@@ -1,0 +1,8 @@
+-R theories UnderLogicAndType
+theories/Prelude.v
+theories/MapFilterDom.v
+theories/Substitution.v
+theories/Resource.v
+theories/ChoiceAlgebra.v
+theories/ChoiceLogic.v
+theories/ChoiceLogicProps.v
