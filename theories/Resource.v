@@ -98,20 +98,45 @@ Lemma res_sum_valid (m1 m2 : World) :
   wf_resource m1 → wf_resource m2 →
   res_sum_defined m1 m2 →
   wf_resource (res_sum m1 m2).
-Proof. Admitted.
+Proof.
+  intros [Hne1 Hdom1] [Hne2 Hdom2] Hdef.
+  split.
+  - destruct Hne1 as [σ1 H1]. exists σ1. left. exact H1.
+  - intros σ1 σ2 [H1|H1] [H2|H2].
+    + exact (Hdom1 σ1 σ2 H1 H2).
+    + exact (Hdef σ1 σ2 H1 H2).
+    + symmetry. exact (Hdef σ2 σ1 H2 H1).
+    + exact (Hdom2 σ1 σ2 H1 H2).
+Qed.
 
 Lemma res_restrict_valid (m : World) (X : gset Var) :
   wf_resource m →
   (∃ σ, m σ ∧ dom σ ∩ X ≠ ∅) →   (* X overlaps the domain *)
   wf_resource (res_restrict m X).
-Proof. Admitted.
+Proof.
+  intros [Hne Hdom] Hoverlap.
+  split.
+  - destruct Hoverlap as [σ [Hσ _]].
+    exists (subst_restrict σ X). exists σ. split; [exact Hσ | reflexivity].
+  - intros σ1 σ2 [σ1' [H1' Hrestr1]] [σ2' [H2' Hrestr2]].
+    subst.
+    rewrite !subst_restrict_dom.
+    Admitted.
 
 (** The unit resource is compatible with every world. *)
 Lemma world_compat_unit_l (m : World) : world_compat res_unit m.
-Proof. Admitted.
+Proof.
+  unfold world_compat, res_unit, subst_compat.
+  intros σ1 σ2 H1 H2 x v1 v2 Hv1 Hv2.
+  subst. rewrite lookup_empty in Hv1. discriminate.
+Qed.
 
 Lemma world_compat_unit_r (m : World) : world_compat m res_unit.
-Proof. Admitted.
+Proof.
+  unfold world_compat, res_unit, subst_compat.
+  intros σ1 σ2 H1 H2 x v1 v2 Hv1 Hv2.
+  subst. rewrite lookup_empty in Hv2. discriminate.
+Qed.
 
 (** ** Partial order properties *)
 
@@ -160,7 +185,17 @@ Proof. Admitted.
 Lemma res_product_comm (m1 m2 : World) :
   world_compat m1 m2 →
   ∀ σ, res_product m1 m2 σ ↔ res_product m2 m1 σ.
-Proof. Admitted.
+Proof.
+  intros Hcomp σ. unfold res_product. split.
+  - intros (σ1 & σ2 & H1 & H2 & Hc & Heq).
+    exists σ2, σ1. repeat split.
+    + exact H2.
+    + exact H1.
+    + exact (subst_compat_sym _ _ Hc).
+    + subst. apply map_eq. intros i.
+      unfold subst_compat in Hc.
+      destruct (σ1 !! i) as [v1|] eqn:E1, (σ2 !! i) as [v2|] eqn:E2.
+Admitted.
 
 Lemma res_product_assoc (m1 m2 m3 : World) :
   world_compat m1 m2 →
@@ -172,7 +207,11 @@ Proof. Admitted.
 Lemma res_product_unit_r (m : World) :
   wf_resource m →
   ∀ σ, res_product m res_unit σ ↔ m σ.
-Proof. Admitted.
+Proof.
+  intros [Hne Hdom] σ.
+  unfold res_product, res_unit. split.
+  - intros (σ1 & σ2 & H1 & H2 & Hcomp & Heq). subst.
+Admitted.
 
 Lemma res_sum_comm (m1 m2 : World) :
   ∀ σ, res_sum m1 m2 σ ↔ res_sum m2 m1 σ.
@@ -191,7 +230,13 @@ Lemma semijoin_valid (m : World) (σ : SubstT) :
   wf_resource m →
   (∃ σ', semijoin m σ σ') →
   wf_resource (semijoin m σ).
-Proof. Admitted.
+Proof.
+  intros [_ Hdom] Hne.
+  split.
+  - exact Hne.
+  - intros σ1 σ2 [H1 _] [H2 _].
+    exact (Hdom σ1 σ2 H1 H2).
+Qed.
 
 End Resource.
 

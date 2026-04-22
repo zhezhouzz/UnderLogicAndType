@@ -116,12 +116,35 @@ Lemma subst_restrict_union σ1 σ2 X :
   subst_compat σ1 σ2 →
   subst_restrict (σ1 ∪ σ2) X = subst_restrict σ1 X ∪ subst_restrict σ2 X.
 Proof.
-Admitted.
+  intros Hcomp.
+  unfold subst_restrict.
+  (* Use projection form of predicate to avoid pattern-match lambda issues *)
+  setoid_rewrite gmap_filter_key_pair.
+  apply map_eq. intros i.
+  rewrite option_eq. intros x.
+  setoid_rewrite map_lookup_filter_Some.
+  setoid_rewrite lookup_union_Some_raw.
+  setoid_rewrite map_lookup_filter_Some.
+  setoid_rewrite map_lookup_filter_None.
+  simpl. split.
+  - intros [[H1|[H1 H2]] HP].
+    + left. eauto.
+    + right. split. { left. exact H1. } eauto.
+  - intros [[H1 HP]|[[H1|H1] [H2 HP]]].
+    + split. { left. exact H1. } exact HP.
+    + split. { right. eauto. } exact HP.
+    + destruct (σ1 !! i) as [y|] eqn:Ey.
+      * exfalso. exact (H1 y Ey HP).
+      * split. { right. eauto. } exact HP.
+Qed.
 
 Lemma subst_restrict_lookup_some σ X x y :
   subst_restrict σ X !! x = Some y -> x ∈ X /\ σ !! x = Some y.
 Proof.
-Admitted.
+  unfold subst_restrict. intro Hlookup.
+  apply map_lookup_filter_Some in Hlookup.
+  destruct Hlookup as [H1 H2]. split; [exact H2 | exact H1].
+Qed.
 
 (** Compatibility is preserved under restriction. *)
 Lemma subst_compat_restrict σ1 σ2 X :
