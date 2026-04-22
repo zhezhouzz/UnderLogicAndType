@@ -16,7 +16,7 @@ From UnderLogicAndType Require Import Prelude Substitution Resource.
     - choice sum (⊕)
     - approximation modalities (o = over, u = under)
     - persistence modality (□)
-    - read modality (X : φ ▷ p) where φ is a semantic guard [Subst → Prop]  *)
+    - universal modality (∀X. p): for each σ_X in proj(m, X), the fiber satisfies σ_X(p)  *)
 
 Section ChoiceLogic.
 
@@ -38,10 +38,9 @@ Inductive Formula (A : Type) : Type :=
   | FPlus   (p q : Formula A)                   (* choice sum p ⊕ q *)
   | FOver   (p : Formula A)                     (* overapproximation  o p *)
   | FUnder  (p : Formula A)                     (* underapproximation u p *)
-  | FPers   (p : Formula A)                     (* persistence  □ p *)
-  | FRead   (X : gset Var)                      (* read modality  X:φ ▷ p *)
-            (guard : SubstT → Prop)             (*   guard φ : set of substs *)
-            (p : Formula A).
+  | FPers    (p : Formula A)                    (* persistence  □ p *)
+  | FForall  (X : gset Var)                     (* universal modality  ∀X. p *)
+             (p : Formula A).
 
 (** Make [A] implicit inside the section so constructors can be written
     without an explicit type argument, e.g. [FTrue] not [FTrue A]. *)
@@ -56,8 +55,8 @@ Arguments FWand  {A} _ _.
 Arguments FPlus  {A} _ _.
 Arguments FOver  {A} _.
 Arguments FUnder {A} _.
-Arguments FPers  {A} _.
-Arguments FRead  {A} _ _ _.
+Arguments FPers   {A} _.
+Arguments FForall {A} _ _.
 
 (** ** Substitution action on formulas
 
@@ -78,8 +77,8 @@ Fixpoint formula_subst {A} (subst_atom : SubstT → A → A) (σ : SubstT) (φ :
   | FPlus p q    => FPlus  (formula_subst subst_atom σ p) (formula_subst subst_atom σ q)
   | FOver p      => FOver  (formula_subst subst_atom σ p)
   | FUnder p     => FUnder (formula_subst subst_atom σ p)
-  | FPers p      => FPers  (formula_subst subst_atom σ p)
-  | FRead X g p  => FRead X g (formula_subst subst_atom σ p)
+  | FPers p     => FPers   (formula_subst subst_atom σ p)
+  | FForall X p => FForall X (formula_subst subst_atom σ p)
   end.
 
 (** ** Formula size (used as termination measure for [satisfies]) *)
@@ -89,8 +88,8 @@ Fixpoint formula_size {A} (φ : Formula A) : nat :=
   | FTrue | FFalse | FAtom _ => 1
   | FAnd p q | FOr p q | FImpl p q
   | FStar p q | FWand p q | FPlus p q => 1 + formula_size p + formula_size q
-  | FOver p | FUnder p | FPers p      => 1 + formula_size p
-  | FRead _ _ p                       => 1 + formula_size p
+  | FOver p | FUnder p | FPers p => 1 + formula_size p
+  | FForall _ p                  => 1 + formula_size p
   end.
 
 (** Substitution preserves size (key lemma for termination). *)
@@ -176,17 +175,14 @@ Fixpoint satisfies {A}
       (∀ σ1 σ2, m σ1 → m σ2 → σ1 = σ2) ∧
       satisfies interp subst_atom m p
 
-  | FRead X guard p =>
-      (** m ⊨ X:φ ▷ p  iff
-          ∀ σ. σ ∈ ⟦φ⟧  ∧  dom(σ) = X  ∧  m ⋉ σ ≠ ∅
-               →  m ⋉ σ ⊨ σ(p)                               *)
+  | FForall X p =>
+      (** m ⊨ ∀X. p  iff
+          ∀ σ_X ∈ proj(m, X).  fiber(m, σ_X) ⊨ σ_X(p)       *)
       ∀ σ,
-        guard σ →
-        dom σ = X →
-        (∃ σ', semijoin m σ σ') →
+        res_restrict m X σ →
         (** Apply σ to [interp] rather than substituting into the formula;
             equivalent by [satisfies_subst_eq] below. *)
-        satisfies (λ a, interp (subst_atom σ a)) subst_atom (semijoin m σ) p
+        satisfies (λ a, interp (subst_atom σ a)) subst_atom (fiber m σ) p
 
   end.
 
@@ -210,19 +206,19 @@ Local Notation "φ ⊢[ interp , sa ] ψ" :=
 
 End ChoiceLogic.
 
-(** After the section closes, Var/EqDecision/Countable/Value become explicit
-    arguments.  Make them all implicit so users can write [FOver p] rather
-    than [@FOver Var _ _ Value A p]. *)
-Arguments FTrue  {Var _ _ Value A}.
-Arguments FFalse {Var _ _ Value A}.
-Arguments FAtom  {Var _ _ Value A} _.
-Arguments FAnd   {Var _ _ Value A} _ _.
-Arguments FOr    {Var _ _ Value A} _ _.
-Arguments FImpl  {Var _ _ Value A} _ _.
-Arguments FStar  {Var _ _ Value A} _ _.
-Arguments FWand  {Var _ _ Value A} _ _.
-Arguments FPlus  {Var _ _ Value A} _ _.
-Arguments FOver  {Var _ _ Value A} _.
-Arguments FUnder {Var _ _ Value A} _.
-Arguments FPers  {Var _ _ Value A} _.
-Arguments FRead  {Var _ _ Value A} _ _ _.
+(** After the section closes the section variables become explicit.
+    Re-establish implicitness using positional underscores with [rename]
+    to avoid name-mismatch errors. *)
+Arguments FTrue  {_} {_} {_} {_} : rename.
+Arguments FFalse {_} {_} {_} {_} : rename.
+Arguments FAtom  {_} {_} {_} {_} _ : rename.
+Arguments FAnd   {_} {_} {_} {_} _ _ : rename.
+Arguments FOr    {_} {_} {_} {_} _ _ : rename.
+Arguments FImpl  {_} {_} {_} {_} _ _ : rename.
+Arguments FStar  {_} {_} {_} {_} _ _ : rename.
+Arguments FWand  {_} {_} {_} {_} _ _ : rename.
+Arguments FPlus  {_} {_} {_} {_} _ _ : rename.
+Arguments FOver  {_} {_} {_} {_} _ : rename.
+Arguments FUnder {_} {_} {_} {_} _ : rename.
+Arguments FPers   {_} {_} {_} {_} _ : rename.
+Arguments FForall {_} {_} {_} {_} _ _ : rename.

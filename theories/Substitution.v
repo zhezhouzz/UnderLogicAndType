@@ -26,11 +26,11 @@ Definition subst_compat (σ1 σ2 : Subst) : Prop :=
 Definition subst_restrict (σ : Subst) (X : gset Var) : Subst :=
   filter (λ '(k, _), k ∈ X) σ.
 
-(** ** Semijoin of a set of substitutions with a single substitution  (Definition 1.5)
+(** ** Fiber over a projection  (Definition 1.5)
 
-    Given a set [m : Subst → Prop] and σ, the semijoin [semijoin_set m σ]
-    collects all σ' ∈ m whose restriction to dom(σ) equals σ. *)
-Definition semijoin_set (m : Subst → Prop) (σ : Subst) : Subst → Prop :=
+    Given a set [m : Subst → Prop] and σ, the fiber [fiber_set m σ]
+    collects all σ' ∈ m whose projection to dom(σ) equals σ. *)
+Definition fiber_set (m : Subst → Prop) (σ : Subst) : Subst → Prop :=
   λ σ', m σ' ∧ subst_restrict σ' (dom σ) = σ.
 
 (** ** Lemmas *)

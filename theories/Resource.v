@@ -49,10 +49,10 @@ Definition res_sum_defined (m1 m2 : World) : Prop :=
 Definition res_restrict (m : World) (X : gset Var) : World :=
   λ σ, ∃ σ', m σ' ∧ subst_restrict σ' X = σ.
 
-(** ** Semijoin  (Definition 1.5) *)
+(** ** Fiber over a projection  (Definition 1.5) *)
 
-Definition semijoin (m : World) (σ : SubstT) : World :=
-  semijoin_set m σ.
+Definition fiber (m : World) (σ : SubstT) : World :=
+  fiber_set m σ.
 
 (** ** Partial order  (Definition 1.4)
 
@@ -221,15 +221,15 @@ Lemma res_sum_assoc (m1 m2 m3 : World) :
   ∀ σ, res_sum (res_sum m1 m2) m3 σ ↔ res_sum m1 (res_sum m2 m3) σ.
 Proof. intros σ. unfold res_sum. hauto. Qed.
 
-(** The semijoin of a valid world with σ is a sub-world (not necessarily valid). *)
-Lemma semijoin_sub (m : World) (σ : SubstT) :
-  ∀ σ', semijoin m σ σ' → m σ'.
+(** The fiber of a valid world with σ is a sub-world (not necessarily valid). *)
+Lemma fiber_sub (m : World) (σ : SubstT) :
+  ∀ σ', fiber m σ σ' → m σ'.
 Proof. intros σ' [Hin _]. exact Hin. Qed.
 
-Lemma semijoin_valid (m : World) (σ : SubstT) :
+Lemma fiber_valid (m : World) (σ : SubstT) :
   wf_resource m →
-  (∃ σ', semijoin m σ σ') →
-  wf_resource (semijoin m σ).
+  (∃ σ', fiber m σ σ') →
+  wf_resource (fiber m σ).
 Proof.
   intros [_ Hdom] Hne.
   split.
