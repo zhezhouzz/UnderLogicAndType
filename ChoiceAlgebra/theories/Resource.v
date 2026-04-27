@@ -1,5 +1,6 @@
 From ChoiceAlgebra Require Import Prelude Store.
-From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality.
+From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality
+  Logic.ProofIrrelevance.
 
 (** * Resources  (Definitions 1.2–1.5)
 
@@ -101,11 +102,19 @@ Definition fiber (m : World) (σ : StoreT) : World := {|
 
 (** ** Partial order  (Definition 1.4)
 
-    [m1 ≤ᵣ m2] iff [m1] is exactly the restriction of [m2] to [m1]'s domain.
-    Requires [wf_world m1] for reflexivity to hold. *)
+    [m1 ≤ᵣ m2] bundles three conditions:
+    - both worlds are well-formed
+    - [m1] is exactly the restriction of [m2] to [m1]'s domain
 
-Definition res_le (m1 m2 : World) : Prop :=
-  m1 = res_restrict m2 (world_dom m1).
+    Bundling [wf_world] makes [res_le] a genuine partial order on well-formed
+    worlds: reflexivity, transitivity, and antisymmetry all hold without
+    separate side conditions. *)
+
+Record res_le (m1 m2 : World) : Prop := mk_res_le {
+  rle_wf1 : wf_world m1;
+  rle_wf2 : wf_world m2;
+  rle_eq  : m1 = res_restrict m2 (world_dom m1);
+}.
 
 Local Infix "≤ᵣ" := res_le (at level 70).
 
@@ -138,27 +147,19 @@ Proof. Admitted.
 
 (** ** Compatibility lemmas *)
 
-Lemma world_compat_unit_l (m : World) : world_compat res_unit m.
+Lemma world_compat_unit (m : World) : world_compat res_unit m.
 Proof.
   unfold world_compat, store_compat. simpl.
   intros s1 s2 H1 H2 x v1 v2 Hv1 Hv2.
   subst. rewrite lookup_empty in Hv1. discriminate.
 Qed.
 
-Lemma world_compat_unit_r (m : World) : world_compat m res_unit.
-Proof.
-  unfold world_compat, store_compat. simpl.
-  intros s1 s2 H1 H2 x v1 v2 Hv1 Hv2.
-  subst. rewrite lookup_empty in Hv2. discriminate.
-Qed.
-
 (** ** Partial order properties *)
 
-(** Domain monotonicity: [m1 ≤ᵣ m2] implies [world_dom m1 ⊆ world_dom m2].
-    This is implicit in the record equality but useful to have explicitly. *)
+(** Domain monotonicity: [m1 ≤ᵣ m2] implies [world_dom m1 ⊆ world_dom m2]. *)
 Lemma res_le_dom (m1 m2 : World) : m1 ≤ᵣ m2 → world_dom m1 ⊆ world_dom m2.
 Proof.
-  unfold res_le. intros Heq.
+  intros [_ _ Heq].
   assert (Hd : world_dom m1 = world_dom m2 ∩ world_dom m1).
   { pattern m1 at 1. rewrite Heq. simpl. reflexivity. }
   set_solver.
@@ -166,7 +167,8 @@ Qed.
 
 Lemma res_le_refl (m : World) : wf_world m → m ≤ᵣ m.
 Proof.
-  intros [_ Hdom]. unfold res_le.
+  intros Hwf. constructor; [exact Hwf | exact Hwf |].
+  destruct Hwf as [_ Hdom].
   apply world_ext.
   - simpl. set_solver.
   - intros s. simpl. split.
@@ -181,12 +183,11 @@ Proof.
       rewrite Hstep in Heq. subst. exact Hs'.
 Qed.
 
-Lemma res_le_antisym (m1 m2 : World) :
-  m1 ≤ᵣ m2 → m2 ≤ᵣ m1 → world_dom m1 = world_dom m2 → m1 = m2.
+(** Antisymmetry: the domain condition follows from both directions of [≤ᵣ]. *)
+Lemma res_le_antisym (m1 m2 : World) : m1 ≤ᵣ m2 → m2 ≤ᵣ m1 → m1 = m2.
 Proof. Admitted.
 
-Lemma res_le_trans (m1 m2 m3 : World) :
-  m1 ≤ᵣ m2 → m2 ≤ᵣ m3 → m1 ≤ᵣ m3.
+Lemma res_le_trans (m1 m2 m3 : World) : m1 ≤ᵣ m2 → m2 ≤ᵣ m3 → m1 ≤ᵣ m3.
 Proof. Admitted.
 
 Lemma res_le_product_l (m1 m2 : World) :
@@ -246,6 +247,36 @@ Lemma wf_fiber_valid (m : World) (σ : StoreT) :
 Proof.
   intros Hwf Hne.
   apply wf_fiber; [exact Hwf | exact Hne].
+Qed.
+
+(** ** Well-formed worlds as a subtype with a genuine partial order
+
+    [WfWorld] is the sigma type of well-formed worlds.  Restricting to this
+    subtype makes [≤ᵣ] a [PreOrder] (refl + trans) and an [AntiSymm]
+    (antisymmetry), i.e., a genuine partial order. *)
+
+Definition WfWorld : Type := { m : World | wf_world m }.
+
+(** Coercion: use a [WfWorld] wherever a [World] is expected. *)
+Coercion wfw_world (w : WfWorld) : World := proj1_sig w.
+Definition wfw_wf (w : WfWorld) : wf_world w := proj2_sig w.
+
+Definition wf_res_le (w1 w2 : WfWorld) : Prop := (w1 : World) ≤ᵣ (w2 : World).
+
+#[global] Instance wf_world_sqsubseteq : SqSubsetEq WfWorld := wf_res_le.
+
+#[global] Instance wf_world_preorder : PreOrder (sqsubseteq (A := WfWorld)).
+Proof.
+  constructor.
+  - intros w. exact (res_le_refl w (wfw_wf w)).
+  - intros w1 w2 w3 H12 H23. exact (res_le_trans w1 w2 w3 H12 H23).
+Qed.
+
+#[global] Instance wf_world_antisym : AntiSymm eq (sqsubseteq (A := WfWorld)).
+Proof.
+  intros [m1 H1] [m2 H2] H12 H21. simpl in *.
+  assert (Heq : m1 = m2) by exact (res_le_antisym m1 m2 H12 H21).
+  subst. f_equal. apply proof_irrelevance.
 Qed.
 
 End Resource.
