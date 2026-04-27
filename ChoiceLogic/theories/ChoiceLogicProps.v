@@ -1,4 +1,4 @@
-From UnderLogicAndType Require Import Prelude Substitution Resource ChoiceLogic.
+From ChoiceLogic Require Import Prelude Substitution Resource Formula.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 

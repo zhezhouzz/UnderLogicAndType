@@ -1,8 +1,24 @@
--R theories UnderLogicAndType
-theories/Prelude.v
-theories/MapFilterDom.v
-theories/Substitution.v
-theories/Resource.v
-theories/ChoiceAlgebra.v
-theories/ChoiceLogic.v
-theories/ChoiceLogicProps.v
+-R ChoiceLogic/theories ChoiceLogic
+-R CoreLang/theories CoreLang
+-R ChoiceType/theories ChoiceType
+
+ChoiceLogic/theories/Prelude.v
+ChoiceLogic/theories/MapFilterDom.v
+ChoiceLogic/theories/Substitution.v
+ChoiceLogic/theories/Resource.v
+ChoiceLogic/theories/ChoiceAlgebra.v
+ChoiceLogic/theories/Formula.v
+ChoiceLogic/theories/ChoiceLogicProps.v
+
+CoreLang/theories/Prelude.v
+CoreLang/theories/Syntax.v
+CoreLang/theories/BasicTyping.v
+CoreLang/theories/SmallStep.v
+CoreLang/theories/Properties.v
+
+ChoiceType/theories/Prelude.v
+ChoiceType/theories/Qualifier.v
+ChoiceType/theories/Syntax.v
+ChoiceType/theories/Denotation.v
+ChoiceType/theories/Typing.v
+ChoiceType/theories/Soundness.v
