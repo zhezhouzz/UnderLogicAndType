@@ -189,7 +189,18 @@ Qed.
 Lemma wf_res_product (m1 m2 : World) :
   wf_world m1 → wf_world m2 → world_compat m1 m2 →
   wf_world (res_product m1 m2).
-Proof. Admitted.
+Proof.
+  intros [Hne1 Hdom1] [Hne2 Hdom2] Hcomp.
+  constructor.
+  - destruct Hne1 as [s1 Hs1], Hne2 as [s2 Hs2].
+    exists (s1 ∪ s2). simpl. exists s1, s2.
+    exact (conj Hs1 (conj Hs2 (conj (Hcomp s1 s2 Hs1 Hs2) eq_refl))).
+  - intros s Hs. simpl in Hs.
+    destruct Hs as [s1 [s2 [Hs1 [Hs2 [Hc Heq]]]]]. subst.
+    unfold res_product; simpl.
+    rewrite <- (Hdom1 s1 Hs1), <- (Hdom2 s2 Hs2).
+    exact (store_union_dom s1 s2 Hc).
+Qed.
 
 Lemma wf_res_sum (m1 m2 : World) :
   wf_world m1 → wf_world m2 → res_sum_defined m1 m2 →
@@ -206,7 +217,17 @@ Qed.
 Lemma wf_res_restrict (m : World) (X : gset Var) :
   wf_world m → (∃ s, m s ∧ dom s ∩ X ≠ ∅) →
   wf_world (res_restrict m X).
-Proof. Admitted.
+Proof.
+  intros [_ Hdom] [s [Hs Hne]].
+  constructor.
+  - exists (store_restrict s X). simpl.
+    exists s. exact (conj Hs eq_refl).
+  - intros s' Hs'. simpl in Hs'.
+    destruct Hs' as [t [Ht Heq]]. subst.
+    unfold res_restrict; simpl.
+    rewrite <- (Hdom t Ht).
+    exact (store_restrict_dom t X).
+Qed.
 
 Lemma wf_fiber (m : World) (σ : StoreT) :
   wf_world m → (∃ s, m s ∧ store_restrict s (dom σ) = σ) →
