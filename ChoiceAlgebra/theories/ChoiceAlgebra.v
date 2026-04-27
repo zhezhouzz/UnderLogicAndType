@@ -1,4 +1,4 @@
-From ChoiceLogic Require Import Prelude Substitution Resource.
+From ChoiceAlgebra Require Import Prelude Substitution Resource.
 
 (** * Choice Algebra  (Definitions 1.6)
 

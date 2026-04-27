@@ -1,4 +1,4 @@
-From ChoiceLogic Require Import Prelude MapFilterDom.
+From ChoiceAlgebra Require Import Prelude MapFilterDom.
 
 (** * Substitutions  (Definition 1.1)
 

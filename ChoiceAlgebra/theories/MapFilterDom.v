@@ -7,7 +7,7 @@
     For predicates written as [λ '(k,_), k ∈ X], use [dom_gmap_filter_key_in_pair]
     (built from [gmap_filter_key_pair] + [dom_gmap_filter_key_in]). *)
 
-From ChoiceLogic Require Export Prelude.
+From ChoiceAlgebra Require Export Prelude.
 From stdpp Require Export fin_maps.
 
 Section dom_gmap_filter.

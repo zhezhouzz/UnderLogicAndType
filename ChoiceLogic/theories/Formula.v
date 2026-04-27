@@ -1,4 +1,4 @@
-From ChoiceLogic Require Import Prelude Substitution Resource.
+From ChoiceLogic Require Import Prelude.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 

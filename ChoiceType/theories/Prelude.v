@@ -9,8 +9,7 @@
     [atom]/[value] types. *)
 
 From CoreLang Require Export Prelude Syntax BasicTyping SmallStep.
-From ChoiceLogic Require Export
-  Prelude Substitution Resource Formula ChoiceLogicProps.
+From ChoiceLogic Require Export Prelude Formula ChoiceLogicProps.
 
 (** ** Instantiation of UnderLogicAndType's abstract parameters
 

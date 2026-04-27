@@ -46,22 +46,37 @@ PATH=$(opam var bin --switch=with-rocq-1):$PATH make
 
 ## Repository structure
 
-The formalization is organized into three logical libraries,
-each under its own `<Library>/theories/` directory.
+The formalization is split into four libraries with a linear dependency order:
 
-### `ChoiceLogic/` — The logic layer
+```
+ChoiceAlgebra → ChoiceLogic → ChoiceType
+                               ↑
+                            CoreLang
+```
 
-The foundation: substitutions, resources, and the choice logic.
+Each library lives under `<Library>/theories/`.
+
+### `ChoiceAlgebra/` — The algebraic layer
+
+Substitutions, resources, and the abstract choice algebra.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Imports and shared setup (stdpp, Hammer) |
+| `Prelude.v` | Shared setup (stdpp, Hammer) |
 | `MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
 | `Substitution.v` | Substitutions, compatibility, restriction, fibers |
 | `Resource.v` | Resources (worlds), resource operations, partial order |
-| `ChoiceAlgebra.v` | Abstract choice algebra; concrete `World` instance |
-| `Formula.v` | Formula syntax and satisfaction relation |
-| `ChoiceLogicProps.v` | Key theorems about the logic (modalities, collapse, erase) |
+| `ChoiceAlgebra.v` | Abstract choice algebra class; concrete `World` instance |
+
+### `ChoiceLogic/` — The logic layer
+
+Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
+
+| File | Contents |
+|------|----------|
+| `Prelude.v` | Re-exports all of `ChoiceAlgebra` |
+| `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FForall`, …) and `satisfies` |
+| `ChoiceLogicProps.v` | Key theorems (modality monotonicity, collapse, erase, adjunction) |
 
 ### `CoreLang/` — The programming language
 

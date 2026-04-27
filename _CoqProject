@@ -1,12 +1,15 @@
+-R ChoiceAlgebra/theories ChoiceAlgebra
 -R ChoiceLogic/theories ChoiceLogic
 -R CoreLang/theories CoreLang
 -R ChoiceType/theories ChoiceType
 
+ChoiceAlgebra/theories/Prelude.v
+ChoiceAlgebra/theories/MapFilterDom.v
+ChoiceAlgebra/theories/Substitution.v
+ChoiceAlgebra/theories/Resource.v
+ChoiceAlgebra/theories/ChoiceAlgebra.v
+
 ChoiceLogic/theories/Prelude.v
-ChoiceLogic/theories/MapFilterDom.v
-ChoiceLogic/theories/Substitution.v
-ChoiceLogic/theories/Resource.v
-ChoiceLogic/theories/ChoiceAlgebra.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/ChoiceLogicProps.v
 

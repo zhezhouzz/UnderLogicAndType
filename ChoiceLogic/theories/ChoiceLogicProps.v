@@ -1,4 +1,4 @@
-From ChoiceLogic Require Import Prelude Substitution Resource Formula.
+From ChoiceLogic Require Import Prelude Formula.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 
