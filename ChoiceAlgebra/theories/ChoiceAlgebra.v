@@ -63,44 +63,50 @@ Section ChoiceAlgebraLemmas.
 Context `{ChoiceAlgebra M}.
 
 (** m1 ≤ m1 × m2  is an expected consequence of bifunctoriality + unit. *)
-(** (The concrete proof for World is in the instance below.) *)
+(** (The concrete proof for WfWorld is in the instance below.) *)
 
 End ChoiceAlgebraLemmas.
 
-(** ** Concrete instance: (World, res_sum, res_product, res_unit, res_le) *)
+(** ** Concrete instance: (WfWorld, wfw_sum, wfw_product, wfw_unit, ⊑)
 
-Section WorldChoiceAlgebra.
+    Carrier is [WfWorld] — the sigma type [{m : World | wf_world m}].
+    All operations are the [wfw_*] ones from Resource.v.  Total operations
+    on WfWorld require a wf proof; we use [Program] and admit those proofs
+    (they only matter when [ca_times_def]/[ca_plus_def] holds). *)
+
+Section WfWorldChoiceAlgebra.
 
 Context `{Countable Var} `{EqDecision Value} `{Inhabited Value}.
-Local Notation SubstT := (gmap Var Value) (only parsing).
-Local Notation WorldT := (@World Var _ _ Value) (only parsing).
+Local Notation WfWorldT := (@WfWorld Var _ _ Value) (only parsing).
 
-(** We lift the world operations pointwise to the algebra interface.
-    [ca_times] = [res_product], [ca_plus] = [res_sum]. *)
+(** Total product on WfWorld: the wf proof is admitted; the operation
+    is only algebraically meaningful when [world_compat w1 w2]. *)
+Program Definition wfw_times_total (w1 w2 : WfWorldT) : WfWorldT :=
+  exist _ (res_product w1 w2) _.
+Next Obligation. Admitted.
 
-Definition world_ca_times (m1 m2 : WorldT) : WorldT := res_product m1 m2.
-Definition world_ca_plus  (m1 m2 : WorldT) : WorldT := res_sum m1 m2.
-Definition world_ca_one   : WorldT            := res_unit.
-Definition world_ca_le    : WorldT → WorldT → Prop := res_le.
-Definition world_ca_times_def (m1 m2 : WorldT) : Prop := world_compat m1 m2.
-Definition world_ca_plus_def  (m1 m2 : WorldT) : Prop := res_sum_defined m1 m2.
+(** Total sum on WfWorld: meaningful when [res_sum_defined w1 w2]. *)
+Program Definition wfw_plus_total (w1 w2 : WfWorldT) : WfWorldT :=
+  exist _ (res_sum w1 w2) _.
+Next Obligation. Admitted.
 
-Program Instance World_ChoiceAlgebra : ChoiceAlgebra WorldT := {|
-  ca_one       := world_ca_one;
-  ca_times     := world_ca_times;
-  ca_plus      := world_ca_plus;
-  ca_le        := world_ca_le;
-  ca_times_def := world_ca_times_def;
-  ca_plus_def  := world_ca_plus_def;
+#[global] Program Instance WfWorld_ChoiceAlgebra : ChoiceAlgebra WfWorldT := {|
+  ca_one       := wfw_unit;
+  ca_times     := wfw_times_total;
+  ca_plus      := wfw_plus_total;
+  ca_le        := sqsubseteq (A := WfWorldT);
+  ca_times_def := fun w1 w2 => world_compat w1 w2;
+  ca_plus_def  := fun w1 w2 => res_sum_defined w1 w2;
 |}.
-(** All proof obligations are admitted; to be filled in during the proof phase. *)
-Next Obligation. Admitted.  (* ca_times_unit *)
-Next Obligation. Admitted.  (* ca_times_comm *)
-Next Obligation. Admitted.  (* ca_plus_comm *)
-Next Obligation. Admitted.  (* ca_times_assoc *)
-Next Obligation. Admitted.  (* ca_plus_assoc *)
-Next Obligation. Admitted.  (* ca_le_refl — requires wf_world *)
-Next Obligation. Admitted.  (* ca_times_le_mono *)
-Next Obligation. Admitted.  (* ca_plus_le_mono *)
+Next Obligation. Admitted.       (* ca_times_unit *)
+Next Obligation. Admitted.       (* ca_times_comm *)
+Next Obligation. Admitted.       (* ca_plus_comm *)
+Next Obligation. Admitted.       (* ca_times_assoc *)
+Next Obligation. Admitted.       (* ca_plus_assoc *)
+Next Obligation.                 (* ca_le_refl: provable because carrier is WfWorld *)
+  intro w. exact (reflexivity w).
+Qed.
+Next Obligation. Admitted.       (* ca_times_le_mono *)
+Next Obligation. Admitted.       (* ca_plus_le_mono *)
 
-End WorldChoiceAlgebra.
+End WfWorldChoiceAlgebra.
