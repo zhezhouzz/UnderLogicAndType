@@ -154,6 +154,16 @@ Qed.
 
 (** ** Partial order properties *)
 
+(** Domain monotonicity: [m1 ≤ᵣ m2] implies [world_dom m1 ⊆ world_dom m2].
+    This is implicit in the record equality but useful to have explicitly. *)
+Lemma res_le_dom (m1 m2 : World) : m1 ≤ᵣ m2 → world_dom m1 ⊆ world_dom m2.
+Proof.
+  unfold res_le. intros Heq.
+  assert (Hd : world_dom m1 = world_dom m2 ∩ world_dom m1).
+  { pattern m1 at 1. rewrite Heq. simpl. reflexivity. }
+  set_solver.
+Qed.
+
 Lemma res_le_refl (m : World) : wf_world m → m ≤ᵣ m.
 Proof.
   intros [_ Hdom]. unfold res_le.
