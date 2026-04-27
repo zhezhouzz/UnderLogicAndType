@@ -1,4 +1,5 @@
 From ChoiceAlgebra Require Import Prelude Store.
+From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality.
 
 (** * Resources  (Definitions 1.2–1.5)
 
@@ -26,6 +27,18 @@ Record World := mk_world {
 (** Coercion: treat a World as a predicate on stores.
     Enables [m s] notation in place of [world_stores m s]. *)
 Coercion world_stores : World >-> Funclass.
+
+(** Extensionality for worlds: two worlds are equal iff they have the same
+    domain and the same set of stores.  Requires [propext] and [funext]. *)
+Lemma world_ext (m1 m2 : World) :
+  world_dom m1 = world_dom m2 →
+  (∀ s, m1 s ↔ m2 s) →
+  m1 = m2.
+Proof.
+  destruct m1, m2. simpl. intros -> Hstores.
+  f_equal. apply functional_extensionality. intros s.
+  apply propositional_extensionality. exact (Hstores s).
+Qed.
 
 (** ** Well-formedness (Definition 1.2)
 
@@ -86,11 +99,13 @@ Definition fiber (m : World) (σ : StoreT) : World := {|
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
 
-(** ** Partial order  (Definition 1.4) *)
+(** ** Partial order  (Definition 1.4)
+
+    [m1 ≤ᵣ m2] iff [m1] is exactly the restriction of [m2] to [m1]'s domain.
+    Requires [wf_world m1] for reflexivity to hold. *)
 
 Definition res_le (m1 m2 : World) : Prop :=
-  (∀ s1, m1 s1 → ∃ s2, m2 s2 ∧ store_restrict s2 (dom s1) = s1) ∧
-  (∀ s1 s2, m1 s1 → m2 s2 → m1 (store_restrict s2 (dom s1))).
+  m1 = res_restrict m2 (world_dom m1).
 
 Local Infix "≤ᵣ" := res_le (at level 70).
 
@@ -139,13 +154,25 @@ Qed.
 
 (** ** Partial order properties *)
 
-Lemma res_le_refl (m : World) : m ≤ᵣ m.
-Proof. Admitted.
+Lemma res_le_refl (m : World) : wf_world m → m ≤ᵣ m.
+Proof.
+  intros [_ Hdom]. unfold res_le.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros s. simpl. split.
+    + intros Hs.
+      pose proof (Hdom s Hs) as Hd.
+      exists s. split; [exact Hs |].
+      apply store_restrict_idemp. set_solver.
+    + intros (s' & Hs' & Heq).
+      pose proof (Hdom s' Hs') as Hd.
+      assert (Hstep : store_restrict s' (world_dom m) = s')
+        by (apply store_restrict_idemp; set_solver).
+      rewrite Hstep in Heq. subst. exact Hs'.
+Qed.
 
 Lemma res_le_antisym (m1 m2 : World) :
-  wf_world m1 → wf_world m2 →
-  m1 ≤ᵣ m2 → m2 ≤ᵣ m1 →
-  ∀ s, m1 s ↔ m2 s.
+  m1 ≤ᵣ m2 → m2 ≤ᵣ m1 → world_dom m1 = world_dom m2 → m1 = m2.
 Proof. Admitted.
 
 Lemma res_le_trans (m1 m2 m3 : World) :
