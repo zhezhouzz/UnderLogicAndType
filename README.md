@@ -44,14 +44,47 @@ If `rocq` is not on your PATH, prefix with the switch's bin directory:
 PATH=$(opam var bin --switch=with-rocq-1):$PATH make
 ```
 
-## File overview
+## Repository structure
+
+The formalization is organized into three logical libraries,
+each under its own `<Library>/theories/` directory.
+
+### `ChoiceLogic/` — The logic layer
+
+The foundation: substitutions, resources, and the choice logic.
 
 | File | Contents |
 |------|----------|
-| `theories/Prelude.v` | Imports and shared setup |
-| `theories/MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
-| `theories/Substitution.v` | Substitutions, compatibility, restriction, fibers |
-| `theories/Resource.v` | Resources, resource operations, partial order |
-| `theories/ChoiceAlgebra.v` | Abstract choice algebra; concrete `World` instance |
-| `theories/ChoiceLogic.v` | Formula syntax and satisfaction relation |
-| `theories/ChoiceLogicProps.v` | Key theorems about the logic |
+| `Prelude.v` | Imports and shared setup (stdpp, Hammer) |
+| `MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
+| `Substitution.v` | Substitutions, compatibility, restriction, fibers |
+| `Resource.v` | Resources (worlds), resource operations, partial order |
+| `ChoiceAlgebra.v` | Abstract choice algebra; concrete `World` instance |
+| `Formula.v` | Formula syntax and satisfaction relation |
+| `ChoiceLogicProps.v` | Key theorems about the logic (modalities, collapse, erase) |
+
+### `CoreLang/` — The programming language
+
+A call-by-value λ-calculus with primitives and pattern matching,
+in locally-nameless representation.
+
+| File | Contents |
+|------|----------|
+| `Prelude.v` | LN infrastructure: `Open`, `Close`, `SubstV`, `Stale`, `Lc` typeclasses |
+| `Syntax.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc` |
+| `BasicTyping.v` | Simple type system (`⊢ᵥ`, `⊢ₑ`) |
+| `SmallStep.v` | Small-step operational semantics (`→*`) |
+| `Properties.v` | Type safety and basic metatheory |
+
+### `ChoiceType/` — The type system
+
+Choice types layered on top of `CoreLang` and `ChoiceLogic`.
+
+| File | Contents |
+|------|----------|
+| `Prelude.v` | Instantiates `ChoiceLogic` with `atom`/`value` from `CoreLang` |
+| `Qualifier.v` | Qualifier atoms (`qual`, `QExpr`, `QProd`); interpretation `qual_interp` |
+| `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
+| `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
+| `Typing.v` | Typing judgment `Γ ⊢ᶜ e ⋮ τ` / `Γ ⊢ˢ e ⋮ τ` (comma and star modes) |
+| `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
