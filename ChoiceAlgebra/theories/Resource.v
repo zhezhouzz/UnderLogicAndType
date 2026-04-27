@@ -116,16 +116,75 @@ Qed.
 
 Lemma res_le_antisym (m1 m2 : World) :
   wf_world m1 → wf_world m2 → m1 ≤ᵣ m2 → m2 ≤ᵣ m1 → m1 = m2.
-Proof. Admitted.
+Proof.
+  intros Hwf1 Hwf2 H12 H21.
+  pose proof (res_le_dom m1 m2 H12) as Hd12.
+  pose proof (res_le_dom m2 m1 H21) as Hd21.
+  assert (Hdeq : world_dom m1 = world_dom m2) by set_solver.
+  apply world_ext; [exact Hdeq |].
+  unfold res_le in H12, H21.
+  intros s. split.
+  - intros Hs1.
+    rewrite H12 in Hs1. cbn in Hs1.
+    destruct Hs1 as [s' [Hs2 Hrestr]].
+    pose proof (wf_dom _ Hwf2 s' Hs2) as Hd2.
+    rewrite Hdeq in Hrestr.
+    rewrite store_restrict_idemp in Hrestr by set_solver.
+    subst. exact Hs2.
+  - intros Hs2.
+    rewrite H21 in Hs2. cbn in Hs2.
+    destruct Hs2 as [s' [Hs1 Hrestr]].
+    pose proof (wf_dom _ Hwf1 s' Hs1) as Hd1.
+    rewrite <- Hdeq in Hrestr.
+    rewrite store_restrict_idemp in Hrestr by set_solver.
+    subst. exact Hs1.
+Qed.
 
 Lemma res_le_trans (m1 m2 m3 : World) :
   m1 ≤ᵣ m2 → m2 ≤ᵣ m3 → m1 ≤ᵣ m3.
-Proof. Admitted.
+Proof.
+  intros H12 H23.
+  pose proof (res_le_dom m1 m2 H12) as Hd12.
+  pose proof (res_le_dom m2 m3 H23) as Hd23.
+  unfold res_le in *.
+  apply world_ext.
+  - (* world_dom m1 = world_dom (res_restrict m3 (world_dom m1)) *)
+    unfold res_restrict. simpl. set_solver.
+  - intros s. split.
+    + intros Hs1.
+      rewrite H12 in Hs1. cbn in Hs1.
+      destruct Hs1 as [s2 [Hs2 Hrestr12]].
+      rewrite H23 in Hs2. cbn in Hs2.
+      destruct Hs2 as [s3 [Hs3 Hrestr23]].
+      cbn. exists s3. split; [exact Hs3 |].
+      rewrite <- Hrestr12, <- Hrestr23, store_restrict_restrict.
+      f_equal. set_solver.
+    + intros Hs1.
+      cbn in Hs1.
+      destruct Hs1 as [s3 [Hs3 Hrestr]].
+      (* Need: m1 s.  Use H12 : m1 = res_restrict m2 (world_dom m1). *)
+      rewrite H12. cbn.
+      (* Witness: store_restrict s3 (world_dom m2) *)
+      exists (store_restrict s3 (world_dom m2)).
+      split.
+      * (* Need: m2 (store_restrict s3 (world_dom m2)) *)
+        enough (Hm2 : (res_restrict m3 (world_dom m2)) (store_restrict s3 (world_dom m2))).
+        { rewrite <- H23 in Hm2. exact Hm2. }
+        cbn. exists s3. exact (conj Hs3 eq_refl).
+      * (* store_restrict (store_restrict s3 (world_dom m2)) (world_dom m1) = s *)
+        rewrite store_restrict_restrict.
+        assert (Heq : world_dom m2 ∩ world_dom m1 = world_dom m1) by set_solver.
+        rewrite Heq. exact Hrestr.
+Qed.
 
 (** ** Well-formedness of operations *)
 
 Lemma wf_res_unit : wf_world res_unit.
-Proof. Admitted.
+Proof.
+  constructor.
+  - exists ∅. simpl. reflexivity.
+  - intros s Hs. simpl in Hs. subst. simpl. set_solver.
+Qed.
 
 Lemma wf_res_product (m1 m2 : World) :
   wf_world m1 → wf_world m2 → world_compat m1 m2 →
@@ -135,7 +194,14 @@ Proof. Admitted.
 Lemma wf_res_sum (m1 m2 : World) :
   wf_world m1 → wf_world m2 → res_sum_defined m1 m2 →
   wf_world (res_sum m1 m2).
-Proof. Admitted.
+Proof.
+  intros [Hne1 Hdom1] [_ Hdom2] Hdef.
+  constructor.
+  - destruct Hne1 as [s Hs]. exists s. simpl. left. exact Hs.
+  - intros s Hs. simpl in Hs. destruct Hs as [Hs | Hs].
+    + simpl. exact (Hdom1 s Hs).
+    + simpl. rewrite (Hdom2 s Hs). symmetry. exact Hdef.
+Qed.
 
 Lemma wf_res_restrict (m : World) (X : gset Var) :
   wf_world m → (∃ s, m s ∧ dom s ∩ X ≠ ∅) →
@@ -145,7 +211,12 @@ Proof. Admitted.
 Lemma wf_fiber (m : World) (σ : StoreT) :
   wf_world m → (∃ s, m s ∧ store_restrict s (dom σ) = σ) →
   wf_world (fiber m σ).
-Proof. Admitted.
+Proof.
+  intros [_ Hdom] [s [Hs Hrestr]].
+  constructor.
+  - exists s. simpl. split; [exact Hs | exact Hrestr].
+  - intros s' [Hs' _]. simpl. exact (Hdom s' Hs').
+Qed.
 
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
