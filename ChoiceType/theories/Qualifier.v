@@ -31,7 +31,7 @@ Inductive qualifier : Type :=
   | QExpr (e : tm) (result : atom)
 
   (** Resource-product atom (compatibility).
-      [interp (QProd q1 q2) σ]  ≝  ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ subst_compat σ1 σ2
+      [interp (QProd q1 q2) σ]  ≝  ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ store_compat σ1 σ2
                                              ∧ interp q1 σ1 ∧ interp q2 σ2 *)
   | QProd (q1 q2 : qualifier).
 
@@ -157,14 +157,18 @@ Fixpoint qual_interp (σ : SubstT) (q : qualifier) : Prop :=
       ∃ v, (tm_subst_all σ e) →* tret v ∧ σ !! ν = Some v
   | QProd q1 q2 =>
       ∃ σ1 σ2,
-        subst_compat σ1 σ2 ∧ σ1 ∪ σ2 = σ ∧
+        store_compat σ1 σ2 ∧ σ1 ∪ σ2 = σ ∧
         qual_interp σ1 q1 ∧ qual_interp σ2 q2
   end.
 
-(** Flip argument order for the [interp : A → SubstT → Prop] parameter
-    that ChoiceLogic.satisfies expects. *)
+(** Flip argument order for convenience. *)
 Definition qual_interp_cl (q : qualifier) (σ : SubstT) : Prop :=
   qual_interp σ q.
+
+(** Wrap as a World for the [interp : A → WorldT] parameter of satisfies.
+    The world_dom field carries no semantic weight for res_le; ∅ is a safe placeholder. *)
+Definition qual_interp_world (q : qualifier) : WorldT :=
+  {| world_dom := ∅; world_stores := qual_interp_cl q |}.
 
 (** ** Denotation typeclass instance
 
@@ -206,7 +210,7 @@ Lemma qual_subst_intro x v (q : qualifier) :
 Proof. Admitted.
 
 Lemma qual_interp_subst_compose (σ_X σ : SubstT) (q : qualifier) :
-  subst_compat σ_X σ →
+  store_compat σ_X σ →
   qual_interp σ (qual_subst σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
 Proof. Admitted.
 

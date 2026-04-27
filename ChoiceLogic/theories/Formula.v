@@ -83,7 +83,7 @@ Arguments FForall {A} _ _.
     [FForall] can apply its own substitution on top. *)
 
 Fixpoint satisfies {A}
-    (interp     : A → (SubstT → Prop))
+    (interp     : A → WorldT)
     (subst_atom : SubstT → A → A)
     (m          : WorldT)
     (φ          : Formula A) : Prop :=
@@ -137,15 +137,17 @@ Fixpoint satisfies {A}
 
   | FOver p =>
       (** m ⊨ o p  iff  ∃ m' ⊇ m. m' ⊨ p  (over-approximation: superset) *)
-      ∃ m', (∀ σ, m σ → m' σ) ∧ satisfies interp subst_atom m' p
+      ∃ m' : WorldT, (∀ σ, m σ → m' σ) ∧ satisfies interp subst_atom m' p
 
   | FUnder p =>
       (** m ⊨ u p  iff  ∃ m' ⊆ m. m' ⊨ p  (under-approximation: subset) *)
-      ∃ m', (∀ σ, m' σ → m σ) ∧ satisfies interp subst_atom m' p
+      ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ satisfies interp subst_atom m' p
 
   | FPers p =>
       (** m ⊨ □ p  iff  ∀ σ ∈ m. {σ} ⊨ p *)
-      ∀ σ, m σ → satisfies interp subst_atom (λ σ', σ' = σ) p
+      ∀ σ, m σ →
+        satisfies interp subst_atom
+          {| world_dom := dom σ; world_stores := λ s, s = σ |} p
 
   | FForall X p =>
       (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  fiber(m, σ_X) ⊨ σ_X(p)

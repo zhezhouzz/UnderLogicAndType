@@ -5,7 +5,7 @@
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/MapFilterDom.v
-ChoiceAlgebra/theories/Substitution.v
+ChoiceAlgebra/theories/Store.v
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 

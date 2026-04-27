@@ -15,7 +15,7 @@ Local Notation SubstT := (gmap Var Value) (only parsing).
 Local Notation WorldT := (@World Var _ _ Value) (only parsing).
 
 Context {A : Type}.
-Context (interp     : A → (SubstT → Prop)).
+Context (interp     : A → WorldT).
 Context (subst_atom : SubstT → A → A).
 
 Notation sat m φ := (satisfies interp subst_atom m φ).
@@ -75,7 +75,7 @@ Record atoms_rich : Prop := {
     ∀ σ, interp a3 σ ↔ interp a1 σ ∨ interp a2 σ;
   ar_prod  : ∀ a1 a2 : A, ∃ a3 : A,
     ∀ σ, interp a3 σ ↔
-      ∃ σ1 σ2, interp a1 σ1 ∧ interp a2 σ2 ∧ subst_compat σ1 σ2 ∧ σ = σ1 ∪ σ2;
+      ∃ σ1 σ2, interp a1 σ1 ∧ interp a2 σ2 ∧ store_compat σ1 σ2 ∧ σ = σ1 ∪ σ2;
 }.
 
 (** Collapse: o(o φ₁ ∧ o φ₂) ↔ o φ₁ ∧ o φ₂ *)

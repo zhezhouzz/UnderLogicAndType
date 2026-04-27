@@ -8,7 +8,7 @@
       [⟦Γ⟧    : Formula qualifier]  — context denotation
 
     We instantiate [satisfies] with:
-      [interp     := qual_interp_cl]  (qualifier → SubstT → Prop)
+      [interp     := qual_interp_world]  (qualifier → SubstT → Prop)
       [subst_atom := qual_subst]      (SubstT → qualifier → qualifier)
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
@@ -24,16 +24,16 @@ From ChoiceType Require Export Syntax.
     all implicit parameters and avoids evar ambiguity. *)
 Notation FQ := (FormulaQ qualifier).
 
-(** Satisfaction: [m ⊨ φ]  ↔  [satisfies qual_interp_cl qual_subst m φ] *)
+(** Satisfaction: [m ⊨ φ]  ↔  [satisfies qual_interp_world qual_subst m φ] *)
 Notation "m ⊨ φ" :=
   (satisfies (Var := atom) (Value := value)
-     qual_interp_cl qual_subst m φ)
+     qual_interp_world qual_subst m φ)
   (at level 70, format "m  ⊨  φ").
 
 (** Entailment shorthand: [φ ⊫ ψ]  ↔  [∀ m, m ⊨ φ → m ⊨ ψ] *)
 Notation "φ ⊫ ψ" :=
   (entails (Var := atom) (Value := value)
-     qual_interp_cl qual_subst φ ψ)
+     qual_interp_world qual_subst φ ψ)
   (at level 85, ψ at level 84, no associativity).
 
 (** ** Fresh variable helpers for denotation *)

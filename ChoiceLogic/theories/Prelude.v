@@ -1,2 +1,2 @@
 From ChoiceAlgebra Require Export
-  Prelude MapFilterDom Substitution Resource ChoiceAlgebra.
+  Prelude MapFilterDom Store Resource ChoiceAlgebra.
