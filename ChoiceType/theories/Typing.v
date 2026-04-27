@@ -144,7 +144,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       (∀ y, y ∉ L →
         has_choice_type ModeComma
           (CtxComma Γ (CtxBind y τx))
-          (e ^t^ y)
+          (e ^^ y)
           ({x := vfvar y} τ)) →
       has_choice_type ModeComma Γ
         (tret (vlam (erase_ty τx) e))
@@ -156,7 +156,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       (∀ y, y ∉ L →
         has_choice_type ModeStar
           (CtxStar Γ (CtxBind y τx))
-          (e ^t^ y)
+          (e ^^ y)
           ({x := vfvar y} τ)) →
       has_choice_type ModeStar Γ
         (tret (vlam (erase_ty τx) e))
@@ -188,7 +188,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       (∀ x, x ∉ L →
         has_choice_type ModeComma
           (CtxComma Γ2 (CtxBind x τ1))
-          (e2 ^t^ x)
+          (e2 ^^ x)
           τ2) →
       has_choice_type ModeComma
         (CtxComma Γ1 Γ2)
@@ -202,7 +202,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       (∀ x, x ∉ L →
         has_choice_type ModeStar
           (CtxStar Γ2 (CtxBind x τ1))
-          (e2 ^t^ x)
+          (e2 ^^ x)
           τ2) →
       has_choice_type ModeStar
         (CtxStar Γ1 Γ2)
@@ -252,7 +252,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       (∀ x, x ∉ L →
         has_choice_type ModeComma
           (CtxComma Γ (CtxBind x (lift_ty (TBase ret_b))))
-          (e_body ^t^ x)
+          (e_body ^^ x)
           τ) →
       has_choice_type ModeComma Γ (tletop op vs e_body) τ
 
@@ -276,7 +276,7 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
               (fold_left
                 (fun ctx '(y, bt) => CtxComma ctx (CtxBind y (lift_ty (TBase bt))))
                 (zip ys arg_tys) Γ)
-              (fold_left (fun e y => e ^t^ y) ys body)
+              (fold_left (fun e y => e ^^ y) ys body)
               τ) →
       has_choice_type ModeComma Γ (tmatch v branches) τ
 

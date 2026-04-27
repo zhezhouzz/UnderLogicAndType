@@ -52,7 +52,7 @@ Inductive value_has_type : gmap atom ty → value → ty → Prop :=
       Γ !! x = Some T →
       Γ ⊢ᵥ (vfvar x) ⋮ T
   | VT_Lam Γ s T e (L : aset) :
-      (∀ x, x ∉ L → <[x := s]>Γ ⊢ₑ (e ^t^ x) ⋮ T) →
+      (∀ x, x ∉ L → <[x := s]>Γ ⊢ₑ (e ^^ x) ⋮ T) →
       Γ ⊢ᵥ (vlam s e) ⋮ (s →ₜ T)
   | VT_Fix Γ sx T e (L : aset) :
       (** Body opened with x at bvar 0 and self (f : sx →ₜ T) at bvar 1. *)
@@ -66,18 +66,18 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ₑ (tret v) ⋮ T
   | TT_Let Γ T1 T2 e1 e2 (L : aset) :
       Γ ⊢ₑ e1 ⋮ T1 →
-      (∀ x, x ∉ L → <[x := T1]>Γ ⊢ₑ (e2 ^t^ x) ⋮ T2) →
+      (∀ x, x ∉ L → <[x := T1]>Γ ⊢ₑ (e2 ^^ x) ⋮ T2) →
       Γ ⊢ₑ (tlete e1 e2) ⋮ T2
   | TT_LetOp Γ op vs e_body arg_tys ret_b T (L : aset) :
       prim_op_type op = (arg_tys, ret_b) →
       length vs = length arg_tys →
       Forall2 (fun v b => Γ ⊢ᵥ v ⋮ TBase b) vs arg_tys →
-      (∀ x, x ∉ L → <[x := TBase ret_b]>Γ ⊢ₑ (e_body ^t^ x) ⋮ T) →
+      (∀ x, x ∉ L → <[x := TBase ret_b]>Γ ⊢ₑ (e_body ^^ x) ⋮ T) →
       Γ ⊢ₑ (tletop op vs e_body) ⋮ T
   | TT_LetApp Γ s1 s2 T v1 v2 e (L : aset) :
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
-      (∀ x, x ∉ L → <[x := s2]>Γ ⊢ₑ (e ^t^ x) ⋮ T) →
+      (∀ x, x ∉ L → <[x := s2]>Γ ⊢ₑ (e ^^ x) ⋮ T) →
       Γ ⊢ₑ (tletapp v1 v2 e) ⋮ T
   | TT_Match Γ v T branches b :
       (** The discriminant [v] must have a base type. *)

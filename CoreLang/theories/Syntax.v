@@ -115,13 +115,17 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
         (map (fun '(n, body) => (n, open_tm (k + n) s body)) brs)
   end.
 
-#[global] Instance open_value_inst : Open value value := open_value.
-#[global] Instance open_tm_inst    : Open value tm    := open_tm.
+#[global] Instance open_value_inst      : Open value value := open_value.
+#[global] Instance open_tm_inst         : Open value tm    := open_tm.
+#[global] Instance open_value_atom_inst : Open atom  value := fun k x => open_value k (vfvar x).
+#[global] Instance open_tm_atom_inst    : Open atom  tm    := fun k x => open_tm    k (vfvar x).
 Arguments open_value_inst /.
 Arguments open_tm_inst /.
+Arguments open_value_atom_inst /.
+Arguments open_tm_atom_inst /.
 
-Notation "v '^v^' x" := (open_value 0 (vfvar x) v) (at level 20).
-Notation "e '^t^' x" := (open_tm    0 (vfvar x) e) (at level 20).
+(** [e ^^ x] works for both [value] and [tm], and for both [value] and [atom]
+    second arguments via the four [Open] instances above. *)
 
 (** ** Closing *)
 
@@ -306,10 +310,10 @@ Lemma subst_open_tm x u s (e : tm) k :
 Proof. Admitted.
 
 Lemma subst_intro_value x u (v : value) :
-  x # v → lc_value u → {x := u} (v ^v^ x) = {0 ~> u} v.
+  x # v → lc_value u → {x := u} (v ^^ x) = {0 ~> u} v.
 Proof. Admitted.
 Lemma subst_intro_tm x u (e : tm) :
-  x # e → lc_value u → {x := u} (e ^t^ x) = {0 ~> u} e.
+  x # e → lc_value u → {x := u} (e ^^ x) = {0 ~> u} e.
 Proof. Admitted.
 
 Lemma subst_lc_value x u (v : value) : lc_value v → lc_value u → lc_value ({x := u} v).
