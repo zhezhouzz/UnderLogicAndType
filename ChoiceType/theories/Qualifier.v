@@ -166,9 +166,16 @@ Definition qual_interp_cl (q : qualifier) (σ : SubstT) : Prop :=
   qual_interp σ q.
 
 (** Wrap as a World for the [interp : A → WorldT] parameter of satisfies.
-    The world_dom field carries no semantic weight for res_le; ∅ is a safe placeholder. *)
+
+    The domain must be [qual_fv q] (the free variables of q), not ∅.
+    With [world_dom := ∅], [res_le (qual_interp_world q) m] would reduce to
+    [qual_interp_world q = res_restrict m ∅] = the singleton-empty world,
+    making [FAtom q] trivially false for any qualifier that can be satisfied by
+    a non-empty store.  Setting [world_dom := qual_fv q] ensures that
+    [res_le (qual_interp_world q) m] means "m restricts to qual_fv(q) in a way
+    consistent with q", which is the intended Kripke-resource atom semantics. *)
 Definition qual_interp_world (q : qualifier) : WorldT :=
-  {| world_dom := ∅; world_stores := qual_interp_cl q |}.
+  {| world_dom := qual_fv q; world_stores := qual_interp_cl q |}.
 
 (** ** Denotation typeclass instance
 
