@@ -58,14 +58,14 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       the over-approximation of φ.  FForall (fv φ) quantifies over
       the remaining free variables of φ for the fiberwise universal. *)
   | CTOver b φ =>
-      let ν  := fresh_result (qual_fv φ) in
+      let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall {[ν]}
         (FImpl (FAtom (QExpr e ν))
                (FForall (qual_fv φ) (FOver (FAtom φ))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      let ν  := fresh_result (qual_fv φ) in
+      let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall {[ν]}
         (FImpl (FAtom (QExpr e ν))
                (FForall (qual_fv φ) (FUnder (FAtom φ))))
