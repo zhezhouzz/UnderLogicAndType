@@ -12,12 +12,26 @@ From CoreLang Require Export Syntax.
 (** ** Primitive-operation type signatures
 
     Each [prim_op] has a list of argument base types and a return base type.
-    We postulate a total function; concrete definitions can be given later. *)
+    The signature is a definition rather than an axiom so the formalization's
+    primitive surface is completely explicit. *)
 
-Parameter prim_op_type : prim_op → list base_ty * base_ty.
+Definition prim_op_type (op : prim_op) : list base_ty * base_ty :=
+  match op with
+  | op_add => ([TNat; TNat], TNat)
+  | op_sub => ([TNat; TNat], TNat)
+  | op_mul => ([TNat; TNat], TNat)
+  | op_eq  => ([TNat; TNat], TBool)
+  | op_lt  => ([TNat; TNat], TBool)
+  | op_le  => ([TNat; TNat], TBool)
+  | op_and => ([TBool; TBool], TBool)
+  | op_or  => ([TBool; TBool], TBool)
+  | op_not => ([TBool], TBool)
+  | op_nat_gen => ([], TNat)
+  | op_int_gen => ([], TInt)
+  end.
 
 (** Well-formedness: the type signature is consistent with the paper's ops. *)
-Parameter prim_op_type_wf :
+Lemma prim_op_type_wf :
   prim_op_type op_add = ([TNat; TNat], TNat) ∧
   prim_op_type op_sub = ([TNat; TNat], TNat) ∧
   prim_op_type op_mul = ([TNat; TNat], TNat) ∧
@@ -29,6 +43,7 @@ Parameter prim_op_type_wf :
   prim_op_type op_not = ([TBool], TBool) ∧
   prim_op_type op_nat_gen = ([], TNat) ∧
   prim_op_type op_int_gen = ([], TInt).
+Proof. repeat split; reflexivity. Qed.
 
 (** Constructor arities for the standard data types. *)
 (** [(constructor_index, arg_base_types)].  We use a simple list;

@@ -120,6 +120,7 @@ Fixpoint denot_ctx (Γ : ctx) : FQ :=
   | CtxBind x τ    => denot_ty τ (tret (vfvar x))
   | CtxComma Γ1 Γ2 => FAnd  (denot_ctx Γ1) (denot_ctx Γ2)
   | CtxStar  Γ1 Γ2 => FStar (denot_ctx Γ1) (denot_ctx Γ2)
+  | CtxSum   Γ1 Γ2 => FPlus (denot_ctx Γ1) (denot_ctx Γ2)
   end.
 
 (** ** Typeclass instances for [⟦⟧] notation *)
@@ -155,6 +156,15 @@ Lemma denot_ctx_star Γ1 Γ2 m :
   ∃ m1 m2,
     res_le (Var := atom) (Value := value) (res_product m1 m2) m ∧
     world_compat (Var := atom) (Value := value) m1 m2 ∧
+    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
+Proof. simpl. reflexivity. Qed.
+
+(** The context denotation of a sum-context distributes over FPlus. *)
+Lemma denot_ctx_sum Γ1 Γ2 m :
+  m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
+  ∃ m1 m2,
+    res_le (Var := atom) (Value := value) (res_sum m1 m2) m ∧
+    res_sum_defined (Var := atom) (Value := value) m1 m2 ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 

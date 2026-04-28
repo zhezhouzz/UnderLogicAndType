@@ -215,10 +215,10 @@ Proof.
 Qed.
 
 Lemma wf_res_restrict (m : World) (X : gset Var) :
-  wf_world m → (∃ s, m s ∧ dom s ∩ X ≠ ∅) →
+  wf_world m → (∃ s, m s) →
   wf_world (res_restrict m X).
 Proof.
-  intros [_ Hdom] [s [Hs Hne]].
+  intros [_ Hdom] [s Hs].
   constructor.
   - exists (store_restrict s X). simpl.
     exists s. exact (conj Hs eq_refl).
@@ -311,7 +311,7 @@ Definition wfw_sum (w1 w2 : WfWorld) (Hdef : res_sum_defined w1 w2) : WfWorld :=
     (wf_res_sum w1 w2 (wfw_wf w1) (wfw_wf w2) Hdef).
 
 Definition wfw_restrict (w : WfWorld) (X : gset Var)
-    (Hne : ∃ s, (w : World) s ∧ dom s ∩ X ≠ ∅) : WfWorld :=
+    (Hne : ∃ s, (w : World) s) : WfWorld :=
   exist _ (res_restrict w X) (wf_res_restrict w X (wfw_wf w) Hne).
 
 Definition wfw_fiber (w : WfWorld) (σ : StoreT)

@@ -31,7 +31,8 @@ Inductive typing_mode : Type :=
       SpLeft  : an unrestricted binding goes entirely to the left half
       SpRight : an unrestricted binding goes entirely to the right half
       SpComma : split each component of a comma context independently
-      SpStar  : split each component of a star context independently *)
+      SpStar  : split each component of a star context independently
+      SpSum   : split each branch of a context choice independently *)
 
 Inductive ctx_split : ctx → ctx → ctx → Prop :=
 
@@ -57,7 +58,12 @@ Inductive ctx_split : ctx → ctx → ctx → Prop :=
   | SpStar Γ Γ1 Γ2 Δ Δ1 Δ2 :
       ctx_split Γ Γ1 Γ2 →
       ctx_split Δ Δ1 Δ2 →
-      ctx_split (CtxStar Γ Δ) (CtxStar Γ1 Δ1) (CtxStar Γ2 Δ2).
+      ctx_split (CtxStar Γ Δ) (CtxStar Γ1 Δ1) (CtxStar Γ2 Δ2)
+
+  | SpSum Γ Γ1 Γ2 Δ Δ1 Δ2 :
+      ctx_split Γ Γ1 Γ2 →
+      ctx_split Δ Δ1 Δ2 →
+      ctx_split (CtxSum Γ Δ) (CtxSum Γ1 Δ1) (CtxSum Γ2 Δ2).
 
 #[global] Hint Constructors ctx_split : core.
 
@@ -71,6 +77,7 @@ Fixpoint persist_ctx (Γ : ctx) : ctx :=
   | CtxBind x τ    => CtxBind x (CTPers τ)
   | CtxComma Γ1 Γ2 => CtxComma (persist_ctx Γ1) (persist_ctx Γ2)
   | CtxStar  Γ1 Γ2 => CtxComma (persist_ctx Γ1) (persist_ctx Γ2)
+  | CtxSum   Γ1 Γ2 => CtxSum (persist_ctx Γ1) (persist_ctx Γ2)
   end.
 
 (** ** Semantic subtyping
