@@ -127,7 +127,7 @@ Arguments denot_ctx_inst /.
 (** Monotonicity: if m ⊨ ⟦Γ⟧ and m ≤ m', then m' ⊨ ⟦Γ⟧ for comma contexts. *)
 Lemma denot_ctx_mono_comma (Γ : ctx) m m' :
   m ⊨ ⟦Γ⟧ →
-  res_le (Var := atom) (Value := value) m m' →
+  raw_le (Var := atom) (Value := value) m m' →
   m' ⊨ ⟦Γ⟧.
 Proof. Admitted.
 
@@ -140,7 +140,7 @@ Proof. simpl. reflexivity. Qed.
 Lemma denot_ctx_star Γ1 Γ2 m :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ m1 m2,
-    res_le (Var := atom) (Value := value) (res_product m1 m2) m ∧
+    raw_le (Var := atom) (Value := value) (raw_product m1 m2) m ∧
     world_compat (Var := atom) (Value := value) m1 m2 ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
@@ -149,8 +149,8 @@ Proof. simpl. reflexivity. Qed.
 Lemma denot_ctx_sum Γ1 Γ2 m :
   m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
   ∃ m1 m2,
-    res_le (Var := atom) (Value := value) (res_sum m1 m2) m ∧
-    res_sum_defined (Var := atom) (Value := value) m1 m2 ∧
+    raw_le (Var := atom) (Value := value) (raw_sum m1 m2) m ∧
+    raw_sum_defined (Var := atom) (Value := value) m1 m2 ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 

@@ -67,36 +67,24 @@ Context `{ChoiceAlgebra M}.
 
 End ChoiceAlgebraLemmas.
 
-(** ** Concrete instance: (WfWorld, wfw_sum, wfw_product, wfw_unit, ⊑)
+(** ** Concrete instance: (WfWorld, res_sum_total, res_product_total, res_unit, ⊑)
 
     Carrier is [WfWorld] — the sigma type [{m : World | wf_world m}].
-    All operations are the [wfw_*] ones from Resource.v.  Total operations
-    on WfWorld require a wf proof; we use [Program] and admit those proofs
-    (they only matter when [ca_times_def]/[ca_plus_def] holds). *)
+    Total operations come from Resource.v; definedness remains explicit in
+    [ca_times_def] and [ca_plus_def]. *)
 
 Section WfWorldChoiceAlgebra.
 
 Context `{Countable Var} `{EqDecision Value} `{Inhabited Value}.
 Local Notation WfWorldT := (@WfWorld Var _ _ Value) (only parsing).
 
-(** Total product on WfWorld: the wf proof is admitted; the operation
-    is only algebraically meaningful when [world_compat w1 w2]. *)
-Program Definition wfw_times_total (w1 w2 : WfWorldT) : WfWorldT :=
-  exist _ (res_product w1 w2) _.
-Next Obligation. Admitted.
-
-(** Total sum on WfWorld: meaningful when [res_sum_defined w1 w2]. *)
-Program Definition wfw_plus_total (w1 w2 : WfWorldT) : WfWorldT :=
-  exist _ (res_sum w1 w2) _.
-Next Obligation. Admitted.
-
 #[global] Program Instance WfWorld_ChoiceAlgebra : ChoiceAlgebra WfWorldT := {|
-  ca_one       := wfw_unit;
-  ca_times     := wfw_times_total;
-  ca_plus      := wfw_plus_total;
+  ca_one       := res_unit;
+  ca_times     := res_product_total;
+  ca_plus      := res_sum_total;
   ca_le        := sqsubseteq (A := WfWorldT);
   ca_times_def := fun w1 w2 => world_compat w1 w2;
-  ca_plus_def  := fun w1 w2 => res_sum_defined w1 w2;
+  ca_plus_def  := fun w1 w2 => raw_sum_defined w1 w2;
 |}.
 Next Obligation. Admitted.       (* ca_times_unit *)
 Next Obligation. Admitted.       (* ca_times_comm *)

@@ -45,6 +45,12 @@ Record wf_world (m : World) : Prop := {
   wf_dom : ∀ s, m s → dom s = world_dom m;
 }.
 
+Definition WfWorld : Type := { m : World | wf_world m }.
+
+(** Coercion and wf-proof accessor. *)
+Coercion raw_world (w : WfWorld) : World := proj1_sig w.
+Definition world_wf (w : WfWorld) : wf_world (raw_world w) := proj2_sig w.
+
 (** ** Compatibility (Definition 1.2, extended) *)
 
 Definition world_compat (m1 m2 : World) : Prop :=
@@ -52,56 +58,56 @@ Definition world_compat (m1 m2 : World) : Prop :=
 
 (** ** Raw resource operations (Definition 1.3) — used internally by WfWorld ops *)
 
-Definition res_unit : World := {|
+Definition raw_unit : World := {|
   world_dom    := ∅;
   world_stores := λ s, s = ∅;
 |}.
 
-Definition res_product (m1 m2 : World) : World := {|
+Definition raw_product (m1 m2 : World) : World := {|
   world_dom    := world_dom m1 ∪ world_dom m2;
   world_stores := λ s, ∃ s1 s2,
       m1 s1 ∧ m2 s2 ∧ store_compat s1 s2 ∧ s = s1 ∪ s2;
 |}.
 
-Definition res_sum (m1 m2 : World) : World := {|
+Definition raw_sum (m1 m2 : World) : World := {|
   world_dom    := world_dom m1;
   world_stores := λ s, m1 s ∨ m2 s;
 |}.
 
-Definition res_sum_defined (m1 m2 : World) : Prop :=
+Definition raw_sum_defined (m1 m2 : World) : Prop :=
   world_dom m1 = world_dom m2.
 
-Definition res_restrict (m : World) (X : gset Var) : World := {|
+Definition raw_restrict (m : World) (X : gset Var) : World := {|
   world_dom    := world_dom m ∩ X;
   world_stores := λ s, ∃ s', m s' ∧ store_restrict s' X = s;
 |}.
 
-Definition fiber (m : World) (σ : StoreT) : World := {|
+Definition raw_fiber (m : World) (σ : StoreT) : World := {|
   world_dom    := world_dom m;
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
 
 (** ** Partial order on raw worlds (Definition 1.4)
 
-    [res_le m1 m2] is simply the equation [m1 = res_restrict m2 (world_dom m1)].
+    [raw_le m1 m2] is simply the equation [m1 = raw_restrict m2 (world_dom m1)].
     Well-formedness is NOT bundled here; it is the responsibility of [WfWorld]. *)
 
-Definition res_le (m1 m2 : World) : Prop :=
-  m1 = res_restrict m2 (world_dom m1).
+Definition raw_le (m1 m2 : World) : Prop :=
+  m1 = raw_restrict m2 (world_dom m1).
 
-Local Infix "≤ᵣ" := res_le (at level 70).
+Local Infix "≤ᵣ" := raw_le (at level 70).
 
-Lemma res_le_dom (m1 m2 : World) : m1 ≤ᵣ m2 → world_dom m1 ⊆ world_dom m2.
+Lemma raw_le_dom (m1 m2 : World) : m1 ≤ᵣ m2 → world_dom m1 ⊆ world_dom m2.
 Proof.
-  unfold res_le. intros Heq.
+  unfold raw_le. intros Heq.
   assert (Hd : world_dom m1 = world_dom m2 ∩ world_dom m1).
   { pattern m1 at 1. rewrite Heq. simpl. reflexivity. }
   set_solver.
 Qed.
 
-Lemma res_le_refl (m : World) : wf_world m → m ≤ᵣ m.
+Lemma raw_le_refl (m : World) : wf_world m → m ≤ᵣ m.
 Proof.
-  intros [_ Hdom]. unfold res_le. apply world_ext.
+  intros [_ Hdom]. unfold raw_le. apply world_ext.
   - simpl. set_solver.
   - intros s. simpl. split.
     + intros Hs.
@@ -114,15 +120,15 @@ Proof.
       rewrite Hstep in Heq. subst. exact Hs'.
 Qed.
 
-Lemma res_le_antisym (m1 m2 : World) :
+Lemma raw_le_antisym (m1 m2 : World) :
   wf_world m1 → wf_world m2 → m1 ≤ᵣ m2 → m2 ≤ᵣ m1 → m1 = m2.
 Proof.
   intros Hwf1 Hwf2 H12 H21.
-  pose proof (res_le_dom m1 m2 H12) as Hd12.
-  pose proof (res_le_dom m2 m1 H21) as Hd21.
+  pose proof (raw_le_dom m1 m2 H12) as Hd12.
+  pose proof (raw_le_dom m2 m1 H21) as Hd21.
   assert (Hdeq : world_dom m1 = world_dom m2) by set_solver.
   apply world_ext; [exact Hdeq |].
-  unfold res_le in H12, H21.
+  unfold raw_le in H12, H21.
   intros s. split.
   - intros Hs1.
     rewrite H12 in Hs1. cbn in Hs1.
@@ -140,16 +146,16 @@ Proof.
     subst. exact Hs1.
 Qed.
 
-Lemma res_le_trans (m1 m2 m3 : World) :
+Lemma raw_le_trans (m1 m2 m3 : World) :
   m1 ≤ᵣ m2 → m2 ≤ᵣ m3 → m1 ≤ᵣ m3.
 Proof.
   intros H12 H23.
-  pose proof (res_le_dom m1 m2 H12) as Hd12.
-  pose proof (res_le_dom m2 m3 H23) as Hd23.
-  unfold res_le in *.
+  pose proof (raw_le_dom m1 m2 H12) as Hd12.
+  pose proof (raw_le_dom m2 m3 H23) as Hd23.
+  unfold raw_le in *.
   apply world_ext.
-  - (* world_dom m1 = world_dom (res_restrict m3 (world_dom m1)) *)
-    unfold res_restrict. simpl. set_solver.
+  - (* world_dom m1 = world_dom (raw_restrict m3 (world_dom m1)) *)
+    unfold raw_restrict. simpl. set_solver.
   - intros s. split.
     + intros Hs1.
       rewrite H12 in Hs1. cbn in Hs1.
@@ -162,13 +168,13 @@ Proof.
     + intros Hs1.
       cbn in Hs1.
       destruct Hs1 as [s3 [Hs3 Hrestr]].
-      (* Need: m1 s.  Use H12 : m1 = res_restrict m2 (world_dom m1). *)
+      (* Need: m1 s.  Use H12 : m1 = raw_restrict m2 (world_dom m1). *)
       rewrite H12. cbn.
       (* Witness: store_restrict s3 (world_dom m2) *)
       exists (store_restrict s3 (world_dom m2)).
       split.
       * (* Need: m2 (store_restrict s3 (world_dom m2)) *)
-        enough (Hm2 : (res_restrict m3 (world_dom m2)) (store_restrict s3 (world_dom m2))).
+        enough (Hm2 : (raw_restrict m3 (world_dom m2)) (store_restrict s3 (world_dom m2))).
         { rewrite <- H23 in Hm2. exact Hm2. }
         cbn. exists s3. exact (conj Hs3 eq_refl).
       * (* store_restrict (store_restrict s3 (world_dom m2)) (world_dom m1) = s *)
@@ -177,91 +183,106 @@ Proof.
         rewrite Heq. exact Hrestr.
 Qed.
 
-(** ** Well-formedness of operations *)
+(** ** Operations on WfWorld *)
 
-Lemma wf_res_unit : wf_world res_unit.
+Definition res_unit : WfWorld.
 Proof.
+  refine (exist _ raw_unit _).
   constructor.
   - exists ∅. simpl. reflexivity.
   - intros s Hs. simpl in Hs. subst. simpl. set_solver.
-Qed.
+Defined.
 
-Lemma wf_res_product (m1 m2 : World) :
-  wf_world m1 → wf_world m2 → world_compat m1 m2 →
-  wf_world (res_product m1 m2).
+Definition res_product (w1 w2 : WfWorld) (Hc : world_compat w1 w2) : WfWorld.
 Proof.
-  intros [Hne1 Hdom1] [Hne2 Hdom2] Hcomp.
+  refine (exist _ (raw_product w1 w2) _).
+  destruct (world_wf w1) as [Hne1 Hdom1].
+  destruct (world_wf w2) as [Hne2 Hdom2].
   constructor.
   - destruct Hne1 as [s1 Hs1], Hne2 as [s2 Hs2].
     exists (s1 ∪ s2). simpl. exists s1, s2.
-    exact (conj Hs1 (conj Hs2 (conj (Hcomp s1 s2 Hs1 Hs2) eq_refl))).
+    exact (conj Hs1 (conj Hs2 (conj (Hc s1 s2 Hs1 Hs2) eq_refl))).
   - intros s Hs. simpl in Hs.
-    destruct Hs as [s1 [s2 [Hs1 [Hs2 [Hc Heq]]]]]. subst.
-    unfold res_product; simpl.
+    destruct Hs as [s1 [s2 [Hs1 [Hs2 [Hcompat Heq]]]]]. subst.
+    unfold raw_product; simpl.
     rewrite <- (Hdom1 s1 Hs1), <- (Hdom2 s2 Hs2).
-    exact (store_union_dom s1 s2 Hc).
-Qed.
+    exact (store_union_dom s1 s2 Hcompat).
+Defined.
 
-Lemma wf_res_sum (m1 m2 : World) :
-  wf_world m1 → wf_world m2 → res_sum_defined m1 m2 →
-  wf_world (res_sum m1 m2).
+Definition res_sum (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) : WfWorld.
 Proof.
-  intros [Hne1 Hdom1] [_ Hdom2] Hdef.
+  refine (exist _ (raw_sum w1 w2) _).
+  destruct (world_wf w1) as [Hne1 Hdom1].
+  destruct (world_wf w2) as [_ Hdom2].
   constructor.
   - destruct Hne1 as [s Hs]. exists s. simpl. left. exact Hs.
   - intros s Hs. simpl in Hs. destruct Hs as [Hs | Hs].
     + simpl. exact (Hdom1 s Hs).
     + simpl. rewrite (Hdom2 s Hs). symmetry. exact Hdef.
-Qed.
+Defined.
 
-Lemma wf_res_restrict (m : World) (X : gset Var) :
-  wf_world m → (∃ s, m s) →
-  wf_world (res_restrict m X).
+Definition res_restrict (w : WfWorld) (X : gset Var) : WfWorld.
 Proof.
-  intros [_ Hdom] [s Hs].
+  refine (exist _ (raw_restrict w X) _).
+  destruct (world_wf w) as [Hne Hdom].
   constructor.
-  - exists (store_restrict s X). simpl.
+  - destruct Hne as [s Hs].
+    exists (store_restrict s X). simpl.
     exists s. exact (conj Hs eq_refl).
   - intros s' Hs'. simpl in Hs'.
     destruct Hs' as [t [Ht Heq]]. subst.
-    unfold res_restrict; simpl.
+    unfold raw_restrict; simpl.
     rewrite <- (Hdom t Ht).
     exact (store_restrict_dom t X).
-Qed.
+Defined.
 
-Lemma wf_fiber (m : World) (σ : StoreT) :
-  wf_world m → (∃ s, m s ∧ store_restrict s (dom σ) = σ) →
-  wf_world (fiber m σ).
+Definition res_fiber (w : WfWorld) (σ : StoreT)
+    (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld.
 Proof.
-  intros [_ Hdom] [s [Hs Hrestr]].
+  refine (exist _ (raw_fiber w σ) _).
+  destruct (world_wf w) as [_ Hdom].
   constructor.
-  - exists s. simpl. split; [exact Hs | exact Hrestr].
+  - destruct Hne as [s [Hs Hrestr]].
+    exists s. simpl. split; [exact Hs | exact Hrestr].
   - intros s' [Hs' _]. simpl. exact (Hdom s' Hs').
-Qed.
+Defined.
+
+(** Total WfWorld operations for algebraic structures that encode partiality
+    with separate definedness predicates.  Their wf obligations are meaningful
+    only under the corresponding definedness assumptions, so we keep them
+    abstract at this layer. *)
+
+Program Definition res_product_total (w1 w2 : WfWorld) : WfWorld :=
+  exist _ (raw_product w1 w2) _.
+Next Obligation. Admitted.
+
+Program Definition res_sum_total (w1 w2 : WfWorld) : WfWorld :=
+  exist _ (raw_sum w1 w2) _.
+Next Obligation. Admitted.
 
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
-Lemma res_product_le_mono (m1 m2 m1' m2' : World) :
+Lemma raw_product_le_mono (m1 m2 m1' m2' : World) :
   m1 ≤ᵣ m1' → m2 ≤ᵣ m2' →
-  res_product m1 m2 ≤ᵣ res_product m1' m2'.
+  raw_product m1 m2 ≤ᵣ raw_product m1' m2'.
 Proof. Admitted.
 
-Lemma res_sum_le_mono (m1 m2 m1' m2' : World) :
-  res_sum_defined m1 m2 → res_sum_defined m1' m2' →
+Lemma raw_sum_le_mono (m1 m2 m1' m2' : World) :
+  raw_sum_defined m1 m2 → raw_sum_defined m1' m2' →
   m1 ≤ᵣ m1' → m2 ≤ᵣ m2' →
-  res_sum m1 m2 ≤ᵣ res_sum m1' m2'.
+  raw_sum m1 m2 ≤ᵣ raw_sum m1' m2'.
 Proof. Admitted.
 
 (** ** Compatibility lemmas *)
 
-Lemma world_compat_unit (m : World) : world_compat res_unit m.
+Lemma raw_compat_unit (m : World) : world_compat raw_unit m.
 Proof.
   unfold world_compat, store_compat. simpl.
   intros s1 s2 H1 H2 x v1 v2 Hv1 Hv2.
   subst. rewrite lookup_empty in Hv1. discriminate.
 Qed.
 
-Lemma world_compat_unit_r (m : World) : world_compat m res_unit.
+Lemma raw_compat_unit_r (m : World) : world_compat m raw_unit.
 Proof.
   unfold world_compat, store_compat. simpl.
   intros s1 s2 H1 H2 x v1 v2 Hv1 Hv2.
@@ -285,39 +306,6 @@ Proof.
   - intros s Hs. simpl in Hs. subst. reflexivity.
 Qed.
 
-(** ** WfWorld: the intended interface  (sigma type of well-formed worlds)
-
-    All algebra operations and the partial order live here.  There are no
-    separate [World]-level and [WfWorld]-level versions of the operations;
-    the raw definitions above are only helpers. *)
-
-Definition WfWorld : Type := { m : World | wf_world m }.
-
-(** Coercion and wf-proof accessor. *)
-Coercion wfw_world (w : WfWorld) : World := proj1_sig w.
-Definition wfw_wf   (w : WfWorld) : wf_world (wfw_world w) := proj2_sig w.
-
-(** *** Operations on WfWorld *)
-
-Definition wfw_unit : WfWorld :=
-  exist _ res_unit wf_res_unit.
-
-Definition wfw_product (w1 w2 : WfWorld) (Hc : world_compat w1 w2) : WfWorld :=
-  exist _ (res_product w1 w2)
-    (wf_res_product w1 w2 (wfw_wf w1) (wfw_wf w2) Hc).
-
-Definition wfw_sum (w1 w2 : WfWorld) (Hdef : res_sum_defined w1 w2) : WfWorld :=
-  exist _ (res_sum w1 w2)
-    (wf_res_sum w1 w2 (wfw_wf w1) (wfw_wf w2) Hdef).
-
-Definition wfw_restrict (w : WfWorld) (X : gset Var)
-    (Hne : ∃ s, (w : World) s) : WfWorld :=
-  exist _ (res_restrict w X) (wf_res_restrict w X (wfw_wf w) Hne).
-
-Definition wfw_fiber (w : WfWorld) (σ : StoreT)
-    (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld :=
-  exist _ (fiber w σ) (wf_fiber w σ (wfw_wf w) Hne).
-
 (** *** Partial order on WfWorld
 
     [⊑] is the stdpp [SqSubsetEq] relation.  Together with [PreOrder] and
@@ -330,51 +318,51 @@ Definition wfw_fiber (w : WfWorld) (σ : StoreT)
 #[global] Instance wf_world_preorder : PreOrder (sqsubseteq (A := WfWorld)).
 Proof.
   constructor.
-  - intros w. exact (res_le_refl w (wfw_wf w)).
-  - intros w1 w2 w3 H12 H23. exact (res_le_trans w1 w2 w3 H12 H23).
+  - intros w. exact (raw_le_refl w (world_wf w)).
+  - intros w1 w2 w3 H12 H23. exact (raw_le_trans w1 w2 w3 H12 H23).
 Qed.
 
 #[global] Instance wf_world_antisym : AntiSymm eq (sqsubseteq (A := WfWorld)).
 Proof.
   intros [m1 H1] [m2 H2] H12 H21. simpl in *.
-  assert (Heq : m1 = m2) by exact (res_le_antisym m1 m2 H1 H2 H12 H21).
+  assert (Heq : m1 = m2) by exact (raw_le_antisym m1 m2 H1 H2 H12 H21).
   subst. f_equal. apply proof_irrelevance.
 Qed.
 
 (** *** Order properties on WfWorld *)
 
-Lemma wfw_le_product_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
-  w1 ⊑ wfw_product w1 w2 Hc.
+Lemma res_le_product_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  w1 ⊑ res_product w1 w2 Hc.
 Proof. Admitted.
 
-Lemma wfw_product_le_mono (w1 w2 w1' w2' : WfWorld)
+Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hc : world_compat w1 w2) (Hc' : world_compat w1' w2') :
   w1 ⊑ w1' → w2 ⊑ w2' →
-  wfw_product w1 w2 Hc ⊑ wfw_product w1' w2' Hc'.
+  res_product w1 w2 Hc ⊑ res_product w1' w2' Hc'.
 Proof. Admitted.
 
-Lemma wfw_sum_le_mono (w1 w2 w1' w2' : WfWorld)
-    (Hdef : res_sum_defined w1 w2) (Hdef' : res_sum_defined w1' w2') :
+Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
+    (Hdef : raw_sum_defined w1 w2) (Hdef' : raw_sum_defined w1' w2') :
   w1 ⊑ w1' → w2 ⊑ w2' →
-  wfw_sum w1 w2 Hdef ⊑ wfw_sum w1' w2' Hdef'.
+  res_sum w1 w2 Hdef ⊑ res_sum w1' w2' Hdef'.
 Proof. Admitted.
 
 (** *** Algebraic laws (stated on WfWorld) *)
 
-Lemma wfw_product_comm (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
+Lemma res_product_comm (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
     (Hc' : world_compat w2 w1) :
-  ∀ s, wfw_product w1 w2 Hc s ↔ wfw_product w2 w1 Hc' s.
+  ∀ s, res_product w1 w2 Hc s ↔ res_product w2 w1 Hc' s.
 Proof. Admitted.
 
-Lemma wfw_product_unit_r (w : WfWorld) :
-  ∀ s, wfw_product w wfw_unit (world_compat_unit_r w) s ↔ (w : World) s.
+Lemma res_product_unit_r (w : WfWorld) :
+  ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
 Proof. Admitted.
 
-Lemma wfw_sum_comm (w1 w2 : WfWorld) (Hdef : res_sum_defined w1 w2)
-    (Hdef' : res_sum_defined w2 w1) :
-  ∀ s, wfw_sum w1 w2 Hdef s ↔ wfw_sum w2 w1 Hdef' s.
-Proof. intros s. unfold wfw_sum. simpl. tauto. Qed.
+Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
+    (Hdef' : raw_sum_defined w2 w1) :
+  ∀ s, res_sum w1 w2 Hdef s ↔ res_sum w2 w1 Hdef' s.
+Proof. intros s. unfold res_sum. simpl. tauto. Qed.
 
 End Resource.
 
-Infix "≤ᵣ" := res_le (at level 70).
+Infix "≤ᵣ" := raw_le (at level 70).

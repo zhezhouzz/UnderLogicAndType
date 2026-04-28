@@ -16,7 +16,7 @@ From ChoiceLogic Require Import Prelude.
     - choice sum (⊕)
     - approximation modalities (o = over, u = under)
     - independent modality
-    - fiberwise modality (∀X. p): for each σ_X in proj(m, X), the fiber satisfies σ_X(p)  *)
+    - fiberwise modality (∀X. p): for each σ_X in proj(m, X), the raw_fiber satisfies σ_X(p)  *)
 
 Section ChoiceLogic.
 
@@ -77,7 +77,7 @@ Arguments FFib    {A} _ _.
     would recurse on [formula_subst subst_atom σ p], but that is not a
     syntactic subterm of [FFib X p], so Rocq's structural [Fixpoint]
     checker rejects it.  Instead we thread σ into the interpretation function:
-      [satisfies (λ a, interp (subst_atom σ a)) subst_atom (fiber m σ) p]
+      [satisfies (λ a, interp (subst_atom σ a)) subst_atom (raw_fiber m σ) p]
     Unfolding the definition confirms this is pointwise equal to evaluating
     the substituted formula, with [subst_atom] propagated so that any nested
     [FFib] can apply its own substitution on top. *)
@@ -97,7 +97,7 @@ Fixpoint satisfies {A}
 
   | FAtom a =>
       (** m ⊨ a  iff  ⟦a⟧ ≤ᵣ m *)
-      res_le (interp a) m
+      raw_le (interp a) m
 
   | FAnd p q =>
       satisfies interp subst_atom m p ∧ satisfies interp subst_atom m q
@@ -107,13 +107,13 @@ Fixpoint satisfies {A}
 
   | FImpl p q =>
       (** Kripke implication: ∀ m' ≥ m. m' ⊨ p → m' ⊨ q *)
-      ∀ m', res_le m m' → satisfies interp subst_atom m' p →
+      ∀ m', raw_le m m' → satisfies interp subst_atom m' p →
             satisfies interp subst_atom m' q
 
   | FStar p q =>
       (** m ⊨ p ∗ q  iff  ∃ m1 m2. m1 × m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
       ∃ m1 m2,
-        res_le (res_product m1 m2) m ∧
+        raw_le (raw_product m1 m2) m ∧
         world_compat m1 m2 ∧
         satisfies interp subst_atom m1 p ∧
         satisfies interp subst_atom m2 q
@@ -123,13 +123,13 @@ Fixpoint satisfies {A}
       ∀ m',
         world_compat m' m →
         satisfies interp subst_atom m' p →
-        satisfies interp subst_atom (res_product m' m) q
+        satisfies interp subst_atom (raw_product m' m) q
 
   | FPlus p q =>
       (** m ⊨ p ⊕ q  iff  ∃ m1 m2. m1 + m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
       ∃ m1 m2,
-        res_le (res_sum m1 m2) m ∧
-        res_sum_defined m1 m2 ∧
+        raw_le (raw_sum m1 m2) m ∧
+        raw_sum_defined m1 m2 ∧
         satisfies interp subst_atom m1 p ∧
         satisfies interp subst_atom m2 q
 
@@ -149,12 +149,12 @@ Fixpoint satisfies {A}
         satisfies interp subst_atom (singleton_world σ) p
 
   | FFib X p =>
-      (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  fiber(m, σ_X) ⊨ σ_X(p)
+      (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  raw_fiber(m, σ_X) ⊨ σ_X(p)
           [subst_atom σ] is applied to every atom via the modified [interp];
           [subst_atom] itself is forwarded so nested [FFib]s can compose. *)
       ∀ σ,
-        res_restrict m X σ →
-        satisfies (λ a, interp (subst_atom σ a)) subst_atom (fiber m σ) p
+        raw_restrict m X σ →
+        satisfies (λ a, interp (subst_atom σ a)) subst_atom (raw_fiber m σ) p
 
   end.
 

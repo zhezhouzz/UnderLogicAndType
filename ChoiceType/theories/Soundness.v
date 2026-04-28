@@ -8,13 +8,13 @@ From ChoiceType Require Export Typing.
 
 Lemma satisfies_impl_mono (φ ψ : FQ) (m m' : WorldT) :
   m ⊨ FImpl φ ψ →
-  res_le (Var := atom) (Value := value) m m' →
+  raw_le (Var := atom) (Value := value) m m' →
   m' ⊨ FImpl φ ψ.
 Proof. Admitted.
 
 Lemma satisfies_and_mono (φ ψ : FQ) (m m' : WorldT) :
   m ⊨ FAnd φ ψ →
-  res_le (Var := atom) (Value := value) m m' →
+  raw_le (Var := atom) (Value := value) m m' →
   m' ⊨ FAnd φ ψ.
 Proof. Admitted.
 
@@ -66,21 +66,21 @@ Proof. simpl. reflexivity. Qed.
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WorldT) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ m1 m2,
-    res_le (Var := atom) (Value := value) (res_product m1 m2) m ∧
+    raw_le (Var := atom) (Value := value) (raw_product m1 m2) m ∧
     world_compat (Var := atom) (Value := value) m1 m2 ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
 Lemma satisfies_impl_intro (m : WorldT) (φ ψ : FQ) :
-  (∀ m', res_le (Var := atom) (Value := value) m m' →
+  (∀ m', raw_le (Var := atom) (Value := value) m m' →
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
 Lemma satisfies_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
   (∀ σ,
-     res_restrict (Var := atom) (Value := value) m X σ →
-     fiber (Var := atom) (Value := value) m σ ⊨ φ) →
+     raw_restrict (Var := atom) (Value := value) m X σ →
+     raw_fiber (Var := atom) (Value := value) m σ ⊨ φ) →
   m ⊨ FFib X φ.
 Proof. Admitted.
 
@@ -93,6 +93,6 @@ Proof. Admitted.
 
 Lemma ctx_satisfies_mono (Γ : ctx) (m m' : WorldT) :
   m ⊨ ⟦Γ⟧ →
-  res_le (Var := atom) (Value := value) m m' →
+  raw_le (Var := atom) (Value := value) m m' →
   m' ⊨ ⟦Γ⟧.
 Proof. Admitted.
