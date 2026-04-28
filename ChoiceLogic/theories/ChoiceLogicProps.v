@@ -52,12 +52,14 @@ Definition over_closure (R : WorldT → Prop) : WorldT → Prop :=
 Definition under_closure (R : WorldT → Prop) : WorldT → Prop :=
   λ m', ∃ m, R m ∧ ∀ σ, m' σ → m σ.
 
+(** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
 Lemma over_ext_eq (p : Formula A) :
-  ∀ m, ext (FOver p) m ↔ over_closure (ext p) m.
+  ∀ m, ext (FOver p) m ↔ under_closure (ext p) m.
 Proof. Admitted.
 
+(** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
 Lemma under_ext_eq (p : Formula A) :
-  ∀ m, ext (FUnder p) m ↔ under_closure (ext p) m.
+  ∀ m, ext (FUnder p) m ↔ over_closure (ext p) m.
 Proof. Admitted.
 
 (** *** §3 Collapse of nested modalities  (Theorem 1.11)
