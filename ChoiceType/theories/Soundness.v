@@ -241,14 +241,14 @@ Proof. Admitted.
 Lemma satisfies_pers_intro (m : WorldT) (φ : FQ) :
   (∀ σ, m σ →
         satisfies qual_interp_world qual_subst
-          {| world_dom := dom σ; world_stores := λ s, s = σ |} φ) →
+          (singleton_world σ) φ) →
   m ⊨ FPers φ.
 Proof. Admitted.
 
 (** Persist_ctx semantics: ⟦persist_ctx Γ⟧ is the persistent version of ⟦Γ⟧. *)
 Lemma denot_persist_ctx (Γ : ctx) (m : WorldT) :
   m ⊨ ⟦persist_ctx Γ⟧ →
-  ∀ σ, m σ → {| world_dom := dom σ; world_stores := λ s, s = σ |} ⊨ ⟦Γ⟧.
+  ∀ σ, m σ → (singleton_world σ) ⊨ ⟦Γ⟧.
 Proof. Admitted.
 
 (** Entailment is upward-closed for monotone formulas (FImpl, FAnd, FOr, FAtom). *)

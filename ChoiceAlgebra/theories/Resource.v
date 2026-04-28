@@ -268,6 +268,23 @@ Proof.
   subst. rewrite lookup_empty in Hv2. discriminate.
 Qed.
 
+(** ** Singleton world
+
+    [singleton_world σ] is the world that contains exactly the store [σ].
+    It appears in the semantics of [FPers] and in the persistence lemmas. *)
+
+Definition singleton_world (σ : StoreT) : World := {|
+  world_dom    := dom σ;
+  world_stores := λ s, s = σ;
+|}.
+
+Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
+Proof.
+  constructor.
+  - exists σ. exact eq_refl.
+  - intros s Hs. simpl in Hs. subst. reflexivity.
+Qed.
+
 (** ** WfWorld: the intended interface  (sigma type of well-formed worlds)
 
     All algebra operations and the partial order live here.  There are no

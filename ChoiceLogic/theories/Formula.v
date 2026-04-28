@@ -146,8 +146,7 @@ Fixpoint satisfies {A}
   | FPers p =>
       (** m ⊨ □ p  iff  ∀ σ ∈ m. {σ} ⊨ p *)
       ∀ σ, m σ →
-        satisfies interp subst_atom
-          {| world_dom := dom σ; world_stores := λ s, s = σ |} p
+        satisfies interp subst_atom (singleton_world σ) p
 
   | FForall X p =>
       (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  fiber(m, σ_X) ⊨ σ_X(p)
