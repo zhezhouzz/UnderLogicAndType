@@ -70,7 +70,6 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ₑ (tlete e1 e2) ⋮ T2
   | TT_LetOp Γ op vs e_body arg_tys ret_b T (L : aset) :
       prim_op_type op = (arg_tys, ret_b) →
-      length vs = length arg_tys →
       Forall2 (fun v b => Γ ⊢ᵥ v ⋮ TBase b) vs arg_tys →
       (∀ x, x ∉ L → <[x := TBase ret_b]>Γ ⊢ₑ (e_body ^^ x) ⋮ T) →
       Γ ⊢ₑ (tletop op vs e_body) ⋮ T
