@@ -91,12 +91,6 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
         (denot_ty τx (tret (vfvar x)))
         (denot_ty τ  (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
 
-  (** x:τ_x ⊸ τ  ≝  ⟦τ_x⟧ x −∗ ⟦τ⟧ (e x)  (separating implication) *)
-  | CTWand x τx τ =>
-      FWand
-        (denot_ty τx (tret (vfvar x)))
-        (denot_ty τ  (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
-
   (** ∗τ  ≝  ind (⟦τ⟧ e)  — independence modality *)
   | CTStar τ =>
       FInd (denot_ty τ e)

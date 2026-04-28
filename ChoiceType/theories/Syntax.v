@@ -20,10 +20,8 @@ Inductive choice_ty : Type :=
   | CTUnion (τ1 τ2 : choice_ty)
   (** Choice sum (⊕) — mirrors resource sum *)
   | CTSum   (τ1 τ2 : choice_ty)
-  (** Dependent function type: x:τ_x →, τ   (additive / comma mode) *)
+  (** Dependent function type: x:τ_x → τ *)
   | CTArrow (x : atom) (τx τ : choice_ty)
-  (** Separating / wand function type: x:τ_x ⊗ τ  (star mode) *)
-  | CTWand  (x : atom) (τx τ : choice_ty)
   (** Independence modality: ∗τ *)
   | CTStar  (τ : choice_ty).
 
@@ -47,7 +45,6 @@ Fixpoint erase_ty (τ : choice_ty) : ty :=
   | CTUnion τ1 _    => erase_ty τ1
   | CTSum   τ1 _    => erase_ty τ1
   | CTArrow _ τx τ  => erase_ty τx →ₜ erase_ty τ
-  | CTWand  _ τx τ  => erase_ty τx →ₜ erase_ty τ
   | CTStar  τ       => erase_ty τ
   end.
 
@@ -95,7 +92,6 @@ Fixpoint fv_cty (τ : choice_ty) : aset :=
   | CTUnion τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
   | CTSum   τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
   | CTArrow x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
-  | CTWand  x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
   | CTStar  τ       => fv_cty τ
   end.
 
@@ -148,10 +144,6 @@ Inductive wf_choice_ty : choice_ty → Prop :=
       wf_choice_ty τx →
       wf_choice_ty τ →
       wf_choice_ty (CTArrow x τx τ)
-  | Wf_CTWand x τx τ :
-      wf_choice_ty τx →
-      wf_choice_ty τ →
-      wf_choice_ty (CTWand x τx τ)
   | Wf_CTStar τ :
       wf_choice_ty τ →
       wf_choice_ty (CTStar τ).
@@ -192,8 +184,6 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
   | CTSum   τ1 τ2   => CTSum   (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTArrow y τx τ  => CTArrow y (cty_subst_one x v τx)
                           (if decide (x = y) then τ else cty_subst_one x v τ)
-  | CTWand  y τx τ  => CTWand  y (cty_subst_one x v τx)
-                          (if decide (x = y) then τ else cty_subst_one x v τ)
   | CTStar  τ       => CTStar  (cty_subst_one x v τ)
   end.
 
@@ -205,7 +195,6 @@ Fixpoint cty_subst (σ : SubstT) (τ : choice_ty) : choice_ty :=
   | CTUnion τ1 τ2   => CTUnion (cty_subst σ τ1) (cty_subst σ τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst σ τ1) (cty_subst σ τ2)
   | CTArrow x τx τ  => CTArrow x (cty_subst σ τx) (cty_subst (delete x σ) τ)
-  | CTWand  x τx τ  => CTWand  x (cty_subst σ τx) (cty_subst (delete x σ) τ)
   | CTStar  τ       => CTStar  (cty_subst σ τ)
   end.
 
@@ -219,7 +208,8 @@ Arguments substM_cty_inst /.
 (** Wand type is syntax sugar: x:τx ⊸ τ  ≝  x:(∗τx) →, τ *)
 Notation "x ':' τx '→,' τ" := (CTArrow x τx τ)
   (at level 30, x constr, τx constr, right associativity).
-Notation "x ':' τx '⊸' τ" := (CTWand x τx τ)
+(** Wand type is only an alias: x:τx ⊸ τ ≝ x:(∗τx) → τ. *)
+Notation "x ':' τx '⊸' τ" := (CTArrow x (CTStar τx) τ)
   (at level 30, x constr, τx constr, right associativity).
 
 (** Non-dependent arrow: τ1 →, τ2  when x ∉ fv_cty τ2 *)

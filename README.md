@@ -101,5 +101,5 @@ Choice types layered on top of `CoreLang` and `ChoiceLogic`.
 | `Qualifier.v` | Qualifier atoms (`qual`, `QExpr`, `QProd`); interpretation `qual_interp` |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
-| `Typing.v` | Typing judgment `Γ ⊢ᶜ e ⋮ τ` / `Γ ⊢ˢ e ⋮ τ` (comma and star modes) |
+| `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
 | `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
