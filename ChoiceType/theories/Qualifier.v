@@ -33,7 +33,12 @@ Inductive qualifier : Type :=
   (** Resource-product atom (compatibility).
       [interp (QProd q1 q2) σ]  ≝  ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ store_compat σ1 σ2
                                              ∧ interp q1 σ1 ∧ interp q2 σ2 *)
-  | QProd (q1 q2 : qualifier).
+  | QProd (q1 q2 : qualifier)
+
+  (** Conjunction atom.
+      [interp (QAnd q1 q2) σ]  ≝  interp q1 σ ∧ interp q2 σ
+      Used as fallback in [qualifier_and] when q1 or q2 is not a [qual]. *)
+  | QAnd (q1 q2 : qualifier).
 
 (** ** Locally-nameless infrastructure *)
 
@@ -43,6 +48,7 @@ Fixpoint qual_open (k : nat) (s : value) (q : qualifier) : qualifier :=
   | qual vals prop => qual (vmap (open_value k s) vals) prop
   | QExpr e ν     => QExpr (open_tm k s e) ν
   | QProd q1 q2   => QProd (qual_open k s q1) (qual_open k s q2)
+  | QAnd  q1 q2   => QAnd  (qual_open k s q1) (qual_open k s q2)
   end.
 
 (** Closing acts symmetrically. *)
@@ -51,6 +57,7 @@ Fixpoint qual_close (x : atom) (k : nat) (q : qualifier) : qualifier :=
   | qual vals prop => qual (vmap (close_value x k) vals) prop
   | QExpr e ν     => QExpr (close_tm x k e) ν
   | QProd q1 q2   => QProd (qual_close x k q1) (qual_close x k q2)
+  | QAnd  q1 q2   => QAnd  (qual_close x k q1) (qual_close x k q2)
   end.
 
 (** Free variables. *)
@@ -59,6 +66,7 @@ Fixpoint qual_fv (q : qualifier) : aset :=
   | qual vals _ => Vector.fold_right (fun v s => fv_value v ∪ s) vals ∅
   | QExpr e ν  => fv_tm e ∪ {[ ν ]}
   | QProd q1 q2 => qual_fv q1 ∪ qual_fv q2
+  | QAnd  q1 q2 => qual_fv q1 ∪ qual_fv q2
   end.
 
 (** Single-variable substitution. *)
@@ -67,6 +75,7 @@ Fixpoint qual_subst_one (x : atom) (v : value) (q : qualifier) : qualifier :=
   | qual vals prop => qual (vmap (value_subst x v) vals) prop
   | QExpr e ν     => QExpr (tm_subst x v e) ν
   | QProd q1 q2   => QProd (qual_subst_one x v q1) (qual_subst_one x v q2)
+  | QAnd  q1 q2   => QAnd  (qual_subst_one x v q1) (qual_subst_one x v q2)
   end.
 
 (** Multi-variable substitution (the [subst_atom] parameter of ChoiceLogic). *)
@@ -75,6 +84,7 @@ Fixpoint qual_subst (σ : SubstT) (q : qualifier) : qualifier :=
   | qual vals prop => qual (vmap (value_subst_all σ) vals) prop
   | QExpr e ν     => QExpr (tm_subst_all σ e) ν
   | QProd q1 q2   => QProd (qual_subst σ q1) (qual_subst σ q2)
+  | QAnd  q1 q2   => QAnd  (qual_subst σ q1) (qual_subst σ q2)
   end.
 
 (** Typeclass instances. *)
@@ -105,7 +115,10 @@ Inductive lc_qualifier : qualifier → Prop :=
       lc_qualifier (QExpr e ν)
   | LCQ_prod q1 q2 :
       lc_qualifier q1 → lc_qualifier q2 →
-      lc_qualifier (QProd q1 q2).
+      lc_qualifier (QProd q1 q2)
+  | LCQ_and q1 q2 :
+      lc_qualifier q1 → lc_qualifier q2 →
+      lc_qualifier (QAnd q1 q2).
 
 #[global] Instance lc_qual_inst : Lc qualifier := lc_qualifier.
 Arguments lc_qual_inst /.
@@ -118,7 +131,7 @@ Definition qualifier_and (q1 q2 : qualifier) : qualifier :=
   | qual vals1 prop1, qual vals2 prop2 =>
       qual (vals1 +++ vals2) (fun v =>
         let '(v1, v2) := Vector.splitat _ v in prop1 v1 ∧ prop2 v2)
-  | _, _ => QProd q1 q2  (** Fallback to QProd for non-qual constructors. *)
+  | _, _ => QAnd q1 q2  (** Fallback to QAnd (conjunction) for non-qual constructors. *)
   end.
 
 Notation "q1 '&q' q2" := (qualifier_and q1 q2) (at level 40).
@@ -159,6 +172,8 @@ Fixpoint qual_interp (σ : SubstT) (q : qualifier) : Prop :=
       ∃ σ1 σ2,
         store_compat σ1 σ2 ∧ σ1 ∪ σ2 = σ ∧
         qual_interp σ1 q1 ∧ qual_interp σ2 q2
+  | QAnd q1 q2 =>
+      qual_interp σ q1 ∧ qual_interp σ q2
   end.
 
 (** Flip argument order for convenience. *)
