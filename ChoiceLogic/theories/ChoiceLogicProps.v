@@ -32,10 +32,10 @@ Lemma under_mono (p q : Formula A) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
 Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 
-(** □ is monotone. *)
-Lemma pers_mono (p q : Formula A) :
-  (p ⊫ q) → (FPers p ⊫ FPers q).
-Proof. unfold entails, sat in *. intros Hip m Hpers σ Hσ. exact (Hip _ (Hpers σ Hσ)). Qed.
+(** The independent modality is monotone. *)
+Lemma ind_mono (p q : Formula A) :
+  (p ⊫ q) → (FInd p ⊫ FInd q).
+Proof. unfold entails, sat in *. intros Hip m Hind σ Hσ. exact (Hip _ (Hind σ Hσ)). Qed.
 
 (** *** §2 Modality set-level characterisations  (§1.3, Erase section)
 
@@ -148,21 +148,21 @@ Lemma star_wand_adjunction (p q r : Formula A) :
   (FStar p q ⊫ r).
 Proof. Admitted.
 
-(** ** Persistence *)
+(** ** Independence *)
 
-(** □ τ ⊫ τ  (holds only for non-empty wf_resource worlds; proof deferred) *)
-Lemma pers_elim (p : Formula A) : FPers p ⊫ p.
+(** ind τ ⊫ τ  (holds only for non-empty wf_resource worlds; proof deferred) *)
+Lemma ind_elim (p : Formula A) : FInd p ⊫ p.
 Proof. Admitted.
 
-(** □ τ ⊫ □ □ τ *)
-Lemma pers_idemp (p : Formula A) : FPers p ⊫ FPers (FPers p).
+(** ind τ ⊫ ind (ind τ) *)
+Lemma ind_idemp (p : Formula A) : FInd p ⊫ FInd (FInd p).
 Proof.
-  unfold entails, sat. simpl. intros m Hpers σ Hσ σ' Hσ'. subst. exact (Hpers σ Hσ).
+  unfold entails, sat. simpl. intros m Hind σ Hσ σ' Hσ'. subst. exact (Hind σ Hσ).
 Qed.
 
-(** o □ φ  implies  □ o φ  (persistence and overapproximation interact) *)
-Lemma over_pers_swap (p : Formula A) :
-  FOver (FPers p) ⊫ FPers (FOver p).
+(** o (ind φ)  implies  ind (o φ) *)
+Lemma over_ind_swap (p : Formula A) :
+  FOver (FInd p) ⊫ FInd (FOver p).
 Proof. Admitted.
 
 End ChoiceLogicProps.

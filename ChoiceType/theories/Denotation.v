@@ -54,21 +54,21 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
       The result variable ν is chosen fresh w.r.t. φ's free variables.
-      FForall {ν} quantifies over ν; inside, FImpl links execution to
-      the over-approximation of φ.  FForall (fv φ) quantifies over
+      FFib {ν} quantifies over ν; inside, FImpl links execution to
+      the over-approximation of φ.  FFib (fv φ) quantifies over
       the remaining free variables of φ for the fiberwise universal. *)
   | CTOver b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
-      FForall {[ν]}
+      FFib {[ν]}
         (FImpl (FAtom (QExpr e ν))
-               (FForall (qual_fv φ) (FOver (FAtom φ))))
+               (FFib (qual_fv φ) (FOver (FAtom φ))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
-      FForall {[ν]}
+      FFib {[ν]}
         (FImpl (FAtom (QExpr e ν))
-               (FForall (qual_fv φ) (FUnder (FAtom φ))))
+               (FFib (qual_fv φ) (FUnder (FAtom φ))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -97,17 +97,9 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
         (denot_ty τx (tret (vfvar x)))
         (denot_ty τ  (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
 
-  (** ∗τ  ≝  □ (⟦τ⟧ e)  — persistence (the type is a persistent assertion) *)
+  (** ∗τ  ≝  ind (⟦τ⟧ e)  — independence modality *)
   | CTStar τ =>
-      FPers (denot_ty τ e)
-
-  (** □τ  ≝  ∀ν. ⟦e⟧_ν ⊸ □ (⟦τ⟧ (return ν))
-      For each execution result ν, the typing assertion for ν is persistent. *)
-  | CTPers τ =>
-      let ν := fresh_result (stale e) in
-      FForall {[ν]}
-        (FImpl (FAtom (QExpr e ν))
-               (FPers (denot_ty τ (tret (vfvar ν)))))
+      FInd (denot_ty τ e)
 
   end.
 

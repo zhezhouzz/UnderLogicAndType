@@ -24,10 +24,8 @@ Inductive choice_ty : Type :=
   | CTArrow (x : atom) (τx τ : choice_ty)
   (** Separating / wand function type: x:τ_x ⊗ τ  (star mode) *)
   | CTWand  (x : atom) (τx τ : choice_ty)
-  (** Separability modality: ∗τ *)
-  | CTStar  (τ : choice_ty)
-  (** Persistence modality: □τ *)
-  | CTPers  (τ : choice_ty).
+  (** Independence modality: ∗τ *)
+  | CTStar  (τ : choice_ty).
 
 (** ** Type contexts *)
 
@@ -51,7 +49,6 @@ Fixpoint erase_ty (τ : choice_ty) : ty :=
   | CTArrow _ τx τ  => erase_ty τx →ₜ erase_ty τ
   | CTWand  _ τx τ  => erase_ty τx →ₜ erase_ty τ
   | CTStar  τ       => erase_ty τ
-  | CTPers  τ       => erase_ty τ
   end.
 
 (** [lift_ty s] : lift a basic type to the default over-refinement type. *)
@@ -100,7 +97,6 @@ Fixpoint fv_cty (τ : choice_ty) : aset :=
   | CTArrow x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
   | CTWand  x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
   | CTStar  τ       => fv_cty τ
-  | CTPers  τ       => fv_cty τ
   end.
 
 Fixpoint fv_ctx (Γ : ctx) : aset :=
@@ -158,10 +154,7 @@ Inductive wf_choice_ty : choice_ty → Prop :=
       wf_choice_ty (CTWand x τx τ)
   | Wf_CTStar τ :
       wf_choice_ty τ →
-      wf_choice_ty (CTStar τ)
-  | Wf_CTPers τ :
-      wf_choice_ty τ →
-      wf_choice_ty (CTPers τ).
+      wf_choice_ty (CTStar τ).
 
 Inductive wf_ctx : ctx → Prop :=
   | Wf_CtxEmpty :
@@ -202,7 +195,6 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
   | CTWand  y τx τ  => CTWand  y (cty_subst_one x v τx)
                           (if decide (x = y) then τ else cty_subst_one x v τ)
   | CTStar  τ       => CTStar  (cty_subst_one x v τ)
-  | CTPers  τ       => CTPers  (cty_subst_one x v τ)
   end.
 
 Fixpoint cty_subst (σ : SubstT) (τ : choice_ty) : choice_ty :=
@@ -215,7 +207,6 @@ Fixpoint cty_subst (σ : SubstT) (τ : choice_ty) : choice_ty :=
   | CTArrow x τx τ  => CTArrow x (cty_subst σ τx) (cty_subst (delete x σ) τ)
   | CTWand  x τx τ  => CTWand  x (cty_subst σ τx) (cty_subst (delete x σ) τ)
   | CTStar  τ       => CTStar  (cty_subst σ τ)
-  | CTPers  τ       => CTPers  (cty_subst σ τ)
   end.
 
 #[global] Instance subst_cty_inst  : SubstV value choice_ty   := cty_subst_one.

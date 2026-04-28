@@ -22,7 +22,7 @@ From ChoiceType Require Export Typing.
 (** ** Compatibility of satisfaction with monotone/antitone structure
 
     Note: satisfaction in Choice Logic is NOT uniformly Kripke-monotone.
-    - [FImpl], [FForall], [FAnd], [FOr] are monotone (upward-closed) in m.
+    - [FImpl], [FFib], [FAnd], [FOr] are monotone (upward-closed) in m.
     - [FUnder] is *antitone* (downward-closed): m ⊨ FUnder φ ↔ ∃ m' ⊆ m, m' ⊨ φ.
     - [FOver] is *antitone* in the opposite direction.
     Therefore, we only state monotonicity for the sub-formulas where it holds. *)
@@ -58,8 +58,6 @@ Proof.
   (** Proof sketch:
       Induction on [ctx_split]:
         SpEmp   : m ⊨ FTrue; take m1 = m2 = res_unit.
-        SpPers  : m ⊨ ⟦CTPers τ⟧(return x); share m between m1 and m2
-                  using the persistence of CTPers.
         SpLeft  : take m1 = m, m2 = res_unit.
         SpRight : take m1 = res_unit, m2 = m.
         SpComma/SpStar : decompose m via the denotation of (⊗/,) and recurse. *)
@@ -93,8 +91,7 @@ Proof.
 
     CT_Inter  : by IH for both branches.
     CT_Union* : by IH for the chosen branch.
-    CT_Pers   : use the persist_ctx semantics and FPers introduction.
-    CT_Star   : ⟦CTStar τ⟧ e = FPers (⟦τ⟧ e); use FPers-intro.
+    CT_Star   : ⟦CTStar τ⟧ e = FInd (⟦τ⟧ e); use FInd-intro.
     CT_Sub_comma : by the sub_comma hypothesis.
     CT_Weak   : use denot_ctx_mono_comma to extend the world.
     CT_Exchange : use commutativity of FAnd (⟦CtxComma⟧ = FAnd).
@@ -229,26 +226,20 @@ Lemma satisfies_impl_intro (m : WorldT) (φ ψ : FQ) :
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-(** FForall introduction: universally quantified over σ-projections. *)
-Lemma satisfies_forall_intro (m : WorldT) (X : aset) (φ : FQ) :
+(** FFib introduction: universally quantified over σ-projections. *)
+Lemma satisfies_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
   (∀ σ,
      res_restrict (Var := atom) (Value := value) m X σ →
      fiber (Var := atom) (Value := value) m σ ⊨ φ) →
-  m ⊨ FForall X φ.
+  m ⊨ FFib X φ.
 Proof. Admitted.
 
-(** FPers introduction: point-wise singleton satisfaction. *)
-Lemma satisfies_pers_intro (m : WorldT) (φ : FQ) :
+(** FInd introduction: point-wise singleton satisfaction. *)
+Lemma satisfies_ind_intro (m : WorldT) (φ : FQ) :
   (∀ σ, m σ →
         satisfies qual_interp_world qual_subst
           (singleton_world σ) φ) →
-  m ⊨ FPers φ.
-Proof. Admitted.
-
-(** Persist_ctx semantics: ⟦persist_ctx Γ⟧ is the persistent version of ⟦Γ⟧. *)
-Lemma denot_persist_ctx (Γ : ctx) (m : WorldT) :
-  m ⊨ ⟦persist_ctx Γ⟧ →
-  ∀ σ, m σ → (singleton_world σ) ⊨ ⟦Γ⟧.
+  m ⊨ FInd φ.
 Proof. Admitted.
 
 (** Entailment is upward-closed for monotone formulas (FImpl, FAnd, FOr, FAtom). *)

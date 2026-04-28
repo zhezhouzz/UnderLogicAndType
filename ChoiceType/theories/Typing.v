@@ -27,7 +27,6 @@ Inductive typing_mode : Type :=
 
     Rules:
       SpEmp   : the empty context splits to (∅, ∅)
-      SpPers  : a persistent binding □τ is *duplicated* (intuitionistic resource)
       SpLeft  : an unrestricted binding goes entirely to the left half
       SpRight : an unrestricted binding goes entirely to the right half
       SpComma : split each component of a comma context independently
@@ -38,11 +37,6 @@ Inductive ctx_split : ctx → ctx → ctx → Prop :=
 
   | SpEmp :
       ctx_split CtxEmpty CtxEmpty CtxEmpty
-
-  | SpPers x τ :
-      ctx_split (CtxBind x (CTPers τ))
-                (CtxBind x (CTPers τ))
-                (CtxBind x (CTPers τ))
 
   | SpLeft x τ :
       ctx_split (CtxBind x τ) (CtxBind x τ) CtxEmpty
@@ -66,19 +60,6 @@ Inductive ctx_split : ctx → ctx → ctx → Prop :=
       ctx_split (CtxSum Γ Δ) (CtxSum Γ1 Δ1) (CtxSum Γ2 Δ2).
 
 #[global] Hint Constructors ctx_split : core.
-
-(** ** Persistence-context constructor
-
-    [persist_ctx Γ] wraps every type in Γ with CTPers.
-    Used in CT_Pers: to prove e : □τ, type e in the persistified context. *)
-Fixpoint persist_ctx (Γ : ctx) : ctx :=
-  match Γ with
-  | CtxEmpty        => CtxEmpty
-  | CtxBind x τ    => CtxBind x (CTPers τ)
-  | CtxComma Γ1 Γ2 => CtxComma (persist_ctx Γ1) (persist_ctx Γ2)
-  | CtxStar  Γ1 Γ2 => CtxComma (persist_ctx Γ1) (persist_ctx Γ2)
-  | CtxSum   Γ1 Γ2 => CtxSum (persist_ctx Γ1) (persist_ctx Γ2)
-  end.
 
 (** ** Semantic subtyping
 
@@ -325,16 +306,9 @@ Inductive has_choice_type : typing_mode → ctx → tm → choice_ty → Prop :=
       has_choice_type ModeStar Γ e τ2 →
       has_choice_type ModeStar Γ e (CTSum τ1 τ2)
 
-  (** T_Pers: persistence modality introduction □τ.
-      If e has type τ in the *persistified* context (all bindings wrapped in CTPers),
-      then e has type □τ in the original context. *)
-  | CT_Pers Γ e τ :
-      has_choice_type ModeComma (persist_ctx Γ) e τ →
-      has_choice_type ModeComma Γ e (CTPers τ)
-
-  (** T_Star: separability modality introduction ∗τ.
+  (** T_Star: independence modality introduction ∗τ.
       If e has type τ, then it also has type ∗τ.
-      Soundness relies on the denotation ⟦∗τ⟧ e = FPers (⟦τ⟧ e) being
+      Soundness relies on the denotation ⟦∗τ⟧ e = FInd (⟦τ⟧ e) being
       provable whenever ⟦τ⟧ e is (via CT_Sub + a semantic argument). *)
   | CT_Star Γ e τ :
       has_choice_type ModeComma Γ e τ →

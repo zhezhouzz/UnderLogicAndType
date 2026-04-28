@@ -8,15 +8,15 @@ From ChoiceLogic Require Import Prelude.
     - [A]           : type of atomic propositions
     - [interp]      : interpretation A → (Subst → Prop), maps atoms to sets of substs
     - [subst_atom]  : Subst → A → A, substitution action on atoms
-                      (used in the [FForall] case to thread σ_X into the interpretation)
+                      (used in the [FFib] case to thread σ_X into the interpretation)
 
     The formula type [Formula A] contains:
     - standard connectives (⊤, ⊥, atoms, ∧, ∨, ⇒)
     - separation logic connectives (∗, −∗)
     - choice sum (⊕)
     - approximation modalities (o = over, u = under)
-    - persistence modality (□)
-    - universal modality (∀X. p): for each σ_X in proj(m, X), the fiber satisfies σ_X(p)  *)
+    - independent modality
+    - fiberwise modality (∀X. p): for each σ_X in proj(m, X), the fiber satisfies σ_X(p)  *)
 
 Section ChoiceLogic.
 
@@ -38,9 +38,9 @@ Inductive Formula (A : Type) : Type :=
   | FPlus   (p q : Formula A)                   (* choice sum p ⊕ q *)
   | FOver   (p : Formula A)                     (* overapproximation  o p *)
   | FUnder  (p : Formula A)                     (* underapproximation u p *)
-  | FPers    (p : Formula A)                    (* persistence  □ p *)
-  | FForall  (X : gset Var)                     (* universal modality  ∀X. p *)
-             (p : Formula A).
+  | FInd    (p : Formula A)                     (* independent modality *)
+  | FFib    (X : gset Var)                      (* fiberwise modality  ∀X. p *)
+            (p : Formula A).
 
 (** Make [A] implicit inside the section so constructors can be written
     without an explicit type argument, e.g. [FTrue] not [FTrue A]. *)
@@ -55,32 +55,32 @@ Arguments FWand  {A} _ _.
 Arguments FPlus  {A} _ _.
 Arguments FOver  {A} _.
 Arguments FUnder {A} _.
-Arguments FPers   {A} _.
-Arguments FForall {A} _ _.
+Arguments FInd    {A} _.
+Arguments FFib    {A} _ _.
 
 (** ** Satisfaction relation
 
     [satisfies interp subst_atom m φ] is written [m ⊨ φ] below.
 
     Role of [subst_atom]:
-    [subst_atom] is only *consumed* in the [FForall] case; every other case
+    [subst_atom] is only *consumed* in the [FFib] case; every other case
     merely threads it through to recursive calls so it is available when a
-    nested [FForall] is eventually reached.  It represents the substitution
+    nested [FFib] is eventually reached.  It represents the substitution
     action on atomic propositions: when entering [∀X. p] under a witness σ_X,
     atoms that mention variables in X must be specialized to σ_X's values.
     If atoms are closed (contain no free variables), [subst_atom = λ σ a, a]
     is the correct instantiation and the threading is a no-op.
 
-    Structural-Fixpoint trick for [FForall]:
-    The semantics of [FForall X p] requires evaluating σ_X(p) — the formula p
+    Structural-Fixpoint trick for [FFib]:
+    The semantics of [FFib X p] requires evaluating σ_X(p) — the formula p
     with every atom a replaced by [subst_atom σ_X a].  The direct approach
     would recurse on [formula_subst subst_atom σ p], but that is not a
-    syntactic subterm of [FForall X p], so Rocq's structural [Fixpoint]
+    syntactic subterm of [FFib X p], so Rocq's structural [Fixpoint]
     checker rejects it.  Instead we thread σ into the interpretation function:
       [satisfies (λ a, interp (subst_atom σ a)) subst_atom (fiber m σ) p]
     Unfolding the definition confirms this is pointwise equal to evaluating
     the substituted formula, with [subst_atom] propagated so that any nested
-    [FForall] can apply its own substitution on top. *)
+    [FFib] can apply its own substitution on top. *)
 
 Fixpoint satisfies {A}
     (interp     : A → WorldT)
@@ -143,15 +143,15 @@ Fixpoint satisfies {A}
       (** m ⊨ u p  iff  ∃ m' ⊆ m. m' ⊨ p  (under-approximation: subset) *)
       ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ satisfies interp subst_atom m' p
 
-  | FPers p =>
-      (** m ⊨ □ p  iff  ∀ σ ∈ m. {σ} ⊨ p *)
+  | FInd p =>
+      (** m ⊨ ind p  iff  ∀ σ ∈ m. {σ} ⊨ p *)
       ∀ σ, m σ →
         satisfies interp subst_atom (singleton_world σ) p
 
-  | FForall X p =>
+  | FFib X p =>
       (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  fiber(m, σ_X) ⊨ σ_X(p)
           [subst_atom σ] is applied to every atom via the modified [interp];
-          [subst_atom] itself is forwarded so nested [FForall]s can compose. *)
+          [subst_atom] itself is forwarded so nested [FFib]s can compose. *)
       ∀ σ,
         res_restrict m X σ →
         satisfies (λ a, interp (subst_atom σ a)) subst_atom (fiber m σ) p
@@ -185,5 +185,5 @@ Arguments FWand  {_} {_} {_} {_} _ _ : rename.
 Arguments FPlus  {_} {_} {_} {_} _ _ : rename.
 Arguments FOver  {_} {_} {_} {_} _ : rename.
 Arguments FUnder {_} {_} {_} {_} _ : rename.
-Arguments FPers   {_} {_} {_} {_} _ : rename.
-Arguments FForall {_} {_} {_} {_} _ _ : rename.
+Arguments FInd    {_} {_} {_} {_} _ : rename.
+Arguments FFib    {_} {_} {_} {_} _ _ : rename.
