@@ -15,7 +15,7 @@ Definition sub_type (Γ : ctx) (τ1 τ2 : choice_ty) : Prop :=
   ∀ e, ⟦Γ⟧ ⊫ FImpl (⟦τ1⟧ e) (⟦τ2⟧ e).
 
 Definition ctx_sub (X : aset) (Γ1 Γ2 : ctx) : Prop :=
-  ∀ r, r ⊨ ⟦Γ1⟧ → raw_restrict r X ⊨ ⟦Γ2⟧.
+  ∀ r, r ⊨ ⟦Γ1⟧ → res_restrict r X ⊨ ⟦Γ2⟧.
 
 (** ** The typing judgment *)
 
@@ -131,44 +131,24 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
         (tret (vfix (erase_ty (CTWand x τx τ)) (erase_ty τx) e))
         (CTWand x τx τ)
 
-  (** T-AppOp.  The current core language records primitive op types at the
-      basic layer, so this rule uses lifted basic argument/result types. *)
-  | CT_AppOp Γ op vs arg_tys ret_b :
-      prim_op_type op = (arg_tys, ret_b) →
-      Forall2
-        (fun v b => has_choice_type Γ (tret v) (lift_ty (TBase b)))
-        vs arg_tys →
-      has_choice_type Γ (tprim op vs) (lift_ty (TBase ret_b))
+  (** T-AppOp.  Primitive operations are unary. *)
+  | CT_AppOp Γ op v arg_b ret_b :
+      prim_op_type op = (arg_b, ret_b) →
+      has_choice_type Γ (tret v) (lift_ty (TBase arg_b)) →
+      has_choice_type Γ (tprim op v) (lift_ty (TBase ret_b))
 
-  (** T-AppOpD.  This mirrors the dependency shape of the paper rule using
-      the current basic primitive-op table. *)
-  | CT_AppOpD Γ1 Γ2 op vs arg_tys ret_b :
-      prim_op_type op = (arg_tys, ret_b) →
-      Forall2
-        (fun v b => has_choice_type Γ2 (tret v) (lift_ty (TBase b)))
-        vs arg_tys →
-      has_choice_type (CtxStar Γ1 Γ2) (tprim op vs) (lift_ty (TBase ret_b))
+  (** T-AppOpD.  Unary primitive operation in a separated argument context. *)
+  | CT_AppOpD Γ1 Γ2 op v arg_b ret_b :
+      prim_op_type op = (arg_b, ret_b) →
+      has_choice_type Γ2 (tret v) (lift_ty (TBase arg_b)) →
+      has_choice_type (CtxStar Γ1 Γ2) (tprim op v) (lift_ty (TBase ret_b))
 
-  (** T-Match.  This is still a compact core-language skeleton; the paper's
-      big-oplus presentation can be recovered by choosing a sum context/type
-      for the branch family. *)
-  | CT_Match Γ v τ branches b (L : aset) :
-      has_choice_type Γ (tret v) (lift_ty (TBase b)) →
-      (∀ i n body arg_tys,
-          branches !! i = Some (n, body) →
-          constructor_tys b !! i = Some arg_tys →
-          length arg_tys = n →
-          ∀ ys : list atom,
-            length ys = n →
-            NoDup ys →
-            Forall (fun y => y ∉ L) ys →
-            has_choice_type
-              (fold_left
-                (fun ctx '(y, bt) => CtxComma ctx (CtxBind y (lift_ty (TBase bt))))
-                (zip ys arg_tys) Γ)
-              (fold_left (fun e y => e ^^ y) ys body)
-              τ) →
-      has_choice_type Γ (tmatch v branches) τ.
+  (** T-Match.  The core match is a fixed boolean two-branch eliminator. *)
+  | CT_Match Γ v τ et ef :
+      has_choice_type Γ (tret v) (lift_ty (TBase TBool)) →
+      has_choice_type Γ et τ →
+      has_choice_type Γ ef τ →
+      has_choice_type Γ (tmatch v et ef) τ.
 
 #[global] Hint Constructors has_choice_type : core.
 #[global] Instance typing_choice_inst : Typing ctx tm choice_ty := has_choice_type.

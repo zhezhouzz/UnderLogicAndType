@@ -247,6 +247,23 @@ Proof.
   - intros s' [Hs' _]. simpl. exact (Hdom s' Hs').
 Defined.
 
+Definition res_fiber_from_projection (w : WfWorld) (X : gset Var) (σ : StoreT)
+    (Hproj : res_restrict w X σ) : WfWorld.
+Proof.
+  refine (res_fiber w σ _).
+  simpl in Hproj.
+  destruct Hproj as [s [Hs Hrestr]].
+  exists s. split; [exact Hs |].
+  assert (Hdomσ : dom σ ⊆ X).
+  { rewrite <- Hrestr. rewrite store_restrict_dom. set_solver. }
+  rewrite <- (store_restrict_idemp σ (dom σ)) at 2 by set_solver.
+  rewrite <- Hrestr.
+  rewrite store_restrict_restrict.
+  replace (X ∩ dom (store_restrict s X)) with (dom (store_restrict s X)).
+  reflexivity.
+  rewrite store_restrict_dom. set_solver.
+Defined.
+
 (** Total WfWorld operations for algebraic structures that encode partiality
     with separate definedness predicates.  Their wf obligations are meaningful
     only under the corresponding definedness assumptions, so we keep them

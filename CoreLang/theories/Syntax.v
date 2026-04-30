@@ -11,7 +11,7 @@ From CoreLang Require Export Prelude.
 (** ** Base and basic types *)
 
 Inductive base_ty : Type :=
-  | TUnit | TBool | TNat | TInt.
+  | TBool | TNat.
 
 Inductive ty : Type :=
   | TBase  (b : base_ty)
@@ -26,33 +26,18 @@ Notation "s1 '→ₜ' s2" := (TArrow s1 s2) (at level 30, right associativity).
 (** ** Constants and primitive operations *)
 
 Inductive constant : Type :=
-  | cunit
   | cbool (b : bool)
-  | cnat  (n : nat)
-  | cint  (z : Z).
+  | cnat  (n : nat).
 
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
-Inductive data_ctor : Type :=
-  | dc_unit | dc_true | dc_false
-  | dc_O | dc_S
-  | dc_Nil | dc_Cons
-  | dc_Leaf | dc_Node.
-
-#[global] Instance data_ctor_eqdec : EqDecision data_ctor. Proof. solve_decision. Defined.
-
 Inductive prim_op : Type :=
-  | op_ctor (d : data_ctor)
-  | op_add | op_sub | op_mul
-  | op_eq  | op_lt  | op_le
-  | op_and | op_or  | op_not
-  | op_nat_gen   (** nondeterministic nat  *)
-  | op_int_gen.  (** nondeterministic int  *)
+  | op_eq0.  (** unary zero test on natural numbers *)
 
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
 Definition base_ty_of_const (c : constant) : base_ty :=
-  match c with cunit => TUnit | cbool _ => TBool | cnat _ => TNat | cint _ => TInt end.
+  match c with cbool _ => TBool | cnat _ => TNat end.
 
 (** ** Values and terms — mutual induction, locally nameless
 
@@ -61,7 +46,7 @@ Definition base_ty_of_const (c : constant) : base_ty :=
       [vfix sf sx e]   : bvar 0 in e  = x (inner λ-arg)
                          bvar 1 in e  = f (fix self-ref, outer)
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
-      [tmatch v brs]   : branch (n, body): bvar 0..n-1 in body = constructor args *)
+      [tmatch v et ef] : boolean case split; both branches bind no variables *)
 
 Inductive value : Type :=
   | vconst (c : constant)
@@ -73,12 +58,9 @@ Inductive value : Type :=
 with tm : Type :=
   | tret    (v : value)
   | tlete   (e1 e2 : tm)
-  | tprim     (op : prim_op) (args : list value)
+  | tprim   (op : prim_op) (arg : value)
   | tapp    (v1 v2 : value)
-  | tmatch  (v : value) (branches : list (nat * tm)).
-
-(** A branch [(n, body)] binds [n] constructor arguments in [body]. *)
-Notation branch := (nat * tm)%type.
+  | tmatch  (v : value) (etrue efalse : tm).
 
 Scheme value_mut := Induction for value Sort Type
   with tm_mut    := Induction for tm    Sort Type.
@@ -114,11 +96,10 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
   match e with
   | tret v          => tret (open_value k s v)
   | tlete e1 e2     => tlete (open_tm k s e1) (open_tm (S k) s e2)
-  | tprim op vs       => tprim op (map (open_value k s) vs)
+  | tprim op v      => tprim op (open_value k s v)
   | tapp v1 v2      => tapp (open_value k s v1) (open_value k s v2)
-  | tmatch v brs    =>
-      tmatch (open_value k s v)
-        (map (fun '(n, body) => (n, open_tm (k + n) s body)) brs)
+  | tmatch v et ef  =>
+      tmatch (open_value k s v) (open_tm k s et) (open_tm k s ef)
   end.
 
 #[global] Instance open_value_inst      : Open value value := open_value.
@@ -147,11 +128,10 @@ with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   match e with
   | tret v          => tret (close_value x k v)
   | tlete e1 e2     => tlete (close_tm x k e1) (close_tm x (S k) e2)
-  | tprim op vs       => tprim op (map (close_value x k) vs)
+  | tprim op v      => tprim op (close_value x k v)
   | tapp v1 v2      => tapp (close_value x k v1) (close_value x k v2)
-  | tmatch v brs    =>
-      tmatch (close_value x k v)
-        (map (fun '(n, body) => (n, close_tm x (k + n) body)) brs)
+  | tmatch v et ef  =>
+      tmatch (close_value x k v) (close_tm x k et) (close_tm x k ef)
   end.
 
 #[global] Instance close_value_inst : Close value := close_value.
@@ -173,10 +153,9 @@ with fv_tm (e : tm) : aset :=
   match e with
   | tret v          => fv_value v
   | tlete e1 e2     => fv_tm e1 ∪ fv_tm e2
-  | tprim _ vs        => ⋃ (fv_value <$> vs)
+  | tprim _ v       => fv_value v
   | tapp v1 v2      => fv_value v1 ∪ fv_value v2
-  | tmatch v brs    =>
-      fv_value v ∪ ⋃ ((fun '(_, body) => fv_tm body) <$> brs)
+  | tmatch v et ef  => fv_value v ∪ fv_tm et ∪ fv_tm ef
   end.
 
 #[global] Instance stale_value_inst : Stale value := fv_value.
@@ -198,11 +177,10 @@ with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   match e with
   | tret v          => tret (value_subst x s v)
   | tlete e1 e2     => tlete (tm_subst x s e1) (tm_subst x s e2)
-  | tprim op vs       => tprim op (map (value_subst x s) vs)
+  | tprim op v      => tprim op (value_subst x s v)
   | tapp v1 v2      => tapp (value_subst x s v1) (value_subst x s v2)
-  | tmatch v brs    =>
-      tmatch (value_subst x s v)
-        (map (fun '(n, body) => (n, tm_subst x s body)) brs)
+  | tmatch v et ef  =>
+      tmatch (value_subst x s v) (tm_subst x s et) (tm_subst x s ef)
   end.
 
 #[global] Instance subst_value_inst : SubstV value value := value_subst.
@@ -231,15 +209,7 @@ Arguments substM_tm_inst /.
 
 (** ** Local closure *)
 
-(** [branch_lc n e]: the branch body [e] is locally closed modulo
-    [n] constructor-argument binders, counted from bvar 0 upward. *)
-Inductive branch_lc : nat → tm → Prop :=
-  | BLC_zero e     : lc_tm e → branch_lc 0 e
-  | BLC_succ n e (L : aset) :
-      (∀ x, x ∉ L → branch_lc n ({0 ~> (vfvar x)} e)) →
-      branch_lc (S n) e
-
-with lc_value : value → Prop :=
+Inductive lc_value : value → Prop :=
   | LC_const c : lc_value (vconst c)
   | LC_fvar  x : lc_value (vfvar x)
   | LC_lam s e (L : aset) :
@@ -256,29 +226,27 @@ with lc_tm : tm → Prop :=
       lc_tm e1 →
       (∀ x, x ∉ L → lc_tm ({0 ~> (vfvar x)} e2)) →
       lc_tm (tlete e1 e2)
-  | LC_op op vs :
-      Forall lc_value vs →
-      lc_tm (tprim op vs)
+  | LC_op op v :
+      lc_value v →
+      lc_tm (tprim op v)
   | LC_app v1 v2 :
       lc_value v1 → lc_value v2 →
       lc_tm (tapp v1 v2)
-  | LC_match v brs :
-      lc_value v →
-      (∀ n body, List.In (n, body) brs → branch_lc n body) →
-      lc_tm (tmatch v brs).
+  | LC_match v et ef :
+      lc_value v → lc_tm et → lc_tm ef →
+      lc_tm (tmatch v et ef).
 
-Scheme branch_lc_mut := Induction for branch_lc Sort Prop
-  with lc_value_mut  := Induction for lc_value  Sort Prop
+Scheme lc_value_mut  := Induction for lc_value  Sort Prop
   with lc_tm_mut     := Induction for lc_tm     Sort Prop.
 
-Combined Scheme lc_mutind from branch_lc_mut, lc_value_mut, lc_tm_mut.
+Combined Scheme lc_mutind from lc_value_mut, lc_tm_mut.
 
 #[global] Instance lc_value_inst : Lc value := lc_value.
 #[global] Instance lc_tm_inst    : Lc tm    := lc_tm.
 Arguments lc_value_inst /.
 Arguments lc_tm_inst /.
 
-#[global] Hint Constructors branch_lc lc_value lc_tm : core.
+#[global] Hint Constructors lc_value lc_tm : core.
 
 (** ** Body *)
 
@@ -290,7 +258,7 @@ Definition body_val (v : value) : Prop :=
 
 (** ** Inhabited instance (required by UnderLogicAndType.Resource) *)
 #[global] Instance value_inhabited : Inhabited value :=
-  populate (vconst cunit).
+  populate (vconst (cbool false)).
 
 (** ** LN lemmas — proofs are in Properties.v (all Admitted here) *)
 

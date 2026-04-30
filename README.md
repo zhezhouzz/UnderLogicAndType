@@ -75,7 +75,7 @@ Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Re-exports all of `ChoiceAlgebra` |
-| `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `satisfies` |
+| `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, collapse, erase, adjunction) |
 
 ### `CoreLang/` — The programming language

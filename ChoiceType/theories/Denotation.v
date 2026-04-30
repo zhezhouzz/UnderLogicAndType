@@ -2,14 +2,8 @@
 
     Denotational semantics for the choice type system (§1.5 of the paper).
 
-    The interpretation is given as formulas in [Choice Logic] over
-    [qualifier] atoms:
-      [⟦τ⟧ e  : Formula qualifier]  — type denotation (a predicate on expressions)
-      [⟦Γ⟧    : Formula qualifier]  — context denotation
-
-    We instantiate [satisfies] with:
-      [interp     := qual_interp_world]  (qualifier → StoreT → Prop)
-      [subst_atom := qual_subst]      (StoreT → qualifier → qualifier)
+    The interpretation is given as formulas in [Choice Logic] whose atoms are
+    world predicates.  Qualifiers enter the logic through [qual_atom].
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
@@ -18,22 +12,17 @@ From ChoiceType Require Export Syntax.
 
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
-(** Abbreviation: a Choice Logic formula over qualifier atoms.
-    [FormulaQ] is defined in ChoiceType.Prelude as
-    [@Formula atom _ _ value], so [FormulaQ qualifier] fully determines
-    all implicit parameters and avoids evar ambiguity. *)
-Notation FQ := (FormulaQ qualifier).
+(** Abbreviation: a Choice Logic formula at the ChoiceType instantiation. *)
+Notation FQ := FormulaQ.
 
-(** Satisfaction: [m ⊨ φ]  ↔  [satisfies qual_interp_world qual_subst m φ] *)
+(** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=
-  (satisfies (Var := atom) (Value := value)
-     qual_interp_world qual_subst m φ)
+  (res_models (Var := atom) (Value := value) m φ)
   (at level 70, format "m  ⊨  φ").
 
 (** Entailment shorthand: [φ ⊫ ψ]  ↔  [∀ m, m ⊨ φ → m ⊨ ψ] *)
 Notation "φ ⊫ ψ" :=
-  (entails (Var := atom) (Value := value)
-     qual_interp_world qual_subst φ ψ)
+  (entails (Var := atom) (Value := value) φ ψ)
   (at level 85, ψ at level 84, no associativity).
 
 (** ** Fresh variable helpers for denotation *)
@@ -55,20 +44,20 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
       The result variable ν is chosen fresh w.r.t. φ's free variables.
       FForall ν quantifies over the result coordinate; inside, FImpl links
-      execution to the over-approximation of φ.  FFib (fv φ) quantifies over
-      the remaining free variables of φ for the fiberwise universal. *)
+      execution to the over-approximation of φ.  [FFib (fv φ)] checks the
+      formula on each fiber determined by φ's free variables. *)
   | CTOver b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
-        (FImpl (FAtom (QExpr e ν))
-               (FFib (qual_fv φ) (FOver (FAtom φ))))
+        (FImpl (FAtom (qual_atom (QExpr e ν)))
+               (FFib (qual_fv φ) (FOver (FAtom (qual_atom φ)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
-        (FImpl (FAtom (QExpr e ν))
-               (FFib (qual_fv φ) (FUnder (FAtom φ))))
+        (FImpl (FAtom (qual_atom (QExpr e ν)))
+               (FFib (qual_fv φ) (FUnder (FAtom (qual_atom φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -87,7 +76,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
-          (FAtom (QExpr e y))
+          (FAtom (qual_atom (QExpr e y)))
           (FFib {[y]}
             (FImpl
               (denot_ty τx (tret (vfvar x)))
@@ -98,7 +87,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
-          (FAtom (QExpr e y))
+          (FAtom (qual_atom (QExpr e y)))
           (FFib {[y]}
             (FWand
               (denot_ty τx (tret (vfvar x)))
@@ -136,7 +125,7 @@ Arguments denot_ctx_inst /.
 (** Monotonicity: if m ⊨ ⟦Γ⟧ and m ≤ m', then m' ⊨ ⟦Γ⟧ for comma contexts. *)
 Lemma denot_ctx_mono_comma (Γ : ctx) m m' :
   m ⊨ ⟦Γ⟧ →
-  raw_le (Var := atom) (Value := value) m m' →
+  m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
 Proof. Admitted.
 
@@ -148,18 +137,16 @@ Proof. simpl. reflexivity. Qed.
 (** The context denotation of a star-context distributes over FStar. *)
 Lemma denot_ctx_star Γ1 Γ2 m :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ m1 m2,
-    raw_le (Var := atom) (Value := value) (raw_product m1 m2) m ∧
-    world_compat (Var := atom) (Value := value) m1 m2 ∧
+  ∃ (m1 m2 : WorldT) (Hc : world_compat (Var := atom) (Value := value) m1 m2),
+    res_product (Var := atom) (Value := value) m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
 (** The context denotation of a sum-context distributes over FPlus. *)
 Lemma denot_ctx_sum Γ1 Γ2 m :
   m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
-  ∃ m1 m2,
-    raw_le (Var := atom) (Value := value) (raw_sum m1 m2) m ∧
-    raw_sum_defined (Var := atom) (Value := value) m1 m2 ∧
+  ∃ (m1 m2 : WorldT) (Hdef : raw_sum_defined (Var := atom) (Value := value) m1 m2),
+    res_sum (Var := atom) (Value := value) m1 m2 Hdef ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 

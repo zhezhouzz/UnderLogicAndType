@@ -11,49 +11,16 @@ From CoreLang Require Export Syntax.
 
 (** ** Primitive-operation type signatures
 
-    Each [prim_op] has a list of argument base types and a return base type.
-    The signature is a definition rather than an axiom so the formalization's
-    primitive surface is completely explicit. *)
+    Each [prim_op] has exactly one argument. *)
 
-Parameter data_ctor_type : data_ctor → list base_ty * base_ty.
-
-Definition prim_op_type (op : prim_op) : list base_ty * base_ty :=
+Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   match op with
-  | op_ctor d => data_ctor_type d
-  | op_add => ([TNat; TNat], TNat)
-  | op_sub => ([TNat; TNat], TNat)
-  | op_mul => ([TNat; TNat], TNat)
-  | op_eq  => ([TNat; TNat], TBool)
-  | op_lt  => ([TNat; TNat], TBool)
-  | op_le  => ([TNat; TNat], TBool)
-  | op_and => ([TBool; TBool], TBool)
-  | op_or  => ([TBool; TBool], TBool)
-  | op_not => ([TBool], TBool)
-  | op_nat_gen => ([], TNat)
-  | op_int_gen => ([], TInt)
+  | op_eq0 => (TNat, TBool)
   end.
 
-(** Well-formedness: the type signature is consistent with the paper's ops. *)
 Lemma prim_op_type_wf :
-  prim_op_type op_add = ([TNat; TNat], TNat) ∧
-  prim_op_type op_sub = ([TNat; TNat], TNat) ∧
-  prim_op_type op_mul = ([TNat; TNat], TNat) ∧
-  prim_op_type op_eq  = ([TNat; TNat], TBool) ∧
-  prim_op_type op_lt  = ([TNat; TNat], TBool) ∧
-  prim_op_type op_le  = ([TNat; TNat], TBool) ∧
-  prim_op_type op_and = ([TBool; TBool], TBool) ∧
-  prim_op_type op_or  = ([TBool; TBool], TBool) ∧
-  prim_op_type op_not = ([TBool], TBool) ∧
-  prim_op_type op_nat_gen = ([], TNat) ∧
-  prim_op_type op_int_gen = ([], TInt).
-Proof. repeat split; reflexivity. Qed.
-
-(** Constructor arities for the standard data types. *)
-(** [(constructor_index, arg_base_types)].  We use a simple list;
-    the [BasicTyping] rule for [tmatch] refers to this. *)
-Parameter constructor_tys : base_ty → list (list base_ty).
-(** Example: constructor_tys TBool = [[];[]] (false: 0 args, true: 0 args)
-             constructor_tys TNat  = [[]; [TNat]]  (O: 0 args, S: 1 arg)  *)
+  prim_op_type op_eq0 = (TNat, TBool).
+Proof. reflexivity. Qed.
 
 (** ** Typing judgments *)
 
@@ -86,29 +53,19 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ₑ e1 ⋮ T1 →
       (∀ x, x ∉ L → <[x := T1]>Γ ⊢ₑ (e2 ^^ x) ⋮ T2) →
       Γ ⊢ₑ (tlete e1 e2) ⋮ T2
-  | TT_Op Γ op vs arg_tys ret_b :
-      prim_op_type op = (arg_tys, ret_b) →
-      Forall2 (fun v b => Γ ⊢ᵥ v ⋮ TBase b) vs arg_tys →
-      Γ ⊢ₑ (tprim op vs) ⋮ TBase ret_b
+  | TT_Op Γ op v arg_b ret_b :
+      prim_op_type op = (arg_b, ret_b) →
+      Γ ⊢ᵥ v ⋮ TBase arg_b →
+      Γ ⊢ₑ (tprim op v) ⋮ TBase ret_b
   | TT_App Γ s1 s2 v1 v2 :
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
       Γ ⊢ₑ (tapp v1 v2) ⋮ s2
-  | TT_Match Γ v T branches b :
-      (** The discriminant [v] must have a base type. *)
-      Γ ⊢ᵥ v ⋮ TBase b →
-      length branches = length (constructor_tys b) →
-      (** Each branch has the right number of arguments and types correctly. *)
-      (∀ n body arg_tys,
-         List.In ((n, body), arg_tys) (zip branches (constructor_tys b)) →
-         length arg_tys = n ∧
-         ∀ xs, length xs = n →
-               Forall (fun x => x ∉ dom Γ) xs →
-               NoDup xs →
-               fold_left (fun ctx '(x, bt) => <[x := TBase bt]>ctx)
-                         (zip xs arg_tys) Γ
-                 ⊢ₑ fold_left (fun e x => {0 ~> vfvar x} e) xs body ⋮ T) →
-      Γ ⊢ₑ (tmatch v branches) ⋮ T
+  | TT_Match Γ v T et ef :
+      Γ ⊢ᵥ v ⋮ TBase TBool →
+      Γ ⊢ₑ et ⋮ T →
+      Γ ⊢ₑ ef ⋮ T →
+      Γ ⊢ₑ (tmatch v et ef) ⋮ T
 
 where "Γ '⊢ᵥ' v '⋮' T" := (value_has_type Γ v T)
   and "Γ '⊢ₑ' e '⋮' T" := (tm_has_type Γ e T).

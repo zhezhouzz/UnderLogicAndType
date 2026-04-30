@@ -1,15 +1,15 @@
 (** * ChoiceType.Qualifier
 
-    Qualifiers [φ] are the atomic propositions of Choice Logic.
+    Qualifiers [φ] are the source-level predicates embedded as atomic
+    propositions of Choice Logic.
     We use a *shallow embedding* with length-indexed vectors (following
     UnderType/Qualifier.v), extended with two new constructors:
       [QExpr e ν] — captures the expression-denotation atom ⟦e⟧_ν
       [QProd q1 q2] — captures the resource-product compatibility atom φ×φ
 
-    The [qualifier] type serves as the type parameter [A] in
-    [ChoiceLogic.Formula A].  We provide:
-      [qual_interp  : qualifier → StoreT → Prop]  ([interp]      in ChoiceLogic)
-      [qual_subst   : StoreT → qualifier → qualifier] ([subst_atom] in ChoiceLogic)
+    Choice Logic atoms are semantic predicates over well-formed worlds.  We
+    therefore interpret each qualifier first as a raw world
+    [qual_interp_world q], then embed it as the atomic predicate [qual_atom q].
 
     All locally-nameless operations ([open], [close], [subst_one], etc.)
     act only on the [vals] vector and the [tm] inside [QExpr]; the
@@ -26,17 +26,18 @@ Inductive qualifier : Type :=
   | qual {n : nat} (vals : vec value n) (prop : vec constant n → Prop)
 
   (** Expression-denotation atom.
-      [interp (QExpr e ν) σ]  ≝  ∃ v, (σ(e) →* tret v) ∧ σ !! ν = Some v
+      [qual_interp σ (QExpr e ν)]  ≝  ∃ v, (σ(e) →* tret v) ∧ σ !! ν = Some v
       Intuitively: "e evaluates to the value bound to ν in σ". *)
   | QExpr (e : tm) (result : atom)
 
   (** Resource-product atom (compatibility).
-      [interp (QProd q1 q2) σ]  ≝  ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ store_compat σ1 σ2
-                                             ∧ interp q1 σ1 ∧ interp q2 σ2 *)
+      [qual_interp σ (QProd q1 q2)]  ≝
+        ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ store_compat σ1 σ2
+                 ∧ qual_interp σ1 q1 ∧ qual_interp σ2 q2 *)
   | QProd (q1 q2 : qualifier)
 
   (** Conjunction atom.
-      [interp (QAnd q1 q2) σ]  ≝  interp q1 σ ∧ interp q2 σ
+      [qual_interp σ (QAnd q1 q2)]  ≝  qual_interp σ q1 ∧ qual_interp σ q2
       Used as fallback in [qualifier_and] when q1 or q2 is not a [qual]. *)
   | QAnd (q1 q2 : qualifier).
 
@@ -78,7 +79,9 @@ Fixpoint qual_subst_one (x : atom) (v : value) (q : qualifier) : qualifier :=
   | QAnd  q1 q2   => QAnd  (qual_subst_one x v q1) (qual_subst_one x v q2)
   end.
 
-(** Store action on a qualifier (the [subst_atom] parameter of ChoiceLogic). *)
+(** Store action on a qualifier.  This is still useful for qualifier lemmas and
+    object-language substitution, but the Choice Logic core no longer takes it
+    as a parameter of satisfaction. *)
 Fixpoint qual_subst (σ : StoreT) (q : qualifier) : qualifier :=
   match q with
   | qual vals prop => qual (vmap (value_subst_all σ) vals) prop
@@ -155,7 +158,7 @@ Fixpoint eval_vals (σ : StoreT) {n} (vals : vec value n) : option (vec constant
       end
   end.
 
-(** ** Interpretation function ([interp] in ChoiceLogic)
+(** ** Store-level interpretation
 
     [qual_interp q σ] : the qualifier [q] holds when evaluated at
     store [σ]. *)
@@ -180,7 +183,8 @@ Fixpoint qual_interp (σ : StoreT) (q : qualifier) : Prop :=
 Definition qual_interp_cl (q : qualifier) (σ : StoreT) : Prop :=
   qual_interp σ q.
 
-(** Wrap as a World for the [interp : A → WorldT] parameter of satisfies.
+(** Wrap a qualifier as the least world determined by its free variables and
+    store-level interpretation.
 
     The domain must be [qual_fv q] (the free variables of q), not ∅.
     With [world_dom := ∅], [raw_le (qual_interp_world q) m] would reduce to
@@ -189,8 +193,13 @@ Definition qual_interp_cl (q : qualifier) (σ : StoreT) : Prop :=
     a non-empty store.  Setting [world_dom := qual_fv q] ensures that
     [raw_le (qual_interp_world q) m] means "m restricts to qual_fv(q) in a way
     consistent with q", which is the intended Kripke-resource atom semantics. *)
-Definition qual_interp_world (q : qualifier) : WorldT :=
+Definition qual_interp_world (q : qualifier) : RawWorldT :=
   {| world_dom := qual_fv q; world_stores := qual_interp_cl q |}.
+
+(** Embed a qualifier as a Choice Logic atom.  The qualifier world is raw
+    because an inconsistent qualifier may denote the empty store set. *)
+Definition qual_atom (q : qualifier) : WorldT → Prop :=
+  λ m, raw_le (qual_interp_world q) m.
 
 (** ** Denotation typeclass instance
 

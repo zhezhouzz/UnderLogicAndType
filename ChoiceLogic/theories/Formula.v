@@ -4,91 +4,54 @@ From ChoiceLogic Require Import Prelude.
 
     We define the syntax of choice logic formulas and the satisfaction relation.
 
-    Parameterization:
-    - [A]           : type of atomic propositions
-    - [interp]      : interpretation A → (Store → Prop), maps atoms to sets of stores
-    - [subst_atom]  : Store → A → A, store action on atoms
-                      (used in the [FFib] case to thread σ_X into the interpretation)
+    Atomic propositions are semantic predicates over well-formed worlds
+    [WorldT → Prop].
+    Hence satisfaction does not need a separate interpretation function.
 
-    The formula type [Formula A] contains:
+    The formula type [Formula] contains:
     - standard connectives (⊤, ⊥, atoms, ∧, ∨, ⇒)
     - separation logic connectives (∗, −∗)
     - choice sum (⊕)
     - approximation modalities (o = over, u = under)
     - ordinary quantifiers over fresh world coordinates
-    - fiberwise modality (∀X. p): for each σ_X in proj(m, X), the raw_fiber satisfies σ_X(p)  *)
+    - fiberwise modality [FFib X p]: for each σ_X in the X-projection of m,
+      the well-formed fiber world satisfies p. *)
 
 Section ChoiceLogic.
 
 Context `{Countable Var} `{EqDecision Value}.
 Local Notation StoreT := (gmap Var Value) (only parsing).
-Local Notation WorldT := (@World Var _ _ Value) (only parsing).
+Local Notation WorldT := (@WfWorld Var _ _ Value) (only parsing).
 
 (** ** Formula syntax *)
 
-Inductive Formula (A : Type) : Type :=
+Inductive Formula : Type :=
   | FTrue
   | FFalse
-  | FAtom   (a : A)
-  | FAnd    (p q : Formula A)
-  | FOr     (p q : Formula A)
-  | FImpl   (p q : Formula A)                   (* Kripke implication *)
-  | FStar   (p q : Formula A)                   (* separating conjunction p ∗ q *)
-  | FWand   (p q : Formula A)                   (* magic wand p −∗ q *)
-  | FPlus   (p q : Formula A)                   (* choice sum p ⊕ q *)
-  | FForall (x : Var) (p : Formula A)           (* ordinary universal quantifier *)
-  | FExists (x : Var) (p : Formula A)           (* ordinary existential quantifier *)
-  | FOver   (p : Formula A)                     (* overapproximation  o p *)
-  | FUnder  (p : Formula A)                     (* underapproximation u p *)
-  | FFib    (X : gset Var)                      (* fiberwise modality  ∀X. p *)
-            (p : Formula A).
-
-(** Make [A] implicit inside the section so constructors can be written
-    without an explicit type argument, e.g. [FTrue] not [FTrue A]. *)
-Arguments FTrue  {A}.
-Arguments FFalse {A}.
-Arguments FAtom  {A} _.
-Arguments FAnd   {A} _ _.
-Arguments FOr    {A} _ _.
-Arguments FImpl  {A} _ _.
-Arguments FStar  {A} _ _.
-Arguments FWand  {A} _ _.
-Arguments FPlus  {A} _ _.
-Arguments FForall {A} _ _.
-Arguments FExists {A} _ _.
-Arguments FOver  {A} _.
-Arguments FUnder {A} _.
-Arguments FFib    {A} _ _.
+  | FAtom   (a : WorldT → Prop)
+  | FAnd    (p q : Formula)
+  | FOr     (p q : Formula)
+  | FImpl   (p q : Formula)                     (* Kripke implication *)
+  | FStar   (p q : Formula)                     (* separating conjunction p ∗ q *)
+  | FWand   (p q : Formula)                     (* magic wand p −∗ q *)
+  | FPlus   (p q : Formula)                     (* choice sum p ⊕ q *)
+  | FForall (x : Var) (p : Formula)             (* ordinary universal quantifier *)
+  | FExists (x : Var) (p : Formula)             (* ordinary existential quantifier *)
+  | FOver   (p : Formula)                       (* overapproximation  o p *)
+  | FUnder  (p : Formula)                       (* underapproximation u p *)
+  | FFib    (X : gset Var)                      (* fiberwise modality *)
+            (p : Formula).
 
 (** ** Satisfaction relation
 
-    [satisfies interp subst_atom m φ] is written [m ⊨ φ] below.
+    [res_models m φ] is written [m ⊨ φ] by the ChoiceType layer.
+    Since atoms are already world predicates, [FFib] only changes the current
+    world to the corresponding fiber; there is no syntactic atom-substitution
+    parameter in the logic core. *)
 
-    Role of [subst_atom]:
-    [subst_atom] is only *consumed* in the [FFib] case; every other case
-    merely threads it through to recursive calls so it is available when a
-    nested [FFib] is eventually reached.  It represents the store action on
-    atomic propositions: when entering [∀X. p] under a witness σ_X,
-    atoms that mention variables in X must be specialized to σ_X's values.
-    If atoms are closed (contain no free variables), [subst_atom = λ σ a, a]
-    is the correct instantiation and the threading is a no-op.
-
-    Structural-Fixpoint trick for [FFib]:
-    The semantics of [FFib X p] requires evaluating σ_X(p) — the formula p
-    with every atom a replaced by [subst_atom σ_X a].  The direct approach
-    would recurse on [formula_subst subst_atom σ p], but that is not a
-    syntactic subterm of [FFib X p], so Rocq's structural [Fixpoint]
-    checker rejects it.  Instead we thread σ into the interpretation function:
-      [satisfies (λ a, interp (subst_atom σ a)) subst_atom (raw_fiber m σ) p]
-    Unfolding the definition confirms this is pointwise equal to evaluating
-    the store-specialized formula, with [subst_atom] propagated so that any nested
-    [FFib] can apply its own substitution on top. *)
-
-Fixpoint satisfies {A}
-    (interp     : A → WorldT)
-    (subst_atom : StoreT → A → A)
-    (m          : WorldT)
-    (φ          : Formula A) : Prop :=
+Fixpoint res_models
+    (m : WorldT)
+    (φ : Formula) : Prop :=
   match φ with
 
   (** Basic connectives (Definition 1.8) *)
@@ -98,87 +61,74 @@ Fixpoint satisfies {A}
   | FFalse => False
 
   | FAtom a =>
-      (** m ⊨ a  iff  ⟦a⟧ ≤ᵣ m *)
-      raw_le (interp a) m
+      (** m ⊨ a iff the semantic atomic predicate holds of m. *)
+      a m
 
   | FAnd p q =>
-      satisfies interp subst_atom m p ∧ satisfies interp subst_atom m q
+      res_models m p ∧ res_models m q
 
   | FOr p q =>
-      satisfies interp subst_atom m p ∨ satisfies interp subst_atom m q
+      res_models m p ∨ res_models m q
 
   | FImpl p q =>
       (** Kripke implication: ∀ m' ≥ m. m' ⊨ p → m' ⊨ q *)
-      ∀ m', raw_le m m' → satisfies interp subst_atom m' p →
-            satisfies interp subst_atom m' q
+      ∀ m' : WorldT, m ⊑ m' → res_models m' p → res_models m' q
 
   | FStar p q =>
       (** m ⊨ p ∗ q  iff  ∃ m1 m2. m1 × m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
-      ∃ m1 m2,
-        raw_le (raw_product m1 m2) m ∧
-        world_compat m1 m2 ∧
-        satisfies interp subst_atom m1 p ∧
-        satisfies interp subst_atom m2 q
+      ∃ (m1 m2 : WorldT) (Hc : world_compat m1 m2),
+        res_product m1 m2 Hc ⊑ m ∧
+        res_models m1 p ∧
+        res_models m2 q
 
   | FWand p q =>
       (** m ⊨ p −∗ q  iff  ∀ m'. m' ↑ m  →  m' ⊨ p  →  m' × m ⊨ q *)
-      ∀ m',
-        world_compat m' m →
-        satisfies interp subst_atom m' p →
-        satisfies interp subst_atom (raw_product m' m) q
+      ∀ m' : WorldT,
+        ∀ Hc : world_compat m' m,
+        res_models m' p →
+        res_models (res_product m' m Hc) q
 
   | FPlus p q =>
       (** m ⊨ p ⊕ q  iff  ∃ m1 m2. m1 + m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
-      ∃ m1 m2,
-        raw_le (raw_sum m1 m2) m ∧
-        raw_sum_defined m1 m2 ∧
-        satisfies interp subst_atom m1 p ∧
-        satisfies interp subst_atom m2 q
+      ∃ (m1 m2 : WorldT) (Hdef : raw_sum_defined m1 m2),
+        res_sum m1 m2 Hdef ⊑ m ∧
+        res_models m1 p ∧
+        res_models m2 q
 
   | FForall x p =>
       (** m ⊨ ∀x.p iff every one-coordinate extension of m satisfies p. *)
-      ∀ m',
+      ∀ m' : WorldT,
         world_dom m' = world_dom m ∪ {[x]} →
-        raw_restrict m' (world_dom m) = m →
-        satisfies interp subst_atom m' p
+        res_restrict m' (world_dom m) = m →
+        res_models m' p
 
   | FExists x p =>
       (** m ⊨ ∃x.p iff some one-coordinate extension of m satisfies p. *)
-      ∃ m',
+      ∃ m' : WorldT,
         world_dom m' = world_dom m ∪ {[x]} ∧
-        raw_restrict m' (world_dom m) = m ∧
-        satisfies interp subst_atom m' p
+        res_restrict m' (world_dom m) = m ∧
+        res_models m' p
 
   (** Approximation modalities (Definition 1.9) *)
 
   | FOver p =>
       (** m ⊨ o p  iff  ∃ m' ⊇ m. m' ⊨ p  (over-approximation: superset) *)
-      ∃ m' : WorldT, (∀ σ, m σ → m' σ) ∧ satisfies interp subst_atom m' p
+      ∃ m' : WorldT, (∀ σ, m σ → m' σ) ∧ res_models m' p
 
   | FUnder p =>
       (** m ⊨ u p  iff  ∃ m' ⊆ m. m' ⊨ p  (under-approximation: subset) *)
-      ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ satisfies interp subst_atom m' p
+      ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ res_models m' p
 
   | FFib X p =>
-      (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  raw_fiber(m, σ_X) ⊨ σ_X(p)
-          [subst_atom σ] is applied to every atom via the modified [interp];
-          [subst_atom] itself is forwarded so nested [FFib]s can compose. *)
-      ∀ σ,
-        raw_restrict m X σ →
-        satisfies (λ a, interp (subst_atom σ a)) subst_atom (raw_fiber m σ) p
+      (** m ⊨ FFib X p iff every X-fiber of m satisfies p. *)
+      ∀ σ (Hproj : res_restrict m X σ),
+        res_models (res_fiber_from_projection m X σ Hproj) p
 
   end.
 
-(** Notation: [m ⊨[ interp , sa ] φ] *)
-Local Notation "m ⊨[ interp , sa ] φ" :=
-  (satisfies interp sa m φ) (at level 70, format "m  ⊨[ interp , sa ]  φ").
-
 (** Entailment: φ ⊨ ψ holds when every world satisfying φ also satisfies ψ. *)
-Definition entails {A} interp sa (φ ψ : Formula A) : Prop :=
-  ∀ m, m ⊨[interp, sa] φ → m ⊨[interp, sa] ψ.
-
-Local Notation "φ ⊢[ interp , sa ] ψ" :=
-  (entails interp sa φ ψ) (at level 70, format "φ  ⊢[ interp , sa ]  ψ").
+Definition entails (φ ψ : Formula) : Prop :=
+  ∀ m, res_models m φ → res_models m ψ.
 
 End ChoiceLogic.
 

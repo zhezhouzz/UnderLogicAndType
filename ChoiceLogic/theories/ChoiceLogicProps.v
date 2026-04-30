@@ -12,35 +12,32 @@ Section ChoiceLogicProps.
 
 Context `{Countable Var} `{EqDecision Value}.
 Local Notation StoreT := (gmap Var Value) (only parsing).
-Local Notation WorldT := (@World Var _ _ Value) (only parsing).
+Local Notation WorldT := (@WfWorld Var _ _ Value) (only parsing).
+Local Notation FormulaT := (@Formula Var _ _ Value) (only parsing).
 
-Context {A : Type}.
-Context (interp     : A → WorldT).
-Context (subst_atom : StoreT → A → A).
-
-Notation sat m φ := (satisfies interp subst_atom m φ).
-Notation "φ ⊫ ψ" := (entails interp subst_atom φ ψ) (at level 85, ψ at level 84, no associativity).
+Notation sat m φ := (res_models m φ).
+Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associativity).
 
 (** *** §1 Modality monotonicity *)
 
 (** o and u are monotone w.r.t. entailment. *)
-Lemma over_mono (p q : Formula A) :
+Lemma over_mono (p q : FormulaT) :
   (p ⊫ q) → (FOver p ⊫ FOver q).
 Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 
-Lemma under_mono (p q : Formula A) :
+Lemma under_mono (p q : FormulaT) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
 Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 
 (** Ordinary quantifiers are monotone. *)
-Lemma forall_mono x (p q : Formula A) :
+Lemma forall_mono x (p q : FormulaT) :
   (p ⊫ q) → (FForall x p ⊫ FForall x q).
 Proof.
   unfold entails, sat in *. intros Hip m Hall m' Hdom Hres.
   exact (Hip _ (Hall m' Hdom Hres)).
 Qed.
 
-Lemma exists_mono x (p q : Formula A) :
+Lemma exists_mono x (p q : FormulaT) :
   (p ⊫ q) → (FExists x p ⊫ FExists x q).
 Proof.
   unfold entails, sat in *. intros Hip m [m' [Hdom [Hres Hp]]].
@@ -52,7 +49,7 @@ Qed.
 
     Write ⟦φ⟧ for the extension of φ: the set of worlds satisfying φ. *)
 
-Definition ext (φ : Formula A) : WorldT → Prop :=
+Definition ext (φ : FormulaT) : WorldT → Prop :=
   λ m, sat m φ.
 
 (** Over-closure: O(R) = { m' | ∃ m ∈ R. m ⊆ m' } *)
@@ -64,53 +61,56 @@ Definition under_closure (R : WorldT → Prop) : WorldT → Prop :=
   λ m', ∃ m, R m ∧ ∀ σ, m' σ → m σ.
 
 (** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
-Lemma over_ext_eq (p : Formula A) :
+Lemma over_ext_eq (p : FormulaT) :
   ∀ m, ext (FOver p) m ↔ under_closure (ext p) m.
 Proof. Admitted.
 
 (** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
-Lemma under_ext_eq (p : Formula A) :
+Lemma under_ext_eq (p : FormulaT) :
   ∀ m, ext (FUnder p) m ↔ over_closure (ext p) m.
 Proof. Admitted.
 
 (** *** §3 Collapse of nested modalities  (Theorem 1.11)
 
-    When [A] is rich enough (closed under ∩, ∪, ×), every formula
+    Since atoms are semantic world predicates, the richness assumptions below
+    say that the available atom predicates are closed under the operations
+    needed by the collapse statements.  Every formula
     reduces to one where [FOver] and [FUnder] are applied only to
     atoms [FAtom].  We state the key collapse lemmas; the full induction
     is the collapse theorem. *)
 
 (** Richness assumption on atomic propositions. *)
 Record atoms_rich : Prop := {
-  ar_inter : ∀ a1 a2 : A, ∃ a3 : A,
-    ∀ σ, interp a3 σ ↔ interp a1 σ ∧ interp a2 σ;
-  ar_union : ∀ a1 a2 : A, ∃ a3 : A,
-    ∀ σ, interp a3 σ ↔ interp a1 σ ∨ interp a2 σ;
-  ar_prod  : ∀ a1 a2 : A, ∃ a3 : A,
-    ∀ σ, interp a3 σ ↔
-      ∃ σ1 σ2, interp a1 σ1 ∧ interp a2 σ2 ∧ store_compat σ1 σ2 ∧ σ = σ1 ∪ σ2;
+  ar_inter : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
+    ∀ m, a3 m ↔ a1 m ∧ a2 m;
+  ar_union : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
+    ∀ m, a3 m ↔ a1 m ∨ a2 m;
+  ar_prod  : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
+    ∀ m, a3 m ↔
+      ∃ (m1 m2 : WorldT) (Hc : world_compat m1 m2),
+        a1 m1 ∧ a2 m2 ∧ res_product m1 m2 Hc ⊑ m;
 }.
 
 (** Collapse: o(o φ₁ ∧ o φ₂) ↔ o φ₁ ∧ o φ₂ *)
-Lemma collapse_over_and (p q : Formula A) :
+Lemma collapse_over_and (p q : FormulaT) :
   FOver (FAnd (FOver p) (FOver q)) ⊫ FAnd (FOver p) (FOver q).
 Proof. Admitted.
 
-Lemma collapse_and_over (p q : Formula A) :
+Lemma collapse_and_over (p q : FormulaT) :
   FAnd (FOver p) (FOver q) ⊫ FOver (FAnd (FOver p) (FOver q)).
 Proof. Admitted.
 
 (** Collapse: u(o φ₁ ∧ o φ₂) ↔ u(φ₁ ∩ φ₂) when atoms are rich.
     a3 is the atom witnessing the intersection of a1 and a2. *)
-Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : A) :
-  (∀ σ, interp a3 σ ↔ interp a1 σ ∧ interp a2 σ) →
+Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : WorldT → Prop) :
+  (∀ m, a3 m ↔ a1 m ∧ a2 m) →
   FUnder (FAnd (FOver (FAtom a1)) (FOver (FAtom a2))) ⊫ FUnder (FAtom a3).
 Proof. Admitted.
 
 (** Full collapse theorem: when atoms are rich, every formula is equivalent
     to one in approximation normal form (ANF): FOver and FUnder applied only to atoms. *)
-Theorem collapse_to_ANF (h : atoms_rich) (φ : Formula A) :
-  ∃ φ_anf : Formula A,
+Theorem collapse_to_ANF (h : atoms_rich) (φ : FormulaT) :
+  ∃ φ_anf : FormulaT,
     (** φ_anf is in ANF: every FOver/FUnder directly wraps an FAtom *)
     (∀ m, sat m φ ↔ sat m φ_anf).
 Proof. Admitted.
@@ -130,7 +130,7 @@ Definition erase_min (S : WorldT → Prop) : WorldT → Prop :=
 Notation "/u" := erase_min.
 
 (** Semantic erase modality: ⟦/u p⟧ = /u(⟦p⟧). *)
-Definition erase_interp (p : Formula A) : WorldT → Prop :=
+Definition erase_interp (p : FormulaT) : WorldT → Prop :=
   erase_min (ext p).
 
 (** Galois connection: /u(R₁) ⊆ R₂ ↔ R₁ ⊆ U(R₂)  (§1.3) *)
@@ -139,21 +139,21 @@ Lemma erase_galois (R1 R2 : WorldT → Prop) :
 Proof. Admitted.
 
 (** /u erases redundant proof obligations: if (/u p) → q then p → q. *)
-Lemma erase_suffices (p q : Formula A) :
+Lemma erase_suffices (p q : FormulaT) :
   (∀ m, erase_interp p m → sat m q) →
   (∀ m, sat m p → sat m q).
 Proof. Admitted.
 
 (** Flip from under to over at negative position:
     if o(/u(u φ)) suffices for q, then o φ suffices for q  (§1.3) *)
-Lemma erase_flip_under (φ : Formula A) (q : Formula A) :
+Lemma erase_flip_under (φ : FormulaT) (q : FormulaT) :
   (∀ m, erase_interp (FUnder φ) m → sat m q) →
   (∀ m, sat m (FOver φ) → sat m q).
 Proof. Admitted.
 
 (** ** Adjunction: ∗ and −∗ *)
 
-Lemma star_wand_adjunction (p q r : Formula A) :
+Lemma star_wand_adjunction (p q r : FormulaT) :
   (FAnd (FStar p q) r ⊫ FStar p (FAnd q r)) →
   (p ⊫ FWand q r) →
   (FStar p q ⊫ r).

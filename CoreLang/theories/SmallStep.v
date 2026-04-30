@@ -9,27 +9,17 @@
 
 From CoreLang Require Export Syntax BasicTyping.
 
-(** ** Postulated evaluation of primitive operations
+(** ** Evaluation of primitive operations *)
 
-    [prim_eval op cs] : evaluate [op] on closed constant arguments [cs].
-    Returns [None] for nondeterministic operations (nat_gen, int_gen)
-    so that they can produce any value. *)
-Parameter prim_eval : prim_op → list constant → option constant.
+Definition prim_eval (op : prim_op) (c : constant) : option constant :=
+  match op, c with
+  | op_eq0, cnat n => Some (cbool (n =? 0))
+  | _, _ => None
+  end.
 
 (** Consistency axioms (not needed for type soundness, but clarify intent). *)
-Parameter prim_eval_add : ∀ n m, prim_eval op_add [cnat n; cnat m] = Some (cnat (n + m)).
-Parameter prim_eval_sub : ∀ n m, prim_eval op_sub [cnat n; cnat m] = Some (cnat (n - m)).
-Parameter prim_eval_eq  : ∀ n m, prim_eval op_eq  [cnat n; cnat m] = Some (cbool (n =? m)).
-
-(** ** Postulated pattern-matching oracle
-
-    [match_branch v brs] selects the branch that matches [v],
-    returning [Some (n, body)] where [n] constructor args are in [body]. *)
-Parameter match_branch : value → list (nat * tm) → option (nat * tm).
-
-(** The result must be one of the branches. *)
-Parameter match_branch_member : ∀ v brs n body,
-  match_branch v brs = Some (n, body) → (n, body) ∈ brs.
+Lemma prim_eval_eq0 : ∀ n, prim_eval op_eq0 (cnat n) = Some (cbool (n =? 0)).
+Proof. reflexivity. Qed.
 
 (** ** Head reduction *)
 
@@ -42,21 +32,11 @@ Inductive head_step : tm → tm → Prop :=
       lc_tm (tlete (tret v) e) →
       head_step (tlete (tret v) e) ({0 ~> v} e)
 
-  (** [tprim op vs  →  c]  when [prim_eval] succeeds *)
-  | HS_Op op vs cs c :
-      Forall2 (fun v c => v = vconst c) vs cs →
-      prim_eval op cs = Some c →
-      lc_tm (tprim op vs) →
-      head_step (tprim op vs) (tret (vconst c))
-
-  (** Nondeterministic ops: [op_nat_gen] and [op_int_gen]. *)
-  | HS_NatGen n :
-      lc_tm (tprim op_nat_gen []) →
-      head_step (tprim op_nat_gen []) (tret (vconst (cnat n)))
-
-  | HS_IntGen z :
-      lc_tm (tprim op_int_gen []) →
-      head_step (tprim op_int_gen []) (tret (vconst (cint z)))
+  (** [tprim op c  →  c']  when [prim_eval] succeeds *)
+  | HS_Op op c c' :
+      prim_eval op c = Some c' →
+      lc_tm (tprim op (vconst c)) →
+      head_step (tprim op (vconst c)) (tret (vconst c'))
 
   (** [tapp (vlam s body) v  →  body[0 ↦ v]] *)
   | HS_Beta s body v :
@@ -72,17 +52,13 @@ Inductive head_step : tm → tm → Prop :=
       head_step (tapp self v)
                 ({0 ~> v} ({1 ~> self} body))
 
-  (** [tmatch v brs  →  body[0..n-1 ↦ constructor args of v]]
-      The oracle selects the branch; the [n] arguments of [v]'s
-      constructor are opened into the branch body. *)
-  | HS_Match v brs n body args :
-      match_branch v brs = Some (n, body) →
-      (** [args] are the sub-values of the matched constructor [v]. *)
-      length args = n →
-      Forall lc_value args →
-      lc_tm (tmatch v brs) →
-      head_step (tmatch v brs)
-                (fold_left (fun e vx => {0 ~> vx} e) args body).
+  | HS_MatchTrue et ef :
+      lc_tm (tmatch (vconst (cbool true)) et ef) →
+      head_step (tmatch (vconst (cbool true)) et ef) et
+
+  | HS_MatchFalse et ef :
+      lc_tm (tmatch (vconst (cbool false)) et ef) →
+      head_step (tmatch (vconst (cbool false)) et ef) ef.
 
 #[global] Hint Constructors head_step : core.
 
@@ -123,13 +99,11 @@ Proof.
   exfalso. eapply val_no_step; eauto.
 Qed.
 
-(** ** Determinism (up to nondeterminism of gen-ops) *)
+(** ** Determinism *)
 
-(** For deterministic operations, head_step is deterministic. *)
 Lemma head_step_det e e1 e2 :
   head_step e e1 → head_step e e2 →
-  (∀ op cs c1 c2, prim_eval op cs = Some c1 → prim_eval op cs = Some c2 → c1 = c2) →
-  e1 = e2 ∨ (∃ op, op = op_nat_gen ∨ op = op_int_gen).
+  e1 = e2.
 Proof. Admitted.
 
 (** ** Preservation (BasicTyping invariant — Admitted here, proved in Properties) *)

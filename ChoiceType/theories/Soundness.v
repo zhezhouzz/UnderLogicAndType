@@ -6,15 +6,15 @@ From ChoiceType Require Export Typing.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
 
-Lemma satisfies_impl_mono (φ ψ : FQ) (m m' : WorldT) :
+Lemma res_models_impl_mono (φ ψ : FQ) (m m' : WorldT) :
   m ⊨ FImpl φ ψ →
-  raw_le (Var := atom) (Value := value) m m' →
+  m ⊑ m' →
   m' ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma satisfies_and_mono (φ ψ : FQ) (m m' : WorldT) :
+Lemma res_models_and_mono (φ ψ : FQ) (m m' : WorldT) :
   m ⊨ FAnd φ ψ →
-  raw_le (Var := atom) (Value := value) m m' →
+  m ⊑ m' →
   m' ⊨ FAnd φ ψ.
 Proof. Admitted.
 
@@ -65,42 +65,41 @@ Proof. simpl. reflexivity. Qed.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WorldT) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ m1 m2,
-    raw_le (Var := atom) (Value := value) (raw_product m1 m2) m ∧
-    world_compat (Var := atom) (Value := value) m1 m2 ∧
+  ∃ (m1 m2 : WorldT) (Hc : world_compat (Var := atom) (Value := value) m1 m2),
+    res_product (Var := atom) (Value := value) m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
-Lemma satisfies_impl_intro (m : WorldT) (φ ψ : FQ) :
-  (∀ m', raw_le (Var := atom) (Value := value) m m' →
+Lemma res_models_impl_intro (m : WorldT) (φ ψ : FQ) :
+  (∀ m', m ⊑ m' →
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma satisfies_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
+Lemma res_models_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
   (∀ σ,
-     raw_restrict (Var := atom) (Value := value) m X σ →
-     raw_fiber (Var := atom) (Value := value) m σ ⊨ φ) →
+     ∀ Hproj : res_restrict (Var := atom) (Value := value) m X σ,
+     res_fiber_from_projection (Var := atom) (Value := value) m X σ Hproj ⊨ φ) →
   m ⊨ FFib X φ.
 Proof. Admitted.
 
-Lemma satisfies_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
-  (∀ m',
+Lemma res_models_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
+  (∀ m' : WorldT,
       world_dom m' = world_dom m ∪ {[x]} →
-      raw_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+      res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
       m' ⊨ φ) →
   m ⊨ FForall x φ.
 Proof. Admitted.
 
-Lemma satisfies_exists_intro (m m' : WorldT) (x : atom) (φ : FQ) :
+Lemma res_models_exists_intro (m m' : WorldT) (x : atom) (φ : FQ) :
   world_dom m' = world_dom m ∪ {[x]} →
-  raw_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+  res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
   m' ⊨ φ →
   m ⊨ FExists x φ.
 Proof. Admitted.
 
-Lemma ctx_satisfies_mono (Γ : ctx) (m m' : WorldT) :
+Lemma ctx_res_models_mono (Γ : ctx) (m m' : WorldT) :
   m ⊨ ⟦Γ⟧ →
-  raw_le (Var := atom) (Value := value) m m' →
+  m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
 Proof. Admitted.
