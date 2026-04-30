@@ -8,8 +8,8 @@
       [⟦Γ⟧    : Formula qualifier]  — context denotation
 
     We instantiate [satisfies] with:
-      [interp     := qual_interp_world]  (qualifier → SubstT → Prop)
-      [subst_atom := qual_subst]      (SubstT → qualifier → qualifier)
+      [interp     := qual_interp_world]  (qualifier → StoreT → Prop)
+      [subst_atom := qual_subst]      (StoreT → qualifier → qualifier)
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
@@ -54,19 +54,19 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
       The result variable ν is chosen fresh w.r.t. φ's free variables.
-      FFib {ν} quantifies over ν; inside, FImpl links execution to
-      the over-approximation of φ.  FFib (fv φ) quantifies over
+      FForall ν quantifies over the result coordinate; inside, FImpl links
+      execution to the over-approximation of φ.  FFib (fv φ) quantifies over
       the remaining free variables of φ for the fiberwise universal. *)
   | CTOver b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
-      FFib {[ν]}
+      FForall ν
         (FImpl (FAtom (QExpr e ν))
                (FFib (qual_fv φ) (FOver (FAtom φ))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
-      FFib {[ν]}
+      FForall ν
         (FImpl (FAtom (QExpr e ν))
                (FFib (qual_fv φ) (FUnder (FAtom φ))))
 
@@ -82,18 +82,27 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
   | CTSum τ1 τ2 =>
       FPlus (denot_ty τ1 e) (denot_ty τ2 e)
 
-  (** x:τ_x →, τ  ≝  ⟦τ_x⟧ x ⊸ ⟦τ⟧ (e x)
-      [e] is an expression (tm), so applying it to [vfvar x] requires first
-      running [e] to get a function value (bound to bvar 0 by tlete), then
-      applying that value.  The ANF encoding: let f = e in f x. *)
+  (** x:τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.(⟦τ_x⟧ x ⇒ ⟦τ⟧ (y x)) *)
   | CTArrow x τx τ =>
-      FImpl
-        (denot_ty τx (tret (vfvar x)))
-        (denot_ty τ  (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
+      let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
+      FForall y
+        (FImpl
+          (FAtom (QExpr e y))
+          (FFib {[y]}
+            (FImpl
+              (denot_ty τx (tret (vfvar x)))
+              (denot_ty τ (tapp (vfvar y) (vfvar x))))))
 
-  (** ∗τ  ≝  ind (⟦τ⟧ e)  — independence modality *)
-  | CTStar τ =>
-      FInd (denot_ty τ e)
+  (** x:τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.(⟦τ_x⟧ x −∗ ⟦τ⟧ (y x)) *)
+  | CTWand x τx τ =>
+      let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
+      FForall y
+        (FImpl
+          (FAtom (QExpr e y))
+          (FFib {[y]}
+            (FWand
+              (denot_ty τx (tret (vfvar x)))
+              (denot_ty τ (tapp (vfvar y) (vfvar x))))))
 
   end.
 

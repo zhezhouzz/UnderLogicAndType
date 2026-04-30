@@ -33,7 +33,16 @@ Inductive constant : Type :=
 
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
+Inductive data_ctor : Type :=
+  | dc_unit | dc_true | dc_false
+  | dc_O | dc_S
+  | dc_Nil | dc_Cons
+  | dc_Leaf | dc_Node.
+
+#[global] Instance data_ctor_eqdec : EqDecision data_ctor. Proof. solve_decision. Defined.
+
 Inductive prim_op : Type :=
+  | op_ctor (d : data_ctor)
   | op_add | op_sub | op_mul
   | op_eq  | op_lt  | op_le
   | op_and | op_or  | op_not
@@ -52,8 +61,6 @@ Definition base_ty_of_const (c : constant) : base_ty :=
       [vfix sf sx e]   : bvar 0 in e  = x (inner λ-arg)
                          bvar 1 in e  = f (fix self-ref, outer)
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
-      [tletop op vs e] : bvar 0 in e  = the result of the operation
-      [tletapp v1 v2 e]: bvar 0 in e  = the result of the application
       [tmatch v brs]   : branch (n, body): bvar 0..n-1 in body = constructor args *)
 
 Inductive value : Type :=
@@ -66,8 +73,8 @@ Inductive value : Type :=
 with tm : Type :=
   | tret    (v : value)
   | tlete   (e1 e2 : tm)
-  | tletop  (op : prim_op) (args : list value)  (e : tm)
-  | tletapp (v1 v2 : value)                     (e : tm)
+  | tprim     (op : prim_op) (args : list value)
+  | tapp    (v1 v2 : value)
   | tmatch  (v : value) (branches : list (nat * tm)).
 
 (** A branch [(n, body)] binds [n] constructor arguments in [body]. *)
@@ -107,9 +114,8 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
   match e with
   | tret v          => tret (open_value k s v)
   | tlete e1 e2     => tlete (open_tm k s e1) (open_tm (S k) s e2)
-  | tletop op vs e  => tletop op (map (open_value k s) vs) (open_tm (S k) s e)
-  | tletapp v1 v2 e => tletapp (open_value k s v1) (open_value k s v2)
-                                (open_tm (S k) s e)
+  | tprim op vs       => tprim op (map (open_value k s) vs)
+  | tapp v1 v2      => tapp (open_value k s v1) (open_value k s v2)
   | tmatch v brs    =>
       tmatch (open_value k s v)
         (map (fun '(n, body) => (n, open_tm (k + n) s body)) brs)
@@ -141,9 +147,8 @@ with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   match e with
   | tret v          => tret (close_value x k v)
   | tlete e1 e2     => tlete (close_tm x k e1) (close_tm x (S k) e2)
-  | tletop op vs e  => tletop op (map (close_value x k) vs) (close_tm x (S k) e)
-  | tletapp v1 v2 e => tletapp (close_value x k v1) (close_value x k v2)
-                                (close_tm x (S k) e)
+  | tprim op vs       => tprim op (map (close_value x k) vs)
+  | tapp v1 v2      => tapp (close_value x k v1) (close_value x k v2)
   | tmatch v brs    =>
       tmatch (close_value x k v)
         (map (fun '(n, body) => (n, close_tm x (k + n) body)) brs)
@@ -168,8 +173,8 @@ with fv_tm (e : tm) : aset :=
   match e with
   | tret v          => fv_value v
   | tlete e1 e2     => fv_tm e1 ∪ fv_tm e2
-  | tletop _ vs e   => (⋃ (fv_value <$> vs)) ∪ fv_tm e
-  | tletapp v1 v2 e => fv_value v1 ∪ fv_value v2 ∪ fv_tm e
+  | tprim _ vs        => ⋃ (fv_value <$> vs)
+  | tapp v1 v2      => fv_value v1 ∪ fv_value v2
   | tmatch v brs    =>
       fv_value v ∪ ⋃ ((fun '(_, body) => fv_tm body) <$> brs)
   end.
@@ -193,9 +198,8 @@ with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   match e with
   | tret v          => tret (value_subst x s v)
   | tlete e1 e2     => tlete (tm_subst x s e1) (tm_subst x s e2)
-  | tletop op vs e  => tletop op (map (value_subst x s) vs) (tm_subst x s e)
-  | tletapp v1 v2 e => tletapp (value_subst x s v1) (value_subst x s v2)
-                                (tm_subst x s e)
+  | tprim op vs       => tprim op (map (value_subst x s) vs)
+  | tapp v1 v2      => tapp (value_subst x s v1) (value_subst x s v2)
   | tmatch v brs    =>
       tmatch (value_subst x s v)
         (map (fun '(n, body) => (n, tm_subst x s body)) brs)
@@ -252,14 +256,12 @@ with lc_tm : tm → Prop :=
       lc_tm e1 →
       (∀ x, x ∉ L → lc_tm ({0 ~> (vfvar x)} e2)) →
       lc_tm (tlete e1 e2)
-  | LC_letop op vs e (L : aset) :
+  | LC_op op vs :
       Forall lc_value vs →
-      (∀ x, x ∉ L → lc_tm ({0 ~> (vfvar x)} e)) →
-      lc_tm (tletop op vs e)
-  | LC_letapp v1 v2 e (L : aset) :
+      lc_tm (tprim op vs)
+  | LC_app v1 v2 :
       lc_value v1 → lc_value v2 →
-      (∀ x, x ∉ L → lc_tm ({0 ~> (vfvar x)} e)) →
-      lc_tm (tletapp v1 v2 e)
+      lc_tm (tapp v1 v2)
   | LC_match v brs :
       lc_value v →
       (∀ n body, List.In (n, body) brs → branch_lc n body) →

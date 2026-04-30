@@ -84,11 +84,19 @@ Lemma satisfies_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
   m ⊨ FFib X φ.
 Proof. Admitted.
 
-Lemma satisfies_ind_intro (m : WorldT) (φ : FQ) :
-  (∀ σ, m σ →
-        satisfies qual_interp_world qual_subst
-          (singleton_world σ) φ) →
-  m ⊨ FInd φ.
+Lemma satisfies_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
+  (∀ m',
+      world_dom m' = world_dom m ∪ {[x]} →
+      raw_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+      m' ⊨ φ) →
+  m ⊨ FForall x φ.
+Proof. Admitted.
+
+Lemma satisfies_exists_intro (m m' : WorldT) (x : atom) (φ : FQ) :
+  world_dom m' = world_dom m ∪ {[x]} →
+  raw_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+  m' ⊨ φ →
+  m ⊨ FExists x φ.
 Proof. Admitted.
 
 Lemma ctx_satisfies_mono (Γ : ctx) (m m' : WorldT) :

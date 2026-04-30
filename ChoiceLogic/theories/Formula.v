@@ -6,8 +6,8 @@ From ChoiceLogic Require Import Prelude.
 
     Parameterization:
     - [A]           : type of atomic propositions
-    - [interp]      : interpretation A → (Subst → Prop), maps atoms to sets of substs
-    - [subst_atom]  : Subst → A → A, substitution action on atoms
+    - [interp]      : interpretation A → (Store → Prop), maps atoms to sets of stores
+    - [subst_atom]  : Store → A → A, store action on atoms
                       (used in the [FFib] case to thread σ_X into the interpretation)
 
     The formula type [Formula A] contains:
@@ -15,13 +15,13 @@ From ChoiceLogic Require Import Prelude.
     - separation logic connectives (∗, −∗)
     - choice sum (⊕)
     - approximation modalities (o = over, u = under)
-    - independent modality
+    - ordinary quantifiers over fresh world coordinates
     - fiberwise modality (∀X. p): for each σ_X in proj(m, X), the raw_fiber satisfies σ_X(p)  *)
 
 Section ChoiceLogic.
 
 Context `{Countable Var} `{EqDecision Value}.
-Local Notation SubstT := (gmap Var Value) (only parsing).
+Local Notation StoreT := (gmap Var Value) (only parsing).
 Local Notation WorldT := (@World Var _ _ Value) (only parsing).
 
 (** ** Formula syntax *)
@@ -36,9 +36,10 @@ Inductive Formula (A : Type) : Type :=
   | FStar   (p q : Formula A)                   (* separating conjunction p ∗ q *)
   | FWand   (p q : Formula A)                   (* magic wand p −∗ q *)
   | FPlus   (p q : Formula A)                   (* choice sum p ⊕ q *)
+  | FForall (x : Var) (p : Formula A)           (* ordinary universal quantifier *)
+  | FExists (x : Var) (p : Formula A)           (* ordinary existential quantifier *)
   | FOver   (p : Formula A)                     (* overapproximation  o p *)
   | FUnder  (p : Formula A)                     (* underapproximation u p *)
-  | FInd    (p : Formula A)                     (* independent modality *)
   | FFib    (X : gset Var)                      (* fiberwise modality  ∀X. p *)
             (p : Formula A).
 
@@ -53,9 +54,10 @@ Arguments FImpl  {A} _ _.
 Arguments FStar  {A} _ _.
 Arguments FWand  {A} _ _.
 Arguments FPlus  {A} _ _.
+Arguments FForall {A} _ _.
+Arguments FExists {A} _ _.
 Arguments FOver  {A} _.
 Arguments FUnder {A} _.
-Arguments FInd    {A} _.
 Arguments FFib    {A} _ _.
 
 (** ** Satisfaction relation
@@ -65,8 +67,8 @@ Arguments FFib    {A} _ _.
     Role of [subst_atom]:
     [subst_atom] is only *consumed* in the [FFib] case; every other case
     merely threads it through to recursive calls so it is available when a
-    nested [FFib] is eventually reached.  It represents the substitution
-    action on atomic propositions: when entering [∀X. p] under a witness σ_X,
+    nested [FFib] is eventually reached.  It represents the store action on
+    atomic propositions: when entering [∀X. p] under a witness σ_X,
     atoms that mention variables in X must be specialized to σ_X's values.
     If atoms are closed (contain no free variables), [subst_atom = λ σ a, a]
     is the correct instantiation and the threading is a no-op.
@@ -79,12 +81,12 @@ Arguments FFib    {A} _ _.
     checker rejects it.  Instead we thread σ into the interpretation function:
       [satisfies (λ a, interp (subst_atom σ a)) subst_atom (raw_fiber m σ) p]
     Unfolding the definition confirms this is pointwise equal to evaluating
-    the substituted formula, with [subst_atom] propagated so that any nested
+    the store-specialized formula, with [subst_atom] propagated so that any nested
     [FFib] can apply its own substitution on top. *)
 
 Fixpoint satisfies {A}
     (interp     : A → WorldT)
-    (subst_atom : SubstT → A → A)
+    (subst_atom : StoreT → A → A)
     (m          : WorldT)
     (φ          : Formula A) : Prop :=
   match φ with
@@ -133,6 +135,20 @@ Fixpoint satisfies {A}
         satisfies interp subst_atom m1 p ∧
         satisfies interp subst_atom m2 q
 
+  | FForall x p =>
+      (** m ⊨ ∀x.p iff every one-coordinate extension of m satisfies p. *)
+      ∀ m',
+        world_dom m' = world_dom m ∪ {[x]} →
+        raw_restrict m' (world_dom m) = m →
+        satisfies interp subst_atom m' p
+
+  | FExists x p =>
+      (** m ⊨ ∃x.p iff some one-coordinate extension of m satisfies p. *)
+      ∃ m',
+        world_dom m' = world_dom m ∪ {[x]} ∧
+        raw_restrict m' (world_dom m) = m ∧
+        satisfies interp subst_atom m' p
+
   (** Approximation modalities (Definition 1.9) *)
 
   | FOver p =>
@@ -142,11 +158,6 @@ Fixpoint satisfies {A}
   | FUnder p =>
       (** m ⊨ u p  iff  ∃ m' ⊆ m. m' ⊨ p  (under-approximation: subset) *)
       ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ satisfies interp subst_atom m' p
-
-  | FInd p =>
-      (** m ⊨ ind p  iff  ∀ σ ∈ m. {σ} ⊨ p *)
-      ∀ σ, m σ →
-        satisfies interp subst_atom (singleton_world σ) p
 
   | FFib X p =>
       (** m ⊨ ∀X. p  iff  ∀ σ_X ∈ proj(m, X).  raw_fiber(m, σ_X) ⊨ σ_X(p)
@@ -183,7 +194,8 @@ Arguments FImpl  {_} {_} {_} {_} _ _ : rename.
 Arguments FStar  {_} {_} {_} {_} _ _ : rename.
 Arguments FWand  {_} {_} {_} {_} _ _ : rename.
 Arguments FPlus  {_} {_} {_} {_} _ _ : rename.
+Arguments FForall {_} {_} {_} {_} _ _ : rename.
+Arguments FExists {_} {_} {_} {_} _ _ : rename.
 Arguments FOver  {_} {_} {_} {_} _ : rename.
 Arguments FUnder {_} {_} {_} {_} _ : rename.
-Arguments FInd    {_} {_} {_} {_} _ : rename.
 Arguments FFib    {_} {_} {_} {_} _ _ : rename.

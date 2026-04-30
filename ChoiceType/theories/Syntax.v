@@ -22,8 +22,8 @@ Inductive choice_ty : Type :=
   | CTSum   (τ1 τ2 : choice_ty)
   (** Dependent function type: x:τ_x → τ *)
   | CTArrow (x : atom) (τx τ : choice_ty)
-  (** Independence modality: ∗τ *)
-  | CTStar  (τ : choice_ty).
+  (** Dependent separating function type: x:τ_x ⊸ τ *)
+  | CTWand  (x : atom) (τx τ : choice_ty).
 
 (** ** Type contexts *)
 
@@ -33,6 +33,25 @@ Inductive ctx : Type :=
   | CtxComma (Γ1 Γ2 : ctx)   (** Γ,Γ  additive / comma bunching *)
   | CtxStar  (Γ1 Γ2 : ctx)   (** Γ∗Γ  multiplicative / star bunching *)
   | CtxSum   (Γ1 Γ2 : ctx).  (** Γ⊕Γ  context choice / splitting *)
+
+(** Contexts with holes [Δ] from the paper.  [plug_ctx Δ Γ] denotes
+    Δ(Γ).  The [CtxHoleCtx] case lets a raw context appear as a leaf inside
+    a context-with-hole expression. *)
+Inductive ctx_hole : Type :=
+  | CtxHole
+  | CtxHoleCtx   (Γ : ctx)
+  | CtxHoleComma (Δ1 Δ2 : ctx_hole)
+  | CtxHoleStar  (Δ1 Δ2 : ctx_hole)
+  | CtxHoleSum   (Δ1 Δ2 : ctx_hole).
+
+Fixpoint plug_ctx (Δ : ctx_hole) (Γ : ctx) : ctx :=
+  match Δ with
+  | CtxHole             => Γ
+  | CtxHoleCtx Γ0       => Γ0
+  | CtxHoleComma Δ1 Δ2  => CtxComma (plug_ctx Δ1 Γ) (plug_ctx Δ2 Γ)
+  | CtxHoleStar  Δ1 Δ2  => CtxStar  (plug_ctx Δ1 Γ) (plug_ctx Δ2 Γ)
+  | CtxHoleSum   Δ1 Δ2  => CtxSum   (plug_ctx Δ1 Γ) (plug_ctx Δ2 Γ)
+  end.
 
 (** ** Type erasure and lifting *)
 
@@ -45,7 +64,7 @@ Fixpoint erase_ty (τ : choice_ty) : ty :=
   | CTUnion τ1 _    => erase_ty τ1
   | CTSum   τ1 _    => erase_ty τ1
   | CTArrow _ τx τ  => erase_ty τx →ₜ erase_ty τ
-  | CTStar  τ       => erase_ty τ
+  | CTWand  _ τx τ  => erase_ty τx →ₜ erase_ty τ
   end.
 
 (** [lift_ty s] : lift a basic type to the default over-refinement type. *)
@@ -92,7 +111,7 @@ Fixpoint fv_cty (τ : choice_ty) : aset :=
   | CTUnion τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
   | CTSum   τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
   | CTArrow x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
-  | CTStar  τ       => fv_cty τ
+  | CTWand  x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
   end.
 
 Fixpoint fv_ctx (Γ : ctx) : aset :=
@@ -144,9 +163,10 @@ Inductive wf_choice_ty : choice_ty → Prop :=
       wf_choice_ty τx →
       wf_choice_ty τ →
       wf_choice_ty (CTArrow x τx τ)
-  | Wf_CTStar τ :
+  | Wf_CTWand x τx τ :
+      wf_choice_ty τx →
       wf_choice_ty τ →
-      wf_choice_ty (CTStar τ).
+      wf_choice_ty (CTWand x τx τ).
 
 Inductive wf_ctx : ctx → Prop :=
   | Wf_CtxEmpty :
@@ -184,10 +204,11 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
   | CTSum   τ1 τ2   => CTSum   (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTArrow y τx τ  => CTArrow y (cty_subst_one x v τx)
                           (if decide (x = y) then τ else cty_subst_one x v τ)
-  | CTStar  τ       => CTStar  (cty_subst_one x v τ)
+  | CTWand y τx τ   => CTWand y (cty_subst_one x v τx)
+                          (if decide (x = y) then τ else cty_subst_one x v τ)
   end.
 
-Fixpoint cty_subst (σ : SubstT) (τ : choice_ty) : choice_ty :=
+Fixpoint cty_subst (σ : StoreT) (τ : choice_ty) : choice_ty :=
   match τ with
   | CTOver  b φ     => CTOver  b (qual_subst σ φ)
   | CTUnder b φ     => CTUnder b (qual_subst σ φ)
@@ -195,21 +216,19 @@ Fixpoint cty_subst (σ : SubstT) (τ : choice_ty) : choice_ty :=
   | CTUnion τ1 τ2   => CTUnion (cty_subst σ τ1) (cty_subst σ τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst σ τ1) (cty_subst σ τ2)
   | CTArrow x τx τ  => CTArrow x (cty_subst σ τx) (cty_subst (delete x σ) τ)
-  | CTStar  τ       => CTStar  (cty_subst σ τ)
+  | CTWand x τx τ   => CTWand x (cty_subst σ τx) (cty_subst (delete x σ) τ)
   end.
 
 #[global] Instance subst_cty_inst  : SubstV value choice_ty   := cty_subst_one.
-#[global] Instance substM_cty_inst : SubstM SubstT choice_ty := cty_subst.
+#[global] Instance substM_cty_inst : SubstM StoreT choice_ty := cty_subst.
 Arguments subst_cty_inst /.
 Arguments substM_cty_inst /.
 
 (** ** Type aliases and notation *)
 
-(** Wand type is syntax sugar: x:τx ⊸ τ  ≝  x:(∗τx) →, τ *)
 Notation "x ':' τx '→,' τ" := (CTArrow x τx τ)
   (at level 30, x constr, τx constr, right associativity).
-(** Wand type is only an alias: x:τx ⊸ τ ≝ x:(∗τx) → τ. *)
-Notation "x ':' τx '⊸' τ" := (CTArrow x (CTStar τx) τ)
+Notation "x ':' τx '⊸' τ" := (CTWand x τx τ)
   (at level 30, x constr, τx constr, right associativity).
 
 (** Non-dependent arrow: τ1 →, τ2  when x ∉ fv_cty τ2 *)

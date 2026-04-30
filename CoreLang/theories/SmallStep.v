@@ -42,37 +42,35 @@ Inductive head_step : tm → tm → Prop :=
       lc_tm (tlete (tret v) e) →
       head_step (tlete (tret v) e) ({0 ~> v} e)
 
-  (** [tletop op vs e  →  e[0 ↦ c]]  when [prim_eval] succeeds *)
-  | HS_Op op vs cs c e :
+  (** [tprim op vs  →  c]  when [prim_eval] succeeds *)
+  | HS_Op op vs cs c :
       Forall2 (fun v c => v = vconst c) vs cs →
       prim_eval op cs = Some c →
-      lc_tm (tletop op vs e) →
-      head_step (tletop op vs e) ({0 ~> vconst c} e)
+      lc_tm (tprim op vs) →
+      head_step (tprim op vs) (tret (vconst c))
 
   (** Nondeterministic ops: [op_nat_gen] and [op_int_gen]. *)
-  | HS_NatGen n e :
-      lc_tm (tletop op_nat_gen [] e) →
-      head_step (tletop op_nat_gen [] e) ({0 ~> vconst (cnat n)} e)
+  | HS_NatGen n :
+      lc_tm (tprim op_nat_gen []) →
+      head_step (tprim op_nat_gen []) (tret (vconst (cnat n)))
 
-  | HS_IntGen z e :
-      lc_tm (tletop op_int_gen [] e) →
-      head_step (tletop op_int_gen [] e) ({0 ~> vconst (cint z)} e)
+  | HS_IntGen z :
+      lc_tm (tprim op_int_gen []) →
+      head_step (tprim op_int_gen []) (tret (vconst (cint z)))
 
-  (** [tletapp (vlam s body) v e  →  tlete (body[0 ↦ v]) e]
-      Opens [body] with the argument [v]; the result computation runs
-      in a [tlete] that binds its return value for [e]. *)
-  | HS_Beta s body v e :
-      lc_tm (tletapp (vlam s body) v e) →
-      head_step (tletapp (vlam s body) v e)
-                (tlete ({0 ~> v} body) e)
+  (** [tapp (vlam s body) v  →  body[0 ↦ v]] *)
+  | HS_Beta s body v :
+      lc_tm (tapp (vlam s body) v) →
+      head_step (tapp (vlam s body) v)
+                ({0 ~> v} body)
 
-  (** [tletapp (vfix sf sx body) v e  →  tlete (body[1 ↦ self][0 ↦ v]) e]
+  (** [tapp (vfix sf sx body) v  →  body[1 ↦ self][0 ↦ v]]
       Opens the body with f = self at bvar 1, then x = v at bvar 0. *)
-  | HS_Fix sf sx body v e :
+  | HS_Fix sf sx body v :
       let self := vfix sf sx body in
-      lc_tm (tletapp self v e) →
-      head_step (tletapp self v e)
-                (tlete ({0 ~> v} ({1 ~> self} body)) e)
+      lc_tm (tapp self v) →
+      head_step (tapp self v)
+                ({0 ~> v} ({1 ~> self} body))
 
   (** [tmatch v brs  →  body[0..n-1 ↦ constructor args of v]]
       The oracle selects the branch; the [n] arguments of [v]'s

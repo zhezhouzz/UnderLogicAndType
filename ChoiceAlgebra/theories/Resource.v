@@ -291,8 +291,7 @@ Qed.
 
 (** ** Singleton world
 
-    [singleton_world σ] is the world that contains exactly the store [σ].
-    It appears in the semantics of [FInd] and in the independence lemmas. *)
+    [singleton_world σ] is the world that contains exactly the store [σ]. *)
 
 Definition singleton_world (σ : StoreT) : World := {|
   world_dom    := dom σ;

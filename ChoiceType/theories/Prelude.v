@@ -27,7 +27,7 @@ From ChoiceLogic Require Export Prelude Formula ChoiceLogicProps.
     [@... atom _ _ value] or let unification fill them in. *)
 
 (** Convenience abbreviations used throughout ChoiceType. *)
-Notation SubstT  := (gmap atom value) (only parsing).
+Notation StoreT  := (gmap atom value) (only parsing).
 Notation WorldT  := (@World atom _ _ value) (only parsing).
 (** [Formula] only discharges [Var], [EqDecision Var], [Countable Var] from the
     ChoiceLogic section — [Value] is not part of [Formula]'s own type. *)

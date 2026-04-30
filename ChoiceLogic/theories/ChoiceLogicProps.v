@@ -11,12 +11,12 @@ From ChoiceLogic Require Import Prelude Formula.
 Section ChoiceLogicProps.
 
 Context `{Countable Var} `{EqDecision Value}.
-Local Notation SubstT := (gmap Var Value) (only parsing).
+Local Notation StoreT := (gmap Var Value) (only parsing).
 Local Notation WorldT := (@World Var _ _ Value) (only parsing).
 
 Context {A : Type}.
 Context (interp     : A → WorldT).
-Context (subst_atom : SubstT → A → A).
+Context (subst_atom : StoreT → A → A).
 
 Notation sat m φ := (satisfies interp subst_atom m φ).
 Notation "φ ⊫ ψ" := (entails interp subst_atom φ ψ) (at level 85, ψ at level 84, no associativity).
@@ -32,10 +32,21 @@ Lemma under_mono (p q : Formula A) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
 Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 
-(** The independent modality is monotone. *)
-Lemma ind_mono (p q : Formula A) :
-  (p ⊫ q) → (FInd p ⊫ FInd q).
-Proof. unfold entails, sat in *. intros Hip m Hind σ Hσ. exact (Hip _ (Hind σ Hσ)). Qed.
+(** Ordinary quantifiers are monotone. *)
+Lemma forall_mono x (p q : Formula A) :
+  (p ⊫ q) → (FForall x p ⊫ FForall x q).
+Proof.
+  unfold entails, sat in *. intros Hip m Hall m' Hdom Hres.
+  exact (Hip _ (Hall m' Hdom Hres)).
+Qed.
+
+Lemma exists_mono x (p q : Formula A) :
+  (p ⊫ q) → (FExists x p ⊫ FExists x q).
+Proof.
+  unfold entails, sat in *. intros Hip m [m' [Hdom [Hres Hp]]].
+  exists m'. split; [exact Hdom|]. split; [exact Hres|].
+  exact (Hip _ Hp).
+Qed.
 
 (** *** §2 Modality set-level characterisations  (§1.3, Erase section)
 
@@ -146,23 +157,6 @@ Lemma star_wand_adjunction (p q r : Formula A) :
   (FAnd (FStar p q) r ⊫ FStar p (FAnd q r)) →
   (p ⊫ FWand q r) →
   (FStar p q ⊫ r).
-Proof. Admitted.
-
-(** ** Independence *)
-
-(** ind τ ⊫ τ  (holds only for non-empty wf_resource worlds; proof deferred) *)
-Lemma ind_elim (p : Formula A) : FInd p ⊫ p.
-Proof. Admitted.
-
-(** ind τ ⊫ ind (ind τ) *)
-Lemma ind_idemp (p : Formula A) : FInd p ⊫ FInd (FInd p).
-Proof.
-  unfold entails, sat. simpl. intros m Hind σ Hσ σ' Hσ'. subst. exact (Hind σ Hσ).
-Qed.
-
-(** o (ind φ)  implies  ind (o φ) *)
-Lemma over_ind_swap (p : Formula A) :
-  FOver (FInd p) ⊫ FInd (FOver p).
 Proof. Admitted.
 
 End ChoiceLogicProps.

@@ -15,8 +15,11 @@ From CoreLang Require Export Syntax.
     The signature is a definition rather than an axiom so the formalization's
     primitive surface is completely explicit. *)
 
+Parameter data_ctor_type : data_ctor → list base_ty * base_ty.
+
 Definition prim_op_type (op : prim_op) : list base_ty * base_ty :=
   match op with
+  | op_ctor d => data_ctor_type d
   | op_add => ([TNat; TNat], TNat)
   | op_sub => ([TNat; TNat], TNat)
   | op_mul => ([TNat; TNat], TNat)
@@ -83,16 +86,14 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ₑ e1 ⋮ T1 →
       (∀ x, x ∉ L → <[x := T1]>Γ ⊢ₑ (e2 ^^ x) ⋮ T2) →
       Γ ⊢ₑ (tlete e1 e2) ⋮ T2
-  | TT_LetOp Γ op vs e_body arg_tys ret_b T (L : aset) :
+  | TT_Op Γ op vs arg_tys ret_b :
       prim_op_type op = (arg_tys, ret_b) →
       Forall2 (fun v b => Γ ⊢ᵥ v ⋮ TBase b) vs arg_tys →
-      (∀ x, x ∉ L → <[x := TBase ret_b]>Γ ⊢ₑ (e_body ^^ x) ⋮ T) →
-      Γ ⊢ₑ (tletop op vs e_body) ⋮ T
-  | TT_LetApp Γ s1 s2 T v1 v2 e (L : aset) :
+      Γ ⊢ₑ (tprim op vs) ⋮ TBase ret_b
+  | TT_App Γ s1 s2 v1 v2 :
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
-      (∀ x, x ∉ L → <[x := s2]>Γ ⊢ₑ (e ^^ x) ⋮ T) →
-      Γ ⊢ₑ (tletapp v1 v2 e) ⋮ T
+      Γ ⊢ₑ (tapp v1 v2) ⋮ s2
   | TT_Match Γ v T branches b :
       (** The discriminant [v] must have a base type. *)
       Γ ⊢ᵥ v ⋮ TBase b →

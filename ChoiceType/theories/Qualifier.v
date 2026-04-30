@@ -8,8 +8,8 @@
 
     The [qualifier] type serves as the type parameter [A] in
     [ChoiceLogic.Formula A].  We provide:
-      [qual_interp  : qualifier → SubstT → Prop]  ([interp]      in ChoiceLogic)
-      [qual_subst   : SubstT → qualifier → qualifier] ([subst_atom] in ChoiceLogic)
+      [qual_interp  : qualifier → StoreT → Prop]  ([interp]      in ChoiceLogic)
+      [qual_subst   : StoreT → qualifier → qualifier] ([subst_atom] in ChoiceLogic)
 
     All locally-nameless operations ([open], [close], [subst_one], etc.)
     act only on the [vals] vector and the [tm] inside [QExpr]; the
@@ -78,8 +78,8 @@ Fixpoint qual_subst_one (x : atom) (v : value) (q : qualifier) : qualifier :=
   | QAnd  q1 q2   => QAnd  (qual_subst_one x v q1) (qual_subst_one x v q2)
   end.
 
-(** Multi-variable substitution (the [subst_atom] parameter of ChoiceLogic). *)
-Fixpoint qual_subst (σ : SubstT) (q : qualifier) : qualifier :=
+(** Store action on a qualifier (the [subst_atom] parameter of ChoiceLogic). *)
+Fixpoint qual_subst (σ : StoreT) (q : qualifier) : qualifier :=
   match q with
   | qual vals prop => qual (vmap (value_subst_all σ) vals) prop
   | QExpr e ν     => QExpr (tm_subst_all σ e) ν
@@ -92,7 +92,7 @@ Fixpoint qual_subst (σ : SubstT) (q : qualifier) : qualifier :=
 #[global] Instance close_qual_inst    : Close qualifier       := qual_close.
 #[global] Instance stale_qual_inst    : Stale qualifier       := qual_fv.
 #[global] Instance subst_qual_inst    : SubstV value qualifier := qual_subst_one.
-#[global] Instance substM_qual_inst   : SubstM SubstT qualifier := qual_subst.
+#[global] Instance substM_qual_inst   : SubstM StoreT qualifier := qual_subst.
 Arguments open_qual_inst /.
 Arguments close_qual_inst /.
 Arguments stale_qual_inst /.
@@ -138,10 +138,10 @@ Notation "q1 '&q' q2" := (qualifier_and q1 q2) (at level 40).
 
 (** ** Denotation helpers *)
 
-(** Evaluate a vector of values under substitution [σ] to constants.
+(** Evaluate a vector of values under store [σ] to constants.
     Returns [None] if any value does not reduce to a constant after
     applying [σ] (i.e., if it's a function or an unresolved free var). *)
-Fixpoint eval_vals (σ : SubstT) {n} (vals : vec value n) : option (vec constant n) :=
+Fixpoint eval_vals (σ : StoreT) {n} (vals : vec value n) : option (vec constant n) :=
   match vals with
   | [#]       => Some [#]
   | v ::: vs  =>
@@ -158,8 +158,8 @@ Fixpoint eval_vals (σ : SubstT) {n} (vals : vec value n) : option (vec constant
 (** ** Interpretation function ([interp] in ChoiceLogic)
 
     [qual_interp q σ] : the qualifier [q] holds when evaluated at
-    substitution [σ]. *)
-Fixpoint qual_interp (σ : SubstT) (q : qualifier) : Prop :=
+    store [σ]. *)
+Fixpoint qual_interp (σ : StoreT) (q : qualifier) : Prop :=
   match q with
   | qual vals prop =>
       match eval_vals σ vals with
@@ -177,7 +177,7 @@ Fixpoint qual_interp (σ : SubstT) (q : qualifier) : Prop :=
   end.
 
 (** Flip argument order for convenience. *)
-Definition qual_interp_cl (q : qualifier) (σ : SubstT) : Prop :=
+Definition qual_interp_cl (q : qualifier) (σ : StoreT) : Prop :=
   qual_interp σ q.
 
 (** Wrap as a World for the [interp : A → WorldT] parameter of satisfies.
@@ -194,9 +194,9 @@ Definition qual_interp_world (q : qualifier) : WorldT :=
 
 (** ** Denotation typeclass instance
 
-    [⟦q⟧] : [SubstT → Prop] — the characteristic function of the
-    set of substitutions satisfying [q] as a closed qualifier. *)
-#[global] Instance denot_qual_inst : Denotation qualifier (SubstT → Prop) :=
+    [⟦q⟧] : [StoreT → Prop] — the characteristic function of the
+    set of stores satisfying [q] as a closed qualifier. *)
+#[global] Instance denot_qual_inst : Denotation qualifier (StoreT → Prop) :=
   qual_interp_cl.
 Arguments denot_qual_inst /.
 
@@ -231,7 +231,7 @@ Lemma qual_subst_intro x v (q : qualifier) :
   x # q → lc_value v → {x := v}q (q ^q^ x) = {0 ~> v} q.
 Proof. Admitted.
 
-Lemma qual_interp_subst_compose (σ_X σ : SubstT) (q : qualifier) :
+Lemma qual_interp_subst_compose (σ_X σ : StoreT) (q : qualifier) :
   store_compat σ_X σ →
   qual_interp σ (qual_subst σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
 Proof. Admitted.
