@@ -3,7 +3,8 @@
     Denotational semantics for the choice type system (§1.5 of the paper).
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
-    world predicates.  Qualifiers enter the logic through [qual_atom].
+    logic qualifiers.  Type qualifiers are embedded through the abstract
+    [type_qualifier_to_logic] conversion.
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
@@ -17,12 +18,12 @@ Notation FQ := FormulaQ.
 
 (** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=
-  (res_models (Var := atom) (Value := value) m φ)
+  (res_models m φ)
   (at level 70, format "m  ⊨  φ").
 
 (** Entailment shorthand: [φ ⊫ ψ]  ↔  [∀ m, m ⊨ φ → m ⊨ ψ] *)
 Notation "φ ⊫ ψ" :=
-  (entails (Var := atom) (Value := value) φ ψ)
+  (entails φ ψ)
   (at level 85, ψ at level 84, no associativity).
 
 (** ** Fresh variable helpers for denotation *)
@@ -49,15 +50,15 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
   | CTOver b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
-        (FImpl (FAtom (qual_atom (QExpr e ν)))
-               (FFib (qual_fv φ) (FOver (FAtom (qual_atom φ)))))
+        (FImpl (FAtom (expr_logic_qual e ν))
+               (FFib (qual_fv φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
-        (FImpl (FAtom (qual_atom (QExpr e ν)))
-               (FFib (qual_fv φ) (FUnder (FAtom (qual_atom φ)))))
+        (FImpl (FAtom (expr_logic_qual e ν))
+               (FFib (qual_fv φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -76,7 +77,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
-          (FAtom (qual_atom (QExpr e y)))
+          (FAtom (expr_logic_qual e y))
           (FFib {[y]}
             (FImpl
               (denot_ty τx (tret (vfvar x)))
@@ -87,7 +88,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
-          (FAtom (qual_atom (QExpr e y)))
+          (FAtom (expr_logic_qual e y))
           (FFib {[y]}
             (FWand
               (denot_ty τx (tret (vfvar x)))

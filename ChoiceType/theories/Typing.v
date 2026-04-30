@@ -116,8 +116,8 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
         (CTArrow x τx τ)
 
   (** T-FixD.  The paper refines the recursive argument with a decreasing
-      predicate; that qualifier atom is still definitionally pending, so this
-      constructor records the separating context structure. *)
+      predicate; the corresponding logic qualifier is still left abstract, so
+      this constructor records the separating context structure. *)
   | CT_FixD Γ x τx τ e (L : aset) :
       (∀ f y, f ∉ L → y ∉ L → f ≠ y →
         has_choice_type

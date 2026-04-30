@@ -11,9 +11,9 @@ From ChoiceType Require Export Qualifier.
 
 Inductive choice_ty : Type :=
   (** Overapproximation refinement type: {ν:b | φ} *)
-  | CTOver  (b : base_ty) (φ : qualifier)
+  | CTOver  (b : base_ty) (φ : type_qualifier)
   (** Underapproximation refinement type: [ν:b | φ] *)
-  | CTUnder (b : base_ty) (φ : qualifier)
+  | CTUnder (b : base_ty) (φ : type_qualifier)
   (** Intersection / meet *)
   | CTInter (τ1 τ2 : choice_ty)
   (** Union / join *)

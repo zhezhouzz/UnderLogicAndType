@@ -1,11 +1,11 @@
-From ChoiceLogic Require Import Prelude.
+From ChoiceLogic Require Import Prelude LogicQualifier.
+From CoreLang Require Import Syntax.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 
     We define the syntax of choice logic formulas and the satisfaction relation.
 
-    Atomic propositions are semantic predicates over well-formed worlds
-    [WorldT → Prop].
+    Atomic propositions are logic qualifiers.
     Hence satisfaction does not need a separate interpretation function.
 
     The formula type [Formula] contains:
@@ -15,39 +15,53 @@ From ChoiceLogic Require Import Prelude.
     - approximation modalities (o = over, u = under)
     - ordinary quantifiers over fresh world coordinates
     - fiberwise modality [FFib X p]: for each σ_X in the X-projection of m,
-      the well-formed fiber world satisfies p. *)
+      the well-formed fiber world models p. *)
 
 Section ChoiceLogic.
 
-Context `{Countable Var} `{EqDecision Value}.
-Local Notation StoreT := (gmap Var Value) (only parsing).
-Local Notation WorldT := (@WfWorld Var _ _ Value) (only parsing).
+Local Notation StoreT := (gmap atom value) (only parsing).
+Local Notation WorldT := (@WfWorld atom _ _ value) (only parsing).
 
 (** ** Formula syntax *)
 
 Inductive Formula : Type :=
   | FTrue
   | FFalse
-  | FAtom   (a : WorldT → Prop)
+  | FAtom   (a : logic_qualifier)
   | FAnd    (p q : Formula)
   | FOr     (p q : Formula)
   | FImpl   (p q : Formula)                     (* Kripke implication *)
   | FStar   (p q : Formula)                     (* separating conjunction p ∗ q *)
   | FWand   (p q : Formula)                     (* magic wand p −∗ q *)
   | FPlus   (p q : Formula)                     (* choice sum p ⊕ q *)
-  | FForall (x : Var) (p : Formula)             (* ordinary universal quantifier *)
-  | FExists (x : Var) (p : Formula)             (* ordinary existential quantifier *)
+  | FForall (x : atom) (p : Formula)            (* ordinary universal quantifier *)
+  | FExists (x : atom) (p : Formula)            (* ordinary existential quantifier *)
   | FOver   (p : Formula)                       (* overapproximation  o p *)
   | FUnder  (p : Formula)                       (* underapproximation u p *)
-  | FFib    (X : gset Var)                      (* fiberwise modality *)
+  | FFib    (X : aset)                          (* fiberwise modality *)
             (p : Formula).
+
+Fixpoint formula_fv (φ : Formula) : aset :=
+  match φ with
+  | FTrue | FFalse => ∅
+  | FAtom q => stale q
+  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
+      formula_fv p ∪ formula_fv q
+  | FForall x p | FExists x p => formula_fv p ∖ {[x]}
+  | FOver p | FUnder p => formula_fv p
+  | FFib X p => X ∪ formula_fv p
+  end.
+
+#[global] Instance stale_formula : Stale Formula := formula_fv.
+Arguments stale_formula /.
 
 (** ** Satisfaction relation
 
     [res_models m φ] is written [m ⊨ φ] by the ChoiceType layer.
-    Since atoms are already world predicates, [FFib] only changes the current
-    world to the corresponding fiber; there is no syntactic atom-substitution
-    parameter in the logic core. *)
+    Since atoms are logic qualifiers, [FAtom] delegates to
+    [logic_qualifier_denote].  [FFib] only changes the current world to the
+    corresponding fiber; there is no syntactic atom-substitution parameter in
+    the logic core. *)
 
 Fixpoint res_models
     (m : WorldT)
@@ -61,8 +75,8 @@ Fixpoint res_models
   | FFalse => False
 
   | FAtom a =>
-      (** m ⊨ a iff the semantic atomic predicate holds of m. *)
-      a m
+      (** m ⊨ a iff the denotation of the logic qualifier holds of m. *)
+      logic_qualifier_denote a m
 
   | FAnd p q =>
       res_models m p ∧ res_models m q
@@ -97,7 +111,7 @@ Fixpoint res_models
 
   | FForall x p =>
       (** m ⊨ ∀x.p iff x is fresh for m and every one-coordinate extension
-          of m at x satisfies p. *)
+          of m at x models p. *)
       x ∉ world_dom m ∧
       ∀ m' : WorldT,
           world_dom m' = world_dom m ∪ {[x]} →
@@ -106,7 +120,7 @@ Fixpoint res_models
 
   | FExists x p =>
       (** m ⊨ ∃x.p iff x is fresh for m and some one-coordinate extension
-          of m at x satisfies p. *)
+          of m at x models p. *)
       x ∉ world_dom m ∧
       ∃ m' : WorldT,
           world_dom m' = world_dom m ∪ {[x]} ∧
@@ -124,32 +138,14 @@ Fixpoint res_models
       ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ res_models m' p
 
   | FFib X p =>
-      (** m ⊨ FFib X p iff every X-fiber of m satisfies p. *)
+      (** m ⊨ FFib X p iff every X-fiber of m models p. *)
       ∀ σ (Hproj : res_restrict m X σ),
         res_models (res_fiber_from_projection m X σ Hproj) p
 
   end.
 
-(** Entailment: φ ⊨ ψ holds when every world satisfying φ also satisfies ψ. *)
+(** Entailment: φ ⊨ ψ holds when every world modeling φ also models ψ. *)
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 
 End ChoiceLogic.
-
-(** After the section closes the section variables become explicit.
-    Re-establish implicitness using positional underscores with [rename]
-    to avoid name-mismatch errors. *)
-Arguments FTrue  {_} {_} {_} {_} : rename.
-Arguments FFalse {_} {_} {_} {_} : rename.
-Arguments FAtom  {_} {_} {_} {_} _ : rename.
-Arguments FAnd   {_} {_} {_} {_} _ _ : rename.
-Arguments FOr    {_} {_} {_} {_} _ _ : rename.
-Arguments FImpl  {_} {_} {_} {_} _ _ : rename.
-Arguments FStar  {_} {_} {_} {_} _ _ : rename.
-Arguments FWand  {_} {_} {_} {_} _ _ : rename.
-Arguments FPlus  {_} {_} {_} {_} _ _ : rename.
-Arguments FForall {_} {_} {_} {_} _ _ : rename.
-Arguments FExists {_} {_} {_} {_} _ _ : rename.
-Arguments FOver  {_} {_} {_} {_} _ : rename.
-Arguments FUnder {_} {_} {_} {_} _ : rename.
-Arguments FFib    {_} {_} {_} {_} _ _ : rename.

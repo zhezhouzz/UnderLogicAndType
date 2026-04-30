@@ -12,41 +12,37 @@ Rocq 的 Section 机制：Section 结束时，只有在定义中**实际出现**
 
 ```coq
 Section ChoiceLogic.
-  Context {Var : Type} `{Countable Var} {Value : Type}.
+  Definition WorldT := (@WfWorld atom _ _ value).
 
   Inductive Formula : Type :=
-    | FForall (X : gset Var) (φ : Formula)   (* 用到了 Var *)
-    | FAtom   (a : WorldT -> Prop)           (* 用到了 Value through WorldT *)
+    | FForall (x : atom) (φ : Formula)
+    | FAtom   (a : logic_qualifier)
     | ...
 ```
 
-`Formula` 的定义里：
-- 用到了 `Var`（通过 `gset Var`）→ discharge 了 `Var`, `EqDecision Var`, `Countable Var`
-- 用到了 `Value`（通过 atom 类型 `WorldT -> Prop`）→ discharge 了 `Value`
+现在的 `Formula` 直接使用全局的 `atom`、`value` 和 `logic_qualifier`，所以它已经不再是
+parameterized formula datatype。
 
-所以 Section 结束后，`Formula` 的实际签名是：
+所以 `Formula` 的实际签名是：
 
 ```coq
-Formula : ∀ {Var} `{Countable Var} {Value}, Type
-(* 隐式参数：Var, EqDecision Var, Countable Var, Value *)
+Formula : Type
 ```
 
 ## 错误的写法
 
 ```coq
-(* 错误：Formula 现在不再接收额外的 atom type 参数 *)
-Notation FormulaQ A := (@Formula atom _ _ value A)
+(* 错误：Formula 现在不再接收额外参数 *)
+Notation FormulaQ A := (Formula A)
 
-(* Rocq 报错：The expression "Formula value" of type "Type"
-   cannot be applied to the term "A" : "Type" *)
+(* Rocq 报错：Formula cannot be applied to the term ... *)
 ```
 
 ## 正确的写法
 
 ```coq
-(* 正确：只提供 Formula 实际需要的参数 *)
-Notation FormulaQ := (@Formula atom _ _ value)
-(*                              Var  EqDec Countable Value *)
+(* 正确：直接别名即可 *)
+Notation FormulaQ := Formula.
 ```
 
 ## 排查方法

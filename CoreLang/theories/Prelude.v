@@ -6,26 +6,10 @@
     uniform classes and notations so that lemma statements are
     syntactically identical across syntactic categories. *)
 
-From stdpp Require Export gmap sets fin_sets fin_map_dom fin vector.
-From Corelib Require Export Program.Wf.
-From Hammer Require Export Hammer.
-
-(** ** Atom type *)
-
-(** We use [positive] as a concrete countable atom type.  stdpp provides
-    [EqDecision], [Countable], and [Infinite] instances out of the box,
-    enabling [fresh] on [gset positive]. *)
-Definition atom : Type := positive.
-#[global] Instance atom_eqdec     : EqDecision atom := _.
-#[global] Instance atom_countable : Countable  atom := _.
-#[global] Instance atom_infinite  : Infinite   atom := _.
-Notation aset := (gset atom).
+From ChoiceAlgebra Require Export Prelude.
+From stdpp Require Export fin vector.
 
 (** ** Core typeclasses *)
-
-(** Free-variable collection; [stale] is the canonical name used in
-    freshness side conditions [x # e ↔ x ∉ stale e]. *)
-Class Stale A := stale : A → aset.
 
 (** Single-variable substitution: [atom → V → A → A].
     Named [SubstV] (variable substitution) to avoid clashing with
@@ -60,26 +44,11 @@ Notation "e '^^' x"            := (open_one 0 x e) (at level 20).
 Notation "'{' k '<~' x '}' e"  := (close_one x k e)
   (at level 20, k constr, format "{ k <~ x } e").
 Notation "x '\\' e"            := (close_one x 0 e) (at level 20).
-Notation "x '#' s"             := (x ∉ stale s) (at level 40).
 Notation "Γ '⊢' e '⋮' T"      := (has_type Γ e T)
   (at level 20, e constr, T constr).
 Notation "'⟦' a '⟧'"           := (denote a) (at level 20, format "⟦ a ⟧").
 (** Multi-substitution: use [subst_map σ e] directly to avoid clashing with
     stdpp's singleton-set notation [{[ _ ]}] which has the same '{[' prefix. *)
-
-(** ** Fresh-atom helpers *)
-
-(** [fresh_for s] produces an atom not in [s]. *)
-Definition fresh_for (s : aset) : atom := fresh s.
-
-Lemma fresh_for_not_in (s : aset) : fresh_for s ∉ s.
-Proof. apply is_fresh. Qed.
-
-(** Tactic: pick a fresh atom and introduce it. *)
-Ltac pick_fresh x s :=
-  let a := fresh x in
-  set (a := fresh_for s);
-  assert (a ∉ s) by apply fresh_for_not_in.
 
 (** ** Hint databases *)
 #[global] Hint Unfold stale subst_one open_one close_one is_lc subst_map has_type denote : class_simpl.

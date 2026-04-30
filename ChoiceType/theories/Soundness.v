@@ -41,13 +41,13 @@ Corollary coverage (e : tm) (b : base_ty) :
   ∃ v, steps e (tret v).
 Proof. Admitted.
 
-Corollary refinement (e : tm) (b : base_ty) (φ : qualifier) :
+Corollary refinement (e : tm) (b : base_ty) (φ : type_qualifier) :
   CtxEmpty ⊢ e ⋮ CTOver b φ →
   ∀ v, steps e (tret v) →
        qual_interp ∅ ({0 ~> v} φ).
 Proof. Admitted.
 
-Corollary incorrectness (e : tm) (b : base_ty) (φ : qualifier) :
+Corollary incorrectness (e : tm) (b : base_ty) (φ : type_qualifier) :
   CtxEmpty ⊢ e ⋮ CTUnder b φ →
   ∃ v, steps e (tret v) ∧ qual_interp ∅ ({0 ~> v} φ).
 Proof. Admitted.

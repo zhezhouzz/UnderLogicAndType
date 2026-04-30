@@ -9,7 +9,7 @@
     [atom]/[value] types. *)
 
 From CoreLang Require Export Prelude Syntax BasicTyping SmallStep.
-From ChoiceLogic Require Export Prelude Formula ChoiceLogicProps.
+From ChoiceLogic Require Export Prelude LogicQualifier Formula ChoiceLogicProps.
 
 (** ** Instantiation of UnderLogicAndType's abstract parameters
 
@@ -30,5 +30,5 @@ From ChoiceLogic Require Export Prelude Formula ChoiceLogicProps.
 Notation StoreT  := (gmap atom value) (only parsing).
 Notation RawWorldT := (@World atom _ _ value) (only parsing).
 Notation WorldT  := (@WfWorld atom _ _ value) (only parsing).
-(** ChoiceType formulas use semantic world predicates as atoms. *)
-Notation FormulaQ := (@Formula atom _ _ value) (only parsing).
+(** ChoiceType formulas use logic qualifiers as atoms. *)
+Notation FormulaQ := Formula (only parsing).

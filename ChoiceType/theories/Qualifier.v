@@ -1,149 +1,86 @@
 (** * ChoiceType.Qualifier
 
-    Qualifiers [φ] are the source-level predicates embedded as atomic
-    propositions of Choice Logic.
-    We use a *shallow embedding* with length-indexed vectors (following
-    UnderType/Qualifier.v), extended with two new constructors:
-      [QExpr e ν] — captures the expression-denotation atom ⟦e⟧_ν
-      [QProd q1 q2] — captures the resource-product compatibility atom φ×φ
-
-    Choice Logic atoms are semantic predicates over well-formed worlds.  We
-    therefore interpret each qualifier first as a raw world
-    [qual_interp_world q], then embed it as the atomic predicate [qual_atom q].
-
-    All locally-nameless operations ([open], [close], [subst_one], etc.)
-    act only on the [vals] vector and the [tm] inside [QExpr]; the
-    shallow [prop] and result atom [ν] in [QExpr] are left untouched. *)
+    Type qualifiers are the source-level refinement predicates used by
+    choice types.  They remain shallow, locally-nameless predicates over a
+    vector of values.  Logic-level atoms live separately in
+    [ChoiceLogic.LogicQualifier]. *)
 
 From ChoiceType Require Export Prelude.
 
 (** ** Syntax *)
 
-Inductive qualifier : Type :=
+Inductive type_qualifier : Type :=
   (** Standard shallow-embedding qualifier (like UnderType).
       [vals] : the (possibly open) values the proposition mentions.
       [prop] : a closed Rocq proposition over the evaluated constants. *)
-  | qual {n : nat} (vals : vec value n) (prop : vec constant n → Prop)
-
-  (** Expression-denotation atom.
-      [qual_interp σ (QExpr e ν)]  ≝  ∃ v, (σ(e) →* tret v) ∧ σ !! ν = Some v
-      Intuitively: "e evaluates to the value bound to ν in σ". *)
-  | QExpr (e : tm) (result : atom)
-
-  (** Resource-product atom (compatibility).
-      [qual_interp σ (QProd q1 q2)]  ≝
-        ∃ σ1 σ2, σ1 ∪ σ2 = σ ∧ store_compat σ1 σ2
-                 ∧ qual_interp σ1 q1 ∧ qual_interp σ2 q2 *)
-  | QProd (q1 q2 : qualifier)
-
-  (** Conjunction atom.
-      [qual_interp σ (QAnd q1 q2)]  ≝  qual_interp σ q1 ∧ qual_interp σ q2
-      Used as fallback in [qualifier_and] when q1 or q2 is not a [qual]. *)
-  | QAnd (q1 q2 : qualifier).
+  | qual {n : nat} (vals : vec value n) (prop : vec constant n → Prop).
 
 (** ** Locally-nameless infrastructure *)
 
-(** Opening acts on [vals] and the expression [e] in [QExpr]. *)
-Fixpoint qual_open (k : nat) (s : value) (q : qualifier) : qualifier :=
+Definition qual_open (k : nat) (s : value) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual vals prop => qual (vmap (open_value k s) vals) prop
-  | QExpr e ν     => QExpr (open_tm k s e) ν
-  | QProd q1 q2   => QProd (qual_open k s q1) (qual_open k s q2)
-  | QAnd  q1 q2   => QAnd  (qual_open k s q1) (qual_open k s q2)
   end.
 
-(** Closing acts symmetrically. *)
-Fixpoint qual_close (x : atom) (k : nat) (q : qualifier) : qualifier :=
+Definition qual_close (x : atom) (k : nat) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual vals prop => qual (vmap (close_value x k) vals) prop
-  | QExpr e ν     => QExpr (close_tm x k e) ν
-  | QProd q1 q2   => QProd (qual_close x k q1) (qual_close x k q2)
-  | QAnd  q1 q2   => QAnd  (qual_close x k q1) (qual_close x k q2)
   end.
 
-(** Free variables. *)
-Fixpoint qual_fv (q : qualifier) : aset :=
+Definition qual_fv (q : type_qualifier) : aset :=
   match q with
   | qual vals _ => Vector.fold_right (fun v s => fv_value v ∪ s) vals ∅
-  | QExpr e ν  => fv_tm e ∪ {[ ν ]}
-  | QProd q1 q2 => qual_fv q1 ∪ qual_fv q2
-  | QAnd  q1 q2 => qual_fv q1 ∪ qual_fv q2
   end.
 
-(** Single-variable substitution. *)
-Fixpoint qual_subst_one (x : atom) (v : value) (q : qualifier) : qualifier :=
+Definition qual_subst_one (x : atom) (v : value) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual vals prop => qual (vmap (value_subst x v) vals) prop
-  | QExpr e ν     => QExpr (tm_subst x v e) ν
-  | QProd q1 q2   => QProd (qual_subst_one x v q1) (qual_subst_one x v q2)
-  | QAnd  q1 q2   => QAnd  (qual_subst_one x v q1) (qual_subst_one x v q2)
   end.
 
-(** Store action on a qualifier.  This is still useful for qualifier lemmas and
-    object-language substitution, but the Choice Logic core no longer takes it
-    as a parameter of satisfaction. *)
-Fixpoint qual_subst (σ : StoreT) (q : qualifier) : qualifier :=
+Definition qual_subst (σ : StoreT) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual vals prop => qual (vmap (value_subst_all σ) vals) prop
-  | QExpr e ν     => QExpr (tm_subst_all σ e) ν
-  | QProd q1 q2   => QProd (qual_subst σ q1) (qual_subst σ q2)
-  | QAnd  q1 q2   => QAnd  (qual_subst σ q1) (qual_subst σ q2)
   end.
 
-(** Typeclass instances. *)
-#[global] Instance open_qual_inst     : Open value qualifier  := qual_open.
-#[global] Instance close_qual_inst    : Close qualifier       := qual_close.
-#[global] Instance stale_qual_inst    : Stale qualifier       := qual_fv.
-#[global] Instance subst_qual_inst    : SubstV value qualifier := qual_subst_one.
-#[global] Instance substM_qual_inst   : SubstM StoreT qualifier := qual_subst.
+#[global] Instance open_qual_inst      : Open value type_qualifier := qual_open.
+#[global] Instance close_qual_inst     : Close type_qualifier := qual_close.
+#[global] Instance stale_qual_inst     : Stale type_qualifier := qual_fv.
+#[global] Instance subst_qual_inst     : SubstV value type_qualifier := qual_subst_one.
+#[global] Instance substM_qual_inst    : SubstM StoreT type_qualifier := qual_subst.
 Arguments open_qual_inst /.
 Arguments close_qual_inst /.
 Arguments stale_qual_inst /.
 Arguments subst_qual_inst /.
 Arguments substM_qual_inst /.
 
-(** Notation mirrors UnderType's [^q^] and [{x:=v}q]. *)
 Notation "q '^q^' x" := (qual_open 0 (vfvar x) q) (at level 20).
 Notation "'{' x ':=' v '}q' q" := (qual_subst_one x v q)
   (at level 20, x constr, v constr, format "{ x := v }q  q").
 
 (** ** Local closure *)
 
-Inductive lc_qualifier : qualifier → Prop :=
+Inductive lc_qualifier : type_qualifier → Prop :=
   | LCQ_qual n vals prop :
       Vector.Forall lc_value vals →
-      lc_qualifier (@qual n vals prop)
-  | LCQ_expr e ν :
-      lc_tm e →
-      lc_qualifier (QExpr e ν)
-  | LCQ_prod q1 q2 :
-      lc_qualifier q1 → lc_qualifier q2 →
-      lc_qualifier (QProd q1 q2)
-  | LCQ_and q1 q2 :
-      lc_qualifier q1 → lc_qualifier q2 →
-      lc_qualifier (QAnd q1 q2).
+      lc_qualifier (@qual n vals prop).
 
-#[global] Instance lc_qual_inst : Lc qualifier := lc_qualifier.
+#[global] Instance lc_qual_inst : Lc type_qualifier := lc_qualifier.
 Arguments lc_qual_inst /.
 #[global] Hint Constructors lc_qualifier : core.
 
-(** ** Conjunction of two [qual]-style qualifiers (like UnderType). *)
+(** ** Conjunction of two shallow qualifiers *)
 
-Definition qualifier_and (q1 q2 : qualifier) : qualifier :=
+Definition qualifier_and (q1 q2 : type_qualifier) : type_qualifier :=
   match q1, q2 with
   | qual vals1 prop1, qual vals2 prop2 =>
       qual (vals1 +++ vals2) (fun v =>
         let '(v1, v2) := Vector.splitat _ v in prop1 v1 ∧ prop2 v2)
-  | _, _ => QAnd q1 q2  (** Fallback to QAnd (conjunction) for non-qual constructors. *)
   end.
 
 Notation "q1 '&q' q2" := (qualifier_and q1 q2) (at level 40).
 
 (** ** Denotation helpers *)
 
-(** Evaluate a vector of values under store [σ] to constants.
-    Returns [None] if any value does not reduce to a constant after
-    applying [σ] (i.e., if it's a function or an unresolved free var). *)
 Fixpoint eval_vals (σ : StoreT) {n} (vals : vec value n) : option (vec constant n) :=
   match vals with
   | [#]       => Some [#]
@@ -158,60 +95,28 @@ Fixpoint eval_vals (σ : StoreT) {n} (vals : vec value n) : option (vec constant
       end
   end.
 
-(** ** Store-level interpretation
-
-    [qual_interp q σ] : the qualifier [q] holds when evaluated at
-    store [σ]. *)
-Fixpoint qual_interp (σ : StoreT) (q : qualifier) : Prop :=
+Definition qual_interp (σ : StoreT) (q : type_qualifier) : Prop :=
   match q with
   | qual vals prop =>
       match eval_vals σ vals with
       | Some cs => prop cs
       | None    => False
       end
-  | QExpr e ν =>
-      ∃ v, (tm_subst_all σ e) →* tret v ∧ σ !! ν = Some v
-  | QProd q1 q2 =>
-      ∃ σ1 σ2,
-        store_compat σ1 σ2 ∧ σ1 ∪ σ2 = σ ∧
-        qual_interp σ1 q1 ∧ qual_interp σ2 q2
-  | QAnd q1 q2 =>
-      qual_interp σ q1 ∧ qual_interp σ q2
   end.
 
-(** Flip argument order for convenience. *)
-Definition qual_interp_cl (q : qualifier) (σ : StoreT) : Prop :=
+Definition qual_interp_cl (q : type_qualifier) (σ : StoreT) : Prop :=
   qual_interp σ q.
 
-(** Wrap a qualifier as the least world determined by its free variables and
-    store-level interpretation.
-
-    The domain must be [qual_fv q] (the free variables of q), not ∅.
-    With [world_dom := ∅], [raw_le (qual_interp_world q) m] would reduce to
-    [qual_interp_world q = raw_restrict m ∅] = the singleton-empty world,
-    making [FAtom q] trivially false for any qualifier that can be satisfied by
-    a non-empty store.  Setting [world_dom := qual_fv q] ensures that
-    [raw_le (qual_interp_world q) m] means "m restricts to qual_fv(q) in a way
-    consistent with q", which is the intended Kripke-resource atom semantics. *)
-Definition qual_interp_world (q : qualifier) : RawWorldT :=
-  {| world_dom := qual_fv q; world_stores := qual_interp_cl q |}.
-
-(** Embed a qualifier as a Choice Logic atom.  The qualifier world is raw
-    because an inconsistent qualifier may denote the empty store set. *)
-Definition qual_atom (q : qualifier) : WorldT → Prop :=
-  λ m, raw_le (qual_interp_world q) m.
-
-(** ** Denotation typeclass instance
-
-    [⟦q⟧] : [StoreT → Prop] — the characteristic function of the
-    set of stores satisfying [q] as a closed qualifier. *)
-#[global] Instance denot_qual_inst : Denotation qualifier (StoreT → Prop) :=
+#[global] Instance denot_qual_inst : Denotation type_qualifier (StoreT → Prop) :=
   qual_interp_cl.
 Arguments denot_qual_inst /.
 
+(** Conversion to a logic qualifier is intentionally left abstract for now. *)
+Parameter type_qualifier_to_logic : type_qualifier → logic_qualifier.
+
 (** ** Standard notations from UnderType *)
 
-Definition mk_q_eq (v1 v2 : value) : qualifier :=
+Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
   qual [# v1; v2] (fun v => v !!! 0%fin = v !!! 1%fin).
 
 Notation "'b0:v=' v" := (mk_q_eq (vbvar 0) v)
@@ -221,26 +126,26 @@ Notation "'b0:x=' x" := (mk_q_eq (vbvar 0) (vfvar x))
 Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
   (at level 5, format "b0:c= c").
 
-Definition qual_top : qualifier := qual [#] (fun _ => True).
-Definition qual_bot : qualifier := qual [#] (fun _ => False).
+Definition qual_top : type_qualifier := qual [#] (fun _ => True).
+Definition qual_bot : type_qualifier := qual [#] (fun _ => False).
 Notation "⊤q" := qual_top.
 Notation "⊥q" := qual_bot.
 
 (** ** Key LN and substitution lemmas (Admitted) *)
 
-Lemma qual_subst_open k s σ (q : qualifier) :
+Lemma qual_subst_open k s σ (q : type_qualifier) :
   subst_map σ ({k ~> s} q) = {k ~> subst_map σ s} (subst_map σ q).
 Proof. Admitted.
 
-Lemma qual_subst_fresh x v (q : qualifier) :
+Lemma qual_subst_fresh x v (q : type_qualifier) :
   x # q → {x := v}q q = q.
 Proof. Admitted.
 
-Lemma qual_subst_intro x v (q : qualifier) :
+Lemma qual_subst_intro x v (q : type_qualifier) :
   x # q → lc_value v → {x := v}q (q ^q^ x) = {0 ~> v} q.
 Proof. Admitted.
 
-Lemma qual_interp_subst_compose (σ_X σ : StoreT) (q : qualifier) :
+Lemma qual_interp_subst_compose (σ_X σ : StoreT) (q : type_qualifier) :
   store_compat σ_X σ →
   qual_interp σ (qual_subst σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
 Proof. Admitted.

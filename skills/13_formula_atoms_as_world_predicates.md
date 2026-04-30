@@ -1,12 +1,12 @@
-# Skill: Formula atoms as world predicates
+# Skill: Formula atoms as logic qualifiers
 
 ## Current convention
 
 `ChoiceLogic.Formula` is not parameterized by an arbitrary atom type.  Atomic
-formulas are already semantic predicates over well-formed worlds:
+formulas store logic qualifiers:
 
 ```coq
-FAtom : (WorldT -> Prop) -> Formula
+FAtom : logic_qualifier -> Formula
 ```
 
 Consequently, satisfaction has no separate atom interpretation parameter:
@@ -15,20 +15,47 @@ Consequently, satisfaction has no separate atom interpretation parameter:
 res_models : WorldT -> Formula -> Prop
 ```
 
-The atom case is just predicate application.
+The atom case delegates to `logic_qualifier_denote`.
 
 ## Qualifier embedding
 
-ChoiceType still has a syntactic `qualifier` type with a store-level
-interpretation:
+ChoiceType still has a type-level shallow qualifier:
 
 ```coq
-qual_interp_world : qualifier -> RawWorldT
-qual_atom         : qualifier -> WorldT -> Prop
+type_qualifier : Type
+qual_interp    : StoreT -> type_qualifier -> Prop
 ```
 
-Use `FAtom (qual_atom q)` when translating a qualifier into a Choice Logic
-formula.
+Its embedding into logic is intentionally abstract for now:
+
+```coq
+type_qualifier_to_logic : type_qualifier -> logic_qualifier
+```
+
+Expression atoms are also abstract for now:
+
+```coq
+expr_logic_qual : tm -> atom -> logic_qualifier
+```
+
+Use `FAtom (type_qualifier_to_logic q)` or `FAtom (expr_logic_qual e ν)` when
+translating into a Choice Logic formula.
+
+## Logic qualifier denotation
+
+Logic qualifiers store a domain, a concrete store, and a predicate:
+
+```coq
+lqual : aset -> StoreT -> (StoreT -> WorldT -> Prop) -> logic_qualifier
+```
+
+Denotation restricts both the stored store and the input world to the recorded
+domain before applying the predicate:
+
+```coq
+logic_qualifier_denote (lqual d σ p) w =
+  p (store_restrict σ d) (res_restrict w d)
+```
 
 ## Fiberwise modality
 

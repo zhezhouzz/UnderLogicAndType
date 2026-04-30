@@ -168,3 +168,6 @@ Proof.
 Qed.
 
 End Store.
+
+#[global] Instance stale_store {A} : Stale (gmap atom A) := dom.
+Arguments stale_store /.

@@ -75,6 +75,7 @@ Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Re-exports all of `ChoiceAlgebra` |
+| `LogicQualifier.v` | Logic-level qualifier atoms (`lqual`) and `logic_qualifier_denote` |
 | `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, collapse, erase, adjunction) |
 
@@ -98,7 +99,7 @@ Choice types layered on top of `CoreLang` and `ChoiceLogic`.
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Instantiates `ChoiceLogic` with `atom`/`value` from `CoreLang` |
-| `Qualifier.v` | Qualifier atoms (`qual`, `QExpr`, `QProd`); interpretation `qual_interp` |
+| `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
 | `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |

@@ -382,3 +382,11 @@ Proof. intros s. unfold res_sum. simpl. tauto. Qed.
 End Resource.
 
 Infix "≤ᵣ" := raw_le (at level 70).
+
+#[global] Instance stale_world {Value} : Stale (@World atom _ _ Value) :=
+  world_dom.
+Arguments stale_world /.
+
+#[global] Instance stale_wfworld {Value} : Stale (@WfWorld atom _ _ Value) :=
+  λ w, world_dom (w : @World atom _ _ Value).
+Arguments stale_wfworld /.

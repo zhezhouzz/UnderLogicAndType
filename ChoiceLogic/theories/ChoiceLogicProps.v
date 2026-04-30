@@ -1,4 +1,5 @@
-From ChoiceLogic Require Import Prelude Formula.
+From ChoiceLogic Require Import Prelude LogicQualifier Formula.
+From CoreLang Require Import Syntax.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 
@@ -10,10 +11,9 @@ From ChoiceLogic Require Import Prelude Formula.
 
 Section ChoiceLogicProps.
 
-Context `{Countable Var} `{EqDecision Value}.
-Local Notation StoreT := (gmap Var Value) (only parsing).
-Local Notation WorldT := (@WfWorld Var _ _ Value) (only parsing).
-Local Notation FormulaT := (@Formula Var _ _ Value) (only parsing).
+Local Notation StoreT := (gmap atom value) (only parsing).
+Local Notation WorldT := (@WfWorld atom _ _ value) (only parsing).
+Local Notation FormulaT := Formula (only parsing).
 
 Notation sat m φ := (res_models m φ).
 Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associativity).
@@ -74,8 +74,8 @@ Proof. Admitted.
 
 (** *** §3 Collapse of nested modalities  (Theorem 1.11)
 
-    Since atoms are semantic world predicates, the richness assumptions below
-    say that the available atom predicates are closed under the operations
+    Since atoms are logic qualifiers, the richness assumptions below say that
+    the available qualifier denotations are closed under the operations
     needed by the collapse statements.  Every formula
     reduces to one where [FOver] and [FUnder] are applied only to
     atoms [FAtom].  We state the key collapse lemmas; the full induction
@@ -83,14 +83,18 @@ Proof. Admitted.
 
 (** Richness assumption on atomic propositions. *)
 Record atoms_rich : Prop := {
-  ar_inter : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
-    ∀ m, a3 m ↔ a1 m ∧ a2 m;
-  ar_union : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
-    ∀ m, a3 m ↔ a1 m ∨ a2 m;
-  ar_prod  : ∀ a1 a2 : WorldT → Prop, ∃ a3 : WorldT → Prop,
-    ∀ m, a3 m ↔
+  ar_inter : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+    ∀ m, logic_qualifier_denote a3 m ↔
+         logic_qualifier_denote a1 m ∧ logic_qualifier_denote a2 m;
+  ar_union : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+    ∀ m, logic_qualifier_denote a3 m ↔
+         logic_qualifier_denote a1 m ∨ logic_qualifier_denote a2 m;
+  ar_prod  : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+    ∀ m, logic_qualifier_denote a3 m ↔
       ∃ (m1 m2 : WorldT) (Hc : world_compat m1 m2),
-        a1 m1 ∧ a2 m2 ∧ res_product m1 m2 Hc ⊑ m;
+        logic_qualifier_denote a1 m1 ∧
+        logic_qualifier_denote a2 m2 ∧
+        res_product m1 m2 Hc ⊑ m;
 }.
 
 (** Collapse: o(o φ₁ ∧ o φ₂) ↔ o φ₁ ∧ o φ₂ *)
@@ -104,8 +108,9 @@ Proof. Admitted.
 
 (** Collapse: u(o φ₁ ∧ o φ₂) ↔ u(φ₁ ∩ φ₂) when atoms are rich.
     a3 is the atom witnessing the intersection of a1 and a2. *)
-Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : WorldT → Prop) :
-  (∀ m, a3 m ↔ a1 m ∧ a2 m) →
+Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : logic_qualifier) :
+  (∀ m, logic_qualifier_denote a3 m ↔
+        logic_qualifier_denote a1 m ∧ logic_qualifier_denote a2 m) →
   FUnder (FAnd (FOver (FAtom a1)) (FOver (FAtom a2))) ⊫ FUnder (FAtom a3).
 Proof. Admitted.
 
