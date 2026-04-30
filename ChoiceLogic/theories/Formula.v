@@ -96,18 +96,22 @@ Fixpoint res_models
         res_models m2 q
 
   | FForall x p =>
-      (** m ⊨ ∀x.p iff every one-coordinate extension of m satisfies p. *)
+      (** m ⊨ ∀x.p iff x is fresh for m and every one-coordinate extension
+          of m at x satisfies p. *)
+      x ∉ world_dom m ∧
       ∀ m' : WorldT,
-        world_dom m' = world_dom m ∪ {[x]} →
-        res_restrict m' (world_dom m) = m →
-        res_models m' p
+          world_dom m' = world_dom m ∪ {[x]} →
+          res_restrict m' (world_dom m) = m →
+          res_models m' p
 
   | FExists x p =>
-      (** m ⊨ ∃x.p iff some one-coordinate extension of m satisfies p. *)
+      (** m ⊨ ∃x.p iff x is fresh for m and some one-coordinate extension
+          of m at x satisfies p. *)
+      x ∉ world_dom m ∧
       ∃ m' : WorldT,
-        world_dom m' = world_dom m ∪ {[x]} ∧
-        res_restrict m' (world_dom m) = m ∧
-        res_models m' p
+          world_dom m' = world_dom m ∪ {[x]} ∧
+          res_restrict m' (world_dom m) = m ∧
+          res_models m' p
 
   (** Approximation modalities (Definition 1.9) *)
 

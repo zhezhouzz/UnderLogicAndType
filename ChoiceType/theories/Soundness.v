@@ -84,6 +84,7 @@ Lemma res_models_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
 Proof. Admitted.
 
 Lemma res_models_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
+  x ∉ world_dom m →
   (∀ m' : WorldT,
       world_dom m' = world_dom m ∪ {[x]} →
       res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
@@ -92,6 +93,7 @@ Lemma res_models_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
 Proof. Admitted.
 
 Lemma res_models_exists_intro (m m' : WorldT) (x : atom) (φ : FQ) :
+  x ∉ world_dom m →
   world_dom m' = world_dom m ∪ {[x]} →
   res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
   m' ⊨ φ →

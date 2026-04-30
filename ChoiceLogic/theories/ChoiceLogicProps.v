@@ -33,15 +33,17 @@ Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 Lemma forall_mono x (p q : FormulaT) :
   (p ⊫ q) → (FForall x p ⊫ FForall x q).
 Proof.
-  unfold entails, sat in *. intros Hip m Hall m' Hdom Hres.
+  unfold entails, sat in *. intros Hip m [Hfresh Hall].
+  split; [exact Hfresh|].
+  intros m' Hdom Hres.
   exact (Hip _ (Hall m' Hdom Hres)).
 Qed.
 
 Lemma exists_mono x (p q : FormulaT) :
   (p ⊫ q) → (FExists x p ⊫ FExists x q).
 Proof.
-  unfold entails, sat in *. intros Hip m [m' [Hdom [Hres Hp]]].
-  exists m'. split; [exact Hdom|]. split; [exact Hres|].
+  unfold entails, sat in *. intros Hip m [Hfresh [m' [Hdom [Hres Hp]]]].
+  split; [exact Hfresh|]. exists m'. split; [exact Hdom|]. split; [exact Hres|].
   exact (Hip _ Hp).
 Qed.
 
