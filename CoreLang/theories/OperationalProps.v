@@ -1,4 +1,4 @@
-From CoreLang Require Import SmallStep BasicTypingProps.
+From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps.
 From LocallyNameless Require Import Tactics.
 
 (** * Operational facts for CoreLang
@@ -8,11 +8,53 @@ From LocallyNameless Require Import Tactics.
 
 Lemma head_step_regular e e' :
   head_step e e' → lc_tm e ∧ lc_tm e'.
-Proof. Admitted.
+Proof.
+  intros Hstep.
+  destruct Hstep as
+    [v e Hlc | op c c' Heval Hlc | s body v Hlc
+    | Tf vf v Hlc | et ef Hlc | et ef Hlc].
+  - split.
+    + assumption.
+    + apply body_open_tm.
+      * by apply lc_lete_iff_body in Hlc as [_ Hbody].
+      * apply lc_lete_iff_body in Hlc as [Hret _].
+        by apply lc_ret_iff_value.
+  - split; [assumption|constructor; constructor].
+  - split.
+    + assumption.
+    + apply body_open_tm.
+      * apply lc_app_iff_values in Hlc as [Hlam _].
+        by apply lc_lam_iff_body in Hlam.
+      * by apply lc_app_iff_values in Hlc as [_ ?].
+  - split.
+    + assumption.
+    + match goal with
+      | H : lc_tm _ |- _ =>
+          apply lc_app_iff_values in H as [Hfix Hv];
+          apply lc_app_iff_values; split;
+          [apply body_open_value; [by apply lc_fix_iff_body in Hfix | exact Hv] | exact Hfix]
+      end.
+  - split.
+    + assumption.
+    + by apply lc_match_iff_parts in Hlc as [_ [? _]].
+  - split.
+    + assumption.
+    + by apply lc_match_iff_parts in Hlc as [_ [_ ?]].
+Qed.
 
 Lemma step_regular e e' :
   step e e' → lc_tm e ∧ lc_tm e'.
-Proof. Admitted.
+Proof.
+  intros Hstep. induction Hstep.
+  - by apply head_step_regular.
+  - destruct IHHstep as [Hlc1 Hlc1'].
+    split; auto.
+    match goal with
+    | Hlc : lc_tm (tlete _ _) |- _ =>
+        apply lc_lete_iff_body in Hlc as [_ Hbody];
+        apply lc_lete_iff_body; split; auto
+    end.
+Qed.
 
 Lemma step_regular1 e e' :
   step e e' → lc_tm e.

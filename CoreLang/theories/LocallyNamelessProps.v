@@ -126,3 +126,29 @@ Lemma subst_intro_tm x w k e :
   lc_value w →
   tm_subst x w (open_tm k (vfvar x) e) = open_tm k w e.
 Proof. Admitted.
+
+Lemma body_open_value v u :
+  body_val v → lc_value u → lc_value (open_value 0 u v).
+Proof.
+  intros [L Hbody] Hlc.
+  pose (x := fresh_for (L ∪ fv_value v)).
+  assert (Hxfresh : x ∉ L ∪ fv_value v) by (subst x; apply fresh_for_not_in).
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hxfv : x ∉ fv_value v) by set_solver.
+  specialize (Hbody x HxL).
+  rewrite <- (subst_intro_value x u 0 v Hxfv Hlc).
+  by apply subst_lc_value.
+Qed.
+
+Lemma body_open_tm e u :
+  body_tm e → lc_value u → lc_tm (open_tm 0 u e).
+Proof.
+  intros [L Hbody] Hlc.
+  pose (x := fresh_for (L ∪ fv_tm e)).
+  assert (Hxfresh : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hxfv : x ∉ fv_tm e) by set_solver.
+  specialize (Hbody x HxL).
+  rewrite <- (subst_intro_tm x u 0 e Hxfv Hlc).
+  by apply subst_lc_tm.
+Qed.
