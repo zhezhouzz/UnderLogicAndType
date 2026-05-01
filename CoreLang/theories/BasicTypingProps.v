@@ -11,6 +11,15 @@ with basic_typing_contains_fv_tm Γ e T :
   Γ ⊢ₑ e ⋮ T → fv_tm e ⊆ dom Γ.
 Proof. Admitted.
 
+Class FvSubsetGamma (E : Type) `{Stale E} `{Typing (gmap atom ty) E ty} :=
+  fv_subset_gamma : ∀ Γ (e : E) T, Γ ⊢ e ⋮ T → stale e ⊆ dom Γ.
+
+#[global] Instance FvSubsetGamma_value : FvSubsetGamma value.
+Proof. intros Γ v T Hty. exact (basic_typing_contains_fv_value Γ v T Hty). Qed.
+
+#[global] Instance FvSubsetGamma_tm : FvSubsetGamma tm.
+Proof. intros Γ e T Hty. exact (basic_typing_contains_fv_tm Γ e T Hty). Qed.
+
 Lemma basic_typing_closed_value v T :
   ∅ ⊢ᵥ v ⋮ T → fv_value v = ∅.
 Proof.
@@ -30,6 +39,15 @@ Proof. apply typing_value_lc. Qed.
 Lemma basic_typing_regular_tm Γ e T :
   Γ ⊢ₑ e ⋮ T → lc_tm e.
 Proof. apply typing_tm_lc. Qed.
+
+Class TypingLc (E : Type) `{Lc E} `{Typing (gmap atom ty) E ty} :=
+  typing_lc : ∀ Γ (e : E) T, Γ ⊢ e ⋮ T → is_lc e.
+
+#[global] Instance TypingLc_value : TypingLc value.
+Proof. intros Γ v T Hty. exact (basic_typing_regular_value Γ v T Hty). Qed.
+
+#[global] Instance TypingLc_tm : TypingLc tm.
+Proof. intros Γ e T Hty. exact (basic_typing_regular_tm Γ e T Hty). Qed.
 
 Lemma basic_typing_base_canonical_form v b :
   ∅ ⊢ᵥ v ⋮ TBase b →
@@ -83,6 +101,16 @@ Lemma basic_typing_weaken_tm Γ Γ' e T :
   Γ ⊢ₑ e ⋮ T → Γ ⊆ Γ' → Γ' ⊢ₑ e ⋮ T.
 Proof. apply weakening_tm. Qed.
 
+Class BasicTypingWeaken (E : Type) `{Typing (gmap atom ty) E ty} :=
+  basic_typing_weaken :
+    ∀ Γ Γ' (e : E) T, Γ ⊆ Γ' → Γ ⊢ e ⋮ T → Γ' ⊢ e ⋮ T.
+
+#[global] Instance BasicTypingWeaken_value : BasicTypingWeaken value.
+Proof. intros Γ Γ' v T Hsub Hty. exact (basic_typing_weaken_value Γ Γ' v T Hty Hsub). Qed.
+
+#[global] Instance BasicTypingWeaken_tm : BasicTypingWeaken tm.
+Proof. intros Γ Γ' e T Hsub Hty. exact (basic_typing_weaken_tm Γ Γ' e T Hty Hsub). Qed.
+
 Lemma basic_typing_weaken_insert_value Γ v T x U :
   x ∉ dom Γ →
   Γ ⊢ᵥ v ⋮ T →
@@ -114,6 +142,20 @@ Lemma basic_typing_subst_tm Γ x s e T vx :
   Γ !! x = Some s →
   delete x Γ ⊢ₑ ({x := vx} e) ⋮ T.
 Proof. apply subst_typing_tm. Qed.
+
+Class BasicTypingSubst (E : Type) `{Typing (gmap atom ty) E ty} `{SubstV value E} :=
+  basic_typing_subst :
+    ∀ Γ x s (e : E) T vx,
+      Γ ⊢ e ⋮ T →
+      ∅ ⊢ᵥ vx ⋮ s →
+      Γ !! x = Some s →
+      delete x Γ ⊢ ({x := vx} e) ⋮ T.
+
+#[global] Instance BasicTypingSubst_value : BasicTypingSubst value.
+Proof. intros Γ x s v T vx Hty Hv Hlook. exact (basic_typing_subst_value Γ x s v T vx Hty Hv Hlook). Qed.
+
+#[global] Instance BasicTypingSubst_tm : BasicTypingSubst tm.
+Proof. intros Γ x s e T vx Hty Hv Hlook. exact (basic_typing_subst_tm Γ x s e T vx Hty Hv Hlook). Qed.
 
 Lemma basic_typing_unique_value Γ v T1 T2 :
   Γ ⊢ᵥ v ⋮ T1 → Γ ⊢ᵥ v ⋮ T2 → T1 = T2.

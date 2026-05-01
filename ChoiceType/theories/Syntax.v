@@ -53,43 +53,6 @@ Fixpoint plug_ctx (Δ : ctx_hole) (Γ : ctx) : ctx :=
   | CtxHoleSum   Δ1 Δ2  => CtxSum   (plug_ctx Δ1 Γ) (plug_ctx Δ2 Γ)
   end.
 
-(** ** Type erasure and lifting *)
-
-(** [erase_ty τ] : the basic type underlying τ (Definition Fig. 2). *)
-Fixpoint erase_ty (τ : choice_ty) : ty :=
-  match τ with
-  | CTOver  b _     => TBase b
-  | CTUnder b _     => TBase b
-  | CTInter τ1 _    => erase_ty τ1
-  | CTUnion τ1 _    => erase_ty τ1
-  | CTSum   τ1 _    => erase_ty τ1
-  | CTArrow _ τx τ  => erase_ty τx →ₜ erase_ty τ
-  | CTWand  _ τx τ  => erase_ty τx →ₜ erase_ty τ
-  end.
-
-(** [lift_ty s] : lift a basic type to the default over-refinement type. *)
-Fixpoint lift_ty (s : ty) : choice_ty :=
-  match s with
-  | TBase b        => CTOver b qual_top   (** {ν:b | ⊤} *)
-  | TArrow s1 s2   =>
-      let x := fresh_for ∅ in
-      CTArrow x (lift_ty s1) (lift_ty s2)
-  end.
-
-(** [erase_ctx Γ] : the basic context underlying Γ. *)
-Fixpoint erase_ctx (Γ : ctx) : gmap atom ty :=
-  match Γ with
-  | CtxEmpty        => ∅
-  | CtxBind x τ    => {[ x := erase_ty τ ]}
-  | CtxComma Γ1 Γ2 => erase_ctx Γ1 ∪ erase_ctx Γ2
-  | CtxStar  Γ1 Γ2 => erase_ctx Γ1 ∪ erase_ctx Γ2
-  | CtxSum   Γ1 _  => erase_ctx Γ1
-  end.
-
-(** [lift_ctx Γ_basic] : lift a basic context. *)
-Definition lift_ctx (Γ : gmap atom ty) : ctx :=
-  map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
-
 (** ** Domain (free variables from binders) *)
 
 Fixpoint ctx_dom (Γ : ctx) : aset :=
@@ -100,33 +63,6 @@ Fixpoint ctx_dom (Γ : ctx) : aset :=
   | CtxStar  Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   end.
-
-(** ** Free variables in types and contexts *)
-
-Fixpoint fv_cty (τ : choice_ty) : aset :=
-  match τ with
-  | CTOver  _ φ     => qual_fv φ
-  | CTUnder _ φ     => qual_fv φ
-  | CTInter τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
-  | CTUnion τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
-  | CTSum   τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
-  | CTArrow x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
-  | CTWand  x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
-  end.
-
-Fixpoint fv_ctx (Γ : ctx) : aset :=
-  match Γ with
-  | CtxEmpty        => ∅
-  | CtxBind x τ    => fv_cty τ          (** x itself is a binder, not free *)
-  | CtxComma Γ1 Γ2 => fv_ctx Γ1 ∪ fv_ctx Γ2
-  | CtxStar  Γ1 Γ2 => fv_ctx Γ1 ∪ fv_ctx Γ2
-  | CtxSum   Γ1 Γ2 => fv_ctx Γ1 ∪ fv_ctx Γ2
-  end.
-
-#[global] Instance stale_cty_inst : Stale choice_ty := fv_cty.
-#[global] Instance stale_ctx_inst : Stale ctx       := fv_ctx.
-Arguments stale_cty_inst /.
-Arguments stale_ctx_inst /.
 
 (** ** Well-formedness
 
