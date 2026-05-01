@@ -25,9 +25,7 @@ Class Close A := close_one : atom → nat → A → A.
 (** Local closure predicate. *)
 Class Lc A := is_lc : A → Prop.
 
-(** Multi-variable substitution (apply a whole gmap): [V → A → A].
-    For us V = gmap atom value; this is the [subst_atom] parameter
-    used in ChoiceLogic's [FFib] case. *)
+(** Multi-variable substitution (apply a whole gmap): [V → A → A]. *)
 Class SubstM V A := subst_map : V → A → A.
 
 (** Standard typing and denotation classes. *)

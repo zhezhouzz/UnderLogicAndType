@@ -76,11 +76,13 @@ Lemma res_models_impl_intro (m : WorldT) (φ ψ : FQ) :
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma res_models_fib_intro (m : WorldT) (X : aset) (φ : FQ) :
+Lemma res_models_fib_intro (m : WorldT) (x : atom) (φ : FQ) :
   (∀ σ,
-     ∀ Hproj : res_restrict (Var := atom) (Value := value) m X σ,
-     res_fiber_from_projection (Var := atom) (Value := value) m X σ Hproj ⊨ φ) →
-  m ⊨ FFib X φ.
+     ∀ Hproj : res_restrict (Var := atom) (Value := value) m {[x]} σ,
+     res_models_with_store σ
+       (res_fiber_from_projection (Var := atom) (Value := value) m {[x]} σ Hproj)
+       φ) →
+  m ⊨ FFib x φ.
 Proof. Admitted.
 
 Lemma res_models_forall_intro (m : WorldT) (x : atom) (φ : FQ) :

@@ -31,6 +31,9 @@ Notation "φ ⊫ ψ" :=
 (** Pick a result variable [ν] fresh with respect to a set of atoms. *)
 Definition fresh_result (avoid : aset) : atom := fresh avoid.
 
+Definition fib_vars (X : aset) (p : FQ) : FQ :=
+  set_fold FFib p X.
+
 (** ** Type denotation
 
     [denot_ty τ e : FQ] encodes the proposition "expression [e] has type [τ]"
@@ -45,20 +48,20 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
       The result variable ν is chosen fresh w.r.t. φ's free variables.
       FForall ν quantifies over the result coordinate; inside, FImpl links
-      execution to the over-approximation of φ.  [FFib (fv φ)] checks the
-      formula on each fiber determined by φ's free variables. *)
+      execution to the over-approximation of φ.  [fib_vars (fv φ)] iterates
+      the single-variable fiber modality over φ's free variables. *)
   | CTOver b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
         (FImpl (FAtom (expr_logic_qual e ν))
-               (FFib (qual_fv φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_fv φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
       FForall ν
         (FImpl (FAtom (expr_logic_qual e ν))
-               (FFib (qual_fv φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_fv φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -78,7 +81,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       FForall y
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FFib {[y]}
+          (FFib y
             (FImpl
               (denot_ty τx (tret (vfvar x)))
               (denot_ty τ (tapp (vfvar y) (vfvar x))))))
@@ -89,7 +92,7 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
       FForall y
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FFib {[y]}
+          (FFib y
             (FWand
               (denot_ty τx (tret (vfvar x)))
               (denot_ty τ (tapp (vfvar y) (vfvar x))))))
