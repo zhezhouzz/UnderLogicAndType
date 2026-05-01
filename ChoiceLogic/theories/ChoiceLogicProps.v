@@ -9,7 +9,12 @@ From ChoiceLogic Require Import Prelude LogicQualifier Formula.
 
 Section ChoiceLogicProps.
 
-Local Notation FormulaT := Formula (only parsing).
+Context {V : Type} `{ValueSig V}.
+
+Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
+
+Local Notation FormulaT := (Formula (V := V)) (only parsing).
 
 Notation sat m φ := (res_models m φ).
 Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associativity).
@@ -47,15 +52,15 @@ Qed.
 
     Write ⟦φ⟧ for the extension of φ: the set of worlds satisfying φ. *)
 
-Definition ext (φ : FormulaT) : WfWorld → Prop :=
+Definition ext (φ : FormulaT) : WfWorldT → Prop :=
   λ m, sat m φ.
 
 (** Over-closure: O(R) = { m' | ∃ m ∈ R. m ⊆ m' }, using same-domain subset. *)
-Definition over_closure (R : WfWorld → Prop) : WfWorld → Prop :=
+Definition over_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m m'.
 
 (** Under-closure: U(R) = { m' | ∃ m ∈ R. m' ⊆ m }, using same-domain subset. *)
-Definition under_closure (R : WfWorld → Prop) : WfWorld → Prop :=
+Definition under_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m' m.
 
 (** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
@@ -79,15 +84,15 @@ Proof. Admitted.
 
 (** Richness assumption on atomic propositions. *)
 Record atoms_rich : Prop := {
-  ar_inter : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+  ar_inter : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
     ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
            logic_qualifier_denote a1 ρ m ∧ logic_qualifier_denote a2 ρ m;
-  ar_union : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+  ar_union : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
     ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
            logic_qualifier_denote a1 ρ m ∨ logic_qualifier_denote a2 ρ m;
-  ar_prod  : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
+  ar_prod  : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
     ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
-      ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+      ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
         logic_qualifier_denote a1 ρ m1 ∧
         logic_qualifier_denote a2 ρ m2 ∧
         res_product m1 m2 Hc ⊑ m;
@@ -104,7 +109,7 @@ Proof. Admitted.
 
 (** Collapse: u(o φ₁ ∧ o φ₂) ↔ u(φ₁ ∩ φ₂) when atoms are rich.
     a3 is the atom witnessing the intersection of a1 and a2. *)
-Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : logic_qualifier) :
+Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : LogicQualifierT) :
   (∀ ρ m, logic_qualifier_denote a3 ρ m ↔
           logic_qualifier_denote a1 ρ m ∧ logic_qualifier_denote a2 ρ m) →
   FUnder (FAnd (FOver (FAtom a1)) (FOver (FAtom a2))) ⊫ FUnder (FAtom a3).

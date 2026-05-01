@@ -44,13 +44,14 @@ Inductive head_step : tm → tm → Prop :=
       head_step (tapp (vlam s body) v)
                 ({0 ~> v} body)
 
-  (** [tapp (vfix sf sx body) v  →  body[1 ↦ self][0 ↦ v]]
-      Opens the body with f = self at bvar 1, then x = v at bvar 0. *)
-  | HS_Fix sf sx body v :
-      let self := vfix sf sx body in
+  (** [tapp (vfix Tf vf) v  →  tapp (vf[0 ↦ v]) self]
+      The fix body is a value.  Once opened with the ordinary argument, it is
+      expected to be a function that accepts the recursive self reference. *)
+  | HS_Fix Tf vf v :
+      let self := vfix Tf vf in
       lc_tm (tapp self v) →
       head_step (tapp self v)
-                ({0 ~> v} ({1 ~> self} body))
+                (tapp ({0 ~> v} vf) self)
 
   | HS_MatchTrue et ef :
       lc_tm (tmatch (vconst (cbool true)) et ef) →

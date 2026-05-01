@@ -11,11 +11,17 @@ From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionali
     All algebra operations and the partial order are defined on [WfWorld].
     [World]-level helpers are kept local where possible. *)
 
+Section Resource.
+
+Context {V : Type} `{ValueSig V}.
+
 (** ** Worlds *)
+
+Local Notation StoreT := (gmap atom V) (only parsing).
 
 Record World := mk_world {
   world_dom    : aset;
-  world_stores : Store → Prop;
+  world_stores : StoreT → Prop;
 }.
 
 (** Coercion: treat a World as a predicate on stores. *)
@@ -76,7 +82,7 @@ Definition raw_restrict (m : World) (X : aset) : World := {|
   world_stores := λ s, ∃ s', m s' ∧ store_restrict s' X = s;
 |}.
 
-Definition raw_fiber (m : World) (σ : Store) : World := {|
+Definition raw_fiber (m : World) (σ : StoreT) : World := {|
   world_dom    := world_dom m;
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
@@ -230,7 +236,7 @@ Proof.
     exact (store_restrict_dom t X).
 Defined.
 
-Definition res_fiber (w : WfWorld) (σ : Store)
+Definition res_fiber (w : WfWorld) (σ : StoreT)
     (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld.
 Proof.
   refine (exist _ (raw_fiber w σ) _).
@@ -241,7 +247,7 @@ Proof.
   - intros s' [Hs' _]. simpl. exact (Hdom s' Hs').
 Defined.
 
-Definition res_fiber_from_projection (w : WfWorld) (X : aset) (σ : Store)
+Definition res_fiber_from_projection (w : WfWorld) (X : aset) (σ : StoreT)
     (Hproj : res_restrict w X σ) : WfWorld.
 Proof.
   refine (res_fiber w σ _).
@@ -325,12 +331,12 @@ Proof. Admitted.
 
     [singleton_world σ] is the world that contains exactly the store [σ]. *)
 
-Definition singleton_world (σ : Store) : World := {|
+Definition singleton_world (σ : StoreT) : World := {|
   world_dom    := dom σ;
   world_stores := λ s, s = σ;
 |}.
 
-Lemma wf_singleton_world (σ : Store) : wf_world (singleton_world σ).
+Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof.
   constructor.
   - exists σ. exact eq_refl.
@@ -394,12 +400,14 @@ Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
   ∀ s, res_sum w1 w2 Hdef s ↔ res_sum w2 w1 Hdef' s.
 Proof. intros s. unfold res_sum. simpl. tauto. Qed.
 
+End Resource.
+
 Infix "≤ᵣ" := raw_le (at level 70).
 
-#[global] Instance stale_world  : Stale (World) :=
+#[global] Instance stale_world {V : Type} `{ValueSig V} : Stale (World (V := V)) :=
   world_dom.
 Arguments stale_world /.
 
-#[global] Instance stale_wfworld  : Stale (WfWorld) :=
-  λ w, world_dom (w : World).
+#[global] Instance stale_wfworld {V : Type} `{ValueSig V} : Stale (WfWorld (V := V)) :=
+  λ w, world_dom (w : World (V := V)).
 Arguments stale_wfworld /.

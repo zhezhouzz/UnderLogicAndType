@@ -11,6 +11,9 @@
 
 From ChoiceType Require Export Syntax.
 
+(** Temporary bridge from core expressions to logic atoms. *)
+Parameter expr_logic_qual : tm → atom → logic_qualifier.
+
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
 (** Abbreviation: a Choice Logic formula at the ChoiceType instantiation. *)

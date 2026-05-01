@@ -43,8 +43,11 @@ Definition base_ty_of_const (c : constant) : base_ty :=
 
     Binder conventions:
       [vlam s e]       : bvar 0 in e  = the λ-parameter x
-      [vfix sf sx e]   : bvar 0 in e  = x (inner λ-arg)
-                         bvar 1 in e  = f (fix self-ref, outer)
+      [vfix Tf vf]     : bvar 0 in vf = the ordinary argument x.
+                         The opened [vf] is expected to be a function that
+                         accepts the recursive self reference.  This
+                         HATs-style encoding avoids giving [vfix] two
+                         binders directly.
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
       [tmatch v et ef] : boolean case split; both branches bind no variables *)
 
@@ -53,7 +56,7 @@ Inductive value : Type :=
   | vfvar  (x : atom)
   | vbvar  (n : nat)
   | vlam   (s : ty)      (e : tm)
-  | vfix   (sf sx : ty)  (e : tm)
+  | vfix   (Tf : ty)     (vf : value)
 
 with tm : Type :=
   | tret    (v : value)
@@ -88,9 +91,7 @@ Fixpoint open_value (k : nat) (s : value) (v : value) : value :=
   | vfvar  _ => v
   | vbvar  n => if decide (k = n) then s else v
   | vlam s' e     => vlam s' (open_tm (S k) s e)
-  (** vfix has two binders; the body is opened starting at k+2 for
-      recursive calls that come through the open machinery. *)
-  | vfix sf sx e  => vfix sf sx (open_tm (S (S k)) s e)
+  | vfix Tf vf    => vfix Tf (open_value (S k) s vf)
   end
 with open_tm (k : nat) (s : value) (e : tm) : tm :=
   match e with
@@ -122,7 +123,7 @@ Fixpoint close_value (x : atom) (k : nat) (v : value) : value :=
   | vfvar  y => if decide (x = y) then vbvar k else v
   | vbvar  _ => v
   | vlam s' e     => vlam s' (close_tm x (S k) e)
-  | vfix sf sx e  => vfix sf sx (close_tm x (S (S k)) e)
+  | vfix Tf vf    => vfix Tf (close_value x (S k) vf)
   end
 with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   match e with
@@ -147,7 +148,7 @@ Fixpoint fv_value (v : value) : aset :=
   | vfvar  x => {[ x ]}
   | vbvar  _ => ∅
   | vlam _ e     => fv_tm e
-  | vfix _ _ e   => fv_tm e
+  | vfix _ vf    => fv_value vf
   end
 with fv_tm (e : tm) : aset :=
   match e with
@@ -171,7 +172,7 @@ Fixpoint value_subst (x : atom) (s : value) (v : value) : value :=
   | vfvar  y => if decide (x = y) then s else v
   | vbvar  _ => v
   | vlam  ty e    => vlam ty  (tm_subst x s e)
-  | vfix  sf sx e => vfix sf sx (tm_subst x s e)
+  | vfix  Tf vf   => vfix Tf (value_subst x s vf)
   end
 with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   match e with
@@ -215,10 +216,9 @@ Inductive lc_value : value → Prop :=
   | LC_lam s e (L : aset) :
       (∀ x, x ∉ L → lc_tm ({0 ~> (vfvar x)} e)) →
       lc_value (vlam s e)
-  | LC_fix sf sx e (L : aset) :
-      (∀ f x, f ∉ L → x ∉ L →
-        lc_tm ({0 ~> (vfvar x)} ({1 ~> (vfvar f)} e))) →
-      lc_value (vfix sf sx e)
+  | LC_fix Tf vf (L : aset) :
+      (∀ x, x ∉ L → lc_value ({0 ~> (vfvar x)} vf)) →
+      lc_value (vfix Tf vf)
 
 with lc_tm : tm → Prop :=
   | LC_ret v : lc_value v → lc_tm (tret v)

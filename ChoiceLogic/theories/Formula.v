@@ -18,12 +18,18 @@ From ChoiceLogic Require Import Prelude LogicQualifier.
 
 Section ChoiceLogic.
 
+Context {V : Type} `{ValueSig V}.
+
+Local Notation StoreT := (gmap atom V) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
+
 (** ** Formula syntax *)
 
 Inductive Formula : Type :=
   | FTrue
   | FFalse
-  | FAtom   (a : logic_qualifier)
+  | FAtom   (a : LogicQualifierT)
   | FAnd    (p q : Formula)
   | FOr     (p q : Formula)
   | FImpl   (p q : Formula)                     (* Kripke implication *)
@@ -59,8 +65,8 @@ Arguments stale_formula /.
     corresponding fiber and extends the explicit store with the projection. *)
 
 Fixpoint res_models_with_store
-    (ρ : Store)
-    (m : WfWorld)
+    (ρ : StoreT)
+    (m : WfWorldT)
     (φ : Formula) : Prop :=
   match φ with
 
@@ -82,28 +88,28 @@ Fixpoint res_models_with_store
 
   | FImpl p q =>
       (** Kripke implication: ∀ m' ≥ m. m' ⊨ p → m' ⊨ q *)
-      ∀ m' : WfWorld,
+      ∀ m' : WfWorldT,
         m ⊑ m' →
         res_models_with_store ρ m' p →
         res_models_with_store ρ m' q
 
   | FStar p q =>
       (** m ⊨ p ∗ q  iff  ∃ m1 m2. m1 × m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
-      ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+      ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
         res_product m1 m2 Hc ⊑ m ∧
         res_models_with_store ρ m1 p ∧
         res_models_with_store ρ m2 q
 
   | FWand p q =>
       (** m ⊨ p −∗ q  iff  ∀ m'. m' ↑ m  →  m' ⊨ p  →  m' × m ⊨ q *)
-      ∀ m' : WfWorld,
+      ∀ m' : WfWorldT,
         ∀ Hc : world_compat m' m,
         res_models_with_store ρ m' p →
         res_models_with_store ρ (res_product m' m Hc) q
 
   | FPlus p q =>
       (** m ⊨ p ⊕ q  iff  ∃ m1 m2. m1 + m2 ≤ m  ∧  m1 ⊨ p  ∧  m2 ⊨ q *)
-      ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+      ∃ (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
         res_sum m1 m2 Hdef ⊑ m ∧
         res_models_with_store ρ m1 p ∧
         res_models_with_store ρ m2 q
@@ -112,7 +118,7 @@ Fixpoint res_models_with_store
       (** m ⊨ ∀x.p iff x is fresh for m and every one-coordinate extension
           of m at x models p. *)
       x ∉ world_dom m ∧
-      ∀ m' : WfWorld,
+      ∀ m' : WfWorldT,
           world_dom m' = world_dom m ∪ {[x]} →
           res_restrict m' (world_dom m) = m →
           res_models_with_store (delete x ρ) m' p
@@ -121,7 +127,7 @@ Fixpoint res_models_with_store
       (** m ⊨ ∃x.p iff x is fresh for m and some one-coordinate extension
           of m at x models p. *)
       x ∉ world_dom m ∧
-      ∃ m' : WfWorld,
+      ∃ m' : WfWorldT,
           world_dom m' = world_dom m ∪ {[x]} ∧
           res_restrict m' (world_dom m) = m ∧
           res_models_with_store (delete x ρ) m' p
@@ -131,12 +137,12 @@ Fixpoint res_models_with_store
   | FOver p =>
       (** m ⊨ o p  iff  ∃ m'. m ⊆ m' ∧ m' ⊨ p
           where subset compares worlds with the same domain. *)
-      ∃ m' : WfWorld, res_subset m m' ∧ res_models_with_store ρ m' p
+      ∃ m' : WfWorldT, res_subset m m' ∧ res_models_with_store ρ m' p
 
   | FUnder p =>
       (** m ⊨ u p  iff  ∃ m'. m' ⊆ m ∧ m' ⊨ p
           where subset compares worlds with the same domain. *)
-      ∃ m' : WfWorld, res_subset m' m ∧ res_models_with_store ρ m' p
+      ∃ m' : WfWorldT, res_subset m' m ∧ res_models_with_store ρ m' p
 
   | FFib x p =>
       (** m ⊨ FFib x p iff ρ is disjoint from x and every x-fiber of m
@@ -149,7 +155,7 @@ Fixpoint res_models_with_store
 
 (** [res_models m φ] is the empty-store instance of the substitution-aware
     satisfaction relation. *)
-Definition res_models (m : WfWorld) (φ : Formula) : Prop :=
+Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
   res_models_with_store ∅ m φ.
 
 (** Entailment: φ ⊨ ψ holds when every world modeling φ also models ψ. *)

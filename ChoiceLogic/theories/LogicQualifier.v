@@ -1,5 +1,4 @@
 From ChoiceLogic Require Import Prelude.
-From CoreLang Require Import Syntax.
 
 (** * Logic qualifiers
 
@@ -10,15 +9,22 @@ From CoreLang Require Import Syntax.
     We do not require [dom store = d] or [world_dom w = d].  Denotation
     restricts both inputs to [d] before calling the predicate. *)
 
+Section LogicQualifier.
+
+Context {V : Type} `{ValueSig V}.
+
+Local Notation StoreT := (gmap atom V) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+
 Inductive logic_qualifier : Type :=
-  | lqual (d : aset) (prop : Store → WfWorld → Prop).
+  | lqual (d : aset) (prop : StoreT → WfWorldT → Prop).
 
 Definition lqual_dom (q : logic_qualifier) : aset :=
   match q with
   | lqual d _ => d
   end.
 
-Definition lqual_prop (q : logic_qualifier) : Store → WfWorld → Prop :=
+Definition lqual_prop (q : logic_qualifier) : StoreT → WfWorldT → Prop :=
   match q with
   | lqual _ p => p
   end.
@@ -28,11 +34,10 @@ Arguments stale_logic_qualifier /.
 
 Definition logic_qualifier_denote
     (q : logic_qualifier)
-    (σ : Store)
-    (w : WfWorld) : Prop :=
+    (σ : StoreT)
+    (w : WfWorldT) : Prop :=
   match q with
   | lqual d p => p (store_restrict σ d) (res_restrict w d)
   end.
 
-(** The expression atom is intentionally left abstract for now. *)
-Parameter expr_logic_qual : tm → atom → logic_qualifier.
+End LogicQualifier.

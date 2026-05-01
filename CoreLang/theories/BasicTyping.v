@@ -39,11 +39,12 @@ Inductive value_has_type : gmap atom ty → value → ty → Prop :=
   | VT_Lam Γ s T e (L : aset) :
       (∀ x, x ∉ L → <[x := s]>Γ ⊢ₑ (e ^^ x) ⋮ T) →
       Γ ⊢ᵥ (vlam s e) ⋮ (s →ₜ T)
-  | VT_Fix Γ sx T e (L : aset) :
-      (** Body opened with x at bvar 0 and self (f : sx →ₜ T) at bvar 1. *)
-      (∀ f x, f ∉ L → x ∉ L → f ≠ x →
-        <[f := sx →ₜ T]>(<[x := sx]>Γ) ⊢ₑ ({0 ~> vfvar x} ({1 ~> vfvar f} e)) ⋮ T) →
-      Γ ⊢ᵥ (vfix (sx →ₜ T) sx e) ⋮ (sx →ₜ T)
+  | VT_Fix Γ sx T vf (L : aset) :
+      (** The body receives the ordinary argument first; the resulting value
+          is a function waiting for the recursive self reference. *)
+      (∀ x, x ∉ L →
+        <[x := sx]>Γ ⊢ᵥ (vf ^^ x) ⋮ ((sx →ₜ T) →ₜ T)) →
+      Γ ⊢ᵥ (vfix (sx →ₜ T) vf) ⋮ (sx →ₜ T)
 
 with tm_has_type : gmap atom ty → tm → ty → Prop :=
   | TT_Ret Γ v T :

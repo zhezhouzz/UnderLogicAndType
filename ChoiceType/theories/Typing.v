@@ -102,33 +102,29 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
       has_choice_type (CtxStar Γ1 Γ2) (tapp v1 v2) ({x := v2} τ)
 
   (** T-Fix *)
-  | CT_Fix Γ x τx τ e (L : aset) :
+  | CT_Fix Γ x τx τ vf (L : aset) :
       (∀ f y, f ∉ L → y ∉ L → f ≠ y →
         has_choice_type
           (CtxComma Γ
-            (CtxComma
-              (CtxBind y τx)
-              (CtxBind f (CTArrow x τx τ))))
-          ({0 ~> vfvar y} ({1 ~> vfvar f} e))
-          ({x := vfvar y} τ)) →
+            (CtxBind y τx))
+          (tret ({0 ~> vfvar y} vf))
+          (CTArrow f (CTArrow x τx τ) ({x := vfvar y} τ))) →
       has_choice_type Γ
-        (tret (vfix (erase_ty (CTArrow x τx τ)) (erase_ty τx) e))
+        (tret (vfix (erase_ty (CTArrow x τx τ)) vf))
         (CTArrow x τx τ)
 
   (** T-FixD.  The paper refines the recursive argument with a decreasing
       predicate; the corresponding logic qualifier is still left abstract, so
       this constructor records the separating context structure. *)
-  | CT_FixD Γ x τx τ e (L : aset) :
+  | CT_FixD Γ x τx τ vf (L : aset) :
       (∀ f y, f ∉ L → y ∉ L → f ≠ y →
         has_choice_type
           (CtxStar Γ
-            (CtxComma
-              (CtxBind y τx)
-              (CtxBind f (CTArrow x τx τ))))
-          ({0 ~> vfvar y} ({1 ~> vfvar f} e))
-          ({x := vfvar y} τ)) →
+            (CtxBind y τx))
+          (tret ({0 ~> vfvar y} vf))
+          (CTWand f (CTWand x τx τ) ({x := vfvar y} τ))) →
       has_choice_type Γ
-        (tret (vfix (erase_ty (CTWand x τx τ)) (erase_ty τx) e))
+        (tret (vfix (erase_ty (CTWand x τx τ)) vf))
         (CTWand x τx τ)
 
   (** T-AppOp.  Primitive operations are unary. *)

@@ -1,16 +1,19 @@
 From ChoiceAlgebra Require Import Prelude MapFilterDom.
-From CoreLang Require Import Syntax.
 
 (** * Stores  (Definition 1.1)
 
-    A store is a finite partial map from global atoms to CoreLang values.
+    A store is a finite partial map from global atoms to abstract values.
 
     We call these "stores" rather than "substitutions" to avoid name clashes
     with the locally-nameless substitution machinery in CoreLang. *)
 
+Section Store.
+
+Context {V : Type} `{ValueSig V}.
+
 (** ** Basic type *)
 
-Definition Store : Type := gmap atom value.
+Definition Store : Type := gmap atom V.
 
 (** ** Compatibility and restriction *)
 
@@ -95,7 +98,7 @@ Proof.
            apply elem_of_difference. split.
            ++ by apply elem_of_dom; exists y.
            ++ by apply not_elem_of_dom.
-      * apply eq_trans with (@None value); first exact E2.
+      * apply eq_trans with (@None V); first exact E2.
         symmetry. unfold s2', store_restrict.
         apply map_lookup_filter_None. left. exact E2.
 Qed.
@@ -162,6 +165,8 @@ Proof.
     setoid_rewrite Hnone.
     rewrite map_lookup_filter_None. hauto.
 Qed.
+
+End Store.
 
 #[global] Instance stale_store {A} : Stale (gmap atom A) := dom.
 Arguments stale_store /.

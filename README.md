@@ -46,33 +46,38 @@ PATH=$(opam var bin --switch=with-rocq-1):$PATH make
 
 ## Repository structure
 
-The formalization is split into four libraries with a linear dependency order:
+The formalization is split into five libraries with the following dependency
+shape:
 
 ```
-ChoiceAlgebra → ChoiceLogic → ChoiceType
-                               ↑
-                            CoreLang
+ChoicePrelude → ChoiceAlgebra → ChoiceLogic
+      │                              │
+      └────────────→ CoreLang ───────┘
+                         │
+                         v
+                    ChoiceType
 ```
 
 Most libraries live under `<Library>/theories/`; `ChoicePrelude/` is a small
 top-level shared prelude.
 
-### `ChoicePrelude/` — Shared concrete aliases
+### `ChoicePrelude/` — Shared prelude
 
-Common aliases for the concrete `atom`/`value` instantiation, including
-`StoreT`, `RawWorldT`, and `WorldT`.
+Common infrastructure shared by the algebra, logic, and language layers:
+the concrete `atom` type, finite atom sets, freshness helpers, `Stale`, and
+the abstract `ValueSig` interface used by `ChoiceAlgebra` and `ChoiceLogic`.
 
 ### `ChoiceAlgebra/` — The algebraic layer
 
-Substitutions, resources, and the abstract choice algebra.
+Stores, resources, and the abstract choice algebra.
 
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Shared setup (stdpp, Hammer) |
 | `MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
-| `Substitution.v` | Substitutions, compatibility, restriction, fibers |
+| `Store.v` | Stores, compatibility, restriction, fibers |
 | `Resource.v` | Resources (worlds), resource operations, partial order |
-| `ChoiceAlgebra.v` | Abstract choice algebra class; concrete `World` instance |
+| `ChoiceAlgebra.v` | Abstract choice algebra class; `WfWorld` instance |
 
 ### `ChoiceLogic/` — The logic layer
 
@@ -89,6 +94,17 @@ Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 
 A call-by-value λ-calculus with primitives and pattern matching,
 in locally-nameless representation.
+
+The Rocq syntax intentionally represents recursive functions slightly
+differently from the paper's surface presentation.  Instead of giving `vfix`
+two binders for the ordinary argument and recursive self reference, the
+formalization uses `vfix Tf vf`, where `vf` is a value with one binder for the
+ordinary argument.  After that binder is opened, `vf` is expected to be a
+function that accepts the recursive self reference.  This HATs-style encoding
+keeps the locally-nameless treatment of `vfix` to one direct binder while
+preserving the intended recursive-call behavior.  Sanity checks against the
+paper should treat this as an encoding choice rather than a literal syntax
+match.
 
 | File | Contents |
 |------|----------|

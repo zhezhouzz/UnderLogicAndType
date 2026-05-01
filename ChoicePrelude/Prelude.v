@@ -2,8 +2,8 @@
 
     Top-level shared infrastructure for the concrete development.  This file
     deliberately sits before both CoreLang and ChoiceAlgebra: it provides the
-    global atom type, finite atom sets, freshness helpers, and the [Stale]
-    interface used by all later layers. *)
+    global atom type, finite atom sets, an abstract value interface, freshness
+    helpers, and the [Stale] interface used by all later layers. *)
 
 From stdpp Require Export gmap sets fin_sets fin_map_dom.
 From Corelib Require Export Program.Wf.
@@ -16,6 +16,18 @@ Definition atom : Type := positive.
 #[global] Instance atom_countable : Countable  atom := _.
 #[global] Instance atom_infinite  : Infinite   atom := _.
 Notation aset := (gset atom).
+
+(** ** Abstract store values
+
+    The algebraic layers quantify over store values abstractly.  The
+    ChoiceType layer later instantiates this interface with CoreLang [value]s. *)
+Class ValueSig (V : Type) := {
+  valuesig_eqdec : EqDecision V;
+  valuesig_inhabited : Inhabited V;
+}.
+
+#[global] Existing Instance valuesig_eqdec.
+#[global] Existing Instance valuesig_inhabited.
 
 (** Free-variable/resource-domain collection. *)
 Class Stale A := stale : A → aset.

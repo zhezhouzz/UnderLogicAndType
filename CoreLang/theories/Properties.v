@@ -23,7 +23,7 @@ Proof. Admitted.
 
 Lemma canonical_arrow v s T :
   ∅ ⊢ᵥ v ⋮ (s →ₜ T) →
-  (∃ s' e, v = vlam s' e) ∨ (∃ sf sx e, v = vfix sf sx e).
+  (∃ s' e, v = vlam s' e) ∨ (∃ Tf vf, v = vfix Tf vf).
 Proof. Admitted.
 
 Lemma canonical_base v b :
