@@ -35,3 +35,41 @@ Ltac inv_lc :=
 Ltac ln_simpl :=
   simpl in *; crush_binders; try set_solver; try congruence; eauto.
 
+(** ** Small set facts used by locally-nameless scripts *)
+
+Lemma setunion_cons_cons (x : atom) (s1 s2 : aset) :
+  {[x]} ∪ s1 ∪ ({[x]} ∪ s2) = {[x]} ∪ s1 ∪ s2.
+Proof. set_solver. Qed.
+
+Lemma setunion_empty_left (s : aset) :
+  ∅ ∪ s = s.
+Proof. set_solver. Qed.
+
+Lemma subseteq_subtract_both (x : atom) (s1 s2 : aset) :
+  x ∉ s1 →
+  x ∉ s2 →
+  {[x]} ∪ s1 ⊆ {[x]} ∪ s2 →
+  s1 ⊆ s2.
+Proof. set_solver. Qed.
+
+Lemma setunion_cons_right (x : atom) (s : aset) :
+  s ∪ ({[x]} ∪ ∅) = {[x]} ∪ s.
+Proof. set_solver. Qed.
+
+Lemma subseteq_subtract_both' (x : atom) (s1 s2 : aset) :
+  x ∉ s1 →
+  x ∉ s2 →
+  {[x]} ∪ s1 ⊆ s2 ∪ ({[x]} ∪ ∅) →
+  s1 ⊆ s2.
+Proof. set_solver. Qed.
+
+Lemma subseteq_trans_cons (x : atom) (s1 s2 s3 : aset) :
+  {[x]} ∪ s1 ⊆ {[x]} ∪ s2 →
+  s2 ⊆ {[x]} ∪ s3 →
+  {[x]} ∪ s1 ⊆ {[x]} ∪ s3.
+Proof. set_solver. Qed.
+
+Ltac pose_fresh_from x s :=
+  let Hfresh := fresh "Hfresh" in
+  pose (x := fresh_for s);
+  assert (Hfresh : x ∉ s) by (subst x; apply fresh_for_not_in).
