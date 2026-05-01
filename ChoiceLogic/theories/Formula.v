@@ -130,12 +130,14 @@ Fixpoint res_models
   (** Approximation modalities (Definition 1.9) *)
 
   | FOver p =>
-      (** m ⊨ o p  iff  ∃ m' ⊇ m. m' ⊨ p  (over-approximation: superset) *)
-      ∃ m' : WorldT, (∀ σ, m σ → m' σ) ∧ res_models m' p
+      (** m ⊨ o p  iff  ∃ m'. m ⊆ m' ∧ m' ⊨ p
+          where subset compares worlds with the same domain. *)
+      ∃ m' : WorldT, res_subset m m' ∧ res_models m' p
 
   | FUnder p =>
-      (** m ⊨ u p  iff  ∃ m' ⊆ m. m' ⊨ p  (under-approximation: subset) *)
-      ∃ m' : WorldT, (∀ σ, m' σ → m σ) ∧ res_models m' p
+      (** m ⊨ u p  iff  ∃ m'. m' ⊆ m ∧ m' ⊨ p
+          where subset compares worlds with the same domain. *)
+      ∃ m' : WorldT, res_subset m' m ∧ res_models m' p
 
   | FFib X p =>
       (** m ⊨ FFib X p iff every X-fiber of m models p. *)

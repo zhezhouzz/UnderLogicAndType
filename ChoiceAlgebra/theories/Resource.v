@@ -264,6 +264,14 @@ Proof.
   rewrite store_restrict_dom. set_solver.
 Defined.
 
+(** Same-domain subset relation on well-formed worlds.
+
+    This is the extensional inclusion relation used by approximation
+    modalities.  Unlike [⊑], it does not restrict or enlarge the domain:
+    [res_subset w1 w2] only compares worlds with the same domain. *)
+Definition res_subset (w1 w2 : WfWorld) : Prop :=
+  world_dom w1 = world_dom w2 ∧ ∀ σ, w1 σ → w2 σ.
+
 (** Total WfWorld operations for algebraic structures that encode partiality
     with separate definedness predicates.  Their wf obligations are meaningful
     only under the corresponding definedness assumptions, so we keep them
