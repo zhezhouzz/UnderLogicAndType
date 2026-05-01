@@ -24,7 +24,11 @@ Proof. intros H. exact (proj2 (step_regular e e' H)). Qed.
 
 Lemma steps_trans e1 e2 e3 :
   e1 →* e2 → e2 →* e3 → e1 →* e3.
-Proof. Admitted.
+Proof. apply rtc_trans. Qed.
+
+Lemma steps_R e e' :
+  step e e' → e →* e'.
+Proof. apply rtc_once. Qed.
 
 Lemma steps_regular e e' :
   e →* e' → lc_tm e → lc_tm e'.
@@ -32,9 +36,25 @@ Proof.
   intros Hsteps Hlc. induction Hsteps; eauto using step_regular2.
 Qed.
 
+Lemma steps_regular1 e e' :
+  e →* e' → lc_tm e → lc_tm e.
+Proof. eauto. Qed.
+
+Lemma steps_regular2 e e' :
+  e →* e' → lc_tm e → lc_tm e'.
+Proof. apply steps_regular. Qed.
+
 Lemma value_steps_self v e :
   tret v →* e → e = tret v.
 Proof. apply val_steps_self. Qed.
+
+Lemma value_no_step v e :
+  ¬ step (tret v) e.
+Proof. intro Hstep. eapply val_no_step; eauto. Qed.
+
+Lemma head_step_deterministic e e1 e2 :
+  head_step e e1 → head_step e e2 → e1 = e2.
+Proof. apply head_step_det. Qed.
 
 Lemma basic_step_preservation Γ e e' T :
   Γ ⊢ₑ e ⋮ T → step e e' → Γ ⊢ₑ e' ⋮ T.
@@ -61,3 +81,44 @@ Proof.
   pose proof (head_step_regular _ _ (HS_Fix Tf vf v Hlc)) as [_ H].
   exact H.
 Qed.
+
+Lemma reduction_lete e1 e2 v :
+  tlete e1 e2 →* tret v →
+  ∃ vx, e1 →* tret vx ∧ open_tm 0 vx e2 →* tret v.
+Proof. Admitted.
+
+Lemma reduction_lete_intro e1 e2 vx v :
+  body_tm e2 →
+  e1 →* tret vx →
+  open_tm 0 vx e2 →* tret v →
+  tlete e1 e2 →* tret v.
+Proof. Admitted.
+
+Lemma reduction_beta s body vx v :
+  lc_value vx →
+  tapp (vlam s body) vx →* tret v →
+  open_tm 0 vx body →* tret v.
+Proof. Admitted.
+
+Lemma reduction_beta_intro s body vx v :
+  body_tm body →
+  lc_value vx →
+  open_tm 0 vx body →* tret v →
+  tapp (vlam s body) vx →* tret v.
+Proof. Admitted.
+
+Lemma reduction_fix Tf vf vx v :
+  lc_value vx →
+  tapp (vfix Tf vf) vx →* tret v →
+  tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v.
+Proof. Admitted.
+
+Lemma reduction_match_true et ef v :
+  tmatch (vconst (cbool true)) et ef →* tret v →
+  et →* tret v.
+Proof. Admitted.
+
+Lemma reduction_match_false et ef v :
+  tmatch (vconst (cbool false)) et ef →* tret v →
+  ef →* tret v.
+Proof. Admitted.
