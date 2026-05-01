@@ -1,5 +1,4 @@
 From ChoiceLogic Require Import Prelude LogicQualifier Formula.
-From CoreLang Require Import Syntax.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 
@@ -10,8 +9,6 @@ From CoreLang Require Import Syntax.
 
 Section ChoiceLogicProps.
 
-Local Notation StoreT := (gmap atom value) (only parsing).
-Local Notation WorldT := (@WfWorld atom _ _ value) (only parsing).
 Local Notation FormulaT := Formula (only parsing).
 
 Notation sat m φ := (res_models m φ).

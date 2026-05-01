@@ -54,7 +54,13 @@ ChoiceAlgebra → ChoiceLogic → ChoiceType
                             CoreLang
 ```
 
-Each library lives under `<Library>/theories/`.
+Most libraries live under `<Library>/theories/`; `ChoicePrelude/` is a small
+top-level shared prelude.
+
+### `ChoicePrelude/` — Shared concrete aliases
+
+Common aliases for the concrete `atom`/`value` instantiation, including
+`StoreT`, `RawWorldT`, and `WorldT`.
 
 ### `ChoiceAlgebra/` — The algebraic layer
 
@@ -74,7 +80,7 @@ Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Re-exports all of `ChoiceAlgebra` |
+| `Prelude.v` | Re-exports `ChoiceAlgebra` and `ChoicePrelude` |
 | `LogicQualifier.v` | Logic-level qualifier atoms (`lqual`) and `logic_qualifier_denote` |
 | `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |

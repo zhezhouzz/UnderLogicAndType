@@ -1,5 +1,4 @@
 From ChoiceLogic Require Import Prelude LogicQualifier.
-From CoreLang Require Import Syntax.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 
@@ -18,9 +17,6 @@ From CoreLang Require Import Syntax.
       the well-formed fiber world models p under the extended store. *)
 
 Section ChoiceLogic.
-
-Local Notation StoreT := (gmap atom value) (only parsing).
-Local Notation WorldT := (@WfWorld atom _ _ value) (only parsing).
 
 (** ** Formula syntax *)
 

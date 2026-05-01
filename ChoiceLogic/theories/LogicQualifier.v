@@ -1,5 +1,4 @@
-From ChoiceLogic Require Import Prelude.
-From CoreLang Require Import Syntax.
+From ChoicePrelude Require Import Prelude.
 
 (** * Logic qualifiers
 
@@ -9,9 +8,6 @@ From CoreLang Require Import Syntax.
 
     We do not require [dom store = d] or [world_dom w = d].  Denotation
     restricts both inputs to [d] before calling the predicate. *)
-
-Definition StoreT := (gmap atom value).
-Definition WorldT := (@WfWorld atom _ _ value).
 
 Inductive logic_qualifier : Type :=
   | lqual (d : aset) (prop : StoreT → WorldT → Prop).

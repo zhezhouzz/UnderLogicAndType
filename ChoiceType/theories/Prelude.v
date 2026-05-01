@@ -26,9 +26,5 @@ From ChoiceLogic Require Export Prelude LogicQualifier Formula ChoiceLogicProps.
     quantified; at usage sites we specialise them with
     [@... atom _ _ value] or let unification fill them in. *)
 
-(** Convenience abbreviations used throughout ChoiceType. *)
-Notation StoreT  := (gmap atom value) (only parsing).
-Notation RawWorldT := (@World atom _ _ value) (only parsing).
-Notation WorldT  := (@WfWorld atom _ _ value) (only parsing).
 (** ChoiceType formulas use logic qualifiers as atoms. *)
 Notation FormulaQ := Formula (only parsing).
