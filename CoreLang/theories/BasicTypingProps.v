@@ -72,3 +72,65 @@ Proof.
       rewrite lookup_empty in Hlookup; discriminate
   end.
 Qed.
+
+(** ** Structural typing lemmas *)
+
+Lemma basic_typing_weaken_value Γ Γ' v T :
+  Γ ⊢ᵥ v ⋮ T → Γ ⊆ Γ' → Γ' ⊢ᵥ v ⋮ T.
+Proof. apply weakening_value. Qed.
+
+Lemma basic_typing_weaken_tm Γ Γ' e T :
+  Γ ⊢ₑ e ⋮ T → Γ ⊆ Γ' → Γ' ⊢ₑ e ⋮ T.
+Proof. apply weakening_tm. Qed.
+
+Lemma basic_typing_weaken_insert_value Γ v T x U :
+  x ∉ dom Γ →
+  Γ ⊢ᵥ v ⋮ T →
+  <[x := U]> Γ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hfresh Hty. eapply basic_typing_weaken_value; eauto.
+  apply insert_subseteq. by apply not_elem_of_dom.
+Qed.
+
+Lemma basic_typing_weaken_insert_tm Γ e T x U :
+  x ∉ dom Γ →
+  Γ ⊢ₑ e ⋮ T →
+  <[x := U]> Γ ⊢ₑ e ⋮ T.
+Proof.
+  intros Hfresh Hty. eapply basic_typing_weaken_tm; eauto.
+  apply insert_subseteq. by apply not_elem_of_dom.
+Qed.
+
+Lemma basic_typing_subst_value Γ x s v T vx :
+  Γ ⊢ᵥ v ⋮ T →
+  ∅ ⊢ᵥ vx ⋮ s →
+  Γ !! x = Some s →
+  delete x Γ ⊢ᵥ ({x := vx} v) ⋮ T.
+Proof. apply subst_typing_value. Qed.
+
+Lemma basic_typing_subst_tm Γ x s e T vx :
+  Γ ⊢ₑ e ⋮ T →
+  ∅ ⊢ᵥ vx ⋮ s →
+  Γ !! x = Some s →
+  delete x Γ ⊢ₑ ({x := vx} e) ⋮ T.
+Proof. apply subst_typing_tm. Qed.
+
+Lemma basic_typing_unique_value Γ v T1 T2 :
+  Γ ⊢ᵥ v ⋮ T1 → Γ ⊢ᵥ v ⋮ T2 → T1 = T2.
+Proof. Admitted.
+
+Lemma basic_typing_unique_tm Γ e T1 T2 :
+  Γ ⊢ₑ e ⋮ T1 → Γ ⊢ₑ e ⋮ T2 → T1 = T2.
+Proof. Admitted.
+
+Lemma basic_typing_strengthen_value Γ x Tx v T :
+  <[x := Tx]> Γ ⊢ᵥ v ⋮ T →
+  x ∉ fv_value v →
+  Γ ⊢ᵥ v ⋮ T.
+Proof. Admitted.
+
+Lemma basic_typing_strengthen_tm Γ x Tx e T :
+  <[x := Tx]> Γ ⊢ₑ e ⋮ T →
+  x ∉ fv_tm e →
+  Γ ⊢ₑ e ⋮ T.
+Proof. Admitted.
