@@ -272,6 +272,27 @@ Defined.
 Definition res_subset (w1 w2 : WfWorld) : Prop :=
   world_dom w1 = world_dom w2 ∧ ∀ σ, w1 σ → w2 σ.
 
+Lemma res_subset_refl (w : WfWorld) : res_subset w w.
+Proof. split; [reflexivity | tauto]. Qed.
+
+Lemma res_subset_trans (w1 w2 w3 : WfWorld) :
+  res_subset w1 w2 → res_subset w2 w3 → res_subset w1 w3.
+Proof.
+  intros [Hdom12 Hin12] [Hdom23 Hin23].
+  split; [congruence | intros σ Hσ; exact (Hin23 σ (Hin12 σ Hσ))].
+Qed.
+
+Lemma res_subset_antisym (w1 w2 : WfWorld) :
+  res_subset w1 w2 → res_subset w2 w1 → w1 = w2.
+Proof.
+  intros [Hdom12 Hin12] [Hdom21 Hin21].
+  destruct w1 as [m1 Hwf1], w2 as [m2 Hwf2]. simpl in *.
+  assert (Heq : m1 = m2).
+  { apply world_ext; [exact Hdom12 |].
+    intros σ. split; [apply Hin12 | apply Hin21]. }
+  subst. f_equal. apply proof_irrelevance.
+Qed.
+
 (** Total WfWorld operations for algebraic structures that encode partiality
     with separate definedness predicates.  Their wf obligations are meaningful
     only under the corresponding definedness assumptions, so we keep them

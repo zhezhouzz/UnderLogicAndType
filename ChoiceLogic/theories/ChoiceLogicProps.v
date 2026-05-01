@@ -6,8 +6,7 @@ From CoreLang Require Import Syntax.
     Key theorems about the logic:
     1.  Modality monotonicity w.r.t. entailment
     2.  Modality set-level characterisations (o, u as closure operators)
-    3.  Collapse of nested modalities (Theorem 1.11)
-    4.  Erase modality /u and its Galois connection  *)
+    3.  Collapse of nested modalities (Theorem 1.11) *)
 
 Section ChoiceLogicProps.
 
@@ -47,7 +46,7 @@ Proof.
   exact (Hip _ Hp).
 Qed.
 
-(** *** §2 Modality set-level characterisations  (§1.3, Erase section)
+(** *** §2 Modality set-level characterisations
 
     Write ⟦φ⟧ for the extension of φ: the set of worlds satisfying φ. *)
 
@@ -120,42 +119,6 @@ Theorem collapse_to_ANF (h : atoms_rich) (φ : FormulaT) :
   ∃ φ_anf : FormulaT,
     (** φ_anf is in ANF: every FOver/FUnder directly wraps an FAtom *)
     (∀ m, sat m φ ↔ sat m φ_anf).
-Proof. Admitted.
-
-(** *** §4 Erase modality  /u  (§1.3, Erase section) *)
-
-(** The under-preorder on worlds:  r ≤_u r' iff ∀R. r ∈ U(R) → r' ∈ U(R). *)
-Definition under_preorder (r r' : WorldT) : Prop :=
-  ∀ R : WorldT → Prop, under_closure R r → under_closure R r'.
-
-Notation "r ≤ᵤ r'" := (under_preorder r r') (at level 70).
-
-(** /u(S): the set of ≤_u-minimal elements of S. *)
-Definition erase_min (S : WorldT → Prop) : WorldT → Prop :=
-  λ r, S r ∧ ∀ r', S r' → r' ≤ᵤ r → ∀ σ, r σ ↔ r' σ.
-
-Notation "/u" := erase_min.
-
-(** Semantic erase modality: ⟦/u p⟧ = /u(⟦p⟧). *)
-Definition erase_interp (p : FormulaT) : WorldT → Prop :=
-  erase_min (ext p).
-
-(** Galois connection: /u(R₁) ⊆ R₂ ↔ R₁ ⊆ U(R₂)  (§1.3) *)
-Lemma erase_galois (R1 R2 : WorldT → Prop) :
-  (∀ m, erase_min R1 m → R2 m) ↔ (∀ m, R1 m → under_closure R2 m).
-Proof. Admitted.
-
-(** /u erases redundant proof obligations: if (/u p) → q then p → q. *)
-Lemma erase_suffices (p q : FormulaT) :
-  (∀ m, erase_interp p m → sat m q) →
-  (∀ m, sat m p → sat m q).
-Proof. Admitted.
-
-(** Flip from under to over at negative position:
-    if o(/u(u φ)) suffices for q, then o φ suffices for q  (§1.3) *)
-Lemma erase_flip_under (φ : FormulaT) (q : FormulaT) :
-  (∀ m, erase_interp (FUnder φ) m → sat m q) →
-  (∀ m, sat m (FOver φ) → sat m q).
 Proof. Admitted.
 
 (** ** Adjunction: ∗ and −∗ *)

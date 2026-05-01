@@ -77,7 +77,7 @@ Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 | `Prelude.v` | Re-exports all of `ChoiceAlgebra` |
 | `LogicQualifier.v` | Logic-level qualifier atoms (`lqual`) and `logic_qualifier_denote` |
 | `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `res_models` |
-| `ChoiceLogicProps.v` | Key theorems (modality monotonicity, collapse, erase, adjunction) |
+| `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
 
 ### `CoreLang/` — The programming language
 

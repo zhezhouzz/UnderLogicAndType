@@ -15,3 +15,4 @@
 | 08_eqdecision_mutual_inductive.md | Mutual inductive 的 `EqDecision` 无法 `solve_decision`，先 Admitted |
 | 09_fixpoint_vs_definition.md | 自引用用 `Fixpoint`；在非 inductive 类型上不能 structural recurse |
 | 10_inductive_let_pattern.md | Constructor 里不用 `let '(a,b) :=`，改用显式等式前提 |
+| 15_definition_sanity_check.md | Definition sanity check：先对齐论文、报告冲突、经确认后再修改 |
