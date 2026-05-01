@@ -4,27 +4,11 @@
       - [CoreLang] (syntax, small-step, basic typing)
       - [UnderLogicAndType] (substitution, resource, choice logic)
 
-    The instantiation note below explains how the abstract [Var]/[Value]
-    parameters of [UnderLogicAndType] are resolved to CoreLang's concrete
-    [atom]/[value] types. *)
+    The algebra and logic layers are already instantiated with the global
+    [atom] variables and CoreLang [value]s. *)
 
 From CoreLang Require Export Prelude Syntax BasicTyping SmallStep.
 From ChoiceLogic Require Export Prelude LogicQualifier Formula ChoiceLogicProps.
-
-(** ** Instantiation of UnderLogicAndType's abstract parameters
-
-    [UnderLogicAndType] is parameterized by:
-      [Var]   : countable type of program variables  →  [atom]   (= positive)
-      [Value] : type of runtime values               →  [value]  (CoreLang.Syntax)
-
-    These instances are resolved automatically since:
-      - [Countable atom]      : from CoreLang.Prelude
-      - [EqDecision value]    : from CoreLang.Syntax
-      - [Inhabited value]     : from CoreLang.Syntax (via [value_inhabited])
-
-    All [Section] variables in UnderLogicAndType are universally
-    quantified; at usage sites we specialise them with
-    [@... atom _ _ value] or let unification fill them in. *)
 
 (** ChoiceType formulas use logic qualifiers as atoms. *)
 Notation FormulaQ := Formula (only parsing).

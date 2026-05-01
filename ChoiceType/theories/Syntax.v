@@ -208,7 +208,7 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
                           (if decide (x = y) then τ else cty_subst_one x v τ)
   end.
 
-Fixpoint cty_subst (σ : StoreT) (τ : choice_ty) : choice_ty :=
+Fixpoint cty_subst (σ : Store) (τ : choice_ty) : choice_ty :=
   match τ with
   | CTOver  b φ     => CTOver  b (qual_subst σ φ)
   | CTUnder b φ     => CTUnder b (qual_subst σ φ)
@@ -220,7 +220,7 @@ Fixpoint cty_subst (σ : StoreT) (τ : choice_ty) : choice_ty :=
   end.
 
 #[global] Instance subst_cty_inst  : SubstV value choice_ty   := cty_subst_one.
-#[global] Instance substM_cty_inst : SubstM StoreT choice_ty := cty_subst.
+#[global] Instance substM_cty_inst : SubstM Store choice_ty := cty_subst.
 Arguments subst_cty_inst /.
 Arguments substM_cty_inst /.
 

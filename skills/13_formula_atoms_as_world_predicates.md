@@ -12,7 +12,7 @@ FAtom : logic_qualifier -> Formula
 Consequently, satisfaction has no separate atom interpretation parameter:
 
 ```coq
-res_models : WorldT -> Formula -> Prop
+res_models : WfWorld -> Formula -> Prop
 ```
 
 The atom case delegates to `logic_qualifier_denote` with the current explicit
@@ -24,7 +24,7 @@ ChoiceType still has a type-level shallow qualifier:
 
 ```coq
 type_qualifier : Type
-qual_interp    : StoreT -> type_qualifier -> Prop
+qual_interp    : Store -> type_qualifier -> Prop
 ```
 
 Its embedding into logic is intentionally abstract for now:
@@ -47,7 +47,7 @@ translating into a Choice Logic formula.
 Logic qualifiers store a domain and a predicate:
 
 ```coq
-lqual : aset -> (StoreT -> WorldT -> Prop) -> logic_qualifier
+lqual : aset -> (Store -> WfWorld -> Prop) -> logic_qualifier
 ```
 
 Denotation takes the explicit store environment and world, restricts both to

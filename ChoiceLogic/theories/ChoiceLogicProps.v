@@ -47,15 +47,15 @@ Qed.
 
     Write ⟦φ⟧ for the extension of φ: the set of worlds satisfying φ. *)
 
-Definition ext (φ : FormulaT) : WorldT → Prop :=
+Definition ext (φ : FormulaT) : WfWorld → Prop :=
   λ m, sat m φ.
 
 (** Over-closure: O(R) = { m' | ∃ m ∈ R. m ⊆ m' }, using same-domain subset. *)
-Definition over_closure (R : WorldT → Prop) : WorldT → Prop :=
+Definition over_closure (R : WfWorld → Prop) : WfWorld → Prop :=
   λ m', ∃ m, R m ∧ res_subset m m'.
 
 (** Under-closure: U(R) = { m' | ∃ m ∈ R. m' ⊆ m }, using same-domain subset. *)
-Definition under_closure (R : WorldT → Prop) : WorldT → Prop :=
+Definition under_closure (R : WfWorld → Prop) : WfWorld → Prop :=
   λ m', ∃ m, R m ∧ res_subset m' m.
 
 (** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
@@ -87,7 +87,7 @@ Record atoms_rich : Prop := {
            logic_qualifier_denote a1 ρ m ∨ logic_qualifier_denote a2 ρ m;
   ar_prod  : ∀ a1 a2 : logic_qualifier, ∃ a3 : logic_qualifier,
     ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
-      ∃ (m1 m2 : WorldT) (Hc : world_compat m1 m2),
+      ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
         logic_qualifier_denote a1 ρ m1 ∧
         logic_qualifier_denote a2 ρ m2 ∧
         res_product m1 m2 Hc ⊑ m;

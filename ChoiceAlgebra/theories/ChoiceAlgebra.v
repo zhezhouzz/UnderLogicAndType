@@ -73,16 +73,11 @@ End ChoiceAlgebraLemmas.
     Total operations come from Resource.v; definedness remains explicit in
     [ca_times_def] and [ca_plus_def]. *)
 
-Section WfWorldChoiceAlgebra.
-
-Context `{Countable Var} `{EqDecision Value} `{Inhabited Value}.
-Local Notation WfWorldT := (@WfWorld Var _ _ Value) (only parsing).
-
-#[global] Program Instance WfWorld_ChoiceAlgebra : ChoiceAlgebra WfWorldT := {|
+#[global] Program Instance WfWorld_ChoiceAlgebra : ChoiceAlgebra WfWorld := {|
   ca_one       := res_unit;
   ca_times     := res_product_total;
   ca_plus      := res_sum_total;
-  ca_le        := sqsubseteq (A := WfWorldT);
+  ca_le        := sqsubseteq (A := WfWorld);
   ca_times_def := fun w1 w2 => world_compat w1 w2;
   ca_plus_def  := fun w1 w2 => raw_sum_defined w1 w2;
 |}.
@@ -96,5 +91,3 @@ Next Obligation.                 (* ca_le_refl: provable because carrier is WfWo
 Qed.
 Next Obligation. Admitted.       (* ca_times_le_mono *)
 Next Obligation. Admitted.       (* ca_plus_le_mono *)
-
-End WfWorldChoiceAlgebra.

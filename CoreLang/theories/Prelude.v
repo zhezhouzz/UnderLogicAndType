@@ -6,7 +6,7 @@
     uniform classes and notations so that lemma statements are
     syntactically identical across syntactic categories. *)
 
-From ChoiceAlgebra Require Export Prelude.
+From ChoicePrelude Require Export Prelude.
 From stdpp Require Export fin vector.
 
 (** ** Core typeclasses *)

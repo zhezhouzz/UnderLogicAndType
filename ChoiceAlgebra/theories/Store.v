@@ -1,20 +1,16 @@
 From ChoiceAlgebra Require Import Prelude MapFilterDom.
+From CoreLang Require Import Syntax.
 
 (** * Stores  (Definition 1.1)
 
-    A store is a finite partial map from variables to values.
-    We use stdpp's [gmap] which requires [Countable Var] and [EqDecision Value].
+    A store is a finite partial map from global atoms to CoreLang values.
 
     We call these "stores" rather than "substitutions" to avoid name clashes
     with the locally-nameless substitution machinery in CoreLang. *)
 
-Section Store.
-
-Context `{Countable Var} `{EqDecision Value} `{Inhabited Value}.
-
 (** ** Basic type *)
 
-Definition Store : Type := gmap Var Value.
+Definition Store : Type := gmap atom value.
 
 (** ** Compatibility and restriction *)
 
@@ -23,7 +19,7 @@ Definition store_compat (s1 s2 : Store) : Prop :=
   ∀ x v1 v2, s1 !! x = Some v1 → s2 !! x = Some v2 → v1 = v2.
 
 (** Restriction of a store to a finite set of variables. *)
-Definition store_restrict (s : Store) (X : gset Var) : Store :=
+Definition store_restrict (s : Store) (X : aset) : Store :=
   filter (λ '(k, _), k ∈ X) s.
 
 (** ** Lemmas *)
@@ -99,7 +95,7 @@ Proof.
            apply elem_of_difference. split.
            ++ by apply elem_of_dom; exists y.
            ++ by apply not_elem_of_dom.
-      * apply eq_trans with (@None Value); first exact E2.
+      * apply eq_trans with (@None value); first exact E2.
         symmetry. unfold s2', store_restrict.
         apply map_lookup_filter_None. left. exact E2.
 Qed.
@@ -166,8 +162,6 @@ Proof.
     setoid_rewrite Hnone.
     rewrite map_lookup_filter_None. hauto.
 Qed.
-
-End Store.
 
 #[global] Instance stale_store {A} : Stale (gmap atom A) := dom.
 Arguments stale_store /.

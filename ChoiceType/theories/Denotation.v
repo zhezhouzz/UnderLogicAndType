@@ -141,16 +141,16 @@ Proof. simpl. reflexivity. Qed.
 (** The context denotation of a star-context distributes over FStar. *)
 Lemma denot_ctx_star Γ1 Γ2 m :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WorldT) (Hc : world_compat (Var := atom) (Value := value) m1 m2),
-    res_product (Var := atom) (Value := value) m1 m2 Hc ⊑ m ∧
+  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
 (** The context denotation of a sum-context distributes over FPlus. *)
 Lemma denot_ctx_sum Γ1 Γ2 m :
   m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WorldT) (Hdef : raw_sum_defined (Var := atom) (Value := value) m1 m2),
-    res_sum (Var := atom) (Value := value) m1 m2 Hdef ⊑ m ∧
+  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 

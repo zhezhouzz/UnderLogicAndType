@@ -1,13 +1,35 @@
 (** * ChoicePrelude.Prelude
 
-    Shared concrete aliases for the Rocq development instantiated with the
-    global [atom] variables and CoreLang [value]s.  This file sits between the
-    abstract algebra/core-language layers and the logic/type layers, so later
-    files can reuse the same names instead of redefining them locally. *)
+    Top-level shared infrastructure for the concrete development.  This file
+    deliberately sits before both CoreLang and ChoiceAlgebra: it provides the
+    global atom type, finite atom sets, freshness helpers, and the [Stale]
+    interface used by all later layers. *)
 
-From ChoiceAlgebra Require Export Prelude Store Resource.
-From CoreLang Require Export Syntax.
+From stdpp Require Export gmap sets fin_sets fin_map_dom.
+From Corelib Require Export Program.Wf.
+From Hammer Require Export Hammer.
 
-Notation StoreT := (gmap atom value) (only parsing).
-Notation RawWorldT := (@World atom _ _ value) (only parsing).
-Notation WorldT := (@WfWorld atom _ _ value) (only parsing).
+(** ** Shared atom and freshness infrastructure *)
+
+Definition atom : Type := positive.
+#[global] Instance atom_eqdec     : EqDecision atom := _.
+#[global] Instance atom_countable : Countable  atom := _.
+#[global] Instance atom_infinite  : Infinite   atom := _.
+Notation aset := (gset atom).
+
+(** Free-variable/resource-domain collection. *)
+Class Stale A := stale : A → aset.
+
+Notation "x '#' s" := (x ∉ stale s) (at level 40).
+
+Definition fresh_for (s : aset) : atom := fresh s.
+
+Lemma fresh_for_not_in (s : aset) : fresh_for s ∉ s.
+Proof. apply is_fresh. Qed.
+
+Ltac pick_fresh x s :=
+  let a := fresh x in
+  set (a := fresh_for s);
+  assert (a ∉ s) by apply fresh_for_not_in.
+
+#[global] Hint Unfold stale : class_simpl.

@@ -6,13 +6,13 @@ From ChoiceType Require Export Typing.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
 
-Lemma res_models_impl_mono (φ ψ : FQ) (m m' : WorldT) :
+Lemma res_models_impl_mono (φ ψ : FQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
   m ⊑ m' →
   m' ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma res_models_and_mono (φ ψ : FQ) (m m' : WorldT) :
+Lemma res_models_and_mono (φ ψ : FQ) (m m' : WfWorld) :
   m ⊨ FAnd φ ψ →
   m ⊑ m' →
   m' ⊨ FAnd φ ψ.
@@ -59,50 +59,50 @@ Proof. Admitted.
 
 (** ** Structural soundness lemmas *)
 
-Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WorldT) :
+Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
-Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WorldT) :
+Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WorldT) (Hc : world_compat (Var := atom) (Value := value) m1 m2),
-    res_product (Var := atom) (Value := value) m1 m2 Hc ⊑ m ∧
+  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. simpl. reflexivity. Qed.
 
-Lemma res_models_impl_intro (m : WorldT) (φ ψ : FQ) :
+Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FQ) :
   (∀ m', m ⊑ m' →
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma res_models_fib_intro (m : WorldT) (x : atom) (φ : FQ) :
+Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
   (∀ σ,
-     ∀ Hproj : res_restrict (Var := atom) (Value := value) m {[x]} σ,
+     ∀ Hproj : res_restrict m {[x]} σ,
      res_models_with_store σ
-       (res_fiber_from_projection (Var := atom) (Value := value) m {[x]} σ Hproj)
+       (res_fiber_from_projection m {[x]} σ Hproj)
        φ) →
   m ⊨ FFib x φ.
 Proof. Admitted.
 
-Lemma res_models_forall_intro (m : WorldT) (x : atom) (φ : FQ) :
+Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
   x ∉ world_dom m →
-  (∀ m' : WorldT,
+  (∀ m' : WfWorld,
       world_dom m' = world_dom m ∪ {[x]} →
-      res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+      res_restrict m' (world_dom m) = m →
       m' ⊨ φ) →
   m ⊨ FForall x φ.
 Proof. Admitted.
 
-Lemma res_models_exists_intro (m m' : WorldT) (x : atom) (φ : FQ) :
+Lemma res_models_exists_intro (m m' : WfWorld) (x : atom) (φ : FQ) :
   x ∉ world_dom m →
   world_dom m' = world_dom m ∪ {[x]} →
-  res_restrict (Var := atom) (Value := value) m' (world_dom m) = m →
+  res_restrict m' (world_dom m) = m →
   m' ⊨ φ →
   m ⊨ FExists x φ.
 Proof. Admitted.
 
-Lemma ctx_res_models_mono (Γ : ctx) (m m' : WorldT) :
+Lemma ctx_res_models_mono (Γ : ctx) (m m' : WfWorld) :
   m ⊨ ⟦Γ⟧ →
   m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
