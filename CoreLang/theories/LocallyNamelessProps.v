@@ -31,6 +31,42 @@ Proof.
   split; inversion 1; subst; eauto.
 Qed.
 
+Lemma body_ret_iff_value v :
+  body_tm (tret v) ↔ body_val v.
+Proof.
+  split; intros [L Hbody]; exists L; intros x Hx; specialize (Hbody x Hx); simpl in *.
+  - by apply lc_ret_iff_value in Hbody.
+  - by apply lc_ret_iff_value.
+Qed.
+
+Lemma lc_lete_iff_body e1 e2 :
+  lc_tm (tlete e1 e2) ↔ lc_tm e1 ∧ body_tm e2.
+Proof.
+  split.
+  - intros H. inversion H; subst. split; eauto. eexists; eauto.
+  - intros [Hlc1 [L Hbody]]. econstructor; eauto.
+Qed.
+
+Lemma lc_prim_iff_value op v :
+  lc_tm (tprim op v) ↔ lc_value v.
+Proof.
+  split; inversion 1; subst; eauto.
+Qed.
+
+Lemma lc_app_iff_values v1 v2 :
+  lc_tm (tapp v1 v2) ↔ lc_value v1 ∧ lc_value v2.
+Proof.
+  split; inversion 1; subst; eauto.
+Qed.
+
+Lemma lc_match_iff_parts v et ef :
+  lc_tm (tmatch v et ef) ↔ lc_value v ∧ lc_tm et ∧ lc_tm ef.
+Proof.
+  split.
+  - inversion 1; subst; eauto.
+  - intros [Hlc_v [Hlc_t Hlc_f]]. constructor; auto.
+Qed.
+
 Lemma close_open_var_value (v : value) (x : atom) k :
   x ∉ fv_value v →
   close_value x k (open_value k (vfvar x) v) = v
@@ -55,4 +91,38 @@ Lemma subst_fresh_value_proven x u (v : value) :
   x ∉ fv_value v → value_subst x u v = v
 with subst_fresh_tm_proven x u (e : tm) :
   x ∉ fv_tm e → tm_subst x u e = e.
+Proof. Admitted.
+
+Lemma open_rec_lc_value v :
+  lc_value v → ∀ k u, open_value k u v = v
+with open_rec_lc_tm e :
+  lc_tm e → ∀ k u, open_tm k u e = e.
+Proof. Admitted.
+
+Lemma subst_lc_value x u v :
+  lc_value v → lc_value u → lc_value (value_subst x u v)
+with subst_lc_tm x u e :
+  lc_tm e → lc_value u → lc_tm (tm_subst x u e).
+Proof. Admitted.
+
+Lemma subst_open_value x u w k v :
+  lc_value w →
+  value_subst x w (open_value k u v) =
+  open_value k (value_subst x w u) (value_subst x w v)
+with subst_open_tm x u w k e :
+  lc_value w →
+  tm_subst x w (open_tm k u e) =
+  open_tm k (value_subst x w u) (tm_subst x w e).
+Proof. Admitted.
+
+Lemma subst_intro_value x w k v :
+  x ∉ fv_value v →
+  lc_value w →
+  value_subst x w (open_value k (vfvar x) v) = open_value k w v.
+Proof. Admitted.
+
+Lemma subst_intro_tm x w k e :
+  x ∉ fv_tm e →
+  lc_value w →
+  tm_subst x w (open_tm k (vfvar x) e) = open_tm k w e.
 Proof. Admitted.
