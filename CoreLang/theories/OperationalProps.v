@@ -147,7 +147,13 @@ Lemma reduction_beta_intro s body vx v :
   lc_value vx →
   open_tm 0 vx body →* tret v →
   tapp (vlam s body) vx →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hbody Hlc Hsteps.
+  eapply steps_trans; [|exact Hsteps].
+  apply steps_R. apply Step_head. apply HS_Beta.
+  apply lc_app_iff_values. split; auto.
+  by apply lc_lam_iff_body.
+Qed.
 
 Lemma reduction_fix Tf vf vx v :
   lc_value vx →
@@ -155,12 +161,49 @@ Lemma reduction_fix Tf vf vx v :
   tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v.
 Proof. Admitted.
 
+Lemma reduction_fix_intro Tf vf vx v :
+  body_val vf →
+  lc_value vx →
+  tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v →
+  tapp (vfix Tf vf) vx →* tret v.
+Proof.
+  intros Hbody Hlc Hsteps.
+  eapply steps_trans; [|exact Hsteps].
+  apply steps_R. apply Step_head. apply HS_Fix.
+  apply lc_app_iff_values. split; auto.
+  by apply lc_fix_iff_body.
+Qed.
+
 Lemma reduction_match_true et ef v :
   tmatch (vconst (cbool true)) et ef →* tret v →
   et →* tret v.
 Proof. Admitted.
 
+Lemma reduction_match_true_intro et ef v :
+  lc_tm et →
+  lc_tm ef →
+  et →* tret v →
+  tmatch (vconst (cbool true)) et ef →* tret v.
+Proof.
+  intros Ht Hf Hsteps.
+  eapply steps_trans; [|exact Hsteps].
+  apply steps_R. apply Step_head. apply HS_MatchTrue.
+  apply lc_match_iff_parts. repeat split; auto.
+Qed.
+
 Lemma reduction_match_false et ef v :
   tmatch (vconst (cbool false)) et ef →* tret v →
   ef →* tret v.
 Proof. Admitted.
+
+Lemma reduction_match_false_intro et ef v :
+  lc_tm et →
+  lc_tm ef →
+  ef →* tret v →
+  tmatch (vconst (cbool false)) et ef →* tret v.
+Proof.
+  intros Ht Hf Hsteps.
+  eapply steps_trans; [|exact Hsteps].
+  apply steps_R. apply Step_head. apply HS_MatchFalse.
+  apply lc_match_iff_parts. repeat split; auto.
+Qed.
