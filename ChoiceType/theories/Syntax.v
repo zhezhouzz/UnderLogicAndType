@@ -301,11 +301,5 @@ Notation "x ':' τx '⊸' τ" := (CTWand τx ({0 <~ x} τ))
 Notation "τ1 '→,' τ2" := (CTArrow τ1 τ2)
   (at level 30, right associativity).
 
-(** Affine type: τ_aff ≝ τ ⊕ lift(erase(τ))
-    (adds the "discard" branch for use-once semantics) *)
-Definition cty_aff (τ : choice_ty) : choice_ty :=
-  CTSum τ (lift_ty (erase_ty τ)).
-Notation "τ '_aff'" := (cty_aff τ) (at level 5).
-
 (** Coercion: base type as the default over-refinement. *)
 Coercion lift_ty : ty >-> choice_ty.
