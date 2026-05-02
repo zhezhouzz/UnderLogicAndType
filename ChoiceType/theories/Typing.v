@@ -68,64 +68,64 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
       has_choice_type (plug_ctx Δ (CtxStar Γ1 Γ2)) (tlete e1 e2) τ2
 
   (** T-Lam *)
-  | CT_Lam Γ x τx τ e (L : aset) :
+  | CT_Lam Γ τx τ e (L : aset) :
       (∀ y, y ∉ L →
         has_choice_type
           (CtxComma Γ (CtxBind y τx))
           (e ^^ y)
-          ({x := vfvar y} τ)) →
+          ({0 ~> vfvar y} τ)) →
       has_choice_type Γ
         (tret (vlam (erase_ty τx) e))
-        (CTArrow x τx τ)
+        (CTArrow τx τ)
 
   (** T-LamD *)
-  | CT_LamD Γ x τx τ e (L : aset) :
+  | CT_LamD Γ τx τ e (L : aset) :
       (∀ y, y ∉ L →
         has_choice_type
           (CtxStar Γ (CtxBind y τx))
           (e ^^ y)
-          ({x := vfvar y} τ)) →
+          ({0 ~> vfvar y} τ)) →
       has_choice_type Γ
         (tret (vlam (erase_ty τx) e))
-        (CTWand x τx τ)
+        (CTWand τx τ)
 
   (** T-AppFun *)
-  | CT_AppFun Γ x τx τ v1 v2 :
-      has_choice_type Γ (tret v1) (CTArrow x τx τ) →
+  | CT_AppFun Γ τx τ v1 v2 :
+      has_choice_type Γ (tret v1) (CTArrow τx τ) →
       has_choice_type Γ (tret v2) τx →
-      has_choice_type Γ (tapp v1 v2) ({x := v2} τ)
+      has_choice_type Γ (tapp v1 v2) ({0 ~> v2} τ)
 
   (** T-AppFunD *)
-  | CT_AppFunD Γ1 Γ2 x τx τ v1 v2 :
-      has_choice_type Γ1 (tret v1) (CTWand x τx τ) →
+  | CT_AppFunD Γ1 Γ2 τx τ v1 v2 :
+      has_choice_type Γ1 (tret v1) (CTWand τx τ) →
       has_choice_type Γ2 (tret v2) τx →
-      has_choice_type (CtxStar Γ1 Γ2) (tapp v1 v2) ({x := v2} τ)
+      has_choice_type (CtxStar Γ1 Γ2) (tapp v1 v2) ({0 ~> v2} τ)
 
   (** T-Fix *)
-  | CT_Fix Γ x τx τ vf (L : aset) :
-      (∀ f y, f ∉ L → y ∉ L → f ≠ y →
+  | CT_Fix Γ τx τ vf (L : aset) :
+      (∀ y, y ∉ L →
         has_choice_type
           (CtxComma Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
-          (CTArrow f (CTArrow x τx τ) ({x := vfvar y} τ))) →
+          (CTArrow (CTArrow τx τ) ({0 ~> vfvar y} τ))) →
       has_choice_type Γ
-        (tret (vfix (erase_ty (CTArrow x τx τ)) vf))
-        (CTArrow x τx τ)
+        (tret (vfix (erase_ty (CTArrow τx τ)) vf))
+        (CTArrow τx τ)
 
   (** T-FixD.  The paper refines the recursive argument with a decreasing
       predicate; the corresponding logic qualifier is still left abstract, so
       this constructor records the separating context structure. *)
-  | CT_FixD Γ x τx τ vf (L : aset) :
-      (∀ f y, f ∉ L → y ∉ L → f ≠ y →
+  | CT_FixD Γ τx τ vf (L : aset) :
+      (∀ y, y ∉ L →
         has_choice_type
           (CtxStar Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
-          (CTWand f (CTWand x τx τ) ({x := vfvar y} τ))) →
+          (CTWand (CTWand τx τ) ({0 ~> vfvar y} τ))) →
       has_choice_type Γ
-        (tret (vfix (erase_ty (CTWand x τx τ)) vf))
-        (CTWand x τx τ)
+        (tret (vfix (erase_ty (CTWand τx τ)) vf))
+        (CTWand τx τ)
 
   (** T-AppOp.  Primitive operations are unary. *)
   | CT_AppOp Γ op v arg_b ret_b :

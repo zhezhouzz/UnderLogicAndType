@@ -78,27 +78,37 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
   | CTSum τ1 τ2 =>
       FPlus (denot_ty τ1 e) (denot_ty τ2 e)
 
-  (** x:τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.(⟦τ_x⟧ x ⇒ ⟦τ⟧ (y x)) *)
-  | CTArrow x τx τ =>
+  (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ⟧ (y x)).
+      The syntax and typing rules treat [τ] as a locally-nameless body.  The
+      precise denotation should interpret [{0 ~> x} τ]; doing that directly in
+      this structurally recursive [Fixpoint] is rejected by Rocq, so we keep the
+      recursive call on the body subterm here and leave the opened-body
+      denotation refactor to the proof layer. *)
+  | CTArrow τx τ =>
+      let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FFib y
-            (FImpl
-              (denot_ty τx (tret (vfvar x)))
-              (denot_ty τ (tapp (vfvar y) (vfvar x))))))
+          (FForall x
+            (FFib y
+              (FImpl
+                (denot_ty τx (tret (vfvar x)))
+                (denot_ty τ (tapp (vfvar y) (vfvar x)))))))
 
-  (** x:τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.(⟦τ_x⟧ x −∗ ⟦τ⟧ (y x)) *)
-  | CTWand x τx τ =>
+  (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ⟧ (y x)).
+      See the [CTArrow] case above for the locally-nameless body note. *)
+  | CTWand τx τ =>
+      let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall y
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FFib y
-            (FWand
-              (denot_ty τx (tret (vfvar x)))
-              (denot_ty τ (tapp (vfvar y) (vfvar x))))))
+          (FForall x
+            (FFib y
+              (FWand
+                (denot_ty τx (tret (vfvar x)))
+                (denot_ty τ (tapp (vfvar y) (vfvar x)))))))
 
   end.
 

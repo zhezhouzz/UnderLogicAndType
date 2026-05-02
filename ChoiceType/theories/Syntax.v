@@ -20,10 +20,10 @@ Inductive choice_ty : Type :=
   | CTUnion (τ1 τ2 : choice_ty)
   (** Choice sum (⊕) — mirrors resource sum *)
   | CTSum   (τ1 τ2 : choice_ty)
-  (** Dependent function type: x:τ_x → τ *)
-  | CTArrow (x : atom) (τx τ : choice_ty)
-  (** Dependent separating function type: x:τ_x ⊸ τ *)
-  | CTWand  (x : atom) (τx τ : choice_ty).
+  (** Dependent function type: τ_x → τ, with bvar 0 in τ bound to the argument *)
+  | CTArrow (τx τ : choice_ty)
+  (** Dependent separating function type: τ_x ⊸ τ, with bvar 0 in τ bound to the argument *)
+  | CTWand  (τx τ : choice_ty).
 
 (** ** Type contexts *)
 
@@ -62,8 +62,8 @@ match τ with
 | CTInter τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
 | CTUnion τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
 | CTSum   τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
-| CTArrow x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
-| CTWand  x τx τ  => fv_cty τx ∪ (fv_cty τ ∖ {[ x ]})
+| CTArrow τx τ    => fv_cty τx ∪ fv_cty τ
+| CTWand  τx τ    => fv_cty τx ∪ fv_cty τ
 end.
 
 Fixpoint fv_ctx (Γ : ctx) : aset :=
@@ -80,6 +80,73 @@ end.
 Arguments stale_cty_inst /.
 Arguments stale_ctx_inst /.
 
+(** ** Locally nameless operations on choice types *)
+
+Fixpoint cty_open (k : nat) (v : value) (τ : choice_ty) : choice_ty :=
+  match τ with
+  | CTOver  b φ     => CTOver  b ({k ~> v} φ)
+  | CTUnder b φ     => CTUnder b ({k ~> v} φ)
+  | CTInter τ1 τ2   => CTInter (cty_open k v τ1) (cty_open k v τ2)
+  | CTUnion τ1 τ2   => CTUnion (cty_open k v τ1) (cty_open k v τ2)
+  | CTSum   τ1 τ2   => CTSum   (cty_open k v τ1) (cty_open k v τ2)
+  | CTArrow τx τ    => CTArrow (cty_open k v τx) (cty_open (S k) v τ)
+  | CTWand  τx τ    => CTWand  (cty_open k v τx) (cty_open (S k) v τ)
+  end.
+
+Fixpoint cty_close (x : atom) (k : nat) (τ : choice_ty) : choice_ty :=
+  match τ with
+  | CTOver  b φ     => CTOver  b ({k <~ x} φ)
+  | CTUnder b φ     => CTUnder b ({k <~ x} φ)
+  | CTInter τ1 τ2   => CTInter (cty_close x k τ1) (cty_close x k τ2)
+  | CTUnion τ1 τ2   => CTUnion (cty_close x k τ1) (cty_close x k τ2)
+  | CTSum   τ1 τ2   => CTSum   (cty_close x k τ1) (cty_close x k τ2)
+  | CTArrow τx τ    => CTArrow (cty_close x k τx) (cty_close x (S k) τ)
+  | CTWand  τx τ    => CTWand  (cty_close x k τx) (cty_close x (S k) τ)
+  end.
+
+#[global] Instance open_cty_inst : Open value choice_ty := cty_open.
+#[global] Instance open_cty_atom_inst : Open atom choice_ty :=
+  fun k x => cty_open k (vfvar x).
+#[global] Instance close_cty_inst : Close choice_ty := cty_close.
+Arguments open_cty_inst /.
+Arguments open_cty_atom_inst /.
+Arguments close_cty_inst /.
+
+Inductive lc_choice_ty : choice_ty → Prop :=
+  | LC_CTOver b φ :
+      lc_qualifier φ →
+      lc_choice_ty (CTOver b φ)
+  | LC_CTUnder b φ :
+      lc_qualifier φ →
+      lc_choice_ty (CTUnder b φ)
+  | LC_CTInter τ1 τ2 :
+      lc_choice_ty τ1 →
+      lc_choice_ty τ2 →
+      lc_choice_ty (CTInter τ1 τ2)
+  | LC_CTUnion τ1 τ2 :
+      lc_choice_ty τ1 →
+      lc_choice_ty τ2 →
+      lc_choice_ty (CTUnion τ1 τ2)
+  | LC_CTSum τ1 τ2 :
+      lc_choice_ty τ1 →
+      lc_choice_ty τ2 →
+      lc_choice_ty (CTSum τ1 τ2)
+  | LC_CTArrow τx τ (L : aset) :
+      lc_choice_ty τx →
+      (∀ x, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ)) →
+      lc_choice_ty (CTArrow τx τ)
+  | LC_CTWand τx τ (L : aset) :
+      lc_choice_ty τx →
+      (∀ x, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ)) →
+      lc_choice_ty (CTWand τx τ).
+
+#[global] Instance lc_cty_inst : Lc choice_ty := lc_choice_ty.
+Arguments lc_cty_inst /.
+#[global] Hint Constructors lc_choice_ty : core.
+
+Definition body_cty (τ : choice_ty) : Prop :=
+  ∃ L : aset, ∀ x : atom, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ).
+
 (** ** Type erasure and lifting *)
 
 (** [erase_ty τ] : the basic type underlying τ (Definition Fig. 2). *)
@@ -90,8 +157,8 @@ Fixpoint erase_ty (τ : choice_ty) : ty :=
   | CTInter τ1 _    => erase_ty τ1
   | CTUnion τ1 _    => erase_ty τ1
   | CTSum   τ1 _    => erase_ty τ1
-  | CTArrow _ τx τ  => erase_ty τx →ₜ erase_ty τ
-  | CTWand  _ τx τ  => erase_ty τx →ₜ erase_ty τ
+  | CTArrow τx τ    => erase_ty τx →ₜ erase_ty τ
+  | CTWand  τx τ    => erase_ty τx →ₜ erase_ty τ
   end.
 
 (** [lift_ty s] : lift a basic type to the default over-refinement type. *)
@@ -101,8 +168,7 @@ Fixpoint lift_ty (s : ty) : choice_ty :=
   | TArrow s1 s2   =>
       let τ1 := lift_ty s1 in
       let τ2 := lift_ty s2 in
-      let x := fresh_for (fv_cty τ1 ∪ fv_cty τ2) in
-      CTArrow x τ1 τ2
+      CTArrow τ1 τ2
   end.
 
 (** [erase_ctx Γ] : the basic context underlying Γ. *)
@@ -161,14 +227,14 @@ Inductive wf_choice_ty : choice_ty → Prop :=
       wf_choice_ty τ2 →
       erase_ty τ1 = erase_ty τ2 →
       wf_choice_ty (CTSum τ1 τ2)
-  | Wf_CTArrow x τx τ :
+  | Wf_CTArrow τx τ (L : aset) :
       wf_choice_ty τx →
-      wf_choice_ty τ →
-      wf_choice_ty (CTArrow x τx τ)
-  | Wf_CTWand x τx τ :
+      (∀ x, x ∉ L → wf_choice_ty ({0 ~> vfvar x} τ)) →
+      wf_choice_ty (CTArrow τx τ)
+  | Wf_CTWand τx τ (L : aset) :
       wf_choice_ty τx →
-      wf_choice_ty τ →
-      wf_choice_ty (CTWand x τx τ).
+      (∀ x, x ∉ L → wf_choice_ty ({0 ~> vfvar x} τ)) →
+      wf_choice_ty (CTWand τx τ).
 
 Inductive wf_ctx : ctx → Prop :=
   | Wf_CtxEmpty :
@@ -204,10 +270,8 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
   | CTInter τ1 τ2   => CTInter (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTUnion τ1 τ2   => CTUnion (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst_one x v τ1) (cty_subst_one x v τ2)
-  | CTArrow y τx τ  => CTArrow y (cty_subst_one x v τx)
-                          (if decide (x = y) then τ else cty_subst_one x v τ)
-  | CTWand y τx τ   => CTWand y (cty_subst_one x v τx)
-                          (if decide (x = y) then τ else cty_subst_one x v τ)
+  | CTArrow τx τ    => CTArrow (cty_subst_one x v τx) (cty_subst_one x v τ)
+  | CTWand τx τ     => CTWand  (cty_subst_one x v τx) (cty_subst_one x v τ)
   end.
 
 Fixpoint cty_subst (σ : Store) (τ : choice_ty) : choice_ty :=
@@ -217,8 +281,8 @@ Fixpoint cty_subst (σ : Store) (τ : choice_ty) : choice_ty :=
   | CTInter τ1 τ2   => CTInter (cty_subst σ τ1) (cty_subst σ τ2)
   | CTUnion τ1 τ2   => CTUnion (cty_subst σ τ1) (cty_subst σ τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst σ τ1) (cty_subst σ τ2)
-  | CTArrow x τx τ  => CTArrow x (cty_subst σ τx) (cty_subst (delete x σ) τ)
-  | CTWand x τx τ   => CTWand x (cty_subst σ τx) (cty_subst (delete x σ) τ)
+  | CTArrow τx τ    => CTArrow (cty_subst σ τx) (cty_subst σ τ)
+  | CTWand τx τ     => CTWand  (cty_subst σ τx) (cty_subst σ τ)
   end.
 
 #[global] Instance subst_cty_inst  : SubstV value choice_ty   := cty_subst_one.
@@ -228,13 +292,13 @@ Arguments substM_cty_inst /.
 
 (** ** Type aliases and notation *)
 
-Notation "x ':' τx '→,' τ" := (CTArrow x τx τ)
+Notation "x ':' τx '→,' τ" := (CTArrow τx ({0 <~ x} τ))
   (at level 30, x constr, τx constr, right associativity).
-Notation "x ':' τx '⊸' τ" := (CTWand x τx τ)
+Notation "x ':' τx '⊸' τ" := (CTWand τx ({0 <~ x} τ))
   (at level 30, x constr, τx constr, right associativity).
 
 (** Non-dependent arrow: τ1 →, τ2  when x ∉ fv_cty τ2 *)
-Notation "τ1 '→,' τ2" := (CTArrow (fresh_for (fv_cty τ1 ∪ fv_cty τ2)) τ1 τ2)
+Notation "τ1 '→,' τ2" := (CTArrow τ1 τ2)
   (at level 30, right associativity).
 
 (** Affine type: τ_aff ≝ τ ⊕ lift(erase(τ))
