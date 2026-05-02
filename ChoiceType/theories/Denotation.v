@@ -37,6 +37,30 @@ Definition fresh_result (avoid : aset) : atom := fresh avoid.
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
 
+(** ** Type measure for denotation fuel
+
+    As in HATs' denotation, the first argument of [denot_ty_fuel] is an
+    over-approximation of the syntactic size of the type.  This lets the
+    denotation recurse on opened locally-nameless bodies such as
+    [{0 ~> vfvar x} τ], which are not syntactic subterms accepted by Rocq's
+    structural termination checker. *)
+Fixpoint cty_measure (τ : choice_ty) : nat :=
+  match τ with
+  | CTOver _ _ | CTUnder _ _ => 1
+  | CTInter τ1 τ2
+  | CTUnion τ1 τ2
+  | CTSum τ1 τ2
+  | CTArrow τ1 τ2
+  | CTWand τ1 τ2 => 1 + cty_measure τ1 + cty_measure τ2
+  end.
+
+Lemma cty_measure_gt_0 τ : cty_measure τ > 0.
+Proof. induction τ; simpl; lia. Qed.
+
+Lemma cty_open_preserves_measure τ k v :
+  cty_measure ({k ~> v} τ) = cty_measure τ.
+Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
+
 (** ** Type denotation
 
     [denot_ty τ e : FQ] encodes the proposition "expression [e] has type [τ]"
@@ -45,7 +69,10 @@ Definition fib_vars (X : aset) (p : FQ) : FQ :=
     Naming convention: [ν] is always the *result variable* (the ν from {ν:b|φ}),
     chosen fresh with respect to [qual_fv φ] so it does not clash. *)
 
-Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
+Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
+  match gas with
+  | 0 => FFalse
+  | S gas' =>
   match τ with
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
@@ -68,22 +95,17 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
-      FAnd (denot_ty τ1 e) (denot_ty τ2 e)
+      FAnd (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
-      FOr (denot_ty τ1 e) (denot_ty τ2 e)
+      FOr (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
-      FPlus (denot_ty τ1 e) (denot_ty τ2 e)
+      FPlus (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
 
-  (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ⟧ (y x)).
-      The syntax and typing rules treat [τ] as a locally-nameless body.  The
-      precise denotation should interpret [{0 ~> x} τ]; doing that directly in
-      this structurally recursive [Fixpoint] is rejected by Rocq, so we keep the
-      recursive call on the body subterm here and leave the opened-body
-      denotation refactor to the proof layer. *)
+  (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
   | CTArrow τx τ =>
       let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
@@ -93,11 +115,11 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
           (FForall x
             (FFib y
               (FImpl
-                (denot_ty τx (tret (vfvar x)))
-                (denot_ty τ (tapp (vfvar y) (vfvar x)))))))
+                (denot_ty_fuel gas' τx (tret (vfvar x)))
+                (denot_ty_fuel gas' ({0 ~> vfvar x} τ)
+                   (tapp (vfvar y) (vfvar x)))))))
 
-  (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ⟧ (y x)).
-      See the [CTArrow] case above for the locally-nameless body note. *)
+  (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
   | CTWand τx τ =>
       let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
       let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
@@ -107,10 +129,15 @@ Fixpoint denot_ty (τ : choice_ty) (e : tm) : FQ :=
           (FForall x
             (FFib y
               (FWand
-                (denot_ty τx (tret (vfvar x)))
-                (denot_ty τ (tapp (vfvar y) (vfvar x)))))))
+                (denot_ty_fuel gas' τx (tret (vfvar x)))
+                (denot_ty_fuel gas' ({0 ~> vfvar x} τ)
+                   (tapp (vfvar y) (vfvar x)))))))
 
+  end
   end.
+
+Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_fuel (cty_measure τ) τ e.
 
 (** ** Context denotation
 
