@@ -157,7 +157,7 @@ Lemma sub_type_refl Γ τ :
 Proof. unfold sub_type, entails. intros e m _ m' _ Hτ. exact Hτ. Qed.
 
 Lemma ctx_sub_refl Γ :
-  ctx_sub (ctx_dom Γ) Γ Γ.
+  ctx_sub (ctx_fv Γ) Γ Γ.
 Proof. Admitted.
 
 (** Substitution preserves choice typing. *)
