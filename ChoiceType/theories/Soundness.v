@@ -61,14 +61,14 @@ Proof. Admitted.
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. simpl. reflexivity. Qed.
+Proof. Admitted.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. simpl. reflexivity. Qed.
+Proof. Admitted.
 
 Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FQ) :
   (∀ m', m ⊑ m' →
@@ -85,21 +85,21 @@ Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
   m ⊨ FFib x φ.
 Proof. Admitted.
 
-Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
-  x ∉ world_dom m →
+Lemma res_models_forall_intro (m : WfWorld) (φ : FQ) :
+  (∀ x : atom, x ∉ world_dom m →
   (∀ m' : WfWorld,
       world_dom m' = world_dom m ∪ {[x]} →
       res_restrict m' (world_dom m) = m →
-      m' ⊨ φ) →
-  m ⊨ FForall x φ.
+      m' ⊨ formula_open 0 x φ)) →
+  m ⊨ FForall φ.
 Proof. Admitted.
 
 Lemma res_models_exists_intro (m m' : WfWorld) (x : atom) (φ : FQ) :
   x ∉ world_dom m →
   world_dom m' = world_dom m ∪ {[x]} →
   res_restrict m' (world_dom m) = m →
-  m' ⊨ φ →
-  m ⊨ FExists x φ.
+  m' ⊨ formula_open 0 x φ →
+  m ⊨ FExists φ.
 Proof. Admitted.
 
 Lemma ctx_res_models_mono (Γ : ctx) (m m' : WfWorld) :

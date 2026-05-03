@@ -7,6 +7,70 @@ From ChoiceAlgebra Require Import Prelude MapFilterDom.
     We call these "stores" rather than "substitutions" to avoid name clashes
     with the locally-nameless substitution machinery in CoreLang. *)
 
+(** ** Polymorphic finite-map compatibility and restriction *)
+
+Section MapOps.
+
+Context `{Countable K}.
+Context {A : Type}.
+
+(** Two finite maps are compatible when they agree on their common domain. *)
+Definition map_compat (m1 m2 : gmap K A) : Prop :=
+  ∀ x v1 v2, m1 !! x = Some v1 → m2 !! x = Some v2 → v1 = v2.
+
+(** Restriction of a finite map to a finite key set. *)
+Definition map_restrict (m : gmap K A) (X : gset K) : gmap K A :=
+  filter (λ '(k, _), k ∈ X) m.
+
+Lemma map_compat_refl m : map_compat m m.
+Proof.
+  unfold map_compat. intros x v1 v2 H1 H2. hauto.
+Qed.
+
+Lemma map_compat_sym m1 m2 :
+  map_compat m1 m2 → map_compat m2 m1.
+Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
+
+Lemma map_compat_union m1 m2 :
+  map_compat m1 m2 →
+  map_compat (m1 ∪ m2) (m1 ∪ m2).
+Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
+
+Lemma map_restrict_dom m X :
+  dom (map_restrict m X) = dom m ∩ X.
+Proof.
+  unfold map_restrict. apply dom_gmap_filter_key_in_pair.
+Qed.
+
+Lemma map_restrict_idemp m X :
+  dom m ⊆ X → map_restrict m X = m.
+Proof.
+  unfold map_restrict. intros Hsub. apply map_filter_id.
+  intros i x Hx. apply elem_of_dom_2 in Hx. set_solver.
+Qed.
+
+Lemma map_restrict_restrict m X Y :
+  map_restrict (map_restrict m X) Y = map_restrict m (X ∩ Y).
+Proof.
+  unfold map_restrict.
+  setoid_rewrite map_filter_filter.
+  apply map_filter_ext.
+  intros i x Hx. apply elem_of_dom_2 in Hx. set_solver.
+Qed.
+
+Lemma map_restrict_lookup_some m X x y :
+  map_restrict m X !! x = Some y → x ∈ X ∧ m !! x = Some y.
+Proof.
+  unfold map_restrict. intro Hlookup.
+  apply map_lookup_filter_Some in Hlookup.
+  destruct Hlookup as [H1 H2]. split; [exact H2 | exact H1].
+Qed.
+
+End MapOps.
+
+Arguments map_compat {_ _ _} _ _ /.
+Arguments map_restrict {_ _ _} _ _ /.
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
@@ -18,12 +82,10 @@ Definition Store : Type := gmap atom V.
 (** ** Compatibility and restriction *)
 
 (** Two stores are compatible when they agree on their common domain. *)
-Definition store_compat (s1 s2 : Store) : Prop :=
-  ∀ x v1 v2, s1 !! x = Some v1 → s2 !! x = Some v2 → v1 = v2.
+Definition store_compat (s1 s2 : Store) : Prop := map_compat V s1 s2.
 
 (** Restriction of a store to a finite set of variables. *)
-Definition store_restrict (s : Store) (X : aset) : Store :=
-  filter (λ '(k, _), k ∈ X) s.
+Definition store_restrict (s : Store) (X : aset) : Store := map_restrict V s X.
 
 (** ** Lemmas *)
 
@@ -57,7 +119,7 @@ Qed.
 Lemma store_restrict_restrict s X Y :
   store_restrict (store_restrict s X) Y = store_restrict s (X ∩ Y).
 Proof.
-  unfold store_restrict.
+  unfold store_restrict, map_restrict.
   setoid_rewrite map_filter_filter.
   apply map_filter_ext.
   intros i x Hx. apply elem_of_dom_2 in Hx. set_solver.
@@ -108,7 +170,7 @@ Lemma store_restrict_union s1 s2 X :
   store_restrict (s1 ∪ s2) X = store_restrict s1 X ∪ store_restrict s2 X.
 Proof.
   intros Hcomp.
-  unfold store_restrict.
+  unfold store_restrict, map_restrict.
   setoid_rewrite gmap_filter_key_pair.
   apply map_eq. intros i.
   rewrite option_eq. intros x.
@@ -151,19 +213,24 @@ Lemma store_compat_restrict_eq s1 s2 :
   store_restrict s2 (dom s1) = s1.
 Proof.
   unfold store_compat. intros Hcomp Hsub.
-  unfold store_restrict.
   apply map_eq. intros i.
-  destruct (decide (i ∈ dom s1)) as [Hin|Hnin].
-  - assert (i ∈ dom s2) as Hin2 by set_solver.
-    pose (lookup_lookup_total_dom _ _ Hin) as Hlookup1.
-    pose (lookup_lookup_total_dom _ _ Hin2) as Hlookup2.
-    rewrite Hlookup1.
-    rewrite map_lookup_filter_Some.
-    split; eauto.
-    rewrite (Hcomp i (s1 !!! i) (s2 !!! i)); eauto.
-  - assert (s1 !! i = None) as Hnone by (by apply not_elem_of_dom).
-    setoid_rewrite Hnone.
-    rewrite map_lookup_filter_None. hauto.
+  destruct (s1 !! i) as [v1|] eqn:H1.
+  - assert (i ∈ dom s2) as Hin2 by (apply Hsub; apply elem_of_dom; eauto).
+    pose (H2 := lookup_lookup_total_dom s2 i Hin2).
+    assert (H2' : s2 !! i = Some v1).
+    { transitivity (Some (s2 !!! i)); first exact H2.
+      f_equal. symmetry. exact (Hcomp i v1 (s2 !!! i) H1 H2). }
+    etrans.
+    + unfold store_restrict, map_restrict.
+      apply map_lookup_filter_Some_2; last by apply elem_of_dom; eauto.
+      exact H2'.
+    + symmetry. exact H1.
+  - unfold store_restrict, map_restrict.
+    etrans.
+    + apply map_lookup_filter_None. right.
+      intros v2 H2 Hin.
+      apply not_elem_of_dom in H1. set_solver.
+    + symmetry. exact H1.
 Qed.
 
 End Store.

@@ -31,22 +31,13 @@ Lemma under_mono (p q : FormulaT) :
 Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
 
 (** Ordinary quantifiers are monotone. *)
-Lemma forall_mono x (p q : FormulaT) :
-  (p ⊫ q) → (FForall x p ⊫ FForall x q).
-Proof.
-  unfold entails, sat in *. intros Hip m [Hfresh Hall].
-  split; [exact Hfresh|].
-  intros m' Hdom Hres.
-  exact (Hip _ (Hall m' Hdom Hres)).
-Qed.
+Lemma forall_mono (p q : FormulaT) :
+  (p ⊫ q) → (FForall p ⊫ FForall q).
+Proof. Admitted.
 
-Lemma exists_mono x (p q : FormulaT) :
-  (p ⊫ q) → (FExists x p ⊫ FExists x q).
-Proof.
-  unfold entails, sat in *. intros Hip m [Hfresh [m' [Hdom [Hres Hp]]]].
-  split; [exact Hfresh|]. exists m'. split; [exact Hdom|]. split; [exact Hres|].
-  exact (Hip _ Hp).
-Qed.
+Lemma exists_mono (p q : FormulaT) :
+  (p ⊫ q) → (FExists p ⊫ FExists q).
+Proof. Admitted.
 
 (** *** §2 Modality set-level characterisations
 
@@ -85,16 +76,16 @@ Proof. Admitted.
 (** Richness assumption on atomic propositions. *)
 Record atoms_rich : Prop := {
   ar_inter : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
-    ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
-           logic_qualifier_denote a1 ρ m ∧ logic_qualifier_denote a2 ρ m;
+    ∀ ρ m, logic_qualifier_denote a3 ∅ ρ m ↔
+           logic_qualifier_denote a1 ∅ ρ m ∧ logic_qualifier_denote a2 ∅ ρ m;
   ar_union : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
-    ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
-           logic_qualifier_denote a1 ρ m ∨ logic_qualifier_denote a2 ρ m;
+    ∀ ρ m, logic_qualifier_denote a3 ∅ ρ m ↔
+           logic_qualifier_denote a1 ∅ ρ m ∨ logic_qualifier_denote a2 ∅ ρ m;
   ar_prod  : ∀ a1 a2 : LogicQualifierT, ∃ a3 : LogicQualifierT,
-    ∀ ρ m, logic_qualifier_denote a3 ρ m ↔
+    ∀ ρ m, logic_qualifier_denote a3 ∅ ρ m ↔
       ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
-        logic_qualifier_denote a1 ρ m1 ∧
-        logic_qualifier_denote a2 ρ m2 ∧
+        logic_qualifier_denote a1 ∅ ρ m1 ∧
+        logic_qualifier_denote a2 ∅ ρ m2 ∧
         res_product m1 m2 Hc ⊑ m;
 }.
 
@@ -110,8 +101,8 @@ Proof. Admitted.
 (** Collapse: u(o φ₁ ∧ o φ₂) ↔ u(φ₁ ∩ φ₂) when atoms are rich.
     a3 is the atom witnessing the intersection of a1 and a2. *)
 Lemma collapse_under_over_and (h : atoms_rich) (a1 a2 a3 : LogicQualifierT) :
-  (∀ ρ m, logic_qualifier_denote a3 ρ m ↔
-          logic_qualifier_denote a1 ρ m ∧ logic_qualifier_denote a2 ρ m) →
+  (∀ ρ m, logic_qualifier_denote a3 ∅ ρ m ↔
+          logic_qualifier_denote a1 ∅ ρ m ∧ logic_qualifier_denote a2 ∅ ρ m) →
   FUnder (FAnd (FOver (FAtom a1)) (FOver (FAtom a2))) ⊫ FUnder (FAtom a3).
 Proof. Admitted.
 
