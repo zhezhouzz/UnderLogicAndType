@@ -37,6 +37,13 @@ Definition logic_qualifier_denote
   | lqual d p => p (store_restrict σ d) (res_restrict w d)
   end.
 
+Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual d p =>
+      lqual (aset_rename x y d)
+        (λ σ w, p (store_rename_atom y x σ) (res_rename_atom y x w))
+  end.
+
 Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
   match q1, q2 with
   | lqual d1 p1, lqual d2 p2 =>

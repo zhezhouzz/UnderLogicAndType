@@ -86,20 +86,26 @@ Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
 Proof. Admitted.
 
 Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
-  x ∉ world_dom m →
-  (∀ m' : WfWorld,
-    world_dom m' = world_dom m ∪ {[x]} →
-    res_restrict m' (world_dom m) = m →
-    m' ⊨ φ) →
+  (∃ L : aset,
+    world_dom m ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∀ m' : WfWorld,
+        world_dom m' = world_dom m ∪ {[y]} →
+        res_restrict m' (world_dom m) = m →
+        m' ⊨ formula_rename_atom x y φ) →
   m ⊨ FForall x φ.
 Proof. Admitted.
 
 Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FQ) :
-  x ∉ world_dom m →
-  (∃ m' : WfWorld,
-    world_dom m' = world_dom m ∪ {[x]} ∧
-    res_restrict m' (world_dom m) = m ∧
-    m' ⊨ φ) →
+  (∃ L : aset,
+    world_dom m ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∃ m' : WfWorld,
+        world_dom m' = world_dom m ∪ {[y]} ∧
+        res_restrict m' (world_dom m) = m ∧
+        m' ⊨ formula_rename_atom x y φ) →
   m ⊨ FExists x φ.
 Proof. Admitted.
 

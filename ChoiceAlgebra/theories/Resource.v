@@ -87,6 +87,11 @@ Definition raw_fiber (m : World) (σ : StoreT) : World := {|
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
 
+Definition raw_rename_atom (x y : atom) (m : World) : World := {|
+  world_dom    := aset_rename x y (world_dom m);
+  world_stores := λ s, ∃ s0, m s0 ∧ store_rename_atom x y s0 = s;
+|}.
+
 (** ** Internal partial order on raw worlds (Definition 1.4)
 
     [raw_le m1 m2] is simply the equation [m1 = raw_restrict m2 (world_dom m1)].
@@ -236,6 +241,11 @@ Proof.
     rewrite <- (Hdom t Ht).
     exact (store_restrict_dom t X).
 Defined.
+
+Definition res_rename_atom (x y : atom) (w : WfWorld) : WfWorld.
+Proof.
+  refine (exist _ (raw_rename_atom x y w) _).
+Admitted.
 
 Definition res_fiber (w : WfWorld) (σ : StoreT)
     (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld.

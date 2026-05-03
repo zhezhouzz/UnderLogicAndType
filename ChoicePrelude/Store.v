@@ -66,6 +66,12 @@ Arguments map_restrict {_ _ _} _ _ /.
 
 (** ** Atom-keyed stores *)
 
+Definition atom_rename (x y z : atom) : atom :=
+  if decide (z = x) then y else z.
+
+Definition aset_rename (x y : atom) (X : aset) : aset :=
+  (if decide (x ∈ X) then {[y]} else ∅) ∪ (X ∖ {[x]}).
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
@@ -75,6 +81,12 @@ Definition Store : Type := gmap atom V.
 Definition store_compat (s1 s2 : Store) : Prop := map_compat V s1 s2.
 
 Definition store_restrict (s : Store) (X : aset) : Store := map_restrict V s X.
+
+Definition store_rename_atom (x y : atom) (s : Store) : Store :=
+  match s !! x with
+  | Some v => <[y := v]> (delete x s)
+  | None => delete y s
+  end.
 
 Lemma store_compat_refl s : store_compat s s.
 Proof.

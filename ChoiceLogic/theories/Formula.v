@@ -45,6 +45,26 @@ Fixpoint formula_fv (φ : Formula) : aset :=
 #[global] Instance stale_formula : Stale Formula := formula_fv.
 Arguments stale_formula /.
 
+Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
+  match φ with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | FAtom q => FAtom (lqual_rename_atom x y q)
+  | FAnd p q => FAnd (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FOr p q => FOr (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FImpl p q => FImpl (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FStar p q => FStar (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FWand p q => FWand (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FPlus p q => FPlus (formula_rename_atom x y p) (formula_rename_atom x y q)
+  | FForall z p =>
+      FForall (atom_rename x y z) (formula_rename_atom x y p)
+  | FExists z p =>
+      FExists (atom_rename x y z) (formula_rename_atom x y p)
+  | FOver p => FOver (formula_rename_atom x y p)
+  | FUnder p => FUnder (formula_rename_atom x y p)
+  | FFib z p => FFib (atom_rename x y z) (formula_rename_atom x y p)
+  end.
+
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1
@@ -108,18 +128,24 @@ Fixpoint res_models_with_store_fuel
         res_models_with_store_fuel gas' ρ m2 q
 
   | FForall x p =>
-      x ∉ world_dom m ∧ x ∉ dom ρ ∧
-      ∀ m' : WfWorldT,
-        world_dom m' = world_dom m ∪ {[x]} →
-        res_restrict m' (world_dom m) = m →
-        res_models_with_store_fuel gas' ρ m' p
+      ∃ L : aset,
+        world_dom m ⊆ L ∧
+        ∀ y : atom,
+          y ∉ L →
+          ∀ m' : WfWorldT,
+            world_dom m' = world_dom m ∪ {[y]} →
+            res_restrict m' (world_dom m) = m →
+            res_models_with_store_fuel gas' ρ m' (formula_rename_atom x y p)
 
   | FExists x p =>
-      x ∉ world_dom m ∧ x ∉ dom ρ ∧
-      ∃ m' : WfWorldT,
-        world_dom m' = world_dom m ∪ {[x]} ∧
-        res_restrict m' (world_dom m) = m ∧
-        res_models_with_store_fuel gas' ρ m' p
+      ∃ L : aset,
+        world_dom m ⊆ L ∧
+        ∀ y : atom,
+          y ∉ L →
+          ∃ m' : WfWorldT,
+            world_dom m' = world_dom m ∪ {[y]} ∧
+            res_restrict m' (world_dom m) = m ∧
+            res_models_with_store_fuel gas' ρ m' (formula_rename_atom x y p)
 
   (** Approximation modalities (Definition 1.9) *)
 
