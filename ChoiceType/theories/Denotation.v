@@ -3,8 +3,10 @@
     Denotational semantics for the choice type system (§1.5 of the paper).
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
-    logic qualifiers.  Type qualifiers are embedded through the abstract
-    [lift_type_qualifier_to_logic] bridge.
+    logic qualifiers.  Core expressions are embedded through
+    [expr_logic_qual], and type qualifiers are embedded through
+    [lift_type_qualifier_to_logic] after they have been opened to closed
+    atom-based qualifiers.
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
@@ -14,7 +16,7 @@ From ChoiceType Require Export Syntax.
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
 (** Abbreviation: a Choice Logic formula at the ChoiceType instantiation. *)
-Notation FQ := FormulaQ.
+Notation FQ := (@Formula.Formula value).
 
 (** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=
@@ -26,10 +28,18 @@ Notation "φ ⊫ ψ" :=
   (entails φ ψ)
   (at level 85, ψ at level 84, no associativity).
 
-(** ** Fresh variable helpers for denotation *)
+(** ** Logic atoms and fresh variable helpers for denotation *)
 
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
+
+Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
+  lqual (stale e ∪ {[ν]}) (fun σ (w : WfWorld) =>
+    ∀ σw,
+      (w : World) σw →
+      ∃ v,
+        σw !! ν = Some v ∧
+        subst_map σw (subst_map σ e) →* tret v).
 
 (** ** Type measure for denotation fuel
 
@@ -57,75 +67,87 @@ Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
 
 (** ** Type denotation
 
-    [denot_ty τ e : FQ] encodes the proposition "expression [e] has type [τ]"
-    as a Choice Logic formula.  The translation follows §1.5 verbatim.
+    [denot_ty_fuel gas D τ e] encodes the proposition "expression [e] has
+    type [τ]" as a Choice Logic formula.  The finite set [D] is an avoidance
+    set for generated binder names; the logic itself uses explicit atom
+    binders rather than locally-nameless formula binders. *)
 
-    Result variables are represented locally namelessly: the outer [FForall]
-    opens the result bound variable in both the expression atom and the type
-    qualifier atom. *)
-
-Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
+Fixpoint denot_ty_fuel (gas : nat) (D : aset) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
   | 0 => FFalse
   | S gas' =>
   match τ with
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ◁φ
-      The outer [FForall] binds the result coordinate in both [⟦e⟧] and [φ].
       [fib_vars (fv φ)] iterates the single-variable fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      FForall
-        (FImpl (FBExprAtom 0 e)
-               (fib_vars (qual_dom φ) (FOver (FAtom (lift_type_qualifier_to_logic φ)))))
+      let ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ) in
+      let φν := qual_open_atom 0 ν φ in
+      FForall ν
+        (FImpl (FAtom (expr_logic_qual e ν))
+               (fib_vars (qual_dom φ) (FOver (FAtom (lift_type_qualifier_to_logic φν)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      FForall
-        (FImpl (FBExprAtom 0 e)
-               (fib_vars (qual_dom φ) (FUnder (FAtom (lift_type_qualifier_to_logic φ)))))
+      let ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ) in
+      let φν := qual_open_atom 0 ν φ in
+      FForall ν
+        (FImpl (FAtom (expr_logic_qual e ν))
+               (fib_vars (qual_dom φ) (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
-      FAnd (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
+      FAnd (denot_ty_fuel gas' D τ1 e) (denot_ty_fuel gas' D τ2 e)
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
-      FOr (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
+      FOr (denot_ty_fuel gas' D τ1 e) (denot_ty_fuel gas' D τ2 e)
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
-      FPlus (denot_ty_fuel gas' τ1 e) (denot_ty_fuel gas' τ2 e)
+      FPlus (denot_ty_fuel gas' D τ1 e) (denot_ty_fuel gas' D τ2 e)
 
   (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
   | CTArrow τx τ =>
-      FForall
+      let y := fresh_for (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ) in
+      let D1 := {[y]} ∪ D in
+      let x := fresh_for (D1 ∪ fv_cty τx ∪ fv_cty τ) in
+      let D2 := {[x]} ∪ D1 in
+      FForall y
         (FImpl
-          (FBExprAtom 0 e)
-          (FForall
-            (FBFib 1
+          (FAtom (expr_logic_qual e y))
+          (FForall x
+            (FFib y
               (FImpl
-                (denot_ty_fuel gas' τx (tret (vbvar 0)))
-                (denot_ty_fuel gas' τ
-                   (tapp (vbvar 1) (vbvar 0)))))))
+                (denot_ty_fuel gas' D2 τx (tret (vfvar x)))
+                (denot_ty_fuel gas' D2 ({0 ~> x} τ)
+                   (tapp (vfvar y) (vfvar x)))))))
 
   (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
   | CTWand τx τ =>
-      FForall
+      let y := fresh_for (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ) in
+      let D1 := {[y]} ∪ D in
+      let x := fresh_for (D1 ∪ fv_cty τx ∪ fv_cty τ) in
+      let D2 := {[x]} ∪ D1 in
+      FForall y
         (FImpl
-          (FBExprAtom 0 e)
-          (FForall
-            (FBFib 1
+          (FAtom (expr_logic_qual e y))
+          (FForall x
+            (FFib y
               (FWand
-                (denot_ty_fuel gas' τx (tret (vbvar 0)))
-                (denot_ty_fuel gas' τ
-                   (tapp (vbvar 1) (vbvar 0)))))))
+                (denot_ty_fuel gas' D2 τx (tret (vfvar x)))
+                (denot_ty_fuel gas' D2 ({0 ~> x} τ)
+                   (tapp (vfvar y) (vfvar x)))))))
 
   end
   end.
 
+Definition denot_ty_avoiding (D : aset) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_fuel (cty_measure τ) D τ e.
+
 Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_fuel (cty_measure τ) τ e.
+  denot_ty_avoiding (fv_cty τ ∪ fv_tm e) τ e.
 
 (** ** Context denotation
 

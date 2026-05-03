@@ -1,5 +1,4 @@
 From ChoiceLogic Require Import Prelude.
-From ChoicePrelude Require Export Qualifier.
 
 (** * Logic qualifiers
 
@@ -15,14 +14,48 @@ Section LogicQualifier.
 Context {V : Type} `{ValueSig V}.
 
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation StoreT := (gmap atom V) (only parsing).
 
-Definition logic_qualifier : Type := qualifier (V := V) (A := WfWorldT).
+Inductive logic_qualifier : Type :=
+  | lqual (d : aset) (prop : StoreT → WfWorldT → Prop).
+
+Definition lqual_dom (q : logic_qualifier) : aset :=
+  match q with
+  | lqual d _ => d
+  end.
+
+Definition lqual_prop (q : logic_qualifier) : StoreT → WfWorldT → Prop :=
+  match q with
+  | lqual _ p => p
+  end.
 
 Definition logic_qualifier_denote
     (q : logic_qualifier)
-    (bmap : gmap nat V)
-    (σ : gmap atom V)
+    (σ : StoreT)
     (w : WfWorldT) : Prop :=
-  qual_denote_with res_restrict q bmap σ w.
+  match q with
+  | lqual d p => p (store_restrict σ d) (res_restrict w d)
+  end.
+
+Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
+  match q1, q2 with
+  | lqual d1 p1, lqual d2 p2 =>
+      lqual (d1 ∪ d2) (λ σ w, p1 σ w ∧ p2 σ w)
+  end.
+
+Definition lqual_or (q1 q2 : logic_qualifier) : logic_qualifier :=
+  match q1, q2 with
+  | lqual d1 p1, lqual d2 p2 =>
+      lqual (d1 ∪ d2) (λ σ w, p1 σ w ∨ p2 σ w)
+  end.
+
+Definition lqual_top : logic_qualifier :=
+  lqual ∅ (λ _ _, True).
+
+Definition lqual_bot : logic_qualifier :=
+  lqual ∅ (λ _ _, False).
+
+#[global] Instance stale_logic_qualifier : Stale logic_qualifier := lqual_dom.
+Arguments stale_logic_qualifier /.
 
 End LogicQualifier.

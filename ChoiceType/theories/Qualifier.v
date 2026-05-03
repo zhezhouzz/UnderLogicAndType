@@ -1,18 +1,81 @@
 (** * ChoiceType.Qualifier
 
-    Type qualifiers are shallow Rocq predicates over stores.  Their syntax is
-    shared with logic qualifiers through [ChoicePrelude.Qualifier]; this file
-    specializes the generic qualifier result object to another store. *)
+    Type qualifiers are shallow Rocq predicates over stores.  Unlike logic
+    qualifiers, they may mention locally-nameless bound variables because
+    dependent choice types bind their result coordinate. *)
 
 From ChoiceType Require Export Prelude.
-From ChoicePrelude Require Import Qualifier.
 
 (** ** Syntax *)
 
-Definition type_qualifier_of {V : Type} `{ValueSig V} : Type :=
-  qualifier (V := V) (A := gmap atom V).
+Inductive type_qualifier : Type :=
+  | qual
+      (B : gset nat)
+      (d : aset)
+      (prop : gmap nat value → gmap atom value → gmap atom value → Prop).
 
-Definition type_qualifier : Type := type_qualifier_of (V := value).
+Definition qual_bvars (q : type_qualifier) : gset nat :=
+  match q with
+  | qual B _ _ => B
+  end.
+
+Definition qual_dom (q : type_qualifier) : aset :=
+  match q with
+  | qual _ d _ => d
+  end.
+
+Definition qual_prop (q : type_qualifier) :
+    gmap nat value → gmap atom value → gmap atom value → Prop :=
+  match q with
+  | qual _ _ p => p
+  end.
+
+Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_qualifier :=
+  match q with
+  | qual B d p =>
+      if decide (k ∈ B) then
+        qual (B ∖ {[k]}) ({[x]} ∪ d)
+          (λ β σ a, ∃ v, σ !! x = Some v ∧ p (<[k := v]> β) σ a)
+      else q
+  end.
+
+Definition qual_subst_value (x : atom) (v : value) (q : type_qualifier) : type_qualifier :=
+  match q with
+  | qual B d p =>
+      if decide (x ∈ d) then
+        qual B (d ∖ {[x]}) (λ β σ a, p β (<[x := v]> σ) a)
+      else q
+  end.
+
+Definition qual_subst_map (θ : gmap atom value) (q : type_qualifier) : type_qualifier :=
+  match q with
+  | qual B d p =>
+      qual B (d ∖ dom θ) (λ β σ a, p β (θ ∪ σ) a)
+  end.
+
+Definition qual_and (q1 q2 : type_qualifier) : type_qualifier :=
+  match q1, q2 with
+  | qual B1 d1 p1, qual B2 d2 p2 =>
+      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∧ p2 β σ a)
+  end.
+
+Definition qual_or (q1 q2 : type_qualifier) : type_qualifier :=
+  match q1, q2 with
+  | qual B1 d1 p1, qual B2 d2 p2 =>
+      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∨ p2 β σ a)
+  end.
+
+Definition qual_top : type_qualifier :=
+  qual ∅ ∅ (λ _ _ _, True).
+
+Definition qual_bot : type_qualifier :=
+  qual ∅ ∅ (λ _ _ _, False).
+
+Definition lc_qualifier (q : type_qualifier) : Prop :=
+  qual_bvars q = ∅.
+
+#[global] Instance stale_qualifier : Stale type_qualifier := qual_dom.
+Arguments stale_qualifier /.
 
 (** ** Locally-nameless infrastructure *)
 
@@ -40,7 +103,9 @@ Notation "q1 '&q' q2" := (qual_and q1 q2) (at level 40).
 
 Definition qual_interp_full
     (β : gmap nat value) (σ ρ : gmap atom value) (q : type_qualifier) : Prop :=
-  qual_denote_with store_restrict q β σ ρ.
+  match q with
+  | qual B d p => p (map_restrict value β B) (store_restrict σ d) (store_restrict ρ d)
+  end.
 
 Definition qual_interp (σ : gmap atom value) (q : type_qualifier) : Prop :=
   qual_interp_full ∅ σ σ q.
@@ -60,8 +125,8 @@ Arguments denot_qual_inst /.
 Definition lift_type_qualifier_to_logic (q : type_qualifier) : logic_qualifier :=
   match q with
   | qual B d p =>
-      qual (V := value) (A := WfWorld) B d (fun β σ (w : WfWorld) =>
-        ∃ σw, (w : World) = singleton_world σw ∧ p β σ σw)
+      lqual d (fun σ (w : WfWorld) =>
+        B = ∅ ∧ ∃ σw, (w : World) = singleton_world σw ∧ p ∅ σ σw)
   end.
 
 (** ** Standard notations from UnderType *)

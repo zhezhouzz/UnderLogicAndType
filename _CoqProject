@@ -8,7 +8,6 @@
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
 ChoicePrelude/Store.v
-ChoicePrelude/Qualifier.v
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/MapFilterDom.v

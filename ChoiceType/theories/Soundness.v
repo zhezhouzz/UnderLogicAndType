@@ -85,22 +85,22 @@ Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
   m ⊨ FFib x φ.
 Proof. Admitted.
 
-Lemma res_models_forall_intro (m : WfWorld) (φ : FQ) (L : aset) :
-  (∀ x : atom, x ∉ L →
-    ∀ m' : WfWorld,
-      world_dom m' = world_dom m ∪ {[x]} →
-      res_restrict m' (world_dom m) = m →
-      m' ⊨ formula_open 0 x φ) →
-  m ⊨ FForall φ.
+Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
+  x ∉ world_dom m →
+  (∀ m' : WfWorld,
+    world_dom m' = world_dom m ∪ {[x]} →
+    res_restrict m' (world_dom m) = m →
+    m' ⊨ φ) →
+  m ⊨ FForall x φ.
 Proof. Admitted.
 
-Lemma res_models_exists_intro (m : WfWorld) (φ : FQ) (L : aset) :
-  (∀ x : atom, x ∉ L →
-    ∃ m' : WfWorld,
-      world_dom m' = world_dom m ∪ {[x]} ∧
-      res_restrict m' (world_dom m) = m ∧
-      m' ⊨ formula_open 0 x φ) →
-  m ⊨ FExists φ.
+Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FQ) :
+  x ∉ world_dom m →
+  (∃ m' : WfWorld,
+    world_dom m' = world_dom m ∪ {[x]} ∧
+    res_restrict m' (world_dom m) = m ∧
+    m' ⊨ φ) →
+  m ⊨ FExists x φ.
 Proof. Admitted.
 
 Lemma ctx_res_models_mono (Γ : ctx) (m m' : WfWorld) :
