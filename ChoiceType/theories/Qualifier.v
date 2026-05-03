@@ -74,6 +74,9 @@ Definition qual_bot : type_qualifier :=
 Definition lc_qualifier (q : type_qualifier) : Prop :=
   qual_bvars q = ∅.
 
+Definition body_qualifier (q : type_qualifier) : Prop :=
+  ∃ L : aset, ∀ x : atom, x ∉ L → lc_qualifier (qual_open_atom 0 x q).
+
 #[global] Instance stale_qualifier : Stale type_qualifier := qual_dom.
 Arguments stale_qualifier /.
 

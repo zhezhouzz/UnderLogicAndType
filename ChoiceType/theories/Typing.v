@@ -7,7 +7,7 @@
     denotational meaning; their direct proof rules are derived/optional and
     are deliberately not part of this core definition. *)
 
-From ChoiceType Require Export Denotation.
+From ChoiceType Require Export BasicTyping Denotation.
 
 (** ** Semantic subtyping and context restriction *)
 
@@ -16,6 +16,9 @@ Definition sub_type (Γ : ctx) (τ1 τ2 : choice_ty) : Prop :=
 
 Definition ctx_sub (X : aset) (Γ1 Γ2 : ctx) : Prop :=
   ∀ r, r ⊨ ⟦Γ1⟧ → res_restrict r X ⊨ ⟦Γ2⟧.
+
+Definition ctx_to_over (Γ Γ' : ctx) : Prop :=
+  FOver (⟦Γ⟧) ⊫ ⟦Γ'⟧.
 
 (** ** The typing judgment *)
 
@@ -58,14 +61,15 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
       has_choice_type (plug_ctx Δ Γ) (tlete e1 e2) τ2
 
   (** T-LetD *)
-  | CT_LetD Δ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
-      has_choice_type Γ1 e1 τ1 →
+  | CT_LetD Δ Γ Γ' τ1 τ2 e1 e2 (L : aset) :
+      has_choice_type Γ' e1 τ1 →
+      ctx_to_over Γ Γ' →
       (∀ x, x ∉ L →
         has_choice_type
-          (plug_ctx Δ (CtxStar (CtxComma Γ1 (CtxBind x τ1)) Γ2))
+          (plug_ctx Δ (CtxStar Γ (CtxBind x τ1)))
           (e2 ^^ x)
           τ2) →
-      has_choice_type (plug_ctx Δ (CtxStar Γ1 Γ2)) (tlete e1 e2) τ2
+      has_choice_type (plug_ctx Δ Γ) (tlete e1 e2) τ2
 
   (** T-Lam *)
   | CT_Lam Γ τx τ e (L : aset) :
@@ -158,6 +162,10 @@ Proof. unfold sub_type, entails. intros e m _ m' _ Hτ. exact Hτ. Qed.
 
 Lemma ctx_sub_refl Γ :
   ctx_sub (ctx_fv Γ) Γ Γ.
+Proof. Admitted.
+
+Lemma ctx_to_over_refl Γ :
+  ctx_to_over Γ Γ.
 Proof. Admitted.
 
 (** Substitution preserves choice typing. *)
