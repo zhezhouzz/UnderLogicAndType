@@ -84,8 +84,8 @@ Arguments stale_ctx_inst /.
 
 Fixpoint cty_open (k : nat) (x : atom) (τ : choice_ty) : choice_ty :=
   match τ with
-  | CTOver  b φ     => CTOver  b (qual_open_atom k x φ)
-  | CTUnder b φ     => CTUnder b (qual_open_atom k x φ)
+  | CTOver  b φ     => CTOver  b (qual_open_atom (S k) x φ)
+  | CTUnder b φ     => CTUnder b (qual_open_atom (S k) x φ)
   | CTInter τ1 τ2   => CTInter (cty_open k x τ1) (cty_open k x τ2)
   | CTUnion τ1 τ2   => CTUnion (cty_open k x τ1) (cty_open k x τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_open k x τ1) (cty_open k x τ2)
@@ -98,10 +98,10 @@ Arguments open_cty_atom_inst /.
 
 Inductive lc_choice_ty : choice_ty → Prop :=
   | LC_CTOver b φ :
-      lc_qualifier φ →
+      body_qualifier φ →
       lc_choice_ty (CTOver b φ)
   | LC_CTUnder b φ :
-      lc_qualifier φ →
+      body_qualifier φ →
       lc_choice_ty (CTUnder b φ)
   | LC_CTInter τ1 τ2 :
       lc_choice_ty τ1 →
@@ -179,71 +179,6 @@ Fixpoint ctx_dom (Γ : ctx) : aset :=
   | CtxStar  Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   end.
-
-(** ** Well-formedness
-
-    The paper keeps well-formedness separate from raw syntax.  We mirror that
-    split here: raw [choice_ty] and [ctx] remain convenient inductive syntax,
-    while these predicates record the invariants needed for paper-level
-    objects.  In particular, binary type constructors only combine types with
-    the same erased type, and context choice [CtxSum] combines branches with
-    the same erased context shape. *)
-
-Inductive wf_choice_ty : choice_ty → Prop :=
-  | Wf_CTOver b φ :
-      lc_qualifier φ →
-      wf_choice_ty (CTOver b φ)
-  | Wf_CTUnder b φ :
-      lc_qualifier φ →
-      wf_choice_ty (CTUnder b φ)
-  | Wf_CTInter τ1 τ2 :
-      wf_choice_ty τ1 →
-      wf_choice_ty τ2 →
-      erase_ty τ1 = erase_ty τ2 →
-      wf_choice_ty (CTInter τ1 τ2)
-  | Wf_CTUnion τ1 τ2 :
-      wf_choice_ty τ1 →
-      wf_choice_ty τ2 →
-      erase_ty τ1 = erase_ty τ2 →
-      wf_choice_ty (CTUnion τ1 τ2)
-  | Wf_CTSum τ1 τ2 :
-      wf_choice_ty τ1 →
-      wf_choice_ty τ2 →
-      erase_ty τ1 = erase_ty τ2 →
-      wf_choice_ty (CTSum τ1 τ2)
-  | Wf_CTArrow τx τ (L : aset) :
-      wf_choice_ty τx →
-      (∀ x, x ∉ L → wf_choice_ty ({0 ~> x} τ)) →
-      wf_choice_ty (CTArrow τx τ)
-  | Wf_CTWand τx τ (L : aset) :
-      wf_choice_ty τx →
-      (∀ x, x ∉ L → wf_choice_ty ({0 ~> x} τ)) →
-      wf_choice_ty (CTWand τx τ).
-
-Inductive wf_ctx : ctx → Prop :=
-  | Wf_CtxEmpty :
-      wf_ctx CtxEmpty
-  | Wf_CtxBind x τ :
-      wf_choice_ty τ →
-      wf_ctx (CtxBind x τ)
-  | Wf_CtxComma Γ1 Γ2 :
-      wf_ctx Γ1 →
-      wf_ctx Γ2 →
-      ctx_dom Γ1 ## ctx_dom Γ2 →
-      wf_ctx (CtxComma Γ1 Γ2)
-  | Wf_CtxStar Γ1 Γ2 :
-      wf_ctx Γ1 →
-      wf_ctx Γ2 →
-      ctx_dom Γ1 ## ctx_dom Γ2 →
-      wf_ctx (CtxStar Γ1 Γ2)
-  | Wf_CtxSum Γ1 Γ2 :
-      wf_ctx Γ1 →
-      wf_ctx Γ2 →
-      ctx_dom Γ1 = ctx_dom Γ2 →
-      erase_ctx Γ1 = erase_ctx Γ2 →
-      wf_ctx (CtxSum Γ1 Γ2).
-
-#[global] Hint Constructors wf_choice_ty wf_ctx : core.
 
 (** ** Substitution on types (apply single variable substitution to qualifiers) *)
 

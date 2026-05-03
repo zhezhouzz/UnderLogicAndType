@@ -19,9 +19,6 @@ Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=
 Definition basic_qualifier_body (D : aset) (q : type_qualifier) : Prop :=
   ∃ L : aset, ∀ x : atom, x ∉ L → basic_qualifier (D ∪ {[x]}) (qual_open_atom 0 x q).
 
-Definition body_qualifier (q : type_qualifier) : Prop :=
-  ∃ L : aset, ∀ x : atom, x ∉ L → lc_qualifier (qual_open_atom 0 x q).
-
 (** ** Basic type and context formation *)
 
 Inductive basic_choice_ty : aset → choice_ty → Prop :=
