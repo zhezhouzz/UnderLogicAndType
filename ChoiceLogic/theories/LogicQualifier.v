@@ -23,6 +23,6 @@ Definition logic_qualifier_denote
     (bmap : gmap nat V)
     (σ : gmap atom V)
     (w : WfWorldT) : Prop :=
-  qual_denote_with (λ d w, res_restrict w d) q bmap σ w.
+  qual_denote_with res_restrict q bmap σ w.
 
 End LogicQualifier.

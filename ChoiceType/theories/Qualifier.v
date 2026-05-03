@@ -40,7 +40,7 @@ Notation "q1 '&q' q2" := (qual_and q1 q2) (at level 40).
 
 Definition qual_interp_full
     (β : gmap nat value) (σ ρ : gmap atom value) (q : type_qualifier) : Prop :=
-  qual_denote_with (λ d ρ, store_restrict ρ d) q β σ ρ.
+  qual_denote_with store_restrict q β σ ρ.
 
 Definition qual_interp (σ : gmap atom value) (q : type_qualifier) : Prop :=
   qual_interp_full ∅ σ σ q.

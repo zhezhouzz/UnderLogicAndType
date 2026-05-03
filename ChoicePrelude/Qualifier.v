@@ -69,14 +69,14 @@ Definition qual_bot : qualifier :=
   qual ∅ ∅ (λ _ _ _, False).
 
 Definition qual_denote_with {A0 : Type}
-    (restrict : aset → A0 → A)
+    (restrict : A0 → aset → A)
     (q : qualifier)
     (β : BStoreT)
     (σ : StoreT)
     (a : A0) : Prop :=
   match q with
   | qual B d p =>
-      p (map_restrict V β B) (store_restrict σ d) (restrict d a)
+      p (map_restrict V β B) (store_restrict σ d) (restrict a d)
   end.
 
 Definition lc_qualifier (q : qualifier) : Prop :=
