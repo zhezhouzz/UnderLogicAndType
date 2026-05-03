@@ -93,24 +93,11 @@ Fixpoint cty_open (k : nat) (v : value) (τ : choice_ty) : choice_ty :=
   | CTWand  τx τ    => CTWand  (cty_open k v τx) (cty_open (S k) v τ)
   end.
 
-Fixpoint cty_close (x : atom) (k : nat) (τ : choice_ty) : choice_ty :=
-  match τ with
-  | CTOver  b φ     => CTOver  b ({k <~ x} φ)
-  | CTUnder b φ     => CTUnder b ({k <~ x} φ)
-  | CTInter τ1 τ2   => CTInter (cty_close x k τ1) (cty_close x k τ2)
-  | CTUnion τ1 τ2   => CTUnion (cty_close x k τ1) (cty_close x k τ2)
-  | CTSum   τ1 τ2   => CTSum   (cty_close x k τ1) (cty_close x k τ2)
-  | CTArrow τx τ    => CTArrow (cty_close x k τx) (cty_close x (S k) τ)
-  | CTWand  τx τ    => CTWand  (cty_close x k τx) (cty_close x (S k) τ)
-  end.
-
 #[global] Instance open_cty_inst : Open value choice_ty := cty_open.
 #[global] Instance open_cty_atom_inst : Open atom choice_ty :=
   fun k x => cty_open k (vfvar x).
-#[global] Instance close_cty_inst : Close choice_ty := cty_close.
 Arguments open_cty_inst /.
 Arguments open_cty_atom_inst /.
-Arguments close_cty_inst /.
 
 Inductive lc_choice_ty : choice_ty → Prop :=
   | LC_CTOver b φ :
@@ -291,11 +278,6 @@ Arguments subst_cty_inst /.
 Arguments substM_cty_inst /.
 
 (** ** Type aliases and notation *)
-
-Notation "x ':' τx '→,' τ" := (CTArrow τx ({0 <~ x} τ))
-  (at level 30, x constr, τx constr, right associativity).
-Notation "x ':' τx '⊸' τ" := (CTWand τx ({0 <~ x} τ))
-  (at level 30, x constr, τx constr, right associativity).
 
 (** Non-dependent arrow: τ1 →, τ2  when x ∉ fv_cty τ2 *)
 Notation "τ1 '→,' τ2" := (CTArrow τ1 τ2)

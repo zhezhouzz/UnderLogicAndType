@@ -22,11 +22,6 @@ Definition qual_open (k : nat) (s : value) (q : type_qualifier) : type_qualifier
   | qual vals prop => qual (vmap (open_value k s) vals) prop
   end.
 
-Definition qual_close (x : atom) (k : nat) (q : type_qualifier) : type_qualifier :=
-  match q with
-  | qual vals prop => qual (vmap (close_value x k) vals) prop
-  end.
-
 Definition qual_fv (q : type_qualifier) : aset :=
   match q with
   | qual vals _ => Vector.fold_right (fun v s => fv_value v ∪ s) vals ∅
@@ -43,12 +38,10 @@ Definition qual_subst (σ : Store) (q : type_qualifier) : type_qualifier :=
   end.
 
 #[global] Instance open_qual_inst      : Open value type_qualifier := qual_open.
-#[global] Instance close_qual_inst     : Close type_qualifier := qual_close.
 #[global] Instance stale_qual_inst     : Stale type_qualifier := qual_fv.
 #[global] Instance subst_qual_inst     : SubstV value type_qualifier := qual_subst_one.
 #[global] Instance substM_qual_inst    : SubstM Store type_qualifier := qual_subst.
 Arguments open_qual_inst /.
-Arguments close_qual_inst /.
 Arguments stale_qual_inst /.
 Arguments subst_qual_inst /.
 Arguments substM_qual_inst /.

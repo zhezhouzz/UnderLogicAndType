@@ -13,20 +13,26 @@ Section LogicQualifier.
 
 Context {V : Type} `{ValueSig V}.
 
+Local Notation bnamingT := (gmap nat atom) (only parsing).
 Local Notation StoreT := (gmap atom V) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 
 Inductive logic_qualifier : Type :=
-  | lqual (d : aset) (prop : StoreT → WfWorldT → Prop).
+  | lqual (B : gset nat) (d : aset) (prop : bnamingT → StoreT → WfWorldT → Prop).
 
 Definition lqual_dom (q : logic_qualifier) : aset :=
   match q with
-  | lqual d _ => d
+  | lqual _ d _ => d
   end.
 
-Definition lqual_prop (q : logic_qualifier) : StoreT → WfWorldT → Prop :=
+Definition lqual_bvars (q : logic_qualifier) : gset nat :=
   match q with
-  | lqual _ p => p
+  | lqual B _ _ => B
+  end.
+
+Definition lqual_prop (q : logic_qualifier) : bnamingT → StoreT → WfWorldT → Prop :=
+  match q with
+  | lqual _ _ p => p
   end.
 
 #[global] Instance stale_logic_qualifier : Stale logic_qualifier := lqual_dom.
@@ -37,7 +43,7 @@ Definition logic_qualifier_denote
     (σ : StoreT)
     (w : WfWorldT) : Prop :=
   match q with
-  | lqual d p => p (store_restrict σ d) (res_restrict w d)
+  | lqual _ d p => p ∅ (store_restrict σ d) (res_restrict w d)
   end.
 
 End LogicQualifier.
