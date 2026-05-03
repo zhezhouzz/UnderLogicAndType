@@ -74,6 +74,12 @@ Fixpoint formula_measure (φ : Formula) : nat :=
       1 + formula_measure p
   end.
 
+Lemma formula_rename_preserves_measure x y φ :
+  formula_measure (formula_rename_atom x y φ) = formula_measure φ.
+Proof.
+  induction φ; simpl; eauto; lia.
+Qed.
+
 (** ** Satisfaction relation *)
 
 Fixpoint res_models_with_store_fuel

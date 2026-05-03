@@ -33,6 +33,14 @@ Notation "φ ⊫ ψ" :=
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
 
+(** [fresh_forall D body] chooses a syntactic representative for the bound
+    coordinate.  The representative is not semantically privileged:
+    [FForall]'s satisfaction relation later renames it to every sufficiently
+    fresh atom. *)
+Definition fresh_forall (D : aset) (body : atom → FQ) : FQ :=
+  let x := fresh_for D in
+  FForall x (body x).
+
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ (w : WfWorld) =>
     ∀ σw,
@@ -69,8 +77,9 @@ Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
 
     [denot_ty_fuel gas D τ e] encodes the proposition "expression [e] has
     type [τ]" as a Choice Logic formula.  The finite set [D] is an avoidance
-    set for generated binder names; the logic itself uses explicit atom
-    binders rather than locally-nameless formula binders. *)
+    set for generated binder representatives.  These names only make the
+    syntax concrete: [FForall]'s cofinite semantics interprets each binder by
+    renaming the representative to every sufficiently fresh atom. *)
 
 Fixpoint denot_ty_fuel (gas : nat) (D : aset) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
@@ -82,19 +91,17 @@ Fixpoint denot_ty_fuel (gas : nat) (D : aset) (τ : choice_ty) (e : tm) : FQ :=
       [fib_vars (fv φ)] iterates the single-variable fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      let ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ) in
+      fresh_forall (D ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-      FForall ν
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_dom φ) (FOver (FAtom (lift_type_qualifier_to_logic φν)))))
+               (fib_vars (qual_dom φν) (FOver (FAtom (lift_type_qualifier_to_logic φν))))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      let ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ) in
+      fresh_forall (D ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-      FForall ν
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_dom φ) (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))
+               (fib_vars (qual_dom φν) (FUnder (FAtom (lift_type_qualifier_to_logic φν))))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -110,35 +117,33 @@ Fixpoint denot_ty_fuel (gas : nat) (D : aset) (τ : choice_ty) (e : tm) : FQ :=
 
   (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
   | CTArrow τx τ =>
-      let y := fresh_for (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ) in
-      let D1 := {[y]} ∪ D in
-      let x := fresh_for (D1 ∪ fv_cty τx ∪ fv_cty τ) in
-      let D2 := {[x]} ∪ D1 in
-      FForall y
+      let Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ in
+      fresh_forall Dy (fun y =>
+      let Dx := {[y]} ∪ Dy in
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FForall x
-            (FFib y
+          (fresh_forall Dx (fun x =>
+          let D2 := {[x]} ∪ Dx in
+            FFib y
               (FImpl
                 (denot_ty_fuel gas' D2 τx (tret (vfvar x)))
                 (denot_ty_fuel gas' D2 ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x)))))))
+                   (tapp (vfvar y) (vfvar x))))))))
 
   (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
   | CTWand τx τ =>
-      let y := fresh_for (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ) in
-      let D1 := {[y]} ∪ D in
-      let x := fresh_for (D1 ∪ fv_cty τx ∪ fv_cty τ) in
-      let D2 := {[x]} ∪ D1 in
-      FForall y
+      let Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ in
+      fresh_forall Dy (fun y =>
+      let Dx := {[y]} ∪ Dy in
         (FImpl
           (FAtom (expr_logic_qual e y))
-          (FForall x
-            (FFib y
+          (fresh_forall Dx (fun x =>
+          let D2 := {[x]} ∪ Dx in
+            FFib y
               (FWand
                 (denot_ty_fuel gas' D2 τx (tret (vfvar x)))
                 (denot_ty_fuel gas' D2 ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x)))))))
+                   (tapp (vfvar y) (vfvar x))))))))
 
   end
   end.
