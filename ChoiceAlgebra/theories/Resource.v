@@ -87,10 +87,11 @@ Definition raw_fiber (m : World) (σ : StoreT) : World := {|
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
 
-(** ** Partial order on raw worlds (Definition 1.4)
+(** ** Internal partial order on raw worlds (Definition 1.4)
 
     [raw_le m1 m2] is simply the equation [m1 = raw_restrict m2 (world_dom m1)].
-    Well-formedness is NOT bundled here; it is the responsibility of [WfWorld]. *)
+    Well-formedness is NOT bundled here; it is the responsibility of [WfWorld].
+    This raw relation is used to implement the exported [⊑] relation below. *)
 
 Definition raw_le (m1 m2 : World) : Prop :=
   m1 = raw_restrict m2 (world_dom m1).
@@ -347,7 +348,7 @@ Qed.
 
     [⊑] is the stdpp [SqSubsetEq] relation.  Together with [PreOrder] and
     [AntiSymm] it forms a genuine partial order — the stdpp convention for
-    expressing this. *)
+    expressing this.  This is the order exported for clients of [Resource]. *)
 
 #[global] Instance wf_world_sqsubseteq : SqSubsetEq WfWorld :=
   fun w1 w2 => (w1 : World) ≤ᵣ (w2 : World).
@@ -401,8 +402,6 @@ Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
 Proof. intros s. unfold res_sum. simpl. tauto. Qed.
 
 End Resource.
-
-Infix "≤ᵣ" := raw_le (at level 70).
 
 #[global] Instance stale_world {V : Type} `{ValueSig V} : Stale (World (V := V)) :=
   world_dom.
