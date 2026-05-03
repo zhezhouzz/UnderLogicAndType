@@ -81,15 +81,86 @@ Stores, resources, and the abstract choice algebra.
 
 ### `ChoiceLogic/` — The logic layer
 
-Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`
-and the `CoreLang` expression syntax used by expression atoms.
+Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
+The logic layer is deliberately independent of `CoreLang`: program expressions
+are embedded into formulas later, by `ChoiceType`, through logic qualifier
+atoms.
 
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Re-exports `ChoiceAlgebra` and `ChoicePrelude` |
 | `LogicQualifier.v` | Logic-level qualifier atoms and `logic_qualifier_denote` |
-| `Formula.v` | Formula syntax (`FAtom`, `FExprAtom`, `FBExprAtom`, `FFib`, `FBFib`, …) and `res_models` |
+| `Formula.v` | Formula syntax (`FAtom`, `FForall`, `FExists`, `FFib`, …), formula renaming, and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
+
+## Naming Representation
+
+The formalization intentionally uses two different binding representations in
+different layers.
+
+### Core language and choice types: locally nameless
+
+`CoreLang` terms and values use the standard locally-nameless (LN)
+representation: free variables are `atom`s and binders are represented by
+natural-number bound variables.  `ChoiceType` also uses LN for dependent
+choice types and type qualifiers, because dependent refinements need to refer
+to the result coordinate bound by a type former.
+
+This representation is good for syntax with real binders:
+
+- opening and closing are structural;
+- alpha-equivalence is handled by bound indices rather than by named
+  substitution;
+- dependent type bodies such as the codomain of `CTArrow` can be opened with a
+  fresh atom using the usual `{0 ~> x}` operation.
+
+The main cost is bookkeeping around open/close operations.  In particular,
+type qualifiers may be non-closed while they sit under a binder, so
+`ChoiceType/theories/Qualifier.v` keeps explicit bound-variable metadata.
+
+### Choice logic: explicit names with cofinite semantics
+
+`ChoiceLogic` formulas use explicit atom binders:
+
+```coq
+FForall x p
+FExists x p
+FFib x p
+```
+
+The atom `x` in `FForall x p` is only a syntactic representative.  The
+satisfaction relation gives it a cofinite interpretation: to model a universal
+or existential formula, the representative is renamed to every sufficiently
+fresh atom outside a finite avoidance set.  This is implemented by
+`formula_rename_atom` and exposed by the smart constructor/spec
+`fresh_forall`.
+
+This design was chosen after weighing two alternatives.
+
+Using LN for formulas would make binders more standard, but it would also force
+formula opening to reach into every embedded atom.  Since type denotation needs
+program expressions such as `tapp y x` to depend on formula binders, an LN
+formula representation would either make `ChoiceLogic` depend directly on
+`CoreLang`, or require shifting embedded `tm`/`value` syntax whenever a new
+formula binder is introduced.  That substantially complicates the logic layer.
+
+Using explicit names keeps `ChoiceLogic` independent from `CoreLang` and keeps
+logic qualifier atoms shallow.  Program expressions are converted to logic
+qualifier atoms only in `ChoiceType/theories/Denotation.v`.  The cost is that
+we must define named renaming for stores, worlds, qualifiers, and formulas, and
+we use cofinite semantics to recover the intended alpha-invariant behavior of
+quantifiers.
+
+In short:
+
+- Core language binders and choice-type binders use LN, where structural
+  opening is the right tool.
+- Choice-logic binders use explicit atoms plus cofinite renaming, preserving a
+  clean dependency boundary between logic and programs.
+- Type denotation bridges the two worlds by choosing syntactic binder
+  representatives with `fresh_forall`; these names are not semantically
+  privileged, because formula satisfaction immediately interprets them through
+  cofinite renaming.
 
 ### `CoreLang/` — The programming language
 
