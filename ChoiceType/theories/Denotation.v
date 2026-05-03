@@ -67,7 +67,7 @@ Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
     as a Choice Logic formula.  The translation follows §1.5 verbatim.
 
     Naming convention: [ν] is always the *result variable* (the ν from {ν:b|φ}),
-    chosen fresh with respect to [qual_fv φ] so it does not clash. *)
+    chosen fresh with respect to [qual_dom φ] so it does not clash. *)
 
 Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
@@ -81,17 +81,17 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
       execution to the over-approximation of φ.  [fib_vars (fv φ)] iterates
       the single-variable fiber modality over φ's free variables. *)
   | CTOver b φ =>
-      let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
+      let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_fv φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_dom φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      let ν  := fresh_result (qual_fv φ ∪ fv_tm e) in
+      let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_fv φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_dom φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>

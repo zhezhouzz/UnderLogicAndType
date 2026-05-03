@@ -58,6 +58,35 @@ Definition qual_subst_map (θ : StoreT) (q : qualifier) : qualifier :=
       qual B (d ∖ dom θ) (λ β σ a, p β (θ ∪ σ) a)
   end.
 
+Definition qual_and (q1 q2 : qualifier) : qualifier :=
+  match q1, q2 with
+  | qual B1 d1 p1, qual B2 d2 p2 =>
+      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∧ p2 β σ a)
+  end.
+
+Definition qual_or (q1 q2 : qualifier) : qualifier :=
+  match q1, q2 with
+  | qual B1 d1 p1, qual B2 d2 p2 =>
+      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∨ p2 β σ a)
+  end.
+
+Definition qual_top : qualifier :=
+  qual ∅ ∅ (λ _ _ _, True).
+
+Definition qual_bot : qualifier :=
+  qual ∅ ∅ (λ _ _ _, False).
+
+Definition qual_denote_with {A0 : Type}
+    (restrict : aset → A0 → A)
+    (q : qualifier)
+    (β : BStoreT)
+    (σ : StoreT)
+    (a : A0) : Prop :=
+  match q with
+  | qual B d p =>
+      p (map_restrict V β B) (store_restrict σ d) (restrict d a)
+  end.
+
 Definition lc_qualifier (q : qualifier) : Prop :=
   qual_bvars q = ∅.
 

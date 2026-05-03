@@ -57,8 +57,8 @@ Fixpoint plug_ctx (Δ : ctx_hole) (Γ : ctx) : ctx :=
 
 Fixpoint fv_cty (τ : choice_ty) : aset :=
 match τ with
-| CTOver  _ φ     => qual_fv φ
-| CTUnder _ φ     => qual_fv φ
+| CTOver  _ φ     => qual_dom φ
+| CTUnder _ φ     => qual_dom φ
 | CTInter τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
 | CTUnion τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
 | CTSum   τ1 τ2   => fv_cty τ1 ∪ fv_cty τ2
@@ -252,8 +252,8 @@ Inductive wf_ctx : ctx → Prop :=
 
 Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
   match τ with
-  | CTOver  b φ     => CTOver  b (qual_subst_one x v φ)
-  | CTUnder b φ     => CTUnder b (qual_subst_one x v φ)
+  | CTOver  b φ     => CTOver  b (qual_subst_value x v φ)
+  | CTUnder b φ     => CTUnder b (qual_subst_value x v φ)
   | CTInter τ1 τ2   => CTInter (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTUnion τ1 τ2   => CTUnion (cty_subst_one x v τ1) (cty_subst_one x v τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst_one x v τ1) (cty_subst_one x v τ2)
@@ -263,8 +263,8 @@ Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
 
 Fixpoint cty_subst (σ : Store) (τ : choice_ty) : choice_ty :=
   match τ with
-  | CTOver  b φ     => CTOver  b (qual_subst σ φ)
-  | CTUnder b φ     => CTUnder b (qual_subst σ φ)
+  | CTOver  b φ     => CTOver  b (qual_subst_map σ φ)
+  | CTUnder b φ     => CTUnder b (qual_subst_map σ φ)
   | CTInter τ1 τ2   => CTInter (cty_subst σ τ1) (cty_subst σ τ2)
   | CTUnion τ1 τ2   => CTUnion (cty_subst σ τ1) (cty_subst σ τ2)
   | CTSum   τ1 τ2   => CTSum   (cty_subst σ τ1) (cty_subst σ τ2)

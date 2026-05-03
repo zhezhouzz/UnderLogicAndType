@@ -61,7 +61,7 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   match φ with
   | FTrue => FTrue
   | FFalse => FFalse
-  | FAtom q => FAtom (lqual_open k x q)
+  | FAtom q => FAtom (qual_open_atom k x q)
   | FAnd p q => FAnd (formula_open k x p) (formula_open k x q)
   | FOr p q => FOr (formula_open k x p) (formula_open k x q)
   | FImpl p q => FImpl (formula_open k x p) (formula_open k x q)
@@ -113,7 +113,7 @@ Fixpoint res_models_with_store_fuel
 
   | FAtom a =>
       (** m ⊨ a iff the denotation of the logic qualifier holds of m. *)
-      lqual_bvars a = ∅ ∧ logic_qualifier_denote a ∅ ρ m
+      qual_bvars a = ∅ ∧ logic_qualifier_denote a ∅ ρ m
 
   | FAnd p q =>
       res_models_with_store_fuel gas' ρ m p ∧
