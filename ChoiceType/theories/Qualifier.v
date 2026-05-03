@@ -52,8 +52,17 @@ Definition qual_interp_cl (q : type_qualifier) (σ : gmap atom value) : Prop :=
   qual_interp_cl.
 Arguments denot_qual_inst /.
 
-(** Conversion to a logic qualifier is intentionally left abstract for now. *)
-Parameter type_qualifier_to_logic : type_qualifier → logic_qualifier.
+(** Lift a type-level store predicate into a logic atom.
+
+    Logic denotation restricts the world to the qualifier domain before this
+    predicate is called, so the singleton requirement applies to the relevant
+    world fragment. *)
+Definition lift_type_qualifier_to_logic (q : type_qualifier) : logic_qualifier :=
+  match q with
+  | qual B d p =>
+      qual (V := value) (A := WfWorld) B d (fun β σ (w : WfWorld) =>
+        ∃ σw, (w : World) = singleton_world σw ∧ p β σ σw)
+  end.
 
 (** ** Standard notations from UnderType *)
 

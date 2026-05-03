@@ -4,7 +4,7 @@
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
     logic qualifiers.  Type qualifiers are embedded through the abstract
-    [type_qualifier_to_logic] conversion.
+    [lift_type_qualifier_to_logic] bridge.
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
@@ -84,14 +84,14 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
       let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_dom φ) (FOver (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_dom φ) (FOver (FAtom (lift_type_qualifier_to_logic φ)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
         (FImpl (FAtom (expr_logic_qual e ν))
-               (fib_vars (qual_dom φ) (FUnder (FAtom (type_qualifier_to_logic φ)))))
+               (fib_vars (qual_dom φ) (FUnder (FAtom (lift_type_qualifier_to_logic φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
