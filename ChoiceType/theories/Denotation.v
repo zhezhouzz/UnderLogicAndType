@@ -12,7 +12,14 @@
 From ChoiceType Require Export Syntax.
 
 (** Temporary bridge from core expressions to logic atoms. *)
-Parameter expr_logic_qual : tm → atom → logic_qualifier.
+Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
+  qual (V := value) (A := WfWorld) ∅ (stale e ∪ {[ν]})
+    (fun _ σ (w : WfWorld) =>
+      ∀ σw,
+        (w : World) σw →
+        ∃ v,
+          σw !! ν = Some v ∧
+          subst_map σw (subst_map σ e) →* tret v).
 
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
