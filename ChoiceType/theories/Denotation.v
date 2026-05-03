@@ -33,14 +33,6 @@ Notation "φ ⊫ ψ" :=
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
 
-(** [fresh_forall D body] chooses a syntactic representative for the bound
-    coordinate.  The representative is not semantically privileged:
-    [FForall]'s satisfaction relation later renames it to every sufficiently
-    fresh atom. *)
-Definition fresh_forall (D : aset) (body : atom → FQ) : FQ :=
-  let x := fresh_for D in
-  FForall x (body x).
-
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ (w : WfWorld) =>
     ∀ σw,

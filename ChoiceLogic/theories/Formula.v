@@ -80,6 +80,14 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
+(** [fresh_forall D body] chooses a syntactic representative for an explicit
+    formula binder.  The representative is not semantically privileged:
+    [FForall]'s satisfaction relation later renames it to every sufficiently
+    fresh atom. *)
+Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
+  let x := fresh_for D in
+  FForall x (body x).
+
 (** ** Satisfaction relation *)
 
 Fixpoint res_models_with_store_fuel
@@ -186,5 +194,38 @@ Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
 (** Entailment: φ ⊨ ψ holds when every world modeling φ also models ψ. *)
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
+
+(** The fuel-level spec records the intended meaning of [fresh_forall]:
+    [fresh_for D] is only the body representative, while models checks all
+    names outside a cofinite set by renaming that representative. *)
+Lemma res_models_fresh_forall_fuel
+    (gas : nat) (ρ : StoreT) (m : WfWorldT) (D : aset)
+    (body : atom → Formula) :
+  res_models_with_store_fuel (S gas) ρ m (fresh_forall D body) ↔
+  ∃ L : aset,
+    world_dom m ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∀ m' : WfWorldT,
+        world_dom m' = world_dom m ∪ {[y]} →
+        res_restrict m' (world_dom m) = m →
+        res_models_with_store_fuel gas ρ m'
+          (formula_rename_atom (fresh_for D) y (body (fresh_for D))).
+Proof. reflexivity. Qed.
+
+Lemma res_models_fresh_forall_intro
+    (gas : nat) (ρ : StoreT) (m : WfWorldT) (D : aset)
+    (body : atom → Formula) :
+  (∃ L : aset,
+    world_dom m ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∀ m' : WfWorldT,
+        world_dom m' = world_dom m ∪ {[y]} →
+        res_restrict m' (world_dom m) = m →
+        res_models_with_store_fuel gas ρ m'
+          (formula_rename_atom (fresh_for D) y (body (fresh_for D)))) →
+  res_models_with_store_fuel (S gas) ρ m (fresh_forall D body).
+Proof. intros Hfresh. exact Hfresh. Qed.
 
 End Formula.
