@@ -120,9 +120,9 @@ Lemma basic_ctx_fv_subset D Γ :
   ctx_fv Γ ⊆ D ∪ ctx_dom Γ.
 Proof. Admitted.
 
-Lemma basic_ctx_dom_nodup D Γ :
+Lemma basic_ctx_erase_dom D Γ :
   basic_ctx D Γ →
-  erase_ctx Γ = erase_ctx Γ.
+  dom (erase_ctx Γ) = ctx_dom Γ.
 Proof. Admitted.
 
 Lemma basic_ctx_closed_fv Γ :

@@ -80,7 +80,12 @@ end.
 Arguments stale_cty_inst /.
 Arguments stale_ctx_inst /.
 
-(** ** Locally nameless operations on choice types *)
+(** ** Locally nameless operations on choice types
+
+    Refinement types bind their result coordinate inside the qualifier.  Thus,
+    when opening an outer type binder through [CTOver] or [CTUnder], the
+    qualifier index is shifted by one; denotation opens the result coordinate
+    itself with [qual_open_atom 0]. *)
 
 Fixpoint cty_open (k : nat) (x : atom) (τ : choice_ty) : choice_ty :=
   match τ with
