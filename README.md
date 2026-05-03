@@ -46,26 +46,35 @@ PATH=$(opam var bin --switch=with-rocq-1):$PATH make
 
 ## Repository structure
 
-The formalization is split into five libraries with the following dependency
+The formalization is split into several libraries with the following dependency
 shape:
 
 ```
-ChoicePrelude → ChoiceAlgebra → ChoiceLogic
-      │                              │
-      └────────────→ CoreLang ───────┘
-                         │
-                         v
-                    ChoiceType
+ChoicePrelude ──→ ChoiceAlgebra ──→ ChoiceLogic ──┐
+      │                                            │
+      └────────────────→ CoreLang ────────────────┤
+                                                    v
+                                               ChoiceType
+
+CoreLang.Syntax ──→ LocallyNameless ──→ CoreLang proof files
 ```
 
-Most libraries live under `<Library>/theories/`; `ChoicePrelude/` is a small
-top-level shared prelude.
+Most libraries live under `<Library>/theories/`.  `ChoicePrelude/` and
+`LocallyNameless/` are top-level support libraries.  `ChoicePrelude` does not
+depend on `CoreLang`; it only provides abstract infrastructure such as `atom`,
+`aset`, `ValueSig`, stores, and freshness helpers.  `LocallyNameless` is proof
+support for CoreLang's locally-nameless metatheory.
 
 ### `ChoicePrelude/` — Shared prelude
 
-Common infrastructure shared by the algebra, logic, and language layers:
-the concrete `atom` type, finite atom sets, freshness helpers, `Stale`, and
-the abstract `ValueSig` interface used by `ChoiceAlgebra` and `ChoiceLogic`.
+Common infrastructure shared by the algebra, logic, and language layers.
+It contains no program syntax and no dependency on `CoreLang`.
+
+| File | Contents |
+|------|----------|
+| `Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, and `ValueSig` |
+| `MapFilterDom.v` | Reusable `dom`/`filter` lemmas for finite maps |
+| `Store.v` | Polymorphic map operations, atom-keyed stores, restriction, compatibility, and renaming |
 
 ### `ChoiceAlgebra/` — The algebraic layer
 
@@ -73,9 +82,9 @@ Stores, resources, and the abstract choice algebra.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Shared setup (stdpp, Hammer) |
+| `Prelude.v` | Re-exports the shared prelude |
 | `MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
-| `Store.v` | Stores, compatibility, restriction, fibers |
+| `Store.v` | Algebra-facing store exports |
 | `Resource.v` | Resources (worlds), resource operations, partial order |
 | `ChoiceAlgebra.v` | Abstract choice algebra class; `WfWorld` instance |
 
@@ -92,6 +101,14 @@ atoms.
 | `LogicQualifier.v` | Logic-level qualifier atoms and `logic_qualifier_denote` |
 | `Formula.v` | Formula syntax (`FAtom`, `FForall`, `FExists`, `FFib`, …), formula renaming, and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
+
+### `LocallyNameless/` — Proof support
+
+Small Ltac support used by the locally-nameless metatheory files.
+
+| File | Contents |
+|------|----------|
+| `Tactics.v` | Lightweight locally-nameless proof automation |
 
 ## Naming Representation
 
@@ -184,7 +201,11 @@ match.
 | `Syntax.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc` |
 | `BasicTyping.v` | Simple type system (`⊢ᵥ`, `⊢ₑ`) |
 | `SmallStep.v` | Small-step operational semantics (`→*`) |
-| `Properties.v` | Type safety and basic metatheory |
+| `Properties.v` | Basic metatheory entry points |
+| `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
+| `BasicTypingProps.v` | Basic typing lemmas |
+| `OperationalProps.v` | Operational semantics lemmas |
+| `Proofs.v` | Aggregated CoreLang proof exports |
 
 ### `ChoiceType/` — The type system
 
@@ -200,7 +221,7 @@ with store-based lookup while preserving expressiveness through let-binding.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Instantiates `ChoiceLogic` with `atom`/`value` from `CoreLang` |
+| `Prelude.v` | Imports `CoreLang` and `ChoiceLogic`; fixes ChoiceType notations to CoreLang `value`s |
 | `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
