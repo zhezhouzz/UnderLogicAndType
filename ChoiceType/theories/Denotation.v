@@ -42,7 +42,7 @@ Definition fib_vars (X : aset) (p : FQ) : FQ :=
     As in HATs' denotation, the first argument of [denot_ty_fuel] is an
     over-approximation of the syntactic size of the type.  This lets the
     denotation recurse on opened locally-nameless bodies such as
-    [{0 ~> vfvar x} τ], which are not syntactic subterms accepted by Rocq's
+    [{0 ~> x} τ], which are not syntactic subterms accepted by Rocq's
     structural termination checker. *)
 Fixpoint cty_measure (τ : choice_ty) : nat :=
   match τ with
@@ -57,8 +57,8 @@ Fixpoint cty_measure (τ : choice_ty) : nat :=
 Lemma cty_measure_gt_0 τ : cty_measure τ > 0.
 Proof. induction τ; simpl; lia. Qed.
 
-Lemma cty_open_preserves_measure τ k v :
-  cty_measure ({k ~> v} τ) = cty_measure τ.
+Lemma cty_open_preserves_measure τ k x :
+  cty_measure ({k ~> x} τ) = cty_measure τ.
 Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
 
 (** ** Type denotation
@@ -116,7 +116,7 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
             (FFib y
               (FImpl
                 (denot_ty_fuel gas' τx (tret (vfvar x)))
-                (denot_ty_fuel gas' ({0 ~> vfvar x} τ)
+                (denot_ty_fuel gas' ({0 ~> x} τ)
                    (tapp (vfvar y) (vfvar x)))))))
 
   (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
@@ -130,7 +130,7 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
             (FFib y
               (FWand
                 (denot_ty_fuel gas' τx (tret (vfvar x)))
-                (denot_ty_fuel gas' ({0 ~> vfvar x} τ)
+                (denot_ty_fuel gas' ({0 ~> x} τ)
                    (tapp (vfvar y) (vfvar x)))))))
 
   end

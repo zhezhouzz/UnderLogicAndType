@@ -16,11 +16,9 @@ Definition type_qualifier : Type := type_qualifier_of (V := value).
 
 (** ** Locally-nameless infrastructure *)
 
-#[global] Instance open_qual_inst      : Open value type_qualifier := qual_open_value.
 #[global] Instance open_qual_atom_inst : Open atom type_qualifier := qual_open_atom.
 #[global] Instance subst_qual_inst     : SubstV value type_qualifier := qual_subst_value.
 #[global] Instance substM_qual_inst    : SubstM (gmap atom value) type_qualifier := qual_subst_map.
-Arguments open_qual_inst /.
 Arguments open_qual_atom_inst /.
 Arguments subst_qual_inst /.
 Arguments substM_qual_inst /.
@@ -98,18 +96,10 @@ Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
 Notation "⊤q" := qual_top.
 Notation "⊥q" := qual_bot.
 
-(** ** Key LN and substitution lemmas (Admitted) *)
-
-Lemma qual_subst_open k s σ (q : type_qualifier) :
-  subst_map σ ({k ~> s} q) = {k ~> subst_map σ s} (subst_map σ q).
-Proof. Admitted.
+(** ** Key substitution lemmas (Admitted) *)
 
 Lemma qual_subst_fresh x v (q : type_qualifier) :
   x # q → {x := v}q q = q.
-Proof. Admitted.
-
-Lemma qual_subst_intro x v (q : type_qualifier) :
-  x # q → lc_value v → {x := v}q (q ^q^ x) = {0 ~> v} q.
 Proof. Admitted.
 
 Lemma qual_interp_subst_compose (σ_X σ : gmap atom value) (q : type_qualifier) :

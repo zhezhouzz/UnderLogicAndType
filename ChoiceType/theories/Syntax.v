@@ -82,21 +82,18 @@ Arguments stale_ctx_inst /.
 
 (** ** Locally nameless operations on choice types *)
 
-Fixpoint cty_open (k : nat) (v : value) (τ : choice_ty) : choice_ty :=
+Fixpoint cty_open (k : nat) (x : atom) (τ : choice_ty) : choice_ty :=
   match τ with
-  | CTOver  b φ     => CTOver  b ({k ~> v} φ)
-  | CTUnder b φ     => CTUnder b ({k ~> v} φ)
-  | CTInter τ1 τ2   => CTInter (cty_open k v τ1) (cty_open k v τ2)
-  | CTUnion τ1 τ2   => CTUnion (cty_open k v τ1) (cty_open k v τ2)
-  | CTSum   τ1 τ2   => CTSum   (cty_open k v τ1) (cty_open k v τ2)
-  | CTArrow τx τ    => CTArrow (cty_open k v τx) (cty_open (S k) v τ)
-  | CTWand  τx τ    => CTWand  (cty_open k v τx) (cty_open (S k) v τ)
+  | CTOver  b φ     => CTOver  b (qual_open_atom k x φ)
+  | CTUnder b φ     => CTUnder b (qual_open_atom k x φ)
+  | CTInter τ1 τ2   => CTInter (cty_open k x τ1) (cty_open k x τ2)
+  | CTUnion τ1 τ2   => CTUnion (cty_open k x τ1) (cty_open k x τ2)
+  | CTSum   τ1 τ2   => CTSum   (cty_open k x τ1) (cty_open k x τ2)
+  | CTArrow τx τ    => CTArrow (cty_open k x τx) (cty_open (S k) x τ)
+  | CTWand  τx τ    => CTWand  (cty_open k x τx) (cty_open (S k) x τ)
   end.
 
-#[global] Instance open_cty_inst : Open value choice_ty := cty_open.
-#[global] Instance open_cty_atom_inst : Open atom choice_ty :=
-  fun k x => cty_open k (vfvar x).
-Arguments open_cty_inst /.
+#[global] Instance open_cty_atom_inst : Open atom choice_ty := cty_open.
 Arguments open_cty_atom_inst /.
 
 Inductive lc_choice_ty : choice_ty → Prop :=
@@ -120,11 +117,11 @@ Inductive lc_choice_ty : choice_ty → Prop :=
       lc_choice_ty (CTSum τ1 τ2)
   | LC_CTArrow τx τ (L : aset) :
       lc_choice_ty τx →
-      (∀ x, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ)) →
+      (∀ x, x ∉ L → lc_choice_ty ({0 ~> x} τ)) →
       lc_choice_ty (CTArrow τx τ)
   | LC_CTWand τx τ (L : aset) :
       lc_choice_ty τx →
-      (∀ x, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ)) →
+      (∀ x, x ∉ L → lc_choice_ty ({0 ~> x} τ)) →
       lc_choice_ty (CTWand τx τ).
 
 #[global] Instance lc_cty_inst : Lc choice_ty := lc_choice_ty.
@@ -132,7 +129,7 @@ Arguments lc_cty_inst /.
 #[global] Hint Constructors lc_choice_ty : core.
 
 Definition body_cty (τ : choice_ty) : Prop :=
-  ∃ L : aset, ∀ x : atom, x ∉ L → lc_choice_ty ({0 ~> vfvar x} τ).
+  ∃ L : aset, ∀ x : atom, x ∉ L → lc_choice_ty ({0 ~> x} τ).
 
 (** ** Type erasure and lifting *)
 
@@ -216,11 +213,11 @@ Inductive wf_choice_ty : choice_ty → Prop :=
       wf_choice_ty (CTSum τ1 τ2)
   | Wf_CTArrow τx τ (L : aset) :
       wf_choice_ty τx →
-      (∀ x, x ∉ L → wf_choice_ty ({0 ~> vfvar x} τ)) →
+      (∀ x, x ∉ L → wf_choice_ty ({0 ~> x} τ)) →
       wf_choice_ty (CTArrow τx τ)
   | Wf_CTWand τx τ (L : aset) :
       wf_choice_ty τx →
-      (∀ x, x ∉ L → wf_choice_ty ({0 ~> vfvar x} τ)) →
+      (∀ x, x ∉ L → wf_choice_ty ({0 ~> x} τ)) →
       wf_choice_ty (CTWand τx τ).
 
 Inductive wf_ctx : ctx → Prop :=

@@ -118,6 +118,14 @@ match.
 
 Choice types layered on top of `CoreLang` and `ChoiceLogic`.
 
+Dependent choice types and qualifiers use an atom-only opening discipline:
+locally-nameless bound variables in type refinements are opened with a fresh
+`atom`, not an arbitrary `value`.  Accordingly, the function-application
+typing rules only apply directly to arguments of the form `vfvar x`; an
+arbitrary value argument can first be named with `tlete` and then applied via
+that atom.  This is a formalization choice that keeps qualifier opening aligned
+with store-based lookup while preserving expressiveness through let-binding.
+
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Instantiates `ChoiceLogic` with `atom`/`value` from `CoreLang` |

@@ -73,7 +73,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
         has_choice_type
           (CtxComma Γ (CtxBind y τx))
           (e ^^ y)
-          ({0 ~> vfvar y} τ)) →
+          ({0 ~> y} τ)) →
       has_choice_type Γ
         (tret (vlam (erase_ty τx) e))
         (CTArrow τx τ)
@@ -84,22 +84,22 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
         has_choice_type
           (CtxStar Γ (CtxBind y τx))
           (e ^^ y)
-          ({0 ~> vfvar y} τ)) →
+          ({0 ~> y} τ)) →
       has_choice_type Γ
         (tret (vlam (erase_ty τx) e))
         (CTWand τx τ)
 
   (** T-AppFun *)
-  | CT_AppFun Γ τx τ v1 v2 :
+  | CT_AppFun Γ τx τ v1 x :
       has_choice_type Γ (tret v1) (CTArrow τx τ) →
-      has_choice_type Γ (tret v2) τx →
-      has_choice_type Γ (tapp v1 v2) ({0 ~> v2} τ)
+      has_choice_type Γ (tret (vfvar x)) τx →
+      has_choice_type Γ (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-AppFunD *)
-  | CT_AppFunD Γ1 Γ2 τx τ v1 v2 :
+  | CT_AppFunD Γ1 Γ2 τx τ v1 x :
       has_choice_type Γ1 (tret v1) (CTWand τx τ) →
-      has_choice_type Γ2 (tret v2) τx →
-      has_choice_type (CtxStar Γ1 Γ2) (tapp v1 v2) ({0 ~> v2} τ)
+      has_choice_type Γ2 (tret (vfvar x)) τx →
+      has_choice_type (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-Fix *)
   | CT_Fix Γ τx τ vf (L : aset) :
@@ -108,7 +108,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
           (CtxComma Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
-          (CTArrow (CTArrow τx τ) ({0 ~> vfvar y} τ))) →
+          (CTArrow (CTArrow τx τ) ({0 ~> y} τ))) →
       has_choice_type Γ
         (tret (vfix (erase_ty (CTArrow τx τ)) vf))
         (CTArrow τx τ)
@@ -122,7 +122,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
           (CtxStar Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
-          (CTWand (CTWand τx τ) ({0 ~> vfvar y} τ))) →
+          (CTWand (CTWand τx τ) ({0 ~> y} τ))) →
       has_choice_type Γ
         (tret (vfix (erase_ty (CTWand τx τ)) vf))
         (CTWand τx τ)

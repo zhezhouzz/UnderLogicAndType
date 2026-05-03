@@ -27,14 +27,6 @@ Definition qual_prop (q : qualifier) : BStoreT → StoreT → A → Prop :=
   | qual _ _ p => p
   end.
 
-Definition qual_open_value (k : nat) (v : V) (q : qualifier) : qualifier :=
-  match q with
-  | qual B d p =>
-      if decide (k ∈ B) then
-        qual (B ∖ {[k]}) d (λ β σ a, p (<[k := v]> β) σ a)
-      else q
-  end.
-
 Definition qual_open_atom (k : nat) (x : atom) (q : qualifier) : qualifier :=
   match q with
   | qual B d p =>

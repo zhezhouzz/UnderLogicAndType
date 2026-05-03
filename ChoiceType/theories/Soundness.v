@@ -44,12 +44,12 @@ Proof. Admitted.
 Corollary refinement (e : tm) (b : base_ty) (φ : type_qualifier) :
   CtxEmpty ⊢ e ⋮ CTOver b φ →
   ∀ v, steps e (tret v) →
-       qual_interp ∅ ({0 ~> v} φ).
+       ∃ x, qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
 Corollary incorrectness (e : tm) (b : base_ty) (φ : type_qualifier) :
   CtxEmpty ⊢ e ⋮ CTUnder b φ →
-  ∃ v, steps e (tret v) ∧ qual_interp ∅ ({0 ~> v} φ).
+  ∃ v x, steps e (tret v) ∧ qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
 Corollary exact_result (e : tm) (b : base_ty) (c : constant) :
