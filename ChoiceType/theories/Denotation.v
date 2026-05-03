@@ -11,16 +11,6 @@
 
 From ChoiceType Require Export Syntax.
 
-(** Temporary bridge from core expressions to logic atoms. *)
-Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  qual (V := value) (A := WfWorld) ∅ (stale e ∪ {[ν]})
-    (fun _ σ (w : WfWorld) =>
-      ∀ σw,
-        (w : World) σw →
-        ∃ v,
-          σw !! ν = Some v ∧
-          subst_map σw (subst_map σ e) →* tret v).
-
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
 (** Abbreviation: a Choice Logic formula at the ChoiceType instantiation. *)
@@ -37,9 +27,6 @@ Notation "φ ⊫ ψ" :=
   (at level 85, ψ at level 84, no associativity).
 
 (** ** Fresh variable helpers for denotation *)
-
-(** Pick a result variable [ν] fresh with respect to a set of atoms. *)
-Definition fresh_result (avoid : aset) : atom := fresh avoid.
 
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
@@ -73,8 +60,9 @@ Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
     [denot_ty τ e : FQ] encodes the proposition "expression [e] has type [τ]"
     as a Choice Logic formula.  The translation follows §1.5 verbatim.
 
-    Naming convention: [ν] is always the *result variable* (the ν from {ν:b|φ}),
-    chosen fresh with respect to [qual_dom φ] so it does not clash. *)
+    Result variables are represented locally namelessly: the outer [FForall]
+    opens the result bound variable in both the expression atom and the type
+    qualifier atom. *)
 
 Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
@@ -82,22 +70,19 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
   | S gas' =>
   match τ with
 
-  (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ◁φ
-      The result variable ν is chosen fresh w.r.t. φ's free variables.
-      FForall ν quantifies over the result coordinate; inside, FImpl links
-      execution to the over-approximation of φ.  [fib_vars (fv φ)] iterates
-      the single-variable fiber modality over φ's free variables. *)
+  (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ◁φ
+      The outer [FForall] binds the result coordinate in both [⟦e⟧] and [φ].
+      [fib_vars (fv φ)] iterates the single-variable fiber modality over
+      φ's free variables. *)
   | CTOver b φ =>
-      let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
-        (FImpl (FAtom (expr_logic_qual e ν))
+        (FImpl (FBExprAtom 0 e)
                (fib_vars (qual_dom φ) (FOver (FAtom (lift_type_qualifier_to_logic φ)))))
 
-  (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⊸ ∀_{FV(φ)} ▷φ *)
+  (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      let ν  := fresh_result (qual_dom φ ∪ fv_tm e) in
       FForall
-        (FImpl (FAtom (expr_logic_qual e ν))
+        (FImpl (FBExprAtom 0 e)
                (fib_vars (qual_dom φ) (FUnder (FAtom (lift_type_qualifier_to_logic φ)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
@@ -114,31 +99,27 @@ Fixpoint denot_ty_fuel (gas : nat) (τ : choice_ty) (e : tm) : FQ :=
 
   (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
   | CTArrow τx τ =>
-      let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
-      let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall
         (FImpl
-          (FAtom (expr_logic_qual e y))
+          (FBExprAtom 0 e)
           (FForall
-            (FFib y
+            (FBFib 1
               (FImpl
-                (denot_ty_fuel gas' τx (tret (vfvar x)))
-                (denot_ty_fuel gas' ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x)))))))
+                (denot_ty_fuel gas' τx (tret (vbvar 0)))
+                (denot_ty_fuel gas' τ
+                   (tapp (vbvar 1) (vbvar 0)))))))
 
   (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
   | CTWand τx τ =>
-      let x := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e) in
-      let y := fresh_result (fv_cty τx ∪ fv_cty τ ∪ fv_tm e ∪ {[x]}) in
       FForall
         (FImpl
-          (FAtom (expr_logic_qual e y))
+          (FBExprAtom 0 e)
           (FForall
-            (FFib y
+            (FBFib 1
               (FWand
-                (denot_ty_fuel gas' τx (tret (vfvar x)))
-                (denot_ty_fuel gas' ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x)))))))
+                (denot_ty_fuel gas' τx (tret (vbvar 0)))
+                (denot_ty_fuel gas' τ
+                   (tapp (vbvar 1) (vbvar 0)))))))
 
   end
   end.

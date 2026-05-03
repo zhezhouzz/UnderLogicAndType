@@ -81,13 +81,14 @@ Stores, resources, and the abstract choice algebra.
 
 ### `ChoiceLogic/` — The logic layer
 
-Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
+Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`
+and the `CoreLang` expression syntax used by expression atoms.
 
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Re-exports `ChoiceAlgebra` and `ChoicePrelude` |
-| `LogicQualifier.v` | Logic-level qualifier atoms (`lqual`) and `logic_qualifier_denote` |
-| `Formula.v` | Formula syntax (`FAtom`, `FStar`, `FFib`, …) and `res_models` |
+| `LogicQualifier.v` | Logic-level qualifier atoms and `logic_qualifier_denote` |
+| `Formula.v` | Formula syntax (`FAtom`, `FExprAtom`, `FBExprAtom`, `FFib`, `FBFib`, …) and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
 
 ### `CoreLang/` — The programming language

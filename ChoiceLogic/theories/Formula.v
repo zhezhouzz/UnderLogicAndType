@@ -1,4 +1,5 @@
 From ChoiceLogic Require Import Prelude LogicQualifier.
+From CoreLang Require Import Syntax SmallStep.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 
@@ -16,13 +17,9 @@ From ChoiceLogic Require Import Prelude LogicQualifier.
     - fiberwise modality [FFib x p]: for each σ_x in the x-projection of m,
       the well-formed fiber world models p under the extended store. *)
 
-Section ChoiceLogic.
-
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreT := (gmap atom V) (only parsing).
-Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
+Local Notation StoreT := (gmap atom value) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
+Local Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
 
 (** ** Formula syntax *)
 
@@ -30,6 +27,8 @@ Inductive Formula : Type :=
   | FTrue
   | FFalse
   | FAtom   (a : LogicQualifierT)
+  | FExprAtom  (x : atom) (e : tm)
+  | FBExprAtom (k : nat)  (e : tm)
   | FAnd    (p q : Formula)
   | FOr     (p q : Formula)
   | FImpl   (p q : Formula)                     (* Kripke implication *)
@@ -41,17 +40,22 @@ Inductive Formula : Type :=
   | FOver   (p : Formula)                       (* overapproximation  o p *)
   | FUnder  (p : Formula)                       (* underapproximation u p *)
   | FFib    (x : atom)                          (* fiberwise modality *)
+            (p : Formula)
+  | FBFib   (k : nat)                           (* bound fiberwise modality *)
             (p : Formula).
 
 Fixpoint formula_fv (φ : Formula) : aset :=
   match φ with
   | FTrue | FFalse => ∅
   | FAtom q => stale q
+  | FExprAtom x e => {[x]} ∪ fv_tm e
+  | FBExprAtom _ e => fv_tm e
   | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
       formula_fv p ∪ formula_fv q
   | FForall p | FExists p => formula_fv p
   | FOver p | FUnder p => formula_fv p
   | FFib x p => {[x]} ∪ formula_fv p
+  | FBFib _ p => formula_fv p
   end.
 
 #[global] Instance stale_formula : Stale Formula := formula_fv.
@@ -62,6 +66,12 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FTrue => FTrue
   | FFalse => FFalse
   | FAtom q => FAtom (qual_open_atom k x q)
+  | FExprAtom y e => FExprAtom y ({k ~> vfvar x} e)
+  | FBExprAtom n e =>
+      if decide (k = n) then
+        FExprAtom x ({k ~> vfvar x} e)
+      else
+        FBExprAtom n ({k ~> vfvar x} e)
   | FAnd p q => FAnd (formula_open k x p) (formula_open k x q)
   | FOr p q => FOr (formula_open k x p) (formula_open k x q)
   | FImpl p q => FImpl (formula_open k x p) (formula_open k x q)
@@ -73,20 +83,27 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FOver p => FOver (formula_open k x p)
   | FUnder p => FUnder (formula_open k x p)
   | FFib y p => FFib y (formula_open k x p)
+  | FBFib n p =>
+      if decide (k = n) then
+        FFib x (formula_open k x p)
+      else
+        FBFib n (formula_open k x p)
   end.
 
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
-  | FTrue | FFalse | FAtom _ => 1
+  | FTrue | FFalse | FAtom _ | FExprAtom _ _ | FBExprAtom _ _ => 1
   | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
       1 + formula_measure p + formula_measure q
-  | FForall p | FExists p | FOver p | FUnder p | FFib _ p =>
+  | FForall p | FExists p | FOver p | FUnder p | FFib _ p | FBFib _ p =>
       1 + formula_measure p
   end.
 
 Lemma formula_open_preserves_measure φ k x :
   formula_measure (formula_open k x φ) = formula_measure φ.
-Proof. induction φ in k |- *; simpl; eauto; lia. Qed.
+Proof.
+  induction φ in k |- *; simpl; eauto; try destruct (decide _); simpl; eauto; lia.
+Qed.
 
 (** ** Satisfaction relation
 
@@ -114,6 +131,18 @@ Fixpoint res_models_with_store_fuel
   | FAtom a =>
       (** m ⊨ a iff the denotation of the logic qualifier holds of m. *)
       qual_bvars a = ∅ ∧ logic_qualifier_denote a ∅ ρ m
+
+  | FExprAtom x e =>
+      (** Expression atoms evaluate under every store represented by the
+          current world; the result is read from coordinate [x]. *)
+      ∀ σw,
+        (m : World (V := value)) σw →
+        ∃ v,
+          σw !! x = Some v ∧
+          subst_map σw (subst_map ρ e) →* tret v
+
+  | FBExprAtom _ _ =>
+      False
 
   | FAnd p q =>
       res_models_with_store_fuel gas' ρ m p ∧
@@ -198,6 +227,9 @@ Fixpoint res_models_with_store_fuel
         res_models_with_store_fuel gas' (ρ ∪ σ)
           (res_fiber_from_projection m {[x]} σ Hproj) p
 
+  | FBFib _ _ =>
+      False
+
   end
   end.
 
@@ -215,5 +247,3 @@ Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
 (** Entailment: φ ⊨ ψ holds when every world modeling φ also models ψ. *)
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
-
-End ChoiceLogic.

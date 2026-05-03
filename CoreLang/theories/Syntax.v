@@ -260,6 +260,11 @@ Definition body_val (v : value) : Prop :=
 #[global] Instance value_inhabited : Inhabited value :=
   populate (vconst (cbool false)).
 
+#[global] Instance corelang_value_sig : ValueSig value := {|
+  valuesig_eqdec := value_eqdec;
+  valuesig_inhabited := value_inhabited;
+|}.
+
 (** ** LN lemmas — proofs are in Properties.v (all Admitted here) *)
 
 Lemma open_rec_lc_value k u (v : value) : lc_value v → {k ~> u} v = v.

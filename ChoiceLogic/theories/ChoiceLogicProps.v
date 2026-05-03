@@ -1,4 +1,5 @@
 From ChoiceLogic Require Import Prelude LogicQualifier Formula.
+From CoreLang Require Import Syntax.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 
@@ -9,12 +10,10 @@ From ChoiceLogic Require Import Prelude LogicQualifier Formula.
 
 Section ChoiceLogicProps.
 
-Context {V : Type} `{ValueSig V}.
+Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
+Local Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
 
-Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
-
-Local Notation FormulaT := (Formula (V := V)) (only parsing).
+Local Notation FormulaT := Formula (only parsing).
 
 Notation sat m φ := (res_models m φ).
 Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associativity).
