@@ -152,24 +152,29 @@ Fixpoint res_models_with_store_fuel
         res_models_with_store_fuel gas' ρ m2 q
 
   | FForall p =>
-      (** m ⊨ ∀x.p iff x is fresh for m and every one-coordinate extension
-          of m at x models p. *)
+      (** Cofinite locally-nameless semantics: the proof chooses a finite
+          avoidance set [L], and every atom outside [L] may be used to open
+          the body.  [L] is responsible for excluding names already present in
+          the world, explicit store, and formula body. *)
+      ∃ L : aset,
       ∀ x : atom,
-      x ∉ world_dom m →
-      ∀ m' : WfWorldT,
+      x ∉ L →
+        ∀ m' : WfWorldT,
           world_dom m' = world_dom m ∪ {[x]} →
           res_restrict m' (world_dom m) = m →
-          res_models_with_store_fuel gas' (delete x ρ) m' (formula_open 0 x p)
+          res_models_with_store_fuel gas' ρ m' (formula_open 0 x p)
 
   | FExists p =>
-      (** m ⊨ ∃x.p iff x is fresh for m and some one-coordinate extension
-          of m at x models p. *)
-      ∃ x : atom,
-      x ∉ world_dom m ∧
-      ∃ m' : WfWorldT,
+      (** Cofinite existential semantics: every atom outside the chosen
+          avoidance set can witness the opened body through some
+          one-coordinate world extension. *)
+      ∃ L : aset,
+      ∀ x : atom,
+      x ∉ L →
+        ∃ m' : WfWorldT,
           world_dom m' = world_dom m ∪ {[x]} ∧
           res_restrict m' (world_dom m) = m ∧
-          res_models_with_store_fuel gas' (delete x ρ) m' (formula_open 0 x p)
+          res_models_with_store_fuel gas' ρ m' (formula_open 0 x p)
 
   (** Approximation modalities (Definition 1.9) *)
 
