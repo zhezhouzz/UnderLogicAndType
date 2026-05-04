@@ -1,4 +1,4 @@
-From ChoiceAlgebra Require Import Prelude Store Resource.
+From ChoiceAlgebra Require Import Prelude Resource.
 
 (** * Choice Algebra  (Definitions 1.6)
 

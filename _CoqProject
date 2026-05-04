@@ -13,7 +13,6 @@ ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/MapFilterDom.v
-ChoiceAlgebra/theories/Store.v
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 ChoiceAlgebra/examples/ResourceExamples.v
