@@ -6,13 +6,13 @@ From ChoiceType Require Export Typing.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
 
-Lemma res_models_impl_mono (φ ψ : FQ) (m m' : WfWorld) :
+Lemma res_models_impl_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
   m ⊑ m' →
   m' ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma res_models_and_mono (φ ψ : FQ) (m m' : WfWorld) :
+Lemma res_models_and_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FAnd φ ψ →
   m ⊑ m' →
   m' ⊨ FAnd φ ψ.
@@ -70,13 +70,13 @@ Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. Admitted.
 
-Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FQ) :
+Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
   (∀ m', m ⊑ m' →
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof. Admitted.
 
-Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
+Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   (∀ σ,
      ∀ Hproj : res_restrict m {[x]} σ,
      res_models_with_store σ
@@ -85,7 +85,7 @@ Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FQ) :
   m ⊨ FFib x φ.
 Proof. Admitted.
 
-Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
+Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,
@@ -97,7 +97,7 @@ Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FQ) :
   m ⊨ FForall x φ.
 Proof. Admitted.
 
-Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FQ) :
+Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,

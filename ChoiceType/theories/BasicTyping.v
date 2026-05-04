@@ -78,13 +78,15 @@ Inductive basic_ctx : aset → ctx → Prop :=
 
 #[global] Hint Constructors basic_choice_ty basic_ctx : core.
 
-(** ** Top-level well-formedness wrappers *)
+(** ** Paper-judgment notations
 
-Definition basic_choice_ty_closed (τ : choice_ty) : Prop :=
-  basic_choice_ty ∅ τ.
+    These notations are for printed goals and statements.  Proof scripts should
+    keep using the explicit names [basic_choice_ty] and [basic_ctx]. *)
 
-Definition basic_ctx_closed (Γ : ctx) : Prop :=
-  basic_ctx ∅ Γ.
+Notation "D '⊢sτ' τ" := (basic_choice_ty D τ)
+  (at level 40, τ at level 40, only printing).
+Notation "D '⊢sΓ' Γ" := (basic_ctx D Γ)
+  (at level 40, Γ at level 40, only printing).
 
 (** ** Regularity and domain facts
 
@@ -131,7 +133,7 @@ Lemma basic_ctx_erase_dom D Γ :
   dom (erase_ctx Γ) = ctx_dom Γ.
 Proof. Admitted.
 
-Lemma basic_ctx_closed_fv Γ :
-  basic_ctx_closed Γ →
+Lemma basic_ctx_empty_fv Γ :
+  basic_ctx ∅ Γ →
   ctx_fv Γ ⊆ ctx_dom Γ.
 Proof. Admitted.

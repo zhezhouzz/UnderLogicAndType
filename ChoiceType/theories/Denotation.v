@@ -15,8 +15,9 @@ From ChoiceType Require Export Syntax.
 
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
-(** Abbreviation: a Choice Logic formula at the ChoiceType instantiation. *)
-Notation FQ := (@Formula.Formula value).
+(** Local abbreviation for the ChoiceType formula instantiation.  The exported
+    name from [Prelude] is [FormulaQ]. *)
+Local Notation FQ := FormulaQ.
 
 (** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=

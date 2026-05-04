@@ -5,7 +5,7 @@
     and the [Stale]/[Subst]/[SubstM] typeclass instances needed for
     the LN infrastructure on qualifiers inside types. *)
 
-From ChoiceType Require Export Qualifier.
+From ChoiceType Require Export QualifierBridge.
 
 (** ** Choice types *)
 

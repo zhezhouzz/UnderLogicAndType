@@ -33,9 +33,11 @@ ChoiceLogic/theories/ChoiceLogicProps.v
 
 ChoiceType/theories/Prelude.v
 ChoiceType/theories/Qualifier.v
+ChoiceType/theories/QualifierBridge.v
 ChoiceType/theories/Syntax.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/Denotation.v
 ChoiceType/theories/WellFormed.v
+ChoiceType/theories/Auxiliary.v
 ChoiceType/theories/Typing.v
 ChoiceType/theories/Soundness.v
