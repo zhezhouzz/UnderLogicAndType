@@ -506,9 +506,27 @@ Proof. Admitted.
 Lemma open_idemp_value k u v :
   lc_value u ->
   open_value k u (open_value k u v) = open_value k u v.
-Proof. Admitted.
+Proof.
+  intros Hlc.
+  revert k. induction v using value_mut with
+      (P0 := fun e => ∀ k,
+        open_tm k u (open_tm k u e) = open_tm k u e);
+      simpl; intros k; try reflexivity; try (f_equal; eauto).
+  destruct (decide (k = n)); subst; simpl.
+  - by rewrite open_rec_lc_value.
+  - by rewrite decide_False by done.
+Qed.
 
 Lemma open_idemp_tm k u e :
   lc_value u ->
   open_tm k u (open_tm k u e) = open_tm k u e.
-Proof. Admitted.
+Proof.
+  intros Hlc.
+  revert k. induction e using tm_mut with
+      (P := fun v => ∀ k,
+        open_value k u (open_value k u v) = open_value k u v);
+      simpl; intros k; try reflexivity; try (f_equal; eauto).
+  destruct (decide (k = n)); subst; simpl.
+  - by rewrite open_rec_lc_value.
+  - by rewrite decide_False by done.
+Qed.
