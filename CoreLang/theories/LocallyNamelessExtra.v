@@ -265,13 +265,33 @@ Lemma close_var_rename_value x y k v :
   y ∉ fv_value v ->
   close_value x k v =
   close_value y k (value_subst x (vfvar y) v).
-Proof. Admitted.
+Proof.
+  revert k. induction v using value_mut with
+      (P0 := fun e => ∀ k,
+        y ∉ fv_tm e ->
+        close_tm x k e =
+        close_tm y k (tm_subst x (vfvar y) e));
+      simpl; intros k Hy; try reflexivity; try (f_equal; eauto; my_set_solver).
+  destruct (decide (x = x0)); subst; simpl.
+  - rewrite decide_True by reflexivity. reflexivity.
+  - by rewrite decide_False by my_set_solver.
+Qed.
 
 Lemma close_var_rename_tm x y k e :
   y ∉ fv_tm e ->
   close_tm x k e =
   close_tm y k (tm_subst x (vfvar y) e).
-Proof. Admitted.
+Proof.
+  revert k. induction e using tm_mut with
+      (P := fun v => ∀ k,
+        y ∉ fv_value v ->
+        close_value x k v =
+        close_value y k (value_subst x (vfvar y) v));
+      simpl; intros k Hy; try reflexivity; try (f_equal; eauto; my_set_solver).
+  destruct (decide (x = x0)); subst; simpl.
+  - rewrite decide_True by reflexivity. reflexivity.
+  - by rewrite decide_False by my_set_solver.
+Qed.
 
 Lemma open_close_var_value x v :
   lc_value v ->
@@ -378,14 +398,42 @@ Lemma subst_close_value x y u k v :
   x <> y ->
   close_value x k (value_subst y u v) =
   value_subst y u (close_value x k v).
-Proof. Admitted.
+Proof.
+  intros Hux Hxy.
+  revert k. induction v using value_mut with
+      (P0 := fun e => ∀ k,
+        close_tm x k (tm_subst y u e) =
+        tm_subst y u (close_tm x k e));
+      simpl; intros k; try reflexivity; try (f_equal; eauto).
+  destruct (decide (y = x0)); subst; simpl.
+  - rewrite decide_False by done.
+    simpl. rewrite decide_True by reflexivity.
+    by rewrite close_fresh_rec_value.
+  - destruct (decide (x = x0)); subst; simpl.
+    + reflexivity.
+    + by rewrite decide_False by done.
+Qed.
 
 Lemma subst_close_tm x y u k e :
   x ∉ fv_value u ->
   x <> y ->
   close_tm x k (tm_subst y u e) =
   tm_subst y u (close_tm x k e).
-Proof. Admitted.
+Proof.
+  intros Hux Hxy.
+  revert k. induction e using tm_mut with
+      (P := fun v => ∀ k,
+        close_value x k (value_subst y u v) =
+        value_subst y u (close_value x k v));
+      simpl; intros k; try reflexivity; try (f_equal; eauto).
+  destruct (decide (y = x0)); subst; simpl.
+  - rewrite decide_False by done.
+    simpl. rewrite decide_True by reflexivity.
+    by rewrite close_fresh_rec_value.
+  - destruct (decide (x = x0)); subst; simpl.
+    + reflexivity.
+    + by rewrite decide_False by done.
+Qed.
 
 Lemma open_lc_respect_value k u w v :
   lc_value u ->
