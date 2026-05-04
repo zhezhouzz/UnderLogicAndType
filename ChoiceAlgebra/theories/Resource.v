@@ -57,6 +57,18 @@ Definition world_wf (w : WfWorld) : wf_world (raw_world w) := proj2_sig w.
 Definition world_compat (m1 m2 : World) : Prop :=
   ∀ s1 s2, m1 s1 → m2 s2 → store_compat s1 s2.
 
+Lemma disj_dom_world_compat (w1 w2 : WfWorld) :
+  world_dom (w1 : World) ∩ world_dom (w2 : World) = ∅ →
+  world_compat w1 w2.
+Proof.
+  intros Hdisj s1 s2 Hs1 Hs2.
+  apply disj_dom_store_compat.
+  change (dom s1 ∩ dom s2 = ∅).
+  rewrite (wf_dom _ (world_wf w1) s1 Hs1).
+  rewrite (wf_dom _ (world_wf w2) s2 Hs2).
+  exact Hdisj.
+Qed.
+
 (** ** Raw resource operations (Definition 1.3) — used internally by WfWorld ops *)
 
 Definition raw_unit : World := {|
