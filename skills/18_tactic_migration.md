@@ -39,6 +39,14 @@ open/close/substitution. It handles many branches of `decide (x = y)` and
 `decide (i < j)`. If the branch has exactly one visible `decide`, an explicit
 `destruct (decide ...); my_set_solver` can be clearer and more robust.
 
+Use `var_dec_simpl` or `var_dec_set_solver` when a script should tolerate the
+case where no decidable branch remains. These are better prefixes than a direct
+`var_dec_solver` call:
+
+```coq
+var_dec_set_solver.
+```
+
 Use `auto_apply` or `auto_eapply` when a mutual induction hypothesis has the
 same conclusion head as the goal. If several IHs have similar conclusions, name
 and apply the intended one explicitly.
@@ -73,6 +81,7 @@ Set/map normalizers:
   `lookup = None`.
 - `my_map_simpl`: normalize map domains and empty map unions.
 - `my_set_solver`: run the normalizers and then fall back to pruned set solving.
+- `smart_ln_simpl`: run `simpl`, binder cleanup, and `my_set_solver` together.
 
 Application helpers:
 
@@ -136,8 +145,9 @@ repeat specialize_with x.
 Small LN induction branch:
 
 ```coq
-simpl; intros; try reflexivity; try (f_equal; eauto; my_set_solver).
-repeat var_dec_solver; my_set_solver.
+smart_ln_simpl.
+try solve [f_equal; eauto; my_set_solver].
+try var_dec_set_solver.
 ```
 
 Typing proof with inserted binder:

@@ -339,6 +339,12 @@ Ltac my_set_solver :=
   try fast_set_solver!!;
   try set_solver.
 
+(** [smart_ln_simpl] is the stronger version of [ln_simpl] to use after this
+    file has defined [my_set_solver].  It is useful in proofs where simplifying
+    open/close/subst immediately creates fv/dom side conditions. *)
+Ltac smart_ln_simpl :=
+  simpl in *; crush_binders; try my_set_solver; try congruence; eauto.
+
 (** ** Fresh-variable automation
 
     These tactics support the cofinite style used by [body_*] and many typing
@@ -478,6 +484,19 @@ Ltac var_dec_solver :=
       end
   | _ => progress simpl
   end.
+
+(** [var_dec_simpl] repeatedly runs [var_dec_solver] until no recognized
+    decidable branch remains.  Unlike a direct [var_dec_solver] call, it is safe
+    as a prefix in scripts where there may be no more progress to make. *)
+Ltac var_dec_simpl :=
+  repeat (progress var_dec_solver).
+
+(** [var_dec_set_solver] captures the common open/close/subst branch shape:
+    simplify all easy decidable tests, then finish the generated set
+    obligations.  If it fails, expose the relevant [decide] explicitly with
+    [destruct (decide ...)] and finish by [my_set_solver]. *)
+Ltac var_dec_set_solver :=
+  var_dec_simpl; my_set_solver.
 
 (** ** Hypothesis application
 
