@@ -62,6 +62,7 @@ Inductive basic_ctx : aset → ctx → Prop :=
   | Basic_CtxComma D Γ1 Γ2 :
       basic_ctx D Γ1 →
       basic_ctx (D ∪ ctx_dom Γ1) Γ2 →
+      ctx_dom Γ1 ## ctx_dom Γ2 →
       basic_ctx D (CtxComma Γ1 Γ2)
   | Basic_CtxStar D Γ1 Γ2 :
       basic_ctx D Γ1 →
@@ -113,6 +114,11 @@ Proof. Admitted.
 Lemma basic_ctx_dom_fresh D Γ :
   basic_ctx D Γ →
   ctx_dom Γ ## D.
+Proof. Admitted.
+
+Lemma basic_ctx_comma_dom_disjoint D Γ1 Γ2 :
+  basic_ctx D (CtxComma Γ1 Γ2) →
+  ctx_dom Γ1 ## ctx_dom Γ2.
 Proof. Admitted.
 
 Lemma basic_ctx_fv_subset D Γ :
