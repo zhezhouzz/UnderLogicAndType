@@ -56,14 +56,18 @@ ChoicePrelude ──→ ChoiceAlgebra ──→ ChoiceLogic ──┐
                                                     v
                                                ChoiceType
 
-CoreLang.Syntax ──→ LocallyNameless ──→ CoreLang proof files
+CoreLang.Syntax ──→ LocallyNameless.Classes
+LocallyNameless ──→ CoreLang / ChoiceType instance and proof files
 ```
 
 Most libraries live under `<Library>/theories/`.  `ChoicePrelude/` and
 `LocallyNameless/` are top-level support libraries.  `ChoicePrelude` does not
 depend on `CoreLang`; it only provides abstract infrastructure such as `atom`,
-`aset`, `ValueSig`, stores, and freshness helpers.  `LocallyNameless` is proof
-support for CoreLang's locally-nameless metatheory.
+`aset`, `ValueSig`, stores, and freshness helpers.  `LocallyNameless` contains
+reusable LN tactics plus parameterized LN typeclasses.  The typeclass file
+currently imports `CoreLang.Syntax` for value-specific substitution classes;
+payload-independent opening is still parameterized so qualifiers can open with
+atoms while CoreLang opens with values.
 
 ### `ChoicePrelude/` — Shared prelude
 
@@ -78,15 +82,16 @@ It contains no program syntax and no dependency on `CoreLang`.
 
 ### `ChoiceAlgebra/` — The algebraic layer
 
-Stores, resources, and the abstract choice algebra.
+Resources and the abstract choice algebra.  Store operations live in
+`ChoicePrelude/Store.v`, so this layer no longer carries a store wrapper.
 
 | File | Contents |
 |------|----------|
 | `Prelude.v` | Re-exports the shared prelude |
-| `MapFilterDom.v` | Auxiliary lemmas: `dom` vs `filter` on `gmap` |
-| `Store.v` | Algebra-facing store exports |
 | `Resource.v` | Resources (worlds), resource operations, partial order |
 | `ChoiceAlgebra.v` | Abstract choice algebra class; `WfWorld` instance |
+
+Examples live in `ChoiceAlgebra/examples/`.
 
 ### `ChoiceLogic/` — The logic layer
 
@@ -104,10 +109,11 @@ atoms.
 
 ### `LocallyNameless/` — Proof support
 
-Small Ltac support used by the locally-nameless metatheory files.
+Small Ltac support and reusable typeclasses for locally-nameless metatheory.
 
 | File | Contents |
 |------|----------|
+| `Classes.v` | Parameterized LN theorem classes; opening payloads are abstract (`value` for CoreLang, `atom` for qualifiers/types) |
 | `Tactics.v` | Lightweight locally-nameless proof automation |
 
 ## Naming Representation
@@ -203,9 +209,10 @@ match.
 | `SmallStep.v` | Small-step operational semantics (`→*`) |
 | `Properties.v` | Basic metatheory entry points |
 | `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
+| `LocallyNamelessExtra.v` | Additional LN lemmas imported from earlier developments |
+| `LocallyNamelessInstances.v` | CoreLang instances for the shared LN classes |
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
-| `Proofs.v` | Aggregated CoreLang proof exports |
 
 ### `ChoiceType/` — The type system
 
@@ -223,7 +230,13 @@ with store-based lookup while preserving expressiveness through let-binding.
 |------|----------|
 | `Prelude.v` | Imports `CoreLang` and `ChoiceLogic`; fixes ChoiceType notations to CoreLang `value`s |
 | `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
+| `QualifierBridge.v` | Lifting closed type qualifiers into logic qualifier atoms |
+| `QualifierInstances.v` | Type-qualifier instances for the shared LN classes |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
+| `LocallyNamelessInstances.v` | Choice-type instances for the shared LN classes |
+| `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
+| `WellFormed.v` | Well-formedness and nonemptiness judgments |
+| `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
 | `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
 | `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
