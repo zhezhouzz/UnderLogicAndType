@@ -11,4 +11,4 @@
     listed with [Admitted] proofs in their source files while the definition
     layer and theorem interfaces stabilize. *)
 
-From CoreLang Require Export LocallyNamelessProps BasicTypingProps OperationalProps.
+From CoreLang Require Export LocallyNamelessProps LocallyNamelessInstances BasicTypingProps OperationalProps.

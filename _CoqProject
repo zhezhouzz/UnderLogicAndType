@@ -26,6 +26,7 @@ LocallyNameless/Tactics.v
 LocallyNameless/Classes.v
 CoreLang/theories/LocallyNamelessProps.v
 CoreLang/theories/LocallyNamelessExtra.v
+CoreLang/theories/LocallyNamelessInstances.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
 CoreLang/theories/Proofs.v
