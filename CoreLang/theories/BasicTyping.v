@@ -88,11 +88,39 @@ Arguments typing_tm_inst /.
 
 Lemma weakening_value Γ Γ' v T :
   Γ ⊢ᵥ v ⋮ T → Γ ⊆ Γ' → Γ' ⊢ᵥ v ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T _ => ∀ Γ', Γ ⊆ Γ' → Γ' ⊢ₑ e ⋮ T);
+      intros Γ' Hsub; eauto using lookup_weaken.
+  - econstructor. intros x Hx.
+    eapply H; [exact Hx | by apply insert_mono].
+  - econstructor. intros x Hx.
+    eapply H; [exact Hx | by apply insert_mono].
+  - econstructor; eauto. intros x Hx.
+    match goal with
+    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
+        eapply IH; [exact Hx | by apply insert_mono]
+    end.
+Qed.
 
 Lemma weakening_tm Γ Γ' e T :
   Γ ⊢ₑ e ⋮ T → Γ ⊆ Γ' → Γ' ⊢ₑ e ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γ v T _ => ∀ Γ', Γ ⊆ Γ' → Γ' ⊢ᵥ v ⋮ T);
+      intros Γ' Hsub; eauto using lookup_weaken.
+  - econstructor. intros x Hx.
+    eapply H; [exact Hx | by apply insert_mono].
+  - econstructor. intros x Hx.
+    eapply H; [exact Hx | by apply insert_mono].
+  - econstructor; eauto. intros x Hx.
+    match goal with
+    | IH : ∀ y : atom, y ∉ _ → ∀ Γ', _ |- _ =>
+        eapply IH; [exact Hx | by apply insert_mono]
+    end.
+Qed.
 
 Lemma subst_typing_value Γ x s v T vx :
   Γ ⊢ᵥ v ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
@@ -105,7 +133,17 @@ Lemma subst_typing_tm Γ x s e T vx :
 Proof. Admitted.
 
 Lemma typing_value_lc Γ v T : Γ ⊢ᵥ v ⋮ T → lc_value v.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T _ => lc_tm e);
+      eauto.
+Qed.
 
 Lemma typing_tm_lc Γ e T : Γ ⊢ₑ e ⋮ T → lc_tm e.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γ v T _ => lc_value v);
+      eauto.
+Qed.

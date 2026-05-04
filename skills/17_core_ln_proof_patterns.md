@@ -88,3 +88,22 @@ apply IH; set_solver.
 
 这里的 `replace` 比直接 `change` 更稳，因为目标中通常是通过 atom-open
 instance 得到的 `vfvar y`，而不是 syntactically 显示的 substitution form。
+
+## Typing induction with cofinite binders
+
+Basic typing 的 weakening/regularity proof 通常可以直接用 generated mutual induction：
+
+```coq
+induction Hty using value_has_type_mut with
+  (P0 := fun Γ e T _ => forall Γ', Γ ⊆ Γ' -> Γ' ⊢ₑ e ⋮ T).
+```
+
+binder case 里对 context extension 使用 `insert_mono`：
+
+```coq
+econstructor. intros x Hx.
+eapply IH; [exact Hx | by apply insert_mono].
+```
+
+如果 proof script 里 IH 名字不稳定，避免猜 `H0`/`H1`，用局部 pattern 抓
+`forall y, y ∉ _ -> forall Γ', ...` 这一类 IH。
