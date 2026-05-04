@@ -32,6 +32,9 @@ Ltac crush_store := vm_compute; try tauto; try congruence; try reflexivity.
 Definition store_xy (xv yv : nat) : StoreN :=
   <['x := xv]> (<['y := yv]> ∅).
 
+Definition sx1 : StoreN := <['x := 1%nat]> ∅.
+Definition sx2 : StoreN := <['x := 2%nat]> ∅.
+
 Definition s11 : StoreN := store_xy 1 1.
 Definition s12 : StoreN := store_xy 1 2.
 Definition s22 : StoreN := store_xy 2 2.
@@ -107,6 +110,20 @@ Definition triangle_slice : LogicQualifierN :=
     | None => False
     end).
 
+Ltac solve_x1_triangle :=
+  unfold logic_qualifier_denote, triangle_slice; vm_compute;
+  intros yv Hle Hlt;
+  assert (yv = 1%nat ∨ yv = 2%nat) as [-> | ->] by lia;
+  [exists s11 | exists s12];
+  repeat split; try (left; reflexivity); try (right; reflexivity); crush_store.
+
+Ltac solve_x2_triangle :=
+  unfold logic_qualifier_denote, triangle_slice; vm_compute;
+  intros yv Hle Hlt;
+  assert (yv = 2%nat) by lia; subst yv;
+  exists s22;
+  repeat split; try (left; reflexivity); try (right; reflexivity); crush_store.
+
 Definition fiber_triangle_formula : FormulaN :=
   FFib 'x (FUnder (FAtom triangle_slice)).
 
@@ -116,7 +133,6 @@ Definition fiber_triangle_formula : FormulaN :=
     fiber itself as this witness; the diagonal counterexample fails because
     the [x=1] fiber is missing [s12]. *)
 Definition fiber_triangle_obligation (w : WfWorldN) : Prop :=
-  dom (∅ : StoreN) ## {['x]} ∧
   ∀ σ (Hproj : res_restrict w {['x]} σ),
     ∃ m' : WfWorldN,
       res_subset m' (res_fiber_from_projection w {['x]} σ Hproj) ∧
@@ -126,9 +142,9 @@ Lemma res_models_fiber_triangle_intro (w : WfWorldN) :
   fiber_triangle_obligation w →
   res_models w fiber_triangle_formula.
 Proof.
-  intros [Hdom Hfib].
+  intros Hfib.
   unfold res_models, res_models_with_store, fiber_triangle_formula.
-  simpl. split; [exact Hdom |].
+  simpl. split; [set_solver |].
   intros σ Hproj.
   destruct (Hfib σ Hproj) as [m' [Hsubset Hatom]].
   exists m'. split; [exact Hsubset | exact Hatom].
@@ -140,29 +156,67 @@ Lemma res_models_fiber_triangle_elim (w : WfWorldN) :
 Proof.
   unfold res_models, res_models_with_store, fiber_triangle_formula,
     fiber_triangle_obligation.
-  simpl. tauto.
+  simpl. intros [_ Hfib] σ Hproj.
+  destruct (Hfib σ Hproj) as [m' [Hsubset Hatom]].
+  exists m'. split; [exact Hsubset | exact Hatom].
 Qed.
 
-(** These are the concrete finite-world facts that should eventually become
-    ordinary proofs.  They are kept as local example lemmas for review before
-    deciding whether any reusable helper belongs in [Resource.v] or
-    [Formula.v]. *)
+(** Concrete finite-world facts for the four displayed resources.  They are
+    deliberately proved locally: the obligations are specific to this example
+    rather than reusable metatheory. *)
 
 Lemma x1_y12_complete_triangle_fibers :
   fiber_triangle_obligation w_x1_y12.
-Proof. Admitted.
+Proof.
+  intros σ Hproj.
+  exists (res_fiber_from_projection w_x1_y12 {['x]} σ Hproj).
+  split; [apply res_subset_refl |].
+  simpl in Hproj.
+  destruct Hproj as [s [[Hs | Hs] Hrestr]]; subst s; subst σ; solve_x1_triangle.
+Qed.
 
 Lemma x2_y2_complete_triangle_fibers :
   fiber_triangle_obligation w_x2_y2.
-Proof. Admitted.
+Proof.
+  intros σ Hproj.
+  exists (res_fiber_from_projection w_x2_y2 {['x]} σ Hproj).
+  split; [apply res_subset_refl |].
+  simpl in Hproj.
+  destruct Hproj as [s [Hs Hrestr]].
+  subst s. subst σ. solve_x2_triangle.
+Qed.
 
 Lemma diag_bad_incomplete_triangle_fibers :
   ¬ fiber_triangle_obligation w_diag_bad.
-Proof. Admitted.
+Proof.
+  intros Hobl.
+  assert (Hproj : res_restrict w_diag_bad {['x]} sx1).
+  { simpl. exists s11. split; [left; reflexivity | crush_store]. }
+  destruct (Hobl sx1 Hproj) as [m' [[Hdom_sub Hin_sub] Hatom]].
+  unfold logic_qualifier_denote, triangle_slice in Hatom.
+  vm_compute in Hatom.
+  assert (Hle12 : 1 <= 2) by lia.
+  assert (Hlt23 : 2 < 3) by lia.
+  specialize (Hatom 2%nat Hle12 Hlt23).
+  destruct Hatom as [s' [Hs' Hrestr]].
+  assert (Hs'_fiber :
+      raw_fiber w_diag_bad sx1 s').
+  { exact (Hin_sub s' Hs'). }
+  simpl in Hs'_fiber.
+  destruct Hs'_fiber as [Hdiag _].
+  destruct Hdiag as [-> | ->]; vm_compute in Hrestr; discriminate Hrestr.
+Qed.
 
 Lemma triangle_ok_complete_triangle_fibers :
   fiber_triangle_obligation w_triangle_ok.
-Proof. Admitted.
+Proof.
+  intros σ Hproj.
+  exists (res_fiber_from_projection w_triangle_ok {['x]} σ Hproj).
+  split; [apply res_subset_refl |].
+  simpl in Hproj.
+  destruct Hproj as [s [[Hs | [Hs | Hs]] Hrestr]]; subst s; subst σ;
+    [solve_x1_triangle | solve_x1_triangle | solve_x2_triangle].
+Qed.
 
 (** These four statements mirror the paper's displayed judgments. *)
 
