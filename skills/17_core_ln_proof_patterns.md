@@ -221,3 +221,18 @@ Defined.
 
 不要写 `{v1 = v2} + {v1 <> v2}`：本 repo 的 LN notation `{ x := v } e`
 会和 sumbool braces 冲突，导致 parser 期待 `:=` / `~>` / `<~`。
+
+## Splitting LN proof files
+
+保持 `Syntax.v` 只放 syntax/operations/instances；基础 LN regularity 放在
+`LocallyNamelessProps.v`；更偏 proof engineering 的 substitution algebra、fv
+估计、body helper 可以放进单独的 `LocallyNamelessExtra.v`。这样 BasicTyping 和
+Denotation 可以只 import 额外文件，而 syntax 层不会重新累积 theorem stubs。
+
+新建 `.v` 文件后记得更新 `_CoqProject` 并重新生成 `Makefile.coq`。如果新文件里
+Unicode token 报 lexer 错，先把 proof statement 里的 `→` / `≠` 改成 ASCII
+`->` / `<>`，尤其是在刚拆出的文件中最省时间。
+
+对于 UnderType/HATs 中较重的 substitution algebra，如 `subst_commute` 和
+`subst_subst`，可以先把 statement 放到 extra 文件中作为后续 proof target；这些
+互归纳证明的变量 case 很容易卡在 `decide` 展开和 `subst_fresh` rewrite 顺序上。

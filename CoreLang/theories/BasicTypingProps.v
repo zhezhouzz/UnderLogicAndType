@@ -1,4 +1,4 @@
-From CoreLang Require Import BasicTyping LocallyNamelessProps.
+From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
 
 (** * Basic typing facts for CoreLang
 
@@ -208,6 +208,39 @@ Proof. intros Γ x s v T vx Hty Hv Hlook. exact (basic_typing_subst_value Γ x s
 
 #[global] Instance BasicTypingSubst_tm : BasicTypingSubst tm.
 Proof. intros Γ x s e T vx Hty Hv Hlook. exact (basic_typing_subst_tm Γ x s e T vx Hty Hv Hlook). Qed.
+
+(** Opening with a typed value, via a fresh variable.  This is the shape used
+    pervasively in the reference developments; its proof depends on the
+    stronger substitution lemma over [<[x:=U]> Γ], so it is recorded here as a
+    target for the substitution pass. *)
+Lemma basic_typing_open_value Γ x u U v T :
+  x ∉ fv_value v →
+  Γ ⊢ᵥ u ⋮ U →
+  <[x := U]> Γ ⊢ᵥ v ^^ x ⋮ T →
+  Γ ⊢ᵥ open_value 0 u v ⋮ T.
+Proof. Admitted.
+
+Lemma basic_typing_open_tm Γ x u U e T :
+  x ∉ fv_tm e →
+  Γ ⊢ᵥ u ⋮ U →
+  <[x := U]> Γ ⊢ₑ e ^^ x ⋮ T →
+  Γ ⊢ₑ open_tm 0 u e ⋮ T.
+Proof. Admitted.
+
+Class BasicTypingOpen (E : Type)
+    `{Stale E} `{Typing (gmap atom ty) E ty} `{Open value E} :=
+  basic_typing_open :
+    ∀ Γ x u U (e : E) T,
+      x ∉ stale e →
+      Γ ⊢ᵥ u ⋮ U →
+      <[x := U]> Γ ⊢ open_one 0 (vfvar x) e ⋮ T →
+      Γ ⊢ open_one 0 u e ⋮ T.
+
+#[global] Instance BasicTypingOpen_value : BasicTypingOpen value.
+Proof. intros Γ x u U v T Hfresh Hu Hopen. exact (basic_typing_open_value Γ x u U v T Hfresh Hu Hopen). Qed.
+
+#[global] Instance BasicTypingOpen_tm : BasicTypingOpen tm.
+Proof. intros Γ x u U e T Hfresh Hu Hopen. exact (basic_typing_open_tm Γ x u U e T Hfresh Hu Hopen). Qed.
 
 Lemma basic_typing_unique_value Γ v T1 T2 :
   Γ ⊢ᵥ v ⋮ T1 → Γ ⊢ᵥ v ⋮ T2 → T1 = T2.

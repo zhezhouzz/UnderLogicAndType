@@ -24,6 +24,7 @@ CoreLang/theories/SmallStep.v
 CoreLang/theories/Properties.v
 LocallyNameless/Tactics.v
 CoreLang/theories/LocallyNamelessProps.v
+CoreLang/theories/LocallyNamelessExtra.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
 CoreLang/theories/Proofs.v

@@ -1,4 +1,4 @@
-From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps.
+From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps LocallyNamelessExtra.
 From LocallyNameless Require Import Tactics.
 
 (** * Operational facts for CoreLang
@@ -104,6 +104,11 @@ Lemma value_steps_self v e :
   tret v →* e → e = tret v.
 Proof. apply val_steps_self. Qed.
 
+Lemma value_reduction_any_ctx v :
+  lc_value v →
+  tret v →* tret v.
+Proof. intros Hlc. apply Steps_refl. by constructor. Qed.
+
 Lemma value_no_step v e :
   ¬ step (tret v) e.
 Proof. intro Hstep. eapply val_no_step; eauto. Qed.
@@ -181,6 +186,18 @@ Proof.
     + eapply IHHsteps1; eauto.
 Qed.
 
+Lemma reduction_lete_iff e1 e2 v :
+  body_tm e2 →
+  tlete e1 e2 →* tret v ↔
+  ∃ vx, e1 →* tret vx ∧ open_tm 0 vx e2 →* tret v.
+Proof.
+  intros Hbody.
+  split.
+  - apply reduction_lete.
+  - intros [vx [H1 H2]].
+    eapply reduction_lete_intro; eauto.
+Qed.
+
 Lemma reduction_beta s body vx v :
   lc_value vx →
   tapp (vlam s body) vx →* tret v →
@@ -204,6 +221,17 @@ Proof.
   apply steps_R. apply Step_head. apply HS_Beta.
   apply lc_app_iff_values. split; auto.
   by apply lc_lam_iff_body.
+Qed.
+
+Lemma reduction_beta_iff s body vx v :
+  body_tm body →
+  lc_value vx →
+  tapp (vlam s body) vx →* tret v ↔
+  open_tm 0 vx body →* tret v.
+Proof.
+  intros Hbody Hlc. split.
+  - apply reduction_beta; auto.
+  - apply reduction_beta_intro; auto.
 Qed.
 
 Lemma reduction_fix Tf vf vx v :
@@ -231,6 +259,17 @@ Proof.
   by apply lc_fix_iff_body.
 Qed.
 
+Lemma reduction_fix_iff Tf vf vx v :
+  body_val vf →
+  lc_value vx →
+  tapp (vfix Tf vf) vx →* tret v ↔
+  tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v.
+Proof.
+  intros Hbody Hlc. split.
+  - apply reduction_fix; auto.
+  - apply reduction_fix_intro; auto.
+Qed.
+
 Lemma reduction_match_true et ef v :
   tmatch (vconst (cbool true)) et ef →* tret v →
   et →* tret v.
@@ -254,6 +293,17 @@ Proof.
   apply lc_match_iff_parts. repeat split; auto.
 Qed.
 
+Lemma reduction_match_true_iff et ef v :
+  lc_tm et →
+  lc_tm ef →
+  tmatch (vconst (cbool true)) et ef →* tret v ↔
+  et →* tret v.
+Proof.
+  intros Ht Hf. split.
+  - apply reduction_match_true.
+  - apply reduction_match_true_intro; auto.
+Qed.
+
 Lemma reduction_match_false et ef v :
   tmatch (vconst (cbool false)) et ef →* tret v →
   ef →* tret v.
@@ -275,4 +325,15 @@ Proof.
   eapply steps_trans; [|exact Hsteps].
   apply steps_R. apply Step_head. apply HS_MatchFalse.
   apply lc_match_iff_parts. repeat split; auto.
+Qed.
+
+Lemma reduction_match_false_iff et ef v :
+  lc_tm et →
+  lc_tm ef →
+  tmatch (vconst (cbool false)) et ef →* tret v ↔
+  ef →* tret v.
+Proof.
+  intros Ht Hf. split.
+  - apply reduction_match_false.
+  - apply reduction_match_false_intro; auto.
 Qed.
