@@ -69,29 +69,89 @@ Qed.
 
 Lemma close_open_var_value (v : value) (x : atom) k :
   x ∉ fv_value v →
-  close_value x k (open_value k (vfvar x) v) = v
-with close_open_var_tm (e : tm) (x : atom) k :
+  close_value x k (open_value k (vfvar x) v) = v.
+Proof.
+  revert x k. induction v using value_mut with
+      (P0 := fun e => ∀ x k, x ∉ fv_tm e →
+        close_tm x k (open_tm k (vfvar x) e) = e);
+      simpl; intros y j Hy;
+      try solve [reflexivity | f_equal; eauto; set_solver].
+  - rewrite decide_False by set_solver. reflexivity.
+  - destruct (decide (j = n)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + reflexivity.
+Qed.
+
+Lemma close_open_var_tm (e : tm) (x : atom) k :
   x ∉ fv_tm e →
   close_tm x k (open_tm k (vfvar x) e) = e.
-Proof. Admitted.
+Proof.
+  revert x k. induction e using tm_mut with
+      (P := fun v => ∀ x k, x ∉ fv_value v →
+        close_value x k (open_value k (vfvar x) v) = v);
+      simpl; intros y j Hy;
+      try solve [reflexivity | f_equal; eauto; set_solver].
+  - rewrite decide_False by set_solver. reflexivity.
+  - destruct (decide (j = n)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + reflexivity.
+Qed.
 
 Lemma open_fv_value (v u : value) k :
-  fv_value (open_value k u v) ⊆ fv_value u ∪ fv_value v
-with open_fv_tm (e : tm) (u : value) k :
+  fv_value (open_value k u v) ⊆ fv_value u ∪ fv_value v.
+Proof.
+  revert u k. induction v using value_mut with
+      (P0 := fun e => ∀ u k,
+        fv_tm (open_tm k u e) ⊆ fv_value u ∪ fv_tm e);
+      simpl; intros u j; try set_solver.
+  destruct (decide (j = n)); set_solver.
+Qed.
+
+Lemma open_fv_tm (e : tm) (u : value) k :
   fv_tm (open_tm k u e) ⊆ fv_value u ∪ fv_tm e.
-Proof. Admitted.
+Proof.
+  revert u k. induction e using tm_mut with
+      (P := fun v => ∀ u k,
+        fv_value (open_value k u v) ⊆ fv_value u ∪ fv_value v);
+      simpl; intros u j; try set_solver.
+  destruct (decide (j = n)); set_solver.
+Qed.
 
 Lemma open_fv_value' (v u : value) k :
-  fv_value v ⊆ fv_value (open_value k u v)
-with open_fv_tm' (e : tm) (u : value) k :
+  fv_value v ⊆ fv_value (open_value k u v).
+Proof.
+  revert u k. induction v using value_mut with
+      (P0 := fun e => ∀ u k,
+        fv_tm e ⊆ fv_tm (open_tm k u e));
+      simpl; intros u j; try set_solver.
+Qed.
+
+Lemma open_fv_tm' (e : tm) (u : value) k :
   fv_tm e ⊆ fv_tm (open_tm k u e).
-Proof. Admitted.
+Proof.
+  revert u k. induction e using tm_mut with
+      (P := fun v => ∀ u k,
+        fv_value v ⊆ fv_value (open_value k u v));
+      simpl; intros u j; try set_solver.
+Qed.
 
 Lemma subst_fresh_value_proven x u (v : value) :
-  x ∉ fv_value v → value_subst x u v = v
-with subst_fresh_tm_proven x u (e : tm) :
+  x ∉ fv_value v → value_subst x u v = v.
+Proof.
+  revert x u. induction v using value_mut with
+      (P0 := fun e => ∀ x u, x ∉ fv_tm e → tm_subst x u e = e);
+      simpl; intros y u Hy; try reflexivity; try f_equal; eauto; try set_solver.
+  rewrite decide_False by set_solver. reflexivity.
+Qed.
+
+Lemma subst_fresh_tm_proven x u (e : tm) :
   x ∉ fv_tm e → tm_subst x u e = e.
-Proof. Admitted.
+Proof.
+  revert x u. induction e using tm_mut with
+      (P := fun v => ∀ x u, x ∉ fv_value v → value_subst x u v = v);
+      simpl; intros y u Hy; try reflexivity; try f_equal; eauto; try set_solver.
+  rewrite decide_False by set_solver. reflexivity.
+Qed.
 
 Lemma open_rec_lc_value v :
   lc_value v → ∀ k u, open_value k u v = v
