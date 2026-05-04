@@ -149,13 +149,13 @@ Proof.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
-  - f_equal; eauto.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_commute_tm x ux y uy e :
@@ -192,14 +192,54 @@ Lemma subst_subst_value x ux y uy v :
   y ∉ fv_value ux ->
   value_subst x ux (value_subst y uy v) =
   value_subst y (value_subst x ux uy) (value_subst x ux v).
-Proof. Admitted.
+Proof.
+  intros Hxy Hyux.
+  induction v using value_mut with
+      (P0 := fun e =>
+        tm_subst x ux (tm_subst y uy e) =
+        tm_subst y (value_subst x ux uy) (tm_subst x ux e));
+      simpl; try reflexivity.
+  - destruct (decide (y = x0)); subst; simpl.
+    + rewrite decide_False by done.
+      simpl. rewrite decide_True by reflexivity. reflexivity.
+    + destruct (decide (x = x0)); subst; simpl.
+      * symmetry. by rewrite subst_fresh_value_proven.
+      * by rewrite decide_False by done.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+Qed.
 
 Lemma subst_subst_tm x ux y uy e :
   x <> y ->
   y ∉ fv_value ux ->
   tm_subst x ux (tm_subst y uy e) =
   tm_subst y (value_subst x ux uy) (tm_subst x ux e).
-Proof. Admitted.
+Proof.
+  intros Hxy Hyux.
+  induction e using tm_mut with
+      (P := fun v =>
+        value_subst x ux (value_subst y uy v) =
+        value_subst y (value_subst x ux uy) (value_subst x ux v));
+      simpl; try reflexivity.
+  - destruct (decide (y = x0)); subst; simpl.
+    + rewrite decide_False by done.
+      simpl. rewrite decide_True by reflexivity. reflexivity.
+    + destruct (decide (x = x0)); subst; simpl.
+      * symmetry. by rewrite subst_fresh_value_proven.
+      * by rewrite decide_False by done.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+Qed.
 
 Lemma close_fresh_rec_value x k v :
   x ∉ fv_value v ->
@@ -289,13 +329,49 @@ Lemma subst_shadow_value x z u v :
   x ∉ fv_value v ->
   value_subst x u (value_subst z (vfvar x) v) =
   value_subst z u v.
-Proof. Admitted.
+Proof.
+  revert x z u. induction v using value_mut with
+      (P0 := fun e => ∀ x z u,
+        x ∉ fv_tm e ->
+        tm_subst x u (tm_subst z (vfvar x) e) =
+        tm_subst z u e);
+      simpl; intros x' z u Hfresh; try reflexivity.
+  - destruct (decide (z = x)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + rewrite decide_False by my_set_solver.
+      destruct (decide (x' = x)); subst; my_set_solver.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+Qed.
 
 Lemma subst_shadow_tm x z u e :
   x ∉ fv_tm e ->
   tm_subst x u (tm_subst z (vfvar x) e) =
   tm_subst z u e.
-Proof. Admitted.
+Proof.
+  revert x z u. induction e using tm_mut with
+      (P := fun v => ∀ x z u,
+        x ∉ fv_value v ->
+        value_subst x u (value_subst z (vfvar x) v) =
+        value_subst z u v);
+      simpl; intros x' z u Hfresh; try reflexivity.
+  - destruct (decide (z = x)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + rewrite decide_False by my_set_solver.
+      destruct (decide (x' = x)); subst; my_set_solver.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
+Qed.
 
 Lemma subst_close_value x y u k v :
   x ∉ fv_value u ->
