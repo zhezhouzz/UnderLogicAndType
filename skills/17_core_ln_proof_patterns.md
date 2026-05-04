@@ -134,3 +134,25 @@ substitution proof 中调用，避免在大的 mutual induction proof 里调试 
 
 如果 IH 名字不稳定，就 pattern-match 形如
 `forall y, y ∉ L -> fv_tm (body ^^ y) ⊆ _` 的 hypothesis。
+
+## Basic typing uniqueness with mutual induction
+
+证明 `Γ ⊢ e ⋮ T1 -> Γ ⊢ e ⋮ T2 -> T1 = T2` 时，即使从
+`value_has_type_mut` 或 `tm_has_type_mut` 的一边开始，Rocq 仍会生成另一边
+judgement 的 obligations。不要假设 bullet 顺序对应当前 syntactic category；
+先看当前 goal，再处理。
+
+常见 cases：
+
+- variable：两个 lookup 都指向同一个 key，`simplify_eq` 通常足够；
+- lambda/body 或 let/body：选 `fresh_for (L ∪ L0)`，把两个 cofinite typing
+  premises 在同一个 fresh atom 上 specialize；
+- let：先用 e1 的 uniqueness 证明 binder type 相等，再 `subst`；
+- primitive op：把一个 `prim_op_type` 等式 rewrite 到另一个里，再
+  `simplify_eq`；
+- application：对函数位置的 uniqueness 得到两个 arrow type 相等，再
+  `simplify_eq`。
+
+如果 IH 名字不稳定，匹配形如
+`forall T2, Γ ⊢ᵥ v1 ⋮ T2 -> TArrow _ _ = T2` 的 hypothesis，比依赖
+`IHHty1` 这类自动名更稳。

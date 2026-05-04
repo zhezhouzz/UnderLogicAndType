@@ -211,11 +211,73 @@ Proof. intros Γ x s e T vx Hty Hv Hlook. exact (basic_typing_subst_tm Γ x s e 
 
 Lemma basic_typing_unique_value Γ v T1 T2 :
   Γ ⊢ᵥ v ⋮ T1 → Γ ⊢ᵥ v ⋮ T2 → T1 = T2.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  revert T2.
+  induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T1 _ => ∀ T2, Γ ⊢ₑ e ⋮ T2 → T1 = T2);
+      intros T2' Hother; inversion Hother; subst; eauto.
+  - simplify_eq. reflexivity.
+  - f_equal.
+    pose (x := fresh_for (L ∪ L0)).
+    assert (Hx : x ∉ L ∪ L0) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    eapply H.
+    match goal with
+    | Hopen : ∀ y : atom, y ∉ L0 → <[y:=s]> Γ ⊢ₑ e ^^ y ⋮ _ |- _ =>
+        eapply Hopen; set_solver
+    end.
+  - pose (x := fresh_for (L ∪ L0)).
+    assert (Hx : x ∉ L ∪ L0) by (subst x; apply fresh_for_not_in).
+    assert (T1 = T0) by eauto. subst T0.
+    match goal with
+    | IH : ∀ y : atom, y ∉ L → ∀ T2, _ ⊢ₑ (e2 ^^ y) ⋮ T2 → _ = T2,
+      Hopen : ∀ y : atom, y ∉ L0 → _ ⊢ₑ (e2 ^^ y) ⋮ _ |- _ =>
+        specialize (IH x ltac:(set_solver));
+        eapply IH; eapply Hopen; set_solver
+    end.
+  - rewrite e in H2. simplify_eq. reflexivity.
+  - match goal with
+    | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
+      Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
+        specialize (IH _ Hfun); simplify_eq; reflexivity
+    end.
+Qed.
 
 Lemma basic_typing_unique_tm Γ e T1 T2 :
   Γ ⊢ₑ e ⋮ T1 → Γ ⊢ₑ e ⋮ T2 → T1 = T2.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  revert T2.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γ v T1 _ => ∀ T2, Γ ⊢ᵥ v ⋮ T2 → T1 = T2);
+      intros T2' Hother; inversion Hother; subst; eauto.
+  - simplify_eq. reflexivity.
+  - f_equal.
+    pose (x := fresh_for (L ∪ L0)).
+    assert (Hx : x ∉ L ∪ L0) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    eapply H.
+    match goal with
+    | Hopen : ∀ y : atom, y ∉ L0 → <[y:=s]> Γ ⊢ₑ e ^^ y ⋮ _ |- _ =>
+        eapply Hopen; set_solver
+    end.
+  - pose (x := fresh_for (L ∪ L0)).
+    assert (Hx : x ∉ L ∪ L0) by (subst x; apply fresh_for_not_in).
+    assert (T1 = T0) by eauto. subst T0.
+    match goal with
+    | IH : ∀ y : atom, y ∉ L → ∀ T2, _ ⊢ₑ (e2 ^^ y) ⋮ T2 → _ = T2,
+      Hopen : ∀ y : atom, y ∉ L0 → _ ⊢ₑ (e2 ^^ y) ⋮ _ |- _ =>
+        specialize (IH x ltac:(set_solver));
+        eapply IH; eapply Hopen; set_solver
+    end.
+  - rewrite e in H2. simplify_eq. reflexivity.
+  - match goal with
+    | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
+      Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
+        specialize (IH _ Hfun); simplify_eq; reflexivity
+    end.
+Qed.
 
 Lemma basic_typing_strengthen_value Γ x Tx v T :
   <[x := Tx]> Γ ⊢ᵥ v ⋮ T →
