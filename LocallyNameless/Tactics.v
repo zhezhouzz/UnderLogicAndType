@@ -7,16 +7,27 @@ From Stdlib Require Import Arith.Compare_dec.
     automation used by the CoreLang proof files, while the larger theorem
     statements live next to the CoreLang definitions. *)
 
-(** ** Hypothesis traversal *)
+(** ** Hypothesis traversal
+
+    These tactics inspect the local proof context.  They are mainly plumbing for
+    later tactics such as [collect_stales], but [do_hyps] and [select!] are also
+    useful when a proof has many similarly-shaped induction hypotheses.
+
+    Use them when the proof context itself is the data you want to traverse.
+    Avoid them in small proofs where naming the relevant hypothesis directly is
+    clearer. *)
 
 Ltac revert_all :=
   repeat match goal with
   | H : _ |- _ => revert H
   end.
 
+(** [get_hyps] packages all current hypotheses into an Ltac term.  It is not
+    meant to be called directly in ordinary proof scripts. *)
 Ltac get_hyps :=
   constr:(ltac:(revert_all; constructor) : True).
 
+(** [do_hyps tac] runs [tac H] once for each hypothesis [H]. *)
 Tactic Notation "do_hyps" tactic3(tac) :=
   let hs := get_hyps in
   let rec go hs :=
@@ -26,6 +37,9 @@ Tactic Notation "do_hyps" tactic3(tac) :=
       end in
   go hs.
 
+(** [select! pat tac] runs [tac H] on every hypothesis matching [pat], and
+    fails if no such hypothesis exists.  This is useful when a proof should
+    definitely have a cofinite IH or regularity assumption available. *)
 Tactic Notation "select" "!" open_constr(pat) tactic3(tac) :=
   let T := lazymatch goal with
            | H : pat |- _ => type of H
@@ -36,6 +50,9 @@ Tactic Notation "select" "!" open_constr(pat) tactic3(tac) :=
                   end);
   unify T pat.
 
+(** [fold_hyps acc tac] folds over hypotheses and returns the accumulated Ltac
+    term.  [collect_stales] uses this to build a single avoidance set from all
+    visible syntax objects. *)
 Ltac fold_hyps acc tac :=
   let hs := get_hyps in
   let rec go hs acc :=
@@ -45,7 +62,12 @@ Ltac fold_hyps acc tac :=
       end in
   go hs acc.
 
-(** ** Small destruct/inversion helpers *)
+(** ** Small destruct/inversion helpers
+
+    These are intentionally shallow.  They clear obvious conjunctions,
+    existentials, pairs, and constructor equalities without trying to solve the
+    goal.  Use them to expose structure before applying a more specific lemma.
+    Do not use [repeat mydestr] in a proof where duplicated hypotheses matter. *)
 
 Ltac destruct_hyp_conj :=
   match goal with
@@ -71,8 +93,20 @@ Ltac mydestr := repeat destruct_hyp_conj.
 
 Ltac invclear H := inversion H; subst; clear H.
 
-(** ** Set/map normalization *)
+(** ** Set/map normalization
 
+    The main entry point is [my_set_solver].  It first normalizes common map/set
+    shapes such as [dom (<[_:=_]> _)], [_ !! _ = None], [∅ ∪ _], and [_ ∪ ∅],
+    then falls back to the pruned set solvers.
+
+    Prefer plain [set_solver] for tiny side conditions.  Use [my_set_solver]
+    when the goal contains map domains, stale/fv unions, or when [set_solver]
+    becomes slow.  Use [set_solver!!] only for pure set side conditions: it
+    prunes hypotheses aggressively and should not be used on a main proof goal
+    whose non-set hypotheses may still be needed. *)
+
+(** [fast_set_solver] is weaker than stdpp's [set_solver] but often much faster.
+    It unfolds set membership and uses first-order propositional reasoning. *)
 Ltac fast_set_solver :=
   solve [try fast_done; repeat (set_unfold; subst; intuition)].
 
@@ -80,6 +114,9 @@ Ltac set_fold_not :=
   change (?x ∈ ?v → False) with (x ∉ v) in *;
   change (?x = ?v → False) with (x ≠ v) in *.
 
+(** [set_prune_hyps_safe] keeps hypotheses that look set-relevant and clears
+    unrelated ones.  It is used by [set_solver!] and is normally safe for side
+    conditions. *)
 Ltac set_prune_hyps_safe :=
   simpl;
   set_fold_not;
@@ -142,6 +179,9 @@ Tactic Notation "set_hyp_filter" constr(T) constr(x) ">>=" tactic3(tac) :=
   | _ => tac T
   end.
 
+(** [set_prune_hyps] is more aggressive: for subset/freshness goals it also
+    clears hypotheses that mention none of the relevant variables.  This is a
+    performance tool, not a general proof-cleanup tactic. *)
 Ltac set_prune_hyps :=
   set_prune_hyps_safe;
   try
@@ -178,6 +218,9 @@ Tactic Notation "fast_set_solver" "!" :=
 Tactic Notation "fast_set_solver" "!!" :=
   set_prune_hyps; fast_set_solver.
 
+(** [crush_binders] simplifies obvious [decide] tests produced by open/close
+    and substitution functions.  For branch-heavy proofs use [var_dec_solver],
+    which also destructs unresolved equality tests. *)
 Ltac crush_binders :=
   repeat match goal with
   | H : context[decide (?x = ?x)] |- _ =>
@@ -207,7 +250,11 @@ Ltac inv_lc :=
 Ltac ln_simpl :=
   simpl in *; crush_binders; try set_solver; try congruence; eauto.
 
-(** ** Small set facts used by locally-nameless scripts *)
+(** ** Small set facts used by locally-nameless scripts
+
+    These lemmas give [my_set_solver] a few normal forms that occur constantly
+    in LN proofs, especially when the same fresh variable appears on both sides
+    of a union.  Keep them small and set-theoretic. *)
 
 Lemma setunion_cons_cons (x : atom) (s1 s2 : aset) :
   {[x]} ∪ s1 ∪ ({[x]} ∪ s2) = {[x]} ∪ s1 ∪ s2.
@@ -275,6 +322,10 @@ Ltac my_map_simpl_aux :=
 
 Ltac my_map_simpl := repeat my_map_simpl_aux.
 
+(** [my_set_solver] is the default local solver for stale/fv/dom side
+    conditions.  It intentionally leaves hard non-set goals untouched, so it can
+    be used as a final side-condition solver after applying a semantic or typing
+    lemma. *)
 Ltac my_set_solver :=
   my_map_simpl;
   my_set_simpl;
@@ -288,7 +339,20 @@ Ltac my_set_solver :=
   try fast_set_solver!!;
   try set_solver.
 
-(** ** Fresh-variable automation *)
+(** ** Fresh-variable automation
+
+    These tactics support the cofinite style used by [body_*] and many typing
+    rules.  They rely on [Stale] instances, so they work best when the context
+    contains syntax objects whose free variables are exposed through [stale].
+
+    Common pattern:
+
+    - [auto_exists_L; intros x Hx] to build a cofinite witness.
+    - [auto_pose_fv x; repeat specialize_with x] to pick a fresh atom and feed
+      it to every visible cofinite hypothesis.
+
+    If [collect_stales] fails, either the context has no useful [Stale] objects
+    or the proof needs a hand-written avoidance set. *)
 
 Ltac pose_fresh_from x s :=
   let Hfresh := fresh "Hfresh" in
@@ -305,6 +369,8 @@ Ltac collect_one_stale e acc :=
   | _ => acc
   end.
 
+(** [collect_stales tt] returns the union of [stale e] for all visible
+    hypotheses/terms that typeclass search can view through [Stale]. *)
 Ltac collect_stales S :=
   let stales := fold_hyps S collect_one_stale in
   lazymatch stales with
@@ -312,16 +378,23 @@ Ltac collect_stales S :=
   | _ => stales
   end.
 
+(** [auto_exists_L] constructs an existential/cofinite constructor and tries to
+    instantiate its [aset] argument with all currently collected stale sets. *)
 Ltac auto_exists_L :=
   let acc := collect_stales tt in
   econstructor; eauto; try instantiate (1 := acc).
 
+(** [auto_pose_fv x] creates [x := fresh_for collected_stales] and proves
+    [x] fresh for that collected set. *)
 Ltac auto_pose_fv a :=
   let acc := collect_stales tt in
   pose (a := fresh_for acc);
   assert (a ∉ acc) by (subst a; apply fresh_for_not_in);
   clearbody a.
 
+(** [specialize_with x] specializes a hypothesis of shape
+    [forall y, y ∉ L -> _] or [forall y, (y ∈ L -> False) -> _] using [x],
+    discharging freshness with [my_set_solver]. *)
 Ltac specialize_with x :=
   match goal with
   | H : forall x, (x ∈ ?L → False) → _ |- _ =>
@@ -338,7 +411,13 @@ Ltac specialize_with x :=
 
 Ltac pose_fresh_fv name := auto_pose_fv name.
 
-(** ** Decidable-variable cleanup *)
+(** ** Decidable-variable cleanup
+
+    [var_dec_solver] is for proofs that repeatedly unfold open/close/subst and
+    produce many [decide (x = y)] or [decide (i < j)] branches.  It rewrites
+    known equalities/inequalities and destructs unresolved tests.  Use it inside
+    structural inductions; avoid it when the equality split is mathematically
+    meaningful and should stay visible. *)
 
 Ltac rw_decide_true a b :=
   assert (a = b) as Hrw_decide_true by auto;
@@ -400,7 +479,17 @@ Ltac var_dec_solver :=
   | _ => progress simpl
   end.
 
-(** ** Hypothesis application *)
+(** ** Hypothesis application
+
+    [auto_apply] and [auto_eapply] apply the first visible hypothesis whose
+    conclusion has the same head as the goal.  They are handy for mutual
+    induction hypotheses, but can pick the wrong hypothesis when several IHs
+    have similar conclusions.  Prefer an explicit [apply IH] when the intended
+    hypothesis matters.
+
+    [apply_eq]/[eapply_eq] are for dependent applications where unification
+    fails only because an argument needs an equality subgoal.  They should be
+    used sparingly and locally. *)
 
 Ltac curry_tac f p :=
   let rec go p :=
@@ -446,7 +535,16 @@ Tactic Notation "auto_eapply" := auto_apply by (fun H => eapply H).
 Tactic Notation "auto_apply_eq" := auto_apply by (fun H => apply_eq H).
 Tactic Notation "auto_eapply_eq" := auto_apply by (fun H => eapply_eq H).
 
-(** ** Cofinite constructors *)
+(** ** Cofinite constructors
+
+    These combine constructor application with the fresh-variable automation
+    above.  Use [econstructor_L] for constructors with an explicit [aset]
+    avoidance parameter, and [econstructor_L_specialized] when the next goal is
+    immediately [forall x, x ∉ L -> _].
+
+    They intentionally do not solve the main [Prop] goal.  If a constructor has
+    several non-[Prop] evars besides the avoidance set, instantiate those
+    manually instead of relying on this tactic. *)
 
 Ltac econstructor_L :=
   unshelve econstructor;

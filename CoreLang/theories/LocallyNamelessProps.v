@@ -76,8 +76,8 @@ Proof.
       (P0 := fun e => ∀ x k, x ∉ fv_tm e →
         close_tm x k (open_tm k (vfvar x) e) = e);
       simpl; intros y j Hy;
-      try solve [reflexivity | f_equal; eauto; set_solver].
-  - rewrite decide_False by set_solver. reflexivity.
+      try solve [reflexivity | f_equal; eauto; my_set_solver].
+  - rewrite decide_False by my_set_solver. reflexivity.
   - destruct (decide (j = n)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + reflexivity.
@@ -91,8 +91,8 @@ Proof.
       (P := fun v => ∀ x k, x ∉ fv_value v →
         close_value x k (open_value k (vfvar x) v) = v);
       simpl; intros y j Hy;
-      try solve [reflexivity | f_equal; eauto; set_solver].
-  - rewrite decide_False by set_solver. reflexivity.
+      try solve [reflexivity | f_equal; eauto; my_set_solver].
+  - rewrite decide_False by my_set_solver. reflexivity.
   - destruct (decide (j = n)); subst; simpl.
     + rewrite decide_True by reflexivity. reflexivity.
     + reflexivity.
@@ -104,8 +104,8 @@ Proof.
   revert u k. induction v using value_mut with
       (P0 := fun e => ∀ u k,
         fv_tm (open_tm k u e) ⊆ fv_value u ∪ fv_tm e);
-      simpl; intros u j; try set_solver.
-  destruct (decide (j = n)); set_solver.
+      simpl; intros u j; try my_set_solver.
+  destruct (decide (j = n)); my_set_solver.
 Qed.
 
 Lemma open_fv_tm (e : tm) (u : value) k :
@@ -114,8 +114,8 @@ Proof.
   revert u k. induction e using tm_mut with
       (P := fun v => ∀ u k,
         fv_value (open_value k u v) ⊆ fv_value u ∪ fv_value v);
-      simpl; intros u j; try set_solver.
-  destruct (decide (j = n)); set_solver.
+      simpl; intros u j; try my_set_solver.
+  destruct (decide (j = n)); my_set_solver.
 Qed.
 
 Lemma open_fv_value' (v u : value) k :

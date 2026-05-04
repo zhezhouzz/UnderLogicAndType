@@ -1,3 +1,4 @@
+From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Syntax LocallyNamelessProps.
 
 (** * Additional locally-nameless algebra for CoreLang
@@ -49,8 +50,8 @@ Lemma subst_body_value x u v :
 Proof.
   intros [L Hbody] Hlc.
   exists (L ∪ {[x]}). intros y Hy.
-  rewrite <- subst_open_var_value by set_solver.
-  apply subst_lc_value; auto. apply Hbody. set_solver.
+  rewrite <- subst_open_var_value by my_set_solver.
+  apply subst_lc_value; auto. apply Hbody. my_set_solver.
 Qed.
 
 Lemma subst_body_tm x u e :
@@ -58,8 +59,8 @@ Lemma subst_body_tm x u e :
 Proof.
   intros [L Hbody] Hlc.
   exists (L ∪ {[x]}). intros y Hy.
-  rewrite <- subst_open_var_tm by set_solver.
-  apply subst_lc_tm; auto. apply Hbody. set_solver.
+  rewrite <- subst_open_var_tm by my_set_solver.
+  apply subst_lc_tm; auto. apply Hbody. my_set_solver.
 Qed.
 
 Lemma lc_implies_body_value v :
@@ -80,8 +81,8 @@ Proof.
   revert x u. induction v using value_mut with
       (P0 := fun e => ∀ x u,
         fv_tm (tm_subst x u e) ⊆ (fv_tm e ∖ {[x]}) ∪ fv_value u);
-      simpl; intros y u; try set_solver.
-  - destruct (decide (y = x)); set_solver.
+      simpl; intros y u; try my_set_solver.
+  - destruct (decide (y = x)); my_set_solver.
 Qed.
 
 Lemma fv_of_subst_tm x u e :
@@ -90,8 +91,8 @@ Proof.
   revert x u. induction e using tm_mut with
       (P := fun v => ∀ x u,
         fv_value (value_subst x u v) ⊆ (fv_value v ∖ {[x]}) ∪ fv_value u);
-      simpl; intros y u; try set_solver.
-  - destruct (decide (y = x)); set_solver.
+      simpl; intros y u; try my_set_solver.
+  - destruct (decide (y = x)); my_set_solver.
 Qed.
 
 Lemma close_rm_fv_value x k v :
@@ -99,8 +100,8 @@ Lemma close_rm_fv_value x k v :
 Proof.
   revert k. induction v using value_mut with
       (P0 := fun e => ∀ k, x ∉ fv_tm (close_tm x k e));
-      simpl; intros k; try set_solver.
-  destruct (decide (x = x0)); set_solver.
+      simpl; intros k; try my_set_solver.
+  destruct (decide (x = x0)); my_set_solver.
 Qed.
 
 Lemma close_rm_fv_tm x k e :
@@ -108,8 +109,8 @@ Lemma close_rm_fv_tm x k e :
 Proof.
   revert k. induction e using tm_mut with
       (P := fun v => ∀ k, x ∉ fv_value (close_value x k v));
-      simpl; intros k; try set_solver.
-  destruct (decide (x = x0)); set_solver.
+      simpl; intros k; try my_set_solver.
+  destruct (decide (x = x0)); my_set_solver.
 Qed.
 
 Lemma open_with_fresh_include_fv_value x v k :
@@ -117,7 +118,7 @@ Lemma open_with_fresh_include_fv_value x v k :
   {[x]} ∪ fv_value v ⊆ {[x]} ∪ fv_value (open_value k (vfvar x) v).
 Proof.
   intros Hfresh.
-  pose proof (open_fv_value' v (vfvar x) k). set_solver.
+  pose proof (open_fv_value' v (vfvar x) k). my_set_solver.
 Qed.
 
 Lemma open_with_fresh_include_fv_tm x e k :
@@ -125,7 +126,7 @@ Lemma open_with_fresh_include_fv_tm x e k :
   {[x]} ∪ fv_tm e ⊆ {[x]} ∪ fv_tm (open_tm k (vfvar x) e).
 Proof.
   intros Hfresh.
-  pose proof (open_fv_tm' e (vfvar x) k). set_solver.
+  pose proof (open_fv_tm' e (vfvar x) k). my_set_solver.
 Qed.
 
 Lemma subst_commute_value x ux y uy v :
@@ -164,8 +165,8 @@ Lemma close_fresh_rec_value x k v :
 Proof.
   revert k. induction v using value_mut with
       (P0 := fun e => ∀ k, x ∉ fv_tm e -> close_tm x k e = e);
-      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; set_solver).
-  by rewrite decide_False by set_solver.
+      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; my_set_solver).
+  by rewrite decide_False by my_set_solver.
 Qed.
 
 Lemma close_fresh_rec_tm x k e :
@@ -174,8 +175,8 @@ Lemma close_fresh_rec_tm x k e :
 Proof.
   revert k. induction e using tm_mut with
       (P := fun v => ∀ k, x ∉ fv_value v -> close_value x k v = v);
-      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; set_solver).
-  by rewrite decide_False by set_solver.
+      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; my_set_solver).
+  by rewrite decide_False by my_set_solver.
 Qed.
 
 Lemma close_var_rename_value x y k v :
