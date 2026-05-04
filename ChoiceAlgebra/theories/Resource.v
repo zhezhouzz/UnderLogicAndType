@@ -52,6 +52,36 @@ Definition WfWorld : Type := { m : World | wf_world m }.
 Coercion raw_world (w : WfWorld) : World := proj1_sig w.
 Definition world_wf (w : WfWorld) : wf_world (raw_world w) := proj2_sig w.
 
+Lemma wfworld_store_dom (w : WfWorld) (σ : StoreT) :
+  w σ → dom σ = world_dom (w : World).
+Proof. apply (wf_dom _ (world_wf w)). Qed.
+
+Lemma wfworld_store_restrict_dom (w : WfWorld) (σ : StoreT) (X : aset) :
+  w σ → dom (store_restrict σ X) = world_dom (w : World) ∩ X.
+Proof.
+  intros Hσ. rewrite store_restrict_dom.
+  change (dom σ ∩ X = world_dom (w : World) ∩ X).
+  rewrite (wfworld_store_dom w σ Hσ). reflexivity.
+Qed.
+
+(** Small domain-normalization tactics for resource proofs.  They keep the
+    unavoidable [change] steps localized around store/world domain coercions. *)
+Ltac solve_disjoint_world_domains w1 σ1 Hσ1 w2 σ2 Hσ2 :=
+  change (dom σ1 ∩ dom σ2 = ∅);
+  rewrite (wfworld_store_dom w1 σ1 Hσ1);
+  rewrite (wfworld_store_dom w2 σ2 Hσ2).
+
+Ltac normalize_store_overlap H w1 σ1 Hσ1 w2 σ2 Hσ2 :=
+  change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
+          store_restrict σ2 (dom σ1 ∩ dom σ2)) in H;
+  rewrite (wfworld_store_dom w1 σ1 Hσ1) in H;
+  rewrite (wfworld_store_dom w2 σ2 Hσ2) in H.
+
+Ltac normalize_restrict_domain_of w σ X Hσ :=
+  replace (dom (store_restrict σ X))
+    with (world_dom (w : World) ∩ X)
+    by (symmetry; exact (wfworld_store_restrict_dom w σ X Hσ)).
+
 (** ** Compatibility (Definition 1.2, extended) *)
 
 Definition world_compat (m1 m2 : World) : Prop :=
@@ -63,10 +93,23 @@ Lemma disj_dom_world_compat (w1 w2 : WfWorld) :
 Proof.
   intros Hdisj s1 s2 Hs1 Hs2.
   apply disj_dom_store_compat.
-  change (dom s1 ∩ dom s2 = ∅).
-  rewrite (wf_dom _ (world_wf w1) s1 Hs1).
-  rewrite (wf_dom _ (world_wf w2) s2 Hs2).
-  exact Hdisj.
+  solve_disjoint_world_domains w1 s1 Hs1 w2 s2 Hs2.
+  hauto.
+Qed.
+
+Lemma world_compat_store_restrict_overlap
+    (w1 w2 : WfWorld) (X : aset) (σ1 σ2 : StoreT) :
+  X = world_dom (w1 : World) ∩ world_dom (w2 : World) →
+  world_compat w1 w2 →
+  w1 σ1 →
+  w2 σ2 →
+  store_restrict σ1 X = store_restrict σ2 X.
+Proof.
+  intros -> Hcompat Hσ1 Hσ2.
+  pose proof (proj1 (store_compat_spec σ1 σ2)
+    (Hcompat σ1 σ2 Hσ1 Hσ2)) as Hrestrict.
+  normalize_store_overlap Hrestrict w1 σ1 Hσ1 w2 σ2 Hσ2.
+  hauto.
 Qed.
 
 (** ** Raw resource operations (Definition 1.3) — used internally by WfWorld ops *)
@@ -441,60 +484,28 @@ Proof.
     destruct (wf_ne _ (world_wf w2)) as [σ2 Hσ2].
     exists (store_restrict σ1 X). split.
     + apply world_ext.
-      * change (world_dom (w1 : World) ∩ X = dom (store_restrict σ1 X)).
-        rewrite store_restrict_dom.
-        change (world_dom (w1 : World) ∩ X = dom σ1 ∩ X).
-        rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
-        unfold X. set_solver.
+      * simpl. normalize_restrict_domain_of w1 σ1 X Hσ1.
+        reflexivity.
       * intros σ. simpl. split.
         -- intros [σ' [Hσ' Hrestr]]. subst σ.
-           pose proof (proj1 (store_compat_spec σ' σ2)
-             (Hcompat σ' σ2 Hσ' Hσ2)) as Hσ'2.
-           pose proof (proj1 (store_compat_spec σ1 σ2)
-             (Hcompat σ1 σ2 Hσ1 Hσ2)) as Hσ12.
-           assert (Hdom'2 : dom σ' ∩ dom σ2 = X).
-           { rewrite (wf_dom _ (world_wf w1) σ' Hσ').
-             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
-             unfold X. set_solver. }
-           assert (Hdom12 : dom σ1 ∩ dom σ2 = X).
-           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
-             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
-             unfold X. set_solver. }
-           change (store_restrict σ' (dom σ' ∩ dom σ2) =
-                   store_restrict σ2 (dom σ' ∩ dom σ2)) in Hσ'2.
-           change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
-                   store_restrict σ2 (dom σ1 ∩ dom σ2)) in Hσ12.
-           rewrite Hdom'2 in Hσ'2. rewrite Hdom12 in Hσ12.
+           pose proof (world_compat_store_restrict_overlap
+             w1 w2 X σ' σ2 eq_refl Hcompat Hσ' Hσ2) as Hσ'2.
+           pose proof (world_compat_store_restrict_overlap
+             w1 w2 X σ1 σ2 eq_refl Hcompat Hσ1 Hσ2) as Hσ12.
            etrans; [exact Hσ'2 | symmetry; exact Hσ12].
         -- intros ->. exists σ1. split; [exact Hσ1 | reflexivity].
     + apply world_ext.
-      * change (world_dom (w2 : World) ∩ X = dom (store_restrict σ1 X)).
-        rewrite store_restrict_dom.
-        change (world_dom (w2 : World) ∩ X = dom σ1 ∩ X).
-        rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+      * simpl. normalize_restrict_domain_of w1 σ1 X Hσ1.
         unfold X. set_solver.
       * intros σ. simpl. split.
         -- intros [σ' [Hσ' Hrestr]]. subst σ.
-           pose proof (proj1 (store_compat_spec σ1 σ')
-             (Hcompat σ1 σ' Hσ1 Hσ')) as Hσ1'.
-           assert (Hdom1' : dom σ1 ∩ dom σ' = X).
-           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
-             rewrite (wf_dom _ (world_wf w2) σ' Hσ').
-             unfold X. set_solver. }
-           change (store_restrict σ1 (dom σ1 ∩ dom σ') =
-                   store_restrict σ' (dom σ1 ∩ dom σ')) in Hσ1'.
-           rewrite Hdom1' in Hσ1'.
+           pose proof (world_compat_store_restrict_overlap
+             w1 w2 X σ1 σ' eq_refl Hcompat Hσ1 Hσ') as Hσ1'.
            symmetry. exact Hσ1'.
         -- intros ->. exists σ2. split; [exact Hσ2 |].
-           pose proof (proj1 (store_compat_spec σ1 σ2)
-             (Hcompat σ1 σ2 Hσ1 Hσ2)) as Hσ12.
-           assert (Hdom12 : dom σ1 ∩ dom σ2 = X).
-           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
-             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
-             unfold X. set_solver. }
-           change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
-                   store_restrict σ2 (dom σ1 ∩ dom σ2)) in Hσ12.
-           rewrite Hdom12 in Hσ12. symmetry. exact Hσ12.
+           pose proof (world_compat_store_restrict_overlap
+             w1 w2 X σ1 σ2 eq_refl Hcompat Hσ1 Hσ2) as Hσ12.
+           symmetry. exact Hσ12.
   - intros [σ [Hw1 Hw2]] σ1 σ2 Hσ1 Hσ2.
     apply (proj2 (store_compat_spec σ1 σ2)).
     assert (H1 : store_restrict σ1 X = σ).
@@ -507,8 +518,8 @@ Proof.
       rewrite Hw2 in Hraw. simpl in Hraw. exact Hraw. }
     replace (dom σ1 ∩ dom σ2) with X.
     { rewrite H1, H2. reflexivity. }
-    rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
-    rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
+    rewrite (wfworld_store_dom w1 σ1 Hσ1).
+    rewrite (wfworld_store_dom w2 σ2 Hσ2).
     reflexivity.
 Qed.
 

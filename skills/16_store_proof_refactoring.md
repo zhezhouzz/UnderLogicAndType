@@ -148,3 +148,53 @@ Qed.
 ```
 
 这样 example 表达的是直觉，而不是重复展开底层 finite-map proof。
+
+## 把 `change` 收敛到小 tactic
+
+如果同一类 `change` 在多个 proof 中重复出现，不要急着写一个会全局展开所有定义的
+large tactic。更稳的做法是：
+
+1. 先加小 lemma，把 semantic fact 命名出来；
+2. 再加参数化的小 tactic，把必要的 `change`/`rewrite` 收在 tactic 内部；
+3. 最后用中间 lemma 改写主证明。
+
+例如 world/resource 层可以先证明：
+
+```coq
+Lemma wfworld_store_dom (w : WfWorld) σ :
+  w σ -> dom σ = world_dom (w : World).
+
+Lemma wfworld_store_restrict_dom (w : WfWorld) σ X :
+  w σ -> dom (store_restrict σ X) = world_dom (w : World) ∩ X.
+```
+
+然后写很窄的 tactic：
+
+```coq
+Ltac normalize_store_overlap H w1 σ1 Hσ1 w2 σ2 Hσ2 :=
+  change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
+          store_restrict σ2 (dom σ1 ∩ dom σ2)) in H;
+  rewrite (wfworld_store_dom w1 σ1 Hσ1) in H;
+  rewrite (wfworld_store_dom w2 σ2 Hσ2) in H.
+```
+
+这种 tactic 虽然需要显式传参数，但它的行为可预测：只处理一个 hypothesis，
+不会意外展开别的 map/world 定义。后续如果发现很多 proof 都需要同样的 overlap
+normal form，再把它包装成 lemma，例如：
+
+```coq
+Lemma world_compat_store_restrict_overlap ... :
+  store_restrict σ1 X = store_restrict σ2 X.
+```
+
+主证明应该优先调用这个 lemma，而不是反复直接调用 tactic。
+
+在 normal form 已经整理好的小目标上，可以用 CoqHammer 自带 tactic 收尾，例如：
+
+```coq
+normalize_store_overlap H w1 σ1 Hσ1 w2 σ2 Hσ2.
+hauto.
+```
+
+经验上，`hauto` 适合处理“目标已经变成某个 hypothesis 或简单一阶组合”的情况；
+不要让它负责发现 store/world 的正确 normal form，否则失败时很难定位问题。
