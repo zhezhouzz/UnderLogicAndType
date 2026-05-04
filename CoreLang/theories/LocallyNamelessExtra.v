@@ -157,3 +157,105 @@ Lemma subst_subst_tm x ux y uy e :
   tm_subst x ux (tm_subst y uy e) =
   tm_subst y (value_subst x ux uy) (tm_subst x ux e).
 Proof. Admitted.
+
+Lemma close_fresh_rec_value x k v :
+  x ∉ fv_value v ->
+  close_value x k v = v.
+Proof.
+  revert k. induction v using value_mut with
+      (P0 := fun e => ∀ k, x ∉ fv_tm e -> close_tm x k e = e);
+      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; set_solver).
+  by rewrite decide_False by set_solver.
+Qed.
+
+Lemma close_fresh_rec_tm x k e :
+  x ∉ fv_tm e ->
+  close_tm x k e = e.
+Proof.
+  revert k. induction e using tm_mut with
+      (P := fun v => ∀ k, x ∉ fv_value v -> close_value x k v = v);
+      simpl; intros k Hfresh; try reflexivity; try (f_equal; eauto; set_solver).
+  by rewrite decide_False by set_solver.
+Qed.
+
+Lemma close_var_rename_value x y k v :
+  y ∉ fv_value v ->
+  close_value x k v =
+  close_value y k (value_subst x (vfvar y) v).
+Proof. Admitted.
+
+Lemma close_var_rename_tm x y k e :
+  y ∉ fv_tm e ->
+  close_tm x k e =
+  close_tm y k (tm_subst x (vfvar y) e).
+Proof. Admitted.
+
+Lemma open_close_var_value x v :
+  lc_value v ->
+  open_value 0 (vfvar x) (close_value x 0 v) = v.
+Proof. Admitted.
+
+Lemma open_close_var_tm x e :
+  lc_tm e ->
+  open_tm 0 (vfvar x) (close_tm x 0 e) = e.
+Proof. Admitted.
+
+Lemma fv_of_subst_value_closed x u v :
+  fv_value u = ∅ ->
+  fv_value (value_subst x u v) = fv_value v ∖ {[x]}.
+Proof. Admitted.
+
+Lemma fv_of_subst_tm_closed x u e :
+  fv_value u = ∅ ->
+  fv_tm (tm_subst x u e) = fv_tm e ∖ {[x]}.
+Proof. Admitted.
+
+Lemma subst_shadow_value x z u v :
+  x ∉ fv_value v ->
+  value_subst x u (value_subst z (vfvar x) v) =
+  value_subst z u v.
+Proof. Admitted.
+
+Lemma subst_shadow_tm x z u e :
+  x ∉ fv_tm e ->
+  tm_subst x u (tm_subst z (vfvar x) e) =
+  tm_subst z u e.
+Proof. Admitted.
+
+Lemma subst_close_value x y u k v :
+  x ∉ fv_value u ->
+  x <> y ->
+  close_value x k (value_subst y u v) =
+  value_subst y u (close_value x k v).
+Proof. Admitted.
+
+Lemma subst_close_tm x y u k e :
+  x ∉ fv_value u ->
+  x <> y ->
+  close_tm x k (tm_subst y u e) =
+  tm_subst y u (close_tm x k e).
+Proof. Admitted.
+
+Lemma open_lc_respect_value k u w v :
+  lc_value u ->
+  lc_value w ->
+  lc_value (open_value k u v) ->
+  lc_value (open_value k w v).
+Proof. Admitted.
+
+Lemma open_lc_respect_tm k u w e :
+  lc_value u ->
+  lc_value w ->
+  lc_tm (open_tm k u e) ->
+  lc_tm (open_tm k w e).
+Proof. Admitted.
+
+Lemma open_idemp_value k u v :
+  lc_value u ->
+  open_value k u (open_value k u v) = open_value k u v.
+Proof. Admitted.
+
+Lemma open_idemp_tm k u e :
+  lc_value u ->
+  open_tm k u (open_tm k u e) = open_tm k u e.
+Proof. Admitted.
