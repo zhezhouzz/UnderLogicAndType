@@ -1,4 +1,5 @@
-From ChoiceAlgebra Require Import Prelude Store.
+From ChoiceAlgebra Require Import Prelude.
+From ChoicePrelude Require Import Store.
 From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality
   Logic.ProofIrrelevance.
 
@@ -410,6 +411,17 @@ Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
     (Hdef' : raw_sum_defined w2 w1) :
   ∀ s, res_sum w1 w2 Hdef s ↔ res_sum w2 w1 Hdef' s.
 Proof. intros s. unfold res_sum. simpl. tauto. Qed.
+
+(** Compatibility can be characterized by the common projection of two
+    well-formed worlds: over the overlapping domain, both worlds restrict to
+    the same singleton world. *)
+Lemma world_compat_spec (w1 w2 : WfWorld) :
+  let X := world_dom (w1 : World) ∩ world_dom (w2 : World) in
+  world_compat w1 w2 ↔
+    exists σ,
+      raw_restrict w1 X = singleton_world σ ∧
+      raw_restrict w2 X = singleton_world σ.
+Proof. Admitted.
 
 End Resource.
 
