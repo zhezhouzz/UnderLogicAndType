@@ -6,6 +6,7 @@
 -R CoreLang/theories CoreLang
 -R LocallyNameless LocallyNameless
 -R ChoiceType/theories ChoiceType
+-R ChoiceType/examples ChoiceTypeExamples
 
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
@@ -49,3 +50,4 @@ ChoiceType/theories/WellFormed.v
 ChoiceType/theories/Auxiliary.v
 ChoiceType/theories/Typing.v
 ChoiceType/theories/Soundness.v
+ChoiceType/examples/FunctionTypeExamples.v
