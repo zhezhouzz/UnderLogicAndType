@@ -69,3 +69,22 @@ open_tm (S k) u (open_tm 0 (vfvar x) body)
 `set_solver` 很适合纯 `fv` inclusion proof；`hauto` 适合 normal form 已经出现后的收尾。
 对涉及 binder index 的 proof，优先显式写出 `destruct (decide (...))` 和 `lia`，
 不要让自动化猜 index arithmetic。
+
+## Substitution under cofinite binders
+
+证明 `subst_lc` 的 binder case 时，fresh set 必须扩成 `L ∪ {[x]}`，其中 `x`
+是正在替换的变量。否则打开 binder 时选择的 `y` 可能等于 `x`，无法把
+`vfvar y` 改写成 `value_subst x u (vfvar y)`。
+
+典型形状：
+
+```coq
+eapply LC_lam with (L := L ∪ {[x]}); intros y Hy.
+replace (vfvar y) with (value_subst x u (vfvar y))
+  by (simpl; rewrite decide_False by set_solver; reflexivity).
+rewrite <- subst_open_tm by eauto.
+apply IH; set_solver.
+```
+
+这里的 `replace` 比直接 `change` 更稳，因为目标中通常是通过 atom-open
+instance 得到的 `vfvar y`，而不是 syntactically 显示的 substitution form。

@@ -239,33 +239,99 @@ Lemma open_rec_lc_tm e :
   lc_tm e → ∀ k u, open_tm k u e = e.
 Proof. exact (proj2 open_rec_lc_mutual e). Qed.
 
-Lemma subst_lc_value x u v :
-  lc_value v → lc_value u → lc_value (value_subst x u v)
-with subst_lc_tm x u e :
-  lc_tm e → lc_value u → lc_tm (tm_subst x u e).
-Proof. Admitted.
-
 Lemma subst_open_value x u w k v :
   lc_value w →
   value_subst x w (open_value k u v) =
-  open_value k (value_subst x w u) (value_subst x w v)
-with subst_open_tm x u w k e :
+  open_value k (value_subst x w u) (value_subst x w v).
+Proof.
+  revert x u w k. induction v using value_mut with
+      (P0 := fun e => ∀ x u w k,
+        lc_value w →
+        tm_subst x w (open_tm k u e) =
+        open_tm k (value_subst x w u) (tm_subst x w e));
+      simpl; intros y u w k Hlc; try reflexivity; try (f_equal; eauto).
+  - destruct (decide (y = x)); subst; simpl.
+    + symmetry. by apply open_rec_lc_value.
+    + reflexivity.
+  - destruct (decide (k = n)); subst; simpl.
+    + reflexivity.
+    + reflexivity.
+Qed.
+
+Lemma subst_open_tm x u w k e :
   lc_value w →
   tm_subst x w (open_tm k u e) =
   open_tm k (value_subst x w u) (tm_subst x w e).
-Proof. Admitted.
+Proof.
+  revert x u w k. induction e using tm_mut with
+      (P := fun v => ∀ x u w k,
+        lc_value w →
+        value_subst x w (open_value k u v) =
+        open_value k (value_subst x w u) (value_subst x w v));
+      simpl; intros y u w k Hlc; try reflexivity; try (f_equal; eauto).
+  - destruct (decide (y = x)); subst; simpl.
+    + symmetry. by apply open_rec_lc_value.
+    + reflexivity.
+  - destruct (decide (k = n)); subst; simpl.
+    + reflexivity.
+    + reflexivity.
+Qed.
+
+Lemma subst_lc_mutual :
+  (∀ v, lc_value v → ∀ x u, lc_value u → lc_value (value_subst x u v)) ∧
+  (∀ e, lc_tm e → ∀ x u, lc_value u → lc_tm (tm_subst x u e)).
+Proof.
+  apply lc_mutind; simpl; intros; eauto.
+  - destruct (decide (x = x0)).
+    + hauto.
+    + hauto.
+  - eapply LC_lam with (L := L ∪ {[x]}); intros y Hy.
+    replace (vfvar y) with (value_subst x u (vfvar y))
+      by (simpl; rewrite decide_False by set_solver; reflexivity).
+    rewrite <- subst_open_tm by eauto.
+    apply H; set_solver.
+  - eapply LC_fix with (L := L ∪ {[x]}); intros y Hy.
+    replace (vfvar y) with (value_subst x u (vfvar y))
+      by (simpl; rewrite decide_False by set_solver; reflexivity).
+    rewrite <- subst_open_value by eauto.
+    apply H; set_solver.
+  - eapply LC_lete with (L := L ∪ {[x]}); eauto.
+    intros y Hy.
+    replace (vfvar y) with (value_subst x u (vfvar y))
+      by (simpl; rewrite decide_False by set_solver; reflexivity).
+    rewrite <- subst_open_tm by eauto.
+    apply H0; set_solver.
+Qed.
+
+Lemma subst_lc_value x u v :
+  lc_value v → lc_value u → lc_value (value_subst x u v).
+Proof. intros Hlc Hu. exact (proj1 subst_lc_mutual v Hlc x u Hu). Qed.
+
+Lemma subst_lc_tm x u e :
+  lc_tm e → lc_value u → lc_tm (tm_subst x u e).
+Proof. intros Hlc Hu. exact (proj2 subst_lc_mutual e Hlc x u Hu). Qed.
 
 Lemma subst_intro_value x w k v :
   x ∉ fv_value v →
   lc_value w →
   value_subst x w (open_value k (vfvar x) v) = open_value k w v.
-Proof. Admitted.
+Proof.
+  intros Hfresh Hlc.
+  rewrite subst_open_value by exact Hlc.
+  simpl. rewrite decide_True by reflexivity.
+  by rewrite subst_fresh_value_proven.
+Qed.
 
 Lemma subst_intro_tm x w k e :
   x ∉ fv_tm e →
   lc_value w →
   tm_subst x w (open_tm k (vfvar x) e) = open_tm k w e.
-Proof. Admitted.
+Proof.
+  intros Hfresh Hlc.
+  rewrite subst_open_tm by exact Hlc.
+  simpl. rewrite decide_True by reflexivity.
+  by rewrite subst_fresh_tm_proven.
+Qed.
 
 Lemma body_open_value v u :
   body_val v → lc_value u → lc_value (open_value 0 u v).
