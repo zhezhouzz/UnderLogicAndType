@@ -1,4 +1,5 @@
 From LocallyNameless Require Import Tactics.
+From Stdlib Require Import Lia.
 
 (** * Locally-nameless facts for CoreLang
 
@@ -153,11 +154,90 @@ Proof.
   rewrite decide_False by set_solver. reflexivity.
 Qed.
 
+Ltac crush_nat_decides :=
+  repeat match goal with
+  | H : context[decide (?i = ?i)] |- _ =>
+      rewrite decide_True in H by reflexivity
+  | |- context[decide (?i = ?i)] =>
+      rewrite decide_True by reflexivity
+  | H : context[decide (?i = ?j)] |- _ =>
+      rewrite decide_False in H by lia
+  | |- context[decide (?i = ?j)] =>
+      rewrite decide_False by lia
+  end.
+
+Lemma open_rec_open_eq_value u w (v : value) i j :
+  i ≠ j →
+  open_value i u (open_value j w v) = open_value j w v →
+  open_value i u v = v.
+Proof.
+  revert i j. induction v using value_mut with
+      (P0 := fun e => ∀ i j,
+        i ≠ j →
+        open_tm i u (open_tm j w e) = open_tm j w e →
+        open_tm i u e = e);
+      simpl; intros i j Hneq Heq; try reflexivity.
+  - destruct (decide (j = n)); destruct (decide (i = n)); subst; simpl in *;
+      crush_nat_decides; try contradiction; auto.
+  - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+Qed.
+
+Lemma open_rec_open_eq_tm u w (e : tm) i j :
+  i ≠ j →
+  open_tm i u (open_tm j w e) = open_tm j w e →
+  open_tm i u e = e.
+Proof.
+  revert i j. induction e using tm_mut with
+      (P := fun v => ∀ i j,
+        i ≠ j →
+        open_value i u (open_value j w v) = open_value j w v →
+        open_value i u v = v);
+      simpl; intros i j Hneq Heq; try reflexivity.
+  - destruct (decide (j = n)); destruct (decide (i = n)); subst; simpl in *;
+      crush_nat_decides; try contradiction; auto.
+  - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
+Qed.
+
+Lemma open_rec_lc_mutual :
+  (∀ v, lc_value v → ∀ k u, open_value k u v = v) ∧
+  (∀ e, lc_tm e → ∀ k u, open_tm k u e = e).
+Proof.
+  apply lc_mutind; simpl; intros; try reflexivity; try (f_equal; eauto).
+  - f_equal.
+    pose (x := fresh_for L).
+    assert (Hx : x ∉ L) by (subst x; apply fresh_for_not_in).
+    eapply open_rec_open_eq_tm with (j := 0) (w := vfvar x); [lia |].
+    exact (H x Hx (S k) u).
+  - f_equal.
+    pose (x := fresh_for L).
+    assert (Hx : x ∉ L) by (subst x; apply fresh_for_not_in).
+    eapply open_rec_open_eq_value with (j := 0) (w := vfvar x); [lia |].
+    exact (H x Hx (S k) u).
+  - pose (x := fresh_for L).
+    assert (Hx : x ∉ L) by (subst x; apply fresh_for_not_in).
+    eapply open_rec_open_eq_tm with (j := 0) (w := vfvar x); [lia |].
+    exact (H0 x Hx (S k) u).
+Qed.
+
 Lemma open_rec_lc_value v :
-  lc_value v → ∀ k u, open_value k u v = v
-with open_rec_lc_tm e :
+  lc_value v → ∀ k u, open_value k u v = v.
+Proof. exact (proj1 open_rec_lc_mutual v). Qed.
+
+Lemma open_rec_lc_tm e :
   lc_tm e → ∀ k u, open_tm k u e = e.
-Proof. Admitted.
+Proof. exact (proj2 open_rec_lc_mutual e). Qed.
 
 Lemma subst_lc_value x u v :
   lc_value v → lc_value u → lc_value (value_subst x u v)
