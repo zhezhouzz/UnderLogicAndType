@@ -24,12 +24,18 @@ Proof. Admitted.
 Lemma canonical_arrow v s T :
   ∅ ⊢ᵥ v ⋮ (s →ₜ T) →
   (∃ s' e, v = vlam s' e) ∨ (∃ Tf vf, v = vfix Tf vf).
-Proof. Admitted.
+Proof.
+  intros Hty. inversion Hty; subst; eauto.
+  rewrite lookup_empty in H. discriminate.
+Qed.
 
 Lemma canonical_base v b :
   ∅ ⊢ᵥ v ⋮ TBase b →
   ∃ c, v = vconst c ∧ base_ty_of_const c = b.
-Proof. Admitted.
+Proof.
+  intros Hty. inversion Hty; subst; eauto.
+  rewrite lookup_empty in H. discriminate.
+Qed.
 
 (** ** LN lemmas proofs (deferred) *)
 
