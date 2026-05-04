@@ -140,7 +140,14 @@ Lemma reduction_beta s body vx v :
   lc_value vx →
   tapp (vlam s body) vx →* tret v →
   open_tm 0 vx body →* tret v.
-Proof. Admitted.
+Proof.
+  intros _ Hsteps.
+  destruct (rtc_inv (R := step) (tapp (vlam s body) vx) (tret v) Hsteps)
+    as [Heq | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    + inversion H; subst; try discriminate. exact Hrest.
+Qed.
 
 Lemma reduction_beta_intro s body vx v :
   body_tm body →
@@ -159,7 +166,14 @@ Lemma reduction_fix Tf vf vx v :
   lc_value vx →
   tapp (vfix Tf vf) vx →* tret v →
   tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v.
-Proof. Admitted.
+Proof.
+  intros _ Hsteps.
+  destruct (rtc_inv (R := step) (tapp (vfix Tf vf) vx) (tret v) Hsteps)
+    as [Heq | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    + inversion H; subst; try discriminate. exact Hrest.
+Qed.
 
 Lemma reduction_fix_intro Tf vf vx v :
   body_val vf →
@@ -177,7 +191,14 @@ Qed.
 Lemma reduction_match_true et ef v :
   tmatch (vconst (cbool true)) et ef →* tret v →
   et →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hsteps.
+  destruct (rtc_inv (R := step) (tmatch (vconst (cbool true)) et ef) (tret v) Hsteps)
+    as [Heq | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    + inversion H; subst; try discriminate. exact Hrest.
+Qed.
 
 Lemma reduction_match_true_intro et ef v :
   lc_tm et →
@@ -194,7 +215,14 @@ Qed.
 Lemma reduction_match_false et ef v :
   tmatch (vconst (cbool false)) et ef →* tret v →
   ef →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hsteps.
+  destruct (rtc_inv (R := step) (tmatch (vconst (cbool false)) et ef) (tret v) Hsteps)
+    as [Heq | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    + inversion H; subst; try discriminate. exact Hrest.
+Qed.
 
 Lemma reduction_match_false_intro et ef v :
   lc_tm et →

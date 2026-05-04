@@ -180,3 +180,16 @@ freshness 需要从 `x ∉ fv (compound)` 中拆出来；直接对每个 IH 用
 `inversion H1; subst; inversion H2; subst`。如果构造子 source 形状设计得足够
 具体，`eauto; try congruence` 往往会解决全部 cases；不要急着手写每个 bullet，
 否则自动化已经解决完目标时会出现 “No more goals” 的 bullet 错误。
+
+## Multi-step inversion with stdpp rtc
+
+对 `e →* v` 做第一步反演时用 `rtc_inv`，但要显式给 relation 和端点，例如：
+
+```coq
+destruct (rtc_inv (R := step) e (tret v) Hsteps)
+  as [Heq | [e' [Hstep Hrest]]].
+```
+
+如果只写 `rtc_inv Hsteps`，Rocq 可能无法推断 `R`，甚至把 `Hsteps` 解析成
+起点参数。head redex 的 inversion 之后，很多 `Step_let` 分支会因为 source
+形状不匹配直接消失，所以同样不要预设每个 constructor 都还有 bullet。
