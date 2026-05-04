@@ -1,5 +1,6 @@
 -R ChoicePrelude ChoicePrelude
 -R ChoiceAlgebra/theories ChoiceAlgebra
+-R ChoiceAlgebra/examples ChoiceAlgebraExamples
 -R ChoiceLogic/theories ChoiceLogic
 -R CoreLang/theories CoreLang
 -R LocallyNameless LocallyNameless
@@ -8,12 +9,14 @@
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
 ChoicePrelude/Store.v
+ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/MapFilterDom.v
 ChoiceAlgebra/theories/Store.v
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
+ChoiceAlgebra/examples/ResourceExamples.v
 
 CoreLang/theories/Prelude.v
 CoreLang/theories/Syntax.v
