@@ -16,6 +16,7 @@ Class OpenArgLc O := open_arg_lc : O -> Prop.
 
 #[global] Instance OpenVar_atom : OpenVar atom := fun x => x.
 #[global] Instance OpenArgLc_atom : OpenArgLc atom := fun _ => True.
+#[global] Instance Stale_atom : Stale atom := fun x => {[x]}.
 
 (** ** Pure open/close/freshness classes *)
 
