@@ -66,24 +66,38 @@ Proof. intros H. exact (proj2 (step_regular e e' H)). Qed.
 
 Lemma steps_trans e1 e2 e3 :
   e1 →* e2 → e2 →* e3 → e1 →* e3.
-Proof. apply rtc_trans. Qed.
+Proof.
+  intros H12 H23. induction H12; eauto using Steps_step.
+Qed.
 
 Lemma steps_R e e' :
   step e e' → e →* e'.
-Proof. apply rtc_once. Qed.
+Proof.
+  intros Hstep. eapply Steps_step; eauto.
+  apply Steps_refl. eauto using step_regular2.
+Qed.
+
+Lemma steps_inv e z :
+  e →* z →
+  (e = z ∧ lc_tm e) ∨ ∃ y, step e y ∧ y →* z.
+Proof.
+  intros Hsteps. inversion Hsteps; subst; eauto.
+Qed.
 
 Lemma steps_regular e e' :
-  e →* e' → lc_tm e → lc_tm e'.
+  e →* e' → lc_tm e'.
 Proof.
-  intros Hsteps Hlc. induction Hsteps; eauto using step_regular2.
+  intros Hsteps. induction Hsteps; eauto using step_regular2.
 Qed.
 
 Lemma steps_regular1 e e' :
-  e →* e' → lc_tm e → lc_tm e.
-Proof. eauto. Qed.
+  e →* e' → lc_tm e.
+Proof.
+  intros Hsteps. induction Hsteps; eauto using step_regular1.
+Qed.
 
 Lemma steps_regular2 e e' :
-  e →* e' → lc_tm e → lc_tm e'.
+  e →* e' → lc_tm e'.
 Proof. apply steps_regular. Qed.
 
 Lemma value_steps_self v e :
@@ -127,14 +141,45 @@ Qed.
 Lemma reduction_lete e1 e2 v :
   tlete e1 e2 →* tret v →
   ∃ vx, e1 →* tret vx ∧ open_tm 0 vx e2 →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hsteps.
+  remember (tlete e1 e2) as e eqn:He.
+  remember (tret v) as r eqn:Hr.
+  revert e1 e2 v He Hr.
+  induction Hsteps; intros e1' e2' v' He Hr; subst.
+  - discriminate.
+  - inversion H; subst.
+    + inversion H0; subst; try discriminate.
+      eexists. split; [|exact Hsteps].
+      apply Steps_refl.
+      match goal with
+      | Hlc : lc_tm (tlete (tret _) _) |- _ =>
+          apply lc_lete_iff_body in Hlc as [Hret _]; exact Hret
+      end.
+    + destruct (IHHsteps e1'0 e2' v' eq_refl eq_refl) as [vx [Hsteps1 Hsteps2]].
+      exists vx. split; [|exact Hsteps2].
+      eapply Steps_step; eauto.
+Qed.
 
 Lemma reduction_lete_intro e1 e2 vx v :
   body_tm e2 →
   e1 →* tret vx →
   open_tm 0 vx e2 →* tret v →
   tlete e1 e2 →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hbody Hsteps1.
+  remember (tret vx) as r eqn:Hr.
+  revert vx Hr e2 Hbody v.
+  induction Hsteps1; intros vx Hr e2' Hbody v Hsteps2.
+  - inversion Hr; subst.
+    eapply steps_trans; [|exact Hsteps2].
+    apply steps_R. apply Step_head. apply HS_Ret.
+    apply lc_lete_iff_body. split; eauto.
+  - eapply Steps_step.
+    + apply Step_let; eauto.
+      apply lc_lete_iff_body. split; eauto using step_regular1.
+    + eapply IHHsteps1; eauto.
+Qed.
 
 Lemma reduction_beta s body vx v :
   lc_value vx →
@@ -142,8 +187,7 @@ Lemma reduction_beta s body vx v :
   open_tm 0 vx body →* tret v.
 Proof.
   intros _ Hsteps.
-  destruct (rtc_inv (R := step) (tapp (vlam s body) vx) (tret v) Hsteps)
-    as [Heq | [e' [Hstep Hrest]]].
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
   - discriminate.
   - inversion Hstep; subst.
     + inversion H; subst; try discriminate. exact Hrest.
@@ -168,8 +212,7 @@ Lemma reduction_fix Tf vf vx v :
   tapp (open_value 0 vx vf) (vfix Tf vf) →* tret v.
 Proof.
   intros _ Hsteps.
-  destruct (rtc_inv (R := step) (tapp (vfix Tf vf) vx) (tret v) Hsteps)
-    as [Heq | [e' [Hstep Hrest]]].
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
   - discriminate.
   - inversion Hstep; subst.
     + inversion H; subst; try discriminate. exact Hrest.
@@ -193,8 +236,7 @@ Lemma reduction_match_true et ef v :
   et →* tret v.
 Proof.
   intros Hsteps.
-  destruct (rtc_inv (R := step) (tmatch (vconst (cbool true)) et ef) (tret v) Hsteps)
-    as [Heq | [e' [Hstep Hrest]]].
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
   - discriminate.
   - inversion Hstep; subst.
     + inversion H; subst; try discriminate. exact Hrest.
@@ -217,8 +259,7 @@ Lemma reduction_match_false et ef v :
   ef →* tret v.
 Proof.
   intros Hsteps.
-  destruct (rtc_inv (R := step) (tmatch (vconst (cbool false)) et ef) (tret v) Hsteps)
-    as [Heq | [e' [Hstep Hrest]]].
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
   - discriminate.
   - inversion Hstep; subst.
     + inversion H; subst; try discriminate. exact Hrest.

@@ -194,6 +194,18 @@ destruct (rtc_inv (R := step) e (tret v) Hsteps)
 起点参数。head redex 的 inversion 之后，很多 `Step_let` 分支会因为 source
 形状不匹配直接消失，所以同样不要预设每个 constructor 都还有 bullet。
 
+如果项目里的 `→*` 被定义成带 regularity 的自定义 inductive，而不是裸
+`rtc step`，应改用项目自己的 inversion lemma，例如 `steps_inv`。这种设计能避免
+`rtc_refl` 让 ill-formed terms 零步约化到自己；let intro/decomposition 里也可以
+直接从 `e →* tret v` 拿到起点和终点的 local closure。
+
+证明 let multi-step decomposition/introduction 的套路：
+
+- intro 方向对 `e1 →* tret vx` 归纳；refl case 用 `HS_Ret`，step case 用
+  `Step_let` lift 一步；
+- decomposition 方向对 `tlete e1 e2 →* tret v` 反演第一步；`HS_Ret` case 取
+  let-bound value，`Step_let` case 递归分解剩余多步。
+
 ## Mutual EqDecision for LN syntax
 
 对 mutual inductive syntax 写 equality decision 时，可以写 mutual fixpoint：
