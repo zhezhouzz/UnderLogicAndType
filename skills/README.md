@@ -18,3 +18,4 @@
 | 15_definition_sanity_check.md | Definition sanity check：先对齐论文、报告冲突、经确认后再修改 |
 | 16_store_proof_refactoring.md | Store/map proof：通用 lemma 上移、`change`/`setoid_rewrite`、lookup extensionality |
 | 17_core_ln_proof_patterns.md | Core LN proof：拆 mutual lemma、combined helper、cofinite binder 的 fact1 |
+| 19_operational_reduction_helpers.md | Core operational proof：用 reduction intro/iff lemmas 简化 derived-form reductions |
