@@ -445,3 +445,31 @@ Tactic Notation "auto_apply" := auto_apply by (fun H => apply H).
 Tactic Notation "auto_eapply" := auto_apply by (fun H => eapply H).
 Tactic Notation "auto_apply_eq" := auto_apply by (fun H => apply_eq H).
 Tactic Notation "auto_eapply_eq" := auto_apply by (fun H => eapply_eq H).
+
+(** ** Cofinite constructors *)
+
+Ltac econstructor_L :=
+  unshelve econstructor;
+  try lazymatch goal with
+  | |- aset =>
+      let acc := collect_stales tt in exact acc
+  | |- ?G =>
+      try lazymatch type of G with
+      | Prop => fail 1
+      | _ => shelve
+      end
+  end;
+  eauto.
+
+Ltac auto_specialization :=
+  try lazymatch goal with
+  | |- ∀ y, y ∉ _ → _ =>
+      let y := fresh "y" in
+      let Hy := fresh "Hy" in
+      intros y Hy;
+      specialize_with y
+  end;
+  eauto.
+
+Ltac econstructor_L_specialized :=
+  econstructor_L; auto_specialization.

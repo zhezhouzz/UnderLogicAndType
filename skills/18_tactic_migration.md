@@ -21,6 +21,10 @@ stable kernel over copying whole tactic files.
 - IH application: `auto_apply`/`auto_eapply` are helpful in mutual induction,
   but keep scripts readable and avoid using them when an explicit IH name is
   clearer.
+- Cofinite constructors: `econstructor_L`, `auto_specialization`, and
+  `econstructor_L_specialized` are useful once the first-wave fresh tactics are
+  available. They instantiate constructor `aset` arguments with the collected
+  stale/fv set, then specialize immediate cofinite premises.
 
 ## Patterns that worked
 
@@ -34,6 +38,12 @@ stable kernel over copying whole tactic files.
 
   ```coq
   auto_exists_L; intros x Hx; repeat specialize_with x.
+  ```
+
+- For constructors with an explicit cofinite set:
+
+  ```coq
+  econstructor_L; auto_specialization.
   ```
 
 - For stubborn set rewrites in hypotheses, prefer `setoid_rewrite` inside the
