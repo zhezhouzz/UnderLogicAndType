@@ -7,6 +7,7 @@
     admissible point [x=1;y=2]. *)
 
 From ChoiceLogic Require Import Prelude LogicQualifier Formula.
+From Stdlib Require Import Lia.
 
 (** Concrete atoms standing for paper variables x and y. *)
 Definition x_atom : atom := 1%positive.
@@ -25,6 +26,8 @@ Local Notation WorldN := (World (V := nat)).
 Local Notation WfWorldN := (WfWorld (V := nat)).
 Local Notation FormulaN := (Formula (V := nat)).
 Local Notation LogicQualifierN := (logic_qualifier (V := nat)).
+
+Ltac crush_store := vm_compute; try tauto; try congruence; try reflexivity.
 
 Definition store_xy (xv yv : nat) : StoreN :=
   <['x := xv]> (<['y := yv]> ∅).
@@ -107,23 +110,88 @@ Definition triangle_slice : LogicQualifierN :=
 Definition fiber_triangle_formula : FormulaN :=
   FFib 'x (FUnder (FAtom triangle_slice)).
 
-(** These four statements mirror the paper's displayed judgments:
-    the two single-fiber worlds pass, the diagonal world fails, and the
-    combined triangle world passes.  The proofs are intentionally left as
-    example obligations; the definitions above are the sanity check payload. *)
+(** The formula unfolds to the following concrete fiber obligation: for each
+    admissible [x]-projection [σ], some same-domain subworld of the induced
+    fiber satisfies [triangle_slice].  The positive examples below use the
+    fiber itself as this witness; the diagonal counterexample fails because
+    the [x=1] fiber is missing [s12]. *)
+Definition fiber_triangle_obligation (w : WfWorldN) : Prop :=
+  dom (∅ : StoreN) ## {['x]} ∧
+  ∀ σ (Hproj : res_restrict w {['x]} σ),
+    ∃ m' : WfWorldN,
+      res_subset m' (res_fiber_from_projection w {['x]} σ Hproj) ∧
+      logic_qualifier_denote triangle_slice (∅ ∪ σ) m'.
+
+Lemma res_models_fiber_triangle_intro (w : WfWorldN) :
+  fiber_triangle_obligation w →
+  res_models w fiber_triangle_formula.
+Proof.
+  intros [Hdom Hfib].
+  unfold res_models, res_models_with_store, fiber_triangle_formula.
+  simpl. split; [exact Hdom |].
+  intros σ Hproj.
+  destruct (Hfib σ Hproj) as [m' [Hsubset Hatom]].
+  exists m'. split; [exact Hsubset | exact Hatom].
+Qed.
+
+Lemma res_models_fiber_triangle_elim (w : WfWorldN) :
+  res_models w fiber_triangle_formula →
+  fiber_triangle_obligation w.
+Proof.
+  unfold res_models, res_models_with_store, fiber_triangle_formula,
+    fiber_triangle_obligation.
+  simpl. tauto.
+Qed.
+
+(** These are the concrete finite-world facts that should eventually become
+    ordinary proofs.  They are kept as local example lemmas for review before
+    deciding whether any reusable helper belongs in [Resource.v] or
+    [Formula.v]. *)
+
+Lemma x1_y12_complete_triangle_fibers :
+  fiber_triangle_obligation w_x1_y12.
+Proof. Admitted.
+
+Lemma x2_y2_complete_triangle_fibers :
+  fiber_triangle_obligation w_x2_y2.
+Proof. Admitted.
+
+Lemma diag_bad_incomplete_triangle_fibers :
+  ¬ fiber_triangle_obligation w_diag_bad.
+Proof. Admitted.
+
+Lemma triangle_ok_complete_triangle_fibers :
+  fiber_triangle_obligation w_triangle_ok.
+Proof. Admitted.
+
+(** These four statements mirror the paper's displayed judgments. *)
 
 Example fiber_x1_y12_models :
   res_models w_x1_y12 fiber_triangle_formula.
-Proof. Admitted.
+Proof.
+  apply res_models_fiber_triangle_intro.
+  exact x1_y12_complete_triangle_fibers.
+Qed.
 
 Example fiber_x2_y2_models :
   res_models w_x2_y2 fiber_triangle_formula.
-Proof. Admitted.
+Proof.
+  apply res_models_fiber_triangle_intro.
+  exact x2_y2_complete_triangle_fibers.
+Qed.
 
 Example fiber_diag_bad_not_models :
   ¬ res_models w_diag_bad fiber_triangle_formula.
-Proof. Admitted.
+Proof.
+  intros Hmodels.
+  apply diag_bad_incomplete_triangle_fibers.
+  apply res_models_fiber_triangle_elim.
+  exact Hmodels.
+Qed.
 
 Example fiber_triangle_ok_models :
   res_models w_triangle_ok fiber_triangle_formula.
-Proof. Admitted.
+Proof.
+  apply res_models_fiber_triangle_intro.
+  exact triangle_ok_complete_triangle_fibers.
+Qed.
