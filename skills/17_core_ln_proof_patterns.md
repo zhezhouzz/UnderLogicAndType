@@ -173,3 +173,10 @@ judgement 的 obligations。不要假设 bullet 顺序对应当前 syntactic cat
 如果 `eauto` 留下 application/match 这类组合 case，通常是因为每个子项的
 freshness 需要从 `x ∉ fv (compound)` 中拆出来；直接对每个 IH 用
 `[reflexivity | set_solver]` 即可。
+
+## Head-step determinism
+
+对于 redex 形状互斥的 `head_step` determinism，先直接
+`inversion H1; subst; inversion H2; subst`。如果构造子 source 形状设计得足够
+具体，`eauto; try congruence` 往往会解决全部 cases；不要急着手写每个 bullet，
+否则自动化已经解决完目标时会出现 “No more goals” 的 bullet 错误。

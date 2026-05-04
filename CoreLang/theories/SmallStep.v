@@ -105,7 +105,10 @@ Qed.
 Lemma head_step_det e e1 e2 :
   head_step e e1 → head_step e e2 →
   e1 = e2.
-Proof. Admitted.
+Proof.
+  intros H1 H2.
+  inversion H1; subst; inversion H2; subst; eauto; try congruence.
+Qed.
 
 (** ** Preservation (BasicTyping invariant — Admitted here, proved in Properties) *)
 
