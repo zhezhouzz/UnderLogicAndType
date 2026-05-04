@@ -293,15 +293,69 @@ Proof.
   - by rewrite decide_False by my_set_solver.
 Qed.
 
+Lemma open_close_var_value_aux x v k :
+  open_value k (vfvar x) v = v ->
+  open_value k (vfvar x) (close_value x k v) = v.
+Proof.
+  revert k. induction v using value_mut with
+      (P0 := fun e => ∀ k,
+        open_tm k (vfvar x) e = e ->
+        open_tm k (vfvar x) (close_tm x k e) = e);
+      simpl; intros k Hopen; try exact Hopen.
+  - destruct (decide (x = x0)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + reflexivity.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
+  - injection Hopen as H1 H2 H3.
+    f_equal; eauto.
+Qed.
+
+Lemma open_close_var_tm_aux x e k :
+  open_tm k (vfvar x) e = e ->
+  open_tm k (vfvar x) (close_tm x k e) = e.
+Proof.
+  revert k. induction e using tm_mut with
+      (P := fun v => ∀ k,
+        open_value k (vfvar x) v = v ->
+        open_value k (vfvar x) (close_value x k v) = v);
+      simpl; intros k Hopen; try exact Hopen.
+  - destruct (decide (x = x0)); subst; simpl.
+    + rewrite decide_True by reflexivity. reflexivity.
+    + reflexivity.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
+  - apply f_equal. injection Hopen as H0. eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
+  - injection Hopen as H1 H2 H3.
+    f_equal; eauto.
+Qed.
+
 Lemma open_close_var_value x v :
   lc_value v ->
   open_value 0 (vfvar x) (close_value x 0 v) = v.
-Proof. Admitted.
+Proof.
+  intros Hlc. apply open_close_var_value_aux.
+  by apply open_rec_lc_value.
+Qed.
 
 Lemma open_close_var_tm x e :
   lc_tm e ->
   open_tm 0 (vfvar x) (close_tm x 0 e) = e.
-Proof. Admitted.
+Proof.
+  intros Hlc. apply open_close_var_tm_aux.
+  by apply open_rec_lc_tm.
+Qed.
 
 Lemma fv_of_subst_value_closed x u v :
   fv_value u = ∅ ->
