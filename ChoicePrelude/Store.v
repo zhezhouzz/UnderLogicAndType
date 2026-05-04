@@ -197,6 +197,26 @@ Proof.
   destruct Hlookup as [H1 H2]. split; [exact H2 | exact H1].
 Qed.
 
+Lemma store_restrict_lookup_some_2 s X x y :
+  s !! x = Some y →
+  x ∈ X →
+  store_restrict s X !! x = Some y.
+Proof.
+  unfold store_restrict, map_restrict. intros Hlookup Hin.
+  apply map_lookup_filter_Some_2; [exact Hlookup | exact Hin].
+Qed.
+
+Lemma disj_dom_store_compat s1 s2 :
+  dom s1 ∩ dom s2 = ∅ → store_compat s1 s2.
+Proof.
+  intros Hdisj.
+  unfold store_compat, map_compat.
+  intros x v1 v2 H1 H2.
+  assert (x ∈ dom s1 ∩ dom s2) as Hin.
+  { apply elem_of_intersection. split; apply elem_of_dom; eauto. }
+  set_solver.
+Qed.
+
 Lemma store_compat_restrict s1 s2 X :
   store_compat s1 s2 → store_compat (store_restrict s1 X) (store_restrict s2 X).
 Proof.
@@ -230,6 +250,42 @@ Proof.
       intros v2 H2 Hin.
       apply not_elem_of_dom in H1. set_solver.
     + symmetry. exact H1.
+Qed.
+
+Lemma store_compat_spec s1 s2 :
+  store_compat s1 s2 ↔
+  store_restrict s1 (dom s1 ∩ dom s2) =
+  store_restrict s2 (dom s1 ∩ dom s2).
+Proof.
+  split.
+  - intros Hcompat.
+    apply map_eq. intros x.
+    rewrite option_eq. intros v.
+    unfold store_restrict, map_restrict.
+    setoid_rewrite map_lookup_filter_Some.
+    simpl. split.
+    + intros [Hs1 Hin].
+      apply elem_of_intersection in Hin as [Hin1 Hin2].
+      pose proof (lookup_lookup_total_dom s2 x Hin2) as Hs2.
+      assert (Hv : v = s2 !!! x) by (eapply Hcompat; eauto).
+      subst. split; [exact Hs2 |].
+      apply elem_of_intersection. split; [exact Hin1 | exact Hin2].
+    + intros [Hs2 Hin].
+      apply elem_of_intersection in Hin as [Hin1 Hin2].
+      pose proof (lookup_lookup_total_dom s1 x Hin1) as Hs1.
+      assert (Hv : s1 !!! x = v) by (eapply Hcompat; eauto).
+      subst. split; [exact Hs1 |].
+      apply elem_of_intersection. split; [exact Hin1 | exact Hin2].
+  - intros Heq.
+    unfold store_compat, map_compat.
+    intros x v1 v2 H1 H2.
+    assert (Hin : x ∈ dom s1 ∩ dom s2).
+    { apply elem_of_intersection. split; apply elem_of_dom; eauto. }
+    assert (Hr1 : store_restrict s1 (dom s1 ∩ dom s2) !! x = Some v1).
+    { apply store_restrict_lookup_some_2; [exact H1 | exact Hin]. }
+    assert (Hr2 : store_restrict s2 (dom s1 ∩ dom s2) !! x = Some v2).
+    { apply store_restrict_lookup_some_2; [exact H2 | exact Hin]. }
+    rewrite Heq in Hr1. rewrite Hr2 in Hr1. by inversion Hr1.
 Qed.
 
 End Store.

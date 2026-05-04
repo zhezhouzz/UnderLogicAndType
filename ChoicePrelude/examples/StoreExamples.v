@@ -29,11 +29,11 @@ Definition store_x2 : StoreN := <['x := 2%nat]> ∅.
 
 Example restrict_xy_to_x :
   store_restrict store_x1_y2 ({['x]}) = store_x1.
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
 
 Example restrict_xy_to_y :
   store_restrict store_x1_y2 ({['y]}) = store_y2.
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
 
 Example restrict_twice_intersection (s : StoreN) (X Y : aset) :
   store_restrict (store_restrict s X) Y = store_restrict s (X ∩ Y).
@@ -41,25 +41,34 @@ Proof. apply store_restrict_restrict. Qed.
 
 Example compatible_disjoint_stores :
   store_compat store_x1 store_y2.
-Proof. Admitted.
+Proof.
+  apply disj_dom_store_compat.
+  vm_compute. reflexivity.
+Qed.
 
 Example incompatible_overlapping_stores :
   ¬ store_compat store_x1 store_x2.
-Proof. Admitted.
+Proof.
+  unfold not, store_compat, map_compat.
+  intros H.
+  specialize (H 'x 1%nat 2%nat).
+  vm_compute in H.
+  discriminate (H eq_refl eq_refl).
+Qed.
 
 Example compatible_union_restrict_x :
   store_restrict (store_x1 ∪ store_y2) ({['x]}) = store_x1.
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
 
 Example compatible_union_restrict_y :
   store_restrict (store_x1 ∪ store_y2) ({['y]}) = store_y2.
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
 
 Example rename_moves_binding :
   store_rename_atom 'x 'z store_x1_y2 =
   <['z := 1%nat]> (<['y := 2%nat]> ∅).
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
 
 Example rename_missing_deletes_target :
   store_rename_atom 'z 'y store_x1_y2 = <['x := 1%nat]> ∅.
-Proof. Admitted.
+Proof. vm_compute. reflexivity. Qed.
