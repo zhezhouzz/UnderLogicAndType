@@ -6,19 +6,6 @@
 
 From CoreLang Require Export BasicTyping SmallStep LocallyNamelessProps.
 
-(** ** Progress *)
-
-Lemma progress e T :
-  ∅ ⊢ₑ e ⋮ T →
-  is_val e ∨ ∃ e', step e e'.
-Proof. Admitted.
-
-(** ** Preservation *)
-
-Lemma preservation e e' T :
-  ∅ ⊢ₑ e ⋮ T → step e e' → ∅ ⊢ₑ e' ⋮ T.
-Proof. Admitted.
-
 (** ** Canonical forms *)
 
 Lemma canonical_arrow v s T :
@@ -36,6 +23,47 @@ Proof.
   intros Hty. inversion Hty; subst; eauto.
   rewrite lookup_empty in H. discriminate.
 Qed.
+
+(** ** Progress *)
+
+Lemma progress e T :
+  ∅ ⊢ₑ e ⋮ T →
+  is_val e ∨ ∃ e', step e e'.
+Proof.
+  intros Hty.
+  remember ∅ as Γ eqn:HΓ.
+  induction Hty; subst.
+  - left. apply is_val_tret.
+  - destruct (IHHty eq_refl) as [[v Hv] | [e1' Hstep]].
+    + subst. right. eexists. apply Step_head. apply HS_Ret.
+      eapply typing_tm_lc. econstructor; eauto.
+    + right. eexists. apply Step_let; eauto.
+      eapply typing_tm_lc. econstructor; eauto.
+  - destruct op. simpl in H. inversion H; subst.
+    apply canonical_base in H0. destruct H0 as [c [-> Hc]].
+    destruct c; simpl in Hc; try discriminate.
+    right. eexists. apply Step_head. eapply HS_Op; eauto.
+  - pose proof H as Hfun.
+    apply canonical_arrow in H.
+    destruct H as [[s' [body ->]] | [Tf [vf ->]]].
+    + right. eexists. apply Step_head. apply HS_Beta.
+      eapply typing_tm_lc. econstructor; eauto.
+    + right. eexists. apply Step_head. apply HS_Fix.
+      eapply typing_tm_lc. econstructor; eauto.
+  - apply canonical_base in H. destruct H as [c [-> Hc]].
+    destruct c as [b|n]; simpl in Hc; try discriminate.
+    destruct b.
+    + right. eexists. apply Step_head. apply HS_MatchTrue.
+      eapply typing_tm_lc. econstructor; eauto.
+    + right. eexists. apply Step_head. apply HS_MatchFalse.
+      eapply typing_tm_lc. econstructor; eauto.
+Qed.
+
+(** ** Preservation *)
+
+Lemma preservation e e' T :
+  ∅ ⊢ₑ e ⋮ T → step e e' → ∅ ⊢ₑ e' ⋮ T.
+Proof. Admitted.
 
 (** ** LN lemmas proofs (deferred) *)
 
