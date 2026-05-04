@@ -8,8 +8,12 @@
 From ChoicePrelude Require Import Prelude Store.
 From ChoiceAlgebra Require Import Resource.
 
-Definition ex_x : atom := 1%positive.
-Definition ex_y : atom := 2%positive.
+(** Concrete atoms standing for paper variables x and y. *)
+Definition x_atom : atom := 1%positive.
+Definition y_atom : atom := 2%positive.
+
+Local Notation "'x" := x_atom.
+Local Notation "'y" := y_atom.
 
 Local Instance nat_valuesig : ValueSig nat := {|
   valuesig_eqdec := _;
@@ -20,38 +24,38 @@ Local Notation StoreN := (gmap atom nat).
 Local Notation WorldN := (World (V := nat)).
 Local Notation WfWorldN := (WfWorld (V := nat)).
 
-Definition sx1 : StoreN := <[ex_x := 1%nat]> ∅.
-Definition sx2 : StoreN := <[ex_x := 2%nat]> ∅.
-Definition sy3 : StoreN := <[ex_y := 3%nat]> ∅.
-Definition sy4 : StoreN := <[ex_y := 4%nat]> ∅.
+Definition sx1 : StoreN := <['x := 1%nat]> ∅.
+Definition sx2 : StoreN := <['x := 2%nat]> ∅.
+Definition sy3 : StoreN := <['y := 3%nat]> ∅.
+Definition sy4 : StoreN := <['y := 4%nat]> ∅.
 
-Definition s13 : StoreN := <[ex_x := 1%nat]> (<[ex_y := 3%nat]> ∅).
-Definition s14 : StoreN := <[ex_x := 1%nat]> (<[ex_y := 4%nat]> ∅).
-Definition s23 : StoreN := <[ex_x := 2%nat]> (<[ex_y := 3%nat]> ∅).
-Definition s24 : StoreN := <[ex_x := 2%nat]> (<[ex_y := 4%nat]> ∅).
+Definition s13 : StoreN := <['x := 1%nat]> (<['y := 3%nat]> ∅).
+Definition s14 : StoreN := <['x := 1%nat]> (<['y := 4%nat]> ∅).
+Definition s23 : StoreN := <['x := 2%nat]> (<['y := 3%nat]> ∅).
+Definition s24 : StoreN := <['x := 2%nat]> (<['y := 4%nat]> ∅).
 
 Definition mx : WorldN := {|
-  world_dom := {[ex_x]};
+  world_dom := {['x]};
   world_stores := fun s => s = sx1 ∨ s = sx2;
 |}.
 
 Definition my : WorldN := {|
-  world_dom := {[ex_y]};
+  world_dom := {['y]};
   world_stores := fun s => s = sy3 ∨ s = sy4;
 |}.
 
 Definition mxy_diag : WorldN := {|
-  world_dom := {[ex_x; ex_y]};
+  world_dom := {['x; 'y]};
   world_stores := fun s => s = s13 ∨ s = s24;
 |}.
 
 Definition mx_one : WorldN := {|
-  world_dom := {[ex_x]};
+  world_dom := {['x]};
   world_stores := fun s => s = sx1;
 |}.
 
 Definition mx_two : WorldN := {|
-  world_dom := {[ex_x]};
+  world_dom := {['x]};
   world_stores := fun s => s = sx2;
 |}.
 
@@ -81,19 +85,19 @@ Proof. Admitted.
 (** ** Restriction order: [⊑] compares projections, not cardinalities. *)
 
 Example restrict_diag_to_x :
-  raw_restrict mxy_diag ({[ex_x]}) = mx.
+  raw_restrict mxy_diag ({['x]}) = mx.
 Proof. Admitted.
 
 Example restrict_diag_to_y :
-  raw_restrict mxy_diag ({[ex_y]}) = my.
+  raw_restrict mxy_diag ({['y]}) = my.
 Proof. Admitted.
 
 Example restrict_product_to_x :
-  raw_restrict (raw_product mx my) ({[ex_x]}) = mx.
+  raw_restrict (raw_product mx my) ({['x]}) = mx.
 Proof. Admitted.
 
 Example restrict_product_to_y :
-  raw_restrict (raw_product mx my) ({[ex_y]}) = my.
+  raw_restrict (raw_product mx my) ({['y]}) = my.
 Proof. Admitted.
 
 Example mx_raw_le_diag :
@@ -136,7 +140,7 @@ Proof. Admitted.
 
 (** ** Fiber: fixing a projection selects the compatible slice. *)
 
-Definition sigma_y3 : StoreN := <[ex_y := 3%nat]> ∅.
+Definition sigma_y3 : StoreN := <['y := 3%nat]> ∅.
 
 Example fiber_y3_keeps_13_and_23 :
   raw_fiber (raw_product mx my) sigma_y3 s13 ∧
