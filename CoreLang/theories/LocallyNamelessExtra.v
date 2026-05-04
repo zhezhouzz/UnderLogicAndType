@@ -489,19 +489,127 @@ Proof.
     + by rewrite decide_False by done.
 Qed.
 
+(* After the UnderType-style mutual induction, only the bound-variable normal
+   form remains; keep that case behind a small tactic instead of scattering
+   low-level [decide] splits through the proof. *)
+Local Ltac solve_open_swap_bvar :=
+  autounfold with class_simpl in *; simpl in *;
+  repeat match goal with
+  | |- context[decide (?i = ?j)] =>
+      destruct (decide (i = j)); subst; simpl in *; try congruence
+  end;
+  try rewrite open_rec_lc_value by eauto;
+  try reflexivity.
+
+Definition open_swap_mutual :
+  (forall (t : value) i j (u v : value),
+    lc_value u ->
+    lc_value v ->
+    i <> j ->
+    {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t)) *
+  (forall (t : tm) i j (u v : value),
+    lc_value u ->
+    lc_value v ->
+    i <> j ->
+    {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t)).
+Proof.
+  apply value_tm_mutind; intros; autounfold with class_simpl in *; ln_simpl; auto;
+    try solve [autounfold with class_simpl in *; ln_simpl; f_equal; eauto].
+  all: solve_open_swap_bvar.
+Defined.
+
+Lemma open_swap_value (t : value) i j (u v : value) :
+    lc_value u ->
+    lc_value v ->
+    i <> j ->
+    {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t).
+Proof. exact (fst open_swap_mutual t i j u v). Qed.
+
+Lemma open_swap_tm (t : tm) i j (u v : value) :
+    lc_value u ->
+    lc_value v ->
+    i <> j ->
+    {i ~> v} ({j ~> u} t) = {j ~> u} ({i ~> v} t).
+Proof. exact (snd open_swap_mutual t i j u v). Qed.
+
+Lemma open_lc_respect_mutual :
+  (forall v' (Hlc : lc_value v') k u w v,
+    v' = {k ~> u} v ->
+    lc_value u ->
+    lc_value w ->
+    lc_value ({k ~> w} v)) /\
+  (forall e' (Hlc : lc_tm e') k u w e,
+    e' = {k ~> u} e ->
+    lc_value u ->
+    lc_value w ->
+    lc_tm ({k ~> w} e)).
+Proof.
+  apply lc_mutind; intros;
+    repeat match goal with
+    | H : _ = {_ ~> _} ?e |- _ =>
+        destruct e; autounfold with class_simpl in *; simpl in *;
+        try case_decide; simplify_eq
+    end; eauto.
+  - eapply LC_lam.
+    let x := fresh "x" in
+    let acc := collect_stales tt in instantiate (1 := L ∪ acc); intros x **;
+    autounfold with class_simpl in *; simpl in *;
+    assert (HxL : x ∉ L) by my_set_solver;
+    specialize (H x HxL);
+    match goal with
+    | |- lc_tm (open_tm 0 (vfvar ?x) (open_tm (S ?k) ?w ?e)) =>
+        replace (open_tm 0 (vfvar x) (open_tm (S k) w e))
+          with (open_tm (S k) w (open_tm 0 (vfvar x) e))
+          by (symmetry; apply open_swap_tm; eauto; lia)
+    end;
+    eapply H; [symmetry; apply open_swap_tm; eauto; lia | eauto | eauto].
+  - eapply LC_fix.
+    let x := fresh "x" in
+    let acc := collect_stales tt in instantiate (1 := L ∪ acc); intros x **;
+    autounfold with class_simpl in *; simpl in *;
+    assert (HxL : x ∉ L) by my_set_solver;
+    specialize (H x HxL);
+    match goal with
+    | |- lc_value (open_value 0 (vfvar ?x) (open_value (S ?k) ?w ?v)) =>
+        replace (open_value 0 (vfvar x) (open_value (S k) w v))
+          with (open_value (S k) w (open_value 0 (vfvar x) v))
+          by (symmetry; apply open_swap_value; eauto; lia)
+    end;
+    eapply H; [symmetry; apply open_swap_value; eauto; lia | eauto | eauto].
+  - eapply LC_lete; eauto.
+    let x := fresh "x" in
+    let acc := collect_stales tt in instantiate (1 := L ∪ acc); intros x **;
+    autounfold with class_simpl in *; simpl in *;
+    assert (HxL : x ∉ L) by my_set_solver;
+    specialize (H0 x HxL);
+    match goal with
+    | |- lc_tm (open_tm 0 (vfvar ?x) (open_tm (S ?k) ?w ?e)) =>
+        replace (open_tm 0 (vfvar x) (open_tm (S k) w e))
+          with (open_tm (S k) w (open_tm 0 (vfvar x) e))
+          by (symmetry; apply open_swap_tm; eauto; lia)
+    end;
+    eapply H0; [symmetry; apply open_swap_tm; eauto; lia | eauto | eauto].
+Qed.
+
 Lemma open_lc_respect_value k u w v :
   lc_value u ->
   lc_value w ->
   lc_value (open_value k u v) ->
   lc_value (open_value k w v).
-Proof. Admitted.
+Proof.
+  intros Hu Hw Hlc.
+  exact (proj1 open_lc_respect_mutual (open_value k u v) Hlc k u w v eq_refl Hu Hw).
+Qed.
 
 Lemma open_lc_respect_tm k u w e :
   lc_value u ->
   lc_value w ->
   lc_tm (open_tm k u e) ->
   lc_tm (open_tm k w e).
-Proof. Admitted.
+Proof.
+  intros Hu Hw Hlc.
+  exact (proj2 open_lc_respect_mutual (open_tm k u e) Hlc k u w e eq_refl Hu Hw).
+Qed.
 
 Lemma open_idemp_value k u v :
   lc_value u ->

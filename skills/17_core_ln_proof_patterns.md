@@ -70,6 +70,48 @@ open_tm (S k) u (open_tm 0 (vfvar x) body)
 对涉及 binder index 的 proof，优先显式写出 `destruct (decide (...))` 和 `lia`，
 不要让自动化猜 index arithmetic。
 
+## Open swap: stay at the UnderType abstraction level
+
+证明 `open_swap` 时不要写两个互不相干的 `value`/`tm` induction，也不要一看到
+`if decide` 就在 lemma 里手动拆。UnderType 的关键形状是 simultaneous recursion：
+同一个 `P` 同时覆盖 `value` 和 `tm`，这样 `vlam`、`vfix`、`tlete` 这些跨语法类的
+constructor 可以直接使用另一侧 IH。
+
+在本 repo 中，`value_tm_mutind` 返回的是 `*`，所以可以先证明一个 pair helper：
+
+```coq
+Definition open_swap_mutual :
+  (forall v, ... open_value ... v ...) *
+  (forall e, ... open_tm ... e ...).
+Proof.
+  apply value_tm_mutind; intros; autounfold with class_simpl in *; ln_simpl; auto;
+    try solve [autounfold with class_simpl in *; ln_simpl; f_equal; eauto].
+  all: solve_the_remaining_bvar_normal_form.
+Defined.
+```
+
+注意 `try solve [f_equal; eauto]`，不要写 `try (f_equal; eauto)`：后者会在
+`vbvar` case 里留下 `i = j`、`v = u` 之类由 `f_equal` 生成的子目标，污染证明状态。
+如果 `if decide` 还残留，优先检查是否忘了 `autounfold with class_simpl in *`
+把 typeclass notation 展开，而不是马上手动 case split。
+
+`open_lc_respect` 也应该用 simultaneous `lc_value`/`lc_tm` induction。Binder case
+的核心步骤是用 `open_swap` 把
+
+```coq
+open 0 (vfvar x) (open (S k) w body)
+```
+
+改成
+
+```coq
+open (S k) w (open 0 (vfvar x) body)
+```
+
+然后把同样交换过的 `u` 版本作为等式前提交给 IH。避免 set 里漏掉原来的 cofinite
+`L`：构造新的 avoidance set 时用 `L ∪ collect_stales`，这样可以直接得到
+`x ∉ L` 来 specialize IH。
+
 ## Substitution under cofinite binders
 
 证明 `subst_lc` 的 binder case 时，fresh set 必须扩成 `L ∪ {[x]}`，其中 `x`
