@@ -79,9 +79,18 @@ Inductive step : tm → tm → Prop :=
 
 (** ** Multi-step reduction *)
 
-Definition steps : tm → tm → Prop := rtc step.
+Inductive steps : tm → tm → Prop :=
+  | Steps_refl e :
+      lc_tm e →
+      steps e e
+  | Steps_step e1 e2 e3 :
+      step e1 e2 →
+      steps e2 e3 →
+      steps e1 e3.
 
 Notation "e '→*' e'" := (steps e e') (at level 40).
+
+#[global] Hint Constructors steps : core.
 
 (** ** Value predicate *)
 
