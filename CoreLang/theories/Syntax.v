@@ -69,16 +69,18 @@ Scheme value_mut := Induction for value Sort Type
   with tm_mut    := Induction for tm    Sort Type.
 Combined Scheme value_tm_mutind from value_mut, tm_mut.
 
-(** EqDecision for the mutually-recursive [value]/[tm] types.
-    [solve_decision] cannot handle mutual inductives automatically.
-    We admit these instances here; a full proof requires a mutual Fixpoint
-    producing [Decision (v1 = v2)] / [Decision (e1 = e2)] simultaneously,
-    which is straightforward but verbose. *)
+(** EqDecision for the mutually-recursive [value]/[tm] types. *)
 
-#[global] Instance value_eqdec : EqDecision value.
-Proof. Admitted.
-#[global] Instance tm_eqdec : EqDecision tm.
-Proof. Admitted.
+Fixpoint value_eqdec' (v1 v2 : value) : sumbool (v1 = v2) (v1 <> v2)
+with tm_eqdec' (e1 e2 : tm) : sumbool (e1 = e2) (e1 <> e2).
+Proof.
+  - decide equality; try apply constant_eqdec; try apply ty_eqdec;
+      try apply Nat.eq_dec; try solve_decision.
+  - decide equality; try apply prim_op_eqdec; try solve_decision.
+Defined.
+
+#[global] Instance value_eqdec : EqDecision value := value_eqdec'.
+#[global] Instance tm_eqdec : EqDecision tm := tm_eqdec'.
 
 Coercion vconst : constant >-> value.
 Coercion vfvar  : atom    >-> value.

@@ -193,3 +193,19 @@ destruct (rtc_inv (R := step) e (tret v) Hsteps)
 如果只写 `rtc_inv Hsteps`，Rocq 可能无法推断 `R`，甚至把 `Hsteps` 解析成
 起点参数。head redex 的 inversion 之后，很多 `Step_let` 分支会因为 source
 形状不匹配直接消失，所以同样不要预设每个 constructor 都还有 bullet。
+
+## Mutual EqDecision for LN syntax
+
+对 mutual inductive syntax 写 equality decision 时，可以写 mutual fixpoint：
+
+```coq
+Fixpoint value_eqdec' (v1 v2 : value) : sumbool (v1 = v2) (v1 <> v2)
+with tm_eqdec' (e1 e2 : tm) : sumbool (e1 = e2) (e1 <> e2).
+Proof.
+  - decide equality; try solve_decision.
+  - decide equality; try solve_decision.
+Defined.
+```
+
+不要写 `{v1 = v2} + {v1 <> v2}`：本 repo 的 LN notation `{ x := v } e`
+会和 sumbool braces 冲突，导致 parser 期待 `:=` / `~>` / `<~`。
