@@ -156,3 +156,20 @@ judgement 的 obligations。不要假设 bullet 顺序对应当前 syntactic cat
 如果 IH 名字不稳定，匹配形如
 `forall T2, Γ ⊢ᵥ v1 ⋮ T2 -> TArrow _ _ = T2` 的 hypothesis，比依赖
 `IHHty1` 这类自动名更稳。
+
+## Basic typing strengthening
+
+证明从 `<[x:=Tx]> Γ ⊢ e ⋮ T` 和 `x ∉ fv e` 得到 `Γ ⊢ e ⋮ T` 时：
+
+1. `remember (<[x:=Tx]> Γ)`，再对 typing derivation 归纳；
+2. variable case 用 `lookup_insert_ne`，freshness 给出变量不是 `x`；
+3. binder case 构造新 typing 时把 cofinite set 扩成 `L ∪ {[x]}`，这样打开用的
+   atom `y` 自动满足 `y ≠ x`；
+4. 用 `insert_insert_ne` 交换 `<[y:=T]> (<[x:=Tx]> Γ)` 和
+   `<[x:=Tx]> (<[y:=T]> Γ)`；
+5. 用 `open_fv_tm` / `open_fv_value` 把 `x ∉ fv body` 推到
+   `x ∉ fv (body ^^ y)`。
+
+如果 `eauto` 留下 application/match 这类组合 case，通常是因为每个子项的
+freshness 需要从 `x ∉ fv (compound)` 中拆出来；直接对每个 IH 用
+`[reflexivity | set_solver]` 即可。

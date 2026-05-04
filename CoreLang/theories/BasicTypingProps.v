@@ -283,10 +283,122 @@ Lemma basic_typing_strengthen_value Γ x Tx v T :
   <[x := Tx]> Γ ⊢ᵥ v ⋮ T →
   x ∉ fv_value v →
   Γ ⊢ᵥ v ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty Hfresh.
+  remember (<[x := Tx]> Γ) as Γx.
+  revert Γ HeqΓx Hfresh.
+  induction Hty using value_has_type_mut with
+      (P0 := fun Γx e T _ =>
+        ∀ Γ, Γx = <[x := Tx]> Γ → x ∉ fv_tm e → Γ ⊢ₑ e ⋮ T);
+      intros Γ0 Heq Hfresh; subst; simpl in Hfresh; eauto.
+  - econstructor.
+    rewrite lookup_insert_ne in e by set_solver.
+    exact e.
+  - apply VT_Lam with (L := L ∪ {[x]}). intros y Hy.
+    eapply H; [set_solver | |].
+    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + pose proof (open_fv_tm e (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - apply VT_Fix with (L := L ∪ {[x]}). intros y Hy.
+    eapply H; [set_solver | |].
+    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + pose proof (open_fv_value vf (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - eapply TT_Let with (T1 := T1) (L := L ∪ {[x]}).
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm e1 → Γ ⊢ₑ e1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + intros y Hy.
+    match goal with
+    | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
+        eapply IH; [set_solver | |]
+    end.
+    * rewrite insert_insert_ne by set_solver. reflexivity.
+    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm et → Γ ⊢ₑ et ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+Qed.
 
 Lemma basic_typing_strengthen_tm Γ x Tx e T :
   <[x := Tx]> Γ ⊢ₑ e ⋮ T →
   x ∉ fv_tm e →
   Γ ⊢ₑ e ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty Hfresh.
+  remember (<[x := Tx]> Γ) as Γx.
+  revert Γ HeqΓx Hfresh.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γx v T _ =>
+        ∀ Γ, Γx = <[x := Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ T);
+      intros Γ0 Heq Hfresh; subst; simpl in Hfresh; eauto.
+  - econstructor.
+    rewrite lookup_insert_ne in e by set_solver.
+    exact e.
+  - apply VT_Lam with (L := L ∪ {[x]}). intros y Hy.
+    eapply H; [set_solver | |].
+    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + pose proof (open_fv_tm e (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - apply VT_Fix with (L := L ∪ {[x]}). intros y Hy.
+    eapply H; [set_solver | |].
+    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + pose proof (open_fv_value vf (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - eapply TT_Let with (T1 := T1) (L := L ∪ {[x]}).
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm e1 → Γ ⊢ₑ e1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + intros y Hy.
+    match goal with
+    | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
+        eapply IH; [set_solver | |]
+    end.
+    * rewrite insert_insert_ne by set_solver. reflexivity.
+    * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
+      simpl in Hfv. set_solver.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm et → Γ ⊢ₑ et ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+Qed.
