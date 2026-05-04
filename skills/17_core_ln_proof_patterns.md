@@ -107,3 +107,18 @@ eapply IH; [exact Hx | by apply insert_mono].
 
 如果 proof script 里 IH 名字不稳定，避免猜 `H0`/`H1`，用局部 pattern 抓
 `forall y, y ∉ _ -> forall Γ', ...` 这一类 IH。
+
+## Watch atom coercions in typing substitution
+
+Typing substitution 的 variable case 容易被 notation/coercion 遮住：目标可能打印成
+`{x := vx} x`，其中右边的 `x` 实际上是 atom 经 coercion 得到的 `vfvar x`。
+这种目标上直接 `change`/`replace` 很容易因为 syntactic shape 不一致而失败。
+
+处理这类 proof 时，优先先暴露 concrete term：
+
+```coq
+change (value_subst x vx (vfvar x)) with vx.
+```
+
+如果 `change` 仍不稳定，先把 variable case 单独抽出小 lemma，再在 typing
+substitution proof 中调用，避免在大的 mutual induction proof 里调试 coercion。

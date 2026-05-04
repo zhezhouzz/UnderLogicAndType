@@ -122,16 +122,6 @@ Proof.
     end.
 Qed.
 
-Lemma subst_typing_value Γ x s v T vx :
-  Γ ⊢ᵥ v ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
-  delete x Γ ⊢ᵥ ({x := vx} v) ⋮ T.
-Proof. Admitted.
-
-Lemma subst_typing_tm Γ x s e T vx :
-  Γ ⊢ₑ e ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
-  delete x Γ ⊢ₑ ({x := vx} e) ⋮ T.
-Proof. Admitted.
-
 Lemma typing_value_lc Γ v T : Γ ⊢ᵥ v ⋮ T → lc_value v.
 Proof.
   intros Hty.
@@ -147,3 +137,13 @@ Proof.
       (P := fun Γ v T _ => lc_value v);
       eauto.
 Qed.
+
+Lemma subst_typing_value Γ x s v T vx :
+  Γ ⊢ᵥ v ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
+  delete x Γ ⊢ᵥ ({x := vx} v) ⋮ T.
+Proof. Admitted.
+
+Lemma subst_typing_tm Γ x s e T vx :
+  Γ ⊢ₑ e ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
+  delete x Γ ⊢ₑ ({x := vx} e) ⋮ T.
+Proof. Admitted.
