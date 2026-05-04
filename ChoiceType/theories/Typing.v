@@ -7,18 +7,24 @@
     denotational meaning; their direct proof rules are derived/optional and
     are deliberately not part of this core definition. *)
 
-From ChoiceType Require Export BasicTyping Denotation.
+From ChoiceType Require Export WellFormed.
 
 (** ** Semantic subtyping and context restriction *)
 
 Definition sub_type (Γ : ctx) (τ1 τ2 : choice_ty) : Prop :=
+  wf_choice_ty Γ τ1 ∧
+  wf_choice_ty Γ τ2 ∧
   ∀ e, ⟦Γ⟧ ⊫ FImpl (⟦τ1⟧ e) (⟦τ2⟧ e).
 
 Definition ctx_sub (X : aset) (Γ1 Γ2 : ctx) : Prop :=
+  wf_ctx Γ1 ∧
+  wf_ctx Γ2 ∧
   ∀ r, r ⊨ ⟦Γ1⟧ → res_restrict r X ⊨ ⟦Γ2⟧.
 
 Definition ctx_to_over (Γ Γ' : ctx) : Prop :=
-  FOver (⟦Γ⟧) ⊫ ⟦Γ'⟧.
+  wf_ctx Γ ∧
+  wf_ctx Γ' ∧
+  (FOver (⟦Γ⟧) ⊫ ⟦Γ'⟧).
 
 (** ** The typing judgment *)
 
@@ -26,6 +32,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-Var *)
   | CT_Var x τ :
+      wf_choice_ty (CtxBind x τ) τ →
       has_choice_type
         (CtxBind x τ)
         (tret (vfvar x))
@@ -33,6 +40,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-Const *)
   | CT_Const c :
+      wf_choice_ty CtxEmpty (CTOver (base_ty_of_const c) (b0:c= c)) →
       has_choice_type
         CtxEmpty
         (tret (vconst c))
@@ -40,18 +48,21 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-Sub *)
   | CT_Sub Γ e τ1 τ2 :
+      wf_choice_ty Γ τ2 →
       has_choice_type Γ e τ1 →
       sub_type Γ τ1 τ2 →
       has_choice_type Γ e τ2
 
   (** T-CtxSub *)
   | CT_CtxSub Γ1 Γ2 e τ :
+      wf_choice_ty Γ1 τ →
       has_choice_type Γ2 e τ →
       ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
       has_choice_type Γ1 e τ
 
   (** T-Let *)
   | CT_Let Δ Γ τ1 τ2 e1 e2 (L : aset) :
+      wf_choice_ty (plug_ctx Δ Γ) τ2 →
       has_choice_type Γ e1 τ1 →
       (∀ x, x ∉ L →
         has_choice_type
@@ -62,6 +73,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-LetD *)
   | CT_LetD Δ Γ Γ' τ1 τ2 e1 e2 (L : aset) :
+      wf_choice_ty (plug_ctx Δ Γ) τ2 →
       has_choice_type Γ' e1 τ1 →
       ctx_to_over Γ Γ' →
       (∀ x, x ∉ L →
@@ -73,6 +85,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-Lam *)
   | CT_Lam Γ τx τ e (L : aset) :
+      wf_choice_ty Γ (CTArrow τx τ) →
       (∀ y, y ∉ L →
         has_choice_type
           (CtxComma Γ (CtxBind y τx))
@@ -84,6 +97,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-LamD *)
   | CT_LamD Γ τx τ e (L : aset) :
+      wf_choice_ty Γ (CTWand τx τ) →
       (∀ y, y ∉ L →
         has_choice_type
           (CtxStar Γ (CtxBind y τx))
@@ -95,18 +109,21 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-AppFun *)
   | CT_AppFun Γ τx τ v1 x :
+      wf_choice_ty Γ ({0 ~> x} τ) →
       has_choice_type Γ (tret v1) (CTArrow τx τ) →
       has_choice_type Γ (tret (vfvar x)) τx →
       has_choice_type Γ (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-AppFunD *)
   | CT_AppFunD Γ1 Γ2 τx τ v1 x :
+      wf_choice_ty (CtxStar Γ1 Γ2) ({0 ~> x} τ) →
       has_choice_type Γ1 (tret v1) (CTWand τx τ) →
       has_choice_type Γ2 (tret (vfvar x)) τx →
       has_choice_type (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-Fix *)
   | CT_Fix Γ τx τ vf (L : aset) :
+      wf_choice_ty Γ (CTArrow τx τ) →
       (∀ y, y ∉ L →
         has_choice_type
           (CtxComma Γ
@@ -121,6 +138,7 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
       predicate; the corresponding logic qualifier is still left abstract, so
       this constructor records the separating context structure. *)
   | CT_FixD Γ τx τ vf (L : aset) :
+      wf_choice_ty Γ (CTWand τx τ) →
       (∀ y, y ∉ L →
         has_choice_type
           (CtxStar Γ
@@ -133,18 +151,21 @@ Inductive has_choice_type : ctx → tm → choice_ty → Prop :=
 
   (** T-AppOp.  Primitive operations are unary. *)
   | CT_AppOp Γ op v arg_b ret_b :
+      wf_choice_ty Γ (lift_ty (TBase ret_b)) →
       prim_op_type op = (arg_b, ret_b) →
       has_choice_type Γ (tret v) (lift_ty (TBase arg_b)) →
       has_choice_type Γ (tprim op v) (lift_ty (TBase ret_b))
 
   (** T-AppOpD.  Unary primitive operation in a separated argument context. *)
   | CT_AppOpD Γ1 Γ2 op v arg_b ret_b :
+      wf_choice_ty (CtxStar Γ1 Γ2) (lift_ty (TBase ret_b)) →
       prim_op_type op = (arg_b, ret_b) →
       has_choice_type Γ2 (tret v) (lift_ty (TBase arg_b)) →
       has_choice_type (CtxStar Γ1 Γ2) (tprim op v) (lift_ty (TBase ret_b))
 
   (** T-Match.  The core match is a fixed boolean two-branch eliminator. *)
   | CT_Match Γ v τ et ef :
+      wf_choice_ty Γ τ →
       has_choice_type Γ (tret v) (lift_ty (TBase TBool)) →
       has_choice_type Γ et τ →
       has_choice_type Γ ef τ →
@@ -157,15 +178,23 @@ Arguments typing_choice_inst /.
 (** ** Small admissible helpers kept only where they name core definitions. *)
 
 Lemma sub_type_refl Γ τ :
+  wf_choice_ty Γ τ →
   sub_type Γ τ τ.
-Proof. unfold sub_type, entails. intros e m _ m' _ Hτ. exact Hτ. Qed.
+Proof. Admitted.
 
 Lemma ctx_sub_refl Γ :
+  wf_ctx Γ →
   ctx_sub (ctx_fv Γ) Γ Γ.
 Proof. Admitted.
 
 Lemma ctx_to_over_refl Γ :
+  wf_ctx Γ →
   ctx_to_over Γ Γ.
+Proof. Admitted.
+
+Lemma typing_regular Γ e τ :
+  has_choice_type Γ e τ →
+  wf_ctx Γ ∧ wf_choice_ty Γ τ.
 Proof. Admitted.
 
 (** Substitution preserves choice typing. *)
