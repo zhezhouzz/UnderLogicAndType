@@ -12,7 +12,6 @@ ChoicePrelude/Store.v
 ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Prelude.v
-ChoiceAlgebra/theories/MapFilterDom.v
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 ChoiceAlgebra/examples/ResourceExamples.v
@@ -29,7 +28,6 @@ CoreLang/theories/LocallyNamelessExtra.v
 CoreLang/theories/LocallyNamelessInstances.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
-CoreLang/theories/Proofs.v
 
 ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v
