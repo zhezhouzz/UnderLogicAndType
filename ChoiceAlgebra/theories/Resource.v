@@ -421,7 +421,84 @@ Lemma world_compat_spec (w1 w2 : WfWorld) :
     exists σ,
       raw_restrict w1 X = singleton_world σ ∧
       raw_restrict w2 X = singleton_world σ.
-Proof. Admitted.
+Proof.
+  set (X := world_dom (w1 : World) ∩ world_dom (w2 : World)).
+  split.
+  - intros Hcompat.
+    destruct (wf_ne _ (world_wf w1)) as [σ1 Hσ1].
+    destruct (wf_ne _ (world_wf w2)) as [σ2 Hσ2].
+    exists (store_restrict σ1 X). split.
+    + apply world_ext.
+      * change (world_dom (w1 : World) ∩ X = dom (store_restrict σ1 X)).
+        rewrite store_restrict_dom.
+        change (world_dom (w1 : World) ∩ X = dom σ1 ∩ X).
+        rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+        unfold X. set_solver.
+      * intros σ. simpl. split.
+        -- intros [σ' [Hσ' Hrestr]]. subst σ.
+           pose proof (proj1 (store_compat_spec σ' σ2)
+             (Hcompat σ' σ2 Hσ' Hσ2)) as Hσ'2.
+           pose proof (proj1 (store_compat_spec σ1 σ2)
+             (Hcompat σ1 σ2 Hσ1 Hσ2)) as Hσ12.
+           assert (Hdom'2 : dom σ' ∩ dom σ2 = X).
+           { rewrite (wf_dom _ (world_wf w1) σ' Hσ').
+             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
+             unfold X. set_solver. }
+           assert (Hdom12 : dom σ1 ∩ dom σ2 = X).
+           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
+             unfold X. set_solver. }
+           change (store_restrict σ' (dom σ' ∩ dom σ2) =
+                   store_restrict σ2 (dom σ' ∩ dom σ2)) in Hσ'2.
+           change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
+                   store_restrict σ2 (dom σ1 ∩ dom σ2)) in Hσ12.
+           rewrite Hdom'2 in Hσ'2. rewrite Hdom12 in Hσ12.
+           etrans; [exact Hσ'2 | symmetry; exact Hσ12].
+        -- intros ->. exists σ1. split; [exact Hσ1 | reflexivity].
+    + apply world_ext.
+      * change (world_dom (w2 : World) ∩ X = dom (store_restrict σ1 X)).
+        rewrite store_restrict_dom.
+        change (world_dom (w2 : World) ∩ X = dom σ1 ∩ X).
+        rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+        unfold X. set_solver.
+      * intros σ. simpl. split.
+        -- intros [σ' [Hσ' Hrestr]]. subst σ.
+           pose proof (proj1 (store_compat_spec σ1 σ')
+             (Hcompat σ1 σ' Hσ1 Hσ')) as Hσ1'.
+           assert (Hdom1' : dom σ1 ∩ dom σ' = X).
+           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+             rewrite (wf_dom _ (world_wf w2) σ' Hσ').
+             unfold X. set_solver. }
+           change (store_restrict σ1 (dom σ1 ∩ dom σ') =
+                   store_restrict σ' (dom σ1 ∩ dom σ')) in Hσ1'.
+           rewrite Hdom1' in Hσ1'.
+           symmetry. exact Hσ1'.
+        -- intros ->. exists σ2. split; [exact Hσ2 |].
+           pose proof (proj1 (store_compat_spec σ1 σ2)
+             (Hcompat σ1 σ2 Hσ1 Hσ2)) as Hσ12.
+           assert (Hdom12 : dom σ1 ∩ dom σ2 = X).
+           { rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+             rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
+             unfold X. set_solver. }
+           change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
+                   store_restrict σ2 (dom σ1 ∩ dom σ2)) in Hσ12.
+           rewrite Hdom12 in Hσ12. symmetry. exact Hσ12.
+  - intros [σ [Hw1 Hw2]] σ1 σ2 Hσ1 Hσ2.
+    apply (proj2 (store_compat_spec σ1 σ2)).
+    assert (H1 : store_restrict σ1 X = σ).
+    { assert (Hraw : raw_restrict w1 X (store_restrict σ1 X)).
+      { exists σ1. split; [exact Hσ1 | reflexivity]. }
+      rewrite Hw1 in Hraw. simpl in Hraw. exact Hraw. }
+    assert (H2 : store_restrict σ2 X = σ).
+    { assert (Hraw : raw_restrict w2 X (store_restrict σ2 X)).
+      { exists σ2. split; [exact Hσ2 | reflexivity]. }
+      rewrite Hw2 in Hraw. simpl in Hraw. exact Hraw. }
+    replace (dom σ1 ∩ dom σ2) with X.
+    { rewrite H1, H2. reflexivity. }
+    rewrite (wf_dom _ (world_wf w1) σ1 Hσ1).
+    rewrite (wf_dom _ (world_wf w2) σ2 Hσ2).
+    reflexivity.
+Qed.
 
 End Resource.
 
