@@ -4,7 +4,7 @@
     All proofs are [Admitted] in this overnight skeleton; the
     statements are the ones needed by the denotational semantics. *)
 
-From CoreLang Require Export BasicTyping SmallStep.
+From CoreLang Require Export BasicTyping SmallStep LocallyNamelessProps.
 
 (** ** Progress *)
 
@@ -44,29 +44,29 @@ Qed.
 
 (** [open_rec_lc] *)
 Lemma open_rec_lc_value_proof k u (v : value) : lc_value v → open_value k u v = v.
-Proof. Admitted.
+Proof. intros Hlc. by apply open_rec_lc_value. Qed.
 
 Lemma open_rec_lc_tm_proof k u (e : tm) : lc_tm e → open_tm k u e = e.
-Proof. Admitted.
+Proof. intros Hlc. by apply open_rec_lc_tm. Qed.
 
 (** [subst_fresh] *)
 Lemma subst_fresh_value_proof x u (v : value) :
   x ∉ fv_value v → value_subst x u v = v.
-Proof. Admitted.
+Proof. apply subst_fresh_value_proven. Qed.
 
 Lemma subst_fresh_tm_proof x u (e : tm) :
   x ∉ fv_tm e → tm_subst x u e = e.
-Proof. Admitted.
+Proof. apply subst_fresh_tm_proven. Qed.
 
 (** [subst_open] *)
 Lemma subst_open_value_proof x u s (v : value) k :
   lc_value u →
   value_subst x u (open_value k s v) =
   open_value k (value_subst x u s) (value_subst x u v).
-Proof. Admitted.
+Proof. apply subst_open_value. Qed.
 
 Lemma subst_open_tm_proof x u s (e : tm) k :
   lc_value u →
   tm_subst x u (open_tm k s e) =
   open_tm k (value_subst x u s) (tm_subst x u e).
-Proof. Admitted.
+Proof. apply subst_open_tm. Qed.
