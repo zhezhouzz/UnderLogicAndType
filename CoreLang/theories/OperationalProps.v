@@ -141,7 +141,25 @@ Qed.
 Lemma reduction_lete e1 e2 v :
   tlete e1 e2 →* tret v →
   ∃ vx, e1 →* tret vx ∧ open_tm 0 vx e2 →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hsteps.
+  remember (tlete e1 e2) as e eqn:He.
+  remember (tret v) as r eqn:Hr.
+  revert e1 e2 v He Hr.
+  induction Hsteps; intros e1' e2' v' He Hr; subst.
+  - discriminate.
+  - inversion H; subst.
+    + inversion H0; subst; try discriminate.
+      eexists. split; [|exact Hsteps].
+      apply Steps_refl.
+      match goal with
+      | Hlc : lc_tm (tlete (tret _) _) |- _ =>
+          apply lc_lete_iff_body in Hlc as [Hret _]; exact Hret
+      end.
+    + destruct (IHHsteps e1'0 e2' v' eq_refl eq_refl) as [vx [Hsteps1 Hsteps2]].
+      exists vx. split; [|exact Hsteps2].
+      eapply Steps_step; eauto.
+Qed.
 
 Lemma reduction_lete_intro e1 e2 vx v :
   body_tm e2 →
