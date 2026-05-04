@@ -6,10 +6,62 @@ From CoreLang Require Import BasicTyping LocallyNamelessProps.
     direct-style CoreLang syntax. *)
 
 Lemma basic_typing_contains_fv_value Γ v T :
-  Γ ⊢ᵥ v ⋮ T → fv_value v ⊆ dom Γ
-with basic_typing_contains_fv_tm Γ e T :
+  Γ ⊢ᵥ v ⋮ T → fv_value v ⊆ dom Γ.
+Proof.
+  intros Hty.
+  induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T _ => fv_tm e ⊆ dom Γ);
+      simpl; try set_solver.
+  - apply elem_of_dom_2 in e. set_solver.
+  - pose (x := fresh_for (L ∪ fv_tm e)).
+    assert (Hx : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    pose proof (open_fv_tm' e (vfvar x) 0) as Hopen.
+    rewrite dom_insert in H. set_solver.
+  - pose (x := fresh_for (L ∪ fv_value vf)).
+    assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    pose proof (open_fv_value' vf (vfvar x) 0) as Hopen.
+    rewrite dom_insert in H. set_solver.
+  - pose (x := fresh_for (L ∪ fv_tm e2)).
+    assert (Hx : x ∉ L ∪ fv_tm e2) by (subst x; apply fresh_for_not_in).
+    match goal with
+    | IH : ∀ y : atom, y ∉ L → fv_tm (e2 ^^ y) ⊆ _ |- _ =>
+        specialize (IH x ltac:(set_solver));
+        rewrite dom_insert in IH
+    end.
+    pose proof (open_fv_tm' e2 (vfvar x) 0) as Hopen.
+    set_solver.
+Qed.
+
+Lemma basic_typing_contains_fv_tm Γ e T :
   Γ ⊢ₑ e ⋮ T → fv_tm e ⊆ dom Γ.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γ v T _ => fv_value v ⊆ dom Γ);
+      simpl; try set_solver.
+  - apply elem_of_dom_2 in e. set_solver.
+  - pose (x := fresh_for (L ∪ fv_tm e)).
+    assert (Hx : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    pose proof (open_fv_tm' e (vfvar x) 0) as Hopen.
+    rewrite dom_insert in H. set_solver.
+  - pose (x := fresh_for (L ∪ fv_value vf)).
+    assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
+    specialize (H x ltac:(set_solver)).
+    pose proof (open_fv_value' vf (vfvar x) 0) as Hopen.
+    rewrite dom_insert in H. set_solver.
+  - pose (x := fresh_for (L ∪ fv_tm e2)).
+    assert (Hx : x ∉ L ∪ fv_tm e2) by (subst x; apply fresh_for_not_in).
+    match goal with
+    | IH : ∀ y : atom, y ∉ L → fv_tm (e2 ^^ y) ⊆ _ |- _ =>
+        specialize (IH x ltac:(set_solver));
+        rewrite dom_insert in IH
+    end.
+    pose proof (open_fv_tm' e2 (vfvar x) 0) as Hopen.
+    set_solver.
+Qed.
 
 Class FvSubsetGamma (E : Type) `{Stale E} `{Typing (gmap atom ty) E ty} :=
   fv_subset_gamma : ∀ Γ (e : E) T, Γ ⊢ e ⋮ T → stale e ⊆ dom Γ.

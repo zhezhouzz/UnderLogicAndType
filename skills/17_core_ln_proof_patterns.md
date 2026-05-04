@@ -122,3 +122,15 @@ change (value_subst x vx (vfvar x)) with vx.
 
 如果 `change` 仍不稳定，先把 variable case 单独抽出小 lemma，再在 typing
 substitution proof 中调用，避免在大的 mutual induction proof 里调试 coercion。
+
+## FV containment under cofinite typing binders
+
+证明 typing implies `fv ⊆ dom Γ` 时，binder case 的标准套路是：
+
+1. 选择 `x = fresh_for (L ∪ fv body)`；
+2. 用 typing IH 得到 `fv (body ^^ x) ⊆ dom (<[x:=T]> Γ)`；
+3. 用 `open_fv_tm'` / `open_fv_value'` 得到 `fv body ⊆ fv (body ^^ x)`；
+4. `rewrite dom_insert in IH; set_solver` 去掉 fresh 的 `{[x]}`。
+
+如果 IH 名字不稳定，就 pattern-match 形如
+`forall y, y ∉ L -> fv_tm (body ^^ y) ⊆ _` 的 hypothesis。
