@@ -60,22 +60,26 @@ Lemma wfworld_store_restrict_dom (w : WfWorld) (σ : StoreT) (X : aset) :
   w σ → dom (store_restrict σ X) = world_dom (w : World) ∩ X.
 Proof.
   intros Hσ. rewrite store_restrict_dom.
-  change (dom σ ∩ X = world_dom (w : World) ∩ X).
-  rewrite (wfworld_store_dom w σ Hσ). reflexivity.
+  replace (world_dom (w : World) ∩ X) with (dom σ ∩ X)
+    by (rewrite (wfworld_store_dom w σ Hσ); reflexivity).
+  reflexivity.
 Qed.
 
-(** Small domain-normalization tactics for resource proofs.  They keep the
-    unavoidable [change] steps localized around store/world domain coercions. *)
+(** Small domain-normalization tactics for resource proofs.  They expose the
+    canonical world-domain shape behind store-domain side conditions. *)
 Ltac solve_disjoint_world_domains w1 σ1 Hσ1 w2 σ2 Hσ2 :=
-  change (dom σ1 ∩ dom σ2 = ∅);
-  rewrite (wfworld_store_dom w1 σ1 Hσ1);
-  rewrite (wfworld_store_dom w2 σ2 Hσ2).
+  replace (dom σ1 ∩ dom σ2)
+    with (world_dom (w1 : World) ∩ world_dom (w2 : World))
+    by (rewrite (wfworld_store_dom w1 σ1 Hσ1);
+        rewrite (wfworld_store_dom w2 σ2 Hσ2);
+        reflexivity).
 
 Ltac normalize_store_overlap H w1 σ1 Hσ1 w2 σ2 Hσ2 :=
-  change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
-          store_restrict σ2 (dom σ1 ∩ dom σ2)) in H;
-  rewrite (wfworld_store_dom w1 σ1 Hσ1) in H;
-  rewrite (wfworld_store_dom w2 σ2 Hσ2) in H.
+  replace (dom σ1 ∩ dom σ2)
+    with (world_dom (w1 : World) ∩ world_dom (w2 : World)) in H
+    by (rewrite (wfworld_store_dom w1 σ1 Hσ1);
+        rewrite (wfworld_store_dom w2 σ2 Hσ2);
+        reflexivity).
 
 Ltac normalize_restrict_domain_of w σ X Hσ :=
   replace (dom (store_restrict σ X))

@@ -98,7 +98,7 @@ setoid_rewrite map_lookup_filter_Some.
 simpl. split.
 ```
 
-### 4. `change` 用于显式化 overloaded 目标
+### 4. 显式化 overloaded 目标
 
 当 Rocq 报错类似：
 
@@ -109,13 +109,18 @@ Could not find an instance for FMap (@Store)
 
 通常是隐式参数或 section-level alias 干扰了 typeclass inference。
 
-可以用 `change` 把目标改成具体的 map 表达式，例如：
+一次性调试时可以用 `change` 看清目标的 convertible normal form，例如：
 
 ```coq
 change (@map_restrict atom _ nat s X !! k = Some v).
 ```
 
-不过如果这个 pattern 频繁出现，说明这个 lemma 应该上移到定义所在文件，而不是留在 example 中。
+但 proof script 里不要反复留下这种 `change`。如果这个 pattern 频繁出现，优先：
+
+- 把 lemma 上移到定义所在文件；
+- 或者写一个窄的 normalization tactic，用 `replace ... by ...`、`rewrite`、
+  `setoid_rewrite` 暴露 canonical form；
+- 再让主证明调用这个 tactic/lemma。
 
 ## Store compatibility 的推荐 spec
 
@@ -149,13 +154,13 @@ Qed.
 
 这样 example 表达的是直觉，而不是重复展开底层 finite-map proof。
 
-## 把 `change` 收敛到小 tactic
+## 把 normal form 调整收敛到小 tactic
 
-如果同一类 `change` 在多个 proof 中重复出现，不要急着写一个会全局展开所有定义的
-large tactic。更稳的做法是：
+如果同一类 normal-form 调整在多个 proof 中重复出现，不要急着写一个会全局展开所有
+定义的 large tactic。更稳的做法是：
 
 1. 先加小 lemma，把 semantic fact 命名出来；
-2. 再加参数化的小 tactic，把必要的 `change`/`rewrite` 收在 tactic 内部；
+2. 再加参数化的小 tactic，把必要的 `replace`/`rewrite` 收在 tactic 内部；
 3. 最后用中间 lemma 改写主证明。
 
 例如 world/resource 层可以先证明：
@@ -172,10 +177,11 @@ Lemma wfworld_store_restrict_dom (w : WfWorld) σ X :
 
 ```coq
 Ltac normalize_store_overlap H w1 σ1 Hσ1 w2 σ2 Hσ2 :=
-  change (store_restrict σ1 (dom σ1 ∩ dom σ2) =
-          store_restrict σ2 (dom σ1 ∩ dom σ2)) in H;
-  rewrite (wfworld_store_dom w1 σ1 Hσ1) in H;
-  rewrite (wfworld_store_dom w2 σ2 Hσ2) in H.
+  replace (dom σ1 ∩ dom σ2)
+    with (world_dom (w1 : World) ∩ world_dom (w2 : World)) in H
+    by (rewrite (wfworld_store_dom w1 σ1 Hσ1);
+        rewrite (wfworld_store_dom w2 σ2 Hσ2);
+        reflexivity).
 ```
 
 这种 tactic 虽然需要显式传参数，但它的行为可预测：只处理一个 hypothesis，
