@@ -148,7 +148,20 @@ Lemma reduction_lete_intro e1 e2 vx v :
   e1 →* tret vx →
   open_tm 0 vx e2 →* tret v →
   tlete e1 e2 →* tret v.
-Proof. Admitted.
+Proof.
+  intros Hbody Hsteps1.
+  remember (tret vx) as r eqn:Hr.
+  revert vx Hr e2 Hbody v.
+  induction Hsteps1; intros vx Hr e2' Hbody v Hsteps2.
+  - inversion Hr; subst.
+    eapply steps_trans; [|exact Hsteps2].
+    apply steps_R. apply Step_head. apply HS_Ret.
+    apply lc_lete_iff_body. split; eauto.
+  - eapply Steps_step.
+    + apply Step_let; eauto.
+      apply lc_lete_iff_body. split; eauto using step_regular1.
+    + eapply IHHsteps1; eauto.
+Qed.
 
 Lemma reduction_beta s body vx v :
   lc_value vx →
