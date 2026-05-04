@@ -107,6 +107,8 @@ atoms.
 | `Formula.v` | Formula syntax (`FAtom`, `FForall`, `FExists`, `FFib`, …), formula renaming, and `res_models` |
 | `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
 
+Examples live in `ChoiceLogic/examples/`.
+
 ### `LocallyNameless/` — Proof support
 
 Small Ltac support and reusable typeclasses for locally-nameless metatheory.
