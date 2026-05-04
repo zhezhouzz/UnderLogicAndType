@@ -135,7 +135,28 @@ Lemma subst_commute_value x ux y uy v :
   y ∉ fv_value ux ->
   value_subst x ux (value_subst y uy v) =
   value_subst y uy (value_subst x ux v).
-Proof. Admitted.
+Proof.
+  intros Hxy Hxuy Hyux.
+  induction v using value_mut with
+      (P0 := fun e =>
+        tm_subst x ux (tm_subst y uy e) =
+        tm_subst y uy (tm_subst x ux e));
+      simpl; try reflexivity.
+  - destruct (decide (y = x0)); subst; simpl.
+    + rewrite decide_False by done.
+      simpl. rewrite decide_True by reflexivity.
+      by rewrite subst_fresh_value_proven.
+    + destruct (decide (x = x0)); subst; simpl.
+      * symmetry. by rewrite subst_fresh_value_proven.
+      * by rewrite decide_False by done.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+Qed.
 
 Lemma subst_commute_tm x ux y uy e :
   x <> y ->
@@ -143,7 +164,28 @@ Lemma subst_commute_tm x ux y uy e :
   y ∉ fv_value ux ->
   tm_subst x ux (tm_subst y uy e) =
   tm_subst y uy (tm_subst x ux e).
-Proof. Admitted.
+Proof.
+  intros Hxy Hxuy Hyux.
+  induction e using tm_mut with
+      (P := fun v =>
+        value_subst x ux (value_subst y uy v) =
+        value_subst y uy (value_subst x ux v));
+      simpl; try reflexivity.
+  - destruct (decide (y = x0)); subst; simpl.
+    + rewrite decide_False by done.
+      simpl. rewrite decide_True by reflexivity.
+      by rewrite subst_fresh_value_proven.
+    + destruct (decide (x = x0)); subst; simpl.
+      * symmetry. by rewrite subst_fresh_value_proven.
+      * by rewrite decide_False by done.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+  - f_equal; eauto.
+Qed.
 
 Lemma subst_subst_value x ux y uy v :
   x <> y ->
@@ -204,12 +246,44 @@ Proof. Admitted.
 Lemma fv_of_subst_value_closed x u v :
   fv_value u = ∅ ->
   fv_value (value_subst x u v) = fv_value v ∖ {[x]}.
-Proof. Admitted.
+Proof.
+  intros Hu.
+  apply leibniz_equiv.
+  split.
+  - pose proof (fv_of_subst_value x u v) as Hsub.
+    rewrite Hu in Hsub. my_set_solver.
+  - assert (Hrev : ∀ x u,
+        fv_value u = ∅ →
+        fv_value v ∖ {[x]} ⊆ fv_value (value_subst x u v)).
+    { clear x u Hu. induction v using value_mut with
+        (P0 := fun e => ∀ x u,
+          fv_value u = ∅ ->
+          fv_tm e ∖ {[x]} ⊆ fv_tm (tm_subst x u e));
+        simpl; intros y u Hu; try my_set_solver.
+      destruct (decide (y = x)); subst; simpl; my_set_solver. }
+    by apply Hrev.
+Qed.
 
 Lemma fv_of_subst_tm_closed x u e :
   fv_value u = ∅ ->
   fv_tm (tm_subst x u e) = fv_tm e ∖ {[x]}.
-Proof. Admitted.
+Proof.
+  intros Hu.
+  apply leibniz_equiv.
+  split.
+  - pose proof (fv_of_subst_tm x u e) as Hsub.
+    rewrite Hu in Hsub. my_set_solver.
+  - assert (Hrev : ∀ x u,
+        fv_value u = ∅ →
+        fv_tm e ∖ {[x]} ⊆ fv_tm (tm_subst x u e)).
+    { clear x u Hu. induction e using tm_mut with
+        (P := fun v => ∀ x u,
+          fv_value u = ∅ ->
+          fv_value v ∖ {[x]} ⊆ fv_value (value_subst x u v));
+        simpl; intros y u Hu; try my_set_solver.
+      destruct (decide (y = x)); subst; simpl; my_set_solver. }
+    by apply Hrev.
+Qed.
 
 Lemma subst_shadow_value x z u v :
   x ∉ fv_value v ->
