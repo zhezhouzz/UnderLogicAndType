@@ -113,10 +113,6 @@ Lemma value_no_step v e :
   ¬ step (tret v) e.
 Proof. intro Hstep. eapply val_no_step; eauto. Qed.
 
-Lemma head_step_deterministic e e1 e2 :
-  head_step e e1 → head_step e e2 → e1 = e2.
-Proof. apply head_step_det. Qed.
-
 Lemma basic_step_preservation Γ e e' T :
   Γ ⊢ₑ e ⋮ T → step e e' → Γ ⊢ₑ e' ⋮ T.
 Proof. apply step_preserves_type. Qed.

@@ -9,17 +9,27 @@
 
 From CoreLang Require Export Syntax BasicTyping.
 
-(** ** Evaluation of primitive operations *)
+(** ** Evaluation of primitive operations
 
-Definition prim_eval (op : prim_op) (c : constant) : option constant :=
-  match op, c with
-  | op_eq0, cnat n => Some (cbool (n =? 0))
-  | _, _ => None
-  end.
+    Primitive evaluation is relational because generators are intentionally
+    nondeterministic.  The dummy boolean inputs for generators make all
+    primitives unary, matching the rest of the ANF core language. *)
 
-(** Consistency axioms (not needed for type soundness, but clarify intent). *)
-Lemma prim_eval_eq0 : ∀ n, prim_eval op_eq0 (cnat n) = Some (cbool (n =? 0)).
-Proof. reflexivity. Qed.
+Inductive prim_step : prim_op → constant → constant → Prop :=
+  | Prim_eq0 n :
+      prim_step op_eq0 (cnat n) (cbool (n =? 0))
+  | Prim_bool_gen_true b :
+      prim_step op_bool_gen (cbool b) (cbool true)
+  | Prim_bool_gen_false b :
+      prim_step op_bool_gen (cbool b) (cbool false)
+  | Prim_nat_gen b n :
+      prim_step op_nat_gen (cbool b) (cnat n)
+  | Prim_plus1 n :
+      prim_step op_plus1 (cnat n) (cnat (S n))
+  | Prim_minus1 n :
+      prim_step op_minus1 (cnat n) (cnat (Nat.pred n)).
+
+#[global] Hint Constructors prim_step : core.
 
 (** ** Head reduction *)
 
@@ -32,9 +42,9 @@ Inductive head_step : tm → tm → Prop :=
       lc_tm (tlete (tret v) e) →
       head_step (tlete (tret v) e) ({0 ~> v} e)
 
-  (** [tprim op c  →  c']  when [prim_eval] succeeds *)
+  (** [tprim op c  →  c']  when [prim_step op c c'] holds. *)
   | HS_Op op c c' :
-      prim_eval op c = Some c' →
+      prim_step op c c' →
       lc_tm (tprim op (vconst c)) →
       head_step (tprim op (vconst c)) (tret (vconst c'))
 
@@ -107,16 +117,6 @@ Lemma val_steps_self v e : tret v →* e → e = tret v.
 Proof.
   intro H. inversion H; subst; [reflexivity|].
   exfalso. eapply val_no_step; eauto.
-Qed.
-
-(** ** Determinism *)
-
-Lemma head_step_det e e1 e2 :
-  head_step e e1 → head_step e e2 →
-  e1 = e2.
-Proof.
-  intros H1 H2.
-  inversion H1; subst; inversion H2; subst; eauto; try congruence.
 Qed.
 
 (** ** Preservation (BasicTyping invariant — Admitted here, proved in Properties) *)

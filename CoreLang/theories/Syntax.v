@@ -32,7 +32,11 @@ Inductive constant : Type :=
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
 Inductive prim_op : Type :=
-  | op_eq0.  (** unary zero test on natural numbers *)
+  | op_eq0       (** unary zero test on natural numbers *)
+  | op_bool_gen  (** nondeterministic boolean generator; ignores dummy bool input *)
+  | op_nat_gen   (** nondeterministic natural-number generator; ignores dummy bool input *)
+  | op_plus1     (** successor on natural numbers *)
+  | op_minus1.   (** predecessor on natural numbers, with [pred 0 = 0] *)
 
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
@@ -49,7 +53,9 @@ Definition base_ty_of_const (c : constant) : base_ty :=
                          HATs-style encoding avoids giving [vfix] two
                          binders directly.
       [tlete e1 e2]    : bvar 0 in e2 = the let-bound variable
-      [tmatch v et ef] : boolean case split; both branches bind no variables *)
+      [tmatch v et ef] : boolean case split; both branches bind no variables.
+                         Natural-number matching should be added as a separate
+                         term former if/when it is needed. *)
 
 Inductive value : Type :=
   | vconst (c : constant)

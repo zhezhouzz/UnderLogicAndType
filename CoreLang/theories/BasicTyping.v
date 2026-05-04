@@ -16,6 +16,10 @@ From CoreLang Require Export Syntax.
 Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   match op with
   | op_eq0 => (TNat, TBool)
+  | op_bool_gen => (TBool, TBool)
+  | op_nat_gen => (TBool, TNat)
+  | op_plus1 => (TNat, TNat)
+  | op_minus1 => (TNat, TNat)
   end.
 
 Lemma prim_op_type_wf :

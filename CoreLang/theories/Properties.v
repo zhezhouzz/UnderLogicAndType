@@ -39,10 +39,19 @@ Proof.
       eapply typing_tm_lc. econstructor; eauto.
     + right. eexists. apply Step_let; eauto.
       eapply typing_tm_lc. econstructor; eauto.
-  - destruct op. simpl in H. inversion H; subst.
-    apply canonical_base in H0. destruct H0 as [c [-> Hc]].
-    destruct c; simpl in Hc; try discriminate.
-    right. eexists. apply Step_head. eapply HS_Op; eauto.
+  - destruct op; simpl in H; inversion H; subst;
+      apply canonical_base in H0; destruct H0 as [c [-> Hc]];
+      destruct c as [b|n]; simpl in Hc; try discriminate; right.
+    + exists (tret (vconst (cbool (n =? 0)))).
+      apply Step_head. eapply HS_Op; eauto.
+    + exists (tret (vconst (cbool true))).
+      apply Step_head. eapply HS_Op; eauto.
+    + exists (tret (vconst (cnat 0))).
+      apply Step_head. eapply HS_Op; eauto.
+    + exists (tret (vconst (cnat (S n)))).
+      apply Step_head. eapply HS_Op; eauto.
+    + exists (tret (vconst (cnat (Nat.pred n)))).
+      apply Step_head. eapply HS_Op; eauto.
   - pose proof H as Hfun.
     apply canonical_arrow in H.
     destruct H as [[s' [body ->]] | [Tf [vf ->]]].
