@@ -70,7 +70,7 @@ Definition atom_rename (x y z : atom) : atom :=
   if decide (z = x) then y else z.
 
 Definition aset_rename (x y : atom) (X : aset) : aset :=
-  (if decide (x ∈ X) then {[y]} else ∅) ∪ (X ∖ {[x]}).
+  if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
 
 Section Store.
 
@@ -88,6 +88,38 @@ Definition store_rename_atom (x y : atom) (s : Store) : Store :=
   | None => delete y s
   end.
 
+Lemma store_rename_atom_dom x y s :
+  dom (store_rename_atom x y s) = aset_rename x y (dom s).
+Proof.
+  unfold store_rename_atom, aset_rename.
+  destruct (s !! x) as [v|] eqn:Hx.
+  - destruct (decide (x ∈ dom s)) as [_|Hnotin].
+    + apply set_eq. intros z.
+      change (z ∈ dom (<[y := v]> (delete x s) : gmap atom V) <->
+        z ∈ ({[y]} ∪ dom (s : gmap atom V) ∖ {[x]} : aset)).
+      rewrite elem_of_dom, lookup_insert_is_Some, lookup_delete_is_Some.
+      rewrite elem_of_union, elem_of_singleton, elem_of_difference,
+        elem_of_singleton, elem_of_dom.
+      split.
+      * intros [Hy | [Hny [Hnx His]]].
+        -- left. symmetry. exact Hy.
+        -- right. split; [exact His | congruence].
+      * intros [Hzy | [His Hnx]].
+        -- left. symmetry. exact Hzy.
+        -- destruct (decide (z = y)) as [->|Hzy].
+           ++ left. reflexivity.
+           ++ right. repeat split; eauto; congruence.
+    + exfalso. apply Hnotin. by apply elem_of_dom; exists v.
+  - destruct (decide (x ∈ dom s)) as [Hin|_].
+    + exfalso. apply not_elem_of_dom in Hx. set_solver.
+    + apply set_eq. intros z.
+      change (z ∈ dom (delete y s : gmap atom V) <->
+        z ∈ (dom (s : gmap atom V) ∖ {[y]} : aset)).
+      rewrite elem_of_dom, lookup_delete_is_Some.
+      rewrite elem_of_difference, elem_of_singleton, elem_of_dom.
+      firstorder congruence.
+Qed.
+
 Lemma store_compat_refl s : store_compat s s.
 Proof.
   unfold store_compat. intros x v1 v2 H1 H2. hauto.
@@ -101,6 +133,82 @@ Lemma store_compat_union s1 s2 :
   store_compat s1 s2 →
   store_compat (s1 ∪ s2) (s1 ∪ s2).
 Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
+
+Lemma store_compat_union_inv_l s1 s2 s3 :
+  store_compat (s1 ∪ s2) s3 →
+  store_compat s1 s3.
+Proof.
+  unfold store_compat. intros Hc i v1 v3 H1 H3.
+  eapply Hc; [| exact H3].
+  rewrite lookup_union_Some_raw. left. exact H1.
+Qed.
+
+Lemma store_compat_union_inv_r s1 s2 s3 :
+  store_compat s1 s2 →
+  store_compat (s1 ∪ s2) s3 →
+  store_compat s2 s3.
+Proof.
+  unfold store_compat. intros H12 Hc i v2 v3 H2 H3.
+  destruct (s1 !! i) as [v1|] eqn:H1.
+  - assert (Hv : v1 = v3).
+    { eapply Hc; [| exact H3].
+      rewrite lookup_union_Some_raw. left. exact H1. }
+    assert (Hv' : v1 = v2) by (eapply H12; eauto).
+    congruence.
+  - eapply Hc; [| exact H3].
+    rewrite lookup_union_Some_raw. right. split; [exact H1 | exact H2].
+Qed.
+
+Lemma store_compat_union_intro_r s1 s2 s3 :
+  store_compat s1 s2 →
+  store_compat s1 s3 →
+  store_compat s1 (s2 ∪ s3).
+Proof.
+  unfold store_compat. intros H12 H13 i v1 v23 H1 H23.
+  rewrite lookup_union_Some_raw in H23.
+  destruct H23 as [H2 | [H2none H3]].
+  - eapply H12; eauto.
+  - eapply H13; eauto.
+Qed.
+
+Lemma store_union_comm s1 s2 :
+  store_compat s1 s2 →
+  s1 ∪ s2 = s2 ∪ s1.
+Proof.
+  intros Hcompat. apply map_eq. intros i.
+  rewrite option_eq. intros v.
+  setoid_rewrite lookup_union_Some_raw.
+  split.
+  - intros [H1 | [H1 H2]].
+    + destruct (s2 !! i) as [v2|] eqn:H2.
+      * left.
+        assert (Hv : v = v2) by (eapply Hcompat; eauto).
+        subst. exact H2.
+      * right. split; [exact H2 | exact H1].
+    + left. exact H2.
+  - intros [H2 | [H2 H1]].
+    + destruct (s1 !! i) as [v1|] eqn:H1.
+      * left.
+        assert (Hv : v1 = v) by (eapply Hcompat; eauto).
+        subst. exact H1.
+      * right. split; [exact H1 | exact H2].
+    + left. exact H1.
+Qed.
+
+Lemma store_union_absorb_l s1 s2 :
+  store_compat s1 s2 →
+  dom s2 ⊆ dom s1 →
+  s1 ∪ s2 = s1.
+Proof.
+  intros Hcompat Hsub. apply map_eq. intros i.
+  rewrite option_eq. intros v.
+  rewrite lookup_union_Some_raw.
+  split.
+  - intros [H1 | [H1 H2]]; [exact H1 |].
+    exfalso. apply not_elem_of_dom in H1.
+    apply H1. apply Hsub. by apply elem_of_dom; exists v.
+  - intros H1. left. exact H1.
+Qed.
 
 Lemma store_restrict_dom s X :
   dom (store_restrict s X) = dom s ∩ X.
@@ -224,6 +332,13 @@ Proof.
   apply store_restrict_lookup_some in H2.
   apply store_restrict_lookup_some in H3.
   hauto.
+Qed.
+
+Lemma store_compat_restrict_r s1 s2 X :
+  store_compat s1 s2 → store_compat s1 (store_restrict s2 X).
+Proof.
+  unfold store_compat. intros Hcomp x y z H2 H3.
+  apply store_restrict_lookup_some in H3. hauto.
 Qed.
 
 Lemma store_compat_restrict_eq s1 s2 :
