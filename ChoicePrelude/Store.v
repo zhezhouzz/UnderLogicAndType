@@ -317,6 +317,29 @@ Proof.
   - exfalso. apply Hz. rewrite elem_of_aset_swap. exact Hz'.
 Qed.
 
+Lemma store_compat_swap x y s1 s2 :
+  store_compat (store_swap x y s1) (store_swap x y s2) ↔
+  store_compat s1 s2.
+Proof.
+  split.
+  - intros Hc z v1 v2 H1 H2.
+    pose proof (Hc (atom_swap x y z) v1 v2) as Hc'.
+    rewrite !store_swap_lookup in Hc'.
+    exact (Hc' H1 H2).
+  - intros Hc z v1 v2 H1 H2.
+    rewrite store_swap_lookup_inv in H1.
+    rewrite store_swap_lookup_inv in H2.
+    exact (Hc _ _ _ H1 H2).
+Qed.
+
+Lemma store_swap_union x y s1 s2 :
+  store_compat s1 s2 →
+  store_swap x y (s1 ∪ s2) = store_swap x y s1 ∪ store_swap x y s2.
+Proof.
+  intros _. unfold store_swap.
+  eapply kmap_union. apply atom_swap_inj.
+Qed.
+
 Lemma store_restrict_rename_atom x y s X :
   store_restrict (store_rename_atom y x s) X =
   store_rename_atom y x (store_restrict s (aset_rename x y X)).

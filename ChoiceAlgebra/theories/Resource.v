@@ -617,8 +617,30 @@ Proof.
   intros Hle Hcompat σm σw Hσm Hσw.
   apply store_compat_sym.
   eapply world_compat_le_r; [exact Hle | | exact Hσw | exact Hσm].
-  intros σw' σn Hσw' Hσn. apply store_compat_sym.
-  exact (Hcompat σn σw' Hσn Hσw').
+	  intros σw' σn Hσw' Hσn. apply store_compat_sym.
+	  exact (Hcompat σn σw' Hσn Hσw').
+Qed.
+
+Lemma world_compat_swap (x y : atom) (w1 w2 : WfWorld) :
+  world_compat (res_swap x y w1) (res_swap x y w2) ↔
+  world_compat w1 w2.
+Proof.
+  split.
+  - intros Hc σ1 σ2 Hσ1 Hσ2.
+    pose proof (Hc (store_swap x y σ1) (store_swap x y σ2)) as Hc'.
+    simpl in Hc'.
+    assert (Hs1 : raw_swap x y w1 (store_swap x y σ1)).
+    { exists σ1. split; [exact Hσ1 | reflexivity]. }
+    assert (Hs2 : raw_swap x y w2 (store_swap x y σ2)).
+    { exists σ2. split; [exact Hσ2 | reflexivity]. }
+    pose proof (Hc' Hs1 Hs2) as Hcompat.
+    exact (proj1 (store_compat_swap x y σ1 σ2) Hcompat).
+  - intros Hc σ1 σ2 Hσ1 Hσ2.
+    simpl in Hσ1, Hσ2.
+    destruct Hσ1 as [τ1 [Hτ1 Hswap1]].
+    destruct Hσ2 as [τ2 [Hτ2 Hswap2]]. subst.
+    apply (proj2 (store_compat_swap x y τ1 τ2)).
+    exact (Hc τ1 τ2 Hτ1 Hτ2).
 Qed.
 
 Lemma res_restrict_le (w : WfWorld) (X : aset) :
