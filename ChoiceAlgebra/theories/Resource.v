@@ -52,6 +52,14 @@ Definition WfWorld : Type := { m : World | wf_world m }.
 Coercion raw_world (w : WfWorld) : World := proj1_sig w.
 Definition world_wf (w : WfWorld) : wf_world (raw_world w) := proj2_sig w.
 
+Lemma wfworld_ext (w1 w2 : WfWorld) :
+  (w1 : World) = (w2 : World) →
+  w1 = w2.
+Proof.
+  destruct w1 as [m1 Hwf1], w2 as [m2 Hwf2]. simpl.
+  intros ->. f_equal. apply proof_irrelevance.
+Qed.
+
 Lemma wfworld_store_dom (w : WfWorld) (σ : StoreT) :
   w σ → dom σ = world_dom (w : World).
 Proof. apply (wf_dom _ (world_wf w)). Qed.
@@ -364,19 +372,6 @@ Proof.
   subst. f_equal. apply proof_irrelevance.
 Qed.
 
-(** Total WfWorld operations for algebraic structures that encode partiality
-    with separate definedness predicates.  Their wf obligations are meaningful
-    only under the corresponding definedness assumptions, so we keep them
-    abstract at this layer. *)
-
-Program Definition res_product_total (w1 w2 : WfWorld) : WfWorld :=
-  exist _ (raw_product w1 w2) _.
-Next Obligation. Admitted.
-
-Program Definition res_sum_total (w1 w2 : WfWorld) : WfWorld :=
-  exist _ (raw_sum w1 w2) _.
-Next Obligation. Admitted.
-
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
 Lemma raw_product_le_mono (m1 m2 m1' m2' : World) :
@@ -466,10 +461,46 @@ Lemma res_product_unit_r (w : WfWorld) :
   ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
 Proof. Admitted.
 
+Lemma res_product_unit_r_eq (w : WfWorld) :
+  res_product w res_unit (raw_compat_unit_r w) = w.
+Proof. Admitted.
+
+Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
+  res_product w res_unit Hc = w.
+Proof. Admitted.
+
 Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
     (Hdef' : raw_sum_defined w2 w1) :
   ∀ s, res_sum w1 w2 Hdef s ↔ res_sum w2 w1 Hdef' s.
 Proof. intros s. unfold res_sum. simpl. tauto. Qed.
+
+Lemma res_product_comm_eq (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  ∃ Hc' : world_compat w2 w1,
+    res_product w1 w2 Hc = res_product w2 w1 Hc'.
+Proof. Admitted.
+
+Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
+  ∃ Hdef' : raw_sum_defined w2 w1,
+    res_sum w1 w2 Hdef = res_sum w2 w1 Hdef'.
+Proof. Admitted.
+
+Lemma res_product_assoc_eq (w1 w2 w3 : WfWorld)
+    (H12 : world_compat w1 w2)
+    (H123 : world_compat (res_product w1 w2 H12) w3) :
+  ∃ (H23 : world_compat w2 w3)
+    (H1_23 : world_compat w1 (res_product w2 w3 H23)),
+    res_product (res_product w1 w2 H12) w3 H123 =
+    res_product w1 (res_product w2 w3 H23) H1_23.
+Proof. Admitted.
+
+Lemma res_sum_assoc_eq (w1 w2 w3 : WfWorld)
+    (H12 : raw_sum_defined w1 w2)
+    (H123 : raw_sum_defined (res_sum w1 w2 H12) w3) :
+  ∃ (H23 : raw_sum_defined w2 w3)
+    (H1_23 : raw_sum_defined w1 (res_sum w2 w3 H23)),
+    res_sum (res_sum w1 w2 H12) w3 H123 =
+    res_sum w1 (res_sum w2 w3 H23) H1_23.
+Proof. Admitted.
 
 (** Compatibility can be characterized by the common projection of two
     well-formed worlds: over the overlapping domain, both worlds restrict to

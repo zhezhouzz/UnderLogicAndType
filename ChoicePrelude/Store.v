@@ -88,6 +88,10 @@ Definition store_rename_atom (x y : atom) (s : Store) : Store :=
   | None => delete y s
   end.
 
+Lemma store_rename_atom_dom x y s :
+  dom (store_rename_atom x y s) = aset_rename x y (dom s).
+Proof. Admitted.
+
 Lemma store_compat_refl s : store_compat s s.
 Proof.
   unfold store_compat. intros x v1 v2 H1 H2. hauto.
