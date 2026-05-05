@@ -383,7 +383,26 @@ Lemma raw_sum_le_mono (m1 m2 m1' m2' : World) :
   raw_sum_defined m1 m2 → raw_sum_defined m1' m2' →
   m1 ≤ᵣ m1' → m2 ≤ᵣ m2' →
   raw_sum m1 m2 ≤ᵣ raw_sum m1' m2'.
-Proof. Admitted.
+Proof.
+  intros Hdef Hdef' Hle1 Hle2.
+  pose proof (raw_le_dom m1 m1' Hle1) as Hdom1.
+  unfold raw_le in *.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [Hσ | Hσ].
+      * rewrite Hle1 in Hσ. simpl in Hσ.
+        destruct Hσ as [σ' [Hσ' Hrestrict]].
+        exists σ'. split; [left; exact Hσ' | exact Hrestrict].
+      * rewrite Hle2 in Hσ. simpl in Hσ.
+        destruct Hσ as [σ' [Hσ' Hrestrict]].
+        exists σ'. split; [right; exact Hσ' |].
+        rewrite Hdef. exact Hrestrict.
+    + intros [σ' [[Hσ' | Hσ'] Hrestrict]].
+      * left. rewrite Hle1. simpl. exists σ'. split; [exact Hσ' | exact Hrestrict].
+      * right. rewrite Hle2. simpl. exists σ'. split; [exact Hσ' |].
+        rewrite <- Hdef. exact Hrestrict.
+Qed.
 
 (** ** Compatibility lemmas *)
 
@@ -454,7 +473,10 @@ Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hdef : raw_sum_defined w1 w2) (Hdef' : raw_sum_defined w1' w2') :
   w1 ⊑ w1' → w2 ⊑ w2' →
   res_sum w1 w2 Hdef ⊑ res_sum w1' w2' Hdef'.
-Proof. Admitted.
+Proof.
+  intros Hle1 Hle2.
+  exact (raw_sum_le_mono w1 w2 w1' w2' Hdef Hdef' Hle1 Hle2).
+Qed.
 
 (** *** Algebraic laws (stated on WfWorld) *)
 
