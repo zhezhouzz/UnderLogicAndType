@@ -371,6 +371,38 @@ Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 
+Lemma entails_rename_atom x y (φ ψ : Formula) :
+  entails φ ψ →
+  entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
+Proof.
+Admitted.
+
+Lemma formula_scoped_forall_from_renamed
+    (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
+  world_dom m ⊆ L →
+  (∀ y : atom,
+    y ∉ L →
+    ∀ m' : WfWorldT,
+      world_dom m' = world_dom m ∪ {[y]} →
+      res_restrict m' (world_dom m) = m →
+      formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
+  formula_scoped_in_world ρ m (FForall x φ).
+Proof.
+Admitted.
+
+Lemma formula_scoped_exists_from_renamed
+    (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
+  world_dom m ⊆ L →
+  (∀ y : atom,
+    y ∉ L →
+    ∃ m' : WfWorldT,
+      world_dom m' = world_dom m ∪ {[y]} ∧
+      res_restrict m' (world_dom m) = m ∧
+      formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
+  formula_scoped_in_world ρ m (FExists x φ).
+Proof.
+Admitted.
+
 (** The fuel-level spec records the intended meaning of [fresh_forall]:
     [fresh_for D] is only the body representative, while models checks all
     names outside a cofinite set by renaming that representative. *)
