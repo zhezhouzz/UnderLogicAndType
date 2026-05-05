@@ -1,4 +1,4 @@
-(** * ChoiceType.WellFormed
+(** * ChoiceTyping.WellFormed
 
     Paper-level well-formedness for choice contexts and choice types.
 
