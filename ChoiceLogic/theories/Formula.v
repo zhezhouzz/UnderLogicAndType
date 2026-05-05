@@ -117,6 +117,29 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
+Lemma formula_fv_swap x y φ :
+  formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
+Proof.
+  induction φ as
+    [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
+     |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp];
+    simpl; try reflexivity.
+  - match goal with
+    | q : logic_qualifier |- _ => destruct q; simpl; reflexivity
+    end.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
+  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
+  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
+  - rewrite IHp. reflexivity.
+  - rewrite IHp. reflexivity.
+  - rewrite IHp, <- (aset_swap_singleton x y a), <- aset_swap_union. reflexivity.
+Qed.
+
 Lemma elem_of_aset_rename_unchanged x y z X :
   z ∈ X →
   z ≠ x →

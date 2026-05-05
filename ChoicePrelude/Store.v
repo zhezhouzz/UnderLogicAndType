@@ -107,6 +107,44 @@ Proof.
   rewrite atom_swap_involutive. reflexivity.
 Qed.
 
+Lemma aset_swap_union x y X Y :
+  aset_swap x y (X ∪ Y) = aset_swap x y X ∪ aset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_union.
+  rewrite !elem_of_aset_swap.
+  tauto.
+Qed.
+
+Lemma aset_swap_singleton x y z :
+  aset_swap x y ({[z]}) = {[atom_swap x y z]}.
+Proof.
+  apply set_eq. intros a.
+  rewrite elem_of_aset_swap, !elem_of_singleton.
+  split.
+  - intros Ha.
+    rewrite <- Ha. symmetry. apply atom_swap_involutive.
+  - intros ->. apply atom_swap_involutive.
+Qed.
+
+Lemma aset_swap_difference_singleton x y z X :
+  aset_swap x y (X ∖ {[z]}) =
+  aset_swap x y X ∖ {[atom_swap x y z]}.
+Proof.
+  apply set_eq. intros a.
+  rewrite elem_of_aset_swap, elem_of_difference, elem_of_singleton.
+  rewrite elem_of_difference, elem_of_singleton, elem_of_aset_swap.
+  split.
+  - intros [Ha Hne]. split; [exact Ha |].
+    intros Heq. apply Hne.
+    rewrite <- (atom_swap_involutive x y z).
+    by rewrite <- Heq.
+  - intros [Ha Hne]. split; [exact Ha |].
+    intros Heq. apply Hne.
+    rewrite <- (atom_swap_involutive x y a).
+    by rewrite Heq.
+Qed.
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
