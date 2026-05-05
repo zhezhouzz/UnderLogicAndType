@@ -478,6 +478,34 @@ Proof.
   subst. f_equal. apply proof_irrelevance.
 Qed.
 
+Lemma res_subset_swap (x y : atom) (w1 w2 : WfWorld) :
+  res_subset (res_swap x y w1) (res_swap x y w2) ↔ res_subset w1 w2.
+Proof.
+  split.
+  - intros [Hdom Hin]. split.
+    + simpl in Hdom.
+      rewrite <- (aset_swap_involutive x y (world_dom (w1 : World))).
+      rewrite <- (aset_swap_involutive x y (world_dom (w2 : World))).
+      by rewrite Hdom.
+    + intros σ Hσ.
+      pose proof (Hin (store_swap x y σ)) as Hin'.
+      simpl in Hin'.
+      assert (Hs1 : raw_swap x y w1 (store_swap x y σ)).
+      { exists σ. split; [exact Hσ | reflexivity]. }
+      destruct (Hin' Hs1) as [σ2 [Hσ2 Hswap]].
+      assert (σ2 = σ).
+      {
+        rewrite <- (store_swap_involutive x y σ2).
+        rewrite Hswap. apply store_swap_involutive.
+      }
+      subst. exact Hσ2.
+  - intros [Hdom Hin]. split.
+    + simpl. by rewrite Hdom.
+    + intros σ Hσ.
+      simpl in Hσ. destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
+      exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
+Qed.
+
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
 Lemma raw_sum_le_mono (m1 m2 m1' m2' : World) :
@@ -666,6 +694,23 @@ Proof.
       * exists σ1, σ2. repeat split; eauto.
       * rewrite store_swap_union by exact (Hc σ1 σ2 Hσ1 Hσ2).
         reflexivity.
+Qed.
+
+Lemma res_sum_swap (x y : atom) (w1 w2 : WfWorld)
+    (Hdef : raw_sum_defined w1 w2)
+    (Hdef' : raw_sum_defined (res_swap x y w1) (res_swap x y w2)) :
+  res_swap x y (res_sum w1 w2 Hdef) =
+  res_sum (res_swap x y w1) (res_swap x y w2) Hdef'.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. reflexivity.
+  - intros σ. simpl. split.
+    + intros [σ0 [[Hσ0 | Hσ0] Hswap]]; subst σ.
+      * left. exists σ0. split; [exact Hσ0 | reflexivity].
+      * right. exists σ0. split; [exact Hσ0 | reflexivity].
+    + intros [[σ0 [Hσ0 Hswap]] | [σ0 [Hσ0 Hswap]]]; subst σ.
+      * exists σ0. split; [left; exact Hσ0 | reflexivity].
+      * exists σ0. split; [right; exact Hσ0 | reflexivity].
 Qed.
 
 Lemma res_restrict_le (w : WfWorld) (X : aset) :
