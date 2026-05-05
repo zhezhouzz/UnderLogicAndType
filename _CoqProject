@@ -30,6 +30,7 @@ CoreLang/theories/LocallyNamelessProps.v
 CoreLang/theories/Sugar.v
 CoreLang/theories/LocallyNamelessExtra.v
 CoreLang/theories/LocallyNamelessInstances.v
+CoreLang/theories/InstantiationProps.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
 
