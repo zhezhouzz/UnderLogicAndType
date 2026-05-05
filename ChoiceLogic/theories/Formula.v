@@ -123,6 +123,21 @@ Proof.
   induction φ; simpl; try congruence.
 Qed.
 
+Lemma formula_rename_atom_conjugate a b x y φ :
+  formula_rename_atom a b (formula_rename_atom x y φ) =
+  formula_rename_atom (atom_swap a b x) (atom_swap a b y)
+    (formula_rename_atom a b φ).
+Proof.
+  induction φ as
+    [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
+     |p IHp q' IHq|p IHp q' IHq|z p IHp|z p IHp|p IHp|p IHp|z p IHp];
+    simpl; try congruence.
+  - rewrite lqual_swap_conjugate. reflexivity.
+  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
+  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
+  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
+Qed.
+
 Lemma formula_fv_swap x y φ :
   formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
 Proof.

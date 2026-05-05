@@ -130,6 +130,32 @@ Proof.
   tauto.
 Qed.
 
+Lemma aset_swap_empty x y :
+  aset_swap x y ∅ = ∅.
+Proof.
+  apply set_eq. intros z. rewrite elem_of_aset_swap. set_solver.
+Qed.
+
+Lemma aset_swap_intersection x y X Y :
+  aset_swap x y (X ∩ Y) = aset_swap x y X ∩ aset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_intersection, !elem_of_aset_swap.
+  tauto.
+Qed.
+
+Lemma aset_swap_disjoint x y X Y :
+  aset_swap x y X ## aset_swap x y Y ↔ X ## Y.
+Proof.
+  unfold disjoint, set_disjoint_instance. split; intros Hdis z HzX HzY.
+  - apply (Hdis (atom_swap x y z)).
+    + rewrite elem_of_aset_swap, atom_swap_involutive. exact HzX.
+    + rewrite elem_of_aset_swap, atom_swap_involutive. exact HzY.
+  - rewrite elem_of_aset_swap in HzX.
+    rewrite elem_of_aset_swap in HzY.
+    exact (Hdis _ HzX HzY).
+Qed.
+
 Lemma aset_swap_singleton x y z :
   aset_swap x y ({[z]}) = {[atom_swap x y z]}.
 Proof.
@@ -148,6 +174,15 @@ Proof.
   apply set_eq. intros z.
   rewrite !elem_of_aset_swap.
   rewrite atom_swap_conjugate_inv. reflexivity.
+Qed.
+
+Lemma aset_swap_conjugate_inv a b x y X :
+  aset_swap x y (aset_swap a b X) =
+  aset_swap a b (aset_swap (atom_swap a b x) (atom_swap a b y) X).
+Proof.
+  apply set_eq. intros z.
+  rewrite !elem_of_aset_swap.
+  rewrite atom_swap_conjugate. reflexivity.
 Qed.
 
 Lemma aset_swap_difference_singleton x y z X :
@@ -238,6 +273,15 @@ Proof.
   apply map_eq. intros z.
   rewrite !store_swap_lookup_inv.
   rewrite atom_swap_conjugate_inv. reflexivity.
+Qed.
+
+Lemma store_swap_conjugate_inv a b x y s :
+  store_swap x y (store_swap a b s) =
+  store_swap a b (store_swap (atom_swap a b x) (atom_swap a b y) s).
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv.
+  rewrite atom_swap_conjugate. reflexivity.
 Qed.
 
 Lemma store_rename_atom_dom x y s :

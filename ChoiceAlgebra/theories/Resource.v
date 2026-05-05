@@ -359,6 +359,40 @@ Proof.
       * apply store_swap_involutive.
 Qed.
 
+Lemma res_swap_conjugate a b x y (w : WfWorld) :
+  res_swap a b (res_swap x y w) =
+  res_swap (atom_swap a b x) (atom_swap a b y) (res_swap a b w).
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. apply aset_swap_conjugate.
+  - intros σ. simpl. split.
+    + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
+      exists (store_swap a b σ1). split.
+      * exists σ1. split; [exact Hσ1 | reflexivity].
+      * symmetry. apply store_swap_conjugate.
+    + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
+      exists (store_swap x y σ1). split.
+      * exists σ1. split; [exact Hσ1 | reflexivity].
+      * apply store_swap_conjugate.
+Qed.
+
+Lemma res_swap_conjugate_inv a b x y (w : WfWorld) :
+  res_swap x y (res_swap a b w) =
+  res_swap a b (res_swap (atom_swap a b x) (atom_swap a b y) w).
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. apply aset_swap_conjugate_inv.
+  - intros σ. simpl. split.
+    + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
+      exists (store_swap (atom_swap a b x) (atom_swap a b y) σ1). split.
+      * exists σ1. split; [exact Hσ1 | reflexivity].
+      * symmetry. apply store_swap_conjugate_inv.
+    + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
+      exists (store_swap a b σ1). split.
+      * exists σ1. split; [exact Hσ1 | reflexivity].
+      * apply store_swap_conjugate_inv.
+Qed.
+
 Lemma res_restrict_swap (x y : atom) (w : WfWorld) (X : aset) :
   res_restrict (res_swap x y w) (aset_swap x y X) =
   res_swap x y (res_restrict w X).
@@ -376,6 +410,17 @@ Proof.
       exists (store_swap x y σw). split.
       * exists σw. split; [exact Hσw | reflexivity].
       * apply store_restrict_swap.
+Qed.
+
+Lemma res_restrict_swap_projection x y (w : WfWorld) (X : aset) (σ : StoreT) :
+  res_restrict w X σ →
+  res_restrict (res_swap x y w) (aset_swap x y X) (store_swap x y σ).
+Proof.
+  intros Hproj.
+  change ((res_restrict (res_swap x y w) (aset_swap x y X) : World)
+    (store_swap x y σ)).
+  rewrite res_restrict_swap. simpl.
+  exists σ. split; [exact Hproj | reflexivity].
 Qed.
 
 Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
