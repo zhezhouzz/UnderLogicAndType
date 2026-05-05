@@ -48,6 +48,7 @@ ChoiceType/theories/QualifierProps.v
 ChoiceType/theories/QualifierInstances.v
 ChoiceType/theories/QualifierBridge.v
 ChoiceType/theories/Syntax.v
+ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/Denotation.v
