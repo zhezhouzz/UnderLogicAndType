@@ -195,6 +195,12 @@ Proof.
   apply atom_swap_inj.
 Qed.
 
+Lemma store_swap_empty x y :
+  store_swap x y (∅ : Store) = ∅.
+Proof.
+  unfold store_swap. apply kmap_empty.
+Qed.
+
 Lemma store_swap_involutive x y s :
   store_swap x y (store_swap x y s) = s.
 Proof.
@@ -333,10 +339,9 @@ Proof.
 Qed.
 
 Lemma store_swap_union x y s1 s2 :
-  store_compat s1 s2 →
   store_swap x y (s1 ∪ s2) = store_swap x y s1 ∪ store_swap x y s2.
 Proof.
-  intros _. unfold store_swap.
+  unfold store_swap.
   eapply kmap_union. apply atom_swap_inj.
 Qed.
 

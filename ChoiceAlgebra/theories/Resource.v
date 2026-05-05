@@ -686,13 +686,13 @@ Proof.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * exists σ2. split; [exact Hσ2 | reflexivity].
       * exact (proj2 (store_compat_swap x y σ1 σ2) Hcompat).
-      * rewrite <- store_swap_union by exact Hcompat. reflexivity.
+      * rewrite <- store_swap_union. reflexivity.
     + intros [σ1' [σ2' [Hσ1' [Hσ2' [Hcompat' ->]]]]].
       destruct Hσ1' as [σ1 [Hσ1 Hswap1]].
       destruct Hσ2' as [σ2 [Hσ2 Hswap2]]. subst σ1' σ2'.
       exists (σ1 ∪ σ2). split.
       * exists σ1, σ2. repeat split; eauto.
-      * rewrite store_swap_union by exact (Hc σ1 σ2 Hσ1 Hσ2).
+      * rewrite store_swap_union.
         reflexivity.
 Qed.
 

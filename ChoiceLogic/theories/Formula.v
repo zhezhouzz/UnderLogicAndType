@@ -60,7 +60,7 @@ Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
   match φ with
   | FTrue => FTrue
   | FFalse => FFalse
-  | FAtom q => FAtom (lqual_rename_atom x y q)
+  | FAtom q => FAtom (lqual_swap x y q)
   | FAnd p q => FAnd (formula_rename_atom x y p) (formula_rename_atom x y q)
   | FOr p q => FOr (formula_rename_atom x y p) (formula_rename_atom x y q)
   | FImpl p q => FImpl (formula_rename_atom x y p) (formula_rename_atom x y q)
@@ -68,12 +68,12 @@ Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
   | FWand p q => FWand (formula_rename_atom x y p) (formula_rename_atom x y q)
   | FPlus p q => FPlus (formula_rename_atom x y p) (formula_rename_atom x y q)
   | FForall z p =>
-      FForall (atom_rename x y z) (formula_rename_atom x y p)
+      FForall (atom_swap x y z) (formula_rename_atom x y p)
   | FExists z p =>
-      FExists (atom_rename x y z) (formula_rename_atom x y p)
+      FExists (atom_swap x y z) (formula_rename_atom x y p)
   | FOver p => FOver (formula_rename_atom x y p)
   | FUnder p => FUnder (formula_rename_atom x y p)
-  | FFib z p => FFib (atom_rename x y z) (formula_rename_atom x y p)
+  | FFib z p => FFib (atom_swap x y z) (formula_rename_atom x y p)
   end.
 
 Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
@@ -117,6 +117,12 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
+Lemma formula_rename_atom_eq_swap x y φ :
+  formula_rename_atom x y φ = formula_swap x y φ.
+Proof.
+  induction φ; simpl; try congruence.
+Qed.
+
 Lemma formula_fv_swap x y φ :
   formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
 Proof.
@@ -140,13 +146,20 @@ Proof.
   - rewrite IHp, <- (aset_swap_singleton x y a), <- aset_swap_union. reflexivity.
 Qed.
 
-Lemma elem_of_aset_rename_unchanged x y z X :
+Lemma formula_fv_rename_atom x y φ :
+  formula_fv (formula_rename_atom x y φ) = aset_swap x y (formula_fv φ).
+Proof.
+  rewrite formula_rename_atom_eq_swap. apply formula_fv_swap.
+Qed.
+
+Lemma elem_of_aset_swap_unchanged x y z X :
   z ∈ X →
   z ≠ x →
   z ≠ y →
-  z ∈ aset_rename x y X.
+  z ∈ aset_swap x y X.
 Proof.
-  unfold aset_rename. destruct (decide (x ∈ X)); set_solver.
+  intros Hz Hzx Hzy. rewrite elem_of_aset_swap.
+  unfold atom_swap. repeat destruct decide; congruence.
 Qed.
 
 Lemma formula_fv_rename_unchanged x y z φ :
@@ -161,18 +174,18 @@ Proof.
      |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp];
     intros z Hz Hzx Hzy; simpl in *; try set_solver.
   - destruct a as [d p]. simpl in *.
-    apply elem_of_aset_rename_unchanged; assumption.
+    apply elem_of_aset_swap_unchanged; assumption.
   - apply elem_of_difference in Hz as [Hz Hzx0].
     apply elem_of_difference. split.
     + apply IHp; assumption.
-    + unfold atom_rename. destruct (decide (b = x)); set_solver.
+    + unfold atom_swap. repeat destruct decide; set_solver.
   - apply elem_of_difference in Hz as [Hz Hzx0].
     apply elem_of_difference. split.
     + apply IHp; assumption.
-    + unfold atom_rename. destruct (decide (b = x)); set_solver.
+    + unfold atom_swap. repeat destruct decide; set_solver.
   - apply elem_of_union in Hz as [Hz | Hz].
     + apply elem_of_union. left.
-      unfold atom_rename. destruct (decide (b = x)); set_solver.
+      unfold atom_swap. repeat destruct decide; set_solver.
     + apply elem_of_union. right. apply IHp; assumption.
 Qed.
 
@@ -197,6 +210,35 @@ Definition formula_scoped_in_world
     (m : WfWorldT)
     (φ : Formula) : Prop :=
   dom ρ ∪ formula_fv φ ⊆ world_dom m.
+
+Lemma formula_scoped_swap x y ρ m φ :
+  formula_scoped_in_world ρ m (formula_rename_atom x y φ) ↔
+  formula_scoped_in_world (store_swap x y ρ) (res_swap x y m) φ.
+Proof.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_rename_atom, store_swap_dom. simpl.
+  split; intros Hscope z Hz.
+  - apply elem_of_aset_swap.
+    apply Hscope.
+    rewrite elem_of_union in Hz |- *.
+    destruct Hz as [Hz | Hz].
+    + left. rewrite elem_of_aset_swap in Hz. exact Hz.
+    + right. rewrite elem_of_aset_swap, atom_swap_involutive. exact Hz.
+  - rewrite elem_of_union in Hz.
+    destruct Hz as [Hz | Hz].
+    + assert (Hzρ : atom_swap x y z ∈ aset_swap x y (dom ρ)).
+      { rewrite elem_of_aset_swap, atom_swap_involutive. exact Hz. }
+      assert (Hzscope : atom_swap x y z ∈ aset_swap x y (dom ρ) ∪ formula_fv φ)
+        by (apply elem_of_union; left; exact Hzρ).
+      pose proof (Hscope _ Hzscope) as Hm.
+      rewrite elem_of_aset_swap in Hm. rewrite atom_swap_involutive in Hm. exact Hm.
+    + assert (Hzφ : atom_swap x y z ∈ formula_fv φ).
+      { rewrite elem_of_aset_swap in Hz. exact Hz. }
+      assert (Hzscope : atom_swap x y z ∈ aset_swap x y (dom ρ) ∪ formula_fv φ)
+        by (apply elem_of_union; right; exact Hzφ).
+      pose proof (Hscope _ Hzscope) as Hm.
+      rewrite elem_of_aset_swap in Hm. rewrite atom_swap_involutive in Hm. exact Hm.
+Qed.
 
 Lemma formula_scoped_res_subset
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
