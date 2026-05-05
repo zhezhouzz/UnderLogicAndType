@@ -1,4 +1,4 @@
-(** * ChoiceType.Auxiliary
+(** * ChoiceTyping.Auxiliary
 
     Auxiliary judgments for the choice typing rules: semantic subtyping,
     context restriction, and context-level over-approximation coercion. *)

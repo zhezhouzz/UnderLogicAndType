@@ -51,7 +51,7 @@ ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/Denotation.v
 ChoiceTyping/theories/WellFormed.v
-ChoiceType/theories/Auxiliary.v
-ChoiceType/theories/Typing.v
-ChoiceType/theories/Soundness.v
+ChoiceTyping/theories/Auxiliary.v
+ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v
