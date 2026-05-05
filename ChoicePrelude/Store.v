@@ -216,6 +216,12 @@ Proof.
   unfold store_restrict. apply dom_gmap_filter_key_in_pair.
 Qed.
 
+Lemma store_restrict_dom_subset s X :
+  dom (store_restrict s X) ⊆ X.
+Proof.
+  rewrite store_restrict_dom. set_solver.
+Qed.
+
 Lemma store_restrict_idemp s X :
   dom s ⊆ X → store_restrict s X = s.
 Proof.
@@ -415,6 +421,97 @@ Proof.
     apply map_lookup_filter_None. left. exact Hi.
 Qed.
 
+Lemma store_restrict_union_piece_l s1 s2 X Y :
+  store_compat s1 s2 →
+  dom s1 ⊆ X →
+  dom s2 ⊆ Y →
+  Y ∩ X = ∅ →
+  store_restrict (s1 ∪ s2) X = s1.
+Proof.
+  intros Hcompat Hdom1 Hdom2 Hdisj.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ s2) X !! i = s1 !! i).
+  destruct (s1 !! i) as [v1|] eqn:H1.
+  - unfold map_restrict.
+    apply map_lookup_filter_Some_2.
+    + rewrite (lookup_union_l' s1 s2 i) by eauto. exact H1.
+    + apply Hdom1. apply elem_of_dom. eauto.
+  - unfold map_restrict.
+    apply map_lookup_filter_None.
+    destruct (decide (i ∈ X)) as [HiX|HiX].
+    + left. change ((s1 ∪ s2) !! i = None).
+      apply lookup_union_None. split; [exact H1 |].
+      apply not_elem_of_dom. intros Hi2.
+      assert (HiY : i ∈ Y) by set_solver.
+      assert (HiYX : i ∈ Y ∩ X).
+      { apply elem_of_intersection. split; [exact HiY | exact HiX]. }
+      rewrite Hdisj in HiYX. apply elem_of_empty in HiYX. contradiction.
+    + right. intros v Hlookup Hin. contradiction.
+Qed.
+
+Lemma store_restrict_union_piece_r s1 s2 X Y :
+  store_compat s1 s2 →
+  dom s1 ⊆ X →
+  dom s2 ⊆ Y →
+  X ∩ Y = ∅ →
+  store_restrict (s1 ∪ s2) Y = s2.
+Proof.
+  intros Hcompat Hdom1 Hdom2 Hdisj.
+  rewrite store_union_comm by exact Hcompat.
+  apply (store_restrict_union_piece_l s2 s1 Y X).
+  - apply store_compat_sym. exact Hcompat.
+  - exact Hdom2.
+  - exact Hdom1.
+  - apply set_eq. intros i. split.
+    + intros Hi.
+      apply elem_of_intersection in Hi as [HiY HiX].
+      assert (HiXY : i ∈ X ∩ Y).
+      { apply elem_of_intersection. split; [exact HiY | exact HiX]. }
+      rewrite Hdisj in HiXY. apply elem_of_empty in HiXY. contradiction.
+    + intros Hi. apply elem_of_empty in Hi. contradiction.
+Qed.
+
+Lemma store_restrict_union_base_singleton s1 s2 D y :
+  D ⊆ dom s1 →
+  dom s2 = D ∪ {[y]} →
+  y ∉ dom s1 →
+  store_restrict s1 D = store_restrict s2 D →
+  store_restrict (s1 ∪ store_restrict s2 {[y]}) (D ∪ {[y]}) = s2.
+Proof.
+  intros HDs1 Hdom2 Hy Hagree.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ map_restrict V s2 {[y]}) (D ∪ {[y]}) !! i =
+    s2 !! i).
+  destruct (decide (i ∈ D)) as [HiD|HiD].
+  - assert (Hi_s1 : i ∈ dom s1) by set_solver.
+    apply elem_of_dom in Hi_s1 as [v1 Hs1].
+    assert (Hs1D : store_restrict s1 D !! i = Some v1).
+    { apply store_restrict_lookup_some_2; [exact Hs1 | exact HiD]. }
+    rewrite Hagree in Hs1D.
+    apply store_restrict_lookup_some in Hs1D as [_ Hs2].
+    transitivity (Some v1); [| symmetry; exact Hs2].
+    apply store_restrict_lookup_some_2; last set_solver.
+    rewrite (lookup_union_l' s1 (store_restrict s2 {[y]}) i) by eauto.
+    exact Hs1.
+  - destruct (decide (i = y)) as [->|Hiy].
+    + destruct (s2 !! y) as [vy|] eqn:Hs2y.
+      * transitivity (Some vy); [| reflexivity].
+        apply store_restrict_lookup_some_2; last set_solver.
+        change ((s1 ∪ map_restrict V s2 {[y]}) !! y = Some vy).
+        rewrite (lookup_union_r s1 (map_restrict V s2 {[y]}) y).
+        -- apply store_restrict_lookup_some_2; [exact Hs2y | set_solver].
+        -- by apply not_elem_of_dom.
+      * assert (Hy_dom : y ∈ dom s2) by (rewrite Hdom2; set_solver).
+        apply not_elem_of_dom in Hs2y. contradiction.
+    + assert (Hi_not_dom2 : i ∉ dom s2).
+      { rewrite Hdom2. set_solver. }
+      apply not_elem_of_dom in Hi_not_dom2.
+      transitivity (@None V); [| symmetry; exact Hi_not_dom2].
+      unfold map_restrict.
+      apply map_lookup_filter_None.
+      right. intros v _ Hin. set_solver.
+Qed.
+
 Lemma disj_dom_store_compat s1 s2 :
   dom s1 ∩ dom s2 = ∅ → store_compat s1 s2.
 Proof.
@@ -424,6 +521,20 @@ Proof.
   assert (x ∈ dom s1 ∩ dom s2) as Hin.
   { apply elem_of_intersection. split; apply elem_of_dom; eauto. }
   set_solver.
+Qed.
+
+Lemma store_compat_restrict_singleton_fresh s1 s2 y :
+  y ∉ dom s1 →
+  store_compat s1 (store_restrict s2 {[y]}).
+Proof.
+  intros Hy.
+  apply disj_dom_store_compat.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_intersection in Hz as [Hz1 Hz2].
+    pose proof (store_restrict_dom_subset s2 {[y]} z Hz2) as Hzy.
+    rewrite elem_of_singleton in Hzy. subst. contradiction.
+  - intros Hz. apply elem_of_empty in Hz. contradiction.
 Qed.
 
 Lemma store_compat_restrict s1 s2 X :
