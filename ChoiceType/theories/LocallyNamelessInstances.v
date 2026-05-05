@@ -3,7 +3,7 @@
     Locally-nameless theorem-class instances for choice types. *)
 
 From LocallyNameless Require Import Classes.
-From ChoiceType Require Import Syntax QualifierInstances.
+From ChoiceType Require Import Syntax QualifierInstances LocallyNamelessProps.
 
 #[global] Instance OpenFv_cty : OpenFv atom choice_ty.
 Proof.
@@ -21,26 +21,15 @@ Qed.
 
 #[global] Instance SubstFresh_cty : SubstFresh choice_ty.
 Proof.
-  intros τ x v Hfresh. induction τ; autounfold with class_simpl in *; simpl in *.
-  - f_equal. exact (qual_subst_fresh x v φ ltac:(set_solver)).
-  - f_equal. exact (qual_subst_fresh x v φ ltac:(set_solver)).
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
+  intros τ x v Hfresh. exact (cty_subst_fresh x v τ Hfresh).
 Qed.
 
 #[global] Instance FvOfSubst_cty : FvOfSubst choice_ty.
 Proof.
-  intros x v τ. induction τ; simpl; try set_solver.
-  - pose proof (fv_of_subst x v φ). simpl in H. set_solver.
-  - pose proof (fv_of_subst x v φ). simpl in H. set_solver.
+  intros x v τ. exact (cty_fv_of_subst x v τ).
 Qed.
 
 #[global] Instance FvOfSubstClosed_cty : FvOfSubstClosed choice_ty.
 Proof.
-  intros x v τ Hclosed. induction τ; simpl; try set_solver.
-  - pose proof (fv_of_subst_closed x v φ Hclosed). simpl in H. set_solver.
-  - pose proof (fv_of_subst_closed x v φ Hclosed). simpl in H. set_solver.
+  intros x v τ Hclosed. exact (cty_fv_of_subst_closed x v τ Hclosed).
 Qed.

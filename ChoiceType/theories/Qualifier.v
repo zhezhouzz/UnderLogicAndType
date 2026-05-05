@@ -160,18 +160,3 @@ Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
 
 Notation "⊤q" := qual_top.
 Notation "⊥q" := qual_bot.
-
-(** ** Key substitution lemmas (Admitted) *)
-
-Lemma qual_subst_fresh x v (q : type_qualifier) :
-  x # q → {x := v}q q = q.
-Proof. Admitted.
-
-Lemma qual_interp_subst_compose (σ_X σ : gmap atom value) (q : type_qualifier) :
-  store_compat σ_X σ →
-  qual_interp σ (qual_subst_map σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
-Proof. Admitted.
-
-Lemma qual_interp_and q1 q2 σ :
-  qual_interp σ (q1 &q q2) ↔ qual_interp σ q1 ∧ qual_interp σ q2.
-Proof. Admitted.

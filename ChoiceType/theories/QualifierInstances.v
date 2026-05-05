@@ -9,7 +9,7 @@
     nested existential witnesses. *)
 
 From LocallyNameless Require Import Classes.
-From ChoiceType Require Import Qualifier.
+From ChoiceType Require Import QualifierProps.
 
 #[global] Instance OpenFv_qualifier : OpenFv atom type_qualifier.
 Proof.
