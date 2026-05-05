@@ -500,6 +500,49 @@ Proof.
       subst. exact Hσ2.
 Qed.
 
+Lemma res_subset_lift_under (m n mu : WfWorld) :
+  m ⊑ n →
+  res_subset mu m →
+  ∃ nu : WfWorld,
+    res_subset nu n ∧ mu ⊑ nu.
+Proof.
+  intros Hle [Hdom_mu_m Hin_mu_m].
+  pose proof (raw_le_dom m n Hle) as Hdom_m_n.
+  pose (raw_nu := ({|
+    world_dom := world_dom (n : World);
+    world_stores := λ σ,
+      (n : World) σ ∧ (mu : World) (store_restrict σ (world_dom (m : World)))
+  |} : World)).
+  assert (Hwf_nu : wf_world raw_nu).
+  {
+    constructor.
+    - destruct (wf_ne _ (world_wf mu)) as [σmu Hσmu].
+      assert (Hmσmu : (m : World) σmu) by exact (Hin_mu_m σmu Hσmu).
+      unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+      rewrite Hle in Hmσmu. simpl in Hmσmu.
+      destruct Hmσmu as [σn [Hσn Hrestrict]].
+      exists σn. split; [exact Hσn |].
+      rewrite Hrestrict. exact Hσmu.
+    - intros σ [Hσn _]. simpl. exact (wfworld_store_dom n σ Hσn).
+  }
+  exists (exist _ raw_nu Hwf_nu). split.
+  - split; [reflexivity | intros σ Hσ; exact (proj1 Hσ)].
+  - unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+    apply world_ext.
+    + simpl. set_solver.
+    + intros σ. simpl. split.
+      * intros Hσmu.
+        assert (Hmσ : (m : World) σ) by exact (Hin_mu_m σ Hσmu).
+        unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+        rewrite Hle in Hmσ. simpl in Hmσ.
+        destruct Hmσ as [σn [Hσn Hrestrict]].
+        exists σn. split; [split; [exact Hσn | rewrite Hrestrict; exact Hσmu] |].
+        rewrite Hdom_mu_m. exact Hrestrict.
+      * intros [σn [[Hσn Hσmu] Hrestrict]].
+        rewrite Hdom_mu_m in Hrestrict.
+        subst σ. exact Hσmu.
+Qed.
+
 Lemma res_le_product_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w1 ⊑ res_product w1 w2 Hc.
 Proof.
@@ -530,6 +573,85 @@ Proof.
            pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdomσ1.
            set_solver.
       * pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdomσ1. set_solver.
+Qed.
+
+Lemma res_subset_lift_over (m n mo : WfWorld) :
+  m ⊑ n →
+  res_subset m mo →
+  ∃ no : WfWorld,
+    res_subset n no ∧ mo ⊑ no.
+Proof.
+  intros Hle [Hdom_m_mo Hin_m_mo].
+  pose proof (raw_le_dom m n Hle) as Hdom_m_n.
+  set (extra := res_restrict n (world_dom (n : World) ∖ world_dom (m : World))).
+  assert (Hcompat : world_compat mo extra).
+  {
+    apply disj_dom_world_compat. subst extra. simpl. set_solver.
+  }
+  exists (res_product mo extra Hcompat). split.
+  - split.
+    + unfold extra. simpl.
+      apply set_eq. intros x. split.
+      * intros Hx.
+        apply elem_of_union.
+        destruct (decide (x ∈ world_dom (m : World))) as [Hxm|Hxnm].
+        -- left. rewrite <- Hdom_m_mo. exact Hxm.
+        -- right. apply elem_of_intersection. split; [exact Hx |].
+           apply elem_of_difference. split; [exact Hx | exact Hxnm].
+      * intros Hx.
+        apply elem_of_union in Hx as [Hxmo|Hxdiff].
+        -- apply Hdom_m_n. rewrite Hdom_m_mo. exact Hxmo.
+        -- apply elem_of_intersection in Hxdiff as [Hx _]. exact Hx.
+    + intros σ Hσn.
+      pose proof (wfworld_store_dom n σ Hσn) as Hdomσ.
+      assert (Hm_proj : (m : World) (store_restrict σ (world_dom (m : World)))).
+      {
+        unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+        rewrite Hle at 1. simpl. exists σ. split; [exact Hσn | reflexivity].
+      }
+      assert (Hmo_proj : (mo : World) (store_restrict σ (world_dom (m : World)))).
+      { exact (Hin_m_mo _ Hm_proj). }
+      assert (Hextra :
+          (extra : World)
+            (store_restrict σ (world_dom (n : World) ∖ world_dom (m : World)))).
+      {
+        subst extra. simpl. exists σ. split; [exact Hσn | reflexivity].
+      }
+      assert (Hstore_part_compat :
+          store_compat (store_restrict σ (world_dom (m : World)))
+            (store_restrict σ (world_dom (n : World) ∖ world_dom (m : World)))).
+      {
+        apply disj_dom_store_compat.
+        apply set_eq. intros x. split.
+        - intros Hin.
+          apply elem_of_intersection in Hin as [Hin1 Hin2].
+          rewrite store_restrict_dom in Hin1.
+          rewrite store_restrict_dom in Hin2.
+          apply elem_of_intersection in Hin1 as [_ Hxm].
+          apply elem_of_intersection in Hin2 as [_ Hxdiff].
+          apply elem_of_difference in Hxdiff as [_ Hxnotm].
+          exfalso. exact (Hxnotm Hxm).
+        - intros Hin. apply elem_of_empty in Hin. contradiction.
+      }
+      simpl. exists (store_restrict σ (world_dom (m : World))),
+        (store_restrict σ (world_dom (n : World) ∖ world_dom (m : World))).
+      repeat split.
+      * exact Hmo_proj.
+      * exact Hextra.
+      * exact Hstore_part_compat.
+      * symmetry. apply store_restrict_union_partition.
+        -- intros x Hx. change (x ∈ dom σ) in Hx. rewrite Hdomσ in Hx.
+           apply elem_of_union.
+           destruct (decide (x ∈ world_dom (m : World))) as [Hxm|Hxnm].
+           ++ left. exact Hxm.
+           ++ right. apply elem_of_difference. split; [exact Hx | exact Hxnm].
+        -- apply set_eq. intros x. split.
+           ++ intros Hin.
+              apply elem_of_intersection in Hin as [Hxm Hxdiff].
+              apply elem_of_difference in Hxdiff as [_ Hxnotm].
+              exfalso. exact (Hxnotm Hxm).
+           ++ intros Hin. apply elem_of_empty in Hin. contradiction.
+  - exact (res_le_product_l mo extra Hcompat).
 Qed.
 
 Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)

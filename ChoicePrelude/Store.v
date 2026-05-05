@@ -379,6 +379,42 @@ Proof.
   apply map_lookup_filter_Some_2; [exact Hlookup | exact Hin].
 Qed.
 
+Lemma store_restrict_union_partition s X Y :
+  dom s ⊆ X ∪ Y →
+  X ∩ Y = ∅ →
+  store_restrict s X ∪ store_restrict s Y = s.
+Proof.
+  intros Hcover Hdisj.
+  apply map_eq. intros i.
+  change ((map_restrict V s X ∪ map_restrict V s Y) !! i = s !! i).
+  destruct (s !! i) as [v|] eqn:Hi.
+  - assert (Hi_dom : i ∈ dom s) by (apply elem_of_dom; eauto).
+    specialize (Hcover _ Hi_dom).
+    apply elem_of_union in Hcover as [HiX|HiY].
+    + rewrite lookup_union_l'.
+      * apply store_restrict_lookup_some_2; [exact Hi | exact HiX].
+      * eexists. apply store_restrict_lookup_some_2; [exact Hi | exact HiX].
+    + assert (Hleft_none : store_restrict s X !! i = None).
+      {
+        unfold store_restrict, map_restrict.
+        apply map_lookup_filter_None. right.
+        intros v' _ HiX.
+        assert (HiXY : i ∈ X ∩ Y).
+        { apply elem_of_intersection. split; [exact HiX | exact HiY]. }
+        rewrite Hdisj in HiXY. apply elem_of_empty in HiXY. contradiction.
+      }
+      rewrite lookup_union_r by exact Hleft_none.
+      apply store_restrict_lookup_some_2; [exact Hi | exact HiY].
+  - assert (Hleft_none : store_restrict s X !! i = None).
+    {
+      unfold store_restrict, map_restrict.
+      apply map_lookup_filter_None. left. exact Hi.
+    }
+    rewrite lookup_union_r by exact Hleft_none.
+    unfold store_restrict, map_restrict.
+    apply map_lookup_filter_None. left. exact Hi.
+Qed.
+
 Lemma disj_dom_store_compat s1 s2 :
   dom s1 ∩ dom s2 = ∅ → store_compat s1 s2.
 Proof.
