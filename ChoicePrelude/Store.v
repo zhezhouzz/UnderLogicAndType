@@ -70,7 +70,7 @@ Definition atom_rename (x y z : atom) : atom :=
   if decide (z = x) then y else z.
 
 Definition aset_rename (x y : atom) (X : aset) : aset :=
-  (if decide (x ∈ X) then {[y]} else ∅) ∪ (X ∖ {[x]}).
+  if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
 
 Section Store.
 
@@ -90,7 +90,35 @@ Definition store_rename_atom (x y : atom) (s : Store) : Store :=
 
 Lemma store_rename_atom_dom x y s :
   dom (store_rename_atom x y s) = aset_rename x y (dom s).
-Proof. Admitted.
+Proof.
+  unfold store_rename_atom, aset_rename.
+  destruct (s !! x) as [v|] eqn:Hx.
+  - destruct (decide (x ∈ dom s)) as [_|Hnotin].
+    + apply set_eq. intros z.
+      change (z ∈ dom (<[y := v]> (delete x s) : gmap atom V) <->
+        z ∈ ({[y]} ∪ dom (s : gmap atom V) ∖ {[x]} : aset)).
+      rewrite elem_of_dom, lookup_insert_is_Some, lookup_delete_is_Some.
+      rewrite elem_of_union, elem_of_singleton, elem_of_difference,
+        elem_of_singleton, elem_of_dom.
+      split.
+      * intros [Hy | [Hny [Hnx His]]].
+        -- left. symmetry. exact Hy.
+        -- right. split; [exact His | congruence].
+      * intros [Hzy | [His Hnx]].
+        -- left. symmetry. exact Hzy.
+        -- destruct (decide (z = y)) as [->|Hzy].
+           ++ left. reflexivity.
+           ++ right. repeat split; eauto; congruence.
+    + exfalso. apply Hnotin. by apply elem_of_dom; exists v.
+  - destruct (decide (x ∈ dom s)) as [Hin|_].
+    + exfalso. apply not_elem_of_dom in Hx. set_solver.
+    + apply set_eq. intros z.
+      change (z ∈ dom (delete y s : gmap atom V) <->
+        z ∈ (dom (s : gmap atom V) ∖ {[y]} : aset)).
+      rewrite elem_of_dom, lookup_delete_is_Some.
+      rewrite elem_of_difference, elem_of_singleton, elem_of_dom.
+      firstorder congruence.
+Qed.
 
 Lemma store_compat_refl s : store_compat s s.
 Proof.

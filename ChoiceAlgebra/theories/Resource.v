@@ -313,7 +313,17 @@ Defined.
 Definition res_rename_atom (x y : atom) (w : WfWorld) : WfWorld.
 Proof.
   refine (exist _ (raw_rename_atom x y w) _).
-Admitted.
+  destruct (world_wf w) as [Hne Hdom].
+  constructor.
+  - destruct Hne as [σ Hσ].
+    exists (store_rename_atom x y σ). simpl.
+    exists σ. split; [exact Hσ | reflexivity].
+  - intros σ' Hσ'. simpl in Hσ'.
+    destruct Hσ' as [σ [Hσ Hrename]]. subst σ'.
+    rewrite store_rename_atom_dom.
+    change (aset_rename x y (dom σ) = aset_rename x y (world_dom (w : World))).
+    rewrite (Hdom σ Hσ). reflexivity.
+Defined.
 
 Definition res_fiber (w : WfWorld) (σ : StoreT)
     (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld.
