@@ -1,0 +1,51 @@
+# Partial Choice Algebra Remaining Work
+
+This note records the unfinished proof work left on
+`codex/partial-choice-algebra` before switching to the instantiation migration.
+
+## Completed on the Branch
+
+- `ChoiceAlgebra` operations now expose partial definedness:
+  - `ca_times_def` is `world_compat`.
+  - `ca_plus_def` is `raw_sum_defined`.
+  - `ca_times` / `ca_plus` take explicit definedness proofs.
+- `res_product_total` and `res_sum_total` were removed.
+- The following algebra/resource facts are proved:
+  - unit laws for product on the right,
+  - commutativity of product and sum,
+  - associativity of product and sum with explicit derived definedness witnesses,
+  - sum monotonicity,
+  - left projection order `w1 ⊑ res_product w1 w2 Hc`,
+  - atom rename well-formedness for resources.
+- `aset_rename` was corrected to match `store_rename_atom`:
+  - if `x ∈ X`, rename `x` to `y`;
+  - if `x ∉ X`, delete `y`.
+
+## Remaining Admits
+
+- `ChoiceAlgebra/theories/Resource.v`
+  - `res_product_le_mono`.
+    This should use the target compatibility proof `Hc' : world_compat w1' w2'`.
+    A raw product monotonicity lemma without such a compatibility assumption is
+    misleading for the partial operation and was removed.
+
+- `ChoiceLogic/theories/ChoiceLogicProps.v`
+  - `forall_mono` and `exists_mono`.
+    These appear to need a semantic rename/entailment lemma, because the
+    cofinite semantics checks `formula_rename_atom x y p`.
+  - `star_wand_adjunction`.
+    Recheck the statement against the current semantics before proving; the
+    exact adjunction may need a different implication shape.
+
+- `ChoiceLogic/theories/ANF.v`
+  - Collapse lemmas are intentionally isolated from the main proof path.  They
+    can remain admitted while the core algebra and typing work proceeds.
+
+## Proof Lessons
+
+- Keep partial operations partial.  Do not repair missing definedness by adding
+  fallback worlds.
+- Prefer moving store/map facts into `ChoicePrelude/Store.v` instead of proving
+  them inline in resource proofs.
+- When stdpp union associativity is overloaded, an explicit term such as
+  `assoc_L (∪) s1 s2 s3` is more stable than bare `rewrite assoc_L`.

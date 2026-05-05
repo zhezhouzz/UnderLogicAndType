@@ -19,3 +19,4 @@
 | 16_store_proof_refactoring.md | Store/map proof：通用 lemma 上移、`change`/`setoid_rewrite`、lookup extensionality |
 | 17_core_ln_proof_patterns.md | Core LN proof：拆 mutual lemma、combined helper、cofinite binder 的 fact1 |
 | 19_operational_reduction_helpers.md | Core operational proof：用 reduction intro/iff lemmas 简化 derived-form reductions |
+| 20_partial_algebra_remaining.md | Partial ChoiceAlgebra：当前剩余证明、风险点、已修正的 rename/domain 经验 |
