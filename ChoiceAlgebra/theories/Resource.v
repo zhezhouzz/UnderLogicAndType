@@ -892,6 +892,34 @@ Proof.
       * pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdomσ1. set_solver.
 Qed.
 
+Lemma res_one_point_extension_exists (w : WfWorld) (y : atom) :
+  y ∉ world_dom (w : World) →
+  ∃ wy : WfWorld,
+    world_dom (wy : World) = world_dom (w : World) ∪ {[y]} ∧
+    res_restrict wy (world_dom (w : World)) = w.
+Proof.
+  intros Hy.
+  set (σy := <[y := inhabitant]> (∅ : StoreT)).
+  set (one_y := (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorld)).
+  assert (Hdom_one_y : world_dom (one_y : World) = {[y]}).
+  {
+    subst one_y σy. simpl.
+    rewrite dom_insert_L, dom_empty_L. set_solver.
+  }
+  assert (Hc : world_compat w one_y).
+  {
+    apply disj_dom_world_compat. rewrite Hdom_one_y. set_solver.
+  }
+  exists (res_product w one_y Hc). split.
+  - change (world_dom (w : World) ∪ world_dom (one_y : World) =
+      world_dom (w : World) ∪ {[y]}).
+    rewrite Hdom_one_y. reflexivity.
+  - rewrite <- (res_restrict_le_eq w (res_product w one_y Hc)
+      (world_dom (w : World)) (res_le_product_l w one_y Hc)).
+    + apply res_restrict_eq_of_le. reflexivity.
+    + set_solver.
+Qed.
+
 Lemma res_subset_lift_over (m n mo : WfWorld) :
   m ⊑ n →
   res_subset m mo →

@@ -91,6 +91,42 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
+Lemma elem_of_aset_rename_unchanged x y z X :
+  z ∈ X →
+  z ≠ x →
+  z ≠ y →
+  z ∈ aset_rename x y X.
+Proof.
+  unfold aset_rename. destruct (decide (x ∈ X)); set_solver.
+Qed.
+
+Lemma formula_fv_rename_unchanged x y z φ :
+  z ∈ formula_fv φ →
+  z ≠ x →
+  z ≠ y →
+  z ∈ formula_fv (formula_rename_atom x y φ).
+Proof.
+  revert z.
+  induction φ as
+    [| |a|p IHp q IHq|p IHp q IHq|p IHp q IHq|p IHp q IHq
+     |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp];
+    intros z Hz Hzx Hzy; simpl in *; try set_solver.
+  - destruct a as [d p]. simpl in *.
+    apply elem_of_aset_rename_unchanged; assumption.
+  - apply elem_of_difference in Hz as [Hz Hzx0].
+    apply elem_of_difference. split.
+    + apply IHp; assumption.
+    + unfold atom_rename. destruct (decide (b = x)); set_solver.
+  - apply elem_of_difference in Hz as [Hz Hzx0].
+    apply elem_of_difference. split.
+    + apply IHp; assumption.
+    + unfold atom_rename. destruct (decide (b = x)); set_solver.
+  - apply elem_of_union in Hz as [Hz | Hz].
+    + apply elem_of_union. left.
+      unfold atom_rename. destruct (decide (b = x)); set_solver.
+    + apply elem_of_union. right. apply IHp; assumption.
+Qed.
+
 Lemma formula_measure_pos (φ : Formula) :
   0 < formula_measure φ.
 Proof. induction φ; simpl; lia. Qed.
@@ -242,7 +278,82 @@ Lemma res_models_with_store_fuel_irrel
   res_models_with_store_fuel gas1 ρ m φ →
   res_models_with_store_fuel gas2 ρ m φ.
 Proof.
-Admitted.
+  assert (Hstrong :
+    ∀ n (ψ : Formula) gas1 gas2 ρ m,
+      formula_measure ψ <= n →
+      formula_measure ψ <= gas1 →
+      formula_measure ψ <= gas2 →
+      res_models_with_store_fuel gas1 ρ m ψ →
+      res_models_with_store_fuel gas2 ρ m ψ).
+  {
+    induction n as [|n IHn].
+    { intros ψ gasA gasB ρ0 m0 Hn. pose proof (formula_measure_pos ψ). lia. }
+    intros ψ gasA gasB ρ0 m0 Hn HgasA HgasB Hmodel.
+    destruct gasA as [|gasA']; [pose proof (formula_measure_pos ψ); lia |].
+    destruct gasB as [|gasB']; [pose proof (formula_measure_pos ψ); lia |].
+    simpl in *.
+    destruct Hmodel as [Hscope Hmodel]. split; [exact Hscope |].
+    destruct ψ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|x p];
+      simpl in *.
+    - exact Hmodel.
+    - exact Hmodel.
+    - exact Hmodel.
+    - destruct Hmodel as [Hp Hq]. split.
+      + exact (IHn p gasA' gasB' ρ0 m0 ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+      + exact (IHn q gasA' gasB' ρ0 m0 ltac:(lia) ltac:(lia) ltac:(lia) Hq).
+    - destruct Hmodel as [Hp | Hq].
+      + left. exact (IHn p gasA' gasB' ρ0 m0 ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+      + right. exact (IHn q gasA' gasB' ρ0 m0 ltac:(lia) ltac:(lia) ltac:(lia) Hq).
+    - intros m' Hle Hp.
+      pose proof (IHn p gasB' gasA' ρ0 m' ltac:(lia) ltac:(lia) ltac:(lia) Hp)
+        as Hp_src.
+      exact (IHn q gasA' gasB' ρ0 m' ltac:(lia) ltac:(lia) ltac:(lia)
+        (Hmodel m' Hle Hp_src)).
+    - destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
+      exists m1, m2, Hc. split; [exact Hprod |]. split.
+      + exact (IHn p gasA' gasB' ρ0 m1 ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+      + exact (IHn q gasA' gasB' ρ0 m2 ltac:(lia) ltac:(lia) ltac:(lia) Hq).
+    - intros m' Hc Hp.
+      pose proof (IHn p gasB' gasA' ρ0 m' ltac:(lia) ltac:(lia) ltac:(lia) Hp)
+        as Hp_src.
+      exact (IHn q gasA' gasB' ρ0 (res_product m' m0 Hc)
+        ltac:(lia) ltac:(lia) ltac:(lia) (Hmodel m' Hc Hp_src)).
+    - destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
+      exists m1, m2, Hdef. split; [exact Hsum |]. split.
+      + exact (IHn p gasA' gasB' ρ0 m1 ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+      + exact (IHn q gasA' gasB' ρ0 m2 ltac:(lia) ltac:(lia) ltac:(lia) Hq).
+    - destruct Hmodel as [L [HL Hforall]].
+      exists L. split; [exact HL |].
+      intros y Hy m' Hdom Hrestr.
+      exact (IHn (formula_rename_atom x y p) gasA' gasB' ρ0 m'
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        (Hforall y Hy m' Hdom Hrestr)).
+    - destruct Hmodel as [L [HL Hexists]].
+      exists L. split; [exact HL |].
+      intros y Hy.
+      destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hp]]].
+      exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+      exact (IHn (formula_rename_atom x y p) gasA' gasB' ρ0 m'
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        ltac:(rewrite formula_rename_preserves_measure; lia)
+        Hp).
+    - destruct Hmodel as [m' [Hsub Hp]].
+      exists m'. split; [exact Hsub |].
+      exact (IHn p gasA' gasB' ρ0 m' ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+    - destruct Hmodel as [m' [Hsub Hp]].
+      exists m'. split; [exact Hsub |].
+      exact (IHn p gasA' gasB' ρ0 m' ltac:(lia) ltac:(lia) ltac:(lia) Hp).
+    - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
+      intros σ Hproj.
+      exact (IHn p gasA' gasB' (ρ0 ∪ σ)
+        (res_fiber_from_projection m0 {[x]} σ Hproj)
+        ltac:(lia) ltac:(lia) ltac:(lia) (Hfib σ Hproj)).
+  }
+  eapply Hstrong with (n := formula_measure φ); eauto.
+Qed.
 
 Lemma formula_scoped_res_le
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
@@ -389,7 +500,31 @@ Lemma formula_scoped_forall_from_renamed
       formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
   formula_scoped_in_world ρ m (FForall x φ).
 Proof.
-Admitted.
+  unfold formula_scoped_in_world.
+  intros HL Hrenamed z Hz.
+  apply elem_of_union in Hz as [Hzρ | Hzφ].
+  - set (y := fresh_for (L ∪ {[z]})).
+    assert (HyL : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hym : y ∉ world_dom (m : World)) by set_solver.
+    destruct (res_one_point_extension_exists m y Hym) as [m' [Hdom Hrestr]].
+    pose proof (Hrenamed y HyL m' Hdom Hrestr) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
+    rewrite Hdom in Hzm'. set_solver.
+  - apply elem_of_difference in Hzφ as [Hzφ Hzx].
+    set (y := fresh_for (L ∪ {[z]})).
+    assert (HyL : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hym : y ∉ world_dom (m : World)) by set_solver.
+    destruct (res_one_point_extension_exists m y Hym) as [m' [Hdom Hrestr]].
+    pose proof (Hrenamed y HyL m' Hdom Hrestr) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    assert (Hzrenamed : z ∈ formula_fv (formula_rename_atom x y φ)).
+    { apply formula_fv_rename_unchanged; set_solver. }
+    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
+    rewrite Hdom in Hzm'. set_solver.
+Qed.
 
 Lemma formula_scoped_exists_from_renamed
     (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
@@ -402,7 +537,27 @@ Lemma formula_scoped_exists_from_renamed
       formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
   formula_scoped_in_world ρ m (FExists x φ).
 Proof.
-Admitted.
+  unfold formula_scoped_in_world.
+  intros _ Hrenamed z Hz.
+  apply elem_of_union in Hz as [Hzρ | Hzφ].
+  - set (y := fresh_for (L ∪ {[z]})).
+    assert (Hy : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    destruct (Hrenamed y Hy) as [m' [Hdom [Hrestr Hscope]]].
+    unfold formula_scoped_in_world in Hscope.
+    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
+    rewrite Hdom in Hzm'. set_solver.
+  - apply elem_of_difference in Hzφ as [Hzφ Hzx].
+    set (y := fresh_for (L ∪ {[z]})).
+    assert (Hy : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    destruct (Hrenamed y Hy) as [m' [Hdom [Hrestr Hscope]]].
+    unfold formula_scoped_in_world in Hscope.
+    assert (Hzrenamed : z ∈ formula_fv (formula_rename_atom x y φ)).
+    { apply formula_fv_rename_unchanged; set_solver. }
+    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
+    rewrite Hdom in Hzm'. set_solver.
+Qed.
 
 (** The fuel-level spec records the intended meaning of [fresh_forall]:
     [fresh_for D] is only the body representative, while models checks all
