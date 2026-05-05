@@ -20,6 +20,7 @@ ChoiceAlgebra/examples/ResourceExamples.v
 
 CoreLang/theories/Prelude.v
 CoreLang/theories/Syntax.v
+CoreLang/theories/Instantiation.v
 CoreLang/theories/BasicTyping.v
 CoreLang/theories/SmallStep.v
 CoreLang/theories/Properties.v
