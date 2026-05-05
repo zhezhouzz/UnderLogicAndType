@@ -84,6 +84,20 @@ Proof.
   unfold atom_swap. repeat destruct decide; congruence.
 Qed.
 
+Lemma atom_swap_conjugate a b x y z :
+  atom_swap a b (atom_swap x y z) =
+  atom_swap (atom_swap a b x) (atom_swap a b y) (atom_swap a b z).
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma atom_swap_conjugate_inv a b x y z :
+  atom_swap x y (atom_swap a b z) =
+  atom_swap a b (atom_swap (atom_swap a b x) (atom_swap a b y) z).
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
 Lemma atom_swap_sym x y z :
   atom_swap x y z = atom_swap y x z.
 Proof.
@@ -125,6 +139,15 @@ Proof.
   - intros Ha.
     rewrite <- Ha. symmetry. apply atom_swap_involutive.
   - intros ->. apply atom_swap_involutive.
+Qed.
+
+Lemma aset_swap_conjugate a b x y X :
+  aset_swap a b (aset_swap x y X) =
+  aset_swap (atom_swap a b x) (atom_swap a b y) (aset_swap a b X).
+Proof.
+  apply set_eq. intros z.
+  rewrite !elem_of_aset_swap.
+  rewrite atom_swap_conjugate_inv. reflexivity.
 Qed.
 
 Lemma aset_swap_difference_singleton x y z X :
@@ -206,6 +229,15 @@ Lemma store_swap_involutive x y s :
 Proof.
   apply map_eq. intros z.
   rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma store_swap_conjugate a b x y s :
+  store_swap a b (store_swap x y s) =
+  store_swap (atom_swap a b x) (atom_swap a b y) (store_swap a b s).
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv.
+  rewrite atom_swap_conjugate_inv. reflexivity.
 Qed.
 
 Lemma store_rename_atom_dom x y s :

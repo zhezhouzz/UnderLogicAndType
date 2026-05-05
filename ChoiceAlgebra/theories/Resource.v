@@ -826,6 +826,47 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma res_fiber_swap x y (w : WfWorld) (σ : StoreT)
+    (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ)
+    (Hne' : ∃ s, (res_swap x y w : World) s ∧
+        store_restrict s (dom (store_swap x y σ)) = store_swap x y σ) :
+  res_swap x y (res_fiber w σ Hne) =
+  res_fiber (res_swap x y w) (store_swap x y σ) Hne'.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. reflexivity.
+  - intros τ. simpl. split.
+    + intros [τ0 [[Hτ0 Hrestr] Hswap]]. subst τ.
+      split.
+      * exists τ0. split; [exact Hτ0 | reflexivity].
+      * change (store_restrict (store_swap x y τ0) (dom (store_swap x y σ)) =
+            store_swap x y σ).
+        rewrite (store_swap_dom x y σ), store_restrict_swap. f_equal.
+        exact Hrestr.
+    + intros [[τ0 [Hτ0 Hswap]] Hrestr]. subst τ.
+      exists τ0. split.
+      * split; [exact Hτ0 |].
+        change (store_restrict (store_swap x y τ0) (dom (store_swap x y σ)) =
+            store_swap x y σ) in Hrestr.
+        rewrite store_swap_dom, store_restrict_swap in Hrestr.
+        apply (f_equal (store_swap x y)) in Hrestr.
+        rewrite !store_swap_involutive in Hrestr. exact Hrestr.
+      * reflexivity.
+Qed.
+
+Lemma res_fiber_from_projection_swap x y (w : WfWorld) (X : aset)
+    (σ : StoreT)
+    (Hproj : res_restrict w X σ)
+    (Hproj' : res_restrict (res_swap x y w) (aset_swap x y X)
+        (store_swap x y σ)) :
+  res_swap x y (res_fiber_from_projection w X σ Hproj) =
+  res_fiber_from_projection (res_swap x y w) (aset_swap x y X)
+    (store_swap x y σ) Hproj'.
+Proof.
+  unfold res_fiber_from_projection.
+  apply res_fiber_swap.
+Qed.
+
 Lemma res_one_point_extension_pushout
     (m n my : WfWorld) (y : atom) :
   m ⊑ n →
