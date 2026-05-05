@@ -372,7 +372,7 @@ Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 
 Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
-  y ∉ (formula_fv φ ∖ {[x]}) ∪ (formula_fv ψ ∖ {[x]}) →
+  y ∉ formula_fv φ ∪ formula_fv ψ →
   entails φ ψ →
   entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
 Proof.

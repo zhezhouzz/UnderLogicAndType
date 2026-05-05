@@ -56,13 +56,13 @@ Lemma forall_mono (x : atom) (p q : FormulaT) :
 Proof.
   unfold entails, sat, res_models, res_models_with_store in *.
   intros Hpq m [Hscope [L [HL Hforall]]].
-  set (L' := L ∪ (formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})).
+  set (L' := L ∪ formula_fv p ∪ formula_fv q).
   split.
   - eapply formula_scoped_forall_from_renamed with (L := L').
     { unfold L'. set_solver. }
     intros y Hy m' Hdom Hrestr.
     assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
-    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
     pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
@@ -78,7 +78,7 @@ Proof.
   - exists L'. split; [unfold L'; set_solver |].
     intros y Hy m' Hdom Hrestr.
     assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
-    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
     pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
@@ -96,13 +96,13 @@ Lemma exists_mono (x : atom) (p q : FormulaT) :
 Proof.
   unfold entails, sat, res_models, res_models_with_store in *.
   intros Hpq m [Hscope [L [HL Hexists]]].
-  set (L' := L ∪ (formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})).
+  set (L' := L ∪ formula_fv p ∪ formula_fv q).
   split.
   - eapply formula_scoped_exists_from_renamed with (L := L').
     { unfold L'. set_solver. }
     intros y Hy.
     assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
-    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
@@ -119,7 +119,7 @@ Proof.
   - exists L'. split; [unfold L'; set_solver |].
     intros y Hy.
     assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
-    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
