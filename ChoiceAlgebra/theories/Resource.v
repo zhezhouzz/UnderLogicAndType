@@ -464,6 +464,42 @@ Qed.
 
 (** *** Order properties on WfWorld *)
 
+Lemma res_le_same_dom_eq (w1 w2 : WfWorld) :
+  w1 ⊑ w2 →
+  world_dom (w1 : World) = world_dom (w2 : World) →
+  w1 = w2.
+Proof.
+  intros Hle Hdom.
+  apply (anti_symm (⊑)); [exact Hle |].
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros Hσ.
+      assert (Hw1σ : (w1 : World) σ).
+      {
+        unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+        rewrite Hle. simpl.
+        exists σ. split; [exact Hσ |].
+        apply store_restrict_idemp.
+        pose proof (wfworld_store_dom w2 σ Hσ) as Hσdom.
+        set_solver.
+      }
+      exists σ. split; [exact Hw1σ |].
+      apply store_restrict_idemp.
+      pose proof (wfworld_store_dom w2 σ Hσ) as Hσdom.
+      set_solver.
+    + intros [σ' [Hσ' Hrestrict]].
+      unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+      rewrite Hle in Hσ'. simpl in Hσ'.
+      destruct Hσ' as [σ2 [Hσ2 Hrestrict2]].
+      pose proof (wfworld_store_dom w2 σ2 Hσ2) as Hσ2dom.
+      rewrite store_restrict_idemp in Hrestrict2 by set_solver.
+      subst σ'.
+      rewrite store_restrict_idemp in Hrestrict by set_solver.
+      subst. exact Hσ2.
+Qed.
+
 Lemma res_le_product_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w1 ⊑ res_product w1 w2 Hc.
 Proof.

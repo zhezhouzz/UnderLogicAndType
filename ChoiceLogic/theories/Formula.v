@@ -31,26 +31,26 @@ Inductive Formula : Type :=
   | FUnder  (p : Formula)                       (* underapproximation u p *)
   | FFib    (x : atom) (p : Formula).           (* fiberwise modality *)
 
+Fixpoint formula_stale (φ : Formula) : aset :=
+  match φ with
+  | FTrue | FFalse => ∅
+  | FAtom q => stale q
+  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
+      formula_stale p ∪ formula_stale q
+  | FForall x p | FExists x p => {[x]} ∪ formula_stale p
+  | FOver p | FUnder p => formula_stale p
+  | FFib x p => {[x]} ∪ formula_stale p
+  end.
+
 Fixpoint formula_fv (φ : Formula) : aset :=
   match φ with
   | FTrue | FFalse => ∅
   | FAtom q => stale q
   | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
       formula_fv p ∪ formula_fv q
-  | FForall x p | FExists x p => {[x]} ∪ formula_fv p
+  | FForall x p | FExists x p => formula_fv p ∖ {[x]}
   | FOver p | FUnder p => formula_fv p
   | FFib x p => {[x]} ∪ formula_fv p
-  end.
-
-Fixpoint formula_scope_vars (φ : Formula) : aset :=
-  match φ with
-  | FTrue | FFalse => ∅
-  | FAtom q => stale q
-  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
-      formula_scope_vars p ∪ formula_scope_vars q
-  | FForall x p | FExists x p => formula_scope_vars p ∖ {[x]}
-  | FOver p | FUnder p => formula_scope_vars p
-  | FFib x p => {[x]} ∪ formula_scope_vars p
   end.
 
 #[global] Instance stale_formula : Stale Formula := formula_fv.
@@ -111,7 +111,7 @@ Definition formula_scoped_in_world
     (ρ : StoreT)
     (m : WfWorldT)
     (φ : Formula) : Prop :=
-  dom ρ ∪ formula_scope_vars φ ⊆ world_dom m.
+  dom ρ ∪ formula_fv φ ⊆ world_dom m.
 
 Lemma formula_scoped_res_subset
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
