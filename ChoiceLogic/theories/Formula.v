@@ -42,6 +42,17 @@ Fixpoint formula_fv (φ : Formula) : aset :=
   | FFib x p => {[x]} ∪ formula_fv p
   end.
 
+Fixpoint formula_scope_vars (φ : Formula) : aset :=
+  match φ with
+  | FTrue | FFalse => ∅
+  | FAtom q => stale q
+  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
+      formula_scope_vars p ∪ formula_scope_vars q
+  | FForall x p | FExists x p => formula_scope_vars p ∖ {[x]}
+  | FOver p | FUnder p => formula_scope_vars p
+  | FFib x p => {[x]} ∪ formula_scope_vars p
+  end.
+
 #[global] Instance stale_formula : Stale Formula := formula_fv.
 Arguments stale_formula /.
 
@@ -80,6 +91,10 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
+Lemma formula_measure_pos (φ : Formula) :
+  0 < formula_measure φ.
+Proof. induction φ; simpl; lia. Qed.
+
 (** [fresh_forall D body] chooses a syntactic representative for an explicit
     formula binder.  The representative is not semantically privileged:
     [FForall]'s satisfaction relation later renames it to every sufficiently
@@ -87,6 +102,36 @@ Qed.
 Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
   let x := fresh_for D in
   FForall x (body x).
+
+(** A formula can only be interpreted at worlds that already track every free
+    coordinate it may inspect.  Explicit quantifiers remove their representative
+    binder from this set; the bound coordinate is introduced by their semantic
+    one-coordinate extension. *)
+Definition formula_scoped_in_world
+    (ρ : StoreT)
+    (m : WfWorldT)
+    (φ : Formula) : Prop :=
+  dom ρ ∪ formula_scope_vars φ ⊆ world_dom m.
+
+Lemma formula_scoped_res_subset
+    (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
+  formula_scoped_in_world ρ m φ →
+  res_subset m m' →
+  formula_scoped_in_world ρ m' φ.
+Proof.
+  unfold formula_scoped_in_world, res_subset.
+  intros Hscope [Hdom _]. rewrite <- Hdom. exact Hscope.
+Qed.
+
+Lemma formula_scoped_world_dom_eq
+    (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
+  world_dom m = world_dom m' →
+  formula_scoped_in_world ρ m φ →
+  formula_scoped_in_world ρ m' φ.
+Proof.
+  unfold formula_scoped_in_world. intros Hdom Hscope. rewrite <- Hdom.
+  exact Hscope.
+Qed.
 
 (** ** Satisfaction relation *)
 
@@ -98,6 +143,7 @@ Fixpoint res_models_with_store_fuel
   match gas with
   | 0 => False
   | S gas' =>
+  formula_scoped_in_world ρ m φ ∧
   match φ with
 
   (** Basic connectives (Definition 1.8) *)
@@ -107,7 +153,8 @@ Fixpoint res_models_with_store_fuel
   | FFalse => False
 
   | FAtom a =>
-      logic_qualifier_denote a ρ m
+      ∃ m0 : WfWorldT,
+        logic_qualifier_denote a ρ m0 ∧ m0 ⊑ m
 
   | FAnd p q =>
       res_models_with_store_fuel gas' ρ m p ∧
@@ -180,6 +227,14 @@ Fixpoint res_models_with_store_fuel
   end
   end.
 
+Lemma res_models_with_store_fuel_scoped
+    (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
+  res_models_with_store_fuel gas ρ m φ →
+  formula_scoped_in_world ρ m φ.
+Proof.
+  destruct gas as [|gas']; simpl; [tauto | intros [Hscope _]; exact Hscope].
+Qed.
+
 Definition res_models_with_store
     (ρ : StoreT)
     (m : WfWorldT)
@@ -202,30 +257,32 @@ Lemma res_models_fresh_forall_fuel
     (gas : nat) (ρ : StoreT) (m : WfWorldT) (D : aset)
     (body : atom → Formula) :
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D body) ↔
-  ∃ L : aset,
-    world_dom m ⊆ L ∧
-    ∀ y : atom,
-      y ∉ L →
-      ∀ m' : WfWorldT,
-        world_dom m' = world_dom m ∪ {[y]} →
-        res_restrict m' (world_dom m) = m →
-        res_models_with_store_fuel gas ρ m'
-          (formula_rename_atom (fresh_for D) y (body (fresh_for D))).
+  formula_scoped_in_world ρ m (fresh_forall D body) ∧
+  (∃ L : aset,
+      world_dom m ⊆ L ∧
+      ∀ y : atom,
+        y ∉ L →
+        ∀ m' : WfWorldT,
+          world_dom m' = world_dom m ∪ {[y]} →
+          res_restrict m' (world_dom m) = m →
+          res_models_with_store_fuel gas ρ m'
+            (formula_rename_atom (fresh_for D) y (body (fresh_for D)))).
 Proof. reflexivity. Qed.
 
 Lemma res_models_fresh_forall_intro
     (gas : nat) (ρ : StoreT) (m : WfWorldT) (D : aset)
     (body : atom → Formula) :
+  formula_scoped_in_world ρ m (fresh_forall D body) →
   (∃ L : aset,
-    world_dom m ⊆ L ∧
-    ∀ y : atom,
-      y ∉ L →
-      ∀ m' : WfWorldT,
-        world_dom m' = world_dom m ∪ {[y]} →
-        res_restrict m' (world_dom m) = m →
-        res_models_with_store_fuel gas ρ m'
-          (formula_rename_atom (fresh_for D) y (body (fresh_for D)))) →
+      world_dom m ⊆ L ∧
+      ∀ y : atom,
+        y ∉ L →
+        ∀ m' : WfWorldT,
+          world_dom m' = world_dom m ∪ {[y]} →
+          res_restrict m' (world_dom m) = m →
+          res_models_with_store_fuel gas ρ m'
+            (formula_rename_atom (fresh_for D) y (body (fresh_for D)))) →
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D body).
-Proof. intros Hfresh. exact Hfresh. Qed.
+Proof. intros Hscope Hfresh. exact (conj Hscope Hfresh). Qed.
 
 End Formula.

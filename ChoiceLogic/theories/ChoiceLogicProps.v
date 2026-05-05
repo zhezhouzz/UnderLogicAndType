@@ -24,11 +24,31 @@ Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associa
 (** o and u are monotone w.r.t. entailment. *)
 Lemma over_mono (p q : FormulaT) :
   (p ⊫ q) → (FOver p ⊫ FOver q).
-Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hip m [Hscope [m' [Hsub Hp]]].
+  pose proof (Hip m' Hp) as Hq.
+  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
+    as Hq_scope.
+  split.
+  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
+    destruct Hsub as [Hdom _]. symmetry. exact Hdom.
+  - exists m'. split; [exact Hsub | exact Hq].
+Qed.
 
 Lemma under_mono (p q : FormulaT) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
-Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hip m [Hscope [m' [Hsub Hp]]].
+  pose proof (Hip m' Hp) as Hq.
+  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
+    as Hq_scope.
+  split.
+  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
+    destruct Hsub as [Hdom _]. exact Hdom.
+  - exists m'. split; [exact Hsub | exact Hq].
+Qed.
 
 (** Ordinary quantifiers are monotone. *)
 Lemma forall_mono (x : atom) (p q : FormulaT) :
@@ -60,8 +80,13 @@ Lemma over_ext_eq (p : FormulaT) :
 Proof.
   intros m. unfold ext, under_closure, sat, res_models, res_models_with_store.
   simpl. split.
-  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. split.
+    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
+        as Hscope.
+      eapply formula_scoped_world_dom_eq; [| exact Hscope].
+      destruct Hsub as [Hdom _]. symmetry. exact Hdom.
+    + exists m'. split; [exact Hsub | exact Hp].
 Qed.
 
 (** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
@@ -70,8 +95,13 @@ Lemma under_ext_eq (p : FormulaT) :
 Proof.
   intros m. unfold ext, over_closure, sat, res_models, res_models_with_store.
   simpl. split.
-  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. split.
+    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
+        as Hscope.
+      eapply formula_scoped_world_dom_eq; [| exact Hscope].
+      destruct Hsub as [Hdom _]. exact Hdom.
+    + exists m'. split; [exact Hsub | exact Hp].
 Qed.
 
 (** ** Adjunction: ∗ and −∗ *)
