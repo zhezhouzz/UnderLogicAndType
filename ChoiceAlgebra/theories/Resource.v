@@ -384,11 +384,6 @@ Qed.
 
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
-Lemma raw_product_le_mono (m1 m2 m1' m2' : World) :
-  m1 ≤ᵣ m1' → m2 ≤ᵣ m2' →
-  raw_product m1 m2 ≤ᵣ raw_product m1' m2'.
-Proof. Admitted.
-
 Lemma raw_sum_le_mono (m1 m2 m1' m2' : World) :
   raw_sum_defined m1 m2 → raw_sum_defined m1' m2' →
   m1 ≤ᵣ m1' → m2 ≤ᵣ m2' →
