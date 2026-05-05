@@ -72,6 +72,41 @@ Definition atom_rename (x y z : atom) : atom :=
 Definition aset_rename (x y : atom) (X : aset) : aset :=
   if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
 
+Definition atom_swap (x y z : atom) : atom :=
+  if decide (z = x) then y else if decide (z = y) then x else z.
+
+Definition aset_swap (x y : atom) (X : aset) : aset :=
+  set_map (atom_swap x y) X.
+
+Lemma atom_swap_involutive x y z :
+  atom_swap x y (atom_swap x y z) = z.
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma atom_swap_sym x y z :
+  atom_swap x y z = atom_swap y x z.
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma elem_of_aset_swap x y z X :
+  z ∈ aset_swap x y X ↔ atom_swap x y z ∈ X.
+Proof.
+  unfold aset_swap. split.
+  - intros [z0 [-> Hz0]]%elem_of_map.
+    rewrite atom_swap_involutive. exact Hz0.
+  - intros Hz.
+    apply elem_of_map. exists (atom_swap x y z). split; [symmetry; apply atom_swap_involutive | exact Hz].
+Qed.
+
+Lemma aset_swap_involutive x y X :
+  aset_swap x y (aset_swap x y X) = X.
+Proof.
+  apply set_eq. intros z. rewrite elem_of_aset_swap, elem_of_aset_swap.
+  rewrite atom_swap_involutive. reflexivity.
+Qed.
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
@@ -87,6 +122,47 @@ Definition store_rename_atom (x y : atom) (s : Store) : Store :=
   | Some v => <[y := v]> (delete x s)
   | None => delete y s
   end.
+
+Definition store_swap (x y : atom) (s : Store) : Store :=
+  kmap (atom_swap x y) s.
+
+Lemma atom_swap_inj x y : Inj (=) (=) (atom_swap x y).
+Proof.
+  intros z1 z2 Heq.
+  rewrite <- (atom_swap_involutive x y z1).
+  rewrite <- (atom_swap_involutive x y z2).
+  by rewrite Heq.
+Qed.
+
+Lemma store_swap_lookup x y s z :
+  store_swap x y s !! atom_swap x y z = s !! z.
+Proof.
+  unfold store_swap.
+  eapply lookup_kmap.
+  apply atom_swap_inj.
+Qed.
+
+Lemma store_swap_lookup_inv x y s z :
+  store_swap x y s !! z = s !! atom_swap x y z.
+Proof.
+  rewrite <- (atom_swap_involutive x y z) at 1.
+  apply store_swap_lookup.
+Qed.
+
+Lemma store_swap_dom x y s :
+  dom (store_swap x y s) = aset_swap x y (dom s).
+Proof.
+  unfold store_swap, aset_swap.
+  eapply dom_kmap_L.
+  apply atom_swap_inj.
+Qed.
+
+Lemma store_swap_involutive x y s :
+  store_swap x y (store_swap x y s) = s.
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
+Qed.
 
 Lemma store_rename_atom_dom x y s :
   dom (store_rename_atom x y s) = aset_rename x y (dom s).
@@ -189,6 +265,18 @@ Proof.
     + apply map_lookup_filter_Some_2; [exact Hs | exact Hz].
     + apply map_lookup_filter_None. left. exact Hs.
   - apply map_lookup_filter_None. right. intros v _ Hin. contradiction.
+Qed.
+
+Lemma store_restrict_swap x y s X :
+  store_restrict (store_swap x y s) (aset_swap x y X) =
+  store_swap x y (store_restrict s X).
+Proof.
+  apply map_eq. intros z.
+  rewrite store_restrict_lookup, !store_swap_lookup_inv, store_restrict_lookup.
+  destruct (decide (z ∈ aset_swap x y X)) as [Hz|Hz];
+    destruct (decide (atom_swap x y z ∈ X)) as [Hz'|Hz']; try reflexivity.
+  - exfalso. apply Hz'. rewrite <- elem_of_aset_swap. exact Hz.
+  - exfalso. apply Hz. rewrite elem_of_aset_swap. exact Hz'.
 Qed.
 
 Lemma store_restrict_rename_atom x y s X :
