@@ -550,7 +550,16 @@ Lemma res_sum_assoc_eq (w1 w2 w3 : WfWorld)
     (H1_23 : raw_sum_defined w1 (res_sum w2 w3 H23)),
     res_sum (res_sum w1 w2 H12) w3 H123 =
     res_sum w1 (res_sum w2 w3 H23) H1_23.
-Proof. Admitted.
+Proof.
+  assert (H23 : raw_sum_defined w2 w3).
+  { unfold raw_sum_defined in *. simpl in H123. congruence. }
+  assert (H1_23 : raw_sum_defined w1 (res_sum w2 w3 H23)).
+  { unfold raw_sum_defined in *. simpl. exact H12. }
+  exists H23, H1_23.
+  apply wfworld_ext. apply world_ext.
+  - simpl. reflexivity.
+  - intros σ. simpl. tauto.
+Qed.
 
 (** Compatibility can be characterized by the common projection of two
     well-formed worlds: over the overlapping domain, both worlds restrict to
