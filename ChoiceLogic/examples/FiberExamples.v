@@ -210,7 +210,39 @@ Qed.
 
 Lemma diag_bad_incomplete_triangle_fibers :
   ¬ fiber_triangle_obligation w_diag_bad.
-Proof. Admitted.
+Proof.
+  intros Hobl.
+  assert (Hproj : res_restrict w_diag_bad {['x]} sx1).
+  { simpl. exists s11. split; [left; reflexivity | crush_store]. }
+  destruct (Hobl sx1 Hproj) as [m' [m0 [[Hdom_sub Hin_sub] [Hatom Hle]]]].
+  unfold logic_qualifier_denote, triangle_slice in Hatom.
+  change (store_restrict (∅ ∪ sx1) {['x; 'y]} !! 'x) with (Some 1%nat) in Hatom.
+  assert (Hle12 : 1 <= 2) by lia.
+  assert (Hlt23 : 2 < 3) by lia.
+  specialize (Hatom 2%nat Hle12 Hlt23).
+  destruct Hatom as [s' [Hs' Hrestr]].
+  assert (Hdom_m0 : world_dom (m0 : WorldN) = {['x; 'y]}).
+  {
+    pose proof (wfworld_store_dom m0 s' Hs') as Hdom_s'.
+    pose proof (raw_le_dom m0 m' Hle) as Hdom_le.
+    simpl in Hdom_sub.
+    assert (Hdom_restr : dom (store_restrict s' {['x; 'y]}) = dom (store_xy 1 2)).
+    { rewrite Hrestr. reflexivity. }
+    rewrite store_restrict_dom in Hdom_restr.
+    rewrite dom_store_xy in Hdom_restr.
+    set_solver.
+  }
+  assert (Hdom_m' : world_dom (m' : WorldN) = {['x; 'y]}).
+  { simpl in Hdom_sub. exact Hdom_sub. }
+  assert (Heq : m0 = m').
+  { apply res_le_same_dom_eq; [exact Hle | congruence]. }
+  subst m0.
+  assert (Hs'_fiber : raw_fiber w_diag_bad sx1 s').
+  { exact (Hin_sub s' Hs'). }
+  simpl in Hs'_fiber.
+  destruct Hs'_fiber as [Hdiag _].
+  destruct Hdiag as [-> | ->]; vm_compute in Hrestr; discriminate Hrestr.
+Qed.
 
 Lemma triangle_ok_complete_triangle_fibers :
   fiber_triangle_obligation w_triangle_ok.
