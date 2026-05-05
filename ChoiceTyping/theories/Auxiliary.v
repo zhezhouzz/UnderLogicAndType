@@ -1,9 +1,9 @@
-(** * ChoiceType.Auxiliary
+(** * ChoiceTyping.Auxiliary
 
     Auxiliary judgments for the choice typing rules: semantic subtyping,
     context restriction, and context-level over-approximation coercion. *)
 
-From ChoiceType Require Export WellFormed.
+From ChoiceTyping Require Export WellFormed.
 
 (** ** Semantic subtyping and context restriction *)
 

@@ -1,4 +1,4 @@
-(** * ChoiceType.Typing
+(** * ChoiceTyping.Typing
 
     Declarative typing rules for the choice type system.
 
@@ -7,7 +7,7 @@
     denotational meaning; their direct proof rules are derived/optional and
     are deliberately not part of this core definition. *)
 
-From ChoiceType Require Export Auxiliary.
+From ChoiceTyping Require Export Auxiliary.
 
 (** ** The typing judgment *)
 

@@ -7,6 +7,7 @@
 -R LocallyNameless LocallyNameless
 -R ChoiceType/theories ChoiceType
 -R ChoiceType/examples ChoiceTypeExamples
+-R ChoiceTyping/theories ChoiceTyping
 
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
@@ -49,8 +50,8 @@ ChoiceType/theories/Syntax.v
 ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/Denotation.v
-ChoiceType/theories/WellFormed.v
-ChoiceType/theories/Auxiliary.v
-ChoiceType/theories/Typing.v
-ChoiceType/theories/Soundness.v
+ChoiceTyping/theories/WellFormed.v
+ChoiceTyping/theories/Auxiliary.v
+ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v

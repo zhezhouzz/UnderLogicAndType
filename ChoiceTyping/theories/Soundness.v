@@ -1,8 +1,8 @@
-(** * ChoiceType.Soundness
+(** * ChoiceTyping.Soundness
 
     Soundness skeleton for the single declarative typing judgment. *)
 
-From ChoiceType Require Export Typing.
+From ChoiceTyping Require Export Typing.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
 
