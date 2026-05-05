@@ -461,7 +461,35 @@ Qed.
 
 Lemma res_le_product_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w1 ⊑ res_product w1 w2 Hc.
-Proof. Admitted.
+Proof.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros Hσ.
+      destruct (wf_ne _ (world_wf w2)) as [σ2 Hσ2].
+      exists (σ ∪ σ2). split.
+      * exists σ, σ2. repeat split; eauto.
+      * rewrite store_restrict_union by exact (Hc σ σ2 Hσ Hσ2).
+        rewrite store_restrict_idemp.
+        -- apply store_union_absorb_l.
+           ++ apply store_compat_restrict_r. exact (Hc σ σ2 Hσ Hσ2).
+           ++ rewrite store_restrict_dom.
+              pose proof (wfworld_store_dom w1 σ Hσ) as Hdomσ.
+              set_solver.
+        -- pose proof (wfworld_store_dom w1 σ Hσ) as Hdomσ. set_solver.
+    + intros [σ12 [Hσ12 Hrestrict]].
+      destruct Hσ12 as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      rewrite store_restrict_union in Hrestrict by exact Hcompat.
+      rewrite store_restrict_idemp in Hrestrict.
+      * rewrite (store_union_absorb_l σ1 (store_restrict σ2 (world_dom w1))) in Hrestrict.
+        -- subst. exact Hσ1.
+        -- apply store_compat_restrict_r. exact Hcompat.
+        -- rewrite store_restrict_dom.
+           pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdomσ1.
+           set_solver.
+      * pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdomσ1. set_solver.
+Qed.
 
 Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hc : world_compat w1 w2) (Hc' : world_compat w1' w2') :

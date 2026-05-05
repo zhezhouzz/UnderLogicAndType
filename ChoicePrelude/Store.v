@@ -167,6 +167,21 @@ Proof.
     + left. exact H1.
 Qed.
 
+Lemma store_union_absorb_l s1 s2 :
+  store_compat s1 s2 →
+  dom s2 ⊆ dom s1 →
+  s1 ∪ s2 = s1.
+Proof.
+  intros Hcompat Hsub. apply map_eq. intros i.
+  rewrite option_eq. intros v.
+  rewrite lookup_union_Some_raw.
+  split.
+  - intros [H1 | [H1 H2]]; [exact H1 |].
+    exfalso. apply not_elem_of_dom in H1.
+    apply H1. apply Hsub. by apply elem_of_dom; exists v.
+  - intros H1. left. exact H1.
+Qed.
+
 Lemma store_restrict_dom s X :
   dom (store_restrict s X) = dom s ∩ X.
 Proof.
@@ -289,6 +304,13 @@ Proof.
   apply store_restrict_lookup_some in H2.
   apply store_restrict_lookup_some in H3.
   hauto.
+Qed.
+
+Lemma store_compat_restrict_r s1 s2 X :
+  store_compat s1 s2 → store_compat s1 (store_restrict s2 X).
+Proof.
+  unfold store_compat. intros Hcomp x y z H2 H3.
+  apply store_restrict_lookup_some in H3. hauto.
 Qed.
 
 Lemma store_compat_restrict_eq s1 s2 :
