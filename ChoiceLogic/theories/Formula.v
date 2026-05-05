@@ -235,6 +235,15 @@ Proof.
   destruct gas as [|gas']; simpl; [tauto | intros [Hscope _]; exact Hscope].
 Qed.
 
+Lemma res_models_with_store_fuel_irrel
+    (gas1 gas2 : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
+  formula_measure φ <= gas1 →
+  formula_measure φ <= gas2 →
+  res_models_with_store_fuel gas1 ρ m φ →
+  res_models_with_store_fuel gas2 ρ m φ.
+Proof.
+Admitted.
+
 Lemma formula_scoped_res_le
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
   formula_scoped_in_world ρ m φ →

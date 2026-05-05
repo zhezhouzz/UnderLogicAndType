@@ -110,6 +110,24 @@ Lemma star_wand_adjunction (p q r : FormulaT) :
   (FAnd (FStar p q) r ⊫ FStar p (FAnd q r)) →
   (p ⊫ FWand q r) →
   (FStar p q ⊫ r).
-Proof. Admitted.
+Proof.
+  intros _ Hp_wand.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros m [Hscope [m1 [m2 [Hc [Hprod [Hp Hq]]]]]].
+  assert (Hp_exact : res_models_with_store_fuel (formula_measure p) ∅ m1 p).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hp]; simpl; lia. }
+  pose proof (Hp_wand m1 Hp_exact) as Hwand.
+  simpl in Hwand. destruct Hwand as [_ Hwand_body].
+  destruct (res_product_comm_eq m1 m2 Hc) as [Hc' Hcomm].
+  assert (Hq_wand :
+      res_models_with_store_fuel (formula_measure q + formula_measure r) ∅ m2 q).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hq]; simpl; lia. }
+  pose proof (Hwand_body m2 Hc' Hq_wand) as Hr_comm.
+  assert (Hr_exact :
+      res_models_with_store_fuel (formula_measure r) ∅ (res_product m2 m1 Hc') r).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hr_comm]; simpl; lia. }
+  eapply res_models_with_store_fuel_kripke; [| exact Hr_exact].
+  rewrite <- Hcomm. exact Hprod.
+Qed.
 
 End ChoiceLogicProps.
