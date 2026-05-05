@@ -274,6 +274,40 @@ Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
 #[global] Instance MsubstIntro_tm : MsubstIntro tm.
 Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
 
+Class MsubstLc A `{SubstV value A} `{Lc A} := msubst_lc :
+  forall (σ : env) (a : A),
+    lc_env σ ->
+    is_lc a ->
+    is_lc (m{σ} a).
+
+Lemma MsubstLc_all
+    (A : Type)
+    (substA : SubstV value A)
+    (lcA : Lc A)
+    (subst_lcA : @SubstLc A substA lcA) :
+  @MsubstLc A substA lcA.
+Proof.
+  unfold MsubstLc. intros σ a.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => lc_env σ ->
+      is_lc a ->
+      is_lc (map_fold (fun x vx acc => {x := vx} acc) a σ)) _ _ σ).
+  - intros _ Hlc. exact Hlc.
+  - intros x vx σ' Hfresh Hfold IH Hlc_env Ha.
+    destruct (lc_env_insert σ' x vx Hfresh Hlc_env) as [Hvx Hlc_env'].
+    rewrite Hfold.
+    apply subst_lcA.
+    + apply IH; [exact Hlc_env' | exact Ha].
+    + exact Hvx.
+Qed.
+
+#[global] Instance MsubstLc_value : MsubstLc value.
+Proof. eapply MsubstLc_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstLc_tm : MsubstLc tm.
+Proof. eapply MsubstLc_all; typeclasses eauto. Qed.
+
 Ltac msubst_simp :=
   repeat match goal with
   | |- context [m{∅} _] => rewrite msubst_empty
