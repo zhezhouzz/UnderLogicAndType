@@ -36,6 +36,7 @@ ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/ChoiceLogicProps.v
+ChoiceLogic/theories/ANF.v
 ChoiceLogic/examples/FiberExamples.v
 
 ChoiceType/theories/Prelude.v
