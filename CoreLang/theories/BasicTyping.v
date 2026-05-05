@@ -8,6 +8,7 @@
     that the notation [Γ ⊢ e ⋮ T] works for both values and terms. *)
 
 From CoreLang Require Export Syntax.
+From CoreLang Require Import LocallyNamelessExtra.
 
 (** ** Primitive-operation type signatures
 
@@ -142,12 +143,166 @@ Proof.
       eauto.
 Qed.
 
+Lemma subst_typing_insert_value Γ x s v T vx :
+  <[x := s]> Γ ⊢ᵥ v ⋮ T →
+  Γ ⊢ᵥ vx ⋮ s →
+  Γ ⊢ᵥ ({x := vx} v) ⋮ T.
+Proof.
+  intros Hty Hv.
+  rename x into xsub.
+  remember (<[xsub := s]> Γ) as Γx.
+  revert Γ HeqΓx Hv.
+  induction Hty using value_has_type_mut with
+      (P := fun Γx v T _ =>
+        ∀ Γ, Γx = <[xsub := s]> Γ → Γ ⊢ᵥ vx ⋮ s →
+          Γ ⊢ᵥ ({xsub := vx} v) ⋮ T)
+      (P0 := fun Γx e T _ =>
+        ∀ Γ, Γx = <[xsub := s]> Γ → Γ ⊢ᵥ vx ⋮ s →
+          Γ ⊢ₑ ({xsub := vx} e) ⋮ T);
+      intros Γ0 Heq Hv; subst; simpl.
+  - constructor.
+  - apply lookup_insert_Some in e as [[-> ->]|[Hne Hlook]].
+    + cbn. rewrite decide_True by reflexivity.
+      exact Hv.
+    + cbn. rewrite decide_False by exact Hne.
+      econstructor. exact Hlook.
+  - apply VT_Lam with (L := L ∪ {[xsub]} ∪ dom Γ0).
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := s0]> Γ0 ⊢ₑ
+      open_tm 0 (vfvar b) (tm_subst xsub vx e) ⋮ T);
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := s0]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_tm by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - apply VT_Fix with (L := L ∪ {[xsub]} ∪ dom Γ0).
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := sx]> Γ0 ⊢ᵥ
+      open_value 0 (vfvar b) (value_subst xsub vx vf) ⋮ ((sx →ₜ T) →ₜ T));
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := sx]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_value by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - constructor. eauto.
+  - eapply TT_Let with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := T1]> Γ0 ⊢ₑ
+      open_tm 0 (vfvar b) (tm_subst xsub vx e2) ⋮ T2);
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := T1]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_tm by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+Qed.
+
+Lemma subst_typing_insert_tm Γ x s e T vx :
+  <[x := s]> Γ ⊢ₑ e ⋮ T →
+  Γ ⊢ᵥ vx ⋮ s →
+  Γ ⊢ₑ ({x := vx} e) ⋮ T.
+Proof.
+  intros Hty Hv.
+  rename x into xsub.
+  remember (<[xsub := s]> Γ) as Γx.
+  revert Γ HeqΓx Hv.
+  induction Hty using tm_has_type_mut with
+      (P := fun Γx v T _ =>
+        ∀ Γ, Γx = <[xsub := s]> Γ → Γ ⊢ᵥ vx ⋮ s →
+          Γ ⊢ᵥ ({xsub := vx} v) ⋮ T)
+      (P0 := fun Γx e T _ =>
+        ∀ Γ, Γx = <[xsub := s]> Γ → Γ ⊢ᵥ vx ⋮ s →
+          Γ ⊢ₑ ({xsub := vx} e) ⋮ T);
+      intros Γ0 Heq Hv; subst; simpl.
+  - constructor.
+  - apply lookup_insert_Some in e as [[-> ->]|[Hne Hlook]].
+    + cbn. rewrite decide_True by reflexivity.
+      exact Hv.
+    + cbn. rewrite decide_False by exact Hne.
+      econstructor. exact Hlook.
+  - apply VT_Lam with (L := L ∪ {[xsub]} ∪ dom Γ0).
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := s0]> Γ0 ⊢ₑ
+      open_tm 0 (vfvar b) (tm_subst xsub vx e) ⋮ T);
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := s0]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_tm by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - apply VT_Fix with (L := L ∪ {[xsub]} ∪ dom Γ0).
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := sx]> Γ0 ⊢ᵥ
+      open_value 0 (vfvar b) (value_subst xsub vx vf) ⋮ ((sx →ₜ T) →ₜ T));
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := sx]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_value by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - constructor. eauto.
+  - eapply TT_Let with (L := L ∪ {[xsub]} ∪ dom Γ0); eauto.
+    let b := fresh "opened" in
+    intros b Hb;
+    change (<[b := T1]> Γ0 ⊢ₑ
+      open_tm 0 (vfvar b) (tm_subst xsub vx e2) ⋮ T2);
+    assert (Hxy : xsub <> b) by (intro; subst; apply Hb; set_solver);
+    assert (Hlc_vx : lc_value vx) by exact (typing_value_lc _ _ _ Hv);
+    assert (Hv' : <[b := T1]> Γ0 ⊢ᵥ vx ⋮ s) by
+      (eapply weakening_value; [exact Hv | apply insert_subseteq; apply not_elem_of_dom; set_solver]);
+    rewrite <- subst_open_var_tm by eauto;
+    eapply H; [set_solver | | exact Hv'];
+    rewrite insert_insert_ne by set_solver; reflexivity.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+Qed.
+
+Lemma insert_delete_lookup_ty (Γ : gmap atom ty) x T :
+  Γ !! x = Some T →
+  <[x := T]> (delete x Γ) = Γ.
+Proof.
+  intros Hlook. apply map_eq. intros y.
+  destruct (decide (x = y)) as [->|Hne].
+  - rewrite lookup_insert. rewrite decide_True by reflexivity. symmetry. exact Hlook.
+  - rewrite lookup_insert_ne by exact Hne.
+    rewrite lookup_delete_ne by congruence.
+    reflexivity.
+Qed.
+
 Lemma subst_typing_value Γ x s v T vx :
   Γ ⊢ᵥ v ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
   delete x Γ ⊢ᵥ ({x := vx} v) ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty Hv Hlook.
+  eapply subst_typing_insert_value.
+  rewrite insert_delete_lookup_ty by exact Hlook.
+  exact Hty.
+  eapply weakening_value; [exact Hv | apply map_empty_subseteq].
+Qed.
 
 Lemma subst_typing_tm Γ x s e T vx :
   Γ ⊢ₑ e ⋮ T → ∅ ⊢ᵥ vx ⋮ s → Γ !! x = Some s →
   delete x Γ ⊢ₑ ({x := vx} e) ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty Hv Hlook.
+  eapply subst_typing_insert_tm.
+  rewrite insert_delete_lookup_ty by exact Hlook.
+  exact Hty.
+  eapply weakening_value; [exact Hv | apply map_empty_subseteq].
+Qed.

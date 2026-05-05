@@ -278,3 +278,69 @@ Unicode token 报 lexer 错，先把 proof statement 里的 `→` / `≠` 改成
 对于 UnderType/HATs 中较重的 substitution algebra，如 `subst_commute` 和
 `subst_subst`，可以先把 statement 放到 extra 文件中作为后续 proof target；这些
 互归纳证明的变量 case 很容易卡在 `decide` 展开和 `subst_fresh` rewrite 顺序上。
+
+## Strengthen substitution before open/preservation
+
+如果 open lemma 需要形如
+
+```coq
+Γ ⊢ᵥ u ⋮ U ->
+<[x := U]> Γ ⊢ e ^^ x ⋮ T ->
+Γ ⊢ e ^^ u ⋮ T
+```
+
+那么 substitution lemma 不应只接受 `∅ ⊢ᵥ u ⋮ U`。先证明更强的 insert-context
+版本：
+
+```coq
+<[x := U]> Γ ⊢ e ⋮ T ->
+Γ ⊢ᵥ u ⋮ U ->
+Γ ⊢ {x := u} e ⋮ T
+```
+
+旧的 closed-substitution 版本再由 `∅ ⊢ᵥ u ⋮ U` 加 weakening 推出。这样
+`basic_typing_open` 可以直接用 `subst_intro` 加强 substitution 收尾。
+
+在 cofinite binder case 中，constructor 的 avoidance set 要显式包含替换变量
+和当前 context domain：
+
+```coq
+apply VT_Lam with (L := L ∪ {[xsub]} ∪ dom Γ).
+```
+
+否则 `eapply` 可能留下未实例化的 set evar，后续想从 `y ∉ L` 推出
+`xsub <> y` 或 `y ∉ dom Γ` 时，`set_solver` 会失去关键 singleton/domain 信息。
+对打开后的替换交换，优先先 assert：
+
+```coq
+assert (Hxy : xsub <> y) by ...
+assert (Hlc : lc_value u) by ...
+rewrite <- subst_open_var_tm by eauto.
+```
+
+这比在 `rewrite ... by [...]` 里塞多分支 tactic 更稳定。
+
+## Preservation over `step`
+
+证明 one-step preservation 时，`Step_let` 的 IH 必须对 context 和 type
+重新泛化：
+
+```coq
+intros Hty Hstep. revert Γ T Hty.
+induction Hstep; intros Γ T Hty.
+```
+
+否则 IH 会被固定成外层 let 的返回类型 `T`，而 congruence step 需要的是
+`e1` 的中间类型 `T1`。重建 let 时显式分两支更稳：
+
+```coq
+inversion Hty; subst.
+eapply TT_Let.
+- eapply IHHstep; eauto.
+- eauto.
+```
+
+Head-step preservation 的 beta/let/fix cases 都走同一条路：从 typing inversion
+拿到 cofinite premise，选 `fresh_for (L ∪ fv body)`，然后调用
+`basic_typing_open_tm/value`。Primitive case 最好先证明一个小 lemma，说明
+`prim_step` 保持 `prim_op_type` 的返回 base type，再用 `VT_Const` 构造结果。

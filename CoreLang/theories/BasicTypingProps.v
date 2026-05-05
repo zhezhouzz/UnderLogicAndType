@@ -218,14 +218,24 @@ Lemma basic_typing_open_value Γ x u U v T :
   Γ ⊢ᵥ u ⋮ U →
   <[x := U]> Γ ⊢ᵥ v ^^ x ⋮ T →
   Γ ⊢ᵥ open_value 0 u v ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hfresh Hu Hopen.
+  assert (Hlc_u : lc_value u) by exact (typing_value_lc _ _ _ Hu).
+  rewrite <- (subst_intro_value x u 0 v Hfresh Hlc_u).
+  eapply subst_typing_insert_value; eauto.
+Qed.
 
 Lemma basic_typing_open_tm Γ x u U e T :
   x ∉ fv_tm e →
   Γ ⊢ᵥ u ⋮ U →
   <[x := U]> Γ ⊢ₑ e ^^ x ⋮ T →
   Γ ⊢ₑ open_tm 0 u e ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hfresh Hu Hopen.
+  assert (Hlc_u : lc_value u) by exact (typing_value_lc _ _ _ Hu).
+  rewrite <- (subst_intro_tm x u 0 e Hfresh Hlc_u).
+  eapply subst_typing_insert_tm; eauto.
+Qed.
 
 Class BasicTypingOpen (E : Type)
     `{Stale E} `{Typing (gmap atom ty) E ty} `{Open value E} :=

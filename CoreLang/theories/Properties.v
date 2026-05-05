@@ -72,7 +72,7 @@ Qed.
 
 Lemma preservation e e' T :
   ∅ ⊢ₑ e ⋮ T → step e e' → ∅ ⊢ₑ e' ⋮ T.
-Proof. Admitted.
+Proof. intros Hty Hstep. eapply step_preserves_type; eauto. Qed.
 
 (** ** LN lemmas proofs (deferred) *)
 

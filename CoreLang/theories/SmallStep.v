@@ -8,6 +8,7 @@
       - [is_val e]       : whether [e] is a value (i.e., [tret v]) *)
 
 From CoreLang Require Export Syntax BasicTyping.
+From CoreLang Require Import BasicTypingProps.
 
 (** ** Evaluation of primitive operations
 
@@ -119,11 +120,66 @@ Proof.
   exfalso. eapply val_no_step; eauto.
 Qed.
 
+Lemma prim_step_preserves_type op c c' arg_b ret_b :
+  prim_step op c c' →
+  prim_op_type op = (arg_b, ret_b) →
+  base_ty_of_const c = arg_b →
+  base_ty_of_const c' = ret_b.
+Proof.
+  intros Hstep Hsig Harg. inversion Hstep; subst; simpl in *;
+    simplify_eq; reflexivity.
+Qed.
+
+Lemma head_step_preserves_type Γ e e' T :
+  Γ ⊢ₑ e ⋮ T → head_step e e' → Γ ⊢ₑ e' ⋮ T.
+Proof.
+  intros Hty Hstep. inversion Hstep; subst.
+  - inversion Hty; subst.
+    match goal with
+    | Hret : Γ ⊢ₑ tret v ⋮ ?T1 |- _ =>
+        inversion Hret; subst
+    end.
+    match goal with
+    | Hbody : ∀ y : atom, y ∉ ?L → <[y:=?T1]> Γ ⊢ₑ e0 ^^ y ⋮ T |- _ =>
+        pose (x := fresh_for (L ∪ fv_tm e0));
+        assert (Hx : x ∉ L ∪ fv_tm e0) by (subst x; apply fresh_for_not_in);
+        eapply basic_typing_open_tm with (x := x) (U := T1); eauto; set_solver
+    end.
+  - inversion Hty; subst.
+    inversion H6; subst.
+    replace ret_b with (base_ty_of_const c') by
+      (eapply prim_step_preserves_type; eauto; reflexivity).
+    constructor; constructor.
+  - inversion Hty; subst.
+    inversion H3; subst.
+    pose (x := fresh_for (L ∪ fv_tm body)).
+    assert (Hx : x ∉ L ∪ fv_tm body) by (subst x; apply fresh_for_not_in).
+    eapply basic_typing_open_tm with (x := x) (U := s1); eauto; set_solver.
+  - inversion Hty; subst.
+    inversion H3; subst.
+    pose (x := fresh_for (L ∪ fv_value vf)).
+    assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
+    eapply TT_App.
+    + eapply basic_typing_open_value with (x := x) (U := s1);
+        [set_solver | exact H5 | apply H2; set_solver].
+    + econstructor; eauto.
+  - inversion Hty; subst; eauto.
+  - inversion Hty; subst; eauto.
+Qed.
+
 (** ** Preservation (BasicTyping invariant — Admitted here, proved in Properties) *)
 
 Lemma step_preserves_type Γ e e' T :
   Γ ⊢ₑ e ⋮ T → step e e' → Γ ⊢ₑ e' ⋮ T.
-Proof. Admitted.
+Proof.
+  intros Hty Hstep. revert Γ T Hty.
+  induction Hstep; intros Γ T Hty.
+  - eapply head_step_preserves_type; eauto.
+  - inversion Hty; subst.
+    eapply TT_Let.
+    + eapply IHHstep; eauto.
+    + eauto.
+Qed.
 
 Lemma steps_preserves_type Γ e e' T :
   Γ ⊢ₑ e ⋮ T → e →* e' → Γ ⊢ₑ e' ⋮ T.
