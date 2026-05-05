@@ -20,3 +20,4 @@
 | 17_core_ln_proof_patterns.md | Core LN proof：拆 mutual lemma、combined helper、cofinite binder 的 fact1 |
 | 19_operational_reduction_helpers.md | Core operational proof：用 reduction intro/iff lemmas 简化 derived-form reductions |
 | 20_partial_algebra_remaining.md | Partial ChoiceAlgebra：当前剩余证明、风险点、已修正的 rename/domain 经验 |
+| 21_instantiation_migration.md | Instantiation/multi-substitution：迁移后的 msubst classes、tactics 和使用前提 |
