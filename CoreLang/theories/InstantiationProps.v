@@ -5,7 +5,8 @@
     later syntactic categories can reuse the same multi-substitution facts once
     they provide the corresponding single-substitution lemmas. *)
 
-From CoreLang Require Import Instantiation LocallyNamelessExtra.
+From ChoicePrelude Require Import Store.
+From CoreLang Require Import Instantiation LocallyNamelessExtra LocallyNamelessInstances.
 From LocallyNameless Require Import Classes Tactics.
 
 Lemma closed_env_insert σ x v :
@@ -98,10 +99,42 @@ Ltac fold_msubst :=
 Ltac rewrite_msubst_insert :=
   cbn; fold_msubst; rewrite !msubst_insert; eauto.
 
+Class MsubstFresh A `{Stale A} `{SubstV value A} := msubst_fresh :
+  forall (σ : env) (a : A),
+    stale σ ∩ stale a = ∅ ->
+    m{σ} a = a.
+
+Lemma MsubstFresh_all
+    (A : Type)
+    (staleA : Stale A)
+    (substA : SubstV value A)
+    (subst_freshA : @SubstFresh A staleA substA) :
+  @MsubstFresh A staleA substA.
+Proof.
+  unfold MsubstFresh. intros σ a.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => dom σ ∩ stale a = ∅ ->
+      map_fold (fun x vx acc => {x := vx} acc) a σ = a) _ _ σ).
+  - intros _. reflexivity.
+  - intros x vx σ' Hfresh Hfold IH Hdisj.
+    rewrite Hfold. rewrite IH.
+    + apply subst_freshA. rewrite dom_insert_L in Hdisj. set_solver.
+    + rewrite dom_insert_L in Hdisj. set_solver.
+Qed.
+
+#[global] Instance MsubstFresh_value : MsubstFresh value.
+Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstFresh_tm : MsubstFresh tm.
+Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
+
 Ltac msubst_simp :=
   repeat match goal with
   | |- context [m{∅} _] => rewrite msubst_empty
   | H : context [m{∅} _] |- _ => rewrite msubst_empty in H
+  | |- context [m{?σ} ?a] => rewrite (msubst_fresh σ a) by set_solver
+  | H : context [m{?σ} ?a] |- _ => rewrite (msubst_fresh σ a) in H by set_solver
   | |- context [m{<[?x := ?vx]> ?σ} _] =>
       rewrite (msubst_insert σ x vx); eauto
   | H : context [m{<[?x := ?vx]> ?σ} _] |- _ =>
