@@ -667,6 +667,18 @@ Proof.
   symmetry. apply wfworld_ext. exact Hle.
 Qed.
 
+Lemma res_swap_le (x y : atom) (w1 w2 : WfWorld) :
+  w1 ⊑ w2 →
+  res_swap x y w1 ⊑ res_swap x y w2.
+Proof.
+  intros Hle.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+  change ((res_swap x y w1 : World) =
+    (res_restrict (res_swap x y w2) (aset_swap x y (world_dom (w1 : World))) : World)).
+  rewrite (res_restrict_swap x y w2 (world_dom (w1 : World))).
+  rewrite (res_restrict_eq_of_le w1 w2 Hle). reflexivity.
+Qed.
+
 Lemma res_restrict_le_eq (m n : WfWorld) (X : aset) :
   m ⊑ n →
   X ⊆ world_dom (m : World) →

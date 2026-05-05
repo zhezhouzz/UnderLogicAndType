@@ -44,6 +44,13 @@ Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifie
         (λ σ w, p (store_rename_atom y x σ) (res_rename_atom y x w))
   end.
 
+Definition lqual_swap (x y : atom) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual d p =>
+      lqual (aset_swap x y d)
+        (λ σ w, p (store_swap x y σ) (res_swap x y w))
+  end.
+
 Lemma logic_qualifier_denote_rename_atom x y q σ w :
   logic_qualifier_denote (lqual_rename_atom x y q) σ w ↔
   logic_qualifier_denote q (store_rename_atom y x σ) (res_rename_atom y x w).
@@ -51,6 +58,17 @@ Proof.
   destruct q as [d p]. simpl.
   rewrite store_restrict_rename_atom.
   rewrite res_restrict_rename_atom.
+  reflexivity.
+Qed.
+
+Lemma logic_qualifier_denote_swap x y q σ w :
+  logic_qualifier_denote (lqual_swap x y q) σ w ↔
+  logic_qualifier_denote q (store_swap x y σ) (res_swap x y w).
+Proof.
+  destruct q as [d p]. simpl.
+  rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
+  rewrite <- (res_restrict_swap x y w (aset_swap x y d)).
+  rewrite !aset_swap_involutive.
   reflexivity.
 Qed.
 

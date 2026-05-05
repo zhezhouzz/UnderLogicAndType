@@ -76,6 +76,26 @@ Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
   | FFib z p => FFib (atom_rename x y z) (formula_rename_atom x y p)
   end.
 
+Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
+  match φ with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | FAtom q => FAtom (lqual_swap x y q)
+  | FAnd p q => FAnd (formula_swap x y p) (formula_swap x y q)
+  | FOr p q => FOr (formula_swap x y p) (formula_swap x y q)
+  | FImpl p q => FImpl (formula_swap x y p) (formula_swap x y q)
+  | FStar p q => FStar (formula_swap x y p) (formula_swap x y q)
+  | FWand p q => FWand (formula_swap x y p) (formula_swap x y q)
+  | FPlus p q => FPlus (formula_swap x y p) (formula_swap x y q)
+  | FForall z p =>
+      FForall (atom_swap x y z) (formula_swap x y p)
+  | FExists z p =>
+      FExists (atom_swap x y z) (formula_swap x y p)
+  | FOver p => FOver (formula_swap x y p)
+  | FUnder p => FUnder (formula_swap x y p)
+  | FFib z p => FFib (atom_swap x y z) (formula_swap x y p)
+  end.
+
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1
@@ -87,6 +107,12 @@ Fixpoint formula_measure (φ : Formula) : nat :=
 
 Lemma formula_rename_preserves_measure x y φ :
   formula_measure (formula_rename_atom x y φ) = formula_measure φ.
+Proof.
+  induction φ; simpl; eauto; lia.
+Qed.
+
+Lemma formula_swap_preserves_measure x y φ :
+  formula_measure (formula_swap x y φ) = formula_measure φ.
 Proof.
   induction φ; simpl; eauto; lia.
 Qed.
