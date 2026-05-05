@@ -44,6 +44,16 @@ Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifie
         (λ σ w, p (store_rename_atom y x σ) (res_rename_atom y x w))
   end.
 
+Lemma logic_qualifier_denote_rename_atom x y q σ w :
+  logic_qualifier_denote (lqual_rename_atom x y q) σ w ↔
+  logic_qualifier_denote q (store_rename_atom y x σ) (res_rename_atom y x w).
+Proof.
+  destruct q as [d p]. simpl.
+  rewrite store_restrict_rename_atom.
+  rewrite res_restrict_rename_atom.
+  reflexivity.
+Qed.
+
 Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
   match q1, q2 with
   | lqual d1 p1, lqual d2 p2 =>

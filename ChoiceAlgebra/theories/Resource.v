@@ -325,6 +325,49 @@ Proof.
     rewrite (Hdom σ Hσ). reflexivity.
 Defined.
 
+Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
+  res_restrict (res_rename_atom y x w) X =
+  res_rename_atom y x (res_restrict w (aset_rename x y X)).
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl.
+    change (aset_rename y x (world_dom (w : World)) ∩ X =
+      aset_rename y x (world_dom (w : World) ∩ aset_rename x y X)).
+    apply set_eq. intros z.
+    rewrite elem_of_intersection, !elem_of_aset_rename.
+    split.
+    + intros [Hzren HzX].
+      destruct Hzren as [[Hzx Hyw] | [Hzx [Hzy Hzw]]].
+      * subst z. left. split; [reflexivity |].
+        apply elem_of_intersection. split; [exact Hyw |].
+        rewrite elem_of_aset_rename. left. split; [reflexivity | exact HzX].
+      * right. repeat split; try congruence.
+        apply elem_of_intersection. split; [exact Hzw |].
+        rewrite elem_of_aset_rename. right. repeat split; try congruence; exact HzX.
+    + intros Hzren.
+      destruct Hzren as [[Hzx Hin] | [Hzx [Hzy Hin]]].
+      * apply elem_of_intersection in Hin as [Hw HX].
+        subst z.
+        split.
+        -- left. split; [reflexivity | exact Hw].
+        -- rewrite elem_of_aset_rename in HX.
+           destruct HX as [[_ HxX] | [Hyy [_ _]]]; [exact HxX | congruence].
+      * apply elem_of_intersection in Hin as [Hw HX].
+        split.
+        -- right. repeat split; try congruence; exact Hw.
+        -- rewrite elem_of_aset_rename in HX.
+           destruct HX as [[Hzy' _] | [_ [_ HzX]]]; [congruence | exact HzX].
+  - intros σ. split.
+    + intros [σ0 [[σw [Hσw Hrename]] Hrestrict]]. subst σ0 σ.
+      simpl. exists (store_restrict σw (aset_rename x y X)). split.
+      * exists σw. split; [exact Hσw | reflexivity].
+      * symmetry. apply store_restrict_rename_atom.
+    + intros [σ0 [[σw [Hσw Hrestrict]] Hrename]]. subst σ0 σ.
+      simpl. exists (store_rename_atom y x σw). split.
+      * exists σw. split; [exact Hσw | reflexivity].
+      * apply store_restrict_rename_atom.
+Qed.
+
 Definition res_fiber (w : WfWorld) (σ : StoreT)
     (Hne : ∃ s, (w : World) s ∧ store_restrict s (dom σ) = σ) : WfWorld.
 Proof.
