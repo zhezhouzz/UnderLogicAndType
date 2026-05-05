@@ -39,15 +39,6 @@ Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_quali
       else q
   end.
 
-Definition qual_close_atom (x : atom) (k : nat) (q : type_qualifier) : type_qualifier :=
-  match q with
-  | qual B d p =>
-      if decide (x ∈ d) then
-        qual ({[k]} ∪ B) (d ∖ {[x]})
-          (λ β σ a, ∃ v, β !! k = Some v ∧ p β (<[x := v]> σ) a)
-      else q
-  end.
-
 Definition qual_subst_value (x : atom) (v : value) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual B d p =>
@@ -92,16 +83,13 @@ Arguments stale_qualifier /.
 (** ** Locally-nameless infrastructure *)
 
 #[global] Instance open_qual_atom_inst : Open atom type_qualifier := qual_open_atom.
-#[global] Instance close_qual_inst     : Close type_qualifier := qual_close_atom.
 #[global] Instance subst_qual_inst     : SubstV value type_qualifier := qual_subst_value.
 #[global] Instance substM_qual_inst    : SubstM (gmap atom value) type_qualifier := qual_subst_map.
 Arguments open_qual_atom_inst /.
-Arguments close_qual_inst /.
 Arguments subst_qual_inst /.
 Arguments substM_qual_inst /.
 
 Notation "q '^q^' x" := (qual_open_atom 0 x q) (at level 20).
-Notation "x '\\q' q" := (qual_close_atom x 0 q) (at level 20).
 Notation "'{' x ':=' v '}q' q" := (qual_subst_value x v q)
   (at level 20, x constr, v constr, format "{ x := v }q  q").
 

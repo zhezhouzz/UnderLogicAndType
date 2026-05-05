@@ -33,6 +33,3 @@ Qed.
 Proof.
   intros x v τ Hclosed. exact (cty_fv_of_subst_closed x v τ Hclosed).
 Qed.
-
-#[global] Instance SubstFresh_ctx : SubstFresh ctx.
-Proof. intros Γ x v Hfresh. exact (ctx_subst_fresh x v Γ Hfresh). Qed.
