@@ -233,6 +233,34 @@ Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
 #[global] Instance MsubstOpen_tm : MsubstOpen tm.
 Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
 
+Class MsubstOpenVar A `{Open value A} `{SubstV value A} := msubst_open_var :
+  forall (a : A) (k : nat) (x : atom) (σ : env),
+    closed_env σ ->
+    lc_env σ ->
+    x ∉ dom σ ->
+    m{σ} ({k ~> vfvar x} a) = {k ~> vfvar x} (m{σ} a).
+
+Lemma MsubstOpenVar_all
+    (A : Type)
+    (openA : Open value A)
+    (substA : SubstV value A)
+    (msubst_openA : @MsubstOpen A openA substA)
+    (msubst_fresh_valueA : @MsubstFresh value stale_value_inst subst_value_inst) :
+  @MsubstOpenVar A openA substA.
+Proof.
+  unfold MsubstOpenVar. intros a k x σ Hclosed Hlc_env Hfresh.
+  rewrite msubst_open by (try exact Hclosed; try exact Hlc_env; exact (LC_fvar x)).
+  rewrite (msubst_fresh σ (vfvar x))
+    by (change (dom σ ∩ {[x]} = ∅); set_solver).
+  reflexivity.
+Qed.
+
+#[global] Instance MsubstOpenVar_value : MsubstOpenVar value.
+Proof. eapply MsubstOpenVar_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstOpenVar_tm : MsubstOpenVar tm.
+Proof. eapply MsubstOpenVar_all; typeclasses eauto. Qed.
+
 Class MsubstIntro A `{Stale A} `{Open value A} `{SubstV value A} :=
   msubst_intro :
     forall (a : A) (k : nat) (vx : value) (x : atom) (σ : env),
