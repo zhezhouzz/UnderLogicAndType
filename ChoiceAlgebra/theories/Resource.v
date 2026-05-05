@@ -643,6 +643,31 @@ Proof.
     exact (Hc τ1 τ2 Hτ1 Hτ2).
 Qed.
 
+Lemma res_product_swap (x y : atom) (w1 w2 : WfWorld)
+    (Hc : world_compat w1 w2)
+    (Hc' : world_compat (res_swap x y w1) (res_swap x y w2)) :
+  res_swap x y (res_product w1 w2 Hc) =
+  res_product (res_swap x y w1) (res_swap x y w2) Hc'.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. rewrite aset_swap_union. reflexivity.
+  - intros σ. simpl. split.
+    + intros [σ0 [Hprod Hswap]]. subst σ.
+      destruct Hprod as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      exists (store_swap x y σ1), (store_swap x y σ2). repeat split.
+      * exists σ1. split; [exact Hσ1 | reflexivity].
+      * exists σ2. split; [exact Hσ2 | reflexivity].
+      * exact (proj2 (store_compat_swap x y σ1 σ2) Hcompat).
+      * rewrite <- store_swap_union by exact Hcompat. reflexivity.
+    + intros [σ1' [σ2' [Hσ1' [Hσ2' [Hcompat' ->]]]]].
+      destruct Hσ1' as [σ1 [Hσ1 Hswap1]].
+      destruct Hσ2' as [σ2 [Hσ2 Hswap2]]. subst σ1' σ2'.
+      exists (σ1 ∪ σ2). split.
+      * exists σ1, σ2. repeat split; eauto.
+      * rewrite store_swap_union by exact (Hc σ1 σ2 Hσ1 Hσ2).
+        reflexivity.
+Qed.
+
 Lemma res_restrict_le (w : WfWorld) (X : aset) :
   res_restrict w X ⊑ w.
 Proof.
