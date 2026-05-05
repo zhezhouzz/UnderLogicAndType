@@ -106,6 +106,43 @@ Lemma store_compat_union s1 s2 :
   store_compat (s1 ∪ s2) (s1 ∪ s2).
 Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
 
+Lemma store_compat_union_inv_l s1 s2 s3 :
+  store_compat (s1 ∪ s2) s3 →
+  store_compat s1 s3.
+Proof.
+  unfold store_compat. intros Hc i v1 v3 H1 H3.
+  eapply Hc; [| exact H3].
+  rewrite lookup_union_Some_raw. left. exact H1.
+Qed.
+
+Lemma store_compat_union_inv_r s1 s2 s3 :
+  store_compat s1 s2 →
+  store_compat (s1 ∪ s2) s3 →
+  store_compat s2 s3.
+Proof.
+  unfold store_compat. intros H12 Hc i v2 v3 H2 H3.
+  destruct (s1 !! i) as [v1|] eqn:H1.
+  - assert (Hv : v1 = v3).
+    { eapply Hc; [| exact H3].
+      rewrite lookup_union_Some_raw. left. exact H1. }
+    assert (Hv' : v1 = v2) by (eapply H12; eauto).
+    congruence.
+  - eapply Hc; [| exact H3].
+    rewrite lookup_union_Some_raw. right. split; [exact H1 | exact H2].
+Qed.
+
+Lemma store_compat_union_intro_r s1 s2 s3 :
+  store_compat s1 s2 →
+  store_compat s1 s3 →
+  store_compat s1 (s2 ∪ s3).
+Proof.
+  unfold store_compat. intros H12 H13 i v1 v23 H1 H23.
+  rewrite lookup_union_Some_raw in H23.
+  destruct H23 as [H2 | [H2none H3]].
+  - eapply H12; eauto.
+  - eapply H13; eauto.
+Qed.
+
 Lemma store_union_comm s1 s2 :
   store_compat s1 s2 →
   s1 ∪ s2 = s2 ∪ s1.

@@ -541,7 +541,57 @@ Lemma res_product_assoc_eq (w1 w2 w3 : WfWorld)
     (H1_23 : world_compat w1 (res_product w2 w3 H23)),
     res_product (res_product w1 w2 H12) w3 H123 =
     res_product w1 (res_product w2 w3 H23) H1_23.
-Proof. Admitted.
+Proof.
+  assert (H23 : world_compat w2 w3).
+  { intros s2 s3 Hs2 Hs3.
+    destruct (wf_ne _ (world_wf w1)) as [s1 Hs1].
+    pose proof (H12 s1 s2 Hs1 Hs2) as Hc12.
+    assert (Hprod : res_product w1 w2 H12 (s1 ∪ s2)).
+    { simpl. exists s1, s2. repeat split; eauto. }
+    eapply store_compat_union_inv_r; [exact Hc12 |].
+    exact (H123 (s1 ∪ s2) s3 Hprod Hs3). }
+  assert (H1_23 : world_compat w1 (res_product w2 w3 H23)).
+  { intros s1 s23 Hs1 Hs23.
+    simpl in Hs23.
+    destruct Hs23 as [s2 [s3 [Hs2 [Hs3 [Hc23 ->]]]]].
+    apply store_compat_union_intro_r.
+    - exact (H12 s1 s2 Hs1 Hs2).
+    - assert (Hprod : res_product w1 w2 H12 (s1 ∪ s2)).
+      { simpl. exists s1, s2. repeat split; eauto. }
+      eapply store_compat_union_inv_l.
+      exact (H123 (s1 ∪ s2) s3 Hprod Hs3). }
+  exists H23, H1_23.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros (s12 & s3 & Hs12 & Hs3 & Hc123 & ->).
+      simpl in Hs12.
+      destruct Hs12 as [s1 [s2 [Hs1 [Hs2 [Hc12 ->]]]]].
+      exists s1, (s2 ∪ s3). split; [exact Hs1 |].
+      split.
+      * exists s2, s3. split; [exact Hs2 |].
+        split; [exact Hs3 |].
+        split; [exact (H23 s2 s3 Hs2 Hs3) | reflexivity].
+      * split.
+        -- assert (Hprod23 : res_product w2 w3 H23 (s2 ∪ s3)).
+           { simpl. exists s2, s3. split; [exact Hs2 |].
+             split; [exact Hs3 |].
+             split; [exact (H23 s2 s3 Hs2 Hs3) | reflexivity]. }
+           exact (H1_23 s1 (s2 ∪ s3) Hs1 Hprod23).
+        -- exact (eq_sym (assoc_L (∪) s1 s2 s3)).
+    + intros (s1 & s23 & Hs1 & Hs23 & Hc1_23 & ->).
+      simpl in Hs23.
+      destruct Hs23 as [s2 [s3 [Hs2 [Hs3 [Hc23 ->]]]]].
+      exists (s1 ∪ s2), s3.
+      split.
+      * simpl. exists s1, s2. repeat split; eauto.
+      * split; [exact Hs3 |].
+        split.
+        -- assert (Hprod12 : res_product w1 w2 H12 (s1 ∪ s2)).
+           { simpl. exists s1, s2. repeat split; eauto. }
+           exact (H123 (s1 ∪ s2) s3 Hprod12 Hs3).
+        -- exact (assoc_L (∪) s1 s2 s3).
+Qed.
 
 Lemma res_sum_assoc_eq (w1 w2 w3 : WfWorld)
     (H12 : raw_sum_defined w1 w2)
