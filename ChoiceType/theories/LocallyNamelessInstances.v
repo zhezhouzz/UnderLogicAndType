@@ -3,7 +3,7 @@
     Locally-nameless theorem-class instances for choice types. *)
 
 From LocallyNameless Require Import Classes.
-From ChoiceType Require Import Syntax QualifierInstances.
+From ChoiceType Require Import Syntax QualifierInstances QualifierProps.
 
 #[global] Instance OpenFv_cty : OpenFv atom choice_ty.
 Proof.
