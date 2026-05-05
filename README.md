@@ -217,7 +217,7 @@ match.
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
 
-### `ChoiceType/` — The type system
+### `ChoiceType/` — Choice types and denotation
 
 Choice types layered on top of `CoreLang` and `ChoiceLogic`.
 
@@ -237,9 +237,18 @@ with store-based lookup while preserving expressiveness through let-binding.
 | `QualifierInstances.v` | Type-qualifier instances for the shared LN classes |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
 | `LocallyNamelessInstances.v` | Choice-type instances for the shared LN classes |
-| `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
-| `WellFormed.v` | Well-formedness and nonemptiness judgments |
 | `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
+
+### `ChoiceTyping/` — Unstable typing layer
+
+The paper-level typing infrastructure is kept outside `ChoiceType` while its
+definitions are still changing.  `ChoiceType` retains `BasicTyping.v` because
+denotation is expected to depend on basic domain/LN well-scopedness.
+
+| File | Contents |
+|------|----------|
+| `WellFormed.v` | Well-formedness and nonemptiness judgments |
+| `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
 | `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
 | `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
