@@ -371,7 +371,8 @@ Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 
-Lemma entails_rename_atom x y (φ ψ : Formula) :
+Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
+  y ∉ (formula_fv φ ∖ {[x]}) ∪ (formula_fv ψ ∖ {[x]}) →
   entails φ ψ →
   entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
 Proof.

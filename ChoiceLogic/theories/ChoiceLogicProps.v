@@ -56,12 +56,16 @@ Lemma forall_mono (x : atom) (p q : FormulaT) :
 Proof.
   unfold entails, sat, res_models, res_models_with_store in *.
   intros Hpq m [Hscope [L [HL Hforall]]].
-  pose proof (entails_rename_atom x) as Hrename_entails.
+  set (L' := L ∪ (formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})).
   split.
-  - eapply formula_scoped_forall_from_renamed; [exact HL |].
+  - eapply formula_scoped_forall_from_renamed with (L := L').
+    { unfold L'. set_solver. }
     intros y Hy m' Hdom Hrestr.
-    pose proof (Hforall y Hy m' Hdom Hrestr) as Hp.
-    pose proof (Hrename_entails y p q Hpq m') as Hpq_y.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+      by (unfold L' in Hy; set_solver).
+    pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
     assert (Hp_exact :
         res_models_with_store_fuel
           (formula_measure (formula_rename_atom x y p)) ∅ m'
@@ -71,10 +75,13 @@ Proof.
     exact (res_models_with_store_fuel_scoped
       (formula_measure (formula_rename_atom x y q)) ∅ m'
       (formula_rename_atom x y q) Hq).
-  - exists L. split; [exact HL |].
+  - exists L'. split; [unfold L'; set_solver |].
     intros y Hy m' Hdom Hrestr.
-    pose proof (Hforall y Hy m' Hdom Hrestr) as Hp.
-    pose proof (Hrename_entails y p q Hpq m') as Hpq_y.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+      by (unfold L' in Hy; set_solver).
+    pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
     assert (Hp_exact :
         res_models_with_store_fuel
           (formula_measure (formula_rename_atom x y p)) ∅ m'
@@ -89,13 +96,17 @@ Lemma exists_mono (x : atom) (p q : FormulaT) :
 Proof.
   unfold entails, sat, res_models, res_models_with_store in *.
   intros Hpq m [Hscope [L [HL Hexists]]].
-  pose proof (entails_rename_atom x) as Hrename_entails.
+  set (L' := L ∪ (formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})).
   split.
-  - eapply formula_scoped_exists_from_renamed; [exact HL |].
+  - eapply formula_scoped_exists_from_renamed with (L := L').
+    { unfold L'. set_solver. }
     intros y Hy.
-    destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hp]]].
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+      by (unfold L' in Hy; set_solver).
+    destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-    pose proof (Hrename_entails y p q Hpq m') as Hpq_y.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
     assert (Hp_exact :
         res_models_with_store_fuel
           (formula_measure (formula_rename_atom x y p)) ∅ m'
@@ -105,11 +116,14 @@ Proof.
     exact (res_models_with_store_fuel_scoped
       (formula_measure (formula_rename_atom x y q)) ∅ m'
       (formula_rename_atom x y q) Hq).
-  - exists L. split; [exact HL |].
+  - exists L'. split; [unfold L'; set_solver |].
     intros y Hy.
-    destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hp]]].
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ ((formula_fv p ∖ {[x]}) ∪ (formula_fv q ∖ {[x]})))
+      by (unfold L' in Hy; set_solver).
+    destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-    pose proof (Hrename_entails y p q Hpq m') as Hpq_y.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
     assert (Hp_exact :
         res_models_with_store_fuel
           (formula_measure (formula_rename_atom x y p)) ∅ m'
