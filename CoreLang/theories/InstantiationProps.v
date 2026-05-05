@@ -233,6 +233,47 @@ Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
 #[global] Instance MsubstOpen_tm : MsubstOpen tm.
 Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
 
+Class MsubstIntro A `{Stale A} `{Open value A} `{SubstV value A} :=
+  msubst_intro :
+    forall (a : A) (k : nat) (vx : value) (x : atom) (σ : env),
+      closed_env σ ->
+      stale vx = ∅ ->
+      is_lc vx ->
+      lc_env σ ->
+      x ∉ dom σ ∪ stale a ->
+      {k ~> vx} (m{σ} a) =
+      m{<[x := vx]> σ} ({k ~> vfvar x} a).
+
+Lemma MsubstIntro_all
+    (A : Type)
+    (staleA : Stale A)
+    (openA : Open value A)
+    (substA : SubstV value A)
+    (subst_introA : @SubstIntro A staleA openA substA)
+    (msubst_insertA : @MsubstInsert A substA)
+    (msubst_openA : @MsubstOpen A openA substA)
+    (msubst_fresh_valueA : @MsubstFresh value stale_value_inst subst_value_inst)
+    (msubst_fvA : @MsubstFv A staleA substA) :
+  @MsubstIntro A staleA openA substA.
+Proof.
+  unfold MsubstIntro. intros a k vx x σ Hclosed Hvx_closed Hvx_lc Hlc_env Hfresh.
+  rewrite (msubst_insert σ x vx)
+    by (try exact Hclosed; try exact Hvx_closed; apply not_elem_of_dom; set_solver).
+  rewrite msubst_open by (try exact Hclosed; try exact Hlc_env; exact (LC_fvar x)).
+  rewrite (msubst_fresh σ (vfvar x))
+    by (change (dom σ ∩ {[x]} = ∅); set_solver).
+  rewrite subst_introA.
+  - reflexivity.
+  - pose proof (msubst_fv σ a Hclosed) as Hfv. set_solver.
+  - exact Hvx_lc.
+Qed.
+
+#[global] Instance MsubstIntro_value : MsubstIntro value.
+Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstIntro_tm : MsubstIntro tm.
+Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
+
 Ltac msubst_simp :=
   repeat match goal with
   | |- context [m{∅} _] => rewrite msubst_empty
