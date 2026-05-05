@@ -388,10 +388,16 @@ Proof. Admitted.
 (** ** Compatibility lemmas *)
 
 Lemma raw_compat_unit (m : World) : world_compat raw_unit m.
-Proof. Admitted.
+Proof.
+  intros s1 s2 Hs1 Hs2. simpl in Hs1. subst.
+  apply disj_dom_store_compat. set_solver.
+Qed.
 
 Lemma raw_compat_unit_r (m : World) : world_compat m raw_unit.
-Proof. Admitted.
+Proof.
+  intros s1 s2 Hs1 Hs2. simpl in Hs2. subst.
+  apply disj_dom_store_compat. set_solver.
+Qed.
 
 (** ** Singleton world
 
@@ -455,19 +461,53 @@ Proof. Admitted.
 Lemma res_product_comm (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
     (Hc' : world_compat w2 w1) :
   ∀ s, res_product w1 w2 Hc s ↔ res_product w2 w1 Hc' s.
-Proof. Admitted.
+Proof.
+  intros s. simpl. split.
+  - intros (s1 & s2 & Hs1 & Hs2 & Hcompat & ->).
+    exists s2, s1. split; [exact Hs2 |].
+    split; [exact Hs1 |].
+    split; [apply store_compat_sym; exact Hcompat |].
+    apply store_union_comm. exact Hcompat.
+  - intros (s2 & s1 & Hs2 & Hs1 & Hcompat & ->).
+    exists s1, s2. split; [exact Hs1 |].
+    split; [exact Hs2 |].
+    split; [apply store_compat_sym; exact Hcompat |].
+    apply store_union_comm. exact Hcompat.
+Qed.
 
 Lemma res_product_unit_r (w : WfWorld) :
   ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
-Proof. Admitted.
+Proof.
+  intros s. simpl. split.
+  - intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
+    subst s2. rewrite map_union_empty. exact Hs1.
+  - intros Hs.
+    exists s, ∅. repeat split; eauto.
+    + exact (raw_compat_unit_r (w : World) s ∅ Hs eq_refl).
+    + rewrite map_union_empty. reflexivity.
+Qed.
 
 Lemma res_product_unit_r_eq (w : WfWorld) :
   res_product w res_unit (raw_compat_unit_r w) = w.
-Proof. Admitted.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - apply res_product_unit_r.
+Qed.
 
 Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
   res_product w res_unit Hc = w.
-Proof. Admitted.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros s. simpl. split.
+    + intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
+      subst s2. rewrite map_union_empty. exact Hs1.
+    + intros Hs.
+      exists s, ∅. repeat split; eauto.
+      * exact (Hc s ∅ Hs eq_refl).
+      * rewrite map_union_empty. reflexivity.
+Qed.
 
 Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
     (Hdef' : raw_sum_defined w2 w1) :
@@ -477,12 +517,22 @@ Proof. intros s. unfold res_sum. simpl. tauto. Qed.
 Lemma res_product_comm_eq (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   ∃ Hc' : world_compat w2 w1,
     res_product w1 w2 Hc = res_product w2 w1 Hc'.
-Proof. Admitted.
+Proof.
+  exists (fun s1 s2 Hs1 Hs2 => store_compat_sym _ _ (Hc s2 s1 Hs2 Hs1)).
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - apply res_product_comm.
+Qed.
 
 Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   ∃ Hdef' : raw_sum_defined w2 w1,
     res_sum w1 w2 Hdef = res_sum w2 w1 Hdef'.
-Proof. Admitted.
+Proof.
+  exists (eq_sym Hdef).
+  apply wfworld_ext. apply world_ext.
+  - simpl. exact Hdef.
+  - apply res_sum_comm.
+Qed.
 
 Lemma res_product_assoc_eq (w1 w2 w3 : WfWorld)
     (H12 : world_compat w1 w2)

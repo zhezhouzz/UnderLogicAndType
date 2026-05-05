@@ -106,6 +106,30 @@ Lemma store_compat_union s1 s2 :
   store_compat (s1 ∪ s2) (s1 ∪ s2).
 Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
 
+Lemma store_union_comm s1 s2 :
+  store_compat s1 s2 →
+  s1 ∪ s2 = s2 ∪ s1.
+Proof.
+  intros Hcompat. apply map_eq. intros i.
+  rewrite option_eq. intros v.
+  setoid_rewrite lookup_union_Some_raw.
+  split.
+  - intros [H1 | [H1 H2]].
+    + destruct (s2 !! i) as [v2|] eqn:H2.
+      * left.
+        assert (Hv : v = v2) by (eapply Hcompat; eauto).
+        subst. exact H2.
+      * right. split; [exact H2 | exact H1].
+    + left. exact H2.
+  - intros [H2 | [H2 H1]].
+    + destruct (s1 !! i) as [v1|] eqn:H1.
+      * left.
+        assert (Hv : v1 = v) by (eapply Hcompat; eauto).
+        subst. exact H1.
+      * right. split; [exact H1 | exact H2].
+    + left. exact H1.
+Qed.
+
 Lemma store_restrict_dom s X :
   dom (store_restrict s X) = dom s ∩ X.
 Proof.
