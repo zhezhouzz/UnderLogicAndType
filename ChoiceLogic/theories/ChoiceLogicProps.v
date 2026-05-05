@@ -57,12 +57,22 @@ Definition under_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
 (** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
 Lemma over_ext_eq (p : FormulaT) :
   ∀ m, ext (FOver p) m ↔ under_closure (ext p) m.
-Proof. Admitted.
+Proof.
+  intros m. unfold ext, under_closure, sat, res_models, res_models_with_store.
+  simpl. split.
+  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+Qed.
 
 (** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
 Lemma under_ext_eq (p : FormulaT) :
   ∀ m, ext (FUnder p) m ↔ over_closure (ext p) m.
-Proof. Admitted.
+Proof.
+  intros m. unfold ext, over_closure, sat, res_models, res_models_with_store.
+  simpl. split.
+  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+Qed.
 
 (** ** Adjunction: ∗ and −∗ *)
 
