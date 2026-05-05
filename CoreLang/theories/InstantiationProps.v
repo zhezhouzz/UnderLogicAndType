@@ -28,6 +28,28 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hclosed Hlookup).
 Qed.
 
+Definition lc_env (σ : env) : Prop :=
+  map_Forall (fun _ v => is_lc v) σ.
+
+Lemma lc_env_insert σ x v :
+  σ !! x = None ->
+  lc_env (<[x := v]> σ) ->
+  is_lc v /\ lc_env σ.
+Proof.
+  intros Hfresh Hlc.
+  unfold lc_env in *.
+  apply map_Forall_insert in Hlc; [exact Hlc | exact Hfresh].
+Qed.
+
+Lemma lc_env_lookup σ x v :
+  lc_env σ ->
+  σ !! x = Some v ->
+  is_lc v.
+Proof.
+  unfold lc_env. intros Hlc Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
+Qed.
+
 Ltac gen_closed_env :=
   repeat
     match goal with
@@ -39,6 +61,19 @@ Ltac gen_closed_env :=
     | H : closed_env ?σ, Hlookup : ?σ !! ?x = Some ?v |- _ =>
         let Hv := fresh "Hclosed_value" in
         pose proof (closed_env_lookup σ x v H Hlookup) as Hv
+    end.
+
+Ltac gen_lc_env :=
+  repeat
+    match goal with
+    | H : lc_env (<[?x := _]> ?σ), Hfresh : ?σ !! ?x = None |- _ =>
+        let Hv := fresh "Hlc_value" in
+        let Hσ := fresh "Hlc_env" in
+        destruct (lc_env_insert σ x _ Hfresh H) as [Hv Hσ];
+        clear H
+    | H : lc_env ?σ, Hlookup : ?σ !! ?x = Some ?v |- _ =>
+        let Hv := fresh "Hlc_value" in
+        pose proof (lc_env_lookup σ x v H Hlookup) as Hv
     end.
 
 (** Single-substitutions commute when the two substituted values are closed.
@@ -160,6 +195,43 @@ Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstFv_tm : MsubstFv tm.
 Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
+
+Class MsubstOpen A `{Open value A} `{SubstV value A} := msubst_open :
+  forall (a : A) (k : nat) (u : value) (σ : env),
+    closed_env σ ->
+    lc_env σ ->
+    is_lc u ->
+    m{σ} ({k ~> u} a) = {k ~> m{σ} u} (m{σ} a).
+
+Lemma MsubstOpen_all
+    (A : Type)
+    (openA : Open value A)
+    (substA : SubstV value A)
+    (subst_openA : @SubstOpen A openA substA) :
+  @MsubstOpen A openA substA.
+Proof.
+  unfold MsubstOpen. intros a k u σ.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => closed_env σ -> lc_env σ -> is_lc u ->
+      map_fold (fun x vx acc => {x := vx} acc) ({k ~> u} a) σ =
+      {k ~> map_fold (fun x vx acc => {x := vx} acc) u σ}
+        (map_fold (fun x vx acc => {x := vx} acc) a σ)) _ _ σ).
+  - intros _ _ _. reflexivity.
+  - intros x vx σ' Hfresh Hfold IH Hclosed Hlc Hu.
+    destruct (closed_env_insert σ' x vx Hfresh Hclosed) as [Hvx_closed Hclosed'].
+    destruct (lc_env_insert σ' x vx Hfresh Hlc) as [Hvx_lc Hlc'].
+    rewrite !Hfold.
+    rewrite IH by eauto.
+    rewrite subst_openA by exact Hvx_lc.
+    reflexivity.
+Qed.
+
+#[global] Instance MsubstOpen_value : MsubstOpen value.
+Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstOpen_tm : MsubstOpen tm.
+Proof. eapply MsubstOpen_all; typeclasses eauto. Qed.
 
 Ltac msubst_simp :=
   repeat match goal with
