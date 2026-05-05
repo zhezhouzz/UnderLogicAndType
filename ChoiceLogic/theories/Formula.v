@@ -235,6 +235,118 @@ Proof.
   destruct gas as [|gas']; simpl; [tauto | intros [Hscope _]; exact Hscope].
 Qed.
 
+Lemma formula_scoped_res_le
+    (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
+  formula_scoped_in_world ρ m φ →
+  m ⊑ m' →
+  formula_scoped_in_world ρ m' φ.
+Proof.
+  unfold formula_scoped_in_world. intros Hscope Hle.
+  pose proof (raw_le_dom m m' Hle) as Hdom.
+  set_solver.
+Qed.
+
+Lemma res_models_with_store_fuel_kripke
+    (gas : nat) (ρ : StoreT) (m n : WfWorldT) (φ : Formula) :
+  m ⊑ n →
+  res_models_with_store_fuel gas ρ m φ →
+  res_models_with_store_fuel gas ρ n φ.
+Proof.
+  revert ρ m n φ.
+  induction gas as [|gas IH]; intros ρ m n φ Hle Hmodel; simpl in *.
+  { exact Hmodel. }
+  destruct Hmodel as [Hscope Hmodel].
+  split.
+  { eapply formula_scoped_res_le; eauto. }
+  destruct φ; simpl in *.
+  - exact I.
+  - exact Hmodel.
+  - destruct Hmodel as [m0 [Ha Hm0m]].
+    exists m0. split; [exact Ha |].
+    etrans; eauto.
+  - destruct Hmodel as [Hp Hq]. split; eauto.
+  - destruct Hmodel as [Hp | Hq]; [left | right]; eauto.
+  - intros m' Hnm' Hp.
+    apply Hmodel; [etrans; eauto | exact Hp].
+  - destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
+    exists m1, m2, Hc. split; [etrans; eauto |].
+    split; eauto.
+  - intros m' Hc' Hp.
+    pose proof (world_compat_le_r m' m n Hle Hc') as Hc_m.
+    pose proof (Hmodel m' Hc_m Hp) as Hq.
+    eapply IH; [| exact Hq].
+    apply res_product_le_mono; [reflexivity | exact Hle].
+  - destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
+    exists m1, m2, Hdef. split; [etrans; eauto |].
+    split; eauto.
+  - destruct Hmodel as [L [HL Hforall]].
+    exists (L ∪ world_dom (n : World)). split.
+    { set_solver. }
+    intros y Hy n' Hdom_n' Hrestr_n'.
+    assert (HyL : y ∉ L) by set_solver.
+    set (m' := res_restrict n' (world_dom (m : World) ∪ {[y]})).
+    assert (Hdom_m' : world_dom (m' : World) = world_dom (m : World) ∪ {[y]}).
+    {
+      unfold m'. simpl.
+      pose proof (raw_le_dom m n Hle) as Hdom_m_n.
+      set_solver.
+    }
+    assert (Hrestr_nm : res_restrict n' (world_dom (m : World)) = m).
+    {
+      transitivity (res_restrict (res_restrict n' (world_dom (n : World)))
+        (world_dom (m : World))).
+      - rewrite res_restrict_restrict_eq.
+        pose proof (raw_le_dom m n Hle) as Hdom_m_n.
+        replace (world_dom (n : World) ∩ world_dom (m : World))
+          with (world_dom (m : World)) by set_solver.
+        reflexivity.
+      - rewrite Hrestr_n'. apply res_restrict_eq_of_le. exact Hle.
+    }
+    assert (Hrestr_m' : res_restrict m' (world_dom (m : World)) = m).
+    {
+      unfold m'. rewrite res_restrict_restrict_eq.
+      pose proof (raw_le_dom m n Hle) as Hdom_m_n.
+      replace ((world_dom (m : World) ∪ {[y]}) ∩ world_dom (m : World))
+        with (world_dom (m : World)) by set_solver.
+      exact Hrestr_nm.
+    }
+    pose proof (Hforall y HyL m' Hdom_m' Hrestr_m') as Hp.
+    eapply IH; [| exact Hp].
+    unfold m'. apply res_restrict_le.
+  - destruct Hmodel as [L [HL Hexists]].
+    exists (L ∪ world_dom (n : World)). split.
+    { set_solver. }
+    intros y Hy.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hyn : y ∉ world_dom (n : World)) by set_solver.
+    destruct (Hexists y HyL) as [my [Hdom_my [Hrestr_my Hp]]].
+    destruct (res_one_point_extension_pushout m n my y Hle Hyn Hdom_my Hrestr_my)
+      as [ny [Hdom_ny [Hrestr_ny Hmy_ny]]].
+    exists ny. split; [exact Hdom_ny |].
+    split; [exact Hrestr_ny |].
+    eauto.
+  - destruct Hmodel as [mo [Hsub Hpo]].
+    destruct (res_subset_lift_over m n mo Hle Hsub) as [no [Hsub_no Hmo_no]].
+    exists no. split; [exact Hsub_no |].
+    eauto.
+  - destruct Hmodel as [mu [Hsub Hpu]].
+    destruct (res_subset_lift_under m n mu Hle Hsub) as [nu [Hsub_nu Hmu_nu]].
+    exists nu. split; [exact Hsub_nu |].
+    eauto.
+  - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
+    intros σ Hproj_n.
+    assert (HX : {[x]} ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. simpl in Hscope. set_solver. }
+    assert (Hproj_m : res_restrict m {[x]} σ).
+    {
+      rewrite (res_restrict_le_eq m n {[x]} Hle HX).
+      exact Hproj_n.
+    }
+    pose proof (Hfib σ Hproj_m) as Hp.
+    eapply IH; [| exact Hp].
+    apply res_fiber_from_projection_le; [exact Hle | exact HX].
+Qed.
+
 Definition res_models_with_store
     (ρ : StoreT)
     (m : WfWorldT)
