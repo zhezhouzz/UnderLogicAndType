@@ -51,6 +51,7 @@ ChoiceType/theories/Syntax.v
 ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
+ChoiceType/theories/InstantiationProps.v
 ChoiceType/theories/Denotation.v
 ChoiceTyping/theories/WellFormed.v
 ChoiceTyping/theories/Auxiliary.v
