@@ -42,6 +42,18 @@ Qed.
 
 (** ** Context substitution *)
 
+Fixpoint ctx_close (x : atom) (k : nat) (Γ : ctx) : ctx :=
+  match Γ with
+  | CtxEmpty => CtxEmpty
+  | CtxBind y τ => CtxBind y ({k <~ x} τ)
+  | CtxComma Γ1 Γ2 => CtxComma (ctx_close x k Γ1) (ctx_close x k Γ2)
+  | CtxStar Γ1 Γ2 => CtxStar (ctx_close x k Γ1) (ctx_close x k Γ2)
+  | CtxSum Γ1 Γ2 => CtxSum (ctx_close x k Γ1) (ctx_close x k Γ2)
+  end.
+
+#[global] Instance close_ctx_inst : Close ctx := ctx_close.
+Arguments close_ctx_inst /.
+
 Fixpoint ctx_subst_one (x : atom) (v : value) (Γ : ctx) : ctx :=
   match Γ with
   | CtxEmpty => CtxEmpty

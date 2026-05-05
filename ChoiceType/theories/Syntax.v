@@ -101,6 +101,20 @@ Fixpoint cty_open (k : nat) (x : atom) (τ : choice_ty) : choice_ty :=
 #[global] Instance open_cty_atom_inst : Open atom choice_ty := cty_open.
 Arguments open_cty_atom_inst /.
 
+Fixpoint cty_close (x : atom) (k : nat) (τ : choice_ty) : choice_ty :=
+  match τ with
+  | CTOver  b φ     => CTOver  b (qual_close_atom x (S k) φ)
+  | CTUnder b φ     => CTUnder b (qual_close_atom x (S k) φ)
+  | CTInter τ1 τ2   => CTInter (cty_close x k τ1) (cty_close x k τ2)
+  | CTUnion τ1 τ2   => CTUnion (cty_close x k τ1) (cty_close x k τ2)
+  | CTSum   τ1 τ2   => CTSum   (cty_close x k τ1) (cty_close x k τ2)
+  | CTArrow τx τ    => CTArrow (cty_close x k τx) (cty_close x (S k) τ)
+  | CTWand  τx τ    => CTWand  (cty_close x k τx) (cty_close x (S k) τ)
+  end.
+
+#[global] Instance close_cty_inst : Close choice_ty := cty_close.
+Arguments close_cty_inst /.
+
 Inductive lc_choice_ty : choice_ty → Prop :=
   | LC_CTOver b φ :
       body_qualifier φ →
