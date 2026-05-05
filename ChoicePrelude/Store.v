@@ -297,6 +297,71 @@ Proof.
       * split. { right. eauto. } exact HP.
 Qed.
 
+Lemma store_restrict_union_cover s1 s2 X1 X2 :
+  store_compat s1 s2 →
+  X1 ⊆ dom s1 →
+  X2 ⊆ dom s2 →
+  store_restrict (s1 ∪ s2) (X1 ∪ X2) =
+  store_restrict s1 X1 ∪ store_restrict s2 X2.
+Proof.
+  intros Hcompat Hcover1 Hcover2.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ s2) (X1 ∪ X2) !! i =
+    (map_restrict V s1 X1 ∪ map_restrict V s2 X2) !! i).
+  destruct (decide (i ∈ X1)) as [Hi1 | Hni1].
+  - assert (i ∈ dom s1) as Hidom1 by set_solver.
+    apply elem_of_dom in Hidom1 as [v1 Hlookup1].
+    assert (Hrestrict1 : map_restrict V s1 X1 !! i = Some v1).
+    {
+      unfold map_restrict.
+      apply map_lookup_filter_Some_2; [exact Hlookup1 | exact Hi1].
+    }
+    transitivity (Some v1).
+    + unfold map_restrict.
+      apply map_lookup_filter_Some_2; last set_solver.
+      rewrite lookup_union_Some_raw. left. exact Hlookup1.
+    + symmetry. rewrite lookup_union_l' by (eexists; exact Hrestrict1).
+      exact Hrestrict1.
+  - destruct (decide (i ∈ X2)) as [Hi2 | Hni2].
+    + assert (i ∈ dom s2) as Hidom2 by set_solver.
+      apply elem_of_dom in Hidom2 as [v2 Hlookup2].
+      assert (Hleft_none : map_restrict V s1 X1 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      rewrite lookup_union_r by exact Hleft_none.
+      assert (Hrestrict2 : map_restrict V s2 X2 !! i = Some v2).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_Some_2; [exact Hlookup2 | exact Hi2].
+      }
+      transitivity (Some v2).
+      * unfold map_restrict.
+        apply map_lookup_filter_Some_2; last set_solver.
+        destruct (s1 !! i) as [v1|] eqn:Hlookup1.
+        -- rewrite lookup_union_Some_raw. left.
+           assert (v1 = v2) by (eapply Hcompat; eauto). subst. exact Hlookup1.
+        -- rewrite lookup_union_Some_raw. right. exact (conj Hlookup1 Hlookup2).
+      * symmetry. exact Hrestrict2.
+    + assert (Hnotin : i ∉ X1 ∪ X2) by set_solver.
+      assert (Hleft_none : map_restrict V s1 X1 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      assert (Hright_none : map_restrict V s2 X2 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      transitivity (@None V).
+      * unfold map_restrict.
+        apply map_lookup_filter_None. right.
+        intros v Hlookup Hin. set_solver.
+      * symmetry. rewrite lookup_union_r by exact Hleft_none. exact Hright_none.
+Qed.
+
 Lemma store_restrict_lookup_some s X x y :
   store_restrict s X !! x = Some y → x ∈ X ∧ s !! x = Some y.
 Proof.

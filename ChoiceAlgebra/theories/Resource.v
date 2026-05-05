@@ -536,7 +536,56 @@ Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hc : world_compat w1 w2) (Hc' : world_compat w1' w2') :
   w1 ⊑ w1' → w2 ⊑ w2' →
   res_product w1 w2 Hc ⊑ res_product w1' w2' Hc'.
-Proof. Admitted.
+Proof.
+  intros Hle1 Hle2.
+  pose proof (raw_le_dom w1 w1' Hle1) as Hdom1.
+  pose proof (raw_le_dom w2 w2' Hle2) as Hdom2.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in *.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros Hσ.
+      destruct Hσ as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      rewrite Hle1 in Hσ1. simpl in Hσ1.
+      rewrite Hle2 in Hσ2. simpl in Hσ2.
+      destruct Hσ1 as [σ1' [Hσ1' Hrestr1]].
+      destruct Hσ2 as [σ2' [Hσ2' Hrestr2]].
+      pose proof (Hc' σ1' σ2' Hσ1' Hσ2') as Hcompat'.
+      exists (σ1' ∪ σ2'). split.
+      * exists σ1', σ2'. repeat split; eauto.
+      * rewrite store_restrict_union_cover.
+        -- rewrite Hrestr1, Hrestr2. reflexivity.
+        -- exact Hcompat'.
+        -- pose proof (wfworld_store_dom w1' σ1' Hσ1') as Hdomσ1'.
+           set_solver.
+        -- pose proof (wfworld_store_dom w2' σ2' Hσ2') as Hdomσ2'.
+           set_solver.
+    + intros [σ' [Hσ' Hrestrict]].
+      destruct Hσ' as [σ1' [σ2' [Hσ1' [Hσ2' [Hcompat' ->]]]]].
+      set (σ1 := store_restrict σ1' (world_dom (w1 : World))).
+      set (σ2 := store_restrict σ2' (world_dom (w2 : World))).
+      assert (Hσ1 : (w1 : World) σ1).
+      {
+        rewrite Hle1. simpl. exists σ1'. split; [exact Hσ1' | reflexivity].
+      }
+      assert (Hσ2 : (w2 : World) σ2).
+      {
+        rewrite Hle2. simpl. exists σ2'. split; [exact Hσ2' | reflexivity].
+      }
+      exists σ1, σ2. repeat split.
+      * exact Hσ1.
+      * exact Hσ2.
+      * exact (Hc σ1 σ2 Hσ1 Hσ2).
+      * subst σ1 σ2.
+        rewrite <- Hrestrict.
+        rewrite store_restrict_union_cover.
+        -- reflexivity.
+        -- exact Hcompat'.
+        -- pose proof (wfworld_store_dom w1' σ1' Hσ1') as Hdomσ1'.
+           set_solver.
+        -- pose proof (wfworld_store_dom w2' σ2' Hσ2') as Hdomσ2'.
+           set_solver.
+Qed.
 
 Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hdef : raw_sum_defined w1 w2) (Hdef' : raw_sum_defined w1' w2') :
