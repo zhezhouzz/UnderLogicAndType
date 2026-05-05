@@ -129,6 +129,38 @@ Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
 #[global] Instance MsubstFresh_tm : MsubstFresh tm.
 Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
 
+Class MsubstFv A `{Stale A} `{SubstV value A} := msubst_fv :
+  forall (σ : env) (a : A),
+    closed_env σ ->
+    stale (m{σ} a) ⊆ stale a.
+
+Lemma MsubstFv_all
+    (A : Type)
+    (staleA : Stale A)
+    (substA : SubstV value A)
+    (fv_of_subst_closedA : @FvOfSubstClosed A staleA substA) :
+  @MsubstFv A staleA substA.
+Proof.
+  unfold MsubstFv. intros σ a.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => closed_env σ ->
+      stale (map_fold (fun x vx acc => {x := vx} acc) a σ) ⊆ stale a) _ _ σ).
+  - intros _. set_solver.
+  - intros x vx σ' Hfresh Hfold IH Hclosed.
+    destruct (closed_env_insert σ' x vx Hfresh Hclosed) as [Hvx Hclosed'].
+    rewrite Hfold.
+    rewrite fv_of_subst_closedA by exact Hvx.
+    pose proof (IH Hclosed') as HIH.
+    set_solver.
+Qed.
+
+#[global] Instance MsubstFv_value : MsubstFv value.
+Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstFv_tm : MsubstFv tm.
+Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
+
 Ltac msubst_simp :=
   repeat match goal with
   | |- context [m{∅} _] => rewrite msubst_empty
