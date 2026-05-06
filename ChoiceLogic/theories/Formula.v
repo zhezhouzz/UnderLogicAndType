@@ -925,24 +925,27 @@ Proof.
           (res_fiber_from_projection m {[atom_swap a b x]} σ Hproj) p) Hp_tgt).
 Qed.
 
+Lemma res_models_swap x y (m : WfWorldT) (φ : Formula) :
+  res_models m (formula_rename_atom x y φ) ↔
+  res_models (res_swap x y m) φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  rewrite formula_rename_preserves_measure.
+  rewrite <- (store_swap_empty x y) at 2.
+  apply res_models_with_store_fuel_swap.
+Qed.
+
 Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
   y ∉ formula_fv φ ∪ formula_fv ψ →
   entails φ ψ →
   entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
 Proof.
   intros _ Hent m Hm.
-  unfold entails, res_models, res_models_with_store in Hent, Hm |- *.
-  pose proof (proj1 (res_models_with_store_fuel_swap x y
-    (formula_measure (formula_rename_atom x y φ)) ∅ m φ) Hm) as Hφ.
-  rewrite formula_rename_preserves_measure in Hφ.
-  rewrite store_swap_empty in Hφ.
-  pose proof (Hent (res_swap x y m) Hφ) as Hψ.
-  pose proof (proj2 (res_models_with_store_fuel_swap x y
-    (formula_measure (formula_rename_atom x y ψ)) ∅ m ψ)) as Hswap.
-  rewrite formula_rename_preserves_measure in Hswap.
-  rewrite store_swap_empty in Hswap.
-  rewrite formula_rename_preserves_measure.
-  exact (Hswap Hψ).
+  unfold entails in Hent.
+  apply res_models_swap.
+  apply Hent.
+  apply res_models_swap.
+  exact Hm.
 Qed.
 
 
