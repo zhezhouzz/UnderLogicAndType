@@ -34,34 +34,46 @@ Notation "Γ '⊢wf' τ" := (wf_choice_ty Γ τ) (at level 40).
 Lemma wf_ctx_basic Γ :
   wf_ctx Γ →
   basic_ctx ∅ Γ.
-Proof. Admitted.
+Proof. intros [Hbasic _]. exact Hbasic. Qed.
 
 Lemma wf_ctx_nonempty Γ :
   wf_ctx Γ →
   ctx_nonempty Γ.
-Proof. Admitted.
+Proof. intros [_ Hnonempty]. exact Hnonempty. Qed.
 
 Lemma wf_choice_ty_ctx Γ τ :
   wf_choice_ty Γ τ →
   wf_ctx Γ.
-Proof. Admitted.
+Proof. intros [Hwf _]. exact Hwf. Qed.
 
 Lemma wf_choice_ty_basic Γ τ :
   wf_choice_ty Γ τ →
   basic_choice_ty (ctx_dom Γ) τ.
-Proof. Admitted.
+Proof. intros [_ Hbasic]. exact Hbasic. Qed.
 
 Lemma wf_ctx_fv_subset Γ :
   wf_ctx Γ →
   ctx_fv Γ ⊆ ctx_dom Γ.
-Proof. Admitted.
+Proof.
+  intros Hwf.
+  pose proof (wf_ctx_basic Γ Hwf) as Hbasic.
+  apply basic_ctx_empty_fv. exact Hbasic.
+Qed.
 
 Lemma wf_choice_ty_lc Γ τ :
   wf_choice_ty Γ τ →
   lc_choice_ty τ.
-Proof. Admitted.
+Proof.
+  intros Hwf.
+  eapply basic_choice_ty_lc.
+  exact (wf_choice_ty_basic Γ τ Hwf).
+Qed.
 
 Lemma wf_choice_ty_fv_subset Γ τ :
   wf_choice_ty Γ τ →
   fv_cty τ ⊆ ctx_dom Γ.
-Proof. Admitted.
+Proof.
+  intros Hwf.
+  eapply basic_choice_ty_fv_subset.
+  exact (wf_choice_ty_basic Γ τ Hwf).
+Qed.
