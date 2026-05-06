@@ -423,6 +423,50 @@ Proof.
   exists σ. split; [exact Hproj | reflexivity].
 Qed.
 
+Lemma res_swap_extension_dom (x y : atom) (m my : WfWorld) (z : atom) :
+  world_dom (my : World) = world_dom (m : World) ∪ {[z]} →
+  world_dom (res_swap x y my : World) =
+  world_dom (res_swap x y m : World) ∪ {[atom_swap x y z]}.
+Proof.
+  intros Hdom. simpl. rewrite Hdom, aset_swap_union, aset_swap_singleton.
+  reflexivity.
+Qed.
+
+Lemma res_swap_extension_dom_cancel
+    (x y : atom) (m my : WfWorld) (z : atom) :
+  world_dom (my : World) = world_dom (res_swap x y m : World) ∪ {[z]} →
+  world_dom (res_swap x y my : World) =
+  world_dom (m : World) ∪ {[atom_swap x y z]}.
+Proof.
+  intros Hdom. simpl in Hdom |- *.
+  rewrite Hdom, aset_swap_union, aset_swap_involutive, aset_swap_singleton.
+  reflexivity.
+Qed.
+
+Lemma res_swap_restrict_extension
+    (x y : atom) (m my : WfWorld) :
+  res_restrict my (world_dom (m : World)) = m →
+  res_restrict (res_swap x y my) (world_dom (res_swap x y m : World)) =
+  res_swap x y m.
+Proof.
+  intros Hrestr.
+  change (res_restrict (res_swap x y my)
+    (aset_swap x y (world_dom (m : World))) = res_swap x y m).
+  rewrite res_restrict_swap, Hrestr. reflexivity.
+Qed.
+
+Lemma res_swap_restrict_extension_cancel
+    (x y : atom) (m my : WfWorld) :
+  res_restrict my (world_dom (res_swap x y m : World)) = res_swap x y m →
+  res_restrict (res_swap x y my) (world_dom (m : World)) = m.
+Proof.
+  intros Hrestr.
+  change (res_restrict my (aset_swap x y (world_dom (m : World))) =
+    res_swap x y m) in Hrestr.
+  rewrite <- (aset_swap_involutive x y (world_dom (m : World))).
+  rewrite res_restrict_swap, Hrestr, res_swap_involutive. reflexivity.
+Qed.
+
 Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
   res_restrict (res_rename_atom y x w) X =
   res_rename_atom y x (res_restrict w (aset_rename x y X)).
