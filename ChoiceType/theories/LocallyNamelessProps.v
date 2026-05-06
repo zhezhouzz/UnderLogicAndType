@@ -22,6 +22,14 @@ Proof.
     try rewrite ?IHτ1, ?IHτ2, <- ?aset_swap_union; reflexivity.
 Qed.
 
+Lemma cty_open_fv_subset k x τ :
+  fv_cty ({k ~> x} τ) ⊆ fv_cty τ ∪ {[x]}.
+Proof.
+  induction τ in k |- *; simpl; try set_solver.
+  - pose proof (qual_open_atom_dom_subset (S k) x φ). set_solver.
+  - pose proof (qual_open_atom_dom_subset (S k) x φ). set_solver.
+Qed.
+
 Lemma ctx_fv_swap x y Γ :
   ctx_fv (ctx_swap_atom x y Γ) = aset_swap x y (ctx_fv Γ).
 Proof.

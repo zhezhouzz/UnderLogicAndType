@@ -16,6 +16,13 @@ Lemma qual_dom_swap x y q :
   qual_dom (qual_swap_atom x y q) = aset_swap x y (qual_dom q).
 Proof. destruct q; reflexivity. Qed.
 
+Lemma qual_open_atom_dom_subset k x q :
+  qual_dom (qual_open_atom k x q) ⊆ qual_dom q ∪ {[x]}.
+Proof.
+  destruct q as [B d p]. unfold qual_open_atom, qual_dom.
+  destruct decide; simpl; set_solver.
+Qed.
+
 Lemma qual_lc_swap x y q :
   lc_qualifier q →
   lc_qualifier (qual_swap_atom x y q).
