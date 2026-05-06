@@ -56,6 +56,7 @@ ChoiceType/theories/Denotation.v
 ChoiceType/theories/Sugar.v
 ChoiceTyping/theories/WellFormed.v
 ChoiceTyping/theories/Auxiliary.v
+ChoiceTyping/theories/PrimOpContext.v
 ChoiceTyping/theories/Typing.v
 ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v
