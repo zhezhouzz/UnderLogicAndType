@@ -65,13 +65,11 @@ Proof.
     assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
-    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
-    assert (Hp_exact :
-        res_models_with_store_fuel
-          (formula_measure (formula_rename_atom x y p)) ∅ m'
-          (formula_rename_atom x y p)).
-    { rewrite formula_rename_preserves_measure. exact Hp. }
-    pose proof (Hpq_y Hp_exact) as Hq.
+    assert (Hp_exact : res_models_with_store_fuel
+        (formula_measure (formula_rename_atom x y p)) ∅ m'
+        (formula_rename_atom x y p))
+      by (rewrite formula_rename_preserves_measure; exact Hp).
+    pose proof (entails_rename_atom_fresh_fuel x y p q m' Hyfresh Hpq Hp_exact) as Hq.
     exact (res_models_with_store_fuel_scoped
       (formula_measure (formula_rename_atom x y q)) ∅ m'
       (formula_rename_atom x y q) Hq).
@@ -81,14 +79,12 @@ Proof.
     assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
       by (unfold L' in Hy; set_solver).
     pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
-    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
-    assert (Hp_exact :
-        res_models_with_store_fuel
-          (formula_measure (formula_rename_atom x y p)) ∅ m'
-          (formula_rename_atom x y p)).
-    { rewrite formula_rename_preserves_measure. exact Hp. }
-    pose proof (Hpq_y Hp_exact) as Hq.
-    rewrite <- (formula_rename_preserves_measure x y q). exact Hq.
+    assert (Hp_exact : res_models_with_store_fuel
+        (formula_measure (formula_rename_atom x y p)) ∅ m'
+        (formula_rename_atom x y p))
+      by (rewrite formula_rename_preserves_measure; exact Hp).
+    pose proof (entails_rename_atom_fresh_fuel x y p q m' Hyfresh Hpq Hp_exact) as Hq.
+    rewrite formula_rename_preserves_measure in Hq. exact Hq.
 Qed.
 
 Lemma exists_mono (x : atom) (p q : FormulaT) :
@@ -106,13 +102,11 @@ Proof.
       by (unfold L' in Hy; set_solver).
     destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
-    assert (Hp_exact :
-        res_models_with_store_fuel
-          (formula_measure (formula_rename_atom x y p)) ∅ m'
-          (formula_rename_atom x y p)).
-    { rewrite formula_rename_preserves_measure. exact Hp. }
-    pose proof (Hpq_y Hp_exact) as Hq.
+    assert (Hp_exact : res_models_with_store_fuel
+        (formula_measure (formula_rename_atom x y p)) ∅ m'
+        (formula_rename_atom x y p))
+      by (rewrite formula_rename_preserves_measure; exact Hp).
+    pose proof (entails_rename_atom_fresh_fuel x y p q m' Hyfresh Hpq Hp_exact) as Hq.
     exact (res_models_with_store_fuel_scoped
       (formula_measure (formula_rename_atom x y q)) ∅ m'
       (formula_rename_atom x y q) Hq).
@@ -123,14 +117,12 @@ Proof.
       by (unfold L' in Hy; set_solver).
     destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
     exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
-    assert (Hp_exact :
-        res_models_with_store_fuel
-          (formula_measure (formula_rename_atom x y p)) ∅ m'
-          (formula_rename_atom x y p)).
-    { rewrite formula_rename_preserves_measure. exact Hp. }
-    pose proof (Hpq_y Hp_exact) as Hq.
-    rewrite <- (formula_rename_preserves_measure x y q). exact Hq.
+    assert (Hp_exact : res_models_with_store_fuel
+        (formula_measure (formula_rename_atom x y p)) ∅ m'
+        (formula_rename_atom x y p))
+      by (rewrite formula_rename_preserves_measure; exact Hp).
+    pose proof (entails_rename_atom_fresh_fuel x y p q m' Hyfresh Hpq Hp_exact) as Hq.
+    rewrite formula_rename_preserves_measure in Hq. exact Hq.
 Qed.
 
 (** *** §2 Modality set-level characterisations

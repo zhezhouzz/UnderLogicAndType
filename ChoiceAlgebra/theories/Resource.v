@@ -423,6 +423,50 @@ Proof.
   exists σ. split; [exact Hproj | reflexivity].
 Qed.
 
+Lemma res_swap_extension_dom (x y : atom) (m my : WfWorld) (z : atom) :
+  world_dom (my : World) = world_dom (m : World) ∪ {[z]} →
+  world_dom (res_swap x y my : World) =
+  world_dom (res_swap x y m : World) ∪ {[atom_swap x y z]}.
+Proof.
+  intros Hdom. simpl. rewrite Hdom, aset_swap_union, aset_swap_singleton.
+  reflexivity.
+Qed.
+
+Lemma res_swap_extension_dom_cancel
+    (x y : atom) (m my : WfWorld) (z : atom) :
+  world_dom (my : World) = world_dom (res_swap x y m : World) ∪ {[z]} →
+  world_dom (res_swap x y my : World) =
+  world_dom (m : World) ∪ {[atom_swap x y z]}.
+Proof.
+  intros Hdom. simpl in Hdom |- *.
+  rewrite Hdom, aset_swap_union, aset_swap_involutive, aset_swap_singleton.
+  reflexivity.
+Qed.
+
+Lemma res_swap_restrict_extension
+    (x y : atom) (m my : WfWorld) :
+  res_restrict my (world_dom (m : World)) = m →
+  res_restrict (res_swap x y my) (world_dom (res_swap x y m : World)) =
+  res_swap x y m.
+Proof.
+  intros Hrestr.
+  change (res_restrict (res_swap x y my)
+    (aset_swap x y (world_dom (m : World))) = res_swap x y m).
+  rewrite res_restrict_swap, Hrestr. reflexivity.
+Qed.
+
+Lemma res_swap_restrict_extension_cancel
+    (x y : atom) (m my : WfWorld) :
+  res_restrict my (world_dom (res_swap x y m : World)) = res_swap x y m →
+  res_restrict (res_swap x y my) (world_dom (m : World)) = m.
+Proof.
+  intros Hrestr.
+  change (res_restrict my (aset_swap x y (world_dom (m : World))) =
+    res_swap x y m) in Hrestr.
+  rewrite <- (aset_swap_involutive x y (world_dom (m : World))).
+  rewrite res_restrict_swap, Hrestr, res_swap_involutive. reflexivity.
+Qed.
+
 Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
   res_restrict (res_rename_atom y x w) X =
   res_rename_atom y x (res_restrict w (aset_rename x y X)).
@@ -494,6 +538,48 @@ Proof.
   rewrite store_restrict_dom. set_solver.
 Defined.
 
+Lemma res_fiber_from_projection_proof_irrel
+    (w : WfWorld) (X : aset) (σ : StoreT)
+    (Hproj1 Hproj2 : res_restrict w X σ) :
+  res_fiber_from_projection w X σ Hproj1 =
+  res_fiber_from_projection w X σ Hproj2.
+Proof.
+  apply wfworld_ext. reflexivity.
+Qed.
+
+Lemma res_fiber_from_projection_swap_cancel
+    (x y z : atom) (w : WfWorld) (σ : StoreT)
+    (Hproj1 : res_restrict (res_swap x y w)
+      (aset_swap x y {[atom_swap x y z]}) (store_swap x y (store_swap x y σ)))
+    (Hproj2 : res_restrict (res_swap x y w) {[z]} σ) :
+  res_fiber_from_projection (res_swap x y w)
+    (aset_swap x y {[atom_swap x y z]})
+    (store_swap x y (store_swap x y σ)) Hproj1 =
+  res_fiber_from_projection (res_swap x y w) {[z]} σ Hproj2.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+  - intros τ. simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive;
+      try rewrite store_swap_involutive. reflexivity.
+Qed.
+
+Lemma res_fiber_from_projection_swap_singleton_cancel
+    (x y z : atom) (w : WfWorld) (σ : StoreT)
+    (Hproj1 : res_restrict (res_swap x y w)
+      (aset_swap x y {[atom_swap x y z]}) σ)
+    (Hproj2 : res_restrict (res_swap x y w) {[z]} σ) :
+  res_fiber_from_projection (res_swap x y w)
+    (aset_swap x y {[atom_swap x y z]}) σ Hproj1 =
+  res_fiber_from_projection (res_swap x y w) {[z]} σ Hproj2.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+  - intros τ. simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+Qed.
+
 (** Same-domain subset relation on well-formed worlds.
 
     This is the extensional inclusion relation used by approximation
@@ -550,6 +636,16 @@ Proof.
       simpl in Hσ. destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
       exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
 Qed.
+
+Lemma res_subset_swap_intro (x y : atom) (w1 w2 : WfWorld) :
+  res_subset w1 w2 →
+  res_subset (res_swap x y w1) (res_swap x y w2).
+Proof. apply (proj2 (res_subset_swap x y w1 w2)). Qed.
+
+Lemma res_subset_swap_elim (x y : atom) (w1 w2 : WfWorld) :
+  res_subset (res_swap x y w1) (res_swap x y w2) →
+  res_subset w1 w2.
+Proof. apply (proj1 (res_subset_swap x y w1 w2)). Qed.
 
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
@@ -716,6 +812,16 @@ Proof.
     exact (Hc τ1 τ2 Hτ1 Hτ2).
 Qed.
 
+Lemma world_compat_swap_intro (x y : atom) (w1 w2 : WfWorld) :
+  world_compat w1 w2 →
+  world_compat (res_swap x y w1) (res_swap x y w2).
+Proof. apply (proj2 (world_compat_swap x y w1 w2)). Qed.
+
+Lemma world_compat_swap_elim (x y : atom) (w1 w2 : WfWorld) :
+  world_compat (res_swap x y w1) (res_swap x y w2) →
+  world_compat w1 w2.
+Proof. apply (proj1 (world_compat_swap x y w1 w2)). Qed.
+
 Lemma res_product_swap (x y : atom) (w1 w2 : WfWorld)
     (Hc : world_compat w1 w2)
     (Hc' : world_compat (res_swap x y w1) (res_swap x y w2)) :
@@ -739,6 +845,27 @@ Proof.
       * exists σ1, σ2. repeat split; eauto.
       * rewrite store_swap_union.
         reflexivity.
+Qed.
+
+Lemma res_product_double_swap_l (x y : atom) (w1 w2 : WfWorld)
+    (Hc : world_compat w1 w2)
+    (Hc' : world_compat (res_swap x y (res_swap x y w1)) w2) :
+  res_product (res_swap x y (res_swap x y w1)) w2 Hc' =
+  res_product w1 w2 Hc.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. rewrite aset_swap_involutive. reflexivity.
+  - intros σ. simpl. split.
+    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
+      subst τ1 σ1. rewrite store_swap_involutive in Hcompat |- *.
+      exists τ0, σ2. repeat split; eauto.
+    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      exists σ1, σ2. split.
+      * exists (store_swap x y σ1). split.
+        -- exists σ1. split; [exact Hσ1 | reflexivity].
+        -- apply store_swap_involutive.
+      * split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
 Qed.
 
 Lemma res_sum_swap (x y : atom) (w1 w2 : WfWorld)
@@ -815,6 +942,21 @@ Proof.
   rewrite (res_restrict_swap x y w2 (world_dom (w1 : World))).
   rewrite (res_restrict_eq_of_le w1 w2 Hle). reflexivity.
 Qed.
+
+Lemma res_swap_le_iff (x y : atom) (w1 w2 : WfWorld) :
+  res_swap x y w1 ⊑ res_swap x y w2 ↔ w1 ⊑ w2.
+Proof.
+  split.
+  - intros Hle.
+    pose proof (res_swap_le x y _ _ Hle) as Hswap.
+    rewrite !res_swap_involutive in Hswap. exact Hswap.
+  - apply res_swap_le.
+Qed.
+
+Lemma res_swap_le_elim (x y : atom) (w1 w2 : WfWorld) :
+  res_swap x y w1 ⊑ res_swap x y w2 →
+  w1 ⊑ w2.
+Proof. apply (proj1 (res_swap_le_iff x y w1 w2)). Qed.
 
 Lemma res_restrict_le_eq (m n : WfWorld) (X : aset) :
   m ⊑ n →

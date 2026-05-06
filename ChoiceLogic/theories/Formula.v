@@ -623,7 +623,7 @@ Proof.
       pose proof (proj1 (IH ρ (res_swap a b n) q') Hq_src) as Hq_tgt.
       rewrite res_swap_involutive in Hq_tgt. exact Hq_tgt.
     + destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
-      pose proof (proj2 (world_compat_swap a b m1 m2) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b m1 m2 Hc) as Hc'.
       exists (res_swap a b m1), (res_swap a b m2), Hc'. split.
       * pose proof (res_swap_le a b _ _ Hprod) as Hle.
         rewrite (res_product_swap a b m1 m2 Hc Hc') in Hle.
@@ -633,7 +633,7 @@ Proof.
       set (n0 := res_swap a b n).
       assert (Hc0 : world_compat n0 m).
       {
-        apply (proj1 (world_compat_swap a b n0 m)).
+        apply (world_compat_swap_elim a b n0 m).
         subst n0. rewrite res_swap_involutive. exact Hc.
       }
       assert (Hpn' : res_models_with_store_fuel gas (store_swap a b ρ)
@@ -649,19 +649,7 @@ Proof.
       replace (res_product (res_swap a b (res_swap a b n)) (res_swap a b m) Hc1)
         with (res_product n (res_swap a b m) Hc) in Hq_tgt.
       * exact Hq_tgt.
-      * apply wfworld_ext. apply world_ext.
-        -- simpl. rewrite aset_swap_involutive. reflexivity.
-        -- intros σ. simpl. split.
-           ++ intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-              exists σ1, σ2. split.
-              ** exists (store_swap a b σ1). split.
-	                 --- exists σ1. split; [exact Hσ1 | reflexivity].
-	                 --- apply store_swap_involutive.
-	              ** split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
-	           ++ intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-              destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
-              subst τ1 σ1. rewrite store_swap_involutive in Hcompat |- *.
-	              exists τ0, σ2. repeat split; eauto.
+      * symmetry. apply res_product_double_swap_l.
     + destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
       assert (Hdef' : raw_sum_defined (res_swap a b m1) (res_swap a b m2)).
       { unfold raw_sum_defined in *. simpl. rewrite Hdef. reflexivity. }
@@ -680,17 +668,9 @@ Proof.
       { subst z. intros Hz. apply Hy. rewrite elem_of_aset_swap. exact Hz. }
       set (mz := res_swap a b my).
       assert (Hdom_mz : world_dom (mz : World) = world_dom (m : World) ∪ {[z]}).
-      {
-        subst mz z. simpl. rewrite Hdom_my, aset_swap_union,
-          aset_swap_involutive, aset_swap_singleton.
-        reflexivity.
-      }
+      { subst mz z. apply res_swap_extension_dom_cancel. exact Hdom_my. }
       assert (Hrestr_mz : res_restrict mz (world_dom (m : World)) = m).
-      {
-        subst mz.
-        rewrite <- (aset_swap_involutive a b (world_dom (m : World))).
-        rewrite res_restrict_swap, Hrestr_my, res_swap_involutive. reflexivity.
-      }
+      { subst mz. apply res_swap_restrict_extension_cancel. exact Hrestr_my. }
       pose proof (Hforall z HzL mz Hdom_mz Hrestr_mz) as Hp_src.
       subst z.
       rewrite <- formula_rename_atom_conjugate in Hp_src.
@@ -708,24 +688,22 @@ Proof.
       { subst z. intros Hz. apply Hy. rewrite elem_of_aset_swap. exact Hz. }
       destruct (Hexists z HzL) as [mz [Hdom_mz [Hrestr_mz Hp_src]]].
       exists (res_swap a b mz). split.
-      * subst z. simpl. rewrite Hdom_mz, aset_swap_union,
-          aset_swap_singleton, atom_swap_involutive.
-        reflexivity.
+      * replace y with (atom_swap a b z) by
+          (subst z; rewrite atom_swap_involutive; reflexivity).
+        apply res_swap_extension_dom. exact Hdom_mz.
       * split.
-        -- change (res_restrict (res_swap a b mz)
-             (aset_swap a b (world_dom (m : World))) = res_swap a b m).
-           rewrite res_restrict_swap, Hrestr_mz. reflexivity.
+        -- apply res_swap_restrict_extension. exact Hrestr_mz.
         -- subst z.
            rewrite <- formula_rename_atom_conjugate in Hp_src.
 	           pose proof (proj1 (IH ρ mz (formula_rename_atom x y p)) Hp_src) as Hp_tgt.
 	           exact Hp_tgt.
     + destruct Hmodel as [mo [Hsub Hp]].
       exists (res_swap a b mo). split.
-      * apply res_subset_swap. exact Hsub.
+      * apply res_subset_swap_intro. exact Hsub.
       * apply IH. exact Hp.
     + destruct Hmodel as [mu [Hsub Hp]].
       exists (res_swap a b mu). split.
-      * apply res_subset_swap. exact Hsub.
+      * apply res_subset_swap_intro. exact Hsub.
       * apply IH. exact Hp.
     + destruct Hmodel as [Hdisj Hfib]. split.
       * rewrite store_swap_dom.
@@ -764,10 +742,7 @@ Proof.
           (aset_swap a b {[atom_swap a b x]})
           (store_swap a b (store_swap a b σ)) Hproj') with
           (res_fiber_from_projection (res_swap a b m) {[x]} σ Hproj) in Hp_tgt.
-        2:{ apply wfworld_ext. apply world_ext.
-            - simpl. try rewrite aset_swap_singleton. try rewrite atom_swap_involutive. reflexivity.
-            - intros τ. simpl. try rewrite aset_swap_singleton.
-              try rewrite atom_swap_involutive. rewrite store_swap_involutive. reflexivity. }
+        2:{ symmetry. apply res_fiber_from_projection_swap_cancel. }
         exact Hp_tgt.
   - split.
     { apply formula_scoped_swap. exact Hscope. }
@@ -789,7 +764,7 @@ Proof.
       pose proof (Hmodel _ Hle' Hp_tgt) as Hq_tgt.
       apply IH in Hq_tgt. exact Hq_tgt.
     + destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
-      pose proof (proj2 (world_compat_swap a b m1 m2) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b m1 m2 Hc) as Hc'.
       exists (res_swap a b m1), (res_swap a b m2), Hc'. split.
       * pose proof (res_swap_le a b _ _ Hprod) as Hle.
         rewrite (res_product_swap a b m1 m2 Hc Hc') in Hle.
@@ -804,7 +779,7 @@ Proof.
              by (rewrite res_swap_involutive; exact Hq).
            exact (proj2 (IH ρ (res_swap a b m2) q') Hq').
     + intros n Hc Hpn.
-      pose proof (proj2 (world_compat_swap a b n m) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b n m Hc) as Hc'.
       pose proof (proj1 (IH ρ n p) Hpn) as Hp_tgt.
       pose proof (Hmodel (res_swap a b n) Hc' Hp_tgt) as Hq_tgt.
       assert (Hq_tgt' : res_models_with_store_fuel gas (store_swap a b ρ)
@@ -838,17 +813,10 @@ Proof.
       set (myz := res_swap a b my).
       assert (Hdom_myz :
           world_dom (myz : World) = world_dom (res_swap a b m : World) ∪ {[z]}).
-      {
-        subst myz z. simpl. rewrite Hdom_my, aset_swap_union,
-          aset_swap_singleton. reflexivity.
-      }
+      { subst myz z. apply res_swap_extension_dom. exact Hdom_my. }
       assert (Hrestr_myz : res_restrict myz (world_dom (res_swap a b m : World)) =
           res_swap a b m).
-      {
-        subst myz. change (res_restrict (res_swap a b my)
-          (aset_swap a b (world_dom (m : World))) = res_swap a b m).
-        rewrite res_restrict_swap, Hrestr_my. reflexivity.
-      }
+      { subst myz. apply res_swap_restrict_extension. exact Hrestr_my. }
       pose proof (Hforall z HzL myz Hdom_myz Hrestr_myz) as Hp_tgt.
       assert (Hp_tgt' : res_models_with_store_fuel gas (store_swap a b ρ)
         (res_swap a b (res_swap a b myz)) (formula_rename_atom x z p))
@@ -869,13 +837,11 @@ Proof.
       { subst z. intros Hz. apply Hy. rewrite elem_of_aset_swap. exact Hz. }
       destruct (Hexists z HzL) as [myz [Hdom_myz [Hrestr_myz Hp_tgt]]].
       exists (res_swap a b myz). split.
-      * subst z. simpl in Hdom_myz |- *.
-        rewrite Hdom_myz, aset_swap_union, aset_swap_involutive,
-          aset_swap_singleton, atom_swap_involutive.
-        reflexivity.
+      * replace y with (atom_swap a b z) by
+          (subst z; rewrite atom_swap_involutive; reflexivity).
+        apply res_swap_extension_dom_cancel. exact Hdom_myz.
       * split.
-        -- rewrite <- (aset_swap_involutive a b (world_dom (m : World))).
-           rewrite res_restrict_swap, Hrestr_myz, res_swap_involutive. reflexivity.
+        -- apply res_swap_restrict_extension_cancel. exact Hrestr_myz.
         -- assert (Hp_tgt' : res_models_with_store_fuel gas (store_swap a b ρ)
              (res_swap a b (res_swap a b myz)) (formula_rename_atom x z p))
              by (rewrite res_swap_involutive; exact Hp_tgt).
@@ -889,7 +855,7 @@ Proof.
       * assert (Hsub' : res_subset (res_swap a b m)
           (res_swap a b (res_swap a b mo))) by
           (rewrite res_swap_involutive; exact Hsub).
-	        exact (proj1 (res_subset_swap a b m (res_swap a b mo)) Hsub').
+        exact (res_subset_swap_elim a b m (res_swap a b mo) Hsub').
       * assert (Hp' : res_models_with_store_fuel gas (store_swap a b ρ)
           (res_swap a b (res_swap a b mo)) p) by
           (rewrite res_swap_involutive; exact Hp).
@@ -898,7 +864,7 @@ Proof.
       exists (res_swap a b mu). split.
       * assert (Hsub' : res_subset (res_swap a b (res_swap a b mu))
           (res_swap a b m)) by (rewrite res_swap_involutive; exact Hsub).
-	        exact (proj1 (res_subset_swap a b (res_swap a b mu) m) Hsub').
+        exact (res_subset_swap_elim a b (res_swap a b mu) m Hsub').
       * assert (Hp' : res_models_with_store_fuel gas (store_swap a b ρ)
           (res_swap a b (res_swap a b mu)) p) by
           (rewrite res_swap_involutive; exact Hp).
@@ -930,11 +896,21 @@ Proof.
           { rewrite aset_swap_singleton, atom_swap_involutive. exact Hproj'. }
           rewrite (res_fiber_from_projection_swap a b m {[atom_swap a b x]} σ
             Hproj Hproj_raw).
-          apply wfworld_ext. reflexivity.
+          apply res_fiber_from_projection_swap_singleton_cancel.
         }
         rewrite <- Hfiber_eq in Hp_tgt.
         exact (proj2 (IH (ρ ∪ σ)
           (res_fiber_from_projection m {[atom_swap a b x]} σ Hproj) p) Hp_tgt).
+Qed.
+
+Lemma res_models_swap x y (m : WfWorldT) (φ : Formula) :
+  res_models m (formula_rename_atom x y φ) ↔
+  res_models (res_swap x y m) φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  rewrite formula_rename_preserves_measure.
+  rewrite <- (store_swap_empty x y) at 2.
+  apply res_models_with_store_fuel_swap.
 Qed.
 
 Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
@@ -943,18 +919,25 @@ Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
   entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
 Proof.
   intros _ Hent m Hm.
-  unfold entails, res_models, res_models_with_store in Hent, Hm |- *.
-  pose proof (proj1 (res_models_with_store_fuel_swap x y
-    (formula_measure (formula_rename_atom x y φ)) ∅ m φ) Hm) as Hφ.
-  rewrite formula_rename_preserves_measure in Hφ.
-  rewrite store_swap_empty in Hφ.
-  pose proof (Hent (res_swap x y m) Hφ) as Hψ.
-  pose proof (proj2 (res_models_with_store_fuel_swap x y
-    (formula_measure (formula_rename_atom x y ψ)) ∅ m ψ)) as Hswap.
-  rewrite formula_rename_preserves_measure in Hswap.
-  rewrite store_swap_empty in Hswap.
-  rewrite formula_rename_preserves_measure.
-  exact (Hswap Hψ).
+  unfold entails in Hent.
+  apply res_models_swap.
+  apply Hent.
+  apply res_models_swap.
+  exact Hm.
+Qed.
+
+Lemma entails_rename_atom_fresh_fuel x y (φ ψ : Formula) (m : WfWorldT) :
+  y ∉ formula_fv φ ∪ formula_fv ψ →
+  entails φ ψ →
+  res_models_with_store_fuel
+    (formula_measure (formula_rename_atom x y φ)) ∅ m
+    (formula_rename_atom x y φ) →
+  res_models_with_store_fuel
+    (formula_measure (formula_rename_atom x y ψ)) ∅ m
+    (formula_rename_atom x y ψ).
+Proof.
+  intros Hyfresh Hent Hp.
+  exact (entails_rename_atom_fresh x y φ ψ Hyfresh Hent m Hp).
 Qed.
 
 
