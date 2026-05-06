@@ -608,6 +608,25 @@ Proof.
   apply res_models_with_store_kripke.
 Qed.
 
+Lemma res_models_with_store_impl_refl
+    (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
+  formula_scoped_in_world ρ m φ →
+  res_models_with_store ρ m (FImpl φ φ).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope. split.
+  - unfold formula_scoped_in_world in *. simpl. set_solver.
+  - intros m' _ Hmodel. exact Hmodel.
+Qed.
+
+Lemma res_models_impl_refl (m : WfWorldT) (φ : Formula) :
+  formula_scoped_in_world ∅ m φ →
+  res_models m (FImpl φ φ).
+Proof.
+  unfold res_models.
+  apply res_models_with_store_impl_refl.
+Qed.
+
 Lemma res_models_with_store_fuel_swap
     (a b : atom) (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
   res_models_with_store_fuel gas ρ m (formula_rename_atom a b φ) ↔

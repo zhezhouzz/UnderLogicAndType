@@ -63,7 +63,13 @@ Proof. intros [_ [Hwf _]]. exact Hwf. Qed.
 Lemma sub_type_refl Γ τ :
   wf_choice_ty Γ τ →
   sub_type Γ τ τ.
-Proof. Admitted.
+Proof.
+  intros Hwf.
+  split; [exact Hwf |]. split; [exact Hwf |]. split; [reflexivity |].
+  intros e Hfv m HΓ.
+  apply res_models_impl_refl.
+  eapply denot_ty_scoped_from_ctx; eauto.
+Qed.
 
 Lemma ctx_sub_refl Γ :
   wf_ctx Γ →

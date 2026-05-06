@@ -151,6 +151,21 @@ Definition denot_ty_avoiding (D : aset) (τ : choice_ty) (e : tm) : FQ :=
 Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_avoiding (fv_cty τ ∪ fv_tm e) τ e.
 
+(** ** Denotation scoping regularity
+
+    These syntactic facts isolate the variable-accounting needed by semantic
+    subtyping reflexivity.  They are intentionally stated at the denotation
+    layer: typing proofs should consume these regularity lemmas rather than
+    unfolding the formula generated for each type constructor. *)
+
+Lemma denot_ty_formula_fv_subset τ e :
+  formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
+Proof. Admitted.
+
+Lemma denot_ty_result_atom_fv x τ :
+  x ∈ formula_fv (denot_ty τ (tret (vfvar x))).
+Proof. Admitted.
+
 (** ** Context denotation
 
     [denot_ctx Γ : FQ] is the formula that holds when [Γ] is "satisfied". *)
@@ -171,6 +186,27 @@ Fixpoint denot_ctx (Γ : ctx) : FQ :=
     Denotation ctx FQ := denot_ctx.
 Arguments denot_cty_inst /.
 Arguments denot_ctx_inst /.
+
+Lemma denot_ctx_dom_subset_formula_fv Γ :
+  ctx_dom Γ ⊆ formula_fv (denot_ctx Γ).
+Proof.
+  induction Γ; simpl; try set_solver.
+  intros z Hz. apply elem_of_singleton in Hz. subst.
+  apply denot_ty_result_atom_fv.
+Qed.
+
+Lemma denot_ctx_models_dom Γ m :
+  m ⊨ ⟦Γ⟧ →
+  ctx_dom Γ ⊆ world_dom m.
+Proof.
+  intros Hmodels z Hz.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (denot_ctx Γ)) ∅ m (denot_ctx Γ) Hmodels) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  apply Hscope.
+  pose proof (denot_ctx_dom_subset_formula_fv Γ z Hz).
+  set_solver.
+Qed.
 
 (** With these instances:
       [⟦τ⟧ e]  unfolds to [denot_ty τ e]
