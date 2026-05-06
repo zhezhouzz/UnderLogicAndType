@@ -174,17 +174,50 @@ Arguments denot_ctx_inst /.
 
 (** ** Key semantic lemmas (Admitted — to be proved in Soundness.v) *)
 
+Local Ltac solve_ctx_fuel Γ1 Γ2 :=
+  unfold denote, denot_ctx_inst in *;
+  simpl;
+  repeat rewrite Nat.add_0_l;
+  repeat rewrite Nat.add_0_r;
+  pose proof (formula_measure_pos (denot_ctx Γ1));
+  pose proof (formula_measure_pos (denot_ctx Γ2));
+  lia.
+
+Local Ltac change_ctx_fuel H Γ1 Γ2 :=
+  match type of H with
+  | res_models_with_store_fuel ?gas ?ρ ?m ?φ =>
+      eapply (res_models_with_store_fuel_irrel gas _ ρ m φ);
+      [solve_ctx_fuel Γ1 Γ2 | solve_ctx_fuel Γ1 Γ2 | exact H]
+  end.
+
 (** Monotonicity: if m ⊨ ⟦Γ⟧ and m ≤ m', then m' ⊨ ⟦Γ⟧ for comma contexts. *)
 Lemma denot_ctx_mono_comma (Γ : ctx) m m' :
   m ⊨ ⟦Γ⟧ →
   m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
-Proof. Admitted.
+Proof.
+  unfold denot_ctx_inst, res_models, res_models_with_store.
+  intros Hmodels Hle. eapply res_models_with_store_fuel_kripke; eauto.
+Qed.
 
 (** The context denotation of a comma-context distributes over conjunction. *)
 Lemma denot_ctx_comma Γ1 Γ2 m :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof.
+  unfold denot_ctx_inst, res_models, res_models_with_store. simpl.
+  split.
+  - intros [Hscope [HΓ1 HΓ2]]. split.
+    + change_ctx_fuel HΓ1 Γ1 Γ2.
+    + change_ctx_fuel HΓ2 Γ1 Γ2.
+  - intros [HΓ1 HΓ2]. split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx Γ1) HΓ1).
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx Γ2) HΓ2).
+      set_solver.
+    + split.
+      * change_ctx_fuel HΓ1 Γ1 Γ2.
+      * change_ctx_fuel HΓ2 Γ1 Γ2.
+Qed.
 
 (** The context denotation of a star-context distributes over FStar. *)
 Lemma denot_ctx_star Γ1 Γ2 m :
@@ -192,7 +225,23 @@ Lemma denot_ctx_star Γ1 Γ2 m :
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof.
+  unfold denot_ctx_inst, res_models, res_models_with_store. simpl.
+  split.
+  - intros [_ [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]]].
+    exists m1, m2, Hc. split; [exact Hprod |]. split.
+    + change_ctx_fuel HΓ1 Γ1 Γ2.
+    + change_ctx_fuel HΓ2 Γ1 Γ2.
+  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m1 (denot_ctx Γ1) HΓ1).
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m2 (denot_ctx Γ2) HΓ2).
+      pose proof (raw_le_dom _ _ Hprod). set_solver.
+    + exists m1, m2, Hc. split; [exact Hprod |]. split.
+      * change_ctx_fuel HΓ1 Γ1 Γ2.
+      * change_ctx_fuel HΓ2 Γ1 Γ2.
+Qed.
 
 (** The context denotation of a sum-context distributes over FPlus. *)
 Lemma denot_ctx_sum Γ1 Γ2 m :
@@ -200,12 +249,33 @@ Lemma denot_ctx_sum Γ1 Γ2 m :
   ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
     res_sum m1 m2 Hdef ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof.
+  unfold denot_ctx_inst, res_models, res_models_with_store. simpl.
+  split.
+  - intros [_ [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]]].
+    exists m1, m2, Hdef. split; [exact Hsum |]. split.
+    + change_ctx_fuel HΓ1 Γ1 Γ2.
+    + change_ctx_fuel HΓ2 Γ1 Γ2.
+  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m1 (denot_ctx Γ1) HΓ1) as Hscope1.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m2 (denot_ctx Γ2) HΓ2) as Hscope2.
+      pose proof (raw_le_dom _ _ Hsum) as Hdom_sum_m.
+      unfold raw_sum_defined in Hdef. simpl in Hdom_sum_m.
+      intros z Hz. apply elem_of_union in Hz as [Hzempty | Hzfv]; [set_solver |].
+      apply elem_of_union in Hzfv as [Hz | Hz].
+      * apply Hdom_sum_m. apply Hscope1. set_solver.
+      * apply Hdom_sum_m. rewrite Hdef. apply Hscope2. set_solver.
+    + exists m1, m2, Hdef. split; [exact Hsum |]. split.
+      * change_ctx_fuel HΓ1 Γ1 Γ2.
+      * change_ctx_fuel HΓ2 Γ1 Γ2.
+Qed.
 
 (** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔ m ⊨ denot_ty τ (tret (vfvar x)).
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 (** Substitution commutes with type denotation. *)
 Lemma denot_ty_subst τ e x v m :
