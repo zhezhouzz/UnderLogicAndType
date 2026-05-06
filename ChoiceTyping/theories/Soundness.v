@@ -20,8 +20,9 @@ Proof. Admitted.
 
 (** ** Fundamental theorem *)
 
-Theorem Fundamental (Γ : ctx) (e : tm) (τ : choice_ty) :
-  Γ ⊢ e ⋮ τ →
+Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ Γ e τ →
   ⟦Γ⟧ ⊫ ⟦τ⟧ e.
 Proof. Admitted.
 
@@ -31,29 +32,34 @@ Proof. Admitted.
     bodies remain as admitted skeletons while the definition layer is being
     aligned with the paper. *)
 
-Corollary safety (e : tm) (b : base_ty) :
-  CtxEmpty ⊢ e ⋮ CTOver b qual_top →
+Corollary safety (Φ : primop_ctx) (e : tm) (b : base_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTOver b qual_top) →
   ∀ e', steps e e' → is_val e' ∨ ∃ e'', step e' e''.
 Proof. Admitted.
 
-Corollary coverage (e : tm) (b : base_ty) :
-  CtxEmpty ⊢ e ⋮ CTUnder b qual_top →
+Corollary coverage (Φ : primop_ctx) (e : tm) (b : base_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b qual_top) →
   ∃ v, steps e (tret v).
 Proof. Admitted.
 
-Corollary refinement (e : tm) (b : base_ty) (φ : type_qualifier) :
-  CtxEmpty ⊢ e ⋮ CTOver b φ →
+Corollary refinement (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTOver b φ) →
   ∀ v, steps e (tret v) →
        ∃ x, qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
-Corollary incorrectness (e : tm) (b : base_ty) (φ : type_qualifier) :
-  CtxEmpty ⊢ e ⋮ CTUnder b φ →
+Corollary incorrectness (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b φ) →
   ∃ v x, steps e (tret v) ∧ qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
-Corollary exact_result (e : tm) (b : base_ty) (c : constant) :
-  CtxEmpty ⊢ e ⋮ CTUnder b (b0:c= c) →
+Corollary exact_result (Φ : primop_ctx) (e : tm) (b : base_ty) (c : constant) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b (b0:c= c)) →
   steps e (tret (vconst c)).
 Proof. Admitted.
 
