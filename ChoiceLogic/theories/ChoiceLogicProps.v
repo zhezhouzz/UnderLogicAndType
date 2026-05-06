@@ -24,20 +24,114 @@ Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associa
 (** o and u are monotone w.r.t. entailment. *)
 Lemma over_mono (p q : FormulaT) :
   (p ⊫ q) → (FOver p ⊫ FOver q).
-Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hip m [Hscope [m' [Hsub Hp]]].
+  pose proof (Hip m' Hp) as Hq.
+  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
+    as Hq_scope.
+  split.
+  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
+    destruct Hsub as [Hdom _]. symmetry. exact Hdom.
+  - exists m'. split; [exact Hsub | exact Hq].
+Qed.
 
 Lemma under_mono (p q : FormulaT) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
-Proof. unfold entails, sat in *. intros Hip m [m' [Hle Hp]]. hauto. Qed.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hip m [Hscope [m' [Hsub Hp]]].
+  pose proof (Hip m' Hp) as Hq.
+  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
+    as Hq_scope.
+  split.
+  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
+    destruct Hsub as [Hdom _]. exact Hdom.
+  - exists m'. split; [exact Hsub | exact Hq].
+Qed.
 
 (** Ordinary quantifiers are monotone. *)
 Lemma forall_mono (x : atom) (p q : FormulaT) :
   (p ⊫ q) → (FForall x p ⊫ FForall x q).
-Proof. Admitted.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hpq m [Hscope [L [HL Hforall]]].
+  set (L' := L ∪ formula_fv p ∪ formula_fv q).
+  split.
+  - eapply formula_scoped_forall_from_renamed with (L := L').
+    { unfold L'. set_solver. }
+    intros y Hy m' Hdom Hrestr.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
+      by (unfold L' in Hy; set_solver).
+    pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
+    assert (Hp_exact :
+        res_models_with_store_fuel
+          (formula_measure (formula_rename_atom x y p)) ∅ m'
+          (formula_rename_atom x y p)).
+    { rewrite formula_rename_preserves_measure. exact Hp. }
+    pose proof (Hpq_y Hp_exact) as Hq.
+    exact (res_models_with_store_fuel_scoped
+      (formula_measure (formula_rename_atom x y q)) ∅ m'
+      (formula_rename_atom x y q) Hq).
+  - exists L'. split; [unfold L'; set_solver |].
+    intros y Hy m' Hdom Hrestr.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
+      by (unfold L' in Hy; set_solver).
+    pose proof (Hforall y HyL m' Hdom Hrestr) as Hp.
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
+    assert (Hp_exact :
+        res_models_with_store_fuel
+          (formula_measure (formula_rename_atom x y p)) ∅ m'
+          (formula_rename_atom x y p)).
+    { rewrite formula_rename_preserves_measure. exact Hp. }
+    pose proof (Hpq_y Hp_exact) as Hq.
+    rewrite <- (formula_rename_preserves_measure x y q). exact Hq.
+Qed.
 
 Lemma exists_mono (x : atom) (p q : FormulaT) :
   (p ⊫ q) → (FExists x p ⊫ FExists x q).
-Proof. Admitted.
+Proof.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros Hpq m [Hscope [L [HL Hexists]]].
+  set (L' := L ∪ formula_fv p ∪ formula_fv q).
+  split.
+  - eapply formula_scoped_exists_from_renamed with (L := L').
+    { unfold L'. set_solver. }
+    intros y Hy.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
+      by (unfold L' in Hy; set_solver).
+    destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
+    exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
+    assert (Hp_exact :
+        res_models_with_store_fuel
+          (formula_measure (formula_rename_atom x y p)) ∅ m'
+          (formula_rename_atom x y p)).
+    { rewrite formula_rename_preserves_measure. exact Hp. }
+    pose proof (Hpq_y Hp_exact) as Hq.
+    exact (res_models_with_store_fuel_scoped
+      (formula_measure (formula_rename_atom x y q)) ∅ m'
+      (formula_rename_atom x y q) Hq).
+  - exists L'. split; [unfold L'; set_solver |].
+    intros y Hy.
+    assert (HyL : y ∉ L) by (unfold L' in Hy; set_solver).
+    assert (Hyfresh : y ∉ formula_fv p ∪ formula_fv q)
+      by (unfold L' in Hy; set_solver).
+    destruct (Hexists y HyL) as [m' [Hdom [Hrestr Hp]]].
+    exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+    pose proof (entails_rename_atom_fresh x y p q Hyfresh Hpq m') as Hpq_y.
+    assert (Hp_exact :
+        res_models_with_store_fuel
+          (formula_measure (formula_rename_atom x y p)) ∅ m'
+          (formula_rename_atom x y p)).
+    { rewrite formula_rename_preserves_measure. exact Hp. }
+    pose proof (Hpq_y Hp_exact) as Hq.
+    rewrite <- (formula_rename_preserves_measure x y q). exact Hq.
+Qed.
 
 (** *** §2 Modality set-level characterisations
 
@@ -60,8 +154,13 @@ Lemma over_ext_eq (p : FormulaT) :
 Proof.
   intros m. unfold ext, under_closure, sat, res_models, res_models_with_store.
   simpl. split.
-  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. split.
+    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
+        as Hscope.
+      eapply formula_scoped_world_dom_eq; [| exact Hscope].
+      destruct Hsub as [Hdom _]. symmetry. exact Hdom.
+    + exists m'. split; [exact Hsub | exact Hp].
 Qed.
 
 (** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
@@ -70,8 +169,13 @@ Lemma under_ext_eq (p : FormulaT) :
 Proof.
   intros m. unfold ext, over_closure, sat, res_models, res_models_with_store.
   simpl. split.
-  - intros [m' [Hsub Hp]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. exists m'. split; [exact Hsub | exact Hp].
+  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
+  - intros [m' [Hp Hsub]]. split.
+    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
+        as Hscope.
+      eapply formula_scoped_world_dom_eq; [| exact Hscope].
+      destruct Hsub as [Hdom _]. exact Hdom.
+    + exists m'. split; [exact Hsub | exact Hp].
 Qed.
 
 (** ** Adjunction: ∗ and −∗ *)
@@ -80,6 +184,24 @@ Lemma star_wand_adjunction (p q r : FormulaT) :
   (FAnd (FStar p q) r ⊫ FStar p (FAnd q r)) →
   (p ⊫ FWand q r) →
   (FStar p q ⊫ r).
-Proof. Admitted.
+Proof.
+  intros _ Hp_wand.
+  unfold entails, sat, res_models, res_models_with_store in *.
+  intros m [Hscope [m1 [m2 [Hc [Hprod [Hp Hq]]]]]].
+  assert (Hp_exact : res_models_with_store_fuel (formula_measure p) ∅ m1 p).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hp]; simpl; lia. }
+  pose proof (Hp_wand m1 Hp_exact) as Hwand.
+  simpl in Hwand. destruct Hwand as [_ Hwand_body].
+  destruct (res_product_comm_eq m1 m2 Hc) as [Hc' Hcomm].
+  assert (Hq_wand :
+      res_models_with_store_fuel (formula_measure q + formula_measure r) ∅ m2 q).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hq]; simpl; lia. }
+  pose proof (Hwand_body m2 Hc' Hq_wand) as Hr_comm.
+  assert (Hr_exact :
+      res_models_with_store_fuel (formula_measure r) ∅ (res_product m2 m1 Hc') r).
+  { eapply res_models_with_store_fuel_irrel; [| | exact Hr_comm]; simpl; lia. }
+  eapply res_models_with_store_fuel_kripke; [| exact Hr_exact].
+  rewrite <- Hcomm. exact Hprod.
+Qed.
 
 End ChoiceLogicProps.

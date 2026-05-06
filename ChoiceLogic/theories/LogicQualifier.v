@@ -1,4 +1,5 @@
 From ChoiceLogic Require Import Prelude.
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** * Logic qualifiers
 
@@ -43,6 +44,48 @@ Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifie
       lqual (aset_rename x y d)
         (λ σ w, p (store_rename_atom y x σ) (res_rename_atom y x w))
   end.
+
+Definition lqual_swap (x y : atom) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual d p =>
+      lqual (aset_swap x y d)
+        (λ σ w, p (store_swap x y σ) (res_swap x y w))
+  end.
+
+Lemma logic_qualifier_denote_rename_atom x y q σ w :
+  logic_qualifier_denote (lqual_rename_atom x y q) σ w ↔
+  logic_qualifier_denote q (store_rename_atom y x σ) (res_rename_atom y x w).
+Proof.
+  destruct q as [d p]. simpl.
+  rewrite store_restrict_rename_atom.
+  rewrite res_restrict_rename_atom.
+  reflexivity.
+Qed.
+
+Lemma logic_qualifier_denote_swap x y q σ w :
+  logic_qualifier_denote (lqual_swap x y q) σ w ↔
+  logic_qualifier_denote q (store_swap x y σ) (res_swap x y w).
+Proof.
+  destruct q as [d p]. simpl.
+  rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
+  rewrite <- (res_restrict_swap x y w (aset_swap x y d)).
+  rewrite !aset_swap_involutive.
+  reflexivity.
+Qed.
+
+Lemma lqual_swap_conjugate a b x y q :
+  lqual_swap a b (lqual_swap x y q) =
+  lqual_swap (atom_swap a b x) (atom_swap a b y) (lqual_swap a b q).
+Proof.
+  destruct q as [d p]. simpl.
+  f_equal.
+  - apply aset_swap_conjugate.
+  - apply functional_extensionality. intros σ.
+    apply functional_extensionality. intros w.
+    apply propositional_extensionality.
+    rewrite store_swap_conjugate_inv, res_swap_conjugate_inv.
+    reflexivity.
+Qed.
 
 Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
   match q1, q2 with

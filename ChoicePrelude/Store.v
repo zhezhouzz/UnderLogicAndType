@@ -72,6 +72,137 @@ Definition atom_rename (x y z : atom) : atom :=
 Definition aset_rename (x y : atom) (X : aset) : aset :=
   if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
 
+Definition atom_swap (x y z : atom) : atom :=
+  if decide (z = x) then y else if decide (z = y) then x else z.
+
+Definition aset_swap (x y : atom) (X : aset) : aset :=
+  set_map (atom_swap x y) X.
+
+Lemma atom_swap_involutive x y z :
+  atom_swap x y (atom_swap x y z) = z.
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma atom_swap_conjugate a b x y z :
+  atom_swap a b (atom_swap x y z) =
+  atom_swap (atom_swap a b x) (atom_swap a b y) (atom_swap a b z).
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma atom_swap_conjugate_inv a b x y z :
+  atom_swap x y (atom_swap a b z) =
+  atom_swap a b (atom_swap (atom_swap a b x) (atom_swap a b y) z).
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma atom_swap_sym x y z :
+  atom_swap x y z = atom_swap y x z.
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
+Lemma elem_of_aset_swap x y z X :
+  z ∈ aset_swap x y X ↔ atom_swap x y z ∈ X.
+Proof.
+  unfold aset_swap. split.
+  - intros [z0 [-> Hz0]]%elem_of_map.
+    rewrite atom_swap_involutive. exact Hz0.
+  - intros Hz.
+    apply elem_of_map. exists (atom_swap x y z). split; [symmetry; apply atom_swap_involutive | exact Hz].
+Qed.
+
+Lemma aset_swap_involutive x y X :
+  aset_swap x y (aset_swap x y X) = X.
+Proof.
+  apply set_eq. intros z. rewrite elem_of_aset_swap, elem_of_aset_swap.
+  rewrite atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma aset_swap_union x y X Y :
+  aset_swap x y (X ∪ Y) = aset_swap x y X ∪ aset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_union.
+  rewrite !elem_of_aset_swap.
+  tauto.
+Qed.
+
+Lemma aset_swap_empty x y :
+  aset_swap x y ∅ = ∅.
+Proof.
+  apply set_eq. intros z. rewrite elem_of_aset_swap. set_solver.
+Qed.
+
+Lemma aset_swap_intersection x y X Y :
+  aset_swap x y (X ∩ Y) = aset_swap x y X ∩ aset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_intersection, !elem_of_aset_swap.
+  tauto.
+Qed.
+
+Lemma aset_swap_disjoint x y X Y :
+  aset_swap x y X ## aset_swap x y Y ↔ X ## Y.
+Proof.
+  unfold disjoint, set_disjoint_instance. split; intros Hdis z HzX HzY.
+  - apply (Hdis (atom_swap x y z)).
+    + rewrite elem_of_aset_swap, atom_swap_involutive. exact HzX.
+    + rewrite elem_of_aset_swap, atom_swap_involutive. exact HzY.
+  - rewrite elem_of_aset_swap in HzX.
+    rewrite elem_of_aset_swap in HzY.
+    exact (Hdis _ HzX HzY).
+Qed.
+
+Lemma aset_swap_singleton x y z :
+  aset_swap x y ({[z]}) = {[atom_swap x y z]}.
+Proof.
+  apply set_eq. intros a.
+  rewrite elem_of_aset_swap, !elem_of_singleton.
+  split.
+  - intros Ha.
+    rewrite <- Ha. symmetry. apply atom_swap_involutive.
+  - intros ->. apply atom_swap_involutive.
+Qed.
+
+Lemma aset_swap_conjugate a b x y X :
+  aset_swap a b (aset_swap x y X) =
+  aset_swap (atom_swap a b x) (atom_swap a b y) (aset_swap a b X).
+Proof.
+  apply set_eq. intros z.
+  rewrite !elem_of_aset_swap.
+  rewrite atom_swap_conjugate_inv. reflexivity.
+Qed.
+
+Lemma aset_swap_conjugate_inv a b x y X :
+  aset_swap x y (aset_swap a b X) =
+  aset_swap a b (aset_swap (atom_swap a b x) (atom_swap a b y) X).
+Proof.
+  apply set_eq. intros z.
+  rewrite !elem_of_aset_swap.
+  rewrite atom_swap_conjugate. reflexivity.
+Qed.
+
+Lemma aset_swap_difference_singleton x y z X :
+  aset_swap x y (X ∖ {[z]}) =
+  aset_swap x y X ∖ {[atom_swap x y z]}.
+Proof.
+  apply set_eq. intros a.
+  rewrite elem_of_aset_swap, elem_of_difference, elem_of_singleton.
+  rewrite elem_of_difference, elem_of_singleton, elem_of_aset_swap.
+  split.
+  - intros [Ha Hne]. split; [exact Ha |].
+    intros Heq. apply Hne.
+    rewrite <- (atom_swap_involutive x y z).
+    by rewrite <- Heq.
+  - intros [Ha Hne]. split; [exact Ha |].
+    intros Heq. apply Hne.
+    rewrite <- (atom_swap_involutive x y a).
+    by rewrite Heq.
+Qed.
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
@@ -87,6 +218,71 @@ Definition store_rename_atom (x y : atom) (s : Store) : Store :=
   | Some v => <[y := v]> (delete x s)
   | None => delete y s
   end.
+
+Definition store_swap (x y : atom) (s : Store) : Store :=
+  kmap (atom_swap x y) s.
+
+Lemma atom_swap_inj x y : Inj (=) (=) (atom_swap x y).
+Proof.
+  intros z1 z2 Heq.
+  rewrite <- (atom_swap_involutive x y z1).
+  rewrite <- (atom_swap_involutive x y z2).
+  by rewrite Heq.
+Qed.
+
+Lemma store_swap_lookup x y s z :
+  store_swap x y s !! atom_swap x y z = s !! z.
+Proof.
+  unfold store_swap.
+  eapply lookup_kmap.
+  apply atom_swap_inj.
+Qed.
+
+Lemma store_swap_lookup_inv x y s z :
+  store_swap x y s !! z = s !! atom_swap x y z.
+Proof.
+  rewrite <- (atom_swap_involutive x y z) at 1.
+  apply store_swap_lookup.
+Qed.
+
+Lemma store_swap_dom x y s :
+  dom (store_swap x y s) = aset_swap x y (dom s).
+Proof.
+  unfold store_swap, aset_swap.
+  eapply dom_kmap_L.
+  apply atom_swap_inj.
+Qed.
+
+Lemma store_swap_empty x y :
+  store_swap x y (∅ : Store) = ∅.
+Proof.
+  unfold store_swap. apply kmap_empty.
+Qed.
+
+Lemma store_swap_involutive x y s :
+  store_swap x y (store_swap x y s) = s.
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma store_swap_conjugate a b x y s :
+  store_swap a b (store_swap x y s) =
+  store_swap (atom_swap a b x) (atom_swap a b y) (store_swap a b s).
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv.
+  rewrite atom_swap_conjugate_inv. reflexivity.
+Qed.
+
+Lemma store_swap_conjugate_inv a b x y s :
+  store_swap x y (store_swap a b s) =
+  store_swap a b (store_swap (atom_swap a b x) (atom_swap a b y) s).
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv.
+  rewrite atom_swap_conjugate. reflexivity.
+Qed.
 
 Lemma store_rename_atom_dom x y s :
   dom (store_rename_atom x y s) = aset_rename x y (dom s).
@@ -118,6 +314,150 @@ Proof.
       rewrite elem_of_dom, lookup_delete_is_Some.
       rewrite elem_of_difference, elem_of_singleton, elem_of_dom.
       firstorder congruence.
+Qed.
+
+Lemma elem_of_aset_rename x y z X :
+  z ∈ aset_rename x y X ↔
+    (z = y ∧ x ∈ X) ∨ (z ≠ y ∧ z ≠ x ∧ z ∈ X).
+Proof.
+  unfold aset_rename.
+  destruct (decide (x ∈ X)) as [Hx|Hx].
+  - rewrite elem_of_union, elem_of_singleton, elem_of_difference,
+      elem_of_singleton.
+    split.
+    + intros [Hzy | [HzX Hzx]].
+      * left. split; [exact Hzy | exact Hx].
+      * destruct (decide (z = y)) as [Hzy|Hzy].
+        -- left. split; [exact Hzy | exact Hx].
+        -- right. repeat split; assumption.
+    + intros [[Hzy _] | [Hzy [Hzx HzX]]].
+      * left. exact Hzy.
+      * right. set_solver.
+  - rewrite elem_of_difference, elem_of_singleton.
+    split.
+    + intros [HzX Hzy]. right. set_solver.
+    + intros [[-> HyX] | [Hzy [Hzx HzX]]]; set_solver.
+Qed.
+
+Lemma store_rename_atom_lookup x y s z :
+  store_rename_atom x y s !! z =
+    if decide (z = y)
+    then s !! x
+    else if decide (z = x)
+         then None
+         else s !! z.
+Proof.
+  unfold store_rename_atom.
+  destruct (s !! x) as [vx|] eqn:Hx.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + destruct (decide (y = y)); [|congruence].
+      change ((<[y := vx]> (delete x s) : gmap atom V) !! y = Some vx).
+      apply lookup_insert_eq.
+    + change ((<[y := vx]> (delete x s) : gmap atom V) !! z =
+        if decide (z = x) then None else s !! z).
+      rewrite (lookup_insert_ne (delete x s) y z vx) by congruence.
+      destruct (decide (z = y)); [congruence |].
+      destruct (decide (z = x)) as [->|Hzx].
+      * change ((delete x s : gmap atom V) !! x = None). apply lookup_delete_eq.
+      * change ((delete x s : gmap atom V) !! z = s !! z).
+        apply lookup_delete_ne. congruence.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + destruct (decide (y = y)); [|congruence].
+      change ((delete y s : gmap atom V) !! y = None).
+      apply lookup_delete_eq.
+    + change ((delete y s : gmap atom V) !! z =
+        if decide (z = x) then None else s !! z).
+      destruct (decide (z = y)); [congruence |].
+      destruct (decide (z = x)) as [->|Hzx].
+      * transitivity (s !! x).
+        -- apply lookup_delete_ne. congruence.
+        -- exact Hx.
+      * change ((delete y s : gmap atom V) !! z = s !! z).
+        apply lookup_delete_ne. congruence.
+Qed.
+
+Lemma store_restrict_lookup s X z :
+  store_restrict s X !! z = if decide (z ∈ X) then s !! z else None.
+Proof.
+  unfold store_restrict, map_restrict.
+  destruct (decide (z ∈ X)) as [Hz|Hz].
+  - destruct (s !! z) eqn:Hs.
+    + apply map_lookup_filter_Some_2; [exact Hs | exact Hz].
+    + apply map_lookup_filter_None. left. exact Hs.
+  - apply map_lookup_filter_None. right. intros v _ Hin. contradiction.
+Qed.
+
+Lemma store_restrict_swap x y s X :
+  store_restrict (store_swap x y s) (aset_swap x y X) =
+  store_swap x y (store_restrict s X).
+Proof.
+  apply map_eq. intros z.
+  rewrite store_restrict_lookup, !store_swap_lookup_inv, store_restrict_lookup.
+  destruct (decide (z ∈ aset_swap x y X)) as [Hz|Hz];
+    destruct (decide (atom_swap x y z ∈ X)) as [Hz'|Hz']; try reflexivity.
+  - exfalso. apply Hz'. rewrite <- elem_of_aset_swap. exact Hz.
+  - exfalso. apply Hz. rewrite elem_of_aset_swap. exact Hz'.
+Qed.
+
+Lemma store_compat_swap x y s1 s2 :
+  store_compat (store_swap x y s1) (store_swap x y s2) ↔
+  store_compat s1 s2.
+Proof.
+  split.
+  - intros Hc z v1 v2 H1 H2.
+    pose proof (Hc (atom_swap x y z) v1 v2) as Hc'.
+    rewrite !store_swap_lookup in Hc'.
+    exact (Hc' H1 H2).
+  - intros Hc z v1 v2 H1 H2.
+    rewrite store_swap_lookup_inv in H1.
+    rewrite store_swap_lookup_inv in H2.
+    exact (Hc _ _ _ H1 H2).
+Qed.
+
+Lemma store_swap_union x y s1 s2 :
+  store_swap x y (s1 ∪ s2) = store_swap x y s1 ∪ store_swap x y s2.
+Proof.
+  unfold store_swap.
+  eapply kmap_union. apply atom_swap_inj.
+Qed.
+
+Lemma store_restrict_rename_atom x y s X :
+  store_restrict (store_rename_atom y x s) X =
+  store_rename_atom y x (store_restrict s (aset_rename x y X)).
+Proof.
+  apply map_eq. intros z.
+  rewrite store_restrict_lookup, !store_rename_atom_lookup.
+  destruct (decide (z = x)) as [->|Hzx].
+  - destruct (decide (x ∈ X)) as [HxX|HxX].
+    + destruct (decide (y = y)); [|congruence].
+      rewrite store_restrict_lookup.
+      destruct (decide (y ∈ aset_rename x y X)) as [_|Hy].
+      * reflexivity.
+      * exfalso. apply Hy. rewrite elem_of_aset_rename. left. split; [reflexivity | exact HxX].
+    + destruct (decide (y = y)); [|congruence].
+      rewrite store_restrict_lookup.
+      destruct (decide (y ∈ aset_rename x y X)) as [Hy|_].
+      * rewrite elem_of_aset_rename in Hy. set_solver.
+      * reflexivity.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + destruct (decide (y ∈ X)) as [HyX|HyX].
+      * destruct (decide (y = x)); [congruence |].
+        destruct (decide (y = y)); [reflexivity | congruence].
+      * destruct (decide (y = x)); [congruence |].
+        destruct (decide (y = y)); [reflexivity | congruence].
+    + destruct (decide (z ∈ X)) as [HzX|HzX].
+      * rewrite store_restrict_lookup.
+        destruct (decide (z ∈ aset_rename x y X)) as [_|Hzren].
+        -- destruct (decide (z = y)); [congruence |].
+           destruct (decide (z = x)); [congruence |].
+           reflexivity.
+        -- exfalso. apply Hzren. rewrite elem_of_aset_rename. right. set_solver.
+      * rewrite store_restrict_lookup.
+        destruct (decide (z ∈ aset_rename x y X)) as [Hzren|_].
+        -- rewrite elem_of_aset_rename in Hzren. set_solver.
+        -- destruct (decide (z = y)); [congruence |].
+           destruct (decide (z = x)); [congruence |].
+           reflexivity.
 Qed.
 
 Lemma store_compat_refl s : store_compat s s.
@@ -216,6 +556,12 @@ Proof.
   unfold store_restrict. apply dom_gmap_filter_key_in_pair.
 Qed.
 
+Lemma store_restrict_dom_subset s X :
+  dom (store_restrict s X) ⊆ X.
+Proof.
+  rewrite store_restrict_dom. set_solver.
+Qed.
+
 Lemma store_restrict_idemp s X :
   dom s ⊆ X → store_restrict s X = s.
 Proof.
@@ -297,6 +643,71 @@ Proof.
       * split. { right. eauto. } exact HP.
 Qed.
 
+Lemma store_restrict_union_cover s1 s2 X1 X2 :
+  store_compat s1 s2 →
+  X1 ⊆ dom s1 →
+  X2 ⊆ dom s2 →
+  store_restrict (s1 ∪ s2) (X1 ∪ X2) =
+  store_restrict s1 X1 ∪ store_restrict s2 X2.
+Proof.
+  intros Hcompat Hcover1 Hcover2.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ s2) (X1 ∪ X2) !! i =
+    (map_restrict V s1 X1 ∪ map_restrict V s2 X2) !! i).
+  destruct (decide (i ∈ X1)) as [Hi1 | Hni1].
+  - assert (i ∈ dom s1) as Hidom1 by set_solver.
+    apply elem_of_dom in Hidom1 as [v1 Hlookup1].
+    assert (Hrestrict1 : map_restrict V s1 X1 !! i = Some v1).
+    {
+      unfold map_restrict.
+      apply map_lookup_filter_Some_2; [exact Hlookup1 | exact Hi1].
+    }
+    transitivity (Some v1).
+    + unfold map_restrict.
+      apply map_lookup_filter_Some_2; last set_solver.
+      rewrite lookup_union_Some_raw. left. exact Hlookup1.
+    + symmetry. rewrite lookup_union_l' by (eexists; exact Hrestrict1).
+      exact Hrestrict1.
+  - destruct (decide (i ∈ X2)) as [Hi2 | Hni2].
+    + assert (i ∈ dom s2) as Hidom2 by set_solver.
+      apply elem_of_dom in Hidom2 as [v2 Hlookup2].
+      assert (Hleft_none : map_restrict V s1 X1 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      rewrite lookup_union_r by exact Hleft_none.
+      assert (Hrestrict2 : map_restrict V s2 X2 !! i = Some v2).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_Some_2; [exact Hlookup2 | exact Hi2].
+      }
+      transitivity (Some v2).
+      * unfold map_restrict.
+        apply map_lookup_filter_Some_2; last set_solver.
+        destruct (s1 !! i) as [v1|] eqn:Hlookup1.
+        -- rewrite lookup_union_Some_raw. left.
+           assert (v1 = v2) by (eapply Hcompat; eauto). subst. exact Hlookup1.
+        -- rewrite lookup_union_Some_raw. right. exact (conj Hlookup1 Hlookup2).
+      * symmetry. exact Hrestrict2.
+    + assert (Hnotin : i ∉ X1 ∪ X2) by set_solver.
+      assert (Hleft_none : map_restrict V s1 X1 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      assert (Hright_none : map_restrict V s2 X2 !! i = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None. right. intros v Hlookup Hin. set_solver.
+      }
+      transitivity (@None V).
+      * unfold map_restrict.
+        apply map_lookup_filter_None. right.
+        intros v Hlookup Hin. set_solver.
+      * symmetry. rewrite lookup_union_r by exact Hleft_none. exact Hright_none.
+Qed.
+
 Lemma store_restrict_lookup_some s X x y :
   store_restrict s X !! x = Some y → x ∈ X ∧ s !! x = Some y.
 Proof.
@@ -314,6 +725,133 @@ Proof.
   apply map_lookup_filter_Some_2; [exact Hlookup | exact Hin].
 Qed.
 
+Lemma store_restrict_union_partition s X Y :
+  dom s ⊆ X ∪ Y →
+  X ∩ Y = ∅ →
+  store_restrict s X ∪ store_restrict s Y = s.
+Proof.
+  intros Hcover Hdisj.
+  apply map_eq. intros i.
+  change ((map_restrict V s X ∪ map_restrict V s Y) !! i = s !! i).
+  destruct (s !! i) as [v|] eqn:Hi.
+  - assert (Hi_dom : i ∈ dom s) by (apply elem_of_dom; eauto).
+    specialize (Hcover _ Hi_dom).
+    apply elem_of_union in Hcover as [HiX|HiY].
+    + rewrite lookup_union_l'.
+      * apply store_restrict_lookup_some_2; [exact Hi | exact HiX].
+      * eexists. apply store_restrict_lookup_some_2; [exact Hi | exact HiX].
+    + assert (Hleft_none : store_restrict s X !! i = None).
+      {
+        unfold store_restrict, map_restrict.
+        apply map_lookup_filter_None. right.
+        intros v' _ HiX.
+        assert (HiXY : i ∈ X ∩ Y).
+        { apply elem_of_intersection. split; [exact HiX | exact HiY]. }
+        rewrite Hdisj in HiXY. apply elem_of_empty in HiXY. contradiction.
+      }
+      rewrite lookup_union_r by exact Hleft_none.
+      apply store_restrict_lookup_some_2; [exact Hi | exact HiY].
+  - assert (Hleft_none : store_restrict s X !! i = None).
+    {
+      unfold store_restrict, map_restrict.
+      apply map_lookup_filter_None. left. exact Hi.
+    }
+    rewrite lookup_union_r by exact Hleft_none.
+    unfold store_restrict, map_restrict.
+    apply map_lookup_filter_None. left. exact Hi.
+Qed.
+
+Lemma store_restrict_union_piece_l s1 s2 X Y :
+  store_compat s1 s2 →
+  dom s1 ⊆ X →
+  dom s2 ⊆ Y →
+  Y ∩ X = ∅ →
+  store_restrict (s1 ∪ s2) X = s1.
+Proof.
+  intros Hcompat Hdom1 Hdom2 Hdisj.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ s2) X !! i = s1 !! i).
+  destruct (s1 !! i) as [v1|] eqn:H1.
+  - unfold map_restrict.
+    apply map_lookup_filter_Some_2.
+    + rewrite (lookup_union_l' s1 s2 i) by eauto. exact H1.
+    + apply Hdom1. apply elem_of_dom. eauto.
+  - unfold map_restrict.
+    apply map_lookup_filter_None.
+    destruct (decide (i ∈ X)) as [HiX|HiX].
+    + left. change ((s1 ∪ s2) !! i = None).
+      apply lookup_union_None. split; [exact H1 |].
+      apply not_elem_of_dom. intros Hi2.
+      assert (HiY : i ∈ Y) by set_solver.
+      assert (HiYX : i ∈ Y ∩ X).
+      { apply elem_of_intersection. split; [exact HiY | exact HiX]. }
+      rewrite Hdisj in HiYX. apply elem_of_empty in HiYX. contradiction.
+    + right. intros v Hlookup Hin. contradiction.
+Qed.
+
+Lemma store_restrict_union_piece_r s1 s2 X Y :
+  store_compat s1 s2 →
+  dom s1 ⊆ X →
+  dom s2 ⊆ Y →
+  X ∩ Y = ∅ →
+  store_restrict (s1 ∪ s2) Y = s2.
+Proof.
+  intros Hcompat Hdom1 Hdom2 Hdisj.
+  rewrite store_union_comm by exact Hcompat.
+  apply (store_restrict_union_piece_l s2 s1 Y X).
+  - apply store_compat_sym. exact Hcompat.
+  - exact Hdom2.
+  - exact Hdom1.
+  - apply set_eq. intros i. split.
+    + intros Hi.
+      apply elem_of_intersection in Hi as [HiY HiX].
+      assert (HiXY : i ∈ X ∩ Y).
+      { apply elem_of_intersection. split; [exact HiY | exact HiX]. }
+      rewrite Hdisj in HiXY. apply elem_of_empty in HiXY. contradiction.
+    + intros Hi. apply elem_of_empty in Hi. contradiction.
+Qed.
+
+Lemma store_restrict_union_base_singleton s1 s2 D y :
+  D ⊆ dom s1 →
+  dom s2 = D ∪ {[y]} →
+  y ∉ dom s1 →
+  store_restrict s1 D = store_restrict s2 D →
+  store_restrict (s1 ∪ store_restrict s2 {[y]}) (D ∪ {[y]}) = s2.
+Proof.
+  intros HDs1 Hdom2 Hy Hagree.
+  apply map_eq. intros i.
+  change (map_restrict V (s1 ∪ map_restrict V s2 {[y]}) (D ∪ {[y]}) !! i =
+    s2 !! i).
+  destruct (decide (i ∈ D)) as [HiD|HiD].
+  - assert (Hi_s1 : i ∈ dom s1) by set_solver.
+    apply elem_of_dom in Hi_s1 as [v1 Hs1].
+    assert (Hs1D : store_restrict s1 D !! i = Some v1).
+    { apply store_restrict_lookup_some_2; [exact Hs1 | exact HiD]. }
+    rewrite Hagree in Hs1D.
+    apply store_restrict_lookup_some in Hs1D as [_ Hs2].
+    transitivity (Some v1); [| symmetry; exact Hs2].
+    apply store_restrict_lookup_some_2; last set_solver.
+    rewrite (lookup_union_l' s1 (store_restrict s2 {[y]}) i) by eauto.
+    exact Hs1.
+  - destruct (decide (i = y)) as [->|Hiy].
+    + destruct (s2 !! y) as [vy|] eqn:Hs2y.
+      * transitivity (Some vy); [| reflexivity].
+        apply store_restrict_lookup_some_2; last set_solver.
+        change ((s1 ∪ map_restrict V s2 {[y]}) !! y = Some vy).
+        rewrite (lookup_union_r s1 (map_restrict V s2 {[y]}) y).
+        -- apply store_restrict_lookup_some_2; [exact Hs2y | set_solver].
+        -- by apply not_elem_of_dom.
+      * assert (Hy_dom : y ∈ dom s2) by (rewrite Hdom2; set_solver).
+        apply not_elem_of_dom in Hs2y. contradiction.
+    + assert (Hi_not_dom2 : i ∉ dom s2).
+      { rewrite Hdom2. set_solver. }
+      apply not_elem_of_dom in Hi_not_dom2.
+      transitivity (@None V); [| symmetry; exact Hi_not_dom2].
+      unfold map_restrict.
+      apply map_lookup_filter_None.
+      right. intros v _ Hin. set_solver.
+Qed.
+
 Lemma disj_dom_store_compat s1 s2 :
   dom s1 ∩ dom s2 = ∅ → store_compat s1 s2.
 Proof.
@@ -323,6 +861,20 @@ Proof.
   assert (x ∈ dom s1 ∩ dom s2) as Hin.
   { apply elem_of_intersection. split; apply elem_of_dom; eauto. }
   set_solver.
+Qed.
+
+Lemma store_compat_restrict_singleton_fresh s1 s2 y :
+  y ∉ dom s1 →
+  store_compat s1 (store_restrict s2 {[y]}).
+Proof.
+  intros Hy.
+  apply disj_dom_store_compat.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_intersection in Hz as [Hz1 Hz2].
+    pose proof (store_restrict_dom_subset s2 {[y]} z Hz2) as Hzy.
+    rewrite elem_of_singleton in Hzy. subst. contradiction.
+  - intros Hz. apply elem_of_empty in Hz. contradiction.
 Qed.
 
 Lemma store_compat_restrict s1 s2 X :

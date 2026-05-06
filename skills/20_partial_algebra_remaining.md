@@ -49,3 +49,11 @@ This note records the unfinished proof work left on
   them inline in resource proofs.
 - When stdpp union associativity is overloaded, an explicit term such as
   `assoc_L (∪) s1 s2 s3` is more stable than bare `rewrite assoc_L`.
+- Choice Logic uses explicit atom binders with cofinite semantics, not locally
+  nameless binders.  For alpha-renaming/equivariance lemmas, use a
+  nominal-style `swap`/finite-permutation operation rather than the existing
+  covering `rename`.  Covering rename (`x ↦ y`, deleting or overwriting the old
+  `y`) is useful for opening into a fresh representative, but it is not a
+  bijection on arbitrary worlds and therefore should not be used to prove
+  global preservation of `⊑`, product, sum, or fiber.  Swap is involutive and
+  preserves resource structure.
