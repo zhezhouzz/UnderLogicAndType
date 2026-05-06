@@ -538,6 +538,48 @@ Proof.
   rewrite store_restrict_dom. set_solver.
 Defined.
 
+Lemma res_fiber_from_projection_proof_irrel
+    (w : WfWorld) (X : aset) (σ : StoreT)
+    (Hproj1 Hproj2 : res_restrict w X σ) :
+  res_fiber_from_projection w X σ Hproj1 =
+  res_fiber_from_projection w X σ Hproj2.
+Proof.
+  apply wfworld_ext. reflexivity.
+Qed.
+
+Lemma res_fiber_from_projection_swap_cancel
+    (x y z : atom) (w : WfWorld) (σ : StoreT)
+    (Hproj1 : res_restrict (res_swap x y w)
+      (aset_swap x y {[atom_swap x y z]}) (store_swap x y (store_swap x y σ)))
+    (Hproj2 : res_restrict (res_swap x y w) {[z]} σ) :
+  res_fiber_from_projection (res_swap x y w)
+    (aset_swap x y {[atom_swap x y z]})
+    (store_swap x y (store_swap x y σ)) Hproj1 =
+  res_fiber_from_projection (res_swap x y w) {[z]} σ Hproj2.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+  - intros τ. simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive;
+      try rewrite store_swap_involutive. reflexivity.
+Qed.
+
+Lemma res_fiber_from_projection_swap_singleton_cancel
+    (x y z : atom) (w : WfWorld) (σ : StoreT)
+    (Hproj1 : res_restrict (res_swap x y w)
+      (aset_swap x y {[atom_swap x y z]}) σ)
+    (Hproj2 : res_restrict (res_swap x y w) {[z]} σ) :
+  res_fiber_from_projection (res_swap x y w)
+    (aset_swap x y {[atom_swap x y z]}) σ Hproj1 =
+  res_fiber_from_projection (res_swap x y w) {[z]} σ Hproj2.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+  - intros τ. simpl. try rewrite aset_swap_singleton; try rewrite atom_swap_involutive.
+    reflexivity.
+Qed.
+
 (** Same-domain subset relation on well-formed worlds.
 
     This is the extensional inclusion relation used by approximation

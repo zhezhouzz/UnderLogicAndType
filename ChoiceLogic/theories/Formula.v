@@ -742,10 +742,7 @@ Proof.
           (aset_swap a b {[atom_swap a b x]})
           (store_swap a b (store_swap a b σ)) Hproj') with
           (res_fiber_from_projection (res_swap a b m) {[x]} σ Hproj) in Hp_tgt.
-        2:{ apply wfworld_ext. apply world_ext.
-            - simpl. try rewrite aset_swap_singleton. try rewrite atom_swap_involutive. reflexivity.
-            - intros τ. simpl. try rewrite aset_swap_singleton.
-              try rewrite atom_swap_involutive. rewrite store_swap_involutive. reflexivity. }
+        2:{ symmetry. apply res_fiber_from_projection_swap_cancel. }
         exact Hp_tgt.
   - split.
     { apply formula_scoped_swap. exact Hscope. }
@@ -899,7 +896,7 @@ Proof.
           { rewrite aset_swap_singleton, atom_swap_involutive. exact Hproj'. }
           rewrite (res_fiber_from_projection_swap a b m {[atom_swap a b x]} σ
             Hproj Hproj_raw).
-          apply wfworld_ext. reflexivity.
+          apply res_fiber_from_projection_swap_singleton_cancel.
         }
         rewrite <- Hfiber_eq in Hp_tgt.
         exact (proj2 (IH (ρ ∪ σ)
