@@ -172,7 +172,7 @@ Arguments denot_ctx_inst /.
       [⟦τ⟧ e]  unfolds to [denot_ty τ e]
       [⟦Γ⟧]    unfolds to [denot_ctx Γ]              *)
 
-(** ** Key semantic lemmas (Admitted — to be proved in Soundness.v) *)
+(** ** Key semantic lemmas *)
 
 Local Ltac solve_ctx_fuel Γ1 Γ2 :=
   unfold denote, denot_ctx_inst in *;
