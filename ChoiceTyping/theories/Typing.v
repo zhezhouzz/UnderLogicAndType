@@ -187,13 +187,31 @@ Arguments typing_choice_inst /.
 
 (** ** Small admissible helpers kept only where they name core definitions. *)
 
+Lemma typing_wf Φ Γ e τ :
+  has_choice_type Φ Γ e τ →
+  choice_typing_wf Γ e τ.
+Proof. induction 1; assumption. Qed.
+
 Lemma typing_regular Φ Γ e τ :
   has_choice_type Φ Γ e τ →
   wf_ctx Γ ∧ wf_choice_ty Γ τ.
-Proof. Admitted.
+Proof.
+  intros Hty.
+  pose proof (typing_wf Φ Γ e τ Hty) as [Hwf _].
+  split; [exact (wf_choice_ty_ctx Γ τ Hwf) | exact Hwf].
+Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
 Lemma typing_erase Φ Γ e τ :
   has_choice_type Φ Γ e τ →
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
-Proof. Admitted.
+Proof. intros Hty. exact (proj2 (typing_wf Φ Γ e τ Hty)). Qed.
+
+Lemma typing_lc Φ Γ e τ :
+  has_choice_type Φ Γ e τ →
+  lc_tm e.
+Proof.
+  intros Hty.
+  apply typing_tm_lc with (Γ := erase_ctx Γ) (T := erase_ty τ).
+  apply typing_erase with (Φ := Φ). exact Hty.
+Qed.
