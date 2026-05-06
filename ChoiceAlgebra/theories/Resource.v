@@ -761,6 +761,27 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma res_product_double_swap_l (x y : atom) (w1 w2 : WfWorld)
+    (Hc : world_compat w1 w2)
+    (Hc' : world_compat (res_swap x y (res_swap x y w1)) w2) :
+  res_product (res_swap x y (res_swap x y w1)) w2 Hc' =
+  res_product w1 w2 Hc.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. rewrite aset_swap_involutive. reflexivity.
+  - intros σ. simpl. split.
+    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
+      subst τ1 σ1. rewrite store_swap_involutive in Hcompat |- *.
+      exists τ0, σ2. repeat split; eauto.
+    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      exists σ1, σ2. split.
+      * exists (store_swap x y σ1). split.
+        -- exists σ1. split; [exact Hσ1 | reflexivity].
+        -- apply store_swap_involutive.
+      * split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
+Qed.
+
 Lemma res_sum_swap (x y : atom) (w1 w2 : WfWorld)
     (Hdef : raw_sum_defined w1 w2)
     (Hdef' : raw_sum_defined (res_swap x y w1) (res_swap x y w2)) :

@@ -649,19 +649,7 @@ Proof.
       replace (res_product (res_swap a b (res_swap a b n)) (res_swap a b m) Hc1)
         with (res_product n (res_swap a b m) Hc) in Hq_tgt.
       * exact Hq_tgt.
-      * apply wfworld_ext. apply world_ext.
-        -- simpl. rewrite aset_swap_involutive. reflexivity.
-        -- intros σ. simpl. split.
-           ++ intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-              exists σ1, σ2. split.
-              ** exists (store_swap a b σ1). split.
-	                 --- exists σ1. split; [exact Hσ1 | reflexivity].
-	                 --- apply store_swap_involutive.
-	              ** split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
-	           ++ intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-              destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
-              subst τ1 σ1. rewrite store_swap_involutive in Hcompat |- *.
-	              exists τ0, σ2. repeat split; eauto.
+      * symmetry. apply res_product_double_swap_l.
     + destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
       assert (Hdef' : raw_sum_defined (res_swap a b m1) (res_swap a b m2)).
       { unfold raw_sum_defined in *. simpl. rewrite Hdef. reflexivity. }
