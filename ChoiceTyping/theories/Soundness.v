@@ -10,13 +10,19 @@ Lemma res_models_impl_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
   m ⊑ m' →
   m' ⊨ FImpl φ ψ.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.
 
 Lemma res_models_and_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FAnd φ ψ →
   m ⊑ m' →
   m' ⊨ FAnd φ ψ.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.
 
 (** ** Fundamental theorem *)
 
@@ -67,14 +73,14 @@ Proof. Admitted.
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof. apply denot_ctx_comma. Qed.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof. apply denot_ctx_star. Qed.
 
 Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
   (∀ m', m ⊑ m' →
@@ -119,4 +125,7 @@ Lemma ctx_res_models_mono (Γ : ctx) (m m' : WfWorld) :
   m ⊨ ⟦Γ⟧ →
   m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.

@@ -588,6 +588,26 @@ Definition res_models (m : WfWorldT) (φ : Formula) : Prop :=
 Definition entails (φ ψ : Formula) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 
+Lemma res_models_with_store_kripke
+    (ρ : StoreT) (m n : WfWorldT) (φ : Formula) :
+  m ⊑ n →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ n φ.
+Proof.
+  unfold res_models_with_store.
+  apply res_models_with_store_fuel_kripke.
+Qed.
+
+Lemma res_models_kripke
+    (m n : WfWorldT) (φ : Formula) :
+  m ⊑ n →
+  res_models m φ →
+  res_models n φ.
+Proof.
+  unfold res_models.
+  apply res_models_with_store_kripke.
+Qed.
+
 Lemma res_models_with_store_fuel_swap
     (a b : atom) (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
   res_models_with_store_fuel gas ρ m (formula_rename_atom a b φ) ↔
