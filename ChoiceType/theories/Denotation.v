@@ -66,6 +66,10 @@ Lemma cty_open_preserves_measure τ k x :
   cty_measure ({k ~> x} τ) = cty_measure τ.
 Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
 
+Lemma cty_swap_preserves_measure x y τ :
+  cty_measure (cty_swap_atom x y τ) = cty_measure τ.
+Proof. induction τ; simpl; eauto; lia. Qed.
+
 (** ** Type denotation
 
     [denot_ty_fuel gas D τ e] encodes the proposition "expression [e] has

@@ -6,6 +6,53 @@
 
 From ChoiceType Require Export Qualifier.
 
+(** ** Swap lemmas *)
+
+Lemma qual_bvars_swap x y q :
+  qual_bvars (qual_swap_atom x y q) = qual_bvars q.
+Proof. destruct q; reflexivity. Qed.
+
+Lemma qual_dom_swap x y q :
+  qual_dom (qual_swap_atom x y q) = aset_swap x y (qual_dom q).
+Proof. destruct q; reflexivity. Qed.
+
+Lemma qual_lc_swap x y q :
+  lc_qualifier q →
+  lc_qualifier (qual_swap_atom x y q).
+Proof.
+  unfold lc_qualifier. rewrite qual_bvars_swap. exact id.
+Qed.
+
+Lemma qual_interp_full_swap x y q β σ ρ :
+  qual_interp_full β σ ρ (qual_swap_atom x y q) ↔
+  qual_interp_full β (store_swap x y σ) (store_swap x y ρ) q.
+Proof.
+  destruct q as [B d p].
+  unfold qual_interp_full, qual_swap_atom. simpl.
+  replace (store_swap x y (store_restrict σ (aset_swap x y d)))
+    with (store_restrict (store_swap x y σ) d).
+  2:{
+    rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
+    rewrite aset_swap_involutive. reflexivity.
+  }
+  replace (store_swap x y (store_restrict ρ (aset_swap x y d)))
+    with (store_restrict (store_swap x y ρ) d).
+  2:{
+    rewrite <- (store_restrict_swap x y ρ (aset_swap x y d)).
+    rewrite aset_swap_involutive. reflexivity.
+  }
+  reflexivity.
+Qed.
+
+Lemma qual_interp_swap x y q σ :
+  qual_interp σ (qual_swap_atom x y q) ↔
+  qual_interp (store_swap x y σ) q.
+Proof.
+  unfold qual_interp.
+  rewrite qual_interp_full_swap.
+  reflexivity.
+Qed.
+
 (** ** Key interpretation lemmas *)
 
 Lemma qual_interp_and q1 q2 σ :

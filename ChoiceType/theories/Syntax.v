@@ -98,6 +98,17 @@ Fixpoint cty_open (k : nat) (x : atom) (τ : choice_ty) : choice_ty :=
   | CTWand  τx τ    => CTWand  (cty_open k x τx) (cty_open (S k) x τ)
   end.
 
+Fixpoint cty_swap_atom (x y : atom) (τ : choice_ty) : choice_ty :=
+  match τ with
+  | CTOver  b φ     => CTOver  b (qual_swap_atom x y φ)
+  | CTUnder b φ     => CTUnder b (qual_swap_atom x y φ)
+  | CTInter τ1 τ2   => CTInter (cty_swap_atom x y τ1) (cty_swap_atom x y τ2)
+  | CTUnion τ1 τ2   => CTUnion (cty_swap_atom x y τ1) (cty_swap_atom x y τ2)
+  | CTSum   τ1 τ2   => CTSum   (cty_swap_atom x y τ1) (cty_swap_atom x y τ2)
+  | CTArrow τx τ    => CTArrow (cty_swap_atom x y τx) (cty_swap_atom x y τ)
+  | CTWand  τx τ    => CTWand  (cty_swap_atom x y τx) (cty_swap_atom x y τ)
+  end.
+
 #[global] Instance open_cty_atom_inst : Open atom choice_ty := cty_open.
 Arguments open_cty_atom_inst /.
 
@@ -183,6 +194,15 @@ Fixpoint ctx_dom (Γ : ctx) : aset :=
   | CtxComma Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   | CtxStar  Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
+  end.
+
+Fixpoint ctx_swap_atom (x y : atom) (Γ : ctx) : ctx :=
+  match Γ with
+  | CtxEmpty        => CtxEmpty
+  | CtxBind z τ    => CtxBind (atom_swap x y z) (cty_swap_atom x y τ)
+  | CtxComma Γ1 Γ2 => CtxComma (ctx_swap_atom x y Γ1) (ctx_swap_atom x y Γ2)
+  | CtxStar  Γ1 Γ2 => CtxStar  (ctx_swap_atom x y Γ1) (ctx_swap_atom x y Γ2)
+  | CtxSum   Γ1 Γ2 => CtxSum   (ctx_swap_atom x y Γ1) (ctx_swap_atom x y Γ2)
   end.
 
 (** ** Type aliases and notation *)
