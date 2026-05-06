@@ -235,7 +235,8 @@ with store-based lookup while preserving expressiveness through let-binding.
 | `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
 | `QualifierBridge.v` | Lifting closed type qualifiers into logic qualifier atoms |
 | `QualifierInstances.v` | Type-qualifier instances for the shared LN classes |
-| `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, substitution |
+| `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, atom opening/swap |
+| `Sugar.v` | Derived type forms such as over/under/precise refinements and unary primop types |
 | `LocallyNamelessInstances.v` | Choice-type instances for the shared LN classes |
 | `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
@@ -246,9 +247,29 @@ The paper-level typing infrastructure is kept outside `ChoiceType` while its
 definitions are still changing.  `ChoiceType` retains `BasicTyping.v` because
 denotation is expected to depend on basic domain/LN well-scopedness.
 
+The current declarative rules follow the paper's bunched presentation more
+closely:
+
+- every typing constructor carries an explicit `choice_typing_wf` side
+  condition for the conclusion, packaging context/type well-formedness together
+  with erased Core basic typing;
+- constants have precise refinement types, i.e. the intersection of over and
+  under refinements at the same qualifier;
+- primitive operations remain unary, their arguments must be variables, their
+  argument types are over-approximate, and their result types are precise;
+- there is no separate `T-AppOpD`, because the over-approximate argument type
+  is the uniform interface for primitive application;
+- `T-Let` and `T-LetD` use the standard additive and separating bunched forms,
+  without the older context-hole/`ToOver` premise;
+- boolean `tmatch` is split into three rules: both branches reachable, true
+  only, and false only.  Unreachable branches are still required to be
+  well-typed after erasure, but they do not contribute a ChoiceTyping
+  context/type branch.
+
 | File | Contents |
 |------|----------|
 | `WellFormed.v` | Well-formedness and nonemptiness judgments |
 | `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
+| `PrimOpContext.v` | Unary primitive-operation signatures and well-formedness |
 | `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
 | `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
