@@ -6,17 +6,62 @@
 
 From ChoiceType Require Export Qualifier.
 
-(** ** Key substitution and interpretation lemmas *)
+(** ** Swap lemmas *)
 
-Lemma qual_subst_fresh x v (q : type_qualifier) :
-  x # q → {x := v}q q = q.
-Proof. Admitted.
+Lemma qual_bvars_swap x y q :
+  qual_bvars (qual_swap_atom x y q) = qual_bvars q.
+Proof. destruct q; reflexivity. Qed.
 
-Lemma qual_interp_subst_compose (σ_X σ : gmap atom value) (q : type_qualifier) :
-  store_compat σ_X σ →
-  qual_interp σ (qual_subst_map σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
-Proof. Admitted.
+Lemma qual_dom_swap x y q :
+  qual_dom (qual_swap_atom x y q) = aset_swap x y (qual_dom q).
+Proof. destruct q; reflexivity. Qed.
+
+Lemma qual_lc_swap x y q :
+  lc_qualifier q →
+  lc_qualifier (qual_swap_atom x y q).
+Proof.
+  unfold lc_qualifier. rewrite qual_bvars_swap. exact id.
+Qed.
+
+Lemma qual_interp_full_swap x y q β σ ρ :
+  qual_interp_full β σ ρ (qual_swap_atom x y q) ↔
+  qual_interp_full β (store_swap x y σ) (store_swap x y ρ) q.
+Proof.
+  destruct q as [B d p].
+  unfold qual_interp_full, qual_swap_atom. simpl.
+  replace (store_swap x y (store_restrict σ (aset_swap x y d)))
+    with (store_restrict (store_swap x y σ) d).
+  2:{
+    rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
+    rewrite aset_swap_involutive. reflexivity.
+  }
+  replace (store_swap x y (store_restrict ρ (aset_swap x y d)))
+    with (store_restrict (store_swap x y ρ) d).
+  2:{
+    rewrite <- (store_restrict_swap x y ρ (aset_swap x y d)).
+    rewrite aset_swap_involutive. reflexivity.
+  }
+  reflexivity.
+Qed.
+
+Lemma qual_interp_swap x y q σ :
+  qual_interp σ (qual_swap_atom x y q) ↔
+  qual_interp (store_swap x y σ) q.
+Proof.
+  unfold qual_interp.
+  rewrite qual_interp_full_swap.
+  reflexivity.
+Qed.
+
+(** ** Key interpretation lemmas *)
 
 Lemma qual_interp_and q1 q2 σ :
   qual_interp σ (q1 &q q2) ↔ qual_interp σ q1 ∧ qual_interp σ q2.
-Proof. Admitted.
+Proof.
+  destruct q1 as [B1 d1 p1], q2 as [B2 d2 p2].
+  unfold qual_interp, qual_interp_full, qual_and. simpl.
+  rewrite !store_restrict_restrict, !map_filter_empty.
+  replace ((d1 ∪ d2) ∩ d1) with d1 by set_solver.
+  replace ((d1 ∪ d2) ∩ d2) with d2 by set_solver.
+  tauto.
+Qed.

@@ -9,7 +9,9 @@
     domain, and locally-nameless bound variables must be opened in the usual
     cofinite style. *)
 
+From LocallyNameless Require Import Classes.
 From ChoiceType Require Export Syntax.
+From ChoiceType Require Import QualifierInstances LocallyNamelessInstances.
 
 (** ** Basic qualifier formation *)
 
@@ -96,44 +98,105 @@ Notation "D '⊢sΓ' Γ" := (basic_ctx D Γ)
 Lemma basic_qualifier_open_lc D q x :
   basic_qualifier (D ∪ {[x]}) (qual_open_atom 0 x q) →
   lc_qualifier (qual_open_atom 0 x q).
-Proof. Admitted.
+Proof. intros [_ Hlc]. exact Hlc. Qed.
 
 Lemma basic_qualifier_body_lc D q :
   basic_qualifier_body D q →
   body_qualifier q.
-Proof. Admitted.
+Proof.
+  intros [L Hbody]. exists L. intros x Hx.
+  eapply basic_qualifier_open_lc. exact (Hbody x Hx).
+Qed.
+
+Lemma basic_qualifier_body_fv_subset D q :
+  basic_qualifier_body D q →
+  qual_dom q ⊆ D.
+Proof.
+  intros [L Hbody] z Hz.
+  set (x := fresh_for (L ∪ {[z]})).
+  assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+  assert (Hzx : z ≠ x) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+  destruct (Hbody x HxL) as [Hdom _].
+  pose proof (open_fv' q x 0 z Hz) as Hzopen.
+  simpl in Hzopen. pose proof (Hdom z Hzopen) as HzDx. set_solver.
+Qed.
 
 Lemma basic_choice_ty_lc D τ :
   basic_choice_ty D τ →
   lc_choice_ty τ.
-Proof. Admitted.
+Proof.
+  induction 1; eauto using basic_qualifier_body_lc.
+Qed.
 
 Lemma basic_choice_ty_fv_subset D τ :
   basic_choice_ty D τ →
   fv_cty τ ⊆ D.
-Proof. Admitted.
+Proof.
+  induction 1; simpl; try set_solver.
+  - eapply basic_qualifier_body_fv_subset. exact H.
+  - eapply basic_qualifier_body_fv_subset. exact H.
+  - intros z Hz.
+    apply elem_of_union in Hz as [Hzτx | Hz].
+    { set_solver. }
+    set (x := fresh_for (L ∪ {[z]})).
+    assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzx : z ≠ x) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    match goal with
+    | IHopen : ∀ x, x ∉ L → fv_cty ({0 ~> x} τ) ⊆ D ∪ {[x]} |- _ =>
+        pose proof (IHopen x HxL) as Hfv_open
+    end.
+    pose proof (open_fv' τ x 0 z Hz) as Hzopen.
+    simpl in Hzopen. pose proof (Hfv_open z Hzopen) as HzDx. set_solver.
+  - intros z Hz.
+    apply elem_of_union in Hz as [Hzτx | Hz].
+    { set_solver. }
+    set (x := fresh_for (L ∪ {[z]})).
+    assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    assert (Hzx : z ≠ x) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
+    match goal with
+    | IHopen : ∀ x, x ∉ L → fv_cty ({0 ~> x} τ) ⊆ D ∪ {[x]} |- _ =>
+        pose proof (IHopen x HxL) as Hfv_open
+    end.
+    pose proof (open_fv' τ x 0 z Hz) as Hzopen.
+    simpl in Hzopen. pose proof (Hfv_open z Hzopen) as HzDx. set_solver.
+Qed.
 
 Lemma basic_ctx_dom_fresh D Γ :
   basic_ctx D Γ →
   ctx_dom Γ ## D.
-Proof. Admitted.
+Proof.
+  induction 1; simpl; try set_solver.
+Qed.
 
 Lemma basic_ctx_comma_dom_disjoint D Γ1 Γ2 :
   basic_ctx D (CtxComma Γ1 Γ2) →
   ctx_dom Γ1 ## ctx_dom Γ2.
-Proof. Admitted.
+Proof. intros H. inversion H; subst; assumption. Qed.
 
 Lemma basic_ctx_fv_subset D Γ :
   basic_ctx D Γ →
   ctx_fv Γ ⊆ D ∪ ctx_dom Γ.
-Proof. Admitted.
+Proof.
+  induction 1; simpl; try set_solver.
+  - pose proof (basic_choice_ty_fv_subset D τ H0). set_solver.
+Qed.
 
 Lemma basic_ctx_erase_dom D Γ :
   basic_ctx D Γ →
   dom (erase_ctx Γ) = ctx_dom Γ.
-Proof. Admitted.
+Proof.
+  induction 1; simpl.
+  - rewrite dom_empty_L. reflexivity.
+  - rewrite dom_singleton_L. reflexivity.
+  - rewrite dom_union_L. set_solver.
+  - rewrite dom_union_L. set_solver.
+  - rewrite IHbasic_ctx1. set_solver.
+Qed.
 
 Lemma basic_ctx_empty_fv Γ :
   basic_ctx ∅ Γ →
   ctx_fv Γ ⊆ ctx_dom Γ.
-Proof. Admitted.
+Proof.
+  intros Hbasic.
+  pose proof (basic_ctx_fv_subset ∅ Γ Hbasic). set_solver.
+Qed.

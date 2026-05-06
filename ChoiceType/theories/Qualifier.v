@@ -39,30 +39,29 @@ Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_quali
       else q
   end.
 
-Definition qual_subst_value (x : atom) (v : value) (q : type_qualifier) : type_qualifier :=
+Definition qual_swap_atom (x y : atom) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual B d p =>
-      if decide (x ∈ d) then
-        qual B (d ∖ {[x]}) (λ β σ a, p β (<[x := v]> σ) a)
-      else q
-  end.
-
-Definition qual_subst_map (θ : gmap atom value) (q : type_qualifier) : type_qualifier :=
-  match q with
-  | qual B d p =>
-      qual B (d ∖ dom θ) (λ β σ a, p β (θ ∪ σ) a)
+      qual B (aset_swap x y d)
+        (λ β σ a, p β (store_swap x y σ) (store_swap x y a))
   end.
 
 Definition qual_and (q1 q2 : type_qualifier) : type_qualifier :=
   match q1, q2 with
   | qual B1 d1 p1, qual B2 d2 p2 =>
-      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∧ p2 β σ a)
+      qual (B1 ∪ B2) (d1 ∪ d2)
+        (λ β σ a,
+          p1 (map_restrict value β B1) (store_restrict σ d1) (store_restrict a d1) ∧
+          p2 (map_restrict value β B2) (store_restrict σ d2) (store_restrict a d2))
   end.
 
 Definition qual_or (q1 q2 : type_qualifier) : type_qualifier :=
   match q1, q2 with
   | qual B1 d1 p1, qual B2 d2 p2 =>
-      qual (B1 ∪ B2) (d1 ∪ d2) (λ β σ a, p1 β σ a ∨ p2 β σ a)
+      qual (B1 ∪ B2) (d1 ∪ d2)
+        (λ β σ a,
+          p1 (map_restrict value β B1) (store_restrict σ d1) (store_restrict a d1) ∨
+          p2 (map_restrict value β B2) (store_restrict σ d2) (store_restrict a d2))
   end.
 
 Definition qual_top : type_qualifier :=
@@ -83,15 +82,10 @@ Arguments stale_qualifier /.
 (** ** Locally-nameless infrastructure *)
 
 #[global] Instance open_qual_atom_inst : Open atom type_qualifier := qual_open_atom.
-#[global] Instance subst_qual_inst     : SubstV value type_qualifier := qual_subst_value.
-#[global] Instance substM_qual_inst    : SubstM (gmap atom value) type_qualifier := qual_subst_map.
 Arguments open_qual_atom_inst /.
-Arguments subst_qual_inst /.
-Arguments substM_qual_inst /.
 
 Notation "q '^q^' x" := (qual_open_atom 0 x q) (at level 20).
-Notation "'{' x ':=' v '}q' q" := (qual_subst_value x v q)
-  (at level 20, x constr, v constr, format "{ x := v }q  q").
+Notation "q '^qs^' '(' x ',' y ')'" := (qual_swap_atom x y q) (at level 20).
 
 (** ** Local closure *)
 

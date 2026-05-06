@@ -1,41 +1,53 @@
 (** * ChoiceType.LocallyNamelessProps
 
     Structural locally-nameless facts for choice types and tree-shaped
-    contexts.  This file deliberately focuses on syntactic/fv/substitution
-    facts; paper-level typing and well-formedness remain in [ChoiceTyping]. *)
+    contexts.  This file deliberately focuses on atom-open syntactic facts;
+    paper-level typing and well-formedness remain in [ChoiceTyping].
+
+    Choice types intentionally do not provide variable-to-value substitution:
+    type qualifiers open locally-nameless binders to atoms, and future
+    transport lemmas should use atom rename/swap rather than value
+    substitution. *)
 
 From LocallyNameless Require Import Classes.
 From ChoiceType Require Export Syntax QualifierProps.
 From ChoiceType Require Import QualifierInstances.
 
-(** ** Choice-type substitution *)
+(** ** Atom swap facts *)
 
-Lemma cty_subst_fresh x v (τ : choice_ty) :
-  x # τ → {x := v} τ = τ.
+Lemma cty_fv_swap x y τ :
+  fv_cty (cty_swap_atom x y τ) = aset_swap x y (fv_cty τ).
 Proof.
-  intros Hfresh. induction τ; autounfold with class_simpl in *; simpl in *.
-  - f_equal. exact (qual_subst_fresh x v φ ltac:(set_solver)).
-  - f_equal. exact (qual_subst_fresh x v φ ltac:(set_solver)).
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; set_solver.
+  induction τ; simpl; try rewrite ?qual_dom_swap;
+    try rewrite ?IHτ1, ?IHτ2, <- ?aset_swap_union; reflexivity.
 Qed.
 
-Lemma cty_fv_of_subst x v (τ : choice_ty) :
-  stale ({x := v} τ) ⊆ (stale τ ∖ {[x]}) ∪ stale v.
+Lemma ctx_fv_swap x y Γ :
+  ctx_fv (ctx_swap_atom x y Γ) = aset_swap x y (ctx_fv Γ).
 Proof.
-  induction τ; simpl; try set_solver.
-  - pose proof (fv_of_subst x v φ). simpl in H. set_solver.
-  - pose proof (fv_of_subst x v φ). simpl in H. set_solver.
+  induction Γ; simpl.
+  - symmetry. apply aset_swap_empty.
+  - rewrite cty_fv_swap.
+    rewrite <- aset_swap_singleton, <- aset_swap_union.
+    reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
 Qed.
 
-Lemma cty_fv_of_subst_closed x v (τ : choice_ty) :
-  stale v = ∅ →
-  stale ({x := v} τ) = stale τ ∖ {[x]}.
+Lemma ctx_dom_swap x y Γ :
+  ctx_dom (ctx_swap_atom x y Γ) = aset_swap x y (ctx_dom Γ).
 Proof.
-  intros Hclosed. induction τ; simpl; try set_solver.
-  - pose proof (fv_of_subst_closed x v φ Hclosed). simpl in H. set_solver.
-  - pose proof (fv_of_subst_closed x v φ Hclosed). simpl in H. set_solver.
+  induction Γ; simpl.
+  - symmetry. apply aset_swap_empty.
+  - rewrite <- aset_swap_singleton. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+Qed.
+
+Lemma cty_swap_preserves_erasure x y τ :
+  erase_ty (cty_swap_atom x y τ) = erase_ty τ.
+Proof.
+  induction τ; simpl; congruence.
 Qed.

@@ -4,9 +4,9 @@
     paper overview and in the "Simulate different reasoning styles" corollary.
 
     The file deliberately proves CoreLang reduction facts rather than full
-    [has_choice_type] theorems: the current choice-typing/subtyping layer still
-    contains admitted semantic skeletons.  Each block records which paper type
-    shape the function is intended to satisfy or refute. *)
+    [has_choice_type] theorems; the typing/subtyping proof layer lives outside
+    [ChoiceType].  Each block records which paper type shape the function is
+    intended to satisfy or refute. *)
 
 From CoreLang Require Import Sugar.
 

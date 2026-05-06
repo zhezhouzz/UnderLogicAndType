@@ -18,18 +18,3 @@ Proof.
   - pose proof (open_fv' φ x (S k)). simpl in H. set_solver.
   - pose proof (open_fv' φ x (S k)). simpl in H. set_solver.
 Qed.
-
-#[global] Instance SubstFresh_cty : SubstFresh choice_ty.
-Proof.
-  intros τ x v Hfresh. exact (cty_subst_fresh x v τ Hfresh).
-Qed.
-
-#[global] Instance FvOfSubst_cty : FvOfSubst choice_ty.
-Proof.
-  intros x v τ. exact (cty_fv_of_subst x v τ).
-Qed.
-
-#[global] Instance FvOfSubstClosed_cty : FvOfSubstClosed choice_ty.
-Proof.
-  intros x v τ Hclosed. exact (cty_fv_of_subst_closed x v τ Hclosed).
-Qed.
