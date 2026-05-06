@@ -10,7 +10,10 @@ From ChoiceType Require Export Qualifier.
 
 Lemma qual_subst_fresh x v (q : type_qualifier) :
   x # q → {x := v}q q = q.
-Proof. Admitted.
+Proof.
+  destruct q as [B d p]. unfold stale, subst_one, qual_subst_value. simpl.
+  intros Hfresh. rewrite decide_False by exact Hfresh. reflexivity.
+Qed.
 
 Lemma qual_interp_subst_compose (σ_X σ : gmap atom value) (q : type_qualifier) :
   store_compat σ_X σ →
