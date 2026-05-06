@@ -6,20 +6,15 @@
 
 From ChoiceType Require Export Qualifier.
 
-(** ** Key substitution and interpretation lemmas *)
-
-Lemma qual_subst_fresh x v (q : type_qualifier) :
-  x # q → {x := v}q q = q.
-Proof.
-  destruct q as [B d p]. unfold stale, subst_one, qual_subst_value. simpl.
-  intros Hfresh. rewrite decide_False by exact Hfresh. reflexivity.
-Qed.
-
-Lemma qual_interp_subst_compose (σ_X σ : gmap atom value) (q : type_qualifier) :
-  store_compat σ_X σ →
-  qual_interp σ (qual_subst_map σ_X q) ↔ qual_interp (σ_X ∪ σ) q.
-Proof. Admitted.
+(** ** Key interpretation lemmas *)
 
 Lemma qual_interp_and q1 q2 σ :
   qual_interp σ (q1 &q q2) ↔ qual_interp σ q1 ∧ qual_interp σ q2.
-Proof. Admitted.
+Proof.
+  destruct q1 as [B1 d1 p1], q2 as [B2 d2 p2].
+  unfold qual_interp, qual_interp_full, qual_and. simpl.
+  rewrite !store_restrict_restrict, !map_filter_empty.
+  replace ((d1 ∪ d2) ∩ d1) with d1 by set_solver.
+  replace ((d1 ∪ d2) ∩ d2) with d2 by set_solver.
+  tauto.
+Qed.

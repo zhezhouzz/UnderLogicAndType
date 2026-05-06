@@ -165,13 +165,6 @@ Lemma typing_regular Γ e τ :
   wf_ctx Γ ∧ wf_choice_ty Γ τ.
 Proof. Admitted.
 
-(** Substitution preserves choice typing. *)
-Lemma subst_typing_choice Γ x τx e τ v :
-  has_choice_type (CtxComma (CtxBind x τx) Γ) e τ →
-  has_choice_type CtxEmpty (tret v) τx →
-  has_choice_type Γ ({x := v} e) ({x := v} τ).
-Proof. Admitted.
-
 (** Typing implies basic typing (erasure correctness). *)
 Lemma typing_erase Γ e τ :
   has_choice_type Γ e (erase_ty τ) →

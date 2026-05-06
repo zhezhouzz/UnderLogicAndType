@@ -185,35 +185,6 @@ Fixpoint ctx_dom (Γ : ctx) : aset :=
   | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
   end.
 
-(** ** Substitution on types (apply single variable substitution to qualifiers) *)
-
-Fixpoint cty_subst_one (x : atom) (v : value) (τ : choice_ty) : choice_ty :=
-  match τ with
-  | CTOver  b φ     => CTOver  b (qual_subst_value x v φ)
-  | CTUnder b φ     => CTUnder b (qual_subst_value x v φ)
-  | CTInter τ1 τ2   => CTInter (cty_subst_one x v τ1) (cty_subst_one x v τ2)
-  | CTUnion τ1 τ2   => CTUnion (cty_subst_one x v τ1) (cty_subst_one x v τ2)
-  | CTSum   τ1 τ2   => CTSum   (cty_subst_one x v τ1) (cty_subst_one x v τ2)
-  | CTArrow τx τ    => CTArrow (cty_subst_one x v τx) (cty_subst_one x v τ)
-  | CTWand τx τ     => CTWand  (cty_subst_one x v τx) (cty_subst_one x v τ)
-  end.
-
-Fixpoint cty_subst (σ : Store) (τ : choice_ty) : choice_ty :=
-  match τ with
-  | CTOver  b φ     => CTOver  b (qual_subst_map σ φ)
-  | CTUnder b φ     => CTUnder b (qual_subst_map σ φ)
-  | CTInter τ1 τ2   => CTInter (cty_subst σ τ1) (cty_subst σ τ2)
-  | CTUnion τ1 τ2   => CTUnion (cty_subst σ τ1) (cty_subst σ τ2)
-  | CTSum   τ1 τ2   => CTSum   (cty_subst σ τ1) (cty_subst σ τ2)
-  | CTArrow τx τ    => CTArrow (cty_subst σ τx) (cty_subst σ τ)
-  | CTWand τx τ     => CTWand  (cty_subst σ τx) (cty_subst σ τ)
-  end.
-
-#[global] Instance subst_cty_inst  : SubstV value choice_ty   := cty_subst_one.
-#[global] Instance substM_cty_inst : SubstM Store choice_ty := cty_subst.
-Arguments subst_cty_inst /.
-Arguments substM_cty_inst /.
-
 (** ** Type aliases and notation *)
 
 (** Non-dependent arrow: τ1 →, τ2  when x ∉ fv_cty τ2 *)

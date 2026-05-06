@@ -276,10 +276,3 @@ Qed.
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔ m ⊨ denot_ty τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
-
-(** Substitution commutes with type denotation. *)
-Lemma denot_ty_subst τ e x v m :
-  lc_value v →
-  m ⊨ denot_ty ({x := v} τ) ({x := v} e) ↔
-  m ⊨ denot_ty τ e.
-Proof. Admitted.
