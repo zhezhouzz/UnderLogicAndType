@@ -623,7 +623,7 @@ Proof.
       pose proof (proj1 (IH ρ (res_swap a b n) q') Hq_src) as Hq_tgt.
       rewrite res_swap_involutive in Hq_tgt. exact Hq_tgt.
     + destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
-      pose proof (proj2 (world_compat_swap a b m1 m2) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b m1 m2 Hc) as Hc'.
       exists (res_swap a b m1), (res_swap a b m2), Hc'. split.
       * pose proof (res_swap_le a b _ _ Hprod) as Hle.
         rewrite (res_product_swap a b m1 m2 Hc Hc') in Hle.
@@ -633,7 +633,7 @@ Proof.
       set (n0 := res_swap a b n).
       assert (Hc0 : world_compat n0 m).
       {
-        apply (proj1 (world_compat_swap a b n0 m)).
+        apply (world_compat_swap_elim a b n0 m).
         subst n0. rewrite res_swap_involutive. exact Hc.
       }
       assert (Hpn' : res_models_with_store_fuel gas (store_swap a b ρ)
@@ -721,11 +721,11 @@ Proof.
 	           exact Hp_tgt.
     + destruct Hmodel as [mo [Hsub Hp]].
       exists (res_swap a b mo). split.
-      * apply res_subset_swap. exact Hsub.
+      * apply res_subset_swap_intro. exact Hsub.
       * apply IH. exact Hp.
     + destruct Hmodel as [mu [Hsub Hp]].
       exists (res_swap a b mu). split.
-      * apply res_subset_swap. exact Hsub.
+      * apply res_subset_swap_intro. exact Hsub.
       * apply IH. exact Hp.
     + destruct Hmodel as [Hdisj Hfib]. split.
       * rewrite store_swap_dom.
@@ -789,7 +789,7 @@ Proof.
       pose proof (Hmodel _ Hle' Hp_tgt) as Hq_tgt.
       apply IH in Hq_tgt. exact Hq_tgt.
     + destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
-      pose proof (proj2 (world_compat_swap a b m1 m2) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b m1 m2 Hc) as Hc'.
       exists (res_swap a b m1), (res_swap a b m2), Hc'. split.
       * pose proof (res_swap_le a b _ _ Hprod) as Hle.
         rewrite (res_product_swap a b m1 m2 Hc Hc') in Hle.
@@ -804,7 +804,7 @@ Proof.
              by (rewrite res_swap_involutive; exact Hq).
            exact (proj2 (IH ρ (res_swap a b m2) q') Hq').
     + intros n Hc Hpn.
-      pose proof (proj2 (world_compat_swap a b n m) Hc) as Hc'.
+      pose proof (world_compat_swap_intro a b n m Hc) as Hc'.
       pose proof (proj1 (IH ρ n p) Hpn) as Hp_tgt.
       pose proof (Hmodel (res_swap a b n) Hc' Hp_tgt) as Hq_tgt.
       assert (Hq_tgt' : res_models_with_store_fuel gas (store_swap a b ρ)
@@ -889,7 +889,7 @@ Proof.
       * assert (Hsub' : res_subset (res_swap a b m)
           (res_swap a b (res_swap a b mo))) by
           (rewrite res_swap_involutive; exact Hsub).
-	        exact (proj1 (res_subset_swap a b m (res_swap a b mo)) Hsub').
+        exact (res_subset_swap_elim a b m (res_swap a b mo) Hsub').
       * assert (Hp' : res_models_with_store_fuel gas (store_swap a b ρ)
           (res_swap a b (res_swap a b mo)) p) by
           (rewrite res_swap_involutive; exact Hp).
@@ -898,7 +898,7 @@ Proof.
       exists (res_swap a b mu). split.
       * assert (Hsub' : res_subset (res_swap a b (res_swap a b mu))
           (res_swap a b m)) by (rewrite res_swap_involutive; exact Hsub).
-	        exact (proj1 (res_subset_swap a b (res_swap a b mu) m) Hsub').
+        exact (res_subset_swap_elim a b (res_swap a b mu) m Hsub').
       * assert (Hp' : res_models_with_store_fuel gas (store_swap a b ρ)
           (res_swap a b (res_swap a b mu)) p) by
           (rewrite res_swap_involutive; exact Hp).
