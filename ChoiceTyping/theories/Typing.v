@@ -7,6 +7,7 @@
     denotational meaning; their direct proof rules are derived/optional and
     are deliberately not part of this core definition. *)
 
+From CoreLang Require Import BasicTypingProps.
 From ChoiceTyping Require Export Auxiliary PrimOpContext.
 
 (** ** The typing judgment *)
@@ -16,6 +17,18 @@ Definition choice_typing_wf (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
 
 Definition branch_unreachable (Γ : ctx) (v : value) (b : bool) : Prop :=
   ⟦Γ⟧ ⊫ FImpl (⟦bool_precise_ty b⟧ (tret v)) FFalse.
+
+Lemma choice_typing_wf_fv_tm_subset Γ e τ :
+  choice_typing_wf Γ e τ →
+  fv_tm e ⊆ ctx_dom Γ.
+Proof.
+  intros [Hwf Herase].
+  pose proof (basic_typing_contains_fv_tm (erase_ctx Γ) e (erase_ty τ) Herase)
+    as Hfv.
+  pose proof (basic_ctx_erase_dom ∅ Γ
+    (wf_ctx_basic Γ (wf_choice_ty_ctx Γ τ Hwf))) as Hdom.
+  rewrite Hdom in Hfv. exact Hfv.
+Qed.
 
 Inductive has_choice_type (Φ : primop_ctx) : ctx → tm → choice_ty → Prop :=
 

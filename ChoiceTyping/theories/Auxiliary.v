@@ -11,7 +11,7 @@ Definition sub_type (Γ : ctx) (τ1 τ2 : choice_ty) : Prop :=
   wf_choice_ty Γ τ1 ∧
   wf_choice_ty Γ τ2 ∧
   erase_ty τ1 = erase_ty τ2 ∧
-  ∀ e, ⟦Γ⟧ ⊫ FImpl (⟦τ1⟧ e) (⟦τ2⟧ e).
+  ∀ e, fv_tm e ⊆ ctx_dom Γ → ⟦Γ⟧ ⊫ FImpl (⟦τ1⟧ e) (⟦τ2⟧ e).
 
 Definition ctx_sub (X : aset) (Γ1 Γ2 : ctx) : Prop :=
   wf_ctx Γ1 ∧
