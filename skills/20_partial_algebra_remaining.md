@@ -57,3 +57,23 @@ This note records the unfinished proof work left on
   bijection on arbitrary worlds and therefore should not be used to prove
   global preservation of `⊑`, product, sum, or fiber.  Swap is involutive and
   preserves resource structure.
+- When a Logic proof repeats a block about transporting a one-coordinate
+  extension through `res_swap`, stop and promote it to `Resource.v`.  The
+  useful shape is a pair of domain/restriction lemmas, one for the direct
+  direction and one for the canceling direction, e.g.
+  `res_swap_extension_dom[_cancel]` and
+  `res_swap_restrict_extension[_cancel]`.  This keeps quantifier cases focused
+  on the cofinite argument instead of on set arithmetic.
+- For fibers, distinguish real semantic content from proof-argument noise.
+  `res_fiber_from_projection` contains a projection proof parameter, so goals
+  that differ only in that proof should use
+  `res_fiber_from_projection_proof_irrel`.  If the same goal also contains
+  convertible swapped singleton domains such as
+  `aset_swap x y {[atom_swap x y z]}`, add a small transport lemma in
+  `Resource.v` instead of leaving a local `wfworld_ext/world_ext` block in
+  `Formula.v`.
+- In Choice Logic monotonicity proofs, the common pattern
+  “rename entailment at a fresh atom, then adjust fuel” should go through
+  `entails_rename_atom_fresh_fuel`.  This avoids four near-identical
+  `pose proof ...; assert Hp_exact ...; rewrite formula_rename_preserves_measure`
+  blocks in `forall_mono`/`exists_mono`.
