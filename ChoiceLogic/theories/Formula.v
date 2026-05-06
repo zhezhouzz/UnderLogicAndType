@@ -926,6 +926,20 @@ Proof.
   exact Hm.
 Qed.
 
+Lemma entails_rename_atom_fresh_fuel x y (φ ψ : Formula) (m : WfWorldT) :
+  y ∉ formula_fv φ ∪ formula_fv ψ →
+  entails φ ψ →
+  res_models_with_store_fuel
+    (formula_measure (formula_rename_atom x y φ)) ∅ m
+    (formula_rename_atom x y φ) →
+  res_models_with_store_fuel
+    (formula_measure (formula_rename_atom x y ψ)) ∅ m
+    (formula_rename_atom x y ψ).
+Proof.
+  intros Hyfresh Hent Hp.
+  exact (entails_rename_atom_fresh x y φ ψ Hyfresh Hent m Hp).
+Qed.
+
 
 Lemma formula_scoped_forall_from_renamed
     (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
