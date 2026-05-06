@@ -121,6 +121,14 @@ Proof.
   simpl in Hzopen. pose proof (Hdom z Hzopen) as HzDx. set_solver.
 Qed.
 
+Lemma basic_qualifier_body_top D :
+  basic_qualifier_body D qual_top.
+Proof.
+  exists ∅. intros x _.
+  unfold basic_qualifier, qual_open_atom, qual_top, qual_dom, qual_bvars.
+  simpl. split; set_solver.
+Qed.
+
 Lemma basic_choice_ty_lc D τ :
   basic_choice_ty D τ →
   lc_choice_ty τ.
