@@ -243,6 +243,45 @@ Proof.
   apply world_has_type_on_swap_insert_fresh; assumption.
 Qed.
 
+Lemma res_models_basic_world_formula_rename_insert_fresh
+    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) m :
+  x ∉ X →
+  y ∉ X →
+  res_models m (formula_rename_atom x y
+    (basic_world_formula (<[x := T]> Σ) ({[x]} ∪ X))) ↔
+  res_models m (basic_world_formula (<[y := T]> Σ) ({[y]} ∪ X)).
+Proof.
+  intros Hx Hy.
+  unfold res_models, res_models_with_store.
+  simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom in *.
+    intros z Hz. apply Hscope.
+    replace (aset_swap x y ({[x]} ∪ X)) with ({[y]} ∪ X) by
+      (rewrite aset_swap_union, aset_swap_singleton;
+       replace (atom_swap x y x) with y by
+         (unfold atom_swap; repeat destruct decide; congruence);
+       rewrite aset_swap_fresh by assumption; reflexivity).
+    exact Hz.
+  - destruct Hmodel as [m0 [Hq Hle]].
+    exists m0. split; [| exact Hle].
+    apply (proj1 (logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
+      Σ X x y T ∅ m0 Hx Hy)). exact Hq.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom in *.
+    intros z Hz. apply Hscope.
+    replace (aset_swap x y ({[x]} ∪ X)) with ({[y]} ∪ X) in Hz by
+      (rewrite aset_swap_union, aset_swap_singleton;
+       replace (atom_swap x y x) with y by
+         (unfold atom_swap; repeat destruct decide; congruence);
+       rewrite aset_swap_fresh by assumption; reflexivity).
+    exact Hz.
+  - destruct Hmodel as [m0 [Hq Hle]].
+    exists m0. split; [| exact Hle].
+    apply (proj2 (logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
+      Σ X x y T ∅ m0 Hx Hy)). exact Hq.
+Qed.
+
 Lemma basic_world_formula_current Σ X m :
   res_models m (basic_world_formula Σ X) →
   world_has_type_on Σ X (res_restrict m X).
