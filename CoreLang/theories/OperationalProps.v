@@ -310,6 +310,18 @@ Proof.
     inversion Hrest. subst. eauto.
 Qed.
 
+Lemma reduction_prim_fvar_msubst_const σ op x c v :
+  closed_env σ →
+  σ !! x = Some (vconst c) →
+  m{σ} (tprim op (vfvar x)) →* tret v →
+  ∃ c', prim_step op c c' ∧ v = vconst c'.
+Proof.
+  intros Hclosed Hlookup Hsteps.
+  rewrite (msubst_prim_fvar_lookup_closed σ op x (vconst c) Hclosed Hlookup)
+    in Hsteps.
+  apply reduction_prim_const. exact Hsteps.
+Qed.
+
 Lemma reduction_fix Tf vf vx v :
   lc_value vx →
   tapp (vfix Tf vf) vx →* tret v →
