@@ -33,6 +33,18 @@ Proof.
   rewrite dom_union_L, Hdom in Hfv. exact Hfv.
 Qed.
 
+Lemma choice_typing_wf_footprint_subset Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  fv_tm e ∪ fv_cty τ ⊆ dom Σ ∪ ctx_dom Γ.
+Proof.
+  intros Hwf.
+  destruct Hwf as [Hty Herase].
+  pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ
+    (conj Hty Herase)) as He.
+  pose proof (wf_choice_ty_under_fv_subset Σ Γ τ Hty) as Hτ.
+  set_solver.
+Qed.
+
 Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → choice_ty → Prop :=
 
   (** T-Var *)
