@@ -491,7 +491,47 @@ Proof. reflexivity. Qed.
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
   denot_ctx_under Σ1 Γ ⊣⊢ denot_ctx_under Σ2 Γ.
-Proof. Admitted.
+Proof.
+  induction Γ in Σ1, Σ2 |- *; intros Hagree.
+  - apply formula_equiv_refl.
+  - simpl in Hagree.
+    apply denot_ty_under_env_equiv.
+    intros z Hz. apply Hagree. simpl in Hz. exact Hz.
+  - simpl in Hagree.
+    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_1 H21_1].
+    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_2 H21_2].
+    split; intros m Hm.
+    + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
+      apply denot_ctx_under_comma. split; eauto.
+    + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
+      apply denot_ctx_under_comma. split; eauto.
+  - simpl in Hagree.
+    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_1 H21_1].
+    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_2 H21_2].
+    split; intros m Hm.
+    + apply denot_ctx_under_star in Hm as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+      apply denot_ctx_under_star.
+      exists m1, m2, Hc. split; [exact Hprod |]. split; eauto.
+    + apply denot_ctx_under_star in Hm as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+      apply denot_ctx_under_star.
+      exists m1, m2, Hc. split; [exact Hprod |]. split; eauto.
+  - simpl in Hagree.
+    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_1 H21_1].
+    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+      as [H12_2 H21_2].
+    split; intros m Hm.
+    + apply denot_ctx_under_sum in Hm as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+      apply denot_ctx_under_sum.
+      exists m1, m2, Hdef. split; [exact Hsum |]. split; eauto.
+    + apply denot_ctx_under_sum in Hm as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+      apply denot_ctx_under_sum.
+      exists m1, m2, Hdef. split; [exact Hsum |]. split; eauto.
+Qed.
 
 (** The public context denotation uses each context's own erased environment.
     These wrappers require environment-locality facts to bridge from the
