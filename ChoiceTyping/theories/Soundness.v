@@ -123,6 +123,50 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
+Lemma lifted_const_qualifier_from_projection c ν m σ
+    (Hproj : res_restrict m {[ν]} σ) :
+  σ !! ν = Some (vconst c) →
+  res_models_with_store σ
+    (res_fiber_from_projection m {[ν]} σ Hproj)
+    (FAtom (lift_type_qualifier_to_logic
+      (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))).
+Proof.
+  intros Hlookup.
+  assert (Hdomσ : dom σ = {[ν]}).
+  {
+    pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hproj) as Hdom.
+    simpl in Hdom.
+    assert (Hνdom : ν ∈ dom σ) by (apply elem_of_dom; eexists; exact Hlookup).
+    set_solver.
+  }
+  assert (Hνm : ν ∈ world_dom (m : World)).
+  {
+    pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hproj) as Hdom.
+    simpl in Hdom. rewrite Hdomσ in Hdom. set_solver.
+  }
+  eapply res_models_with_store_atom_intro.
+  - unfold formula_scoped_in_world. simpl.
+    unfold stale, stale_logic_qualifier.
+    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    unfold qual_open_atom, mk_q_eq, qual_dom. simpl.
+    rewrite decide_True by set_solver.
+    simpl. rewrite Hdomσ. set_solver.
+  - unfold logic_qualifier_denote, lift_type_qualifier_to_logic.
+    unfold qual_open_atom, mk_q_eq. simpl.
+    rewrite decide_True by set_solver. simpl.
+    assert (Hfiber_singleton_raw :
+      raw_restrict (raw_fiber m σ) ({[ν]} ∪ (∅ ∪ ∅)) = singleton_world σ).
+    {
+      replace ({[ν]} ∪ (∅ ∪ ∅)) with ({[ν]} : aset) by set_solver.
+      apply raw_restrict_fiber_from_projection_eq_singleton; [exact Hproj | exact Hdomσ].
+    }
+    split; [set_solver |].
+    exists σ. split; [exact Hfiber_singleton_raw |].
+    exists (vconst c). split.
+    + apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+    + reflexivity.
+Qed.
+
 (** Kripke implication elimination at the current world. *)
 Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FImpl φ ψ →

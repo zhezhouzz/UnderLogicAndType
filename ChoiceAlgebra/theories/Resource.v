@@ -735,6 +735,55 @@ Proof.
         -- rewrite Hrestr. apply store_restrict_idemp. set_solver.
 Qed.
 
+Lemma res_restrict_fiber_from_projection_eq_singleton
+    (w : WfWorld) (X : aset) (σ : StoreT)
+    (Hproj : res_restrict w X σ) :
+  dom σ = X →
+  (res_restrict (res_fiber_from_projection w X σ Hproj) X : World) =
+  singleton_world σ.
+Proof.
+  intros Hdomσ.
+  simpl in Hproj.
+  destruct Hproj as [σw [Hσw Hrestr]].
+  apply world_ext.
+  - change (world_dom (w : World) ∩ X = dom σ).
+    rewrite <- (wfworld_store_dom w σw Hσw).
+    rewrite <- Hrestr, store_restrict_dom. reflexivity.
+  - intros τ. simpl. split.
+    + intros [τ0 [[Hτ0 Hτ0σ] Hτ]].
+      rewrite Hdomσ in Hτ0σ.
+      congruence.
+    + intros ->.
+      exists σw. split.
+      * split; [exact Hσw |].
+        rewrite Hdomσ. exact Hrestr.
+      * exact Hrestr.
+Qed.
+
+Lemma raw_restrict_fiber_from_projection_eq_singleton
+    (w : WfWorld) (X : aset) (σ : StoreT) :
+  res_restrict w X σ →
+  dom σ = X →
+  raw_restrict (raw_fiber w σ) X = singleton_world σ.
+Proof.
+  intros Hproj Hdomσ.
+  simpl in Hproj.
+  destruct Hproj as [σw [Hσw Hrestr]].
+  apply world_ext.
+  - simpl.
+    rewrite <- (wfworld_store_dom w σw Hσw).
+    rewrite <- Hrestr, store_restrict_dom. reflexivity.
+  - intros τ. simpl. split.
+    + intros [τ0 [[Hτ0 Hτ0σ] Hτ]].
+      rewrite Hdomσ in Hτ0σ.
+      congruence.
+    + intros ->.
+      exists σw. split.
+      * split; [exact Hσw |].
+        rewrite Hdomσ. exact Hrestr.
+      * exact Hrestr.
+Qed.
+
 (** *** Partial order on WfWorld
 
     [⊑] is the stdpp [SqSubsetEq] relation.  Together with [PreOrder] and
