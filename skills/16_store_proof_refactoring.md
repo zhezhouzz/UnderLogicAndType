@@ -220,6 +220,39 @@ Lemma world_compat_store_restrict_overlap ... :
   store_restrict σ1 X = store_restrict σ2 X.
 ```
 
+## Basic-world typing is local to a footprint
+
+`basic_world_formula Σ X` only gives typing/closedness/lc facts for the
+projection to `X`.  Do not try to prove that an arbitrary store in a larger
+world is wholly closed or typed: the world may contain coordinates outside
+`X`, and those are intentionally unconstrained.
+
+Preferred shape:
+
+```coq
+store_has_type_on Σ X (store_restrict σ X)
+closed_env (store_restrict σ X)
+lc_env (store_restrict σ X)
+```
+
+Useful lemmas:
+
+```coq
+basic_world_formula_subset_current :
+  X ⊆ Y ->
+  m ⊨ basic_world_formula Σ Y ->
+  world_has_type_on Σ X (res_restrict m X).
+
+basic_world_formula_store_restrict_closed_env
+basic_world_formula_store_restrict_lc_env
+```
+
+In `ChoiceTyping.Soundness`, use the wrappers
+`denot_ctx_in_env_world_has_type_on`,
+`denot_ctx_in_env_store_restrict_closed`, and
+`denot_ctx_in_env_store_restrict_lc` instead of unfolding the context
+denotation's `FAnd` manually.
+
 主证明应该优先调用这个 lemma，而不是反复直接调用 tactic。
 
 在 normal form 已经整理好的小目标上，可以用 CoqHammer 自带 tactic 收尾，例如：

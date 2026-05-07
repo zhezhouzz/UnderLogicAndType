@@ -21,6 +21,22 @@ Useful helpers:
   boolean-match reductions from the chosen branch reduction.
 - `reduction_beta_intro` and `reduction_fix_intro` do the same for function
   application.
+- `reduction_prim_intro` proves a primitive redex result directly from
+  `prim_step op c c'`.
+- `reduction_prim_const` is the inversion direction: every result of
+  `tprim op (vconst c)` comes from some `prim_step op c c'`.
+- `reduction_prim_fvar_msubst_const` packages the common semantic case where a
+  substituted argument variable is known to be a constant:
+
+  ```coq
+  closed_env σ ->
+  σ !! x = Some (vconst c) ->
+  m{σ} (tprim op (vfvar x)) ->* tret v ->
+  exists c', prim_step op c c' /\ v = vconst c'.
+  ```
+
+  Use this in primitive-operation soundness instead of unfolding both
+  multi-substitution and `steps_inv` in the same proof.
 
 Pattern for derived choice forms:
 
@@ -31,6 +47,17 @@ Pattern for derived choice forms:
 3. After opening the let body, use `open_rec_lc_tm` to erase openings through
    already-closed branches.
 4. Use the appropriate match intro lemma for the chosen boolean branch.
+
+Primitive-operation proof pattern:
+
+1. Use a basic-world/store typing lemma to show the argument coordinate maps
+   to a closed constant of the primitive's argument base type.
+2. Rewrite the substituted primitive with
+   `msubst_prim_fvar_lookup_closed`, or use
+   `reduction_prim_fvar_msubst_const` directly if the goal is a result
+   inversion.
+3. Use `prim_step_result_has_type` when the proof needs the result constant's
+   erased/basic type.
 
 Example shape:
 
