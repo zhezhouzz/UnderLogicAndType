@@ -2,6 +2,7 @@
 
     Soundness skeleton for the single declarative typing judgment. *)
 
+From CoreLang Require Import Instantiation InstantiationProps.
 From ChoiceTyping Require Export Typing.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -519,6 +520,69 @@ Proof.
     ∅ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
   pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
   eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+Qed.
+
+(** The environment-indexed context denotation always carries a reusable
+    basic-world component.  Keeping these as named destructors avoids
+    repeatedly unfolding the [FAnd] shape in fundamental-theorem cases. *)
+Lemma denot_ctx_in_env_basic Σ Γ m :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ basic_world_formula Σ (dom Σ).
+Proof.
+  unfold denot_ctx_in_env.
+  apply res_models_and_elim_l.
+Qed.
+
+Lemma denot_ctx_in_env_ctx Σ Γ m :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ denot_ctx_under (erase_ctx_under Σ Γ) Γ.
+Proof.
+  unfold denot_ctx_in_env.
+  apply res_models_and_elim_r.
+Qed.
+
+Lemma denot_ctx_in_env_world_has_type Σ Γ m :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  world_has_type_on Σ (dom Σ) (res_restrict m (dom Σ)).
+Proof.
+  intros HΓ.
+  apply basic_world_formula_current.
+  apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+Qed.
+
+Lemma denot_ctx_in_env_store_typed Σ Γ m σ :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  store_has_type_on Σ (dom Σ) (store_restrict σ (dom Σ)).
+Proof.
+  intros HΓ Hσ.
+  eapply basic_world_formula_store_restrict_typed.
+  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  - exact Hσ.
+Qed.
+
+Lemma denot_ctx_in_env_store_restrict_closed Σ Γ m σ :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  closed_env (store_restrict σ (dom Σ)).
+Proof.
+  intros HΓ Hσ.
+  eapply basic_world_formula_store_restrict_closed_env.
+  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  - set_solver.
+  - exact Hσ.
+Qed.
+
+Lemma denot_ctx_in_env_store_restrict_lc Σ Γ m σ :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  lc_env (store_restrict σ (dom Σ)).
+Proof.
+  intros HΓ Hσ.
+  eapply basic_world_formula_store_restrict_lc_env.
+  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  - set_solver.
+  - exact Hσ.
 Qed.
 
 (** The semantic-subtyping case of the fundamental theorem. *)
