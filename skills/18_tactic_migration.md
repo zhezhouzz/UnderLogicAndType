@@ -107,6 +107,26 @@ my_map_simpl; my_set_simpl.
 Then inspect the remaining goal. Do not blindly replace every `set_solver` with
 `my_set_solver`; use it where normalization helps.
 
+If a denotation/freshness proof contains `fresh_forall`, `expr_logic_qual`, or
+`basic_world_formula`, avoid sending the whole `formula_fv` goal to
+`set_solver`. First peel the binder representatives by hand:
+
+```coq
+apply elem_of_difference in Hz as [Hz Hy].
+```
+
+Then unfold only the atom whose stale set is opaque:
+
+```coq
+unfold expr_logic_qual in Hzexpr; simpl in Hzexpr.
+unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
+change (stale e) with (fv_tm e) in Hzexpr.
+```
+
+For `basic_world_formula`, use the same targeted unfold on the hypothesis
+being analyzed. This keeps `set_solver` away from shallow embedded predicates
+and large `match decide` terms produced by qualifier opening.
+
 If `set_solver!!` solved a side condition before but now fails, try
 `set_solver!` or plain `set_solver`. The aggressive pruning can remove a
 hypothesis that a rewritten goal later needs.
