@@ -283,6 +283,21 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
 Qed.
 
+(** Kripke implication elimination at the current world. *)
+Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ FImpl φ ψ →
+  m ⊨ φ →
+  m ⊨ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros [_ Himpl] Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ) (formula_measure φ + formula_measure ψ)
+    ∅ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
+  pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+Qed.
+
 Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FForall x φ) →
   (∃ L : aset,
