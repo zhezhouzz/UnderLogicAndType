@@ -882,24 +882,24 @@ Lemma denot_ctx_bind x τ m :
   m ⊨ denot_ty_in_ctx (CtxBind x τ) τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
 
-Lemma denot_ctx_restrict_stale Γ m :
-  m ⊨ ⟦Γ⟧ →
-  res_restrict m (ctx_stale Γ) ⊨ ⟦Γ⟧.
+Lemma denot_ctx_under_restrict_stale Σ Γ m :
+  m ⊨ denot_ctx_under Σ Γ →
+  res_restrict m (ctx_stale Γ) ⊨ denot_ctx_under Σ Γ.
 Proof.
   induction Γ in m |- *; simpl.
   - intros _. unfold res_models, res_models_with_store. simpl.
     split; [unfold formula_scoped_in_world; simpl; set_solver | exact I].
   - intros Hbind. apply denot_ty_under_restrict_fv. exact Hbind.
   - intros Hctx.
-    apply denot_ctx_comma in Hctx as [HΓ1 HΓ2].
-    apply denot_ctx_comma. split.
+    apply denot_ctx_under_comma in Hctx as [HΓ1 HΓ2].
+    apply denot_ctx_under_comma. split.
     + eapply res_models_kripke; [| exact (IHΓ1 m HΓ1)].
       apply res_restrict_mono. set_solver.
     + eapply res_models_kripke; [| exact (IHΓ2 m HΓ2)].
       apply res_restrict_mono. set_solver.
   - intros Hctx.
-    apply denot_ctx_star in Hctx as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-    apply denot_ctx_star.
+    apply denot_ctx_under_star in Hctx as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    apply denot_ctx_under_star.
     set (r1 := res_restrict m1 (ctx_stale Γ1)).
     set (r2 := res_restrict m2 (ctx_stale Γ2)).
     assert (Hc' : world_compat r1 r2).
@@ -920,8 +920,8 @@ Proof.
       * subst r1 r2. simpl. set_solver.
     + split; [apply IHΓ1 | apply IHΓ2]; assumption.
   - intros Hctx.
-    apply denot_ctx_sum in Hctx as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-    apply denot_ctx_sum.
+    apply denot_ctx_under_sum in Hctx as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    apply denot_ctx_under_sum.
     set (S := ctx_stale Γ1 ∪ ctx_stale Γ2).
     set (r1 := res_restrict m1 S).
     set (r2 := res_restrict m2 S).
@@ -942,4 +942,12 @@ Proof.
         subst r1 S. apply res_restrict_mono. set_solver.
       * eapply res_models_kripke; [| exact (IHΓ2 m2 HΓ2)].
         subst r2 S. apply res_restrict_mono. set_solver.
+Qed.
+
+Lemma denot_ctx_restrict_stale Γ m :
+  m ⊨ ⟦Γ⟧ →
+  res_restrict m (ctx_stale Γ) ⊨ ⟦Γ⟧.
+Proof.
+  unfold denot_ctx.
+  apply denot_ctx_under_restrict_stale.
 Qed.
