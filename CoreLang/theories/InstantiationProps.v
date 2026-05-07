@@ -38,6 +38,16 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hclosed Hlookup).
 Qed.
 
+Lemma closed_env_store_swap x y σ :
+  closed_env σ ->
+  closed_env (store_swap x y σ).
+Proof.
+  unfold closed_env. intros Hclosed.
+  apply map_Forall_lookup_2. intros z v Hlookup.
+  rewrite store_swap_lookup_inv in Hlookup.
+  exact (closed_env_lookup σ (atom_swap x y z) v Hclosed Hlookup).
+Qed.
+
 Definition lc_env (σ : env) : Prop :=
   map_Forall (fun _ v => is_lc v) σ.
 
@@ -372,6 +382,42 @@ Proof. eapply MsubstRestrict_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstRestrict_tm : MsubstRestrict tm.
 Proof. eapply MsubstRestrict_all; typeclasses eauto. Qed.
+
+Lemma msubst_agree
+    (A : Type) `{Stale A} `{SubstV value A} `{MsubstRestrict A}
+    (σ1 σ2 : env) (X : aset) (a : A) :
+  closed_env σ1 ->
+  closed_env σ2 ->
+  stale a ⊆ X ->
+  (∀ x, x ∈ X -> σ1 !! x = σ2 !! x) ->
+  m{σ1} a = m{σ2} a.
+Proof.
+  intros Hclosed1 Hclosed2 HaX Hagree.
+  rewrite <- (msubst_restrict σ1 X a Hclosed1 HaX).
+  rewrite <- (msubst_restrict σ2 X a Hclosed2 HaX).
+  rewrite (@map_restrict_agree atom _ _ value σ1 σ2 X Hagree).
+  reflexivity.
+Qed.
+
+Lemma msubst_store_swap_fresh
+    (A : Type) `{Stale A} `{SubstV value A} `{MsubstRestrict A}
+    x y (σ : env) (a : A) :
+  closed_env σ ->
+  x ∉ stale a ->
+  y ∉ stale a ->
+  m{store_swap x y σ} a = m{σ} a.
+Proof.
+  intros Hclosed Hx Hy.
+  rewrite <- (msubst_restrict (store_swap x y σ) (stale a) a)
+    by (try apply closed_env_store_swap; try exact Hclosed; reflexivity).
+  rewrite <- (msubst_restrict σ (stale a) a)
+    by (try exact Hclosed; reflexivity).
+  f_equal.
+  apply map_restrict_agree. intros z Hz.
+  rewrite store_swap_lookup_inv.
+  rewrite atom_swap_fresh by set_solver.
+  reflexivity.
+Qed.
 
 Class MsubstOpen A `{Open value A} `{SubstV value A} := msubst_open :
   forall (a : A) (k : nat) (u : value) (σ : env),

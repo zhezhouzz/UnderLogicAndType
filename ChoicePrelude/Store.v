@@ -59,6 +59,27 @@ Proof.
   destruct Hlookup as [H1 H2]. split; [exact H2 | exact H1].
 Qed.
 
+Lemma map_restrict_agree (m1 m2 : gmap K A) X :
+  (∀ x, x ∈ X → m1 !! x = m2 !! x) →
+  map_restrict m1 X = map_restrict m2 X.
+Proof.
+  intros Hagree. apply map_eq. intros x.
+  destruct (decide (x ∈ X)) as [Hx | Hx].
+  - unfold map_restrict.
+    destruct (m1 !! x) as [v1|] eqn:H1.
+    + transitivity (Some v1).
+      * apply map_lookup_filter_Some_2; [exact H1 | exact Hx].
+      * symmetry. apply map_lookup_filter_Some_2; [rewrite <- (Hagree x Hx); exact H1 | exact Hx].
+    + transitivity (@None A).
+      * apply map_lookup_filter_None_2. left. exact H1.
+      * symmetry. apply map_lookup_filter_None_2. left.
+        rewrite <- (Hagree x Hx). exact H1.
+  - unfold map_restrict.
+    transitivity (@None A).
+    + apply map_lookup_filter_None_2. right. intros v _ Hin. exact (Hx Hin).
+    + symmetry. apply map_lookup_filter_None_2. right. intros v _ Hin. exact (Hx Hin).
+Qed.
+
 End MapOps.
 
 Arguments map_compat {_ _ _} _ _ /.

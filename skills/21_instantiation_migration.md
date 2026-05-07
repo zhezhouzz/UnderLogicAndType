@@ -29,6 +29,12 @@ This repo now has a CoreLang instantiation layer modeled after UnderType/HATs:
 - Use `msubst_restrict` when a denotation has restricted the explicit store
   to a domain containing the target's free variables:
   `m{map_restrict value σ X} e = m{σ} e`.
+- Use `msubst_agree` when two closed environments agree on a set containing
+  the target's stale variables.  This is usually cleaner than proving two
+  separate restriction equalities by hand.
+- Use `msubst_store_swap_fresh` when a nominal swap only touches atoms fresh
+  for the syntax being substituted.  This is the standard way to simplify
+  formula-level alpha/rename obligations for embedded CoreLang expressions.
 - Use `msubst_open_var` for the common LN case where opening uses a fresh
   variable:
   `m{σ} ({k ~> vfvar x} e) = {k ~> vfvar x} (m{σ} e)`.
@@ -116,6 +122,33 @@ directly is often simpler than rewriting domains:
 unfold map_restrict.
 apply map_lookup_filter_None_2. left. exact Hfresh.
 ```
+
+## Agreement And Swap Locality
+
+When a proof has two closed stores that are known equal only on the variables a
+term can actually inspect, avoid unfolding `map_fold`.  Use:
+
+```coq
+msubst_agree :
+  closed_env σ1 ->
+  closed_env σ2 ->
+  stale e ⊆ X ->
+  (forall x, x ∈ X -> σ1 !! x = σ2 !! x) ->
+  m{σ1} e = m{σ2} e.
+```
+
+For swapped stores in particular, the common proof step is now:
+
+```coq
+rewrite (msubst_store_swap_fresh _ _ σ e)
+  by (try exact Hclosed; set_solver).
+```
+
+This is especially useful in ChoiceType denotation proofs after an `FForall` or
+`FExists` body has been renamed from its syntactic representative to a fresh
+semantic atom.  The swap changes the result coordinate, but if both swapped
+atoms are fresh for the embedded expression, the expression substitution itself
+does not change.
 
 ## Design Boundary
 
