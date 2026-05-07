@@ -32,6 +32,25 @@ Inductive prim_step : prim_op → constant → constant → Prop :=
 
 #[global] Hint Constructors prim_step : core.
 
+Lemma prim_step_preserves_base op c c' arg_b ret_b :
+  prim_op_type op = (arg_b, ret_b) →
+  prim_step op c c' →
+  base_ty_of_const c' = ret_b.
+Proof.
+  intros Hop Hstep.
+  inversion Hstep; subst; simpl in Hop; inversion Hop; reflexivity.
+Qed.
+
+Lemma prim_step_result_has_type op c c' arg_b ret_b :
+  prim_op_type op = (arg_b, ret_b) →
+  prim_step op c c' →
+  ∅ ⊢ᵥ vconst c' ⋮ TBase ret_b.
+Proof.
+  intros Hop Hstep.
+  pose proof (prim_step_preserves_base op c c' arg_b ret_b Hop Hstep) as Hret.
+  rewrite <- Hret. constructor.
+Qed.
+
 (** ** Head reduction *)
 
 (** [head_step e e'] is the *head* (redex) reduction.
