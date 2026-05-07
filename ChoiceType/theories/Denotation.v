@@ -883,6 +883,40 @@ Proof.
     eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
 Qed.
 
+Lemma foldr_fib_store_equiv xs φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_fv (foldr FFib φ xs) = formula_fv (foldr FFib ψ xs) ∧
+  formula_store_equiv (foldr FFib φ xs) (foldr FFib ψ xs).
+Proof.
+  induction xs as [|x xs IH]; simpl; intros Hfv Heq.
+  - split; [exact Hfv | exact Heq].
+  - destruct (IH Hfv Heq) as [Hfv' Heq'].
+    split.
+    + simpl. rewrite Hfv'. reflexivity.
+    + apply formula_store_equiv_fib; assumption.
+Qed.
+
+Lemma fib_vars_store_equiv X φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_fv (fib_vars X φ) = formula_fv (fib_vars X ψ) ∧
+  formula_store_equiv (fib_vars X φ) (fib_vars X ψ).
+Proof.
+  intros Hfv Heq.
+  unfold fib_vars, set_fold.
+  apply foldr_fib_store_equiv; assumption.
+Qed.
+
+Lemma fib_vars_rename_atom_fresh_store_equiv x y X φ :
+  x ∉ X →
+  y ∉ X →
+  formula_store_equiv
+    (formula_rename_atom x y (fib_vars ({[x]} ∪ X) φ))
+    (fib_vars ({[y]} ∪ X) (formula_rename_atom x y φ)).
+Proof.
+Admitted.
+
 Lemma denot_ty_fuel_env_agree gas D Σ1 Σ2 τ e :
   ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_fuel gas D Σ1 τ e = denot_ty_fuel gas D Σ2 τ e.
