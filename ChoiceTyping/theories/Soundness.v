@@ -509,6 +509,31 @@ Proof.
     exact Herase.
 Qed.
 
+(** The semantic content of [T-Let].
+
+    This is intentionally separated from [fundamental_let_case].  The typing
+    case should only assemble the induction hypotheses; the hard work is the
+    expression-result composition:
+
+    - results of [e1] provide the let-bound coordinate;
+    - the body theorem is used under the comma-extended context;
+    - all resulting body outcomes are reassembled into the result set of
+      [tlete e1 e2].
+
+    This lemma is the right place to use [expr_result_in_world_let_intro] and
+    the denotation compatibility lemmas.  It must not recurse on [τ2] locally;
+    any structural recursion belongs in the general denotation-compatibility
+    theorem. *)
+Lemma semantic_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
+  (∀ x, x ∉ L →
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
+Proof.
+Admitted.
+
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
@@ -516,7 +541,10 @@ Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
     denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
-Proof. Admitted.
+Proof.
+  intros Hwf IH1 IH2.
+  eapply semantic_let_rule; eauto.
+Qed.
 
 Lemma fundamental_letd_case (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 →
