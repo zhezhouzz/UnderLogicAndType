@@ -241,9 +241,125 @@ Proof.
 Qed.
 
 Lemma denot_ty_fuel_env_agree gas D Σ1 Σ2 τ e :
-  ty_env_agree_on (D ∪ fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_fuel gas D Σ1 τ e = denot_ty_fuel gas D Σ2 τ e.
-Proof. Admitted.
+Proof.
+  revert D Σ1 Σ2 τ e.
+  induction gas as [|gas IH]; intros D Σ1 Σ2 τ e Hagree; [reflexivity |].
+  destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
+  - unfold fresh_forall.
+    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (φν := qual_open_atom 0 ν φ).
+    assert (Hbasic :
+      basic_world_formula (<[ν:=TBase b]> Σ1) ({[ν]} ∪ qual_dom φν) =
+      basic_world_formula (<[ν:=TBase b]> Σ2) ({[ν]} ∪ qual_dom φν)).
+    {
+      apply basic_world_formula_agree.
+      intros z Hz.
+      destruct (decide (z = ν)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree.
+        pose proof (qual_open_atom_dom_subset 0 ν φ z) as Hdom.
+        set_solver.
+    }
+    rewrite Hbasic. reflexivity.
+  - unfold fresh_forall.
+    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (φν := qual_open_atom 0 ν φ).
+    assert (Hbasic :
+      basic_world_formula (<[ν:=TBase b]> Σ1) ({[ν]} ∪ qual_dom φν) =
+      basic_world_formula (<[ν:=TBase b]> Σ2) ({[ν]} ∪ qual_dom φν)).
+    {
+      apply basic_world_formula_agree.
+      intros z Hz.
+      destruct (decide (z = ν)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree.
+        pose proof (qual_open_atom_dom_subset 0 ν φ z) as Hdom.
+        set_solver.
+    }
+    rewrite Hbasic. reflexivity.
+  - rewrite (IH D Σ1 Σ2 τ1 e).
+    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+      intros z Hz. apply Hagree. set_solver.
+    + intros z Hz. apply Hagree. set_solver.
+  - rewrite (IH D Σ1 Σ2 τ1 e).
+    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+      intros z Hz. apply Hagree. set_solver.
+    + intros z Hz. apply Hagree. set_solver.
+  - rewrite (IH D Σ1 Σ2 τ1 e).
+    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+      intros z Hz. apply Hagree. set_solver.
+    + intros z Hz. apply Hagree. set_solver.
+  - unfold fresh_forall.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    set (Dx := {[y]} ∪ Dy).
+    set (x := fresh_for Dx).
+    set (D2 := {[x]} ∪ Dx).
+    assert (Harg :
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
+    {
+      apply IH.
+      intros z Hz.
+      destruct (decide (z = x)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree. simpl in Hz. set_solver.
+    }
+    assert (Hres :
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
+        (tapp (vfvar y) (vfvar x)) =
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
+        (tapp (vfvar y) (vfvar x))).
+    {
+      apply IH.
+      intros z Hz.
+      destruct (decide (z = x)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree.
+        pose proof (cty_open_fv_subset 0 x τ) as Hopen.
+        simpl in Hz. set_solver.
+    }
+    repeat (f_equal; try assumption).
+  - unfold fresh_forall.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    set (Dx := {[y]} ∪ Dy).
+    set (x := fresh_for Dx).
+    set (D2 := {[x]} ∪ Dx).
+    assert (Harg :
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
+    {
+      apply IH.
+      intros z Hz.
+      destruct (decide (z = x)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree. simpl in Hz. set_solver.
+    }
+    assert (Hres :
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
+        (tapp (vfvar y) (vfvar x)) =
+      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
+        (tapp (vfvar y) (vfvar x))).
+    {
+      apply IH.
+      intros z Hz.
+      destruct (decide (z = x)) as [->|Hne].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        apply Hagree.
+        pose proof (cty_open_fv_subset 0 x τ) as Hopen.
+        simpl in Hz. set_solver.
+    }
+    repeat (f_equal; try assumption).
+Qed.
 
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
