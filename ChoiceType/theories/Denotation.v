@@ -148,6 +148,22 @@ Proof.
   eapply reduction_lete_intro; eauto.
 Qed.
 
+Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
+  closed_env σw →
+  σw !! x = Some vx →
+  expr_result_in_store ∅ (tret (vfvar x)) ν σw →
+  σw !! ν = Some vx.
+Proof.
+  intros Hclosed Hx [v [Hν Hsteps]].
+  change (subst_map σw (subst_map ∅ (tret (vfvar x))) →* tret v) in Hsteps.
+  change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  change (subst_map σw (tret (vfvar x))) with (m{σw} (tret (vfvar x))) in Hsteps.
+  rewrite (msubst_ret_fvar_lookup_closed σw x vx Hclosed Hx) in Hsteps.
+  apply val_steps_self in Hsteps.
+  inversion Hsteps. subst. exact Hν.
+Qed.
+
 Lemma FExprResult_models_elim e ν m :
   m ⊨ FExprResult e ν →
   ∃ w : WfWorld,
