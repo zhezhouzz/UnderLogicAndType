@@ -280,12 +280,31 @@ Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof. apply denot_ctx_comma. Qed.
 
+Lemma denot_ctx_comma_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
+  m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
+  m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
+Proof. apply denot_ctx_under_comma. Qed.
+
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof. apply denot_ctx_star. Qed.
+
+Lemma denot_ctx_star_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
+  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ↔
+  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m ∧
+    m1 ⊨ denot_ctx_under Σ Γ1 ∧ m2 ⊨ denot_ctx_under Σ Γ2.
+Proof. apply denot_ctx_under_star. Qed.
+
+Lemma denot_ctx_sum_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
+  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ↔
+  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m ∧
+    m1 ⊨ denot_ctx_under Σ Γ1 ∧ m2 ⊨ denot_ctx_under Σ Γ2.
+Proof. apply denot_ctx_under_sum. Qed.
 
 Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
   formula_scoped_in_world ∅ m (FImpl φ ψ) →
