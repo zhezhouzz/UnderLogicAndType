@@ -362,17 +362,16 @@ Proof.
 Qed.
 
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
 Proof.
   intros Hagree.
   unfold denot_ty_under, denot_ty_avoiding.
-  apply denot_ty_fuel_env_agree.
-  intros z Hz. apply Hagree. set_solver.
+  apply denot_ty_fuel_env_agree. exact Hagree.
 Qed.
 
 Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
 Proof.
   intros Hagree.
@@ -381,14 +380,14 @@ Proof.
 Qed.
 
 Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
 Proof.
   unfold denot_ty_in_ctx. apply denot_ty_under_env_agree.
 Qed.
 
 Lemma denot_ty_in_ctx_env_equiv Γ1 Γ2 τ e :
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e ⊣⊢ denot_ty_in_ctx Γ2 τ e.
 Proof.
   unfold denot_ty_in_ctx. apply denot_ty_under_env_equiv.
@@ -668,7 +667,7 @@ Proof.
   - apply formula_equiv_refl.
   - simpl in Hagree.
     apply denot_ty_under_env_equiv.
-    intros z Hz. apply Hagree. simpl in Hz. exact Hz.
+    intros z Hz. apply Hagree. simpl. set_solver.
   - simpl in Hagree.
     pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_1 H21_1].

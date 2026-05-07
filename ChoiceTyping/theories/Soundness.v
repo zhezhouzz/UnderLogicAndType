@@ -66,7 +66,7 @@ Proof.
   intros Hsub Hagree IH m HΓ1.
   destruct Hsub as [_ [_ Hrestrict]].
   destruct (denot_ty_in_ctx_env_equiv Γ2 Γ1 τ e) as [H21 _].
-  { intros z Hz. symmetry. apply Hagree. exact Hz. }
+  { intros z Hz. symmetry. apply Hagree. set_solver. }
   apply H21.
   eapply res_models_kripke.
   - apply res_restrict_le.
