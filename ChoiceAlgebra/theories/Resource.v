@@ -315,6 +315,23 @@ Proof.
     exact (store_restrict_dom t X).
 Defined.
 
+Lemma res_restrict_lift_store
+    (w : WfWorld) (X : aset) (σ : StoreT) :
+  (res_restrict w X : World) σ →
+  ∃ σw, (w : World) σw ∧ store_restrict σw X = σ.
+Proof.
+  intros Hσ. exact Hσ.
+Qed.
+
+Lemma res_restrict_eq_lift_store
+    (w wX : WfWorld) (X : aset) (σ : StoreT) :
+  res_restrict w X = wX →
+  (wX : World) σ →
+  ∃ σw, (w : World) σw ∧ store_restrict σw X = σ.
+Proof.
+  intros <- Hσ. exact Hσ.
+Qed.
+
 Definition res_rename_atom (x y : atom) (w : WfWorld) : WfWorld.
 Proof.
   refine (exist _ (raw_rename_atom x y w) _).
@@ -537,6 +554,23 @@ Proof.
   reflexivity.
   rewrite store_restrict_dom. set_solver.
 Defined.
+
+Lemma res_fiber_from_projection_member
+    (w : WfWorld) (X : aset) (σ σw : StoreT)
+    (Hproj : res_restrict w X σ) :
+  (w : World) σw →
+  store_restrict σw X = σ →
+  (res_fiber_from_projection w X σ Hproj : World) σw.
+Proof.
+  intros Hσw Hrestrict. simpl. split; [exact Hσw |].
+  rewrite <- Hrestrict.
+  rewrite <- (store_restrict_idemp
+    (store_restrict σw X) (dom (store_restrict σw X))) at 2 by set_solver.
+  rewrite store_restrict_restrict.
+  replace (X ∩ dom (store_restrict σw X)) with (dom (store_restrict σw X)).
+  - reflexivity.
+  - rewrite store_restrict_dom. set_solver.
+Qed.
 
 Lemma res_fiber_from_projection_proof_irrel
     (w : WfWorld) (X : aset) (σ : StoreT)
