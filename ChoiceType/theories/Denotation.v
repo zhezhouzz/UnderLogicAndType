@@ -166,6 +166,58 @@ Proof.
     rewrite Hright in Hsteps. rewrite Hleft. exact Hsteps.
 Qed.
 
+Lemma expr_logic_qual_renamed_result_steps e x y ρ w σw :
+  x ∉ stale e →
+  y ∉ stale e →
+  closed_env ρ →
+  closed_env σw →
+  logic_qualifier_denote (lqual_swap x y (expr_logic_qual e x)) ρ w →
+  (res_restrict w (stale e ∪ {[y]}) : World) σw →
+  ∃ v, σw !! y = Some v ∧ steps (m{σw} (m{ρ} e)) (tret v).
+Proof.
+  intros Hxe Hye Hρ Hσw Hq Hproj.
+  apply logic_qualifier_denote_swap in Hq.
+  assert (Hdomswap : aset_swap x y (stale e ∪ {[y]}) = stale e ∪ {[x]}).
+  {
+    rewrite aset_swap_union, aset_swap_fresh by set_solver.
+    rewrite aset_swap_singleton. unfold atom_swap.
+    repeat destruct decide; try congruence; set_solver.
+  }
+  assert (Hproj_swap :
+    (res_restrict (res_swap x y w) (stale e ∪ {[x]}) : World)
+      (store_swap x y σw)).
+  {
+    rewrite <- Hdomswap.
+    apply res_restrict_swap_projection. exact Hproj.
+  }
+  unfold logic_qualifier_denote, expr_logic_qual in Hq. simpl in Hq.
+  destruct (Hq (store_swap x y σw) Hproj_swap) as [v [Hlookup Hsteps]].
+  exists v. split.
+  - rewrite store_swap_lookup_inv in Hlookup.
+    unfold atom_swap in Hlookup.
+    repeat destruct decide; try congruence; exact Hlookup.
+  - assert (Hinner :
+      m{store_restrict (store_swap x y ρ) (stale e ∪ {[x]})} e =
+      m{ρ} e).
+    {
+      rewrite (msubst_restrict (store_swap x y ρ) (stale e ∪ {[x]}) e)
+        by (try apply closed_env_store_swap; try exact Hρ; set_solver).
+      rewrite (msubst_store_swap_fresh tm x y ρ e)
+        by (try exact Hρ; set_solver).
+      reflexivity.
+    }
+    change (steps
+      (m{store_swap x y σw}
+        (m{store_restrict (store_swap x y ρ) (stale e ∪ {[x]})} e))
+      (tret v)) in Hsteps.
+    rewrite Hinner in Hsteps.
+    rewrite (msubst_store_swap_fresh tm x y σw (m{ρ} e)) in Hsteps.
+    + exact Hsteps.
+    + exact Hσw.
+    + pose proof (msubst_fv ρ e Hρ) as Hfv. set_solver.
+    + pose proof (msubst_fv ρ e Hρ) as Hfv. set_solver.
+Qed.
+
 Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   stale v = ∅ →
   logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
