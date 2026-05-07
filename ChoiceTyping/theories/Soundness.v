@@ -123,7 +123,7 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
-Lemma res_models_fib_intro_local (m : WfWorld) (x : atom) (φ : FormulaQ) :
+Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FFib x φ) →
   (∀ σ,
      ∀ Hproj : res_restrict m {[x]} σ,
@@ -140,6 +140,42 @@ Proof.
     rewrite map_empty_union.
     eapply res_models_with_store_fuel_irrel; [| | exact (Hfib σ Hproj)];
       simpl; lia.
+Qed.
+
+Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FImpl φ ψ) →
+  (∀ m', m ⊑ m' →
+         m' ⊨ φ → m' ⊨ ψ) →
+  m ⊨ FImpl φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Himpl. split; [exact Hscope |].
+  intros m' Hle Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ + formula_measure ψ) (formula_measure φ)
+    ∅ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
+  pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
+Qed.
+
+Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FForall x φ) →
+  (∃ L : aset,
+    world_dom m ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∀ m' : WfWorld,
+        world_dom m' = world_dom m ∪ {[y]} →
+        res_restrict m' (world_dom m) = m →
+        m' ⊨ formula_rename_atom x y φ) →
+  m ⊨ FForall x φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope [L [HL Hforall]]. split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy m' Hdom Hrestr.
+  eapply res_models_with_store_fuel_irrel; [| | exact (Hforall y Hy m' Hdom Hrestr)];
+    rewrite ?formula_rename_preserves_measure; simpl; lia.
 Qed.
 
 Lemma basic_const_world_from_expr_atom c ν Σ m :
@@ -236,7 +272,7 @@ Proof.
     set_solver.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro_local.
+    eapply res_models_fib_intro.
     + pose proof (res_models_with_store_fuel_scoped _
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
@@ -281,7 +317,7 @@ Proof.
     set_solver.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro_local.
+    eapply res_models_fib_intro.
     + pose proof (res_models_with_store_fuel_scoped _
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
@@ -764,61 +800,6 @@ Lemma denot_ctx_sum_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
     res_sum m1 m2 Hdef ⊑ m ∧
     m1 ⊨ denot_ctx_under Σ Γ1 ∧ m2 ⊨ denot_ctx_under Σ Γ2.
 Proof. apply denot_ctx_under_sum. Qed.
-
-Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
-  formula_scoped_in_world ∅ m (FImpl φ ψ) →
-  (∀ m', m ⊑ m' →
-         m' ⊨ φ → m' ⊨ ψ) →
-  m ⊨ FImpl φ ψ.
-Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Himpl. split; [exact Hscope |].
-  intros m' Hle Hφ.
-  pose proof (res_models_with_store_fuel_irrel
-    (formula_measure φ + formula_measure ψ) (formula_measure φ)
-    ∅ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
-  pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
-Qed.
-
-Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
-  formula_scoped_in_world ∅ m (FFib x φ) →
-  (∀ σ,
-     ∀ Hproj : res_restrict m {[x]} σ,
-     res_models_with_store σ
-       (res_fiber_from_projection m {[x]} σ Hproj)
-       φ) →
-  m ⊨ FFib x φ.
-Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Hfib. split; [exact Hscope |].
-  split.
-  - set_solver.
-  - intros σ Hproj.
-    rewrite map_empty_union.
-    eapply res_models_with_store_fuel_irrel; [| | exact (Hfib σ Hproj)];
-      simpl; lia.
-Qed.
-
-Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
-  formula_scoped_in_world ∅ m (FForall x φ) →
-  (∃ L : aset,
-    world_dom m ⊆ L ∧
-    ∀ y : atom,
-      y ∉ L →
-      ∀ m' : WfWorld,
-        world_dom m' = world_dom m ∪ {[y]} →
-        res_restrict m' (world_dom m) = m →
-        m' ⊨ formula_rename_atom x y φ) →
-  m ⊨ FForall x φ.
-Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope [L [HL Hforall]]. split; [exact Hscope |].
-  exists L. split; [exact HL |].
-  intros y Hy m' Hdom Hrestr.
-  eapply res_models_with_store_fuel_irrel; [| | exact (Hforall y Hy m' Hdom Hrestr)];
-    rewrite ?formula_rename_preserves_measure; simpl; lia.
-Qed.
 
 Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FExists x φ) →
