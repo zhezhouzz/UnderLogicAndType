@@ -123,6 +123,32 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
+Lemma basic_const_world_from_expr_atom c ν Σ m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  m ⊨ basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]}.
+Proof.
+  intros Hexpr.
+  pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
+  eapply res_models_atom_intro.
+  - unfold formula_scoped_in_world. simpl.
+    unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom.
+    destruct (wf_ne _ (world_wf (res_restrict m {[ν]}))) as [σ Hσ].
+    pose proof (Hlookup σ Hσ) as Hν.
+    pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hσ) as Hdom.
+    assert (Hνdom : ν ∈ dom σ) by (apply elem_of_dom; eexists; exact Hν).
+    simpl in Hdom. set_solver.
+  - unfold logic_qualifier_denote, basic_world_formula, basic_world_lqual.
+    simpl. unfold world_has_type_on, store_has_type_on.
+    intros σ Hσ x T v Hx HΣ Hσv.
+    apply elem_of_singleton in Hx. subst x.
+    rewrite lookup_insert in HΣ.
+    destruct (decide (ν = ν)) as [_ | Hneq]; [| congruence].
+    inversion HΣ; subst T.
+    pose proof (Hlookup σ Hσ) as Hν.
+    rewrite Hν in Hσv. inversion Hσv; subst v.
+    constructor.
+Qed.
+
 Lemma lifted_const_qualifier_from_projection c ν m σ
     (Hproj : res_restrict m {[ν]} σ) :
   σ !! ν = Some (vconst c) →
