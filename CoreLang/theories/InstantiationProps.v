@@ -38,6 +38,16 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hclosed Hlookup).
 Qed.
 
+Lemma closed_env_delete σ x :
+  closed_env σ ->
+  closed_env (delete x σ).
+Proof.
+  unfold closed_env. intros Hclosed.
+  apply map_Forall_lookup_2. intros y v Hlookup.
+  rewrite lookup_delete_Some in Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hclosed (proj2 Hlookup)).
+Qed.
+
 Lemma closed_env_store_swap x y σ :
   closed_env σ ->
   closed_env (store_swap x y σ).
@@ -68,6 +78,16 @@ Lemma lc_env_lookup σ x v :
 Proof.
   unfold lc_env. intros Hlc Hlookup.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
+Qed.
+
+Lemma lc_env_delete σ x :
+  lc_env σ ->
+  lc_env (delete x σ).
+Proof.
+  unfold lc_env. intros Hlc.
+  apply map_Forall_lookup_2. intros y v Hlookup.
+  rewrite lookup_delete_Some in Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc (proj2 Hlookup)).
 Qed.
 
 Ltac gen_closed_env :=
@@ -536,6 +556,26 @@ Lemma msubst_intro_open_tm e k vx x σ :
 Proof.
   intros Hclosed Hvx_closed Hvx_lc Hlc_env Hfresh.
   symmetry. apply msubst_intro; eauto.
+Qed.
+
+Lemma msubst_open_lookup_tm σ e k x vx :
+  closed_env σ ->
+  lc_env σ ->
+  σ !! x = Some vx ->
+  x ∉ fv_tm e ->
+  m{σ} (open_tm k (vfvar x) e) =
+  open_tm k vx (m{delete x σ} e).
+Proof.
+  intros Hclosed Hlc Hlookup Hfresh.
+  replace (m{σ} (open_tm k (vfvar x) e)) with
+    (m{<[x := vx]> (delete x σ)} (open_tm k (vfvar x) e)).
+  2:{ rewrite (insert_delete_id σ x vx Hlookup). reflexivity. }
+  apply msubst_intro_open_tm.
+  - apply closed_env_delete. exact Hclosed.
+  - eapply closed_env_lookup; eauto.
+  - eapply lc_env_lookup; eauto.
+  - apply lc_env_delete. exact Hlc.
+  - rewrite (dom_delete_L σ x). set_solver.
 Qed.
 
 Class MsubstLc A `{SubstV value A} `{Lc A} := msubst_lc :
