@@ -7,7 +7,7 @@
     coordinates.  This file isolates that constraint from the refinement and
     resource definitions. *)
 
-From CoreLang Require Import BasicTyping.
+From CoreLang Require Import BasicTyping BasicTypingProps Instantiation.
 From ChoiceType Require Export Syntax.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
@@ -90,6 +90,24 @@ Lemma store_has_type_on_lookup Σ X σ x T v :
 Proof.
   intros Htyped Hx HΣ Hσ.
   eapply Htyped; eauto.
+Qed.
+
+Lemma store_has_type_on_closed_env Σ X σ :
+  dom σ ⊆ X →
+  X ⊆ dom Σ →
+  store_has_type_on Σ X σ →
+  closed_env σ.
+Proof.
+  intros Hdomσ HXΣ Htyped.
+  unfold closed_env. apply map_Forall_lookup_2.
+  intros x v Hlookup.
+  assert (Hxσ : x ∈ dom σ) by (apply elem_of_dom; eexists; exact Hlookup).
+  assert (HxX : x ∈ X) by set_solver.
+  assert (HxΣ : x ∈ dom Σ) by set_solver.
+  apply elem_of_dom in HxΣ as [T HΣ].
+  pose proof (Htyped x T v HxX HΣ Hlookup) as Hvalue.
+  apply basic_typing_closed_value in Hvalue.
+  exact Hvalue.
 Qed.
 
 Lemma store_has_type_on_insert_self Σ X σ x T v :
