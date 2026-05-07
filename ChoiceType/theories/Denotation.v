@@ -292,7 +292,82 @@ Proof.
   intros Hmodels Hle. eapply res_models_with_store_fuel_kripke; eauto.
 Qed.
 
-(** The context denotation of a comma-context distributes over conjunction. *)
+(** Environment-indexed context denotations distribute structurally when the
+    same ambient erased environment is used for both subcontexts. *)
+Lemma denot_ctx_under_comma Σ Γ1 Γ2 m :
+  m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
+  m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  unfold res_models, res_models_with_store. simpl.
+  split.
+  - intros [Hscope [HΓ1 HΓ2]]. split.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+  - intros [HΓ1 HΓ2]. split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx_under Σ Γ1) HΓ1).
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx_under Σ Γ2) HΓ2).
+      set_solver.
+    + split.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+Qed.
+
+Lemma denot_ctx_under_star Σ Γ1 Γ2 m :
+  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ↔
+  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m ∧
+    m1 ⊨ denot_ctx_under Σ Γ1 ∧ m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  unfold res_models, res_models_with_store. simpl.
+  split.
+  - intros [_ [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]]].
+    exists m1, m2, Hc. split; [exact Hprod |]. split.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m1 (denot_ctx_under Σ Γ1) HΓ1).
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m2 (denot_ctx_under Σ Γ2) HΓ2).
+      pose proof (raw_le_dom _ _ Hprod). set_solver.
+    + exists m1, m2, Hc. split; [exact Hprod |]. split.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+Qed.
+
+Lemma denot_ctx_under_sum Σ Γ1 Γ2 m :
+  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ↔
+  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m ∧
+    m1 ⊨ denot_ctx_under Σ Γ1 ∧ m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  unfold res_models, res_models_with_store. simpl.
+  split.
+  - intros [_ [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]]].
+    exists m1, m2, Hdef. split; [exact Hsum |]. split.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    split.
+    + unfold formula_scoped_in_world in *. simpl.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m1 (denot_ctx_under Σ Γ1) HΓ1) as Hscope1.
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m2 (denot_ctx_under Σ Γ2) HΓ2) as Hscope2.
+      pose proof (raw_le_dom _ _ Hsum) as Hdom_sum_m.
+      unfold raw_sum_defined in Hdef. simpl in Hdom_sum_m.
+      intros z Hz. apply elem_of_union in Hz as [Hzempty | Hzfv]; [set_solver |].
+      apply elem_of_union in Hzfv as [Hz | Hz].
+      * apply Hdom_sum_m. apply Hscope1. set_solver.
+      * apply Hdom_sum_m. rewrite Hdef. apply Hscope2. set_solver.
+    + exists m1, m2, Hdef. split; [exact Hsum |]. split.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
+      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+Qed.
+
+(** The public context denotation uses each context's own erased environment.
+    These wrappers require environment-locality facts to bridge from the
+    ambient environment of the compound context to the standalone subcontext
+    environments. *)
 Lemma denot_ctx_comma Γ1 Γ2 m :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof. Admitted.
@@ -317,7 +392,7 @@ Proof. Admitted.
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔
   m ⊨ denot_ty_in_ctx (CtxBind x τ) τ (tret (vfvar x)).
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 Lemma denot_ctx_restrict_stale Γ m :
   m ⊨ ⟦Γ⟧ →
