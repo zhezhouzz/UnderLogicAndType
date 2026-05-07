@@ -5,6 +5,7 @@
     stays light. *)
 
 From ChoiceType Require Export Qualifier.
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** ** Swap lemmas *)
 
@@ -21,6 +22,35 @@ Lemma qual_open_atom_dom_subset k x q :
 Proof.
   destruct q as [B d p]. unfold qual_open_atom, qual_dom.
   destruct decide; simpl; set_solver.
+Qed.
+
+Lemma qual_open_atom_swap_fresh k x y q :
+  k ∈ qual_bvars q →
+  x ∉ qual_dom q →
+  y ∉ qual_dom q →
+  qual_swap_atom x y (qual_open_atom k x q) = qual_open_atom k y q.
+Proof.
+  destruct q as [B d p]. simpl. intros Hk Hx Hy.
+  unfold qual_open_atom, qual_swap_atom, qual_bvars, qual_dom in *; simpl in *.
+  rewrite !decide_True by exact Hk.
+  f_equal.
+  - rewrite aset_swap_union, aset_swap_singleton.
+    unfold atom_swap at 1.
+    destruct (decide (x = x)) as [_|Hxx]; [|congruence].
+    destruct (decide (x = y)) as [->|Hxy].
+    + rewrite aset_swap_fresh by assumption. set_solver.
+    + rewrite aset_swap_fresh by assumption. reflexivity.
+  - apply functional_extensionality. intros β.
+    apply functional_extensionality. intros σ.
+    apply functional_extensionality. intros a.
+    apply propositional_extensionality.
+    rewrite map_restrict_store_swap_fresh by assumption.
+    rewrite map_restrict_store_swap_fresh by assumption.
+    rewrite store_swap_lookup_inv.
+    replace (atom_swap x y x) with y.
+    2:{ unfold atom_swap.
+        destruct (decide (x = x)) as [_|Hxx]; [reflexivity | congruence]. }
+    reflexivity.
 Qed.
 
 Lemma qual_lc_swap x y q :
