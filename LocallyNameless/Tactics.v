@@ -294,6 +294,35 @@ Lemma setunion_mono_cons (x : atom) (s1 s2 s3 s4 : aset) :
   {[x]} ∪ (s1 ∪ s3) ⊆ {[x]} ∪ (s2 ∪ s4).
 Proof. set_solver. Qed.
 
+Lemma setunion_mono_two_cons (x y : atom) (s1 s2 : aset) :
+  s1 ⊆ {[x]} ∪ {[y]} ∪ s2 →
+  {[x]} ∪ {[y]} ∪ s1 ⊆ {[x]} ∪ {[y]} ∪ s2.
+Proof. set_solver. Qed.
+
+Lemma subseteq_open_two_fv
+    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
+  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  ({[y]} ∪ ((body1 ∪ body2) ∖ {[x]})) ∖ {[y]} ⊆
+    D ∪ e ∪ τ1 ∪ τ2.
+Proof. set_solver. Qed.
+
+Lemma subseteq_arrow_formula_fv
+    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
+  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  (e ∪ {[y]} ∪ (({[y]} ∪ (body1 ∪ body2)) ∖ {[x]})) ∖ {[y]} ⊆
+    D ∪ e ∪ τ1 ∪ τ2.
+Proof. set_solver. Qed.
+
+Lemma subseteq_arrow_formula_fv_nested
+    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
+  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
+  (e ∪ {[y]} ∪ ({[y]} ∪ (body1 ∪ body2)) ∖ {[x]}) ∖ {[y]} ⊆
+    D ∪ e ∪ (τ1 ∪ τ2).
+Proof. set_solver. Qed.
+
 Ltac my_set_simpl_aux :=
   match goal with
   | |- _ !! _ = None => rewrite <- not_elem_of_dom
@@ -333,6 +362,18 @@ Ltac my_set_solver :=
   try match goal with
   | |- {[?x]} ∪ (?s1 ∪ ?s3) ⊆ {[?x]} ∪ (?s2 ∪ ?s4) =>
       apply setunion_mono_cons; eauto
+  | |- {[?x]} ∪ {[?y]} ∪ ?s1 ⊆ {[?x]} ∪ {[?y]} ∪ ?s2 =>
+      apply setunion_mono_two_cons; eauto
+  | H1 : ?body1 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2,
+    H2 : ?body2 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2
+      |- (?e ∪ {[?y]} ∪ (({[?y]} ∪ (?body1 ∪ ?body2)) ∖ {[?x]})) ∖ {[?y]} ⊆
+          ?D ∪ ?e ∪ ?τ1 ∪ ?τ2 =>
+      eapply subseteq_arrow_formula_fv; [exact H1 | exact H2]
+  | H1 : ?body1 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2,
+    H2 : ?body2 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2
+      |- ({[?y]} ∪ ((?body1 ∪ ?body2) ∖ {[?x]})) ∖ {[?y]} ⊆
+          ?D ∪ ?e ∪ ?τ1 ∪ ?τ2 =>
+      eapply subseteq_open_two_fv; [exact H1 | exact H2]
   | H : {[?x]} ∪ ?s1 ⊆ {[?x]} ∪ ?s2 |- ?s1 ⊆ ?s2 =>
       eapply subseteq_subtract_both; eauto; fast_set_solver
   end;

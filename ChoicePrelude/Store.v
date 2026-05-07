@@ -203,6 +203,23 @@ Proof.
     by rewrite Heq.
 Qed.
 
+Lemma aset_swap_difference x y X Y :
+  aset_swap x y (X ∖ Y) =
+  aset_swap x y X ∖ aset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_difference, elem_of_aset_swap.
+  split.
+  - intros [HzX HzY]. split; [exact HzX |].
+    intros HzswapY. apply HzY.
+    rewrite elem_of_aset_swap in HzswapY.
+    exact HzswapY.
+  - intros [HzX HzY]. split; [exact HzX |].
+    intros HzY'. apply HzY.
+    rewrite elem_of_aset_swap.
+    exact HzY'.
+Qed.
+
 Section Store.
 
 Context {V : Type} `{ValueSig V}.
@@ -852,6 +869,61 @@ Proof.
       right. intros v _ Hin. set_solver.
 Qed.
 
+Lemma store_restrict_wand_product
+    (sn sm : Store) (S X Y : aset) :
+  store_compat (store_restrict sn X) sm →
+  store_compat sn (store_restrict sm S) →
+  Y ⊆ S →
+  Y ⊆ dom sm →
+  store_restrict (sn ∪ store_restrict sm S) Y =
+  store_restrict (store_restrict sn X ∪ sm) Y.
+Proof.
+  intros Hsmall Hfull HYS HYm.
+  apply map_eq. intros i.
+  destruct (decide (i ∈ Y)) as [HiY|HiY].
+  - assert (HiS : i ∈ S) by set_solver.
+    assert (Him : i ∈ dom sm) by set_solver.
+    apply elem_of_dom in Him as [vm Hsm].
+    destruct (sn !! i) as [vn|] eqn:Hsn.
+    + assert (Heq : vn = vm).
+      {
+        eapply Hfull; [exact Hsn |].
+        apply store_restrict_lookup_some_2; [exact Hsm | exact HiS].
+      }
+      subst vn.
+      transitivity (Some vm).
+      * apply store_restrict_lookup_some_2; [| exact HiY].
+        change ((sn ∪ store_restrict sm S) !! i = Some vm).
+        apply lookup_union_Some_raw. left. exact Hsn.
+      * symmetry. apply store_restrict_lookup_some_2; [| exact HiY].
+        destruct (decide (i ∈ X)) as [HiX|HiX].
+        -- change ((store_restrict sn X ∪ sm) !! i = Some vm).
+           apply lookup_union_Some_raw. left.
+           apply store_restrict_lookup_some_2; [exact Hsn | exact HiX].
+        -- change ((store_restrict sn X ∪ sm) !! i = Some vm).
+           apply lookup_union_Some_raw. right. split.
+           ++ unfold store_restrict, map_restrict.
+              apply map_lookup_filter_None. right. intros _ _ Hin. contradiction.
+           ++ exact Hsm.
+    + transitivity (Some vm).
+      * apply store_restrict_lookup_some_2; [| exact HiY].
+        change ((sn ∪ store_restrict sm S) !! i = Some vm).
+        apply lookup_union_Some_raw. right. split.
+        -- exact Hsn.
+        -- apply store_restrict_lookup_some_2; [exact Hsm | exact HiS].
+      * symmetry. apply store_restrict_lookup_some_2; [| exact HiY].
+        change ((store_restrict sn X ∪ sm) !! i = Some vm).
+        apply lookup_union_Some_raw. right. split.
+        -- unfold store_restrict, map_restrict.
+           apply map_lookup_filter_None. left. exact Hsn.
+        -- exact Hsm.
+  - transitivity (@None V).
+    + unfold store_restrict, map_restrict.
+      apply map_lookup_filter_None. right. intros _ _ Hin. contradiction.
+    + symmetry. unfold store_restrict, map_restrict.
+      apply map_lookup_filter_None. right. intros _ _ Hin. contradiction.
+Qed.
+
 Lemma disj_dom_store_compat s1 s2 :
   dom s1 ∩ dom s2 = ∅ → store_compat s1 s2.
 Proof.
@@ -891,6 +963,18 @@ Lemma store_compat_restrict_r s1 s2 X :
 Proof.
   unfold store_compat. intros Hcomp x y z H2 H3.
   apply store_restrict_lookup_some in H3. hauto.
+Qed.
+
+Lemma store_compat_restrict_l_full_r s1 s2 X :
+  dom s1 ⊆ X →
+  store_compat s1 (store_restrict s2 X) →
+  store_compat s1 s2.
+Proof.
+  unfold store_compat. intros Hdom Hcomp x v1 v2 H1 H2.
+  assert (Hx : x ∈ X).
+  { apply Hdom. apply elem_of_dom. eauto. }
+  eapply Hcomp; [exact H1 |].
+  apply store_restrict_lookup_some_2; [exact H2 | exact Hx].
 Qed.
 
 Lemma store_compat_restrict_eq s1 s2 :

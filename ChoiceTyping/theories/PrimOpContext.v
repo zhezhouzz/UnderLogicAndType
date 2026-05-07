@@ -29,13 +29,51 @@ Definition primop_ctx : Type := prim_op → primop_sig.
 Definition primop_erasure_ok (op : prim_op) (sig : primop_sig) : Prop :=
   prim_op_type op = (sig.(prim_arg_base), sig.(prim_ret_base)).
 
-Definition wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop :=
-  primop_erasure_ok op sig ∧
-  basic_choice_ty ∅ (primop_arg_ty sig) ∧
-  basic_choice_ty ∅ (primop_result_ty sig).
+Definition primop_semantic_ok (_op : prim_op) (_sig : primop_sig) : Prop :=
+  True.
+
+Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
+  wf_primop_erasure : primop_erasure_ok op sig;
+  wf_primop_arg_basic : basic_choice_ty ∅ (primop_arg_ty sig);
+  wf_primop_result_basic : basic_choice_ty ∅ (primop_result_ty sig);
+  wf_primop_semantic : primop_semantic_ok op sig;
+}.
 
 Definition wf_primop_ctx (Φ : primop_ctx) : Prop :=
   ∀ op, wf_primop_sig op (Φ op).
+
+Lemma erase_primop_arg_ty sig :
+  erase_ty (primop_arg_ty sig) = TBase sig.(prim_arg_base).
+Proof. destruct sig; reflexivity. Qed.
+
+Lemma erase_primop_result_ty sig :
+  erase_ty (primop_result_ty sig) = TBase sig.(prim_ret_base).
+Proof. destruct sig; reflexivity. Qed.
+
+Lemma erase_primop_sig_ty sig :
+  erase_ty (primop_sig_ty sig) =
+  (TBase sig.(prim_arg_base) →ₜ TBase sig.(prim_ret_base)).
+Proof. destruct sig; reflexivity. Qed.
+
+Lemma wf_primop_sig_erasure op sig :
+  wf_primop_sig op sig →
+  primop_erasure_ok op sig.
+Proof. apply wf_primop_erasure. Qed.
+
+Lemma wf_primop_sig_arg_basic op sig :
+  wf_primop_sig op sig →
+  basic_choice_ty ∅ (primop_arg_ty sig).
+Proof. apply wf_primop_arg_basic. Qed.
+
+Lemma wf_primop_sig_result_basic op sig :
+  wf_primop_sig op sig →
+  basic_choice_ty ∅ (primop_result_ty sig).
+Proof. apply wf_primop_result_basic. Qed.
+
+Lemma wf_primop_sig_erased_bases op sig :
+  wf_primop_sig op sig →
+  prim_op_type op = (sig.(prim_arg_base), sig.(prim_ret_base)).
+Proof. apply wf_primop_sig_erasure. Qed.
 
 (** Default shallow signatures for the current unary CoreLang primitives.
     These are intentionally conservative: arguments and results are typed by
@@ -51,4 +89,30 @@ Lemma default_primop_ctx_erasure_ok op :
 Proof.
   unfold primop_erasure_ok, default_primop_ctx.
   destruct (prim_op_type op) as [arg_b ret_b]. reflexivity.
+Qed.
+
+Lemma default_primop_ctx_arg_basic op :
+  basic_choice_ty ∅ (primop_arg_ty (default_primop_ctx op)).
+Proof.
+  unfold default_primop_ctx.
+  destruct (prim_op_type op) as [arg_b ret_b].
+  simpl. constructor. apply basic_qualifier_body_top.
+Qed.
+
+Lemma default_primop_ctx_result_basic op :
+  basic_choice_ty ∅ (primop_result_ty (default_primop_ctx op)).
+Proof.
+  unfold default_primop_ctx.
+  destruct (prim_op_type op) as [arg_b ret_b].
+  simpl. constructor; constructor; try reflexivity; apply basic_qualifier_body_top.
+Qed.
+
+Lemma default_primop_ctx_wf :
+  wf_primop_ctx default_primop_ctx.
+Proof.
+  intros op. constructor.
+  - apply default_primop_ctx_erasure_ok.
+  - apply default_primop_ctx_arg_basic.
+  - apply default_primop_ctx_result_basic.
+  - exact I.
 Qed.

@@ -19,3 +19,7 @@ Definition lift_type_qualifier_to_logic (q : type_qualifier) : logic_qualifier :
       lqual d (fun σ (w : WfWorld) =>
         B = ∅ ∧ ∃ σw, (w : World) = singleton_world σw ∧ p ∅ σ σw)
   end.
+
+Lemma lqual_dom_lift_type_qualifier_to_logic q :
+  lqual_dom (lift_type_qualifier_to_logic q) = qual_dom q.
+Proof. destruct q; reflexivity. Qed.

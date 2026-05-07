@@ -10,18 +10,25 @@ Lemma res_models_impl_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
   m ⊑ m' →
   m' ⊨ FImpl φ ψ.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.
 
 Lemma res_models_and_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FAnd φ ψ →
   m ⊑ m' →
   m' ⊨ FAnd φ ψ.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.
 
 (** ** Fundamental theorem *)
 
-Theorem Fundamental (Γ : ctx) (e : tm) (τ : choice_ty) :
-  Γ ⊢ e ⋮ τ →
+Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ Γ e τ →
   ⟦Γ⟧ ⊫ ⟦τ⟧ e.
 Proof. Admitted.
 
@@ -31,29 +38,34 @@ Proof. Admitted.
     bodies remain as admitted skeletons while the definition layer is being
     aligned with the paper. *)
 
-Corollary safety (e : tm) (b : base_ty) :
-  CtxEmpty ⊢ e ⋮ CTOver b qual_top →
+Corollary safety (Φ : primop_ctx) (e : tm) (b : base_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTOver b qual_top) →
   ∀ e', steps e e' → is_val e' ∨ ∃ e'', step e' e''.
 Proof. Admitted.
 
-Corollary coverage (e : tm) (b : base_ty) :
-  CtxEmpty ⊢ e ⋮ CTUnder b qual_top →
+Corollary coverage (Φ : primop_ctx) (e : tm) (b : base_ty) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b qual_top) →
   ∃ v, steps e (tret v).
 Proof. Admitted.
 
-Corollary refinement (e : tm) (b : base_ty) (φ : type_qualifier) :
-  CtxEmpty ⊢ e ⋮ CTOver b φ →
+Corollary refinement (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTOver b φ) →
   ∀ v, steps e (tret v) →
        ∃ x, qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
-Corollary incorrectness (e : tm) (b : base_ty) (φ : type_qualifier) :
-  CtxEmpty ⊢ e ⋮ CTUnder b φ →
+Corollary incorrectness (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b φ) →
   ∃ v x, steps e (tret v) ∧ qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
-Corollary exact_result (e : tm) (b : base_ty) (c : constant) :
-  CtxEmpty ⊢ e ⋮ CTUnder b (b0:c= c) →
+Corollary exact_result (Φ : primop_ctx) (e : tm) (b : base_ty) (c : constant) :
+  wf_primop_ctx Φ →
+  has_choice_type Φ CtxEmpty e (CTUnder b (b0:c= c)) →
   steps e (tret (vconst c)).
 Proof. Admitted.
 
@@ -61,31 +73,52 @@ Proof. Admitted.
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof. apply denot_ctx_comma. Qed.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. Admitted.
+Proof. apply denot_ctx_star. Qed.
 
 Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FImpl φ ψ) →
   (∀ m', m ⊑ m' →
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
-Proof. Admitted.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Himpl. split; [exact Hscope |].
+  intros m' Hle Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ + formula_measure ψ) (formula_measure φ)
+    ∅ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
+  pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
+Qed.
 
 Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FFib x φ) →
   (∀ σ,
      ∀ Hproj : res_restrict m {[x]} σ,
      res_models_with_store σ
        (res_fiber_from_projection m {[x]} σ Hproj)
        φ) →
   m ⊨ FFib x φ.
-Proof. Admitted.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hfib. split; [exact Hscope |].
+  split.
+  - set_solver.
+  - intros σ Hproj.
+    rewrite map_empty_union.
+    eapply res_models_with_store_fuel_irrel; [| | exact (Hfib σ Hproj)];
+      simpl; lia.
+Qed.
 
 Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FForall x φ) →
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,
@@ -95,9 +128,17 @@ Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
         res_restrict m' (world_dom m) = m →
         m' ⊨ formula_rename_atom x y φ) →
   m ⊨ FForall x φ.
-Proof. Admitted.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope [L [HL Hforall]]. split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy m' Hdom Hrestr.
+  eapply res_models_with_store_fuel_irrel; [| | exact (Hforall y Hy m' Hdom Hrestr)];
+    rewrite ?formula_rename_preserves_measure; simpl; lia.
+Qed.
 
 Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FExists x φ) →
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,
@@ -107,10 +148,22 @@ Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
         res_restrict m' (world_dom m) = m ∧
         m' ⊨ formula_rename_atom x y φ) →
   m ⊨ FExists x φ.
-Proof. Admitted.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope [L [HL Hexists]]. split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy.
+  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hφ]]].
+  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ];
+    rewrite ?formula_rename_preserves_measure; simpl; lia.
+Qed.
 
 Lemma ctx_res_models_mono (Γ : ctx) (m m' : WfWorld) :
   m ⊨ ⟦Γ⟧ →
   m ⊑ m' →
   m' ⊨ ⟦Γ⟧.
-Proof. Admitted.
+Proof.
+  intros Hmodel Hle.
+  eapply res_models_kripke; eauto.
+Qed.

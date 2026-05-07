@@ -11,7 +11,9 @@
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
 
+From LocallyNameless Require Import Tactics.
 From ChoiceType Require Export Syntax.
+From ChoiceType Require Import LocallyNamelessProps.
 
 (** ** ChoiceLogic satisfaction, instantiated for qualifiers *)
 
@@ -33,6 +35,14 @@ Notation "φ ⊫ ψ" :=
 
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
+
+Lemma fib_vars_formula_fv_subset X p :
+  formula_fv (fib_vars X p) ⊆ X ∪ formula_fv p.
+Proof.
+  unfold fib_vars.
+  apply (set_fold_ind_L (fun r Y => formula_fv r ⊆ Y ∪ formula_fv p));
+    simpl; set_solver.
+Qed.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ (w : WfWorld) =>
@@ -151,6 +161,274 @@ Definition denot_ty_avoiding (D : aset) (τ : choice_ty) (e : tm) : FQ :=
 Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_avoiding (fv_cty τ ∪ fv_tm e) τ e.
 
+(** ** Denotation scoping regularity
+
+    These syntactic facts isolate the variable-accounting needed by semantic
+    subtyping reflexivity.  They are intentionally stated at the denotation
+    layer: typing proofs should consume these regularity lemmas rather than
+    unfolding the formula generated for each type constructor. *)
+
+Lemma denot_ty_formula_fv_subset τ e :
+  formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
+Proof.
+  unfold denot_ty, denot_ty_avoiding.
+  assert (Hfuel :
+    ∀ gas D τ0 e0,
+      formula_fv (denot_ty_fuel gas D τ0 e0) ⊆ D ∪ fv_tm e0 ∪ fv_cty τ0).
+  {
+    induction gas as [|gas IH]; intros D τ0 e0; simpl.
+    { set_solver. }
+    destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2]; simpl.
+    - unfold fresh_forall. simpl.
+      destruct φ as [B d p]. simpl in *.
+      set (q := qual B d p).
+      set (ν := fresh_for (D ∪ fv_tm e0 ∪ qual_dom q)).
+      pose proof (qual_open_atom_dom_subset 0 ν q)
+        as Hopen.
+      pose proof (fib_vars_formula_fv_subset
+        (qual_dom (qual_open_atom 0 ν q))
+        (FOver
+          (FAtom
+            (lift_type_qualifier_to_logic
+              (qual_open_atom 0 ν q)))))
+        as Hfib.
+      change (formula_fv
+        (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν q)))))
+        with (lqual_dom (lift_type_qualifier_to_logic (qual_open_atom 0 ν q))) in Hfib.
+      unfold q, qual_open_atom in Hfib, Hopen.
+      destruct (decide (0 ∈ B)); simpl in Hfib, Hopen |- *.
+      + intros z Hz. apply elem_of_difference in Hz as [Hz Hzν].
+        apply elem_of_union in Hz as [Hzexpr | Hzfibpart].
+        * change (z ∈ D ∪ fv_tm e0 ∪ d). simpl in Hzexpr.
+          change (z ∈ fv_tm e0 ∪ {[ν]}) in Hzexpr.
+          apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
+          -- apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+          -- exfalso. apply Hzν. exact Hzνin.
+        * change (z ∈ D ∪ fv_tm e0 ∪ d).
+          pose proof (Hfib z Hzfibpart) as Hzfib.
+          apply elem_of_union in Hzfib as [Hzopen | Hzopen];
+            pose proof (Hopen z Hzopen) as Hzdν;
+            apply elem_of_union in Hzdν as [Hzd | Hzνin].
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+      + intros z Hz. apply elem_of_difference in Hz as [Hz Hzν].
+        apply elem_of_union in Hz as [Hzexpr | Hzfibpart].
+        * change (z ∈ D ∪ fv_tm e0 ∪ d). simpl in Hzexpr.
+          change (z ∈ fv_tm e0 ∪ {[ν]}) in Hzexpr.
+          apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
+          -- apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+          -- exfalso. apply Hzν. exact Hzνin.
+        * change (z ∈ D ∪ fv_tm e0 ∪ d).
+          pose proof (Hfib z Hzfibpart) as Hzfib.
+          apply elem_of_union in Hzfib as [Hzopen | Hzopen];
+            pose proof (Hopen z Hzopen) as Hzdν;
+            apply elem_of_union in Hzdν as [Hzd | Hzνin].
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+    - unfold fresh_forall. simpl.
+      destruct φ as [B d p]. simpl in *.
+      set (q := qual B d p).
+      set (ν := fresh_for (D ∪ fv_tm e0 ∪ qual_dom q)).
+      pose proof (qual_open_atom_dom_subset 0 ν q)
+        as Hopen.
+      pose proof (fib_vars_formula_fv_subset
+        (qual_dom (qual_open_atom 0 ν q))
+        (FUnder
+          (FAtom
+            (lift_type_qualifier_to_logic
+              (qual_open_atom 0 ν q)))))
+        as Hfib.
+      change (formula_fv
+        (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν q)))))
+        with (lqual_dom (lift_type_qualifier_to_logic (qual_open_atom 0 ν q))) in Hfib.
+      unfold q, qual_open_atom in Hfib, Hopen.
+      destruct (decide (0 ∈ B)); simpl in Hfib, Hopen |- *.
+      + intros z Hz. apply elem_of_difference in Hz as [Hz Hzν].
+        apply elem_of_union in Hz as [Hzexpr | Hzfibpart].
+        * change (z ∈ D ∪ fv_tm e0 ∪ d). simpl in Hzexpr.
+          change (z ∈ fv_tm e0 ∪ {[ν]}) in Hzexpr.
+          apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
+          -- apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+          -- exfalso. apply Hzν. exact Hzνin.
+        * change (z ∈ D ∪ fv_tm e0 ∪ d).
+          pose proof (Hfib z Hzfibpart) as Hzfib.
+          apply elem_of_union in Hzfib as [Hzopen | Hzopen];
+            pose proof (Hopen z Hzopen) as Hzdν;
+            apply elem_of_union in Hzdν as [Hzd | Hzνin].
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+      + intros z Hz. apply elem_of_difference in Hz as [Hz Hzν].
+        apply elem_of_union in Hz as [Hzexpr | Hzfibpart].
+        * change (z ∈ D ∪ fv_tm e0 ∪ d). simpl in Hzexpr.
+          change (z ∈ fv_tm e0 ∪ {[ν]}) in Hzexpr.
+          apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
+          -- apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+          -- exfalso. apply Hzν. exact Hzνin.
+        * change (z ∈ D ∪ fv_tm e0 ∪ d).
+          pose proof (Hfib z Hzfibpart) as Hzfib.
+          apply elem_of_union in Hzfib as [Hzopen | Hzopen];
+            pose proof (Hopen z Hzopen) as Hzdν;
+            apply elem_of_union in Hzdν as [Hzd | Hzνin].
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+          -- apply elem_of_union. right. exact Hzd.
+          -- exfalso. apply Hzν. exact Hzνin.
+    - pose proof (IH D τ1 e0) as H1.
+      pose proof (IH D τ2 e0) as H2. set_solver.
+    - pose proof (IH D τ1 e0) as H1.
+      pose proof (IH D τ2 e0) as H2. set_solver.
+    - pose proof (IH D τ1 e0) as H1.
+      pose proof (IH D τ2 e0) as H2. set_solver.
+    - unfold fresh_forall. simpl.
+      set (Dy := D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      set (y := fresh_for Dy).
+      set (Dx := {[y]} ∪ Dy).
+      set (x := fresh_for Dx).
+      set (D2 := {[x]} ∪ Dx).
+      pose proof (IH D2
+        τ1 (tret (vfvar x))) as Harg.
+      pose proof (IH D2
+        ({0 ~> x} τ2) (tapp (vfvar y) (vfvar x))) as Hret.
+      pose proof (cty_open_fv_subset 0 x τ2) as Hopen.
+      simpl in Harg, Hret.
+      assert (Harg' :
+        formula_fv (denot_ty_fuel gas
+          D2
+          τ1 (tret (vfvar x)))
+        ⊆ {[x]} ∪ {[y]} ∪ D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      { subst D2 Dx Dy. intros z Hz. pose proof (Harg z Hz). set_solver. }
+      assert (Hret' :
+        formula_fv (denot_ty_fuel gas
+          D2
+          ({0 ~> x} τ2) (tapp (vfvar y) (vfvar x)))
+        ⊆ {[x]} ∪ {[y]} ∪ D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      { subst D2 Dx Dy. intros z Hz. pose proof (Hret z Hz). pose proof (Hopen z). set_solver. }
+      clear Harg Hret Hopen.
+      change (stale (expr_logic_qual e0 y)) with (fv_tm e0 ∪ {[y]}).
+      fold Dy y Dx x D2.
+      eapply subseteq_arrow_formula_fv_nested; [exact Harg' | exact Hret'].
+    - unfold fresh_forall. simpl.
+      set (Dy := D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      set (y := fresh_for Dy).
+      set (Dx := {[y]} ∪ Dy).
+      set (x := fresh_for Dx).
+      set (D2 := {[x]} ∪ Dx).
+      pose proof (IH D2
+        τ1 (tret (vfvar x))) as Harg.
+      pose proof (IH D2
+        ({0 ~> x} τ2) (tapp (vfvar y) (vfvar x))) as Hret.
+      pose proof (cty_open_fv_subset 0 x τ2) as Hopen.
+      simpl in Harg, Hret.
+      assert (Harg' :
+        formula_fv (denot_ty_fuel gas
+          D2
+          τ1 (tret (vfvar x)))
+        ⊆ {[x]} ∪ {[y]} ∪ D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      { subst D2 Dx Dy. intros z Hz. pose proof (Harg z Hz). set_solver. }
+      assert (Hret' :
+        formula_fv (denot_ty_fuel gas
+          D2
+          ({0 ~> x} τ2) (tapp (vfvar y) (vfvar x)))
+        ⊆ {[x]} ∪ {[y]} ∪ D ∪ fv_tm e0 ∪ fv_cty τ1 ∪ fv_cty τ2).
+      { subst D2 Dx Dy. intros z Hz. pose proof (Hret z Hz). pose proof (Hopen z). set_solver. }
+      clear Harg Hret Hopen.
+      change (stale (expr_logic_qual e0 y)) with (fv_tm e0 ∪ {[y]}).
+      fold Dy y Dx x D2.
+      eapply subseteq_arrow_formula_fv_nested; [exact Harg' | exact Hret'].
+  }
+  pose proof (Hfuel (cty_measure τ) (fv_cty τ ∪ fv_tm e) τ e).
+  set_solver.
+Qed.
+
+Lemma denot_ty_result_atom_fv x τ :
+  x ∈ formula_fv (denot_ty τ (tret (vfvar x))).
+Proof.
+  unfold denot_ty, denot_ty_avoiding.
+  assert (Hfuel :
+    ∀ gas D τ0 z,
+      cty_measure τ0 <= gas →
+      z ∈ D →
+      z ∈ formula_fv (denot_ty_fuel gas D τ0 (tret (vfvar z)))).
+  {
+    induction gas as [|gas IH]; intros D τ0 z Hgas HzD.
+    { pose proof (cty_measure_gt_0 τ0). lia. }
+    destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2]; simpl in *.
+    - unfold fresh_forall. simpl.
+      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
+      assert (Hzν : z ≠ ν).
+      {
+        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
+      + intros Hzνin. apply elem_of_singleton in Hzνin.
+        exact (Hzν Hzνin).
+    - unfold fresh_forall. simpl.
+      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
+      assert (Hzν : z ≠ ν).
+      {
+        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
+      + intros Hzνin. apply elem_of_singleton in Hzνin.
+        exact (Hzν Hzνin).
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - unfold fresh_forall. simpl.
+      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+      assert (Hzy : z ≠ y).
+      {
+        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
+      + intros Hzyin. apply elem_of_singleton in Hzyin.
+        exact (Hzy Hzyin).
+    - unfold fresh_forall. simpl.
+      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+      assert (Hzy : z ≠ y).
+      {
+        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
+      + intros Hzyin. apply elem_of_singleton in Hzyin.
+        exact (Hzy Hzyin).
+  }
+  apply Hfuel.
+  - reflexivity.
+  - simpl. set_solver.
+Qed.
+
+Lemma denot_ty_restrict_fv τ e m :
+  m ⊨ denot_ty τ e →
+  res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ denot_ty τ e.
+Proof.
+  intros Hm.
+  eapply res_models_kripke.
+  - apply res_restrict_mono. apply denot_ty_formula_fv_subset.
+  - apply res_models_restrict_fv. exact Hm.
+Qed.
+
 (** ** Context denotation
 
     [denot_ctx Γ : FQ] is the formula that holds when [Γ] is "satisfied". *)
@@ -171,6 +449,27 @@ Fixpoint denot_ctx (Γ : ctx) : FQ :=
     Denotation ctx FQ := denot_ctx.
 Arguments denot_cty_inst /.
 Arguments denot_ctx_inst /.
+
+Lemma denot_ctx_dom_subset_formula_fv Γ :
+  ctx_dom Γ ⊆ formula_fv (denot_ctx Γ).
+Proof.
+  induction Γ; simpl; try set_solver.
+  intros z Hz. apply elem_of_singleton in Hz. subst.
+  apply denot_ty_result_atom_fv.
+Qed.
+
+Lemma denot_ctx_models_dom Γ m :
+  m ⊨ ⟦Γ⟧ →
+  ctx_dom Γ ⊆ world_dom m.
+Proof.
+  intros Hmodels z Hz.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (denot_ctx Γ)) ∅ m (denot_ctx Γ) Hmodels) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  apply Hscope.
+  pose proof (denot_ctx_dom_subset_formula_fv Γ z Hz).
+  set_solver.
+Qed.
 
 (** With these instances:
       [⟦τ⟧ e]  unfolds to [denot_ty τ e]
@@ -280,3 +579,65 @@ Qed.
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔ m ⊨ denot_ty τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
+
+Lemma denot_ctx_restrict_stale Γ m :
+  m ⊨ ⟦Γ⟧ →
+  res_restrict m (ctx_stale Γ) ⊨ ⟦Γ⟧.
+Proof.
+  induction Γ in m |- *; simpl.
+  - intros _. unfold res_models, res_models_with_store. simpl.
+    split; [unfold formula_scoped_in_world; simpl; set_solver | exact I].
+  - intros Hbind. apply denot_ty_restrict_fv. exact Hbind.
+  - intros Hctx.
+    apply denot_ctx_comma in Hctx as [HΓ1 HΓ2].
+    apply denot_ctx_comma. split.
+    + eapply res_models_kripke; [| exact (IHΓ1 m HΓ1)].
+      apply res_restrict_mono. set_solver.
+    + eapply res_models_kripke; [| exact (IHΓ2 m HΓ2)].
+      apply res_restrict_mono. set_solver.
+  - intros Hctx.
+    apply denot_ctx_star in Hctx as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    apply denot_ctx_star.
+    set (r1 := res_restrict m1 (ctx_stale Γ1)).
+    set (r2 := res_restrict m2 (ctx_stale Γ2)).
+    assert (Hc' : world_compat r1 r2).
+    {
+      subst r1 r2.
+      eapply world_compat_le_l.
+      - apply res_restrict_le.
+      - eapply world_compat_le_r.
+        + apply res_restrict_le.
+        + exact Hc.
+    }
+    exists r1, r2, Hc'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_product_le_mono r1 r2 m1 m2 Hc' Hc);
+             apply res_restrict_le.
+        -- exact Hprod.
+      * subst r1 r2. simpl. set_solver.
+    + split; [apply IHΓ1 | apply IHΓ2]; assumption.
+  - intros Hctx.
+    apply denot_ctx_sum in Hctx as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    apply denot_ctx_sum.
+    set (S := ctx_stale Γ1 ∪ ctx_stale Γ2).
+    set (r1 := res_restrict m1 S).
+    set (r2 := res_restrict m2 S).
+    assert (Hdef' : raw_sum_defined r1 r2).
+    {
+      subst r1 r2 S. unfold raw_sum_defined. simpl.
+      rewrite Hdef. reflexivity.
+    }
+    exists r1, r2, Hdef'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_sum_le_mono r1 r2 m1 m2 Hdef' Hdef);
+             apply res_restrict_le.
+        -- exact Hsum.
+      * subst r1 r2 S. simpl. set_solver.
+    + split.
+      * eapply res_models_kripke; [| exact (IHΓ1 m1 HΓ1)].
+        subst r1 S. apply res_restrict_mono. set_solver.
+      * eapply res_models_kripke; [| exact (IHΓ2 m2 HΓ2)].
+        subst r2 S. apply res_restrict_mono. set_solver.
+Qed.

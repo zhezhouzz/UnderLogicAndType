@@ -790,6 +790,23 @@ Proof.
 	  exact (Hcompat σn σw' Hσn Hσw').
 Qed.
 
+Lemma world_compat_restrict_l_full_r (n m : WfWorld) (S X : aset) :
+  X ⊆ S →
+  world_compat n (res_restrict m S) →
+  world_compat (res_restrict n X) m.
+Proof.
+  intros HXS Hcompat σn σm Hσn Hσm.
+  simpl in Hσn. destruct Hσn as [τn [Hτn Hrestrict]]. subst σn.
+  assert (Hrσm : (res_restrict m S : World) (store_restrict σm S)).
+  { simpl. exists σm. split; [exact Hσm | reflexivity]. }
+  pose proof (Hcompat τn (store_restrict σm S) Hτn Hrσm) as Hstore.
+  apply store_compat_restrict_l_full_r with (X := S).
+  - rewrite store_restrict_dom. set_solver.
+  - apply store_compat_sym.
+    apply store_compat_restrict_r.
+    apply store_compat_sym. exact Hstore.
+Qed.
+
 Lemma world_compat_swap (x y : atom) (w1 w2 : WfWorld) :
   world_compat (res_swap x y w1) (res_swap x y w2) ↔
   world_compat w1 w2.
@@ -922,6 +939,20 @@ Proof.
       * rewrite store_restrict_restrict. reflexivity.
 Qed.
 
+Lemma res_restrict_mono (w : WfWorld) (X Y : aset) :
+  X ⊆ Y →
+  res_restrict w X ⊑ res_restrict w Y.
+Proof.
+  intros HXY.
+  replace (res_restrict w X) with (res_restrict (res_restrict w Y) X).
+  2:{
+    rewrite res_restrict_restrict_eq.
+    replace (Y ∩ X) with X by set_solver.
+    reflexivity.
+  }
+  apply res_restrict_le.
+Qed.
+
 Lemma res_restrict_eq_of_le (m n : WfWorld) :
   m ⊑ n →
   res_restrict n (world_dom (m : World)) = m.
@@ -929,6 +960,26 @@ Proof.
   intros Hle.
   unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
   symmetry. apply wfworld_ext. exact Hle.
+Qed.
+
+Lemma res_le_restrict (m n : WfWorld) (X : aset) :
+  m ⊑ n →
+  world_dom (m : World) ⊆ X →
+  m ⊑ res_restrict n X.
+Proof.
+  intros Hle Hdom.
+  rewrite <- (res_restrict_eq_of_le m n Hle).
+  apply res_restrict_mono. exact Hdom.
+Qed.
+
+Lemma res_restrict_le_mono (m n : WfWorld) (X : aset) :
+  m ⊑ n →
+  res_restrict m X ⊑ res_restrict n X.
+Proof.
+  intros Hle.
+  eapply res_le_restrict.
+  - etrans; [apply res_restrict_le | exact Hle].
+  - simpl. set_solver.
 Qed.
 
 Lemma res_swap_le (x y : atom) (w1 w2 : WfWorld) :
@@ -968,6 +1019,21 @@ Proof.
   rewrite res_restrict_restrict_eq.
   replace (world_dom (m : World) ∩ X) with X by set_solver.
   reflexivity.
+Qed.
+
+Lemma res_restrict_le_eq_from_base
+    (m n : WfWorld) (S X : aset) :
+  res_restrict m S ⊑ n →
+  X ⊆ S →
+  X ⊆ world_dom (m : World) →
+  res_restrict n X = res_restrict m X.
+Proof.
+  intros Hle HXS HXm.
+  rewrite <- (res_restrict_le_eq (res_restrict m S) n X Hle).
+  - rewrite res_restrict_restrict_eq.
+    replace (S ∩ X) with X by set_solver.
+    reflexivity.
+  - simpl. set_solver.
 Qed.
 
 Lemma res_fiber_from_projection_le
@@ -1480,6 +1546,76 @@ Proof.
            set_solver.
         -- pose proof (wfworld_store_dom w2' σ2' Hσ2') as Hdomσ2'.
            set_solver.
+Qed.
+
+Lemma res_product_restrict_wand_le
+    (n m : WfWorld) (S X Y : aset)
+    (Hc_small : world_compat (res_restrict n X) m)
+    (Hc : world_compat n (res_restrict m S)) :
+  Y ⊆ S →
+  Y ⊆ world_dom (m : World) →
+  res_restrict (res_product (res_restrict n X) m Hc_small) Y ⊑
+  res_product n (res_restrict m S) Hc.
+Proof.
+  intros HYS HYm.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+  apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [τ [Hτ Hrestrict]].
+      destruct Hτ as [τn [τm [Hτn [Hτm [Hcompat ->]]]]].
+      simpl in Hτn. destruct Hτn as [σn [Hσn HnX]]. subst τn.
+      assert (Htarget_compat : store_compat σn (store_restrict τm S)).
+      {
+        apply (Hc σn (store_restrict τm S)).
+        - exact Hσn.
+        - simpl. exists τm. split; [exact Hτm | reflexivity].
+      }
+      exists ((σn : StoreT) ∪ (store_restrict τm S : StoreT)). split.
+      * simpl. exists σn, (store_restrict τm S). split; [exact Hσn |].
+        split.
+        -- simpl. exists τm. split; [exact Hτm | reflexivity].
+        -- split; [exact Htarget_compat | reflexivity].
+      * replace (((world_dom (n : World) ∩ X) ∪ world_dom (m : World)) ∩ Y)
+          with Y by set_solver.
+        transitivity (store_restrict ((store_restrict σn X : StoreT) ∪ (τm : StoreT)) Y).
+        -- assert (HYτm : Y ⊆ dom τm).
+           { pose proof (wfworld_store_dom m τm Hτm) as Hdomτm.
+             rewrite Hdomτm. exact HYm. }
+           exact (store_restrict_wand_product σn τm S X Y
+             Hcompat Htarget_compat HYS HYτm).
+        -- exact Hrestrict.
+    + intros [τ [Hτ Hrestrict]].
+      destruct Hτ as [τn [τm [Hτn [Hτm [Hcompat ->]]]]].
+      simpl in Hτm. destruct Hτm as [σm [Hσm HmS]]. subst τm.
+      set (σnX := store_restrict τn X).
+      exists ((σnX : StoreT) ∪ (σm : StoreT)). split.
+      * exists σnX, σm. split.
+        -- subst σnX. simpl. exists τn. split; [exact Hτn | reflexivity].
+        -- split; [exact Hσm |].
+           split.
+           ++ subst σnX. apply (Hc_small (store_restrict τn X) σm).
+              ** simpl. exists τn. split; [exact Hτn | reflexivity].
+              ** exact Hσm.
+           ++ reflexivity.
+      * subst σnX.
+        replace (((world_dom (n : World) ∩ X) ∪ world_dom (m : World)) ∩ Y)
+          with Y in Hrestrict by set_solver.
+        rewrite <- Hrestrict.
+        symmetry.
+        assert (Hsmall_compat : store_compat (store_restrict τn X) σm).
+        {
+          apply (Hc_small (store_restrict τn X) σm).
+          - simpl. exists τn. split; [exact Hτn | reflexivity].
+          - exact Hσm.
+        }
+        assert (HYσm : Y ⊆ dom σm).
+        {
+          pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+          rewrite Hdomσm. exact HYm.
+        }
+        exact (store_restrict_wand_product τn σm S X Y
+          Hsmall_compat Hcompat HYS HYσm).
 Qed.
 
 Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
