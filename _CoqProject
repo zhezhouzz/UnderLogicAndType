@@ -59,5 +59,6 @@ ChoiceTyping/theories/WellFormed.v
 ChoiceTyping/theories/Auxiliary.v
 ChoiceTyping/theories/PrimOpContext.v
 ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/SoundnessHelpers.v
 ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v
