@@ -89,6 +89,7 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
 Lemma expr_let_result_intro_basic Σ X e1 e2 ν :
   body_tm e2 →
   fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
+  X ⊆ dom Σ →
   FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) ⊫
     FExprResult (tlete e1 e2) ν.
 Proof. Admitted.
