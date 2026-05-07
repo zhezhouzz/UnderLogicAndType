@@ -334,6 +334,33 @@ Proof.
     rewrite ?formula_rename_preserves_measure; simpl; lia.
 Qed.
 
+Lemma res_models_fresh_forall_transport
+    (m : WfWorld) (D : aset) (body1 body2 : atom → FormulaQ) :
+  formula_scoped_in_world ∅ m (fresh_forall D body2) →
+  (∀ y m',
+    m' ⊨ formula_rename_atom (fresh_for D) y (body1 (fresh_for D)) →
+    m' ⊨ formula_rename_atom (fresh_for D) y (body2 (fresh_for D))) →
+  m ⊨ fresh_forall D body1 →
+  m ⊨ fresh_forall D body2.
+Proof.
+  intros Hscope Hbody Hm.
+  unfold res_models, res_models_with_store in *.
+  simpl in *.
+  destruct Hm as [_ [L [HL Hforall]]].
+  split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy m' Hdom Hrestr.
+  specialize (Hforall y Hy m' Hdom Hrestr).
+  assert (Hsrc : m' ⊨ formula_rename_atom (fresh_for D) y (body1 (fresh_for D))).
+  {
+    eapply res_models_with_store_fuel_irrel; [| | exact Hforall];
+      rewrite formula_rename_preserves_measure; simpl; lia.
+  }
+  pose proof (Hbody y m' Hsrc) as Htarget.
+  eapply res_models_with_store_fuel_irrel; [| | exact Htarget];
+    rewrite formula_rename_preserves_measure; simpl; lia.
+Qed.
+
 Lemma res_models_exists_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FExists x φ) →
   (∃ L : aset,
