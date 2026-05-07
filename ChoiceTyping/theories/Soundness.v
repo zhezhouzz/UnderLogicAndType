@@ -3,7 +3,7 @@
     Soundness skeleton for the single declarative typing judgment. *)
 
 From ChoiceTyping Require Export Typing.
-From ChoiceType Require Import LocallyNamelessProps.
+From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
 
@@ -23,6 +23,24 @@ Lemma res_models_and_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
 Proof.
   intros Hmodel Hle.
   eapply res_models_kripke; eauto.
+Qed.
+
+Lemma res_models_and_elim_l (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ FAnd φ ψ →
+  m ⊨ φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros [_ [Hφ _]].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_and_elim_r (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ FAnd φ ψ →
+  m ⊨ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros [_ [_ Hψ]].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
 (** Kripke implication elimination at the current world. *)
@@ -78,7 +96,15 @@ Qed.
 Lemma fundamental_var_case Σ (x : atom) (τ : choice_ty) :
   denot_ctx_in_env Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
-Proof. Admitted.
+Proof.
+  intros m Hm.
+  unfold denot_ctx_in_env in Hm.
+  pose proof (res_models_and_elim_r m
+    (basic_world_formula Σ (dom Σ))
+    (denot_ctx_under (erase_ctx_under Σ (CtxBind x τ)) (CtxBind x τ))
+    Hm) as Hbind.
+  exact Hbind.
+Qed.
 
 (** Constants need the first value-adequacy lemma for the new
     basic-world-aware refinement denotation: evaluating [tret c] at a fresh
