@@ -75,13 +75,27 @@ Proof.
   intros m Hm. apply denot_ctx_bind. exact Hm.
 Qed.
 
+(** Constants need the first value-adequacy lemma for the new
+    basic-world-aware refinement denotation: evaluating [tret c] at a fresh
+    result coordinate produces a singleton world satisfying the opened
+    equality qualifier. *)
+Lemma fundamental_const_case c :
+  ⟦CtxEmpty⟧ ⊫ denot_ty_in_ctx CtxEmpty (const_precise_ty c) (tret (vconst c)).
+Proof. Admitted.
+
 (** ** Fundamental theorem *)
 
 Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
   wf_primop_ctx Φ →
   has_choice_type Φ Γ e τ →
   ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ e.
-Proof. Admitted.
+Proof.
+  intros HΦ Hty.
+  induction Hty; eauto using fundamental_var_case, fundamental_const_case.
+  - eapply fundamental_sub_case; eauto.
+  - eapply fundamental_ctx_sub_case; eauto.
+  all: admit.
+Admitted.
 
 (** ** Corollaries
 
