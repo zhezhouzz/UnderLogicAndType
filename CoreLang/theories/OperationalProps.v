@@ -288,6 +288,15 @@ Proof.
   - apply reduction_beta_intro; auto.
 Qed.
 
+Lemma reduction_prim_intro op c c' :
+  prim_step op c c' →
+  tprim op (vconst c) →* tret (vconst c').
+Proof.
+  intros Hop.
+  apply steps_R. apply Step_head. apply HS_Op; [exact Hop |].
+  constructor. constructor.
+Qed.
+
 Lemma reduction_fix Tf vf vx v :
   lc_value vx →
   tapp (vfix Tf vf) vx →* tret v →
