@@ -179,6 +179,34 @@ Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
 
+Lemma ty_env_agree_on_mono X Y Σ1 Σ2 :
+  X ⊆ Y →
+  ty_env_agree_on Y Σ1 Σ2 →
+  ty_env_agree_on X Σ1 Σ2.
+Proof.
+  intros HXY Hagree z Hz. apply Hagree. apply HXY. exact Hz.
+Qed.
+
+Lemma ty_env_agree_on_insert_same X Σ1 Σ2 x T :
+  ty_env_agree_on (X ∖ {[x]}) Σ1 Σ2 →
+  ty_env_agree_on X (<[x := T]> Σ1) (<[x := T]> Σ2).
+Proof.
+  intros Hagree z Hz.
+  destruct (decide (z = x)) as [->|Hne].
+  - rewrite !(lookup_insert_eq _ x T). reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    apply Hagree. set_solver.
+Qed.
+
+Lemma ty_env_agree_on_insert_same_keep X Σ1 Σ2 x T :
+  ty_env_agree_on X Σ1 Σ2 →
+  ty_env_agree_on (X ∪ {[x]}) (<[x := T]> Σ1) (<[x := T]> Σ2).
+Proof.
+  intros Hagree.
+  apply ty_env_agree_on_insert_same.
+  intros z Hz. apply Hagree. set_solver.
+Qed.
+
 Definition formula_equiv (φ ψ : FQ) : Prop :=
   (φ ⊫ ψ) ∧ (ψ ⊫ φ).
 
