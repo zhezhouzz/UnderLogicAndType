@@ -320,6 +320,11 @@ Proof.
   - apply res_models_restrict_fv. exact Hm.
 Qed.
 
+Lemma denot_ty_under_restrict_fv Σ τ e m :
+  m ⊨ denot_ty_under Σ τ e →
+  res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ denot_ty_under Σ τ e.
+Proof. Admitted.
+
 (** ** Context denotation
 
     [denot_ctx_under Σ Γ] is the formula that holds when [Γ] is satisfied
@@ -516,4 +521,61 @@ Proof. reflexivity. Qed.
 Lemma denot_ctx_restrict_stale Γ m :
   m ⊨ ⟦Γ⟧ →
   res_restrict m (ctx_stale Γ) ⊨ ⟦Γ⟧.
-Proof. Admitted.
+Proof.
+  induction Γ in m |- *; simpl.
+  - intros _. unfold res_models, res_models_with_store. simpl.
+    split; [unfold formula_scoped_in_world; simpl; set_solver | exact I].
+  - intros Hbind. apply denot_ty_under_restrict_fv. exact Hbind.
+  - intros Hctx.
+    apply denot_ctx_comma in Hctx as [HΓ1 HΓ2].
+    apply denot_ctx_comma. split.
+    + eapply res_models_kripke; [| exact (IHΓ1 m HΓ1)].
+      apply res_restrict_mono. set_solver.
+    + eapply res_models_kripke; [| exact (IHΓ2 m HΓ2)].
+      apply res_restrict_mono. set_solver.
+  - intros Hctx.
+    apply denot_ctx_star in Hctx as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    apply denot_ctx_star.
+    set (r1 := res_restrict m1 (ctx_stale Γ1)).
+    set (r2 := res_restrict m2 (ctx_stale Γ2)).
+    assert (Hc' : world_compat r1 r2).
+    {
+      subst r1 r2.
+      eapply world_compat_le_l.
+      - apply res_restrict_le.
+      - eapply world_compat_le_r.
+        + apply res_restrict_le.
+        + exact Hc.
+    }
+    exists r1, r2, Hc'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_product_le_mono r1 r2 m1 m2 Hc' Hc);
+             apply res_restrict_le.
+        -- exact Hprod.
+      * subst r1 r2. simpl. set_solver.
+    + split; [apply IHΓ1 | apply IHΓ2]; assumption.
+  - intros Hctx.
+    apply denot_ctx_sum in Hctx as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    apply denot_ctx_sum.
+    set (S := ctx_stale Γ1 ∪ ctx_stale Γ2).
+    set (r1 := res_restrict m1 S).
+    set (r2 := res_restrict m2 S).
+    assert (Hdef' : raw_sum_defined r1 r2).
+    {
+      subst r1 r2 S. unfold raw_sum_defined. simpl.
+      rewrite Hdef. reflexivity.
+    }
+    exists r1, r2, Hdef'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_sum_le_mono r1 r2 m1 m2 Hdef' Hdef);
+             apply res_restrict_le.
+        -- exact Hsum.
+      * subst r1 r2 S. simpl. set_solver.
+    + split.
+      * eapply res_models_kripke; [| exact (IHΓ1 m1 HΓ1)].
+        subst r1 S. apply res_restrict_mono. set_solver.
+      * eapply res_models_kripke; [| exact (IHΓ2 m2 HΓ2)].
+        subst r2 S. apply res_restrict_mono. set_solver.
+Qed.
