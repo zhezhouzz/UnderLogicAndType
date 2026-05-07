@@ -738,6 +738,17 @@ Proof.
   - intros s Hs. simpl in Hs. subst. reflexivity.
 Qed.
 
+Lemma res_swap_singleton_world (x y : atom) (σ : StoreT) :
+  (res_swap x y (exist _ (singleton_world σ) (wf_singleton_world σ)) : World) =
+  singleton_world (store_swap x y σ).
+Proof.
+  apply world_ext.
+  - simpl. symmetry. apply store_swap_dom.
+  - intros τ. simpl. split.
+    + intros [σ0 [-> ->]]. reflexivity.
+    + intros ->. exists σ. split; reflexivity.
+Qed.
+
 Lemma res_restrict_fiber_from_projection_dom_singleton
     (w : WfWorld) (X : aset) (σ : StoreT)
     (Hproj : res_restrict w X σ) :

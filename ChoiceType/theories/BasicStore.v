@@ -87,6 +87,117 @@ Proof.
   rewrite (basic_world_lqual_agree Σ1 Σ2 X Hagree). reflexivity.
 Qed.
 
+Lemma lookup_insert_atom_swap_fresh_l
+    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) z :
+  x ∉ X →
+  y ∉ X →
+  z ∈ {[y]} ∪ X →
+  (<[x := T]> Σ) !! atom_swap x y z = (<[y := T]> Σ) !! z.
+Proof.
+  intros Hx Hy Hz.
+  destruct (decide (z = y)) as [->|Hzy].
+  - replace (atom_swap x y y) with x
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite !lookup_insert_eq. reflexivity.
+  - assert (HzX : z ∈ X) by set_solver.
+    assert (Hzx : z ≠ x) by set_solver.
+    rewrite atom_swap_fresh by congruence.
+    rewrite !lookup_insert_ne by congruence.
+    reflexivity.
+Qed.
+
+Lemma lookup_insert_atom_swap_fresh_r
+    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) z :
+  x ∉ X →
+  y ∉ X →
+  z ∈ {[x]} ∪ X →
+  (<[y := T]> Σ) !! atom_swap x y z = (<[x := T]> Σ) !! z.
+Proof.
+  intros Hx Hy Hz.
+  destruct (decide (z = x)) as [->|Hzx].
+  - replace (atom_swap x y x) with y
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite !lookup_insert_eq. reflexivity.
+  - assert (HzX : z ∈ X) by set_solver.
+    assert (Hzy : z ≠ y) by set_solver.
+    rewrite atom_swap_fresh by congruence.
+    rewrite !lookup_insert_ne by congruence.
+    reflexivity.
+Qed.
+
+Lemma store_has_type_on_swap_insert_fresh
+    (Σ : gmap atom ty) (X : aset) (σ : Store) (x y : atom) (T : ty) :
+  x ∉ X →
+  y ∉ X →
+  store_has_type_on (<[x := T]> Σ) ({[x]} ∪ X) (store_swap x y σ) ↔
+  store_has_type_on (<[y := T]> Σ) ({[y]} ∪ X) σ.
+Proof.
+  intros Hx Hy. split.
+  - intros Htyped z Tz v Hz HΣ Hσ.
+    eapply Htyped with (x := atom_swap x y z); eauto.
+    + destruct (decide (z = y)) as [->|Hzy].
+      * replace (atom_swap x y y) with x
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        set_solver.
+      * rewrite atom_swap_fresh by set_solver.
+        set_solver.
+    + rewrite (lookup_insert_atom_swap_fresh_l Σ X x y T z Hx Hy Hz).
+      exact HΣ.
+    + rewrite store_swap_lookup. exact Hσ.
+  - intros Htyped z Tz v Hz HΣ Hσ.
+    eapply Htyped with (x := atom_swap x y z); eauto.
+    + destruct (decide (z = x)) as [->|Hzx].
+      * replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        set_solver.
+      * rewrite atom_swap_fresh by set_solver.
+        set_solver.
+    + rewrite (lookup_insert_atom_swap_fresh_r Σ X x y T z Hx Hy Hz).
+      exact HΣ.
+    + rewrite <- store_swap_lookup_inv. exact Hσ.
+Qed.
+
+Lemma world_has_type_on_swap_insert_fresh
+    (Σ : gmap atom ty) (X : aset) (w : WfWorld) (x y : atom) (T : ty) :
+  x ∉ X →
+  y ∉ X →
+  world_has_type_on (<[x := T]> Σ) ({[x]} ∪ X) (res_swap x y w) ↔
+  world_has_type_on (<[y := T]> Σ) ({[y]} ∪ X) w.
+Proof.
+  intros Hx Hy. split.
+  - intros [Hdom Htyped]. split.
+    + simpl in Hdom.
+      rewrite elem_of_subseteq. intros z Hz.
+      assert (Hzswap : atom_swap x y z ∈ {[x]} ∪ X).
+      {
+        destruct (decide (z = y)) as [->|Hzy].
+        - replace (atom_swap x y y) with x
+            by (unfold atom_swap; repeat destruct decide; congruence).
+          set_solver.
+        - rewrite atom_swap_fresh by set_solver.
+          set_solver.
+      }
+      apply Hdom in Hzswap.
+      simpl in Hzswap. rewrite elem_of_aset_swap in Hzswap.
+      rewrite atom_swap_involutive in Hzswap. exact Hzswap.
+    + intros σ Hσ.
+      apply (proj1 (store_has_type_on_swap_insert_fresh Σ X σ x y T Hx Hy)).
+      apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+  - intros [Hdom Htyped]. split.
+    + simpl. rewrite elem_of_subseteq. intros z Hz.
+      rewrite elem_of_aset_swap.
+      destruct (decide (z = x)) as [->|Hzx].
+      * replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        set_solver.
+      * rewrite atom_swap_fresh by set_solver.
+        set_solver.
+    + intros σ Hσ.
+      simpl in Hσ. destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
+      apply (proj2 (store_has_type_on_swap_insert_fresh Σ X σ0 x y T Hx Hy)).
+      apply Htyped. exact Hσ0.
+Qed.
+
 Lemma basic_world_formula_current Σ X m :
   res_models m (basic_world_formula Σ X) →
   world_has_type_on Σ X (res_restrict m X).
