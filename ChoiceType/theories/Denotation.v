@@ -12,7 +12,7 @@
     the typing rules and the fundamental theorem. *)
 
 From LocallyNameless Require Import Tactics.
-From CoreLang Require Import Instantiation InstantiationProps.
+From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps.
 From ChoiceType Require Export Syntax.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -87,6 +87,20 @@ Proof. Admitted.
 Lemma expr_let_result_elim e1 e2 ν :
   FExprResult (tlete e1 e2) ν ⊫ FLetResult e1 e2 ν.
 Proof. Admitted.
+
+Lemma FExprResult_fv e ν :
+  formula_fv (FExprResult e ν) = fv_tm e ∪ {[ν]}.
+Proof. reflexivity. Qed.
+
+Lemma FLetResult_fv_subset e1 e2 ν :
+  formula_fv (FLetResult e1 e2 ν) ⊆ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}.
+Proof.
+  unfold FLetResult, FExprResult.
+  set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
+  simpl. unfold stale, stale_logic_qualifier. simpl.
+  pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+  set_solver.
+Qed.
 
 Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
   closed_env ρ →
