@@ -478,6 +478,11 @@ Proof.
       * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
 Qed.
 
+Lemma denot_ctx_under_bind Σ x τ m :
+  m ⊨ denot_ctx_under Σ (CtxBind x τ) ↔
+  m ⊨ denot_ty_under Σ τ (tret (vfvar x)).
+Proof. reflexivity. Qed.
+
 (** The public context denotation uses each context's own erased environment.
     These wrappers require environment-locality facts to bridge from the
     ambient environment of the compound context to the standalone subcontext
