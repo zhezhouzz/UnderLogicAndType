@@ -97,6 +97,36 @@ Proof.
   right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_or_intro_l_from_model (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ φ →
+  formula_fv ψ ⊆ world_dom (m : World) →
+  m ⊨ FOr φ ψ.
+Proof.
+  intros Hφ Hψscope.
+  eapply res_models_or_intro_l.
+  - unfold formula_scoped_in_world. simpl.
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure φ) ∅ m φ Hφ) as Hscopeφ.
+    unfold formula_scoped_in_world in Hscopeφ.
+    set_solver.
+  - exact Hφ.
+Qed.
+
+Lemma res_models_or_intro_r_from_model (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_fv φ ⊆ world_dom (m : World) →
+  m ⊨ ψ →
+  m ⊨ FOr φ ψ.
+Proof.
+  intros Hφscope Hψ.
+  eapply res_models_or_intro_r.
+  - unfold formula_scoped_in_world. simpl.
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure ψ) ∅ m ψ Hψ) as Hscopeψ.
+    unfold formula_scoped_in_world in Hscopeψ.
+    set_solver.
+  - exact Hψ.
+Qed.
+
 Lemma res_models_star_intro
     (m m1 m2 : WfWorld) (φ ψ : FormulaQ) (Hc : world_compat m1 m2) :
   formula_scoped_in_world ∅ m (FStar φ ψ) →
@@ -171,6 +201,18 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
+Lemma res_models_over_intro_same_from_model (m : WfWorld) (φ : FormulaQ) :
+  m ⊨ φ →
+  m ⊨ FOver φ.
+Proof.
+  intros Hφ.
+  eapply res_models_over_intro_same.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure φ) ∅ m φ Hφ) as Hscope.
+    unfold formula_scoped_in_world in *. simpl. exact Hscope.
+  - exact Hφ.
+Qed.
+
 Lemma res_models_under_intro_same (m : WfWorld) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FUnder φ) →
   m ⊨ φ →
@@ -192,6 +234,18 @@ Proof.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_under_intro_same_from_model (m : WfWorld) (φ : FormulaQ) :
+  m ⊨ φ →
+  m ⊨ FUnder φ.
+Proof.
+  intros Hφ.
+  eapply res_models_under_intro_same.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure φ) ∅ m φ Hφ) as Hscope.
+    unfold formula_scoped_in_world in *. simpl. exact Hscope.
+  - exact Hφ.
 Qed.
 
 Lemma res_models_fib_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
