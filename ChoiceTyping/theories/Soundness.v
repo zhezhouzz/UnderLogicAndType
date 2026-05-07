@@ -56,6 +56,56 @@ Proof.
   - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_or_intro_l (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FOr φ ψ) →
+  m ⊨ φ →
+  m ⊨ FOr φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  left. eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_or_intro_r (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FOr φ ψ) →
+  m ⊨ ψ →
+  m ⊨ FOr φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hψ. split; [exact Hscope |].
+  right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
+Lemma res_models_star_intro
+    (m m1 m2 : WfWorld) (φ ψ : FormulaQ) (Hc : world_compat m1 m2) :
+  formula_scoped_in_world ∅ m (FStar φ ψ) →
+  res_product m1 m2 Hc ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  m ⊨ FStar φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hle Hφ Hψ. split; [exact Hscope |].
+  exists m1, m2, Hc. split; [exact Hle |]. split.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
+Lemma res_models_plus_intro
+    (m m1 m2 : WfWorld) (φ ψ : FormulaQ) (Hdef : raw_sum_defined m1 m2) :
+  formula_scoped_in_world ∅ m (FPlus φ ψ) →
+  res_sum m1 m2 Hdef ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  m ⊨ FPlus φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hle Hφ Hψ. split; [exact Hscope |].
+  exists m1, m2, Hdef. split; [exact Hle |]. split.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
 Lemma res_models_atom_intro (m : WfWorld) (q : logic_qualifier) :
   formula_scoped_in_world ∅ m (FAtom q) →
   logic_qualifier_denote q ∅ m →
