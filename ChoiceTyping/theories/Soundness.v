@@ -43,6 +43,19 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_and_intro (m : WfWorld) (φ ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FAnd φ ψ) →
+  m ⊨ φ →
+  m ⊨ ψ →
+  m ⊨ FAnd φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ Hψ. split; [exact Hscope |].
+  split.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
 (** Kripke implication elimination at the current world. *)
 Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FImpl φ ψ →
@@ -345,6 +358,107 @@ Lemma denot_ctx_comma_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
   m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
 Proof. apply denot_ctx_under_comma. Qed.
+
+Lemma denot_ctx_in_env_comma_agree Σ Γ1 Γ2 m :
+  ty_env_agree_on (ctx_stale Γ1)
+    (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1) →
+  ty_env_agree_on (ctx_stale Γ2)
+    (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2) →
+  m ⊨ denot_ctx_in_env Σ (CtxComma Γ1 Γ2) ↔
+  m ⊨ denot_ctx_in_env Σ Γ1 ∧ m ⊨ denot_ctx_in_env Σ Γ2.
+Proof.
+  intros Hagree1 Hagree2.
+  unfold denot_ctx_in_env.
+  split.
+  - intros Hm.
+    pose proof (res_models_and_elim_l m
+      (basic_world_formula Σ (dom Σ))
+      (denot_ctx_under (erase_ctx_under Σ (CtxComma Γ1 Γ2))
+        (CtxComma Γ1 Γ2)) Hm) as Hbasic.
+    pose proof (res_models_and_elim_r m
+      (basic_world_formula Σ (dom Σ))
+      (denot_ctx_under (erase_ctx_under Σ (CtxComma Γ1 Γ2))
+        (CtxComma Γ1 Γ2)) Hm) as Hctx.
+    apply denot_ctx_under_comma in Hctx as [HΓ1 HΓ2].
+    split.
+    + eapply res_models_and_intro.
+      * unfold formula_scoped_in_world in *. simpl in *.
+        pose proof (res_models_with_store_fuel_scoped _
+          ∅ m (basic_world_formula Σ (dom Σ)) Hbasic).
+        destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
+          Γ1 Hagree1) as [Hequiv _].
+        pose proof (Hequiv m HΓ1) as HΓ1'.
+        pose proof (res_models_with_store_fuel_scoped _
+          ∅ m (denot_ctx_under (erase_ctx_under Σ Γ1) Γ1) HΓ1').
+        set_solver.
+      * exact Hbasic.
+      * destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
+          Γ1 Hagree1) as [Hequiv _].
+        apply Hequiv. exact HΓ1.
+    + eapply res_models_and_intro.
+      * unfold formula_scoped_in_world in *. simpl in *.
+        pose proof (res_models_with_store_fuel_scoped _
+          ∅ m (basic_world_formula Σ (dom Σ)) Hbasic).
+        destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
+          Γ2 Hagree2) as [Hequiv _].
+        pose proof (Hequiv m HΓ2) as HΓ2'.
+        pose proof (res_models_with_store_fuel_scoped _
+          ∅ m (denot_ctx_under (erase_ctx_under Σ Γ2) Γ2) HΓ2').
+        set_solver.
+      * exact Hbasic.
+      * destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
+          Γ2 Hagree2) as [Hequiv _].
+        apply Hequiv. exact HΓ2.
+  - intros [HΓ1 HΓ2].
+    pose proof (res_models_and_elim_l m
+      (basic_world_formula Σ (dom Σ))
+      (denot_ctx_under (erase_ctx_under Σ Γ1) Γ1) HΓ1) as Hbasic.
+    pose proof (res_models_and_elim_r m
+      (basic_world_formula Σ (dom Σ))
+      (denot_ctx_under (erase_ctx_under Σ Γ1) Γ1) HΓ1) as Hctx1.
+    pose proof (res_models_and_elim_r m
+      (basic_world_formula Σ (dom Σ))
+      (denot_ctx_under (erase_ctx_under Σ Γ2) Γ2) HΓ2) as Hctx2.
+    eapply res_models_and_intro.
+    + unfold formula_scoped_in_world in *. simpl in *.
+      pose proof (res_models_with_store_fuel_scoped _
+        ∅ m (basic_world_formula Σ (dom Σ)) Hbasic) as Hscope_basic.
+      destruct (denot_ctx_under_env_equiv
+        (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
+        Γ1 Hagree1) as [_ H1].
+      destruct (denot_ctx_under_env_equiv
+        (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
+        Γ2 Hagree2) as [_ H2].
+      pose proof (H1 m Hctx1) as Hctx1'.
+      pose proof (H2 m Hctx2) as Hctx2'.
+      pose proof (proj2 (denot_ctx_under_comma
+        (erase_ctx_under Σ (CtxComma Γ1 Γ2)) Γ1 Γ2 m)
+        (conj Hctx1' Hctx2')) as Hcomma.
+      pose proof (res_models_with_store_fuel_scoped _
+        ∅ m (denot_ctx_under (erase_ctx_under Σ (CtxComma Γ1 Γ2))
+          (CtxComma Γ1 Γ2)) Hcomma) as Hscope_comma.
+      intros z Hz.
+      rewrite dom_empty_L in Hz.
+      apply elem_of_union in Hz as [Hzempty | Hz].
+      { exfalso. set_solver. }
+      apply elem_of_union in Hz as [Hzbasic | Hzcomma].
+      * apply Hscope_basic. apply elem_of_union. right. exact Hzbasic.
+      * apply Hscope_comma. apply elem_of_union. right. exact Hzcomma.
+    + exact Hbasic.
+    + apply denot_ctx_under_comma. split.
+      * destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
+          Γ1 Hagree1) as [_ Hequiv].
+        apply Hequiv. exact Hctx1.
+      * destruct (denot_ctx_under_env_equiv
+          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
+          Γ2 Hagree2) as [_ Hequiv].
+        apply Hequiv. exact Hctx2.
+Qed.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
