@@ -192,7 +192,63 @@ Lemma fundamental_appop_case (Φ : primop_ctx) Σ Γ op x :
     denot_ty_in_ctx_under Σ Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) →
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
-Proof. Admitted.
+Proof.
+  intros Hwf Hchoice Harg m HΓ.
+  set (sig := Φ op).
+  set (τarg := primop_arg_ty sig).
+  set (τres := primop_result_ty sig).
+  pose proof (wf_primop_semantic op (Φ op) Hwf x) as [Hop _].
+  assert (Harg_empty : fv_cty τarg ⊆ ∅).
+  {
+    subst τarg sig.
+    eapply basic_choice_ty_fv_subset.
+    apply wf_primop_sig_arg_basic with (op := op). exact Hwf.
+  }
+  assert (Harg_single :
+    m ⊨ denot_ty_in_ctx (CtxBind x τarg) τarg (tret (vfvar x))).
+  {
+    destruct (denot_ty_under_env_equiv
+      (erase_ctx_under Σ Γ) (erase_ctx (CtxBind x τarg)) τarg
+      (tret (vfvar x))) as [Henv _].
+    { intros z Hz. pose proof (Harg_empty z Hz). set_solver. }
+    apply Henv. subst τarg sig. apply Harg. exact HΓ.
+  }
+  assert (Hsingle_ctx : m ⊨ ⟦CtxBind x τarg⟧).
+  { apply denot_ctx_bind. exact Harg_single. }
+  pose proof (Hop m Hsingle_ctx) as Hres_single.
+  assert (Hx_lookup : erase_ctx_under Σ Γ !! x = Some (erase_ty τarg)).
+  {
+    destruct Hchoice as [_ Herase].
+    subst τarg τres sig.
+    simpl in Herase.
+    inversion Herase; subst.
+    pose proof (wf_primop_sig_erased_bases op (Φ op) Hwf) as HopErase.
+    rewrite HopErase in H3. inversion H3; subst.
+    inversion H4; subst. simpl. exact H1.
+  }
+  assert (Hres_fv : fv_cty ({0 ~> x} τres) ⊆ {[x]}).
+  {
+    pose proof (cty_open_fv_subset 0 x τres) as Hopen.
+    assert (fv_cty τres ⊆ ∅).
+    {
+      subst τres sig.
+      eapply basic_choice_ty_fv_subset.
+      apply wf_primop_sig_result_basic with (op := op). exact Hwf.
+    }
+    set_solver.
+  }
+  destruct (denot_ty_under_env_equiv
+    (erase_ctx (CtxBind x τarg)) (erase_ctx_under Σ Γ) ({0 ~> x} τres)
+    (tprim op (vfvar x))) as [Hres_env _].
+  {
+    intros z Hz.
+    pose proof (Hres_fv z Hz) as Hzx.
+    apply elem_of_singleton in Hzx. subst z.
+    subst τarg. simpl in Hx_lookup. simpl.
+    rewrite lookup_singleton_eq. symmetry. exact Hx_lookup.
+  }
+  subst τres sig. apply Hres_env. exact Hres_single.
+Qed.
 
 Lemma fundamental_match_both_case (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
   (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) →
