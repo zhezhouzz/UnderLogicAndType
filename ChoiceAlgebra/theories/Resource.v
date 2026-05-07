@@ -749,6 +749,14 @@ Proof.
     + intros ->. exists σ. split; reflexivity.
 Qed.
 
+Lemma res_swap_singleton_wfworld (x y : atom) (σ : StoreT) :
+  res_swap x y (exist _ (singleton_world σ) (wf_singleton_world σ)) =
+  exist _ (singleton_world (store_swap x y σ))
+    (wf_singleton_world (store_swap x y σ)).
+Proof.
+  apply wfworld_ext. apply res_swap_singleton_world.
+Qed.
+
 Lemma res_restrict_fiber_from_projection_dom_singleton
     (w : WfWorld) (X : aset) (σ : StoreT)
     (Hproj : res_restrict w X σ) :

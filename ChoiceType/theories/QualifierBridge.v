@@ -7,6 +7,8 @@
     Choice Logic world structure. *)
 
 From ChoiceType Require Export Qualifier.
+From ChoiceType Require Import QualifierProps.
+From Stdlib Require Import Logic.PropExtensionality.
 
 (** Lift a type-level store predicate into a logic atom.
 
@@ -23,3 +25,47 @@ Definition lift_type_qualifier_to_logic (q : type_qualifier) : logic_qualifier :
 Lemma lqual_dom_lift_type_qualifier_to_logic q :
   lqual_dom (lift_type_qualifier_to_logic q) = qual_dom q.
 Proof. destruct q; reflexivity. Qed.
+
+Lemma logic_qualifier_denote_lift_swap x y q σ w :
+  logic_qualifier_denote
+    (lqual_swap x y (lift_type_qualifier_to_logic q)) σ w ↔
+  logic_qualifier_denote
+    (lift_type_qualifier_to_logic (qual_swap_atom x y q)) σ w.
+Proof.
+  destruct q as [B d p]. simpl.
+  split.
+  - intros [HB [σw [Hw Hp]]]. split; [exact HB |].
+    exists (store_swap x y σw). split.
+    + assert (Hwf : res_swap x y (res_restrict w (aset_swap x y d)) =
+          exist _ (singleton_world σw) (wf_singleton_world σw)).
+      { apply wfworld_ext. exact Hw. }
+      apply (f_equal (res_swap x y)) in Hwf.
+      rewrite res_swap_involutive in Hwf.
+      rewrite res_swap_singleton_wfworld in Hwf.
+      exact (f_equal raw_world Hwf).
+    + rewrite store_swap_involutive. exact Hp.
+  - intros [HB [σw [Hw Hp]]]. split; [exact HB |].
+    exists (store_swap x y σw). split.
+    + assert (Hwf : res_restrict w (aset_swap x y d) =
+          exist _ (singleton_world σw) (wf_singleton_world σw)).
+      { apply wfworld_ext. exact Hw. }
+      apply (f_equal (res_swap x y)) in Hwf.
+      rewrite res_swap_singleton_wfworld in Hwf.
+      exact (f_equal raw_world Hwf).
+    + exact Hp.
+Qed.
+
+Lemma logic_qualifier_denote_lift_open_swap_fresh k x y q σ w :
+  k ∈ qual_bvars q →
+  x ∉ qual_dom q →
+  y ∉ qual_dom q →
+  logic_qualifier_denote
+    (lqual_swap x y (lift_type_qualifier_to_logic (qual_open_atom k x q))) σ w ↔
+  logic_qualifier_denote
+    (lift_type_qualifier_to_logic (qual_open_atom k y q)) σ w.
+Proof.
+  intros Hk Hx Hy.
+  rewrite logic_qualifier_denote_lift_swap.
+  rewrite (qual_open_atom_swap_fresh k x y q Hk Hx Hy).
+  reflexivity.
+Qed.
