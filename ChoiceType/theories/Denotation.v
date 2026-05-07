@@ -176,6 +176,21 @@ Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
 Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx Γ) τ e.
 
+Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
+  ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
+
+Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
+Proof. Admitted.
+
+Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
+Proof.
+  unfold denot_ty_in_ctx. apply denot_ty_under_env_agree.
+Qed.
+
 (** ** Denotation scoping regularity
 
     These syntactic facts isolate the variable-accounting needed by semantic
