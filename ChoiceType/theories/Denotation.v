@@ -80,42 +80,39 @@ Proof.
   inversion Hsteps. subst. exact Hν.
 Qed.
 
-Lemma expr_logic_qual_ret_const_lookup c ν m :
-  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
-  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
+Lemma expr_logic_qual_ret_closed_value_lookup v ν m :
+  stale v = ∅ →
+  m ⊨ FAtom (expr_logic_qual (tret v) ν) →
+  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some v.
 Proof.
-  unfold res_models, res_models_with_store. simpl.
-  intros [_ [m0 [Hqual Hle]]] σ Hσ.
-  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
-  change (stale (tret (vconst c))) with (∅ : aset) in Hqual.
-  replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
+  intros Hvclosed Hmodel σ Hσ.
+  unfold res_models, res_models_with_store in Hmodel. simpl in Hmodel.
+  destruct Hmodel as [_ [m0 [Hqual Hle]]].
   assert (Hνm0 : {[ν]} ⊆ world_dom (m0 : World)).
   {
     destruct (wf_ne _ (world_wf (res_restrict m0 {[ν]}))) as [σ0 Hσ0].
-    destruct (Hqual σ0 Hσ0) as [v [Hlook _]].
+    pose proof (expr_logic_qual_ret_closed_value_denote_lookup
+      v ν m0 σ0 Hvclosed Hqual Hσ0) as Hν.
     pose proof (wfworld_store_dom (res_restrict m0 {[ν]}) σ0 Hσ0) as Hdomσ0.
     intros z Hz. apply elem_of_singleton in Hz. subst z.
     assert (Hνdomσ0 : ν ∈ dom σ0).
-    { apply elem_of_dom. eexists. exact Hlook. }
+    { apply elem_of_dom. eexists. exact Hν. }
     rewrite Hdomσ0 in Hνdomσ0. simpl in Hνdomσ0. set_solver.
   }
   assert (Hrestrict_eq : res_restrict m {[ν]} = res_restrict m0 {[ν]}).
   { symmetry. apply res_restrict_le_eq; [exact Hle | exact Hνm0]. }
   assert (Hσm0 : (res_restrict m0 {[ν]} : World) σ).
   { rewrite <- Hrestrict_eq. exact Hσ. }
-  destruct (Hqual σ Hσm0) as [v [Hlook Hsteps]].
-  assert (Hv : v = vconst c).
-  {
-    change (subst_map (store_restrict ∅ {[ν]}) (tret c))
-      with (msubst (store_restrict ∅ {[ν]}) (tret (vconst c))) in Hsteps.
-    rewrite msubst_fresh in Hsteps by set_solver.
-    change (subst_map σ (tret c))
-      with (msubst σ (tret (vconst c))) in Hsteps.
-    rewrite msubst_fresh in Hsteps by set_solver.
-    apply val_steps_self in Hsteps.
-    inversion Hsteps. reflexivity.
-  }
-  subst v. exact Hlook.
+  exact (expr_logic_qual_ret_closed_value_denote_lookup
+    v ν m0 σ Hvclosed Hqual Hσm0).
+Qed.
+
+Lemma expr_logic_qual_ret_const_lookup c ν m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
+Proof.
+  apply expr_logic_qual_ret_closed_value_lookup.
+  reflexivity.
 Qed.
 
 Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
