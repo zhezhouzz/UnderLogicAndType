@@ -57,6 +57,29 @@ Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
         σw !! ν = Some v ∧
         subst_map σw (subst_map σ e) →* tret v).
 
+Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
+  stale v = ∅ →
+  logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
+  (res_restrict w {[ν]} : World) σ →
+  σ !! ν = Some v.
+Proof.
+  intros Hvclosed Hqual Hσ.
+  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
+  change (stale (tret v)) with (stale v) in Hqual.
+  rewrite Hvclosed in Hqual.
+  replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
+  destruct (Hqual σ Hσ) as [v' [Hν Hsteps]].
+  change (subst_map (store_restrict ∅ {[ν]}) (tret v))
+    with (m{store_restrict ∅ {[ν]}} (tret v)) in Hsteps.
+  rewrite store_restrict_empty in Hsteps.
+  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  change (subst_map σ (tret v)) with (m{σ} (tret v)) in Hsteps.
+  rewrite msubst_fresh in Hsteps by (change (dom σ ∩ stale v = ∅); rewrite Hvclosed; set_solver).
+  apply val_steps_self in Hsteps.
+  inversion Hsteps. subst. exact Hν.
+Qed.
+
 Lemma expr_logic_qual_ret_const_lookup c ν m :
   m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
