@@ -157,6 +157,34 @@ Proof.
   exact (typing_value_lc _ _ _ Hvalue).
 Qed.
 
+Lemma basic_world_formula_store_closed_env Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  (res_restrict m X : World) σ →
+  closed_env σ.
+Proof.
+  intros Hbasic HXΣ Hσ.
+  eapply (store_has_type_on_closed_env Σ X σ).
+  - pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
+    simpl in Hdom. set_solver.
+  - exact HXΣ.
+  - eapply basic_world_formula_store_typed; eauto.
+Qed.
+
+Lemma basic_world_formula_store_lc_env Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  (res_restrict m X : World) σ →
+  lc_env σ.
+Proof.
+  intros Hbasic HXΣ Hσ.
+  eapply (store_has_type_on_lc_env Σ X σ).
+  - pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
+    simpl in Hdom. set_solver.
+  - exact HXΣ.
+  - eapply basic_world_formula_store_typed; eauto.
+Qed.
+
 Lemma store_has_type_on_insert_self Σ X σ x T v :
   store_has_type_on (<[x := T]> Σ) X σ →
   x ∈ X →
