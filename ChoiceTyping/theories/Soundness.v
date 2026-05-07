@@ -57,6 +57,24 @@ Proof.
   - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_and_intro_from_models (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ φ →
+  m ⊨ ψ →
+  m ⊨ FAnd φ ψ.
+Proof.
+  intros Hφ Hψ.
+  eapply res_models_and_intro.
+  - unfold formula_scoped_in_world. simpl.
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure φ) ∅ m φ Hφ) as Hscopeφ.
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure ψ) ∅ m ψ Hψ) as Hscopeψ.
+    unfold formula_scoped_in_world in *.
+    set_solver.
+  - exact Hφ.
+  - exact Hψ.
+Qed.
+
 Lemma res_models_or_intro_l (m : WfWorld) (φ ψ : FormulaQ) :
   formula_scoped_in_world ∅ m (FOr φ ψ) →
   m ⊨ φ →
