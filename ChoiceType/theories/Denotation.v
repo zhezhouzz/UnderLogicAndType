@@ -404,6 +404,57 @@ Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
 Proof. Admitted.
 
+Lemma denot_ty_fuel_formula_fv_env_agree gas D Σ1 Σ2 τ e :
+  formula_fv (denot_ty_fuel gas D Σ1 τ e) =
+  formula_fv (denot_ty_fuel gas D Σ2 τ e).
+Proof.
+  revert D Σ1 Σ2 τ e.
+  induction gas as [|gas IH]; intros D Σ1 Σ2 τ e; [reflexivity |].
+  destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
+  - unfold fresh_forall.
+    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (φν := qual_open_atom 0 ν φ).
+    reflexivity.
+  - unfold fresh_forall.
+    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (φν := qual_open_atom 0 ν φ).
+    reflexivity.
+  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
+  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
+  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
+  - unfold fresh_forall.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    set (Dx := {[y]} ∪ Dy).
+    set (x := fresh_for Dx).
+    set (D2 := {[x]} ∪ Dx).
+    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+      τx (tret (vfvar x))).
+    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+      ({0 ~> x} τ) (tapp (vfvar y) (vfvar x))).
+    reflexivity.
+  - unfold fresh_forall.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    set (Dx := {[y]} ∪ Dy).
+    set (x := fresh_for Dx).
+    set (D2 := {[x]} ∪ Dx).
+    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+      τx (tret (vfvar x))).
+    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+      ({0 ~> x} τ) (tapp (vfvar y) (vfvar x))).
+    reflexivity.
+Qed.
+
+Lemma denot_ty_under_formula_fv_subset Σ τ e :
+  formula_fv (denot_ty_under Σ τ e) ⊆ fv_tm e ∪ fv_cty τ.
+Proof.
+  unfold denot_ty_under, denot_ty_avoiding.
+  rewrite (denot_ty_fuel_formula_fv_env_agree
+    (cty_measure τ) (fv_cty τ ∪ fv_tm e) Σ ∅ τ e).
+  exact (denot_ty_formula_fv_subset τ e).
+Qed.
+
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
 Proof.
@@ -494,7 +545,12 @@ Qed.
 Lemma denot_ty_under_restrict_fv Σ τ e m :
   m ⊨ denot_ty_under Σ τ e →
   res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ denot_ty_under Σ τ e.
-Proof. Admitted.
+Proof.
+  intros Hm.
+  eapply res_models_kripke.
+  - apply res_restrict_mono. apply denot_ty_under_formula_fv_subset.
+  - apply res_models_restrict_fv. exact Hm.
+Qed.
 
 (** ** Context denotation
 
