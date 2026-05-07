@@ -24,6 +24,58 @@ Proof.
   eapply res_models_kripke; eauto.
 Qed.
 
+(** Kripke implication elimination at the current world. *)
+Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
+  m ⊨ FImpl φ ψ →
+  m ⊨ φ →
+  m ⊨ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros [_ Himpl] Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ) (formula_measure φ + formula_measure ψ)
+    ∅ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
+  pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+Qed.
+
+(** The semantic-subtyping case of the fundamental theorem. *)
+Lemma fundamental_sub_case
+    (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
+  choice_typing_wf Γ e τ2 →
+  sub_type Γ τ1 τ2 →
+  (⟦Γ⟧ ⊫ ⟦τ1⟧ e) →
+  ⟦Γ⟧ ⊫ ⟦τ2⟧ e.
+Proof.
+  intros Hwf Hsub IH m HΓ.
+  destruct Hsub as [_ [_ [_ Hent]]].
+  pose proof (choice_typing_wf_fv_tm_subset Γ e τ2 Hwf) as Hfv.
+  pose proof (Hent e Hfv m HΓ) as Himpl.
+  eapply res_models_impl_elim; [exact Himpl |].
+  apply IH. exact HΓ.
+Qed.
+
+(** The context-subtyping case of the fundamental theorem. *)
+Lemma fundamental_ctx_sub_case
+    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
+  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
+  (⟦Γ2⟧ ⊫ ⟦τ⟧ e) →
+  ⟦Γ1⟧ ⊫ ⟦τ⟧ e.
+Proof.
+  intros Hsub IH m HΓ1.
+  destruct Hsub as [_ [_ Hrestrict]].
+  eapply res_models_kripke.
+  - apply res_restrict_le.
+  - apply IH. apply Hrestrict. exact HΓ1.
+Qed.
+
+(** The variable case is exactly the singleton context denotation. *)
+Lemma fundamental_var_case (x : atom) (τ : choice_ty) :
+  ⟦CtxBind x τ⟧ ⊫ ⟦τ⟧ (tret (vfvar x)).
+Proof.
+  intros m Hm. exact Hm.
+Qed.
+
 (** ** Fundamental theorem *)
 
 Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
