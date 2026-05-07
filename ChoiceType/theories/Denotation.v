@@ -218,6 +218,75 @@ Proof.
     + pose proof (msubst_fv ρ e Hρ) as Hfv. set_solver.
 Qed.
 
+Lemma expr_logic_qual_renamed_open_steps e x y ν ρ w σw vx :
+  x ∉ stale e →
+  y ∉ stale e →
+  ν ≠ x →
+  ν ≠ y →
+  closed_env ρ →
+  lc_env ρ →
+  ρ !! y = Some vx →
+  closed_env σw →
+  stale vx = ∅ →
+  lc_value vx →
+  logic_qualifier_denote (lqual_swap x y (expr_logic_qual (e ^^ x) ν)) ρ w →
+  (res_restrict w (aset_swap x y (stale (e ^^ x) ∪ {[ν]})) : World) σw →
+  ∃ v, σw !! ν = Some v ∧
+    steps (m{σw} (open_tm 0 vx (m{delete y ρ} e))) (tret v).
+Proof.
+  intros Hxe Hye Hνx Hνy Hρ Hlcρ Hlookup Hσw Hvx_closed Hvx_lc Hq Hproj.
+  apply logic_qualifier_denote_swap in Hq.
+  assert (Hproj_swap :
+    (res_restrict (res_swap x y w) (stale (e ^^ x) ∪ {[ν]}) : World)
+      (store_swap x y σw)).
+  {
+    replace (stale (e ^^ x) ∪ {[ν]})
+      with (aset_swap x y (aset_swap x y (stale (e ^^ x) ∪ {[ν]}))).
+    - apply res_restrict_swap_projection. exact Hproj.
+    - rewrite aset_swap_involutive. reflexivity.
+  }
+  unfold logic_qualifier_denote, expr_logic_qual in Hq. simpl in Hq.
+  destruct (Hq (store_swap x y σw) Hproj_swap) as [v [Hν Hsteps]].
+  exists v. split.
+  - rewrite store_swap_lookup_inv in Hν.
+    rewrite atom_swap_fresh in Hν by congruence.
+    exact Hν.
+  - assert (Hinner :
+      m{store_restrict (store_swap x y ρ) (stale (e ^^ x) ∪ {[ν]})}
+        (e ^^ x) =
+      m{ρ} (e ^^ y)).
+    {
+      rewrite (msubst_restrict (store_swap x y ρ)
+        (stale (e ^^ x) ∪ {[ν]}) (e ^^ x))
+        by (try apply closed_env_store_swap; try exact Hρ; set_solver).
+      apply (msubst_open_lookup_swap_tm ρ e 0 x y vx); eauto.
+    }
+    assert (Hopen :
+      m{ρ} (e ^^ y) = open_tm 0 vx (m{delete y ρ} e)).
+    { apply msubst_open_lookup_tm; eauto. }
+    change (steps
+      (m{store_swap x y σw}
+        (m{store_restrict (store_swap x y ρ) (stale (e ^^ x) ∪ {[ν]})}
+          (e ^^ x)))
+      (tret v)) in Hsteps.
+    rewrite Hinner, Hopen in Hsteps.
+    rewrite (msubst_store_swap_fresh tm x y σw
+      (open_tm 0 vx (m{delete y ρ} e))) in Hsteps.
+    + exact Hsteps.
+    + exact Hσw.
+    + pose proof (msubst_fv (delete y ρ) e (closed_env_delete ρ y Hρ)) as Hfv.
+      pose proof (open_fv_tm e vx 0) as Hopen_fv.
+      pose proof (open_fv_tm (m{delete y ρ} e) vx 0) as Hopen_msubst_fv.
+      change (fv_value vx) with (stale vx) in Hopen_msubst_fv.
+      rewrite Hvx_closed in Hopen_msubst_fv.
+      set_solver.
+    + pose proof (msubst_fv (delete y ρ) e (closed_env_delete ρ y Hρ)) as Hfv.
+      pose proof (open_fv_tm (m{delete y ρ} e) vx 0) as Hopen_msubst_fv.
+      change (fv_value vx) with (stale vx) in Hopen_msubst_fv.
+      rewrite Hvx_closed in Hopen_msubst_fv.
+      set_solver.
+Qed.
+
 Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   stale v = ∅ →
   logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
