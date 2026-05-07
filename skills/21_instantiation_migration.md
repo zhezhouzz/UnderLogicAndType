@@ -13,6 +13,7 @@ This repo now has a CoreLang instantiation layer modeled after UnderType/HATs:
   - `MsubstInsert`,
   - `MsubstFresh`,
   - `MsubstFv`,
+  - `MsubstRestrict`,
   - `MsubstOpen`,
   - `MsubstOpenVar`,
   - `MsubstIntro`,
@@ -25,6 +26,9 @@ This repo now has a CoreLang instantiation layer modeled after UnderType/HATs:
   `m{<[x := v]> σ} e = {x := v} (m{σ} e)`.
 - Use `msubst_fresh` when `dom σ` is disjoint from the free variables of the
   target.
+- Use `msubst_restrict` when a denotation has restricted the explicit store
+  to a domain containing the target's free variables:
+  `m{map_restrict value σ X} e = m{σ} e`.
 - Use `msubst_open_var` for the common LN case where opening uses a fresh
   variable:
   `m{σ} ({k ~> vfvar x} e) = {k ~> vfvar x} (m{σ} e)`.
@@ -82,6 +86,36 @@ the closedness of the looked-up value.
 
 At the ChoiceType layer, `store_has_type_on_closed_env` is the intended bridge
 from basic store typing to `closed_env`.
+
+## Restriction Locality
+
+Prefer `map_restrict value σ X` in CoreLang instantiation lemmas.  The more
+semantic `store_restrict` wrapper is useful in ChoicePrelude/ChoiceAlgebra, but
+inside generic `map_fold` proofs it can leave Rocq trying to infer finite-map
+instances for the `Store` type alias instead of the concrete `gmap`.
+
+The useful proof shape for restriction locality is:
+
+```coq
+refine (fin_maps.map_fold_ind (fun (σ : env) => ...) _ _ σ).
+```
+
+Keep the `(σ : env)` annotation; without it, `store_restrict`/`Store` aliases
+can make instance search drift.  In the insert case, split on `x ∈ X`.
+
+- If `x ∈ X`, rewrite the restricted insert with `map_filter_insert_True`,
+  then use `msubst_insert` on the restricted environment.
+- If `x ∉ X`, rewrite with `map_filter_insert_not`, use the induction
+  hypothesis, and finish with `subst_fresh`; `msubst_fv` plus `stale a ⊆ X`
+  gives the freshness side condition.
+
+For the restricted environment's freshness side condition, proving lookup-none
+directly is often simpler than rewriting domains:
+
+```coq
+unfold map_restrict.
+apply map_lookup_filter_None_2. left. exact Hfresh.
+```
 
 ## Design Boundary
 

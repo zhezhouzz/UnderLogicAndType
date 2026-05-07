@@ -748,6 +748,24 @@ Proof.
   apply map_lookup_filter_Some_2; [exact Hlookup | exact Hin].
 Qed.
 
+Lemma store_restrict_insert_in s X x v :
+  x ∈ X →
+  store_restrict (<[x := v]> s) X =
+  <[x := v]> (store_restrict s X).
+Proof.
+  intros Hx. unfold store_restrict, map_restrict.
+  apply map_filter_insert_True. exact Hx.
+Qed.
+
+Lemma store_restrict_insert_notin s X x v :
+  x ∉ X →
+  store_restrict (<[x := v]> s) X =
+  store_restrict s X.
+Proof.
+  intros Hx. unfold store_restrict, map_restrict.
+  apply map_filter_insert_not. intros vi. exact Hx.
+Qed.
+
 Lemma store_restrict_union_partition s X Y :
   dom s ⊆ X ∪ Y →
   X ∩ Y = ∅ →

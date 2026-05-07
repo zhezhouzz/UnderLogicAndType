@@ -28,6 +28,16 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hclosed Hlookup).
 Qed.
 
+Lemma closed_env_restrict σ X :
+  closed_env σ ->
+  closed_env (map_restrict value σ X).
+Proof.
+  unfold closed_env. intros Hclosed.
+  apply map_Forall_lookup_2. intros x v Hlookup.
+  apply map_restrict_lookup_some in Hlookup as [_ Hlookup].
+  exact (map_Forall_lookup_1 _ _ _ _ Hclosed Hlookup).
+Qed.
+
 Definition lc_env (σ : env) : Prop :=
   map_Forall (fun _ v => is_lc v) σ.
 
@@ -268,6 +278,82 @@ Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstFv_tm : MsubstFv tm.
 Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
+
+Class MsubstRestrict A `{Stale A} `{SubstV value A} := msubst_restrict :
+  forall (σ : env) (X : aset) (a : A),
+    closed_env σ ->
+    stale a ⊆ X ->
+    m{map_restrict value σ X} a = m{σ} a.
+
+Lemma MsubstRestrict_all
+    (A : Type)
+    (staleA : Stale A)
+    (substA : SubstV value A)
+    (subst_freshA : @SubstFresh A staleA substA)
+    (msubst_insertA : @MsubstInsert A substA)
+    (msubst_fvA : @MsubstFv A staleA substA) :
+  @MsubstRestrict A staleA substA.
+Proof.
+  unfold MsubstRestrict.
+  intros σ X a Hclosed HaX.
+  unfold msubst at 2.
+  revert Hclosed.
+  refine (fin_maps.map_fold_ind
+    (fun (σ : env) =>
+      closed_env σ ->
+      map_fold (fun x vx acc => {x := vx} acc) a
+        (map_restrict value σ X) =
+      map_fold (fun x vx acc => {x := vx} acc) a σ) _ _ σ).
+  - replace (map_restrict value (∅ : env) X) with (∅ : env)
+      by (symmetry; apply map_restrict_idemp; set_solver).
+    reflexivity.
+  - intros x vx σ' Hfresh Hfold IH Hclosed'.
+    destruct (closed_env_insert σ' x vx Hfresh Hclosed') as [Hvx Hclosedσ].
+    rewrite Hfold.
+    destruct (decide (x ∈ X)) as [Hx | Hx].
+    + unfold map_restrict at 1.
+      rewrite map_filter_insert_True by exact Hx.
+      fold (map_restrict value σ' X).
+      change (m{<[x := vx]> (map_restrict value σ' X)} a =
+              {x := vx} (m{σ'} a)).
+      assert (map_restrict value σ' X !! x = None) as Hfresh_restrict.
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None_2. left. exact Hfresh.
+      }
+      rewrite msubst_insert by
+        (try exact (closed_env_restrict σ' X Hclosedσ);
+         try exact Hvx; exact Hfresh_restrict).
+      assert (HIH : m{map_restrict value σ' X} a = m{σ'} a).
+      { change (map_fold (fun x vx acc => {x := vx} acc) a
+          (map_restrict value σ' X) =
+          map_fold (fun x vx acc => {x := vx} acc) a σ').
+        exact (IH Hclosedσ). }
+      change ({x := vx} (m{map_restrict value σ' X} a) =
+              {x := vx} (m{σ'} a)).
+      rewrite HIH.
+      reflexivity.
+    + unfold map_restrict at 1.
+      rewrite map_filter_insert_not by (intros vi; exact Hx).
+      fold (map_restrict value σ' X).
+      assert (HIH : m{map_restrict value σ' X} a = m{σ'} a).
+      { change (map_fold (fun x vx acc => {x := vx} acc) a
+          (map_restrict value σ' X) =
+          map_fold (fun x vx acc => {x := vx} acc) a σ').
+        exact (IH Hclosedσ). }
+      change (m{map_restrict value σ' X} a =
+              {x := vx} (m{σ'} a)).
+      rewrite HIH.
+      symmetry. apply subst_freshA.
+      pose proof (msubst_fv σ' a Hclosedσ) as Hfv.
+      set_solver.
+Qed.
+
+#[global] Instance MsubstRestrict_value : MsubstRestrict value.
+Proof. eapply MsubstRestrict_all; typeclasses eauto. Qed.
+
+#[global] Instance MsubstRestrict_tm : MsubstRestrict tm.
+Proof. eapply MsubstRestrict_all; typeclasses eauto. Qed.
 
 Class MsubstOpen A `{Open value A} `{SubstV value A} := msubst_open :
   forall (a : A) (k : nat) (u : value) (σ : env),
