@@ -83,6 +83,104 @@ Lemma fundamental_const_case c :
   ⟦CtxEmpty⟧ ⊫ denot_ty_in_ctx CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof. Admitted.
 
+Lemma fundamental_let_case (Φ : primop_ctx) Γ τ1 τ2 e1 e2 (L : aset) :
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ1 e1) →
+  (∀ x, x ∉ L →
+    ⟦CtxComma Γ (CtxBind x τ1)⟧ ⊫
+      denot_ty_in_ctx (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ2 (tlete e1 e2).
+Proof. Admitted.
+
+Lemma fundamental_letd_case (Φ : primop_ctx) Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
+  (⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ1 e1) →
+  (∀ x, x ∉ L →
+    ⟦CtxStar Γ2 (CtxBind x τ1)⟧ ⊫
+      denot_ty_in_ctx (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  ⟦CtxStar Γ1 Γ2⟧ ⊫
+    denot_ty_in_ctx (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
+Proof. Admitted.
+
+Lemma fundamental_lam_case (Φ : primop_ctx) Γ τx τ e (L : aset) :
+  (∀ y, y ∉ L →
+    ⟦CtxComma Γ (CtxBind y τx)⟧ ⊫
+      denot_ty_in_ctx (CtxComma Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
+  ⟦Γ⟧ ⊫
+    denot_ty_in_ctx Γ (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
+Proof. Admitted.
+
+Lemma fundamental_lamd_case (Φ : primop_ctx) Γ τx τ e (L : aset) :
+  (∀ y, y ∉ L →
+    ⟦CtxStar Γ (CtxBind y τx)⟧ ⊫
+      denot_ty_in_ctx (CtxStar Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
+  ⟦Γ⟧ ⊫
+    denot_ty_in_ctx Γ (CTWand τx τ) (tret (vlam (erase_ty τx) e)).
+Proof. Admitted.
+
+Lemma fundamental_app_case (Φ : primop_ctx) Γ τx τ v1 x :
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (CTArrow τx τ) (tret v1)) →
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τx (tret (vfvar x))) →
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
+Proof. Admitted.
+
+Lemma fundamental_appd_case (Φ : primop_ctx) Γ1 Γ2 τx τ v1 x :
+  (⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 (CTWand τx τ) (tret v1)) →
+  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τx (tret (vfvar x))) →
+  ⟦CtxStar Γ1 Γ2⟧ ⊫
+    denot_ty_in_ctx (CtxStar Γ1 Γ2) ({0 ~> x} τ) (tapp v1 (vfvar x)).
+Proof. Admitted.
+
+Lemma fundamental_fix_case (Φ : primop_ctx) Γ τx τ vf (L : aset) :
+  (∀ y, y ∉ L →
+    ⟦CtxComma Γ (CtxBind y τx)⟧ ⊫
+      denot_ty_in_ctx (CtxComma Γ (CtxBind y τx))
+        (CTArrow (CTArrow τx τ) ({0 ~> y} τ))
+        (tret ({0 ~> vfvar y} vf))) →
+  ⟦Γ⟧ ⊫
+    denot_ty_in_ctx Γ (CTArrow τx τ)
+      (tret (vfix (erase_ty (CTArrow τx τ)) vf)).
+Proof. Admitted.
+
+Lemma fundamental_fixd_case (Φ : primop_ctx) Γ τx τ vf (L : aset) :
+  (∀ y, y ∉ L →
+    ⟦CtxStar Γ (CtxBind y τx)⟧ ⊫
+      denot_ty_in_ctx (CtxStar Γ (CtxBind y τx))
+        (CTWand (CTWand τx τ) ({0 ~> y} τ))
+        (tret ({0 ~> vfvar y} vf))) →
+  ⟦Γ⟧ ⊫
+    denot_ty_in_ctx Γ (CTWand τx τ)
+      (tret (vfix (erase_ty (CTWand τx τ)) vf)).
+Proof. Admitted.
+
+Lemma fundamental_appop_case (Φ : primop_ctx) Γ op x :
+  wf_primop_sig op (Φ op) →
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) →
+  ⟦Γ⟧ ⊫
+    denot_ty_in_ctx Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
+Proof. Admitted.
+
+Lemma fundamental_match_both_case (Φ : primop_ctx) Γt Γf v τt τf et ef :
+  (⟦Γt⟧ ⊫ denot_ty_in_ctx Γt (bool_precise_ty true) (tret v)) →
+  (⟦Γf⟧ ⊫ denot_ty_in_ctx Γf (bool_precise_ty false) (tret v)) →
+  (⟦Γt⟧ ⊫ denot_ty_in_ctx Γt τt et) →
+  (⟦Γf⟧ ⊫ denot_ty_in_ctx Γf τf ef) →
+  ⟦CtxSum Γt Γf⟧ ⊫
+    denot_ty_in_ctx (CtxSum Γt Γf) (CTSum τt τf) (tmatch v et ef).
+Proof. Admitted.
+
+Lemma fundamental_match_true_case (Φ : primop_ctx) Γ v τ et ef :
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (bool_precise_ty true) (tret v)) →
+  branch_unreachable Γ v false →
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ et) →
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ (tmatch v et ef).
+Proof. Admitted.
+
+Lemma fundamental_match_false_case (Φ : primop_ctx) Γ v τ et ef :
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (bool_precise_ty false) (tret v)) →
+  branch_unreachable Γ v true →
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ ef) →
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ (tmatch v et ef).
+Proof. Admitted.
+
 (** ** Fundamental theorem *)
 
 Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
@@ -94,8 +192,19 @@ Proof.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
-  all: admit.
-Admitted.
+  - eapply fundamental_let_case; eauto.
+  - eapply fundamental_letd_case; eauto.
+  - eapply fundamental_lam_case; eauto.
+  - eapply fundamental_lamd_case; eauto.
+  - eapply fundamental_app_case; eauto.
+  - eapply fundamental_appd_case; eauto.
+  - eapply fundamental_fix_case; eauto.
+  - eapply fundamental_fixd_case; eauto.
+  - eapply fundamental_appop_case; eauto.
+  - eapply fundamental_match_both_case; eauto.
+  - eapply fundamental_match_true_case; eauto.
+  - eapply fundamental_match_false_case; eauto.
+Qed.
 
 (** ** Corollaries
 
