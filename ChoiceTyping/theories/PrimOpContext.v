@@ -43,9 +43,10 @@ Definition primop_erasure_ok (op : prim_op) (sig : primop_sig) : Prop :=
     its argument context. *)
 Definition primop_semantic_ok (op : prim_op) (sig : primop_sig) : Prop :=
   ∀ x : atom,
+    let Γx := CtxBind x (primop_arg_ty sig) in
     (⟦CtxBind x (primop_arg_ty sig)⟧ ⊫
-      ⟦{0 ~> x} (primop_result_ty sig)⟧ (tprim op (vfvar x))) ∧
-    (⟦{0 ~> x} (primop_result_ty sig)⟧ (tprim op (vfvar x)) ⊫
+      denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x))) ∧
+    (denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x)) ⊫
       ⟦CtxBind x (primop_arg_ty sig)⟧).
 
 Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {

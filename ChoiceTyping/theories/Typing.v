@@ -16,7 +16,7 @@ Definition choice_typing_wf (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
   wf_choice_ty Γ τ ∧ erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 
 Definition branch_unreachable (Γ : ctx) (v : value) (b : bool) : Prop :=
-  ⟦Γ⟧ ⊫ FImpl (⟦bool_precise_ty b⟧ (tret v)) FFalse.
+  ⟦Γ⟧ ⊫ FImpl (denot_ty_in_ctx Γ (bool_precise_ty b) (tret v)) FFalse.
 
 Lemma choice_typing_wf_fv_tm_subset Γ e τ :
   choice_typing_wf Γ e τ →

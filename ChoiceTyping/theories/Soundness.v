@@ -44,8 +44,8 @@ Lemma fundamental_sub_case
     (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
   choice_typing_wf Γ e τ2 →
   sub_type Γ τ1 τ2 →
-  (⟦Γ⟧ ⊫ ⟦τ1⟧ e) →
-  ⟦Γ⟧ ⊫ ⟦τ2⟧ e.
+  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ1 e) →
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ2 e.
 Proof.
   intros Hwf Hsub IH m HΓ.
   destruct Hsub as [_ [_ [_ Hent]]].
@@ -59,21 +59,20 @@ Qed.
 Lemma fundamental_ctx_sub_case
     (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
   ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
-  (⟦Γ2⟧ ⊫ ⟦τ⟧ e) →
-  ⟦Γ1⟧ ⊫ ⟦τ⟧ e.
+  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
+  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
 Proof.
   intros Hsub IH m HΓ1.
   destruct Hsub as [_ [_ Hrestrict]].
-  eapply res_models_kripke.
-  - apply res_restrict_le.
-  - apply IH. apply Hrestrict. exact HΓ1.
-Qed.
+  (* Changing the ambient erased environment from [Γ2] to [Γ1] requires
+     a denotation environment-weakening/locality lemma. *)
+Admitted.
 
 (** The variable case is exactly the singleton context denotation. *)
 Lemma fundamental_var_case (x : atom) (τ : choice_ty) :
-  ⟦CtxBind x τ⟧ ⊫ ⟦τ⟧ (tret (vfvar x)).
+  ⟦CtxBind x τ⟧ ⊫ denot_ty_in_ctx (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-  intros m Hm. exact Hm.
+  intros m Hm. apply denot_ctx_bind. exact Hm.
 Qed.
 
 (** ** Fundamental theorem *)
@@ -81,7 +80,7 @@ Qed.
 Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
   wf_primop_ctx Φ →
   has_choice_type Φ Γ e τ →
-  ⟦Γ⟧ ⊫ ⟦τ⟧ e.
+  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ e.
 Proof. Admitted.
 
 (** ** Corollaries

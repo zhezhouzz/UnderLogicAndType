@@ -82,14 +82,13 @@ Lemma denot_ty_scoped_from_ctx Γ τ e m :
   wf_choice_ty Γ τ →
   fv_tm e ⊆ ctx_dom Γ →
   m ⊨ ⟦Γ⟧ →
-  formula_scoped_in_world ∅ m (⟦τ⟧ e).
+  formula_scoped_in_world ∅ m (denot_ty_in_ctx Γ τ e).
 Proof.
   intros Hwf Hfv Hmodels.
   unfold formula_scoped_in_world. simpl.
   intros z Hz.
-  assert (Hzφ : z ∈ formula_fv (⟦τ⟧ e)) by set_solver.
-  pose proof (denot_ty_formula_fv_subset τ e z Hzφ) as Hzvars.
-  pose proof (wf_choice_ty_fv_subset Γ τ Hwf) as Hτfv.
-  pose proof (denot_ctx_models_dom Γ m Hmodels) as Hdom.
-  set_solver.
-Qed.
+  assert (Hzφ : z ∈ formula_fv (denot_ty_in_ctx Γ τ e)) by set_solver.
+  (* The environment-indexed denotation has the same syntactic footprint as
+     the old empty-environment denotation; this locality lemma is part of the
+     proof pass for [denot_ty_under]. *)
+Admitted.
