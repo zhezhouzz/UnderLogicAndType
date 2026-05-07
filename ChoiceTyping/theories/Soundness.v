@@ -3,6 +3,7 @@
     Soundness skeleton for the single declarative typing judgment. *)
 
 From ChoiceTyping Require Export SoundnessHelpers.
+From CoreLang Require Import LocallyNamelessProps.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma basic_const_world_from_expr_atom c ν Σ m :
@@ -420,7 +421,18 @@ Proof.
   - apply fundamental_const_under_case. exact HΓ.
 Qed.
 
+Lemma choice_typing_wf_let_body Σ Γ e1 e2 τ :
+  choice_typing_wf Σ Γ (tlete e1 e2) τ →
+  body_tm e2.
+Proof.
+  intros [_ Herase].
+  apply typing_tm_lc in Herase.
+  apply lc_lete_iff_body in Herase as [_ Hbody].
+  exact Hbody.
+Qed.
+
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
     denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
@@ -429,6 +441,7 @@ Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
 Proof. Admitted.
 
 Lemma fundamental_letd_case (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
+  choice_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) →
   (∀ x, x ∉ L →
     denot_ctx_in_env Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
