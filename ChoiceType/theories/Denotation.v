@@ -160,21 +160,19 @@ Qed.
     direction is contravariant because type denotations use expression results
     as implication antecedents. *)
 Definition expr_result_refines (e_to e_from : tm) : Prop :=
-  ∀ x y,
-    formula_rename_atom x y (FExprResult e_to x) ⊫
-    formula_rename_atom x y (FExprResult e_from x).
-
-Lemma expr_result_refines_refl e :
-  expr_result_refines e e.
-Proof. intros x y m Hm. exact Hm. Qed.
+  ∀ x_to x_from y,
+    formula_rename_atom x_to y (FExprResult e_to x_to) ⊫
+    formula_rename_atom x_from y (FExprResult e_from x_from).
 
 Lemma expr_result_refines_trans e3 e2 e1 :
   expr_result_refines e3 e2 →
   expr_result_refines e2 e1 →
   expr_result_refines e3 e1.
 Proof.
-  intros H32 H21 x y m Hm.
-  apply H21. apply H32. exact Hm.
+  intros H32 H21 x3 x1 y m Hm.
+  eapply (H21 y x1 y).
+  eapply (H32 x3 y y).
+  exact Hm.
 Qed.
 
 (** Formula-level result-set view for [let].
