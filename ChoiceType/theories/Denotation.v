@@ -57,6 +57,37 @@ Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
         σw !! ν = Some v ∧
         subst_map σw (subst_map σ e) →* tret v).
 
+Definition FExprResult (e : tm) (ν : atom) : FQ :=
+  FAtom (expr_logic_qual e ν).
+
+(** Formula-level result-set view for [let].
+
+    [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
+    obtained by choosing an intermediate coordinate [x], evaluating [e1] into
+    [x], and then evaluating the opened body in the [x]-fiber.  This is the
+    Choice Logic form of the operational result-set decomposition
+
+      [tlete e1 e2 ⇓ ν] iff ∃x. [e1 ⇓ x] and [e2[x] ⇓ ν].
+
+    The representative [x] is chosen fresh for the two expressions and the
+    final coordinate; [FExists]'s cofinite semantics later interprets the
+    representative by any sufficiently fresh atom. *)
+Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
+  let x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
+  FExists x
+    (FAnd
+      (FExprResult e1 x)
+      (FFib x (FExprResult (e2 ^^ x) ν))).
+
+Lemma expr_let_result_intro e1 e2 ν :
+  body_tm e2 →
+  FLetResult e1 e2 ν ⊫ FExprResult (tlete e1 e2) ν.
+Proof. Admitted.
+
+Lemma expr_let_result_elim e1 e2 ν :
+  FExprResult (tlete e1 e2) ν ⊫ FLetResult e1 e2 ν.
+Proof. Admitted.
+
 Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
   closed_env ρ →
   stale e ⊆ X →
