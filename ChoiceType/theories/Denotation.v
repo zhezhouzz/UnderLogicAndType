@@ -153,26 +153,11 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
       (FExprResult e1 x)
       (FFib x (FExprResult (e2 ^^ x) ν))).
 
-(** The pure [FLetResult] formula is not by itself enough to compose the
-    operational [let] step: the bridge from an intermediate coordinate [x] to
-    the real value substituted into the body uses multi-substitution lemmas
-    whose hypotheses require closed/lc store values.  The fundamental theorem
-    obtains those facts from the basic-world component of the context
-    denotation, so the formula-level rule records that precondition
-    explicitly. *)
-Lemma expr_let_result_intro_basic Σ X e1 e2 ν :
-  body_tm e2 →
-  fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
-  X ⊆ dom Σ →
-  FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) ⊫
-    FExprResult (tlete e1 e2) ν.
-Proof. Admitted.
-
-Lemma expr_let_result_elim_basic Σ X e1 e2 ν :
-  fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
-  FAnd (basic_world_formula Σ X) (FExprResult (tlete e1 e2) ν) ⊫
-    FLetResult e1 e2 ν.
-Proof. Admitted.
+(** [FLetResult] remains a useful auxiliary formula for examples and local
+    decompositions, but the operational bridge for [tlete] is handled at the
+    Rocq predicate level by [expr_result_in_world_let_elim] and
+    [expr_result_in_world_let_intro].  This avoids forcing a precise
+    expression-result relation through [FAtom]'s upward-closed semantics. *)
 
 Lemma FExprResult_fv e ν :
   formula_fv (FExprResult e ν) = fv_tm e ∪ {[ν]}.
