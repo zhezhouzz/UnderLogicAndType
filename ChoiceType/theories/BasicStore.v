@@ -124,3 +124,35 @@ Proof.
   intros Htyped Hσ Hx Hlook.
   eapply store_has_type_on_insert_self; eauto.
 Qed.
+
+Lemma store_has_type_on_restrict Σ X Y σ :
+  store_has_type_on Σ X σ →
+  store_has_type_on Σ (X ∩ Y) (store_restrict σ Y).
+Proof.
+  intros Htyped z T v Hz HΣ Hlookup.
+  apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+  eapply Htyped; eauto. set_solver.
+Qed.
+
+Lemma world_has_type_on_restrict Σ X Y w :
+  world_has_type_on Σ X w →
+  world_has_type_on Σ (X ∩ Y) (res_restrict w Y).
+Proof.
+  intros Htyped σ Hσ.
+  simpl in Hσ.
+  destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+  subst σ.
+  apply store_has_type_on_restrict.
+  apply Htyped. exact Hσ0.
+Qed.
+
+Lemma world_has_type_on_restrict_mono Σ X Y w :
+  X ⊆ Y →
+  world_has_type_on Σ X w →
+  world_has_type_on Σ X (res_restrict w Y).
+Proof.
+  intros HXY Htyped.
+  eapply (world_has_type_on_mono Σ X (X ∩ Y)).
+  - intros z Hz. apply elem_of_intersection. split; [exact Hz | set_solver].
+  - apply world_has_type_on_restrict. exact Htyped.
+Qed.
