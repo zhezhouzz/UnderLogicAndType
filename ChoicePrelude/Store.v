@@ -150,6 +150,28 @@ Proof.
   rewrite atom_swap_involutive. reflexivity.
 Qed.
 
+Lemma aset_swap_fresh x y X :
+  x ∉ X →
+  y ∉ X →
+  aset_swap x y X = X.
+Proof.
+  intros Hx Hy. apply set_eq. intros z.
+  rewrite elem_of_aset_swap.
+  split; intros Hz.
+  - destruct (decide (z = x)) as [Hzx_eq|Hzx].
+    { subst z. unfold atom_swap in Hz.
+      destruct (decide (x = x)) as [_|Hxx]; [|congruence].
+      exfalso. apply Hy. exact Hz. }
+    destruct (decide (z = y)) as [Hzy_eq|Hzy].
+    { subst z. unfold atom_swap in Hz.
+      destruct (decide (y = x)) as [Hyx|_].
+      - subst y. exfalso. apply Hx. exact Hz.
+      - destruct (decide (y = y)) as [_|Hyy]; [|congruence].
+        exfalso. apply Hx. exact Hz. }
+    rewrite atom_swap_fresh in Hz by congruence. exact Hz.
+  - rewrite atom_swap_fresh by set_solver. exact Hz.
+Qed.
+
 Lemma aset_swap_union x y X Y :
   aset_swap x y (X ∪ Y) = aset_swap x y X ∪ aset_swap x y Y.
 Proof.
