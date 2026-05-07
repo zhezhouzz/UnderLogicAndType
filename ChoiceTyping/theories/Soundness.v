@@ -351,6 +351,8 @@ Proof. Admitted.
 (** ** Structural soundness lemmas *)
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
+  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
+  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof. apply denot_ctx_comma. Qed.
 
@@ -461,6 +463,8 @@ Proof.
 Qed.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
+  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
+  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) →
   m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
   ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
     res_product m1 m2 Hc ⊑ m ∧
