@@ -479,6 +479,19 @@ Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
 #[global] Instance MsubstIntro_tm : MsubstIntro tm.
 Proof. eapply MsubstIntro_all; typeclasses eauto. Qed.
 
+Lemma msubst_intro_open_tm e k vx x σ :
+  closed_env σ ->
+  stale vx = ∅ ->
+  lc_value vx ->
+  lc_env σ ->
+  x ∉ dom σ ∪ fv_tm e ->
+  m{<[x := vx]> σ} (open_tm k (vfvar x) e) =
+  open_tm k vx (m{σ} e).
+Proof.
+  intros Hclosed Hvx_closed Hvx_lc Hlc_env Hfresh.
+  symmetry. apply msubst_intro; eauto.
+Qed.
+
 Class MsubstLc A `{SubstV value A} `{Lc A} := msubst_lc :
   forall (σ : env) (a : A),
     lc_env σ ->
@@ -512,6 +525,19 @@ Proof. eapply MsubstLc_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstLc_tm : MsubstLc tm.
 Proof. eapply MsubstLc_all; typeclasses eauto. Qed.
+
+Lemma body_tm_msubst σ e :
+  closed_env σ ->
+  lc_env σ ->
+  body_tm e ->
+  body_tm (m{σ} e).
+Proof.
+  intros Hclosed Hlc_env [L Hbody].
+  exists (L ∪ dom σ). intros x Hx.
+  rewrite <- msubst_open_var by (try exact Hclosed; try exact Hlc_env; set_solver).
+  apply msubst_lc; [exact Hlc_env |].
+  apply Hbody. set_solver.
+Qed.
 
 Ltac msubst_simp :=
   repeat match goal with
