@@ -57,6 +57,58 @@ Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
         σw !! ν = Some v ∧
         subst_map σw (subst_map σ e) →* tret v).
 
+Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
+  closed_env ρ →
+  stale e ⊆ X →
+  logic_qualifier_denote (expr_logic_qual e ν) (map_restrict value ρ X) w ↔
+  logic_qualifier_denote (expr_logic_qual e ν) ρ w.
+Proof.
+  intros Hclosed HeX.
+  unfold logic_qualifier_denote, expr_logic_qual. simpl.
+  assert (Hleft :
+    m{store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})} e =
+    m{ρ} e).
+  {
+    rewrite <- (msubst_restrict ρ X e Hclosed HeX).
+    apply msubst_restrict.
+    - apply closed_env_restrict. exact Hclosed.
+    - set_solver.
+  }
+  assert (Hright :
+    m{store_restrict ρ (stale e ∪ {[ν]})} e =
+    m{ρ} e).
+  {
+    apply msubst_restrict; [exact Hclosed | set_solver].
+  }
+  split.
+  - intros Hq σw Hσw.
+    specialize (Hq σw Hσw) as [v [Hν Hsteps]].
+    exists v. split; [exact Hν |].
+    change (subst_map σw
+      (subst_map (store_restrict ρ (stale e ∪ {[ν]})) e) →* tret v).
+    change (subst_map σw
+      (subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e)
+      →* tret v) in Hsteps.
+    change (subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e)
+      with (m{store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})} e) in Hsteps.
+    change (subst_map (store_restrict ρ (stale e ∪ {[ν]})) e)
+      with (m{store_restrict ρ (stale e ∪ {[ν]})} e).
+    rewrite Hleft in Hsteps. rewrite Hright. exact Hsteps.
+  - intros Hq σw Hσw.
+    specialize (Hq σw Hσw) as [v [Hν Hsteps]].
+    exists v. split; [exact Hν |].
+    change (subst_map σw
+      (subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e)
+      →* tret v).
+    change (subst_map σw
+      (subst_map (store_restrict ρ (stale e ∪ {[ν]})) e) →* tret v) in Hsteps.
+    change (subst_map (store_restrict ρ (stale e ∪ {[ν]})) e)
+      with (m{store_restrict ρ (stale e ∪ {[ν]})} e) in Hsteps.
+    change (subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e)
+      with (m{store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})} e).
+    rewrite Hright in Hsteps. rewrite Hleft. exact Hsteps.
+Qed.
+
 Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   stale v = ∅ →
   logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
