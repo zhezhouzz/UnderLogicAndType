@@ -302,6 +302,40 @@ Proof.
       * exact Hatom.
 Qed.
 
+Lemma const_over_consequent_from_renamed_expr c ν y Σ m :
+  m ⊨ formula_rename_atom ν y
+    (FAtom (expr_logic_qual (tret (vconst c)) ν)) →
+  m ⊨ formula_rename_atom ν y
+    (FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FOver (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+Proof.
+  intros Hexpr.
+  apply res_models_swap.
+  apply const_over_consequent_from_expr.
+  apply res_models_swap.
+  exact Hexpr.
+Qed.
+
+Lemma const_under_consequent_from_renamed_expr c ν y Σ m :
+  m ⊨ formula_rename_atom ν y
+    (FAtom (expr_logic_qual (tret (vconst c)) ν)) →
+  m ⊨ formula_rename_atom ν y
+    (FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FUnder (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+Proof.
+  intros Hexpr.
+  apply res_models_swap.
+  apply const_under_consequent_from_expr.
+  apply res_models_swap.
+  exact Hexpr.
+Qed.
+
 (** Kripke implication elimination at the current world. *)
 Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FImpl φ ψ →
