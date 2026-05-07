@@ -66,6 +66,17 @@ Proof.
   exists m. split; [exact Hq | reflexivity].
 Qed.
 
+Lemma res_models_with_store_atom_intro
+    (ρ : Store) (m : WfWorld) (q : logic_qualifier) :
+  formula_scoped_in_world ρ m (FAtom q) →
+  logic_qualifier_denote q ρ m →
+  res_models_with_store ρ m (FAtom q).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hq. split; [exact Hscope |].
+  exists m. split; [exact Hq | reflexivity].
+Qed.
+
 Lemma res_models_over_intro_same (m : WfWorld) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FOver φ) →
   m ⊨ φ →
@@ -77,12 +88,36 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
+Lemma res_models_with_store_over_intro_same
+    (ρ : Store) (m : WfWorld) (φ : FormulaQ) :
+  formula_scoped_in_world ρ m (FOver φ) →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ m (FOver φ).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  exists m. split; [apply res_subset_refl |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
 Lemma res_models_under_intro_same (m : WfWorld) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FUnder φ) →
   m ⊨ φ →
   m ⊨ FUnder φ.
 Proof.
   unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  exists m. split; [apply res_subset_refl |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_under_intro_same
+    (ρ : Store) (m : WfWorld) (φ : FormulaQ) :
+  formula_scoped_in_world ρ m (FUnder φ) →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ m (FUnder φ).
+Proof.
+  unfold res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
