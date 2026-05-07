@@ -127,6 +127,28 @@ For `basic_world_formula`, use the same targeted unfold on the hypothesis
 being analyzed. This keeps `set_solver` away from shallow embedded predicates
 and large `match decide` terms produced by qualifier opening.
 
+When the denotation is a small recurring shape, name the body before proving
+scope.  For example, the constant proof uses bodies such as:
+
+```coq
+Definition const_over_body Σ c ν := FImpl ... .
+```
+
+Then prove a footprint lemma:
+
+```coq
+Lemma const_over_body_fv_subset Σ c ν :
+  formula_fv (const_over_body Σ c ν) ⊆ {[ν]}.
+```
+
+The outer `fresh_forall` scope proof can then use the footprint lemma plus
+`formula_fv_rename_atom`, instead of unfolding the whole denotation.  This is
+much faster and avoids `set_solver` looping on nested shallow qualifier
+predicates.  If a proof still exposes `if decide (...) then ... else ...` from
+`qual_open_atom`, destruct the specific `decide` and immediately re-unfold only
+`stale`/`stale_logic_qualifier`; do not leave a large `set_solver` to discover
+that normal form by itself.
+
 If `set_solver!!` solved a side condition before but now fails, try
 `set_solver!` or plain `set_solver`. The aggressive pruning can remove a
 hypothesis that a rewritten goal later needs.
