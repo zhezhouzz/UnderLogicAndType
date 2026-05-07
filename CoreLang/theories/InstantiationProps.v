@@ -189,6 +189,24 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_lete σ e1 e2 :
+  m{σ} (tlete e1 e2) = tlete (m{σ} e1) (m{σ} e2).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tlete e1 e2) σ =
+      tlete
+        (map_fold (fun x vx acc => {x := vx} acc) e1 σ)
+        (map_fold (fun x vx acc => {x := vx} acc) e2 σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) e1).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) e2).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tlete e1 e2)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_fvar_lookup_closed σ x v :
   closed_env σ →
   σ !! x = Some v →

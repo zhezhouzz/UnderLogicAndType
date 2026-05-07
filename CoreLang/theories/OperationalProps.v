@@ -1,4 +1,5 @@
-From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps LocallyNamelessExtra.
+From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps
+  LocallyNamelessExtra Instantiation InstantiationProps.
 From LocallyNameless Require Import Tactics.
 
 (** * Operational facts for CoreLang
@@ -180,6 +181,17 @@ Proof.
     + apply Step_let; eauto.
       apply lc_lete_iff_body. split; eauto using step_regular1.
     + eapply IHHsteps1; eauto.
+Qed.
+
+Lemma reduction_lete_msubst_intro σ e1 e2 vx v :
+  body_tm (msubst σ e2) →
+  msubst σ e1 →* tret vx →
+  open_tm 0 vx (msubst σ e2) →* tret v →
+  msubst σ (tlete e1 e2) →* tret v.
+Proof.
+  intros Hbody Hsteps1 Hsteps2.
+  rewrite msubst_lete.
+  eapply reduction_lete_intro; eauto.
 Qed.
 
 Lemma reduction_lete_iff e1 e2 v :
