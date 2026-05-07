@@ -164,6 +164,18 @@ Proof.
   inversion Hsteps. subst. exact Hν.
 Qed.
 
+Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
+  closed_env σw →
+  expr_result_in_store ρ e x σw →
+  expr_result_in_store ∅ (tret (vfvar x)) ν σw →
+  expr_result_in_store ρ e ν σw.
+Proof.
+  intros Hclosed [vx [Hx Hsteps]] Hret.
+  exists vx. split.
+  - eapply expr_result_in_store_ret_fvar_lookup; eauto.
+  - exact Hsteps.
+Qed.
+
 Lemma FExprResult_models_elim e ν m :
   m ⊨ FExprResult e ν →
   ∃ w : WfWorld,
