@@ -12,6 +12,7 @@
     the typing rules and the fundamental theorem. *)
 
 From LocallyNameless Require Import Tactics.
+From CoreLang Require Import Instantiation InstantiationProps.
 From ChoiceType Require Export Syntax.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -51,6 +52,44 @@ Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
       ∃ v,
         σw !! ν = Some v ∧
         subst_map σw (subst_map σ e) →* tret v).
+
+Lemma expr_logic_qual_ret_const_lookup c ν m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
+Proof.
+  unfold res_models, res_models_with_store. simpl.
+  intros [_ [m0 [Hqual Hle]]] σ Hσ.
+  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
+  change (stale (tret (vconst c))) with (∅ : aset) in Hqual.
+  replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
+  assert (Hνm0 : {[ν]} ⊆ world_dom (m0 : World)).
+  {
+    destruct (wf_ne _ (world_wf (res_restrict m0 {[ν]}))) as [σ0 Hσ0].
+    destruct (Hqual σ0 Hσ0) as [v [Hlook _]].
+    pose proof (wfworld_store_dom (res_restrict m0 {[ν]}) σ0 Hσ0) as Hdomσ0.
+    intros z Hz. apply elem_of_singleton in Hz. subst z.
+    assert (Hνdomσ0 : ν ∈ dom σ0).
+    { apply elem_of_dom. eexists. exact Hlook. }
+    rewrite Hdomσ0 in Hνdomσ0. simpl in Hνdomσ0. set_solver.
+  }
+  assert (Hrestrict_eq : res_restrict m {[ν]} = res_restrict m0 {[ν]}).
+  { symmetry. apply res_restrict_le_eq; [exact Hle | exact Hνm0]. }
+  assert (Hσm0 : (res_restrict m0 {[ν]} : World) σ).
+  { rewrite <- Hrestrict_eq. exact Hσ. }
+  destruct (Hqual σ Hσm0) as [v [Hlook Hsteps]].
+  assert (Hv : v = vconst c).
+  {
+    change (subst_map (store_restrict ∅ {[ν]}) (tret c))
+      with (msubst (store_restrict ∅ {[ν]}) (tret (vconst c))) in Hsteps.
+    rewrite msubst_fresh in Hsteps by set_solver.
+    change (subst_map σ (tret c))
+      with (msubst σ (tret (vconst c))) in Hsteps.
+    rewrite msubst_fresh in Hsteps by set_solver.
+    apply val_steps_self in Hsteps.
+    inversion Hsteps. reflexivity.
+  }
+  subst v. exact Hlook.
+Qed.
 
 (** ** Type measure for denotation fuel
 
