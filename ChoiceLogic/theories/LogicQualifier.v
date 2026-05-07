@@ -73,6 +73,17 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma logic_qualifier_denote_restrict q σ w X :
+  lqual_dom q ⊆ X →
+  logic_qualifier_denote q σ (res_restrict w X) ↔
+  logic_qualifier_denote q σ w.
+Proof.
+  destruct q as [d p]. simpl. intros HdX.
+  rewrite res_restrict_restrict_eq.
+  replace (X ∩ d) with d by set_solver.
+  reflexivity.
+Qed.
+
 Lemma lqual_swap_conjugate a b x y q :
   lqual_swap a b (lqual_swap x y q) =
   lqual_swap (atom_swap a b x) (atom_swap a b y) (lqual_swap a b q).

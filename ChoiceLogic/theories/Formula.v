@@ -167,6 +167,29 @@ Proof.
   rewrite formula_rename_atom_eq_swap. apply formula_fv_swap.
 Qed.
 
+Lemma formula_fv_rename_atom_subset_open x y φ :
+  y ∉ formula_fv φ ∖ {[x]} →
+  formula_fv (formula_rename_atom x y φ) ⊆
+    (formula_fv φ ∖ {[x]}) ∪ {[y]}.
+Proof.
+  intros Hy z Hz.
+  rewrite formula_fv_rename_atom in Hz.
+  rewrite elem_of_aset_swap in Hz.
+  destruct (decide (z = y)) as [Hzy|Hzy].
+  - subst z. apply elem_of_union. right. set_solver.
+  - destruct (decide (z = x)) as [Hzx|Hzx].
+    + subst z. exfalso. apply Hy. apply elem_of_difference. split.
+      * replace (atom_swap x y x) with y in Hz
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        exact Hz.
+      * set_solver.
+    + apply elem_of_union. left. apply elem_of_difference. split.
+      * replace (atom_swap x y z) with z in Hz
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        exact Hz.
+      * set_solver.
+Qed.
+
 Lemma elem_of_aset_swap_unchanged x y z X :
   z ∈ X →
   z ≠ x →
@@ -606,6 +629,306 @@ Lemma res_models_kripke
 Proof.
   unfold res_models.
   apply res_models_with_store_kripke.
+Qed.
+
+Lemma res_models_with_store_fuel_restrict_fv
+    (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
+  res_models_with_store_fuel gas ρ m φ →
+  res_models_with_store_fuel gas ρ
+    (res_restrict m (dom ρ ∪ formula_fv φ)) φ.
+Proof.
+  revert ρ m φ.
+  induction gas as [|gas IH]; intros ρ m φ Hmodel; simpl in *.
+  { exact Hmodel. }
+  destruct Hmodel as [Hscope Hmodel].
+  set (S := dom ρ ∪ formula_fv φ).
+  assert (Hscope_restrict : formula_scoped_in_world ρ (res_restrict m S) φ).
+  {
+    unfold formula_scoped_in_world in *. subst S. simpl. set_solver.
+  }
+  split; [exact Hscope_restrict |].
+  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|x p];
+    simpl in *; subst S.
+  - exact I.
+  - exact Hmodel.
+  - destruct Hmodel as [m0 [Ha Hle]].
+    exists (res_restrict m0 (dom ρ ∪ stale a)). split.
+    + rewrite logic_qualifier_denote_restrict.
+      * exact Ha.
+      * set_solver.
+    + eapply res_restrict_le_mono. exact Hle.
+  - destruct Hmodel as [Hp Hq]. split.
+    + pose proof (IH ρ m p Hp) as Hp_small.
+      eapply res_models_with_store_fuel_kripke; [| exact Hp_small].
+      apply res_restrict_mono. set_solver.
+    + pose proof (IH ρ m q Hq) as Hq_small.
+      eapply res_models_with_store_fuel_kripke; [| exact Hq_small].
+      apply res_restrict_mono. set_solver.
+  - destruct Hmodel as [Hp | Hq].
+    + left.
+      pose proof (IH ρ m p Hp) as Hp_small.
+      eapply res_models_with_store_fuel_kripke; [| exact Hp_small].
+      apply res_restrict_mono. set_solver.
+    + right.
+      pose proof (IH ρ m q Hq) as Hq_small.
+      eapply res_models_with_store_fuel_kripke; [| exact Hq_small].
+      apply res_restrict_mono. set_solver.
+  - intros n Hle_rn Hp_n.
+    set (Sp := dom ρ ∪ formula_fv p).
+    set (Sq := dom ρ ∪ formula_fv q).
+    assert (HSpS : Sp ⊆ dom ρ ∪ (formula_fv p ∪ formula_fv q)) by (subst Sp; set_solver).
+    assert (HSqS : Sq ⊆ dom ρ ∪ (formula_fv p ∪ formula_fv q)) by (subst Sq; set_solver).
+    assert (HSpm : Sp ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. subst Sp. set_solver. }
+    assert (HSqm : Sq ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. subst Sq. set_solver. }
+    pose proof (IH ρ n p Hp_n) as Hp_small.
+    assert (Heq_p : res_restrict n Sp = res_restrict m Sp).
+    {
+      subst Sp.
+      eapply res_restrict_le_eq_from_base; [exact Hle_rn | set_solver | set_solver].
+    }
+    change (dom ρ ∪ formula_fv p) with Sp in Hp_small.
+    rewrite Heq_p in Hp_small.
+    assert (Hp_m : res_models_with_store_fuel gas ρ m p).
+    { eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small]. }
+    pose proof (Hmodel m ltac:(reflexivity) Hp_m) as Hq_m.
+    pose proof (IH ρ m q Hq_m) as Hq_small.
+    change (dom ρ ∪ formula_fv q) with Sq in Hq_small.
+    assert (Hsmall_n : res_restrict m Sq ⊑ n).
+    {
+      rewrite <- (res_restrict_le_eq_from_base m n
+        (dom ρ ∪ (formula_fv p ∪ formula_fv q)) Sq Hle_rn HSqS HSqm).
+      apply res_restrict_le.
+    }
+    eapply res_models_with_store_fuel_kripke; [exact Hsmall_n | exact Hq_small].
+  - destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
+    set (Sp := dom ρ ∪ formula_fv p).
+    set (Sq := dom ρ ∪ formula_fv q).
+    set (r1 := res_restrict m1 Sp).
+    set (r2 := res_restrict m2 Sq).
+    assert (Hc' : world_compat r1 r2).
+    {
+      subst r1 r2.
+      eapply world_compat_le_l.
+      - apply res_restrict_le.
+      - eapply world_compat_le_r.
+        + apply res_restrict_le.
+        + exact Hc.
+    }
+    exists r1, r2, Hc'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_product_le_mono r1 r2 m1 m2 Hc' Hc);
+             apply res_restrict_le.
+        -- exact Hprod.
+      * subst r1 r2 Sp Sq. simpl. set_solver.
+    + split.
+      * subst r1 Sp. apply IH. exact Hp.
+      * subst r2 Sq. apply IH. exact Hq.
+  - intros n Hc Hp.
+    set (S := dom ρ ∪ (formula_fv p ∪ formula_fv q)).
+    set (Sp := dom ρ ∪ formula_fv p).
+    set (Sq := dom ρ ∪ formula_fv q).
+    assert (HSpS : Sp ⊆ S) by (subst Sp S; set_solver).
+    assert (HSqS : Sq ⊆ S) by (subst Sq S; set_solver).
+    assert (Hc_small : world_compat (res_restrict n Sp) m).
+    {
+      eapply world_compat_restrict_l_full_r.
+      - exact HSpS.
+      - exact Hc.
+    }
+    pose proof (IH ρ n p Hp) as Hp_small.
+    change (dom ρ ∪ formula_fv p) with Sp in Hp_small.
+    pose proof (Hmodel (res_restrict n Sp) Hc_small Hp_small) as Hq_big.
+    pose proof (IH ρ (res_product (res_restrict n Sp) m Hc_small) q Hq_big)
+      as Hq_small.
+    change (dom ρ ∪ formula_fv q) with Sq in Hq_small.
+    eapply res_models_with_store_fuel_kripke; [| exact Hq_small].
+    assert (HSqm : Sq ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. subst Sq. set_solver. }
+    exact (res_product_restrict_wand_le n m S Sp Sq Hc_small Hc HSqS HSqm).
+  - destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
+    set (Sp := dom ρ ∪ formula_fv p).
+    set (Sq := dom ρ ∪ formula_fv q).
+    set (S := dom ρ ∪ (formula_fv p ∪ formula_fv q)).
+    set (r1 := res_restrict m1 S).
+    set (r2 := res_restrict m2 S).
+    assert (Hdef' : raw_sum_defined r1 r2).
+    {
+      subst r1 r2 S. unfold raw_sum_defined. simpl.
+      rewrite Hdef. reflexivity.
+    }
+    exists r1, r2, Hdef'. split.
+    + eapply res_le_restrict.
+      * etrans.
+        -- eapply (res_sum_le_mono r1 r2 m1 m2 Hdef' Hdef);
+             apply res_restrict_le.
+        -- exact Hsum.
+      * subst r1 S. simpl. set_solver.
+    + split.
+      * pose proof (IH ρ m1 p Hp) as Hp_small.
+        subst r1 Sp S.
+        eapply res_models_with_store_fuel_kripke; [| exact Hp_small].
+        apply res_restrict_mono. set_solver.
+      * pose proof (IH ρ m2 q Hq) as Hq_small.
+        subst r2 Sq S.
+        eapply res_models_with_store_fuel_kripke; [| exact Hq_small].
+        apply res_restrict_mono. set_solver.
+  - destruct Hmodel as [L [HL Hforall]].
+    set (S := dom ρ ∪ (formula_fv p ∖ {[x]})).
+    exists (L ∪ world_dom (m : World) ∪ S). split.
+    { subst S. simpl. set_solver. }
+    intros y Hy n Hdom_n Hrestr_n.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hym : y ∉ world_dom (m : World)) by set_solver.
+    assert (Hyfv : y ∉ formula_fv p ∖ {[x]}) by (subst S; set_solver).
+    assert (HS_m : S ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. subst S. set_solver. }
+    assert (Hle_rm : res_restrict m S ⊑ m) by apply res_restrict_le.
+    destruct (res_one_point_extension_pushout
+      (res_restrict m S) m n y Hle_rm Hym Hdom_n Hrestr_n)
+      as [my [Hdom_my [Hrestr_my Hn_my]]].
+    pose proof (Hforall y HyL my Hdom_my Hrestr_my) as Hp_my.
+    pose proof (IH ρ my (formula_rename_atom x y p) Hp_my) as Hp_small.
+    set (X := dom ρ ∪ formula_fv (formula_rename_atom x y p)).
+    change (dom ρ ∪ formula_fv (formula_rename_atom x y p)) with X in Hp_small.
+    assert (HX_n : X ⊆ world_dom (n : World)).
+    {
+      subst X S. rewrite Hdom_n. simpl.
+      intros z Hz.
+      apply elem_of_union in Hz as [Hzρ | Hzφ].
+      - apply elem_of_union. left. unfold formula_scoped_in_world in Hscope.
+        set_solver.
+      - pose proof (formula_fv_rename_atom_subset_open x y p Hyfv z Hzφ) as Hzopen.
+        set_solver.
+    }
+    rewrite <- (res_restrict_le_eq n my X Hn_my HX_n) in Hp_small.
+    eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
+  - destruct Hmodel as [L [HL Hexists]].
+    set (S := dom ρ ∪ (formula_fv p ∖ {[x]})).
+    exists (L ∪ world_dom (m : World) ∪ S). split.
+    { subst S. simpl. set_solver. }
+    intros y Hy.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hyfv : y ∉ formula_fv p ∖ {[x]}) by (subst S; set_solver).
+    assert (HS_m : S ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. subst S. set_solver. }
+    destruct (Hexists y HyL) as [my [Hdom_my [Hrestr_my Hp_my]]].
+    set (n := res_restrict my (S ∪ {[y]})).
+    exists n. split.
+    + subst n. simpl. rewrite Hdom_my.
+      apply set_eq. intros z. set_solver.
+    + split.
+      * subst n.
+        change (res_restrict (res_restrict my (S ∪ {[y]}))
+          (world_dom (res_restrict m S : World)) = res_restrict m S).
+        simpl.
+        replace (world_dom (m : World) ∩ S) with S by set_solver.
+        rewrite res_restrict_restrict_eq.
+        replace ((S ∪ {[y]}) ∩ S) with S by set_solver.
+        rewrite <- Hrestr_my.
+        rewrite res_restrict_restrict_eq.
+        replace (world_dom (m : World) ∩ S) with S by set_solver.
+        reflexivity.
+      * pose proof (IH ρ my (formula_rename_atom x y p) Hp_my) as Hp_small.
+        set (X := dom ρ ∪ formula_fv (formula_rename_atom x y p)).
+        change (dom ρ ∪ formula_fv (formula_rename_atom x y p)) with X in Hp_small.
+        assert (HX_n : X ⊆ world_dom (n : World)).
+        {
+          subst X n S. simpl. rewrite Hdom_my.
+          intros z Hz.
+          apply elem_of_union in Hz as [Hzρ | Hzφ].
+          - unfold formula_scoped_in_world in Hscope. set_solver.
+          - pose proof (formula_fv_rename_atom_subset_open x y p Hyfv z Hzφ) as Hzopen.
+            set_solver.
+        }
+        rewrite <- (res_restrict_le_eq n my X ltac:(subst n; apply res_restrict_le) HX_n)
+          in Hp_small.
+        eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
+  - destruct Hmodel as [m' [Hsub Hp]].
+    set (S := dom ρ ∪ formula_fv p).
+    exists (res_restrict m' S). split.
+    + destruct Hsub as [Hdom Hin]. split.
+      * subst S. simpl. rewrite Hdom. reflexivity.
+      * intros σ Hrσ. simpl in Hrσ.
+        destruct Hrσ as [σm [Hσm Hrestrict]].
+        exists σm. split; [apply Hin; exact Hσm | exact Hrestrict].
+    + subst S. apply IH. exact Hp.
+  - destruct Hmodel as [m' [Hsub Hp]].
+    set (S := dom ρ ∪ formula_fv p).
+    exists (res_restrict m' S). split.
+    + destruct Hsub as [Hdom Hin]. split.
+      * subst S. simpl. rewrite Hdom. reflexivity.
+      * intros σ Hrσ. simpl in Hrσ.
+        destruct Hrσ as [σm [Hσm Hrestrict]].
+        exists σm. split; [apply Hin; exact Hσm | exact Hrestrict].
+    + subst S. apply IH. exact Hp.
+  - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
+    intros σ Hproj_r.
+    set (S := dom ρ ∪ ({[x]} ∪ formula_fv p)).
+    assert (HXm : {[x]} ⊆ world_dom (m : World)).
+    { unfold formula_scoped_in_world in Hscope. set_solver. }
+    assert (HXS : {[x]} ⊆ S) by (subst S; set_solver).
+    assert (Hproj_m : res_restrict m {[x]} σ).
+    {
+      change ((res_restrict m {[x]} : World) σ).
+      change ((res_restrict (res_restrict m S) {[x]} : World) σ) in Hproj_r.
+      rewrite res_restrict_restrict_eq in Hproj_r.
+      replace (S ∩ {[x]}) with ({[x]} : aset) in Hproj_r by set_solver.
+      exact Hproj_r.
+    }
+    pose proof (Hfib σ Hproj_m) as Hp_fib.
+    pose proof (IH (ρ ∪ σ)
+      (res_fiber_from_projection m {[x]} σ Hproj_m) p Hp_fib) as Hp_small.
+    set (T := dom (ρ ∪ σ) ∪ formula_fv p).
+    change (dom (ρ ∪ σ) ∪ formula_fv p) with T in Hp_small.
+    assert (Hfiber_le :
+      res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r ⊑
+      res_fiber_from_projection m {[x]} σ Hproj_m).
+    {
+      eapply res_fiber_from_projection_le.
+      - apply res_restrict_le.
+      - simpl. set_solver.
+    }
+    assert (HT_target :
+      T ⊆ world_dom (res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r : World)).
+    {
+      subst T S. simpl.
+      pose proof (wfworld_store_dom (res_restrict m {[x]}) σ Hproj_m) as Hdomσ.
+      simpl in Hdomσ.
+      replace (world_dom (m : World) ∩ {[x]}) with ({[x]} : aset) in Hdomσ
+        by set_solver.
+      rewrite dom_union_L. rewrite Hdomσ.
+      unfold formula_scoped_in_world in Hscope. set_solver.
+    }
+    rewrite <- (res_restrict_le_eq
+      (res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r)
+      (res_fiber_from_projection m {[x]} σ Hproj_m)
+      T Hfiber_le HT_target) in Hp_small.
+    eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
+Qed.
+
+Lemma res_models_with_store_restrict_fv
+    (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ
+    (res_restrict m (dom ρ ∪ formula_fv φ)) φ.
+Proof.
+  unfold res_models_with_store.
+  apply res_models_with_store_fuel_restrict_fv.
+Qed.
+
+Lemma res_models_restrict_fv (m : WfWorldT) (φ : Formula) :
+  res_models m φ →
+  res_models (res_restrict m (formula_fv φ)) φ.
+Proof.
+  unfold res_models.
+  intros Hm.
+  pose proof (res_models_with_store_restrict_fv ∅ m φ Hm) as Hrestrict.
+  change (dom (∅ : StoreT)) with (∅ : aset) in Hrestrict.
+  replace (∅ ∪ formula_fv φ) with (formula_fv φ) in Hrestrict by set_solver.
+  exact Hrestrict.
 Qed.
 
 Lemma res_models_with_store_impl_refl

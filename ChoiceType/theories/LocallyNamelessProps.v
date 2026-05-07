@@ -30,8 +30,8 @@ Proof.
   - pose proof (qual_open_atom_dom_subset (S k) x φ). set_solver.
 Qed.
 
-Lemma ctx_fv_swap x y Γ :
-  ctx_fv (ctx_swap_atom x y Γ) = aset_swap x y (ctx_fv Γ).
+Lemma ctx_stale_swap x y Γ :
+  ctx_stale (ctx_swap_atom x y Γ) = aset_swap x y (ctx_stale Γ).
 Proof.
   induction Γ; simpl.
   - symmetry. apply aset_swap_empty.
@@ -52,6 +52,44 @@ Proof.
   - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
   - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
   - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+Qed.
+
+Lemma ctx_fv_swap x y Γ :
+  ctx_fv (ctx_swap_atom x y Γ) = aset_swap x y (ctx_fv Γ).
+Proof.
+  induction Γ; simpl.
+  - symmetry. apply aset_swap_empty.
+  - rewrite cty_fv_swap. reflexivity.
+  - rewrite IHΓ1, IHΓ2, ctx_dom_swap.
+    rewrite <- aset_swap_difference, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+  - rewrite IHΓ1, IHΓ2, <- aset_swap_union. reflexivity.
+Qed.
+
+Lemma ctx_stale_eq_fv_dom Γ :
+  ctx_stale Γ = ctx_fv Γ ∪ ctx_dom Γ.
+Proof.
+  induction Γ; simpl.
+  - set_solver.
+  - set_solver.
+  - apply set_eq. intros z.
+    rewrite IHΓ1, IHΓ2.
+    rewrite !elem_of_union, elem_of_difference.
+    split.
+    + intros [[Hzfv1 | Hzdom1] | [Hzfv2 | Hzdom2]].
+      * left. left. exact Hzfv1.
+      * right. left. exact Hzdom1.
+      * destruct (decide (z ∈ ctx_dom Γ1)) as [Hzdom1 | Hznotdom1].
+        -- right. left. exact Hzdom1.
+        -- left. right. split; [exact Hzfv2 | exact Hznotdom1].
+      * right. right. exact Hzdom2.
+    + intros [[Hzfv1 | [Hzfv2 Hznotdom1]] | [Hzdom1 | Hzdom2]].
+      * left. left. exact Hzfv1.
+      * right. left. exact Hzfv2.
+      * left. right. exact Hzdom1.
+      * right. right. exact Hzdom2.
+  - rewrite IHΓ1, IHΓ2. set_solver.
+  - rewrite IHΓ1, IHΓ2. set_solver.
 Qed.
 
 Lemma cty_swap_preserves_erasure x y τ :

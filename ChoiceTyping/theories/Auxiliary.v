@@ -73,8 +73,13 @@ Qed.
 
 Lemma ctx_sub_refl Γ :
   wf_ctx Γ →
-  ctx_sub (ctx_fv Γ) Γ Γ.
-Proof. Admitted.
+  ctx_sub (ctx_stale Γ) Γ Γ.
+Proof.
+  intros Hwf.
+  split; [exact Hwf |]. split; [exact Hwf |].
+  intros r Hr.
+  apply denot_ctx_restrict_stale. exact Hr.
+Qed.
 
 Lemma ctx_to_over_refl Γ :
   wf_ctx Γ →

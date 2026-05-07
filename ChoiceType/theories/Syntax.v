@@ -66,17 +66,37 @@ match τ with
 | CTWand  τx τ    => fv_cty τx ∪ fv_cty τ
 end.
 
-Fixpoint ctx_fv (Γ : ctx) : aset :=
+(** ** Context binder domain *)
+
+Fixpoint ctx_dom (Γ : ctx) : aset :=
+  match Γ with
+  | CtxEmpty        => ∅
+  | CtxBind x _    => {[ x ]}
+  | CtxComma Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
+  | CtxStar  Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
+  | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
+  end.
+
+Fixpoint ctx_stale (Γ : ctx) : aset :=
 match Γ with
 | CtxEmpty        => ∅
 | CtxBind x τ    => {[x]} ∪ fv_cty τ
-| CtxComma Γ1 Γ2 => ctx_fv Γ1 ∪ ctx_fv Γ2
+| CtxComma Γ1 Γ2 => ctx_stale Γ1 ∪ ctx_stale Γ2
+| CtxStar  Γ1 Γ2 => ctx_stale Γ1 ∪ ctx_stale Γ2
+| CtxSum   Γ1 Γ2 => ctx_stale Γ1 ∪ ctx_stale Γ2
+end.
+
+Fixpoint ctx_fv (Γ : ctx) : aset :=
+match Γ with
+| CtxEmpty        => ∅
+| CtxBind _ τ    => fv_cty τ
+| CtxComma Γ1 Γ2 => ctx_fv Γ1 ∪ (ctx_fv Γ2 ∖ ctx_dom Γ1)
 | CtxStar  Γ1 Γ2 => ctx_fv Γ1 ∪ ctx_fv Γ2
 | CtxSum   Γ1 Γ2 => ctx_fv Γ1 ∪ ctx_fv Γ2
 end.
 
 #[global] Instance stale_cty_inst : Stale choice_ty := fv_cty.
-#[global] Instance stale_ctx_inst : Stale ctx       := ctx_fv.
+#[global] Instance stale_ctx_inst : Stale ctx       := ctx_stale.
 Arguments stale_cty_inst /.
 Arguments stale_ctx_inst /.
 
@@ -184,17 +204,6 @@ Fixpoint erase_ctx (Γ : ctx) : gmap atom ty :=
 (** [lift_ctx Γ_basic] : lift a basic context. *)
 Definition lift_ctx (Γ : gmap atom ty) : ctx :=
   map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
-
-(** ** Context binder domain *)
-
-Fixpoint ctx_dom (Γ : ctx) : aset :=
-  match Γ with
-  | CtxEmpty        => ∅
-  | CtxBind x _    => {[ x ]}
-  | CtxComma Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
-  | CtxStar  Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
-  | CtxSum   Γ1 Γ2 => ctx_dom Γ1 ∪ ctx_dom Γ2
-  end.
 
 Fixpoint ctx_swap_atom (x y : atom) (Γ : ctx) : ctx :=
   match Γ with
