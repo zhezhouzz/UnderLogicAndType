@@ -431,6 +431,84 @@ Proof.
   exact Hbody.
 Qed.
 
+Lemma choice_typing_wf_inter_l Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTInter τ1 τ2) →
+  choice_typing_wf Σ Γ e τ1.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split; [split; assumption | exact Herase].
+Qed.
+
+Lemma choice_typing_wf_inter_r Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTInter τ1 τ2) →
+  choice_typing_wf Σ Γ e τ2.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split.
+  - split; assumption.
+  - simpl in Herase.
+    match goal with
+    | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
+    end.
+    exact Herase.
+Qed.
+
+Lemma choice_typing_wf_union_l Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTUnion τ1 τ2) →
+  choice_typing_wf Σ Γ e τ1.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split; [split; assumption | exact Herase].
+Qed.
+
+Lemma choice_typing_wf_union_r Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTUnion τ1 τ2) →
+  choice_typing_wf Σ Γ e τ2.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split.
+  - split; assumption.
+  - simpl in Herase.
+    match goal with
+    | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
+    end.
+    exact Herase.
+Qed.
+
+Lemma choice_typing_wf_sum_l Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTSum τ1 τ2) →
+  choice_typing_wf Σ Γ e τ1.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split; [split; assumption | exact Herase].
+Qed.
+
+Lemma choice_typing_wf_sum_r Σ Γ e τ1 τ2 :
+  choice_typing_wf Σ Γ e (CTSum τ1 τ2) →
+  choice_typing_wf Σ Γ e τ2.
+Proof.
+  intros [Hwf Herase].
+  destruct Hwf as [Hctx Hbasic].
+  inversion Hbasic; subst.
+  split.
+  - split; assumption.
+  - simpl in Herase.
+    match goal with
+    | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
+    end.
+    exact Herase.
+Qed.
+
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
