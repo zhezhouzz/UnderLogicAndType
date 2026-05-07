@@ -198,15 +198,29 @@ Proof.
   intros [Hφψ Hψφ] [Hψχ Hχψ]. split; intros m Hm; eauto.
 Qed.
 
+Lemma denot_ty_fuel_env_agree gas D Σ1 Σ2 τ e :
+  ty_env_agree_on (D ∪ fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  denot_ty_fuel gas D Σ1 τ e = denot_ty_fuel gas D Σ2 τ e.
+Proof. Admitted.
+
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
-Proof. Admitted.
+Proof.
+  intros Hagree.
+  unfold denot_ty_under, denot_ty_avoiding.
+  apply denot_ty_fuel_env_agree.
+  intros z Hz. apply Hagree. set_solver.
+Qed.
 
 Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
   ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
-Proof. Admitted.
+Proof.
+  intros Hagree.
+  rewrite (denot_ty_under_env_agree Σ1 Σ2 τ e Hagree).
+  apply formula_equiv_refl.
+Qed.
 
 Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
   ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
