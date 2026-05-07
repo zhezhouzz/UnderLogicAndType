@@ -34,9 +34,14 @@ For `tlete`, use:
 - `expr_result_in_store_let_intro`
 - `expr_result_in_world_let_elim`
 - `expr_result_in_world_let_intro`
+- `expr_result_in_store_ret_fvar_lookup`
+- `expr_result_in_store_ret_fvar_trans`
 
 These lemmas call the CoreLang reduction helpers (`reduction_lete`,
 `reduction_lete_intro`) after pushing `msubst` through `tlete`.
+The `ret_fvar` lemmas are useful when a proof introduces a fresh coordinate
+for a let-bound result and then needs to reuse that coordinate as the result
+representative for a body/context typing premise.
 
 ## Important FAtom detail
 
