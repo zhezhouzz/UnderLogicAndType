@@ -56,3 +56,46 @@ Lemma basic_world_formula_fv Σ X :
   formula_fv (basic_world_formula Σ X) = X.
 Proof. reflexivity. Qed.
 
+Lemma store_has_type_on_lookup Σ X σ x T v :
+  store_has_type_on Σ X σ →
+  x ∈ X →
+  Σ !! x = Some T →
+  σ !! x = Some v →
+  ∅ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Htyped Hx HΣ Hσ.
+  eapply Htyped; eauto.
+Qed.
+
+Lemma store_has_type_on_insert_self Σ X σ x T v :
+  store_has_type_on (<[x := T]> Σ) X σ →
+  x ∈ X →
+  σ !! x = Some v →
+  ∅ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Htyped Hx Hσ.
+  exact (Htyped x T v Hx (lookup_insert_eq Σ x T) Hσ).
+Qed.
+
+Lemma world_has_type_on_lookup Σ X w σ x T v :
+  world_has_type_on Σ X w →
+  (w : World) σ →
+  x ∈ X →
+  Σ !! x = Some T →
+  σ !! x = Some v →
+  ∅ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Htyped Hσ Hx HΣ Hlook.
+  eapply store_has_type_on_lookup; eauto.
+Qed.
+
+Lemma world_has_type_on_insert_self Σ X w σ x T v :
+  world_has_type_on (<[x := T]> Σ) X w →
+  (w : World) σ →
+  x ∈ X →
+  σ !! x = Some v →
+  ∅ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Htyped Hσ Hx Hlook.
+  eapply store_has_type_on_insert_self; eauto.
+Qed.
