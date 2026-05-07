@@ -194,6 +194,52 @@ Proof.
     eapply reduction_lete_intro; eauto.
 Qed.
 
+(** ** Result-set view of nondeterministic evaluation
+
+    Generators make [steps e (tret v)] a relation rather than a function.
+    The typing proof should therefore reason about the whole result set of an
+    expression.  For let, this result set is the union over every result of
+    the bound expression, followed by the corresponding opened body. *)
+
+Definition reaches_result (e : tm) (v : value) : Prop :=
+  e →* tret v.
+
+Definition result_set (e : tm) : value → Prop :=
+  reaches_result e.
+
+Definition all_results (e : tm) (P : value → Prop) : Prop :=
+  ∀ v, reaches_result e v → P v.
+
+Definition let_result_set (e1 e2 : tm) : value → Prop :=
+  λ v, ∃ vx,
+    reaches_result e1 vx ∧
+    reaches_result (open_tm 0 vx e2) v.
+
+Lemma let_result_decompose e1 e2 v :
+  reaches_result (tlete e1 e2) v →
+  let_result_set e1 e2 v.
+Proof. apply reduction_lete. Qed.
+
+Lemma let_result_compose e1 e2 v :
+  body_tm e2 →
+  let_result_set e1 e2 v →
+  reaches_result (tlete e1 e2) v.
+Proof.
+  intros Hbody [vx [H1 H2]].
+  eapply reduction_lete_intro; eauto.
+Qed.
+
+Lemma all_results_let_intro e1 e2 P :
+  body_tm e2 →
+  (∀ vx, reaches_result e1 vx →
+    all_results (open_tm 0 vx e2) P) →
+  all_results (tlete e1 e2) P.
+Proof.
+  intros _ Hall v Hlet.
+  apply let_result_decompose in Hlet as [vx [H1 H2]].
+  exact (Hall vx H1 v H2).
+Qed.
+
 Lemma reduction_beta s body vx v :
   lc_value vx →
   tapp (vlam s body) vx →* tret v →
