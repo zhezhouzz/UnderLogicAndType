@@ -298,6 +298,22 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
 Qed.
 
+Lemma res_models_impl_antecedent_strengthen
+    (m : WfWorld) (φ1 φ2 ψ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FImpl φ2 ψ) →
+  (∀ m', m ⊑ m' → m' ⊨ φ2 → m' ⊨ φ1) →
+  m ⊨ FImpl φ1 ψ →
+  m ⊨ FImpl φ2 ψ.
+Proof.
+  intros Hscope Hφ Himpl.
+  eapply res_models_impl_intro.
+  - exact Hscope.
+  - intros m' Hle Hφ2.
+    eapply res_models_impl_elim.
+    + eapply res_models_kripke; [exact Hle | exact Himpl].
+    + eapply Hφ; eauto.
+Qed.
+
 Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
   formula_scoped_in_world ∅ m (FForall x φ) →
   (∃ L : aset,
