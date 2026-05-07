@@ -237,6 +237,21 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tprim σ op v :
+  m{σ} (tprim op v) = tprim op (m{σ} v).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tprim op v) σ =
+      tprim op (map_fold (fun x vx acc => {x := vx} acc) v σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tprim op v)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_fvar_lookup_closed σ x v :
   closed_env σ →
   σ !! x = Some v →
