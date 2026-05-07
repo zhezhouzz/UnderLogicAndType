@@ -297,6 +297,19 @@ Proof.
   constructor. constructor.
 Qed.
 
+Lemma reduction_prim_const op c v :
+  tprim op (vconst c) →* tret v →
+  ∃ c', prim_step op c c' ∧ v = vconst c'.
+Proof.
+  intros Hsteps.
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    inversion H; subst; try discriminate.
+    apply val_steps_self in Hrest.
+    inversion Hrest. subst. eauto.
+Qed.
+
 Lemma reduction_fix Tf vf vx v :
   lc_value vx →
   tapp (vfix Tf vf) vx →* tret v →
