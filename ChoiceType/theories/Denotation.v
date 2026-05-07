@@ -114,6 +114,80 @@ Proof.
   set_solver.
 Qed.
 
+Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
+  fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
+  m ⊨ FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) →
+  formula_scoped_in_world ∅ m (FExprResult (tlete e1 e2) ν).
+Proof.
+  intros Hfv Hm.
+  unfold formula_scoped_in_world. intros z Hz.
+  pose proof (res_models_with_store_fuel_scoped _ ∅ m _ Hm) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  apply Hscope. simpl.
+  apply elem_of_union. right.
+  apply elem_of_union. left.
+  apply Hfv.
+  unfold FExprResult, expr_logic_qual in Hz. simpl in Hz.
+  unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
+  set_solver.
+Qed.
+
+Lemma FLetResult_models_elim e1 e2 ν m :
+  m ⊨ FLetResult e1 e2 ν →
+  ∃ L : aset,
+    world_dom (m : World) ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∃ m' : WfWorld,
+        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
+        res_restrict m' (world_dom (m : World)) = m ∧
+        m' ⊨ formula_rename_atom
+          (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
+          (FAnd
+            (FExprResult e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
+            (FFib (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}))
+              (FExprResult
+                (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν))).
+Proof.
+  unfold FLetResult, res_models, res_models_with_store.
+  simpl. intros [_ [L [HL Hexists]]].
+  exists L. split; [exact HL |].
+  intros y Hy.
+  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hmodel]]].
+  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+  unfold res_models, res_models_with_store.
+  exact Hmodel.
+Qed.
+
+Lemma FLetResult_models_intro e1 e2 ν m :
+  formula_scoped_in_world ∅ m (FLetResult e1 e2 ν) →
+  (∃ L : aset,
+    world_dom (m : World) ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∃ m' : WfWorld,
+        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
+        res_restrict m' (world_dom (m : World)) = m ∧
+        m' ⊨ formula_rename_atom
+          (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
+          (FAnd
+            (FExprResult e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
+            (FFib (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}))
+              (FExprResult
+                (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)))) →
+  m ⊨ FLetResult e1 e2 ν.
+Proof.
+  unfold FLetResult, res_models, res_models_with_store.
+  simpl. intros Hscope [L [HL Hexists]].
+  split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy.
+  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hmodel]]].
+  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+  unfold res_models, res_models_with_store in Hmodel.
+  exact Hmodel.
+Qed.
+
 Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
   closed_env ρ →
   stale e ⊆ X →
