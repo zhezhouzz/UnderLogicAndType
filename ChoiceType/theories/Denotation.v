@@ -207,6 +207,20 @@ Proof.
   intros z Hz. apply Hagree. set_solver.
 Qed.
 
+Lemma ty_env_agree_on_open_qual_result D Σ1 Σ2 b φ ν :
+  ty_env_agree_on (D ∪ qual_dom φ) Σ1 Σ2 →
+  ty_env_agree_on ({[ν]} ∪ qual_dom (qual_open_atom 0 ν φ))
+    (<[ν := TBase b]> Σ1) (<[ν := TBase b]> Σ2).
+Proof.
+  intros Hagree z Hz.
+  destruct (decide (z = ν)) as [->|Hne].
+  - rewrite !(lookup_insert_eq _ ν (TBase b)). reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    apply Hagree.
+    pose proof (qual_open_atom_dom_subset 0 ν φ z) as Hdom.
+    set_solver.
+Qed.
+
 Definition formula_equiv (φ ψ : FQ) : Prop :=
   (φ ⊫ ψ) ∧ (ψ ⊫ φ).
 
