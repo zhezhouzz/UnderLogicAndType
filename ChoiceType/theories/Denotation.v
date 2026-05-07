@@ -176,6 +176,16 @@ Proof.
   - exact Hsteps.
 Qed.
 
+Lemma expr_result_in_world_ret_fvar_trans ρ e x ν (w : WfWorld) :
+  (∀ σw, (w : World) σw → closed_env σw) →
+  expr_result_in_world ρ e x w →
+  expr_result_in_world ∅ (tret (vfvar x)) ν w →
+  expr_result_in_world ρ e ν w.
+Proof.
+  intros Hclosed He Hret σw Hσw.
+  eapply expr_result_in_store_ret_fvar_trans; eauto.
+Qed.
+
 Lemma FExprResult_models_elim e ν m :
   m ⊨ FExprResult e ν →
   ∃ w : WfWorld,
