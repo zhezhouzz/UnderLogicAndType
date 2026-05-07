@@ -69,6 +69,23 @@ goal still exposes those wrappers, unfold only the wrapper definitions needed
 for the domain and use a named set equality, rather than asking `set_solver` to
 discover the normal form through the match.
 
+## Fiber folds need with-store equivalence
+
+Do not prove atom transport only for `res_models`, because `fib_vars` interprets
+its body under an explicit store extended by the current projection.  The right
+level is:
+
+```coq
+formula_store_equiv φ ψ :=
+  forall ρ m, res_models_with_store ρ m φ <-> res_models_with_store ρ m ψ
+```
+
+Then prove congruence lemmas for `FAnd`, `FOver`, `FUnder`, and `FFib` before
+lifting through `fib_vars`.  The same-set fold case can be proved by unfolding
+`set_fold` to `foldr` over `elements`; the harder alpha case
+`{x} ∪ X` renamed to `{y} ∪ X` is a separate fiber-commutativity/alpha lemma,
+not a property of the shallow atom.
+
 ## Design lesson
 
 Do not introduce formula-level bridges such as
