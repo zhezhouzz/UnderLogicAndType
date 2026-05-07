@@ -123,6 +123,25 @@ Proof.
   eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
 Qed.
 
+Lemma res_models_fib_intro_local (m : WfWorld) (x : atom) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FFib x φ) →
+  (∀ σ,
+     ∀ Hproj : res_restrict m {[x]} σ,
+     res_models_with_store σ
+       (res_fiber_from_projection m {[x]} σ Hproj)
+       φ) →
+  m ⊨ FFib x φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hfib. split; [exact Hscope |].
+  split.
+  - set_solver.
+  - intros σ Hproj.
+    rewrite map_empty_union.
+    eapply res_models_with_store_fuel_irrel; [| | exact (Hfib σ Hproj)];
+      simpl; lia.
+Qed.
+
 Lemma basic_const_world_from_expr_atom c ν Σ m :
   m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
   m ⊨ basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]}.
@@ -191,6 +210,96 @@ Proof.
     exists (vconst c). split.
     + apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
     + reflexivity.
+Qed.
+
+Lemma const_over_consequent_from_expr c ν Σ m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  m ⊨
+    FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FOver (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+Proof.
+  intros Hexpr.
+  pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
+  pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
+  eapply res_models_and_intro.
+  - pose proof (res_models_with_store_fuel_scoped _
+      ∅ m _ Hbasic) as Hscope_basic.
+    unfold formula_scoped_in_world in *. simpl in *.
+    rewrite fib_vars_singleton. simpl.
+    unfold stale, stale_logic_qualifier.
+    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
+    rewrite decide_True by set_solver. simpl.
+    set_solver.
+  - exact Hbasic.
+  - rewrite fib_vars_singleton.
+    eapply res_models_fib_intro_local.
+    + pose proof (res_models_with_store_fuel_scoped _
+        ∅ m _ Hbasic) as Hscope_basic.
+      unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier.
+      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
+      rewrite decide_True by set_solver. simpl.
+      set_solver.
+    + intros σ Hproj.
+      pose proof (Hlookup σ Hproj) as Hσν.
+      pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
+        as Hatom.
+      eapply res_models_with_store_over_intro_same.
+      * pose proof (res_models_with_store_fuel_scoped _
+          σ (res_fiber_from_projection m {[ν]} σ Hproj) _ Hatom) as Hscope_atom.
+        unfold formula_scoped_in_world in *. simpl in *.
+        exact Hscope_atom.
+      * exact Hatom.
+Qed.
+
+Lemma const_under_consequent_from_expr c ν Σ m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  m ⊨
+    FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FUnder (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+Proof.
+  intros Hexpr.
+  pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
+  pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
+  eapply res_models_and_intro.
+  - pose proof (res_models_with_store_fuel_scoped _
+      ∅ m _ Hbasic) as Hscope_basic.
+    unfold formula_scoped_in_world in *. simpl in *.
+    rewrite fib_vars_singleton. simpl.
+    unfold stale, stale_logic_qualifier.
+    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
+    rewrite decide_True by set_solver. simpl.
+    set_solver.
+  - exact Hbasic.
+  - rewrite fib_vars_singleton.
+    eapply res_models_fib_intro_local.
+    + pose proof (res_models_with_store_fuel_scoped _
+        ∅ m _ Hbasic) as Hscope_basic.
+      unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier.
+      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
+      rewrite decide_True by set_solver. simpl.
+      set_solver.
+    + intros σ Hproj.
+      pose proof (Hlookup σ Hproj) as Hσν.
+      pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
+        as Hatom.
+      eapply res_models_with_store_under_intro_same.
+      * pose proof (res_models_with_store_fuel_scoped _
+          σ (res_fiber_from_projection m {[ν]} σ Hproj) _ Hatom) as Hscope_atom.
+        unfold formula_scoped_in_world in *. simpl in *.
+        exact Hscope_atom.
+      * exact Hatom.
 Qed.
 
 (** Kripke implication elimination at the current world. *)

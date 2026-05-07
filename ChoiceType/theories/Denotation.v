@@ -37,6 +37,10 @@ Notation "φ ⊫ ψ" :=
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
 
+Lemma fib_vars_singleton x p :
+  fib_vars {[x]} p = FFib x p.
+Proof. unfold fib_vars. apply set_fold_singleton. Qed.
+
 Lemma fib_vars_formula_fv_subset X p :
   formula_fv (fib_vars X p) ⊆ X ∪ formula_fv p.
 Proof.
