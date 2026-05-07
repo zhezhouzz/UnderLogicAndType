@@ -334,6 +334,14 @@ Proof.
   rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
 Qed.
 
+Lemma store_swap_delete x y z s :
+  store_swap x y (delete z s) =
+  delete (atom_swap x y z) (store_swap x y s).
+Proof.
+  unfold store_swap.
+  apply kmap_delete. apply atom_swap_inj.
+Qed.
+
 Lemma map_restrict_store_swap_fresh x y (s : Store) X :
   x ∉ X →
   y ∉ X →
