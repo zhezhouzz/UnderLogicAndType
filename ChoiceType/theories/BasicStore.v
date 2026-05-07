@@ -101,6 +101,28 @@ Proof.
   exact Htyped0.
 Qed.
 
+Lemma basic_world_formula_subset_current Σ X Y m :
+  X ⊆ Y →
+  res_models m (basic_world_formula Σ Y) →
+  world_has_type_on Σ X (res_restrict m X).
+Proof.
+  intros HXY Hbasic.
+  pose proof (basic_world_formula_current Σ Y m Hbasic) as HtypedY.
+  destruct HtypedY as [HdomY HtypedY].
+  split.
+  - simpl in *. set_solver.
+  - intros σ Hσ z T v Hz HΣ Hlookup.
+    simpl in Hσ.
+    destruct Hσ as [σm [Hσm Hrestrict]].
+    subst σ.
+    apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+    eapply HtypedY.
+    + simpl. exists σm. split; [exact Hσm | reflexivity].
+    + exact (HXY z Hz).
+    + exact HΣ.
+    + apply store_restrict_lookup_some_2; [exact Hlookup | exact (HXY z Hz)].
+Qed.
+
 Lemma basic_world_formula_store_typed Σ X m σ :
   res_models m (basic_world_formula Σ X) →
   (res_restrict m X : World) σ →

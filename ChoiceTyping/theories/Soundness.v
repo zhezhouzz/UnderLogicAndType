@@ -550,6 +550,16 @@ Proof.
   apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
 Qed.
 
+Lemma denot_ctx_in_env_world_has_type_on Σ Γ X m :
+  X ⊆ dom Σ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  world_has_type_on Σ X (res_restrict m X).
+Proof.
+  intros HXΣ HΓ.
+  eapply basic_world_formula_subset_current; [exact HXΣ |].
+  apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+Qed.
+
 Lemma denot_ctx_in_env_store_typed Σ Γ m σ :
   m ⊨ denot_ctx_in_env Σ Γ →
   (m : World) σ →
