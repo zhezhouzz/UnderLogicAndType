@@ -144,7 +144,7 @@ Proof.
   induction φ as
     [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
      |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp];
-    simpl; try reflexivity.
+    cbn; try reflexivity.
   - match goal with
     | q : logic_qualifier |- _ => destruct q; simpl; reflexivity
     end.

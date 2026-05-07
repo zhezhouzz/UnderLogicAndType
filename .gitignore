@@ -1,4 +1,4 @@
-Makefile*
+Makefile.coq*
 .*.aux
 .*.d
 *.a
@@ -43,4 +43,5 @@ native_compute_profile_*.data
 time-of-build-after.log
 time-of-build-before.log
 time-of-build-both.log
+time-of-build.log
 time-of-build-pretty.log
