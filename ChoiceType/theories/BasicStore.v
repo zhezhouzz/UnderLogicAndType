@@ -9,6 +9,7 @@
 
 From CoreLang Require Import BasicTyping.
 From ChoiceType Require Export Syntax.
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** [store_has_type_on Σ X σ] says that every coordinate in [X] whose basic
     type is recorded by [Σ] is occupied by a closed value of that type.  The
@@ -55,6 +56,30 @@ Qed.
 Lemma basic_world_formula_fv Σ X :
   formula_fv (basic_world_formula Σ X) = X.
 Proof. reflexivity. Qed.
+
+Lemma basic_world_lqual_agree Σ1 Σ2 X :
+  (∀ x, x ∈ X → Σ1 !! x = Σ2 !! x) →
+  basic_world_lqual Σ1 X = basic_world_lqual Σ2 X.
+Proof.
+  intros Hagree. unfold basic_world_lqual. f_equal.
+  apply functional_extensionality. intros σ.
+  apply functional_extensionality. intros w.
+  apply propositional_extensionality.
+  unfold world_has_type_on, store_has_type_on in *.
+  split; intros Htyped σw Hσw x T v Hx HΣ Hlook.
+  - apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
+    rewrite Hagree; exact HΣ || exact Hx.
+  - apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
+    rewrite <- Hagree; exact HΣ || exact Hx.
+Qed.
+
+Lemma basic_world_formula_agree Σ1 Σ2 X :
+  (∀ x, x ∈ X → Σ1 !! x = Σ2 !! x) →
+  basic_world_formula Σ1 X = basic_world_formula Σ2 X.
+Proof.
+  intros Hagree. unfold basic_world_formula.
+  rewrite (basic_world_lqual_agree Σ1 Σ2 X Hagree). reflexivity.
+Qed.
 
 Lemma store_has_type_on_lookup Σ X σ x T v :
   store_has_type_on Σ X σ →
