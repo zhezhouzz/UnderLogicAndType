@@ -50,6 +50,25 @@ expr_result_in_world
 Use `FExprResult_models_elim` / `FExprResult_models_intro` instead of manually
 unfolding this shape.
 
+## Naming wrappers around shallow atoms
+
+When a proof renames a formula atom produced from a shallow qualifier, avoid
+normalizing the wrapper stack in the large proof.  Put the normal form in a
+small lemma instead.  The useful pattern is:
+
+- prove a `logic_qualifier_denote` lemma for the raw atom, such as
+  `logic_qualifier_denote_lift_open_swap_fresh`;
+- lift it once to `res_models`, such as
+  `res_models_lift_open_rename_fresh`;
+- for basic world atoms, do the same with
+  `res_models_basic_world_formula_rename_insert_fresh`.
+
+This prevents goals from getting stuck behind nested matches from
+`lqual_dom`, `lqual_swap`, and `lift_type_qualifier_to_logic`.  If a scope
+goal still exposes those wrappers, unfold only the wrapper definitions needed
+for the domain and use a named set equality, rather than asking `set_solver` to
+discover the normal form through the match.
+
 ## Design lesson
 
 Do not introduce formula-level bridges such as
