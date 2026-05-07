@@ -11,6 +11,15 @@ Keep the direct expression-result relation as a Rocq-level predicate:
 expr_result_in_world ρ e ν w
 ```
 
+When the proof is about one concrete store, use the smaller pointwise view:
+
+```coq
+expr_result_in_store ρ e ν σ
+```
+
+Then lift it to worlds only at the boundary.  This avoids repeatedly
+destructing `∀ σ, w σ -> ...` while doing operational `let` decomposition.
+
 Then let the logic atom wrapper be only a shallow embedding:
 
 ```coq
@@ -21,6 +30,8 @@ FExprResult e ν := FAtom (expr_logic_qual e ν)
 This makes operational lemmas usable before entering formula proof plumbing.
 For `tlete`, use:
 
+- `expr_result_in_store_let_elim`
+- `expr_result_in_store_let_intro`
 - `expr_result_in_world_let_elim`
 - `expr_result_in_world_let_intro`
 

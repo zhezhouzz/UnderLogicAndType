@@ -50,12 +50,15 @@ Proof.
     simpl; set_solver.
 Qed.
 
-Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
-  ∀ σw,
-    (w : World) σw →
+Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
     ∃ v,
       σw !! ν = Some v ∧
       subst_map σw (subst_map ρ e) →* tret v.
+
+Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
+  ∀ σw,
+    (w : World) σw →
+    expr_result_in_store ρ e ν σw.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ w => expr_result_in_world σ e ν w).
@@ -85,6 +88,25 @@ Proof.
   exists vx. repeat split; assumption.
 Qed.
 
+Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
+  expr_result_in_store ρ (tlete e1 e2) ν σw →
+  ∃ v vx,
+    σw !! ν = Some v ∧
+    subst_map σw (subst_map ρ e1) →* tret vx ∧
+    open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
+Proof.
+  intros [v [Hν Hsteps]].
+  exists v.
+  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
+  rewrite (msubst_lete ρ e1 e2) in Hsteps.
+  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
+    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))) in Hsteps.
+  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)) in Hsteps.
+  apply reduction_lete in Hsteps as [vx [He1 He2]].
+  exists vx. repeat split; assumption.
+Qed.
+
 Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
   (∀ σw,
     (w : World) σw →
@@ -97,6 +119,25 @@ Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
 Proof.
   intros Hres σw Hσw.
   destruct (Hres σw Hσw) as [v [vx [Hν [Hbody [He1 He2]]]]].
+  exists v. split; [exact Hν |].
+  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v).
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
+  rewrite (msubst_lete ρ e1 e2).
+  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
+    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))).
+  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)).
+  eapply reduction_lete_intro; eauto.
+Qed.
+
+Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
+  (∃ v vx,
+    σw !! ν = Some v ∧
+    body_tm (subst_map σw (subst_map ρ e2)) ∧
+    subst_map σw (subst_map ρ e1) →* tret vx ∧
+    open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
+  expr_result_in_store ρ (tlete e1 e2) ν σw.
+Proof.
+  intros [v [vx [Hν [Hbody [He1 He2]]]]].
   exists v. split; [exact Hν |].
   change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v).
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
