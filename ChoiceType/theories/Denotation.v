@@ -154,6 +154,29 @@ Proof.
   - exact Hle.
 Qed.
 
+(** Semantic expression refinement is stated in the shape used by
+    [fresh_forall]: after the representative [x] is renamed to any concrete
+    fresh atom [y], every result of [e_to] is also a result of [e_from].  The
+    direction is contravariant because type denotations use expression results
+    as implication antecedents. *)
+Definition expr_result_refines (e_to e_from : tm) : Prop :=
+  ∀ x y,
+    formula_rename_atom x y (FExprResult e_to x) ⊫
+    formula_rename_atom x y (FExprResult e_from x).
+
+Lemma expr_result_refines_refl e :
+  expr_result_refines e e.
+Proof. intros x y m Hm. exact Hm. Qed.
+
+Lemma expr_result_refines_trans e3 e2 e1 :
+  expr_result_refines e3 e2 →
+  expr_result_refines e2 e1 →
+  expr_result_refines e3 e1.
+Proof.
+  intros H32 H21 x y m Hm.
+  apply H21. apply H32. exact Hm.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
