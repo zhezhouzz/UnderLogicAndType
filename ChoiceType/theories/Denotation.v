@@ -488,10 +488,107 @@ Lemma denot_ctx_under_bind Σ x τ m :
   m ⊨ denot_ty_under Σ τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
 
+Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
+  ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
+  denot_ctx_under Σ1 Γ ⊣⊢ denot_ctx_under Σ2 Γ.
+Proof. Admitted.
+
 (** The public context denotation uses each context's own erased environment.
     These wrappers require environment-locality facts to bridge from the
     ambient environment of the compound context to the standalone subcontext
     environments. *)
+Lemma denot_ctx_comma_agree Γ1 Γ2 m :
+  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
+  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
+  m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
+Proof.
+  intros Hagree1 Hagree2.
+  change (m ⊨ denot_ctx_under (erase_ctx (CtxComma Γ1 Γ2)) (CtxComma Γ1 Γ2) ↔
+    m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧).
+  rewrite denot_ctx_under_comma.
+  split.
+  - intros [HΓ1 HΓ2]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
+      apply H. exact HΓ2.
+  - intros [HΓ1 HΓ2]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
+      apply H. exact HΓ2.
+Qed.
+
+Lemma denot_ctx_star_agree Γ1 Γ2 m :
+  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
+  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) →
+  m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
+  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m ∧
+    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
+Proof.
+  intros Hagree1 Hagree2.
+  change (m ⊨ denot_ctx_under (erase_ctx (CtxStar Γ1 Γ2)) (CtxStar Γ1 Γ2) ↔
+    ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
+      res_product m1 m2 Hc ⊑ m ∧
+      m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧).
+  rewrite denot_ctx_under_star.
+  split.
+  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    exists m1, m2, Hc. split; [exact Hprod |]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
+      apply H. exact HΓ2.
+  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
+    exists m1, m2, Hc. split; [exact Hprod |]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
+      apply H. exact HΓ2.
+Qed.
+
+Lemma denot_ctx_sum_agree Γ1 Γ2 m :
+  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) →
+  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) →
+  m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
+  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m ∧
+    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
+Proof.
+  intros Hagree1 Hagree2.
+  change (m ⊨ denot_ctx_under (erase_ctx (CtxSum Γ1 Γ2)) (CtxSum Γ1 Γ2) ↔
+    ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
+      res_sum m1 m2 Hdef ⊑ m ∧
+      m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧).
+  rewrite denot_ctx_under_sum.
+  split.
+  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    exists m1, m2, Hdef. split; [exact Hsum |]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
+      apply H. exact HΓ2.
+  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
+    exists m1, m2, Hdef. split; [exact Hsum |]. split.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
+      apply H. exact HΓ1.
+    + destruct (denot_ctx_under_env_equiv
+        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
+      apply H. exact HΓ2.
+Qed.
+
 Lemma denot_ctx_comma Γ1 Γ2 m :
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof. Admitted.
