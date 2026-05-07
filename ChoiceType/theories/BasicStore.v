@@ -111,6 +111,16 @@ Proof.
   exact (Htyped σ Hσ).
 Qed.
 
+Lemma basic_world_formula_store_restrict_typed Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  (m : World) σ →
+  store_has_type_on Σ X (store_restrict σ X).
+Proof.
+  intros Hbasic Hσ.
+  eapply basic_world_formula_store_typed; [exact Hbasic |].
+  simpl. exists σ. split; [exact Hσ | reflexivity].
+Qed.
+
 Lemma store_has_type_on_lookup Σ X σ x T v :
   store_has_type_on Σ X σ →
   x ∈ X →
@@ -171,6 +181,19 @@ Proof.
   - eapply basic_world_formula_store_typed; eauto.
 Qed.
 
+Lemma basic_world_formula_store_restrict_closed_env Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  (m : World) σ →
+  closed_env (store_restrict σ X).
+Proof.
+  intros Hbasic HXΣ Hσ.
+  eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
+  - rewrite store_restrict_dom. set_solver.
+  - exact HXΣ.
+  - eapply basic_world_formula_store_restrict_typed; eauto.
+Qed.
+
 Lemma basic_world_formula_store_lc_env Σ X m σ :
   res_models m (basic_world_formula Σ X) →
   X ⊆ dom Σ →
@@ -183,6 +206,19 @@ Proof.
     simpl in Hdom. set_solver.
   - exact HXΣ.
   - eapply basic_world_formula_store_typed; eauto.
+Qed.
+
+Lemma basic_world_formula_store_restrict_lc_env Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  (m : World) σ →
+  lc_env (store_restrict σ X).
+Proof.
+  intros Hbasic HXΣ Hσ.
+  eapply (store_has_type_on_lc_env Σ X (store_restrict σ X)).
+  - rewrite store_restrict_dom. set_solver.
+  - exact HXΣ.
+  - eapply basic_world_formula_store_restrict_typed; eauto.
 Qed.
 
 Lemma store_has_type_on_insert_self Σ X σ x T v :
