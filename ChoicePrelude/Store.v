@@ -84,6 +84,14 @@ Proof.
   unfold atom_swap. repeat destruct decide; congruence.
 Qed.
 
+Lemma atom_swap_fresh x y z :
+  z ≠ x →
+  z ≠ y →
+  atom_swap x y z = z.
+Proof.
+  unfold atom_swap. repeat destruct decide; congruence.
+Qed.
+
 Lemma atom_swap_conjugate a b x y z :
   atom_swap a b (atom_swap x y z) =
   atom_swap (atom_swap a b x) (atom_swap a b y) (atom_swap a b z).
@@ -281,6 +289,30 @@ Lemma store_swap_involutive x y s :
 Proof.
   apply map_eq. intros z.
   rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma map_restrict_store_swap_fresh x y (s : Store) X :
+  x ∉ X →
+  y ∉ X →
+  map_restrict V (store_swap x y s) X = map_restrict V s X.
+Proof.
+  intros Hx Hy. apply map_eq. intros z.
+  destruct (decide (z ∈ X)) as [Hz | Hz].
+  - destruct (s !! z) as [v|] eqn:Hs.
+    + transitivity (Some v).
+      * apply map_lookup_filter_Some_2; [| exact Hz].
+        rewrite store_swap_lookup_inv.
+        rewrite atom_swap_fresh by set_solver.
+        exact Hs.
+      * symmetry. apply map_lookup_filter_Some_2; [exact Hs | exact Hz].
+    + transitivity (@None V).
+      * apply map_lookup_filter_None_2. left.
+        rewrite store_swap_lookup_inv.
+        rewrite atom_swap_fresh by set_solver. exact Hs.
+      * symmetry. apply map_lookup_filter_None_2. left. exact Hs.
+  - transitivity (@None V).
+    + apply map_lookup_filter_None_2. right. intros v _ Hin. exact (Hz Hin).
+    + symmetry. apply map_lookup_filter_None_2. right. intros v _ Hin. exact (Hz Hin).
 Qed.
 
 Lemma store_swap_conjugate a b x y s :
