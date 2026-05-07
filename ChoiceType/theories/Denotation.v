@@ -12,7 +12,8 @@
     the typing rules and the fundamental theorem. *)
 
 From LocallyNameless Require Import Tactics.
-From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps.
+From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
+  OperationalProps.
 From ChoiceType Require Export Syntax.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -49,16 +50,62 @@ Proof.
     simpl; set_solver.
 Qed.
 
+Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
+  ∀ σw,
+    (w : World) σw →
+    ∃ v,
+      σw !! ν = Some v ∧
+      subst_map σw (subst_map ρ e) →* tret v.
+
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  lqual (stale e ∪ {[ν]}) (fun σ (w : WfWorld) =>
-    ∀ σw,
-      (w : World) σw →
-      ∃ v,
-        σw !! ν = Some v ∧
-        subst_map σw (subst_map σ e) →* tret v).
+  lqual (stale e ∪ {[ν]}) (fun σ w => expr_result_in_world σ e ν w).
 
 Definition FExprResult (e : tm) (ν : atom) : FQ :=
   FAtom (expr_logic_qual e ν).
+
+Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
+  expr_result_in_world ρ (tlete e1 e2) ν w →
+  ∀ σw,
+    (w : World) σw →
+    ∃ v vx,
+      σw !! ν = Some v ∧
+      subst_map σw (subst_map ρ e1) →* tret vx ∧
+      open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
+Proof.
+  intros Hres σw Hσw.
+  destruct (Hres σw Hσw) as [v [Hν Hsteps]].
+  exists v.
+  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
+  rewrite (msubst_lete ρ e1 e2) in Hsteps.
+  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
+    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))) in Hsteps.
+  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)) in Hsteps.
+  apply reduction_lete in Hsteps as [vx [He1 He2]].
+  exists vx. repeat split; assumption.
+Qed.
+
+Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
+  (∀ σw,
+    (w : World) σw →
+    ∃ v vx,
+      σw !! ν = Some v ∧
+      body_tm (subst_map σw (subst_map ρ e2)) ∧
+      subst_map σw (subst_map ρ e1) →* tret vx ∧
+      open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
+  expr_result_in_world ρ (tlete e1 e2) ν w.
+Proof.
+  intros Hres σw Hσw.
+  destruct (Hres σw Hσw) as [v [vx [Hν [Hbody [He1 He2]]]]].
+  exists v. split; [exact Hν |].
+  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v).
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
+  rewrite (msubst_lete ρ e1 e2).
+  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
+    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))).
+  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)).
+  eapply reduction_lete_intro; eauto.
+Qed.
 
 (** Formula-level result-set view for [let].
 
