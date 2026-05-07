@@ -134,6 +134,26 @@ Proof.
   exists w. split; [exact Hres | exact Hle].
 Qed.
 
+Lemma FExprResult_models_from_result_inclusion e1 e2 ν m :
+  formula_scoped_in_world ∅ m (FExprResult e1 ν) →
+  (∀ w,
+    expr_result_in_world
+      (store_restrict ∅ (stale e2 ∪ {[ν]})) e2 ν
+      (res_restrict w (stale e2 ∪ {[ν]})) →
+    expr_result_in_world
+      (store_restrict ∅ (stale e1 ∪ {[ν]})) e1 ν
+      (res_restrict w (stale e1 ∪ {[ν]}))) →
+  m ⊨ FExprResult e2 ν →
+  m ⊨ FExprResult e1 ν.
+Proof.
+  intros Hscope Hincl Hexpr.
+  destruct (FExprResult_models_elim e2 ν m Hexpr) as [w [Hres Hle]].
+  eapply FExprResult_models_intro.
+  - exact Hscope.
+  - apply Hincl. exact Hres.
+  - exact Hle.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
