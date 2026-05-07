@@ -122,6 +122,33 @@ change (@map_restrict atom _ nat s X !! k = Some v).
   `setoid_rewrite` 暴露 canonical form；
 - 再让主证明调用这个 tactic/lemma。
 
+### 5. Nested restriction: choose the direction explicitly
+
+For goals involving a projected store from an extension world, the useful shape
+is often:
+
+```coq
+replace (store_restrict σ X)
+  with (store_restrict (store_restrict σ D) X).
+2:{ rewrite store_restrict_restrict.
+    replace (D ∩ X) with X by set_solver.
+    reflexivity. }
+```
+
+This direction lets you reuse lemmas whose premise is a store in the smaller
+world `D`.  Trying to `rewrite <- store_restrict_restrict` directly often fails
+because the goal contains `store_restrict σ X`, not the normalized
+`store_restrict σ (D ∩ X)` subterm.
+
+When proving that `store_restrict σ D = σ` from a world-store domain fact
+`dom σ = D`, use `store_restrict_idemp` with the equality in the right
+direction:
+
+```coq
+symmetry. apply store_restrict_idemp.
+intros z Hz. rewrite <- Hdomσ. exact Hz.
+```
+
 ## Store compatibility 的推荐 spec
 
 `store_compat s1 s2` 的自然含义是：

@@ -221,6 +221,66 @@ Proof.
   - eapply basic_world_formula_store_restrict_typed; eauto.
 Qed.
 
+Lemma basic_world_formula_extension_store_restrict_closed_env
+    Σ X m my σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  X ⊆ world_dom (m : World) →
+  res_restrict my (world_dom (m : World)) = m →
+  (my : World) σ →
+  closed_env (store_restrict σ X).
+Proof.
+  intros Hbasic HXΣ HXm Hrestr Hσ.
+  assert (Hmσ : (m : World) (store_restrict σ (world_dom (m : World)))).
+  {
+    rewrite <- Hrestr. simpl.
+    exists σ. split; [exact Hσ |].
+    pose proof (wfworld_store_dom my σ Hσ) as Hdomσ.
+    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
+      (world_dom (m : World))).
+    replace (store_restrict σ (world_dom (my : World))) with σ.
+    2:{ symmetry. apply store_restrict_idemp.
+        intros z Hz. rewrite <- Hdomσ. exact Hz. }
+    reflexivity.
+  }
+  replace (store_restrict σ X)
+    with (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  2:{ rewrite store_restrict_restrict.
+      replace (world_dom (m : World) ∩ X) with X by set_solver.
+      reflexivity. }
+  eapply basic_world_formula_store_restrict_closed_env; eauto.
+Qed.
+
+Lemma basic_world_formula_extension_store_restrict_lc_env
+    Σ X m my σ :
+  res_models m (basic_world_formula Σ X) →
+  X ⊆ dom Σ →
+  X ⊆ world_dom (m : World) →
+  res_restrict my (world_dom (m : World)) = m →
+  (my : World) σ →
+  lc_env (store_restrict σ X).
+Proof.
+  intros Hbasic HXΣ HXm Hrestr Hσ.
+  assert (Hmσ : (m : World) (store_restrict σ (world_dom (m : World)))).
+  {
+    rewrite <- Hrestr. simpl.
+    exists σ. split; [exact Hσ |].
+    pose proof (wfworld_store_dom my σ Hσ) as Hdomσ.
+    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
+      (world_dom (m : World))).
+    replace (store_restrict σ (world_dom (my : World))) with σ.
+    2:{ symmetry. apply store_restrict_idemp.
+        intros z Hz. rewrite <- Hdomσ. exact Hz. }
+    reflexivity.
+  }
+  replace (store_restrict σ X)
+    with (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  2:{ rewrite store_restrict_restrict.
+      replace (world_dom (m : World) ∩ X) with X by set_solver.
+      reflexivity. }
+  eapply basic_world_formula_store_restrict_lc_env; eauto.
+Qed.
+
 Lemma store_has_type_on_insert_self Σ X σ x T v :
   store_has_type_on (<[x := T]> Σ) X σ →
   x ∈ X →
