@@ -578,6 +578,49 @@ Proof.
   - rewrite (dom_delete_L σ x). set_solver.
 Qed.
 
+Lemma msubst_open_lookup_swap_tm σ e k x y vx :
+  closed_env σ ->
+  lc_env σ ->
+  σ !! y = Some vx ->
+  x ∉ fv_tm e ->
+  y ∉ fv_tm e ->
+  m{store_swap x y σ} (open_tm k (vfvar x) e) =
+  m{σ} (open_tm k (vfvar y) e).
+Proof.
+  intros Hclosed Hlc Hlookup Hx Hy.
+  assert (Hlc_swap : lc_env (store_swap x y σ)).
+  {
+    unfold lc_env in *. apply map_Forall_lookup_2. intros z v Hz.
+    rewrite store_swap_lookup_inv in Hz.
+    eapply lc_env_lookup; eauto.
+  }
+  assert (Hlookup_swap : store_swap x y σ !! x = Some vx).
+  {
+    rewrite store_swap_lookup_inv.
+    unfold atom_swap. repeat destruct decide; try congruence; exact Hlookup.
+  }
+  rewrite (msubst_open_lookup_tm (store_swap x y σ) e k x vx)
+    by (try apply closed_env_store_swap; try exact Hclosed;
+        try exact Hlc_swap; try exact Hlookup_swap; try exact Hx).
+  rewrite (msubst_open_lookup_tm σ e k y vx)
+    by (try exact Hclosed; try exact Hlc; try exact Hlookup; try exact Hy).
+  f_equal.
+  assert (Hdelete :
+    delete x (store_swap x y σ) = store_swap x y (delete y σ)).
+  {
+    assert (Hatom : atom_swap x y y = x).
+    { unfold atom_swap. repeat destruct decide; subst; try congruence; reflexivity. }
+    rewrite <- Hatom at 1. symmetry. apply store_swap_delete.
+  }
+  change (m{delete x (store_swap x y σ)} e = m{delete y σ} e).
+  rewrite Hdelete.
+  rewrite (msubst_store_swap_fresh tm x y (delete y σ) e).
+  - reflexivity.
+  - apply closed_env_delete. exact Hclosed.
+  - exact Hx.
+  - exact Hy.
+Qed.
+
 Class MsubstLc A `{SubstV value A} `{Lc A} := msubst_lc :
   forall (σ : env) (a : A),
     lc_env σ ->
