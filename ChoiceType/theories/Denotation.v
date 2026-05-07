@@ -233,9 +233,82 @@ Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
 Proof. Admitted.
 
+Lemma denot_ty_under_result_atom_fv Σ x τ :
+  x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
+Proof.
+  unfold denot_ty_under, denot_ty_avoiding.
+  assert (Hfuel :
+    ∀ gas D Σ0 τ0 z,
+      cty_measure τ0 <= gas →
+      z ∈ D →
+      z ∈ formula_fv (denot_ty_fuel gas D Σ0 τ0 (tret (vfvar z)))).
+  {
+    induction gas as [|gas IH]; intros D Σ0 τ0 z Hgas HzD.
+    { pose proof (cty_measure_gt_0 τ0). lia. }
+    destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2]; simpl in *.
+    - unfold fresh_forall. simpl.
+      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
+      assert (Hzν : z ≠ ν).
+      {
+        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
+      + intros Hzνin. apply elem_of_singleton in Hzνin.
+        exact (Hzν Hzνin).
+    - unfold fresh_forall. simpl.
+      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
+      assert (Hzν : z ≠ ν).
+      {
+        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
+      + intros Hzνin. apply elem_of_singleton in Hzνin.
+        exact (Hzν Hzνin).
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - apply elem_of_union. left.
+      apply IH; [lia | exact HzD].
+    - unfold fresh_forall. simpl.
+      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+      assert (Hzy : z ≠ y).
+      {
+        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
+      + intros Hzyin. apply elem_of_singleton in Hzyin.
+        exact (Hzy Hzyin).
+    - unfold fresh_forall. simpl.
+      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+      assert (Hzy : z ≠ y).
+      {
+        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
+        set_solver.
+      }
+      apply elem_of_difference. split.
+      + apply elem_of_union. left.
+        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
+      + intros Hzyin. apply elem_of_singleton in Hzyin.
+        exact (Hzy Hzyin).
+  }
+  apply Hfuel.
+  - reflexivity.
+  - simpl. set_solver.
+Qed.
+
 Lemma denot_ty_result_atom_fv x τ :
   x ∈ formula_fv (denot_ty τ (tret (vfvar x))).
-Proof. Admitted.
+Proof. apply denot_ty_under_result_atom_fv. Qed.
 
 Lemma denot_ty_restrict_fv τ e m :
   m ⊨ denot_ty τ e →
@@ -274,9 +347,19 @@ Definition denot_ctx (Γ : ctx) : FQ :=
 Arguments denot_cty_inst /.
 Arguments denot_ctx_inst /.
 
+Lemma denot_ctx_under_dom_subset_formula_fv Σ Γ :
+  ctx_dom Γ ⊆ formula_fv (denot_ctx_under Σ Γ).
+Proof.
+  induction Γ; simpl; try set_solver.
+  intros z Hz. apply elem_of_singleton in Hz. subst.
+  apply denot_ty_under_result_atom_fv.
+Qed.
+
 Lemma denot_ctx_dom_subset_formula_fv Γ :
   ctx_dom Γ ⊆ formula_fv (denot_ctx Γ).
-Proof. Admitted.
+Proof.
+  unfold denot_ctx. apply denot_ctx_under_dom_subset_formula_fv.
+Qed.
 
 Lemma denot_ctx_models_dom Γ m :
   m ⊨ ⟦Γ⟧ →

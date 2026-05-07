@@ -180,7 +180,14 @@ Lemma fundamental_appop_case (Φ : primop_ctx) Γ op x :
   (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) →
   ⟦Γ⟧ ⊫
     denot_ty_in_ctx Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
-Proof. Admitted.
+Proof.
+  intros Hwf Harg m HΓ.
+  pose proof (wf_primop_semantic op (Φ op) Hwf x) as [Hop _].
+  (* The operator spec is stated over the singleton argument context.  To use
+     it under an arbitrary ambient [Γ], we need a locality lemma translating
+     [denot_ty_in_ctx Γ] for the argument/result to
+     [denot_ty_in_ctx (CtxBind x (primop_arg_ty (Φ op)))]. *)
+Admitted.
 
 Lemma fundamental_match_both_case (Φ : primop_ctx) Γt Γf v τt τf et ef :
   (⟦Γt⟧ ⊫ denot_ty_in_ctx Γt (bool_precise_ty true) (tret v)) →
