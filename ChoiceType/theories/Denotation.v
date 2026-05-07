@@ -107,6 +107,33 @@ Proof.
   eapply reduction_lete_intro; eauto.
 Qed.
 
+Lemma FExprResult_models_elim e ν m :
+  m ⊨ FExprResult e ν →
+  ∃ w : WfWorld,
+    expr_result_in_world
+      (store_restrict ∅ (stale e ∪ {[ν]})) e ν
+      (res_restrict w (stale e ∪ {[ν]})) ∧
+    w ⊑ m.
+Proof.
+  unfold FExprResult, res_models, res_models_with_store.
+  simpl. intros [_ [w [Hres Hle]]].
+  exists w. split; [exact Hres | exact Hle].
+Qed.
+
+Lemma FExprResult_models_intro e ν m w :
+  formula_scoped_in_world ∅ m (FExprResult e ν) →
+  expr_result_in_world
+    (store_restrict ∅ (stale e ∪ {[ν]})) e ν
+    (res_restrict w (stale e ∪ {[ν]})) →
+  w ⊑ m →
+  m ⊨ FExprResult e ν.
+Proof.
+  unfold FExprResult, res_models, res_models_with_store.
+  simpl. intros Hscope Hres Hle.
+  split; [exact Hscope |].
+  exists w. split; [exact Hres | exact Hle].
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
