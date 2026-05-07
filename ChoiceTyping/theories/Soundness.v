@@ -244,6 +244,12 @@ Proof.
     simpl in Hdom. set_solver.
   - unfold logic_qualifier_denote, basic_world_formula, basic_world_lqual.
     simpl. unfold world_has_type_on, store_has_type_on.
+    split.
+    { destruct (wf_ne _ (world_wf (res_restrict m {[ν]}))) as [σ Hσ].
+      pose proof (Hlookup σ Hσ) as Hν.
+      pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hσ) as Hdom.
+      assert (Hνdom : ν ∈ dom σ) by (apply elem_of_dom; eexists; exact Hν).
+      simpl in Hdom. set_solver. }
     intros σ Hσ x T v Hx HΣ Hσv.
     apply elem_of_singleton in Hx. subst x.
     rewrite lookup_insert in HΣ.

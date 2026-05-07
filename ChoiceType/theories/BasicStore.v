@@ -25,6 +25,7 @@ Definition store_has_type_on
 
 Definition world_has_type_on
     (Σ : gmap atom ty) (X : aset) (w : WfWorld) : Prop :=
+  X ⊆ world_dom (w : World) ∧
   ∀ σ, (w : World) σ → store_has_type_on Σ X σ.
 
 Definition basic_world_lqual
@@ -49,7 +50,8 @@ Lemma world_has_type_on_mono Σ X Y w :
   world_has_type_on Σ Y w →
   world_has_type_on Σ X w.
 Proof.
-  intros HXY Htyped σ Hσ.
+  intros HXY [Hdom Htyped]. split; [set_solver |].
+  intros σ Hσ.
   eapply store_has_type_on_mono; eauto.
 Qed.
 
@@ -66,10 +68,14 @@ Proof.
   apply functional_extensionality. intros w.
   apply propositional_extensionality.
   unfold world_has_type_on, store_has_type_on in *.
-  split; intros Htyped σw Hσw x T v Hx HΣ Hlook.
-  - apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
+  split.
+  - intros [Hdom Htyped]. split; [exact Hdom |].
+    intros σw Hσw x T v Hx HΣ Hlook.
+    apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
     rewrite Hagree; exact HΣ || exact Hx.
-  - apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
+  - intros [Hdom Htyped]. split; [exact Hdom |].
+    intros σw Hσw x T v Hx HΣ Hlook.
+    apply (Htyped σw Hσw x T v Hx); [| exact Hlook].
     rewrite <- Hagree; exact HΣ || exact Hx.
 Qed.
 
@@ -79,6 +85,30 @@ Lemma basic_world_formula_agree Σ1 Σ2 X :
 Proof.
   intros Hagree. unfold basic_world_formula.
   rewrite (basic_world_lqual_agree Σ1 Σ2 X Hagree). reflexivity.
+Qed.
+
+Lemma basic_world_formula_current Σ X m :
+  res_models m (basic_world_formula Σ X) →
+  world_has_type_on Σ X (res_restrict m X).
+Proof.
+  unfold basic_world_formula, res_models, res_models_with_store.
+  simpl. intros [_ [m0 [Htyped0 Hle]]].
+  assert (HXm0 : X ⊆ world_dom (m0 : World)).
+  {
+    destruct Htyped0 as [Hdom0 _]. simpl in Hdom0. set_solver.
+  }
+  rewrite <- (res_restrict_le_eq m0 m X Hle HXm0).
+  exact Htyped0.
+Qed.
+
+Lemma basic_world_formula_store_typed Σ X m σ :
+  res_models m (basic_world_formula Σ X) →
+  (res_restrict m X : World) σ →
+  store_has_type_on Σ X σ.
+Proof.
+  intros Hbasic Hσ.
+  destruct (basic_world_formula_current Σ X m Hbasic) as [_ Htyped].
+  exact (Htyped σ Hσ).
 Qed.
 
 Lemma store_has_type_on_lookup Σ X σ x T v :
@@ -145,7 +175,7 @@ Lemma world_has_type_on_lookup Σ X w σ x T v :
   σ !! x = Some v →
   ∅ ⊢ᵥ v ⋮ T.
 Proof.
-  intros Htyped Hσ Hx HΣ Hlook.
+  intros [_ Htyped] Hσ Hx HΣ Hlook.
   eapply store_has_type_on_lookup; eauto.
 Qed.
 
@@ -156,7 +186,7 @@ Lemma world_has_type_on_insert_self Σ X w σ x T v :
   σ !! x = Some v →
   ∅ ⊢ᵥ v ⋮ T.
 Proof.
-  intros Htyped Hσ Hx Hlook.
+  intros [_ Htyped] Hσ Hx Hlook.
   eapply store_has_type_on_insert_self; eauto.
 Qed.
 
@@ -173,7 +203,8 @@ Lemma world_has_type_on_restrict Σ X Y w :
   world_has_type_on Σ X w →
   world_has_type_on Σ (X ∩ Y) (res_restrict w Y).
 Proof.
-  intros Htyped σ Hσ.
+  intros [Hdom Htyped]. split; [simpl; set_solver |].
+  intros σ Hσ.
   simpl in Hσ.
   destruct Hσ as [σ0 [Hσ0 Hrestrict]].
   subst σ.
@@ -186,8 +217,12 @@ Lemma world_has_type_on_restrict_mono Σ X Y w :
   world_has_type_on Σ X w →
   world_has_type_on Σ X (res_restrict w Y).
 Proof.
-  intros HXY Htyped.
-  eapply (world_has_type_on_mono Σ X (X ∩ Y)).
-  - intros z Hz. apply elem_of_intersection. split; [exact Hz | set_solver].
-  - apply world_has_type_on_restrict. exact Htyped.
+  intros HXY [Hdom Htyped]. split; [simpl; set_solver |].
+  intros σ Hσ.
+  simpl in Hσ.
+  destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+  subst σ.
+  intros x T v Hx HΣ Hlookup.
+  apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+  eapply Htyped; eauto.
 Qed.
