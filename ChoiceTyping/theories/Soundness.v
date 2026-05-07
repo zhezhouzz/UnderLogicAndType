@@ -513,6 +513,66 @@ Proof.
   exact Hbind.
 Qed.
 
+Lemma fundamental_const_over_case Σ c :
+  denot_ctx_in_env Σ CtxEmpty ⊫
+    denot_ty_in_ctx_under Σ CtxEmpty
+      (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+      (tret (vconst c)).
+Proof.
+  intros m _.
+  unfold denot_ty_in_ctx_under, denot_ty_under, denot_ty_avoiding.
+  simpl.
+  set (ν := fresh_for (∅ ∪ ∅ ∪ ∅ ∪ (∅ ∪ ∅))).
+  change (m ⊨ FForall ν (const_over_body (erase_ctx_under Σ CtxEmpty) c ν)).
+  eapply res_models_forall_intro.
+  - unfold formula_scoped_in_world. intros z Hz.
+    rewrite dom_empty_L in Hz.
+    apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+    simpl in Hz.
+    apply elem_of_difference in Hz as [Hzbody Hzν].
+    pose proof (const_over_body_fv_subset (erase_ctx_under Σ CtxEmpty) c ν _ Hzbody)
+      as Hzν'.
+    set_solver.
+  - exists (world_dom (m : World) ∪ {[ν]}). split; [set_solver |].
+    intros y Hy m' Hdom Hrestr.
+    eapply res_models_impl_intro.
+    + apply const_over_body_rename_scoped.
+      simpl. rewrite Hdom. set_solver.
+    + intros m'' Hle Hexpr.
+      apply const_over_consequent_from_renamed_expr.
+      exact Hexpr.
+Qed.
+
+Lemma fundamental_const_under_case Σ c :
+  denot_ctx_in_env Σ CtxEmpty ⊫
+    denot_ty_in_ctx_under Σ CtxEmpty
+      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+      (tret (vconst c)).
+Proof.
+  intros m _.
+  unfold denot_ty_in_ctx_under, denot_ty_under, denot_ty_avoiding.
+  simpl.
+  set (ν := fresh_for (∅ ∪ ∅ ∪ ∅ ∪ (∅ ∪ ∅))).
+  change (m ⊨ FForall ν (const_under_body (erase_ctx_under Σ CtxEmpty) c ν)).
+  eapply res_models_forall_intro.
+  - unfold formula_scoped_in_world. intros z Hz.
+    rewrite dom_empty_L in Hz.
+    apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+    simpl in Hz.
+    apply elem_of_difference in Hz as [Hzbody Hzν].
+    pose proof (const_under_body_fv_subset (erase_ctx_under Σ CtxEmpty) c ν _ Hzbody)
+      as Hzν'.
+    set_solver.
+  - exists (world_dom (m : World) ∪ {[ν]}). split; [set_solver |].
+    intros y Hy m' Hdom Hrestr.
+    eapply res_models_impl_intro.
+    + apply const_under_body_rename_scoped.
+      simpl. rewrite Hdom. set_solver.
+    + intros m'' Hle Hexpr.
+      apply const_under_consequent_from_renamed_expr.
+      exact Hexpr.
+Qed.
+
 (** Constants need the first value-adequacy lemma for the new
     basic-world-aware refinement denotation: evaluating [tret c] at a fresh
     result coordinate produces a singleton world satisfying the opened
@@ -520,7 +580,27 @@ Qed.
 Lemma fundamental_const_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
-Proof. Admitted.
+Proof.
+  intros m HΓ.
+  unfold const_precise_ty, precise_ty.
+  eapply res_models_and_intro.
+  - unfold formula_scoped_in_world. simpl. intros z Hz.
+    assert (Hzφ : z ∈ formula_fv
+      (denot_ty_in_ctx_under Σ CtxEmpty
+        (CTInter
+          (over_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+          (under_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
+        (tret (vconst c)))) by set_solver.
+    pose proof (denot_ty_under_formula_fv_subset
+      (erase_ctx_under Σ CtxEmpty)
+      (CTInter
+        (over_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+        (under_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
+      (tret (vconst c)) z Hzφ) as Hfoot.
+    simpl in Hfoot. set_solver.
+  - apply fundamental_const_over_case. exact HΓ.
+  - apply fundamental_const_under_case. exact HΓ.
+Qed.
 
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
