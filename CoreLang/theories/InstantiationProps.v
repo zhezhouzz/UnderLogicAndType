@@ -310,6 +310,17 @@ Proof.
       rewrite (closed_env_lookup σ' x v Hclosed' Hlookup). set_solver.
 Qed.
 
+Lemma msubst_prim_fvar_lookup_closed σ op x v :
+  closed_env σ →
+  σ !! x = Some v →
+  m{σ} (tprim op (vfvar x)) = tprim op v.
+Proof.
+  intros Hclosed Hlookup.
+  rewrite msubst_tprim.
+  rewrite (msubst_fvar_lookup_closed σ x v Hclosed Hlookup).
+  reflexivity.
+Qed.
+
 Class MsubstFv A `{Stale A} `{SubstV value A} := msubst_fv :
   forall (σ : env) (a : A),
     closed_env σ ->
