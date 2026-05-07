@@ -35,7 +35,9 @@ Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_quali
   | qual B d p =>
       if decide (k ∈ B) then
         qual (B ∖ {[k]}) ({[x]} ∪ d)
-          (λ β σ a, ∃ v, σ !! x = Some v ∧ p (<[k := v]> β) σ a)
+          (λ β σ a,
+            ∃ v, σ !! x = Some v ∧
+                 p (<[k := v]> β) (store_restrict σ d) (store_restrict a d))
       else q
   end.
 
