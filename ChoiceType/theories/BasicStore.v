@@ -198,6 +198,51 @@ Proof.
       apply Htyped. exact Hσ0.
 Qed.
 
+Lemma logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
+    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) σ w :
+  x ∉ X →
+  y ∉ X →
+  logic_qualifier_denote
+    (lqual_swap x y (basic_world_lqual (<[x := T]> Σ) ({[x]} ∪ X))) σ w ↔
+  logic_qualifier_denote
+    (basic_world_lqual (<[y := T]> Σ) ({[y]} ∪ X)) σ w.
+Proof.
+  intros Hx Hy.
+  rewrite logic_qualifier_denote_swap.
+  unfold basic_world_lqual. simpl.
+  set (Xx := ({[x]} ∪ X : aset)).
+  set (Xy := ({[y]} ∪ X : aset)).
+  replace (aset_swap x y Xx) with Xy.
+  2:{
+    subst Xx Xy.
+    rewrite aset_swap_union, aset_swap_singleton.
+    replace (atom_swap x y x) with y
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by assumption.
+    reflexivity.
+  }
+  replace Xx with (aset_swap x y Xy).
+  2:{
+    subst Xx Xy.
+    rewrite aset_swap_union, aset_swap_singleton.
+    replace (atom_swap x y y) with x
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by assumption.
+    reflexivity.
+  }
+  rewrite res_restrict_swap.
+  subst Xy.
+  replace (aset_swap x y ({[y]} ∪ X)) with ({[x]} ∪ X).
+  2:{
+    rewrite aset_swap_union, aset_swap_singleton.
+    replace (atom_swap x y y) with x
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by assumption.
+    reflexivity.
+  }
+  apply world_has_type_on_swap_insert_fresh; assumption.
+Qed.
+
 Lemma basic_world_formula_current Σ X m :
   res_models m (basic_world_formula Σ X) →
   world_has_type_on Σ X (res_restrict m X).
