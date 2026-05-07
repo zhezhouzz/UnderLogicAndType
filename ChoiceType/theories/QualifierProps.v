@@ -72,3 +72,22 @@ Proof.
   replace ((d1 ∪ d2) ∩ d2) with d2 by set_solver.
   tauto.
 Qed.
+
+Lemma qual_interp_open_eq_const x c σ :
+  qual_interp σ (qual_open_atom 0 x (mk_q_eq (vbvar 0) (vconst c))) ↔
+  σ !! x = Some (vconst c).
+Proof.
+  unfold qual_interp, qual_interp_full, qual_open_atom, mk_q_eq.
+  simpl.
+  rewrite decide_True by set_solver.
+  rewrite !map_filter_empty.
+  split.
+  - intros [v [Hlook Heq]].
+    apply store_restrict_lookup_some in Hlook as [_ Hlook].
+    simpl in Heq. rewrite lookup_insert in Heq.
+    inversion Heq. subst v. exact Hlook.
+  - intros Hlook.
+    exists (vconst c). split.
+    + apply store_restrict_lookup_some_2; [exact Hlook | set_solver].
+    + reflexivity.
+Qed.
