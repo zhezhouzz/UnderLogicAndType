@@ -56,6 +56,38 @@ Proof.
   - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_atom_intro (m : WfWorld) (q : logic_qualifier) :
+  formula_scoped_in_world ∅ m (FAtom q) →
+  logic_qualifier_denote q ∅ m →
+  m ⊨ FAtom q.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hq. split; [exact Hscope |].
+  exists m. split; [exact Hq | reflexivity].
+Qed.
+
+Lemma res_models_over_intro_same (m : WfWorld) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FOver φ) →
+  m ⊨ φ →
+  m ⊨ FOver φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  exists m. split; [apply res_subset_refl |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_under_intro_same (m : WfWorld) (φ : FormulaQ) :
+  formula_scoped_in_world ∅ m (FUnder φ) →
+  m ⊨ φ →
+  m ⊨ FUnder φ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  exists m. split; [apply res_subset_refl |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
 (** Kripke implication elimination at the current world. *)
 Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FImpl φ ψ →
