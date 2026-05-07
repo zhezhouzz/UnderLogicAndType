@@ -42,15 +42,15 @@ Qed.
 
 (** The semantic-subtyping case of the fundamental theorem. *)
 Lemma fundamental_sub_case
-    (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
-  choice_typing_wf Γ e τ2 →
-  sub_type Γ τ1 τ2 →
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ1 e) →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ2 e.
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
+  choice_typing_wf Σ Γ e τ2 →
+  sub_type_under Σ Γ τ1 τ2 →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 e.
 Proof.
   intros Hwf Hsub IH m HΓ.
   destruct Hsub as [_ [_ [_ Hent]]].
-  pose proof (choice_typing_wf_fv_tm_subset Γ e τ2 Hwf) as Hfv.
+  pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ2 Hwf) as Hfv.
   pose proof (Hent e Hfv m HΓ) as Himpl.
   eapply res_models_impl_elim; [exact Himpl |].
   apply IH. exact HΓ.
@@ -58,15 +58,15 @@ Qed.
 
 (** The context-subtyping case of the fundamental theorem. *)
 Lemma fundamental_ctx_sub_case
-    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
-  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
-  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
-  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
+  ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
+  (denot_ctx_in_env Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τ e) →
+  denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ e.
 Proof.
-  intros Hsub Hagree IH m HΓ1.
-  destruct Hsub as [_ [_ Hrestrict]].
-  destruct (denot_ty_in_ctx_env_equiv Γ2 Γ1 τ e) as [H21 _].
+  intros Hsub IH m HΓ1.
+  destruct Hsub as [_ [_ [Hagree Hrestrict]]].
+  destruct (denot_ty_under_env_equiv
+    (erase_ctx_under Σ Γ2) (erase_ctx_under Σ Γ1) τ e) as [H21 _].
   { intros z Hz. symmetry. apply Hagree. set_solver. }
   apply H21.
   eapply res_models_kripke.
@@ -74,206 +74,134 @@ Proof.
   - apply IH. apply Hrestrict. exact HΓ1.
 Qed.
 
-Lemma fundamental_ctx_sub_case_from_typing
-    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
-  choice_typing_wf Γ1 e τ →
-  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
-  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
-  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
-  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
-Proof.
-  intros _ Hsub Hagree IH.
-  eapply fundamental_ctx_sub_case; eauto.
-Qed.
-
-Lemma fundamental_ctx_sub_case_unchecked
-    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
-  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
-  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
-  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
-Proof. Admitted.
-
 (** The variable case is exactly the singleton context denotation. *)
-Lemma fundamental_var_case (x : atom) (τ : choice_ty) :
-  ⟦CtxBind x τ⟧ ⊫ denot_ty_in_ctx (CtxBind x τ) τ (tret (vfvar x)).
-Proof.
-  intros m Hm. apply denot_ctx_bind. exact Hm.
-Qed.
+Lemma fundamental_var_case Σ (x : atom) (τ : choice_ty) :
+  denot_ctx_in_env Σ (CtxBind x τ) ⊫
+    denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
+Proof. Admitted.
 
 (** Constants need the first value-adequacy lemma for the new
     basic-world-aware refinement denotation: evaluating [tret c] at a fresh
     result coordinate produces a singleton world satisfying the opened
     equality qualifier. *)
-Lemma fundamental_const_case c :
-  ⟦CtxEmpty⟧ ⊫ denot_ty_in_ctx CtxEmpty (const_precise_ty c) (tret (vconst c)).
+Lemma fundamental_const_case Σ c :
+  denot_ctx_in_env Σ CtxEmpty ⊫
+    denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof. Admitted.
 
-Lemma fundamental_let_case (Φ : primop_ctx) Γ τ1 τ2 e1 e2 (L : aset) :
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ1 e1) →
+Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
-    ⟦CtxComma Γ (CtxBind x τ1)⟧ ⊫
-      denot_ty_in_ctx (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ2 (tlete e1 e2).
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof. Admitted.
 
-Lemma fundamental_letd_case (Φ : primop_ctx) Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
-  (⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ1 e1) →
+Lemma fundamental_letd_case (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
+  (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) →
   (∀ x, x ∉ L →
-    ⟦CtxStar Γ2 (CtxBind x τ1)⟧ ⊫
-      denot_ty_in_ctx (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) →
-  ⟦CtxStar Γ1 Γ2⟧ ⊫
-    denot_ty_in_ctx (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
+    denot_ctx_in_env Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
+    denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof. Admitted.
 
-Lemma fundamental_lam_case (Φ : primop_ctx) Γ τx τ e (L : aset) :
+Lemma fundamental_lam_case (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   (∀ y, y ∉ L →
-    ⟦CtxComma Γ (CtxBind y τx)⟧ ⊫
-      denot_ty_in_ctx (CtxComma Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
-  ⟦Γ⟧ ⊫
-    denot_ty_in_ctx Γ (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
 Proof. Admitted.
 
-Lemma fundamental_lamd_case (Φ : primop_ctx) Γ τx τ e (L : aset) :
+Lemma fundamental_lamd_case (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   (∀ y, y ∉ L →
-    ⟦CtxStar Γ (CtxBind y τx)⟧ ⊫
-      denot_ty_in_ctx (CtxStar Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
-  ⟦Γ⟧ ⊫
-    denot_ty_in_ctx Γ (CTWand τx τ) (tret (vlam (erase_ty τx) e)).
+    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ({0 ~> y} τ) (e ^^ y)) →
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (CTWand τx τ) (tret (vlam (erase_ty τx) e)).
 Proof. Admitted.
 
-Lemma fundamental_app_case (Φ : primop_ctx) Γ τx τ v1 x :
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (CTArrow τx τ) (tret v1)) →
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τx (tret (vfvar x))) →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
+Lemma fundamental_app_case (Φ : primop_ctx) Σ Γ τx τ v1 x :
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ (CTArrow τx τ) (tret v1)) →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τx (tret (vfvar x))) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof. Admitted.
 
-Lemma fundamental_appd_case (Φ : primop_ctx) Γ1 Γ2 τx τ v1 x :
-  (⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 (CTWand τx τ) (tret v1)) →
-  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τx (tret (vfvar x))) →
-  ⟦CtxStar Γ1 Γ2⟧ ⊫
-    denot_ty_in_ctx (CtxStar Γ1 Γ2) ({0 ~> x} τ) (tapp v1 (vfvar x)).
+Lemma fundamental_appd_case (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
+  (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 (CTWand τx τ) (tret v1)) →
+  (denot_ctx_in_env Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τx (tret (vfvar x))) →
+  denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
+    denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof. Admitted.
 
-Lemma fundamental_fix_case (Φ : primop_ctx) Γ τx τ vf (L : aset) :
+Lemma fundamental_fix_case (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
   (∀ y, y ∉ L →
-    ⟦CtxComma Γ (CtxBind y τx)⟧ ⊫
-      denot_ty_in_ctx (CtxComma Γ (CtxBind y τx))
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
         (CTArrow (CTArrow τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) →
-  ⟦Γ⟧ ⊫
-    denot_ty_in_ctx Γ (CTArrow τx τ)
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (erase_ty (CTArrow τx τ)) vf)).
 Proof. Admitted.
 
-Lemma fundamental_fixd_case (Φ : primop_ctx) Γ τx τ vf (L : aset) :
+Lemma fundamental_fixd_case (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
   (∀ y, y ∉ L →
-    ⟦CtxStar Γ (CtxBind y τx)⟧ ⊫
-      denot_ty_in_ctx (CtxStar Γ (CtxBind y τx))
+    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
         (CTWand (CTWand τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) →
-  ⟦Γ⟧ ⊫
-    denot_ty_in_ctx Γ (CTWand τx τ)
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (erase_ty (CTWand τx τ)) vf)).
 Proof. Admitted.
 
-Lemma fundamental_appop_case (Φ : primop_ctx) Γ op x :
+Lemma fundamental_appop_case (Φ : primop_ctx) Σ Γ op x :
   wf_primop_sig op (Φ op) →
-  choice_typing_wf Γ
+  choice_typing_wf Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) →
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) →
-  ⟦Γ⟧ ⊫
-    denot_ty_in_ctx Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
-Proof.
-  intros Hwf Hchoice Harg m HΓ.
-  set (sig := Φ op).
-  set (τarg := primop_arg_ty sig).
-  set (τres := primop_result_ty sig).
-  pose proof (wf_primop_semantic op (Φ op) Hwf x) as [Hop _].
-  assert (Harg_empty : fv_cty τarg ⊆ ∅).
-  {
-    subst τarg sig.
-    eapply basic_choice_ty_fv_subset.
-    apply wf_primop_sig_arg_basic with (op := op). exact Hwf.
-  }
-  assert (Harg_single :
-    m ⊨ denot_ty_in_ctx (CtxBind x τarg) τarg (tret (vfvar x))).
-  {
-    destruct (denot_ty_in_ctx_env_equiv Γ (CtxBind x τarg) τarg
-      (tret (vfvar x))) as [Henv _].
-    { intros z Hz. pose proof (Harg_empty z Hz). set_solver. }
-    apply Henv. subst τarg sig. apply Harg. exact HΓ.
-  }
-  assert (Hsingle_ctx : m ⊨ ⟦CtxBind x τarg⟧).
-  { apply denot_ctx_bind. exact Harg_single. }
-  pose proof (Hop m Hsingle_ctx) as Hres_single.
-  assert (Hx_lookup : erase_ctx Γ !! x = Some (erase_ty τarg)).
-  {
-    destruct Hchoice as [_ Herase].
-    subst τarg τres sig.
-    simpl in Herase.
-    inversion Herase; subst.
-    pose proof (wf_primop_sig_erased_bases op (Φ op) Hwf) as HopErase.
-    rewrite HopErase in H3. inversion H3; subst.
-    inversion H4; subst. simpl. exact H1.
-  }
-  assert (Hres_fv : fv_cty ({0 ~> x} τres) ⊆ {[x]}).
-  {
-    pose proof (cty_open_fv_subset 0 x τres) as Hopen.
-    assert (fv_cty τres ⊆ ∅).
-    {
-      subst τres sig.
-      eapply basic_choice_ty_fv_subset.
-      apply wf_primop_sig_result_basic with (op := op). exact Hwf.
-    }
-    set_solver.
-  }
-  destruct (denot_ty_in_ctx_env_equiv (CtxBind x τarg) Γ ({0 ~> x} τres)
-    (tprim op (vfvar x))) as [Hres_env _].
-  {
-    intros z Hz.
-    pose proof (Hres_fv z Hz) as Hzx.
-    apply elem_of_singleton in Hzx. subst z.
-    subst τarg. simpl in Hx_lookup. simpl.
-    rewrite lookup_singleton_eq. symmetry. exact Hx_lookup.
-  }
-  subst τres sig. apply Hres_env. exact Hres_single.
-Qed.
-
-Lemma fundamental_match_both_case (Φ : primop_ctx) Γt Γf v τt τf et ef :
-  (⟦Γt⟧ ⊫ denot_ty_in_ctx Γt (bool_precise_ty true) (tret v)) →
-  (⟦Γf⟧ ⊫ denot_ty_in_ctx Γf (bool_precise_ty false) (tret v)) →
-  (⟦Γt⟧ ⊫ denot_ty_in_ctx Γt τt et) →
-  (⟦Γf⟧ ⊫ denot_ty_in_ctx Γf τf ef) →
-  ⟦CtxSum Γt Γf⟧ ⊫
-    denot_ty_in_ctx (CtxSum Γt Γf) (CTSum τt τf) (tmatch v et ef).
+  (denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) →
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
 Proof. Admitted.
 
-Lemma fundamental_match_true_case (Φ : primop_ctx) Γ v τ et ef :
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (bool_precise_ty true) (tret v)) →
-  branch_unreachable Γ v false →
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ et) →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ (tmatch v et ef).
+Lemma fundamental_match_both_case (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
+  (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) →
+  (denot_ctx_in_env Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf (bool_precise_ty false) (tret v)) →
+  (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt τt et) →
+  (denot_ctx_in_env Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf τf ef) →
+  denot_ctx_in_env Σ (CtxSum Γt Γf) ⊫
+    denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf) (tmatch v et ef).
 Proof. Admitted.
 
-Lemma fundamental_match_false_case (Φ : primop_ctx) Γ v τ et ef :
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ (bool_precise_ty false) (tret v)) →
-  branch_unreachable Γ v true →
-  (⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ ef) →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ (tmatch v et ef).
+Lemma fundamental_match_true_case (Φ : primop_ctx) Σ Γ v τ et ef :
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ (bool_precise_ty true) (tret v)) →
+  branch_unreachable Σ Γ v false →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ et) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
+Proof. Admitted.
+
+Lemma fundamental_match_false_case (Φ : primop_ctx) Σ Γ v τ et ef :
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ (bool_precise_ty false) (tret v)) →
+  branch_unreachable Σ Γ v true →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ ef) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof. Admitted.
 
 (** ** Fundamental theorem *)
 
-Theorem Fundamental (Φ : primop_ctx) (Γ : ctx) (e : tm) (τ : choice_ty) :
+Theorem Fundamental (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : choice_ty) :
   wf_primop_ctx Φ →
-  has_choice_type Φ Γ e τ →
-  ⟦Γ⟧ ⊫ denot_ty_in_ctx Γ τ e.
+  has_choice_type Φ Σ Γ e τ →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e.
 Proof.
   intros HΦ Hty.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.
   - eapply fundamental_sub_case; eauto.
-  - eapply fundamental_ctx_sub_case_unchecked; eauto.
+  - eapply fundamental_ctx_sub_case; eauto.
   - eapply fundamental_let_case; eauto.
   - eapply fundamental_letd_case; eauto.
   - eapply fundamental_lam_case; eauto.
@@ -296,32 +224,32 @@ Qed.
 
 Corollary safety (Φ : primop_ctx) (e : tm) (b : base_ty) :
   wf_primop_ctx Φ →
-  has_choice_type Φ CtxEmpty e (CTOver b qual_top) →
+  has_choice_type Φ ∅ CtxEmpty e (CTOver b qual_top) →
   ∀ e', steps e e' → is_val e' ∨ ∃ e'', step e' e''.
 Proof. Admitted.
 
 Corollary coverage (Φ : primop_ctx) (e : tm) (b : base_ty) :
   wf_primop_ctx Φ →
-  has_choice_type Φ CtxEmpty e (CTUnder b qual_top) →
+  has_choice_type Φ ∅ CtxEmpty e (CTUnder b qual_top) →
   ∃ v, steps e (tret v).
 Proof. Admitted.
 
 Corollary refinement (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
   wf_primop_ctx Φ →
-  has_choice_type Φ CtxEmpty e (CTOver b φ) →
+  has_choice_type Φ ∅ CtxEmpty e (CTOver b φ) →
   ∀ v, steps e (tret v) →
        ∃ x, qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
 Corollary incorrectness (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
   wf_primop_ctx Φ →
-  has_choice_type Φ CtxEmpty e (CTUnder b φ) →
+  has_choice_type Φ ∅ CtxEmpty e (CTUnder b φ) →
   ∃ v x, steps e (tret v) ∧ qual_interp {[x := v]} (φ ^q^ x).
 Proof. Admitted.
 
 Corollary exact_result (Φ : primop_ctx) (e : tm) (b : base_ty) (c : constant) :
   wf_primop_ctx Φ →
-  has_choice_type Φ CtxEmpty e (CTUnder b (b0:c= c)) →
+  has_choice_type Φ ∅ CtxEmpty e (CTUnder b (b0:c= c)) →
   steps e (tret (vconst c)).
 Proof. Admitted.
 

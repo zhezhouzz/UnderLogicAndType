@@ -176,6 +176,13 @@ Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
 Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx Γ) τ e.
 
+Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
+  Σ ∪ erase_ctx Γ.
+
+Definition denot_ty_in_ctx_under
+    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_under (erase_ctx_under Σ Γ) τ e.
+
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
 
@@ -570,6 +577,10 @@ Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FQ :=
 Definition denot_ctx (Γ : ctx) : FQ :=
   denot_ctx_under (erase_ctx Γ) Γ.
 
+Definition denot_ctx_in_env (Σ : gmap atom ty) (Γ : ctx) : FQ :=
+  FAnd (basic_world_formula Σ (dom Σ))
+       (denot_ctx_under (erase_ctx_under Σ Γ) Γ).
+
 (** ** Typeclass instances for [⟦⟧] notation *)
 
 #[global] Instance denot_cty_inst :
@@ -585,6 +596,14 @@ Proof.
   induction Γ; simpl; try set_solver.
   intros z Hz. apply elem_of_singleton in Hz. subst.
   apply denot_ty_under_result_atom_fv.
+Qed.
+
+Lemma denot_ctx_in_env_dom_subset_formula_fv Σ Γ :
+  dom Σ ∪ ctx_dom Γ ⊆ formula_fv (denot_ctx_in_env Σ Γ).
+Proof.
+  unfold denot_ctx_in_env. simpl.
+  pose proof (denot_ctx_under_dom_subset_formula_fv (erase_ctx_under Σ Γ) Γ).
+  set_solver.
 Qed.
 
 Lemma denot_ctx_dom_subset_formula_fv Γ :
