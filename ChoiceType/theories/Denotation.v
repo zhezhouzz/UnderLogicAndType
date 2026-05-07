@@ -80,6 +80,25 @@ Proof.
   inversion Hsteps. subst. exact Hν.
 Qed.
 
+Lemma expr_logic_qual_ret_value_denote_lookup v ν w σ :
+  logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
+  (res_restrict w (stale v ∪ {[ν]}) : World) σ →
+  σ !! ν = Some (m{σ} v).
+Proof.
+  intros Hqual Hσ.
+  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
+  destruct (Hqual σ Hσ) as [v' [Hν Hsteps]].
+  change (subst_map (store_restrict ∅ (stale v ∪ {[ν]})) (tret v))
+    with (m{store_restrict ∅ (stale v ∪ {[ν]})} (tret v)) in Hsteps.
+  rewrite store_restrict_empty in Hsteps.
+  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  change (subst_map σ (tret v)) with (m{σ} (tret v)) in Hsteps.
+  rewrite msubst_ret in Hsteps.
+  apply val_steps_self in Hsteps.
+  inversion Hsteps. subst. exact Hν.
+Qed.
+
 Lemma expr_logic_qual_ret_closed_value_lookup v ν m :
   stale v = ∅ →
   m ⊨ FAtom (expr_logic_qual (tret v) ν) →

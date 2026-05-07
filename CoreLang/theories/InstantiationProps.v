@@ -164,6 +164,21 @@ Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
 #[global] Instance MsubstFresh_tm : MsubstFresh tm.
 Proof. eapply MsubstFresh_all; typeclasses eauto. Qed.
 
+Lemma msubst_ret σ v :
+  m{σ} (tret v) = tret (m{σ} v).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tret v) σ =
+      tret (map_fold (fun x vx acc => {x := vx} acc) v σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tret v)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_fvar_lookup_closed σ x v :
   closed_env σ →
   σ !! x = Some v →
