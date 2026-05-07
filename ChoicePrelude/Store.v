@@ -579,6 +579,12 @@ Proof.
   rewrite store_restrict_dom. set_solver.
 Qed.
 
+Lemma store_restrict_empty X :
+  store_restrict (∅ : Store) X = ∅.
+Proof.
+  unfold store_restrict. apply map_restrict_idemp. set_solver.
+Qed.
+
 Lemma store_restrict_idemp s X :
   dom s ⊆ X → store_restrict s X = s.
 Proof.

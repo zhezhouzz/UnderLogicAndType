@@ -95,6 +95,29 @@ Proof.
   subst v. exact Hlook.
 Qed.
 
+Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
+  logic_qualifier_denote (expr_logic_qual (tret (vfvar x)) ν) ∅ w →
+  (res_restrict w ({[x]} ∪ {[ν]}) : World) σ →
+  closed_env σ →
+  σ !! x = Some vx →
+  σ !! ν = Some vx.
+Proof.
+  intros Hqual Hσ Hclosed Hx.
+  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
+  replace (({[x]} : aset) ∪ {[ν]}) with ({[x]} ∪ {[ν]} : aset) in Hqual
+    by reflexivity.
+  destruct (Hqual σ Hσ) as [v [Hν Hsteps]].
+  change (subst_map (store_restrict ∅ ({[x]} ∪ {[ν]})) (tret x))
+    with (m{store_restrict ∅ ({[x]} ∪ {[ν]})} (tret (vfvar x))) in Hsteps.
+  rewrite store_restrict_empty in Hsteps.
+  change (subst_map ∅ (tret x)) with (m{∅} (tret (vfvar x))) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  change (subst_map σ (tret x)) with (m{σ} (tret (vfvar x))) in Hsteps.
+  rewrite (msubst_ret_fvar_lookup_closed σ x vx Hclosed Hx) in Hsteps.
+  apply val_steps_self in Hsteps.
+  inversion Hsteps. subst. exact Hν.
+Qed.
+
 (** ** Type measure for denotation fuel
 
     As in HATs' denotation, the first argument of [denot_ty_fuel] is an
