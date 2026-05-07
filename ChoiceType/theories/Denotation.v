@@ -743,6 +743,9 @@ Definition formula_equiv (φ ψ : FQ) : Prop :=
 Notation "φ '⊣⊢' ψ" := (formula_equiv φ ψ)
   (at level 85, no associativity).
 
+Definition formula_store_equiv (φ ψ : FQ) : Prop :=
+  ∀ ρ m, res_models_with_store ρ m φ ↔ res_models_with_store ρ m ψ.
+
 Lemma formula_equiv_refl φ : φ ⊣⊢ φ.
 Proof. split; intros m Hm; exact Hm. Qed.
 
@@ -754,6 +757,130 @@ Lemma formula_equiv_trans φ ψ χ :
   φ ⊣⊢ ψ → ψ ⊣⊢ χ → φ ⊣⊢ χ.
 Proof.
   intros [Hφψ Hψφ] [Hψχ Hχψ]. split; intros m Hm; eauto.
+Qed.
+
+Lemma formula_store_equiv_refl φ : formula_store_equiv φ φ.
+Proof. intros ρ m; reflexivity. Qed.
+
+Lemma formula_store_equiv_sym φ ψ :
+  formula_store_equiv φ ψ → formula_store_equiv ψ φ.
+Proof. intros H ρ m. symmetry. apply H. Qed.
+
+Lemma formula_store_equiv_trans φ ψ χ :
+  formula_store_equiv φ ψ →
+  formula_store_equiv ψ χ →
+  formula_store_equiv φ χ.
+Proof.
+  intros Hφψ Hψχ ρ m.
+  transitivity (res_models_with_store ρ m ψ); [apply Hφψ | apply Hψχ].
+Qed.
+
+Lemma formula_store_equiv_and φ1 φ2 ψ1 ψ2 :
+  formula_fv φ1 = formula_fv ψ1 →
+  formula_fv φ2 = formula_fv ψ2 →
+  formula_store_equiv φ1 ψ1 →
+  formula_store_equiv φ2 ψ2 →
+  formula_store_equiv (FAnd φ1 φ2) (FAnd ψ1 ψ2).
+Proof.
+  intros Hfv1 Hfv2 H1 H2 ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv1, <- Hfv2. exact Hscope.
+  - destruct Hmodel as [Hφ1 Hφ2]. split.
+    + pose proof (proj1 (H1 ρ m)) as H.
+      assert (Hφ1_exact : res_models_with_store ρ m φ1).
+      { eapply res_models_with_store_fuel_irrel; [| | exact Hφ1]; simpl; lia. }
+      eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ1_exact)];
+        simpl; lia.
+    + pose proof (proj1 (H2 ρ m)) as H.
+      assert (Hφ2_exact : res_models_with_store ρ m φ2).
+      { eapply res_models_with_store_fuel_irrel; [| | exact Hφ2]; simpl; lia. }
+      eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ2_exact)];
+        simpl; lia.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv1, Hfv2. exact Hscope.
+  - destruct Hmodel as [Hψ1 Hψ2]. split.
+    + pose proof (proj2 (H1 ρ m)) as H.
+      assert (Hψ1_exact : res_models_with_store ρ m ψ1).
+      { eapply res_models_with_store_fuel_irrel; [| | exact Hψ1]; simpl; lia. }
+      eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ1_exact)];
+        simpl; lia.
+    + pose proof (proj2 (H2 ρ m)) as H.
+      assert (Hψ2_exact : res_models_with_store ρ m ψ2).
+      { eapply res_models_with_store_fuel_irrel; [| | exact Hψ2]; simpl; lia. }
+      eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ2_exact)];
+        simpl; lia.
+Qed.
+
+Lemma formula_store_equiv_over φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_store_equiv (FOver φ) (FOver ψ).
+Proof.
+  intros Hfv Heq ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
+  - exists m0. split; [exact Hsub |].
+    pose proof (proj1 (Heq ρ m0)) as H.
+    assert (Hφ_exact : res_models_with_store ρ m0 φ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
+  - exists m0. split; [exact Hsub |].
+    pose proof (proj2 (Heq ρ m0)) as H.
+    assert (Hψ_exact : res_models_with_store ρ m0 ψ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
+Qed.
+
+Lemma formula_store_equiv_under φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_store_equiv (FUnder φ) (FUnder ψ).
+Proof.
+  intros Hfv Heq ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
+  - exists m0. split; [exact Hsub |].
+    pose proof (proj1 (Heq ρ m0)) as H.
+    assert (Hφ_exact : res_models_with_store ρ m0 φ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
+  - exists m0. split; [exact Hsub |].
+    pose proof (proj2 (Heq ρ m0)) as H.
+    assert (Hψ_exact : res_models_with_store ρ m0 ψ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
+Qed.
+
+Lemma formula_store_equiv_fib x φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_store_equiv (FFib x φ) (FFib x ψ).
+Proof.
+  intros Hfv Heq ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope [Hdisj Hfib]]; split.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
+  - split; [exact Hdisj |].
+    intros σ Hproj.
+    pose proof (Hfib σ Hproj) as Hφ.
+    pose proof (proj1 (Heq (ρ ∪ σ)
+      (res_fiber_from_projection m {[x]} σ Hproj))) as H.
+    assert (Hφ_exact : res_models_with_store (ρ ∪ σ)
+      (res_fiber_from_projection m {[x]} σ Hproj) φ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
+  - split; [exact Hdisj |].
+    intros σ Hproj.
+    pose proof (Hfib σ Hproj) as Hψ.
+    pose proof (proj2 (Heq (ρ ∪ σ)
+      (res_fiber_from_projection m {[x]} σ Hproj))) as H.
+    assert (Hψ_exact : res_models_with_store (ρ ∪ σ)
+      (res_fiber_from_projection m {[x]} σ Hproj) ψ).
+    { eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia. }
+    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
 Qed.
 
 Lemma denot_ty_fuel_env_agree gas D Σ1 Σ2 τ e :
