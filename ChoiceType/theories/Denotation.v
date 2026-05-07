@@ -179,9 +179,33 @@ Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
 
+Definition formula_equiv (φ ψ : FQ) : Prop :=
+  (φ ⊫ ψ) ∧ (ψ ⊫ φ).
+
+Notation "φ '⊣⊢' ψ" := (formula_equiv φ ψ)
+  (at level 85, no associativity).
+
+Lemma formula_equiv_refl φ : φ ⊣⊢ φ.
+Proof. split; intros m Hm; exact Hm. Qed.
+
+Lemma formula_equiv_sym φ ψ :
+  φ ⊣⊢ ψ → ψ ⊣⊢ φ.
+Proof. intros [H1 H2]. split; assumption. Qed.
+
+Lemma formula_equiv_trans φ ψ χ :
+  φ ⊣⊢ ψ → ψ ⊣⊢ χ → φ ⊣⊢ χ.
+Proof.
+  intros [Hφψ Hψφ] [Hψχ Hχψ]. split; intros m Hm; eauto.
+Qed.
+
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
+Proof. Admitted.
+
+Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) Σ1 Σ2 →
+  denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
 Proof. Admitted.
 
 Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
@@ -189,6 +213,13 @@ Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
   denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
 Proof.
   unfold denot_ty_in_ctx. apply denot_ty_under_env_agree.
+Qed.
+
+Lemma denot_ty_in_ctx_env_equiv Γ1 Γ2 τ e :
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  denot_ty_in_ctx Γ1 τ e ⊣⊢ denot_ty_in_ctx Γ2 τ e.
+Proof.
+  unfold denot_ty_in_ctx. apply denot_ty_under_env_equiv.
 Qed.
 
 (** ** Denotation scoping regularity

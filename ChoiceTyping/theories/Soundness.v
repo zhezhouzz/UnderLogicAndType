@@ -59,14 +59,38 @@ Qed.
 Lemma fundamental_ctx_sub_case
     (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
   ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
   (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
   ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
 Proof.
-  intros Hsub IH m HΓ1.
+  intros Hsub Hagree IH m HΓ1.
   destruct Hsub as [_ [_ Hrestrict]].
-  (* Changing the ambient erased environment from [Γ2] to [Γ1] requires
-     a denotation environment-weakening/locality lemma. *)
-Admitted.
+  destruct (denot_ty_in_ctx_env_equiv Γ2 Γ1 τ e) as [H21 _].
+  { intros z Hz. symmetry. apply Hagree. exact Hz. }
+  apply H21.
+  eapply res_models_kripke.
+  - apply res_restrict_le.
+  - apply IH. apply Hrestrict. exact HΓ1.
+Qed.
+
+Lemma fundamental_ctx_sub_case_from_typing
+    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
+  choice_typing_wf Γ1 e τ →
+  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
+  ty_env_agree_on (fv_tm e ∪ fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
+  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
+Proof.
+  intros _ Hsub Hagree IH.
+  eapply fundamental_ctx_sub_case; eauto.
+Qed.
+
+Lemma fundamental_ctx_sub_case_unchecked
+    (Φ : primop_ctx) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
+  ctx_sub (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
+  (⟦Γ2⟧ ⊫ denot_ty_in_ctx Γ2 τ e) →
+  ⟦Γ1⟧ ⊫ denot_ty_in_ctx Γ1 τ e.
+Proof. Admitted.
 
 (** The variable case is exactly the singleton context denotation. *)
 Lemma fundamental_var_case (x : atom) (τ : choice_ty) :
@@ -191,7 +215,7 @@ Proof.
   intros HΦ Hty.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.
   - eapply fundamental_sub_case; eauto.
-  - eapply fundamental_ctx_sub_case; eauto.
+  - eapply fundamental_ctx_sub_case_unchecked; eauto.
   - eapply fundamental_let_case; eauto.
   - eapply fundamental_letd_case; eauto.
   - eapply fundamental_lam_case; eauto.
