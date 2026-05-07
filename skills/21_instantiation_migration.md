@@ -54,6 +54,35 @@ For fold-insertion proofs, use `map_fold_insert_L` or
 discharged through `SubstCommuteClosed`; this keeps the fold-order argument
 separate from syntax-specific substitution proofs.
 
+## Closed Environment Lookup
+
+Use these lemmas when a denotational proof needs to evaluate a returned
+variable under a store substitution:
+
+```coq
+msubst_fvar_lookup_closed
+msubst_ret_fvar_lookup_closed
+```
+
+They say that if `closed_env σ` and `σ !! x = Some v`, then multi-substitution
+of `vfvar x` (or `tret (vfvar x)`) yields `v` (or `tret v`).
+
+Their proof pattern is useful when adding similar lookup lemmas:
+
+```coq
+change (map_fold (fun y vy acc => {y := vy} acc) (vfvar x) σ')
+  with (m{σ'} (vfvar x)).
+rewrite lookup_insert_Some in Hlookup.
+```
+
+Then split the inserted-key and old-key cases.  In the inserted-key case, use
+`msubst_fresh` on the remaining environment.  In the old-key case, rewrite with
+the induction hypothesis, then use `subst_fresh`; `closed_env_lookup` supplies
+the closedness of the looked-up value.
+
+At the ChoiceType layer, `store_has_type_on_closed_env` is the intended bridge
+from basic store typing to `closed_env`.
+
 ## Design Boundary
 
 This migration intentionally starts in CoreLang with `value` substitution.
