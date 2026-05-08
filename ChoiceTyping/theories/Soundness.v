@@ -554,6 +554,23 @@ Proof.
   apply IH. exact HΓ.
 Qed.
 
+Lemma fundamental_sub_total_case
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
+  choice_typing_wf Σ Γ e τ2 →
+  sub_type_under Σ Γ τ1 τ2 →
+  entails_total (denot_ctx_in_env Σ Γ)
+    (denot_ty_total_in_ctx_under Σ Γ τ1 e) →
+  entails_total (denot_ctx_in_env Σ Γ)
+    (denot_ty_total_in_ctx_under Σ Γ τ2 e).
+Proof.
+  intros Hwf Hsub IH m HΓ.
+  destruct (IH m HΓ) as [Hτ1 Htotal].
+  split.
+  - eapply fundamental_sub_case; eauto.
+    intros n Hn. exact (proj1 (IH n Hn)).
+  - exact Htotal.
+Qed.
+
 (** The context-subtyping case of the fundamental theorem. *)
 Lemma fundamental_ctx_sub_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx) (e : tm) (τ : choice_ty) :
