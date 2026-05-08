@@ -1010,6 +1010,44 @@ Proof.
   right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
 Qed.
 
+Lemma res_models_with_store_and_map
+    (ρ : StoreT) (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 : Formula) :
+  formula_scoped_in_world ρ m (FAnd ψ1 ψ2) →
+  (res_models_with_store ρ m φ1 → res_models_with_store ρ m ψ1) →
+  (res_models_with_store ρ m φ2 → res_models_with_store ρ m ψ2) →
+  res_models_with_store ρ m (FAnd φ1 φ2) →
+  res_models_with_store ρ m (FAnd ψ1 ψ2).
+Proof.
+  intros Hscope H1 H2 Hm.
+  eapply res_models_with_store_and_intro; [exact Hscope | |].
+  - apply H1. eapply res_models_with_store_and_elim_l. exact Hm.
+  - apply H2. eapply res_models_with_store_and_elim_r. exact Hm.
+Qed.
+
+Lemma res_models_with_store_or_map
+    (ρ : StoreT) (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 : Formula) :
+  formula_scoped_in_world ρ m (FOr ψ1 ψ2) →
+  (res_models_with_store ρ m φ1 → res_models_with_store ρ m ψ1) →
+  (res_models_with_store ρ m φ2 → res_models_with_store ρ m ψ2) →
+  res_models_with_store ρ m (FOr φ1 φ2) →
+  res_models_with_store ρ m (FOr ψ1 ψ2).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope H1 H2 [_ [Hφ1 | Hφ2]].
+  - split; [exact Hscope |].
+    left.
+    pose proof (H1 ltac:(eapply res_models_with_store_fuel_irrel;
+      [| | exact Hφ1]; simpl; lia)) as Hψ1.
+    eapply res_models_with_store_fuel_irrel; [| | exact Hψ1]; simpl; lia.
+  - split; [exact Hscope |].
+    right.
+    pose proof (H2 ltac:(eapply res_models_with_store_fuel_irrel;
+      [| | exact Hφ2]; simpl; lia)) as Hψ2.
+    eapply res_models_with_store_fuel_irrel; [| | exact Hψ2]; simpl; lia.
+Qed.
+
 Lemma res_models_with_store_impl_intro
     (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
   formula_scoped_in_world ρ m (FImpl φ ψ) →
