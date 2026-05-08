@@ -1883,7 +1883,62 @@ Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
   denot_ctx_under Σ1 Γ ⊣⊢ denot_ctx_under Σ2 Γ.
 Proof.
-Admitted.
+  intros Hdom Hagree.
+  assert (Heq : denot_ctx_under Σ1 Γ = denot_ctx_under Σ2 Γ).
+  {
+    revert Σ1 Σ2 Hdom Hagree.
+    induction Γ as [|x τ|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2];
+      intros Σ1 Σ2 Hdom Hagree; simpl.
+    - reflexivity.
+    - unfold denot_ty_on, denot_ty_avoiding.
+      replace (dom Σ1 ∪ {[x]}) with (dom Σ2 ∪ {[x]}) by set_solver.
+      replace (dom (<[x:=erase_ty τ]> Σ1))
+        with (dom (<[x:=erase_ty τ]> Σ2)).
+      + apply denot_ty_fuel_env_agree.
+        intros z Hz.
+        destruct (decide (z = x)) as [->|Hne].
+        * rewrite !lookup_insert_eq. reflexivity.
+        * rewrite !lookup_insert_ne by congruence.
+          apply Hagree. simpl. set_solver.
+      + rewrite !dom_insert_L. set_solver.
+    - rewrite (IH1 Σ1 Σ2 Hdom).
+      2:{ intros z Hz. apply Hagree. simpl. set_solver. }
+      assert (HdomU :
+        dom (Σ1 ∪ erase_ctx Γ1) = dom (Σ2 ∪ erase_ctx Γ1)).
+      { rewrite !dom_union_L. set_solver. }
+      rewrite (IH2 (Σ1 ∪ erase_ctx Γ1) (Σ2 ∪ erase_ctx Γ1) HdomU).
+      + reflexivity.
+      + intros z Hz.
+        destruct (Σ1 !! z) as [T1|] eqn:H1;
+          destruct (Σ2 !! z) as [T2|] eqn:H2.
+        * assert (HT : T1 = T2).
+          {
+            pose proof (Hagree z ltac:(simpl; set_solver)) as Hzagree.
+            rewrite H1, H2 in Hzagree. inversion Hzagree. reflexivity.
+          }
+          subst T2. rewrite !lookup_union, H1, H2. reflexivity.
+        * exfalso.
+          apply elem_of_dom_2 in H1.
+          apply not_elem_of_dom in H2.
+          apply H2. rewrite <- Hdom. exact H1.
+        * exfalso.
+          apply elem_of_dom_2 in H2.
+          apply not_elem_of_dom in H1.
+          apply H1. rewrite Hdom. exact H2.
+        * rewrite !lookup_union, H1, H2. reflexivity.
+    - rewrite (IH1 Σ1 Σ2 Hdom).
+      2:{ intros z Hz. apply Hagree. simpl. set_solver. }
+      rewrite (IH2 Σ1 Σ2 Hdom).
+      + reflexivity.
+      + intros z Hz. apply Hagree. simpl. set_solver.
+    - rewrite (IH1 Σ1 Σ2 Hdom).
+      2:{ intros z Hz. apply Hagree. simpl. set_solver. }
+      rewrite (IH2 Σ1 Σ2 Hdom).
+      + reflexivity.
+      + intros z Hz. apply Hagree. simpl. set_solver.
+  }
+  rewrite Heq. apply formula_equiv_refl.
+Qed.
 
 (** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
 Lemma denot_ctx_bind x τ m :
