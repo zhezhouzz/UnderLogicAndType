@@ -439,6 +439,99 @@ Proof.
   exact Hsteps_to_X.
 Qed.
 
+Lemma FExprResultOn_models_shrink X Y e ν m :
+  fv_tm e ⊆ X →
+  X ⊆ Y →
+  world_closed_on X m →
+  world_closed_on Y m →
+  m ⊨ FExprResultOn Y e ν →
+  m ⊨ FExprResultOn X e ν.
+Proof.
+  intros HeX HXY HclosedX HclosedY Hmodel.
+  unfold FExprResultOn, res_models, res_models_with_store in *.
+  simpl in *.
+  destruct Hmodel as [Hscope [m0 [Hscope0 [Hden Hle]]]].
+  split.
+  - unfold formula_scoped_in_world in *.
+    intros z Hz. apply Hscope.
+    unfold formula_fv, stale, stale_logic_qualifier in *.
+    simpl in *. set_solver.
+  - exists m0. split.
+    + unfold formula_scoped_in_world in *.
+      intros z Hz. apply Hscope0.
+      unfold formula_fv, stale, stale_logic_qualifier in *.
+      simpl in *. set_solver.
+    + split; [| exact Hle].
+      unfold logic_qualifier_denote, expr_logic_qual_on in *.
+      simpl in *.
+      intros σX HσX.
+      simpl in HσX.
+      destruct HσX as [σfull [Hσfull HrestrictX]].
+      set (σY := store_restrict σfull (Y ∪ {[ν]})).
+      assert (HσY : (res_restrict m0 (Y ∪ {[ν]}) : World) σY).
+      {
+        simpl. exists σfull. split; [exact Hσfull | reflexivity].
+      }
+      specialize (Hden σY HσY) as [v [HνY HstepsY]].
+      exists v. split.
+      * rewrite <- HrestrictX.
+        apply store_restrict_lookup_some in HνY as [Hνdom Hνfull].
+        apply store_restrict_lookup_some_2; [exact Hνfull | set_solver].
+      * rewrite <- HrestrictX.
+        change (subst_map (store_restrict σfull (X ∪ {[ν]})) e →* tret v).
+        change (subst_map σY e →* tret v) in HstepsY.
+        assert (HclosedX0 : world_closed_on X m0).
+        { eapply world_closed_on_le; eauto. }
+        assert (HclosedY0 : world_closed_on Y m0).
+        { eapply world_closed_on_le; eauto. }
+        assert (HclosedσX : closed_env (store_restrict σfull X)).
+        { exact (HclosedX0 σfull Hσfull). }
+        assert (HclosedσY : closed_env (store_restrict σfull Y)).
+        { exact (HclosedY0 σfull Hσfull). }
+        change (subst_map (store_restrict σfull (X ∪ {[ν]})) e)
+          with (m{store_restrict σfull (X ∪ {[ν]})} e).
+        change (subst_map σY e) with (m{σY} e) in HstepsY.
+        assert (HclosedXX :
+          closed_env (store_restrict (store_restrict σfull (X ∪ {[ν]})) X)).
+        {
+          rewrite store_restrict_restrict.
+          replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+          exact HclosedσX.
+        }
+        assert (HclosedYY : closed_env (store_restrict σY Y)).
+        {
+          unfold σY. rewrite store_restrict_restrict.
+          replace ((Y ∪ {[ν]}) ∩ Y) with Y by set_solver.
+          exact HclosedσY.
+        }
+        rewrite <- (msubst_restrict_closed_on stale_tm_inst subst_tm_inst
+          ltac:(typeclasses eauto) ltac:(typeclasses eauto) ltac:(typeclasses eauto)
+          (store_restrict σfull (X ∪ {[ν]})) X e) by
+          (try exact HclosedXX; set_solver).
+        rewrite store_restrict_restrict.
+        replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+        rewrite <- (msubst_restrict_closed_on stale_tm_inst subst_tm_inst
+          ltac:(typeclasses eauto) ltac:(typeclasses eauto) ltac:(typeclasses eauto)
+          σY Y e) in HstepsY by
+          (try exact HclosedYY; set_solver).
+        unfold σY in HstepsY. rewrite store_restrict_restrict in HstepsY.
+        replace ((Y ∪ {[ν]}) ∩ Y) with Y in HstepsY by set_solver.
+        assert (Hagree :
+          m{store_restrict σfull Y} e = m{store_restrict σfull X} e).
+        {
+          eapply (@msubst_agree tm stale_tm_inst subst_tm_inst
+            stale_tm_inst subst_tm_inst MsubstRestrict_tm).
+          - exact HclosedσY.
+          - exact HclosedσX.
+          - exact HeX.
+          - intros z Hz.
+            rewrite !(store_restrict_lookup (V := value)).
+            rewrite !decide_True by set_solver. reflexivity.
+        }
+        rewrite <- Hagree.
+        exact HstepsY.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
