@@ -697,6 +697,59 @@ Proof.
   eapply basic_steps_result_regular; eauto.
 Qed.
 
+Lemma choice_typing_wf_result_typed_restrict_in_ctx Σ Γ e τ m σ vx :
+  choice_typing_wf Σ Γ e τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e →* tret vx →
+  ∅ ⊢ᵥ vx ⋮ erase_ty τ.
+Proof.
+  intros Hwf HΓ Hσ Hsteps.
+  destruct Hwf as [Hty Herase].
+  pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty))
+    as Hbasic.
+  set (X := dom Σ ∪ ctx_dom Γ).
+  destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ Hbasic HΓ Hσ)
+    as [Hclosed Henv].
+  assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
+  {
+    unfold erase_ctx_under, X.
+    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+    rewrite dom_union_L, HdomΓ. reflexivity.
+  }
+  assert (Hdom_del : env_delete (store_restrict σ X) (erase_ctx_under Σ Γ) = ∅).
+  {
+    apply env_delete_empty_of_dom_subset.
+    rewrite Hdom_erase.
+    assert (HXworld : X ⊆ world_dom (m : World)).
+    {
+      pose proof (res_models_with_store_fuel_scoped
+        (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+        (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
+      unfold formula_scoped_in_world in Hscope.
+      intros z Hz. apply Hscope.
+      pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ z) as Hdomfv.
+      apply elem_of_union. right. apply Hdomfv. unfold X in Hz. exact Hz.
+    }
+    pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+    intros z Hz.
+    apply elem_of_dom.
+    assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
+    apply elem_of_dom in Hzdom as [v Hlookup].
+    exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+  }
+  assert (Htyped :
+    ∅ ⊢ₑ m{store_restrict σ X} e ⋮ erase_ty τ).
+  {
+    rewrite <- Hdom_del.
+    eapply msubst_basic_typing_tm; eauto.
+  }
+  rewrite Hdom_erase in Hsteps.
+  pose proof (basic_steps_preservation ∅ _ _ _ Htyped Hsteps) as Hret.
+  inversion Hret; subst.
+  assumption.
+Qed.
+
 Lemma choice_typing_wf_let_body_helper Σ Γ e1 e2 τ :
   choice_typing_wf Σ Γ (tlete e1 e2) τ →
   body_tm e2.
@@ -705,6 +758,14 @@ Proof.
   apply basic_typing_regular_tm in Hbasic.
   apply lc_lete_iff_body in Hbasic as [_ Hbody].
   exact Hbody.
+Qed.
+
+Lemma erase_ctx_under_comma_bind_dom Σ Γ x τ :
+  dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))) =
+  dom (erase_ctx_under Σ Γ) ∪ {[x]}.
+Proof.
+  unfold erase_ctx_under. simpl.
+  rewrite !dom_union_L, dom_singleton_L. set_solver.
 Qed.
 
 (** ** Let-result worlds *)
@@ -891,6 +952,125 @@ Proof.
   eapply res_models_kripke.
   - apply let_result_world_on_le.
   - exact Hctx.
+Qed.
+
+Lemma let_result_world_on_erased_basic
+    Σ Γ τ e x (m : WfWorld) Hfresh Hresult :
+  choice_typing_wf Σ Γ e τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  x ∉ dom (erase_ctx_under Σ Γ) →
+  let_result_world_on (dom (erase_ctx_under Σ Γ)) e x m Hfresh Hresult ⊨
+    basic_world_formula
+      (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)))
+      (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)))).
+Proof.
+  intros Hwf Hm Hx.
+  eapply res_models_atom_intro.
+  - unfold formula_scoped_in_world, basic_world_formula, basic_world_lqual.
+    simpl.
+    rewrite erase_ctx_under_comma_bind_dom.
+    intros z Hz. simpl.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + rewrite dom_empty_L in Hz. set_solver.
+    + change (z ∈ dom (erase_ctx_under Σ Γ) ∪ {[x]}) in Hz.
+      apply elem_of_union in Hz as [Hzold|Hzx].
+      * apply elem_of_union. left.
+        pose proof (res_models_with_store_fuel_scoped
+          (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+          (denot_ctx_in_env Σ Γ) Hm) as Hscope.
+        unfold formula_scoped_in_world in Hscope.
+        apply Hscope.
+        apply elem_of_union. right.
+        apply denot_ctx_in_env_dom_subset_formula_fv.
+        destruct Hwf as [Hwfτ _].
+        rewrite <- (basic_ctx_erase_dom (dom Σ) Γ
+          (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))).
+        unfold erase_ctx_under in Hzold.
+        rewrite dom_union_L in Hzold.
+        exact Hzold.
+      * apply elem_of_union. right. exact Hzx.
+  - unfold logic_qualifier_denote, basic_world_lqual. simpl.
+    rewrite erase_ctx_under_comma_bind_dom.
+    split.
+    + intros z Hz. simpl.
+      apply elem_of_intersection. split; [| exact Hz].
+      apply elem_of_union in Hz as [Hz|Hz].
+      * apply elem_of_union. left.
+        pose proof (res_models_with_store_fuel_scoped
+          (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+          (denot_ctx_in_env Σ Γ) Hm) as Hscope.
+        unfold formula_scoped_in_world in Hscope.
+        apply Hscope.
+        apply elem_of_union. right.
+        apply denot_ctx_in_env_dom_subset_formula_fv.
+        destruct Hwf as [Hwfτ _].
+        rewrite <- (basic_ctx_erase_dom (dom Σ) Γ
+          (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))).
+        unfold erase_ctx_under in Hz.
+        rewrite dom_union_L in Hz.
+        exact Hz.
+      * apply elem_of_union. right. exact Hz.
+    + intros σx Hσx.
+      simpl in Hσx.
+      destruct Hσx as [σfull [Hσfull Hrestrict_full]].
+      destruct (let_result_world_on_elim
+        (dom (erase_ctx_under Σ Γ)) e x m Hfresh Hresult σfull Hσfull)
+        as [σ [vx [Hσ [Hsteps ->]]]].
+      intros z T v Hz HΣext Hlookup.
+      rewrite <- Hrestrict_full in Hlookup.
+      apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+      destruct (decide (z = x)) as [->|Hzx].
+      * change ((<[x := vx]> σ : Store) !! x = Some v) in Hlookup.
+        assert (Hins : (<[x := vx]> σ : Store) !! x = Some vx)
+          by apply lookup_insert_eq.
+        rewrite Hins in Hlookup.
+        inversion Hlookup. subst v.
+        assert (HT : T = erase_ty τ).
+        {
+          assert (HΣx :
+            erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) !! x = Some (erase_ty τ)).
+          {
+            unfold erase_ctx_under. simpl.
+            rewrite lookup_union_r.
+            - rewrite lookup_union_r.
+              + rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
+              + apply not_elem_of_dom. set_solver.
+            - apply not_elem_of_dom.
+              intros HxΣ. apply Hx.
+              unfold erase_ctx_under. rewrite dom_union_L.
+              apply elem_of_union. left. exact HxΣ.
+          }
+          rewrite HΣx in HΣext. inversion HΣext. reflexivity.
+        }
+        subst T.
+        eapply choice_typing_wf_result_typed_restrict_in_ctx; eauto.
+      * change ((<[x := vx]> σ : Store) !! z = Some v) in Hlookup.
+        rewrite lookup_insert_ne in Hlookup by congruence.
+        assert (Hzold : z ∈ dom (erase_ctx_under Σ Γ)) by set_solver.
+        pose proof (basic_world_formula_store_restrict_typed
+          (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)) m σ
+          (denot_ctx_in_env_erased_basic Σ Γ m Hm) Hσ) as Htyped_old.
+        assert (HΣold : erase_ctx_under Σ Γ !! z = Some T).
+        {
+          unfold erase_ctx_under in *. simpl in HΣext.
+          rewrite lookup_union_Some_raw in HΣext.
+          apply lookup_union_Some_raw.
+          destruct HΣext as [HΣz | [HΣnone Hz_right]].
+          - left. exact HΣz.
+          - right. split; [exact HΣnone |].
+            rewrite lookup_union_Some_raw in Hz_right.
+            destruct Hz_right as [HΓz | [HΓnone Hsingle]].
+            + exact HΓz.
+            + rewrite lookup_singleton in Hsingle.
+              destruct (decide (z = x)) as [->|Hne].
+              * contradiction.
+              * rewrite decide_False in Hsingle by congruence.
+                discriminate.
+        }
+        eapply Htyped_old.
+        -- exact Hzold.
+        -- exact HΣold.
+        -- apply store_restrict_lookup_some_2; [exact Hlookup | exact Hzold].
 Qed.
 
 Lemma lc_env_restrict σ X :
