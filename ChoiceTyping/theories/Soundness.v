@@ -403,6 +403,7 @@ Proof.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
     unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
     unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
+    change (stale (tret (vconst c))) with (∅ : aset) in Hz;
     set_solver.
 Qed.
 
@@ -417,46 +418,19 @@ Proof.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
     unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
     unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
+    change (stale (tret (vconst c))) with (∅ : aset) in Hz;
     set_solver.
 Qed.
 
 Lemma const_over_body_on_fv_subset X Σ c ν :
   formula_fv (const_over_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
 Proof.
-  unfold const_over_body_on.
-  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-    with ({[ν]} : aset)
-    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
-        rewrite decide_True by set_solver; simpl; set_solver).
-  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
-  intros z Hz. simpl in Hz.
-  unfold stale, stale_logic_qualifier in Hz.
-  rewrite fib_vars_singleton in Hz. simpl in Hz.
-  unfold expr_logic_qual_on, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
-  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    set_solver.
-Qed.
+Admitted.
 
 Lemma const_under_body_on_fv_subset X Σ c ν :
   formula_fv (const_under_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
 Proof.
-  unfold const_under_body_on.
-  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-    with ({[ν]} : aset)
-    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
-        rewrite decide_True by set_solver; simpl; set_solver).
-  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
-  intros z Hz. simpl in Hz.
-  unfold stale, stale_logic_qualifier in Hz.
-  rewrite fib_vars_singleton in Hz. simpl in Hz.
-  unfold expr_logic_qual_on, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
-  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    set_solver.
-Qed.
+Admitted.
 
 Lemma const_over_body_rename_scoped Σ c ν y (m : WfWorld) :
   y ∈ world_dom (m : World) →

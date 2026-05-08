@@ -62,7 +62,7 @@ Lemma res_models_and_intro_from_models (m : WfWorld) (φ ψ : FormulaQ) :
 Proof.
   intros Hφ Hψ.
   eapply res_models_and_intro.
-  - unfold formula_scoped_in_world. simpl.
+  - unfold formula_scoped_in_world.
     pose proof (res_models_with_store_fuel_scoped
       (formula_measure φ) ∅ m φ Hφ) as Hscopeφ.
     pose proof (res_models_with_store_fuel_scoped
@@ -1595,57 +1595,61 @@ Proof.
     pose proof (raw_le_dom (w : World)
       (let_result_world_on X e1 x n Hfresh Hresult : World) Hle_w) as Hdom_w.
     simpl in Hdom_w.
-    intros z Hz.
-    unfold formula_scoped_in_world in Hscopew.
-    simpl in Hscopew.
-    simpl in Hz.
-    rewrite stale_expr_logic_qual_on in Hz.
-    rewrite dom_empty_L in Hz.
-    assert (HzS : z ∈ X ∪ {[ν]}).
-    {
-      apply elem_of_union in Hz as [Hzempty | HzS].
-      - apply elem_of_empty in Hzempty. contradiction.
-      - exact HzS.
-    }
+	    intros z Hz.
+	    unfold formula_scoped_in_world in Hscopew.
+	    apply elem_of_union in Hz as [Hzempty | Hz].
+	    { apply elem_of_empty in Hzempty. contradiction. }
+	    unfold FExprResultOn in Hz.
+	    rewrite fib_vars_formula_fv in Hz.
+	    simpl in Hz.
+	    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
+	    assert (HzS : z ∈ X ∪ {[ν]}).
+	    { pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen. set_solver. }
     assert (Hzbody : z ∈ (X ∪ {[x]}) ∪ {[ν]}).
     {
       apply elem_of_union in HzS as [HzX | Hzν].
       - apply elem_of_union. left. apply elem_of_union. left. exact HzX.
       - apply elem_of_union. right. exact Hzν.
     }
-    assert (Hzscopew :
-      z ∈ dom (∅ : Store) ∪ stale (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)).
-    {
-      simpl. rewrite stale_expr_logic_qual_on, dom_empty_L.
-      apply elem_of_union. right. exact Hzbody.
-    }
+	    assert (Hzscopew :
+	      z ∈ dom (∅ : Store) ∪ formula_fv (FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν)).
+	    {
+	      apply elem_of_union. right.
+	      unfold FExprResultOn.
+	      rewrite fib_vars_formula_fv. simpl.
+	      unfold stale, stale_logic_qualifier. simpl.
+	      pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+	      set_solver.
+	    }
     pose proof (Hscopew z Hzscopew) as Hzw.
     pose proof (Hdom_w z Hzw) as Hznx.
-    apply elem_of_union in Hznx as [Hzn | Hzx].
-    + exact Hzn.
-    + apply elem_of_singleton in Hzx. subst z.
-      exfalso. apply Hx.
-      apply elem_of_union in HzS as [HxX | Hxν].
-      * apply elem_of_union. left. apply elem_of_union. left. exact HxX.
-      * apply elem_of_union. right. exact Hxν.
-  - unfold formula_scoped_in_world. simpl. subst S. simpl.
-    intros z Hz.
-    rewrite stale_expr_logic_qual_on in Hz.
-    rewrite dom_empty_L in Hz.
-    assert (HzS : z ∈ X ∪ {[ν]}).
-    {
-      apply elem_of_union in Hz as [Hzempty | HzS].
-      - apply elem_of_empty in Hzempty. contradiction.
-      - exact HzS.
-    }
-    apply elem_of_intersection. split; [| exact HzS].
-    unfold formula_scoped_in_world in Hscopew. simpl in Hscopew.
-    apply Hscopew.
-    simpl. rewrite stale_expr_logic_qual_on, dom_empty_L.
-    apply elem_of_union. right.
-    apply elem_of_union in HzS as [HzX | Hzν].
-    + apply elem_of_union. left. apply elem_of_union. left. exact HzX.
-    + apply elem_of_union. right. exact Hzν.
+	    apply elem_of_union in Hznx as [Hzn | Hzx].
+	    { exact Hzn. }
+	    { apply elem_of_singleton in Hzx. subst z.
+	      exfalso. apply Hx.
+	      apply elem_of_union in HzS as [HxX | Hxν].
+	      { apply elem_of_union. left. apply elem_of_union. left. exact HxX. }
+	      { apply elem_of_union. right. exact Hxν. } }
+	  - unfold formula_scoped_in_world. subst S.
+	    intros z Hz.
+	    apply elem_of_union in Hz as [Hzempty | Hz].
+	    { apply elem_of_empty in Hzempty. contradiction. }
+	    unfold FExprResultOn in Hz.
+	    rewrite fib_vars_formula_fv in Hz.
+	    simpl in Hz.
+	    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
+	    assert (HzS : z ∈ X ∪ {[ν]}).
+	    { set_solver. }
+	    simpl. apply elem_of_intersection. split; [| exact HzS].
+	    unfold formula_scoped_in_world in Hscopew.
+	    apply Hscopew.
+	    apply elem_of_union. right.
+	    unfold FExprResultOn.
+	    rewrite fib_vars_formula_fv. simpl.
+	    unfold stale, stale_logic_qualifier. simpl.
+	    apply elem_of_union in HzS as [HzX | Hzν].
+	    + apply elem_of_union. left. apply elem_of_union. left. exact HzX.
+	    + apply elem_of_union. right. apply elem_of_union. right. exact Hzν.
   - subst S. rewrite res_restrict_restrict_eq.
     replace ((world_dom (w : World) ∩ (X ∪ {[ν]})) ∩ (X ∪ {[ν]}))
       with (world_dom (w : World) ∩ (X ∪ {[ν]})) by set_solver.
@@ -1654,14 +1658,16 @@ Proof.
     destruct HσS as [σw [Hw HrestrictS]].
     assert (Hscope_Xx : X ∪ {[x]} ⊆ world_dom (w : World)).
     {
-      unfold formula_scoped_in_world in Hscopew. simpl in Hscopew.
-      intros z Hz.
-      apply Hscopew.
-      simpl. rewrite stale_expr_logic_qual_on, dom_empty_L.
-      apply elem_of_union. right.
-      apply elem_of_union. left.
-      exact Hz.
-    }
+	      unfold formula_scoped_in_world in Hscopew. simpl in Hscopew.
+	      intros z Hz.
+	      apply Hscopew.
+	      apply elem_of_union. right.
+	      unfold FExprResultOn.
+	      rewrite fib_vars_formula_fv. simpl.
+	      unfold stale, stale_logic_qualifier. simpl.
+	      pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+	      set_solver.
+	    }
     assert (HxX : x ∉ X).
     {
       intros Hx_in.
@@ -1805,14 +1811,16 @@ Proof.
     + apply res_restrict_le.
     + assert (HS_w : X ∪ {[ν]} ⊆ world_dom (w : World)).
       {
-        unfold formula_scoped_in_world in Hscopew. simpl in Hscopew.
-        intros z Hz.
-        apply Hscopew.
-        simpl. rewrite stale_expr_logic_qual_on, dom_empty_L.
-        apply elem_of_union. right.
-        apply elem_of_union in Hz as [HzX | Hzν].
-        * apply elem_of_union. left. apply elem_of_union. left. exact HzX.
-        * apply elem_of_union. right. exact Hzν.
+	        unfold formula_scoped_in_world in Hscopew. simpl in Hscopew.
+	        intros z Hz.
+	        apply Hscopew.
+	        apply elem_of_union. right.
+	        unfold FExprResultOn.
+	        rewrite fib_vars_formula_fv. simpl.
+	        unfold stale, stale_logic_qualifier. simpl.
+	        apply elem_of_union in Hz as [HzX | Hzν].
+	        * apply elem_of_union. left. apply elem_of_union. left. exact HzX.
+	        * apply elem_of_union. right. apply elem_of_union. right. exact Hzν.
       }
       assert (HS_n : X ∪ {[ν]} ⊆ world_dom (n : World)).
       {
