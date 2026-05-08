@@ -38,6 +38,19 @@ Notation "φ ⊫ ψ" :=
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
   set_fold FFib p X.
 
+Definition fib_vars_obligation_step
+    (x : atom)
+    (R : Store → WfWorld → Prop)
+    (ρ : Store) (m : WfWorld) : Prop :=
+  dom ρ ## {[x]} ∧
+  ∀ σ (Hproj : res_restrict m {[x]} σ),
+    R (ρ ∪ σ) (res_fiber_from_projection m {[x]} σ Hproj).
+
+Definition fib_vars_obligation
+    (X : aset) (p : FQ) (ρ : Store) (m : WfWorld) : Prop :=
+  set_fold fib_vars_obligation_step
+    (fun ρ m => res_models_with_store ρ m p) X ρ m.
+
 Lemma fib_vars_singleton x p :
   fib_vars {[x]} p = FFib x p.
 Proof. unfold fib_vars. apply set_fold_singleton. Qed.
@@ -59,6 +72,12 @@ Proof.
   - intros x r Y Hx HY.
     simpl. rewrite HY. set_solver.
 Qed.
+
+Lemma fib_vars_models_elim X p ρ m :
+  res_models_with_store ρ m (fib_vars X p) →
+  fib_vars_obligation X p ρ m.
+Proof.
+Admitted.
 
 Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
     ∃ v,
