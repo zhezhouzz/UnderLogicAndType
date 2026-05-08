@@ -84,6 +84,17 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
+(** Prop-level totality for the expression component of a type denotation.
+
+    This is intentionally not encoded as a ChoiceLogic formula.  The logic
+    describes resource/domain behavior; operational totality is a meta-level
+    obligation used by the fundamental theorem.  Keeping it here lets the let
+    proof combine the formula denotation with the fact that the bound
+    expression has an actual result in every admissible store. *)
+Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
+  fv_tm e ⊆ X ∧
+  ∀ σ, (m : World) σ → ∃ v, subst_map σ e →* tret v.
+
 (** [world_closed_on X m] is the ChoiceType-level invariant saying that every
     store in [m] is operationally usable on the coordinates [X].  This belongs
     here rather than in ChoiceAlgebra: the algebra is polymorphic in store
@@ -992,6 +1003,25 @@ Definition denot_ty_in_ctx_under
     (dom (erase_ctx_under Σ Γ))
     (fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
     (erase_ctx_under Σ Γ) τ e.
+
+Definition denot_ty_total_in_ctx_under
+    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
+    (m : WfWorld) : Prop :=
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
+  expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
+
+Definition entails_total (φ : FQ) (P : WfWorld → Prop) : Prop :=
+  ∀ m, m ⊨ φ → P m.
+
+Lemma denot_ty_total_formula Σ Γ τ e m :
+  denot_ty_total_in_ctx_under Σ Γ τ e m →
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
+Proof. intros [H _]. exact H. Qed.
+
+Lemma denot_ty_total_expr_total Σ Γ τ e m :
+  denot_ty_total_in_ctx_under Σ Γ τ e m →
+  expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
+Proof. intros [_ H]. exact H. Qed.
 
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
