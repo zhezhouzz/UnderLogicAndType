@@ -3,7 +3,7 @@
     Soundness skeleton for the single declarative typing judgment. *)
 
 From ChoiceTyping Require Export SoundnessHelpers.
-From CoreLang Require Import LocallyNamelessProps.
+From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma basic_const_world_from_lookup c ν Σ m :
@@ -717,6 +717,30 @@ Proof.
   eapply res_models_and_intro_from_models.
   - apply fundamental_const_over_case. exact Hctx.
   - apply fundamental_const_under_case. exact Hctx.
+Qed.
+
+Lemma expr_total_on_ret_const X c m :
+  expr_total_on X (tret (vconst c)) m.
+Proof.
+  split.
+  - simpl. set_solver.
+  - intros σ _.
+    exists (vconst c).
+    change (m{store_restrict σ X} (tret (vconst c)) →* tret (vconst c)).
+    rewrite msubst_ret. simpl.
+    rewrite (msubst_fresh (store_restrict σ X) (vconst c)) by set_solver.
+    apply Steps_refl.
+    constructor. constructor.
+Qed.
+
+Lemma fundamental_const_total_case Σ c :
+  entails_total (denot_ctx_in_env Σ CtxEmpty)
+    (denot_ty_total_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c))).
+Proof.
+  intros m Hctx.
+  split.
+  - apply fundamental_const_case. exact Hctx.
+  - apply expr_total_on_ret_const.
 Qed.
 
 Lemma choice_typing_wf_let_body Σ Γ e1 e2 τ :
