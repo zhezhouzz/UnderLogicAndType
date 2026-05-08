@@ -35,9 +35,6 @@ Notation "φ ⊫ ψ" :=
 
 (** ** Logic atoms and fresh variable helpers for denotation *)
 
-Definition fib_vars (X : aset) (p : FQ) : FQ :=
-  set_fold FFib p X.
-
 Definition fib_vars_obligation_step
     (x : atom)
     (R : Store → WfWorld → Prop)
@@ -46,38 +43,79 @@ Definition fib_vars_obligation_step
   ∀ σ (Hproj : res_restrict m {[x]} σ),
     R (ρ ∪ σ) (res_fiber_from_projection m {[x]} σ Hproj).
 
+Definition fib_vars_acc_step
+    (x : atom)
+    (acc : FQ * (Store → WfWorld → Prop))
+    : FQ * (Store → WfWorld → Prop) :=
+  let '(p, R) := acc in
+  (FFib x p, fib_vars_obligation_step x R).
+
+Definition fib_vars_acc
+    (X : aset) (p : FQ) : FQ * (Store → WfWorld → Prop) :=
+  set_fold fib_vars_acc_step
+    (p, fun ρ m => res_models_with_store ρ m p) X.
+
+Definition fib_vars (X : aset) (p : FQ) : FQ :=
+  fst (fib_vars_acc X p).
+
 Definition fib_vars_obligation
     (X : aset) (p : FQ) (ρ : Store) (m : WfWorld) : Prop :=
-  set_fold fib_vars_obligation_step
-    (fun ρ m => res_models_with_store ρ m p) X ρ m.
+  snd (fib_vars_acc X p) ρ m.
 
 Lemma fib_vars_singleton x p :
   fib_vars {[x]} p = FFib x p.
-Proof. unfold fib_vars. apply set_fold_singleton. Qed.
+Proof.
+  unfold fib_vars, fib_vars_acc.
+  rewrite set_fold_singleton. reflexivity.
+Qed.
 
 Lemma fib_vars_formula_fv_subset X p :
   formula_fv (fib_vars X p) ⊆ X ∪ formula_fv p.
 Proof.
-  unfold fib_vars.
-  apply (set_fold_ind_L (fun r Y => formula_fv r ⊆ Y ∪ formula_fv p));
-    simpl; set_solver.
+  unfold fib_vars, fib_vars_acc.
+  apply (set_fold_ind_L
+    (fun acc Y => formula_fv (fst acc) ⊆ Y ∪ formula_fv p)).
+  - simpl. set_solver.
+  - intros x Y acc Hx HY.
+    destruct acc as [q R]. simpl in *.
+    intros z Hz.
+    apply elem_of_union in Hz as [Hzx | Hzq].
+    + set_solver.
+    + apply HY in Hzq. set_solver.
 Qed.
 
 Lemma fib_vars_formula_fv X p :
   formula_fv (fib_vars X p) = X ∪ formula_fv p.
 Proof.
-  unfold fib_vars.
-  apply (set_fold_ind_L (fun r Y => formula_fv r = Y ∪ formula_fv p)).
+  unfold fib_vars, fib_vars_acc.
+  apply (set_fold_ind_L
+    (fun acc Y => formula_fv (fst acc) = Y ∪ formula_fv p)).
   - simpl. set_solver.
-  - intros x r Y Hx HY.
-    simpl. rewrite HY. set_solver.
+  - intros x Y acc Hx HY.
+    destruct acc as [q R]. simpl in *.
+    rewrite HY. set_solver.
 Qed.
 
 Lemma fib_vars_models_elim X p ρ m :
   res_models_with_store ρ m (fib_vars X p) →
   fib_vars_obligation X p ρ m.
 Proof.
-Admitted.
+  unfold fib_vars, fib_vars_obligation, fib_vars_acc.
+  apply (set_fold_ind_L
+    (fun acc _ =>
+      ∀ ρ m, res_models_with_store ρ m (fst acc) → snd acc ρ m)).
+  - simpl. auto.
+  - intros x Y acc Hx IH ρ0 m0 Hm.
+    destruct acc as [q R]. simpl in *.
+    unfold fib_vars_obligation_step.
+    unfold res_models_with_store in Hm. simpl in Hm.
+    destruct Hm as [_ [Hdisj Hfib]].
+    split; [exact Hdisj |].
+    intros σ Hproj.
+    specialize (Hfib σ Hproj).
+    eapply IH.
+    eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia.
+Qed.
 
 Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
     ∃ v,
@@ -1035,6 +1073,13 @@ Proof.
     + apply formula_store_equiv_fib; assumption.
 Qed.
 
+Lemma foldr_fib_vars_acc_fst xs φ R :
+  fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
+Proof.
+  induction xs as [|x xs IH]; simpl; [reflexivity |].
+  rewrite <- IH. destruct (foldr fib_vars_acc_step (φ, R) xs); reflexivity.
+Qed.
+
 Lemma fib_vars_store_equiv X φ ψ :
   formula_fv φ = formula_fv ψ →
   formula_store_equiv φ ψ →
@@ -1042,7 +1087,9 @@ Lemma fib_vars_store_equiv X φ ψ :
   formula_store_equiv (fib_vars X φ) (fib_vars X ψ).
 Proof.
   intros Hfv Heq.
-  unfold fib_vars, set_fold.
+  unfold fib_vars, fib_vars_acc, set_fold.
+  simpl.
+  rewrite !foldr_fib_vars_acc_fst.
   apply foldr_fib_store_equiv; assumption.
 Qed.
 
