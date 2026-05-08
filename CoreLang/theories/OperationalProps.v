@@ -122,6 +122,19 @@ Lemma basic_steps_preservation Γ e e' T :
   Γ ⊢ₑ e ⋮ T → e →* e' → Γ ⊢ₑ e' ⋮ T.
 Proof. apply steps_preserves_type. Qed.
 
+Lemma basic_steps_result_closed e v T :
+  ∅ ⊢ₑ e ⋮ T →
+  e →* tret v →
+  stale v = ∅.
+Proof.
+  intros Hty Hsteps.
+  pose proof (basic_steps_preservation ∅ e (tret v) T Hty Hsteps) as Hret.
+  inversion Hret; subst.
+  match goal with
+  | H : ∅ ⊢ᵥ v ⋮ _ |- _ => exact (basic_typing_closed_value v _ H)
+  end.
+Qed.
+
 Lemma beta_step_regular s body v :
   lc_tm (tapp (vlam s body) v) →
   lc_tm ({0 ~> v} body).
