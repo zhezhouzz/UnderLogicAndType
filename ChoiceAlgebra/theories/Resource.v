@@ -1208,8 +1208,66 @@ Proof.
       * transitivity (store_restrict τn (dom σ)); [| exact Hτn].
         rewrite <- Hrestrict.
         rewrite store_restrict_restrict.
-        replace (world_dom (m : World) ∩ dom σ) with (dom σ) by set_solver.
-        reflexivity.
+	        replace (world_dom (m : World) ∩ dom σ) with (dom σ) by set_solver.
+	        reflexivity.
+Qed.
+
+(** Pull back a projection world [p] along a larger world [n].  This keeps
+    [n]'s full domain but filters stores to those whose [p]-domain projection
+    belongs to [p]. *)
+Definition raw_pullback_projection (n p : WfWorld) : World := {|
+  world_dom := world_dom (n : World);
+  world_stores := fun σ =>
+    (n : World) σ ∧ (p : World) (store_restrict σ (world_dom (p : World)));
+|}.
+
+Lemma raw_pullback_projection_wf (n p : WfWorld) :
+  p ⊑ n →
+  wf_world (raw_pullback_projection n p).
+Proof.
+  intros Hle. constructor.
+  - destruct (world_wf p) as [[σp Hp] _].
+    pose proof (res_restrict_eq_of_le p n Hle) as Hrestrict.
+    change (res_restrict n (world_dom (p : World)) = p) in Hrestrict.
+    assert ((res_restrict n (world_dom (p : World)) : World) σp) as Hσp.
+    { rewrite Hrestrict. exact Hp. }
+    simpl in Hσp.
+    destruct Hσp as [σn [Hσn Hproj]].
+    exists σn. split; [exact Hσn |].
+    rewrite Hproj. exact Hp.
+  - intros σ [Hσ _]. simpl. exact (wfworld_store_dom n σ Hσ).
+Qed.
+
+Definition res_pullback_projection (n p : WfWorld) (Hle : p ⊑ n) : WfWorld :=
+  exist _ (raw_pullback_projection n p)
+    (raw_pullback_projection_wf n p Hle).
+
+Lemma res_pullback_projection_subset (n p : WfWorld) Hle :
+  res_subset (res_pullback_projection n p Hle) n.
+Proof.
+  split; [reflexivity |].
+  intros σ [Hσ _]. exact Hσ.
+Qed.
+
+Lemma res_pullback_projection_restrict (n p : WfWorld) Hle :
+  res_restrict (res_pullback_projection n p Hle)
+    (world_dom (p : World)) = p.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl.
+    pose proof (raw_le_dom p n Hle). set_solver.
+  - intros σ. simpl. split.
+    + intros [σn [[Hσn Hpσ] Hrestrict]].
+      subst σ. exact Hpσ.
+    + intros Hpσ.
+      pose proof (res_restrict_eq_of_le p n Hle) as Hrestrict.
+      change (res_restrict n (world_dom (p : World)) = p) in Hrestrict.
+      assert ((res_restrict n (world_dom (p : World)) : World) σ) as Hσ.
+      { rewrite Hrestrict. exact Hpσ. }
+      simpl in Hσ.
+      destruct Hσ as [σn [Hσn Hproj]].
+      exists σn. split; [split; [exact Hσn | rewrite Hproj; exact Hpσ] |].
+      exact Hproj.
 Qed.
 
 Lemma res_fiber_swap x y (w : WfWorld) (σ : StoreT)
