@@ -1040,6 +1040,27 @@ Proof.
   exact Hsteps.
 Qed.
 
+Lemma expr_total_results_on_restrict
+    X e (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  (∀ σ, (n : World) σ →
+    ∃ v, subst_map (store_restrict σ X) e →* tret v) →
+  ∀ σ, (m : World) σ →
+    ∃ v, subst_map (store_restrict σ X) e →* tret v.
+Proof.
+  intros HXm Hle Hresult σm Hσm.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+  rewrite Hle in Hσm. simpl in Hσm.
+  destruct Hσm as [σn [Hσn Hrestrict]].
+  destruct (Hresult σn Hσn) as [v Hsteps].
+  exists v.
+  rewrite <- Hrestrict.
+  rewrite !store_restrict_restrict.
+  replace (world_dom (m : World) ∩ X) with X by set_solver.
+  exact Hsteps.
+Qed.
+
 Lemma let_result_world_on_base_mono
     X e x (m n : WfWorld)
     (Hfresh_m : x ∉ world_dom (m : World))
