@@ -155,6 +155,14 @@ Definition raw_fiber (m : World) (σ : StoreT) : World := {|
   world_stores := λ s, m s ∧ store_restrict s (dom σ) = σ;
 |}.
 
+Lemma raw_fiber_commute (m : World) (σ1 σ2 : StoreT) :
+  raw_fiber (raw_fiber m σ1) σ2 =
+  raw_fiber (raw_fiber m σ2) σ1.
+Proof.
+  apply world_ext; [reflexivity |].
+  intros s. simpl. tauto.
+Qed.
+
 Definition raw_rename_atom (x y : atom) (m : World) : World := {|
   world_dom    := aset_rename x y (world_dom m);
   world_stores := λ s, ∃ s0, m s0 ∧ store_rename_atom x y s0 = s;
@@ -554,6 +562,15 @@ Proof.
   reflexivity.
   rewrite store_restrict_dom. set_solver.
 Defined.
+
+Lemma res_fiber_commute (w : WfWorld) (σ1 σ2 : StoreT)
+    H1 H2 H1' H2' :
+  res_fiber (res_fiber w σ1 H1) σ2 H2 =
+  res_fiber (res_fiber w σ2 H1') σ1 H2'.
+Proof.
+  apply wfworld_ext. simpl.
+  apply raw_fiber_commute.
+Qed.
 
 Lemma res_fiber_from_projection_member
     (w : WfWorld) (X : aset) (σ σw : StoreT)
