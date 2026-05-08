@@ -58,6 +58,13 @@ For the closedness premise on an actual reduction result, use
 `basic_steps_result_closed`: preservation turns `e ->* tret v` into a typing
 derivation for `tret v`, and empty-context value regularity closes `v`.
 
+When the expression has first been multi-substituted by a store, use
+`msubst_basic_typing_tm`.  It tracks the context side with `env_delete σ Γ`:
+after substituting every coordinate in `σ`, those coordinates are removed from
+the basic typing environment.  If the substituted store covers all variables
+used by the expression, the remaining context can usually be shown empty or
+irrelevant by the usual fv-in-context lemmas.
+
 ## Important FAtom detail
 
 `FAtom` is upward closed and `logic_qualifier_denote` restricts both the
