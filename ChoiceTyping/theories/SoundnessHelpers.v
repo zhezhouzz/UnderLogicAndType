@@ -1094,6 +1094,7 @@ Qed.
     [e] satisfies [τ] for [return x]. *)
 Lemma denot_ty_on_let_result_representative
     X Σ τ e x (m : WfWorld) Hfresh Hresult :
+  basic_choice_ty (dom Σ) τ →
   fv_tm e ⊆ X →
   x ∉ X ∪ fv_cty τ ∪ fv_tm e →
   m ⊨ basic_world_formula Σ (dom Σ) →
@@ -1118,6 +1119,15 @@ Proof.
   intros Hwf Hm Hτ Hx.
   eapply (denot_ty_on_let_result_representative
     (dom (erase_ctx_under Σ Γ)) (erase_ctx_under Σ Γ) τ e x m Hfresh Hresult).
+  - destruct Hwf as [Hwfτ _].
+    pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasicτ.
+    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
+    + exact Hbasicτ.
+    + pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
+        as Hctx.
+      unfold erase_ctx_under.
+      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
+      reflexivity.
   - pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Hfv.
     replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
     + exact Hfv.
