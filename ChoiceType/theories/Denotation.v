@@ -242,25 +242,63 @@ Proof.
   - exact Hle.
 Qed.
 
-(** Semantic expression refinement is stated in the shape used by
-    [fresh_forall]: after the representative [x] is renamed to any concrete
-    fresh atom [y], every result of [e_to] is also a result of [e_from].  The
-    direction is contravariant because type denotations use expression results
-    as implication antecedents. *)
-Definition expr_result_refines (e_to e_from : tm) : Prop :=
-  ∀ x_to x_from y,
-    formula_rename_atom x_to y (FExprResult e_to x_to) ⊫
-    formula_rename_atom x_from y (FExprResult e_from x_from).
+(** Operational result comparison for open expressions.
 
-Lemma expr_result_refines_trans e3 e2 e1 :
-  expr_result_refines e3 e2 →
-  expr_result_refines e2 e1 →
-  expr_result_refines e3 e1.
+    This relation is intentionally stated outside Choice Logic.  Logic
+    entailment [⊫] follows the Kripke/domain-restriction order on worlds; it is
+    not a same-domain subset relation on result sets.  For open terms, the
+    result set is really a relation from an input store domain [X] to possible
+    results, so the comparison must name [X] explicitly. *)
+Definition expr_result_incl_on (X : aset) (e_to e_from : tm) : Prop :=
+  fv_tm e_to ∪ fv_tm e_from ⊆ X ∧
+  ∀ σ v,
+    dom σ = X →
+    closed_env σ →
+    subst_map σ e_to →* tret v →
+    subst_map σ e_from →* tret v.
+
+Definition expr_result_equiv_on (X : aset) (e1 e2 : tm) : Prop :=
+  expr_result_incl_on X e1 e2 ∧ expr_result_incl_on X e2 e1.
+
+Lemma expr_result_incl_on_refl X e :
+  fv_tm e ⊆ X →
+  expr_result_incl_on X e e.
 Proof.
-  intros H32 H21 x3 x1 y m Hm.
-  eapply (H21 y x1 y).
-  eapply (H32 x3 y y).
-  exact Hm.
+  intros Hfv. split; [set_solver |].
+  intros σ v _ _ Hsteps. exact Hsteps.
+Qed.
+
+Lemma expr_result_incl_on_trans X e3 e2 e1 :
+  expr_result_incl_on X e3 e2 →
+  expr_result_incl_on X e2 e1 →
+  expr_result_incl_on X e3 e1.
+Proof.
+  intros [Hfv32 H32] [Hfv21 H21]. split; [set_solver |].
+  intros σ v Hdom Hclosed Hsteps.
+  pose proof (H32 σ v Hdom Hclosed Hsteps) as Hsteps2.
+  exact (H21 σ v Hdom Hclosed Hsteps2).
+Qed.
+
+Lemma expr_result_equiv_on_refl X e :
+  fv_tm e ⊆ X →
+  expr_result_equiv_on X e e.
+Proof.
+  intros Hfv. split; apply expr_result_incl_on_refl; exact Hfv.
+Qed.
+
+Lemma expr_result_equiv_on_sym X e1 e2 :
+  expr_result_equiv_on X e1 e2 →
+  expr_result_equiv_on X e2 e1.
+Proof. intros [H12 H21]. split; assumption. Qed.
+
+Lemma expr_result_equiv_on_trans X e3 e2 e1 :
+  expr_result_equiv_on X e3 e2 →
+  expr_result_equiv_on X e2 e1 →
+  expr_result_equiv_on X e3 e1.
+Proof.
+  intros [H32 H23] [H21 H12]. split.
+  - eapply expr_result_incl_on_trans; eauto.
+  - eapply expr_result_incl_on_trans; eauto.
 Qed.
 
 (** Formula-level result-set view for [let].
@@ -780,7 +818,7 @@ Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx_under Σ Γ) τ e.
 
-Lemma denot_ty_fuel_result_refines_inter_from_parts gas D Σ τ1 τ2 e_to e_from m :
+Lemma denot_ty_fuel_result_equiv_inter_from_parts gas D Σ τ1 τ2 e_to e_from m :
   (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
     m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
     m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
@@ -800,7 +838,7 @@ Proof.
   - exact Hm.
 Qed.
 
-Lemma denot_ty_fuel_result_refines_union_from_parts gas D Σ τ1 τ2 e_to e_from m :
+Lemma denot_ty_fuel_result_equiv_union_from_parts gas D Σ τ1 τ2 e_to e_from m :
   (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
     m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
     m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
@@ -820,39 +858,39 @@ Proof.
   - exact Hm.
 Qed.
 
-Lemma denot_ty_fuel_result_refines gas D Σ τ e_to e_from m :
+Lemma denot_ty_fuel_result_equiv_on gas X D Σ τ e_to e_from m :
   formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ e_to) →
-  expr_result_refines e_to e_from →
+  expr_result_equiv_on X e_to e_from →
   m ⊨ denot_ty_fuel gas D Σ τ e_from →
   m ⊨ denot_ty_fuel gas D Σ τ e_to.
 Proof.
 Admitted.
 
-Lemma denot_ty_avoiding_result_refines D Σ τ e_to e_from :
+Lemma denot_ty_avoiding_result_equiv_on X D Σ τ e_to e_from :
   formula_fv (denot_ty_avoiding D Σ τ e_to) ⊆
     formula_fv (denot_ty_avoiding D Σ τ e_from) →
-  expr_result_refines e_to e_from →
+  expr_result_equiv_on X e_to e_from →
   denot_ty_avoiding D Σ τ e_from ⊫ denot_ty_avoiding D Σ τ e_to.
 Proof.
-  intros Hfv Href m Hfrom.
-  eapply denot_ty_fuel_result_refines.
+  intros Hfv Hequiv m Hfrom.
+  eapply denot_ty_fuel_result_equiv_on.
   - pose proof (res_models_with_store_fuel_scoped
       (formula_measure (denot_ty_avoiding D Σ τ e_from))
       ∅ m (denot_ty_avoiding D Σ τ e_from) Hfrom) as Hscope_from.
     unfold formula_scoped_in_world in *.
     intros z Hz. apply Hscope_from.
     unfold denot_ty_avoiding in *. set_solver.
-  - exact Href.
+  - exact Hequiv.
   - exact Hfrom.
 Qed.
 
 (** This wrapper additionally has to account for the fact that
     [denot_ty_under] chooses its avoidance set from [fv_tm e].  The core
-    result-refinement argument is [denot_ty_fuel_result_refines]; the remaining
+    result-equivalence argument is [denot_ty_fuel_result_equiv_on]; the remaining
     obligation is an alpha/avoidance-set transport lemma for [fresh_forall]. *)
-Lemma denot_ty_under_result_refines Σ τ e_to e_from :
+Lemma denot_ty_under_result_equiv_on X Σ τ e_to e_from :
   formula_fv (denot_ty_under Σ τ e_to) ⊆ formula_fv (denot_ty_under Σ τ e_from) →
-  expr_result_refines e_to e_from →
+  expr_result_equiv_on X e_to e_from →
   denot_ty_under Σ τ e_from ⊫ denot_ty_under Σ τ e_to.
 Proof.
 Admitted.
