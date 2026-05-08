@@ -525,6 +525,7 @@ Qed.
     any structural recursion belongs in the general denotation-compatibility
     theorem. *)
 Lemma semantic_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
+  choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -532,11 +533,12 @@ Lemma semantic_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-  intros Hwf IH1 IH2.
+  intros Hwf1 Hwf IH1 IH2.
   eapply denot_tlet_semantic; eauto.
 Qed.
 
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
+  choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
   (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -544,7 +546,7 @@ Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-  intros Hwf IH1 IH2.
+  intros Hwf1 Hwf IH1 IH2.
   eapply semantic_let_rule; eauto.
 Qed.
 
@@ -710,7 +712,7 @@ Proof.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
-  - eapply fundamental_let_case; eauto.
+  - eapply fundamental_let_case; eauto using typing_wf_under.
   - eapply fundamental_letd_case; eauto.
   - eapply fundamental_lam_case; eauto.
   - eapply fundamental_lamd_case; eauto.
