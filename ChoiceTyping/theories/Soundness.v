@@ -356,6 +356,26 @@ Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : For
         (FUnder (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
 
+Definition const_over_body_on
+    (X : aset) (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FImpl
+    (FExprResultOn X (tret (vconst c)) ν)
+    (FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FOver (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+
+Definition const_under_body_on
+    (X : aset) (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FImpl
+    (FExprResultOn X (tret (vconst c)) ν)
+    (FAnd
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+      (fib_vars {[ν]}
+        (FUnder (FAtom (lift_type_qualifier_to_logic
+          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+
 Lemma const_over_body_fv_subset Σ c ν :
   formula_fv (const_over_body Σ c ν) ⊆ {[ν]}.
 Proof.
@@ -378,6 +398,34 @@ Proof.
   unfold stale, stale_logic_qualifier in Hz.
   rewrite fib_vars_singleton in Hz. simpl in Hz.
   unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
+  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
+    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
+    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
+    set_solver.
+Qed.
+
+Lemma const_over_body_on_fv_subset X Σ c ν :
+  formula_fv (const_over_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
+Proof.
+  unfold const_over_body_on.
+  intros z Hz. simpl in Hz.
+  unfold stale, stale_logic_qualifier in Hz.
+  rewrite fib_vars_singleton in Hz. simpl in Hz.
+  unfold expr_logic_qual_on, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
+  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
+    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
+    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
+    set_solver.
+Qed.
+
+Lemma const_under_body_on_fv_subset X Σ c ν :
+  formula_fv (const_under_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
+Proof.
+  unfold const_under_body_on.
+  intros z Hz. simpl in Hz.
+  unfold stale, stale_logic_qualifier in Hz.
+  rewrite fib_vars_singleton in Hz. simpl in Hz.
+  unfold expr_logic_qual_on, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
     unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
     unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
@@ -414,6 +462,54 @@ Proof.
   apply elem_of_singleton in Hν.
   unfold atom_swap in Hν.
   repeat destruct decide; subst; try congruence; exact Hym.
+Qed.
+
+Lemma const_over_body_on_rename_scoped X Σ c ν y (m : WfWorld) :
+  y ∉ X ∪ {[ν]} →
+  X ⊆ world_dom (m : World) →
+  y ∈ world_dom (m : World) →
+  formula_scoped_in_world ∅ m
+    (formula_rename_atom ν y (const_over_body_on X Σ c ν)).
+Proof.
+  intros Hyfresh HXm Hym.
+  unfold formula_scoped_in_world. intros z Hz.
+  rewrite dom_empty_L in Hz.
+  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+  rewrite formula_fv_rename_atom in Hz.
+  rewrite elem_of_aset_swap in Hz.
+  destruct (decide (z = ν)) as [-> | Hzν].
+  { replace (atom_swap ν y ν) with y in Hz
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    pose proof (const_over_body_on_fv_subset X Σ c ν _ Hz) as HyX.
+    set_solver. }
+  destruct (decide (z = y)) as [-> | Hzy]; [exact Hym |].
+  rewrite atom_swap_fresh in Hz by congruence.
+  pose proof (const_over_body_on_fv_subset X Σ c ν _ Hz) as HzX.
+  set_solver.
+Qed.
+
+Lemma const_under_body_on_rename_scoped X Σ c ν y (m : WfWorld) :
+  y ∉ X ∪ {[ν]} →
+  X ⊆ world_dom (m : World) →
+  y ∈ world_dom (m : World) →
+  formula_scoped_in_world ∅ m
+    (formula_rename_atom ν y (const_under_body_on X Σ c ν)).
+Proof.
+  intros Hyfresh HXm Hym.
+  unfold formula_scoped_in_world. intros z Hz.
+  rewrite dom_empty_L in Hz.
+  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+  rewrite formula_fv_rename_atom in Hz.
+  rewrite elem_of_aset_swap in Hz.
+  destruct (decide (z = ν)) as [-> | Hzν].
+  { replace (atom_swap ν y ν) with y in Hz
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    pose proof (const_under_body_on_fv_subset X Σ c ν _ Hz) as HyX.
+    set_solver. }
+  destruct (decide (z = y)) as [-> | Hzy]; [exact Hym |].
+  rewrite atom_swap_fresh in Hz by congruence.
+  pose proof (const_under_body_on_fv_subset X Σ c ν _ Hz) as HzX.
+  set_solver.
 Qed.
 
 (** The semantic-subtyping case of the fundamental theorem. *)
