@@ -376,7 +376,22 @@ Lemma denot_ctx_in_env_ctx Σ Γ m :
   m ⊨ denot_ctx_under (erase_ctx_under Σ Γ) Γ.
 Proof.
   unfold denot_ctx_in_env.
-  apply res_models_and_elim_r.
+  intros HΓ.
+  apply res_models_and_elim_r in HΓ.
+  apply res_models_and_elim_r in HΓ.
+  exact HΓ.
+Qed.
+
+Lemma denot_ctx_in_env_erased_basic Σ Γ m :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ basic_world_formula
+        (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)).
+Proof.
+  unfold denot_ctx_in_env.
+  intros HΓ.
+  apply res_models_and_elim_r in HΓ.
+  apply res_models_and_elim_l in HΓ.
+  exact HΓ.
 Qed.
 
 Lemma denot_ctx_in_env_world_has_type Σ Γ m :
@@ -490,13 +505,33 @@ Qed.
     over [Γ], using the basic-world conjuncts produced by type denotations for
     binders. *)
 Lemma denot_ctx_in_env_store_erased_typed Σ Γ m σ :
+  basic_ctx (dom Σ) Γ →
   m ⊨ denot_ctx_in_env Σ Γ →
   (m : World) σ →
   let X := dom Σ ∪ ctx_dom Γ in
   closed_env (store_restrict σ X) ∧
   env_has_type (erase_ctx_under Σ Γ) (store_restrict σ X).
 Proof.
-Admitted.
+  intros Hbasic HΓ Hσ X.
+  assert (HdomX : X = dom (erase_ctx_under Σ Γ)).
+  {
+    unfold X, erase_ctx_under.
+    rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
+    reflexivity.
+  }
+  rewrite HdomX.
+  split.
+  - eapply basic_world_formula_store_restrict_closed_env.
+    + apply denot_ctx_in_env_erased_basic. exact HΓ.
+    + set_solver.
+    + exact Hσ.
+  - intros x T v HΣx Hσx.
+    pose proof (basic_world_formula_store_restrict_typed
+      (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)) m σ
+      (denot_ctx_in_env_erased_basic Σ Γ m HΓ) Hσ) as Htyped.
+    eapply Htyped; [| exact HΣx | exact Hσx].
+    apply elem_of_dom. eexists. exact HΣx.
+Qed.
 
 Lemma choice_typing_wf_result_closed_in_ctx Σ Γ e τ m σ vx :
   choice_typing_wf Σ Γ e τ →
@@ -509,7 +544,8 @@ Proof.
   pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Hfv.
   destruct Hwf as [Hty Herase].
   set (X := dom Σ ∪ ctx_dom Γ).
-  destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ HΓ Hσ) as
+  destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ
+    (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty)) HΓ Hσ) as
     [Hclosed Henv].
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
   {

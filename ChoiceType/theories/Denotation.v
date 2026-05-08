@@ -1712,7 +1712,9 @@ Definition denot_ctx (Γ : ctx) : FQ :=
 
 Definition denot_ctx_in_env (Σ : gmap atom ty) (Γ : ctx) : FQ :=
   FAnd (basic_world_formula Σ (dom Σ))
-       (denot_ctx_under (erase_ctx_under Σ Γ) Γ).
+       (FAnd
+          (basic_world_formula (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)))
+          (denot_ctx_under (erase_ctx_under Σ Γ) Γ)).
 
 (** ** Typeclass instances for [⟦⟧] notation *)
 
@@ -1735,8 +1737,16 @@ Lemma denot_ctx_in_env_dom_subset_formula_fv Σ Γ :
   dom Σ ∪ ctx_dom Γ ⊆ formula_fv (denot_ctx_in_env Σ Γ).
 Proof.
   unfold denot_ctx_in_env. simpl.
-  pose proof (denot_ctx_under_dom_subset_formula_fv (erase_ctx_under Σ Γ) Γ).
-  set_solver.
+  pose proof (denot_ctx_under_dom_subset_formula_fv (erase_ctx_under Σ Γ) Γ)
+    as Hctx.
+  intros z Hz.
+  apply elem_of_union in Hz as [HzΣ | HzΓ].
+  - apply elem_of_union. right. apply elem_of_union. left.
+    unfold erase_ctx_under.
+    change (z ∈ dom (Σ ∪ erase_ctx Γ)).
+    rewrite dom_union_L. set_solver.
+  - apply elem_of_union. right. apply elem_of_union. right.
+    apply Hctx. exact HzΓ.
 Qed.
 
 Lemma denot_ctx_dom_subset_formula_fv Γ :
