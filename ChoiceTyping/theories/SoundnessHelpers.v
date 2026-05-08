@@ -4,7 +4,7 @@
     them outside [Soundness.v] leaves the fundamental-theorem file focused on
     the proof cases themselves. *)
 
-From CoreLang Require Import Instantiation InstantiationProps.
+From CoreLang Require Import Instantiation InstantiationProps OperationalProps.
 From ChoiceTyping Require Export Typing.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -516,6 +516,79 @@ Proof.
     rewrite Hdomσ. simpl. set_solver.
   - exact HXΣ.
   - apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+Qed.
+
+(** Regularity obligation for context denotations: a world satisfying
+    [denot_ctx_in_env Σ Γ] provides basic typed values for every coordinate
+    used by the erased environment [erase_ctx_under Σ Γ].  This is independent
+    of any particular typing rule; the full proof should proceed by induction
+    over [Γ], using the basic-world conjuncts produced by type denotations for
+    binders. *)
+Lemma denot_ctx_in_env_store_erased_typed Σ Γ m σ :
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  let X := dom Σ ∪ ctx_dom Γ in
+  closed_env (store_restrict σ X) ∧
+  env_has_type (erase_ctx_under Σ Γ) (store_restrict σ X).
+Proof.
+Admitted.
+
+Lemma choice_typing_wf_result_closed_in_ctx Σ Γ e τ m σ vx :
+  choice_typing_wf Σ Γ e τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  subst_map σ e →* tret vx →
+  stale vx = ∅.
+Proof.
+  intros Hwf HΓ Hσ Hsteps.
+  pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Hfv.
+  destruct Hwf as [Hty Herase].
+  set (X := dom Σ ∪ ctx_dom Γ).
+  destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ HΓ Hσ) as
+    [Hclosed Henv].
+  assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
+  {
+    unfold erase_ctx_under, X.
+    pose proof (basic_ctx_erase_dom (dom Σ) Γ
+      (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty))) as HdomΓ.
+    rewrite dom_union_L, HdomΓ. reflexivity.
+  }
+  assert (HXworld : X ⊆ world_dom (m : World)).
+  {
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+      (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    intros z Hz. apply Hscope.
+    pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ z) as Hdomfv.
+    apply elem_of_union. right. apply Hdomfv. unfold X in Hz. exact Hz.
+  }
+  assert (Hdom_del : env_delete (store_restrict σ X) (erase_ctx_under Σ Γ) = ∅).
+  {
+    apply env_delete_empty_of_dom_subset.
+    rewrite Hdom_erase.
+    intros z Hz.
+    pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+    apply elem_of_dom.
+    assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
+    apply elem_of_dom in Hzdom as [v Hlookup].
+    exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+  }
+  assert (Htyped :
+    ∅ ⊢ₑ m{store_restrict σ X} e ⋮ erase_ty τ).
+  {
+    rewrite <- Hdom_del.
+    eapply msubst_basic_typing_tm; eauto.
+  }
+  assert (Hsubst : m{store_restrict σ X} e = subst_map σ e).
+  {
+    change (subst_map σ e) with (m{σ} e).
+    apply msubst_restrict_closed_on.
+    - exact Hclosed.
+    - unfold X in *. set_solver.
+  }
+  rewrite Hsubst in Htyped.
+  eapply basic_steps_result_closed; eauto.
 Qed.
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :

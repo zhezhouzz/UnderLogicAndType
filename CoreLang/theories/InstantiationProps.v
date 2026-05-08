@@ -528,6 +528,20 @@ Class MsubstRestrict A `{Stale A} `{SubstV value A} := msubst_restrict :
     stale a ⊆ X ->
     m{map_restrict value σ X} a = m{σ} a.
 
+(** A weaker restriction principle: it is enough for the part of the store
+    that [a] can actually inspect to be closed.  Substitutions outside [X] are
+    fresh for [a], and closed values substituted inside [X] cannot reintroduce
+    outside variables. *)
+Lemma msubst_restrict_closed_on
+    {A : Type} `{Stale A} `{SubstV value A}
+    `{SubstFresh A} `{MsubstInsert A} `{MsubstFv A}
+    (σ : env) (X : aset) (a : A) :
+  closed_env (map_restrict value σ X) →
+  stale a ⊆ X →
+  m{map_restrict value σ X} a = m{σ} a.
+Proof.
+Admitted.
+
 Lemma MsubstRestrict_all
     (A : Type)
     (staleA : Stale A)
