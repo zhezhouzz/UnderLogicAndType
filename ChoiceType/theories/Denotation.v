@@ -640,7 +640,63 @@ Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
   logic_qualifier_denote (expr_logic_qual e ν) (map_restrict value ρ X) w ↔
   logic_qualifier_denote (expr_logic_qual e ν) ρ w.
 Proof.
-Admitted.
+  intros Hclosed HeX.
+  unfold logic_qualifier_denote, expr_logic_qual. simpl.
+  split.
+  - assert (Hinner :
+      subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e =
+      subst_map (store_restrict ρ (stale e ∪ {[ν]})) e).
+    {
+      eapply (msubst_agree tm
+        (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]}))
+        (store_restrict ρ (stale e ∪ {[ν]})) (stale e) e).
+      - apply closed_env_restrict. apply closed_env_restrict. exact Hclosed.
+      - apply closed_env_restrict. exact Hclosed.
+      - reflexivity.
+      - intros z Hz.
+        rewrite (@store_restrict_lookup value
+          (map_restrict value ρ X) (stale e ∪ {[ν]}) z).
+        rewrite (@store_restrict_lookup value ρ (stale e ∪ {[ν]}) z).
+        rewrite !decide_True by set_solver.
+        change (map_restrict value ρ X) with (store_restrict ρ X).
+        rewrite (@store_restrict_lookup value ρ X z).
+        rewrite decide_True by set_solver.
+        reflexivity.
+    }
+    intros Hres σw Hσw.
+    specialize (Hres σw Hσw) as [v [Hν Hsteps]].
+    exists v. split; [exact Hν |].
+    change (subst_map σw (subst_map (store_restrict ρ (stale e ∪ {[ν]})) e)
+      →* tret v).
+    rewrite <- Hinner. exact Hsteps.
+  - assert (Hinner :
+      subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e =
+      subst_map (store_restrict ρ (stale e ∪ {[ν]})) e).
+    {
+      eapply (msubst_agree tm
+        (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]}))
+        (store_restrict ρ (stale e ∪ {[ν]})) (stale e) e).
+      - apply closed_env_restrict. apply closed_env_restrict. exact Hclosed.
+      - apply closed_env_restrict. exact Hclosed.
+      - reflexivity.
+      - intros z Hz.
+        rewrite (@store_restrict_lookup value
+          (map_restrict value ρ X) (stale e ∪ {[ν]}) z).
+        rewrite (@store_restrict_lookup value ρ (stale e ∪ {[ν]}) z).
+        rewrite !decide_True by set_solver.
+        change (map_restrict value ρ X) with (store_restrict ρ X).
+        rewrite (@store_restrict_lookup value ρ X z).
+        rewrite decide_True by set_solver.
+        reflexivity.
+    }
+    intros Hres σw Hσw.
+    specialize (Hres σw Hσw) as [v [Hν Hsteps]].
+    exists v. split; [exact Hν |].
+    change (subst_map σw
+      (subst_map (store_restrict (map_restrict value ρ X) (stale e ∪ {[ν]})) e)
+      →* tret v).
+    rewrite Hinner. exact Hsteps.
+Qed.
 
 Lemma expr_logic_qual_renamed_result_steps e x y ρ w σw :
   x ∉ stale e →
