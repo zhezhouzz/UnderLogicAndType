@@ -1773,63 +1773,6 @@ Proof.
       exists m1, m2, Hdef. split; [exact Hsum |]. split; eauto.
 Qed.
 
-(** The public context denotation uses each context's own erased environment.
-    These wrappers require environment-locality facts to bridge from the
-    ambient environment of the compound context to the standalone subcontext
-    environments. *)
-Lemma denot_ctx_comma_agree Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof.
-Admitted.
-
-Lemma denot_ctx_star_agree Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m ∧
-    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof.
-Admitted.
-
-Lemma denot_ctx_sum_agree Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef ⊑ m ∧
-    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof.
-Admitted.
-
-Lemma denot_ctx_comma Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. apply denot_ctx_comma_agree. Qed.
-
-(** The context denotation of a star-context distributes over FStar. *)
-Lemma denot_ctx_star Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m ∧
-    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. apply denot_ctx_star_agree. Qed.
-
-(** The context denotation of a sum-context distributes over FPlus. *)
-Lemma denot_ctx_sum Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxSum Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef ⊑ m ∧
-    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. apply denot_ctx_sum_agree. Qed.
-
 (** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔

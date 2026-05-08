@@ -847,35 +847,10 @@ Proof.
   eapply denot_tlet_semantic_at_world; eauto.
 Qed.
 
-Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
-Proof. apply denot_ctx_comma. Qed.
-
 Lemma denot_ctx_comma_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
   m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
 Proof. apply denot_ctx_under_comma. Qed.
-
-Lemma denot_ctx_in_env_comma_agree Σ Γ1 Γ2 m :
-  ty_env_agree_on (ctx_stale Γ1)
-    (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1) →
-  ty_env_agree_on (ctx_stale Γ2)
-    (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2) →
-  m ⊨ denot_ctx_in_env Σ (CtxComma Γ1 Γ2) ↔
-  m ⊨ denot_ctx_in_env Σ Γ1 ∧ m ⊨ denot_ctx_in_env Σ Γ2.
-Proof.
-Admitted.
-
-Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
-  ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
-  ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) →
-  m ⊨ ⟦CtxStar Γ1 Γ2⟧ ↔
-  ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m ∧
-    m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
-Proof. apply denot_ctx_star. Qed.
 
 Lemma denot_ctx_star_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ↔
