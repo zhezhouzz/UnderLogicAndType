@@ -84,6 +84,33 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
+(** [world_closed_on X m] is the ChoiceType-level invariant saying that every
+    store in [m] is operationally usable on the coordinates [X].  This belongs
+    here rather than in ChoiceAlgebra: the algebra is polymorphic in store
+    values, while closedness is a CoreLang [value] property. *)
+Definition world_closed_on (X : aset) (m : WfWorld) : Prop :=
+  ∀ σ, (m : World) σ → closed_env (store_restrict σ X).
+
+Lemma world_closed_on_le X m n :
+  m ⊑ n →
+  world_closed_on X n →
+  world_closed_on X m.
+Proof.
+  intros Hle Hclosed σ Hσ.
+  unfold world_closed_on in Hclosed.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+  change ((m : World) σ) in Hσ.
+  rewrite Hle in Hσ. simpl in Hσ.
+  destruct Hσ as [σn [Hσn Hrestrict]].
+  rewrite <- Hrestrict.
+  rewrite !store_restrict_restrict.
+  replace (world_dom (m : World) ∩ X) with (X ∩ world_dom (m : World))
+    by set_solver.
+  rewrite <- store_restrict_restrict.
+  apply closed_env_restrict.
+  exact (Hclosed σn Hσn).
+Qed.
+
 Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
   expr_result_in_world ρ (tlete e1 e2) ν w →
   ∀ σw,
@@ -884,6 +911,7 @@ Qed.
 
 Lemma denot_ty_fuel_result_equiv_on gas X D Σ τ e_to e_from m :
   formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ e_to) →
+  world_closed_on X m →
   expr_result_equiv_on X e_to e_from →
   m ⊨ denot_ty_fuel gas X D Σ τ e_from →
   m ⊨ denot_ty_fuel gas X D Σ τ e_to.
@@ -894,9 +922,12 @@ Lemma denot_ty_avoiding_result_equiv_on X D Σ τ e_to e_from :
   formula_fv (denot_ty_avoiding X D Σ τ e_to) ⊆
     formula_fv (denot_ty_avoiding X D Σ τ e_from) →
   expr_result_equiv_on X e_to e_from →
-  denot_ty_avoiding X D Σ τ e_from ⊫ denot_ty_avoiding X D Σ τ e_to.
+  ∀ m,
+  world_closed_on X m →
+  m ⊨ denot_ty_avoiding X D Σ τ e_from →
+  m ⊨ denot_ty_avoiding X D Σ τ e_to.
 Proof.
-  intros Hfv Hequiv m Hfrom.
+  intros Hfv Hequiv m Hclosed Hfrom.
   eapply denot_ty_fuel_result_equiv_on.
   - pose proof (res_models_with_store_fuel_scoped
       (formula_measure (denot_ty_avoiding X D Σ τ e_from))
@@ -904,6 +935,7 @@ Proof.
     unfold formula_scoped_in_world in *.
     intros z Hz. apply Hscope_from.
     unfold denot_ty_avoiding in *. set_solver.
+  - exact Hclosed.
   - exact Hequiv.
   - exact Hfrom.
 Qed.
@@ -915,7 +947,10 @@ Qed.
 Lemma denot_ty_under_result_equiv_on X Σ τ e_to e_from :
   formula_fv (denot_ty_under Σ τ e_to) ⊆ formula_fv (denot_ty_under Σ τ e_from) →
   expr_result_equiv_on X e_to e_from →
-  denot_ty_under Σ τ e_from ⊫ denot_ty_under Σ τ e_to.
+  ∀ m,
+  world_closed_on X m →
+  m ⊨ denot_ty_under Σ τ e_from →
+  m ⊨ denot_ty_under Σ τ e_to.
 Proof.
 Admitted.
 
