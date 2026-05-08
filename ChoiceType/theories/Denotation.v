@@ -84,6 +84,32 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
+Lemma FExprResultOn_models_elim X e ν m :
+  m ⊨ FExprResultOn X e ν →
+  ∃ w : WfWorld,
+    formula_scoped_in_world ∅ w (FExprResultOn X e ν) ∧
+    expr_result_in_world ∅ e ν (res_restrict w (X ∪ {[ν]})) ∧
+    w ⊑ m.
+Proof.
+  unfold FExprResultOn, res_models, res_models_with_store.
+  simpl. intros [_ [w [Hscopew [Hres Hle]]]].
+  exists w. split; [exact Hscopew |]. split; [| exact Hle].
+  exact Hres.
+Qed.
+
+Lemma FExprResultOn_models_intro X e ν m w :
+  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
+  formula_scoped_in_world ∅ w (FExprResultOn X e ν) →
+  expr_result_in_world ∅ e ν (res_restrict w (X ∪ {[ν]})) →
+  w ⊑ m →
+  m ⊨ FExprResultOn X e ν.
+Proof.
+  unfold FExprResultOn, res_models, res_models_with_store.
+  simpl. intros Hscope Hscopew Hres Hle.
+  split; [exact Hscope |].
+  exists w. split; [exact Hscopew |]. split; [exact Hres | exact Hle].
+Qed.
+
 (** Prop-level totality for the expression component of a type denotation.
 
     This is intentionally not encoded as a ChoiceLogic formula.  The logic

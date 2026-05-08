@@ -1462,6 +1462,10 @@ Lemma FExprResultOn_tlete_from_body_result_world
   fv_tm (tlete e1 e2) ⊆ X →
   (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
   (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   let_result_world_on X e1 x n Hfresh Hresult ⊨
     FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν →
