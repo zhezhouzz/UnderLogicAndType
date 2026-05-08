@@ -533,8 +533,10 @@ Class MsubstRestrict A `{Stale A} `{SubstV value A} := msubst_restrict :
     fresh for [a], and closed values substituted inside [X] cannot reintroduce
     outside variables. *)
 Lemma msubst_restrict_closed_on
-    {A : Type} `{Stale A} `{SubstV value A}
-    `{SubstFresh A} `{MsubstInsert A} `{MsubstFv A}
+    {A : Type} (staleA : Stale A) (substA : SubstV value A)
+    (substFreshA : @SubstFresh A staleA substA)
+    (msubstInsertA : @MsubstInsert A substA)
+    (msubstFvA : @MsubstFv A staleA substA)
     (σ : env) (X : aset) (a : A) :
   closed_env (map_restrict value σ X) →
   stale a ⊆ X →

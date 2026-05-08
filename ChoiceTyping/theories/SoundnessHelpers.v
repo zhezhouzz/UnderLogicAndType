@@ -583,13 +583,34 @@ Proof.
   assert (Hsubst : m{store_restrict σ X} e = subst_map σ e).
   {
     change (subst_map σ e) with (m{σ} e).
-    apply msubst_restrict_closed_on.
+    eapply (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _).
     - exact Hclosed.
     - unfold X in *. set_solver.
   }
   rewrite Hsubst in Htyped.
   eapply basic_steps_result_closed; eauto.
 Qed.
+
+(** Semantic compatibility of bunched let.
+
+    This is the remaining tlet-specific denotation theorem.  Its proof should
+    combine:
+    - [expr_result_in_world_let_intro]/[_elim] for operational composition;
+    - [choice_typing_wf_result_closed_in_ctx] for closed intermediate values;
+    - the body entailment under [CtxComma Γ (CtxBind x τ1)].
+
+    Keeping this theorem separate prevents the fundamental theorem case from
+    doing any recursion on [τ2]. *)
+Lemma denot_tlet_semantic
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset) :
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) →
+  (∀ x, x ∉ L →
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
+Proof.
+Admitted.
 
 Lemma denot_ctx_comma_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →

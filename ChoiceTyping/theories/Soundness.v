@@ -532,7 +532,9 @@ Lemma semantic_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf IH1 IH2.
+  eapply denot_tlet_semantic; eauto.
+Qed.
 
 Lemma fundamental_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
