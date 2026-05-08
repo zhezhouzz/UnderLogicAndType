@@ -6,12 +6,11 @@ From ChoiceTyping Require Export SoundnessHelpers.
 From CoreLang Require Import LocallyNamelessProps.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-Lemma basic_const_world_from_expr_atom c ν Σ m :
-  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+Lemma basic_const_world_from_lookup c ν Σ m :
+  (∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c)) →
   m ⊨ basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]}.
 Proof.
-  intros Hexpr.
-  pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
+  intros Hlookup.
   eapply res_models_atom_intro.
   - unfold formula_scoped_in_world. simpl.
     unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom.
@@ -36,6 +35,15 @@ Proof.
     pose proof (Hlookup σ Hσ) as Hν.
     rewrite Hν in Hσv. inversion Hσv; subst v.
     constructor.
+Qed.
+
+Lemma basic_const_world_from_expr_atom c ν Σ m :
+  m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
+  m ⊨ basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]}.
+Proof.
+  intros Hexpr.
+  apply basic_const_world_from_lookup.
+  apply expr_logic_qual_ret_const_lookup. exact Hexpr.
 Qed.
 
 Lemma lifted_const_qualifier_from_projection c ν m σ
