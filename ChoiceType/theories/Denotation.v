@@ -1078,8 +1078,12 @@ Definition denot_ty_avoiding
     (X D : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_fuel (cty_measure τ) X D Σ τ e.
 
+Definition denot_ty_on
+    (X : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_avoiding X (dom Σ ∪ fv_cty τ ∪ fv_tm e ∪ X) Σ τ e.
+
 Definition denot_ty_under (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_avoiding (dom Σ ∪ fv_tm e) (fv_cty τ ∪ fv_tm e ∪ dom Σ) Σ τ e.
+  denot_ty_on (fv_tm e) Σ τ e.
 
 Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under ∅ τ e.
@@ -1092,10 +1096,7 @@ Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
 
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_avoiding
-    (dom (erase_ctx_under Σ Γ))
-    (fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
-    (erase_ctx_under Σ Γ) τ e.
+  denot_ty_on (dom (erase_ctx_under Σ Γ)) (erase_ctx_under Σ Γ) τ e.
 
 Definition denot_ty_total_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
@@ -1461,7 +1462,7 @@ Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
 Proof.
   intros Hdom Hagree.
-  unfold denot_ty_under, denot_ty_avoiding.
+  unfold denot_ty_under, denot_ty_on, denot_ty_avoiding.
   rewrite Hdom.
   apply denot_ty_fuel_env_agree. exact Hagree.
 Qed.
@@ -1658,11 +1659,9 @@ Qed.
 Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
 Proof.
-  unfold denot_ty, denot_ty_under, denot_ty_avoiding.
+  unfold denot_ty, denot_ty_under, denot_ty_on, denot_ty_avoiding.
   pose proof (denot_ty_fuel_formula_fv_subset
-    (cty_measure τ) (fv_tm e) (fv_cty τ ∪ fv_tm e) ∅ τ e ltac:(lia)) as Hfv.
-  rewrite dom_empty_L.
-  replace (∅ ∪ fv_tm e) with (fv_tm e) by set_solver.
+    (cty_measure τ) (fv_tm e) (dom (∅ : gmap atom ty) ∪ fv_cty τ ∪ fv_tm e ∪ fv_tm e) ∅ τ e ltac:(lia)) as Hfv.
   replace (fv_cty τ ∪ fv_tm e ∪ ∅) with (fv_cty τ ∪ fv_tm e) by set_solver.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
@@ -1714,10 +1713,20 @@ Qed.
 Lemma denot_ty_under_formula_fv_subset Σ τ e :
   formula_fv (denot_ty_under Σ τ e) ⊆ dom Σ ∪ fv_tm e ∪ fv_cty τ.
 Proof.
-  unfold denot_ty_under, denot_ty_avoiding.
+  unfold denot_ty_under, denot_ty_on, denot_ty_avoiding.
   pose proof (denot_ty_fuel_formula_fv_subset
-    (cty_measure τ) (dom Σ ∪ fv_tm e)
-    (fv_cty τ ∪ fv_tm e ∪ dom Σ) Σ τ e ltac:(lia)) as Hfv.
+    (cty_measure τ) (fv_tm e)
+    (dom Σ ∪ fv_cty τ ∪ fv_tm e ∪ fv_tm e) Σ τ e ltac:(lia)) as Hfv.
+  intros z Hz. apply Hfv in Hz. set_solver.
+Qed.
+
+Lemma denot_ty_on_formula_fv_subset X Σ τ e :
+  formula_fv (denot_ty_on X Σ τ e) ⊆ dom Σ ∪ X ∪ fv_tm e ∪ fv_cty τ.
+Proof.
+  unfold denot_ty_on, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_formula_fv_subset
+    (cty_measure τ) X (dom Σ ∪ fv_cty τ ∪ fv_tm e ∪ X)
+    Σ τ e ltac:(lia)) as Hfv.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
 
@@ -1725,10 +1734,10 @@ Lemma denot_ty_in_ctx_under_formula_fv_subset Σ Γ τ e :
   formula_fv (denot_ty_in_ctx_under Σ Γ τ e) ⊆
     dom (erase_ctx_under Σ Γ) ∪ fv_tm e ∪ fv_cty τ.
 Proof.
-  unfold denot_ty_in_ctx_under, denot_ty_avoiding.
+  unfold denot_ty_in_ctx_under, denot_ty_on, denot_ty_avoiding.
   pose proof (denot_ty_fuel_formula_fv_subset
     (cty_measure τ) (dom (erase_ctx_under Σ Γ))
-    (fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
+    (dom (erase_ctx_under Σ Γ) ∪ fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
     (erase_ctx_under Σ Γ) τ e ltac:(lia)) as Hfv.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
@@ -1782,11 +1791,24 @@ Qed.
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
 Proof.
-  unfold denot_ty_under, denot_ty_avoiding.
+  unfold denot_ty_under, denot_ty_on, denot_ty_avoiding.
   pose proof (denot_ty_fuel_expr_fv_subset
-    (cty_measure τ) (dom Σ ∪ fv_tm (tret (vfvar x)))
-    (fv_cty τ ∪ fv_tm (tret (vfvar x)) ∪ dom Σ) Σ τ
+    (cty_measure τ) (fv_tm (tret (vfvar x)))
+    (dom Σ ∪ fv_cty τ ∪ fv_tm (tret (vfvar x)) ∪ fv_tm (tret (vfvar x))) Σ τ
     (tret (vfvar x)) ltac:(lia) ltac:(set_solver)) as Hfv.
+  apply Hfv. simpl. set_solver.
+Qed.
+
+Lemma denot_ty_on_result_atom_fv X Σ x τ :
+  x ∈ X →
+  x ∈ formula_fv (denot_ty_on X Σ τ (tret (vfvar x))).
+Proof.
+  intros Hx.
+  unfold denot_ty_on, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_expr_fv_subset
+    (cty_measure τ) X
+    (dom Σ ∪ fv_cty τ ∪ fv_tm (tret (vfvar x)) ∪ X) Σ τ
+    (tret (vfvar x)) ltac:(lia) ltac:(simpl; set_solver)) as Hfv.
   apply Hfv. simpl. set_solver.
 Qed.
 
@@ -1821,11 +1843,33 @@ Qed.
     under the ambient erased basic environment [Σ].  The public
     [denot_ctx Γ] instantiates [Σ] with [erase_ctx Γ], so later binders in a
     comma context can be checked against earlier erased bindings. *)
+
+Lemma erase_ctx_dom_subset Γ :
+  dom (erase_ctx Γ) ⊆ ctx_dom Γ.
+Proof.
+  induction Γ; simpl.
+  - rewrite dom_empty_L. set_solver.
+  - rewrite dom_singleton_L. set_solver.
+  - rewrite dom_union_L. set_solver.
+  - rewrite dom_union_L. set_solver.
+  - set_solver.
+Qed.
+
+Lemma ctx_dom_subset_stale Γ :
+  ctx_dom Γ ⊆ ctx_stale Γ.
+Proof.
+  induction Γ; simpl; set_solver.
+Qed.
+
 Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FQ :=
   match Γ with
   | CtxEmpty        => FTrue
-  | CtxBind x τ    => denot_ty_under Σ τ (tret (vfvar x))
-  | CtxComma Γ1 Γ2 => FAnd  (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+  | CtxBind x τ    =>
+      denot_ty_on (dom Σ ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+  | CtxComma Γ1 Γ2 =>
+      FAnd
+        (denot_ctx_under Σ Γ1)
+        (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
   | CtxStar  Γ1 Γ2 => FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
   | CtxSum   Γ1 Γ2 => FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
   end.
@@ -1837,7 +1881,7 @@ Definition denot_ctx_in_env (Σ : gmap atom ty) (Γ : ctx) : FQ :=
   FAnd (basic_world_formula Σ (dom Σ))
        (FAnd
           (basic_world_formula (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)))
-          (denot_ctx_under (erase_ctx_under Σ Γ) Γ)).
+          (denot_ctx_under Σ Γ)).
 
 (** ** Typeclass instances for [⟦⟧] notation *)
 
@@ -1851,16 +1895,26 @@ Arguments denot_ctx_inst /.
 Lemma denot_ctx_under_dom_subset_formula_fv Σ Γ :
   ctx_dom Γ ⊆ formula_fv (denot_ctx_under Σ Γ).
 Proof.
-  induction Γ; simpl; try set_solver.
-  intros z Hz. apply elem_of_singleton in Hz. subst.
-  apply denot_ty_under_result_atom_fv.
+  induction Γ in Σ |- *; simpl.
+  - set_solver.
+  - intros z Hz. apply elem_of_singleton in Hz. subst.
+    apply denot_ty_on_result_atom_fv. set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 (Σ ∪ erase_ctx Γ1)) as H2.
+    set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 Σ) as H2.
+    set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 Σ) as H2.
+    set_solver.
 Qed.
 
 Lemma denot_ctx_in_env_dom_subset_formula_fv Σ Γ :
   dom Σ ∪ ctx_dom Γ ⊆ formula_fv (denot_ctx_in_env Σ Γ).
 Proof.
   unfold denot_ctx_in_env. simpl.
-  pose proof (denot_ctx_under_dom_subset_formula_fv (erase_ctx_under Σ Γ) Γ)
+  pose proof (denot_ctx_under_dom_subset_formula_fv Σ Γ)
     as Hctx.
   intros z Hz.
   apply elem_of_union in Hz as [HzΣ | HzΓ].
@@ -1881,13 +1935,27 @@ Qed.
 Lemma denot_ctx_under_formula_fv_subset Σ Γ :
   formula_fv (denot_ctx_under Σ Γ) ⊆ dom Σ ∪ ctx_stale Γ.
 Proof.
-  induction Γ; simpl.
+  induction Γ in Σ |- *; simpl.
   - set_solver.
-  - pose proof (denot_ty_under_formula_fv_subset Σ τ (tret (vfvar x))) as Hτ.
+  - pose proof (denot_ty_on_formula_fv_subset (dom Σ ∪ {[x]})
+      (<[x:=erase_ty τ]> Σ) τ (tret (vfvar x))) as Hτ.
     intros z Hz. apply Hτ in Hz. simpl in Hz. set_solver.
-  - set_solver.
-  - set_solver.
-  - set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 (Σ ∪ erase_ctx Γ1)) as H2.
+    intros z Hz.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + apply H1 in Hz. set_solver.
+    + apply H2 in Hz.
+      rewrite dom_union_L in Hz.
+      pose proof (ctx_dom_subset_stale Γ1).
+      pose proof (erase_ctx_dom_subset Γ1).
+      set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 Σ) as H2.
+    intros z Hz. apply elem_of_union in Hz as [Hz|Hz]; [apply H1 in Hz|apply H2 in Hz]; set_solver.
+  - pose proof (IHΓ1 Σ) as H1.
+    pose proof (IHΓ2 Σ) as H2.
+    intros z Hz. apply elem_of_union in Hz as [Hz|Hz]; [apply H1 in Hz|apply H2 in Hz]; set_solver.
 Qed.
 
 Lemma denot_ctx_models_dom Γ m :
@@ -1935,11 +2003,13 @@ Proof.
   intros Hmodels Hle. eapply res_models_with_store_fuel_kripke; eauto.
 Qed.
 
-(** Environment-indexed context denotations distribute structurally when the
-    same ambient erased environment is used for both subcontexts. *)
+(** Environment-indexed comma context denotations are sequential: the right
+    subcontext is interpreted under the environment extended by the erased
+    left subcontext. *)
 Lemma denot_ctx_under_comma Σ Γ1 Γ2 m :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
-  m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
+  m ⊨ denot_ctx_under Σ Γ1 ∧
+  m ⊨ denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2.
 Proof.
   unfold res_models, res_models_with_store. simpl.
   split.
@@ -1949,7 +2019,8 @@ Proof.
   - intros [HΓ1 HΓ2]. split.
     + unfold formula_scoped_in_world in *. simpl.
       pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx_under Σ Γ1) HΓ1).
-      pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx_under Σ Γ2) HΓ2).
+      pose proof (res_models_with_store_fuel_scoped _ ∅ m
+        (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2) HΓ2).
       set_solver.
     + split.
       * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
@@ -2009,7 +2080,7 @@ Qed.
 
 Lemma denot_ctx_under_bind Σ x τ m :
   m ⊨ denot_ctx_under Σ (CtxBind x τ) ↔
-  m ⊨ denot_ty_under Σ τ (tret (vfvar x)).
+  m ⊨ denot_ty_on (dom Σ ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
@@ -2017,52 +2088,15 @@ Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
   denot_ctx_under Σ1 Γ ⊣⊢ denot_ctx_under Σ2 Γ.
 Proof.
-  induction Γ in Σ1, Σ2 |- *; intros Hdom Hagree.
-  - apply formula_equiv_refl.
-  - simpl in Hagree.
-    apply denot_ty_under_env_equiv.
-    + exact Hdom.
-    + intros z Hz. apply Hagree. simpl. set_solver.
-  - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_2 H21_2].
-    split; intros m Hm.
-    + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
-      apply denot_ctx_under_comma. split; eauto.
-    + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
-      apply denot_ctx_under_comma. split; eauto.
-  - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_2 H21_2].
-    split; intros m Hm.
-    + apply denot_ctx_under_star in Hm as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-      apply denot_ctx_under_star.
-      exists m1, m2, Hc. split; [exact Hprod |]. split; eauto.
-    + apply denot_ctx_under_star in Hm as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-      apply denot_ctx_under_star.
-      exists m1, m2, Hc. split; [exact Hprod |]. split; eauto.
-  - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
-      as [H12_2 H21_2].
-    split; intros m Hm.
-    + apply denot_ctx_under_sum in Hm as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-      apply denot_ctx_under_sum.
-      exists m1, m2, Hdef. split; [exact Hsum |]. split; eauto.
-    + apply denot_ctx_under_sum in Hm as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-      apply denot_ctx_under_sum.
-      exists m1, m2, Hdef. split; [exact Hsum |]. split; eauto.
-Qed.
+Admitted.
 
 (** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔
-  m ⊨ denot_ty_in_ctx (CtxBind x τ) τ (tret (vfvar x)).
+  m ⊨ denot_ty_on
+    (dom (erase_ctx (CtxBind x τ)) ∪ {[x]})
+    (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
+    τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_restrict_stale Σ Γ m :

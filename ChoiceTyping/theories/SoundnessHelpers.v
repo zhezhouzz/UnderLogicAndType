@@ -404,7 +404,7 @@ Qed.
 
 Lemma denot_ctx_in_env_ctx Σ Γ m :
   m ⊨ denot_ctx_in_env Σ Γ →
-  m ⊨ denot_ctx_under (erase_ctx_under Σ Γ) Γ.
+  m ⊨ denot_ctx_under Σ Γ.
 Proof.
   unfold denot_ctx_in_env.
   intros HΓ.
@@ -1087,21 +1087,6 @@ Proof.
         -- apply store_restrict_lookup_some_2; [exact Hlookup | exact Hzold].
 Qed.
 
-(** Extending the erased environment by a fresh coordinate should not change
-    the meaning of an old context.  This is the weakening principle needed by
-    let-result worlds.  The proof is semantic rather than syntactic: extending
-    the environment also extends the input domain used by [FExprResultOn], so
-    the argument must use that old expressions/types do not mention [x] and the
-    extended world provides closed/basic values at [x]. *)
-Lemma denot_ctx_under_fresh_env_extend
-    Σ Γ x T (m : WfWorld) :
-  x ∉ dom Σ ∪ ctx_stale Γ →
-  m ⊨ basic_world_formula (<[x := T]> Σ) (dom (<[x := T]> Σ)) →
-  m ⊨ denot_ctx_under Σ Γ →
-  m ⊨ denot_ctx_under (<[x := T]> Σ) Γ.
-Proof.
-Admitted.
-
 (** Result-binding compatibility for the let-result world.
 
     If [m] satisfies [τ] for the expression [e], then the world obtained by
@@ -1114,7 +1099,9 @@ Lemma let_result_world_on_bound_type
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ ∪ fv_tm e →
   let_result_world_on (dom (erase_ctx_under Σ Γ)) e x m Hfresh Hresult ⊨
-    denot_ty_under (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)))
+    denot_ty_on
+      (dom (erase_ctx_under Σ Γ) ∪ {[x]})
+      (<[x := erase_ty τ]> (erase_ctx_under Σ Γ))
       τ (tret (vfvar x)).
 Proof.
 Admitted.
@@ -1137,52 +1124,11 @@ Proof.
   - apply res_models_and_intro_from_models.
     + eapply let_result_world_on_erased_basic; eauto. set_solver.
     + apply denot_ctx_under_comma. split.
-      * assert (Henv_eq :
-          erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
-          <[x := erase_ty τ]> (erase_ctx_under Σ Γ)).
-        {
-          unfold erase_ctx_under. simpl.
-          apply (map_eq (M := gmap atom)). intros z.
-          destruct (decide (z = x)) as [->|Hzx].
-          - rewrite lookup_insert_eq.
-            rewrite lookup_union_r.
-            + rewrite lookup_union_r.
-              * rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
-              * apply not_elem_of_dom. set_solver.
-            + apply not_elem_of_dom.
-              intros HxΣ. apply Hx.
-              apply elem_of_union. left.
-              unfold erase_ctx_under. rewrite dom_union_L.
-              set_solver.
-          - rewrite lookup_insert_ne by congruence.
-            destruct (Σ !! z) as [Tz|] eqn:HΣz.
-            + rewrite (lookup_union_l' Σ (erase_ctx Γ ∪ {[x := erase_ty τ]}) z)
-                by eauto.
-              rewrite (lookup_union_l' Σ (erase_ctx Γ) z) by eauto.
-              reflexivity.
-            + rewrite (lookup_union_r Σ (erase_ctx Γ ∪ {[x := erase_ty τ]}) z)
-                by exact HΣz.
-              rewrite (lookup_union_r Σ (erase_ctx Γ) z) by exact HΣz.
-              destruct (erase_ctx Γ !! z) as [Tz|] eqn:HΓz.
-              * rewrite (lookup_union_l' (erase_ctx Γ) ({[x := erase_ty τ]}) z)
-                  by eauto. rewrite HΓz. reflexivity.
-              * rewrite (lookup_union_r (erase_ctx Γ) ({[x := erase_ty τ]}) z)
-                  by exact HΓz.
-                rewrite lookup_singleton.
-                rewrite decide_False by congruence.
-                reflexivity.
-        }
-        rewrite Henv_eq.
-        eapply denot_ctx_under_fresh_env_extend.
-        -- intros Hz. apply Hx.
-           pose proof (choice_typing_wf_ctx_stale_subset_erase_dom Σ Γ e τ Hwf).
-           set_solver.
-        -- rewrite <- Henv_eq.
-           eapply let_result_world_on_erased_basic; eauto. set_solver.
-        -- eapply res_models_kripke.
-           ++ apply let_result_world_on_le.
-           ++ apply denot_ctx_in_env_ctx. exact Hm.
-      * eapply let_result_world_on_bound_type; eauto.
+      * apply denot_ctx_in_env_ctx.
+        eapply let_result_world_on_preserves_context; exact Hm.
+      * simpl.
+        unfold erase_ctx_under.
+        eapply let_result_world_on_bound_type; eauto.
 Qed.
 
 Lemma lc_env_restrict σ X :
@@ -1636,7 +1582,8 @@ Qed.
 
 Lemma denot_ctx_comma_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ↔
-  m ⊨ denot_ctx_under Σ Γ1 ∧ m ⊨ denot_ctx_under Σ Γ2.
+  m ⊨ denot_ctx_under Σ Γ1 ∧
+  m ⊨ denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2.
 Proof. apply denot_ctx_under_comma. Qed.
 
 Lemma denot_ctx_star_split_under Σ (Γ1 Γ2 : ctx) (m : WfWorld) :
