@@ -314,7 +314,19 @@ Lemma fundamental_var_case Σ (x : atom) (τ : choice_ty) :
   denot_ctx_in_env Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-Admitted.
+  intros m Hm.
+  apply denot_ctx_in_env_ctx in Hm.
+  simpl in Hm.
+  unfold denot_ty_in_ctx_under, denot_ty_under, denot_ty_avoiding in *.
+  simpl in Hm |- *.
+  replace (dom (erase_ctx_under Σ (CtxBind x τ)) ∪ {[x]})
+    with (dom (erase_ctx_under Σ (CtxBind x τ))) in Hm.
+  2:{
+    unfold erase_ctx_under. simpl.
+    rewrite dom_union_L, dom_singleton_L. set_solver.
+  }
+  exact Hm.
+Qed.
 
 Lemma fundamental_const_over_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
