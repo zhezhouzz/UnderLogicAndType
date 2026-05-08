@@ -685,6 +685,89 @@ Proof.
   - exact Hctx.
 Qed.
 
+Lemma expr_result_in_store_ret_fvar_to_source
+    ρ e x ν σ vx σν :
+  stale vx = ∅ →
+  ν ≠ x →
+  σ !! x = None →
+  subst_map σ (subst_map ρ e) →* tret vx →
+  expr_result_in_store ∅ (tret (vfvar x)) ν σν →
+  store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) = σν →
+  expr_result_in_store ρ e ν σ.
+Proof.
+  intros Hclosed Hνx Hx_fresh Hsteps Hret Hproj.
+  assert (Hxσν : σν !! x = Some vx).
+  {
+    rewrite <- Hproj.
+    apply store_restrict_lookup_some_2.
+    - change ((<[x := vx]> σ : Store) !! x = Some vx).
+      rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+    - set_solver.
+  }
+  assert (Hνσ : σ !! ν = Some vx).
+  {
+    assert (Hνσν : σν !! ν = Some vx).
+    { eapply expr_result_in_store_ret_fvar_lookup; eauto. }
+    rewrite <- Hproj in Hνσν.
+    apply store_restrict_lookup_some in Hνσν as [_ Hx].
+    change ((<[x := vx]> σ : Store) !! ν = Some vx) in Hx.
+    rewrite lookup_insert in Hx.
+    rewrite decide_False in Hx by congruence.
+    exact Hx.
+  }
+  exists vx. split; [exact Hνσ | exact Hsteps].
+Qed.
+
+Lemma expr_result_in_store_ret_fvar_to_source_restrict
+    e x ν σ vx σν :
+  let S := stale e ∪ {[ν]} in
+  stale vx = ∅ →
+  ν ≠ x →
+  x ∉ S →
+  closed_env (store_restrict σ S) →
+  σ !! x = None →
+  subst_map σ e →* tret vx →
+  expr_result_in_store ∅ (tret (vfvar x)) ν σν →
+  store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) = σν →
+  expr_result_in_store ∅ e ν (store_restrict σ S).
+Proof.
+  intros S Hclosed_vx Hνx HxS HclosedσS Hx_fresh Hsteps Hret Hproj.
+  assert (Hsteps0 : subst_map σ (subst_map ∅ e) →* tret vx).
+  {
+    change (subst_map ∅ e) with (m{∅} e).
+    rewrite msubst_empty. exact Hsteps.
+  }
+  assert (Hν : σ !! ν = Some vx).
+  {
+    assert (Hxσν : σν !! x = Some vx).
+    {
+      rewrite <- Hproj.
+      apply store_restrict_lookup_some_2.
+      - change ((<[x := vx]> σ : Store) !! x = Some vx).
+        rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+      - set_solver.
+    }
+    assert (Hνσν : σν !! ν = Some vx).
+    { eapply expr_result_in_store_ret_fvar_lookup; eauto. }
+    rewrite <- Hproj in Hνσν.
+    apply store_restrict_lookup_some in Hνσν as [_ Hx].
+    change ((<[x := vx]> σ : Store) !! ν = Some vx) in Hx.
+    rewrite lookup_insert in Hx.
+    rewrite decide_False in Hx by congruence.
+    exact Hx.
+  }
+  exists vx. split.
+  - apply store_restrict_lookup_some_2; [exact Hν | set_solver].
+  - change (subst_map (store_restrict σ S) (subst_map ∅ e) →* tret vx).
+    change (subst_map ∅ e) with (m{∅} e).
+    rewrite msubst_empty.
+    change (subst_map (store_restrict σ S) e) with (m{store_restrict σ S} e).
+    change (m{store_restrict σ S} e) with (m{map_restrict value σ S} e).
+    change (subst_map σ e) with (m{σ} e) in Hsteps.
+    erewrite (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _
+      σ S e); [exact Hsteps | exact HclosedσS | set_solver].
+Qed.
+
 (** Semantic compatibility of bunched let.
 
     This is the remaining tlet-specific denotation theorem.  Its proof should
