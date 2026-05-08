@@ -115,6 +115,23 @@ can make instance search drift.  In the insert case, split on `x ∈ X`.
   hypothesis, and finish with `subst_fresh`; `msubst_fv` plus `stale a ⊆ X`
   gives the freshness side condition.
 
+For the weaker lemma `msubst_restrict_closed_on`, do not accidentally require
+`closed_env σ'` in the `x ∉ X` branch.  Only
+`closed_env (map_restrict value σ' X)` is available.  The reliable move is:
+
+```coq
+assert (HIH : m{map_restrict value σ' X} a = m{σ'} a) by ...
+rewrite HIH.
+symmetry; apply subst_fresh.
+rewrite <- HIH.
+pose proof (msubst_fv (map_restrict value σ' X) a Hclosed_restrict) as Hfv.
+set_solver.
+```
+
+This proves freshness of `x` through the restricted substitution, which is the
+only part known to be closed.  Reaching for `msubst_fv σ'` is the wrong shape
+unless the whole store is closed.
+
 For the restricted environment's freshness side condition, proving lookup-none
 directly is often simpler than rewriting domains:
 
