@@ -542,7 +542,78 @@ Lemma msubst_restrict_closed_on
   stale a ⊆ X →
   m{map_restrict value σ X} a = m{σ} a.
 Proof.
-Admitted.
+  intros Hclosed HaX.
+  unfold msubst.
+  revert Hclosed.
+  refine (fin_maps.map_fold_ind
+    (fun (σ : env) =>
+      closed_env (map_restrict value σ X) →
+      map_fold (fun x vx acc => {x := vx} acc) a
+        (map_restrict value σ X) =
+      map_fold (fun x vx acc => {x := vx} acc) a σ) _ _ σ).
+  - intros _. replace (map_restrict value (∅ : env) X) with (∅ : env)
+      by (symmetry; apply map_restrict_idemp; set_solver).
+    reflexivity.
+  - intros x vx σ' Hfresh Hfold IH Hclosed_restrict.
+    rewrite Hfold.
+    destruct (decide (x ∈ X)) as [Hx | Hx].
+    + assert (Hfresh_restrict : map_restrict value σ' X !! x = None).
+      {
+        unfold map_restrict.
+        apply map_lookup_filter_None_2. left. exact Hfresh.
+      }
+      assert (Hclosed_insert :
+          closed_env (<[x := vx]> (map_restrict value σ' X))).
+      {
+        change (closed_env (map_restrict value (<[x := vx]> σ') X)) in Hclosed_restrict.
+        unfold map_restrict in Hclosed_restrict.
+        rewrite map_filter_insert_True in Hclosed_restrict by exact Hx.
+        exact Hclosed_restrict.
+      }
+      destruct (closed_env_insert
+        (map_restrict value σ' X) x vx Hfresh_restrict Hclosed_insert)
+        as [Hvx Hclosedσ].
+      unfold map_restrict at 1.
+      rewrite map_filter_insert_True by exact Hx.
+      fold (map_restrict value σ' X).
+      change (m{<[x := vx]> (map_restrict value σ' X)} a =
+              {x := vx} (m{σ'} a)).
+      rewrite msubst_insert by (try exact Hclosedσ; try exact Hvx; exact Hfresh_restrict).
+      assert (HIH : m{map_restrict value σ' X} a = m{σ'} a).
+      {
+        change (map_fold (fun x vx acc => {x := vx} acc) a
+          (map_restrict value σ' X) =
+          map_fold (fun x vx acc => {x := vx} acc) a σ').
+        exact (IH Hclosedσ).
+      }
+      change ({x := vx} (m{map_restrict value σ' X} a) =
+              {x := vx} (m{σ'} a)).
+      rewrite HIH. reflexivity.
+    + assert (Hclosedσ : closed_env (map_restrict value σ' X)).
+      {
+        change (closed_env (map_restrict value (<[x := vx]> σ') X)) in Hclosed_restrict.
+        unfold map_restrict in Hclosed_restrict.
+        rewrite map_filter_insert_not in Hclosed_restrict by (intros vi; exact Hx).
+        exact Hclosed_restrict.
+      }
+      unfold map_restrict at 1.
+      rewrite map_filter_insert_not by (intros vi; exact Hx).
+      fold (map_restrict value σ' X).
+      change (m{map_restrict value σ' X} a =
+              {x := vx} (m{σ'} a)).
+      assert (HIH : m{map_restrict value σ' X} a = m{σ'} a).
+      {
+        change (map_fold (fun x vx acc => {x := vx} acc) a
+          (map_restrict value σ' X) =
+          map_fold (fun x vx acc => {x := vx} acc) a σ').
+        exact (IH Hclosedσ).
+      }
+      rewrite HIH.
+      symmetry. apply substFreshA.
+      rewrite <- HIH.
+      pose proof (msubstFvA (map_restrict value σ' X) a Hclosedσ) as Hfv.
+      set_solver.
+Qed.
 
 Lemma MsubstRestrict_all
     (A : Type)
