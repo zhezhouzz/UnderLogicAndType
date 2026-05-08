@@ -115,6 +115,28 @@ If a denotation/freshness proof contains `fresh_forall`, `expr_logic_qual`, or
 apply elem_of_difference in Hz as [Hz Hy].
 ```
 
+For nested binders such as the arrow/wand denotation, peel in the syntactic
+order that `formula_fv` actually produced.  The outer representative is usually
+an outer difference, but the inner representative may sit only on the body side
+of a union:
+
+```coq
+apply elem_of_difference in Hz as [Hz Hy].
+apply elem_of_union in Hz as [Hzexpr | Hzbody].
+- (* expression-result atom *)
+  ...
+- apply elem_of_difference in Hzbody as [Hzbody Hx].
+  ...
+```
+
+This is much faster than asking `set_solver` to infer the nesting.  If the
+representative came from `fresh_for`, also record the freshness explicitly:
+
+```coq
+assert (Hy : y ∉ fv_tm e)
+  by (subst y; pose proof (fresh_for_not_in (...)); set_solver).
+```
+
 Then unfold only the atom whose stale set is opaque:
 
 ```coq
