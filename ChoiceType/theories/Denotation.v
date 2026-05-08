@@ -780,6 +780,43 @@ Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx_under Σ Γ) τ e.
 
+Lemma denot_ty_fuel_result_refines gas D Σ τ e_to e_from m :
+  formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ e_to) →
+  expr_result_refines e_to e_from →
+  m ⊨ denot_ty_fuel gas D Σ τ e_from →
+  m ⊨ denot_ty_fuel gas D Σ τ e_to.
+Proof.
+Admitted.
+
+Lemma denot_ty_avoiding_result_refines D Σ τ e_to e_from :
+  formula_fv (denot_ty_avoiding D Σ τ e_to) ⊆
+    formula_fv (denot_ty_avoiding D Σ τ e_from) →
+  expr_result_refines e_to e_from →
+  denot_ty_avoiding D Σ τ e_from ⊫ denot_ty_avoiding D Σ τ e_to.
+Proof.
+  intros Hfv Href m Hfrom.
+  eapply denot_ty_fuel_result_refines.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (denot_ty_avoiding D Σ τ e_from))
+      ∅ m (denot_ty_avoiding D Σ τ e_from) Hfrom) as Hscope_from.
+    unfold formula_scoped_in_world in *.
+    intros z Hz. apply Hscope_from.
+    unfold denot_ty_avoiding in *. set_solver.
+  - exact Href.
+  - exact Hfrom.
+Qed.
+
+(** This wrapper additionally has to account for the fact that
+    [denot_ty_under] chooses its avoidance set from [fv_tm e].  The core
+    result-refinement argument is [denot_ty_fuel_result_refines]; the remaining
+    obligation is an alpha/avoidance-set transport lemma for [fresh_forall]. *)
+Lemma denot_ty_under_result_refines Σ τ e_to e_from :
+  formula_fv (denot_ty_under Σ τ e_to) ⊆ formula_fv (denot_ty_under Σ τ e_from) →
+  expr_result_refines e_to e_from →
+  denot_ty_under Σ τ e_from ⊫ denot_ty_under Σ τ e_to.
+Proof.
+Admitted.
+
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
 
