@@ -768,6 +768,22 @@ Proof.
       σ S e); [exact Hsteps | exact HclosedσS | set_solver].
 Qed.
 
+Lemma closed_env_restrict_insert_result σ S ν vx :
+  closed_env (store_restrict σ (S ∖ {[ν]})) →
+  σ !! ν = Some vx →
+  stale vx = ∅ →
+  closed_env (store_restrict σ S).
+Proof.
+  intros Hclosed Hν Hvx.
+  unfold closed_env in *.
+  apply map_Forall_lookup_2. intros z v Hz.
+  apply store_restrict_lookup_some in Hz as [HzS Hzσ].
+  destruct (decide (z = ν)) as [->|Hzν].
+  - rewrite Hν in Hzσ. inversion Hzσ. subst. exact Hvx.
+  - apply (map_Forall_lookup_1 _ _ z v Hclosed).
+    apply store_restrict_lookup_some_2; [exact Hzσ | set_solver].
+Qed.
+
 (** Semantic compatibility of bunched let.
 
     This is the remaining tlet-specific denotation theorem.  Its proof should
