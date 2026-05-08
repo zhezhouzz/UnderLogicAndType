@@ -598,6 +598,42 @@ Proof.
   apply wfworld_ext. reflexivity.
 Qed.
 
+Lemma res_projection_from_fiber_projection
+    (w : WfWorld) (X Y : aset) (σX σY : StoreT)
+    (HprojX : res_restrict w X σX)
+    (HprojY : res_restrict (res_fiber_from_projection w X σX HprojX) Y σY) :
+  res_restrict w Y σY.
+Proof.
+  destruct HprojY as [s [[Hs _] HrestrictY]].
+  exists s. split; [exact Hs | exact HrestrictY].
+Qed.
+
+Lemma res_projection_into_other_fiber
+    (w : WfWorld) (X Y : aset) (σX σY : StoreT)
+    (HprojX : res_restrict w X σX)
+    (HprojY : res_restrict (res_fiber_from_projection w X σX HprojX) Y σY) :
+  res_restrict
+    (res_fiber_from_projection w Y σY
+      (res_projection_from_fiber_projection w X Y σX σY HprojX HprojY))
+    (dom σX) σX.
+Proof.
+  destruct HprojY as [s [[Hs HrestrictX] HrestrictY]].
+  exists s. split.
+  - simpl. split; [exact Hs |].
+    assert (Hrestrict_dom :
+      store_restrict s (dom σY) = store_restrict s Y).
+    {
+      rewrite <- (store_restrict_idemp (store_restrict s Y) (dom σY)).
+      - rewrite store_restrict_restrict.
+        replace (Y ∩ dom σY) with (dom σY) by
+          (rewrite <- HrestrictY; rewrite store_restrict_dom; set_solver).
+        reflexivity.
+      - rewrite HrestrictY. set_solver.
+    }
+    rewrite Hrestrict_dom. exact HrestrictY.
+  - exact HrestrictX.
+Qed.
+
 Lemma res_fiber_from_projection_swap_cancel
     (x y z : atom) (w : WfWorld) (σ : StoreT)
     (Hproj1 : res_restrict (res_swap x y w)
