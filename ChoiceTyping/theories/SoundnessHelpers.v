@@ -1446,6 +1446,70 @@ Lemma denot_tlet_semantic_at_world
 Proof.
 Admitted.
 
+Lemma denot_tlet_expr_total_at_world_given_bind
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
+    (m : WfWorld) :
+  choice_typing_wf Σ Γ e1 τ1 →
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  expr_total_on (dom (erase_ctx_under Σ Γ)) e1 m →
+  (∀ x (HxL : x ∉ L)
+      (Hfresh : x ∉ world_dom (m : World))
+      (Hresult : ∀ σ, (m : World) σ →
+        ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx),
+    expr_total_on (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
+      (e2 ^^ x)
+      (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult)) →
+  (∀ σ, (m : World) σ →
+    closed_env (store_restrict σ (dom (erase_ctx_under Σ Γ)))) →
+  (∀ σ, (m : World) σ →
+    lc_env (store_restrict σ (dom (erase_ctx_under Σ Γ)))) →
+  expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m.
+Proof.
+  intros Hwf1 Hwflet Hm Htotal1 Hbody_total Hclosed Hlc.
+  destruct Htotal1 as [Hfv1 Hresult].
+  set (X := dom (erase_ctx_under Σ Γ)).
+  set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)).
+  assert (Hxfresh_all : x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)
+    by (subst x; apply fresh_for_not_in).
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
+  assert (HxX : x ∉ X) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  pose proof (Hbody_total x HxL Hfresh Hresult) as Hbody.
+  eapply expr_total_on_tlete_from_open with
+    (Hfresh := Hfresh) (Hresult := Hresult).
+  - exact HxX.
+  - exact Hxe2.
+  - exact Hclosed.
+  - exact Hlc.
+  - intros σ vx Hσ Hsteps.
+    subst X.
+    eapply (choice_typing_wf_result_regular_restrict_in_ctx
+      Σ Γ e1 τ1 m σ vx); eauto.
+  - intros σ Hσ.
+    apply body_tm_msubst.
+    + apply Hclosed. exact Hσ.
+    + apply Hlc. exact Hσ.
+    + eapply choice_typing_wf_let_body_helper; eauto.
+  - subst X.
+    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
+      with (dom (erase_ctx_under Σ Γ) ∪ {[x]}) in Hbody.
+    + exact Hbody.
+    + unfold erase_ctx_under. simpl.
+      rewrite !dom_union_L, dom_singleton_L. set_solver.
+  - pose proof (choice_typing_wf_fv_tm_subset Σ Γ (tlete e1 e2) τ2 Hwflet).
+    subst X.
+    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
+    + exact H.
+    + destruct Hwflet as [Hwfτ _].
+      unfold erase_ctx_under.
+      rewrite dom_union_L.
+      rewrite (basic_ctx_erase_dom (dom Σ) Γ
+        (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ2 Hwfτ))).
+      reflexivity.
+Qed.
+
 Lemma denot_tlet_total_at_world_given_bind
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
     (m : WfWorld) :
@@ -1471,21 +1535,13 @@ Proof.
   - eapply denot_tlet_semantic_at_world; eauto.
     + intros n Hn. exact (proj1 (IH1 n Hn)).
     + intros x Hx n Hn. exact (proj1 (IH2 x Hx n Hn)).
-  - destruct Htotal1 as [Hfv1 Hresult].
-    set (X := dom (erase_ctx_under Σ Γ)).
-    set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)).
-    assert (Hxfresh_all : x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)
-      by (subst x; apply fresh_for_not_in).
-    assert (HxL : x ∉ L) by set_solver.
-    assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
-    assert (HxX : x ∉ X) by set_solver.
-    assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
-    pose (wx := let_result_world_on X e1 x m Hfresh Hresult).
-    assert (Hctxx : wx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
-    { subst wx X. apply Hbind; exact HxL. }
-    destruct (IH2 x HxL wx Hctxx) as [_ Hbody_total].
-    eapply expr_total_on_tlete_from_open with
-      (Hfresh := Hfresh) (Hresult := Hresult); eauto.
+  - eapply denot_tlet_expr_total_at_world_given_bind; eauto.
+    + intros x HxL Hfresh Hresult.
+      set (wx := let_result_world_on
+        (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult).
+      assert (Hctxx : wx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
+      { subst wx. apply Hbind; exact HxL. }
+      exact (proj2 (IH2 x HxL wx Hctxx)).
     + intros σ Hσ.
       eapply basic_world_formula_store_restrict_closed_env.
       * apply denot_ctx_in_env_erased_basic. exact Hm.
@@ -1496,37 +1552,6 @@ Proof.
       * apply denot_ctx_in_env_erased_basic. exact Hm.
       * set_solver.
       * exact Hσ.
-	    + intros σ vx Hσ Hsteps.
-	      subst X.
-	      eapply (choice_typing_wf_result_regular_restrict_in_ctx
-	        Σ Γ e1 τ1 m σ vx); eauto.
-	    + intros σ Hσ.
-	      apply body_tm_msubst.
-	      * eapply basic_world_formula_store_restrict_closed_env.
-	        -- apply denot_ctx_in_env_erased_basic. exact Hm.
-	        -- set_solver.
-	        -- exact Hσ.
-	      * eapply basic_world_formula_store_restrict_lc_env.
-	        -- apply denot_ctx_in_env_erased_basic. exact Hm.
-	        -- set_solver.
-	        -- exact Hσ.
-	      * eapply choice_typing_wf_let_body_helper; eauto.
-    + subst X.
-      replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
-        with (dom (erase_ctx_under Σ Γ) ∪ {[x]}) in Hbody_total.
-      * exact Hbody_total.
-      * unfold erase_ctx_under. simpl.
-        rewrite !dom_union_L, dom_singleton_L. set_solver.
-    + pose proof (choice_typing_wf_fv_tm_subset Σ Γ (tlete e1 e2) τ2 Hwflet).
-      subst X.
-      replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-      * exact H.
-      * destruct Hwflet as [Hwfτ _].
-        unfold erase_ctx_under.
-        rewrite dom_union_L.
-        rewrite (basic_ctx_erase_dom (dom Σ) Γ
-          (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ2 Hwfτ))).
-        reflexivity.
 Qed.
 
 Lemma denot_tlet_total_at_world
