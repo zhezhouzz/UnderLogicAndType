@@ -88,6 +88,26 @@ expr_result_in_world
 Use `FExprResult_models_elim` / `FExprResult_models_intro` instead of manually
 unfolding this shape.
 
+For domain-explicit atoms, the safe direction is shrink, not arbitrary grow:
+
+```coq
+FExprResultOn_models_shrink :
+  fv_tm e ⊆ X ->
+  X ⊆ Y ->
+  world_closed_on X m ->
+  world_closed_on Y m ->
+  m ⊨ FExprResultOn Y e ν ->
+  m ⊨ FExprResultOn X e ν.
+```
+
+The reverse direction is not generally valid.  A model of
+`FExprResultOn X e ν` may use an atom witness world whose domain only covers
+`X ∪ {ν}`.  Growing to `Y ∪ {ν}` would require a witness world over the larger
+projection domain, and `FAtom`'s upward closure does not manufacture that
+same-domain extension.  If a proof seems to need this direction, look for a
+separate constructed world (for example a let-result world) or strengthen the
+statement with an explicit extension/pullback witness.
+
 ## Naming wrappers around shallow atoms
 
 When a proof renames a formula atom produced from a shallow qualifier, avoid
