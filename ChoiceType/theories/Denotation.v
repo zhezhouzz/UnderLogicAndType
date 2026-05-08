@@ -1135,15 +1135,6 @@ Proof.
   apply foldr_fib_store_equiv; assumption.
 Qed.
 
-Lemma fib_vars_rename_atom_fresh_store_equiv x y X φ :
-  x ∉ X →
-  y ∉ X →
-  formula_store_equiv
-    (formula_rename_atom x y (fib_vars ({[x]} ∪ X) φ))
-    (fib_vars ({[y]} ∪ X) (formula_rename_atom x y φ)).
-Proof.
-Admitted.
-
 Lemma denot_ty_fuel_env_agree gas X D Σ1 Σ2 τ e :
   ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_fuel gas X D Σ1 τ e = denot_ty_fuel gas X D Σ2 τ e.
