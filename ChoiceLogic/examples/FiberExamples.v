@@ -124,6 +124,9 @@ Ltac solve_x2_triangle :=
   exists s22;
   repeat split; try (left; reflexivity); try (right; reflexivity); crush_store.
 
+Ltac solve_triangle_atom_scope :=
+  unfold formula_scoped_in_world; simpl; vm_compute; set_solver.
+
 Definition fiber_triangle_formula : FormulaN :=
   FFib 'x (FUnder (FAtom triangle_slice)).
 
@@ -136,6 +139,7 @@ Definition fiber_triangle_obligation (w : WfWorldN) : Prop :=
   ∀ σ (Hproj : res_restrict w {['x]} σ),
     ∃ m' m0 : WfWorldN,
       res_subset m' (res_fiber_from_projection w {['x]} σ Hproj) ∧
+      formula_scoped_in_world (∅ ∪ σ) m0 (FAtom triangle_slice) ∧
       logic_qualifier_denote triangle_slice (∅ ∪ σ) m0 ∧
       m0 ⊑ m'.
 
@@ -158,7 +162,7 @@ Proof.
   - exact Hscope.
   - split; [set_solver |].
     intros σ Hproj.
-    destruct (Hfib σ Hproj) as [m' [m0 [Hsubset [Hatom Hle]]]].
+    destruct (Hfib σ Hproj) as [m' [m0 [Hsubset [Hscope0 [Hatom Hle]]]]].
     pose proof (wfworld_store_dom (res_restrict w {['x]}) σ Hproj) as Hdomσ.
     simpl in Hdomσ.
     split.
@@ -167,7 +171,7 @@ Proof.
       split.
       * unfold formula_scoped_in_world in *. simpl in *.
         destruct Hsubset as [Hdom_subset _]. simpl in Hdom_subset. set_solver.
-      * exists m0. split; [exact Hatom | exact Hle].
+      * exists m0. split; [exact Hscope0 |]. split; [exact Hatom | exact Hle].
 Qed.
 
 Lemma res_models_fiber_triangle_elim (w : WfWorldN) :
@@ -177,8 +181,9 @@ Proof.
   unfold res_models, res_models_with_store, fiber_triangle_formula,
     fiber_triangle_obligation.
   simpl. intros [_ [_ Hfib]] σ Hproj.
-  destruct (Hfib σ Hproj) as [_ [m' [Hsubset [_ [m0 [Hatom Hle]]]]]].
-  exists m', m0. split; [exact Hsubset |]. split; [exact Hatom | exact Hle].
+  destruct (Hfib σ Hproj) as [_ [m' [Hsubset [_ [m0 [Hscope0 [Hatom Hle]]]]]]].
+  exists m', m0. split; [exact Hsubset |].
+  split; [exact Hscope0 |]. split; [exact Hatom | exact Hle].
 Qed.
 
 (** Concrete finite-world facts for the four displayed resources.  They are
@@ -191,9 +196,14 @@ Proof.
   intros σ Hproj.
   exists (res_fiber_from_projection w_x1_y12 {['x]} σ Hproj).
   exists (res_fiber_from_projection w_x1_y12 {['x]} σ Hproj).
-  split; [apply res_subset_refl |]. split; [| reflexivity].
-  simpl in Hproj.
-  destruct Hproj as [s [[Hs | Hs] Hrestr]]; subst s; subst σ; solve_x1_triangle.
+  split; [apply res_subset_refl |].
+  pose proof Hproj as Hproj_shape.
+  simpl in Hproj_shape.
+  destruct Hproj_shape as [s [[Hs | Hs] Hrestr]]; subst s; subst σ.
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x1_triangle | reflexivity].
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x1_triangle | reflexivity].
 Qed.
 
 Lemma x2_y2_complete_triangle_fibers :
@@ -202,10 +212,12 @@ Proof.
   intros σ Hproj.
   exists (res_fiber_from_projection w_x2_y2 {['x]} σ Hproj).
   exists (res_fiber_from_projection w_x2_y2 {['x]} σ Hproj).
-  split; [apply res_subset_refl |]. split; [| reflexivity].
-  simpl in Hproj.
-  destruct Hproj as [s [Hs Hrestr]].
-  subst s. subst σ. solve_x2_triangle.
+  split; [apply res_subset_refl |].
+  pose proof Hproj as Hproj_shape.
+  simpl in Hproj_shape.
+  destruct Hproj_shape as [s [Hs Hrestr]]; subst s; subst σ.
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x2_triangle | reflexivity].
 Qed.
 
 Lemma diag_bad_incomplete_triangle_fibers :
@@ -214,7 +226,7 @@ Proof.
   intros Hobl.
   assert (Hproj : res_restrict w_diag_bad {['x]} sx1).
   { simpl. exists s11. split; [left; reflexivity | crush_store]. }
-  destruct (Hobl sx1 Hproj) as [m' [m0 [[Hdom_sub Hin_sub] [Hatom Hle]]]].
+  destruct (Hobl sx1 Hproj) as [m' [m0 [[Hdom_sub Hin_sub] [_ [Hatom Hle]]]]].
   unfold logic_qualifier_denote, triangle_slice in Hatom.
   change (store_restrict (∅ ∪ sx1) {['x; 'y]} !! 'x) with (Some 1%nat) in Hatom.
   assert (Hle12 : 1 <= 2) by lia.
@@ -250,10 +262,16 @@ Proof.
   intros σ Hproj.
   exists (res_fiber_from_projection w_triangle_ok {['x]} σ Hproj).
   exists (res_fiber_from_projection w_triangle_ok {['x]} σ Hproj).
-  split; [apply res_subset_refl |]. split; [| reflexivity].
-  simpl in Hproj.
-  destruct Hproj as [s [[Hs | [Hs | Hs]] Hrestr]]; subst s; subst σ;
-    [solve_x1_triangle | solve_x1_triangle | solve_x2_triangle].
+  split; [apply res_subset_refl |].
+  pose proof Hproj as Hproj_shape.
+  simpl in Hproj_shape.
+  destruct Hproj_shape as [s [[Hs | [Hs | Hs]] Hrestr]]; subst s; subst σ.
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x1_triangle | reflexivity].
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x1_triangle | reflexivity].
+  split; [solve_triangle_atom_scope |].
+  split; [solve_x2_triangle | reflexivity].
 Qed.
 
 (** These four statements mirror the paper's displayed judgments. *)

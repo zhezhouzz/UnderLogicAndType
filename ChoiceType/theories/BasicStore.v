@@ -264,8 +264,18 @@ Proof.
          (unfold atom_swap; repeat destruct decide; congruence);
        rewrite aset_swap_fresh by assumption; reflexivity).
     exact Hz.
-  - destruct Hmodel as [m0 [Hq Hle]].
-    exists m0. split; [| exact Hle].
+  - destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
+    exists m0. split.
+    + unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom in *.
+      intros z Hz. apply Hscope0.
+      replace (aset_swap x y ({[x]} ∪ X)) with ({[y]} ∪ X) by
+        (rewrite aset_swap_union, aset_swap_singleton;
+         replace (atom_swap x y x) with y by
+           (unfold atom_swap; repeat destruct decide; congruence);
+         rewrite aset_swap_fresh by assumption; reflexivity).
+      exact Hz.
+    + split; [| exact Hle].
     apply (proj1 (logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
       Σ X x y T ρ m0 Hx Hy)). exact Hq.
   - unfold formula_scoped_in_world in *. simpl in *.
@@ -277,8 +287,18 @@ Proof.
          (unfold atom_swap; repeat destruct decide; congruence);
        rewrite aset_swap_fresh by assumption; reflexivity).
     exact Hz.
-  - destruct Hmodel as [m0 [Hq Hle]].
-    exists m0. split; [| exact Hle].
+  - destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
+    exists m0. split.
+    + unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier, basic_world_lqual, lqual_dom in *.
+      intros z Hz. apply Hscope0.
+      replace (aset_swap x y ({[x]} ∪ X)) with ({[y]} ∪ X) in Hz by
+        (rewrite aset_swap_union, aset_swap_singleton;
+         replace (atom_swap x y x) with y by
+           (unfold atom_swap; repeat destruct decide; congruence);
+         rewrite aset_swap_fresh by assumption; reflexivity).
+      exact Hz.
+    + split; [| exact Hle].
     apply (proj2 (logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
       Σ X x y T ρ m0 Hx Hy)). exact Hq.
 Qed.
@@ -299,7 +319,7 @@ Lemma basic_world_formula_current Σ X m :
   world_has_type_on Σ X (res_restrict m X).
 Proof.
   unfold basic_world_formula, res_models, res_models_with_store.
-  simpl. intros [_ [m0 [Htyped0 Hle]]].
+  simpl. intros [_ [m0 [_ [Htyped0 Hle]]]].
   assert (HXm0 : X ⊆ world_dom (m0 : World)).
   {
     destruct Htyped0 as [Hdom0 _]. simpl in Hdom0. set_solver.

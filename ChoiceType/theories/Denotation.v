@@ -192,18 +192,20 @@ Qed.
 Lemma FExprResult_models_elim e ν m :
   m ⊨ FExprResult e ν →
   ∃ w : WfWorld,
+    formula_scoped_in_world ∅ w (FExprResult e ν) ∧
     expr_result_in_world
       (store_restrict ∅ (stale e ∪ {[ν]})) e ν
       (res_restrict w (stale e ∪ {[ν]})) ∧
     w ⊑ m.
 Proof.
   unfold FExprResult, res_models, res_models_with_store.
-  simpl. intros [_ [w [Hres Hle]]].
-  exists w. split; [exact Hres | exact Hle].
+  simpl. intros [_ [w [Hscopew [Hres Hle]]]].
+  exists w. split; [exact Hscopew |]. split; [exact Hres | exact Hle].
 Qed.
 
 Lemma FExprResult_models_intro e ν m w :
   formula_scoped_in_world ∅ m (FExprResult e ν) →
+  formula_scoped_in_world ∅ w (FExprResult e ν) →
   expr_result_in_world
     (store_restrict ∅ (stale e ∪ {[ν]})) e ν
     (res_restrict w (stale e ∪ {[ν]})) →
@@ -211,13 +213,16 @@ Lemma FExprResult_models_intro e ν m w :
   m ⊨ FExprResult e ν.
 Proof.
   unfold FExprResult, res_models, res_models_with_store.
-  simpl. intros Hscope Hres Hle.
+  simpl. intros Hscope Hscopew Hres Hle.
   split; [exact Hscope |].
-  exists w. split; [exact Hres | exact Hle].
+  exists w. split; [exact Hscopew |]. split; [exact Hres | exact Hle].
 Qed.
 
 Lemma FExprResult_models_from_result_inclusion e1 e2 ν m :
   formula_scoped_in_world ∅ m (FExprResult e1 ν) →
+  (∀ w,
+    formula_scoped_in_world ∅ w (FExprResult e2 ν) →
+    formula_scoped_in_world ∅ w (FExprResult e1 ν)) →
   (∀ w,
     expr_result_in_world
       (store_restrict ∅ (stale e2 ∪ {[ν]})) e2 ν
@@ -228,10 +233,11 @@ Lemma FExprResult_models_from_result_inclusion e1 e2 ν m :
   m ⊨ FExprResult e2 ν →
   m ⊨ FExprResult e1 ν.
 Proof.
-  intros Hscope Hincl Hexpr.
-  destruct (FExprResult_models_elim e2 ν m Hexpr) as [w [Hres Hle]].
+  intros Hscope Hscope_incl Hincl Hexpr.
+  destruct (FExprResult_models_elim e2 ν m Hexpr) as [w [Hscopew [Hres Hle]]].
   eapply FExprResult_models_intro.
   - exact Hscope.
+  - apply Hscope_incl. exact Hscopew.
   - apply Hincl. exact Hres.
   - exact Hle.
 Qed.
@@ -592,7 +598,7 @@ Lemma expr_logic_qual_ret_closed_value_lookup v ν m :
 Proof.
   intros Hvclosed Hmodel σ Hσ.
   unfold res_models, res_models_with_store in Hmodel. simpl in Hmodel.
-  destruct Hmodel as [_ [m0 [Hqual Hle]]].
+  destruct Hmodel as [_ [m0 [_ [Hqual Hle]]]].
   assert (Hνm0 : {[ν]} ⊆ world_dom (m0 : World)).
   {
     destruct (wf_ne _ (world_wf (res_restrict m0 {[ν]}))) as [σ0 Hσ0].

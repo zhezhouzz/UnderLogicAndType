@@ -100,8 +100,24 @@ Proof.
     apply Hscope.
     unfold lqual_dom. cbn.
     rewrite Hsets. exact Hz.
-  - destruct Hmodel as [m0 [Hq Hle]].
-    exists m0. split; [| exact Hle].
+  - destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
+    exists m0. split.
+    + unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier in *.
+      unfold lqual_dom in *.
+      unfold lift_type_qualifier_to_logic in *.
+      cbn in *.
+      rewrite decide_True by exact Hk.
+      rewrite decide_True in Hscope0 by exact Hk.
+      assert (Hsets : aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
+      { rewrite aset_swap_union, aset_swap_singleton.
+        replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        rewrite aset_swap_fresh by assumption. reflexivity. }
+      intros z Hz. apply Hscope0.
+      unfold lqual_swap, lift_type_qualifier_to_logic. cbn.
+      rewrite Hsets. change (z ∈ dom ρ ∪ ({[y]} ∪ d)). exact Hz.
+    + split; [| exact Hle].
     apply (proj1 (logic_qualifier_denote_lift_open_swap_fresh
       k x y (qual B d p) ρ m0 Hk Hx Hy)).
     exact Hq.
@@ -121,8 +137,25 @@ Proof.
     rewrite decide_True in Hz by exact Hk.
     apply Hscope.
     rewrite Hsets in Hz. exact Hz.
-  - destruct Hmodel as [m0 [Hq Hle]].
-    exists m0. split; [| exact Hle].
+  - destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
+    exists m0. split.
+    + unfold formula_scoped_in_world in *. simpl in *.
+      unfold stale, stale_logic_qualifier in *.
+      unfold lqual_dom in *.
+      unfold lift_type_qualifier_to_logic in *.
+      cbn in *.
+      rewrite decide_True by exact Hk.
+      rewrite decide_True in Hscope0 by exact Hk.
+      assert (Hsets : aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
+      { rewrite aset_swap_union, aset_swap_singleton.
+        replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        rewrite aset_swap_fresh by assumption. reflexivity. }
+      intros z Hz. apply Hscope0.
+      unfold lqual_swap, lift_type_qualifier_to_logic in Hz. cbn in Hz.
+      rewrite Hsets in Hz.
+      change (z ∈ dom ρ ∪ ({[y]} ∪ d)). exact Hz.
+    + split; [| exact Hle].
     apply (proj2 (logic_qualifier_denote_lift_open_swap_fresh
       k x y (qual B d p) ρ m0 Hk Hx Hy)).
     exact Hq.

@@ -319,7 +319,9 @@ Fixpoint res_models_with_store_fuel
 
   | FAtom a =>
       ∃ m0 : WfWorldT,
-        logic_qualifier_denote a ρ m0 ∧ m0 ⊑ m
+        formula_scoped_in_world ρ m0 (FAtom a) ∧
+        logic_qualifier_denote a ρ m0 ∧
+        m0 ⊑ m
 
   | FAnd p q =>
       res_models_with_store_fuel gas' ρ m p ∧
@@ -510,8 +512,8 @@ Proof.
   destruct φ; simpl in *.
   - exact I.
   - exact Hmodel.
-  - destruct Hmodel as [m0 [Ha Hm0m]].
-    exists m0. split; [exact Ha |].
+  - destruct Hmodel as [m0 [Hscope0 [Ha Hm0m]]].
+    exists m0. split; [exact Hscope0 |]. split; [exact Ha |].
     etrans; eauto.
   - destruct Hmodel as [Hp Hq]. split; eauto.
   - destruct Hmodel as [Hp | Hq]; [left | right]; eauto.
@@ -651,12 +653,14 @@ Proof.
     simpl in *; subst S.
   - exact I.
   - exact Hmodel.
-  - destruct Hmodel as [m0 [Ha Hle]].
+  - destruct Hmodel as [m0 [Hscope0 [Ha Hle]]].
     exists (res_restrict m0 (dom ρ ∪ stale a)). split.
-    + rewrite logic_qualifier_denote_restrict.
-      * exact Ha.
-      * set_solver.
-    + eapply res_restrict_le_mono. exact Hle.
+    + unfold formula_scoped_in_world in *. simpl in *. set_solver.
+    + split.
+      * rewrite logic_qualifier_denote_restrict.
+        -- exact Ha.
+        -- set_solver.
+      * eapply res_restrict_le_mono. exact Hle.
   - destruct Hmodel as [Hp Hq]. split.
     + pose proof (IH ρ m p Hp) as Hp_small.
       eapply res_models_with_store_fuel_kripke; [| exact Hp_small].
@@ -965,10 +969,12 @@ Proof.
       simpl in *.
     + exact I.
     + exact Hmodel.
-    + destruct Hmodel as [m0 [Hq Hle]].
+    + destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
       exists (res_swap a b m0). split.
-      * apply logic_qualifier_denote_swap. exact Hq.
-      * apply res_swap_le. exact Hle.
+      * apply formula_scoped_swap. exact Hscope0.
+      * split.
+        -- apply logic_qualifier_denote_swap. exact Hq.
+        -- apply res_swap_le. exact Hle.
     + destruct Hmodel as [Hp Hq]. split; [apply IH | apply IH]; assumption.
     + destruct Hmodel as [Hp | Hq]; [left; apply IH | right; apply IH]; assumption.
     + intros n Hle Hpn.
@@ -1106,12 +1112,15 @@ Proof.
       simpl in *.
     + exact I.
     + exact Hmodel.
-    + destruct Hmodel as [m0 [Hq Hle]].
-	      exists (res_swap a b m0). split.
-	      * apply logic_qualifier_denote_swap.
-	        rewrite res_swap_involutive. exact Hq.
-      * pose proof (res_swap_le a b _ _ Hle) as Hswap_le.
-        rewrite res_swap_involutive in Hswap_le. exact Hswap_le.
+    + destruct Hmodel as [m0 [Hscope0 [Hq Hle]]].
+      exists (res_swap a b m0). split.
+      * apply (proj2 (formula_scoped_swap a b ρ (res_swap a b m0) (FAtom q))).
+        rewrite res_swap_involutive. exact Hscope0.
+      * split.
+        -- apply logic_qualifier_denote_swap.
+           rewrite res_swap_involutive. exact Hq.
+        -- pose proof (res_swap_le a b _ _ Hle) as Hswap_le.
+           rewrite res_swap_involutive in Hswap_le. exact Hswap_le.
     + destruct Hmodel as [Hp Hq]. split; [apply IH | apply IH]; assumption.
     + destruct Hmodel as [Hp | Hq]; [left; apply IH | right; apply IH]; assumption.
     + intros n Hle Hpn.

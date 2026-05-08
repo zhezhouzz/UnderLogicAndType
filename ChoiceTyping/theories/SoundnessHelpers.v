@@ -164,7 +164,7 @@ Lemma res_models_atom_intro (m : WfWorld) (q : logic_qualifier) :
 Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hq. split; [exact Hscope |].
-  exists m. split; [exact Hq | reflexivity].
+  exists m. split; [exact Hscope |]. split; [exact Hq | reflexivity].
 Qed.
 
 Lemma res_models_with_store_atom_intro
@@ -175,7 +175,7 @@ Lemma res_models_with_store_atom_intro
 Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hq. split; [exact Hscope |].
-  exists m. split; [exact Hq | reflexivity].
+  exists m. split; [exact Hscope |]. split; [exact Hq | reflexivity].
 Qed.
 
 Lemma res_models_over_intro_same (m : WfWorld) (φ : FormulaQ) :
