@@ -43,6 +43,17 @@ The `ret_fvar` lemmas are useful when a proof introduces a fresh coordinate
 for a let-bound result and then needs to reuse that coordinate as the result
 representative for a body/context typing premise.
 
+Prefer the closed-value version of the substitution fact.  For a returned
+variable, proving
+
+```coq
+m{σ} (tret (vfvar x)) = tret v
+```
+
+only needs `σ !! x = Some v` and `stale v = ∅`; it does not need the whole
+store `σ` to be closed.  Use `msubst_ret_fvar_lookup_closed_value` before
+falling back to the stronger `msubst_ret_fvar_lookup_closed`.
+
 ## Important FAtom detail
 
 `FAtom` is upward closed and `logic_qualifier_denote` restricts both the
