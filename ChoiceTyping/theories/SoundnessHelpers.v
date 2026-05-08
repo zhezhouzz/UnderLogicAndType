@@ -1456,6 +1456,24 @@ Lemma denot_tlet_semantic_at_world
 Proof.
 Admitted.
 
+Lemma FExprResultOn_tlete_from_body_result_world
+    X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  let_result_world_on X e1 x n Hfresh Hresult ⊨
+    FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν →
+  n ⊨ FExprResultOn X (tlete e1 e2) ν.
+Proof.
+Admitted.
+
+(** Fixed-world body-to-let lifting is not strong enough for the main tlet
+    proof because [denot_ty_on] contains Kripke implications.  The theorem
+    below is the total-aware, Kripke-parametric bridge used by the fundamental
+    theorem; this older shape is kept only as a local target while the
+    structural denotation transport is being factored. *)
 Lemma denot_ty_on_let_result_body_to_let
     X Σ τ e1 e2 x Tx (m : WfWorld) Hfresh Hresult :
   basic_choice_ty (dom Σ) τ →
@@ -1561,6 +1579,21 @@ Proof.
     exact Hbody.
 Qed.
 
+Lemma denot_tlet_formula_at_world_total
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
+    (m : WfWorld) :
+  choice_typing_wf Σ Γ e1 τ1 →
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  entails_total (denot_ctx_in_env Σ Γ)
+    (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
+  (∀ x, x ∉ L →
+    entails_total (denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)))
+      (denot_ty_total_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))) →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
+Proof.
+Admitted.
+
 Lemma denot_tlet_expr_total_at_world_given_bind
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
     (m : WfWorld) :
@@ -1647,7 +1680,7 @@ Proof.
   intros Hwf1 Hwflet IH1 IH2 Hbind Hm.
   destruct (IH1 m Hm) as [Hτ1 Htotal1].
   split.
-  - eapply denot_tlet_formula_at_world_given_bind_total; eauto.
+  - eapply denot_tlet_formula_at_world_total; eauto.
   - eapply denot_tlet_expr_total_at_world_given_bind; eauto.
     + intros x HxL Hfresh Hresult.
       set (wx := let_result_world_on
