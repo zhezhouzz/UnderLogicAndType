@@ -355,6 +355,79 @@ Proof.
   - eapply expr_result_incl_on_trans; eauto.
 Qed.
 
+Lemma FExprResultOn_models_result_equiv X e_to e_from ν m :
+  formula_scoped_in_world ∅ m (FExprResultOn X e_to ν) →
+  world_closed_on X m →
+  expr_result_equiv_on X e_to e_from →
+  m ⊨ FExprResultOn X e_from ν →
+  m ⊨ FExprResultOn X e_to ν.
+Proof.
+  intros Hscope Hclosed [_ Hincl] Hfrom.
+  unfold FExprResultOn, res_models, res_models_with_store in *.
+  simpl in *.
+  destruct Hfrom as [_ [m0 [Hscope0 [Hden Hle]]]].
+  split; [exact Hscope |].
+  exists m0. split; [exact Hscope0 |]. split; [| exact Hle].
+  unfold logic_qualifier_denote, expr_logic_qual_on in *.
+  simpl in *.
+  intros σw Hσw.
+  specialize (Hden σw Hσw) as [v [Hν Hsteps_from]].
+  exists v. split; [exact Hν |].
+  rewrite !store_restrict_empty in Hsteps_from |- *.
+  assert (Hclosed0 : world_closed_on X m0).
+  { eapply world_closed_on_le; eauto. }
+  assert (Hclosedσ : closed_env (map_restrict value σw X)).
+  {
+    simpl in Hσw.
+    destruct Hσw as [σ1 [Hσ1 Hrestrict1]].
+    subst σw.
+    change (closed_env (map_restrict value (map_restrict value σ1 (X ∪ {[ν]})) X)).
+    rewrite map_restrict_restrict.
+    replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+    exact (Hclosed0 σ1 Hσ1).
+  }
+  assert (HdomσX : dom (map_restrict value σw X) = X).
+  {
+    pose proof (wfworld_store_dom
+      (res_restrict m0 (X ∪ {[ν]})) σw Hσw)
+      as Hdom.
+    simpl in Hdom.
+    unfold formula_scoped_in_world in Hscope0.
+    simpl in Hscope0.
+    rewrite dom_empty_L in Hscope0.
+    unfold stale, stale_logic_qualifier in Hscope0.
+    simpl in Hscope0.
+    apply set_eq. intros z. split.
+    - intros Hz. rewrite map_restrict_dom in Hz. set_solver.
+    - intros Hz.
+      assert (Hzdom : z ∈ dom σw).
+      { rewrite Hdom. set_solver. }
+      apply elem_of_dom in Hzdom as [vz Hvz].
+      eapply elem_of_dom_2.
+      unfold map_restrict. apply map_lookup_filter_Some_2; last exact Hz.
+      exact Hvz.
+  }
+  assert (Hfv : fv_tm e_to ∪ fv_tm e_from ⊆ X).
+  { destruct Hincl as [Hfv _]. set_solver. }
+  assert (Hsteps_from_X : subst_map (map_restrict value σw X) e_from →* tret v).
+  {
+    change (m{map_restrict value σw X} e_from →* tret v).
+    change (m{σw} e_from →* tret v) in Hsteps_from.
+    rewrite (msubst_restrict_closed_on stale_tm_inst subst_tm_inst
+      ltac:(typeclasses eauto) ltac:(typeclasses eauto) ltac:(typeclasses eauto)
+      σw X e_from Hclosedσ ltac:(set_solver)).
+    exact Hsteps_from.
+  }
+  pose proof (proj2 Hincl (map_restrict value σw X) v HdomσX Hclosedσ Hsteps_from_X)
+    as Hsteps_to_X.
+  change (m{σw} e_to →* tret v).
+  change (m{map_restrict value σw X} e_to →* tret v) in Hsteps_to_X.
+  rewrite <- (msubst_restrict_closed_on stale_tm_inst subst_tm_inst
+    ltac:(typeclasses eauto) ltac:(typeclasses eauto) ltac:(typeclasses eauto)
+    σw X e_to Hclosedσ ltac:(set_solver)).
+  exact Hsteps_to_X.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
