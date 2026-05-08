@@ -6,7 +6,8 @@
     they provide the corresponding single-substitution lemmas. *)
 
 From ChoicePrelude Require Import Store.
-From CoreLang Require Import Instantiation LocallyNamelessExtra LocallyNamelessInstances.
+From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
+  LocallyNamelessExtra LocallyNamelessInstances.
 From LocallyNameless Require Import Classes Tactics.
 
 Lemma closed_env_insert σ x v :
@@ -228,6 +229,75 @@ Proof.
     unfold env_delete_step.
     rewrite lookup_delete_ne by congruence.
     apply IH; assumption.
+Qed.
+
+Definition env_has_type (Γ : gmap atom ty) (σ : env) : Prop :=
+  ∀ x T v,
+    Γ !! x = Some T →
+    σ !! x = Some v →
+    value_has_type ∅ v T.
+
+Lemma env_has_type_insert_inv Γ σ x vx :
+  σ !! x = None →
+  env_has_type Γ (<[x := vx]> σ) →
+  env_has_type Γ σ.
+Proof.
+  intros Hfresh Htyped y T v HΓ Hσ.
+  assert (Hxy : x ≠ y).
+  { intros ->. rewrite Hσ in Hfresh. discriminate. }
+  assert (Hins : (<[x := vx]> σ) !! y = Some v).
+  {
+    destruct (decide (x = y)) as [->|Hne].
+    - exfalso. rewrite Hσ in Hfresh. discriminate.
+    - apply lookup_insert_Some. right. split; [congruence | exact Hσ].
+  }
+  exact (Htyped y T v HΓ Hins).
+Qed.
+
+Lemma delete_lookup_none {A} (Γ : gmap atom A) x :
+  Γ !! x = None →
+  delete x Γ = Γ.
+Proof.
+  intros Hnone. apply map_eq. intros y.
+  destruct (decide (y = x)) as [->|Hyx].
+  - rewrite lookup_delete_eq. symmetry. exact Hnone.
+  - rewrite lookup_delete_ne by congruence. reflexivity.
+Qed.
+
+Lemma msubst_basic_typing_tm Γ σ e T :
+  closed_env σ →
+  env_has_type Γ σ →
+  tm_has_type Γ e T →
+  tm_has_type (env_delete σ Γ) (m{σ} e) T.
+Proof.
+  unfold msubst.
+  revert Γ e T.
+  refine (fin_maps.map_fold_ind
+    (fun σ => ∀ Γ e T,
+      closed_env σ →
+      env_has_type Γ σ →
+      tm_has_type Γ e T →
+      tm_has_type (env_delete σ Γ)
+        (map_fold (fun x vx acc => {x := vx} acc) e σ) T) _ _ σ).
+  - intros Γ e T _ _ Hty. rewrite env_delete_empty. exact Hty.
+  - intros x vx σ' Hfresh Hfold IH Γ e T Hclosed Htyped Hty.
+    destruct (closed_env_insert σ' x vx Hfresh Hclosed) as [Hvx_closed Hclosed'].
+    rewrite Hfold.
+    change (map_fold (fun x vx acc => {x := vx} acc) e σ') with (m{σ'} e).
+    rewrite env_delete_insert by exact Hfresh.
+    pose proof (IH Γ e T Hclosed' (env_has_type_insert_inv Γ σ' x vx Hfresh Htyped) Hty)
+      as Hmsubst.
+    destruct (env_delete σ' Γ !! x) as [Tx|] eqn:HxΓ.
+    + eapply basic_typing_subst_tm; [exact Hmsubst | | exact HxΓ].
+      destruct (env_delete_lookup_some σ' Γ x Tx HxΓ) as [HΓx _].
+      eapply Htyped.
+      * exact HΓx.
+      * apply lookup_insert_Some. left. split; reflexivity.
+    + rewrite delete_lookup_none by exact HxΓ.
+      rewrite subst_fresh.
+      * exact Hmsubst.
+      * pose proof (basic_typing_contains_fv_tm _ _ _ Hmsubst) as Hfv.
+        apply not_elem_of_dom in HxΓ. set_solver.
 Qed.
 
 Class MsubstFresh A `{Stale A} `{SubstV value A} := msubst_fresh :
