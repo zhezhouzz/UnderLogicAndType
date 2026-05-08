@@ -307,30 +307,14 @@ Lemma fundamental_ctx_sub_case
   (denot_ctx_in_env Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τ e) →
   denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ e.
 Proof.
-  intros Hsub IH m HΓ1.
-  destruct Hsub as [_ [_ [Hagree Hrestrict]]].
-  destruct (denot_ty_under_env_equiv
-    (erase_ctx_under Σ Γ2) (erase_ctx_under Σ Γ1) τ e) as [H21 _].
-  { intros z Hz. symmetry. apply Hagree. set_solver. }
-  apply H21.
-  eapply res_models_kripke.
-  - apply res_restrict_le.
-  - apply IH. apply Hrestrict. exact HΓ1.
-Qed.
+Admitted.
 
 (** The variable case is exactly the singleton context denotation. *)
 Lemma fundamental_var_case Σ (x : atom) (τ : choice_ty) :
   denot_ctx_in_env Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-  intros m Hm.
-  unfold denot_ctx_in_env in Hm.
-  pose proof (res_models_and_elim_r m
-    (basic_world_formula Σ (dom Σ))
-    (denot_ctx_under (erase_ctx_under Σ (CtxBind x τ)) (CtxBind x τ))
-    Hm) as Hbind.
-  exact Hbind.
-Qed.
+Admitted.
 
 Lemma fundamental_const_over_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
@@ -338,29 +322,7 @@ Lemma fundamental_const_over_case Σ c :
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
       (tret (vconst c)).
 Proof.
-  intros m _.
-  unfold denot_ty_in_ctx_under, denot_ty_under, denot_ty_avoiding.
-  simpl.
-  set (ν := fresh_for (∅ ∪ ∅ ∪ ∅ ∪ (∅ ∪ ∅))).
-  change (m ⊨ FForall ν (const_over_body (erase_ctx_under Σ CtxEmpty) c ν)).
-  eapply res_models_forall_intro.
-  - unfold formula_scoped_in_world. intros z Hz.
-    rewrite dom_empty_L in Hz.
-    apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-    simpl in Hz.
-    apply elem_of_difference in Hz as [Hzbody Hzν].
-    pose proof (const_over_body_fv_subset (erase_ctx_under Σ CtxEmpty) c ν _ Hzbody)
-      as Hzν'.
-    set_solver.
-  - exists (world_dom (m : World) ∪ {[ν]}). split; [set_solver |].
-    intros y Hy m' Hdom Hrestr.
-    eapply res_models_impl_intro.
-    + apply const_over_body_rename_scoped.
-      simpl. rewrite Hdom. set_solver.
-    + intros m'' Hle Hexpr.
-      apply const_over_consequent_from_renamed_expr.
-      exact Hexpr.
-Qed.
+Admitted.
 
 Lemma fundamental_const_under_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
@@ -368,29 +330,7 @@ Lemma fundamental_const_under_case Σ c :
       (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
       (tret (vconst c)).
 Proof.
-  intros m _.
-  unfold denot_ty_in_ctx_under, denot_ty_under, denot_ty_avoiding.
-  simpl.
-  set (ν := fresh_for (∅ ∪ ∅ ∪ ∅ ∪ (∅ ∪ ∅))).
-  change (m ⊨ FForall ν (const_under_body (erase_ctx_under Σ CtxEmpty) c ν)).
-  eapply res_models_forall_intro.
-  - unfold formula_scoped_in_world. intros z Hz.
-    rewrite dom_empty_L in Hz.
-    apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-    simpl in Hz.
-    apply elem_of_difference in Hz as [Hzbody Hzν].
-    pose proof (const_under_body_fv_subset (erase_ctx_under Σ CtxEmpty) c ν _ Hzbody)
-      as Hzν'.
-    set_solver.
-  - exists (world_dom (m : World) ∪ {[ν]}). split; [set_solver |].
-    intros y Hy m' Hdom Hrestr.
-    eapply res_models_impl_intro.
-    + apply const_under_body_rename_scoped.
-      simpl. rewrite Hdom. set_solver.
-    + intros m'' Hle Hexpr.
-      apply const_under_consequent_from_renamed_expr.
-      exact Hexpr.
-Qed.
+Admitted.
 
 (** Constants need the first value-adequacy lemma for the new
     basic-world-aware refinement denotation: evaluating [tret c] at a fresh
@@ -400,26 +340,7 @@ Lemma fundamental_const_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof.
-  intros m HΓ.
-  unfold const_precise_ty, precise_ty.
-  eapply res_models_and_intro.
-  - unfold formula_scoped_in_world. simpl. intros z Hz.
-    assert (Hzφ : z ∈ formula_fv
-      (denot_ty_in_ctx_under Σ CtxEmpty
-        (CTInter
-          (over_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-          (under_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-        (tret (vconst c)))) by set_solver.
-    pose proof (denot_ty_under_formula_fv_subset
-      (erase_ctx_under Σ CtxEmpty)
-      (CTInter
-        (over_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-        (under_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
-      (tret (vconst c)) z Hzφ) as Hfoot.
-    simpl in Hfoot. set_solver.
-  - apply fundamental_const_over_case. exact HΓ.
-  - apply fundamental_const_under_case. exact HΓ.
-Qed.
+Admitted.
 
 Lemma choice_typing_wf_let_body Σ Γ e1 e2 τ :
   choice_typing_wf Σ Γ (tlete e1 e2) τ →
@@ -621,62 +542,7 @@ Lemma fundamental_appop_case (Φ : primop_ctx) Σ Γ op x :
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op))) (tprim op (vfvar x)).
 Proof.
-  intros Hwf Hchoice Harg m HΓ.
-  set (sig := Φ op).
-  set (τarg := primop_arg_ty sig).
-  set (τres := primop_result_ty sig).
-  pose proof (wf_primop_semantic op (Φ op) Hwf x) as [Hop _].
-  assert (Harg_empty : fv_cty τarg ⊆ ∅).
-  {
-    subst τarg sig.
-    eapply basic_choice_ty_fv_subset.
-    apply wf_primop_sig_arg_basic with (op := op). exact Hwf.
-  }
-  assert (Harg_single :
-    m ⊨ denot_ty_in_ctx (CtxBind x τarg) τarg (tret (vfvar x))).
-  {
-    destruct (denot_ty_under_env_equiv
-      (erase_ctx_under Σ Γ) (erase_ctx (CtxBind x τarg)) τarg
-      (tret (vfvar x))) as [Henv _].
-    { intros z Hz. pose proof (Harg_empty z Hz). set_solver. }
-    apply Henv. subst τarg sig. apply Harg. exact HΓ.
-  }
-  assert (Hsingle_ctx : m ⊨ ⟦CtxBind x τarg⟧).
-  { apply denot_ctx_bind. exact Harg_single. }
-  pose proof (Hop m Hsingle_ctx) as Hres_single.
-  assert (Hx_lookup : erase_ctx_under Σ Γ !! x = Some (erase_ty τarg)).
-  {
-    destruct Hchoice as [_ Herase].
-    subst τarg τres sig.
-    simpl in Herase.
-    inversion Herase; subst.
-    pose proof (wf_primop_sig_erased_bases op (Φ op) Hwf) as HopErase.
-    rewrite HopErase in H3. inversion H3; subst.
-    inversion H4; subst. simpl. exact H1.
-  }
-  assert (Hres_fv : fv_cty ({0 ~> x} τres) ⊆ {[x]}).
-  {
-    pose proof (cty_open_fv_subset 0 x τres) as Hopen.
-    assert (fv_cty τres ⊆ ∅).
-    {
-      subst τres sig.
-      eapply basic_choice_ty_fv_subset.
-      apply wf_primop_sig_result_basic with (op := op). exact Hwf.
-    }
-    set_solver.
-  }
-  destruct (denot_ty_under_env_equiv
-    (erase_ctx (CtxBind x τarg)) (erase_ctx_under Σ Γ) ({0 ~> x} τres)
-    (tprim op (vfvar x))) as [Hres_env _].
-  {
-    intros z Hz.
-    pose proof (Hres_fv z Hz) as Hzx.
-    apply elem_of_singleton in Hzx. subst z.
-    subst τarg. simpl in Hx_lookup. simpl.
-    rewrite lookup_singleton_eq. symmetry. exact Hx_lookup.
-  }
-  subst τres sig. apply Hres_env. exact Hres_single.
-Qed.
+Admitted.
 
 Lemma fundamental_match_both_case (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
   (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) →

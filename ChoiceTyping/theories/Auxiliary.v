@@ -96,7 +96,7 @@ Qed.
 
 Lemma ctx_sub_refl Γ :
   wf_ctx Γ →
-  ctx_sub (ctx_stale Γ) Γ Γ.
+  ctx_sub (dom (erase_ctx Γ) ∪ ctx_stale Γ) Γ Γ.
 Proof.
   intros Hwf.
   split; [exact Hwf |]. split; [exact Hwf |]. split.

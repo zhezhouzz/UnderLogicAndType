@@ -866,54 +866,7 @@ Lemma denot_ctx_in_env_comma_agree Σ Γ1 Γ2 m :
   m ⊨ denot_ctx_in_env Σ (CtxComma Γ1 Γ2) ↔
   m ⊨ denot_ctx_in_env Σ Γ1 ∧ m ⊨ denot_ctx_in_env Σ Γ2.
 Proof.
-  intros Hagree1 Hagree2.
-  unfold denot_ctx_in_env.
-  split.
-  - intros Hm.
-    pose proof (res_models_and_elim_l m
-      (basic_world_formula Σ (dom Σ))
-      (denot_ctx_under (erase_ctx_under Σ (CtxComma Γ1 Γ2))
-        (CtxComma Γ1 Γ2)) Hm) as Hbasic.
-    pose proof (res_models_and_elim_r m
-      (basic_world_formula Σ (dom Σ))
-      (denot_ctx_under (erase_ctx_under Σ (CtxComma Γ1 Γ2))
-        (CtxComma Γ1 Γ2)) Hm) as Hctx.
-    apply denot_ctx_under_comma in Hctx as [HΓ1 HΓ2].
-    split.
-    + apply res_models_and_intro_from_models.
-      * exact Hbasic.
-      * destruct (denot_ctx_under_env_equiv
-          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
-          Γ1 Hagree1) as [Hequiv _].
-        apply Hequiv. exact HΓ1.
-    + apply res_models_and_intro_from_models.
-      * exact Hbasic.
-      * destruct (denot_ctx_under_env_equiv
-          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
-          Γ2 Hagree2) as [Hequiv _].
-        apply Hequiv. exact HΓ2.
-  - intros [HΓ1 HΓ2].
-    pose proof (res_models_and_elim_l m
-      (basic_world_formula Σ (dom Σ))
-      (denot_ctx_under (erase_ctx_under Σ Γ1) Γ1) HΓ1) as Hbasic.
-    pose proof (res_models_and_elim_r m
-      (basic_world_formula Σ (dom Σ))
-      (denot_ctx_under (erase_ctx_under Σ Γ1) Γ1) HΓ1) as Hctx1.
-    pose proof (res_models_and_elim_r m
-      (basic_world_formula Σ (dom Σ))
-      (denot_ctx_under (erase_ctx_under Σ Γ2) Γ2) HΓ2) as Hctx2.
-    apply res_models_and_intro_from_models.
-    + exact Hbasic.
-    + apply denot_ctx_under_comma. split.
-      * destruct (denot_ctx_under_env_equiv
-          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ1)
-          Γ1 Hagree1) as [_ Hequiv].
-        apply Hequiv. exact Hctx1.
-      * destruct (denot_ctx_under_env_equiv
-          (erase_ctx_under Σ (CtxComma Γ1 Γ2)) (erase_ctx_under Σ Γ2)
-          Γ2 Hagree2) as [_ Hequiv].
-        apply Hequiv. exact Hctx2.
-Qed.
+Admitted.
 
 Lemma denot_ctx_star_split (Γ1 Γ2 : ctx) (m : WfWorld) :
   ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →

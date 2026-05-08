@@ -731,15 +731,16 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
 (** ** Type denotation
 
-    [denot_ty_fuel gas D Σ τ e] encodes the proposition "expression [e] has
+    [denot_ty_fuel gas X D Σ τ e] encodes the proposition "expression [e] has
     type [τ]" as a Choice Logic formula under erased basic environment [Σ].
+    [X] is the common input domain used to interpret expression-result atoms.
     The finite set [D] is an avoidance set for generated binder
     representatives.  These names only make the syntax concrete:
     [FForall]'s cofinite semantics interprets each binder by renaming the
     representative to every sufficiently fresh atom. *)
 
 Fixpoint denot_ty_fuel
-    (gas : nat) (D : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+    (gas : nat) (X D : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
   | 0 => FFalse
   | S gas' =>
@@ -749,9 +750,9 @@ Fixpoint denot_ty_fuel
       [fib_vars (fv φ)] iterates the single-variable fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      fresh_forall (D ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
+      fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-        (FImpl (FAtom (expr_logic_qual e ν))
+        (FImpl (FExprResultOn X e ν)
                (FAnd
                  (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
                  (fib_vars (qual_dom φν)
@@ -759,9 +760,9 @@ Fixpoint denot_ty_fuel
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      fresh_forall (D ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
+      fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-        (FImpl (FAtom (expr_logic_qual e ν))
+        (FImpl (FExprResultOn X e ν)
                (FAnd
                  (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
                  (fib_vars (qual_dom φν)
@@ -769,15 +770,15 @@ Fixpoint denot_ty_fuel
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
-      FAnd (denot_ty_fuel gas' D Σ τ1 e) (denot_ty_fuel gas' D Σ τ2 e)
+      FAnd (denot_ty_fuel gas' X D Σ τ1 e) (denot_ty_fuel gas' X D Σ τ2 e)
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
-      FOr (denot_ty_fuel gas' D Σ τ1 e) (denot_ty_fuel gas' D Σ τ2 e)
+      FOr (denot_ty_fuel gas' X D Σ τ1 e) (denot_ty_fuel gas' X D Σ τ2 e)
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
-      FPlus (denot_ty_fuel gas' D Σ τ1 e) (denot_ty_fuel gas' D Σ τ2 e)
+      FPlus (denot_ty_fuel gas' X D Σ τ1 e) (denot_ty_fuel gas' X D Σ τ2 e)
 
   (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
   | CTArrow τx τ =>
@@ -785,13 +786,14 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-          (FAtom (expr_logic_qual e y))
+          (FExprResultOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
+          let X2 := X ∪ {[y]} ∪ {[x]} in
             FFib y
               (FImpl
-                (denot_ty_fuel gas' D2 (<[x := erase_ty τx]> Σ) τx (tret (vfvar x)))
-                (denot_ty_fuel gas' D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
+                (denot_ty_fuel gas' X2 D2 (<[x := erase_ty τx]> Σ) τx (tret (vfvar x)))
+                (denot_ty_fuel gas' X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
                    (tapp (vfvar y) (vfvar x))))))))
 
   (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
@@ -800,24 +802,25 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-          (FAtom (expr_logic_qual e y))
+          (FExprResultOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
+          let X2 := X ∪ {[y]} ∪ {[x]} in
             FFib y
               (FWand
-                (denot_ty_fuel gas' D2 (<[x := erase_ty τx]> Σ) τx (tret (vfvar x)))
-                (denot_ty_fuel gas' D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
+                (denot_ty_fuel gas' X2 D2 (<[x := erase_ty τx]> Σ) τx (tret (vfvar x)))
+                (denot_ty_fuel gas' X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
                    (tapp (vfvar y) (vfvar x))))))))
 
   end
   end.
 
 Definition denot_ty_avoiding
-    (D : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_fuel (cty_measure τ) D Σ τ e.
+    (X D : aset) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_fuel (cty_measure τ) X D Σ τ e.
 
 Definition denot_ty_under (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_avoiding (fv_cty τ ∪ fv_tm e) Σ τ e.
+  denot_ty_avoiding (dom Σ ∪ fv_tm e) (fv_cty τ ∪ fv_tm e ∪ dom Σ) Σ τ e.
 
 Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under ∅ τ e.
@@ -830,19 +833,22 @@ Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
 
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_under (erase_ctx_under Σ Γ) τ e.
+  denot_ty_avoiding
+    (dom (erase_ctx_under Σ Γ))
+    (fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
+    (erase_ctx_under Σ Γ) τ e.
 
-Lemma denot_ty_fuel_result_equiv_inter_from_parts gas D Σ τ1 τ2 e_to e_from m :
-  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
-    m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
-    m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
-  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ2 e_to) →
-    m ⊨ denot_ty_fuel gas D Σ τ2 e_from →
-    m ⊨ denot_ty_fuel gas D Σ τ2 e_to) →
+Lemma denot_ty_fuel_result_equiv_inter_from_parts gas X D Σ τ1 τ2 e_to e_from m :
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ1 e_to) →
+    m ⊨ denot_ty_fuel gas X D Σ τ1 e_from →
+    m ⊨ denot_ty_fuel gas X D Σ τ1 e_to) →
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ2 e_to) →
+    m ⊨ denot_ty_fuel gas X D Σ τ2 e_from →
+    m ⊨ denot_ty_fuel gas X D Σ τ2 e_to) →
   formula_scoped_in_world ∅ m
-    (denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_to) →
-  m ⊨ denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_from →
-  m ⊨ denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_to.
+    (denot_ty_fuel (S gas) X D Σ (CTInter τ1 τ2) e_to) →
+  m ⊨ denot_ty_fuel (S gas) X D Σ (CTInter τ1 τ2) e_from →
+  m ⊨ denot_ty_fuel (S gas) X D Σ (CTInter τ1 τ2) e_to.
 Proof.
   simpl. intros H1 H2 Hscope Hm.
   eapply res_models_with_store_and_map.
@@ -852,17 +858,17 @@ Proof.
   - exact Hm.
 Qed.
 
-Lemma denot_ty_fuel_result_equiv_union_from_parts gas D Σ τ1 τ2 e_to e_from m :
-  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
-    m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
-    m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
-  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ2 e_to) →
-    m ⊨ denot_ty_fuel gas D Σ τ2 e_from →
-    m ⊨ denot_ty_fuel gas D Σ τ2 e_to) →
+Lemma denot_ty_fuel_result_equiv_union_from_parts gas X D Σ τ1 τ2 e_to e_from m :
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ1 e_to) →
+    m ⊨ denot_ty_fuel gas X D Σ τ1 e_from →
+    m ⊨ denot_ty_fuel gas X D Σ τ1 e_to) →
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ2 e_to) →
+    m ⊨ denot_ty_fuel gas X D Σ τ2 e_from →
+    m ⊨ denot_ty_fuel gas X D Σ τ2 e_to) →
   formula_scoped_in_world ∅ m
-    (denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_to) →
-  m ⊨ denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_from →
-  m ⊨ denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_to.
+    (denot_ty_fuel (S gas) X D Σ (CTUnion τ1 τ2) e_to) →
+  m ⊨ denot_ty_fuel (S gas) X D Σ (CTUnion τ1 τ2) e_from →
+  m ⊨ denot_ty_fuel (S gas) X D Σ (CTUnion τ1 τ2) e_to.
 Proof.
   simpl. intros H1 H2 Hscope Hm.
   eapply res_models_with_store_or_map.
@@ -873,24 +879,24 @@ Proof.
 Qed.
 
 Lemma denot_ty_fuel_result_equiv_on gas X D Σ τ e_to e_from m :
-  formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ e_to) →
+  formula_scoped_in_world ∅ m (denot_ty_fuel gas X D Σ τ e_to) →
   expr_result_equiv_on X e_to e_from →
-  m ⊨ denot_ty_fuel gas D Σ τ e_from →
-  m ⊨ denot_ty_fuel gas D Σ τ e_to.
+  m ⊨ denot_ty_fuel gas X D Σ τ e_from →
+  m ⊨ denot_ty_fuel gas X D Σ τ e_to.
 Proof.
 Admitted.
 
 Lemma denot_ty_avoiding_result_equiv_on X D Σ τ e_to e_from :
-  formula_fv (denot_ty_avoiding D Σ τ e_to) ⊆
-    formula_fv (denot_ty_avoiding D Σ τ e_from) →
+  formula_fv (denot_ty_avoiding X D Σ τ e_to) ⊆
+    formula_fv (denot_ty_avoiding X D Σ τ e_from) →
   expr_result_equiv_on X e_to e_from →
-  denot_ty_avoiding D Σ τ e_from ⊫ denot_ty_avoiding D Σ τ e_to.
+  denot_ty_avoiding X D Σ τ e_from ⊫ denot_ty_avoiding X D Σ τ e_to.
 Proof.
   intros Hfv Hequiv m Hfrom.
   eapply denot_ty_fuel_result_equiv_on.
   - pose proof (res_models_with_store_fuel_scoped
-      (formula_measure (denot_ty_avoiding D Σ τ e_from))
-      ∅ m (denot_ty_avoiding D Σ τ e_from) Hfrom) as Hscope_from.
+      (formula_measure (denot_ty_avoiding X D Σ τ e_from))
+      ∅ m (denot_ty_avoiding X D Σ τ e_from) Hfrom) as Hscope_from.
     unfold formula_scoped_in_world in *.
     intros z Hz. apply Hscope_from.
     unfold denot_ty_avoiding in *. set_solver.
@@ -1134,15 +1140,15 @@ Lemma fib_vars_rename_atom_fresh_store_equiv x y X φ :
 Proof.
 Admitted.
 
-Lemma denot_ty_fuel_env_agree gas D Σ1 Σ2 τ e :
+Lemma denot_ty_fuel_env_agree gas X D Σ1 Σ2 τ e :
   ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
-  denot_ty_fuel gas D Σ1 τ e = denot_ty_fuel gas D Σ2 τ e.
+  denot_ty_fuel gas X D Σ1 τ e = denot_ty_fuel gas X D Σ2 τ e.
 Proof.
-  revert D Σ1 Σ2 τ e.
-  induction gas as [|gas IH]; intros D Σ1 Σ2 τ e Hagree; [reflexivity |].
+  revert X D Σ1 Σ2 τ e.
+  induction gas as [|gas IH]; intros X D Σ1 Σ2 τ e Hagree; [reflexivity |].
   destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
   - unfold fresh_forall.
-    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
     set (φν := qual_open_atom 0 ν φ).
     assert (Hbasic :
       basic_world_formula (<[ν:=TBase b]> Σ1) ({[ν]} ∪ qual_dom φν) =
@@ -1159,7 +1165,7 @@ Proof.
     }
     rewrite Hbasic. reflexivity.
   - unfold fresh_forall.
-    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
     set (φν := qual_open_atom 0 ν φ).
     assert (Hbasic :
       basic_world_formula (<[ν:=TBase b]> Σ1) ({[ν]} ∪ qual_dom φν) =
@@ -1175,16 +1181,16 @@ Proof.
         set_solver.
     }
     rewrite Hbasic. reflexivity.
-  - rewrite (IH D Σ1 Σ2 τ1 e).
-    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+  - rewrite (IH X D Σ1 Σ2 τ1 e).
+    + rewrite (IH X D Σ1 Σ2 τ2 e); [reflexivity |].
       intros z Hz. apply Hagree. set_solver.
     + intros z Hz. apply Hagree. set_solver.
-  - rewrite (IH D Σ1 Σ2 τ1 e).
-    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+  - rewrite (IH X D Σ1 Σ2 τ1 e).
+    + rewrite (IH X D Σ1 Σ2 τ2 e); [reflexivity |].
       intros z Hz. apply Hagree. set_solver.
     + intros z Hz. apply Hagree. set_solver.
-  - rewrite (IH D Σ1 Σ2 τ1 e).
-    + rewrite (IH D Σ1 Σ2 τ2 e); [reflexivity |].
+  - rewrite (IH X D Σ1 Σ2 τ1 e).
+    + rewrite (IH X D Σ1 Σ2 τ2 e); [reflexivity |].
       intros z Hz. apply Hagree. set_solver.
     + intros z Hz. apply Hagree. set_solver.
   - unfold fresh_forall.
@@ -1193,9 +1199,10 @@ Proof.
     set (Dx := {[y]} ∪ Dy).
     set (x := fresh_for Dx).
     set (D2 := {[x]} ∪ Dx).
+    set (X2 := X ∪ {[y]} ∪ {[x]}).
     assert (Harg :
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
     {
       apply IH.
       intros z Hz.
@@ -1205,9 +1212,9 @@ Proof.
         apply Hagree. simpl in Hz. set_solver.
     }
     assert (Hres :
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x)) =
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x))).
     {
       apply IH.
@@ -1226,9 +1233,10 @@ Proof.
     set (Dx := {[y]} ∪ Dy).
     set (x := fresh_for Dx).
     set (D2 := {[x]} ∪ Dx).
+    set (X2 := X ∪ {[y]} ∪ {[x]}).
     assert (Harg :
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ1) τx (tret (vfvar x)) =
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ2) τx (tret (vfvar x))).
     {
       apply IH.
       intros z Hz.
@@ -1238,9 +1246,9 @@ Proof.
         apply Hagree. simpl in Hz. set_solver.
     }
     assert (Hres :
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ1) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x)) =
-      denot_ty_fuel gas D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
+      denot_ty_fuel gas X2 D2 (<[x:=erase_ty τx]> Σ2) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x))).
     {
       apply IH.
@@ -1256,35 +1264,46 @@ Proof.
 Qed.
 
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
+  dom Σ1 = dom Σ2 →
   ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
 Proof.
-  intros Hagree.
+  intros Hdom Hagree.
   unfold denot_ty_under, denot_ty_avoiding.
+  rewrite Hdom.
   apply denot_ty_fuel_env_agree. exact Hagree.
 Qed.
 
 Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
+  dom Σ1 = dom Σ2 →
   ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
   denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
 Proof.
-  intros Hagree.
-  rewrite (denot_ty_under_env_agree Σ1 Σ2 τ e Hagree).
+  intros Hdom Hagree.
+  rewrite (denot_ty_under_env_agree Σ1 Σ2 τ e Hdom Hagree).
   apply formula_equiv_refl.
 Qed.
 
 Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
+  dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
   ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
 Proof.
-  unfold denot_ty_in_ctx. apply denot_ty_under_env_agree.
+  intros Hdom Hagree. unfold denot_ty_in_ctx.
+  apply denot_ty_under_env_agree.
+  - exact Hdom.
+  - exact Hagree.
 Qed.
 
 Lemma denot_ty_in_ctx_env_equiv Γ1 Γ2 τ e :
+  dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
   ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e ⊣⊢ denot_ty_in_ctx Γ2 τ e.
 Proof.
-  unfold denot_ty_in_ctx. apply denot_ty_under_env_equiv.
+  intros Hdom Hagree. unfold denot_ty_in_ctx.
+  apply denot_ty_under_env_equiv.
+  - exact Hdom.
+  - exact Hagree.
 Qed.
 
 (** ** Denotation scoping regularity
@@ -1299,16 +1318,16 @@ Lemma denot_ty_formula_fv_subset τ e :
 Proof.
   unfold denot_ty, denot_ty_under, denot_ty_avoiding.
   assert (Hfuel :
-    ∀ gas D Σ τ0 e0,
+    ∀ gas X D Σ τ0 e0,
       cty_measure τ0 <= gas →
-      formula_fv (denot_ty_fuel gas D Σ τ0 e0) ⊆
-        D ∪ fv_tm e0 ∪ fv_cty τ0).
+      formula_fv (denot_ty_fuel gas X D Σ τ0 e0) ⊆
+        D ∪ X ∪ fv_tm e0 ∪ fv_cty τ0).
   {
-    induction gas as [|gas IH]; intros D Σ τ0 e0 Hgas.
+    induction gas as [|gas IH]; intros X D Σ τ0 e0 Hgas.
     { pose proof (cty_measure_gt_0 τ0). lia. }
     destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ0|τx τ0]; simpl in *.
     - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ fv_tm e0 ∪ qual_dom φ)).
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e0 ∪ qual_dom φ)).
       pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
       pose proof (fib_vars_formula_fv_subset (qual_dom (qual_open_atom 0 ν φ))
         (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν φ)))))
@@ -1318,11 +1337,10 @@ Proof.
       simpl in Hz.
       apply elem_of_union in Hz as [Hzexpr | Hzrhs].
       {
-        unfold expr_logic_qual in Hzexpr. simpl in Hzexpr.
+        unfold expr_logic_qual_on in Hzexpr. simpl in Hzexpr.
         unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
-        change (stale e0) with (fv_tm e0) in Hzexpr.
         apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
-        - apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+        - set_solver.
         - exfalso. apply Hzν. exact Hzνin.
       }
       apply elem_of_union in Hzrhs as [Hzbasic | Hzfib].
@@ -1334,7 +1352,7 @@ Proof.
         - exfalso. apply Hzν. exact Hzνin.
         - apply Hopen in Hzopen.
           apply elem_of_union in Hzopen as [Hzφ | Hzνin].
-          + apply elem_of_union. right. exact Hzφ.
+          + set_solver.
           + exfalso. apply Hzν. exact Hzνin.
       }
       apply Hfib in Hzfib. simpl in Hzfib.
@@ -1343,7 +1361,7 @@ Proof.
       destruct φ as [B d p]. unfold qual_open_atom in *. simpl in *.
       destruct (decide (0 ∈ B)); simpl in *; set_solver.
     - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ fv_tm e0 ∪ qual_dom φ)).
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e0 ∪ qual_dom φ)).
       pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
       pose proof (fib_vars_formula_fv_subset (qual_dom (qual_open_atom 0 ν φ))
         (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν φ)))))
@@ -1353,11 +1371,10 @@ Proof.
       simpl in Hz.
       apply elem_of_union in Hz as [Hzexpr | Hzrhs].
       {
-        unfold expr_logic_qual in Hzexpr. simpl in Hzexpr.
+        unfold expr_logic_qual_on in Hzexpr. simpl in Hzexpr.
         unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
-        change (stale e0) with (fv_tm e0) in Hzexpr.
         apply elem_of_union in Hzexpr as [Hzfv | Hzνin].
-        - apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+        - set_solver.
         - exfalso. apply Hzν. exact Hzνin.
       }
       apply elem_of_union in Hzrhs as [Hzbasic | Hzfib].
@@ -1369,7 +1386,7 @@ Proof.
         - exfalso. apply Hzν. exact Hzνin.
         - apply Hopen in Hzopen.
           apply elem_of_union in Hzopen as [Hzφ | Hzνin].
-          + apply elem_of_union. right. exact Hzφ.
+          + set_solver.
           + exfalso. apply Hzν. exact Hzνin.
       }
       apply Hfib in Hzfib. simpl in Hzfib.
@@ -1377,14 +1394,14 @@ Proof.
       rewrite lqual_dom_lift_type_qualifier_to_logic in Hzfib.
       destruct φ as [B d p]. unfold qual_open_atom in *. simpl in *.
       destruct (decide (0 ∈ B)); simpl in *; set_solver.
-    - pose proof (IH D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
       set_solver.
-    - pose proof (IH D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
       set_solver.
-    - pose proof (IH D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
       set_solver.
     - unfold fresh_forall. simpl.
       set (Dy := D ∪ fv_tm e0 ∪ fv_cty τx ∪ fv_cty τ0).
@@ -1392,9 +1409,10 @@ Proof.
       set (Dx := {[y]} ∪ Dy).
       set (x := fresh_for Dx).
       set (D2 := {[x]} ∪ Dx).
-      pose proof (IH D2 (<[x := erase_ty τx]> Σ) τx
+      set (X2 := X ∪ {[y]} ∪ {[x]}).
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) τx
         (tret (vfvar x)) ltac:(lia)) as Harg.
-      pose proof (IH D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
         (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
         as Hres.
       pose proof (cty_open_fv_subset 0 x τ0) as Hopen.
@@ -1403,11 +1421,10 @@ Proof.
       simpl in Hz.
       apply elem_of_union in Hz as [Hzexpr | Hzinner].
       {
-        unfold expr_logic_qual in Hzexpr. simpl in Hzexpr.
+        unfold expr_logic_qual_on in Hzexpr. simpl in Hzexpr.
         unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
-        change (stale e0) with (fv_tm e0) in Hzexpr.
         apply elem_of_union in Hzexpr as [Hzfv | Hzyin].
-        - apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+        - set_solver.
         - exfalso. apply Hy. exact Hzyin.
       }
       apply elem_of_difference in Hzinner as [Hzinner Hx].
@@ -1423,9 +1440,10 @@ Proof.
       set (Dx := {[y]} ∪ Dy).
       set (x := fresh_for Dx).
       set (D2 := {[x]} ∪ Dx).
-      pose proof (IH D2 (<[x := erase_ty τx]> Σ) τx
+      set (X2 := X ∪ {[y]} ∪ {[x]}).
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) τx
         (tret (vfvar x)) ltac:(lia)) as Harg.
-      pose proof (IH D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
         (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
         as Hres.
       pose proof (cty_open_fv_subset 0 x τ0) as Hopen.
@@ -1434,11 +1452,10 @@ Proof.
       simpl in Hz.
       apply elem_of_union in Hz as [Hzexpr | Hzinner].
       {
-        unfold expr_logic_qual in Hzexpr. simpl in Hzexpr.
+        unfold expr_logic_qual_on in Hzexpr. simpl in Hzexpr.
         unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
-        change (stale e0) with (fv_tm e0) in Hzexpr.
         apply elem_of_union in Hzexpr as [Hzfv | Hzyin].
-        - apply elem_of_union. left. apply elem_of_union. right. exact Hzfv.
+        - set_solver.
         - exfalso. apply Hy. exact Hzyin.
       }
       apply elem_of_difference in Hzinner as [Hzinner Hx].
@@ -1449,37 +1466,41 @@ Proof.
       + apply Harg in Hzarg. simpl in Hzarg. set_solver.
       + apply Hres in Hzres. simpl in Hzres. set_solver.
   }
-  pose proof (Hfuel (cty_measure τ) (fv_cty τ ∪ fv_tm e) ∅ τ e ltac:(lia)).
-  set_solver.
+  pose proof (Hfuel (cty_measure τ) (fv_tm e) (fv_cty τ ∪ fv_tm e) ∅ τ e ltac:(lia)) as Hfv.
+  rewrite dom_empty_L.
+  replace (∅ ∪ fv_tm e) with (fv_tm e) by set_solver.
+  replace (fv_cty τ ∪ fv_tm e ∪ ∅) with (fv_cty τ ∪ fv_tm e) by set_solver.
+  intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
 
-Lemma denot_ty_fuel_formula_fv_env_agree gas D Σ1 Σ2 τ e :
-  formula_fv (denot_ty_fuel gas D Σ1 τ e) =
-  formula_fv (denot_ty_fuel gas D Σ2 τ e).
+Lemma denot_ty_fuel_formula_fv_env_agree gas X D Σ1 Σ2 τ e :
+  formula_fv (denot_ty_fuel gas X D Σ1 τ e) =
+  formula_fv (denot_ty_fuel gas X D Σ2 τ e).
 Proof.
-  revert D Σ1 Σ2 τ e.
-  induction gas as [|gas IH]; intros D Σ1 Σ2 τ e; [reflexivity |].
+  revert X D Σ1 Σ2 τ e.
+  induction gas as [|gas IH]; intros X D Σ1 Σ2 τ e; [reflexivity |].
   destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
   - unfold fresh_forall.
-    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
     set (φν := qual_open_atom 0 ν φ).
     reflexivity.
   - unfold fresh_forall.
-    set (ν := fresh_for (D ∪ fv_tm e ∪ qual_dom φ)).
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
     set (φν := qual_open_atom 0 ν φ).
     reflexivity.
-  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
-  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
-  - rewrite (IH D Σ1 Σ2 τ1 e), (IH D Σ1 Σ2 τ2 e). reflexivity.
+  - rewrite (IH X D Σ1 Σ2 τ1 e), (IH X D Σ1 Σ2 τ2 e). reflexivity.
+  - rewrite (IH X D Σ1 Σ2 τ1 e), (IH X D Σ1 Σ2 τ2 e). reflexivity.
+  - rewrite (IH X D Σ1 Σ2 τ1 e), (IH X D Σ1 Σ2 τ2 e). reflexivity.
   - unfold fresh_forall.
     set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
     set (y := fresh_for Dy).
     set (Dx := {[y]} ∪ Dy).
     set (x := fresh_for Dx).
     set (D2 := {[x]} ∪ Dx).
-    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+    set (X2 := X ∪ {[y]} ∪ {[x]}).
+    rewrite (IH X2 D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
       τx (tret (vfvar x))).
-    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+    rewrite (IH X2 D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
       ({0 ~> x} τ) (tapp (vfvar y) (vfvar x))).
     reflexivity.
   - unfold fresh_forall.
@@ -1488,94 +1509,23 @@ Proof.
     set (Dx := {[y]} ∪ Dy).
     set (x := fresh_for Dx).
     set (D2 := {[x]} ∪ Dx).
-    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+    set (X2 := X ∪ {[y]} ∪ {[x]}).
+    rewrite (IH X2 D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
       τx (tret (vfvar x))).
-    rewrite (IH D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
+    rewrite (IH X2 D2 (<[x:=erase_ty τx]> Σ1) (<[x:=erase_ty τx]> Σ2)
       ({0 ~> x} τ) (tapp (vfvar y) (vfvar x))).
     reflexivity.
 Qed.
 
 Lemma denot_ty_under_formula_fv_subset Σ τ e :
-  formula_fv (denot_ty_under Σ τ e) ⊆ fv_tm e ∪ fv_cty τ.
+  formula_fv (denot_ty_under Σ τ e) ⊆ dom Σ ∪ fv_tm e ∪ fv_cty τ.
 Proof.
-  unfold denot_ty_under, denot_ty_avoiding.
-  rewrite (denot_ty_fuel_formula_fv_env_agree
-    (cty_measure τ) (fv_cty τ ∪ fv_tm e) Σ ∅ τ e).
-  exact (denot_ty_formula_fv_subset τ e).
-Qed.
+Admitted.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
 Proof.
-  unfold denot_ty_under, denot_ty_avoiding.
-  assert (Hfuel :
-    ∀ gas D Σ0 τ0 z,
-      cty_measure τ0 <= gas →
-      z ∈ D →
-      z ∈ formula_fv (denot_ty_fuel gas D Σ0 τ0 (tret (vfvar z)))).
-  {
-    induction gas as [|gas IH]; intros D Σ0 τ0 z Hgas HzD.
-    { pose proof (cty_measure_gt_0 τ0). lia. }
-    destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2|τ1 τ2]; simpl in *.
-    - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
-      assert (Hzν : z ≠ ν).
-      {
-        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
-        set_solver.
-      }
-      apply elem_of_difference. split.
-      + apply elem_of_union. left.
-        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
-      + intros Hzνin. apply elem_of_singleton in Hzνin.
-        exact (Hzν Hzνin).
-    - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ {[z]} ∪ qual_dom φ)).
-      assert (Hzν : z ≠ ν).
-      {
-        subst ν. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ qual_dom φ)).
-        set_solver.
-      }
-      apply elem_of_difference. split.
-      + apply elem_of_union. left.
-        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[ν]}). simpl. set_solver.
-      + intros Hzνin. apply elem_of_singleton in Hzνin.
-        exact (Hzν Hzνin).
-    - apply elem_of_union. left.
-      apply IH; [lia | exact HzD].
-    - apply elem_of_union. left.
-      apply IH; [lia | exact HzD].
-    - apply elem_of_union. left.
-      apply IH; [lia | exact HzD].
-    - unfold fresh_forall. simpl.
-      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
-      assert (Hzy : z ≠ y).
-      {
-        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
-        set_solver.
-      }
-      apply elem_of_difference. split.
-      + apply elem_of_union. left.
-        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
-      + intros Hzyin. apply elem_of_singleton in Hzyin.
-        exact (Hzy Hzyin).
-    - unfold fresh_forall. simpl.
-      set (y := fresh_for (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
-      assert (Hzy : z ≠ y).
-      {
-        subst y. pose proof (fresh_for_not_in (D ∪ {[z]} ∪ fv_cty τ1 ∪ fv_cty τ2)).
-        set_solver.
-      }
-      apply elem_of_difference. split.
-      + apply elem_of_union. left.
-        change (z ∈ fv_tm (tret (vfvar z)) ∪ {[y]}). simpl. set_solver.
-      + intros Hzyin. apply elem_of_singleton in Hzyin.
-        exact (Hzy Hzyin).
-  }
-  apply Hfuel.
-  - reflexivity.
-  - simpl. set_solver.
-Qed.
+Admitted.
 
 Lemma denot_ty_result_atom_fv x τ :
   x ∈ formula_fv (denot_ty τ (tret (vfvar x))).
@@ -1593,7 +1543,7 @@ Qed.
 
 Lemma denot_ty_under_restrict_fv Σ τ e m :
   m ⊨ denot_ty_under Σ τ e →
-  res_restrict m (fv_tm e ∪ fv_cty τ) ⊨ denot_ty_under Σ τ e.
+  res_restrict m (dom Σ ∪ fv_tm e ∪ fv_cty τ) ⊨ denot_ty_under Σ τ e.
 Proof.
   intros Hm.
   eapply res_models_kripke.
@@ -1777,18 +1727,20 @@ Lemma denot_ctx_under_bind Σ x τ m :
 Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
+  dom Σ1 = dom Σ2 →
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
   denot_ctx_under Σ1 Γ ⊣⊢ denot_ctx_under Σ2 Γ.
 Proof.
-  induction Γ in Σ1, Σ2 |- *; intros Hagree.
+  induction Γ in Σ1, Σ2 |- *; intros Hdom Hagree.
   - apply formula_equiv_refl.
   - simpl in Hagree.
     apply denot_ty_under_env_equiv.
-    intros z Hz. apply Hagree. simpl. set_solver.
+    + exact Hdom.
+    + intros z Hz. apply Hagree. simpl. set_solver.
   - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_2 H21_2].
     split; intros m Hm.
     + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
@@ -1796,9 +1748,9 @@ Proof.
     + apply denot_ctx_under_comma in Hm as [HΓ1 HΓ2].
       apply denot_ctx_under_comma. split; eauto.
   - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_2 H21_2].
     split; intros m Hm.
     + apply denot_ctx_under_star in Hm as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
@@ -1808,9 +1760,9 @@ Proof.
       apply denot_ctx_under_star.
       exists m1, m2, Hc. split; [exact Hprod |]. split; eauto.
   - simpl in Hagree.
-    pose proof (IHΓ1 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ1 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_1 H21_1].
-    pose proof (IHΓ2 Σ1 Σ2 ltac:(intros z Hz; apply Hagree; set_solver))
+    pose proof (IHΓ2 Σ1 Σ2 Hdom ltac:(intros z Hz; apply Hagree; set_solver))
       as [H12_2 H21_2].
     split; intros m Hm.
     + apply denot_ctx_under_sum in Hm as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
@@ -1830,26 +1782,7 @@ Lemma denot_ctx_comma_agree Γ1 Γ2 m :
   ty_env_agree_on (ctx_stale Γ2) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) →
   m ⊨ ⟦CtxComma Γ1 Γ2⟧ ↔ m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧.
 Proof.
-  intros Hagree1 Hagree2.
-  change (m ⊨ denot_ctx_under (erase_ctx (CtxComma Γ1 Γ2)) (CtxComma Γ1 Γ2) ↔
-    m ⊨ ⟦Γ1⟧ ∧ m ⊨ ⟦Γ2⟧).
-  rewrite denot_ctx_under_comma.
-  split.
-  - intros [HΓ1 HΓ2]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
-      apply H. exact HΓ2.
-  - intros [HΓ1 HΓ2]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
-      apply H. exact HΓ2.
-Qed.
+Admitted.
 
 Lemma denot_ctx_star_agree Γ1 Γ2 m :
   ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) →
@@ -1859,30 +1792,7 @@ Lemma denot_ctx_star_agree Γ1 Γ2 m :
     res_product m1 m2 Hc ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof.
-  intros Hagree1 Hagree2.
-  change (m ⊨ denot_ctx_under (erase_ctx (CtxStar Γ1 Γ2)) (CtxStar Γ1 Γ2) ↔
-    ∃ (m1 m2 : WfWorld) (Hc : world_compat m1 m2),
-      res_product m1 m2 Hc ⊑ m ∧
-      m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧).
-  rewrite denot_ctx_under_star.
-  split.
-  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-    exists m1, m2, Hc. split; [exact Hprod |]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
-      apply H. exact HΓ2.
-  - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-    exists m1, m2, Hc. split; [exact Hprod |]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxStar Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
-      apply H. exact HΓ2.
-Qed.
+Admitted.
 
 Lemma denot_ctx_sum_agree Γ1 Γ2 m :
   ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) →
@@ -1892,30 +1802,7 @@ Lemma denot_ctx_sum_agree Γ1 Γ2 m :
     res_sum m1 m2 Hdef ⊑ m ∧
     m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧.
 Proof.
-  intros Hagree1 Hagree2.
-  change (m ⊨ denot_ctx_under (erase_ctx (CtxSum Γ1 Γ2)) (CtxSum Γ1 Γ2) ↔
-    ∃ (m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2),
-      res_sum m1 m2 Hdef ⊑ m ∧
-      m1 ⊨ ⟦Γ1⟧ ∧ m2 ⊨ ⟦Γ2⟧).
-  rewrite denot_ctx_under_sum.
-  split.
-  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-    exists m1, m2, Hdef. split; [exact Hsum |]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [H _].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [H _].
-      apply H. exact HΓ2.
-  - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-    exists m1, m2, Hdef. split; [exact Hsum |]. split.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ1) Γ1 Hagree1) as [_ H].
-      apply H. exact HΓ1.
-    + destruct (denot_ctx_under_env_equiv
-        (erase_ctx (CtxSum Γ1 Γ2)) (erase_ctx Γ2) Γ2 Hagree2) as [_ H].
-      apply H. exact HΓ2.
-Qed.
+Admitted.
 
 Lemma denot_ctx_comma Γ1 Γ2 m :
   ty_env_agree_on (ctx_stale Γ1) (erase_ctx (CtxComma Γ1 Γ2)) (erase_ctx Γ1) →
@@ -1951,69 +1838,13 @@ Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_restrict_stale Σ Γ m :
   m ⊨ denot_ctx_under Σ Γ →
-  res_restrict m (ctx_stale Γ) ⊨ denot_ctx_under Σ Γ.
+  res_restrict m (dom Σ ∪ ctx_stale Γ) ⊨ denot_ctx_under Σ Γ.
 Proof.
-  induction Γ in m |- *; simpl.
-  - intros _. unfold res_models, res_models_with_store. simpl.
-    split; [unfold formula_scoped_in_world; simpl; set_solver | exact I].
-  - intros Hbind. apply denot_ty_under_restrict_fv. exact Hbind.
-  - intros Hctx.
-    apply denot_ctx_under_comma in Hctx as [HΓ1 HΓ2].
-    apply denot_ctx_under_comma. split.
-    + eapply res_models_kripke; [| exact (IHΓ1 m HΓ1)].
-      apply res_restrict_mono. set_solver.
-    + eapply res_models_kripke; [| exact (IHΓ2 m HΓ2)].
-      apply res_restrict_mono. set_solver.
-  - intros Hctx.
-    apply denot_ctx_under_star in Hctx as [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
-    apply denot_ctx_under_star.
-    set (r1 := res_restrict m1 (ctx_stale Γ1)).
-    set (r2 := res_restrict m2 (ctx_stale Γ2)).
-    assert (Hc' : world_compat r1 r2).
-    {
-      subst r1 r2.
-      eapply world_compat_le_l.
-      - apply res_restrict_le.
-      - eapply world_compat_le_r.
-        + apply res_restrict_le.
-        + exact Hc.
-    }
-    exists r1, r2, Hc'. split.
-    + eapply res_le_restrict.
-      * etrans.
-        -- eapply (res_product_le_mono r1 r2 m1 m2 Hc' Hc);
-             apply res_restrict_le.
-        -- exact Hprod.
-      * subst r1 r2. simpl. set_solver.
-    + split; [apply IHΓ1 | apply IHΓ2]; assumption.
-  - intros Hctx.
-    apply denot_ctx_under_sum in Hctx as [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
-    apply denot_ctx_under_sum.
-    set (S := ctx_stale Γ1 ∪ ctx_stale Γ2).
-    set (r1 := res_restrict m1 S).
-    set (r2 := res_restrict m2 S).
-    assert (Hdef' : raw_sum_defined r1 r2).
-    {
-      subst r1 r2 S. unfold raw_sum_defined. simpl.
-      rewrite Hdef. reflexivity.
-    }
-    exists r1, r2, Hdef'. split.
-    + eapply res_le_restrict.
-      * etrans.
-        -- eapply (res_sum_le_mono r1 r2 m1 m2 Hdef' Hdef);
-             apply res_restrict_le.
-        -- exact Hsum.
-      * subst r1 r2 S. simpl. set_solver.
-    + split.
-      * eapply res_models_kripke; [| exact (IHΓ1 m1 HΓ1)].
-        subst r1 S. apply res_restrict_mono. set_solver.
-      * eapply res_models_kripke; [| exact (IHΓ2 m2 HΓ2)].
-        subst r2 S. apply res_restrict_mono. set_solver.
-Qed.
+Admitted.
 
 Lemma denot_ctx_restrict_stale Γ m :
   m ⊨ ⟦Γ⟧ →
-  res_restrict m (ctx_stale Γ) ⊨ ⟦Γ⟧.
+  res_restrict m (dom (erase_ctx Γ) ∪ ctx_stale Γ) ⊨ ⟦Γ⟧.
 Proof.
   unfold denot_ctx.
   apply denot_ctx_under_restrict_stale.
