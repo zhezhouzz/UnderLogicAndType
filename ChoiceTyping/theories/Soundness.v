@@ -582,10 +582,83 @@ Admitted.
 
 (** The variable case is exactly the singleton context denotation. *)
 Lemma fundamental_var_case Σ (x : atom) (τ : choice_ty) :
+  choice_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ →
   denot_ctx_in_env Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf m Hctx.
+  pose proof (denot_ctx_in_env_ctx Σ (CtxBind x τ) m Hctx) as Hbind.
+  destruct Hwf as [Hwfτ _].
+  pose proof (wf_choice_ty_under_ctx Σ (CtxBind x τ) τ Hwfτ) as Hwfctx.
+  pose proof (wf_ctx_under_basic Σ (CtxBind x τ) Hwfctx) as Hbasicctx.
+  inversion Hbasicctx; subst; clear Hbasicctx.
+  simpl in Hbind.
+  unfold denot_ty_in_ctx_under, erase_ctx_under. simpl.
+  replace (dom (Σ ∪ {[x := erase_ty τ]})) with (dom Σ ∪ {[x]}).
+  2:{ rewrite dom_union_L, dom_singleton_L. reflexivity. }
+  replace (Σ ∪ {[x := erase_ty τ]}) with (<[x := erase_ty τ]> Σ).
+  - exact Hbind.
+  - apply (map_eq (M := gmap atom)). intros z.
+    rewrite lookup_insert.
+    destruct (decide (z = x)) as [->|Hzx].
+    + rewrite decide_True by reflexivity.
+      rewrite lookup_union_r.
+      * rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
+      * apply not_elem_of_dom.
+        match goal with
+        | H : x ∉ dom Σ |- _ => exact H
+        end.
+    + rewrite decide_False by congruence.
+      rewrite lookup_union.
+      rewrite lookup_singleton. rewrite decide_False by congruence.
+      destruct (Σ !! z); reflexivity.
+Qed.
+
+Lemma expr_total_on_ret_lc X v (m : WfWorld) :
+  stale v ⊆ X →
+  is_lc v →
+  (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
+  expr_total_on X (tret v) m.
+Proof.
+  intros Hfv Hlc Henv.
+  split; [simpl; exact Hfv |].
+  intros σ Hσ.
+  exists (m{store_restrict σ X} v).
+  change (m{store_restrict σ X} (tret v) →* tret (m{store_restrict σ X} v)).
+  rewrite msubst_ret.
+  apply Steps_refl.
+  constructor.
+  apply msubst_lc; [apply Henv; exact Hσ | exact Hlc].
+Qed.
+
+Lemma fundamental_var_total_case Σ (x : atom) (τ : choice_ty) :
+  choice_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ →
+  entails_total (denot_ctx_in_env Σ (CtxBind x τ))
+    (denot_ty_total_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x))).
+Proof.
+  intros Hwf m Hctx.
+  assert (Hbasicctx : basic_ctx (dom Σ) (CtxBind x τ)).
+  {
+    destruct Hwf as [Hwfτ _].
+    eapply wf_ctx_under_basic.
+    eapply wf_choice_ty_under_ctx. exact Hwfτ.
+  }
+  split.
+  - eapply fundamental_var_case; eauto.
+  - eapply (expr_total_on_ret_lc
+      (dom (erase_ctx_under Σ (CtxBind x τ))) (vfvar x) m).
+    + change ({[x]} ⊆ dom (erase_ctx_under Σ (CtxBind x τ))).
+      unfold erase_ctx_under. simpl.
+      rewrite dom_union_L, dom_singleton_L. set_solver.
+    + constructor.
+    + intros σ Hσ.
+      replace (dom (erase_ctx_under Σ (CtxBind x τ))) with (dom Σ ∪ {[x]}).
+      * pose proof (denot_ctx_in_env_store_erased_lc
+          Σ (CtxBind x τ) m σ Hbasicctx Hctx Hσ) as Hlc.
+        simpl in Hlc. exact Hlc.
+      * unfold erase_ctx_under. simpl.
+        rewrite dom_union_L, dom_singleton_L. set_solver.
+Qed.
 
 Lemma fundamental_const_over_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
