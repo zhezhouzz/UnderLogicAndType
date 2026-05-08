@@ -184,12 +184,18 @@ Lemma const_over_consequent_from_expr_on X c ν Σ m :
   m ⊨ FExprResultOn X (tret (vconst c)) ν →
   m ⊨
     FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FOver (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
+  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
+    with ({[ν]} : aset)
+    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
+        rewrite decide_True by set_solver; simpl; set_solver).
+  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
   pose proof (expr_logic_qual_on_ret_const_lookup X c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
@@ -229,12 +235,18 @@ Lemma const_under_consequent_from_expr_on X c ν Σ m :
   m ⊨ FExprResultOn X (tret (vconst c)) ν →
   m ⊨
     FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FUnder (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
+  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
+    with ({[ν]} : aset)
+    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
+        rewrite decide_True by set_solver; simpl; set_solver).
+  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
   pose proof (expr_logic_qual_on_ret_const_lookup X c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
@@ -309,8 +321,9 @@ Lemma const_over_consequent_from_renamed_expr_on X c ν y Σ m :
     (FExprResultOn X (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FOver (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
 Proof.
@@ -326,8 +339,9 @@ Lemma const_under_consequent_from_renamed_expr_on X c ν y Σ m :
     (FExprResultOn X (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FUnder (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
 Proof.
@@ -361,8 +375,9 @@ Definition const_over_body_on
   FImpl
     (FExprResultOn X (tret (vconst c)) ν)
     (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FOver (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
 
@@ -371,8 +386,9 @@ Definition const_under_body_on
   FImpl
     (FExprResultOn X (tret (vconst c)) ν)
     (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (fib_vars {[ν]}
+      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
+      (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
         (FUnder (FAtom (lift_type_qualifier_to_logic
           (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
 
@@ -408,6 +424,11 @@ Lemma const_over_body_on_fv_subset X Σ c ν :
   formula_fv (const_over_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
 Proof.
   unfold const_over_body_on.
+  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
+    with ({[ν]} : aset)
+    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
+        rewrite decide_True by set_solver; simpl; set_solver).
+  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
   intros z Hz. simpl in Hz.
   unfold stale, stale_logic_qualifier in Hz.
   rewrite fib_vars_singleton in Hz. simpl in Hz.
@@ -422,6 +443,11 @@ Lemma const_under_body_on_fv_subset X Σ c ν :
   formula_fv (const_under_body_on X Σ c ν) ⊆ X ∪ {[ν]}.
 Proof.
   unfold const_under_body_on.
+  replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
+    with ({[ν]} : aset)
+    by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
+        rewrite decide_True by set_solver; simpl; set_solver).
+  replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
   intros z Hz. simpl in Hz.
   unfold stale, stale_logic_qualifier in Hz.
   rewrite fib_vars_singleton in Hz. simpl in Hz.
@@ -562,7 +588,64 @@ Lemma fundamental_const_over_case Σ c :
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
       (tret (vconst c)).
 Proof.
-Admitted.
+  intros m Hctx.
+  pose proof (denot_ty_scoped_from_ctx_under Σ CtxEmpty
+    (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+    (tret (vconst c)) m) as Hscope_gen.
+  assert (Hwf :
+    wf_choice_ty_under Σ CtxEmpty
+      (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))).
+  {
+    split.
+    - split; [constructor | exists m; exact Hctx].
+    - constructor. unfold basic_qualifier_body.
+      exists ∅. intros x _.
+      unfold basic_qualifier, qual_open_atom, mk_q_eq, qual_dom, qual_bvars.
+      simpl. rewrite decide_True by set_solver. simpl. split; set_solver.
+  }
+  specialize (Hscope_gen Hwf ltac:(set_solver) Hctx).
+  unfold denot_ty_in_ctx_under, denot_ty_avoiding in *.
+  simpl in *.
+  set (X := dom (erase_ctx_under Σ CtxEmpty)).
+  set (ν := fresh_for (∅ ∪ ∅ ∪ ∅ ∪ X ∪ X ∪ ∅ ∪ (∅ ∪ ∅))).
+  eapply res_models_fresh_forall_intro.
+  - exact Hscope_gen.
+  - exists (world_dom (m : World) ∪ X ∪ {[ν]}).
+    split; [set_solver |].
+    intros y Hy m' Hdom Hrestr.
+    assert (Himpl : m' ⊨ formula_rename_atom ν y
+      (const_over_body_on X (erase_ctx_under Σ CtxEmpty) c ν)).
+    {
+      eapply res_models_impl_intro.
+      - apply const_over_body_on_rename_scoped.
+        + set_solver.
+        + intros z Hz.
+          subst X. unfold erase_ctx_under. simpl.
+          assert (Hzctx : z ∈ formula_fv (denot_ctx_in_env Σ CtxEmpty)).
+          { pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ CtxEmpty z).
+            set_solver. }
+          pose proof (res_models_with_store_fuel_scoped
+            (formula_measure (denot_ctx_in_env Σ CtxEmpty))
+            ∅ m (denot_ctx_in_env Σ CtxEmpty) Hctx) as Hctx_scope.
+          unfold formula_scoped_in_world in Hctx_scope.
+          assert (Hzm : z ∈ world_dom (m : World)).
+          { apply Hctx_scope. rewrite dom_empty_L. set_solver. }
+          rewrite Hdom. set_solver.
+        + rewrite Hdom. set_solver.
+      - intros n Hle Hexpr.
+        eapply const_over_consequent_from_renamed_expr_on.
+        exact Hexpr.
+    }
+    unfold res_models, res_models_with_store in Himpl.
+    match goal with
+    | |- res_models_with_store_fuel ?gas ∅ m' _ =>
+        change (res_models_with_store_fuel gas ∅ m'
+          (formula_rename_atom ν y
+            (const_over_body_on X (erase_ctx_under Σ CtxEmpty) c ν)))
+    end.
+    eapply res_models_with_store_fuel_irrel; [apply Nat.le_refl | | exact Himpl].
+    rewrite formula_rename_preserves_measure. apply Nat.le_refl.
+Qed.
 
 Lemma fundamental_const_under_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
