@@ -1092,6 +1092,17 @@ Qed.
     If [m] satisfies [τ] for the expression [e], then the world obtained by
     adding a fresh coordinate [x] containing exactly the possible results of
     [e] satisfies [τ] for [return x]. *)
+Lemma denot_ty_on_let_result_representative
+    X Σ τ e x (m : WfWorld) Hfresh Hresult :
+  fv_tm e ⊆ X →
+  x ∉ X ∪ fv_cty τ ∪ fv_tm e →
+  m ⊨ basic_world_formula Σ (dom Σ) →
+  m ⊨ denot_ty_on X Σ τ e →
+  let_result_world_on X e x m Hfresh Hresult ⊨
+    denot_ty_on (X ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+Proof.
+Admitted.
+
 Lemma let_result_world_on_bound_type
     Σ Γ τ e x (m : WfWorld) Hfresh Hresult :
   choice_typing_wf Σ Γ e τ →
@@ -1104,7 +1115,22 @@ Lemma let_result_world_on_bound_type
       (<[x := erase_ty τ]> (erase_ctx_under Σ Γ))
       τ (tret (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf Hm Hτ Hx.
+  eapply (denot_ty_on_let_result_representative
+    (dom (erase_ctx_under Σ Γ)) (erase_ctx_under Σ Γ) τ e x m Hfresh Hresult).
+  - pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Hfv.
+    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
+    + exact Hfv.
+    + destruct Hwf as [Hwfτ _].
+      pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
+        as Hctx.
+      unfold erase_ctx_under.
+      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
+      reflexivity.
+  - exact Hx.
+  - apply denot_ctx_in_env_erased_basic. exact Hm.
+  - exact Hτ.
+Qed.
 
 Lemma let_result_world_on_denot_ctx_in_env
     Σ Γ τ e x (m : WfWorld) Hfresh Hresult :
