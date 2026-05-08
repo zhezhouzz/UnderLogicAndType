@@ -66,6 +66,20 @@ Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
 Definition FExprResult (e : tm) (ν : atom) : FQ :=
   FAtom (expr_logic_qual e ν).
 
+(** Domain-explicit expression-result atom.
+
+    [FExprResult e ν] uses [fv_tm e] as the input domain.  That is fine for a
+    single expression, but comparisons between open expressions need both sides
+    interpreted over the same input domain.  [FExprResultOn X e ν] records that
+    common domain explicitly; callers should provide [fv_tm e ⊆ X] and choose
+    [ν ∉ X]. *)
+Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier :=
+  lqual (X ∪ {[ν]})
+    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
+
+Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  FAtom (expr_logic_qual_on X e ν).
+
 Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
   expr_result_in_world ρ (tlete e1 e2) ν w →
   ∀ σw,
