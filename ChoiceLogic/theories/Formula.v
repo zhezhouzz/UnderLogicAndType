@@ -954,6 +954,57 @@ Proof.
   apply res_models_with_store_impl_refl.
 Qed.
 
+Lemma res_models_with_store_impl_intro
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  formula_scoped_in_world ρ m (FImpl φ ψ) →
+  (∀ m', m ⊑ m' →
+     res_models_with_store ρ m' φ →
+     res_models_with_store ρ m' ψ) →
+  res_models_with_store ρ m (FImpl φ ψ).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Himpl. split; [exact Hscope |].
+  intros m' Hle Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ + formula_measure ψ) (formula_measure φ)
+    ρ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
+  pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_impl_elim
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  res_models_with_store ρ m (FImpl φ ψ) →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ m ψ.
+Proof.
+  unfold res_models_with_store.
+  simpl. intros [_ Himpl] Hφ.
+  pose proof (res_models_with_store_fuel_irrel
+    (formula_measure φ) (formula_measure φ + formula_measure ψ)
+    ρ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
+  pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_impl_antecedent_strengthen
+    (ρ : StoreT) (m : WfWorldT) (φ1 φ2 ψ : Formula) :
+  formula_scoped_in_world ρ m (FImpl φ2 ψ) →
+  (∀ m', m ⊑ m' →
+     res_models_with_store ρ m' φ2 →
+     res_models_with_store ρ m' φ1) →
+  res_models_with_store ρ m (FImpl φ1 ψ) →
+  res_models_with_store ρ m (FImpl φ2 ψ).
+Proof.
+  intros Hscope Hφ Himpl.
+  eapply res_models_with_store_impl_intro.
+  - exact Hscope.
+  - intros m' Hle Hφ2.
+    eapply res_models_with_store_impl_elim.
+    + eapply res_models_with_store_kripke; [exact Hle | exact Himpl].
+    + eapply Hφ; eauto.
+Qed.
+
 Lemma res_models_with_store_fuel_swap
     (a b : atom) (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
   res_models_with_store_fuel gas ρ m (formula_rename_atom a b φ) ↔

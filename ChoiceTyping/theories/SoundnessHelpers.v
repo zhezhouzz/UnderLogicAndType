@@ -273,14 +273,8 @@ Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :
          m' ⊨ φ → m' ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Himpl. split; [exact Hscope |].
-  intros m' Hle Hφ.
-  pose proof (res_models_with_store_fuel_irrel
-    (formula_measure φ + formula_measure ψ) (formula_measure φ)
-    ∅ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
-  pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_impl_intro.
 Qed.
 
 (** Kripke implication elimination at the current world. *)
@@ -289,13 +283,8 @@ Lemma res_models_impl_elim (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ φ →
   m ⊨ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros [_ Himpl] Hφ.
-  pose proof (res_models_with_store_fuel_irrel
-    (formula_measure φ) (formula_measure φ + formula_measure ψ)
-    ∅ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
-  pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_impl_elim.
 Qed.
 
 Lemma res_models_impl_antecedent_strengthen
@@ -305,13 +294,8 @@ Lemma res_models_impl_antecedent_strengthen
   m ⊨ FImpl φ1 ψ →
   m ⊨ FImpl φ2 ψ.
 Proof.
-  intros Hscope Hφ Himpl.
-  eapply res_models_impl_intro.
-  - exact Hscope.
-  - intros m' Hle Hφ2.
-    eapply res_models_impl_elim.
-    + eapply res_models_kripke; [exact Hle | exact Himpl].
-    + eapply Hφ; eauto.
+  unfold res_models.
+  apply res_models_with_store_impl_antecedent_strengthen.
 Qed.
 
 Lemma res_models_forall_intro (m : WfWorld) (x : atom) (φ : FormulaQ) :
