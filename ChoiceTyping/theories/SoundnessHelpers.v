@@ -665,6 +665,26 @@ Proof.
         pose proof (wfworld_store_dom w σ Hσ). set_solver.
 Qed.
 
+Lemma let_result_world_le ρ e x (w : WfWorld) Hfresh Hresult :
+  w ⊑ let_result_world ρ e x w Hfresh Hresult.
+Proof.
+  pose proof (res_restrict_le
+    (let_result_world ρ e x w Hfresh Hresult)
+    (world_dom (w : World))) as Hle.
+  rewrite (let_result_world_restrict ρ e x w Hfresh Hresult) in Hle.
+  exact Hle.
+Qed.
+
+Lemma let_result_world_preserves_context Σ Γ ρ e x (w : WfWorld) Hfresh Hresult :
+  w ⊨ denot_ctx_in_env Σ Γ →
+  let_result_world ρ e x w Hfresh Hresult ⊨ denot_ctx_in_env Σ Γ.
+Proof.
+  intros Hctx.
+  eapply res_models_kripke.
+  - apply let_result_world_le.
+  - exact Hctx.
+Qed.
+
 (** Semantic compatibility of bunched let.
 
     This is the remaining tlet-specific denotation theorem.  Its proof should
