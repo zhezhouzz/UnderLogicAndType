@@ -89,18 +89,6 @@ Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) 
     (w : World) σw →
     expr_result_in_store ρ e ν σw.
 
-(** One-store expression result atom.
-
-    This is the paper-style [mstep(e,ν)] atom.  The surrounding [FFib]
-    modalities choose the input coordinates; the atom itself is checked on the
-    concrete fiber store.  Thus [σ] contains both the expression inputs and the
-    result coordinate [ν]. *)
-Definition mstep_store (e : tm) (ν : atom) (σ : Store) : Prop :=
-  match σ !! ν with
-  | Some v => subst_map σ e →* tret v
-  | None => False
-  end.
-
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ w => expr_result_in_world σ e ν w).
 
