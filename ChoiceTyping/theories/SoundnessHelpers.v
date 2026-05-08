@@ -121,6 +121,19 @@ Proof.
   - exact Hψ.
 Qed.
 
+Lemma basic_world_formula_dom_subset Σ X (m : WfWorld) :
+  m ⊨ basic_world_formula Σ X →
+  X ⊆ world_dom (m : World).
+Proof.
+  intros Hm.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (basic_world_formula Σ X)) ∅ m
+    (basic_world_formula Σ X) Hm) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  rewrite basic_world_formula_fv in Hscope.
+  intros z Hz. apply Hscope. set_solver.
+Qed.
+
 Lemma basic_steps_result_regular e v T :
   ∅ ⊢ₑ e ⋮ T →
   e →* tret v →
@@ -2000,6 +2013,7 @@ Lemma denot_ty_on_let_result_body_to_let
   basic_choice_ty (dom Σ) τ →
   fv_tm (tlete e1 e2) ⊆ X →
   x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+  X ⊆ world_dom (m : World) →
   m ⊨ basic_world_formula Σ (dom Σ) →
   let_result_world_on X e1 x m Hfresh Hresult ⊨
     denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x) →
@@ -2066,6 +2080,9 @@ Proof.
       rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
       reflexivity.
   - exact Hx.
+  - apply (basic_world_formula_dom_subset (erase_ctx_under Σ Γ)
+      (dom (erase_ctx_under Σ Γ))).
+    apply denot_ctx_in_env_erased_basic. exact Hm.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
   - assert (Hdom_ctxx :
       (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) : aset) =
