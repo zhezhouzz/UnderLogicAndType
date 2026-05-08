@@ -980,6 +980,36 @@ Proof.
   exact Hle.
 Qed.
 
+Lemma expr_total_results_on_le
+    X e (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  (∀ σ, (m : World) σ →
+    ∃ v, subst_map (store_restrict σ X) e →* tret v) →
+  ∀ σ, (n : World) σ →
+    ∃ v, subst_map (store_restrict σ X) e →* tret v.
+Proof.
+  intros HXm Hle Hresult σn Hσn.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+  specialize (Hresult (store_restrict σn (world_dom (m : World)))).
+  assert (Hσm :
+    (m : World) (store_restrict σn (world_dom (m : World)))).
+  {
+    rewrite Hle. simpl.
+    exists σn. split; [exact Hσn |].
+    pose proof (raw_le_dom (m : World) (n : World)
+      ltac:(unfold raw_le; exact Hle)) as Hdom_mn.
+    replace (world_dom (n : World) ∩ world_dom (m : World))
+      with (world_dom (m : World)) by set_solver.
+    reflexivity.
+  }
+  destruct (Hresult Hσm) as [v Hsteps].
+  exists v.
+  rewrite !store_restrict_restrict in Hsteps.
+  replace (world_dom (m : World) ∩ X) with X in Hsteps by set_solver.
+  exact Hsteps.
+Qed.
+
 Lemma let_result_world_on_base_mono
     X e x (m n : WfWorld)
     (Hfresh_m : x ∉ world_dom (m : World))
