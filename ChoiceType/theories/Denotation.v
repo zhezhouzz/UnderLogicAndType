@@ -1668,6 +1668,18 @@ Proof.
   unfold denot_ctx. apply denot_ctx_under_dom_subset_formula_fv.
 Qed.
 
+Lemma denot_ctx_under_formula_fv_subset Σ Γ :
+  formula_fv (denot_ctx_under Σ Γ) ⊆ dom Σ ∪ ctx_stale Γ.
+Proof.
+  induction Γ; simpl.
+  - set_solver.
+  - pose proof (denot_ty_under_formula_fv_subset Σ τ (tret (vfvar x))) as Hτ.
+    intros z Hz. apply Hτ in Hz. simpl in Hz. set_solver.
+  - set_solver.
+  - set_solver.
+  - set_solver.
+Qed.
+
 Lemma denot_ctx_models_dom Γ m :
   m ⊨ ⟦Γ⟧ →
   ctx_dom Γ ⊆ world_dom m.
@@ -1847,7 +1859,11 @@ Lemma denot_ctx_under_restrict_stale Σ Γ m :
   m ⊨ denot_ctx_under Σ Γ →
   res_restrict m (dom Σ ∪ ctx_stale Γ) ⊨ denot_ctx_under Σ Γ.
 Proof.
-Admitted.
+  intros Hm.
+  eapply res_models_kripke.
+  - apply res_restrict_mono. apply denot_ctx_under_formula_fv_subset.
+  - apply res_models_restrict_fv. exact Hm.
+Qed.
 
 Lemma denot_ctx_restrict_stale Γ m :
   m ⊨ ⟦Γ⟧ →
