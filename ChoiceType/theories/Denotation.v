@@ -117,6 +117,55 @@ Proof.
     eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia.
 Qed.
 
+Lemma fib_vars_models_intro X p ρ m :
+  formula_scoped_in_world ρ m (fib_vars X p) →
+  fib_vars_obligation X p ρ m →
+  res_models_with_store ρ m (fib_vars X p).
+Proof.
+  unfold fib_vars, fib_vars_obligation, fib_vars_acc.
+  apply (set_fold_ind_L
+    (fun acc _ =>
+      ∀ ρ m,
+        formula_scoped_in_world ρ m (fst acc) →
+        snd acc ρ m →
+        res_models_with_store ρ m (fst acc))).
+  - simpl. auto.
+  - intros x Y acc Hx IH ρ0 m0 Hscope Hobl.
+    destruct acc as [q R]. simpl in *.
+    unfold fib_vars_obligation_step in Hobl.
+    destruct Hobl as [Hdisj Hfib].
+    unfold res_models_with_store. simpl.
+    split; [exact Hscope |].
+    split; [exact Hdisj |].
+    intros σ Hproj.
+    specialize (Hfib σ Hproj).
+    assert (Hscope_q :
+      formula_scoped_in_world (ρ0 ∪ σ)
+        (res_fiber_from_projection m0 {[x]} σ Hproj) q).
+    {
+      unfold formula_scoped_in_world in *.
+      simpl in Hscope.
+      pose proof (wfworld_store_dom (res_restrict m0 {[x]}) σ Hproj) as Hdomσ.
+      simpl in Hdomσ.
+      rewrite dom_union_L.
+      intros z Hz.
+      apply elem_of_union in Hz as [Hzρσ | Hzq].
+      - apply elem_of_union in Hzρσ as [Hzρ | Hzσ].
+        + assert (Hzscope : z ∈ dom ρ0 ∪ ({[x]} ∪ formula_fv q)).
+          { set_solver. }
+          pose proof (Hscope z Hzscope) as Hzdom.
+          simpl in Hzdom. exact Hzdom.
+        + rewrite Hdomσ in Hzσ.
+          pose proof (Hscope z ltac:(set_solver)) as Hzdom.
+          simpl in Hzdom. exact Hzdom.
+      - assert (Hzscope : z ∈ dom ρ0 ∪ ({[x]} ∪ formula_fv q)).
+        { set_solver. }
+        pose proof (Hscope z Hzscope) as Hzdom.
+        simpl in Hzdom. exact Hzdom.
+    }
+    eapply IH; eauto.
+Qed.
+
 Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
     ∃ v,
       σw !! ν = Some v ∧
@@ -167,6 +216,14 @@ Lemma FExprResultOn_models_elim X e ν m :
 Proof.
 Admitted.
 
+Lemma FExprResultOn_models_elim_obligation X e ν m :
+  m ⊨ FExprResultOn X e ν →
+  fib_vars_obligation X (FAtom (expr_logic_qual e ν)) ∅ m.
+Proof.
+  unfold FExprResultOn, res_models.
+  apply fib_vars_models_elim.
+Qed.
+
 Lemma FExprResultOn_models_intro X e ν m w :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
   formula_scoped_in_world ∅ w (FExprResultOn X e ν) →
@@ -175,6 +232,15 @@ Lemma FExprResultOn_models_intro X e ν m w :
   m ⊨ FExprResultOn X e ν.
 Proof.
 Admitted.
+
+Lemma FExprResultOn_models_intro_obligation X e ν m :
+  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
+  fib_vars_obligation X (FAtom (expr_logic_qual e ν)) ∅ m →
+  m ⊨ FExprResultOn X e ν.
+Proof.
+  unfold FExprResultOn, res_models.
+  apply fib_vars_models_intro.
+Qed.
 
 (** Prop-level totality for the expression component of a type denotation.
 
