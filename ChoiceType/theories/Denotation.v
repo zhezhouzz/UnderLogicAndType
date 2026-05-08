@@ -780,6 +780,46 @@ Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx_under Σ Γ) τ e.
 
+Lemma denot_ty_fuel_result_refines_inter_from_parts gas D Σ τ1 τ2 e_to e_from m :
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
+    m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
+    m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ2 e_to) →
+    m ⊨ denot_ty_fuel gas D Σ τ2 e_from →
+    m ⊨ denot_ty_fuel gas D Σ τ2 e_to) →
+  formula_scoped_in_world ∅ m
+    (denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_to) →
+  m ⊨ denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_from →
+  m ⊨ denot_ty_fuel (S gas) D Σ (CTInter τ1 τ2) e_to.
+Proof.
+  simpl. intros H1 H2 Hscope Hm.
+  eapply res_models_with_store_and_map.
+  - exact Hscope.
+  - apply H1. unfold formula_scoped_in_world in *. simpl in *. set_solver.
+  - apply H2. unfold formula_scoped_in_world in *. simpl in *. set_solver.
+  - exact Hm.
+Qed.
+
+Lemma denot_ty_fuel_result_refines_union_from_parts gas D Σ τ1 τ2 e_to e_from m :
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ1 e_to) →
+    m ⊨ denot_ty_fuel gas D Σ τ1 e_from →
+    m ⊨ denot_ty_fuel gas D Σ τ1 e_to) →
+  (formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ2 e_to) →
+    m ⊨ denot_ty_fuel gas D Σ τ2 e_from →
+    m ⊨ denot_ty_fuel gas D Σ τ2 e_to) →
+  formula_scoped_in_world ∅ m
+    (denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_to) →
+  m ⊨ denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_from →
+  m ⊨ denot_ty_fuel (S gas) D Σ (CTUnion τ1 τ2) e_to.
+Proof.
+  simpl. intros H1 H2 Hscope Hm.
+  eapply res_models_with_store_or_map.
+  - exact Hscope.
+  - apply H1. unfold formula_scoped_in_world in *. simpl in *. set_solver.
+  - apply H2. unfold formula_scoped_in_world in *. simpl in *. set_solver.
+  - exact Hm.
+Qed.
+
 Lemma denot_ty_fuel_result_refines gas D Σ τ e_to e_from m :
   formula_scoped_in_world ∅ m (denot_ty_fuel gas D Σ τ e_to) →
   expr_result_refines e_to e_from →
