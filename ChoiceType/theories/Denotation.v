@@ -791,6 +791,48 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
+  m ⊨ FExprResultOn X (tret (vconst c)) ν →
+  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
+Proof.
+  intros Hmodel σ Hσ.
+  unfold FExprResultOn, res_models, res_models_with_store in Hmodel.
+  simpl in Hmodel.
+  destruct Hmodel as [_ [m0 [Hscope0 [Hqual Hle]]]].
+  assert (Hνm0 : {[ν]} ⊆ world_dom (m0 : World)).
+  {
+    unfold formula_scoped_in_world in Hscope0.
+    simpl in Hscope0.
+    unfold stale, stale_logic_qualifier in Hscope0. simpl in Hscope0.
+    set_solver.
+  }
+  assert (Hrestrict_eq : res_restrict m {[ν]} = res_restrict m0 {[ν]}).
+  { symmetry. apply res_restrict_le_eq; [exact Hle | exact Hνm0]. }
+  assert (Hσm0 : (res_restrict m0 {[ν]} : World) σ).
+  { rewrite <- Hrestrict_eq. exact Hσ. }
+  simpl in Hσm0.
+  destruct Hσm0 as [σ0 [Hσ0 Hrestrict0]].
+  unfold logic_qualifier_denote, expr_logic_qual_on in Hqual. simpl in Hqual.
+  assert (Hσfull : (res_restrict m0 (X ∪ {[ν]}) : World)
+      (store_restrict σ0 (X ∪ {[ν]}))).
+  { simpl. exists σ0. split; [exact Hσ0 | reflexivity]. }
+  destruct (Hqual (store_restrict σ0 (X ∪ {[ν]})) Hσfull) as
+    [v [Hν Hsteps]].
+  rewrite store_restrict_empty in Hsteps.
+  change (subst_map (store_restrict ∅ X) (tret (vconst c)))
+    with (m{store_restrict ∅ X} (tret (vconst c))) in Hsteps.
+  rewrite store_restrict_empty in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  change (subst_map (store_restrict σ0 (X ∪ {[ν]})) (tret (vconst c)))
+    with (m{store_restrict σ0 (X ∪ {[ν]})} (tret (vconst c))) in Hsteps.
+  rewrite msubst_fresh in Hsteps by set_solver.
+  apply val_steps_self in Hsteps.
+  inversion Hsteps. subst v.
+  apply store_restrict_lookup_some in Hν as [_ Hν0].
+  rewrite <- Hrestrict0.
+  apply store_restrict_lookup_some_2; [exact Hν0 | set_solver].
+Qed.
+
 Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
   logic_qualifier_denote (expr_logic_qual (tret (vfvar x)) ν) ∅ w →
   (res_restrict w ({[x]} ∪ {[ν]}) : World) σ →
