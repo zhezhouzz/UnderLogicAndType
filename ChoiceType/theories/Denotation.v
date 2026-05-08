@@ -93,7 +93,7 @@ Proof. reflexivity. Qed.
     expression has an actual result in every admissible store. *)
 Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
   fv_tm e ⊆ X ∧
-  ∀ σ, (m : World) σ → ∃ v, subst_map σ e →* tret v.
+  ∀ σ, (m : World) σ → ∃ v, subst_map (store_restrict σ X) e →* tret v.
 
 (** [world_closed_on X m] is the ChoiceType-level invariant saying that every
     store in [m] is operationally usable on the coordinates [X].  This belongs

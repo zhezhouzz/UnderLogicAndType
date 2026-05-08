@@ -686,6 +686,98 @@ Proof.
   - exact Hctx.
 Qed.
 
+Definition let_result_raw_world_on
+    (X : aset) (e : tm) (x : atom) (w : WfWorld) : World := {|
+  world_dom := world_dom (w : World) ∪ {[x]};
+  world_stores := fun σx =>
+    ∃ σ vx,
+      (w : World) σ ∧
+      subst_map (store_restrict σ X) e →* tret vx ∧
+      σx = <[x := vx]> σ;
+|}.
+
+Lemma let_result_raw_world_on_wf X e x (w : WfWorld) :
+  x ∉ world_dom (w : World) →
+  (∀ σ, (w : World) σ → ∃ vx, subst_map (store_restrict σ X) e →* tret vx) →
+  wf_world (let_result_raw_world_on X e x w).
+Proof.
+  intros Hfresh Hresult. constructor.
+  - destruct (world_wf w) as [[σ Hσ] _].
+    destruct (Hresult σ Hσ) as [vx Hsteps].
+    exists (<[x := vx]> σ). exists σ, vx. repeat split; eauto.
+  - intros σx [σ [vx [Hσ [Hsteps ->]]]].
+    rewrite dom_insert_L.
+    rewrite (wfworld_store_dom w σ Hσ).
+    set_solver.
+Qed.
+
+Definition let_result_world_on
+    (X : aset) (e : tm) (x : atom) (w : WfWorld)
+    (Hfresh : x ∉ world_dom (w : World))
+    (Hresult : ∀ σ, (w : World) σ → ∃ vx, subst_map (store_restrict σ X) e →* tret vx)
+    : WfWorld :=
+  exist _ (let_result_raw_world_on X e x w)
+    (let_result_raw_world_on_wf X e x w Hfresh Hresult).
+
+Lemma let_result_world_on_member X e x (w : WfWorld) Hfresh Hresult σ vx :
+  (w : World) σ →
+  subst_map (store_restrict σ X) e →* tret vx →
+  (let_result_world_on X e x w Hfresh Hresult : World) (<[x := vx]> σ).
+Proof.
+  intros Hσ Hsteps. exists σ, vx. repeat split; eauto.
+Qed.
+
+Lemma let_result_world_on_elim X e x (w : WfWorld) Hfresh Hresult σx :
+  (let_result_world_on X e x w Hfresh Hresult : World) σx →
+  ∃ σ vx,
+    (w : World) σ ∧
+    subst_map (store_restrict σ X) e →* tret vx ∧
+    σx = <[x := vx]> σ.
+Proof. intros Hσx. exact Hσx. Qed.
+
+Lemma let_result_world_on_restrict X e x (w : WfWorld) Hfresh Hresult :
+  res_restrict (let_result_world_on X e x w Hfresh Hresult)
+    (world_dom (w : World)) = w.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [σx [[σ0 [vx [Hσ0 [Hsteps ->]]]] Hrestrict]].
+      rewrite store_restrict_insert_notin in Hrestrict by exact Hfresh.
+      assert (Hid : store_restrict σ0 (world_dom (w : World)) = σ0).
+      { apply store_restrict_idemp.
+        pose proof (wfworld_store_dom w σ0 Hσ0). set_solver. }
+      rewrite Hid in Hrestrict.
+      subst. exact Hσ0.
+    + intros Hσ.
+      destruct (Hresult σ Hσ) as [vx Hsteps].
+      exists (<[x := vx]> σ). split.
+      * exists σ, vx. repeat split; eauto.
+      * rewrite store_restrict_insert_notin by exact Hfresh.
+        apply store_restrict_idemp.
+        pose proof (wfworld_store_dom w σ Hσ). set_solver.
+Qed.
+
+Lemma let_result_world_on_le X e x (w : WfWorld) Hfresh Hresult :
+  w ⊑ let_result_world_on X e x w Hfresh Hresult.
+Proof.
+  pose proof (res_restrict_le
+    (let_result_world_on X e x w Hfresh Hresult)
+    (world_dom (w : World))) as Hle.
+  rewrite (let_result_world_on_restrict X e x w Hfresh Hresult) in Hle.
+  exact Hle.
+Qed.
+
+Lemma let_result_world_on_preserves_context Σ Γ X e x (w : WfWorld) Hfresh Hresult :
+  w ⊨ denot_ctx_in_env Σ Γ →
+  let_result_world_on X e x w Hfresh Hresult ⊨ denot_ctx_in_env Σ Γ.
+Proof.
+  intros Hctx.
+  eapply res_models_kripke.
+  - apply let_result_world_on_le.
+  - exact Hctx.
+Qed.
+
 Lemma expr_result_in_store_ret_fvar_to_source
     ρ e x ν σ vx σν :
   stale vx = ∅ →
