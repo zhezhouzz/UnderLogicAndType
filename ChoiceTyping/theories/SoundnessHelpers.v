@@ -1167,6 +1167,48 @@ Proof.
         eapply let_result_world_on_bound_type; eauto.
 Qed.
 
+Lemma let_result_world_on_le_store_elim
+    X e x (n w : WfWorld) Hfresh Hresult σw :
+  w ⊑ let_result_world_on X e x n Hfresh Hresult →
+  X ∪ {[x]} ⊆ world_dom (w : World) →
+  x ∉ X →
+  (w : World) σw →
+  ∃ σ vx,
+    (n : World) σ ∧
+    σw !! x = Some vx ∧
+    store_restrict σw X = store_restrict σ X ∧
+    subst_map (store_restrict σw X) e →* tret vx.
+Proof.
+  intros Hle Hscope HxX Hw.
+  assert (Hw_raw := Hw).
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+  rewrite Hle in Hw_raw. simpl in Hw_raw.
+  destruct Hw_raw as [σwx [Hwx_store Hrestrict_w]].
+  destruct (let_result_world_on_elim X e x n Hfresh Hresult
+    _ Hwx_store) as [σ [vx [Hσ [Hsteps Hσwx_dom]]]].
+  assert (Hstore_eq : store_restrict σw X = store_restrict σ X).
+  {
+    rewrite <- Hrestrict_w.
+    rewrite !store_restrict_restrict.
+    replace (world_dom (w : World) ∩ X) with X by set_solver.
+    rewrite Hσwx_dom.
+    change (store_restrict (<[x:=vx]> σ) X = store_restrict σ X).
+    exact (store_restrict_insert_notin σ X x vx HxX).
+  }
+  exists σ, vx. repeat split; try exact Hσ.
+  - assert (Hx_lookup_dom :
+      σwx !! x =
+      Some vx).
+    {
+      rewrite Hσwx_dom.
+      rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+    }
+    rewrite <- Hrestrict_w.
+    apply store_restrict_lookup_some_2; [exact Hx_lookup_dom | set_solver].
+  - exact Hstore_eq.
+  - rewrite Hstore_eq. exact Hsteps.
+Qed.
+
 Lemma lc_env_restrict σ X :
   lc_env σ →
   lc_env (store_restrict σ X).
