@@ -1533,6 +1533,18 @@ Proof.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
 
+Lemma denot_ty_in_ctx_under_formula_fv_subset Σ Γ τ e :
+  formula_fv (denot_ty_in_ctx_under Σ Γ τ e) ⊆
+    dom (erase_ctx_under Σ Γ) ∪ fv_tm e ∪ fv_cty τ.
+Proof.
+  unfold denot_ty_in_ctx_under, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_formula_fv_subset
+    (cty_measure τ) (dom (erase_ctx_under Σ Γ))
+    (fv_cty τ ∪ fv_tm e ∪ dom (erase_ctx_under Σ Γ))
+    (erase_ctx_under Σ Γ) τ e ltac:(lia)) as Hfv.
+  intros z Hz. apply Hfv in Hz. set_solver.
+Qed.
+
 Lemma denot_ty_fuel_expr_fv_subset gas X D Σ τ e :
   cty_measure τ <= gas →
   fv_tm e ⊆ X →

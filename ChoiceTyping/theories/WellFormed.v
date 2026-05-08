@@ -126,7 +126,25 @@ Lemma denot_ty_scoped_from_ctx_under Σ Γ τ e m :
   m ⊨ denot_ctx_in_env Σ Γ →
   formula_scoped_in_world ∅ m (denot_ty_in_ctx_under Σ Γ τ e).
 Proof.
-Admitted.
+  intros Hwf Hfv Hctx.
+  pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf)) as HbasicΓ.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
+  pose proof (wf_choice_ty_under_fv_subset Σ Γ τ Hwf) as Hτfv.
+  pose proof (denot_ty_in_ctx_under_formula_fv_subset Σ Γ τ e) as Hdenot_fv.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m (denot_ctx_in_env Σ Γ) Hctx)
+    as Hctx_scope.
+  unfold formula_scoped_in_world in *.
+  intros z Hz.
+  rewrite dom_empty_L in Hz.
+  assert (Hzfv : z ∈ formula_fv (denot_ty_in_ctx_under Σ Γ τ e)) by set_solver.
+  apply Hdenot_fv in Hzfv.
+  apply Hctx_scope.
+  pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ) as Hctx_fv.
+  unfold erase_ctx_under in Hzfv.
+  rewrite dom_union_L, HdomΓ in Hzfv.
+  set_solver.
+Qed.
 
 Lemma denot_ty_scoped_from_ctx Γ τ e m :
   wf_choice_ty Γ τ →
@@ -134,4 +152,22 @@ Lemma denot_ty_scoped_from_ctx Γ τ e m :
   m ⊨ ⟦Γ⟧ →
   formula_scoped_in_world ∅ m (denot_ty_in_ctx Γ τ e).
 Proof.
-Admitted.
+  intros Hwf Hfv Hctx.
+  unfold denot_ty_in_ctx.
+  pose proof (wf_ctx_basic Γ (wf_choice_ty_ctx Γ τ Hwf)) as HbasicΓ.
+  pose proof (basic_ctx_erase_dom ∅ Γ HbasicΓ) as HdomΓ.
+  pose proof (wf_choice_ty_fv_subset Γ τ Hwf) as Hτfv.
+  pose proof (denot_ty_under_formula_fv_subset (erase_ctx Γ) τ e) as Hdenot_fv.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (⟦Γ⟧)) ∅ m (⟦Γ⟧) Hctx) as Hctx_scope.
+  unfold formula_scoped_in_world in *.
+  intros z Hz.
+  rewrite dom_empty_L in Hz.
+  assert (Hzfv : z ∈ formula_fv (denot_ty_under (erase_ctx Γ) τ e)) by set_solver.
+  apply Hdenot_fv in Hzfv.
+  apply Hctx_scope.
+  unfold denot_ctx in Hctx_scope.
+  pose proof (denot_ctx_dom_subset_formula_fv Γ) as Hctx_fv.
+  rewrite HdomΓ in Hzfv.
+  set_solver.
+Qed.
