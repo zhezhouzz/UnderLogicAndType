@@ -54,6 +54,10 @@ only needs `σ !! x = Some v` and `stale v = ∅`; it does not need the whole
 store `σ` to be closed.  Use `msubst_ret_fvar_lookup_closed_value` before
 falling back to the stronger `msubst_ret_fvar_lookup_closed`.
 
+For the closedness premise on an actual reduction result, use
+`basic_steps_result_closed`: preservation turns `e ->* tret v` into a typing
+derivation for `tret v`, and empty-context value regularity closes `v`.
+
 ## Important FAtom detail
 
 `FAtom` is upward closed and `logic_qualifier_denote` restricts both the
