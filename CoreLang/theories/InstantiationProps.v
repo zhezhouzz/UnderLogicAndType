@@ -231,6 +231,21 @@ Proof.
     apply IH; assumption.
 Qed.
 
+Lemma env_delete_empty_of_dom_subset σ Γ :
+  dom Γ ⊆ dom σ →
+  env_delete σ Γ = ∅.
+Proof.
+  intros Hdom. apply map_eq. intros x.
+  destruct (env_delete σ Γ !! x) as [T|] eqn:Hlookup.
+  - destruct (env_delete_lookup_some σ Γ x T Hlookup) as [HΓ Hσnone].
+    assert (HxΓ : x ∈ dom Γ) by (apply elem_of_dom; eexists; exact HΓ).
+    assert (Hxσ : x ∈ dom σ) by set_solver.
+    apply elem_of_dom in Hxσ as [v Hσ].
+    change (σ !! x = None) in Hσnone.
+    setoid_rewrite Hσ in Hσnone. discriminate.
+  - rewrite lookup_empty. reflexivity.
+Qed.
+
 Definition env_has_type (Γ : gmap atom ty) (σ : env) : Prop :=
   ∀ x T v,
     Γ !! x = Some T →
