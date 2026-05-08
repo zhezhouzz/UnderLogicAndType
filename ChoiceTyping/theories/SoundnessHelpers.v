@@ -980,6 +980,115 @@ Proof.
   exact Hle.
 Qed.
 
+Lemma let_result_world_on_base_mono
+    X e x (m n : WfWorld)
+    (Hfresh_m : x ∉ world_dom (m : World))
+    (Hfresh_n : x ∉ world_dom (n : World))
+    Hresult_m Hresult_n :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  let_result_world_on X e x m Hfresh_m Hresult_m ⊑
+    let_result_world_on X e x n Hfresh_n Hresult_n.
+Proof.
+  intros HXm Hle.
+  unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+  apply world_ext.
+  - simpl.
+    pose proof (raw_le_dom (m : World) (n : World) Hle) as Hdom.
+    set_solver.
+  - intros σx. simpl. split.
+    + intros Hσx.
+      destruct Hσx as [σm [vx [Hσm [Hsteps ->]]]].
+      unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+      rewrite Hle in Hσm.
+      destruct Hσm as [σn [Hσn Hrestrict_m]].
+      exists (<[x := vx]> σn). split.
+      * exists σn, vx. repeat split; eauto.
+        assert (HstoreX : store_restrict σn X = store_restrict σm X).
+        {
+          rewrite <- Hrestrict_m.
+          rewrite !store_restrict_restrict.
+          replace (world_dom (m : World) ∩ X) with X by set_solver.
+          reflexivity.
+        }
+        rewrite HstoreX. exact Hsteps.
+      * rewrite <- Hrestrict_m.
+        apply (map_eq (M := gmap atom)). intros z.
+        rewrite !store_restrict_lookup.
+        destruct (decide (z ∈ world_dom (m : World) ∪ {[x]})) as [Hz|Hz].
+        -- destruct (decide (z = x)) as [->|Hzx].
+           ++ change ((<[x:=vx]> σn : Store) !! x =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! x).
+              rewrite !lookup_insert.
+              rewrite !decide_True by reflexivity.
+              reflexivity.
+           ++ change ((<[x:=vx]> σn : Store) !! z =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! z).
+              rewrite !lookup_insert_ne by congruence.
+              rewrite store_restrict_lookup.
+              rewrite decide_True by set_solver.
+              reflexivity.
+        -- destruct (decide (z = x)) as [->|Hzx].
+           ++ exfalso. apply Hz. set_solver.
+           ++ change (None =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! z).
+              rewrite lookup_insert_ne by congruence.
+              rewrite store_restrict_lookup.
+              rewrite decide_False by set_solver.
+              reflexivity.
+    + intros Hσx.
+      destruct Hσx as [σxn [Hσxn Hrestrict]].
+      destruct Hσxn as [σn [vx [Hσn [Hsteps ->]]]].
+      unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
+      assert (Hσm : (m : World) (store_restrict σn (world_dom (m : World)))).
+      {
+        pose proof (raw_le_dom (m : World) (n : World)
+          ltac:(unfold sqsubseteq, wf_world_sqsubseteq, raw_le; exact Hle)) as Hdom_mn.
+        rewrite Hle.
+        exists σn. split; [exact Hσn |].
+        simpl.
+        replace (world_dom (n : World) ∩ world_dom (m : World))
+          with (world_dom (m : World)) by set_solver.
+        reflexivity.
+      }
+      exists (store_restrict σn (world_dom (m : World))), vx.
+      split; [exact Hσm |].
+      split.
+      * assert (HstoreX :
+          store_restrict (store_restrict σn (world_dom (m : World))) X =
+          store_restrict σn X).
+        {
+          rewrite !store_restrict_restrict.
+          replace (world_dom (m : World) ∩ X) with X by set_solver.
+          reflexivity.
+        }
+        rewrite HstoreX. exact Hsteps.
+      * rewrite <- Hrestrict.
+        apply (map_eq (M := gmap atom)). intros z.
+        rewrite !store_restrict_lookup.
+        destruct (decide (z ∈ world_dom (m : World) ∪ {[x]})) as [Hz|Hz].
+        -- destruct (decide (z = x)) as [->|Hzx].
+           ++ change ((<[x:=vx]> σn : Store) !! x =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! x).
+              rewrite !lookup_insert.
+              rewrite !decide_True by reflexivity.
+              reflexivity.
+           ++ change ((<[x:=vx]> σn : Store) !! z =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! z).
+              rewrite !lookup_insert_ne by congruence.
+              rewrite store_restrict_lookup.
+              rewrite decide_True by set_solver.
+              reflexivity.
+        -- destruct (decide (z = x)) as [->|Hzx].
+           ++ exfalso. apply Hz. set_solver.
+           ++ change (None =
+                (<[x:=vx]> (store_restrict σn (world_dom (m : World))) : Store) !! z).
+              rewrite lookup_insert_ne by congruence.
+              rewrite store_restrict_lookup.
+              rewrite decide_False by set_solver.
+              reflexivity.
+Qed.
+
 Lemma let_result_world_on_preserves_context Σ Γ X e x (w : WfWorld) Hfresh Hresult :
   w ⊨ denot_ctx_in_env Σ Γ →
   let_result_world_on X e x w Hfresh Hresult ⊨ denot_ctx_in_env Σ Γ.
