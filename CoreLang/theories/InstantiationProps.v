@@ -174,6 +174,62 @@ Ltac fold_msubst :=
 Ltac rewrite_msubst_insert :=
   cbn; fold_msubst; rewrite !msubst_insert; eauto.
 
+Lemma env_delete_insert σ Γ x vx :
+  σ !! x = None →
+  env_delete (<[x := vx]> σ) Γ = delete x (env_delete σ Γ).
+Proof.
+  unfold env_delete. intros Hfresh.
+  change (delete x (map_fold env_delete_step Γ σ))
+    with (env_delete_step x vx (map_fold env_delete_step Γ σ)).
+  apply map_fold_insert_L; [| exact Hfresh].
+  unfold env_delete_step.
+  intros y z vy vz acc Hyz _ _.
+  apply map_eq. intros k.
+  rewrite !lookup_delete.
+  repeat case_decide; subst; try congruence; reflexivity.
+Qed.
+
+Lemma env_delete_lookup_some σ Γ x T :
+  env_delete σ Γ !! x = Some T →
+  Γ !! x = Some T ∧ σ !! x = None.
+Proof.
+  revert Γ.
+  refine (fin_maps.map_fold_ind
+    (fun σ => ∀ Γ,
+      map_fold env_delete_step Γ σ !! x = Some T →
+      Γ !! x = Some T ∧ σ !! x = None) _ _ σ).
+  - intros Γ Hlookup. rewrite lookup_empty. split; [exact Hlookup | reflexivity].
+  - intros y vy σ' Hfresh Hfold IH Γ Hlookup.
+    rewrite Hfold in Hlookup.
+    unfold env_delete_step in Hlookup.
+    rewrite lookup_delete_Some in Hlookup.
+    destruct Hlookup as [Hxy Hlookup].
+    specialize (IH Γ Hlookup) as [HΓ Hσ'].
+    split; [exact HΓ |].
+    rewrite lookup_insert_ne by congruence. exact Hσ'.
+Qed.
+
+Lemma env_delete_lookup_none σ Γ x T :
+  σ !! x = None →
+  Γ !! x = Some T →
+  env_delete σ Γ !! x = Some T.
+Proof.
+  revert Γ.
+  refine (fin_maps.map_fold_ind
+    (fun σ => ∀ Γ,
+      σ !! x = None →
+      Γ !! x = Some T →
+      map_fold env_delete_step Γ σ !! x = Some T) _ _ σ).
+  - intros Γ _ HΓ. exact HΓ.
+  - intros y vy σ' Hfresh Hfold IH Γ Hx HΓ.
+    rewrite lookup_insert_None in Hx.
+    destruct Hx as [Hxy Hx].
+    rewrite Hfold.
+    unfold env_delete_step.
+    rewrite lookup_delete_ne by congruence.
+    apply IH; assumption.
+Qed.
+
 Class MsubstFresh A `{Stale A} `{SubstV value A} := msubst_fresh :
   forall (σ : env) (a : A),
     stale σ ∩ stale a = ∅ ->

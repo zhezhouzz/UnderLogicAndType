@@ -23,8 +23,20 @@ Definition msubst (σ : env) {A : Type} `{SubstV value A} (a : A) : A :=
 Notation "'m{' σ '}' e" := (msubst σ e)
   (at level 20, format "m{ σ } e", σ constr).
 
+Definition env_delete_step (x : atom) (_ : value) (Γ : gmap atom ty) : gmap atom ty :=
+  delete x Γ.
+
+(** Delete from a typing environment every variable instantiated by [σ].
+    This is the context-side companion of [msubst]. *)
+Definition env_delete (σ : env) (Γ : gmap atom ty) : gmap atom ty :=
+  map_fold env_delete_step Γ σ.
+
 Lemma msubst_empty {A : Type} `{SubstV value A} (a : A) :
   m{∅} a = a.
 Proof.
   unfold msubst. reflexivity.
 Qed.
+
+Lemma env_delete_empty Γ :
+  env_delete ∅ Γ = Γ.
+Proof. unfold env_delete. reflexivity. Qed.
