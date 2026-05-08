@@ -954,6 +954,62 @@ Proof.
   apply res_models_with_store_impl_refl.
 Qed.
 
+Lemma res_models_with_store_and_elim_l
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  res_models_with_store ρ m (FAnd φ ψ) →
+  res_models_with_store ρ m φ.
+Proof.
+  unfold res_models_with_store.
+  simpl. intros [_ [Hφ _]].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_and_elim_r
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  res_models_with_store ρ m (FAnd φ ψ) →
+  res_models_with_store ρ m ψ.
+Proof.
+  unfold res_models_with_store.
+  simpl. intros [_ [_ Hψ]].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_and_intro
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  formula_scoped_in_world ρ m (FAnd φ ψ) →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ m ψ →
+  res_models_with_store ρ m (FAnd φ ψ).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hφ Hψ. split; [exact Hscope |].
+  split.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_or_intro_l
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  formula_scoped_in_world ρ m (FOr φ ψ) →
+  res_models_with_store ρ m φ →
+  res_models_with_store ρ m (FOr φ ψ).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hφ. split; [exact Hscope |].
+  left. eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+Qed.
+
+Lemma res_models_with_store_or_intro_r
+    (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
+  formula_scoped_in_world ρ m (FOr φ ψ) →
+  res_models_with_store ρ m ψ →
+  res_models_with_store ρ m (FOr φ ψ).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hψ. split; [exact Hscope |].
+  right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+Qed.
+
 Lemma res_models_with_store_impl_intro
     (ρ : StoreT) (m : WfWorldT) (φ ψ : Formula) :
   formula_scoped_in_world ρ m (FImpl φ ψ) →

@@ -32,18 +32,16 @@ Lemma res_models_and_elim_l (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FAnd φ ψ →
   m ⊨ φ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros [_ [Hφ _]].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_and_elim_l.
 Qed.
 
 Lemma res_models_and_elim_r (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FAnd φ ψ →
   m ⊨ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros [_ [_ Hψ]].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_and_elim_r.
 Qed.
 
 Lemma res_models_and_intro (m : WfWorld) (φ ψ : FormulaQ) :
@@ -52,11 +50,8 @@ Lemma res_models_and_intro (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ ψ →
   m ⊨ FAnd φ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Hφ Hψ. split; [exact Hscope |].
-  split.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_and_intro.
 Qed.
 
 Lemma res_models_and_intro_from_models (m : WfWorld) (φ ψ : FormulaQ) :
@@ -82,9 +77,8 @@ Lemma res_models_or_intro_l (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ φ →
   m ⊨ FOr φ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Hφ. split; [exact Hscope |].
-  left. eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_or_intro_l.
 Qed.
 
 Lemma res_models_or_intro_r (m : WfWorld) (φ ψ : FormulaQ) :
@@ -92,9 +86,8 @@ Lemma res_models_or_intro_r (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ ψ →
   m ⊨ FOr φ ψ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Hψ. split; [exact Hscope |].
-  right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  unfold res_models.
+  apply res_models_with_store_or_intro_r.
 Qed.
 
 Lemma res_models_or_intro_l_from_model (m : WfWorld) (φ ψ : FormulaQ) :
