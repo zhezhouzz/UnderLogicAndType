@@ -784,6 +784,80 @@ Proof.
     apply store_restrict_lookup_some_2; [exact Hzσ | set_solver].
 Qed.
 
+Lemma expr_result_in_world_ret_fvar_to_source_pullback
+    e x ν (n p : WfWorld) Hle :
+  ν ≠ x →
+  x ∉ stale e ∪ {[ν]} →
+  {[x]} ∪ {[ν]} ⊆ world_dom (p : World) →
+  (∀ σx,
+    (n : World) σx →
+    ∃ σ vx,
+      σx = <[x := vx]> σ ∧
+      σ !! x = None ∧
+      subst_map σ e →* tret vx) →
+  (∀ σ vx,
+    (n : World) (<[x := vx]> σ) →
+    subst_map σ e →* tret vx →
+    closed_env (store_restrict σ ((stale e ∪ {[ν]}) ∖ {[ν]}))) →
+  (∀ σ vx,
+    (n : World) (<[x := vx]> σ) →
+    subst_map σ e →* tret vx →
+    stale vx = ∅) →
+  expr_result_in_world ∅ (tret (vfvar x)) ν
+    (res_restrict p ({[x]} ∪ {[ν]})) →
+  expr_result_in_world ∅ e ν
+    (res_restrict (res_pullback_projection n p Hle) (stale e ∪ {[ν]})).
+Proof.
+  intros Hνx HxS Hp_dom Hdecomp Hclosed Hresult_closed Hret σS HσS.
+  simpl in HσS.
+  destruct HσS as [σfull [[Hn_full Hp_full] HrestrictS]].
+  destruct (Hdecomp σfull Hn_full) as [σ [vx [-> [Hx_fresh Hsteps]]]].
+  assert (Hσν_proj :
+    (res_restrict p ({[x]} ∪ {[ν]}) : World)
+      (store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}))).
+  {
+    simpl. exists (store_restrict (<[x := vx]> σ) (world_dom (p : World))).
+    split; [exact Hp_full |].
+    rewrite store_restrict_restrict.
+    change ({[x]} ∪ {[ν]}) with (({[x]} ∪ {[ν]}) : aset).
+    replace (world_dom (p : World) ∩ (({[x]} ∪ {[ν]}) : aset))
+      with (({[x]} ∪ {[ν]}) : aset) by set_solver.
+    reflexivity.
+  }
+  pose proof (Hret _ Hσν_proj) as Hret_store.
+  assert (HclosedS : closed_env (store_restrict σ (stale e ∪ {[ν]}))).
+  {
+    assert (Hν_lookup : σ !! ν = Some vx).
+    {
+      assert (Hxσν : store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) !! x = Some vx).
+      {
+        apply store_restrict_lookup_some_2.
+        - change ((<[x := vx]> σ : Store) !! x = Some vx).
+          rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+        - set_solver.
+      }
+      assert (Hνσν : store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) !! ν = Some vx).
+      { eapply expr_result_in_store_ret_fvar_lookup; eauto. }
+      apply store_restrict_lookup_some in Hνσν as [_ Hνins].
+      change ((<[x := vx]> σ : Store) !! ν = Some vx) in Hνins.
+      rewrite lookup_insert in Hνins.
+      rewrite decide_False in Hνins by congruence.
+      exact Hνins.
+    }
+    eapply closed_env_restrict_insert_result; eauto.
+  }
+  pose proof (expr_result_in_store_ret_fvar_to_source_restrict
+    e x ν σ vx (store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}))
+    (Hresult_closed σ vx Hn_full Hsteps)
+    ltac:(exact Hνx) ltac:(exact HxS) HclosedS) as Hbridge.
+  specialize (Hbridge Hx_fresh Hsteps Hret_store eq_refl).
+  destruct Hbridge as [v [Hν HstepsS]].
+  rewrite store_restrict_insert_notin in HrestrictS by exact HxS.
+  exists v. split; [|].
+  - rewrite <- HrestrictS. exact Hν.
+  - rewrite <- HrestrictS. exact HstepsS.
+Qed.
+
 (** Semantic compatibility of bunched let.
 
     This is the remaining tlet-specific denotation theorem.  Its proof should
