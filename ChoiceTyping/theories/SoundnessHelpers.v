@@ -1189,6 +1189,55 @@ Proof.
         eapply let_result_world_on_bound_type; eauto.
 Qed.
 
+Lemma let_result_world_on_bound_fresh
+    Σ Γ τ e x (m : WfWorld) :
+  choice_typing_wf Σ Γ e τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  expr_total_on (dom (erase_ctx_under Σ Γ)) e m →
+  x ∉ world_dom (m : World) →
+  x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ ∪ fv_tm e.
+Proof.
+  intros Hwf Hm Htotal Hfresh.
+  destruct Htotal as [Hfv_e _].
+  assert (Hfv_τ : fv_cty τ ⊆ dom (erase_ctx_under Σ Γ)).
+  {
+    destruct Hwf as [Hwfτ _].
+    pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasic.
+    pose proof (basic_choice_ty_fv_subset (dom Σ ∪ ctx_dom Γ) τ Hbasic) as Hfv.
+    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
+    - exact Hfv.
+    - pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
+        as Hctx.
+      unfold erase_ctx_under.
+      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
+      reflexivity.
+  }
+  assert (Hdom_world : dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : World)).
+  {
+    pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+      (denot_ctx_in_env Σ Γ) Hm) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    intros z Hz. apply Hscope.
+    apply elem_of_union. right.
+    apply denot_ctx_in_env_dom_subset_formula_fv.
+    destruct Hwf as [Hwfτ _].
+    replace (dom Σ ∪ ctx_dom Γ) with (dom (erase_ctx_under Σ Γ)).
+    - exact Hz.
+    - symmetry.
+      pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
+        as Hctx.
+      unfold erase_ctx_under.
+      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
+      reflexivity.
+  }
+  apply not_elem_of_union. split.
+  - apply not_elem_of_union. split.
+    + intros Hbad. apply Hfresh. apply Hdom_world. exact Hbad.
+    + intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_τ. exact Hbad.
+  - intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_e. exact Hbad.
+Qed.
+
 Lemma let_result_world_on_le_store_elim
     X e x (n w : WfWorld) Hfresh Hresult σw :
   w ⊑ let_result_world_on X e x n Hfresh Hresult →
@@ -1917,7 +1966,13 @@ Lemma denot_tlet_formula_at_world_total
   m ⊨ denot_ctx_in_env Σ Γ →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf1 Hwflet IH1 IH2 Hm.
+  destruct (IH1 m Hm) as [Hτ1 Htotal1].
+  eapply denot_tlet_formula_at_world_given_bind_total; eauto.
+  intros x HxL Hfresh Hresult.
+  eapply let_result_world_on_denot_ctx_in_env; eauto.
+  eapply let_result_world_on_bound_fresh; eauto.
+Qed.
 
 Lemma denot_tlet_expr_total_at_world_given_bind
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
@@ -2043,49 +2098,8 @@ Proof.
   intros x HxL Hfresh Hresult.
   eapply let_result_world_on_denot_ctx_in_env; eauto.
   - exact (proj1 (IH1 m Hm)).
-  - 
-  assert (Hfv_e1 : fv_tm e1 ⊆ dom (erase_ctx_under Σ Γ)).
-  {
-    destruct (IH1 m Hm) as [_ [Hfv _]].
-    exact Hfv.
-  }
-  assert (Hfv_τ1 : fv_cty τ1 ⊆ dom (erase_ctx_under Σ Γ)).
-  {
-    destruct Hwf1 as [Hwfτ _].
-    pose proof (wf_choice_ty_under_basic Σ Γ τ1 Hwfτ) as Hbasic.
-    pose proof (basic_choice_ty_fv_subset (dom Σ ∪ ctx_dom Γ) τ1 Hbasic) as Hfv.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    - exact Hfv.
-    - pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ1 Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
-  }
-  assert (Hdom_world : dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : World)).
-  {
-    pose proof (res_models_with_store_fuel_scoped
-      (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
-      (denot_ctx_in_env Σ Γ) Hm) as Hscope.
-    unfold formula_scoped_in_world in Hscope.
-    intros z Hz. apply Hscope.
-    apply elem_of_union. right.
-    apply denot_ctx_in_env_dom_subset_formula_fv.
-    destruct Hwf1 as [Hwfτ _].
-    replace (dom Σ ∪ ctx_dom Γ) with (dom (erase_ctx_under Σ Γ)).
-    - exact Hz.
-    - symmetry.
-      pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ1 Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
-  }
-    apply not_elem_of_union. split.
-    + apply not_elem_of_union. split.
-      * intros Hbad. apply Hfresh. apply Hdom_world. exact Hbad.
-      * intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_τ1. exact Hbad.
-    + intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_e1. exact Hbad.
+  - eapply let_result_world_on_bound_fresh; eauto.
+    exact (proj2 (IH1 m Hm)).
 Qed.
 
 Lemma denot_tlet_semantic
