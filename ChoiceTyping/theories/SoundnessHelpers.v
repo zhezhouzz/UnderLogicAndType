@@ -778,6 +778,98 @@ Proof.
   - exact Hctx.
 Qed.
 
+Lemma lc_env_restrict σ X :
+  lc_env σ →
+  lc_env (store_restrict σ X).
+Proof.
+  unfold lc_env. intros Hlc.
+  apply map_Forall_lookup_2. intros y v Hlookup.
+  apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
+Qed.
+
+Lemma store_restrict_insert_fresh_union (σ : Store) (X : aset) (x : atom) (v : value) :
+  σ !! x = None →
+  x ∉ X →
+  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
+  <[x := v]> (store_restrict σ X).
+Proof.
+  intros Hx_none HxX.
+  rewrite store_restrict_insert_in by set_solver.
+  f_equal.
+  apply (map_eq (M := gmap atom)). intros z.
+  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
+    (store_restrict σ X : Store) !! z).
+  rewrite (@store_restrict_lookup value σ (X ∪ {[x]}) z) at 1.
+  rewrite (@store_restrict_lookup value σ X z) at 1.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    rewrite decide_False by exact HxX.
+    exact Hx_none.
+  - destruct (decide (z ∈ X)) as [HzX|HzX].
+    + rewrite !decide_True by set_solver. reflexivity.
+    + rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
+Lemma store_restrict_insert_fresh_union_lookup_none
+    (σ : Store) (X : aset) (x : atom) (v : value) :
+  σ !! x = None →
+  x ∉ X →
+  (<[x := v]> (store_restrict σ X) : Store) !! x = Some v.
+Proof.
+  intros _ _. rewrite lookup_insert. rewrite decide_True by reflexivity.
+  reflexivity.
+Qed.
+
+Lemma expr_total_on_tlete_from_open
+    (X : aset) e1 e2 x (m : WfWorld) Hfresh Hresult :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  (∀ σ, (m : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (m : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+    (let_result_world_on X e1 x m Hfresh Hresult) →
+  fv_tm (tlete e1 e2) ⊆ X →
+  expr_total_on X (tlete e1 e2) m.
+Proof.
+  intros HxX Hxe2 Hclosed Hlc Hresult_closed Hbody Hbody_total Hfv.
+  split; [exact Hfv |].
+  intros σ Hσ.
+  destruct (Hresult σ Hσ) as [vx Hsteps1].
+  pose proof (let_result_world_on_member X e1 x m Hfresh Hresult
+    σ vx Hσ Hsteps1) as Hσx.
+  destruct Hbody_total as [_ Hbody_total].
+  specialize (Hbody_total (<[x := vx]> σ) Hσx) as [v Hsteps2].
+  exists v.
+  change (subst_map (store_restrict σ X) (tlete e1 e2))
+    with (m{store_restrict σ X} (tlete e1 e2)).
+  rewrite (msubst_lete (store_restrict σ X) e1 e2).
+  eapply reduction_lete_intro.
+  - apply Hbody. exact Hσ.
+  - exact Hsteps1.
+  - rewrite store_restrict_insert_fresh_union in Hsteps2.
+    2:{
+      pose proof (wfworld_store_dom m σ Hσ) as Hdom.
+      apply not_elem_of_dom. rewrite Hdom. exact Hfresh.
+    }
+    2:{ exact HxX. }
+    change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)
+      →* tret v) in Hsteps2.
+    rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
+    + exact Hsteps2.
+    + apply Hclosed. exact Hσ.
+    + apply (proj1 (Hresult_closed σ vx Hσ Hsteps1)).
+    + apply (proj2 (Hresult_closed σ vx Hσ Hsteps1)).
+    + apply Hlc. exact Hσ.
+    + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
+      rewrite store_restrict_dom. set_solver.
+Qed.
+
 Lemma expr_result_in_store_ret_fvar_to_source
     ρ e x ν σ vx σν :
   stale vx = ∅ →
