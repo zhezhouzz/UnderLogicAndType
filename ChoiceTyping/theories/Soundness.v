@@ -720,7 +720,14 @@ Lemma fundamental_const_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof.
-Admitted.
+  intros m Hctx.
+  unfold const_precise_ty, precise_ty, over_ty, under_ty.
+  unfold denot_ty_in_ctx_under, denot_ty_avoiding.
+  simpl.
+  eapply res_models_and_intro_from_models.
+  - apply fundamental_const_over_case. exact Hctx.
+  - apply fundamental_const_under_case. exact Hctx.
+Qed.
 
 Lemma choice_typing_wf_let_body Σ Γ e1 e2 τ :
   choice_typing_wf Σ Γ (tlete e1 e2) τ →
