@@ -1404,4 +1404,79 @@ Lemma res_models_fresh_forall_intro
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D body).
 Proof. intros Hscope Hfresh. exact (conj Hscope Hfresh). Qed.
 
+Lemma res_models_fresh_forall_transport_fuel
+    (gas : nat) (ρ : StoreT) (m : WfWorldT)
+    (D1 D2 : aset) (body1 body2 : atom → Formula) :
+  formula_scoped_in_world ρ m (fresh_forall D2 body2) →
+  (∀ y m',
+    res_models_with_store_fuel gas ρ m'
+      (formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))) →
+    res_models_with_store_fuel gas ρ m'
+      (formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2)))) →
+  res_models_with_store_fuel (S gas) ρ m (fresh_forall D1 body1) →
+  res_models_with_store_fuel (S gas) ρ m (fresh_forall D2 body2).
+Proof.
+  intros Hscope Hbody Hmodel.
+  rewrite res_models_fresh_forall_fuel in Hmodel.
+  rewrite res_models_fresh_forall_fuel.
+  destruct Hmodel as [_ [L [HL Hforall]]].
+  split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy m' Hdom Hrestr.
+  apply Hbody.
+  exact (Hforall y Hy m' Hdom Hrestr).
+Qed.
+
+Lemma res_models_with_store_fresh_forall_transport
+    (ρ : StoreT) (m : WfWorldT)
+    (D1 D2 : aset) (body1 body2 : atom → Formula) :
+  formula_scoped_in_world ρ m (fresh_forall D2 body2) →
+  (∀ y m',
+    res_models_with_store ρ m'
+      (formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))) →
+    res_models_with_store ρ m'
+      (formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2)))) →
+  res_models_with_store ρ m (fresh_forall D1 body1) →
+  res_models_with_store ρ m (fresh_forall D2 body2).
+Proof.
+  unfold res_models_with_store.
+  intros Hscope Hbody Hmodel.
+  set (gas := Nat.max
+    (formula_measure (body1 (fresh_for D1)))
+    (formula_measure (body2 (fresh_for D2)))).
+  assert (Hgas1 : formula_measure (body1 (fresh_for D1)) <= gas).
+  { unfold gas. apply Nat.le_max_l. }
+  assert (Hgas2 : formula_measure (body2 (fresh_for D2)) <= gas).
+  { unfold gas. apply Nat.le_max_r. }
+  eapply (res_models_with_store_fuel_irrel
+    (S gas) (formula_measure (fresh_forall D2 body2))).
+  - simpl. lia.
+  - reflexivity.
+  - eapply res_models_fresh_forall_transport_fuel.
+    + exact Hscope.
+    + intros y m' Hsrc.
+      set (src := formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))).
+      set (tgt := formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2))).
+      assert (Hsrc_measure : res_models_with_store_fuel (formula_measure src) ρ m' src).
+      {
+        eapply (res_models_with_store_fuel_irrel gas (formula_measure src) ρ m' src).
+        - unfold src. rewrite formula_rename_preserves_measure. exact Hgas1.
+        - reflexivity.
+        - exact Hsrc.
+      }
+      assert (Htgt_measure : res_models_with_store_fuel (formula_measure tgt) ρ m' tgt).
+      {
+        unfold src, tgt in *.
+        exact (Hbody y m' Hsrc_measure).
+      }
+      eapply (res_models_with_store_fuel_irrel (formula_measure tgt) gas ρ m' tgt).
+      * reflexivity.
+      * unfold tgt. rewrite formula_rename_preserves_measure. exact Hgas2.
+      * exact Htgt_measure.
+    + eapply res_models_with_store_fuel_irrel.
+      * reflexivity.
+      * simpl. lia.
+      * exact Hmodel.
+Qed.
+
 End Formula.
