@@ -1149,6 +1149,21 @@ Proof.
               reflexivity.
 Qed.
 
+Lemma let_result_world_on_base_mono_from_total
+    X e x (m n : WfWorld)
+    (Hfresh_m : x ∉ world_dom (m : World))
+    (Hfresh_n : x ∉ world_dom (n : World))
+    Hresult_m :
+  ∀ (HXm : X ⊆ world_dom (m : World)) (Hle : m ⊑ n),
+  let Hresult_n :=
+    expr_total_results_on_le X e m n HXm Hle Hresult_m in
+  let_result_world_on X e x m Hfresh_m Hresult_m ⊑
+    let_result_world_on X e x n Hfresh_n Hresult_n.
+Proof.
+  intros HXm Hle.
+  apply let_result_world_on_base_mono; assumption.
+Qed.
+
 Lemma let_result_world_on_preserves_context Σ Γ X e x (w : WfWorld) Hfresh Hresult :
   w ⊨ denot_ctx_in_env Σ Γ →
   let_result_world_on X e x w Hfresh Hresult ⊨ denot_ctx_in_env Σ Γ.
