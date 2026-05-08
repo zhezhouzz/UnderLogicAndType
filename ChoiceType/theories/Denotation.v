@@ -111,6 +111,15 @@ Proof.
   exact (Hclosed σn Hσn).
 Qed.
 
+Lemma basic_world_formula_world_closed_on Σ X m :
+  X ⊆ dom Σ →
+  m ⊨ basic_world_formula Σ X →
+  world_closed_on X m.
+Proof.
+  intros HXΣ Hbasic σ Hσ.
+  eapply basic_world_formula_store_restrict_closed_env; eauto.
+Qed.
+
 Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
   expr_result_in_world ρ (tlete e1 e2) ν w →
   ∀ σw,

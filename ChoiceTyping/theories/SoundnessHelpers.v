@@ -398,6 +398,20 @@ Proof.
   apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
 Qed.
 
+Lemma denot_ctx_in_env_world_closed_on Σ Γ X m :
+  X ⊆ dom Σ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  world_closed_on X m.
+Proof.
+  intros HXΣ HΓ σ Hσ.
+  pose proof (denot_ctx_in_env_world_has_type_on Σ Γ X m HXΣ HΓ)
+    as [_ Htyped].
+  eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
+  - rewrite store_restrict_dom. set_solver.
+  - exact HXΣ.
+  - apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+Qed.
+
 Lemma denot_ctx_in_env_store_typed Σ Γ m σ :
   m ⊨ denot_ctx_in_env Σ Γ →
   (m : World) σ →
