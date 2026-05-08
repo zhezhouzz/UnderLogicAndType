@@ -310,6 +310,34 @@ Proof.
       rewrite (closed_env_lookup σ' x v Hclosed' Hlookup). set_solver.
 Qed.
 
+Lemma msubst_ret_fvar_lookup_closed_value σ x v :
+  stale v = ∅ →
+  σ !! x = Some v →
+  m{σ} (tret (vfvar x)) = tret v.
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => stale v = ∅ →
+      σ !! x = Some v →
+      map_fold (fun y vy acc => {y := vy} acc) (tret (vfvar x)) σ = tret v) _ _ σ).
+  - intros _ Hlookup. rewrite lookup_empty in Hlookup. discriminate.
+  - intros y vy σ' Hfresh Hfold IH Hvclosed Hlookup.
+    rewrite Hfold.
+    change (map_fold (fun y vy acc => {y := vy} acc) (tret (vfvar x)) σ')
+      with (m{σ'} (tret (vfvar x))).
+    rewrite lookup_insert_Some in Hlookup.
+    destruct Hlookup as [[-> ->] | [Hxy Hlookup]].
+    + rewrite (msubst_fresh σ' (tret (vfvar x)))
+        by (change (dom σ' ∩ {[x]} = ∅);
+            apply not_elem_of_dom in Hfresh; set_solver).
+      change (tm_subst x v (tret (vfvar x)) = tret v).
+      simpl. rewrite decide_True by reflexivity. reflexivity.
+    + replace (m{σ'} (tret (vfvar x))) with (tret v)
+        by (symmetry; apply IH; assumption).
+      apply subst_fresh.
+      change (y ∉ stale v). rewrite Hvclosed. set_solver.
+Qed.
+
 Lemma msubst_prim_fvar_lookup_closed σ op x v :
   closed_env σ →
   σ !! x = Some v →

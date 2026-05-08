@@ -149,40 +149,43 @@ Proof.
 Qed.
 
 Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
-  closed_env σw →
+  stale vx = ∅ →
   σw !! x = Some vx →
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   σw !! ν = Some vx.
 Proof.
-  intros Hclosed Hx [v [Hν Hsteps]].
+  intros Hvclosed Hx [v [Hν Hsteps]].
   change (subst_map σw (subst_map ∅ (tret (vfvar x))) →* tret v) in Hsteps.
   change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
   rewrite msubst_empty in Hsteps.
   change (subst_map σw (tret (vfvar x))) with (m{σw} (tret (vfvar x))) in Hsteps.
-  rewrite (msubst_ret_fvar_lookup_closed σw x vx Hclosed Hx) in Hsteps.
+  rewrite (msubst_ret_fvar_lookup_closed_value σw x vx Hvclosed Hx) in Hsteps.
   apply val_steps_self in Hsteps.
   inversion Hsteps. subst. exact Hν.
 Qed.
 
 Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
-  closed_env σw →
+  (∀ vx, subst_map σw (subst_map ρ e) →* tret vx → stale vx = ∅) →
   expr_result_in_store ρ e x σw →
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   expr_result_in_store ρ e ν σw.
 Proof.
-  intros Hclosed [vx [Hx Hsteps]] Hret.
+  intros Hclosed_result [vx [Hx Hsteps]] Hret.
   exists vx. split.
   - eapply expr_result_in_store_ret_fvar_lookup; eauto.
   - exact Hsteps.
 Qed.
 
 Lemma expr_result_in_world_ret_fvar_trans ρ e x ν (w : WfWorld) :
-  (∀ σw, (w : World) σw → closed_env σw) →
+  (∀ σw vx,
+    (w : World) σw →
+    subst_map σw (subst_map ρ e) →* tret vx →
+    stale vx = ∅) →
   expr_result_in_world ρ e x w →
   expr_result_in_world ∅ (tret (vfvar x)) ν w →
   expr_result_in_world ρ e ν w.
 Proof.
-  intros Hclosed He Hret σw Hσw.
+  intros Hclosed_result He Hret σw Hσw.
   eapply expr_result_in_store_ret_fvar_trans; eauto.
 Qed.
 
