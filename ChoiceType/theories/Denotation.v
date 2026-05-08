@@ -80,6 +80,10 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
   FAtom (expr_logic_qual_on X e ν).
 
+Lemma stale_expr_logic_qual_on X e ν :
+  stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
+Proof. reflexivity. Qed.
+
 Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
   expr_result_in_world ρ (tlete e1 e2) ν w →
   ∀ σw,
@@ -1313,21 +1317,17 @@ Qed.
     layer: typing proofs should consume these regularity lemmas rather than
     unfolding the formula generated for each type constructor. *)
 
-Lemma denot_ty_formula_fv_subset τ e :
-  formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
+Lemma denot_ty_fuel_formula_fv_subset gas X D Σ τ e :
+  cty_measure τ <= gas →
+  formula_fv (denot_ty_fuel gas X D Σ τ e) ⊆
+    D ∪ X ∪ fv_tm e ∪ fv_cty τ.
 Proof.
-  unfold denot_ty, denot_ty_under, denot_ty_avoiding.
-  assert (Hfuel :
-    ∀ gas X D Σ τ0 e0,
-      cty_measure τ0 <= gas →
-      formula_fv (denot_ty_fuel gas X D Σ τ0 e0) ⊆
-        D ∪ X ∪ fv_tm e0 ∪ fv_cty τ0).
-  {
-    induction gas as [|gas IH]; intros X D Σ τ0 e0 Hgas.
-    { pose proof (cty_measure_gt_0 τ0). lia. }
-    destruct τ0 as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ0|τx τ0]; simpl in *.
+  revert X D Σ τ e.
+  induction gas as [|gas IH]; intros X D Σ τ e Hgas.
+  { pose proof (cty_measure_gt_0 τ). lia. }
+  destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
     - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ X ∪ fv_tm e0 ∪ qual_dom φ)).
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
       pose proof (fib_vars_formula_fv_subset (qual_dom (qual_open_atom 0 ν φ))
         (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν φ)))))
@@ -1361,7 +1361,7 @@ Proof.
       destruct φ as [B d p]. unfold qual_open_atom in *. simpl in *.
       destruct (decide (0 ∈ B)); simpl in *; set_solver.
     - unfold fresh_forall. simpl.
-      set (ν := fresh_for (D ∪ X ∪ fv_tm e0 ∪ qual_dom φ)).
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
       pose proof (fib_vars_formula_fv_subset (qual_dom (qual_open_atom 0 ν φ))
         (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 ν φ)))))
@@ -1394,17 +1394,17 @@ Proof.
       rewrite lqual_dom_lift_type_qualifier_to_logic in Hzfib.
       destruct φ as [B d p]. unfold qual_open_atom in *. simpl in *.
       destruct (decide (0 ∈ B)); simpl in *; set_solver.
-    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e ltac:(lia)) as H2.
       set_solver.
-    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e ltac:(lia)) as H2.
       set_solver.
-    - pose proof (IH X D Σ τ1 e0 ltac:(lia)) as H1.
-      pose proof (IH X D Σ τ2 e0 ltac:(lia)) as H2.
+    - pose proof (IH X D Σ τ1 e ltac:(lia)) as H1.
+      pose proof (IH X D Σ τ2 e ltac:(lia)) as H2.
       set_solver.
     - unfold fresh_forall. simpl.
-      set (Dy := D ∪ fv_tm e0 ∪ fv_cty τx ∪ fv_cty τ0).
+      set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
       set (y := fresh_for Dy).
       set (Dx := {[y]} ∪ Dy).
       set (x := fresh_for Dx).
@@ -1412,10 +1412,10 @@ Proof.
       set (X2 := X ∪ {[y]} ∪ {[x]}).
       pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) τx
         (tret (vfvar x)) ltac:(lia)) as Harg.
-      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
         as Hres.
-      pose proof (cty_open_fv_subset 0 x τ0) as Hopen.
+      pose proof (cty_open_fv_subset 0 x τ) as Hopen.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hy].
       simpl in Hz.
@@ -1435,7 +1435,7 @@ Proof.
       + apply Harg in Hzarg. simpl in Hzarg. set_solver.
       + apply Hres in Hzres. simpl in Hzres. set_solver.
     - unfold fresh_forall. simpl.
-      set (Dy := D ∪ fv_tm e0 ∪ fv_cty τx ∪ fv_cty τ0).
+      set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
       set (y := fresh_for Dy).
       set (Dx := {[y]} ∪ Dy).
       set (x := fresh_for Dx).
@@ -1443,10 +1443,10 @@ Proof.
       set (X2 := X ∪ {[y]} ∪ {[x]}).
       pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) τx
         (tret (vfvar x)) ltac:(lia)) as Harg.
-      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ0)
+      pose proof (IH X2 D2 (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
         (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
         as Hres.
-      pose proof (cty_open_fv_subset 0 x τ0) as Hopen.
+      pose proof (cty_open_fv_subset 0 x τ) as Hopen.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hy].
       simpl in Hz.
@@ -1465,8 +1465,14 @@ Proof.
       apply elem_of_union in Hzimpl as [Hzarg | Hzres].
       + apply Harg in Hzarg. simpl in Hzarg. set_solver.
       + apply Hres in Hzres. simpl in Hzres. set_solver.
-  }
-  pose proof (Hfuel (cty_measure τ) (fv_tm e) (fv_cty τ ∪ fv_tm e) ∅ τ e ltac:(lia)) as Hfv.
+Qed.
+
+Lemma denot_ty_formula_fv_subset τ e :
+  formula_fv (denot_ty τ e) ⊆ fv_tm e ∪ fv_cty τ.
+Proof.
+  unfold denot_ty, denot_ty_under, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_formula_fv_subset
+    (cty_measure τ) (fv_tm e) (fv_cty τ ∪ fv_tm e) ∅ τ e ltac:(lia)) as Hfv.
   rewrite dom_empty_L.
   replace (∅ ∪ fv_tm e) with (fv_tm e) by set_solver.
   replace (fv_cty τ ∪ fv_tm e ∪ ∅) with (fv_cty τ ∪ fv_tm e) by set_solver.
@@ -1520,12 +1526,70 @@ Qed.
 Lemma denot_ty_under_formula_fv_subset Σ τ e :
   formula_fv (denot_ty_under Σ τ e) ⊆ dom Σ ∪ fv_tm e ∪ fv_cty τ.
 Proof.
-Admitted.
+  unfold denot_ty_under, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_formula_fv_subset
+    (cty_measure τ) (dom Σ ∪ fv_tm e)
+    (fv_cty τ ∪ fv_tm e ∪ dom Σ) Σ τ e ltac:(lia)) as Hfv.
+  intros z Hz. apply Hfv in Hz. set_solver.
+Qed.
+
+Lemma denot_ty_fuel_expr_fv_subset gas X D Σ τ e :
+  cty_measure τ <= gas →
+  fv_tm e ⊆ X →
+  fv_tm e ⊆ formula_fv (denot_ty_fuel gas X D Σ τ e).
+Proof.
+  revert X D Σ τ e.
+  induction gas as [|gas IH]; intros X D Σ τ e Hgas HX.
+  { pose proof (cty_measure_gt_0 τ). lia. }
+  destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
+  - unfold fresh_forall. simpl.
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
+    pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)) as Hν.
+    intros z Hz. apply elem_of_difference. split.
+    + simpl. apply elem_of_union_l. rewrite stale_expr_logic_qual_on. set_solver.
+    + set_solver.
+  - unfold fresh_forall. simpl.
+    set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
+    pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)) as Hν.
+    intros z Hz. apply elem_of_difference. split.
+    + simpl. apply elem_of_union_l. rewrite stale_expr_logic_qual_on. set_solver.
+    + set_solver.
+  - pose proof (IH X D Σ τ1 e ltac:(lia) HX) as H1.
+    pose proof (IH X D Σ τ2 e ltac:(lia) HX) as H2.
+    set_solver.
+  - pose proof (IH X D Σ τ1 e ltac:(lia) HX) as H1.
+    pose proof (IH X D Σ τ2 e ltac:(lia) HX) as H2.
+    set_solver.
+  - pose proof (IH X D Σ τ1 e ltac:(lia) HX) as H1.
+    pose proof (IH X D Σ τ2 e ltac:(lia) HX) as H2.
+    set_solver.
+  - unfold fresh_forall. simpl.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    pose proof (fresh_for_not_in Dy) as Hy.
+    intros z Hz. apply elem_of_difference. split.
+    + simpl. apply elem_of_union_l. rewrite stale_expr_logic_qual_on. set_solver.
+    + set_solver.
+  - unfold fresh_forall. simpl.
+    set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    set (y := fresh_for Dy).
+    pose proof (fresh_for_not_in Dy) as Hy.
+    intros z Hz. apply elem_of_difference. split.
+    + simpl. apply elem_of_union_l. rewrite stale_expr_logic_qual_on. set_solver.
+    + set_solver.
+Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
 Proof.
-Admitted.
+  unfold denot_ty_under, denot_ty_avoiding.
+  pose proof (denot_ty_fuel_expr_fv_subset
+    (cty_measure τ) (dom Σ ∪ fv_tm (tret (vfvar x)))
+    (fv_cty τ ∪ fv_tm (tret (vfvar x)) ∪ dom Σ) Σ τ
+    (tret (vfvar x)) ltac:(lia) ltac:(set_solver)) as Hfv.
+  apply Hfv. simpl. set_solver.
+Qed.
+
 
 Lemma denot_ty_result_atom_fv x τ :
   x ∈ formula_fv (denot_ty τ (tret (vfvar x))).
