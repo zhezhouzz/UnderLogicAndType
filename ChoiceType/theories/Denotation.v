@@ -1529,7 +1529,59 @@ Lemma denot_ty_fuel_expr_fv_subset gas X D Σ τ e :
   fv_tm e ⊆ X →
   fv_tm e ⊆ formula_fv (denot_ty_fuel gas X D Σ τ e).
 Proof.
-Admitted.
+  revert X D Σ τ e.
+  induction gas as [|gas IH]; intros X D Σ τ e Hgas Hfv.
+  - destruct τ; simpl in Hgas; lia.
+  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ]; simpl in *.
+    + unfold fresh_forall.
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
+      assert (Hνe : ν ∉ fv_tm e)
+        by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
+      unfold FExprResultOn.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      change (stale e) with (fv_tm e).
+      intros z Hz. apply elem_of_difference. split; [set_solver |].
+      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
+    + unfold fresh_forall.
+      set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
+      assert (Hνe : ν ∉ fv_tm e)
+        by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
+      unfold FExprResultOn.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      change (stale e) with (fv_tm e).
+      intros z Hz. apply elem_of_difference. split; [set_solver |].
+      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
+    + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
+      set_solver.
+    + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
+      set_solver.
+    + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
+      set_solver.
+    + unfold fresh_forall.
+      set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+      set (y := fresh_for Dy).
+      assert (Hye : y ∉ fv_tm e)
+        by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
+      unfold FExprResultOn.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      change (stale e) with (fv_tm e).
+      intros z Hz. apply elem_of_difference. split; [set_solver |].
+      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
+    + unfold fresh_forall.
+      set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+      set (y := fresh_for Dy).
+      assert (Hye : y ∉ fv_tm e)
+        by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
+      unfold FExprResultOn.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      change (stale e) with (fv_tm e).
+      intros z Hz. apply elem_of_difference. split; [set_solver |].
+      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
+Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
