@@ -486,7 +486,25 @@ Lemma FAtom_expr_logic_qual_on_exact X e ν ρ m :
   res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)) →
   expr_result_in_world (store_restrict ρ X) e ν m.
 Proof.
-Admitted.
+  unfold res_models_with_store. simpl.
+  intros [Hscope [m0 [Hscope0 [Hden Hle]]]] σν.
+  unfold logic_qualifier_denote, expr_logic_qual_on in Hden. simpl in Hden.
+  rewrite store_restrict_restrict in Hden.
+  replace ((X ∪ {[ν]}) ∩ X) with X in Hden by set_solver.
+  specialize (Hden σν).
+  rewrite !res_restrict_restrict_eq in Hden.
+  replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset) in Hden by set_solver.
+  assert (Hνdom : ({[ν]} : aset) ⊆ world_dom (m0 : World)).
+  {
+    unfold formula_scoped_in_world in Hscope0.
+    simpl in Hscope0. unfold stale, stale_logic_qualifier in Hscope0. simpl in Hscope0.
+    set_solver.
+  }
+  rewrite (res_restrict_le_eq m0 m ({[ν]} : aset)) in Hden.
+  - exact Hden.
+  - exact Hle.
+  - exact Hνdom.
+Qed.
 
 (** Prop-level totality for the expression component of a type denotation.
 

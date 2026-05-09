@@ -1528,6 +1528,56 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : value) :
+  store_restrict (<[x := v]> σ) {[x]} = {[x := v]}.
+Proof.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ {[x]})) as [Hz|Hz].
+  - apply elem_of_singleton in Hz. subst z.
+    transitivity (Some v).
+    + change ((<[x := v]> σ : gmap atom value) !! x = Some v).
+      apply lookup_insert_eq.
+    + symmetry. rewrite lookup_singleton. rewrite decide_True by reflexivity.
+      reflexivity.
+  - rewrite lookup_singleton.
+    rewrite decide_False by set_solver.
+    reflexivity.
+Qed.
+
+Lemma store_restrict_union_singleton_insert (σ : Store) (X : aset) (x : atom) (v : value) :
+  dom σ ⊆ X →
+  x ∉ X →
+  store_restrict (σ ∪ {[x := v]}) (X ∪ {[x]}) = <[x := v]> σ.
+Proof.
+  intros Hdomσ HxX.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    transitivity (Some v).
+    + rewrite (lookup_union_r σ ({[x := v]} : Store) x).
+      * rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
+      * apply not_elem_of_dom. set_solver.
+    + symmetry. change ((<[x := v]> σ : gmap atom value) !! x = Some v).
+      apply lookup_insert_eq.
+  - rewrite lookup_insert_ne by congruence.
+    destruct (decide (z ∈ X)) as [HzX|HzX].
+    + rewrite decide_True by set_solver.
+      destruct (σ !! z) eqn:Hσz.
+      * rewrite (lookup_union_l' σ ({[x := v]} : Store) z) by eauto.
+        rewrite Hσz.
+        reflexivity.
+      * rewrite (lookup_union_r σ ({[x := v]} : Store) z) by exact Hσz.
+        rewrite lookup_singleton. rewrite decide_False by congruence.
+        reflexivity.
+    + rewrite decide_False by set_solver.
+      assert (Hzdom : z ∉ dom σ) by set_solver.
+      apply not_elem_of_dom in Hzdom.
+      rewrite Hzdom.
+      reflexivity.
+Qed.
+
 Lemma expr_total_on_tlete_from_open
     (X : aset) e1 e2 x (m : WfWorld) Hfresh Hresult :
   x ∉ X →
@@ -1787,7 +1837,73 @@ Lemma expr_result_in_world_tlete_xfiber_sound
   (res_restrict m {[ν]} : World) σν →
   expr_result_in_store ρ (tlete e1 e2) ν σν.
 Proof.
-Admitted.
+  intros Hx Hclosed Hlc Hresult_closed Hbody Hm Hmlet_elim Hmlet_intro Hbody_model Hν.
+  destruct Hν as [σ [Hσm Hσν]].
+  destruct (Hm σ Hσm) as [Hσn HσX].
+  destruct (Hresult σ Hσn) as [vx He1].
+  pose proof (Hmlet_intro σ vx Hσm He1) as Hσx_mlet.
+  assert (Hprojx : res_restrict mlet {[x]} {[x := vx]}).
+  {
+    exists (<[x := vx]> σ). split; [exact Hσx_mlet |].
+    apply store_restrict_insert_singleton.
+  }
+  unfold res_models_with_store in Hbody_model. simpl in Hbody_model.
+  destruct Hbody_model as [_ [Hdisj Hfib]].
+  specialize (Hfib {[x := vx]} Hprojx).
+  assert (Hatom :
+    res_models_with_store (ρ ∪ {[x := vx]})
+      (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+      (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))).
+  { unfold res_models_with_store. exact Hfib. }
+  pose proof (FAtom_expr_logic_qual_on_exact
+    (X ∪ {[x]}) (e2 ^^ x) ν (ρ ∪ {[x := vx]})
+    (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+    Hatom) as Hbody_exact.
+  assert (Hσν_body :
+    (res_restrict
+      (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx) {[ν]} : World) σν).
+  {
+    exists (<[x := vx]> σ). split.
+    - apply res_fiber_from_projection_member.
+      + exact Hσx_mlet.
+      + apply store_restrict_insert_singleton.
+    - rewrite store_restrict_insert_notin by set_solver.
+      exact Hσν.
+  }
+  pose proof (expr_result_in_world_sound
+    (store_restrict (ρ ∪ {[x := vx]}) (X ∪ {[x]}))
+    (e2 ^^ x) ν
+    (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+    σν Hbody_exact Hσν_body) as Hbody_store.
+  assert (Hρx :
+    store_restrict (ρ ∪ {[x := vx]}) (X ∪ {[x]}) =
+    <[x := vx]> ρ).
+  {
+    apply store_restrict_union_singleton_insert.
+    - rewrite <- HσX. rewrite store_restrict_dom. set_solver.
+    - set_solver.
+  }
+  rewrite Hρx in Hbody_store.
+  destruct (expr_result_store_elim ν
+    (subst_map (<[x := vx]> ρ) (e2 ^^ x)) σν Hbody_store)
+    as [v [Hσν_eq [Hv_stale [Hv_lc Hbody_steps]]]].
+  subst σν.
+  rewrite Hσν_eq.
+  apply expr_result_store_intro; [exact Hv_stale | exact Hv_lc |].
+  assert (HxX : x ∉ X) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  rewrite <- HσX.
+  eapply expr_result_value_tlete_from_body_projection.
+  - exact HxX.
+  - exact Hxe2.
+  - apply Hclosed. exact Hσn.
+  - apply Hlc. exact Hσn.
+  - apply (proj1 (Hresult_closed σ vx Hσn He1)).
+  - apply (proj2 (Hresult_closed σ vx Hσn He1)).
+  - apply Hbody. exact Hσn.
+  - exact He1.
+  - rewrite HσX. exact Hbody_steps.
+Qed.
 
 Lemma expr_result_in_world_tlete_xfiber_complete
     X e1 e2 x ν (n : WfWorld)
@@ -1817,7 +1933,80 @@ Lemma expr_result_in_world_tlete_xfiber_complete
   expr_result_in_store ρ (tlete e1 e2) ν σν →
   (res_restrict m {[ν]} : World) σν.
 Proof.
-Admitted.
+  intros Hx Hclosed Hlc Hresult_closed Hbody Hm Hmlet_elim Hmlet_intro Hbody_model Hstore.
+  destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σν Hstore)
+    as [v [Hσν_eq [Hv_stale [Hv_lc Hsteps]]]].
+  subst σν.
+  destruct (world_wf m) as [[σ Hσm] _].
+  destruct (Hm σ Hσm) as [Hσn HσX].
+  rewrite <- HσX in Hsteps.
+  change (subst_map (store_restrict σ X) (tlete e1 e2)) with
+    (m{store_restrict σ X} (tlete e1 e2)) in Hsteps.
+  rewrite msubst_lete in Hsteps.
+  destruct (reduction_lete (m{store_restrict σ X} e1)
+    (m{store_restrict σ X} e2) v Hsteps) as [vx [He1 Hbody_steps_open]].
+  pose proof (Hmlet_intro σ vx Hσm He1) as Hσx_mlet.
+  assert (Hprojx : res_restrict mlet {[x]} {[x := vx]}).
+  {
+    exists (<[x := vx]> σ). split; [exact Hσx_mlet |].
+    apply store_restrict_insert_singleton.
+  }
+  unfold res_models_with_store in Hbody_model. simpl in Hbody_model.
+  destruct Hbody_model as [_ [Hdisj Hfib]].
+  specialize (Hfib {[x := vx]} Hprojx).
+  assert (Hatom :
+    res_models_with_store (ρ ∪ {[x := vx]})
+      (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+      (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))).
+  { unfold res_models_with_store. exact Hfib. }
+  pose proof (FAtom_expr_logic_qual_on_exact
+    (X ∪ {[x]}) (e2 ^^ x) ν (ρ ∪ {[x := vx]})
+    (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+    Hatom) as Hbody_exact.
+  assert (HxX : x ∉ X) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  assert (Hρx :
+    store_restrict (ρ ∪ {[x := vx]}) (X ∪ {[x]}) =
+    <[x := vx]> ρ).
+  {
+    apply store_restrict_union_singleton_insert.
+    - rewrite <- HσX. rewrite store_restrict_dom. set_solver.
+    - exact HxX.
+  }
+  assert (Hbody_steps :
+    subst_map (<[x := vx]> ρ) (e2 ^^ x) →* tret v).
+  {
+    pose proof Hbody_steps_open as Htmp.
+    rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)) in Htmp.
+    - rewrite HσX in Htmp. exact Htmp.
+    - apply Hclosed. exact Hσn.
+    - apply (proj1 (Hresult_closed σ vx Hσn He1)).
+    - apply (proj2 (Hresult_closed σ vx Hσn He1)).
+    - apply Hlc. exact Hσn.
+    - change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
+      rewrite store_restrict_dom. set_solver.
+  }
+  assert (Hbody_store :
+    expr_result_in_store
+      (store_restrict (ρ ∪ {[x := vx]}) (X ∪ {[x]}))
+      (e2 ^^ x) ν {[ν := v]}).
+  {
+    rewrite Hρx.
+    apply expr_result_store_intro; [exact Hv_stale | exact Hv_lc | exact Hbody_steps].
+  }
+  pose proof (expr_result_in_world_complete
+    (store_restrict (ρ ∪ {[x := vx]}) (X ∪ {[x]}))
+    (e2 ^^ x) ν
+    (res_fiber_from_projection mlet {[x]} {[x := vx]} Hprojx)
+    {[ν := v]} Hbody_exact Hbody_store) as Hν_body.
+  destruct Hν_body as [σx [[Hσx_mlet' Hσx_proj] Hσxν]].
+  destruct (Hmlet_elim σx Hσx_mlet') as [σ' [vx' [Hσ'm [He1' Hσx_eq]]]].
+  subst σx.
+  exists σ'. split; [exact Hσ'm |].
+  rewrite <- Hσxν.
+  rewrite store_restrict_insert_notin by set_solver.
+  reflexivity.
+Qed.
 
 (** One-projection semantic core of tlet.
 
