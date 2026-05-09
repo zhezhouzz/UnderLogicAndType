@@ -1755,7 +1755,14 @@ Lemma expr_result_in_store_ret_fvar_to_source
   store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) = σν →
   expr_result_in_store ρ e ν σ.
 Proof.
-Admitted.
+  intros _ _ _ _ Hret _.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 Lemma expr_result_in_store_ret_fvar_to_source_restrict
     e x ν σ vx σν :
@@ -1770,7 +1777,14 @@ Lemma expr_result_in_store_ret_fvar_to_source_restrict
   store_restrict (<[x := vx]> σ) ({[x]} ∪ {[ν]}) = σν →
   expr_result_in_store ∅ e ν (store_restrict σ S).
 Proof.
-Admitted.
+  intros S Hvx Hνx HxS Hclosed Hxnone Hsteps_e Hret Hrestrict.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 Lemma closed_env_restrict_insert_result σ S ν vx :
   closed_env (store_restrict σ (S ∖ {[ν]})) →
