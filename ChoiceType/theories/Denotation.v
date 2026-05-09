@@ -1045,7 +1045,25 @@ Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   (res_restrict w {[ν]} : World) σ →
   σ !! ν = Some v.
 Proof.
-Admitted.
+  intros Hvclosed Hden Hσ.
+  unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite store_restrict_empty in Hden.
+  assert (Hσproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σ).
+  {
+    exists σ. split; [exact Hσ |].
+    apply store_restrict_idemp.
+    pose proof (wfworld_store_dom (res_restrict w {[ν]}) σ Hσ) as Hdomσ.
+    simpl in Hdomσ. set_solver.
+  }
+  pose proof (expr_result_in_world_sound ∅ (tret v) ν
+    (res_restrict w {[ν]}) σ Hden Hσproj) as Hstore.
+  destruct (expr_result_store_lookup ν (subst_map ∅ (tret v)) σ Hstore)
+    as [v' [Hlookup Hsteps]].
+  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  pose proof (value_steps_self v (tret v') Hsteps) as Heq.
+  inversion Heq. subst v'. exact Hlookup.
+Qed.
 
 Lemma expr_logic_qual_ret_value_denote_lookup v ν w σ :
   logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
