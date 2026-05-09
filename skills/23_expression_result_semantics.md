@@ -113,6 +113,23 @@ the final semantic obligation.  First assert the small set facts, then
 instantiate the store/world arguments explicitly.  This prevents Coq from
 treating the semantic obligation as an earlier domain-equality subgoal.
 
+When unfolding `fib_vars`, remember that stdpp's `set_fold` exposes a composed
+term:
+
+```coq
+(foldr fib_vars_acc_step ... ∘ elements) X
+```
+
+Run `cbn [compose]` before rewriting with the normal-form lemma:
+
+```coq
+unfold fib_vars, fib_vars_acc, set_fold in H.
+cbn [compose] in H.
+rewrite foldr_fib_vars_acc_fst in H.
+```
+
+This is usually cleaner than creating one-off lemmas for each atom shape.
+
 For the common empty-restriction side condition, use:
 
 ```coq
@@ -170,6 +187,17 @@ This prevents goals from getting stuck behind nested matches from
 goal still exposes those wrappers, unfold only the wrapper definitions needed
 for the domain and use a named set equality, rather than asking `set_solver` to
 discover the normal form through the match.
+
+For `FExists`/`FForall` wrappers such as `FLetResult_models_elim`, keep the
+formula body in a local `set` and use `change` to align both sides to
+
+```coq
+res_models_with_store_fuel ... ρ m (formula_rename_atom x y body)
+```
+
+before applying `res_models_with_store_fuel_irrel`.  If one side has already
+simplified the renamed conjunction and the other has not, `change` is usually
+more reliable than another round of unfolding.
 
 ## Fiber folds need with-store equivalence
 
