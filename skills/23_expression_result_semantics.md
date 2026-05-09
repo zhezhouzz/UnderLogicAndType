@@ -151,3 +151,30 @@ Do not introduce formula-level bridges such as
 against `FAtom`'s upward-closed semantics.  For let, the operational link
 between the intermediate result and the body is store-dependent, so it is safer
 to prove the operational relation at the Rocq predicate level first.
+
+## Unsubstituted free-variable returns are impossible exact results
+
+Under the current exact result semantics, `expr_result_store` requires the
+result value to be closed:
+
+```coq
+stale v = ∅
+```
+
+Therefore lemmas whose premise contains
+
+```coq
+expr_result_in_store ∅ (tret (vfvar x)) ν σ
+```
+
+are usually vacuous.  The proof pattern is:
+
+1. destruct the exact result with `expr_result_store_elim`;
+2. simplify `subst_map ∅ (tret (vfvar x))`;
+3. use `value_steps_self` to show the result value must be `vfvar x`;
+4. simplify `stale (vfvar x)` and finish by set reasoning.
+
+For world-level versions, first use `world_wf` to pick a store from the
+nonempty world, project it to `{ν}`, and apply `expr_result_in_world_sound`.
+This pattern proved the old `ret_fvar` pullback/trans lemmas without adding
+new semantic assumptions.
