@@ -2056,6 +2056,141 @@ Proof.
         -- apply elem_of_union. right. exact Hxν0.
 Qed.
 
+Lemma FExprResultOn_body_from_paired_let_result_world
+    X e1 e2 x ν (w : WfWorld) :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm e2 ⊆ X →
+  X ∪ {[x]} ∪ {[ν]} ⊆ world_dom (w : World) →
+  world_closed_on X w →
+  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σw, (w : World) σw →
+    expr_let_result_in_world_on X e1 e2 x ν w) →
+  w ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν.
+Proof.
+  intros Hx Hfv2 Hdom Hclosed Hlc Hregular Hpaired.
+  eapply FExprResultOn_models_intro with (w := w).
+  - unfold formula_scoped_in_world. intros z Hz.
+    apply elem_of_union in Hz as [Hzempty | Hz].
+    { apply elem_of_empty in Hzempty. contradiction. }
+    unfold FExprResultOn, FExprResultOnRaw in Hz.
+    rewrite fib_vars_formula_fv in Hz. simpl in Hz.
+    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
+    pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+    apply Hdom. set_solver.
+  - unfold formula_scoped_in_world. intros z Hz.
+    apply elem_of_union in Hz as [Hzempty | Hz].
+    { apply elem_of_empty in Hzempty. contradiction. }
+    unfold FExprResultOn, FExprResultOnRaw in Hz.
+    rewrite fib_vars_formula_fv in Hz. simpl in Hz.
+    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
+    pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+    apply Hdom. set_solver.
+  - intros σr Hσr.
+    simpl in Hσr.
+    destruct Hσr as [σw [Hσw Hrestrict]].
+    specialize (Hpaired σw Hσw) as Hpaired_all.
+    destruct (expr_let_result_in_world_on_sound X e1 e2 x ν w σw
+      Hpaired_all Hσw) as [vx [v [Hx_lookup [Hν_lookup [_Hsteps1 Hsteps2]]]]].
+    exists v. split.
+    + rewrite <- Hrestrict.
+      apply store_restrict_lookup_some_2.
+      * exact Hν_lookup.
+      * set_solver.
+    + change (subst_map σr (subst_map ∅ (e2 ^^ x)) →* tret v).
+      change (subst_map ∅ (e2 ^^ x)) with (m{∅} (e2 ^^ x)).
+      rewrite msubst_empty.
+      rewrite <- Hrestrict.
+      change (subst_map (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (e2 ^^ x)
+        →* tret v).
+      assert (HclosedX : closed_env (store_restrict σw X)).
+      { apply Hclosed. exact Hσw. }
+      assert (Hvx_reg : stale vx = ∅ ∧ is_lc vx).
+      { eapply Hregular; eauto. }
+      assert (Hbody_eq :
+        subst_map (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (e2 ^^ x) =
+        open_tm 0 vx (subst_map (store_restrict σw X) e2)).
+      {
+        change (subst_map (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (e2 ^^ x))
+          with (m{store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})} (e2 ^^ x)).
+        change (subst_map (store_restrict σw X) e2)
+          with (m{store_restrict σw X} e2).
+        rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σw X)).
+        - change (m{store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})} (e2 ^^ x) =
+            m{<[x := vx]> (store_restrict σw X)} (e2 ^^ x)).
+          assert (Hstale_body : stale (e2 ^^ x) ⊆ X ∪ {[x]}).
+          { pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen. simpl. set_solver. }
+          assert (Hclosed_right :
+            closed_env (store_restrict (<[x := vx]> (store_restrict σw X)) (X ∪ {[x]}))).
+          {
+            unfold closed_env. apply map_Forall_lookup_2. intros z vz Hzlookup.
+            apply store_restrict_lookup_some in Hzlookup as [Hzin Hzlookup].
+            destruct (decide (z = x)) as [->|Hzx].
+            + change ((<[x := vx]> (store_restrict σw X) : Store) !! x = Some vz) in Hzlookup.
+              rewrite lookup_insert in Hzlookup.
+              rewrite decide_True in Hzlookup by reflexivity.
+              inversion Hzlookup. subst. exact (proj1 Hvx_reg).
+            + change ((<[x := vx]> (store_restrict σw X) : Store) !! z = Some vz) in Hzlookup.
+              rewrite lookup_insert in Hzlookup.
+              rewrite decide_False in Hzlookup by congruence.
+              apply (map_Forall_lookup_1 _ _ z vz HclosedX).
+              exact Hzlookup.
+          }
+          assert (Hmap :
+            store_restrict (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (X ∪ {[x]}) =
+            store_restrict (<[x := vx]> (store_restrict σw X)) (X ∪ {[x]})).
+          {
+            apply (map_eq (M := gmap atom)). intros z.
+            rewrite !store_restrict_lookup.
+            destruct (decide (z ∈ X)) as [HzX|HzX].
+            + rewrite !decide_True by set_solver.
+              change (σw !! z = (<[x := vx]> (store_restrict σw X) : Store) !! z).
+              destruct (decide (z = x)) as [->|Hzx].
+              * exfalso. apply Hx. set_solver.
+              * rewrite lookup_insert_ne by congruence.
+                rewrite store_restrict_lookup. rewrite decide_True by exact HzX.
+                reflexivity.
+            + destruct (decide (z = x)) as [->|Hzx].
+              * rewrite !decide_True by set_solver.
+                change (σw !! x = (<[x := vx]> (store_restrict σw X) : Store) !! x).
+                rewrite Hx_lookup. rewrite lookup_insert. rewrite decide_True by reflexivity.
+                reflexivity.
+              * rewrite !decide_False by set_solver.
+                reflexivity.
+          }
+          rewrite <- (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _
+            (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (X ∪ {[x]}) (e2 ^^ x)).
+          2:{
+            replace (store_restrict (store_restrict σw ((X ∪ {[x]}) ∪ {[ν]})) (X ∪ {[x]}))
+              with (store_restrict (store_restrict σw (X ∪ {[x]} ∪ {[ν]})) (X ∪ {[x]}))
+              by (repeat f_equal; set_solver).
+            rewrite Hmap. exact Hclosed_right.
+          }
+          2:{ exact Hstale_body. }
+          rewrite <- (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _
+            (<[x := vx]> (store_restrict σw X)) (X ∪ {[x]}) (e2 ^^ x)).
+          2:{ exact Hclosed_right. }
+          2:{ exact Hstale_body. }
+          change (m{store_restrict (store_restrict σw (X ∪ {[x]} ∪ {[ν]})) (X ∪ {[x]})}
+            (e2 ^^ x) =
+            m{store_restrict (<[x := vx]> (store_restrict σw X)) (X ∪ {[x]})}
+            (e2 ^^ x)).
+          rewrite Hmap. reflexivity.
+        - exact HclosedX.
+        - exact (proj1 Hvx_reg).
+        - exact (proj2 Hvx_reg).
+        - apply Hlc. exact Hσw.
+        - change (x ∉ dom (store_restrict σw X) ∪ fv_tm e2).
+          rewrite store_restrict_dom. set_solver.
+      }
+      rewrite Hbody_eq.
+      exact Hsteps2.
+  - reflexivity.
+Qed.
+
 (** Fixed-world body-to-let lifting is not strong enough for the main tlet
     proof because [denot_ty_on] contains Kripke implications.  The theorem
     below is the total-aware, Kripke-parametric bridge used by the fundamental
