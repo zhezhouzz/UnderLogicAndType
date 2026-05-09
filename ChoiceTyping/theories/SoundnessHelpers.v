@@ -1731,6 +1731,25 @@ Lemma denot_tlet_semantic_at_world
 Proof.
 Admitted.
 
+Lemma fib_vars_obligation_tlete_from_body_result_world
+    X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  fib_vars_obligation (X ∪ {[x]})
+    (FAtom (expr_logic_qual (e2 ^^ x) ν)) ∅
+    (let_result_world_on X e1 x n Hfresh Hresult) →
+  fib_vars_obligation X
+    (FAtom (expr_logic_qual (tlete e1 e2) ν)) ∅ n.
+Proof.
+Admitted.
+
 Lemma FExprResultOn_tlete_from_body_result_world
     X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
   x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
@@ -1745,7 +1764,37 @@ Lemma FExprResultOn_tlete_from_body_result_world
   let_result_world_on X e1 x n Hfresh Hresult ⊨
     FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν →
   n ⊨ FExprResultOn X (tlete e1 e2) ν.
-Admitted.
+Proof.
+  intros Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_model.
+  unfold FExprResultOn, FExprResultOnRaw, res_models in *.
+  apply fib_vars_models_intro.
+  - apply FExprResultOn_scoped_intro.
+    intros z Hz.
+    assert (Hz' : z ∈ X ∪ {[ν]}) by set_solver.
+    pose proof (res_models_with_store_fuel_scoped _ _ _ _
+      Hbody_model) as Hscope_body.
+    unfold formula_scoped_in_world in Hscope_body.
+    assert (Hz_body :
+      z ∈ dom (∅ : Store) ∪ formula_fv
+        (FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν)).
+    {
+      apply elem_of_union. right.
+      unfold FExprResultOn, FExprResultOnRaw.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      set_solver.
+    }
+    pose proof (Hscope_body z Hz_body) as Hz_dom.
+    unfold let_result_world_on, let_result_raw_world_on in Hz_dom.
+    simpl in Hz_dom.
+    apply elem_of_union in Hz_dom as [Hz_dom | Hzx].
+    + exact Hz_dom.
+    + assert (z = x) by set_solver.
+      subst z. set_solver.
+  - eapply fib_vars_obligation_tlete_from_body_result_world; eauto.
+    unfold FExprResultOn, FExprResultOnRaw, res_models in Hbody_model.
+    exact (fib_vars_models_elim _ _ _ _ Hbody_model).
+Qed.
 
 Lemma FExprResultOn_body_from_paired_let_result_world
     X e1 e2 x ν (w : WfWorld) :
