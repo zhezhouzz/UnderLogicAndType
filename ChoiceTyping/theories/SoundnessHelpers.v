@@ -1429,6 +1429,104 @@ Proof.
       apply store_restrict_insert_singleton.
 Qed.
 
+(** Input-fiber exactness of the tlet graph.
+
+    This is the companion check to [tlet_result_graph_body_fiber_exact].  If
+    we project the graph only at the original input domain [X], then the
+    remaining [ν]-fiber is exactly the result world of the whole
+    [tlete e1 e2].  In other words, the graph has neither extra final results
+    nor missing final results when viewed from the outside.
+
+    This is the high-risk invariant needed by the [CTOver] side of the tlet
+    proof: an arbitrary final result of the let expression can be represented
+    in the same graph that also remembers the intermediate [x] result used by
+    the body proof. *)
+Lemma tlet_result_graph_tlet_fiber_exact
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh ρ Hproj :
+  X ⊆ world_dom (w : World) →
+  x ∉ X →
+  ν ∉ X →
+  (∀ σ, (w : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (w : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  expr_result_in_world
+    (store_restrict ρ X) (tlete e1 e2) ν
+    (res_fiber_from_projection
+      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+      X ρ Hproj).
+Proof.
+  intros HXdom HxX HνX Hclosed Hlc Hresult_closed Hbody σν. split.
+  - intros Hσν.
+    assert (Hdomρ : dom ρ = X).
+    {
+      destruct Hproj as [σxν0 [Hgraph0 Hρ0]].
+      assert (Hρeq : ρ = store_restrict σxν0 X) by (symmetry; exact Hρ0).
+      destruct (tlet_result_graph_world_on_elim
+        X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
+        as [σ0 [vx0 [v0 [Hσ0 [_ [_ [_ [_ [_ [_ ->]]]]]]]]]].
+      rewrite Hρeq, store_restrict_dom.
+      change ((dom (<[ν := v0]> (<[x := vx0]> σ0) : Store) ∩ X) = X).
+      rewrite !dom_insert_L.
+      pose proof (wfworld_store_dom w σ0 Hσ0) as Hdomσ0.
+      rewrite Hdomσ0. set_solver.
+    }
+    destruct Hσν as [σxν [Hσxν Hσν_eq]].
+    destruct Hσxν as [Hgraph Hρ].
+    pose proof (tlet_result_graph_member_to_tlet_result_store
+      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν
+      HxX HνX Hbody Hgraph) as Hstore.
+    rewrite Hσν_eq in Hstore.
+    assert (HρX : store_restrict σxν X = store_restrict ρ X).
+    {
+      transitivity ρ.
+      - rewrite <- Hdomρ. exact Hρ.
+      - symmetry. apply store_restrict_idemp. set_solver.
+    }
+    rewrite HρX in Hstore. exact Hstore.
+  - intros Hstore.
+    destruct Hproj as [σxν0 [Hgraph0 Hρ0]].
+    destruct (tlet_result_graph_world_on_elim
+      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
+      as [σ [vx0 [v0 [Hσ [Hsteps10 [_ [_ [_ [_ [_ ->]]]]]]]]]].
+    assert (Hρ_shape : ρ = store_restrict σ X).
+    {
+      rewrite <- Hρ0.
+      rewrite store_restrict_insert_notin by exact HνX.
+      rewrite store_restrict_insert_notin by exact HxX.
+      reflexivity.
+    }
+    rewrite Hρ_shape in Hstore.
+    replace (store_restrict (store_restrict σ X) X) with (store_restrict σ X) in Hstore.
+    2:{ rewrite store_restrict_restrict.
+        replace (X ∩ X) with X by set_solver.
+        reflexivity. }
+    assert (Hσν_dom : store_restrict σν {[ν]} = σν).
+    {
+      destruct (expr_result_store_elim ν
+        (subst_map (store_restrict σ X) (tlete e1 e2)) σν Hstore)
+        as [v [-> _]].
+      apply store_restrict_insert_singleton.
+    }
+    destruct (tlet_result_store_to_graph_member
+      X e1 e2 x ν w Hfreshx Hfreshν Hinh σ σν
+      HxX HνX Hσ Hσν_dom Hstore
+      (fun vx Hsteps => Hresult_closed σ vx Hσ Hsteps))
+      as [σxν [Hgraph [HX Hν]]].
+    exists σxν. split.
+    + split; [exact Hgraph |].
+      rewrite Hρ_shape.
+      replace (dom (store_restrict σ X)) with X.
+      * exact HX.
+      * rewrite store_restrict_dom.
+        pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+        set_solver.
+    + exact Hν.
+Qed.
+
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
