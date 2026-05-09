@@ -3310,7 +3310,29 @@ Lemma denot_ty_on_let_result_body_to_let
   fv_tm (tlete e1 e2) ⊆ X →
   X ⊆ world_dom (m : World) →
   (∀ σ, (m : World) σ → ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
+  (∀ σ, (m : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (m : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   m ⊨ basic_world_formula Σ (dom Σ) →
+  (∀ x,
+    x ∉ L →
+    x ∉ world_dom (m : World) →
+    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+    ∀ Hfresh Hresult,
+      expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+        (let_result_world_on X e1 x m Hfresh Hresult)) →
+  (∀ x,
+    x ∉ L →
+    x ∉ world_dom (m : World) →
+    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+    ∀ Hfresh Hresult σx v,
+      (let_result_world_on X e1 x m Hfresh Hresult : World) σx →
+      subst_map (store_restrict σx (X ∪ {[x]})) (e2 ^^ x) →* tret v →
+      stale v = ∅ ∧ is_lc v) →
   (∀ x,
     x ∉ L →
     x ∉ world_dom (m : World) →
@@ -3327,6 +3349,8 @@ Lemma denot_tlet_formula_at_world_given_bind_total
     (m : WfWorld) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   m ⊨ denot_ctx_in_env Σ Γ →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 →
   expr_total_on (dom (erase_ctx_under Σ Γ)) e1 m →
@@ -3341,7 +3365,7 @@ Lemma denot_tlet_formula_at_world_given_bind_total
       denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))) →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-  intros Hwf1 Hwflet Hm Hτ1 Htotal1 IH2 Hbind.
+  intros Hwf1 Hwflet Hbody_wf Hm Hτ1 Htotal1 IH2 Hbind.
   destruct Htotal1 as [Hfv1 Hresult].
   set (X := dom (erase_ctx_under Σ Γ)).
   set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ2 ∪ fv_tm e2)).
@@ -3380,7 +3404,52 @@ Proof.
       (dom (erase_ctx_under Σ Γ))).
     apply denot_ctx_in_env_erased_basic. exact Hm.
   - exact Hresult.
+  - intros σ Hσ.
+    eapply basic_world_formula_store_restrict_closed_env.
+    + apply denot_ctx_in_env_erased_basic. exact Hm.
+    + set_solver.
+    + exact Hσ.
+  - intros σ Hσ.
+    eapply basic_world_formula_store_restrict_lc_env.
+    + apply denot_ctx_in_env_erased_basic. exact Hm.
+    + set_solver.
+    + exact Hσ.
+  - intros σ vx Hσ Hsteps.
+    eapply (choice_typing_wf_result_regular_restrict_in_ctx
+      Σ Γ e1 τ1 m σ vx); eauto.
+  - intros σ Hσ.
+    apply body_tm_msubst.
+    + eapply basic_world_formula_store_restrict_closed_env.
+      * apply denot_ctx_in_env_erased_basic. exact Hm.
+      * set_solver.
+      * exact Hσ.
+    + eapply basic_world_formula_store_restrict_lc_env.
+      * apply denot_ctx_in_env_erased_basic. exact Hm.
+      * set_solver.
+      * exact Hσ.
+    + eapply choice_typing_wf_let_body_helper; eauto.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
+  - intros y HyL Hyfresh Hy Hfresh_y Hresult_y.
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+    assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
+    { subst wy. apply Hbind; exact HyL0. }
+    destruct (IH2 y HyL0 wy Hctxy) as [_ Hbody_total].
+	    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))
+	      with (dom (erase_ctx_under Σ Γ) ∪ {[y]}) in Hbody_total.
+	    + exact Hbody_total.
+	    + symmetry. apply erase_ctx_under_comma_bind_dom.
+  - intros y HyL Hyfresh Hy Hfresh_y Hresult_y σx v Hσx Hsteps.
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+    assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
+    { subst wy. apply Hbind; exact HyL0. }
+    pose proof (Hbody_wf y HyL0) as Hwf_body.
+    replace (store_restrict σx (dom (erase_ctx_under Σ Γ) ∪ {[y]}))
+      with (store_restrict σx (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))) in Hsteps.
+    2:{ rewrite erase_ctx_under_comma_bind_dom. reflexivity. }
+    eapply (choice_typing_wf_result_regular_restrict_in_ctx
+      Σ (CtxComma Γ (CtxBind y τ1)) (e2 ^^ y) τ2 wy σx v); eauto.
   - intros y HyL Hyfresh Hy.
     intros Hfresh_y Hresult_y.
     set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
@@ -3426,6 +3495,8 @@ Lemma denot_tlet_formula_at_world_total
     (m : WfWorld) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -3434,7 +3505,7 @@ Lemma denot_tlet_formula_at_world_total
   m ⊨ denot_ctx_in_env Σ Γ →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-  intros Hwf1 Hwflet IH1 IH2 Hm.
+  intros Hwf1 Hwflet Hbody_wf IH1 IH2 Hm.
   destruct (IH1 m Hm) as [Hτ1 Htotal1].
   eapply denot_tlet_formula_at_world_given_bind_total; eauto.
   intros x HxL Hfresh Hresult.
@@ -3511,6 +3582,8 @@ Lemma denot_tlet_total_at_world_given_bind
     (m : WfWorld) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -3525,7 +3598,7 @@ Lemma denot_tlet_total_at_world_given_bind
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Proof.
-  intros Hwf1 Hwflet IH1 IH2 Hbind Hm.
+  intros Hwf1 Hwflet Hbody_wf IH1 IH2 Hbind Hm.
   destruct (IH1 m Hm) as [Hτ1 Htotal1].
   split.
   - eapply denot_tlet_formula_at_world_total; eauto.
@@ -3553,6 +3626,8 @@ Lemma denot_tlet_total_at_world
     (m : WfWorld) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -3561,7 +3636,7 @@ Lemma denot_tlet_total_at_world
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Proof.
-  intros Hwf1 Hwflet IH1 IH2 Hm.
+  intros Hwf1 Hwflet Hbody_wf IH1 IH2 Hm.
   eapply denot_tlet_total_at_world_given_bind; eauto.
   intros x HxL Hfresh Hresult.
   eapply let_result_world_on_denot_ctx_in_env; eauto.

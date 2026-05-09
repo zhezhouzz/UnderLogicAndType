@@ -973,6 +973,8 @@ Qed.
 Lemma semantic_total_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -981,13 +983,15 @@ Lemma semantic_total_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2)).
 Proof.
-  intros Hwf1 Hwf IH1 IH2 m Hm.
+  intros Hwf1 Hwf Hbody_wf IH1 IH2 m Hm.
   eapply denot_tlet_total_at_world; eauto.
 Qed.
 
 Lemma fundamental_total_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
   choice_typing_wf Σ Γ e1 τ1 →
   choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
   (∀ x, x ∉ L →
@@ -996,7 +1000,7 @@ Lemma fundamental_total_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset
   entails_total (denot_ctx_in_env Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2)).
 Proof.
-  intros Hwf1 Hwf IH1 IH2.
+  intros Hwf1 Hwf Hbody_wf IH1 IH2.
   eapply semantic_total_let_rule; eauto.
 Qed.
 
