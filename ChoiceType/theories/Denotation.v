@@ -570,25 +570,37 @@ Proof.
   eapply basic_world_formula_store_restrict_closed_env; eauto.
 Qed.
 
-Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
-  expr_result_in_world ρ (tlete e1 e2) ν w →
-  ∀ σw,
-    (w : World) σw →
-    ∃ v vx,
-      σw !! ν = Some v ∧
-      subst_map σw (subst_map ρ e1) →* tret vx ∧
-      open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
-Proof.
-Admitted.
-
 Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
   expr_result_in_store ρ (tlete e1 e2) ν σw →
   ∃ v vx,
-    σw !! ν = Some v ∧
-    subst_map σw (subst_map ρ e1) →* tret vx ∧
-    open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
+    σw = {[ν := v]} ∧
+    subst_map ρ e1 →* tret vx ∧
+    open_tm 0 vx (subst_map ρ e2) →* tret v.
 Proof.
-Admitted.
+  intros Hstore.
+  destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σw Hstore)
+    as [v [Hσw [_ [_ Hsteps]]]].
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
+  rewrite msubst_lete in Hsteps.
+  destruct (reduction_lete (m{ρ} e1) (m{ρ} e2) v Hsteps)
+    as [vx [Hsteps1 Hsteps2]].
+  exists v, vx. repeat split; assumption.
+Qed.
+
+Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
+  expr_result_in_world ρ (tlete e1 e2) ν w →
+  ∀ σν,
+    (res_restrict w {[ν]} : World) σν →
+    ∃ v vx,
+      σν = {[ν := v]} ∧
+      subst_map ρ e1 →* tret vx ∧
+      open_tm 0 vx (subst_map ρ e2) →* tret v.
+Proof.
+  intros Hworld σν Hσν.
+  pose proof (expr_result_in_world_sound ρ (tlete e1 e2) ν w σν
+    Hworld Hσν) as Hstore.
+  exact (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore).
+Qed.
 
 Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
   (∀ σw,
