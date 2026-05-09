@@ -1038,7 +1038,29 @@ Qed.
     world.  The final result coordinate [ν] is also kept distinct from [x].
 
     Whenever this definition appears in a proof, remember: it is an auxiliary
-    Rocq witness world for tlet soundness, not a new paper-level modality. *)
+    Rocq witness world for tlet soundness, not a new paper-level modality.
+
+    Relation to the expression-result/fiber view:
+
+    - The paper-level intuition is still [∀M FV(e). Atom(mstep e ν)].  The
+      surrounding fiber fixes the input store; the atom at the leaf should only
+      talk about the result coordinate.  The graph below is the proof-side
+      expansion of that idea for [tlet], where the input projection [X], the
+      intermediate coordinate [x], and the final result coordinate [ν] all have
+      to stay paired.
+    - Do not read [world_stores] as allowing arbitrary extensions such as
+      [{x ↦ vx, ν ↦ v}] disconnected from the same base input [σ].  Every member
+      must come from one base store [σ] in [w], one result [vx] of [e1] over
+      [σ|X], and one result [v] of [e2] opened with exactly that [vx].
+    - Conversely, every such operational triple must be present.  This is the
+      "no extra and no missing stores" invariant we need before proving either
+      the over-approximate direction or the under-approximate direction.
+
+    High-risk proof obligation to check first: after projecting/fibering this
+    graph at [X ∪ {[x]}], the remaining [ν]-fiber must be exactly the result
+    world for [(e2 ^^ x)] under that paired projection.  If that lemma fails,
+    this graph shape is wrong and the later fundamental [tlet] case should not
+    be trusted. *)
 Definition tlet_result_graph_raw_world_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld) : World := {|
   world_dom := world_dom (w : World) ∪ {[x]} ∪ {[ν]};
@@ -1290,6 +1312,121 @@ Proof.
       reflexivity.
     + rewrite store_restrict_insert_singleton.
       subst σν. reflexivity.
+Qed.
+
+Lemma tlet_result_graph_body_fiber_exact
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh ρx Hproj :
+  X ⊆ world_dom (w : World) →
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  ν ∉ X ∪ {[x]} →
+  (∀ σ, (w : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
+  expr_result_in_world
+    (store_restrict ρx (X ∪ {[x]})) (e2 ^^ x) ν
+    (res_fiber_from_projection
+      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+      (X ∪ {[x]}) ρx Hproj).
+Proof.
+  intros HXdom HxX Hxe2 HνXx Hclosed Hlc σν. split.
+  - intros Hσν.
+    assert (Hdomρx : dom ρx = X ∪ {[x]}).
+    {
+      pose proof (wfworld_store_dom
+        (res_restrict
+          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+          (X ∪ {[x]})) ρx Hproj) as Hdom.
+      transitivity (world_dom
+        (res_restrict
+          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+          (X ∪ {[x]}) : World)).
+      - exact Hdom.
+      - simpl. unfold tlet_result_graph_raw_world_on. simpl. set_solver.
+    }
+    destruct Hσν as [σxν [Hσxν Hσν_eq]].
+    destruct Hσxν as [Hgraph Hρx].
+    assert (Hρx_full : store_restrict σxν (X ∪ {[x]}) = ρx).
+    { rewrite <- Hdomρx. exact Hρx. }
+    pose proof (tlet_result_graph_member_to_body_result_store
+      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν
+      HxX Hxe2 HνXx Hclosed Hlc Hgraph) as Hstore.
+    rewrite Hρx_full in Hstore.
+    rewrite Hσν_eq in Hstore.
+    replace (store_restrict ρx (X ∪ {[x]})) with ρx.
+    2:{ symmetry. apply store_restrict_idemp. rewrite Hdomρx. set_solver. }
+    exact Hstore.
+  - intros Hstore.
+    assert (Hdomρx : dom ρx = X ∪ {[x]}).
+    {
+      pose proof (wfworld_store_dom
+        (res_restrict
+          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+          (X ∪ {[x]})) ρx Hproj) as Hdom.
+      transitivity (world_dom
+        (res_restrict
+          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+          (X ∪ {[x]}) : World)).
+      - exact Hdom.
+      - simpl. unfold tlet_result_graph_raw_world_on. simpl. set_solver.
+    }
+    destruct Hproj as [σxν0 [Hgraph0 Hρx0]].
+    destruct (tlet_result_graph_world_on_elim
+      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
+      as [σ [vx [v0 [Hσ [Hsteps1 [_ [Hvx_stale [Hvx_lc [_ [_ ->]]]]]]]]]].
+    assert (Hρx_shape :
+      ρx = <[x := vx]> (store_restrict σ X)).
+    {
+      assert (Hρx0_full :
+        store_restrict (<[ν := v0]> (<[x := vx]> σ)) (X ∪ {[x]}) = ρx).
+      { exact Hρx0. }
+      rewrite <- Hρx0_full.
+      rewrite store_restrict_insert_notin by exact HνXx.
+      apply store_restrict_insert_fresh_union.
+      - apply not_elem_of_dom.
+        pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+        rewrite Hdomσ. exact Hfreshx.
+      - exact HxX.
+    }
+    assert (Hρx_id : store_restrict ρx (X ∪ {[x]}) = ρx).
+    { apply store_restrict_idemp. rewrite Hdomρx. set_solver. }
+    rewrite Hρx_id in Hstore.
+    rewrite Hρx_shape in Hstore.
+    destruct (expr_result_store_elim ν
+      (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) σν Hstore)
+      as [v [Hσν_eq [Hv_stale [Hv_lc Hsteps_body]]]].
+    assert (Hsteps2 :
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v).
+    {
+      change (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) with
+        (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x)) in Hsteps_body.
+      change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hsteps_body.
+      pose proof (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)
+        ltac:(apply Hclosed; exact Hσ)
+        Hvx_stale
+        Hvx_lc
+        ltac:(apply Hlc; exact Hσ)
+        ltac:(change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2);
+              rewrite store_restrict_dom; set_solver)) as Heq.
+      replace (m{<[x := vx]> (store_restrict σ X)} open_tm 0 x e2)
+        with (open_tm 0 vx (m{store_restrict σ X} e2)) in Hsteps_body
+        by (symmetry; exact Heq).
+      exact Hsteps_body.
+    }
+    exists (<[ν := v]> (<[x := vx]> σ)). split.
+    + split.
+      * apply tlet_result_graph_world_on_member; eauto.
+      * assert (Hνdomρx : ν ∉ dom ρx).
+        { rewrite Hdomρx. exact HνXx. }
+        rewrite store_restrict_insert_notin by exact Hνdomρx.
+        replace (dom ρx) with (X ∪ {[x]}) by (symmetry; exact Hdomρx).
+        rewrite store_restrict_insert_fresh_union.
+        -- symmetry. exact Hρx_shape.
+        -- apply not_elem_of_dom.
+           pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+           rewrite Hdomσ. exact Hfreshx.
+        -- exact HxX.
+    + rewrite Hσν_eq.
+      apply store_restrict_insert_singleton.
 Qed.
 
 Lemma expr_total_results_on_le
