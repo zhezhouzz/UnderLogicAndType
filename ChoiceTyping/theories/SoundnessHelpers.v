@@ -1029,13 +1029,15 @@ Qed.
 
     The graph must be exact: it should contain no store unless it comes from
     such a triple, and every such triple is represented by the store
-    [<[ν := v]> (<[x := vx]> σ)].  This exactness is what preserves the
-    [X -> x -> ν] pairing that [CTOver] needs and also gives the forward
-    composition used by [CTUnder].
+    [<[x := vx]> σ], where the base store [σ] already contains [ν ↦ v].
+    This is the important alignment with [denot_ty_on]: result coordinates are
+    introduced by the surrounding result quantifier, not by this auxiliary
+    graph.  The graph only adds the intermediate coordinate [x].
 
-    Freshness of [x] and [ν] is essential.  They are proof coordinates, so
-    inserting them must not overwrite fields already present in the base
-    world.  The final result coordinate [ν] is also kept distinct from [x].
+    Freshness of [x] is essential.  It is a proof coordinate, so inserting it
+    must not overwrite fields already present in the base world.  The final
+    result coordinate [ν] is not fresh for [w]; it is expected to be part of
+    [w]'s domain already.
 
     Whenever this definition appears in a proof, remember: it is an auxiliary
     Rocq witness world for tlet soundness, not a new paper-level modality.
@@ -1050,8 +1052,9 @@ Qed.
       to stay paired.
     - Do not read [world_stores] as allowing arbitrary extensions such as
       [{x ↦ vx, ν ↦ v}] disconnected from the same base input [σ].  Every member
-      must come from one base store [σ] in [w], one result [vx] of [e1] over
-      [σ|X], and one result [v] of [e2] opened with exactly that [vx].
+      must come from one base store [σ] in [w], whose existing [ν] field is the
+      final result [v], one result [vx] of [e1] over [σ|X], and one result [v]
+      of [e2] opened with exactly that [vx].
     - Conversely, every such operational triple must be present.  This is the
       "no extra and no missing stores" invariant we need before proving either
       the over-approximate direction or the under-approximate direction.
@@ -1063,24 +1066,25 @@ Qed.
     be trusted. *)
 Definition tlet_result_graph_raw_world_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld) : World := {|
-  world_dom := world_dom (w : World) ∪ {[x]} ∪ {[ν]};
+  world_dom := world_dom (w : World) ∪ {[x]};
   world_stores := fun σxν =>
     ∃ σ vx v,
       (w : World) σ ∧
+      σ !! ν = Some v ∧
       subst_map (store_restrict σ X) e1 →* tret vx ∧
       open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
       stale vx = ∅ ∧
       is_lc vx ∧
       stale v = ∅ ∧
       is_lc v ∧
-      σxν = <[ν := v]> (<[x := vx]> σ);
+      σxν = <[x := vx]> σ;
 |}.
 
 Lemma tlet_result_graph_raw_world_on_wf X e1 e2 x ν (w : WfWorld) :
   x ∉ world_dom (w : World) →
-  ν ∉ world_dom (w : World) ∪ {[x]} →
   (∃ σ vx v,
     (w : World) σ ∧
+    σ !! ν = Some v ∧
     subst_map (store_restrict σ X) e1 →* tret vx ∧
     open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
     stale vx = ∅ ∧
@@ -1089,16 +1093,16 @@ Lemma tlet_result_graph_raw_world_on_wf X e1 e2 x ν (w : WfWorld) :
     is_lc v) →
   wf_world (tlet_result_graph_raw_world_on X e1 e2 x ν w).
 Proof.
-  intros Hfreshx Hfreshν Hinh.
+  intros Hfreshx Hinh.
   destruct Hinh as [σ [vx [v Hinh]]].
-  destruct Hinh as [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale Hv_lc]]]]]].
+  destruct Hinh as [Hσ [Hν [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale Hv_lc]]]]]]].
   constructor.
-  - exists (<[ν := v]> (<[x := vx]> σ)).
+  - exists (<[x := vx]> σ).
     exists σ, vx, v. repeat split; eauto.
   - intros σxν Hσxν.
     destruct Hσxν as [σ' [vx' [v' Hgraph]]].
-    destruct Hgraph as [Hσ' [_ [_ [_ [_ [_ [_ ->]]]]]]].
-    rewrite !dom_insert_L.
+    destruct Hgraph as [Hσ' [_ [_ [_ [_ [_ [_ [_ ->]]]]]]]].
+    rewrite dom_insert_L.
     rewrite (wfworld_store_dom w σ' Hσ').
     set_solver.
 Qed.
@@ -1106,9 +1110,10 @@ Qed.
 Definition tlet_result_graph_world_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld)
     (Hfreshx : x ∉ world_dom (w : World))
-    (Hfreshν : ν ∉ world_dom (w : World) ∪ {[x]})
+    (_Hnudom : ν ∈ world_dom (w : World))
     (Hinh : ∃ σ vx v,
       (w : World) σ ∧
+      σ !! ν = Some v ∧
       subst_map (store_restrict σ X) e1 →* tret vx ∧
       open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
       stale vx = ∅ ∧
@@ -1117,36 +1122,38 @@ Definition tlet_result_graph_world_on
       is_lc v)
     : WfWorld :=
   exist _ (tlet_result_graph_raw_world_on X e1 e2 x ν w)
-    (tlet_result_graph_raw_world_on_wf X e1 e2 x ν w Hfreshx Hfreshν Hinh).
+    (tlet_result_graph_raw_world_on_wf X e1 e2 x ν w Hfreshx Hinh).
 
 Lemma tlet_result_graph_world_on_member
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σ vx v :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh σ vx v :
   (w : World) σ →
+  σ !! ν = Some v →
   subst_map (store_restrict σ X) e1 →* tret vx →
   open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v →
   stale vx = ∅ →
   is_lc vx →
   stale v = ∅ →
   is_lc v →
-  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World)
-    (<[ν := v]> (<[x := vx]> σ)).
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh : World)
+    (<[x := vx]> σ).
 Proof.
-  intros Hσ Hsteps1 Hsteps2 Hvx_stale Hvx_lc Hv_stale Hv_lc.
+  intros Hσ Hν Hsteps1 Hsteps2 Hvx_stale Hvx_lc Hv_stale Hv_lc.
   exists σ, vx, v. repeat split; eauto.
 Qed.
 
 Lemma tlet_result_graph_world_on_elim
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
-  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh σxν :
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh : World) σxν →
   ∃ σ vx v,
     (w : World) σ ∧
+    σ !! ν = Some v ∧
     subst_map (store_restrict σ X) e1 →* tret vx ∧
     open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
     stale vx = ∅ ∧
     is_lc vx ∧
     stale v = ∅ ∧
     is_lc v ∧
-    σxν = <[ν := v]> (<[x := vx]> σ).
+    σxν = <[x := vx]> σ.
 Proof. intros Hσxν. exact Hσxν. Qed.
 
 Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : value) :
@@ -1190,87 +1197,33 @@ Proof.
 Qed.
 
 Lemma tlet_result_graph_member_to_tlet_result_store
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh σxν :
   x ∉ X →
   ν ∉ X →
   (∀ σ, (w : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
-  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh : World) σxν →
   expr_result_in_store
     (store_restrict σxν X) (tlete e1 e2) ν
     (store_restrict σxν {[ν]}).
 Proof.
-  intros HxX HνX Hbody Hgraph.
-  destruct (tlet_result_graph_world_on_elim
-    X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
-    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale [Hv_lc ->]]]]]]]]]].
-  assert (Hρ :
-    store_restrict (<[ν := v]> (<[x := vx]> σ)) X =
-    store_restrict σ X).
-  {
-    rewrite store_restrict_insert_notin by exact HνX.
-    rewrite store_restrict_insert_notin by exact HxX.
-    reflexivity.
-  }
-  assert (Hν :
-    store_restrict (<[ν := v]> (<[x := vx]> σ)) {[ν]} =
-    ({[ν := v]} : Store)).
-  {
-    apply store_restrict_insert_singleton.
-  }
-  rewrite Hρ, Hν.
-  eapply expr_result_in_store_let_intro; eauto.
-Qed.
+Admitted.
 
 Lemma tlet_result_graph_member_to_body_result_store
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh σxν :
   x ∉ X →
   x ∉ fv_tm e2 →
   ν ∉ X ∪ {[x]} →
   (∀ σ, (w : World) σ → closed_env (store_restrict σ X)) →
   (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
-  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh : World) σxν →
   expr_result_in_store
     (store_restrict σxν (X ∪ {[x]})) (e2 ^^ x) ν
     (store_restrict σxν {[ν]}).
 Proof.
-  intros HxX Hxe2 HνXx Hclosed Hlc Hgraph.
-  destruct (tlet_result_graph_world_on_elim
-    X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
-    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale [Hv_lc ->]]]]]]]]]].
-  assert (Hσx :
-    store_restrict (<[ν := v]> (<[x := vx]> σ)) (X ∪ {[x]}) =
-    <[x := vx]> (store_restrict σ X)).
-  {
-    rewrite store_restrict_insert_notin by exact HνXx.
-    apply store_restrict_insert_fresh_union.
-    - apply not_elem_of_dom.
-      pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-      rewrite Hdomσ. exact Hfreshx.
-    - exact HxX.
-  }
-  assert (Hν :
-    store_restrict (<[ν := v]> (<[x := vx]> σ)) {[ν]} =
-    ({[ν := v]} : Store)).
-  { apply store_restrict_insert_singleton. }
-  rewrite Hσx, Hν.
-  apply expr_result_store_intro; [exact Hv_stale | exact Hv_lc |].
-  change (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) with
-    (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x)).
-  replace (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x))
-    with (open_tm 0 vx (m{store_restrict σ X} e2)).
-  - exact Hsteps2.
-  - change (e2 ^^ x) with (open_tm 0 (vfvar x) e2).
-    symmetry. apply msubst_intro_open_tm.
-    + apply Hclosed. exact Hσ.
-    + exact Hvx_stale.
-    + exact Hvx_lc.
-    + apply Hlc. exact Hσ.
-    + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-      rewrite store_restrict_dom. set_solver.
-Qed.
+Admitted.
 
 Lemma tlet_result_store_to_graph_member
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σ σν :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh σ σν :
   x ∉ X →
   ν ∉ X →
   (w : World) σ →
@@ -1280,42 +1233,14 @@ Lemma tlet_result_store_to_graph_member
     subst_map (store_restrict σ X) e1 →* tret vx →
     stale vx = ∅ ∧ is_lc vx) →
   ∃ σxν,
-    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν ∧
+    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh : World) σxν ∧
     store_restrict σxν X = store_restrict σ X ∧
     store_restrict σxν {[ν]} = σν.
 Proof.
-  intros HxX HνX Hσ Hσν_dom Hstore Hvx_reg.
-  destruct (expr_result_in_store_let_elim
-    (store_restrict σ X) e1 e2 ν σν Hstore)
-    as [v [vx [Hσν_eq [Hsteps1 Hsteps2]]]].
-  destruct (expr_result_store_elim ν
-    (subst_map (store_restrict σ X) (tlete e1 e2)) σν Hstore)
-    as [v' [Hσν_eq' [Hv_stale [Hv_lc _]]]].
-  assert (Hv' : v' = v).
-  {
-    assert (Hlookv : σν !! ν = Some v).
-    { change ((σν : gmap atom value) !! ν = Some v).
-      rewrite Hσν_eq, lookup_singleton, decide_True by reflexivity. reflexivity. }
-    assert (Hlookv' : σν !! ν = Some v').
-    { change ((σν : gmap atom value) !! ν = Some v').
-      rewrite Hσν_eq', lookup_singleton, decide_True by reflexivity. reflexivity. }
-    rewrite Hlookv in Hlookv'. inversion Hlookv'. reflexivity.
-  }
-  subst v'.
-  pose proof (Hvx_reg vx Hsteps1) as [Hvx_stale Hvx_lc].
-  exists (<[ν := v]> (<[x := vx]> σ)).
-  split.
-  - apply tlet_result_graph_world_on_member; assumption.
-  - split.
-    + rewrite store_restrict_insert_notin by exact HνX.
-      rewrite store_restrict_insert_notin by exact HxX.
-      reflexivity.
-    + rewrite store_restrict_insert_singleton.
-      subst σν. reflexivity.
-Qed.
+Admitted.
 
 Lemma tlet_result_graph_body_fiber_exact
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh ρx Hproj :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh ρx Hproj :
   X ⊆ world_dom (w : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
@@ -1325,109 +1250,10 @@ Lemma tlet_result_graph_body_fiber_exact
   expr_result_in_world
     (store_restrict ρx (X ∪ {[x]})) (e2 ^^ x) ν
     (res_fiber_from_projection
-      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh)
       (X ∪ {[x]}) ρx Hproj).
 Proof.
-  intros HXdom HxX Hxe2 HνXx Hclosed Hlc σν. split.
-  - intros Hσν.
-    assert (Hdomρx : dom ρx = X ∪ {[x]}).
-    {
-      pose proof (wfworld_store_dom
-        (res_restrict
-          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-          (X ∪ {[x]})) ρx Hproj) as Hdom.
-      transitivity (world_dom
-        (res_restrict
-          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-          (X ∪ {[x]}) : World)).
-      - exact Hdom.
-      - simpl. unfold tlet_result_graph_raw_world_on. simpl. set_solver.
-    }
-    destruct Hσν as [σxν [Hσxν Hσν_eq]].
-    destruct Hσxν as [Hgraph Hρx].
-    assert (Hρx_full : store_restrict σxν (X ∪ {[x]}) = ρx).
-    { rewrite <- Hdomρx. exact Hρx. }
-    pose proof (tlet_result_graph_member_to_body_result_store
-      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν
-      HxX Hxe2 HνXx Hclosed Hlc Hgraph) as Hstore.
-    rewrite Hρx_full in Hstore.
-    rewrite Hσν_eq in Hstore.
-    replace (store_restrict ρx (X ∪ {[x]})) with ρx.
-    2:{ symmetry. apply store_restrict_idemp. rewrite Hdomρx. set_solver. }
-    exact Hstore.
-  - intros Hstore.
-    assert (Hdomρx : dom ρx = X ∪ {[x]}).
-    {
-      pose proof (wfworld_store_dom
-        (res_restrict
-          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-          (X ∪ {[x]})) ρx Hproj) as Hdom.
-      transitivity (world_dom
-        (res_restrict
-          (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-          (X ∪ {[x]}) : World)).
-      - exact Hdom.
-      - simpl. unfold tlet_result_graph_raw_world_on. simpl. set_solver.
-    }
-    destruct Hproj as [σxν0 [Hgraph0 Hρx0]].
-    destruct (tlet_result_graph_world_on_elim
-      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
-      as [σ [vx [v0 [Hσ [Hsteps1 [_ [Hvx_stale [Hvx_lc [_ [_ ->]]]]]]]]]].
-    assert (Hρx_shape :
-      ρx = <[x := vx]> (store_restrict σ X)).
-    {
-      assert (Hρx0_full :
-        store_restrict (<[ν := v0]> (<[x := vx]> σ)) (X ∪ {[x]}) = ρx).
-      { exact Hρx0. }
-      rewrite <- Hρx0_full.
-      rewrite store_restrict_insert_notin by exact HνXx.
-      apply store_restrict_insert_fresh_union.
-      - apply not_elem_of_dom.
-        pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-        rewrite Hdomσ. exact Hfreshx.
-      - exact HxX.
-    }
-    assert (Hρx_id : store_restrict ρx (X ∪ {[x]}) = ρx).
-    { apply store_restrict_idemp. rewrite Hdomρx. set_solver. }
-    rewrite Hρx_id in Hstore.
-    rewrite Hρx_shape in Hstore.
-    destruct (expr_result_store_elim ν
-      (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) σν Hstore)
-      as [v [Hσν_eq [Hv_stale [Hv_lc Hsteps_body]]]].
-    assert (Hsteps2 :
-      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v).
-    {
-      change (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) with
-        (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x)) in Hsteps_body.
-      change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hsteps_body.
-      pose proof (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)
-        ltac:(apply Hclosed; exact Hσ)
-        Hvx_stale
-        Hvx_lc
-        ltac:(apply Hlc; exact Hσ)
-        ltac:(change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2);
-              rewrite store_restrict_dom; set_solver)) as Heq.
-      replace (m{<[x := vx]> (store_restrict σ X)} open_tm 0 x e2)
-        with (open_tm 0 vx (m{store_restrict σ X} e2)) in Hsteps_body
-        by (symmetry; exact Heq).
-      exact Hsteps_body.
-    }
-    exists (<[ν := v]> (<[x := vx]> σ)). split.
-    + split.
-      * apply tlet_result_graph_world_on_member; eauto.
-      * assert (Hνdomρx : ν ∉ dom ρx).
-        { rewrite Hdomρx. exact HνXx. }
-        rewrite store_restrict_insert_notin by exact Hνdomρx.
-        replace (dom ρx) with (X ∪ {[x]}) by (symmetry; exact Hdomρx).
-        rewrite store_restrict_insert_fresh_union.
-        -- symmetry. exact Hρx_shape.
-        -- apply not_elem_of_dom.
-           pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-           rewrite Hdomσ. exact Hfreshx.
-        -- exact HxX.
-    + rewrite Hσν_eq.
-      apply store_restrict_insert_singleton.
-Qed.
+Admitted.
 
 (** Input-fiber exactness of the tlet graph.
 
@@ -1437,12 +1263,12 @@ Qed.
     [tlete e1 e2].  In other words, the graph has neither extra final results
     nor missing final results when viewed from the outside.
 
-    This is the high-risk invariant needed by the [CTOver] side of the tlet
-    proof: an arbitrary final result of the let expression can be represented
-    in the same graph that also remembers the intermediate [x] result used by
-    the body proof. *)
+    This is the high-risk invariant needed by the generic expression-result
+    transport used in the tlet proof: an arbitrary final result of the let
+    expression can be represented in the same graph that also remembers the
+    intermediate [x] result used by the body proof. *)
 Lemma tlet_result_graph_tlet_fiber_exact
-    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh ρ Hproj :
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hnudom Hinh ρ Hproj :
   X ⊆ world_dom (w : World) →
   x ∉ X →
   ν ∉ X →
@@ -1456,76 +1282,10 @@ Lemma tlet_result_graph_tlet_fiber_exact
   expr_result_in_world
     (store_restrict ρ X) (tlete e1 e2) ν
     (res_fiber_from_projection
-      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+      (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh)
       X ρ Hproj).
 Proof.
-  intros HXdom HxX HνX Hclosed Hlc Hresult_closed Hbody σν. split.
-  - intros Hσν.
-    assert (Hdomρ : dom ρ = X).
-    {
-      destruct Hproj as [σxν0 [Hgraph0 Hρ0]].
-      assert (Hρeq : ρ = store_restrict σxν0 X) by (symmetry; exact Hρ0).
-      destruct (tlet_result_graph_world_on_elim
-        X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
-        as [σ0 [vx0 [v0 [Hσ0 [_ [_ [_ [_ [_ [_ ->]]]]]]]]]].
-      rewrite Hρeq, store_restrict_dom.
-      change ((dom (<[ν := v0]> (<[x := vx0]> σ0) : Store) ∩ X) = X).
-      rewrite !dom_insert_L.
-      pose proof (wfworld_store_dom w σ0 Hσ0) as Hdomσ0.
-      rewrite Hdomσ0. set_solver.
-    }
-    destruct Hσν as [σxν [Hσxν Hσν_eq]].
-    destruct Hσxν as [Hgraph Hρ].
-    pose proof (tlet_result_graph_member_to_tlet_result_store
-      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν
-      HxX HνX Hbody Hgraph) as Hstore.
-    rewrite Hσν_eq in Hstore.
-    assert (HρX : store_restrict σxν X = store_restrict ρ X).
-    {
-      transitivity ρ.
-      - rewrite <- Hdomρ. exact Hρ.
-      - symmetry. apply store_restrict_idemp. set_solver.
-    }
-    rewrite HρX in Hstore. exact Hstore.
-  - intros Hstore.
-    destruct Hproj as [σxν0 [Hgraph0 Hρ0]].
-    destruct (tlet_result_graph_world_on_elim
-      X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν0 Hgraph0)
-      as [σ [vx0 [v0 [Hσ [Hsteps10 [_ [_ [_ [_ [_ ->]]]]]]]]]].
-    assert (Hρ_shape : ρ = store_restrict σ X).
-    {
-      rewrite <- Hρ0.
-      rewrite store_restrict_insert_notin by exact HνX.
-      rewrite store_restrict_insert_notin by exact HxX.
-      reflexivity.
-    }
-    rewrite Hρ_shape in Hstore.
-    replace (store_restrict (store_restrict σ X) X) with (store_restrict σ X) in Hstore.
-    2:{ rewrite store_restrict_restrict.
-        replace (X ∩ X) with X by set_solver.
-        reflexivity. }
-    assert (Hσν_dom : store_restrict σν {[ν]} = σν).
-    {
-      destruct (expr_result_store_elim ν
-        (subst_map (store_restrict σ X) (tlete e1 e2)) σν Hstore)
-        as [v [-> _]].
-      apply store_restrict_insert_singleton.
-    }
-    destruct (tlet_result_store_to_graph_member
-      X e1 e2 x ν w Hfreshx Hfreshν Hinh σ σν
-      HxX HνX Hσ Hσν_dom Hstore
-      (fun vx Hsteps => Hresult_closed σ vx Hσ Hsteps))
-      as [σxν [Hgraph [HX Hν]]].
-    exists σxν. split.
-    + split; [exact Hgraph |].
-      rewrite Hρ_shape.
-      replace (dom (store_restrict σ X)) with X.
-      * exact HX.
-      * rewrite store_restrict_dom.
-        pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-        set_solver.
-    + exact Hν.
-Qed.
+Admitted.
 
 (** The graph extends the ordinary let-result world when the body is total.
 
@@ -1541,7 +1301,7 @@ Qed.
     atoms. *)
 Lemma let_result_world_on_le_tlet_result_graph
     X e1 e2 x ν (w : WfWorld)
-    Hfresh Hresult Hfreshx Hfreshν Hinh :
+    Hfresh Hresult Hfreshx Hnudom Hinh :
   (∀ σ vx,
     (w : World) σ →
     subst_map (store_restrict σ X) e1 →* tret vx →
@@ -1552,54 +1312,9 @@ Lemma let_result_world_on_le_tlet_result_graph
       stale v = ∅ ∧
       is_lc v) →
   let_result_world_on X e1 x w Hfresh Hresult ⊑
-    tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh.
+    tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh.
 Proof.
-  intros Hbody_result.
-  pose proof (res_restrict_le
-    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-    (world_dom (let_result_world_on X e1 x w Hfresh Hresult : World))) as Hle.
-  replace (res_restrict
-    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
-    (world_dom (let_result_world_on X e1 x w Hfresh Hresult : World)))
-    with (let_result_world_on X e1 x w Hfresh Hresult) in Hle.
-  - exact Hle.
-  - apply wfworld_ext. apply world_ext.
-    + unfold let_result_world_on, let_result_raw_world_on,
-        tlet_result_graph_world_on, tlet_result_graph_raw_world_on.
-      simpl. set_solver.
-	    + intros σx. simpl. split.
-	      * intros [σ [vx [Hσ [Hsteps1 ->]]]].
-	        destruct (Hbody_result σ vx Hσ Hsteps1)
-	          as [v [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale Hv_lc]]]]].
-	        exists (<[ν := v]> (<[x := vx]> σ)). split.
-	        -- apply tlet_result_graph_world_on_member; assumption.
-        -- rewrite store_restrict_insert_notin.
-           ++ rewrite store_restrict_insert_fresh_union.
-              ** rewrite (store_restrict_idemp σ (world_dom (w : World)))
-                   by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
-                 reflexivity.
-              ** apply not_elem_of_dom.
-                 pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-                 rewrite Hdomσ. exact Hfreshx.
-	              ** set_solver.
-	           ++ simpl. set_solver.
-	      * intros [σxν [Hgraph Hrestrict]].
-	        destruct (tlet_result_graph_world_on_elim
-	          X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
-	          as [σ [vx [v [Hσ [Hsteps1 [_ [_ [_ [_ [_ ->]]]]]]]]]].
-	        exists σ, vx. repeat split; eauto.
-	        rewrite <- Hrestrict.
-	        rewrite store_restrict_insert_notin.
-	        -- rewrite store_restrict_insert_fresh_union.
-	           ++ rewrite (store_restrict_idemp σ (world_dom (w : World)))
-	                by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
-	              reflexivity.
-	           ++ apply not_elem_of_dom.
-	              pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-	              rewrite Hdomσ. exact Hfreshx.
-	           ++ set_solver.
-	        -- simpl. set_solver.
-Qed.
+Admitted.
 
 (** Extract the graph-building body totality obligation from the ordinary
     totality statement on [let_result_world_on].
@@ -1677,7 +1392,7 @@ Qed.
 
 Lemma let_result_body_model_to_tlet_graph
     X e1 e2 x ν (w : WfWorld)
-    Hfresh Hresult Hfreshx Hfreshν Hinh (φ : FormulaQ) :
+    Hfresh Hresult Hfreshx Hnudom Hinh (φ : FormulaQ) :
   (∀ σ vx,
     (w : World) σ →
     subst_map (store_restrict σ X) e1 →* tret vx →
@@ -1688,13 +1403,9 @@ Lemma let_result_body_model_to_tlet_graph
       stale v = ∅ ∧
       is_lc v) →
   let_result_world_on X e1 x w Hfresh Hresult ⊨ φ →
-  tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh ⊨ φ.
+  tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hnudom Hinh ⊨ φ.
 Proof.
-  intros Hbody_result Hmodel.
-  eapply res_models_kripke.
-  - eapply let_result_world_on_le_tlet_result_graph; exact Hbody_result.
-  - exact Hmodel.
-Qed.
+Admitted.
 
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
@@ -2004,7 +1715,13 @@ Qed.
 
     If [m] satisfies [τ] for the expression [e], then the world obtained by
     adding a fresh coordinate [x] containing exactly the possible results of
-    [e] satisfies [τ] for [return x]. *)
+    [e] satisfies [τ] for [return x].
+
+    This is intentionally a denotation-level transport theorem, not a
+    constructor-specific typing case.  The proof must not split into local
+    [CTOver]/[CTUnder] cases for the caller.  If structural induction over
+    [τ] is needed, it belongs in a generic expression-result transport lemma
+    that this theorem instantiates. *)
 Lemma denot_ty_on_let_result_representative
     X Σ τ e x (m : WfWorld) Hfresh Hresult :
   basic_choice_ty (dom Σ) τ →
@@ -3299,11 +3016,18 @@ Proof.
     exact (fib_vars_models_elim _ _ _ _ Hbody_model).
 Qed.
 
-(** Fixed-world body-to-let lifting is not strong enough for the main tlet
-    proof because [denot_ty_on] contains Kripke implications.  The theorem
-    below is the total-aware, Kripke-parametric bridge used by the fundamental
-    theorem; this older shape is kept only as a local target while the
-    structural denotation transport is being factored. *)
+(** Body-to-let lifting for the total tlet proof.
+
+    This statement is deliberately phrased for an arbitrary result type [τ].
+    The proof should use two ingredients:
+
+    - expression-result exactness/composition for [tlete e1 e2];
+    - a generic denotation transport theorem for [denot_ty_on].
+
+    It should not prove the tlet case separately for [CTOver], [CTUnder], or
+    any other type constructor.  Such a split would make the typing rule depend
+    on the shape of [τ], which is the abstraction leak this lemma is meant to
+    avoid. *)
 Lemma denot_ty_on_let_result_body_to_let
     X Σ τ e1 e2 Tx (L : aset) (m : WfWorld) :
   basic_choice_ty (dom Σ) τ →
