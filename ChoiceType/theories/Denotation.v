@@ -211,10 +211,13 @@ Definition let_expr_logic_qual_on
   lqual (X ∪ {[x]} ∪ {[ν]})
     (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w).
 
+Definition FLetResultOnWith
+    (X : aset) (e1 e2 : tm) (x ν : atom) : FQ :=
+  fib_vars (X ∪ {[x]}) (FAtom (let_expr_logic_qual_on X e1 e2 x ν)).
+
 Definition FLetResultOn (X : aset) (e1 e2 : tm) (ν : atom) : FQ :=
   let x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
-  FExists x
-    (fib_vars (X ∪ {[x]}) (FAtom (let_expr_logic_qual_on X e1 e2 x ν))).
+  FExists x (FLetResultOnWith X e1 e2 x ν).
 
 Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
   stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
@@ -225,7 +228,7 @@ Lemma FLetResultOn_fv_subset X e1 e2 ν :
 Proof.
   unfold FLetResultOn.
   set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  simpl. rewrite fib_vars_formula_fv. simpl.
+  simpl. unfold FLetResultOnWith. rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   subst x.
   pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hx.
