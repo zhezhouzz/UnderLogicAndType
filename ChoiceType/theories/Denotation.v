@@ -227,6 +227,55 @@ Definition FLetResultOn (X : aset) (e1 e2 : tm) (ν : atom) : FQ :=
   let x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
   FExists x (FLetResultOnWith X e1 e2 x ν).
 
+Lemma FLetResultOn_models_elim X e1 e2 ν m :
+  m ⊨ FLetResultOn X e1 e2 ν →
+  ∃ L : aset,
+    world_dom (m : World) ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∃ m' : WfWorld,
+        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
+        res_restrict m' (world_dom (m : World)) = m ∧
+        m' ⊨ formula_rename_atom
+          (fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
+          (FLetResultOnWith X e1 e2
+            (fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν).
+Proof.
+  unfold FLetResultOn, res_models, res_models_with_store.
+  simpl. intros [_ [L [HL Hexists]]].
+  exists L. split; [exact HL |].
+  intros y Hy.
+  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hbody]]].
+  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hbody];
+    rewrite formula_rename_preserves_measure; lia.
+Qed.
+
+Lemma FLetResultOn_models_intro X e1 e2 ν m :
+  formula_scoped_in_world ∅ m (FLetResultOn X e1 e2 ν) →
+  (∃ L : aset,
+    world_dom (m : World) ⊆ L ∧
+    ∀ y : atom,
+      y ∉ L →
+      ∃ m' : WfWorld,
+        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
+        res_restrict m' (world_dom (m : World)) = m ∧
+        m' ⊨ formula_rename_atom
+          (fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
+          (FLetResultOnWith X e1 e2
+            (fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)) →
+  m ⊨ FLetResultOn X e1 e2 ν.
+Proof.
+  unfold FLetResultOn, res_models, res_models_with_store.
+  simpl. intros Hscope [L [HL Hexists]]. split; [exact Hscope |].
+  exists L. split; [exact HL |].
+  intros y Hy.
+  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hbody]]].
+  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
+  eapply res_models_with_store_fuel_irrel; [| | exact Hbody];
+    rewrite formula_rename_preserves_measure; lia.
+Qed.
+
 Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=
   fib_vars X (FAtom (expr_logic_qual e ν)).
 
