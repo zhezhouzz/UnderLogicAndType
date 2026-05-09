@@ -141,39 +141,16 @@ explicit store and the world to the qualifier domain.  Therefore, destructing
 m ⊨ FExprResult e ν
 ```
 
-does **not** produce `expr_result_in_world ∅ e ν m`.  It produces a witness
-world `w` such that:
+should be unpacked through the fiber layer, not by old global wrappers that
+erase the input projection.  In particular, avoid lemmas that turn
+`FExprResultOn X e ν` into `expr_result_in_world ∅ e ν ...`; this loses the
+store fixed by `fib_vars X`, and is wrong as soon as `X` is nonempty.
 
-```coq
-expr_result_in_world
-  (store_restrict ∅ (stale e ∪ {[ν]}))
-  e ν
-  (res_restrict w (stale e ∪ {[ν]}))
-∧ w ⊑ m
-```
-
-Use `FExprResult_models_elim` / `FExprResult_models_intro` instead of manually
-unfolding this shape.
-
-For domain-explicit atoms, the safe direction is shrink, not arbitrary grow:
-
-```coq
-FExprResultOn_models_shrink :
-  fv_tm e ⊆ X ->
-  X ⊆ Y ->
-  world_closed_on X m ->
-  world_closed_on Y m ->
-  m ⊨ FExprResultOn Y e ν ->
-  m ⊨ FExprResultOn X e ν.
-```
-
-The reverse direction is not generally valid.  A model of
-`FExprResultOn X e ν` may use an atom witness world whose domain only covers
-`X ∪ {ν}`.  Growing to `Y ∪ {ν}` would require a witness world over the larger
-projection domain, and `FAtom`'s upward closure does not manufacture that
-same-domain extension.  If a proof seems to need this direction, look for a
-separate constructed world (for example a let-result world) or strengthen the
-statement with an explicit extension/pullback witness.
+Use `fib_vars_models_elim` / `fib_vars_models_intro` to expose the projection
+store, then use `FAtom_expr_logic_qual_on_exact` /
+`FAtom_expr_logic_qual_on_intro` at the atom layer.  If a proof needs to change
+the input domain, construct an explicit fiber/projection witness or prove a
+domain-specific lemma; do not rely on arbitrary grow/shrink wrappers.
 
 ## Naming wrappers around shallow atoms
 

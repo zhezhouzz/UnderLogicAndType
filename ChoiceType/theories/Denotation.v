@@ -451,24 +451,6 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
-Lemma FExprResultOn_models_elim X e ν m :
-  m ⊨ FExprResultOn X e ν →
-  ∃ w : WfWorld,
-    formula_scoped_in_world ∅ w (FExprResultOn X e ν) ∧
-    expr_result_in_world ∅ e ν (res_restrict w (X ∪ {[ν]})) ∧
-    w ⊑ m.
-Proof.
-Admitted.
-
-Lemma FExprResultOn_models_intro X e ν m w :
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
-  formula_scoped_in_world ∅ w (FExprResultOn X e ν) →
-  expr_result_in_world ∅ e ν (res_restrict w (X ∪ {[ν]})) →
-  w ⊑ m →
-  m ⊨ FExprResultOn X e ν.
-Proof.
-Admitted.
-
 Lemma FExprResultOn_scoped_dom X e ν m :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
   X ∪ {[ν]} ⊆ world_dom (m : World).
@@ -768,52 +750,6 @@ Proof.
   simpl in Hv_stale. set_solver.
 Qed.
 
-Lemma FExprResult_models_elim e ν m :
-  m ⊨ FExprResult e ν →
-  ∃ w : WfWorld,
-    formula_scoped_in_world ∅ w (FExprResult e ν) ∧
-    expr_result_in_world
-      (store_restrict ∅ (stale e ∪ {[ν]})) e ν
-      (res_restrict w (stale e ∪ {[ν]})) ∧
-    w ⊑ m.
-Proof.
-Admitted.
-
-Lemma FExprResult_models_intro e ν m w :
-  formula_scoped_in_world ∅ m (FExprResult e ν) →
-  formula_scoped_in_world ∅ w (FExprResult e ν) →
-  expr_result_in_world
-    (store_restrict ∅ (stale e ∪ {[ν]})) e ν
-    (res_restrict w (stale e ∪ {[ν]})) →
-  w ⊑ m →
-  m ⊨ FExprResult e ν.
-Proof.
-Admitted.
-
-Lemma FExprResult_models_from_result_inclusion e1 e2 ν m :
-  formula_scoped_in_world ∅ m (FExprResult e1 ν) →
-  (∀ w,
-    formula_scoped_in_world ∅ w (FExprResult e2 ν) →
-    formula_scoped_in_world ∅ w (FExprResult e1 ν)) →
-  (∀ w,
-    expr_result_in_world
-      (store_restrict ∅ (stale e2 ∪ {[ν]})) e2 ν
-      (res_restrict w (stale e2 ∪ {[ν]})) →
-    expr_result_in_world
-      (store_restrict ∅ (stale e1 ∪ {[ν]})) e1 ν
-      (res_restrict w (stale e1 ∪ {[ν]}))) →
-  m ⊨ FExprResult e2 ν →
-  m ⊨ FExprResult e1 ν.
-Proof.
-  intros Hscope Hscope_incl Hincl Hexpr.
-  destruct (FExprResult_models_elim e2 ν m Hexpr) as [w [Hscopew [Hres Hle]]].
-  eapply FExprResult_models_intro.
-  - exact Hscope.
-  - apply Hscope_incl. exact Hscopew.
-  - apply Hincl. exact Hres.
-  - exact Hle.
-Qed.
-
 (** Operational result comparison for open expressions.
 
     This relation is intentionally stated outside Choice Logic.  Logic
@@ -872,25 +808,6 @@ Proof.
   - eapply expr_result_incl_on_trans; eauto.
   - eapply expr_result_incl_on_trans; eauto.
 Qed.
-
-Lemma FExprResultOn_models_result_equiv X e_to e_from ν m :
-  formula_scoped_in_world ∅ m (FExprResultOn X e_to ν) →
-  world_closed_on X m →
-  expr_result_equiv_on X e_to e_from →
-  m ⊨ FExprResultOn X e_from ν →
-  m ⊨ FExprResultOn X e_to ν.
-Proof.
-Admitted.
-
-Lemma FExprResultOn_models_shrink X Y e ν m :
-  fv_tm e ⊆ X →
-  X ⊆ Y →
-  world_closed_on X m →
-  world_closed_on Y m →
-  m ⊨ FExprResultOn Y e ν →
-  m ⊨ FExprResultOn X e ν.
-Proof.
-Admitted.
 
 (** Formula-level result-set view for [let].
 
