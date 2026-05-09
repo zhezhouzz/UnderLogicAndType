@@ -1527,6 +1527,80 @@ Proof.
     + exact Hν.
 Qed.
 
+(** The graph extends the ordinary let-result world when the body is total.
+
+    This is the proof-side bridge that lets a body denotation obtained on
+    [let_result_world_on X e1 x w] be used on the richer graph world by
+    Kripke monotonicity.  The bridge is not automatic: the graph contains a
+    store for [(σ, vx)] only when [e2] also produces some final result [v].
+    Therefore the premise [Hbody_result] is essential and records precisely
+    the totality obligation for the opened body.
+
+    If this lemma were false, the graph would be too small to transport the
+    body proof, and the tlet case could not be proved just from exact result
+    atoms. *)
+Lemma let_result_world_on_le_tlet_result_graph
+    X e1 e2 x ν (w : WfWorld)
+    Hfresh Hresult Hfreshx Hfreshν Hinh :
+  (∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    ∃ v,
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+      stale vx = ∅ ∧
+      is_lc vx ∧
+      stale v = ∅ ∧
+      is_lc v) →
+  let_result_world_on X e1 x w Hfresh Hresult ⊑
+    tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh.
+Proof.
+  intros Hbody_result.
+  pose proof (res_restrict_le
+    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+    (world_dom (let_result_world_on X e1 x w Hfresh Hresult : World))) as Hle.
+  replace (res_restrict
+    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh)
+    (world_dom (let_result_world_on X e1 x w Hfresh Hresult : World)))
+    with (let_result_world_on X e1 x w Hfresh Hresult) in Hle.
+  - exact Hle.
+  - apply wfworld_ext. apply world_ext.
+    + unfold let_result_world_on, let_result_raw_world_on,
+        tlet_result_graph_world_on, tlet_result_graph_raw_world_on.
+      simpl. set_solver.
+	    + intros σx. simpl. split.
+	      * intros [σ [vx [Hσ [Hsteps1 ->]]]].
+	        destruct (Hbody_result σ vx Hσ Hsteps1)
+	          as [v [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale Hv_lc]]]]].
+	        exists (<[ν := v]> (<[x := vx]> σ)). split.
+	        -- apply tlet_result_graph_world_on_member; assumption.
+        -- rewrite store_restrict_insert_notin.
+           ++ rewrite store_restrict_insert_fresh_union.
+              ** rewrite (store_restrict_idemp σ (world_dom (w : World)))
+                   by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
+                 reflexivity.
+              ** apply not_elem_of_dom.
+                 pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+                 rewrite Hdomσ. exact Hfreshx.
+	              ** set_solver.
+	           ++ simpl. set_solver.
+	      * intros [σxν [Hgraph Hrestrict]].
+	        destruct (tlet_result_graph_world_on_elim
+	          X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
+	          as [σ [vx [v [Hσ [Hsteps1 [_ [_ [_ [_ [_ ->]]]]]]]]]].
+	        exists σ, vx. repeat split; eauto.
+	        rewrite <- Hrestrict.
+	        rewrite store_restrict_insert_notin.
+	        -- rewrite store_restrict_insert_fresh_union.
+	           ++ rewrite (store_restrict_idemp σ (world_dom (w : World)))
+	                by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
+	              reflexivity.
+	           ++ apply not_elem_of_dom.
+	              pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+	              rewrite Hdomσ. exact Hfreshx.
+	           ++ set_solver.
+	        -- simpl. set_solver.
+Qed.
+
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
