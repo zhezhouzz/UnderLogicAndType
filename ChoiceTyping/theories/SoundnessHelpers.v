@@ -1644,6 +1644,28 @@ Proof.
       symmetry. exact Hσx_none.
 Qed.
 
+Lemma difference_cons_decompose (X S : aset) (y : atom) :
+  y ∈ X →
+  y ∉ S →
+  X ∖ S = (X ∖ ({[y]} ∪ S)) ∪ {[y]}.
+Proof.
+  intros HyX HyS.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    destruct (decide (z = y)) as [->|Hzy].
+    + set_solver.
+    + set_solver.
+  - intros Hz. set_solver.
+Qed.
+
+Lemma fiber_projection_member_elim (w : WfWorld) X σ Hproj σw :
+  (res_fiber_from_projection w X σ Hproj : World) σw →
+  (w : World) σw ∧ store_restrict σw (dom σ) = σ.
+Proof.
+  unfold res_fiber_from_projection, res_fiber, raw_fiber.
+  simpl. intros H. exact H.
+Qed.
+
 Lemma let_result_world_on_fiber_elim
     X e x (n : WfWorld) Hfresh Hresult ρ Hprojn Hprojlet σx :
   X ⊆ world_dom (n : World) →
@@ -2341,6 +2363,150 @@ Proof.
       destruct (world_wf m) as [[σ Hσm] _].
       destruct (Hm σ Hσm) as [_ Hσρ].
       rewrite <- Hσρ, store_restrict_dom. set_solver.
+Qed.
+
+Lemma fib_vars_obligation_tlete_from_body_foldr
+    xs X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) :
+  NoDup xs →
+  (list_to_set xs : aset) ⊆ X →
+  X ⊆ world_dom (n : World) →
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  ∀ ρ (m mlet : WfWorld),
+    world_dom (m : World) = world_dom (n : World) →
+    world_dom (mlet : World) = world_dom (n : World) ∪ {[x]} →
+    (∀ σ, (m : World) σ →
+      (n : World) σ ∧
+      store_restrict σ (X ∖ (list_to_set xs : aset)) = ρ) →
+    (∀ σx, (mlet : World) σx →
+      ∃ σ vx,
+        (m : World) σ ∧
+        subst_map (store_restrict σ X) e1 →* tret vx ∧
+        σx = <[x := vx]> σ) →
+    (∀ σ vx,
+      (m : World) σ →
+      subst_map (store_restrict σ X) e1 →* tret vx →
+      (mlet : World) (<[x := vx]> σ)) →
+    snd (foldr fib_vars_acc_step
+      (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)),
+       fun ρ m => res_models_with_store ρ m
+         (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)))) xs)
+      ρ mlet →
+    snd (foldr fib_vars_acc_step
+      (FAtom (expr_logic_qual_on X (tlete e1 e2) ν),
+       fun ρ m => res_models_with_store ρ m
+         (FAtom (expr_logic_qual_on X (tlete e1 e2) ν))) xs)
+      ρ m.
+Proof.
+  induction xs as [|y xs IH]; simpl; intros Hnodup Hsub HXdom Hx Hfv Hclosed Hlc Hres_closed Hbody
+    ρ m mlet Hdomm Hdommlet Hm Hmlet_elim Hmlet_intro Hbody_obl.
+  - eapply (fib_vars_obligation_tlete_from_body_foldr_base
+      X e1 e2 x ν n Hfresh Hresult ρ m mlet).
+    + exact Hx.
+    + exact Hfv.
+    + exact Hclosed.
+    + exact Hlc.
+    + exact Hres_closed.
+    + exact Hbody.
+    + exact Hdomm.
+    + exact Hdommlet.
+    + intros σ Hσ. destruct (Hm σ Hσ) as [Hσn Hσρ].
+      split; [exact Hσn |]. rewrite difference_empty_L in Hσρ. exact Hσρ.
+    + exact Hmlet_elim.
+    + exact Hmlet_intro.
+    + exact Hbody_obl.
+  - inversion Hnodup as [|? ? Hy_notin Hnodup']; subst.
+    destruct (foldr fib_vars_acc_step
+      (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)),
+       fun ρ m => res_models_with_store ρ m
+         (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)))) xs)
+      as [p_body R_body] eqn:Hbody_tail.
+    destruct (foldr fib_vars_acc_step
+      (FAtom (expr_logic_qual_on X (tlete e1 e2) ν),
+       fun ρ m => res_models_with_store ρ m
+         (FAtom (expr_logic_qual_on X (tlete e1 e2) ν))) xs)
+      as [p_let R_let] eqn:Hlet_tail.
+    simpl in Hbody_obl |- *.
+    unfold fib_vars_obligation_step in Hbody_obl.
+    destruct Hbody_obl as [Hdisj Hfib]. split; [exact Hdisj |].
+    intros σy Hprojy_m.
+    assert (HyX : y ∈ X).
+    { apply Hsub. set_solver. }
+    assert (Hyx : y ≠ x) by set_solver.
+    assert (Hdomσy : dom σy = {[y]}).
+    {
+      destruct Hprojy_m as [σ0 [Hσ0 Hσ0y]].
+      assert (Hσyeq : σy = store_restrict σ0 {[y]}) by (symmetry; exact Hσ0y).
+      pose proof (wfworld_store_dom m σ0 Hσ0) as Hdomσ0.
+      rewrite Hσyeq, store_restrict_dom.
+      set_solver.
+    }
+    assert (Hprojy_mlet : res_restrict mlet {[y]} σy).
+    {
+      destruct Hprojy_m as [σ0 [Hσ0 Hσ0y]].
+      destruct (Hm σ0 Hσ0) as [Hσ0n _].
+      destruct (Hresult σ0 Hσ0n) as [vx Hsteps].
+      exists (<[x := vx]> σ0). split.
+      - apply Hmlet_intro; [exact Hσ0 | exact Hsteps].
+      - rewrite store_restrict_insert_notin by set_solver.
+        exact Hσ0y.
+    }
+    specialize (Hfib σy Hprojy_mlet).
+    eapply (IH Hnodup'
+      ltac:(intros z Hz; apply Hsub; set_solver)
+      HXdom Hx Hfv Hclosed Hlc Hres_closed Hbody
+      (ρ ∪ σy)
+      (res_fiber_from_projection m {[y]} σy Hprojy_m)
+      (res_fiber_from_projection mlet {[y]} σy Hprojy_mlet)).
+    + simpl. rewrite Hdomm. reflexivity.
+    + simpl. rewrite Hdommlet. reflexivity.
+    + intros σ Hσ.
+      destruct Hσ as [Hσm Hσy].
+      destruct (Hm σ Hσm) as [Hσn Hσρ].
+      split; [exact Hσn |].
+      replace (X ∖ (list_to_set xs : aset)) with
+        ((X ∖ ({[y]} ∪ (list_to_set xs : aset))) ∪ {[y]}).
+      rewrite (store_restrict_union_from_parts σ ρ σy
+        (X ∖ ({[y]} ∪ (list_to_set xs : aset))) y).
+      * reflexivity.
+      * timeout 3 set_solver.
+      * exact Hσρ.
+      * rewrite <- Hdomσy. exact Hσy.
+      * symmetry. apply difference_cons_decompose.
+        -- exact HyX.
+        -- rewrite elem_of_list_to_set. exact Hy_notin.
+    + intros σx Hσx.
+      destruct (fiber_projection_member_elim _ _ _ _ _ Hσx)
+        as [Hσx_mlet Hσx_y].
+      destruct (Hmlet_elim σx Hσx_mlet) as [σ [vx [Hσm [Hsteps ->]]]].
+      exists σ, vx. split.
+      * apply res_fiber_from_projection_member; [exact Hσm |].
+        rewrite <- Hσx_y.
+        rewrite Hdomσy.
+        rewrite store_restrict_insert_notin by (timeout 3 set_solver).
+        reflexivity.
+      * split; [exact Hsteps | reflexivity].
+    + intros σ vx Hσ Hsteps.
+      destruct (fiber_projection_member_elim _ _ _ _ _ Hσ)
+        as [Hσm Hσy].
+      apply res_fiber_from_projection_member.
+      * apply Hmlet_intro; [exact Hσm | exact Hsteps].
+      * transitivity (store_restrict (<[x := vx]> σ) (dom σy)).
+        -- rewrite Hdomσy. reflexivity.
+        -- rewrite store_restrict_insert_notin.
+           ++ exact Hσy.
+           ++ rewrite Hdomσy. timeout 3 set_solver.
+    + exact Hfib.
 Qed.
 
 (** Lifting the one-projection semantic core through the outer [X] fibers.
