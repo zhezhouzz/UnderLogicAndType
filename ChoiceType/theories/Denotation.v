@@ -174,19 +174,21 @@ Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) 
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
   ∀ σw,
     (w : World) σw ↔
+    dom σw = world_dom (w : World) ∧
     expr_result_in_store ρ e ν σw.
 
 Lemma expr_result_in_world_sound ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   (w : World) σw →
   expr_result_in_store ρ e ν σw.
-Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
+Proof. intros H Hw. exact (proj2 (proj1 (H σw) Hw)). Qed.
 
 Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_in_world ρ e ν w →
+  dom σw = world_dom (w : World) →
   expr_result_in_store ρ e ν σw →
   (w : World) σw.
-Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
+Proof. intros H Hdom Hσ. exact (proj2 (H σw) (conj Hdom Hσ)). Qed.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual (stale e ∪ {[ν]}) (fun σ w => expr_result_in_world σ e ν w).
@@ -915,7 +917,7 @@ Proof.
   change (stale (tret v)) with (stale v) in Hqual.
   rewrite Hvclosed in Hqual.
   replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
-  destruct (proj1 (Hqual σ) Hσ) as [v' [Hν Hsteps]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [v' [Hν Hsteps]]].
   change (subst_map (store_restrict ∅ {[ν]}) (tret v))
     with (m{store_restrict ∅ {[ν]}} (tret v)) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
@@ -935,7 +937,7 @@ Proof.
   intros Hqual Hσ.
   unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
   change (stale (tret v)) with (stale v) in Hqual.
-  destruct (proj1 (Hqual σ) Hσ) as [v' [Hν Hsteps]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [v' [Hν Hsteps]]].
   change (subst_map (store_restrict ∅ (stale v ∪ {[ν]})) (tret v))
     with (m{store_restrict ∅ (stale v ∪ {[ν]})} (tret v)) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
@@ -999,7 +1001,7 @@ Proof.
   unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
   replace (({[x]} : aset) ∪ {[ν]}) with ({[x]} ∪ {[ν]} : aset) in Hqual
     by reflexivity.
-  destruct (proj1 (Hqual σ) Hσ) as [v [Hν Hsteps]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [v [Hν Hsteps]]].
   change (subst_map (store_restrict ∅ ({[x]} ∪ {[ν]})) (tret x))
     with (m{store_restrict ∅ ({[x]} ∪ {[ν]})} (tret (vfvar x))) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
