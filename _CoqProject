@@ -53,6 +53,10 @@ ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/InstantiationProps.v
+ChoiceType/theories/DenotationFormula.v
+ChoiceType/theories/DenotationExprProps.v
+ChoiceType/theories/DenotationType.v
+ChoiceType/theories/DenotationContext.v
 ChoiceType/theories/Denotation.v
 ChoiceType/theories/Sugar.v
 ChoiceTyping/theories/WellFormed.v
