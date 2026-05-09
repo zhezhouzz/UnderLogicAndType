@@ -205,30 +205,24 @@ Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) 
   expr_result_store ν (subst_map ρ e) σw.
 
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
-  world_dom (w : World) = {[ν]} ∧
-  ∀ σw,
-    (w : World) σw ↔ expr_result_in_store ρ e ν σw.
+  ∀ σν,
+    (res_restrict w {[ν]} : World) σν ↔ expr_result_in_store ρ e ν σν.
 
 Lemma expr_result_in_world_sound ρ e ν w σw :
   expr_result_in_world ρ e ν w →
-  (w : World) σw →
+  (res_restrict w {[ν]} : World) σw →
   expr_result_in_store ρ e ν σw.
-Proof. intros [_ H] Hw. exact (proj1 (H σw) Hw). Qed.
+Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
 
 Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   expr_result_in_store ρ e ν σw →
-  (w : World) σw.
-Proof. intros [_ H] Hσ. exact (proj2 (H σw) Hσ). Qed.
-
-Lemma expr_result_in_world_dom ρ e ν w :
-  expr_result_in_world ρ e ν w →
-  world_dom (w : World) = {[ν]}.
-Proof. intros [Hdom _]. exact Hdom. Qed.
+  (res_restrict w {[ν]} : World) σw.
+Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
 
 Lemma expr_result_in_world_store_elim ρ e ν w σw :
   expr_result_in_world ρ e ν w →
-  (w : World) σw →
+  (res_restrict w {[ν]} : World) σw →
   ∃ v,
     σw = {[ν := v]} ∧
     stale v = ∅ ∧

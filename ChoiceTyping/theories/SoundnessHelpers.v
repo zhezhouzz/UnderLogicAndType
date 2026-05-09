@@ -1731,6 +1731,86 @@ Lemma denot_tlet_semantic_at_world
 Proof.
 Admitted.
 
+(** The fold order chosen by [stdpp.set_fold] is intentionally abstract.  For
+    the tlet proof we need to expose the semantic order [X] first and the bound
+    result coordinate [x] second.  This is pure fiber bookkeeping: it follows
+    from commutation of independent [FFib] modalities and [res_fiber_commute]. *)
+Lemma fib_vars_obligation_insert_fresh_to_fib
+    X x p ρ m :
+  x ∉ X →
+  fib_vars_obligation (X ∪ {[x]}) p ρ m →
+  fib_vars_obligation X (FFib x p) ρ m.
+Proof.
+Admitted.
+
+(** One-projection semantic core of tlet.
+
+    After the outer [X]-fibers have fixed the input store [ρ], the body-side
+    obligation still contains one more fiber for [x].  That [x]-fiber ranges
+    over exactly the stores produced by [let_result_world_on]: each admissible
+    input store is paired with an actual result [vx] of [e1].  Exactness of the
+    inner result projection for [e2 ^^ x], together with the operational let
+    bridge [expr_result_value_tlete_from_body_store], yields exactness of the
+    [ν]-projection for [tlete e1 e2].
+
+    The remaining proof work here is algebraic alignment of the fibered
+    [let_result_world_on] with the fibered base world. *)
+Lemma expr_result_in_world_tlete_from_body_xfiber
+    X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx)
+    (ρ : Store) (m mlet : WfWorld) :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (* [m] is the current [X]-fiber of [n], and [ρ] is its fixed projection. *)
+  (∀ σ, (m : World) σ → (n : World) σ ∧ store_restrict σ X = ρ) →
+  (* [mlet] is the matching [X]-fiber of [let_result_world_on X e1 x n]. *)
+  (∀ σx, (mlet : World) σx →
+    ∃ σ vx,
+      (m : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      σx = <[x := vx]> σ) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    (mlet : World) (<[x := vx]> σ)) →
+  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual (e2 ^^ x) ν))) →
+  expr_result_in_world ρ (tlete e1 e2) ν m.
+Proof.
+Admitted.
+
+(** Lifting the one-projection semantic core through the outer [X] fibers.
+    This is the induction over [fib_vars_obligation X].  Its non-mechanical
+    leaf is [expr_result_in_world_tlete_from_body_xfiber]; the rest is threading
+    the invariant that the current fiber of [n] consists exactly of stores with
+    the accumulated projection [ρ]. *)
+Lemma fib_vars_obligation_tlete_from_body_normalized
+    X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  fib_vars_obligation X
+    (FFib x (FAtom (expr_logic_qual (e2 ^^ x) ν))) ∅
+    (let_result_world_on X e1 x n Hfresh Hresult) →
+  fib_vars_obligation X
+    (FAtom (expr_logic_qual (tlete e1 e2) ν)) ∅ n.
+Proof.
+Admitted.
+
 Lemma fib_vars_obligation_tlete_from_body_result_world
     X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
   x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
@@ -1748,7 +1828,10 @@ Lemma fib_vars_obligation_tlete_from_body_result_world
   fib_vars_obligation X
     (FAtom (expr_logic_qual (tlete e1 e2) ν)) ∅ n.
 Proof.
-Admitted.
+  intros Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
+  eapply fib_vars_obligation_tlete_from_body_normalized; eauto.
+  eapply fib_vars_obligation_insert_fresh_to_fib; [set_solver | exact Hbody_obl].
+Qed.
 
 Lemma FExprResultOn_tlete_from_body_result_world
     X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
