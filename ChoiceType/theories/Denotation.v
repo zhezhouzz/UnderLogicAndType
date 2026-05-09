@@ -670,6 +670,48 @@ Proof.
     exists v, vx. repeat split; eauto.
 Qed.
 
+Lemma expr_result_in_store_tlete_to_body_open_atom ρ e1 e2 x ν σν :
+  closed_env ρ →
+  lc_env ρ →
+  x ∉ dom ρ ∪ fv_tm e2 →
+  (∀ vx, subst_map ρ e1 →* tret vx → stale vx = ∅ ∧ is_lc vx) →
+  expr_result_in_store ρ (tlete e1 e2) ν σν →
+  ∃ vx,
+    subst_map ρ e1 →* tret vx ∧
+    expr_result_in_store (<[x := vx]> ρ) (e2 ^^ x) ν σν.
+Proof.
+  intros Hclosed Hlc Hx Hresult_closed Hstore.
+  destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σν Hstore)
+    as [v [Hσν [Hv_closed [Hv_lc _]]]].
+  destruct (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore)
+    as [v' [vx [Hσν' [Hsteps1 Hsteps2]]]].
+  subst σν.
+  assert (Hv' : v' = v).
+  {
+    assert (({[ν := v']} : Store) !! ν = Some v).
+    {
+      rewrite <- Hσν'.
+      rewrite lookup_singleton. rewrite decide_True by reflexivity.
+      reflexivity.
+    }
+    rewrite lookup_singleton in H.
+    rewrite decide_True in H by reflexivity.
+    inversion H. reflexivity.
+  }
+  subst v'.
+  exists vx. split; [exact Hsteps1 |].
+  apply expr_result_store_intro; [exact Hv_closed | exact Hv_lc |].
+  change (subst_map (<[x := vx]> ρ) (e2 ^^ x)) with
+    (m{<[x := vx]> ρ} (open_tm 0 (vfvar x) e2)).
+  rewrite (msubst_intro_open_tm e2 0 vx x ρ).
+  - exact Hsteps2.
+  - exact Hclosed.
+  - apply (proj1 (Hresult_closed vx Hsteps1)).
+  - apply (proj2 (Hresult_closed vx Hsteps1)).
+  - exact Hlc.
+  - exact Hx.
+Qed.
+
 Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   stale vx = ∅ →
   σw !! x = Some vx →
