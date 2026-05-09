@@ -76,6 +76,13 @@ It says that a single concrete tlet result can be decomposed into some
 intermediate `vx`, then re-expressed as a result of `(e2 ^^ x)` under
 `<[x := vx]> ρ`.
 
+Be careful with world-level bridges that erase the input projection.  A lemma
+that turns a let-result world over `X` directly into
+`expr_result_in_world ∅ (tlete e1 e2) ...` is usually too strong when `X` is
+nonempty: the expression still needs the fixed `X` projection as its input
+environment.  Prefer store-level pointwise lemmas, or world lemmas parameterized
+by the relevant projection store.
+
 Prefer the closed-value version of the substitution fact.  For a returned
 variable, proving
 
