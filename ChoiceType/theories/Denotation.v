@@ -200,8 +200,7 @@ Definition expr_let_result_in_store_on
 Definition expr_let_result_in_world_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld) : Prop :=
   ∀ σw,
-    (w : World) σw →
-    expr_let_result_in_store_on X e1 e2 x ν σw.
+    (w : World) σw ↔ expr_let_result_in_store_on X e1 e2 x ν σw.
 
 Definition let_expr_logic_qual_on
     (X : aset) (e1 e2 : tm) (x ν : atom) : logic_qualifier :=
@@ -531,7 +530,7 @@ Proof.
   intros Hfv1 Hfv2 Hclosed Hbody Hlet σS HσS.
   simpl in HσS.
   destruct HσS as [σw [Hσw Hrestrict]].
-  destruct (Hlet σw Hσw) as [vx [v [Hx [Hν [Hsteps1 Hsteps2]]]]].
+  destruct (proj1 (Hlet σw) Hσw) as [vx [v [Hx [Hν [Hsteps1 Hsteps2]]]]].
   assert (HclosedX : closed_env (store_restrict σw X)).
   { apply Hclosed. exact Hσw. }
   assert (HclosedXνX :
