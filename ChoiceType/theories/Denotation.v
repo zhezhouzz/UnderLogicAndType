@@ -1065,11 +1065,67 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma foldr_fib_vars_acc_fst_ret_const xs X c ν R :
+  fst (foldr fib_vars_acc_step
+    (FAtom (expr_logic_qual_on X (tret (vconst c)) ν), R) xs) =
+  foldr FFib (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)) xs.
+Proof.
+  induction xs as [|x xs IH]; simpl; [reflexivity |].
+  rewrite <- IH. destruct (foldr fib_vars_acc_step
+    (FAtom (expr_logic_qual_on X (tret (vconst c)) ν), R) xs); reflexivity.
+Qed.
+
+Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :
+  res_models_with_store ρ m
+    (foldr FFib (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)) xs) →
+  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
+Proof.
+  revert ρ m.
+  induction xs as [|x xs IH]; simpl; intros ρ m Hm σν Hσν.
+  - pose proof (FAtom_expr_logic_qual_on_exact
+      X (tret (vconst c)) ν ρ m Hm) as Hexact.
+    pose proof (expr_result_in_world_sound
+      (store_restrict ρ X) (tret (vconst c)) ν m σν Hexact Hσν) as Hstore.
+    destruct (expr_result_store_elim ν
+      (subst_map (store_restrict ρ X) (tret (vconst c))) σν Hstore)
+      as [v [Hσν_eq [_ [_ Hsteps]]]].
+    change (subst_map (store_restrict ρ X) (tret (vconst c))) with
+      (m{store_restrict ρ X} (tret (vconst c))) in Hsteps.
+    rewrite msubst_ret in Hsteps.
+    rewrite (msubst_fresh (store_restrict ρ X) (vconst c)) in Hsteps
+      by (simpl; set_solver).
+    pose proof (val_steps_self (vconst c) (tret v) Hsteps) as Hret.
+    injection Hret as Hv. subst v.
+    rewrite Hσν_eq, lookup_singleton, decide_True by reflexivity.
+    reflexivity.
+  - unfold res_models_with_store in Hm. simpl in Hm.
+    destruct Hm as [_ [_ Hfib]].
+    destruct Hσν as [σw [Hσw Hσν]].
+    set (σx := store_restrict σw {[x]}).
+    assert (Hprojx : res_restrict m {[x]} σx).
+    {
+      exists σw. split; [exact Hσw | reflexivity].
+    }
+    specialize (Hfib σx Hprojx).
+    eapply IH.
+    + eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia.
+    + exists σw. split.
+      * apply res_fiber_from_projection_member; [exact Hσw | reflexivity].
+      * exact Hσν.
+Qed.
+
 Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
   m ⊨ FExprResultOn X (tret (vconst c)) ν →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
 Proof.
-Admitted.
+  intros Hm σ Hσ.
+  change (res_models_with_store ∅ m
+    (fib_vars X (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)))) in Hm.
+  unfold fib_vars, fib_vars_acc, set_fold in Hm.
+  cbn [compose] in Hm.
+  rewrite foldr_fib_vars_acc_fst_ret_const in Hm.
+  eapply foldr_fib_ret_const_lookup; eauto.
+Qed.
 
 Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
   logic_qualifier_denote (expr_logic_qual (tret (vfvar x)) ν) ∅ w →
