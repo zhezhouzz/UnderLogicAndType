@@ -1578,6 +1578,63 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma let_result_world_on_fiber_elim
+    X e x (n : WfWorld) Hfresh Hresult ρ Hprojn Hprojlet σx :
+  X ⊆ world_dom (n : World) →
+  x ∉ X →
+  (res_fiber_from_projection
+    (let_result_world_on X e x n Hfresh Hresult) X ρ Hprojlet : World) σx →
+  ∃ σ vx,
+    (res_fiber_from_projection n X ρ Hprojn : World) σ ∧
+    subst_map (store_restrict σ X) e →* tret vx ∧
+    σx = <[x := vx]> σ.
+Proof.
+  intros _ HxX [Hσx Hσxρ].
+  destruct (let_result_world_on_elim X e x n Hfresh Hresult σx Hσx)
+    as [σ [vx [Hσ [Hsteps ->]]]].
+  exists σ, vx. split.
+  - simpl. split; [exact Hσ |].
+    assert (Hdomρ : dom ρ ⊆ X).
+    { destruct Hprojlet as [τ [_ Hτrestrict]].
+      rewrite <- Hτrestrict. rewrite store_restrict_dom. set_solver. }
+    assert (Hxdomρ : x ∉ dom ρ) by set_solver.
+    assert (Hσρ : store_restrict σ (dom ρ) = ρ).
+    {
+      transitivity (store_restrict (<[x := vx]> σ) (dom ρ)).
+      - symmetry. apply store_restrict_insert_notin. exact Hxdomρ.
+      - exact Hσxρ.
+    }
+    exact Hσρ.
+  - split; [exact Hsteps | reflexivity].
+Qed.
+
+Lemma let_result_world_on_fiber_intro
+    X e x (n : WfWorld) Hfresh Hresult ρ Hprojn Hprojlet σ vx :
+  X ⊆ world_dom (n : World) →
+  x ∉ X →
+  (res_fiber_from_projection n X ρ Hprojn : World) σ →
+  subst_map (store_restrict σ X) e →* tret vx →
+  (res_fiber_from_projection
+    (let_result_world_on X e x n Hfresh Hresult) X ρ Hprojlet : World)
+    (<[x := vx]> σ).
+Proof.
+  intros HXdom HxX Hσ Hsteps.
+  destruct Hσ as [Hσn Hσρ].
+  assert (Hdomρ : dom ρ = X).
+  {
+    destruct Hprojn as [σ0 [Hσ0 Hσ0ρ]].
+    assert (Hρeq : ρ = store_restrict σ0 X) by (symmetry; exact Hσ0ρ).
+    pose proof (wfworld_store_dom n σ0 Hσ0) as Hdomσ0.
+    rewrite Hρeq.
+    rewrite store_restrict_dom.
+    set_solver.
+  }
+  apply res_fiber_from_projection_member.
+  - apply let_result_world_on_member; [exact Hσn | exact Hsteps].
+  - rewrite store_restrict_insert_notin by exact HxX.
+    rewrite <- Hdomρ. exact Hσρ.
+Qed.
+
 Lemma expr_total_on_tlete_from_open
     (X : aset) e1 e2 x (m : WfWorld) Hfresh Hresult :
   x ∉ X →
