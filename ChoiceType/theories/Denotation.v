@@ -167,6 +167,13 @@ Proof.
 Qed.
 
 Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
+  closed_env σw ∧
+  lc_env σw ∧
+  ∃ v,
+    σw !! ν = Some v ∧
+    subst_map σw (subst_map ρ e) →* tret v.
+
+Definition expr_result_steps_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
     ∃ v,
       σw !! ν = Some v ∧
       subst_map σw (subst_map ρ e) →* tret v.
@@ -449,6 +456,18 @@ Proof.
   exact Hres.
 Qed.
 
+Lemma FExprResultOn_scoped_dom X e ν m :
+  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
+  X ∪ {[ν]} ⊆ world_dom (m : World).
+Proof.
+  intros Hscope z Hz.
+  apply Hscope.
+  apply elem_of_union. right.
+  unfold FExprResultOn, FExprResultOnRaw. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  exact Hz.
+Qed.
+
 Lemma FExprResultOn_models_intro_obligation X e ν m :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
   fib_vars_obligation X (FAtom (expr_logic_qual e ν)) ∅ m →
@@ -514,7 +533,7 @@ Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
 Proof.
   intros Hres σw Hσw.
   destruct (expr_result_in_world_sound ρ (tlete e1 e2) ν w σw Hres Hσw)
-    as [v [Hν Hsteps]].
+    as [_ [_ [v [Hν Hsteps]]]].
   exists v.
   change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
@@ -533,7 +552,7 @@ Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
     subst_map σw (subst_map ρ e1) →* tret vx ∧
     open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
 Proof.
-  intros [v [Hν Hsteps]].
+  intros [_ [_ [v [Hν Hsteps]]]].
   exists v.
   change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
@@ -570,6 +589,8 @@ Proof.
 Admitted.
 
 Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
+  closed_env σw →
+  lc_env σw →
   (∃ v vx,
     σw !! ν = Some v ∧
     body_tm (subst_map σw (subst_map ρ e2)) ∧
@@ -577,8 +598,11 @@ Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
     open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
   expr_result_in_store ρ (tlete e1 e2) ν σw.
 Proof.
-  intros [v [vx [Hν [Hbody [He1 He2]]]]].
-  exists v. split; [exact Hν |].
+  intros Hclosed Hlc [v [vx [Hν [Hbody [He1 He2]]]]].
+  repeat split.
+  - exact Hclosed.
+  - exact Hlc.
+  - exists v. split; [exact Hν |].
   change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v).
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
   rewrite (msubst_lete ρ e1 e2).
@@ -594,7 +618,7 @@ Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   σw !! ν = Some vx.
 Proof.
-  intros Hvclosed Hx [v [Hν Hsteps]].
+  intros Hvclosed Hx [_ [_ [v [Hν Hsteps]]]].
   change (subst_map σw (subst_map ∅ (tret (vfvar x))) →* tret v) in Hsteps.
   change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
   rewrite msubst_empty in Hsteps.
@@ -610,7 +634,8 @@ Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   expr_result_in_store ρ e ν σw.
 Proof.
-  intros Hclosed_result [vx [Hx Hsteps]] Hret.
+  intros Hclosed_result [Hclosed [Hlc [vx [Hx Hsteps]]]] Hret.
+  repeat split; try assumption.
   exists vx. split.
   - eapply expr_result_in_store_ret_fvar_lookup; eauto.
   - exact Hsteps.
@@ -917,7 +942,7 @@ Proof.
   change (stale (tret v)) with (stale v) in Hqual.
   rewrite Hvclosed in Hqual.
   replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [v' [Hν Hsteps]]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v' [Hν Hsteps]]]]].
   change (subst_map (store_restrict ∅ {[ν]}) (tret v))
     with (m{store_restrict ∅ {[ν]}} (tret v)) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
@@ -937,7 +962,7 @@ Proof.
   intros Hqual Hσ.
   unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
   change (stale (tret v)) with (stale v) in Hqual.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [v' [Hν Hsteps]]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v' [Hν Hsteps]]]]].
   change (subst_map (store_restrict ∅ (stale v ∪ {[ν]})) (tret v))
     with (m{store_restrict ∅ (stale v ∪ {[ν]})} (tret v)) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
@@ -1001,7 +1026,7 @@ Proof.
   unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
   replace (({[x]} : aset) ∪ {[ν]}) with ({[x]} ∪ {[ν]} : aset) in Hqual
     by reflexivity.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [v [Hν Hsteps]]].
+  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v [Hν Hsteps]]]]].
   change (subst_map (store_restrict ∅ ({[x]} ∪ {[ν]})) (tret x))
     with (m{store_restrict ∅ ({[x]} ∪ {[ν]})} (tret (vfvar x))) in Hsteps.
   rewrite store_restrict_empty in Hsteps.
