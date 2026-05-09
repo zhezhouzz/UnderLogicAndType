@@ -1804,7 +1804,7 @@ Proof.
 	    unfold formula_scoped_in_world in Hscopew.
 	    apply elem_of_union in Hz as [Hzempty | Hz].
 	    { apply elem_of_empty in Hzempty. contradiction. }
-	    unfold FExprResultOn in Hz.
+		    unfold FExprResultOn, FExprResultOnRaw in Hz.
 	    rewrite fib_vars_formula_fv in Hz.
 	    simpl in Hz.
 	    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
@@ -1820,7 +1820,7 @@ Proof.
 	      z ∈ dom (∅ : Store) ∪ formula_fv (FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν)).
 	    {
 	      apply elem_of_union. right.
-	      unfold FExprResultOn.
+		      unfold FExprResultOn, FExprResultOnRaw.
 	      rewrite fib_vars_formula_fv. simpl.
 	      unfold stale, stale_logic_qualifier. simpl.
 	      pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
@@ -1839,7 +1839,7 @@ Proof.
 	    intros z Hz.
 	    apply elem_of_union in Hz as [Hzempty | Hz].
 	    { apply elem_of_empty in Hzempty. contradiction. }
-	    unfold FExprResultOn in Hz.
+		    unfold FExprResultOn, FExprResultOnRaw in Hz.
 	    rewrite fib_vars_formula_fv in Hz.
 	    simpl in Hz.
 	    unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
@@ -1849,7 +1849,7 @@ Proof.
 	    unfold formula_scoped_in_world in Hscopew.
 	    apply Hscopew.
 	    apply elem_of_union. right.
-	    unfold FExprResultOn.
+		    unfold FExprResultOn, FExprResultOnRaw.
 	    rewrite fib_vars_formula_fv. simpl.
 	    unfold stale, stale_logic_qualifier. simpl.
 	    apply elem_of_union in HzS as [HzX | Hzν].
@@ -1867,7 +1867,7 @@ Proof.
 	      intros z Hz.
 	      apply Hscopew.
 	      apply elem_of_union. right.
-	      unfold FExprResultOn.
+		      unfold FExprResultOn, FExprResultOnRaw.
 	      rewrite fib_vars_formula_fv. simpl.
 	      unfold stale, stale_logic_qualifier. simpl.
 	      pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
@@ -2020,7 +2020,7 @@ Proof.
 	        intros z Hz.
 	        apply Hscopew.
 	        apply elem_of_union. right.
-	        unfold FExprResultOn.
+		        unfold FExprResultOn, FExprResultOnRaw.
 	        rewrite fib_vars_formula_fv. simpl.
 	        unfold stale, stale_logic_qualifier. simpl.
 	        apply elem_of_union in Hz as [HzX | Hzν].
