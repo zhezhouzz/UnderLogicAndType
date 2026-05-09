@@ -602,18 +602,6 @@ Proof.
   exact (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore).
 Qed.
 
-Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
-  (∀ σw,
-    (w : World) σw →
-    ∃ v vx,
-      σw !! ν = Some v ∧
-      body_tm (subst_map σw (subst_map ρ e2)) ∧
-      subst_map σw (subst_map ρ e1) →* tret vx ∧
-      open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
-  expr_result_in_world ρ (tlete e1 e2) ν w.
-Proof.
-Admitted.
-
 Lemma expr_let_result_in_world_on_to_tlete
     X e1 e2 x ν (w : WfWorld) :
   fv_tm e1 ⊆ X →
@@ -639,6 +627,47 @@ Proof.
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
   rewrite msubst_lete.
   eapply reduction_lete_intro; eauto.
+Qed.
+
+Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
+  body_tm (subst_map ρ e2) →
+  (∀ σν,
+    (res_restrict w {[ν]} : World) σν ↔
+    ∃ v vx,
+      σν = {[ν := v]} ∧
+      stale v = ∅ ∧
+      is_lc v ∧
+      subst_map ρ e1 →* tret vx ∧
+      open_tm 0 vx (subst_map ρ e2) →* tret v) →
+  expr_result_in_world ρ (tlete e1 e2) ν w.
+Proof.
+  intros Hbody Hexact σν. split.
+  - intros Hσν.
+    destruct (proj1 (Hexact σν) Hσν)
+      as [v [vx [Hσν_eq [Hv_closed [Hv_lc [Hsteps1 Hsteps2]]]]]].
+    subst σν.
+    eapply expr_result_in_store_let_intro; eauto.
+  - intros Hstore.
+    destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σν Hstore)
+      as [v [Hσν_eq [Hv_closed [Hv_lc Hsteps]]]].
+    destruct (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore)
+      as [v' [vx [Hσν_eq' [Hsteps1 Hsteps2]]]].
+    subst σν.
+    assert (Hv' : v' = v).
+    {
+      assert (({[ν := v']} : Store) !! ν = Some v).
+      {
+        rewrite <- Hσν_eq'.
+        rewrite lookup_singleton. rewrite decide_True by reflexivity.
+        reflexivity.
+      }
+      rewrite lookup_singleton in H.
+      rewrite decide_True in H by reflexivity.
+      inversion H. reflexivity.
+    }
+    subst v'.
+    apply (proj2 (Hexact {[ν := v]})).
+    exists v, vx. repeat split; eauto.
 Qed.
 
 Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
