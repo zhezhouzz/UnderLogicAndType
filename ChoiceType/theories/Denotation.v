@@ -1010,14 +1010,6 @@ Lemma FLetResult_models_intro e1 e2 ν m :
 Proof.
 Admitted.
 
-Lemma expr_logic_qual_denote_store_restrict e ν ρ w X :
-  closed_env ρ →
-  stale e ⊆ X →
-  logic_qualifier_denote (expr_logic_qual e ν) (map_restrict value ρ X) w ↔
-  logic_qualifier_denote (expr_logic_qual e ν) ρ w.
-Proof.
-Admitted.
-
 Lemma expr_logic_qual_renamed_result_steps e x y ρ w σw :
   x ∉ stale e →
   y ∉ stale e →
