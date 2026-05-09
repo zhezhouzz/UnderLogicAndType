@@ -2258,6 +2258,91 @@ Proof.
     eapply let_result_world_on_fiber_intro; eauto; set_solver.
 Qed.
 
+Lemma fib_vars_obligation_tlete_from_body_foldr_base
+    X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx)
+    ρ (m mlet : WfWorld) :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  world_dom (m : World) = world_dom (n : World) →
+  world_dom (mlet : World) = world_dom (n : World) ∪ {[x]} →
+  (∀ σ, (m : World) σ → (n : World) σ ∧ store_restrict σ X = ρ) →
+  (∀ σx, (mlet : World) σx →
+    ∃ σ vx,
+      (m : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      σx = <[x := vx]> σ) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    (mlet : World) (<[x := vx]> σ)) →
+  res_models_with_store ρ mlet
+    (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
+  res_models_with_store ρ m
+    (FAtom (expr_logic_qual_on X (tlete e1 e2) ν)).
+Proof.
+  intros Hx Hfv Hclosed Hlc Hres_closed Hbody Hdomm Hdommlet
+    Hm Hmlet_elim Hmlet_intro Hbody_model.
+  assert (Hexact : expr_result_in_world ρ (tlete e1 e2) ν m).
+  {
+    eapply (expr_result_in_world_tlete_from_body_xfiber
+      X e1 e2 x ν n Hfresh Hresult ρ m mlet).
+    - exact Hx.
+    - exact Hfv.
+    - exact Hclosed.
+    - exact Hlc.
+    - exact Hres_closed.
+    - exact Hbody.
+    - exact Hm.
+    - exact Hmlet_elim.
+    - exact Hmlet_intro.
+    - exact Hbody_model.
+  }
+  assert (Hscope_body :
+    formula_scoped_in_world ρ mlet
+      (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)))).
+  { apply (res_models_with_store_fuel_scoped _ _ _ _ Hbody_model). }
+  assert (Hscope :
+    formula_scoped_in_world ρ m
+      (FAtom (expr_logic_qual_on X (tlete e1 e2) ν))).
+  {
+    assert (HdomρX : dom ρ ⊆ X).
+    {
+      destruct (world_wf m) as [[σ Hσm] _].
+      destruct (Hm σ Hσm) as [_ Hσρ].
+      rewrite <- Hσρ, store_restrict_dom. set_solver.
+    }
+    unfold formula_scoped_in_world in *.
+    simpl in *. unfold stale, stale_logic_qualifier in *. simpl in *.
+    intros z Hz.
+    rewrite Hdomm.
+    assert (Hz_body :
+      z ∈ dom ρ ∪ ({[x]} ∪ (X ∪ {[x]} ∪ {[ν]}))).
+    { set_solver. }
+    pose proof (Hscope_body z Hz_body) as Hz_mlet.
+    rewrite Hdommlet in Hz_mlet.
+    assert (z ≠ x) by set_solver.
+    set_solver.
+  }
+  eapply FAtom_expr_logic_qual_on_intro.
+  - exact Hscope.
+  - replace (store_restrict ρ X) with ρ.
+    + exact Hexact.
+    + symmetry. apply store_restrict_idemp.
+      destruct (world_wf m) as [[σ Hσm] _].
+      destruct (Hm σ Hσm) as [_ Hσρ].
+      rewrite <- Hσρ, store_restrict_dom. set_solver.
+Qed.
+
 (** Lifting the one-projection semantic core through the outer [X] fibers.
     This is the induction over [fib_vars_obligation X].  Its non-mechanical
     leaf is [expr_result_in_world_tlete_from_body_xfiber]; the rest is threading
