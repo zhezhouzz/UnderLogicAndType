@@ -1601,6 +1601,80 @@ Proof.
 	        -- simpl. set_solver.
 Qed.
 
+(** Extract the graph-building body totality obligation from the ordinary
+    totality statement on [let_result_world_on].
+
+    [expr_total_on (X ∪ {[x]}) (e2 ^^ x)] talks about substituting the whole
+    projected store of [<[x := vx]> σ] into the opened body.  The graph, on the
+    other hand, stores the operational edge in the normalized form
+    [open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v].  This lemma is
+    exactly that conversion, plus the regularity facts needed to make the graph
+    world well-formed.
+
+    This is a high-risk bridge because any mismatch between the LN opening
+    convention and the store-projection convention shows up here before the
+    final tlet theorem. *)
+Lemma body_total_on_let_result_world_to_graph_obligation
+    X e1 e2 x (w : WfWorld) Hfresh Hresult :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  (∀ σ, (w : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (w : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (∀ σx v,
+    (let_result_world_on X e1 x w Hfresh Hresult : World) σx →
+    subst_map (store_restrict σx (X ∪ {[x]})) (e2 ^^ x) →* tret v →
+    stale v = ∅ ∧ is_lc v) →
+  expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+    (let_result_world_on X e1 x w Hfresh Hresult) →
+  ∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    ∃ v,
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+      stale vx = ∅ ∧
+      is_lc vx ∧
+      stale v = ∅ ∧
+      is_lc v.
+Proof.
+  intros HxX Hxe2 Hclosed Hlc Hresult_closed Hbody Hbody_regular Htotal σ vx Hσ Hsteps1.
+  destruct Htotal as [_ Htotal].
+  pose proof (let_result_world_on_member X e1 x w Hfresh Hresult
+    σ vx Hσ Hsteps1) as Hσx.
+  specialize (Htotal (<[x := vx]> σ) Hσx) as [v Hsteps_body].
+  exists v.
+  assert (Hsteps_norm :
+    open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v).
+  {
+    rewrite store_restrict_insert_fresh_union in Hsteps_body.
+    2:{
+      apply not_elem_of_dom.
+      pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+      rewrite Hdomσ. exact Hfresh.
+    }
+    2:{ exact HxX. }
+    change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)
+      →* tret v) in Hsteps_body.
+    replace (m{<[x := vx]> (store_restrict σ X)} open_tm 0 x e2)
+      with (open_tm 0 vx (m{store_restrict σ X} e2)) in Hsteps_body.
+    - exact Hsteps_body.
+    - symmetry. apply (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
+      + apply Hclosed. exact Hσ.
+      + apply (proj1 (Hresult_closed σ vx Hσ Hsteps1)).
+      + apply (proj2 (Hresult_closed σ vx Hσ Hsteps1)).
+      + apply Hlc. exact Hσ.
+      + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
+        rewrite store_restrict_dom. set_solver.
+  }
+  pose proof (Hbody_regular (<[x := vx]> σ) v Hσx Hsteps_body) as [Hv_stale Hv_lc].
+  pose proof (Hresult_closed σ vx Hσ Hsteps1) as [Hvx_stale Hvx_lc].
+  repeat split; assumption.
+Qed.
+
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
