@@ -861,6 +861,42 @@ Proof.
   - exact Hsmall.
 Qed.
 
+Lemma model_transport_restrict_common (nsrc ntgt : WfWorld) S :
+  world_dom (nsrc : World) ∩ world_dom (ntgt : World) ⊆ S →
+  res_restrict nsrc S = res_restrict ntgt S →
+  model_transport nsrc ntgt.
+Proof.
+  intros Hcommon Heq φ Hfv Hφ.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure φ) ∅ nsrc φ Hφ) as Hscope_src.
+  assert (HfvS : formula_fv φ ⊆ S).
+  {
+    unfold formula_scoped_in_world in Hscope_src.
+    intros z Hz.
+    apply Hcommon. apply elem_of_intersection. split.
+    - apply Hscope_src. set_solver.
+    - apply Hfv. exact Hz.
+  }
+  pose proof (res_models_restrict_fv nsrc φ Hφ) as Hsmall.
+  assert (Hsmall_eq :
+    res_restrict nsrc (formula_fv φ) =
+    res_restrict ntgt (formula_fv φ)).
+  {
+    transitivity (res_restrict (res_restrict nsrc S) (formula_fv φ)).
+    - rewrite res_restrict_restrict_eq.
+      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+    - rewrite Heq.
+      rewrite res_restrict_restrict_eq.
+      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+  }
+  rewrite Hsmall_eq in Hsmall.
+  eapply res_models_kripke.
+  - apply res_restrict_le.
+  - exact Hsmall.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
