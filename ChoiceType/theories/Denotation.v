@@ -912,6 +912,26 @@ Proof.
   set_solver.
 Qed.
 
+Lemma FLetResultOn_scoped_intro X e1 e2 ν (m : WfWorld) :
+  X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ world_dom (m : World) →
+  formula_scoped_in_world ∅ m (FLetResultOn X e1 e2 ν).
+Proof.
+  intros Hdom z Hz.
+  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+  pose proof (FLetResultOn_fv_subset X e1 e2 ν z Hz) as Hz'.
+  apply Hdom. exact Hz'.
+Qed.
+
+Lemma FExprResultDenotOn_scoped_intro X e ν (m : WfWorld) :
+  X ∪ fv_tm e ∪ {[ν]} ⊆ world_dom (m : World) →
+  formula_scoped_in_world ∅ m (FExprResultDenotOn X e ν).
+Proof.
+  intros Hdom z Hz.
+  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+  pose proof (FExprResultDenotOn_fv_subset X e ν z Hz) as Hz'.
+  apply Hdom. exact Hz'.
+Qed.
+
 Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
   fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
   m ⊨ FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) →
