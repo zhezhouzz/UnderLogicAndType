@@ -2062,14 +2062,18 @@ Qed.
     theorem; this older shape is kept only as a local target while the
     structural denotation transport is being factored. *)
 Lemma denot_ty_on_let_result_body_to_let
-    X Σ τ e1 e2 x Tx (m : WfWorld) Hfresh Hresult :
+    X Σ τ e1 e2 Tx (L : aset) (m : WfWorld) :
   basic_choice_ty (dom Σ) τ →
   fv_tm (tlete e1 e2) ⊆ X →
-  x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
   X ⊆ world_dom (m : World) →
   m ⊨ basic_world_formula Σ (dom Σ) →
-  let_result_world_on X e1 x m Hfresh Hresult ⊨
-    denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x) →
+  (∀ x,
+    x ∉ L →
+    x ∉ world_dom (m : World) →
+    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+    ∀ Hfresh Hresult,
+      let_result_world_on X e1 x m Hfresh Hresult ⊨
+        denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x)) →
   m ⊨ denot_ty_on X Σ τ (tlete e1 e2).
 Proof.
 Admitted.
@@ -2103,14 +2107,10 @@ Proof.
   assert (HxL : x ∉ L) by set_solver.
   assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
   assert (Hx : x ∉ X ∪ fv_cty τ2 ∪ fv_tm e2) by set_solver.
-  set (wx := let_result_world_on X e1 x m Hfresh Hresult).
-  assert (Hctxx : wx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
-  { subst wx X. apply Hbind; exact HxL. }
-  destruct (IH2 x HxL wx Hctxx) as [Hbody _].
   unfold denot_ty_in_ctx_under.
-  subst wx X.
+  subst X.
   eapply denot_ty_on_let_result_body_to_let with
-    (x := x) (Tx := erase_ty τ1) (Hfresh := Hfresh) (Hresult := Hresult).
+    (Tx := erase_ty τ1) (L := L ∪ world_dom (m : World) ∪ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2).
   - pose proof Hwflet as Hwflet_basic.
     destruct Hwflet_basic as [Hwfτ _].
     pose proof (wf_choice_ty_under_basic Σ Γ τ2 Hwfτ) as Hbasicτ.
@@ -2132,26 +2132,32 @@ Proof.
       unfold erase_ctx_under.
       rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
       reflexivity.
-  - exact Hx.
   - apply (basic_world_formula_dom_subset (erase_ctx_under Σ Γ)
       (dom (erase_ctx_under Σ Γ))).
     apply denot_ctx_in_env_erased_basic. exact Hm.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
-  - assert (Hdom_ctxx :
-      (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) : aset) =
-      dom (erase_ctx_under Σ Γ) ∪ {[x]}).
+  - intros y HyL Hyfresh Hy.
+    intros Hfresh_y Hresult_y.
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+    assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
+    { subst wy. apply Hbind; exact HyL0. }
+	    destruct (IH2 y HyL0 wy Hctxy) as [Hbody _].
+	    assert (Hdom_ctxx :
+	      (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))) : aset) =
+	      dom (erase_ctx_under Σ Γ) ∪ {[y]}).
     {
       unfold erase_ctx_under. simpl.
       rewrite !dom_union_L, dom_singleton_L. set_solver.
     }
-    assert (Henv_ctxx :
-      erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) =
-      <[x := erase_ty τ1]> (erase_ctx_under Σ Γ)).
+	    assert (Henv_ctxx :
+	      erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) =
+	      <[y := erase_ty τ1]> (erase_ctx_under Σ Γ)).
     {
       unfold erase_ctx_under. simpl.
       apply (map_eq (M := gmap atom)). intros z.
       rewrite lookup_insert.
-      destruct (decide (z = x)) as [->|Hzx].
+	      destruct (decide (z = y)) as [->|Hzx].
       - rewrite decide_True by reflexivity.
         rewrite lookup_union_r.
         + rewrite lookup_union_r.
