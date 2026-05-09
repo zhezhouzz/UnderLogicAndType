@@ -2516,6 +2516,7 @@ Qed.
     the accumulated projection [ρ]. *)
 Lemma fib_vars_obligation_tlete_from_body_normalized
     X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
+  X ⊆ world_dom (n : World) →
   x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
   fv_tm (tlete e1 e2) ⊆ X →
   (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
@@ -2531,10 +2532,40 @@ Lemma fib_vars_obligation_tlete_from_body_normalized
   fib_vars_obligation X
     (FAtom (expr_logic_qual_on X (tlete e1 e2) ν)) ∅ n.
 Proof.
-Admitted.
+  intros HXdom Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
+  unfold fib_vars_obligation, fib_vars_acc, set_fold in *.
+  assert (Hxs : (list_to_set (elements X) : aset) ⊆ X).
+  {
+    intros z Hz.
+    rewrite elem_of_list_to_set, elem_of_elements in Hz.
+    exact Hz.
+  }
+  pose proof (fib_vars_obligation_tlete_from_body_foldr
+    (elements X) X e1 e2 x ν n Hfresh Hresult) as Hfold.
+  eapply (Hfold
+    (NoDup_elements X)
+    Hxs
+    HXdom Hx Hfv Hclosed Hlc Hresult_closed Hbody
+    (∅ : Store) n (let_result_world_on X e1 x n Hfresh Hresult)).
+  - reflexivity.
+  - unfold let_result_world_on, let_result_raw_world_on. simpl. reflexivity.
+  - intros σ Hσ. split; [exact Hσ |].
+    replace (X ∖ list_to_set (elements X) : aset) with (∅ : aset).
+    + apply store_restrict_empty_set.
+    + apply set_eq. intros z. rewrite elem_of_difference.
+      rewrite elem_of_list_to_set, elem_of_elements. set_solver.
+  - intros σx Hσx.
+    destruct (let_result_world_on_elim X e1 x n Hfresh Hresult σx Hσx)
+      as [σ [vx [Hσ [Hsteps ->]]]].
+    exists σ, vx. repeat split; eauto.
+  - intros σ vx Hσ Hsteps.
+    apply let_result_world_on_member; [exact Hσ | exact Hsteps].
+  - exact Hbody_obl.
+Qed.
 
 Lemma fib_vars_obligation_tlete_from_body_result_world
     X e1 e2 x ν (n : WfWorld) Hfresh Hresult :
+  X ⊆ world_dom (n : World) →
   x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
   fv_tm (tlete e1 e2) ⊆ X →
   (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
@@ -2550,7 +2581,7 @@ Lemma fib_vars_obligation_tlete_from_body_result_world
   fib_vars_obligation X
     (FAtom (expr_logic_qual_on X (tlete e1 e2) ν)) ∅ n.
 Proof.
-  intros Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
+  intros HXdom Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
   eapply fib_vars_obligation_tlete_from_body_normalized; eauto.
   eapply fib_vars_obligation_insert_fresh_to_fib; [set_solver | exact Hbody_obl].
 Qed.
@@ -2572,12 +2603,33 @@ Lemma FExprResultOn_tlete_from_body_result_world
 Proof.
   intros Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_model.
   unfold FExprResultOn, FExprResultOnRaw, res_models in *.
+  pose proof (res_models_with_store_fuel_scoped _ _ _ _
+    Hbody_model) as Hscope_body.
+  assert (HXdom : X ⊆ world_dom (n : World)).
+  {
+    intros z Hz.
+    assert (Hz_body :
+      z ∈ dom (∅ : Store) ∪ formula_fv
+        (fib_vars (X ∪ {[x]})
+          (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)))).
+    {
+      apply elem_of_union. right.
+      rewrite fib_vars_formula_fv. simpl.
+      unfold stale, stale_logic_qualifier. simpl.
+      set_solver.
+    }
+    pose proof (Hscope_body z Hz_body) as Hz_dom.
+    unfold let_result_world_on, let_result_raw_world_on in Hz_dom.
+    simpl in Hz_dom.
+    apply elem_of_union in Hz_dom as [Hz_dom | Hzx].
+    - exact Hz_dom.
+    - assert (z = x) by set_solver.
+      subst z. set_solver.
+  }
   apply fib_vars_models_intro.
   - apply FExprResultOn_scoped_intro.
     intros z Hz.
     assert (Hz' : z ∈ X ∪ {[ν]}) by set_solver.
-    pose proof (res_models_with_store_fuel_scoped _ _ _ _
-      Hbody_model) as Hscope_body.
     unfold formula_scoped_in_world in Hscope_body.
     assert (Hz_body :
       z ∈ dom (∅ : Store) ∪ formula_fv

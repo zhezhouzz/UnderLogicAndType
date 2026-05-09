@@ -668,6 +668,14 @@ Proof.
   unfold store_restrict. apply map_restrict_idemp. set_solver.
 Qed.
 
+Lemma store_restrict_empty_set s :
+  store_restrict s ∅ = ∅.
+Proof.
+  apply map_eq. intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ (∅ : aset))) as [Hz|Hz]; [set_solver | reflexivity].
+Qed.
+
 Lemma store_restrict_idemp s X :
   dom s ⊆ X → store_restrict s X = s.
 Proof.
