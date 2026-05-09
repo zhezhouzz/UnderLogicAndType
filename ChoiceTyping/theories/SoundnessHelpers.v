@@ -1010,6 +1010,217 @@ Proof.
   exact Hle.
 Qed.
 
+(** Proof-only exact graph for [tlet] results.
+
+    This definition is deliberately not part of the paper syntax or semantic
+    presentation.  The paper reasons informally with the result set of
+    [let x = e1 in e2]; the Rocq proof sometimes needs a concrete witness
+    world that remembers which intermediate result produced which final result.
+
+    The important design point is that this is a *relation graph*, not a
+    function graph.  If [e1] is nondeterministic, the same input projection
+    [σ|X] may produce many intermediate values [vx].  If [e2] is
+    nondeterministic, the same pair [(σ|X, vx)] may produce many final values
+    [v].  Membership below therefore ranges over all triples [(σ, vx, v)]
+    satisfying the two operational reductions:
+
+      [subst_map (store_restrict σ X) e1 →* tret vx]
+      [open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v]
+
+    The graph must be exact: it should contain no store unless it comes from
+    such a triple, and every such triple is represented by the store
+    [<[ν := v]> (<[x := vx]> σ)].  This exactness is what preserves the
+    [X -> x -> ν] pairing that [CTOver] needs and also gives the forward
+    composition used by [CTUnder].
+
+    Freshness of [x] and [ν] is essential.  They are proof coordinates, so
+    inserting them must not overwrite fields already present in the base
+    world.  The final result coordinate [ν] is also kept distinct from [x].
+
+    Whenever this definition appears in a proof, remember: it is an auxiliary
+    Rocq witness world for tlet soundness, not a new paper-level modality. *)
+Definition tlet_result_graph_raw_world_on
+    (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld) : World := {|
+  world_dom := world_dom (w : World) ∪ {[x]} ∪ {[ν]};
+  world_stores := fun σxν =>
+    ∃ σ vx v,
+      (w : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+      stale vx = ∅ ∧
+      is_lc vx ∧
+      stale v = ∅ ∧
+      is_lc v ∧
+      σxν = <[ν := v]> (<[x := vx]> σ);
+|}.
+
+Lemma tlet_result_graph_raw_world_on_wf X e1 e2 x ν (w : WfWorld) :
+  x ∉ world_dom (w : World) →
+  ν ∉ world_dom (w : World) ∪ {[x]} →
+  (∃ σ vx v,
+    (w : World) σ ∧
+    subst_map (store_restrict σ X) e1 →* tret vx ∧
+    open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+    stale vx = ∅ ∧
+    is_lc vx ∧
+    stale v = ∅ ∧
+    is_lc v) →
+  wf_world (tlet_result_graph_raw_world_on X e1 e2 x ν w).
+Proof.
+  intros Hfreshx Hfreshν Hinh.
+  destruct Hinh as [σ [vx [v Hinh]]].
+  destruct Hinh as [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale Hv_lc]]]]]].
+  constructor.
+  - exists (<[ν := v]> (<[x := vx]> σ)).
+    exists σ, vx, v. repeat split; eauto.
+  - intros σxν Hσxν.
+    destruct Hσxν as [σ' [vx' [v' Hgraph]]].
+    destruct Hgraph as [Hσ' [_ [_ [_ [_ [_ [_ ->]]]]]]].
+    rewrite !dom_insert_L.
+    rewrite (wfworld_store_dom w σ' Hσ').
+    set_solver.
+Qed.
+
+Definition tlet_result_graph_world_on
+    (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld)
+    (Hfreshx : x ∉ world_dom (w : World))
+    (Hfreshν : ν ∉ world_dom (w : World) ∪ {[x]})
+    (Hinh : ∃ σ vx v,
+      (w : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+      stale vx = ∅ ∧
+      is_lc vx ∧
+      stale v = ∅ ∧
+      is_lc v)
+    : WfWorld :=
+  exist _ (tlet_result_graph_raw_world_on X e1 e2 x ν w)
+    (tlet_result_graph_raw_world_on_wf X e1 e2 x ν w Hfreshx Hfreshν Hinh).
+
+Lemma tlet_result_graph_world_on_member
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σ vx v :
+  (w : World) σ →
+  subst_map (store_restrict σ X) e1 →* tret vx →
+  open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v →
+  stale vx = ∅ →
+  is_lc vx →
+  stale v = ∅ →
+  is_lc v →
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World)
+    (<[ν := v]> (<[x := vx]> σ)).
+Proof.
+  intros Hσ Hsteps1 Hsteps2 Hvx_stale Hvx_lc Hv_stale Hv_lc.
+  exists σ, vx, v. repeat split; eauto.
+Qed.
+
+Lemma tlet_result_graph_world_on_elim
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+  ∃ σ vx v,
+    (w : World) σ ∧
+    subst_map (store_restrict σ X) e1 →* tret vx ∧
+    open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+    stale vx = ∅ ∧
+    is_lc vx ∧
+    stale v = ∅ ∧
+    is_lc v ∧
+    σxν = <[ν := v]> (<[x := vx]> σ).
+Proof. intros Hσxν. exact Hσxν. Qed.
+
+Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : value) :
+  store_restrict (<[x := v]> σ) {[x]} = {[x := v]}.
+Proof.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ {[x]})) as [Hz|Hz].
+  - apply elem_of_singleton in Hz. subst z.
+    transitivity (Some v).
+    + change ((<[x := v]> σ : gmap atom value) !! x = Some v).
+      apply lookup_insert_eq.
+    + symmetry. rewrite lookup_singleton. rewrite decide_True by reflexivity.
+      reflexivity.
+  - rewrite lookup_singleton.
+    rewrite decide_False by set_solver.
+    reflexivity.
+Qed.
+
+Lemma tlet_result_graph_member_to_tlet_result_store
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
+  x ∉ X →
+  ν ∉ X →
+  (∀ σ, (w : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+  expr_result_in_store
+    (store_restrict σxν X) (tlete e1 e2) ν
+    (store_restrict σxν {[ν]}).
+Proof.
+  intros HxX HνX Hbody Hgraph.
+  destruct (tlet_result_graph_world_on_elim
+    X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
+    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [_ [_ [Hv_stale [Hv_lc ->]]]]]]]]]].
+  assert (Hρ :
+    store_restrict (<[ν := v]> (<[x := vx]> σ)) X =
+    store_restrict σ X).
+  {
+    rewrite store_restrict_insert_notin by exact HνX.
+    rewrite store_restrict_insert_notin by exact HxX.
+    reflexivity.
+  }
+  assert (Hν :
+    store_restrict (<[ν := v]> (<[x := vx]> σ)) {[ν]} =
+    ({[ν := v]} : Store)).
+  {
+    apply store_restrict_insert_singleton.
+  }
+  rewrite Hρ, Hν.
+  eapply expr_result_in_store_let_intro; eauto.
+Qed.
+
+Lemma tlet_result_store_to_graph_member
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σ σν :
+  x ∉ X →
+  ν ∉ X →
+  (w : World) σ →
+  store_restrict σν {[ν]} = σν →
+  expr_result_in_store (store_restrict σ X) (tlete e1 e2) ν σν →
+  (∀ vx,
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  ∃ σxν,
+    (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν ∧
+    store_restrict σxν X = store_restrict σ X ∧
+    store_restrict σxν {[ν]} = σν.
+Proof.
+  intros HxX HνX Hσ Hσν_dom Hstore Hvx_reg.
+  destruct (expr_result_in_store_let_elim
+    (store_restrict σ X) e1 e2 ν σν Hstore)
+    as [v [vx [Hσν_eq [Hsteps1 Hsteps2]]]].
+  destruct (expr_result_store_elim ν
+    (subst_map (store_restrict σ X) (tlete e1 e2)) σν Hstore)
+    as [v' [Hσν_eq' [Hv_stale [Hv_lc _]]]].
+  assert (Hv' : v' = v).
+  {
+    assert (Hlookv : σν !! ν = Some v).
+    { change ((σν : gmap atom value) !! ν = Some v).
+      rewrite Hσν_eq, lookup_singleton, decide_True by reflexivity. reflexivity. }
+    assert (Hlookv' : σν !! ν = Some v').
+    { change ((σν : gmap atom value) !! ν = Some v').
+      rewrite Hσν_eq', lookup_singleton, decide_True by reflexivity. reflexivity. }
+    rewrite Hlookv in Hlookv'. inversion Hlookv'. reflexivity.
+  }
+  subst v'.
+  pose proof (Hvx_reg vx Hsteps1) as [Hvx_stale Hvx_lc].
+  exists (<[ν := v]> (<[x := vx]> σ)).
+  split.
+  - apply tlet_result_graph_world_on_member; assumption.
+  - split.
+    + rewrite store_restrict_insert_notin by exact HνX.
+      rewrite store_restrict_insert_notin by exact HxX.
+      reflexivity.
+    + rewrite store_restrict_insert_singleton.
+      subst σν. reflexivity.
+Qed.
+
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
@@ -1526,23 +1737,6 @@ Lemma store_restrict_insert_fresh_union_lookup_none
 Proof.
   intros _ _. rewrite lookup_insert. rewrite decide_True by reflexivity.
   reflexivity.
-Qed.
-
-Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : value) :
-  store_restrict (<[x := v]> σ) {[x]} = {[x := v]}.
-Proof.
-  apply (map_eq (M := gmap atom)). intros z.
-  rewrite store_restrict_lookup.
-  destruct (decide (z ∈ {[x]})) as [Hz|Hz].
-  - apply elem_of_singleton in Hz. subst z.
-    transitivity (Some v).
-    + change ((<[x := v]> σ : gmap atom value) !! x = Some v).
-      apply lookup_insert_eq.
-    + symmetry. rewrite lookup_singleton. rewrite decide_True by reflexivity.
-      reflexivity.
-  - rewrite lookup_singleton.
-    rewrite decide_False by set_solver.
-    reflexivity.
 Qed.
 
 Lemma store_restrict_union_singleton_insert (σ : Store) (X : aset) (x : atom) (v : value) :
