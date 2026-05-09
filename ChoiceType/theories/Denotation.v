@@ -202,6 +202,18 @@ Definition expr_let_result_in_world_on
   ∀ σw,
     (w : World) σw ↔ expr_let_result_in_store_on X e1 e2 x ν σw.
 
+Lemma expr_let_result_in_world_on_sound X e1 e2 x ν w σw :
+  expr_let_result_in_world_on X e1 e2 x ν w →
+  (w : World) σw →
+  expr_let_result_in_store_on X e1 e2 x ν σw.
+Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
+
+Lemma expr_let_result_in_world_on_complete X e1 e2 x ν w σw :
+  expr_let_result_in_world_on X e1 e2 x ν w →
+  expr_let_result_in_store_on X e1 e2 x ν σw →
+  (w : World) σw.
+Proof. intros H Hstore. exact (proj2 (H σw) Hstore). Qed.
+
 Definition let_expr_logic_qual_on
     (X : aset) (e1 e2 : tm) (x ν : atom) : logic_qualifier :=
   lqual (X ∪ {[x]} ∪ {[ν]})
