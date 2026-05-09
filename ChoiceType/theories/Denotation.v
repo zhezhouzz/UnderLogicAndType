@@ -809,6 +809,57 @@ Proof.
   - eapply expr_result_incl_on_trans; eauto.
 Qed.
 
+(** Formula-level transport for expression-result atoms.
+
+    [expr_result_incl_on] is an operational same-input-domain comparison.  The
+    type denotation needs a stronger, resource-aware bridge: when the target
+    expression-result atom holds in a target extension, we can find a source
+    extension where the source atom holds, and any continuation formula whose
+    free variables already live in the target extension can be transported
+    back to that target extension.
+
+    This last condition is deliberately weaker than [nsrc ⊑ ntgt].  In the
+    tlet proof the source extension may be a graph world that contains the
+    auxiliary intermediate coordinate [x]; continuations that do not mention
+    [x] should still transport by restricting to their free variables. *)
+Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
+  ∀ φ : FQ,
+    formula_fv φ ⊆ world_dom (ntgt : World) →
+    nsrc ⊨ φ →
+    ntgt ⊨ φ.
+
+Definition expr_result_model_bridge
+    (Xsrc : aset) (esrc : tm)
+    (Xtgt : aset) (etgt : tm)
+    (msrc mtgt : WfWorld) : Prop :=
+  ∀ ν ntgt,
+    mtgt ⊑ ntgt →
+    ntgt ⊨ FExprResultOn Xtgt etgt ν →
+    ∃ nsrc,
+      msrc ⊑ nsrc ∧
+      nsrc ⊨ FExprResultOn Xsrc esrc ν ∧
+      model_transport nsrc ntgt.
+
+Lemma model_transport_kripke (nsrc ntgt : WfWorld) :
+  nsrc ⊑ ntgt →
+  model_transport nsrc ntgt.
+Proof.
+  intros Hle φ _ Hφ.
+  eapply res_models_kripke; eauto.
+Qed.
+
+Lemma model_transport_restrict_eq (nsrc ntgt : WfWorld) :
+  res_restrict nsrc (world_dom (ntgt : World)) = ntgt →
+  model_transport nsrc ntgt.
+Proof.
+  intros Hrestrict φ Hfv Hφ.
+  pose proof (res_models_restrict_fv nsrc φ Hφ) as Hsmall.
+  eapply res_models_kripke.
+  - rewrite <- Hrestrict.
+    apply res_restrict_mono. exact Hfv.
+  - exact Hsmall.
+Qed.
+
 (** Formula-level result-set view for [let].
 
     [FLetResult e1 e2 ν] says that the final result coordinate [ν] is
