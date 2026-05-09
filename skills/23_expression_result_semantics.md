@@ -63,6 +63,19 @@ state the projection as an iff over `res_restrict w {[ν]}`.  Keep
 `body_tm (subst_map ρ e2)` as a separate regularity premise; it does not follow
 from merely knowing the result set of `tlete`.
 
+For over-approximation reasoning, do not try to prove a global reverse bridge
+from `FExprResultOn X (tlete e1 e2) ν` to the body result formula.  That would
+incorrectly turn a union over all intermediate `vx` into obligations for every
+branch.  Use the pointwise decomposition instead:
+
+```coq
+expr_result_in_store_tlete_to_body_open_atom
+```
+
+It says that a single concrete tlet result can be decomposed into some
+intermediate `vx`, then re-expressed as a result of `(e2 ^^ x)` under
+`<[x := vx]> ρ`.
+
 Prefer the closed-value version of the substitution fact.  For a returned
 variable, proving
 
