@@ -189,9 +189,6 @@ Definition FExprResult (e : tm) (ν : atom) : FQ :=
     interpreted over the same input domain.  [FExprResultOn X e ν] records that
     common domain explicitly; callers should provide [fv_tm e ⊆ X] and choose
     [ν ∉ X]. *)
-Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FAtom (expr_logic_qual e ν)).
-
 Definition expr_let_result_in_store_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (σw : Store) : Prop :=
   ∃ vx v,
@@ -219,6 +216,18 @@ Definition FLetResultOn (X : aset) (e1 e2 : tm) (ν : atom) : FQ :=
   let x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
   FExists x (FLetResultOnWith X e1 e2 x ν).
 
+Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=
+  fib_vars X (FAtom (expr_logic_qual e ν)).
+
+Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  FExprResultOnRaw X e ν.
+
+Definition FExprResultDenotOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  match e with
+  | tlete e1 e2 => FLetResultOn X e1 e2 ν
+  | _ => FExprResultOnRaw X e ν
+  end.
+
 Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
   stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
 Proof. reflexivity. Qed.
@@ -243,6 +252,72 @@ Proof.
       * set_solver.
       * exfalso. apply Hzfresh. exact Hzfresh'.
     + set_solver.
+Qed.
+
+Lemma FLetResultOn_fv_contains_X X e1 e2 ν :
+  X ⊆ formula_fv (FLetResultOn X e1 e2 ν).
+Proof.
+  unfold FLetResultOn.
+  set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
+  simpl. unfold FLetResultOnWith. rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  intros z Hz.
+  apply elem_of_difference. split; [set_solver |].
+  subst x.
+  pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hfresh.
+  intros Hzx. apply elem_of_singleton in Hzx. subst z.
+  exact (Hfresh ltac:(set_solver)).
+Qed.
+
+Lemma FExprResultDenotOn_fv_subset X e ν :
+  formula_fv (FExprResultDenotOn X e ν) ⊆ X ∪ fv_tm e ∪ {[ν]}.
+Proof.
+  destruct e as [v|e1 e2|op v|v1 v2|v et ef]; simpl.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn.
+    pose proof (FLetResultOn_fv_subset X e1 e2 ν) as Hfv.
+    simpl in Hfv. intros z Hz. apply Hfv in Hz. set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+Qed.
+
+Lemma FExprResultDenotOn_expr_fv_subset X e ν :
+  fv_tm e ⊆ X →
+  fv_tm e ⊆ formula_fv (FExprResultDenotOn X e ν).
+Proof.
+  intros Hfv.
+  destruct e as [v|e1 e2|op v|v1 v2|v et ef]; simpl in *.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn.
+    intros z Hz. apply FLetResultOn_fv_contains_X. set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
+  - unfold FExprResultDenotOn, FExprResultOnRaw.
+    rewrite fib_vars_formula_fv. simpl.
+    unfold stale, stale_logic_qualifier. simpl.
+    set_solver.
 Qed.
 
 Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :
@@ -1064,21 +1139,21 @@ Fixpoint denot_ty_fuel
   | CTOver b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-        (FImpl (FExprResultOn X e ν)
-               (FAnd
-                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-                 (fib_vars (qual_dom φν)
-                   (FOver (FAtom (lift_type_qualifier_to_logic φν)))))))
+	        (FImpl (FExprResultDenotOn X e ν)
+	               (FAnd
+	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
+	                 (fib_vars (qual_dom φν)
+	                   (FOver (FAtom (lift_type_qualifier_to_logic φν)))))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-        (FImpl (FExprResultOn X e ν)
-               (FAnd
-                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-                 (fib_vars (qual_dom φν)
-                   (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))))
+	        (FImpl (FExprResultDenotOn X e ν)
+	               (FAnd
+	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
+	                 (fib_vars (qual_dom φν)
+	                   (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -1098,7 +1173,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-          (FExprResultOn X e y)
+	          (FExprResultDenotOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -1114,7 +1189,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-          (FExprResultOn X e y)
+	          (FExprResultDenotOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -1586,13 +1661,10 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz.
-      apply elem_of_difference in Hz as [Hz Hzν].
-      set_solver.
+	      pose proof (FExprResultDenotOn_fv_subset X e ν) as Hres_fv.
+	      intros z Hz.
+	      apply elem_of_difference in Hz as [Hz Hzν].
+	      set_solver.
     + unfold fresh_forall.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       set (φν := qual_open_atom 0 ν φ).
@@ -1602,13 +1674,10 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz.
-      apply elem_of_difference in Hz as [Hz Hzν].
-      set_solver.
+	      pose proof (FExprResultDenotOn_fv_subset X e ν) as Hres_fv.
+	      intros z Hz.
+	      apply elem_of_difference in Hz as [Hz Hzν].
+	      set_solver.
     + pose proof (IH X D Σ τ1 e ltac:(lia)) as H1.
       pose proof (IH X D Σ τ2 e ltac:(lia)) as H2.
       set_solver.
@@ -1634,11 +1703,8 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-      * unfold FExprResultOn in Hzres_e.
-        rewrite fib_vars_formula_fv in Hzres_e. simpl in Hzres_e.
-        unfold stale, stale_logic_qualifier in Hzres_e. simpl in Hzres_e.
-        change (stale e) with (fv_tm e) in Hzres_e.
-        set_solver.
+	      * pose proof (FExprResultDenotOn_fv_subset X e y) as Hres_fv.
+	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
         { set_solver. }
@@ -1661,11 +1727,8 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-      * unfold FExprResultOn in Hzres_e.
-        rewrite fib_vars_formula_fv in Hzres_e. simpl in Hzres_e.
-        unfold stale, stale_logic_qualifier in Hzres_e. simpl in Hzres_e.
-        change (stale e) with (fv_tm e) in Hzres_e.
-        set_solver.
+	      * pose proof (FExprResultDenotOn_fv_subset X e y) as Hres_fv.
+	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
         { set_solver. }
@@ -1773,22 +1836,16 @@ Proof.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz. apply elem_of_difference. split; [set_solver |].
-      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
+	      pose proof (FExprResultDenotOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      intros z Hz. apply elem_of_difference. split; [set_solver |].
+	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + unfold fresh_forall.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz. apply elem_of_difference. split; [set_solver |].
-      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
+	      pose proof (FExprResultDenotOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      intros z Hz. apply elem_of_difference. split; [set_solver |].
+	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
       set_solver.
     + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
@@ -1800,23 +1857,17 @@ Proof.
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz. apply elem_of_difference. split; [set_solver |].
-      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
+	      pose proof (FExprResultDenotOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      intros z Hz. apply elem_of_difference. split; [set_solver |].
+	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
     + unfold fresh_forall.
       set (Dy := D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-      unfold FExprResultOn.
-      rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier. simpl.
-      change (stale e) with (fv_tm e).
-      intros z Hz. apply elem_of_difference. split; [set_solver |].
-      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
+	      pose proof (FExprResultDenotOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      intros z Hz. apply elem_of_difference. split; [set_solver |].
+	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
 Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
