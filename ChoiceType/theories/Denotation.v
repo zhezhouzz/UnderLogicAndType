@@ -506,6 +506,23 @@ Proof.
   - exact Hνdom.
 Qed.
 
+Lemma FAtom_expr_logic_qual_on_intro X e ν ρ m :
+  formula_scoped_in_world ρ m (FAtom (expr_logic_qual_on X e ν)) →
+  expr_result_in_world (store_restrict ρ X) e ν m →
+  res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)).
+Proof.
+  intros Hscope Hexact.
+  unfold res_models_with_store. simpl. split; [exact Hscope |].
+  exists m. split; [exact Hscope |]. split; [| reflexivity].
+  unfold logic_qualifier_denote, expr_logic_qual_on. simpl.
+  rewrite store_restrict_restrict.
+  replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+  intros σν. specialize (Hexact σν).
+  rewrite res_restrict_restrict_eq.
+  replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset) by set_solver.
+  exact Hexact.
+Qed.
+
 (** Prop-level totality for the expression component of a type denotation.
 
     This is intentionally not encoded as a ChoiceLogic formula.  The logic
