@@ -65,6 +65,33 @@ the basic typing environment.  If the substituted store covers all variables
 used by the expression, the remaining context can usually be shown empty or
 irrelevant by the usual fv-in-context lemmas.
 
+## Fiber/set-fold proof plumbing
+
+When lifting an exact result atom through `fib_vars`, avoid leaving implicit
+arguments to a large `eapply` if the lemma has many ordinary hypotheses before
+the final semantic obligation.  First assert the small set facts, then
+instantiate the store/world arguments explicitly.  This prevents Coq from
+treating the semantic obligation as an earlier domain-equality subgoal.
+
+For the common empty-restriction side condition, use:
+
+```coq
+store_restrict_empty_set : store_restrict s ∅ = ∅
+```
+
+Do not re-prove this locally with a raw `map_eq` in a polymorphic typing proof:
+the `gmap`/`Store` instances can become ambiguous outside `ChoicePrelude.Store`.
+
+When a `fib_vars` model on a let-result world must imply that the base world
+covers the whole input domain `X`, extract it from scopedness:
+
+```coq
+pose proof (res_models_with_store_fuel_scoped _ _ _ _ Hmodel) as Hscope.
+```
+
+Then unfold the let-result world domain and use the freshness of the generated
+let coordinate `x` to discard the extra `{[x]}` case.
+
 ## Important FAtom detail
 
 `FAtom` is upward closed and `logic_qualifier_denote` restricts both the
