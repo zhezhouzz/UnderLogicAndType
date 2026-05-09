@@ -2066,6 +2066,7 @@ Lemma denot_ty_on_let_result_body_to_let
   basic_choice_ty (dom Σ) τ →
   fv_tm (tlete e1 e2) ⊆ X →
   X ⊆ world_dom (m : World) →
+  (∀ σ, (m : World) σ → ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
   m ⊨ basic_world_formula Σ (dom Σ) →
   (∀ x,
     x ∉ L →
@@ -2135,6 +2136,7 @@ Proof.
   - apply (basic_world_formula_dom_subset (erase_ctx_under Σ Γ)
       (dom (erase_ctx_under Σ Γ))).
     apply denot_ctx_in_env_erased_basic. exact Hm.
+  - exact Hresult.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
   - intros y HyL Hyfresh Hy.
     intros Hfresh_y Hresult_y.
