@@ -1120,14 +1120,11 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma foldr_fib_vars_acc_fst_ret_const xs X c ν R :
-  fst (foldr fib_vars_acc_step
-    (FAtom (expr_logic_qual_on X (tret (vconst c)) ν), R) xs) =
-  foldr FFib (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)) xs.
+Lemma foldr_fib_vars_acc_fst xs φ R :
+  fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
 Proof.
   induction xs as [|x xs IH]; simpl; [reflexivity |].
-  rewrite <- IH. destruct (foldr fib_vars_acc_step
-    (FAtom (expr_logic_qual_on X (tret (vconst c)) ν), R) xs); reflexivity.
+  rewrite <- IH. destruct (foldr fib_vars_acc_step (φ, R) xs); reflexivity.
 Qed.
 
 Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :
@@ -1178,7 +1175,7 @@ Proof.
     (fib_vars X (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)))) in Hm.
   unfold fib_vars, fib_vars_acc, set_fold in Hm.
   cbn [compose] in Hm.
-  rewrite foldr_fib_vars_acc_fst_ret_const in Hm.
+  rewrite foldr_fib_vars_acc_fst in Hm.
   eapply foldr_fib_ret_const_lookup; eauto.
 Qed.
 
@@ -1582,13 +1579,6 @@ Proof.
     split.
     + simpl. rewrite Hfv'. reflexivity.
     + apply formula_store_equiv_fib; assumption.
-Qed.
-
-Lemma foldr_fib_vars_acc_fst xs φ R :
-  fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
-Proof.
-  induction xs as [|x xs IH]; simpl; [reflexivity |].
-  rewrite <- IH. destruct (foldr fib_vars_acc_step (φ, R) xs); reflexivity.
 Qed.
 
 Lemma fib_vars_store_equiv X φ ψ :
