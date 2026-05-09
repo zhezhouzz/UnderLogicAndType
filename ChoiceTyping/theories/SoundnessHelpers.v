@@ -1144,6 +1144,29 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma store_restrict_insert_fresh_union (σ : Store) (X : aset) (x : atom) (v : value) :
+  σ !! x = None →
+  x ∉ X →
+  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
+  <[x := v]> (store_restrict σ X).
+Proof.
+  intros Hx_none HxX.
+  rewrite store_restrict_insert_in by set_solver.
+  f_equal.
+  apply (map_eq (M := gmap atom)). intros z.
+  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
+    (store_restrict σ X : Store) !! z).
+  rewrite (@store_restrict_lookup value σ (X ∪ {[x]}) z) at 1.
+  rewrite (@store_restrict_lookup value σ X z) at 1.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    rewrite decide_False by exact HxX.
+    exact Hx_none.
+  - destruct (decide (z ∈ X)) as [HzX|HzX].
+    + rewrite !decide_True by set_solver. reflexivity.
+    + rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
 Lemma tlet_result_graph_member_to_tlet_result_store
     X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
   x ∉ X →
@@ -1157,7 +1180,7 @@ Proof.
   intros HxX HνX Hbody Hgraph.
   destruct (tlet_result_graph_world_on_elim
     X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
-    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [_ [_ [Hv_stale [Hv_lc ->]]]]]]]]]].
+    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale [Hv_lc ->]]]]]]]]]].
   assert (Hρ :
     store_restrict (<[ν := v]> (<[x := vx]> σ)) X =
     store_restrict σ X).
@@ -1174,6 +1197,54 @@ Proof.
   }
   rewrite Hρ, Hν.
   eapply expr_result_in_store_let_intro; eauto.
+Qed.
+
+Lemma tlet_result_graph_member_to_body_result_store
+    X e1 e2 x ν (w : WfWorld) Hfreshx Hfreshν Hinh σxν :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  ν ∉ X ∪ {[x]} →
+  (∀ σ, (w : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
+  (tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh : World) σxν →
+  expr_result_in_store
+    (store_restrict σxν (X ∪ {[x]})) (e2 ^^ x) ν
+    (store_restrict σxν {[ν]}).
+Proof.
+  intros HxX Hxe2 HνXx Hclosed Hlc Hgraph.
+  destruct (tlet_result_graph_world_on_elim
+    X e1 e2 x ν w Hfreshx Hfreshν Hinh σxν Hgraph)
+    as [σ [vx [v [Hσ [Hsteps1 [Hsteps2 [Hvx_stale [Hvx_lc [Hv_stale [Hv_lc ->]]]]]]]]]].
+  assert (Hσx :
+    store_restrict (<[ν := v]> (<[x := vx]> σ)) (X ∪ {[x]}) =
+    <[x := vx]> (store_restrict σ X)).
+  {
+    rewrite store_restrict_insert_notin by exact HνXx.
+    apply store_restrict_insert_fresh_union.
+    - apply not_elem_of_dom.
+      pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+      rewrite Hdomσ. exact Hfreshx.
+    - exact HxX.
+  }
+  assert (Hν :
+    store_restrict (<[ν := v]> (<[x := vx]> σ)) {[ν]} =
+    ({[ν := v]} : Store)).
+  { apply store_restrict_insert_singleton. }
+  rewrite Hσx, Hν.
+  apply expr_result_store_intro; [exact Hv_stale | exact Hv_lc |].
+  change (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) with
+    (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x)).
+  replace (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x))
+    with (open_tm 0 vx (m{store_restrict σ X} e2)).
+  - exact Hsteps2.
+  - change (e2 ^^ x) with (open_tm 0 (vfvar x) e2).
+    symmetry. apply msubst_intro_open_tm.
+    + apply Hclosed. exact Hσ.
+    + exact Hvx_stale.
+    + exact Hvx_lc.
+    + apply Hlc. exact Hσ.
+    + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
+      rewrite store_restrict_dom. set_solver.
 Qed.
 
 Lemma tlet_result_store_to_graph_member
@@ -1704,29 +1775,6 @@ Proof.
   apply map_Forall_lookup_2. intros y v Hlookup.
   apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
-Qed.
-
-Lemma store_restrict_insert_fresh_union (σ : Store) (X : aset) (x : atom) (v : value) :
-  σ !! x = None →
-  x ∉ X →
-  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
-  <[x := v]> (store_restrict σ X).
-Proof.
-  intros Hx_none HxX.
-  rewrite store_restrict_insert_in by set_solver.
-  f_equal.
-  apply (map_eq (M := gmap atom)). intros z.
-  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
-    (store_restrict σ X : Store) !! z).
-  rewrite (@store_restrict_lookup value σ (X ∪ {[x]}) z) at 1.
-  rewrite (@store_restrict_lookup value σ X z) at 1.
-  destruct (decide (z = x)) as [->|Hzx].
-  - rewrite decide_True by set_solver.
-    rewrite decide_False by exact HxX.
-    exact Hx_none.
-  - destruct (decide (z ∈ X)) as [HzX|HzX].
-    + rewrite !decide_True by set_solver. reflexivity.
-    + rewrite !decide_False by set_solver. reflexivity.
 Qed.
 
 Lemma store_restrict_insert_fresh_union_lookup_none
