@@ -70,5 +70,6 @@ ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetExprResult.v
 ChoiceTyping/theories/TLetDenotation.v
 ChoiceTyping/theories/SoundnessHelpers.v
+ChoiceTyping/theories/SoundnessConst.v
 ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v
