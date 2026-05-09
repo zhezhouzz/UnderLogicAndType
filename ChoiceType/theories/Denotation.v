@@ -176,6 +176,31 @@ Definition expr_result_store (ν : atom) (eρ : tm) (σw : Store) : Prop :=
     is_lc v ∧
     expr_result_value eρ v.
 
+Lemma expr_result_store_elim ν eρ σw :
+  expr_result_store ν eρ σw →
+  ∃ v,
+    σw = {[ν := v]} ∧
+    stale v = ∅ ∧
+    is_lc v ∧
+    eρ →* tret v.
+Proof. intros H. exact H. Qed.
+
+Lemma expr_result_store_intro ν eρ v :
+  stale v = ∅ →
+  is_lc v →
+  eρ →* tret v →
+  expr_result_store ν eρ ({[ν := v]}).
+Proof. intros Hstale Hlc Hsteps. exists v. repeat split; auto. Qed.
+
+Lemma expr_result_store_lookup ν eρ σw :
+  expr_result_store ν eρ σw →
+  ∃ v, σw !! ν = Some v ∧ eρ →* tret v.
+Proof.
+  intros [v [-> [_ [_ Hsteps]]]].
+  exists v. split; [rewrite lookup_singleton; rewrite decide_True by reflexivity; reflexivity |].
+  exact Hsteps.
+Qed.
+
 Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
   expr_result_store ν (subst_map ρ e) σw.
 
@@ -195,6 +220,25 @@ Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_in_store ρ e ν σw →
   (w : World) σw.
 Proof. intros [_ H] Hσ. exact (proj2 (H σw) Hσ). Qed.
+
+Lemma expr_result_in_world_dom ρ e ν w :
+  expr_result_in_world ρ e ν w →
+  world_dom (w : World) = {[ν]}.
+Proof. intros [Hdom _]. exact Hdom. Qed.
+
+Lemma expr_result_in_world_store_elim ρ e ν w σw :
+  expr_result_in_world ρ e ν w →
+  (w : World) σw →
+  ∃ v,
+    σw = {[ν := v]} ∧
+    stale v = ∅ ∧
+    is_lc v ∧
+    subst_map ρ e →* tret v.
+Proof.
+  intros Hres Hw.
+  exact (expr_result_store_elim ν (subst_map ρ e) σw
+    (expr_result_in_world_sound ρ e ν w σw Hres Hw)).
+Qed.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual {[ν]} (fun σ w => expr_result_in_world σ e ν w).

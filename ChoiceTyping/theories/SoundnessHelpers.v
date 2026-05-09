@@ -1577,6 +1577,67 @@ Proof.
       rewrite store_restrict_dom. set_solver.
 Qed.
 
+Lemma expr_result_value_tlete_from_body_projection
+    X e1 e2 x σ vx v :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  closed_env (store_restrict σ X) →
+  lc_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  body_tm (subst_map (store_restrict σ X) e2) →
+  subst_map (store_restrict σ X) e1 →* tret vx →
+  subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x) →* tret v →
+  subst_map (store_restrict σ X) (tlete e1 e2) →* tret v.
+Proof.
+  intros HxX Hxe2 Hclosed Hlc Hvx_closed Hvx_lc Hbody He1 Hbody_steps.
+  change (subst_map (store_restrict σ X) (tlete e1 e2))
+    with (m{store_restrict σ X} (tlete e1 e2)).
+  rewrite (msubst_lete (store_restrict σ X) e1 e2).
+  eapply reduction_lete_intro; [exact Hbody | exact He1 |].
+  rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
+  - exact Hbody_steps.
+  - exact Hclosed.
+  - exact Hvx_closed.
+  - exact Hvx_lc.
+  - exact Hlc.
+  - change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
+    rewrite store_restrict_dom. set_solver.
+Qed.
+
+Lemma expr_result_value_tlete_from_body_store
+    X e1 e2 x ν σ vx v :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  closed_env (store_restrict σ X) →
+  lc_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  body_tm (subst_map (store_restrict σ X) e2) →
+  subst_map (store_restrict σ X) e1 →* tret vx →
+  expr_result_store ν (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) {[ν := v]} →
+  expr_result_store ν (subst_map (store_restrict σ X) (tlete e1 e2)) {[ν := v]}.
+Proof.
+  intros HxX Hxe2 Hclosed Hlc Hvx_closed Hvx_lc Hbody He1 Hstore.
+  destruct Hstore as [v' [Hσ [Hv_closed [Hv_lc Hbody_steps]]]].
+  assert (Hv_eq : v' = v).
+  {
+    assert (Hlookup : ({[ν := v']} : Store) !! ν = Some v).
+    {
+      rewrite <- Hσ.
+      rewrite lookup_singleton. rewrite decide_True by reflexivity.
+      reflexivity.
+    }
+    rewrite lookup_singleton in Hlookup.
+    rewrite decide_True in Hlookup by reflexivity.
+    inversion Hlookup. reflexivity.
+  }
+  subst v'.
+  exists v. repeat split; try reflexivity; try exact Hv_closed; try exact Hv_lc.
+  unfold expr_result_value.
+  eapply (expr_result_value_tlete_from_body_projection X e1 e2 x σ vx v); eauto.
+Qed.
+
 Lemma expr_result_in_store_ret_fvar_to_source
     ρ e x ν σ vx σν :
   stale vx = ∅ →
