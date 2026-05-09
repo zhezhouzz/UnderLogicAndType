@@ -245,6 +245,25 @@ Proof.
     + set_solver.
 Qed.
 
+Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :
+  m ⊨ FLetResultOnWith X e1 e2 x ν →
+  fib_vars_obligation (X ∪ {[x]})
+    (FAtom (let_expr_logic_qual_on X e1 e2 x ν)) ∅ m.
+Proof.
+  unfold FLetResultOnWith, res_models.
+  apply fib_vars_models_elim.
+Qed.
+
+Lemma FLetResultOnWith_models_intro_obligation X e1 e2 x ν m :
+  formula_scoped_in_world ∅ m (FLetResultOnWith X e1 e2 x ν) →
+  fib_vars_obligation (X ∪ {[x]})
+    (FAtom (let_expr_logic_qual_on X e1 e2 x ν)) ∅ m →
+  m ⊨ FLetResultOnWith X e1 e2 x ν.
+Proof.
+  unfold FLetResultOnWith, res_models.
+  apply fib_vars_models_intro.
+Qed.
+
 Lemma stale_expr_logic_qual e ν :
   stale (expr_logic_qual e ν) = stale e ∪ {[ν]}.
 Proof. reflexivity. Qed.
