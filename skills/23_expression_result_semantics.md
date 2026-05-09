@@ -43,6 +43,26 @@ The `ret_fvar` lemmas are useful when a proof introduces a fresh coordinate
 for a let-bound result and then needs to reuse that coordinate as the result
 representative for a body/context typing premise.
 
+Keep input environments and output result stores separate.  In the exact
+result semantics, an output store for coordinate `ν` is a singleton:
+
+```coq
+{[ν := v]}
+```
+
+It should not also be used as the input environment for evaluating `e1` or
+`e2`.  For let, the useful store-level shape is:
+
+```coq
+subst_map ρ e1 →* tret vx
+open_tm 0 vx (subst_map ρ e2) →* tret v
+```
+
+paired with output store `{[ν := v]}`.  If a world-level intro needs exactness,
+state the projection as an iff over `res_restrict w {[ν]}`.  Keep
+`body_tm (subst_map ρ e2)` as a separate regularity premise; it does not follow
+from merely knowing the result set of `tlete`.
+
 Prefer the closed-value version of the substitution fact.  For a returned
 variable, proving
 
