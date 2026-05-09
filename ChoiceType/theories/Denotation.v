@@ -232,6 +232,25 @@ Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
   stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
+Lemma FLetResultOnWith_fv X e1 e2 x ν :
+  formula_fv (FLetResultOnWith X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
+Proof.
+  unfold FLetResultOnWith.
+  rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  set_solver.
+Qed.
+
+Lemma FLetResultOnWith_scoped_intro X e1 e2 x ν (m : WfWorld) :
+  X ∪ {[x]} ∪ {[ν]} ⊆ world_dom (m : World) →
+  formula_scoped_in_world ∅ m (FLetResultOnWith X e1 e2 x ν).
+Proof.
+  intros Hdom z Hz.
+  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
+  rewrite FLetResultOnWith_fv in Hz.
+  apply Hdom. exact Hz.
+Qed.
+
 Lemma FLetResultOn_fv_subset X e1 e2 ν :
   formula_fv (FLetResultOn X e1 e2 ν) ⊆ X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}.
 Proof.
