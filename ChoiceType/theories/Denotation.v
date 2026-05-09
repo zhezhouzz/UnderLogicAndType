@@ -602,18 +602,6 @@ Proof.
   exact (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore).
 Qed.
 
-Lemma expr_let_result_in_world_on_to_tlete
-    X e1 e2 x ν (w : WfWorld) :
-  fv_tm e1 ⊆ X →
-  fv_tm e2 ⊆ X →
-  world_closed_on X w →
-  (∀ σw, (w : World) σw →
-    body_tm (subst_map (store_restrict σw X) e2)) →
-  expr_let_result_in_world_on X e1 e2 x ν w →
-  expr_result_in_world ∅ (tlete e1 e2) ν (res_restrict w (X ∪ {[ν]})).
-Proof.
-Admitted.
-
 Lemma expr_result_in_store_let_intro ρ e1 e2 ν v vx :
   stale v = ∅ →
   is_lc v →
@@ -627,6 +615,19 @@ Proof.
   change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
   rewrite msubst_lete.
   eapply reduction_lete_intro; eauto.
+Qed.
+
+Lemma expr_let_result_in_store_on_to_tlete_result X e1 e2 x ν σw v :
+  expr_let_result_in_store_on X e1 e2 x ν σw →
+  σw !! ν = Some v →
+  stale v = ∅ →
+  is_lc v →
+  body_tm (subst_map (store_restrict σw X) e2) →
+  expr_result_in_store (store_restrict σw X) (tlete e1 e2) ν {[ν := v]}.
+Proof.
+  intros [vx [v' [_ [Hν [Hsteps1 Hsteps2]]]]] Hνv Hv_closed Hv_lc Hbody.
+  rewrite Hνv in Hν. inversion Hν. subst v'.
+  eapply expr_result_in_store_let_intro; eauto.
 Qed.
 
 Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
