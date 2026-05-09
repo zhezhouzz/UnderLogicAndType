@@ -3317,6 +3317,12 @@ Lemma denot_ty_on_let_result_body_to_let
     subst_map (store_restrict σ X) e1 →* tret vx →
     stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (m : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (∀ n,
+    m ⊑ n →
+    ∀ σ v,
+      (n : World) σ →
+      subst_map (store_restrict σ X) (tlete e1 e2) →* tret v →
+      ∅ ⊢ᵥ v ⋮ erase_ty τ) →
   m ⊨ basic_world_formula Σ (dom Σ) →
   (∀ n,
     m ⊑ n →
@@ -3445,6 +3451,12 @@ Proof.
       * set_solver.
       * exact Hσ.
     + eapply choice_typing_wf_let_body_helper; eauto.
+  - intros n Hmn σ v Hσ Hsteps.
+    assert (Hnctx : n ⊨ denot_ctx_in_env Σ Γ).
+    { eapply res_models_kripke; eauto. }
+    replace (store_restrict σ (dom (erase_ctx_under Σ Γ)))
+      with (store_restrict σ (dom (erase_ctx_under Σ Γ))) in Hsteps by reflexivity.
+    eapply choice_typing_wf_result_typed_restrict_in_ctx; eauto.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
   - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy Hfresh_y Hresult_y.
     set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y n Hfresh_y Hresult_y).
