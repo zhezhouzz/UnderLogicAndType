@@ -429,8 +429,8 @@ Proof.
   intros z Hz. simpl in Hz.
   apply elem_of_union in Hz as [Hzres | Hzrest].
   - change (formula_fv (FExprResultOn X (tret (vconst c)) ν))
-      with (formula_fv (FExprResultDenotOn X (tret (vconst c)) ν)) in Hzres.
-    pose proof (FExprResultDenotOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
+      with (formula_fv (FExprResultOn X (tret (vconst c)) ν)) in Hzres.
+    pose proof (FExprResultOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
     change (stale (vconst c)) with (∅ : aset) in Hzres'.
     set_solver.
   - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.
@@ -451,8 +451,8 @@ Proof.
   intros z Hz. simpl in Hz.
   apply elem_of_union in Hz as [Hzres | Hzrest].
   - change (formula_fv (FExprResultOn X (tret (vconst c)) ν))
-      with (formula_fv (FExprResultDenotOn X (tret (vconst c)) ν)) in Hzres.
-    pose proof (FExprResultDenotOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
+      with (formula_fv (FExprResultOn X (tret (vconst c)) ν)) in Hzres.
+    pose proof (FExprResultOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
     change (stale (vconst c)) with (∅ : aset) in Hzres'.
     set_solver.
   - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.

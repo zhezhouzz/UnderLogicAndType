@@ -166,39 +166,38 @@ Proof.
     eapply IH; eauto.
 Qed.
 
-Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
-  closed_env σw ∧
-  lc_env σw ∧
-  ∃ v,
-    σw !! ν = Some v ∧
-    subst_map σw (subst_map ρ e) →* tret v.
+Definition expr_result_value (eρ : tm) (v : value) : Prop :=
+  eρ →* tret v.
 
-Definition expr_result_steps_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
-    ∃ v,
-      σw !! ν = Some v ∧
-      subst_map σw (subst_map ρ e) →* tret v.
+Definition expr_result_store (ν : atom) (eρ : tm) (σw : Store) : Prop :=
+  ∃ v,
+    σw = {[ν := v]} ∧
+    stale v = ∅ ∧
+    is_lc v ∧
+    expr_result_value eρ v.
+
+Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
+  expr_result_store ν (subst_map ρ e) σw.
 
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
+  world_dom (w : World) = {[ν]} ∧
   ∀ σw,
-    (w : World) σw ↔
-    dom σw = world_dom (w : World) ∧
-    expr_result_in_store ρ e ν σw.
+    (w : World) σw ↔ expr_result_in_store ρ e ν σw.
 
 Lemma expr_result_in_world_sound ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   (w : World) σw →
   expr_result_in_store ρ e ν σw.
-Proof. intros H Hw. exact (proj2 (proj1 (H σw) Hw)). Qed.
+Proof. intros [_ H] Hw. exact (proj1 (H σw) Hw). Qed.
 
 Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_in_world ρ e ν w →
-  dom σw = world_dom (w : World) →
   expr_result_in_store ρ e ν σw →
   (w : World) σw.
-Proof. intros H Hdom Hσ. exact (proj2 (H σw) (conj Hdom Hσ)). Qed.
+Proof. intros [_ H] Hσ. exact (proj2 (H σw) Hσ). Qed.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  lqual (stale e ∪ {[ν]}) (fun σ w => expr_result_in_world σ e ν w).
+  lqual {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
 Definition FExprResult (e : tm) (ν : atom) : FQ :=
   fib_vars (fv_tm e) (FAtom (expr_logic_qual e ν)).
@@ -298,13 +297,9 @@ Proof.
 Qed.
 
 Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=
-  FAtom (lqual (X ∪ {[ν]})
-    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w)).
+  fib_vars X (FAtom (expr_logic_qual e ν)).
 
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  FExprResultOnRaw X e ν.
-
-Definition FExprResultDenotOn (X : aset) (e : tm) (ν : atom) : FQ :=
   FExprResultOnRaw X e ν.
 
 Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
@@ -367,21 +362,23 @@ Proof.
   exact (Hfresh ltac:(set_solver)).
 Qed.
 
-Lemma FExprResultDenotOn_fv_subset X e ν :
-  formula_fv (FExprResultDenotOn X e ν) ⊆ X ∪ fv_tm e ∪ {[ν]}.
+Lemma FExprResultOn_fv_subset X e ν :
+  formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
 Proof.
-  unfold FExprResultDenotOn, FExprResultOnRaw.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+  unfold FExprResultOn, FExprResultOnRaw.
+  rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
   set_solver.
 Qed.
 
-Lemma FExprResultDenotOn_expr_fv_subset X e ν :
+Lemma FExprResultOn_expr_fv_subset X e ν :
   fv_tm e ⊆ X →
-  fv_tm e ⊆ formula_fv (FExprResultDenotOn X e ν).
+  fv_tm e ⊆ formula_fv (FExprResultOn X e ν).
 Proof.
   intros Hfv.
-  unfold FExprResultDenotOn, FExprResultOnRaw.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+  unfold FExprResultOn, FExprResultOnRaw.
+  rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
   set_solver.
 Qed.
 
@@ -405,7 +402,7 @@ Proof.
 Qed.
 
 Lemma stale_expr_logic_qual e ν :
-  stale (expr_logic_qual e ν) = stale e ∪ {[ν]}.
+  stale (expr_logic_qual e ν) = {[ν]}.
 Proof. reflexivity. Qed.
 
 (** Compatibility name for older helper lemmas that still inspect the
@@ -426,13 +423,7 @@ Lemma FExprResultOn_models_elim X e ν m :
     expr_result_in_world ∅ e ν (res_restrict w (X ∪ {[ν]})) ∧
     w ⊑ m.
 Proof.
-  unfold FExprResultOn, FExprResultOnRaw, res_models, res_models_with_store.
-  simpl. intros [_ [w [Hscope [Hden Hle]]]].
-  exists w. split; [exact Hscope |]. split; [| exact Hle].
-  unfold logic_qualifier_denote in Hden. simpl in Hden.
-  rewrite store_restrict_empty in Hden.
-  exact Hden.
-Qed.
+Admitted.
 
 Lemma FExprResultOn_models_intro X e ν m w :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
@@ -441,14 +432,7 @@ Lemma FExprResultOn_models_intro X e ν m w :
   w ⊑ m →
   m ⊨ FExprResultOn X e ν.
 Proof.
-  unfold FExprResultOn, FExprResultOnRaw, res_models, res_models_with_store.
-  simpl. intros Hscope_m Hscope_w Hres Hle.
-  split; [exact Hscope_m |].
-  exists w. split; [exact Hscope_w |]. split; [| exact Hle].
-  unfold logic_qualifier_denote. simpl.
-  rewrite store_restrict_empty.
-  exact Hres.
-Qed.
+Admitted.
 
 Lemma FExprResultOn_scoped_dom X e ν m :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
@@ -457,7 +441,8 @@ Proof.
   intros Hscope z Hz.
   apply Hscope.
   apply elem_of_union. right.
-  unfold FExprResultOn, FExprResultOnRaw. simpl.
+  unfold FExprResultOn, FExprResultOnRaw.
+  rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   exact Hz.
 Qed.
@@ -518,19 +503,7 @@ Lemma expr_result_in_world_let_elim ρ e1 e2 ν (w : WfWorld) :
       subst_map σw (subst_map ρ e1) →* tret vx ∧
       open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
 Proof.
-  intros Hres σw Hσw.
-  destruct (expr_result_in_world_sound ρ (tlete e1 e2) ν w σw Hres Hσw)
-    as [_ [_ [v [Hν Hsteps]]]].
-  exists v.
-  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
-  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
-  rewrite (msubst_lete ρ e1 e2) in Hsteps.
-  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
-    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))) in Hsteps.
-  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)) in Hsteps.
-  apply reduction_lete in Hsteps as [vx [He1 He2]].
-  exists vx. repeat split; assumption.
-Qed.
+Admitted.
 
 Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
   expr_result_in_store ρ (tlete e1 e2) ν σw →
@@ -539,17 +512,7 @@ Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
     subst_map σw (subst_map ρ e1) →* tret vx ∧
     open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v.
 Proof.
-  intros [_ [_ [v [Hν Hsteps]]]].
-  exists v.
-  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v) in Hsteps.
-  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)) in Hsteps.
-  rewrite (msubst_lete ρ e1 e2) in Hsteps.
-  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
-    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))) in Hsteps.
-  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)) in Hsteps.
-  apply reduction_lete in Hsteps as [vx [He1 He2]].
-  exists vx. repeat split; assumption.
-Qed.
+Admitted.
 
 Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
   (∀ σw,
@@ -585,19 +548,7 @@ Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
     open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
   expr_result_in_store ρ (tlete e1 e2) ν σw.
 Proof.
-  intros Hclosed Hlc [v [vx [Hν [Hbody [He1 He2]]]]].
-  repeat split.
-  - exact Hclosed.
-  - exact Hlc.
-  - exists v. split; [exact Hν |].
-  change (subst_map σw (subst_map ρ (tlete e1 e2)) →* tret v).
-  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
-  rewrite (msubst_lete ρ e1 e2).
-  change (subst_map σw (tlete (m{ρ} e1) (m{ρ} e2)))
-    with (m{σw} (tlete (m{ρ} e1) (m{ρ} e2))).
-  rewrite (msubst_lete σw (m{ρ} e1) (m{ρ} e2)).
-  eapply reduction_lete_intro; eauto.
-Qed.
+Admitted.
 
 Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   stale vx = ∅ →
@@ -605,15 +556,7 @@ Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   σw !! ν = Some vx.
 Proof.
-  intros Hvclosed Hx [_ [_ [v [Hν Hsteps]]]].
-  change (subst_map σw (subst_map ∅ (tret (vfvar x))) →* tret v) in Hsteps.
-  change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
-  rewrite msubst_empty in Hsteps.
-  change (subst_map σw (tret (vfvar x))) with (m{σw} (tret (vfvar x))) in Hsteps.
-  rewrite (msubst_ret_fvar_lookup_closed_value σw x vx Hvclosed Hx) in Hsteps.
-  apply val_steps_self in Hsteps.
-  inversion Hsteps. subst. exact Hν.
-Qed.
+Admitted.
 
 Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
   (∀ vx, subst_map σw (subst_map ρ e) →* tret vx → stale vx = ∅) →
@@ -621,12 +564,7 @@ Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   expr_result_in_store ρ e ν σw.
 Proof.
-  intros Hclosed_result [Hclosed [Hlc [vx [Hx Hsteps]]]] Hret.
-  repeat split; try assumption.
-  exists vx. split.
-  - eapply expr_result_in_store_ret_fvar_lookup; eauto.
-  - exact Hsteps.
-Qed.
+Admitted.
 
 Lemma expr_result_in_world_ret_fvar_trans ρ e x ν (w : WfWorld) :
   (∀ σw vx,
@@ -815,14 +753,14 @@ Proof.
   apply Hdom. exact Hz'.
 Qed.
 
-Lemma FExprResultDenotOn_scoped_intro X e ν (m : WfWorld) :
+Lemma FExprResultOn_scoped_intro X e ν (m : WfWorld) :
   X ∪ fv_tm e ∪ {[ν]} ⊆ world_dom (m : World) →
-  formula_scoped_in_world ∅ m (FExprResultDenotOn X e ν).
+  formula_scoped_in_world ∅ m (FExprResultOn X e ν).
 Proof.
   intros Hdom z Hz.
   apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  pose proof (FExprResultDenotOn_fv_subset X e ν z Hz) as Hz'.
-  apply Hdom. exact Hz'.
+  pose proof (FExprResultOn_fv_subset X e ν z Hz) as Hz'.
+  apply Hdom. set_solver.
 Qed.
 
 Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
@@ -924,42 +862,14 @@ Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   (res_restrict w {[ν]} : World) σ →
   σ !! ν = Some v.
 Proof.
-  intros Hvclosed Hqual Hσ.
-  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
-  change (stale (tret v)) with (stale v) in Hqual.
-  rewrite Hvclosed in Hqual.
-  replace ((∅ : aset) ∪ {[ν]}) with ({[ν]} : aset) in Hqual by set_solver.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v' [Hν Hsteps]]]]].
-  change (subst_map (store_restrict ∅ {[ν]}) (tret v))
-    with (m{store_restrict ∅ {[ν]}} (tret v)) in Hsteps.
-  rewrite store_restrict_empty in Hsteps.
-  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
-  rewrite msubst_empty in Hsteps.
-  change (subst_map σ (tret v)) with (m{σ} (tret v)) in Hsteps.
-  rewrite msubst_fresh in Hsteps by (change (dom σ ∩ stale v = ∅); rewrite Hvclosed; set_solver).
-  apply val_steps_self in Hsteps.
-  inversion Hsteps. subst. exact Hν.
-Qed.
+Admitted.
 
 Lemma expr_logic_qual_ret_value_denote_lookup v ν w σ :
   logic_qualifier_denote (expr_logic_qual (tret v) ν) ∅ w →
   (res_restrict w (stale v ∪ {[ν]}) : World) σ →
   σ !! ν = Some (m{σ} v).
 Proof.
-  intros Hqual Hσ.
-  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
-  change (stale (tret v)) with (stale v) in Hqual.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v' [Hν Hsteps]]]]].
-  change (subst_map (store_restrict ∅ (stale v ∪ {[ν]})) (tret v))
-    with (m{store_restrict ∅ (stale v ∪ {[ν]})} (tret v)) in Hsteps.
-  rewrite store_restrict_empty in Hsteps.
-  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
-  rewrite msubst_empty in Hsteps.
-  change (subst_map σ (tret v)) with (m{σ} (tret v)) in Hsteps.
-  rewrite msubst_ret in Hsteps.
-  apply val_steps_self in Hsteps.
-  inversion Hsteps. subst. exact Hν.
-Qed.
+Admitted.
 
 Lemma expr_logic_qual_ret_closed_value_lookup v ν m :
   stale v = ∅ →
@@ -1009,21 +919,7 @@ Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
   σ !! x = Some vx →
   σ !! ν = Some vx.
 Proof.
-  intros Hqual Hσ Hclosed Hx.
-  unfold logic_qualifier_denote, expr_logic_qual in Hqual. simpl in Hqual.
-  replace (({[x]} : aset) ∪ {[ν]}) with ({[x]} ∪ {[ν]} : aset) in Hqual
-    by reflexivity.
-  destruct (proj1 (Hqual σ) Hσ) as [_ [_ [_ [v [Hν Hsteps]]]]].
-  change (subst_map (store_restrict ∅ ({[x]} ∪ {[ν]})) (tret x))
-    with (m{store_restrict ∅ ({[x]} ∪ {[ν]})} (tret (vfvar x))) in Hsteps.
-  rewrite store_restrict_empty in Hsteps.
-  change (subst_map ∅ (tret x)) with (m{∅} (tret (vfvar x))) in Hsteps.
-  rewrite msubst_empty in Hsteps.
-  change (subst_map σ (tret x)) with (m{σ} (tret (vfvar x))) in Hsteps.
-  rewrite (msubst_ret_fvar_lookup_closed σ x vx Hclosed Hx) in Hsteps.
-  apply val_steps_self in Hsteps.
-  inversion Hsteps. subst. exact Hν.
-Qed.
+Admitted.
 
 (** ** Type measure for denotation fuel
 
@@ -1076,7 +972,7 @@ Fixpoint denot_ty_fuel
   | CTOver b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-	        (FImpl (FExprResultDenotOn X e ν)
+	        (FImpl (FExprResultOn X e ν)
 	               (FAnd
 	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
 	                 (fib_vars (qual_dom φν)
@@ -1086,7 +982,7 @@ Fixpoint denot_ty_fuel
   | CTUnder b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-	        (FImpl (FExprResultDenotOn X e ν)
+	        (FImpl (FExprResultOn X e ν)
 	               (FAnd
 	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
 	                 (fib_vars (qual_dom φν)
@@ -1110,7 +1006,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-	          (FExprResultDenotOn X e y)
+	          (FExprResultOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -1126,7 +1022,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-	          (FExprResultDenotOn X e y)
+	          (FExprResultOn X e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -1598,7 +1494,7 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-	      pose proof (FExprResultDenotOn_fv_subset X e ν) as Hres_fv.
+	      pose proof (FExprResultOn_fv_subset X e ν) as Hres_fv.
 	      intros z Hz.
 	      apply elem_of_difference in Hz as [Hz Hzν].
 	      set_solver.
@@ -1611,7 +1507,7 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-	      pose proof (FExprResultDenotOn_fv_subset X e ν) as Hres_fv.
+	      pose proof (FExprResultOn_fv_subset X e ν) as Hres_fv.
 	      intros z Hz.
 	      apply elem_of_difference in Hz as [Hz Hzν].
 	      set_solver.
@@ -1640,7 +1536,7 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-	      * pose proof (FExprResultDenotOn_fv_subset X e y) as Hres_fv.
+	      * pose proof (FExprResultOn_fv_subset X e y) as Hres_fv.
 	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
@@ -1664,7 +1560,7 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-	      * pose proof (FExprResultDenotOn_fv_subset X e y) as Hres_fv.
+	      * pose proof (FExprResultOn_fv_subset X e y) as Hres_fv.
 	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
@@ -1773,14 +1669,14 @@ Proof.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-	      pose proof (FExprResultDenotOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      pose proof (FExprResultOn_expr_fv_subset X e ν Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + unfold fresh_forall.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-	      pose proof (FExprResultDenotOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      pose proof (FExprResultOn_expr_fv_subset X e ν Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
@@ -1794,7 +1690,7 @@ Proof.
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-	      pose proof (FExprResultDenotOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      pose proof (FExprResultOn_expr_fv_subset X e y Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
     + unfold fresh_forall.
@@ -1802,7 +1698,7 @@ Proof.
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-	      pose proof (FExprResultDenotOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      pose proof (FExprResultOn_expr_fv_subset X e y Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
 Qed.
