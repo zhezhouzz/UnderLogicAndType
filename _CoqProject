@@ -65,6 +65,7 @@ ChoiceTyping/theories/PrimOpContext.v
 ChoiceTyping/theories/Typing.v
 ChoiceTyping/theories/LetResultWorld.v
 ChoiceTyping/theories/SoundnessCommon.v
+ChoiceTyping/theories/ResultWorldBridge.v
 ChoiceTyping/theories/TLetGraph.v
 ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetExprResult.v
