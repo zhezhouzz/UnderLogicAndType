@@ -833,6 +833,7 @@ Definition expr_result_model_bridge
     (Xtgt : aset) (etgt : tm)
     (msrc mtgt : WfWorld) : Prop :=
   ∀ ν ntgt,
+    ν ∉ world_dom (mtgt : World) →
     mtgt ⊑ ntgt →
     ntgt ⊨ FExprResultOn Xtgt etgt ν →
     ∃ nsrc,

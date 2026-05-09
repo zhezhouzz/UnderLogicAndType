@@ -1010,6 +1010,51 @@ Proof.
   exact Hle.
 Qed.
 
+(** Assumed expression-result world characterization.
+
+    This is the pure resource/operational fact we want to prove next.  It says
+    that [FExprResultOn X e ν] is exactly the same information as saying that
+    the [X,ν]-part of the current world is obtained by first restricting to the
+    input world [X] and then adding the exact result coordinate [ν] with
+    [let_result_world_on].
+
+    Keeping this as a separate lemma is important: the tlet proof should use a
+    generic characterization of expression-result worlds, not unfold
+    [fib_vars] and [expr_logic_qual_on] at every type constructor. *)
+Axiom FExprResultOn_iff_let_result_world_on :
+  ∀ X e ν (m : WfWorld) Hfresh Hresult,
+    fv_tm e ⊆ X →
+    ν ∉ X →
+    X ⊆ world_dom (m : World) →
+    (m ⊨ FExprResultOn X e ν ↔
+     res_restrict m (X ∪ {[ν]}) =
+       let_result_world_on X e ν (res_restrict m X) Hfresh Hresult).
+
+(** Assumed two-stage decomposition for [tlet] result worlds.
+
+    This is the pure [let_result_world_on] lemma behind the tlet case.  First
+    evaluate [e1] over [X] into a fresh intermediate coordinate [x].  Then
+    evaluate the opened body over [X ∪ {[x]}] into the final coordinate [ν].
+    Restricting away [x] gives exactly the one-shot result world for
+    [tlete e1 e2].
+
+    This is the point where the [X -> x -> ν] pairing is preserved: [ν] is
+    introduced only by the second stage, so the first stage cannot form the
+    spurious cross-product that appears if [ν] is already in the base world. *)
+Axiom let_result_world_on_tlete_decompose :
+  ∀ X e1 e2 x ν (n : WfWorld)
+    Hfreshx Hresult1 Hfreshν Hresult2 Hfreshν_tlet Hresult_tlet,
+    fv_tm (tlete e1 e2) ⊆ X →
+    x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+    ν ∉ world_dom (n : World) →
+    X ⊆ world_dom (n : World) →
+    res_restrict
+      (let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν
+        (let_result_world_on X e1 x n Hfreshx Hresult1)
+        Hfreshν Hresult2)
+      (world_dom (n : World) ∪ {[ν]}) =
+    let_result_world_on X (tlete e1 e2) ν n Hfreshν_tlet Hresult_tlet.
+
 (** Proof-only exact graph for [tlet] results.
 
     This definition is deliberately not part of the paper syntax or semantic
