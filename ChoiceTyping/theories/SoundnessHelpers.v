@@ -1826,7 +1826,31 @@ Lemma expr_result_in_world_ret_fvar_to_source_pullback
   expr_result_in_world ∅ e ν
     (res_restrict (res_pullback_projection n p Hle) (stale e ∪ {[ν]})).
 Proof.
-Admitted.
+  intros _ _ Hscope _ _ _ Hret_world.
+  exfalso.
+  destruct (world_wf p) as [[σp Hσp] _].
+  set (σxν := store_restrict σp ({[x]} ∪ {[ν]})).
+  assert (Hproj_xν : (res_restrict p ({[x]} ∪ {[ν]}) : World) σxν).
+  { exists σp. split; [exact Hσp | reflexivity]. }
+  set (σν := store_restrict σp {[ν]}).
+  assert (Hproj_ν :
+    (res_restrict (res_restrict p ({[x]} ∪ {[ν]})) {[ν]} : World) σν).
+  {
+    exists σxν. split; [exact Hproj_xν |].
+    subst σxν σν.
+    rewrite store_restrict_restrict.
+    replace (({[x]} ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
+    reflexivity.
+  }
+  pose proof (expr_result_in_world_sound ∅ (tret (vfvar x)) ν
+    (res_restrict p ({[x]} ∪ {[ν]})) σν Hret_world Hproj_ν) as Hret.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 (** Semantic compatibility of bunched let.
 
