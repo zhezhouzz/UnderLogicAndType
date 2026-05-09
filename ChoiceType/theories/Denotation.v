@@ -665,7 +665,21 @@ Lemma expr_result_in_world_ret_fvar_trans ρ e x ν (w : WfWorld) :
   expr_result_in_world ∅ (tret (vfvar x)) ν w →
   expr_result_in_world ρ e ν w.
 Proof.
-Admitted.
+  intros _ _ Hret_world.
+  exfalso.
+  destruct (world_wf w) as [[σ Hσ] _].
+  set (σν := store_restrict σ {[ν]}).
+  assert (Hprojν : (res_restrict w {[ν]} : World) σν).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  pose proof (expr_result_in_world_sound ∅ (tret (vfvar x)) ν w σν
+    Hret_world Hprojν) as Hret.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 Lemma FExprResult_models_elim e ν m :
   m ⊨ FExprResult e ν →
