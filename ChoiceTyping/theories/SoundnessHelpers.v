@@ -1743,6 +1743,82 @@ Lemma fib_vars_obligation_insert_fresh_to_fib
 Proof.
 Admitted.
 
+Lemma expr_result_store_from_body_xfiber
+    X e2 x ν ρ (mlet : WfWorld) σ vx v :
+  x ∉ X →
+  store_restrict σ X = ρ →
+  (mlet : World) (<[x := vx]> σ) →
+  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
+  expr_result_store ν
+    (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x))
+    {[ν := v]} →
+  expr_result_store ν
+    (subst_map (<[x := vx]> ρ) (e2 ^^ x))
+    {[ν := v]}.
+Proof.
+  intros _ Hρ _ _ Hstore. rewrite <- Hρ. exact Hstore.
+Qed.
+
+Lemma expr_result_in_world_tlete_xfiber_sound
+    X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx)
+    (ρ : Store) (m mlet : WfWorld) σν :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (∀ σ, (m : World) σ → (n : World) σ ∧ store_restrict σ X = ρ) →
+  (∀ σx, (mlet : World) σx →
+    ∃ σ vx,
+      (m : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      σx = <[x := vx]> σ) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    (mlet : World) (<[x := vx]> σ)) →
+  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
+  (res_restrict m {[ν]} : World) σν →
+  expr_result_in_store ρ (tlete e1 e2) ν σν.
+Proof.
+Admitted.
+
+Lemma expr_result_in_world_tlete_xfiber_complete
+    X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx)
+    (ρ : Store) (m mlet : WfWorld) σν :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  (∀ σ, (m : World) σ → (n : World) σ ∧ store_restrict σ X = ρ) →
+  (∀ σx, (mlet : World) σx →
+    ∃ σ vx,
+      (m : World) σ ∧
+      subst_map (store_restrict σ X) e1 →* tret vx ∧
+      σx = <[x := vx]> σ) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    (mlet : World) (<[x := vx]> σ)) →
+  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
+  expr_result_in_store ρ (tlete e1 e2) ν σν →
+  (res_restrict m {[ν]} : World) σν.
+Proof.
+Admitted.
+
 (** One-projection semantic core of tlet.
 
     After the outer [X]-fibers have fixed the input store [ρ], the body-side
@@ -1782,10 +1858,14 @@ Lemma expr_result_in_world_tlete_from_body_xfiber
     (m : World) σ →
     subst_map (store_restrict σ X) e1 →* tret vx →
     (mlet : World) (<[x := vx]> σ)) →
-  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual (e2 ^^ x) ν))) →
+  res_models_with_store ρ mlet (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
   expr_result_in_world ρ (tlete e1 e2) ν m.
 Proof.
-Admitted.
+  intros Hx _ Hclosed Hlc Hresult_closed Hbody Hm Hmlet_elim Hmlet_intro Hbody_model.
+  intros σν. split.
+  - eapply expr_result_in_world_tlete_xfiber_sound; eauto.
+  - eapply expr_result_in_world_tlete_xfiber_complete; eauto.
+Qed.
 
 (** Lifting the one-projection semantic core through the outer [X] fibers.
     This is the induction over [fib_vars_obligation X].  Its non-mechanical
@@ -1804,10 +1884,10 @@ Lemma fib_vars_obligation_tlete_from_body_normalized
     stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   fib_vars_obligation X
-    (FFib x (FAtom (expr_logic_qual (e2 ^^ x) ν))) ∅
+    (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) ∅
     (let_result_world_on X e1 x n Hfresh Hresult) →
   fib_vars_obligation X
-    (FAtom (expr_logic_qual (tlete e1 e2) ν)) ∅ n.
+    (FAtom (expr_logic_qual_on X (tlete e1 e2) ν)) ∅ n.
 Proof.
 Admitted.
 
@@ -1823,10 +1903,10 @@ Lemma fib_vars_obligation_tlete_from_body_result_world
     stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   fib_vars_obligation (X ∪ {[x]})
-    (FAtom (expr_logic_qual (e2 ^^ x) ν)) ∅
+    (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν)) ∅
     (let_result_world_on X e1 x n Hfresh Hresult) →
   fib_vars_obligation X
-    (FAtom (expr_logic_qual (tlete e1 e2) ν)) ∅ n.
+    (FAtom (expr_logic_qual_on X (tlete e1 e2) ν)) ∅ n.
 Proof.
   intros Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
   eapply fib_vars_obligation_tlete_from_body_normalized; eauto.

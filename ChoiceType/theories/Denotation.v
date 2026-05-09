@@ -237,8 +237,12 @@ Qed.
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
+Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier :=
+  lqual (X ∪ {[ν]})
+    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
+
 Definition FExprResult (e : tm) (ν : atom) : FQ :=
-  fib_vars (fv_tm e) (FAtom (expr_logic_qual e ν)).
+  fib_vars (fv_tm e) (FAtom (expr_logic_qual_on (fv_tm e) e ν)).
 
 (** Domain-explicit expression-result atom.
 
@@ -335,7 +339,7 @@ Proof.
 Qed.
 
 Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FAtom (expr_logic_qual e ν)).
+  fib_vars X (FAtom (expr_logic_qual_on X e ν)).
 
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
   FExprResultOnRaw X e ν.
@@ -443,13 +447,6 @@ Lemma stale_expr_logic_qual e ν :
   stale (expr_logic_qual e ν) = {[ν]}.
 Proof. reflexivity. Qed.
 
-(** Compatibility name for older helper lemmas that still inspect the
-    domain-explicit atom directly.  New denotations should use
-    [FExprResultOn], whose domain is represented by [fib_vars]. *)
-Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier :=
-  lqual (X ∪ {[ν]})
-    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
-
 Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
@@ -482,8 +479,14 @@ Proof.
   unfold FExprResultOn, FExprResultOnRaw.
   rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
-  exact Hz.
+  set_solver.
 Qed.
+
+Lemma FAtom_expr_logic_qual_on_exact X e ν ρ m :
+  res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)) →
+  expr_result_in_world (store_restrict ρ X) e ν m.
+Proof.
+Admitted.
 
 (** Prop-level totality for the expression component of a type denotation.
 
