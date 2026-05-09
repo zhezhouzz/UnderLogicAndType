@@ -1070,7 +1070,48 @@ Lemma expr_logic_qual_ret_value_denote_lookup v ν w σ :
   (res_restrict w (stale v ∪ {[ν]}) : World) σ →
   σ !! ν = Some (m{σ} v).
 Proof.
-Admitted.
+  intros Hden Hσ.
+  set (σν := store_restrict σ {[ν]}).
+  assert (Hσν : (res_restrict w {[ν]} : World) σν).
+  {
+    destruct Hσ as [σw [Hσw Hrestrict]].
+    exists σw. split; [exact Hσw |].
+    subst σν.
+    rewrite <- Hrestrict.
+    rewrite store_restrict_restrict.
+    replace ((stale v ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
+    reflexivity.
+  }
+  unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite store_restrict_empty in Hden.
+  assert (Hσνproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σν).
+  {
+    exists σν. split; [exact Hσν |].
+    apply store_restrict_idemp.
+    pose proof (wfworld_store_dom (res_restrict w {[ν]}) σν Hσν) as Hdomσν.
+    simpl in Hdomσν. set_solver.
+  }
+  pose proof (expr_result_in_world_sound ∅ (tret v) ν
+    (res_restrict w {[ν]}) σν Hden Hσνproj) as Hstore.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret v)) σν Hstore)
+    as [v' [Hσν_eq [Hv'_closed [_ Hsteps]]]].
+  change (subst_map ∅ (tret v)) with (m{∅} (tret v)) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  pose proof (value_steps_self v (tret v') Hsteps) as Heq.
+  inversion Heq. subst v'.
+  assert (Hvclosed : stale v = ∅) by exact Hv'_closed.
+  rewrite (msubst_fresh σ v) by (rewrite Hvclosed; set_solver).
+  assert (Hlookupν : σν !! ν = Some v).
+  {
+    rewrite Hσν_eq.
+    change (({[ν := v]} : Store) !! ν = Some v).
+    rewrite lookup_singleton. rewrite decide_True by reflexivity.
+    reflexivity.
+  }
+  subst σν.
+  apply store_restrict_lookup_some in Hlookupν as [_ Hlookupν].
+  exact Hlookupν.
+Qed.
 
 Lemma expr_logic_qual_ret_closed_value_lookup v ν m :
   stale v = ∅ →
