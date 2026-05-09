@@ -1675,6 +1675,27 @@ Proof.
   repeat split; assumption.
 Qed.
 
+Lemma let_result_body_model_to_tlet_graph
+    X e1 e2 x ν (w : WfWorld)
+    Hfresh Hresult Hfreshx Hfreshν Hinh (φ : FormulaQ) :
+  (∀ σ vx,
+    (w : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    ∃ v,
+      open_tm 0 vx (subst_map (store_restrict σ X) e2) →* tret v ∧
+      stale vx = ∅ ∧
+      is_lc vx ∧
+      stale v = ∅ ∧
+      is_lc v) →
+  let_result_world_on X e1 x w Hfresh Hresult ⊨ φ →
+  tlet_result_graph_world_on X e1 e2 x ν w Hfreshx Hfreshν Hinh ⊨ φ.
+Proof.
+  intros Hbody_result Hmodel.
+  eapply res_models_kripke.
+  - eapply let_result_world_on_le_tlet_result_graph; exact Hbody_result.
+  - exact Hmodel.
+Qed.
+
 Lemma expr_total_results_on_le
     X e (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
