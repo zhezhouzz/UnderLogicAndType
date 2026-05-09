@@ -3318,28 +3318,43 @@ Lemma denot_ty_on_let_result_body_to_let
     stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (m : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   m ⊨ basic_world_formula Σ (dom Σ) →
-  (∀ x,
-    x ∉ L →
-    x ∉ world_dom (m : World) →
-    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
-    ∀ Hfresh Hresult,
-      expr_total_on (X ∪ {[x]}) (e2 ^^ x)
-        (let_result_world_on X e1 x m Hfresh Hresult)) →
-  (∀ x,
-    x ∉ L →
-    x ∉ world_dom (m : World) →
-    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
-    ∀ Hfresh Hresult σx v,
-      (let_result_world_on X e1 x m Hfresh Hresult : World) σx →
-      subst_map (store_restrict σx (X ∪ {[x]})) (e2 ^^ x) →* tret v →
-      stale v = ∅ ∧ is_lc v) →
-  (∀ x,
-    x ∉ L →
-    x ∉ world_dom (m : World) →
-    x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
-    ∀ Hfresh Hresult,
-      let_result_world_on X e1 x m Hfresh Hresult ⊨
-        denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x)) →
+  (∀ n,
+    m ⊑ n →
+    X ⊆ world_dom (n : World) →
+    (∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
+    ∀ x,
+      x ∉ L →
+      x ∉ world_dom (n : World) →
+      x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+      ∀ Hfresh Hresult,
+        expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+          (let_result_world_on X e1 x n Hfresh Hresult)) →
+  (∀ n,
+    m ⊑ n →
+    X ⊆ world_dom (n : World) →
+    (∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
+    ∀ x,
+      x ∉ L →
+      x ∉ world_dom (n : World) →
+      x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+      ∀ Hfresh Hresult σx v,
+        (let_result_world_on X e1 x n Hfresh Hresult : World) σx →
+        subst_map (store_restrict σx (X ∪ {[x]})) (e2 ^^ x) →* tret v →
+        stale v = ∅ ∧ is_lc v) →
+  (∀ n,
+    m ⊑ n →
+    X ⊆ world_dom (n : World) →
+    (∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
+    ∀ x,
+      x ∉ L →
+      x ∉ world_dom (n : World) →
+      x ∉ X ∪ fv_cty τ ∪ fv_tm e2 →
+      ∀ Hfresh Hresult,
+        let_result_world_on X e1 x n Hfresh Hresult ⊨
+          denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x)) →
   m ⊨ denot_ty_on X Σ τ (tlete e1 e2).
 Proof.
 Admitted.
@@ -3378,7 +3393,9 @@ Proof.
   unfold denot_ty_in_ctx_under.
   subst X.
   eapply denot_ty_on_let_result_body_to_let with
-    (Tx := erase_ty τ1) (L := L ∪ world_dom (m : World) ∪ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2).
+    (Tx := erase_ty τ1)
+    (L := L ∪ world_dom (m : World) ∪ dom (erase_ctx_under Σ Γ)
+          ∪ fv_cty τ1 ∪ fv_tm e1 ∪ fv_cty τ2 ∪ fv_tm e2).
   - pose proof Hwflet as Hwflet_basic.
     destruct Hwflet_basic as [Hwfτ _].
     pose proof (wf_choice_ty_under_basic Σ Γ τ2 Hwfτ) as Hbasicτ.
@@ -3429,33 +3446,69 @@ Proof.
       * exact Hσ.
     + eapply choice_typing_wf_let_body_helper; eauto.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
-  - intros y HyL Hyfresh Hy Hfresh_y Hresult_y.
-    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+  - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy Hfresh_y Hresult_y.
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y n Hfresh_y Hresult_y).
     assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hnctx : n ⊨ denot_ctx_in_env Σ Γ).
+    { eapply res_models_kripke; eauto. }
+    assert (Hτ1n : n ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1).
+    { eapply res_models_kripke; eauto. }
     assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
-    { subst wy. apply Hbind; exact HyL0. }
+    {
+      subst wy.
+      eapply (let_result_world_on_denot_ctx_in_env
+        Σ Γ τ1 e1 y n Hfresh_y Hresult_y).
+      - exact Hwf1.
+      - exact Hnctx.
+      - exact Hτ1n.
+      - set_solver.
+    }
     destruct (IH2 y HyL0 wy Hctxy) as [_ Hbody_total].
-	    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))
-	      with (dom (erase_ctx_under Σ Γ) ∪ {[y]}) in Hbody_total.
-	    + exact Hbody_total.
-	    + symmetry. apply erase_ctx_under_comma_bind_dom.
-  - intros y HyL Hyfresh Hy Hfresh_y Hresult_y σx v Hσx Hsteps.
-    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))
+      with (dom (erase_ctx_under Σ Γ) ∪ {[y]}) in Hbody_total.
+    + exact Hbody_total.
+    + symmetry. apply erase_ctx_under_comma_bind_dom.
+  - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy Hfresh_y Hresult_y σx v Hσx Hsteps.
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y n Hfresh_y Hresult_y).
     assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hnctx : n ⊨ denot_ctx_in_env Σ Γ).
+    { eapply res_models_kripke; eauto. }
+    assert (Hτ1n : n ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1).
+    { eapply res_models_kripke; eauto. }
     assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
-    { subst wy. apply Hbind; exact HyL0. }
+    {
+      subst wy.
+      eapply (let_result_world_on_denot_ctx_in_env
+        Σ Γ τ1 e1 y n Hfresh_y Hresult_y).
+      - exact Hwf1.
+      - exact Hnctx.
+      - exact Hτ1n.
+      - set_solver.
+    }
     pose proof (Hbody_wf y HyL0) as Hwf_body.
     replace (store_restrict σx (dom (erase_ctx_under Σ Γ) ∪ {[y]}))
       with (store_restrict σx (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))) in Hsteps.
     2:{ rewrite erase_ctx_under_comma_bind_dom. reflexivity. }
     eapply (choice_typing_wf_result_regular_restrict_in_ctx
       Σ (CtxComma Γ (CtxBind y τ1)) (e2 ^^ y) τ2 wy σx v); eauto.
-  - intros y HyL Hyfresh Hy.
+  - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy.
     intros Hfresh_y Hresult_y.
-    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y m Hfresh_y Hresult_y).
+    set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y n Hfresh_y Hresult_y).
     assert (HyL0 : y ∉ L) by set_solver.
+    assert (Hnctx : n ⊨ denot_ctx_in_env Σ Γ).
+    { eapply res_models_kripke; eauto. }
+    assert (Hτ1n : n ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1).
+    { eapply res_models_kripke; eauto. }
     assert (Hctxy : wy ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τ1))).
-    { subst wy. apply Hbind; exact HyL0. }
+    {
+      subst wy.
+      eapply (let_result_world_on_denot_ctx_in_env
+        Σ Γ τ1 e1 y n Hfresh_y Hresult_y).
+      - exact Hwf1.
+      - exact Hnctx.
+      - exact Hτ1n.
+      - set_solver.
+    }
 	    destruct (IH2 y HyL0 wy Hctxy) as [Hbody _].
 	    assert (Hdom_ctxx :
 	      (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))) : aset) =
