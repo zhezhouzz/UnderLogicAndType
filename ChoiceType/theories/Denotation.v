@@ -632,7 +632,14 @@ Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   σw !! ν = Some vx.
 Proof.
-Admitted.
+  intros _ _ Hret.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σw Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
   (∀ vx, subst_map σw (subst_map ρ e) →* tret vx → stale vx = ∅) →
@@ -640,7 +647,14 @@ Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
   expr_result_in_store ∅ (tret (vfvar x)) ν σw →
   expr_result_in_store ρ e ν σw.
 Proof.
-Admitted.
+  intros _ _ Hret.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σw Hret)
+    as [v [-> [Hv_stale [_ Hsteps]]]].
+  simpl in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_stale. set_solver.
+Qed.
 
 Lemma expr_result_in_world_ret_fvar_trans ρ e x ν (w : WfWorld) :
   (∀ σw vx,
