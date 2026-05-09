@@ -2653,22 +2653,6 @@ Proof.
     exact (fib_vars_models_elim _ _ _ _ Hbody_model).
 Qed.
 
-Lemma FExprResultOn_body_from_paired_let_result_world
-    X e1 e2 x ν (w : WfWorld) :
-  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
-  fv_tm e2 ⊆ X →
-  X ∪ {[x]} ∪ {[ν]} ⊆ world_dom (w : World) →
-  world_closed_on X w →
-  (∀ σ, (w : World) σ → lc_env (store_restrict σ X)) →
-  (∀ σ vx,
-    (w : World) σ →
-    subst_map (store_restrict σ X) e1 →* tret vx →
-    stale vx = ∅ ∧ is_lc vx) →
-  (∀ σw, (w : World) σw →
-    expr_let_result_in_world_on X e1 e2 x ν w) →
-  w ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν.
-Proof. Admitted.
-
 (** Fixed-world body-to-let lifting is not strong enough for the main tlet
     proof because [denot_ty_on] contains Kripke implications.  The theorem
     below is the total-aware, Kripke-parametric bridge used by the fundamental
