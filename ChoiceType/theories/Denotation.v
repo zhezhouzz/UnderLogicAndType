@@ -434,12 +434,6 @@ Proof.
   exact Hden.
 Qed.
 
-Lemma FExprResultOn_models_elim_obligation X e ν m :
-  m ⊨ FExprResultOn X e ν →
-  fib_vars_obligation X (FAtom (expr_logic_qual e ν)) ∅ m.
-Proof.
-Admitted.
-
 Lemma FExprResultOn_models_intro X e ν m w :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
   formula_scoped_in_world ∅ w (FExprResultOn X e ν) →
@@ -467,13 +461,6 @@ Proof.
   unfold stale, stale_logic_qualifier. simpl.
   exact Hz.
 Qed.
-
-Lemma FExprResultOn_models_intro_obligation X e ν m :
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
-  fib_vars_obligation X (FAtom (expr_logic_qual e ν)) ∅ m →
-  m ⊨ FExprResultOn X e ν.
-Proof.
-Admitted.
 
 (** Prop-level totality for the expression component of a type denotation.
 
