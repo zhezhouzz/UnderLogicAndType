@@ -1161,7 +1161,38 @@ Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
   σ !! x = Some vx →
   σ !! ν = Some vx.
 Proof.
-Admitted.
+  intros Hden Hσ _ _.
+  exfalso.
+  set (σν := store_restrict σ {[ν]}).
+  assert (Hσν : (res_restrict w {[ν]} : World) σν).
+  {
+    destruct Hσ as [σw [Hσw Hrestrict]].
+    exists σw. split; [exact Hσw |].
+    subst σν.
+    rewrite <- Hrestrict.
+    rewrite store_restrict_restrict.
+    replace (({[x]} ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
+    reflexivity.
+  }
+  unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite store_restrict_empty in Hden.
+  assert (Hσνproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σν).
+  {
+    exists σν. split; [exact Hσν |].
+    apply store_restrict_idemp.
+    pose proof (wfworld_store_dom (res_restrict w {[ν]}) σν Hσν) as Hdomσν.
+    simpl in Hdomσν. set_solver.
+  }
+  pose proof (expr_result_in_world_sound ∅ (tret (vfvar x)) ν
+    (res_restrict w {[ν]}) σν Hden Hσνproj) as Hstore.
+  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hstore)
+    as [v [-> [Hv_closed [_ Hsteps]]]].
+  change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
+  rewrite msubst_empty in Hsteps.
+  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
+  inversion Heq. subst v.
+  simpl in Hv_closed. set_solver.
+Qed.
 
 (** ** Type measure for denotation fuel
 
