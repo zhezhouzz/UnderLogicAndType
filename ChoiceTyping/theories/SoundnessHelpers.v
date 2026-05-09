@@ -1578,6 +1578,72 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma store_restrict_union_from_parts
+    (σ ρ σx : Store) (S : aset) (x : atom) :
+  x ∉ S →
+  store_restrict σ S = ρ →
+  store_restrict σ {[x]} = σx →
+  store_restrict σ (S ∪ {[x]}) = ρ ∪ σx.
+Proof.
+  intros HxS Hρ Hσx.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ S)) as [HzS|HzS].
+  - rewrite decide_True by set_solver.
+    assert (Hρz : ρ !! z = σ !! z).
+    {
+      rewrite <- Hρ.
+      rewrite store_restrict_lookup.
+      rewrite decide_True by exact HzS.
+      reflexivity.
+    }
+    assert (Hσx_none : σx !! z = None).
+    {
+      rewrite <- Hσx.
+      rewrite store_restrict_lookup.
+      rewrite decide_False by set_solver.
+      reflexivity.
+    }
+    destruct (σ !! z) eqn:Hσz.
+    + rewrite lookup_union_l'.
+      * transitivity (Some v); [exact Hσz | symmetry; exact Hρz].
+      * rewrite Hρz. eauto.
+    + rewrite lookup_union_r.
+      * transitivity (@None value); [exact Hσz | symmetry; exact Hσx_none].
+      * exact Hρz.
+  - destruct (decide (z = x)) as [->|Hzx].
+    + rewrite decide_True by set_solver.
+      assert (Hρ_none : ρ !! x = None).
+      {
+        rewrite <- Hρ.
+        rewrite store_restrict_lookup.
+        rewrite decide_False by exact HxS.
+        reflexivity.
+      }
+      rewrite lookup_union_r by exact Hρ_none.
+      rewrite <- Hσx.
+      rewrite store_restrict_lookup.
+      rewrite decide_True by set_solver.
+      reflexivity.
+    + rewrite decide_False by set_solver.
+      assert (Hρ_none : ρ !! z = None).
+      {
+        rewrite <- Hρ.
+        rewrite store_restrict_lookup.
+        rewrite decide_False by exact HzS.
+        reflexivity.
+      }
+      assert (Hσx_none : σx !! z = None).
+      {
+        rewrite <- Hσx.
+        rewrite store_restrict_lookup.
+        rewrite decide_False by set_solver.
+        reflexivity.
+      }
+      rewrite lookup_union_r by exact Hρ_none.
+      symmetry. exact Hσx_none.
+Qed.
+
 Lemma let_result_world_on_fiber_elim
     X e x (n : WfWorld) Hfresh Hresult ρ Hprojn Hprojlet σx :
   X ⊆ world_dom (n : World) →
