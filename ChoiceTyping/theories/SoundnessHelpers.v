@@ -2151,6 +2151,47 @@ Proof.
   - eapply expr_result_in_world_tlete_xfiber_complete; eauto.
 Qed.
 
+Lemma expr_result_in_world_tlete_from_body_projection_fiber
+    X e1 e2 x ν (n : WfWorld)
+    (Hfresh : x ∉ world_dom (n : World))
+    (Hresult : ∀ σ, (n : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx)
+    ρ Hprojn Hprojlet :
+  X ⊆ world_dom (n : World) →
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  (∀ σ, (n : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (n : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  res_models_with_store ρ
+    (res_fiber_from_projection
+      (let_result_world_on X e1 x n Hfresh Hresult) X ρ Hprojlet)
+    (FFib x (FAtom (expr_logic_qual_on (X ∪ {[x]}) (e2 ^^ x) ν))) →
+  expr_result_in_world ρ (tlete e1 e2) ν
+    (res_fiber_from_projection n X ρ Hprojn).
+Proof.
+  intros HXdom Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_model.
+  eapply expr_result_in_world_tlete_from_body_xfiber; eauto.
+  - intros σ Hσ.
+    destruct Hσ as [Hσn Hσρ]. split; [exact Hσn |].
+    assert (Hdomρ : dom ρ = X).
+    {
+      destruct Hprojn as [σ0 [Hσ0 Hσ0ρ]].
+      assert (Hρeq : ρ = store_restrict σ0 X) by (symmetry; exact Hσ0ρ).
+      pose proof (wfworld_store_dom n σ0 Hσ0) as Hdomσ0.
+      rewrite Hρeq, store_restrict_dom. set_solver.
+    }
+    rewrite <- Hdomρ. exact Hσρ.
+  - intros σx Hσx.
+    eapply let_result_world_on_fiber_elim; eauto; set_solver.
+  - intros σ vx Hσ Hsteps.
+    eapply let_result_world_on_fiber_intro; eauto; set_solver.
+Qed.
+
 (** Lifting the one-projection semantic core through the outer [X] fibers.
     This is the induction over [fib_vars_obligation X].  Its non-mechanical
     leaf is [expr_result_in_world_tlete_from_body_xfiber]; the rest is threading
