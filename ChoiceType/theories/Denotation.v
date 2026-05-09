@@ -402,6 +402,114 @@ Proof.
   eapply reduction_lete_intro; eauto.
 Qed.
 
+Lemma expr_let_result_in_world_on_to_tlete
+    X e1 e2 x ν (w : WfWorld) :
+  fv_tm e1 ⊆ X →
+  fv_tm e2 ⊆ X →
+  world_closed_on X w →
+  (∀ σw, (w : World) σw →
+    body_tm (subst_map (store_restrict σw X) e2)) →
+  expr_let_result_in_world_on X e1 e2 x ν w →
+  expr_result_in_world ∅ (tlete e1 e2) ν (res_restrict w (X ∪ {[ν]})).
+Proof.
+  intros Hfv1 Hfv2 Hclosed Hbody Hlet σS HσS.
+  simpl in HσS.
+  destruct HσS as [σw [Hσw Hrestrict]].
+  destruct (Hlet σw Hσw) as [vx [v [Hx [Hν [Hsteps1 Hsteps2]]]]].
+  assert (HclosedX : closed_env (store_restrict σw X)).
+  { apply Hclosed. exact Hσw. }
+  assert (HclosedXνX :
+    closed_env (store_restrict (store_restrict σw (X ∪ {[ν]})) X)).
+  {
+    rewrite store_restrict_restrict.
+    replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+    exact HclosedX.
+  }
+  assert (He1 :
+    subst_map (store_restrict σw (X ∪ {[ν]})) e1 =
+    subst_map (store_restrict σw X) e1).
+  {
+    change (subst_map (store_restrict σw (X ∪ {[ν]})) e1)
+      with (m{store_restrict σw (X ∪ {[ν]})} e1).
+    change (subst_map (store_restrict σw X) e1)
+      with (m{store_restrict σw X} e1).
+    rewrite <- (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _
+      (store_restrict σw (X ∪ {[ν]})) X e1).
+    - rewrite store_restrict_restrict.
+      replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+      reflexivity.
+    - exact HclosedXνX.
+    - exact Hfv1.
+  }
+  assert (He2 :
+    subst_map (store_restrict σw (X ∪ {[ν]})) e2 =
+    subst_map (store_restrict σw X) e2).
+  {
+    change (subst_map (store_restrict σw (X ∪ {[ν]})) e2)
+      with (m{store_restrict σw (X ∪ {[ν]})} e2).
+    change (subst_map (store_restrict σw X) e2)
+      with (m{store_restrict σw X} e2).
+    rewrite <- (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _
+      (store_restrict σw (X ∪ {[ν]})) X e2).
+    - rewrite store_restrict_restrict.
+      replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+      reflexivity.
+    - exact HclosedXνX.
+    - exact Hfv2.
+  }
+  assert (He1_empty :
+    subst_map (store_restrict σw (X ∪ {[ν]})) (subst_map ∅ e1) =
+    subst_map (store_restrict σw X) e1).
+  {
+    change (subst_map ∅ e1) with (m{∅} e1).
+    rewrite msubst_empty. exact He1.
+  }
+  assert (He2_empty :
+    subst_map (store_restrict σw (X ∪ {[ν]})) (subst_map ∅ e2) =
+    subst_map (store_restrict σw X) e2).
+  {
+    change (subst_map ∅ e2) with (m{∅} e2).
+    rewrite msubst_empty. exact He2.
+  }
+  assert (He1_m :
+    m{store_restrict σw (X ∪ {[ν]})} e1 =
+    subst_map (store_restrict σw X) e1).
+  {
+    change (m{store_restrict σw (X ∪ {[ν]})} e1)
+      with (subst_map (store_restrict σw (X ∪ {[ν]})) e1).
+    exact He1.
+  }
+  assert (He2_m :
+    m{store_restrict σw (X ∪ {[ν]})} e2 =
+    subst_map (store_restrict σw X) e2).
+  {
+    change (m{store_restrict σw (X ∪ {[ν]})} e2)
+      with (subst_map (store_restrict σw (X ∪ {[ν]})) e2).
+    exact He2.
+  }
+  exists v. split.
+  - rewrite <- Hrestrict.
+    apply store_restrict_lookup_some_2; [exact Hν | set_solver].
+  - change (subst_map σS (subst_map ∅ (tlete e1 e2)) →* tret v).
+    change (subst_map ∅ (tlete e1 e2)) with (m{∅} (tlete e1 e2)).
+    rewrite msubst_empty.
+    rewrite <- Hrestrict.
+    change (subst_map (store_restrict σw (X ∪ {[ν]})) (tlete e1 e2) →* tret v).
+    change (subst_map (store_restrict σw (X ∪ {[ν]})) (tlete e1 e2))
+      with (m{store_restrict σw (X ∪ {[ν]})} (tlete e1 e2)).
+    rewrite (msubst_lete (store_restrict σw (X ∪ {[ν]})) e1 e2).
+    eapply reduction_lete_intro.
+    + change (body_tm (m{store_restrict σw (X ∪ {[ν]})} e2)).
+      change (subst_map (store_restrict σw (X ∪ {[ν]})) e2)
+        with (m{store_restrict σw (X ∪ {[ν]})} e2) in He2.
+      change (subst_map (store_restrict σw X) e2)
+        with (m{store_restrict σw X} e2) in He2.
+      rewrite He2. apply Hbody. exact Hσw.
+    + rewrite He1_m. exact Hsteps1.
+    + change (open_tm 0 vx (m{store_restrict σw (X ∪ {[ν]})} e2) →* tret v).
+      rewrite He2_m. exact Hsteps2.
+Qed.
+
 Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
   (∃ v vx,
     σw !! ν = Some v ∧
