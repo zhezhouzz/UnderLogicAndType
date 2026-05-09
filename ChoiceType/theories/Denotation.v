@@ -614,17 +614,20 @@ Lemma expr_let_result_in_world_on_to_tlete
 Proof.
 Admitted.
 
-Lemma expr_result_in_store_let_intro ρ e1 e2 ν σw :
-  closed_env σw →
-  lc_env σw →
-  (∃ v vx,
-    σw !! ν = Some v ∧
-    body_tm (subst_map σw (subst_map ρ e2)) ∧
-    subst_map σw (subst_map ρ e1) →* tret vx ∧
-    open_tm 0 vx (subst_map σw (subst_map ρ e2)) →* tret v) →
-  expr_result_in_store ρ (tlete e1 e2) ν σw.
+Lemma expr_result_in_store_let_intro ρ e1 e2 ν v vx :
+  stale v = ∅ →
+  is_lc v →
+  body_tm (subst_map ρ e2) →
+  subst_map ρ e1 →* tret vx →
+  open_tm 0 vx (subst_map ρ e2) →* tret v →
+  expr_result_in_store ρ (tlete e1 e2) ν {[ν := v]}.
 Proof.
-Admitted.
+  intros Hv_closed Hv_lc Hbody Hsteps1 Hsteps2.
+  apply expr_result_store_intro; [exact Hv_closed | exact Hv_lc |].
+  change (subst_map ρ (tlete e1 e2)) with (m{ρ} (tlete e1 e2)).
+  rewrite msubst_lete.
+  eapply reduction_lete_intro; eauto.
+Qed.
 
 Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
   stale vx = ∅ →
