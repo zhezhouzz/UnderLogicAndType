@@ -192,6 +192,56 @@ Definition FExprResult (e : tm) (ν : atom) : FQ :=
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
   fib_vars X (FAtom (expr_logic_qual e ν)).
 
+Definition expr_let_result_in_store_on
+    (X : aset) (e1 e2 : tm) (x ν : atom) (σw : Store) : Prop :=
+  ∃ vx v,
+    σw !! x = Some vx ∧
+    σw !! ν = Some v ∧
+    subst_map (store_restrict σw X) e1 →* tret vx ∧
+    open_tm 0 vx (subst_map (store_restrict σw X) e2) →* tret v.
+
+Definition expr_let_result_in_world_on
+    (X : aset) (e1 e2 : tm) (x ν : atom) (w : WfWorld) : Prop :=
+  ∀ σw,
+    (w : World) σw →
+    expr_let_result_in_store_on X e1 e2 x ν σw.
+
+Definition let_expr_logic_qual_on
+    (X : aset) (e1 e2 : tm) (x ν : atom) : logic_qualifier :=
+  lqual (X ∪ {[x]} ∪ {[ν]})
+    (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w).
+
+Definition FLetResultOn (X : aset) (e1 e2 : tm) (ν : atom) : FQ :=
+  let x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
+  FExists x
+    (fib_vars (X ∪ {[x]}) (FAtom (let_expr_logic_qual_on X e1 e2 x ν))).
+
+Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
+  stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
+Proof. reflexivity. Qed.
+
+Lemma FLetResultOn_fv_subset X e1 e2 ν :
+  formula_fv (FLetResultOn X e1 e2 ν) ⊆ X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}.
+Proof.
+  unfold FLetResultOn.
+  set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
+  simpl. rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  subst x.
+  pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hx.
+  intros z Hz.
+  apply elem_of_difference in Hz as [Hz Hzfresh].
+  apply elem_of_union in Hz as [Hz | Hz].
+  - apply elem_of_union in Hz as [HzX | Hzfresh'].
+    + set_solver.
+    + exfalso. apply Hzfresh. exact Hzfresh'.
+  - apply elem_of_union in Hz as [Hz | Hzν].
+    + apply elem_of_union in Hz as [HzX | Hzfresh'].
+      * set_solver.
+      * exfalso. apply Hzfresh. exact Hzfresh'.
+    + set_solver.
+Qed.
+
 Lemma stale_expr_logic_qual e ν :
   stale (expr_logic_qual e ν) = stale e ∪ {[ν]}.
 Proof. reflexivity. Qed.
