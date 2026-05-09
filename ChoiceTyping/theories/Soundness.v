@@ -427,19 +427,21 @@ Lemma const_over_body_on_fv_subset X Σ c ν :
 Proof.
   unfold const_over_body_on.
   intros z Hz. simpl in Hz.
-  unfold FExprResultOn in Hz.
-  rewrite fib_vars_formula_fv in Hz.
-  unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
-  unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
-  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    change (stale (tret (vconst c))) with (∅ : aset) in Hz;
-    repeat rewrite fib_vars_formula_fv in Hz;
-    simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    clear -Hz;
+  apply elem_of_union in Hz as [Hzres | Hzrest].
+  - change (formula_fv (FExprResultOn X (tret (vconst c)) ν))
+      with (formula_fv (FExprResultDenotOn X (tret (vconst c)) ν)) in Hzres.
+    pose proof (FExprResultDenotOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
+    change (stale (vconst c)) with (∅ : aset) in Hzres'.
     set_solver.
+  - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.
+    destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hzrest;
+      unfold lift_type_qualifier_to_logic in Hzrest; simpl in Hzrest;
+      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
+      repeat rewrite fib_vars_formula_fv in Hzrest;
+      simpl in Hzrest;
+      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
+      clear -Hzrest;
+      set_solver.
 Qed.
 
 Lemma const_under_body_on_fv_subset X Σ c ν :
@@ -447,19 +449,21 @@ Lemma const_under_body_on_fv_subset X Σ c ν :
 Proof.
   unfold const_under_body_on.
   intros z Hz. simpl in Hz.
-  unfold FExprResultOn in Hz.
-  rewrite fib_vars_formula_fv in Hz.
-  unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
-  unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
-  destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    change (stale (tret (vconst c))) with (∅ : aset) in Hz;
-    repeat rewrite fib_vars_formula_fv in Hz;
-    simpl in Hz;
-    unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
-    clear -Hz;
+  apply elem_of_union in Hz as [Hzres | Hzrest].
+  - change (formula_fv (FExprResultOn X (tret (vconst c)) ν))
+      with (formula_fv (FExprResultDenotOn X (tret (vconst c)) ν)) in Hzres.
+    pose proof (FExprResultDenotOn_fv_subset X (tret (vconst c)) ν z Hzres) as Hzres'.
+    change (stale (vconst c)) with (∅ : aset) in Hzres'.
     set_solver.
+  - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.
+    destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hzrest;
+      unfold lift_type_qualifier_to_logic in Hzrest; simpl in Hzrest;
+      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
+      repeat rewrite fib_vars_formula_fv in Hzrest;
+      simpl in Hzrest;
+      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
+      clear -Hzrest;
+      set_solver.
 Qed.
 
 Lemma const_over_body_rename_scoped Σ c ν y (m : WfWorld) :
