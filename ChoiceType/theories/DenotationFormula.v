@@ -828,11 +828,20 @@ Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
     nsrc ⊨ φ →
     ntgt ⊨ φ.
 
+(** Resource-aware expression-result bridge.
+
+    The freshness side condition [ν ∉ Xsrc ∪ Xtgt] is essential for tlet:
+    the source expression may already use an intermediate result coordinate
+    [x] in its input domain [Xsrc = X ∪ {[x]}].  The final result coordinate
+    [ν] must stay distinct from that intermediate coordinate, otherwise the
+    bridge would conflate the paired [X -> x -> ν] relation that the result
+    world is meant to track exactly. *)
 Definition expr_result_model_bridge
     (Xsrc : aset) (esrc : tm)
     (Xtgt : aset) (etgt : tm)
     (msrc mtgt : WfWorld) : Prop :=
   ∀ ν ntgt,
+    ν ∉ Xsrc ∪ Xtgt →
     ν ∉ world_dom (mtgt : World) →
     mtgt ⊑ ntgt →
     ntgt ⊨ FExprResultOn Xtgt etgt ν →
