@@ -1282,8 +1282,7 @@ Proof.
     eapply res_models_with_store_fuel_irrel.
     3: {
       apply Himpl_cont; [exact Hle |].
-      eapply res_models_with_store_fuel_irrel; [| | exact Hant];
-        rewrite ?formula_rename_preserves_measure; lia.
+      models_fuel_irrel Hant.
     }
     all: rewrite ?formula_rename_preserves_measure; lia.
   }

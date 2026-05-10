@@ -410,8 +410,7 @@ Proof.
   intros y Hy.
   destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hbody]]].
   exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hbody];
-    rewrite formula_rename_preserves_measure; lia.
+  models_fuel_irrel Hbody.
 Qed.
 
 Lemma FLetResultOn_models_intro X e1 e2 ν m :
@@ -435,8 +434,7 @@ Proof.
   intros y Hy.
   destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hbody]]].
   exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hbody];
-    rewrite formula_rename_preserves_measure; lia.
+  models_fuel_irrel Hbody.
 Qed.
 
 Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=

@@ -396,8 +396,7 @@ Proof.
   simpl. intros Hscope [L [HL Hforall]]. split; [exact Hscope |].
   exists L. split; [exact HL |].
   intros y Hy m' Hdom Hrestr.
-  eapply res_models_with_store_fuel_irrel; [| | exact (Hforall y Hy m' Hdom Hrestr)];
-    rewrite ?formula_rename_preserves_measure; simpl; lia.
+  models_fuel_irrel (Hforall y Hy m' Hdom Hrestr).
 Qed.
 
 Lemma res_models_fresh_forall_transport
@@ -446,8 +445,7 @@ Proof.
   intros y Hy.
   destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hφ]]].
   exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ];
-    rewrite ?formula_rename_preserves_measure; simpl; lia.
+  models_fuel_irrel Hφ.
 Qed.
 
 (** ** Environment-indexed context helpers *)

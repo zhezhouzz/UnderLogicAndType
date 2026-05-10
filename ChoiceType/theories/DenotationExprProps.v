@@ -118,8 +118,7 @@ Proof.
   unfold res_models_with_store.
   change (res_models_with_store_fuel (formula_measure body)
     (∅ : Store) m' (formula_rename_atom x y body)) in Hmodel.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hmodel];
-    rewrite formula_rename_preserves_measure; simpl; lia.
+  models_fuel_irrel Hmodel.
 Qed.
 
 Lemma FLetResult_models_intro e1 e2 ν m :
@@ -167,8 +166,7 @@ Proof.
     (∅ : Store) m' (formula_rename_atom x y body)) in Hmodel.
   change (res_models_with_store_fuel (formula_measure body)
     (∅ : Store) m' (formula_rename_atom x y body)).
-  eapply res_models_with_store_fuel_irrel; [| | exact Hmodel];
-    rewrite formula_rename_preserves_measure; simpl; lia.
+  models_fuel_irrel Hmodel.
 Qed.
 
 Lemma expr_logic_qual_renamed_result_steps e x y ρ w σw :
