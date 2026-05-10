@@ -68,6 +68,7 @@ ChoiceTyping/theories/Typing.v
 ChoiceTyping/theories/LetResultWorld.v
 ChoiceTyping/theories/Naming.v
 ChoiceTyping/theories/SoundnessCommon.v
+ChoiceTyping/theories/ResultWorldClosed.v
 ChoiceTyping/theories/ResultWorldBridge.v
 ChoiceTyping/theories/TLetGraph.v
 ChoiceTyping/theories/TLetResultBridge.v
