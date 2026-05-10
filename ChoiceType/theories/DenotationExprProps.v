@@ -349,7 +349,7 @@ Proof.
     }
     specialize (Hfib σx Hprojx).
     eapply IH.
-    + eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia.
+    + models_fuel_irrel Hfib.
     + exists σw. split.
       * apply res_fiber_from_projection_member; [exact Hσw | reflexivity].
       * exact Hσν.

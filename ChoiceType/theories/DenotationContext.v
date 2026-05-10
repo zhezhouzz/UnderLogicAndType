@@ -180,8 +180,8 @@ Proof.
   unfold res_models, res_models_with_store. simpl.
   split.
   - intros [Hscope [HΓ1 HΓ2]]. split.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+    + models_fuel_irrel HΓ1.
+    + models_fuel_irrel HΓ2.
   - intros [HΓ1 HΓ2]. split.
     + unfold formula_scoped_in_world in *. simpl.
       pose proof (res_models_with_store_fuel_scoped _ ∅ m (denot_ctx_under Σ Γ1) HΓ1).
@@ -189,8 +189,8 @@ Proof.
         (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2) HΓ2).
       set_solver.
     + split.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+      * models_fuel_irrel HΓ1.
+      * models_fuel_irrel HΓ2.
 Qed.
 
 Lemma denot_ctx_under_star Σ Γ1 Γ2 m :
@@ -203,8 +203,8 @@ Proof.
   split.
   - intros [_ [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]]].
     exists m1, m2, Hc. split; [exact Hprod |]. split.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+    + models_fuel_irrel HΓ1.
+    + models_fuel_irrel HΓ2.
   - intros [m1 [m2 [Hc [Hprod [HΓ1 HΓ2]]]]].
     split.
     + unfold formula_scoped_in_world in *. simpl.
@@ -212,8 +212,8 @@ Proof.
       pose proof (res_models_with_store_fuel_scoped _ ∅ m2 (denot_ctx_under Σ Γ2) HΓ2).
       pose proof (raw_le_dom _ _ Hprod). set_solver.
     + exists m1, m2, Hc. split; [exact Hprod |]. split.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+      * models_fuel_irrel HΓ1.
+      * models_fuel_irrel HΓ2.
 Qed.
 
 Lemma denot_ctx_under_sum Σ Γ1 Γ2 m :
@@ -226,8 +226,8 @@ Proof.
   split.
   - intros [_ [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]]].
     exists m1, m2, Hdef. split; [exact Hsum |]. split.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-    + eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+    + models_fuel_irrel HΓ1.
+    + models_fuel_irrel HΓ2.
   - intros [m1 [m2 [Hdef [Hsum [HΓ1 HΓ2]]]]].
     split.
     + unfold formula_scoped_in_world in *. simpl.
@@ -240,8 +240,8 @@ Proof.
       * apply Hdom_sum_m. apply Hscope1. set_solver.
       * apply Hdom_sum_m. rewrite Hdef. apply Hscope2. set_solver.
     + exists m1, m2, Hdef. split; [exact Hsum |]. split.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ1]; simpl; lia.
-      * eapply res_models_with_store_fuel_irrel; [| | exact HΓ2]; simpl; lia.
+      * models_fuel_irrel HΓ1.
+      * models_fuel_irrel HΓ2.
 Qed.
 
 Lemma denot_ctx_under_bind Σ x τ m :

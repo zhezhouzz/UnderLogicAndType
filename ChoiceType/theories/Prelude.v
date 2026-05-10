@@ -9,7 +9,7 @@
 
 From CoreLang Require Export Prelude Syntax BasicTyping SmallStep.
 
-From ChoiceLogic Require Export Prelude LogicQualifier Formula ChoiceLogicProps.
+From ChoiceLogic Require Export Prelude LogicQualifier Formula FormulaTactics ChoiceLogicProps.
 
 (** Fix the abstract algebra/logic value parameter to CoreLang values in the
     choice-type layer. *)

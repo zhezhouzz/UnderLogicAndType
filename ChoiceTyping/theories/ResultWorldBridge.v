@@ -363,7 +363,7 @@ Proof.
       set_solver.
     }
     specialize (IH Hdisj_tail).
-    pose proof (IH ltac:(eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia)
+    pose proof (IH ltac:(models_fuel_irrel Hfib)
       Hσw_fib ltac:(assumption)) as Hstore.
     unfold σx in Hstore.
     rewrite <- store_restrict_accum_cons_projection in Hstore.
@@ -415,7 +415,7 @@ Proof.
     specialize (IH (ρ ∪ σx)
       (res_fiber_from_projection m {[x]} σx Hprojx) σw sigmanu
       Hnodup' Hdisj_tail
-      ltac:(eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia)
+      ltac:(models_fuel_irrel Hfib)
       Hσw_fib Hstore).
     destruct IH as [τ [Hτ Hτν]].
     destruct Hτ as [Hτm _].
@@ -474,7 +474,7 @@ Proof.
     destruct (IH (ρ ∪ σx)
       (res_fiber_from_projection m {[x]} σx Hprojx) σw sigmanu
       Hnodup' Hdisj_tail
-      ltac:(eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia)
+      ltac:(models_fuel_irrel Hfib)
       Hσw_fib Hstore)
       as [τ [Hτfib [Hτxs Hτν]]].
     destruct Hτfib as [Hτm Hτx].

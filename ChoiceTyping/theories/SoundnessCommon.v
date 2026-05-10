@@ -204,8 +204,8 @@ Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hle Hφ Hψ. split; [exact Hscope |].
   exists m1, m2, Hc. split; [exact Hle |]. split.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  - models_fuel_irrel Hφ.
+  - models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_plus_intro
@@ -219,8 +219,8 @@ Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hle Hφ Hψ. split; [exact Hscope |].
   exists m1, m2, Hdef. split; [exact Hle |]. split.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  - models_fuel_irrel Hφ.
+  - models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_atom_intro (m : WfWorld) (q : logic_qualifier) :
@@ -252,7 +252,7 @@ Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_with_store_over_intro_same
@@ -264,7 +264,7 @@ Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_over_intro_same_from_model (m : WfWorld) (φ : FormulaQ) :
@@ -287,7 +287,7 @@ Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_with_store_under_intro_same
@@ -299,7 +299,7 @@ Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
   exists m. split; [apply res_subset_refl |].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_under_intro_same_from_model (m : WfWorld) (φ : FormulaQ) :
@@ -329,8 +329,7 @@ Proof.
   - set_solver.
   - intros σ Hproj.
     rewrite map_empty_union.
-    eapply res_models_with_store_fuel_irrel; [| | exact (Hfib σ Hproj)];
-      simpl; lia.
+    models_fuel_irrel (Hfib σ Hproj).
 Qed.
 
 Lemma res_models_impl_intro (m : WfWorld) (φ ψ : FormulaQ) :

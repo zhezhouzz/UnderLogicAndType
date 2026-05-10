@@ -200,7 +200,7 @@ Proof.
     intros σ Hproj.
     specialize (Hfib σ Hproj).
     eapply IH.
-    eapply res_models_with_store_fuel_irrel; [| | exact Hfib]; simpl; lia.
+    models_fuel_irrel Hfib.
 Qed.
 
 Lemma fib_vars_models_intro X p ρ m :

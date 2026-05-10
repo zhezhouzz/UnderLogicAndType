@@ -250,27 +250,23 @@ Proof.
   - destruct Hmodel as [Hφ1 Hφ2]. split.
     + pose proof (proj1 (H1 ρ m)) as H.
       assert (Hφ1_exact : res_models_with_store ρ m φ1).
-      { eapply res_models_with_store_fuel_irrel; [| | exact Hφ1]; simpl; lia. }
-      eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ1_exact)];
-        simpl; lia.
+      { models_fuel_irrel Hφ1. }
+      models_fuel_irrel (H Hφ1_exact).
     + pose proof (proj1 (H2 ρ m)) as H.
       assert (Hφ2_exact : res_models_with_store ρ m φ2).
-      { eapply res_models_with_store_fuel_irrel; [| | exact Hφ2]; simpl; lia. }
-      eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ2_exact)];
-        simpl; lia.
+      { models_fuel_irrel Hφ2. }
+      models_fuel_irrel (H Hφ2_exact).
   - unfold formula_scoped_in_world in *. simpl in *.
     rewrite Hfv1, Hfv2. exact Hscope.
   - destruct Hmodel as [Hψ1 Hψ2]. split.
     + pose proof (proj2 (H1 ρ m)) as H.
       assert (Hψ1_exact : res_models_with_store ρ m ψ1).
-      { eapply res_models_with_store_fuel_irrel; [| | exact Hψ1]; simpl; lia. }
-      eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ1_exact)];
-        simpl; lia.
+      { models_fuel_irrel Hψ1. }
+      models_fuel_irrel (H Hψ1_exact).
     + pose proof (proj2 (H2 ρ m)) as H.
       assert (Hψ2_exact : res_models_with_store ρ m ψ2).
-      { eapply res_models_with_store_fuel_irrel; [| | exact Hψ2]; simpl; lia. }
-      eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ2_exact)];
-        simpl; lia.
+      { models_fuel_irrel Hψ2. }
+      models_fuel_irrel (H Hψ2_exact).
 Qed.
 
 Lemma formula_store_equiv_over φ ψ :
@@ -284,14 +280,14 @@ Proof.
   - exists m0. split; [exact Hsub |].
     pose proof (proj1 (Heq ρ m0)) as H.
     assert (Hφ_exact : res_models_with_store ρ m0 φ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+    { models_fuel_irrel Hφ. }
+    models_fuel_irrel (H Hφ_exact).
   - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
     pose proof (proj2 (Heq ρ m0)) as H.
     assert (Hψ_exact : res_models_with_store ρ m0 ψ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
+    { models_fuel_irrel Hφ. }
+    models_fuel_irrel (H Hψ_exact).
 Qed.
 
 Lemma formula_store_equiv_under φ ψ :
@@ -305,14 +301,14 @@ Proof.
   - exists m0. split; [exact Hsub |].
     pose proof (proj1 (Heq ρ m0)) as H.
     assert (Hφ_exact : res_models_with_store ρ m0 φ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+    { models_fuel_irrel Hφ. }
+    models_fuel_irrel (H Hφ_exact).
   - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
     pose proof (proj2 (Heq ρ m0)) as H.
     assert (Hψ_exact : res_models_with_store ρ m0 ψ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
+    { models_fuel_irrel Hφ. }
+    models_fuel_irrel (H Hψ_exact).
 Qed.
 
 Lemma formula_store_equiv_fib x φ ψ :
@@ -330,8 +326,8 @@ Proof.
       (res_fiber_from_projection m {[x]} σ Hproj))) as H.
     assert (Hφ_exact : res_models_with_store (ρ ∪ σ)
       (res_fiber_from_projection m {[x]} σ Hproj) φ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hφ_exact)]; simpl; lia.
+    { models_fuel_irrel Hφ. }
+    models_fuel_irrel (H Hφ_exact).
   - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
   - split; [exact Hdisj |].
     intros σ Hproj.
@@ -340,8 +336,8 @@ Proof.
       (res_fiber_from_projection m {[x]} σ Hproj))) as H.
     assert (Hψ_exact : res_models_with_store (ρ ∪ σ)
       (res_fiber_from_projection m {[x]} σ Hproj) ψ).
-    { eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia. }
-    eapply res_models_with_store_fuel_irrel; [| | exact (H Hψ_exact)]; simpl; lia.
+    { models_fuel_irrel Hψ. }
+    models_fuel_irrel (H Hψ_exact).
 Qed.
 
 Lemma foldr_fib_store_equiv xs φ ψ :
