@@ -124,6 +124,16 @@ Proof.
     destruct (Σ !! z); destruct (erase_ctx Γ !! z); reflexivity.
 Qed.
 
+Lemma erase_ctx_under_dom_basic Σ Γ :
+  basic_ctx (dom Σ) Γ →
+  dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
+Proof.
+  intros Hbasic.
+  unfold erase_ctx_under.
+  rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
+  reflexivity.
+Qed.
+
 Ltac ctx_name_norm :=
   repeat match goal with
   | H : context[dom (erase_ctx_under ?Σ (CtxComma ?Γ (CtxBind ?x ?τ)))] |- _ =>

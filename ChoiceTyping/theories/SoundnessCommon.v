@@ -7,9 +7,44 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export LetResultWorld.
+From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 (** ** Compatibility of satisfaction with monotone/antitone structure *)
+
+Lemma denot_ctx_in_env_world_covers_erased Σ Γ m :
+  basic_ctx (dom Σ) Γ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : World).
+Proof.
+  intros Hbasic HΓ z Hz.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
+    (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  apply Hscope.
+  apply elem_of_union. right.
+  apply denot_ctx_in_env_dom_subset_formula_fv.
+  rewrite <- (erase_ctx_under_dom_basic Σ Γ Hbasic). exact Hz.
+Qed.
+
+Lemma denot_ctx_in_env_store_restrict_env_delete_empty Σ Γ m σ :
+  basic_ctx (dom Σ) Γ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  (m : World) σ →
+  env_delete (store_restrict σ (dom (erase_ctx_under Σ Γ)))
+    (erase_ctx_under Σ Γ) = ∅.
+Proof.
+  intros Hbasic HΓ Hσ.
+  apply env_delete_empty_of_dom_subset.
+  pose proof (denot_ctx_in_env_world_covers_erased Σ Γ m Hbasic HΓ) as Hcover.
+  pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+  intros z Hz.
+  apply elem_of_dom.
+  assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
+  apply elem_of_dom in Hzdom as [v Hlookup].
+  exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+Qed.
 
 Lemma res_models_impl_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
@@ -570,9 +605,7 @@ Proof.
   intros Hbasic HΓ Hσ X.
   assert (HdomX : X = dom (erase_ctx_under Σ Γ)).
   {
-    unfold X, erase_ctx_under.
-    rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
-    reflexivity.
+    unfold X. rewrite (erase_ctx_under_dom_basic Σ Γ Hbasic). reflexivity.
   }
   rewrite HdomX.
   split.
@@ -601,11 +634,7 @@ Proof.
   eapply env_has_type_lc_env_dom; [| exact Htyped].
   intros z Hz.
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
-  {
-    unfold erase_ctx_under, X.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    rewrite dom_union_L, HdomΓ. reflexivity.
-  }
+  { unfold X. apply erase_ctx_under_dom_basic. exact Hbasic. }
   rewrite Hdom_erase.
   change (z ∈ dom (store_restrict σ X)) in Hz.
   rewrite store_restrict_dom in Hz. set_solver.
@@ -626,32 +655,13 @@ Proof.
     (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty)) HΓ Hσ) as
     [Hclosed Henv].
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
-  {
-    unfold erase_ctx_under, X.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ
-      (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty))) as HdomΓ.
-    rewrite dom_union_L, HdomΓ. reflexivity.
-  }
-  assert (HXworld : X ⊆ world_dom (m : World)).
-  {
-    pose proof (res_models_with_store_fuel_scoped
-      (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
-      (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
-    unfold formula_scoped_in_world in Hscope.
-    intros z Hz. apply Hscope.
-    pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ z) as Hdomfv.
-    apply elem_of_union. right. apply Hdomfv. unfold X in Hz. exact Hz.
-  }
+  { unfold X. apply erase_ctx_under_dom_basic.
+    apply (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty)). }
   assert (Hdom_del : env_delete (store_restrict σ X) (erase_ctx_under Σ Γ) = ∅).
   {
-    apply env_delete_empty_of_dom_subset.
-    rewrite Hdom_erase.
-    intros z Hz.
-    pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
-    apply elem_of_dom.
-    assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
-    apply elem_of_dom in Hzdom as [v Hlookup].
-    exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+    rewrite <- Hdom_erase.
+    eapply denot_ctx_in_env_store_restrict_env_delete_empty; eauto.
+    apply (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty)).
   }
   assert (Htyped :
     ∅ ⊢ₑ m{store_restrict σ X} e ⋮ erase_ty τ).
@@ -685,31 +695,11 @@ Proof.
   destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ Hbasic HΓ Hσ)
     as [Hclosed Henv].
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
-  {
-    unfold erase_ctx_under, X.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    rewrite dom_union_L, HdomΓ. reflexivity.
-  }
+  { unfold X. apply erase_ctx_under_dom_basic. exact Hbasic. }
   assert (Hdom_del : env_delete (store_restrict σ X) (erase_ctx_under Σ Γ) = ∅).
   {
-    apply env_delete_empty_of_dom_subset.
-    rewrite Hdom_erase.
-    assert (HXworld : X ⊆ world_dom (m : World)).
-    {
-      pose proof (res_models_with_store_fuel_scoped
-        (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
-        (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
-      unfold formula_scoped_in_world in Hscope.
-      intros z Hz. apply Hscope.
-      pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ z) as Hdomfv.
-      apply elem_of_union. right. apply Hdomfv. unfold X in Hz. exact Hz.
-    }
-    pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
-    intros z Hz.
-    apply elem_of_dom.
-    assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
-    apply elem_of_dom in Hzdom as [v Hlookup].
-    exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+    rewrite <- Hdom_erase.
+    eapply denot_ctx_in_env_store_restrict_env_delete_empty; eauto.
   }
   assert (Htyped :
     ∅ ⊢ₑ m{store_restrict σ X} e ⋮ erase_ty τ).
@@ -736,31 +726,11 @@ Proof.
   destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ Hbasic HΓ Hσ)
     as [Hclosed Henv].
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
-  {
-    unfold erase_ctx_under, X.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    rewrite dom_union_L, HdomΓ. reflexivity.
-  }
+  { unfold X. apply erase_ctx_under_dom_basic. exact Hbasic. }
   assert (Hdom_del : env_delete (store_restrict σ X) (erase_ctx_under Σ Γ) = ∅).
   {
-    apply env_delete_empty_of_dom_subset.
-    rewrite Hdom_erase.
-    assert (HXworld : X ⊆ world_dom (m : World)).
-    {
-      pose proof (res_models_with_store_fuel_scoped
-        (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m
-        (denot_ctx_in_env Σ Γ) HΓ) as Hscope.
-      unfold formula_scoped_in_world in Hscope.
-      intros z Hz. apply Hscope.
-      pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ z) as Hdomfv.
-      apply elem_of_union. right. apply Hdomfv. unfold X in Hz. exact Hz.
-    }
-    pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
-    intros z Hz.
-    apply elem_of_dom.
-    assert (Hzdom : z ∈ dom σ) by (rewrite Hdomσ; set_solver).
-    apply elem_of_dom in Hzdom as [v Hlookup].
-    exists v. apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
+    rewrite <- Hdom_erase.
+    eapply denot_ctx_in_env_store_restrict_env_delete_empty; eauto.
   }
   assert (Htyped :
     ∅ ⊢ₑ m{store_restrict σ X} e ⋮ erase_ty τ).
