@@ -10,6 +10,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetTotal.
+From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma denot_tlet_semantic_at_world
@@ -212,15 +213,14 @@ Proof.
   assert (Hbody_steps :
     subst_map (<[x := vx]> ρ) (e2 ^^ x) →* tret v).
   {
-    pose proof Hbody_steps_open as Htmp.
-    rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)) in Htmp.
-    - rewrite HσX in Htmp. exact Htmp.
-    - apply Hclosed. exact Hσn.
-    - apply (proj1 (Hresult_closed σ vx Hσn He1)).
-    - apply (proj2 (Hresult_closed σ vx Hσn He1)).
-    - apply Hlc. exact Hσn.
-    - change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-      rewrite store_restrict_dom. set_solver.
+    pose proof (steps_open_body_to_msubst_result X σ e2 x vx v
+      HxX Hxe2
+      ltac:(apply Hclosed; exact Hσn)
+      (proj1 (Hresult_closed σ vx Hσn He1))
+      (proj2 (Hresult_closed σ vx Hσn He1))
+      ltac:(apply Hlc; exact Hσn)
+      Hbody_steps_open) as Htmp.
+    rewrite HσX in Htmp. exact Htmp.
   }
   assert (Hbody_store :
     expr_result_in_store

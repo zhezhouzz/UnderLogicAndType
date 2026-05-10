@@ -5,6 +5,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export SoundnessCommon.
+From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Definition let_result_raw_world
@@ -321,19 +322,14 @@ Proof.
   }
   rewrite Hσx, Hνstore.
   apply expr_result_store_intro; [exact Hv_stale | exact Hv_lc |].
-  change (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x)) with
-    (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x)).
-  replace (m{<[x := vx]> (store_restrict σ X)} (e2 ^^ x))
-    with (open_tm 0 vx (m{store_restrict σ X} e2)).
+  eapply (steps_open_body_to_msubst_result X σ e2 x vx v).
+  - exact HxX.
+  - exact Hxe2.
+  - apply Hclosed. exact Hσ.
+  - exact Hvx_stale.
+  - exact Hvx_lc.
+  - apply Hlc. exact Hσ.
   - exact Hsteps2.
-  - change (e2 ^^ x) with (open_tm 0 (vfvar x) e2).
-    symmetry. apply msubst_intro_open_tm.
-    + apply Hclosed. exact Hσ.
-    + exact Hvx_stale.
-    + exact Hvx_lc.
-    + apply Hlc. exact Hσ.
-    + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-      rewrite store_restrict_dom. set_solver.
 Qed.
 
 (** Body-fiber exactness for the tlet graph.
@@ -430,19 +426,14 @@ Proof.
     assert (Hsteps2 :
       open_tm 0 vx0 (subst_map (store_restrict σ0 X) e2) →* tret v).
     {
-      change (subst_map (<[x := vx0]> (store_restrict σ0 X)) (e2 ^^ x)) with
-        (m{<[x := vx0]> (store_restrict σ0 X)} (e2 ^^ x)) in Hsteps_body.
-      change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hsteps_body.
-      pose proof (msubst_intro_open_tm e2 0 vx0 x (store_restrict σ0 X)
-        ltac:(apply Hclosed; exact Hσ0)
-        Hvx0_stale Hvx0_lc
-        ltac:(apply Hlc; exact Hσ0)
-        ltac:(change (x ∉ dom (store_restrict σ0 X) ∪ fv_tm e2);
-              rewrite store_restrict_dom; set_solver)) as Heq.
-      replace (m{<[x := vx0]> (store_restrict σ0 X)} open_tm 0 x e2)
-        with (open_tm 0 vx0 (m{store_restrict σ0 X} e2)) in Hsteps_body
-        by (symmetry; exact Heq).
-      exact Hsteps_body.
+      eapply (steps_msubst_open_body_result X σ0 e2 x vx0 v).
+      - exact HxX.
+      - exact Hxe2.
+      - apply Hclosed. exact Hσ0.
+      - exact Hvx0_stale.
+      - exact Hvx0_lc.
+      - apply Hlc. exact Hσ0.
+      - exact Hsteps_body.
     }
     assert (Htlet_store :
       expr_result_in_store (store_restrict ρx X) (tlete e1 e2) ν σν).
@@ -805,18 +796,14 @@ Proof.
       - exact Hfresh.
     }
     2:{ exact HxX. }
-    change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)
-      →* tret v) in Hsteps_body.
-    replace (m{<[x := vx]> (store_restrict σ X)} open_tm 0 x e2)
-      with (open_tm 0 vx (m{store_restrict σ X} e2)) in Hsteps_body.
+    eapply (steps_msubst_open_body_result X σ e2 x vx v).
+    - exact HxX.
+    - exact Hxe2.
+    - apply Hclosed. exact Hσ.
+    - apply (proj1 (Hresult_closed σ vx Hσ Hsteps1)).
+    - apply (proj2 (Hresult_closed σ vx Hσ Hsteps1)).
+    - apply Hlc. exact Hσ.
     - exact Hsteps_body.
-    - symmetry. apply (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
-      + apply Hclosed. exact Hσ.
-      + apply (proj1 (Hresult_closed σ vx Hσ Hsteps1)).
-      + apply (proj2 (Hresult_closed σ vx Hσ Hsteps1)).
-      + apply Hlc. exact Hσ.
-      + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-        rewrite store_restrict_dom. set_solver.
   }
   pose proof (Hbody_regular (<[x := vx]> σ) v Hσx Hsteps_body) as [Hv_stale Hv_lc].
   pose proof (Hresult_closed σ vx Hσ Hsteps1) as [Hvx_stale Hvx_lc].

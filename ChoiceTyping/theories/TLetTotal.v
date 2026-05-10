@@ -5,6 +5,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetGraph.
+From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma expr_total_results_on_le
@@ -729,16 +730,14 @@ Proof.
       + exact Hfresh.
     }
     2:{ exact HxX. }
-    change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)
-      →* tret v) in Hsteps2.
-    rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
-    + exact Hsteps2.
+    eapply (steps_msubst_open_body_result X σ e2 x vx v).
+    + exact HxX.
+    + exact Hxe2.
     + apply Hclosed. exact Hσ.
     + apply (proj1 (Hresult_closed σ vx Hσ Hsteps1)).
     + apply (proj2 (Hresult_closed σ vx Hσ Hsteps1)).
     + apply Hlc. exact Hσ.
-    + change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-      rewrite store_restrict_dom. set_solver.
+    + exact Hsteps2.
 Qed.
 
 Lemma expr_result_value_tlete_from_body_projection
@@ -759,14 +758,7 @@ Proof.
     with (m{store_restrict σ X} (tlete e1 e2)).
   rewrite (msubst_lete (store_restrict σ X) e1 e2).
   eapply reduction_lete_intro; [exact Hbody | exact He1 |].
-  rewrite <- (msubst_intro_open_tm e2 0 vx x (store_restrict σ X)).
-  - exact Hbody_steps.
-  - exact Hclosed.
-  - exact Hvx_closed.
-  - exact Hvx_lc.
-  - exact Hlc.
-  - change (x ∉ dom (store_restrict σ X) ∪ fv_tm e2).
-    rewrite store_restrict_dom. set_solver.
+  eapply (steps_msubst_open_body_result X σ e2 x vx v); eauto.
 Qed.
 
 Lemma expr_result_value_tlete_from_body_store
