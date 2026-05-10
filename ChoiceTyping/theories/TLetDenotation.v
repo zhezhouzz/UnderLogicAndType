@@ -176,19 +176,6 @@ Qed.
 
 Import Tactics.
 
-(** High-risk regularity narrowing used by the split [tlet] proof.
-
-    The body IH gives regularity for [τ2] under the extended erased context
-    [Γ, x:τ1].  Since the final [tlete e1 e2] type is checked back under [Γ],
-    we need to drop the fresh auxiliary result coordinate [x].  This should be
-    proved by induction on [basic_choice_ty], using [x ∉ fv_cty τ2]. *)
-Lemma basic_choice_ty_narrow_comma_bind_fresh
-    (Σ : gmap atom ty) (Γ : ctx) x τ1 τ2 :
-  x ∉ fv_cty τ2 →
-  basic_choice_ty (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1)))) τ2 →
-  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ2.
-Proof. Admitted.
-
 (** High-risk semantic transport for [tlet].
 
     This is the denotation-level form of the result-world identity:
@@ -364,59 +351,6 @@ Proof.
   eapply tlet_body_total_model_on_result_world; eauto.
 Qed.
 
-Lemma tlet_body_basic_choice_ty_outer
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
-    (L : aset) x (m : WfWorld)
-    (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
-  x ∉ L →
-  x ∉ fv_cty τ2 →
-  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
-  (∀ y, y ∉ L →
-    total_model_in_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) τ2 (e2 ^^ y)) →
-  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ2.
-Proof.
-  intros HxL Hxfv Herase Hm Hmodel Hbody.
-  pose proof (tlet_body_total_model_on_result_world
-    Σ Γ τ1 τ2 e1 e2 L x m Hfresh Hresult
-    HxL Herase Hm Hmodel Hbody) as Hbody_model.
-  eapply basic_choice_ty_narrow_comma_bind_fresh; [exact Hxfv |].
-  exact (denot_ty_total_model_basic_choice_ty
-    Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)
-    (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult)
-    Hbody_model).
-Qed.
-
-Lemma tlet_choice_typing_wf_from_body_total
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
-    (L : aset) x (m : WfWorld)
-    (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
-  x ∉ L →
-  x ∉ fv_cty τ2 →
-  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
-  erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
-  (∀ y, y ∉ L →
-    total_model_in_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) τ2 (e2 ^^ y)) →
-  choice_typing_wf Σ Γ (tlete e1 e2) τ2.
-Proof.
-  intros HxL Hxfv Herase1 Heraselet Hm Hmodel Hbody.
-  pose proof (tlet_body_basic_choice_ty_outer
-    Σ Γ τ1 τ2 e1 e2 L x m Hfresh Hresult
-    HxL Hxfv Herase1 Hm Hmodel Hbody) as Hbasicτ2.
-  eapply choice_typing_wf_from_erased_denot_ctx_basic_ty.
-  - exact (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel).
-  - exact Hbasicτ2.
-  - exact Hm.
-  - exact Heraselet.
-Qed.
-
 (** A deliberately split version of [denot_tlet_total_at_world].
 
     This is not meant to be the final interface.  It records the direction we
@@ -432,11 +366,12 @@ Lemma denot_tlet_total_at_world_split
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
+  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ2 →
   (∀ x, x ∉ L →
     total_model_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ty_total_model_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Proof.
-  intros Herase1 Heraselet Hm Hmodel Hbody.
+  intros Herase1 Heraselet Hm Hmodel Hbasicτ2 Hbody.
   pose proof (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel) as HbasicΓ.
   pose proof (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel) as Htotal1.
   destruct Htotal1 as [Hfv1 Hresult].
@@ -446,12 +381,8 @@ Proof.
   pick_tlet_fresh x L X τ2 e2 m.
   destruct Hfresh as [HxL Hfresh_m Hxbody].
   set (m' := let_result_world_on X e1 x m Hfresh_m Hresult).
-  pose proof (tlet_body_basic_choice_ty_outer
-    Σ Γ τ1 τ2 e1 e2 L x m Hfresh_m Hresult
-    HxL ltac:(set_solver) Herase1 Hm Hmodel Hbody) as Hbasicτ2.
-  pose proof (tlet_choice_typing_wf_from_body_total
-    Σ Γ τ1 τ2 e1 e2 L x m Hfresh_m Hresult
-    HxL ltac:(set_solver) Herase1 Heraselet Hm Hmodel Hbody) as Hwflet.
+  pose proof (choice_typing_wf_from_erased_denot_ctx_basic_ty
+    Σ Γ (tlete e1 e2) τ2 m HbasicΓ Hbasicτ2 Hm Heraselet) as Hwflet.
   split.
   - split.
     + split; [exact HbasicΓ | exact Hbasicτ2].

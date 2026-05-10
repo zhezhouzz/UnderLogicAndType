@@ -451,6 +451,8 @@ Proof.
   - exact (proj2 Hwf).
   - exact Hm.
   - eapply entails_total_to_total_model; eauto.
+  - exact (choice_typing_wf_basic_choice_ty_erased
+      Σ Γ (tlete e1 e2) τ2 Hwf).
   - intros x HxL.
     eapply entails_total_to_total_model; eauto.
 Qed.
