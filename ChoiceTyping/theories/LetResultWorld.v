@@ -136,23 +136,6 @@ Proof.
     + rewrite !decide_False by set_solver. reflexivity.
 Qed.
 
-Axiom FExprResultOn_iff_let_result_world_on :
-  ∀ X e ν (m : WfWorld),
-    fv_tm e ⊆ X →
-    ν ∉ X →
-    X ⊆ world_dom (m : World) →
-    (m ⊨ FExprResultOn X e ν ↔
-     ∃ Hfresh Hresult,
-       res_restrict m (X ∪ {[ν]}) =
-         let_result_world_on X e ν (res_restrict m X) Hfresh Hresult).
-
-Axiom let_result_world_on_models_FExprResultOn :
-  ∀ X e ν (n : WfWorld) Hfresh Hresult,
-    fv_tm e ⊆ X →
-    ν ∉ X →
-    X ⊆ world_dom (n : World) →
-    let_result_world_on X e ν n Hfresh Hresult ⊨ FExprResultOn X e ν.
-
 Lemma let_result_world_on_tlete_decompose :
   ∀ X e1 e2 x ν (n : WfWorld)
     Hfreshx Hresult1 Hfreshν Hresult2 Hfreshν_tlet Hresult_tlet,
@@ -257,66 +240,4 @@ Proof.
         rewrite dom_insert_L.
         pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
         rewrite Hdomσ. set_solver.
-Qed.
-
-Lemma tlet_body_to_whole_bridge
-    X e1 e2 x ν (ntgt : WfWorld)
-    Hfreshx Hresult1 Hfreshν Hresult2 :
-  let nX := res_restrict ntgt X in
-  let w1 := let_result_world_on X e1 x nX Hfreshx Hresult1 in
-  let w2 := let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν w1 Hfreshν Hresult2 in
-  fv_tm (tlete e1 e2) ⊆ X →
-  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
-  ν ∉ X →
-  x ∉ world_dom (ntgt : World) →
-  X ⊆ world_dom (ntgt : World) →
-  (∀ σ, (res_restrict ntgt X : World) σ → closed_env (store_restrict σ X)) →
-  (∀ σ, (res_restrict ntgt X : World) σ → lc_env (store_restrict σ X)) →
-  (∀ σ vx,
-    (res_restrict ntgt X : World) σ →
-    subst_map (store_restrict σ X) e1 →* tret vx →
-    stale vx = ∅ ∧ is_lc vx) →
-  (∀ σ, (res_restrict ntgt X : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
-  ntgt ⊨ FExprResultOn X (tlete e1 e2) ν →
-  w2 ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν ∧
-  model_transport w2 ntgt.
-Proof.
-  intros nX w1 w2 Hfv Hx HνX Hxntgt HXntgt Hclosed Hlc Hres_regular Hbody Htgt.
-  pose proof (proj1 (FExprResultOn_iff_let_result_world_on
-    X (tlete e1 e2) ν ntgt Hfv HνX HXntgt) Htgt)
-    as [Hfresh_tlet [Hresult_tlet Htgt_eq]].
-  split.
-  - subst w2 w1 nX.
-    apply let_result_world_on_models_FExprResultOn.
-    + intros z Hz.
-      change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hz.
-      pose proof (open_fv_tm e2 (vfvar x) 0 z Hz) as Hzopen.
-      simpl in Hzopen. simpl in Hfv. set_solver.
-    + set_solver.
-    + simpl. unfold let_result_world_on, let_result_raw_world_on. simpl.
-      set_solver.
-  - subst w2 w1 nX.
-    eapply model_transport_restrict_common with (S := X ∪ {[ν]}).
-    + simpl. unfold let_result_world_on, let_result_raw_world_on. simpl.
-      intros z Hz. set_solver.
-    + replace (X ∪ {[ν]})
-        with (world_dom (res_restrict ntgt X : WfWorld) ∪ {[ν]})
-        by (simpl; set_solver).
-      rewrite (let_result_world_on_tlete_decompose
-        X e1 e2 x ν (res_restrict ntgt X)
-        Hfreshx Hresult1 Hfreshν Hresult2 Hfresh_tlet Hresult_tlet).
-      * replace (world_dom (res_restrict ntgt X : WfWorld) ∪ {[ν]})
-          with (X ∪ {[ν]}) by (simpl; set_solver).
-        rewrite <- Htgt_eq.
-        replace (world_dom (res_restrict ntgt X : WfWorld) ∪ {[ν]})
-          with (X ∪ {[ν]}) by (simpl; set_solver).
-        reflexivity.
-      * exact Hfv.
-      * exact Hx.
-      * simpl. set_solver.
-      * simpl. set_solver.
-      * exact Hclosed.
-      * exact Hlc.
-      * exact Hres_regular.
-      * exact Hbody.
 Qed.

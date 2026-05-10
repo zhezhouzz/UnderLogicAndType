@@ -526,7 +526,7 @@ Proof.
     transitivity (Some v).
     + rewrite (lookup_union_r σ ({[x := v]} : Store) x).
       * rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
-      * apply not_elem_of_dom. set_solver.
+      * eapply store_lookup_none_of_dom; [reflexivity | set_solver].
     + symmetry. change ((<[x := v]> σ : gmap atom value) !! x = Some v).
       apply lookup_insert_eq.
   - rewrite lookup_insert_ne by congruence.
@@ -724,8 +724,9 @@ Proof.
   - exact Hsteps1.
   - rewrite store_restrict_insert_fresh_union in Hsteps2.
     2:{
-      pose proof (wfworld_store_dom m σ Hσ) as Hdom.
-      apply not_elem_of_dom. rewrite Hdom. exact Hfresh.
+      eapply store_lookup_none_of_dom.
+      + apply wfworld_store_dom. exact Hσ.
+      + exact Hfresh.
     }
     2:{ exact HxX. }
     change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)

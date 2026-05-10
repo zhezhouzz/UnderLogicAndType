@@ -81,6 +81,16 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
 Qed.
 
+Lemma lc_env_restrict σ X :
+  lc_env σ ->
+  lc_env (map_restrict value σ X).
+Proof.
+  unfold lc_env. intros Hlc.
+  apply map_Forall_lookup_2. intros x v Hlookup.
+  apply map_restrict_lookup_some in Hlookup as [_ Hlookup].
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
+Qed.
+
 Lemma lc_env_delete σ x :
   lc_env σ ->
   lc_env (delete x σ).
@@ -89,6 +99,18 @@ Proof.
   apply map_Forall_lookup_2. intros y v Hlookup.
   rewrite lookup_delete_Some in Hlookup.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc (proj2 Hlookup)).
+Qed.
+
+Definition store_closed (σ : env) : Prop :=
+  closed_env σ ∧ lc_env σ.
+
+Lemma store_closed_restrict σ X :
+  store_closed σ ->
+  store_closed (map_restrict value σ X).
+Proof.
+  intros [Hclosed Hlc]. split.
+  - by apply closed_env_restrict.
+  - by apply lc_env_restrict.
 Qed.
 
 Ltac gen_closed_env :=
@@ -521,6 +543,48 @@ Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
 
 #[global] Instance MsubstFv_tm : MsubstFv tm.
 Proof. eapply MsubstFv_all; typeclasses eauto. Qed.
+
+Lemma msubst_fv_delete
+    (A : Type)
+    (staleA : Stale A)
+    (substA : SubstV value A)
+    (fv_of_subst_closedA : @FvOfSubstClosed A staleA substA)
+    (σ : env) (a : A) :
+  closed_env σ ->
+  stale (m{σ} a) ⊆ stale a ∖ dom σ.
+Proof.
+  intros Hclosed.
+  unfold msubst.
+  revert Hclosed.
+  refine (fin_maps.map_fold_ind
+    (fun σ => closed_env σ ->
+      stale (map_fold (fun x vx acc => {x := vx} acc) a σ) ⊆ stale a ∖ dom σ)
+    _ _ σ).
+  - intros _. set_solver.
+  - intros x vx σ' Hfresh Hfold IH Hclosed_insert.
+    destruct (closed_env_insert σ' x vx Hfresh Hclosed_insert) as [Hvx Hclosed'].
+    rewrite Hfold.
+    rewrite fv_of_subst_closedA by exact Hvx.
+    pose proof (IH Hclosed') as HIH.
+    rewrite dom_insert_L.
+    set_solver.
+Qed.
+
+Lemma msubst_fv_delete_value σ (v : value) :
+  closed_env σ ->
+  stale (m{σ} v) ⊆ stale v ∖ dom σ.
+Proof.
+  eapply (msubst_fv_delete value stale_value_inst subst_value_inst).
+  typeclasses eauto.
+Qed.
+
+Lemma msubst_fv_delete_tm σ (e : tm) :
+  closed_env σ ->
+  stale (m{σ} e) ⊆ stale e ∖ dom σ.
+Proof.
+  eapply (msubst_fv_delete tm stale_tm_inst subst_tm_inst).
+  typeclasses eauto.
+Qed.
 
 Class MsubstRestrict A `{Stale A} `{SubstV value A} := msubst_restrict :
   forall (σ : env) (X : aset) (a : A),

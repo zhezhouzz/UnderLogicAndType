@@ -245,72 +245,6 @@ Lemma tlet_result_graph_world_on_elim
     σxν = <[x := vx]> σ.
 Proof. intros Hσxν. exact Hσxν. Qed.
 
-Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : value) :
-  store_restrict (<[x := v]> σ) {[x]} = {[x := v]}.
-Proof.
-  apply (map_eq (M := gmap atom)). intros z.
-  rewrite store_restrict_lookup.
-  destruct (decide (z ∈ {[x]})) as [Hz|Hz].
-  - apply elem_of_singleton in Hz. subst z.
-    transitivity (Some v).
-    + change ((<[x := v]> σ : gmap atom value) !! x = Some v).
-      apply lookup_insert_eq.
-    + symmetry. rewrite lookup_singleton. rewrite decide_True by reflexivity.
-      reflexivity.
-  - rewrite lookup_singleton.
-    rewrite decide_False by set_solver.
-    reflexivity.
-Qed.
-
-Lemma store_restrict_singleton_lookup (σ : Store) (x : atom) (v : value) :
-  σ !! x = Some v →
-  store_restrict σ {[x]} = {[x := v]}.
-Proof.
-  intros Hlookup.
-  apply (map_eq (M := gmap atom)). intros z.
-  rewrite store_restrict_lookup.
-  destruct (decide (z = x)) as [->|Hzx].
-  - rewrite decide_True by set_solver.
-    rewrite lookup_singleton, decide_True by reflexivity.
-    exact Hlookup.
-  - rewrite decide_False by set_solver.
-    rewrite lookup_singleton, decide_False by congruence.
-    reflexivity.
-Qed.
-
-Lemma store_restrict_insert_singleton_ne
-    (σ : Store) (x y : atom) (v : value) :
-  x ≠ y →
-  store_restrict (<[x := v]> σ) {[y]} = store_restrict σ {[y]}.
-Proof.
-  intros Hxy.
-  rewrite store_restrict_insert_notin by set_solver.
-  reflexivity.
-Qed.
-
-Lemma store_restrict_insert_fresh_union (σ : Store) (X : aset) (x : atom) (v : value) :
-  σ !! x = None →
-  x ∉ X →
-  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
-  <[x := v]> (store_restrict σ X).
-Proof.
-  intros Hx_none HxX.
-  rewrite store_restrict_insert_in by set_solver.
-  f_equal.
-  apply (map_eq (M := gmap atom)). intros z.
-  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
-    (store_restrict σ X : Store) !! z).
-  rewrite (@store_restrict_lookup value σ (X ∪ {[x]}) z) at 1.
-  rewrite (@store_restrict_lookup value σ X z) at 1.
-  destruct (decide (z = x)) as [->|Hzx].
-  - rewrite decide_True by set_solver.
-    rewrite decide_False by exact HxX.
-    exact Hx_none.
-  - destruct (decide (z ∈ X)) as [HzX|HzX].
-    + rewrite !decide_True by set_solver. reflexivity.
-    + rewrite !decide_False by set_solver. reflexivity.
-Qed.
-
 (** Soundness direction from a graph member to the whole-let result atom.
 
     Anti-slip rule: this is purely an expression-result/operational lemma.
@@ -373,9 +307,9 @@ Proof.
     <[x := vx]> (store_restrict σ X)).
   {
     apply store_restrict_insert_fresh_union.
-    - apply not_elem_of_dom.
-      pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-      rewrite Hdomσ. exact Hfreshx.
+    - eapply store_lookup_none_of_dom.
+      + apply wfworld_store_dom. exact Hσ.
+      + exact Hfreshx.
     - exact HxX.
   }
   assert (Hνstore :
@@ -475,9 +409,9 @@ Proof.
       rewrite <- Hρx0.
       rewrite store_restrict_insert_fresh_union.
       - reflexivity.
-      - apply not_elem_of_dom.
-        pose proof (wfworld_store_dom w σ0 Hσ0) as Hdomσ0.
-        rewrite Hdomσ0. exact Hfreshx.
+      - eapply store_lookup_none_of_dom.
+        + apply wfworld_store_dom. exact Hσ0.
+        + exact Hfreshx.
       - exact HxX.
     }
     assert (HρxX : store_restrict ρx X = store_restrict σ0 X).
@@ -553,9 +487,9 @@ Proof.
         -- rewrite Hσbase_restrict_X.
            rewrite HρxX.
            symmetry. exact Hρx_shape.
-        -- apply not_elem_of_dom.
-           pose proof (wfworld_store_dom w σbase Hσbase) as Hdomσbase.
-           rewrite Hdomσbase. exact Hfreshx.
+        -- eapply store_lookup_none_of_dom.
+           ++ apply wfworld_store_dom. exact Hσbase.
+           ++ exact Hfreshx.
         -- exact HxX.
     + rewrite store_restrict_insert_singleton_ne by set_solver.
       exact Hσν_eq.
@@ -795,9 +729,9 @@ Proof.
            ++ rewrite (store_restrict_idemp σ (world_dom (w : World)))
                 by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
               reflexivity.
-           ++ apply not_elem_of_dom.
-              pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-              rewrite Hdomσ. exact Hfreshx.
+           ++ eapply store_lookup_none_of_dom.
+              ** apply wfworld_store_dom. exact Hσ.
+              ** exact Hfreshx.
            ++ simpl. set_solver.
       * intros [σxν [Hgraph Hrestrict]].
         destruct (tlet_result_graph_world_on_elim
@@ -809,9 +743,9 @@ Proof.
         -- rewrite (store_restrict_idemp σ (world_dom (w : World)))
              by (pose proof (wfworld_store_dom w σ Hσ) as Hdomσ; set_solver).
            reflexivity.
-        -- apply not_elem_of_dom.
-           pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-           rewrite Hdomσ. exact Hfreshx.
+        -- eapply store_lookup_none_of_dom.
+           ++ apply wfworld_store_dom. exact Hσ.
+           ++ exact Hfreshx.
         -- simpl. set_solver.
 Qed.
 
@@ -866,9 +800,9 @@ Proof.
   {
     rewrite store_restrict_insert_fresh_union in Hsteps_body.
     2:{
-      apply not_elem_of_dom.
-      pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-      rewrite Hdomσ. exact Hfresh.
+      eapply store_lookup_none_of_dom.
+      - apply wfworld_store_dom. exact Hσ.
+      - exact Hfresh.
     }
     2:{ exact HxX. }
     change (m{<[x := vx]> (store_restrict σ X)} (open_tm 0 (vfvar x) e2)

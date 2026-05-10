@@ -101,6 +101,71 @@ Lemma steps_regular2 e e' :
   e →* e' → lc_tm e'.
 Proof. apply steps_regular. Qed.
 
+Definition closed_tm (e : tm) : Prop :=
+  stale e = ∅ ∧ lc_tm e.
+
+Definition closed_value (v : value) : Prop :=
+  stale v = ∅ ∧ lc_value v.
+
+Lemma head_step_fv_subset e e' :
+  head_step e e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hstep. destruct Hstep; simpl.
+  - pose proof (open_fv_tm e v 0) as Hopen. my_set_solver.
+  - my_set_solver.
+  - pose proof (open_fv_tm body v 0) as Hopen. my_set_solver.
+  - pose proof (open_fv_value vf v 0) as Hopen. my_set_solver.
+  - my_set_solver.
+  - my_set_solver.
+Qed.
+
+Lemma step_fv_subset e e' :
+  step e e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hstep. induction Hstep; simpl.
+  - by apply head_step_fv_subset.
+  - pose proof IHHstep. my_set_solver.
+Qed.
+
+Lemma steps_fv_subset e e' :
+  e →* e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hsteps. induction Hsteps.
+  - set_solver.
+  - pose proof (step_fv_subset _ _ H) as Hfv.
+    set_solver.
+Qed.
+
+Lemma steps_closed_result e v :
+  closed_tm e →
+  e →* tret v →
+  closed_value v.
+Proof.
+  intros [Hclosed Hlc] Hsteps.
+  split.
+  - pose proof (steps_fv_subset _ _ Hsteps) as Hfv.
+    simpl in Hfv. change (fv_tm e = ∅) in Hclosed.
+    rewrite Hclosed in Hfv. set_solver.
+  - pose proof (steps_regular2 _ _ Hsteps) as Hret.
+    by apply lc_ret_iff_value in Hret.
+Qed.
+
+Lemma msubst_closed_tm σ e :
+  store_closed σ →
+  lc_tm e →
+  stale e ⊆ dom σ →
+  closed_tm (m{σ} e).
+Proof.
+  intros [Hclosed Hlc_env] Hlc Hcover.
+  split.
+  - pose proof (msubst_fv_delete_tm σ e Hclosed) as Hfv.
+    apply leibniz_equiv. set_solver.
+  - apply msubst_lc; assumption.
+Qed.
+
 Lemma value_steps_self v e :
   tret v →* e → e = tret v.
 Proof. apply val_steps_self. Qed.

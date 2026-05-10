@@ -857,6 +857,89 @@ Proof.
   apply map_filter_insert_not. intros vi. exact Hx.
 Qed.
 
+Lemma store_lookup_none_of_dom (σ : Store) (X : aset) (x : atom) :
+  dom σ = X →
+  x ∉ X →
+  σ !! x = None.
+Proof.
+  intros Hdom Hx.
+  destruct (σ !! x) as [v|] eqn:Hlookup; [| reflexivity].
+  exfalso. apply Hx.
+  rewrite <- Hdom. by apply elem_of_dom_2 in Hlookup.
+Qed.
+
+Lemma store_restrict_insert_singleton (σ : Store) (x : atom) (v : V) :
+  store_restrict (<[x := v]> σ) {[x]} = {[x := v]}.
+Proof.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ {[x]})) as [Hz|Hz].
+    - apply elem_of_singleton in Hz. subst z.
+      transitivity (Some v).
+      + change ((<[x := v]> σ : gmap atom V) !! x = Some v).
+        apply lookup_insert_eq.
+      + change (Some v = ({[x := v]} : gmap atom V) !! x).
+        rewrite lookup_singleton. rewrite decide_True by reflexivity.
+        reflexivity.
+  - change (None = ({[x := v]} : gmap atom V) !! z).
+    rewrite lookup_singleton.
+    rewrite decide_False by set_solver.
+    reflexivity.
+Qed.
+
+Lemma store_restrict_singleton_lookup (σ : Store) (x : atom) (v : V) :
+  σ !! x = Some v →
+  store_restrict σ {[x]} = {[x := v]}.
+Proof.
+  intros Hlookup.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    rewrite Hlookup.
+    change (Some v = ({[x := v]} : gmap atom V) !! x).
+    rewrite lookup_singleton, decide_True by reflexivity.
+    reflexivity.
+  - rewrite decide_False by set_solver.
+    change (None = ({[x := v]} : gmap atom V) !! z).
+    rewrite lookup_singleton, decide_False by congruence.
+    reflexivity.
+Qed.
+
+Lemma store_restrict_insert_singleton_ne
+    (σ : Store) (x y : atom) (v : V) :
+  x ≠ y →
+  store_restrict (<[x := v]> σ) {[y]} = store_restrict σ {[y]}.
+Proof.
+  intros Hxy.
+  rewrite store_restrict_insert_notin by set_solver.
+  reflexivity.
+Qed.
+
+Lemma store_restrict_insert_fresh_union
+    (σ : Store) (X : aset) (x : atom) (v : V) :
+  σ !! x = None →
+  x ∉ X →
+  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
+  <[x := v]> (store_restrict σ X).
+Proof.
+  intros Hx_none HxX.
+  rewrite store_restrict_insert_in by set_solver.
+  f_equal.
+  apply (map_eq (M := gmap atom)). intros z.
+  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
+    (store_restrict σ X : Store) !! z).
+  rewrite (store_restrict_lookup σ (X ∪ {[x]}) z) at 1.
+  rewrite (store_restrict_lookup σ X z) at 1.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    rewrite decide_False by exact HxX.
+    exact Hx_none.
+  - destruct (decide (z ∈ X)) as [HzX|HzX].
+    + rewrite !decide_True by set_solver. reflexivity.
+    + rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
 Lemma store_restrict_union_partition s X Y :
   dom s ⊆ X ∪ Y →
   X ∩ Y = ∅ →
