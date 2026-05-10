@@ -102,6 +102,47 @@ Proof.
         exact Hrestrict.
 Qed.
 
+Lemma let_result_world_on_restrict_input
+    X e x (w : WfWorld) Hfresh Hresult Hfresh' Hresult' :
+  X ⊆ world_dom (w : World) →
+  x ∉ X →
+  res_restrict (let_result_world_on X e x w Hfresh Hresult) (X ∪ {[x]}) =
+  let_result_world_on X e x (res_restrict w X) Hfresh' Hresult'.
+Proof.
+  intros HXw HxX.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σx. simpl. split.
+    + intros [σfull [[σ [vx [Hσ [Hsteps ->]]]] Hrestrict]].
+      exists (store_restrict σ X), vx. split.
+      * exists σ. split; [exact Hσ | reflexivity].
+      * split.
+        -- rewrite store_restrict_restrict.
+           replace (X ∩ X) with X by set_solver.
+           exact Hsteps.
+        -- rewrite <- Hrestrict.
+           rewrite store_restrict_insert_fresh_union.
+           ++ reflexivity.
+           ++ eapply store_lookup_none_of_dom.
+              ** apply wfworld_store_dom. exact Hσ.
+              ** exact Hfresh.
+           ++ exact HxX.
+    + intros [σ [vx [[σ0 [Hσ0 Hσ0X]] [Hsteps ->]]]].
+      exists (<[x := vx]> σ0). split.
+      * exists σ0, vx. split; [exact Hσ0 |]. split.
+        -- rewrite <- Hσ0X in Hsteps.
+           rewrite store_restrict_restrict in Hsteps.
+           replace (X ∩ X) with X in Hsteps by set_solver.
+           exact Hsteps.
+        -- reflexivity.
+      * rewrite store_restrict_insert_fresh_union.
+        -- rewrite Hσ0X. reflexivity.
+        -- eapply store_lookup_none_of_dom.
+           ++ apply wfworld_store_dom. exact Hσ0.
+           ++ exact Hfresh.
+        -- exact HxX.
+Qed.
+
 Lemma let_result_world_on_le X e x (w : WfWorld) Hfresh Hresult :
   w ⊑ let_result_world_on X e x w Hfresh Hresult.
 Proof.

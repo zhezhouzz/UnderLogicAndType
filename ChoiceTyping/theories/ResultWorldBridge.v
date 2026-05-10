@@ -54,6 +54,36 @@ Proof.
   exact (Hclosed σ Hσ).
 Qed.
 
+Lemma let_result_world_on_store_closed_on_insert
+    X e ν (n : WfWorld) Hfresh Hresult :
+  ν ∉ X →
+  world_store_closed_on X n →
+  (∀ σ vx,
+    (n : World) σ →
+    subst_map (store_restrict σ X) e →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  world_store_closed_on (X ∪ {[ν]})
+    (let_result_world_on X e ν n Hfresh Hresult).
+Proof.
+  intros HνX Hclosed Hres σν Hσν.
+  destruct (let_result_world_on_elim X e ν n Hfresh Hresult σν Hσν)
+    as [σ [vx [Hσ [Hsteps ->]]]].
+  rewrite store_restrict_insert_fresh_union.
+  2:{
+    eapply store_lookup_none_of_dom.
+    - apply wfworld_store_dom. exact Hσ.
+    - exact Hfresh.
+  }
+  2:{ exact HνX. }
+  destruct (Hclosed σ Hσ) as [Hclosedσ Hlcσ].
+  destruct (Hres σ vx Hσ Hsteps) as [Hvx_closed Hvx_lc].
+  split.
+  - unfold closed_env in *.
+    apply map_Forall_insert_2; [exact Hvx_closed | exact Hclosedσ].
+  - unfold lc_env in *.
+    apply map_Forall_insert_2; [exact Hvx_lc | exact Hlcσ].
+Qed.
+
 Lemma foldr_fib_vars_acc_fst_bridge xs φ R :
   fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
 Proof.
