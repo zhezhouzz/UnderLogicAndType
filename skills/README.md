@@ -23,3 +23,4 @@
 | 21_instantiation_migration.md | Instantiation/multi-substitution：迁移后的 msubst classes、tactics 和使用前提 |
 | 22_choice_instantiation_migration.md | ChoiceType instantiation：qualifier/type/context subst、close、tree context fv 边界 |
 | 23_expression_result_semantics.md | Expression result：先用 Rocq-level predicate 做 operational intro/elim，再包装成 logic atom |
+| 24_typing_naming_refactor.md | Typing naming：fresh record、erased-context domain、open/subst bridge |
