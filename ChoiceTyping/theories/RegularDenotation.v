@@ -108,4 +108,3 @@ Proof.
   apply choice_typing_wf_to_total_model; [exact Hwf |].
   exact (Hent m Hm).
 Qed.
-
