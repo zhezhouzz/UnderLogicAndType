@@ -157,9 +157,7 @@ Proof.
   replace (store_restrict σ X) with
     (store_restrict (store_restrict σ (world_dom (m : World))) X).
   - exact (Hclosed _ Hσm).
-  - rewrite store_restrict_restrict.
-    replace (world_dom (m : World) ∩ X) with X by set_solver.
-    reflexivity.
+  - store_norm. reflexivity.
 Qed.
 
 Lemma world_store_closed_on_restrict X Y (m : WfWorld) :
@@ -170,8 +168,7 @@ Proof.
   intros HXY Hclosed σ Hσ.
   destruct Hσ as [σ0 [Hσ0 Hrestrict]].
   rewrite <- Hrestrict.
-  rewrite store_restrict_restrict.
-  replace (Y ∩ X) with X by set_solver.
+  store_norm.
   exact (Hclosed σ0 Hσ0).
 Qed.
 
@@ -1014,8 +1011,7 @@ Proof.
         replace ((∅ : Store) ∪ store_restrict σw X) with (store_restrict σw X) in Hstore.
         2:{ apply (map_eq (M := gmap atom)). intros z.
             rewrite lookup_union_r; [reflexivity | apply lookup_empty]. }
-        rewrite store_restrict_restrict in Hstore.
-        replace (X ∩ X) with X in Hstore by set_solver.
+        store_norm.
         destruct (expr_result_store_elim ν (subst_map (store_restrict σw X) e)
           (store_restrict σw {[ν]}) Hstore)
           as [vx [Hνstore [_ [_ Hsteps]]]].
@@ -1198,8 +1194,7 @@ Proof.
       rewrite store_restrict_insert_notin in Hrestrict by exact HνX.
       subst σ.
       exists vx.
-      rewrite store_restrict_restrict.
-      replace (X ∩ X) with X by set_solver.
+      store_norm.
       exact Hsteps.
     }
     exists Hfresh0, Hresult0.
@@ -1232,8 +1227,7 @@ Proof.
         subst σ.
         exists (<[ν := vx]> σ0). split.
         -- exists σ0, vx. repeat split; eauto.
-           rewrite store_restrict_restrict in Hsteps.
-           replace (X ∩ X) with X in Hsteps by set_solver.
+           store_norm.
            exact Hsteps.
         -- rewrite store_restrict_insert_in by set_solver.
            rewrite store_restrict_union_singleton_fresh_eq.

@@ -32,8 +32,7 @@ Proof.
   }
   destruct (Hresult Hσm) as [v Hsteps].
   exists v.
-  rewrite !store_restrict_restrict in Hsteps.
-  replace (world_dom (m : World) ∩ X) with X in Hsteps by set_solver.
+  store_norm.
   exact Hsteps.
 Qed.
 
@@ -53,8 +52,7 @@ Proof.
   destruct (Hresult σn Hσn) as [v Hsteps].
   exists v.
   rewrite <- Hrestrict.
-  rewrite !store_restrict_restrict.
-  replace (world_dom (m : World) ∩ X) with X by set_solver.
+  store_norm.
   exact Hsteps.
 Qed.
 
@@ -85,8 +83,7 @@ Proof.
         assert (HstoreX : store_restrict σn X = store_restrict σm X).
         {
           rewrite <- Hrestrict_m.
-          rewrite !store_restrict_restrict.
-          replace (world_dom (m : World) ∩ X) with X by set_solver.
+          store_norm.
           reflexivity.
         }
         rewrite HstoreX. exact Hsteps.
@@ -136,8 +133,7 @@ Proof.
           store_restrict (store_restrict σn (world_dom (m : World))) X =
           store_restrict σn X).
         {
-          rewrite !store_restrict_restrict.
-          replace (world_dom (m : World) ∩ X) with X by set_solver.
+          store_norm.
           reflexivity.
         }
         rewrite HstoreX. exact Hsteps.

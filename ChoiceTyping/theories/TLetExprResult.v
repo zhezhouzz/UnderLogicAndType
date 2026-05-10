@@ -532,7 +532,7 @@ Proof.
       rewrite (store_restrict_union_from_parts σ ρ σy
         (X ∖ ({[y]} ∪ (list_to_set xs : aset))) y).
       * reflexivity.
-      * timeout 3 set_solver.
+      * set_solver.
       * exact Hσρ.
       * rewrite <- Hdomσy. exact Hσy.
       * symmetry. apply difference_cons_decompose.
@@ -546,7 +546,7 @@ Proof.
       * apply res_fiber_from_projection_member; [exact Hσm |].
         rewrite <- Hσx_y.
         rewrite Hdomσy.
-        rewrite store_restrict_insert_notin by (timeout 3 set_solver).
+        rewrite store_restrict_insert_notin by set_solver.
         reflexivity.
       * split; [exact Hsteps | reflexivity].
     + intros σ vx Hσ Hsteps.
@@ -558,7 +558,7 @@ Proof.
         -- rewrite Hdomσy. reflexivity.
         -- rewrite store_restrict_insert_notin.
            ++ exact Hσy.
-           ++ rewrite Hdomσy. timeout 3 set_solver.
+           ++ rewrite Hdomσy. set_solver.
     + exact Hfib.
 Qed.
 

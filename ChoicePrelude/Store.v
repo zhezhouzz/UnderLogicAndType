@@ -1262,6 +1262,18 @@ Ltac store_set_norm :=
   | |- context[∅ ∪ _] => rewrite map_empty_union
   | H : context[_ ∪ ∅] |- _ => rewrite map_union_empty in H
   | |- context[_ ∪ ∅] => rewrite map_union_empty
+  | H : context[?X ∩ ?X] |- _ =>
+      replace (X ∩ X) with X in H by set_solver
+  | |- context[?X ∩ ?X] =>
+      replace (X ∩ X) with X by set_solver
+  | Hsub : ?X ⊆ ?Y, H : context[?Y ∩ ?X] |- _ =>
+      replace (Y ∩ X) with X in H by set_solver
+  | Hsub : ?X ⊆ ?Y |- context[?Y ∩ ?X] =>
+      replace (Y ∩ X) with X by set_solver
+  | Hsub : ?X ⊆ ?Y, H : context[?X ∩ ?Y] |- _ =>
+      replace (X ∩ Y) with X in H by set_solver
+  | Hsub : ?X ⊆ ?Y |- context[?X ∩ ?Y] =>
+      replace (X ∩ Y) with X by set_solver
   end.
 
 Ltac store_restrict_norm :=

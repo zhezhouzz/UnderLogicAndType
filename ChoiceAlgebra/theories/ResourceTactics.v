@@ -5,7 +5,7 @@
     worlds or the algebraic resource order. *)
 
 From ChoiceAlgebra Require Import Resource.
-From ChoicePrelude Require Import Store.
+From ChoicePrelude Require Export Store.
 
 Ltac resource_world_norm :=
   cbn [world_dom world_stores raw_unit raw_product raw_sum raw_restrict raw_fiber] in *.

@@ -238,8 +238,7 @@ Proof.
     assert (HσX : (ntgtX : World) (store_restrict σ X)).
     { subst ntgtX. exists σ. split; [exact Hσ | reflexivity]. }
     destruct (Hresult_tlet (store_restrict σ X) HσX) as [v Hsteps_tlet].
-    rewrite store_restrict_restrict in Hsteps_tlet.
-    replace (X ∩ X) with X in Hsteps_tlet by set_solver.
+    store_norm.
     change (subst_map (store_restrict σ X) (tlete e1 e2))
       with (m{store_restrict σ X} (tlete e1 e2)) in Hsteps_tlet.
     rewrite msubst_lete in Hsteps_tlet.
@@ -285,8 +284,7 @@ Proof.
       Hresult_ntgt_e1 σ vx Hσ) as Hσx_ntgt.
     assert (Hsteps1_full : subst_map (store_restrict σ X) e1 →* tret vx).
     { rewrite <- Hσ_restrict in Hsteps1.
-      rewrite store_restrict_restrict in Hsteps1.
-      replace (X ∩ X) with X in Hsteps1 by set_solver.
+      store_norm.
       exact Hsteps1. }
     specialize (Hσx_ntgt Hsteps1_full).
     destruct Hbody_total_ntgt as [_ Htotal_body].
@@ -297,9 +295,7 @@ Proof.
     {
       rewrite <- Hσ_restrict.
       rewrite store_restrict_insert_fresh_union.
-      - rewrite store_restrict_restrict.
-        replace (X ∩ X) with X by set_solver.
-        reflexivity.
+      - store_norm. reflexivity.
       - eapply store_lookup_none_of_dom.
         + rewrite store_restrict_dom.
           pose proof (wfworld_store_dom ntgt σ Hσ) as Hdomσ.

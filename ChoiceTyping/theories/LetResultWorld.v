@@ -122,9 +122,7 @@ Proof.
       exists (store_restrict σ X), vx. split.
       * exists σ. split; [exact Hσ | reflexivity].
       * split.
-        -- rewrite store_restrict_restrict.
-           replace (X ∩ X) with X by set_solver.
-           exact Hsteps.
+        -- store_norm. exact Hsteps.
         -- rewrite <- Hrestrict.
            rewrite store_restrict_insert_fresh_union.
            ++ reflexivity.
@@ -136,9 +134,7 @@ Proof.
       exists (<[x := vx]> σ0). split.
       * exists σ0, vx. split; [exact Hσ0 |]. split.
         -- rewrite <- Hσ0X in Hsteps.
-           rewrite store_restrict_restrict in Hsteps.
-           replace (X ∩ X) with X in Hsteps by set_solver.
-           exact Hsteps.
+           store_norm. exact Hsteps.
         -- reflexivity.
       * rewrite store_restrict_insert_fresh_union.
         -- rewrite Hσ0X. reflexivity.
@@ -169,8 +165,7 @@ Proof.
     destruct (Hresult_m σm Hσm) as [vx Hsteps].
     exists vx.
     rewrite <- Hrestrict.
-    rewrite store_restrict_restrict.
-    replace (X ∩ X) with X by set_solver.
+    store_norm.
     exact Hsteps.
   }
   rewrite (let_result_world_on_restrict_input
