@@ -145,30 +145,13 @@ Proof.
   unfold denot_ty_in_ctx_under.
   subst X.
   eapply denot_ty_on_let_result_body_to_let with
-    (Tx := erase_ty τ1)
-    (L := L ∪ world_dom (m : World) ∪ dom (erase_ctx_under Σ Γ)
+      (Tx := erase_ty τ1)
+      (L := L ∪ world_dom (m : World) ∪ dom (erase_ctx_under Σ Γ)
           ∪ fv_cty τ1 ∪ fv_tm e1 ∪ fv_cty τ2 ∪ fv_tm e2).
-  - pose proof Hwflet as Hwflet_basic.
-    destruct Hwflet_basic as [Hwfτ _].
-    pose proof (wf_choice_ty_under_basic Σ Γ τ2 Hwfτ) as Hbasicτ.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    + exact Hbasicτ.
-    + pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ2 Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
-  - pose proof (choice_typing_wf_fv_tm_subset Σ Γ (tlete e1 e2) τ2 Hwflet)
-      as Hfv.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    + exact Hfv.
-    + pose proof Hwflet as Hwflet_ctx.
-      destruct Hwflet_ctx as [Hwfτ _].
-      pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ2 Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
+  - exact (choice_typing_wf_basic_choice_ty_erased
+      Σ Γ (tlete e1 e2) τ2 Hwflet).
+  - exact (choice_typing_wf_fv_tm_subset_erase_dom
+      Σ Γ (tlete e1 e2) τ2 Hwflet).
   - apply (basic_world_formula_dom_subset (erase_ctx_under Σ Γ)
       (dom (erase_ctx_under Σ Γ))).
     apply denot_ctx_in_env_erased_basic. exact Hm.
@@ -350,16 +333,9 @@ Proof.
   - subst X.
     rewrite erase_ctx_under_comma_bind_dom_nf in Hbody.
     exact Hbody.
-  - pose proof (choice_typing_wf_fv_tm_subset Σ Γ (tlete e1 e2) τ2 Hwflet).
-    subst X.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    + exact H.
-    + destruct Hwflet as [Hwfτ _].
-      unfold erase_ctx_under.
-      rewrite dom_union_L.
-      rewrite (basic_ctx_erase_dom (dom Σ) Γ
-        (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ2 Hwfτ))).
-      reflexivity.
+  - subst X.
+    exact (choice_typing_wf_fv_tm_subset_erase_dom
+      Σ Γ (tlete e1 e2) τ2 Hwflet).
 Qed.
 
 Lemma denot_tlet_total_at_world_given_bind

@@ -355,24 +355,8 @@ Proof.
   intros Hwf Hm Hτ Hx.
   eapply (denot_ty_on_let_result_representative
     (dom (erase_ctx_under Σ Γ)) (erase_ctx_under Σ Γ) τ e x m Hfresh Hresult).
-  - destruct Hwf as [Hwfτ _].
-    pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasicτ.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    + exact Hbasicτ.
-    + pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
-  - pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Hfv.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    + exact Hfv.
-    + destruct Hwf as [Hwfτ _].
-      pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
+  - exact (choice_typing_wf_basic_choice_ty_erased Σ Γ e τ Hwf).
+  - exact (choice_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ Hwf).
   - exact Hx.
   - apply denot_ctx_in_env_erased_basic. exact Hm.
   - exact Hτ.
@@ -415,16 +399,7 @@ Proof.
   destruct Htotal as [Hfv_e _].
   assert (Hfv_τ : fv_cty τ ⊆ dom (erase_ctx_under Σ Γ)).
   {
-    destruct Hwf as [Hwfτ _].
-    pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasic.
-    pose proof (basic_choice_ty_fv_subset (dom Σ ∪ ctx_dom Γ) τ Hbasic) as Hfv.
-    replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
-    - exact Hfv.
-    - pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
-      reflexivity.
+    exact (choice_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ Hwf).
   }
   assert (Hdom_world : dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : World)).
   {

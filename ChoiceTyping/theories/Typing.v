@@ -45,6 +45,58 @@ Proof.
   set_solver.
 Qed.
 
+Lemma choice_typing_wf_erase_dom Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
+Proof.
+  intros [Hwf _].
+  unfold erase_ctx_under.
+  rewrite dom_union_L.
+  rewrite (basic_ctx_erase_dom (dom Σ) Γ
+    (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))).
+  reflexivity.
+Qed.
+
+Lemma choice_typing_wf_basic_choice_ty_erased Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ.
+Proof.
+  intros Hwf.
+  destruct Hwf as [Hwfτ Herase].
+  pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasic.
+  rewrite (choice_typing_wf_erase_dom Σ Γ e τ (conj Hwfτ Herase)).
+  exact Hbasic.
+Qed.
+
+Lemma choice_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  fv_tm e ⊆ dom (erase_ctx_under Σ Γ).
+Proof.
+  intros Hwf.
+  rewrite (choice_typing_wf_erase_dom Σ Γ e τ Hwf).
+  exact (choice_typing_wf_fv_tm_subset Σ Γ e τ Hwf).
+Qed.
+
+Lemma choice_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  fv_cty τ ⊆ dom (erase_ctx_under Σ Γ).
+Proof.
+  intros Hwf.
+  destruct Hwf as [Hwfτ Herase].
+  rewrite (choice_typing_wf_erase_dom Σ Γ e τ (conj Hwfτ Herase)).
+  exact (wf_choice_ty_under_fv_subset Σ Γ τ Hwfτ).
+Qed.
+
+Lemma choice_typing_wf_footprint_subset_erase_dom Σ Γ e τ :
+  choice_typing_wf Σ Γ e τ →
+  fv_tm e ∪ fv_cty τ ⊆ dom (erase_ctx_under Σ Γ).
+Proof.
+  intros Hwf.
+  pose proof (choice_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ Hwf) as He.
+  pose proof (choice_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ Hwf) as Hτ.
+  set_solver.
+Qed.
+
 Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → choice_ty → Prop :=
 
   (** T-Var *)
