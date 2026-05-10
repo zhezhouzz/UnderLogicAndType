@@ -112,8 +112,9 @@ Proof.
 Qed.
 
 Lemma fib_vars_obligation_insert_fresh_to_fib
-    X x p ρ m :
+    X x p ρ (m : WfWorld) :
   x ∉ X →
+  X ∪ {[x]} ⊆ world_dom (m : World) →
   fib_vars_obligation (X ∪ {[x]}) p ρ m →
   fib_vars_obligation X (FFib x p) ρ m.
 Proof.
@@ -726,7 +727,10 @@ Lemma fib_vars_obligation_tlete_from_body_result_world
 Proof.
   intros HXdom Hx Hfv Hclosed Hlc Hresult_closed Hbody Hbody_obl.
   eapply fib_vars_obligation_tlete_from_body_normalized; eauto.
-  eapply fib_vars_obligation_insert_fresh_to_fib; [set_solver | exact Hbody_obl].
+  eapply fib_vars_obligation_insert_fresh_to_fib.
+  - set_solver.
+  - unfold let_result_world_on, let_result_raw_world_on. simpl. set_solver.
+  - exact Hbody_obl.
 Qed.
 
 Lemma FExprResultOn_tlete_from_body_result_world
