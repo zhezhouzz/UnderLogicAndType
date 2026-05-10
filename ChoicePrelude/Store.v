@@ -940,6 +940,118 @@ Proof.
     + rewrite !decide_False by set_solver. reflexivity.
 Qed.
 
+Lemma store_restrict_insert_fresh_union_lookup_none
+    (σ : Store) (X : aset) (x : atom) (v : V) :
+  σ !! x = None →
+  x ∉ X →
+  (<[x := v]> (store_restrict σ X) : Store) !! x = Some v.
+Proof.
+  intros _ _. apply lookup_insert_eq.
+Qed.
+
+Lemma store_restrict_union_singleton_insert
+    (σ : Store) (X : aset) (x : atom) (v : V) :
+  dom σ ⊆ X →
+  x ∉ X →
+  store_restrict (σ ∪ {[x := v]}) (X ∪ {[x]}) = <[x := v]> σ.
+Proof.
+  intros Hdomσ HxX.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by set_solver.
+    transitivity (Some v).
+    + rewrite (lookup_union_r σ ({[x := v]} : Store) x).
+      * change (({[x := v]} : gmap atom V) !! x = Some v).
+        rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
+      * eapply store_lookup_none_of_dom; [reflexivity | set_solver].
+    + symmetry. change ((<[x := v]> σ : gmap atom V) !! x = Some v).
+      apply lookup_insert_eq.
+  - change ((if decide (z ∈ X ∪ {[x]})
+              then (σ ∪ ({[x := v]} : Store)) !! z else None) =
+            (<[x := v]> σ : gmap atom V) !! z).
+    rewrite (lookup_insert_ne σ x z v) by congruence.
+    destruct (decide (z ∈ X)) as [HzX|HzX].
+    + rewrite decide_True by set_solver.
+	      destruct (σ !! z) eqn:Hσz.
+	      * rewrite (lookup_union_l' σ ({[x := v]} : Store) z) by eauto.
+	        reflexivity.
+	      * rewrite (lookup_union_r σ ({[x := v]} : Store) z) by exact Hσz.
+	        change (({[x := v]} : Store) !! z = σ !! z).
+	        rewrite Hσz.
+	        change (({[x := v]} : Store) !! z = None).
+	        change ({[x := v]} : Store) with (<[x := v]> (∅ : Store)).
+	        rewrite (lookup_insert_ne (∅ : Store) x z v) by congruence.
+	        reflexivity.
+    + rewrite decide_False by set_solver.
+      assert (Hzdom : z ∉ dom σ) by set_solver.
+      apply not_elem_of_dom in Hzdom.
+      rewrite Hzdom.
+      reflexivity.
+Qed.
+
+Lemma store_restrict_union_from_parts
+    (σ ρ σx : Store) (S : aset) (x : atom) :
+  x ∉ S →
+  store_restrict σ S = ρ →
+  store_restrict σ {[x]} = σx →
+  store_restrict σ (S ∪ {[x]}) = ρ ∪ σx.
+Proof.
+  intros HxS Hρ Hσx.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z ∈ S)) as [HzS|HzS].
+  - rewrite decide_True by set_solver.
+    assert (Hρz : ρ !! z = σ !! z).
+    {
+      rewrite <- Hρ.
+      rewrite store_restrict_lookup.
+      rewrite decide_True by exact HzS.
+      reflexivity.
+    }
+    assert (Hσx_none : σx !! z = None).
+    {
+      rewrite <- Hσx.
+      rewrite store_restrict_lookup.
+      rewrite decide_False by set_solver.
+      reflexivity.
+    }
+    destruct (σ !! z) eqn:Hσz.
+    + rewrite (lookup_union_l' ρ σx z).
+      * symmetry. exact Hρz.
+      * eexists. exact Hρz.
+    + rewrite (lookup_union_r ρ σx z).
+      * symmetry. exact Hσx_none.
+      * exact Hρz.
+  - destruct (decide (z = x)) as [->|Hzx].
+    + rewrite decide_True by set_solver.
+      assert (Hρ_none : ρ !! x = None).
+      {
+        rewrite <- Hρ.
+        rewrite store_restrict_lookup.
+        rewrite decide_False by exact HxS.
+        reflexivity.
+      }
+      rewrite (lookup_union_r ρ σx x) by exact Hρ_none.
+      rewrite <- Hσx.
+      rewrite store_restrict_lookup.
+      rewrite decide_True by set_solver.
+      reflexivity.
+    + rewrite decide_False by set_solver.
+      assert (Hρ_none : ρ !! z = None).
+      {
+        rewrite <- Hρ.
+        rewrite store_restrict_lookup.
+        rewrite decide_False by exact HzS.
+        reflexivity.
+      }
+      rewrite (lookup_union_r ρ σx z) by exact Hρ_none.
+      rewrite <- Hσx.
+      rewrite store_restrict_lookup.
+      rewrite decide_False by set_solver.
+      reflexivity.
+Qed.
+
 Lemma store_restrict_union_partition s X Y :
   dom s ⊆ X ∪ Y →
   X ∩ Y = ∅ →
