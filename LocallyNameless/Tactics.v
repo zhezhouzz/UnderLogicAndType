@@ -341,8 +341,16 @@ Ltac my_set_simpl := repeat my_set_simpl_aux.
 
 Ltac my_map_simpl_aux :=
   match goal with
+  | H : context[dom ∅] |- _ => rewrite dom_empty_L in H
+  | |- context[dom ∅] => rewrite dom_empty_L
+  | H : context[dom ({[_:=_]})] |- _ => rewrite dom_singleton_L in H
+  | |- context[dom ({[_:=_]})] => rewrite dom_singleton_L
   | H : context[dom (<[_:=_]> _)] |- _ => rewrite dom_insert_L in H
   | |- context[dom (<[_:=_]> _)] => rewrite dom_insert_L
+  | H : context[dom (delete _ _)] |- _ => rewrite dom_delete_L in H
+  | |- context[dom (delete _ _)] => rewrite dom_delete_L
+  | H : context[dom (_ ∪ _)] |- _ => rewrite dom_union_L in H
+  | |- context[dom (_ ∪ _)] => rewrite dom_union_L
   | H : context[∅ ∪ _] |- _ => rewrite map_empty_union in H
   | |- context[∅ ∪ _] => rewrite map_empty_union
   | H : context[_ ∪ ∅] |- _ => rewrite map_union_empty in H
@@ -351,13 +359,28 @@ Ltac my_map_simpl_aux :=
 
 Ltac my_map_simpl := repeat my_map_simpl_aux.
 
+(** [my_set_norm] exposes the normal set/map shape expected by
+    [set_solver].  It does not finish goals by itself; use it before rewriting
+    with semantic lemmas when raw [set_solver] cannot see through [dom] or map
+    units. *)
+Ltac my_set_norm :=
+  my_map_simpl;
+  my_set_simpl.
+
+(** [solve_set] is the small finalizer for pure set side conditions after
+    normalization.  Keep this tactic lightweight: heavier domain-specific
+    rewriting belongs in [store_solver] or [resource_solver]. *)
+Ltac solve_set :=
+  my_set_norm;
+  try fast_set_solver!!;
+  try set_solver.
+
 (** [my_set_solver] is the default local solver for stale/fv/dom side
     conditions.  It intentionally leaves hard non-set goals untouched, so it can
     be used as a final side-condition solver after applying a semantic or typing
     lemma. *)
 Ltac my_set_solver :=
-  my_map_simpl;
-  my_set_simpl;
+  my_set_norm;
   eauto;
   try match goal with
   | |- {[?x]} ∪ (?s1 ∪ ?s3) ⊆ {[?x]} ∪ (?s2 ∪ ?s4) =>
@@ -377,8 +400,7 @@ Ltac my_set_solver :=
   | H : {[?x]} ∪ ?s1 ⊆ {[?x]} ∪ ?s2 |- ?s1 ⊆ ?s2 =>
       eapply subseteq_subtract_both; eauto; fast_set_solver
   end;
-  try fast_set_solver!!;
-  try set_solver.
+  solve_set.
 
 (** [smart_ln_simpl] is the stronger version of [ln_simpl] to use after this
     file has defined [my_set_solver].  It is useful in proofs where simplifying
