@@ -5,7 +5,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetExprResult.
-From ChoiceTyping Require Import ResultWorldBridge.
+From ChoiceTyping Require Import TLetResultBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma denot_ty_on_expr_result_model_bridge_fresh_bind
@@ -97,11 +97,8 @@ Proof.
     + exact HX.
     + intros σ Hσ. split; [apply Hclosed | apply Hlc_env]; exact Hσ.
     + exact Hlc.
-    + exact Hclosed.
-    + exact Hlc_env.
-    + exact Hresult_closed.
-    + exact Hbody.
-    + eapply Hbody_total; eauto; try reflexivity.
+    + intros n Hmn HXn Hresultn Hfreshn Hresultn'.
+      eapply Hbody_total; eauto.
   - eapply Hbody_model; eauto; try reflexivity.
 Qed.
 
