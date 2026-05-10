@@ -194,6 +194,32 @@ Lemma denot_tlet_total_at_world_split
   denot_ty_total_model_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Admitted.
 
+Lemma denot_tlet_total_at_world_via_split
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
+    (m : WfWorld) :
+  choice_typing_wf Σ Γ e1 τ1 →
+  choice_typing_wf Σ Γ (tlete e1 e2) τ2 →
+  (∀ x, x ∉ L →
+    choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
+  entails_total (denot_ctx_in_env Σ Γ)
+    (denot_ty_total_in_ctx_under Σ Γ τ1 e1) →
+  (∀ x, x ∉ L →
+    entails_total (denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)))
+      (denot_ty_total_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))) →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
+Proof.
+  intros Hwf1 Hwflet Hbody_wf IH1 IH2 Hm.
+  apply denot_ty_total_model_old.
+  eapply denot_tlet_total_at_world_split with (L := L).
+  - exact (proj2 Hwf1).
+  - exact (proj2 Hwflet).
+  - exact Hm.
+  - eapply entails_total_to_total_model; eauto.
+  - intros x HxL.
+    eapply entails_total_to_total_model; eauto.
+Qed.
+
 Lemma denot_tlet_semantic
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset) :
   choice_typing_wf Σ Γ e1 τ1 →
