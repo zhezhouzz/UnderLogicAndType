@@ -1,6 +1,13 @@
 (** * ChoiceTyping.TLetDenotation
 
-    Denotation-level [tlet] soundness helpers. *)
+    Denotation-level [tlet] soundness helpers.
+
+    Status note: this file records the intended final shape of the [tlet]
+    soundness proof, but the type-denotation transport from an expression-result
+    bridge to an arbitrary [denot_ty_on] is still open.  Lemmas below
+    [denot_ty_on_expr_result_model_bridge_fresh_bind] should therefore be read
+    as conditional plumbing around that missing transport principle, not as a
+    completed fundamental [tlet] case. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
@@ -16,6 +23,13 @@ Lemma denot_ty_on_expr_result_model_bridge_fresh_bind
   msrc ⊨ denot_ty_on Xsrc (<[x := Tx]> Σ) τ esrc →
   mtgt ⊨ denot_ty_on Xtgt Σ τ etgt.
 Proof.
+(** Open: the current statement is too weak.  The bridge only transports
+    formulas whose free variables are included in [Xsrc]/[Xtgt ∪ {ν}], while
+    [denot_ty_on] may also observe [dom Σ], [fv_cty τ], and expression free
+    variables.  A repaired statement should add explicit scope assumptions such
+    as [dom (<[x := Tx]> Σ) ⊆ Xsrc], [dom Σ ⊆ Xtgt],
+    [fv_tm esrc ⊆ Xsrc], and [fv_tm etgt ⊆ Xtgt] (or an equivalent packaged
+    invariant). *)
 Admitted.
 
 Lemma denot_ty_on_let_result_body_to_let

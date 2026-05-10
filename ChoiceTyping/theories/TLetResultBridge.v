@@ -149,6 +149,53 @@ Proof.
     + symmetry. exact Heq_tgt.
 Qed.
 
+Lemma nested_body_result_world_models_FExprResultOn
+    X e1 e2 x ν (ntgt : WfWorld)
+    Hfreshx Hresult1 Hfreshν Hresult2 :
+  x ∉ X ∪ fv_tm e2 →
+  fv_tm (tlete e1 e2) ⊆ X →
+  ν ∉ X ∪ {[x]} →
+  X ⊆ world_dom (ntgt : World) →
+  world_store_closed_on X ntgt →
+  lc_tm (tlete e1 e2) →
+  let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν
+    (let_result_world_on X e1 x (res_restrict ntgt X) Hfreshx Hresult1)
+    Hfreshν Hresult2
+    ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν.
+Proof.
+  intros Hx Hfv HνXx HXntgt Hclosed Hlc.
+  destruct (proj1 (lc_lete_iff_body e1 e2) Hlc) as [Hlce1 Hbodye2].
+  apply let_result_world_on_models_FExprResultOn.
+  - change (fv_tm (open_tm 0 (vfvar x) e2) ⊆ X ∪ {[x]}).
+    pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+    simpl in Hopen. set_solver.
+  - apply body_open_tm; [exact Hbodye2 | constructor].
+  - exact HνXx.
+  - simpl. set_solver.
+  - apply let_result_world_on_store_closed_on_insert.
+    + assert (HxX : x ∉ X) by set_solver.
+      exact HxX.
+    + eapply world_store_closed_on_restrict; [set_solver | exact Hclosed].
+    + intros σ vx Hσ Hsteps.
+      assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e1)).
+      {
+        apply msubst_closed_tm.
+        - destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+          rewrite <- Hrestrict.
+          rewrite store_restrict_restrict.
+          replace (X ∩ X) with X by set_solver.
+          exact (Hclosed σ0 Hσ0).
+        - exact Hlce1.
+        - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
+          rewrite store_restrict_dom.
+          pose proof (wfworld_store_dom (res_restrict ntgt X) σ Hσ) as Hdomσ.
+          simpl in Hdomσ.
+          simpl in Hfv. set_solver.
+      }
+      apply steps_closed_result with (e := subst_map (store_restrict σ X) e1);
+        assumption.
+Qed.
+
 (** High-risk tlet expression-result bridge.
 
     This is the resource-level version of the operational identity
@@ -310,4 +357,22 @@ Proof.
       a body-result world over the projected let-result resource.  The remaining
       work is resource transport bookkeeping between this world, the source
       continuation scope, and the target [X ∪ {ν}] scope. *)
-Admitted.
+  set (nsrc := let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν w1 Hfreshν_w1 Hresult_body).
+  exists nsrc.
+  split.
+  - subst nsrc w1 ntgtX.
+    exact (nested_tlet_result_world_source_transport
+      X e1 e2 x ν m ntgt Hfresh Hresult Hfreshx_ntgtX Hresult_ntgtX_e1
+      Hfreshν_w1 Hresult_body HXm Hmntgt HxX ltac:(set_solver)).
+  - split.
+    + subst nsrc w1 ntgtX.
+      exact (nested_body_result_world_models_FExprResultOn
+        X e1 e2 x ν ntgt Hfreshx_ntgtX Hresult_ntgtX_e1
+        Hfreshν_w1 Hresult_body Hx Hfv ltac:(set_solver) HXntgt
+        Hclosed_ntgt Hlc).
+    + subst nsrc w1 ntgtX.
+      exact (nested_tlet_result_world_target_transport
+        X e1 e2 x ν ntgt Hfreshx_ntgtX Hresult_ntgtX_e1
+        Hfreshν_w1 Hresult_body ltac:(set_solver) Hfv HνX HXntgt
+        Hclosed_ntgt Hlc Htarget).
+Qed.

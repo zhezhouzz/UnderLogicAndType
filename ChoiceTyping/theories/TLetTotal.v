@@ -337,6 +337,10 @@ Lemma denot_ty_on_let_result_representative
   let_result_world_on X e x m Hfresh Hresult ⊨
     denot_ty_on (X ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
 Proof.
+(** Open: this is the same missing transport principle in a specialized
+    representative form.  It should follow from a repaired generic
+    expression-result/denotation transport theorem, not from a constructor-by-
+    constructor proof over [τ]. *)
 Admitted.
 
 Lemma let_result_world_on_bound_type

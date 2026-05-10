@@ -1,6 +1,11 @@
 (** * ChoiceTyping.TLetExprResult
 
-    Expression-result and fiber bridges for the [tlet] proof. *)
+    Expression-result and fiber bridges for the [tlet] proof.
+
+    The proved lemmas in this file are expression/result-world facts.  They do
+    not by themselves prove the final typing [tlet] case.  The intentionally
+    admitted high-level theorem below is kept only as a placeholder for the
+    future proof once the generic [denot_ty_on] transport principle is repaired. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
@@ -19,6 +24,9 @@ Lemma denot_tlet_semantic_at_world
   m ⊨ denot_ctx_in_env Σ Γ →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
+(** Placeholder: this is the final semantic [tlet] statement and should not be
+    used as evidence that the [tlet] case is proved.  The current proved
+    material below stops at expression-result exactness/fiber bookkeeping. *)
 Admitted.
 
 (** The fold order chosen by [stdpp.set_fold] is intentionally abstract.  For
@@ -118,6 +126,8 @@ Lemma fib_vars_obligation_insert_fresh_to_fib
   fib_vars_obligation (X ∪ {[x]}) p ρ m →
   fib_vars_obligation X (FFib x p) ρ m.
 Proof.
+(** Open generic fiber lemma.  This should eventually live with the general
+    [fib_vars] library, not in the [tlet] proof file. *)
 Admitted.
 
 Lemma expr_result_store_from_body_xfiber
