@@ -64,6 +64,14 @@ Lemma wfworld_store_dom (w : WfWorld) (σ : StoreT) :
   w σ → dom σ = world_dom (w : World).
 Proof. apply (wf_dom _ (world_wf w)). Qed.
 
+Lemma wfworld_store_dom_subset (w : WfWorld) (σ : StoreT) (X : aset) :
+  w σ →
+  world_dom (w : World) ⊆ X →
+  dom σ ⊆ X.
+Proof.
+  intros Hσ HX. rewrite (wfworld_store_dom w σ Hσ). exact HX.
+Qed.
+
 Lemma wfworld_store_restrict_dom (w : WfWorld) (σ : StoreT) (X : aset) :
   w σ → dom (store_restrict σ X) = world_dom (w : World) ∩ X.
 Proof.

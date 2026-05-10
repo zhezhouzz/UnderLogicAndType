@@ -22,8 +22,15 @@ Ltac resource_restrict_norm :=
       rewrite (res_restrict_eq_of_le m n Hle)
   end.
 
+Ltac resource_store_dom_solver :=
+  try solve
+  [ set_solver
+  | eapply wfworld_store_dom_subset; [eassumption | set_solver]
+  ].
+
 Ltac resource_norm :=
   repeat progress (resource_world_norm; store_norm; resource_restrict_norm).
 
 Ltac resource_solver :=
-  resource_norm; try solve [store_solver | set_solver | eauto | reflexivity | congruence].
+  resource_norm;
+  try solve [store_solver | resource_store_dom_solver | set_solver | eauto | reflexivity | congruence].

@@ -72,8 +72,7 @@ Proof.
     + intros [σx [[σ0 [vx [Hσ0 [Hsteps ->]]]] Hrestrict]].
       rewrite store_restrict_insert_notin in Hrestrict by exact Hfresh.
       assert (Hid : store_restrict σ0 (world_dom (w : World)) = σ0).
-      { apply store_restrict_idemp.
-        pose proof (wfworld_store_dom w σ0 Hσ0). set_solver. }
+      { apply store_restrict_idemp. resource_solver. }
       rewrite Hid in Hrestrict.
       subst. exact Hσ0.
     + intros Hσ.
@@ -82,7 +81,7 @@ Proof.
       * exists σ, vx. repeat split; eauto.
       * rewrite store_restrict_insert_notin by exact Hfresh.
         apply store_restrict_idemp.
-        pose proof (wfworld_store_dom w σ Hσ). set_solver.
+        resource_solver.
 Qed.
 
 Lemma let_result_world_on_restrict_old
