@@ -15,19 +15,13 @@ Lemma res_models_impl_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FImpl φ ψ →
   m ⊑ m' →
   m' ⊨ FImpl φ ψ.
-Proof.
-  intros Hmodel Hle.
-  eapply res_models_kripke; eauto.
-Qed.
+Proof. hauto using res_models_kripke. Qed.
 
 Lemma res_models_and_mono (φ ψ : FormulaQ) (m m' : WfWorld) :
   m ⊨ FAnd φ ψ →
   m ⊑ m' →
   m' ⊨ FAnd φ ψ.
-Proof.
-  intros Hmodel Hle.
-  eapply res_models_kripke; eauto.
-Qed.
+Proof. hauto using res_models_kripke. Qed.
 
 Lemma res_models_and_elim_l (m : WfWorld) (φ ψ : FormulaQ) :
   m ⊨ FAnd φ ψ →
@@ -811,4 +805,3 @@ Proof.
   rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
   set_solver.
 Qed.
-

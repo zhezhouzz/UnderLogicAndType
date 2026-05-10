@@ -167,9 +167,7 @@ Lemma ty_env_agree_on_mono X Y Σ1 Σ2 :
   X ⊆ Y →
   ty_env_agree_on Y Σ1 Σ2 →
   ty_env_agree_on X Σ1 Σ2.
-Proof.
-  intros HXY Hagree z Hz. apply Hagree. apply HXY. exact Hz.
-Qed.
+Proof. unfold ty_env_agree_on. hauto. Qed.
 
 Lemma ty_env_agree_on_insert_same X Σ1 Σ2 x T :
   ty_env_agree_on (X ∖ {[x]}) Σ1 Σ2 →
@@ -215,33 +213,28 @@ Definition formula_store_equiv (φ ψ : FQ) : Prop :=
   ∀ ρ m, res_models_with_store ρ m φ ↔ res_models_with_store ρ m ψ.
 
 Lemma formula_equiv_refl φ : φ ⊣⊢ φ.
-Proof. split; intros m Hm; exact Hm. Qed.
+Proof. unfold formula_equiv, entails. hauto. Qed.
 
 Lemma formula_equiv_sym φ ψ :
   φ ⊣⊢ ψ → ψ ⊣⊢ φ.
-Proof. intros [H1 H2]. split; assumption. Qed.
+Proof. unfold formula_equiv. hauto. Qed.
 
 Lemma formula_equiv_trans φ ψ χ :
   φ ⊣⊢ ψ → ψ ⊣⊢ χ → φ ⊣⊢ χ.
-Proof.
-  intros [Hφψ Hψφ] [Hψχ Hχψ]. split; intros m Hm; eauto.
-Qed.
+Proof. unfold formula_equiv, entails. hauto. Qed.
 
 Lemma formula_store_equiv_refl φ : formula_store_equiv φ φ.
-Proof. intros ρ m; reflexivity. Qed.
+Proof. unfold formula_store_equiv. hauto. Qed.
 
 Lemma formula_store_equiv_sym φ ψ :
   formula_store_equiv φ ψ → formula_store_equiv ψ φ.
-Proof. intros H ρ m. symmetry. apply H. Qed.
+Proof. unfold formula_store_equiv. hauto. Qed.
 
 Lemma formula_store_equiv_trans φ ψ χ :
   formula_store_equiv φ ψ →
   formula_store_equiv ψ χ →
   formula_store_equiv φ χ.
-Proof.
-  intros Hφψ Hψχ ρ m.
-  transitivity (res_models_with_store ρ m ψ); [apply Hφψ | apply Hψχ].
-Qed.
+Proof. unfold formula_store_equiv. hauto. Qed.
 
 Lemma formula_store_equiv_and φ1 φ2 ψ1 ψ2 :
   formula_fv φ1 = formula_fv ψ1 →

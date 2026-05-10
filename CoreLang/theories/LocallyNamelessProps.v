@@ -14,16 +14,16 @@ Lemma lc_lam_iff_body s e :
   lc_value (vlam s e) ↔ body_tm e.
 Proof.
   split.
-  - intros H. inversion H; subst. eexists. eauto.
-  - intros [L H]. econstructor. exact H.
+  - intros H. inversion H; subst. hauto.
+  - hauto.
 Qed.
 
 Lemma lc_fix_iff_body Tf vf :
   lc_value (vfix Tf vf) ↔ body_val vf.
 Proof.
   split.
-  - intros H. inversion H; subst. eexists. eauto.
-  - intros [L H]. econstructor. exact H.
+  - intros H. inversion H; subst. hauto.
+  - hauto.
 Qed.
 
 Lemma lc_ret_iff_value v :
@@ -64,8 +64,8 @@ Lemma lc_match_iff_parts v et ef :
   lc_tm (tmatch v et ef) ↔ lc_value v ∧ lc_tm et ∧ lc_tm ef.
 Proof.
   split.
-  - inversion 1; subst; eauto.
-  - intros [Hlc_v [Hlc_t Hlc_f]]. constructor; auto.
+  - inversion 1; subst; hauto.
+  - hauto.
 Qed.
 
 Lemma close_open_var_value (v : value) (x : atom) k :

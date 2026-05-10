@@ -47,6 +47,23 @@ case where no decidable branch remains. These are better prefixes than a direct
 var_dec_set_solver.
 ```
 
+Use CoqHammer tactics, especially `hauto`, only for short structural proof
+plumbing: projecting fields out of conjunctions/records, rebuilding simple
+iff/entailment goals, or closing small existential/constructor goals after the
+important semantic rewrite has already happened.  Prefer an explicit local
+unfold before Hammer when the target is hidden behind a wrapper definition:
+
+```coq
+Proof. unfold sub_type, sub_type_under. hauto. Qed.
+Proof. unfold formula_equiv, entails. hauto. Qed.
+```
+
+Do not put `hauto` in broad solver tactics such as `my_set_solver`,
+`store_solver`, or `resource_solver`.  Those tactics are called on many small
+side conditions, and Hammer search there can quietly increase build time.  If
+`hauto` fails, first check whether a local definition or notation needs to be
+unfolded; if it still fails, keep the explicit proof script.
+
 Use `auto_apply` or `auto_eapply` when a mutual induction hypothesis has the
 same conclusion head as the goal. If several IHs have similar conclusions, name
 and apply the intended one explicitly.
