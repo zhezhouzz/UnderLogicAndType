@@ -178,6 +178,43 @@ Proof.
   - intros σx. simpl. split; intros Hσx; exact Hσx.
 Qed.
 
+Lemma let_result_world_on_restrict_domain
+    X e x (w : WfWorld) Hfresh Hresult :
+  world_dom (w : World) = X →
+  res_restrict (let_result_world_on X e x w Hfresh Hresult) (X ∪ {[x]}) =
+  let_result_world_on X e x w Hfresh Hresult.
+Proof.
+  intros Hdomw.
+  apply wfworld_ext. apply world_ext.
+  - simpl. rewrite Hdomw. set_solver.
+  - intros σx. simpl. split.
+    + intros [σfull [Hσfull Hrestrict]].
+      destruct Hσfull as [σ [vx [Hσ [Hsteps ->]]]].
+      exists σ, vx. split; [exact Hσ |].
+      split; [exact Hsteps |].
+      rewrite <- Hrestrict.
+      rewrite store_restrict_insert_fresh_union.
+      * assert (Hdomσ : dom σ = X).
+        { pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+          rewrite Hdomσ, Hdomw. reflexivity. }
+        f_equal.
+        exact (store_restrict_idemp σ X ltac:(pose proof (wfworld_store_dom w σ Hσ); set_solver)).
+      * eapply store_lookup_none_of_dom.
+        -- apply wfworld_store_dom. exact Hσ.
+        -- set_solver.
+      * set_solver.
+    + intros Hσx.
+      exists σx. split; [exact Hσx |].
+      destruct Hσx as [σ [vx [Hσ [_ ->]]]].
+      change (store_restrict (<[x := vx]> σ : gmap atom value) (X ∪ {[x]}) =
+        <[x := vx]> σ).
+      eapply (@store_restrict_idemp value (<[x := vx]> σ) (X ∪ {[x]})).
+      change (dom (<[x := vx]> σ : gmap atom value) ⊆ X ∪ {[x]}).
+      rewrite dom_insert_L.
+      rewrite (wfworld_store_dom w σ Hσ).
+      rewrite Hdomw. set_solver.
+Qed.
+
 Lemma let_result_world_on_le X e x (w : WfWorld) Hfresh Hresult :
   w ⊑ let_result_world_on X e x w Hfresh Hresult.
 Proof.

@@ -14,6 +14,53 @@ From ChoiceTyping Require Export ResultWorldBridge.
 From ChoiceTyping Require Import TLetGraph.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
+Lemma nested_tlet_result_world_source_transport
+    X e1 e2 x ν (m ntgt : WfWorld)
+    Hfresh_m Hresult_m Hfreshx_ntgtX Hresult_ntgtX Hfreshν Hresult_body :
+  X ⊆ world_dom (m : World) →
+  m ⊑ ntgt →
+  x ∉ X →
+  ν ∉ X ∪ {[x]} →
+  model_transport_on (X ∪ {[x]})
+    (let_result_world_on X e1 x m Hfresh_m Hresult_m)
+    (let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν
+      (let_result_world_on X e1 x (res_restrict ntgt X)
+        Hfreshx_ntgtX Hresult_ntgtX)
+      Hfreshν Hresult_body).
+Proof.
+  intros HXm Hmn HxX HνXx.
+  eapply model_transport_on_restrict_common.
+  - pose proof (raw_le_dom (m : World) (ntgt : World) Hmn) as Hdommn.
+    simpl. set_solver.
+  - transitivity
+      (let_result_world_on X e1 x (res_restrict ntgt X)
+        Hfreshx_ntgtX Hresult_ntgtX).
+    + apply let_result_world_on_restrict_input_le; assumption.
+    + symmetry.
+      assert (Hdom_base :
+        world_dom (let_result_world_on X e1 x (res_restrict ntgt X)
+          Hfreshx_ntgtX Hresult_ntgtX : World) = X ∪ {[x]}).
+      {
+        simpl.
+        pose proof (raw_le_dom (m : World) (ntgt : World) Hmn) as Hdommn.
+        set_solver.
+      }
+      transitivity (res_restrict
+        (let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν
+          (let_result_world_on X e1 x (res_restrict ntgt X)
+            Hfreshx_ntgtX Hresult_ntgtX)
+          Hfreshν Hresult_body)
+        (world_dom
+          (let_result_world_on X e1 x (res_restrict ntgt X)
+            Hfreshx_ntgtX Hresult_ntgtX : World))).
+      * f_equal. symmetry. exact Hdom_base.
+      * exact (let_result_world_on_restrict
+          (X ∪ {[x]}) (e2 ^^ x) ν
+          (let_result_world_on X e1 x (res_restrict ntgt X)
+            Hfreshx_ntgtX Hresult_ntgtX)
+          Hfreshν Hresult_body).
+Qed.
+
 Lemma nested_tlet_result_world_target_transport
     X e1 e2 x ν (ntgt : WfWorld)
     Hfreshx Hresult1 Hfreshν Hresult2 :
