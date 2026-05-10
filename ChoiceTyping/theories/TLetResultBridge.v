@@ -14,6 +14,94 @@ From ChoiceTyping Require Export ResultWorldBridge.
 From ChoiceTyping Require Import TLetGraph.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
+Lemma nested_tlet_result_world_target_transport
+    X e1 e2 x ν (ntgt : WfWorld)
+    Hfreshx Hresult1 Hfreshν Hresult2 :
+  x ∉ X ∪ fv_tm e2 ∪ {[ν]} →
+  fv_tm (tlete e1 e2) ⊆ X →
+  ν ∉ X →
+  X ⊆ world_dom (ntgt : World) →
+  world_store_closed_on X ntgt →
+  lc_tm (tlete e1 e2) →
+  ntgt ⊨ FExprResultOn X (tlete e1 e2) ν →
+  model_transport_on (X ∪ {[ν]})
+    (let_result_world_on (X ∪ {[x]}) (e2 ^^ x) ν
+      (let_result_world_on X e1 x (res_restrict ntgt X) Hfreshx Hresult1)
+      Hfreshν Hresult2)
+    ntgt.
+Proof.
+  intros Hx Hfv HνX HXntgt Hclosed Hlc Htarget.
+  destruct (proj1 (lc_lete_iff_body e1 e2) Hlc) as [Hlce1 Hbodye2].
+  pose proof (proj1 (FExprResultOn_iff_let_result_world_on
+    X (tlete e1 e2) ν ntgt Hfv Hlc HνX HXntgt Hclosed) Htarget)
+    as [Hfresh_tlet [Hresult_tlet Heq_tgt]].
+  assert (Hνntgt : ν ∈ world_dom (ntgt : World)).
+  {
+    pose proof (FExprResultOn_scoped_dom X (tlete e1 e2) ν ntgt
+      (res_models_with_store_fuel_scoped _ _ _ _ Htarget)) as Hscoped.
+    set_solver.
+  }
+  eapply model_transport_on_restrict_common.
+  - simpl. intros z Hz.
+    apply elem_of_union in Hz as [HzX | Hzν].
+    + apply elem_of_intersection. split; [set_solver | apply HXntgt; exact HzX].
+    + apply elem_of_singleton in Hzν. subst z.
+      apply elem_of_intersection. split; [set_solver | exact Hνntgt].
+  - transitivity (let_result_world_on X (tlete e1 e2) ν
+      (res_restrict ntgt X) Hfresh_tlet Hresult_tlet).
+    + replace (X ∪ {[ν]}) with
+        (world_dom (res_restrict ntgt X : World) ∪ {[ν]}).
+      2:{ simpl. set_solver. }
+      eapply let_result_world_on_tlete_decompose.
+      * exact Hfv.
+      * exact Hx.
+      * exact Hfresh_tlet.
+      * simpl. set_solver.
+      * intros σ Hσ.
+        destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+        rewrite <- Hrestrict.
+        rewrite store_restrict_restrict.
+        replace (X ∩ X) with X by set_solver.
+        exact (proj1 (Hclosed σ0 Hσ0)).
+      * intros σ Hσ.
+        destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+        rewrite <- Hrestrict.
+        rewrite store_restrict_restrict.
+        replace (X ∩ X) with X by set_solver.
+        exact (proj2 (Hclosed σ0 Hσ0)).
+      * intros σ vx Hσ Hsteps.
+        assert (Hclosed_input : closed_tm (subst_map (store_restrict σ X) e1)).
+        {
+          apply msubst_closed_tm.
+          - destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+            rewrite <- Hrestrict.
+            rewrite store_restrict_restrict.
+            replace (X ∩ X) with X by set_solver.
+            exact (Hclosed σ0 Hσ0).
+          - exact Hlce1.
+          - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
+            rewrite store_restrict_dom.
+            pose proof (wfworld_store_dom (res_restrict ntgt X) σ Hσ) as Hdomσ.
+            simpl in Hdomσ. set_solver.
+        }
+        apply steps_closed_result with (e := subst_map (store_restrict σ X) e1);
+          assumption.
+      * intros σ Hσ.
+        apply body_tm_msubst.
+        -- destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+           rewrite <- Hrestrict.
+           rewrite store_restrict_restrict.
+           replace (X ∩ X) with X by set_solver.
+           exact (proj1 (Hclosed σ0 Hσ0)).
+        -- destruct Hσ as [σ0 [Hσ0 Hrestrict]].
+           rewrite <- Hrestrict.
+           rewrite store_restrict_restrict.
+           replace (X ∩ X) with X by set_solver.
+           exact (proj2 (Hclosed σ0 Hσ0)).
+        -- exact Hbodye2.
+    + symmetry. exact Heq_tgt.
+Qed.
+
 (** High-risk tlet expression-result bridge.
 
     This is the resource-level version of the operational identity
