@@ -5,13 +5,25 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetExprResult.
+From ChoiceTyping Require Import ResultWorldBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
+
+Lemma denot_ty_on_expr_result_model_bridge_fresh_bind
+    Xsrc Xtgt Σ τ esrc etgt x Tx (msrc mtgt : WfWorld) :
+  basic_choice_ty (dom Σ) τ →
+  x ∉ Xtgt ∪ fv_cty τ →
+  expr_result_model_bridge Xsrc esrc Xtgt etgt msrc mtgt →
+  msrc ⊨ denot_ty_on Xsrc (<[x := Tx]> Σ) τ esrc →
+  mtgt ⊨ denot_ty_on Xtgt Σ τ etgt.
+Proof.
+Admitted.
 
 Lemma denot_ty_on_let_result_body_to_let
     X Σ τ e1 e2 Tx (L : aset) (m : WfWorld) :
   basic_choice_ty (dom Σ) τ →
   fv_tm (tlete e1 e2) ⊆ X →
   X ⊆ world_dom (m : World) →
+  lc_tm (tlete e1 e2) →
   (∀ σ, (m : World) σ → ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx) →
   (∀ σ, (m : World) σ → closed_env (store_restrict σ X)) →
   (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
@@ -66,7 +78,32 @@ Lemma denot_ty_on_let_result_body_to_let
           denot_ty_on (X ∪ {[x]}) (<[x := Tx]> Σ) τ (e2 ^^ x)) →
   m ⊨ denot_ty_on X Σ τ (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hbasic Hfv HX Hlc Hresult Hclosed Hlc_env Hresult_closed Hbody
+    Htyped Hbasic_world Hbody_total Hbody_regular Hbody_model.
+  set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ ∪ fv_tm e2)).
+  assert (Hxfresh : x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ ∪ fv_tm e2)
+    by (subst x; apply fresh_for_not_in).
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
+  assert (Hx : x ∉ X ∪ fv_cty τ ∪ fv_tm e2) by set_solver.
+  eapply (denot_ty_on_expr_result_model_bridge_fresh_bind
+    (X ∪ {[x]}) X Σ τ (e2 ^^ x) (tlete e1 e2) x Tx
+    (let_result_world_on X e1 x m Hfresh Hresult) m).
+  - exact Hbasic.
+  - set_solver.
+  - eapply expr_result_model_bridge_tlete.
+    + set_solver.
+    + exact Hfv.
+    + exact HX.
+    + intros σ Hσ. split; [apply Hclosed | apply Hlc_env]; exact Hσ.
+    + exact Hlc.
+    + exact Hclosed.
+    + exact Hlc_env.
+    + exact Hresult_closed.
+    + exact Hbody.
+    + eapply Hbody_total; eauto; try reflexivity.
+  - eapply Hbody_model; eauto; try reflexivity.
+Qed.
 
 Lemma denot_tlet_formula_at_world_given_bind_total
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
@@ -129,6 +166,8 @@ Proof.
   - apply (basic_world_formula_dom_subset (erase_ctx_under Σ Γ)
       (dom (erase_ctx_under Σ Γ))).
     apply denot_ctx_in_env_erased_basic. exact Hm.
+  - exact (basic_typing_regular_tm
+      (erase_ctx_under Σ Γ) (tlete e1 e2) (erase_ty τ2) (proj2 Hwflet)).
   - exact Hresult.
   - intros σ Hσ.
     eapply basic_world_formula_store_restrict_closed_env.
