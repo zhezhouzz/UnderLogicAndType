@@ -143,6 +143,41 @@ Proof.
         -- exact HxX.
 Qed.
 
+Lemma let_result_world_on_restrict_input_le
+    X e x (m n : WfWorld)
+    Hfresh_m Hresult_m Hfresh_nX Hresult_nX :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  x ∉ X →
+  res_restrict (let_result_world_on X e x m Hfresh_m Hresult_m) (X ∪ {[x]}) =
+  let_result_world_on X e x (res_restrict n X) Hfresh_nX Hresult_nX.
+Proof.
+  intros HXm Hle HxX.
+  assert (Hfresh_mX : x ∉ world_dom (res_restrict m X : World)).
+  { simpl. set_solver. }
+  assert (Hresult_mX :
+    ∀ σ, (res_restrict m X : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e →* tret vx).
+  {
+    intros σ Hσ.
+    destruct Hσ as [σm [Hσm Hrestrict]].
+    destruct (Hresult_m σm Hσm) as [vx Hsteps].
+    exists vx.
+    rewrite <- Hrestrict.
+    rewrite store_restrict_restrict.
+    replace (X ∩ X) with X by set_solver.
+    exact Hsteps.
+  }
+  rewrite (let_result_world_on_restrict_input
+    X e x m Hfresh_m Hresult_m Hfresh_mX Hresult_mX HXm HxX).
+  assert (Hbase : res_restrict m X = res_restrict n X).
+  { apply res_restrict_le_eq; [exact Hle | exact HXm]. }
+  destruct Hbase.
+  apply wfworld_ext. apply world_ext.
+  - reflexivity.
+  - intros σx. simpl. split; intros Hσx; exact Hσx.
+Qed.
+
 Lemma let_result_world_on_le X e x (w : WfWorld) Hfresh Hresult :
   w ⊑ let_result_world_on X e x w Hfresh Hresult.
 Proof.
