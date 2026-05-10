@@ -13,6 +13,7 @@ In `ChoiceTyping/theories/LetResultWorld.v`:
 
 - `let_result_world_on_member`
 - `let_result_world_on_elim`
+- `let_result_world_on_dom`
 - `let_result_world_on_restrict`
 - `let_result_world_on_restrict_old`
 - `let_result_world_on_restrict_input`
@@ -30,6 +31,15 @@ coordinate for an expression.  The most important one is
 
 In `ChoiceTyping/theories/ResultWorldBridge.v`:
 
+- `world_store_closed_on_restrict_store_closed`
+- `world_store_closed_on_restrict_closed_env`
+- `world_store_closed_on_restrict_lc_env`
+- `world_store_closed_on_restrict_store_restrict_closed`
+- `world_store_closed_on_restrict_store_restrict_closed_env`
+- `world_store_closed_on_restrict_store_restrict_lc_env`
+- `msubst_closed_tm_of_restrict_world`
+- `steps_closed_result_of_restrict_world`
+- `body_tm_msubst_restrict_world`
 - `FExprResultOn_iff_let_result_world_on`
 - `let_result_world_on_models_FExprResultOn`
 - `fresh_forall_expr_result_to_let_result_world_renamed`
@@ -44,9 +54,16 @@ result world.  This is the cleanest part of the current tlet infrastructure.
 
 ### Tlet expression-result/fiber facts
 
-In `ChoiceTyping/theories/TLetExprResult.v`:
+In `ChoiceType/theories/DenotationFormula.v`:
 
 - `fib_vars_obligation_step_commute`
+- `fib_vars_obligation_insert_fresh_to_fib` is still admitted, but has been
+  moved to the generic fiber layer.  The current statement is missing a
+  scopedness premise: an obligation alone does not prove the base model needed
+  for `FFib x p`.
+
+In `ChoiceTyping/theories/TLetExprResult.v`:
+
 - `expr_result_store_from_body_xfiber`
 - `expr_result_in_world_tlete_xfiber_sound`
 - `expr_result_in_world_tlete_xfiber_complete`
@@ -60,12 +77,6 @@ In `ChoiceTyping/theories/TLetExprResult.v`:
 
 These lemmas show how the body-side result formula for `e2 ^^ x` can be lifted
 through the `x` fiber into the whole-let result formula for `tlete e1 e2`.
-
-One generic fiber lemma remains admitted here:
-
-- `fib_vars_obligation_insert_fresh_to_fib`
-
-It should eventually move to the general `fib_vars` library.
 
 ### High-risk expression-result bridge
 

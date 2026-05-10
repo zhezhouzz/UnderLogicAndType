@@ -41,6 +41,11 @@ Definition let_result_world_on
   exist _ (let_result_raw_world_on X e x w)
     (let_result_raw_world_on_wf X e x w Hfresh Hresult).
 
+Lemma let_result_world_on_dom X e x (w : WfWorld) Hfresh Hresult :
+  world_dom (let_result_world_on X e x w Hfresh Hresult : World) =
+  world_dom (w : World) ∪ {[x]}.
+Proof. reflexivity. Qed.
+
 Lemma let_result_world_on_member X e x (w : WfWorld) Hfresh Hresult σ vx :
   (w : World) σ →
   subst_map (store_restrict σ X) e →* tret vx →
@@ -185,34 +190,24 @@ Lemma let_result_world_on_restrict_domain
   let_result_world_on X e x w Hfresh Hresult.
 Proof.
   intros Hdomw.
-  apply wfworld_ext. apply world_ext.
-  - simpl. rewrite Hdomw. set_solver.
-  - intros σx. simpl. split.
-    + intros [σfull [Hσfull Hrestrict]].
-      destruct Hσfull as [σ [vx [Hσ [Hsteps ->]]]].
-      exists σ, vx. split; [exact Hσ |].
-      split; [exact Hsteps |].
-      rewrite <- Hrestrict.
-      rewrite store_restrict_insert_fresh_union.
-      * assert (Hdomσ : dom σ = X).
-        { pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
-          rewrite Hdomσ, Hdomw. reflexivity. }
-        f_equal.
-        exact (store_restrict_idemp σ X ltac:(pose proof (wfworld_store_dom w σ Hσ); set_solver)).
-      * eapply store_lookup_none_of_dom.
-        -- apply wfworld_store_dom. exact Hσ.
-        -- set_solver.
-      * set_solver.
-    + intros Hσx.
-      exists σx. split; [exact Hσx |].
-      destruct Hσx as [σ [vx [Hσ [_ ->]]]].
-      change (store_restrict (<[x := vx]> σ : gmap atom value) (X ∪ {[x]}) =
-        <[x := vx]> σ).
-      eapply (@store_restrict_idemp value (<[x := vx]> σ) (X ∪ {[x]})).
-      change (dom (<[x := vx]> σ : gmap atom value) ⊆ X ∪ {[x]}).
-      rewrite dom_insert_L.
-      rewrite (wfworld_store_dom w σ Hσ).
-      rewrite Hdomw. set_solver.
+  replace (X ∪ {[x]}) with
+    (world_dom (let_result_world_on X e x w Hfresh Hresult : World)).
+  - apply wfworld_ext. apply world_ext.
+    + simpl. set_solver.
+    + intros σx. simpl. split.
+      * intros [σfull [Hσfull Hrestrict]].
+        rewrite store_restrict_idemp in Hrestrict.
+        -- subst σx. exact Hσfull.
+        -- pose proof (wfworld_store_dom
+             (let_result_world_on X e x w Hfresh Hresult) σfull Hσfull) as Hdomσ.
+           set_solver.
+      * intros Hσx.
+        exists σx. split; [exact Hσx |].
+        apply store_restrict_idemp.
+        pose proof (wfworld_store_dom
+          (let_result_world_on X e x w Hfresh Hresult) σx Hσx) as Hdomσ.
+        set_solver.
+  - rewrite let_result_world_on_dom, Hdomw. reflexivity.
 Qed.
 
 Lemma let_result_world_on_le X e x (w : WfWorld) Hfresh Hresult :

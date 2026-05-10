@@ -28,6 +28,120 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps.
 Definition world_store_closed_on (X : aset) (m : WfWorld) : Prop :=
   ∀ σ, (m : World) σ → store_closed (store_restrict σ X).
 
+Lemma world_store_closed_on_restrict_store_closed X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  store_closed σ.
+Proof.
+  intros Hclosed [σ0 [Hσ0 <-]].
+  exact (Hclosed σ0 Hσ0).
+Qed.
+
+Lemma world_store_closed_on_restrict_closed_env X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  closed_env σ.
+Proof.
+  intros Hclosed Hσ.
+  exact (proj1 (world_store_closed_on_restrict_store_closed X m σ Hclosed Hσ)).
+Qed.
+
+Lemma world_store_closed_on_restrict_lc_env X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  lc_env σ.
+Proof.
+  intros Hclosed Hσ.
+  exact (proj2 (world_store_closed_on_restrict_store_closed X m σ Hclosed Hσ)).
+Qed.
+
+Lemma world_store_closed_on_restrict_store_restrict_closed X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  store_closed (store_restrict σ X).
+Proof.
+  intros Hclosed Hσ.
+  apply store_closed_restrict.
+  eapply world_store_closed_on_restrict_store_closed; eauto.
+Qed.
+
+Lemma world_store_closed_on_restrict_store_restrict_closed_env X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  closed_env (store_restrict σ X).
+Proof.
+  intros Hclosed Hσ.
+  exact (proj1 (world_store_closed_on_restrict_store_restrict_closed X m σ Hclosed Hσ)).
+Qed.
+
+Lemma world_store_closed_on_restrict_store_restrict_lc_env X (m : WfWorld) σ :
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  lc_env (store_restrict σ X).
+Proof.
+  intros Hclosed Hσ.
+  exact (proj2 (world_store_closed_on_restrict_store_restrict_closed X m σ Hclosed Hσ)).
+Qed.
+
+Lemma msubst_closed_tm_of_restrict_world X e (m : WfWorld) σ :
+  X ⊆ world_dom (m : World) →
+  fv_tm e ⊆ X →
+  lc_tm e →
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  closed_tm (subst_map (store_restrict σ X) e).
+Proof.
+  intros HXm Hfv Hlc Hclosed Hσ.
+  assert (Hdomσ : dom σ ⊆ X).
+  {
+    pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
+    simpl in Hdom. set_solver.
+  }
+  replace (store_restrict σ X) with σ.
+  - apply msubst_closed_tm.
+    + eapply world_store_closed_on_restrict_store_closed; eauto.
+    + exact Hlc.
+    + change (fv_tm e ⊆ dom σ).
+      pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
+      simpl in Hdom. rewrite Hdom. set_solver.
+  - symmetry. apply store_restrict_idemp. exact Hdomσ.
+Qed.
+
+Lemma steps_closed_result_of_restrict_world X e (m : WfWorld) σ v :
+  X ⊆ world_dom (m : World) →
+  fv_tm e ⊆ X →
+  lc_tm e →
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  subst_map (store_restrict σ X) e →* tret v →
+  stale v = ∅ ∧ is_lc v.
+Proof.
+  intros HXm Hfv Hlc Hclosed Hσ Hsteps.
+  eapply steps_closed_result.
+  - eapply msubst_closed_tm_of_restrict_world; eauto.
+  - exact Hsteps.
+Qed.
+
+Lemma body_tm_msubst_restrict_world X e (m : WfWorld) σ :
+  body_tm e →
+  world_store_closed_on X m →
+  (res_restrict m X : World) σ →
+  body_tm (subst_map (store_restrict σ X) e).
+Proof.
+  intros Hbody Hclosed Hσ.
+  assert (Hdomσ : dom σ ⊆ X).
+  {
+    pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
+    simpl in Hdom. set_solver.
+  }
+  replace (store_restrict σ X) with σ.
+  - apply body_tm_msubst.
+    + eapply world_store_closed_on_restrict_closed_env; eauto.
+    + eapply world_store_closed_on_restrict_lc_env; eauto.
+    + exact Hbody.
+  - symmetry. apply store_restrict_idemp. exact Hdomσ.
+Qed.
+
 Lemma world_store_closed_on_le X (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
   m ⊑ n →
@@ -915,22 +1029,14 @@ Proof.
                  set_solver.
            ++ rewrite <- Hrestrict.
               by apply store_restrict_union_singleton_insert_from_projection.
-      * intros [σ [vx [Hσ [Hsteps ->]]]].
-        destruct Hσ as [σw [Hσw HrestrictX]].
-        assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e)).
-        {
-          apply msubst_closed_tm.
-          - exact (world_store_closed_on_restrict X X m ltac:(set_solver) Hclosed σ
-              ltac:(exists σw; split; eauto)).
-          - exact Hlc.
-          - change (fv_tm e ⊆ dom (store_restrict σ X)).
-            rewrite store_restrict_dom.
-            pose proof (wfworld_store_dom (res_restrict m X) σ
-              ltac:(exists σw; split; eauto)) as Hdomσ.
-            simpl in Hdomσ. set_solver.
-        }
-        pose proof (steps_closed_result _ _ Hinput_closed Hsteps)
-          as [Hvx_closed Hvx_lc].
+	      * intros [σ [vx [Hσ [Hsteps ->]]]].
+	        destruct Hσ as [σw [Hσw HrestrictX]].
+	        assert (Hσ_restrict : (res_restrict m X : World) σ).
+	        { exists σw. split; eauto. }
+	        assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e)).
+	        { eapply msubst_closed_tm_of_restrict_world; eauto. }
+	        pose proof (steps_closed_result _ _ Hinput_closed Hsteps)
+	          as [Hvx_closed Hvx_lc].
         assert (Hstore :
           expr_result_in_store
             (store_restrict ((∅ : Store) ∪ store_restrict σw (list_to_set (elements X))) X)

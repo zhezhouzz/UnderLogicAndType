@@ -104,48 +104,27 @@ Proof.
       * exact Hx.
       * exact Hfresh_tlet.
       * simpl. set_solver.
-      * intros σ Hσ.
-        destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-        rewrite <- Hrestrict.
-        rewrite store_restrict_restrict.
-        replace (X ∩ X) with X by set_solver.
-        exact (proj1 (Hclosed σ0 Hσ0)).
-      * intros σ Hσ.
-        destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-        rewrite <- Hrestrict.
-        rewrite store_restrict_restrict.
-        replace (X ∩ X) with X by set_solver.
-        exact (proj2 (Hclosed σ0 Hσ0)).
-      * intros σ vx Hσ Hsteps.
-        assert (Hclosed_input : closed_tm (subst_map (store_restrict σ X) e1)).
-        {
-          apply msubst_closed_tm.
-          - destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-            rewrite <- Hrestrict.
-            rewrite store_restrict_restrict.
-            replace (X ∩ X) with X by set_solver.
-            exact (Hclosed σ0 Hσ0).
-          - exact Hlce1.
-          - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
-            rewrite store_restrict_dom.
-            pose proof (wfworld_store_dom (res_restrict ntgt X) σ Hσ) as Hdomσ.
-            simpl in Hdomσ. set_solver.
-        }
-        apply steps_closed_result with (e := subst_map (store_restrict σ X) e1);
-          assumption.
-      * intros σ Hσ.
-        apply body_tm_msubst.
-        -- destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-           rewrite <- Hrestrict.
-           rewrite store_restrict_restrict.
-           replace (X ∩ X) with X by set_solver.
-           exact (proj1 (Hclosed σ0 Hσ0)).
-        -- destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-           rewrite <- Hrestrict.
-           rewrite store_restrict_restrict.
-           replace (X ∩ X) with X by set_solver.
-           exact (proj2 (Hclosed σ0 Hσ0)).
-        -- exact Hbodye2.
+	      * intros σ Hσ.
+	        eapply world_store_closed_on_restrict_store_restrict_closed_env.
+	        -- exact Hclosed.
+	        -- exact Hσ.
+	      * intros σ Hσ.
+	        eapply world_store_closed_on_restrict_store_restrict_lc_env.
+	        -- exact Hclosed.
+	        -- exact Hσ.
+	      * intros σ vx Hσ Hsteps.
+	        eapply (steps_closed_result_of_restrict_world X e1 ntgt σ vx).
+	        -- exact HXntgt.
+	        -- intros z Hz. apply Hfv. simpl. set_solver.
+	        -- exact Hlce1.
+	        -- exact Hclosed.
+	        -- exact Hσ.
+	        -- exact Hsteps.
+	      * intros σ Hσ.
+	        eapply body_tm_msubst_restrict_world.
+	        -- exact Hbodye2.
+	        -- exact Hclosed.
+	        -- exact Hσ.
     + symmetry. exact Heq_tgt.
 Qed.
 
@@ -175,25 +154,15 @@ Proof.
   - apply let_result_world_on_store_closed_on_insert.
     + assert (HxX : x ∉ X) by set_solver.
       exact HxX.
-    + eapply world_store_closed_on_restrict; [set_solver | exact Hclosed].
-    + intros σ vx Hσ Hsteps.
-      assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e1)).
-      {
-        apply msubst_closed_tm.
-        - destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-          rewrite <- Hrestrict.
-          rewrite store_restrict_restrict.
-          replace (X ∩ X) with X by set_solver.
-          exact (Hclosed σ0 Hσ0).
-        - exact Hlce1.
-        - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
-          rewrite store_restrict_dom.
-          pose proof (wfworld_store_dom (res_restrict ntgt X) σ Hσ) as Hdomσ.
-          simpl in Hdomσ.
-          simpl in Hfv. set_solver.
-      }
-      apply steps_closed_result with (e := subst_map (store_restrict σ X) e1);
-        assumption.
+	    + eapply world_store_closed_on_restrict; [set_solver | exact Hclosed].
+	    + intros σ vx Hσ Hsteps.
+	      eapply (steps_closed_result_of_restrict_world X e1 ntgt σ vx).
+	      * exact HXntgt.
+	      * intros z Hz. apply Hfv. simpl. set_solver.
+	      * exact Hlce1.
+	      * exact Hclosed.
+	      * exact Hσ.
+	      * exact Hsteps.
 Qed.
 
 (** High-risk tlet expression-result bridge.
