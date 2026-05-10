@@ -11,6 +11,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export ResultWorldBridge.
+From ChoiceTyping Require Import ResultWorldFreshForall.
 From ChoiceTyping Require Import TLetGraph.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
