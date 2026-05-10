@@ -844,7 +844,15 @@ Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
 
     The disjointness premise for [Xsrc ∖ Xtgt] says that source-only coordinates
     are proof auxiliaries, not coordinates already present in the target world.
-    For tlet this is the usual fresh-bound-variable condition [x ∉ dom target]. *)
+    For tlet this is the usual fresh-bound-variable condition [x ∉ dom target].
+
+    The first transport component replaces a too-strong old requirement
+    [msrc ⊑ nsrc].  In the tlet proof [nsrc] is a graph world carrying the
+    final result coordinate [ν], while [msrc] is the ordinary let-result world.
+    They only need to agree on the variables that the source continuation can
+    observe, namely [Xsrc]; requiring a full domain restriction would
+    incorrectly force graph witnesses to preserve target coordinates that are
+    outside the expression-result fiber. *)
 Definition expr_result_model_bridge
     (Xsrc : aset) (esrc : tm)
     (Xtgt : aset) (etgt : tm)
@@ -856,7 +864,7 @@ Definition expr_result_model_bridge
     mtgt ⊑ ntgt →
     ntgt ⊨ FExprResultOn Xtgt etgt ν →
     ∃ nsrc,
-      msrc ⊑ nsrc ∧
+      model_transport_on Xsrc msrc nsrc ∧
       nsrc ⊨ FExprResultOn Xsrc esrc ν ∧
       model_transport_on (Xtgt ∪ {[ν]}) nsrc ntgt.
 

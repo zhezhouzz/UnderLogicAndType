@@ -45,5 +45,134 @@ Lemma expr_result_model_bridge_tlete
     (let_result_world_on X e1 x m Hfresh Hresult)
     m.
 Proof.
-Admitted.
+  intros Hx Hfv HXm Hclosed_m Hlc Hbody_total_future.
+  unfold expr_result_model_bridge.
+  intros ν ntgt Hνfresh Hsrc_aux_fresh Hνm Hmntgt Htarget.
+  assert (HνX : ν ∉ X) by set_solver.
+  assert (HxX : x ∉ X) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  assert (Hxν : x ≠ ν) by set_solver.
+  assert (HXntgt : X ⊆ world_dom (ntgt : World)).
+  { pose proof (raw_le_dom (m : World) (ntgt : World) Hmntgt) as Hdom.
+    set_solver. }
+  assert (Hclosed_ntgt : world_store_closed_on X ntgt).
+  {
+    eapply (world_store_closed_on_le X m ntgt).
+    - exact HXm.
+    - exact Hmntgt.
+    - exact Hclosed_m.
+  }
+  destruct (proj1 (lc_lete_iff_body e1 e2) Hlc) as [Hlce1 Hbodye2].
 
+  pose proof (proj1 (FExprResultOn_iff_let_result_world_on
+    X (tlete e1 e2) ν ntgt Hfv Hlc HνX HXntgt Hclosed_ntgt) Htarget)
+    as [Hfresh_tlet [Hresult_tlet Heq_tgt]].
+
+  set (ntgtX := res_restrict ntgt X).
+  assert (Hfreshx_ntgt : x ∉ world_dom (ntgt : World)).
+  {
+    assert (Hxsrc : x ∈ (X ∪ {[x]}) ∖ X) by set_solver.
+    unfold disjoint in Hsrc_aux_fresh.
+    specialize (Hsrc_aux_fresh x).
+    set_solver.
+  }
+  assert (Hfreshx_ntgtX : x ∉ world_dom (ntgtX : World)).
+  { subst ntgtX. simpl. set_solver. }
+
+  assert (Hresult_ntgt_e1 :
+    ∀ σ, (ntgt : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx).
+  {
+    intros σ Hσ.
+    assert (HσX : (ntgtX : World) (store_restrict σ X)).
+    { subst ntgtX. exists σ. split; [exact Hσ | reflexivity]. }
+    destruct (Hresult_tlet (store_restrict σ X) HσX) as [v Hsteps_tlet].
+    rewrite store_restrict_restrict in Hsteps_tlet.
+    replace (X ∩ X) with X in Hsteps_tlet by set_solver.
+    change (subst_map (store_restrict σ X) (tlete e1 e2))
+      with (m{store_restrict σ X} (tlete e1 e2)) in Hsteps_tlet.
+    rewrite msubst_lete in Hsteps_tlet.
+    destruct (reduction_lete
+      (m{store_restrict σ X} e1) (m{store_restrict σ X} e2) v Hsteps_tlet)
+      as [vx [Hsteps1 _]].
+    exists vx. exact Hsteps1.
+  }
+
+  assert (Hresult_ntgtX_e1 :
+    ∀ σ, (ntgtX : World) σ →
+      ∃ vx, subst_map (store_restrict σ X) e1 →* tret vx).
+  {
+    intros σ Hσ.
+    destruct (Hresult_tlet σ Hσ) as [v Hsteps_tlet].
+    change (subst_map (store_restrict σ X) (tlete e1 e2))
+      with (m{store_restrict σ X} (tlete e1 e2)) in Hsteps_tlet.
+    rewrite msubst_lete in Hsteps_tlet.
+    destruct (reduction_lete
+      (m{store_restrict σ X} e1) (m{store_restrict σ X} e2) v Hsteps_tlet)
+      as [vx [Hsteps1 _]].
+    exists vx. exact Hsteps1.
+  }
+
+  set (w1 := let_result_world_on X e1 x ntgtX Hfreshx_ntgtX Hresult_ntgtX_e1).
+  assert (Hfreshν_w1 : ν ∉ world_dom (w1 : World)).
+  { subst w1 ntgtX. simpl. set_solver. }
+
+  assert (Hbody_total_ntgt :
+    expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+      (let_result_world_on X e1 x ntgt Hfreshx_ntgt Hresult_ntgt_e1)).
+  { eapply Hbody_total_future; eauto. }
+
+  assert (Hresult_body :
+    ∀ σx, (w1 : World) σx →
+      ∃ v, subst_map (store_restrict σx (X ∪ {[x]})) (e2 ^^ x) →* tret v).
+  {
+    intros σx Hσx.
+    destruct (let_result_world_on_elim X e1 x ntgtX Hfreshx_ntgtX
+      Hresult_ntgtX_e1 σx Hσx) as [σX [vx [HσX [Hsteps1 ->]]]].
+    destruct HσX as [σ [Hσ Hσ_restrict]].
+    pose proof (let_result_world_on_member X e1 x ntgt Hfreshx_ntgt
+      Hresult_ntgt_e1 σ vx Hσ) as Hσx_ntgt.
+    assert (Hsteps1_full : subst_map (store_restrict σ X) e1 →* tret vx).
+    { rewrite <- Hσ_restrict in Hsteps1.
+      rewrite store_restrict_restrict in Hsteps1.
+      replace (X ∩ X) with X in Hsteps1 by set_solver.
+      exact Hsteps1. }
+    specialize (Hσx_ntgt Hsteps1_full).
+    destruct Hbody_total_ntgt as [_ Htotal_body].
+    destruct (Htotal_body (<[x := vx]> σ) Hσx_ntgt) as [v Hsteps_body].
+    exists v.
+    assert (HσX_proj :
+      store_restrict (<[x := vx]> σX) (X ∪ {[x]}) = <[x := vx]> σX).
+    {
+      rewrite <- Hσ_restrict.
+      rewrite store_restrict_insert_fresh_union.
+      - rewrite store_restrict_restrict.
+        replace (X ∩ X) with X by set_solver.
+        reflexivity.
+      - eapply store_lookup_none_of_dom.
+        + rewrite store_restrict_dom.
+          pose proof (wfworld_store_dom ntgt σ Hσ) as Hdomσ.
+          set_solver.
+        + set_solver.
+      - exact HxX.
+    }
+    assert (Hσ_proj :
+      store_restrict (<[x := vx]> σ) (X ∪ {[x]}) = <[x := vx]> σX).
+    {
+      rewrite store_restrict_insert_fresh_union.
+      - rewrite Hσ_restrict. reflexivity.
+      - eapply store_lookup_none_of_dom.
+        + apply wfworld_store_dom. exact Hσ.
+        + exact Hfreshx_ntgt.
+      - exact HxX.
+    }
+    rewrite HσX_proj, <- Hσ_proj.
+    exact Hsteps_body.
+  }
+
+  (** At this point the core paired-totality construction has been checked:
+      the target whole-let exact result atom plus future body totality produces
+      a body-result world over the projected let-result resource.  The remaining
+      work is resource transport bookkeeping between this world, the source
+      continuation scope, and the target [X ∪ {ν}] scope. *)
+Admitted.
