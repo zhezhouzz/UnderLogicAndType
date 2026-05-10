@@ -6,7 +6,7 @@
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
-From ChoiceTyping Require Export TLetExprResult.
+From ChoiceTyping Require Export TLetExprResult RegularDenotation.
 From ChoiceTyping Require Import Naming TLetResultBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -185,19 +185,13 @@ Qed.
 Lemma denot_tlet_total_at_world_split
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
     (m : WfWorld) :
-  choice_typing_basic Σ Γ e1 τ1 →
-  choice_typing_basic Σ Γ (tlete e1 e2) τ2 →
-  (∀ x, x ∉ L →
-    choice_typing_basic Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) →
-  ctx_nonempty_under Σ Γ →
-  (∀ x, x ∉ L →
-    ctx_nonempty_under Σ (CtxComma Γ (CtxBind x τ1))) →
+  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
+  erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_in_ctx_under Σ Γ τ1 e1 m →
+  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
   (∀ x, x ∉ L →
-    entails_total (denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)))
-      (denot_ty_total_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))) →
-  denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
+    total_model_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
+  denot_ty_total_model_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Admitted.
 
 Lemma denot_tlet_semantic

@@ -66,6 +66,7 @@ ChoiceTyping/theories/WellFormed.v
 ChoiceTyping/theories/Auxiliary.v
 ChoiceTyping/theories/PrimOpContext.v
 ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/RegularDenotation.v
 ChoiceTyping/theories/LetResultWorld.v
 ChoiceTyping/theories/Naming.v
 ChoiceTyping/theories/SoundnessCommon.v
