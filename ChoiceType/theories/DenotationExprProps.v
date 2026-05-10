@@ -5,7 +5,7 @@
 From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
   OperationalProps.
-From ChoiceType Require Export DenotationFormula.
+From ChoiceType Require Export DenotationResultBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Local Notation FQ := FormulaQ.
