@@ -16,6 +16,7 @@ ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/Resource.v
+ChoiceAlgebra/theories/ResourceTactics.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 ChoiceAlgebra/examples/ResourceExamples.v
 
