@@ -112,30 +112,6 @@ Proof.
   exact Hle.
 Qed.
 
-Lemma store_restrict_insert_fresh_union_for_let_result
-    (σ : Store) (X : aset) (x : atom) (v : value) :
-  σ !! x = None →
-  x ∉ X →
-  store_restrict (<[x := v]> σ) (X ∪ {[x]}) =
-  <[x := v]> (store_restrict σ X).
-Proof.
-  intros Hx_none HxX.
-  rewrite store_restrict_insert_in by set_solver.
-  f_equal.
-  apply (map_eq (M := gmap atom)). intros z.
-  change ((store_restrict σ (X ∪ {[x]}) : Store) !! z =
-    (store_restrict σ X : Store) !! z).
-  rewrite (@store_restrict_lookup value σ (X ∪ {[x]}) z) at 1.
-  rewrite (@store_restrict_lookup value σ X z) at 1.
-  destruct (decide (z = x)) as [->|Hzx].
-  - rewrite decide_True by set_solver.
-    rewrite decide_False by exact HxX.
-    exact Hx_none.
-  - destruct (decide (z ∈ X)) as [HzX|HzX].
-    + rewrite !decide_True by set_solver. reflexivity.
-    + rewrite !decide_False by set_solver. reflexivity.
-Qed.
-
 Lemma let_result_world_on_tlete_decompose :
   ∀ X e1 e2 x ν (n : WfWorld)
     Hfreshx Hresult1 Hfreshν Hresult2 Hfreshν_tlet Hresult_tlet,
@@ -177,11 +153,11 @@ Proof.
         eapply reduction_lete_intro.
         -- apply Hbody. exact Hσ.
         -- exact Hsteps1.
-        -- rewrite store_restrict_insert_fresh_union_for_let_result in Hsteps_body.
+        -- rewrite store_restrict_insert_fresh_union in Hsteps_body.
            2:{
-             apply not_elem_of_dom.
-             pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
-             rewrite Hdomσ. exact Hfreshx.
+             eapply store_lookup_none_of_dom.
+             - apply wfworld_store_dom. exact Hσ.
+             - exact Hfreshx.
            }
            2:{ set_solver. }
            change (m{<[x := vx]> (store_restrict σ X)}
@@ -215,11 +191,11 @@ Proof.
           (let_result_world_on X e1 x n Hfreshx Hresult1)
           Hfreshν Hresult2 (<[x := vx]> σ) v).
         -- apply let_result_world_on_member; [exact Hσ | exact Hsteps1].
-        -- rewrite store_restrict_insert_fresh_union_for_let_result.
+        -- rewrite store_restrict_insert_fresh_union.
            2:{
-             apply not_elem_of_dom.
-             pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
-             rewrite Hdomσ. exact Hfreshx.
+             eapply store_lookup_none_of_dom.
+             - apply wfworld_store_dom. exact Hσ.
+             - exact Hfreshx.
            }
            2:{ set_solver. }
            replace (subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x))
