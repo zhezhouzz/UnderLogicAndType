@@ -79,8 +79,7 @@ Lemma logic_qualifier_denote_restrict q σ w X :
   logic_qualifier_denote q σ w.
 Proof.
   destruct q as [d p]. simpl. intros HdX.
-  rewrite res_restrict_restrict_eq.
-  replace (X ∩ d) with d by set_solver.
+  resource_norm.
   reflexivity.
 Qed.
 

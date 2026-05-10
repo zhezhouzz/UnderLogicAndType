@@ -1001,13 +1001,9 @@ Proof.
     res_restrict ntgt (formula_fv φ)).
   {
     transitivity (res_restrict (res_restrict nsrc S) (formula_fv φ)).
-    - rewrite res_restrict_restrict_eq.
-      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
-      reflexivity.
+    - resource_norm. reflexivity.
     - rewrite Heq.
-      rewrite res_restrict_restrict_eq.
-      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
-      reflexivity.
+      resource_norm. reflexivity.
   }
   rewrite Hsmall_eq in Hsmall.
   eapply res_models_kripke.
@@ -1037,13 +1033,9 @@ Proof.
     res_restrict ntgt (formula_fv φ)).
   {
     transitivity (res_restrict (res_restrict nsrc S) (formula_fv φ)).
-    - rewrite res_restrict_restrict_eq.
-      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
-      reflexivity.
+    - resource_norm. reflexivity.
     - rewrite Heq.
-      rewrite res_restrict_restrict_eq.
-      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
-      reflexivity.
+      resource_norm. reflexivity.
   }
   rewrite Hsmall_eq in Hsmall.
   eapply res_models_kripke.
