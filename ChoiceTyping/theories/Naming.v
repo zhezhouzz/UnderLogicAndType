@@ -54,11 +54,41 @@ Proof.
   constructor; unfold tlet_fresh_avoid in Hfresh; set_solver.
 Qed.
 
+(** A lighter variant for totality lemmas that only mention a body term, not a
+    result refinement type. *)
+
+Definition body_fresh_avoid
+    (L X : aset) (e : tm) (m : WfWorld) : aset :=
+  L ∪ world_dom (m : World) ∪ X ∪ fv_tm e.
+
+Record body_fresh_name
+    (L X : aset) (e : tm) (m : WfWorld) (x : atom) : Prop := {
+  body_fresh_notin_L : x ∉ L;
+  body_fresh_notin_world : x ∉ world_dom (m : World);
+  body_fresh_notin_X : x ∉ X;
+  body_fresh_notin_fv_tm : x ∉ fv_tm e;
+}.
+
+Lemma body_fresh_name_for
+    L X e (m : WfWorld) :
+  body_fresh_name L X e m
+    (fresh_for (body_fresh_avoid L X e m)).
+Proof.
+  pose proof (fresh_for_not_in (body_fresh_avoid L X e m)) as Hfresh.
+  constructor; unfold body_fresh_avoid in Hfresh; set_solver.
+Qed.
+
 Ltac pick_tlet_fresh x L X τ e m :=
   let Hfresh := fresh "Hfresh" in
   set (x := fresh_for (tlet_fresh_avoid L X τ e m));
   pose proof (tlet_fresh_name_for L X τ e m) as Hfresh;
   change (tlet_fresh_name L X τ e m x) in Hfresh.
+
+Ltac pick_body_fresh x L X e m :=
+  let Hfresh := fresh "Hfresh" in
+  set (x := fresh_for (body_fresh_avoid L X e m));
+  pose proof (body_fresh_name_for L X e m) as Hfresh;
+  change (body_fresh_name L X e m x) in Hfresh.
 
 (** ** Context binder normal forms *)
 

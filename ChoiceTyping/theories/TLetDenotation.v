@@ -12,7 +12,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetExprResult.
-From ChoiceTyping Require Import TLetResultBridge.
+From ChoiceTyping Require Import Naming TLetResultBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma denot_ty_on_expr_result_model_bridge_fresh_bind
@@ -94,12 +94,10 @@ Lemma denot_ty_on_let_result_body_to_let
 Proof.
   intros Hbasic Hfv HX Hlc Hresult Hclosed Hlc_env Hresult_closed Hbody
     Htyped Hbasic_world Hbody_total Hbody_regular Hbody_model.
-  set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ ∪ fv_tm e2)).
-  assert (Hxfresh : x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ ∪ fv_tm e2)
-    by (subst x; apply fresh_for_not_in).
-  assert (HxL : x ∉ L) by set_solver.
-  assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
-  assert (Hx : x ∉ X ∪ fv_cty τ ∪ fv_tm e2) by set_solver.
+  set (x := fresh_for (tlet_fresh_avoid L X τ e2 m)).
+  pose proof (tlet_fresh_name_for L X τ e2 m) as Hxname.
+  change (tlet_fresh_name L X τ e2 m x) in Hxname.
+  destruct Hxname as [HxL Hfresh Hx].
   eapply (denot_ty_on_expr_result_model_bridge_fresh_bind
     (X ∪ {[x]}) X Σ τ (e2 ^^ x) (tlete e1 e2) x Tx
     (let_result_world_on X e1 x m Hfresh Hresult) m).
@@ -140,13 +138,10 @@ Proof.
   intros Hwf1 Hwflet Hbody_wf Hm Hτ1 Htotal1 IH2 Hbind.
   destruct Htotal1 as [Hfv1 Hresult].
   set (X := dom (erase_ctx_under Σ Γ)).
-  set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ2 ∪ fv_tm e2)).
-  assert (Hxfresh_all :
-    x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ2 ∪ fv_tm e2)
-    by (subst x; apply fresh_for_not_in).
-  assert (HxL : x ∉ L) by set_solver.
-  assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
-  assert (Hx : x ∉ X ∪ fv_cty τ2 ∪ fv_tm e2) by set_solver.
+  set (x := fresh_for (tlet_fresh_avoid L X τ2 e2 m)).
+  pose proof (tlet_fresh_name_for L X τ2 e2 m) as Hxname.
+  change (tlet_fresh_name L X τ2 e2 m x) in Hxname.
+  destruct Hxname as [HxL Hfresh Hx].
   unfold denot_ty_in_ctx_under.
   subst X.
   eapply denot_ty_on_let_result_body_to_let with
@@ -229,10 +224,8 @@ Proof.
       - set_solver.
     }
     destruct (IH2 y HyL0 wy Hctxy) as [_ Hbody_total].
-    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))
-      with (dom (erase_ctx_under Σ Γ) ∪ {[y]}) in Hbody_total.
-    + exact Hbody_total.
-    + symmetry. apply erase_ctx_under_comma_bind_dom.
+    rewrite erase_ctx_under_comma_bind_dom_nf in Hbody_total.
+    exact Hbody_total.
   - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy Hfresh_y Hresult_y σx v Hσx Hsteps.
     set (wy := let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 y n Hfresh_y Hresult_y).
     assert (HyL0 : y ∉ L) by set_solver.
@@ -251,9 +244,9 @@ Proof.
       - set_solver.
     }
     pose proof (Hbody_wf y HyL0) as Hwf_body.
-    replace (store_restrict σx (dom (erase_ctx_under Σ Γ) ∪ {[y]}))
-      with (store_restrict σx (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))))) in Hsteps.
-    2:{ rewrite erase_ctx_under_comma_bind_dom. reflexivity. }
+    replace (dom (erase_ctx_under Σ Γ) ∪ {[y]})
+      with (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1)))) in Hsteps
+      by exact (erase_ctx_under_comma_bind_dom_nf Σ Γ y τ1).
     eapply (choice_typing_wf_result_regular_restrict_in_ctx
       Σ (CtxComma Γ (CtxBind y τ1)) (e2 ^^ y) τ2 wy σx v); eauto.
   - intros n Hmn HXn Hresult_n y HyL Hyfresh Hy.
@@ -277,32 +270,12 @@ Proof.
 	    destruct (IH2 y HyL0 wy Hctxy) as [Hbody _].
 	    assert (Hdom_ctxx :
 	      (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1))) : aset) =
-	      dom (erase_ctx_under Σ Γ) ∪ {[y]}).
-    {
-      unfold erase_ctx_under. simpl.
-      rewrite !dom_union_L, dom_singleton_L. set_solver.
-    }
+	      dom (erase_ctx_under Σ Γ) ∪ {[y]})
+        by apply erase_ctx_under_comma_bind_dom_nf.
 	    assert (Henv_ctxx :
 	      erase_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) =
 	      <[y := erase_ty τ1]> (erase_ctx_under Σ Γ)).
-    {
-      unfold erase_ctx_under. simpl.
-      apply (map_eq (M := gmap atom)). intros z.
-      rewrite lookup_insert.
-	      destruct (decide (z = y)) as [->|Hzx].
-      - rewrite decide_True by reflexivity.
-        rewrite lookup_union_r.
-        + rewrite lookup_union_r.
-          * rewrite lookup_singleton. rewrite decide_True by reflexivity.
-            reflexivity.
-          * apply not_elem_of_dom. set_solver.
-        + apply not_elem_of_dom. set_solver.
-      - rewrite decide_False by congruence.
-        rewrite !lookup_union.
-        rewrite lookup_singleton.
-        rewrite decide_False by congruence.
-        destruct (Σ !! z); destruct (erase_ctx Γ !! z); reflexivity.
-    }
+    { apply erase_ctx_under_comma_bind_env_fresh. set_solver. }
     unfold denot_ty_in_ctx_under in Hbody.
     rewrite Hdom_ctxx, Henv_ctxx in Hbody.
     exact Hbody.
@@ -354,13 +327,10 @@ Proof.
   intros Hwf1 Hwflet Hm Htotal1 Hbody_total Hclosed Hlc.
   destruct Htotal1 as [Hfv1 Hresult].
   set (X := dom (erase_ctx_under Σ Γ)).
-  set (x := fresh_for (L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)).
-  assert (Hxfresh_all : x ∉ L ∪ world_dom (m : World) ∪ X ∪ fv_tm e2)
-    by (subst x; apply fresh_for_not_in).
-  assert (HxL : x ∉ L) by set_solver.
-  assert (Hfresh : x ∉ world_dom (m : World)) by set_solver.
-  assert (HxX : x ∉ X) by set_solver.
-  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  set (x := fresh_for (body_fresh_avoid L X e2 m)).
+  pose proof (body_fresh_name_for L X e2 m) as Hxname.
+  change (body_fresh_name L X e2 m x) in Hxname.
+  destruct Hxname as [HxL Hfresh HxX Hxe2].
   pose proof (Hbody_total x HxL Hfresh Hresult) as Hbody.
   eapply expr_total_on_tlete_from_open with
     (Hfresh := Hfresh) (Hresult := Hresult).
@@ -378,11 +348,8 @@ Proof.
     + apply Hlc. exact Hσ.
     + eapply choice_typing_wf_let_body_helper; eauto.
   - subst X.
-    replace (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
-      with (dom (erase_ctx_under Σ Γ) ∪ {[x]}) in Hbody.
-    + exact Hbody.
-    + unfold erase_ctx_under. simpl.
-      rewrite !dom_union_L, dom_singleton_L. set_solver.
+    rewrite erase_ctx_under_comma_bind_dom_nf in Hbody.
+    exact Hbody.
   - pose proof (choice_typing_wf_fv_tm_subset Σ Γ (tlete e1 e2) τ2 Hwflet).
     subst X.
     replace (dom (erase_ctx_under Σ Γ)) with (dom Σ ∪ ctx_dom Γ).
