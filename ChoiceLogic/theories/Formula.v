@@ -486,6 +486,13 @@ Proof.
   eapply Hstrong with (n := formula_measure φ); eauto.
 Qed.
 
+Local Ltac formula_models_fuel_finish :=
+  rewrite ?formula_rename_preserves_measure; simpl; lia.
+
+Local Tactic Notation "formula_models_fuel_irrel" constr(H) :=
+  eapply res_models_with_store_fuel_irrel; [| | exact H];
+  formula_models_fuel_finish.
+
 Lemma formula_scoped_res_le
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
   formula_scoped_in_world ρ m φ →
@@ -961,7 +968,7 @@ Lemma res_models_with_store_and_elim_l
 Proof.
   unfold res_models_with_store.
   simpl. intros [_ [Hφ _]].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  formula_models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_with_store_and_elim_r
@@ -971,7 +978,7 @@ Lemma res_models_with_store_and_elim_r
 Proof.
   unfold res_models_with_store.
   simpl. intros [_ [_ Hψ]].
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  formula_models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_with_store_and_intro
@@ -984,8 +991,8 @@ Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hφ Hψ. split; [exact Hscope |].
   split.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
-  - eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  - formula_models_fuel_irrel Hφ.
+  - formula_models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_with_store_or_intro_l
@@ -996,7 +1003,7 @@ Lemma res_models_with_store_or_intro_l
 Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hφ. split; [exact Hscope |].
-  left. eapply res_models_with_store_fuel_irrel; [| | exact Hφ]; simpl; lia.
+  left. formula_models_fuel_irrel Hφ.
 Qed.
 
 Lemma res_models_with_store_or_intro_r
@@ -1007,7 +1014,7 @@ Lemma res_models_with_store_or_intro_r
 Proof.
   unfold res_models_with_store.
   simpl. intros Hscope Hψ. split; [exact Hscope |].
-  right. eapply res_models_with_store_fuel_irrel; [| | exact Hψ]; simpl; lia.
+  right. formula_models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_with_store_and_map
@@ -1038,14 +1045,12 @@ Proof.
   simpl. intros Hscope H1 H2 [_ [Hφ1 | Hφ2]].
   - split; [exact Hscope |].
     left.
-    pose proof (H1 ltac:(eapply res_models_with_store_fuel_irrel;
-      [| | exact Hφ1]; simpl; lia)) as Hψ1.
-    eapply res_models_with_store_fuel_irrel; [| | exact Hψ1]; simpl; lia.
+    pose proof (H1 ltac:(formula_models_fuel_irrel Hφ1)) as Hψ1.
+    formula_models_fuel_irrel Hψ1.
   - split; [exact Hscope |].
     right.
-    pose proof (H2 ltac:(eapply res_models_with_store_fuel_irrel;
-      [| | exact Hφ2]; simpl; lia)) as Hψ2.
-    eapply res_models_with_store_fuel_irrel; [| | exact Hψ2]; simpl; lia.
+    pose proof (H2 ltac:(formula_models_fuel_irrel Hφ2)) as Hψ2.
+    formula_models_fuel_irrel Hψ2.
 Qed.
 
 Lemma res_models_with_store_impl_intro
@@ -1063,7 +1068,7 @@ Proof.
     (formula_measure φ + formula_measure ψ) (formula_measure φ)
     ρ m' φ ltac:(simpl; lia) ltac:(lia) Hφ) as Hφ_exact.
   pose proof (Himpl m' Hle Hφ_exact) as Hψ_exact.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_exact]; simpl; lia.
+  formula_models_fuel_irrel Hψ_exact.
 Qed.
 
 Lemma res_models_with_store_impl_elim
@@ -1078,7 +1083,7 @@ Proof.
     (formula_measure φ) (formula_measure φ + formula_measure ψ)
     ρ m φ ltac:(lia) ltac:(simpl; lia) Hφ) as Hφ_big.
   pose proof (Himpl m ltac:(reflexivity) Hφ_big) as Hψ_big.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hψ_big]; simpl; lia.
+  formula_models_fuel_irrel Hψ_big.
 Qed.
 
 Lemma res_models_with_store_impl_antecedent_strengthen
