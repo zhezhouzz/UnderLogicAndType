@@ -28,6 +28,26 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps.
 Definition world_store_closed_on (X : aset) (m : WfWorld) : Prop :=
   ∀ σ, (m : World) σ → store_closed (store_restrict σ X).
 
+Lemma world_store_closed_on_le X (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  world_store_closed_on X m →
+  world_store_closed_on X n.
+Proof.
+  intros HXm Hle Hclosed σ Hσ.
+  pose proof (res_restrict_eq_of_le m n Hle) as Hrestrict.
+  assert ((res_restrict n (world_dom (m : World)) : World)
+    (store_restrict σ (world_dom (m : World)))) as Hσm.
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  rewrite Hrestrict in Hσm.
+  replace (store_restrict σ X) with
+    (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  - exact (Hclosed _ Hσm).
+  - rewrite store_restrict_restrict.
+    replace (world_dom (m : World) ∩ X) with X by set_solver.
+    reflexivity.
+Qed.
+
 Lemma world_store_closed_on_restrict X Y (m : WfWorld) :
   X ⊆ Y →
   world_store_closed_on X m →
@@ -1352,3 +1372,36 @@ Proof.
   - apply Hfuture. reflexivity.
   - exact Hmodel.
 Qed.
+
+(** High-risk tlet expression-result bridge.
+
+    This is the resource-level version of the operational identity
+    [Results(let x = e1 in e2) = Results(e2[x := Results(e1)])].
+    It is intentionally phrased as an [expr_result_model_bridge], so later type
+    denotation transport can stay generic in [τ].  The freshness premise built
+    into [expr_result_model_bridge] keeps the final result coordinate [ν]
+    distinct from the intermediate coordinate [x], preserving the exact
+    [X -> x -> ν] pairing tracked by [let_result_world_on]. *)
+Lemma expr_result_model_bridge_tlete
+    X e1 e2 x (m : WfWorld) Hfresh Hresult :
+  x ∉ X ∪ fv_tm e2 →
+  fv_tm (tlete e1 e2) ⊆ X →
+  X ⊆ world_dom (m : World) →
+  world_store_closed_on X m →
+  lc_tm (tlete e1 e2) →
+  (∀ σ, (m : World) σ → closed_env (store_restrict σ X)) →
+  (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
+  (∀ σ vx,
+    (m : World) σ →
+    subst_map (store_restrict σ X) e1 →* tret vx →
+    stale vx = ∅ ∧ is_lc vx) →
+  (∀ σ, (m : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
+  expr_total_on (X ∪ {[x]}) (e2 ^^ x)
+    (let_result_world_on X e1 x m Hfresh Hresult) →
+  expr_result_model_bridge
+    (X ∪ {[x]}) (e2 ^^ x)
+    X (tlete e1 e2)
+    (let_result_world_on X e1 x m Hfresh Hresult)
+    m.
+Proof.
+Admitted.

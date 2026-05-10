@@ -819,14 +819,19 @@ Qed.
     back to that target extension.
 
     This last condition is deliberately weaker than [nsrc ⊑ ntgt].  In the
-    tlet proof the source extension may be a graph world that contains the
-    auxiliary intermediate coordinate [x]; continuations that do not mention
-    [x] should still transport by restricting to their free variables. *)
-Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
+    tlet proof the source extension may contain the auxiliary intermediate
+    coordinate [x]; continuations that do not mention [x] should still
+    transport by restricting to their free variables.
+
+    [model_transport_on S] makes the relevant continuation scope explicit. *)
+Definition model_transport_on (S : aset) (nsrc ntgt : WfWorld) : Prop :=
   ∀ φ : FQ,
-    formula_fv φ ⊆ world_dom (ntgt : World) →
+    formula_fv φ ⊆ S →
     nsrc ⊨ φ →
     ntgt ⊨ φ.
+
+Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
+  model_transport_on (world_dom (ntgt : World)) nsrc ntgt.
 
 (** Resource-aware expression-result bridge.
 
@@ -835,20 +840,25 @@ Definition model_transport (nsrc ntgt : WfWorld) : Prop :=
     [x] in its input domain [Xsrc = X ∪ {[x]}].  The final result coordinate
     [ν] must stay distinct from that intermediate coordinate, otherwise the
     bridge would conflate the paired [X -> x -> ν] relation that the result
-    world is meant to track exactly. *)
+    world is meant to track exactly.
+
+    The disjointness premise for [Xsrc ∖ Xtgt] says that source-only coordinates
+    are proof auxiliaries, not coordinates already present in the target world.
+    For tlet this is the usual fresh-bound-variable condition [x ∉ dom target]. *)
 Definition expr_result_model_bridge
     (Xsrc : aset) (esrc : tm)
     (Xtgt : aset) (etgt : tm)
     (msrc mtgt : WfWorld) : Prop :=
-  ∀ ν ntgt,
+  ∀ (ν : atom) (ntgt : WfWorld),
     ν ∉ Xsrc ∪ Xtgt →
+    (Xsrc ∖ Xtgt) ## world_dom (ntgt : World) →
     ν ∉ world_dom (mtgt : World) →
     mtgt ⊑ ntgt →
     ntgt ⊨ FExprResultOn Xtgt etgt ν →
     ∃ nsrc,
       msrc ⊑ nsrc ∧
       nsrc ⊨ FExprResultOn Xsrc esrc ν ∧
-      model_transport nsrc ntgt.
+      model_transport_on (Xtgt ∪ {[ν]}) nsrc ntgt.
 
 Lemma model_transport_kripke (nsrc ntgt : WfWorld) :
   nsrc ⊑ ntgt →
@@ -867,6 +877,32 @@ Proof.
   eapply res_models_kripke.
   - rewrite <- Hrestrict.
     apply res_restrict_mono. exact Hfv.
+  - exact Hsmall.
+Qed.
+
+Lemma model_transport_on_restrict_common (S : aset) (nsrc ntgt : WfWorld) :
+  S ⊆ world_dom (nsrc : World) ∩ world_dom (ntgt : World) →
+  res_restrict nsrc S = res_restrict ntgt S →
+  model_transport_on S nsrc ntgt.
+Proof.
+  intros HS Heq φ Hfv Hφ.
+  pose proof (res_models_restrict_fv nsrc φ Hφ) as Hsmall.
+  assert (Hsmall_eq :
+    res_restrict nsrc (formula_fv φ) =
+    res_restrict ntgt (formula_fv φ)).
+  {
+    transitivity (res_restrict (res_restrict nsrc S) (formula_fv φ)).
+    - rewrite res_restrict_restrict_eq.
+      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+    - rewrite Heq.
+      rewrite res_restrict_restrict_eq.
+      replace (S ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+  }
+  rewrite Hsmall_eq in Hsmall.
+  eapply res_models_kripke.
+  - apply res_restrict_le.
   - exact Hsmall.
 Qed.
 
