@@ -32,6 +32,8 @@ Class ValueSig (V : Type) := {
 (** Free-variable/resource-domain collection. *)
 Class Stale A := stale : A → aset.
 
+#[global] Instance stale_aset : Stale aset := id.
+
 Notation "x '#' s" := (x ∉ stale s) (at level 40).
 
 Definition fresh_for (s : aset) : atom := fresh s.
