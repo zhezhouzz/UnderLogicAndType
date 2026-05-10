@@ -25,6 +25,92 @@ Admitted.
     the tlet proof we need to expose the semantic order [X] first and the bound
     result coordinate [x] second.  This is pure fiber bookkeeping: it follows
     from commutation of independent [FFib] modalities and [res_fiber_commute]. *)
+Lemma fib_vars_obligation_step_commute x y R ρ (m : WfWorld) :
+  x ≠ y →
+  x ∈ world_dom (m : World) →
+  y ∈ world_dom (m : World) →
+  fib_vars_obligation_step y (fib_vars_obligation_step x R) ρ m →
+  fib_vars_obligation_step x (fib_vars_obligation_step y R) ρ m.
+Proof.
+  intros Hxy Hxm Hym [Hρy Hy].
+  unfold fib_vars_obligation_step in *.
+  split.
+  - destruct (world_wf m) as [[σ Hσ] _].
+    set (σy := store_restrict σ {[y]}).
+    assert (Hprojy : res_restrict m {[y]} σy).
+    { exists σ. split; [exact Hσ | reflexivity]. }
+    destruct (Hy σy Hprojy) as [Hρσy_x _].
+    subst σy.
+    rewrite dom_union_L in Hρσy_x.
+    rewrite store_restrict_dom in Hρσy_x.
+    set_solver.
+  - intros σx Hprojx.
+    split.
+    + rewrite dom_union_L.
+      destruct Hprojx as [σ [Hσ Hσx]].
+      assert (Hdomσx : dom σx ⊆ {[x]}).
+      { rewrite <- Hσx, store_restrict_dom. set_solver. }
+      set_solver.
+    + intros σy Hprojy_after_x.
+      pose proof (res_projection_from_fiber_projection
+        m {[x]} {[y]} σx σy Hprojx Hprojy_after_x) as Hprojy.
+      assert (Hprojx_after_y :
+        res_restrict
+          (res_fiber_from_projection m {[y]} σy Hprojy) {[x]} σx).
+      {
+        assert (Hdomσx : dom σx = {[x]}).
+        {
+          destruct Hprojx as [σ0 [Hσ0 Hσ0x]].
+          rewrite <- Hσ0x, store_restrict_dom.
+          pose proof (wfworld_store_dom m σ0 Hσ0) as Hdomσ0.
+          set_solver.
+        }
+        destruct Hprojy_after_x as [σ [Hσfiber_x Hσy]].
+        destruct Hσfiber_x as [Hσm Hσx].
+        exists σ. split.
+        - apply res_fiber_from_projection_member; [exact Hσm | exact Hσy].
+        - rewrite <- Hdomσx. exact Hσx.
+      }
+      destruct (Hy σy Hprojy) as [_ Hyx].
+      specialize (Hyx σx Hprojx_after_y).
+      assert (Hfib_eq :
+        res_fiber_from_projection
+          (res_fiber_from_projection m {[y]} σy Hprojy) {[x]} σx Hprojx_after_y =
+        res_fiber_from_projection
+          (res_fiber_from_projection m {[x]} σx Hprojx) {[y]} σy Hprojy_after_x).
+      {
+        apply wfworld_ext. apply world_ext.
+        - reflexivity.
+        - intros τ. simpl. tauto.
+      }
+      replace (ρ ∪ σx ∪ σy) with (ρ ∪ σy ∪ σx).
+      2:{
+        assert (Hdomσx : dom σx = {[x]}).
+        {
+          destruct Hprojx as [σ0 [Hσ0 Hσ0x]].
+          rewrite <- Hσ0x, store_restrict_dom.
+          pose proof (wfworld_store_dom m σ0 Hσ0) as Hdomσ0.
+          set_solver.
+        }
+        assert (Hdomσy : dom σy = {[y]}).
+        {
+          destruct Hprojy as [σ0 [Hσ0 Hσ0y]].
+          rewrite <- Hσ0y, store_restrict_dom.
+          pose proof (wfworld_store_dom m σ0 Hσ0) as Hdomσ0.
+          set_solver.
+        }
+        assert (Hdisj_xy : σx ##ₘ σy).
+        {
+          apply map_disjoint_dom.
+          rewrite Hdomσx, Hdomσy. set_solver.
+        }
+        rewrite <- (assoc_L (∪) ρ σx σy).
+        rewrite <- (assoc_L (∪) ρ σy σx).
+        f_equal. symmetry. apply map_union_comm. exact Hdisj_xy.
+      }
+      rewrite <- Hfib_eq. exact Hyx.
+Qed.
+
 Lemma fib_vars_obligation_insert_fresh_to_fib
     X x p ρ m :
   x ∉ X →
