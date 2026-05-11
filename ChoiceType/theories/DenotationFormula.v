@@ -14,7 +14,7 @@
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
-  OperationalProps.
+  OperationalProps StrongNormalization.
 From ChoiceType Require Export Syntax.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -733,16 +733,17 @@ Proof.
   exact Hexact.
 Qed.
 
-(** Prop-level totality for the expression component of a type denotation.
+(** Prop-level must-totality for the expression component of a type denotation.
 
-    This is intentionally not encoded as a ChoiceLogic formula.  The logic
-    describes resource/domain behavior; operational totality is a meta-level
-    obligation used by the fundamental theorem.  Keeping it here lets the let
-    proof combine the formula denotation with the fact that the bound
-    expression has an actual result in every admissible store. *)
+    This is intentionally not encoded as a ChoiceLogic formula.  In the
+    nondeterministic core language, totality must mean strong normalization:
+    every branch of the reduction tree terminates.  The step-indexed definition
+    lives in [CoreLang.StrongNormalization]; here we lift it pointwise over the
+    stores of a world. *)
 Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
   fv_tm e ⊆ X ∧
-  ∀ σ, (m : World) σ → ∃ v, subst_map (store_restrict σ X) e →* tret v.
+  ∀ σ, (m : World) σ →
+    strongly_normalizing (subst_map (store_restrict σ X) e).
 
 (** [world_closed_on X m] is the ChoiceType-level invariant saying that every
     store in [m] is operationally usable on the coordinates [X].  This belongs

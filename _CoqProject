@@ -35,6 +35,7 @@ CoreLang/theories/LocallyNamelessInstances.v
 CoreLang/theories/InstantiationProps.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
+CoreLang/theories/StrongNormalization.v
 
 ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v

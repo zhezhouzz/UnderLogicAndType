@@ -3,7 +3,8 @@
     Soundness skeleton for the single declarative typing judgment. *)
 
 From ChoiceTyping Require Export SoundnessHelpers.
-From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps.
+From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
+  StrongNormalization.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 From ChoiceTyping Require Export SoundnessConst.
@@ -90,11 +91,9 @@ Proof.
   intros Hfv Hlc Henv.
   split; [simpl; exact Hfv |].
   intros σ Hσ.
-  exists (m{store_restrict σ X} v).
-  change (m{store_restrict σ X} (tret v) →* tret (m{store_restrict σ X} v)).
+  change (strongly_normalizing (m{store_restrict σ X} (tret v))).
   rewrite msubst_ret.
-  apply Steps_refl.
-  constructor.
+  apply strongly_normalizing_tret.
   apply msubst_lc; [apply Henv; exact Hσ | exact Hlc].
 Qed.
 
@@ -166,12 +165,11 @@ Proof.
   split.
   - simpl. set_solver.
   - intros σ _.
-    exists (vconst c).
-    change (m{store_restrict σ X} (tret (vconst c)) →* tret (vconst c)).
+    change (strongly_normalizing (m{store_restrict σ X} (tret (vconst c)))).
     rewrite msubst_ret. simpl.
     rewrite (msubst_fresh (store_restrict σ X) (vconst c)) by set_solver.
-    apply Steps_refl.
-    constructor. constructor.
+    apply strongly_normalizing_tret.
+    constructor.
 Qed.
 
 Lemma fundamental_const_total_case Σ c :
