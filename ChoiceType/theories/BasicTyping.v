@@ -11,7 +11,7 @@
 
 From LocallyNameless Require Import Classes.
 From ChoiceType Require Export Syntax.
-From ChoiceType Require Import QualifierInstances LocallyNamelessInstances.
+From ChoiceType Require Import QualifierInstances QualifierProps LocallyNamelessInstances.
 
 (** ** Basic qualifier formation *)
 
