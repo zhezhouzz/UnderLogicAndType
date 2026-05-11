@@ -942,6 +942,21 @@ Proof.
   exact Hrestrict.
 Qed.
 
+Lemma res_models_minimal_on (S : aset) (m : WfWorldT) (φ : Formula) :
+  formula_fv φ ⊆ S →
+  res_models m φ ↔ res_models (res_restrict m S) φ.
+Proof.
+  intros Hfv. split.
+  - intros Hm.
+    eapply res_models_kripke.
+    + apply res_restrict_mono. exact Hfv.
+    + apply res_models_restrict_fv. exact Hm.
+  - intros Hm.
+    eapply res_models_kripke.
+    + apply res_restrict_le.
+    + exact Hm.
+Qed.
+
 Lemma res_models_with_store_impl_refl
     (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
   formula_scoped_in_world ρ m φ →
@@ -1418,6 +1433,15 @@ Proof.
   unfold res_models, res_models_with_store.
   rewrite formula_rename_preserves_measure.
   rewrite <- (store_swap_empty x y) at 2.
+  apply res_models_with_store_fuel_swap.
+Qed.
+
+Lemma res_models_with_store_swap x y ρ (m : WfWorldT) (φ : Formula) :
+  res_models_with_store ρ m (formula_rename_atom x y φ) ↔
+  res_models_with_store (store_swap x y ρ) (res_swap x y m) φ.
+Proof.
+  unfold res_models_with_store.
+  rewrite formula_rename_preserves_measure.
   apply res_models_with_store_fuel_swap.
 Qed.
 
