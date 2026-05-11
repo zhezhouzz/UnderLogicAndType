@@ -136,6 +136,61 @@ Proof.
   induction 1; eauto using basic_qualifier_body_lc.
 Qed.
 
+Lemma basic_qualifier_mono D E q :
+  D ⊆ E →
+  basic_qualifier D q →
+  basic_qualifier E q.
+Proof.
+  unfold basic_qualifier. set_solver.
+Qed.
+
+Lemma basic_qualifier_body_mono D E q :
+  D ⊆ E →
+  basic_qualifier_body D q →
+  basic_qualifier_body E q.
+Proof.
+  intros HDE [L Hbody].
+  exists L. intros x Hx.
+  eapply basic_qualifier_mono; [| apply Hbody; exact Hx].
+  set_solver.
+Qed.
+
+Lemma basic_choice_ty_mono D E τ :
+  D ⊆ E →
+  basic_choice_ty D τ →
+  basic_choice_ty E τ.
+Proof.
+  intros HDE Hbasic.
+  revert E HDE.
+  induction Hbasic; intros E HDE.
+  - constructor. eapply basic_qualifier_body_mono; eauto.
+  - constructor. eapply basic_qualifier_body_mono; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - eapply Basic_CTArrow.
+    + eauto.
+    + intros x Hx.
+      match goal with
+      | IH : ∀ y, y ∉ _ → ∀ E, _ ⊆ E → basic_choice_ty E _ |- _ =>
+          eapply IH; [exact Hx | set_solver]
+      end.
+  - eapply Basic_CTWand.
+    + eauto.
+    + intros x Hx.
+      match goal with
+      | IH : ∀ y, y ∉ _ → ∀ E, _ ⊆ E → basic_choice_ty E _ |- _ =>
+          eapply IH; [exact Hx | set_solver]
+      end.
+Qed.
+
+Lemma basic_choice_ty_drop_fresh D x τ :
+  x ∉ fv_cty τ →
+  basic_choice_ty (D ∪ {[x]}) τ →
+  basic_choice_ty D τ.
+Proof.
+Admitted.
+
 Lemma basic_choice_ty_fv_subset D τ :
   basic_choice_ty D τ →
   fv_cty τ ⊆ D.
