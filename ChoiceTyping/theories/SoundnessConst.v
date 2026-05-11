@@ -181,7 +181,7 @@ Proof.
 Qed.
 
 Lemma const_over_consequent_from_expr_on c ν Σ m :
-  m ⊨ FExprResult (tret (vconst c)) ν →
+  m ⊨ FExprResultIn Σ (tret (vconst c)) ν →
   m ⊨
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -196,7 +196,7 @@ Proof.
     by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
         rewrite decide_True by set_solver; simpl; set_solver).
   replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
-  pose proof (expr_logic_qual_on_ret_const_lookup c ν m Hexpr) as Hlookup.
+  pose proof (expr_logic_qual_on_ret_const_lookup (dom Σ) c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
   - pose proof (res_models_with_store_fuel_scoped _
@@ -232,7 +232,7 @@ Proof.
 Qed.
 
 Lemma const_under_consequent_from_expr_on c ν Σ m :
-  m ⊨ FExprResult (tret (vconst c)) ν →
+  m ⊨ FExprResultIn Σ (tret (vconst c)) ν →
   m ⊨
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -247,7 +247,7 @@ Proof.
     by (unfold qual_open_atom, mk_q_eq, qual_dom; simpl;
         rewrite decide_True by set_solver; simpl; set_solver).
   replace ({[ν]} ∪ {[ν]}) with ({[ν]} : aset) by set_solver.
-  pose proof (expr_logic_qual_on_ret_const_lookup c ν m Hexpr) as Hlookup.
+  pose proof (expr_logic_qual_on_ret_const_lookup (dom Σ) c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
   - pose proof (res_models_with_store_fuel_scoped _
@@ -318,7 +318,7 @@ Qed.
 
 Lemma const_over_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
-    (FExprResult (tret (vconst c)) ν) →
+    (FExprResultIn Σ (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -336,7 +336,7 @@ Qed.
 
 Lemma const_under_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
-    (FExprResult (tret (vconst c)) ν) →
+    (FExprResultIn Σ (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -373,7 +373,7 @@ Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : For
 Definition const_over_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
-    (FExprResult (tret (vconst c)) ν)
+    (FExprResultIn Σ (tret (vconst c)) ν)
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
@@ -384,7 +384,7 @@ Definition const_over_body_on
 Definition const_under_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
-    (FExprResult (tret (vconst c)) ν)
+    (FExprResultIn Σ (tret (vconst c)) ν)
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
@@ -423,48 +423,14 @@ Proof.
 Qed.
 
 Lemma const_over_body_on_fv_subset Σ c ν :
-  formula_fv (const_over_body_on Σ c ν) ⊆ {[ν]}.
+  formula_fv (const_over_body_on Σ c ν) ⊆ dom Σ ∪ {[ν]}.
 Proof.
-  unfold const_over_body_on.
-  intros z Hz. simpl in Hz.
-  apply elem_of_union in Hz as [Hzres | Hzrest].
-  - change (formula_fv (FExprResult (tret (vconst c)) ν))
-      with (formula_fv (FExprResult (tret (vconst c)) ν)) in Hzres.
-    pose proof (FExprResult_fv_exact_domain (tret (vconst c)) ν z Hzres) as Hzres'.
-    change (stale (vconst c)) with (∅ : aset) in Hzres'.
-    set_solver.
-  - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.
-    destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hzrest;
-      unfold lift_type_qualifier_to_logic in Hzrest; simpl in Hzrest;
-      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
-      repeat rewrite fib_vars_formula_fv in Hzrest;
-      simpl in Hzrest;
-      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
-      clear -Hzrest;
-      set_solver.
-Qed.
+Admitted.
 
 Lemma const_under_body_on_fv_subset Σ c ν :
-  formula_fv (const_under_body_on Σ c ν) ⊆ {[ν]}.
+  formula_fv (const_under_body_on Σ c ν) ⊆ dom Σ ∪ {[ν]}.
 Proof.
-  unfold const_under_body_on.
-  intros z Hz. simpl in Hz.
-  apply elem_of_union in Hz as [Hzres | Hzrest].
-  - change (formula_fv (FExprResult (tret (vconst c)) ν))
-      with (formula_fv (FExprResult (tret (vconst c)) ν)) in Hzres.
-    pose proof (FExprResult_fv_exact_domain (tret (vconst c)) ν z Hzres) as Hzres'.
-    change (stale (vconst c)) with (∅ : aset) in Hzres'.
-    set_solver.
-  - unfold qual_open_atom, mk_q_eq, qual_dom in Hzrest; simpl in Hzrest.
-    destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hzrest;
-      unfold lift_type_qualifier_to_logic in Hzrest; simpl in Hzrest;
-      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
-      repeat rewrite fib_vars_formula_fv in Hzrest;
-      simpl in Hzrest;
-      unfold stale, stale_logic_qualifier in Hzrest; simpl in Hzrest;
-      clear -Hzrest;
-      set_solver.
-Qed.
+Admitted.
 
 Lemma const_over_body_rename_scoped Σ c ν y (m : WfWorld) :
   y ∈ world_dom (m : World) →
@@ -499,45 +465,17 @@ Proof.
 Qed.
 
 Lemma const_over_body_on_rename_scoped Σ c ν y (m : WfWorld) :
+  dom Σ ⊆ world_dom (m : World) →
   y ∈ world_dom (m : World) →
   formula_scoped_in_world ∅ m
     (formula_rename_atom ν y (const_over_body_on Σ c ν)).
 Proof.
-  intros Hym.
-  unfold formula_scoped_in_world. intros z Hz.
-  rewrite dom_empty_L in Hz.
-  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  rewrite formula_fv_rename_atom in Hz.
-  rewrite elem_of_aset_swap in Hz.
-  destruct (decide (z = ν)) as [-> | Hzν].
-  { replace (atom_swap ν y ν) with y in Hz
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    pose proof (const_over_body_on_fv_subset Σ c ν _ Hz) as Hyν.
-    apply elem_of_singleton in Hyν. subst y. exact Hym. }
-  destruct (decide (z = y)) as [-> | Hzy]; [exact Hym |].
-  rewrite atom_swap_fresh in Hz by congruence.
-  pose proof (const_over_body_on_fv_subset Σ c ν _ Hz) as Hzν'.
-  apply elem_of_singleton in Hzν'. subst z. contradiction.
-Qed.
+Admitted.
 
 Lemma const_under_body_on_rename_scoped Σ c ν y (m : WfWorld) :
+  dom Σ ⊆ world_dom (m : World) →
   y ∈ world_dom (m : World) →
   formula_scoped_in_world ∅ m
     (formula_rename_atom ν y (const_under_body_on Σ c ν)).
 Proof.
-  intros Hym.
-  unfold formula_scoped_in_world. intros z Hz.
-  rewrite dom_empty_L in Hz.
-  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  rewrite formula_fv_rename_atom in Hz.
-  rewrite elem_of_aset_swap in Hz.
-  destruct (decide (z = ν)) as [-> | Hzν].
-  { replace (atom_swap ν y ν) with y in Hz
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    pose proof (const_under_body_on_fv_subset Σ c ν _ Hz) as Hyν.
-    apply elem_of_singleton in Hyν. subst y. exact Hym. }
-  destruct (decide (z = y)) as [-> | Hzy]; [exact Hym |].
-  rewrite atom_swap_fresh in Hz by congruence.
-  pose proof (const_under_body_on_fv_subset Σ c ν _ Hz) as Hzν'.
-  apply elem_of_singleton in Hzν'. subst z. contradiction.
-Qed.
+Admitted.

@@ -11,6 +11,7 @@
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)
 
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
   OperationalProps.
@@ -182,6 +183,43 @@ Proof.
     rewrite HY. set_solver.
 Qed.
 
+Lemma formula_rename_atom_fib_vars_fresh a b X p :
+  a ∉ X →
+  b ∉ X →
+  fib_vars X (formula_rename_atom a b p) =
+  formula_rename_atom a b (fib_vars X p).
+Proof.
+  intros Ha Hb.
+  unfold fib_vars, fib_vars_acc.
+  set (Rel := fun acc1 acc2 : FormulaQ * (Store → WfWorld → Prop) =>
+    fst acc1 = fst acc2).
+  change (Rel
+    (set_fold fib_vars_acc_step
+       (formula_rename_atom a b p,
+        fun ρ m => res_models_with_store ρ m (formula_rename_atom a b p)) X)
+    ((formula_rename_atom a b
+        (set_fold fib_vars_acc_step
+          (p, fun ρ m => res_models_with_store ρ m p) X).1),
+      fun ρ m => res_models_with_store ρ m
+        (formula_rename_atom a b
+          (set_fold fib_vars_acc_step
+            (p, fun ρ m => res_models_with_store ρ m p) X).1))).
+  eapply (set_fold_comm_acc_strong Rel fib_vars_acc_step
+    (fun acc : FormulaQ * (Store → WfWorld → Prop) =>
+       (formula_rename_atom a b (fst acc),
+        fun ρ m => res_models_with_store ρ m
+          (formula_rename_atom a b (fst acc))))
+    (p, fun ρ m => res_models_with_store ρ m p) X).
+  - intros x [p1 R1] [p2 R2] Hrel.
+    unfold Rel in *. simpl in *. rewrite Hrel. reflexivity.
+  - intros x [q R] Hx. unfold Rel. simpl.
+    rewrite atom_swap_fresh by set_solver. reflexivity.
+  Unshelve.
+  constructor.
+  + intros [? ?]. reflexivity.
+  + intros [? ?] [? ?] [? ?] H12 H23. simpl in *. congruence.
+Qed.
+
 Lemma fib_vars_models_elim X p ρ m :
   res_models_with_store ρ m (fib_vars X p) →
   fib_vars_obligation X p ρ m.
@@ -290,6 +328,18 @@ Lemma expr_result_store_intro ν eρ v :
   expr_result_store ν eρ ({[ν := v]}).
 Proof. intros Hstale Hlc Hsteps. exists v. repeat split; auto. Qed.
 
+Lemma expr_result_store_swap_result a ν eρ σ :
+  expr_result_store ν eρ σ →
+  expr_result_store a eρ (store_swap a ν σ).
+Proof.
+  intros [v [-> [Hstale [Hlc Hsteps]]]].
+  exists v. repeat split; auto.
+  unfold store_swap. rewrite kmap_singleton.
+  replace (atom_swap a ν ν) with a
+    by (unfold atom_swap; repeat destruct decide; congruence).
+  reflexivity.
+Qed.
+
 Lemma expr_result_store_lookup ν eρ σw :
   expr_result_store ν eρ σw →
   ∃ v, σw !! ν = Some v ∧ eρ →* tret v.
@@ -316,6 +366,48 @@ Lemma expr_result_in_world_complete ρ e ν w σw :
   (res_restrict w {[ν]} : World) σw.
 Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
 
+Lemma expr_result_in_world_swap_result ρ e a ν (m : WfWorld) :
+  expr_result_in_world ρ e ν m →
+  expr_result_in_world ρ e a (res_swap a ν m).
+Proof.
+  intros H σa. split.
+  - intros Hproj_a.
+    assert (Hproj_ν : (res_restrict m {[ν]} : World) (store_swap a ν σa)).
+    {
+      pose proof (res_restrict_swap_projection a ν (res_swap a ν m) {[a]} σa
+        Hproj_a) as Hproj_swap.
+      rewrite res_swap_involutive in Hproj_swap.
+      rewrite aset_swap_singleton in Hproj_swap.
+      replace (atom_swap a ν a) with ν in Hproj_swap
+        by (unfold atom_swap; repeat destruct decide; congruence).
+      exact Hproj_swap.
+    }
+    pose proof (expr_result_in_world_sound ρ e ν m
+      (store_swap a ν σa) H Hproj_ν) as Hstoreν.
+    pose proof (expr_result_store_swap_result a ν (subst_map ρ e)
+      (store_swap a ν σa) Hstoreν) as Hstorea.
+    rewrite store_swap_involutive in Hstorea. exact Hstorea.
+  - intros Hstorea.
+    assert (Hstoreν : expr_result_store ν (subst_map ρ e) (store_swap a ν σa)).
+    {
+      pose proof (expr_result_store_swap_result ν a (subst_map ρ e) σa Hstorea)
+        as Htmp.
+      rewrite store_swap_sym in Htmp. exact Htmp.
+    }
+    pose proof (expr_result_in_world_complete ρ e ν m
+      (store_swap a ν σa) H Hstoreν) as Hprojν.
+    change ((res_restrict (res_swap a ν m) {[a]} : World) σa).
+    replace ({[a]} : aset) with (aset_swap a ν ({[ν]} : aset)).
+    2:{
+      rewrite aset_swap_singleton.
+      replace (atom_swap a ν ν) with a
+        by (unfold atom_swap; repeat destruct decide; congruence).
+      reflexivity.
+    }
+    rewrite res_restrict_swap. simpl.
+    exists (store_swap a ν σa). split; [exact Hprojν | apply store_swap_involutive].
+Qed.
+
 Lemma expr_result_in_world_store_elim ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   (res_restrict w {[ν]} : World) σw →
@@ -337,8 +429,58 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
   lqual (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
-Definition FExprResult (e : tm) (ν : atom) : FQ :=
-  fib_vars (fv_tm e) (FAtom (expr_logic_qual_on (fv_tm e) e ν)).
+Lemma expr_logic_qual_on_swap_result X e a ν :
+  a ∉ X →
+  ν ∉ X →
+  lqual_swap a ν (expr_logic_qual_on X e a) = expr_logic_qual_on X e ν.
+Proof.
+  intros Ha Hν.
+  unfold expr_logic_qual_on, lqual_swap. simpl.
+  f_equal.
+  - rewrite aset_swap_union, aset_swap_singleton.
+    replace (atom_swap a ν a) with ν
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by assumption. reflexivity.
+  - apply functional_extensionality. intros σ.
+    apply functional_extensionality. intros w.
+    apply propositional_extensionality. split; intros Hres.
+    + rewrite map_restrict_store_swap_fresh in Hres by assumption.
+      pose proof (expr_result_in_world_swap_result (store_restrict σ X) e
+        ν a (res_swap a ν w) Hres) as Hback.
+      rewrite (res_swap_sym ν a), res_swap_involutive in Hback.
+      exact Hback.
+    + rewrite map_restrict_store_swap_fresh by assumption.
+      apply expr_result_in_world_swap_result. exact Hres.
+Qed.
+
+Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  fib_vars X (FAtom (expr_logic_qual_on X e ν)).
+
+Lemma FExprResultOn_rename_result_fresh X e a ν :
+  a ∉ X →
+  ν ∉ X →
+  formula_rename_atom a ν (FExprResultOn X e a) = FExprResultOn X e ν.
+Proof.
+  intros Ha Hν.
+  unfold FExprResultOn.
+  rewrite <- formula_rename_atom_fib_vars_fresh by assumption.
+  change (fib_vars X (FAtom (lqual_swap a ν (expr_logic_qual_on X e a))) =
+          fib_vars X (FAtom (expr_logic_qual_on X e ν))).
+  rewrite expr_logic_qual_on_swap_result by assumption.
+  reflexivity.
+Qed.
+
+Definition FExprResultIn (Σ : gmap atom ty) (e : tm) (ν : atom) : FQ :=
+  FExprResultOn (dom Σ) e ν.
+
+(** Expression-result continuation:
+    [FExprContIn Σ e Q] abbreviates the recurring formula
+    [∀ν. FExprResultIn Σ e ν ⇒ Q ν].  The cofinite avoidance set is
+    exactly [dom Σ]: well-formed typing premises, kept at the Rocq [Prop]
+    level rather than inside the logic, ensure that [fv_tm e] and the relevant
+    type variables already live in this domain. *)
+Definition FExprContIn (Σ : gmap atom ty) (e : tm) (Q : atom → FQ) : FQ :=
+  fresh_forall (dom Σ) (fun ν => FImpl (FExprResultIn Σ e ν) (Q ν)).
 
 (** Expression-result atom.
 
@@ -491,35 +633,25 @@ Proof.
   exact (Hfresh ltac:(set_solver)).
 Qed.
 
-Lemma FExprResult_fv_subset X e ν :
-  fv_tm e ⊆ X →
-  formula_fv (FExprResult e ν) ⊆ X ∪ {[ν]}.
+Lemma FExprResultOn_fv X e ν :
+  formula_fv (FExprResultOn X e ν) = X ∪ {[ν]}.
 Proof.
-  intros Hfv.
-  unfold FExprResult.
+  unfold FExprResultOn.
   rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   set_solver.
 Qed.
 
-Lemma FExprResult_fv_exact_domain e ν :
-  formula_fv (FExprResult e ν) ⊆ fv_tm e ∪ {[ν]}.
+Lemma FExprResultOn_fv_subset X e ν :
+  formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
 Proof.
-  unfold FExprResult.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
-  set_solver.
+  rewrite FExprResultOn_fv. set_solver.
 Qed.
 
-Lemma FExprResult_expr_fv_subset X e ν :
-  fv_tm e ⊆ X →
-  fv_tm e ⊆ formula_fv (FExprResult e ν).
+Lemma FExprResultIn_fv Σ e ν :
+  formula_fv (FExprResultIn Σ e ν) = dom Σ ∪ {[ν]}.
 Proof.
-  intros Hfv.
-  unfold FExprResult.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
-  set_solver.
+  unfold FExprResultIn. apply FExprResultOn_fv.
 Qed.
 
 Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :
@@ -549,16 +681,14 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
-Lemma FExprResult_scoped_dom e ν m :
-  formula_scoped_in_world ∅ m (FExprResult e ν) →
-  fv_tm e ∪ {[ν]} ⊆ world_dom (m : World).
+Lemma FExprResultOn_scoped_dom X e ν m :
+  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
+  X ∪ {[ν]} ⊆ world_dom (m : World).
 Proof.
   intros Hscope z Hz.
   apply Hscope.
   apply elem_of_union. right.
-  unfold FExprResult.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
+  rewrite FExprResultOn_fv.
   set_solver.
 Qed.
 

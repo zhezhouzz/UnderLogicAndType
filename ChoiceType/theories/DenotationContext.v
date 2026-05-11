@@ -31,7 +31,7 @@ Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FQ :=
   match Γ with
   | CtxEmpty        => FTrue
   | CtxBind x τ    =>
-      denot_ty_on (dom Σ ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+      denot_ty_on (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
   | CtxComma Γ1 Γ2 =>
       FAnd
         (denot_ctx_under Σ Γ1)
@@ -103,7 +103,7 @@ Lemma denot_ctx_under_formula_fv_subset Σ Γ :
 Proof.
   induction Γ in Σ |- *; simpl.
   - set_solver.
-  - pose proof (denot_ty_on_formula_fv_subset (dom Σ ∪ {[x]})
+  - pose proof (denot_ty_on_formula_fv_subset
       (<[x:=erase_ty τ]> Σ) τ (tret (vfvar x))) as Hτ.
     intros z Hz. apply Hτ in Hz. simpl in Hz. set_solver.
   - pose proof (IHΓ1 Σ) as H1.
@@ -246,7 +246,7 @@ Qed.
 
 Lemma denot_ctx_under_bind Σ x τ m :
   m ⊨ denot_ctx_under Σ (CtxBind x τ) ↔
-  m ⊨ denot_ty_on (dom Σ ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+  m ⊨ denot_ty_on (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
 Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
@@ -261,17 +261,14 @@ Proof.
     induction Γ as [|x τ|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2];
       intros Σ1 Σ2 Hdom Hagree; simpl.
     - reflexivity.
-    - unfold denot_ty_on, denot_ty_avoiding.
-      replace (dom Σ1 ∪ {[x]}) with (dom Σ2 ∪ {[x]}) by set_solver.
-      replace (dom (<[x:=erase_ty τ]> Σ1))
-        with (dom (<[x:=erase_ty τ]> Σ2)).
-      + apply denot_ty_fuel_env_agree.
-        intros z Hz.
+    - unfold denot_ty_on.
+      apply denot_ty_fuel_env_agree.
+      + rewrite !dom_insert_L. set_solver.
+      + intros z Hz.
         destruct (decide (z = x)) as [->|Hne].
         * rewrite !lookup_insert_eq. reflexivity.
         * rewrite !lookup_insert_ne by congruence.
           apply Hagree. simpl. set_solver.
-      + rewrite !dom_insert_L. set_solver.
     - rewrite (IH1 Σ1 Σ2 Hdom).
       2:{ intros z Hz. apply Hagree. simpl. set_solver. }
       assert (HdomU :
@@ -315,7 +312,6 @@ Qed.
 Lemma denot_ctx_bind x τ m :
   m ⊨ ⟦CtxBind x τ⟧ ↔
   m ⊨ denot_ty_on
-    (dom (erase_ctx (CtxBind x τ)) ∪ {[x]})
     (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
     τ (tret (vfvar x)).
 Proof. reflexivity. Qed.

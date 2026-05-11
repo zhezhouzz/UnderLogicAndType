@@ -40,7 +40,7 @@ Lemma nested_tlet_result_world_target_transport
   X ⊆ world_dom (ntgt : World) →
   world_store_closed_on X ntgt →
   lc_tm (tlete e1 e2) →
-  ntgt ⊨ FExprResult (tlete e1 e2) ν →
+  ntgt ⊨ FExprResultOn X (tlete e1 e2) ν →
   model_transport_on (X ∪ {[ν]})
     (let_result_world_on (e2 ^^ x) ν
       (let_result_world_on e1 x (res_restrict ntgt X) Hfreshx Hresult1)
@@ -60,7 +60,7 @@ Lemma nested_body_result_world_models_FExprResult X e1 e2 x ν (ntgt : WfWorld)
   let_result_world_on (e2 ^^ x) ν
     (let_result_world_on e1 x (res_restrict ntgt X) Hfreshx Hresult1)
     Hfreshν Hresult2
-    ⊨ FExprResult (e2 ^^ x) ν.
+    ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν.
 Proof.
 Admitted.
 

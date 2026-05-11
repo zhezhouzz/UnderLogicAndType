@@ -234,9 +234,9 @@ Lemma denot_ty_on_let_result_representative
   fv_tm e ⊆ X →
   x ∉ X ∪ fv_cty τ ∪ fv_tm e →
   m ⊨ basic_world_formula Σ (dom Σ) →
-  m ⊨ denot_ty_on X Σ τ e →
+  m ⊨ denot_ty_on Σ τ e →
   let_result_world_on e x m Hfresh Hresult ⊨
-    denot_ty_on (X ∪ {[x]}) (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+    denot_ty_on (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
 Proof.
 (** Open: this is the same missing transport principle in a specialized
     representative form.  It should follow from a repaired generic
@@ -252,7 +252,6 @@ Lemma let_result_world_on_bound_type
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ ∪ fv_tm e →
   let_result_world_on e x m Hfresh Hresult ⊨
     denot_ty_on
-      (dom (erase_ctx_under Σ Γ) ∪ {[x]})
       (<[x := erase_ty τ]> (erase_ctx_under Σ Γ))
       τ (tret (vfvar x)).
 Proof.
@@ -437,27 +436,6 @@ Lemma expr_total_on_tlete_from_open
   expr_total_on X (tlete e1 e2) m.
 Proof.
 Admitted.
-
-Lemma steps_tlete_from_body_projection
-    X e1 e2 x σ vx v :
-  x ∉ X →
-  x ∉ fv_tm e2 →
-  closed_env (store_restrict σ X) →
-  lc_env (store_restrict σ X) →
-  stale vx = ∅ →
-  is_lc vx →
-  body_tm (subst_map (store_restrict σ X) e2) →
-  subst_map (store_restrict σ X) e1 →* tret vx →
-  subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x) →* tret v →
-  subst_map (store_restrict σ X) (tlete e1 e2) →* tret v.
-Proof.
-  intros HxX Hxe2 Hclosed Hlc Hvx_closed Hvx_lc Hbody He1 Hbody_steps.
-  change (subst_map (store_restrict σ X) (tlete e1 e2))
-    with (m{store_restrict σ X} (tlete e1 e2)).
-  rewrite (msubst_lete (store_restrict σ X) e1 e2).
-  eapply reduction_lete_intro; [exact Hbody | exact He1 |].
-  eapply (steps_msubst_open_body_result X σ e2 x vx v); eauto.
-Qed.
 
 Lemma expr_result_store_tlete_from_body_store
     X e1 e2 x ν σ vx v :

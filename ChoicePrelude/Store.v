@@ -150,6 +150,13 @@ Proof.
   rewrite atom_swap_involutive. reflexivity.
 Qed.
 
+Lemma aset_swap_sym x y X :
+  aset_swap x y X = aset_swap y x X.
+Proof.
+  apply set_eq. intros z.
+  rewrite !elem_of_aset_swap, atom_swap_sym. reflexivity.
+Qed.
+
 Lemma aset_swap_fresh x y X :
   x ∉ X →
   y ∉ X →
@@ -332,6 +339,13 @@ Lemma store_swap_involutive x y s :
 Proof.
   apply map_eq. intros z.
   rewrite !store_swap_lookup_inv, atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma store_swap_sym x y s :
+  store_swap x y s = store_swap y x s.
+Proof.
+  apply map_eq. intros z.
+  rewrite !store_swap_lookup_inv, atom_swap_sym. reflexivity.
 Qed.
 
 Lemma store_swap_delete x y z s :

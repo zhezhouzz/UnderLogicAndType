@@ -392,6 +392,18 @@ Proof.
       * apply store_swap_involutive.
 Qed.
 
+Lemma res_swap_sym (x y : atom) (w : WfWorld) :
+  res_swap x y w = res_swap y x w.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. apply aset_swap_sym.
+  - intros σ. simpl. split.
+    + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
+      rewrite <- store_swap_sym. exact Hswap.
+    + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
+      rewrite store_swap_sym. exact Hswap.
+Qed.
+
 Lemma res_swap_conjugate a b x y (w : WfWorld) :
   res_swap a b (res_swap x y w) =
   res_swap (atom_swap a b x) (atom_swap a b y) (res_swap a b w).

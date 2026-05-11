@@ -8,6 +8,49 @@ From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessPro
   OperationalProps.
 From ChoiceTyping Require Export Typing.
 
+Lemma subst_map_eq_on_fv (e : tm) (σ ρ : Store) :
+  closed_env (store_restrict σ (fv_tm e)) →
+  store_restrict ρ (fv_tm e) = store_restrict σ (fv_tm e) →
+  subst_map ρ e = subst_map σ e.
+Proof.
+  intros Hclosed Hagree.
+  pose proof (@msubst_restrict_closed_on
+    tm stale_tm_inst subst_tm_inst _ _ _ ρ (fv_tm e) e) as Hρ.
+  specialize (Hρ ltac:(
+    change (closed_env (store_restrict ρ (fv_tm e)));
+    rewrite Hagree; exact Hclosed) ltac:(reflexivity)).
+  change (subst_map (store_restrict ρ (fv_tm e)) e = subst_map ρ e) in Hρ.
+  pose proof (@msubst_restrict_closed_on
+    tm stale_tm_inst subst_tm_inst _ _ _ σ (fv_tm e) e) as Hσ.
+  specialize (Hσ Hclosed ltac:(reflexivity)).
+  change (subst_map (store_restrict σ (fv_tm e)) e = subst_map σ e) in Hσ.
+  rewrite <- Hρ, <- Hσ, Hagree. reflexivity.
+Qed.
+
+Lemma subst_map_restrict_to_fv_from_superset (e : tm) X (σ : Store) :
+  fv_tm e ⊆ X →
+  closed_env (store_restrict σ X) →
+  subst_map (store_restrict σ (fv_tm e)) e =
+  subst_map (store_restrict σ X) e.
+Proof.
+  intros Hfv Hclosed.
+  pose proof (subst_map_eq_on_fv e
+    (store_restrict σ X) (store_restrict σ (fv_tm e))) as Heq.
+  assert (Hclosed_fv :
+    closed_env (store_restrict (store_restrict σ X) (fv_tm e))).
+  { apply closed_env_restrict. exact Hclosed. }
+  specialize (Heq Hclosed_fv).
+  assert (Hagree :
+    store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
+    store_restrict (store_restrict σ X) (fv_tm e)).
+  {
+    store_norm.
+    replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+    reflexivity.
+  }
+  exact (Heq Hagree).
+Qed.
+
 Definition let_result_raw_world_on
     (e : tm) (x : atom) (w : WfWorld) : World := {|
   world_dom := world_dom (w : World) ∪ {[x]};
@@ -186,6 +229,103 @@ Proof.
   - intros σx. simpl. split; intros Hσx; exact Hσx.
 Qed.
 
+(** Fiber and result-world construction commute for input coordinates.
+
+    If [x] is not one of the coordinates fixed by the current input fiber, then
+    "first run [e] and record its result at [x], then take the [X]-fiber" is
+    the same world as "first take the [X]-fiber, then run [e] and record its
+    result at [x]".  This is the resource fact needed when pushing a [tlet]
+    proof through a tower of [fib_vars]. *)
+Lemma let_result_world_on_fiber_commute
+    X e x (w : WfWorld) Hfresh Hresult
+    ρ Hproj_w Hproj_let Hfresh_fib Hresult_fib :
+  x ∉ X →
+  res_fiber_from_projection
+    (let_result_world_on e x w Hfresh Hresult) X ρ Hproj_let =
+  let_result_world_on e x
+    (res_fiber_from_projection w X ρ Hproj_w)
+    Hfresh_fib Hresult_fib.
+Proof.
+  intros HxX.
+  assert (HdomρX : dom ρ ⊆ X).
+  {
+    destruct Hproj_w as [σ [Hσ Hrestrict]].
+    rewrite <- Hrestrict, store_restrict_dom. set_solver.
+  }
+  assert (Hxρ : x ∉ dom ρ) by set_solver.
+  apply wfworld_ext. apply world_ext.
+  - simpl. reflexivity.
+  - intros σx. simpl. split.
+    + intros [[σ [vx [Hσ [Hsteps ->]]]] Hrestrict].
+      assert (Hσρ : store_restrict σ (dom ρ) = ρ).
+      {
+        rewrite <- Hrestrict at 2.
+        rewrite store_restrict_insert_notin by exact Hxρ.
+        reflexivity.
+      }
+      exists σ, vx. repeat split; eauto.
+    + intros [σ [vx [[Hσ Hrestrict] [Hsteps ->]]]].
+      split.
+      * exists σ, vx. repeat split; eauto.
+      * rewrite store_restrict_insert_notin by exact Hxρ.
+        exact Hrestrict.
+Qed.
+
+(** Result-world construction also commutes with a later one-coordinate
+    extension.
+
+    This is the [fresh_forall] counterpart of
+    [let_result_world_on_fiber_commute].  If [mν] is a future world extending
+    [m] with some fresh result coordinate [ν], and [e] only depends on the old
+    coordinates of [m], then running [e] into [x] after moving to [mν] restricts
+    back to the same [x]-result world over [m].  In the [tlet] proof this is
+    the formal reason that [x] is paired before [ν] is introduced, so the two
+    coordinates do not interfere. *)
+Lemma let_result_world_on_extension_restrict
+    e x (m mν : WfWorld) Hfresh_m Hresult_m Hfresh_mν Hresult_mν :
+  fv_tm e ⊆ world_dom (m : World) →
+  world_dom (m : World) ⊆ world_dom (mν : World) →
+  x ∉ world_dom (m : World) →
+  res_restrict mν (world_dom (m : World)) = m →
+  res_restrict (let_result_world_on e x mν Hfresh_mν Hresult_mν)
+    (world_dom (m : World) ∪ {[x]}) =
+  let_result_world_on e x m Hfresh_m Hresult_m.
+Proof.
+  intros Hfv Hdom Hx Hrestrict.
+  assert (Hfresh_r :
+    x ∉ world_dom (res_restrict mν (world_dom (m : World)) : World)).
+  { simpl. set_solver. }
+  assert (Hresult_r :
+    ∀ σ, (res_restrict mν (world_dom (m : World)) : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+  {
+    intros σ [σν [Hσν Hσ]].
+    destruct (Hresult_mν σν Hσν) as [vx Hsteps].
+    exists vx.
+    rewrite <- Hσ.
+    rewrite store_restrict_restrict.
+    replace (world_dom (m : World) ∩ fv_tm e) with (fv_tm e) by set_solver.
+    exact Hsteps.
+  }
+  rewrite (let_result_world_on_restrict_input
+    (world_dom (m : World)) e x mν Hfresh_mν Hresult_mν
+    Hfresh_r Hresult_r Hfv Hdom Hx).
+  assert (Hmem :
+    ∀ σ,
+      (res_restrict mν (world_dom (m : World)) : World) σ ↔
+      (m : World) σ).
+  { intros σ. rewrite Hrestrict. tauto. }
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σx. simpl. split.
+    + intros [σ [vx [Hσ [Hsteps ->]]]].
+      exists σ, vx. repeat split; eauto.
+      apply Hmem. exact Hσ.
+    + intros [σ [vx [Hσ [Hsteps ->]]]].
+      exists σ, vx. repeat split; eauto.
+      apply Hmem. exact Hσ.
+Qed.
+
 Lemma let_result_world_on_restrict_domain
     X e x (w : WfWorld) Hfresh Hresult :
   world_dom (w : World) = X →
@@ -223,6 +363,172 @@ Proof.
   exact Hle.
 Qed.
 
+(** ** Opening a body through an inserted result store *)
+
+Lemma msubst_open_body_result
+    X σ e x vx :
+  x ∉ X →
+  x ∉ fv_tm e →
+  closed_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  lc_env (store_restrict σ X) →
+  subst_map (<[x := vx]> (store_restrict σ X)) (e ^^ x) =
+  open_tm 0 vx (subst_map (store_restrict σ X) e).
+Proof.
+  intros HxX Hxe Hclosed Hvx_closed Hvx_lc Hlc.
+  change (e ^^ x) with (open_tm 0 (vfvar x) e).
+  apply msubst_intro_open_tm; eauto.
+  change (x ∉ dom (store_restrict σ X) ∪ fv_tm e).
+  rewrite store_restrict_dom. set_solver.
+Qed.
+
+Lemma steps_msubst_open_body_result
+    X σ e x vx v :
+  x ∉ X →
+  x ∉ fv_tm e →
+  closed_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  lc_env (store_restrict σ X) →
+  subst_map (<[x := vx]> (store_restrict σ X)) (e ^^ x) →* tret v →
+  open_tm 0 vx (subst_map (store_restrict σ X) e) →* tret v.
+Proof.
+  intros HxX Hxe Hclosed Hvx_closed Hvx_lc Hlc Hsteps.
+  rewrite <- (msubst_open_body_result X σ e x vx) by eauto.
+  exact Hsteps.
+Qed.
+
+Lemma steps_open_body_to_msubst_result
+    X σ e x vx v :
+  x ∉ X →
+  x ∉ fv_tm e →
+  closed_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  lc_env (store_restrict σ X) →
+  open_tm 0 vx (subst_map (store_restrict σ X) e) →* tret v →
+  subst_map (<[x := vx]> (store_restrict σ X)) (e ^^ x) →* tret v.
+Proof.
+  intros HxX Hxe Hclosed Hvx_closed Hvx_lc Hlc Hsteps.
+  rewrite (msubst_open_body_result X σ e x vx) by eauto.
+  exact Hsteps.
+Qed.
+
+Lemma subst_map_open_body_insert_restrict
+    X (σ : gmap atom value) e x vx :
+  x ∉ X →
+  fv_tm e ⊆ X →
+  closed_env (store_restrict σ X) →
+  stale vx = ∅ →
+  subst_map (store_restrict (<[x := vx]> σ) (fv_tm (e ^^ x))) (e ^^ x) =
+  subst_map (<[x := vx]> (store_restrict σ X)) (e ^^ x).
+Proof.
+  intros HxX Hfv Hclosed Hvx_closed.
+  pose proof (subst_map_eq_on_fv (e ^^ x)
+    (<[x := vx]> (store_restrict σ X))
+    (store_restrict (<[x := vx]> σ) (fv_tm (e ^^ x)))) as Heq.
+  assert (Hclosed_fv :
+    closed_env
+      (store_restrict (<[x := vx]> (store_restrict σ X)) (fv_tm (e ^^ x)))).
+  {
+    apply closed_env_restrict.
+    unfold closed_env in *.
+    apply map_Forall_insert_2; [exact Hvx_closed | exact Hclosed].
+  }
+  specialize (Heq Hclosed_fv).
+  assert (Hagree :
+    store_restrict (store_restrict (<[x := vx]> σ) (fv_tm (e ^^ x)))
+      (fv_tm (e ^^ x)) =
+    store_restrict (<[x := vx]> (store_restrict σ X)) (fv_tm (e ^^ x))).
+  {
+    rewrite store_restrict_restrict.
+    replace (fv_tm (e ^^ x) ∩ fv_tm (e ^^ x))
+      with (fv_tm (e ^^ x)) by set_solver.
+    apply (map_eq (M := gmap atom)). intros z.
+    rewrite !store_restrict_lookup.
+    destruct (decide (z ∈ fv_tm (e ^^ x))) as [HzF|HzF].
+    2:{ reflexivity. }
+    destruct (decide (z = x)) as [->|Hzx].
+    - change ((<[x := vx]> (σ : gmap atom value) : gmap atom value) !! x =
+        (<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! x).
+      rewrite !lookup_insert_eq.
+      reflexivity.
+    - change ((<[x := vx]> (σ : gmap atom value) : gmap atom value) !! z =
+        (<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! z).
+      rewrite !lookup_insert_ne by congruence.
+      rewrite store_restrict_lookup.
+      destruct (decide (z ∈ X)) as [HzX|HzX].
+      + reflexivity.
+      + exfalso.
+        pose proof (open_fv_tm e (vfvar x) 0) as Hopen.
+        simpl in Hopen.
+        assert (Hz : z ∈ {[x]} ∪ fv_tm e) by set_solver.
+        apply elem_of_union in Hz as [Hzx'|Hze].
+        * apply elem_of_singleton in Hzx'. contradiction.
+        * apply HzX. apply Hfv. exact Hze.
+  }
+  specialize (Heq Hagree).
+  exact Heq.
+Qed.
+
+Lemma store_restrict_drop_middle_insert
+    (σ : gmap atom value) (D : aset) x ν vx v :
+  dom σ ⊆ D →
+  x ∉ D ∪ {[ν]} →
+  ν ∉ D →
+  store_restrict (<[ν := v]> (<[x := vx]> σ)) (D ∪ {[ν]}) =
+    <[ν := v]> σ.
+Proof.
+  intros Hdom HxD HνD.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite store_restrict_lookup.
+  destruct (decide (z = ν)) as [->|Hzν].
+  - rewrite decide_True by set_solver.
+    change ((<[ν := v]> (<[x := vx]> (σ : gmap atom value)) : gmap atom value) !! ν =
+      (<[ν := v]> (σ : gmap atom value) : gmap atom value) !! ν).
+    rewrite !lookup_insert_eq. reflexivity.
+  - change ((if decide (z ∈ D ∪ {[ν]})
+        then (<[ν := v]> (<[x := vx]> (σ : gmap atom value)) : gmap atom value) !! z
+        else None) =
+      (<[ν := v]> (σ : gmap atom value) : gmap atom value) !! z).
+    rewrite lookup_insert_ne by congruence.
+    destruct (decide (z ∈ D)) as [HzD|HzD].
+    + rewrite decide_True by set_solver.
+      rewrite lookup_insert_ne by set_solver.
+      rewrite lookup_insert_ne by congruence.
+      reflexivity.
+    + rewrite decide_False by set_solver.
+      rewrite lookup_insert_ne by congruence.
+      symmetry. apply not_elem_of_dom. set_solver.
+Qed.
+
+Lemma steps_tlete_from_body_projection
+    X e1 e2 x σ vx v :
+  x ∉ X →
+  x ∉ fv_tm e2 →
+  closed_env (store_restrict σ X) →
+  lc_env (store_restrict σ X) →
+  stale vx = ∅ →
+  is_lc vx →
+  body_tm (subst_map (store_restrict σ X) e2) →
+  subst_map (store_restrict σ X) e1 →* tret vx →
+  subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x) →* tret v →
+  subst_map (store_restrict σ X) (tlete e1 e2) →* tret v.
+Proof.
+  intros HxX Hxe2 Hclosed Hlc Hvx_closed Hvx_lc Hbody He1 Hbody_steps.
+  change (subst_map (store_restrict σ X) (tlete e1 e2))
+    with (m{store_restrict σ X} (tlete e1 e2)).
+  rewrite (msubst_lete (store_restrict σ X) e1 e2).
+  eapply reduction_lete_intro; [exact Hbody | exact He1 |].
+  eapply (steps_msubst_open_body_result X σ e2 x vx v); eauto.
+Qed.
+
+Lemma notin_tlet_result_parts (X S : aset) (x ν : atom) :
+  x ∉ X ∪ S ∪ {[ν]} →
+  x ∉ X ∧ x ∉ S ∧ x ≠ ν.
+Proof. set_solver. Qed.
+
 Lemma let_result_world_on_tlete_decompose :
   ∀ X e1 e2 x ν (n : WfWorld)
     Hfreshx Hresult1 Hfreshν Hresult2 Hfreshν_tlet Hresult_tlet,
@@ -244,4 +550,137 @@ Lemma let_result_world_on_tlete_decompose :
       (world_dom (n : World) ∪ {[ν]}) =
     let_result_world_on (tlete e1 e2) ν n Hfreshν_tlet Hresult_tlet.
 Proof.
-Admitted.
+  intros X e1 e2 x ν n Hfreshx Hresult1 Hfreshν Hresult2
+    Hfreshν_tlet Hresult_tlet Hfv Hx Hνn HXn Hclosed Hlc
+    Hresult_closed Hbody.
+  destruct (notin_tlet_result_parts X (fv_tm e2) x ν Hx)
+    as [HxX [Hxe2 Hxν]].
+  assert (Hx_worldν : x ∉ world_dom (n : World) ∪ {[ν]}).
+  {
+    intros Hin. apply elem_of_union in Hin as [Hin|Hin].
+    - exact (Hfreshx Hin).
+    - apply elem_of_singleton in Hin. apply Hxν. exact Hin.
+  }
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σν. simpl. split.
+    + intros [σxν [Hnested Hrestrict]].
+      destruct Hnested as [σx [v [Hσx [Hbody_steps ->]]]].
+      destruct Hσx as [σ [vx [Hσ [He1_fv ->]]]].
+      assert (Hfv_e1 : fv_tm e1 ⊆ X) by (simpl in Hfv; set_solver).
+      assert (Hfv_e2 : fv_tm e2 ⊆ X) by (simpl in Hfv; set_solver).
+      assert (He1X : subst_map (store_restrict σ X) e1 →* tret vx).
+      {
+        replace (subst_map (store_restrict σ X) e1)
+          with (subst_map (store_restrict σ (fv_tm e1)) e1).
+        - exact He1_fv.
+        - pose proof (subst_map_eq_on_fv e1
+            (store_restrict σ X) (store_restrict σ (fv_tm e1))) as Heq.
+          assert (Hclosed_fv :
+            closed_env (store_restrict (store_restrict σ X) (fv_tm e1))).
+          { apply closed_env_restrict. exact (Hclosed σ Hσ). }
+          specialize (Heq Hclosed_fv).
+          assert (Hagree :
+            store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
+            store_restrict (store_restrict σ X) (fv_tm e1)).
+          {
+            store_norm. replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            reflexivity.
+          }
+          exact (Heq Hagree).
+      }
+      destruct (Hresult_closed σ vx Hσ He1X) as [Hvx_closed Hvx_lc].
+      assert (Hbody_steps_X :
+        subst_map (<[x := vx]> (store_restrict σ X)) (e2 ^^ x) →* tret v).
+      {
+        rewrite <- (subst_map_open_body_insert_restrict X σ e2 x vx).
+        - exact Hbody_steps.
+        - exact HxX.
+        - exact Hfv_e2.
+        - exact (Hclosed σ Hσ).
+        - exact Hvx_closed.
+      }
+      exists σ, v. split; [exact Hσ |]. split.
+      * change (subst_map (store_restrict σ (fv_tm (tlete e1 e2)))
+          (tlete e1 e2) →* tret v).
+        rewrite (subst_map_restrict_to_fv_from_superset
+          (tlete e1 e2) X σ Hfv (Hclosed σ Hσ)).
+        eapply steps_tlete_from_body_projection.
+        -- exact HxX.
+        -- exact Hxe2.
+        -- exact (Hclosed σ Hσ).
+        -- exact (Hlc σ Hσ).
+        -- exact Hvx_closed.
+        -- exact Hvx_lc.
+        -- exact (Hbody σ Hσ).
+        -- exact He1X.
+        -- exact Hbody_steps_X.
+      * rewrite <- Hrestrict.
+        eapply store_restrict_drop_middle_insert.
+        -- pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
+           rewrite Hdomσ. set_solver.
+        -- exact Hx_worldν.
+        -- exact Hνn.
+    + intros [σ [v [Hσ [Hsteps ->]]]].
+      assert (Hfv_e1 : fv_tm e1 ⊆ X) by (simpl in Hfv; set_solver).
+      assert (Hfv_e2 : fv_tm e2 ⊆ X) by (simpl in Hfv; set_solver).
+      assert (HstepsX :
+        subst_map (store_restrict σ X) (tlete e1 e2) →* tret v).
+      {
+        rewrite <- (subst_map_restrict_to_fv_from_superset
+          (tlete e1 e2) X σ Hfv (Hclosed σ Hσ)).
+        exact Hsteps.
+      }
+      change (subst_map (store_restrict σ X) (tlete e1 e2))
+        with (m{store_restrict σ X} (tlete e1 e2)) in HstepsX.
+      rewrite (msubst_lete (store_restrict σ X) e1 e2) in HstepsX.
+      destruct (reduction_lete _ _ _ HstepsX) as [vx [He1X Hopen]].
+      assert (He1_fv : subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
+      {
+        replace (subst_map (store_restrict σ (fv_tm e1)) e1)
+          with (subst_map (store_restrict σ X) e1).
+        - exact He1X.
+        - symmetry.
+          pose proof (subst_map_eq_on_fv e1
+            (store_restrict σ X) (store_restrict σ (fv_tm e1))) as Heq.
+          assert (Hclosed_fv :
+            closed_env (store_restrict (store_restrict σ X) (fv_tm e1))).
+          { apply closed_env_restrict. exact (Hclosed σ Hσ). }
+          specialize (Heq Hclosed_fv).
+          assert (Hagree :
+            store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
+            store_restrict (store_restrict σ X) (fv_tm e1)).
+          {
+            store_norm. replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            reflexivity.
+          }
+          exact (Heq Hagree).
+      }
+      destruct (Hresult_closed σ vx Hσ He1X) as [Hvx_closed Hvx_lc].
+      assert (Hbody_steps :
+        subst_map (store_restrict (<[x := vx]> σ) (fv_tm (e2 ^^ x)))
+          (e2 ^^ x) →* tret v).
+      {
+        rewrite (subst_map_open_body_insert_restrict X σ e2 x vx).
+        - eapply steps_open_body_to_msubst_result.
+          + exact HxX.
+          + exact Hxe2.
+          + exact (Hclosed σ Hσ).
+          + exact Hvx_closed.
+          + exact Hvx_lc.
+          + exact (Hlc σ Hσ).
+          + exact Hopen.
+        - exact HxX.
+        - exact Hfv_e2.
+        - exact (Hclosed σ Hσ).
+        - exact Hvx_closed.
+      }
+      exists (<[ν := v]> (<[x := vx]> σ)).
+      split.
+      * exists (<[x := vx]> σ), v. repeat split; eauto.
+      * eapply store_restrict_drop_middle_insert.
+        -- pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
+           rewrite Hdomσ. set_solver.
+        -- exact Hx_worldν.
+        -- exact Hνn.
+Qed.

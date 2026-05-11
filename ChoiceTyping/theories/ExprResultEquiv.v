@@ -95,8 +95,8 @@ Lemma FExprResult_expr_result_equiv_in_world
   X ⊆ world_dom (m : World) →
   world_store_closed_on X m →
   expr_result_equiv_in_world X (res_restrict m X) e e' →
-  m ⊨ FExprResult e ν →
-  m ⊨ FExprResult e' ν.
+  m ⊨ FExprResultOn X e ν →
+  m ⊨ FExprResultOn X e' ν.
 Proof.
 Admitted.
 
@@ -109,8 +109,8 @@ Lemma FExprResult_expr_result_equiv_future
   X ⊆ world_dom (m : World) →
   world_store_closed_on X m →
   expr_result_equiv_future X (res_restrict m X) e e' →
-  m ⊨ FExprResult e ν →
-  m ⊨ FExprResult e' ν.
+  m ⊨ FExprResultOn X e ν →
+  m ⊨ FExprResultOn X e' ν.
 Proof.
   intros Hfv Hlce Hlce' HνX HXm Hclosed Hfuture Hmodel.
   eapply FExprResult_expr_result_equiv_in_world.

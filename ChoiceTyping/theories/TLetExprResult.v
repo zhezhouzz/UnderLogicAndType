@@ -311,8 +311,8 @@ Lemma FExprResult_tlete_from_body_result_world
     stale vx = ∅ ∧ is_lc vx) →
   (∀ σ, (n : World) σ → body_tm (subst_map (store_restrict σ X) e2)) →
   let_result_world_on e1 x n Hfresh Hresult ⊨
-    FExprResult (e2 ^^ x) ν →
-  n ⊨ FExprResult (tlete e1 e2) ν.
+    FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν →
+  n ⊨ FExprResultOn X (tlete e1 e2) ν.
 Proof.
 Admitted.
 

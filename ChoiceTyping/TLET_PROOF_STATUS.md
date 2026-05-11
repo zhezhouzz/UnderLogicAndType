@@ -18,6 +18,8 @@ In `ChoiceTyping/theories/LetResultWorld.v`:
 - `let_result_world_on_restrict_old`
 - `let_result_world_on_restrict_input`
 - `let_result_world_on_restrict_input_le`
+- `let_result_world_on_fiber_commute`
+- `let_result_world_on_extension_restrict`
 - `let_result_world_on_restrict_domain`
 - `let_result_world_on_le`
 - `let_result_world_on_tlete_decompose`
@@ -26,6 +28,16 @@ These lemmas describe the exact world produced by adding a fresh result
 coordinate for an expression.  The most important one is
 `let_result_world_on_tlete_decompose`: nested result worlds for `e1` and
 `e2 ^^ x` restrict back to the result world for `tlete e1 e2`.
+
+The two commuting lemmas are the current shape of the intended continuation
+proof:
+
+- `let_result_world_on_fiber_commute` says input fibers commute with adding the
+  intermediate result coordinate `x`.
+- `let_result_world_on_extension_restrict` says a later one-coordinate
+  `fresh_forall` extension, such as the result coordinate `ν`, restricts back
+  to the same `x`-result world.  This captures the proof idea that `x` is
+  paired before `ν` is introduced, so the two coordinates do not interfere.
 
 ### Generic bridge between `FExprResult` and result worlds
 
@@ -127,20 +139,30 @@ is preserved by the result-world construction.
 
 ## Current blocker
 
-The next intended lemma is in `ChoiceTyping/theories/TLetDenotation.v`:
+The current intended lemma is in `ChoiceTyping/theories/TLetDenotation.v`:
 
 ```coq
-denot_ty_on_expr_result_model_bridge_fresh_bind
+FExprCont_tlet_reduction
 ```
 
-The current statement is too weak.  It assumes only:
+Its intended proof should not try to derive a standalone reverse implication
 
 ```coq
-expr_result_model_bridge Xsrc esrc Xtgt etgt msrc mtgt
+m ⊨ FExprResultOn X (tlete e1 e2) ν ->
+let_result_world_on e1 x ... ⊨ FExprResultOn (X ∪ {[x]}) (e2 ^^ x) ν
 ```
 
-But `expr_result_model_bridge` transports formulas only on the explicit source
-and target expression scopes.  An arbitrary `denot_ty_on` may also mention:
+at the outer world.  Instead it should use `FExprCont`: the outer world does
+not yet contain `ν`; first add the `x` result world for `e1`, then let the
+continuation's `fresh_forall` add `ν`.  The remaining hard proof obligation is
+the base continuation step after the `ν` extension: use the paired result world
+for `e1`, prove the body-side antecedent for `e2 ^^ x`, use the body
+continuation, and finally remove the extra `x` by formula locality because the
+continuation does not inspect `x`.
+
+After this continuation bridge is proved, the older generic transport theorem
+will still need a cleaned-up scope/agreement interface.  An arbitrary
+`denot_ty_on` may mention:
 
 - `dom Σ`
 - `fv_cty τ`
@@ -168,15 +190,20 @@ The following are intentionally not complete evidence for the tlet case:
 - `denot_tlet_semantic_at_world`
 - `denot_ty_on_expr_result_model_bridge_fresh_bind`
 - `denot_ty_on_let_result_body_to_let`
-- `denot_tlet_formula_at_world_given_bind_total`
-- `denot_tlet_formula_at_world_total`
-- `denot_tlet_expr_total_at_world_given_bind`
-- `denot_tlet_total_at_world_given_bind`
-- `denot_tlet_total_at_world`
+- `denot_tlet_total_semantic`
 - `denot_tlet_semantic`
 
 Some of these have `Qed`, but they depend on admitted transport lemmas.  They
 should be treated as proof plumbing, not as completed theorems.
+
+The earlier long-premise tlet plumbing lemmas
+`denot_tlet_formula_at_world_given_bind_total`,
+`denot_tlet_formula_at_world_total`,
+`denot_tlet_expr_total_at_world_given_bind`,
+`denot_tlet_total_at_world_given_bind`, and `denot_tlet_total_at_world` were
+removed because their interfaces were too specific to guide the proof.
+The later thin at-world wrapper `denot_tlet_total_at_world_split` was also
+removed; the total let rule now calls `denot_tlet_total_semantic` directly.
 
 ## Suggested next step
 
