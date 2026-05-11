@@ -1289,12 +1289,12 @@ Proof.
 Qed.
 
 
-Lemma denot_ty_tlet_reduction_formula
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
+Lemma denot_ty_tlet_reduction_formula (τ2 : choice_ty): forall
+    (Σ : gmap atom ty) (Γ : ctx) (τ1: choice_ty) e1 e2
     (m : WfWorld) x
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx),
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   m ⊨ denot_ctx_in_env Σ Γ →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2 →
@@ -1303,6 +1303,28 @@ Lemma denot_ty_tlet_reduction_formula
   <->
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
+  induction τ2; intros Σ Γ τ1 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx.
+  - (* CTOver: should reduce to [FExprCont_tlet_reduction] after adding
+       the missing formula-level exact-domain/totality premises. *)
+    admit.
+  - (* CTUnder: same shape as CTOver, using the under refinement continuation. *)
+    admit.
+  - (* CTInter: after unfolding this should map both conjuncts through the IHs.
+       The second IH needs the erased-type equality supplied by basic formation;
+       the current statement does not expose that premise directly. *)
+    admit.
+  - (* CTUnion: same erasure/formation issue as CTInter, but for disjunction. *)
+    admit.
+  - (* CTSum: needs the same recursive transport as CTInter, plus preservation
+       through the partial resource sum witness. *)
+    admit.
+  - (* CTArrow: requires transporting the nested [FExprContIn] generated for
+       the function value and its fresh argument binder.  This is the env/fresh
+       binder mismatch case we identified as high risk. *)
+    admit.
+  - (* CTWand: same nested binder/env transport issue as CTArrow, with [FWand]
+       instead of implication. *)
+    admit.
 Admitted.
 
 Lemma expr_total_tlet_reduction
@@ -1386,7 +1408,7 @@ Proof.
     + split.
       * apply (proj1 Hregular_iff). exact Hregular_body.
       * apply (proj1 (denot_ty_tlet_reduction_formula
-          Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
+          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
         exact Hformula_body.
     + apply (proj1 (expr_total_tlet_reduction
         Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx ltac:(set_solver))).
@@ -1396,7 +1418,7 @@ Proof.
     + split.
       * apply (proj2 Hregular_iff). exact Hregular_target.
       * apply (proj2 (denot_ty_tlet_reduction_formula
-          Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
+          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
         exact Hformula_target.
     + apply (proj2 (expr_total_tlet_reduction
         Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx ltac:(set_solver))).
