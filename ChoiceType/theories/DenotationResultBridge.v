@@ -2,7 +2,7 @@
 
     Operational and resource-aware comparison principles for expression-result
     atoms.  These lemmas sit after [DenotationFormula]: they depend on
-    [FExprResultOn], but the core denotation atoms do not depend on these
+    [FExprResult], but the core denotation atoms do not depend on these
     proof-side transport notions. *)
 
 From LocallyNameless Require Import Tactics.
@@ -125,10 +125,10 @@ Definition expr_result_model_bridge
     (Xsrc ∖ Xtgt) ## world_dom (ntgt : World) →
     ν ∉ world_dom (mtgt : World) →
     mtgt ⊑ ntgt →
-    ntgt ⊨ FExprResultOn Xtgt etgt ν →
+    ntgt ⊨ FExprResult etgt ν →
     ∃ nsrc,
       model_transport_on Xsrc msrc nsrc ∧
-      nsrc ⊨ FExprResultOn Xsrc esrc ν ∧
+      nsrc ⊨ FExprResult esrc ν ∧
       model_transport_on (Xtgt ∪ {[ν]}) nsrc ntgt.
 
 Lemma model_transport_kripke (nsrc ntgt : WfWorld) :

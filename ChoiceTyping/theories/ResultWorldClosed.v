@@ -161,10 +161,10 @@ Lemma let_result_world_on_store_closed_on
     X e ν (n : WfWorld) Hfresh Hresult :
   ν ∉ X →
   world_store_closed_on X n →
-  world_store_closed_on X (let_result_world_on X e ν n Hfresh Hresult).
+  world_store_closed_on X (let_result_world_on e ν n Hfresh Hresult).
 Proof.
   intros HνX Hclosed σx Hσx.
-  destruct (let_result_world_on_elim X e ν n Hfresh Hresult σx Hσx)
+  destruct (let_result_world_on_elim e ν n Hfresh Hresult σx Hσx)
     as [σ [vx [Hσ [Hsteps ->]]]].
   rewrite store_restrict_insert_notin by exact HνX.
   exact (Hclosed σ Hσ).
@@ -176,13 +176,13 @@ Lemma let_result_world_on_store_closed_on_insert
   world_store_closed_on X n →
   (∀ σ vx,
     (n : World) σ →
-    subst_map (store_restrict σ X) e →* tret vx →
+    subst_map (store_restrict σ (fv_tm e)) e →* tret vx →
     stale vx = ∅ ∧ is_lc vx) →
   world_store_closed_on (X ∪ {[ν]})
-    (let_result_world_on X e ν n Hfresh Hresult).
+    (let_result_world_on e ν n Hfresh Hresult).
 Proof.
   intros HνX Hclosed Hres σν Hσν.
-  destruct (let_result_world_on_elim X e ν n Hfresh Hresult σν Hσν)
+  destruct (let_result_world_on_elim e ν n Hfresh Hresult σν Hσν)
     as [σ [vx [Hσ [Hsteps ->]]]].
   rewrite store_restrict_insert_fresh_union.
   2:{

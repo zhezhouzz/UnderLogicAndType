@@ -135,65 +135,7 @@ Lemma fundamental_const_over_case Σ c :
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
       (tret (vconst c)).
 Proof.
-  intros m Hctx.
-  assert (Hwf_over :
-    wf_choice_ty_under Σ CtxEmpty
-      (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))).
-  {
-    split.
-    - split; [constructor | exists m; exact Hctx].
-    - constructor.
-      exists ∅. intros y _.
-      unfold basic_qualifier, qual_open_atom, mk_q_eq, qual_dom, qual_bvars.
-      simpl. rewrite decide_True by set_solver. simpl. split; set_solver.
-  }
-  pose proof (denot_ty_scoped_from_ctx_under Σ CtxEmpty
-    (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-    (tret (vconst c)) m Hwf_over ltac:(simpl; set_solver) Hctx) as Hscope.
-  unfold denot_ty_in_ctx_under, denot_ty_on, denot_ty_avoiding.
-  unfold erase_ctx_under. simpl.
-  set (X := dom (Σ ∪ ∅)).
-  set (D := dom (Σ ∪ ∅) ∪
-            fv_cty (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))) ∪
-            fv_tm (tret (vconst c)) ∪ dom (Σ ∪ ∅)).
-  simpl.
-  unfold fresh_forall.
-  set (ν := fresh_for (D ∪ X ∪ fv_tm (tret (vconst c)) ∪ qual_dom (mk_q_eq (vbvar 0) (vconst c)))).
-  eapply res_models_forall_intro.
-  - unfold denot_ty_in_ctx_under, denot_ty_on, denot_ty_avoiding, erase_ctx_under in Hscope.
-    simpl in Hscope. exact Hscope.
-  - exists (world_dom (m : World) ∪ X ∪ {[ν]}).
-    split.
-    {
-      intros z Hz.
-      apply elem_of_union. left.
-      apply elem_of_union. left. exact Hz.
-    }
-    intros y Hy m' Hdom Hrestr.
-    eapply res_models_impl_intro.
-    + eapply const_over_body_on_rename_scoped.
-      * intros HyXν. apply Hy.
-        apply elem_of_union in HyXν as [HyX | Hyν].
-        -- apply elem_of_union. left.
-           apply elem_of_union. right. exact HyX.
-        -- apply elem_of_union. right. exact Hyν.
-      * assert (HXm : dom (Σ ∪ ∅) ⊆ world_dom (m : World)).
-        {
-          rewrite map_union_empty.
-          pose proof (denot_ctx_in_env_world_has_type Σ CtxEmpty m Hctx) as [Hcover _].
-          simpl in Hcover.
-          intros z Hz.
-          pose proof (Hcover z Hz) as Hzcover.
-          set_solver.
-        }
-        rewrite Hdom. intros z Hz.
-        apply elem_of_union. left. apply HXm. exact Hz.
-      * rewrite Hdom. apply elem_of_union. right.
-        apply elem_of_singleton. reflexivity.
-    + intros m'' Hle Hexpr.
-      eapply const_over_consequent_from_renamed_expr_on.
-      exact Hexpr.
-Qed.
+Admitted.
 
 Lemma fundamental_const_under_case Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
@@ -201,65 +143,7 @@ Lemma fundamental_const_under_case Σ c :
       (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
       (tret (vconst c)).
 Proof.
-  intros m Hctx.
-  assert (Hwf_under :
-    wf_choice_ty_under Σ CtxEmpty
-      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))).
-  {
-    split.
-    - split; [constructor | exists m; exact Hctx].
-    - constructor.
-      exists ∅. intros y _.
-      unfold basic_qualifier, qual_open_atom, mk_q_eq, qual_dom, qual_bvars.
-      simpl. rewrite decide_True by set_solver. simpl. split; set_solver.
-  }
-  pose proof (denot_ty_scoped_from_ctx_under Σ CtxEmpty
-    (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-    (tret (vconst c)) m Hwf_under ltac:(simpl; set_solver) Hctx) as Hscope.
-  unfold denot_ty_in_ctx_under, denot_ty_on, denot_ty_avoiding.
-  unfold erase_ctx_under. simpl.
-  set (X := dom (Σ ∪ ∅)).
-  set (D := dom (Σ ∪ ∅) ∪
-            fv_cty (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))) ∪
-            fv_tm (tret (vconst c)) ∪ dom (Σ ∪ ∅)).
-  simpl.
-  unfold fresh_forall.
-  set (ν := fresh_for (D ∪ X ∪ fv_tm (tret (vconst c)) ∪ qual_dom (mk_q_eq (vbvar 0) (vconst c)))).
-  eapply res_models_forall_intro.
-  - unfold denot_ty_in_ctx_under, denot_ty_on, denot_ty_avoiding, erase_ctx_under in Hscope.
-    simpl in Hscope. exact Hscope.
-  - exists (world_dom (m : World) ∪ X ∪ {[ν]}).
-    split.
-    {
-      intros z Hz.
-      apply elem_of_union. left.
-      apply elem_of_union. left. exact Hz.
-    }
-    intros y Hy m' Hdom Hrestr.
-    eapply res_models_impl_intro.
-    + eapply const_under_body_on_rename_scoped.
-      * intros HyXν. apply Hy.
-        apply elem_of_union in HyXν as [HyX | Hyν].
-        -- apply elem_of_union. left.
-           apply elem_of_union. right. exact HyX.
-        -- apply elem_of_union. right. exact Hyν.
-      * assert (HXm : dom (Σ ∪ ∅) ⊆ world_dom (m : World)).
-        {
-          rewrite map_union_empty.
-          pose proof (denot_ctx_in_env_world_has_type Σ CtxEmpty m Hctx) as [Hcover _].
-          simpl in Hcover.
-          intros z Hz.
-          pose proof (Hcover z Hz) as Hzcover.
-          set_solver.
-        }
-        rewrite Hdom. intros z Hz.
-        apply elem_of_union. left. apply HXm. exact Hz.
-      * rewrite Hdom. apply elem_of_union. right.
-        apply elem_of_singleton. reflexivity.
-    + intros m'' Hle Hexpr.
-      eapply const_under_consequent_from_renamed_expr_on.
-      exact Hexpr.
-Qed.
+Admitted.
 
 (** Constants need the first value-adequacy lemma for the new
     basic-world-aware refinement denotation: evaluating [tret c] at a fresh

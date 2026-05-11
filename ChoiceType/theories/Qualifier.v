@@ -109,11 +109,8 @@ Definition qual_interp_full
 Definition qual_interp (σ : gmap atom value) (q : type_qualifier) : Prop :=
   qual_interp_full ∅ σ σ q.
 
-Definition qual_interp_cl (q : type_qualifier) (σ : gmap atom value) : Prop :=
-  qual_interp σ q.
-
 #[global] Instance denot_qual_inst : Denotation type_qualifier (gmap atom value → Prop) :=
-  qual_interp_cl.
+  fun q σ => qual_interp σ q.
 Arguments denot_qual_inst /.
 
 (** ** Standard notations from UnderType *)

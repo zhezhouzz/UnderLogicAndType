@@ -14,7 +14,7 @@ expr_result_in_world ρ e ν w
 When the proof is about one concrete store, use the smaller pointwise view:
 
 ```coq
-expr_result_in_store ρ e ν σ
+expr_result_store ν (subst_map ρ e) σ
 ```
 
 Then lift it to worlds only at the boundary.  This avoids repeatedly
@@ -30,12 +30,12 @@ FExprResult e ν := FAtom (expr_logic_qual e ν)
 This makes operational lemmas usable before entering formula proof plumbing.
 For `tlete`, use:
 
-- `expr_result_in_store_let_elim`
-- `expr_result_in_store_let_intro`
+- `expr_result_store_let_elim`
+- `expr_result_store_let_intro`
 - `expr_result_in_world_let_elim`
 - `expr_result_in_world_let_intro`
-- `expr_result_in_store_ret_fvar_lookup`
-- `expr_result_in_store_ret_fvar_trans`
+- `expr_result_store_ret_fvar_lookup`
+- `expr_result_store_ret_fvar_trans`
 
 These lemmas call the CoreLang reduction helpers (`reduction_lete`,
 `reduction_lete_intro`) after pushing `msubst` through `tlete`.
@@ -64,12 +64,12 @@ state the projection as an iff over `res_restrict w {[ν]}`.  Keep
 from merely knowing the result set of `tlete`.
 
 For over-approximation reasoning, do not try to prove a global reverse bridge
-from `FExprResultOn X (tlete e1 e2) ν` to the body result formula.  That would
+from `FExprResult (tlete e1 e2) ν` to the body result formula.  That would
 incorrectly turn a union over all intermediate `vx` into obligations for every
 branch.  Use the pointwise decomposition instead:
 
 ```coq
-expr_result_in_store_tlete_to_body_open_atom
+expr_result_store_tlete_to_body_open_atom
 ```
 
 It says that a single concrete tlet result can be decomposed into some
@@ -160,7 +160,7 @@ m ⊨ FExprResult e ν
 
 should be unpacked through the fiber layer, not by old global wrappers that
 erase the input projection.  In particular, avoid lemmas that turn
-`FExprResultOn X e ν` into `expr_result_in_world ∅ e ν ...`; this loses the
+`FExprResult e ν` into `expr_result_in_world ∅ e ν ...`; this loses the
 store fixed by `fib_vars X`, and is wrong as soon as `X` is nonempty.
 
 Use `fib_vars_models_elim` / `fib_vars_models_intro` to expose the projection
@@ -236,7 +236,7 @@ stale v = ∅
 Therefore lemmas whose premise contains
 
 ```coq
-expr_result_in_store ∅ (tret (vfvar x)) ν σ
+expr_result_store ν (subst_map ∅ (tret (vfvar x))) σ
 ```
 
 are usually vacuous.  The proof pattern is:

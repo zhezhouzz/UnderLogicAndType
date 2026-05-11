@@ -267,15 +267,12 @@ Proof.
     scopedness invariant for the accumulated fold. *)
 Admitted.
 
-Definition expr_result_value (eρ : tm) (v : value) : Prop :=
-  eρ →* tret v.
-
 Definition expr_result_store (ν : atom) (eρ : tm) (σw : Store) : Prop :=
   ∃ v,
     σw = {[ν := v]} ∧
     stale v = ∅ ∧
     is_lc v ∧
-    expr_result_value eρ v.
+    eρ →* tret v.
 
 Lemma expr_result_store_elim ν eρ σw :
   expr_result_store ν eρ σw →
@@ -302,22 +299,20 @@ Proof.
   exact Hsteps.
 Qed.
 
-Definition expr_result_in_store (ρ : Store) (e : tm) (ν : atom) (σw : Store) : Prop :=
-  expr_result_store ν (subst_map ρ e) σw.
-
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
   ∀ σν,
-    (res_restrict w {[ν]} : World) σν ↔ expr_result_in_store ρ e ν σν.
+    (res_restrict w {[ν]} : World) σν ↔
+    expr_result_store ν (subst_map ρ e) σν.
 
 Lemma expr_result_in_world_sound ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   (res_restrict w {[ν]} : World) σw →
-  expr_result_in_store ρ e ν σw.
+  expr_result_store ν (subst_map ρ e) σw.
 Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
 
 Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_in_world ρ e ν w →
-  expr_result_in_store ρ e ν σw →
+  expr_result_store ν (subst_map ρ e) σw →
   (res_restrict w {[ν]} : World) σw.
 Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
 
@@ -345,13 +340,12 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
 Definition FExprResult (e : tm) (ν : atom) : FQ :=
   fib_vars (fv_tm e) (FAtom (expr_logic_qual_on (fv_tm e) e ν)).
 
-(** Domain-explicit expression-result atom.
+(** Expression-result atom.
 
-    [FExprResult e ν] uses [fv_tm e] as the input domain.  That is fine for a
-    single expression, but comparisons between open expressions need both sides
-    interpreted over the same input domain.  [FExprResultOn X e ν] records that
-    common domain explicitly; callers should provide [fv_tm e ⊆ X] and choose
-    [ν ∉ X]. *)
+    The operational input domain is exactly [fv_tm e].  Earlier versions kept an
+    explicit [X] parameter so several expressions could be compared over a
+    common larger domain, but that made the Prop-level specification drift away
+    from the formula itself. *)
 Definition expr_let_result_in_store_on
     (X : aset) (e1 e2 : tm) (x ν : atom) (σw : Store) : Prop :=
   ∃ vx v,
@@ -437,12 +431,6 @@ Proof.
   models_fuel_irrel Hbody.
 Qed.
 
-Definition FExprResultOnRaw (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FAtom (expr_logic_qual_on X e ν)).
-
-Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  FExprResultOnRaw X e ν.
-
 Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
   stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
 Proof. reflexivity. Qed.
@@ -503,21 +491,32 @@ Proof.
   exact (Hfresh ltac:(set_solver)).
 Qed.
 
-Lemma FExprResultOn_fv_subset X e ν :
-  formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
+Lemma FExprResult_fv_subset X e ν :
+  fv_tm e ⊆ X →
+  formula_fv (FExprResult e ν) ⊆ X ∪ {[ν]}.
 Proof.
-  unfold FExprResultOn, FExprResultOnRaw.
+  intros Hfv.
+  unfold FExprResult.
   rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   set_solver.
 Qed.
 
-Lemma FExprResultOn_expr_fv_subset X e ν :
+Lemma FExprResult_fv_exact_domain e ν :
+  formula_fv (FExprResult e ν) ⊆ fv_tm e ∪ {[ν]}.
+Proof.
+  unfold FExprResult.
+  rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  set_solver.
+Qed.
+
+Lemma FExprResult_expr_fv_subset X e ν :
   fv_tm e ⊆ X →
-  fv_tm e ⊆ formula_fv (FExprResultOn X e ν).
+  fv_tm e ⊆ formula_fv (FExprResult e ν).
 Proof.
   intros Hfv.
-  unfold FExprResultOn, FExprResultOnRaw.
+  unfold FExprResult.
   rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   set_solver.
@@ -550,14 +549,14 @@ Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
 Proof. reflexivity. Qed.
 
-Lemma FExprResultOn_scoped_dom X e ν m :
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
-  X ∪ {[ν]} ⊆ world_dom (m : World).
+Lemma FExprResult_scoped_dom e ν m :
+  formula_scoped_in_world ∅ m (FExprResult e ν) →
+  fv_tm e ∪ {[ν]} ⊆ world_dom (m : World).
 Proof.
   intros Hscope z Hz.
   apply Hscope.
   apply elem_of_union. right.
-  unfold FExprResultOn, FExprResultOnRaw.
+  unfold FExprResult.
   rewrite fib_vars_formula_fv. simpl.
   unfold stale, stale_logic_qualifier. simpl.
   set_solver.
@@ -651,8 +650,8 @@ Proof.
   eapply basic_world_formula_store_restrict_closed_env; eauto.
 Qed.
 
-Lemma expr_result_in_store_let_elim ρ e1 e2 ν σw :
-  expr_result_in_store ρ (tlete e1 e2) ν σw →
+Lemma expr_result_store_let_elim ρ e1 e2 ν σw :
+  expr_result_store ν (subst_map ρ (tlete e1 e2)) σw →
   ∃ v vx,
     σw = {[ν := v]} ∧
     subst_map ρ e1 →* tret vx ∧
@@ -680,16 +679,16 @@ Proof.
   intros Hworld σν Hσν.
   pose proof (expr_result_in_world_sound ρ (tlete e1 e2) ν w σν
     Hworld Hσν) as Hstore.
-  exact (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore).
+  exact (expr_result_store_let_elim ρ e1 e2 ν σν Hstore).
 Qed.
 
-Lemma expr_result_in_store_let_intro ρ e1 e2 ν v vx :
+Lemma expr_result_store_let_intro ρ e1 e2 ν v vx :
   stale v = ∅ →
   is_lc v →
   body_tm (subst_map ρ e2) →
   subst_map ρ e1 →* tret vx →
   open_tm 0 vx (subst_map ρ e2) →* tret v →
-  expr_result_in_store ρ (tlete e1 e2) ν {[ν := v]}.
+  expr_result_store ν (subst_map ρ (tlete e1 e2)) {[ν := v]}.
 Proof.
   intros Hv_closed Hv_lc Hbody Hsteps1 Hsteps2.
   apply expr_result_store_intro; [exact Hv_closed | exact Hv_lc |].
@@ -704,11 +703,12 @@ Lemma expr_let_result_in_store_on_to_tlete_result X e1 e2 x ν σw v :
   stale v = ∅ →
   is_lc v →
   body_tm (subst_map (store_restrict σw X) e2) →
-  expr_result_in_store (store_restrict σw X) (tlete e1 e2) ν {[ν := v]}.
+  expr_result_store ν
+    (subst_map (store_restrict σw X) (tlete e1 e2)) {[ν := v]}.
 Proof.
   intros [vx [v' [_ [Hν [Hsteps1 Hsteps2]]]]] Hνv Hv_closed Hv_lc Hbody.
   rewrite Hνv in Hν. inversion Hν. subst v'.
-  eapply expr_result_in_store_let_intro; eauto.
+  eapply expr_result_store_let_intro; eauto.
 Qed.
 
 Lemma expr_result_in_world_let_intro ρ e1 e2 ν (w : WfWorld) :
@@ -728,11 +728,11 @@ Proof.
     destruct (proj1 (Hexact σν) Hσν)
       as [v [vx [Hσν_eq [Hv_closed [Hv_lc [Hsteps1 Hsteps2]]]]]].
     subst σν.
-    eapply expr_result_in_store_let_intro; eauto.
+    eapply expr_result_store_let_intro; eauto.
   - intros Hstore.
     destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σν Hstore)
       as [v [Hσν_eq [Hv_closed [Hv_lc Hsteps]]]].
-    destruct (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore)
+    destruct (expr_result_store_let_elim ρ e1 e2 ν σν Hstore)
       as [v' [vx [Hσν_eq' [Hsteps1 Hsteps2]]]].
     subst σν.
     assert (Hv' : v' = v).
@@ -752,20 +752,20 @@ Proof.
     exists v, vx. repeat split; eauto.
 Qed.
 
-Lemma expr_result_in_store_tlete_to_body_open_atom ρ e1 e2 x ν σν :
+Lemma expr_result_store_tlete_to_body_open_atom ρ e1 e2 x ν σν :
   closed_env ρ →
   lc_env ρ →
   x ∉ dom ρ ∪ fv_tm e2 →
   (∀ vx, subst_map ρ e1 →* tret vx → stale vx = ∅ ∧ is_lc vx) →
-  expr_result_in_store ρ (tlete e1 e2) ν σν →
+  expr_result_store ν (subst_map ρ (tlete e1 e2)) σν →
   ∃ vx,
     subst_map ρ e1 →* tret vx ∧
-    expr_result_in_store (<[x := vx]> ρ) (e2 ^^ x) ν σν.
+    expr_result_store ν (subst_map (<[x := vx]> ρ) (e2 ^^ x)) σν.
 Proof.
   intros Hclosed Hlc Hx Hresult_closed Hstore.
   destruct (expr_result_store_elim ν (subst_map ρ (tlete e1 e2)) σν Hstore)
     as [v [Hσν [Hv_closed [Hv_lc _]]]].
-  destruct (expr_result_in_store_let_elim ρ e1 e2 ν σν Hstore)
+  destruct (expr_result_store_let_elim ρ e1 e2 ν σν Hstore)
     as [v' [vx [Hσν' [Hsteps1 Hsteps2]]]].
   subst σν.
   assert (Hv' : v' = v).
@@ -794,10 +794,10 @@ Proof.
   - exact Hx.
 Qed.
 
-Lemma expr_result_in_store_ret_fvar_lookup x ν σw vx :
+Lemma expr_result_store_ret_fvar_lookup x ν σw vx :
   stale vx = ∅ →
   σw !! x = Some vx →
-  expr_result_in_store ∅ (tret (vfvar x)) ν σw →
+  expr_result_store ν (subst_map ∅ (tret (vfvar x))) σw →
   σw !! ν = Some vx.
 Proof.
   intros _ _ Hret.
@@ -809,11 +809,11 @@ Proof.
   simpl in Hv_stale. set_solver.
 Qed.
 
-Lemma expr_result_in_store_ret_fvar_trans ρ e x ν σw :
+Lemma expr_result_store_ret_fvar_trans ρ e x ν σw :
   (∀ vx, subst_map σw (subst_map ρ e) →* tret vx → stale vx = ∅) →
-  expr_result_in_store ρ e x σw →
-  expr_result_in_store ∅ (tret (vfvar x)) ν σw →
-  expr_result_in_store ρ e ν σw.
+  expr_result_store x (subst_map ρ e) σw →
+  expr_result_store ν (subst_map ∅ (tret (vfvar x))) σw →
+  expr_result_store ν (subst_map ρ e) σw.
 Proof.
   intros _ _ Hret.
   destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σw Hret)

@@ -27,7 +27,7 @@ coordinate for an expression.  The most important one is
 `let_result_world_on_tlete_decompose`: nested result worlds for `e1` and
 `e2 ^^ x` restrict back to the result world for `tlete e1 e2`.
 
-### Generic bridge between `FExprResultOn` and result worlds
+### Generic bridge between `FExprResult` and result worlds
 
 In `ChoiceTyping/theories/ResultWorldBridge.v`:
 
@@ -40,14 +40,14 @@ In `ChoiceTyping/theories/ResultWorldBridge.v`:
 - `msubst_closed_tm_of_restrict_world`
 - `steps_closed_result_of_restrict_world`
 - `body_tm_msubst_restrict_world`
-- `FExprResultOn_iff_let_result_world_on`
-- `let_result_world_on_models_FExprResultOn`
+- `FExprResult_iff_let_result_world_on`
+- `let_result_world_on_models_FExprResult`
 - `fresh_forall_expr_result_to_let_result_world_renamed`
 - `fresh_forall_expr_result_to_let_result_world`
 - `expr_result_equiv_in_world_refl`
 - `expr_result_equiv_future_refl`
 - `let_result_world_on_expr_result_equiv_in_world`
-- `FExprResultOn_transport_by_result_world_equiv`
+- `FExprResult_transport_by_result_world_equiv`
 
 These lemmas connect the formula-level result atom with the exact operational
 result world.  This is the cleanest part of the current tlet infrastructure.
@@ -73,7 +73,7 @@ In `ChoiceTyping/theories/TLetExprResult.v`:
 - `fib_vars_obligation_tlete_from_body_foldr`
 - `fib_vars_obligation_tlete_from_body_normalized`
 - `fib_vars_obligation_tlete_from_body_result_world`
-- `FExprResultOn_tlete_from_body_result_world`
+- `FExprResult_tlete_from_body_result_world`
 
 These lemmas show how the body-side result formula for `e2 ^^ x` can be lifted
 through the `x` fiber into the whole-let result formula for `tlete e1 e2`.
@@ -84,7 +84,7 @@ In `ChoiceTyping/theories/TLetResultBridge.v`:
 
 - `nested_tlet_result_world_source_transport`
 - `nested_tlet_result_world_target_transport`
-- `nested_body_result_world_models_FExprResultOn`
+- `nested_body_result_world_models_FExprResult`
 - `expr_result_model_bridge_tlete`
 
 This is the furthest completed point.  It proves the expression/resource-level
@@ -97,8 +97,8 @@ This still does not prove the typing rule.
 In `ChoiceTyping/theories/TLetTotal.v`:
 
 - `expr_total_on_tlete_from_open`
-- `expr_result_value_tlete_from_body_projection`
-- `expr_result_value_tlete_from_body_store`
+- `steps_tlete_from_body_projection`
+- `expr_result_store_tlete_from_body_store`
 - several regularity helpers for closed/lc results and typed results
 
 The representative lemma
@@ -113,7 +113,7 @@ The proof reaches this expression-result bridge:
 expr_result_model_bridge
   (X ∪ {[x]}) (e2 ^^ x)
   X (tlete e1 e2)
-  (let_result_world_on X e1 x m ...)
+  (let_result_world_on e1 x m ...)
   m
 ```
 

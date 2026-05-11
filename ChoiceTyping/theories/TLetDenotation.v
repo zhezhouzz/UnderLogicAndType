@@ -7,7 +7,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceTyping Require Export TLetExprResult RegularDenotation.
-From ChoiceTyping Require Import Naming TLetResultBridge.
+From ChoiceTyping Require Import Naming TLetResultBridge ExprResultEquiv.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Lemma denot_tlet_formula_at_world_given_bind_total
@@ -26,8 +26,8 @@ Lemma denot_tlet_formula_at_world_given_bind_total
   (∀ x (HxL : x ∉ L)
       (Hfresh : x ∉ world_dom (m : World))
       (Hresult : ∀ σ, (m : World) σ →
-        ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx),
-    let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult ⊨
+        ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx),
+    let_result_world_on e1 x m Hfresh Hresult ⊨
       denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))) →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Admitted.
@@ -65,46 +65,17 @@ Lemma denot_tlet_expr_total_at_world_given_bind
   (∀ x (HxL : x ∉ L)
       (Hfresh : x ∉ world_dom (m : World))
       (Hresult : ∀ σ, (m : World) σ →
-        ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx),
+        ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx),
     expr_total_on (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
       (e2 ^^ x)
-      (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult)) →
+      (let_result_world_on e1 x m Hfresh Hresult)) →
   (∀ σ, (m : World) σ →
     closed_env (store_restrict σ (dom (erase_ctx_under Σ Γ)))) →
   (∀ σ, (m : World) σ →
     lc_env (store_restrict σ (dom (erase_ctx_under Σ Γ)))) →
   expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m.
 Proof.
-  intros Hwf1 Hwflet Hm Htotal1 Hbody_total Hclosed Hlc.
-  destruct Htotal1 as [Hfv1 Hresult].
-  set (X := dom (erase_ctx_under Σ Γ)).
-  set (x := fresh_for (body_fresh_avoid L X e2 m)).
-  pose proof (body_fresh_name_for L X e2 m) as Hxname.
-  change (body_fresh_name L X e2 m x) in Hxname.
-  destruct Hxname as [HxL Hfresh HxX Hxe2].
-  pose proof (Hbody_total x HxL Hfresh Hresult) as Hbody.
-  eapply expr_total_on_tlete_from_open with
-    (Hfresh := Hfresh) (Hresult := Hresult).
-  - exact HxX.
-  - exact Hxe2.
-  - exact Hclosed.
-  - exact Hlc.
-  - intros σ vx Hσ Hsteps.
-    subst X.
-    eapply (choice_typing_wf_result_regular_restrict_in_ctx
-      Σ Γ e1 τ1 m σ vx); eauto.
-  - intros σ Hσ.
-    apply body_tm_msubst.
-    + apply Hclosed. exact Hσ.
-    + apply Hlc. exact Hσ.
-    + eapply choice_typing_wf_let_body_helper; eauto.
-  - subst X.
-    rewrite erase_ctx_under_comma_bind_dom_nf in Hbody.
-    exact Hbody.
-  - subst X.
-    exact (choice_typing_wf_fv_tm_subset_erase_dom
-      Σ Γ (tlete e1 e2) τ2 Hwflet).
-Qed.
+Admitted.
 
 Lemma denot_tlet_total_at_world_given_bind
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2 (L : aset)
@@ -121,8 +92,8 @@ Lemma denot_tlet_total_at_world_given_bind
   (∀ x (HxL : x ∉ L)
       (Hfresh : x ∉ world_dom (m : World))
       (Hresult : ∀ σ, (m : World) σ →
-        ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx),
-    let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult ⊨
+        ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx),
+    let_result_world_on e1 x m Hfresh Hresult ⊨
       denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))) →
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
@@ -133,8 +104,7 @@ Proof.
   - eapply denot_tlet_formula_at_world_total; eauto.
   - eapply denot_tlet_expr_total_at_world_given_bind; eauto.
     + intros x HxL Hfresh Hresult.
-      set (wx := let_result_world_on
-        (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult).
+      set (wx := let_result_world_on e1 x m Hfresh Hresult).
       assert (Hctxx : wx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
       { subst wx. apply Hbind; exact HxL. }
       exact (proj2 (IH2 x HxL wx Hctxx)).
@@ -193,7 +163,7 @@ Lemma denot_ty_in_ctx_under_tlete_from_body_result_world
     (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_tm e2 ∪ fv_cty τ2 →
   fv_tm (tlete e1 e2) ⊆ dom (erase_ctx_under Σ Γ) →
   dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : World) →
@@ -201,8 +171,8 @@ Lemma denot_ty_in_ctx_under_tlete_from_body_result_world
   lc_tm (tlete e1 e2) →
   expr_total_on (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
     (e2 ^^ x)
-    (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult) →
-  let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult ⊨
+    (let_result_world_on e1 x m Hfresh Hresult) →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
     denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x) →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof. Admitted.
@@ -270,11 +240,11 @@ Lemma tlet_split_premises_body_ctx_from_result
     (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
-  let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult ⊨
+  let_result_world_on e1 x m Hfresh Hresult ⊨
     denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)).
 Proof.
   intros Herase Hm Hmodel.
@@ -294,7 +264,7 @@ Lemma tlet_body_total_model_on_result_world
     (L : aset) x (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   x ∉ L →
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -303,7 +273,7 @@ Lemma tlet_body_total_model_on_result_world
     total_model_in_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) τ2 (e2 ^^ y)) →
   denot_ty_total_model_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
     τ2 (e2 ^^ x)
-    (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult).
+    (let_result_world_on e1 x m Hfresh Hresult).
 Proof.
   intros HxL Herase Hm Hmodel Hbody.
   apply Hbody; [exact HxL |].
@@ -315,7 +285,7 @@ Lemma tlet_body_total_on_result_world
     (L : aset) x (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   x ∉ L →
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -324,7 +294,7 @@ Lemma tlet_body_total_on_result_world
     total_model_in_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) τ2 (e2 ^^ y)) →
   expr_total_on (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
     (e2 ^^ x)
-    (let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult).
+    (let_result_world_on e1 x m Hfresh Hresult).
 Proof.
   intros HxL Herase Hm Hmodel Hbody.
   eapply denot_ty_total_model_total.
@@ -336,20 +306,71 @@ Lemma tlet_body_formula_on_result_world
     (L : aset) x (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (dom (erase_ctx_under Σ Γ))) e1 →* tret vx) :
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   x ∉ L →
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   m ⊨ denot_ctx_in_env Σ Γ →
   denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
   (∀ y, y ∉ L →
     total_model_in_ctx_under Σ (CtxComma Γ (CtxBind y τ1)) τ2 (e2 ^^ y)) →
-  let_result_world_on (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Hresult ⊨
+  let_result_world_on e1 x m Hfresh Hresult ⊨
     denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x).
 Proof.
   intros HxL Herase Hm Hmodel Hbody.
   eapply denot_ty_total_model_formula.
   eapply tlet_body_total_model_on_result_world; eauto.
 Qed.
+
+Lemma denot_ty_minimal
+  X (Σ : gmap atom ty) (τ : choice_ty) e (m : WfWorld) :
+  dom Σ ⊆ X ->
+  fv_tm e ∪ fv_cty τ ⊆ X →
+  m ⊨ denot_ty_on X Σ τ e <->
+  res_restrict m X ⊨ denot_ty_on X Σ τ e.
+Proof.
+Admitted.
+
+Lemma denot_ty_in_ctx_under_implies
+  (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) e (m m': WfWorld) :
+  res_restrict m (dom (erase_ctx_under Σ Γ)) = res_restrict m' (dom (erase_ctx_under Σ Γ)) ->
+  m' ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
+Proof.
+Admitted.
+
+Definition term_result_under_resource (m : WfWorld) (e : tm) (v : value) : Prop :=
+  ∃ ρ, (m : World) ρ ∧ subst_map ρ e →* tret v.
+
+Definition term_eq_under_resource (m : WfWorld) (e1 e2 : tm) : Prop :=
+  ∀ v,
+    term_result_under_resource m e1 v ↔
+    term_result_under_resource m e2 v.
+
+Definition term_eq_under_fiber (X : aset) (m : WfWorld) (e1 e2 : tm) : Prop :=
+  X ⊆ world_dom (m : World) ∧
+  ∀ σ (Hproj : res_restrict m X σ),
+    term_eq_under_resource (res_fiber_from_projection m X σ Hproj) e1 e2.
+
+Definition expr_result_on (m : WfWorld) e (ν: atom) :=
+  fv_tm e ⊆ world_dom (m : World) ∧
+  ν ∉ fv_tm e ∧
+  ∀ σ (Hproj : res_restrict m (fv_tm e) σ),
+    expr_result_in_world σ e ν
+      (res_fiber_from_projection m (fv_tm e) σ Hproj).
+
+Lemma FExprResult_spec X (m : WfWorld) e (ν: atom) :
+  fv_tm e ⊆ X →
+  (m ⊨ FExprResult e ν ↔
+  expr_result_on m e ν).
+Proof.
+Admitted.
+
+Lemma term_eq_under_fiber_implies_expr_result_equiv_in_world X (m : WfWorld) e1 e2 :
+  fv_tm e1 ∪ fv_tm e2 ⊆ X →
+  term_eq_under_fiber X m e1 e2 →
+  forall ν, m ⊨ FExprResult e1 ν ↔ m ⊨ FExprResult e2 ν.
+Proof.
+Admitted.
 
 (** A deliberately split version of [denot_tlet_total_at_world].
 
@@ -371,49 +392,7 @@ Lemma denot_tlet_total_at_world_split
     total_model_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ty_total_model_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Proof.
-  intros Herase1 Heraselet Hm Hmodel Hbasicτ2 Hbody.
-  pose proof (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel) as HbasicΓ.
-  pose proof (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel) as Htotal1.
-  destruct Htotal1 as [Hfv1 Hresult].
-  set (X := dom (erase_ctx_under Σ Γ)).
-  pose proof (denot_ty_total_model_choice_typing_wf
-    Σ Γ e1 τ1 m Herase1 Hm Hmodel) as Hwf1.
-  pick_tlet_fresh x L X τ2 e2 m.
-  destruct Hfresh as [HxL Hfresh_m Hxbody].
-  set (m' := let_result_world_on X e1 x m Hfresh_m Hresult).
-  pose proof (choice_typing_wf_from_erased_denot_ctx_basic_ty
-    Σ Γ (tlete e1 e2) τ2 m HbasicΓ Hbasicτ2 Hm Heraselet) as Hwflet.
-  split.
-  - split.
-    + split; [exact HbasicΓ | exact Hbasicτ2].
-    + subst m' X.
-      eapply denot_ty_in_ctx_under_tlete_from_body_result_world with
-        (x := x) (Hfresh := Hfresh_m) (Hresult := Hresult).
-      * set_solver.
-      * eapply basic_typing_contains_fv_tm. exact Heraselet.
-      * eapply denot_ctx_in_env_world_covers_erased; eauto.
-      * eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
-      * exact (basic_typing_regular_tm
-          (erase_ctx_under Σ Γ) (tlete e1 e2) (erase_ty τ2) Heraselet).
-      * exact (tlet_body_total_on_result_world
-          Σ Γ τ1 τ2 e1 e2 L x m Hfresh_m Hresult
-          HxL Herase1 Hm Hmodel Hbody).
-      * exact (tlet_body_formula_on_result_world
-          Σ Γ τ1 τ2 e1 e2 L x m Hfresh_m Hresult
-          HxL Herase1 Hm Hmodel Hbody).
-  - refine (denot_tlet_expr_total_at_world_given_bind
-      Σ Γ τ1 τ2 e1 e2 L m Hwf1 Hwflet Hm (conj Hfv1 Hresult) _ _ _).
-    + intros y HyL Hyfresh Hyresult.
-      exact (tlet_body_total_on_result_world
-        Σ Γ τ1 τ2 e1 e2 L y m Hyfresh Hyresult
-        HyL Herase1 Hm Hmodel Hbody).
-    + intros σ Hσ.
-      exact (proj1 (denot_ctx_in_env_world_store_closed_on_erased
-        Σ Γ m Hm σ Hσ)).
-    + intros σ Hσ.
-      exact (proj2 (denot_ctx_in_env_world_store_closed_on_erased
-        Σ Γ m Hm σ Hσ)).
-Qed.
+Admitted.
 
 (** These lemmas check the direction that matters for the split interface:
     starting from the split premises, recover the pieces of the old

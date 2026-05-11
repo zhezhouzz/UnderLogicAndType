@@ -50,13 +50,13 @@ Proof.
   apply Hdom. exact Hz'.
 Qed.
 
-Lemma FExprResultOn_scoped_intro X e ν (m : WfWorld) :
+Lemma FExprResult_scoped_intro X e ν (m : WfWorld) :
   X ∪ fv_tm e ∪ {[ν]} ⊆ world_dom (m : World) →
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν).
+  formula_scoped_in_world ∅ m (FExprResult e ν).
 Proof.
   intros Hdom z Hz.
   apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  pose proof (FExprResultOn_fv_subset X e ν z Hz) as Hz'.
+  pose proof (FExprResult_fv_exact_domain e ν z Hz) as Hz'.
   apply Hdom. set_solver.
 Qed.
 
@@ -353,13 +353,14 @@ Proof.
       * exact Hσν.
 Qed.
 
-Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
-  m ⊨ FExprResultOn X (tret (vconst c)) ν →
+Lemma expr_logic_qual_on_ret_const_lookup c ν m :
+  m ⊨ FExprResult (tret (vconst c)) ν →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
 Proof.
   intros Hm σ Hσ.
   change (res_models_with_store ∅ m
-    (fib_vars X (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)))) in Hm.
+    (fib_vars (∅ : aset)
+      (FAtom (expr_logic_qual_on (∅ : aset) (tret (vconst c)) ν)))) in Hm.
   unfold fib_vars, fib_vars_acc, set_fold in Hm.
   cbn [compose] in Hm.
   rewrite foldr_fib_vars_acc_fst in Hm.

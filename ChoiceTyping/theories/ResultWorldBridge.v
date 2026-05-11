@@ -7,7 +7,7 @@
 
       forall x.  [e ⇓ x] ==> body x
 
-    to the operational result world [let_result_world_on X e x m].  Because
+    to the operational result world [let_result_world_on e x m].  Because
     [fresh_forall] is explicit-name/cofinite rather than locally nameless, the
     primitive bridge is phrased with the renamed representative
     [formula_rename_atom (fresh_for D) y (body (fresh_for D))].  Callers that
@@ -131,9 +131,11 @@ Lemma foldr_fib_expr_result_sound
     (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
   (m : World) σw →
   store_restrict σw {[ν]} = sigmanu →
-  expr_result_in_store
-    (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
-    e ν sigmanu.
+  expr_result_store ν
+    (subst_map
+      (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
+      e)
+    sigmanu.
 Proof.
   revert ρ m σw sigmanu.
   induction xs as [|x xs IH]; intros ρ m σw sigmanu Hnodup Hdisj Hmodel Hσw Heqν.
@@ -141,7 +143,7 @@ Proof.
     simpl in *.
     rewrite store_restrict_empty_set.
     replace (ρ ∪ (∅ : Store)) with ρ.
-    change (expr_result_in_store (store_restrict ρ X) e ν sigmanu).
+    change (expr_result_store ν (subst_map (store_restrict ρ X) e) sigmanu).
     assert (Hprojν : (res_restrict m {[ν]} : World) sigmanu).
     { exists σw. split; [exact Hσw | exact Heqν]. }
     exact (expr_result_in_world_sound (store_restrict ρ X) e ν m sigmanu Hexact Hprojν).
@@ -185,9 +187,11 @@ Lemma foldr_fib_expr_result_complete
   res_models_with_store ρ m
     (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
   (m : World) σw →
-  expr_result_in_store
-    (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
-    e ν sigmanu →
+  expr_result_store ν
+    (subst_map
+      (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
+      e)
+    sigmanu →
   (res_restrict m {[ν]} : World) sigmanu.
 Proof.
   revert ρ m σw sigmanu.
@@ -235,9 +239,11 @@ Lemma foldr_fib_expr_result_complete_paired
   res_models_with_store ρ m
     (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
   (m : World) σw →
-  expr_result_in_store
-    (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
-    e ν sigmanu →
+  expr_result_store ν
+    (subst_map
+      (store_restrict (ρ ∪ store_restrict σw (list_to_set xs : aset)) X)
+      e)
+    sigmanu →
   ∃ τ,
     (m : World) τ ∧
     store_restrict τ (list_to_set xs : aset) =
@@ -600,374 +606,28 @@ Lemma result_world_slice_inv_base X e ν (n : WfWorld)
     (Hfresh : ν ∉ world_dom (n : World))
     (Hresult :
       ∀ σ, (n : World) σ →
-        ∃ vx, subst_map (store_restrict σ X) e →* tret vx)
+        ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx)
     (Hfv : fv_tm e ⊆ X)
     (Hlc : lc_tm e)
     (Hclosed : world_store_closed_on X n)
     ρ (w : WfWorld) :
   result_world_slice_inv X ν
-    (let_result_world_on X e ν n Hfresh Hresult)
+    (let_result_world_on e ν n Hfresh Hresult)
     X ρ w →
   res_models_with_store ρ w (FAtom (expr_logic_qual_on X e ν)).
 Proof.
-  intros Hinv.
-  unfold result_world_slice_inv in Hinv.
-  destruct Hinv as [Hdomρ [_ [Hdomw Hslice]]].
-  assert (HνX : ν ∉ X) by (rewrite <- Hdomn; exact Hfresh).
-  assert (Hρ_id : store_restrict ρ X = ρ).
-  { apply store_restrict_idemp. set_solver. }
-  eapply FAtom_expr_logic_qual_on_intro.
-  - unfold formula_scoped_in_world. simpl.
-    unfold stale, stale_logic_qualifier. simpl.
-    intros z Hz.
-    rewrite Hdomρ in Hz. set_solver.
-  - intros σν. split.
-    + intros Hprojν.
-      destruct Hprojν as [τ [Hτw Hτν]].
-      set (σXν := store_restrict τ (X ∪ {[ν]})).
-      assert (HτXν_eq : store_restrict τ (X ∪ {[ν]}) = σXν) by reflexivity.
-      assert (HprojXν : (res_restrict w (X ∪ {[ν]}) : World) σXν).
-      { exists τ. split; [exact Hτw | reflexivity]. }
-      destruct (proj1 (Hslice σXν) HprojXν) as [Hres Hfixed].
-      destruct (let_result_world_on_elim X e ν n Hfresh Hresult σXν Hres)
-        as [σ [vx [Hσn [Hsteps ->]]]].
-      rewrite store_restrict_insert_notin in Hfixed by exact HνX.
-      rewrite store_restrict_idemp in Hfixed.
-      2:{ pose proof (wfworld_store_dom n σ Hσn) as Hdomσ.
-          set_solver. }
-      subst ρ.
-      rewrite Hρ_id.
-      assert (Hσν : σν = {[ν := vx]}).
-      {
-        rewrite <- Hτν.
-        transitivity (store_restrict (store_restrict τ (X ∪ {[ν]})) {[ν]}).
-        - rewrite store_restrict_restrict.
-          replace ((X ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
-          reflexivity.
-        - rewrite HτXν_eq.
-        rewrite store_restrict_insert_in by set_solver.
-        replace (store_restrict σ {[ν]}) with (∅ : Store).
-        2:{
-          apply (map_eq (M := gmap atom)). intros z.
-          rewrite store_restrict_lookup.
-          destruct (decide (z ∈ ({[ν]} : aset))) as [Hzν|Hzν]; [| reflexivity].
-          apply elem_of_singleton in Hzν. subst z.
-          rewrite lookup_empty.
-          destruct (σ !! ν) eqn:Hσν; [| symmetry; exact Hσν].
-          exfalso. apply HνX.
-          rewrite <- Hdomn.
-          pose proof (wfworld_store_dom n σ Hσn) as Hdomσ.
-          rewrite <- Hdomσ. apply elem_of_dom. eauto.
-        }
-        apply (map_eq (M := gmap atom)). intros z.
-        destruct (decide (z = ν)) as [->|Hzν].
-        + rewrite lookup_insert. rewrite lookup_singleton.
-          destruct (decide (ν = ν)); [reflexivity | contradiction].
-        + rewrite lookup_insert_ne by congruence.
-          rewrite lookup_empty, lookup_singleton, decide_False by congruence.
-          reflexivity.
-      }
-      subst σν.
-      assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e)).
-      {
-        apply msubst_closed_tm.
-        - exact (Hclosed σ Hσn).
-        - exact Hlc.
-        - change (fv_tm e ⊆ dom (store_restrict σ X)).
-          rewrite store_restrict_dom.
-          pose proof (wfworld_store_dom n σ Hσn) as Hdomσ.
-          set_solver.
-      }
-      pose proof (steps_closed_result _ _ Hinput_closed Hsteps) as [Hstale Hlc_v].
-      rewrite Hρ_id in Hsteps.
-      rewrite Hσν.
-      apply expr_result_store_intro; [exact Hstale | exact Hlc_v | exact Hsteps].
-    + intros Hstore.
-      destruct (expr_result_store_elim ν (subst_map (store_restrict ρ X) e) σν Hstore)
-        as [vx [-> [_ [_ Hsteps]]]].
-      rewrite Hρ_id in Hsteps.
-      destruct (world_wf w) as [[τ Hτw] _].
-      set (σXν0 := store_restrict τ (X ∪ {[ν]})).
-      assert (HprojXν0 : (res_restrict w (X ∪ {[ν]}) : World) σXν0).
-      { exists τ. split; [exact Hτw | reflexivity]. }
-      destruct (proj1 (Hslice σXν0) HprojXν0) as [Hres0 Hfixed0].
-      destruct (let_result_world_on_elim X e ν n Hfresh Hresult σXν0 Hres0)
-        as [σ0 [vx0 [Hσ0n [_ ->]]]].
-      rewrite store_restrict_insert_notin in Hfixed0 by exact HνX.
-      rewrite store_restrict_idemp in Hfixed0.
-      2:{ pose proof (wfworld_store_dom n σ0 Hσ0n) as Hdomσ0.
-          set_solver. }
-      subst ρ.
-      assert (Hres : (let_result_world_on X e ν n Hfresh Hresult : World)
-        (<[ν := vx]> σ0)).
-      { apply let_result_world_on_member; [exact Hσ0n |].
-        rewrite Hρ_id. exact Hsteps. }
-      assert (Hfixed : store_restrict (<[ν := vx]> σ0) X = σ0).
-      {
-        rewrite store_restrict_insert_notin by exact HνX.
-        apply store_restrict_idemp.
-        pose proof (wfworld_store_dom n σ0 Hσ0n) as Hdomσ0.
-        set_solver.
-      }
-      assert (HprojXν : (res_restrict w (X ∪ {[ν]}) : World)
-        (<[ν := vx]> σ0)).
-      { apply (proj2 (Hslice (<[ν := vx]> σ0))). split; [exact Hres | exact Hfixed]. }
-      destruct HprojXν as [τ' [Hτ'w Hτ'restrict]].
-      exists τ'. split; [exact Hτ'w |].
-      transitivity (store_restrict (store_restrict τ' (X ∪ {[ν]})) {[ν]}).
-      * rewrite store_restrict_restrict.
-        replace ((X ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
-        reflexivity.
-      * rewrite Hτ'restrict.
-      rewrite store_restrict_insert_in by set_solver.
-      replace (store_restrict σ0 {[ν]}) with (∅ : Store).
-      2:{
-        apply (map_eq (M := gmap atom)). intros z.
-        rewrite store_restrict_lookup.
-        destruct (decide (z ∈ ({[ν]} : aset))) as [Hzν|Hzν]; [| reflexivity].
-        apply elem_of_singleton in Hzν. subst z.
-        rewrite lookup_empty.
-        destruct (σ0 !! ν) eqn:Hσν; [| symmetry; exact Hσν].
-        exfalso. apply HνX.
-        rewrite <- Hdomn.
-        pose proof (wfworld_store_dom n σ0 Hσ0n) as Hdomσ0.
-        rewrite <- Hdomσ0. apply elem_of_dom. eauto.
-      }
-      apply (map_eq (M := gmap atom)). intros z.
-      destruct (decide (z = ν)) as [->|Hzν].
-      { rewrite lookup_insert. rewrite lookup_singleton.
-        destruct (decide (ν = ν)); [reflexivity | contradiction]. }
-      { rewrite lookup_insert_ne by congruence.
-        rewrite lookup_empty, lookup_singleton, decide_False by congruence.
-        reflexivity. }
-Qed.
+Admitted.
 
-Lemma FExprResultOn_iff_let_result_world_on :
+Lemma FExprResult_iff_let_result_world_on :
   ∀ X e ν (m : WfWorld),
     fv_tm e ⊆ X →
     lc_tm e →
     ν ∉ X →
     X ⊆ world_dom (m : World) →
     world_store_closed_on X m →
-    (m ⊨ FExprResultOn X e ν ↔
+    (m ⊨ FExprResult e ν ↔
      ∃ Hfresh Hresult,
        res_restrict m (X ∪ {[ν]}) =
-         let_result_world_on X e ν (res_restrict m X) Hfresh Hresult).
+         let_result_world_on e ν (res_restrict m X) Hfresh Hresult).
 Proof.
-  intros X e ν m Hfv Hlc HνX HXm Hclosed.
-  assert (Hmodel_to_fold :
-    m ⊨ FExprResultOn X e ν →
-    res_models_with_store ∅ m
-      (foldr FFib (FAtom (expr_logic_qual_on X e ν)) (elements X))).
-  {
-    intros Hmodel.
-    unfold FExprResultOn, FExprResultOnRaw, fib_vars, fib_vars_acc, set_fold in Hmodel.
-    cbn [compose] in Hmodel.
-    rewrite foldr_fib_vars_acc_fst_bridge in Hmodel.
-    exact Hmodel.
-  }
-  split.
-  - intros Hmodel.
-    pose proof (Hmodel_to_fold Hmodel) as Hmodel_fold.
-    assert (Hfresh : ν ∉ world_dom (res_restrict m X : World)).
-    { simpl. set_solver. }
-    assert (Hresult :
-      ∀ σ, (res_restrict m X : World) σ →
-        ∃ vx, subst_map (store_restrict σ X) e →* tret vx).
-    {
-      intros σ Hσ.
-      destruct Hσ as [σw [Hσw Hrestrict]].
-      assert (Hdisj_empty_X : dom (∅ : Store) ## (list_to_set (elements X) : aset)).
-      { rewrite dom_empty_L. set_solver. }
-      pose proof (foldr_fib_expr_result_sound
-        (elements X) X e ν ∅ m σw (store_restrict σw {[ν]})
-        (NoDup_elements X)
-        Hdisj_empty_X
-        Hmodel_fold Hσw eq_refl) as Hstore.
-      assert (HelemsX : (list_to_set (elements X) : aset) = X).
-      { apply set_eq. intros z. rewrite elem_of_list_to_set, elem_of_elements. reflexivity. }
-      rewrite HelemsX in Hstore.
-      replace ((∅ : Store) ∪ store_restrict σw X) with (store_restrict σw X) in Hstore.
-      2:{ apply (map_eq (M := gmap atom)). intros z.
-          rewrite lookup_union_r; [reflexivity | apply lookup_empty]. }
-      rewrite Hrestrict in Hstore.
-      destruct (expr_result_store_elim ν (subst_map (store_restrict σ X) e)
-        (store_restrict σw {[ν]}) Hstore)
-        as [vx [_ [_ [_ Hsteps]]]].
-      exists vx. exact Hsteps.
-    }
-    exists Hfresh, Hresult.
-    pose proof (FExprResultOn_scoped_dom X e ν m
-      (res_models_with_store_fuel_scoped _ _ _ _ Hmodel)) as Hscope_dom.
-    apply wfworld_ext. apply world_ext.
-    + simpl. unfold let_result_world_on, let_result_raw_world_on. simpl.
-      apply set_eq. intros z. split; intros Hz; set_solver.
-    + intros σXν. simpl. split.
-      * intros [σw [Hσw Hrestrict]].
-        assert (Hdisj_empty_X : dom (∅ : Store) ## (list_to_set (elements X) : aset)).
-        { rewrite dom_empty_L. set_solver. }
-        pose proof (foldr_fib_expr_result_sound
-          (elements X) X e ν ∅ m σw (store_restrict σw {[ν]})
-          (NoDup_elements X)
-          Hdisj_empty_X
-          Hmodel_fold Hσw eq_refl) as Hstore.
-        assert (HelemsX : (list_to_set (elements X) : aset) = X).
-        { apply set_eq. intros z. rewrite elem_of_list_to_set, elem_of_elements. reflexivity. }
-        rewrite HelemsX in Hstore.
-        replace ((∅ : Store) ∪ store_restrict σw X) with (store_restrict σw X) in Hstore.
-        2:{ apply (map_eq (M := gmap atom)). intros z.
-            rewrite lookup_union_r; [reflexivity | apply lookup_empty]. }
-        store_norm.
-        destruct (expr_result_store_elim ν (subst_map (store_restrict σw X) e)
-          (store_restrict σw {[ν]}) Hstore)
-          as [vx [Hνstore [_ [_ Hsteps]]]].
-        exists (store_restrict σw X), vx. split.
-        -- exists σw. split; [exact Hσw | reflexivity].
-        -- split.
-           ++ rewrite store_restrict_idemp.
-              ** exact Hsteps.
-              ** rewrite store_restrict_dom.
-                 pose proof (wfworld_store_dom m σw Hσw) as Hdomσw.
-                 set_solver.
-           ++ rewrite <- Hrestrict.
-              by apply store_restrict_union_singleton_insert_from_projection.
-	      * intros [σ [vx [Hσ [Hsteps ->]]]].
-	        destruct Hσ as [σw [Hσw HrestrictX]].
-	        assert (Hσ_restrict : (res_restrict m X : World) σ).
-	        { exists σw. split; eauto. }
-	        assert (Hinput_closed : closed_tm (subst_map (store_restrict σ X) e)).
-	        { eapply msubst_closed_tm_of_restrict_world; eauto. }
-	        pose proof (steps_closed_result _ _ Hinput_closed Hsteps)
-	          as [Hvx_closed Hvx_lc].
-        assert (Hstore :
-          expr_result_in_store
-            (store_restrict ((∅ : Store) ∪ store_restrict σw (list_to_set (elements X))) X)
-            e ν {[ν := vx]}).
-        {
-          assert (HelemsX : (list_to_set (elements X) : aset) = X).
-          { apply set_eq. intros z. rewrite elem_of_list_to_set, elem_of_elements. reflexivity. }
-          rewrite HelemsX.
-          replace ((∅ : Store) ∪ store_restrict σw X) with (store_restrict σw X).
-          2:{ apply (map_eq (M := gmap atom)). intros z.
-              rewrite lookup_union_r; [reflexivity | apply lookup_empty]. }
-          rewrite HrestrictX.
-          apply expr_result_store_intro.
-          - exact Hvx_closed.
-          - exact Hvx_lc.
-          - exact Hsteps.
-        }
-        assert (Hdisj_empty_X : dom (∅ : Store) ## (list_to_set (elements X) : aset)).
-        { rewrite dom_empty_L. set_solver. }
-        destruct (foldr_fib_expr_result_complete_paired
-          (elements X) X e ν ∅ m σw {[ν := vx]}
-          (NoDup_elements X)
-          Hdisj_empty_X Hmodel_fold Hσw Hstore)
-          as [τ [Hτm [HτX Hτν]]].
-        exists τ. split; [exact Hτm |].
-        assert (HelemsX : (list_to_set (elements X) : aset) = X).
-        { apply set_eq. intros z. rewrite elem_of_list_to_set, elem_of_elements. reflexivity. }
-        rewrite HelemsX in HτX.
-        replace (X ∪ {[ν]}) with ({[ν]} ∪ X) by set_solver.
-        transitivity (store_restrict (<[ν := vx]> σ) ({[ν]} ∪ X)).
-        -- eapply (store_restrict_union_singleton_eq_from_parts
-             τ (<[ν := vx]> σ) ν X).
-           ++ exact HνX.
-           ++ rewrite Hτν.
-              apply (map_eq (M := gmap atom)). intros z.
-              rewrite store_restrict_lookup.
-              destruct (decide (z = ν)) as [->|Hzν].
-              ** rewrite decide_True by set_solver.
-                 symmetry.
-                 change ((<[ν := vx]> σ : Store) !! ν = ({[ν := vx]} : Store) !! ν).
-                 rewrite lookup_insert.
-                 rewrite lookup_singleton.
-                 destruct (decide (ν = ν)) as [_|Hneq]; [reflexivity | contradiction].
-              ** rewrite decide_False by set_solver.
-                 change (({[ν := vx]} : Store) !! z = None).
-                 rewrite lookup_singleton, decide_False by congruence.
-                 reflexivity.
-           ++ rewrite store_restrict_insert_notin by exact HνX.
-              rewrite HτX.
-              rewrite <- HrestrictX.
-              symmetry. apply store_restrict_idemp.
-              rewrite store_restrict_dom. set_solver.
-        -- apply (map_eq (M := gmap atom)). intros z.
-           rewrite store_restrict_lookup.
-           destruct (decide (z = ν)) as [->|Hzν].
-           ++ rewrite decide_True by set_solver. reflexivity.
-           ++ destruct (decide (z ∈ X)) as [HzX|HzX].
-              ** rewrite decide_True by set_solver. reflexivity.
-              ** rewrite decide_False by set_solver.
-                 symmetry.
-                 rewrite lookup_insert_ne by congruence.
-                 apply not_elem_of_dom.
-                 pose proof (wfworld_store_dom (res_restrict m X) σ
-                   ltac:(exists σw; split; eauto)) as Hdomσ.
-                 simpl in Hdomσ. rewrite Hdomσ. set_solver.
-  - intros [Hfresh [Hresult Heq]].
-    assert (Hscope_dom : X ∪ {[ν]} ⊆ world_dom (m : World)).
-    {
-      pose proof (f_equal (fun w : WfWorld => world_dom (w : World)) Heq)
-        as Hdom_eq.
-      assert (Hνm : ν ∈ world_dom (m : World)).
-      {
-        assert (Hνleft : ν ∈ world_dom (res_restrict m (X ∪ {[ν]}) : World)).
-        {
-          rewrite Hdom_eq.
-          simpl. unfold let_result_world_on, let_result_raw_world_on. simpl.
-          set_solver.
-        }
-        simpl in Hνleft.
-        apply elem_of_intersection in Hνleft as [Hνm _].
-        exact Hνm.
-      }
-      intros z Hz.
-      apply elem_of_union in Hz as [HzX | Hzν].
-      - apply HXm. exact HzX.
-      - apply elem_of_singleton in Hzν. subst z. exact Hνm.
-    }
-    apply fib_vars_models_intro.
-    + unfold formula_scoped_in_world.
-      intros z Hz.
-      apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-      unfold FExprResultOn, FExprResultOnRaw in Hz.
-      rewrite fib_vars_formula_fv in Hz. simpl in Hz.
-      unfold stale, stale_logic_qualifier in Hz. simpl in Hz.
-      set_solver.
-    + eapply (fib_vars_obligation_intro
-        X (FAtom (expr_logic_qual_on X e ν))
-        (result_world_slice_inv X ν
-          (let_result_world_on X e ν (res_restrict m X) Hfresh Hresult))).
-      * eapply result_world_slice_inv_initial.
-        -- exact Hscope_dom.
-        -- exact Heq.
-      * intros x Y ρ' w' HxX HxY Hinv.
-        eapply result_world_slice_inv_disjoint; [exact HxX | | exact Hinv].
-        clear -HxY. set_solver.
-      * intros x Y ρ' w' HxX HxY Hinv Hdisj σx Hproj.
-        assert (Hfixed_step : X ∖ Y = (X ∖ ({[x]} ∪ Y)) ∪ {[x]}).
-        {
-          apply set_eq. intros z.
-          rewrite elem_of_union, !elem_of_difference, elem_of_union,
-            elem_of_singleton.
-          split.
-          - intros [HzX HzY].
-            destruct (decide (z = x)) as [->|Hzx]; [right; reflexivity |].
-            left. repeat split; try exact HzX; try exact HzY.
-            intros [Hzx' | HzY']; [contradiction | contradiction].
-          - intros [[HzX Hznot] | ->].
-            + split; [exact HzX |].
-              intros HzY. apply Hznot. right. exact HzY.
-            + split; [exact HxX | exact HxY].
-        }
-        rewrite Hfixed_step.
-        eapply result_world_slice_inv_step; [exact HxX | | exact Hinv | exact Hdisj].
-        clear -HxY. set_solver.
-      * intros ρ' w' Hinv.
-        eapply (result_world_slice_inv_base X e ν (res_restrict m X)).
-        -- change (world_dom (m : World) ∩ X = X). set_solver.
-        -- exact Hfv.
-        -- exact Hlc.
-        -- eapply world_store_closed_on_restrict; [set_solver | exact Hclosed].
-        -- exact Hinv.
-Qed.
+Admitted.

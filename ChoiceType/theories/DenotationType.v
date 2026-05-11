@@ -54,7 +54,7 @@ Fixpoint denot_ty_fuel
   | CTOver b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-	        (FImpl (FExprResultOn X e ν)
+	        (FImpl (FExprResult e ν)
 	               (FAnd
 	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
 	                 (fib_vars (qual_dom φν)
@@ -64,7 +64,7 @@ Fixpoint denot_ty_fuel
   | CTUnder b φ =>
       fresh_forall (D ∪ X ∪ fv_tm e ∪ qual_dom φ) (fun ν =>
       let φν := qual_open_atom 0 ν φ in
-	        (FImpl (FExprResultOn X e ν)
+	        (FImpl (FExprResult e ν)
 	               (FAnd
 	                 (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
 	                 (fib_vars (qual_dom φν)
@@ -88,7 +88,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-	          (FExprResultOn X e y)
+	          (FExprResult e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -104,7 +104,7 @@ Fixpoint denot_ty_fuel
       fresh_forall Dy (fun y =>
       let Dx := {[y]} ∪ Dy in
         (FImpl
-	          (FExprResultOn X e y)
+	          (FExprResult e y)
           (fresh_forall Dx (fun x =>
           let D2 := {[x]} ∪ Dx in
           let X2 := X ∪ {[y]} ∪ {[x]} in
@@ -558,7 +558,7 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-	      pose proof (FExprResultOn_fv_subset X e ν) as Hres_fv.
+	      pose proof (FExprResult_fv_exact_domain e ν) as Hres_fv.
 	      intros z Hz.
 	      apply elem_of_difference in Hz as [Hz Hzν].
 	      set_solver.
@@ -571,7 +571,7 @@ Proof.
       unfold stale, stale_logic_qualifier. simpl.
       change (stale e) with (fv_tm e).
       rewrite lqual_dom_lift_type_qualifier_to_logic.
-	      pose proof (FExprResultOn_fv_subset X e ν) as Hres_fv.
+	      pose proof (FExprResult_fv_exact_domain e ν) as Hres_fv.
 	      intros z Hz.
 	      apply elem_of_difference in Hz as [Hz Hzν].
 	      set_solver.
@@ -600,7 +600,7 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-	      * pose proof (FExprResultOn_fv_subset X e y) as Hres_fv.
+	      * pose proof (FExprResult_fv_exact_domain e y) as Hres_fv.
 	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
@@ -624,7 +624,7 @@ Proof.
       intros z Hz.
       apply elem_of_difference in Hz as [Hz Hzy].
       apply elem_of_union in Hz as [Hzres_e | Hzrest].
-	      * pose proof (FExprResultOn_fv_subset X e y) as Hres_fv.
+	      * pose proof (FExprResult_fv_exact_domain e y) as Hres_fv.
 	        apply Hres_fv in Hzres_e. set_solver.
       * apply elem_of_difference in Hzrest as [Hzrest Hzx].
         apply elem_of_union in Hzrest as [Hzy0 | Hzrest].
@@ -733,14 +733,14 @@ Proof.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-	      pose proof (FExprResultOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      pose proof (FExprResult_expr_fv_subset X e ν Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + unfold fresh_forall.
       set (ν := fresh_for (D ∪ X ∪ fv_tm e ∪ qual_dom φ)).
       assert (Hνe : ν ∉ fv_tm e)
         by (subst ν; pose proof (fresh_for_not_in (D ∪ X ∪ fv_tm e ∪ qual_dom φ)); set_solver).
-	      pose proof (FExprResultOn_expr_fv_subset X e ν Hfv) as Hres_fv.
+	      pose proof (FExprResult_expr_fv_subset X e ν Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzν. apply elem_of_singleton in Hzν. subst z. exact (Hνe Hz).
     + pose proof (IH X D Σ τ1 e ltac:(lia) Hfv) as H1.
@@ -754,7 +754,7 @@ Proof.
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-	      pose proof (FExprResultOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      pose proof (FExprResult_expr_fv_subset X e y Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
     + unfold fresh_forall.
@@ -762,7 +762,7 @@ Proof.
       set (y := fresh_for Dy).
       assert (Hye : y ∉ fv_tm e)
         by (subst y Dy; pose proof (fresh_for_not_in (D ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ)); set_solver).
-	      pose proof (FExprResultOn_expr_fv_subset X e y Hfv) as Hres_fv.
+	      pose proof (FExprResult_expr_fv_subset X e y Hfv) as Hres_fv.
 	      intros z Hz. apply elem_of_difference. split; [set_solver |].
 	      intros Hzy. apply elem_of_singleton in Hzy. subst z. exact (Hye Hz).
 Qed.
