@@ -601,6 +601,23 @@ Proof.
            ++ exact Hτrestrict.
 Qed.
 
+(** The exact bridge from [FExprResult] to [let_result_world_on] is deliberately
+    disabled for now.  In the new setting [FExprResult e ν] scopes over
+    [fv_tm e ∪ {ν}], while [let_result_world_on e ν ...] constructs a concrete
+    result world from the [fv_tm e]-projection.  We still need to decide the
+    right statement connecting these two views.
+
+    Downstream lemmas that used this bridge are intentionally left admitted for
+    the same reason, including:
+
+    - [let_result_world_on_models_FExprResult]
+    - [FExprResult_expr_result_equiv_in_world]
+    - [nested_body_result_world_models_FExprResult]
+    - [FExprResult_tlete_from_body_result_world]
+
+    Keeping this block commented avoids accidentally using an obsolete bridge
+    while the result-world semantics are still being redesigned. *)
+(*
 Lemma result_world_slice_inv_base X e ν (n : WfWorld)
     (Hdomn : world_dom (n : World) = X)
     (Hfresh : ν ∉ world_dom (n : World))
@@ -619,15 +636,13 @@ Proof.
 Admitted.
 
 Lemma FExprResult_iff_let_result_world_on :
-  ∀ X e ν (m : WfWorld),
-    fv_tm e ⊆ X →
+  ∀ e ν (m : WfWorld),
+    fv_tm e ⊆ world_dom (m : World) →
     lc_tm e →
-    ν ∉ X →
-    X ⊆ world_dom (m : World) →
-    world_store_closed_on X m →
+    ν ∉ fv_tm e →
     (m ⊨ FExprResult e ν ↔
      ∃ Hfresh Hresult,
-       res_restrict m (X ∪ {[ν]}) =
-         let_result_world_on e ν (res_restrict m X) Hfresh Hresult).
+       m =
+         let_result_world_on e ν (res_restrict m (world_dom (m : World) ∖ fv_tm e)) Hfresh Hresult).
 Proof.
-Admitted.
+Admitted. *)
