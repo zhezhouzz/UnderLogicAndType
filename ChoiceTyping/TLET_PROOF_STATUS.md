@@ -58,9 +58,8 @@ The current tlet route still depends on admitted or partially admitted pieces:
 - `expr_total_tlet_reduction`
 - `denot_ty_regular_tlet_context_iff`
 
-`TLetExprResult.v` is now only a small compatibility file with
-`denot_tlet_semantic_at_world` admitted.  The older expression-result bridge
-files and graph route have been removed.
+The older expression-result bridge files, graph route, and the thin
+`TLetExprResult.v` wrapper have been removed.
 
 ## Removed Routes
 
@@ -68,6 +67,7 @@ The following old modules were deleted because they were no longer part of the
 current tlet proof path:
 
 - `ChoiceTyping/theories/ExprResultEquiv.v`
+- `ChoiceTyping/theories/TLetExprResult.v`
 - `ChoiceTyping/theories/TLetGraph.v`
 - `ChoiceTyping/theories/TLetResultBridge.v`
 

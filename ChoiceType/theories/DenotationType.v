@@ -672,7 +672,7 @@ Proof.
   unfold FExprContIn.
   apply fresh_forall_formula_fv_subset; first exact Hdom.
   intros ν Hν.
-  simpl. rewrite FExprResultIn_fv.
+  simpl. rewrite FExprResultOn_fv.
   pose proof (HQ ν Hν) as HQν.
   set_solver.
 Qed.
@@ -797,12 +797,12 @@ Proof.
       cbn [denot_ty_fuel cty_measure fv_cty] in *.
     + unfold FExprContIn, fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultIn_fv.
+      rewrite FExprResultOn_fv.
       pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
       set_solver.
     + unfold FExprContIn, fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultIn_fv.
+      rewrite FExprResultOn_fv.
       pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
       set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
@@ -810,12 +810,12 @@ Proof.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
     + unfold FExprContIn, fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultIn_fv.
+      rewrite FExprResultOn_fv.
       pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
       set_solver.
     + unfold FExprContIn, fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultIn_fv.
+      rewrite FExprResultOn_fv.
       pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
       set_solver.
 Qed.

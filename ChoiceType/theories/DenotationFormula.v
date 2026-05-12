@@ -470,17 +470,14 @@ Proof.
   reflexivity.
 Qed.
 
-Definition FExprResultIn (Σ : gmap atom ty) (e : tm) (ν : atom) : FQ :=
-  FExprResultOn (dom Σ) e ν.
-
 (** Expression-result continuation:
     [FExprContIn Σ e Q] abbreviates the recurring formula
-    [∀ν. FExprResultIn Σ e ν ⇒ Q ν].  The cofinite avoidance set is
+    [∀ν. FExprResultOn (dom Σ) e ν ⇒ Q ν].  The cofinite avoidance set is
     exactly [dom Σ]: well-formed typing premises, kept at the Rocq [Prop]
     level rather than inside the logic, ensure that [fv_tm e] and the relevant
     type variables already live in this domain. *)
 Definition FExprContIn (Σ : gmap atom ty) (e : tm) (Q : atom → FQ) : FQ :=
-  fresh_forall (dom Σ) (fun ν => FImpl (FExprResultIn Σ e ν) (Q ν)).
+  fresh_forall (dom Σ) (fun ν => FImpl (FExprResultOn (dom Σ) e ν) (Q ν)).
 
 (** Expression-result atom.
 
@@ -646,12 +643,6 @@ Lemma FExprResultOn_fv_subset X e ν :
   formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
 Proof.
   rewrite FExprResultOn_fv. set_solver.
-Qed.
-
-Lemma FExprResultIn_fv Σ e ν :
-  formula_fv (FExprResultIn Σ e ν) = dom Σ ∪ {[ν]}.
-Proof.
-  unfold FExprResultIn. apply FExprResultOn_fv.
 Qed.
 
 Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :
