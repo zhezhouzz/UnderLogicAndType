@@ -1761,6 +1761,71 @@ Proof.
       * store_norm. reflexivity.
 Qed.
 
+Lemma denot_ty_fuel_tlet_reduction_result_from_formula_on gas
+    (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
+    τ2 :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  basic_choice_ty (dom Δ) τ2 →
+  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
+  (let_result_world_on e1 x m Hfresh Hresult
+      ⊨ denot_ty_fuel gas (<[x:=T1]> Δ) τ2 (e2 ^^ x)
+    <->
+    m ⊨ denot_ty_fuel gas Δ τ2 (tlete e1 e2)) →
+  denot_ty_result_models
+    (denot_ty_fuel_result gas (<[x:=T1]> Δ) τ2 (e2 ^^ x))
+    (let_result_world_on e1 x m Hfresh Hresult)
+  <->
+  denot_ty_result_models
+    (denot_ty_fuel_result gas Δ τ2 (tlete e1 e2))
+    m.
+Proof.
+  intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet Hformula_iff.
+  assert (Hbody_basic : basic_choice_ty (dom (<[x:=T1]> Δ)) τ2).
+  { eapply basic_choice_ty_mono; [| exact Hbasicτ].
+    rewrite dom_insert_L. set_solver. }
+  assert (Hbody_typed : <[x:=T1]> Δ ⊢ₑ e2 ^^ x ⋮ erase_ty τ2).
+  { eapply basic_typing_tlete_body_for_fresh; eauto. }
+  assert (Hbody_closed :
+    world_closed_on (dom (<[x:=T1]> Δ))
+      (let_result_world_on e1 x m Hfresh Hresult)).
+  {
+    eapply let_result_world_on_world_closed_on_insert_from_basic; eauto.
+    set_solver.
+  }
+  assert (Hbody_total :
+    expr_total_on (dom (<[x:=T1]> Δ)) (e2 ^^ x)
+      (let_result_world_on e1 x m Hfresh Hresult)).
+  {
+    rewrite dom_insert_L.
+    replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
+    eapply (expr_total_on_tlete_elim_body_strong
+      (dom Δ) e1 e2 x m Hfresh Hresult).
+    - rewrite Hdom. set_solver.
+    - set_solver.
+    - set_solver.
+    - exact Hclosed.
+    - eapply typing_tm_lc; eauto.
+    - exact Htotal.
+  }
+  assert (Htarget_closed : world_closed_on (dom Δ) m).
+  { eapply world_store_closed_on_world_closed_on. exact Hclosed. }
+  split; intros Hmodel.
+  - eapply denot_ty_fuel_result_models_intro; eauto.
+    apply Hformula_iff.
+    eapply denot_ty_fuel_result_models_formula. exact Hmodel.
+  - eapply denot_ty_fuel_result_models_intro; eauto.
+    apply Hformula_iff.
+    eapply denot_ty_fuel_result_models_formula. exact Hmodel.
+Qed.
+
 Lemma denot_ty_fuel_tlet_reduction_result_on gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
     (m : WfWorld) (x : atom)
@@ -1784,10 +1849,28 @@ Lemma denot_ty_fuel_tlet_reduction_result_on gas
       (denot_ty_fuel_result gas Δ τ2 (tlete e1 e2))
       m.
 Proof.
-  (** This is now the real induction target for the [tlet] denotation proof.
-      The old formula-only lemma below is only a projection of this result-level
-      statement, so Arrow/Wand recursive calls can carry their static, closed
-      resource, and strong-total obligations through the IH. *)
+  intros He1 Hdom Hclosed Htotal Hx_base τ2 Hgas Hbasicτ Hlet.
+  destruct gas as [|gas].
+  - pose proof (cty_measure_gt_0 τ2). lia.
+  - destruct τ2 as [b φ|b φ|τa τb|τa τb|τa τb|τx τ|τx τ].
+    + eapply denot_ty_fuel_tlet_reduction_result_from_formula_on; eauto.
+      eapply denot_ty_fuel_tlet_reduction_formula_on_legacy; eauto.
+    + eapply denot_ty_fuel_tlet_reduction_result_from_formula_on; eauto.
+      eapply denot_ty_fuel_tlet_reduction_formula_on_legacy; eauto.
+    + eapply denot_ty_fuel_tlet_reduction_result_from_formula_on; eauto.
+      eapply denot_ty_fuel_tlet_reduction_formula_on_legacy; eauto.
+    + eapply denot_ty_fuel_tlet_reduction_result_from_formula_on; eauto.
+      eapply denot_ty_fuel_tlet_reduction_formula_on_legacy; eauto.
+    + (* CTSum: still needs the sum/resource distribution argument at the
+         result level.  The formula case is not enough because the result
+         fields must be transported through each summand resource. *)
+      admit.
+    + (* CTArrow: this is the main reason this theorem is result-level.  The
+         recursive body obligation must carry [strong_total] through the IH. *)
+      admit.
+    + (* CTWand: same shape as Arrow, with the separating implication resource
+         split instead of ordinary implication. *)
+      admit.
 Admitted.
 
 Lemma denot_ty_fuel_tlet_reduction_formula_on gas
