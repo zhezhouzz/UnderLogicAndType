@@ -41,9 +41,9 @@ Proof.
     set_solver.
   }
   assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
-  { apply basic_typing_contains_fv_tm in He1. exact He1. }
+  { eauto using basic_typing_contains_fv_tm. }
   assert (Hlc1 : lc_tm e1).
-  { apply typing_tm_lc with (Γ := Σ) (T := T1). exact He1. }
+  { eauto using typing_tm_lc. }
   assert (Hclosed_m1 :
     world_store_closed_on (dom (<[x := T1]> Σ)) m1).
   {
@@ -59,12 +59,12 @@ Proof.
         (fv_tm e1) e1 m (store_restrict σ (fv_tm e1)) vx).
       + rewrite Hdom. exact Hfv1.
       + set_solver.
-      + exact Hlc1.
-      + exact Hclosed_fv.
+      + eauto.
+      + eauto.
       + exists σ. split; [exact Hσ | reflexivity].
       + replace (store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1))
           with (store_restrict σ (fv_tm e1)).
-        * exact Hsteps.
+        * eauto.
         * store_norm. reflexivity.
   }
   assert (Htotal2 :
@@ -108,9 +108,9 @@ Proof.
       Hfresh Hresult Hfreshν_body Hresultν_body
       Hfreshν_tlet Hresultν_tlet).
     - reflexivity.
-    - apply basic_typing_contains_fv_tm in Hlet. exact Hlet.
+    - eauto using basic_typing_contains_fv_tm.
     - apply basic_typing_contains_fv_tm in Hlet. simpl in Hlet. set_solver.
-    - exact Hfreshν_tlet.
+    - eauto.
     - rewrite Hdom. set_solver.
     - intros σ Hσ. exact (proj1 (Hclosed σ Hσ)).
     - intros σ Hσ. exact (proj2 (Hclosed σ Hσ)).
@@ -119,14 +119,14 @@ Proof.
       + eapply (msubst_closed_tm_of_restrict_world (dom Σ) e1 m σ).
         * rewrite Hdom. set_solver.
         * exact Hfv1.
-        * exact Hlc1.
-        * exact Hclosed.
+        * eauto.
+        * eauto.
         * exists σ. split; [exact Hσ |].
           rewrite (store_restrict_idemp σ (dom Σ)).
           -- reflexivity.
           -- pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
              set_solver.
-      + exact Hsteps.
+      + eauto.
     - intros σ Hσ.
       pose proof (typing_tm_lc _ _ _ Hlet) as Hlclet.
       apply lc_lete_iff_body in Hlclet as [_ Hbodye2].
@@ -350,8 +350,8 @@ Proof.
   rewrite dom_insert_L.
   replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
   eapply let_result_world_on_store_closed_on_insert.
-  - exact Hx.
-  - exact Hclosed.
+  - eauto.
+  - eauto.
   - intros σ vx Hσ Hsteps.
     pose proof (basic_typing_contains_fv_tm Δ e T Htyped) as Hfv.
     pose proof (typing_tm_lc Δ e T Htyped) as Hlc.
@@ -361,12 +361,12 @@ Proof.
       (fv_tm e) e m (store_restrict σ (fv_tm e)) vx).
     + rewrite Hdom. exact Hfv.
     + set_solver.
-    + exact Hlc.
-    + exact Hclosed_fv.
+    + eauto.
+    + eauto.
     + exists σ. split; [exact Hσ | reflexivity].
     + replace (store_restrict (store_restrict σ (fv_tm e)) (fv_tm e))
         with (store_restrict σ (fv_tm e)).
-      * exact Hsteps.
+      * eauto.
       * store_norm. reflexivity.
 Qed.
 
@@ -426,11 +426,11 @@ Proof.
   split; intros Hmodel.
   - eapply denot_ty_fuel_intro; eauto.
     apply Hformula_iff.
-    eapply denot_ty_fuel_body_of_formula. exact Hmodel.
+    eauto using denot_ty_fuel_body_of_formula.
     rewrite Hdom. set_solver.
   - eapply denot_ty_fuel_intro; eauto.
     apply Hformula_iff.
-    eapply denot_ty_fuel_body_of_formula. exact Hmodel.
+    eauto using denot_ty_fuel_body_of_formula.
     rewrite let_result_world_on_dom, Hdom, dom_insert_L. set_solver.
 Qed.
 
@@ -477,16 +477,16 @@ Proof.
       * exact Hclosed.
       * eapply typing_tm_lc; eauto.
       * exact Htotal.
-    + exact Hformula.
+    + eauto.
     + rewrite let_result_world_on_dom, Hdom, dom_insert_L. set_solver.
   - apply denot_ty_fuel_body_of_formula.
     apply (proj2 Hresult_iff).
     eapply denot_ty_fuel_intro.
-    + exact Hbasicτ.
-    + exact Hlet.
+    + eauto.
+    + eauto.
     + eapply world_store_closed_on_world_closed_on. exact Hclosed.
-    + exact Htotal.
-    + exact Hformula.
+    + eauto.
+    + eauto.
     + rewrite Hdom. set_solver.
 Qed.
 
@@ -622,11 +622,11 @@ Proof.
   cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty].
   split; intros Hmodel.
   - apply res_models_and_intro_from_models.
-    + apply (proj1 HIHa). eapply res_models_and_elim_l. exact Hmodel.
-    + apply (proj1 HIHb). eapply res_models_and_elim_r. exact Hmodel.
+    + apply (proj1 HIHa). eauto using res_models_and_elim_l.
+    + apply (proj1 HIHb). eauto using res_models_and_elim_r.
   - apply res_models_and_intro_from_models.
-    + apply (proj2 HIHa). eapply res_models_and_elim_l. exact Hmodel.
-    + apply (proj2 HIHb). eapply res_models_and_elim_r. exact Hmodel.
+    + apply (proj2 HIHa). eauto using res_models_and_elim_l.
+    + apply (proj2 HIHb). eauto using res_models_and_elim_r.
 Qed.
 
 Lemma denot_ty_fuel_tlet_reduction_full_on_union_case gas
@@ -676,14 +676,14 @@ Proof.
       pose proof (denot_ty_fuel_formula_fv_subset_env
         gas (<[x:=T1]> Δ) τa (e2 ^^ x) HgasA
         ltac:(rewrite dom_insert_L;
-          pose proof (basic_choice_ty_fv_subset (dom Δ) τa HbasicA);
+          epose proof (basic_choice_ty_fv_subset (dom Δ) τa HbasicA);
           set_solver)) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
     + rewrite let_result_world_on_dom, Hdom.
       pose proof (denot_ty_fuel_formula_fv_subset_env
         gas (<[x:=T1]> Δ) τb (e2 ^^ x) HgasB
         ltac:(rewrite dom_insert_L;
-          pose proof (basic_choice_ty_fv_subset (dom Δ) τb HbasicB);
+          epose proof (basic_choice_ty_fv_subset (dom Δ) τb HbasicB);
           set_solver)) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
 Qed.
@@ -722,9 +722,7 @@ Proof.
           denot_ty_fuel gas (<[x:=T1]> Δ) τa (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τa (tlete e1 e2)).
       {
-        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult);
-          [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-           exact Hx_base | lia | exact HbasicA | exact Hlet].
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult); eauto; lia.
       }
       assert (HletB : Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty τb).
       { replace (erase_ty τb) with (erase_ty τa) by congruence. exact Hlet. }
@@ -733,13 +731,9 @@ Proof.
           denot_ty_fuel gas (<[x:=T1]> Δ) τb (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τb (tlete e1 e2)).
       {
-        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult);
-          [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-           exact Hx_base | lia | exact HbasicB | exact HletB].
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult); eauto; lia.
       }
-      eapply denot_ty_fuel_tlet_reduction_full_on_inter_case;
-        [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-         exact Hx_base | exact Hbasicτ | exact Hlet | exact HfullA | exact HfullB].
+      eapply denot_ty_fuel_tlet_reduction_full_on_inter_case; eauto.
     + cbn [cty_measure] in Hgas.
       inversion Hbasicτ as [| | |D τ1' τ2' HbasicA HbasicB Herase| | |]; subst.
       assert (HfullA :
@@ -747,9 +741,7 @@ Proof.
           denot_ty_fuel gas (<[x:=T1]> Δ) τa (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τa (tlete e1 e2)).
       {
-        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult);
-          [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-           exact Hx_base | lia | exact HbasicA | exact Hlet].
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult); eauto; lia.
       }
       assert (HletB : Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty τb).
       { replace (erase_ty τb) with (erase_ty τa) by congruence. exact Hlet. }
@@ -758,14 +750,9 @@ Proof.
           denot_ty_fuel gas (<[x:=T1]> Δ) τb (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τb (tlete e1 e2)).
       {
-        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult);
-          [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-           exact Hx_base | lia | exact HbasicB | exact HletB].
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult); eauto; lia.
       }
-      eapply denot_ty_fuel_tlet_reduction_full_on_union_case;
-        [exact He1 | exact Hdom | exact Hclosed | exact Htotal |
-         exact Hx_base | exact Hgas | exact Hbasicτ | exact Hlet |
-         exact HbasicA | exact HbasicB | exact HfullA | exact HfullB].
+      eapply denot_ty_fuel_tlet_reduction_full_on_union_case; eauto.
     + (* CTSum: still needs the sum/resource distribution argument. *)
       admit.
     + (* CTArrow: postponed with the function-type reduction proof. *)
