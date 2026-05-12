@@ -87,6 +87,16 @@ Proof.
     + reflexivity.
 Qed.
 
+Local Ltac solve_const_refinement_scope Hbasic :=
+  pose proof (res_models_with_store_fuel_scoped _ ∅ _ _ Hbasic);
+  unfold formula_scoped_in_world in *; simpl in *;
+  rewrite ?fib_vars_singleton in *; simpl in *;
+  unfold stale, stale_logic_qualifier in *;
+  repeat rewrite formula_fv_FTypeQualifier in *;
+  unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *;
+  repeat (rewrite decide_True in * by set_solver);
+  simpl in *; set_solver.
+
 Lemma const_over_consequent_from_expr c ν Σ m :
   m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
   m ⊨
@@ -99,26 +109,11 @@ Proof.
   pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
   pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
   eapply res_models_and_intro.
-  - pose proof (res_models_with_store_fuel_scoped _
-      ∅ m _ Hbasic) as Hscope_basic.
-    unfold formula_scoped_in_world in *. simpl in *.
-    rewrite fib_vars_singleton. simpl.
-    unfold stale, stale_logic_qualifier.
-    rewrite formula_fv_FTypeQualifier.
-    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-    rewrite decide_True by set_solver. simpl.
-    set_solver.
+  - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
     eapply res_models_fib_intro.
-    + pose proof (res_models_with_store_fuel_scoped _
-        ∅ m _ Hbasic) as Hscope_basic.
-      unfold formula_scoped_in_world in *. simpl in *.
-      unfold stale, stale_logic_qualifier.
-      rewrite formula_fv_FTypeQualifier.
-      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-      rewrite decide_True by set_solver. simpl.
-      set_solver.
+    + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
       pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
@@ -143,26 +138,11 @@ Proof.
   pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
   pose proof (expr_logic_qual_ret_const_lookup c ν m Hexpr) as Hlookup.
   eapply res_models_and_intro.
-  - pose proof (res_models_with_store_fuel_scoped _
-      ∅ m _ Hbasic) as Hscope_basic.
-    unfold formula_scoped_in_world in *. simpl in *.
-    rewrite fib_vars_singleton. simpl.
-    unfold stale, stale_logic_qualifier.
-    rewrite formula_fv_FTypeQualifier.
-    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-    rewrite decide_True by set_solver. simpl.
-    set_solver.
+  - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
     eapply res_models_fib_intro.
-    + pose proof (res_models_with_store_fuel_scoped _
-        ∅ m _ Hbasic) as Hscope_basic.
-      unfold formula_scoped_in_world in *. simpl in *.
-      unfold stale, stale_logic_qualifier.
-      rewrite formula_fv_FTypeQualifier.
-      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-      rewrite decide_True by set_solver. simpl.
-      set_solver.
+    + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
       pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
@@ -193,26 +173,11 @@ Proof.
   pose proof (expr_logic_qual_on_ret_const_lookup (dom Σ) c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
-  - pose proof (res_models_with_store_fuel_scoped _
-      ∅ m _ Hbasic) as Hscope_basic.
-    unfold formula_scoped_in_world in *. simpl in *.
-    rewrite fib_vars_singleton. simpl.
-    unfold stale, stale_logic_qualifier.
-    rewrite formula_fv_FTypeQualifier.
-    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-    rewrite decide_True by set_solver. simpl.
-    set_solver.
+  - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
     eapply res_models_fib_intro.
-    + pose proof (res_models_with_store_fuel_scoped _
-        ∅ m _ Hbasic) as Hscope_basic.
-      unfold formula_scoped_in_world in *. simpl in *.
-      unfold stale, stale_logic_qualifier.
-      rewrite formula_fv_FTypeQualifier.
-      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-      rewrite decide_True by set_solver. simpl.
-      set_solver.
+    + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
       pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
@@ -243,26 +208,11 @@ Proof.
   pose proof (expr_logic_qual_on_ret_const_lookup (dom Σ) c ν m Hexpr) as Hlookup.
   pose proof (basic_const_world_from_lookup c ν Σ m Hlookup) as Hbasic.
   eapply res_models_and_intro.
-  - pose proof (res_models_with_store_fuel_scoped _
-      ∅ m _ Hbasic) as Hscope_basic.
-    unfold formula_scoped_in_world in *. simpl in *.
-    rewrite fib_vars_singleton. simpl.
-    unfold stale, stale_logic_qualifier.
-    rewrite formula_fv_FTypeQualifier.
-    unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-    rewrite decide_True by set_solver. simpl.
-    set_solver.
+  - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
   - rewrite fib_vars_singleton.
     eapply res_models_fib_intro.
-    + pose proof (res_models_with_store_fuel_scoped _
-        ∅ m _ Hbasic) as Hscope_basic.
-      unfold formula_scoped_in_world in *. simpl in *.
-      unfold stale, stale_logic_qualifier.
-      rewrite formula_fv_FTypeQualifier.
-      unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
-      rewrite decide_True by set_solver. simpl.
-      set_solver.
+    + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
       pose proof (lifted_const_qualifier_from_projection c ν m σ Hproj Hσν)
