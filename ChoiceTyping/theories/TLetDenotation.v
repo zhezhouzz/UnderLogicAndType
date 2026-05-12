@@ -518,60 +518,6 @@ Proof.
       apply res_models_and_elim_r in H. exact H.
 Qed.
 
-(** Renaming the cofinite representative of an expression-result continuation
-    only changes the result coordinate.  This is the formal version of the
-    [HHH] step in the proof below. *)
-Lemma FExprResultOn_dom_rename_from_current_exact_domain
-    (Σ : gmap atom ty) (T : ty) e ν (n : WfWorld) :
-  Σ ⊢ₑ e ⋮ T →
-  ν ∉ dom Σ →
-  world_dom (n : World) = dom Σ ∪ {[ν]} →
-  n ⊨ FExprResultOn (dom Σ) e ν →
-  n ⊨ formula_rename_atom (fresh_for (dom Σ)) ν
-        (FExprResultOn (dom Σ) e (fresh_for (dom Σ))).
-Proof.
-  intros _ Hν _ Hmodel.
-  cbn [dom].
-  rewrite FExprResultOn_rename_result_fresh.
-  - exact Hmodel.
-  - apply fresh_for_not_in.
-  - exact Hν.
-Qed.
-
-Lemma expr_total_on_to_fv_result X e (m : WfWorld) :
-  world_store_closed_on X m →
-  expr_total_on X e m →
-  ∀ σ, (m : World) σ →
-    ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx.
-Proof.
-  intros Hclosed [Hfv Htotal] σ Hσ.
-  destruct (strongly_normalizing_reaches_result _ (Htotal σ Hσ)) as [vx Hsteps].
-  exists vx.
-  pose proof (subst_map_eq_on_fv e
-    (store_restrict σ X)
-    (store_restrict σ (fv_tm e))) as Heq.
-  assert (Hclosed_fv :
-    closed_env (store_restrict (store_restrict σ X) (fv_tm e))).
-  {
-    apply closed_env_restrict.
-    exact (proj1 (Hclosed σ Hσ)).
-  }
-  specialize (Heq Hclosed_fv).
-  assert (Hagree :
-    store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
-    store_restrict (store_restrict σ X) (fv_tm e)).
-  {
-    store_norm.
-    replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
-    reflexivity.
-  }
-  specialize (Heq Hagree).
-  change (subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
-  replace (subst_map (store_restrict σ (fv_tm e)) e)
-    with (subst_map (store_restrict σ X) e) by (symmetry; exact Heq).
-  exact Hsteps.
-Qed.
-
 Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
     (Hfresh : ν ∉ world_dom (m : World))

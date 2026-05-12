@@ -8,9 +8,28 @@
     equivariant can use the wrapper lemma to transport it back to [body y]. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
-  LocallyNamelessProps.
+  BasicTypingProps LocallyNamelessProps.
 From ChoiceTyping Require Import ResultWorldBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
+
+(** Renaming the cofinite representative of an expression-result continuation
+    only changes the result coordinate. *)
+Lemma FExprResultOn_dom_rename_from_current_exact_domain
+    (Σ : gmap atom ty) (T : ty) e ν (n : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  ν ∉ dom Σ →
+  world_dom (n : World) = dom Σ ∪ {[ν]} →
+  n ⊨ FExprResultOn (dom Σ) e ν →
+  n ⊨ formula_rename_atom (fresh_for (dom Σ)) ν
+        (FExprResultOn (dom Σ) e (fresh_for (dom Σ))).
+Proof.
+  intros _ Hν _ Hmodel.
+  cbn [dom].
+  rewrite FExprResultOn_rename_result_fresh.
+  - exact Hmodel.
+  - apply fresh_for_not_in.
+  - exact Hν.
+Qed.
 
 Lemma set_difference_pull_singleton (X Y : aset) x :
   x ∈ X →
