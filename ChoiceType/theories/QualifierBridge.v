@@ -22,6 +22,27 @@ Definition lift_type_qualifier_to_logic (q : type_qualifier) : logic_qualifier :
         B = ∅ ∧ ∃ σw, (w : World) = singleton_world σw ∧ p ∅ σ σw)
   end.
 
+(** Formula-level lift of a type qualifier.
+
+    This is definitionally the same singleton-world lift as
+    [FAtom (lift_type_qualifier_to_logic q)], but it exposes the intended
+    shape directly as a store/resource atom.  Keeping the [match] here lets
+    formula proofs reuse the generic atom lemmas for [FStoreResourceAtom]. *)
+Definition FTypeQualifier (q : type_qualifier) : Formula :=
+  match q with
+  | qual B d p =>
+      FStoreResourceAtom d (fun σ (w : WfWorld) =>
+        B = ∅ ∧ ∃ σw, (w : World) = singleton_world σw ∧ p ∅ σ σw)
+  end.
+
+Lemma FTypeQualifier_unfold q :
+  FTypeQualifier q = FAtom (lift_type_qualifier_to_logic q).
+Proof. destruct q; reflexivity. Qed.
+
+Lemma formula_fv_FTypeQualifier q :
+  formula_fv (FTypeQualifier q) = qual_dom q.
+Proof. destruct q; reflexivity. Qed.
+
 Lemma lqual_dom_lift_type_qualifier_to_logic q :
   lqual_dom (lift_type_qualifier_to_logic q) = qual_dom q.
 Proof. destruct q; reflexivity. Qed.
@@ -170,4 +191,28 @@ Lemma res_models_lift_open_rename_fresh k x y q m :
   res_models m (FAtom (lift_type_qualifier_to_logic (qual_open_atom k y q))).
 Proof.
   apply res_models_with_store_lift_open_rename_fresh.
+Qed.
+
+Lemma res_models_with_store_FTypeQualifier_open_rename_fresh k x y q ρ m :
+  k ∈ qual_bvars q →
+  x ∉ qual_dom q →
+  y ∉ qual_dom q →
+  res_models_with_store ρ m (formula_rename_atom x y
+    (FTypeQualifier (qual_open_atom k x q))) ↔
+  res_models_with_store ρ m (FTypeQualifier (qual_open_atom k y q)).
+Proof.
+  intros Hk Hx Hy.
+  rewrite !FTypeQualifier_unfold.
+  apply res_models_with_store_lift_open_rename_fresh; assumption.
+Qed.
+
+Lemma res_models_FTypeQualifier_open_rename_fresh k x y q m :
+  k ∈ qual_bvars q →
+  x ∉ qual_dom q →
+  y ∉ qual_dom q →
+  res_models m (formula_rename_atom x y
+    (FTypeQualifier (qual_open_atom k x q))) ↔
+  res_models m (FTypeQualifier (qual_open_atom k y q)).
+Proof.
+  apply res_models_with_store_FTypeQualifier_open_rename_fresh.
 Qed.

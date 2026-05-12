@@ -277,6 +277,22 @@ Lemma formula_fv_FStoreResourceAtom D P :
   formula_fv (FStoreResourceAtom D P) = D.
 Proof. reflexivity. Qed.
 
+Lemma formula_rename_FPure x y P :
+  formula_rename_atom x y (FPure P) = FPure P.
+Proof. reflexivity. Qed.
+
+Lemma formula_rename_FResourceAtom x y D P :
+  formula_rename_atom x y (FResourceAtom D P) =
+  FResourceAtom (aset_swap x y D)
+    (fun m => P (res_swap x y m)).
+Proof. reflexivity. Qed.
+
+Lemma formula_rename_FStoreResourceAtom x y D P :
+  formula_rename_atom x y (FStoreResourceAtom D P) =
+  FStoreResourceAtom (aset_swap x y D)
+    (fun σ m => P (store_swap x y σ) (res_swap x y m)).
+Proof. reflexivity. Qed.
+
 (** A formula can only be interpreted at worlds that already track every free
     coordinate it may inspect.  Explicit quantifiers remove their representative
     binder from this set; the bound coordinate is introduced by their semantic

@@ -179,13 +179,13 @@ Lemma denot_refinement_over_cont_insert_fresh_eq
      (basic_world_formula (<[ν := TBase b]> (<[x := Tx]> Σ))
        ({[ν]} ∪ qual_dom φν))
      (fib_vars (qual_dom φν)
-       (FOver (FAtom (lift_type_qualifier_to_logic φν))))) =
+       (FOver (FTypeQualifier φν)))) =
   (let φν := qual_open_atom 0 ν φ in
    FAnd
      (basic_world_formula (<[ν := TBase b]> Σ)
        ({[ν]} ∪ qual_dom φν))
      (fib_vars (qual_dom φν)
-       (FOver (FAtom (lift_type_qualifier_to_logic φν))))).
+       (FOver (FTypeQualifier φν)))).
 Proof.
   intros Hx Hdom.
   f_equal.
@@ -211,13 +211,13 @@ Lemma denot_refinement_under_cont_insert_fresh_eq
      (basic_world_formula (<[ν := TBase b]> (<[x := Tx]> Σ))
        ({[ν]} ∪ qual_dom φν))
      (fib_vars (qual_dom φν)
-       (FUnder (FAtom (lift_type_qualifier_to_logic φν))))) =
+       (FUnder (FTypeQualifier φν)))) =
   (let φν := qual_open_atom 0 ν φ in
    FAnd
      (basic_world_formula (<[ν := TBase b]> Σ)
        ({[ν]} ∪ qual_dom φν))
      (fib_vars (qual_dom φν)
-       (FUnder (FAtom (lift_type_qualifier_to_logic φν))))).
+       (FUnder (FTypeQualifier φν)))).
 Proof.
   intros Hx Hdom.
   f_equal.
@@ -247,18 +247,17 @@ Lemma denot_refinement_over_cont_fv_subset
        FAnd
          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
          (fib_vars (qual_dom φν)
-           (FOver (FAtom (lift_type_qualifier_to_logic φν))))) ⊆
+           (FOver (FTypeQualifier φν)))) ⊆
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
+  destruct φ as [B d p]. simpl in Hφ.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   rewrite fib_vars_formula_fv.
-  cbn [formula_fv].
-  unfold stale, stale_logic_qualifier.
-  rewrite lqual_dom_lift_type_qualifier_to_logic.
-  pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
-  set_solver.
+  unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
+  destruct (decide (0 ∈ B)); simpl.
+  all: unfold stale, stale_logic_qualifier; simpl; set_solver.
 Qed.
 
 Lemma denot_refinement_under_cont_fv_subset
@@ -270,18 +269,17 @@ Lemma denot_refinement_under_cont_fv_subset
        FAnd
          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
          (fib_vars (qual_dom φν)
-           (FUnder (FAtom (lift_type_qualifier_to_logic φν))))) ⊆
+           (FUnder (FTypeQualifier φν)))) ⊆
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
+  destruct φ as [B d p]. simpl in Hφ.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   rewrite fib_vars_formula_fv.
-  cbn [formula_fv].
-  unfold stale, stale_logic_qualifier.
-  rewrite lqual_dom_lift_type_qualifier_to_logic.
-  pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
-  set_solver.
+  unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
+  destruct (decide (0 ∈ B)); simpl.
+  all: unfold stale, stale_logic_qualifier; simpl; set_solver.
 Qed.
 
 Lemma qual_open_atom_dom_eq_member k x q :
@@ -313,30 +311,23 @@ Lemma formula_store_equiv_lift_open_over_rename_fresh k x y q :
   y ∉ qual_dom q →
   formula_store_equiv
     (formula_rename_atom x y
-      (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom k x q)))))
-    (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom k y q)))).
+      (FOver (FTypeQualifier (qual_open_atom k x q))))
+    (FOver (FTypeQualifier (qual_open_atom k y q))).
 Proof.
   intros Hk Hx Hy.
-  destruct q as [B d p]. simpl in *.
   apply formula_store_equiv_over.
-  - unfold formula_rename_atom, formula_swap. simpl.
-    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-      lift_type_qualifier_to_logic, qual_open_atom.
-    simpl. rewrite !decide_True by exact Hk.
+  - destruct q as [B d p]. simpl in *.
+    unfold qual_open_atom, FTypeQualifier, FStoreResourceAtom in *; simpl.
+    rewrite !decide_True by exact Hk.
+    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap; simpl.
+    change (aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
     rewrite aset_swap_union, aset_swap_singleton.
     replace (atom_swap x y x) with y
       by (unfold atom_swap; repeat destruct decide; congruence).
     rewrite aset_swap_fresh by assumption.
     reflexivity.
   - intros ρ m.
-    change (res_models_with_store ρ m
-      (formula_rename_atom x y
-        (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom k x (qual B d p))))) ↔
-      res_models_with_store ρ m
-        (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom k y (qual B d p))))).
-    apply res_models_with_store_lift_open_rename_fresh; assumption.
+    apply res_models_with_store_FTypeQualifier_open_rename_fresh; assumption.
 Qed.
 
 Lemma formula_store_equiv_lift_open_under_rename_fresh k x y q :
@@ -345,30 +336,23 @@ Lemma formula_store_equiv_lift_open_under_rename_fresh k x y q :
   y ∉ qual_dom q →
   formula_store_equiv
     (formula_rename_atom x y
-      (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom k x q)))))
-    (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom k y q)))).
+      (FUnder (FTypeQualifier (qual_open_atom k x q))))
+    (FUnder (FTypeQualifier (qual_open_atom k y q))).
 Proof.
   intros Hk Hx Hy.
-  destruct q as [B d p]. simpl in *.
   apply formula_store_equiv_under.
-  - unfold formula_rename_atom, formula_swap. simpl.
-    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-      lift_type_qualifier_to_logic, qual_open_atom.
-    simpl. rewrite !decide_True by exact Hk.
+  - destruct q as [B d p]. simpl in *.
+    unfold qual_open_atom, FTypeQualifier, FStoreResourceAtom in *; simpl.
+    rewrite !decide_True by exact Hk.
+    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap; simpl.
+    change (aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
     rewrite aset_swap_union, aset_swap_singleton.
     replace (atom_swap x y x) with y
       by (unfold atom_swap; repeat destruct decide; congruence).
     rewrite aset_swap_fresh by assumption.
     reflexivity.
   - intros ρ m.
-    change (res_models_with_store ρ m
-      (formula_rename_atom x y
-        (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom k x (qual B d p))))) ↔
-      res_models_with_store ρ m
-        (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom k y (qual B d p))))).
-    apply res_models_with_store_lift_open_rename_fresh; assumption.
+    apply res_models_with_store_FTypeQualifier_open_rename_fresh; assumption.
 Qed.
 
 Lemma denot_refinement_over_fib_rename_stable
@@ -380,23 +364,23 @@ Lemma denot_refinement_over_fib_rename_stable
     m ⊨ formula_rename_atom x y
       (let φx := qual_open_atom 0 x φ in
        fib_vars (qual_dom φx)
-         (FOver (FAtom (lift_type_qualifier_to_logic φx)))) ↔
+         (FOver (FTypeQualifier φx))) ↔
     m ⊨
       (let φy := qual_open_atom 0 y φ in
        fib_vars (qual_dom φy)
-         (FOver (FAtom (lift_type_qualifier_to_logic φy)))).
+         (FOver (FTypeQualifier φy))).
 Proof.
   intros Hdom x y m HxD HyD.
   change (m ⊨ formula_rename_atom x y
       (fib_vars (qual_dom (qual_open_atom 0 x φ))
-        (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 x φ))))) ↔
+        (FOver (FTypeQualifier (qual_open_atom 0 x φ)))) ↔
     m ⊨
       (fib_vars (qual_dom (qual_open_atom 0 y φ))
-        (FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 y φ)))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 y φ))))).
   destruct (decide (0 ∈ qual_bvars φ)) as [Hk|Hk].
   - rewrite !qual_open_atom_dom_eq_member by exact Hk.
-    set (base_x := FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 x φ)))).
-    set (base_y := FOver (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 y φ)))).
+    set (base_x := FOver (FTypeQualifier (qual_open_atom 0 x φ))).
+    set (base_y := FOver (FTypeQualifier (qual_open_atom 0 y φ))).
     transitivity (m ⊨ fib_vars ({[y]} ∪ qual_dom φ)
       (formula_rename_atom x y base_x)).
     + apply res_models_of_formula_store_equiv.
@@ -421,11 +405,15 @@ Proof.
   - rewrite !qual_open_atom_eq_not_member by exact Hk.
     apply res_models_rename_atom_fresh.
     + rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic. set_solver.
+      rewrite FTypeQualifier_unfold.
+      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      destruct φ; simpl in *.
+      set_solver.
     + rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic. set_solver.
+      rewrite FTypeQualifier_unfold.
+      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      destruct φ; simpl in *.
+      set_solver.
 Qed.
 
 Lemma denot_refinement_under_fib_rename_stable
@@ -437,23 +425,23 @@ Lemma denot_refinement_under_fib_rename_stable
     m ⊨ formula_rename_atom x y
       (let φx := qual_open_atom 0 x φ in
        fib_vars (qual_dom φx)
-         (FUnder (FAtom (lift_type_qualifier_to_logic φx)))) ↔
+         (FUnder (FTypeQualifier φx))) ↔
     m ⊨
       (let φy := qual_open_atom 0 y φ in
        fib_vars (qual_dom φy)
-         (FUnder (FAtom (lift_type_qualifier_to_logic φy)))).
+         (FUnder (FTypeQualifier φy))).
 Proof.
   intros Hdom x y m HxD HyD.
   change (m ⊨ formula_rename_atom x y
       (fib_vars (qual_dom (qual_open_atom 0 x φ))
-        (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 x φ))))) ↔
+        (FUnder (FTypeQualifier (qual_open_atom 0 x φ)))) ↔
     m ⊨
       (fib_vars (qual_dom (qual_open_atom 0 y φ))
-        (FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 y φ)))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 y φ))))).
   destruct (decide (0 ∈ qual_bvars φ)) as [Hk|Hk].
   - rewrite !qual_open_atom_dom_eq_member by exact Hk.
-    set (base_x := FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 x φ)))).
-    set (base_y := FUnder (FAtom (lift_type_qualifier_to_logic (qual_open_atom 0 y φ)))).
+    set (base_x := FUnder (FTypeQualifier (qual_open_atom 0 x φ))).
+    set (base_y := FUnder (FTypeQualifier (qual_open_atom 0 y φ))).
     transitivity (m ⊨ fib_vars ({[y]} ∪ qual_dom φ)
       (formula_rename_atom x y base_x)).
     + apply res_models_of_formula_store_equiv.
@@ -478,11 +466,15 @@ Proof.
   - rewrite !qual_open_atom_eq_not_member by exact Hk.
     apply res_models_rename_atom_fresh.
     + rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic. set_solver.
+      rewrite FTypeQualifier_unfold.
+      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      destruct φ; simpl in *.
+      set_solver.
     + rewrite fib_vars_formula_fv. simpl.
-      unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic. set_solver.
+      rewrite FTypeQualifier_unfold.
+      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      destruct φ; simpl in *.
+      set_solver.
 Qed.
 
 Lemma denot_refinement_over_cont_rename_stable
@@ -493,7 +485,7 @@ Lemma denot_refinement_over_cont_rename_stable
     FAnd
       (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
       (fib_vars (qual_dom φν)
-        (FOver (FAtom (lift_type_qualifier_to_logic φν))))).
+        (FOver (FTypeQualifier φν)))).
 Proof.
   intros Hφ x y m HxD HyD.
   unfold formula_family_rename_stable_on.
@@ -545,7 +537,7 @@ Lemma denot_refinement_under_cont_rename_stable
     FAnd
       (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
       (fib_vars (qual_dom φν)
-        (FUnder (FAtom (lift_type_qualifier_to_logic φν))))).
+        (FUnder (FTypeQualifier φν)))).
 Proof.
   intros Hφ x y m HxD HyD.
   unfold formula_family_rename_stable_on.
@@ -1696,14 +1688,14 @@ Proof.
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T1]> Δ))
               ({[ν]} ∪ qual_dom φν))
             (fib_vars (qual_dom φν)
-              (FOver (FAtom (lift_type_qualifier_to_logic φν)))))
+              (FOver (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Δ)
               ({[ν]} ∪ qual_dom φν))
             (fib_vars (qual_dom φν)
-              (FOver (FAtom (lift_type_qualifier_to_logic φν)))))).
+              (FOver (FTypeQualifier φν))))).
       2:{
         eapply (denot_refinement_over_cont_insert_fresh_eq
           (dom Δ : aset) Δ x T1 b φ); [set_solver | reflexivity].
@@ -1732,14 +1724,14 @@ Proof.
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T1]> Δ))
               ({[ν]} ∪ qual_dom φν))
             (fib_vars (qual_dom φν)
-              (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))
+              (FUnder (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Δ)
               ({[ν]} ∪ qual_dom φν))
             (fib_vars (qual_dom φν)
-              (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))).
+              (FUnder (FTypeQualifier φν))))).
       2:{
         eapply (denot_refinement_under_cont_insert_fresh_eq
           (dom Δ : aset) Δ x T1 b φ); [set_solver | reflexivity].

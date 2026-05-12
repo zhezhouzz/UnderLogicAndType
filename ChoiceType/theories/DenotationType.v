@@ -86,7 +86,7 @@ Fixpoint denot_ty_fuel_result
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FOver (FAtom (lift_type_qualifier_to_logic φν))))))
+            (FOver (FTypeQualifier φν)))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
@@ -95,7 +95,7 @@ Fixpoint denot_ty_fuel_result
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FUnder (FAtom (lift_type_qualifier_to_logic φν))))))
+            (FUnder (FTypeQualifier φν)))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -768,19 +768,19 @@ Proof.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
       rewrite fib_vars_formula_fv.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
-      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hφ.
-      set_solver.
+      destruct φ as [B d p].
+      unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
+      destruct (decide (0 ∈ B)); simpl.
+      all: unfold stale, stale_logic_qualifier; simpl; set_solver.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
       rewrite fib_vars_formula_fv.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
-      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hφ.
-      set_solver.
+      destruct φ as [B d p].
+      unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
+      destruct (decide (0 ∈ B)); simpl.
+      all: unfold stale, stale_logic_qualifier; simpl; set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
       pose proof (IH Σ τ2 e ltac:(lia)) as H2.
       set_solver.
