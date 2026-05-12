@@ -17,7 +17,7 @@ Notation Store := (gmap atom value) (only parsing).
 Notation World := (World (V := value)) (only parsing).
 Notation WfWorld := (WfWorld (V := value)) (only parsing).
 Notation logic_qualifier := (logic_qualifier (V := value)) (only parsing).
-Notation Formula := (@Formula.Formula value) (only parsing).
+Notation Formula := (@FormulaSyntax.Formula value) (only parsing).
 
 (** ChoiceType formulas use logic qualifiers as atoms. *)
-Notation FormulaQ := (@Formula.Formula value) (only parsing).
+Notation FormulaQ := (@FormulaSyntax.Formula value) (only parsing).

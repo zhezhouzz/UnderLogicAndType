@@ -1,9 +1,9 @@
-From ChoiceLogic Require Import Prelude LogicQualifier.
+From ChoiceLogic Require Export FormulaSyntax.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 
-    Formulas are independent of the core language.  Core expressions are
-    embedded into the logic by ChoiceType through ordinary logic qualifiers. *)
+    Formula syntax and naming operations live in [FormulaSyntax]; this file
+    contains satisfaction and semantic proof principles. *)
 
 Section Formula.
 
@@ -12,232 +12,7 @@ Context {V : Type} `{ValueSig V}.
 Local Notation StoreT := (gmap atom V) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
-
-(** ** Formula syntax *)
-
-Inductive Formula : Type :=
-  | FTrue
-  | FFalse
-  | FAtom   (a : LogicQualifierT)
-  | FAnd    (p q : Formula)
-  | FOr     (p q : Formula)
-  | FImpl   (p q : Formula)                     (* Kripke implication *)
-  | FStar   (p q : Formula)                     (* separating conjunction p ∗ q *)
-  | FWand   (p q : Formula)                     (* magic wand p −∗ q *)
-  | FPlus   (p q : Formula)                     (* choice sum p ⊕ q *)
-  | FForall (x : atom) (p : Formula)            (* ordinary universal quantifier *)
-  | FExists (x : atom) (p : Formula)            (* ordinary existential quantifier *)
-  | FOver   (p : Formula)                       (* overapproximation  o p *)
-  | FUnder  (p : Formula)                       (* underapproximation u p *)
-  | FFib    (x : atom) (p : Formula).           (* fiberwise modality *)
-
-Fixpoint formula_stale (φ : Formula) : aset :=
-  match φ with
-  | FTrue | FFalse => ∅
-  | FAtom q => stale q
-  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
-      formula_stale p ∪ formula_stale q
-  | FForall x p | FExists x p => {[x]} ∪ formula_stale p
-  | FOver p | FUnder p => formula_stale p
-  | FFib x p => {[x]} ∪ formula_stale p
-  end.
-
-Fixpoint formula_fv (φ : Formula) : aset :=
-  match φ with
-  | FTrue | FFalse => ∅
-  | FAtom q => stale q
-  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
-      formula_fv p ∪ formula_fv q
-  | FForall x p | FExists x p => formula_fv p ∖ {[x]}
-  | FOver p | FUnder p => formula_fv p
-  | FFib x p => {[x]} ∪ formula_fv p
-  end.
-
-#[global] Instance stale_formula : Stale Formula := formula_fv.
-Arguments stale_formula /.
-
-Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
-  match φ with
-  | FTrue => FTrue
-  | FFalse => FFalse
-  | FAtom q => FAtom (lqual_swap x y q)
-  | FAnd p q => FAnd (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FOr p q => FOr (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FImpl p q => FImpl (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FStar p q => FStar (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FWand p q => FWand (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FPlus p q => FPlus (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FForall z p =>
-      FForall (atom_swap x y z) (formula_rename_atom x y p)
-  | FExists z p =>
-      FExists (atom_swap x y z) (formula_rename_atom x y p)
-  | FOver p => FOver (formula_rename_atom x y p)
-  | FUnder p => FUnder (formula_rename_atom x y p)
-  | FFib z p => FFib (atom_swap x y z) (formula_rename_atom x y p)
-  end.
-
-Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
-  match φ with
-  | FTrue => FTrue
-  | FFalse => FFalse
-  | FAtom q => FAtom (lqual_swap x y q)
-  | FAnd p q => FAnd (formula_swap x y p) (formula_swap x y q)
-  | FOr p q => FOr (formula_swap x y p) (formula_swap x y q)
-  | FImpl p q => FImpl (formula_swap x y p) (formula_swap x y q)
-  | FStar p q => FStar (formula_swap x y p) (formula_swap x y q)
-  | FWand p q => FWand (formula_swap x y p) (formula_swap x y q)
-  | FPlus p q => FPlus (formula_swap x y p) (formula_swap x y q)
-  | FForall z p =>
-      FForall (atom_swap x y z) (formula_swap x y p)
-  | FExists z p =>
-      FExists (atom_swap x y z) (formula_swap x y p)
-  | FOver p => FOver (formula_swap x y p)
-  | FUnder p => FUnder (formula_swap x y p)
-  | FFib z p => FFib (atom_swap x y z) (formula_swap x y p)
-  end.
-
-Fixpoint formula_measure (φ : Formula) : nat :=
-  match φ with
-  | FTrue | FFalse | FAtom _ => 1
-  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
-      1 + formula_measure p + formula_measure q
-  | FForall _ p | FExists _ p | FOver p | FUnder p | FFib _ p =>
-      1 + formula_measure p
-  end.
-
-Lemma formula_rename_preserves_measure x y φ :
-  formula_measure (formula_rename_atom x y φ) = formula_measure φ.
-Proof.
-  induction φ; simpl; eauto; lia.
-Qed.
-
-Lemma formula_swap_preserves_measure x y φ :
-  formula_measure (formula_swap x y φ) = formula_measure φ.
-Proof.
-  induction φ; simpl; eauto; lia.
-Qed.
-
-Lemma formula_rename_atom_eq_swap x y φ :
-  formula_rename_atom x y φ = formula_swap x y φ.
-Proof.
-  induction φ; simpl; try congruence.
-Qed.
-
-Lemma formula_rename_atom_conjugate a b x y φ :
-  formula_rename_atom a b (formula_rename_atom x y φ) =
-  formula_rename_atom (atom_swap a b x) (atom_swap a b y)
-    (formula_rename_atom a b φ).
-Proof.
-  induction φ as
-    [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
-     |p IHp q' IHq|p IHp q' IHq|z p IHp|z p IHp|p IHp|p IHp|z p IHp];
-    simpl; try congruence.
-  - rewrite lqual_swap_conjugate. reflexivity.
-  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
-  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
-  - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
-Qed.
-
-Lemma formula_fv_swap x y φ :
-  formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
-Proof.
-  induction φ as
-    [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
-     |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp];
-    cbn; try reflexivity.
-  - match goal with
-    | q : logic_qualifier |- _ => destruct q; simpl; reflexivity
-    end.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
-  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
-  - rewrite IHp. reflexivity.
-  - rewrite IHp. reflexivity.
-  - rewrite IHp, <- (aset_swap_singleton x y a), <- aset_swap_union. reflexivity.
-Qed.
-
-Lemma formula_fv_rename_atom x y φ :
-  formula_fv (formula_rename_atom x y φ) = aset_swap x y (formula_fv φ).
-Proof.
-  rewrite formula_rename_atom_eq_swap. apply formula_fv_swap.
-Qed.
-
-Lemma formula_fv_rename_atom_subset_open x y φ :
-  y ∉ formula_fv φ ∖ {[x]} →
-  formula_fv (formula_rename_atom x y φ) ⊆
-    (formula_fv φ ∖ {[x]}) ∪ {[y]}.
-Proof.
-  intros Hy z Hz.
-  rewrite formula_fv_rename_atom in Hz.
-  rewrite elem_of_aset_swap in Hz.
-  destruct (decide (z = y)) as [Hzy|Hzy].
-  - subst z. apply elem_of_union. right. set_solver.
-  - destruct (decide (z = x)) as [Hzx|Hzx].
-    + subst z. exfalso. apply Hy. apply elem_of_difference. split.
-      * replace (atom_swap x y x) with y in Hz
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        exact Hz.
-      * set_solver.
-    + apply elem_of_union. left. apply elem_of_difference. split.
-      * replace (atom_swap x y z) with z in Hz
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        exact Hz.
-      * set_solver.
-Qed.
-
-Lemma elem_of_aset_swap_unchanged x y z X :
-  z ∈ X →
-  z ≠ x →
-  z ≠ y →
-  z ∈ aset_swap x y X.
-Proof.
-  intros Hz Hzx Hzy. rewrite elem_of_aset_swap.
-  unfold atom_swap. repeat destruct decide; congruence.
-Qed.
-
-Lemma formula_fv_rename_unchanged x y z φ :
-  z ∈ formula_fv φ →
-  z ≠ x →
-  z ≠ y →
-  z ∈ formula_fv (formula_rename_atom x y φ).
-Proof.
-  revert z.
-  induction φ as
-    [| |a|p IHp q IHq|p IHp q IHq|p IHp q IHq|p IHp q IHq
-     |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp];
-    intros z Hz Hzx Hzy; simpl in *; try set_solver.
-  - destruct a as [d p]. simpl in *.
-    apply elem_of_aset_swap_unchanged; assumption.
-  - apply elem_of_difference in Hz as [Hz Hzx0].
-    apply elem_of_difference. split.
-    + apply IHp; assumption.
-    + unfold atom_swap. repeat destruct decide; set_solver.
-  - apply elem_of_difference in Hz as [Hz Hzx0].
-    apply elem_of_difference. split.
-    + apply IHp; assumption.
-    + unfold atom_swap. repeat destruct decide; set_solver.
-  - apply elem_of_union in Hz as [Hz | Hz].
-    + apply elem_of_union. left.
-      unfold atom_swap. repeat destruct decide; set_solver.
-    + apply elem_of_union. right. apply IHp; assumption.
-Qed.
-
-Lemma formula_measure_pos (φ : Formula) :
-  0 < formula_measure φ.
-Proof. induction φ; simpl; lia. Qed.
-
-(** [fresh_forall D body] chooses a syntactic representative for an explicit
-    formula binder.  The representative is not semantically privileged:
-    [FForall]'s satisfaction relation later renames it to every sufficiently
-    fresh atom. *)
-Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
-  let x := fresh_for D in
-  FForall x (body x).
+Local Notation Formula := (Formula (V := V)) (only parsing).
 
 (** ** Common atom shorthands
 
@@ -1623,7 +1398,8 @@ Proof.
     unfold formula_scoped_in_world in Hscope.
     assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
     rewrite Hdom in Hzm'. set_solver.
-  - apply elem_of_difference in Hzφ as [Hzφ Hzx].
+  - simpl in Hzφ.
+    apply elem_of_difference in Hzφ as [Hzφ Hzx].
     set (y := fresh_for (L ∪ {[z]})).
     assert (HyL : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
     assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
@@ -1658,7 +1434,8 @@ Proof.
     unfold formula_scoped_in_world in Hscope.
     assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
     rewrite Hdom in Hzm'. set_solver.
-  - apply elem_of_difference in Hzφ as [Hzφ Hzx].
+  - simpl in Hzφ.
+    apply elem_of_difference in Hzφ as [Hzφ Hzx].
     set (y := fresh_for (L ∪ {[z]})).
     assert (Hy : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
     assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).

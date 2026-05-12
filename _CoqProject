@@ -41,6 +41,7 @@ CoreLang/theories/OperationalResults.v
 
 ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v
+ChoiceLogic/theories/FormulaSyntax.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/FormulaTactics.v
 ChoiceLogic/theories/FormulaDerived.v
