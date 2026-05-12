@@ -239,6 +239,44 @@ Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
   let x := fresh_for D in
   FForall x (body x).
 
+(** ** Common atom shorthands
+
+    These constructors are only syntax sugar over shallow logic qualifiers.
+    They separate the three common classes of atoms used by the type
+    denotation:
+
+    - [FPure] carries a Rocq proposition and inspects neither the explicit
+      substitution store nor the resource.
+    - [FResourceAtom] inspects the current resource after the qualifier domain
+      restriction, but ignores the explicit substitution store.
+    - [FStoreResourceAtom] inspects both the explicit substitution store and
+      the resource, after both have been restricted to the declared domain.
+
+    Expression-result and expression-totality atoms should use
+    [FStoreResourceAtom], because [FFib] accumulates fixed projections in the
+    explicit store [ρ]. *)
+Definition FPure (P : Prop) : Formula :=
+  FAtom (lqual ∅ (λ _ _, P)).
+
+Definition FResourceAtom (D : aset) (P : WfWorldT → Prop) : Formula :=
+  FAtom (lqual D (λ _ m, P m)).
+
+Definition FStoreResourceAtom
+    (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
+  FAtom (lqual D P).
+
+Lemma formula_fv_FPure P :
+  formula_fv (FPure P) = ∅.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_FResourceAtom D P :
+  formula_fv (FResourceAtom D P) = D.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_FStoreResourceAtom D P :
+  formula_fv (FStoreResourceAtom D P) = D.
+Proof. reflexivity. Qed.
+
 (** A formula can only be interpreted at worlds that already track every free
     coordinate it may inspect.  Explicit quantifiers remove their representative
     binder from this set; the bound coordinate is introduced by their semantic
@@ -1064,8 +1102,81 @@ Proof.
     formula_models_fuel_irrel Hψ1.
   - split; [exact Hscope |].
     right.
-    pose proof (H2 ltac:(formula_models_fuel_irrel Hφ2)) as Hψ2.
+      pose proof (H2 ltac:(formula_models_fuel_irrel Hφ2)) as Hψ2.
     formula_models_fuel_irrel Hψ2.
+Qed.
+
+Lemma res_models_with_store_pure_intro
+    (ρ : StoreT) (m : WfWorldT) (P : Prop) :
+  formula_scoped_in_world ρ m (FPure P) →
+  P →
+  res_models_with_store ρ m (FPure P).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope HP. split; [exact Hscope |].
+  exists m. split; [exact Hscope |].
+  split; [exact HP | reflexivity].
+Qed.
+
+Lemma res_models_with_store_pure_elim
+    (ρ : StoreT) (m : WfWorldT) (P : Prop) :
+  res_models_with_store ρ m (FPure P) →
+  P.
+Proof.
+  unfold res_models_with_store. simpl.
+  intros [_ [m0 [_ [HP _]]]]. exact HP.
+Qed.
+
+Lemma res_models_with_store_resource_atom_intro
+    (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FResourceAtom D P) →
+  P (res_restrict m D) →
+  res_models_with_store ρ m (FResourceAtom D P).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope HP. split; [exact Hscope |].
+  exists m. split; [exact Hscope |].
+  split; [exact HP | reflexivity].
+Qed.
+
+Lemma res_models_with_store_resource_atom_elim
+    (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
+  res_models_with_store ρ m (FResourceAtom D P) →
+  ∃ m0,
+    formula_scoped_in_world ρ m0 (FResourceAtom D P) ∧
+    P (res_restrict m0 D) ∧
+    m0 ⊑ m.
+Proof.
+  unfold res_models_with_store. simpl.
+  intros [_ [m0 [Hscope [HP Hle]]]].
+  exists m0. repeat split; eauto.
+Qed.
+
+Lemma res_models_with_store_store_resource_atom_intro
+    (ρ : StoreT) (m : WfWorldT) D
+    (P : StoreT → WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FStoreResourceAtom D P) →
+  P (store_restrict ρ D) (res_restrict m D) →
+  res_models_with_store ρ m (FStoreResourceAtom D P).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope HP. split; [exact Hscope |].
+  exists m. split; [exact Hscope |].
+  split; [exact HP | reflexivity].
+Qed.
+
+Lemma res_models_with_store_store_resource_atom_elim
+    (ρ : StoreT) (m : WfWorldT) D
+    (P : StoreT → WfWorldT → Prop) :
+  res_models_with_store ρ m (FStoreResourceAtom D P) →
+  ∃ m0,
+    formula_scoped_in_world ρ m0 (FStoreResourceAtom D P) ∧
+    P (store_restrict ρ D) (res_restrict m0 D) ∧
+    m0 ⊑ m.
+Proof.
+  unfold res_models_with_store. simpl.
+  intros [_ [m0 [Hscope [HP Hle]]]].
+  exists m0. repeat split; eauto.
 Qed.
 
 Lemma res_models_with_store_impl_intro
