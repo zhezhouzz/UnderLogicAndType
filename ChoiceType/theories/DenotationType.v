@@ -152,6 +152,35 @@ Definition denot_ty_fuel
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_formula (denot_ty_fuel_result gas Σ τ e).
 
+Lemma denot_ty_fuel_result_basic_typing gas Σ τ e :
+  basic_typing (denot_ty_fuel_result gas Σ τ e) ↔
+  basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ.
+Proof.
+  destruct gas as [|gas]; [reflexivity |].
+  destruct τ; reflexivity.
+Qed.
+
+Lemma denot_ty_fuel_result_closed_resource gas Σ τ e m :
+  closed_resource (denot_ty_fuel_result gas Σ τ e) m ↔
+  world_closed_on (dom Σ) m.
+Proof.
+  destruct gas as [|gas]; [reflexivity |].
+  destruct τ; reflexivity.
+Qed.
+
+Lemma denot_ty_fuel_result_strong_total gas Σ τ e m :
+  strong_total (denot_ty_fuel_result gas Σ τ e) m ↔
+  expr_total_on (dom Σ) e m.
+Proof.
+  destruct gas as [|gas]; [reflexivity |].
+  destruct τ; reflexivity.
+Qed.
+
+Lemma denot_ty_fuel_result_formula gas Σ τ e :
+  denot_ty_formula (denot_ty_fuel_result gas Σ τ e) =
+  denot_ty_fuel gas Σ τ e.
+Proof. reflexivity. Qed.
+
 Definition denot_ty_on
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_fuel (cty_measure τ) Σ τ e.

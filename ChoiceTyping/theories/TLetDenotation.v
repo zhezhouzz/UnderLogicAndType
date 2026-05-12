@@ -1461,7 +1461,7 @@ Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
 Proof.
 Admitted.
 
-Lemma denot_ty_fuel_tlet_reduction_formula_on gas
+Lemma denot_ty_fuel_tlet_reduction_formula_on_legacy gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
     (m : WfWorld) (x : atom)
     (Hfresh : x ∉ world_dom (m : World))
@@ -1690,6 +1690,159 @@ Proof.
     + eapply denot_ty_fuel_tlet_reduction_formula_on_arrow_case; eauto.
     + eapply denot_ty_fuel_tlet_reduction_formula_on_wand_case; eauto.
 Admitted.
+
+Lemma world_store_closed_on_world_closed_on X (m : WfWorld) :
+  world_store_closed_on X m →
+  world_closed_on X m.
+Proof.
+  intros Hclosed σ Hσ.
+  exact (proj1 (Hclosed σ Hσ)).
+Qed.
+
+Lemma denot_ty_fuel_result_models_intro gas Σ τ e m :
+  basic_choice_ty (dom Σ) τ →
+  Σ ⊢ₑ e ⋮ erase_ty τ →
+  world_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) e m →
+  m ⊨ denot_ty_fuel gas Σ τ e →
+  denot_ty_result_models (denot_ty_fuel_result gas Σ τ e) m.
+Proof.
+  intros Hbasic Htyped Hclosed Htotal Hformula.
+  unfold denot_ty_result_models.
+  repeat split.
+  - rewrite denot_ty_fuel_result_basic_typing.
+    split; assumption.
+  - rewrite denot_ty_fuel_result_closed_resource.
+    exact Hclosed.
+  - rewrite denot_ty_fuel_result_strong_total.
+    exact Htotal.
+  - exact Hformula.
+Qed.
+
+Lemma denot_ty_fuel_result_models_formula gas Σ τ e m :
+  denot_ty_result_models (denot_ty_fuel_result gas Σ τ e) m →
+  m ⊨ denot_ty_fuel gas Σ τ e.
+Proof.
+  intros [_ [_ [_ Hformula]]].
+  exact Hformula.
+Qed.
+
+Lemma let_result_world_on_world_closed_on_insert_from_basic
+    (Δ : gmap atom ty) T e x (m : WfWorld) Hfresh Hresult :
+  Δ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  x ∉ dom Δ →
+  world_closed_on (dom (<[x := T]> Δ))
+    (let_result_world_on e x m Hfresh Hresult).
+Proof.
+  intros Htyped Hdom Hclosed Hx.
+  eapply world_store_closed_on_world_closed_on.
+  rewrite dom_insert_L.
+  replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
+  eapply let_result_world_on_store_closed_on_insert.
+  - exact Hx.
+  - exact Hclosed.
+  - intros σ vx Hσ Hsteps.
+    pose proof (basic_typing_contains_fv_tm Δ e T Htyped) as Hfv.
+    pose proof (typing_tm_lc Δ e T Htyped) as Hlc.
+    assert (Hclosed_fv : world_store_closed_on (fv_tm e) m).
+    { eapply world_store_closed_on_mono; [exact Hfv | exact Hclosed]. }
+    eapply (steps_closed_result_of_restrict_world
+      (fv_tm e) e m (store_restrict σ (fv_tm e)) vx).
+    + rewrite Hdom. exact Hfv.
+    + set_solver.
+    + exact Hlc.
+    + exact Hclosed_fv.
+    + exists σ. split; [exact Hσ | reflexivity].
+    + replace (store_restrict (store_restrict σ (fv_tm e)) (fv_tm e))
+        with (store_restrict σ (fv_tm e)).
+      * exact Hsteps.
+      * store_norm. reflexivity.
+Qed.
+
+Lemma denot_ty_fuel_tlet_reduction_result_on gas
+    (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  ∀ τ2,
+    cty_measure τ2 <= gas →
+    basic_choice_ty (dom Δ) τ2 →
+    Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
+    denot_ty_result_models
+      (denot_ty_fuel_result gas (<[x:=T1]> Δ) τ2 (e2 ^^ x))
+      (let_result_world_on e1 x m Hfresh Hresult)
+    <->
+    denot_ty_result_models
+      (denot_ty_fuel_result gas Δ τ2 (tlete e1 e2))
+      m.
+Proof.
+  (** This is now the real induction target for the [tlet] denotation proof.
+      The old formula-only lemma below is only a projection of this result-level
+      statement, so Arrow/Wand recursive calls can carry their static, closed
+      resource, and strong-total obligations through the IH. *)
+Admitted.
+
+Lemma denot_ty_fuel_tlet_reduction_formula_on gas
+    (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  ∀ τ2,
+    cty_measure τ2 <= gas →
+    basic_choice_ty (dom Δ) τ2 →
+    Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
+    let_result_world_on e1 x m Hfresh Hresult
+      ⊨ denot_ty_fuel gas (<[x:=T1]> Δ) τ2 (e2 ^^ x)
+    <->
+    m ⊨ denot_ty_fuel gas Δ τ2 (tlete e1 e2).
+Proof.
+  intros He1 Hdom Hclosed Htotal Hx_base τ2 Hgas Hbasicτ Hlet.
+  pose proof (denot_ty_fuel_tlet_reduction_result_on
+    gas Δ T1 e1 e2 m x Hfresh Hresult
+    He1 Hdom Hclosed Htotal Hx_base τ2 Hgas Hbasicτ Hlet) as Hresult_level.
+  split; intros Hformula.
+  - apply denot_ty_fuel_result_models_formula.
+    apply (proj1 Hresult_level).
+    eapply denot_ty_fuel_result_models_intro.
+    + eapply basic_choice_ty_mono; [| exact Hbasicτ].
+      rewrite dom_insert_L. set_solver.
+    + eapply basic_typing_tlete_body_for_fresh; eauto.
+    + eapply let_result_world_on_world_closed_on_insert_from_basic; eauto.
+      set_solver.
+    + rewrite dom_insert_L.
+      replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
+      eapply (expr_total_on_tlete_elim_body_strong
+        (dom Δ) e1 e2 x m Hfresh Hresult).
+      * rewrite Hdom. set_solver.
+      * set_solver.
+      * set_solver.
+      * exact Hclosed.
+      * eapply typing_tm_lc; eauto.
+      * exact Htotal.
+    + exact Hformula.
+  - apply denot_ty_fuel_result_models_formula.
+    apply (proj2 Hresult_level).
+    eapply denot_ty_fuel_result_models_intro.
+    + exact Hbasicτ.
+    + exact Hlet.
+    + eapply world_store_closed_on_world_closed_on. exact Hclosed.
+    + exact Htotal.
+    + exact Hformula.
+Qed.
 
 Lemma denot_ty_fuel_tlet_reduction_formula gas (τ2 : choice_ty): forall
     (Σ : gmap atom ty) (Γ : ctx) (τ1: choice_ty) e1 e2
