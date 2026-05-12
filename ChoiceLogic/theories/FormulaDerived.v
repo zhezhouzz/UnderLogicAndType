@@ -125,6 +125,36 @@ Proof.
   - exact Hψ.
 Qed.
 
+Lemma res_models_or_transport_between_worlds
+    (m n : WfWorldT) (φa φb ψa ψb : FormulaT) :
+  formula_fv ψa ⊆ world_dom (n : World) →
+  formula_fv ψb ⊆ world_dom (n : World) →
+  (m ⊨ φa → n ⊨ ψa) →
+  (m ⊨ φb → n ⊨ ψb) →
+  m ⊨ FOr φa φb →
+  n ⊨ FOr ψa ψb.
+Proof.
+  intros Hψa Hψb Ha Hb Hor.
+  unfold res_models, res_models_with_store in Hor.
+  simpl in Hor. destruct Hor as [_ [Hleft | Hright]].
+  - eapply res_models_or_intro_l_from_model.
+    + apply Ha. unfold res_models, res_models_with_store.
+      lazymatch type of Hleft with
+      | res_models_with_store_fuel ?g ?ρ ?w ?φ =>
+          eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ w φ);
+          [simpl; lia | lia | exact Hleft]
+      end.
+    + exact Hψb.
+  - eapply res_models_or_intro_r_from_model.
+    + exact Hψa.
+    + apply Hb. unfold res_models, res_models_with_store.
+      lazymatch type of Hright with
+      | res_models_with_store_fuel ?g ?ρ ?w ?φ =>
+          eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ w φ);
+          [simpl; lia | lia | exact Hright]
+      end.
+Qed.
+
 Lemma res_models_star_intro
     (m m1 m2 : WfWorldT) (φ ψ : FormulaT) (Hc : world_compat m1 m2) :
   formula_scoped_in_world ∅ m (FStar φ ψ) →
