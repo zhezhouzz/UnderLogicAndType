@@ -4,9 +4,9 @@
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
     logic qualifiers.  Core expressions are embedded through
-    [expr_logic_qual], and type qualifiers are embedded through
-    [lift_type_qualifier_to_logic] after they have been opened to closed
-    atom-based qualifiers.
+    [expr_logic_qual], and type qualifiers are embedded directly as
+    store/resource atoms after they have been opened to closed atom-based
+    qualifiers.
 
     The satisfaction notation [m ⊨ φ] is the central judgment used by
     the typing rules and the fundamental theorem. *)

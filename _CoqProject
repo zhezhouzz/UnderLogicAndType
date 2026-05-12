@@ -36,6 +36,7 @@ CoreLang/theories/InstantiationProps.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
+CoreLang/theories/OperationalResults.v
 
 ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v
