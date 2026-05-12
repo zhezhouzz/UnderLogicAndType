@@ -187,6 +187,19 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
 Qed.
 
+Lemma expr_total_on_tlete_elim_e1_strong X e1 e2 (m : WfWorld) :
+  expr_total_on X (tlete e1 e2) m →
+  expr_total_on X e1 m.
+Proof.
+  intros [Hfv Hsn].
+  split; [simpl in Hfv; set_solver |].
+  intros σ Hσ.
+  specialize (Hsn σ Hσ).
+  change (strongly_normalizing (m{store_restrict σ X} (tlete e1 e2))) in Hsn.
+  rewrite msubst_lete in Hsn.
+  eapply strongly_normalizing_tlete_elim_e1; eauto.
+Qed.
+
 Lemma expr_total_on_tlete_elim_body_strong
     X e1 e2 x (m : WfWorld) Hfresh Hresult :
   X ⊆ world_dom (m : World) →
