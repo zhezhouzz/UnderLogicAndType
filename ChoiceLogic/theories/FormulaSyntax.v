@@ -238,6 +238,22 @@ Proof. induction φ; simpl; lia. Qed.
 Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
   FForall (fresh_for D) (body (fresh_for D)).
 
+Lemma fresh_forall_formula_fv_subset
+    (D S : aset) (Q : atom → Formula) :
+  D ⊆ S →
+  (∀ x, x ∉ D → formula_fv (Q x) ⊆ S ∪ {[x]}) →
+  formula_fv (fresh_forall D Q) ⊆ S.
+Proof.
+  intros HDS HQ.
+  unfold fresh_forall.
+  set (x := fresh_for D).
+  simpl.
+  pose proof (fresh_for_not_in D) as Hfresh.
+  fold x in Hfresh.
+  pose proof (HQ x Hfresh) as HQx.
+  set_solver.
+Qed.
+
 Definition FPure (P : Prop) : Formula :=
   FAtom (lqual ∅ (λ _ _, P)).
 

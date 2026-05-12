@@ -192,6 +192,21 @@ Qed.
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
   fib_vars X (FExprResultAtomOn X e ν).
 
+Lemma FExprResultOn_fv X e ν :
+  formula_fv (FExprResultOn X e ν) = X ∪ {[ν]}.
+Proof.
+  unfold FExprResultOn.
+  rewrite fib_vars_formula_fv. simpl.
+  unfold stale, stale_logic_qualifier. simpl.
+  set_solver.
+Qed.
+
+Lemma FExprResultOn_fv_subset X e ν :
+  formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
+Proof.
+  rewrite FExprResultOn_fv. set_solver.
+Qed.
+
 Lemma FExprResultOn_rename_result_fresh X e a ν :
   a ∉ X →
   ν ∉ X →
@@ -214,6 +229,21 @@ Qed.
     type variables already live in this domain. *)
 Definition FExprContIn (Σ : gmap atom ty) (e : tm) (Q : atom → FQ) : FQ :=
   fresh_forall (dom Σ) (fun ν => FImpl (FExprResultOn (dom Σ) e ν) (Q ν)).
+
+Lemma FExprContIn_formula_fv_subset
+    (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
+  dom Σ ⊆ S →
+  (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
+  formula_fv (FExprContIn Σ e Q) ⊆ S.
+Proof.
+  intros Hdom HQ.
+  unfold FExprContIn.
+  apply fresh_forall_formula_fv_subset; first exact Hdom.
+  intros ν Hν.
+  simpl. rewrite FExprResultOn_fv.
+  pose proof (HQ ν Hν) as HQν.
+  set_solver.
+Qed.
 
 Definition formula_family_rename_stable_on
     (D : aset) (P : atom → FQ) : Prop :=
@@ -374,21 +404,6 @@ Proof.
   pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hfresh.
   intros Hzx. apply elem_of_singleton in Hzx. subst z.
   exact (Hfresh ltac:(set_solver)).
-Qed.
-
-Lemma FExprResultOn_fv X e ν :
-  formula_fv (FExprResultOn X e ν) = X ∪ {[ν]}.
-Proof.
-  unfold FExprResultOn.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
-  set_solver.
-Qed.
-
-Lemma FExprResultOn_fv_subset X e ν :
-  formula_fv (FExprResultOn X e ν) ⊆ X ∪ {[ν]}.
-Proof.
-  rewrite FExprResultOn_fv. set_solver.
 Qed.
 
 Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :

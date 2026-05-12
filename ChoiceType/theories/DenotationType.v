@@ -352,37 +352,6 @@ Qed.
     layer: typing proofs should consume these regularity lemmas rather than
     unfolding the formula generated for each type constructor. *)
 
-Lemma fresh_forall_formula_fv_subset
-    (D S : aset) (Q : atom → FQ) :
-  D ⊆ S →
-  (∀ x, x ∉ D → formula_fv (Q x) ⊆ S ∪ {[x]}) →
-  formula_fv (fresh_forall D Q) ⊆ S.
-Proof.
-  intros HDS HQ.
-  unfold fresh_forall.
-  set (x := fresh_for D).
-  simpl.
-  pose proof (fresh_for_not_in D) as Hfresh.
-  fold x in Hfresh.
-  pose proof (HQ x Hfresh) as HQx.
-  set_solver.
-Qed.
-
-Lemma FExprContIn_formula_fv_subset
-    (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
-  dom Σ ⊆ S →
-  (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
-  formula_fv (FExprContIn Σ e Q) ⊆ S.
-Proof.
-  intros Hdom HQ.
-  unfold FExprContIn.
-  apply fresh_forall_formula_fv_subset; first exact Hdom.
-  intros ν Hν.
-  simpl. rewrite FExprResultOn_fv.
-  pose proof (HQ ν Hν) as HQν.
-  set_solver.
-Qed.
-
 Lemma denot_ty_obligations_formula_fv_subset Σ τ e φ S :
   dom Σ ∪ formula_fv φ ⊆ S →
   formula_fv (denot_ty_obligations Σ τ e φ) ⊆ S.
