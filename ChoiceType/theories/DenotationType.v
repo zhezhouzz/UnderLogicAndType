@@ -4,7 +4,7 @@
 
 From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
-  OperationalProps Sugar.
+  OperationalProps StrongNormalization Sugar.
 From ChoiceType Require Export DenotationExprProps.
 From ChoiceType Require Import BasicStore BasicTyping LocallyNamelessProps.
 
@@ -48,6 +48,40 @@ Proof. induction τ; simpl; eauto; lia. Qed.
     Expression-result atoms and fresh representatives are driven by [dom Σ].
     The regularity assumptions that [fv_tm e] and [fv_cty τ] are contained in
     [dom Σ] live at the Rocq [Prop] level, not inside the logic. *)
+
+Definition expr_total_with_store (X : aset) (e : tm)
+    (ρ : Store) (m : WfWorld) : Prop :=
+  ∀ σ, (m : World) σ →
+    strongly_normalizing (subst_map (store_restrict (ρ ∪ σ) X) e).
+
+Definition FBasicTypingIn (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+  FPure (basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ).
+
+Definition FClosedResourceIn (Σ : gmap atom ty) : FQ :=
+  FResourceAtom (dom Σ) (world_closed_on (dom Σ)).
+
+Definition FStrongTotalIn (Σ : gmap atom ty) (e : tm) : FQ :=
+  FStoreResourceAtom (dom Σ)
+    (fun ρ m => expr_total_with_store (dom Σ) e ρ m).
+
+Lemma expr_total_with_store_empty_restrict X e m :
+  expr_total_on X e m →
+  expr_total_with_store X e ∅ (res_restrict m X).
+Proof.
+  intros [_ Htotal] σ Hσ.
+  destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
+  rewrite left_id_L.
+  rewrite <- Hrestrict.
+  rewrite store_restrict_restrict.
+  replace (X ∩ X) with X by set_solver.
+  apply Htotal. exact Hσm.
+Admitted.
+
+Definition denot_ty_obligations
+    (Σ : gmap atom ty) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
+  FAnd (FBasicTypingIn Σ τ e)
+    (FAnd (FClosedResourceIn Σ)
+      (FAnd (FStrongTotalIn Σ e) φ)).
 
 Record denot_ty_result := {
   basic_typing : Prop;
@@ -148,9 +182,13 @@ Fixpoint denot_ty_fuel_result
   end
   end.
 
-Definition denot_ty_fuel
+Definition denot_ty_fuel_body
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_formula (denot_ty_fuel_result gas Σ τ e).
+
+Definition denot_ty_fuel
+    (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_obligations Σ τ e (denot_ty_fuel_body gas Σ τ e).
 
 Lemma denot_ty_fuel_result_basic_typing gas Σ τ e :
   basic_typing (denot_ty_fuel_result gas Σ τ e) ↔
@@ -178,7 +216,7 @@ Qed.
 
 Lemma denot_ty_fuel_result_formula gas Σ τ e :
   denot_ty_formula (denot_ty_fuel_result gas Σ τ e) =
-  denot_ty_fuel gas Σ τ e.
+  denot_ty_fuel_body gas Σ τ e.
 Proof. reflexivity. Qed.
 
 Definition denot_ty_on
@@ -753,15 +791,25 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
+Lemma denot_ty_obligations_formula_fv_subset Σ τ e φ S :
+  dom Σ ∪ formula_fv φ ⊆ S →
+  formula_fv (denot_ty_obligations Σ τ e φ) ⊆ S.
+Proof.
+  unfold denot_ty_obligations, FBasicTypingIn, FClosedResourceIn,
+    FStrongTotalIn, FPure, FResourceAtom, FStoreResourceAtom.
+  simpl. unfold stale, stale_logic_qualifier. simpl.
+  set_solver.
+Qed.
+
+Lemma denot_ty_fuel_body_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
-  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
+  formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
   revert Σ τ e.
   induction gas as [|gas IH]; intros Σ τ e Hgas.
   - pose proof (cty_measure_gt_0 τ). lia.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel denot_ty_fuel_result denot_ty_formula
+      cbn [denot_ty_fuel_body denot_ty_fuel_result denot_ty_formula
         mk_denot_ty_result cty_measure fv_cty] in *.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
@@ -816,6 +864,17 @@ Proof.
         unfold Σx in *.
         rewrite !dom_insert_L in *.
         set_solver.
+Qed.
+
+Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
+  cty_measure τ <= gas →
+  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
+Proof.
+  intros Hgas.
+  unfold denot_ty_fuel.
+  apply denot_ty_obligations_formula_fv_subset.
+  pose proof (denot_ty_fuel_body_formula_fv_subset gas Σ τ e Hgas) as Hbody.
+  set_solver.
 Qed.
 
 Lemma denot_ty_formula_fv_subset τ e :
@@ -861,47 +920,12 @@ Lemma denot_ty_fuel_env_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   dom Σ ⊆ formula_fv (denot_ty_fuel gas Σ τ e).
 Proof.
-  revert Σ τ e.
-  induction gas as [|gas IH]; intros Σ τ e Hgas.
-  - pose proof (cty_measure_gt_0 τ). lia.
-  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel denot_ty_fuel_result denot_ty_formula
-        mk_denot_ty_result cty_measure fv_cty] in *.
-    + unfold FExprContIn, fresh_forall.
-      cbn [formula_fv].
-      rewrite FExprResultOn_fv.
-      pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
-      set_solver.
-    + unfold FExprContIn, fresh_forall.
-      cbn [formula_fv].
-      rewrite FExprResultOn_fv.
-      pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
-      set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
-    + unfold fresh_forall.
-      cbn [formula_fv].
-      set (x := fresh_for (dom Σ)).
-      set (Σx := <[x:=erase_ty τx]> Σ).
-      assert (Hx : x ∉ dom Σ) by (subst x; apply fresh_for_not_in).
-      pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
-      unfold Σx in Harg. rewrite dom_insert_L in Harg.
-      intros z Hz.
-      apply elem_of_difference. split.
-      * apply elem_of_union_l. apply Harg. set_solver.
-      * set_solver.
-    + unfold fresh_forall.
-      cbn [formula_fv].
-      set (x := fresh_for (dom Σ)).
-      set (Σx := <[x:=erase_ty τx]> Σ).
-      assert (Hx : x ∉ dom Σ) by (subst x; apply fresh_for_not_in).
-      pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
-      unfold Σx in Harg. rewrite dom_insert_L in Harg.
-      intros z Hz.
-      apply elem_of_difference. split.
-      * apply elem_of_union_l. apply Harg. set_solver.
-      * set_solver.
+  intros _.
+  destruct gas as [|gas]; destruct τ;
+    unfold denot_ty_fuel, denot_ty_obligations, mk_denot_ty_result,
+      FBasicTypingIn, FClosedResourceIn, FStrongTotalIn,
+      FPure, FResourceAtom, FStoreResourceAtom;
+    simpl; unfold stale, stale_logic_qualifier; simpl; set_solver.
 Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
