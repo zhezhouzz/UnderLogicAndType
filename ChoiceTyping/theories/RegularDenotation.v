@@ -9,6 +9,7 @@
     naming or well-formedness as logic atoms. *)
 
 From ChoiceTyping Require Export Typing.
+From ChoiceTyping Require Import Naming.
 
 Definition denot_ty_regular_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : Prop :=
@@ -75,6 +76,33 @@ Lemma denot_ty_total_model_from_old Σ Γ τ e m :
 Proof.
   intros Hctx Hτ [Hmodel Htotal].
   split; [split; [split; [exact Hctx | exact Hτ] | exact Hmodel] | exact Htotal].
+Qed.
+
+Lemma choice_typing_wf_from_erased_denot_ctx_basic_ty Σ Γ e τ m :
+  basic_ctx (dom Σ) Γ →
+  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
+  choice_typing_wf Σ Γ e τ.
+Proof.
+  intros Hctx Hτ Hm Herase.
+  split; [| exact Herase].
+  split.
+  - split; [exact Hctx | exists m; exact Hm].
+  - rewrite <- (erase_ctx_under_dom_basic Σ Γ Hctx).
+    exact Hτ.
+Qed.
+
+Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
+  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  denot_ty_total_model_in_ctx_under Σ Γ τ e m →
+  choice_typing_wf Σ Γ e τ.
+Proof.
+  intros Herase Hm Hmodel.
+  eapply choice_typing_wf_from_erased_denot_ctx_basic_ty; eauto.
+  - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
+  - exact (denot_ty_total_model_basic_choice_ty Σ Γ τ e m Hmodel).
 Qed.
 
 Lemma choice_typing_wf_regular_denotation Σ Γ e τ :

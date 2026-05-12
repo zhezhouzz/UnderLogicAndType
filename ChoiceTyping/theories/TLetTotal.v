@@ -8,9 +8,21 @@
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization.
-From ChoiceTyping Require Export SoundnessCommon.
+From ChoiceTyping Require Export RegularDenotation.
 From ChoiceTyping Require Import Naming ResultWorldClosed.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
+
+Lemma tlet_split_premises_choice_typing_wf_e1
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1
+    (m : WfWorld) :
+  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
+  choice_typing_wf Σ Γ e1 τ1.
+Proof.
+  intros Herase Hm Hmodel.
+  eapply denot_ty_total_model_choice_typing_wf; eauto.
+Qed.
 
 Lemma let_result_world_on_preserves_context Σ Γ e x (w : WfWorld) Hfresh Hresult :
   w ⊨ denot_ctx_in_env Σ Γ →
@@ -139,6 +151,30 @@ Proof.
     + intros Hbad. apply Hfresh. apply Hdom_world. exact Hbad.
     + intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_τ. exact Hbad.
   - intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_e. exact Hbad.
+Qed.
+
+Lemma tlet_split_premises_body_ctx_from_result
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1 x
+    (m : WfWorld)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)).
+Proof.
+  intros Herase Hm Hmodel.
+  eapply let_result_world_on_denot_ctx_in_env.
+  - eapply tlet_split_premises_choice_typing_wf_e1; eauto.
+  - exact Hm.
+  - exact (denot_ty_total_model_formula Σ Γ τ1 e1 m Hmodel).
+  - eapply let_result_world_on_bound_fresh.
+    + eapply tlet_split_premises_choice_typing_wf_e1; eauto.
+    + exact Hm.
+    + exact (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel).
+    + exact Hfresh.
 Qed.
 
 Lemma lc_env_restrict σ X :

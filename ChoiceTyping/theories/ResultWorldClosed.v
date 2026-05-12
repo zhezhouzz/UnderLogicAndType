@@ -8,10 +8,36 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   LocallyNamelessProps StrongNormalization.
 From ChoiceTyping Require Export SoundnessCommon.
 From ChoiceTyping Require Export LetResultWorld.
+From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Definition world_store_closed_on (X : aset) (m : WfWorld) : Prop :=
   ∀ σ, (m : World) σ → store_closed (store_restrict σ X).
+
+Lemma world_store_closed_on_world_closed_on X (m : WfWorld) :
+  world_store_closed_on X m →
+  world_closed_on X m.
+Proof.
+  intros Hclosed σ Hσ.
+  exact (proj1 (Hclosed σ Hσ)).
+Qed.
+
+Lemma denot_ctx_in_env_world_store_closed_on_erased Σ Γ m :
+  basic_ctx (dom Σ) Γ →
+  m ⊨ denot_ctx_in_env Σ Γ →
+  world_store_closed_on (dom (erase_ctx_under Σ Γ)) m.
+Proof.
+  intros Hbasic Hctx σ Hσ.
+  assert (Hdom_erase :
+    dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
+  { apply erase_ctx_under_dom_basic. exact Hbasic. }
+  rewrite Hdom_erase.
+  split.
+  - exact (proj1 (denot_ctx_in_env_store_erased_typed
+      Σ Γ m σ Hbasic Hctx Hσ)).
+  - exact (denot_ctx_in_env_store_erased_lc
+      Σ Γ m σ Hbasic Hctx Hσ).
+Qed.
 
 Lemma world_store_closed_on_restrict_store_closed X (m : WfWorld) σ :
   world_store_closed_on X m →

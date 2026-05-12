@@ -10,86 +10,6 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinem
 
 Import Tactics.
 
-Lemma choice_typing_wf_from_erased_denot_ctx_basic_ty Σ Γ e τ m :
-  basic_ctx (dom Σ) Γ →
-  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
-  choice_typing_wf Σ Γ e τ.
-Proof.
-  intros Hctx Hτ Hm Herase.
-  split; [| exact Herase].
-  split.
-  - split; [exact Hctx | exists m; exact Hm].
-  - rewrite <- (erase_ctx_under_dom_basic Σ Γ Hctx).
-    exact Hτ.
-Qed.
-
-Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
-  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_model_in_ctx_under Σ Γ τ e m →
-  choice_typing_wf Σ Γ e τ.
-Proof.
-  intros Herase Hm Hmodel.
-  eapply choice_typing_wf_from_erased_denot_ctx_basic_ty; eauto.
-  - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
-  - exact (denot_ty_total_model_basic_choice_ty Σ Γ τ e m Hmodel).
-Qed.
-
-Lemma tlet_split_premises_choice_typing_wf_e1
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1
-    (m : WfWorld) :
-  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
-  choice_typing_wf Σ Γ e1 τ1.
-Proof.
-  intros Herase Hm Hmodel.
-  eapply denot_ty_total_model_choice_typing_wf; eauto.
-Qed.
-
-Lemma tlet_split_premises_body_ctx_from_result
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1 x
-    (m : WfWorld)
-    (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
-  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  denot_ty_total_model_in_ctx_under Σ Γ τ1 e1 m →
-  let_result_world_on e1 x m Hfresh Hresult ⊨
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)).
-Proof.
-  intros Herase Hm Hmodel.
-  eapply let_result_world_on_denot_ctx_in_env.
-  - eapply tlet_split_premises_choice_typing_wf_e1; eauto.
-  - exact Hm.
-  - exact (denot_ty_total_model_formula Σ Γ τ1 e1 m Hmodel).
-  - eapply let_result_world_on_bound_fresh.
-    + eapply tlet_split_premises_choice_typing_wf_e1; eauto.
-    + exact Hm.
-    + exact (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel).
-    + exact Hfresh.
-Qed.
-
-Lemma denot_ctx_in_env_world_store_closed_on_erased Σ Γ m :
-  basic_ctx (dom Σ) Γ →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  world_store_closed_on (dom (erase_ctx_under Σ Γ)) m.
-Proof.
-  intros Hbasic Hctx σ Hσ.
-  assert (Hdom_erase :
-    dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
-  { apply erase_ctx_under_dom_basic. exact Hbasic. }
-  rewrite Hdom_erase.
-  split.
-  - exact (proj1 (denot_ctx_in_env_store_erased_typed
-      Σ Γ m σ Hbasic Hctx Hσ)).
-  - exact (denot_ctx_in_env_store_erased_lc
-      Σ Γ m σ Hbasic Hctx Hσ).
-Qed.
-
 (** Continuation-style expression-result principle for [tlet].
 
     This is the stabilized version of the earlier fibered statement.  The
@@ -369,14 +289,6 @@ Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
           ({0 ~> y} τ) (tapp_tm (tlete e1 e2) (vfvar y)))).
 Proof.
 Admitted.
-
-Lemma world_store_closed_on_world_closed_on X (m : WfWorld) :
-  world_store_closed_on X m →
-  world_closed_on X m.
-Proof.
-  intros Hclosed σ Hσ.
-  exact (proj1 (Hclosed σ Hσ)).
-Qed.
 
 Lemma denot_ty_fuel_intro gas Σ τ e m :
   basic_choice_ty (dom Σ) τ →
