@@ -51,8 +51,7 @@ Lemma lifted_const_qualifier_from_projection c ν m σ
   σ !! ν = Some (vconst c) →
   res_models_with_store σ
     (res_fiber_from_projection m {[ν]} σ Hproj)
-    (FAtom (lift_type_qualifier_to_logic
-      (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))).
+    (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))).
 Proof.
   intros Hlookup.
   assert (Hdomσ : dom σ = {[ν]}).
@@ -67,15 +66,13 @@ Proof.
     pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hproj) as Hdom.
     simpl in Hdom. rewrite Hdomσ in Hdom. set_solver.
   }
-  eapply res_models_with_store_atom_intro.
-  - unfold formula_scoped_in_world. simpl.
-    unfold stale, stale_logic_qualifier.
-    rewrite lqual_dom_lift_type_qualifier_to_logic.
+  eapply res_models_with_store_FTypeQualifier_intro.
+  - unfold formula_scoped_in_world.
+    rewrite formula_fv_FTypeQualifier.
     unfold qual_open_atom, mk_q_eq, qual_dom. simpl.
     rewrite decide_True by set_solver.
     simpl. rewrite Hdomσ. set_solver.
-  - unfold logic_qualifier_denote, lift_type_qualifier_to_logic.
-    unfold qual_open_atom, mk_q_eq. simpl.
+  - unfold qual_open_atom, mk_q_eq. simpl.
     rewrite decide_True by set_solver. simpl.
     assert (Hfiber_singleton_raw :
       raw_restrict (raw_fiber m σ) ({[ν]} ∪ (∅ ∪ ∅)) = singleton_world σ).
@@ -96,8 +93,7 @@ Lemma const_over_consequent_from_expr c ν Σ m :
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
 Proof.
   intros Hexpr.
   pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
@@ -108,7 +104,7 @@ Proof.
     unfold formula_scoped_in_world in *. simpl in *.
     rewrite fib_vars_singleton. simpl.
     unfold stale, stale_logic_qualifier.
-    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    rewrite formula_fv_FTypeQualifier.
     unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
     rewrite decide_True by set_solver. simpl.
     set_solver.
@@ -119,7 +115,7 @@ Proof.
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
       unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      rewrite formula_fv_FTypeQualifier.
       unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
       rewrite decide_True by set_solver. simpl.
       set_solver.
@@ -141,8 +137,7 @@ Lemma const_under_consequent_from_expr c ν Σ m :
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
 Proof.
   intros Hexpr.
   pose proof (basic_const_world_from_expr_atom c ν Σ m Hexpr) as Hbasic.
@@ -153,7 +148,7 @@ Proof.
     unfold formula_scoped_in_world in *. simpl in *.
     rewrite fib_vars_singleton. simpl.
     unfold stale, stale_logic_qualifier.
-    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    rewrite formula_fv_FTypeQualifier.
     unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
     rewrite decide_True by set_solver. simpl.
     set_solver.
@@ -164,7 +159,7 @@ Proof.
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
       unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      rewrite formula_fv_FTypeQualifier.
       unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
       rewrite decide_True by set_solver. simpl.
       set_solver.
@@ -187,8 +182,7 @@ Lemma const_over_consequent_from_expr_on c ν Σ m :
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
 Proof.
   intros Hexpr.
   replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
@@ -204,7 +198,7 @@ Proof.
     unfold formula_scoped_in_world in *. simpl in *.
     rewrite fib_vars_singleton. simpl.
     unfold stale, stale_logic_qualifier.
-    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    rewrite formula_fv_FTypeQualifier.
     unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
     rewrite decide_True by set_solver. simpl.
     set_solver.
@@ -215,7 +209,7 @@ Proof.
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
       unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      rewrite formula_fv_FTypeQualifier.
       unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
       rewrite decide_True by set_solver. simpl.
       set_solver.
@@ -238,8 +232,7 @@ Lemma const_under_consequent_from_expr_on c ν Σ m :
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
 Proof.
   intros Hexpr.
   replace (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
@@ -255,7 +248,7 @@ Proof.
     unfold formula_scoped_in_world in *. simpl in *.
     rewrite fib_vars_singleton. simpl.
     unfold stale, stale_logic_qualifier.
-    rewrite lqual_dom_lift_type_qualifier_to_logic.
+    rewrite formula_fv_FTypeQualifier.
     unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
     rewrite decide_True by set_solver. simpl.
     set_solver.
@@ -266,7 +259,7 @@ Proof.
         ∅ m _ Hbasic) as Hscope_basic.
       unfold formula_scoped_in_world in *. simpl in *.
       unfold stale, stale_logic_qualifier.
-      rewrite lqual_dom_lift_type_qualifier_to_logic.
+      rewrite formula_fv_FTypeQualifier.
       unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *.
       rewrite decide_True by set_solver. simpl.
       set_solver.
@@ -289,8 +282,7 @@ Lemma const_over_consequent_from_renamed_expr c ν y Σ m :
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -306,8 +298,7 @@ Lemma const_under_consequent_from_renamed_expr c ν y Σ m :
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -324,8 +315,7 @@ Lemma const_over_consequent_from_renamed_expr_on c ν y Σ m :
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -342,8 +332,7 @@ Lemma const_under_consequent_from_renamed_expr_on c ν y Σ m :
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -358,8 +347,7 @@ Definition const_over_body (Σ : gmap atom ty) (c : constant) (ν : atom) : Form
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 
 Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
@@ -367,8 +355,7 @@ Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : For
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
       (fib_vars {[ν]}
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 
 Definition const_over_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
@@ -378,8 +365,7 @@ Definition const_over_body_on
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FOver (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 
 Definition const_under_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
@@ -389,8 +375,7 @@ Definition const_under_body_on
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
       (fib_vars (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))
-        (FUnder (FAtom (lift_type_qualifier_to_logic
-          (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))))).
+        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
 
 Lemma const_over_body_fv_subset Σ c ν :
   formula_fv (const_over_body Σ c ν) ⊆ {[ν]}.
@@ -401,7 +386,7 @@ Proof.
   rewrite fib_vars_singleton in Hz. simpl in Hz.
   unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
+    unfold FTypeQualifier in Hz; simpl in Hz;
     unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
     change (stale (tret (vconst c))) with (∅ : aset) in Hz;
     set_solver.
@@ -416,7 +401,7 @@ Proof.
   rewrite fib_vars_singleton in Hz. simpl in Hz.
   unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
-    unfold lift_type_qualifier_to_logic in Hz; simpl in Hz;
+    unfold FTypeQualifier in Hz; simpl in Hz;
     unfold stale, stale_logic_qualifier in Hz; simpl in Hz;
     change (stale (tret (vconst c))) with (∅ : aset) in Hz;
     set_solver.
