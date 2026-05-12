@@ -572,36 +572,6 @@ Proof.
   exact Hsteps.
 Qed.
 
-Lemma store_restrict_empty_union_elements (σ : Store) (X : aset) :
-  store_restrict ((∅ : Store) ∪ store_restrict σ (list_to_set (elements X) : aset)) X =
-  store_restrict σ X.
-Proof.
-  rewrite map_empty_union.
-  store_norm.
-  replace ((list_to_set (elements X) : aset) ∩ X) with X.
-  - reflexivity.
-  - apply set_eq. intros z.
-    rewrite elem_of_intersection, elem_of_list_to_set, elem_of_elements.
-    set_solver.
-Qed.
-
-Lemma store_restrict_empty_union_elements_fv
-    (σ τ : Store) (X F : aset) :
-  F ⊆ X →
-  store_restrict τ X = σ →
-  store_restrict
-    (store_restrict ((∅ : Store) ∪ store_restrict τ (list_to_set (elements X) : aset)) X)
-    F =
-  store_restrict σ F.
-Proof.
-  intros HFX HτX.
-  rewrite store_restrict_empty_union_elements.
-  rewrite HτX.
-  store_norm.
-  replace (X ∩ F) with F by set_solver.
-  reflexivity.
-Qed.
-
 Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
     (Hfresh : ν ∉ world_dom (m : World))
@@ -735,7 +705,7 @@ Proof.
         store_restrict σ (fv_tm e)).
       {
         subst E.
-        eapply store_restrict_empty_union_elements_fv; eauto.
+        eapply store_restrict_empty_union_elements_subset; eauto.
       }
       assert (Hclosed_env :
         closed_env

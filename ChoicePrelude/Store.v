@@ -706,6 +706,36 @@ Proof.
   intros i x Hx. apply elem_of_dom_2 in Hx. set_solver.
 Qed.
 
+Lemma store_restrict_empty_union_elements (σ : Store) (X : aset) :
+  store_restrict ((∅ : Store) ∪ store_restrict σ (list_to_set (elements X) : aset)) X =
+  store_restrict σ X.
+Proof.
+  replace ((∅ : Store) ∪ store_restrict σ (list_to_set (elements X) : aset))
+    with (store_restrict σ (list_to_set (elements X) : aset))
+    by (symmetry; apply map_empty_union).
+  rewrite store_restrict_restrict.
+  replace ((list_to_set (elements X) : aset) ∩ X) with X.
+  - reflexivity.
+  - apply set_eq. intros z.
+    rewrite elem_of_intersection, elem_of_list_to_set, elem_of_elements.
+    set_solver.
+Qed.
+
+Lemma store_restrict_empty_union_elements_subset
+    (σ τ : Store) (X F : aset) :
+  F ⊆ X →
+  store_restrict τ X = σ →
+  store_restrict
+    (store_restrict ((∅ : Store) ∪ store_restrict τ (list_to_set (elements X) : aset)) X)
+    F =
+  store_restrict σ F.
+Proof.
+  intros HFX HτX.
+  rewrite store_restrict_empty_union_elements.
+  rewrite HτX.
+  reflexivity.
+Qed.
+
 Lemma store_union_dom s1 s2 :
   store_compat s1 s2 →
   dom (s1 ∪ s2) = dom s1 ∪ dom s2.
