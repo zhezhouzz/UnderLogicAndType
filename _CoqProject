@@ -59,6 +59,7 @@ ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/InstantiationProps.v
+ChoiceType/theories/DenotationFibers.v
 ChoiceType/theories/DenotationFormula.v
 ChoiceType/theories/DenotationResultBridge.v
 ChoiceType/theories/DenotationExprProps.v
