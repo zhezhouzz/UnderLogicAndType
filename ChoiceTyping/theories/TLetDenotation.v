@@ -151,6 +151,21 @@ Proof.
   set_solver.
 Qed.
 
+Lemma denot_ty_fuel_model_covers_env
+    gas (Σ : gmap atom ty) (τ : choice_ty) e (m : WfWorld) :
+  cty_measure τ <= gas →
+  m ⊨ denot_ty_fuel gas Σ τ e →
+  dom Σ ⊆ world_dom (m : World).
+Proof.
+  intros Hgas Hm.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (denot_ty_fuel gas Σ τ e)) ∅ m
+    (denot_ty_fuel gas Σ τ e) Hm) as Hscope.
+  pose proof (denot_ty_fuel_env_fv_subset gas Σ τ e Hgas) as Henv.
+  unfold formula_scoped_in_world in Hscope.
+  set_solver.
+Qed.
+
 Lemma world_store_closed_on_mono (X Y : aset) (m : WfWorld) :
   X ⊆ Y →
   world_store_closed_on Y m →
