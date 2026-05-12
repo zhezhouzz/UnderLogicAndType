@@ -238,4 +238,42 @@ Proof. induction φ; simpl; lia. Qed.
 Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
   FForall (fresh_for D) (body (fresh_for D)).
 
+Definition FPure (P : Prop) : Formula :=
+  FAtom (lqual ∅ (λ _ _, P)).
+
+Definition FResourceAtom (D : aset) (P : WfWorldT → Prop) : Formula :=
+  FAtom (lqual D (λ _ m, P m)).
+
+Definition FStoreResourceAtom
+    (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
+  FAtom (lqual D P).
+
+Lemma formula_fv_FPure P :
+  formula_fv (FPure P) = ∅.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_FResourceAtom D P :
+  formula_fv (FResourceAtom D P) = D.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_FStoreResourceAtom D P :
+  formula_fv (FStoreResourceAtom D P) = D.
+Proof. reflexivity. Qed.
+
+Lemma formula_rename_FPure x y P :
+  formula_rename_atom x y (FPure P) = FPure P.
+Proof. reflexivity. Qed.
+
+Lemma formula_rename_FResourceAtom x y D P :
+  formula_rename_atom x y (FResourceAtom D P) =
+  FResourceAtom (aset_swap x y D)
+    (fun m => P (res_swap x y m)).
+Proof. reflexivity. Qed.
+
+Lemma formula_rename_FStoreResourceAtom x y D P :
+  formula_rename_atom x y (FStoreResourceAtom D P) =
+  FStoreResourceAtom (aset_swap x y D)
+    (fun σ m => P (store_swap x y σ) (res_swap x y m)).
+Proof. reflexivity. Qed.
+
 End Formula.

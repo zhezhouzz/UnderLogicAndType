@@ -14,60 +14,6 @@ Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
 Local Notation Formula := (Formula (V := V)) (only parsing).
 
-(** ** Common atom shorthands
-
-    These constructors are only syntax sugar over shallow logic qualifiers.
-    They separate the three common classes of atoms used by the type
-    denotation:
-
-    - [FPure] carries a Rocq proposition and inspects neither the explicit
-      substitution store nor the resource.
-    - [FResourceAtom] inspects the current resource after the qualifier domain
-      restriction, but ignores the explicit substitution store.
-    - [FStoreResourceAtom] inspects both the explicit substitution store and
-      the resource, after both have been restricted to the declared domain.
-
-    Expression-result and expression-totality atoms should use
-    [FStoreResourceAtom], because [FFib] accumulates fixed projections in the
-    explicit store [ρ]. *)
-Definition FPure (P : Prop) : Formula :=
-  FAtom (lqual ∅ (λ _ _, P)).
-
-Definition FResourceAtom (D : aset) (P : WfWorldT → Prop) : Formula :=
-  FAtom (lqual D (λ _ m, P m)).
-
-Definition FStoreResourceAtom
-    (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
-  FAtom (lqual D P).
-
-Lemma formula_fv_FPure P :
-  formula_fv (FPure P) = ∅.
-Proof. reflexivity. Qed.
-
-Lemma formula_fv_FResourceAtom D P :
-  formula_fv (FResourceAtom D P) = D.
-Proof. reflexivity. Qed.
-
-Lemma formula_fv_FStoreResourceAtom D P :
-  formula_fv (FStoreResourceAtom D P) = D.
-Proof. reflexivity. Qed.
-
-Lemma formula_rename_FPure x y P :
-  formula_rename_atom x y (FPure P) = FPure P.
-Proof. reflexivity. Qed.
-
-Lemma formula_rename_FResourceAtom x y D P :
-  formula_rename_atom x y (FResourceAtom D P) =
-  FResourceAtom (aset_swap x y D)
-    (fun m => P (res_swap x y m)).
-Proof. reflexivity. Qed.
-
-Lemma formula_rename_FStoreResourceAtom x y D P :
-  formula_rename_atom x y (FStoreResourceAtom D P) =
-  FStoreResourceAtom (aset_swap x y D)
-    (fun σ m => P (store_swap x y σ) (res_swap x y m)).
-Proof. reflexivity. Qed.
-
 (** A formula can only be interpreted at worlds that already track every free
     coordinate it may inspect.  Explicit quantifiers remove their representative
     binder from this set; the bound coordinate is introduced by their semantic
