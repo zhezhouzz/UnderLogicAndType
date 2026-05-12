@@ -5,8 +5,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization.
 From ChoiceTyping Require Export TLetExprResult RegularDenotation.
-From ChoiceTyping Require Import Naming TLetResultBridge ExprResultEquiv
-  ResultWorldFreshForall.
+From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldFreshForall.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Import Tactics.
@@ -117,29 +116,6 @@ Proof.
   apply denot_ty_fuel_minimal; [lia | exact Hfv].
 Qed.
 
-Lemma denot_ty_under_minimal
-    (Σ : gmap atom ty) (τ : choice_ty) e (m : WfWorld) :
-  fv_cty τ ⊆ dom Σ →
-  m ⊨ denot_ty_under Σ τ e ↔
-  res_restrict m (dom Σ) ⊨ denot_ty_under Σ τ e.
-Proof.
-  intros Hfv.
-  unfold denot_ty_under.
-  apply denot_ty_on_minimal. exact Hfv.
-Qed.
-
-Lemma denot_ty_in_ctx_under_minimal
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) e (m : WfWorld) :
-  fv_cty τ ⊆ dom (erase_ctx_under Σ Γ) →
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ↔
-  res_restrict m (dom (erase_ctx_under Σ Γ)) ⊨
-    denot_ty_in_ctx_under Σ Γ τ e.
-Proof.
-  intros Hfv.
-  unfold denot_ty_in_ctx_under.
-  apply denot_ty_on_minimal. exact Hfv.
-Qed.
-
 Lemma denot_ty_fuel_formula_fv_subset_env
     gas (Σ : gmap atom ty) (τ : choice_ty) e :
   cty_measure τ <= gas →
@@ -148,21 +124,6 @@ Lemma denot_ty_fuel_formula_fv_subset_env
 Proof.
   intros Hgas Hfv.
   pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ e Hgas) as Hφ.
-  set_solver.
-Qed.
-
-Lemma denot_ty_fuel_model_covers_env
-    gas (Σ : gmap atom ty) (τ : choice_ty) e (m : WfWorld) :
-  cty_measure τ <= gas →
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  dom Σ ⊆ world_dom (m : World).
-Proof.
-  intros Hgas Hm.
-  pose proof (res_models_with_store_fuel_scoped
-    (formula_measure (denot_ty_fuel gas Σ τ e)) ∅ m
-    (denot_ty_fuel gas Σ τ e) Hm) as Hscope.
-  pose proof (denot_ty_fuel_env_fv_subset gas Σ τ e Hgas) as Henv.
-  unfold formula_scoped_in_world in Hscope.
   set_solver.
 Qed.
 
@@ -208,17 +169,6 @@ Definition formula_family_rename_stable_on
     y ∉ D →
     n ⊨ formula_rename_atom x y (P x) ↔ n ⊨ P y.
 
-Lemma formula_family_rename_stable_on_by_eq
-    (D : aset) (P : atom → FormulaQ) :
-  (∀ x y, x ∉ D → y ∉ D →
-    formula_rename_atom x y (P x) = P y) →
-  formula_family_rename_stable_on D P.
-Proof.
-  intros Heq x y n Hx Hy.
-  rewrite Heq by assumption.
-  reflexivity.
-Qed.
-
 Lemma FExprContIn_post_eq_at_fresh
     (Σ : gmap atom ty) e (P Q : atom → FormulaQ) :
   P (fresh_for (dom Σ)) = Q (fresh_for (dom Σ)) →
@@ -228,91 +178,6 @@ Proof.
   unfold FExprContIn, fresh_forall.
   rewrite Heq. reflexivity.
 Qed.
-
-(** Arrow/Wand are discharged from the main [τ2] induction through these
-    focused obligations.  They isolate the only remaining issue for function
-    types: the body-side environment contains the auxiliary let-result
-    coordinate [x], while the target continuation is generated from the
-    original environment [Δ].  The intended proof is to drop this fresh
-    environment entry for generated function continuations, then apply the
-    generic [FExprCont_tlet_reduction] bridge. *)
-Lemma denot_ty_fuel_tlet_reduction_formula_on_arrow_case
-    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
-    (m : WfWorld) (x : atom)
-    (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
-    τx τ :
-  Δ ⊢ₑ e1 ⋮ T1 →
-  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τ) →
-  world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
-  expr_total_on (dom Δ) (tlete e1 e2) m →
-  x ∉ dom Δ ∪ fv_tm e2 →
-  basic_choice_ty (dom Δ) (CTArrow τx τ) →
-  let_result_world_on e1 x m Hfresh Hresult ⊨
-    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTArrow τx τ)]> (<[x := T1]> Δ) in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FImpl
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))) <->
-  m ⊨
-    FExprContIn Δ (tlete e1 e2)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTArrow τx τ)]> Δ in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FImpl
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))).
-Proof.
-Admitted.
-
-Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
-    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
-    (m : WfWorld) (x : atom)
-    (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
-    τx τ :
-  Δ ⊢ₑ e1 ⋮ T1 →
-  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTWand τx τ) →
-  world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
-  expr_total_on (dom Δ) (tlete e1 e2) m →
-  x ∉ dom Δ ∪ fv_tm e2 →
-  basic_choice_ty (dom Δ) (CTWand τx τ) →
-  let_result_world_on e1 x m Hfresh Hresult ⊨
-    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTWand τx τ)]> (<[x := T1]> Δ) in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FWand
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))) <->
-  m ⊨
-    FExprContIn Δ (tlete e1 e2)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTWand τx τ)]> Δ in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FWand
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))).
-Proof.
-Admitted.
 
 Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaQ) :
   x ∉ D →
@@ -443,46 +308,6 @@ Proof.
   rewrite lqual_dom_lift_type_qualifier_to_logic.
   pose proof (qual_open_atom_dom_subset 0 ν φ) as Hopen.
   set_solver.
-Qed.
-
-Lemma basic_choice_ty_inter_inv D τ1 τ2 :
-  basic_choice_ty D (CTInter τ1 τ2) →
-  basic_choice_ty D τ1 ∧ basic_choice_ty D τ2 ∧ erase_ty τ1 = erase_ty τ2.
-Proof.
-  intros Hbasic. inversion Hbasic; subst; eauto.
-Qed.
-
-Lemma basic_choice_ty_union_inv D τ1 τ2 :
-  basic_choice_ty D (CTUnion τ1 τ2) →
-  basic_choice_ty D τ1 ∧ basic_choice_ty D τ2 ∧ erase_ty τ1 = erase_ty τ2.
-Proof.
-  intros Hbasic. inversion Hbasic; subst; eauto.
-Qed.
-
-Lemma basic_choice_ty_sum_inv D τ1 τ2 :
-  basic_choice_ty D (CTSum τ1 τ2) →
-  basic_choice_ty D τ1 ∧ basic_choice_ty D τ2 ∧ erase_ty τ1 = erase_ty τ2.
-Proof.
-  intros Hbasic. inversion Hbasic; subst; eauto.
-Qed.
-
-Lemma qual_open_atom_dom_swap_fresh k x y q :
-  x ∉ qual_dom q →
-  y ∉ qual_dom q →
-  aset_swap x y (qual_dom (qual_open_atom k x q)) =
-  qual_dom (qual_open_atom k y q).
-Proof.
-  destruct q as [B d p]. unfold qual_open_atom, qual_dom. simpl.
-  intros Hx Hy.
-  destruct (decide (k ∈ B)) as [Hk|Hk].
-  - simpl.
-    rewrite aset_swap_union, aset_swap_singleton.
-    replace (atom_swap x y x) with y
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    rewrite aset_swap_fresh by assumption.
-    reflexivity.
-  - rewrite aset_swap_fresh by assumption.
-    reflexivity.
 Qed.
 
 Lemma qual_open_atom_dom_eq_member k x q :
@@ -1597,6 +1422,86 @@ Proof.
       (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
       (Q ν) (HQfv ν)) Hrestrict).
 Qed.
+
+Lemma denot_ty_fuel_tlet_reduction_formula_on_arrow_case
+    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
+    τx τ :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τ) →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  cty_measure (CTArrow τx τ) <= S gas →
+  basic_choice_ty (dom Δ) (CTArrow τx τ) →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
+    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTArrow τx τ)]> (<[x := T1]> Δ) in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FImpl
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))) <->
+  m ⊨
+    FExprContIn Δ (tlete e1 e2)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTArrow τx τ)]> Δ in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FImpl
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
+    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
+    τx τ :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTWand τx τ) →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  cty_measure (CTWand τx τ) <= S gas →
+  basic_choice_ty (dom Δ) (CTWand τx τ) →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
+    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTWand τx τ)]> (<[x := T1]> Δ) in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FWand
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))) <->
+  m ⊨
+    FExprContIn Δ (tlete e1 e2)
+      (fun y =>
+    let Σy := <[y := erase_ty (CTWand τx τ)]> Δ in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FWand
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))).
+Proof.
+Admitted.
 
 Lemma denot_ty_fuel_tlet_reduction_formula_on gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
