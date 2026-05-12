@@ -332,6 +332,99 @@ Proof.
   - set_solver.
 Qed.
 
+Lemma FExprContIn_restrict_insert_fresh_env_irrel
+    (Σ : gmap atom ty) T Tx e x (P : atom → FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  x ∉ dom Σ ∪ fv_tm e →
+  world_dom (m : World) = dom (<[x := Tx]> Σ) →
+  world_store_closed_on (dom (<[x := Tx]> Σ)) m →
+  expr_total_on (dom (<[x := Tx]> Σ)) e m →
+  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
+  formula_family_rename_stable_on (dom Σ) P →
+  m ⊨ FExprContIn (<[x := Tx]> Σ) e P →
+  res_restrict m (dom Σ) ⊨ FExprContIn Σ e P.
+Proof.
+  intros Hty Hx Hdom Hclosed Htotal HPfv HPrename Hcont.
+  assert (Hdom_restrict :
+    world_dom (res_restrict m (dom Σ) : World) = dom Σ).
+  { simpl. rewrite Hdom, dom_insert_L. set_solver. }
+  assert (Hclosed_restrict :
+    world_store_closed_on (dom Σ) (res_restrict m (dom Σ))).
+  { eapply world_store_closed_on_restrict_insert_fresh; eauto. }
+  assert (Htotal_restrict :
+    expr_total_on (dom Σ) e (res_restrict m (dom Σ))).
+  {
+    eapply (expr_total_on_restrict_insert_fresh Σ Tx e x m); eauto.
+  }
+  assert (Hty_insert : <[x := Tx]> Σ ⊢ₑ e ⋮ T).
+  {
+    eapply basic_typing_weaken_insert_tm.
+    - set_solver.
+    - exact Hty.
+  }
+  assert (HPfv_insert :
+    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := Tx]> Σ) ∪ {[ν]}).
+  { intros ν. specialize (HPfv ν). rewrite dom_insert_L. set_solver. }
+  assert (HPrename_insert :
+    formula_family_rename_stable_on (dom (<[x := Tx]> Σ)) P).
+  {
+    unfold formula_family_rename_stable_on in *.
+    intros a b n Ha Hb.
+    apply HPrename; rewrite dom_insert_L in *; set_solver.
+  }
+  pose proof (proj1
+    (FExprContIn_iff_let_result_world_on_exact_domain
+      (<[x := Tx]> Σ) T e P m
+      Hty_insert Hdom Hclosed Htotal HPfv_insert HPrename_insert)
+    Hcont) as [L [HL Hbody]].
+  apply (proj2
+    (FExprContIn_iff_let_result_world_on_exact_domain
+      Σ T e P (res_restrict m (dom Σ))
+      Hty Hdom_restrict Hclosed_restrict Htotal_restrict HPfv HPrename)).
+  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
+  split; [set_solver |].
+  intros ν Hν Hfresh_restrict Hresult_restrict.
+  assert (Hfresh : ν ∉ world_dom (m : World)).
+  { rewrite Hdom, dom_insert_L. set_solver. }
+  assert (Hresult :
+    ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+  {
+    eapply expr_total_on_to_fv_result; eauto.
+  }
+  pose proof (Hbody ν ltac:(set_solver) Hfresh Hresult) as Hfull.
+  pose proof (proj1 (res_models_minimal_on
+    (dom Σ ∪ {[ν]})
+    (let_result_world_on e ν m Hfresh Hresult)
+    (P ν) (HPfv ν))) as Hminimal.
+  rewrite <- (let_result_world_on_restrict_input
+    (dom Σ) e ν m Hfresh Hresult Hfresh_restrict Hresult_restrict).
+  - apply Hminimal. exact Hfull.
+  - destruct Htotal as [Hfv _].
+    rewrite dom_insert_L in Hfv.
+    set_solver.
+  - rewrite Hdom, dom_insert_L. set_solver.
+  - set_solver.
+Qed.
+
+Lemma FExprContIn_insert_fresh_env_irrel_iff
+    (Σ : gmap atom ty) T Tx e x (P : atom → FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  x ∉ dom Σ ∪ fv_tm e →
+  world_dom (m : World) = dom (<[x := Tx]> Σ) →
+  world_store_closed_on (dom (<[x := Tx]> Σ)) m →
+  expr_total_on (dom (<[x := Tx]> Σ)) e m →
+  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
+  formula_family_rename_stable_on (dom Σ) P →
+  m ⊨ FExprContIn (<[x := Tx]> Σ) e P <->
+  res_restrict m (dom Σ) ⊨ FExprContIn Σ e P.
+Proof.
+  intros Hty Hx Hdom Hclosed Htotal HPfv HPrename.
+  split.
+  - eapply FExprContIn_restrict_insert_fresh_env_irrel; eauto.
+  - eapply FExprContIn_insert_fresh_env_irrel; eauto.
+Qed.
+
 Lemma denot_ty_fuel_tlet_reduction_formula_on_arrow_case
     gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
     (m : WfWorld) (x : atom)
