@@ -1087,6 +1087,7 @@ Qed.
 
 Lemma expr_total_on_tlete_elim_body_strong
     X e1 e2 x (m : WfWorld) Hfresh Hresult :
+  X ⊆ world_dom (m : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
   world_store_closed_on X m →
@@ -1095,7 +1096,89 @@ Lemma expr_total_on_tlete_elim_body_strong
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)
     (let_result_world_on e1 x m Hfresh Hresult).
 Proof.
-Admitted.
+  intros HXdom HxX Hxe2 Hclosed Hlclet [Hfv Hsn].
+  apply lc_lete_iff_body in Hlclet as [Hlc1 Hbody2].
+  split.
+  - simpl in Hfv.
+    pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen_fv.
+    simpl in Hopen_fv. set_solver.
+  - intros σx Hσx.
+    destruct (let_result_world_on_elim e1 x m Hfresh Hresult σx Hσx)
+      as [σ [vx [Hσ [Hsteps_fv ->]]]].
+    assert (HclosedX : store_closed (store_restrict σ X)).
+    { exact (Hclosed σ Hσ). }
+    assert (Hfv1 : fv_tm e1 ⊆ X) by (simpl in Hfv; set_solver).
+    assert (HstepsX : subst_map (store_restrict σ X) e1 →* tret vx).
+    {
+      rewrite <- (subst_map_restrict_to_fv_from_superset e1 X σ Hfv1
+        (proj1 HclosedX)).
+      exact Hsteps_fv.
+    }
+    assert (Hvx_closed : stale vx = ∅ ∧ is_lc vx).
+    {
+      eapply steps_closed_result; [| exact HstepsX].
+      apply msubst_closed_tm.
+      - exact HclosedX.
+      - exact Hlc1.
+      - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
+        rewrite store_restrict_dom.
+        pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+        set_solver.
+    }
+    assert (Hbody_msubst : body_tm (subst_map (store_restrict σ X) e2)).
+    { apply body_tm_msubst; [exact (proj1 HclosedX) | exact (proj2 HclosedX) | exact Hbody2]. }
+    assert (Hsnlet :
+      strongly_normalizing
+        (tlete (subst_map (store_restrict σ X) e1)
+               (subst_map (store_restrict σ X) e2))).
+    {
+      specialize (Hsn σ Hσ).
+      change (strongly_normalizing (m{store_restrict σ X} (tlete e1 e2))) in Hsn.
+      rewrite msubst_lete in Hsn. exact Hsn.
+    }
+    pose proof (strongly_normalizing_tlete_elim_body
+      (subst_map (store_restrict σ X) e1)
+      (subst_map (store_restrict σ X) e2)
+      vx Hbody_msubst HstepsX Hsnlet) as Hbody_sn.
+    rewrite store_restrict_insert_fresh_union.
+    + rewrite (msubst_open_body_result X σ e2 x vx)
+        by (try exact HxX; try exact Hxe2; try exact (proj1 HclosedX);
+            try exact (proj1 Hvx_closed); try exact (proj2 Hvx_closed);
+            try exact (proj2 HclosedX)).
+      exact Hbody_sn.
+    + eapply store_lookup_none_of_dom.
+      * exact (wfworld_store_dom m σ Hσ).
+      * exact Hfresh.
+    + exact HxX.
+Qed.
+
+Lemma basic_typing_tlete_body_for_fresh Γ e1 e2 T1 T2 x :
+  Γ ⊢ₑ e1 ⋮ T1 →
+  Γ ⊢ₑ tlete e1 e2 ⋮ T2 →
+  x ∉ dom Γ ∪ fv_tm e2 →
+  <[x := T1]> Γ ⊢ₑ e2 ^^ x ⋮ T2.
+Proof.
+  intros He1 Hlet Hxfresh.
+  inversion Hlet; subst.
+  assert (T0 = T1) as ->.
+  { eapply basic_typing_unique_tm; eauto. }
+  pose (y := fresh_for (L ∪ dom Γ ∪ fv_tm e2 ∪ {[x]})).
+  assert (Hy : y ∉ L ∪ dom Γ ∪ fv_tm e2 ∪ {[x]})
+    by (subst y; apply fresh_for_not_in).
+  match goal with
+  | Hopen : ∀ z : atom, z ∉ L → <[z:=T1]> Γ ⊢ₑ e2 ^^ z ⋮ T2 |- _ =>
+      pose proof (Hopen y ltac:(set_solver)) as Hybody
+  end.
+  eapply basic_typing_open_tm with (x := y) (U := T1).
+  - set_solver.
+  - constructor. apply lookup_insert_eq.
+  - replace (<[y:=T1]> (<[x:=T1]> Γ))
+      with (<[x:=T1]> (<[y:=T1]> Γ))
+      by (rewrite insert_insert_ne by set_solver; reflexivity).
+    eapply basic_typing_weaken_insert_tm.
+    + rewrite dom_insert_L. set_solver.
+    + exact Hybody.
+Qed.
 
 (** Continuation-style expression-result principle for [tlet].
 
@@ -1113,24 +1196,205 @@ Admitted.
     the result type; it is meant to be a type-constructor-independent bridge used
     by the [tlet] case. *)
 Lemma FExprCont_tlet_reduction
-    (Σ : gmap atom ty) (Tx T1 T2 : ty)
+    (Σ : gmap atom ty) (T1 T2 : ty)
     (m : WfWorld) e1 e2 (x : atom) (Q : atom → FormulaQ)
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
       ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   Σ ⊢ₑ e1 ⋮ T1 →
-  <[x := Tx]> Σ ⊢ₑ e2 ^^ x ⋮ T2 →
   Σ ⊢ₑ tlete e1 e2 ⋮ T2 →
+  x ∉ fv_tm e2 →
   world_dom (m : World) = dom Σ →
   world_store_closed_on (dom Σ) m →
   expr_total_on (dom Σ) (tlete e1 e2) m →
   (∀ ν, formula_fv (Q ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) Q →
   let_result_world_on e1 x m Hfresh Hresult
-    ⊨ FExprContIn (<[x := Tx]> Σ) (e2 ^^ x) Q ↔
+    ⊨ FExprContIn (<[x := T1]> Σ) (e2 ^^ x) Q ↔
   m ⊨ FExprContIn Σ (tlete e1 e2) Q.
 Proof.
-Admitted.
+  intros He1 Hlet Hxe2 Hdom Hclosed Htotal_let HQfv HQrename.
+  set (m1 := let_result_world_on e1 x m Hfresh Hresult).
+  assert (HxΣ : x ∉ dom Σ).
+  { rewrite <- Hdom. exact Hfresh. }
+  assert (He2 : <[x := T1]> Σ ⊢ₑ e2 ^^ x ⋮ T2).
+  { eapply basic_typing_tlete_body_for_fresh; eauto; set_solver. }
+  assert (Hdom_m1 : world_dom (m1 : World) = dom (<[x := T1]> Σ)).
+  {
+    subst m1. rewrite let_result_world_on_dom, Hdom, dom_insert_L.
+    set_solver.
+  }
+  assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
+  { apply basic_typing_contains_fv_tm in He1. exact He1. }
+  assert (Hlc1 : lc_tm e1).
+  { apply typing_tm_lc with (Γ := Σ) (T := T1). exact He1. }
+  assert (Hclosed_m1 :
+    world_store_closed_on (dom (<[x := T1]> Σ)) m1).
+  {
+    subst m1. rewrite dom_insert_L.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
+    eapply let_result_world_on_store_closed_on_insert.
+    - exact HxΣ.
+    - exact Hclosed.
+    - intros σ vx Hσ Hsteps.
+      assert (Hclosed_fv : world_store_closed_on (fv_tm e1) m).
+      { eapply world_store_closed_on_mono; [exact Hfv1 | exact Hclosed]. }
+      eapply (steps_closed_result_of_restrict_world
+        (fv_tm e1) e1 m (store_restrict σ (fv_tm e1)) vx).
+      + rewrite Hdom. exact Hfv1.
+      + set_solver.
+      + exact Hlc1.
+      + exact Hclosed_fv.
+      + exists σ. split; [exact Hσ | reflexivity].
+      + replace (store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1))
+          with (store_restrict σ (fv_tm e1)).
+        * exact Hsteps.
+        * store_norm. reflexivity.
+  }
+  assert (Htotal2 :
+    expr_total_on (dom (<[x := T1]> Σ)) (e2 ^^ x) m1).
+  {
+    subst m1. rewrite dom_insert_L.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
+    eapply (expr_total_on_tlete_elim_body_strong
+      (dom Σ) e1 e2 x m Hfresh Hresult).
+    - rewrite Hdom. set_solver.
+    - exact HxΣ.
+    - exact Hxe2.
+    - exact Hclosed.
+    - eapply typing_tm_lc; eauto.
+    - exact Htotal_let.
+  }
+  assert (HQfv_insert :
+    ∀ ν, formula_fv (Q ν) ⊆ dom (<[x := T1]> Σ) ∪ {[ν]}).
+  {
+    intros ν. specialize (HQfv ν). rewrite dom_insert_L. set_solver.
+  }
+  assert (HQrename_insert :
+    formula_family_rename_stable_on (dom (<[x := T1]> Σ)) Q).
+  {
+    unfold formula_family_rename_stable_on in *.
+    intros a b n Ha Hb.
+    apply HQrename; rewrite dom_insert_L in *; set_solver.
+  }
+  assert (Hdecompose_side :
+    ∀ ν Hfreshν_body Hresultν_body Hfreshν_tlet Hresultν_tlet,
+      ν ∉ dom Σ ∪ {[x]} ∪ fv_tm e2 →
+      res_restrict
+        (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+        (world_dom (m : World) ∪ {[ν]}) =
+      let_result_world_on (tlete e1 e2) ν m Hfreshν_tlet Hresultν_tlet).
+  {
+    intros ν Hfreshν_body Hresultν_body Hfreshν_tlet Hresultν_tlet Hνfresh.
+    unfold m1.
+    rewrite (let_result_world_on_tlete_decompose
+      (dom Σ) e1 e2 x ν m
+      Hfresh Hresult Hfreshν_body Hresultν_body
+      Hfreshν_tlet Hresultν_tlet).
+    - reflexivity.
+    - apply basic_typing_contains_fv_tm in Hlet. exact Hlet.
+    - apply basic_typing_contains_fv_tm in Hlet. simpl in Hlet. set_solver.
+    - exact Hfreshν_tlet.
+    - rewrite Hdom. set_solver.
+    - intros σ Hσ. exact (proj1 (Hclosed σ Hσ)).
+    - intros σ Hσ. exact (proj2 (Hclosed σ Hσ)).
+    - intros σ vx Hσ Hsteps.
+      eapply steps_closed_result.
+      + eapply (msubst_closed_tm_of_restrict_world (dom Σ) e1 m σ).
+        * rewrite Hdom. set_solver.
+        * exact Hfv1.
+        * exact Hlc1.
+        * exact Hclosed.
+        * exists σ. split; [exact Hσ |].
+          rewrite (store_restrict_idemp σ (dom Σ)).
+          -- reflexivity.
+          -- pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+             set_solver.
+      + exact Hsteps.
+    - intros σ Hσ.
+      pose proof (typing_tm_lc _ _ _ Hlet) as Hlclet.
+      apply lc_lete_iff_body in Hlclet as [_ Hbodye2].
+      eapply body_tm_msubst.
+      + exact (proj1 (Hclosed σ Hσ)).
+      + exact (proj2 (Hclosed σ Hσ)).
+      + exact Hbodye2.
+  }
+  split.
+  - intros Hcont.
+    pose proof (proj1
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
+        He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert HQrename_insert)
+      Hcont) as [L [HLdom Hbody]].
+    apply (proj2
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        Σ T2 (tlete e1 e2) Q m
+        Hlet Hdom Hclosed Htotal_let HQfv HQrename)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
+    split; [set_solver |].
+    intros ν Hν Hfreshν_tlet Hresultν_tlet.
+    assert (Hfreshν_body : ν ∉ world_dom (m1 : World)).
+    {
+      subst m1. rewrite let_result_world_on_dom, Hdom. set_solver.
+    }
+    assert (Hresultν_body :
+      ∀ σ, (m1 : World) σ →
+        ∃ vx, subst_map (store_restrict σ (fv_tm (e2 ^^ x)))
+          (e2 ^^ x) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result; eauto.
+    }
+    pose proof (Hbody ν ltac:(set_solver) Hfreshν_body Hresultν_body)
+      as Hnested.
+    pose proof (proj1 (res_models_minimal_on
+      (dom Σ ∪ {[ν]})
+      (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+      (Q ν) (HQfv ν)) Hnested) as Hnested_min.
+    replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
+      in Hnested_min by (rewrite Hdom; reflexivity).
+    rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
+      Hfreshν_tlet Hresultν_tlet ltac:(set_solver)) in Hnested_min.
+    exact Hnested_min.
+  - intros Hcont.
+    pose proof (proj1
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        Σ T2 (tlete e1 e2) Q m
+        Hlet Hdom Hclosed Htotal_let HQfv HQrename)
+      Hcont) as [L [HLdom Hwhole]].
+    apply (proj2
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
+        He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert HQrename_insert)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
+    split; [rewrite dom_insert_L; set_solver |].
+    intros ν Hν Hfreshν_body Hresultν_body.
+    assert (Hfreshν_tlet : ν ∉ world_dom (m : World)).
+    { rewrite Hdom. set_solver. }
+    assert (Hresultν_tlet :
+      ∀ σ, (m : World) σ →
+        ∃ vx, subst_map (store_restrict σ (fv_tm (tlete e1 e2)))
+          (tlete e1 e2) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result; eauto.
+    }
+    pose proof (Hwhole ν ltac:(set_solver) Hfreshν_tlet Hresultν_tlet)
+      as Hwholeν.
+    assert (Hrestrict :
+      res_restrict
+        (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+        (dom Σ ∪ {[ν]}) ⊨ Q ν).
+    {
+      replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
+        by (rewrite Hdom; reflexivity).
+      rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
+        Hfreshν_tlet Hresultν_tlet ltac:(set_solver)).
+      exact Hwholeν.
+    }
+    exact (proj2 (res_models_minimal_on
+      (dom Σ ∪ {[ν]})
+      (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+      (Q ν) (HQfv ν)) Hrestrict).
+Qed.
 
 Lemma denot_ty_tlet_reduction_formula (τ2 : choice_ty): forall
     (Σ : gmap atom ty) (Γ : ctx) (τ1: choice_ty) e1 e2
