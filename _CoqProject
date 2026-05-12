@@ -11,6 +11,7 @@
 
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
+ChoicePrelude/StoreBase.v
 ChoicePrelude/Store.v
 ChoicePrelude/examples/StoreExamples.v
 
