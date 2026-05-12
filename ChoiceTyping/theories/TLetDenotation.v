@@ -140,6 +140,17 @@ Proof.
   apply denot_ty_on_minimal. exact Hfv.
 Qed.
 
+Lemma denot_ty_fuel_formula_fv_subset_env
+    gas (Σ : gmap atom ty) (τ : choice_ty) e :
+  cty_measure τ <= gas →
+  fv_cty τ ⊆ dom Σ →
+  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ.
+Proof.
+  intros Hgas Hfv.
+  pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ e Hgas) as Hφ.
+  set_solver.
+Qed.
+
 Lemma world_store_closed_on_mono (X Y : aset) (m : WfWorld) :
   X ⊆ Y →
   world_store_closed_on Y m →
@@ -1634,9 +1645,97 @@ Proof.
       * apply res_models_and_intro_from_models.
         -- apply (proj2 HIHa). eapply res_models_and_elim_l. exact Hmodel.
         -- apply (proj2 HIHb). eapply res_models_and_elim_r. exact Hmodel.
-    + (* CTUnion: needs the same recursive transport as CTInter, plus scoped
-         side-condition bookkeeping for the branch not chosen by [FOr]. *)
-      admit.
+    + inversion Hbasicτ as [| | |D τ1' τ2' HbasicA HbasicB Herase| | |]; subst.
+      assert (HIHa :
+        let_result_world_on e1 x m Hfresh Hresult ⊨
+          denot_ty_fuel gas (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) τa
+            (e2 ^^ x) <->
+        m ⊨ denot_ty_fuel gas (erase_ctx_under Σ Γ) τa (tlete e1 e2)).
+      {
+        eapply (IH τa Σ Γ τ1 e1 e2 m x Hfresh Hresult).
+        - lia.
+        - split; [exact HbasicΓ | exact HbasicA].
+        - subst Δ. exact He1.
+        - subst Δ. exact Hlet.
+        - exact Hdom.
+        - exact Hctx.
+        - exact Htotal.
+        - set_solver.
+      }
+      assert (HIHb :
+        let_result_world_on e1 x m Hfresh Hresult ⊨
+          denot_ty_fuel gas (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) τb
+            (e2 ^^ x) <->
+        m ⊨ denot_ty_fuel gas (erase_ctx_under Σ Γ) τb (tlete e1 e2)).
+      {
+        eapply (IH τb Σ Γ τ1 e1 e2 m x Hfresh Hresult).
+        - lia.
+        - split; [exact HbasicΓ | exact HbasicB].
+        - subst Δ. exact He1.
+        - subst Δ. replace (erase_ty τb) with (erase_ty τa) by congruence.
+          exact Hlet.
+        - exact Hdom.
+        - exact Hctx.
+        - exact Htotal.
+        - set_solver.
+      }
+      rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1) in HIHa
+        by (subst Δ; exact HxΔ).
+      rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1) in HIHb
+        by (subst Δ; exact HxΔ).
+      split; intros Hmodel.
+      * unfold res_models, res_models_with_store in Hmodel.
+        simpl in Hmodel. destruct Hmodel as [_ [Ha | Hb]].
+        -- eapply res_models_or_intro_l_from_model.
+           ++ apply (proj1 HIHa). unfold res_models, res_models_with_store.
+              lazymatch type of Ha with
+              | res_models_with_store_fuel ?g ?ρ ?n ?φ =>
+                  eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ n φ);
+                  [simpl; lia | lia | exact Ha]
+              end.
+           ++ rewrite Hdom.
+              eapply denot_ty_fuel_formula_fv_subset_env; [lia |].
+              eapply basic_choice_ty_fv_subset. exact HbasicB.
+        -- eapply res_models_or_intro_r_from_model.
+           ++ rewrite Hdom.
+              eapply denot_ty_fuel_formula_fv_subset_env; [lia |].
+              eapply basic_choice_ty_fv_subset. exact HbasicA.
+           ++ apply (proj1 HIHb). unfold res_models, res_models_with_store.
+              lazymatch type of Hb with
+              | res_models_with_store_fuel ?g ?ρ ?n ?φ =>
+                  eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ n φ);
+                  [simpl; lia | lia | exact Hb]
+              end.
+      * unfold res_models, res_models_with_store in Hmodel.
+        simpl in Hmodel. destruct Hmodel as [_ [Ha | Hb]].
+        -- eapply res_models_or_intro_l_from_model.
+           ++ apply (proj2 HIHa). unfold res_models, res_models_with_store.
+              lazymatch type of Ha with
+              | res_models_with_store_fuel ?g ?ρ ?n ?φ =>
+                  eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ n φ);
+                  [simpl; lia | lia | exact Ha]
+              end.
+           ++ rewrite let_result_world_on_dom, Hdom.
+              pose proof (denot_ty_fuel_formula_fv_subset_env
+                gas (<[x:=erase_ty τ1]> Δ) τb (e2 ^^ x) ltac:(lia)
+                ltac:(rewrite dom_insert_L;
+                  pose proof (basic_choice_ty_fv_subset (dom Δ) τb HbasicB);
+                  set_solver)) as Hfv.
+              intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
+        -- eapply res_models_or_intro_r_from_model.
+           ++ rewrite let_result_world_on_dom, Hdom.
+              pose proof (denot_ty_fuel_formula_fv_subset_env
+                gas (<[x:=erase_ty τ1]> Δ) τa (e2 ^^ x) ltac:(lia)
+                ltac:(rewrite dom_insert_L;
+                  pose proof (basic_choice_ty_fv_subset (dom Δ) τa HbasicA);
+                  set_solver)) as Hfv.
+              intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
+           ++ apply (proj2 HIHb). unfold res_models, res_models_with_store.
+              lazymatch type of Hb with
+              | res_models_with_store_fuel ?g ?ρ ?n ?φ =>
+                  eapply (res_models_with_store_fuel_irrel g (formula_measure φ) ρ n φ);
+                  [simpl; lia | lia | exact Hb]
+              end.
     + (* CTSum: the recursive calls happen under the two summand subresources.
          Their domains should be recovered from formula scoping plus
          [denot_ty_fuel_env_fv_subset]. *)
