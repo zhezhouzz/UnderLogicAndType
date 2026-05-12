@@ -1487,7 +1487,8 @@ Proof.
   - pose proof (cty_measure_gt_0 τ2). lia.
   - assert (HxΔ : x ∉ dom Δ) by set_solver.
     destruct τ2 as [b φ|b φ|τa τb|τa τb|τa τb|τx τ|τx τ];
-      cbn [cty_measure denot_ty_fuel fv_cty erase_ty] in Hgas, Hbasicτ, Hlet |- *.
+      cbn [cty_measure denot_ty_fuel denot_ty_fuel_result denot_ty_formula
+        mk_denot_ty_result fv_cty erase_ty] in Hgas, Hbasicτ, Hlet |- *.
     + inversion Hbasicτ as [D b' φ' Hqbody| | | | | |]; subst.
       assert (Hφ : qual_dom φ ⊆ dom Δ).
       { eapply basic_qualifier_body_fv_subset. exact Hqbody. }

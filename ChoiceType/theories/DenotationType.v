@@ -6,7 +6,7 @@ From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
   OperationalProps Sugar.
 From ChoiceType Require Export DenotationExprProps.
-From ChoiceType Require Import BasicStore LocallyNamelessProps.
+From ChoiceType Require Import BasicStore BasicTyping LocallyNamelessProps.
 
 Local Notation FQ := FormulaQ.
 
@@ -33,16 +33,47 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
 (** ** Type denotation
 
-    [denot_ty_fuel gas Σ τ e] encodes the proposition "expression [e] has type
-    [τ]" as a Choice Logic formula under erased basic environment [Σ].
+    [denot_ty_fuel_result gas Σ τ e] packages the meta-level obligations and
+    the Choice Logic formula for "expression [e] has type [τ]" under erased
+    basic environment [Σ].
+
+    The field [denot_ty_formula] is the old formula denotation.  The other
+    fields deliberately remain at the Rocq [Prop] level: they are needed by
+    recursive proof obligations such as [tlet], but encoding strong totality
+    inside Choice Logic would make the logic depend on the full operational
+    semantics.
+
+    [denot_ty_fuel gas Σ τ e] is kept below as a projection to
+    [denot_ty_formula], preserving the existing formula-level interface.
     Expression-result atoms and fresh representatives are driven by [dom Σ].
     The regularity assumptions that [fv_tm e] and [fv_cty τ] are contained in
     [dom Σ] live at the Rocq [Prop] level, not inside the logic. *)
 
-Fixpoint denot_ty_fuel
-    (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+Record denot_ty_result := {
+  basic_typing : Prop;
+  closed_resource : WfWorld → Prop;
+  strong_total : WfWorld → Prop;
+  denot_ty_formula : FQ;
+}.
+
+Definition mk_denot_ty_result
+    (Σ : gmap atom ty) (τ : choice_ty) (e : tm) (φ : FQ)
+    : denot_ty_result := {|
+  basic_typing := basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ;
+  closed_resource := fun m => world_closed_on (dom Σ) m;
+  strong_total := fun m => expr_total_on (dom Σ) e m;
+  denot_ty_formula := φ;
+|}.
+
+Definition denot_ty_result_models (R : denot_ty_result) (m : WfWorld) : Prop :=
+  basic_typing R ∧ closed_resource R m ∧ strong_total R m ∧
+  m ⊨ denot_ty_formula R.
+
+Fixpoint denot_ty_fuel_result
+    (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm)
+    : denot_ty_result :=
   match gas with
-  | 0 => FFalse
+  | 0 => mk_denot_ty_result Σ τ e FFalse
   | S gas' =>
   match τ with
 
@@ -50,33 +81,42 @@ Fixpoint denot_ty_fuel
       [fib_vars (fv φ)] iterates the single-variable fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      FExprContIn Σ e (fun ν =>
+      mk_denot_ty_result Σ τ e (FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FOver (FAtom (lift_type_qualifier_to_logic φν)))))
+            (FOver (FAtom (lift_type_qualifier_to_logic φν))))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      FExprContIn Σ e (fun ν =>
+      mk_denot_ty_result Σ τ e (FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FUnder (FAtom (lift_type_qualifier_to_logic φν)))))
+            (FUnder (FAtom (lift_type_qualifier_to_logic φν))))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
-      FAnd (denot_ty_fuel gas' Σ τ1 e) (denot_ty_fuel gas' Σ τ2 e)
+      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
+      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
+      mk_denot_ty_result Σ τ e
+        (FAnd (denot_ty_formula R1) (denot_ty_formula R2))
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
-      FOr (denot_ty_fuel gas' Σ τ1 e) (denot_ty_fuel gas' Σ τ2 e)
+      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
+      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
+      mk_denot_ty_result Σ τ e
+        (FOr (denot_ty_formula R1) (denot_ty_formula R2))
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
-      FPlus (denot_ty_fuel gas' Σ τ1 e) (denot_ty_fuel gas' Σ τ2 e)
+      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
+      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
+      mk_denot_ty_result Σ τ e
+        (FPlus (denot_ty_formula R1) (denot_ty_formula R2))
 
   (** τ_x →, τ  ≝  ∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (e x)).
 
@@ -85,24 +125,32 @@ Fixpoint denot_ty_fuel
       then applies it to [x].  We intentionally do not allocate a separate
       logic coordinate for the function result here. *)
   | CTArrow τx τ =>
-      fresh_forall (dom Σ) (fun x =>
+      mk_denot_ty_result Σ (CTArrow τx τ) e (fresh_forall (dom Σ) (fun x =>
         let Σx := <[x := erase_ty τx]> Σ in
+        let Rarg := denot_ty_fuel_result gas' Σx τx (tret (vfvar x)) in
+        let Rbody := denot_ty_fuel_result gas' Σx ({0 ~> x} τ)
+          (tapp_tm e (vfvar x)) in
           FImpl
-            (denot_ty_fuel gas' Σx τx (tret (vfvar x)))
-            (denot_ty_fuel gas' Σx ({0 ~> x} τ)
-              (tapp_tm e (vfvar x))))
+            (denot_ty_formula Rarg)
+            (denot_ty_formula Rbody)))
 
   (** τ_x ⊸ τ  ≝  ∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (e x)). *)
   | CTWand τx τ =>
-      fresh_forall (dom Σ) (fun x =>
+      mk_denot_ty_result Σ (CTWand τx τ) e (fresh_forall (dom Σ) (fun x =>
         let Σx := <[x := erase_ty τx]> Σ in
+        let Rarg := denot_ty_fuel_result gas' Σx τx (tret (vfvar x)) in
+        let Rbody := denot_ty_fuel_result gas' Σx ({0 ~> x} τ)
+          (tapp_tm e (vfvar x)) in
           FWand
-            (denot_ty_fuel gas' Σx τx (tret (vfvar x)))
-            (denot_ty_fuel gas' Σx ({0 ~> x} τ)
-              (tapp_tm e (vfvar x))))
+            (denot_ty_formula Rarg)
+            (denot_ty_formula Rbody)))
 
   end
   end.
+
+Definition denot_ty_fuel
+    (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_formula (denot_ty_fuel_result gas Σ τ e).
 
 Definition denot_ty_on
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
@@ -684,7 +732,8 @@ Proof.
   induction gas as [|gas IH]; intros Σ τ e Hgas.
   - pose proof (cty_measure_gt_0 τ). lia.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel cty_measure fv_cty] in *.
+      cbn [denot_ty_fuel denot_ty_fuel_result denot_ty_formula
+        mk_denot_ty_result cty_measure fv_cty] in *.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
       cbn [formula_fv].
@@ -787,7 +836,8 @@ Proof.
   induction gas as [|gas IH]; intros Σ τ e Hgas.
   - pose proof (cty_measure_gt_0 τ). lia.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel cty_measure fv_cty] in *.
+      cbn [denot_ty_fuel denot_ty_fuel_result denot_ty_formula
+        mk_denot_ty_result cty_measure fv_cty] in *.
     + unfold FExprContIn, fresh_forall.
       cbn [formula_fv].
       rewrite FExprResultOn_fv.
