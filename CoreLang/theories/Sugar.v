@@ -5,6 +5,7 @@
     boolean and matching on it. *)
 
 From CoreLang Require Export SmallStep OperationalProps LocallyNamelessProps.
+From CoreLang Require Import BasicTypingProps.
 
 Definition vtrue : value := vconst (cbool true).
 Definition vfalse : value := vconst (cbool false).
@@ -16,6 +17,9 @@ Definition tbool_gen : tm :=
 Definition tnat_gen : tm :=
   tprim op_nat_gen vtrue.
 
+Definition tapp_tm (ef : tm) (vx : value) : tm :=
+  tlete ef (tapp (vbvar 0) vx).
+
 Definition tchoice (etrue efalse : tm) : tm :=
   tlete tbool_gen (tmatch (vbvar 0) etrue efalse).
 
@@ -24,6 +28,69 @@ Proof. repeat constructor. Qed.
 
 Lemma lc_tnat_gen : lc_tm tnat_gen.
 Proof. repeat constructor. Qed.
+
+Lemma fv_tapp_tm ef vx :
+  fv_tm (tapp_tm ef vx) = fv_tm ef ∪ fv_value vx.
+Proof.
+  unfold tapp_tm. simpl. set_solver.
+Qed.
+
+Lemma body_tapp_tm_body vx :
+  lc_value vx →
+  body_tm (tapp (vbvar 0) vx).
+Proof.
+  intros Hvx. exists ∅. intros x _.
+  change (lc_tm (tapp (vfvar x) (open_value 0 (vfvar x) vx))).
+  rewrite (open_rec_lc_value vx Hvx 0 (vfvar x)).
+  repeat constructor. exact Hvx.
+Qed.
+
+Lemma lc_tapp_tm ef vx :
+  lc_tm ef →
+  lc_value vx →
+  lc_tm (tapp_tm ef vx).
+Proof.
+  intros Hef Hvx. unfold tapp_tm.
+  eapply LC_lete with (L := ∅); [exact Hef |].
+  intros x _.
+  change (lc_tm (tapp (vfvar x) (open_value 0 (vfvar x) vx))).
+  rewrite (open_rec_lc_value vx Hvx 0 (vfvar x)).
+  repeat constructor. exact Hvx.
+Qed.
+
+Lemma basic_typing_tapp_tm Γ ef vx Tx T :
+  Γ ⊢ₑ ef ⋮ (Tx →ₜ T) →
+  Γ ⊢ᵥ vx ⋮ Tx →
+  Γ ⊢ₑ tapp_tm ef vx ⋮ T.
+Proof.
+  intros Hef Hvx. unfold tapp_tm.
+  eapply TT_Let with (L := dom Γ ∪ fv_value vx).
+  - exact Hef.
+  - intros x Hx.
+    change (<[x := Tx →ₜ T]> Γ ⊢ₑ
+      tapp (vfvar x) (open_value 0 (vfvar x) vx) ⋮ T).
+    rewrite (open_rec_lc_value vx (typing_value_lc _ _ _ Hvx) 0 (vfvar x)).
+    eapply TT_App.
+    + eapply VT_FVar. rewrite lookup_insert.
+      destruct (decide (x = x)); [reflexivity | congruence].
+    + eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
+Qed.
+
+Lemma reduction_tapp_tm_intro ef vf vx v :
+  lc_value vx →
+  ef →* tret vf →
+  tapp vf vx →* tret v →
+  tapp_tm ef vx →* tret v.
+Proof.
+  intros Hvx Hef Happ.
+  unfold tapp_tm.
+  eapply reduction_lete_intro.
+  - apply body_tapp_tm_body. exact Hvx.
+  - exact Hef.
+  - change (tapp vf (open_value 0 vf vx) →* tret v).
+    rewrite (open_rec_lc_value vx Hvx 0 vf).
+    exact Happ.
+Qed.
 
 Lemma lc_tchoice et ef :
   lc_tm et →

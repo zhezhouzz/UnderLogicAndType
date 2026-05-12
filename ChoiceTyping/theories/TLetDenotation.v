@@ -3,7 +3,7 @@
     Thin denotation-level interface for the [tlet] soundness case. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
-  LocallyNamelessProps StrongNormalization.
+  LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetTotal RegularDenotation.
 From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldFreshForall.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
@@ -1413,27 +1413,19 @@ Lemma denot_ty_fuel_tlet_reduction_formula_on_arrow_case
   cty_measure (CTArrow τx τ) <= S gas →
   basic_choice_ty (dom Δ) (CTArrow τx τ) →
   let_result_world_on e1 x m Hfresh Hresult ⊨
-    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTArrow τx τ)]> (<[x := T1]> Δ) in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FImpl
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))) <->
+    fresh_forall (dom (<[x:=T1]> Δ)) (fun y =>
+      FImpl
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> (<[x:=T1]> Δ)) τx
+          (tret (vfvar y)))
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> (<[x:=T1]> Δ))
+          ({0 ~> y} τ) (tapp_tm (e2 ^^ x) (vfvar y)))) <->
   m ⊨
-    FExprContIn Δ (tlete e1 e2)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTArrow τx τ)]> Δ in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FImpl
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))).
+    fresh_forall (dom Δ) (fun y =>
+      FImpl
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> Δ) τx
+          (tret (vfvar y)))
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> Δ)
+          ({0 ~> y} τ) (tapp_tm (tlete e1 e2) (vfvar y)))).
 Proof.
 Admitted.
 
@@ -1453,27 +1445,19 @@ Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
   cty_measure (CTWand τx τ) <= S gas →
   basic_choice_ty (dom Δ) (CTWand τx τ) →
   let_result_world_on e1 x m Hfresh Hresult ⊨
-    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-      (fun y =>
-        let Σy := <[y := erase_ty (CTWand τx τ)]> (<[x := T1]> Δ) in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FWand
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))) <->
+    fresh_forall (dom (<[x:=T1]> Δ)) (fun y =>
+      FWand
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> (<[x:=T1]> Δ)) τx
+          (tret (vfvar y)))
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> (<[x:=T1]> Δ))
+          ({0 ~> y} τ) (tapp_tm (e2 ^^ x) (vfvar y)))) <->
   m ⊨
-    FExprContIn Δ (tlete e1 e2)
-      (fun y =>
-    let Σy := <[y := erase_ty (CTWand τx τ)]> Δ in
-        fresh_forall (dom Σy) (fun z =>
-          let Σxy := <[z := erase_ty τx]> Σy in
-            FFib y
-              (FWand
-                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
-                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
-                   (tapp (vfvar y) (vfvar z)))))).
+    fresh_forall (dom Δ) (fun y =>
+      FWand
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> Δ) τx
+          (tret (vfvar y)))
+        (denot_ty_fuel gas (<[y:=erase_ty τx]> Δ)
+          ({0 ~> y} τ) (tapp_tm (tlete e1 e2) (vfvar y)))).
 Proof.
 Admitted.
 

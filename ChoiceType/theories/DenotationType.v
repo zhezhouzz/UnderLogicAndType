@@ -4,7 +4,7 @@
 
 From LocallyNameless Require Import Tactics.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
-  OperationalProps.
+  OperationalProps Sugar.
 From ChoiceType Require Export DenotationExprProps.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
@@ -78,29 +78,28 @@ Fixpoint denot_ty_fuel
   | CTSum τ1 τ2 =>
       FPlus (denot_ty_fuel gas' Σ τ1 e) (denot_ty_fuel gas' Σ τ2 e)
 
-  (** τ_x →, τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (y x)). *)
-  | CTArrow τx τ =>
-      FExprContIn Σ e (fun y =>
-      let Σy := <[y := erase_ty (CTArrow τx τ)]> Σ in
-        fresh_forall (dom Σy) (fun x =>
-          let Σxy := <[x := erase_ty τx]> Σy in
-            FFib y
-              (FImpl
-                (denot_ty_fuel gas' Σxy τx (tret (vfvar x)))
-                (denot_ty_fuel gas' Σxy ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x))))))
+  (** τ_x →, τ  ≝  ∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (e x)).
 
-  (** τ_x ⊸ τ  ≝  ∀y. ⟦e⟧_y ⇒ ∀{y}.∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (y x)). *)
+      The application [e x] is represented by the derived core term
+      [tapp_tm e (vfvar x)], which first evaluates [e] to a function value and
+      then applies it to [x].  We intentionally do not allocate a separate
+      logic coordinate for the function result here. *)
+  | CTArrow τx τ =>
+      fresh_forall (dom Σ) (fun x =>
+        let Σx := <[x := erase_ty τx]> Σ in
+          FImpl
+            (denot_ty_fuel gas' Σx τx (tret (vfvar x)))
+            (denot_ty_fuel gas' Σx ({0 ~> x} τ)
+              (tapp_tm e (vfvar x))))
+
+  (** τ_x ⊸ τ  ≝  ∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (e x)). *)
   | CTWand τx τ =>
-      FExprContIn Σ e (fun y =>
-      let Σy := <[y := erase_ty (CTWand τx τ)]> Σ in
-        fresh_forall (dom Σy) (fun x =>
-          let Σxy := <[x := erase_ty τx]> Σy in
-            FFib y
-              (FWand
-                (denot_ty_fuel gas' Σxy τx (tret (vfvar x)))
-                (denot_ty_fuel gas' Σxy ({0 ~> x} τ)
-                   (tapp (vfvar y) (vfvar x))))))
+      fresh_forall (dom Σ) (fun x =>
+        let Σx := <[x := erase_ty τx]> Σ in
+          FWand
+            (denot_ty_fuel gas' Σx τx (tret (vfvar x)))
+            (denot_ty_fuel gas' Σx ({0 ~> x} τ)
+              (tapp_tm e (vfvar x))))
 
   end
   end.
@@ -713,36 +712,30 @@ Proof.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
       pose proof (IH Σ τ2 e ltac:(lia)) as H2.
       set_solver.
-    + apply FExprContIn_formula_fv_subset; first set_solver.
-      intros y Hy.
-      set (Σy := <[y:=erase_ty (CTArrow τx τ)]> Σ).
-      apply fresh_forall_formula_fv_subset
-        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ) ∪ {[y]}).
-      * unfold Σy. rewrite dom_insert_L. set_solver.
+    + apply fresh_forall_formula_fv_subset
+        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
+      * set_solver.
       * intros x Hx.
-        set (Σxy := <[x:=erase_ty τx]> Σy).
-        pose proof (IH Σxy τx (tret (vfvar x)) ltac:(lia)) as Harg.
-        pose proof (IH Σxy ({0 ~> x} τ)
-          (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
+        set (Σx := <[x:=erase_ty τx]> Σ).
+        pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
+        pose proof (IH Σx ({0 ~> x} τ)
+          (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
           as Hres.
         pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-        unfold Σxy, Σy in *.
+        unfold Σx in *.
         rewrite !dom_insert_L in *.
         set_solver.
-    + apply FExprContIn_formula_fv_subset; first set_solver.
-      intros y Hy.
-      set (Σy := <[y:=erase_ty (CTWand τx τ)]> Σ).
-      apply fresh_forall_formula_fv_subset
-        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ) ∪ {[y]}).
-      * unfold Σy. rewrite dom_insert_L. set_solver.
+    + apply fresh_forall_formula_fv_subset
+        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
+      * set_solver.
       * intros x Hx.
-        set (Σxy := <[x:=erase_ty τx]> Σy).
-        pose proof (IH Σxy τx (tret (vfvar x)) ltac:(lia)) as Harg.
-        pose proof (IH Σxy ({0 ~> x} τ)
-          (tapp (vfvar y) (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
+        set (Σx := <[x:=erase_ty τx]> Σ).
+        pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
+        pose proof (IH Σx ({0 ~> x} τ)
+          (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
           as Hres.
         pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-        unfold Σxy, Σy in *.
+        unfold Σx in *.
         rewrite !dom_insert_L in *.
         set_solver.
 Qed.
@@ -808,16 +801,28 @@ Proof.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1. set_solver.
-    + unfold FExprContIn, fresh_forall.
+    + unfold fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultOn_fv.
-      pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
-      set_solver.
-    + unfold FExprContIn, fresh_forall.
+      set (x := fresh_for (dom Σ)).
+      set (Σx := <[x:=erase_ty τx]> Σ).
+      assert (Hx : x ∉ dom Σ) by (subst x; apply fresh_for_not_in).
+      pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
+      unfold Σx in Harg. rewrite dom_insert_L in Harg.
+      intros z Hz.
+      apply elem_of_difference. split.
+      * apply elem_of_union_l. apply Harg. set_solver.
+      * set_solver.
+    + unfold fresh_forall.
       cbn [formula_fv].
-      rewrite FExprResultOn_fv.
-      pose proof (fresh_for_not_in (dom Σ)) as Hfresh.
-      set_solver.
+      set (x := fresh_for (dom Σ)).
+      set (Σx := <[x:=erase_ty τx]> Σ).
+      assert (Hx : x ∉ dom Σ) by (subst x; apply fresh_for_not_in).
+      pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
+      unfold Σx in Harg. rewrite dom_insert_L in Harg.
+      intros z Hz.
+      apply elem_of_difference. split.
+      * apply elem_of_union_l. apply Harg. set_solver.
+      * set_solver.
 Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
