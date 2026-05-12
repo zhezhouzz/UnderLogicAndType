@@ -1509,7 +1509,7 @@ Lemma denot_ty_fuel_tlet_reduction_formula gas (τ2 : choice_ty): forall
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   world_dom (m : World) = dom (erase_ctx_under Σ Γ) →
-  m ⊨ denot_ctx_in_env Σ Γ →
+  world_store_closed_on (dom (erase_ctx_under Σ Γ)) m →
   expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2 →
   let_result_world_on e1 x m Hfresh Hresult
@@ -1520,16 +1520,11 @@ Lemma denot_ty_fuel_tlet_reduction_formula gas (τ2 : choice_ty): forall
 Proof.
   revert τ2.
   induction gas as [|gas IH]; intros τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
-    Hgas Hregular He1 Hlet Hdom Hctx Htotal Hx.
+    Hgas Hregular He1 Hlet Hdom Hclosed Htotal Hx.
   - pose proof (cty_measure_gt_0 τ2). lia.
   - destruct Hregular as [HbasicΓ Hbasicτ].
     set (Δ := erase_ctx_under Σ Γ) in *.
     assert (HxΔ : x ∉ dom Δ) by (subst Δ; set_solver).
-    assert (Hclosed : world_store_closed_on (dom Δ) m).
-    {
-      subst Δ.
-      eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
-    }
     rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1)
       by (subst Δ; exact HxΔ).
     destruct τ2 as [b φ|b φ|τa τb|τa τb|τa τb|τx τ|τx τ];
@@ -1613,7 +1608,7 @@ Proof.
         - subst Δ. exact He1.
         - subst Δ. exact Hlet.
         - exact Hdom.
-        - exact Hctx.
+        - exact Hclosed.
         - exact Htotal.
         - set_solver.
       }
@@ -1630,7 +1625,7 @@ Proof.
         - subst Δ. replace (erase_ty τb) with (erase_ty τa) by congruence.
           exact Hlet.
         - exact Hdom.
-        - exact Hctx.
+        - exact Hclosed.
         - exact Htotal.
         - set_solver.
       }
@@ -1658,7 +1653,7 @@ Proof.
         - subst Δ. exact He1.
         - subst Δ. exact Hlet.
         - exact Hdom.
-        - exact Hctx.
+        - exact Hclosed.
         - exact Htotal.
         - set_solver.
       }
@@ -1675,7 +1670,7 @@ Proof.
         - subst Δ. replace (erase_ty τb) with (erase_ty τa) by congruence.
           exact Hlet.
         - exact Hdom.
-        - exact Hctx.
+        - exact Hclosed.
         - exact Htotal.
         - set_solver.
       }
@@ -1770,6 +1765,8 @@ Proof.
   intros Σ Γ τ1 e1 e2 m x Hfresh Hresult Hregular He1 Hlet Hdom Hctx Htotal Hx.
   unfold denot_ty_in_ctx_under, denot_ty_on.
   eapply denot_ty_fuel_tlet_reduction_formula; eauto.
+  eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+  exact (proj1 Hregular).
 Qed.
 
 Lemma denot_ty_tlet_reduction_formula_any_world (τ2 : choice_ty): forall
