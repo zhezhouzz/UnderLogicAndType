@@ -70,12 +70,15 @@ Lemma expr_total_with_store_empty_restrict X e m :
 Proof.
   intros [_ Htotal] σ Hσ.
   destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
-  rewrite left_id_L.
-  rewrite <- Hrestrict.
-  rewrite store_restrict_restrict.
-  replace (X ∩ X) with X by set_solver.
-  apply Htotal. exact Hσm.
-Admitted.
+  replace (store_restrict (∅ ∪ σ) X) with (store_restrict σm X).
+  - apply Htotal. exact Hσm.
+  - rewrite left_id_L.
+    rewrite <- Hrestrict.
+    rewrite store_restrict_restrict.
+    f_equal. set_solver.
+Unshelve.
+  all: try typeclasses eauto; try set_solver.
+Qed.
 
 Definition denot_ty_obligations
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
