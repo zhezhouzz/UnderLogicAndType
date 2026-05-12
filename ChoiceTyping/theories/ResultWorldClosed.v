@@ -5,7 +5,7 @@
     makes the tlet proof support files less tangled. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
-  LocallyNamelessProps.
+  LocallyNamelessProps StrongNormalization.
 From ChoiceTyping Require Export SoundnessCommon.
 From ChoiceTyping Require Export LetResultWorld.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
@@ -84,6 +84,40 @@ Proof.
       (store_restrict (store_restrict σ Y) X).
     + apply lc_env_restrict. exact Hlc_env.
     + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
+Qed.
+
+Lemma expr_total_on_to_fv_result X e (m : WfWorld) :
+  world_store_closed_on X m →
+  expr_total_on X e m →
+  ∀ σ, (m : World) σ →
+    ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx.
+Proof.
+  intros Hclosed [Hfv Htotal] σ Hσ.
+  destruct (strongly_normalizing_reaches_result _ (Htotal σ Hσ)) as [vx Hsteps].
+  exists vx.
+  pose proof (subst_map_eq_on_fv e
+    (store_restrict σ X)
+    (store_restrict σ (fv_tm e))) as Heq.
+  assert (Hclosed_fv :
+    closed_env (store_restrict (store_restrict σ X) (fv_tm e))).
+  {
+    apply closed_env_restrict.
+    exact (proj1 (Hclosed σ Hσ)).
+  }
+  specialize (Heq Hclosed_fv).
+  assert (Hagree :
+    store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
+    store_restrict (store_restrict σ X) (fv_tm e)).
+  {
+    store_norm.
+    replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+    reflexivity.
+  }
+  specialize (Heq Hagree).
+  change (subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+  replace (subst_map (store_restrict σ (fv_tm e)) e)
+    with (subst_map (store_restrict σ X) e) by (symmetry; exact Heq).
+  exact Hsteps.
 Qed.
 
 Lemma msubst_closed_tm_of_restrict_world X e (m : WfWorld) σ :
