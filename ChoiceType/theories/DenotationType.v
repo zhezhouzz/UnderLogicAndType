@@ -33,21 +33,17 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
 (** ** Type denotation
 
-    [denot_ty_fuel_result gas Σ τ e] packages the meta-level obligations and
-    the Choice Logic formula for "expression [e] has type [τ]" under erased
-    basic environment [Σ].
+    [denot_ty_fuel_body gas Σ τ e] is the recursive semantic content of
+    "expression [e] has type [τ]" under erased basic environment [Σ].
+    [denot_ty_fuel] then conjoins the uniform obligations every denotation
+    needs: basic typing, closed resources, and strong totality.
 
-    The field [denot_ty_formula] is the old formula denotation.  The other
-    fields deliberately remain at the Rocq [Prop] level: they are needed by
-    recursive proof obligations such as [tlet], but encoding strong totality
-    inside Choice Logic would make the logic depend on the full operational
-    semantics.
-
-    [denot_ty_fuel gas Σ τ e] is kept below as a projection to
-    [denot_ty_formula], preserving the existing formula-level interface.
+    Keeping the obligations in the logic itself avoids the previous
+    [denot_ty_result] wrapper style: recursive calls are ordinary formulas,
+    and helper lemmas can reason with Choice Logic connectives directly.
     Expression-result atoms and fresh representatives are driven by [dom Σ].
     The regularity assumptions that [fv_tm e] and [fv_cty τ] are contained in
-    [dom Σ] live at the Rocq [Prop] level, not inside the logic. *)
+    [dom Σ] are supplied by the basic typing conjunct. *)
 
 Definition expr_total_with_store (X : aset) (e : tm)
     (ρ : Store) (m : WfWorld) : Prop :=
@@ -86,31 +82,11 @@ Definition denot_ty_obligations
     (FAnd (FClosedResourceIn Σ)
       (FAnd (FStrongTotalIn Σ e) φ)).
 
-Record denot_ty_result := {
-  basic_typing : Prop;
-  closed_resource : WfWorld → Prop;
-  strong_total : WfWorld → Prop;
-  denot_ty_formula : FQ;
-}.
-
-Definition mk_denot_ty_result
-    (Σ : gmap atom ty) (τ : choice_ty) (e : tm) (φ : FQ)
-    : denot_ty_result := {|
-  basic_typing := basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ;
-  closed_resource := fun m => world_closed_on (dom Σ) m;
-  strong_total := fun m => expr_total_on (dom Σ) e m;
-  denot_ty_formula := φ;
-|}.
-
-Definition denot_ty_result_models (R : denot_ty_result) (m : WfWorld) : Prop :=
-  basic_typing R ∧ closed_resource R m ∧ strong_total R m ∧
-  m ⊨ denot_ty_formula R.
-
-Fixpoint denot_ty_fuel_result
+Fixpoint denot_ty_fuel_body
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm)
-    : denot_ty_result :=
+    : FQ :=
   match gas with
-  | 0 => mk_denot_ty_result Σ τ e FFalse
+  | 0 => FFalse
   | S gas' =>
   match τ with
 
@@ -118,42 +94,39 @@ Fixpoint denot_ty_fuel_result
       [fib_vars (fv φ)] iterates the single-variable fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      mk_denot_ty_result Σ τ e (FExprContIn Σ e (fun ν =>
+      FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FOver (FTypeQualifier φν)))))
+            (FOver (FTypeQualifier φν))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      mk_denot_ty_result Σ τ e (FExprContIn Σ e (fun ν =>
+      FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
           (fib_vars (qual_dom φν)
-            (FUnder (FTypeQualifier φν)))))
+            (FUnder (FTypeQualifier φν))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
-      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
-      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
-      mk_denot_ty_result Σ τ e
-        (FAnd (denot_ty_formula R1) (denot_ty_formula R2))
+      FAnd
+        (denot_ty_fuel_body gas' Σ τ1 e)
+        (denot_ty_fuel_body gas' Σ τ2 e)
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
-      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
-      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
-      mk_denot_ty_result Σ τ e
-        (FOr (denot_ty_formula R1) (denot_ty_formula R2))
+      FOr
+        (denot_ty_fuel_body gas' Σ τ1 e)
+        (denot_ty_fuel_body gas' Σ τ2 e)
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
-      let R1 := denot_ty_fuel_result gas' Σ τ1 e in
-      let R2 := denot_ty_fuel_result gas' Σ τ2 e in
-      mk_denot_ty_result Σ τ e
-        (FPlus (denot_ty_formula R1) (denot_ty_formula R2))
+      FPlus
+        (denot_ty_fuel_body gas' Σ τ1 e)
+        (denot_ty_fuel_body gas' Σ τ2 e)
 
   (** τ_x →, τ  ≝  ∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (e x)).
 
@@ -162,65 +135,28 @@ Fixpoint denot_ty_fuel_result
       then applies it to [x].  We intentionally do not allocate a separate
       logic coordinate for the function result here. *)
   | CTArrow τx τ =>
-      mk_denot_ty_result Σ (CTArrow τx τ) e (fresh_forall (dom Σ) (fun x =>
+      fresh_forall (dom Σ) (fun x =>
         let Σx := <[x := erase_ty τx]> Σ in
-        let Rarg := denot_ty_fuel_result gas' Σx τx (tret (vfvar x)) in
-        let Rbody := denot_ty_fuel_result gas' Σx ({0 ~> x} τ)
-          (tapp_tm e (vfvar x)) in
           FImpl
-            (denot_ty_formula Rarg)
-            (denot_ty_formula Rbody)))
+            (denot_ty_fuel_body gas' Σx τx (tret (vfvar x)))
+            (denot_ty_fuel_body gas' Σx ({0 ~> x} τ)
+              (tapp_tm e (vfvar x))))
 
   (** τ_x ⊸ τ  ≝  ∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (e x)). *)
   | CTWand τx τ =>
-      mk_denot_ty_result Σ (CTWand τx τ) e (fresh_forall (dom Σ) (fun x =>
+      fresh_forall (dom Σ) (fun x =>
         let Σx := <[x := erase_ty τx]> Σ in
-        let Rarg := denot_ty_fuel_result gas' Σx τx (tret (vfvar x)) in
-        let Rbody := denot_ty_fuel_result gas' Σx ({0 ~> x} τ)
-          (tapp_tm e (vfvar x)) in
           FWand
-            (denot_ty_formula Rarg)
-            (denot_ty_formula Rbody)))
+            (denot_ty_fuel_body gas' Σx τx (tret (vfvar x)))
+            (denot_ty_fuel_body gas' Σx ({0 ~> x} τ)
+              (tapp_tm e (vfvar x))))
 
   end
   end.
 
-Definition denot_ty_fuel_body
-    (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_formula (denot_ty_fuel_result gas Σ τ e).
-
 Definition denot_ty_fuel
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_obligations Σ τ e (denot_ty_fuel_body gas Σ τ e).
-
-Lemma denot_ty_fuel_result_basic_typing gas Σ τ e :
-  basic_typing (denot_ty_fuel_result gas Σ τ e) ↔
-  basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ.
-Proof.
-  destruct gas as [|gas]; [reflexivity |].
-  destruct τ; reflexivity.
-Qed.
-
-Lemma denot_ty_fuel_result_closed_resource gas Σ τ e m :
-  closed_resource (denot_ty_fuel_result gas Σ τ e) m ↔
-  world_closed_on (dom Σ) m.
-Proof.
-  destruct gas as [|gas]; [reflexivity |].
-  destruct τ; reflexivity.
-Qed.
-
-Lemma denot_ty_fuel_result_strong_total gas Σ τ e m :
-  strong_total (denot_ty_fuel_result gas Σ τ e) m ↔
-  expr_total_on (dom Σ) e m.
-Proof.
-  destruct gas as [|gas]; [reflexivity |].
-  destruct τ; reflexivity.
-Qed.
-
-Lemma denot_ty_fuel_result_formula gas Σ τ e :
-  denot_ty_formula (denot_ty_fuel_result gas Σ τ e) =
-  denot_ty_fuel_body gas Σ τ e.
-Proof. reflexivity. Qed.
 
 Definition denot_ty_on
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
@@ -812,8 +748,7 @@ Proof.
   induction gas as [|gas IH]; intros Σ τ e Hgas.
   - pose proof (cty_measure_gt_0 τ). lia.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel_body denot_ty_fuel_result denot_ty_formula
-        mk_denot_ty_result cty_measure fv_cty] in *.
+      cbn [denot_ty_fuel_body cty_measure fv_cty] in *.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
       cbn [formula_fv].
@@ -925,7 +860,7 @@ Lemma denot_ty_fuel_env_fv_subset gas Σ τ e :
 Proof.
   intros _.
   destruct gas as [|gas]; destruct τ;
-    unfold denot_ty_fuel, denot_ty_obligations, mk_denot_ty_result,
+    unfold denot_ty_fuel, denot_ty_obligations,
       FBasicTypingIn, FClosedResourceIn, FStrongTotalIn,
       FPure, FResourceAtom, FStoreResourceAtom;
     simpl; unfold stale, stale_logic_qualifier; simpl; set_solver.
