@@ -62,6 +62,7 @@ ChoiceType/theories/InstantiationProps.v
 ChoiceType/theories/DenotationFormula.v
 ChoiceType/theories/DenotationResultBridge.v
 ChoiceType/theories/DenotationExprProps.v
+ChoiceType/theories/DenotationFormulaEquiv.v
 ChoiceType/theories/DenotationType.v
 ChoiceType/theories/DenotationRefinement.v
 ChoiceType/theories/DenotationContext.v
