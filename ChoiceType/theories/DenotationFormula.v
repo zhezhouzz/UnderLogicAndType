@@ -514,14 +514,11 @@ Lemma expr_let_result_in_world_on_complete X e1 e2 x ν w σw :
   (w : World) σw.
 Proof. intros H Hstore. exact (proj2 (H σw) Hstore). Qed.
 
-Definition let_expr_logic_qual_on
-    (X : aset) (e1 e2 : tm) (x ν : atom) : logic_qualifier :=
-  lqual (X ∪ {[x]} ∪ {[ν]})
-    (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w).
-
 Definition FLetResultOnWith
     (X : aset) (e1 e2 : tm) (x ν : atom) : FQ :=
-  fib_vars (X ∪ {[x]}) (FAtom (let_expr_logic_qual_on X e1 e2 x ν)).
+  fib_vars (X ∪ {[x]})
+    (FStoreResourceAtom (X ∪ {[x]} ∪ {[ν]})
+      (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w)).
 
 Definition FLetResultOn (X : aset) (e1 e2 : tm) (ν : atom) : FQ :=
   let x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
@@ -574,16 +571,12 @@ Proof.
   models_fuel_irrel Hbody.
 Qed.
 
-Lemma stale_let_expr_logic_qual_on X e1 e2 x ν :
-  stale (let_expr_logic_qual_on X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
-Proof. reflexivity. Qed.
-
 Lemma FLetResultOnWith_fv X e1 e2 x ν :
   formula_fv (FLetResultOnWith X e1 e2 x ν) = X ∪ {[x]} ∪ {[ν]}.
 Proof.
   unfold FLetResultOnWith.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
+  rewrite fib_vars_formula_fv.
+  rewrite formula_fv_FStoreResourceAtom.
   set_solver.
 Qed.
 
@@ -602,8 +595,8 @@ Lemma FLetResultOn_fv_subset X e1 e2 ν :
 Proof.
   unfold FLetResultOn.
   set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  simpl. unfold FLetResultOnWith. rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
+  simpl. unfold FLetResultOnWith.
+  rewrite fib_vars_formula_fv, formula_fv_FStoreResourceAtom.
   subst x.
   pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hx.
   intros z Hz.
@@ -624,8 +617,8 @@ Lemma FLetResultOn_fv_contains_X X e1 e2 ν :
 Proof.
   unfold FLetResultOn.
   set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  simpl. unfold FLetResultOnWith. rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
+  simpl. unfold FLetResultOnWith.
+  rewrite fib_vars_formula_fv, formula_fv_FStoreResourceAtom.
   intros z Hz.
   apply elem_of_difference. split; [set_solver |].
   subst x.
@@ -652,7 +645,8 @@ Qed.
 Lemma FLetResultOnWith_models_elim_obligation X e1 e2 x ν m :
   m ⊨ FLetResultOnWith X e1 e2 x ν →
   fib_vars_obligation (X ∪ {[x]})
-    (FAtom (let_expr_logic_qual_on X e1 e2 x ν)) ∅ m.
+    (FStoreResourceAtom (X ∪ {[x]} ∪ {[ν]})
+      (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w)) ∅ m.
 Proof.
   unfold FLetResultOnWith, res_models.
   apply fib_vars_models_elim.
@@ -661,7 +655,8 @@ Qed.
 Lemma FLetResultOnWith_models_intro_obligation X e1 e2 x ν m :
   formula_scoped_in_world ∅ m (FLetResultOnWith X e1 e2 x ν) →
   fib_vars_obligation (X ∪ {[x]})
-    (FAtom (let_expr_logic_qual_on X e1 e2 x ν)) ∅ m →
+    (FStoreResourceAtom (X ∪ {[x]} ∪ {[ν]})
+      (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w)) ∅ m →
   m ⊨ FLetResultOnWith X e1 e2 x ν.
 Proof.
   unfold FLetResultOnWith, res_models.
