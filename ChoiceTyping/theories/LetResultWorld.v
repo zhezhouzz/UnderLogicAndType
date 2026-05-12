@@ -181,6 +181,26 @@ Proof.
   exact Hle.
 Qed.
 
+Lemma let_result_world_on_res_sum
+    e x (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)
+    Hfresh Hresult Hfresh1 Hresult1 Hfresh2 Hresult2 Hdef' :
+  let_result_world_on e x (res_sum w1 w2 Hdef) Hfresh Hresult =
+  res_sum
+    (let_result_world_on e x w1 Hfresh1 Hresult1)
+    (let_result_world_on e x w2 Hfresh2 Hresult2)
+    Hdef'.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. unfold raw_sum_defined in Hdef. simpl in Hdef. set_solver.
+  - intros σx. simpl. split.
+    + intros [σ [vx [[Hσ|Hσ] [Hsteps ->]]]].
+      * left. exists σ, vx. repeat split; eauto.
+      * right. exists σ, vx. repeat split; eauto.
+    + intros [[σ [vx [Hσ [Hsteps ->]]]] | [σ [vx [Hσ [Hsteps ->]]]]].
+      * exists σ, vx. split; [left; exact Hσ |]. split; [exact Hsteps | reflexivity].
+      * exists σ, vx. split; [right; exact Hσ |]. split; [exact Hsteps | reflexivity].
+Qed.
+
 (** ** Opening a body through an inserted result store *)
 
 Lemma msubst_open_body_result
