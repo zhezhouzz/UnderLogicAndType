@@ -68,6 +68,24 @@ Proof.
   exact (proj2 (world_store_closed_on_restrict_store_restrict_closed X m σ Hclosed Hσ)).
 Qed.
 
+Lemma world_store_closed_on_mono (X Y : aset) (m : WfWorld) :
+  X ⊆ Y →
+  world_store_closed_on Y m →
+  world_store_closed_on X m.
+Proof.
+  intros HXY Hclosed σ Hσ.
+  specialize (Hclosed σ Hσ) as [Hclosed_env Hlc_env].
+  split.
+  - replace (store_restrict σ X) with
+      (store_restrict (store_restrict σ Y) X).
+    + apply closed_env_restrict. exact Hclosed_env.
+    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
+  - replace (store_restrict σ X) with
+      (store_restrict (store_restrict σ Y) X).
+    + apply lc_env_restrict. exact Hlc_env.
+    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
+Qed.
+
 Lemma msubst_closed_tm_of_restrict_world X e (m : WfWorld) σ :
   X ⊆ world_dom (m : World) →
   fv_tm e ⊆ X →

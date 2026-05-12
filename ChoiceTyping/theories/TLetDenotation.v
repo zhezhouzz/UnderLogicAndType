@@ -90,46 +90,6 @@ Proof.
       Σ Γ m σ Hbasic Hctx Hσ).
 Qed.
 
-Lemma denot_ty_fuel_formula_fv_subset_env
-    gas (Σ : gmap atom ty) (τ : choice_ty) e :
-  cty_measure τ <= gas →
-  fv_cty τ ⊆ dom Σ →
-  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ.
-Proof.
-  intros Hgas Hfv.
-  pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ e Hgas) as Hφ.
-  set_solver.
-Qed.
-
-Lemma denot_ty_fuel_body_formula_fv_subset_env
-    gas (Σ : gmap atom ty) (τ : choice_ty) e :
-  cty_measure τ <= gas →
-  fv_cty τ ⊆ dom Σ →
-  formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ.
-Proof.
-  intros Hgas Hfv.
-  pose proof (denot_ty_fuel_body_formula_fv_subset gas Σ τ e Hgas) as Hφ.
-  set_solver.
-Qed.
-
-Lemma world_store_closed_on_mono (X Y : aset) (m : WfWorld) :
-  X ⊆ Y →
-  world_store_closed_on Y m →
-  world_store_closed_on X m.
-Proof.
-  intros HXY Hclosed σ Hσ.
-  specialize (Hclosed σ Hσ) as [Hclosed_env Hlc_env].
-  split.
-  - replace (store_restrict σ X) with
-      (store_restrict (store_restrict σ Y) X).
-    + apply closed_env_restrict. exact Hclosed_env.
-    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
-  - replace (store_restrict σ X) with
-      (store_restrict (store_restrict σ Y) X).
-    + apply lc_env_restrict. exact Hlc_env.
-    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
-Qed.
-
 (** ** Exact-domain bridge for expression-result continuations
 
     This is the stable version of the informal principle:

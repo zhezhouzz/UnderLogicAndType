@@ -978,6 +978,28 @@ Proof.
         set_solver.
 Qed.
 
+Lemma denot_ty_fuel_formula_fv_subset_env
+    gas (Σ : gmap atom ty) (τ : choice_ty) e :
+  cty_measure τ <= gas →
+  fv_cty τ ⊆ dom Σ →
+  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ.
+Proof.
+  intros Hgas Hfv.
+  pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ e Hgas) as Hφ.
+  set_solver.
+Qed.
+
+Lemma denot_ty_fuel_body_formula_fv_subset_env
+    gas (Σ : gmap atom ty) (τ : choice_ty) e :
+  cty_measure τ <= gas →
+  fv_cty τ ⊆ dom Σ →
+  formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ.
+Proof.
+  intros Hgas Hfv.
+  pose proof (denot_ty_fuel_body_formula_fv_subset gas Σ τ e Hgas) as Hφ.
+  set_solver.
+Qed.
+
 Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_cty τ.
 Proof.
