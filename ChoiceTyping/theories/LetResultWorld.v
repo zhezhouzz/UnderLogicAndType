@@ -201,6 +201,146 @@ Proof.
       * exists σ, vx. split; [right; exact Hσ |]. split; [exact Hsteps | reflexivity].
 Qed.
 
+Lemma store_compat_insert_l_fresh (s1 s2 : Store) x v :
+  store_compat s1 s2 →
+  x ∉ dom s2 →
+  store_compat (<[x := v]> s1) s2.
+Proof.
+  unfold store_compat.
+  intros Hcompat Hx z v1 v2 H1 H2.
+  destruct (decide (z = x)) as [->|Hzx].
+  - exfalso. apply Hx. apply elem_of_dom. eauto.
+  - rewrite lookup_insert_ne in H1 by congruence.
+    eapply Hcompat; eauto.
+Qed.
+
+Lemma store_insert_union_l_fresh (s1 s2 : Store) x v :
+  x ∉ dom s2 →
+  <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
+Proof.
+  intros _.
+  symmetry. apply insert_union_l.
+Qed.
+
+Lemma let_result_world_on_res_product_left_result
+    e (x : atom) (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  (∀ σ, (res_product w1 w2 Hc : World) σ →
+     ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx) →
+  fv_tm e ⊆ world_dom (w1 : World) →
+  ∀ σ1, (w1 : World) σ1 →
+     ∃ vx, subst_map (store_restrict σ1 (fv_tm e)) e →* tret vx.
+Proof.
+  intros Hproduct Hfv σ1 Hσ1.
+  destruct (wf_ne _ (world_wf w2)) as [σ2 Hσ2].
+  pose proof (Hc σ1 σ2 Hσ1 Hσ2) as Hcompat.
+  destruct (Hproduct (σ1 ∪ σ2)) as [vx Hsteps].
+  {
+    simpl. exists σ1, σ2. repeat split; eauto.
+  }
+  exists vx.
+  replace (store_restrict (σ1 ∪ σ2) (fv_tm e))
+    with (store_restrict σ1 (fv_tm e)) in Hsteps; [exact Hsteps |].
+  rewrite store_restrict_union by exact Hcompat.
+  rewrite store_union_absorb_l; [reflexivity | |].
+  - apply store_compat_restrict. exact Hcompat.
+  - rewrite !store_restrict_dom.
+    pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdom1.
+    set_solver.
+Qed.
+
+Lemma let_result_world_on_res_product_left_compat
+    e x (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
+    Hfresh1 Hresult1 :
+  x ∉ world_dom (w2 : World) →
+  world_compat (let_result_world_on e x w1 Hfresh1 Hresult1) w2.
+Proof.
+  intros Hx2 σx σ2 Hσx Hσ2.
+  destruct Hσx as [σ1 [vx [Hσ1 [_ ->]]]].
+  pose proof (Hc σ1 σ2 Hσ1 Hσ2) as Hcompat.
+  eapply store_compat_insert_l_fresh.
+  - exact Hcompat.
+  - pose proof (wfworld_store_dom w2 σ2 Hσ2) as Hdom2.
+    set_solver.
+Qed.
+
+Lemma let_result_world_on_res_product_left
+    e x (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
+    Hfresh Hresult Hfresh1 Hresult1 Hc' :
+  fv_tm e ⊆ world_dom (w1 : World) →
+  x ∉ world_dom (w2 : World) →
+  let_result_world_on e x (res_product w1 w2 Hc) Hfresh Hresult =
+  res_product
+    (let_result_world_on e x w1 Hfresh1 Hresult1)
+    w2
+    Hc'.
+Proof.
+  intros Hfv Hx2.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σx. simpl. split.
+    + intros [σ [vx [Hσ [Hsteps ->]]]].
+      destruct Hσ as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
+      assert (Hsteps1 :
+        subst_map (store_restrict σ1 (fv_tm e)) e →* tret vx).
+      {
+        replace (store_restrict σ1 (fv_tm e))
+          with (store_restrict (σ1 ∪ σ2) (fv_tm e)); [exact Hsteps |].
+        rewrite store_restrict_union by exact Hcompat.
+        rewrite store_union_absorb_l; [reflexivity | |].
+        - apply store_compat_restrict. exact Hcompat.
+        - rewrite !store_restrict_dom.
+          pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdom1.
+          set_solver.
+      }
+      exists (<[x := vx]> σ1), σ2. repeat split.
+      * exists σ1, vx. repeat split; eauto.
+      * exact Hσ2.
+      * eapply store_compat_insert_l_fresh.
+        -- exact Hcompat.
+        -- pose proof (wfworld_store_dom w2 σ2 Hσ2) as Hdom2.
+           set_solver.
+      * rewrite store_insert_union_l_fresh.
+        -- reflexivity.
+        -- pose proof (wfworld_store_dom w2 σ2 Hσ2) as Hdom2.
+           set_solver.
+    + intros [σ1x [σ2 [Hσ1x [Hσ2 [Hcompatx ->]]]]].
+	      destruct Hσ1x as [σ1 [vx [Hσ1 [Hsteps1 ->]]]].
+	      exists (σ1 ∪ σ2), vx. split.
+	      * exists σ1, σ2. repeat split; eauto.
+      * split.
+        -- replace (store_restrict (σ1 ∪ σ2) (fv_tm e))
+             with (store_restrict σ1 (fv_tm e)); [exact Hsteps1 |].
+           pose proof (Hc σ1 σ2 Hσ1 Hσ2) as Hcompat.
+           rewrite store_restrict_union by exact Hcompat.
+           rewrite store_union_absorb_l; [reflexivity | |].
+           ++ apply store_compat_restrict. exact Hcompat.
+           ++ rewrite !store_restrict_dom.
+              pose proof (wfworld_store_dom w1 σ1 Hσ1) as Hdom1.
+              set_solver.
+        -- rewrite store_insert_union_l_fresh.
+           ++ reflexivity.
+           ++ pose proof (wfworld_store_dom w2 σ2 Hσ2) as Hdom2.
+              set_solver.
+Qed.
+
+Lemma let_result_world_on_res_product_left_le
+    e x (w1 w2 : WfWorld) (Hc : world_compat w1 w2)
+    Hfresh Hresult Hfresh1 Hresult1 Hc' :
+  fv_tm e ⊆ world_dom (w1 : World) →
+  x ∉ world_dom (w2 : World) →
+  let_result_world_on e x (res_product w1 w2 Hc) Hfresh Hresult
+    ⊑
+  res_product
+    (let_result_world_on e x w1 Hfresh1 Hresult1)
+    w2
+    Hc'.
+Proof.
+  intros Hfv Hx2.
+  rewrite (let_result_world_on_res_product_left
+    e x w1 w2 Hc Hfresh Hresult Hfresh1 Hresult1 Hc' Hfv Hx2).
+  reflexivity.
+Qed.
+
 (** ** Opening a body through an inserted result store *)
 
 Lemma msubst_open_body_result
