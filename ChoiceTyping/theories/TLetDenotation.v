@@ -229,6 +229,91 @@ Proof.
   rewrite Heq. reflexivity.
 Qed.
 
+(** Arrow/Wand are discharged from the main [τ2] induction through these
+    focused obligations.  They isolate the only remaining issue for function
+    types: the body-side environment contains the auxiliary let-result
+    coordinate [x], while the target continuation is generated from the
+    original environment [Δ].  The intended proof is to drop this fresh
+    environment entry for generated function continuations, then apply the
+    generic [FExprCont_tlet_reduction] bridge. *)
+Lemma denot_ty_fuel_tlet_reduction_formula_on_arrow_case
+    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
+    τx τ :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τ) →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  basic_choice_ty (dom Δ) (CTArrow τx τ) →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
+    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTArrow τx τ)]> (<[x := T1]> Δ) in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FImpl
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))) <->
+  m ⊨
+    FExprContIn Δ (tlete e1 e2)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTArrow τx τ)]> Δ in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FImpl
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_fuel_tlet_reduction_formula_on_wand_case
+    gas (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
+    (m : WfWorld) (x : atom)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx)
+    τx τ :
+  Δ ⊢ₑ e1 ⋮ T1 →
+  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTWand τx τ) →
+  world_dom (m : World) = dom Δ →
+  world_store_closed_on (dom Δ) m →
+  expr_total_on (dom Δ) (tlete e1 e2) m →
+  x ∉ dom Δ ∪ fv_tm e2 →
+  basic_choice_ty (dom Δ) (CTWand τx τ) →
+  let_result_world_on e1 x m Hfresh Hresult ⊨
+    FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTWand τx τ)]> (<[x := T1]> Δ) in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FWand
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))) <->
+  m ⊨
+    FExprContIn Δ (tlete e1 e2)
+      (fun y =>
+        let Σy := <[y := erase_ty (CTWand τx τ)]> Δ in
+        fresh_forall (dom Σy) (fun z =>
+          let Σxy := <[z := erase_ty τx]> Σy in
+            FFib y
+              (FWand
+                (denot_ty_fuel gas Σxy τx (tret (vfvar z)))
+                (denot_ty_fuel gas Σxy ({0 ~> z} τ)
+                   (tapp (vfvar y) (vfvar z)))))).
+Proof.
+Admitted.
+
 Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaQ) :
   x ∉ D →
   y ∉ D →
@@ -1717,13 +1802,8 @@ Proof.
          Their domains should be recovered from formula scoping plus
          [denot_ty_fuel_env_fv_subset]. *)
       admit.
-    + (* CTArrow: after the top [FExprCont_tlet_reduction], the generated
-         continuation needs a general fresh-env irrelevance/rename-stability
-         lemma for the nested [fresh_forall]/[FFib] body. *)
-      admit.
-    + (* CTWand: same generated-continuation problem as CTArrow, with [FWand]
-         replacing [FImpl]. *)
-      admit.
+    + eapply denot_ty_fuel_tlet_reduction_formula_on_arrow_case; eauto.
+    + eapply denot_ty_fuel_tlet_reduction_formula_on_wand_case; eauto.
 Admitted.
 
 Lemma denot_ty_fuel_tlet_reduction_formula gas (τ2 : choice_ty): forall
