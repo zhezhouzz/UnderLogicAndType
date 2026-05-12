@@ -230,7 +230,7 @@ Proof.
         destruct φ as [B d p]. simpl in *.
         rewrite !decide_True by exact Hk.
         unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-          lift_type_qualifier_to_logic.
+          FTypeQualifier, FStoreResourceAtom.
         simpl.
         rewrite aset_swap_union, aset_swap_singleton.
         replace (atom_swap x y x) with y
@@ -243,13 +243,11 @@ Proof.
   - rewrite !qual_open_atom_eq_not_member by exact Hk.
     apply res_models_rename_atom_fresh.
     + rewrite fib_vars_formula_fv. simpl.
-      rewrite FTypeQualifier_unfold.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ; simpl in *.
       set_solver.
     + rewrite fib_vars_formula_fv. simpl.
-      rewrite FTypeQualifier_unfold.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ; simpl in *.
       set_solver.
 Qed.
@@ -291,7 +289,7 @@ Proof.
         destruct φ as [B d p]. simpl in *.
         rewrite !decide_True by exact Hk.
         unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-          lift_type_qualifier_to_logic.
+          FTypeQualifier, FStoreResourceAtom.
         simpl.
         rewrite aset_swap_union, aset_swap_singleton.
         replace (atom_swap x y x) with y
@@ -304,13 +302,11 @@ Proof.
   - rewrite !qual_open_atom_eq_not_member by exact Hk.
     apply res_models_rename_atom_fresh.
     + rewrite fib_vars_formula_fv. simpl.
-      rewrite FTypeQualifier_unfold.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ; simpl in *.
       set_solver.
     + rewrite fib_vars_formula_fv. simpl.
-      rewrite FTypeQualifier_unfold.
-      cbn [formula_fv]. unfold stale, stale_logic_qualifier.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ; simpl in *.
       set_solver.
 Qed.
@@ -418,4 +414,3 @@ Proof.
       apply (proj2 Hfib).
       apply res_models_and_elim_r in H. exact H.
 Qed.
-

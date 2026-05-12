@@ -43,6 +43,28 @@ Lemma formula_fv_FTypeQualifier q :
   formula_fv (FTypeQualifier q) = qual_dom q.
 Proof. destruct q; reflexivity. Qed.
 
+Lemma formula_fv_FTypeQualifier_open_member k x q :
+  k ∈ qual_bvars q →
+  formula_fv (FTypeQualifier (qual_open_atom k x q)) =
+  {[x]} ∪ qual_dom q.
+Proof.
+  intros Hk.
+  rewrite formula_fv_FTypeQualifier.
+  destruct q as [B d p]. unfold qual_open_atom, qual_bvars, qual_dom in *.
+  simpl in *. rewrite decide_True by exact Hk. reflexivity.
+Qed.
+
+Lemma formula_fv_FTypeQualifier_open_not_member k x q :
+  k ∉ qual_bvars q →
+  formula_fv (FTypeQualifier (qual_open_atom k x q)) =
+  qual_dom q.
+Proof.
+  intros Hk.
+  rewrite formula_fv_FTypeQualifier.
+  destruct q as [B d p]. unfold qual_open_atom, qual_bvars, qual_dom in *.
+  simpl in *. rewrite decide_False by exact Hk. reflexivity.
+Qed.
+
 Lemma formula_scoped_FTypeQualifier ρ m q :
   formula_scoped_in_world ρ m (FTypeQualifier q) ↔
   dom ρ ∪ qual_dom q ⊆ world_dom (m : World).
@@ -88,6 +110,27 @@ Proof.
   exact (res_models_with_store_store_resource_atom_elim ρ m d
     (fun σ w => B = ∅ ∧ ∃ σw, (w : World) = singleton_world σw ∧ p ∅ σ σw)
     Hmodel).
+Qed.
+
+Lemma res_models_FTypeQualifier_intro m q :
+  formula_scoped_in_world ∅ m (FTypeQualifier q) →
+  match q with
+  | qual B d p =>
+      B = ∅ ∧
+      ∃ σw,
+        (res_restrict m d : World) = singleton_world σw ∧
+        p ∅ ∅ σw
+  end →
+  res_models m (FTypeQualifier q).
+Proof.
+  intros Hscope Hden.
+  eapply res_models_with_store_FTypeQualifier_intro.
+  - exact Hscope.
+  - destruct q as [B d p]. simpl in *.
+    destruct Hden as [HB [σw [Hres Hp]]].
+    split; [exact HB |].
+    exists σw. split; [exact Hres |].
+    rewrite store_restrict_empty. exact Hp.
 Qed.
 
 Lemma lqual_dom_lift_type_qualifier_to_logic q :
