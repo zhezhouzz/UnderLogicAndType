@@ -1138,8 +1138,10 @@ Lemma denot_ty_tlet_reduction_formula (τ2 : choice_ty): forall
     (Hfresh : x ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
       ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx),
+  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   m ⊨ denot_ctx_in_env Σ Γ →
+  expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2 →
   let_result_world_on e1 x m Hfresh Hresult
     ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)
@@ -1223,24 +1225,27 @@ Proof.
     Σ Γ τ1 τ2 x ltac:(set_solver)
     (denot_ty_total_model_regular Σ Γ τ1 e1 m Hmodel1))
     as Hregular_iff.
-  split; intros Hmodel.
-  - destruct Hmodel as [[Hregular_body Hformula_body] Htotal_body].
-    split.
-    + split.
-      * apply (proj1 Hregular_iff). exact Hregular_body.
-      * apply (proj1 (denot_ty_tlet_reduction_formula
-          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
-        exact Hformula_body.
-    + apply (proj1 (expr_total_tlet_reduction
-        Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx ltac:(set_solver))).
-      exact Htotal_body.
-  - destruct Hmodel as [[Hregular_target Hformula_target] Htotal_target].
-    split.
-    + split.
-      * apply (proj2 Hregular_iff). exact Hregular_target.
-      * apply (proj2 (denot_ty_tlet_reduction_formula
-          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult Hlet Hctx Hfreshx)).
-        exact Hformula_target.
+	  split; intros Hmodel.
+	  - destruct Hmodel as [[Hregular_body Hformula_body] Htotal_body].
+	    pose proof (proj1 (expr_total_tlet_reduction
+	      Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx ltac:(set_solver))
+	      Htotal_body) as Htotal_target.
+	    split.
+	    + split.
+	      * apply (proj1 Hregular_iff). exact Hregular_body.
+	      * apply (proj1 (denot_ty_tlet_reduction_formula
+	          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult He1 Hlet Hctx
+	          Htotal_target Hfreshx)).
+	        exact Hformula_body.
+	    + exact Htotal_target.
+	  - destruct Hmodel as [[Hregular_target Hformula_target] Htotal_target].
+	    split.
+	    + split.
+	      * apply (proj2 Hregular_iff). exact Hregular_target.
+	      * apply (proj2 (denot_ty_tlet_reduction_formula
+	          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult He1 Hlet Hctx
+	          Htotal_target Hfreshx)).
+	        exact Hformula_target.
     + apply (proj2 (expr_total_tlet_reduction
         Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet Hctx ltac:(set_solver))).
       exact Htotal_target.
