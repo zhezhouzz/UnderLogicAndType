@@ -1481,8 +1481,9 @@ Lemma denot_ty_fuel_tlet_reduction_formula_on gas
     <->
     m ⊨ denot_ty_fuel gas Δ τ2 (tlete e1 e2).
 Proof.
-  intros He1 Hdom Hclosed Htotal Hx_base.
-  induction gas as [|gas IH]; intros τ2 Hgas Hbasicτ Hlet.
+  revert Δ T1 e1 e2 m x Hfresh Hresult.
+  induction gas as [|gas IH]; intros Δ T1 e1 e2 m x Hfresh Hresult
+    He1 Hdom Hclosed Htotal Hx_base τ2 Hgas Hbasicτ Hlet.
   - pose proof (cty_measure_gt_0 τ2). lia.
   - assert (HxΔ : x ∉ dom Δ) by set_solver.
     destruct τ2 as [b φ|b φ|τa τb|τa τb|τa τb|τx τ|τx τ];
@@ -1560,7 +1561,12 @@ Proof.
             (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τa (tlete e1 e2)).
       {
-        eapply (IH τa).
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult).
+        - exact He1.
+        - exact Hdom.
+        - exact Hclosed.
+        - exact Htotal.
+        - exact Hx_base.
         - lia.
         - exact HbasicA.
         - exact Hlet.
@@ -1571,7 +1577,12 @@ Proof.
             (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τb (tlete e1 e2)).
       {
-        eapply (IH τb).
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult).
+        - exact He1.
+        - exact Hdom.
+        - exact Hclosed.
+        - exact Htotal.
+        - exact Hx_base.
         - lia.
         - exact HbasicB.
         - replace (erase_ty τb) with (erase_ty τa) by congruence.
@@ -1591,7 +1602,12 @@ Proof.
             (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τa (tlete e1 e2)).
       {
-        eapply (IH τa).
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult).
+        - exact He1.
+        - exact Hdom.
+        - exact Hclosed.
+        - exact Htotal.
+        - exact Hx_base.
         - lia.
         - exact HbasicA.
         - exact Hlet.
@@ -1602,7 +1618,12 @@ Proof.
             (e2 ^^ x) <->
         m ⊨ denot_ty_fuel gas Δ τb (tlete e1 e2)).
       {
-        eapply (IH τb).
+        eapply (IH Δ T1 e1 e2 m x Hfresh Hresult).
+        - exact He1.
+        - exact Hdom.
+        - exact Hclosed.
+        - exact Htotal.
+        - exact Hx_base.
         - lia.
         - exact HbasicB.
         - replace (erase_ty τb) with (erase_ty τa) by congruence.
