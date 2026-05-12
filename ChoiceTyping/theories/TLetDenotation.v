@@ -107,40 +107,6 @@ Qed.
     [fv_tm e ⊆ dom Σ] and [lc_tm e], so the statement does not carry those
     bookkeeping hypotheses separately. *)
 
-Definition formula_family_rename_stable_on
-    (D : aset) (P : atom → FormulaQ) : Prop :=
-  ∀ x y n,
-    x ∉ D →
-    y ∉ D →
-    n ⊨ formula_rename_atom x y (P x) ↔ n ⊨ P y.
-
-Lemma FExprContIn_post_eq_at_fresh
-    (Σ : gmap atom ty) e (P Q : atom → FormulaQ) :
-  P (fresh_for (dom Σ)) = Q (fresh_for (dom Σ)) →
-  FExprContIn Σ e P = FExprContIn Σ e Q.
-Proof.
-  intros Heq.
-  unfold FExprContIn, fresh_forall.
-  rewrite Heq. reflexivity.
-Qed.
-
-Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaQ) :
-  x ∉ D →
-  y ∉ D →
-  formula_fv φ ⊆ D ∪ {[x]} →
-  formula_fv (formula_rename_atom x y φ) ⊆ D ∪ {[y]}.
-Proof.
-  intros HxD HyD Hfv.
-  etrans.
-  - apply formula_fv_rename_atom_subset_open.
-    intros Hy.
-    rewrite elem_of_difference in Hy.
-    destruct Hy as [Hyφ Hyx].
-    pose proof (Hfv _ Hyφ) as HyD_or_x.
-    set_solver.
-  - set_solver.
-Qed.
-
 Lemma denot_refinement_over_cont_insert_fresh_eq
     (D : aset) (Σ : gmap atom ty) x Tx b φ ν :
   x ∉ D ∪ qual_dom φ →

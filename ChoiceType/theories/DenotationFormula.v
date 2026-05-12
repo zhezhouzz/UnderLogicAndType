@@ -483,6 +483,23 @@ Qed.
 Definition FExprContIn (Σ : gmap atom ty) (e : tm) (Q : atom → FQ) : FQ :=
   fresh_forall (dom Σ) (fun ν => FImpl (FExprResultOn (dom Σ) e ν) (Q ν)).
 
+Definition formula_family_rename_stable_on
+    (D : aset) (P : atom → FQ) : Prop :=
+  ∀ x y n,
+    x ∉ D →
+    y ∉ D →
+    n ⊨ formula_rename_atom x y (P x) ↔ n ⊨ P y.
+
+Lemma FExprContIn_post_eq_at_fresh
+    (Σ : gmap atom ty) e (P Q : atom → FQ) :
+  P (fresh_for (dom Σ)) = Q (fresh_for (dom Σ)) →
+  FExprContIn Σ e P = FExprContIn Σ e Q.
+Proof.
+  intros Heq.
+  unfold FExprContIn, fresh_forall.
+  rewrite Heq. reflexivity.
+Qed.
+
 (** Expression-result atom.
 
     The operational input domain is exactly [fv_tm e].  Earlier versions kept an
