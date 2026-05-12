@@ -429,6 +429,10 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
   lqual (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
+Definition FExprResultAtomOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  FStoreResourceAtom (X ∪ {[ν]})
+    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
+
 Lemma expr_logic_qual_on_swap_result X e a ν :
   a ∉ X →
   ν ∉ X →
@@ -454,7 +458,7 @@ Proof.
 Qed.
 
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FAtom (expr_logic_qual_on X e ν)).
+  fib_vars X (FExprResultAtomOn X e ν).
 
 Lemma FExprResultOn_rename_result_fresh X e a ν :
   a ∉ X →
