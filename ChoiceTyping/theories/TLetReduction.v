@@ -645,8 +645,104 @@ Proof.
   rewrite Hrestrict in Hσm.
   replace (store_restrict σ X) with
     (store_restrict (store_restrict σ (world_dom (m : World))) X).
-  - exact (Hclosed _ Hσm).
-  - store_norm. reflexivity.
+      - exact (Hclosed _ Hσm).
+      - store_norm. reflexivity.
+Qed.
+
+Lemma world_store_closed_on_sum_le_l X (m n1 n2 : WfWorld)
+    (Hdef : raw_sum_defined n1 n2) :
+  X ⊆ world_dom (n1 : World) →
+  world_store_closed_on X m →
+  res_sum n1 n2 Hdef ⊑ m →
+  world_store_closed_on X n1.
+Proof.
+  intros HX Hclosed Hle σ Hσ.
+  pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
+  assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
+    as HσR.
+  { rewrite Hrestrict. simpl. left. exact Hσ. }
+  destruct HσR as [σm [Hσm Hstore]].
+  replace (store_restrict σ X) with (store_restrict σm X).
+  - exact (Hclosed σm Hσm).
+  - rewrite <- Hstore.
+    rewrite store_restrict_restrict.
+    replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X by set_solver.
+    reflexivity.
+Qed.
+
+Lemma world_store_closed_on_sum_le_r X (m n1 n2 : WfWorld)
+    (Hdef : raw_sum_defined n1 n2) :
+  X ⊆ world_dom (n2 : World) →
+  world_store_closed_on X m →
+  res_sum n1 n2 Hdef ⊑ m →
+  world_store_closed_on X n2.
+Proof.
+  intros HX Hclosed Hle σ Hσ.
+  pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
+  assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
+    as HσR.
+  { rewrite Hrestrict. simpl. right. exact Hσ. }
+  destruct HσR as [σm [Hσm Hstore]].
+  replace (store_restrict σ X) with (store_restrict σm X).
+  - exact (Hclosed σm Hσm).
+  - rewrite <- Hstore.
+    rewrite store_restrict_restrict.
+    replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X.
+    + reflexivity.
+    + simpl.
+      apply set_eq. intros z. split.
+      * intros Hz. apply elem_of_intersection. split; [| exact Hz].
+        unfold raw_sum_defined in Hdef. rewrite Hdef. apply HX. exact Hz.
+      * intros Hz. apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
+Qed.
+
+Lemma expr_total_on_sum_le_l X e (m n1 n2 : WfWorld)
+    (Hdef : raw_sum_defined n1 n2) :
+  X ⊆ world_dom (n1 : World) →
+  expr_total_on X e m →
+  res_sum n1 n2 Hdef ⊑ m →
+  expr_total_on X e n1.
+Proof.
+  intros HX [Hfv Htotal] Hle. split; [exact Hfv |].
+  intros σ Hσ.
+  pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
+  assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
+    as HσR.
+  { rewrite Hrestrict. simpl. left. exact Hσ. }
+  destruct HσR as [σm [Hσm Hstore]].
+  replace (store_restrict σ X) with (store_restrict σm X).
+  - exact (Htotal σm Hσm).
+  - rewrite <- Hstore.
+    rewrite store_restrict_restrict.
+    replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X by set_solver.
+    reflexivity.
+Qed.
+
+Lemma expr_total_on_sum_le_r X e (m n1 n2 : WfWorld)
+    (Hdef : raw_sum_defined n1 n2) :
+  X ⊆ world_dom (n2 : World) →
+  expr_total_on X e m →
+  res_sum n1 n2 Hdef ⊑ m →
+  expr_total_on X e n2.
+Proof.
+  intros HX [Hfv Htotal] Hle. split; [exact Hfv |].
+  intros σ Hσ.
+  pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
+  assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
+    as HσR.
+  { rewrite Hrestrict. simpl. right. exact Hσ. }
+  destruct HσR as [σm [Hσm Hstore]].
+  replace (store_restrict σ X) with (store_restrict σm X).
+  - exact (Htotal σm Hσm).
+  - rewrite <- Hstore.
+    rewrite store_restrict_restrict.
+    replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X.
+    + reflexivity.
+    + simpl.
+      apply set_eq. intros z. split.
+      * intros Hz. apply elem_of_intersection. split; [| exact Hz].
+        unfold raw_sum_defined in Hdef. rewrite Hdef. apply HX. exact Hz.
+      * intros Hz. apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
 Qed.
 
 Lemma denot_ty_fuel_world_closed_on_of_formula gas Σ τ e m :
