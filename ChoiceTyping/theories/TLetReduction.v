@@ -1516,6 +1516,24 @@ Proof.
     unfold atom_swap in Hzx. repeat destruct decide; congruence.
 Qed.
 
+Lemma support_exact_renamed_family_covers_target D P x y :
+  formula_family_support_exact_on D P →
+  x ∉ D →
+  y ∉ D →
+  D ∪ {[y]} ⊆ formula_fv (formula_rename_atom x y (P x)).
+Proof.
+  intros Hsupp Hx Hy z Hz.
+  rewrite formula_fv_rename_atom.
+  rewrite Hsupp by exact Hx.
+  rewrite elem_of_aset_swap.
+  apply elem_of_union in Hz as [HzD | Hzy].
+  - apply elem_of_union_l.
+    rewrite atom_swap_fresh; [exact HzD | set_solver | set_solver].
+  - apply elem_of_union_r.
+    apply elem_of_singleton in Hzy. subst z.
+    rewrite atom_swap_right_eq. apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_rename_stable
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
