@@ -1304,6 +1304,154 @@ Lemma denot_ty_fuel_fresh_result_family_rename_stable
 Proof.
 Admitted.
 
+Lemma denot_ty_fuel_insert_fresh_env_irrel_same_world_over_case gas
+    (Σ : gmap atom ty) b φ e x T (m : WfWorld) :
+  x ∉ dom Σ ∪ qual_dom φ ∪ fv_tm e →
+  dom (<[x := T]> Σ) ⊆ world_dom (m : World) →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  m ⊨ denot_ty_fuel (S gas) (<[x := T]> Σ) (CTOver b φ) e <->
+  m ⊨ denot_ty_fuel (S gas) Σ (CTOver b φ) e.
+Proof.
+  intros Hx Hdom_sub Hclosed Htotal. split.
+  - intros Hsrc.
+    pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hsrc)
+      as [Hbasic_src Htyped_src].
+    assert (Htyped_base : Σ ⊢ₑ e ⋮ b).
+    {
+      eapply basic_typing_drop_insert_fresh_tm.
+      - intros Hxe. apply Hx. set_solver.
+      - exact Htyped_src.
+    }
+    assert (Hbasic_base : basic_choice_ty (dom Σ) (CTOver b φ)).
+    {
+      eapply basic_choice_ty_drop_fresh.
+      - intros Hxτ. apply Hx. set_solver.
+      - replace (dom Σ ∪ {[x]}) with (dom (<[x:=T]> Σ)).
+        + exact Hbasic_src.
+        + rewrite dom_insert_L. set_solver.
+    }
+    inversion Hbasic_base as [D b' φ' Hqbody| | | | | |]; subst.
+    assert (Hφ : qual_dom φ ⊆ dom Σ).
+    { eapply basic_qualifier_body_fv_subset. exact Hqbody. }
+    eapply denot_ty_fuel_intro.
+    + exact Hbasic_base.
+    + exact Htyped_base.
+    + eapply world_store_closed_on_world_closed_on.
+      eapply world_store_closed_on_mono; [| exact Hclosed].
+      rewrite dom_insert_L. set_solver.
+    + eapply expr_total_on_drop_insert_fresh_same.
+      * intros Hbad. apply Hx.
+        apply elem_of_union in Hbad as [Hbad | Hbad].
+        -- apply elem_of_union_l. apply elem_of_union_l. exact Hbad.
+        -- apply elem_of_union_r. exact Hbad.
+      * exact Hclosed.
+      * exact Htotal.
+    + cbn [denot_ty_fuel_body fv_cty erase_ty].
+      pose proof (denot_ty_fuel_body_of_formula _ _ _ _ _ Hsrc) as Hbody.
+      cbn [denot_ty_fuel_body fv_cty erase_ty] in Hbody.
+      rewrite (FExprContIn_post_eq_at_fresh
+        (<[x:=T]> Σ) e
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν))))
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> Σ)
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν))))) in Hbody.
+      2:{
+        eapply (denot_refinement_over_cont_insert_fresh_eq
+          (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
+      }
+      pose proof (FExprContIn_insert_fresh_env_irrel_iff_at_world
+        Σ b T e x
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> Σ)
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
+      assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
+      {
+        intros Hxe. apply Hx.
+        apply elem_of_union in Hxe as [Hxe | Hxe].
+        -- apply elem_of_union_l. apply elem_of_union_l. exact Hxe.
+        -- apply elem_of_union_r. exact Hxe.
+      }
+      pose proof (Hcont_iff Htyped_base Hx_e Hdom_sub Hclosed Htotal
+        ltac:(eapply denot_refinement_over_cont_fv_subset; exact Hφ)
+        ltac:(eapply denot_refinement_over_cont_rename_stable; exact Hφ))
+        as Hcont_iff'.
+      exact (proj1 Hcont_iff' Hbody).
+    + etrans; [| exact Hdom_sub].
+      rewrite dom_insert_L. set_solver.
+  - intros Hsrc.
+    pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hsrc)
+      as [Hbasic_src Htyped_src].
+    inversion Hbasic_src as [D b' φ' Hqbody| | | | | |]; subst.
+    assert (Hφ : qual_dom φ ⊆ dom Σ).
+    { eapply basic_qualifier_body_fv_subset. exact Hqbody. }
+    eapply denot_ty_fuel_intro.
+    + eapply basic_choice_ty_mono; [| exact Hbasic_src].
+      rewrite dom_insert_L. set_solver.
+    + eapply basic_typing_weaken_insert_tm; [set_solver | exact Htyped_src].
+    + eapply world_store_closed_on_world_closed_on. exact Hclosed.
+    + exact Htotal.
+    + cbn [denot_ty_fuel_body fv_cty erase_ty].
+      pose proof (denot_ty_fuel_body_of_formula _ _ _ _ _ Hsrc) as Hbody.
+      cbn [denot_ty_fuel_body fv_cty erase_ty] in Hbody.
+      rewrite (FExprContIn_post_eq_at_fresh
+        (<[x:=T]> Σ) e
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν))))
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> Σ)
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν))))).
+      2:{
+        eapply (denot_refinement_over_cont_insert_fresh_eq
+          (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
+      }
+      pose proof (FExprContIn_insert_fresh_env_irrel_iff_at_world
+        Σ b T e x
+        (fun ν =>
+          let φν := qual_open_atom 0 ν φ in
+          FAnd
+            (basic_world_formula (<[ν:=TBase b]> Σ)
+              ({[ν]} ∪ qual_dom φν))
+            (fib_vars (qual_dom φν)
+              (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
+      assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
+      {
+        intros Hxe. apply Hx.
+        apply elem_of_union in Hxe as [Hxe | Hxe].
+        -- apply elem_of_union_l. apply elem_of_union_l. exact Hxe.
+        -- apply elem_of_union_r. exact Hxe.
+      }
+      pose proof (Hcont_iff Htyped_src Hx_e Hdom_sub Hclosed Htotal
+        ltac:(eapply denot_refinement_over_cont_fv_subset; exact Hφ)
+        ltac:(eapply denot_refinement_over_cont_rename_stable; exact Hφ))
+        as Hcont_iff'.
+      exact (proj2 Hcont_iff' Hbody).
+    + exact Hdom_sub.
+Qed.
+
 Lemma denot_ty_fuel_drop_fresh_env_irrel_over_case gas
     (Σ : gmap atom ty) b φ e x T (m : WfWorld) :
   x ∉ dom Σ ∪ qual_dom φ ∪ fv_tm e →
