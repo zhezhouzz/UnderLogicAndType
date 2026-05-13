@@ -237,6 +237,18 @@ Proof.
       f_equal. rewrite dom_insert_L. set_solver.
 Qed.
 
+Lemma expr_total_on_restrict_self X e (m : WfWorld) :
+  expr_total_on X e m →
+  expr_total_on X e (res_restrict m X).
+Proof.
+  intros [Hfv Htotal]. split; [exact Hfv |].
+  intros σ Hσ.
+  destruct Hσ as [σm [Hσm <-]].
+  rewrite store_restrict_restrict.
+  replace (X ∩ X) with X by set_solver.
+  apply Htotal. exact Hσm.
+Qed.
+
 Lemma world_store_closed_on_restrict_insert_fresh
     (Σ : gmap atom ty) T x (m : WfWorld) :
   world_store_closed_on (dom (<[x := T]> Σ)) m →
@@ -1988,6 +2000,90 @@ Proof.
   intros Hgas Hx Hdom Hclosed Htotal. split.
   - eapply denot_ty_fuel_drop_fresh_env_irrel; eauto.
   - eapply denot_ty_fuel_insert_fresh_env_irrel; eauto.
+Qed.
+
+Lemma denot_ty_fuel_insert_fresh_env_irrel_iff_at_world gas
+    (Σ : gmap atom ty) (τ : choice_ty) e x T (m : WfWorld) :
+  cty_measure τ <= gas →
+  x ∉ dom Σ ∪ fv_cty τ ∪ fv_tm e →
+  dom (<[x := T]> Σ) ⊆ world_dom (m : World) →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  m ⊨ denot_ty_fuel gas (<[x := T]> Σ) τ e <->
+  m ⊨ denot_ty_fuel gas Σ τ e.
+Proof.
+  intros Hgas Hx Hdom_sub Hclosed Htotal. split.
+  - intros Hins.
+    pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hins)
+      as [Hbasic_ins _].
+    pose proof (denot_ty_fuel_formula_fv_subset_env
+      gas (<[x:=T]> Σ) τ e Hgas
+      ltac:(eapply basic_choice_ty_fv_subset; exact Hbasic_ins)) as Hfv_ins.
+    pose proof (proj1 (res_models_minimal_on
+      (dom (<[x:=T]> Σ)) m
+      (denot_ty_fuel gas (<[x:=T]> Σ) τ e)
+      Hfv_ins) Hins) as Hins_min.
+    assert (Hdom_min :
+      world_dom (res_restrict m (dom (<[x:=T]> Σ)) : World) =
+      dom (<[x:=T]> Σ)).
+    { simpl. set_solver. }
+    assert (Hclosed_min :
+      world_store_closed_on (dom (<[x:=T]> Σ))
+        (res_restrict m (dom (<[x:=T]> Σ)))).
+    {
+      eapply world_store_closed_on_restrict.
+      - reflexivity.
+      - exact Hclosed.
+    }
+    assert (Htotal_min :
+      expr_total_on (dom (<[x:=T]> Σ)) e
+        (res_restrict m (dom (<[x:=T]> Σ)))).
+    { apply expr_total_on_restrict_self. exact Htotal. }
+    pose proof (proj1 (denot_ty_fuel_insert_fresh_env_irrel_iff
+      gas Σ τ e x T (res_restrict m (dom (<[x:=T]> Σ)))
+      Hgas Hx Hdom_min Hclosed_min Htotal_min) Hins_min) as Hbase_min.
+    rewrite res_restrict_restrict_eq in Hbase_min.
+    replace (dom (<[x:=T]> Σ) ∩ dom Σ) with (dom Σ) in Hbase_min
+      by (rewrite dom_insert_L; set_solver).
+    eapply res_models_kripke; [apply res_restrict_le | exact Hbase_min].
+  - intros Hbase.
+    pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hbase)
+      as [Hbasic_base _].
+    pose proof (denot_ty_fuel_formula_fv_subset_env
+      gas Σ τ e Hgas
+      ltac:(eapply basic_choice_ty_fv_subset; exact Hbasic_base)) as Hfv_base.
+    pose proof (proj1 (res_models_minimal_on
+      (dom Σ) m (denot_ty_fuel gas Σ τ e) Hfv_base) Hbase)
+      as Hbase_min.
+    assert (Hdom_min :
+      world_dom (res_restrict m (dom (<[x:=T]> Σ)) : World) =
+      dom (<[x:=T]> Σ)).
+    { simpl. set_solver. }
+    assert (Hclosed_min :
+      world_store_closed_on (dom (<[x:=T]> Σ))
+        (res_restrict m (dom (<[x:=T]> Σ)))).
+    {
+      eapply world_store_closed_on_restrict.
+      - reflexivity.
+      - exact Hclosed.
+    }
+    assert (Htotal_min :
+      expr_total_on (dom (<[x:=T]> Σ)) e
+        (res_restrict m (dom (<[x:=T]> Σ)))).
+    { apply expr_total_on_restrict_self. exact Htotal. }
+    assert (Hbase_min' :
+      res_restrict (res_restrict m (dom (<[x:=T]> Σ))) (dom Σ)
+        ⊨ denot_ty_fuel gas Σ τ e).
+    {
+      rewrite res_restrict_restrict_eq.
+      replace (dom (<[x:=T]> Σ) ∩ dom Σ) with (dom Σ)
+        by (rewrite dom_insert_L; set_solver).
+      exact Hbase_min.
+    }
+    pose proof (proj2 (denot_ty_fuel_insert_fresh_env_irrel_iff
+      gas Σ τ e x T (res_restrict m (dom (<[x:=T]> Σ)))
+      Hgas Hx Hdom_min Hclosed_min Htotal_min) Hbase_min') as Hins_min.
+    eapply res_models_kripke; [apply res_restrict_le | exact Hins_min].
 Qed.
 
 Lemma let_result_world_on_world_closed_on_insert_from_basic
