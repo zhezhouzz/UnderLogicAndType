@@ -171,6 +171,22 @@ Proof.
         -- exact HxX.
 Qed.
 
+Lemma let_result_world_on_restrict_extension
+    X e x (w w0 : WfWorld) Hfresh Hresult Hfresh0 Hresult0 :
+  res_restrict w X = w0 →
+  fv_tm e ⊆ X →
+  X ⊆ world_dom (w : World) →
+  x ∉ X →
+  res_restrict (let_result_world_on e x w Hfresh Hresult) (X ∪ {[x]}) =
+  let_result_world_on e x w0 Hfresh0 Hresult0.
+Proof.
+  intros Hrestrict Hfv HXw HxX.
+  subst w0.
+  rewrite (let_result_world_on_restrict_input
+    X e x w Hfresh Hresult Hfresh0 Hresult0 Hfv HXw HxX).
+  reflexivity.
+Qed.
+
 Lemma let_result_world_on_le e x (w : WfWorld) Hfresh Hresult :
   w ⊑ let_result_world_on e x w Hfresh Hresult.
 Proof.
