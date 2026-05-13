@@ -278,6 +278,19 @@ Proof.
            ++ apply elem_of_union. left. apply elem_of_union. right. exact Hz.
 Qed.
 
+Lemma basic_choice_ty_drop_insert_fresh
+    (Σ : gmap atom ty) x T τ :
+  x ∉ dom Σ →
+  x ∉ fv_cty τ →
+  basic_choice_ty (dom (<[x := T]> Σ)) τ →
+  basic_choice_ty (dom Σ) τ.
+Proof.
+  intros HxΣ Hxτ Hbasic.
+  rewrite dom_insert_L in Hbasic.
+  replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hbasic by set_solver.
+  eapply basic_choice_ty_drop_fresh; eauto.
+Qed.
+
 Lemma basic_choice_ty_fv_subset D τ :
   basic_choice_ty D τ →
   fv_cty τ ⊆ D.
