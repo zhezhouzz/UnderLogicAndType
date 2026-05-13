@@ -369,6 +369,47 @@ Proof.
   - apply Hφ; [exact Hle | exact Hφ2].
 Qed.
 
+Lemma res_models_wand_intro (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FWand φ ψ) →
+  (∀ m' : WfWorldT, ∀ Hc : world_compat m' m,
+     m' ⊨ φ →
+     res_product m' m Hc ⊨ ψ) →
+  m ⊨ FWand φ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hwand. split; [exact Hscope |].
+  intros m' Hc Hφ.
+  pose proof (Hwand m' Hc ltac:(models_fuel_irrel Hφ)) as Hψ.
+  models_fuel_irrel Hψ.
+Qed.
+
+Lemma res_models_wand_elim
+    (m m' : WfWorldT) (φ ψ : FormulaT) (Hc : world_compat m' m) :
+  m ⊨ FWand φ ψ →
+  m' ⊨ φ →
+  res_product m' m Hc ⊨ ψ.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros [_ Hwand] Hφ.
+  pose proof (Hwand m' Hc ltac:(models_fuel_irrel Hφ)) as Hψ.
+  models_fuel_irrel Hψ.
+Qed.
+
+Lemma res_models_wand_antecedent_strengthen
+    (m : WfWorldT) (φ1 φ2 ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FWand φ2 ψ) →
+  (∀ m' : WfWorldT, ∀ Hc : world_compat m' m, m' ⊨ φ2 → m' ⊨ φ1) →
+  m ⊨ FWand φ1 ψ →
+  m ⊨ FWand φ2 ψ.
+Proof.
+  intros Hscope Hφ Hwand.
+  eapply res_models_wand_intro; [exact Hscope |].
+  intros m' Hc Hφ2.
+  eapply res_models_wand_elim.
+  - exact Hwand.
+  - apply Hφ; [exact Hc | exact Hφ2].
+Qed.
+
 Lemma res_models_wand_map
     (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
   formula_scoped_in_world ∅ m (FWand φ2 ψ2) →
