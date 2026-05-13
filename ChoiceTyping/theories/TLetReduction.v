@@ -496,6 +496,95 @@ Proof.
   exact (res_models_with_store_pure_elim _ _ _ Hm).
 Qed.
 
+Lemma world_closed_on_extend X (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  world_closed_on X m →
+  world_closed_on X n.
+Proof.
+  intros HXm Hle Hclosed σ Hσ.
+  pose proof (res_restrict_eq_of_le m n Hle) as Hrestrict.
+  assert ((res_restrict n (world_dom (m : World)) : World)
+    (store_restrict σ (world_dom (m : World)))) as Hσm.
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  rewrite Hrestrict in Hσm.
+  replace (store_restrict σ X) with
+    (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  - exact (Hclosed _ Hσm).
+  - store_norm. reflexivity.
+Qed.
+
+Lemma denot_ty_fuel_world_closed_on_of_formula gas Σ τ e m :
+  m ⊨ denot_ty_fuel gas Σ τ e →
+  world_closed_on (dom Σ) m.
+Proof.
+  intros Hm.
+  rewrite denot_ty_fuel_unfold in Hm.
+  unfold denot_ty_obligations, FClosedResourceIn in Hm.
+  apply res_models_with_store_and_elim_r in Hm.
+  apply res_models_with_store_and_elim_l in Hm.
+  destruct (res_models_with_store_resource_atom_elim ∅ m (dom Σ)
+    (world_closed_on (dom Σ)) Hm) as [m0 [Hscope [Hclosed Hle]]].
+  eapply (world_closed_on_extend (dom Σ) (res_restrict m0 (dom Σ)) m).
+  - simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+    unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+    rewrite dom_empty_L in Hscope.
+    intros z Hz. simpl. apply elem_of_intersection. split.
+    + apply Hscope. set_solver.
+    + exact Hz.
+  - etrans; [apply res_restrict_le | exact Hle].
+  - exact Hclosed.
+Qed.
+
+Lemma denot_ty_fuel_expr_total_on_of_formula gas Σ τ e m :
+  m ⊨ denot_ty_fuel gas Σ τ e →
+  expr_total_on (dom Σ) e m.
+Proof.
+  intros Hm.
+  pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hm)
+    as [_ Htyped].
+  split.
+  - eapply basic_typing_contains_fv_tm. exact Htyped.
+  - rewrite denot_ty_fuel_unfold in Hm.
+    unfold denot_ty_obligations, FStrongTotalIn in Hm.
+    apply res_models_with_store_and_elim_r in Hm.
+    apply res_models_with_store_and_elim_r in Hm.
+    apply res_models_with_store_and_elim_l in Hm.
+    destruct (res_models_with_store_store_resource_atom_elim ∅ m (dom Σ)
+      (fun ρ m => expr_total_with_store (dom Σ) e ρ m) Hm)
+      as [m0 [Hscope [Htotal Hle]]].
+    intros σ Hσ.
+    pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
+    assert ((res_restrict m (world_dom (m0 : World)) : World)
+      (store_restrict σ (world_dom (m0 : World)))) as Hσm0.
+    { exists σ. split; [exact Hσ | reflexivity]. }
+    rewrite Hrestrict in Hσm0.
+	    replace (store_restrict σ (dom Σ)) with
+	      (store_restrict (store_restrict σ (world_dom (m0 : World))) (dom Σ)).
+	    2:{
+	      rewrite store_restrict_restrict.
+	      replace (world_dom (m0 : World) ∩ dom Σ) with (dom Σ).
+	      - reflexivity.
+	      - apply set_eq. intros z. split; intros Hz.
+	        + apply elem_of_intersection. split; [| exact Hz].
+	          unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+	          unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+	          rewrite dom_empty_L in Hscope.
+	          apply Hscope. set_solver.
+	        + apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
+    }
+    rewrite store_restrict_empty in Htotal.
+    assert ((res_restrict m0 (dom Σ) : World)
+      (store_restrict (store_restrict σ (world_dom (m0 : World))) (dom Σ))) as HσD.
+    { exists (store_restrict σ (world_dom (m0 : World))).
+      split; [exact Hσm0 | reflexivity]. }
+    specialize (Htotal _ HσD).
+    rewrite map_empty_union in Htotal.
+    rewrite store_restrict_restrict in Htotal.
+    replace (dom Σ ∩ dom Σ) with (dom Σ) in Htotal by set_solver.
+    exact Htotal.
+Qed.
+
 Lemma msubst_tapp_tm σ ef vx :
   m{σ} (tapp_tm ef vx) = tapp_tm (m{σ} ef) (m{σ} vx).
 Proof.
@@ -767,6 +856,99 @@ Proof.
       exact Hclosed.
     + exact Htotal.
   - apply expr_total_with_store_empty_tapp_tm_fvar_swap_exact; assumption.
+Qed.
+
+Lemma expr_total_on_tret_fvar_swap_iff D x y (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  D ∪ {[y]} ⊆ world_dom (m : World) →
+  world_closed_on (D ∪ {[y]}) m →
+  expr_total_on (D ∪ {[x]}) (tret (vfvar x)) (res_swap x y m) ↔
+  expr_total_on (D ∪ {[y]}) (tret (vfvar y)) m.
+Proof.
+  intros Hx Hy Hdom Hclosed. split.
+  - intros [_ Htotal]. split; [set_solver |].
+    intros σ Hσ.
+    pose proof (Hclosed σ Hσ) as Hclosedσ.
+    assert (Hy_dom : y ∈ dom σ).
+    { rewrite (wfworld_store_dom m σ Hσ). apply Hdom. set_solver. }
+    apply elem_of_dom in Hy_dom as [vy Hlookup].
+    assert (Hlookup_restrict :
+      store_restrict σ (D ∪ {[y]}) !! y = Some vy).
+    { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+    pose proof (Htotal (store_swap x y σ)) as Hsn.
+    assert ((res_swap x y m : World) (store_swap x y σ)) as Hσswap.
+    { simpl. exists σ. split; [exact Hσ | reflexivity]. }
+    specialize (Hsn Hσswap).
+    rewrite store_restrict_swap_fresh_union_singleton in Hsn by assumption.
+    apply (proj1 (strongly_normalizing_tret_fvar_store_swap_lookup
+      (store_restrict σ (D ∪ {[y]})) x y vy
+      Hclosedσ Hlookup_restrict)).
+    exact Hsn.
+  - intros [_ Htotal]. split; [set_solver |].
+    intros σx Hσx.
+    simpl in Hσx.
+    destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+    rewrite store_restrict_swap_fresh_union_singleton by assumption.
+    pose proof (Hclosed σy Hσy) as Hclosedσ.
+    assert (Hy_dom : y ∈ dom σy).
+    { rewrite (wfworld_store_dom m σy Hσy). apply Hdom. set_solver. }
+    apply elem_of_dom in Hy_dom as [vy Hlookup].
+    assert (Hlookup_restrict :
+      store_restrict σy (D ∪ {[y]}) !! y = Some vy).
+    { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+    apply (proj2 (strongly_normalizing_tret_fvar_store_swap_lookup
+      (store_restrict σy (D ∪ {[y]})) x y vy
+      Hclosedσ Hlookup_restrict)).
+    apply Htotal. exact Hσy.
+Qed.
+
+Lemma expr_total_on_tapp_tm_fvar_swap_iff D e x y (m : WfWorld) :
+  x ∉ D ∪ fv_tm e →
+  y ∉ D ∪ fv_tm e →
+  fv_tm e ⊆ D →
+  D ∪ {[y]} ⊆ world_dom (m : World) →
+  world_closed_on (D ∪ {[y]}) m →
+  expr_total_on (D ∪ {[x]}) (tapp_tm e (vfvar x)) (res_swap x y m) ↔
+  expr_total_on (D ∪ {[y]}) (tapp_tm e (vfvar y)) m.
+Proof.
+  intros Hx Hy Hfve Hdom Hclosed. split.
+  - intros [_ Htotal]. split.
+    { rewrite fv_tapp_tm. simpl. set_solver. }
+    intros σ Hσ.
+    pose proof (Hclosed σ Hσ) as Hclosedσ.
+    assert (Hy_dom : y ∈ dom σ).
+    { rewrite (wfworld_store_dom m σ Hσ). apply Hdom. set_solver. }
+    apply elem_of_dom in Hy_dom as [vy Hlookup].
+    assert (Hlookup_restrict :
+      store_restrict σ (D ∪ {[y]}) !! y = Some vy).
+    { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+    pose proof (Htotal (store_swap x y σ)) as Hsn.
+    assert ((res_swap x y m : World) (store_swap x y σ)) as Hσswap.
+    { simpl. exists σ. split; [exact Hσ | reflexivity]. }
+    specialize (Hsn Hσswap).
+    rewrite store_restrict_swap_fresh_union_singleton in Hsn by set_solver.
+    apply (proj1 (strongly_normalizing_tapp_tm_fvar_store_swap_lookup
+      (store_restrict σ (D ∪ {[y]})) e x y vy
+      Hclosedσ Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+    exact Hsn.
+  - intros [_ Htotal]. split.
+    { rewrite fv_tapp_tm. simpl. set_solver. }
+    intros σx Hσx.
+    simpl in Hσx.
+    destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+    rewrite store_restrict_swap_fresh_union_singleton by set_solver.
+    pose proof (Hclosed σy Hσy) as Hclosedσ.
+    assert (Hy_dom : y ∈ dom σy).
+    { rewrite (wfworld_store_dom m σy Hσy). apply Hdom. set_solver. }
+    apply elem_of_dom in Hy_dom as [vy Hlookup].
+    assert (Hlookup_restrict :
+      store_restrict σy (D ∪ {[y]}) !! y = Some vy).
+    { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+    apply (proj2 (strongly_normalizing_tapp_tm_fvar_store_swap_lookup
+      (store_restrict σy (D ∪ {[y]})) e x y vy
+      Hclosedσ Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+    apply Htotal. exact Hσy.
 Qed.
 
 (** The two lemmas below are the explicit-name/cofinite rename principles
