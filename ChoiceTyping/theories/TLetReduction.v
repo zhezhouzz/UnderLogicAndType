@@ -1655,6 +1655,96 @@ Proof.
     + intros m' Hm'. apply (proj2 (HQ x y m' Hx Hy)). exact Hm'.
 Qed.
 
+Lemma formula_family_rename_stable_impl_exact D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_rename_stable_on D P →
+  formula_family_rename_stable_on D Q →
+  formula_family_rename_stable_on D (fun x => FImpl (P x) (Q x)).
+Proof.
+  intros HPsupp HQsupp HP HQ.
+  unfold formula_family_rename_stable_on in *.
+  intros x y n Hx Hy. simpl. split; intros Hmodel.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (FImpl (formula_rename_atom x y (P x))
+         (formula_rename_atom x y (Q x)))) ∅ n
+      (FImpl (formula_rename_atom x y (P x))
+         (formula_rename_atom x y (Q x))) Hmodel) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    eapply res_models_impl_map; [| | | exact Hmodel].
+    + unfold formula_scoped_in_world. simpl.
+      assert (HPscope : formula_fv (P y) ⊆ world_dom (n : World)).
+      { eapply support_exact_renamed_scope_to_target_scope; [exact HPsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      assert (HQscope : formula_fv (Q y) ⊆ world_dom (n : World)).
+      { eapply support_exact_renamed_scope_to_target_scope; [exact HQsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      set_solver.
+    + intros m' _ HPy. apply (proj2 (HP x y m' Hx Hy)). exact HPy.
+    + intros m' _ HQx. apply (proj1 (HQ x y m' Hx Hy)). exact HQx.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (FImpl (P y) (Q y))) ∅ n
+      (FImpl (P y) (Q y)) Hmodel) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    eapply res_models_impl_map; [| | | exact Hmodel].
+    + unfold formula_scoped_in_world. simpl.
+      assert (HPscope : formula_fv (formula_rename_atom x y (P x)) ⊆ world_dom (n : World)).
+      { eapply support_exact_target_scope_to_renamed_scope; [exact HPsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      assert (HQscope : formula_fv (formula_rename_atom x y (Q x)) ⊆ world_dom (n : World)).
+      { eapply support_exact_target_scope_to_renamed_scope; [exact HQsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      set_solver.
+    + intros m' _ HPx. apply (proj1 (HP x y m' Hx Hy)). exact HPx.
+    + intros m' _ HQy. apply (proj2 (HQ x y m' Hx Hy)). exact HQy.
+Qed.
+
+Lemma formula_family_rename_stable_wand_exact D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_rename_stable_on D P →
+  formula_family_rename_stable_on D Q →
+  formula_family_rename_stable_on D (fun x => FWand (P x) (Q x)).
+Proof.
+  intros HPsupp HQsupp HP HQ.
+  unfold formula_family_rename_stable_on in *.
+  intros x y n Hx Hy. simpl. split; intros Hmodel.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (FWand (formula_rename_atom x y (P x))
+         (formula_rename_atom x y (Q x)))) ∅ n
+      (FWand (formula_rename_atom x y (P x))
+         (formula_rename_atom x y (Q x))) Hmodel) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    eapply res_models_wand_map; [| | | exact Hmodel].
+    + unfold formula_scoped_in_world. simpl.
+      assert (HPscope : formula_fv (P y) ⊆ world_dom (n : World)).
+      { eapply support_exact_renamed_scope_to_target_scope; [exact HPsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      assert (HQscope : formula_fv (Q y) ⊆ world_dom (n : World)).
+      { eapply support_exact_renamed_scope_to_target_scope; [exact HQsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      set_solver.
+    + intros m' _ HPy. apply (proj2 (HP x y m' Hx Hy)). exact HPy.
+    + intros m' Hc HQx.
+      apply (proj1 (HQ x y (res_product m' n Hc) Hx Hy)). exact HQx.
+  - pose proof (res_models_with_store_fuel_scoped
+      (formula_measure (FWand (P y) (Q y))) ∅ n
+      (FWand (P y) (Q y)) Hmodel) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    eapply res_models_wand_map; [| | | exact Hmodel].
+    + unfold formula_scoped_in_world. simpl.
+      assert (HPscope : formula_fv (formula_rename_atom x y (P x)) ⊆ world_dom (n : World)).
+      { eapply support_exact_target_scope_to_renamed_scope; [exact HPsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      assert (HQscope : formula_fv (formula_rename_atom x y (Q x)) ⊆ world_dom (n : World)).
+      { eapply support_exact_target_scope_to_renamed_scope; [exact HQsupp | exact Hx | exact Hy |].
+        simpl in Hscope. set_solver. }
+      set_solver.
+    + intros m' _ HPx. apply (proj1 (HP x y m' Hx Hy)). exact HPx.
+    + intros m' Hc HQy.
+      apply (proj2 (HQ x y (res_product m' n Hc) Hx Hy)). exact HQy.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_rename_stable
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
