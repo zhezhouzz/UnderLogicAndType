@@ -1830,6 +1830,68 @@ Proof.
            rewrite store_swap_fresh by assumption. reflexivity.
 Qed.
 
+Lemma FBasicTypingIn_insert_tret_fvar_rename_stable
+    (Σ : gmap atom ty) x y τ (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  basic_choice_ty (dom Σ) τ →
+  m ⊨ formula_rename_atom x y
+    (FBasicTypingIn (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))) ↔
+  m ⊨ FBasicTypingIn (<[y := erase_ty τ]> Σ) τ (tret (vfvar y)).
+Proof.
+  intros Hx Hy Hbasic.
+  unfold FBasicTypingIn.
+  rewrite formula_rename_FPure.
+  split; intros _.
+  - eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * eapply basic_choice_ty_mono; [| exact Hbasic].
+        rewrite dom_insert_L. set_solver.
+      * apply basic_typing_tret_fvar_insert.
+  - eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * eapply basic_choice_ty_mono; [| exact Hbasic].
+        rewrite dom_insert_L. set_solver.
+      * apply basic_typing_tret_fvar_insert.
+Qed.
+
+Lemma FBasicTypingIn_insert_tapp_fvar_rename_stable
+    (Σ : gmap atom ty) x y τx τ e (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ) →
+  basic_choice_ty (dom Σ ∪ {[y]}) ({0 ~> y} τ) →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  m ⊨ formula_rename_atom x y
+    (FBasicTypingIn (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
+      (tapp_tm e (vfvar x))) ↔
+  m ⊨ FBasicTypingIn (<[y := erase_ty τx]> Σ) ({0 ~> y} τ)
+    (tapp_tm e (vfvar y)).
+Proof.
+  intros Hx Hy Hbasicx Hbasicy Htyped.
+  unfold FBasicTypingIn.
+  rewrite formula_rename_FPure.
+  split; intros _.
+  - eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * replace (dom (<[y:=erase_ty τx]> Σ)) with (dom Σ ∪ {[y]})
+          by (rewrite dom_insert_L; set_solver).
+        exact Hbasicy.
+      * rewrite cty_open_preserves_erasure.
+        eapply basic_typing_tapp_tm_fvar_insert; eauto.
+  - eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * replace (dom (<[x:=erase_ty τx]> Σ)) with (dom Σ ∪ {[x]})
+          by (rewrite dom_insert_L; set_solver).
+        exact Hbasicx.
+      * rewrite cty_open_preserves_erasure.
+        eapply basic_typing_tapp_tm_fvar_insert; eauto.
+Qed.
+
 Lemma FClosedResourceIn_insert_swap_iff
     (Σ : gmap atom ty) x y T (m : WfWorld) :
   x ∉ dom Σ →
@@ -2171,6 +2233,48 @@ Proof.
       exact (proj2 (expr_total_with_store_empty_tapp_tm_fvar_swap_exact_iff
         (dom Σ) e x y (res_restrict m (dom Σ ∪ {[y]}))
         Hx Hy Hdom_y_m Hclosed_y) Htotal_m).
+Qed.
+
+Lemma denot_ty_obligations_tret_fvar_family_rename_stable
+    (Σ : gmap atom ty) τ (Body : atom → FormulaQ) :
+  basic_choice_ty (dom Σ) τ →
+  formula_family_rename_stable_on (dom Σ) Body →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_obligations (<[x := erase_ty τ]> Σ) τ
+      (tret (vfvar x)) (Body x)).
+Proof.
+  intros Hbasic Hbody.
+  unfold denot_ty_obligations.
+  repeat apply formula_family_rename_stable_and.
+  - intros x y m Hx Hy.
+    eapply FBasicTypingIn_insert_tret_fvar_rename_stable; eauto.
+  - intros x y m Hx Hy.
+    eapply FClosedResourceIn_insert_swap_iff; eauto.
+  - intros x y m Hx Hy.
+    eapply FStrongTotalIn_insert_tret_fvar_swap_iff; eauto.
+  - exact Hbody.
+Qed.
+
+Lemma denot_ty_obligations_tapp_fvar_family_rename_stable
+    (Σ : gmap atom ty) τx τ e (Body : atom → FormulaQ) :
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  fv_tm e ⊆ dom Σ →
+  formula_family_rename_stable_on (dom Σ) Body →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_obligations (<[x := erase_ty τx]> Σ) ({0 ~> x} τ)
+      (tapp_tm e (vfvar x)) (Body x)).
+Proof.
+  intros Hbasic_body Htyped Hfve Hbody.
+  unfold denot_ty_obligations.
+  repeat apply formula_family_rename_stable_and.
+  - intros x y m Hx Hy.
+    eapply FBasicTypingIn_insert_tapp_fvar_rename_stable; eauto.
+  - intros x y m Hx Hy.
+    eapply FClosedResourceIn_insert_swap_iff; eauto.
+  - intros x y m Hx Hy.
+    eapply FStrongTotalIn_insert_tapp_fvar_swap_iff; eauto; set_solver.
+  - exact Hbody.
 Qed.
 
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
