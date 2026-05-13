@@ -22,6 +22,14 @@ Proof.
     try rewrite ?IHτ1, ?IHτ2, <- ?aset_swap_union; reflexivity.
 Qed.
 
+Lemma cty_swap_atom_involutive x y τ :
+  cty_swap_atom x y (cty_swap_atom x y τ) = τ.
+Proof.
+  induction τ; simpl; try rewrite ?IHτ1, ?IHτ2; try reflexivity.
+  - rewrite qual_swap_atom_involutive. reflexivity.
+  - rewrite qual_swap_atom_involutive. reflexivity.
+Qed.
+
 Lemma cty_open_fv_subset k x τ :
   fv_cty ({k ~> x} τ) ⊆ fv_cty τ ∪ {[x]}.
 Proof.

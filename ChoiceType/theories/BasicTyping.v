@@ -252,6 +252,19 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma basic_choice_ty_swap_iff x y D τ :
+  basic_choice_ty (aset_swap x y D) (cty_swap_atom x y τ) ↔
+  basic_choice_ty D τ.
+Proof.
+  split.
+  - intros Hswap.
+    pose proof (basic_choice_ty_swap x y _ _ Hswap) as Hback.
+    rewrite aset_swap_involutive in Hback.
+    rewrite cty_swap_atom_involutive in Hback.
+    exact Hback.
+  - apply basic_choice_ty_swap.
+Qed.
+
 Lemma basic_choice_ty_drop_fresh D x τ :
   x ∉ fv_cty τ →
   basic_choice_ty (D ∪ {[x]}) τ →

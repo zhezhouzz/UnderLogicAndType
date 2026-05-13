@@ -73,6 +73,26 @@ Proof.
   rewrite !store_swap_lookup_inv, atom_swap_sym. reflexivity.
 Qed.
 
+Lemma store_swap_fresh x y s :
+  x ∉ dom s →
+  y ∉ dom s →
+  store_swap x y s = s.
+Proof.
+  intros Hx Hy. apply map_eq. intros z.
+  rewrite store_swap_lookup_inv.
+  destruct (decide (z = x)) as [->|Hzx].
+  - apply not_elem_of_dom in Hx. rewrite Hx.
+    replace (atom_swap x y x) with y
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    apply not_elem_of_dom. exact Hy.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + apply not_elem_of_dom in Hy. rewrite Hy.
+      replace (atom_swap x y y) with x
+        by (unfold atom_swap; repeat destruct decide; congruence).
+      apply not_elem_of_dom. exact Hx.
+    + rewrite atom_swap_fresh by congruence. reflexivity.
+Qed.
+
 Lemma store_swap_delete x y z s :
   store_swap x y (delete z s) =
   delete (atom_swap x y z) (store_swap x y s).

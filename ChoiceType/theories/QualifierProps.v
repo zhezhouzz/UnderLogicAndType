@@ -17,6 +17,19 @@ Lemma qual_dom_swap x y q :
   qual_dom (qual_swap_atom x y q) = aset_swap x y (qual_dom q).
 Proof. destruct q; reflexivity. Qed.
 
+Lemma qual_swap_atom_involutive x y q :
+  qual_swap_atom x y (qual_swap_atom x y q) = q.
+Proof.
+  destruct q as [B d p]. unfold qual_swap_atom. simpl.
+  f_equal.
+  - apply aset_swap_involutive.
+  - apply functional_extensionality. intros β.
+    apply functional_extensionality. intros σ.
+    apply functional_extensionality. intros a.
+    apply propositional_extensionality.
+    rewrite !store_swap_involutive. reflexivity.
+Qed.
+
 Lemma qual_open_atom_dom_subset k x q :
   qual_dom (qual_open_atom k x q) ⊆ qual_dom q ∪ {[x]}.
 Proof.
