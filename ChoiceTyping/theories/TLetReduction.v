@@ -1813,6 +1813,79 @@ Proof.
            rewrite store_swap_fresh by assumption. reflexivity.
 Qed.
 
+Lemma FClosedResourceIn_insert_swap_iff
+    (Σ : gmap atom ty) x y T (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  m ⊨ formula_rename_atom x y (FClosedResourceIn (<[x := T]> Σ)) ↔
+  m ⊨ FClosedResourceIn (<[y := T]> Σ).
+Proof.
+  intros Hx Hy.
+  unfold FClosedResourceIn.
+  rewrite formula_rename_FResourceAtom.
+  replace (aset_swap x y (dom (<[x:=T]> Σ)))
+    with (dom (<[y:=T]> Σ)).
+  2:{
+    rewrite !dom_insert_L, aset_swap_union, aset_swap_singleton.
+    rewrite atom_swap_left_eq, aset_swap_fresh by assumption.
+    set_solver.
+  }
+  split; intros Hm.
+  - destruct (res_models_with_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ))
+      (fun m0 : WfWorld => world_closed_on (dom (<[x:=T]> Σ)) (res_swap x y m0))
+      Hm) as [m0 [Hscope [Hclosed Hle]]].
+    assert (Hclosed_m0 :
+      world_closed_on (dom (<[y:=T]> Σ)) (res_restrict m0 (dom (<[y:=T]> Σ)))).
+    {
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Hclosed by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) in Hclosed by
+        (rewrite dom_insert_L; set_solver).
+      exact (proj1 (world_closed_on_swap_fresh_union_singleton_iff
+        (dom Σ) x y (res_restrict m0 (dom Σ ∪ {[y]})) Hx Hy) Hclosed).
+    }
+    eapply res_models_with_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + eapply (world_closed_on_extend (dom (<[y:=T]> Σ))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) (res_restrict m (dom (<[y:=T]> Σ)))).
+      * simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        set_solver.
+      * apply res_restrict_le_mono. exact Hle.
+      * exact Hclosed_m0.
+  - destruct (res_models_with_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ)) (world_closed_on (dom (<[y:=T]> Σ)) ) Hm)
+      as [m0 [Hscope [Hclosed Hle]]].
+    assert (Hclosed_m :
+      world_closed_on (dom (<[y:=T]> Σ)) (res_restrict m (dom (<[y:=T]> Σ)))).
+    {
+      eapply (world_closed_on_extend (dom (<[y:=T]> Σ))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) (res_restrict m (dom (<[y:=T]> Σ)))).
+      - simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        set_solver.
+      - apply res_restrict_le_mono. exact Hle.
+      - exact Hclosed.
+    }
+    eapply res_models_with_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Hclosed_m by
+        (rewrite dom_insert_L; set_solver).
+      exact (proj2 (world_closed_on_swap_fresh_union_singleton_iff
+        (dom Σ) x y (res_restrict m (dom Σ ∪ {[y]})) Hx Hy) Hclosed_m).
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
