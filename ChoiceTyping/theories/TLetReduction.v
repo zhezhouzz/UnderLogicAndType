@@ -612,6 +612,50 @@ Proof.
   apply store_restrict_swap.
 Qed.
 
+Lemma world_closed_on_swap_fresh_union_singleton_iff D x y (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  world_closed_on (D ∪ {[x]}) (res_swap x y m) ↔
+  world_closed_on (D ∪ {[y]}) m.
+Proof.
+  intros Hx Hy. split; intros Hclosed.
+  - pose proof (world_closed_on_swap x y (D ∪ {[x]}) (res_swap x y m)
+      Hclosed) as Hswap.
+    rewrite res_swap_involutive in Hswap.
+    replace (aset_swap x y (D ∪ {[x]})) with (D ∪ {[y]}) in Hswap;
+      [exact Hswap |].
+    apply set_eq. intros z.
+    rewrite elem_of_aset_swap, !elem_of_union, !elem_of_singleton.
+    unfold atom_swap.
+    repeat destruct decide; set_solver.
+  - pose proof (world_closed_on_swap x y (D ∪ {[y]}) m Hclosed) as Hswap.
+    replace (aset_swap x y (D ∪ {[y]})) with (D ∪ {[x]}) in Hswap;
+      [exact Hswap |].
+    symmetry. apply aset_swap_fresh_union_singleton; assumption.
+Qed.
+
+Lemma world_store_closed_on_swap_fresh_union_singleton_iff D x y (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  world_store_closed_on (D ∪ {[x]}) (res_swap x y m) ↔
+  world_store_closed_on (D ∪ {[y]}) m.
+Proof.
+  intros Hx Hy. split; intros Hclosed.
+  - pose proof (world_store_closed_on_swap x y (D ∪ {[x]}) (res_swap x y m)
+      Hclosed) as Hswap.
+    rewrite res_swap_involutive in Hswap.
+    replace (aset_swap x y (D ∪ {[x]})) with (D ∪ {[y]}) in Hswap;
+      [exact Hswap |].
+    apply set_eq. intros z.
+    rewrite elem_of_aset_swap, !elem_of_union, !elem_of_singleton.
+    unfold atom_swap.
+    repeat destruct decide; set_solver.
+  - pose proof (world_store_closed_on_swap x y (D ∪ {[y]}) m Hclosed) as Hswap.
+    replace (aset_swap x y (D ∪ {[y]})) with (D ∪ {[x]}) in Hswap;
+      [exact Hswap |].
+    symmetry. apply aset_swap_fresh_union_singleton; assumption.
+Qed.
+
 Lemma expr_total_with_store_empty_tret_fvar_swap_exact
     D x y (m : WfWorld) :
   x ∉ D →
@@ -642,6 +686,32 @@ Proof.
   apply Htotal. exact Hσy.
 Qed.
 
+Lemma expr_total_with_store_empty_tret_fvar_swap_exact_iff
+    D x y (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  world_dom (m : World) = D ∪ {[y]} →
+  world_store_closed_on (D ∪ {[y]}) m →
+  expr_total_with_store (D ∪ {[x]}) (tret (vfvar x)) ∅ (res_swap x y m) ↔
+  expr_total_with_store (D ∪ {[y]}) (tret (vfvar y)) ∅ m.
+Proof.
+  intros Hx Hy Hdom Hclosed. split.
+  - intros Htotal.
+    replace m with (res_swap y x (res_swap x y m)).
+    2:{ rewrite res_swap_sym, res_swap_involutive. reflexivity. }
+    eapply (expr_total_with_store_empty_tret_fvar_swap_exact
+      D y x (res_swap x y m) Hy Hx).
+    + simpl. rewrite Hdom.
+      apply set_eq. intros z.
+      rewrite elem_of_aset_swap, !elem_of_union, !elem_of_singleton.
+      unfold atom_swap. repeat destruct decide; set_solver.
+    + apply (proj2 (world_store_closed_on_swap_fresh_union_singleton_iff
+        D x y m ltac:(set_solver) ltac:(set_solver))).
+      exact Hclosed.
+    + exact Htotal.
+  - apply expr_total_with_store_empty_tret_fvar_swap_exact; assumption.
+Qed.
+
 Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact
     D e x y (m : WfWorld) :
   x ∉ D ∪ fv_tm e →
@@ -670,6 +740,33 @@ Proof.
     with (store_restrict (∅ ∪ σy) (D ∪ {[y]}))
     by (rewrite map_empty_union; reflexivity).
   apply Htotal. exact Hσy.
+Qed.
+
+Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact_iff
+    D e x y (m : WfWorld) :
+  x ∉ D ∪ fv_tm e →
+  y ∉ D ∪ fv_tm e →
+  world_dom (m : World) = D ∪ {[y]} →
+  world_store_closed_on (D ∪ {[y]}) m →
+  expr_total_with_store (D ∪ {[x]}) (tapp_tm e (vfvar x)) ∅
+    (res_swap x y m) ↔
+  expr_total_with_store (D ∪ {[y]}) (tapp_tm e (vfvar y)) ∅ m.
+Proof.
+  intros Hx Hy Hdom Hclosed. split.
+  - intros Htotal.
+    replace m with (res_swap y x (res_swap x y m)).
+    2:{ rewrite res_swap_sym, res_swap_involutive. reflexivity. }
+    eapply (expr_total_with_store_empty_tapp_tm_fvar_swap_exact
+      D e y x (res_swap x y m) Hy Hx).
+    + simpl. rewrite Hdom.
+      apply set_eq. intros z.
+      rewrite elem_of_aset_swap, !elem_of_union, !elem_of_singleton.
+      unfold atom_swap. repeat destruct decide; set_solver.
+    + apply (proj2 (world_store_closed_on_swap_fresh_union_singleton_iff
+        D x y m ltac:(set_solver) ltac:(set_solver))).
+      exact Hclosed.
+    + exact Htotal.
+  - apply expr_total_with_store_empty_tapp_tm_fvar_swap_exact; assumption.
 Qed.
 
 (** The two lemmas below are the explicit-name/cofinite rename principles

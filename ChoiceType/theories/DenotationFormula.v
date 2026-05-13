@@ -506,6 +506,18 @@ Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
 Definition world_closed_on (X : aset) (m : WfWorld) : Prop :=
   ∀ σ, (m : World) σ → closed_env (store_restrict σ X).
 
+Lemma world_closed_on_swap x y X (m : WfWorld) :
+  world_closed_on X m →
+  world_closed_on (aset_swap x y X) (res_swap x y m).
+Proof.
+  intros Hclosed σ Hσ.
+  simpl in Hσ.
+  destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
+  rewrite store_restrict_swap.
+  apply closed_env_store_swap.
+  exact (Hclosed σ0 Hσ0).
+Qed.
+
 Lemma world_closed_on_le X m n :
   m ⊑ n →
   world_closed_on X n →
