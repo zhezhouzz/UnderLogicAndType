@@ -1404,6 +1404,12 @@ Qed.
 Definition formula_family_support_exact_on (D : aset) (P : atom → FormulaQ) : Prop :=
   ∀ x, x ∉ D → formula_fv (P x) = D ∪ {[x]}.
 
+Lemma atom_swap_left_eq x y : atom_swap x y x = y.
+Proof. unfold atom_swap. repeat destruct decide; congruence. Qed.
+
+Lemma atom_swap_right_eq x y : atom_swap x y y = x.
+Proof. unfold atom_swap. repeat destruct decide; congruence. Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
@@ -1448,6 +1454,66 @@ Proof.
     eapply denot_ty_fuel_env_fv_subset.
     + rewrite cty_open_preserves_measure. exact Hgas.
     + rewrite dom_insert_L. set_solver.
+Qed.
+
+Lemma support_exact_rename_to_target_scope D P x y n :
+  formula_family_support_exact_on D P →
+  x ∉ D →
+  y ∉ D →
+  n ⊨ formula_rename_atom x y (P x) →
+  formula_fv (P y) ⊆ world_dom (n : World).
+Proof.
+  intros Hsupp Hx Hy Hmodel.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (formula_rename_atom x y (P x))) ∅ n
+    (formula_rename_atom x y (P x)) Hmodel) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  rewrite dom_empty_L in Hscope.
+  rewrite Hsupp by exact Hy.
+  intros z Hz.
+  apply Hscope.
+  apply elem_of_union_r.
+  rewrite formula_fv_rename_atom.
+  rewrite Hsupp by exact Hx.
+  rewrite elem_of_aset_swap.
+  apply elem_of_union in Hz as [HzD | Hzy].
+  - apply elem_of_union_l.
+    rewrite atom_swap_fresh; [exact HzD | set_solver | set_solver].
+  - apply elem_of_union_r.
+    apply elem_of_singleton in Hzy. subst z.
+    rewrite atom_swap_right_eq. apply elem_of_singleton. reflexivity.
+Qed.
+
+Lemma support_exact_target_to_rename_scope D P x y n :
+  formula_family_support_exact_on D P →
+  x ∉ D →
+  y ∉ D →
+  n ⊨ P y →
+  formula_fv (formula_rename_atom x y (P x)) ⊆ world_dom (n : World).
+Proof.
+  intros Hsupp Hx Hy Hmodel.
+  pose proof (res_models_with_store_fuel_scoped
+    (formula_measure (P y)) ∅ n (P y) Hmodel) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  rewrite dom_empty_L in Hscope.
+  rewrite formula_fv_rename_atom.
+  rewrite Hsupp by exact Hx.
+  intros z Hz.
+  rewrite elem_of_aset_swap in Hz.
+  apply Hscope.
+  apply elem_of_union_r.
+  rewrite Hsupp by exact Hy.
+  apply elem_of_union in Hz as [HzD | Hzx].
+  - apply elem_of_union_l.
+    assert (Hzx : z ≠ x).
+    { intros ->. rewrite atom_swap_left_eq in HzD. exact (Hy HzD). }
+    assert (Hzy : z ≠ y).
+    { intros ->. rewrite atom_swap_right_eq in HzD. exact (Hx HzD). }
+    rewrite atom_swap_fresh in HzD by assumption. exact HzD.
+  - apply elem_of_union_r.
+    apply elem_of_singleton in Hzx.
+    apply elem_of_singleton.
+    unfold atom_swap in Hzx. repeat destruct decide; congruence.
 Qed.
 
 Lemma denot_ty_fuel_fresh_arg_family_rename_stable
