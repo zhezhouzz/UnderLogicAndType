@@ -49,8 +49,8 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
 Definition expr_total_with_store (X : aset) (e : tm)
     (ρ : Store) (m : WfWorld) : Prop :=
-  ∀ σ, (m : World) σ →
-    strongly_normalizing (subst_map (store_restrict (ρ ∪ σ) X) e).
+  ∃ n, ∀ σ, (m : World) σ →
+    strongly_normalizing_fuel n (subst_map (store_restrict (ρ ∪ σ) X) e).
 
 Definition FBasicTypingIn (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   FPure (basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ).
@@ -66,7 +66,8 @@ Lemma expr_total_with_store_empty_restrict X e m :
   expr_total_on X e m →
   expr_total_with_store X e ∅ (res_restrict m X).
 Proof.
-  intros [_ Htotal] σ Hσ.
+  intros [_ [n Htotal]].
+  exists n. intros σ Hσ.
   destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
   replace (store_restrict (∅ ∪ σ) X) with (store_restrict σm X).
   - apply Htotal. exact Hσm.

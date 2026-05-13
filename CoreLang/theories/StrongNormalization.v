@@ -111,17 +111,32 @@ Proof.
     eapply strongly_normalizing_step_inv; eauto.
 Qed.
 
+Lemma strongly_normalizing_fuel_steps_inv n e e' :
+  strongly_normalizing_fuel n e ->
+  e →* e' ->
+  exists n', n' <= n /\ strongly_normalizing_fuel n' e'.
+Proof.
+  intros Hsn Hsteps.
+  induction Hsteps in n, Hsn |- *.
+  - exists n. split; [lia | exact Hsn].
+  - destruct n as [|n].
+    + destruct Hsn as [v [-> _]].
+      exfalso. eapply val_no_step; eauto.
+    + pose proof (strongly_normalizing_fuel_step_inv n e1 e2 Hsn H) as Hsn2.
+      destruct (IHHsteps n Hsn2) as [n' [Hle Hsn']].
+      exists n'. split; [lia | exact Hsn'].
+Qed.
+
 (** The tlet facts below are intentionally stated at the operational layer.
     They are the principles the ChoiceTyping totality proof should use.  Their
     proofs are independent of refinements/resources, so they belong here even
     when later proof engineering temporarily admits them. *)
 
-Lemma strongly_normalizing_tlete_elim_e1 e1 e2 :
-  strongly_normalizing (tlete e1 e2) ->
-  strongly_normalizing e1.
+Lemma strongly_normalizing_fuel_tlete_elim_e1 n e1 e2 :
+  strongly_normalizing_fuel n (tlete e1 e2) ->
+  strongly_normalizing_fuel n e1.
 Proof.
-  intros [n Hsn]. exists n.
-  induction n as [|n IH] in e1, e2, Hsn |- *.
+  induction n as [|n IH] in e1, e2 |- *; intros Hsn.
   - destruct Hsn as [v [Hbad _]]. discriminate Hbad.
   - destruct Hsn as [[v [Hbad _]] | [Hcan Hnext]].
     + discriminate Hbad.
@@ -132,34 +147,42 @@ Proof.
         apply lc_lete_iff_body in Hlc_tlet as [Hret _].
         apply lc_ret_iff_value in Hret.
         apply result_tm_tret. exact Hret.
-	      * right. split.
-	        -- inversion Hstep_tlet; subst.
-	           ++ inversion H; subst; try discriminate.
-	           ++ unfold can_step; eauto.
+      * right. split.
+        -- inversion Hstep_tlet; subst.
+           ++ inversion H; subst; try discriminate.
+           ++ unfold can_step; eauto.
         -- intros e1' Hstep1.
            apply IH with (e2 := e2).
            apply Hnext. apply Step_let; assumption.
-	      * right. split.
-	        -- inversion Hstep_tlet; subst.
-	           ++ inversion H; subst; try discriminate.
-	           ++ unfold can_step; eauto.
+      * right. split.
+        -- inversion Hstep_tlet; subst.
+           ++ inversion H; subst; try discriminate.
+           ++ unfold can_step; eauto.
         -- intros e1' Hstep1.
            apply IH with (e2 := e2).
            apply Hnext. apply Step_let; assumption.
-	      * right. split.
-	        -- inversion Hstep_tlet; subst.
-	           ++ inversion H; subst; try discriminate.
-	           ++ unfold can_step; eauto.
+      * right. split.
+        -- inversion Hstep_tlet; subst.
+           ++ inversion H; subst; try discriminate.
+           ++ unfold can_step; eauto.
         -- intros e1' Hstep1.
            apply IH with (e2 := e2).
            apply Hnext. apply Step_let; assumption.
-	      * right. split.
-	        -- inversion Hstep_tlet; subst.
-	           ++ inversion H; subst; try discriminate.
-	           ++ unfold can_step; eauto.
+      * right. split.
+        -- inversion Hstep_tlet; subst.
+           ++ inversion H; subst; try discriminate.
+           ++ unfold can_step; eauto.
         -- intros e1' Hstep1.
            apply IH with (e2 := e2).
-	           apply Hnext. apply Step_let; assumption.
+           apply Hnext. apply Step_let; assumption.
+Qed.
+
+Lemma strongly_normalizing_tlete_elim_e1 e1 e2 :
+  strongly_normalizing (tlete e1 e2) ->
+  strongly_normalizing e1.
+Proof.
+  intros [n Hsn]. exists n.
+  eapply strongly_normalizing_fuel_tlete_elim_e1; eauto.
 Qed.
 
 Lemma steps_tlete_to_body e1 e2 vx :
@@ -196,6 +219,19 @@ Proof.
   eapply strongly_normalizing_steps_inv.
   - exact Hsn.
   - eapply steps_tlete_to_body; eauto.
+Qed.
+
+Lemma strongly_normalizing_fuel_tlete_elim_body n e1 e2 vx :
+  body_tm e2 ->
+  e1 →* tret vx ->
+  strongly_normalizing_fuel n (tlete e1 e2) ->
+  strongly_normalizing_fuel n ({0 ~> vx} e2).
+Proof.
+  intros Hbody Hsteps Hsn.
+  destruct (strongly_normalizing_fuel_steps_inv n (tlete e1 e2)
+    ({0 ~> vx} e2) Hsn ltac:(eapply steps_tlete_to_body; eauto))
+    as [n' [Hle Hsn']].
+  eapply strongly_normalizing_fuel_mono; eauto.
 Qed.
 
 Lemma strongly_normalizing_fuel_tlete_intro n1 n2 e1 e2 :

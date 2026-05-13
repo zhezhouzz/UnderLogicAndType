@@ -490,14 +490,14 @@ Qed.
 (** Prop-level must-totality for the expression component of a type denotation.
 
     This is intentionally not encoded as a ChoiceLogic formula.  In the
-    nondeterministic core language, totality must mean strong normalization:
-    every branch of the reduction tree terminates.  The step-indexed definition
-    lives in [CoreLang.StrongNormalization]; here we lift it pointwise over the
-    stores of a world. *)
+    nondeterministic core language, totality must mean uniform strong
+    normalization: there is one fuel bound for all stores in the world.  A
+    pointwise existential bound is too weak for [let] when the bound expression
+    can produce infinitely many results. *)
 Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
   fv_tm e ⊆ X ∧
-  ∀ σ, (m : World) σ →
-    strongly_normalizing (subst_map (store_restrict σ X) e).
+  ∃ n, ∀ σ, (m : World) σ →
+    strongly_normalizing_fuel n (subst_map (store_restrict σ X) e).
 
 (** [world_closed_on X m] is the ChoiceType-level invariant saying that every
     store in [m] is operationally usable on the coordinates [X].  This belongs

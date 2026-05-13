@@ -128,8 +128,9 @@ Lemma expr_total_on_to_fv_result X e (m : WfWorld) :
   ∀ σ, (m : World) σ →
     ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx.
 Proof.
-  intros Hclosed [Hfv Htotal] σ Hσ.
-  destruct (strongly_normalizing_reaches_result _ (Htotal σ Hσ)) as [vx Hsteps].
+  intros Hclosed [Hfv [n Htotal]] σ Hσ.
+  destruct (strongly_normalizing_reaches_result _
+    ltac:(exists n; exact (Htotal σ Hσ))) as [vx Hsteps].
   exists vx.
   pose proof (subst_map_eq_on_fv e
     (store_restrict σ X)
