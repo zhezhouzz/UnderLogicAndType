@@ -35,8 +35,8 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
     [denot_ty_fuel gas Σ τ e] is the recursive semantic content of
     "expression [e] has type [τ]" under erased basic environment [Σ],
-    including the uniform obligations every denotation needs: basic typing,
-    closed resources, and strong totality.
+    including the obligations every denotation needs: basic typing, closed
+    resources, and deterministic result reachability.
 
     Keeping the obligations in the recursive formula itself avoids the previous
     [denot_ty_result] wrapper style: recursive calls are ordinary full
@@ -50,8 +50,8 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 Definition expr_total_with_store (X : aset) (e : tm)
     (ρ : Store) (m : WfWorld) : Prop :=
   (∀ σ, (m : World) σ → store_closed (store_restrict (ρ ∪ σ) X)) ∧
-  ∃ n, ∀ σ, (m : World) σ →
-    strongly_normalizing_fuel n (subst_map (store_restrict (ρ ∪ σ) X) e).
+  ∀ σ, (m : World) σ →
+    ∃ vx, subst_map (store_restrict (ρ ∪ σ) X) e →* tret vx.
 
 Definition FBasicTypingIn (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   FPure (basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ).
@@ -68,7 +68,7 @@ Lemma expr_total_with_store_empty_restrict X e m :
   expr_total_on X e m →
   expr_total_with_store X e ∅ (res_restrict m X).
 Proof.
-  intros Hclosed [_ [n Htotal]].
+  intros Hclosed [_ Htotal].
   split.
   - intros σ Hσ.
     destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
@@ -79,7 +79,7 @@ Proof.
       replace (X ∩ X) with X by set_solver.
       reflexivity. }
     rewrite Heq. apply Hclosed. exact Hσm.
-  - exists n. intros σ Hσ.
+  - intros σ Hσ.
     destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
     assert (Heq : store_restrict ((∅ : Store) ∪ σ) X = store_restrict σm X).
     { rewrite map_empty_union.

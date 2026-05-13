@@ -487,16 +487,15 @@ Proof.
   exact Hexact.
 Qed.
 
-(** Prop-level must-totality for the expression component of a type denotation.
+(** Prop-level totality for the expression component of a type denotation.
 
-    This is intentionally not encoded as a ChoiceLogic formula.  We keep a
-    uniform fuel bound over all stores in the world; for the deterministic core
-    this is stronger than mere reachability but matches the existing proof
-    structure for [let]. *)
+    This is intentionally not encoded as a ChoiceLogic formula.  Since the core
+    language is deterministic, totality is recorded as result reachability for
+    every store in the world. *)
 Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
   fv_tm e ⊆ X ∧
-  ∃ n, ∀ σ, (m : World) σ →
-    strongly_normalizing_fuel n (subst_map (store_restrict σ X) e).
+  ∀ σ, (m : World) σ →
+    ∃ vx, subst_map (store_restrict σ X) e →* tret vx.
 
 (** [world_closed_on X m] is the ChoiceType-level invariant saying that every
     store in [m] is operationally usable on the coordinates [X].  This belongs

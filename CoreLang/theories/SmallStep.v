@@ -132,6 +132,72 @@ Proof.
   exfalso. eapply val_no_step; eauto.
 Qed.
 
+Lemma prim_step_det op c c1 c2 :
+  prim_step op c c1 →
+  prim_step op c c2 →
+  c1 = c2.
+Proof.
+  intros H1 H2. inversion H1; inversion H2; subst; try reflexivity; congruence.
+Qed.
+
+Lemma head_step_det e e1 e2 :
+  head_step e e1 →
+  head_step e e2 →
+  e1 = e2.
+Proof.
+  intros H1 H2.
+  inversion H1; inversion H2; subst;
+    repeat match goal with
+    | H : tlete _ _ = tlete _ _ |- _ => inversion H; subst; clear H
+    | H : tprim _ _ = tprim _ _ |- _ => inversion H; subst; clear H
+    | H : tapp _ _ = tapp _ _ |- _ => inversion H; subst; clear H
+    | H : tmatch _ _ _ = tmatch _ _ _ |- _ => inversion H; subst; clear H
+    end;
+    try reflexivity; try discriminate.
+  repeat f_equal. eapply prim_step_det; eauto.
+Qed.
+
+Lemma step_det e e1 e2 :
+  step e e1 →
+  step e e2 →
+  e1 = e2.
+Proof.
+  intros H1. revert e2.
+  induction H1; intros e2'' H2.
+  - inversion H2; subst.
+    + eapply head_step_det; eauto.
+    + inversion H; subst; try discriminate.
+      exfalso. eapply val_no_step; eauto.
+  - inversion H2; subst.
+    + match goal with
+      | Hh : head_step (tlete _ _) _ |- _ =>
+          inversion Hh; subst; try discriminate
+      end.
+      exfalso. eapply val_no_step; eauto.
+    + f_equal. eauto.
+Qed.
+
+Lemma steps_result_unique e v1 v2 :
+  e →* tret v1 →
+  e →* tret v2 →
+  v1 = v2.
+Proof.
+  intros H1.
+  remember (tret v1) as r1 eqn:Hr1.
+  revert v1 Hr1 v2.
+  induction H1 as [e0 Hlc | e0 e1' e2' Hstep Hsteps IH];
+    intros v1 Hr1 v2 H2; subst.
+  - pose proof (val_steps_self v1 (tret v2) H2) as Heq.
+    inversion Heq. reflexivity.
+  - inversion H2; subst.
+    + exfalso. eapply val_no_step; eauto.
+    + match goal with
+      | Hs : step e0 ?e2'' |- _ =>
+          assert (e1' = e2'') as -> by (eapply step_det; eauto)
+      end.
+      eapply IH; eauto.
+Qed.
+
 Lemma prim_step_preserves_type op c c' arg_b ret_b :
   prim_step op c c' →
   prim_op_type op = (arg_b, ret_b) →

@@ -246,15 +246,14 @@ Lemma expr_total_on_tlete_elim_e1_strong X e1 e2 (m : WfWorld) :
   expr_total_on X (tlete e1 e2) m →
   expr_total_on X e1 m.
 Proof.
-  intros [Hfv [n Hsn]].
+  intros [Hfv Htotal].
   split; [simpl in Hfv; set_solver |].
-  exists n.
   intros σ Hσ.
-  specialize (Hsn σ Hσ).
-  change (strongly_normalizing_fuel n
-    (m{store_restrict σ X} (tlete e1 e2))) in Hsn.
-  rewrite msubst_lete in Hsn.
-  eapply strongly_normalizing_fuel_tlete_elim_e1; eauto.
+  destruct (Htotal σ Hσ) as [v Hsteps].
+  change (m{store_restrict σ X} (tlete e1 e2) →* tret v) in Hsteps.
+  rewrite msubst_lete in Hsteps.
+  apply reduction_lete in Hsteps as [vx [Hsteps1 _]].
+  exists vx. exact Hsteps1.
 Qed.
 
 Lemma expr_total_on_tlete_elim_body_strong
@@ -268,13 +267,13 @@ Lemma expr_total_on_tlete_elim_body_strong
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)
     (let_result_world_on e1 x m Hfresh Hresult).
 Proof.
-  intros HXdom HxX Hxe2 Hclosed Hlclet [Hfv [n Hsn]].
+  intros HXdom HxX Hxe2 Hclosed Hlclet [Hfv Htotal].
   apply lc_lete_iff_body in Hlclet as [Hlc1 Hbody2].
   split.
   - simpl in Hfv.
     pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen_fv.
     simpl in Hopen_fv. set_solver.
-  - exists n. intros σx Hσx.
+  - intros σx Hσx.
     destruct (let_result_world_on_elim e1 x m Hfresh Hresult σx Hσx)
       as [σ [vx [Hσ [Hsteps_fv ->]]]].
     assert (HclosedX : store_closed (store_restrict σ X)).
@@ -297,28 +296,18 @@ Proof.
         pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
         set_solver.
     }
-    assert (Hbody_msubst : body_tm (subst_map (store_restrict σ X) e2)).
-    { apply body_tm_msubst; [exact (proj1 HclosedX) | exact (proj2 HclosedX) | exact Hbody2]. }
-    assert (Hsnlet :
-      strongly_normalizing_fuel n
-        (tlete (subst_map (store_restrict σ X) e1)
-               (subst_map (store_restrict σ X) e2))).
-    {
-      specialize (Hsn σ Hσ).
-      change (strongly_normalizing_fuel n
-        (m{store_restrict σ X} (tlete e1 e2))) in Hsn.
-      rewrite msubst_lete in Hsn. exact Hsn.
-    }
-    pose proof (strongly_normalizing_fuel_tlete_elim_body n
-      (subst_map (store_restrict σ X) e1)
-      (subst_map (store_restrict σ X) e2)
-      vx Hbody_msubst HstepsX Hsnlet) as Hbody_sn.
+    destruct (Htotal σ Hσ) as [vout Hlet].
+    change (m{store_restrict σ X} (tlete e1 e2) →* tret vout) in Hlet.
+    rewrite msubst_lete in Hlet.
+    apply reduction_lete in Hlet as [vx' [HstepsX' Hbody_steps]].
+    assert (vx' = vx) as ->.
+    { eapply steps_result_unique; eauto. }
     rewrite store_restrict_insert_fresh_union.
     + rewrite (msubst_open_body_result X σ e2 x vx)
         by (try exact HxX; try exact Hxe2; try exact (proj1 HclosedX);
             try exact (proj1 Hvx_closed); try exact (proj2 Hvx_closed);
             try exact (proj2 HclosedX)).
-      exact Hbody_sn.
+      exists vout. exact Hbody_steps.
     + eapply store_lookup_none_of_dom.
       * exact (wfworld_store_dom m σ Hσ).
       * exact Hfresh.
@@ -337,8 +326,8 @@ Lemma expr_total_on_tlete_intro_strong
     (let_result_world_on e1 x m Hfresh Hresult) →
   expr_total_on X (tlete e1 e2) m.
 Proof.
-  intros HXdom HxX Hxe2 Hclosed Hlclet [Hfv1 [n1 Hsn1]]
-    [Hfv2 [n2 Hsn2]].
+  intros HXdom HxX Hxe2 Hclosed Hlclet [Hfv1 Htotal1]
+    [Hfv2 Htotal2].
   apply lc_lete_iff_body in Hlclet as [Hlc1 Hbody2].
   split.
   - simpl.
@@ -352,52 +341,46 @@ Proof.
       simpl in Hfv2.
       apply elem_of_union in Hfv2 as [HzX | Hzx]; [exact HzX |].
       apply elem_of_singleton in Hzx. subst z. contradiction.
-  - exists (S (n1 + n2)).
-    intros σ Hσ.
-    change (strongly_normalizing_fuel (S (n1 + n2))
-      (m{store_restrict σ X} (tlete e1 e2))).
+  - intros σ Hσ.
+    destruct (Htotal1 σ Hσ) as [vx HstepsX].
+    assert (Hsteps_fv :
+      subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
+    {
+      rewrite (subst_map_restrict_to_fv_from_superset e1 X σ
+        Hfv1 (proj1 (Hclosed σ Hσ))).
+      exact HstepsX.
+    }
+    assert (Hvx_closed : stale vx = ∅ ∧ is_lc vx).
+    {
+      eapply steps_closed_result; [| exact HstepsX].
+      apply msubst_closed_tm.
+      - exact (Hclosed σ Hσ).
+      - exact Hlc1.
+      - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
+        rewrite store_restrict_dom.
+        pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+        set_solver.
+    }
+    pose proof (Htotal2 (<[x:=vx]> σ)) as Hbody_total.
+    assert ((let_result_world_on e1 x m Hfresh Hresult : World)
+      (<[x:=vx]> σ)) as Hσx.
+    { exists σ, vx. split; [exact Hσ | split; [exact Hsteps_fv | reflexivity]]. }
+    specialize (Hbody_total Hσx) as [vout Hbody_steps].
+    exists vout.
+    change (m{store_restrict σ X} (tlete e1 e2) →* tret vout).
     rewrite msubst_lete.
-    change (strongly_normalizing_fuel (S (n1 + n2))
-      (tlete (subst_map (store_restrict σ X) e1)
-        (subst_map (store_restrict σ X) e2))).
-    eapply (strongly_normalizing_fuel_tlete_intro n1 n2
-      (subst_map (store_restrict σ X) e1)
-      (subst_map (store_restrict σ X) e2)).
+    eapply reduction_lete_intro.
     + apply body_tm_msubst.
       * exact (proj1 (Hclosed σ Hσ)).
       * exact (proj2 (Hclosed σ Hσ)).
       * exact Hbody2.
-    + apply Hsn1. exact Hσ.
-    + intros vx HstepsX.
-      assert (Hsteps_fv :
-        subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
-      {
-        rewrite (subst_map_restrict_to_fv_from_superset e1 X σ
-          Hfv1 (proj1 (Hclosed σ Hσ))).
-        exact HstepsX.
-      }
-      assert (Hvx_closed : stale vx = ∅ ∧ is_lc vx).
-      {
-        eapply steps_closed_result; [| exact HstepsX].
-        apply msubst_closed_tm.
-        - exact (Hclosed σ Hσ).
-        - exact Hlc1.
-        - change (fv_tm e1 ⊆ dom (store_restrict σ X)).
-          rewrite store_restrict_dom.
-          pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
-          set_solver.
-      }
-      pose proof (Hsn2 (<[x:=vx]> σ)) as Hbody_sn.
-      assert ((let_result_world_on e1 x m Hfresh Hresult : World)
-        (<[x:=vx]> σ)) as Hσx.
-      { exists σ, vx. split; [exact Hσ | split; [exact Hsteps_fv | reflexivity]]. }
-      specialize (Hbody_sn Hσx).
-      rewrite store_restrict_insert_fresh_union in Hbody_sn.
+    + exact HstepsX.
+    + rewrite store_restrict_insert_fresh_union in Hbody_steps.
       * rewrite (msubst_open_body_result X σ e2 x vx
           HxX Hxe2 (proj1 (Hclosed σ Hσ))
           (proj1 Hvx_closed) (proj2 Hvx_closed)
-          (proj2 (Hclosed σ Hσ))) in Hbody_sn.
-        exact Hbody_sn.
+          (proj2 (Hclosed σ Hσ))) in Hbody_steps.
+        exact Hbody_steps.
       * eapply store_lookup_none_of_dom.
         -- apply wfworld_store_dom. exact Hσ.
         -- exact Hfresh.

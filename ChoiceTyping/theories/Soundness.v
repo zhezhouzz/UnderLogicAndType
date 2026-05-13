@@ -90,11 +90,12 @@ Lemma expr_total_on_ret_lc X v (m : WfWorld) :
 Proof.
   intros Hfv Hlc Henv.
   split; [simpl; exact Hfv |].
-  exists 0.
   intros σ Hσ.
-  change (strongly_normalizing_fuel 0 (m{store_restrict σ X} (tret v))).
+  exists (m{store_restrict σ X} v).
+  change (m{store_restrict σ X} (tret v) →* tret (m{store_restrict σ X} v)).
   rewrite msubst_ret.
-  apply result_tm_tret.
+  apply Steps_refl.
+  constructor.
   apply msubst_lc; [apply Henv; exact Hσ | exact Hlc].
 Qed.
 
@@ -158,12 +159,12 @@ Lemma expr_total_on_ret_const X c m :
 Proof.
   split.
   - simpl. set_solver.
-  - exists 0.
-    intros σ _.
-    change (strongly_normalizing_fuel 0 (m{store_restrict σ X} (tret (vconst c)))).
+  - intros σ _.
+    exists (vconst c).
+    change (m{store_restrict σ X} (tret (vconst c)) →* tret (vconst c)).
     rewrite msubst_ret. simpl.
     rewrite (msubst_fresh (store_restrict σ X) (vconst c)) by set_solver.
-    apply result_tm_tret. constructor.
+    apply Steps_refl. constructor. constructor.
 Qed.
 
 Lemma fundamental_const_total_case Σ c :

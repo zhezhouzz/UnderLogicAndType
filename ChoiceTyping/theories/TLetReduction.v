@@ -220,15 +220,15 @@ Lemma expr_total_on_restrict_insert_fresh
   expr_total_on (dom (<[x := T]> Σ)) e m →
   expr_total_on (dom Σ) e (res_restrict m (dom Σ)).
 Proof.
-  intros Hx Hdom Hclosed [Hfv [n Htotal]].
+  intros Hx Hdom Hclosed [Hfv Htotal].
   split; [set_solver |].
-  exists n.
   intros σ Hσ.
   destruct Hσ as [σm [Hσm Hrestrict]].
-  specialize (Htotal σm Hσm).
+  destruct (Htotal σm Hσm) as [vx Hsteps].
+  exists vx.
   replace (subst_map (store_restrict σ (dom Σ)) e)
     with (subst_map (store_restrict σm (dom (<[x := T]> Σ))) e).
-  - exact Htotal.
+  - exact Hsteps.
   - symmetry.
     eapply subst_map_eq_on_fv.
     + apply closed_env_restrict. exact (proj1 (Hclosed σm Hσm)).
@@ -245,14 +245,14 @@ Lemma expr_total_on_drop_insert_fresh_same
   expr_total_on (dom (<[x := T]> Σ)) e m →
   expr_total_on (dom Σ) e m.
 Proof.
-  intros Hx Hclosed [Hfv [n Htotal]].
+  intros Hx Hclosed [Hfv Htotal].
   split; [set_solver |].
-  exists n.
   intros σ Hσ.
-  specialize (Htotal σ Hσ).
+  destruct (Htotal σ Hσ) as [vx Hsteps].
+  exists vx.
   replace (subst_map (store_restrict σ (dom Σ)) e)
     with (subst_map (store_restrict σ (dom (<[x := T]> Σ))) e).
-  - exact Htotal.
+  - exact Hsteps.
   - symmetry.
     eapply subst_map_eq_on_fv.
     + apply closed_env_restrict. exact (proj1 (Hclosed σ Hσ)).
@@ -264,8 +264,7 @@ Lemma expr_total_on_restrict_self X e (m : WfWorld) :
   expr_total_on X e m →
   expr_total_on X e (res_restrict m X).
 Proof.
-  intros [Hfv [n Htotal]]. split; [exact Hfv |].
-  exists n.
+  intros [Hfv Htotal]. split; [exact Hfv |].
   intros σ Hσ.
   destruct Hσ as [σm [Hσm <-]].
   rewrite store_restrict_restrict.
@@ -707,16 +706,17 @@ Lemma expr_total_on_sum_le_l X e (m n1 n2 : WfWorld)
   res_sum n1 n2 Hdef ⊑ m →
   expr_total_on X e n1.
 Proof.
-  intros HX [Hfv [n Htotal]] Hle. split; [exact Hfv |].
-  exists n.
+  intros HX [Hfv Htotal] Hle. split; [exact Hfv |].
   intros σ Hσ.
   pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
   assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
     as HσR.
   { rewrite Hrestrict. simpl. left. exact Hσ. }
   destruct HσR as [σm [Hσm Hstore]].
+  destruct (Htotal σm Hσm) as [vx Hsteps].
+  exists vx.
   replace (store_restrict σ X) with (store_restrict σm X).
-  - exact (Htotal σm Hσm).
+  - exact Hsteps.
   - rewrite <- Hstore.
     rewrite store_restrict_restrict.
     replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X by set_solver.
@@ -730,16 +730,17 @@ Lemma expr_total_on_sum_le_r X e (m n1 n2 : WfWorld)
   res_sum n1 n2 Hdef ⊑ m →
   expr_total_on X e n2.
 Proof.
-  intros HX [Hfv [n Htotal]] Hle. split; [exact Hfv |].
-  exists n.
+  intros HX [Hfv Htotal] Hle. split; [exact Hfv |].
   intros σ Hσ.
   pose proof (res_restrict_eq_of_le (res_sum n1 n2 Hdef) m Hle) as Hrestrict.
   assert ((res_restrict m (world_dom (res_sum n1 n2 Hdef : World)) : World) σ)
     as HσR.
   { rewrite Hrestrict. simpl. right. exact Hσ. }
   destruct HσR as [σm [Hσm Hstore]].
+  destruct (Htotal σm Hσm) as [vx Hsteps].
+  exists vx.
   replace (store_restrict σ X) with (store_restrict σm X).
-  - exact (Htotal σm Hσm).
+  - exact Hsteps.
   - rewrite <- Hstore.
     rewrite store_restrict_restrict.
     replace (world_dom (res_sum n1 n2 Hdef : World) ∩ X) with X.
@@ -797,8 +798,7 @@ Proof.
     destruct (res_models_with_store_store_resource_atom_elim ∅ m (dom Σ)
       (fun ρ m => expr_total_with_store (dom Σ) e ρ m) Hm)
       as [m0 [Hscope [Htotal Hle]]].
-    destruct Htotal as [_ [n Htotal]].
-    exists n.
+    destruct Htotal as [_ Htotal].
     intros σ Hσ.
     pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
     assert ((res_restrict m (world_dom (m0 : World)) : World)
@@ -1293,7 +1293,7 @@ Lemma expr_total_with_store_empty_tret_fvar_swap_exact
   expr_total_with_store (D ∪ {[y]}) (tret (vfvar y)) ∅ m →
   expr_total_with_store (D ∪ {[x]}) (tret (vfvar x)) ∅ (res_swap x y m).
 Proof.
-  intros Hx Hy Hdom Hclosed [_ [n Htotal]].
+  intros Hx Hy Hdom Hclosed [_ Htotal].
   split.
   - intros σx Hσx.
     simpl in Hσx.
@@ -1302,7 +1302,7 @@ Proof.
     rewrite store_restrict_swap_fresh_union_singleton by assumption.
     apply store_closed_store_swap.
     apply Hclosed. exact Hσy.
-  - exists n. intros σx Hσx.
+  - intros σx Hσx.
   simpl in Hσx.
   destruct Hσx as [σy [Hσy Hσx]]. subst σx.
   rewrite map_empty_union.
@@ -1314,13 +1314,17 @@ Proof.
   assert (Hlookup_restrict :
     store_restrict σy (D ∪ {[y]}) !! y = Some vy).
   { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-  apply (proj2 (strongly_normalizing_fuel_tret_fvar_store_swap_lookup n
+  destruct (Htotal σy Hσy) as [vout Hsteps].
+  exists vout.
+  change (m{store_swap x y (store_restrict σy (D ∪ {[y]}))}
+    (tret (vfvar x)) →* tret vout).
+  rewrite (msubst_tret_fvar_store_swap_lookup
     (store_restrict σy (D ∪ {[y]})) x y vy
-    Hclosed_y Hlookup_restrict)).
+    Hclosed_y Hlookup_restrict).
   replace (store_restrict σy (D ∪ {[y]}))
     with (store_restrict (∅ ∪ σy) (D ∪ {[y]}))
     by (rewrite map_empty_union; reflexivity).
-  apply Htotal. exact Hσy.
+  exact Hsteps.
 Qed.
 
 Lemma expr_total_with_store_empty_tret_fvar_swap_exact_iff
@@ -1358,7 +1362,7 @@ Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact
   expr_total_with_store (D ∪ {[y]}) (tapp_tm e (vfvar y)) ∅ m →
   expr_total_with_store (D ∪ {[x]}) (tapp_tm e (vfvar x)) ∅ (res_swap x y m).
 Proof.
-  intros Hx Hy Hdom Hclosed [_ [n Htotal]].
+  intros Hx Hy Hdom Hclosed [_ Htotal].
   split.
   - intros σx Hσx.
     simpl in Hσx.
@@ -1367,7 +1371,7 @@ Proof.
     rewrite store_restrict_swap_fresh_union_singleton by set_solver.
     apply store_closed_store_swap.
     apply Hclosed. exact Hσy.
-  - exists n. intros σx Hσx.
+  - intros σx Hσx.
   simpl in Hσx.
   destruct Hσx as [σy [Hσy Hσx]]. subst σx.
   rewrite map_empty_union.
@@ -1379,13 +1383,17 @@ Proof.
   assert (Hlookup_restrict :
     store_restrict σy (D ∪ {[y]}) !! y = Some vy).
   { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-  apply (proj2 (strongly_normalizing_fuel_tapp_tm_fvar_store_swap_lookup n
+  destruct (Htotal σy Hσy) as [vout Hsteps].
+  exists vout.
+  change (m{store_swap x y (store_restrict σy (D ∪ {[y]}))}
+    (tapp_tm e (vfvar x)) →* tret vout).
+  rewrite (msubst_tapp_tm_fvar_store_swap_lookup
     (store_restrict σy (D ∪ {[y]})) e x y vy
-    Hclosed_y Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+    Hclosed_y Hlookup_restrict ltac:(set_solver) ltac:(set_solver)).
   replace (store_restrict σy (D ∪ {[y]}))
     with (store_restrict (∅ ∪ σy) (D ∪ {[y]}))
     by (rewrite map_empty_union; reflexivity).
-  apply Htotal. exact Hσy.
+  exact Hsteps.
 Qed.
 
 Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact_iff
@@ -1424,8 +1432,7 @@ Lemma expr_total_on_tret_fvar_swap_iff D x y (m : WfWorld) :
   expr_total_on (D ∪ {[y]}) (tret (vfvar y)) m.
 Proof.
   intros Hx Hy Hdom Hclosed. split.
-  - intros [_ [n Htotal]]. split; [set_solver |].
-    exists n.
+  - intros [_ Htotal]. split; [set_solver |].
     intros σ Hσ.
     pose proof (Hclosed σ Hσ) as Hclosedσ.
     assert (Hy_dom : y ∈ dom σ).
@@ -1434,17 +1441,18 @@ Proof.
     assert (Hlookup_restrict :
       store_restrict σ (D ∪ {[y]}) !! y = Some vy).
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-    pose proof (Htotal (store_swap x y σ)) as Hsn.
+    pose proof (Htotal (store_swap x y σ)) as Hsteps_total.
     assert ((res_swap x y m : World) (store_swap x y σ)) as Hσswap.
     { simpl. exists σ. split; [exact Hσ | reflexivity]. }
-    specialize (Hsn Hσswap).
-    rewrite store_restrict_swap_fresh_union_singleton in Hsn by assumption.
-    apply (proj1 (strongly_normalizing_fuel_tret_fvar_store_swap_lookup n
+    specialize (Hsteps_total Hσswap) as [vout Hsteps].
+    exists vout.
+    rewrite store_restrict_swap_fresh_union_singleton in Hsteps by assumption.
+    change (m{store_restrict σ (D ∪ {[y]})} (tret (vfvar y)) →* tret vout).
+    rewrite <- (msubst_tret_fvar_store_swap_lookup
       (store_restrict σ (D ∪ {[y]})) x y vy
-      (proj1 Hclosedσ) Hlookup_restrict)).
-    exact Hsn.
-  - intros [_ [n Htotal]]. split; [set_solver |].
-    exists n.
+      (proj1 Hclosedσ) Hlookup_restrict).
+    exact Hsteps.
+  - intros [_ Htotal]. split; [set_solver |].
     intros σx Hσx.
     simpl in Hσx.
     destruct Hσx as [σy [Hσy Hσx]]. subst σx.
@@ -1456,10 +1464,14 @@ Proof.
     assert (Hlookup_restrict :
       store_restrict σy (D ∪ {[y]}) !! y = Some vy).
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-    apply (proj2 (strongly_normalizing_fuel_tret_fvar_store_swap_lookup n
+    destruct (Htotal σy Hσy) as [vout Hsteps].
+    exists vout.
+    change (m{store_swap x y (store_restrict σy (D ∪ {[y]}))}
+      (tret (vfvar x)) →* tret vout).
+    rewrite (msubst_tret_fvar_store_swap_lookup
       (store_restrict σy (D ∪ {[y]})) x y vy
-      (proj1 Hclosedσ) Hlookup_restrict)).
-    apply Htotal. exact Hσy.
+      (proj1 Hclosedσ) Hlookup_restrict).
+    exact Hsteps.
 Qed.
 
 Lemma expr_total_on_tapp_tm_fvar_swap_iff D e x y (m : WfWorld) :
@@ -1472,9 +1484,8 @@ Lemma expr_total_on_tapp_tm_fvar_swap_iff D e x y (m : WfWorld) :
   expr_total_on (D ∪ {[y]}) (tapp_tm e (vfvar y)) m.
 Proof.
   intros Hx Hy Hfve Hdom Hclosed. split.
-  - intros [_ [n Htotal]]. split.
+  - intros [_ Htotal]. split.
     { rewrite fv_tapp_tm. simpl. set_solver. }
-    exists n.
     intros σ Hσ.
     pose proof (Hclosed σ Hσ) as Hclosedσ.
     assert (Hy_dom : y ∈ dom σ).
@@ -1483,18 +1494,19 @@ Proof.
     assert (Hlookup_restrict :
       store_restrict σ (D ∪ {[y]}) !! y = Some vy).
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-    pose proof (Htotal (store_swap x y σ)) as Hsn.
+    pose proof (Htotal (store_swap x y σ)) as Hsteps_total.
     assert ((res_swap x y m : World) (store_swap x y σ)) as Hσswap.
     { simpl. exists σ. split; [exact Hσ | reflexivity]. }
-    specialize (Hsn Hσswap).
-    rewrite store_restrict_swap_fresh_union_singleton in Hsn by set_solver.
-    apply (proj1 (strongly_normalizing_fuel_tapp_tm_fvar_store_swap_lookup n
+    specialize (Hsteps_total Hσswap) as [vout Hsteps].
+    exists vout.
+    rewrite store_restrict_swap_fresh_union_singleton in Hsteps by set_solver.
+    change (m{store_restrict σ (D ∪ {[y]})} (tapp_tm e (vfvar y)) →* tret vout).
+    rewrite <- (msubst_tapp_tm_fvar_store_swap_lookup
       (store_restrict σ (D ∪ {[y]})) e x y vy
-      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
-    exact Hsn.
-  - intros [_ [n Htotal]]. split.
+      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver)).
+    exact Hsteps.
+  - intros [_ Htotal]. split.
     { rewrite fv_tapp_tm. simpl. set_solver. }
-    exists n.
     intros σx Hσx.
     simpl in Hσx.
     destruct Hσx as [σy [Hσy Hσx]]. subst σx.
@@ -1506,10 +1518,14 @@ Proof.
     assert (Hlookup_restrict :
       store_restrict σy (D ∪ {[y]}) !! y = Some vy).
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
-    apply (proj2 (strongly_normalizing_fuel_tapp_tm_fvar_store_swap_lookup n
+    destruct (Htotal σy Hσy) as [vout Hsteps].
+    exists vout.
+    change (m{store_swap x y (store_restrict σy (D ∪ {[y]}))}
+      (tapp_tm e (vfvar x)) →* tret vout).
+    rewrite (msubst_tapp_tm_fvar_store_swap_lookup
       (store_restrict σy (D ∪ {[y]})) e x y vy
-      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
-    apply Htotal. exact Hσy.
+      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver)).
+    exact Hsteps.
 Qed.
 
 Lemma dom_insert_fresh_union (Σ : gmap atom ty) x T :
@@ -1981,7 +1997,7 @@ Lemma expr_total_with_store_empty_extend X e (m n : WfWorld) :
   expr_total_with_store X e ∅ m →
   expr_total_with_store X e ∅ (res_restrict n X).
 Proof.
-  intros HXm Hle [Hclosed [k Htotal]].
+  intros HXm Hle [Hclosed Htotal].
   split.
   - intros σ Hσ.
     destruct Hσ as [σn [Hσn Hrestrict]].
@@ -1998,7 +2014,7 @@ Proof.
       replace (world_dom (m : World) ∩ X) with X by set_solver.
       reflexivity. }
     rewrite Heq. apply Hclosed. exact Hσm.
-  - exists k. intros σ Hσ.
+  - intros σ Hσ.
     destruct Hσ as [σn [Hσn Hrestrict]].
     assert ((res_restrict n (world_dom (m : World)) : World)
       (store_restrict σn (world_dom (m : World)))) as Hσm.
@@ -3543,9 +3559,8 @@ Proof.
            ++ apply elem_of_union_r. exact Hbad.
         -- rewrite Hdom_m1. exact Hdom_sub.
         -- intros σ Hσ. apply Hclosed. exact (proj2 Hsub_m1 σ Hσ).
-        -- destruct Htotal as [Hfv [n Hsn]]. split; [exact Hfv |].
-           exists n.
-           intros σ Hσ. apply Hsn. exact (proj2 Hsub_m1 σ Hσ).
+        -- destruct Htotal as [Hfv Htotal]. split; [exact Hfv |].
+           intros σ Hσ. apply Htotal. exact (proj2 Hsub_m1 σ Hσ).
         -- exact (IHfrom Hm1_base).
       * assert (Hn2_model : n2 ⊨ denot_ty_fuel gas Σ τb e).
         { unfold res_models, res_models_with_store. models_fuel_irrel Hn2. }
@@ -3566,9 +3581,8 @@ Proof.
            ++ apply elem_of_union_r. exact Hbad.
         -- rewrite Hdom_m2. exact Hdom_sub.
         -- intros σ Hσ. apply Hclosed. exact (proj2 Hsub_m2 σ Hσ).
-        -- destruct Htotal as [Hfv [n Hsn]]. split; [exact Hfv |].
-           exists n.
-           intros σ Hσ. apply Hsn. exact (proj2 Hsub_m2 σ Hσ).
+        -- destruct Htotal as [Hfv Htotal]. split; [exact Hfv |].
+           intros σ Hσ. apply Htotal. exact (proj2 Hsub_m2 σ Hσ).
         -- exact (IHfrom Hm2_base).
     + exact Hdom_sub.
 Qed.
@@ -4044,9 +4058,9 @@ Proof.
               replace (world_dom (res_sum n1 n2 Hdef : World) ∩ dom (<[x:=T]> Σ))
                 with (dom (<[x:=T]> Σ)) by set_solver.
               apply Hclosed. exact Hσm.
-           ++ destruct Htotal as [Hfv_total [ntotal Hsn]]. split.
+           ++ destruct Htotal as [Hfv_total Htotal]. split.
               ** simpl. rewrite dom_insert_L. set_solver.
-              ** exists ntotal. intros σ Hσ.
+              ** intros σ Hσ.
                  assert (Hσsum : (res_sum n1 n2 Hdef : World) σ).
                  { simpl. left. exact Hσ. }
                  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
@@ -4064,9 +4078,11 @@ Proof.
                    eapply denot_ty_fuel_env_fv_subset; [cbn [cty_measure] in Hgas; lia |].
                    exact Hz.
                  }
+                 destruct (Htotal σm Hσm) as [vx Hsteps].
+                 exists vx.
                  replace (store_restrict σ (dom (<[x:=T]> Σ)))
                    with (store_restrict σm (dom (<[x:=T]> Σ))).
-                 { apply Hsn. exact Hσm. }
+                 { exact Hsteps. }
                  rewrite <- Hrestrict.
                  rewrite store_restrict_restrict.
                  replace (world_dom (res_sum n1 n2 Hdef : World) ∩ dom (<[x:=T]> Σ))
@@ -4127,9 +4143,9 @@ Proof.
               replace (world_dom (res_sum n1 n2 Hdef : World) ∩ dom (<[x:=T]> Σ))
                 with (dom (<[x:=T]> Σ)) by set_solver.
               apply Hclosed. exact Hσm.
-           ++ destruct Htotal as [Hfv_total [ntotal Hsn]]. split.
+           ++ destruct Htotal as [Hfv_total Htotal]. split.
               ** simpl. rewrite dom_insert_L. set_solver.
-              ** exists ntotal. intros σ Hσ.
+              ** intros σ Hσ.
                  assert (Hσsum : (res_sum n1 n2 Hdef : World) σ).
                  { simpl. right. exact Hσ. }
                  unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
@@ -4147,9 +4163,11 @@ Proof.
                    eapply denot_ty_fuel_env_fv_subset; [cbn [cty_measure] in Hgas; lia |].
                    exact Hz.
                  }
+                 destruct (Htotal σm Hσm) as [vx Hsteps].
+                 exists vx.
                  replace (store_restrict σ (dom (<[x:=T]> Σ)))
                    with (store_restrict σm (dom (<[x:=T]> Σ))).
-                 { apply Hsn. exact Hσm. }
+                 { exact Hsteps. }
                  rewrite <- Hrestrict.
                  rewrite store_restrict_restrict.
                  replace (world_dom (res_sum n1 n2 Hdef : World) ∩ dom (<[x:=T]> Σ))
@@ -4354,9 +4372,8 @@ Proof.
 	           ++ rewrite Hdom_m1. exact Hdom.
 	           ++ intros σ Hσ.
 	              apply Hclosed. exact (proj2 Hsub_m1 σ Hσ).
-	           ++ destruct Htotal as [Hfv [ntotal Hsn]]. split; [rewrite dom_insert_L; set_solver |].
-	              exists ntotal.
-	              intros σ Hσ. apply Hsn. exact (proj2 Hsub_m1 σ Hσ).
+		           ++ destruct Htotal as [Hfv Htotal]. split; [rewrite dom_insert_L; set_solver |].
+		              intros σ Hσ. apply Htotal. exact (proj2 Hsub_m1 σ Hσ).
 	           ++ rewrite Hrestr1.
 	              eapply res_models_with_store_fuel_irrel.
 	              ** apply Nat.le_add_r.
@@ -4368,9 +4385,8 @@ Proof.
 	           ++ rewrite Hdom_m2. exact Hdom.
 	           ++ intros σ Hσ.
 	              apply Hclosed. exact (proj2 Hsub_m2 σ Hσ).
-	           ++ destruct Htotal as [Hfv [ntotal Hsn]]. split; [rewrite dom_insert_L; set_solver |].
-	              exists ntotal.
-	              intros σ Hσ. apply Hsn. exact (proj2 Hsub_m2 σ Hσ).
+		           ++ destruct Htotal as [Hfv Htotal]. split; [rewrite dom_insert_L; set_solver |].
+		              intros σ Hσ. apply Htotal. exact (proj2 Hsub_m2 σ Hσ).
 	           ++ rewrite Hrestr2.
 	              eapply res_models_with_store_fuel_irrel.
 	              ** apply Nat.le_add_l.
