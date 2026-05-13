@@ -81,6 +81,17 @@ Proof.
   apply kmap_delete. apply atom_swap_inj.
 Qed.
 
+Lemma store_swap_insert x y z v (s : Store) :
+  store_swap x y (<[z := v]> s) =
+  <[atom_swap x y z := v]> (store_swap x y s).
+Proof.
+  unfold store_swap.
+  change (kmap (atom_swap x y) (<[z := v]> (s : gmap atom V)) =
+    (<[atom_swap x y z := v]> (kmap (atom_swap x y) (s : gmap atom V)) :
+      gmap atom V)).
+  rewrite kmap_insert; [reflexivity | apply atom_swap_inj].
+Qed.
+
 Lemma map_restrict_store_swap_fresh x y (s : Store) X :
   x ∉ X →
   y ∉ X →

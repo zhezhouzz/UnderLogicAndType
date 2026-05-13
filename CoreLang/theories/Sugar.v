@@ -6,6 +6,7 @@
 
 From CoreLang Require Export SmallStep OperationalProps LocallyNamelessProps.
 From CoreLang Require Import BasicTypingProps.
+From ChoicePrelude Require Import StoreBase.
 
 Definition vtrue : value := vconst (cbool true).
 Definition vfalse : value := vconst (cbool false).
@@ -37,6 +38,27 @@ Lemma fv_tapp_tm ef vx :
   fv_tm (tapp_tm ef vx) = fv_tm ef ∪ fv_value vx.
 Proof.
   induction ef; simpl; set_solver.
+Qed.
+
+Lemma tm_swap_atom_tapp_tm x y ef vx :
+  tm_swap_atom x y (tapp_tm ef vx) =
+  tapp_tm (tm_swap_atom x y ef) (value_swap_atom x y vx).
+Proof.
+  induction ef; simpl; try reflexivity.
+  rewrite IHef2. reflexivity.
+Qed.
+
+Lemma tm_swap_atom_tapp_tm_fvar_fresh x y ef :
+  x ∉ fv_tm ef →
+  y ∉ fv_tm ef →
+  tm_swap_atom x y (tapp_tm ef (vfvar x)) = tapp_tm ef (vfvar y).
+Proof.
+  intros Hx Hy.
+  rewrite tm_swap_atom_tapp_tm.
+  rewrite tm_swap_atom_fresh by assumption.
+  simpl. replace (atom_swap x y x) with y
+    by (unfold atom_swap; repeat destruct decide; congruence).
+  reflexivity.
 Qed.
 
 Lemma open_tapp_tm_lc_arg ef vx k u :

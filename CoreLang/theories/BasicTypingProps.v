@@ -1,4 +1,5 @@
 From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
+From ChoicePrelude Require Import Store.
 
 (** * Basic typing facts for CoreLang
 
@@ -261,6 +262,99 @@ Proof.
               eapply IH; intros z Hz; apply Hagree; set_solver
           end
       end.
+Qed.
+
+Lemma basic_typing_swap_value Γ v T x y :
+  Γ ⊢ᵥ v ⋮ T →
+  store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T
+with basic_typing_swap_tm Γ e T x y :
+  Γ ⊢ₑ e ⋮ T →
+  store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T.
+Proof.
+  - intros Hty.
+    induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T _ =>
+        store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T);
+      simpl.
+    + constructor.
+    + econstructor. rewrite store_swap_lookup. exact e.
+    + eapply VT_Lam with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=s]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+        open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
+          ((sx →ₜ T) →ₜ T)).
+      rewrite open_value_swap_atom.
+      replace (<[z:=sx]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + eapply TT_Let; [eauto |].
+      intros z Hz.
+      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=T1]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + econstructor; eauto.
+    + econstructor; eauto.
+  - intros Hty.
+    induction Hty using tm_has_type_mut with
+      (P := fun Γ v T _ =>
+        store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T);
+      simpl.
+    + constructor.
+    + econstructor. rewrite store_swap_lookup. exact e.
+    + eapply VT_Lam with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=s]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+        open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
+          ((sx →ₜ T) →ₜ T)).
+      rewrite open_value_swap_atom.
+      replace (<[z:=sx]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + eapply TT_Let; [eauto |].
+      intros z Hz.
+      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=T1]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + econstructor; eauto.
+    + econstructor; eauto.
 Qed.
 
 Lemma basic_typing_env_agree_tm Γ Γ' e T :
