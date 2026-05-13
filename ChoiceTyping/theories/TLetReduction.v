@@ -1763,6 +1763,56 @@ Proof. unfold atom_swap. repeat destruct decide; congruence. Qed.
 Lemma atom_swap_right_eq x y : atom_swap x y y = x.
 Proof. unfold atom_swap. repeat destruct decide; congruence. Qed.
 
+Lemma FBasicTypingIn_insert_swap_iff
+    (Σ : gmap atom ty) x y T τ e (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  m ⊨ formula_rename_atom x y (FBasicTypingIn (<[x := T]> Σ) τ e) ↔
+  m ⊨ FBasicTypingIn (<[y := T]> Σ)
+    (cty_swap_atom x y τ) (tm_swap_atom x y e).
+Proof.
+  intros Hx Hy.
+  unfold FBasicTypingIn.
+  rewrite formula_rename_FPure.
+  split; intros Hm.
+  - destruct (res_models_with_store_pure_elim _ _ _ Hm) as [Hbasic Htyped].
+    eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * replace (dom (<[y:=T]> Σ))
+          with (aset_swap x y (dom (<[x:=T]> Σ))).
+        -- apply basic_choice_ty_swap. exact Hbasic.
+        -- rewrite !dom_insert_L, aset_swap_union, aset_swap_singleton.
+           rewrite atom_swap_left_eq, aset_swap_fresh by assumption.
+           set_solver.
+      * rewrite (cty_swap_preserves_erasure x y τ).
+        replace (<[y:=T]> Σ)
+          with (store_swap x y (<[x:=T]> Σ)).
+        -- apply basic_typing_swap_tm. exact Htyped.
+        -- rewrite store_swap_insert, atom_swap_left_eq.
+           rewrite store_swap_fresh by assumption. reflexivity.
+  - destruct (res_models_with_store_pure_elim _ _ _ Hm) as [Hbasic Htyped].
+    eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world. simpl. set_solver.
+    + split.
+      * pose proof (basic_choice_ty_swap x y _ _ Hbasic) as Hback.
+        rewrite cty_swap_atom_involutive in Hback.
+        replace (aset_swap x y (dom (<[y:=T]> Σ)))
+          with (dom (<[x:=T]> Σ)) in Hback.
+        -- exact Hback.
+        -- rewrite !dom_insert_L, aset_swap_union, aset_swap_singleton.
+           rewrite atom_swap_right_eq, aset_swap_fresh by assumption.
+           set_solver.
+      * pose proof (basic_typing_swap_tm _ _ _ x y Htyped) as Htyped_swap.
+        rewrite tm_swap_atom_involutive in Htyped_swap.
+        rewrite (cty_swap_preserves_erasure x y τ) in Htyped_swap.
+        replace (store_swap x y (<[y:=T]> Σ))
+          with (<[x:=T]> Σ) in Htyped_swap.
+        -- exact Htyped_swap.
+        -- rewrite store_swap_insert, atom_swap_right_eq.
+           rewrite store_swap_fresh by assumption. reflexivity.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
