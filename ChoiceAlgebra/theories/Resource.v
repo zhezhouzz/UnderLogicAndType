@@ -754,6 +754,90 @@ Lemma res_subset_swap_elim (x y : atom) (w1 w2 : WfWorld) :
   res_subset w1 w2.
 Proof. apply (proj1 (res_subset_swap x y w1 w2)). Qed.
 
+Lemma res_sum_subset_l (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
+  res_subset w1 (res_sum w1 w2 Hdef).
+Proof.
+  split; [reflexivity |].
+  intros σ Hσ. simpl. left. exact Hσ.
+Qed.
+
+Lemma res_sum_subset_r (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
+  res_subset w2 (res_sum w1 w2 Hdef).
+Proof.
+  split.
+  - simpl. unfold raw_sum_defined in Hdef. symmetry. exact Hdef.
+  - intros σ Hσ. simpl. right. exact Hσ.
+Qed.
+
+Definition raw_slice_restrict (n : WfWorld) (X : aset) (p : WfWorld) : World := {|
+  world_dom := world_dom (n : World);
+  world_stores := fun σ =>
+    (n : World) σ ∧ (p : World) (store_restrict σ X);
+|}.
+
+Lemma raw_slice_restrict_wf (n : WfWorld) (X : aset) (p : WfWorld) :
+  res_subset p (res_restrict n X) →
+  wf_world (raw_slice_restrict n X p).
+Proof.
+  intros [_ Hin]. constructor.
+  - destruct (wf_ne _ (world_wf p)) as [σp Hσp].
+    pose proof (Hin σp Hσp) as Hproj.
+    simpl in Hproj.
+    destruct Hproj as [σn [Hσn Hrestrict]].
+    exists σn. split; [exact Hσn |].
+    rewrite Hrestrict. exact Hσp.
+  - intros σ [Hσn _]. simpl.
+    exact (wfworld_store_dom n σ Hσn).
+Qed.
+
+Definition res_slice_restrict
+    (n : WfWorld) (X : aset) (p : WfWorld)
+    (Hsub : res_subset p (res_restrict n X)) : WfWorld :=
+  exist _ (raw_slice_restrict n X p)
+    (raw_slice_restrict_wf n X p Hsub).
+
+Lemma res_slice_restrict_subset
+    (n : WfWorld) (X : aset) (p : WfWorld) Hsub :
+  res_subset (res_slice_restrict n X p Hsub) n.
+Proof.
+  split; [reflexivity |].
+  intros σ Hσ. exact (proj1 Hσ).
+Qed.
+
+Lemma res_slice_restrict_restrict
+    (n : WfWorld) (X : aset) (p : WfWorld) Hsub :
+  res_restrict (res_slice_restrict n X p Hsub) X = p.
+Proof.
+  destruct Hsub as [Hdom Hin].
+  apply wfworld_ext. apply world_ext.
+  - simpl in Hdom |- *. set_solver.
+  - intros σ. simpl. split.
+    + intros [σn [[Hσn Hp] Hrestrict]].
+      rewrite <- Hrestrict. exact Hp.
+    + intros Hp.
+      pose proof (Hin σ Hp) as Hproj.
+      simpl in Hproj.
+      destruct Hproj as [σn [Hσn Hrestrict]].
+      exists σn. split; [split; [exact Hσn | rewrite Hrestrict; exact Hp] |].
+      exact Hrestrict.
+Qed.
+
+Lemma res_restrict_self (w : WfWorld) :
+  res_restrict w (world_dom (w : World)) = w.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [σw [Hσw Hrestrict]].
+      pose proof (wfworld_store_dom w σw Hσw) as Hdomσw.
+      rewrite store_restrict_idemp in Hrestrict by set_solver.
+      subst. exact Hσw.
+    + intros Hσ.
+      exists σ. split; [exact Hσ |].
+      apply store_restrict_idemp.
+      pose proof (wfworld_store_dom w σ Hσ). set_solver.
+Qed.
+
 (** ** Raw order-monotonicity lemmas (used by ChoiceAlgebra instance) *)
 
 Lemma raw_sum_le_mono (m1 m2 m1' m2' : World) :
@@ -1889,6 +1973,63 @@ Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
 Proof.
   intros Hle1 Hle2.
   exact (raw_sum_le_mono w1 w2 w1' w2' Hdef Hdef' Hle1 Hle2).
+Qed.
+
+Lemma res_sum_lift_along_restrict
+    (m n1 n2 : WfWorld) (X : aset) (Hdef : raw_sum_defined n1 n2) :
+  world_dom (n1 : World) = world_dom (res_restrict m X : World) →
+  res_sum n1 n2 Hdef ⊑ res_restrict m X →
+  ∃ (m1 m2 : WfWorld) (Hdef' : raw_sum_defined m1 m2),
+    res_restrict m1 X = n1 ∧
+    res_restrict m2 X = n2 ∧
+    res_sum m1 m2 Hdef' ⊑ m.
+Proof.
+  intros Hdom1 Hle.
+  assert (Hdom_sum :
+      world_dom (res_sum n1 n2 Hdef : World) =
+      world_dom (res_restrict m X : World)).
+  { simpl. exact Hdom1. }
+  assert (Hsum_eq : res_sum n1 n2 Hdef = res_restrict m X).
+  {
+    pose proof (res_restrict_eq_of_le
+      (res_sum n1 n2 Hdef) (res_restrict m X) Hle) as Hrestrict.
+    change (res_restrict (res_restrict m X)
+      (world_dom (res_sum n1 n2 Hdef : World)) =
+      res_sum n1 n2 Hdef) in Hrestrict.
+    rewrite Hdom_sum in Hrestrict.
+    rewrite res_restrict_self in Hrestrict.
+    symmetry. exact Hrestrict.
+  }
+  assert (Hsub1 : res_subset n1 (res_restrict m X)).
+  { rewrite <- Hsum_eq. apply res_sum_subset_l. }
+  assert (Hsub2 : res_subset n2 (res_restrict m X)).
+  { rewrite <- Hsum_eq. apply res_sum_subset_r. }
+  set (m1 := res_slice_restrict m X n1 Hsub1).
+  set (m2 := res_slice_restrict m X n2 Hsub2).
+  assert (Hdef' : raw_sum_defined m1 m2).
+  { unfold raw_sum_defined. subst m1 m2. reflexivity. }
+  exists m1, m2, Hdef'. repeat split.
+  - subst m1. apply res_slice_restrict_restrict.
+  - subst m2. apply res_slice_restrict_restrict.
+  - unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+    apply world_ext.
+    + subst m1 m2. simpl. set_solver.
+    + intros σ. subst m1 m2. simpl. split.
+      * intros [[Hσm _] | [Hσm _]].
+        all: exists σ; split; [exact Hσm |].
+        all: apply store_restrict_idemp;
+          pose proof (wfworld_store_dom m σ Hσm); set_solver.
+      * intros [σm [Hσm Hrestrict]].
+        pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+        rewrite store_restrict_idemp in Hrestrict by set_solver.
+        subst σ.
+        assert (Hproj : (res_restrict m X : World) (store_restrict σm X)).
+        { exists σm. split; [exact Hσm | reflexivity]. }
+        rewrite <- Hsum_eq in Hproj.
+        simpl in Hproj.
+        destruct Hproj as [Hn1 | Hn2].
+        -- left. split; [exact Hσm | exact Hn1].
+        -- right. split; [exact Hσm | exact Hn2].
 Qed.
 
 (** *** Algebraic laws (stated on WfWorld) *)
