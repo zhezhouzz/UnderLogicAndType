@@ -91,6 +91,16 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
 Qed.
 
+Lemma lc_env_store_swap x y σ :
+  lc_env σ ->
+  lc_env (store_swap x y σ).
+Proof.
+  unfold lc_env. intros Hlc.
+  apply map_Forall_lookup_2. intros z v Hlookup.
+  rewrite store_swap_lookup_inv in Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
+Qed.
+
 Lemma lc_env_delete σ x :
   lc_env σ ->
   lc_env (delete x σ).
@@ -111,6 +121,15 @@ Proof.
   intros [Hclosed Hlc]. split.
   - by apply closed_env_restrict.
   - by apply lc_env_restrict.
+Qed.
+
+Lemma store_closed_store_swap x y σ :
+  store_closed σ ->
+  store_closed (store_swap x y σ).
+Proof.
+  intros [Hclosed Hlc]. split.
+  - by apply closed_env_store_swap.
+  - by apply lc_env_store_swap.
 Qed.
 
 Ltac gen_closed_env :=

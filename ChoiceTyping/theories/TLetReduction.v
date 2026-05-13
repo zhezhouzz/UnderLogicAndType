@@ -552,14 +552,13 @@ Qed.
 
 Lemma msubst_tapp_tm_fvar_store_swap_lookup σ e x y v :
   closed_env σ →
-  lc_env σ →
   σ !! y = Some v →
   x ∉ fv_tm e →
   y ∉ fv_tm e →
   m{store_swap x y σ} (tapp_tm e (vfvar x)) =
   m{σ} (tapp_tm e (vfvar y)).
 Proof.
-  intros Hclosed Hlc Hlookup Hx Hy.
+  intros Hclosed Hlookup Hx Hy.
   rewrite !msubst_tapp_tm.
   rewrite (msubst_store_swap_fresh tm x y σ e) by assumption.
   rewrite (msubst_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
@@ -579,17 +578,98 @@ Qed.
 
 Lemma strongly_normalizing_tapp_tm_fvar_store_swap_lookup σ e x y v :
   closed_env σ →
-  lc_env σ →
   σ !! y = Some v →
   x ∉ fv_tm e →
   y ∉ fv_tm e →
   strongly_normalizing (m{store_swap x y σ} (tapp_tm e (vfvar x))) ↔
   strongly_normalizing (m{σ} (tapp_tm e (vfvar y))).
 Proof.
-  intros Hclosed Hlc Hlookup Hx Hy.
+  intros Hclosed Hlookup Hx Hy.
   rewrite (msubst_tapp_tm_fvar_store_swap_lookup σ e x y v
-    Hclosed Hlc Hlookup Hx Hy).
+    Hclosed Hlookup Hx Hy).
   reflexivity.
+Qed.
+
+Lemma aset_swap_fresh_union_singleton x y D :
+  x ∉ D →
+  y ∉ D →
+  aset_swap x y (D ∪ {[y]}) = D ∪ {[x]}.
+Proof.
+  intros Hx Hy. apply set_eq. intros z.
+  rewrite elem_of_aset_swap, !elem_of_union, !elem_of_singleton.
+  unfold atom_swap.
+  repeat destruct decide; set_solver.
+Qed.
+
+Lemma store_restrict_swap_fresh_union_singleton (σ : Store) x y D :
+  x ∉ D →
+  y ∉ D →
+  store_restrict (store_swap x y σ) (D ∪ {[x]}) =
+  store_swap x y (store_restrict σ (D ∪ {[y]})).
+Proof.
+  intros Hx Hy.
+  rewrite <- (aset_swap_fresh_union_singleton x y D Hx Hy).
+  apply store_restrict_swap.
+Qed.
+
+Lemma expr_total_with_store_empty_tret_fvar_swap_exact
+    D x y (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  world_dom (m : World) = D ∪ {[y]} →
+  world_store_closed_on (D ∪ {[y]}) m →
+  expr_total_with_store (D ∪ {[y]}) (tret (vfvar y)) ∅ m →
+  expr_total_with_store (D ∪ {[x]}) (tret (vfvar x)) ∅ (res_swap x y m).
+Proof.
+  intros Hx Hy Hdom Hclosed Htotal σx Hσx.
+  simpl in Hσx.
+  destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+  rewrite map_empty_union.
+  rewrite store_restrict_swap_fresh_union_singleton by assumption.
+  pose proof (Hclosed σy Hσy) as [Hclosed_y _].
+  assert (Hy_dom : y ∈ dom σy).
+  { rewrite (wfworld_store_dom m σy Hσy), Hdom. set_solver. }
+  apply elem_of_dom in Hy_dom as [vy Hlookup].
+  assert (Hlookup_restrict :
+    store_restrict σy (D ∪ {[y]}) !! y = Some vy).
+  { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+  apply (proj2 (strongly_normalizing_tret_fvar_store_swap_lookup
+    (store_restrict σy (D ∪ {[y]})) x y vy
+    Hclosed_y Hlookup_restrict)).
+  replace (store_restrict σy (D ∪ {[y]}))
+    with (store_restrict (∅ ∪ σy) (D ∪ {[y]}))
+    by (rewrite map_empty_union; reflexivity).
+  apply Htotal. exact Hσy.
+Qed.
+
+Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact
+    D e x y (m : WfWorld) :
+  x ∉ D ∪ fv_tm e →
+  y ∉ D ∪ fv_tm e →
+  world_dom (m : World) = D ∪ {[y]} →
+  world_store_closed_on (D ∪ {[y]}) m →
+  expr_total_with_store (D ∪ {[y]}) (tapp_tm e (vfvar y)) ∅ m →
+  expr_total_with_store (D ∪ {[x]}) (tapp_tm e (vfvar x)) ∅ (res_swap x y m).
+Proof.
+  intros Hx Hy Hdom Hclosed Htotal σx Hσx.
+  simpl in Hσx.
+  destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+  rewrite map_empty_union.
+  rewrite store_restrict_swap_fresh_union_singleton by set_solver.
+  pose proof (Hclosed σy Hσy) as [Hclosed_y _].
+  assert (Hy_dom : y ∈ dom σy).
+  { rewrite (wfworld_store_dom m σy Hσy), Hdom. set_solver. }
+  apply elem_of_dom in Hy_dom as [vy Hlookup].
+  assert (Hlookup_restrict :
+    store_restrict σy (D ∪ {[y]}) !! y = Some vy).
+  { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
+  apply (proj2 (strongly_normalizing_tapp_tm_fvar_store_swap_lookup
+    (store_restrict σy (D ∪ {[y]})) e x y vy
+    Hclosed_y Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+  replace (store_restrict σy (D ∪ {[y]}))
+    with (store_restrict (∅ ∪ σy) (D ∪ {[y]}))
+    by (rewrite map_empty_union; reflexivity).
+  apply Htotal. exact Hσy.
 Qed.
 
 (** The two lemmas below are the explicit-name/cofinite rename principles
