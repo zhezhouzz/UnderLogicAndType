@@ -1809,6 +1809,66 @@ Proof.
     + rewrite dom_insert_L. set_solver.
 Qed.
 
+Lemma denot_ty_fuel_fresh_arg_family_rename_stable
+    gas (Σ : gmap atom ty) τx :
+  cty_measure τx <= gas →
+  basic_choice_ty (dom Σ) τx →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      τx (tret (vfvar x))).
+Proof.
+Admitted.
+
+Lemma denot_ty_fuel_fresh_result_family_rename_stable
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τ <= gas →
+  fv_tm e ⊆ dom Σ →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      ({0 ~> x} τ) (tapp_tm e (vfvar x))).
+Proof.
+Admitted.
+
+Lemma denot_ty_fuel_arrow_body_family_support_exact
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τx <= gas →
+  cty_measure τ <= gas →
+  basic_choice_ty (dom Σ) τx →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_support_exact_on (dom Σ) (fun x =>
+    FImpl
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        τx (tret (vfvar x)))
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        ({0 ~> x} τ) (tapp_tm e (vfvar x)))).
+Proof.
+  intros Hgasx Hgas Hbasicx Hbasic_body.
+  apply formula_family_support_exact_impl.
+  - eapply denot_ty_fuel_fresh_arg_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_support_exact; eauto.
+Qed.
+
+Lemma denot_ty_fuel_wand_body_family_support_exact
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τx <= gas →
+  cty_measure τ <= gas →
+  basic_choice_ty (dom Σ) τx →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_support_exact_on (dom Σ) (fun x =>
+    FWand
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        τx (tret (vfvar x)))
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        ({0 ~> x} τ) (tapp_tm e (vfvar x)))).
+Proof.
+  intros Hgasx Hgas Hbasicx Hbasic_body.
+  apply formula_family_support_exact_wand.
+  - eapply denot_ty_fuel_fresh_arg_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_support_exact; eauto.
+Qed.
+
 Lemma support_exact_rename_to_target_scope D P x y n :
   formula_family_support_exact_on D P →
   x ∉ D →
@@ -2096,6 +2156,89 @@ Proof.
     + intros m' _ HPx. apply (proj1 (HP x y m' Hx Hy)). exact HPx.
     + intros m' Hc HQy.
       apply (proj2 (HQ x y (res_product m' n Hc) Hx Hy)). exact HQy.
+Qed.
+
+Lemma res_models_fresh_forall_family_equiv
+    (m : WfWorld) (D1 D2 : aset) (P Q : atom → FormulaQ) :
+  formula_scoped_in_world ∅ m (fresh_forall D2 Q) →
+  formula_family_rename_stable_on D1 P →
+  formula_family_rename_stable_on D2 Q →
+  (∀ y m',
+    y ∉ D1 →
+    y ∉ D2 →
+    m' ⊨ P y →
+    m' ⊨ Q y) →
+  m ⊨ fresh_forall D1 P →
+  m ⊨ fresh_forall D2 Q.
+Proof.
+  intros Hscope2 HPren HQren Hpoint Hsrc.
+  unfold fresh_forall in *.
+  apply res_models_forall_intro; [exact Hscope2 |].
+  unfold res_models, res_models_with_store in Hsrc.
+  simpl in Hsrc.
+  destruct Hsrc as [_ [L [HL Hforall]]].
+  exists (L ∪ D1 ∪ D2). split; [set_solver |].
+  intros y Hy m' Hdom Hrestr.
+  assert (HyL : y ∉ L) by set_solver.
+  assert (HyD1 : y ∉ D1) by set_solver.
+  assert (HyD2 : y ∉ D2) by set_solver.
+  pose proof (Hforall y HyL m' Hdom Hrestr) as HPfuel.
+  assert (HPmodel : m' ⊨ formula_rename_atom (fresh_for D1) y (P (fresh_for D1))).
+  {
+    unfold res_models, res_models_with_store.
+    models_fuel_irrel HPfuel.
+  }
+  pose proof (proj1 (HPren (fresh_for D1) y m'
+    (fresh_for_not_in D1) HyD1) HPmodel) as HPy.
+  pose proof (Hpoint y m' HyD1 HyD2 HPy) as HQy.
+  exact (proj2 (HQren (fresh_for D2) y m'
+    (fresh_for_not_in D2) HyD2) HQy).
+Qed.
+
+Lemma denot_ty_fuel_arrow_body_family_rename_stable
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τx <= gas →
+  cty_measure τ <= gas →
+  basic_choice_ty (dom Σ) τx →
+  fv_tm e ⊆ dom Σ →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    FImpl
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        τx (tret (vfvar x)))
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        ({0 ~> x} τ) (tapp_tm e (vfvar x)))).
+Proof.
+  intros Hgasx Hgas Hbasicx Hfve Htye Hbasic_body.
+  apply formula_family_rename_stable_impl_exact.
+  - eapply denot_ty_fuel_fresh_arg_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_arg_family_rename_stable; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_rename_stable; eauto.
+Qed.
+
+Lemma denot_ty_fuel_wand_body_family_rename_stable
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τx <= gas →
+  cty_measure τ <= gas →
+  basic_choice_ty (dom Σ) τx →
+  fv_tm e ⊆ dom Σ →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    FWand
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        τx (tret (vfvar x)))
+      (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+        ({0 ~> x} τ) (tapp_tm e (vfvar x)))).
+Proof.
+  intros Hgasx Hgas Hbasicx Hfve Htye Hbasic_body.
+  apply formula_family_rename_stable_wand_exact.
+  - eapply denot_ty_fuel_fresh_arg_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_support_exact; eauto.
+  - eapply denot_ty_fuel_fresh_arg_family_rename_stable; eauto.
+  - eapply denot_ty_fuel_fresh_result_family_rename_stable; eauto.
 Qed.
 
 Lemma denot_ty_fuel_insert_fresh_env_irrel_same_world_over_case gas
