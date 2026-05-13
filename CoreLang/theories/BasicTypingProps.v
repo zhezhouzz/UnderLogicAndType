@@ -181,6 +181,189 @@ Proof.
   apply insert_subseteq. by apply not_elem_of_dom.
 Qed.
 
+(** Typing depends only on the entries for the free variables of the
+    expression/value being typed.  This is the convenient contraction principle
+    used when a fresh environment coordinate is semantically irrelevant. *)
+Lemma basic_typing_env_agree_value Γ Γ' v T :
+  Γ ⊢ᵥ v ⋮ T →
+  (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) →
+  Γ' ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using value_has_type_mut with
+    (P := fun Γ v T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) → Γ' ⊢ᵥ v ⋮ T)
+    (P0 := fun Γ e T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) → Γ' ⊢ₑ e ⋮ T);
+    intros Γ0 Hagree; simpl in *.
+  - constructor.
+  - econstructor. rewrite Hagree; [exact e | set_solver].
+  - eapply VT_Lam with (L := L ∪ fv_tm e).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_tm e).
+      {
+        pose proof (open_fv_tm e (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - eapply VT_Fix with (L := L ∪ fv_value vf).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_value vf).
+      {
+        pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - constructor. eapply IHHty. intros z Hz. apply Hagree. set_solver.
+  - eapply TT_Let with (L := L ∪ fv_tm e2).
+    + eapply IHHty. intros z Hz. apply Hagree. set_solver.
+    + intros y Hy.
+      eapply H; [set_solver |].
+      intros z Hz.
+      destruct (decide (z = y)) as [->|Hne].
+      * rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+      * rewrite !lookup_insert_ne by congruence.
+        assert (Hzfv : z ∈ fv_tm e2).
+        {
+          pose proof (open_fv_tm e2 (vfvar y) 0) as Hopen.
+          simpl in Hopen. set_solver.
+        }
+        rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor; eauto.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+Qed.
+
+Lemma basic_typing_env_agree_tm Γ Γ' e T :
+  Γ ⊢ₑ e ⋮ T →
+  (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) →
+  Γ' ⊢ₑ e ⋮ T.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using tm_has_type_mut with
+    (P := fun Γ v T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) → Γ' ⊢ᵥ v ⋮ T)
+    (P0 := fun Γ e T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) → Γ' ⊢ₑ e ⋮ T);
+    intros Γ0 Hagree; simpl in *.
+  - constructor.
+  - econstructor. rewrite Hagree; [exact e | set_solver].
+  - eapply VT_Lam with (L := L ∪ fv_tm e).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_tm e).
+      {
+        pose proof (open_fv_tm e (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - eapply VT_Fix with (L := L ∪ fv_value vf).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_value vf).
+      {
+        pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - constructor. eapply IHHty. intros z Hz. apply Hagree. set_solver.
+  - eapply TT_Let with (L := L ∪ fv_tm e2).
+    + eapply IHHty. intros z Hz. apply Hagree. set_solver.
+    + intros y Hy.
+      eapply H; [set_solver |].
+      intros z Hz.
+      destruct (decide (z = y)) as [->|Hne].
+      * rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+      * rewrite !lookup_insert_ne by congruence.
+        assert (Hzfv : z ∈ fv_tm e2).
+        {
+          pose proof (open_fv_tm e2 (vfvar y) 0) as Hopen.
+          simpl in Hopen. set_solver.
+        }
+        rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor; eauto.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+Qed.
+
+Lemma basic_typing_drop_insert_fresh_value Γ v T x U :
+  x ∉ fv_value v →
+  <[x := U]> Γ ⊢ᵥ v ⋮ T →
+  Γ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_typing_env_agree_value; [exact Hty |].
+  intros z Hz.
+  rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
+Lemma basic_typing_drop_insert_fresh_tm Γ e T x U :
+  x ∉ fv_tm e →
+  <[x := U]> Γ ⊢ₑ e ⋮ T →
+  Γ ⊢ₑ e ⋮ T.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_typing_env_agree_tm; [exact Hty |].
+  intros z Hz.
+  rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
 Lemma basic_typing_subst_value Γ x s v T vx :
   Γ ⊢ᵥ v ⋮ T →
   ∅ ⊢ᵥ vx ⋮ s →

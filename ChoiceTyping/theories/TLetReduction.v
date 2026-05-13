@@ -1169,6 +1169,18 @@ Lemma denot_ty_fuel_fresh_result_family_rename_stable
 Proof.
 Admitted.
 
+Lemma denot_ty_fuel_drop_fresh_env_irrel gas
+    (Σ : gmap atom ty) (τ : choice_ty) e x T (m : WfWorld) :
+  cty_measure τ <= gas →
+  x ∉ dom Σ ∪ fv_cty τ ∪ fv_tm e →
+  world_dom (m : World) = dom (<[x := T]> Σ) →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  m ⊨ denot_ty_fuel gas (<[x := T]> Σ) τ e →
+  res_restrict m (dom Σ) ⊨ denot_ty_fuel gas Σ τ e.
+Proof.
+Admitted.
+
 Lemma denot_ty_fuel_insert_fresh_env_irrel gas
     (Σ : gmap atom ty) (τ : choice_ty) e x T (m : WfWorld) :
   cty_measure τ <= gas →
@@ -1383,6 +1395,21 @@ Proof.
       * admit.
     + rewrite Hdom, dom_insert_L. set_solver.
 Admitted.
+
+Lemma denot_ty_fuel_insert_fresh_env_irrel_iff gas
+    (Σ : gmap atom ty) (τ : choice_ty) e x T (m : WfWorld) :
+  cty_measure τ <= gas →
+  x ∉ dom Σ ∪ fv_cty τ ∪ fv_tm e →
+  world_dom (m : World) = dom (<[x := T]> Σ) →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  m ⊨ denot_ty_fuel gas (<[x := T]> Σ) τ e <->
+  res_restrict m (dom Σ) ⊨ denot_ty_fuel gas Σ τ e.
+Proof.
+  intros Hgas Hx Hdom Hclosed Htotal. split.
+  - eapply denot_ty_fuel_drop_fresh_env_irrel; eauto.
+  - eapply denot_ty_fuel_insert_fresh_env_irrel; eauto.
+Qed.
 
 Lemma let_result_world_on_world_closed_on_insert_from_basic
     (Δ : gmap atom ty) T e x (m : WfWorld) Hfresh Hresult :
