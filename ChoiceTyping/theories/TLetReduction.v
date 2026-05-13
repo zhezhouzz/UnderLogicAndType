@@ -496,6 +496,45 @@ Proof.
   exact (res_models_with_store_pure_elim _ _ _ Hm).
 Qed.
 
+(** The two lemmas below are the explicit-name/cofinite rename principles
+    needed by the function-type cases.
+
+    They are intentionally stated as semantic [formula_family_rename_stable_on]
+    lemmas rather than syntactic equalities.  [denot_ty_fuel] now contains
+    [FPure], [FClosedResourceIn], and [FStrongTotalIn] obligations; a syntactic
+    [formula_rename_atom] does not rewrite those Rocq propositions.  The proof
+    must therefore transport the obligations semantically:
+
+    - [FPure] uses basic typing/formation rename for the fresh parameter;
+    - [FClosedResourceIn] uses resource swap/restrict compatibility;
+    - [FStrongTotalIn] uses operational totality under swapped stores;
+    - the recursive body uses the [gas] induction hypothesis.
+
+    The argument-family lemma covers the antecedent of Arrow/Wand.  The result
+    family covers the consequent, where the result type is opened with the same
+    fresh parameter and the expression is the ANF application sugar
+    [tapp_tm e (vfvar x)]. *)
+Lemma denot_ty_fuel_fresh_arg_family_rename_stable
+    gas (Σ : gmap atom ty) τx :
+  cty_measure τx <= gas →
+  basic_choice_ty (dom Σ) τx →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      τx (tret (vfvar x))).
+Proof.
+Admitted.
+
+Lemma denot_ty_fuel_fresh_result_family_rename_stable
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τ <= gas →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  formula_family_rename_stable_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      ({0 ~> x} τ) (tapp_tm e (vfvar x))).
+Proof.
+Admitted.
+
 Lemma denot_ty_fuel_insert_fresh_env_irrel gas
     (Σ : gmap atom ty) (τ : choice_ty) e x T (m : WfWorld) :
   cty_measure τ <= gas →
