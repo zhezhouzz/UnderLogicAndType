@@ -389,6 +389,19 @@ Proof.
   - intros H1. left. exact H1.
 Qed.
 
+Lemma store_union_absorb_r s1 s2 :
+  store_compat s1 s2 →
+  dom s1 ⊆ dom s2 →
+  s1 ∪ s2 = s2.
+Proof.
+  intros Hcompat Hsub.
+  rewrite store_union_comm by exact Hcompat.
+  apply store_union_absorb_l.
+  - intros i v2 v1 H2 H1.
+    symmetry. eapply Hcompat; eauto.
+  - exact Hsub.
+Qed.
+
 Lemma store_restrict_dom s X :
   dom (store_restrict s X) = dom s ∩ X.
 Proof.
