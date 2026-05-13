@@ -504,7 +504,7 @@ Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
     here rather than in ChoiceAlgebra: the algebra is polymorphic in store
     values, while closedness is a CoreLang [value] property. *)
 Definition world_closed_on (X : aset) (m : WfWorld) : Prop :=
-  ∀ σ, (m : World) σ → closed_env (store_restrict σ X).
+  ∀ σ, (m : World) σ → store_closed (store_restrict σ X).
 
 Lemma world_closed_on_swap x y X (m : WfWorld) :
   world_closed_on X m →
@@ -514,7 +514,7 @@ Proof.
   simpl in Hσ.
   destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
   rewrite store_restrict_swap.
-  apply closed_env_store_swap.
+  apply store_closed_store_swap.
   exact (Hclosed σ0 Hσ0).
 Qed.
 
@@ -534,7 +534,7 @@ Proof.
   replace (world_dom (m : World) ∩ X) with (X ∩ world_dom (m : World))
     by set_solver.
   rewrite <- store_restrict_restrict.
-  apply closed_env_restrict.
+  apply store_closed_restrict.
   exact (Hclosed σn Hσn).
 Qed.
 
@@ -544,7 +544,9 @@ Lemma basic_world_formula_world_closed_on Σ X m :
   world_closed_on X m.
 Proof.
   intros HXΣ Hbasic σ Hσ.
-  eapply basic_world_formula_store_restrict_closed_env; eauto.
+  split.
+  - eapply basic_world_formula_store_restrict_closed_env; eauto.
+  - eapply basic_world_formula_store_restrict_lc_env; eauto.
 Qed.
 
 Lemma expr_result_store_let_elim ρ e1 e2 ν σw :

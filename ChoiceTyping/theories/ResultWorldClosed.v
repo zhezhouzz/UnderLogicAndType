@@ -11,15 +11,13 @@ From ChoiceTyping Require Export LetResultWorld.
 From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-Definition world_store_closed_on (X : aset) (m : WfWorld) : Prop :=
-  ∀ σ, (m : World) σ → store_closed (store_restrict σ X).
+Definition world_store_closed_on : aset → WfWorld → Prop := world_closed_on.
 
 Lemma world_store_closed_on_world_closed_on X (m : WfWorld) :
   world_store_closed_on X m →
   world_closed_on X m.
 Proof.
-  intros Hclosed σ Hσ.
-  exact (proj1 (Hclosed σ Hσ)).
+  intros Hclosed. exact Hclosed.
 Qed.
 
 Lemma world_store_closed_on_swap x y X (m : WfWorld) :

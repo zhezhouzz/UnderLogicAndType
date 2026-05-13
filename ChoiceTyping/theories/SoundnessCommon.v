@@ -150,10 +150,17 @@ Proof.
   intros HXΣ HΓ σ Hσ.
   pose proof (denot_ctx_in_env_world_has_type_on Σ Γ X m HXΣ HΓ)
     as [_ Htyped].
-  eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
-  - rewrite store_restrict_dom. set_solver.
-  - exact HXΣ.
-  - apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+  assert (Hstore_typed : store_has_type_on Σ X (store_restrict σ X)).
+  { apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity]. }
+  split.
+  - eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
+    + rewrite store_restrict_dom. set_solver.
+    + exact HXΣ.
+    + exact Hstore_typed.
+  - eapply (store_has_type_on_lc_env Σ X (store_restrict σ X)).
+    + rewrite store_restrict_dom. set_solver.
+    + exact HXΣ.
+    + exact Hstore_typed.
 Qed.
 
 Lemma denot_ctx_in_env_store_typed Σ Γ m σ :

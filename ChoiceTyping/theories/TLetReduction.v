@@ -979,7 +979,7 @@ Proof.
       {
         replace (store_restrict σm {[y]}) with
           (store_restrict (store_restrict σm (D ∪ {[y]})) {[y]}).
-        - apply closed_env_restrict. exact (Hclosed σm Hσm).
+        - apply closed_env_restrict. exact (proj1 (Hclosed σm Hσm)).
         - store_norm. replace ((D ∪ {[y]}) ∩ {[y]}) with ({[y]} : aset) by set_solver.
           reflexivity.
       }
@@ -1025,7 +1025,7 @@ Proof.
       {
         replace (store_restrict σm {[y]}) with
           (store_restrict (store_restrict σm (D ∪ {[y]})) {[y]}).
-        - apply closed_env_restrict. exact (Hclosed σm Hσm).
+        - apply closed_env_restrict. exact (proj1 (Hclosed σm Hσm)).
         - store_norm. replace ((D ∪ {[y]}) ∩ {[y]}) with ({[y]} : aset) by set_solver.
           reflexivity.
       }
@@ -1382,7 +1382,7 @@ Proof.
     rewrite store_restrict_swap_fresh_union_singleton in Hsn by assumption.
     apply (proj1 (strongly_normalizing_tret_fvar_store_swap_lookup
       (store_restrict σ (D ∪ {[y]})) x y vy
-      Hclosedσ Hlookup_restrict)).
+      (proj1 Hclosedσ) Hlookup_restrict)).
     exact Hsn.
   - intros [_ Htotal]. split; [set_solver |].
     intros σx Hσx.
@@ -1398,7 +1398,7 @@ Proof.
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
     apply (proj2 (strongly_normalizing_tret_fvar_store_swap_lookup
       (store_restrict σy (D ∪ {[y]})) x y vy
-      Hclosedσ Hlookup_restrict)).
+      (proj1 Hclosedσ) Hlookup_restrict)).
     apply Htotal. exact Hσy.
 Qed.
 
@@ -1429,7 +1429,7 @@ Proof.
     rewrite store_restrict_swap_fresh_union_singleton in Hsn by set_solver.
     apply (proj1 (strongly_normalizing_tapp_tm_fvar_store_swap_lookup
       (store_restrict σ (D ∪ {[y]})) e x y vy
-      Hclosedσ Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
     exact Hsn.
   - intros [_ Htotal]. split.
     { rewrite fv_tapp_tm. simpl. set_solver. }
@@ -1446,7 +1446,7 @@ Proof.
     { apply store_restrict_lookup_some_2; [exact Hlookup | set_solver]. }
     apply (proj2 (strongly_normalizing_tapp_tm_fvar_store_swap_lookup
       (store_restrict σy (D ∪ {[y]})) e x y vy
-      Hclosedσ Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
+      (proj1 Hclosedσ) Hlookup_restrict ltac:(set_solver) ltac:(set_solver))).
     apply Htotal. exact Hσy.
 Qed.
 
