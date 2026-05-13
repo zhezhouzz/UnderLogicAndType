@@ -588,7 +588,8 @@ Proof.
              (store_restrict ∅ (dom Σ)) (res_restrict m (dom Σ))).
            rewrite store_restrict_empty.
            apply expr_total_with_store_empty_restrict.
-           exact Htotal.
+           ++ exact Hclosed.
+           ++ exact Htotal.
       * exact Hbody.
 Qed.
 
@@ -796,7 +797,7 @@ Proof.
     destruct (res_models_with_store_store_resource_atom_elim ∅ m (dom Σ)
       (fun ρ m => expr_total_with_store (dom Σ) e ρ m) Hm)
       as [m0 [Hscope [Htotal Hle]]].
-    destruct Htotal as [n Htotal].
+    destruct Htotal as [_ [n Htotal]].
     exists n.
     intros σ Hσ.
     pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
@@ -1292,8 +1293,16 @@ Lemma expr_total_with_store_empty_tret_fvar_swap_exact
   expr_total_with_store (D ∪ {[y]}) (tret (vfvar y)) ∅ m →
   expr_total_with_store (D ∪ {[x]}) (tret (vfvar x)) ∅ (res_swap x y m).
 Proof.
-  intros Hx Hy Hdom Hclosed [n Htotal].
-  exists n. intros σx Hσx.
+  intros Hx Hy Hdom Hclosed [_ [n Htotal]].
+  split.
+  - intros σx Hσx.
+    simpl in Hσx.
+    destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+    rewrite map_empty_union.
+    rewrite store_restrict_swap_fresh_union_singleton by assumption.
+    apply store_closed_store_swap.
+    apply Hclosed. exact Hσy.
+  - exists n. intros σx Hσx.
   simpl in Hσx.
   destruct Hσx as [σy [Hσy Hσx]]. subst σx.
   rewrite map_empty_union.
@@ -1349,8 +1358,16 @@ Lemma expr_total_with_store_empty_tapp_tm_fvar_swap_exact
   expr_total_with_store (D ∪ {[y]}) (tapp_tm e (vfvar y)) ∅ m →
   expr_total_with_store (D ∪ {[x]}) (tapp_tm e (vfvar x)) ∅ (res_swap x y m).
 Proof.
-  intros Hx Hy Hdom Hclosed [n Htotal].
-  exists n. intros σx Hσx.
+  intros Hx Hy Hdom Hclosed [_ [n Htotal]].
+  split.
+  - intros σx Hσx.
+    simpl in Hσx.
+    destruct Hσx as [σy [Hσy Hσx]]. subst σx.
+    rewrite map_empty_union.
+    rewrite store_restrict_swap_fresh_union_singleton by set_solver.
+    apply store_closed_store_swap.
+    apply Hclosed. exact Hσy.
+  - exists n. intros σx Hσx.
   simpl in Hσx.
   destruct Hσx as [σy [Hσy Hσx]]. subst σx.
   rewrite map_empty_union.
@@ -1892,20 +1909,38 @@ Lemma expr_total_with_store_empty_extend X e (m n : WfWorld) :
   expr_total_with_store X e ∅ m →
   expr_total_with_store X e ∅ (res_restrict n X).
 Proof.
-  intros HXm Hle [k Htotal].
-  exists k. intros σ Hσ.
-  destruct Hσ as [σn [Hσn Hrestrict]].
-  assert ((res_restrict n (world_dom (m : World)) : World)
-    (store_restrict σn (world_dom (m : World)))) as Hσm.
-  { exists σn. split; [exact Hσn | reflexivity]. }
-  rewrite (res_restrict_eq_of_le m n Hle) in Hσm.
-  replace (store_restrict ((∅ : Store) ∪ σ) X) with
-    (store_restrict ((∅ : Store) ∪ store_restrict σn (world_dom (m : World))) X).
-  - apply Htotal. exact Hσm.
-  - rewrite !map_empty_union.
-    rewrite <- Hrestrict.
-    rewrite !store_restrict_restrict.
-    f_equal. set_solver.
+  intros HXm Hle [Hclosed [k Htotal]].
+  split.
+  - intros σ Hσ.
+    destruct Hσ as [σn [Hσn Hrestrict]].
+    assert ((res_restrict n (world_dom (m : World)) : World)
+      (store_restrict σn (world_dom (m : World)))) as Hσm.
+    { exists σn. split; [exact Hσn | reflexivity]. }
+    rewrite (res_restrict_eq_of_le m n Hle) in Hσm.
+    assert (Heq : store_restrict ((∅ : Store) ∪ σ) X =
+      store_restrict ((∅ : Store) ∪ store_restrict σn (world_dom (m : World))) X).
+    { rewrite !map_empty_union.
+      rewrite <- Hrestrict.
+      rewrite !store_restrict_restrict.
+      replace (X ∩ X) with X by set_solver.
+      replace (world_dom (m : World) ∩ X) with X by set_solver.
+      reflexivity. }
+    rewrite Heq. apply Hclosed. exact Hσm.
+  - exists k. intros σ Hσ.
+    destruct Hσ as [σn [Hσn Hrestrict]].
+    assert ((res_restrict n (world_dom (m : World)) : World)
+      (store_restrict σn (world_dom (m : World)))) as Hσm.
+    { exists σn. split; [exact Hσn | reflexivity]. }
+    rewrite (res_restrict_eq_of_le m n Hle) in Hσm.
+    assert (Heq : store_restrict ((∅ : Store) ∪ σ) X =
+      store_restrict ((∅ : Store) ∪ store_restrict σn (world_dom (m : World))) X).
+    { rewrite !map_empty_union.
+      rewrite <- Hrestrict.
+      rewrite !store_restrict_restrict.
+      replace (X ∩ X) with X by set_solver.
+      replace (world_dom (m : World) ∩ X) with X by set_solver.
+      reflexivity. }
+    rewrite Heq. apply Htotal. exact Hσm.
 Qed.
 
 Lemma denot_ty_fuel_fresh_arg_family_support_exact

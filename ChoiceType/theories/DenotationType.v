@@ -49,6 +49,7 @@ Proof. induction τ; simpl; eauto; lia. Qed.
 
 Definition expr_total_with_store (X : aset) (e : tm)
     (ρ : Store) (m : WfWorld) : Prop :=
+  (∀ σ, (m : World) σ → store_closed (store_restrict (ρ ∪ σ) X)) ∧
   ∃ n, ∀ σ, (m : World) σ →
     strongly_normalizing_fuel n (subst_map (store_restrict (ρ ∪ σ) X) e).
 
@@ -63,18 +64,30 @@ Definition FStrongTotalIn (Σ : gmap atom ty) (e : tm) : FQ :=
     (fun ρ m => expr_total_with_store (dom Σ) e ρ m).
 
 Lemma expr_total_with_store_empty_restrict X e m :
+  world_closed_on X m →
   expr_total_on X e m →
   expr_total_with_store X e ∅ (res_restrict m X).
 Proof.
-  intros [_ [n Htotal]].
-  exists n. intros σ Hσ.
-  destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
-  replace (store_restrict (∅ ∪ σ) X) with (store_restrict σm X).
-  - apply Htotal. exact Hσm.
-  - rewrite left_id_L.
-    rewrite <- Hrestrict.
-    rewrite store_restrict_restrict.
-    f_equal. set_solver.
+  intros Hclosed [_ [n Htotal]].
+  split.
+  - intros σ Hσ.
+    destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
+    assert (Heq : store_restrict ((∅ : Store) ∪ σ) X = store_restrict σm X).
+    { rewrite map_empty_union.
+      rewrite <- Hrestrict.
+      rewrite store_restrict_restrict.
+      replace (X ∩ X) with X by set_solver.
+      reflexivity. }
+    rewrite Heq. apply Hclosed. exact Hσm.
+  - exists n. intros σ Hσ.
+    destruct (res_restrict_lift_store m X σ Hσ) as [σm [Hσm Hrestrict]].
+    assert (Heq : store_restrict ((∅ : Store) ∪ σ) X = store_restrict σm X).
+    { rewrite map_empty_union.
+      rewrite <- Hrestrict.
+      rewrite store_restrict_restrict.
+      replace (X ∩ X) with X by set_solver.
+      reflexivity. }
+    rewrite Heq. apply Htotal. exact Hσm.
 Unshelve.
   all: try typeclasses eauto; try set_solver.
 Qed.
