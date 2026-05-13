@@ -1404,6 +1404,46 @@ Qed.
 Definition formula_family_support_exact_on (D : aset) (P : atom → FormulaQ) : Prop :=
   ∀ x, x ∉ D → formula_fv (P x) = D ∪ {[x]}.
 
+Lemma formula_family_support_exact_and D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_support_exact_on D (fun x => FAnd (P x) (Q x)).
+Proof.
+  intros HP HQ x Hx. simpl. rewrite HP, HQ by exact Hx. set_solver.
+Qed.
+
+Lemma formula_family_support_exact_or D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_support_exact_on D (fun x => FOr (P x) (Q x)).
+Proof.
+  intros HP HQ x Hx. simpl. rewrite HP, HQ by exact Hx. set_solver.
+Qed.
+
+Lemma formula_family_support_exact_plus D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_support_exact_on D (fun x => FPlus (P x) (Q x)).
+Proof.
+  intros HP HQ x Hx. simpl. rewrite HP, HQ by exact Hx. set_solver.
+Qed.
+
+Lemma formula_family_support_exact_impl D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_support_exact_on D (fun x => FImpl (P x) (Q x)).
+Proof.
+  intros HP HQ x Hx. simpl. rewrite HP, HQ by exact Hx. set_solver.
+Qed.
+
+Lemma formula_family_support_exact_wand D P Q :
+  formula_family_support_exact_on D P →
+  formula_family_support_exact_on D Q →
+  formula_family_support_exact_on D (fun x => FWand (P x) (Q x)).
+Proof.
+  intros HP HQ x Hx. simpl. rewrite HP, HQ by exact Hx. set_solver.
+Qed.
+
 Lemma atom_swap_left_eq x y : atom_swap x y x = y.
 Proof. unfold atom_swap. repeat destruct decide; congruence. Qed.
 
