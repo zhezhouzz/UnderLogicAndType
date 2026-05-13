@@ -1379,6 +1379,28 @@ Qed.
     family covers the consequent, where the result type is opened with the same
     fresh parameter and the expression is the ANF application sugar
     [tapp_tm e (vfvar x)]. *)
+
+Lemma formula_family_rename_stable_and D P Q :
+  formula_family_rename_stable_on D P →
+  formula_family_rename_stable_on D Q →
+  formula_family_rename_stable_on D (fun x => FAnd (P x) (Q x)).
+Proof.
+  intros HP HQ.
+  unfold formula_family_rename_stable_on in *.
+  intros x y n Hx Hy. simpl.
+  split; intros Hmodel.
+  - apply res_models_and_intro_from_models.
+    + apply (proj1 (HP x y n Hx Hy)).
+      apply res_models_and_elim_l in Hmodel. exact Hmodel.
+    + apply (proj1 (HQ x y n Hx Hy)).
+      apply res_models_and_elim_r in Hmodel. exact Hmodel.
+  - apply res_models_and_intro_from_models.
+    + apply (proj2 (HP x y n Hx Hy)).
+      apply res_models_and_elim_l in Hmodel. exact Hmodel.
+    + apply (proj2 (HQ x y n Hx Hy)).
+      apply res_models_and_elim_r in Hmodel. exact Hmodel.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_rename_stable
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
