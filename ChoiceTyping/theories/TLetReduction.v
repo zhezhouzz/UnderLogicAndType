@@ -932,6 +932,140 @@ Proof.
   apply store_restrict_swap.
 Qed.
 
+Lemma store_swap_insert_fresh (σ : gmap atom value) x y z v :
+  z ≠ x →
+  z ≠ y →
+  store_swap (V:=value) x y (<[z := v]> σ : gmap atom value) =
+  (<[z := v]> (store_swap (V:=value) x y σ) : gmap atom value).
+Proof.
+  intros Hzx Hzy.
+  unfold store_swap.
+  rewrite kmap_insert.
+  - rewrite atom_swap_fresh by congruence. reflexivity.
+  - apply atom_swap_inj.
+Qed.
+
+Lemma let_result_world_on_tret_fvar_swap
+    D x y ν (m : WfWorld)
+    Hfresh_src Hresult_src Hfresh_tgt Hresult_tgt :
+  x ∉ D →
+  y ∉ D →
+  ν ∉ D ∪ {[x]} ∪ {[y]} →
+  world_dom (m : World) = D ∪ {[y]} →
+  world_closed_on (D ∪ {[y]}) m →
+  let_result_world_on (tret (vfvar x)) ν (res_swap x y m)
+    Hfresh_src Hresult_src =
+  res_swap x y
+    (let_result_world_on (tret (vfvar y)) ν m
+      Hfresh_tgt Hresult_tgt).
+Proof.
+  intros Hx Hy Hν Hdom Hclosed.
+  assert (Hνx : ν ≠ x) by set_solver.
+  assert (Hνy : ν ≠ y) by set_solver.
+  apply wfworld_ext. apply world_ext.
+  - simpl. rewrite Hdom, !aset_swap_union, !aset_swap_singleton.
+    replace (atom_swap x y y) with x
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by set_solver.
+    rewrite atom_swap_fresh by set_solver.
+    set_solver.
+  - intros σ. simpl. split.
+    + intros [σ0 [vx [Hσ0 [Hsteps ->]]]].
+      destruct Hσ0 as [σm [Hσm Hswap]]. subst σ0.
+      assert (Hy_dom : y ∈ dom σm).
+      { rewrite (wfworld_store_dom m σm Hσm), Hdom. set_solver. }
+      apply elem_of_dom in Hy_dom as [vy Hlookup_y].
+      assert (Hclosed_y : closed_env (store_restrict σm {[y]})).
+      {
+        replace (store_restrict σm {[y]}) with
+          (store_restrict (store_restrict σm (D ∪ {[y]})) {[y]}).
+        - apply closed_env_restrict. exact (Hclosed σm Hσm).
+        - store_norm. replace ((D ∪ {[y]}) ∩ {[y]}) with ({[y]} : aset) by set_solver.
+          reflexivity.
+      }
+      assert (Hlookup_y_restrict :
+        store_restrict σm {[y]} !! y = Some vy).
+      { rewrite store_restrict_lookup, decide_True by set_solver. exact Hlookup_y. }
+      assert (Hclosed_x : closed_env
+        (store_restrict (store_swap x y σm) {[x]})).
+      {
+        replace ({[x]} : aset) with ((∅ : aset) ∪ {[x]}) by set_solver.
+        rewrite store_restrict_swap_fresh_union_singleton with (D := ∅)
+          by (try apply not_elem_of_empty).
+        replace ((∅ : aset) ∪ {[y]}) with ({[y]} : aset) by set_solver.
+        apply closed_env_store_swap. exact Hclosed_y.
+      }
+      assert (Hlookup_x_restrict :
+        store_restrict (store_swap x y σm) {[x]} !! x = Some vy).
+      {
+        rewrite store_restrict_lookup, decide_True by set_solver.
+        rewrite store_swap_lookup_inv.
+        replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        exact Hlookup_y.
+      }
+      change (m{store_restrict (store_swap x y σm) {[x]}} (tret (vfvar x)) →*
+        tret vx) in Hsteps.
+      rewrite (msubst_ret_fvar_lookup_closed _ x vy Hclosed_x Hlookup_x_restrict) in Hsteps.
+      pose proof (value_steps_self vy (tret vx) Hsteps) as Heq.
+      inversion Heq. subst vx.
+      exists (<[ν := vy]> σm). split.
+      * exists σm, vy. repeat split; eauto.
+        change (m{store_restrict σm {[y]}} (tret (vfvar y)) →* tret vy).
+        rewrite (msubst_ret_fvar_lookup_closed _ y vy Hclosed_y Hlookup_y_restrict).
+        exact Hsteps.
+      * rewrite store_swap_insert_fresh by congruence.
+        reflexivity.
+    + intros [σtgt [[σm [vx [Hσm [Hsteps ->]]]] Hswap]].
+      subst σ.
+      assert (Hy_dom : y ∈ dom σm).
+      { rewrite (wfworld_store_dom m σm Hσm), Hdom. set_solver. }
+      apply elem_of_dom in Hy_dom as [vy Hlookup_y].
+      assert (Hclosed_y : closed_env (store_restrict σm {[y]})).
+      {
+        replace (store_restrict σm {[y]}) with
+          (store_restrict (store_restrict σm (D ∪ {[y]})) {[y]}).
+        - apply closed_env_restrict. exact (Hclosed σm Hσm).
+        - store_norm. replace ((D ∪ {[y]}) ∩ {[y]}) with ({[y]} : aset) by set_solver.
+          reflexivity.
+      }
+      assert (Hlookup_y_restrict :
+        store_restrict σm {[y]} !! y = Some vy).
+      { rewrite store_restrict_lookup, decide_True by set_solver. exact Hlookup_y. }
+      change (m{store_restrict σm {[y]}} (tret (vfvar y)) →*
+        tret vx) in Hsteps.
+      rewrite (msubst_ret_fvar_lookup_closed _ y vy Hclosed_y Hlookup_y_restrict) in Hsteps.
+      pose proof (value_steps_self vy (tret vx) Hsteps) as Heq.
+      inversion Heq. subst vx.
+      assert (Hclosed_x : closed_env
+        (store_restrict (store_swap x y σm) {[x]})).
+      {
+        replace ({[x]} : aset) with ((∅ : aset) ∪ {[x]}) by set_solver.
+        rewrite store_restrict_swap_fresh_union_singleton with (D := ∅)
+          by (try apply not_elem_of_empty).
+        replace ((∅ : aset) ∪ {[y]}) with ({[y]} : aset) by set_solver.
+        apply closed_env_store_swap. exact Hclosed_y.
+      }
+      assert (Hlookup_x_restrict :
+        store_restrict (store_swap x y σm) {[x]} !! x = Some vy).
+      {
+        rewrite store_restrict_lookup, decide_True by set_solver.
+        rewrite store_swap_lookup_inv.
+        replace (atom_swap x y x) with y
+          by (unfold atom_swap; repeat destruct decide; congruence).
+        exact Hlookup_y.
+      }
+      exists (store_swap x y σm), vy.
+      repeat split.
+      * exists σm. split; [exact Hσm | reflexivity].
+      * change (m{store_restrict (store_swap x y σm) {[x]}} (tret (vfvar x)) →*
+          tret vy).
+        rewrite (msubst_ret_fvar_lookup_closed _ x vy Hclosed_x Hlookup_x_restrict).
+        exact Hsteps.
+      * rewrite store_swap_insert_fresh by congruence.
+        reflexivity.
+Qed.
+
 Lemma world_closed_on_swap_fresh_union_singleton_iff D x y (m : WfWorld) :
   x ∉ D →
   y ∉ D →
