@@ -1943,6 +1943,236 @@ Proof.
     rewrite Heq. apply Htotal. exact Hσm.
 Qed.
 
+Lemma expr_total_with_store_empty_closed_on X e (m : WfWorld) :
+  expr_total_with_store X e ∅ m →
+  world_store_closed_on X m.
+Proof.
+  intros [Hclosed _] σ Hσ.
+  specialize (Hclosed σ Hσ).
+  rewrite map_empty_union in Hclosed.
+  exact Hclosed.
+Qed.
+
+Lemma FStrongTotalIn_insert_tret_fvar_swap_iff
+    (Σ : gmap atom ty) x y T (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  m ⊨ formula_rename_atom x y
+    (FStrongTotalIn (<[x := T]> Σ) (tret (vfvar x))) ↔
+  m ⊨ FStrongTotalIn (<[y := T]> Σ) (tret (vfvar y)).
+Proof.
+  intros Hx Hy.
+  unfold FStrongTotalIn.
+  rewrite formula_rename_FStoreResourceAtom.
+  replace (aset_swap x y (dom (<[x:=T]> Σ)))
+    with (dom (<[y:=T]> Σ)).
+  2:{
+    rewrite !dom_insert_L, aset_swap_union, aset_swap_singleton.
+    rewrite atom_swap_left_eq, aset_swap_fresh by assumption.
+    set_solver.
+  }
+  split; intros Hm.
+  - destruct (res_models_with_store_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ))
+      (fun ρ m0 => expr_total_with_store (dom (<[x:=T]> Σ))
+        (tret (vfvar x)) (store_swap x y ρ) (res_swap x y m0))
+      Hm) as [m0 [Hscope [Htotal Hle]]].
+    rewrite store_restrict_empty, store_swap_empty in Htotal.
+    assert (Htotal_m0 :
+      expr_total_with_store (dom (<[y:=T]> Σ)) (tret (vfvar y)) ∅
+        (res_restrict m0 (dom (<[y:=T]> Σ)))).
+    {
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) in Htotal by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Htotal by
+        (rewrite dom_insert_L; set_solver).
+      pose proof (expr_total_with_store_empty_closed_on _ _ _ Htotal) as Hclosed_swap.
+      pose proof (proj1 (world_store_closed_on_swap_fresh_union_singleton_iff
+        (dom Σ) x y (res_restrict m0 (dom Σ ∪ {[y]})) Hx Hy)
+        Hclosed_swap) as Hclosed_y.
+      exact (proj1 (expr_total_with_store_empty_tret_fvar_swap_exact_iff
+        (dom Σ) x y (res_restrict m0 (dom Σ ∪ {[y]})) Hx Hy
+        ltac:(simpl; unfold formula_scoped_in_world in Hscope; simpl in Hscope;
+              apply set_eq; intros z; split; intros Hz;
+              [apply elem_of_intersection in Hz as [_ Hz]; exact Hz
+              |apply elem_of_intersection; split; [apply Hscope; set_solver | exact Hz]])
+        Hclosed_y) Htotal).
+    }
+    eapply res_models_with_store_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + eapply (expr_total_with_store_empty_extend
+        (dom (<[y:=T]> Σ)) (tret (vfvar y))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) m).
+      * simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+        set_solver.
+      * etrans; [apply res_restrict_le | exact Hle].
+      * exact Htotal_m0.
+  - destruct (res_models_with_store_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ))
+      (fun ρ m0 => expr_total_with_store (dom (<[y:=T]> Σ))
+        (tret (vfvar y)) ρ m0)
+      Hm) as [m0 [Hscope [Htotal Hle]]].
+    rewrite store_restrict_empty in Htotal.
+    assert (Htotal_m :
+      expr_total_with_store (dom (<[y:=T]> Σ)) (tret (vfvar y)) ∅
+        (res_restrict m (dom (<[y:=T]> Σ)))).
+    {
+      eapply (expr_total_with_store_empty_extend
+        (dom (<[y:=T]> Σ)) (tret (vfvar y))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) m).
+      - simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+        set_solver.
+      - etrans; [apply res_restrict_le | exact Hle].
+      - exact Htotal.
+    }
+    eapply res_models_with_store_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + rewrite store_restrict_empty, store_swap_empty.
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Htotal_m by
+        (rewrite dom_insert_L; set_solver).
+      pose proof (expr_total_with_store_empty_closed_on _ _ _ Htotal_m) as Hclosed_y.
+      assert (Hdom_y_m : world_dom (res_restrict m (dom Σ ∪ {[y]}) : World) =
+        dom Σ ∪ {[y]}).
+      {
+        assert (Hscope0 : dom (<[y:=T]> Σ) ⊆ world_dom (m0 : World)).
+        { intros z Hz. apply Hscope.
+          unfold stale, stale_logic_qualifier. simpl. set_solver. }
+        pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+        apply set_eq. intros z. split; intros Hz.
+        - simpl in Hz. apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
+        - simpl. apply elem_of_intersection. split; [| exact Hz].
+          apply Hdomle. apply Hscope0. rewrite dom_insert_L. set_solver.
+      }
+      exact (proj2 (expr_total_with_store_empty_tret_fvar_swap_exact_iff
+        (dom Σ) x y (res_restrict m (dom Σ ∪ {[y]})) Hx Hy
+        Hdom_y_m Hclosed_y) Htotal_m).
+Qed.
+
+Lemma FStrongTotalIn_insert_tapp_fvar_swap_iff
+    (Σ : gmap atom ty) x y T e (m : WfWorld) :
+  x ∉ dom Σ ∪ fv_tm e →
+  y ∉ dom Σ ∪ fv_tm e →
+  fv_tm e ⊆ dom Σ →
+  m ⊨ formula_rename_atom x y
+    (FStrongTotalIn (<[x := T]> Σ) (tapp_tm e (vfvar x))) ↔
+  m ⊨ FStrongTotalIn (<[y := T]> Σ) (tapp_tm e (vfvar y)).
+Proof.
+  intros Hx Hy Hfve.
+  unfold FStrongTotalIn.
+  rewrite formula_rename_FStoreResourceAtom.
+  replace (aset_swap x y (dom (<[x:=T]> Σ)))
+    with (dom (<[y:=T]> Σ)).
+  2:{
+    rewrite !dom_insert_L, aset_swap_union, aset_swap_singleton.
+    rewrite atom_swap_left_eq, aset_swap_fresh by set_solver.
+    set_solver.
+  }
+  split; intros Hm.
+  - destruct (res_models_with_store_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ))
+      (fun ρ m0 => expr_total_with_store (dom (<[x:=T]> Σ))
+        (tapp_tm e (vfvar x)) (store_swap x y ρ) (res_swap x y m0))
+      Hm) as [m0 [Hscope [Htotal Hle]]].
+    rewrite store_restrict_empty, store_swap_empty in Htotal.
+    assert (Htotal_m0 :
+      expr_total_with_store (dom (<[y:=T]> Σ)) (tapp_tm e (vfvar y)) ∅
+        (res_restrict m0 (dom (<[y:=T]> Σ)))).
+    {
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) in Htotal by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Htotal by
+        (rewrite dom_insert_L; set_solver).
+      pose proof (expr_total_with_store_empty_closed_on _ _ _ Htotal) as Hclosed_swap.
+      pose proof (proj1 (world_store_closed_on_swap_fresh_union_singleton_iff
+        (dom Σ) x y (res_restrict m0 (dom Σ ∪ {[y]}))
+        ltac:(set_solver) ltac:(set_solver)) Hclosed_swap) as Hclosed_y.
+      exact (proj1 (expr_total_with_store_empty_tapp_tm_fvar_swap_exact_iff
+        (dom Σ) e x y (res_restrict m0 (dom Σ ∪ {[y]}))
+        Hx Hy
+        ltac:(simpl; unfold formula_scoped_in_world in Hscope; simpl in Hscope;
+              apply set_eq; intros z; split; intros Hz;
+              [apply elem_of_intersection in Hz as [_ Hz]; exact Hz
+              |apply elem_of_intersection; split; [apply Hscope; set_solver | exact Hz]])
+        Hclosed_y) Htotal).
+    }
+    eapply res_models_with_store_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + eapply (expr_total_with_store_empty_extend
+        (dom (<[y:=T]> Σ)) (tapp_tm e (vfvar y))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) m).
+      * simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+        set_solver.
+      * etrans; [apply res_restrict_le | exact Hle].
+      * exact Htotal_m0.
+  - destruct (res_models_with_store_store_resource_atom_elim ∅ m
+      (dom (<[y:=T]> Σ))
+      (fun ρ m0 => expr_total_with_store (dom (<[y:=T]> Σ))
+        (tapp_tm e (vfvar y)) ρ m0)
+      Hm) as [m0 [Hscope [Htotal Hle]]].
+    rewrite store_restrict_empty in Htotal.
+    assert (Htotal_m :
+      expr_total_with_store (dom (<[y:=T]> Σ)) (tapp_tm e (vfvar y)) ∅
+        (res_restrict m (dom (<[y:=T]> Σ)))).
+    {
+      eapply (expr_total_with_store_empty_extend
+        (dom (<[y:=T]> Σ)) (tapp_tm e (vfvar y))
+        (res_restrict m0 (dom (<[y:=T]> Σ))) m).
+      - simpl. unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+        unfold stale, stale_logic_qualifier in Hscope. simpl in Hscope.
+        set_solver.
+      - etrans; [apply res_restrict_le | exact Hle].
+      - exact Htotal.
+    }
+    eapply res_models_with_store_store_resource_atom_intro.
+    + unfold formula_scoped_in_world. simpl.
+      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
+      pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+      set_solver.
+    + rewrite store_restrict_empty, store_swap_empty.
+      replace (dom (<[x:=T]> Σ)) with (dom Σ ∪ {[x]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) by
+        (rewrite dom_insert_L; set_solver).
+      replace (dom (<[y:=T]> Σ)) with (dom Σ ∪ {[y]}) in Htotal_m by
+        (rewrite dom_insert_L; set_solver).
+      pose proof (expr_total_with_store_empty_closed_on _ _ _ Htotal_m) as Hclosed_y.
+      assert (Hdom_y_m : world_dom (res_restrict m (dom Σ ∪ {[y]}) : World) =
+        dom Σ ∪ {[y]}).
+      {
+        assert (Hscope0 : dom (<[y:=T]> Σ) ⊆ world_dom (m0 : World)).
+        { intros z Hz. apply Hscope.
+          unfold stale, stale_logic_qualifier. simpl. set_solver. }
+        pose proof (raw_le_dom (m0 : World) (m : World) Hle) as Hdomle.
+        apply set_eq. intros z. split; intros Hz.
+        - simpl in Hz. apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
+        - simpl. apply elem_of_intersection. split; [| exact Hz].
+          apply Hdomle. apply Hscope0. rewrite dom_insert_L. set_solver.
+      }
+      exact (proj2 (expr_total_with_store_empty_tapp_tm_fvar_swap_exact_iff
+        (dom Σ) e x y (res_restrict m (dom Σ ∪ {[y]}))
+        Hx Hy Hdom_y_m Hclosed_y) Htotal_m).
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
