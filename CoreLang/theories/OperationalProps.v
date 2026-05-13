@@ -284,12 +284,11 @@ Proof.
     eapply reduction_lete_intro; eauto.
 Qed.
 
-(** ** Result-set view of nondeterministic evaluation
+(** ** Result view of evaluation
 
-    Generators make [steps e (tret v)] a relation rather than a function.
-    The typing proof should therefore reason about the whole result set of an
-    expression.  For let, this result set is the union over every result of
-    the bound expression, followed by the corresponding opened body. *)
+    [steps e (tret v)] remains a relation even though primitive reduction is
+    deterministic.  These helpers keep let-result reasoning relational, which
+    avoids committing higher layers to a particular evaluator function. *)
 
 Definition reaches_result (e : tm) (v : value) : Prop :=
   e →* tret v.

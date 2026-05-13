@@ -489,11 +489,10 @@ Qed.
 
 (** Prop-level must-totality for the expression component of a type denotation.
 
-    This is intentionally not encoded as a ChoiceLogic formula.  In the
-    nondeterministic core language, totality must mean uniform strong
-    normalization: there is one fuel bound for all stores in the world.  A
-    pointwise existential bound is too weak for [let] when the bound expression
-    can produce infinitely many results. *)
+    This is intentionally not encoded as a ChoiceLogic formula.  We keep a
+    uniform fuel bound over all stores in the world; for the deterministic core
+    this is stronger than mere reachability but matches the existing proof
+    structure for [let]. *)
 Definition expr_total_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
   fv_tm e ⊆ X ∧
   ∃ n, ∀ σ, (m : World) σ →

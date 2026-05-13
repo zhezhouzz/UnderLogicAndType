@@ -34,8 +34,6 @@ Inductive constant : Type :=
 
 Inductive prim_op : Type :=
   | op_eq0       (** unary zero test on natural numbers *)
-  | op_bool_gen  (** nondeterministic boolean generator; ignores dummy bool input *)
-  | op_nat_gen   (** nondeterministic natural-number generator; ignores dummy bool input *)
   | op_plus1     (** successor on natural numbers *)
   | op_minus1.   (** predecessor on natural numbers, with [pred 0 = 0] *)
 

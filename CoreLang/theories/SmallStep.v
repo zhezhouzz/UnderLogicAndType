@@ -12,19 +12,12 @@ From CoreLang Require Import BasicTypingProps.
 
 (** ** Evaluation of primitive operations
 
-    Primitive evaluation is relational because generators are intentionally
-    nondeterministic.  The dummy boolean inputs for generators make all
-    primitives unary, matching the rest of the ANF core language. *)
+    Primitive evaluation is deterministic.  All primitives are unary, matching
+    the rest of the ANF core language. *)
 
 Inductive prim_step : prim_op → constant → constant → Prop :=
   | Prim_eq0 n :
       prim_step op_eq0 (cnat n) (cbool (n =? 0))
-  | Prim_bool_gen_true b :
-      prim_step op_bool_gen (cbool b) (cbool true)
-  | Prim_bool_gen_false b :
-      prim_step op_bool_gen (cbool b) (cbool false)
-  | Prim_nat_gen b n :
-      prim_step op_nat_gen (cbool b) (cnat n)
   | Prim_plus1 n :
       prim_step op_plus1 (cnat n) (cnat (S n))
   | Prim_minus1 n :

@@ -1,12 +1,9 @@
 (** * CoreLang.StrongNormalization
 
-    Step-indexed must-termination for the nondeterministic core language.
-
-    The old denotational "totality" helper only recorded that an expression had
-    at least one result.  That is too weak in the presence of generators: a
-    typed term should not merely have a successful branch, it should have no
-    diverging branch.  The fuel below measures the height of the whole reduction
-    tree. *)
+    Step-indexed must-termination for the deterministic core language.  The
+    fuel below measures the height of the reduction tree; in the deterministic
+    setting that tree is at most a path, but the stronger formulation remains
+    convenient for existing totality lemmas. *)
 
 From Stdlib Require Import Lia.
 From CoreLang Require Import SmallStep OperationalProps LocallyNamelessProps.

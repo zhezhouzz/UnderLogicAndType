@@ -189,8 +189,8 @@ In short:
 
 ### `CoreLang/` — The programming language
 
-A call-by-value λ-calculus with primitive operations, nondeterministic
-generators, and boolean pattern matching, in locally-nameless representation.
+A deterministic call-by-value λ-calculus with unary primitive operations and
+boolean pattern matching, in locally-nameless representation.
 
 The Rocq syntax intentionally represents recursive functions slightly
 differently from the paper's surface presentation.  Instead of giving `vfix`
@@ -208,8 +208,8 @@ match.
 | `Prelude.v` | LN infrastructure: `Open`, `Close`, `SubstV`, `Stale`, `Lc` typeclasses |
 | `Syntax.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc` |
 | `BasicTyping.v` | Simple type system (`⊢ᵥ`, `⊢ₑ`) |
-| `SmallStep.v` | Nondeterministic small-step operational semantics (`→*`) |
-| `Sugar.v` | Derived generator and boolean-choice forms used by examples |
+| `SmallStep.v` | Deterministic small-step operational semantics (`→*`) |
+| `Sugar.v` | Small deterministic derived forms used by examples |
 | `Properties.v` | Basic metatheory entry points |
 | `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
 | `LocallyNamelessExtra.v` | Additional LN lemmas imported from earlier developments |
