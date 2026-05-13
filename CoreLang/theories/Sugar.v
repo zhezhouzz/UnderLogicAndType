@@ -131,6 +131,25 @@ Proof.
       * eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
 Qed.
 
+Lemma basic_typing_tret_fvar_insert Γ x T :
+  <[x := T]> Γ ⊢ₑ tret (vfvar x) ⋮ T.
+Proof.
+  apply TT_Ret. apply VT_FVar.
+  rewrite lookup_insert. destruct (decide (x = x)); [reflexivity | congruence].
+Qed.
+
+Lemma basic_typing_tapp_tm_fvar_insert Γ e x Tx T :
+  x ∉ dom Γ →
+  Γ ⊢ₑ e ⋮ (Tx →ₜ T) →
+  <[x := Tx]> Γ ⊢ₑ tapp_tm e (vfvar x) ⋮ T.
+Proof.
+  intros Hx Htyped.
+  eapply basic_typing_tapp_tm.
+  - eapply basic_typing_weaken_insert_tm; [exact Hx | exact Htyped].
+  - apply VT_FVar.
+    rewrite lookup_insert. destruct (decide (x = x)); [reflexivity | congruence].
+Qed.
+
 Lemma lc_tchoice et ef :
   lc_tm et →
   lc_tm ef →
