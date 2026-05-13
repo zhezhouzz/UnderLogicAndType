@@ -369,6 +369,42 @@ Proof.
   - apply Hφ; [exact Hle | exact Hφ2].
 Qed.
 
+Lemma res_models_wand_map
+    (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
+  formula_scoped_in_world ∅ m (FWand φ2 ψ2) →
+  (∀ m' : WfWorldT, ∀ Hc : world_compat m' m, m' ⊨ φ2 → m' ⊨ φ1) →
+  (∀ m' : WfWorldT, ∀ Hc : world_compat m' m,
+      res_product m' m Hc ⊨ ψ1 →
+      res_product m' m Hc ⊨ ψ2) →
+  m ⊨ FWand φ1 ψ1 →
+  m ⊨ FWand φ2 ψ2.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ Hψ [_ Hwand]. split; [exact Hscope |].
+  intros m' Hc Hφ2.
+  assert (Hφ2_fuel :
+      res_models_with_store_fuel (formula_measure φ2) ∅ m' φ2).
+  {
+    models_fuel_irrel Hφ2.
+  }
+  pose proof (Hφ m' Hc Hφ2_fuel) as Hφ1_fuel.
+  assert (Hφ1_sum :
+      res_models_with_store_fuel
+        (formula_measure φ1 + formula_measure ψ1) ∅ m' φ1).
+  {
+    models_fuel_irrel Hφ1_fuel.
+  }
+  pose proof (Hwand m' Hc Hφ1_sum) as Hψ1.
+  assert (Hψ1_fuel :
+      res_models_with_store_fuel (formula_measure ψ1) ∅
+        (res_product m' m Hc) ψ1).
+  {
+    models_fuel_irrel Hψ1.
+  }
+  pose proof (Hψ m' Hc Hψ1_fuel) as Hψ2.
+  models_fuel_irrel Hψ2.
+Qed.
+
 Lemma res_models_forall_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
   formula_scoped_in_world ∅ m (FForall x φ) →
   (∃ L : aset,
