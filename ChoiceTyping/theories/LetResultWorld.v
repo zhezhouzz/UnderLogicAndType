@@ -201,27 +201,6 @@ Proof.
       * exists σ, vx. split; [right; exact Hσ |]. split; [exact Hsteps | reflexivity].
 Qed.
 
-Lemma store_compat_insert_l_fresh (s1 s2 : Store) x v :
-  store_compat s1 s2 →
-  x ∉ dom s2 →
-  store_compat (<[x := v]> s1) s2.
-Proof.
-  unfold store_compat.
-  intros Hcompat Hx z v1 v2 H1 H2.
-  destruct (decide (z = x)) as [->|Hzx].
-  - exfalso. apply Hx. apply elem_of_dom. eauto.
-  - rewrite lookup_insert_ne in H1 by congruence.
-    eapply Hcompat; eauto.
-Qed.
-
-Lemma store_insert_union_l_fresh (s1 s2 : Store) x v :
-  x ∉ dom s2 →
-  <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
-Proof.
-  intros _.
-  symmetry. apply insert_union_l.
-Qed.
-
 Lemma let_result_world_on_res_product_left_result
     e (x : atom) (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   (∀ σ, (res_product w1 w2 Hc : World) σ →
