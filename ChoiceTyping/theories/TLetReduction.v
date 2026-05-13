@@ -1731,6 +1731,16 @@ Proof.
       apply res_models_and_elim_r in Hmodel. exact Hmodel.
 Qed.
 
+Lemma formula_family_rename_stable_const D φ :
+  formula_fv φ ⊆ D →
+  formula_family_rename_stable_on D (fun _ => φ).
+Proof.
+  intros Hfv.
+  unfold formula_family_rename_stable_on.
+  intros x y n Hx Hy.
+  apply res_models_rename_atom_fresh; set_solver.
+Qed.
+
 Definition formula_family_support_exact_on (D : aset) (P : atom → FormulaQ) : Prop :=
   ∀ x, x ∉ D → formula_fv (P x) = D ∪ {[x]}.
 
