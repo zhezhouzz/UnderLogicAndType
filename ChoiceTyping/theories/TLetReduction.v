@@ -1401,6 +1401,55 @@ Proof.
       apply res_models_and_elim_r in Hmodel. exact Hmodel.
 Qed.
 
+Definition formula_family_support_exact_on (D : aset) (P : atom → FormulaQ) : Prop :=
+  ∀ x, x ∉ D → formula_fv (P x) = D ∪ {[x]}.
+
+Lemma denot_ty_fuel_fresh_arg_family_support_exact
+    gas (Σ : gmap atom ty) τx :
+  cty_measure τx <= gas →
+  basic_choice_ty (dom Σ) τx →
+  formula_family_support_exact_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      τx (tret (vfvar x))).
+Proof.
+  intros Hgas Hbasic x Hx.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    eapply denot_ty_fuel_formula_fv_subset_env in Hz.
+    + rewrite dom_insert_L in Hz. set_solver.
+    + exact Hgas.
+    + eapply basic_choice_ty_fv_subset.
+      eapply basic_choice_ty_mono; [| exact Hbasic].
+      rewrite dom_insert_L. set_solver.
+  - intros Hz.
+    eapply denot_ty_fuel_env_fv_subset; [exact Hgas |].
+    rewrite dom_insert_L. set_solver.
+Qed.
+
+Lemma denot_ty_fuel_fresh_result_family_support_exact
+    gas (Σ : gmap atom ty) τx τ e :
+  cty_measure τ <= gas →
+  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
+  formula_family_support_exact_on (dom Σ) (fun x =>
+    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      ({0 ~> x} τ) (tapp_tm e (vfvar x))).
+Proof.
+  intros Hgas Hbasic_body x Hx.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    eapply denot_ty_fuel_formula_fv_subset_env in Hz.
+    + rewrite dom_insert_L in Hz. set_solver.
+    + rewrite cty_open_preserves_measure. exact Hgas.
+    + eapply basic_choice_ty_fv_subset.
+      replace (dom (<[x:=erase_ty τx]> Σ)) with (dom Σ ∪ {[x]})
+        by (rewrite dom_insert_L; set_solver).
+      apply Hbasic_body. exact Hx.
+  - intros Hz.
+    eapply denot_ty_fuel_env_fv_subset.
+    + rewrite cty_open_preserves_measure. exact Hgas.
+    + rewrite dom_insert_L. set_solver.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_rename_stable
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
