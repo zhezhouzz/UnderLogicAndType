@@ -237,6 +237,27 @@ Proof.
       f_equal. rewrite dom_insert_L. set_solver.
 Qed.
 
+Lemma expr_total_on_drop_insert_fresh_same
+    (Σ : gmap atom ty) T e x (m : WfWorld) :
+  x ∉ dom Σ ∪ fv_tm e →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  expr_total_on (dom Σ) e m.
+Proof.
+  intros Hx Hclosed [Hfv Htotal].
+  split; [set_solver |].
+  intros σ Hσ.
+  specialize (Htotal σ Hσ).
+  replace (subst_map (store_restrict σ (dom Σ)) e)
+    with (subst_map (store_restrict σ (dom (<[x := T]> Σ))) e).
+  - exact Htotal.
+  - symmetry.
+    eapply subst_map_eq_on_fv.
+    + apply closed_env_restrict. exact (proj1 (Hclosed σ Hσ)).
+    + rewrite !store_restrict_restrict.
+      f_equal. rewrite dom_insert_L. set_solver.
+Qed.
+
 Lemma expr_total_on_restrict_self X e (m : WfWorld) :
   expr_total_on X e m →
   expr_total_on X e (res_restrict m X).
