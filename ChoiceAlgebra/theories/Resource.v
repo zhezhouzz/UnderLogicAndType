@@ -1980,6 +1980,10 @@ Lemma res_sum_lift_along_restrict
   world_dom (n1 : World) = world_dom (res_restrict m X : World) →
   res_sum n1 n2 Hdef ⊑ res_restrict m X →
   ∃ (m1 m2 : WfWorld) (Hdef' : raw_sum_defined m1 m2),
+    world_dom (m1 : World) = world_dom (m : World) ∧
+    world_dom (m2 : World) = world_dom (m : World) ∧
+    res_subset m1 m ∧
+    res_subset m2 m ∧
     res_restrict m1 X = n1 ∧
     res_restrict m2 X = n2 ∧
     res_sum m1 m2 Hdef' ⊑ m.
@@ -2008,28 +2012,37 @@ Proof.
   set (m2 := res_slice_restrict m X n2 Hsub2).
   assert (Hdef' : raw_sum_defined m1 m2).
   { unfold raw_sum_defined. subst m1 m2. reflexivity. }
-  exists m1, m2, Hdef'. repeat split.
-  - subst m1. apply res_slice_restrict_restrict.
-  - subst m2. apply res_slice_restrict_restrict.
-  - unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
-    apply world_ext.
-    + subst m1 m2. simpl. set_solver.
-    + intros σ. subst m1 m2. simpl. split.
-      * intros [[Hσm _] | [Hσm _]].
-        all: exists σ; split; [exact Hσm |].
-        all: apply store_restrict_idemp;
-          pose proof (wfworld_store_dom m σ Hσm); set_solver.
-      * intros [σm [Hσm Hrestrict]].
-        pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
-        rewrite store_restrict_idemp in Hrestrict by set_solver.
-        subst σ.
-        assert (Hproj : (res_restrict m X : World) (store_restrict σm X)).
-        { exists σm. split; [exact Hσm | reflexivity]. }
-        rewrite <- Hsum_eq in Hproj.
-        simpl in Hproj.
-        destruct Hproj as [Hn1 | Hn2].
-        -- left. split; [exact Hσm | exact Hn1].
-        -- right. split; [exact Hσm | exact Hn2].
+  exists m1, m2, Hdef'. split.
+  - unfold m1. reflexivity.
+  - split.
+    + unfold m2. reflexivity.
+    + split.
+      * unfold m1. apply res_slice_restrict_subset.
+      * split.
+        -- unfold m2. apply res_slice_restrict_subset.
+        -- split.
+           ++ unfold m1. apply res_slice_restrict_restrict.
+           ++ split.
+              ** unfold m2. apply res_slice_restrict_restrict.
+              ** unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
+                 apply world_ext.
+                 --- unfold m1, m2. simpl. set_solver.
+                 --- intros σ. unfold m1, m2. simpl. split.
+                     +++ intros [[Hσm _] | [Hσm _]].
+                         all: exists σ; split; [exact Hσm |].
+                         all: apply store_restrict_idemp;
+                           pose proof (wfworld_store_dom m σ Hσm); set_solver.
+                     +++ intros [σm [Hσm Hrestrict]].
+                         pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+                         rewrite store_restrict_idemp in Hrestrict by set_solver.
+                         subst σ.
+                         assert (Hproj : (res_restrict m X : World) (store_restrict σm X)).
+                         { exists σm. split; [exact Hσm | reflexivity]. }
+                         rewrite <- Hsum_eq in Hproj.
+                         simpl in Hproj.
+                         destruct Hproj as [Hn1 | Hn2].
+                         *** left. split; [exact Hσm | exact Hn1].
+                         *** right. split; [exact Hσm | exact Hn2].
 Qed.
 
 (** *** Algebraic laws (stated on WfWorld) *)
