@@ -312,14 +312,14 @@ Qed.
 
 Lemma denot_ty_fuel_env_agree gas Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
-  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
   denot_ty_fuel gas Σ1 τ e = denot_ty_fuel gas Σ2 τ e.
 Proof.
 Admitted.
 
 Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
-  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
 Proof.
   intros Hdom Hagree.
@@ -329,7 +329,7 @@ Qed.
 
 Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
-  ty_env_agree_on (fv_cty τ) Σ1 Σ2 →
+  ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
   denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
 Proof.
   intros Hdom Hagree.
@@ -339,7 +339,7 @@ Qed.
 
 Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
   dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
-  ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  ty_env_agree_on (fv_cty τ ∪ fv_tm e) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
 Proof.
   intros Hdom Hagree. unfold denot_ty_in_ctx.
@@ -350,7 +350,7 @@ Qed.
 
 Lemma denot_ty_in_ctx_env_equiv Γ1 Γ2 τ e :
   dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
-  ty_env_agree_on (fv_cty τ) (erase_ctx Γ1) (erase_ctx Γ2) →
+  ty_env_agree_on (fv_cty τ ∪ fv_tm e) (erase_ctx Γ1) (erase_ctx Γ2) →
   denot_ty_in_ctx Γ1 τ e ⊣⊢ denot_ty_in_ctx Γ2 τ e.
 Proof.
   intros Hdom Hagree. unfold denot_ty_in_ctx.
