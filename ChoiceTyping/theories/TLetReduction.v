@@ -900,56 +900,6 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma strongly_normalizing_tret_fvar_store_swap_lookup σ x y v :
-  closed_env σ →
-  σ !! y = Some v →
-  strongly_normalizing (m{store_swap x y σ} (tret (vfvar x))) ↔
-  strongly_normalizing (m{σ} (tret (vfvar y))).
-Proof.
-  intros Hclosed Hlookup.
-  rewrite (msubst_tret_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
-  reflexivity.
-Qed.
-
-Lemma strongly_normalizing_fuel_tret_fvar_store_swap_lookup n σ x y v :
-  closed_env σ →
-  σ !! y = Some v →
-  strongly_normalizing_fuel n (m{store_swap x y σ} (tret (vfvar x))) ↔
-  strongly_normalizing_fuel n (m{σ} (tret (vfvar y))).
-Proof.
-  intros Hclosed Hlookup.
-  rewrite (msubst_tret_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
-  reflexivity.
-Qed.
-
-Lemma strongly_normalizing_tapp_tm_fvar_store_swap_lookup σ e x y v :
-  closed_env σ →
-  σ !! y = Some v →
-  x ∉ fv_tm e →
-  y ∉ fv_tm e →
-  strongly_normalizing (m{store_swap x y σ} (tapp_tm e (vfvar x))) ↔
-  strongly_normalizing (m{σ} (tapp_tm e (vfvar y))).
-Proof.
-  intros Hclosed Hlookup Hx Hy.
-  rewrite (msubst_tapp_tm_fvar_store_swap_lookup σ e x y v
-    Hclosed Hlookup Hx Hy).
-  reflexivity.
-Qed.
-
-Lemma strongly_normalizing_fuel_tapp_tm_fvar_store_swap_lookup n σ e x y v :
-  closed_env σ →
-  σ !! y = Some v →
-  x ∉ fv_tm e →
-  y ∉ fv_tm e →
-  strongly_normalizing_fuel n (m{store_swap x y σ} (tapp_tm e (vfvar x))) ↔
-  strongly_normalizing_fuel n (m{σ} (tapp_tm e (vfvar y))).
-Proof.
-  intros Hclosed Hlookup Hx Hy.
-  rewrite (msubst_tapp_tm_fvar_store_swap_lookup σ e x y v
-    Hclosed Hlookup Hx Hy).
-  reflexivity.
-Qed.
-
 Lemma aset_swap_fresh_union_singleton x y D :
   x ∉ D →
   y ∉ D →
