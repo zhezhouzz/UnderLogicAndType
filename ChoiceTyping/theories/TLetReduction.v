@@ -1066,6 +1066,140 @@ Proof.
         reflexivity.
 Qed.
 
+Lemma FExprContIn_tret_fvar_swap_iff
+    (Σ : gmap atom ty) T (P : atom → FormulaQ)
+    x y (m : WfWorld) :
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  world_dom (m : World) = dom Σ ∪ {[y]} →
+  world_store_closed_on (dom Σ ∪ {[y]}) m →
+  expr_total_on (dom Σ ∪ {[x]}) (tret (vfvar x)) (res_swap x y m) →
+  expr_total_on (dom Σ ∪ {[y]}) (tret (vfvar y)) m →
+  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
+  formula_family_rename_stable_on (dom Σ) P →
+  res_swap x y m ⊨ FExprContIn (<[x := T]> Σ) (tret (vfvar x)) P ↔
+  m ⊨ FExprContIn (<[y := T]> Σ) (tret (vfvar y)) P.
+Proof.
+  intros Hx Hy Hdom Hclosed Htotal_src_base Htotal HPfv HPrename.
+  assert (Hdom_src :
+    world_dom (res_swap x y m : World) = dom (<[x := T]> Σ)).
+  {
+    simpl. rewrite Hdom, aset_swap_union, aset_swap_singleton.
+    replace (atom_swap x y y) with x
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    rewrite aset_swap_fresh by set_solver.
+    rewrite dom_insert_L. set_solver.
+  }
+  assert (Hclosed_src :
+    world_store_closed_on (dom (<[x := T]> Σ)) (res_swap x y m)).
+  {
+    rewrite dom_insert_L.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
+    pose proof (world_store_closed_on_swap x y (dom Σ ∪ {[y]}) m Hclosed)
+      as Hswap_closed.
+    replace (aset_swap x y (dom Σ ∪ {[y]})) with (dom Σ ∪ {[x]})
+      in Hswap_closed.
+    - exact Hswap_closed.
+    - symmetry. apply aset_swap_fresh_union_singleton; assumption.
+  }
+  assert (Htotal_src :
+    expr_total_on (dom (<[x := T]> Σ)) (tret (vfvar x)) (res_swap x y m)).
+  { rewrite dom_insert_L. replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver. exact Htotal_src_base. }
+  assert (Hdom_tgt : world_dom (m : World) = dom (<[y := T]> Σ)).
+  { rewrite dom_insert_L, Hdom. set_solver. }
+  assert (Hclosed_tgt :
+    world_store_closed_on (dom (<[y := T]> Σ)) m).
+  { rewrite dom_insert_L. replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver. exact Hclosed. }
+  assert (Htotal_tgt :
+    expr_total_on (dom (<[y := T]> Σ)) (tret (vfvar y)) m).
+  { rewrite dom_insert_L. replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver. exact Htotal. }
+  assert (HPfv_src :
+    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := T]> Σ) ∪ {[ν]}).
+  { intros ν. rewrite dom_insert_L. pose proof (HPfv ν). set_solver. }
+  assert (HPfv_tgt :
+    ∀ ν, formula_fv (P ν) ⊆ dom (<[y := T]> Σ) ∪ {[ν]}).
+  { intros ν. rewrite dom_insert_L. pose proof (HPfv ν). set_solver. }
+  assert (HPrename_src :
+    formula_family_rename_stable_on (dom (<[x := T]> Σ)) P).
+  {
+    unfold formula_family_rename_stable_on in *.
+    intros a b n Ha Hb. apply HPrename; rewrite dom_insert_L in *; set_solver.
+  }
+  assert (HPrename_tgt :
+    formula_family_rename_stable_on (dom (<[y := T]> Σ)) P).
+  {
+    unfold formula_family_rename_stable_on in *.
+    intros a b n Ha Hb. apply HPrename; rewrite dom_insert_L in *; set_solver.
+  }
+  split; intros Hcont.
+  - pose proof (proj1 (FExprContIn_iff_let_result_world_on_exact_domain
+      (<[x := T]> Σ) T (tret (vfvar x)) P (res_swap x y m)
+      (basic_typing_tret_fvar_insert Σ x T) Hdom_src Hclosed_src Htotal_src
+      HPfv_src HPrename_src) Hcont) as [L [HL Huse]].
+    apply (proj2 (FExprContIn_iff_let_result_world_on_exact_domain
+      (<[y := T]> Σ) T (tret (vfvar y)) P m
+      (basic_typing_tret_fvar_insert Σ y T) Hdom_tgt Hclosed_tgt Htotal_tgt
+      HPfv_tgt HPrename_tgt)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ {[y]}). split.
+    { rewrite dom_insert_L. set_solver. }
+    intros ν Hν Hfreshν Hresultν.
+    assert (Hfreshν_src : ν ∉ world_dom (res_swap x y m : World)).
+    {
+      rewrite Hdom_src, dom_insert_L. set_solver.
+    }
+    assert (Hresultν_src : ∀ σ, (res_swap x y m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm (tret (vfvar x))))
+        (tret (vfvar x)) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result.
+      - exact Hclosed_src.
+      - exact Htotal_src.
+    }
+    pose proof (Huse ν ltac:(set_solver) Hfreshν_src Hresultν_src) as Hsrcν.
+    rewrite (let_result_world_on_tret_fvar_swap
+      (dom Σ) x y ν m Hfreshν_src Hresultν_src Hfreshν Hresultν
+      Hx Hy ltac:(set_solver) Hdom
+      ltac:(eapply world_store_closed_on_world_closed_on; exact Hclosed)) in Hsrcν.
+    rewrite <- res_models_swap in Hsrcν.
+    apply (proj1 (res_models_rename_atom_fresh x y (P ν)
+      (let_result_world_on (tret (vfvar y)) ν m Hfreshν Hresultν)
+      ltac:(pose proof (HPfv ν); set_solver)
+      ltac:(pose proof (HPfv ν); set_solver))).
+    exact Hsrcν.
+  - pose proof (proj1 (FExprContIn_iff_let_result_world_on_exact_domain
+      (<[y := T]> Σ) T (tret (vfvar y)) P m
+      (basic_typing_tret_fvar_insert Σ y T) Hdom_tgt Hclosed_tgt Htotal_tgt
+      HPfv_tgt HPrename_tgt) Hcont) as [L [HL Huse]].
+    apply (proj2 (FExprContIn_iff_let_result_world_on_exact_domain
+      (<[x := T]> Σ) T (tret (vfvar x)) P (res_swap x y m)
+      (basic_typing_tret_fvar_insert Σ x T) Hdom_src Hclosed_src Htotal_src
+      HPfv_src HPrename_src)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ {[y]}). split.
+    { rewrite dom_insert_L. set_solver. }
+    intros ν Hν Hfreshν_src Hresultν_src.
+    assert (Hfreshν : ν ∉ world_dom (m : World)).
+    { rewrite Hdom. set_solver. }
+    assert (Hresultν : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm (tret (vfvar y))))
+        (tret (vfvar y)) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result.
+      - exact Hclosed_tgt.
+      - exact Htotal_tgt.
+    }
+    pose proof (Huse ν ltac:(set_solver) Hfreshν Hresultν) as Htgtν.
+    apply (proj2 (res_models_rename_atom_fresh x y (P ν)
+      (let_result_world_on (tret (vfvar y)) ν m Hfreshν Hresultν)
+      ltac:(pose proof (HPfv ν); set_solver)
+      ltac:(pose proof (HPfv ν); set_solver))) in Htgtν.
+    rewrite res_models_swap in Htgtν.
+    rewrite (let_result_world_on_tret_fvar_swap
+      (dom Σ) x y ν m Hfreshν_src Hresultν_src Hfreshν Hresultν
+      Hx Hy ltac:(set_solver) Hdom
+      ltac:(eapply world_store_closed_on_world_closed_on; exact Hclosed)).
+    exact Htgtν.
+Qed.
+
 Lemma world_closed_on_swap_fresh_union_singleton_iff D x y (m : WfWorld) :
   x ∉ D →
   y ∉ D →
