@@ -415,6 +415,44 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tapp σ v1 v2 :
+  m{σ} (tapp v1 v2) = tapp (m{σ} v1) (m{σ} v2).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tapp v1 v2) σ =
+      tapp
+        (map_fold (fun x vx acc => {x := vx} acc) v1 σ)
+        (map_fold (fun x vx acc => {x := vx} acc) v2 σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v1).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v2).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tapp v1 v2)).
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma msubst_tmatch σ v et ef :
+  m{σ} (tmatch v et ef) = tmatch (m{σ} v) (m{σ} et) (m{σ} ef).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tmatch v et ef) σ =
+      tmatch
+        (map_fold (fun x vx acc => {x := vx} acc) v σ)
+        (map_fold (fun x vx acc => {x := vx} acc) et σ)
+        (map_fold (fun x vx acc => {x := vx} acc) ef σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) et).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) ef).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tmatch v et ef)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_fvar_lookup_closed σ x v :
   closed_env σ →
   σ !! x = Some v →

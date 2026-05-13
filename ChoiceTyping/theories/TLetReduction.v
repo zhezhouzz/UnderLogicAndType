@@ -496,6 +496,76 @@ Proof.
   exact (res_models_with_store_pure_elim _ _ _ Hm).
 Qed.
 
+Lemma msubst_tapp_tm σ ef vx :
+  m{σ} (tapp_tm ef vx) = tapp_tm (m{σ} ef) (m{σ} vx).
+Proof.
+  induction ef; simpl.
+  - rewrite msubst_tapp, msubst_ret. reflexivity.
+  - rewrite !msubst_lete. rewrite IHef2. reflexivity.
+  - rewrite msubst_lete, msubst_tprim.
+    rewrite msubst_tapp.
+    rewrite (msubst_fresh σ (vbvar 0)) by set_solver.
+    cbn [tapp_tm].
+    rewrite msubst_tprim.
+    reflexivity.
+  - rewrite msubst_lete, msubst_tapp.
+    rewrite msubst_tapp.
+    rewrite (msubst_fresh σ (vbvar 0)) by set_solver.
+    cbn [tapp_tm].
+    rewrite msubst_tapp.
+    reflexivity.
+  - rewrite msubst_lete, msubst_tmatch.
+    rewrite msubst_tapp.
+    rewrite (msubst_fresh σ (vbvar 0)) by set_solver.
+    cbn [tapp_tm].
+    rewrite msubst_tmatch.
+    reflexivity.
+Qed.
+
+Lemma msubst_fvar_store_swap_lookup σ x y v :
+  closed_env σ →
+  σ !! y = Some v →
+  m{store_swap x y σ} (vfvar x) = m{σ} (vfvar y).
+Proof.
+  intros Hclosed Hlookup.
+  rewrite (msubst_fvar_lookup_closed σ y v Hclosed Hlookup).
+  rewrite (msubst_fvar_lookup_closed (store_swap x y σ) x v).
+  - reflexivity.
+  - apply closed_env_store_swap. exact Hclosed.
+  - change (store_swap x y σ !! x = Some v).
+    rewrite store_swap_lookup_inv.
+    replace (atom_swap x y x) with y
+      by (unfold atom_swap; repeat destruct decide; congruence).
+    exact Hlookup.
+Qed.
+
+Lemma msubst_tret_fvar_store_swap_lookup σ x y v :
+  closed_env σ →
+  σ !! y = Some v →
+  m{store_swap x y σ} (tret (vfvar x)) = m{σ} (tret (vfvar y)).
+Proof.
+  intros Hclosed Hlookup.
+  rewrite !msubst_ret.
+  rewrite (msubst_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
+  reflexivity.
+Qed.
+
+Lemma msubst_tapp_tm_fvar_store_swap_lookup σ e x y v :
+  closed_env σ →
+  lc_env σ →
+  σ !! y = Some v →
+  x ∉ fv_tm e →
+  y ∉ fv_tm e →
+  m{store_swap x y σ} (tapp_tm e (vfvar x)) =
+  m{σ} (tapp_tm e (vfvar y)).
+Proof.
+  intros Hclosed Hlc Hlookup Hx Hy.
+  rewrite !msubst_tapp_tm.
+  rewrite (msubst_store_swap_fresh tm x y σ e) by assumption.
+  rewrite (msubst_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
+  reflexivity.
+Qed.
+
 (** The two lemmas below are the explicit-name/cofinite rename principles
     needed by the function-type cases.
 
