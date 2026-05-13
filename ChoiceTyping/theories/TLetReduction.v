@@ -1724,6 +1724,154 @@ Proof.
     + exact Hdom_sub.
 Qed.
 
+Lemma denot_ty_fuel_insert_fresh_env_irrel_same_world_union_case gas
+    (Σ : gmap atom ty) τa τb e x T (m : WfWorld) :
+  (∀ τ,
+    cty_measure τ <= gas →
+    x ∉ dom Σ ∪ fv_cty τ ∪ fv_tm e →
+    dom (<[x := T]> Σ) ⊆ world_dom (m : World) →
+    world_store_closed_on (dom (<[x := T]> Σ)) m →
+    expr_total_on (dom (<[x := T]> Σ)) e m →
+    m ⊨ denot_ty_fuel gas (<[x := T]> Σ) τ e <->
+    m ⊨ denot_ty_fuel gas Σ τ e) →
+  cty_measure (CTUnion τa τb) <= S gas →
+  x ∉ dom Σ ∪ fv_cty (CTUnion τa τb) ∪ fv_tm e →
+  dom (<[x := T]> Σ) ⊆ world_dom (m : World) →
+  world_store_closed_on (dom (<[x := T]> Σ)) m →
+  expr_total_on (dom (<[x := T]> Σ)) e m →
+  m ⊨ denot_ty_fuel (S gas) (<[x := T]> Σ) (CTUnion τa τb) e <->
+  m ⊨ denot_ty_fuel (S gas) Σ (CTUnion τa τb) e.
+Proof.
+  intros IH Hgas Hx Hdom_sub Hclosed Htotal. split; intros Hsrc.
+  - pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hsrc)
+      as [Hbasic_src Htyped_src].
+    assert (Hbasic_base : basic_choice_ty (dom Σ) (CTUnion τa τb)).
+    {
+      eapply basic_choice_ty_drop_fresh.
+      - intros Hxτ. apply Hx.
+        apply elem_of_union_l. apply elem_of_union_r. exact Hxτ.
+      - replace (dom Σ ∪ {[x]}) with (dom (<[x:=T]> Σ)).
+        + exact Hbasic_src.
+        + rewrite dom_insert_L. set_solver.
+    }
+    assert (Htyped_base : Σ ⊢ₑ e ⋮ erase_ty (CTUnion τa τb)).
+    {
+      eapply basic_typing_drop_insert_fresh_tm.
+      - intros Hxe. apply Hx. apply elem_of_union_r. exact Hxe.
+      - exact Htyped_src.
+    }
+    inversion Hbasic_base as [| | |D τ1' τ2' HbasicA HbasicB Herase| | |]; subst.
+    eapply denot_ty_fuel_intro.
+    + exact Hbasic_base.
+    + exact Htyped_base.
+    + eapply world_store_closed_on_world_closed_on.
+      eapply world_store_closed_on_mono; [| exact Hclosed].
+      rewrite dom_insert_L. set_solver.
+    + eapply expr_total_on_drop_insert_fresh_same.
+      * intros Hbad. apply Hx.
+        apply elem_of_union in Hbad as [Hbad | Hbad].
+        -- apply elem_of_union_l. apply elem_of_union_l. exact Hbad.
+        -- apply elem_of_union_r. exact Hbad.
+      * exact Hclosed.
+      * exact Htotal.
+    + pose proof (denot_ty_fuel_body_of_formula _ _ _ _ _ Hsrc) as Hbody.
+      cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty] in Hbody |- *.
+      eapply res_models_or_transport_between_worlds; [| | | | exact Hbody].
+      * etrans; [| etrans; [| exact Hdom_sub]].
+        -- eapply (denot_ty_fuel_formula_fv_subset_env gas Σ τa e).
+           ++ cbn [cty_measure] in Hgas. lia.
+           ++ eapply basic_choice_ty_fv_subset. exact HbasicA.
+        -- rewrite dom_insert_L. set_solver.
+      * etrans; [| etrans; [| exact Hdom_sub]].
+        -- eapply (denot_ty_fuel_formula_fv_subset_env gas Σ τb e).
+           ++ cbn [cty_measure] in Hgas. lia.
+           ++ eapply basic_choice_ty_fv_subset. exact HbasicB.
+        -- rewrite dom_insert_L. set_solver.
+      * intros Ha.
+        destruct (IH τa) as [IHto _].
+        -- cbn [cty_measure] in Hgas. lia.
+        -- intros Hbad. apply Hx.
+           apply elem_of_union in Hbad as [Hbad | Hbad].
+           ++ apply elem_of_union_l.
+              apply elem_of_union in Hbad as [Hbad | Hbad].
+              ** apply elem_of_union_l. exact Hbad.
+              ** apply elem_of_union_r. simpl. apply elem_of_union. left. exact Hbad.
+           ++ apply elem_of_union_r. exact Hbad.
+        -- exact Hdom_sub.
+        -- exact Hclosed.
+        -- exact Htotal.
+        -- exact (IHto Ha).
+      * intros Hb.
+        destruct (IH τb) as [IHto _].
+        -- cbn [cty_measure] in Hgas. lia.
+        -- intros Hbad. apply Hx.
+           apply elem_of_union in Hbad as [Hbad | Hbad].
+           ++ apply elem_of_union_l.
+              apply elem_of_union in Hbad as [Hbad | Hbad].
+              ** apply elem_of_union_l. exact Hbad.
+              ** apply elem_of_union_r. simpl. apply elem_of_union. right. exact Hbad.
+           ++ apply elem_of_union_r. exact Hbad.
+        -- exact Hdom_sub.
+        -- exact Hclosed.
+        -- exact Htotal.
+        -- exact (IHto Hb).
+    + etrans; [| exact Hdom_sub].
+      rewrite dom_insert_L. set_solver.
+  - pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hsrc)
+      as [Hbasic_src Htyped_src].
+    inversion Hbasic_src as [| | |D τ1' τ2' HbasicA HbasicB Herase| | |]; subst.
+    eapply denot_ty_fuel_intro.
+    + eapply basic_choice_ty_mono; [| exact Hbasic_src].
+      rewrite dom_insert_L. set_solver.
+    + eapply basic_typing_weaken_insert_tm; [set_solver | exact Htyped_src].
+    + eapply world_store_closed_on_world_closed_on. exact Hclosed.
+    + exact Htotal.
+    + pose proof (denot_ty_fuel_body_of_formula _ _ _ _ _ Hsrc) as Hbody.
+      cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty] in Hbody |- *.
+      eapply res_models_or_transport_between_worlds; [| | | | exact Hbody].
+      * etrans; [| exact Hdom_sub].
+        eapply (denot_ty_fuel_formula_fv_subset_env gas (<[x:=T]> Σ) τa e);
+          [cbn [cty_measure] in Hgas; lia |].
+        eapply basic_choice_ty_fv_subset.
+        eapply basic_choice_ty_mono; [| exact HbasicA].
+        rewrite dom_insert_L. set_solver.
+      * etrans; [| exact Hdom_sub].
+        eapply (denot_ty_fuel_formula_fv_subset_env gas (<[x:=T]> Σ) τb e);
+          [cbn [cty_measure] in Hgas; lia |].
+        eapply basic_choice_ty_fv_subset.
+        eapply basic_choice_ty_mono; [| exact HbasicB].
+        rewrite dom_insert_L. set_solver.
+      * intros Ha.
+        destruct (IH τa) as [_ IHfrom].
+        -- cbn [cty_measure] in Hgas. lia.
+        -- intros Hbad. apply Hx.
+           apply elem_of_union in Hbad as [Hbad | Hbad].
+           ++ apply elem_of_union_l.
+              apply elem_of_union in Hbad as [Hbad | Hbad].
+              ** apply elem_of_union_l. exact Hbad.
+              ** apply elem_of_union_r. simpl. apply elem_of_union. left. exact Hbad.
+           ++ apply elem_of_union_r. exact Hbad.
+        -- exact Hdom_sub.
+        -- exact Hclosed.
+        -- exact Htotal.
+        -- exact (IHfrom Ha).
+      * intros Hb.
+        destruct (IH τb) as [_ IHfrom].
+        -- cbn [cty_measure] in Hgas. lia.
+        -- intros Hbad. apply Hx.
+           apply elem_of_union in Hbad as [Hbad | Hbad].
+           ++ apply elem_of_union_l.
+              apply elem_of_union in Hbad as [Hbad | Hbad].
+              ** apply elem_of_union_l. exact Hbad.
+              ** apply elem_of_union_r. simpl. apply elem_of_union. right. exact Hbad.
+           ++ apply elem_of_union_r. exact Hbad.
+        -- exact Hdom_sub.
+        -- exact Hclosed.
+        -- exact Htotal.
+        -- exact (IHfrom Hb).
+    + exact Hdom_sub.
+Qed.
+
 Lemma denot_ty_fuel_drop_fresh_env_irrel_over_case gas
     (Σ : gmap atom ty) b φ e x T (m : WfWorld) :
   x ∉ dom Σ ∪ qual_dom φ ∪ fv_tm e →
