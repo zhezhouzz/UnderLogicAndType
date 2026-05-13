@@ -185,6 +185,34 @@ Proof.
   - models_fuel_irrel Hψ.
 Qed.
 
+Lemma res_models_plus_map
+    (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
+  formula_scoped_in_world ∅ m (FPlus φ2 ψ2) →
+  (∀ m', m' ⊨ φ1 → m' ⊨ φ2) →
+  (∀ m', m' ⊨ ψ1 → m' ⊨ ψ2) →
+  m ⊨ FPlus φ1 ψ1 →
+  m ⊨ FPlus φ2 ψ2.
+Proof.
+  unfold res_models, res_models_with_store.
+  simpl. intros Hscope Hφ Hψ [_ Hplus]. split; [exact Hscope |].
+  destruct Hplus as [m1 [m2 [Hdef [Hle [Hm1 Hm2]]]]].
+  exists m1, m2, Hdef. split; [exact Hle |]. split.
+  - assert (Hm1_model : m1 ⊨ φ1).
+    {
+      unfold res_models, res_models_with_store.
+      models_fuel_irrel Hm1.
+    }
+    pose proof (Hφ m1 Hm1_model) as Hm1'.
+    models_fuel_irrel Hm1'.
+  - assert (Hm2_model : m2 ⊨ ψ1).
+    {
+      unfold res_models, res_models_with_store.
+      models_fuel_irrel Hm2.
+    }
+    pose proof (Hψ m2 Hm2_model) as Hm2'.
+    models_fuel_irrel Hm2'.
+Qed.
+
 Lemma res_models_atom_intro (m : WfWorldT) (q : LogicQualifierT) :
   formula_scoped_in_world ∅ m (FAtom q) →
   logic_qualifier_denote q ∅ m →
