@@ -5,7 +5,7 @@
     global atom type, finite atom sets, an abstract value interface, freshness
     helpers, and the [Stale] interface used by all later layers. *)
 
-From stdpp Require Export gmap sets fin_sets fin_map_dom.
+From stdpp Require Export gmap sets fin_sets fin_map_dom countable.
 From Corelib Require Export Program.Wf.
 From Hammer Require Export Hammer.
 
@@ -16,6 +16,74 @@ Definition atom : Type := positive.
 #[global] Instance atom_countable : Countable  atom := _.
 #[global] Instance atom_infinite  : Infinite   atom := _.
 Notation aset := (gset atom).
+
+(** Free-variable/resource-domain collection. *)
+Class Stale A := stale : A → aset.
+
+#[global] Instance stale_aset : Stale aset := id.
+
+Notation "x '#' s" := (x ∉ stale s) (at level 40).
+
+(** ** Logic variables
+
+    Logic and type qualifiers may mention both locally-nameless bound
+    coordinates and ordinary atom coordinates.  We keep these references in a
+    single finite set so opening a binder is just a finite-set map from the
+    bound representative to the chosen atom.
+
+    [LVBound k] is not a stale atom by itself; it becomes one only after an
+    explicit open operation. *)
+Inductive logic_var : Type :=
+  | LVBound (k : nat)
+  | LVFree  (x : atom).
+
+#[global] Instance logic_var_eqdec : EqDecision logic_var.
+Proof. solve_decision. Qed.
+#[global] Instance logic_var_countable : Countable logic_var.
+Proof.
+  refine (inj_countable'
+    (λ v, match v with LVBound k => inl k | LVFree x => inr x end)
+    (λ s, match s with inl k => LVBound k | inr x => LVFree x end) _).
+  intros []; reflexivity.
+Qed.
+
+Notation lvset := (gset logic_var).
+
+Definition logic_var_fv (v : logic_var) : aset :=
+  match v with
+  | LVBound _ => ∅
+  | LVFree x => {[x]}
+  end.
+
+Definition logic_var_bv (v : logic_var) : gset nat :=
+  match v with
+  | LVBound k => {[k]}
+  | LVFree _ => ∅
+  end.
+
+Definition lvars_fv (D : lvset) : aset :=
+  set_fold (λ v acc, logic_var_fv v ∪ acc) ∅ D.
+
+Definition lvars_bv (D : lvset) : gset nat :=
+  set_fold (λ v acc, logic_var_bv v ∪ acc) ∅ D.
+
+Definition logic_var_open (k : nat) (x : atom) (v : logic_var) : logic_var :=
+  match v with
+  | LVBound j => if decide (j = k) then LVFree x else LVBound j
+  | LVFree y => LVFree y
+  end.
+
+Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
+  set_map (logic_var_open k x) D.
+
+Definition lvars_of_atoms (X : aset) : lvset :=
+  set_map LVFree X.
+
+#[global] Instance stale_logic_var : Stale logic_var := logic_var_fv.
+Arguments stale_logic_var /.
+
+#[global] Instance stale_logic_vars : Stale lvset := lvars_fv.
+Arguments stale_logic_vars /.
 
 (** ** Abstract store values
 
@@ -28,13 +96,6 @@ Class ValueSig (V : Type) := {
 
 #[global] Existing Instance valuesig_eqdec.
 #[global] Existing Instance valuesig_inhabited.
-
-(** Free-variable/resource-domain collection. *)
-Class Stale A := stale : A → aset.
-
-#[global] Instance stale_aset : Stale aset := id.
-
-Notation "x '#' s" := (x ∉ stale s) (at level 40).
 
 Definition fresh_for (s : aset) : atom := fresh s.
 
