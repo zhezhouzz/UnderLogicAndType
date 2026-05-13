@@ -30,6 +30,16 @@ Proof.
   - pose proof (qual_open_atom_dom_subset (S k) x φ). set_solver.
 Qed.
 
+Lemma cty_open_swap_atom k x y z τ :
+  cty_open k z (cty_swap_atom x y τ) =
+  cty_swap_atom x y (cty_open k (atom_swap x y z) τ).
+Proof.
+  induction τ in k |- *; simpl;
+    try rewrite ?IHτ1, ?IHτ2; try reflexivity.
+  - rewrite qual_open_atom_swap. reflexivity.
+  - rewrite qual_open_atom_swap. reflexivity.
+Qed.
+
 Lemma ctx_stale_swap x y Γ :
   ctx_stale (ctx_swap_atom x y Γ) = aset_swap x y (ctx_stale Γ).
 Proof.

@@ -53,6 +53,37 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma qual_open_atom_swap k x y z q :
+  qual_open_atom k z (qual_swap_atom x y q) =
+  qual_swap_atom x y (qual_open_atom k (atom_swap x y z) q).
+Proof.
+  destruct q as [B d p]. simpl.
+  unfold qual_open_atom, qual_swap_atom, qual_bvars, qual_dom in *; simpl in *.
+  destruct (decide (k ∈ B)) as [Hk|Hk]; simpl.
+  - f_equal.
+    + rewrite aset_swap_union, aset_swap_singleton, atom_swap_involutive.
+      reflexivity.
+    + apply functional_extensionality. intros β.
+      apply functional_extensionality. intros σ.
+      apply functional_extensionality. intros a.
+      apply propositional_extensionality.
+      replace (store_swap x y (store_restrict σ (aset_swap x y d)))
+        with (store_restrict (store_swap x y σ) d).
+      2:{
+        rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
+        rewrite aset_swap_involutive. reflexivity.
+      }
+      replace (store_swap x y (store_restrict a (aset_swap x y d)))
+        with (store_restrict (store_swap x y a) d).
+      2:{
+        rewrite <- (store_restrict_swap x y a (aset_swap x y d)).
+        rewrite aset_swap_involutive. reflexivity.
+      }
+      rewrite store_swap_lookup_inv, atom_swap_involutive.
+      reflexivity.
+  - reflexivity.
+Qed.
+
 Lemma qual_lc_swap x y q :
   lc_qualifier q →
   lc_qualifier (qual_swap_atom x y q).
