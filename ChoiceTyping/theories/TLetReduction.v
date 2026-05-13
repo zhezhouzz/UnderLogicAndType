@@ -767,6 +767,13 @@ Proof.
   - exact Hclosed.
 Qed.
 
+Lemma denot_ty_fuel_world_store_closed_on_of_formula gas Σ τ e m :
+  m ⊨ denot_ty_fuel gas Σ τ e →
+  world_store_closed_on (dom Σ) m.
+Proof.
+  apply denot_ty_fuel_world_closed_on_of_formula.
+Qed.
+
 Lemma denot_ty_fuel_expr_total_on_of_formula gas Σ τ e m :
   m ⊨ denot_ty_fuel gas Σ τ e →
   expr_total_on (dom Σ) e m.
@@ -2052,27 +2059,6 @@ Proof.
     + intros m' Hc HQy.
       apply (proj2 (HQ x y (res_product m' n Hc) Hx Hy)). exact HQy.
 Qed.
-
-Lemma denot_ty_fuel_fresh_arg_family_rename_stable
-    gas (Σ : gmap atom ty) τx :
-  cty_measure τx <= gas →
-  basic_choice_ty (dom Σ) τx →
-  formula_family_rename_stable_on (dom Σ) (fun x =>
-    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
-      τx (tret (vfvar x))).
-Proof.
-Admitted.
-
-Lemma denot_ty_fuel_fresh_result_family_rename_stable
-    gas (Σ : gmap atom ty) τx τ e :
-  cty_measure τ <= gas →
-  (∀ x, x ∉ dom Σ → basic_choice_ty (dom Σ ∪ {[x]}) ({0 ~> x} τ)) →
-  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
-  formula_family_rename_stable_on (dom Σ) (fun x =>
-    denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
-      ({0 ~> x} τ) (tapp_tm e (vfvar x))).
-Proof.
-Admitted.
 
 Lemma denot_ty_fuel_insert_fresh_env_irrel_same_world_over_case gas
     (Σ : gmap atom ty) b φ e x T (m : WfWorld) :
@@ -4307,7 +4293,116 @@ Lemma denot_ty_tlet_reduction_formula_any_world (τ2 : choice_ty): forall
   <->
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Σ Γ τ1 e1 e2 m x Hfresh Hresult Hregular He1 Hlet Hctx Htotal Hx.
+  set (Δ := erase_ctx_under Σ Γ).
+  assert (HbasicΓ : basic_ctx (dom Σ) Γ) by exact (proj1 Hregular).
+  assert (Hbasicτ : basic_choice_ty (dom Δ) τ2) by exact (proj2 Hregular).
+  assert (Hcover : dom Δ ⊆ world_dom (m : World)).
+  { subst Δ. eapply denot_ctx_in_env_world_covers_erased; eauto. }
+  assert (HxΔ : x ∉ dom Δ) by (subst Δ; set_solver).
+  assert (Hfresh0 : x ∉ world_dom (res_restrict m (dom Δ) : World)).
+  { simpl. set_solver. }
+  assert (Hfv1 : fv_tm e1 ⊆ dom Δ).
+  { subst Δ. eapply basic_typing_contains_fv_tm. exact He1. }
+  assert (Hclosed_m : world_store_closed_on (dom Δ) m).
+  { subst Δ. eapply denot_ctx_in_env_world_store_closed_on_erased; eauto. }
+  assert (Hresult0 : ∀ σ, (res_restrict m (dom Δ) : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
+  {
+    intros σ Hσ.
+    destruct Hσ as [σm [Hσm Hrestrict]].
+    destruct (Hresult σm Hσm) as [vx Hsteps].
+    exists vx.
+    replace (store_restrict σ (fv_tm e1))
+      with (store_restrict σm (fv_tm e1)).
+    - exact Hsteps.
+    - rewrite <- Hrestrict.
+      store_norm.
+      replace (dom Δ ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+      reflexivity.
+  }
+  assert (Hclosed0 : world_store_closed_on (dom Δ) (res_restrict m (dom Δ))).
+  { eapply world_store_closed_on_restrict; [reflexivity | exact Hclosed_m]. }
+  assert (Htotal0 :
+      expr_total_on (dom Δ) (tlete e1 e2) (res_restrict m (dom Δ))).
+  { apply expr_total_on_restrict_self. exact Htotal. }
+  assert (Hctx_fv : formula_fv (denot_ctx_in_env Σ Γ) ⊆ dom Δ).
+  {
+    subst Δ.
+    unfold denot_ctx_in_env.
+    cbn [formula_fv].
+    rewrite !basic_world_formula_fv.
+    pose proof (denot_ctx_under_formula_fv_subset Σ Γ) as Hctx_fv.
+    pose proof (basic_ctx_fv_subset (dom Σ) Γ HbasicΓ) as HΓfv.
+    rewrite erase_ctx_under_dom_basic by exact HbasicΓ.
+    rewrite ctx_stale_eq_fv_dom in Hctx_fv.
+    set_solver.
+  }
+  assert (Hctx0 : res_restrict m (dom Δ) ⊨ denot_ctx_in_env Σ Γ).
+  { exact (proj1 (res_models_minimal_on (dom Δ) m
+      (denot_ctx_in_env Σ Γ) Hctx_fv) Hctx). }
+  assert (Hbody_env :
+      erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) =
+      <[x := erase_ty τ1]> Δ).
+  { subst Δ. apply erase_ctx_under_comma_bind_env_fresh. exact HxΔ. }
+  assert (Hbody_fv :
+      formula_fv
+        (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))
+      ⊆ dom Δ ∪ {[x]}).
+  {
+    unfold denot_ty_in_ctx_under, denot_ty_on.
+    rewrite Hbody_env.
+    pose proof (denot_ty_fuel_formula_fv_subset_env
+      (cty_measure τ2) (<[x:=erase_ty τ1]> Δ) τ2 (e2 ^^ x)
+      ltac:(lia)
+      ltac:(eapply basic_choice_ty_fv_subset;
+        eapply basic_choice_ty_mono; [| exact Hbasicτ];
+        rewrite dom_insert_L; set_solver)) as Hfv.
+    rewrite dom_insert_L in Hfv.
+    set_solver.
+  }
+  assert (Htarget_fv :
+      formula_fv (denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2)) ⊆ dom Δ).
+  {
+    subst Δ.
+    unfold denot_ty_in_ctx_under, denot_ty_on.
+    eapply denot_ty_fuel_formula_fv_subset_env; [lia |].
+    eapply basic_choice_ty_fv_subset. exact Hbasicτ.
+  }
+  assert (Hresult_world_restrict :
+      res_restrict (let_result_world_on e1 x m Hfresh Hresult)
+        (dom Δ ∪ {[x]}) =
+      let_result_world_on e1 x (res_restrict m (dom Δ)) Hfresh0 Hresult0).
+  {
+    eapply let_result_world_on_restrict_input.
+    - exact Hfv1.
+    - exact Hcover.
+    - exact HxΔ.
+  }
+  pose proof (denot_ty_tlet_reduction_formula
+    τ2 Σ Γ τ1 e1 e2 (res_restrict m (dom Δ)) x
+    Hfresh0 Hresult0 Hregular He1 Hlet
+    ltac:(simpl; set_solver) Hctx0 Htotal0 Hx) as Hexact.
+  split; intros Hmodel.
+  - apply (proj2 (res_models_minimal_on (dom Δ) m
+      (denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2)) Htarget_fv)).
+    apply (proj1 Hexact).
+    rewrite <- Hresult_world_restrict.
+    apply (proj1 (res_models_minimal_on (dom Δ ∪ {[x]})
+      (let_result_world_on e1 x m Hfresh Hresult)
+      (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))
+      Hbody_fv)).
+    exact Hmodel.
+  - apply (proj2 (res_models_minimal_on (dom Δ ∪ {[x]})
+      (let_result_world_on e1 x m Hfresh Hresult)
+      (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))
+      Hbody_fv)).
+    rewrite Hresult_world_restrict.
+    apply (proj2 Hexact).
+    apply (proj1 (res_models_minimal_on (dom Δ) m
+      (denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2)) Htarget_fv)).
+    exact Hmodel.
+Qed.
 
 Lemma expr_total_tlet_reduction
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
