@@ -97,3 +97,9 @@ Lemma cty_swap_preserves_erasure x y τ :
 Proof.
   induction τ; simpl; congruence.
 Qed.
+
+Lemma cty_open_preserves_erasure k x τ :
+  erase_ty ({k ~> x} τ) = erase_ty τ.
+Proof.
+  induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+Qed.

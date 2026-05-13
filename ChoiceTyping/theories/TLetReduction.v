@@ -951,6 +951,185 @@ Proof.
     apply Htotal. exact Hσy.
 Qed.
 
+Lemma dom_insert_fresh_union (Σ : gmap atom ty) x T :
+  x ∉ dom Σ →
+  dom (<[x := T]> Σ) = dom Σ ∪ {[x]}.
+Proof.
+  intros _. rewrite dom_insert_L. set_solver.
+Qed.
+
+Lemma swap_scoped_insert_dom x y D (m : WfWorld) :
+  x ∉ D →
+  y ∉ D →
+  D ∪ {[x]} ⊆ world_dom (res_swap x y m : World) →
+  D ∪ {[y]} ⊆ world_dom (m : World).
+Proof.
+  intros Hx Hy Hscope z Hz.
+  assert (Hzswap : atom_swap x y z ∈ D ∪ {[x]}).
+  {
+    rewrite !elem_of_union, !elem_of_singleton in Hz |- *.
+    unfold atom_swap in *.
+    repeat destruct decide; set_solver.
+  }
+  specialize (Hscope (atom_swap x y z) Hzswap).
+  simpl in Hscope.
+  rewrite elem_of_aset_swap in Hscope.
+  rewrite atom_swap_involutive in Hscope.
+  exact Hscope.
+Qed.
+
+Lemma denot_ty_fuel_rebuild_fresh_tret_from_body gas
+    (Σ : gmap atom ty) τx x y (m : WfWorld) :
+  cty_measure τx <= gas →
+  x ∉ dom Σ →
+  y ∉ dom Σ →
+  basic_choice_ty (dom Σ) τx →
+  res_swap x y m ⊨ denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+    τx (tret (vfvar x)) →
+  m ⊨ denot_ty_fuel_body gas (<[y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)) →
+  m ⊨ denot_ty_fuel gas (<[y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
+Proof.
+  intros Hgas Hx Hy Hbasic Hsrc Hbody.
+  pose proof (res_models_with_store_fuel_scoped _ ∅ (res_swap x y m)
+    (denot_ty_fuel gas (<[x := erase_ty τx]> Σ) τx (tret (vfvar x)))
+    Hsrc) as Hscope_src.
+  assert (Hscope_y :
+    dom (<[y := erase_ty τx]> Σ) ⊆ world_dom (m : World)).
+  {
+    replace (dom (<[y:=erase_ty τx]> Σ)) with (dom Σ ∪ {[y]})
+      by (rewrite dom_insert_L; set_solver).
+    eapply swap_scoped_insert_dom; [exact Hx | exact Hy |].
+    replace (dom Σ ∪ {[x]}) with (dom (<[x:=erase_ty τx]> Σ))
+      by (rewrite dom_insert_L; set_solver).
+    etransitivity.
+    - eapply (denot_ty_fuel_env_fv_subset
+        gas (<[x:=erase_ty τx]> Σ) τx (tret (vfvar x))).
+      exact Hgas.
+    - unfold formula_scoped_in_world in Hscope_src.
+      rewrite dom_empty_L in Hscope_src.
+      intros z Hz. apply Hscope_src. apply elem_of_union. right. exact Hz.
+  }
+  eapply denot_ty_fuel_intro.
+  - eapply basic_choice_ty_mono; [| exact Hbasic].
+    rewrite dom_insert_L. set_solver.
+  - apply basic_typing_tret_fvar_insert.
+	  - pose proof (denot_ty_fuel_world_closed_on_of_formula _ _ _ _ _ Hsrc)
+	      as Hclosed_src.
+	    rewrite dom_insert_L in Hclosed_src.
+	    rewrite dom_insert_L.
+	    replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver.
+	    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hclosed_src by set_solver.
+	    apply (proj1 (world_closed_on_swap_fresh_union_singleton_iff
+	      (dom Σ) x y m Hx Hy)).
+	    exact Hclosed_src.
+  - pose proof (denot_ty_fuel_expr_total_on_of_formula _ _ _ _ _ Hsrc)
+      as Htotal_src.
+	    rewrite dom_insert_L in Htotal_src.
+	    rewrite dom_insert_L.
+	    replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver.
+	    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Htotal_src by set_solver.
+	    assert (Hclosed_y : world_closed_on (dom Σ ∪ {[y]}) m).
+	    {
+	      pose proof (denot_ty_fuel_world_closed_on_of_formula _ _ _ _ _ Hsrc)
+	        as Hclosed_src.
+	      rewrite dom_insert_L in Hclosed_src.
+	      replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hclosed_src by set_solver.
+	      apply (proj1 (world_closed_on_swap_fresh_union_singleton_iff
+	        (dom Σ) x y m Hx Hy)).
+	      exact Hclosed_src.
+	    }
+	    apply (proj1 (expr_total_on_tret_fvar_swap_iff
+	      (dom Σ) x y m Hx Hy
+	      ltac:(rewrite dom_insert_L in Hscope_y;
+	            intros z Hz; apply Hscope_y; set_solver)
+	      Hclosed_y)).
+	    exact Htotal_src.
+  - exact Hbody.
+  - exact Hscope_y.
+Qed.
+
+Lemma denot_ty_fuel_rebuild_fresh_tapp_from_body gas
+    (Σ : gmap atom ty) τx τ e x y (m : WfWorld) :
+  cty_measure ({0 ~> y} τ) <= gas →
+  x ∉ dom Σ ∪ fv_tm e →
+  y ∉ dom Σ ∪ fv_tm e →
+  fv_tm e ⊆ dom Σ →
+  basic_choice_ty (dom Σ ∪ {[y]}) ({0 ~> y} τ) →
+  Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
+  res_swap x y m ⊨ denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+    ({0 ~> x} τ) (tapp_tm e (vfvar x)) →
+  m ⊨ denot_ty_fuel_body gas (<[y := erase_ty τx]> Σ)
+    ({0 ~> y} τ) (tapp_tm e (vfvar y)) →
+  m ⊨ denot_ty_fuel gas (<[y := erase_ty τx]> Σ)
+    ({0 ~> y} τ) (tapp_tm e (vfvar y)).
+Proof.
+  intros Hgas Hx Hy Hfve Hbasic Htye Hsrc Hbody.
+  pose proof (res_models_with_store_fuel_scoped _ ∅ (res_swap x y m)
+    (denot_ty_fuel gas (<[x := erase_ty τx]> Σ)
+      ({0 ~> x} τ) (tapp_tm e (vfvar x))) Hsrc) as Hscope_src.
+  assert (Hscope_y :
+    dom (<[y := erase_ty τx]> Σ) ⊆ world_dom (m : World)).
+  {
+    replace (dom (<[y:=erase_ty τx]> Σ)) with (dom Σ ∪ {[y]})
+      by (rewrite dom_insert_L; set_solver).
+    eapply swap_scoped_insert_dom;
+      [intro H; apply Hx; set_solver
+      |intro H; apply Hy; set_solver
+      |].
+    replace (dom Σ ∪ {[x]}) with (dom (<[x:=erase_ty τx]> Σ))
+      by (rewrite dom_insert_L; set_solver).
+    etransitivity.
+    - eapply (denot_ty_fuel_env_fv_subset
+        gas (<[x:=erase_ty τx]> Σ) ({0 ~> x} τ)
+        (tapp_tm e (vfvar x))).
+      rewrite !cty_open_preserves_measure in *. exact Hgas.
+    - unfold formula_scoped_in_world in Hscope_src.
+      rewrite dom_empty_L in Hscope_src.
+      intros z Hz. apply Hscope_src. apply elem_of_union. right. exact Hz.
+  }
+  eapply denot_ty_fuel_intro.
+  - eapply basic_choice_ty_mono; [| exact Hbasic].
+    rewrite dom_insert_L. set_solver.
+  - eapply basic_typing_tapp_tm_fvar_insert.
+    + set_solver.
+    + rewrite cty_open_preserves_erasure. exact Htye.
+  - pose proof (denot_ty_fuel_world_closed_on_of_formula _ _ _ _ _ Hsrc)
+      as Hclosed_src.
+    rewrite dom_insert_L in Hclosed_src.
+    rewrite dom_insert_L.
+    replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hclosed_src by set_solver.
+    apply (proj1 (world_closed_on_swap_fresh_union_singleton_iff
+      (dom Σ) x y m ltac:(set_solver) ltac:(set_solver))).
+    exact Hclosed_src.
+  - pose proof (denot_ty_fuel_expr_total_on_of_formula _ _ _ _ _ Hsrc)
+      as Htotal_src.
+    rewrite dom_insert_L in Htotal_src.
+    rewrite dom_insert_L.
+    replace ({[y]} ∪ dom Σ) with (dom Σ ∪ {[y]}) by set_solver.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Htotal_src by set_solver.
+    assert (Hclosed_y : world_closed_on (dom Σ ∪ {[y]}) m).
+    {
+      pose proof (denot_ty_fuel_world_closed_on_of_formula _ _ _ _ _ Hsrc)
+        as Hclosed_src.
+      rewrite dom_insert_L in Hclosed_src.
+      replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hclosed_src by set_solver.
+      apply (proj1 (world_closed_on_swap_fresh_union_singleton_iff
+        (dom Σ) x y m ltac:(set_solver) ltac:(set_solver))).
+      exact Hclosed_src.
+    }
+    apply (proj1 (expr_total_on_tapp_tm_fvar_swap_iff
+      (dom Σ) e x y m Hx Hy Hfve
+      ltac:(rewrite dom_insert_L in Hscope_y;
+            intros z Hz; apply Hscope_y; set_solver)
+      Hclosed_y)).
+    exact Htotal_src.
+  - exact Hbody.
+  - exact Hscope_y.
+Qed.
+
 (** The two lemmas below are the explicit-name/cofinite rename principles
     needed by the function-type cases.
 
