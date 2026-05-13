@@ -458,6 +458,90 @@ Proof.
   - eapply FExprContIn_insert_fresh_env_irrel; eauto.
 Qed.
 
+Lemma FExprContIn_insert_fresh_env_irrel_iff_at_world
+    (Σ : gmap atom ty) T Tx e x (P : atom → FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  x ∉ dom Σ ∪ fv_tm e →
+  dom (<[x := Tx]> Σ) ⊆ world_dom (m : World) →
+  world_store_closed_on (dom (<[x := Tx]> Σ)) m →
+  expr_total_on (dom (<[x := Tx]> Σ)) e m →
+  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
+  formula_family_rename_stable_on (dom Σ) P →
+  m ⊨ FExprContIn (<[x := Tx]> Σ) e P <->
+  m ⊨ FExprContIn Σ e P.
+Proof.
+  intros Hty Hx Hdom_sub Hclosed Htotal HPfv HPrename.
+  assert (Hdom_ins :
+    world_dom (res_restrict m (dom (<[x:=Tx]> Σ)) : World) =
+    dom (<[x:=Tx]> Σ)).
+  { simpl. set_solver. }
+  assert (Hclosed_ins :
+    world_store_closed_on (dom (<[x:=Tx]> Σ))
+      (res_restrict m (dom (<[x:=Tx]> Σ)))).
+  {
+    eapply world_store_closed_on_restrict.
+    - reflexivity.
+    - exact Hclosed.
+  }
+  assert (Htotal_ins :
+    expr_total_on (dom (<[x:=Tx]> Σ)) e
+      (res_restrict m (dom (<[x:=Tx]> Σ)))).
+  { apply expr_total_on_restrict_self. exact Htotal. }
+  assert (Hfv_ins :
+    formula_fv (FExprContIn (<[x:=Tx]> Σ) e P) ⊆ dom (<[x:=Tx]> Σ)).
+  {
+    apply FExprContIn_formula_fv_subset.
+    - reflexivity.
+    - intros ν _. specialize (HPfv ν).
+      rewrite dom_insert_L. set_solver.
+  }
+  assert (Hfv_base :
+    formula_fv (FExprContIn Σ e P) ⊆ dom (<[x:=Tx]> Σ)).
+  {
+    apply FExprContIn_formula_fv_subset.
+    - rewrite dom_insert_L. set_solver.
+    - intros ν _. specialize (HPfv ν).
+      rewrite dom_insert_L. set_solver.
+  }
+  assert (Hfv_base_small :
+    formula_fv (FExprContIn Σ e P) ⊆ dom Σ).
+  {
+    apply FExprContIn_formula_fv_subset.
+    - reflexivity.
+    - intros ν _. apply HPfv.
+  }
+  split.
+  - intros Hm.
+    pose proof (proj1 (res_models_minimal_on
+      (dom (<[x:=Tx]> Σ)) m (FExprContIn (<[x:=Tx]> Σ) e P)
+      Hfv_ins) Hm) as Hm_min.
+    pose proof (proj1 (FExprContIn_insert_fresh_env_irrel_iff
+      Σ T Tx e x P (res_restrict m (dom (<[x:=Tx]> Σ))
+      ) Hty Hx Hdom_ins Hclosed_ins Htotal_ins HPfv HPrename) Hm_min)
+      as Hbase_min.
+    rewrite res_restrict_restrict_eq in Hbase_min.
+    replace (dom (<[x:=Tx]> Σ) ∩ dom Σ) with (dom Σ) in Hbase_min
+      by (rewrite dom_insert_L; set_solver).
+    eapply res_models_kripke; [apply res_restrict_le | exact Hbase_min].
+  - intros Hm.
+    pose proof (proj1 (res_models_minimal_on
+      (dom (<[x:=Tx]> Σ)) m (FExprContIn Σ e P)
+      Hfv_base) Hm) as Hbase_big_min.
+    pose proof (proj1 (res_models_minimal_on
+      (dom Σ) (res_restrict m (dom (<[x:=Tx]> Σ))
+      ) (FExprContIn Σ e P) Hfv_base_small) Hbase_big_min)
+      as Hbase_big_min'.
+    assert (Hbase_nested :
+      res_restrict (res_restrict m (dom (<[x:=Tx]> Σ))) (dom Σ)
+        ⊨ FExprContIn Σ e P).
+    { exact Hbase_big_min'. }
+    pose proof (proj2 (FExprContIn_insert_fresh_env_irrel_iff
+      Σ T Tx e x P (res_restrict m (dom (<[x:=Tx]> Σ))
+      ) Hty Hx Hdom_ins Hclosed_ins Htotal_ins HPfv HPrename) Hbase_nested)
+      as Hins_min.
+    eapply res_models_kripke; [apply res_restrict_le | exact Hins_min].
+Qed.
+
 Lemma denot_ty_fuel_intro gas Σ τ e m :
   basic_choice_ty (dom Σ) τ →
   Σ ⊢ₑ e ⋮ erase_ty τ →
