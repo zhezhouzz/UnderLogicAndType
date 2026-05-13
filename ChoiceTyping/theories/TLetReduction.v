@@ -1886,6 +1886,28 @@ Proof.
         (dom Σ) x y (res_restrict m (dom Σ ∪ {[y]})) Hx Hy) Hclosed_m).
 Qed.
 
+Lemma expr_total_with_store_empty_extend X e (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  expr_total_with_store X e ∅ m →
+  expr_total_with_store X e ∅ (res_restrict n X).
+Proof.
+  intros HXm Hle [k Htotal].
+  exists k. intros σ Hσ.
+  destruct Hσ as [σn [Hσn Hrestrict]].
+  assert ((res_restrict n (world_dom (m : World)) : World)
+    (store_restrict σn (world_dom (m : World)))) as Hσm.
+  { exists σn. split; [exact Hσn | reflexivity]. }
+  rewrite (res_restrict_eq_of_le m n Hle) in Hσm.
+  replace (store_restrict ((∅ : Store) ∪ σ) X) with
+    (store_restrict ((∅ : Store) ∪ store_restrict σn (world_dom (m : World))) X).
+  - apply Htotal. exact Hσm.
+  - rewrite !map_empty_union.
+    rewrite <- Hrestrict.
+    rewrite !store_restrict_restrict.
+    f_equal. set_solver.
+Qed.
+
 Lemma denot_ty_fuel_fresh_arg_family_support_exact
     gas (Σ : gmap atom ty) τx :
   cty_measure τx <= gas →
