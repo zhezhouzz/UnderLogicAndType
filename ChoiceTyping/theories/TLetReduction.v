@@ -631,6 +631,24 @@ Proof.
   - store_norm. reflexivity.
 Qed.
 
+Lemma world_store_closed_on_extend X (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  world_store_closed_on X m →
+  world_store_closed_on X n.
+Proof.
+  intros HXm Hle Hclosed σ Hσ.
+  pose proof (res_restrict_eq_of_le m n Hle) as Hrestrict.
+  assert ((res_restrict n (world_dom (m : World)) : World)
+    (store_restrict σ (world_dom (m : World)))) as Hσm.
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  rewrite Hrestrict in Hσm.
+  replace (store_restrict σ X) with
+    (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  - exact (Hclosed _ Hσm).
+  - store_norm. reflexivity.
+Qed.
+
 Lemma denot_ty_fuel_world_closed_on_of_formula gas Σ τ e m :
   m ⊨ denot_ty_fuel gas Σ τ e →
   world_closed_on (dom Σ) m.
