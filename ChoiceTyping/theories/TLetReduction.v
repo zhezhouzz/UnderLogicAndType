@@ -566,6 +566,32 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma strongly_normalizing_tret_fvar_store_swap_lookup σ x y v :
+  closed_env σ →
+  σ !! y = Some v →
+  strongly_normalizing (m{store_swap x y σ} (tret (vfvar x))) ↔
+  strongly_normalizing (m{σ} (tret (vfvar y))).
+Proof.
+  intros Hclosed Hlookup.
+  rewrite (msubst_tret_fvar_store_swap_lookup σ x y v Hclosed Hlookup).
+  reflexivity.
+Qed.
+
+Lemma strongly_normalizing_tapp_tm_fvar_store_swap_lookup σ e x y v :
+  closed_env σ →
+  lc_env σ →
+  σ !! y = Some v →
+  x ∉ fv_tm e →
+  y ∉ fv_tm e →
+  strongly_normalizing (m{store_swap x y σ} (tapp_tm e (vfvar x))) ↔
+  strongly_normalizing (m{σ} (tapp_tm e (vfvar y))).
+Proof.
+  intros Hclosed Hlc Hlookup Hx Hy.
+  rewrite (msubst_tapp_tm_fvar_store_swap_lookup σ e x y v
+    Hclosed Hlc Hlookup Hx Hy).
+  reflexivity.
+Qed.
+
 (** The two lemmas below are the explicit-name/cofinite rename principles
     needed by the function-type cases.
 
