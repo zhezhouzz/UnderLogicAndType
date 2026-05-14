@@ -46,7 +46,6 @@ ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/FormulaTactics.v
 ChoiceLogic/theories/FormulaDerived.v
 ChoiceLogic/theories/ChoiceLogicProps.v
-ChoiceLogic/theories/ANF.v
 ChoiceLogic/examples/FiberExamples.v
 
 ChoiceType/theories/Prelude.v
@@ -85,9 +84,7 @@ ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetReductionFuelSupport.v
 ChoiceTyping/theories/TLetReductionSwapSupport.v
 ChoiceTyping/theories/TLetReductionFamilySupport.v
-ChoiceTyping/theories/TLetReductionRenameSupport.v
 ChoiceTyping/theories/TLetReductionEnvIrrel.v
-ChoiceTyping/theories/TLetReductionSupport.v
 ChoiceTyping/theories/TLetReduction.v
 ChoiceTyping/theories/TLetReductionTotal.v
 ChoiceTyping/theories/TLetDenotation.v

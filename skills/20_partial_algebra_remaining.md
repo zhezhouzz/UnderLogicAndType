@@ -41,10 +41,6 @@ This note records the unfinished proof work left on
     Recheck the statement against the current semantics before proving; the
     exact adjunction may need a different implication shape.
 
-- `ChoiceLogic/theories/ANF.v`
-  - Collapse lemmas are intentionally isolated from the main proof path.  They
-    can remain admitted while the core algebra and typing work proceeds.
-
 ## Proof Lessons
 
 - Keep partial operations partial.  Do not repair missing definedness by adding
