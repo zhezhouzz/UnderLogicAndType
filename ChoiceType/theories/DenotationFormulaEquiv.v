@@ -169,6 +169,15 @@ Lemma res_models_of_formula_store_equiv φ ψ (m : WfWorld) :
   m ⊨ φ ↔ m ⊨ ψ.
 Proof. intros Heq. unfold res_models. apply Heq. Qed.
 
+Lemma FExprContIn_post_open_store_equiv
+    (Σ : gmap atom ty) e (P Q : FQ) :
+  formula_fv P = formula_fv Q →
+  (∀ ν, ν ∉ dom Σ →
+    formula_store_equiv (formula_open 0 ν P) (formula_open 0 ν Q)) →
+  formula_store_equiv (FExprContIn Σ e P) (FExprContIn Σ e Q).
+Proof.
+Admitted.
+
 Lemma fib_vars_insert_rename_res_models x y X (φ : FQ) (m : WfWorld) :
   x ∉ X →
   y ∉ X →

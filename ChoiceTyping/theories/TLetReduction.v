@@ -3174,7 +3174,21 @@ Lemma FExprContIn_FResultBasicWorld_insert_fresh_type_env_irrel
   m ⊨ FExprContIn (<[x := T]> Σ) e
       (FAnd (FResultBasicWorld (atom_env_to_lty_env Σ) b D) R).
 Proof.
-Admitted.
+  intros Hx.
+  apply res_models_of_formula_store_equiv.
+  eapply FExprContIn_post_open_store_equiv.
+  - cbn [formula_fv].
+    rewrite !formula_fv_FResultBasicWorld_atom_env.
+    reflexivity.
+  - intros ν Hν.
+    apply formula_store_equiv_and.
+    + apply formula_fv_FResultBasicWorld_atom_env_insert_fresh_open.
+      exact Hx.
+    + reflexivity.
+    + apply formula_store_equiv_FResultBasicWorld_atom_env_insert_fresh_open.
+      exact Hx.
+    + apply formula_store_equiv_refl.
+Qed.
 
 Lemma denot_ty_fuel_tlet_reduction_full_on_over_case gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)

@@ -103,6 +103,11 @@ Lemma lty_env_open_atom_env_empty Σ :
 Proof.
 Admitted.
 
+Lemma lty_env_open_atom_env η Σ :
+  lty_env_open η (atom_env_to_lty_env Σ) = Σ.
+Proof.
+Admitted.
+
 Lemma open_cty_env_empty τ :
   open_cty_env ∅ τ = τ.
 Proof.
@@ -207,6 +212,29 @@ Proof.
   rewrite lvars_fv_of_bvars, lvars_fv_singleton_bound.
   set_solver.
 Qed.
+
+Lemma formula_store_equiv_FResultBasicWorld_atom_env_insert_fresh_open
+    Σ x T b D ν :
+  x ∉ dom Σ ∪ lvars_fv D →
+  formula_store_equiv
+    (formula_open 0 ν
+      (FResultBasicWorld (atom_env_to_lty_env (<[x := T]> Σ)) b D))
+    (formula_open 0 ν
+      (FResultBasicWorld (atom_env_to_lty_env Σ) b D)).
+Proof.
+Admitted.
+
+Lemma formula_fv_FResultBasicWorld_atom_env_insert_fresh_open
+    Σ x T b D ν :
+  x ∉ dom Σ ∪ lvars_fv D →
+  formula_fv
+    (formula_open 0 ν
+      (FResultBasicWorld (atom_env_to_lty_env (<[x := T]> Σ)) b D)) =
+  formula_fv
+    (formula_open 0 ν
+      (FResultBasicWorld (atom_env_to_lty_env Σ) b D)).
+Proof.
+Admitted.
 
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →
