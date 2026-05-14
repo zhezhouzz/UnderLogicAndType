@@ -472,7 +472,13 @@ Lemma FExprResultOn_scoped_dom X e ν m :
   formula_scoped_in_world ∅ m (FExprResultAt X e ν) →
   X ∪ {[ν]} ⊆ world_dom (m : World).
 Proof.
-Admitted.
+  intros Hscope z Hz.
+  apply Hscope.
+  rewrite dom_empty_L.
+  apply elem_of_union_r.
+  rewrite FExprResultAt_fv.
+  exact Hz.
+Qed.
 
 Lemma FAtom_expr_logic_qual_on_exact X e ν ρ m :
   res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)) →
