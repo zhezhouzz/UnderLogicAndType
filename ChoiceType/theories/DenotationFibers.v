@@ -119,21 +119,21 @@ Proof.
 Qed.
 
 Lemma fib_vars_singleton x (p : FQ) :
-  FFibVars (lvars_of_atoms {[x]}) p = FFibVars (lvars_of_atoms {[x]}) p.
+  FFibVars {[LVFree x]} p = FFibVars {[LVFree x]} p.
 Proof.
   reflexivity.
 Qed.
 
-Lemma fib_vars_formula_fv_subset X (p : FQ) :
-  formula_fv (FFibVars (lvars_of_atoms X) p) ⊆ X ∪ formula_fv p.
+Lemma fib_vars_formula_fv_subset D (p : FQ) :
+  formula_fv (FFibVars D p) ⊆ lvars_fv D ∪ formula_fv p.
 Proof.
-  simpl. rewrite lvars_fv_of_atoms. set_solver.
+  simpl. set_solver.
 Qed.
 
-Lemma fib_vars_formula_fv X (p : FQ) :
-  formula_fv (FFibVars (lvars_of_atoms X) p) = X ∪ formula_fv p.
+Lemma fib_vars_formula_fv D (p : FQ) :
+  formula_fv (FFibVars D p) = lvars_fv D ∪ formula_fv p.
 Proof.
-  simpl. rewrite lvars_fv_of_atoms. reflexivity.
+  simpl. reflexivity.
 Qed.
 
 Lemma formula_rename_atom_fib_vars_fresh a b X (p : FQ) :
@@ -145,27 +145,25 @@ Proof.
   (* Legacy explicit-swap lemma; superseded by LN opening. *)
 Admitted.
 
-Lemma fib_vars_models_elim X (p : FQ) ρ m :
-  res_models_with_store ρ m (FFibVars (lvars_of_atoms X) p) →
-  fib_vars_obligation X p ρ m.
+Lemma fib_vars_models_elim D (p : FQ) ρ m :
+  res_models_with_store ρ m (FFibVars D p) →
+  fib_vars_obligation (lvars_fv D) p ρ m.
 Proof.
   unfold fib_vars_obligation.
   unfold res_models_with_store. simpl.
-  rewrite lvars_fv_of_atoms.
   intros Hm. destruct Hm as [_ [Hdisj Hfib]].
   split; [exact Hdisj |].
   intros σ Hproj. models_fuel_irrel (Hfib σ Hproj).
 Qed.
 
-Lemma fib_vars_models_intro X (p : FQ) ρ m :
-  formula_scoped_in_world ρ m (FFibVars (lvars_of_atoms X) p) →
-  fib_vars_obligation X p ρ m →
-  res_models_with_store ρ m (FFibVars (lvars_of_atoms X) p).
+Lemma fib_vars_models_intro D (p : FQ) ρ m :
+  formula_scoped_in_world ρ m (FFibVars D p) →
+  fib_vars_obligation (lvars_fv D) p ρ m →
+  res_models_with_store ρ m (FFibVars D p).
 Proof.
   unfold fib_vars_obligation.
   intros Hscope [Hdisj Hfib].
   unfold res_models_with_store. simpl.
-  rewrite lvars_fv_of_atoms.
   split; [exact Hscope |].
   split; [exact Hdisj |].
   intros σ Hproj.

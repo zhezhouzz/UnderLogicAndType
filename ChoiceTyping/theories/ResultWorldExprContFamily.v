@@ -308,10 +308,11 @@ Proof.
            {
              eapply let_result_world_on_fiber_expr_result_in_world; eauto.
            }
-           intros σν.
-           rewrite map_empty_union.
-           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
-           rewrite store_restrict_restrict.
+	           intros σν.
+	           rewrite map_empty_union.
+	           rewrite lvars_fv_of_atoms.
+	           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+	           rewrite store_restrict_restrict.
            replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
            rewrite res_restrict_restrict_eq.
            replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset)
