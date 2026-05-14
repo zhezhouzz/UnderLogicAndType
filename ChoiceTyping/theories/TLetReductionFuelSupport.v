@@ -12,6 +12,53 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinem
 Import Tactics.
 
 (** Resource/totality and [denot_ty_fuel] obligation helpers for the [tlet] reduction proof. *)
+Local Lemma dom_insert_inter_fv_tm_fresh
+    (Σ : gmap atom ty) T e x :
+  x ∉ fv_tm e →
+  dom Σ ∩ fv_tm e = dom (<[x := T]> Σ) ∩ fv_tm e.
+Proof.
+  intros Hx.
+  rewrite dom_insert_L.
+  apply set_eq. intros z.
+  rewrite !elem_of_intersection, elem_of_union, elem_of_singleton.
+  split.
+  - intros [HzΣ Hze]. split; [right; exact HzΣ | exact Hze].
+  - intros [[Hzx | HzΣ] Hze]; [subst; exfalso; eauto |].
+    split; [exact HzΣ | exact Hze].
+Qed.
+
+Local Lemma dom_insert_inter_fv_tm_fresh_restrict
+    (Σ : gmap atom ty) T e x :
+  x ∉ dom Σ ∪ fv_tm e →
+  fv_tm e ⊆ dom (<[x := T]> Σ) →
+  dom Σ ∩ (dom Σ ∩ fv_tm e) = dom (<[x := T]> Σ) ∩ fv_tm e.
+Proof.
+  intros Hx Hfv.
+  rewrite not_elem_of_union in Hx.
+  destruct Hx as [HxΣ Hxfv].
+  rewrite dom_insert_L.
+  apply set_eq. intros z.
+  rewrite !elem_of_intersection, elem_of_union, elem_of_singleton.
+  split.
+  - intros [HzΣ [_ Hzfv]]. split; [right; exact HzΣ | exact Hzfv].
+  - intros [[Hzx | HzΣ] Hzfv].
+    + subst. exfalso. apply Hxfv. exact Hzfv.
+    + split; [exact HzΣ | split; [exact HzΣ | exact Hzfv]].
+Qed.
+
+Local Lemma subset_dom_insert_union_singleton
+    (Σ : gmap atom ty) T X ν :
+  X ⊆ dom Σ ∪ {[ν]} →
+  X ⊆ dom (<[ν := T]> Σ) ∪ {[ν]}.
+Proof.
+  intros HX z Hz.
+  apply HX in Hz.
+  rewrite dom_insert_L.
+  apply elem_of_union in Hz as [HzΣ | Hzν].
+  - apply elem_of_union. left. apply elem_of_union. right. exact HzΣ.
+  - apply elem_of_union. right. exact Hzν.
+Qed.
+
 Lemma expr_total_on_restrict_insert_fresh
     (Σ : gmap atom ty) T e x (m : WfWorld) :
   x ∉ dom Σ ∪ fv_tm e →
@@ -31,11 +78,11 @@ Proof.
   - exact Hsteps.
   - symmetry.
     eapply subst_map_eq_on_fv.
-    + apply closed_env_restrict. exact (proj1 (Hclosed σm Hσm)).
-    + rewrite !store_restrict_restrict.
-      rewrite <- Hrestrict.
-      rewrite !store_restrict_restrict.
-      f_equal. rewrite dom_insert_L. set_solver.
+	    + apply closed_env_restrict. exact (proj1 (Hclosed σm Hσm)).
+	    + rewrite !store_restrict_restrict.
+	      rewrite <- Hrestrict.
+	      rewrite !store_restrict_restrict.
+		      f_equal. eapply dom_insert_inter_fv_tm_fresh_restrict; eauto.
 Qed.
 
 Lemma expr_total_on_restrict_self X e (m : WfWorld) :
@@ -97,9 +144,16 @@ Proof.
     - set_solver.
     - exact Hty.
   }
-  assert (HPfv_insert :
-    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := Tx]> Σ) ∪ {[ν]}).
-  { intros ν. specialize (HPfv ν). rewrite dom_insert_L. set_solver. }
+	  assert (HPfv_insert :
+	    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := Tx]> Σ) ∪ {[ν]}).
+	  {
+	    intros ν z Hz.
+	    specialize (HPfv ν z Hz) as HzP.
+	    rewrite dom_insert_L.
+	    apply elem_of_union in HzP as [HzΣ | Hzν].
+	    - apply elem_of_union. left. apply elem_of_union. right. exact HzΣ.
+	    - apply elem_of_union. right. exact Hzν.
+	  }
   assert (HPrename_insert :
     formula_family_rename_stable_on (dom (<[x := Tx]> Σ)) P).
   {
@@ -116,20 +170,24 @@ Proof.
     (FExprContIn_iff_let_result_world_on_exact_domain
       (<[x := Tx]> Σ) T e P m
       Hty_insert Hdom Hclosed Htotal HPfv_insert HPrename_insert)).
-  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
-  split; [set_solver |].
-  intros ν Hν Hfresh Hresult.
-  assert (Hfresh_restrict :
-    ν ∉ world_dom (res_restrict m (dom Σ) : World)).
-  { rewrite Hdom_restrict. set_solver. }
-  assert (Hresult_restrict :
-    ∀ σ, (res_restrict m (dom Σ) : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
-  {
-    eapply expr_total_on_to_fv_result; eauto.
-  }
-  pose proof (Hbody ν ltac:(set_solver) Hfresh_restrict Hresult_restrict)
-    as Hsmall.
+	  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
+	  split; [set_solver |].
+	  intros ν Hν Hfresh Hresult.
+	  rewrite !not_elem_of_union in Hν.
+	  destruct Hν as [[HνL HνΣx] Hνe].
+	  rewrite dom_insert_L, not_elem_of_union, not_elem_of_singleton in HνΣx.
+	  destruct HνΣx as [Hνx HνΣ].
+	  assert (Hfresh_restrict :
+	    ν ∉ world_dom (res_restrict m (dom Σ) : World)).
+	  { rewrite Hdom_restrict. exact HνΣ. }
+	  assert (Hresult_restrict :
+	    ∀ σ, (res_restrict m (dom Σ) : World) σ →
+	      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+	  {
+	    eapply expr_total_on_to_fv_result; eauto.
+	  }
+	  pose proof (Hbody ν HνL Hfresh_restrict Hresult_restrict)
+	    as Hsmall.
   pose proof (proj2 (res_models_minimal_on
     (dom Σ ∪ {[ν]})
     (let_result_world_on e ν m Hfresh Hresult)
@@ -138,11 +196,17 @@ Proof.
   rewrite (let_result_world_on_restrict_input
     (dom Σ) e ν m Hfresh Hresult Hfresh_restrict Hresult_restrict).
   - exact Hsmall.
-  - destruct Htotal as [Hfv _].
-    rewrite dom_insert_L in Hfv.
-    set_solver.
-  - rewrite Hdom, dom_insert_L. set_solver.
-  - set_solver.
+	  - destruct Htotal as [Hfv _].
+	    rewrite dom_insert_L in Hfv.
+	    pose proof Hx as Hx_fv.
+	    rewrite not_elem_of_union in Hx_fv.
+	    destruct Hx_fv as [_ Hx_fv].
+	    intros z Hz0. pose proof Hz0 as Hz. apply Hfv in Hz.
+	    apply elem_of_union in Hz as [Hzx | HzΣ]; [| exact HzΣ].
+	    apply elem_of_singleton in Hzx.
+	    exfalso. apply Hx_fv. rewrite <- Hzx. exact Hz0.
+	  - rewrite Hdom, dom_insert_L. set_solver.
+	  - exact HνΣ.
 Qed.
 
 Lemma FExprContIn_restrict_insert_fresh_env_irrel
@@ -175,9 +239,16 @@ Proof.
     - set_solver.
     - exact Hty.
   }
-  assert (HPfv_insert :
-    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := Tx]> Σ) ∪ {[ν]}).
-  { intros ν. specialize (HPfv ν). rewrite dom_insert_L. set_solver. }
+	  assert (HPfv_insert :
+	    ∀ ν, formula_fv (P ν) ⊆ dom (<[x := Tx]> Σ) ∪ {[ν]}).
+	  {
+	    intros ν z Hz.
+	    specialize (HPfv ν z Hz) as HzP.
+	    rewrite dom_insert_L.
+	    apply elem_of_union in HzP as [HzΣ | Hzν].
+	    - apply elem_of_union. left. apply elem_of_union. right. exact HzΣ.
+	    - apply elem_of_union. right. exact Hzν.
+	  }
   assert (HPrename_insert :
     formula_family_rename_stable_on (dom (<[x := Tx]> Σ)) P).
   {
@@ -194,18 +265,22 @@ Proof.
     (FExprContIn_iff_let_result_world_on_exact_domain
       Σ T e P (res_restrict m (dom Σ))
       Hty Hdom_restrict Hclosed_restrict Htotal_restrict HPfv HPrename)).
-  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
-  split; [set_solver |].
-  intros ν Hν Hfresh_restrict Hresult_restrict.
-  assert (Hfresh : ν ∉ world_dom (m : World)).
-  { rewrite Hdom, dom_insert_L. set_solver. }
-  assert (Hresult :
-    ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
-  {
-    eapply expr_total_on_to_fv_result; eauto.
-  }
-  pose proof (Hbody ν ltac:(set_solver) Hfresh Hresult) as Hfull.
+	  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
+	  split; [set_solver |].
+	  intros ν Hν Hfresh_restrict Hresult_restrict.
+	  rewrite !not_elem_of_union in Hν.
+	  destruct Hν as [[HνL HνΣx] Hνe].
+	  rewrite dom_insert_L, not_elem_of_union, not_elem_of_singleton in HνΣx.
+	  destruct HνΣx as [Hνx HνΣ].
+	  assert (Hfresh : ν ∉ world_dom (m : World)).
+	  { rewrite Hdom, dom_insert_L. set_solver. }
+	  assert (Hresult :
+	    ∀ σ, (m : World) σ →
+	      ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+	  {
+	    eapply expr_total_on_to_fv_result; eauto.
+	  }
+	  pose proof (Hbody ν HνL Hfresh Hresult) as Hfull.
   pose proof (proj1 (res_models_minimal_on
     (dom Σ ∪ {[ν]})
     (let_result_world_on e ν m Hfresh Hresult)
@@ -213,11 +288,17 @@ Proof.
   rewrite <- (let_result_world_on_restrict_input
     (dom Σ) e ν m Hfresh Hresult Hfresh_restrict Hresult_restrict).
   - apply Hminimal. exact Hfull.
-  - destruct Htotal as [Hfv _].
-    rewrite dom_insert_L in Hfv.
-    set_solver.
-  - rewrite Hdom, dom_insert_L. set_solver.
-  - set_solver.
+	  - destruct Htotal as [Hfv _].
+	    rewrite dom_insert_L in Hfv.
+	    pose proof Hx as Hx_fv.
+	    rewrite not_elem_of_union in Hx_fv.
+	    destruct Hx_fv as [_ Hx_fv].
+	    intros z Hz0. pose proof Hz0 as Hz. apply Hfv in Hz.
+	    apply elem_of_union in Hz as [Hzx | HzΣ]; [| exact HzΣ].
+	    apply elem_of_singleton in Hzx.
+	    exfalso. apply Hx_fv. rewrite <- Hzx. exact Hz0.
+	  - rewrite Hdom, dom_insert_L. set_solver.
+	  - exact HνΣ.
 Qed.
 
 Lemma FExprContIn_insert_fresh_env_irrel_iff
