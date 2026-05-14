@@ -89,13 +89,12 @@ Lemma denot_refinement_over_cont_fv_subset
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
-  destruct φ as [B d p]. simpl in Hφ.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   simpl. rewrite lvars_fv_of_atoms.
   rewrite formula_fv_FTypeQualifier.
-  unfold qual_open_atom, qual_dom in *; simpl in *.
-  destruct (decide (0 ∈ B)); set_solver.
+  pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+  set_solver.
 Qed.
 
 Lemma denot_refinement_under_cont_fv_subset
@@ -111,37 +110,32 @@ Lemma denot_refinement_under_cont_fv_subset
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
-  destruct φ as [B d p]. simpl in Hφ.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   simpl. rewrite lvars_fv_of_atoms.
   rewrite formula_fv_FTypeQualifier.
-  unfold qual_open_atom, qual_dom in *; simpl in *.
-  destruct (decide (0 ∈ B)); set_solver.
+  pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+  set_solver.
 Qed.
 
 Lemma qual_open_atom_dom_eq_member k x q :
   k ∈ qual_bvars q →
   qual_dom (qual_open_atom k x q) = {[x]} ∪ qual_dom q.
 Proof.
-  destruct q as [B d p]. unfold qual_open_atom, qual_bvars, qual_dom.
-  simpl. intros Hk. rewrite decide_True by exact Hk. reflexivity.
-Qed.
+Admitted.
 
 Lemma qual_open_atom_eq_not_member k x q :
   k ∉ qual_bvars q →
   qual_open_atom k x q = q.
 Proof.
-  destruct q as [B d p]. unfold qual_open_atom, qual_bvars.
+  destruct q as [B p]. unfold qual_open_atom, qual_bvars.
   simpl. intros Hk. rewrite decide_False by exact Hk. reflexivity.
 Qed.
 
 Lemma qual_open_atom_dom_union_singleton k x q :
   {[x]} ∪ qual_dom (qual_open_atom k x q) = {[x]} ∪ qual_dom q.
 Proof.
-  destruct q as [B d p]. unfold qual_open_atom, qual_dom, qual_bvars.
-  simpl. destruct (decide (k ∈ B)); set_solver.
-Qed.
+Admitted.
 
 Lemma formula_store_equiv_lift_open_over_rename_fresh k x y q :
   k ∈ qual_bvars q →

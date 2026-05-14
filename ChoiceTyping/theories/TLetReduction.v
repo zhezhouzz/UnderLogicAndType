@@ -576,7 +576,7 @@ Proof.
       * unfold res_models.
         change (res_models_with_store ∅ m
           (FStoreResourceAtom (dom Σ)
-            (fun ρ m => expr_total_with_store (dom Σ) e ρ m))).
+            (fun _ ρ m => expr_total_with_store (dom Σ) e ρ m))).
         eapply res_models_with_store_store_resource_atom_intro.
         -- unfold formula_scoped_in_world.
            rewrite formula_fv_FStoreResourceAtom. set_solver.
@@ -786,9 +786,9 @@ Proof.
     unfold denot_ty_obligations, FStrongTotalIn in Hm.
     apply res_models_with_store_and_elim_r in Hm.
     apply res_models_with_store_and_elim_r in Hm.
-    apply res_models_with_store_and_elim_l in Hm.
-    destruct (res_models_with_store_store_resource_atom_elim ∅ m (dom Σ)
-      (fun ρ m => expr_total_with_store (dom Σ) e ρ m) Hm)
+	    apply res_models_with_store_and_elim_l in Hm.
+	    destruct (res_models_with_store_store_resource_atom_elim ∅ m (dom Σ)
+	      (fun _ ρ m => expr_total_with_store (dom Σ) e ρ m) Hm)
       as [m0 [Hscope [Htotal Hle]]].
     destruct Htotal as [_ Htotal].
     intros σ Hσ.

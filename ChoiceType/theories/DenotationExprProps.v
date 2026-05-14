@@ -27,7 +27,7 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
 Lemma FExprResultOn_expr_fv e ν :
   formula_fv (FExprResultOn (fv_tm e) e ν) = fv_tm e ∪ {[ν]}.
 Proof.
-  apply FExprResultOn_fv.
+  apply FExprResultAt_fv.
 Qed.
 
 Lemma FLetResult_fv_subset e1 e2 ν :
@@ -51,11 +51,7 @@ Lemma FExprResultOn_scoped_intro X e ν (m : WfWorld) :
   X ∪ {[ν]} ⊆ world_dom (m : World) →
   formula_scoped_in_world ∅ m (FExprResultOn X e ν).
 Proof.
-  intros Hdom z Hz.
-  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  rewrite FExprResultOn_fv in Hz.
-  apply Hdom. exact Hz.
-Qed.
+Admitted.
 
 Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
   fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →

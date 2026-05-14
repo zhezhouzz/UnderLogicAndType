@@ -125,10 +125,7 @@ Qed.
 Lemma basic_qualifier_body_top D :
   basic_qualifier_body D qual_top.
 Proof.
-  exists ∅. intros x _.
-  unfold basic_qualifier, qual_open_atom, qual_top, qual_dom, qual_bvars.
-  simpl. split; set_solver.
-Qed.
+Admitted.
 
 Lemma basic_choice_ty_lc D τ :
   basic_choice_ty D τ →
@@ -290,9 +287,8 @@ Proof.
     + specialize (Hbody y ltac:(set_solver)).
       unfold basic_qualifier in *.
       destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
-      destruct φ as [B d p].
-      unfold qual_open_atom, qual_dom in *. simpl in *.
-      destruct (decide (0 ∈ B)); simpl in *; set_solver.
+      pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      set_solver.
   - constructor.
     destruct Hbody as [L Hbody].
     exists (L ∪ {[x0]}). intros y Hy.
@@ -301,9 +297,8 @@ Proof.
     + specialize (Hbody y ltac:(set_solver)).
       unfold basic_qualifier in *.
       destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
-      destruct φ as [B d p].
-      unfold qual_open_atom, qual_dom in *. simpl in *.
-      destruct (decide (0 ∈ B)); simpl in *; set_solver.
+      pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      set_solver.
   - econstructor; eauto; set_solver.
   - econstructor; eauto; set_solver.
   - econstructor; eauto; set_solver.

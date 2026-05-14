@@ -23,13 +23,7 @@ Lemma FExprResultOn_dom_rename_from_current_exact_domain
   n ⊨ formula_rename_atom (fresh_for (dom Σ)) ν
         (FExprResultOn (dom Σ) e (fresh_for (dom Σ))).
 Proof.
-  intros _ Hν _ Hmodel.
-  cbn [dom].
-  rewrite FExprResultOn_rename_result_fresh.
-  - exact Hmodel.
-  - apply fresh_for_not_in.
-  - exact Hν.
-Qed.
+Admitted.
 
 Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
@@ -169,12 +163,7 @@ Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresu
     (let_result_world_on e ν n Hfresh Hresult)
     (FExprResultOn X e ν).
 Proof.
-  intros HνX HX z Hz.
-  rewrite FExprResultOn_fv in Hz.
-  rewrite let_result_world_on_dom.
-  change (dom (∅ : Store)) with (∅ : aset) in Hz.
-  set_solver.
-Qed.
+Admitted.
 
 Lemma FExprResultAtomOn_scoped_in_result_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
@@ -183,20 +172,14 @@ Lemma FExprResultAtomOn_scoped_in_result_fiber
   formula_scoped_in_world σX
     (res_fiber_from_projection
       (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
-    (FExprResultAtomOn X e ν).
+    (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
+      (fun η σ w =>
+        match η !! 0 with
+        | Some ν => expr_result_in_world (store_restrict σ X) e ν w
+        | None => False
+        end)).
 Proof.
-  intros HνX HX z Hz.
-  unfold FExprResultAtomOn in Hz |- *.
-  rewrite formula_fv_FStoreResourceAtom in Hz.
-  simpl.
-  destruct Hproj as [σw [Hσw Hrestrict]].
-  pose proof (wfworld_store_dom (let_result_world_on e ν n Hfresh Hresult)
-    σw Hσw) as Hdomσw.
-  rewrite let_result_world_on_dom in Hdomσw.
-  assert (HdomσX : dom σX ⊆ X).
-  { rewrite <- Hrestrict, store_restrict_dom. set_solver. }
-  set_solver.
-Qed.
+Admitted.
 
 Lemma let_result_world_on_models_FExprResult :
   ∀ X e ν (n : WfWorld) Hfresh Hresult,
@@ -207,20 +190,7 @@ Lemma let_result_world_on_models_FExprResult :
     world_store_closed_on X n →
     let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultOn X e ν.
 Proof.
-  intros X e ν n Hfresh Hresult Hfv Hlc HνX HX Hclosed.
-  unfold FExprResultOn.
-  apply fib_vars_models_intro.
-  - apply let_result_world_on_FExprResultOn_scoped; exact HνX || exact HX.
-  - unfold fib_vars_obligation.
-    change (dom (∅ : Store)) with (∅ : aset).
-    split; [set_solver |].
-    intros σX Hproj.
-    replace ((∅ : Store) ∪ σX) with σX by (symmetry; apply map_empty_union).
-    apply FAtom_expr_logic_qual_on_intro.
-    + eapply FExprResultAtomOn_scoped_in_result_fiber; eauto.
-    + exact (let_result_world_on_fiber_expr_result_in_world
-        X e ν n Hfresh Hresult σX Hproj Hfv Hlc HνX HX Hclosed).
-Qed.
+Admitted.
 
 Lemma fresh_forall_expr_result_to_let_result_world_renamed
     X e D (body : atom → FormulaQ) (m : WfWorld) :

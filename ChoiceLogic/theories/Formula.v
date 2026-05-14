@@ -893,9 +893,9 @@ Qed.
 
 Lemma res_models_with_store_store_resource_atom_intro
     (ρ : StoreT) (m : WfWorldT) D
-    (P : StoreT → WfWorldT → Prop) :
+    (P : gmap nat atom → StoreT → WfWorldT → Prop) :
   formula_scoped_in_world ρ m (FStoreResourceAtom D P) →
-  P (store_restrict ρ D) (res_restrict m D) →
+  P ∅ (store_restrict ρ D) (res_restrict m D) →
   res_models_with_store ρ m (FStoreResourceAtom D P).
 Proof.
   unfold res_models_with_store. simpl.
@@ -907,11 +907,11 @@ Qed.
 
 Lemma res_models_with_store_store_resource_atom_elim
     (ρ : StoreT) (m : WfWorldT) D
-    (P : StoreT → WfWorldT → Prop) :
+    (P : gmap nat atom → StoreT → WfWorldT → Prop) :
   res_models_with_store ρ m (FStoreResourceAtom D P) →
   ∃ m0,
     formula_scoped_in_world ρ m0 (FStoreResourceAtom D P) ∧
-    P (store_restrict ρ D) (res_restrict m0 D) ∧
+    P ∅ (store_restrict ρ D) (res_restrict m0 D) ∧
     m0 ⊑ m.
 Proof.
   unfold res_models_with_store. simpl.

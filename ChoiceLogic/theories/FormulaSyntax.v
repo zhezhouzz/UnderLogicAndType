@@ -138,11 +138,6 @@ Proof.
   induction φ; intros k; simpl; eauto; lia.
 Qed.
 
-Lemma lvars_fv_open_subset k x (D : lvset) :
-  lvars_fv (lvars_open k x D) ⊆ lvars_fv D ∪ {[x]}.
-Proof.
-Admitted.
-
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.
@@ -239,37 +234,42 @@ Proof.
 Admitted.
 
 Definition FPure (P : Prop) : Formula :=
-  FAtom (lqual ∅ (λ _ _, P)).
+  FAtom (lqual ∅ (λ _ _ _, P)).
 
-Definition FResourceAtom (D : aset) (P : WfWorldT → Prop) : Formula :=
-  FAtom (lqual_fvars D (λ _ m, P m)).
+Definition FResourceAtom {A : Type} `{IntoLVars A}
+    (D : A) (P : WfWorldT → Prop) : Formula :=
+  FAtom (lqual (into_lvars D) (λ _ _ m, P m)).
 
 Definition FResourceAtomVars (D : lvset) (P : WfWorldT → Prop) : Formula :=
-  FAtom (lqual D (λ _ m, P m)).
+  @FResourceAtom lvset _ D P.
 
-Definition FStoreResourceAtom
+Definition FStoreResourceAtom {A : Type} `{IntoLVars A}
+    (D : A) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
+  FAtom (lqual (into_lvars D) P).
+
+Definition FStoreResourceAtomFVars
     (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
-  FAtom (lqual_fvars D P).
+  @FStoreResourceAtom aset _ D (λ _ σ m, P σ m).
 
 Definition FStoreResourceAtomVars
-    (D : lvset) (P : StoreT → WfWorldT → Prop) : Formula :=
-  FAtom (lqual D P).
+    (D : lvset) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
+  @FStoreResourceAtom lvset _ D P.
 
 Lemma formula_fv_FPure P :
   formula_fv (FPure P) = ∅.
 Proof. reflexivity. Qed.
 
-Lemma formula_fv_FResourceAtom D P :
+Lemma formula_fv_FResourceAtom (D : aset) P :
   formula_fv (FResourceAtom D P) = D.
-Proof. unfold FResourceAtom, lqual_fvars. simpl. apply lvars_fv_of_atoms. Qed.
+Proof. unfold FResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
 
 Lemma formula_fv_FResourceAtomVars D P :
   formula_fv (FResourceAtomVars D P) = lvars_fv D.
 Proof. reflexivity. Qed.
 
-Lemma formula_fv_FStoreResourceAtom D P :
+Lemma formula_fv_FStoreResourceAtom (D : aset) P :
   formula_fv (FStoreResourceAtom D P) = D.
-Proof. unfold FStoreResourceAtom, lqual_fvars. simpl. apply lvars_fv_of_atoms. Qed.
+Proof. unfold FStoreResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
 
 Lemma formula_fv_FStoreResourceAtomVars D P :
   formula_fv (FStoreResourceAtomVars D P) = lvars_fv D.
@@ -288,9 +288,9 @@ Proof.
 Admitted.
 
 Lemma formula_rename_FStoreResourceAtom x y D P :
-  formula_rename_atom x y (FStoreResourceAtom D P) =
+  formula_rename_atom x y (FStoreResourceAtomFVars D P) =
   FStoreResourceAtom (aset_swap x y D)
-    (fun σ m => P (store_swap x y σ) (res_swap x y m)).
+    (fun _ σ m => P (store_swap x y σ) (res_swap x y m)).
 Proof.
   (* Legacy explicit-swap lemma; superseded by LN opening. *)
 Admitted.

@@ -61,7 +61,7 @@ Definition FClosedResourceIn (Σ : gmap atom ty) : FQ :=
 
 Definition FStrongTotalIn (Σ : gmap atom ty) (e : tm) : FQ :=
   FStoreResourceAtom (dom Σ)
-    (fun ρ m => expr_total_with_store (dom Σ) e ρ m).
+    (fun _ ρ m => expr_total_with_store (dom Σ) e ρ m).
 
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →
@@ -419,9 +419,8 @@ Proof.
         rewrite basic_world_formula_fv.
         simpl. rewrite lvars_fv_of_atoms.
         rewrite formula_fv_FTypeQualifier.
-        destruct φ as [B d p].
-        unfold qual_open_atom, qual_dom in *; simpl in *.
-        destruct (decide (0 ∈ B)); set_solver.
+        pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+        set_solver.
       }
       set_solver.
     + assert (Hbody :
@@ -441,9 +440,8 @@ Proof.
         rewrite basic_world_formula_fv.
         simpl. rewrite lvars_fv_of_atoms.
         rewrite formula_fv_FTypeQualifier.
-        destruct φ as [B d p].
-        unfold qual_open_atom, qual_dom in *; simpl in *.
-        destruct (decide (0 ∈ B)); set_solver.
+        pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+        set_solver.
       }
       set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
@@ -522,18 +520,16 @@ Proof.
       rewrite basic_world_formula_fv.
       simpl. rewrite lvars_fv_of_atoms.
       rewrite formula_fv_FTypeQualifier.
-      destruct φ as [B d p].
-      unfold qual_open_atom, qual_dom in *; simpl in *.
-      destruct (decide (0 ∈ B)); set_solver.
+      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+      set_solver.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
       simpl. rewrite lvars_fv_of_atoms.
       rewrite formula_fv_FTypeQualifier.
-      destruct φ as [B d p].
-      unfold qual_open_atom, qual_dom in *; simpl in *.
-      destruct (decide (0 ∈ B)); set_solver.
+      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+      set_solver.
     + pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ1 e ltac:(lia)) as H1.
       pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ2 e ltac:(lia)) as H2.
       set_solver.

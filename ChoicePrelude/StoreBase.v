@@ -99,6 +99,11 @@ Definition atom_swap (x y z : atom) : atom :=
 Definition aset_swap (x y : atom) (X : aset) : aset :=
   set_map (atom_swap x y) X.
 
+Lemma lvars_fv_swap x y (D : lvset) :
+  lvars_fv (lvars_swap x y D) = aset_swap x y (lvars_fv D).
+Proof.
+Admitted.
+
 Lemma atom_swap_involutive x y z :
   atom_swap x y (atom_swap x y z) = z.
 Proof.

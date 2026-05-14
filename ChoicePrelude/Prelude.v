@@ -89,8 +89,41 @@ Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 
+Class IntoLVars A := into_lvars : A → lvset.
+
+#[global] Instance into_lvars_aset : IntoLVars aset := lvars_of_atoms.
+#[global] Instance into_lvars_lvset : IntoLVars lvset := id.
+
 Lemma lvars_fv_of_atoms (X : aset) :
   lvars_fv (lvars_of_atoms X) = X.
+Proof.
+Admitted.
+
+Lemma logic_var_bv_swap x y v :
+  logic_var_bv (logic_var_swap x y v) = logic_var_bv v.
+Proof.
+  destruct v; simpl; repeat destruct decide; reflexivity.
+Qed.
+
+Lemma lvars_bv_swap x y (D : lvset) :
+  lvars_bv (lvars_swap x y D) = lvars_bv D.
+Proof.
+Admitted.
+
+Lemma logic_var_swap_involutive x y v :
+  logic_var_swap x y (logic_var_swap x y v) = v.
+Proof.
+  destruct v as [k|z]; simpl; [reflexivity |].
+  repeat destruct decide; subst; try reflexivity; congruence.
+Qed.
+
+Lemma lvars_swap_involutive x y (D : lvset) :
+  lvars_swap x y (lvars_swap x y D) = D.
+Proof.
+Admitted.
+
+Lemma lvars_fv_open_subset k x (D : lvset) :
+  lvars_fv (lvars_open k x D) ⊆ lvars_fv D ∪ {[x]}.
 Proof.
 Admitted.
 

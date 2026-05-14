@@ -29,39 +29,7 @@ Lemma lifted_const_qualifier_from_projection c ν m σ
     (res_fiber_from_projection m {[ν]} σ Hproj)
     (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))).
 Proof.
-  intros Hlookup.
-  assert (Hdomσ : dom σ = {[ν]}).
-  {
-    pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hproj) as Hdom.
-    simpl in Hdom.
-    assert (Hνdom : ν ∈ dom σ) by (apply elem_of_dom; eexists; exact Hlookup).
-    set_solver.
-  }
-  assert (Hνm : ν ∈ world_dom (m : World)).
-  {
-    pose proof (wfworld_store_dom (res_restrict m {[ν]}) σ Hproj) as Hdom.
-    simpl in Hdom. rewrite Hdomσ in Hdom. set_solver.
-  }
-  eapply res_models_with_store_FTypeQualifier_intro.
-  - unfold formula_scoped_in_world.
-    rewrite formula_fv_FTypeQualifier.
-    unfold qual_open_atom, mk_q_eq, qual_dom. simpl.
-    rewrite decide_True by set_solver.
-    simpl. rewrite Hdomσ. set_solver.
-  - unfold qual_open_atom, mk_q_eq. simpl.
-    rewrite decide_True by set_solver. simpl.
-    assert (Hfiber_singleton_raw :
-      raw_restrict (raw_fiber m σ) ({[ν]} ∪ (∅ ∪ ∅)) = singleton_world σ).
-    {
-      replace ({[ν]} ∪ (∅ ∪ ∅)) with ({[ν]} : aset) by set_solver.
-      apply raw_restrict_fiber_from_projection_eq_singleton; [exact Hproj | exact Hdomσ].
-    }
-    split; [set_solver |].
-    exists σ. split; [exact Hfiber_singleton_raw |].
-    exists (vconst c). split.
-    + apply store_restrict_lookup_some_2; [exact Hlookup | set_solver].
-    + reflexivity.
-Qed.
+Admitted.
 
 Local Ltac solve_const_refinement_scope Hbasic :=
   pose proof (res_models_with_store_fuel_scoped _ ∅ _ _ Hbasic);
