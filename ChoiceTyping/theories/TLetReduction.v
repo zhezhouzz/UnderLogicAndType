@@ -12,6 +12,25 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinem
 
 Import Tactics.
 
+Local Lemma singleton_union_comm_dom (Σ : gmap atom ty) T x :
+  {[x]} ∪ dom Σ = dom (<[x := T]> Σ).
+Proof.
+  rewrite dom_insert_L. reflexivity.
+Qed.
+
+Local Lemma formula_family_fv_insert
+    (Σ : gmap atom ty) T x (Q : atom → FormulaQ) :
+  (∀ ν, formula_fv (Q ν) ⊆ dom Σ ∪ {[ν]}) →
+  ∀ ν, formula_fv (Q ν) ⊆ dom (<[x := T]> Σ) ∪ {[ν]}.
+Proof.
+  intros HQfv ν z Hz.
+  specialize (HQfv ν z Hz) as HzQ.
+  rewrite dom_insert_L.
+  apply elem_of_union in HzQ as [HzΣ | Hzν].
+  - apply elem_of_union. left. apply elem_of_union. right. exact HzΣ.
+  - apply elem_of_union. right. exact Hzν.
+Qed.
+
 Lemma FExprCont_tlet_reduction
     (Σ : gmap atom ty) (T1 T2 : ty)
     (m : WfWorld) e1 e2 (x : atom) (Q : atom → FormulaQ)
@@ -36,21 +55,21 @@ Proof.
   { rewrite <- Hdom. exact Hfresh. }
   assert (He2 : <[x := T1]> Σ ⊢ₑ e2 ^^ x ⋮ T2).
   { eapply basic_typing_tlete_body_for_fresh; eauto; set_solver. }
-  assert (Hdom_m1 : world_dom (m1 : World) = dom (<[x := T1]> Σ)).
-  {
-    subst m1. rewrite let_result_world_on_dom, Hdom, dom_insert_L.
-    set_solver.
-  }
+	  assert (Hdom_m1 : world_dom (m1 : World) = dom (<[x := T1]> Σ)).
+	  {
+	    subst m1. rewrite let_result_world_on_dom, Hdom, dom_insert_L.
+	    rewrite union_comm_L. reflexivity.
+	  }
   assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
   { eauto using basic_typing_contains_fv_tm. }
   assert (Hlc1 : lc_tm e1).
   { eauto using typing_tm_lc. }
   assert (Hclosed_m1 :
     world_store_closed_on (dom (<[x := T1]> Σ)) m1).
-  {
-    subst m1. rewrite dom_insert_L.
-    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
-    eapply let_result_world_on_store_closed_on_insert.
+	  {
+	    subst m1. rewrite dom_insert_L.
+	    rewrite union_comm_L.
+	    eapply let_result_world_on_store_closed_on_insert.
     - exact HxΣ.
     - exact Hclosed.
     - intros σ vx Hσ Hsteps.
@@ -68,12 +87,12 @@ Proof.
         * eauto.
         * store_norm. reflexivity.
   }
-  assert (Htotal2 :
-    expr_total_on (dom (<[x := T1]> Σ)) (e2 ^^ x) m1).
-  {
-    subst m1. rewrite dom_insert_L.
-    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
-    eapply (expr_total_on_tlete_elim_body_strong
+	  assert (Htotal2 :
+	    expr_total_on (dom (<[x := T1]> Σ)) (e2 ^^ x) m1).
+	  {
+	    subst m1. rewrite dom_insert_L.
+	    rewrite union_comm_L.
+	    eapply (expr_total_on_tlete_elim_body_strong
       (dom Σ) e1 e2 x m Hfresh Hresult).
     - rewrite Hdom. set_solver.
     - exact HxΣ.
@@ -82,11 +101,9 @@ Proof.
     - eapply typing_tm_lc; eauto.
     - exact Htotal_let.
   }
-  assert (HQfv_insert :
-    ∀ ν, formula_fv (Q ν) ⊆ dom (<[x := T1]> Σ) ∪ {[ν]}).
-  {
-    intros ν. specialize (HQfv ν). rewrite dom_insert_L. set_solver.
-  }
+	  assert (HQfv_insert :
+	    ∀ ν, formula_fv (Q ν) ⊆ dom (<[x := T1]> Σ) ∪ {[ν]}).
+	  { apply formula_family_fv_insert. exact HQfv. }
   assert (HQrename_insert :
     formula_family_rename_stable_on (dom (<[x := T1]> Σ)) Q).
   {

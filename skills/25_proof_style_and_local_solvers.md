@@ -258,6 +258,43 @@ places and Hammer can quietly increase compile time.
 If `hauto` fails, do not keep increasing search blindly.  First unfold the
 intended wrapper or apply the intended lemma explicitly.
 
+## Watch import and loading cost
+
+Rocq compile time is not only proof checking.  `Require Import/Export` loads
+compiled `.vo` objects into the current environment: constants, proof terms,
+universe constraints, notations, hints, typeclass instances, and exported
+dependencies.  A tiny wrapper file can still be slow if it exports a large
+prelude.
+
+Use these rules when optimizing build time:
+
+- Prefer `Require Import` for ordinary proof-support files.  Reserve
+  `Require Export` for intentional API/prelude boundaries.
+- Avoid very small wrapper files unless they control a useful public import
+  surface.  Splitting a huge file helps proof checking, but too many small files
+  can make loading dominate.
+- Keep heavyweight hints out of `core`; put them in named hint databases and
+  call them explicitly with `eauto 6 with ...`.
+- When a short file has high seconds-per-kloc, first check whether the cost is
+  mostly its imports.  If `coqc -time` reports only the initial `From ...`
+  command as hot, proof-script edits inside the file will not help much.
+- Be careful with `Require Export` chains in `SoundnessHelpers`-style wrapper
+  files.  They can make every downstream file pay for dependencies it never
+  uses directly.
+
+Useful measurement pattern:
+
+```sh
+coqc -time path/to/File.v > /tmp/file_time.log
+perl -ne 'if (/\] ([0-9.]+) secs/) { print "$1 $_" if $1 > 0.12 }' \
+  /tmp/file_time.log | sort -nr | head
+```
+
+If the hot command is a `set_solver`, `hauto`, or broad `eauto`, reduce the
+context or extract the recurring set/resource fact.  If the hot command is an
+import, inspect the dependency surface instead of micro-optimizing local
+proofs.
+
 ## Preserve explicit scripts at known hot spots
 
 Some proof locations should remain explicit.  A real example is the over/under
