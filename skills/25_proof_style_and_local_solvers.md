@@ -105,6 +105,26 @@ Keep normalizers narrow.  A tactic that unfolds every formula and every
 resource definition will be unpredictable and can slow the build.  It is better
 to have several small tactics than one large one.
 
+For overloaded wrapper classes, prefer a tiny local normalizer instead of
+scattered `change`s.  For example, the denotation layer uses `IntoLVars` for
+atom sets, logic-variable sets, atom typing environments, and logic-variable
+typing environments.  A local tactic can normalize only those wrappers:
+
+```coq
+Ltac denot_lvars_norm :=
+  repeat match goal with
+  | |- context[into_lvars ?X] =>
+      let T := type of X in
+      lazymatch T with
+      | lvset => change (into_lvars X) with X
+      | aset => change (into_lvars X) with (lvars_of_atoms X)
+      end
+  end.
+```
+
+Use this style only for definitional wrapper cleanup.  Do not put semantic
+rewrites or large unfolds into such a tactic.
+
 If a normalization is semantic rather than definitional, make it a lemma first.
 For example, prefer:
 
@@ -240,6 +260,19 @@ Ltac basic_solver :=
 
 Keep this tactic local to the typing layer unless it becomes stable enough to
 export.
+
+When a proof file has a recurring but very local family of regularity facts,
+start with a file-local tactic rather than exporting a global solver.  For
+example, a tlet proof can use:
+
+```coq
+Local Ltac tlet_regular :=
+  eauto 6 using basic_typing_contains_fv_tm, typing_tm_lc,
+    world_store_closed_on_world_closed_on.
+```
+
+This documents the proof pattern without adding broad global hints.  Promote it
+to a shared solver only after multiple files use the same shape.
 
 ## CoqHammer usage
 

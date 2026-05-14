@@ -649,8 +649,7 @@ Lemma FExprResultOn_lvars_fv D e :
 Proof.
   unfold FExprResultOn, FStoreResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom].
-  change (into_lvars D) with D.
-  change (into_lvars (D ∪ {[LVBound 0]})) with (D ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_fv_union, lvars_fv_singleton_bound.
   set_solver.
 Qed.
@@ -661,7 +660,7 @@ Lemma FExprContIn_lty_env_formula_fv_subset
 Proof.
   unfold FExprContIn.
   cbn [formula_fv].
-  change (into_lvars Σ) with (dom Σ).
+  denot_lvars_norm.
   rewrite FExprResultOn_lvars_fv.
   unfold lty_env_atom_dom.
   set_solver.
@@ -692,8 +691,7 @@ Proof.
   unfold FBasicTypingIn, FClosedResourceIn, FStrongTotalIn,
     FStoreResourceAtom, FResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom].
-  change (into_lvars (dom Σe ∪ dom Στ)) with (dom Σe ∪ dom Στ).
-  change (into_lvars (dom Σe)) with (dom Σe).
+  denot_lvars_norm.
   rewrite lvars_fv_union.
   unfold lty_env_atom_dom.
   set_solver.
@@ -867,11 +865,7 @@ Proof.
   unfold denot_ty_obligations, FBasicTypingIn, FClosedResourceIn,
     FStrongTotalIn, FStoreResourceAtom, FResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom].
-  change (into_lvars
-    (dom (atom_env_to_lty_env Σ) ∪ dom (atom_env_to_lty_env Σ)))
-    with (dom (atom_env_to_lty_env Σ) ∪ dom (atom_env_to_lty_env Σ)).
-  change (into_lvars (dom (atom_env_to_lty_env Σ)))
-    with (dom (atom_env_to_lty_env Σ)).
+  denot_lvars_norm.
   rewrite !atom_env_to_lty_env_dom.
   rewrite !lvars_fv_union, !lvars_fv_of_atoms.
   set_solver.

@@ -190,8 +190,7 @@ Proof.
   unfold FStoreResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
     into_lvars_lvset].
-  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
   pose proof (wfworld_store_dom
     (res_restrict (let_result_world_on e ν n Hfresh Hresult) X)
@@ -220,8 +219,7 @@ Proof.
   unfold formula_scoped_in_world, FStoreResourceAtom.
   cbn [formula_open formula_fv stale stale_logic_qualifier lqual_dom
     lqual_open into_lvars into_lvars_lvset].
-  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_fv_open_atoms_with_bound.
   pose proof (wfworld_store_dom
     (res_restrict (let_result_world_on e ν n Hfresh Hresult) X)
@@ -273,9 +271,7 @@ Proof.
       unfold FStoreResourceAtom in Hopen.
       cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
         into_lvars_aset into_lvars_lvset] in Hopen.
-      change (into_lvars X) with (lvars_of_atoms X) in Hopen.
-      change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-        with (lvars_of_atoms X ∪ {[LVBound 0]}) in Hopen.
+      denot_lvars_norm.
       rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound in Hopen.
       set_solver.
     }
@@ -293,9 +289,7 @@ Proof.
       formula_fv formula_open lqual_dom logic_qualifier_denote lqual_prop
       lqual_open stale stale_logic_qualifier into_lvars into_lvars_aset
       into_lvars_lvset].
-    change (into_lvars X) with (lvars_of_atoms X).
-    change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-      with (lvars_of_atoms X ∪ {[LVBound 0]}).
+    denot_lvars_norm.
     rewrite lvars_fv_open_atoms_with_bound.
     rewrite lookup_insert_eq.
     rewrite map_empty_union.

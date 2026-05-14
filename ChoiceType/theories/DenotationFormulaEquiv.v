@@ -53,25 +53,17 @@ Proof.
   - unfold formula_scoped_in_world in *. simpl in *.
     rewrite <- Hfv1, <- Hfv2. exact Hscope.
   - destruct Hmodel as [Hφ1 Hφ2]. split.
-    + pose proof (proj1 (H1 ρ m)) as H.
-      assert (Hφ1_exact : res_models_with_store ρ m φ1).
-      { models_fuel_irrel Hφ1. }
-      models_fuel_irrel (H Hφ1_exact).
-    + pose proof (proj1 (H2 ρ m)) as H.
-      assert (Hφ2_exact : res_models_with_store ρ m φ2).
-      { models_fuel_irrel Hφ2. }
-      models_fuel_irrel (H Hφ2_exact).
+    + pose proof (proj1 (H1 ρ m) ltac:(models_fuel_irrel Hφ1)) as H.
+      models_fuel_irrel H.
+    + pose proof (proj1 (H2 ρ m) ltac:(models_fuel_irrel Hφ2)) as H.
+      models_fuel_irrel H.
   - unfold formula_scoped_in_world in *. simpl in *.
     rewrite Hfv1, Hfv2. exact Hscope.
   - destruct Hmodel as [Hψ1 Hψ2]. split.
-    + pose proof (proj2 (H1 ρ m)) as H.
-      assert (Hψ1_exact : res_models_with_store ρ m ψ1).
-      { models_fuel_irrel Hψ1. }
-      models_fuel_irrel (H Hψ1_exact).
-    + pose proof (proj2 (H2 ρ m)) as H.
-      assert (Hψ2_exact : res_models_with_store ρ m ψ2).
-      { models_fuel_irrel Hψ2. }
-      models_fuel_irrel (H Hψ2_exact).
+    + pose proof (proj2 (H1 ρ m) ltac:(models_fuel_irrel Hψ1)) as H.
+      models_fuel_irrel H.
+    + pose proof (proj2 (H2 ρ m) ltac:(models_fuel_irrel Hψ2)) as H.
+      models_fuel_irrel H.
 Qed.
 
 Lemma formula_store_equiv_over φ ψ :
@@ -83,16 +75,12 @@ Proof.
   unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
   - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
-    pose proof (proj1 (Heq ρ m0)) as H.
-    assert (Hφ_exact : res_models_with_store ρ m0 φ).
-    { models_fuel_irrel Hφ. }
-    models_fuel_irrel (H Hφ_exact).
+    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
+    models_fuel_irrel H.
   - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
-    pose proof (proj2 (Heq ρ m0)) as H.
-    assert (Hψ_exact : res_models_with_store ρ m0 ψ).
-    { models_fuel_irrel Hφ. }
-    models_fuel_irrel (H Hψ_exact).
+    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
+    models_fuel_irrel H.
 Qed.
 
 Lemma formula_store_equiv_under φ ψ :
@@ -104,16 +92,12 @@ Proof.
   unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
   - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
-    pose proof (proj1 (Heq ρ m0)) as H.
-    assert (Hφ_exact : res_models_with_store ρ m0 φ).
-    { models_fuel_irrel Hφ. }
-    models_fuel_irrel (H Hφ_exact).
+    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
+    models_fuel_irrel H.
   - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
   - exists m0. split; [exact Hsub |].
-    pose proof (proj2 (Heq ρ m0)) as H.
-    assert (Hψ_exact : res_models_with_store ρ m0 ψ).
-    { models_fuel_irrel Hφ. }
-    models_fuel_irrel (H Hψ_exact).
+    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
+    models_fuel_irrel H.
 Qed.
 
 Lemma fib_vars_store_equiv X φ ψ :
@@ -180,8 +164,7 @@ Lemma FExprContIn_post_open_store_equiv
 Proof.
   intros Hfv Hopen_fv Heq ρ m.
   unfold FExprContIn, res_models_with_store.
-  change (expr_cont_body (lvars_fv (into_lvars Σ)) P) with P.
-  change (expr_cont_body (lvars_fv (into_lvars Σ)) Q) with Q.
+  denot_sugar_norm.
   cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
     formula_fv formula_open].
   split; intros [Hscope [L [HLdom Hforall]]]; split.

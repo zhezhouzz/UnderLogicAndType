@@ -19,6 +19,10 @@ Proof.
   rewrite dom_insert_L. reflexivity.
 Qed.
 
+Local Ltac tlet_regular :=
+  eauto 6 using basic_typing_contains_fv_tm, typing_tm_lc,
+    world_store_closed_on_world_closed_on.
+
 Local Lemma formula_family_fv_insert
     (Σ : gmap atom ty) T x (Q : atom → FormulaQ) :
   (∀ ν, formula_fv (Q ν) ⊆ dom Σ ∪ {[ν]}) →
@@ -62,9 +66,9 @@ Proof.
 	    rewrite union_comm_L. reflexivity.
 	  }
   assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
-  { eauto using basic_typing_contains_fv_tm. }
+  { tlet_regular. }
   assert (Hlc1 : lc_tm e1).
-  { eauto using typing_tm_lc. }
+  { tlet_regular. }
   assert (Hclosed_m1 :
     world_store_closed_on (dom (<[x := T1]> Σ)) m1).
 	  {
@@ -99,7 +103,7 @@ Proof.
     - exact HxΣ.
     - exact Hxe2.
     - exact Hclosed.
-    - eapply typing_tm_lc; eauto.
+    - tlet_regular.
     - exact Htotal_let.
   }
 	  assert (HQfv_insert :
@@ -127,7 +131,7 @@ Proof.
       Hfresh Hresult Hfreshν_body Hresultν_body
       Hfreshν_tlet Hresultν_tlet).
     - reflexivity.
-    - eauto using basic_typing_contains_fv_tm.
+    - tlet_regular.
     - apply basic_typing_contains_fv_tm in Hlet. simpl in Hlet. set_solver.
     - eauto.
     - rewrite Hdom. set_solver.
@@ -321,11 +325,11 @@ Proof.
     - set_solver.
     - set_solver.
     - exact Hclosed.
-    - eapply typing_tm_lc; eauto.
+    - tlet_regular.
     - exact Htotal.
   }
   assert (Htarget_closed : world_closed_on (dom Δ) m).
-  { eapply world_store_closed_on_world_closed_on. exact Hclosed. }
+  { tlet_regular. }
   split; intros Hmodel.
   - eapply denot_ty_fuel_intro; eauto.
     apply Hformula_iff.

@@ -30,6 +30,26 @@ Local Notation FQ := FormulaQ.
 #[global] Instance into_lvars_logic_ty_env : IntoLVars (gmap logic_var ty) :=
   fun Σ => dom Σ.
 
+Ltac denot_lvars_norm :=
+  repeat match goal with
+  | |- context[into_lvars ?X] =>
+      let T := type of X in
+      lazymatch T with
+      | lvset => change (into_lvars X) with X
+      | aset => change (into_lvars X) with (lvars_of_atoms X)
+      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X))
+      | gmap logic_var ty => change (into_lvars X) with (dom X)
+      end
+  | H : context[into_lvars ?X] |- _ =>
+      let T := type of X in
+      lazymatch T with
+      | lvset => change (into_lvars X) with X in H
+      | aset => change (into_lvars X) with (lvars_of_atoms X) in H
+      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X)) in H
+      | gmap logic_var ty => change (into_lvars X) with (dom X) in H
+      end
+  end.
+
 (** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=
   (res_models m φ)
@@ -211,9 +231,7 @@ Proof.
   unfold FExprResultOn, FStoreResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
     into_lvars_aset into_lvars_lvset].
-  change (into_lvars X) with (lvars_of_atoms X).
-  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_fv_union, !lvars_fv_of_atoms, lvars_fv_singleton_bound.
   set_solver.
 Qed.
@@ -239,9 +257,7 @@ Proof.
   unfold FExprResultAt, FExprResultOn, FStoreResourceAtom.
   cbn [formula_open formula_fv stale stale_logic_qualifier lqual_dom
     lqual_open into_lvars into_lvars_aset into_lvars_lvset].
-  change (into_lvars X) with (lvars_of_atoms X).
-  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
-    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_open_of_atoms.
   rewrite lvars_fv_of_atoms.
   rewrite lvars_fv_open_atoms_with_bound.
@@ -268,6 +284,23 @@ Class IntoExprCont (A : Type) := expr_cont_body : aset → A → FQ.
 #[global] Instance into_expr_cont_family : IntoExprCont (atom → FQ) :=
   fun D Q => Q (fresh_for D).
 
+Ltac denot_expr_cont_norm :=
+  repeat match goal with
+  | |- context[expr_cont_body ?D ?Q] =>
+      let T := type of Q in
+      lazymatch T with
+      | FormulaQ => change (expr_cont_body D Q) with Q
+      end
+  | H : context[expr_cont_body ?D ?Q] |- _ =>
+      let T := type of Q in
+      lazymatch T with
+      | FormulaQ => change (expr_cont_body D Q) with Q in H
+      end
+  end.
+
+Ltac denot_sugar_norm :=
+  denot_lvars_norm; denot_expr_cont_norm.
+
 Definition FExprContIn {E A : Type} `{IntoLVars E} `{IntoExprCont A}
     (Σ : E) (e : tm) (Q : A) : FQ :=
   FForall (FImpl (FExprResultOn (into_lvars Σ) e) (expr_cont_body (lvars_fv (into_lvars Σ)) Q)).
@@ -281,17 +314,12 @@ Proof.
   intros HΣ HQ.
   unfold FExprContIn.
   cbn [formula_fv].
-  change (into_lvars Σ) with (lvars_of_atoms (dom Σ)).
+  denot_lvars_norm.
   unfold FExprResultOn at 1.
   unfold FStoreResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
     into_lvars_lvset].
-  change (into_lvars (lvars_of_atoms (dom Σ)))
-    with (lvars_of_atoms (dom Σ)).
-  change (into_lvars (into_lvars (lvars_of_atoms (dom Σ)) ∪ {[LVBound 0]}))
-    with (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}).
-  change (into_lvars (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}))
-    with (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}).
+  denot_lvars_norm.
   rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
   set_solver.
 Qed.
