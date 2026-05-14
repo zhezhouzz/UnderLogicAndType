@@ -163,7 +163,13 @@ Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresu
     (let_result_world_on e ν n Hfresh Hresult)
     (FExprResultAt X e ν).
 Proof.
-Admitted.
+  intros HνX HX.
+  unfold formula_scoped_in_world.
+  rewrite dom_empty_L.
+  rewrite FExprResultAt_fv.
+  rewrite let_result_world_on_dom.
+  set_solver.
+Qed.
 
 Lemma FExprResultAtomOn_scoped_in_result_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
@@ -179,7 +185,51 @@ Lemma FExprResultAtomOn_scoped_in_result_fiber
         | None => False
         end)).
 Proof.
-Admitted.
+  intros HνX HX.
+  unfold formula_scoped_in_world.
+  unfold FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
+    into_lvars_lvset].
+  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  pose proof (wfworld_store_dom
+    (res_restrict (let_result_world_on e ν n Hfresh Hresult) X)
+    σX Hproj) as HdomσX.
+  simpl in HdomσX.
+  simpl.
+  set_solver.
+Qed.
+
+Lemma FExprResultAtomOn_opened_scoped_in_result_fiber
+    X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
+  ν ∉ X →
+  X ⊆ world_dom (n : World) →
+  formula_scoped_in_world σX
+    (res_fiber_from_projection
+      (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
+    (formula_open 0 ν
+      (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
+        (fun η σ w =>
+          match η !! 0 with
+          | Some ν => expr_result_in_world (store_restrict σ X) e ν w
+          | None => False
+          end))).
+Proof.
+  intros HνX HX.
+  unfold formula_scoped_in_world, FStoreResourceAtom.
+  cbn [formula_open formula_fv stale stale_logic_qualifier lqual_dom
+    lqual_open into_lvars into_lvars_lvset].
+  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  rewrite lvars_fv_open_atoms_with_bound.
+  pose proof (wfworld_store_dom
+    (res_restrict (let_result_world_on e ν n Hfresh Hresult) X)
+    σX Hproj) as HdomσX.
+  simpl in HdomσX.
+  simpl.
+  set_solver.
+Qed.
 
 Lemma let_result_world_on_models_FExprResult :
   ∀ X e ν (n : WfWorld) Hfresh Hresult,
@@ -190,7 +240,92 @@ Lemma let_result_world_on_models_FExprResult :
     world_store_closed_on X n →
     let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultAt X e ν.
 Proof.
-Admitted.
+  intros X e ν n Hfresh Hresult Hfv Hlc HνX HX Hclosed.
+  unfold FExprResultAt, FExprResultOn.
+  cbn [formula_open].
+  rewrite lvars_open_of_atoms.
+  apply fib_vars_models_intro.
+  - unfold formula_scoped_in_world.
+    rewrite dom_empty_L.
+    assert (Hopen_fv :
+      formula_fv
+        (formula_open 0 ν
+          (FStoreResourceAtom (into_lvars X ∪ {[LVBound 0]})
+            (fun η σ w =>
+              match η !! 0 with
+              | Some ν =>
+                  expr_result_in_world
+                    (store_restrict σ (lvars_fv (into_lvars X)))
+                    (open_tm_env η e) ν w
+              | None => False
+              end))) ⊆ X ∪ {[ν]}).
+    {
+      pose proof (formula_open_fv_subset 0 ν
+        (FStoreResourceAtom (into_lvars X ∪ {[LVBound 0]})
+          (fun η σ w =>
+            match η !! 0 with
+            | Some ν =>
+                expr_result_in_world
+                  (store_restrict σ (lvars_fv (into_lvars X)))
+                  (open_tm_env η e) ν w
+            | None => False
+            end))) as Hopen.
+      unfold FStoreResourceAtom in Hopen.
+      cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
+        into_lvars_aset into_lvars_lvset] in Hopen.
+      change (into_lvars X) with (lvars_of_atoms X) in Hopen.
+      change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+        with (lvars_of_atoms X ∪ {[LVBound 0]}) in Hopen.
+      rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound in Hopen.
+      set_solver.
+    }
+    cbn [formula_fv].
+    rewrite lvars_fv_of_atoms.
+    rewrite let_result_world_on_dom.
+    set_solver.
+  - unfold fib_vars_obligation.
+    rewrite lvars_fv_of_atoms.
+    split; [set_solver |].
+    intros σX Hproj.
+    unfold res_models_with_store.
+    unfold FStoreResourceAtom.
+    cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+      formula_fv formula_open lqual_dom logic_qualifier_denote lqual_prop
+      lqual_open stale stale_logic_qualifier into_lvars into_lvars_aset
+      into_lvars_lvset].
+    change (into_lvars X) with (lvars_of_atoms X).
+    change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+      with (lvars_of_atoms X ∪ {[LVBound 0]}).
+    rewrite lvars_fv_open_atoms_with_bound.
+    rewrite lookup_insert_eq.
+    rewrite map_empty_union.
+    split.
+    + eapply FExprResultAtomOn_opened_scoped_in_result_fiber; eauto.
+    + exists (res_fiber_from_projection
+        (let_result_world_on e ν n Hfresh Hresult) X σX Hproj).
+      split.
+      * rewrite map_empty_union.
+        eapply FExprResultAtomOn_opened_scoped_in_result_fiber; eauto.
+      * split.
+        -- rewrite open_tm_env_singleton_lc by exact Hlc.
+           assert (Hexact :
+             expr_result_in_world (store_restrict σX X) e ν
+               (res_fiber_from_projection
+                 (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)).
+           {
+             eapply let_result_world_on_fiber_expr_result_in_world; eauto.
+           }
+           intros σν.
+           rewrite map_empty_union.
+           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+           rewrite store_restrict_restrict.
+           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+           rewrite res_restrict_restrict_eq.
+           replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset)
+             by set_solver.
+           exact (Hexact σν).
+        -- reflexivity.
+Qed.
 
 Lemma fresh_forall_expr_result_to_let_result_world_renamed
     X e D (body : atom → FormulaQ) (m : WfWorld) :

@@ -107,6 +107,23 @@ Lemma lvars_bv_of_atoms (X : aset) :
 Proof.
 Admitted.
 
+Lemma lvars_open_of_atoms k x (X : aset) :
+  lvars_open k x (lvars_of_atoms X) = lvars_of_atoms X.
+Proof.
+  unfold lvars_open, lvars_of_atoms.
+  apply set_eq. intros v.
+  rewrite !elem_of_map.
+  split.
+  - intros [lv [-> Hlv]].
+    rewrite elem_of_map in Hlv.
+    destruct Hlv as [a [-> Ha]].
+    exists a. split; [reflexivity | exact Ha].
+  - intros [a [-> Ha]].
+    exists (LVFree a). split; [reflexivity |].
+    rewrite elem_of_map.
+    exists a. split; [reflexivity | exact Ha].
+Qed.
+
 Lemma lvars_fv_of_bvars (B : gset nat) :
   lvars_fv (lvars_of_bvars B) = ∅.
 Proof.
@@ -132,6 +149,17 @@ Lemma lvars_fv_union (D1 D2 : lvset) :
   lvars_fv (D1 ∪ D2) = lvars_fv D1 ∪ lvars_fv D2.
 Proof.
 Admitted.
+
+Lemma lvars_fv_open_atoms_with_bound k x (X : aset) :
+  lvars_fv (lvars_open k x (lvars_of_atoms X ∪ {[LVBound k]})) =
+  X ∪ {[x]}.
+Proof.
+  rewrite lvars_fv_open.
+  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  destruct (decide (k ∈ lvars_bv (lvars_of_atoms X ∪ {[LVBound k]}))).
+  - set_solver.
+  - exfalso. apply n. apply lvars_bv_contains_bound_singleton.
+Qed.
 
 Lemma logic_var_bv_swap x y v :
   logic_var_bv (logic_var_swap x y v) = logic_var_bv v.
