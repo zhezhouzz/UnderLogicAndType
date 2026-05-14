@@ -14,9 +14,9 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
   let x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
   FExists
     (FAnd
-      (FExprResultOn (fv_tm e1) e1 x)
+      (FExprResultAt (fv_tm e1) e1 x)
       (FFibVars (lvars_of_atoms {[x]})
-        (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+        (FExprResultAt (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
 
 (** [FLetResult] remains a useful auxiliary formula for examples and local
     decompositions, but the operational bridge for [tlete] is handled at the
@@ -25,7 +25,7 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
     expression-result relation through [FAtom]'s upward-closed semantics. *)
 
 Lemma FExprResultOn_expr_fv e ν :
-  formula_fv (FExprResultOn (fv_tm e) e ν) = fv_tm e ∪ {[ν]}.
+  formula_fv (FExprResultAt (fv_tm e) e ν) = fv_tm e ∪ {[ν]}.
 Proof.
   apply FExprResultAt_fv.
 Qed.
@@ -49,14 +49,14 @@ Qed.
 
 Lemma FExprResultOn_scoped_intro X e ν (m : WfWorld) :
   X ∪ {[ν]} ⊆ world_dom (m : World) →
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν).
+  formula_scoped_in_world ∅ m (FExprResultAt X e ν).
 Proof.
 Admitted.
 
 Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
   fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
   m ⊨ FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) →
-  formula_scoped_in_world ∅ m (FExprResultOn X (tlete e1 e2) ν).
+  formula_scoped_in_world ∅ m (FExprResultAt X (tlete e1 e2) ν).
 Proof.
 Admitted.
 
@@ -72,9 +72,9 @@ Lemma FLetResult_models_elim e1 e2 ν m :
         m' ⊨ formula_rename_atom
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
-            (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
+            (FExprResultAt (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
             (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
-              (FExprResultOn
+              (FExprResultAt
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν))).
 Proof.
@@ -92,9 +92,9 @@ Lemma FLetResult_models_intro e1 e2 ν m :
         m' ⊨ formula_rename_atom
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
-            (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
+            (FExprResultAt (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
             (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
-              (FExprResultOn
+              (FExprResultAt
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)))) →
   m ⊨ FLetResult e1 e2 ν.
@@ -251,7 +251,7 @@ Proof.
 Admitted.
 
 Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
-  m ⊨ FExprResultOn X (tret (vconst c)) ν →
+  m ⊨ FExprResultAt X (tret (vconst c)) ν →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
 Proof.
 Admitted.

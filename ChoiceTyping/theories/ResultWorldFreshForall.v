@@ -19,9 +19,9 @@ Lemma FExprResultOn_dom_rename_from_current_exact_domain
   Σ ⊢ₑ e ⋮ T →
   ν ∉ dom Σ →
   world_dom (n : World) = dom Σ ∪ {[ν]} →
-  n ⊨ FExprResultOn (dom Σ) e ν →
+  n ⊨ FExprResultAt (dom Σ) e ν →
   n ⊨ formula_rename_atom (fresh_for (dom Σ)) ν
-        (FExprResultOn (dom Σ) e (fresh_for (dom Σ))).
+        (FExprResultAt (dom Σ) e (fresh_for (dom Σ))).
 Proof.
 Admitted.
 
@@ -35,7 +35,7 @@ Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
   world_store_closed_on (dom Σ) m →
   world_dom (n : World) = dom Σ ∪ {[ν]} →
   res_restrict n (dom Σ) = m →
-  n ⊨ FExprResultOn (dom Σ) e ν →
+  n ⊨ FExprResultAt (dom Σ) e ν →
   n = let_result_world_on e ν m Hfresh Hresult.
 Proof.
   (* Fold-based proof removed with primitive multi-fiber; this will be
@@ -161,7 +161,7 @@ Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresu
   X ⊆ world_dom (n : World) →
   formula_scoped_in_world ∅
     (let_result_world_on e ν n Hfresh Hresult)
-    (FExprResultOn X e ν).
+    (FExprResultAt X e ν).
 Proof.
 Admitted.
 
@@ -188,7 +188,7 @@ Lemma let_result_world_on_models_FExprResult :
     ν ∉ X →
     X ⊆ world_dom (n : World) →
     world_store_closed_on X n →
-    let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultOn X e ν.
+    let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultAt X e ν.
 Proof.
 Admitted.
 
@@ -198,7 +198,7 @@ Lemma fresh_forall_expr_result_to_let_result_world_renamed
   lc_tm e →
   X ⊆ world_dom (m : World) →
   world_store_closed_on X m →
-  m ⊨ fresh_forall D (fun x => FImpl (FExprResultOn X e x) (body x)) →
+  m ⊨ fresh_forall D (fun x => FImpl (FExprResultAt X e x) (body x)) →
   ∃ L : aset,
     world_dom (m : World) ∪ D ∪ X ∪ fv_tm e ⊆ L ∧
     ∀ y,
@@ -206,9 +206,9 @@ Lemma fresh_forall_expr_result_to_let_result_world_renamed
       ∀ Hfresh Hresult,
         (∀ (n : WfWorld),
           world_dom (n : World) = world_dom (m : World) ∪ {[y]} →
-          n ⊨ FExprResultOn X e y →
+          n ⊨ FExprResultAt X e y →
           n ⊨ formula_rename_atom (fresh_for D) y
-                 (FExprResultOn X e (fresh_for D))) →
+                 (FExprResultAt X e (fresh_for D))) →
         let_result_world_on e y m Hfresh Hresult ⊨
           formula_rename_atom (fresh_for D) y (body (fresh_for D)).
 Proof.
@@ -221,7 +221,7 @@ Lemma fresh_forall_expr_result_to_let_result_world
   lc_tm e →
   X ⊆ world_dom (m : World) →
   world_store_closed_on X m →
-  m ⊨ fresh_forall D (fun x => FImpl (FExprResultOn X e x) (body x)) →
+  m ⊨ fresh_forall D (fun x => FImpl (FExprResultAt X e x) (body x)) →
   ∃ L : aset,
     world_dom (m : World) ∪ D ∪ X ∪ fv_tm e ⊆ L ∧
     ∀ y,
@@ -229,9 +229,9 @@ Lemma fresh_forall_expr_result_to_let_result_world
       ∀ Hfresh Hresult,
         (∀ (n : WfWorld),
           world_dom (n : World) = world_dom (m : World) ∪ {[y]} →
-          n ⊨ FExprResultOn X e y →
+          n ⊨ FExprResultAt X e y →
           n ⊨ formula_rename_atom (fresh_for D) y
-                 (FExprResultOn X e (fresh_for D))) →
+                 (FExprResultAt X e (fresh_for D))) →
         (∀ n,
           n ⊨ formula_rename_atom (fresh_for D) y (body (fresh_for D)) →
           n ⊨ body y) →

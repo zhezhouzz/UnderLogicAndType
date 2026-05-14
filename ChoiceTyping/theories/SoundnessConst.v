@@ -63,7 +63,7 @@ Proof.
 Admitted.
 
 Lemma const_over_consequent_from_expr_on c ν Σ m :
-  m ⊨ FExprResultOn (dom Σ) (tret (vconst c)) ν →
+  m ⊨ FExprResultAt (dom Σ) (tret (vconst c)) ν →
   m ⊨
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -75,7 +75,7 @@ Proof.
 Admitted.
 
 Lemma const_under_consequent_from_expr_on c ν Σ m :
-  m ⊨ FExprResultOn (dom Σ) (tret (vconst c)) ν →
+  m ⊨ FExprResultAt (dom Σ) (tret (vconst c)) ν →
   m ⊨
     FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -120,7 +120,7 @@ Qed.
 
 Lemma const_over_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
-    (FExprResultOn (dom Σ) (tret (vconst c)) ν) →
+    (FExprResultAt (dom Σ) (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -137,7 +137,7 @@ Qed.
 
 Lemma const_under_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
-    (FExprResultOn (dom Σ) (tret (vconst c)) ν) →
+    (FExprResultAt (dom Σ) (tret (vconst c)) ν) →
   m ⊨ formula_rename_atom ν y
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
@@ -171,7 +171,7 @@ Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : For
 Definition const_over_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
-    (FExprResultOn (dom Σ) (tret (vconst c)) ν)
+    (FExprResultAt (dom Σ) (tret (vconst c)) ν)
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
@@ -181,7 +181,7 @@ Definition const_over_body_on
 Definition const_under_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
-    (FExprResultOn (dom Σ) (tret (vconst c)) ν)
+    (FExprResultAt (dom Σ) (tret (vconst c)) ν)
     (FAnd
       (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
         ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))

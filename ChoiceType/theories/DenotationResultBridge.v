@@ -66,10 +66,10 @@ Definition expr_result_model_bridge
     (Xsrc ∖ Xtgt) ## world_dom (ntgt : World) →
     ν ∉ world_dom (mtgt : World) →
     mtgt ⊑ ntgt →
-    ntgt ⊨ FExprResultOn Xtgt etgt ν →
+    ntgt ⊨ FExprResultAt Xtgt etgt ν →
     ∃ nsrc,
       model_transport_on Xsrc msrc nsrc ∧
-      nsrc ⊨ FExprResultOn Xsrc esrc ν ∧
+      nsrc ⊨ FExprResultAt Xsrc esrc ν ∧
       model_transport_on (Xtgt ∪ {[ν]}) nsrc ntgt.
 
 Lemma model_transport_kripke (nsrc ntgt : WfWorld) :

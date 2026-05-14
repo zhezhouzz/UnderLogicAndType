@@ -164,28 +164,17 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
   lqual_fvars (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
-Record expr_result_formula := {
-  expr_result_body : FQ;
-  expr_result_at : atom → FQ;
-}.
-
-Coercion expr_result_body : expr_result_formula >-> Formula.
-Coercion expr_result_at : expr_result_formula >-> Funclass.
-
-Definition FExprResultOn (X : aset) (e : tm) : expr_result_formula :=
-  let body :=
-    FFibVars (lvars_of_atoms X)
-      (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
-        (fun η σ w =>
-          match η !! 0 with
-          | Some ν => expr_result_in_world (store_restrict σ X) (open_tm_env η e) ν w
-          | None => False
-          end)) in
-  {| expr_result_body := body;
-     expr_result_at := fun ν => formula_open 0 ν body |}.
+Definition FExprResultOn (X : aset) (e : tm) : FQ :=
+  FFibVars (lvars_of_atoms X)
+    (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
+      (fun η σ w =>
+        match η !! 0 with
+        | Some ν => expr_result_in_world (store_restrict σ X) (open_tm_env η e) ν w
+        | None => False
+        end)).
 
 Definition FExprResultAt (X : aset) (e : tm) (ν : atom) : FQ :=
-  FExprResultOn X e ν.
+  formula_open 0 ν (FExprResultOn X e).
 
 Lemma expr_logic_qual_on_swap_result X e a ν :
   a ∉ X →
@@ -228,12 +217,10 @@ Proof.
   (* Legacy explicit-swap helper; replaced by LN open/cofinite bridge. *)
 Admitted.
 
-(** Expression-result continuation:
-    [FExprContIn Σ e Q] abbreviates the recurring formula
-    [∀ν. FExprResultOn (dom Σ) e ⇒ Q].  New callers should pass an LN body
-    [Q : FQ].  The function instance below is a temporary compatibility shim
-    for older explicit-representative proofs and should disappear once those
-    proofs are rewritten over [formula_open]. *)
+(** [FExprContIn Σ e Q] abbreviates [∀ν. FExprResultOn (dom Σ) e ⇒ Q].
+    The preferred postcondition [Q] is an LN body: [LVBound 0] names the result
+    coordinate introduced by the surrounding [FForall].  The family instance is
+    a compatibility shim for the remaining old tlet bridges. *)
 Class IntoExprCont (A : Type) := expr_cont_body : gmap atom ty → A → FQ.
 
 #[global] Instance into_expr_cont_formula : IntoExprCont FQ :=
@@ -246,7 +233,7 @@ Definition FExprContIn {A : Type} `{IntoExprCont A}
     (Σ : gmap atom ty) (e : tm) (Q : A) : FQ :=
   FForall (FImpl (FExprResultOn (dom Σ) e) (expr_cont_body Σ Q)).
 
-Lemma FExprContIn_body_formula_fv_subset
+Lemma FExprContIn_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : FQ) :
   dom Σ ⊆ S →
   formula_fv Q ⊆ S →
@@ -254,12 +241,13 @@ Lemma FExprContIn_body_formula_fv_subset
 Proof.
 Admitted.
 
-Lemma FExprContIn_formula_fv_subset
+Lemma FExprContIn_family_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
   dom Σ ⊆ S →
   (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
-  formula_fv (FExprContIn Σ e Q) ⊆ S.
+  formula_fv (FExprContIn Σ e (Q (fresh_for (dom Σ)))) ⊆ S.
 Proof.
+  (* Legacy fv helper for proofs not yet ported to LN bodies. *)
 Admitted.
 
 Definition formula_family_rename_stable_on
@@ -280,10 +268,10 @@ Qed.
 Lemma FExprContIn_post_eq_at_fresh
     (Σ : gmap atom ty) e (P Q : atom → FQ) :
   P (fresh_for (dom Σ)) = Q (fresh_for (dom Σ)) →
-  FExprContIn Σ e P = FExprContIn Σ e Q.
+  FExprContIn Σ e (P (fresh_for (dom Σ))) =
+  FExprContIn Σ e (Q (fresh_for (dom Σ))).
 Proof.
   intros Heq.
-  unfold FExprContIn, expr_cont_body, into_expr_cont_family.
   rewrite Heq. reflexivity.
 Qed.
 
@@ -426,7 +414,7 @@ Proof.
 Qed.
 
 Lemma FExprResultOn_scoped_dom X e ν m :
-  formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
+  formula_scoped_in_world ∅ m (FExprResultAt X e ν) →
   X ∪ {[ν]} ⊆ world_dom (m : World).
 Proof.
 Admitted.

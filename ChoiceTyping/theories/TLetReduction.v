@@ -492,7 +492,7 @@ Proof.
   assert (Hfv_ins :
     formula_fv (FExprContIn (<[x:=Tx]> Σ) e P) ⊆ dom (<[x:=Tx]> Σ)).
   {
-    apply FExprContIn_formula_fv_subset.
+    apply FExprContIn_family_formula_fv_subset.
     - reflexivity.
     - intros ν _. specialize (HPfv ν).
       rewrite dom_insert_L. set_solver.
@@ -500,7 +500,7 @@ Proof.
   assert (Hfv_base :
     formula_fv (FExprContIn Σ e P) ⊆ dom (<[x:=Tx]> Σ)).
   {
-    apply FExprContIn_formula_fv_subset.
+    apply FExprContIn_family_formula_fv_subset.
     - rewrite dom_insert_L. set_solver.
     - intros ν _. specialize (HPfv ν).
       rewrite dom_insert_L. set_solver.
@@ -508,7 +508,7 @@ Proof.
   assert (Hfv_base_small :
     formula_fv (FExprContIn Σ e P) ⊆ dom Σ).
   {
-    apply FExprContIn_formula_fv_subset.
+    apply FExprContIn_family_formula_fv_subset.
     - reflexivity.
     - intros ν _. apply HPfv.
   }
