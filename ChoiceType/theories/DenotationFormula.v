@@ -197,10 +197,6 @@ Qed.
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual_fvars {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
-Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier :=
-  lqual_fvars (X ∪ {[ν]})
-    (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
-
 Definition FExprResultOn {A : Type} `{IntoLVars A} (D : A) (e : tm) : FQ :=
   let L := into_lvars D in
   FFibVars L
@@ -315,13 +311,6 @@ Proof.
   simpl. rewrite lvars_fv_of_atoms. reflexivity.
 Qed.
 
-Lemma stale_expr_logic_qual_on X e ν :
-  stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
-Proof.
-  unfold expr_logic_qual_on, stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
-  simpl. rewrite lvars_fv_of_atoms. reflexivity.
-Qed.
-
 Lemma FExprResultOn_scoped_dom X e ν m :
   formula_scoped_in_world ∅ m (FExprResultAt X e ν) →
   X ∪ {[ν]} ⊆ world_dom (m : World).
@@ -332,61 +321,6 @@ Proof.
   apply elem_of_union_r.
   rewrite FExprResultAt_fv.
   exact Hz.
-Qed.
-
-Lemma FAtom_expr_logic_qual_on_exact X e ν ρ m :
-  res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)) →
-  expr_result_in_world (store_restrict ρ X) e ν m.
-Proof.
-  unfold res_models_with_store. simpl.
-  intros [Hscope [m0 [Hscope0 [Hden Hle]]]] σν.
-  unfold logic_qualifier_denote, expr_logic_qual_on in Hden. simpl in Hden.
-  rewrite store_restrict_restrict in Hden.
-  replace ((X ∪ {[ν]}) ∩ X) with X in Hden by set_solver.
-  specialize (Hden σν).
-  rewrite !res_restrict_restrict_eq in Hden.
-  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ ({[ν]} : aset))
-    with ({[ν]} : aset) in Hden.
-  2:{ rewrite lvars_fv_of_atoms. set_solver. }
-  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ X) with X in Hden.
-  2:{ rewrite lvars_fv_of_atoms. set_solver. }
-  assert (Hνdom : ({[ν]} : aset) ⊆ world_dom (m0 : World)).
-  {
-    unfold formula_scoped_in_world in Hscope0.
-    pose proof (Hscope0 ν) as Hν.
-    assert (ν ∈ formula_fv (FAtom (expr_logic_qual_on X e ν))) as Hνfv.
-    {
-      simpl. unfold stale, stale_logic_qualifier, lqual_dom, expr_logic_qual_on,
-        lqual_fvars. simpl.
-      rewrite lvars_fv_of_atoms. set_solver.
-    }
-    specialize (Hν (elem_of_union_r (dom ρ) _ _ Hνfv)).
-    set_solver.
-  }
-  rewrite (res_restrict_le_eq m0 m ({[ν]} : aset)) in Hden.
-  - exact Hden.
-  - exact Hle.
-  - exact Hνdom.
-Qed.
-
-Lemma FAtom_expr_logic_qual_on_intro X e ν ρ m :
-  formula_scoped_in_world ρ m (FAtom (expr_logic_qual_on X e ν)) →
-  expr_result_in_world (store_restrict ρ X) e ν m →
-  res_models_with_store ρ m (FAtom (expr_logic_qual_on X e ν)).
-Proof.
-  intros Hscope Hexact.
-  unfold res_models_with_store. simpl. split; [exact Hscope |].
-  exists m. split; [exact Hscope |]. split; [| reflexivity].
-  unfold logic_qualifier_denote, expr_logic_qual_on. simpl.
-  rewrite store_restrict_restrict.
-  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ X) with X.
-  2:{ rewrite lvars_fv_of_atoms. set_solver. }
-  intros σν. specialize (Hexact σν).
-  rewrite res_restrict_restrict_eq.
-  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ ({[ν]} : aset))
-    with ({[ν]} : aset).
-  2:{ rewrite lvars_fv_of_atoms. set_solver. }
-  exact Hexact.
 Qed.
 
 (** Prop-level totality for the expression component of a type denotation.
