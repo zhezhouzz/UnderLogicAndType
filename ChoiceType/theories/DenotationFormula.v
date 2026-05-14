@@ -154,6 +154,9 @@ Proof.
     (expr_result_in_world_sound ρ e ν w σw Hres Hw)).
 Qed.
 
+Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
+  map_fold (λ k x acc, open_tm k (vfvar x) acc) e η.
+
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
   lqual_fvars {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
@@ -175,7 +178,7 @@ Definition FExprResultOn (X : aset) (e : tm) : expr_result_formula :=
       (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
         (fun η σ w =>
           match η !! 0 with
-          | Some ν => expr_result_in_world (store_restrict σ X) e ν w
+          | Some ν => expr_result_in_world (store_restrict σ X) (open_tm_env η e) ν w
           | None => False
           end)) in
   {| expr_result_body := body;

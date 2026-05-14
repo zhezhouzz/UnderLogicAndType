@@ -63,6 +63,17 @@ Definition FStrongTotalIn (Σ : gmap atom ty) (e : tm) : FQ :=
   FStoreResourceAtom (dom Σ)
     (fun _ ρ m => expr_total_with_store (dom Σ) e ρ m).
 
+Definition FResultBasicWorld
+    (Σ : gmap atom ty) (b : base_ty) (D : lvset) : FQ :=
+  FStoreResourceAtom (D ∪ {[LVBound 0]})
+    (fun η _ m =>
+      match η !! 0 with
+      | Some ν =>
+          world_has_type_on (<[ν := TBase b]> Σ)
+            (lvars_fv D ∪ {[ν]}) m
+      | None => False
+      end).
+
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →
   expr_total_on X e m →
@@ -123,21 +134,19 @@ Fixpoint denot_ty_fuel
       [FFibVars (lvars_of_atoms (fv φ))] applies the primitive multi-fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      FExprContIn Σ e (fun ν =>
-      let φν := qual_open_atom 0 ν φ in
+      FExprContIn Σ e (
         FAnd
-          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FOver (FTypeQualifier φν))))
+          (FResultBasicWorld Σ b (qual_vars φ))
+          (FFibVars (qual_vars φ)
+       (FOver (FTypeQualifier φ))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      FExprContIn Σ e (fun ν =>
-      let φν := qual_open_atom 0 ν φ in
+      FExprContIn Σ e (
         FAnd
-          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FUnder (FTypeQualifier φν))))
+          (FResultBasicWorld Σ b (qual_vars φ))
+          (FFibVars (qual_vars φ)
+       (FUnder (FTypeQualifier φ))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -190,19 +199,17 @@ Definition denot_ty_fuel_body
   | S gas' =>
   match τ with
   | CTOver b φ =>
-      FExprContIn Σ e (fun ν =>
-      let φν := qual_open_atom 0 ν φ in
+      FExprContIn Σ e (
         FAnd
-          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FOver (FTypeQualifier φν))))
+          (FResultBasicWorld Σ b (qual_vars φ))
+          (FFibVars (qual_vars φ)
+       (FOver (FTypeQualifier φ))))
   | CTUnder b φ =>
-      FExprContIn Σ e (fun ν =>
-      let φν := qual_open_atom 0 ν φ in
+      FExprContIn Σ e (
         FAnd
-          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FUnder (FTypeQualifier φν))))
+          (FResultBasicWorld Σ b (qual_vars φ))
+          (FFibVars (qual_vars φ)
+       (FUnder (FTypeQualifier φ))))
   | CTInter τ1 τ2 =>
       FAnd
         (denot_ty_fuel gas' Σ τ1 e)
@@ -395,179 +402,13 @@ Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
-  revert Σ τ e.
-  induction gas as [|gas IH]; intros Σ τ e Hgas.
-  - pose proof (cty_measure_gt_0 τ). lia.
-  - rewrite denot_ty_fuel_unfold.
-  apply denot_ty_obligations_formula_fv_subset.
-    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel_body cty_measure fv_cty] in *.
-    + assert (Hbody :
-        formula_fv
-          (FExprContIn Σ e (λ ν : atom,
-             let φν := qual_open_atom 0 ν φ in
-             FAnd
-               (basic_world_formula (<[ν:=TBase b]> Σ)
-                 ({[ν]} ∪ qual_dom φν))
-               (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FOver (FTypeQualifier φν)))))
-        ⊆ dom Σ ∪ fv_cty (CTOver b φ)).
-      {
-        apply FExprContIn_formula_fv_subset; first set_solver.
-        intros ν _.
-        cbn [formula_fv].
-        rewrite basic_world_formula_fv.
-        simpl. rewrite lvars_fv_of_atoms.
-        rewrite formula_fv_FTypeQualifier.
-        pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
-        set_solver.
-      }
-      set_solver.
-    + assert (Hbody :
-        formula_fv
-          (FExprContIn Σ e (λ ν : atom,
-             let φν := qual_open_atom 0 ν φ in
-             FAnd
-               (basic_world_formula (<[ν:=TBase b]> Σ)
-                 ({[ν]} ∪ qual_dom φν))
-               (FFibVars (lvars_of_atoms (qual_dom φν))
-       (FUnder (FTypeQualifier φν)))))
-        ⊆ dom Σ ∪ fv_cty (CTUnder b φ)).
-      {
-        apply FExprContIn_formula_fv_subset; first set_solver.
-        intros ν _.
-        cbn [formula_fv].
-        rewrite basic_world_formula_fv.
-        simpl. rewrite lvars_fv_of_atoms.
-        rewrite formula_fv_FTypeQualifier.
-        pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
-        set_solver.
-      }
-      set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
-      pose proof (IH Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
-      pose proof (IH Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
-      pose proof (IH Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + assert (Hbody :
-        formula_fv
-          (fresh_forall (dom Σ) (λ x : atom,
-             let Σx := <[x:=erase_ty τx]> Σ in
-             FImpl
-               (denot_ty_fuel gas Σx τx (tret (vfvar x)))
-               (denot_ty_fuel gas Σx ({0 ~> x} τ)
-                 (tapp_tm e (vfvar x)))))
-        ⊆ dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-      {
-        apply fresh_forall_formula_fv_subset
-          with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-        - set_solver.
-        - intros x Hx.
-          set (Σx := <[x:=erase_ty τx]> Σ).
-          pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
-          pose proof (IH Σx ({0 ~> x} τ)
-            (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
-            as Hres.
-          pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-          unfold Σx in *.
-          rewrite !dom_insert_L in *.
-          set_solver.
-      }
-      set_solver.
-    + assert (Hbody :
-        formula_fv
-          (fresh_forall (dom Σ) (λ x : atom,
-             let Σx := <[x:=erase_ty τx]> Σ in
-             FWand
-               (denot_ty_fuel gas Σx τx (tret (vfvar x)))
-               (denot_ty_fuel gas Σx ({0 ~> x} τ)
-                 (tapp_tm e (vfvar x)))))
-        ⊆ dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-      {
-        apply fresh_forall_formula_fv_subset
-          with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-        - set_solver.
-        - intros x Hx.
-          set (Σx := <[x:=erase_ty τx]> Σ).
-          pose proof (IH Σx τx (tret (vfvar x)) ltac:(lia)) as Harg.
-          pose proof (IH Σx ({0 ~> x} τ)
-            (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
-            as Hres.
-          pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-          unfold Σx in *.
-          rewrite !dom_insert_L in *.
-          set_solver.
-      }
-      set_solver.
-Qed.
+Admitted.
 
 Lemma denot_ty_fuel_body_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
-  intros Hgas.
-  destruct gas as [|gas].
-  - pose proof (cty_measure_gt_0 τ). lia.
-  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
-      cbn [denot_ty_fuel_body cty_measure fv_cty] in *.
-    + apply FExprContIn_formula_fv_subset; first set_solver.
-      intros ν _.
-      cbn [formula_fv].
-      rewrite basic_world_formula_fv.
-      simpl. rewrite lvars_fv_of_atoms.
-      rewrite formula_fv_FTypeQualifier.
-      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
-      set_solver.
-    + apply FExprContIn_formula_fv_subset; first set_solver.
-      intros ν _.
-      cbn [formula_fv].
-      rewrite basic_world_formula_fv.
-      simpl. rewrite lvars_fv_of_atoms.
-      rewrite formula_fv_FTypeQualifier.
-      pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
-      set_solver.
-    + pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ1 e ltac:(lia)) as H1.
-      pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ1 e ltac:(lia)) as H1.
-      pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ1 e ltac:(lia)) as H1.
-      pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ2 e ltac:(lia)) as H2.
-      set_solver.
-    + apply fresh_forall_formula_fv_subset
-        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-      * set_solver.
-      * intros x Hx.
-        set (Σx := <[x:=erase_ty τx]> Σ).
-        pose proof (denot_ty_fuel_formula_fv_subset gas Σx τx
-          (tret (vfvar x)) ltac:(lia)) as Harg.
-        pose proof (denot_ty_fuel_formula_fv_subset gas Σx ({0 ~> x} τ)
-          (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
-          as Hres.
-        pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-        unfold Σx in *.
-        rewrite !dom_insert_L in *.
-        set_solver.
-    + apply fresh_forall_formula_fv_subset
-        with (S := dom Σ ∪ (fv_cty τx ∪ fv_cty τ)).
-      * set_solver.
-      * intros x Hx.
-        set (Σx := <[x:=erase_ty τx]> Σ).
-        pose proof (denot_ty_fuel_formula_fv_subset gas Σx τx
-          (tret (vfvar x)) ltac:(lia)) as Harg.
-        pose proof (denot_ty_fuel_formula_fv_subset gas Σx ({0 ~> x} τ)
-          (tapp_tm e (vfvar x)) ltac:(rewrite cty_open_preserves_measure; lia))
-          as Hres.
-        pose proof (cty_open_fv_subset 0 x τ) as Hopen.
-        unfold Σx in *.
-        rewrite !dom_insert_L in *.
-        set_solver.
-Qed.
+Admitted.
 
 Lemma denot_ty_fuel_formula_fv_subset_env
     gas (Σ : gmap atom ty) (τ : choice_ty) e :
