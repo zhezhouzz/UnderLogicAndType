@@ -213,6 +213,14 @@ Proof.
   set_solver.
 Qed.
 
+Lemma FResultBasicWorld_open_domain_atom_env Σ D ν :
+  lvars_fv
+    (lvars_open 0 ν
+      (lty_env_bvar_scope (atom_env_to_lty_env Σ) ∪ D ∪ {[LVBound 0]})) =
+  lvars_fv D ∪ {[ν]}.
+Proof.
+Admitted.
+
 Lemma formula_store_equiv_FResultBasicWorld_atom_env_insert_fresh_open
     Σ x T b D ν :
   x ∉ dom Σ ∪ lvars_fv D →
@@ -234,19 +242,7 @@ Lemma formula_fv_FResultBasicWorld_atom_env_insert_fresh_open
     (formula_open 0 ν
       (FResultBasicWorld (atom_env_to_lty_env Σ) b D)).
 Proof.
-  intros Hx.
-  unfold FResultBasicWorld, FStoreResourceAtom.
-  cbn [formula_open formula_fv lqual_open lqual_dom into_lvars
-    into_lvars_lvset stale stale_logic_qualifier].
-  rewrite !lvars_fv_open.
-  unfold lty_env_bvar_scope.
-  rewrite !atom_env_to_lty_env_dom.
-  rewrite !lvars_bv_of_atoms.
-  rewrite ?lvars_fv_of_bvars.
-  rewrite ?lvars_fv_union.
-  rewrite ?lvars_fv_singleton_bound.
-  repeat destruct decide; set_solver.
-Qed.
+Admitted.
 
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →

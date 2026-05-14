@@ -99,6 +99,21 @@ Proof.
   intros y Hy. rewrite lookup_insert_ne; [reflexivity | set_solver].
 Qed.
 
+Lemma world_has_type_on_insert_under_result_irrel Σ X w x T ν b :
+  x ∉ X →
+  world_has_type_on (<[ν := TBase b]> (<[x := T]> Σ)) (X ∪ {[ν]}) w ↔
+  world_has_type_on (<[ν := TBase b]> Σ) (X ∪ {[ν]}) w.
+Proof.
+  intros Hx.
+  apply world_has_type_on_agree.
+  intros y Hy.
+  destruct (decide (y = ν)) as [->|Hyν].
+  - rewrite !lookup_insert_eq. reflexivity.
+  - rewrite (lookup_insert_ne (<[x := T]> Σ) ν y (TBase b)) by congruence.
+    rewrite (lookup_insert_ne Σ ν y (TBase b)) by congruence.
+    rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
 Lemma basic_world_formula_fv Σ X :
   formula_fv (basic_world_formula Σ X) = X.
 Proof.
