@@ -634,6 +634,39 @@ Proof.
   - exact Hagree.
 Qed.
 
+Lemma formula_fv_FResultBasicWorld_lvar_subset Σ b D :
+  formula_fv (FResultBasicWorld Σ b D) ⊆ lvars_fv D.
+Proof.
+  rewrite formula_fv_FResultBasicWorld.
+  unfold lty_env_bvar_scope.
+  rewrite lvars_fv_union, lvars_fv_union.
+  rewrite lvars_fv_of_bvars, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
+Lemma FExprResultOn_lvars_fv D e :
+  formula_fv (FExprResultOn D e) = lvars_fv D.
+Proof.
+  unfold FExprResultOn, FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
+  change (into_lvars D) with D.
+  change (into_lvars (D ∪ {[LVBound 0]})) with (D ∪ {[LVBound 0]}).
+  rewrite lvars_fv_union, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
+Lemma FExprContIn_lty_env_formula_fv_subset
+    (Σ : lty_env) e (Q : FQ) :
+  formula_fv (FExprContIn Σ e Q) ⊆ lty_env_atom_dom Σ ∪ formula_fv Q.
+Proof.
+  unfold FExprContIn.
+  cbn [formula_fv].
+  change (into_lvars Σ) with (dom Σ).
+  rewrite FExprResultOn_lvars_fv.
+  unfold lty_env_atom_dom.
+  set_solver.
+Qed.
+
 (** ** Denotation scoping regularity
 
     These syntactic facts isolate the variable-accounting needed by semantic
