@@ -10,125 +10,11 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Local Notation FQ := FormulaQ.
 
-Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
-  let x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}) in
-  FExists
-    (FAnd
-      (FExprResultAt (fv_tm e1) e1 x)
-      (FFibVars (lvars_of_atoms {[x]})
-        (FExprResultAt (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
-
-(** [FLetResult] remains a useful auxiliary formula for examples and local
-    decompositions, but the operational bridge for [tlete] is handled at the
-    Rocq predicate level by [expr_result_in_world_let_elim] and
-    [expr_result_in_world_let_intro].  This avoids forcing a precise
-    expression-result relation through [FAtom]'s upward-closed semantics. *)
-
 Lemma FExprResultOn_expr_fv e ν :
   formula_fv (FExprResultAt (fv_tm e) e ν) = fv_tm e ∪ {[ν]}.
 Proof.
   apply FExprResultAt_fv.
 Qed.
-
-Lemma FLetResult_fv_subset e1 e2 ν :
-  formula_fv (FLetResult e1 e2 ν) ⊆ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}.
-Proof.
-  (* Pending refresh after replacing the one-coordinate fiber with primitive
-     multi-fiber. *)
-Admitted.
-
-Lemma FLetResultOn_scoped_intro X e1 e2 ν (m : WfWorld) :
-  X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ world_dom (m : World) →
-  formula_scoped_in_world ∅ m (FLetResultOn X e1 e2 ν).
-Proof.
-  intros Hdom z Hz.
-  apply elem_of_union in Hz as [Hzempty | Hz]; [set_solver |].
-  pose proof (FLetResultOn_fv_subset X e1 e2 ν z Hz) as Hz'.
-  apply Hdom. exact Hz'.
-Qed.
-
-Lemma FExprResultOn_scoped_intro X e ν (m : WfWorld) :
-  X ∪ {[ν]} ⊆ world_dom (m : World) →
-  formula_scoped_in_world ∅ m (FExprResultAt X e ν).
-Proof.
-Admitted.
-
-Lemma FLetResult_expr_scope_from_basic Σ X e1 e2 ν m :
-  fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ X →
-  m ⊨ FAnd (basic_world_formula Σ X) (FLetResult e1 e2 ν) →
-  formula_scoped_in_world ∅ m (FExprResultAt X (tlete e1 e2) ν).
-Proof.
-Admitted.
-
-Lemma FLetResult_models_elim e1 e2 ν m :
-  m ⊨ FLetResult e1 e2 ν →
-  ∃ L : aset,
-    world_dom (m : World) ⊆ L ∧
-    ∀ y : atom,
-      y ∉ L →
-      ∃ m' : WfWorld,
-        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
-        res_restrict m' (world_dom (m : World)) = m ∧
-        m' ⊨ formula_rename_atom
-          (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
-          (FAnd
-            (FExprResultAt (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
-              (FExprResultAt
-                (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-                (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν))).
-Proof.
-Admitted.
-
-Lemma FLetResult_models_intro e1 e2 ν m :
-  formula_scoped_in_world ∅ m (FLetResult e1 e2 ν) →
-  (∃ L : aset,
-    world_dom (m : World) ⊆ L ∧
-    ∀ y : atom,
-      y ∉ L →
-      ∃ m' : WfWorld,
-        world_dom (m' : World) = world_dom (m : World) ∪ {[y]} ∧
-        res_restrict m' (world_dom (m : World)) = m ∧
-        m' ⊨ formula_rename_atom
-          (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
-          (FAnd
-            (FExprResultAt (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
-              (FExprResultAt
-                (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-                (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)))) →
-  m ⊨ FLetResult e1 e2 ν.
-Proof.
-Admitted.
-
-Lemma expr_logic_qual_renamed_result_steps e x y ρ w σw :
-  x ∉ stale e →
-  y ∉ stale e →
-  closed_env ρ →
-  closed_env σw →
-  logic_qualifier_denote (lqual_swap x y (expr_logic_qual e x)) ρ w →
-  (res_restrict w (stale e ∪ {[y]}) : World) σw →
-  ∃ v, σw !! y = Some v ∧ steps (m{σw} (m{ρ} e)) (tret v).
-Proof.
-Admitted.
-
-Lemma expr_logic_qual_renamed_open_steps e x y ν ρ w σw vx :
-  x ∉ stale e →
-  y ∉ stale e →
-  ν ≠ x →
-  ν ≠ y →
-  closed_env ρ →
-  lc_env ρ →
-  ρ !! y = Some vx →
-  closed_env σw →
-  stale vx = ∅ →
-  lc_value vx →
-  logic_qualifier_denote (lqual_swap x y (expr_logic_qual (e ^^ x) ν)) ρ w →
-  (res_restrict w (aset_swap x y (stale (e ^^ x) ∪ {[ν]})) : World) σw →
-  ∃ v, σw !! ν = Some v ∧
-    steps (m{σw} (open_tm 0 vx (m{delete y ρ} e))) (tret v).
-Proof.
-Admitted.
 
 Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
   stale v = ∅ →
@@ -239,62 +125,6 @@ Lemma expr_logic_qual_ret_const_lookup c ν m :
 Proof.
   apply expr_logic_qual_ret_closed_value_lookup.
   reflexivity.
-Qed.
-
-Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :
-  res_models_with_store ρ m
-    (FFibVars (lvars_of_atoms (list_to_set xs))
-      (FAtom (expr_logic_qual_on X (tret (vconst c)) ν))) →
-  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
-Proof.
-  (* Legacy fold-over-fiber helper; primitive multi-fiber version pending. *)
-Admitted.
-
-Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
-  m ⊨ FExprResultAt X (tret (vconst c)) ν →
-  ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
-Proof.
-Admitted.
-
-Lemma expr_logic_qual_ret_fvar_denote_lookup x ν w σ vx :
-  logic_qualifier_denote (expr_logic_qual (tret (vfvar x)) ν) ∅ w →
-  (res_restrict w ({[x]} ∪ {[ν]}) : World) σ →
-  closed_env σ →
-  σ !! x = Some vx →
-  σ !! ν = Some vx.
-Proof.
-  intros Hden Hσ _ _.
-  exfalso.
-  set (σν := store_restrict σ {[ν]}).
-  assert (Hσν : (res_restrict w {[ν]} : World) σν).
-  {
-    destruct Hσ as [σw [Hσw Hrestrict]].
-    exists σw. split; [exact Hσw |].
-    subst σν.
-    rewrite <- Hrestrict.
-    rewrite store_restrict_restrict.
-    replace (({[x]} ∪ {[ν]}) ∩ {[ν]}) with ({[ν]} : aset) by set_solver.
-    reflexivity.
-  }
-  unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
-  rewrite lvars_fv_of_atoms in Hden.
-  rewrite store_restrict_empty in Hden.
-  assert (Hσνproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σν).
-  {
-    exists σν. split; [exact Hσν |].
-    apply store_restrict_idemp.
-    pose proof (wfworld_store_dom (res_restrict w {[ν]}) σν Hσν) as Hdomσν.
-    simpl in Hdomσν. set_solver.
-  }
-  pose proof (expr_result_in_world_sound ∅ (tret (vfvar x)) ν
-    (res_restrict w {[ν]}) σν Hden Hσνproj) as Hstore.
-  destruct (expr_result_store_elim ν (subst_map ∅ (tret (vfvar x))) σν Hstore)
-    as [v [-> [Hv_closed [_ Hsteps]]]].
-  change (subst_map ∅ (tret (vfvar x))) with (m{∅} (tret (vfvar x))) in Hsteps.
-  rewrite msubst_empty in Hsteps.
-  pose proof (value_steps_self (vfvar x) (tret v) Hsteps) as Heq.
-  inversion Heq. subst v.
-  simpl in Hv_closed. set_solver.
 Qed.
 
 (** ** Type measure for denotation fuel
