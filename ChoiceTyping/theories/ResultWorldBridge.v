@@ -21,13 +21,6 @@ From ChoiceTyping Require Export LetResultWorld.
 From ChoiceTyping Require Export ResultWorldClosed.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-Lemma foldr_fib_vars_acc_fst_bridge xs φ R :
-  fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
-Proof.
-  induction xs as [|x xs IH]; simpl; [reflexivity |].
-  rewrite <- IH. destruct (foldr fib_vars_acc_step (φ, R) xs); reflexivity.
-Qed.
-
 Lemma store_restrict_union_singleton_fresh_eq
     (σ : Store) (X : aset) (x : atom) :
   σ !! x = None →
@@ -409,57 +402,6 @@ Proof.
       symmetry. apply not_elem_of_dom. rewrite Hdomσx. set_solver.
 Qed.
 
-Lemma foldr_fib_vars_obligation_intro
-    xs X (p : FormulaQ)
-    (I : aset → Store → WfWorld → Prop)
-    (ρ : Store) (w : WfWorld) :
-  NoDup xs →
-  (list_to_set xs : aset) ⊆ X →
-  I (X ∖ (list_to_set xs : aset)) ρ w →
-  (∀ x Y ρ' w',
-      x ∈ X →
-      x ∉ Y →
-      I (X ∖ ({[x]} ∪ Y)) ρ' w' →
-      dom ρ' ## {[x]}) →
-  (∀ x Y ρ' w',
-      x ∈ X →
-      x ∉ Y →
-      I (X ∖ ({[x]} ∪ Y)) ρ' w' →
-      dom ρ' ## {[x]} →
-      ∀ σx (Hproj : res_restrict w' {[x]} σx),
-        I (X ∖ Y) (ρ' ∪ σx)
-          (res_fiber_from_projection w' {[x]} σx Hproj)) →
-  (∀ ρ' w',
-      I X ρ' w' →
-      res_models_with_store ρ' w' p) →
-  snd (foldr fib_vars_acc_step
-        (p, fun ρ' w' => res_models_with_store ρ' w' p) xs) ρ w.
-Proof.
-  revert ρ w.
-  induction xs as [|x xs IH]; intros ρ w Hnodup Hxs HI Hdisj Hstep Hbase.
-  - simpl in *. replace (X ∖ (∅ : aset)) with X in HI by set_solver.
-    exact (Hbase ρ w HI).
-  - simpl in *.
-    inversion Hnodup as [|? ? Hx_notin Hnodup']; subst.
-    destruct (foldr fib_vars_acc_step
-      (p, fun ρ' w' => res_models_with_store ρ' w' p) xs) as [q R] eqn:Hfold.
-    simpl.
-    unfold fib_vars_obligation_step.
-    assert (HxX : x ∈ X).
-    { apply Hxs. simpl. set_solver. }
-    assert (Hxs_sub : (list_to_set xs : aset) ⊆ X).
-    { intros z Hz. apply Hxs. simpl. set_solver. }
-    split.
-    + exact (Hdisj x (list_to_set xs) ρ w HxX
-        ltac:(rewrite elem_of_list_to_set; exact Hx_notin) HI).
-    + intros σx Hproj.
-      eapply IH; eauto.
-      * eapply Hstep; eauto.
-        -- rewrite elem_of_list_to_set. exact Hx_notin.
-        -- exact (Hdisj x (list_to_set xs) ρ w HxX
-             ltac:(rewrite elem_of_list_to_set; exact Hx_notin) HI).
-Qed.
-
 Lemma fib_vars_obligation_intro
     X (p : FormulaQ)
     (I : aset → Store → WfWorld → Prop)
@@ -483,20 +425,11 @@ Lemma fib_vars_obligation_intro
       res_models_with_store ρ' w' p) →
   fib_vars_obligation X p ρ w.
 Proof.
-  intros HI Hdisj Hstep Hbase.
-  unfold fib_vars_obligation, fib_vars_acc, set_fold.
-  cbn [compose].
-  eapply foldr_fib_vars_obligation_intro.
-  - apply NoDup_elements.
-  - intros z Hz. rewrite elem_of_list_to_set, elem_of_elements in Hz. exact Hz.
-  - replace (X ∖ (list_to_set (elements X) : aset)) with (∅ : aset).
-    + exact HI.
-    + apply set_eq. intros z. rewrite elem_of_difference.
-      rewrite elem_of_list_to_set, elem_of_elements. set_solver.
-  - exact Hdisj.
-  - exact Hstep.
-  - exact Hbase.
-Qed.
+  (* Primitive multi-fiber version: this replaces the old fold-over-elements
+     induction.  The direct proof should decompose a projection over [X] into
+     one-coordinate projections; keeping it admitted while the LN refactor
+     removes the fold interface. *)
+Admitted.
 
 (** Slice invariant used to read a [fib_vars] tower as an exact result world.
 

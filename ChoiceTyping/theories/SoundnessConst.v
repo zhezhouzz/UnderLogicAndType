@@ -90,7 +90,6 @@ Qed.
 Local Ltac solve_const_refinement_scope Hbasic :=
   pose proof (res_models_with_store_fuel_scoped _ ∅ _ _ Hbasic);
   unfold formula_scoped_in_world in *; simpl in *;
-  rewrite ?fib_vars_singleton in *; simpl in *;
   unfold stale, stale_logic_qualifier in *;
   repeat rewrite formula_fv_FTypeQualifier in *;
   unfold qual_open_atom, mk_q_eq, qual_dom in *; simpl in *;
@@ -111,8 +110,7 @@ Proof.
   eapply res_models_and_intro.
   - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
-  - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro.
+  - eapply res_models_fib_vars_intro.
     + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
@@ -140,8 +138,7 @@ Proof.
   eapply res_models_and_intro.
   - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
-  - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro.
+  - eapply res_models_fib_vars_intro.
     + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
@@ -175,8 +172,7 @@ Proof.
   eapply res_models_and_intro.
   - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
-  - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro.
+  - eapply res_models_fib_vars_intro.
     + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
@@ -210,8 +206,7 @@ Proof.
   eapply res_models_and_intro.
   - solve_const_refinement_scope Hbasic.
   - exact Hbasic.
-  - rewrite fib_vars_singleton.
-    eapply res_models_fib_intro.
+  - eapply res_models_fib_vars_intro.
     + solve_const_refinement_scope Hbasic.
     + intros σ Hproj.
       pose proof (Hlookup σ Hproj) as Hσν.
@@ -333,7 +328,7 @@ Proof.
   unfold const_over_body.
   intros z Hz. simpl in Hz.
   unfold stale, stale_logic_qualifier in Hz.
-  rewrite fib_vars_singleton in Hz. simpl in Hz.
+  simpl in Hz.
   unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
     unfold FTypeQualifier in Hz; simpl in Hz;
@@ -348,7 +343,7 @@ Proof.
   unfold const_under_body.
   intros z Hz. simpl in Hz.
   unfold stale, stale_logic_qualifier in Hz.
-  rewrite fib_vars_singleton in Hz. simpl in Hz.
+  simpl in Hz.
   unfold expr_logic_qual, qual_open_atom, mk_q_eq, qual_dom in Hz; simpl in Hz.
   destruct (decide (0 ∈ ({[0]} ∪ ∅ : gset nat))); simpl in Hz;
     unfold FTypeQualifier in Hz; simpl in Hz;

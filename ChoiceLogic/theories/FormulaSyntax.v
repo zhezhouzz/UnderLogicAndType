@@ -29,7 +29,8 @@ Inductive Formula : Type :=
   | FExists (x : atom) (p : Formula)            (* ordinary existential quantifier *)
   | FOver   (p : Formula)                       (* overapproximation  o p *)
   | FUnder  (p : Formula)                       (* underapproximation u p *)
-  | FFib    (x : atom) (p : Formula).           (* fiberwise modality *)
+  | FFib    (x : atom) (p : Formula)            (* legacy one-coordinate fiber *)
+  | FFibVars (X : aset) (p : Formula).          (* primitive multi-fiber *)
 
 Fixpoint formula_stale (φ : Formula) : aset :=
   match φ with
@@ -40,6 +41,7 @@ Fixpoint formula_stale (φ : Formula) : aset :=
   | FForall x p | FExists x p => {[x]} ∪ formula_stale p
   | FOver p | FUnder p => formula_stale p
   | FFib x p => {[x]} ∪ formula_stale p
+  | FFibVars X p => X ∪ formula_stale p
   end.
 
 Fixpoint formula_fv (φ : Formula) : aset :=
@@ -51,6 +53,7 @@ Fixpoint formula_fv (φ : Formula) : aset :=
   | FForall x p | FExists x p => formula_fv p ∖ {[x]}
   | FOver p | FUnder p => formula_fv p
   | FFib x p => {[x]} ∪ formula_fv p
+  | FFibVars X p => X ∪ formula_fv p
   end.
 
 #[global] Instance stale_formula : Stale Formula := formula_fv.
@@ -74,6 +77,7 @@ Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
   | FOver p => FOver (formula_rename_atom x y p)
   | FUnder p => FUnder (formula_rename_atom x y p)
   | FFib z p => FFib (atom_swap x y z) (formula_rename_atom x y p)
+  | FFibVars X p => FFibVars (aset_swap x y X) (formula_rename_atom x y p)
   end.
 
 Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
@@ -94,6 +98,7 @@ Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
   | FOver p => FOver (formula_swap x y p)
   | FUnder p => FUnder (formula_swap x y p)
   | FFib z p => FFib (atom_swap x y z) (formula_swap x y p)
+  | FFibVars X p => FFibVars (aset_swap x y X) (formula_swap x y p)
   end.
 
 Fixpoint formula_measure (φ : Formula) : nat :=
@@ -101,7 +106,7 @@ Fixpoint formula_measure (φ : Formula) : nat :=
   | FTrue | FFalse | FAtom _ => 1
   | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
       1 + formula_measure p + formula_measure q
-  | FForall _ p | FExists _ p | FOver p | FUnder p | FFib _ p =>
+  | FForall _ p | FExists _ p | FOver p | FUnder p | FFib _ p | FFibVars _ p =>
       1 + formula_measure p
   end.
 
@@ -130,12 +135,14 @@ Lemma formula_rename_atom_conjugate a b x y φ :
 Proof.
   induction φ as
     [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
-     |p IHp q' IHq|p IHp q' IHq|z p IHp|z p IHp|p IHp|p IHp|z p IHp];
+     |p IHp q' IHq|p IHp q' IHq|z p IHp|z p IHp|p IHp|p IHp|z p IHp
+     |X p IHp];
     simpl; try congruence.
   - rewrite lqual_swap_conjugate. reflexivity.
   - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
   - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
   - rewrite IHp. rewrite atom_swap_conjugate. reflexivity.
+  - rewrite IHp. rewrite aset_swap_conjugate. reflexivity.
 Qed.
 
 Lemma formula_fv_swap x y φ :
@@ -143,7 +150,8 @@ Lemma formula_fv_swap x y φ :
 Proof.
   induction φ as
     [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
-     |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp];
+     |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp
+     |X p IHp];
     cbn; try reflexivity.
   - match goal with
     | q : logic_qualifier |- _ => destruct q; simpl; reflexivity
@@ -159,6 +167,7 @@ Proof.
   - rewrite IHp. reflexivity.
   - rewrite IHp. reflexivity.
   - rewrite IHp, <- (aset_swap_singleton x y a), <- aset_swap_union. reflexivity.
+  - rewrite IHp, <- aset_swap_union. reflexivity.
 Qed.
 
 Lemma formula_fv_rename_atom x y φ :
@@ -209,7 +218,8 @@ Proof.
   revert z.
   induction φ as
     [| |a|p IHp q IHq|p IHp q IHq|p IHp q IHq|p IHp q IHq
-     |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp];
+     |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp
+     |X p IHp];
     intros z Hz Hzx Hzy; simpl in *; try set_solver.
   - destruct a as [d p]. simpl in *.
     apply elem_of_aset_swap_unchanged; assumption.
@@ -224,6 +234,10 @@ Proof.
   - apply elem_of_union in Hz as [Hz | Hz].
     + apply elem_of_union. left.
       unfold atom_swap. repeat destruct decide; set_solver.
+    + apply elem_of_union. right. apply IHp; assumption.
+  - apply elem_of_union in Hz as [Hz | Hz].
+    + apply elem_of_union. left.
+      apply elem_of_aset_swap_unchanged; assumption.
     + apply elem_of_union. right. apply IHp; assumption.
 Qed.
 

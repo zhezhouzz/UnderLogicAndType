@@ -34,7 +34,8 @@ Lemma FLetResult_fv_subset e1 e2 ν :
 Proof.
   unfold FLetResult.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  simpl. rewrite !FExprResultOn_expr_fv.
+  simpl. unfold FExprResultOn, FExprResultAtomOn, FStoreResourceAtom, fib_vars.
+  simpl. unfold stale, stale_logic_qualifier. simpl.
   pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
   set_solver.
 Qed.
@@ -298,13 +299,6 @@ Lemma expr_logic_qual_ret_const_lookup c ν m :
 Proof.
   apply expr_logic_qual_ret_closed_value_lookup.
   reflexivity.
-Qed.
-
-Lemma foldr_fib_vars_acc_fst xs φ R :
-  fst (foldr fib_vars_acc_step (φ, R) xs) = foldr FFib φ xs.
-Proof.
-  induction xs as [|x xs IH]; simpl; [reflexivity |].
-  rewrite <- IH. destruct (foldr fib_vars_acc_step (φ, R) xs); reflexivity.
 Qed.
 
 Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :

@@ -25,24 +25,15 @@ Definition fib_vars_obligation_step
   ∀ σ (Hproj : res_restrict m {[x]} σ),
     R (ρ ∪ σ) (res_fiber_from_projection m {[x]} σ Hproj).
 
-Definition fib_vars_acc_step
-    (x : atom)
-    (acc : FQ * (Store → WfWorld → Prop))
-    : FQ * (Store → WfWorld → Prop) :=
-  let '(p, R) := acc in
-  (FFib x p, fib_vars_obligation_step x R).
-
-Definition fib_vars_acc
-    (X : aset) (p : FQ) : FQ * (Store → WfWorld → Prop) :=
-  set_fold fib_vars_acc_step
-    (p, fun ρ m => res_models_with_store ρ m p) X.
-
 Definition fib_vars (X : aset) (p : FQ) : FQ :=
-  fst (fib_vars_acc X p).
+  FFibVars X p.
 
 Definition fib_vars_obligation
     (X : aset) (p : FQ) (ρ : Store) (m : WfWorld) : Prop :=
-  snd (fib_vars_acc X p) ρ m.
+  dom ρ ## X ∧
+  ∀ σ (Hproj : res_restrict m X σ),
+    res_models_with_store (ρ ∪ σ)
+      (res_fiber_from_projection m X σ Hproj) p.
 
 Lemma fib_vars_obligation_step_commute x y R ρ (m : WfWorld) :
   x ≠ y →
@@ -131,37 +122,21 @@ Proof.
 Qed.
 
 Lemma fib_vars_singleton x p :
-  fib_vars {[x]} p = FFib x p.
+  fib_vars {[x]} p = FFibVars {[x]} p.
 Proof.
-  unfold fib_vars, fib_vars_acc.
-  rewrite set_fold_singleton. reflexivity.
+  reflexivity.
 Qed.
 
 Lemma fib_vars_formula_fv_subset X p :
   formula_fv (fib_vars X p) ⊆ X ∪ formula_fv p.
 Proof.
-  unfold fib_vars, fib_vars_acc.
-  apply (set_fold_ind_L
-    (fun acc Y => formula_fv (fst acc) ⊆ Y ∪ formula_fv p)).
-  - simpl. set_solver.
-  - intros x Y acc Hx HY.
-    destruct acc as [q R]. simpl in *.
-    intros z Hz.
-    apply elem_of_union in Hz as [Hzx | Hzq].
-    + set_solver.
-    + apply HY in Hzq. set_solver.
+  unfold fib_vars. simpl. set_solver.
 Qed.
 
 Lemma fib_vars_formula_fv X p :
   formula_fv (fib_vars X p) = X ∪ formula_fv p.
 Proof.
-  unfold fib_vars, fib_vars_acc.
-  apply (set_fold_ind_L
-    (fun acc Y => formula_fv (fst acc) = Y ∪ formula_fv p)).
-  - simpl. set_solver.
-  - intros x Y acc Hx HY.
-    destruct acc as [q R]. simpl in *.
-    rewrite HY. set_solver.
+  reflexivity.
 Qed.
 
 Lemma formula_rename_atom_fib_vars_fresh a b X p :
@@ -171,55 +146,20 @@ Lemma formula_rename_atom_fib_vars_fresh a b X p :
   formula_rename_atom a b (fib_vars X p).
 Proof.
   intros Ha Hb.
-  unfold fib_vars, fib_vars_acc.
-  set (Rel := fun acc1 acc2 : FormulaQ * (Store → WfWorld → Prop) =>
-    fst acc1 = fst acc2).
-  change (Rel
-    (set_fold fib_vars_acc_step
-       (formula_rename_atom a b p,
-        fun ρ m => res_models_with_store ρ m (formula_rename_atom a b p)) X)
-    ((formula_rename_atom a b
-        (set_fold fib_vars_acc_step
-          (p, fun ρ m => res_models_with_store ρ m p) X).1),
-      fun ρ m => res_models_with_store ρ m
-        (formula_rename_atom a b
-          (set_fold fib_vars_acc_step
-            (p, fun ρ m => res_models_with_store ρ m p) X).1))).
-  eapply (set_fold_comm_acc_strong Rel fib_vars_acc_step
-    (fun acc : FormulaQ * (Store → WfWorld → Prop) =>
-       (formula_rename_atom a b (fst acc),
-        fun ρ m => res_models_with_store ρ m
-          (formula_rename_atom a b (fst acc))))
-    (p, fun ρ m => res_models_with_store ρ m p) X).
-  - intros x [p1 R1] [p2 R2] Hrel.
-    unfold Rel in *. simpl in *. rewrite Hrel. reflexivity.
-  - intros x [q R] Hx. unfold Rel. simpl.
-    rewrite atom_swap_fresh by set_solver. reflexivity.
-  Unshelve.
-  constructor.
-  + intros [? ?]. reflexivity.
-  + intros [? ?] [? ?] [? ?] H12 H23. simpl in *. congruence.
+  unfold fib_vars. simpl.
+  rewrite aset_swap_fresh by assumption.
+  reflexivity.
 Qed.
 
 Lemma fib_vars_models_elim X p ρ m :
   res_models_with_store ρ m (fib_vars X p) →
   fib_vars_obligation X p ρ m.
 Proof.
-  unfold fib_vars, fib_vars_obligation, fib_vars_acc.
-  apply (set_fold_ind_L
-    (fun acc _ =>
-      ∀ ρ m, res_models_with_store ρ m (fst acc) → snd acc ρ m)).
-  - simpl. auto.
-  - intros x Y acc Hx IH ρ0 m0 Hm.
-    destruct acc as [q R]. simpl in *.
-    unfold fib_vars_obligation_step.
-    unfold res_models_with_store in Hm. simpl in Hm.
-    destruct Hm as [_ [Hdisj Hfib]].
-    split; [exact Hdisj |].
-    intros σ Hproj.
-    specialize (Hfib σ Hproj).
-    eapply IH.
-    models_fuel_irrel Hfib.
+  unfold fib_vars, fib_vars_obligation.
+  unfold res_models_with_store. simpl.
+  intros Hm. destruct Hm as [_ [Hdisj Hfib]].
+  split; [exact Hdisj |].
+  intros σ Hproj. models_fuel_irrel (Hfib σ Hproj).
 Qed.
 
 Lemma fib_vars_models_intro X p ρ m :
@@ -227,48 +167,14 @@ Lemma fib_vars_models_intro X p ρ m :
   fib_vars_obligation X p ρ m →
   res_models_with_store ρ m (fib_vars X p).
 Proof.
-  unfold fib_vars, fib_vars_obligation, fib_vars_acc.
-  apply (set_fold_ind_L
-    (fun acc _ =>
-      ∀ ρ m,
-        formula_scoped_in_world ρ m (fst acc) →
-        snd acc ρ m →
-        res_models_with_store ρ m (fst acc))).
-  - simpl. auto.
-  - intros x Y acc Hx IH ρ0 m0 Hscope Hobl.
-    destruct acc as [q R]. simpl in *.
-    unfold fib_vars_obligation_step in Hobl.
-    destruct Hobl as [Hdisj Hfib].
-    unfold res_models_with_store. simpl.
-    split; [exact Hscope |].
-    split; [exact Hdisj |].
-    intros σ Hproj.
-    specialize (Hfib σ Hproj).
-    assert (Hscope_q :
-      formula_scoped_in_world (ρ0 ∪ σ)
-        (res_fiber_from_projection m0 {[x]} σ Hproj) q).
-    {
-      unfold formula_scoped_in_world in *.
-      simpl in Hscope.
-      pose proof (wfworld_store_dom (res_restrict m0 {[x]}) σ Hproj) as Hdomσ.
-      simpl in Hdomσ.
-      rewrite dom_union_L.
-      intros z Hz.
-      apply elem_of_union in Hz as [Hzρσ | Hzq].
-      - apply elem_of_union in Hzρσ as [Hzρ | Hzσ].
-        + assert (Hzscope : z ∈ dom ρ0 ∪ ({[x]} ∪ formula_fv q)).
-          { set_solver. }
-          pose proof (Hscope z Hzscope) as Hzdom.
-          simpl in Hzdom. exact Hzdom.
-        + rewrite Hdomσ in Hzσ.
-          pose proof (Hscope z ltac:(set_solver)) as Hzdom.
-          simpl in Hzdom. exact Hzdom.
-      - assert (Hzscope : z ∈ dom ρ0 ∪ ({[x]} ∪ formula_fv q)).
-        { set_solver. }
-        pose proof (Hscope z Hzscope) as Hzdom.
-        simpl in Hzdom. exact Hzdom.
-    }
-    eapply IH; eauto.
+  unfold fib_vars, fib_vars_obligation.
+  intros Hscope [Hdisj Hfib].
+  unfold res_models_with_store. simpl.
+  split; [exact Hscope |].
+  split; [exact Hdisj |].
+  intros σ Hproj.
+  specialize (Hfib σ Hproj).
+  models_fuel_irrel Hfib.
 Qed.
 
 Lemma fib_vars_obligation_insert_fresh_to_fib
