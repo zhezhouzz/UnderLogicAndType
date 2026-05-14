@@ -121,7 +121,16 @@ Lemma lqual_swap_conjugate a b x y q :
   lqual_swap (atom_swap a b x) (atom_swap a b y) (lqual_swap a b q).
 Proof.
   destruct q as [D p]. simpl.
-Admitted.
+  rewrite !lvars_fv_of_atoms.
+  rewrite aset_swap_conjugate.
+  f_equal.
+  apply functional_extensionality. intros η.
+  apply functional_extensionality. intros σ.
+  apply functional_extensionality. intros w.
+  rewrite store_swap_conjugate_inv.
+  rewrite res_swap_conjugate_inv.
+  reflexivity.
+Qed.
 
 Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
   match q1, q2 with
