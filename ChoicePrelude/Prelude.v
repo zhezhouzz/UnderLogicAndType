@@ -134,6 +134,15 @@ Lemma lvars_fv_singleton_bound k :
 Proof.
 Admitted.
 
+Lemma lvars_fv_singleton_free x :
+  lvars_fv ({[LVFree x]} : lvset) = {[x]}.
+Proof.
+  rewrite <- (lvars_fv_of_atoms ({[x]} : aset)).
+  unfold lvars_of_atoms.
+  rewrite set_map_singleton_L.
+  reflexivity.
+Qed.
+
 Lemma lvars_fv_open k x (D : lvset) :
   lvars_fv (lvars_open k x D) =
   lvars_fv D ∪ (if decide (k ∈ lvars_bv D) then {[x]} else ∅).

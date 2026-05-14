@@ -100,14 +100,14 @@ Proof.
     models_fuel_irrel H.
 Qed.
 
-Lemma fib_vars_store_equiv X φ ψ :
+Lemma fib_vars_store_equiv D φ ψ :
   formula_fv φ = formula_fv ψ →
   formula_store_equiv φ ψ →
-  formula_fv (FFibVars (lvars_of_atoms X) φ) =
-    formula_fv (FFibVars (lvars_of_atoms X) ψ) ∧
+  formula_fv (FFibVars D φ) =
+    formula_fv (FFibVars D ψ) ∧
   formula_store_equiv
-    (FFibVars (lvars_of_atoms X) φ)
-    (FFibVars (lvars_of_atoms X) ψ).
+    (FFibVars D φ)
+    (FFibVars D ψ).
 Proof.
   intros Hfv Heq.
   split.
@@ -139,11 +139,11 @@ Proof.
   by rewrite Hperm.
 Qed.
 
-Lemma fib_vars_insert_store_equiv x X (φ : FQ) :
-  x ∉ X →
+Lemma fib_vars_insert_store_equiv x D (φ : FQ) :
+  x ∉ lvars_fv D →
   formula_store_equiv
-    (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ)
-    (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ).
+    (FFibVars ({[LVFree x]} ∪ D) φ)
+    (FFibVars ({[LVFree x]} ∪ D) φ).
 Proof.
   intros _. apply formula_store_equiv_refl.
 Qed.

@@ -131,7 +131,7 @@ Ltac solve_triangle_atom_scope :=
   simpl; rewrite ?lvars_fv_of_atoms; vm_compute; set_solver.
 
 Definition fiber_triangle_formula : FormulaN :=
-  FFibVars (lvars_of_atoms {['x]}) (FUnder (FAtom triangle_slice)).
+  FFibVars {[LVFree 'x]} (FUnder (FAtom triangle_slice)).
 
 (** The formula unfolds to the following concrete fiber obligation: for each
     admissible [x]-projection [σ], some same-domain subworld of the induced
@@ -154,7 +154,7 @@ Proof.
   simpl. unfold stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
   unfold triangle_slice. simpl.
   unfold stale, stale_logic_qualifier, lqual_fvars, lqual_dom. simpl.
-  rewrite !lvars_fv_of_atoms. rewrite Hdom. set_solver.
+  rewrite lvars_fv_singleton_free, lvars_fv_of_atoms, Hdom. set_solver.
 Qed.
 
 Lemma res_models_fiber_triangle_intro (w : WfWorldN) :
@@ -169,7 +169,7 @@ Proof.
   - split; [set_solver |].
     intros σ Hproj.
     assert (Hproj' : res_restrict w {['x]} σ).
-    { rewrite lvars_fv_of_atoms in Hproj. exact Hproj. }
+    { rewrite lvars_fv_singleton_free in Hproj. exact Hproj. }
     destruct (Hfib σ Hproj') as [m' [m0 [Hsubset [Hscope0 [Hatom Hle]]]]].
     pose proof (wfworld_store_dom (res_restrict w {['x]}) σ Hproj') as Hdomσ.
     simpl in Hdomσ.
@@ -189,8 +189,8 @@ Proof.
   unfold res_models, res_models_with_store, fiber_triangle_formula,
     fiber_triangle_obligation.
   simpl. intros [_ [_ Hfib]] σ Hproj.
-  assert (Hproj' : res_restrict w (lvars_fv (lvars_of_atoms {['x]})) σ).
-  { rewrite lvars_fv_of_atoms. exact Hproj. }
+  assert (Hproj' : res_restrict w (lvars_fv ({[LVFree 'x]} : lvset)) σ).
+  { rewrite lvars_fv_singleton_free. exact Hproj. }
   destruct (Hfib σ Hproj') as [_ [m' [Hsubset [_ [m0 [Hscope0 [Hatom Hle]]]]]]].
   exists m', m0. split; [exact Hsubset |].
   split; [exact Hscope0 |]. split; [exact Hatom | exact Hle].
