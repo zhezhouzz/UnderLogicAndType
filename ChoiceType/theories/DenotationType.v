@@ -790,7 +790,12 @@ Lemma denot_ty_fuel_body_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
-Admitted.
+  intros Hgas.
+  pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ e Hgas) as Hfv.
+  rewrite denot_ty_fuel_unfold in Hfv.
+  cbn [denot_ty_obligations formula_fv] in Hfv.
+  set_solver.
+Qed.
 
 Lemma denot_ty_fuel_formula_fv_subset_env
     gas (Σ : gmap atom ty) (τ : choice_ty) e :
