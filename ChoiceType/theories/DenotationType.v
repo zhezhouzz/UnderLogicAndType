@@ -125,7 +125,7 @@ Lemma FExprContIn_atom_env_to_lty_env Σ e (Q : FQ) :
 Proof.
   unfold FExprContIn, FExprResultOn, into_lvars, into_lvars_lvset,
     into_lvars_aset.
-  rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+  rewrite atom_env_to_lty_env_dom.
   reflexivity.
 Qed.
 

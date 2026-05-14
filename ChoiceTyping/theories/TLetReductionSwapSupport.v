@@ -6,7 +6,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Import TLetReductionFuelSupport
-  Naming ResultWorldBridge ResultWorldFreshForall.
+  Naming ResultWorldBridge ResultWorldExprContFamily.
 From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
 
 Import Tactics.

@@ -6,7 +6,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Import TLetTotal RegularDenotation
-  Naming ResultWorldBridge ResultWorldFreshForall.
+  Naming ResultWorldBridge ResultWorldExprContFamily.
 From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
 
 Import Tactics.
@@ -123,8 +123,8 @@ Lemma FExprContIn_insert_fresh_env_irrel
   expr_total_on (dom (<[x := Tx]> Σ)) e m →
   (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) P →
-  res_restrict m (dom Σ) ⊨ FExprContIn Σ e P →
-  m ⊨ FExprContIn (<[x := Tx]> Σ) e P.
+  res_restrict m (dom Σ) ⊨ FExprContFamilyIn Σ e P →
+  m ⊨ FExprContFamilyIn (<[x := Tx]> Σ) e P.
 Proof.
   intros Hty Hx Hdom Hclosed Htotal HPfv HPrename Hcont.
   assert (Hdom_restrict :
@@ -162,12 +162,12 @@ Proof.
     apply HPrename; rewrite dom_insert_L in *; set_solver.
   }
   pose proof (proj1
-    (FExprContIn_iff_let_result_world_on_exact_domain
+    (FExprContFamilyIn_iff_let_result_world_on_exact_domain
       Σ T e P (res_restrict m (dom Σ))
       Hty Hdom_restrict Hclosed_restrict Htotal_restrict HPfv HPrename)
     Hcont) as [L [HL Hbody]].
   apply (proj2
-    (FExprContIn_iff_let_result_world_on_exact_domain
+    (FExprContFamilyIn_iff_let_result_world_on_exact_domain
       (<[x := Tx]> Σ) T e P m
       Hty_insert Hdom Hclosed Htotal HPfv_insert HPrename_insert)).
 	  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
@@ -218,8 +218,8 @@ Lemma FExprContIn_restrict_insert_fresh_env_irrel
   expr_total_on (dom (<[x := Tx]> Σ)) e m →
   (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContIn (<[x := Tx]> Σ) e P →
-  res_restrict m (dom Σ) ⊨ FExprContIn Σ e P.
+  m ⊨ FExprContFamilyIn (<[x := Tx]> Σ) e P →
+  res_restrict m (dom Σ) ⊨ FExprContFamilyIn Σ e P.
 Proof.
   intros Hty Hx Hdom Hclosed Htotal HPfv HPrename Hcont.
   assert (Hdom_restrict :
@@ -257,12 +257,12 @@ Proof.
     apply HPrename; rewrite dom_insert_L in *; set_solver.
   }
   pose proof (proj1
-    (FExprContIn_iff_let_result_world_on_exact_domain
+    (FExprContFamilyIn_iff_let_result_world_on_exact_domain
       (<[x := Tx]> Σ) T e P m
       Hty_insert Hdom Hclosed Htotal HPfv_insert HPrename_insert)
     Hcont) as [L [HL Hbody]].
   apply (proj2
-    (FExprContIn_iff_let_result_world_on_exact_domain
+    (FExprContFamilyIn_iff_let_result_world_on_exact_domain
       Σ T e P (res_restrict m (dom Σ))
       Hty Hdom_restrict Hclosed_restrict Htotal_restrict HPfv HPrename)).
 	  exists (L ∪ dom (<[x := Tx]> Σ) ∪ fv_tm e).
@@ -310,8 +310,8 @@ Lemma FExprContIn_insert_fresh_env_irrel_iff
   expr_total_on (dom (<[x := Tx]> Σ)) e m →
   (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContIn (<[x := Tx]> Σ) e P <->
-  res_restrict m (dom Σ) ⊨ FExprContIn Σ e P.
+  m ⊨ FExprContFamilyIn (<[x := Tx]> Σ) e P <->
+  res_restrict m (dom Σ) ⊨ FExprContFamilyIn Σ e P.
 Proof.
   intros Hty Hx Hdom Hclosed Htotal HPfv HPrename.
   split.

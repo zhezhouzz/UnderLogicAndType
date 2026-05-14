@@ -1,11 +1,10 @@
-(** * ChoiceTyping.ResultWorldFreshForall
+(** * ChoiceTyping.ResultWorldExprContFamily
 
-    Bridges from cofinite [fresh_forall] expression-result formulas to the
-    concrete result world used by the tlet proof.
-
-    The representative chosen by [fresh_forall] is explicit-name/cofinite, so
-    the primitive lemma returns the renamed body.  Callers that know the body is
-    equivariant can use the wrapper lemma to transport it back to [body y]. *)
+    Legacy bridges from atom-family expression-result continuations to the
+    concrete result world used by the tlet proof.  The main denotation now uses
+    locally nameless formula bodies through [FExprContIn]; the family-based
+    lemmas below are kept only as an intermediate compatibility layer for the
+    remaining tlet proof scripts. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   BasicTypingProps LocallyNamelessProps.
@@ -321,61 +320,7 @@ Proof.
         -- reflexivity.
 Qed.
 
-Lemma fresh_forall_expr_result_to_let_result_world_renamed
-    X e D (body : atom → FormulaQ) (m : WfWorld) :
-  fv_tm e ⊆ X →
-  lc_tm e →
-  X ⊆ world_dom (m : World) →
-  world_store_closed_on X m →
-  m ⊨ fresh_forall D (fun x => FImpl (FExprResultAt X e x) (body x)) →
-  ∃ L : aset,
-    world_dom (m : World) ∪ D ∪ X ∪ fv_tm e ⊆ L ∧
-    ∀ y,
-      y ∉ L →
-      ∀ Hfresh Hresult,
-        (∀ (n : WfWorld),
-          world_dom (n : World) = world_dom (m : World) ∪ {[y]} →
-          n ⊨ FExprResultAt X e y →
-          n ⊨ formula_rename_atom (fresh_for D) y
-                 (FExprResultAt X e (fresh_for D))) →
-        let_result_world_on e y m Hfresh Hresult ⊨
-          formula_rename_atom (fresh_for D) y (body (fresh_for D)).
-Proof.
-  (* Legacy fresh_forall bridge; to be replaced by LN open/cofinite bridge. *)
-Admitted.
-
-Lemma fresh_forall_expr_result_to_let_result_world
-    X e D (body : atom → FormulaQ) (m : WfWorld) :
-  fv_tm e ⊆ X →
-  lc_tm e →
-  X ⊆ world_dom (m : World) →
-  world_store_closed_on X m →
-  m ⊨ fresh_forall D (fun x => FImpl (FExprResultAt X e x) (body x)) →
-  ∃ L : aset,
-    world_dom (m : World) ∪ D ∪ X ∪ fv_tm e ⊆ L ∧
-    ∀ y,
-      y ∉ L →
-      ∀ Hfresh Hresult,
-        (∀ (n : WfWorld),
-          world_dom (n : World) = world_dom (m : World) ∪ {[y]} →
-          n ⊨ FExprResultAt X e y →
-          n ⊨ formula_rename_atom (fresh_for D) y
-                 (FExprResultAt X e (fresh_for D))) →
-        (∀ n,
-          n ⊨ formula_rename_atom (fresh_for D) y (body (fresh_for D)) →
-          n ⊨ body y) →
-        let_result_world_on e y m Hfresh Hresult ⊨ body y.
-Proof.
-  intros Hfv Hlc HX Hclosed Hforall.
-  destruct (fresh_forall_expr_result_to_let_result_world_renamed
-    X e D body m Hfv Hlc HX Hclosed Hforall) as [L [HL Huse]].
-  exists L. split; [exact HL |].
-  intros y Hy Hfresh Hresult Hante Hbody.
-  apply Hbody.
-  eapply Huse; eauto.
-Qed.
-
-Lemma FExprContIn_to_let_result_world_on_exact_domain
+Lemma FExprContFamilyIn_to_let_result_world_on_exact_domain
     (Σ : gmap atom ty) (T : ty) e
     (P : atom → FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -384,7 +329,7 @@ Lemma FExprContIn_to_let_result_world_on_exact_domain
   expr_total_on (dom Σ) e m →
   (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContIn Σ e P →
+  m ⊨ FExprContFamilyIn Σ e P →
   ∃ L : aset,
     dom Σ ⊆ L ∧
     ∀ ν,
@@ -392,10 +337,10 @@ Lemma FExprContIn_to_let_result_world_on_exact_domain
       ∀ Hfresh Hresult,
         let_result_world_on e ν m Hfresh Hresult ⊨ P ν.
 Proof.
-  (* Legacy fresh_forall bridge; to be replaced by LN open/cofinite bridge. *)
+  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
 Admitted.
 
-Lemma let_result_world_on_to_FExprContIn_exact_domain
+Lemma let_result_world_on_to_FExprContFamilyIn_exact_domain
     (Σ : gmap atom ty) (T : ty) e
     (P : atom → FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -410,12 +355,12 @@ Lemma let_result_world_on_to_FExprContIn_exact_domain
       ν ∉ L →
       ∀ Hfresh Hresult,
         let_result_world_on e ν m Hfresh Hresult ⊨ P ν) →
-  m ⊨ FExprContIn Σ e P.
+  m ⊨ FExprContFamilyIn Σ e P.
 Proof.
-  (* Legacy fresh_forall bridge; to be replaced by LN open/cofinite bridge. *)
+  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
 Admitted.
 
-Lemma FExprContIn_iff_let_result_world_on_exact_domain
+Lemma FExprContFamilyIn_iff_let_result_world_on_exact_domain
     (Σ : gmap atom ty) (T : ty) e
     (P : atom → FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -424,7 +369,7 @@ Lemma FExprContIn_iff_let_result_world_on_exact_domain
   expr_total_on (dom Σ) e m →
   (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContIn Σ e P ↔
+  m ⊨ FExprContFamilyIn Σ e P ↔
   ∃ L : aset,
     dom Σ ⊆ L ∧
     ∀ ν,
@@ -432,5 +377,5 @@ Lemma FExprContIn_iff_let_result_world_on_exact_domain
       ∀ Hfresh Hresult,
         let_result_world_on e ν m Hfresh Hresult ⊨ P ν.
 Proof.
-  (* Legacy fresh_forall bridge; to be replaced by LN open/cofinite bridge. *)
+  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
 Admitted.

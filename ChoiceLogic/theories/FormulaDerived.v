@@ -460,34 +460,6 @@ Lemma res_models_forall_intro (m : WfWorldT) (φ : FormulaT) :
 Proof.
 Admitted.
 
-Lemma res_models_fresh_forall_transport
-    (m : WfWorldT) (D : aset) (body1 body2 : atom → FormulaT) :
-  formula_scoped_in_world ∅ m (fresh_forall D body2) →
-  (∀ y m',
-    m' ⊨ formula_open 0 y (body1 (fresh_for D)) →
-    m' ⊨ formula_open 0 y (body2 (fresh_for D))) →
-  m ⊨ fresh_forall D body1 →
-  m ⊨ fresh_forall D body2.
-Proof.
-  intros Hscope Hbody Hm.
-  unfold res_models in *.
-  eapply res_models_with_store_fresh_forall_transport; eauto.
-Qed.
-
-Lemma res_models_fresh_forall_transport2
-    (m : WfWorldT) (D1 D2 : aset) (body1 body2 : atom → FormulaT) :
-  formula_scoped_in_world ∅ m (fresh_forall D2 body2) →
-  (∀ y m',
-    m' ⊨ formula_open 0 y (body1 (fresh_for D1)) →
-    m' ⊨ formula_open 0 y (body2 (fresh_for D2))) →
-  m ⊨ fresh_forall D1 body1 →
-  m ⊨ fresh_forall D2 body2.
-Proof.
-  intros Hscope Hbody Hm.
-  unfold res_models in *.
-  eapply res_models_with_store_fresh_forall_transport; eauto.
-Qed.
-
 Lemma res_models_exists_intro (m : WfWorldT) (φ : FormulaT) :
   formula_scoped_in_world ∅ m (FExists φ) →
   (∃ L : aset,

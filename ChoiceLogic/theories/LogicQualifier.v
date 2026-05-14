@@ -66,30 +66,12 @@ Definition lqual_open (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifi
   | lqual D p => lqual (lvars_open k x D) (λ η σ w, p (<[k := x]> η) σ w)
   end.
 
-Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifier :=
-  match q with
-  | lqual D p =>
-      lqual (lvars_of_atoms (aset_rename x y (lvars_fv D)))
-        (λ η σ w, p η (store_rename_atom y x σ) (res_rename_atom y x w))
-  end.
-
 Definition lqual_swap (x y : atom) (q : logic_qualifier) : logic_qualifier :=
   match q with
   | lqual D p =>
       lqual (lvars_of_atoms (aset_swap x y (lvars_fv D)))
         (λ η σ w, p η (store_swap x y σ) (res_swap x y w))
   end.
-
-Lemma logic_qualifier_denote_rename_atom x y q σ w :
-  logic_qualifier_denote (lqual_rename_atom x y q) σ w ↔
-  logic_qualifier_denote q (store_rename_atom y x σ) (res_rename_atom y x w).
-Proof.
-  destruct q as [D p]. simpl.
-  rewrite lvars_fv_of_atoms.
-  rewrite <- store_restrict_rename_atom.
-  rewrite <- res_restrict_rename_atom.
-  reflexivity.
-Qed.
 
 Lemma logic_qualifier_denote_swap x y q σ w :
   logic_qualifier_denote (lqual_swap x y q) σ w ↔

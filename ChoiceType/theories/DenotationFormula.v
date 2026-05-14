@@ -217,14 +217,6 @@ Definition FExprResultAt {A : Type} `{IntoLVars A}
     (D : A) (e : tm) (ν : atom) : FQ :=
   formula_open 0 ν (FExprResultOn D e).
 
-Lemma expr_logic_qual_on_swap_result X e a ν :
-  a ∉ X →
-  ν ∉ X →
-  lqual_swap a ν (expr_logic_qual_on X e a) = expr_logic_qual_on X e ν.
-Proof.
-  (* Legacy explicit-swap helper; replaced by LN open/cofinite bridge. *)
-Admitted.
-
 Lemma FExprResultOn_fv X e :
   formula_fv (FExprResultOn X e) = X.
 Proof.
@@ -264,46 +256,23 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultOn_rename_result_fresh X e a ν :
-  a ∉ X →
-  ν ∉ X →
-  formula_rename_atom a ν (FExprResultAt X e a) = FExprResultAt X e ν.
-Proof.
-  (* Legacy explicit-swap helper; replaced by LN open/cofinite bridge. *)
-Admitted.
+Ltac denot_sugar_norm :=
+  denot_lvars_norm.
 
 (** [FExprContIn Σ e Q] abbreviates [∀ν. FExprResultOn (dom Σ) e ⇒ Q].
-    The preferred postcondition [Q] is an LN body: [LVBound 0] names the result
-    coordinate introduced by the surrounding [FForall].  The family instance is
-    a compatibility shim for the remaining old tlet bridges. *)
-Class IntoExprCont (A : Type) := expr_cont_body : aset → A → FQ.
+    The postcondition [Q] is an LN body: [LVBound 0] names the result
+    coordinate introduced by the surrounding [FForall]. *)
+Definition FExprContIn {E : Type} `{IntoLVars E}
+    (Σ : E) (e : tm) (Q : FQ) : FQ :=
+  FForall (FImpl (FExprResultOn (into_lvars Σ) e) Q).
 
-#[global] Instance into_expr_cont_formula : IntoExprCont FQ :=
-  fun _ Q => Q.
-
-#[global] Instance into_expr_cont_family : IntoExprCont (atom → FQ) :=
-  fun D Q => Q (fresh_for D).
-
-Ltac denot_expr_cont_norm :=
-  repeat match goal with
-  | |- context[expr_cont_body ?D ?Q] =>
-      let T := type of Q in
-      lazymatch T with
-      | FormulaQ => change (expr_cont_body D Q) with Q
-      end
-  | H : context[expr_cont_body ?D ?Q] |- _ =>
-      let T := type of Q in
-      lazymatch T with
-      | FormulaQ => change (expr_cont_body D Q) with Q in H
-      end
-  end.
-
-Ltac denot_sugar_norm :=
-  denot_lvars_norm; denot_expr_cont_norm.
-
-Definition FExprContIn {E A : Type} `{IntoLVars E} `{IntoExprCont A}
-    (Σ : E) (e : tm) (Q : A) : FQ :=
-  FForall (FImpl (FExprResultOn (into_lvars Σ) e) (expr_cont_body (lvars_fv (into_lvars Σ)) Q)).
+(** Legacy compatibility shim for older tlet bridges that still take an
+    explicit atom-indexed family.  New denotation code should use
+    [FExprContIn] with an LN body directly. *)
+Definition FExprContFamilyIn {E : Type} `{IntoLVars E}
+    (Σ : E) (e : tm) (Q : atom → FQ) : FQ :=
+  FForall (FImpl (FExprResultOn (into_lvars Σ) e)
+    (Q (fresh_for (lvars_fv (into_lvars Σ))))).
 
 Lemma FExprContIn_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : FQ) :
@@ -324,15 +293,6 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprContIn_family_formula_fv_subset
-    (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
-  dom Σ ⊆ S →
-  (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
-  formula_fv (FExprContIn Σ e Q) ⊆ S.
-Proof.
-  (* Legacy fv helper for proofs not yet ported to LN bodies. *)
-Admitted.
-
 Definition formula_family_rename_stable_on
     (D : aset) (P : atom → FQ) : Prop :=
   ∀ x y n,
@@ -346,16 +306,6 @@ Lemma FExprContIn_post_eq
   FExprContIn Σ e P = FExprContIn Σ e Q.
 Proof.
   intros ->. reflexivity.
-Qed.
-
-Lemma FExprContIn_post_eq_at_fresh
-    (Σ : gmap atom ty) e (P Q : atom → FQ) :
-  P (fresh_for (dom Σ)) = Q (fresh_for (dom Σ)) →
-  FExprContIn Σ e (P (fresh_for (dom Σ))) =
-  FExprContIn Σ e (Q (fresh_for (dom Σ))).
-Proof.
-  intros Heq.
-  rewrite Heq. reflexivity.
 Qed.
 
 (** Expression-result atom.

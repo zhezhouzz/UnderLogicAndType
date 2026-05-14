@@ -9,7 +9,7 @@ The active proof path is:
 
 1. `ChoiceTyping/theories/LetResultWorld.v` defines the exact operational
    result world `let_result_world_on e x m`.
-2. `ChoiceTyping/theories/ResultWorldFreshForall.v` connects result worlds with
+2. `ChoiceTyping/theories/ResultWorldExprContFamily.v` connects result worlds with
    `FExprContIn`.
 3. `ChoiceTyping/theories/TLetDenotation.v` uses that bridge in
    `FExprCont_tlet_reduction`, then lifts the result through
@@ -34,7 +34,7 @@ In `ChoiceTyping/theories/LetResultWorld.v`:
 - `let_result_world_on_le`
 - `let_result_world_on_tlete_decompose`
 
-In `ChoiceTyping/theories/ResultWorldFreshForall.v`:
+In `ChoiceTyping/theories/ResultWorldExprContFamily.v`:
 
 - `FExprContIn_to_let_result_world_on_exact_domain`
 - `let_result_world_on_to_FExprContIn_exact_domain`

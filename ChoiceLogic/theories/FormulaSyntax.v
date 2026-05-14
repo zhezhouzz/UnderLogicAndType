@@ -74,24 +74,6 @@ Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
   | FFibVars D p => FFibVars (lvars_swap x y D) (formula_rename_atom x y p)
   end.
 
-Fixpoint formula_swap (x y : atom) (φ : Formula) : Formula :=
-  match φ with
-  | FTrue => FTrue
-  | FFalse => FFalse
-  | FAtom q => FAtom (lqual_swap x y q)
-  | FAnd p q => FAnd (formula_swap x y p) (formula_swap x y q)
-  | FOr p q => FOr (formula_swap x y p) (formula_swap x y q)
-  | FImpl p q => FImpl (formula_swap x y p) (formula_swap x y q)
-  | FStar p q => FStar (formula_swap x y p) (formula_swap x y q)
-  | FWand p q => FWand (formula_swap x y p) (formula_swap x y q)
-  | FPlus p q => FPlus (formula_swap x y p) (formula_swap x y q)
-  | FForall p => FForall (formula_swap x y p)
-  | FExists p => FExists (formula_swap x y p)
-  | FOver p => FOver (formula_swap x y p)
-  | FUnder p => FUnder (formula_swap x y p)
-  | FFibVars D p => FFibVars (lvars_swap x y D) (formula_swap x y p)
-  end.
-
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1
@@ -125,12 +107,6 @@ Proof.
   induction φ; simpl; eauto; lia.
 Qed.
 
-Lemma formula_swap_preserves_measure x y φ :
-  formula_measure (formula_swap x y φ) = formula_measure φ.
-Proof.
-  induction φ; simpl; eauto; lia.
-Qed.
-
 Lemma formula_open_preserves_measure k x φ :
   formula_measure (formula_open k x φ) = formula_measure φ.
 Proof.
@@ -143,12 +119,6 @@ Lemma formula_open_fv_subset k x φ :
 Proof.
 Admitted.
 
-Lemma formula_rename_atom_eq_swap x y φ :
-  formula_rename_atom x y φ = formula_swap x y φ.
-Proof.
-  induction φ; simpl; try congruence.
-Qed.
-
 Lemma formula_rename_atom_conjugate a b x y φ :
   formula_rename_atom a b (formula_rename_atom x y φ) =
   formula_rename_atom (atom_swap a b x) (atom_swap a b y)
@@ -157,17 +127,11 @@ Proof.
   (* Legacy explicit-swap lemma; superseded by LN opening. *)
 Admitted.
 
-Lemma formula_fv_swap x y φ :
-  formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
-Proof.
-  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
-Admitted.
-
 Lemma formula_fv_rename_atom x y φ :
   formula_fv (formula_rename_atom x y φ) = aset_swap x y (formula_fv φ).
 Proof.
-  rewrite formula_rename_atom_eq_swap. apply formula_fv_swap.
-Qed.
+  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
+Admitted.
 
 Lemma formula_fv_rename_atom_subset_open x y φ :
   y ∉ formula_fv φ ∖ {[x]} →
@@ -214,24 +178,6 @@ Admitted.
 Lemma formula_measure_pos (φ : Formula) :
   0 < formula_measure φ.
 Proof. induction φ; simpl; lia. Qed.
-
-(** [fresh_forall D body] chooses a syntactic representative for an explicit
-    formula binder.  The representative is not semantically privileged:
-    [FForall]'s satisfaction relation later renames it to every sufficiently
-    fresh atom. *)
-Definition fresh_forall (D : aset) (body : atom → Formula) : Formula :=
-  FForall (body (fresh_for D)).
-
-Lemma fresh_forall_formula_fv_subset
-    (D S : aset) (Q : atom → Formula) :
-  D ⊆ S →
-  (∀ x, x ∉ D → formula_fv (Q x) ⊆ S ∪ {[x]}) →
-  formula_fv (fresh_forall D Q) ⊆ S.
-Proof.
-  (* Legacy compatibility lemma.  Once callers build formulas with bound
-     logic variables directly, this statement is replaced by an open/cofinite
-     fv lemma and [fresh_forall] disappears. *)
-Admitted.
 
 Definition FPure (P : Prop) : Formula :=
   FAtom (lqual ∅ (λ _ _ _, P)).

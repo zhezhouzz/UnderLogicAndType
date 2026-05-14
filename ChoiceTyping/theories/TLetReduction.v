@@ -6,7 +6,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetTotal RegularDenotation.
-From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldFreshForall
+From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprContFamily
   TLetReductionFuelSupport TLetReductionSwapSupport TLetReductionFamilySupport
   TLetReductionEnvIrrel.
 From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
@@ -36,7 +36,7 @@ Proof.
   - apply elem_of_union. right. exact Hzν.
 Qed.
 
-Lemma FExprCont_tlet_reduction
+Lemma FExprContFamily_tlet_reduction
     (Σ : gmap atom ty) (T1 T2 : ty)
     (m : WfWorld) e1 e2 (x : atom) (Q : atom → FormulaQ)
     (Hfresh : x ∉ world_dom (m : World))
@@ -51,8 +51,8 @@ Lemma FExprCont_tlet_reduction
   (∀ ν, formula_fv (Q ν) ⊆ dom Σ ∪ {[ν]}) →
   formula_family_rename_stable_on (dom Σ) Q →
   let_result_world_on e1 x m Hfresh Hresult
-    ⊨ FExprContIn (<[x := T1]> Σ) (e2 ^^ x) Q ↔
-  m ⊨ FExprContIn Σ (tlete e1 e2) Q.
+    ⊨ FExprContFamilyIn (<[x := T1]> Σ) (e2 ^^ x) Q ↔
+  m ⊨ FExprContFamilyIn Σ (tlete e1 e2) Q.
 Proof.
   intros He1 Hlet Hxe2 Hdom Hclosed Htotal_let HQfv HQrename.
   set (m1 := let_result_world_on e1 x m Hfresh Hresult).
@@ -161,12 +161,12 @@ Proof.
   split.
   - intros Hcont.
     pose proof (proj1
-      (FExprContIn_iff_let_result_world_on_exact_domain
+      (FExprContFamilyIn_iff_let_result_world_on_exact_domain
         (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
         He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert HQrename_insert)
       Hcont) as [L [HLdom Hbody]].
     apply (proj2
-      (FExprContIn_iff_let_result_world_on_exact_domain
+      (FExprContFamilyIn_iff_let_result_world_on_exact_domain
         Σ T2 (tlete e1 e2) Q m
         Hlet Hdom Hclosed Htotal_let HQfv HQrename)).
     exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
@@ -200,12 +200,12 @@ Proof.
     exact Hnested_min.
   - intros Hcont.
     pose proof (proj1
-      (FExprContIn_iff_let_result_world_on_exact_domain
+      (FExprContFamilyIn_iff_let_result_world_on_exact_domain
         Σ T2 (tlete e1 e2) Q m
         Hlet Hdom Hclosed Htotal_let HQfv HQrename)
       Hcont) as [L [HLdom Hwhole]].
     apply (proj2
-      (FExprContIn_iff_let_result_world_on_exact_domain
+      (FExprContFamilyIn_iff_let_result_world_on_exact_domain
         (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
         He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert HQrename_insert)).
     exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
@@ -240,6 +240,32 @@ Proof.
       (dom Σ ∪ {[ν]})
       (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
       (Q ν) (HQfv ν)) Hrestrict).
+Qed.
+
+Lemma FExprCont_tlet_reduction
+    (Σ : gmap atom ty) (T1 T2 : ty)
+    (m : WfWorld) e1 e2 (x : atom) (Q : FormulaQ)
+    (Hfresh : x ∉ world_dom (m : World))
+    (Hresult : ∀ σ, (m : World) σ →
+      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+  Σ ⊢ₑ e1 ⋮ T1 →
+  Σ ⊢ₑ tlete e1 e2 ⋮ T2 →
+  x ∉ fv_tm e2 →
+  world_dom (m : World) = dom Σ →
+  world_store_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) (tlete e1 e2) m →
+  formula_fv Q ⊆ dom Σ →
+  let_result_world_on e1 x m Hfresh Hresult
+    ⊨ FExprContIn (<[x := T1]> Σ) (e2 ^^ x) Q ↔
+  m ⊨ FExprContIn Σ (tlete e1 e2) Q.
+Proof.
+  intros He1 Hlet Hxe2 Hdom Hclosed Htotal_let HQfv.
+  change (let_result_world_on e1 x m Hfresh Hresult
+      ⊨ FExprContFamilyIn (<[x := T1]> Σ) (e2 ^^ x) (fun _ => Q) <->
+    m ⊨ FExprContFamilyIn Σ (tlete e1 e2) (fun _ => Q)).
+  eapply FExprContFamily_tlet_reduction; eauto.
+  - intros ν. set_solver.
+  - apply formula_family_rename_stable_const. exact HQfv.
 Qed.
 
 
@@ -456,18 +482,15 @@ Proof.
     set_solver.
   - change (let_result_world_on e1 x m Hfresh Hresult
       ⊨ FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-          (fun _ : atom =>
-            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
-              (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ))))) <->
+          (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+            (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ))))) <->
       m ⊨ FExprContIn Δ (tlete e1 e2)
-          (fun _ : atom =>
-            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
-              (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ)))))).
+          (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+            (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ)))))).
     eapply (FExprCont_tlet_reduction
       Δ T1 (TBase b) m e1 e2 x
-      (fun _ : atom =>
-        FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
-          (FFibVars Dφ (FOver (FTypeQualifier (qual Dφ Pφ)))))
+      (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
+        (FFibVars Dφ (FOver (FTypeQualifier (qual Dφ Pφ)))))
       Hfresh Hresult).
     + exact He1.
     + exact Hlet.
@@ -475,14 +498,8 @@ Proof.
     + exact Hdom.
     + exact Hclosed.
     + exact Htotal.
-    + intros ν. cbn [formula_fv].
+    + cbn [formula_fv].
     eapply union_least.
-      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
-        set_solver.
-      * set_solver.
-    + apply formula_family_rename_stable_const.
-      intros ν. cbn [formula_fv].
-      eapply union_least.
       * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
         set_solver.
       * set_solver.
@@ -519,18 +536,15 @@ Proof.
     set_solver.
   - change (let_result_world_on e1 x m Hfresh Hresult
       ⊨ FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
-          (fun _ : atom =>
-            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
-              (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ))))) <->
+          (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+            (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ))))) <->
       m ⊨ FExprContIn Δ (tlete e1 e2)
-          (fun _ : atom =>
-            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
-              (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ)))))).
+          (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+            (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ)))))).
     eapply (FExprCont_tlet_reduction
       Δ T1 (TBase b) m e1 e2 x
-      (fun _ : atom =>
-        FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
-          (FFibVars Dφ (FUnder (FTypeQualifier (qual Dφ Pφ)))))
+      (FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
+        (FFibVars Dφ (FUnder (FTypeQualifier (qual Dφ Pφ)))))
       Hfresh Hresult).
     + exact He1.
     + exact Hlet.
@@ -538,14 +552,8 @@ Proof.
     + exact Hdom.
     + exact Hclosed.
     + exact Htotal.
-    + intros ν. cbn [formula_fv].
+    + cbn [formula_fv].
     eapply union_least.
-      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
-        set_solver.
-      * set_solver.
-    + apply formula_family_rename_stable_const.
-      intros ν. cbn [formula_fv].
-      eapply union_least.
       * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
         set_solver.
       * set_solver.

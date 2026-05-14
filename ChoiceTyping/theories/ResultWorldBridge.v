@@ -1,18 +1,7 @@
 (** * ChoiceTyping.ResultWorldBridge
 
     Bridges between expression-result formulas and the concrete result worlds
-    used by the soundness proof.
-
-    The first group relates the cofinite [fresh_forall] encoding
-
-      forall x.  [e ⇓ x] ==> body x
-
-    to the operational result world [let_result_world_on e x m].  Because
-    [fresh_forall] is explicit-name/cofinite rather than locally nameless, the
-    primitive bridge is phrased with the renamed representative
-    [formula_rename_atom (fresh_for D) y (body (fresh_for D))].  Callers that
-    know their body is equivariant can use the wrapper lemma to transport this
-    renamed body to the desired [body y]. *)
+    used by the soundness proof. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   LocallyNamelessProps.
