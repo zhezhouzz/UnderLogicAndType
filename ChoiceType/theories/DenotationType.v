@@ -862,7 +862,20 @@ Lemma denot_ty_fuel_env_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   dom Σ ⊆ formula_fv (denot_ty_fuel gas Σ τ e).
 Proof.
-Admitted.
+  intros _.
+  rewrite denot_ty_fuel_unfold.
+  unfold denot_ty_obligations, FBasicTypingIn, FClosedResourceIn,
+    FStrongTotalIn, FStoreResourceAtom, FResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
+  change (into_lvars
+    (dom (atom_env_to_lty_env Σ) ∪ dom (atom_env_to_lty_env Σ)))
+    with (dom (atom_env_to_lty_env Σ) ∪ dom (atom_env_to_lty_env Σ)).
+  change (into_lvars (dom (atom_env_to_lty_env Σ)))
+    with (dom (atom_env_to_lty_env Σ)).
+  rewrite !atom_env_to_lty_env_dom.
+  rewrite !lvars_fv_union, !lvars_fv_of_atoms.
+  set_solver.
+Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :
   x ∈ dom Σ →
