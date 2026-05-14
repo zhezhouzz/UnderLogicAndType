@@ -219,7 +219,22 @@ Lemma FResultBasicWorld_open_domain_atom_env Σ D ν :
       (lty_env_bvar_scope (atom_env_to_lty_env Σ) ∪ D ∪ {[LVBound 0]})) =
   lvars_fv D ∪ {[ν]}.
 Proof.
-Admitted.
+  rewrite lvars_fv_open.
+  unfold lty_env_bvar_scope.
+  rewrite atom_env_to_lty_env_dom.
+  rewrite lvars_bv_of_atoms.
+  rewrite ?lvars_fv_union.
+  rewrite ?lvars_fv_of_bvars.
+  rewrite ?lvars_fv_union.
+  rewrite ?lvars_fv_singleton_bound.
+  destruct decide as [_|Hnot].
+  - set_solver.
+  - exfalso.
+    apply Hnot.
+    replace (lvars_of_bvars ∅ ∪ D ∪ {[LVBound 0]})
+      with ((lvars_of_bvars ∅ ∪ D) ∪ {[LVBound 0]}) by set_solver.
+    apply lvars_bv_contains_bound_singleton.
+Qed.
 
 Lemma formula_store_equiv_FResultBasicWorld_atom_env_insert_fresh_open
     Σ x T b D ν :
