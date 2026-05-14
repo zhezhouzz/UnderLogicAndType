@@ -196,6 +196,18 @@ Proof.
   set_solver.
 Qed.
 
+Lemma formula_fv_FResultBasicWorld_atom_env Σ b D :
+  formula_fv (FResultBasicWorld (atom_env_to_lty_env Σ) b D) = lvars_fv D.
+Proof.
+  rewrite formula_fv_FResultBasicWorld.
+  unfold lty_env_bvar_scope.
+  rewrite atom_env_to_lty_env_dom.
+  rewrite lvars_bv_of_atoms.
+  rewrite lvars_fv_union, lvars_fv_union.
+  rewrite lvars_fv_of_bvars, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →
   expr_total_on X e m →
