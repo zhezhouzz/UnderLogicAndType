@@ -1,5 +1,9 @@
 # Partial Choice Algebra Remaining Work
 
+> Priority: P3 historical/reference.  This records an old branch checkpoint.
+> Check the current `ChoiceAlgebra` and `ChoiceLogic` files before acting on any
+> listed "remaining" work.
+
 This note records the unfinished proof work left on
 `codex/partial-choice-algebra` before switching to the instantiation migration.
 

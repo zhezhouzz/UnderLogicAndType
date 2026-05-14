@@ -1,5 +1,10 @@
 # Skill: ANF 编码 — tletapp 只接受 value，不接受 tm
 
+> Priority: P3 historical/reference.  This note records an older ANF-derived
+> form issue.  Current code has since introduced `tapp_tm` and deterministic
+> core simplifications, so use this only when reading legacy proofs or old
+> design notes.
+
 ## 问题
 
 `tletapp` 的类型签名是：
