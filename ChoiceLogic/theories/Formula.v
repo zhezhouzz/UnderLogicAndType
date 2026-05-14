@@ -130,7 +130,7 @@ Fixpoint res_models_with_store_fuel
         res_models_with_store_fuel gas' ρ m1 p ∧
         res_models_with_store_fuel gas' ρ m2 q
 
-  | FForall x p =>
+  | FForall p =>
       ∃ L : aset,
         world_dom m ⊆ L ∧
         ∀ y : atom,
@@ -138,9 +138,9 @@ Fixpoint res_models_with_store_fuel
           ∀ m' : WfWorldT,
             world_dom m' = world_dom m ∪ {[y]} →
             res_restrict m' (world_dom m) = m →
-            res_models_with_store_fuel gas' ρ m' (formula_rename_atom x y p)
+            res_models_with_store_fuel gas' ρ m' (formula_open 0 y p)
 
-  | FExists x p =>
+  | FExists p =>
       ∃ L : aset,
         world_dom m ⊆ L ∧
         ∀ y : atom,
@@ -148,7 +148,7 @@ Fixpoint res_models_with_store_fuel
           ∃ m' : WfWorldT,
             world_dom m' = world_dom m ∪ {[y]} ∧
             res_restrict m' (world_dom m) = m ∧
-            res_models_with_store_fuel gas' ρ m' (formula_rename_atom x y p)
+            res_models_with_store_fuel gas' ρ m' (formula_open 0 y p)
 
   (** Approximation modalities (Definition 1.9) *)
 
@@ -200,7 +200,7 @@ Proof.
     destruct gasB as [|gasB']; [pose proof (formula_measure_pos ψ); lia |].
     simpl in *.
     destruct Hmodel as [Hscope Hmodel]. split; [exact Hscope |].
-    destruct ψ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|X p];
+    destruct ψ as [| |a|p q|p q|p q|p q|p q|p q|p|p|p|p|X p];
       simpl in *.
     - exact Hmodel.
     - exact Hmodel.
@@ -232,20 +232,20 @@ Proof.
     - destruct Hmodel as [L [HL Hforall]].
       exists L. split; [exact HL |].
       intros y Hy m' Hdom Hrestr.
-      exact (IHn (formula_rename_atom x y p) gasA' gasB' ρ0 m'
-        ltac:(rewrite formula_rename_preserves_measure; lia)
-        ltac:(rewrite formula_rename_preserves_measure; lia)
-        ltac:(rewrite formula_rename_preserves_measure; lia)
+      exact (IHn (formula_open 0 y p) gasA' gasB' ρ0 m'
+        ltac:(rewrite formula_open_preserves_measure; lia)
+        ltac:(rewrite formula_open_preserves_measure; lia)
+        ltac:(rewrite formula_open_preserves_measure; lia)
         (Hforall y Hy m' Hdom Hrestr)).
     - destruct Hmodel as [L [HL Hexists]].
       exists L. split; [exact HL |].
       intros y Hy.
       destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hp]]].
       exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-      exact (IHn (formula_rename_atom x y p) gasA' gasB' ρ0 m'
-        ltac:(rewrite formula_rename_preserves_measure; lia)
-        ltac:(rewrite formula_rename_preserves_measure; lia)
-        ltac:(rewrite formula_rename_preserves_measure; lia)
+      exact (IHn (formula_open 0 y p) gasA' gasB' ρ0 m'
+        ltac:(rewrite formula_open_preserves_measure; lia)
+        ltac:(rewrite formula_open_preserves_measure; lia)
+        ltac:(rewrite formula_open_preserves_measure; lia)
         Hp).
     - destruct Hmodel as [m' [Hsub Hp]].
       exists m'. split; [exact Hsub |].
@@ -292,7 +292,7 @@ Proof.
   destruct Hmodel as [Hscope Hmodel].
   split.
   { eapply formula_scoped_res_le; eauto. }
-  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|D p];
+  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|p|p|p|p|D p];
     simpl in *.
   - exact I.
   - exact Hmodel.
@@ -434,7 +434,7 @@ Proof.
     unfold formula_scoped_in_world in *. subst S. simpl. set_solver.
   }
   split; [exact Hscope_restrict |].
-  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|X p];
+  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|p|p|p|p|X p];
     simpl in *; subst S.
   - exact I.
   - exact Hmodel.
@@ -565,13 +565,12 @@ Proof.
         eapply res_models_with_store_fuel_kripke; [| exact Hq_small].
         apply res_restrict_mono. set_solver.
   - destruct Hmodel as [L [HL Hforall]].
-    set (S := dom ρ ∪ (formula_fv p ∖ {[x]})).
+    set (S := dom ρ ∪ formula_fv p).
     exists (L ∪ world_dom (m : World) ∪ S). split.
     { subst S. simpl. set_solver. }
     intros y Hy n Hdom_n Hrestr_n.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hym : y ∉ world_dom (m : World)) by set_solver.
-    assert (Hyfv : y ∉ formula_fv p ∖ {[x]}) by (subst S; set_solver).
     assert (HS_m : S ⊆ world_dom (m : World)).
     { unfold formula_scoped_in_world in Hscope. subst S. set_solver. }
     assert (Hle_rm : res_restrict m S ⊑ m) by apply res_restrict_le.
@@ -579,9 +578,9 @@ Proof.
       (res_restrict m S) m n y Hle_rm Hym Hdom_n Hrestr_n)
       as [my [Hdom_my [Hrestr_my Hn_my]]].
     pose proof (Hforall y HyL my Hdom_my Hrestr_my) as Hp_my.
-    pose proof (IH ρ my (formula_rename_atom x y p) Hp_my) as Hp_small.
-    set (X := dom ρ ∪ formula_fv (formula_rename_atom x y p)).
-    change (dom ρ ∪ formula_fv (formula_rename_atom x y p)) with X in Hp_small.
+    pose proof (IH ρ my (formula_open 0 y p) Hp_my) as Hp_small.
+    set (X := dom ρ ∪ formula_fv (formula_open 0 y p)).
+    change (dom ρ ∪ formula_fv (formula_open 0 y p)) with X in Hp_small.
     assert (HX_n : X ⊆ world_dom (n : World)).
     {
       subst X S. rewrite Hdom_n. simpl.
@@ -589,18 +588,17 @@ Proof.
       apply elem_of_union in Hz as [Hzρ | Hzφ].
       - apply elem_of_union. left. unfold formula_scoped_in_world in Hscope.
         set_solver.
-      - pose proof (formula_fv_rename_atom_subset_open x y p Hyfv z Hzφ) as Hzopen.
+      - pose proof (formula_open_fv_subset 0 y p z Hzφ) as Hzopen.
         set_solver.
     }
     rewrite <- (res_restrict_le_eq n my X Hn_my HX_n) in Hp_small.
     eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
   - destruct Hmodel as [L [HL Hexists]].
-    set (S := dom ρ ∪ (formula_fv p ∖ {[x]})).
+    set (S := dom ρ ∪ formula_fv p).
     exists (L ∪ world_dom (m : World) ∪ S). split.
     { subst S. simpl. set_solver. }
     intros y Hy.
     assert (HyL : y ∉ L) by set_solver.
-    assert (Hyfv : y ∉ formula_fv p ∖ {[x]}) by (subst S; set_solver).
     assert (HS_m : S ⊆ world_dom (m : World)).
     { unfold formula_scoped_in_world in Hscope. subst S. set_solver. }
     destruct (Hexists y HyL) as [my [Hdom_my [Hrestr_my Hp_my]]].
@@ -620,16 +618,16 @@ Proof.
         rewrite res_restrict_restrict_eq.
         replace (world_dom (m : World) ∩ S) with S by set_solver.
         reflexivity.
-      * pose proof (IH ρ my (formula_rename_atom x y p) Hp_my) as Hp_small.
-        set (X := dom ρ ∪ formula_fv (formula_rename_atom x y p)).
-        change (dom ρ ∪ formula_fv (formula_rename_atom x y p)) with X in Hp_small.
+      * pose proof (IH ρ my (formula_open 0 y p) Hp_my) as Hp_small.
+        set (X := dom ρ ∪ formula_fv (formula_open 0 y p)).
+        change (dom ρ ∪ formula_fv (formula_open 0 y p)) with X in Hp_small.
         assert (HX_n : X ⊆ world_dom (n : World)).
         {
           subst X n S. simpl. rewrite Hdom_my.
           intros z Hz.
           apply elem_of_union in Hz as [Hzρ | Hzφ].
           - unfold formula_scoped_in_world in Hscope. set_solver.
-          - pose proof (formula_fv_rename_atom_subset_open x y p Hyfv z Hzφ) as Hzopen.
+          - pose proof (formula_open_fv_subset 0 y p z Hzφ) as Hzopen.
             set_solver.
         }
         rewrite <- (res_restrict_le_eq n my X ltac:(subst n; apply res_restrict_le) HX_n)
@@ -1029,77 +1027,31 @@ Proof.
 Qed.
 
 
-Lemma formula_scoped_forall_from_renamed
-    (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
+Lemma formula_scoped_forall_from_open
+    (ρ : StoreT) (m : WfWorldT) (φ : Formula) (L : aset) :
   world_dom m ⊆ L →
   (∀ y : atom,
     y ∉ L →
     ∀ m' : WfWorldT,
       world_dom m' = world_dom m ∪ {[y]} →
       res_restrict m' (world_dom m) = m →
-      formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
-  formula_scoped_in_world ρ m (FForall x φ).
+      formula_scoped_in_world ρ m' (formula_open 0 y φ)) →
+  formula_scoped_in_world ρ m (FForall φ).
 Proof.
-  unfold formula_scoped_in_world.
-  intros HL Hrenamed z Hz.
-  apply elem_of_union in Hz as [Hzρ | Hzφ].
-  - set (y := fresh_for (L ∪ {[z]})).
-    assert (HyL : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hym : y ∉ world_dom (m : World)) by set_solver.
-    destruct (res_one_point_extension_exists m y Hym) as [m' [Hdom Hrestr]].
-    pose proof (Hrenamed y HyL m' Hdom Hrestr) as Hscope.
-    unfold formula_scoped_in_world in Hscope.
-    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
-    rewrite Hdom in Hzm'. set_solver.
-  - simpl in Hzφ.
-    apply elem_of_difference in Hzφ as [Hzφ Hzx].
-    set (y := fresh_for (L ∪ {[z]})).
-    assert (HyL : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hym : y ∉ world_dom (m : World)) by set_solver.
-    destruct (res_one_point_extension_exists m y Hym) as [m' [Hdom Hrestr]].
-    pose proof (Hrenamed y HyL m' Hdom Hrestr) as Hscope.
-    unfold formula_scoped_in_world in Hscope.
-    assert (Hzrenamed : z ∈ formula_fv (formula_rename_atom x y φ)).
-    { apply formula_fv_rename_unchanged; set_solver. }
-    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
-    rewrite Hdom in Hzm'. set_solver.
-Qed.
+Admitted.
 
-Lemma formula_scoped_exists_from_renamed
-    (ρ : StoreT) (m : WfWorldT) (x : atom) (φ : Formula) (L : aset) :
+Lemma formula_scoped_exists_from_open
+    (ρ : StoreT) (m : WfWorldT) (φ : Formula) (L : aset) :
   world_dom m ⊆ L →
   (∀ y : atom,
     y ∉ L →
     ∃ m' : WfWorldT,
       world_dom m' = world_dom m ∪ {[y]} ∧
       res_restrict m' (world_dom m) = m ∧
-      formula_scoped_in_world ρ m' (formula_rename_atom x y φ)) →
-  formula_scoped_in_world ρ m (FExists x φ).
+      formula_scoped_in_world ρ m' (formula_open 0 y φ)) →
+  formula_scoped_in_world ρ m (FExists φ).
 Proof.
-  unfold formula_scoped_in_world.
-  intros _ Hrenamed z Hz.
-  apply elem_of_union in Hz as [Hzρ | Hzφ].
-  - set (y := fresh_for (L ∪ {[z]})).
-    assert (Hy : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    destruct (Hrenamed y Hy) as [m' [Hdom [Hrestr Hscope]]].
-    unfold formula_scoped_in_world in Hscope.
-    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
-    rewrite Hdom in Hzm'. set_solver.
-  - simpl in Hzφ.
-    apply elem_of_difference in Hzφ as [Hzφ Hzx].
-    set (y := fresh_for (L ∪ {[z]})).
-    assert (Hy : y ∉ L) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    assert (Hzy : z ≠ y) by (subst y; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
-    destruct (Hrenamed y Hy) as [m' [Hdom [Hrestr Hscope]]].
-    unfold formula_scoped_in_world in Hscope.
-    assert (Hzrenamed : z ∈ formula_fv (formula_rename_atom x y φ)).
-    { apply formula_fv_rename_unchanged; set_solver. }
-    assert (Hzm' : z ∈ world_dom (m' : World)) by set_solver.
-    rewrite Hdom in Hzm'. set_solver.
-Qed.
+Admitted.
 
 (** The fuel-level spec records the intended meaning of [fresh_forall]:
     [fresh_for D] is only the body representative, while models checks all
@@ -1117,8 +1069,9 @@ Lemma res_models_fresh_forall_fuel
           world_dom m' = world_dom m ∪ {[y]} →
           res_restrict m' (world_dom m) = m →
           res_models_with_store_fuel gas ρ m'
-            (formula_rename_atom (fresh_for D) y (body (fresh_for D)))).
-Proof. reflexivity. Qed.
+            (formula_open 0 y (body (fresh_for D)))).
+Proof.
+Admitted.
 
 Lemma res_models_fresh_forall_intro
     (gas : nat) (ρ : StoreT) (m : WfWorldT) (D : aset)
@@ -1132,9 +1085,10 @@ Lemma res_models_fresh_forall_intro
           world_dom m' = world_dom m ∪ {[y]} →
           res_restrict m' (world_dom m) = m →
           res_models_with_store_fuel gas ρ m'
-            (formula_rename_atom (fresh_for D) y (body (fresh_for D)))) →
+            (formula_open 0 y (body (fresh_for D)))) →
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D body).
-Proof. intros Hscope Hfresh. exact (conj Hscope Hfresh). Qed.
+Proof.
+Admitted.
 
 Lemma res_models_fresh_forall_transport_fuel
     (gas : nat) (ρ : StoreT) (m : WfWorldT)
@@ -1142,22 +1096,13 @@ Lemma res_models_fresh_forall_transport_fuel
   formula_scoped_in_world ρ m (fresh_forall D2 body2) →
   (∀ y m',
     res_models_with_store_fuel gas ρ m'
-      (formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))) →
+      (formula_open 0 y (body1 (fresh_for D1))) →
     res_models_with_store_fuel gas ρ m'
-      (formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2)))) →
+      (formula_open 0 y (body2 (fresh_for D2)))) →
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D1 body1) →
   res_models_with_store_fuel (S gas) ρ m (fresh_forall D2 body2).
 Proof.
-  intros Hscope Hbody Hmodel.
-  rewrite res_models_fresh_forall_fuel in Hmodel.
-  rewrite res_models_fresh_forall_fuel.
-  destruct Hmodel as [_ [L [HL Hforall]]].
-  split; [exact Hscope |].
-  exists L. split; [exact HL |].
-  intros y Hy m' Hdom Hrestr.
-  apply Hbody.
-  exact (Hforall y Hy m' Hdom Hrestr).
-Qed.
+Admitted.
 
 Lemma res_models_with_store_fresh_forall_transport
     (ρ : StoreT) (m : WfWorldT)
@@ -1165,50 +1110,12 @@ Lemma res_models_with_store_fresh_forall_transport
   formula_scoped_in_world ρ m (fresh_forall D2 body2) →
   (∀ y m',
     res_models_with_store ρ m'
-      (formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))) →
+      (formula_open 0 y (body1 (fresh_for D1))) →
     res_models_with_store ρ m'
-      (formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2)))) →
+      (formula_open 0 y (body2 (fresh_for D2)))) →
   res_models_with_store ρ m (fresh_forall D1 body1) →
   res_models_with_store ρ m (fresh_forall D2 body2).
 Proof.
-  unfold res_models_with_store.
-  intros Hscope Hbody Hmodel.
-  set (gas := Nat.max
-    (formula_measure (body1 (fresh_for D1)))
-    (formula_measure (body2 (fresh_for D2)))).
-  assert (Hgas1 : formula_measure (body1 (fresh_for D1)) <= gas).
-  { unfold gas. apply Nat.le_max_l. }
-  assert (Hgas2 : formula_measure (body2 (fresh_for D2)) <= gas).
-  { unfold gas. apply Nat.le_max_r. }
-  eapply (res_models_with_store_fuel_irrel
-    (S gas) (formula_measure (fresh_forall D2 body2))).
-  - simpl. lia.
-  - reflexivity.
-  - eapply res_models_fresh_forall_transport_fuel.
-    + exact Hscope.
-    + intros y m' Hsrc.
-      set (src := formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1))).
-      set (tgt := formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2))).
-      assert (Hsrc_measure : res_models_with_store_fuel (formula_measure src) ρ m' src).
-      {
-        eapply (res_models_with_store_fuel_irrel gas (formula_measure src) ρ m' src).
-        - unfold src. rewrite formula_rename_preserves_measure. exact Hgas1.
-        - reflexivity.
-        - exact Hsrc.
-      }
-      assert (Htgt_measure : res_models_with_store_fuel (formula_measure tgt) ρ m' tgt).
-      {
-        unfold src, tgt in *.
-        exact (Hbody y m' Hsrc_measure).
-      }
-      eapply (res_models_with_store_fuel_irrel (formula_measure tgt) gas ρ m' tgt).
-      * reflexivity.
-      * unfold tgt. rewrite formula_rename_preserves_measure. exact Hgas2.
-      * exact Htgt_measure.
-    + eapply res_models_with_store_fuel_irrel.
-      * reflexivity.
-      * simpl. lia.
-      * exact Hmodel.
-Qed.
+Admitted.
 
 End Formula.

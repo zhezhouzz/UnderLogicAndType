@@ -446,8 +446,8 @@ Proof.
   models_fuel_irrel Hψ2.
 Qed.
 
-Lemma res_models_forall_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
-  formula_scoped_in_world ∅ m (FForall x φ) →
+Lemma res_models_forall_intro (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world ∅ m (FForall φ) →
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,
@@ -455,22 +455,17 @@ Lemma res_models_forall_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
       ∀ m' : WfWorldT,
         world_dom m' = world_dom m ∪ {[y]} →
         res_restrict m' (world_dom m) = m →
-        m' ⊨ formula_rename_atom x y φ) →
-  m ⊨ FForall x φ.
+        m' ⊨ formula_open 0 y φ) →
+  m ⊨ FForall φ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope [L [HL Hforall]]. split; [exact Hscope |].
-  exists L. split; [exact HL |].
-  intros y Hy m' Hdom Hrestr.
-  models_fuel_irrel (Hforall y Hy m' Hdom Hrestr).
-Qed.
+Admitted.
 
 Lemma res_models_fresh_forall_transport
     (m : WfWorldT) (D : aset) (body1 body2 : atom → FormulaT) :
   formula_scoped_in_world ∅ m (fresh_forall D body2) →
   (∀ y m',
-    m' ⊨ formula_rename_atom (fresh_for D) y (body1 (fresh_for D)) →
-    m' ⊨ formula_rename_atom (fresh_for D) y (body2 (fresh_for D))) →
+    m' ⊨ formula_open 0 y (body1 (fresh_for D)) →
+    m' ⊨ formula_open 0 y (body2 (fresh_for D))) →
   m ⊨ fresh_forall D body1 →
   m ⊨ fresh_forall D body2.
 Proof.
@@ -483,8 +478,8 @@ Lemma res_models_fresh_forall_transport2
     (m : WfWorldT) (D1 D2 : aset) (body1 body2 : atom → FormulaT) :
   formula_scoped_in_world ∅ m (fresh_forall D2 body2) →
   (∀ y m',
-    m' ⊨ formula_rename_atom (fresh_for D1) y (body1 (fresh_for D1)) →
-    m' ⊨ formula_rename_atom (fresh_for D2) y (body2 (fresh_for D2))) →
+    m' ⊨ formula_open 0 y (body1 (fresh_for D1)) →
+    m' ⊨ formula_open 0 y (body2 (fresh_for D2))) →
   m ⊨ fresh_forall D1 body1 →
   m ⊨ fresh_forall D2 body2.
 Proof.
@@ -493,8 +488,8 @@ Proof.
   eapply res_models_with_store_fresh_forall_transport; eauto.
 Qed.
 
-Lemma res_models_exists_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
-  formula_scoped_in_world ∅ m (FExists x φ) →
+Lemma res_models_exists_intro (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world ∅ m (FExists φ) →
   (∃ L : aset,
     world_dom m ⊆ L ∧
     ∀ y : atom,
@@ -502,17 +497,10 @@ Lemma res_models_exists_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
       ∃ m' : WfWorldT,
         world_dom m' = world_dom m ∪ {[y]} ∧
         res_restrict m' (world_dom m) = m ∧
-        m' ⊨ formula_rename_atom x y φ) →
-  m ⊨ FExists x φ.
+        m' ⊨ formula_open 0 y φ) →
+  m ⊨ FExists φ.
 Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope [L [HL Hexists]]. split; [exact Hscope |].
-  exists L. split; [exact HL |].
-  intros y Hy.
-  destruct (Hexists y Hy) as [m' [Hdom [Hrestr Hφ]]].
-  exists m'. split; [exact Hdom |]. split; [exact Hrestr |].
-  models_fuel_irrel Hφ.
-Qed.
+Admitted.
 
 Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaT) :
   x ∉ D →

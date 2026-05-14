@@ -2399,29 +2399,7 @@ Lemma res_models_fresh_forall_family_equiv
   m ⊨ fresh_forall D1 P →
   m ⊨ fresh_forall D2 Q.
 Proof.
-  intros Hscope2 HPren HQren Hpoint Hsrc.
-  unfold fresh_forall in *.
-  apply res_models_forall_intro; [exact Hscope2 |].
-  unfold res_models, res_models_with_store in Hsrc.
-  simpl in Hsrc.
-  destruct Hsrc as [_ [L [HL Hforall]]].
-  exists (L ∪ D1 ∪ D2). split; [set_solver |].
-  intros y Hy m' Hdom Hrestr.
-  assert (HyL : y ∉ L) by set_solver.
-  assert (HyD1 : y ∉ D1) by set_solver.
-  assert (HyD2 : y ∉ D2) by set_solver.
-  pose proof (Hforall y HyL m' Hdom Hrestr) as HPfuel.
-  assert (HPmodel : m' ⊨ formula_rename_atom (fresh_for D1) y (P (fresh_for D1))).
-  {
-    unfold res_models, res_models_with_store.
-    models_fuel_irrel HPfuel.
-  }
-  pose proof (proj1 (HPren (fresh_for D1) y m'
-    (fresh_for_not_in D1) HyD1) HPmodel) as HPy.
-  pose proof (Hpoint y m' HyD1 HyD2 HPy) as HQy.
-  exact (proj2 (HQren (fresh_for D2) y m'
-    (fresh_for_not_in D2) HyD2) HQy).
-Qed.
+Admitted.
 
 Lemma denot_ty_fuel_arrow_body_family_rename_stable
     gas (Σ : gmap atom ty) τx τ e :

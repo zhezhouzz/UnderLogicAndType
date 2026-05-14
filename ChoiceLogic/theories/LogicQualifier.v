@@ -53,6 +53,11 @@ Definition logic_qualifier_denote
 Definition lqual_fvars (d : aset) (prop : StoreT → WfWorldT → Prop) : logic_qualifier :=
   lqual (lvars_of_atoms d) prop.
 
+Definition lqual_open (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual D p => lqual (lvars_open k x D) p
+  end.
+
 Definition lqual_rename_atom (x y : atom) (q : logic_qualifier) : logic_qualifier :=
   match q with
   | lqual D p =>
