@@ -55,6 +55,50 @@ Proof.
   eapply store_has_type_on_mono; eauto.
 Qed.
 
+Lemma store_has_type_on_agree Σ1 Σ2 X σ :
+  (∀ x, x ∈ X → Σ1 !! x = Σ2 !! x) →
+  store_has_type_on Σ1 X σ ↔ store_has_type_on Σ2 X σ.
+Proof.
+  intros Hagree. unfold store_has_type_on.
+  split; intros Htyped x T v Hx HΣ Hσ.
+  - eapply Htyped; eauto.
+    rewrite Hagree; eauto.
+  - eapply Htyped; eauto.
+    rewrite <- Hagree; eauto.
+Qed.
+
+Lemma world_has_type_on_agree Σ1 Σ2 X w :
+  (∀ x, x ∈ X → Σ1 !! x = Σ2 !! x) →
+  world_has_type_on Σ1 X w ↔ world_has_type_on Σ2 X w.
+Proof.
+  intros Hagree. unfold world_has_type_on.
+  split; intros [Hdom Htyped]; split; [exact Hdom | | exact Hdom |].
+  - intros σ Hσ.
+    apply (proj1 (store_has_type_on_agree Σ1 Σ2 X σ Hagree)).
+    exact (Htyped σ Hσ).
+  - intros σ Hσ.
+    apply (proj2 (store_has_type_on_agree Σ1 Σ2 X σ Hagree)).
+    exact (Htyped σ Hσ).
+Qed.
+
+Lemma store_has_type_on_insert_fresh_irrel Σ X σ x T :
+  x ∉ X →
+  store_has_type_on (<[x := T]> Σ) X σ ↔ store_has_type_on Σ X σ.
+Proof.
+  intros Hx.
+  apply store_has_type_on_agree.
+  intros y Hy. rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
+Lemma world_has_type_on_insert_fresh_irrel Σ X w x T :
+  x ∉ X →
+  world_has_type_on (<[x := T]> Σ) X w ↔ world_has_type_on Σ X w.
+Proof.
+  intros Hx.
+  apply world_has_type_on_agree.
+  intros y Hy. rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
 Lemma basic_world_formula_fv Σ X :
   formula_fv (basic_world_formula Σ X) = X.
 Proof.
