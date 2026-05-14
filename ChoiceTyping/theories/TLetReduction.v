@@ -150,9 +150,12 @@ Proof.
     exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
     split; [set_solver |].
     intros ν Hν Hfreshν_tlet Hresultν_tlet.
+    rewrite !not_elem_of_union in Hν.
+    destruct Hν as [[[HνL HνΣ] Hνx] Hνe2].
     assert (Hfreshν_body : ν ∉ world_dom (m1 : World)).
     {
-      subst m1. rewrite let_result_world_on_dom, Hdom. set_solver.
+      subst m1. rewrite let_result_world_on_dom, Hdom, not_elem_of_union.
+      split; eauto 6.
     }
     assert (Hresultν_body :
       ∀ σ, (m1 : World) σ →
@@ -161,7 +164,7 @@ Proof.
     {
       eapply expr_total_on_to_fv_result; eauto.
     }
-    pose proof (Hbody ν ltac:(set_solver) Hfreshν_body Hresultν_body)
+    pose proof (Hbody ν HνL Hfreshν_body Hresultν_body)
       as Hnested.
     pose proof (proj1 (res_models_minimal_on
       (dom Σ ∪ {[ν]})
@@ -170,7 +173,8 @@ Proof.
     replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
       in Hnested_min by (rewrite Hdom; reflexivity).
     rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
-      Hfreshν_tlet Hresultν_tlet ltac:(set_solver)) in Hnested_min.
+      Hfreshν_tlet Hresultν_tlet ltac:(
+        rewrite !not_elem_of_union; repeat split; eauto 6)) in Hnested_min.
     exact Hnested_min.
   - intros Hcont.
     pose proof (proj1
@@ -185,8 +189,10 @@ Proof.
     exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
     split; [rewrite dom_insert_L; set_solver |].
     intros ν Hν Hfreshν_body Hresultν_body.
+    rewrite !not_elem_of_union in Hν.
+    destruct Hν as [[[HνL HνΣ] Hνx] Hνe2].
     assert (Hfreshν_tlet : ν ∉ world_dom (m : World)).
-    { rewrite Hdom. set_solver. }
+    { rewrite Hdom. exact HνΣ. }
     assert (Hresultν_tlet :
       ∀ σ, (m : World) σ →
         ∃ vx, subst_map (store_restrict σ (fv_tm (tlete e1 e2)))
@@ -194,7 +200,7 @@ Proof.
     {
       eapply expr_total_on_to_fv_result; eauto.
     }
-    pose proof (Hwhole ν ltac:(set_solver) Hfreshν_tlet Hresultν_tlet)
+    pose proof (Hwhole ν HνL Hfreshν_tlet Hresultν_tlet)
       as Hwholeν.
     assert (Hrestrict :
       res_restrict
@@ -204,7 +210,8 @@ Proof.
       replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
         by (rewrite Hdom; reflexivity).
       rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
-        Hfreshν_tlet Hresultν_tlet ltac:(set_solver)).
+        Hfreshν_tlet Hresultν_tlet ltac:(
+          rewrite !not_elem_of_union; repeat split; eauto 6)).
       exact Hwholeν.
     }
     exact (proj2 (res_models_minimal_on
@@ -591,6 +598,14 @@ Proof.
     HbasicA HbasicB HIHa HIHb.
   assert (HgasA : cty_measure τa <= gas) by (cbn in Hgas; lia).
   assert (HgasB : cty_measure τb <= gas) by (cbn in Hgas; lia).
+  assert (HfvA : fv_cty τa ⊆ dom Δ)
+    by (eapply basic_choice_ty_fv_subset; exact HbasicA).
+  assert (HfvB : fv_cty τb ⊆ dom Δ)
+    by (eapply basic_choice_ty_fv_subset; exact HbasicB).
+  assert (HfvA_insert : fv_cty τa ⊆ dom (<[x:=T1]> Δ)).
+  { rewrite dom_insert_L. set_solver. }
+  assert (HfvB_insert : fv_cty τb ⊆ dom (<[x:=T1]> Δ)).
+  { rewrite dom_insert_L. set_solver. }
   eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
   cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty].
   split; intros Hmodel.
@@ -604,17 +619,11 @@ Proof.
   - eapply res_models_or_transport_between_worlds; [| | apply (proj2 HIHa) | apply (proj2 HIHb) | exact Hmodel].
     + rewrite let_result_world_on_dom, Hdom.
       pose proof (denot_ty_fuel_formula_fv_subset_env
-        gas (<[x:=T1]> Δ) τa (e2 ^^ x) HgasA
-        ltac:(rewrite dom_insert_L;
-          epose proof (basic_choice_ty_fv_subset (dom Δ) τa HbasicA);
-          set_solver)) as Hfv.
+        gas (<[x:=T1]> Δ) τa (e2 ^^ x) HgasA HfvA_insert) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
     + rewrite let_result_world_on_dom, Hdom.
       pose proof (denot_ty_fuel_formula_fv_subset_env
-        gas (<[x:=T1]> Δ) τb (e2 ^^ x) HgasB
-        ltac:(rewrite dom_insert_L;
-          epose proof (basic_choice_ty_fv_subset (dom Δ) τb HbasicB);
-          set_solver)) as Hfv.
+        gas (<[x:=T1]> Δ) τb (e2 ^^ x) HgasB HfvB_insert) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
 Qed.
 

@@ -176,6 +176,38 @@ add it to the appropriate solver.  This is especially useful for:
 - `lvars_fv (D ∪ E)`
 - `world_dom (res_restrict m X)`
 
+Also reduce the proof context before calling automation.  Many slow proof
+commands are not slow because the target set fact is hard, but because the
+context contains large semantic hypotheses such as full denotations, typing
+derivations, and world predicates.  If a side condition needs only a few fv/dom
+facts, specialize or pose those small facts first, then clear the bulky ones:
+
+```coq
+pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
+clear Hty Hmodel Hdenot Hworld.
+set_solver.
+```
+
+For one-off freshness arguments, prefer destructing `not_elem_of_union` over
+sending a huge union goal to `set_solver`:
+
+```coq
+rewrite !not_elem_of_union in Hfresh.
+destruct Hfresh as [[[Hfresh_L Hfresh_dom] Hfresh_x] Hfresh_e].
+```
+
+This is especially helpful when the freshness proof is passed as an argument to
+a large lemma or a `rewrite`:
+
+```coq
+(* Avoid: this runs set_solver in the full semantic context. *)
+rewrite (big_lemma ... ltac:(set_solver)).
+
+(* Prefer: isolate the small fact first. *)
+assert (Hν : ν ∉ D ∪ {[x]} ∪ fv_tm e) by set_solver.
+rewrite (big_lemma ... Hν).
+```
+
 ## Basic typing solver pattern
 
 Basic typing side conditions should be solved by regularity plus bounded

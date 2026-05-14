@@ -117,7 +117,11 @@ Proof.
     + intros [σx [[σ0 [vx [Hσ0 [Hsteps ->]]]] Hrestrict]].
       rewrite store_restrict_insert_notin in Hrestrict by exact Hfresh.
       assert (Hid : store_restrict σ0 (world_dom (w : World)) = σ0).
-      { apply store_restrict_idemp. resource_solver. }
+      {
+        apply store_restrict_idemp.
+        pose proof (wfworld_store_dom w σ0 Hσ0) as Hdomσ0.
+        set_solver.
+      }
       rewrite Hid in Hrestrict.
       subst. exact Hσ0.
     + intros Hσ.
@@ -126,7 +130,8 @@ Proof.
       * exists σ, vx. repeat split; eauto.
       * rewrite store_restrict_insert_notin by exact Hfresh.
         apply store_restrict_idemp.
-        resource_solver.
+        pose proof (wfworld_store_dom w σ Hσ) as Hdomσ.
+        set_solver.
 Qed.
 
 Lemma let_result_world_on_restrict_input
@@ -676,7 +681,9 @@ Proof.
             store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
             store_restrict (store_restrict σ X) (fv_tm e1)).
           {
-            store_norm. replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            rewrite !store_restrict_restrict.
+            replace (fv_tm e1 ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
             reflexivity.
           }
           exact (Heq Hagree).
@@ -743,7 +750,9 @@ Proof.
             store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
             store_restrict (store_restrict σ X) (fv_tm e1)).
           {
-            store_norm. replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            rewrite !store_restrict_restrict.
+            replace (fv_tm e1 ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
             reflexivity.
           }
           exact (Heq Hagree).
