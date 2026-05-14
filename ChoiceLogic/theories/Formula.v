@@ -891,6 +891,31 @@ Proof.
   exists m0. repeat split; eauto.
 Qed.
 
+Lemma res_models_with_store_resource_atom_vars_intro
+    (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FResourceAtomVars D P) →
+  P (res_restrict m (lvars_fv D)) →
+  res_models_with_store ρ m (FResourceAtomVars D P).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope HP. split; [exact Hscope |].
+  exists m. split; [exact Hscope |].
+  split; [exact HP | reflexivity].
+Qed.
+
+Lemma res_models_with_store_resource_atom_vars_elim
+    (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
+  res_models_with_store ρ m (FResourceAtomVars D P) →
+  ∃ m0,
+    formula_scoped_in_world ρ m0 (FResourceAtomVars D P) ∧
+    P (res_restrict m0 (lvars_fv D)) ∧
+    m0 ⊑ m.
+Proof.
+  unfold res_models_with_store. simpl.
+  intros [_ [m0 [Hscope [HP Hle]]]].
+  exists m0. repeat split; eauto.
+Qed.
+
 Lemma res_models_with_store_store_resource_atom_intro
     (ρ : StoreT) (m : WfWorldT) D
     (P : gmap nat atom → StoreT → WfWorldT → Prop) :
@@ -917,6 +942,33 @@ Proof.
   unfold res_models_with_store. simpl.
   intros [_ [m0 [Hscope [HP Hle]]]].
   rewrite lvars_fv_of_atoms in HP.
+  exists m0. repeat split; eauto.
+Qed.
+
+Lemma res_models_with_store_store_resource_atom_vars_intro
+    (ρ : StoreT) (m : WfWorldT) D
+    (P : gmap nat atom → StoreT → WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FStoreResourceAtomVars D P) →
+  P ∅ (store_restrict ρ (lvars_fv D)) (res_restrict m (lvars_fv D)) →
+  res_models_with_store ρ m (FStoreResourceAtomVars D P).
+Proof.
+  unfold res_models_with_store. simpl.
+  intros Hscope HP. split; [exact Hscope |].
+  exists m. split; [exact Hscope |].
+  split; [exact HP | reflexivity].
+Qed.
+
+Lemma res_models_with_store_store_resource_atom_vars_elim
+    (ρ : StoreT) (m : WfWorldT) D
+    (P : gmap nat atom → StoreT → WfWorldT → Prop) :
+  res_models_with_store ρ m (FStoreResourceAtomVars D P) →
+  ∃ m0,
+    formula_scoped_in_world ρ m0 (FStoreResourceAtomVars D P) ∧
+    P ∅ (store_restrict ρ (lvars_fv D)) (res_restrict m0 (lvars_fv D)) ∧
+    m0 ⊑ m.
+Proof.
+  unfold res_models_with_store. simpl.
+  intros [_ [m0 [Hscope [HP Hle]]]].
   exists m0. repeat split; eauto.
 Qed.
 

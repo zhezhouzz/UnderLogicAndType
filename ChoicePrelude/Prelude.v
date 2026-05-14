@@ -99,6 +99,11 @@ Lemma lvars_fv_of_atoms (X : aset) :
 Proof.
 Admitted.
 
+Lemma lvars_bv_of_atoms (X : aset) :
+  lvars_bv (lvars_of_atoms X) = ∅.
+Proof.
+Admitted.
+
 Lemma logic_var_bv_swap x y v :
   logic_var_bv (logic_var_swap x y v) = logic_var_bv v.
 Proof.

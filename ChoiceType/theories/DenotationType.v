@@ -58,10 +58,59 @@ Definition open_cty_env (η : gmap nat atom) (τ : choice_ty) : choice_ty :=
 Definition lty_env_atom_dom (Σ : lty_env) : aset :=
   lvars_fv (dom Σ).
 
+Lemma atom_env_to_lty_env_dom Σ :
+  dom (atom_env_to_lty_env Σ) = lvars_of_atoms (dom Σ).
+Proof.
+  unfold atom_env_to_lty_env, lvars_of_atoms.
+  refine (fin_maps.map_fold_ind
+    (fun Σ => dom (map_fold
+        (fun (x : atom) (T : ty) (acc : lty_env) => <[LVFree x := T]> acc)
+        (∅ : lty_env) Σ)
+      = set_map LVFree (dom Σ)) _ _ Σ).
+  - rewrite dom_empty_L. rewrite set_map_empty. reflexivity.
+  - intros x T Σ' Hfresh Hfold IH.
+    rewrite Hfold.
+	    replace (dom (map_fold
+	        (fun (x : atom) (T : ty) (acc : lty_env) => <[LVFree x := T]> acc)
+	        (∅ : lty_env) Σ'))
+	      with (set_map (C:=aset) (D:=lvset) LVFree (dom Σ'))
+	      by exact (eq_sym IH).
+	    rewrite dom_insert_L.
+	    rewrite set_map_union_L, set_map_singleton_L.
+    set_solver.
+Qed.
+
 Lemma atom_env_to_lty_env_closed Σ :
   lty_env_closed (atom_env_to_lty_env Σ).
 Proof.
+  unfold lty_env_closed.
+  rewrite atom_env_to_lty_env_dom.
+  apply lvars_bv_of_atoms.
+Qed.
+
+Lemma atom_env_to_lty_env_atom_dom Σ :
+  lty_env_atom_dom (atom_env_to_lty_env Σ) = dom Σ.
+Proof.
+  unfold lty_env_atom_dom. rewrite atom_env_to_lty_env_dom.
+  apply lvars_fv_of_atoms.
+Qed.
+
+Lemma lty_env_open_atom_env_empty Σ :
+  lty_env_open ∅ (atom_env_to_lty_env Σ) = Σ.
+Proof.
 Admitted.
+
+Lemma open_cty_env_empty τ :
+  open_cty_env ∅ τ = τ.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma open_tm_env_empty e :
+  open_tm_env ∅ e = e.
+Proof.
+  reflexivity.
+Qed.
 
 (** ** Type denotation
 
