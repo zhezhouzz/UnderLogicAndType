@@ -499,7 +499,9 @@ Lemma denot_ty_fuel_unfold gas Σ τ e :
   let Σl := atom_env_to_lty_env Σ in
   denot_ty_obligations Σl Σl τ e (denot_ty_fuel_body gas Σ τ e).
 Proof.
-Admitted.
+  unfold denot_ty_fuel, denot_ty_fuel_body.
+  destruct gas as [|gas]; reflexivity.
+Qed.
 
 Definition denot_ty_on
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
