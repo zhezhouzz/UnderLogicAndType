@@ -117,6 +117,12 @@ Lemma lvars_fv_singleton_bound k :
 Proof.
 Admitted.
 
+Lemma lvars_fv_open k x (D : lvset) :
+  lvars_fv (lvars_open k x D) =
+  lvars_fv D ∪ (if decide (k ∈ lvars_bv D) then {[x]} else ∅).
+Proof.
+Admitted.
+
 Lemma lvars_fv_union (D1 D2 : lvset) :
   lvars_fv (D1 ∪ D2) = lvars_fv D1 ∪ lvars_fv D2.
 Proof.
