@@ -553,8 +553,37 @@ Lemma denot_ty_fuel_intro gas Σ τ e m :
   dom Σ ⊆ world_dom (m : World) →
   m ⊨ denot_ty_fuel gas Σ τ e.
 Proof.
-  (* Transitional obligation-introduction lemma during logic LN refactor. *)
-Admitted.
+  intros Hbasic Htyped Hclosed Htotal Hbody Hdom.
+  rewrite denot_ty_fuel_unfold.
+  unfold denot_ty_obligations.
+  apply res_models_and_intro_from_models.
+  - unfold FBasicTypingIn, res_models.
+    eapply res_models_with_store_pure_intro.
+    + unfold formula_scoped_in_world.
+      rewrite formula_fv_FPure. set_solver.
+    + split; assumption.
+  - apply res_models_and_intro_from_models.
+    + unfold res_models.
+      change (res_models_with_store ∅ m
+        (FResourceAtom (dom Σ) (world_closed_on (dom Σ)))).
+      eapply res_models_with_store_resource_atom_intro.
+      * unfold formula_scoped_in_world.
+        rewrite formula_fv_FResourceAtom. set_solver.
+      * eapply world_closed_on_le.
+        -- apply res_restrict_le.
+        -- exact Hclosed.
+    + apply res_models_and_intro_from_models.
+      * unfold res_models.
+        change (res_models_with_store ∅ m
+          (FStoreResourceAtom (dom Σ)
+            (fun ρ m => expr_total_with_store (dom Σ) e ρ m))).
+        eapply res_models_with_store_store_resource_atom_intro.
+        -- unfold formula_scoped_in_world.
+           rewrite formula_fv_FStoreResourceAtom. set_solver.
+        -- rewrite store_restrict_empty.
+           eapply expr_total_with_store_empty_restrict; eauto.
+      * exact Hbody.
+Qed.
 
 Lemma denot_ty_fuel_body_of_formula gas Σ τ e m :
   m ⊨ denot_ty_fuel gas Σ τ e →

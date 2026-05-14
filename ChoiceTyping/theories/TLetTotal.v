@@ -44,8 +44,70 @@ Lemma let_result_world_on_erased_basic
       (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)))
       (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)))).
 Proof.
-  (* Transitional lqual-domain normalization during LN refactor. *)
-Admitted.
+  intros Hwf Hctx Hx.
+  set (Δ := erase_ctx_under Σ Γ).
+  set (Δx := erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))).
+  assert (HΔx_dom : dom Δx = dom Δ ∪ {[x]}).
+  { subst Δ Δx. apply erase_ctx_under_comma_bind_dom. }
+  assert (Hbasic_old : m ⊨ basic_world_formula Δ (dom Δ)).
+  { subst Δ. apply denot_ctx_in_env_erased_basic. exact Hctx. }
+  assert (Hcover_old : dom Δ ⊆ world_dom (m : World)).
+  { eapply basic_world_formula_dom_subset. exact Hbasic_old. }
+  assert (HΔx_env : Δx = <[x := erase_ty τ]> Δ).
+  { subst Δ Δx. apply erase_ctx_under_comma_bind_env_fresh. exact Hx. }
+  eapply res_models_atom_intro.
+  - change (formula_scoped_in_world ∅
+      (let_result_world_on e x m Hfresh Hresult)
+      (basic_world_formula Δx (dom Δx))).
+    unfold formula_scoped_in_world.
+    rewrite dom_empty_L, basic_world_formula_fv.
+    rewrite HΔx_dom. simpl. set_solver.
+  - unfold basic_world_formula, basic_world_lqual, logic_qualifier_denote,
+      lqual_fvars. simpl. rewrite lvars_fv_of_atoms.
+    split.
+    + simpl. rewrite HΔx_dom. simpl. set_solver.
+    + intros σr Hσr z T v Hz HΣz Hlookup.
+      simpl in Hσr.
+      destruct Hσr as [σx [Hσx Hrestrict]].
+      destruct (let_result_world_on_elim e x m Hfresh Hresult σx Hσx)
+        as [σ [vx [Hσ [Hsteps ->]]]].
+      rewrite <- Hrestrict in Hlookup.
+      apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
+      destruct (decide (z = x)) as [->|Hzx].
+      * rewrite (lookup_insert_eq σ x vx) in Hlookup. inversion Hlookup; subst v.
+        rewrite HΔx_env in HΣz.
+        rewrite lookup_insert_eq in HΣz. inversion HΣz; subst T.
+        eapply choice_typing_wf_result_typed_restrict_in_ctx; eauto.
+        subst Δ.
+        assert (Hfv : fv_tm e ⊆ dom (erase_ctx_under Σ Γ)).
+        { eapply choice_typing_wf_fv_tm_subset_erase_dom. exact Hwf. }
+        assert (Hclosed :
+          closed_env (store_restrict σ (dom (erase_ctx_under Σ Γ)))).
+        {
+          destruct Hwf as [Hty _].
+          pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hty))
+            as HbasicΓ.
+          destruct (denot_ctx_in_env_store_erased_typed
+            Σ Γ m σ HbasicΓ Hctx Hσ) as [Hclosed0 _].
+          assert (Hdom_erase :
+            dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
+          { apply erase_ctx_under_dom_basic. exact HbasicΓ. }
+          rewrite Hdom_erase. exact Hclosed0.
+        }
+        rewrite <- (subst_map_restrict_to_fv_from_superset e
+          (dom (erase_ctx_under Σ Γ)) σ Hfv Hclosed).
+        exact Hsteps.
+      * rewrite HΔx_env in HΣz.
+        rewrite lookup_insert_ne in HΣz by congruence.
+        rewrite (lookup_insert_ne σ x z vx) in Hlookup by congruence.
+        assert (HzΔ : z ∈ dom Δ).
+        { subst Δ. subst Δx. rewrite erase_ctx_under_comma_bind_dom in Hz.
+          set_solver. }
+        pose proof (basic_world_formula_store_restrict_typed
+          Δ (dom Δ) m σ Hbasic_old Hσ) as Htyped.
+        eapply Htyped; eauto.
+        apply store_restrict_lookup_some_2; [exact Hlookup | exact HzΔ].
+Qed.
 
 (** Result-binding compatibility for the let-result world.
 
