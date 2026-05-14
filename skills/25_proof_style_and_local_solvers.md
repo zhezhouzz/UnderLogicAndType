@@ -270,9 +270,17 @@ Use these rules when optimizing build time:
 
 - Prefer `Require Import` for ordinary proof-support files.  Reserve
   `Require Export` for intentional API/prelude boundaries.
+- Register typeclass instances in the file that proves the underlying theorem
+  whenever possible.  A tiny `*Instances.v` wrapper often reloads a large proof
+  layer just to run a few `Instance` commands; move those instances next to the
+  lemmas unless doing so creates a real dependency cycle.
 - Avoid very small wrapper files unless they control a useful public import
   surface.  Splitting a huge file helps proof checking, but too many small files
   can make loading dominate.
+- File-size guidance is pragmatic: keep ordinary files around 1000 lines, but
+  allow up to about 1500 lines when merging wrappers/instances materially
+  reduces loading cost.  Do not preserve a tiny file solely to satisfy the line
+  limit if it makes every downstream compile pay another import.
 - Keep heavyweight hints out of `core`; put them in named hint databases and
   call them explicitly with `eauto 6 with ...`.
 - When a short file has high seconds-per-kloc, first check whether the cost is

@@ -8,4 +8,4 @@
     This file remains as a small compatibility prelude for modules that import
     the old proof-layer entry point. *)
 
-From ChoiceType Require Export LocallyNamelessProps LocallyNamelessInstances.
+From ChoiceType Require Export LocallyNamelessProps.

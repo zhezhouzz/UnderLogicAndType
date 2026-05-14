@@ -5,6 +5,7 @@
     stays light. *)
 
 From ChoiceType Require Export Qualifier.
+From LocallyNameless Require Import Classes.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** ** Swap lemmas *)
@@ -85,5 +86,31 @@ Admitted.
 Lemma qual_interp_open_eq_const x c σ :
   qual_interp σ (qual_open_atom 0 x (mk_q_eq (vbvar 0) (vconst c))) ↔
   σ !! x = Some (vconst c).
+Proof.
+Admitted.
+
+(** ** Shared locally-nameless class instances
+
+    Keep these next to the qualifier lemmas they wrap.  A separate tiny
+    instances file forces downstream files to reload this whole layer just to
+    register typeclasses. *)
+
+#[global] Instance OpenFv_qualifier : OpenFv atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenFvPrime_qualifier : OpenFvPrime atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenRecLc_qualifier : OpenRecLc atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenLcRespect_qualifier : OpenLcRespect atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenIdemp_qualifier : OpenIdemp atom type_qualifier.
 Proof.
 Admitted.

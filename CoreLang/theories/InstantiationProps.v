@@ -7,7 +7,7 @@
 
 From ChoicePrelude Require Import Store.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
-  LocallyNamelessExtra LocallyNamelessInstances.
+  LocallyNamelessExtra.
 From LocallyNameless Require Import Classes Tactics.
 
 Lemma closed_env_insert σ x v :

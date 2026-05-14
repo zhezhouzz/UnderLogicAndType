@@ -213,7 +213,6 @@ match.
 | `Properties.v` | Basic metatheory entry points |
 | `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
 | `LocallyNamelessExtra.v` | Additional LN lemmas imported from earlier developments |
-| `LocallyNamelessInstances.v` | CoreLang instances for the shared LN classes |
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
 
@@ -234,10 +233,8 @@ with store-based lookup while preserving expressiveness through let-binding.
 | `Prelude.v` | Imports `CoreLang` and `ChoiceLogic`; fixes ChoiceType notations to CoreLang `value`s |
 | `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
 | `QualifierBridge.v` | Lifting closed type qualifiers into logic qualifier atoms |
-| `QualifierInstances.v` | Type-qualifier instances for the shared LN classes |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, atom opening/swap |
 | `Sugar.v` | Derived type forms such as over/under/precise refinements and unary primop types |
-| `LocallyNamelessInstances.v` | Choice-type instances for the shared LN classes |
 | `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
 

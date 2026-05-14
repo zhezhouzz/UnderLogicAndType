@@ -32,7 +32,6 @@ LocallyNameless/Classes.v
 CoreLang/theories/LocallyNamelessProps.v
 CoreLang/theories/Sugar.v
 CoreLang/theories/LocallyNamelessExtra.v
-CoreLang/theories/LocallyNamelessInstances.v
 CoreLang/theories/InstantiationProps.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
@@ -51,12 +50,10 @@ ChoiceLogic/examples/FiberExamples.v
 ChoiceType/theories/Prelude.v
 ChoiceType/theories/Qualifier.v
 ChoiceType/theories/QualifierProps.v
-ChoiceType/theories/QualifierInstances.v
 ChoiceType/theories/QualifierBridge.v
 ChoiceType/theories/Syntax.v
 ChoiceType/theories/BasicStore.v
 ChoiceType/theories/LocallyNamelessProps.v
-ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/InstantiationProps.v
 ChoiceType/theories/DenotationFibers.v

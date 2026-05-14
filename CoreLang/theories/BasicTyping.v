@@ -76,6 +76,7 @@ where "Γ '⊢ᵥ' v '⋮' T" := (value_has_type Γ v T)
 
 Scheme value_has_type_mut := Induction for value_has_type Sort Prop
   with tm_has_type_mut    := Induction for tm_has_type    Sort Prop.
+Combined Scheme has_type_mutind from value_has_type_mut, tm_has_type_mut.
 
 #[global] Hint Constructors value_has_type tm_has_type : core.
 

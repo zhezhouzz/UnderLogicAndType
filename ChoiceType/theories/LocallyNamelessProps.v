@@ -11,7 +11,6 @@
 
 From LocallyNameless Require Import Classes.
 From ChoiceType Require Export Syntax QualifierProps.
-From ChoiceType Require Import QualifierInstances.
 
 (** ** Atom swap facts *)
 
@@ -120,4 +119,23 @@ Lemma cty_open_preserves_erasure k x τ :
   erase_ty ({k ~> x} τ) = erase_ty τ.
 Proof.
   induction τ in k |- *; simpl; try rewrite ?IHτ1, ?IHτ2; reflexivity.
+Qed.
+
+(** ** Shared locally-nameless class instances
+
+    These instances wrap the lemmas above, so keeping them here avoids a tiny
+    instance-only file that reloads this layer just to register typeclasses. *)
+
+#[global] Instance OpenFv_cty : OpenFv atom choice_ty.
+Proof.
+  intros τ. induction τ; intros x k; simpl; try set_solver.
+  - pose proof (open_fv φ x (S k)). simpl in H. set_solver.
+  - pose proof (open_fv φ x (S k)). simpl in H. set_solver.
+Qed.
+
+#[global] Instance OpenFvPrime_cty : OpenFvPrime atom choice_ty.
+Proof.
+  intros τ. induction τ; intros x k; simpl; try set_solver.
+  - pose proof (open_fv' φ x (S k)). simpl in H. set_solver.
+  - pose proof (open_fv' φ x (S k)). simpl in H. set_solver.
 Qed.

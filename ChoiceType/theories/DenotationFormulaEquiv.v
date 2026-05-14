@@ -188,16 +188,19 @@ Proof.
   - unfold formula_scoped_in_world in *.
     cbn [formula_fv] in *.
     rewrite <- Hfv. exact Hscope.
-  - exists (L ∪ dom Σ). split; [set_solver |].
+  - exists (L ∪ dom Σ). split.
+    { intros z Hz. apply elem_of_union. left. exact (HLdom z Hz). }
     intros y Hy m' Hdom Hrestrict.
-    specialize (Hforall y ltac:(set_solver) m' Hdom Hrestrict).
+    rewrite not_elem_of_union in Hy.
+    destruct Hy as [HyL HyΣ].
+    specialize (Hforall y HyL m' Hdom Hrestrict).
     cbn [formula_open formula_measure res_models_with_store_fuel
       formula_scoped_in_world formula_fv] in *.
     destruct Hforall as [HscopeImp Himpl].
     split.
     + unfold formula_scoped_in_world in *.
       cbn [formula_fv] in *.
-      rewrite <- Hopen_fv by set_solver.
+      rewrite <- Hopen_fv by exact HyΣ.
       exact HscopeImp.
     + intros n Hle HA.
       assert (HA_src : res_models_with_store_fuel
@@ -206,7 +209,7 @@ Proof.
         ρ n (formula_open 0 y (FExprResultOn (into_lvars Σ) e))).
       { models_fuel_irrel HA. }
       specialize (Himpl n Hle HA_src) as HP.
-      pose proof (Heq y ltac:(set_solver) ρ n) as HyEq.
+      pose proof (Heq y HyΣ ρ n) as HyEq.
       unfold res_models_with_store in HyEq.
       assert (HQ_exact :
         res_models_with_store_fuel (formula_measure (formula_open 0 y Q))
@@ -221,16 +224,19 @@ Proof.
   - unfold formula_scoped_in_world in *.
     cbn [formula_fv] in *.
     rewrite Hfv. exact Hscope.
-  - exists (L ∪ dom Σ). split; [set_solver |].
+  - exists (L ∪ dom Σ). split.
+    { intros z Hz. apply elem_of_union. left. exact (HLdom z Hz). }
     intros y Hy m' Hdom Hrestrict.
-    specialize (Hforall y ltac:(set_solver) m' Hdom Hrestrict).
+    rewrite not_elem_of_union in Hy.
+    destruct Hy as [HyL HyΣ].
+    specialize (Hforall y HyL m' Hdom Hrestrict).
     cbn [formula_open formula_measure res_models_with_store_fuel
       formula_scoped_in_world formula_fv] in *.
     destruct Hforall as [HscopeImp Himpl].
     split.
     + unfold formula_scoped_in_world in *.
       cbn [formula_fv] in *.
-      rewrite Hopen_fv by set_solver.
+      rewrite Hopen_fv by exact HyΣ.
       exact HscopeImp.
     + intros n Hle HA.
       assert (HA_src : res_models_with_store_fuel
@@ -239,7 +245,7 @@ Proof.
         ρ n (formula_open 0 y (FExprResultOn (into_lvars Σ) e))).
       { models_fuel_irrel HA. }
       specialize (Himpl n Hle HA_src) as HQ.
-      pose proof (Heq y ltac:(set_solver) ρ n) as HyEq.
+      pose proof (Heq y HyΣ ρ n) as HyEq.
       unfold res_models_with_store in HyEq.
       assert (HP_exact :
         res_models_with_store_fuel (formula_measure (formula_open 0 y P))
