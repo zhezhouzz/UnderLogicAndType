@@ -120,15 +120,15 @@ Fixpoint denot_ty_fuel
     match τ with
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ◁φ
-      [fib_vars (fv φ)] iterates the single-variable fiber modality over
+      [FFibVars (lvars_of_atoms (fv φ))] applies the primitive multi-fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
       FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FOver (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
@@ -136,8 +136,8 @@ Fixpoint denot_ty_fuel
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FUnder (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
@@ -194,15 +194,15 @@ Definition denot_ty_fuel_body
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FOver (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
   | CTUnder b φ =>
       FExprContIn Σ e (fun ν =>
       let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FUnder (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
   | CTInter τ1 τ2 =>
       FAnd
         (denot_ty_fuel gas' Σ τ1 e)
@@ -409,16 +409,16 @@ Proof.
              FAnd
                (basic_world_formula (<[ν:=TBase b]> Σ)
                  ({[ν]} ∪ qual_dom φν))
-               (fib_vars (qual_dom φν)
-                 (FOver (FTypeQualifier φν)))))
+               (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν)))))
         ⊆ dom Σ ∪ fv_cty (CTOver b φ)).
       {
         apply FExprContIn_formula_fv_subset; first set_solver.
         intros ν _.
         cbn [formula_fv].
         rewrite basic_world_formula_fv.
-        rewrite fib_vars_formula_fv.
-        rewrite formula_fv_FOver_FTypeQualifier.
+        simpl. rewrite lvars_fv_of_atoms.
+        rewrite formula_fv_FTypeQualifier.
         destruct φ as [B d p].
         unfold qual_open_atom, qual_dom in *; simpl in *.
         destruct (decide (0 ∈ B)); set_solver.
@@ -431,16 +431,16 @@ Proof.
              FAnd
                (basic_world_formula (<[ν:=TBase b]> Σ)
                  ({[ν]} ∪ qual_dom φν))
-               (fib_vars (qual_dom φν)
-                 (FUnder (FTypeQualifier φν)))))
+               (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν)))))
         ⊆ dom Σ ∪ fv_cty (CTUnder b φ)).
       {
         apply FExprContIn_formula_fv_subset; first set_solver.
         intros ν _.
         cbn [formula_fv].
         rewrite basic_world_formula_fv.
-        rewrite fib_vars_formula_fv.
-        rewrite formula_fv_FUnder_FTypeQualifier.
+        simpl. rewrite lvars_fv_of_atoms.
+        rewrite formula_fv_FTypeQualifier.
         destruct φ as [B d p].
         unfold qual_open_atom, qual_dom in *; simpl in *.
         destruct (decide (0 ∈ B)); set_solver.
@@ -520,8 +520,8 @@ Proof.
       intros ν _.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
-      rewrite fib_vars_formula_fv.
-      rewrite formula_fv_FOver_FTypeQualifier.
+      simpl. rewrite lvars_fv_of_atoms.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ as [B d p].
       unfold qual_open_atom, qual_dom in *; simpl in *.
       destruct (decide (0 ∈ B)); set_solver.
@@ -529,8 +529,8 @@ Proof.
       intros ν _.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
-      rewrite fib_vars_formula_fv.
-      rewrite formula_fv_FUnder_FTypeQualifier.
+      simpl. rewrite lvars_fv_of_atoms.
+      rewrite formula_fv_FTypeQualifier.
       destruct φ as [B d p].
       unfold qual_open_atom, qual_dom in *; simpl in *.
       destruct (decide (0 ∈ B)); set_solver.

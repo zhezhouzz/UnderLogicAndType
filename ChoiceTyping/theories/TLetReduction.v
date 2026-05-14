@@ -2522,15 +2522,15 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν))))
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν))))) in Hbody.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))) in Hbody.
       2:{
         eapply (denot_refinement_over_cont_insert_fresh_eq
           (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -2542,8 +2542,8 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
       assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
       {
         intros Hxe. apply Hx.
@@ -2580,15 +2580,15 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν))))
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν))))).
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))).
       2:{
         eapply (denot_refinement_over_cont_insert_fresh_eq
           (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -2600,8 +2600,8 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν)))) m) as Hcont_iff.
       assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
       {
         intros Hxe. apply Hx.
@@ -2670,15 +2670,15 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν))))
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν))))) in Hbody.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))) in Hbody.
       2:{
         eapply (denot_refinement_under_cont_insert_fresh_eq
           (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -2690,8 +2690,8 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν)))) m) as Hcont_iff.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν)))) m) as Hcont_iff.
       assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
       {
         intros Hxe. apply Hx.
@@ -2728,15 +2728,15 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν))))
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
         (fun ν =>
           let φν := qual_open_atom 0 ν φ in
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν))))).
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))).
       2:{
         eapply (denot_refinement_under_cont_insert_fresh_eq
           (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -2748,8 +2748,8 @@ Proof.
           FAnd
             (basic_world_formula (<[ν:=TBase b]> Σ)
               ({[ν]} ∪ qual_dom φν))
-            (fib_vars (qual_dom φν)
-              (FUnder (FTypeQualifier φν)))) m) as Hcont_iff.
+            (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν)))) m) as Hcont_iff.
       assert (Hx_e : x ∉ dom Σ ∪ fv_tm e).
       {
         intros Hxe. apply Hx.
@@ -3321,15 +3321,15 @@ Proof.
         FAnd
           (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
             ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FOver (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
       (fun ν =>
         let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν:=TBase b]> Σ)
             ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FOver (FTypeQualifier φν))))) in Hbody.
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))) in Hbody.
     2:{
       eapply (denot_refinement_over_cont_insert_fresh_eq
         (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -3395,15 +3395,15 @@ Proof.
         FAnd
           (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
             ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FUnder (FTypeQualifier φν))))
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
       (fun ν =>
         let φν := qual_open_atom 0 ν φ in
         FAnd
           (basic_world_formula (<[ν:=TBase b]> Σ)
             ({[ν]} ∪ qual_dom φν))
-          (fib_vars (qual_dom φν)
-            (FUnder (FTypeQualifier φν))))) in Hbody.
+          (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))) in Hbody.
     2:{
       eapply (denot_refinement_under_cont_insert_fresh_eq
         (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -3904,15 +3904,15 @@ Proof.
             FAnd
               (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
                 ({[ν]} ∪ qual_dom φν))
-              (fib_vars (qual_dom φν)
-                (FOver (FTypeQualifier φν))))
+              (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
           (fun ν =>
             let φν := qual_open_atom 0 ν φ in
             FAnd
               (basic_world_formula (<[ν:=TBase b]> Σ)
                 ({[ν]} ∪ qual_dom φν))
-              (fib_vars (qual_dom φν)
-                (FOver (FTypeQualifier φν))))).
+              (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))).
         2:{
           eapply (denot_refinement_over_cont_insert_fresh_eq
             (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -3937,15 +3937,15 @@ Proof.
             FAnd
               (basic_world_formula (<[ν:=TBase b]> (<[x:=T]> Σ))
                 ({[ν]} ∪ qual_dom φν))
-              (fib_vars (qual_dom φν)
-                (FUnder (FTypeQualifier φν))))
+              (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
           (fun ν =>
             let φν := qual_open_atom 0 ν φ in
             FAnd
               (basic_world_formula (<[ν:=TBase b]> Σ)
                 ({[ν]} ∪ qual_dom φν))
-              (fib_vars (qual_dom φν)
-                (FUnder (FTypeQualifier φν))))).
+              (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))).
         2:{
           eapply (denot_refinement_under_cont_insert_fresh_eq
             (dom Σ : aset) Σ x T b φ); [set_solver | reflexivity].
@@ -4370,15 +4370,15 @@ Proof.
       FAnd
         (basic_world_formula (<[ν:=TBase b]> (<[x:=T1]> Δ))
           ({[ν]} ∪ qual_dom φν))
-        (fib_vars (qual_dom φν)
-          (FOver (FTypeQualifier φν))))
+        (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))
     (fun ν =>
       let φν := qual_open_atom 0 ν φ in
       FAnd
         (basic_world_formula (<[ν:=TBase b]> Δ)
           ({[ν]} ∪ qual_dom φν))
-        (fib_vars (qual_dom φν)
-          (FOver (FTypeQualifier φν))))).
+        (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FOver (FTypeQualifier φν))))).
   2:{
     eapply (denot_refinement_over_cont_insert_fresh_eq
       (dom Δ : aset) Δ x T1 b φ); [set_solver | reflexivity].
@@ -4421,15 +4421,15 @@ Proof.
       FAnd
         (basic_world_formula (<[ν:=TBase b]> (<[x:=T1]> Δ))
           ({[ν]} ∪ qual_dom φν))
-        (fib_vars (qual_dom φν)
-          (FUnder (FTypeQualifier φν))))
+        (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))
     (fun ν =>
       let φν := qual_open_atom 0 ν φ in
       FAnd
         (basic_world_formula (<[ν:=TBase b]> Δ)
           ({[ν]} ∪ qual_dom φν))
-        (fib_vars (qual_dom φν)
-          (FUnder (FTypeQualifier φν))))).
+        (FFibVars (lvars_of_atoms (qual_dom φν))
+       (FUnder (FTypeQualifier φν))))).
   2:{
     eapply (denot_refinement_under_cont_insert_fresh_eq
       (dom Δ : aset) Δ x T1 b φ); [set_solver | reflexivity].

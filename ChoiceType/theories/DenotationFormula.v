@@ -166,7 +166,7 @@ Definition FExprResultAtomOn (X : aset) (e : tm) (ν : atom) : FQ :=
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
 Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FExprResultAtomOn X e ν).
+  FFibVars (lvars_of_atoms X) (FExprResultAtomOn X e ν).
 
 Lemma expr_logic_qual_on_swap_result X e a ν :
   a ∉ X →
@@ -267,7 +267,7 @@ Proof. intros H Hstore. exact (proj2 (H σw) Hstore). Qed.
 
 Definition FLetResultOnWith
     (X : aset) (e1 e2 : tm) (x ν : atom) : FQ :=
-  fib_vars (X ∪ {[x]})
+  FFibVars (lvars_of_atoms (X ∪ {[x]}))
     (FStoreResourceAtom (X ∪ {[x]} ∪ {[ν]})
       (fun _ w => expr_let_result_in_world_on X e1 e2 x ν w)).
 

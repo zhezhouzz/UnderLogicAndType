@@ -15,7 +15,8 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
   FExists x
     (FAnd
       (FExprResultOn (fv_tm e1) e1 x)
-      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (FFibVars (lvars_of_atoms {[x]})
+        (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
 
 (** [FLetResult] remains a useful auxiliary formula for examples and local
     decompositions, but the operational bridge for [tlete] is handled at the
@@ -76,7 +77,7 @@ Lemma FLetResult_models_elim e1 e2 ν m :
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
             (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (fib_vars {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]}
+            (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
               (FExprResultOn
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν))).
@@ -85,7 +86,8 @@ Proof.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
   set (body :=
     FAnd (FExprResultOn (fv_tm e1) e1 x)
-      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (FFibVars (lvars_of_atoms {[x]})
+        (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
   change (res_models_with_store (∅ : Store) m (FExists x body) →
     ∃ L : aset,
       world_dom (m : World) ⊆ L ∧
@@ -122,7 +124,7 @@ Lemma FLetResult_models_intro e1 e2 ν m :
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
             (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (fib_vars {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]}
+            (FFibVars (lvars_of_atoms {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]})
               (FExprResultOn
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)))) →
@@ -132,7 +134,8 @@ Proof.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
   set (body :=
     FAnd (FExprResultOn (fv_tm e1) e1 x)
-      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (FFibVars (lvars_of_atoms {[x]})
+        (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
   change (formula_scoped_in_world (∅ : Store) m (FExists x body) →
     (∃ L : aset,
       world_dom (m : World) ⊆ L ∧
@@ -301,7 +304,7 @@ Qed.
 
 Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :
   res_models_with_store ρ m
-    (fib_vars (list_to_set xs)
+    (FFibVars (lvars_of_atoms (list_to_set xs))
       (FAtom (expr_logic_qual_on X (tret (vconst c)) ν))) →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
 Proof.

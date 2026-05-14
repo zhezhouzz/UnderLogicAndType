@@ -121,7 +121,8 @@ Lemma foldr_fib_expr_result_sound
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
+    (FFibVars (lvars_of_atoms (list_to_set xs))
+      (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   store_restrict σw {[ν]} = sigmanu →
   expr_result_store ν
@@ -138,7 +139,8 @@ Lemma foldr_fib_expr_result_complete
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
+    (FFibVars (lvars_of_atoms (list_to_set xs))
+      (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   expr_result_store ν
     (subst_map
@@ -155,7 +157,8 @@ Lemma foldr_fib_expr_result_complete_paired
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
+    (FFibVars (lvars_of_atoms (list_to_set xs))
+      (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   expr_result_store ν
     (subst_map
@@ -293,7 +296,7 @@ Proof.
      removes the fold interface. *)
 Admitted.
 
-(** Slice invariant used to read a [fib_vars] tower as an exact result world.
+(** Slice invariant used to read a primitive multi-fiber formula as an exact result world.
 
     After fixing the variables in [Fixed], the current fiber world [w] should
     be exactly the slice of [result] whose [Fixed]-projection is the current

@@ -119,13 +119,16 @@ Qed.
 Lemma fib_vars_store_equiv X φ ψ :
   formula_fv φ = formula_fv ψ →
   formula_store_equiv φ ψ →
-  formula_fv (fib_vars X φ) = formula_fv (fib_vars X ψ) ∧
-  formula_store_equiv (fib_vars X φ) (fib_vars X ψ).
+  formula_fv (FFibVars (lvars_of_atoms X) φ) =
+    formula_fv (FFibVars (lvars_of_atoms X) ψ) ∧
+  formula_store_equiv
+    (FFibVars (lvars_of_atoms X) φ)
+    (FFibVars (lvars_of_atoms X) ψ).
 Proof.
   intros Hfv Heq.
   split.
-  - unfold fib_vars. simpl. rewrite Hfv. reflexivity.
-  - unfold fib_vars. intros ρ m.
+  - simpl. rewrite Hfv. reflexivity.
+  - intros ρ m.
     unfold res_models_with_store. simpl.
     split; intros [Hscope [Hdisj Hfib]]; split.
     + unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
@@ -154,7 +157,9 @@ Qed.
 
 Lemma fib_vars_insert_store_equiv x X (φ : FQ) :
   x ∉ X →
-  formula_store_equiv (fib_vars ({[x]} ∪ X) φ) (fib_vars ({[x]} ∪ X) φ).
+  formula_store_equiv
+    (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ)
+    (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ).
 Proof.
   intros _. apply formula_store_equiv_refl.
 Qed.
@@ -167,8 +172,10 @@ Proof. intros Heq. unfold res_models. apply Heq. Qed.
 Lemma fib_vars_insert_rename_res_models x y X (φ : FQ) (m : WfWorld) :
   x ∉ X →
   y ∉ X →
-  m ⊨ formula_rename_atom x y (fib_vars ({[x]} ∪ X) φ) ↔
-  m ⊨ fib_vars ({[y]} ∪ X) (formula_rename_atom x y φ).
+  m ⊨ formula_rename_atom x y
+        (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ) ↔
+  m ⊨ FFibVars (lvars_of_atoms ({[y]} ∪ X))
+        (formula_rename_atom x y φ).
 Proof.
   (* Legacy explicit-rename helper.  The LN refactor removes this route. *)
 Admitted.
@@ -177,8 +184,8 @@ Lemma fib_vars_insert_rename_store_equiv x y X (φ : FQ) :
   x ∉ X →
   y ∉ X →
   formula_store_equiv
-    (formula_rename_atom x y (fib_vars ({[x]} ∪ X) φ))
-    (fib_vars ({[y]} ∪ X) (formula_rename_atom x y φ)).
+    (formula_rename_atom x y (FFibVars (lvars_of_atoms ({[x]} ∪ X)) φ))
+    (FFibVars (lvars_of_atoms ({[y]} ∪ X)) (formula_rename_atom x y φ)).
 Proof.
   (* Legacy explicit-rename helper.  The LN refactor removes this route. *)
 Admitted.
