@@ -434,7 +434,18 @@ Proof.
           (fun _ : atom =>
             FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
               (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ)))))).
-    eapply FExprCont_tlet_reduction; eauto; try set_solver.
+    eapply (FExprCont_tlet_reduction
+      Δ T1 (TBase b) m e1 e2 x
+      (fun _ : atom =>
+        FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
+          (FFibVars Dφ (FOver (FTypeQualifier (qual Dφ Pφ)))))
+      Hfresh Hresult).
+    + exact He1.
+    + exact Hlet.
+    + set_solver.
+    + exact Hdom.
+    + exact Hclosed.
+    + exact Htotal.
     + intros ν. cbn [formula_fv].
     eapply union_least.
       * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
@@ -486,7 +497,18 @@ Proof.
           (fun _ : atom =>
             FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
               (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ)))))).
-    eapply FExprCont_tlet_reduction; eauto; try set_solver.
+    eapply (FExprCont_tlet_reduction
+      Δ T1 (TBase b) m e1 e2 x
+      (fun _ : atom =>
+        FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b Dφ)
+          (FFibVars Dφ (FUnder (FTypeQualifier (qual Dφ Pφ)))))
+      Hfresh Hresult).
+    + exact He1.
+    + exact Hlet.
+    + set_solver.
+    + exact Hdom.
+    + exact Hclosed.
+    + exact Htotal.
     + intros ν. cbn [formula_fv].
     eapply union_least.
       * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).

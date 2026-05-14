@@ -85,7 +85,11 @@ Lemma logic_qualifier_denote_rename_atom x y q σ w :
   logic_qualifier_denote q (store_rename_atom y x σ) (res_rename_atom y x w).
 Proof.
   destruct q as [D p]. simpl.
-Admitted.
+  rewrite lvars_fv_of_atoms.
+  rewrite <- store_restrict_rename_atom.
+  rewrite <- res_restrict_rename_atom.
+  reflexivity.
+Qed.
 
 Lemma logic_qualifier_denote_swap x y q σ w :
   logic_qualifier_denote (lqual_swap x y q) σ w ↔
