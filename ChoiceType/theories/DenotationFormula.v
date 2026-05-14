@@ -208,7 +208,15 @@ Admitted.
 Lemma FExprResultOn_fv X e :
   formula_fv (FExprResultOn X e) = X.
 Proof.
-Admitted.
+  unfold FExprResultOn, FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
+    into_lvars_aset into_lvars_lvset].
+  change (into_lvars X) with (lvars_of_atoms X).
+  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  rewrite lvars_fv_union, !lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
 
 Lemma FExprResultOn_fv_subset X e :
   formula_fv (FExprResultOn X e) ⊆ X.
@@ -228,7 +236,17 @@ Qed.
 Lemma FExprResultAt_fv X e ν :
   formula_fv (FExprResultAt X e ν) = X ∪ {[ν]}.
 Proof.
-Admitted.
+  unfold FExprResultAt, FExprResultOn, FStoreResourceAtom.
+  cbn [formula_open formula_fv stale stale_logic_qualifier lqual_dom
+    lqual_open into_lvars into_lvars_aset into_lvars_lvset].
+  change (into_lvars X) with (lvars_of_atoms X).
+  change (into_lvars (lvars_of_atoms X ∪ {[LVBound 0]}))
+    with (lvars_of_atoms X ∪ {[LVBound 0]}).
+  rewrite lvars_open_of_atoms.
+  rewrite lvars_fv_of_atoms.
+  rewrite lvars_fv_open_atoms_with_bound.
+  set_solver.
+Qed.
 
 Lemma FExprResultOn_rename_result_fresh X e a ν :
   a ∉ X →
@@ -260,7 +278,23 @@ Lemma FExprContIn_formula_fv_subset
   formula_fv Q ⊆ S →
   formula_fv (FExprContIn Σ e Q) ⊆ S.
 Proof.
-Admitted.
+  intros HΣ HQ.
+  unfold FExprContIn.
+  cbn [formula_fv].
+  change (into_lvars Σ) with (lvars_of_atoms (dom Σ)).
+  unfold FExprResultOn at 1.
+  unfold FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
+    into_lvars_lvset].
+  change (into_lvars (lvars_of_atoms (dom Σ)))
+    with (lvars_of_atoms (dom Σ)).
+  change (into_lvars (into_lvars (lvars_of_atoms (dom Σ)) ∪ {[LVBound 0]}))
+    with (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}).
+  change (into_lvars (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}))
+    with (lvars_of_atoms (dom Σ) ∪ {[LVBound 0]}).
+  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
 
 Lemma FExprContIn_family_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
