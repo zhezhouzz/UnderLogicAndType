@@ -107,6 +107,16 @@ Lemma lvars_bv_of_atoms (X : aset) :
 Proof.
 Admitted.
 
+Lemma lvars_fv_of_bvars (B : gset nat) :
+  lvars_fv (lvars_of_bvars B) = ∅.
+Proof.
+Admitted.
+
+Lemma lvars_fv_singleton_bound k :
+  lvars_fv ({[LVBound k]} : lvset) = ∅.
+Proof.
+Admitted.
+
 Lemma lvars_fv_union (D1 D2 : lvset) :
   lvars_fv (D1 ∪ D2) = lvars_fv D1 ∪ lvars_fv D2.
 Proof.
