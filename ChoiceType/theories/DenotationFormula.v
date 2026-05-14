@@ -24,6 +24,12 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps.
     name from [Prelude] is [FormulaQ]. *)
 Local Notation FQ := FormulaQ.
 
+#[global] Instance into_lvars_atom_ty_env : IntoLVars (gmap atom ty) :=
+  fun Σ => lvars_of_atoms (dom Σ).
+
+#[global] Instance into_lvars_logic_ty_env : IntoLVars (gmap logic_var ty) :=
+  fun Σ => dom Σ.
+
 (** Satisfaction: [m ⊨ φ]  ↔  [res_models m φ] *)
 Notation "m ⊨ φ" :=
   (res_models m φ)
@@ -164,17 +170,21 @@ Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier 
   lqual_fvars (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
-Definition FExprResultOn (X : aset) (e : tm) : FQ :=
-  FFibVars (lvars_of_atoms X)
-    (FStoreResourceAtom (lvars_of_atoms X ∪ {[LVBound 0]})
+Definition FExprResultOn {A : Type} `{IntoLVars A} (D : A) (e : tm) : FQ :=
+  let L := into_lvars D in
+  FFibVars L
+    (FStoreResourceAtom (L ∪ {[LVBound 0]})
       (fun η σ w =>
         match η !! 0 with
-        | Some ν => expr_result_in_world (store_restrict σ X) (open_tm_env η e) ν w
+        | Some ν =>
+            expr_result_in_world (store_restrict σ (lvars_fv L))
+              (open_tm_env η e) ν w
         | None => False
         end)).
 
-Definition FExprResultAt (X : aset) (e : tm) (ν : atom) : FQ :=
-  formula_open 0 ν (FExprResultOn X e).
+Definition FExprResultAt {A : Type} `{IntoLVars A}
+    (D : A) (e : tm) (ν : atom) : FQ :=
+  formula_open 0 ν (FExprResultOn D e).
 
 Lemma expr_logic_qual_on_swap_result X e a ν :
   a ∉ X →
@@ -221,17 +231,17 @@ Admitted.
     The preferred postcondition [Q] is an LN body: [LVBound 0] names the result
     coordinate introduced by the surrounding [FForall].  The family instance is
     a compatibility shim for the remaining old tlet bridges. *)
-Class IntoExprCont (A : Type) := expr_cont_body : gmap atom ty → A → FQ.
+Class IntoExprCont (A : Type) := expr_cont_body : aset → A → FQ.
 
 #[global] Instance into_expr_cont_formula : IntoExprCont FQ :=
   fun _ Q => Q.
 
 #[global] Instance into_expr_cont_family : IntoExprCont (atom → FQ) :=
-  fun Σ Q => Q (fresh_for (dom Σ)).
+  fun D Q => Q (fresh_for D).
 
-Definition FExprContIn {A : Type} `{IntoExprCont A}
-    (Σ : gmap atom ty) (e : tm) (Q : A) : FQ :=
-  FForall (FImpl (FExprResultOn (dom Σ) e) (expr_cont_body Σ Q)).
+Definition FExprContIn {E A : Type} `{IntoLVars E} `{IntoExprCont A}
+    (Σ : E) (e : tm) (Q : A) : FQ :=
+  FForall (FImpl (FExprResultOn (into_lvars Σ) e) (expr_cont_body (lvars_fv (into_lvars Σ)) Q)).
 
 Lemma FExprContIn_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : FQ) :
@@ -245,7 +255,7 @@ Lemma FExprContIn_family_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : atom → FQ) :
   dom Σ ⊆ S →
   (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
-  formula_fv (FExprContIn Σ e (Q (fresh_for (dom Σ)))) ⊆ S.
+  formula_fv (FExprContIn Σ e Q) ⊆ S.
 Proof.
   (* Legacy fv helper for proofs not yet ported to LN bodies. *)
 Admitted.
