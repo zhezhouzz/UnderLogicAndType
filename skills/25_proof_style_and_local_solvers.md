@@ -1,0 +1,247 @@
+# Proof Style And Local Solvers
+
+This note records the preferred proof-script style for the current
+formalization.  The goal is not to maximize automation blindly, but to make
+proofs robust under harmless refactors such as hypothesis renaming, small
+definition reshaping, or moving helper lemmas between files.
+
+## Prefer bounded automation for trivial plumbing
+
+Use `eauto 6` as the default small automation budget.
+
+Good targets:
+
+```coq
+Proof. intros; eauto 6. Qed.
+Proof. constructor; eauto 6. Qed.
+Proof. split; eauto 6. Qed.
+```
+
+When a proof is just:
+
+```coq
+intros H1 H2. exact H1.
+```
+
+prefer:
+
+```coq
+intros; eauto 6.
+```
+
+This is more robust when hypothesis names change.  The same applies to many
+`reflexivity`, `assumption`, and tiny constructor goals, unless a definitional
+equality is the whole point of the lemma.
+
+If a local hint database exists, use the bounded form:
+
+```coq
+eauto 6 with basic_typing.
+eauto 6 with store.
+eauto 6 with resource.
+```
+
+Avoid unbounded `eauto` in large semantic goals.  If a previous proof was slow
+because automation searched through denotation/resource definitions, keep the
+explicit proof and add a warning comment:
+
+```coq
+(* Keep this explicit: broad eauto here used to search through denotation
+   atoms and made TLetReduction.v recompile slowly. *)
+```
+
+## Split automation by layer
+
+Do not build one global tactic that unfolds the whole development.  Each layer
+should have its own solver and hint database.
+
+Recommended layers:
+
+- `my_set_solver`: finite-set, freshness, `dom`, and `lookup = None` side
+  conditions.
+- `store_solver`: store restriction, store swap/rename, store domain, store
+  compatibility.
+- `resource_solver`: resource restriction, world domain, fibers, swaps,
+  resource order, product/sum witnesses.
+- `logic_solver`: formula intro/elim, atom sugar, connective equivalence,
+  monotonicity/transport lemmas.
+- `ln_solver`: locally-nameless `open`, `fv`, `lc`, stale sets, cofinite
+  witnesses, measure preservation.
+- `basic_solver`: basic typing, erasure contexts, regularity lemmas, primitive
+  typing facts, context-domain bookkeeping.
+
+A good solver shape is:
+
+```coq
+Ltac basic_solver :=
+  repeat basic_regular;
+  repeat basic_norm;
+  eauto 6 with basic_typing;
+  try my_set_solver.
+```
+
+The important part is that each tactic normalizes only its own layer, then
+finishes with bounded `eauto 6`.  Do not add `Hint Unfold denot_ty_fuel` or
+other large definitions to a global hint database.
+
+## Normalize instead of writing repeated `change`
+
+Repeated `change (...) with (...)` is a smell.  It is fine while debugging, but
+if the same conversion appears more than once, abstract it.
+
+Prefer small normalizers:
+
+```coq
+Ltac store_norm :=
+  cbn [store_restrict map_restrict store_swap store_rename_atom] in *;
+  rewrite ?store_restrict_restrict in *.
+
+Ltac resource_norm :=
+  cbn [world_dom res_restrict] in *;
+  rewrite ?res_restrict_idemp in * by eauto 6.
+```
+
+Keep normalizers narrow.  A tactic that unfolds every formula and every
+resource definition will be unpredictable and can slow the build.  It is better
+to have several small tactics than one large one.
+
+If a normalization is semantic rather than definitional, make it a lemma first.
+For example, prefer:
+
+```coq
+rewrite store_restrict_restrict.
+```
+
+over repeating:
+
+```coq
+change (store_restrict (store_restrict σ X) Y) with ...
+```
+
+## Avoid one-use `assert`
+
+Use `assert` when the intermediate fact is named, reused, or clarifies a proof
+boundary.  Do not use it only to immediately feed another hypothesis.
+
+Prefer direct specialization:
+
+```coq
+specialize (H x Hx).
+eapply lemma in H; eauto 6.
+```
+
+or direct application:
+
+```coq
+eapply lemma; eauto 6.
+```
+
+over:
+
+```coq
+assert (Hx' : P x).
+{ ... }
+pose proof (lemma _ Hx') as Hlem.
+```
+
+When a proof really needs a shared intermediate state, keep the `assert`, but
+name it by the semantic fact it represents rather than by a local proof step.
+
+## Use set solving as the final step
+
+`set_solver` is excellent, but large denotation goals often contain opaque
+shallow-embedded predicates.  First expose only the set-shaped facts, then call
+the solver.
+
+Typical order:
+
+```coq
+cbn [formula_fv stale stale_logic_qualifier lqual_dom] in *.
+rewrite ?lvars_fv_union, ?lvars_fv_of_atoms in *.
+eauto 6; try set_solver.
+```
+
+If `set_solver` is mixed with automation, let the non-set automation clear the
+simple proof obligations first:
+
+```coq
+eauto 6; try set_solver.
+```
+
+When `set_solver` is slow, extract the recurring side condition into a lemma and
+add it to the appropriate solver.  This is especially useful for:
+
+- `dom (<[x := T]> Γ)`
+- `fv_* ({0 ~> x} t)`
+- `lvars_fv (D ∪ E)`
+- `world_dom (res_restrict m X)`
+
+## Basic typing solver pattern
+
+Basic typing side conditions should be solved by regularity plus bounded
+automation, not by manually destructing every typing derivation in every proof.
+
+The intended pattern:
+
+1. Use regularity lemmas to pull out basic typing, well-formed context/type, and
+   domain facts from richer typing hypotheses.
+2. Normalize erased contexts and inserted binders.
+3. Finish with `eauto 6 with basic_typing` and `my_set_solver`.
+
+Example skeleton:
+
+```coq
+Ltac basic_regular :=
+  repeat match goal with
+  | H : choice_typing _ _ _ _ |- _ =>
+      pose proof (choice_typing_regular _ _ _ _ H); clear H
+  | H : _ ⊢ₑ _ ⋮ _ |- _ =>
+      pose proof (basic_typing_regular _ _ _ H)
+  end.
+
+Ltac basic_solver :=
+  basic_regular;
+  cbn [erase_ctx erase_ty ctx_dom] in *;
+  eauto 6 with basic_typing;
+  try my_set_solver.
+```
+
+Keep this tactic local to the typing layer unless it becomes stable enough to
+export.
+
+## CoqHammer usage
+
+`hauto` is useful for small first-order proof plumbing:
+
+```coq
+Proof. unfold formula_equiv, entails. hauto. Qed.
+Proof. unfold sub_type. hauto. Qed.
+```
+
+Use it after the important semantic rewrite or local unfold has already exposed
+the simple shape.  Do not put `hauto` inside broad solvers such as
+`my_set_solver`, `store_solver`, or `resource_solver`; those tactics run in many
+places and Hammer can quietly increase compile time.
+
+If `hauto` fails, do not keep increasing search blindly.  First unfold the
+intended wrapper or apply the intended lemma explicitly.
+
+## Preserve explicit scripts at known hot spots
+
+Some proof locations should remain explicit.  A real example is the over/under
+case in `TLetReduction.v`: a broad
+
+```coq
+eapply FExprCont_tlet_reduction; eauto; try set_solver.
+```
+
+made the file compile very slowly.  The fix was to pass the key arguments and
+hypotheses explicitly.  In these cases, keep the explicit script and leave a
+comment explaining why bounded automation is intentionally avoided.
+
+The rule is:
+
+- use `eauto 6` for robust small proof plumbing;
+- use layer solvers for normalized side conditions;
+- keep explicit scripts where semantic search space is large or previously
+  caused a compile-time regression.
