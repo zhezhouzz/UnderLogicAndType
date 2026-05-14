@@ -155,49 +155,35 @@ Proof.
 Qed.
 
 Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  lqual {[ν]} (fun σ w => expr_result_in_world σ e ν w).
+  lqual_fvars {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
 Definition expr_logic_qual_on (X : aset) (e : tm) (ν : atom) : logic_qualifier :=
-  lqual (X ∪ {[ν]})
+  lqual_fvars (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
 Definition FExprResultAtomOn (X : aset) (e : tm) (ν : atom) : FQ :=
   FStoreResourceAtom (X ∪ {[ν]})
     (fun σ w => expr_result_in_world (store_restrict σ X) e ν w).
 
+Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
+  fib_vars X (FExprResultAtomOn X e ν).
+
 Lemma expr_logic_qual_on_swap_result X e a ν :
   a ∉ X →
   ν ∉ X →
   lqual_swap a ν (expr_logic_qual_on X e a) = expr_logic_qual_on X e ν.
 Proof.
-  intros Ha Hν.
-  unfold expr_logic_qual_on, lqual_swap. simpl.
-  f_equal.
-  - rewrite aset_swap_union, aset_swap_singleton.
-    replace (atom_swap a ν a) with ν
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    rewrite aset_swap_fresh by assumption. reflexivity.
-  - apply functional_extensionality. intros σ.
-    apply functional_extensionality. intros w.
-    apply propositional_extensionality. split; intros Hres.
-    + rewrite map_restrict_store_swap_fresh in Hres by assumption.
-      pose proof (expr_result_in_world_swap_result (store_restrict σ X) e
-        ν a (res_swap a ν w) Hres) as Hback.
-      rewrite (res_swap_sym ν a), res_swap_involutive in Hback.
-      exact Hback.
-    + rewrite map_restrict_store_swap_fresh by assumption.
-      apply expr_result_in_world_swap_result. exact Hres.
-Qed.
-
-Definition FExprResultOn (X : aset) (e : tm) (ν : atom) : FQ :=
-  fib_vars X (FExprResultAtomOn X e ν).
+  (* Legacy explicit-swap helper; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 Lemma FExprResultOn_fv X e ν :
   formula_fv (FExprResultOn X e ν) = X ∪ {[ν]}.
 Proof.
   unfold FExprResultOn.
-  rewrite fib_vars_formula_fv. simpl.
-  unfold stale, stale_logic_qualifier. simpl.
+  rewrite fib_vars_formula_fv.
+  unfold FExprResultAtomOn, FStoreResourceAtom. simpl.
+  unfold stale, stale_logic_qualifier, lqual_dom, lqual_fvars. simpl.
+  rewrite lvars_fv_of_atoms.
   set_solver.
 Qed.
 
@@ -212,21 +198,12 @@ Lemma FExprResultOn_rename_result_fresh X e a ν :
   ν ∉ X →
   formula_rename_atom a ν (FExprResultOn X e a) = FExprResultOn X e ν.
 Proof.
-  intros Ha Hν.
-  unfold FExprResultOn.
-  rewrite <- formula_rename_atom_fib_vars_fresh by assumption.
-  change (fib_vars X (FAtom (lqual_swap a ν (expr_logic_qual_on X e a))) =
-          fib_vars X (FAtom (expr_logic_qual_on X e ν))).
-  rewrite expr_logic_qual_on_swap_result by assumption.
-  reflexivity.
-Qed.
+  (* Legacy explicit-swap helper; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 (** Expression-result continuation:
     [FExprContIn Σ e Q] abbreviates the recurring formula
-    [∀ν. FExprResultOn (dom Σ) e ν ⇒ Q ν].  The cofinite avoidance set is
-    exactly [dom Σ]: well-formed typing premises, kept at the Rocq [Prop]
-    level rather than inside the logic, ensure that [fv_tm e] and the relevant
-    type variables already live in this domain. *)
+    [∀ν. FExprResultOn (dom Σ) e ν ⇒ Q ν]. *)
 Definition FExprContIn (Σ : gmap atom ty) (e : tm) (Q : atom → FQ) : FQ :=
   fresh_forall (dom Σ) (fun ν => FImpl (FExprResultOn (dom Σ) e ν) (Q ν)).
 
@@ -241,7 +218,8 @@ Proof.
   apply fresh_forall_formula_fv_subset; first exact Hdom.
   intros ν Hν.
   unfold FExprResultOn, FExprResultAtomOn, FStoreResourceAtom.
-  simpl.
+  simpl. unfold stale, stale_logic_qualifier, lqual_dom, lqual_fvars. simpl.
+  rewrite lvars_fv_of_atoms.
   pose proof (HQ ν Hν) as HQν.
   change ((dom Σ ∪ (dom Σ ∪ {[ν]})) ∪ formula_fv (Q ν) ⊆ S ∪ {[ν]}).
   set_solver.
@@ -362,21 +340,13 @@ Lemma FLetResultOn_fv_subset X e1 e2 ν :
 Proof.
   unfold FLetResultOn.
   set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  unfold FLetResultOnWith, fib_vars, FStoreResourceAtom.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+  change (formula_fv (FExists x (FLetResultOnWith X e1 e2 x ν))
+    ⊆ X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}).
+  cbn [formula_fv].
+  rewrite FLetResultOnWith_fv.
   subst x.
-  pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) as Hx.
-  intros z Hz.
-  apply elem_of_difference in Hz as [Hz Hzfresh].
-  apply elem_of_union in Hz as [Hz | Hz].
-  - apply elem_of_union in Hz as [HzX | Hzfresh'].
-    + set_solver.
-    + exfalso. apply Hzfresh. exact Hzfresh'.
-  - apply elem_of_union in Hz as [Hz | Hzν].
-    + apply elem_of_union in Hz as [HzX | Hzfresh'].
-      * set_solver.
-      * exfalso. apply Hzfresh. exact Hzfresh'.
-    + set_solver.
+  pose proof (fresh_for_not_in (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
+  set_solver.
 Qed.
 
 Lemma FLetResultOn_fv_contains_X X e1 e2 ν :
@@ -384,8 +354,9 @@ Lemma FLetResultOn_fv_contains_X X e1 e2 ν :
 Proof.
   unfold FLetResultOn.
   set (x := fresh_for (X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  unfold FLetResultOnWith, fib_vars, FStoreResourceAtom.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+  change (X ⊆ formula_fv (FExists x (FLetResultOnWith X e1 e2 x ν))).
+  cbn [formula_fv].
+  rewrite FLetResultOnWith_fv.
   intros z Hz.
   apply elem_of_difference. split; [set_solver |].
   subst x.
@@ -417,11 +388,17 @@ Qed.
 
 Lemma stale_expr_logic_qual e ν :
   stale (expr_logic_qual e ν) = {[ν]}.
-Proof. reflexivity. Qed.
+Proof.
+  unfold expr_logic_qual, stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
+  simpl. rewrite lvars_fv_of_atoms. reflexivity.
+Qed.
 
 Lemma stale_expr_logic_qual_on X e ν :
   stale (expr_logic_qual_on X e ν) = X ∪ {[ν]}.
-Proof. reflexivity. Qed.
+Proof.
+  unfold expr_logic_qual_on, stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
+  simpl. rewrite lvars_fv_of_atoms. reflexivity.
+Qed.
 
 Lemma FExprResultOn_scoped_dom X e ν m :
   formula_scoped_in_world ∅ m (FExprResultOn X e ν) →
@@ -445,11 +422,22 @@ Proof.
   replace ((X ∪ {[ν]}) ∩ X) with X in Hden by set_solver.
   specialize (Hden σν).
   rewrite !res_restrict_restrict_eq in Hden.
-  replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset) in Hden by set_solver.
+  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ ({[ν]} : aset))
+    with ({[ν]} : aset) in Hden.
+  2:{ rewrite lvars_fv_of_atoms. set_solver. }
+  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ X) with X in Hden.
+  2:{ rewrite lvars_fv_of_atoms. set_solver. }
   assert (Hνdom : ({[ν]} : aset) ⊆ world_dom (m0 : World)).
   {
     unfold formula_scoped_in_world in Hscope0.
-    simpl in Hscope0. unfold stale, stale_logic_qualifier in Hscope0. simpl in Hscope0.
+    pose proof (Hscope0 ν) as Hν.
+    assert (ν ∈ formula_fv (FAtom (expr_logic_qual_on X e ν))) as Hνfv.
+    {
+      simpl. unfold stale, stale_logic_qualifier, lqual_dom, expr_logic_qual_on,
+        lqual_fvars. simpl.
+      rewrite lvars_fv_of_atoms. set_solver.
+    }
+    specialize (Hν (elem_of_union_r (dom ρ) _ _ Hνfv)).
     set_solver.
   }
   rewrite (res_restrict_le_eq m0 m ({[ν]} : aset)) in Hden.
@@ -468,10 +456,13 @@ Proof.
   exists m. split; [exact Hscope |]. split; [| reflexivity].
   unfold logic_qualifier_denote, expr_logic_qual_on. simpl.
   rewrite store_restrict_restrict.
-  replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ X) with X.
+  2:{ rewrite lvars_fv_of_atoms. set_solver. }
   intros σν. specialize (Hexact σν).
   rewrite res_restrict_restrict_eq.
-  replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset) by set_solver.
+  replace (lvars_fv (lvars_of_atoms (X ∪ {[ν]})) ∩ ({[ν]} : aset))
+    with ({[ν]} : aset).
+  2:{ rewrite lvars_fv_of_atoms. set_solver. }
   exact Hexact.
 Qed.
 

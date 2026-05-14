@@ -98,6 +98,18 @@ Definition denot_ty_obligations
     (FAnd (FClosedResourceIn Σ)
       (FAnd (FStrongTotalIn Σ e) φ)).
 
+Lemma formula_fv_FOver_FTypeQualifier q :
+  formula_fv (FOver (FTypeQualifier q)) = qual_dom q.
+Proof.
+  cbn [formula_fv]. apply formula_fv_FTypeQualifier.
+Qed.
+
+Lemma formula_fv_FUnder_FTypeQualifier q :
+  formula_fv (FUnder (FTypeQualifier q)) = qual_dom q.
+Proof.
+  cbn [formula_fv]. apply formula_fv_FTypeQualifier.
+Qed.
+
 Fixpoint denot_ty_fuel
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm)
     : FQ :=
@@ -371,8 +383,11 @@ Lemma denot_ty_obligations_formula_fv_subset Σ τ e φ S :
   formula_fv (denot_ty_obligations Σ τ e φ) ⊆ S.
 Proof.
   unfold denot_ty_obligations, FBasicTypingIn, FClosedResourceIn,
-    FStrongTotalIn, FPure, FResourceAtom, FStoreResourceAtom.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+    FStrongTotalIn.
+  cbn [formula_fv].
+  rewrite formula_fv_FPure.
+  rewrite formula_fv_FResourceAtom.
+  rewrite formula_fv_FStoreResourceAtom.
   set_solver.
 Qed.
 
@@ -403,10 +418,10 @@ Proof.
         cbn [formula_fv].
         rewrite basic_world_formula_fv.
         rewrite fib_vars_formula_fv.
+        rewrite formula_fv_FOver_FTypeQualifier.
         destruct φ as [B d p].
-        unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-        destruct (decide (0 ∈ B)); simpl.
-        all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+        unfold qual_open_atom, qual_dom in *; simpl in *.
+        destruct (decide (0 ∈ B)); set_solver.
       }
       set_solver.
     + assert (Hbody :
@@ -425,10 +440,10 @@ Proof.
         cbn [formula_fv].
         rewrite basic_world_formula_fv.
         rewrite fib_vars_formula_fv.
+        rewrite formula_fv_FUnder_FTypeQualifier.
         destruct φ as [B d p].
-        unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-        destruct (decide (0 ∈ B)); simpl.
-        all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+        unfold qual_open_atom, qual_dom in *; simpl in *.
+        destruct (decide (0 ∈ B)); set_solver.
       }
       set_solver.
     + pose proof (IH Σ τ1 e ltac:(lia)) as H1.
@@ -506,19 +521,19 @@ Proof.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
       rewrite fib_vars_formula_fv.
+      rewrite formula_fv_FOver_FTypeQualifier.
       destruct φ as [B d p].
-      unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-      destruct (decide (0 ∈ B)); simpl.
-      all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+      unfold qual_open_atom, qual_dom in *; simpl in *.
+      destruct (decide (0 ∈ B)); set_solver.
     + apply FExprContIn_formula_fv_subset; first set_solver.
       intros ν _.
       cbn [formula_fv].
       rewrite basic_world_formula_fv.
       rewrite fib_vars_formula_fv.
+      rewrite formula_fv_FUnder_FTypeQualifier.
       destruct φ as [B d p].
-      unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-      destruct (decide (0 ∈ B)); simpl.
-      all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+      unfold qual_open_atom, qual_dom in *; simpl in *.
+      destruct (decide (0 ∈ B)); set_solver.
     + pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ1 e ltac:(lia)) as H1.
       pose proof (denot_ty_fuel_formula_fv_subset gas Σ τ2 e ltac:(lia)) as H2.
       set_solver.
@@ -626,9 +641,12 @@ Proof.
   intros _.
   rewrite denot_ty_fuel_unfold.
   unfold denot_ty_obligations,
-      FBasicTypingIn, FClosedResourceIn, FStrongTotalIn,
-      FPure, FResourceAtom, FStoreResourceAtom;
-    simpl; unfold stale, stale_logic_qualifier; simpl; set_solver.
+      FBasicTypingIn, FClosedResourceIn, FStrongTotalIn.
+  cbn [formula_fv].
+  rewrite formula_fv_FPure.
+  rewrite formula_fv_FResourceAtom.
+  rewrite formula_fv_FStoreResourceAtom.
+  set_solver.
 Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :

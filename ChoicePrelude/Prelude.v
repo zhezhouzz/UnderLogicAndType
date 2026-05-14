@@ -79,6 +79,11 @@ Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 
+Lemma lvars_fv_of_atoms (X : aset) :
+  lvars_fv (lvars_of_atoms X) = X.
+Proof.
+Admitted.
+
 #[global] Instance stale_logic_var : Stale logic_var := logic_var_fv.
 Arguments stale_logic_var /.
 

@@ -937,6 +937,7 @@ Proof.
   unfold res_models_with_store. simpl.
   intros Hscope HP. split; [exact Hscope |].
   exists m. split; [exact Hscope |].
+  rewrite lvars_fv_of_atoms.
   split; [exact HP | reflexivity].
 Qed.
 
@@ -950,6 +951,7 @@ Lemma res_models_with_store_resource_atom_elim
 Proof.
   unfold res_models_with_store. simpl.
   intros [_ [m0 [Hscope [HP Hle]]]].
+  rewrite lvars_fv_of_atoms in HP.
   exists m0. repeat split; eauto.
 Qed.
 
@@ -963,6 +965,7 @@ Proof.
   unfold res_models_with_store. simpl.
   intros Hscope HP. split; [exact Hscope |].
   exists m. split; [exact Hscope |].
+  rewrite lvars_fv_of_atoms.
   split; [exact HP | reflexivity].
 Qed.
 
@@ -977,6 +980,7 @@ Lemma res_models_with_store_store_resource_atom_elim
 Proof.
   unfold res_models_with_store. simpl.
   intros [_ [m0 [Hscope [HP Hle]]]].
+  rewrite lvars_fv_of_atoms in HP.
   exists m0. repeat split; eauto.
 Qed.
 

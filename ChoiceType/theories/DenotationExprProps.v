@@ -34,9 +34,11 @@ Lemma FLetResult_fv_subset e1 e2 ν :
 Proof.
   unfold FLetResult.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  simpl. unfold FExprResultOn, FExprResultAtomOn, FStoreResourceAtom, fib_vars.
-  simpl. unfold stale, stale_logic_qualifier. simpl.
+  cbn [formula_fv].
+  rewrite !FExprResultOn_fv.
   pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
+  subst x.
+  pose proof (fresh_for_not_in (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
   set_solver.
 Qed.
 
@@ -200,6 +202,7 @@ Lemma expr_logic_qual_ret_closed_value_denote_lookup v ν w σ :
 Proof.
   intros Hvclosed Hden Hσ.
   unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite lvars_fv_of_atoms in Hden.
   rewrite store_restrict_empty in Hden.
   assert (Hσproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σ).
   {
@@ -236,6 +239,7 @@ Proof.
     reflexivity.
   }
   unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite lvars_fv_of_atoms in Hden.
   rewrite store_restrict_empty in Hden.
   assert (Hσνproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σν).
   {
@@ -367,6 +371,7 @@ Proof.
     reflexivity.
   }
   unfold logic_qualifier_denote, expr_logic_qual in Hden. simpl in Hden.
+  rewrite lvars_fv_of_atoms in Hden.
   rewrite store_restrict_empty in Hden.
   assert (Hσνproj : (res_restrict (res_restrict w {[ν]}) {[ν]} : World) σν).
   {

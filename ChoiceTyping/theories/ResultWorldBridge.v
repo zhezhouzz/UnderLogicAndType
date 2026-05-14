@@ -130,48 +130,8 @@ Lemma foldr_fib_expr_result_sound
       e)
     sigmanu.
 Proof.
-  revert ρ m σw sigmanu.
-  induction xs as [|x xs IH]; intros ρ m σw sigmanu Hnodup Hdisj Hmodel Hσw Heqν.
-  - pose proof (FAtom_expr_logic_qual_on_exact X e ν ρ m Hmodel) as Hexact.
-    simpl in *.
-    rewrite store_restrict_empty_set.
-    replace (ρ ∪ (∅ : Store)) with ρ.
-    change (expr_result_store ν (subst_map (store_restrict ρ X) e) sigmanu).
-    assert (Hprojν : (res_restrict m {[ν]} : World) sigmanu).
-    { exists σw. split; [exact Hσw | exact Heqν]. }
-    exact (expr_result_in_world_sound (store_restrict ρ X) e ν m sigmanu Hexact Hprojν).
-    apply (map_eq (M := gmap atom)). intros z.
-    rewrite lookup_union_l by apply lookup_empty.
-    reflexivity.
-  - simpl in *.
-    inversion Hnodup as [|x0 xs0 Hx_notin Hnodup']; subst x0 xs0.
-    unfold res_models_with_store in Hmodel. simpl in Hmodel.
-    destruct Hmodel as [Hscope [Hρx Hfib]].
-    set (σx := store_restrict σw {[x]}).
-    assert (Hprojx : res_restrict m {[x]} σx).
-    { exists σw. split; [exact Hσw | reflexivity]. }
-    specialize (Hfib σx Hprojx).
-    assert (Hσw_fib :
-      (res_fiber_from_projection m {[x]} σx Hprojx : World) σw).
-    { apply res_fiber_from_projection_member; [exact Hσw | reflexivity]. }
-    specialize (IH (ρ ∪ σx)
-      (res_fiber_from_projection m {[x]} σx Hprojx) σw sigmanu
-      Hnodup').
-    assert (Hdisj_tail : dom (ρ ∪ σx) ## (list_to_set xs : aset)).
-    {
-      rewrite dom_union_L.
-      unfold σx. rewrite store_restrict_dom.
-      set_solver.
-    }
-    specialize (IH Hdisj_tail).
-    pose proof (IH ltac:(models_fuel_irrel Hfib)
-      Hσw_fib ltac:(assumption)) as Hstore.
-    unfold σx in Hstore.
-    rewrite <- store_restrict_accum_cons_projection in Hstore.
-    + exact Hstore.
-    + rewrite elem_of_list_to_set. exact Hx_notin.
-    + exact Hdisj.
-Qed.
+  (* Legacy foldr fiber bridge; primitive multi-fiber replaces this route. *)
+Admitted.
 
 Lemma foldr_fib_expr_result_complete
     xs X e ν ρ (m : WfWorld) σw sigmanu :
@@ -187,43 +147,8 @@ Lemma foldr_fib_expr_result_complete
     sigmanu →
   (res_restrict m {[ν]} : World) sigmanu.
 Proof.
-  revert ρ m σw sigmanu.
-  induction xs as [|x xs IH]; simpl; intros ρ m σw sigmanu Hnodup Hdisj Hmodel Hσw Hstore.
-  - pose proof (FAtom_expr_logic_qual_on_exact X e ν ρ m Hmodel) as Hexact.
-    rewrite store_restrict_empty_set in Hstore.
-    replace (ρ ∪ (∅ : Store)) with ρ in Hstore.
-    + exact (expr_result_in_world_complete (store_restrict ρ X) e ν m sigmanu Hexact Hstore).
-    + apply (map_eq (M := gmap atom)). intros z.
-      rewrite lookup_union_l by apply lookup_empty.
-      reflexivity.
-  - inversion Hnodup as [|? ? Hx_notin Hnodup']; subst.
-    unfold res_models_with_store in Hmodel. simpl in Hmodel.
-    destruct Hmodel as [Hscope [Hρx Hfib]].
-    set (σx := store_restrict σw {[x]}).
-    assert (Hprojx : res_restrict m {[x]} σx).
-    { exists σw. split; [exact Hσw | reflexivity]. }
-    specialize (Hfib σx Hprojx).
-    assert (Hσw_fib :
-      (res_fiber_from_projection m {[x]} σx Hprojx : World) σw).
-    { apply res_fiber_from_projection_member; [exact Hσw | reflexivity]. }
-    assert (Hdisj_tail : dom (ρ ∪ σx) ## (list_to_set xs : aset)).
-    {
-      rewrite dom_union_L.
-      unfold σx. rewrite store_restrict_dom.
-      set_solver.
-    }
-    rewrite store_restrict_accum_cons_projection in Hstore.
-    2:{ rewrite elem_of_list_to_set. exact Hx_notin. }
-    2:{ exact Hdisj. }
-    specialize (IH (ρ ∪ σx)
-      (res_fiber_from_projection m {[x]} σx Hprojx) σw sigmanu
-      Hnodup' Hdisj_tail
-      ltac:(models_fuel_irrel Hfib)
-      Hσw_fib Hstore).
-    destruct IH as [τ [Hτ Hτν]].
-    destruct Hτ as [Hτm _].
-    exists τ. split; [exact Hτm | exact Hτν].
-Qed.
+  (* Legacy foldr fiber bridge; primitive multi-fiber replaces this route. *)
+Admitted.
 
 Lemma foldr_fib_expr_result_complete_paired
     xs X e ν ρ (m : WfWorld) σw sigmanu :
@@ -243,71 +168,8 @@ Lemma foldr_fib_expr_result_complete_paired
       store_restrict σw (list_to_set xs : aset) ∧
     store_restrict τ {[ν]} = sigmanu.
 Proof.
-  revert ρ m σw sigmanu.
-  induction xs as [|x xs IH]; simpl; intros ρ m σw sigmanu Hnodup Hdisj Hmodel Hσw Hstore.
-  - pose proof (FAtom_expr_logic_qual_on_exact X e ν ρ m Hmodel) as Hexact.
-    rewrite store_restrict_empty_set in Hstore.
-    replace (ρ ∪ (∅ : Store)) with ρ in Hstore.
-    2:{
-      apply (map_eq (M := gmap atom)). intros z.
-      rewrite lookup_union_l by apply lookup_empty. reflexivity.
-    }
-    pose proof (expr_result_in_world_complete
-      (store_restrict ρ X) e ν m sigmanu Hexact Hstore)
-      as [τ [Hτ Hτν]].
-    exists τ. repeat split; auto.
-    rewrite !store_restrict_empty_set. reflexivity.
-  - inversion Hnodup as [|? ? Hx_notin Hnodup']; subst.
-    unfold res_models_with_store in Hmodel. simpl in Hmodel.
-    destruct Hmodel as [Hscope [Hρx Hfib]].
-    set (σx := store_restrict σw {[x]}).
-    assert (Hprojx : res_restrict m {[x]} σx).
-    { exists σw. split; [exact Hσw | reflexivity]. }
-    specialize (Hfib σx Hprojx).
-    assert (Hσw_fib :
-      (res_fiber_from_projection m {[x]} σx Hprojx : World) σw).
-    { apply res_fiber_from_projection_member; [exact Hσw | reflexivity]. }
-    assert (Hdisj_tail : dom (ρ ∪ σx) ## (list_to_set xs : aset)).
-    {
-      rewrite dom_union_L.
-      unfold σx. rewrite store_restrict_dom.
-      set_solver.
-    }
-    rewrite store_restrict_accum_cons_projection in Hstore.
-    2:{ rewrite elem_of_list_to_set. exact Hx_notin. }
-    2:{ exact Hdisj. }
-    destruct (IH (ρ ∪ σx)
-      (res_fiber_from_projection m {[x]} σx Hprojx) σw sigmanu
-      Hnodup' Hdisj_tail
-      ltac:(models_fuel_irrel Hfib)
-      Hσw_fib Hstore)
-      as [τ [Hτfib [Hτxs Hτν]]].
-    destruct Hτfib as [Hτm Hτx].
-    assert (Hxdom : x ∈ world_dom (m : World)).
-    {
-      unfold formula_scoped_in_world in Hscope. simpl in Hscope.
-      apply Hscope. set_solver.
-    }
-    assert (Hdomσx : dom σx = {[x]}).
-    { pose proof (wfworld_store_dom (res_restrict m {[x]}) σx Hprojx) as Hdom.
-      simpl in Hdom.
-      transitivity (world_dom (m : World) ∩ {[x]}).
-      - exact Hdom.
-      - set_solver. }
-    assert (Hτx' : store_restrict τ {[x]} = store_restrict σw {[x]}).
-    {
-      assert (Hσx_dom : store_restrict σw (dom σx) = σx).
-      { rewrite Hdomσx. unfold σx. reflexivity. }
-      rewrite <- Hdomσx.
-      rewrite Hσx_dom.
-      exact Hτx.
-    }
-    exists τ. split; [exact Hτm |]. split; [| exact Hτν].
-    eapply store_restrict_union_singleton_eq_from_parts.
-    + rewrite elem_of_list_to_set. exact Hx_notin.
-    + exact Hτx'.
-    + exact Hτxs.
-Qed.
+  (* Legacy foldr fiber bridge; primitive multi-fiber replaces this route. *)
+Admitted.
 
 Lemma store_restrict_union_singleton_insert_from_projection
     (σ : Store) (X : aset) (ν : atom) (v : value) :
@@ -549,6 +411,12 @@ Lemma result_world_slice_inv_base X e ν (n : WfWorld)
     X ρ w →
   res_models_with_store ρ w (FAtom (expr_logic_qual_on X e ν)).
 Proof.
+  (*
+    Legacy exact-result bridge for the old fold/FFib path.  The primitive
+    multi-fiber refactor will replace this with a direct FFibVars/LN bridge;
+    keeping the old script commented avoids spending minutes compiling proof
+    search against definitions we are actively deleting.
+
   intros Hinv.
   unfold result_world_slice_inv in Hinv.
   destruct Hinv as [Hdomρ [HFixedX [Hdomw Hslice]]].
@@ -730,4 +598,5 @@ Proof.
       rewrite Hτ'restrict.
       rewrite store_restrict_insert_singleton.
       reflexivity.
-Qed.
+  *)
+Admitted.

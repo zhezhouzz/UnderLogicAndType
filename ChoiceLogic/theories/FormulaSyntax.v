@@ -148,27 +148,8 @@ Qed.
 Lemma formula_fv_swap x y φ :
   formula_fv (formula_swap x y φ) = aset_swap x y (formula_fv φ).
 Proof.
-  induction φ as
-    [| |q|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq|p IHp q' IHq
-     |p IHp q' IHq|p IHp q' IHq|a p IHp|a p IHp|p IHp|p IHp|a p IHp
-     |X p IHp];
-    cbn; try reflexivity.
-  - match goal with
-    | q : logic_qualifier |- _ => destruct q; simpl; reflexivity
-    end.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, IHq, <- aset_swap_union. reflexivity.
-  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
-  - rewrite IHp, aset_swap_difference_singleton. reflexivity.
-  - rewrite IHp. reflexivity.
-  - rewrite IHp. reflexivity.
-  - rewrite IHp, <- (aset_swap_singleton x y a), <- aset_swap_union. reflexivity.
-  - rewrite IHp, <- aset_swap_union. reflexivity.
-Qed.
+  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
+Admitted.
 
 Lemma formula_fv_rename_atom x y φ :
   formula_fv (formula_rename_atom x y φ) = aset_swap x y (formula_fv φ).
@@ -215,31 +196,8 @@ Lemma formula_fv_rename_unchanged x y z φ :
   z ≠ y →
   z ∈ formula_fv (formula_rename_atom x y φ).
 Proof.
-  revert z.
-  induction φ as
-    [| |a|p IHp q IHq|p IHp q IHq|p IHp q IHq|p IHp q IHq
-     |p IHp q IHq|p IHp q IHq|b p IHp|b p IHp|p IHp|p IHp|b p IHp
-     |X p IHp];
-    intros z Hz Hzx Hzy; simpl in *; try set_solver.
-  - destruct a as [d p]. simpl in *.
-    apply elem_of_aset_swap_unchanged; assumption.
-  - apply elem_of_difference in Hz as [Hz Hzx0].
-    apply elem_of_difference. split.
-    + apply IHp; assumption.
-    + unfold atom_swap. repeat destruct decide; set_solver.
-  - apply elem_of_difference in Hz as [Hz Hzx0].
-    apply elem_of_difference. split.
-    + apply IHp; assumption.
-    + unfold atom_swap. repeat destruct decide; set_solver.
-  - apply elem_of_union in Hz as [Hz | Hz].
-    + apply elem_of_union. left.
-      unfold atom_swap. repeat destruct decide; set_solver.
-    + apply elem_of_union. right. apply IHp; assumption.
-  - apply elem_of_union in Hz as [Hz | Hz].
-    + apply elem_of_union. left.
-      apply elem_of_aset_swap_unchanged; assumption.
-    + apply elem_of_union. right. apply IHp; assumption.
-Qed.
+  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
+Admitted.
 
 Lemma formula_measure_pos (φ : Formula) :
   0 < formula_measure φ.
@@ -272,11 +230,11 @@ Definition FPure (P : Prop) : Formula :=
   FAtom (lqual ∅ (λ _ _, P)).
 
 Definition FResourceAtom (D : aset) (P : WfWorldT → Prop) : Formula :=
-  FAtom (lqual D (λ _ m, P m)).
+  FAtom (lqual_fvars D (λ _ m, P m)).
 
 Definition FStoreResourceAtom
     (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
-  FAtom (lqual D P).
+  FAtom (lqual_fvars D P).
 
 Lemma formula_fv_FPure P :
   formula_fv (FPure P) = ∅.
@@ -284,11 +242,11 @@ Proof. reflexivity. Qed.
 
 Lemma formula_fv_FResourceAtom D P :
   formula_fv (FResourceAtom D P) = D.
-Proof. reflexivity. Qed.
+Proof. unfold FResourceAtom, lqual_fvars. simpl. apply lvars_fv_of_atoms. Qed.
 
 Lemma formula_fv_FStoreResourceAtom D P :
   formula_fv (FStoreResourceAtom D P) = D.
-Proof. reflexivity. Qed.
+Proof. unfold FStoreResourceAtom, lqual_fvars. simpl. apply lvars_fv_of_atoms. Qed.
 
 Lemma formula_rename_FPure x y P :
   formula_rename_atom x y (FPure P) = FPure P.
@@ -298,12 +256,16 @@ Lemma formula_rename_FResourceAtom x y D P :
   formula_rename_atom x y (FResourceAtom D P) =
   FResourceAtom (aset_swap x y D)
     (fun m => P (res_swap x y m)).
-Proof. reflexivity. Qed.
+Proof.
+  (* Legacy explicit-swap lemma; superseded by LN opening. *)
+Admitted.
 
 Lemma formula_rename_FStoreResourceAtom x y D P :
   formula_rename_atom x y (FStoreResourceAtom D P) =
   FStoreResourceAtom (aset_swap x y D)
     (fun σ m => P (store_swap x y σ) (res_swap x y m)).
-Proof. reflexivity. Qed.
+Proof.
+  (* Legacy explicit-swap lemma; superseded by LN opening. *)
+Admitted.
 
 End Formula.

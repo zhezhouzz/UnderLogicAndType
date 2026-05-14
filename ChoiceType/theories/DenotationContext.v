@@ -79,17 +79,14 @@ Qed.
 Lemma denot_ctx_in_env_dom_subset_formula_fv Σ Γ :
   dom Σ ∪ ctx_dom Γ ⊆ formula_fv (denot_ctx_in_env Σ Γ).
 Proof.
-  unfold denot_ctx_in_env. simpl.
-  pose proof (denot_ctx_under_dom_subset_formula_fv Σ Γ)
-    as Hctx.
-  intros z Hz.
-  apply elem_of_union in Hz as [HzΣ | HzΓ].
-  - apply elem_of_union. right. apply elem_of_union. left.
-    unfold erase_ctx_under.
-    change (z ∈ dom (Σ ∪ erase_ctx Γ)).
-    rewrite dom_union_L. set_solver.
-  - apply elem_of_union. right. apply elem_of_union. right.
-    apply Hctx. exact HzΓ.
+  unfold denot_ctx_in_env.
+  cbn [formula_fv].
+  rewrite !basic_world_formula_fv.
+  pose proof (erase_ctx_dom_subset Γ) as Herase.
+  pose proof (denot_ctx_under_dom_subset_formula_fv Σ Γ) as Hctx.
+  unfold erase_ctx_under.
+  rewrite dom_union_L.
+  set_solver.
 Qed.
 
 Lemma denot_ctx_dom_subset_formula_fv Γ :

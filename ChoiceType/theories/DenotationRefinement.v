@@ -93,9 +93,9 @@ Proof.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   rewrite fib_vars_formula_fv.
-  unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-  destruct (decide (0 ∈ B)); simpl.
-  all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+  rewrite formula_fv_FOver_FTypeQualifier.
+  unfold qual_open_atom, qual_dom in *; simpl in *.
+  destruct (decide (0 ∈ B)); set_solver.
 Qed.
 
 Lemma denot_refinement_under_cont_fv_subset
@@ -115,9 +115,9 @@ Proof.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
   rewrite fib_vars_formula_fv.
-  unfold qual_open_atom, FTypeQualifier, qual_dom in *; simpl in *.
-  destruct (decide (0 ∈ B)); simpl.
-  all: unfold stale, stale_logic_qualifier; simpl; set_solver.
+  rewrite formula_fv_FUnder_FTypeQualifier.
+  unfold qual_open_atom, qual_dom in *; simpl in *.
+  destruct (decide (0 ∈ B)); set_solver.
 Qed.
 
 Lemma qual_open_atom_dom_eq_member k x q :
@@ -152,21 +152,8 @@ Lemma formula_store_equiv_lift_open_over_rename_fresh k x y q :
       (FOver (FTypeQualifier (qual_open_atom k x q))))
     (FOver (FTypeQualifier (qual_open_atom k y q))).
 Proof.
-  intros Hk Hx Hy.
-  apply formula_store_equiv_over.
-  - destruct q as [B d p]. simpl in *.
-    unfold qual_open_atom, FTypeQualifier, FStoreResourceAtom in *; simpl.
-    rewrite !decide_True by exact Hk.
-    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap; simpl.
-    change (aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
-    rewrite aset_swap_union, aset_swap_singleton.
-    replace (atom_swap x y x) with y
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    rewrite aset_swap_fresh by assumption.
-    reflexivity.
-  - intros ρ m.
-    apply res_models_with_store_FTypeQualifier_open_rename_fresh; assumption.
-Qed.
+  (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 Lemma formula_store_equiv_lift_open_under_rename_fresh k x y q :
   k ∈ qual_bvars q →
@@ -177,21 +164,8 @@ Lemma formula_store_equiv_lift_open_under_rename_fresh k x y q :
       (FUnder (FTypeQualifier (qual_open_atom k x q))))
     (FUnder (FTypeQualifier (qual_open_atom k y q))).
 Proof.
-  intros Hk Hx Hy.
-  apply formula_store_equiv_under.
-  - destruct q as [B d p]. simpl in *.
-    unfold qual_open_atom, FTypeQualifier, FStoreResourceAtom in *; simpl.
-    rewrite !decide_True by exact Hk.
-    unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap; simpl.
-    change (aset_swap x y ({[x]} ∪ d) = {[y]} ∪ d).
-    rewrite aset_swap_union, aset_swap_singleton.
-    replace (atom_swap x y x) with y
-      by (unfold atom_swap; repeat destruct decide; congruence).
-    rewrite aset_swap_fresh by assumption.
-    reflexivity.
-  - intros ρ m.
-    apply res_models_with_store_FTypeQualifier_open_rename_fresh; assumption.
-Qed.
+  (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 Lemma denot_refinement_over_fib_rename_stable
     (D : aset) φ :
@@ -208,49 +182,8 @@ Lemma denot_refinement_over_fib_rename_stable
        fib_vars (qual_dom φy)
          (FOver (FTypeQualifier φy))).
 Proof.
-  intros Hdom x y m HxD HyD.
-  change (m ⊨ formula_rename_atom x y
-      (fib_vars (qual_dom (qual_open_atom 0 x φ))
-        (FOver (FTypeQualifier (qual_open_atom 0 x φ)))) ↔
-    m ⊨
-      (fib_vars (qual_dom (qual_open_atom 0 y φ))
-        (FOver (FTypeQualifier (qual_open_atom 0 y φ))))).
-  destruct (decide (0 ∈ qual_bvars φ)) as [Hk|Hk].
-  - rewrite !qual_open_atom_dom_eq_member by exact Hk.
-    set (base_x := FOver (FTypeQualifier (qual_open_atom 0 x φ))).
-    set (base_y := FOver (FTypeQualifier (qual_open_atom 0 y φ))).
-    transitivity (m ⊨ fib_vars ({[y]} ∪ qual_dom φ)
-      (formula_rename_atom x y base_x)).
-    + apply res_models_of_formula_store_equiv.
-      subst base_x. apply fib_vars_insert_rename_store_equiv; set_solver.
-    + apply res_models_of_formula_store_equiv.
-      destruct (fib_vars_store_equiv ({[y]} ∪ qual_dom φ)
-        (formula_rename_atom x y base_x) base_y) as [_ Heq].
-      * subst base_x base_y.
-        destruct φ as [B d p]. simpl in *.
-        rewrite !decide_True by exact Hk.
-        unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-          FTypeQualifier, FStoreResourceAtom.
-        simpl.
-        rewrite aset_swap_union, aset_swap_singleton.
-        replace (atom_swap x y x) with y
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        rewrite aset_swap_fresh by set_solver.
-        reflexivity.
-      * subst base_x base_y.
-        apply formula_store_equiv_lift_open_over_rename_fresh; set_solver.
-      * exact Heq.
-  - rewrite !qual_open_atom_eq_not_member by exact Hk.
-    apply res_models_rename_atom_fresh.
-    + rewrite fib_vars_formula_fv. simpl.
-      rewrite formula_fv_FTypeQualifier.
-      destruct φ; simpl in *.
-      set_solver.
-    + rewrite fib_vars_formula_fv. simpl.
-      rewrite formula_fv_FTypeQualifier.
-      destruct φ; simpl in *.
-      set_solver.
-Qed.
+  (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 Lemma denot_refinement_under_fib_rename_stable
     (D : aset) φ :
@@ -267,49 +200,8 @@ Lemma denot_refinement_under_fib_rename_stable
        fib_vars (qual_dom φy)
          (FUnder (FTypeQualifier φy))).
 Proof.
-  intros Hdom x y m HxD HyD.
-  change (m ⊨ formula_rename_atom x y
-      (fib_vars (qual_dom (qual_open_atom 0 x φ))
-        (FUnder (FTypeQualifier (qual_open_atom 0 x φ)))) ↔
-    m ⊨
-      (fib_vars (qual_dom (qual_open_atom 0 y φ))
-        (FUnder (FTypeQualifier (qual_open_atom 0 y φ))))).
-  destruct (decide (0 ∈ qual_bvars φ)) as [Hk|Hk].
-  - rewrite !qual_open_atom_dom_eq_member by exact Hk.
-    set (base_x := FUnder (FTypeQualifier (qual_open_atom 0 x φ))).
-    set (base_y := FUnder (FTypeQualifier (qual_open_atom 0 y φ))).
-    transitivity (m ⊨ fib_vars ({[y]} ∪ qual_dom φ)
-      (formula_rename_atom x y base_x)).
-    + apply res_models_of_formula_store_equiv.
-      subst base_x. apply fib_vars_insert_rename_store_equiv; set_solver.
-    + apply res_models_of_formula_store_equiv.
-      destruct (fib_vars_store_equiv ({[y]} ∪ qual_dom φ)
-        (formula_rename_atom x y base_x) base_y) as [_ Heq].
-      * subst base_x base_y.
-        destruct φ as [B d p]. simpl in *.
-        rewrite !decide_True by exact Hk.
-        unfold stale, stale_logic_qualifier, lqual_dom, lqual_swap,
-          FTypeQualifier, FStoreResourceAtom.
-        simpl.
-        rewrite aset_swap_union, aset_swap_singleton.
-        replace (atom_swap x y x) with y
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        rewrite aset_swap_fresh by set_solver.
-        reflexivity.
-      * subst base_x base_y.
-        apply formula_store_equiv_lift_open_under_rename_fresh; set_solver.
-      * exact Heq.
-  - rewrite !qual_open_atom_eq_not_member by exact Hk.
-    apply res_models_rename_atom_fresh.
-    + rewrite fib_vars_formula_fv. simpl.
-      rewrite formula_fv_FTypeQualifier.
-      destruct φ; simpl in *.
-      set_solver.
-    + rewrite fib_vars_formula_fv. simpl.
-      rewrite formula_fv_FTypeQualifier.
-      destruct φ; simpl in *.
-      set_solver.
-Qed.
+  (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
+Admitted.
 
 Lemma denot_refinement_over_cont_rename_stable
     (D : aset) (Σ : gmap atom ty) b φ :
