@@ -645,7 +645,17 @@ Lemma denot_ty_obligations_formula_fv_subset (Σe Στ : lty_env) τ e φ S :
   lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ formula_fv φ ⊆ S →
   formula_fv (denot_ty_obligations Σe Στ τ e φ) ⊆ S.
 Proof.
-Admitted.
+  intros Hsub.
+  unfold denot_ty_obligations.
+  unfold FBasicTypingIn, FClosedResourceIn, FStrongTotalIn,
+    FStoreResourceAtom, FResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
+  change (into_lvars (dom Σe ∪ dom Στ)) with (dom Σe ∪ dom Στ).
+  change (into_lvars (dom Σe)) with (dom Σe).
+  rewrite lvars_fv_union.
+  unfold lty_env_atom_dom.
+  set_solver.
+Qed.
 
 Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
