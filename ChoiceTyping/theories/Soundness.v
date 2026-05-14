@@ -450,21 +450,23 @@ Theorem Fundamental (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (�
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e.
 Proof.
   intros HΦ Hty.
-  induction Hty; eauto using fundamental_var_case, fundamental_const_case.
-  - eapply fundamental_sub_case; eauto.
-  - eapply fundamental_ctx_sub_case; eauto.
-  - eapply fundamental_let_case; eauto using typing_wf_under.
-  - eapply fundamental_letd_case; eauto.
-  - eapply fundamental_lam_case; eauto.
-  - eapply fundamental_lamd_case; eauto.
-  - eapply fundamental_app_case; eauto.
-  - eapply fundamental_appd_case; eauto.
-  - eapply fundamental_fix_case; eauto.
-  - eapply fundamental_fixd_case; eauto.
-  - eapply fundamental_appop_case; eauto.
-  - eapply fundamental_match_both_case; eauto.
-  - eapply fundamental_match_true_case; eauto.
-  - eapply fundamental_match_false_case; eauto.
+  induction Hty.
+  - eapply fundamental_var_case; eauto 6.
+  - eapply fundamental_const_case; eauto 6.
+  - eapply fundamental_sub_case; eauto 6.
+  - eapply fundamental_ctx_sub_case; eauto 6.
+  - eapply fundamental_let_case; eauto 6 using typing_wf_under.
+  - eapply fundamental_letd_case; eauto 6.
+  - eapply fundamental_lam_case; eauto 6.
+  - eapply fundamental_lamd_case; eauto 6.
+  - eapply fundamental_app_case; eauto 6.
+  - eapply fundamental_appd_case; eauto 6.
+  - eapply fundamental_fix_case; eauto 6.
+  - eapply fundamental_fixd_case; eauto 6.
+  - eapply fundamental_appop_case; eauto 6.
+  - eapply fundamental_match_both_case; eauto 6.
+  - eapply fundamental_match_true_case; eauto 6.
+  - eapply fundamental_match_false_case; eauto 6.
 Qed.
 
 (** ** Corollaries
