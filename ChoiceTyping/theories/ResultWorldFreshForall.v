@@ -69,6 +69,50 @@ Proof.
     + subst z. split; [exact HxX | exact HxY].
 Qed.
 
+Lemma let_result_world_on_fiber_expr_result_in_world
+    X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
+  fv_tm e ⊆ X →
+  lc_tm e →
+  ν ∉ X →
+  X ⊆ world_dom (n : World) →
+  world_store_closed_on X n →
+  expr_result_in_world (store_restrict σX X) e ν
+    (res_restrict
+      (res_fiber_from_projection
+        (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
+      (X ∪ {[ν]})).
+Proof.
+  (* Pending direct multi-fiber exactness proof.  The proof is conceptually a
+     projection argument, but the current script hits slow set normalization
+     around [dom σX = X] and insert/restrict rewrites.  Keep this explicit
+     statement as the future proof boundary instead of letting [set_solver]
+     block the LN refactor. *)
+Admitted.
+
+Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresult :
+  ν ∉ X →
+  X ⊆ world_dom (n : World) →
+  formula_scoped_in_world ∅
+    (let_result_world_on e ν n Hfresh Hresult)
+    (FExprResultOn X e ν).
+Proof.
+  (* Pending lightweight scopedness proof; deliberately admitted while the
+     formula naming representation is being replaced by LN. *)
+Admitted.
+
+Lemma FExprResultAtomOn_scoped_in_result_fiber
+    X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
+  ν ∉ X →
+  X ⊆ world_dom (n : World) →
+  formula_scoped_in_world σX
+    (res_fiber_from_projection
+      (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
+    (FExprResultAtomOn X e ν).
+Proof.
+  (* Pending lightweight scopedness proof; deliberately admitted while the
+     formula naming representation is being replaced by LN. *)
+Admitted.
+
 Lemma let_result_world_on_models_FExprResult :
   ∀ X e ν (n : WfWorld) Hfresh Hresult,
     fv_tm e ⊆ X →
@@ -78,7 +122,8 @@ Lemma let_result_world_on_models_FExprResult :
     world_store_closed_on X n →
     let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultOn X e ν.
 Proof.
-  (* Primitive multi-fiber version pending direct projection proof. *)
+  (* Pending direct projection proof; this is the main bridge that should become
+     simpler once formulas use LN binders and multi-fibers over [logic_var]. *)
 Admitted.
 
 Lemma fresh_forall_expr_result_to_let_result_world_renamed
@@ -194,4 +239,3 @@ Lemma FExprContIn_iff_let_result_world_on_exact_domain
 Proof.
   (* Legacy fresh_forall bridge; to be replaced by LN open/cofinite bridge. *)
 Admitted.
-
