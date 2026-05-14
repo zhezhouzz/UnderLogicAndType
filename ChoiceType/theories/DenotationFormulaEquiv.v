@@ -173,10 +173,85 @@ Lemma FExprContIn_post_open_store_equiv
     (Σ : gmap atom ty) e (P Q : FQ) :
   formula_fv P = formula_fv Q →
   (∀ ν, ν ∉ dom Σ →
+    formula_fv (formula_open 0 ν P) = formula_fv (formula_open 0 ν Q)) →
+  (∀ ν, ν ∉ dom Σ →
     formula_store_equiv (formula_open 0 ν P) (formula_open 0 ν Q)) →
   formula_store_equiv (FExprContIn Σ e P) (FExprContIn Σ e Q).
 Proof.
-Admitted.
+  intros Hfv Hopen_fv Heq ρ m.
+  unfold FExprContIn, res_models_with_store.
+  change (expr_cont_body (lvars_fv (into_lvars Σ)) P) with P.
+  change (expr_cont_body (lvars_fv (into_lvars Σ)) Q) with Q.
+  cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+    formula_fv formula_open].
+  split; intros [Hscope [L [HLdom Hforall]]]; split.
+  - unfold formula_scoped_in_world in *.
+    cbn [formula_fv] in *.
+    rewrite <- Hfv. exact Hscope.
+  - exists (L ∪ dom Σ). split; [set_solver |].
+    intros y Hy m' Hdom Hrestrict.
+    specialize (Hforall y ltac:(set_solver) m' Hdom Hrestrict).
+    cbn [formula_open formula_measure res_models_with_store_fuel
+      formula_scoped_in_world formula_fv] in *.
+    destruct Hforall as [HscopeImp Himpl].
+    split.
+    + unfold formula_scoped_in_world in *.
+      cbn [formula_fv] in *.
+      rewrite <- Hopen_fv by set_solver.
+      exact HscopeImp.
+    + intros n Hle HA.
+      assert (HA_src : res_models_with_store_fuel
+        (0 + formula_measure (FExprResultOn (into_lvars Σ) e) +
+          formula_measure P)
+        ρ n (formula_open 0 y (FExprResultOn (into_lvars Σ) e))).
+      { models_fuel_irrel HA. }
+      specialize (Himpl n Hle HA_src) as HP.
+      pose proof (Heq y ltac:(set_solver) ρ n) as HyEq.
+      unfold res_models_with_store in HyEq.
+      assert (HQ_exact :
+        res_models_with_store_fuel (formula_measure (formula_open 0 y Q))
+          ρ n (formula_open 0 y Q)).
+      {
+        apply (proj1 HyEq).
+        eapply res_models_with_store_fuel_irrel; [| | exact HP];
+          rewrite formula_open_preserves_measure; simpl; lia.
+      }
+      eapply res_models_with_store_fuel_irrel; [| | exact HQ_exact];
+        rewrite formula_open_preserves_measure; simpl; lia.
+  - unfold formula_scoped_in_world in *.
+    cbn [formula_fv] in *.
+    rewrite Hfv. exact Hscope.
+  - exists (L ∪ dom Σ). split; [set_solver |].
+    intros y Hy m' Hdom Hrestrict.
+    specialize (Hforall y ltac:(set_solver) m' Hdom Hrestrict).
+    cbn [formula_open formula_measure res_models_with_store_fuel
+      formula_scoped_in_world formula_fv] in *.
+    destruct Hforall as [HscopeImp Himpl].
+    split.
+    + unfold formula_scoped_in_world in *.
+      cbn [formula_fv] in *.
+      rewrite Hopen_fv by set_solver.
+      exact HscopeImp.
+    + intros n Hle HA.
+      assert (HA_src : res_models_with_store_fuel
+        (0 + formula_measure (FExprResultOn (into_lvars Σ) e) +
+          formula_measure Q)
+        ρ n (formula_open 0 y (FExprResultOn (into_lvars Σ) e))).
+      { models_fuel_irrel HA. }
+      specialize (Himpl n Hle HA_src) as HQ.
+      pose proof (Heq y ltac:(set_solver) ρ n) as HyEq.
+      unfold res_models_with_store in HyEq.
+      assert (HP_exact :
+        res_models_with_store_fuel (formula_measure (formula_open 0 y P))
+          ρ n (formula_open 0 y P)).
+      {
+        apply (proj2 HyEq).
+        eapply res_models_with_store_fuel_irrel; [| | exact HQ];
+          rewrite formula_open_preserves_measure; simpl; lia.
+      }
+      eapply res_models_with_store_fuel_irrel; [| | exact HP_exact];
+        rewrite formula_open_preserves_measure; simpl; lia.
+Qed.
 
 Lemma fib_vars_insert_rename_res_models x y X (φ : FQ) (m : WfWorld) :
   x ∉ X →

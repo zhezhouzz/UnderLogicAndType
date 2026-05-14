@@ -3181,6 +3181,10 @@ Proof.
     rewrite !formula_fv_FResultBasicWorld_atom_env.
     reflexivity.
   - intros ν Hν.
+    cbn [formula_open formula_fv].
+    rewrite !formula_fv_FResultBasicWorld_atom_env_insert_fresh_open by exact Hx.
+    reflexivity.
+  - intros ν Hν.
     apply formula_store_equiv_and.
     + apply formula_fv_FResultBasicWorld_atom_env_insert_fresh_open.
       exact Hx.
