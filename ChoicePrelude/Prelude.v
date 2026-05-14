@@ -76,6 +76,16 @@ Definition logic_var_open (k : nat) (x : atom) (v : logic_var) : logic_var :=
 Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
   set_map (logic_var_open k x) D.
 
+Definition logic_var_swap (x y : atom) (v : logic_var) : logic_var :=
+  match v with
+  | LVBound k => LVBound k
+  | LVFree z =>
+      LVFree (if decide (z = x) then y else if decide (z = y) then x else z)
+  end.
+
+Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
+  set_map (logic_var_swap x y) D.
+
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 

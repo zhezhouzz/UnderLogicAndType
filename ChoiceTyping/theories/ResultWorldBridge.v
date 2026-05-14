@@ -121,7 +121,7 @@ Lemma foldr_fib_expr_result_sound
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
+    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   store_restrict σw {[ν]} = sigmanu →
   expr_result_store ν
@@ -138,7 +138,7 @@ Lemma foldr_fib_expr_result_complete
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
+    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   expr_result_store ν
     (subst_map
@@ -155,7 +155,7 @@ Lemma foldr_fib_expr_result_complete_paired
   NoDup xs →
   dom ρ ## (list_to_set xs : aset) →
   res_models_with_store ρ m
-    (foldr FFib (FAtom (expr_logic_qual_on X e ν)) xs) →
+    (fib_vars (list_to_set xs) (FAtom (expr_logic_qual_on X e ν))) →
   (m : World) σw →
   expr_result_store ν
     (subst_map
@@ -412,7 +412,7 @@ Lemma result_world_slice_inv_base X e ν (n : WfWorld)
   res_models_with_store ρ w (FAtom (expr_logic_qual_on X e ν)).
 Proof.
   (*
-    Legacy exact-result bridge for the old fold/FFib path.  The primitive
+    Legacy exact-result bridge for the old folded fiber path.  The primitive
     multi-fiber refactor will replace this with a direct FFibVars/LN bridge;
     keeping the old script commented avoids spending minutes compiling proof
     search against definitions we are actively deleting.

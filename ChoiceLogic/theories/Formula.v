@@ -160,13 +160,8 @@ Fixpoint res_models_with_store_fuel
       ∃ m' : WfWorldT, res_subset m' m ∧
         res_models_with_store_fuel gas' ρ m' p
 
-  | FFib x p =>
-      dom ρ ## {[x]} ∧
-      ∀ σ (Hproj : res_restrict m {[x]} σ),
-        res_models_with_store_fuel gas' (ρ ∪ σ)
-          (res_fiber_from_projection m {[x]} σ Hproj) p
-
-  | FFibVars X p =>
+  | FFibVars D p =>
+      let X := lvars_fv D in
       dom ρ ## X ∧
       ∀ σ (Hproj : res_restrict m X σ),
         res_models_with_store_fuel gas' (ρ ∪ σ)
@@ -205,7 +200,7 @@ Proof.
     destruct gasB as [|gasB']; [pose proof (formula_measure_pos ψ); lia |].
     simpl in *.
     destruct Hmodel as [Hscope Hmodel]. split; [exact Hscope |].
-    destruct ψ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|x p|X p];
+    destruct ψ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|X p];
       simpl in *.
     - exact Hmodel.
     - exact Hmodel.
@@ -261,12 +256,7 @@ Proof.
     - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
       intros σ Hproj.
       exact (IHn p gasA' gasB' (ρ0 ∪ σ)
-        (res_fiber_from_projection m0 {[x]} σ Hproj)
-        ltac:(lia) ltac:(lia) ltac:(lia) (Hfib σ Hproj)).
-    - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
-      intros σ Hproj.
-      exact (IHn p gasA' gasB' (ρ0 ∪ σ)
-        (res_fiber_from_projection m0 X σ Hproj)
+        (res_fiber_from_projection m0 (lvars_fv X) σ Hproj)
         ltac:(lia) ltac:(lia) ltac:(lia) (Hfib σ Hproj)).
   }
   eapply Hstrong with (n := formula_measure φ); eauto.
@@ -302,7 +292,8 @@ Proof.
   destruct Hmodel as [Hscope Hmodel].
   split.
   { eapply formula_scoped_res_le; eauto. }
-  destruct φ; simpl in *.
+  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|D p];
+    simpl in *.
   - exact I.
   - exact Hmodel.
   - destruct Hmodel as [m0 [Hscope0 [Ha Hm0m]]].
@@ -379,23 +370,12 @@ Proof.
     eauto.
   - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
     intros σ Hproj_n.
-    assert (HX : {[x]} ⊆ world_dom (m : World)).
+    set (XF := lvars_fv D).
+    assert (HX : XF ⊆ world_dom (m : World)).
     { unfold formula_scoped_in_world in Hscope. simpl in Hscope. set_solver. }
-    assert (Hproj_m : res_restrict m {[x]} σ).
+    assert (Hproj_m : res_restrict m XF σ).
     {
-      rewrite (res_restrict_le_eq m n {[x]} Hle HX).
-      exact Hproj_n.
-    }
-    pose proof (Hfib σ Hproj_m) as Hp.
-    eapply IH; [| exact Hp].
-    apply res_fiber_from_projection_le; [exact Hle | exact HX].
-  - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
-    intros σ Hproj_n.
-    assert (HX : X ⊆ world_dom (m : World)).
-    { unfold formula_scoped_in_world in Hscope. simpl in Hscope. set_solver. }
-    assert (Hproj_m : res_restrict m X σ).
-    {
-      rewrite (res_restrict_le_eq m n X Hle HX).
+      rewrite (res_restrict_le_eq m n XF Hle HX).
       exact Hproj_n.
     }
     pose proof (Hfib σ Hproj_m) as Hp.
@@ -454,7 +434,7 @@ Proof.
     unfold formula_scoped_in_world in *. subst S. simpl. set_solver.
   }
   split; [exact Hscope_restrict |].
-  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|x p|X p];
+  destruct φ as [| |a|p q|p q|p q|p q|p q|p q|x p|x p|p|p|X p];
     simpl in *; subst S.
   - exact I.
   - exact Hmodel.
@@ -675,86 +655,44 @@ Proof.
     + subst S. apply IH. exact Hp.
   - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
     intros σ Hproj_r.
-    set (S := dom ρ ∪ ({[x]} ∪ formula_fv p)).
-    assert (HXm : {[x]} ⊆ world_dom (m : World)).
+    set (XF := lvars_fv X).
+    set (S := dom ρ ∪ (XF ∪ formula_fv p)).
+    assert (HXm : XF ⊆ world_dom (m : World)).
     { unfold formula_scoped_in_world in Hscope. set_solver. }
-    assert (HXS : {[x]} ⊆ S) by (subst S; set_solver).
-    assert (Hproj_m : res_restrict m {[x]} σ).
+    assert (Hproj_m : res_restrict m XF σ).
     {
-      change ((res_restrict m {[x]} : World) σ).
-      change ((res_restrict (res_restrict m S) {[x]} : World) σ) in Hproj_r.
+      change ((res_restrict m XF : World) σ).
+      change ((res_restrict (res_restrict m S) XF : World) σ) in Hproj_r.
       rewrite res_restrict_restrict_eq in Hproj_r.
-      replace (S ∩ {[x]}) with ({[x]} : aset) in Hproj_r by set_solver.
+      replace (S ∩ XF) with XF in Hproj_r by set_solver.
       exact Hproj_r.
     }
     pose proof (Hfib σ Hproj_m) as Hp_fib.
     pose proof (IH (ρ ∪ σ)
-      (res_fiber_from_projection m {[x]} σ Hproj_m) p Hp_fib) as Hp_small.
+      (res_fiber_from_projection m XF σ Hproj_m) p Hp_fib) as Hp_small.
     set (T := dom (ρ ∪ σ) ∪ formula_fv p).
     change (dom (ρ ∪ σ) ∪ formula_fv p) with T in Hp_small.
     assert (Hfiber_le :
-      res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r ⊑
-      res_fiber_from_projection m {[x]} σ Hproj_m).
+      res_fiber_from_projection (res_restrict m S) XF σ Hproj_r ⊑
+      res_fiber_from_projection m XF σ Hproj_m).
     {
       eapply res_fiber_from_projection_le.
       - apply res_restrict_le.
       - simpl. set_solver.
     }
     assert (HT_target :
-      T ⊆ world_dom (res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r : World)).
+      T ⊆ world_dom (res_fiber_from_projection (res_restrict m S) XF σ Hproj_r : World)).
     {
       subst T S. simpl.
-      pose proof (wfworld_store_dom (res_restrict m {[x]}) σ Hproj_m) as Hdomσ.
+      pose proof (wfworld_store_dom (res_restrict m XF) σ Hproj_m) as Hdomσ.
       simpl in Hdomσ.
-      replace (world_dom (m : World) ∩ {[x]}) with ({[x]} : aset) in Hdomσ
-        by set_solver.
+      replace (world_dom (m : World) ∩ XF) with XF in Hdomσ by set_solver.
       rewrite dom_union_L. rewrite Hdomσ.
       unfold formula_scoped_in_world in Hscope. set_solver.
     }
     rewrite <- (res_restrict_le_eq
-      (res_fiber_from_projection (res_restrict m S) {[x]} σ Hproj_r)
-      (res_fiber_from_projection m {[x]} σ Hproj_m)
-      T Hfiber_le HT_target) in Hp_small.
-    eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
-  - destruct Hmodel as [Hdisj Hfib]. split; [exact Hdisj |].
-    intros σ Hproj_r.
-    set (S := dom ρ ∪ (X ∪ formula_fv p)).
-    assert (HXm : X ⊆ world_dom (m : World)).
-    { unfold formula_scoped_in_world in Hscope. set_solver. }
-    assert (Hproj_m : res_restrict m X σ).
-    {
-      change ((res_restrict m X : World) σ).
-      change ((res_restrict (res_restrict m S) X : World) σ) in Hproj_r.
-      rewrite res_restrict_restrict_eq in Hproj_r.
-      replace (S ∩ X) with X in Hproj_r by set_solver.
-      exact Hproj_r.
-    }
-    pose proof (Hfib σ Hproj_m) as Hp_fib.
-    pose proof (IH (ρ ∪ σ)
-      (res_fiber_from_projection m X σ Hproj_m) p Hp_fib) as Hp_small.
-    set (T := dom (ρ ∪ σ) ∪ formula_fv p).
-    change (dom (ρ ∪ σ) ∪ formula_fv p) with T in Hp_small.
-    assert (Hfiber_le :
-      res_fiber_from_projection (res_restrict m S) X σ Hproj_r ⊑
-      res_fiber_from_projection m X σ Hproj_m).
-    {
-      eapply res_fiber_from_projection_le.
-      - apply res_restrict_le.
-      - simpl. set_solver.
-    }
-    assert (HT_target :
-      T ⊆ world_dom (res_fiber_from_projection (res_restrict m S) X σ Hproj_r : World)).
-    {
-      subst T S. simpl.
-      pose proof (wfworld_store_dom (res_restrict m X) σ Hproj_m) as Hdomσ.
-      simpl in Hdomσ.
-      replace (world_dom (m : World) ∩ X) with X in Hdomσ by set_solver.
-      rewrite dom_union_L. rewrite Hdomσ.
-      unfold formula_scoped_in_world in Hscope. set_solver.
-    }
-    rewrite <- (res_restrict_le_eq
-      (res_fiber_from_projection (res_restrict m S) X σ Hproj_r)
-      (res_fiber_from_projection m X σ Hproj_m)
+      (res_fiber_from_projection (res_restrict m S) XF σ Hproj_r)
+      (res_fiber_from_projection m XF σ Hproj_m)
       T Hfiber_le HT_target) in Hp_small.
     eapply res_models_with_store_fuel_kripke; [apply res_restrict_le | exact Hp_small].
 Qed.

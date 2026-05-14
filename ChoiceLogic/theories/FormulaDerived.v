@@ -304,32 +304,14 @@ Proof.
   - exact Hφ.
 Qed.
 
-Lemma res_models_fib_intro (m : WfWorldT) (x : atom) (φ : FormulaT) :
-  formula_scoped_in_world ∅ m (FFib x φ) →
+Lemma res_models_fib_vars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
+  formula_scoped_in_world ∅ m (FFibVars D φ) →
   (∀ σ,
-     ∀ Hproj : res_restrict m {[x]} σ,
+     ∀ Hproj : res_restrict m (lvars_fv D) σ,
      res_models_with_store σ
-       (res_fiber_from_projection m {[x]} σ Hproj)
+       (res_fiber_from_projection m (lvars_fv D) σ Hproj)
        φ) →
-  m ⊨ FFib x φ.
-Proof.
-  unfold res_models, res_models_with_store.
-  simpl. intros Hscope Hfib. split; [exact Hscope |].
-  split.
-  - set_solver.
-  - intros σ Hproj.
-    rewrite map_empty_union.
-    models_fuel_irrel (Hfib σ Hproj).
-Qed.
-
-Lemma res_models_fib_vars_intro (m : WfWorldT) (X : aset) (φ : FormulaT) :
-  formula_scoped_in_world ∅ m (FFibVars X φ) →
-  (∀ σ,
-     ∀ Hproj : res_restrict m X σ,
-     res_models_with_store σ
-       (res_fiber_from_projection m X σ Hproj)
-       φ) →
-  m ⊨ FFibVars X φ.
+  m ⊨ FFibVars D φ.
 Proof.
   unfold res_models, res_models_with_store.
   simpl. intros Hscope Hfib. split; [exact Hscope |].

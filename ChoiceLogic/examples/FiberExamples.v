@@ -1,8 +1,9 @@
 (** * Fiber modality examples
 
     This file formalizes the dependent-underapproximation example from the
-    paper.  The key point is that [FFib x] checks the underapproximation
-    independently in every fixed-[x] fiber.  Thus the diagonal world
+    paper.  The key point is that [FFibVars {[x]}] checks the
+    underapproximation independently in every fixed-[x] fiber.  Thus the
+    diagonal world
     [{[x=1;y=1], [x=2;y=2]}] is not enough: the [x=1] fiber is missing the
     admissible point [x=1;y=2]. *)
 
@@ -99,7 +100,7 @@ Definition w_x2_y2 : WfWorldN := exist _ raw_x2_y2 wf_raw_x2_y2.
 Definition w_diag_bad : WfWorldN := exist _ raw_diag_bad wf_raw_diag_bad.
 Definition w_triangle_ok : WfWorldN := exist _ raw_triangle_ok wf_raw_triangle_ok.
 
-(** [triangle_slice] is evaluated after [FFib 'x] has added the fixed
+(** [triangle_slice] is evaluated after [FFibVars {['x]}] has added the fixed
     projection store to [ρ].  It then requires the current world to contain
     every point [x=fixed_x;y=y] satisfying [fixed_x <= y < 3]. *)
 Definition triangle_slice : LogicQualifierN :=
@@ -130,7 +131,7 @@ Ltac solve_triangle_atom_scope :=
   simpl; rewrite ?lvars_fv_of_atoms; vm_compute; set_solver.
 
 Definition fiber_triangle_formula : FormulaN :=
-  FFib 'x (FUnder (FAtom triangle_slice)).
+  FFibVars (lvars_of_atoms {['x]}) (FUnder (FAtom triangle_slice)).
 
 (** The formula unfolds to the following concrete fiber obligation: for each
     admissible [x]-projection [σ], some same-domain subworld of the induced
@@ -151,7 +152,9 @@ Lemma fiber_triangle_scoped (w : WfWorldN) :
 Proof.
   intros Hdom. unfold formula_scoped_in_world, fiber_triangle_formula.
   simpl. unfold stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
-  simpl. rewrite lvars_fv_of_atoms. rewrite Hdom. set_solver.
+  unfold triangle_slice. simpl.
+  unfold stale, stale_logic_qualifier, lqual_fvars, lqual_dom. simpl.
+  rewrite !lvars_fv_of_atoms. rewrite Hdom. set_solver.
 Qed.
 
 Lemma res_models_fiber_triangle_intro (w : WfWorldN) :
@@ -165,8 +168,10 @@ Proof.
   - exact Hscope.
   - split; [set_solver |].
     intros σ Hproj.
-    destruct (Hfib σ Hproj) as [m' [m0 [Hsubset [Hscope0 [Hatom Hle]]]]].
-    pose proof (wfworld_store_dom (res_restrict w {['x]}) σ Hproj) as Hdomσ.
+    assert (Hproj' : res_restrict w {['x]} σ).
+    { rewrite lvars_fv_of_atoms in Hproj. exact Hproj. }
+    destruct (Hfib σ Hproj') as [m' [m0 [Hsubset [Hscope0 [Hatom Hle]]]]].
+    pose proof (wfworld_store_dom (res_restrict w {['x]}) σ Hproj') as Hdomσ.
     simpl in Hdomσ.
     split.
     + unfold formula_scoped_in_world in *. simpl in *. set_solver.
@@ -184,7 +189,9 @@ Proof.
   unfold res_models, res_models_with_store, fiber_triangle_formula,
     fiber_triangle_obligation.
   simpl. intros [_ [_ Hfib]] σ Hproj.
-  destruct (Hfib σ Hproj) as [_ [m' [Hsubset [_ [m0 [Hscope0 [Hatom Hle]]]]]]].
+  assert (Hproj' : res_restrict w (lvars_fv (lvars_of_atoms {['x]})) σ).
+  { rewrite lvars_fv_of_atoms. exact Hproj. }
+  destruct (Hfib σ Hproj') as [_ [m' [Hsubset [_ [m0 [Hscope0 [Hatom Hle]]]]]]].
   exists m', m0. split; [exact Hsubset |].
   split; [exact Hscope0 |]. split; [exact Hatom | exact Hle].
 Qed.

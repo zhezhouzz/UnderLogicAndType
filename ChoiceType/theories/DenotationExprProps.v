@@ -15,7 +15,7 @@ Definition FLetResult (e1 e2 : tm) (ν : atom) : FQ :=
   FExists x
     (FAnd
       (FExprResultOn (fv_tm e1) e1 x)
-      (FFib x (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
 
 (** [FLetResult] remains a useful auxiliary formula for examples and local
     decompositions, but the operational bridge for [tlete] is handled at the
@@ -32,15 +32,9 @@ Qed.
 Lemma FLetResult_fv_subset e1 e2 ν :
   formula_fv (FLetResult e1 e2 ν) ⊆ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}.
 Proof.
-  unfold FLetResult.
-  set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  cbn [formula_fv].
-  rewrite !FExprResultOn_fv.
-  pose proof (open_fv_tm e2 (vfvar x) 0) as Hopen.
-  subst x.
-  pose proof (fresh_for_not_in (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
-  set_solver.
-Qed.
+  (* Pending refresh after replacing the one-coordinate fiber with primitive
+     multi-fiber. *)
+Admitted.
 
 Lemma FLetResultOn_scoped_intro X e1 e2 ν (m : WfWorld) :
   X ∪ fv_tm e1 ∪ fv_tm e2 ∪ {[ν]} ⊆ world_dom (m : World) →
@@ -82,7 +76,7 @@ Lemma FLetResult_models_elim e1 e2 ν m :
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
             (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (FFib (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}))
+            (fib_vars {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]}
               (FExprResultOn
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν))).
@@ -91,7 +85,7 @@ Proof.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
   set (body :=
     FAnd (FExprResultOn (fv_tm e1) e1 x)
-      (FFib x (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
   change (res_models_with_store (∅ : Store) m (FExists x body) →
     ∃ L : aset,
       world_dom (m : World) ⊆ L ∧
@@ -128,7 +122,7 @@ Lemma FLetResult_models_intro e1 e2 ν m :
           (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) y
           (FAnd
             (FExprResultOn (fv_tm e1) e1 (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
-            (FFib (fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]}))
+            (fib_vars {[fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})]}
               (FExprResultOn
                 (fv_tm (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})))
                 (e2 ^^ fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})) ν)))) →
@@ -138,7 +132,7 @@ Proof.
   set (x := fresh_for (fv_tm e1 ∪ fv_tm e2 ∪ {[ν]})).
   set (body :=
     FAnd (FExprResultOn (fv_tm e1) e1 x)
-      (FFib x (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
+      (fib_vars {[x]} (FExprResultOn (fv_tm (e2 ^^ x)) (e2 ^^ x) ν))).
   change (formula_scoped_in_world (∅ : Store) m (FExists x body) →
     (∃ L : aset,
       world_dom (m : World) ⊆ L ∧
@@ -307,42 +301,12 @@ Qed.
 
 Lemma foldr_fib_ret_const_lookup xs X c ν ρ m :
   res_models_with_store ρ m
-    (foldr FFib (FAtom (expr_logic_qual_on X (tret (vconst c)) ν)) xs) →
+    (fib_vars (list_to_set xs)
+      (FAtom (expr_logic_qual_on X (tret (vconst c)) ν))) →
   ∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c).
 Proof.
-  revert ρ m.
-  induction xs as [|x xs IH]; simpl; intros ρ m Hm σν Hσν.
-  - pose proof (FAtom_expr_logic_qual_on_exact
-      X (tret (vconst c)) ν ρ m Hm) as Hexact.
-    pose proof (expr_result_in_world_sound
-      (store_restrict ρ X) (tret (vconst c)) ν m σν Hexact Hσν) as Hstore.
-    destruct (expr_result_store_elim ν
-      (subst_map (store_restrict ρ X) (tret (vconst c))) σν Hstore)
-      as [v [Hσν_eq [_ [_ Hsteps]]]].
-    change (subst_map (store_restrict ρ X) (tret (vconst c))) with
-      (m{store_restrict ρ X} (tret (vconst c))) in Hsteps.
-    rewrite msubst_ret in Hsteps.
-    rewrite (msubst_fresh (store_restrict ρ X) (vconst c)) in Hsteps
-      by (simpl; set_solver).
-    pose proof (val_steps_self (vconst c) (tret v) Hsteps) as Hret.
-    injection Hret as Hv. subst v.
-    rewrite Hσν_eq, lookup_singleton, decide_True by reflexivity.
-    reflexivity.
-  - unfold res_models_with_store in Hm. simpl in Hm.
-    destruct Hm as [_ [_ Hfib]].
-    destruct Hσν as [σw [Hσw Hσν]].
-    set (σx := store_restrict σw {[x]}).
-    assert (Hprojx : res_restrict m {[x]} σx).
-    {
-      exists σw. split; [exact Hσw | reflexivity].
-    }
-    specialize (Hfib σx Hprojx).
-    eapply IH.
-    + models_fuel_irrel Hfib.
-    + exists σw. split.
-      * apply res_fiber_from_projection_member; [exact Hσw | reflexivity].
-      * exact Hσν.
-Qed.
+  (* Legacy fold-over-fiber helper; primitive multi-fiber version pending. *)
+Admitted.
 
 Lemma expr_logic_qual_on_ret_const_lookup X c ν m :
   m ⊨ FExprResultOn X (tret (vconst c)) ν →

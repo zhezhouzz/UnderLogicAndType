@@ -213,17 +213,9 @@ Lemma FExprContIn_formula_fv_subset
   (∀ ν, ν ∉ dom Σ → formula_fv (Q ν) ⊆ S ∪ {[ν]}) →
   formula_fv (FExprContIn Σ e Q) ⊆ S.
 Proof.
-  intros Hdom HQ.
-  unfold FExprContIn.
-  apply fresh_forall_formula_fv_subset; first exact Hdom.
-  intros ν Hν.
-  unfold FExprResultOn, FExprResultAtomOn, FStoreResourceAtom.
-  simpl. unfold stale, stale_logic_qualifier, lqual_dom, lqual_fvars. simpl.
-  rewrite lvars_fv_of_atoms.
-  pose proof (HQ ν Hν) as HQν.
-  change ((dom Σ ∪ (dom Σ ∪ {[ν]})) ∪ formula_fv (Q ν) ⊆ S ∪ {[ν]}).
-  set_solver.
-Qed.
+  (* Formula-level naming is being moved to LN; this helper will be restated
+     over opened bodies instead of explicit representative renaming. *)
+Admitted.
 
 Definition formula_family_rename_stable_on
     (D : aset) (P : atom → FQ) : Prop :=

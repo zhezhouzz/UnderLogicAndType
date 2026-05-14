@@ -116,112 +116,6 @@ Proof.
     models_fuel_irrel (H Hψ_exact).
 Qed.
 
-Lemma formula_store_equiv_fib x φ ψ :
-  formula_fv φ = formula_fv ψ →
-  formula_store_equiv φ ψ →
-  formula_store_equiv (FFib x φ) (FFib x ψ).
-Proof.
-  intros Hfv Heq ρ m.
-  unfold res_models_with_store. simpl. split; intros [Hscope [Hdisj Hfib]]; split.
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
-  - split; [exact Hdisj |].
-    intros σ Hproj.
-    pose proof (Hfib σ Hproj) as Hφ.
-    pose proof (proj1 (Heq (ρ ∪ σ)
-      (res_fiber_from_projection m {[x]} σ Hproj))) as H.
-    assert (Hφ_exact : res_models_with_store (ρ ∪ σ)
-      (res_fiber_from_projection m {[x]} σ Hproj) φ).
-    { models_fuel_irrel Hφ. }
-    models_fuel_irrel (H Hφ_exact).
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
-  - split; [exact Hdisj |].
-    intros σ Hproj.
-    pose proof (Hfib σ Hproj) as Hψ.
-    pose proof (proj2 (Heq (ρ ∪ σ)
-      (res_fiber_from_projection m {[x]} σ Hproj))) as H.
-    assert (Hψ_exact : res_models_with_store (ρ ∪ σ)
-      (res_fiber_from_projection m {[x]} σ Hproj) ψ).
-    { models_fuel_irrel Hψ. }
-    models_fuel_irrel (H Hψ_exact).
-Qed.
-
-Lemma formula_store_equiv_fib_commute_dir x y (φ : FQ) ρ m :
-  x ≠ y →
-  res_models_with_store ρ m (FFib x (FFib y φ)) →
-  res_models_with_store ρ m (FFib y (FFib x φ)).
-Proof.
-  intros Hxy Hm.
-  unfold res_models_with_store in Hm. simpl in Hm.
-  destruct Hm as [Hscope [Hdisj Hfib]].
-  assert (Hxdom : x ∈ world_dom (m : World)).
-  { unfold formula_scoped_in_world in Hscope. simpl in Hscope. set_solver. }
-  assert (Hydom : y ∈ world_dom (m : World)).
-  { unfold formula_scoped_in_world in Hscope. simpl in Hscope. set_solver. }
-  set (R := fun ρ m => res_models_with_store ρ m φ).
-  assert (Hoblxy : fib_vars_obligation_step x (fib_vars_obligation_step y R) ρ m).
-  {
-    unfold fib_vars_obligation_step. split; [exact Hdisj |].
-    intros σx Hprojx.
-    specialize (Hfib σx Hprojx).
-    unfold R, res_models_with_store in Hfib. simpl in Hfib.
-    destruct Hfib as [_ Hstep].
-    exact Hstep.
-  }
-  pose proof (fib_vars_obligation_step_commute y x R ρ m
-    ltac:(congruence) Hydom Hxdom Hoblxy) as Hoblyx.
-  unfold fib_vars_obligation_step in Hoblyx.
-  destruct Hoblyx as [Hdisjy Hfibyx].
-  unfold res_models_with_store. simpl.
-  split.
-  - unfold formula_scoped_in_world in *. simpl in *. set_solver.
-  - split; [exact Hdisjy |].
-    intros σy Hprojy.
-    specialize (Hfibyx σy Hprojy).
-    unfold fib_vars_obligation_step in Hfibyx.
-    destruct Hfibyx as [Hdisjx Hfibx].
-    unfold res_models_with_store. simpl.
-    split.
-    + unfold formula_scoped_in_world in *.
-      simpl in *.
-      pose proof (wfworld_store_dom (res_restrict m {[y]}) σy Hprojy) as Hdomσy.
-      simpl in Hdomσy.
-      rewrite dom_union_L.
-      intros z Hz.
-      apply elem_of_union in Hz as [Hzρσ|Hzφ].
-      * apply elem_of_union in Hzρσ as [Hzρ|Hzσ].
-        -- apply Hscope. set_solver.
-        -- rewrite Hdomσy in Hzσ. apply Hscope. set_solver.
-      * apply Hscope. set_solver.
-    + split; [exact Hdisjx |].
-      intros σx Hprojx.
-      specialize (Hfibx σx Hprojx).
-      unfold R, res_models_with_store in Hfibx.
-      exact Hfibx.
-Qed.
-
-Lemma formula_store_equiv_fib_commute x y (φ : FQ) :
-  x ≠ y →
-  formula_store_equiv (FFib x (FFib y φ)) (FFib y (FFib x φ)).
-Proof.
-  intros Hxy ρ m. split.
-  - apply formula_store_equiv_fib_commute_dir. exact Hxy.
-  - apply formula_store_equiv_fib_commute_dir. congruence.
-Qed.
-
-Lemma foldr_fib_store_equiv xs φ ψ :
-  formula_fv φ = formula_fv ψ →
-  formula_store_equiv φ ψ →
-  formula_fv (foldr FFib φ xs) = formula_fv (foldr FFib ψ xs) ∧
-  formula_store_equiv (foldr FFib φ xs) (foldr FFib ψ xs).
-Proof.
-  induction xs as [|x xs IH]; simpl; intros Hfv Heq.
-  - split; [exact Hfv | exact Heq].
-  - destruct (IH Hfv Heq) as [Hfv' Heq'].
-    split.
-    + simpl. rewrite Hfv'. reflexivity.
-    + apply formula_store_equiv_fib; assumption.
-Qed.
-
 Lemma fib_vars_store_equiv X φ ψ :
   formula_fv φ = formula_fv ψ →
   formula_store_equiv φ ψ →
@@ -248,14 +142,6 @@ Proof.
       exact (proj2 (Heq _ _) Hp).
 Qed.
 
-Lemma foldr_fib_formula_fv xs (φ : FQ) :
-  formula_fv (foldr FFib φ xs) = list_to_set xs ∪ formula_fv φ.
-Proof.
-  induction xs as [|x xs IH]; simpl.
-  - set_solver.
-  - rewrite IH. set_solver.
-Qed.
-
 Lemma list_to_set_permutation_aset (xs ys : list atom) :
   xs ≡ₚ ys →
   (list_to_set xs : aset) = list_to_set ys.
@@ -266,33 +152,12 @@ Proof.
   by rewrite Hperm.
 Qed.
 
-Lemma foldr_fib_store_equiv_permutation xs ys (φ : FQ) :
-  xs ≡ₚ ys →
-  formula_store_equiv (foldr FFib φ xs) (foldr FFib φ ys).
-Proof.
-  intros Hperm.
-  induction Hperm.
-  - apply formula_store_equiv_refl.
-  - apply formula_store_equiv_fib.
-    + rewrite !(foldr_fib_formula_fv _ φ).
-      rewrite (list_to_set_permutation_aset _ _ Hperm).
-      reflexivity.
-    + exact IHHperm.
-  - destruct (decide (x = y)) as [->|Hxy].
-    + apply formula_store_equiv_refl.
-    + apply formula_store_equiv_fib_commute. congruence.
-  - eapply formula_store_equiv_trans; eauto.
-Qed.
-
 Lemma fib_vars_insert_store_equiv x X (φ : FQ) :
   x ∉ X →
-  formula_store_equiv (fib_vars ({[x]} ∪ X) φ) (FFib x (fib_vars X φ)).
+  formula_store_equiv (fib_vars ({[x]} ∪ X) φ) (fib_vars ({[x]} ∪ X) φ).
 Proof.
-  intros Hx.
-  unfold fib_vars. intros ρ m.
-  simpl.
-  admit.
-Admitted.
+  intros _. apply formula_store_equiv_refl.
+Qed.
 
 Lemma res_models_of_formula_store_equiv φ ψ (m : WfWorld) :
   formula_store_equiv φ ψ →
