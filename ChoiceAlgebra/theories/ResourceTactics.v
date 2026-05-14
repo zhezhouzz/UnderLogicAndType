@@ -33,4 +33,4 @@ Ltac resource_norm :=
 
 Ltac resource_solver :=
   resource_norm;
-  try solve [store_solver | resource_store_dom_solver | set_solver | eauto | reflexivity | congruence].
+  try solve [store_solver | resource_store_dom_solver | set_solver | eauto 6 | reflexivity | congruence].

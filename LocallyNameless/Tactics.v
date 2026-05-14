@@ -381,12 +381,12 @@ Ltac solve_set :=
     lemma. *)
 Ltac my_set_solver :=
   my_set_norm;
-  eauto;
+  eauto 6;
   try match goal with
   | |- {[?x]} ∪ (?s1 ∪ ?s3) ⊆ {[?x]} ∪ (?s2 ∪ ?s4) =>
-      apply setunion_mono_cons; eauto
+      apply setunion_mono_cons; eauto 6
   | |- {[?x]} ∪ {[?y]} ∪ ?s1 ⊆ {[?x]} ∪ {[?y]} ∪ ?s2 =>
-      apply setunion_mono_two_cons; eauto
+      apply setunion_mono_two_cons; eauto 6
   | H1 : ?body1 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2,
     H2 : ?body2 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2
       |- (?e ∪ {[?y]} ∪ (({[?y]} ∪ (?body1 ∪ ?body2)) ∖ {[?x]})) ∖ {[?y]} ⊆
@@ -398,7 +398,7 @@ Ltac my_set_solver :=
           ?D ∪ ?e ∪ ?τ1 ∪ ?τ2 =>
       eapply subseteq_open_two_fv; [exact H1 | exact H2]
   | H : {[?x]} ∪ ?s1 ⊆ {[?x]} ∪ ?s2 |- ?s1 ⊆ ?s2 =>
-      eapply subseteq_subtract_both; eauto; fast_set_solver
+      eapply subseteq_subtract_both; eauto 6; fast_set_solver
   end;
   solve_set.
 
@@ -406,7 +406,7 @@ Ltac my_set_solver :=
     file has defined [my_set_solver].  It is useful in proofs where simplifying
     open/close/subst immediately creates fv/dom side conditions. *)
 Ltac smart_ln_simpl :=
-  simpl in *; crush_binders; try my_set_solver; try congruence; eauto.
+  simpl in *; crush_binders; try my_set_solver; try congruence; eauto 6.
 
 (** ** Fresh-variable automation
 

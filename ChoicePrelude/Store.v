@@ -1306,7 +1306,7 @@ Ltac store_norm :=
   repeat progress (store_set_norm; store_restrict_norm; store_insert_norm; store_lookup_norm).
 
 Ltac store_solver :=
-  store_norm; try solve [set_solver | eauto | reflexivity | congruence].
+  store_norm; try solve [set_solver | eauto 6 | reflexivity | congruence].
 
 #[global] Instance stale_store {A} : Stale (gmap atom A) := dom.
 Arguments stale_store /.

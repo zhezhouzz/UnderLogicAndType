@@ -36,7 +36,7 @@ Definition total_model_in_ctx_under
 Lemma denot_ty_total_model_regular Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   denot_ty_regular_in_ctx_under Σ Γ τ.
-Proof. intros [[Hregular _] _]. exact Hregular. Qed.
+Proof. intros; hauto. Qed.
 
 Lemma denot_ty_total_model_basic_ctx Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
@@ -51,21 +51,21 @@ Proof. intros H. exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m H)). Qe
 Lemma denot_ty_total_model_formula Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
-Proof. intros [[_ Hmodel] _]. exact Hmodel. Qed.
+Proof. intros; hauto. Qed.
 
 Lemma denot_ty_total_model_total Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
-Proof. intros [_ Htotal]. exact Htotal. Qed.
+Proof. intros; hauto. Qed.
 
 Lemma denot_ty_total_model_old Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   denot_ty_total_in_ctx_under Σ Γ τ e m.
 Proof.
-  intros H.
+  intros.
   split.
-  - exact (denot_ty_total_model_formula Σ Γ τ e m H).
-  - exact (denot_ty_total_model_total Σ Γ τ e m H).
+  - eauto 6 using denot_ty_total_model_formula.
+  - eauto 6 using denot_ty_total_model_total.
 Qed.
 
 Lemma denot_ty_total_model_from_old Σ Γ τ e m :
@@ -74,8 +74,8 @@ Lemma denot_ty_total_model_from_old Σ Γ τ e m :
   denot_ty_total_in_ctx_under Σ Γ τ e m →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m.
 Proof.
-  intros Hctx Hτ [Hmodel Htotal].
-  split; [split; [split; [exact Hctx | exact Hτ] | exact Hmodel] | exact Htotal].
+  intros.
+  hauto.
 Qed.
 
 Lemma choice_typing_wf_from_erased_denot_ctx_basic_ty Σ Γ e τ m :
@@ -112,8 +112,8 @@ Proof.
   intros Hwf.
   split.
   - destruct Hwf as [Hwfτ _].
-    exact (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ)).
-  - exact (choice_typing_wf_basic_choice_ty_erased Σ Γ e τ Hwf).
+    eauto 6 using wf_ctx_under_basic, wf_choice_ty_under_ctx.
+  - eauto 6 using choice_typing_wf_basic_choice_ty_erased.
 Qed.
 
 Lemma choice_typing_wf_to_total_model Σ Γ e τ m :
@@ -133,6 +133,5 @@ Lemma entails_total_to_total_model Σ Γ e τ :
   total_model_in_ctx_under Σ Γ τ e.
 Proof.
   intros Hwf Hent m Hm.
-  apply choice_typing_wf_to_total_model; [exact Hwf |].
-  exact (Hent m Hm).
+  apply choice_typing_wf_to_total_model; eauto 6.
 Qed.
