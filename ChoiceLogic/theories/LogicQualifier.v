@@ -92,7 +92,15 @@ Lemma logic_qualifier_denote_swap x y q σ w :
   logic_qualifier_denote q (store_swap x y σ) (res_swap x y w).
 Proof.
   destruct q as [D p]. simpl.
-Admitted.
+  rewrite lvars_fv_of_atoms.
+  rewrite <- (aset_swap_involutive x y (lvars_fv D)) at 3.
+  rewrite <- (store_restrict_swap x y σ (aset_swap x y (lvars_fv D))).
+  rewrite aset_swap_involutive.
+  rewrite <- (aset_swap_involutive x y (lvars_fv D)) at 3.
+  rewrite <- (res_restrict_swap x y w (aset_swap x y (lvars_fv D))).
+  rewrite aset_swap_involutive.
+  reflexivity.
+Qed.
 
 Lemma logic_qualifier_denote_restrict q σ w X :
   lqual_dom q ⊆ X →
