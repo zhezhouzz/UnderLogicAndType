@@ -58,6 +58,9 @@ Definition open_cty_env (η : gmap nat atom) (τ : choice_ty) : choice_ty :=
 Definition lty_env_atom_dom (Σ : lty_env) : aset :=
   lvars_fv (dom Σ).
 
+Definition lty_env_bvar_scope (Σ : lty_env) : lvset :=
+  lvars_of_bvars (lvars_bv (dom Σ)).
+
 Lemma atom_env_to_lty_env_dom Σ :
   dom (atom_env_to_lty_env Σ) = lvars_of_atoms (dom Σ).
 Proof.
@@ -112,6 +115,15 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma FExprContIn_atom_env_to_lty_env Σ e (Q : FQ) :
+  FExprContIn (atom_env_to_lty_env Σ) e Q = FExprContIn Σ e Q.
+Proof.
+  unfold FExprContIn, FExprResultOn, into_lvars, into_lvars_lvset,
+    into_lvars_aset.
+  rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+  reflexivity.
+Qed.
+
 (** ** Type denotation
 
     [denot_ty_fuel gas Σ τ e] is the recursive semantic content of
@@ -134,13 +146,14 @@ Definition expr_total_with_store (X : aset) (e : tm)
   ∀ σ, (m : World) σ →
     ∃ vx, subst_map (store_restrict (ρ ∪ σ) X) e →* tret vx.
 
-Definition FBasicTypingIn (Σ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
-  FStoreResourceAtom (dom Σ)
+Definition FBasicTypingIn (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
+  FStoreResourceAtom (dom Σe ∪ dom Στ)
     (fun η _ _ =>
-      let Γ := lty_env_open η Σ in
+      let Γe := lty_env_open η Σe in
+      let Γτ := lty_env_open η Στ in
       let τη := open_cty_env η τ in
       let eη := open_tm_env η e in
-      basic_choice_ty (dom Γ) τη ∧ Γ ⊢ₑ eη ⋮ erase_ty τη).
+      basic_choice_ty (dom Γτ) τη ∧ Γe ⊢ₑ eη ⋮ erase_ty τη).
 
 Definition FClosedResourceIn (Σ : lty_env) : FQ :=
   FResourceAtom (dom Σ) (world_closed_on (lty_env_atom_dom Σ)).
@@ -152,7 +165,7 @@ Definition FStrongTotalIn (Σ : lty_env) (e : tm) : FQ :=
 
 Definition FResultBasicWorld
     (Σ : lty_env) (b : base_ty) (D : lvset) : FQ :=
-  FStoreResourceAtom (dom Σ ∪ D ∪ {[LVBound 0]})
+  FStoreResourceAtom (lty_env_bvar_scope Σ ∪ D ∪ {[LVBound 0]})
     (fun η _ m =>
       match η !! 0 with
       | Some ν =>
@@ -160,6 +173,20 @@ Definition FResultBasicWorld
             (lvars_fv D ∪ {[ν]}) m
       | None => False
       end).
+
+Lemma formula_fv_FResultBasicWorld Σ b D :
+  formula_fv (FResultBasicWorld Σ b D) =
+  lvars_fv (lty_env_bvar_scope Σ ∪ D ∪ {[LVBound 0]}).
+Proof.
+  unfold FResultBasicWorld.
+  apply formula_fv_FStoreResourceAtomVars.
+Qed.
+
+Lemma formula_fv_FResultBasicWorld_atom_env_subset Σ b D :
+  lvars_fv D ⊆ dom Σ →
+  formula_fv (FResultBasicWorld (atom_env_to_lty_env Σ) b D) ⊆ dom Σ.
+Proof.
+Admitted.
 
 Lemma expr_total_with_store_empty_restrict X e m :
   world_closed_on X m →
@@ -191,10 +218,10 @@ Unshelve.
 Qed.
 
 Definition denot_ty_obligations
-    (Σ : lty_env) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
-  FAnd (FBasicTypingIn Σ τ e)
-    (FAnd (FClosedResourceIn Σ)
-      (FAnd (FStrongTotalIn Σ e) φ)).
+    (Σe Στ : lty_env) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
+  FAnd (FBasicTypingIn Σe Στ τ e)
+    (FAnd (FClosedResourceIn Σe)
+      (FAnd (FStrongTotalIn Σe e) φ)).
 
 Lemma formula_fv_FOver_FTypeQualifier q :
   formula_fv (FOver (FTypeQualifier q)) = qual_dom q.
@@ -209,9 +236,9 @@ Proof.
 Qed.
 
 Fixpoint denot_ty_fuel_lvar
-    (gas : nat) (Σ : lty_env) (τ : choice_ty) (e : tm)
+    (gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm)
     : FQ :=
-  denot_ty_obligations Σ τ e (
+  denot_ty_obligations Σe Στ τ e (
     match gas with
     | 0 => FFalse
     | S gas' =>
@@ -221,37 +248,37 @@ Fixpoint denot_ty_fuel_lvar
       [FFibVars (lvars_of_atoms (fv φ))] applies the primitive multi-fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
-      FExprContIn Σ e (
+      FExprContIn Σe e (
         FAnd
-          (FResultBasicWorld Σ b (qual_vars φ))
+          (FResultBasicWorld Στ b (qual_vars φ))
           (FFibVars (qual_vars φ)
        (FOver (FTypeQualifier φ))))
 
   (** [ν:b | φ]  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ▷φ *)
   | CTUnder b φ =>
-      FExprContIn Σ e (
+      FExprContIn Σe e (
         FAnd
-          (FResultBasicWorld Σ b (qual_vars φ))
+          (FResultBasicWorld Στ b (qual_vars φ))
           (FFibVars (qual_vars φ)
        (FUnder (FTypeQualifier φ))))
 
   (** τ1 ⊓ τ2  ≝  ⟦τ1⟧ e ∧ ⟦τ2⟧ e *)
   | CTInter τ1 τ2 =>
       FAnd
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
 
   (** τ1 ⊔ τ2  ≝  ⟦τ1⟧ e ∨ ⟦τ2⟧ e *)
   | CTUnion τ1 τ2 =>
       FOr
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
 
   (** τ1 ⊕ τ2  ≝  ⟦τ1⟧ e ⊕ ⟦τ2⟧ e *)
   | CTSum τ1 τ2 =>
       FPlus
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
 
   (** τ_x →, τ  ≝  ∀x.(⟦τ_x⟧ x ⇒ ⟦τ[x]⟧ (e x)).
 
@@ -259,84 +286,91 @@ Fixpoint denot_ty_fuel_lvar
       [tapp_tm e (vfvar x)], which first evaluates [e] to a function value and
       then applies it to [x].  We intentionally do not allocate a separate
       logic coordinate for the function result here. *)
-  | CTArrow τx τ =>
-      FForall (
-        let Σx := <[LVBound 0 := erase_ty τx]> Σ in
-          FImpl
-            (denot_ty_fuel_lvar gas' Σx τx (tret (vbvar 0)))
-            (denot_ty_fuel_lvar gas' Σx τ
-              (tapp_tm e (vbvar 0))))
+	  | CTArrow τx τ =>
+	      FForall (
+	        let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+	        let Στx := <[LVBound 0 := erase_ty τx]> Στ in
+	          FImpl
+	            (denot_ty_fuel_lvar gas' Σex Στ τx (tret (vbvar 0)))
+	            (denot_ty_fuel_lvar gas' Σex Στx τ
+	              (tapp_tm e (vbvar 0))))
 
   (** τ_x ⊸ τ  ≝  ∀x.(⟦τ_x⟧ x −∗ ⟦τ[x]⟧ (e x)). *)
-  | CTWand τx τ =>
-      FForall (
-        let Σx := <[LVBound 0 := erase_ty τx]> Σ in
-          FWand
-            (denot_ty_fuel_lvar gas' Σx τx (tret (vbvar 0)))
-            (denot_ty_fuel_lvar gas' Σx τ
-              (tapp_tm e (vbvar 0))))
+	  | CTWand τx τ =>
+	      FForall (
+	        let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+	        let Στx := <[LVBound 0 := erase_ty τx]> Στ in
+	          FWand
+	            (denot_ty_fuel_lvar gas' Σex Στ τx (tret (vbvar 0)))
+	            (denot_ty_fuel_lvar gas' Σex Στx τ
+	              (tapp_tm e (vbvar 0))))
 
     end
     end).
 
 Definition denot_ty_fuel_body_lvar
-    (gas : nat) (Σ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
+    (gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
   | 0 => FFalse
   | S gas' =>
   match τ with
   | CTOver b φ =>
-      FExprContIn Σ e (
+      FExprContIn Σe e (
         FAnd
-          (FResultBasicWorld Σ b (qual_vars φ))
+          (FResultBasicWorld Στ b (qual_vars φ))
           (FFibVars (qual_vars φ)
        (FOver (FTypeQualifier φ))))
   | CTUnder b φ =>
-      FExprContIn Σ e (
+      FExprContIn Σe e (
         FAnd
-          (FResultBasicWorld Σ b (qual_vars φ))
+          (FResultBasicWorld Στ b (qual_vars φ))
           (FFibVars (qual_vars φ)
        (FUnder (FTypeQualifier φ))))
   | CTInter τ1 τ2 =>
       FAnd
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
   | CTUnion τ1 τ2 =>
       FOr
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
   | CTSum τ1 τ2 =>
       FPlus
-        (denot_ty_fuel_lvar gas' Σ τ1 e)
-        (denot_ty_fuel_lvar gas' Σ τ2 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ1 e)
+        (denot_ty_fuel_lvar gas' Σe Στ τ2 e)
   | CTArrow τx τ =>
       FForall (
-        let Σx := <[LVBound 0 := erase_ty τx]> Σ in
+        let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+        let Στx := <[LVBound 0 := erase_ty τx]> Στ in
           FImpl
-            (denot_ty_fuel_lvar gas' Σx τx (tret (vbvar 0)))
-            (denot_ty_fuel_lvar gas' Σx τ
+            (denot_ty_fuel_lvar gas' Σex Στ τx (tret (vbvar 0)))
+            (denot_ty_fuel_lvar gas' Σex Στx τ
               (tapp_tm e (vbvar 0))))
   | CTWand τx τ =>
       FForall (
-        let Σx := <[LVBound 0 := erase_ty τx]> Σ in
+        let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+        let Στx := <[LVBound 0 := erase_ty τx]> Στ in
           FWand
-            (denot_ty_fuel_lvar gas' Σx τx (tret (vbvar 0)))
-            (denot_ty_fuel_lvar gas' Σx τ
+            (denot_ty_fuel_lvar gas' Σex Στ τx (tret (vbvar 0)))
+            (denot_ty_fuel_lvar gas' Σex Στx τ
               (tapp_tm e (vbvar 0))))
   end
   end.
 
 Definition denot_ty_fuel
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_fuel_lvar gas (atom_env_to_lty_env Σ) τ e.
+  let Σl := atom_env_to_lty_env Σ in
+  denot_ty_fuel_lvar gas Σl Σl τ e.
 
 Definition denot_ty_fuel_body
     (gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_fuel_body_lvar gas (atom_env_to_lty_env Σ) τ e.
+  let Σl := atom_env_to_lty_env Σ in
+  denot_ty_fuel_body_lvar gas Σl Σl τ e.
 
 Lemma denot_ty_fuel_unfold gas Σ τ e :
   denot_ty_fuel gas Σ τ e =
-  denot_ty_obligations (atom_env_to_lty_env Σ) τ e (denot_ty_fuel_body gas Σ τ e).
+  let Σl := atom_env_to_lty_env Σ in
+  denot_ty_obligations Σl Σl τ e (denot_ty_fuel_body gas Σ τ e).
 Proof.
 Admitted.
 
@@ -478,9 +512,9 @@ Qed.
     layer: typing proofs should consume these regularity lemmas rather than
     unfolding the formula generated for each type constructor. *)
 
-Lemma denot_ty_obligations_formula_fv_subset (Σ : lty_env) τ e φ S :
-  lty_env_atom_dom Σ ∪ formula_fv φ ⊆ S →
-  formula_fv (denot_ty_obligations Σ τ e φ) ⊆ S.
+Lemma denot_ty_obligations_formula_fv_subset (Σe Στ : lty_env) τ e φ S :
+  lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ formula_fv φ ⊆ S →
+  formula_fv (denot_ty_obligations Σe Στ τ e φ) ⊆ S.
 Proof.
 Admitted.
 

@@ -560,8 +560,9 @@ Proof.
   - unfold FBasicTypingIn, res_models.
     eapply res_models_with_store_store_resource_atom_vars_intro.
     + unfold formula_scoped_in_world.
-      rewrite formula_fv_FStoreResourceAtomVars.
-      rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+	      rewrite formula_fv_FStoreResourceAtomVars.
+	      rewrite !atom_env_to_lty_env_dom.
+	      rewrite lvars_fv_union, !lvars_fv_of_atoms.
       rewrite dom_empty_L. set_solver.
     + rewrite lty_env_open_atom_env_empty, open_cty_env_empty, open_tm_env_empty.
       split; assumption.
@@ -1771,9 +1772,11 @@ Lemma FBasicTypingIn_insert_swap_iff
   x ∉ dom Σ →
   y ∉ dom Σ →
   m ⊨ formula_rename_atom x y
-    (FBasicTypingIn (atom_env_to_lty_env (<[x := T]> Σ)) τ e) ↔
-  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := T]> Σ))
-    (cty_swap_atom x y τ) (tm_swap_atom x y e).
+    (FBasicTypingIn (atom_env_to_lty_env (<[x := T]> Σ))
+      (atom_env_to_lty_env (<[x := T]> Σ)) τ e) ↔
+	  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := T]> Σ))
+      (atom_env_to_lty_env (<[y := T]> Σ))
+	    (cty_swap_atom x y τ) (tm_swap_atom x y e).
 Proof.
 Admitted.
 
@@ -1783,8 +1786,10 @@ Lemma FBasicTypingIn_insert_tret_fvar_rename_stable
   y ∉ dom Σ →
   basic_choice_ty (dom Σ) τ →
   m ⊨ formula_rename_atom x y
-    (FBasicTypingIn (atom_env_to_lty_env (<[x := erase_ty τ]> Σ)) τ (tret (vfvar x))) ↔
-  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := erase_ty τ]> Σ)) τ (tret (vfvar y)).
+    (FBasicTypingIn (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
+      (atom_env_to_lty_env (<[x := erase_ty τ]> Σ)) τ (tret (vfvar x))) ↔
+	  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := erase_ty τ]> Σ))
+      (atom_env_to_lty_env (<[y := erase_ty τ]> Σ)) τ (tret (vfvar y)).
 Proof.
 Admitted.
 
@@ -1796,9 +1801,11 @@ Lemma FBasicTypingIn_insert_tapp_fvar_rename_stable
   basic_choice_ty (dom Σ ∪ {[y]}) ({0 ~> y} τ) →
   Σ ⊢ₑ e ⋮ (erase_ty τx →ₜ erase_ty τ) →
   m ⊨ formula_rename_atom x y
-    (FBasicTypingIn (atom_env_to_lty_env (<[x := erase_ty τx]> Σ)) ({0 ~> x} τ)
+    (FBasicTypingIn (atom_env_to_lty_env (<[x := erase_ty τx]> Σ))
+      (atom_env_to_lty_env (<[x := erase_ty τx]> Σ)) ({0 ~> x} τ)
       (tapp_tm e (vfvar x))) ↔
-  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := erase_ty τx]> Σ)) ({0 ~> y} τ)
+  m ⊨ FBasicTypingIn (atom_env_to_lty_env (<[y := erase_ty τx]> Σ))
+    (atom_env_to_lty_env (<[y := erase_ty τx]> Σ)) ({0 ~> y} τ)
     (tapp_tm e (vfvar y)).
 Proof.
 Admitted.
@@ -1891,7 +1898,8 @@ Lemma denot_ty_obligations_tret_fvar_family_rename_stable
   basic_choice_ty (dom Σ) τ →
   formula_family_rename_stable_on (dom Σ) Body →
   formula_family_rename_stable_on (dom Σ) (fun x =>
-    denot_ty_obligations (atom_env_to_lty_env (<[x := erase_ty τ]> Σ)) τ
+    denot_ty_obligations (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
+      (atom_env_to_lty_env (<[x := erase_ty τ]> Σ)) τ
       (tret (vfvar x)) (Body x)).
 Proof.
 Admitted.
@@ -1903,7 +1911,8 @@ Lemma denot_ty_obligations_tapp_fvar_family_rename_stable
   fv_tm e ⊆ dom Σ →
   formula_family_rename_stable_on (dom Σ) Body →
   formula_family_rename_stable_on (dom Σ) (fun x =>
-    denot_ty_obligations (atom_env_to_lty_env (<[x := erase_ty τx]> Σ)) ({0 ~> x} τ)
+    denot_ty_obligations (atom_env_to_lty_env (<[x := erase_ty τx]> Σ))
+      (atom_env_to_lty_env (<[x := erase_ty τx]> Σ)) ({0 ~> x} τ)
       (tapp_tm e (vfvar x)) (Body x)).
 Proof.
 Admitted.
@@ -3157,6 +3166,16 @@ Proof.
     + rewrite Hdom. set_solver.
 Qed.
 
+Lemma FExprContIn_FResultBasicWorld_insert_fresh_type_env_irrel
+    (Σ : gmap atom ty) x T b D e R (m : WfWorld) :
+  x ∉ dom Σ ∪ lvars_fv D →
+  m ⊨ FExprContIn (<[x := T]> Σ) e
+      (FAnd (FResultBasicWorld (atom_env_to_lty_env (<[x := T]> Σ)) b D) R) <->
+  m ⊨ FExprContIn (<[x := T]> Σ) e
+      (FAnd (FResultBasicWorld (atom_env_to_lty_env Σ) b D) R).
+Proof.
+Admitted.
+
 Lemma denot_ty_fuel_tlet_reduction_full_on_over_case gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
     (m : WfWorld) (x : atom)
@@ -3174,9 +3193,40 @@ Lemma denot_ty_fuel_tlet_reduction_full_on_over_case gas
   let_result_world_on e1 x m Hfresh Hresult
     ⊨ denot_ty_fuel (S gas) (<[x:=T1]> Δ) (CTOver b φ) (e2 ^^ x)
   <->
-  m ⊨ denot_ty_fuel (S gas) Δ (CTOver b φ) (tlete e1 e2).
+	  m ⊨ denot_ty_fuel (S gas) Δ (CTOver b φ) (tlete e1 e2).
 Proof.
-Admitted.
+  intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
+  eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
+  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar cty_measure].
+  rewrite !FExprContIn_atom_env_to_lty_env.
+  pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
+  simpl in Hfvτ.
+  destruct φ as [Dφ Pφ]; simpl in *.
+  etransitivity.
+  - eapply FExprContIn_FResultBasicWorld_insert_fresh_type_env_irrel.
+    set_solver.
+  - change (let_result_world_on e1 x m Hfresh Hresult
+      ⊨ FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+          (fun _ : atom =>
+            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+              (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ))))) <->
+      m ⊨ FExprContIn Δ (tlete e1 e2)
+          (fun _ : atom =>
+            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+              (FFibVars (Dφ) (FOver (FTypeQualifier (qual Dφ Pφ)))))).
+    eapply FExprCont_tlet_reduction; eauto; try set_solver.
+    + intros ν. cbn [formula_fv].
+    eapply union_least.
+      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+        set_solver.
+      * set_solver.
+    + apply formula_family_rename_stable_const.
+      intros ν. cbn [formula_fv].
+      eapply union_least.
+      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+        set_solver.
+      * set_solver.
+Qed.
 
 Lemma denot_ty_fuel_tlet_reduction_full_on_under_case gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)
@@ -3195,9 +3245,40 @@ Lemma denot_ty_fuel_tlet_reduction_full_on_under_case gas
   let_result_world_on e1 x m Hfresh Hresult
     ⊨ denot_ty_fuel (S gas) (<[x:=T1]> Δ) (CTUnder b φ) (e2 ^^ x)
   <->
-  m ⊨ denot_ty_fuel (S gas) Δ (CTUnder b φ) (tlete e1 e2).
+	  m ⊨ denot_ty_fuel (S gas) Δ (CTUnder b φ) (tlete e1 e2).
 Proof.
-Admitted.
+  intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
+  eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
+  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar cty_measure].
+  rewrite !FExprContIn_atom_env_to_lty_env.
+  pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
+  simpl in Hfvτ.
+  destruct φ as [Dφ Pφ]; simpl in *.
+  etransitivity.
+  - eapply FExprContIn_FResultBasicWorld_insert_fresh_type_env_irrel.
+    set_solver.
+  - change (let_result_world_on e1 x m Hfresh Hresult
+      ⊨ FExprContIn (<[x:=T1]> Δ) (e2 ^^ x)
+          (fun _ : atom =>
+            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+              (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ))))) <->
+      m ⊨ FExprContIn Δ (tlete e1 e2)
+          (fun _ : atom =>
+            FAnd (FResultBasicWorld (atom_env_to_lty_env Δ) b (Dφ))
+              (FFibVars (Dφ) (FUnder (FTypeQualifier (qual Dφ Pφ)))))).
+    eapply FExprCont_tlet_reduction; eauto; try set_solver.
+    + intros ν. cbn [formula_fv].
+    eapply union_least.
+      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+        set_solver.
+      * set_solver.
+    + apply formula_family_rename_stable_const.
+      intros ν. cbn [formula_fv].
+      eapply union_least.
+      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+        set_solver.
+      * set_solver.
+Qed.
 
 Lemma denot_ty_fuel_tlet_reduction_full_on_inter_case gas
     (Δ : gmap atom ty) (T1 : ty) (e1 e2 : tm)

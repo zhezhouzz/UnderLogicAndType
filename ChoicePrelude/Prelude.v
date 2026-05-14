@@ -89,6 +89,9 @@ Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 
+Definition lvars_of_bvars (B : gset nat) : lvset :=
+  set_map LVBound B.
+
 Class IntoLVars A := into_lvars : A → lvset.
 
 #[global] Instance into_lvars_aset : IntoLVars aset := lvars_of_atoms.
@@ -101,6 +104,11 @@ Admitted.
 
 Lemma lvars_bv_of_atoms (X : aset) :
   lvars_bv (lvars_of_atoms X) = ∅.
+Proof.
+Admitted.
+
+Lemma lvars_fv_union (D1 D2 : lvset) :
+  lvars_fv (D1 ∪ D2) = lvars_fv D1 ∪ lvars_fv D2.
 Proof.
 Admitted.
 
