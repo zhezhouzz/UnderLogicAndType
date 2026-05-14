@@ -16,13 +16,13 @@ Lemma denot_refinement_over_cont_insert_fresh_eq
    FAnd
      (basic_world_formula (<[ν := TBase b]> (<[x := Tx]> Σ))
        ({[ν]} ∪ qual_dom φν))
-     (FFibVars (lvars_of_atoms (qual_dom φν))
+     (FFibVars (qual_vars φν)
        (FOver (FTypeQualifier φν)))) =
   (let φν := qual_open_atom 0 ν φ in
    FAnd
      (basic_world_formula (<[ν := TBase b]> Σ)
        ({[ν]} ∪ qual_dom φν))
-     (FFibVars (lvars_of_atoms (qual_dom φν))
+     (FFibVars (qual_vars φν)
        (FOver (FTypeQualifier φν)))).
 Proof.
   intros Hx Hdom.
@@ -48,13 +48,13 @@ Lemma denot_refinement_under_cont_insert_fresh_eq
    FAnd
      (basic_world_formula (<[ν := TBase b]> (<[x := Tx]> Σ))
        ({[ν]} ∪ qual_dom φν))
-     (FFibVars (lvars_of_atoms (qual_dom φν))
+     (FFibVars (qual_vars φν)
        (FUnder (FTypeQualifier φν)))) =
   (let φν := qual_open_atom 0 ν φ in
    FAnd
      (basic_world_formula (<[ν := TBase b]> Σ)
        ({[ν]} ∪ qual_dom φν))
-     (FFibVars (lvars_of_atoms (qual_dom φν))
+     (FFibVars (qual_vars φν)
        (FUnder (FTypeQualifier φν)))).
 Proof.
   intros Hx Hdom.
@@ -84,16 +84,18 @@ Lemma denot_refinement_over_cont_fv_subset
       (let φν := qual_open_atom 0 ν φ in
        FAnd
          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-         (FFibVars (lvars_of_atoms (qual_dom φν))
+         (FFibVars (qual_vars φν)
        (FOver (FTypeQualifier φν)))) ⊆
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
-  simpl. rewrite lvars_fv_of_atoms.
+  simpl.
   rewrite formula_fv_FTypeQualifier.
   pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+  destruct (qual_open_atom 0 ν φ) as [Dν pν].
+  cbn [qual_dom qual_vars].
   set_solver.
 Qed.
 
@@ -105,16 +107,18 @@ Lemma denot_refinement_under_cont_fv_subset
       (let φν := qual_open_atom 0 ν φ in
        FAnd
          (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-         (FFibVars (lvars_of_atoms (qual_dom φν))
+         (FFibVars (qual_vars φν)
        (FUnder (FTypeQualifier φν)))) ⊆
     D ∪ {[ν]}.
 Proof.
   intros Hφ ν.
   cbn [formula_fv].
   rewrite basic_world_formula_fv.
-  simpl. rewrite lvars_fv_of_atoms.
+  simpl.
   rewrite formula_fv_FTypeQualifier.
   pose proof (qual_open_atom_dom_subset 0 ν φ) as Hsubset.
+  destruct (qual_open_atom 0 ν φ) as [Dν pν].
+  cbn [qual_dom qual_vars].
   set_solver.
 Qed.
 
@@ -169,11 +173,11 @@ Lemma denot_refinement_over_fib_rename_stable
     y ∉ D →
     m ⊨ formula_rename_atom x y
       (let φx := qual_open_atom 0 x φ in
-       FFibVars (lvars_of_atoms (qual_dom φx))
+       FFibVars (qual_vars φx)
        (FOver (FTypeQualifier φx))) ↔
     m ⊨
       (let φy := qual_open_atom 0 y φ in
-       FFibVars (lvars_of_atoms (qual_dom φy))
+       FFibVars (qual_vars φy)
        (FOver (FTypeQualifier φy))).
 Proof.
   (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
@@ -187,11 +191,11 @@ Lemma denot_refinement_under_fib_rename_stable
     y ∉ D →
     m ⊨ formula_rename_atom x y
       (let φx := qual_open_atom 0 x φ in
-       FFibVars (lvars_of_atoms (qual_dom φx))
+       FFibVars (qual_vars φx)
        (FUnder (FTypeQualifier φx))) ↔
     m ⊨
       (let φy := qual_open_atom 0 y φ in
-       FFibVars (lvars_of_atoms (qual_dom φy))
+       FFibVars (qual_vars φy)
        (FUnder (FTypeQualifier φy))).
 Proof.
   (* Legacy explicit rename route; replaced by LN open/cofinite bridge. *)
@@ -204,7 +208,7 @@ Lemma denot_refinement_over_cont_rename_stable
     let φν := qual_open_atom 0 ν φ in
     FAnd
       (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-      (FFibVars (lvars_of_atoms (qual_dom φν))
+      (FFibVars (qual_vars φν)
        (FOver (FTypeQualifier φν)))).
 Proof.
   intros Hφ x y m HxD HyD.
@@ -256,7 +260,7 @@ Lemma denot_refinement_under_cont_rename_stable
     let φν := qual_open_atom 0 ν φ in
     FAnd
       (basic_world_formula (<[ν := TBase b]> Σ) ({[ν]} ∪ qual_dom φν))
-      (FFibVars (lvars_of_atoms (qual_dom φν))
+      (FFibVars (qual_vars φν)
        (FUnder (FTypeQualifier φν)))).
 Proof.
   intros Hφ x y m HxD HyD.

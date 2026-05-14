@@ -372,7 +372,7 @@ Fixpoint denot_ty_fuel_lvar
     match τ with
 
   (** {ν:b | φ}  ≝  ∀ν. ⟦e⟧_ν ⇒ ∀_{FV(φ)} ◁φ
-      [FFibVars (lvars_of_atoms (fv φ))] applies the primitive multi-fiber modality over
+      [FFibVars (qual_vars φ)] applies the primitive multi-fiber modality over
       φ's free variables. *)
   | CTOver b φ =>
       FExprContIn Σe e (
