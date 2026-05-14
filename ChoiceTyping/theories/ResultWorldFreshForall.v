@@ -77,17 +77,90 @@ Lemma let_result_world_on_fiber_expr_result_in_world
   X ⊆ world_dom (n : World) →
   world_store_closed_on X n →
   expr_result_in_world (store_restrict σX X) e ν
-    (res_restrict
-      (res_fiber_from_projection
-        (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
-      (X ∪ {[ν]})).
+    (res_fiber_from_projection
+      (let_result_world_on e ν n Hfresh Hresult) X σX Hproj).
 Proof.
-  (* Pending direct multi-fiber exactness proof.  The proof is conceptually a
-     projection argument, but the current script hits slow set normalization
-     around [dom σX = X] and insert/restrict rewrites.  Keep this explicit
-     statement as the future proof boundary instead of letting [set_solver]
-     block the LN refactor. *)
-Admitted.
+  intros Hfv Hlc HνX HX Hclosed.
+  assert (HdomσX : dom σX = X).
+  {
+    pose proof (wfworld_store_dom
+      (res_restrict (let_result_world_on e ν n Hfresh Hresult) X)
+      σX Hproj) as Hdom.
+    simpl in Hdom. set_solver.
+  }
+  intros σν. split.
+  - intros Hσν.
+    destruct Hσν as [σall [Hσfiber Hσν_eq]].
+    destruct Hσfiber as [Hσlet HσX].
+    destruct (let_result_world_on_elim e ν n Hfresh Hresult σall Hσlet)
+      as [σ [vx [Hσn [Hsteps ->]]]].
+    assert (HσX_base : store_restrict σ X = σX).
+    {
+      replace (dom σX) with X in HσX by (symmetry; exact HdomσX).
+      rewrite <- HσX.
+      rewrite store_restrict_insert_notin.
+      - reflexivity.
+      - exact HνX.
+    }
+    assert (HstepsX :
+      subst_map (store_restrict σX X) e →* tret vx).
+    {
+      assert (HσX_id : store_restrict σX X = store_restrict σ X).
+      {
+        rewrite <- HσX_base.
+        rewrite store_restrict_restrict.
+        replace (X ∩ X) with X by set_solver.
+        reflexivity.
+      }
+      rewrite HσX_id.
+      rewrite <- (subst_map_restrict_to_fv_from_superset e X σ).
+      - exact Hsteps.
+      - exact Hfv.
+      - exact (proj1 (Hclosed σ Hσn)).
+    }
+    assert (Hσν_single : σν = {[ν := vx]}).
+    {
+      rewrite <- Hσν_eq.
+      rewrite store_restrict_insert_singleton.
+      reflexivity.
+    }
+    pose proof (steps_closed_result_of_restrict_world X e n σX vx
+      HX Hfv Hlc Hclosed ltac:(exists σ; split; [exact Hσn | exact HσX_base])
+      HstepsX) as [Hv_stale Hv_lc].
+    exists vx. repeat split; eauto.
+  - intros Hstore.
+    destruct (expr_result_store_elim ν
+      (subst_map (store_restrict σX X) e) σν Hstore)
+      as [vx [-> [Hv_closed [Hv_lc HstepsX]]]].
+    destruct Hproj as [σall [Hσlet HσX]].
+    destruct (let_result_world_on_elim e ν n Hfresh Hresult σall Hσlet)
+      as [σ [vy [Hσn [_ ->]]]].
+    assert (HσX_base : store_restrict σ X = σX).
+    {
+      replace (dom σX) with X in HσX by (symmetry; exact HdomσX).
+      rewrite <- HσX.
+      rewrite store_restrict_insert_notin.
+      - reflexivity.
+      - exact HνX.
+    }
+    assert (Hsteps_fv :
+      subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+    {
+      rewrite (subst_map_restrict_to_fv_from_superset e X σ Hfv
+        (proj1 (Hclosed σ Hσn))).
+      rewrite HσX_base.
+      rewrite store_restrict_idemp in HstepsX by set_solver.
+      exact HstepsX.
+    }
+    exists (<[ν := vx]> σ). split.
+    + split.
+      * apply let_result_world_on_member; [exact Hσn | exact Hsteps_fv].
+      * replace (dom σX) with X by (symmetry; exact HdomσX).
+        rewrite store_restrict_insert_notin by exact HνX.
+        exact HσX_base.
+    + rewrite store_restrict_insert_singleton.
+      reflexivity.
+Qed.
 
 Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresult :
   ν ∉ X →
@@ -96,9 +169,12 @@ Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresu
     (let_result_world_on e ν n Hfresh Hresult)
     (FExprResultOn X e ν).
 Proof.
-  (* Pending lightweight scopedness proof; deliberately admitted while the
-     formula naming representation is being replaced by LN. *)
-Admitted.
+  intros HνX HX z Hz.
+  rewrite FExprResultOn_fv in Hz.
+  rewrite let_result_world_on_dom.
+  change (dom (∅ : Store)) with (∅ : aset) in Hz.
+  set_solver.
+Qed.
 
 Lemma FExprResultAtomOn_scoped_in_result_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
@@ -109,9 +185,18 @@ Lemma FExprResultAtomOn_scoped_in_result_fiber
       (let_result_world_on e ν n Hfresh Hresult) X σX Hproj)
     (FExprResultAtomOn X e ν).
 Proof.
-  (* Pending lightweight scopedness proof; deliberately admitted while the
-     formula naming representation is being replaced by LN. *)
-Admitted.
+  intros HνX HX z Hz.
+  unfold FExprResultAtomOn in Hz |- *.
+  rewrite formula_fv_FStoreResourceAtom in Hz.
+  simpl.
+  destruct Hproj as [σw [Hσw Hrestrict]].
+  pose proof (wfworld_store_dom (let_result_world_on e ν n Hfresh Hresult)
+    σw Hσw) as Hdomσw.
+  rewrite let_result_world_on_dom in Hdomσw.
+  assert (HdomσX : dom σX ⊆ X).
+  { rewrite <- Hrestrict, store_restrict_dom. set_solver. }
+  set_solver.
+Qed.
 
 Lemma let_result_world_on_models_FExprResult :
   ∀ X e ν (n : WfWorld) Hfresh Hresult,
@@ -122,9 +207,20 @@ Lemma let_result_world_on_models_FExprResult :
     world_store_closed_on X n →
     let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultOn X e ν.
 Proof.
-  (* Pending direct projection proof; this is the main bridge that should become
-     simpler once formulas use LN binders and multi-fibers over [logic_var]. *)
-Admitted.
+  intros X e ν n Hfresh Hresult Hfv Hlc HνX HX Hclosed.
+  unfold FExprResultOn.
+  apply fib_vars_models_intro.
+  - apply let_result_world_on_FExprResultOn_scoped; exact HνX || exact HX.
+  - unfold fib_vars_obligation.
+    change (dom (∅ : Store)) with (∅ : aset).
+    split; [set_solver |].
+    intros σX Hproj.
+    replace ((∅ : Store) ∪ σX) with σX by (symmetry; apply map_empty_union).
+    apply FAtom_expr_logic_qual_on_intro.
+    + eapply FExprResultAtomOn_scoped_in_result_fiber; eauto.
+    + exact (let_result_world_on_fiber_expr_result_in_world
+        X e ν n Hfresh Hresult σX Hproj Hfv Hlc HνX HX Hclosed).
+Qed.
 
 Lemma fresh_forall_expr_result_to_let_result_world_renamed
     X e D (body : atom → FormulaQ) (m : WfWorld) :
