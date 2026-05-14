@@ -667,6 +667,15 @@ Proof.
   set_solver.
 Qed.
 
+Lemma lty_env_atom_dom_insert_bound Σ k T :
+  lty_env_atom_dom (<[LVBound k := T]> Σ) = lty_env_atom_dom Σ.
+Proof.
+  unfold lty_env_atom_dom.
+  rewrite (dom_insert_L (M:=gmap logic_var) (A:=ty) Σ (LVBound k) T).
+  rewrite lvars_fv_union, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 (** ** Denotation scoping regularity
 
     These syntactic facts isolate the variable-accounting needed by semantic
@@ -690,11 +699,92 @@ Proof.
   set_solver.
 Qed.
 
+Lemma denot_ty_fuel_lvar_formula_fv_subset gas Σe Στ τ e :
+  cty_measure τ <= gas →
+  formula_fv (denot_ty_fuel_lvar gas Σe Στ τ e) ⊆
+    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
+Proof.
+  induction gas as [|gas IH] in Σe, Στ, τ, e |- *; intros Hgas.
+  - pose proof (cty_measure_gt_0 τ). lia.
+  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
+      cbn [cty_measure fv_cty denot_ty_fuel_lvar] in *;
+      apply denot_ty_obligations_formula_fv_subset; simpl.
+    + destruct φ as [D p]. cbn [qual_vars qual_dom].
+      pose proof (FExprContIn_lty_env_formula_fv_subset Σe e
+        (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
+          (FFibVars (qual_vars (qual D p))
+            (FOver (FTypeQualifier (qual D p)))))) as Hcont.
+      cbn [qual_vars qual_dom] in Hcont.
+      cbn [formula_fv] in Hcont.
+      rewrite formula_fv_FResultBasicWorld in Hcont.
+      unfold lty_env_bvar_scope in Hcont.
+      rewrite !lvars_fv_union, lvars_fv_of_bvars,
+        lvars_fv_singleton_bound in Hcont.
+      rewrite formula_fv_FTypeQualifier in Hcont.
+      cbn [qual_dom] in Hcont.
+      set_solver.
+    + destruct φ as [D p]. cbn [qual_vars qual_dom].
+      pose proof (FExprContIn_lty_env_formula_fv_subset Σe e
+        (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
+          (FFibVars (qual_vars (qual D p))
+            (FUnder (FTypeQualifier (qual D p)))))) as Hcont.
+      cbn [qual_vars qual_dom] in Hcont.
+      cbn [formula_fv] in Hcont.
+      rewrite formula_fv_FResultBasicWorld in Hcont.
+      unfold lty_env_bvar_scope in Hcont.
+      rewrite !lvars_fv_union, lvars_fv_of_bvars,
+        lvars_fv_singleton_bound in Hcont.
+      rewrite formula_fv_FTypeQualifier in Hcont.
+      cbn [qual_dom] in Hcont.
+      set_solver.
+    + pose proof (IH Σe Στ τ1 e ltac:(lia)) as H1.
+      pose proof (IH Σe Στ τ2 e ltac:(lia)) as H2.
+      set_solver.
+    + pose proof (IH Σe Στ τ1 e ltac:(lia)) as H1.
+      pose proof (IH Σe Στ τ2 e ltac:(lia)) as H2.
+      set_solver.
+    + pose proof (IH Σe Στ τ1 e ltac:(lia)) as H1.
+      pose proof (IH Σe Στ τ2 e ltac:(lia)) as H2.
+      set_solver.
+    + set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
+      set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
+      pose proof (IH Σex Στ τx (tret (vbvar 0)) ltac:(lia)) as Hx.
+      pose proof (IH Σex Στx τ (tapp_tm e (vbvar 0)) ltac:(lia)) as Hbody.
+      subst Σex Στx.
+      rewrite !lty_env_atom_dom_insert_bound in Hx.
+      rewrite !lty_env_atom_dom_insert_bound in Hbody.
+      cbn [formula_fv].
+      transitivity
+        (lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪
+          (fv_cty τx ∪ fv_cty τ)).
+      { set_solver. }
+      set_solver.
+    + set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
+      set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
+      pose proof (IH Σex Στ τx (tret (vbvar 0)) ltac:(lia)) as Hx.
+      pose proof (IH Σex Στx τ (tapp_tm e (vbvar 0)) ltac:(lia)) as Hbody.
+      subst Σex Στx.
+      rewrite !lty_env_atom_dom_insert_bound in Hx.
+      rewrite !lty_env_atom_dom_insert_bound in Hbody.
+      cbn [formula_fv].
+      transitivity
+        (lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪
+          (fv_cty τx ∪ fv_cty τ)).
+      { set_solver. }
+      set_solver.
+Qed.
+
 Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
   formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
-Admitted.
+  intros Hgas.
+  unfold denot_ty_fuel.
+  pose proof (denot_ty_fuel_lvar_formula_fv_subset
+    gas (atom_env_to_lty_env Σ) (atom_env_to_lty_env Σ) τ e Hgas) as Hfv.
+  rewrite !atom_env_to_lty_env_atom_dom in Hfv.
+  set_solver.
+Qed.
 
 Lemma denot_ty_fuel_body_formula_fv_subset gas Σ τ e :
   cty_measure τ <= gas →
