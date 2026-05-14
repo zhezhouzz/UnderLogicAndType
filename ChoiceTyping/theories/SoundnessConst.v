@@ -6,6 +6,35 @@ From ChoiceTyping Require Export SoundnessHelpers.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
+Definition const_eq_qual (c : constant) (ν : atom) : type_qualifier :=
+  qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)).
+
+Definition const_over_consequent (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FAnd
+    (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+    (FFibVars (qual_vars (const_eq_qual c ν))
+      (FOver (FTypeQualifier (const_eq_qual c ν)))).
+
+Definition const_under_consequent (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FAnd
+    (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
+    (FFibVars (qual_vars (const_eq_qual c ν))
+      (FUnder (FTypeQualifier (const_eq_qual c ν)))).
+
+Definition const_over_consequent_on (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FAnd
+    (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+      ({[ν]} ∪ qual_dom (const_eq_qual c ν)))
+    (FFibVars (qual_vars (const_eq_qual c ν))
+      (FOver (FTypeQualifier (const_eq_qual c ν)))).
+
+Definition const_under_consequent_on (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
+  FAnd
+    (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
+      ({[ν]} ∪ qual_dom (const_eq_qual c ν)))
+    (FFibVars (qual_vars (const_eq_qual c ν))
+      (FUnder (FTypeQualifier (const_eq_qual c ν)))).
+
 Lemma basic_const_world_from_lookup c ν Σ m :
   (∀ σ, (res_restrict m {[ν]} : World) σ → σ !! ν = Some (vconst c)) →
   m ⊨ basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]}.
@@ -42,46 +71,28 @@ Local Ltac solve_const_refinement_scope Hbasic :=
 
 Lemma const_over_consequent_from_expr c ν Σ m :
   m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
-  m ⊨
-    FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
+  m ⊨ const_over_consequent Σ c ν.
 Proof.
   (* Transitional const bridge during primitive fiber/LN refactor. *)
 Admitted.
 
 Lemma const_under_consequent_from_expr c ν Σ m :
   m ⊨ FAtom (expr_logic_qual (tret (vconst c)) ν) →
-  m ⊨
-    FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
+  m ⊨ const_under_consequent Σ c ν.
 Proof.
   (* Transitional const bridge during primitive fiber/LN refactor. *)
 Admitted.
 
 Lemma const_over_consequent_from_expr_on c ν Σ m :
   m ⊨ FExprResultAt (dom Σ) (tret (vconst c)) ν →
-  m ⊨
-    FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
+  m ⊨ const_over_consequent_on Σ c ν.
 Proof.
   (* Transitional const bridge during primitive fiber/LN refactor. *)
 Admitted.
 
 Lemma const_under_consequent_from_expr_on c ν Σ m :
   m ⊨ FExprResultAt (dom Σ) (tret (vconst c)) ν →
-  m ⊨
-    FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))).
+  m ⊨ const_under_consequent_on Σ c ν.
 Proof.
   (* Transitional const bridge during primitive fiber/LN refactor. *)
 Admitted.
@@ -89,11 +100,7 @@ Admitted.
 Lemma const_over_consequent_from_renamed_expr c ν y Σ m :
   m ⊨ formula_rename_atom ν y
     (FAtom (expr_logic_qual (tret (vconst c)) ν)) →
-  m ⊨ formula_rename_atom ν y
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+  m ⊨ formula_rename_atom ν y (const_over_consequent Σ c ν).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -105,11 +112,7 @@ Qed.
 Lemma const_under_consequent_from_renamed_expr c ν y Σ m :
   m ⊨ formula_rename_atom ν y
     (FAtom (expr_logic_qual (tret (vconst c)) ν)) →
-  m ⊨ formula_rename_atom ν y
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+  m ⊨ formula_rename_atom ν y (const_under_consequent Σ c ν).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -121,12 +124,7 @@ Qed.
 Lemma const_over_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
     (FExprResultAt (dom Σ) (tret (vconst c)) ν) →
-  m ⊨ formula_rename_atom ν y
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+  m ⊨ formula_rename_atom ν y (const_over_consequent_on Σ c ν).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -138,12 +136,7 @@ Qed.
 Lemma const_under_consequent_from_renamed_expr_on c ν y Σ m :
   m ⊨ formula_rename_atom ν y
     (FExprResultAt (dom Σ) (tret (vconst c)) ν) →
-  m ⊨ formula_rename_atom ν y
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+  m ⊨ formula_rename_atom ν y (const_under_consequent_on Σ c ν).
 Proof.
   intros Hexpr.
   apply res_models_swap.
@@ -155,38 +148,24 @@ Qed.
 Definition const_over_body (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
     (FAtom (expr_logic_qual (tret (vconst c)) ν))
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+    (const_over_consequent Σ c ν).
 
 Definition const_under_body (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
     (FAtom (expr_logic_qual (tret (vconst c)) ν))
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ) {[ν]})
-      (FFibVars (lvars_of_atoms {[ν]})
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+    (const_under_consequent Σ c ν).
 
 Definition const_over_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
     (FExprResultAt (dom Σ) (tret (vconst c)) ν)
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FOver (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+    (const_over_consequent_on Σ c ν).
 
 Definition const_under_body_on
     (Σ : gmap atom ty) (c : constant) (ν : atom) : FormulaQ :=
   FImpl
     (FExprResultAt (dom Σ) (tret (vconst c)) ν)
-    (FAnd
-      (basic_world_formula (<[ν := TBase (base_ty_of_const c)]> Σ)
-        ({[ν]} ∪ qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-      (FFibVars (lvars_of_atoms (qual_dom (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c)))))
-        (FUnder (FTypeQualifier (qual_open_atom 0 ν (mk_q_eq (vbvar 0) (vconst c))))))).
+    (const_under_consequent_on Σ c ν).
 
 Lemma const_over_body_fv_subset Σ c ν :
   formula_fv (const_over_body Σ c ν) ⊆ {[ν]}.
