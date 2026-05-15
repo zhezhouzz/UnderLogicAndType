@@ -710,21 +710,21 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_ty_under_result_atom_fv Σ x τ :
-  x ∈ dom Σ →
-  x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
-Proof.
-  intros Hx.
-  unfold denot_ty_under.
-  pose proof (denot_ty_on_env_fv_subset Σ τ (tret (vfvar x))) as Hfv.
-  apply Hfv. exact Hx.
-Qed.
-
 Lemma denot_ty_on_result_atom_fv Σ x τ :
   x ∈ dom Σ →
   x ∈ formula_fv (denot_ty_on Σ τ (tret (vfvar x))).
 Proof.
-  apply denot_ty_under_result_atom_fv.
+  intros Hx.
+  pose proof (denot_ty_on_env_fv_subset Σ τ (tret (vfvar x))) as Hfv.
+  apply Hfv. exact Hx.
+Qed.
+
+Lemma denot_ty_under_result_atom_fv Σ x τ :
+  x ∈ dom Σ →
+  x ∈ formula_fv (denot_ty_under Σ τ (tret (vfvar x))).
+Proof.
+  unfold denot_ty_under.
+  apply denot_ty_on_result_atom_fv.
 Qed.
 
 Lemma denot_ty_restrict_fv τ e m :

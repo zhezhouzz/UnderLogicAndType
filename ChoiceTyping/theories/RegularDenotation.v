@@ -36,7 +36,7 @@ Proof. intros; hauto. Qed.
 Lemma denot_ty_total_model_basic_ctx Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   basic_ctx (dom Σ) Γ.
-Proof. intros H. exact (proj1 (denot_ty_total_model_regular Σ Γ τ e m H)). Qed.
+Proof. intros; hauto. Qed.
 
 Lemma denot_ty_total_model_formula Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →

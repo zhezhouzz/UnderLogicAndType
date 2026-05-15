@@ -310,21 +310,24 @@ Lemma store_compat_insert_r_fresh (s1 s2 : Store) x v :
   x ∉ dom s1 →
   store_compat s1 (<[x := v]> s2).
 Proof.
-  unfold store_compat.
-  intros Hcompat Hx z v1 v2 H1 H2.
-  destruct (decide (z = x)) as [->|Hzx].
-  - exfalso. apply Hx. apply elem_of_dom. eauto.
-  - apply lookup_insert_Some in H2 as [[Hz Heq] | [Hz H2]].
-    + congruence.
-    + eapply Hcompat; eauto.
+  intros Hcompat Hx.
+  apply store_compat_sym.
+  eapply store_compat_insert_l_fresh.
+  - apply store_compat_sym. exact Hcompat.
+  - exact Hx.
+Qed.
+
+Lemma store_insert_union_l (s1 s2 : Store) x v :
+  <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
+Proof.
+  symmetry. apply insert_union_l.
 Qed.
 
 Lemma store_insert_union_l_fresh (s1 s2 : Store) x v :
   x ∉ dom s2 →
   <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
 Proof.
-  intros _.
-  symmetry. apply insert_union_l.
+  intros _. apply store_insert_union_l.
 Qed.
 
 Lemma store_insert_union_r_fresh (s1 s2 : Store) x v :

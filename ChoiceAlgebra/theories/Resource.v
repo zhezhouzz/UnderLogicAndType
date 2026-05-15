@@ -1976,16 +1976,22 @@ Proof.
     apply store_union_comm. exact Hcompat.
 Qed.
 
-Lemma res_product_unit_r (w : WfWorld) :
-  ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
+Lemma res_product_unit_r_any (w : WfWorld) (Hc : world_compat w res_unit) :
+  ∀ s, res_product w res_unit Hc s ↔ (w : World) s.
 Proof.
   intros s. simpl. split.
   - intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
     subst s2. rewrite map_union_empty. exact Hs1.
   - intros Hs.
     exists s, ∅. repeat split; eauto.
-    + exact (raw_compat_unit_r (w : World) s ∅ Hs eq_refl).
+    + exact (Hc s ∅ Hs eq_refl).
     + rewrite map_union_empty. reflexivity.
+Qed.
+
+Lemma res_product_unit_r (w : WfWorld) :
+  ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
+Proof.
+  apply res_product_unit_r_any.
 Qed.
 
 Lemma res_product_unit_r_eq (w : WfWorld) :
@@ -2001,13 +2007,7 @@ Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
 Proof.
   apply wfworld_ext. apply world_ext.
   - simpl. set_solver.
-  - intros s. simpl. split.
-    + intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
-      subst s2. rewrite map_union_empty. exact Hs1.
-    + intros Hs.
-      exists s, ∅. repeat split; eauto.
-      * exact (Hc s ∅ Hs eq_refl).
-      * rewrite map_union_empty. reflexivity.
+  - apply res_product_unit_r_any.
 Qed.
 
 Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)

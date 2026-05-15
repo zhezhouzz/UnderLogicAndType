@@ -39,6 +39,19 @@ Proof.
   exact (Hclosed σ0 Hσ0).
 Qed.
 
+Lemma world_store_closed_on_store_restrict_closed X Y (m : WfWorld) σ :
+  Y ⊆ X →
+  world_store_closed_on X m →
+  (m : World) σ →
+  store_closed (store_restrict σ Y).
+Proof.
+  intros HYX Hclosed Hσ.
+  replace (store_restrict σ Y) with
+    (store_restrict (store_restrict σ X) Y).
+  - apply store_closed_restrict. exact (Hclosed σ Hσ).
+  - store_norm. replace (X ∩ Y) with Y by set_solver. reflexivity.
+Qed.
+
 Lemma world_store_closed_on_restrict_closed_env X (m : WfWorld) σ :
   world_store_closed_on X m →
   (res_restrict m X : World) σ →
@@ -118,8 +131,12 @@ Proof.
   assert (Hclosed_fv :
     closed_env (store_restrict (store_restrict σ X) (fv_tm e))).
   {
-    apply closed_env_restrict.
-    exact (proj1 (Hclosed σ Hσ)).
+    replace (store_restrict (store_restrict σ X) (fv_tm e)) with
+      (store_restrict σ (fv_tm e)).
+    - exact (proj1 (world_store_closed_on_store_restrict_closed
+        X (fv_tm e) m σ Hfv Hclosed Hσ)).
+    - store_norm. replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+      reflexivity.
   }
   specialize (Heq Hclosed_fv).
   assert (Hagree :
