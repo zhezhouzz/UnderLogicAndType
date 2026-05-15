@@ -66,28 +66,6 @@ Definition lqual_open (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifi
   | lqual D p => lqual (lvars_open k x D) (λ η σ w, p (<[k := x]> η) σ w)
   end.
 
-Definition lqual_swap (x y : atom) (q : logic_qualifier) : logic_qualifier :=
-  match q with
-  | lqual D p =>
-      lqual (lvars_of_atoms (aset_swap x y (lvars_fv D)))
-        (λ η σ w, p η (store_swap x y σ) (res_swap x y w))
-  end.
-
-Lemma logic_qualifier_denote_swap x y q σ w :
-  logic_qualifier_denote (lqual_swap x y q) σ w ↔
-  logic_qualifier_denote q (store_swap x y σ) (res_swap x y w).
-Proof.
-  destruct q as [D p]. simpl.
-  rewrite lvars_fv_of_atoms.
-  rewrite <- (aset_swap_involutive x y (lvars_fv D)) at 3.
-  rewrite <- (store_restrict_swap x y σ (aset_swap x y (lvars_fv D))).
-  rewrite aset_swap_involutive.
-  rewrite <- (aset_swap_involutive x y (lvars_fv D)) at 3.
-  rewrite <- (res_restrict_swap x y w (aset_swap x y (lvars_fv D))).
-  rewrite aset_swap_involutive.
-  reflexivity.
-Qed.
-
 Lemma logic_qualifier_denote_restrict q σ w X :
   lqual_dom q ⊆ X →
   logic_qualifier_denote q σ (res_restrict w X) ↔
@@ -95,22 +73,6 @@ Lemma logic_qualifier_denote_restrict q σ w X :
 Proof.
   destruct q as [D p]. simpl. intros HdX.
   resource_norm.
-  reflexivity.
-Qed.
-
-Lemma lqual_swap_conjugate a b x y q :
-  lqual_swap a b (lqual_swap x y q) =
-  lqual_swap (atom_swap a b x) (atom_swap a b y) (lqual_swap a b q).
-Proof.
-  destruct q as [D p]. simpl.
-  rewrite !lvars_fv_of_atoms.
-  rewrite aset_swap_conjugate.
-  f_equal.
-  apply functional_extensionality. intros η.
-  apply functional_extensionality. intros σ.
-  apply functional_extensionality. intros w.
-  rewrite store_swap_conjugate_inv.
-  rewrite res_swap_conjugate_inv.
   reflexivity.
 Qed.
 
