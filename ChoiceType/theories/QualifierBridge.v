@@ -8,7 +8,6 @@
 
 From ChoiceType Require Export Qualifier.
 From ChoiceType Require Import QualifierProps.
-From Stdlib Require Import Logic.PropExtensionality.
 
 Definition bstore_of_env (η : gmap nat atom) (σ : Store) : gmap nat value :=
   map_fold (λ k x β,
@@ -38,74 +37,3 @@ Proof.
   destruct q. unfold FTypeQualifier, FStoreResourceAtom. simpl.
   reflexivity.
 Qed.
-
-Lemma formula_fv_FTypeQualifier_open_member k x q :
-  k ∈ qual_bvars q →
-  formula_fv (FTypeQualifier (qual_open_atom k x q)) =
-  {[x]} ∪ qual_dom q.
-Proof.
-Admitted.
-
-Lemma formula_fv_FTypeQualifier_open_not_member k x q :
-  k ∉ qual_bvars q →
-  formula_fv (FTypeQualifier (qual_open_atom k x q)) =
-  qual_dom q.
-Proof.
-  intros Hk.
-  rewrite formula_fv_FTypeQualifier.
-  destruct q as [B p]. unfold qual_open_atom, qual_bvars, qual_dom in *.
-  simpl in *. rewrite decide_False by exact Hk. reflexivity.
-Qed.
-
-Lemma formula_scoped_FTypeQualifier ρ m q :
-  formula_scoped_in_world ρ m (FTypeQualifier q) ↔
-  dom ρ ∪ qual_dom q ⊆ world_dom (m : World).
-Proof.
-  unfold formula_scoped_in_world.
-  rewrite formula_fv_FTypeQualifier.
-  reflexivity.
-Qed.
-
-Lemma res_models_with_store_FTypeQualifier_intro ρ m q :
-  formula_scoped_in_world ρ m (FTypeQualifier q) →
-  match q with
-  | qual D p =>
-      let β := bstore_of_env ∅ (store_restrict ρ (lvars_fv D)) in
-      lvars_bv D ⊆ dom β ∧
-      ∃ σw,
-        (res_restrict m (lvars_fv D) : World) = singleton_world σw ∧
-        p β (store_restrict ρ (lvars_fv D)) σw
-  end →
-  res_models_with_store ρ m (FTypeQualifier q).
-Proof.
-Admitted.
-
-Lemma res_models_with_store_FTypeQualifier_elim ρ m q :
-  res_models_with_store ρ m (FTypeQualifier q) →
-  ∃ m0,
-    formula_scoped_in_world ρ m0 (FTypeQualifier q) ∧
-    match q with
-    | qual D p =>
-        let β := bstore_of_env ∅ (store_restrict ρ (lvars_fv D)) in
-        lvars_bv D ⊆ dom β ∧
-        ∃ σw,
-          (res_restrict m0 (lvars_fv D) : World) = singleton_world σw ∧
-          p β (store_restrict ρ (lvars_fv D)) σw
-    end ∧
-    m0 ⊑ m.
-Proof.
-Admitted.
-
-Lemma res_models_FTypeQualifier_intro m q :
-  formula_scoped_in_world ∅ m (FTypeQualifier q) →
-  match q with
-  | qual D p =>
-      let β := bstore_of_env ∅ (∅ : Store) in
-      lvars_bv D ⊆ dom β ∧
-      ∃ σw,
-        (res_restrict m (lvars_fv D) : World) = singleton_world σw ∧
-        p β ∅ σw
-  end →
-  res_models m (FTypeQualifier q).
-Proof.
-Admitted.

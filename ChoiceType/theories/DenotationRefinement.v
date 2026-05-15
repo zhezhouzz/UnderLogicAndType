@@ -121,17 +121,3 @@ Proof.
   cbn [qual_dom qual_vars].
   set_solver.
 Qed.
-
-Lemma qual_open_atom_dom_eq_member k x q :
-  k ∈ qual_bvars q →
-  qual_dom (qual_open_atom k x q) = {[x]} ∪ qual_dom q.
-Proof.
-Admitted.
-
-Lemma qual_open_atom_eq_not_member k x q :
-  k ∉ qual_bvars q →
-  qual_open_atom k x q = q.
-Proof.
-  destruct q as [B p]. unfold qual_open_atom, qual_bvars.
-  simpl. intros Hk. rewrite decide_False by exact Hk. reflexivity.
-Qed.
