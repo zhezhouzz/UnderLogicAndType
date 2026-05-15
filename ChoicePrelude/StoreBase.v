@@ -78,12 +78,6 @@ Arguments map_restrict {_ _ _} _ _ /.
 
 (** ** Atom-keyed stores *)
 
-Definition atom_rename (x y z : atom) : atom :=
-  if decide (z = x) then y else z.
-
-Definition aset_rename (x y : atom) (X : aset) : aset :=
-  if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
-
 Definition atom_swap (x y z : atom) : atom :=
   if decide (z = x) then y else if decide (z = y) then x else z.
 

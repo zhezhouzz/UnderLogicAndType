@@ -171,11 +171,6 @@ Proof.
   intros s. simpl. tauto.
 Qed.
 
-Definition raw_rename_atom (x y : atom) (m : World) : World := {|
-  world_dom    := aset_rename x y (world_dom m);
-  world_stores := λ s, ∃ s0, m s0 ∧ store_rename_atom x y s0 = s;
-|}.
-
 Definition raw_swap (x y : atom) (m : World) : World := {|
   world_dom    := aset_swap x y (world_dom m);
   world_stores := λ s, ∃ s0, m s0 ∧ store_swap x y s0 = s;
@@ -348,21 +343,6 @@ Proof.
   intros <- Hσ. exact Hσ.
 Qed.
 
-Definition res_rename_atom (x y : atom) (w : WfWorld) : WfWorld.
-Proof.
-  refine (exist _ (raw_rename_atom x y w) _).
-  destruct (world_wf w) as [Hne Hdom].
-  constructor.
-  - destruct Hne as [σ Hσ].
-    exists (store_rename_atom x y σ). simpl.
-    exists σ. split; [exact Hσ | reflexivity].
-  - intros σ' Hσ'. simpl in Hσ'.
-    destruct Hσ' as [σ [Hσ Hrename]]. subst σ'.
-    rewrite store_rename_atom_dom.
-    change (aset_rename x y (dom σ) = aset_rename x y (world_dom (w : World))).
-    rewrite (Hdom σ Hσ). reflexivity.
-Defined.
-
 Definition res_swap (x y : atom) (w : WfWorld) : WfWorld.
 Proof.
   refine (exist _ (raw_swap x y w) _).
@@ -510,49 +490,6 @@ Proof.
     res_swap x y m) in Hrestr.
   rewrite <- (aset_swap_involutive x y (world_dom (m : World))).
   rewrite res_restrict_swap, Hrestr, res_swap_involutive. reflexivity.
-Qed.
-
-Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
-  res_restrict (res_rename_atom y x w) X =
-  res_rename_atom y x (res_restrict w (aset_rename x y X)).
-Proof.
-  apply wfworld_ext. apply world_ext.
-  - simpl.
-    change (aset_rename y x (world_dom (w : World)) ∩ X =
-      aset_rename y x (world_dom (w : World) ∩ aset_rename x y X)).
-    apply set_eq. intros z.
-    rewrite elem_of_intersection, !elem_of_aset_rename.
-    split.
-    + intros [Hzren HzX].
-      destruct Hzren as [[Hzx Hyw] | [Hzx [Hzy Hzw]]].
-      * subst z. left. split; [reflexivity |].
-        apply elem_of_intersection. split; [exact Hyw |].
-        rewrite elem_of_aset_rename. left. split; [reflexivity | exact HzX].
-      * right. repeat split; try congruence.
-        apply elem_of_intersection. split; [exact Hzw |].
-        rewrite elem_of_aset_rename. right. repeat split; try congruence; exact HzX.
-    + intros Hzren.
-      destruct Hzren as [[Hzx Hin] | [Hzx [Hzy Hin]]].
-      * apply elem_of_intersection in Hin as [Hw HX].
-        subst z.
-        split.
-        -- left. split; [reflexivity | exact Hw].
-        -- rewrite elem_of_aset_rename in HX.
-           destruct HX as [[_ HxX] | [Hyy [_ _]]]; [exact HxX | congruence].
-      * apply elem_of_intersection in Hin as [Hw HX].
-        split.
-        -- right. repeat split; try congruence; exact Hw.
-        -- rewrite elem_of_aset_rename in HX.
-           destruct HX as [[Hzy' _] | [_ [_ HzX]]]; [congruence | exact HzX].
-  - intros σ. split.
-    + intros [σ0 [[σw [Hσw Hrename]] Hrestrict]]. subst σ0 σ.
-      simpl. exists (store_restrict σw (aset_rename x y X)). split.
-      * exists σw. split; [exact Hσw | reflexivity].
-      * symmetry. apply store_restrict_rename_atom.
-    + intros [σ0 [[σw [Hσw Hrestrict]] Hrename]]. subst σ0 σ.
-      simpl. exists (store_rename_atom y x σw). split.
-      * exists σw. split; [exact Hσw | reflexivity].
-      * apply store_restrict_rename_atom.
 Qed.
 
 Definition res_fiber (w : WfWorld) (σ : StoreT)

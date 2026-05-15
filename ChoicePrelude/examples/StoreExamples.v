@@ -63,12 +63,3 @@ Proof. vm_compute. reflexivity. Qed.
 Example compatible_union_restrict_y :
   store_restrict (store_x1 ∪ store_y2) ({['y]}) = store_y2.
 Proof. vm_compute. reflexivity. Qed.
-
-Example rename_moves_binding :
-  store_rename_atom 'x 'z store_x1_y2 =
-  <['z := 1%nat]> (<['y := 2%nat]> ∅).
-Proof. vm_compute. reflexivity. Qed.
-
-Example rename_missing_deletes_target :
-  store_rename_atom 'z 'y store_x1_y2 = <['x := 1%nat]> ∅.
-Proof. vm_compute. reflexivity. Qed.
