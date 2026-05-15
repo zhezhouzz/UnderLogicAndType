@@ -1,0 +1,149 @@
+(** * ChoiceTyping.Naming
+
+    Small proof-layer helpers for binder representatives.  These definitions
+    keep the tlet proofs from repeatedly rebuilding the same freshness,
+    context-domain, and open/substitution side conditions. *)
+
+From CoreLang Require Import Instantiation InstantiationProps.
+From ChoiceTyping Require Export LetResultWorld.
+From ChoiceType Require Import BasicStore LocallyNamelessProps.
+
+(** ** Fresh representatives for tlet body binders *)
+
+Definition tlet_fresh_avoid
+    (L X : aset) (τ : choice_ty) (e : tm) (m : WfWorld) : aset :=
+  L ∪ world_dom (m : World) ∪ X ∪ fv_cty τ ∪ fv_tm e.
+
+Record tlet_fresh_name
+    (L X : aset) (τ : choice_ty) (e : tm) (m : WfWorld) (x : atom) : Prop := {
+  tlet_fresh_notin_L : x ∉ L;
+  tlet_fresh_notin_world : x ∉ world_dom (m : World);
+  tlet_fresh_notin_body : x ∉ X ∪ fv_cty τ ∪ fv_tm e;
+}.
+
+Lemma tlet_fresh_name_notin_X
+    L X τ e (m : WfWorld) x :
+  tlet_fresh_name L X τ e m x →
+  x ∉ X.
+Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
+
+Lemma tlet_fresh_name_notin_fv_cty
+    L X τ e (m : WfWorld) x :
+  tlet_fresh_name L X τ e m x →
+  x ∉ fv_cty τ.
+Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
+
+Lemma tlet_fresh_name_notin_fv_tm
+    L X τ e (m : WfWorld) x :
+  tlet_fresh_name L X τ e m x →
+  x ∉ fv_tm e.
+Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
+
+Lemma tlet_fresh_name_notin_erased
+    L X τ e (m : WfWorld) x :
+  tlet_fresh_name L X τ e m x →
+  x ∉ X ∪ fv_cty τ ∪ fv_tm e.
+Proof. intros [HL HW HB]. exact HB. Qed.
+
+Lemma tlet_fresh_name_for
+    L X τ e (m : WfWorld) :
+  tlet_fresh_name L X τ e m
+    (fresh_for (tlet_fresh_avoid L X τ e m)).
+Proof.
+  pose proof (fresh_for_not_in (tlet_fresh_avoid L X τ e m)) as Hfresh.
+  constructor; unfold tlet_fresh_avoid in Hfresh; set_solver.
+Qed.
+
+(** A lighter variant for totality lemmas that only mention a body term, not a
+    result refinement type. *)
+
+Definition body_fresh_avoid
+    (L X : aset) (e : tm) (m : WfWorld) : aset :=
+  L ∪ world_dom (m : World) ∪ X ∪ fv_tm e.
+
+Record body_fresh_name
+    (L X : aset) (e : tm) (m : WfWorld) (x : atom) : Prop := {
+  body_fresh_notin_L : x ∉ L;
+  body_fresh_notin_world : x ∉ world_dom (m : World);
+  body_fresh_notin_X : x ∉ X;
+  body_fresh_notin_fv_tm : x ∉ fv_tm e;
+}.
+
+Lemma body_fresh_name_for
+    L X e (m : WfWorld) :
+  body_fresh_name L X e m
+    (fresh_for (body_fresh_avoid L X e m)).
+Proof.
+  pose proof (fresh_for_not_in (body_fresh_avoid L X e m)) as Hfresh.
+  constructor; unfold body_fresh_avoid in Hfresh; set_solver.
+Qed.
+
+Ltac pick_tlet_fresh x L X τ e m :=
+  let Hfresh := fresh "Hfresh" in
+  set (x := fresh_for (tlet_fresh_avoid L X τ e m));
+  pose proof (tlet_fresh_name_for L X τ e m) as Hfresh;
+  change (tlet_fresh_name L X τ e m x) in Hfresh.
+
+Ltac pick_body_fresh x L X e m :=
+  let Hfresh := fresh "Hfresh" in
+  set (x := fresh_for (body_fresh_avoid L X e m));
+  pose proof (body_fresh_name_for L X e m) as Hfresh;
+  change (body_fresh_name L X e m x) in Hfresh.
+
+(** ** Context binder normal forms *)
+
+Lemma erase_ctx_under_comma_bind_dom_nf Σ Γ x τ :
+  dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))) =
+  dom (erase_ctx_under Σ Γ) ∪ {[x]}.
+Proof.
+  unfold erase_ctx_under. simpl.
+  rewrite !dom_union_L, dom_singleton_L. set_solver.
+Qed.
+
+Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
+  x ∉ dom (erase_ctx_under Σ Γ) →
+  erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
+  <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
+Proof.
+  intros Hfresh.
+  unfold erase_ctx_under. simpl.
+  apply (map_eq (M := gmap atom)). intros z.
+  rewrite lookup_insert.
+  destruct (decide (z = x)) as [->|Hzx].
+  - rewrite decide_True by reflexivity.
+    rewrite lookup_union_r.
+    + rewrite lookup_union_r.
+      * rewrite lookup_singleton. rewrite decide_True by reflexivity.
+        reflexivity.
+      * apply not_elem_of_dom. set_solver.
+    + apply not_elem_of_dom. set_solver.
+  - rewrite decide_False by congruence.
+    rewrite !lookup_union.
+    rewrite lookup_singleton.
+    rewrite decide_False by congruence.
+    destruct (Σ !! z); destruct (erase_ctx Γ !! z); reflexivity.
+Qed.
+
+Lemma erase_ctx_under_dom_basic Σ Γ :
+  basic_ctx (dom Σ) Γ →
+  dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
+Proof.
+  intros Hbasic.
+  unfold erase_ctx_under.
+  rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
+  reflexivity.
+Qed.
+
+Ltac ctx_name_norm :=
+  repeat match goal with
+  | H : context[dom (erase_ctx_under ?Σ (CtxComma ?Γ (CtxBind ?x ?τ)))] |- _ =>
+      rewrite (erase_ctx_under_comma_bind_dom_nf Σ Γ x τ) in H
+  | |- context[dom (erase_ctx_under ?Σ (CtxComma ?Γ (CtxBind ?x ?τ)))] =>
+      rewrite (erase_ctx_under_comma_bind_dom_nf Σ Γ x τ)
+  | Hfresh : ?x ∉ dom (erase_ctx_under ?Σ ?Γ),
+    H : context[erase_ctx_under ?Σ (CtxComma ?Γ (CtxBind ?x ?τ))] |- _ =>
+      rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ Hfresh) in H
+  | Hfresh : ?x ∉ dom (erase_ctx_under ?Σ ?Γ)
+      |- context[erase_ctx_under ?Σ (CtxComma ?Γ (CtxBind ?x ?τ))] =>
+      rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ Hfresh)
+  end.

@@ -5,7 +5,7 @@
     global atom type, finite atom sets, an abstract value interface, freshness
     helpers, and the [Stale] interface used by all later layers. *)
 
-From stdpp Require Export gmap sets fin_sets fin_map_dom.
+From stdpp Require Export gmap sets fin_sets fin_map_dom countable.
 From Corelib Require Export Program.Wf.
 From Hammer Require Export Hammer.
 
@@ -16,6 +16,193 @@ Definition atom : Type := positive.
 #[global] Instance atom_countable : Countable  atom := _.
 #[global] Instance atom_infinite  : Infinite   atom := _.
 Notation aset := (gset atom).
+
+(** Free-variable/resource-domain collection. *)
+Class Stale A := stale : A → aset.
+
+#[global] Instance stale_aset : Stale aset := id.
+
+Notation "x '#' s" := (x ∉ stale s) (at level 40).
+
+(** ** Logic variables
+
+    Logic and type qualifiers may mention both locally-nameless bound
+    coordinates and ordinary atom coordinates.  We keep these references in a
+    single finite set so opening a binder is just a finite-set map from the
+    bound representative to the chosen atom.
+
+    [LVBound k] is not a stale atom by itself; it becomes one only after an
+    explicit open operation. *)
+Inductive logic_var : Type :=
+  | LVBound (k : nat)
+  | LVFree  (x : atom).
+
+#[global] Instance logic_var_eqdec : EqDecision logic_var.
+Proof. solve_decision. Qed.
+#[global] Instance logic_var_countable : Countable logic_var.
+Proof.
+  refine (inj_countable'
+    (λ v, match v with LVBound k => inl k | LVFree x => inr x end)
+    (λ s, match s with inl k => LVBound k | inr x => LVFree x end) _).
+  intros []; reflexivity.
+Qed.
+
+Notation lvset := (gset logic_var).
+
+Definition logic_var_fv (v : logic_var) : aset :=
+  match v with
+  | LVBound _ => ∅
+  | LVFree x => {[x]}
+  end.
+
+Definition logic_var_bv (v : logic_var) : gset nat :=
+  match v with
+  | LVBound k => {[k]}
+  | LVFree _ => ∅
+  end.
+
+Definition lvars_fv (D : lvset) : aset :=
+  set_fold (λ v acc, logic_var_fv v ∪ acc) ∅ D.
+
+Definition lvars_bv (D : lvset) : gset nat :=
+  set_fold (λ v acc, logic_var_bv v ∪ acc) ∅ D.
+
+Definition logic_var_open (k : nat) (x : atom) (v : logic_var) : logic_var :=
+  match v with
+  | LVBound j => if decide (j = k) then LVFree x else LVBound j
+  | LVFree y => LVFree y
+  end.
+
+Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
+  set_map (logic_var_open k x) D.
+
+Definition logic_var_swap (x y : atom) (v : logic_var) : logic_var :=
+  match v with
+  | LVBound k => LVBound k
+  | LVFree z =>
+      LVFree (if decide (z = x) then y else if decide (z = y) then x else z)
+  end.
+
+Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
+  set_map (logic_var_swap x y) D.
+
+Definition lvars_of_atoms (X : aset) : lvset :=
+  set_map LVFree X.
+
+Definition lvars_of_bvars (B : gset nat) : lvset :=
+  set_map LVBound B.
+
+Class IntoLVars A := into_lvars : A → lvset.
+
+#[global] Instance into_lvars_aset : IntoLVars aset := lvars_of_atoms.
+#[global] Instance into_lvars_lvset : IntoLVars lvset := id.
+
+Lemma lvars_fv_of_atoms (X : aset) :
+  lvars_fv (lvars_of_atoms X) = X.
+Proof.
+Admitted.
+
+Lemma lvars_bv_of_atoms (X : aset) :
+  lvars_bv (lvars_of_atoms X) = ∅.
+Proof.
+Admitted.
+
+Lemma lvars_open_of_atoms k x (X : aset) :
+  lvars_open k x (lvars_of_atoms X) = lvars_of_atoms X.
+Proof.
+  unfold lvars_open, lvars_of_atoms.
+  apply set_eq. intros v.
+  rewrite !elem_of_map.
+  split.
+  - intros [lv [-> Hlv]].
+    rewrite elem_of_map in Hlv.
+    destruct Hlv as [a [-> Ha]].
+    exists a. split; [reflexivity | exact Ha].
+  - intros [a [-> Ha]].
+    exists (LVFree a). split; [reflexivity |].
+    rewrite elem_of_map.
+    exists a. split; [reflexivity | exact Ha].
+Qed.
+
+Lemma lvars_fv_of_bvars (B : gset nat) :
+  lvars_fv (lvars_of_bvars B) = ∅.
+Proof.
+Admitted.
+
+Lemma lvars_fv_singleton_bound k :
+  lvars_fv ({[LVBound k]} : lvset) = ∅.
+Proof.
+Admitted.
+
+Lemma lvars_fv_singleton_free x :
+  lvars_fv ({[LVFree x]} : lvset) = {[x]}.
+Proof.
+  rewrite <- (lvars_fv_of_atoms ({[x]} : aset)).
+  unfold lvars_of_atoms.
+  rewrite set_map_singleton_L.
+  reflexivity.
+Qed.
+
+Lemma lvars_fv_open k x (D : lvset) :
+  lvars_fv (lvars_open k x D) =
+  lvars_fv D ∪ (if decide (k ∈ lvars_bv D) then {[x]} else ∅).
+Proof.
+Admitted.
+
+Lemma lvars_bv_contains_bound_singleton k (D : lvset) :
+  k ∈ lvars_bv (D ∪ {[LVBound k]}).
+Proof.
+Admitted.
+
+Lemma lvars_fv_union (D1 D2 : lvset) :
+  lvars_fv (D1 ∪ D2) = lvars_fv D1 ∪ lvars_fv D2.
+Proof.
+Admitted.
+
+Lemma lvars_fv_open_atoms_with_bound k x (X : aset) :
+  lvars_fv (lvars_open k x (lvars_of_atoms X ∪ {[LVBound k]})) =
+  X ∪ {[x]}.
+Proof.
+  rewrite lvars_fv_open.
+  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  destruct (decide (k ∈ lvars_bv (lvars_of_atoms X ∪ {[LVBound k]}))).
+  - set_solver.
+  - exfalso. apply n. apply lvars_bv_contains_bound_singleton.
+Qed.
+
+Lemma logic_var_bv_swap x y v :
+  logic_var_bv (logic_var_swap x y v) = logic_var_bv v.
+Proof.
+  destruct v; simpl; repeat destruct decide; reflexivity.
+Qed.
+
+Lemma lvars_bv_swap x y (D : lvset) :
+  lvars_bv (lvars_swap x y D) = lvars_bv D.
+Proof.
+Admitted.
+
+Lemma logic_var_swap_involutive x y v :
+  logic_var_swap x y (logic_var_swap x y v) = v.
+Proof.
+  destruct v as [k|z]; simpl; [reflexivity |].
+  repeat destruct decide; subst; try reflexivity; congruence.
+Qed.
+
+Lemma lvars_swap_involutive x y (D : lvset) :
+  lvars_swap x y (lvars_swap x y D) = D.
+Proof.
+Admitted.
+
+Lemma lvars_fv_open_subset k x (D : lvset) :
+  lvars_fv (lvars_open k x D) ⊆ lvars_fv D ∪ {[x]}.
+Proof.
+Admitted.
+
+#[global] Instance stale_logic_var : Stale logic_var := logic_var_fv.
+Arguments stale_logic_var /.
+
+#[global] Instance stale_logic_vars : Stale lvset := lvars_fv.
+Arguments stale_logic_vars /.
 
 (** ** Abstract store values
 
@@ -28,11 +215,6 @@ Class ValueSig (V : Type) := {
 
 #[global] Existing Instance valuesig_eqdec.
 #[global] Existing Instance valuesig_inhabited.
-
-(** Free-variable/resource-domain collection. *)
-Class Stale A := stale : A → aset.
-
-Notation "x '#' s" := (x ∉ stale s) (at level 40).
 
 Definition fresh_for (s : aset) : atom := fresh s.
 

@@ -44,10 +44,6 @@ Proof.
       destruct c as [b|n]; simpl in Hc; try discriminate; right.
     + exists (tret (vconst (cbool (n =? 0)))).
       apply Step_head. eapply HS_Op; eauto.
-    + exists (tret (vconst (cbool true))).
-      apply Step_head. eapply HS_Op; eauto.
-    + exists (tret (vconst (cnat 0))).
-      apply Step_head. eapply HS_Op; eauto.
     + exists (tret (vconst (cnat (S n)))).
       apply Step_head. eapply HS_Op; eauto.
     + exists (tret (vconst (cnat (Nat.pred n)))).

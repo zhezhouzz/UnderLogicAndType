@@ -13,14 +13,14 @@ Section dom_gmap_filter.
     rewrite elem_of_intersection, !elem_of_dom.
     unfold is_Some.
     setoid_rewrite map_lookup_filter_Some.
-    naive_solver.
+    hauto.
   Qed.
 
   Lemma gmap_filter_key_pair (m : gmap K A) (X : gset K) :
     filter (λ '(k, _), k ∈ X) m = filter (λ kv : K * A, kv.1 ∈ X) m.
   Proof.
     apply map_filter_strong_ext_1.
-    intros i x. split; intros [H1 H2]; split; naive_solver.
+    intros i x. hauto.
   Qed.
 
   Corollary dom_gmap_filter_key_in_pair (m : gmap K A) (X : gset K) :

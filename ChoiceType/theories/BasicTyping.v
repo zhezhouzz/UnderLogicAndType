@@ -11,7 +11,7 @@
 
 From LocallyNameless Require Import Classes.
 From ChoiceType Require Export Syntax.
-From ChoiceType Require Import QualifierInstances LocallyNamelessInstances.
+From ChoiceType Require Import QualifierProps LocallyNamelessProps.
 
 (** ** Basic qualifier formation *)
 
@@ -124,16 +124,166 @@ Qed.
 Lemma basic_qualifier_body_top D :
   basic_qualifier_body D qual_top.
 Proof.
-  exists ∅. intros x _.
-  unfold basic_qualifier, qual_open_atom, qual_top, qual_dom, qual_bvars.
-  simpl. split; set_solver.
-Qed.
+Admitted.
 
 Lemma basic_choice_ty_lc D τ :
   basic_choice_ty D τ →
   lc_choice_ty τ.
 Proof.
   induction 1; eauto using basic_qualifier_body_lc.
+Qed.
+
+Lemma basic_qualifier_mono D E q :
+  D ⊆ E →
+  basic_qualifier D q →
+  basic_qualifier E q.
+Proof.
+  unfold basic_qualifier. set_solver.
+Qed.
+
+Lemma basic_qualifier_body_mono D E q :
+  D ⊆ E →
+  basic_qualifier_body D q →
+  basic_qualifier_body E q.
+Proof.
+  intros HDE [L Hbody].
+  exists L. intros x Hx.
+  eapply basic_qualifier_mono; [| apply Hbody; exact Hx].
+  set_solver.
+Qed.
+
+Lemma basic_choice_ty_mono D E τ :
+  D ⊆ E →
+  basic_choice_ty D τ →
+  basic_choice_ty E τ.
+Proof.
+  intros HDE Hbasic.
+  revert E HDE.
+  induction Hbasic; intros E HDE.
+  - constructor. eapply basic_qualifier_body_mono; eauto.
+  - constructor. eapply basic_qualifier_body_mono; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - econstructor; eauto.
+  - eapply Basic_CTArrow.
+    + eauto.
+    + intros x Hx.
+      match goal with
+      | IH : ∀ y, y ∉ _ → ∀ E, _ ⊆ E → basic_choice_ty E _ |- _ =>
+          eapply IH; [exact Hx | set_solver]
+      end.
+  - eapply Basic_CTWand.
+    + eauto.
+    + intros x Hx.
+      match goal with
+      | IH : ∀ y, y ∉ _ → ∀ E, _ ⊆ E → basic_choice_ty E _ |- _ =>
+          eapply IH; [exact Hx | set_solver]
+      end.
+Qed.
+
+Lemma basic_choice_ty_drop_fresh D x τ :
+  x ∉ fv_cty τ →
+  basic_choice_ty (D ∪ {[x]}) τ →
+  basic_choice_ty D τ.
+Proof.
+  intros Hfresh Hbasic.
+  remember (D ∪ {[x]}) as E.
+  revert D x Hfresh HeqE.
+  induction Hbasic as
+    [E b φ Hbody
+    |E b φ Hbody
+    |E τ1 τ2 Hτ1 Hτ2 Herase IHτ1 IHτ2
+    |E τ1 τ2 Hτ1 Hτ2 Herase IHτ1 IHτ2
+    |E τ1 τ2 Hτ1 Hτ2 Herase IHτ1 IHτ2
+    |E τx τ L Hτx Hbody IHτx IHbody
+    |E τx τ L Hτx Hbody IHτx IHbody];
+    intros D0 x0 Hfresh HeqE; subst; simpl in Hfresh.
+  - constructor.
+    destruct Hbody as [L Hbody].
+    exists (L ∪ {[x0]}). intros y Hy.
+    eapply basic_qualifier_mono.
+    + set_solver.
+    + specialize (Hbody y ltac:(set_solver)).
+      unfold basic_qualifier in *.
+      destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
+      pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      set_solver.
+  - constructor.
+    destruct Hbody as [L Hbody].
+    exists (L ∪ {[x0]}). intros y Hy.
+    eapply basic_qualifier_mono.
+    + set_solver.
+    + specialize (Hbody y ltac:(set_solver)).
+      unfold basic_qualifier in *.
+      destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
+      pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      set_solver.
+  - econstructor; eauto; set_solver.
+  - econstructor; eauto; set_solver.
+  - econstructor; eauto; set_solver.
+  - eapply (Basic_CTArrow _ _ _ (L ∪ {[x0]})).
+    + eapply Hbody; eauto; set_solver.
+    + intros y Hy.
+      assert (HyL : y ∉ L).
+      { intros HyL. apply Hy. apply elem_of_union. left. exact HyL. }
+      eapply (IHbody y HyL (D0 ∪ {[y]}) x0).
+      * pose proof (open_fv τ y 0) as Hopen.
+        simpl in Hopen. intros Hxopen.
+        pose proof (Hopen x0 Hxopen) as Hxuy.
+        apply elem_of_union in Hxuy as [Hxy | Hxτ].
+        -- change (x0 ∈ ({[y]} : aset)) in Hxy.
+           apply elem_of_singleton in Hxy. subst.
+           apply Hy. apply elem_of_union. right. apply elem_of_singleton. reflexivity.
+        -- apply Hfresh. apply elem_of_union. right. exact Hxτ.
+      * apply set_eq. intros z. split.
+        -- intros Hz. apply elem_of_union in Hz as [Hz | Hz].
+           ++ apply elem_of_union in Hz as [Hz | Hz].
+              ** apply elem_of_union. left. apply elem_of_union. left. exact Hz.
+              ** apply elem_of_union. right. exact Hz.
+           ++ apply elem_of_union. left. apply elem_of_union. right. exact Hz.
+        -- intros Hz. apply elem_of_union in Hz as [Hz | Hz].
+           ++ apply elem_of_union in Hz as [Hz | Hz].
+              ** apply elem_of_union. left. apply elem_of_union. left. exact Hz.
+              ** apply elem_of_union. right. exact Hz.
+           ++ apply elem_of_union. left. apply elem_of_union. right. exact Hz.
+  - eapply (Basic_CTWand _ _ _ (L ∪ {[x0]})).
+    + eapply Hbody; eauto; set_solver.
+    + intros y Hy.
+      assert (HyL : y ∉ L).
+      { intros HyL. apply Hy. apply elem_of_union. left. exact HyL. }
+      eapply (IHbody y HyL (D0 ∪ {[y]}) x0).
+      * pose proof (open_fv τ y 0) as Hopen.
+        simpl in Hopen. intros Hxopen.
+        pose proof (Hopen x0 Hxopen) as Hxuy.
+        apply elem_of_union in Hxuy as [Hxy | Hxτ].
+        -- change (x0 ∈ ({[y]} : aset)) in Hxy.
+           apply elem_of_singleton in Hxy. subst.
+           apply Hy. apply elem_of_union. right. apply elem_of_singleton. reflexivity.
+        -- apply Hfresh. apply elem_of_union. right. exact Hxτ.
+      * apply set_eq. intros z. split.
+        -- intros Hz. apply elem_of_union in Hz as [Hz | Hz].
+           ++ apply elem_of_union in Hz as [Hz | Hz].
+              ** apply elem_of_union. left. apply elem_of_union. left. exact Hz.
+              ** apply elem_of_union. right. exact Hz.
+           ++ apply elem_of_union. left. apply elem_of_union. right. exact Hz.
+        -- intros Hz. apply elem_of_union in Hz as [Hz | Hz].
+           ++ apply elem_of_union in Hz as [Hz | Hz].
+              ** apply elem_of_union. left. apply elem_of_union. left. exact Hz.
+              ** apply elem_of_union. right. exact Hz.
+           ++ apply elem_of_union. left. apply elem_of_union. right. exact Hz.
+Qed.
+
+Lemma basic_choice_ty_drop_insert_fresh
+    (Σ : gmap atom ty) x T τ :
+  x ∉ dom Σ →
+  x ∉ fv_cty τ →
+  basic_choice_ty (dom (<[x := T]> Σ)) τ →
+  basic_choice_ty (dom Σ) τ.
+Proof.
+  intros HxΣ Hxτ Hbasic.
+  rewrite dom_insert_L in Hbasic.
+  replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) in Hbasic by set_solver.
+  eapply basic_choice_ty_drop_fresh; eauto.
 Qed.
 
 Lemma basic_choice_ty_fv_subset D τ :

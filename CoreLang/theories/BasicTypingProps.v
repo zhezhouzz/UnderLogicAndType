@@ -1,67 +1,49 @@
 From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
+From ChoicePrelude Require Import Store.
 
 (** * Basic typing facts for CoreLang
 
     These mirror the basic typing facts in HATs/UnderType, specialized to the
     direct-style CoreLang syntax. *)
 
-Lemma basic_typing_contains_fv_value Γ v T :
-  Γ ⊢ᵥ v ⋮ T → fv_value v ⊆ dom Γ.
+Lemma basic_typing_contains_fv_mut :
+  (∀ Γ v T, Γ ⊢ᵥ v ⋮ T → fv_value v ⊆ dom Γ) ∧
+  (∀ Γ e T, Γ ⊢ₑ e ⋮ T → fv_tm e ⊆ dom Γ).
 Proof.
-  intros Hty.
-  induction Hty using value_has_type_mut with
+  apply has_type_mutind with
+      (P := fun Γ v T _ => fv_value v ⊆ dom Γ)
       (P0 := fun Γ e T _ => fv_tm e ⊆ dom Γ);
       simpl; try set_solver.
-  - apply elem_of_dom_2 in e. set_solver.
-  - pose (x := fresh_for (L ∪ fv_tm e)).
+  - intros Γ x T Hlookup.
+    apply elem_of_dom_2 in Hlookup. set_solver.
+  - intros Γ s T e L Hty IH.
+    pose (x := fresh_for (L ∪ fv_tm e)).
     assert (Hx : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
-    specialize (H x ltac:(set_solver)).
+    specialize (IH x ltac:(set_solver)).
     pose proof (open_fv_tm' e (vfvar x) 0) as Hopen.
-    rewrite dom_insert in H. set_solver.
-  - pose (x := fresh_for (L ∪ fv_value vf)).
+    rewrite dom_insert in IH. set_solver.
+  - intros Γ sx T vf L Hty IH.
+    pose (x := fresh_for (L ∪ fv_value vf)).
     assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
-    specialize (H x ltac:(set_solver)).
+    specialize (IH x ltac:(set_solver)).
     pose proof (open_fv_value' vf (vfvar x) 0) as Hopen.
-    rewrite dom_insert in H. set_solver.
-  - pose (x := fresh_for (L ∪ fv_tm e2)).
+    rewrite dom_insert in IH. set_solver.
+  - intros Γ T1 T2 e1 e2 L Hty1 IH1 Hty2 IH2.
+    pose (x := fresh_for (L ∪ fv_tm e2)).
     assert (Hx : x ∉ L ∪ fv_tm e2) by (subst x; apply fresh_for_not_in).
-    match goal with
-    | IH : ∀ y : atom, y ∉ L → fv_tm (e2 ^^ y) ⊆ _ |- _ =>
-        specialize (IH x ltac:(set_solver));
-        rewrite dom_insert in IH
-    end.
+    specialize (IH2 x ltac:(set_solver)).
+    rewrite dom_insert in IH2.
     pose proof (open_fv_tm' e2 (vfvar x) 0) as Hopen.
     set_solver.
 Qed.
 
+Lemma basic_typing_contains_fv_value Γ v T :
+  Γ ⊢ᵥ v ⋮ T → fv_value v ⊆ dom Γ.
+Proof. exact (proj1 basic_typing_contains_fv_mut Γ v T). Qed.
+
 Lemma basic_typing_contains_fv_tm Γ e T :
   Γ ⊢ₑ e ⋮ T → fv_tm e ⊆ dom Γ.
-Proof.
-  intros Hty.
-  induction Hty using tm_has_type_mut with
-      (P := fun Γ v T _ => fv_value v ⊆ dom Γ);
-      simpl; try set_solver.
-  - apply elem_of_dom_2 in e. set_solver.
-  - pose (x := fresh_for (L ∪ fv_tm e)).
-    assert (Hx : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
-    specialize (H x ltac:(set_solver)).
-    pose proof (open_fv_tm' e (vfvar x) 0) as Hopen.
-    rewrite dom_insert in H. set_solver.
-  - pose (x := fresh_for (L ∪ fv_value vf)).
-    assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
-    specialize (H x ltac:(set_solver)).
-    pose proof (open_fv_value' vf (vfvar x) 0) as Hopen.
-    rewrite dom_insert in H. set_solver.
-  - pose (x := fresh_for (L ∪ fv_tm e2)).
-    assert (Hx : x ∉ L ∪ fv_tm e2) by (subst x; apply fresh_for_not_in).
-    match goal with
-    | IH : ∀ y : atom, y ∉ L → fv_tm (e2 ^^ y) ⊆ _ |- _ =>
-        specialize (IH x ltac:(set_solver));
-        rewrite dom_insert in IH
-    end.
-    pose proof (open_fv_tm' e2 (vfvar x) 0) as Hopen.
-    set_solver.
-Qed.
+Proof. exact (proj2 basic_typing_contains_fv_mut Γ e T). Qed.
 
 Class FvSubsetGamma (E : Type) `{Stale E} `{Typing (gmap atom ty) E ty} :=
   fv_subset_gamma : ∀ Γ (e : E) T, Γ ⊢ e ⋮ T → stale e ⊆ dom Γ.
@@ -179,6 +161,282 @@ Lemma basic_typing_weaken_insert_tm Γ e T x U :
 Proof.
   intros Hfresh Hty. eapply basic_typing_weaken_tm; eauto.
   apply insert_subseteq. by apply not_elem_of_dom.
+Qed.
+
+(** Typing depends only on the entries for the free variables of the
+    expression/value being typed.  This is the convenient contraction principle
+    used when a fresh environment coordinate is semantically irrelevant. *)
+Lemma basic_typing_env_agree_value Γ Γ' v T :
+  Γ ⊢ᵥ v ⋮ T →
+  (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) →
+  Γ' ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using value_has_type_mut with
+    (P := fun Γ v T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) → Γ' ⊢ᵥ v ⋮ T)
+    (P0 := fun Γ e T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) → Γ' ⊢ₑ e ⋮ T);
+    intros Γ0 Hagree; simpl in *.
+  - constructor.
+  - econstructor. rewrite Hagree; [exact e | set_solver].
+  - eapply VT_Lam with (L := L ∪ fv_tm e).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_tm e).
+      {
+        pose proof (open_fv_tm e (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - eapply VT_Fix with (L := L ∪ fv_value vf).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_value vf).
+      {
+        pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - constructor. eapply IHHty. intros z Hz. apply Hagree. set_solver.
+  - eapply TT_Let with (L := L ∪ fv_tm e2).
+    + eapply IHHty. intros z Hz. apply Hagree. set_solver.
+    + intros y Hy.
+      eapply H; [set_solver |].
+      intros z Hz.
+      destruct (decide (z = y)) as [->|Hne].
+      * rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+      * rewrite !lookup_insert_ne by congruence.
+        assert (Hzfv : z ∈ fv_tm e2).
+        {
+          pose proof (open_fv_tm e2 (vfvar y) 0) as Hopen.
+          simpl in Hopen. set_solver.
+        }
+        rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor; eauto.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+Qed.
+
+Lemma basic_typing_swap_value Γ v T x y :
+  Γ ⊢ᵥ v ⋮ T →
+  store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T
+with basic_typing_swap_tm Γ e T x y :
+  Γ ⊢ₑ e ⋮ T →
+  store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T.
+Proof.
+  - intros Hty.
+    induction Hty using value_has_type_mut with
+      (P0 := fun Γ e T _ =>
+        store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T);
+      simpl.
+    + constructor.
+    + econstructor. rewrite store_swap_lookup. exact e.
+    + eapply VT_Lam with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=s]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+        open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
+          ((sx →ₜ T) →ₜ T)).
+      rewrite open_value_swap_atom.
+      replace (<[z:=sx]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + eapply TT_Let; [eauto |].
+      intros z Hz.
+      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=T1]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + econstructor; eauto.
+    + econstructor; eauto.
+  - intros Hty.
+    induction Hty using tm_has_type_mut with
+      (P := fun Γ v T _ =>
+        store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T);
+      simpl.
+    + constructor.
+    + econstructor. rewrite store_swap_lookup. exact e.
+    + eapply VT_Lam with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=s]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := aset_swap x y L).
+      intros z Hz.
+      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+        open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
+          ((sx →ₜ T) →ₜ T)).
+      rewrite open_value_swap_atom.
+      replace (<[z:=sx]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + eapply TT_Let; [eauto |].
+      intros z Hz.
+      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+        open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
+      rewrite open_tm_swap_atom.
+      replace (<[z:=T1]> (store_swap x y Γ))
+        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+      * apply H. intros Hin. apply Hz.
+        rewrite elem_of_aset_swap. exact Hin.
+      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+    + econstructor; eauto.
+    + econstructor; eauto.
+    + econstructor; eauto.
+Qed.
+
+Lemma basic_typing_env_agree_tm Γ Γ' e T :
+  Γ ⊢ₑ e ⋮ T →
+  (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) →
+  Γ' ⊢ₑ e ⋮ T.
+Proof.
+  intros Hty. revert Γ'.
+  induction Hty using tm_has_type_mut with
+    (P := fun Γ v T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_value v → Γ' !! x = Γ !! x) → Γ' ⊢ᵥ v ⋮ T)
+    (P0 := fun Γ e T _ =>
+      ∀ Γ', (∀ x, x ∈ fv_tm e → Γ' !! x = Γ !! x) → Γ' ⊢ₑ e ⋮ T);
+    intros Γ0 Hagree; simpl in *.
+  - constructor.
+  - econstructor. rewrite Hagree; [exact e | set_solver].
+  - eapply VT_Lam with (L := L ∪ fv_tm e).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_tm e).
+      {
+        pose proof (open_fv_tm e (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - eapply VT_Fix with (L := L ∪ fv_value vf).
+    intros y Hy.
+    eapply H; [set_solver |].
+    intros z Hz.
+    destruct (decide (z = y)) as [->|Hne].
+    + rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hzfv : z ∈ fv_value vf).
+      {
+        pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
+        simpl in Hopen. set_solver.
+      }
+      rewrite Hagree by exact Hzfv. reflexivity.
+  - constructor. eapply IHHty. intros z Hz. apply Hagree. set_solver.
+  - eapply TT_Let with (L := L ∪ fv_tm e2).
+    + eapply IHHty. intros z Hz. apply Hagree. set_solver.
+    + intros y Hy.
+      eapply H; [set_solver |].
+      intros z Hz.
+      destruct (decide (z = y)) as [->|Hne].
+      * rewrite !lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
+      * rewrite !lookup_insert_ne by congruence.
+        assert (Hzfv : z ∈ fv_tm e2).
+        {
+          pose proof (open_fv_tm e2 (vfvar y) 0) as Hopen.
+          simpl in Hopen. set_solver.
+        }
+        rewrite Hagree by (simpl; set_solver). reflexivity.
+  - econstructor; eauto.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+Qed.
+
+Lemma basic_typing_drop_insert_fresh_value Γ v T x U :
+  x ∉ fv_value v →
+  <[x := U]> Γ ⊢ᵥ v ⋮ T →
+  Γ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_typing_env_agree_value; [exact Hty |].
+  intros z Hz.
+  rewrite lookup_insert_ne; [reflexivity | set_solver].
+Qed.
+
+Lemma basic_typing_drop_insert_fresh_tm Γ e T x U :
+  x ∉ fv_tm e →
+  <[x := U]> Γ ⊢ₑ e ⋮ T →
+  Γ ⊢ₑ e ⋮ T.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_typing_env_agree_tm; [exact Hty |].
+  intros z Hz.
+  rewrite lookup_insert_ne; [reflexivity | set_solver].
 Qed.
 
 Lemma basic_typing_subst_value Γ x s v T vx :

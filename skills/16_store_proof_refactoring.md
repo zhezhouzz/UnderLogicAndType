@@ -122,6 +122,33 @@ change (@map_restrict atom _ nat s X !! k = Some v).
   `setoid_rewrite` 暴露 canonical form；
 - 再让主证明调用这个 tactic/lemma。
 
+### 5. Nested restriction: choose the direction explicitly
+
+For goals involving a projected store from an extension world, the useful shape
+is often:
+
+```coq
+replace (store_restrict σ X)
+  with (store_restrict (store_restrict σ D) X).
+2:{ rewrite store_restrict_restrict.
+    replace (D ∩ X) with X by set_solver.
+    reflexivity. }
+```
+
+This direction lets you reuse lemmas whose premise is a store in the smaller
+world `D`.  Trying to `rewrite <- store_restrict_restrict` directly often fails
+because the goal contains `store_restrict σ X`, not the normalized
+`store_restrict σ (D ∩ X)` subterm.
+
+When proving that `store_restrict σ D = σ` from a world-store domain fact
+`dom σ = D`, use `store_restrict_idemp` with the equality in the right
+direction:
+
+```coq
+symmetry. apply store_restrict_idemp.
+intros z Hz. rewrite <- Hdomσ. exact Hz.
+```
+
 ## Store compatibility 的推荐 spec
 
 `store_compat s1 s2` 的自然含义是：
@@ -192,6 +219,39 @@ normal form，再把它包装成 lemma，例如：
 Lemma world_compat_store_restrict_overlap ... :
   store_restrict σ1 X = store_restrict σ2 X.
 ```
+
+## Basic-world typing is local to a footprint
+
+`basic_world_formula Σ X` only gives typing/closedness/lc facts for the
+projection to `X`.  Do not try to prove that an arbitrary store in a larger
+world is wholly closed or typed: the world may contain coordinates outside
+`X`, and those are intentionally unconstrained.
+
+Preferred shape:
+
+```coq
+store_has_type_on Σ X (store_restrict σ X)
+closed_env (store_restrict σ X)
+lc_env (store_restrict σ X)
+```
+
+Useful lemmas:
+
+```coq
+basic_world_formula_subset_current :
+  X ⊆ Y ->
+  m ⊨ basic_world_formula Σ Y ->
+  world_has_type_on Σ X (res_restrict m X).
+
+basic_world_formula_store_restrict_closed_env
+basic_world_formula_store_restrict_lc_env
+```
+
+In `ChoiceTyping.Soundness`, use the wrappers
+`denot_ctx_in_env_world_has_type_on`,
+`denot_ctx_in_env_store_restrict_closed`, and
+`denot_ctx_in_env_store_restrict_lc` instead of unfolding the context
+denotation's `FAnd` manually.
 
 主证明应该优先调用这个 lemma，而不是反复直接调用 tactic。
 

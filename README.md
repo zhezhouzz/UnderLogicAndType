@@ -189,8 +189,8 @@ In short:
 
 ### `CoreLang/` — The programming language
 
-A call-by-value λ-calculus with primitive operations, nondeterministic
-generators, and boolean pattern matching, in locally-nameless representation.
+A deterministic call-by-value λ-calculus with unary primitive operations and
+boolean pattern matching, in locally-nameless representation.
 
 The Rocq syntax intentionally represents recursive functions slightly
 differently from the paper's surface presentation.  Instead of giving `vfix`
@@ -208,12 +208,11 @@ match.
 | `Prelude.v` | LN infrastructure: `Open`, `Close`, `SubstV`, `Stale`, `Lc` typeclasses |
 | `Syntax.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc` |
 | `BasicTyping.v` | Simple type system (`⊢ᵥ`, `⊢ₑ`) |
-| `SmallStep.v` | Nondeterministic small-step operational semantics (`→*`) |
-| `Sugar.v` | Derived generator and boolean-choice forms used by examples |
+| `SmallStep.v` | Deterministic small-step operational semantics (`→*`) |
+| `Sugar.v` | Small deterministic derived forms used by examples |
 | `Properties.v` | Basic metatheory entry points |
 | `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
 | `LocallyNamelessExtra.v` | Additional LN lemmas imported from earlier developments |
-| `LocallyNamelessInstances.v` | CoreLang instances for the shared LN classes |
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
 
@@ -234,10 +233,8 @@ with store-based lookup while preserving expressiveness through let-binding.
 | `Prelude.v` | Imports `CoreLang` and `ChoiceLogic`; fixes ChoiceType notations to CoreLang `value`s |
 | `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
 | `QualifierBridge.v` | Lifting closed type qualifiers into logic qualifier atoms |
-| `QualifierInstances.v` | Type-qualifier instances for the shared LN classes |
 | `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, atom opening/swap |
 | `Sugar.v` | Derived type forms such as over/under/precise refinements and unary primop types |
-| `LocallyNamelessInstances.v` | Choice-type instances for the shared LN classes |
 | `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
 | `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
 

@@ -7,6 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
+From ChoicePrelude Require Import StoreBase.
 
 (** ** Base and basic types *)
 
@@ -33,8 +34,6 @@ Inductive constant : Type :=
 
 Inductive prim_op : Type :=
   | op_eq0       (** unary zero test on natural numbers *)
-  | op_bool_gen  (** nondeterministic boolean generator; ignores dummy bool input *)
-  | op_nat_gen   (** nondeterministic natural-number generator; ignores dummy bool input *)
   | op_plus1     (** successor on natural numbers *)
   | op_minus1.   (** predecessor on natural numbers, with [pred 0 = 0] *)
 
@@ -171,6 +170,110 @@ with fv_tm (e : tm) : aset :=
 #[global] Instance stale_tm_inst    : Stale tm    := fv_tm.
 Arguments stale_value_inst /.
 Arguments stale_tm_inst /.
+
+(** ** Atom swap
+
+    Swapping is the bijective name action used by cofinite/explicit-name
+    proofs.  Unlike substitution, it never replaces a variable by an arbitrary
+    value; it only exchanges two free atoms and leaves bound indices intact. *)
+
+Fixpoint value_swap_atom (x y : atom) (v : value) : value :=
+  match v with
+  | vconst _ => v
+  | vfvar z => vfvar (atom_swap x y z)
+  | vbvar _ => v
+  | vlam s e => vlam s (tm_swap_atom x y e)
+  | vfix Tf vf => vfix Tf (value_swap_atom x y vf)
+  end
+with tm_swap_atom (x y : atom) (e : tm) : tm :=
+  match e with
+  | tret v => tret (value_swap_atom x y v)
+  | tlete e1 e2 => tlete (tm_swap_atom x y e1) (tm_swap_atom x y e2)
+  | tprim op v => tprim op (value_swap_atom x y v)
+  | tapp v1 v2 => tapp (value_swap_atom x y v1) (value_swap_atom x y v2)
+  | tmatch v et ef =>
+      tmatch (value_swap_atom x y v)
+        (tm_swap_atom x y et) (tm_swap_atom x y ef)
+  end.
+
+Lemma fv_value_swap_atom x y v :
+  fv_value (value_swap_atom x y v) = aset_swap x y (fv_value v)
+with fv_tm_swap_atom x y e :
+  fv_tm (tm_swap_atom x y e) = aset_swap x y (fv_tm e).
+Proof.
+  - destruct v; simpl; try reflexivity.
+    + symmetry. apply aset_swap_singleton.
+    + apply fv_tm_swap_atom.
+    + apply fv_value_swap_atom.
+  - destruct e; simpl.
+    + apply fv_value_swap_atom.
+    + rewrite !fv_tm_swap_atom, aset_swap_union. reflexivity.
+    + apply fv_value_swap_atom.
+    + rewrite !fv_value_swap_atom, aset_swap_union. reflexivity.
+    + rewrite fv_value_swap_atom, !fv_tm_swap_atom, !aset_swap_union.
+      reflexivity.
+Qed.
+
+Lemma value_swap_atom_involutive x y v :
+  value_swap_atom x y (value_swap_atom x y v) = v
+with tm_swap_atom_involutive x y e :
+  tm_swap_atom x y (tm_swap_atom x y e) = e.
+Proof.
+  - destruct v; simpl; try reflexivity.
+    + rewrite atom_swap_involutive. reflexivity.
+    + rewrite tm_swap_atom_involutive. reflexivity.
+    + rewrite value_swap_atom_involutive. reflexivity.
+  - destruct e; simpl; rewrite ?value_swap_atom_involutive,
+      ?tm_swap_atom_involutive; reflexivity.
+Qed.
+
+Lemma value_swap_atom_fresh x y v :
+  x ∉ fv_value v →
+  y ∉ fv_value v →
+  value_swap_atom x y v = v
+with tm_swap_atom_fresh x y e :
+  x ∉ fv_tm e →
+  y ∉ fv_tm e →
+  tm_swap_atom x y e = e.
+Proof.
+  - destruct v; simpl; intros Hx Hy; try reflexivity.
+    + rewrite atom_swap_fresh by set_solver. reflexivity.
+    + rewrite tm_swap_atom_fresh by set_solver. reflexivity.
+    + rewrite value_swap_atom_fresh by set_solver. reflexivity.
+  - destruct e; simpl; intros Hx Hy; try rewrite !value_swap_atom_fresh by set_solver;
+      try rewrite !tm_swap_atom_fresh by set_solver; reflexivity.
+Qed.
+
+Lemma value_swap_atom_open x y k u v :
+  value_swap_atom x y (open_value k u v) =
+  open_value k (value_swap_atom x y u) (value_swap_atom x y v)
+with tm_swap_atom_open x y k u e :
+  tm_swap_atom x y (open_tm k u e) =
+  open_tm k (value_swap_atom x y u) (tm_swap_atom x y e).
+Proof.
+  - destruct v; simpl; try reflexivity.
+    + destruct (decide (k = n)); reflexivity.
+    + rewrite tm_swap_atom_open. reflexivity.
+    + rewrite value_swap_atom_open. reflexivity.
+  - destruct e; simpl; try rewrite ?value_swap_atom_open;
+      try rewrite ?tm_swap_atom_open; reflexivity.
+Qed.
+
+Lemma open_value_swap_atom x y k z v :
+  open_value k (vfvar z) (value_swap_atom x y v) =
+  value_swap_atom x y (open_value k (vfvar (atom_swap x y z)) v).
+Proof.
+  rewrite value_swap_atom_open. simpl.
+  rewrite atom_swap_involutive. reflexivity.
+Qed.
+
+Lemma open_tm_swap_atom x y k z e :
+  open_tm k (vfvar z) (tm_swap_atom x y e) =
+  tm_swap_atom x y (open_tm k (vfvar (atom_swap x y z)) e).
+Proof.
+  rewrite tm_swap_atom_open. simpl.
+  rewrite atom_swap_involutive. reflexivity.
+Qed.
 
 (** ** Single-variable substitution *)
 

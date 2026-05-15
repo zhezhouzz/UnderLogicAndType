@@ -11,11 +11,13 @@
 
 ChoicePrelude/Prelude.v
 ChoicePrelude/MapFilterDom.v
+ChoicePrelude/StoreBase.v
 ChoicePrelude/Store.v
 ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Prelude.v
 ChoiceAlgebra/theories/Resource.v
+ChoiceAlgebra/theories/ResourceTactics.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 ChoiceAlgebra/examples/ResourceExamples.v
 
@@ -30,33 +32,54 @@ LocallyNameless/Classes.v
 CoreLang/theories/LocallyNamelessProps.v
 CoreLang/theories/Sugar.v
 CoreLang/theories/LocallyNamelessExtra.v
-CoreLang/theories/LocallyNamelessInstances.v
 CoreLang/theories/InstantiationProps.v
 CoreLang/theories/BasicTypingProps.v
 CoreLang/theories/OperationalProps.v
+CoreLang/theories/StrongNormalization.v
+CoreLang/theories/OperationalResults.v
 
 ChoiceLogic/theories/Prelude.v
 ChoiceLogic/theories/LogicQualifier.v
+ChoiceLogic/theories/FormulaSyntax.v
 ChoiceLogic/theories/Formula.v
+ChoiceLogic/theories/FormulaTactics.v
+ChoiceLogic/theories/FormulaDerived.v
 ChoiceLogic/theories/ChoiceLogicProps.v
-ChoiceLogic/theories/ANF.v
 ChoiceLogic/examples/FiberExamples.v
 
 ChoiceType/theories/Prelude.v
 ChoiceType/theories/Qualifier.v
 ChoiceType/theories/QualifierProps.v
-ChoiceType/theories/QualifierInstances.v
 ChoiceType/theories/QualifierBridge.v
 ChoiceType/theories/Syntax.v
+ChoiceType/theories/BasicStore.v
 ChoiceType/theories/LocallyNamelessProps.v
-ChoiceType/theories/LocallyNamelessInstances.v
 ChoiceType/theories/BasicTyping.v
-ChoiceType/theories/InstantiationProps.v
+ChoiceType/theories/DenotationFibers.v
+ChoiceType/theories/DenotationFormula.v
+ChoiceType/theories/DenotationExprProps.v
+ChoiceType/theories/DenotationFormulaEquiv.v
+ChoiceType/theories/DenotationType.v
+ChoiceType/theories/DenotationRefinement.v
+ChoiceType/theories/DenotationContext.v
 ChoiceType/theories/Denotation.v
 ChoiceType/theories/Sugar.v
 ChoiceTyping/theories/WellFormed.v
 ChoiceTyping/theories/Auxiliary.v
 ChoiceTyping/theories/PrimOpContext.v
 ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/RegularDenotation.v
+ChoiceTyping/theories/LetResultWorld.v
+ChoiceTyping/theories/Naming.v
+ChoiceTyping/theories/SoundnessCommon.v
+ChoiceTyping/theories/ResultWorldClosed.v
+ChoiceTyping/theories/ResultWorldBridge.v
+ChoiceTyping/theories/ResultWorldExprCont.v
+ChoiceTyping/theories/TLetTotal.v
+ChoiceTyping/theories/TLetReductionFuelSupport.v
+ChoiceTyping/theories/TLetReduction.v
+ChoiceTyping/theories/TLetReductionTotal.v
+ChoiceTyping/theories/TLetDenotation.v
+ChoiceTyping/theories/SoundnessHelpers.v
 ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v

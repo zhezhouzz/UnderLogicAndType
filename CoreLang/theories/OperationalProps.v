@@ -1,4 +1,5 @@
-From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps LocallyNamelessExtra.
+From CoreLang Require Import SmallStep BasicTypingProps LocallyNamelessProps
+  LocallyNamelessExtra Instantiation InstantiationProps.
 From LocallyNameless Require Import Tactics.
 
 (** * Operational facts for CoreLang
@@ -100,6 +101,71 @@ Lemma steps_regular2 e e' :
   e →* e' → lc_tm e'.
 Proof. apply steps_regular. Qed.
 
+Definition closed_tm (e : tm) : Prop :=
+  stale e = ∅ ∧ lc_tm e.
+
+Definition closed_value (v : value) : Prop :=
+  stale v = ∅ ∧ lc_value v.
+
+Lemma head_step_fv_subset e e' :
+  head_step e e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hstep. destruct Hstep; simpl.
+  - pose proof (open_fv_tm e v 0) as Hopen. my_set_solver.
+  - my_set_solver.
+  - pose proof (open_fv_tm body v 0) as Hopen. my_set_solver.
+  - pose proof (open_fv_value vf v 0) as Hopen. my_set_solver.
+  - my_set_solver.
+  - my_set_solver.
+Qed.
+
+Lemma step_fv_subset e e' :
+  step e e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hstep. induction Hstep; simpl.
+  - by apply head_step_fv_subset.
+  - pose proof IHHstep. my_set_solver.
+Qed.
+
+Lemma steps_fv_subset e e' :
+  e →* e' →
+  fv_tm e' ⊆ fv_tm e.
+Proof.
+  intros Hsteps. induction Hsteps.
+  - set_solver.
+  - pose proof (step_fv_subset _ _ H) as Hfv.
+    set_solver.
+Qed.
+
+Lemma steps_closed_result e v :
+  closed_tm e →
+  e →* tret v →
+  closed_value v.
+Proof.
+  intros [Hclosed Hlc] Hsteps.
+  split.
+  - pose proof (steps_fv_subset _ _ Hsteps) as Hfv.
+    simpl in Hfv. change (fv_tm e = ∅) in Hclosed.
+    rewrite Hclosed in Hfv. set_solver.
+  - pose proof (steps_regular2 _ _ Hsteps) as Hret.
+    by apply lc_ret_iff_value in Hret.
+Qed.
+
+Lemma msubst_closed_tm σ e :
+  store_closed σ →
+  lc_tm e →
+  stale e ⊆ dom σ →
+  closed_tm (m{σ} e).
+Proof.
+  intros [Hclosed Hlc_env] Hlc Hcover.
+  split.
+  - pose proof (msubst_fv_delete_tm σ e Hclosed) as Hfv.
+    apply leibniz_equiv. set_solver.
+  - apply msubst_lc; assumption.
+Qed.
+
 Lemma value_steps_self v e :
   tret v →* e → e = tret v.
 Proof. apply val_steps_self. Qed.
@@ -120,6 +186,19 @@ Proof. apply step_preserves_type. Qed.
 Lemma basic_steps_preservation Γ e e' T :
   Γ ⊢ₑ e ⋮ T → e →* e' → Γ ⊢ₑ e' ⋮ T.
 Proof. apply steps_preserves_type. Qed.
+
+Lemma basic_steps_result_closed e v T :
+  ∅ ⊢ₑ e ⋮ T →
+  e →* tret v →
+  stale v = ∅.
+Proof.
+  intros Hty Hsteps.
+  pose proof (basic_steps_preservation ∅ e (tret v) T Hty Hsteps) as Hret.
+  inversion Hret; subst.
+  match goal with
+  | H : ∅ ⊢ᵥ v ⋮ _ |- _ => exact (basic_typing_closed_value v _ H)
+  end.
+Qed.
 
 Lemma beta_step_regular s body v :
   lc_tm (tapp (vlam s body) v) →
@@ -182,6 +261,17 @@ Proof.
     + eapply IHHsteps1; eauto.
 Qed.
 
+Lemma reduction_lete_msubst_intro σ e1 e2 vx v :
+  body_tm (msubst σ e2) →
+  msubst σ e1 →* tret vx →
+  open_tm 0 vx (msubst σ e2) →* tret v →
+  msubst σ (tlete e1 e2) →* tret v.
+Proof.
+  intros Hbody Hsteps1 Hsteps2.
+  rewrite msubst_lete.
+  eapply reduction_lete_intro; eauto.
+Qed.
+
 Lemma reduction_lete_iff e1 e2 v :
   body_tm e2 →
   tlete e1 e2 →* tret v ↔
@@ -192,6 +282,51 @@ Proof.
   - apply reduction_lete.
   - intros [vx [H1 H2]].
     eapply reduction_lete_intro; eauto.
+Qed.
+
+(** ** Result view of evaluation
+
+    [steps e (tret v)] remains a relation even though primitive reduction is
+    deterministic.  These helpers keep let-result reasoning relational, which
+    avoids committing higher layers to a particular evaluator function. *)
+
+Definition reaches_result (e : tm) (v : value) : Prop :=
+  e →* tret v.
+
+Definition result_set (e : tm) : value → Prop :=
+  reaches_result e.
+
+Definition all_results (e : tm) (P : value → Prop) : Prop :=
+  ∀ v, reaches_result e v → P v.
+
+Definition let_result_set (e1 e2 : tm) : value → Prop :=
+  λ v, ∃ vx,
+    reaches_result e1 vx ∧
+    reaches_result (open_tm 0 vx e2) v.
+
+Lemma let_result_decompose e1 e2 v :
+  reaches_result (tlete e1 e2) v →
+  let_result_set e1 e2 v.
+Proof. apply reduction_lete. Qed.
+
+Lemma let_result_compose e1 e2 v :
+  body_tm e2 →
+  let_result_set e1 e2 v →
+  reaches_result (tlete e1 e2) v.
+Proof.
+  intros Hbody [vx [H1 H2]].
+  eapply reduction_lete_intro; eauto.
+Qed.
+
+Lemma all_results_let_intro e1 e2 P :
+  body_tm e2 →
+  (∀ vx, reaches_result e1 vx →
+    all_results (open_tm 0 vx e2) P) →
+  all_results (tlete e1 e2) P.
+Proof.
+  intros _ Hall v Hlet.
+  apply let_result_decompose in Hlet as [vx [H1 H2]].
+  exact (Hall vx H1 v H2).
 Qed.
 
 Lemma reduction_beta s body vx v :
@@ -228,6 +363,40 @@ Proof.
   intros Hbody Hlc. split.
   - apply reduction_beta; auto.
   - apply reduction_beta_intro; auto.
+Qed.
+
+Lemma reduction_prim_intro op c c' :
+  prim_step op c c' →
+  tprim op (vconst c) →* tret (vconst c').
+Proof.
+  intros Hop.
+  apply steps_R. apply Step_head. apply HS_Op; [exact Hop |].
+  constructor. constructor.
+Qed.
+
+Lemma reduction_prim_const op c v :
+  tprim op (vconst c) →* tret v →
+  ∃ c', prim_step op c c' ∧ v = vconst c'.
+Proof.
+  intros Hsteps.
+  destruct (steps_inv _ _ Hsteps) as [[Heq _] | [e' [Hstep Hrest]]].
+  - discriminate.
+  - inversion Hstep; subst.
+    inversion H; subst; try discriminate.
+    apply val_steps_self in Hrest.
+    inversion Hrest. subst. eauto.
+Qed.
+
+Lemma reduction_prim_fvar_msubst_const σ op x c v :
+  closed_env σ →
+  σ !! x = Some (vconst c) →
+  m{σ} (tprim op (vfvar x)) →* tret v →
+  ∃ c', prim_step op c c' ∧ v = vconst c'.
+Proof.
+  intros Hclosed Hlookup Hsteps.
+  rewrite (msubst_prim_fvar_lookup_closed σ op x (vconst c) Hclosed Hlookup)
+    in Hsteps.
+  apply reduction_prim_const. exact Hsteps.
 Qed.
 
 Lemma reduction_fix Tf vf vx v :

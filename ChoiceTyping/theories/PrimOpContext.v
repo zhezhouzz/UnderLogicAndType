@@ -4,7 +4,7 @@
     unary type [prim_op_type]; this layer refines it with over-approximate
     argument qualifiers and precise result qualifiers. *)
 
-From ChoiceType Require Export Sugar BasicTyping.
+From ChoiceType Require Export Sugar BasicTyping Denotation.
 
 Record primop_sig := mk_primop_sig {
   prim_arg_base : base_ty;
@@ -29,8 +29,25 @@ Definition primop_ctx : Type := prim_op → primop_sig.
 Definition primop_erasure_ok (op : prim_op) (sig : primop_sig) : Prop :=
   prim_op_type op = (sig.(prim_arg_base), sig.(prim_ret_base)).
 
-Definition primop_semantic_ok (_op : prim_op) (_sig : primop_sig) : Prop :=
-  True.
+(** Paper-level semantic well-formedness for primitive operators.
+
+    In the paper this is written as
+
+      [Φ(op) = x : {b_x | φ_x} -> precise(b, φ)]
+      and [⊨ ⟦x : {b_x | φ_x}⟧ ⇔ ⟦precise(b, φ)⟧ (op x)].
+
+    Our CoreLang primitive operations are unary and the application rule only
+    accepts atom arguments, so the specification quantifies over the atom used
+    as the argument coordinate.  The two entailments record the paper's
+    equivalence: the primitive result denotation is exactly characterized by
+    its argument context. *)
+Definition primop_semantic_ok (op : prim_op) (sig : primop_sig) : Prop :=
+  ∀ x : atom,
+    let Γx := CtxBind x (primop_arg_ty sig) in
+    (⟦CtxBind x (primop_arg_ty sig)⟧ ⊫
+      denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x))) ∧
+    (denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x)) ⊫
+      ⟦CtxBind x (primop_arg_ty sig)⟧).
 
 Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
   wf_primop_erasure : primop_erasure_ok op sig;
@@ -107,6 +124,10 @@ Proof.
   simpl. constructor; constructor; try reflexivity; apply basic_qualifier_body_top.
 Qed.
 
+Lemma default_primop_ctx_semantic_ok op :
+  primop_semantic_ok op (default_primop_ctx op).
+Proof. Admitted.
+
 Lemma default_primop_ctx_wf :
   wf_primop_ctx default_primop_ctx.
 Proof.
@@ -114,5 +135,5 @@ Proof.
   - apply default_primop_ctx_erasure_ok.
   - apply default_primop_ctx_arg_basic.
   - apply default_primop_ctx_result_basic.
-  - exact I.
+  - apply default_primop_ctx_semantic_ok.
 Qed.

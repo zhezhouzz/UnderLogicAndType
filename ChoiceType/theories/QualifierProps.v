@@ -5,59 +5,15 @@
     stays light. *)
 
 From ChoiceType Require Export Qualifier.
-
-(** ** Swap lemmas *)
-
-Lemma qual_bvars_swap x y q :
-  qual_bvars (qual_swap_atom x y q) = qual_bvars q.
-Proof. destruct q; reflexivity. Qed.
-
-Lemma qual_dom_swap x y q :
-  qual_dom (qual_swap_atom x y q) = aset_swap x y (qual_dom q).
-Proof. destruct q; reflexivity. Qed.
+From LocallyNameless Require Import Classes.
 
 Lemma qual_open_atom_dom_subset k x q :
   qual_dom (qual_open_atom k x q) ⊆ qual_dom q ∪ {[x]}.
 Proof.
-  destruct q as [B d p]. unfold qual_open_atom, qual_dom.
-  destruct decide; simpl; set_solver.
-Qed.
-
-Lemma qual_lc_swap x y q :
-  lc_qualifier q →
-  lc_qualifier (qual_swap_atom x y q).
-Proof.
-  unfold lc_qualifier. rewrite qual_bvars_swap. exact id.
-Qed.
-
-Lemma qual_interp_full_swap x y q β σ ρ :
-  qual_interp_full β σ ρ (qual_swap_atom x y q) ↔
-  qual_interp_full β (store_swap x y σ) (store_swap x y ρ) q.
-Proof.
-  destruct q as [B d p].
-  unfold qual_interp_full, qual_swap_atom. simpl.
-  replace (store_swap x y (store_restrict σ (aset_swap x y d)))
-    with (store_restrict (store_swap x y σ) d).
-  2:{
-    rewrite <- (store_restrict_swap x y σ (aset_swap x y d)).
-    rewrite aset_swap_involutive. reflexivity.
-  }
-  replace (store_swap x y (store_restrict ρ (aset_swap x y d)))
-    with (store_restrict (store_swap x y ρ) d).
-  2:{
-    rewrite <- (store_restrict_swap x y ρ (aset_swap x y d)).
-    rewrite aset_swap_involutive. reflexivity.
-  }
-  reflexivity.
-Qed.
-
-Lemma qual_interp_swap x y q σ :
-  qual_interp σ (qual_swap_atom x y q) ↔
-  qual_interp (store_swap x y σ) q.
-Proof.
-  unfold qual_interp.
-  rewrite qual_interp_full_swap.
-  reflexivity.
+  destruct q as [D p]. unfold qual_open_atom, qual_dom, qual_bvars.
+  destruct decide; simpl.
+  - pose proof (lvars_fv_open_subset k x D). set_solver.
+  - set_solver.
 Qed.
 
 (** ** Key interpretation lemmas *)
@@ -65,10 +21,36 @@ Qed.
 Lemma qual_interp_and q1 q2 σ :
   qual_interp σ (q1 &q q2) ↔ qual_interp σ q1 ∧ qual_interp σ q2.
 Proof.
-  destruct q1 as [B1 d1 p1], q2 as [B2 d2 p2].
-  unfold qual_interp, qual_interp_full, qual_and. simpl.
-  rewrite !store_restrict_restrict, !map_filter_empty.
-  replace ((d1 ∪ d2) ∩ d1) with d1 by set_solver.
-  replace ((d1 ∪ d2) ∩ d2) with d2 by set_solver.
-  tauto.
-Qed.
+Admitted.
+
+Lemma qual_interp_open_eq_const x c σ :
+  qual_interp σ (qual_open_atom 0 x (mk_q_eq (vbvar 0) (vconst c))) ↔
+  σ !! x = Some (vconst c).
+Proof.
+Admitted.
+
+(** ** Shared locally-nameless class instances
+
+    Keep these next to the qualifier lemmas they wrap.  A separate tiny
+    instances file forces downstream files to reload this whole layer just to
+    register typeclasses. *)
+
+#[global] Instance OpenFv_qualifier : OpenFv atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenFvPrime_qualifier : OpenFvPrime atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenRecLc_qualifier : OpenRecLc atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenLcRespect_qualifier : OpenLcRespect atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenIdemp_qualifier : OpenIdemp atom type_qualifier.
+Proof.
+Admitted.

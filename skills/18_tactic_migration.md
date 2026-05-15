@@ -47,6 +47,23 @@ case where no decidable branch remains. These are better prefixes than a direct
 var_dec_set_solver.
 ```
 
+Use CoqHammer tactics, especially `hauto`, only for short structural proof
+plumbing: projecting fields out of conjunctions/records, rebuilding simple
+iff/entailment goals, or closing small existential/constructor goals after the
+important semantic rewrite has already happened.  Prefer an explicit local
+unfold before Hammer when the target is hidden behind a wrapper definition:
+
+```coq
+Proof. unfold sub_type, sub_type_under. hauto. Qed.
+Proof. unfold formula_equiv, entails. hauto. Qed.
+```
+
+Do not put `hauto` in broad solver tactics such as `my_set_solver`,
+`store_solver`, or `resource_solver`.  Those tactics are called on many small
+side conditions, and Hammer search there can quietly increase build time.  If
+`hauto` fails, first check whether a local definition or notation needs to be
+unfolded; if it still fails, keep the explicit proof script.
+
 Use `auto_apply` or `auto_eapply` when a mutual induction hypothesis has the
 same conclusion head as the goal. If several IHs have similar conclusions, name
 and apply the intended one explicitly.
@@ -106,6 +123,70 @@ my_map_simpl; my_set_simpl.
 
 Then inspect the remaining goal. Do not blindly replace every `set_solver` with
 `my_set_solver`; use it where normalization helps.
+
+If a denotation/freshness proof contains `fresh_forall`, `expr_logic_qual`, or
+`basic_world_formula`, avoid sending the whole `formula_fv` goal to
+`set_solver`. First peel the binder representatives by hand:
+
+```coq
+apply elem_of_difference in Hz as [Hz Hy].
+```
+
+For nested binders such as the arrow/wand denotation, peel in the syntactic
+order that `formula_fv` actually produced.  The outer representative is usually
+an outer difference, but the inner representative may sit only on the body side
+of a union:
+
+```coq
+apply elem_of_difference in Hz as [Hz Hy].
+apply elem_of_union in Hz as [Hzexpr | Hzbody].
+- (* expression-result atom *)
+  ...
+- apply elem_of_difference in Hzbody as [Hzbody Hx].
+  ...
+```
+
+This is much faster than asking `set_solver` to infer the nesting.  If the
+representative came from `fresh_for`, also record the freshness explicitly:
+
+```coq
+assert (Hy : y ∉ fv_tm e)
+  by (subst y; pose proof (fresh_for_not_in (...)); set_solver).
+```
+
+Then unfold only the atom whose stale set is opaque:
+
+```coq
+unfold expr_logic_qual in Hzexpr; simpl in Hzexpr.
+unfold stale, stale_logic_qualifier, lqual_dom in Hzexpr.
+change (stale e) with (fv_tm e) in Hzexpr.
+```
+
+For `basic_world_formula`, use the same targeted unfold on the hypothesis
+being analyzed. This keeps `set_solver` away from shallow embedded predicates
+and large `match decide` terms produced by qualifier opening.
+
+When the denotation is a small recurring shape, name the body before proving
+scope.  For example, the constant proof uses bodies such as:
+
+```coq
+Definition const_over_body Σ c ν := FImpl ... .
+```
+
+Then prove a footprint lemma:
+
+```coq
+Lemma const_over_body_fv_subset Σ c ν :
+  formula_fv (const_over_body Σ c ν) ⊆ {[ν]}.
+```
+
+The outer `fresh_forall` scope proof can then use the footprint lemma plus
+`formula_fv_rename_atom`, instead of unfolding the whole denotation.  This is
+much faster and avoids `set_solver` looping on nested shallow qualifier
+predicates.  If a proof still exposes `if decide (...) then ... else ...` from
+`qual_open_atom`, destruct the specific `decide` and immediately re-unfold only
+`stale`/`stale_logic_qualifier`; do not leave a large `set_solver` to discover
+that normal form by itself.
 
 If `set_solver!!` solved a side condition before but now fails, try
 `set_solver!` or plain `set_solver`. The aggressive pruning can remove a

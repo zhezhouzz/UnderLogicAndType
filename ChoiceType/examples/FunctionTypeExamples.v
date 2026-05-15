@@ -3,10 +3,10 @@
     Operational witnesses for the function-type readings discussed in the
     paper overview and in the "Simulate different reasoning styles" corollary.
 
-    The file deliberately proves CoreLang reduction facts rather than full
-    [has_choice_type] theorems; the typing/subtyping proof layer lives outside
-    [ChoiceType].  Each block records which paper type shape the function is
-    intended to satisfy or refute. *)
+    The core language is now deterministic: examples use constants, unary
+    primitive operations, and ordinary boolean matching.  The file deliberately
+    proves CoreLang reduction facts rather than full [has_choice_type]
+    theorems; the typing/subtyping proof layer lives outside [ChoiceType]. *)
 
 From CoreLang Require Import Sugar.
 
@@ -30,17 +30,15 @@ Definition fn_const0 : value :=
 Definition fn_const1 : value :=
   vlam nat_ty (tret one).
 
-(** [λ x. nat_gen true] -- the result is independent of the argument. *)
-Definition fn_nat_gen : value :=
-  vlam nat_ty tnat_gen.
+(** [λ x. x + 1] *)
+Definition fn_plus1 : value :=
+  vlam nat_ty (tprim op_plus1 (vbvar 0)).
 
 (** [λ x. if x == 0 then 0 else 1].
 
     This is the Nat/Bool-test analogue of the total dependency example in the
-    overview.  It is not integer absolute value, but it exposes the same
-    lesson for this core calculus: the result is determined by information
-    about the argument, so the argument and result should not be treated as
-    separated under-complete draws. *)
+    overview.  It exposes that the result is determined by information about
+    the argument. *)
 Definition fn_iszero : value :=
   vlam nat_ty
     (tlete (tprim op_eq0 (vbvar 0))
@@ -49,7 +47,7 @@ Definition fn_iszero : value :=
 Definition app (f x : value) : tm := tapp f x.
 
 Ltac solve_lc :=
-  cbn; repeat (constructor || eassumption || apply lc_tbool_gen || apply lc_tnat_gen).
+  cbn; repeat (constructor || eassumption).
 
 Lemma body_ret_bvar0 :
   body_tm (tret (vbvar 0)).
@@ -67,10 +65,10 @@ Proof.
   constructor. exact Hv.
 Qed.
 
-Lemma body_tnat_gen :
-  body_tm tnat_gen.
+Lemma body_tprim_plus1 :
+  body_tm (tprim op_plus1 (vbvar 0)).
 Proof.
-  exists ∅. intros x _. cbn. apply lc_tnat_gen.
+  exists ∅. intros x _. solve_lc.
 Qed.
 
 Lemma body_match_zero_one :
@@ -98,8 +96,8 @@ Proof. unfold fn_const0. apply lc_lam_iff_body. apply body_ret_closed. unfold ze
 Lemma lc_fn_const1 : lc_value fn_const1.
 Proof. unfold fn_const1. apply lc_lam_iff_body. apply body_ret_closed. unfold one, vnat. solve_lc. Qed.
 
-Lemma lc_fn_nat_gen : lc_value fn_nat_gen.
-Proof. unfold fn_nat_gen. apply lc_lam_iff_body. apply body_tnat_gen. Qed.
+Lemma lc_fn_plus1 : lc_value fn_plus1.
+Proof. unfold fn_plus1. apply lc_lam_iff_body. apply body_tprim_plus1. Qed.
 
 Lemma lc_fn_iszero : lc_value fn_iszero.
 Proof.
@@ -138,14 +136,23 @@ Proof.
   - cbn. apply Steps_refl. solve_lc.
 Qed.
 
-Lemma fn_nat_gen_reaches arg n :
-  app fn_nat_gen (vnat arg) →* tret (vnat n).
+Lemma op_plus1_result n :
+  tprim op_plus1 (vnat n) →* tret (vnat (S n)).
 Proof.
-  unfold app, fn_nat_gen.
-  eapply reduction_beta_intro.
-  - apply body_tnat_gen.
+  unfold vnat.
+  apply steps_R. apply Step_head. eapply HS_Op.
+  - apply Prim_plus1.
   - solve_lc.
-  - cbn. apply tnat_gen_reaches.
+Qed.
+
+Lemma fn_plus1_reaches n :
+  app fn_plus1 (vnat n) →* tret (vnat (S n)).
+Proof.
+  unfold app, fn_plus1.
+  eapply reduction_beta_intro.
+  - apply body_tprim_plus1.
+  - solve_lc.
+  - cbn. apply op_plus1_result.
 Qed.
 
 Lemma op_eq0_zero_true :
@@ -194,9 +201,9 @@ Proof.
     + cbn. eapply reduction_match_false_intro; solve_lc.
 Qed.
 
-(** ** Corollary table witnesses and refutations
+(** ** Corollary table witnesses and refutations *)
 
-    Over -> Over, ordinary refinement safety:
+(** Over -> Over, ordinary refinement safety:
       [x:{Nat|⊤} -> {Nat|ν=0}]
     [fn_const0] is the positive example; [fn_const1] refutes it by returning
     [1] on every input. *)
@@ -222,16 +229,11 @@ Proof. apply fn_const0_reaches. Qed.
 
 (** Under -> Under, incorrectness-style reading:
       [x:[Nat|⊤] -> [Nat|⊤]]
-    For every desired output, [fn_id] can choose that output as the input.
-    [fn_nat_gen] is another positive example operationally: it can generate
-    every Nat independently of the argument.  [fn_const0] cannot reach [1]. *)
+    In the deterministic core, [fn_id] witnesses any desired output by choosing
+    that output as the input.  [fn_const0] cannot reach [1]. *)
 Example under_under_good_id n :
   app fn_id (vnat n) →* tret (vnat n).
 Proof. apply fn_id_reaches. Qed.
-
-Example under_under_good_nat_gen arg n :
-  app fn_nat_gen (vnat arg) →* tret (vnat n).
-Proof. apply fn_nat_gen_reaches. Qed.
 
 Example under_under_bad_const0_counterexample :
   app fn_const0 one →* tret zero.
@@ -272,9 +274,6 @@ Proof. apply fn_iszero_zero_reaches_zero. Qed.
 
 (** ** Overview insight examples *)
 
-(** Identity correlation: single calls justify the incorrectness-style
-    function reading, but repeated uses of the same argument should not be
-    treated as separated independent draws. *)
 Example id_reaches_one :
   app fn_id one →* tret one.
 Proof. apply fn_id_reaches. Qed.
@@ -283,8 +282,10 @@ Example id_reaches_seven :
   app fn_id seven →* tret seven.
 Proof. apply fn_id_reaches. Qed.
 
-(** Total dependency analogue: [fn_iszero] is total but records dependency
-    between the argument class and the result. *)
+Example plus1_dependency_zero :
+  app fn_plus1 zero →* tret one.
+Proof. apply fn_plus1_reaches. Qed.
+
 Example iszero_dependency_zero :
   app fn_iszero zero →* tret zero.
 Proof. apply fn_iszero_zero_reaches_zero. Qed.
@@ -293,22 +294,9 @@ Example iszero_dependency_one :
   app fn_iszero one →* tret one.
 Proof. apply fn_iszero_one_reaches_one. Qed.
 
-(** Independent generator: the result can be any Nat regardless of the
-    argument.  This is the operational side of the separating-let case where
-    the return can be separated from an outer under-complete variable. *)
-Example nat_gen_independent_of_zero n :
-  app fn_nat_gen zero →* tret (vnat n).
-Proof. apply fn_nat_gen_reaches. Qed.
+(** Higher-order branching location is now represented by ordinary boolean
+    functions. *)
 
-Example nat_gen_independent_of_one n :
-  app fn_nat_gen one →* tret (vnat n).
-Proof. apply fn_nat_gen_reaches. Qed.
-
-(** Higher-order branching location.
-
-    [g1] branches at function granularity; [g2] is one function whose body
-    branches at return granularity.  The paper keeps this distinction visible
-    with [CTSum] at function types. *)
 Definition unit_arg : value := vtrue.
 
 Definition g_true : value :=
@@ -317,11 +305,8 @@ Definition g_true : value :=
 Definition g_false : value :=
   vlam bool_ty (tret vfalse).
 
-Definition g1 : tm :=
-  tchoice (tret g_true) (tret g_false).
-
 Definition g2 : value :=
-  vlam bool_ty (tchoice (tret vtrue) (tret vfalse)).
+  vlam bool_ty (tmatch (vbvar 0) (tret vtrue) (tret vfalse)).
 
 Lemma lc_g_true : lc_value g_true.
 Proof.
@@ -336,33 +321,15 @@ Proof.
 Qed.
 
 Lemma body_g2 :
-  body_tm (tchoice (tret vtrue) (tret vfalse)).
+  body_tm (tmatch (vbvar 0) (tret vtrue) (tret vfalse)).
 Proof.
   exists ∅. intros x _. cbn.
-  apply lc_tchoice; unfold vtrue, vfalse; solve_lc.
+  unfold vtrue, vfalse. solve_lc.
 Qed.
 
 Lemma lc_g2 : lc_value g2.
 Proof.
   unfold g2. apply lc_lam_iff_body. apply body_g2.
-Qed.
-
-Example g1_can_choose_true_function :
-  g1 →* tret g_true.
-Proof.
-  unfold g1. apply tchoice_true_result.
-  - constructor. apply lc_g_true.
-  - constructor. apply lc_g_false.
-  - apply Steps_refl. constructor. apply lc_g_true.
-Qed.
-
-Example g1_can_choose_false_function :
-  g1 →* tret g_false.
-Proof.
-  unfold g1. apply tchoice_false_result.
-  - constructor. apply lc_g_true.
-  - constructor. apply lc_g_false.
-  - apply Steps_refl. constructor. apply lc_g_false.
 Qed.
 
 Example g_true_call_returns_true :
@@ -385,22 +352,22 @@ Proof.
   - cbn. apply Steps_refl. solve_lc.
 Qed.
 
-Example g2_call_can_return_true :
-  app g2 unit_arg →* tret vtrue.
+Example g2_call_true_returns_true :
+  app g2 vtrue →* tret vtrue.
 Proof.
-  unfold app, g2, unit_arg, bool_ty.
+  unfold app, g2, bool_ty.
   eapply reduction_beta_intro.
   - apply body_g2.
   - solve_lc.
-  - cbn. apply tchoice_true_result; solve_lc.
+  - cbn. eapply reduction_match_true_intro; solve_lc.
 Qed.
 
-Example g2_call_can_return_false :
-  app g2 unit_arg →* tret vfalse.
+Example g2_call_false_returns_false :
+  app g2 vfalse →* tret vfalse.
 Proof.
-  unfold app, g2, unit_arg, bool_ty.
+  unfold app, g2, bool_ty.
   eapply reduction_beta_intro.
   - apply body_g2.
   - solve_lc.
-  - cbn. apply tchoice_false_result; solve_lc.
+  - cbn. eapply reduction_match_false_intro; solve_lc.
 Qed.

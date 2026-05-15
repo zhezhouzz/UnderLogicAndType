@@ -1,5 +1,9 @@
 # Skill: ^t^ 接受 atom，不接受 value；{k ~> v} 接受 value
 
+> Priority: P3 historical/reference.  Prefer the current generic open/typeclass
+> notation in the codebase.  This file is mainly useful when reading older
+> scripts that still mention category-specific open notation.
+
 ## 两种 open notation 的区别
 
 ```coq

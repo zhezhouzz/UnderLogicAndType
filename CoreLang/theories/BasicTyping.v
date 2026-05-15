@@ -17,8 +17,6 @@ From CoreLang Require Import LocallyNamelessExtra.
 Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   match op with
   | op_eq0 => (TNat, TBool)
-  | op_bool_gen => (TBool, TBool)
-  | op_nat_gen => (TBool, TNat)
   | op_plus1 => (TNat, TNat)
   | op_minus1 => (TNat, TNat)
   end.
@@ -78,6 +76,7 @@ where "Γ '⊢ᵥ' v '⋮' T" := (value_has_type Γ v T)
 
 Scheme value_has_type_mut := Induction for value_has_type Sort Prop
   with tm_has_type_mut    := Induction for tm_has_type    Sort Prop.
+Combined Scheme has_type_mutind from value_has_type_mut, tm_has_type_mut.
 
 #[global] Hint Constructors value_has_type tm_has_type : core.
 

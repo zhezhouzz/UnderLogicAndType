@@ -1,5 +1,9 @@
 # Skill: Mutual Inductive 的 EqDecision 无法自动证明
 
+> Priority: P3 historical/reference.  This was acceptable during skeleton
+> development, but new core infrastructure should avoid adding permanent
+> `Admitted` instances unless the user explicitly approves that tradeoff.
+
 ## 问题
 
 对于普通的 inductive type，`solve_decision` 可以自动推导 `EqDecision`。

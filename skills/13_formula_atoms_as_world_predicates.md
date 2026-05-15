@@ -1,5 +1,10 @@
 # Skill: Formula atoms as logic qualifiers
 
+> Priority: P3 historical/reference.  This describes the pre-LN / early
+> shallow-atom route.  Current ChoiceLogic is being refactored around
+> locally-nameless formulas, multi-fiber variables, and atom syntax sugar such
+> as `FStoreResourceAtom`; do not use this as the current design source.
+
 ## Current convention
 
 `ChoiceLogic.Formula` is not parameterized by an arbitrary atom type.  Atomic

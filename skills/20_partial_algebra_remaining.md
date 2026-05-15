@@ -1,5 +1,9 @@
 # Partial Choice Algebra Remaining Work
 
+> Priority: P3 historical/reference.  This records an old branch checkpoint.
+> Check the current `ChoiceAlgebra` and `ChoiceLogic` files before acting on any
+> listed "remaining" work.
+
 This note records the unfinished proof work left on
 `codex/partial-choice-algebra` before switching to the instantiation migration.
 
@@ -36,10 +40,6 @@ This note records the unfinished proof work left on
   - `star_wand_adjunction`.
     Recheck the statement against the current semantics before proving; the
     exact adjunction may need a different implication shape.
-
-- `ChoiceLogic/theories/ANF.v`
-  - Collapse lemmas are intentionally isolated from the main proof path.  They
-    can remain admitted while the core algebra and typing work proceeds.
 
 ## Proof Lessons
 
