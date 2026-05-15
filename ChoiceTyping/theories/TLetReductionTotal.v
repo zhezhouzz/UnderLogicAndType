@@ -4,7 +4,7 @@
     type-denotation reduction proof stays in [TLetReduction]. *)
 
 From ChoiceTyping Require Export TLetReduction.
-From ChoiceTyping Require Import Auxiliary LetResultWorld Naming ResultWorldClosed
+From ChoiceTyping Require Import LetResultWorld Naming ResultWorldClosed
   SoundnessCommon TLetTotal.
 
 Import Tactics.
