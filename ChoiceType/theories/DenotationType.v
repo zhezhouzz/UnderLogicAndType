@@ -180,7 +180,7 @@ Lemma formula_fv_FResultBasicWorld Σ b D :
   lvars_fv (lty_env_bvar_scope Σ ∪ D ∪ {[LVBound 0]}).
 Proof.
   unfold FResultBasicWorld.
-  apply formula_fv_FStoreResourceAtomVars.
+  apply formula_fv_FStoreResourceAtom_lvars.
 Qed.
 
 Lemma formula_fv_FResultBasicWorld_atom_env_subset Σ b D :

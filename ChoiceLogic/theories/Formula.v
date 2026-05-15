@@ -864,9 +864,9 @@ Qed.
 
 Lemma res_models_with_store_resource_atom_vars_intro
     (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
-  formula_scoped_in_world ρ m (FResourceAtomVars D P) →
+  formula_scoped_in_world ρ m (FResourceAtom D P) →
   P (res_restrict m (lvars_fv D)) →
-  res_models_with_store ρ m (FResourceAtomVars D P).
+  res_models_with_store ρ m (FResourceAtom D P).
 Proof.
   unfold res_models_with_store. simpl.
   intros Hscope HP. split; [exact Hscope |].
@@ -876,9 +876,9 @@ Qed.
 
 Lemma res_models_with_store_resource_atom_vars_elim
     (ρ : StoreT) (m : WfWorldT) D (P : WfWorldT → Prop) :
-  res_models_with_store ρ m (FResourceAtomVars D P) →
+  res_models_with_store ρ m (FResourceAtom D P) →
   ∃ m0,
-    formula_scoped_in_world ρ m0 (FResourceAtomVars D P) ∧
+    formula_scoped_in_world ρ m0 (FResourceAtom D P) ∧
     P (res_restrict m0 (lvars_fv D)) ∧
     m0 ⊑ m.
 Proof.
@@ -919,9 +919,9 @@ Qed.
 Lemma res_models_with_store_store_resource_atom_vars_intro
     (ρ : StoreT) (m : WfWorldT) D
     (P : gmap nat atom → StoreT → WfWorldT → Prop) :
-  formula_scoped_in_world ρ m (FStoreResourceAtomVars D P) →
+  formula_scoped_in_world ρ m (FStoreResourceAtom D P) →
   P ∅ (store_restrict ρ (lvars_fv D)) (res_restrict m (lvars_fv D)) →
-  res_models_with_store ρ m (FStoreResourceAtomVars D P).
+  res_models_with_store ρ m (FStoreResourceAtom D P).
 Proof.
   unfold res_models_with_store. simpl.
   intros Hscope HP. split; [exact Hscope |].
@@ -932,9 +932,9 @@ Qed.
 Lemma res_models_with_store_store_resource_atom_vars_elim
     (ρ : StoreT) (m : WfWorldT) D
     (P : gmap nat atom → StoreT → WfWorldT → Prop) :
-  res_models_with_store ρ m (FStoreResourceAtomVars D P) →
+  res_models_with_store ρ m (FStoreResourceAtom D P) →
   ∃ m0,
-    formula_scoped_in_world ρ m0 (FStoreResourceAtomVars D P) ∧
+    formula_scoped_in_world ρ m0 (FStoreResourceAtom D P) ∧
     P ∅ (store_restrict ρ (lvars_fv D)) (res_restrict m0 (lvars_fv D)) ∧
     m0 ⊑ m.
 Proof.

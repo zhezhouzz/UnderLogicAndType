@@ -40,7 +40,7 @@ Proof.
   - unfold FBasicTypingIn, res_models.
     eapply res_models_with_store_store_resource_atom_vars_intro.
     + unfold formula_scoped_in_world.
-	      rewrite formula_fv_FStoreResourceAtomVars.
+	      rewrite formula_fv_FStoreResourceAtom_lvars.
 	      rewrite !atom_env_to_lty_env_dom.
 	      rewrite lvars_fv_union, !lvars_fv_of_atoms.
       rewrite dom_empty_L. set_solver.
@@ -50,7 +50,7 @@ Proof.
     + unfold FClosedResourceIn, res_models.
       eapply res_models_with_store_resource_atom_vars_intro.
       * unfold formula_scoped_in_world.
-        rewrite formula_fv_FResourceAtomVars.
+        rewrite formula_fv_FResourceAtom_lvars.
         rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
         rewrite dom_empty_L. set_solver.
       * rewrite atom_env_to_lty_env_atom_dom.
@@ -61,7 +61,7 @@ Proof.
       * unfold FStrongTotalIn, res_models.
         eapply res_models_with_store_store_resource_atom_vars_intro.
         -- unfold formula_scoped_in_world.
-           rewrite formula_fv_FStoreResourceAtomVars.
+           rewrite formula_fv_FStoreResourceAtom_lvars.
            rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
            rewrite dom_empty_L. set_solver.
         -- rewrite atom_env_to_lty_env_atom_dom.
@@ -137,7 +137,7 @@ Proof.
     unfold formula_scoped_in_world in Hscope.
     rewrite dom_empty_L in Hscope.
     apply Hscope. apply elem_of_union. right.
-    rewrite formula_fv_FResourceAtomVars.
+    rewrite formula_fv_FResourceAtom_lvars.
     rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz.
   - etrans; [apply res_restrict_le | exact Hle].
   - exact Hclosed.
@@ -179,7 +179,7 @@ Proof.
     { unfold formula_scoped_in_world in Hscope.
       rewrite dom_empty_L in Hscope.
       intros z Hz. apply Hscope. apply elem_of_union. right.
-      rewrite formula_fv_FStoreResourceAtomVars.
+      rewrite formula_fv_FStoreResourceAtom_lvars.
       rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz. }
     assert (HσD :
       (res_restrict m0 (dom Σ) : World) (store_restrict σ (dom Σ))).
