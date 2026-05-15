@@ -100,7 +100,7 @@ Lemma denot_ctx_under_formula_fv_subset Σ Γ :
 Proof.
   induction Γ in Σ |- *; simpl.
   - set_solver.
-  - pose proof (denot_ty_on_formula_fv_subset
+  - pose proof (denot_ty_on_fv_subset
       (<[x:=erase_ty τ]> Σ) τ (tret (vfvar x))) as Hτ.
     intros z Hz. apply Hτ in Hz. simpl in Hz. set_solver.
   - pose proof (IHΓ1 Σ) as H1.

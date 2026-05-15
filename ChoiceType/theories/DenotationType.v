@@ -504,7 +504,7 @@ Proof.
   - exact Hagree.
 Qed.
 
-Lemma FExprContIn_lty_env_formula_fv_subset
+Lemma FExprContIn_fv_lty_env
     (Σ : lty_env) e (Q : FQ) :
   formula_fv (FExprContIn Σ e Q) ⊆ lty_env_atom_dom Σ ∪ formula_fv Q.
 Proof.
@@ -532,7 +532,7 @@ Qed.
     layer: typing proofs should consume these regularity lemmas rather than
     unfolding the formula generated for each type constructor. *)
 
-Lemma denot_ty_obligations_formula_fv_subset (Σe Στ : lty_env) τ e φ S :
+Lemma denot_ty_obligations_fv_subset (Σe Στ : lty_env) τ e φ S :
   lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ formula_fv φ ⊆ S →
   formula_fv (denot_ty_obligations Σe Στ τ e φ) ⊆ S.
 Proof.
@@ -547,16 +547,16 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_ty_lvar_formula_fv_subset Σe Στ τ e :
+Lemma denot_ty_lvar_fv_subset Σe Στ τ e :
   formula_fv (denot_ty_lvar Σe Στ τ e) ⊆
     lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
 Proof.
   induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
     |τ1 IH1 τ2 IH2|τx IHx τ IH|τx IHx τ IH] in Σe, Στ, e |- *;
     cbn [fv_cty denot_ty_lvar denot_ty_body_lvar];
-    apply denot_ty_obligations_formula_fv_subset; simpl.
+    apply denot_ty_obligations_fv_subset; simpl.
   - destruct φ as [D p]. cbn [qual_vars qual_dom].
-    pose proof (FExprContIn_lty_env_formula_fv_subset Σe e
+    pose proof (FExprContIn_fv_lty_env Σe e
       (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
         (FFibVars (qual_vars (qual D p))
           (FOver (FTypeQualifier (qual D p)))))) as Hcont.
@@ -569,7 +569,7 @@ Proof.
     cbn [qual_dom] in Hcont.
     set_solver.
   - destruct φ as [D p]. cbn [qual_vars qual_dom].
-    pose proof (FExprContIn_lty_env_formula_fv_subset Σe e
+    pose proof (FExprContIn_fv_lty_env Σe e
       (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
         (FFibVars (qual_vars (qual D p))
           (FUnder (FTypeQualifier (qual D p)))))) as Hcont.
@@ -618,53 +618,53 @@ Proof.
     set_solver.
 Qed.
 
-Lemma denot_ty_lvar_body_formula_fv_subset Σe Στ τ e :
+Lemma denot_ty_body_lvar_fv_subset Σe Στ τ e :
   formula_fv (denot_ty_body_lvar Σe Στ τ e) ⊆
     lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
 Proof.
-  pose proof (denot_ty_lvar_formula_fv_subset Σe Στ τ e) as Hfv.
+  pose proof (denot_ty_lvar_fv_subset Σe Στ τ e) as Hfv.
   unfold denot_ty_lvar in Hfv.
   cbn [denot_ty_obligations formula_fv] in Hfv.
   set_solver.
 Qed.
 
-Lemma denot_ty_on_formula_fv_subset Σ τ e :
+Lemma denot_ty_on_fv_subset Σ τ e :
   formula_fv (denot_ty_on Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
   unfold denot_ty_on.
-  pose proof (denot_ty_lvar_formula_fv_subset
+  pose proof (denot_ty_lvar_fv_subset
     (atom_env_to_lty_env Σ) (atom_env_to_lty_env Σ) τ e) as Hfv.
   rewrite !atom_env_to_lty_env_atom_dom in Hfv.
   set_solver.
 Qed.
 
-Lemma denot_ty_body_formula_fv_subset Σ τ e :
+Lemma denot_ty_body_fv_subset Σ τ e :
   formula_fv (denot_ty_body Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
   unfold denot_ty_body.
-  pose proof (denot_ty_lvar_body_formula_fv_subset
+  pose proof (denot_ty_body_lvar_fv_subset
     (atom_env_to_lty_env Σ) (atom_env_to_lty_env Σ) τ e) as Hfv.
   rewrite !atom_env_to_lty_env_atom_dom in Hfv.
   set_solver.
 Qed.
 
-Lemma denot_ty_on_formula_fv_subset_env
+Lemma denot_ty_on_fv_subset_env
     (Σ : gmap atom ty) (τ : choice_ty) e :
   fv_cty τ ⊆ dom Σ →
   formula_fv (denot_ty_on Σ τ e) ⊆ dom Σ.
 Proof.
   intros Hfv.
-  pose proof (denot_ty_on_formula_fv_subset Σ τ e) as Hφ.
+  pose proof (denot_ty_on_fv_subset Σ τ e) as Hφ.
   set_solver.
 Qed.
 
-Lemma denot_ty_body_formula_fv_subset_env
+Lemma denot_ty_body_fv_subset_env
     (Σ : gmap atom ty) (τ : choice_ty) e :
   fv_cty τ ⊆ dom Σ →
   formula_fv (denot_ty_body Σ τ e) ⊆ dom Σ.
 Proof.
   intros Hfv.
-  pose proof (denot_ty_body_formula_fv_subset Σ τ e) as Hφ.
+  pose proof (denot_ty_body_fv_subset Σ τ e) as Hφ.
   set_solver.
 Qed.
 
@@ -672,29 +672,29 @@ Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_cty τ.
 Proof.
   unfold denot_ty, denot_ty_under.
-  pose proof (denot_ty_on_formula_fv_subset ∅ τ e) as Hfv.
+  pose proof (denot_ty_on_fv_subset ∅ τ e) as Hfv.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
 
-Lemma denot_ty_on_formula_fv_env_agree Σ1 Σ2 τ e :
+Lemma denot_ty_on_fv_env_agree Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
   formula_fv (denot_ty_on Σ1 τ e) =
   formula_fv (denot_ty_on Σ2 τ e).
 Proof.
 Admitted.
 
-Lemma denot_ty_under_formula_fv_subset Σ τ e :
+Lemma denot_ty_under_fv_subset Σ τ e :
   formula_fv (denot_ty_under Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
 Proof.
-  apply denot_ty_on_formula_fv_subset.
+  apply denot_ty_on_fv_subset.
 Qed.
 
-Lemma denot_ty_in_ctx_under_formula_fv_subset Σ Γ τ e :
+Lemma denot_ty_in_ctx_under_fv_subset Σ Γ τ e :
   formula_fv (denot_ty_in_ctx_under Σ Γ τ e) ⊆
     dom (erase_ctx_under Σ Γ) ∪ fv_cty τ.
 Proof.
   unfold denot_ty_in_ctx_under.
-  apply denot_ty_on_formula_fv_subset.
+  apply denot_ty_on_fv_subset.
 Qed.
 
 Lemma denot_ty_on_env_fv_subset Σ τ e :
@@ -743,7 +743,7 @@ Lemma denot_ty_under_restrict_fv Σ τ e m :
 Proof.
   intros Hm.
   eapply res_models_kripke.
-  - apply res_restrict_mono. apply denot_ty_under_formula_fv_subset.
+  - apply res_restrict_mono. apply denot_ty_under_fv_subset.
   - apply res_models_restrict_fv. exact Hm.
 Qed.
 

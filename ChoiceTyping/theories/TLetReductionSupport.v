@@ -1,7 +1,7 @@
 (** * ChoiceTyping.TLetReductionSupport
 
     Model-level reduction lemmas for the [tlet] soundness case.
-    The final semantic wrappers stay in [TLetDenotation]. *)
+    The final semantic bridge stays in [TLetDenotation]. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.

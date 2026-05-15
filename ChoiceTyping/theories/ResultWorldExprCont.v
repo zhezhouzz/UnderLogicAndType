@@ -139,7 +139,7 @@ Proof.
       reflexivity.
 Qed.
 
-Lemma let_result_world_on_FExprResultAt_scoped X e ν (n : WfWorld) Hfresh Hresult :
+Lemma FExprResultAt_scoped_let_result_world X e ν (n : WfWorld) Hfresh Hresult :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
   formula_scoped_in_world ∅
@@ -212,7 +212,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma let_result_world_on_models_FExprResult :
+Lemma let_result_world_on_models_FExprResultAt :
   ∀ X e ν (n : WfWorld) Hfresh Hresult,
     fv_tm e ⊆ X →
     lc_tm e →
@@ -350,7 +350,7 @@ Proof.
   - subst mν.
     change (let_result_world_on e ν m Hfresh Hresult
       ⊨ FExprResultAt (dom Σ) e ν).
-    eapply let_result_world_on_models_FExprResult; eauto.
+    eapply let_result_world_on_models_FExprResultAt; eauto.
     rewrite Hdom. set_solver.
 Qed.
 

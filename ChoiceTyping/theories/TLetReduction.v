@@ -1,7 +1,7 @@
 (** * ChoiceTyping.TLetReduction
 
     Type-denotation reduction lemmas for the [tlet] soundness case.
-    The final semantic wrappers stay in [TLetDenotation]. *)
+    The final semantic bridge stays in [TLetDenotation]. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
@@ -536,18 +536,18 @@ Proof.
   split; intros Hmodel.
   - eapply res_models_or_transport_between_worlds; [| | apply (proj1 HIHa) | apply (proj1 HIHb) | exact Hmodel].
     + rewrite Hdom.
-      eapply denot_ty_on_formula_fv_subset_env.
+      eapply denot_ty_on_fv_subset_env.
       eapply basic_choice_ty_fv_subset. exact HbasicA.
     + rewrite Hdom.
-      eapply denot_ty_on_formula_fv_subset_env.
+      eapply denot_ty_on_fv_subset_env.
       eapply basic_choice_ty_fv_subset. exact HbasicB.
   - eapply res_models_or_transport_between_worlds; [| | apply (proj2 HIHa) | apply (proj2 HIHb) | exact Hmodel].
     + rewrite let_result_world_on_dom, Hdom.
-      pose proof (denot_ty_on_formula_fv_subset_env
+      pose proof (denot_ty_on_fv_subset_env
         (<[x:=T1]> Δ) τa (e2 ^^ x) HfvA_insert) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
     + rewrite let_result_world_on_dom, Hdom.
-      pose proof (denot_ty_on_formula_fv_subset_env
+      pose proof (denot_ty_on_fv_subset_env
         (<[x:=T1]> Δ) τb (e2 ^^ x) HfvB_insert) as Hfv.
       intros z Hz. apply Hfv in Hz. rewrite dom_insert_L in Hz. set_solver.
 Qed.
@@ -744,7 +744,7 @@ Proof.
   {
     unfold denot_ty_in_ctx_under.
     rewrite Hbody_env.
-    pose proof (denot_ty_on_formula_fv_subset
+    pose proof (denot_ty_on_fv_subset
       (<[x:=erase_ty τ1]> Δ) τ2 (e2 ^^ x)) as Hfv.
     assert (Hτ2 : fv_cty τ2 ⊆ dom (<[x:=erase_ty τ1]> Δ)).
     { eapply basic_choice_ty_fv_subset;
@@ -762,7 +762,7 @@ Proof.
   {
     subst Δ.
     unfold denot_ty_in_ctx_under.
-    pose proof (denot_ty_on_formula_fv_subset
+    pose proof (denot_ty_on_fv_subset
       (erase_ctx_under Σ Γ) τ2 (tlete e1 e2)) as Hfv.
     pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hτ.
     intros z Hz.

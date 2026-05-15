@@ -1,6 +1,6 @@
 (** * ChoiceTyping.TLetReductionTotal
 
-    Total/model-level wrappers for the [tlet] reduction theorem.  The
+    Total/model-level bridges for the [tlet] reduction theorem.  The
     type-denotation reduction proof stays in [TLetReduction]. *)
 
 From ChoiceTyping Require Export TLetReduction.

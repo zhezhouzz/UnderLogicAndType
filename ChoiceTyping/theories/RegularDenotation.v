@@ -1,6 +1,6 @@
 (** * ChoiceTyping.RegularDenotation
 
-    Prop-level wrappers around type denotation.
+    Prop-level regularity and totality around type denotation.
 
     The denotation formulas in [ChoiceType] intentionally stay semantic.  The
     typing proof, however, often needs the regularity facts that the paper keeps
