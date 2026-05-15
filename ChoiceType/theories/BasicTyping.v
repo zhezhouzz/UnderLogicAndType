@@ -95,17 +95,12 @@ Notation "D '⊢sΓ' Γ" := (basic_ctx D Γ)
     These statements are the small facts expected from the paper-level
     formation checks.  Proofs are intentionally left for the proof pass. *)
 
-Lemma basic_qualifier_open_lc D q x :
-  basic_qualifier (D ∪ {[x]}) (qual_open_atom 0 x q) →
-  lc_qualifier (qual_open_atom 0 x q).
-Proof. intros [_ Hlc]. exact Hlc. Qed.
-
 Lemma basic_qualifier_body_lc D q :
   basic_qualifier_body D q →
   body_qualifier q.
 Proof.
   intros [L Hbody]. exists L. intros x Hx.
-  eapply basic_qualifier_open_lc. exact (Hbody x Hx).
+  exact (proj2 (Hbody x Hx)).
 Qed.
 
 Lemma basic_qualifier_body_fv_subset D q :

@@ -38,11 +38,6 @@ Lemma denot_ty_total_model_basic_ctx Σ Γ τ e m :
   basic_ctx (dom Σ) Γ.
 Proof. intros H. exact (proj1 (denot_ty_total_model_regular Σ Γ τ e m H)). Qed.
 
-Lemma denot_ty_total_model_basic_choice_ty Σ Γ τ e m :
-  denot_ty_total_model_in_ctx_under Σ Γ τ e m →
-  basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ.
-Proof. intros H. exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m H)). Qed.
-
 Lemma denot_ty_total_model_formula Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
@@ -97,7 +92,7 @@ Proof.
   intros Herase Hm Hmodel.
   eapply choice_typing_wf_from_erased_denot_ctx_basic_ty; eauto.
   - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
-  - exact (denot_ty_total_model_basic_choice_ty Σ Γ τ e m Hmodel).
+  - exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
 Qed.
 
 Lemma choice_typing_wf_regular_denotation Σ Γ e τ :

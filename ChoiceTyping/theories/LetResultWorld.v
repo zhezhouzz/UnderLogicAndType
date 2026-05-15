@@ -621,11 +621,6 @@ Proof.
   eapply (steps_msubst_open_body_result X σ e2 x vx v); eauto.
 Qed.
 
-Lemma notin_tlet_result_parts (X S : aset) (x ν : atom) :
-  x ∉ X ∪ S ∪ {[ν]} →
-  x ∉ X ∧ x ∉ S ∧ x ≠ ν.
-Proof. set_solver. Qed.
-
 Lemma let_result_world_on_tlete_decompose :
   ∀ X e1 e2 x ν (n : WfWorld)
     Hfreshx Hresult1 Hfreshν Hresult2 Hfreshν_tlet Hresult_tlet,
@@ -650,8 +645,9 @@ Proof.
   intros X e1 e2 x ν n Hfreshx Hresult1 Hfreshν Hresult2
     Hfreshν_tlet Hresult_tlet Hfv Hx Hνn HXn Hclosed Hlc
     Hresult_closed Hbody.
-  destruct (notin_tlet_result_parts X (fv_tm e2) x ν Hx)
-    as [HxX [Hxe2 Hxν]].
+  assert (HxX : x ∉ X) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  assert (Hxν : x ≠ ν) by set_solver.
   assert (Hx_worldν : x ∉ world_dom (n : World) ∪ {[ν]}).
   {
     intros Hin. apply elem_of_union in Hin as [Hin|Hin].
