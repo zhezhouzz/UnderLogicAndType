@@ -44,7 +44,7 @@ Proof.
 	      rewrite !atom_env_to_lty_env_dom.
 	      rewrite lvars_fv_union, !lvars_fv_of_atoms.
       rewrite dom_empty_L. set_solver.
-    + rewrite lty_env_open_atom_env_empty, open_cty_env_empty, open_tm_env_empty.
+    + rewrite lty_env_open_atom_env, open_cty_env_empty, open_tm_env_empty.
       split; assumption.
   - apply res_models_and_intro_from_models.
     + unfold FClosedResourceIn, res_models.
@@ -94,7 +94,7 @@ Proof.
   apply res_models_with_store_and_elim_l in Hm.
   destruct (res_models_with_store_store_resource_atom_vars_elim _ _ _ _ Hm)
     as [_ [_ [Hbasic _]]].
-  rewrite lty_env_open_atom_env_empty, open_cty_env_empty, open_tm_env_empty in Hbasic.
+  rewrite lty_env_open_atom_env, open_cty_env_empty, open_tm_env_empty in Hbasic.
   exact Hbasic.
 Qed.
 

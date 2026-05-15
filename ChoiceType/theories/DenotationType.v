@@ -94,11 +94,6 @@ Proof.
   apply lvars_fv_of_atoms.
 Qed.
 
-Lemma lty_env_open_atom_env_empty Σ :
-  lty_env_open ∅ (atom_env_to_lty_env Σ) = Σ.
-Proof.
-Admitted.
-
 Lemma lty_env_open_atom_env η Σ :
   lty_env_open η (atom_env_to_lty_env Σ) = Σ.
 Proof.
