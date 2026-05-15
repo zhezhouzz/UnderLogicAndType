@@ -15,9 +15,6 @@ From ChoiceType Require Export BasicTyping Denotation.
 Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   ∃ r : WfWorld, r ⊨ denot_ctx_in_env Σ Γ.
 
-Definition ctx_nonempty (Γ : ctx) : Prop :=
-  ctx_nonempty_under ∅ Γ.
-
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
 
@@ -29,14 +26,6 @@ Definition wf_choice_ty_under (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : 
 
 Definition wf_choice_ty (Γ : ctx) (τ : choice_ty) : Prop :=
   wf_choice_ty_under ∅ Γ τ.
-
-(** ** Paper-judgment notations
-
-    These notations make printed statements closer to the paper.  Proof scripts
-    should prefer the explicit names [wf_ctx] and [wf_choice_ty]. *)
-
-Notation "'⊢wf' Γ" := (wf_ctx Γ) (at level 40).
-Notation "Γ '⊢wf' τ" := (wf_choice_ty Γ τ) (at level 40).
 
 (** ** Regularity skeletons *)
 
