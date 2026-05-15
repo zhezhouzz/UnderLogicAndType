@@ -458,7 +458,17 @@ Lemma res_models_forall_intro (m : WfWorldT) (φ : FormulaT) :
         m' ⊨ formula_open 0 y φ) →
   m ⊨ FForall φ.
 Proof.
-Admitted.
+  intros Hscope [L [HLdom Hopen]].
+  unfold res_models, res_models_with_store.
+  cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+    formula_fv].
+  split; [exact Hscope |].
+  exists L. split; [exact HLdom |].
+  intros y Hy m' Hdom Hrestrict.
+  specialize (Hopen y Hy m' Hdom Hrestrict).
+  eapply res_models_with_store_fuel_irrel; [| | exact Hopen];
+    rewrite ?formula_open_preserves_measure; simpl; lia.
+Qed.
 
 Lemma res_models_exists_intro (m : WfWorldT) (φ : FormulaT) :
   formula_scoped_in_world ∅ m (FExists φ) →
@@ -472,7 +482,18 @@ Lemma res_models_exists_intro (m : WfWorldT) (φ : FormulaT) :
         m' ⊨ formula_open 0 y φ) →
   m ⊨ FExists φ.
 Proof.
-Admitted.
+  intros Hscope [L [HLdom Hopen]].
+  unfold res_models, res_models_with_store.
+  cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+    formula_fv].
+  split; [exact Hscope |].
+  exists L. split; [exact HLdom |].
+  intros y Hy.
+  destruct (Hopen y Hy) as [m' [Hdom [Hrestrict Hmodel]]].
+  exists m'. repeat split; eauto.
+  eapply res_models_with_store_fuel_irrel; [| | exact Hmodel];
+    rewrite ?formula_open_preserves_measure; simpl; lia.
+Qed.
 
 Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaT) :
   x ∉ D →
