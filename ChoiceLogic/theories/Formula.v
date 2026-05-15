@@ -24,35 +24,6 @@ Definition formula_scoped_in_world
     (φ : Formula) : Prop :=
   dom ρ ∪ formula_fv φ ⊆ world_dom m.
 
-Lemma formula_scoped_swap x y ρ m φ :
-  formula_scoped_in_world ρ m (formula_rename_atom x y φ) ↔
-  formula_scoped_in_world (store_swap x y ρ) (res_swap x y m) φ.
-Proof.
-  unfold formula_scoped_in_world.
-  rewrite formula_fv_rename_atom, store_swap_dom. simpl.
-  split; intros Hscope z Hz.
-  - apply elem_of_aset_swap.
-    apply Hscope.
-    rewrite elem_of_union in Hz |- *.
-    destruct Hz as [Hz | Hz].
-    + left. rewrite elem_of_aset_swap in Hz. exact Hz.
-    + right. rewrite elem_of_aset_swap, atom_swap_involutive. exact Hz.
-  - rewrite elem_of_union in Hz.
-    destruct Hz as [Hz | Hz].
-    + assert (Hzρ : atom_swap x y z ∈ aset_swap x y (dom ρ)).
-      { rewrite elem_of_aset_swap, atom_swap_involutive. exact Hz. }
-      assert (Hzscope : atom_swap x y z ∈ aset_swap x y (dom ρ) ∪ formula_fv φ)
-        by (apply elem_of_union; left; exact Hzρ).
-      pose proof (Hscope _ Hzscope) as Hm.
-      rewrite elem_of_aset_swap in Hm. rewrite atom_swap_involutive in Hm. exact Hm.
-    + assert (Hzφ : atom_swap x y z ∈ formula_fv φ).
-      { rewrite elem_of_aset_swap in Hz. exact Hz. }
-      assert (Hzscope : atom_swap x y z ∈ aset_swap x y (dom ρ) ∪ formula_fv φ)
-        by (apply elem_of_union; right; exact Hzφ).
-      pose proof (Hscope _ Hzscope) as Hm.
-      rewrite elem_of_aset_swap in Hm. rewrite atom_swap_involutive in Hm. exact Hm.
-Qed.
-
 Lemma formula_scoped_res_subset
     (ρ : StoreT) (m m' : WfWorldT) (φ : Formula) :
   formula_scoped_in_world ρ m φ →

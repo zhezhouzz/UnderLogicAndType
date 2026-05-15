@@ -56,24 +56,6 @@ Fixpoint formula_fv (φ : Formula) : aset :=
 #[global] Instance stale_formula : Stale Formula := formula_fv.
 Arguments stale_formula /.
 
-Fixpoint formula_rename_atom (x y : atom) (φ : Formula) : Formula :=
-  match φ with
-  | FTrue => FTrue
-  | FFalse => FFalse
-  | FAtom q => FAtom (lqual_swap x y q)
-  | FAnd p q => FAnd (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FOr p q => FOr (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FImpl p q => FImpl (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FStar p q => FStar (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FWand p q => FWand (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FPlus p q => FPlus (formula_rename_atom x y p) (formula_rename_atom x y q)
-  | FForall p => FForall (formula_rename_atom x y p)
-  | FExists p => FExists (formula_rename_atom x y p)
-  | FOver p => FOver (formula_rename_atom x y p)
-  | FUnder p => FUnder (formula_rename_atom x y p)
-  | FFibVars D p => FFibVars (lvars_swap x y D) (formula_rename_atom x y p)
-  end.
-
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1
@@ -101,12 +83,6 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FFibVars D p => FFibVars (lvars_open k x D) (formula_open k x p)
   end.
 
-Lemma formula_rename_preserves_measure x y φ :
-  formula_measure (formula_rename_atom x y φ) = formula_measure φ.
-Proof.
-  induction φ; simpl; eauto; lia.
-Qed.
-
 Lemma formula_open_preserves_measure k x φ :
   formula_measure (formula_open k x φ) = formula_measure φ.
 Proof.
@@ -117,62 +93,6 @@ Qed.
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.
-Admitted.
-
-Lemma formula_rename_atom_conjugate a b x y φ :
-  formula_rename_atom a b (formula_rename_atom x y φ) =
-  formula_rename_atom (atom_swap a b x) (atom_swap a b y)
-    (formula_rename_atom a b φ).
-Proof.
-  (* Legacy explicit-swap lemma; superseded by LN opening. *)
-Admitted.
-
-Lemma formula_fv_rename_atom x y φ :
-  formula_fv (formula_rename_atom x y φ) = aset_swap x y (formula_fv φ).
-Proof.
-  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
-Admitted.
-
-Lemma formula_fv_rename_atom_subset_open x y φ :
-  y ∉ formula_fv φ ∖ {[x]} →
-  formula_fv (formula_rename_atom x y φ) ⊆
-    (formula_fv φ ∖ {[x]}) ∪ {[y]}.
-Proof.
-  intros Hy z Hz.
-  rewrite formula_fv_rename_atom in Hz.
-  rewrite elem_of_aset_swap in Hz.
-  destruct (decide (z = y)) as [Hzy|Hzy].
-  - subst z. apply elem_of_union. right. set_solver.
-  - destruct (decide (z = x)) as [Hzx|Hzx].
-    + subst z. exfalso. apply Hy. apply elem_of_difference. split.
-      * replace (atom_swap x y x) with y in Hz
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        exact Hz.
-      * set_solver.
-    + apply elem_of_union. left. apply elem_of_difference. split.
-      * replace (atom_swap x y z) with z in Hz
-          by (unfold atom_swap; repeat destruct decide; congruence).
-        exact Hz.
-      * set_solver.
-Qed.
-
-Lemma elem_of_aset_swap_unchanged x y z X :
-  z ∈ X →
-  z ≠ x →
-  z ≠ y →
-  z ∈ aset_swap x y X.
-Proof.
-  intros Hz Hzx Hzy. rewrite elem_of_aset_swap.
-  unfold atom_swap. repeat destruct decide; congruence.
-Qed.
-
-Lemma formula_fv_rename_unchanged x y z φ :
-  z ∈ formula_fv φ →
-  z ≠ x →
-  z ≠ y →
-  z ∈ formula_fv (formula_rename_atom x y φ).
-Proof.
-  (* Legacy explicit-swap lemma.  It disappears once Formula binders become LN. *)
 Admitted.
 
 Lemma formula_measure_pos (φ : Formula) :
@@ -220,25 +140,5 @@ Proof. unfold FStoreResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
 Lemma formula_fv_FStoreResourceAtomVars D P :
   formula_fv (FStoreResourceAtomVars D P) = lvars_fv D.
 Proof. reflexivity. Qed.
-
-Lemma formula_rename_FPure x y P :
-  formula_rename_atom x y (FPure P) = FPure P.
-Proof. reflexivity. Qed.
-
-Lemma formula_rename_FResourceAtom x y D P :
-  formula_rename_atom x y (FResourceAtom D P) =
-  FResourceAtom (aset_swap x y D)
-    (fun m => P (res_swap x y m)).
-Proof.
-  (* Legacy explicit-swap lemma; superseded by LN opening. *)
-Admitted.
-
-Lemma formula_rename_FStoreResourceAtom x y D P :
-  formula_rename_atom x y (FStoreResourceAtomFVars D P) =
-  FStoreResourceAtom (aset_swap x y D)
-    (fun _ σ m => P (store_swap x y σ) (res_swap x y m)).
-Proof.
-  (* Legacy explicit-swap lemma; superseded by LN opening. *)
-Admitted.
 
 End Formula.
