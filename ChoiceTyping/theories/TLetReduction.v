@@ -75,7 +75,7 @@ Proof.
 	    subst m1. rewrite dom_insert_L.
 	    rewrite union_comm_L.
 	    eapply let_result_world_on_store_closed_on_insert.
-    - exact HxΣ.
+    - set_solver.
     - exact Hclosed.
     - intros σ vx Hσ Hsteps.
       assert (Hclosed_fv : world_store_closed_on (fv_tm e1) m).
@@ -100,7 +100,7 @@ Proof.
 	    eapply (expr_total_on_tlete_elim_body_strong
       (dom Σ) e1 e2 x m Hfresh Hresult).
     - rewrite Hdom. set_solver.
-    - exact HxΣ.
+    - set_solver.
     - exact Hxe2.
     - exact Hclosed.
     - tlet_regular.
@@ -260,12 +260,188 @@ Lemma FExprCont_tlet_reduction
   m ⊨ FExprContIn Σ (tlete e1 e2) Q.
 Proof.
   intros He1 Hlet Hxe2 Hdom Hclosed Htotal_let HQfv.
-  change (let_result_world_on e1 x m Hfresh Hresult
-      ⊨ FExprContFamilyIn (<[x := T1]> Σ) (e2 ^^ x) (fun _ => Q) <->
-    m ⊨ FExprContFamilyIn Σ (tlete e1 e2) (fun _ => Q)).
-  eapply FExprContFamily_tlet_reduction; eauto.
-  - intros ν. set_solver.
-  - apply formula_family_rename_stable_const. exact HQfv.
+  set (m1 := let_result_world_on e1 x m Hfresh Hresult).
+  assert (HxΣ : x ∉ dom Σ).
+  { rewrite <- Hdom. exact Hfresh. }
+  assert (He2 : <[x := T1]> Σ ⊢ₑ e2 ^^ x ⋮ T2).
+  { eapply basic_typing_tlete_body_for_fresh; eauto; set_solver. }
+  assert (Hdom_m1 : world_dom (m1 : World) = dom (<[x := T1]> Σ)).
+  {
+    subst m1. rewrite let_result_world_on_dom, Hdom, dom_insert_L.
+    rewrite union_comm_L. reflexivity.
+  }
+  assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
+  { tlet_regular. }
+  assert (Hclosed_m1 :
+    world_store_closed_on (dom (<[x := T1]> Σ)) m1).
+  {
+    subst m1. rewrite dom_insert_L.
+    rewrite union_comm_L.
+    eapply let_result_world_on_store_closed_on_insert.
+    - set_solver.
+    - exact Hclosed.
+    - intros σ vx Hσ Hsteps.
+      assert (Hclosed_fv : world_store_closed_on (fv_tm e1) m).
+      { eapply world_store_closed_on_mono; [exact Hfv1 | exact Hclosed]. }
+      eapply (steps_closed_result_of_restrict_world
+        (fv_tm e1) e1 m (store_restrict σ (fv_tm e1)) vx).
+      + rewrite Hdom. exact Hfv1.
+      + set_solver.
+      + tlet_regular.
+      + exact Hclosed_fv.
+      + exists σ. split; [exact Hσ | reflexivity].
+      + replace (store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1))
+          with (store_restrict σ (fv_tm e1)).
+        * exact Hsteps.
+        * store_norm. reflexivity.
+  }
+  assert (Htotal2 :
+    expr_total_on (dom (<[x := T1]> Σ)) (e2 ^^ x) m1).
+  {
+    subst m1. rewrite dom_insert_L.
+    replace ({[x]} ∪ dom Σ) with (dom Σ ∪ {[x]}) by set_solver.
+    eapply (expr_total_on_tlete_elim_body_strong
+      (dom Σ) e1 e2 x m Hfresh Hresult).
+    - rewrite Hdom. set_solver.
+    - set_solver.
+    - exact Hxe2.
+    - exact Hclosed.
+    - tlet_regular.
+    - exact Htotal_let.
+  }
+  assert (HQfv_insert : formula_fv Q ⊆ dom (<[x := T1]> Σ)).
+  { rewrite dom_insert_L. set_solver. }
+  assert (Hdecompose_side :
+    ∀ ν Hfreshν_body Hresultν_body Hfreshν_tlet Hresultν_tlet,
+      ν ∉ dom Σ ∪ {[x]} ∪ fv_tm e2 →
+      res_restrict
+        (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+        (world_dom (m : World) ∪ {[ν]}) =
+      let_result_world_on (tlete e1 e2) ν m Hfreshν_tlet Hresultν_tlet).
+  {
+    intros ν Hfreshν_body Hresultν_body Hfreshν_tlet Hresultν_tlet Hνfresh.
+    unfold m1.
+    rewrite (let_result_world_on_tlete_decompose
+      (dom Σ) e1 e2 x ν m
+      Hfresh Hresult Hfreshν_body Hresultν_body
+      Hfreshν_tlet Hresultν_tlet).
+    - reflexivity.
+    - tlet_regular.
+    - apply basic_typing_contains_fv_tm in Hlet. simpl in Hlet. set_solver.
+    - set_solver.
+    - rewrite Hdom. set_solver.
+    - intros σ Hσ. exact (proj1 (Hclosed σ Hσ)).
+    - intros σ Hσ. exact (proj2 (Hclosed σ Hσ)).
+    - intros σ vx Hσ Hsteps.
+      eapply steps_closed_result.
+      + eapply (msubst_closed_tm_of_restrict_world (dom Σ) e1 m σ).
+        * rewrite Hdom. set_solver.
+        * exact Hfv1.
+        * tlet_regular.
+        * exact Hclosed.
+        * exists σ. split; [exact Hσ |].
+          rewrite (store_restrict_idemp σ (dom Σ)).
+          -- reflexivity.
+          -- pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+             set_solver.
+      + exact Hsteps.
+    - intros σ Hσ.
+      pose proof (typing_tm_lc _ _ _ Hlet) as Hlclet.
+      apply lc_lete_iff_body in Hlclet as [_ Hbodye2].
+      eapply body_tm_msubst.
+      + exact (proj1 (Hclosed σ Hσ)).
+      + exact (proj2 (Hclosed σ Hσ)).
+      + exact Hbodye2.
+  }
+  assert (HQopen_fv :
+    ∀ ν, formula_fv (formula_open 0 ν Q) ⊆ dom Σ ∪ {[ν]}).
+  {
+    intros ν z Hz.
+    pose proof (formula_open_fv_subset 0 ν Q z Hz) as HzQ.
+    set_solver.
+  }
+  split.
+  - intros Hcont.
+    pose proof (proj1
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
+        He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert)
+      Hcont) as [L [HLdom Hbody]].
+    apply (proj2
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        Σ T2 (tlete e1 e2) Q m
+        Hlet Hdom Hclosed Htotal_let HQfv)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
+    split; [set_solver |].
+    intros ν Hν Hfreshν_tlet Hresultν_tlet.
+    rewrite !not_elem_of_union in Hν.
+    destruct Hν as [[[HνL HνΣ] Hνx] Hνe2].
+    assert (Hfreshν_body : ν ∉ world_dom (m1 : World)).
+    {
+      subst m1. rewrite let_result_world_on_dom, Hdom, not_elem_of_union.
+      split; eauto 6.
+    }
+    assert (Hresultν_body :
+      ∀ σ, (m1 : World) σ →
+        ∃ vx, subst_map (store_restrict σ (fv_tm (e2 ^^ x)))
+          (e2 ^^ x) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result; eauto.
+    }
+    pose proof (Hbody ν HνL Hfreshν_body Hresultν_body)
+      as Hnested.
+    pose proof (proj1 (res_models_minimal_on
+      (dom Σ ∪ {[ν]})
+      (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+      (formula_open 0 ν Q) (HQopen_fv ν)) Hnested) as Hnested_min.
+    replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
+      in Hnested_min by (rewrite Hdom; reflexivity).
+    rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
+      Hfreshν_tlet Hresultν_tlet ltac:(
+        rewrite !not_elem_of_union; repeat split; eauto 6)) in Hnested_min.
+    exact Hnested_min.
+  - intros Hcont.
+    pose proof (proj1
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        Σ T2 (tlete e1 e2) Q m
+        Hlet Hdom Hclosed Htotal_let HQfv)
+      Hcont) as [L [HLdom Hwhole]].
+    apply (proj2
+      (FExprContIn_iff_let_result_world_on_exact_domain
+        (<[x := T1]> Σ) T2 (e2 ^^ x) Q m1
+        He2 Hdom_m1 Hclosed_m1 Htotal2 HQfv_insert)).
+    exists (L ∪ dom Σ ∪ {[x]} ∪ fv_tm e2).
+    split; [rewrite dom_insert_L; set_solver |].
+    intros ν Hν Hfreshν_body Hresultν_body.
+    rewrite !not_elem_of_union in Hν.
+    destruct Hν as [[[HνL HνΣ] Hνx] Hνe2].
+    assert (Hfreshν_tlet : ν ∉ world_dom (m : World)).
+    { rewrite Hdom. exact HνΣ. }
+    assert (Hresultν_tlet :
+      ∀ σ, (m : World) σ →
+        ∃ vx, subst_map (store_restrict σ (fv_tm (tlete e1 e2)))
+          (tlete e1 e2) →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result; eauto.
+    }
+    pose proof (Hwhole ν HνL Hfreshν_tlet Hresultν_tlet)
+      as Hwholeν.
+    assert (Hrestrict :
+      res_restrict
+        (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+        (dom Σ ∪ {[ν]}) ⊨ formula_open 0 ν Q).
+    {
+      replace (dom Σ ∪ {[ν]}) with (world_dom (m : World) ∪ {[ν]})
+        by (rewrite Hdom; reflexivity).
+      rewrite (Hdecompose_side ν Hfreshν_body Hresultν_body
+        Hfreshν_tlet Hresultν_tlet ltac:(
+          rewrite !not_elem_of_union; repeat split; eauto 6)).
+      exact Hwholeν.
+    }
+    exact (proj2 (res_models_minimal_on
+      (dom Σ ∪ {[ν]})
+      (let_result_world_on (e2 ^^ x) ν m1 Hfreshν_body Hresultν_body)
+      (formula_open 0 ν Q) (HQopen_fv ν)) Hrestrict).
 Qed.
 
 
