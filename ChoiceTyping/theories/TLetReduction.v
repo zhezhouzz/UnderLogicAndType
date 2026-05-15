@@ -19,8 +19,7 @@ Proof.
 Qed.
 
 Local Ltac tlet_regular :=
-  eauto 6 using basic_typing_contains_fv_tm, typing_tm_lc,
-    world_store_closed_on_world_closed_on.
+  eauto 6 using basic_typing_contains_fv_tm, typing_tm_lc.
 
 Lemma FExprCont_tlet_reduction
     (Σ : gmap atom ty) (T1 T2 : ty)
@@ -235,7 +234,6 @@ Lemma let_result_world_on_world_closed_on_insert_from_basic
     (let_result_world_on e x m Hfresh Hresult).
 Proof.
   intros Htyped Hdom Hclosed Hx.
-  eapply world_store_closed_on_world_closed_on.
   rewrite dom_insert_L.
   replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
   eapply let_result_world_on_store_closed_on_insert.
@@ -373,7 +371,7 @@ Proof.
     eapply denot_ty_fuel_intro.
     + eauto.
     + eauto.
-    + eapply world_store_closed_on_world_closed_on. exact Hclosed.
+    + exact Hclosed.
     + eauto.
     + eauto.
     + rewrite Hdom. set_solver.

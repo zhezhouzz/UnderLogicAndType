@@ -13,13 +13,6 @@ From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Definition world_store_closed_on : aset → WfWorld → Prop := world_closed_on.
 
-Lemma world_store_closed_on_world_closed_on X (m : WfWorld) :
-  world_store_closed_on X m →
-  world_closed_on X m.
-Proof.
-  intros Hclosed. exact Hclosed.
-Qed.
-
 Lemma denot_ctx_in_env_world_store_closed_on_erased Σ Γ m :
   basic_ctx (dom Σ) Γ →
   m ⊨ denot_ctx_in_env Σ Γ →
