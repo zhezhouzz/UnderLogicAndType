@@ -13,7 +13,7 @@ From CoreLang Require Import BasicTypingProps.
 (** ** Evaluation of primitive operations
 
     Primitive evaluation is deterministic.  All primitives are unary, matching
-    the rest of the ANF core language. *)
+    the rest of the let-normal core language. *)
 
 Inductive prim_step : prim_op → constant → constant → Prop :=
   | Prim_eq0 n :
@@ -88,7 +88,7 @@ Inductive head_step : tm → tm → Prop :=
 
 (** ** Small-step reduction (congruence under let-binding context) *)
 
-(** The only non-trivial evaluation context for our ANF language:
+(** The only non-trivial evaluation context for this let-normal language:
     [tlete □ e2] — we reduce the first component. *)
 Inductive step : tm → tm → Prop :=
   | Step_head e e' :

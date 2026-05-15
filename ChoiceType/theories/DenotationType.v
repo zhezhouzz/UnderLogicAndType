@@ -157,7 +157,7 @@ Definition denot_ty_obligations
     (FAnd (FClosedResourceIn Σe)
       (FAnd (FStrongTotalIn Σe e) φ)).
 
-Lemma formula_fv_FResultBasicWorld Σ b D :
+Lemma FResultBasicWorld_fv Σ b D :
   formula_fv (FResultBasicWorld Σ b D) =
   lvars_fv (lty_env_bvar_scope Σ ∪ D ∪ {[LVBound 0]}).
 Proof.
@@ -165,12 +165,12 @@ Proof.
   apply formula_fv_FStoreResourceAtom_lvars.
 Qed.
 
-Lemma formula_fv_FResultBasicWorld_atom_env_subset Σ b D :
+Lemma FResultBasicWorld_fv_atom_env_subset Σ b D :
   lvars_fv D ⊆ dom Σ →
   formula_fv (FResultBasicWorld (atom_env_to_lty_env Σ) b D) ⊆ dom Σ.
 Proof.
   intros HD.
-  rewrite formula_fv_FResultBasicWorld.
+  rewrite FResultBasicWorld_fv.
   unfold lty_env_bvar_scope.
   rewrite atom_env_to_lty_env_dom.
   rewrite lvars_bv_of_atoms.
@@ -179,10 +179,10 @@ Proof.
   set_solver.
 Qed.
 
-Lemma formula_fv_FResultBasicWorld_atom_env Σ b D :
+Lemma FResultBasicWorld_fv_atom_env Σ b D :
   formula_fv (FResultBasicWorld (atom_env_to_lty_env Σ) b D) = lvars_fv D.
 Proof.
-  rewrite formula_fv_FResultBasicWorld.
+  rewrite FResultBasicWorld_fv.
   unfold lty_env_bvar_scope.
   rewrite atom_env_to_lty_env_dom.
   rewrite lvars_bv_of_atoms.
@@ -561,7 +561,7 @@ Proof.
         (FFibVars (qual_vars (qual D p))
           (FOver (FTypeQualifier (qual D p)))))) as Hcont.
     cbn [qual_vars qual_dom formula_fv] in Hcont.
-    rewrite formula_fv_FResultBasicWorld in Hcont.
+    rewrite FResultBasicWorld_fv in Hcont.
     unfold lty_env_bvar_scope in Hcont.
     rewrite !lvars_fv_union, lvars_fv_of_bvars,
       lvars_fv_singleton_bound in Hcont.
@@ -574,7 +574,7 @@ Proof.
         (FFibVars (qual_vars (qual D p))
           (FUnder (FTypeQualifier (qual D p)))))) as Hcont.
     cbn [qual_vars qual_dom formula_fv] in Hcont.
-    rewrite formula_fv_FResultBasicWorld in Hcont.
+    rewrite FResultBasicWorld_fv in Hcont.
     unfold lty_env_bvar_scope in Hcont.
     rewrite !lvars_fv_union, lvars_fv_of_bvars,
       lvars_fv_singleton_bound in Hcont.

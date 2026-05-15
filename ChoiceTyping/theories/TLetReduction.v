@@ -333,7 +333,7 @@ Proof.
   apply res_models_of_formula_store_equiv.
   eapply FExprContIn_post_open_store_equiv.
   - cbn [formula_fv].
-    rewrite !formula_fv_FResultBasicWorld_atom_env.
+    rewrite !FResultBasicWorld_fv_atom_env.
     reflexivity.
   - intros ν Hν.
     cbn [formula_open formula_fv].
@@ -398,7 +398,7 @@ Proof.
     + exact Htotal.
     + cbn [formula_fv].
     eapply union_least.
-      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+      * pose proof (FResultBasicWorld_fv_atom_env_subset Δ b Dφ Hfvτ).
         set_solver.
       * set_solver.
 Qed.
@@ -452,7 +452,7 @@ Proof.
     + exact Htotal.
     + cbn [formula_fv].
     eapply union_least.
-      * pose proof (formula_fv_FResultBasicWorld_atom_env_subset Δ b Dφ Hfvτ).
+      * pose proof (FResultBasicWorld_fv_atom_env_subset Δ b Dφ Hfvτ).
         set_solver.
       * set_solver.
 Qed.

@@ -1,6 +1,6 @@
 (** * ChoiceLogic.FormulaDerived
 
-    Convenience wrappers for the empty-store satisfaction judgment.
+    Convenience lemmas for the empty-store satisfaction judgment.
 
     The core semantics in [Formula] is stated for [res_models_with_store].
     Many downstream proofs use the closed-resource shorthand [res_models];
