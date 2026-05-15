@@ -282,10 +282,8 @@ Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm →
       has_choice_type Φ Σ Γ (tmatch v et ef) τ.
 
 #[global] Hint Constructors has_choice_type : core.
-Definition default_has_choice_type : ctx → tm → choice_ty → Prop :=
+#[global] Instance typing_choice_inst : Typing ctx tm choice_ty :=
   has_choice_type default_primop_ctx ∅.
-
-#[global] Instance typing_choice_inst : Typing ctx tm choice_ty := default_has_choice_type.
 Arguments typing_choice_inst /.
 
 (** ** Small admissible helpers kept only where they name core definitions. *)
