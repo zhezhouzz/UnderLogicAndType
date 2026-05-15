@@ -30,22 +30,19 @@ Proof.
   rewrite erase_ctx_under_comma_bind_dom_nf.
   split.
   - intros Hbody.
-    eapply expr_total_on_tlete_intro_strong.
+    eapply expr_total_on_tlete_intro_strong; eauto 6.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
     + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
-    + exact Htotal1.
-    + exact Hbody.
   - intros Hlet_total.
-    eapply expr_total_on_tlete_elim_body_strong.
+    eapply expr_total_on_tlete_elim_body_strong; eauto 6.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
     + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
-    + exact Hlet_total.
 Qed.
 
 Lemma denot_ty_regular_tlet_context_iff
@@ -63,18 +60,18 @@ Proof.
       * intros Hxτ. apply Hfresh. apply elem_of_union_r. exact Hxτ.
       * replace (dom (erase_ctx_under Σ Γ) ∪ {[x]}) with
           (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1)))).
-        -- exact Hτ2_body.
+        -- eauto 6.
         -- rewrite erase_ctx_under_comma_bind_dom_nf. set_solver.
   - intros [HctxΓ' Hτ2].
     split.
     + eapply Basic_CtxComma.
-      * exact HctxΓ'.
+      * eauto 6.
       * eapply Basic_CtxBind.
         -- rewrite <- (erase_ctx_under_dom_basic Σ Γ HctxΓ').
            set_solver.
         -- replace (dom Σ ∪ ctx_dom Γ) with
              (dom (erase_ctx_under Σ Γ)).
-           ++ exact Hτ1.
+           ++ eauto 6.
            ++ rewrite erase_ctx_under_dom_basic by exact HctxΓ'. set_solver.
       * simpl. pose proof (erase_ctx_under_dom_basic Σ Γ HctxΓ') as HdomΓ.
         set_solver.
@@ -115,26 +112,23 @@ Proof.
         ltac:(set_solver))
         Htotal_body) as Htotal_target.
     split.
-    + apply (proj1 Hregular_iff). exact Hregular_body.
+    + apply (proj1 Hregular_iff); eauto 6.
     + split.
       * apply (proj1 (denot_ty_tlet_reduction_any_world
             τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
             (proj1 Hregular_iff Hregular_body) He1 Hlet Hctx
-            Htotal_target Hfreshx)).
-        exact Hformula_body.
-      * exact Htotal_target.
+            Htotal_target Hfreshx)); eauto 6.
+      * eauto 6.
   - destruct Hmodel as [Hregular_target [Hformula_target Htotal_target]].
     split.
-    + apply (proj2 Hregular_iff). exact Hregular_target.
+    + apply (proj2 Hregular_iff); eauto 6.
     + split.
       * apply (proj2 (denot_ty_tlet_reduction_any_world
             τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
-            Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)).
-        exact Hformula_target.
+            Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)); eauto 6.
       * apply (proj2 (expr_total_tlet_reduction
           Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
           (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
           (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
-          ltac:(set_solver))).
-        exact Htotal_target.
+          ltac:(set_solver))); eauto 6.
 Qed.

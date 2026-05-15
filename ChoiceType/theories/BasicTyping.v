@@ -202,6 +202,7 @@ Proof.
       unfold basic_qualifier in *.
       destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
       pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      clear -Hfresh Hdom Hsubset.
       set_solver.
   - constructor.
     destruct Hbody as [L Hbody].
@@ -212,6 +213,7 @@ Proof.
       unfold basic_qualifier in *.
       destruct Hbody as [Hdom Hbvars]. split; [| exact Hbvars].
       pose proof (qual_open_atom_dom_subset 0 y φ) as Hsubset.
+      clear -Hfresh Hdom Hsubset.
       set_solver.
   - econstructor; eauto; set_solver.
   - econstructor; eauto; set_solver.
@@ -285,12 +287,18 @@ Lemma basic_choice_ty_fv_subset D τ :
   basic_choice_ty D τ →
   fv_cty τ ⊆ D.
 Proof.
-  induction 1; simpl; try set_solver.
+  induction 1; simpl.
   - eapply basic_qualifier_body_fv_subset. exact H.
   - eapply basic_qualifier_body_fv_subset. exact H.
   - intros z Hz.
+    apply elem_of_union in Hz as [Hz | Hz]; eauto 6.
+  - intros z Hz.
+    apply elem_of_union in Hz as [Hz | Hz]; eauto 6.
+  - intros z Hz.
+    apply elem_of_union in Hz as [Hz | Hz]; eauto 6.
+  - intros z Hz.
     apply elem_of_union in Hz as [Hzτx | Hz].
-    { set_solver. }
+    { eauto 6. }
     set (x := fresh_for (L ∪ {[z]})).
     assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
     assert (Hzx : z ≠ x) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
@@ -302,7 +310,7 @@ Proof.
     simpl in Hzopen. pose proof (Hfv_open z Hzopen) as HzDx. set_solver.
   - intros z Hz.
     apply elem_of_union in Hz as [Hzτx | Hz].
-    { set_solver. }
+    { eauto 6. }
     set (x := fresh_for (L ∪ {[z]})).
     assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
     assert (Hzx : z ≠ x) by (subst x; pose proof (fresh_for_not_in (L ∪ {[z]})); set_solver).
@@ -318,15 +326,20 @@ Lemma basic_ctx_dom_fresh D Γ :
   basic_ctx D Γ →
   ctx_dom Γ ## D.
 Proof.
-  induction 1; simpl; try set_solver.
+  induction 1; simpl; set_solver.
 Qed.
 
 Lemma basic_ctx_fv_subset D Γ :
   basic_ctx D Γ →
   ctx_fv Γ ⊆ D ∪ ctx_dom Γ.
 Proof.
-  induction 1; simpl; try set_solver.
-  - pose proof (basic_choice_ty_fv_subset D τ H0). set_solver.
+  induction 1; simpl.
+  - set_solver.
+  - pose proof (basic_choice_ty_fv_subset D τ H0) as Hfv.
+    clear -Hfv. set_solver.
+  - clear -IHbasic_ctx1 IHbasic_ctx2. set_solver.
+  - clear -IHbasic_ctx1 IHbasic_ctx2. set_solver.
+  - clear -IHbasic_ctx1 IHbasic_ctx2. set_solver.
 Qed.
 
 Lemma basic_ctx_erase_dom D Γ :

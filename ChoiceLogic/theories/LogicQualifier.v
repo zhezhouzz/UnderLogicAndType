@@ -1,4 +1,6 @@
-From ChoiceLogic Require Import Prelude.
+From ChoiceAlgebra Require Export
+  Resource ResourceTactics ChoiceAlgebra.
+From ChoicePrelude Require Export Prelude MapFilterDom Store.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** * Logic qualifiers

@@ -76,11 +76,11 @@ Lemma choice_typing_wf_from_erased_basic Σ Γ e τ m :
   choice_typing_wf Σ Γ e τ.
 Proof.
   intros Hctx Hτ Hm Herase.
-  split; [| exact Herase].
+  split; [| eauto 6].
   split.
-  - split; [exact Hctx | exists m; exact Hm].
+  - split; [eauto 6 | exists m; eauto 6].
   - rewrite <- (erase_ctx_under_dom_basic Σ Γ Hctx).
-    exact Hτ.
+    eauto 6.
 Qed.
 
 Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
@@ -90,9 +90,9 @@ Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
   choice_typing_wf Σ Γ e τ.
 Proof.
   intros Herase Hm Hmodel.
-  eapply choice_typing_wf_from_erased_basic; eauto.
-  - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
-  - exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
+  eapply choice_typing_wf_from_erased_basic; eauto 6
+    using denot_ty_total_model_basic_ctx.
+  exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
 Qed.
 
 Lemma choice_typing_wf_regular_denotation Σ Γ e τ :

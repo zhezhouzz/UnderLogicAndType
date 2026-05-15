@@ -1,4 +1,4 @@
-From ChoiceLogic Require Import Prelude LogicQualifier Formula FormulaTactics.
+From ChoiceLogic Require Import LogicQualifier Formula FormulaTactics.
 
 (** * Choice Logic Properties  (§1.2–1.3)
 

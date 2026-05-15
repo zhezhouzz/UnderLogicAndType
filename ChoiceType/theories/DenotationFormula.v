@@ -100,14 +100,20 @@ Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
 Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
   map_fold (λ k x acc, open_tm k (vfvar x) acc) e η.
 
+Lemma open_tm_env_singleton k x e :
+  open_tm_env (<[k := x]> ∅) e = open_tm k (vfvar x) e.
+Proof.
+  unfold open_tm_env.
+  change (<[k := x]> ∅ : gmap nat atom) with ({[k := x]} : gmap nat atom).
+  rewrite map_fold_singleton. reflexivity.
+Qed.
+
 Lemma open_tm_env_singleton_lc k x e :
   lc_tm e →
   open_tm_env (<[k := x]> ∅) e = e.
 Proof.
   intros Hlc.
-  unfold open_tm_env.
-  change (<[k := x]> ∅ : gmap nat atom) with ({[k := x]} : gmap nat atom).
-  rewrite map_fold_singleton.
+  rewrite open_tm_env_singleton.
   apply open_rec_lc_tm. exact Hlc.
 Qed.
 
@@ -157,9 +163,6 @@ Proof.
   rewrite lvars_fv_open_atoms_with_bound.
   set_solver.
 Qed.
-
-Ltac denot_sugar_norm :=
-  denot_lvars_norm.
 
 (** [FExprContIn Σ e Q] abbreviates [∀ν. FExprResultOn (dom Σ) e ⇒ Q].
     The postcondition [Q] is an LN body: [LVBound 0] names the result
@@ -226,10 +229,7 @@ Proof.
   rewrite Hle in Hσ. simpl in Hσ.
   destruct Hσ as [σn [Hσn Hrestrict]].
   rewrite <- Hrestrict.
-  rewrite !store_restrict_restrict.
-  replace (world_dom (m : World) ∩ X) with (X ∩ world_dom (m : World))
-    by set_solver.
-  rewrite <- store_restrict_restrict.
+  rewrite store_restrict_comm.
   apply store_closed_restrict.
   exact (Hclosed σn Hσn).
 Qed.

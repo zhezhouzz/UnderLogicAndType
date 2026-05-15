@@ -64,7 +64,7 @@ Lemma FExprContIn_post_open_store_equiv
 Proof.
   intros Hfv Hopen_fv Heq ρ m.
   unfold FExprContIn, res_models_with_store.
-  denot_sugar_norm.
+  denot_lvars_norm.
   cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
     formula_fv formula_open].
   split; intros [Hscope [L [HLdom Hforall]]]; split.

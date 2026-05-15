@@ -4,7 +4,7 @@
     unary type [prim_op_type]; this layer refines it with over-approximate
     argument qualifiers and precise result qualifiers. *)
 
-From ChoiceType Require Export Sugar BasicTyping Denotation.
+From ChoiceType Require Export Sugar BasicTyping DenotationContext.
 
 Record primop_sig := mk_primop_sig {
   prim_arg_base : base_ty;

@@ -1,4 +1,5 @@
-From ChoiceAlgebra Require Import Prelude Resource.
+From ChoicePrelude Require Import Prelude.
+From ChoiceAlgebra Require Import Resource.
 
 (** * Choice Algebra  (Definitions 1.6)
 

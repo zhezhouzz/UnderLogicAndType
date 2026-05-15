@@ -1,4 +1,4 @@
-(** * ChoiceTyping.SoundnessHelpers
+(** * ChoiceTyping.SoundnessCommon
 
     Stable formula/context helper lemmas used by the soundness proof.  Keeping
     them outside [Soundness.v] leaves the fundamental-theorem file focused on
@@ -138,8 +138,8 @@ Lemma denot_ctx_in_env_world_has_type_on Σ Γ X m :
   world_has_type_on Σ X (res_restrict m X).
 Proof.
   intros HXΣ HΓ.
-  eapply basic_world_formula_subset_current; [exact HXΣ |].
-  apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  eapply basic_world_formula_subset_current; eauto 6.
+  apply denot_ctx_in_env_basic with (Γ := Γ); eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_world_closed_on Σ Γ X m :
@@ -155,12 +155,12 @@ Proof.
   split.
   - eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
     + rewrite store_restrict_dom. set_solver.
-    + exact HXΣ.
-    + exact Hstore_typed.
+    + eauto 6.
+    + eauto 6.
   - eapply (store_has_type_on_lc_env Σ X (store_restrict σ X)).
     + rewrite store_restrict_dom. set_solver.
-    + exact HXΣ.
-    + exact Hstore_typed.
+    + eauto 6.
+    + eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_typed Σ Γ m σ :
@@ -170,8 +170,8 @@ Lemma denot_ctx_in_env_store_typed Σ Γ m σ :
 Proof.
   intros HΓ Hσ.
   eapply basic_world_formula_store_restrict_typed.
-  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
-  - exact Hσ.
+  - apply denot_ctx_in_env_basic with (Γ := Γ); eauto 6.
+  - eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_restrict_closed Σ Γ m σ :
@@ -181,9 +181,9 @@ Lemma denot_ctx_in_env_store_restrict_closed Σ Γ m σ :
 Proof.
   intros HΓ Hσ.
   eapply basic_world_formula_store_restrict_closed_env.
-  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  - apply denot_ctx_in_env_basic with (Γ := Γ); eauto 6.
   - set_solver.
-  - exact Hσ.
+  - eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_restrict_closed_on Σ Γ X m σ :
@@ -200,8 +200,8 @@ Proof.
       (store_restrict σ X) ltac:(simpl; exists σ; split; [exact Hσ | reflexivity]))
       as Hdomσ.
     rewrite Hdomσ. simpl. set_solver.
-  - exact HXΣ.
-  - apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+  - eauto 6.
+  - apply Htyped. simpl. exists σ. split; eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_restrict_lc Σ Γ m σ :
@@ -211,9 +211,9 @@ Lemma denot_ctx_in_env_store_restrict_lc Σ Γ m σ :
 Proof.
   intros HΓ Hσ.
   eapply basic_world_formula_store_restrict_lc_env.
-  - apply denot_ctx_in_env_basic with (Γ := Γ). exact HΓ.
+  - apply denot_ctx_in_env_basic with (Γ := Γ); eauto 6.
   - set_solver.
-  - exact Hσ.
+  - eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_restrict_lc_on Σ Γ X m σ :
@@ -230,8 +230,8 @@ Proof.
       (store_restrict σ X) ltac:(simpl; exists σ; split; [exact Hσ | reflexivity]))
       as Hdomσ.
     rewrite Hdomσ. simpl. set_solver.
-  - exact HXΣ.
-  - apply Htyped. simpl. exists σ. split; [exact Hσ | reflexivity].
+  - eauto 6.
+  - apply Htyped. simpl. exists σ. split; eauto 6.
 Qed.
 
 (** Regularity obligation for context denotations: a world satisfying
@@ -256,15 +256,15 @@ Proof.
   rewrite HdomX.
   split.
   - eapply basic_world_formula_store_restrict_closed_env.
-    + apply denot_ctx_in_env_erased_basic. exact HΓ.
+    + apply denot_ctx_in_env_erased_basic; eauto 6.
     + set_solver.
-    + exact Hσ.
+    + eauto 6.
   - intros x T v HΣx Hσx.
     pose proof (basic_world_formula_store_restrict_typed
       (erase_ctx_under Σ Γ) (dom (erase_ctx_under Σ Γ)) m σ
       (denot_ctx_in_env_erased_basic Σ Γ m HΓ) Hσ) as Htyped.
-    eapply Htyped; [| exact HΣx | exact Hσx].
-    apply elem_of_dom. eexists. exact HΣx.
+    eapply Htyped; eauto 6.
+    apply elem_of_dom. eexists; eauto 6.
 Qed.
 
 Lemma denot_ctx_in_env_store_erased_lc Σ Γ m σ :
@@ -277,7 +277,7 @@ Proof.
   intros Hbasic HΓ Hσ X.
   destruct (denot_ctx_in_env_store_erased_typed Σ Γ m σ Hbasic HΓ Hσ)
     as [_ Htyped].
-  eapply env_has_type_lc_env_dom; [| exact Htyped].
+  eapply env_has_type_lc_env_dom; eauto 6.
   intros z Hz.
   assert (Hdom_erase : dom (erase_ctx_under Σ Γ) = X).
   { unfold X. apply erase_ctx_under_dom_basic. exact Hbasic. }
@@ -319,7 +319,7 @@ Proof.
   {
     change (subst_map σ e) with (m{σ} e).
     eapply (@msubst_restrict_closed_on tm stale_tm_inst subst_tm_inst _ _ _).
-    - exact Hclosed.
+    - eauto 6.
     - unfold X in *. set_solver.
   }
   rewrite Hsubst in Htyped.

@@ -44,8 +44,8 @@ Proof.
     store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
     store_restrict (store_restrict σ X) (fv_tm e)).
   {
-    store_norm.
-    replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+    rewrite store_restrict_twice_same.
+    rewrite store_restrict_twice_subset by exact Hfv.
     reflexivity.
   }
   exact (Heq Hagree).
@@ -150,8 +150,7 @@ Proof.
       exists (store_restrict σ X), vx. split.
       * exists σ. split; [exact Hσ | reflexivity].
       * split.
-        -- rewrite store_restrict_restrict.
-           replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+        -- rewrite store_restrict_twice_subset by exact Hfv.
            exact Hsteps.
         -- rewrite <- Hrestrict.
            rewrite store_restrict_insert_fresh_union.
@@ -164,8 +163,7 @@ Proof.
       exists (<[x := vx]> σ0). split.
       * exists σ0, vx. split; [exact Hσ0 |]. split.
         -- rewrite <- Hσ0X in Hsteps.
-           rewrite store_restrict_restrict in Hsteps.
-           replace (X ∩ fv_tm e) with (fv_tm e) in Hsteps by set_solver.
+           rewrite store_restrict_twice_subset in Hsteps by exact Hfv.
            exact Hsteps.
         -- reflexivity.
       * rewrite store_restrict_insert_fresh_union.
@@ -281,9 +279,7 @@ Proof.
       (fv_tm (e ^^ x)) =
     store_restrict (<[x := vx]> (store_restrict σ X)) (fv_tm (e ^^ x))).
   {
-    rewrite store_restrict_restrict.
-    replace (fv_tm (e ^^ x) ∩ fv_tm (e ^^ x))
-      with (fv_tm (e ^^ x)) by set_solver.
+    rewrite store_restrict_twice_same.
     apply (map_eq (M := gmap atom)). intros z.
     rewrite !store_restrict_lookup.
     destruct (decide (z ∈ fv_tm (e ^^ x))) as [HzF|HzF].
@@ -419,9 +415,8 @@ Proof.
             store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
             store_restrict (store_restrict σ X) (fv_tm e1)).
           {
-            rewrite !store_restrict_restrict.
-            replace (fv_tm e1 ∩ fv_tm e1) with (fv_tm e1) by set_solver.
-            replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            rewrite store_restrict_twice_same.
+            rewrite store_restrict_twice_subset by exact Hfv_e1.
             reflexivity.
           }
           exact (Heq Hagree).
@@ -442,16 +437,7 @@ Proof.
           (tlete e1 e2) →* tret v).
         rewrite (subst_map_restrict_to_fv_from_superset
           (tlete e1 e2) X σ Hfv (Hclosed σ Hσ)).
-        eapply steps_tlete_from_body_projection.
-        -- exact HxX.
-        -- exact Hxe2.
-        -- exact (Hclosed σ Hσ).
-        -- exact (Hlc σ Hσ).
-        -- exact Hvx_closed.
-        -- exact Hvx_lc.
-        -- exact (Hbody σ Hσ).
-        -- exact He1X.
-        -- exact Hbody_steps_X.
+        eapply steps_tlete_from_body_projection; eauto 6.
       * rewrite <- Hrestrict.
         eapply store_restrict_drop_middle_insert.
         -- pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
@@ -488,9 +474,8 @@ Proof.
             store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1) =
             store_restrict (store_restrict σ X) (fv_tm e1)).
           {
-            rewrite !store_restrict_restrict.
-            replace (fv_tm e1 ∩ fv_tm e1) with (fv_tm e1) by set_solver.
-            replace (X ∩ fv_tm e1) with (fv_tm e1) by set_solver.
+            rewrite store_restrict_twice_same.
+            rewrite store_restrict_twice_subset by exact Hfv_e1.
             reflexivity.
           }
           exact (Heq Hagree).

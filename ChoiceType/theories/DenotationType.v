@@ -3,8 +3,9 @@
     Choice-type denotation and formula-locality lemmas. *)
 
 From LocallyNameless Require Import Tactics.
-From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
-  OperationalProps StrongNormalization Sugar.
+From CoreLang Require Import Instantiation InstantiationProps BasicTypingProps
+  LocallyNamelessProps OperationalProps StrongNormalization Sugar.
+From ChoiceLogic Require Import FormulaDerived.
 From ChoiceType Require Export DenotationFormulaEquiv.
 From ChoiceType Require Import BasicStore BasicTyping LocallyNamelessProps.
 
@@ -77,21 +78,194 @@ Proof.
   apply lvars_fv_of_atoms.
 Qed.
 
+Lemma atom_env_to_lty_env_lookup_bound_none Σ k :
+  atom_env_to_lty_env Σ !! LVBound k = None.
+Proof.
+  apply not_elem_of_dom.
+  rewrite atom_env_to_lty_env_dom.
+  intros Hin.
+  unfold lvars_of_atoms in Hin.
+  rewrite elem_of_map in Hin.
+  destruct Hin as [y [Hy _]].
+  congruence.
+Qed.
+
 Lemma lty_env_open_atom_env η Σ :
   lty_env_open η (atom_env_to_lty_env Σ) = Σ.
 Proof.
-Admitted.
-
-Lemma open_cty_env_empty τ :
-  open_cty_env ∅ τ = τ.
-Proof.
-  reflexivity.
+  unfold atom_env_to_lty_env.
+  refine (fin_maps.map_fold_ind
+    (fun Σ =>
+      lty_env_open η
+        (map_fold
+          (fun (x : atom) (T : ty) (acc : lty_env) =>
+            <[LVFree x := T]> acc) ∅ Σ) = Σ) _ _ Σ).
+  - unfold lty_env_open. rewrite map_fold_empty. reflexivity.
+  - intros x T Σ' Hfresh Hfold IH.
+    rewrite Hfold.
+    unfold lty_env_open in *.
+    rewrite (map_fold_insert_L
+      (M:=gmap logic_var)
+      (fun v U acc =>
+        match lvar_to_atom η v with
+        | Some y => <[y:=U]> acc
+        | None => acc
+        end)
+      (∅ : gmap atom ty) (LVFree x) T
+      (map_fold
+        (fun (x : atom) (T : ty) (acc : lty_env) =>
+          <[LVFree x:=T]> acc) ∅ Σ')).
+    + cbn [lvar_to_atom].
+      change (map_fold
+        (fun v U acc =>
+          match lvar_to_atom η v with
+          | Some y => <[y:=U]> acc
+          | None => acc
+          end)
+        ∅
+        (map_fold
+          (fun (x : atom) (T : ty) (acc : lty_env) =>
+            <[LVFree x:=T]> acc) ∅ Σ')) with
+        (lty_env_open η
+          (map_fold
+            (fun (x : atom) (T : ty) (acc : lty_env) =>
+              <[LVFree x:=T]> acc) ∅ Σ')).
+      change (lty_env_open η
+          (map_fold
+            (fun (x : atom) (T : ty) (acc : lty_env) =>
+              <[LVFree x:=T]> acc) ∅ Σ') = Σ') in IH.
+      rewrite IH. reflexivity.
+    + intros i j Ti Tj acc Hne Hi Hj.
+      cbn [lvar_to_atom] in *.
+      destruct i as [ki|xi], j as [kj|xj]; cbn [lvar_to_atom] in *;
+        try reflexivity.
+      * rewrite lookup_insert_ne in Hi by congruence.
+        change (map_fold
+          (fun (x0 : atom) (T0 : ty) (acc0 : lty_env) =>
+            <[LVFree x0:=T0]> acc0) ∅ Σ')
+          with (atom_env_to_lty_env Σ') in Hi.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hi. discriminate.
+      * rewrite lookup_insert_ne in Hi by congruence.
+        change (map_fold
+          (fun (x0 : atom) (T0 : ty) (acc0 : lty_env) =>
+            <[LVFree x0:=T0]> acc0) ∅ Σ')
+          with (atom_env_to_lty_env Σ') in Hi.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hi. discriminate.
+      * rewrite lookup_insert_ne in Hj by congruence.
+        change (map_fold
+          (fun (x0 : atom) (T0 : ty) (acc0 : lty_env) =>
+            <[LVFree x0:=T0]> acc0) ∅ Σ')
+          with (atom_env_to_lty_env Σ') in Hj.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj. discriminate.
+      * rewrite insert_insert_ne by congruence. reflexivity.
+    + change (map_fold
+        (fun (x0 : atom) (T0 : ty) (acc : lty_env) =>
+          <[LVFree x0:=T0]> acc) ∅ Σ')
+        with (atom_env_to_lty_env Σ').
+      apply not_elem_of_dom.
+      rewrite atom_env_to_lty_env_dom.
+      unfold lvars_of_atoms.
+      intros Hin.
+      rewrite elem_of_map in Hin.
+      destruct Hin as [y [Hy HyΣ]].
+      inversion Hy. subst.
+      apply elem_of_dom in HyΣ as [Ty HTy].
+      rewrite Hfresh in HTy. discriminate.
 Qed.
 
-Lemma open_tm_env_empty e :
-  open_tm_env ∅ e = e.
+Lemma lty_env_open_insert_bound_atom_env k x T η Σ :
+  x ∉ dom Σ →
+  lty_env_open (<[k := x]> η) (<[LVBound k := T]> (atom_env_to_lty_env Σ)) =
+  <[x := T]> Σ.
 Proof.
-  reflexivity.
+  intros Hx.
+  unfold lty_env_open.
+  set (ηx := <[k:=x]> η).
+  set (f := fun (v : logic_var) (U : ty) (acc : gmap atom ty) =>
+    match lvar_to_atom ηx v with
+    | Some y => <[y:=U]> acc
+    | None => acc
+    end).
+  change (map_fold f ∅ (<[LVBound k:=T]> (atom_env_to_lty_env Σ)) =
+    <[x:=T]> Σ).
+  rewrite (map_fold_insert_L f ∅ (LVBound k) T (atom_env_to_lty_env Σ)).
+  - subst f ηx. cbn [lvar_to_atom].
+    rewrite lookup_insert.
+    change (map_fold
+      (fun v U acc =>
+        match lvar_to_atom (<[k:=x]> η) v with
+        | Some y => <[y:=U]> acc
+        | None => acc
+        end)
+      ∅ (atom_env_to_lty_env Σ))
+      with (lty_env_open (<[k:=x]> η) (atom_env_to_lty_env Σ)).
+    rewrite lty_env_open_atom_env.
+    destruct (decide (k = k)); [reflexivity | congruence].
+  - subst f ηx.
+    intros j1 j2 z1 z2 acc Hne Hj1 Hj2.
+    cbn [lvar_to_atom].
+    destruct j1 as [j1|y1], j2 as [j2|y2]; cbn [lvar_to_atom] in *.
+    + destruct (decide (j1 = k)) as [->|Hj1k];
+        destruct (decide (j2 = k)) as [->|Hj2k].
+      * congruence.
+      * rewrite lookup_insert in Hj1.
+        rewrite lookup_insert_ne in Hj2 by congruence.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj2.
+        discriminate.
+      * rewrite lookup_insert_ne in Hj1 by congruence.
+        rewrite lookup_insert in Hj2.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj1.
+        discriminate.
+      * rewrite lookup_insert_ne in Hj1 by congruence.
+        rewrite lookup_insert_ne in Hj2 by congruence.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj1.
+        discriminate.
+    + destruct (decide (j1 = k)) as [->|Hj1k].
+      * rewrite lookup_insert in Hj1.
+        assert (Hy2 : y2 ∈ dom Σ).
+        {
+          rewrite lookup_insert_ne in Hj2 by congruence.
+          apply elem_of_dom_2 in Hj2.
+          rewrite atom_env_to_lty_env_dom in Hj2.
+          unfold lvars_of_atoms in Hj2.
+          rewrite elem_of_map in Hj2.
+          destruct Hj2 as [y [Hy Hydom]].
+          inversion Hy. subst. exact Hydom.
+        }
+        rewrite lookup_insert.
+        destruct (decide (k = k)) as [_|Hkk]; [| congruence].
+        rewrite insert_insert_ne by set_solver. reflexivity.
+      * rewrite lookup_insert_ne in Hj1 by congruence.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj1.
+        discriminate.
+    + destruct (decide (j2 = k)) as [->|Hj2k].
+      * rewrite lookup_insert in Hj2.
+        assert (Hy1 : y1 ∈ dom Σ).
+        {
+          rewrite lookup_insert_ne in Hj1 by congruence.
+          apply elem_of_dom_2 in Hj1.
+          rewrite atom_env_to_lty_env_dom in Hj1.
+          unfold lvars_of_atoms in Hj1.
+          rewrite elem_of_map in Hj1.
+          destruct Hj1 as [y [Hy Hydom]].
+          inversion Hy. subst. exact Hydom.
+        }
+        rewrite lookup_insert.
+        destruct (decide (k = k)) as [_|Hkk]; [| congruence].
+        rewrite <- insert_insert_ne by set_solver. reflexivity.
+      * rewrite lookup_insert_ne in Hj2 by congruence.
+        rewrite atom_env_to_lty_env_lookup_bound_none in Hj2.
+        discriminate.
+    + rewrite <- insert_insert_ne by congruence. reflexivity.
+  - apply atom_env_to_lty_env_lookup_bound_none.
+Qed.
+
+Lemma open_cty_env_singleton k x τ :
+  open_cty_env (<[k := x]> ∅) τ = cty_open k x τ.
+Proof.
+  unfold open_cty_env.
+  change (<[k := x]> ∅ : gmap nat atom) with ({[k := x]} : gmap nat atom).
+  rewrite map_fold_singleton. reflexivity.
 Qed.
 
 (** ** Type denotation
@@ -296,8 +470,7 @@ Proof.
     assert (Heq : store_restrict ((∅ : Store) ∪ σ) X = store_restrict σm X).
     { rewrite map_empty_union.
       rewrite <- Hrestrict.
-      rewrite store_restrict_restrict.
-      replace (X ∩ X) with X by set_solver.
+      rewrite store_restrict_twice_same.
       reflexivity. }
     rewrite Heq. apply Hclosed. exact Hσm.
   - intros σ Hσ.
@@ -305,8 +478,7 @@ Proof.
     assert (Heq : store_restrict ((∅ : Store) ∪ σ) X = store_restrict σm X).
     { rewrite map_empty_union.
       rewrite <- Hrestrict.
-      rewrite store_restrict_restrict.
-      replace (X ∩ X) with X by set_solver.
+      rewrite store_restrict_twice_same.
       reflexivity. }
     rewrite Heq. apply Htotal. exact Hσm.
 Unshelve.
@@ -399,6 +571,178 @@ Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_on (erase_ctx_under Σ Γ) τ e.
+
+Lemma denot_ty_intro Σ τ e m :
+  basic_choice_ty (dom Σ) τ →
+  Σ ⊢ₑ e ⋮ erase_ty τ →
+  world_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) e m →
+  m ⊨ denot_ty_body Σ τ e →
+  dom Σ ⊆ world_dom (m : World) →
+  m ⊨ denot_ty_on Σ τ e.
+Proof.
+  intros Hbasic Htyped Hclosed Htotal Hbody Hdom.
+  unfold denot_ty_on, denot_ty_body.
+  unfold denot_ty_obligations.
+  apply res_models_and_intro_from_models.
+  - unfold FBasicTypingIn, res_models.
+    eapply res_models_with_store_store_resource_atom_vars_intro.
+    + unfold formula_scoped_in_world.
+      rewrite formula_fv_FStoreResourceAtom_lvars.
+      rewrite !atom_env_to_lty_env_dom.
+      rewrite lvars_fv_union, !lvars_fv_of_atoms.
+      rewrite dom_empty_L. set_solver.
+    + rewrite lty_env_open_atom_env. cbn [open_cty_env open_tm_env].
+      split; assumption.
+  - apply res_models_and_intro_from_models.
+    + unfold FClosedResourceIn, res_models.
+      eapply res_models_with_store_resource_atom_vars_intro.
+      * unfold formula_scoped_in_world.
+        rewrite formula_fv_FResourceAtom_lvars.
+        rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+        rewrite dom_empty_L. set_solver.
+      * rewrite atom_env_to_lty_env_atom_dom.
+        eapply world_closed_on_le.
+        -- apply res_restrict_le.
+        -- exact Hclosed.
+    + apply res_models_and_intro_from_models.
+      * unfold FStrongTotalIn, res_models.
+        eapply res_models_with_store_store_resource_atom_vars_intro.
+        -- unfold formula_scoped_in_world.
+           rewrite formula_fv_FStoreResourceAtom_lvars.
+           rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+           rewrite dom_empty_L. set_solver.
+        -- rewrite atom_env_to_lty_env_atom_dom.
+           rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+           rewrite store_restrict_empty. cbn [open_tm_env].
+           eapply expr_total_with_store_empty_restrict; eauto.
+      * exact Hbody.
+Qed.
+
+Lemma denot_ty_body_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
+  m ⊨ denot_ty_body Σ τ e.
+Proof.
+  intros Hm.
+  unfold denot_ty_on, denot_ty_body in Hm.
+  unfold denot_ty_obligations in Hm.
+  apply res_models_with_store_and_elim_r in Hm.
+  apply res_models_with_store_and_elim_r in Hm.
+  apply res_models_with_store_and_elim_r in Hm.
+  exact Hm.
+Qed.
+
+Lemma denot_ty_basic_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
+  basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ.
+Proof.
+  intros Hm.
+  unfold denot_ty_on in Hm.
+  unfold denot_ty_obligations, FBasicTypingIn in Hm.
+  apply res_models_with_store_and_elim_l in Hm.
+  destruct (res_models_with_store_store_resource_atom_vars_elim _ _ _ _ Hm)
+    as [_ [_ [Hbasic _]]].
+  rewrite lty_env_open_atom_env in Hbasic.
+  cbn [open_cty_env open_tm_env] in Hbasic.
+  exact Hbasic.
+Qed.
+
+Lemma world_closed_on_extend X (m n : WfWorld) :
+  X ⊆ world_dom (m : World) →
+  m ⊑ n →
+  world_closed_on X m →
+  world_closed_on X n.
+Proof.
+  intros HXm Hle Hclosed σ Hσ.
+  pose proof (res_restrict_eq_of_le m n Hle) as Hrestrict.
+  assert ((res_restrict n (world_dom (m : World)) : World)
+    (store_restrict σ (world_dom (m : World)))) as Hσm.
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  rewrite Hrestrict in Hσm.
+  replace (store_restrict σ X) with
+    (store_restrict (store_restrict σ (world_dom (m : World))) X).
+  - exact (Hclosed _ Hσm).
+  - store_norm. reflexivity.
+Qed.
+
+Lemma denot_ty_world_closed_on_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
+  world_closed_on (dom Σ) m.
+Proof.
+  intros Hm.
+  unfold denot_ty_on in Hm.
+  unfold denot_ty_obligations, FClosedResourceIn in Hm.
+  apply res_models_with_store_and_elim_r in Hm.
+  apply res_models_with_store_and_elim_l in Hm.
+  destruct (res_models_with_store_resource_atom_vars_elim ∅ m
+    (dom (atom_env_to_lty_env Σ))
+    (world_closed_on (lty_env_atom_dom (atom_env_to_lty_env Σ))) Hm)
+    as [m0 [Hscope [Hclosed Hle]]].
+  rewrite atom_env_to_lty_env_atom_dom in Hclosed.
+  rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms in Hclosed.
+  eapply (world_closed_on_extend (dom Σ)
+    (res_restrict m0 (dom Σ)) m).
+  - simpl. intros z Hz. apply elem_of_intersection. split; [| exact Hz].
+    unfold formula_scoped_in_world in Hscope.
+    rewrite dom_empty_L in Hscope.
+    apply Hscope. apply elem_of_union. right.
+    rewrite formula_fv_FResourceAtom_lvars.
+    rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz.
+  - etrans; [apply res_restrict_le | exact Hle].
+  - exact Hclosed.
+Qed.
+
+Lemma denot_ty_expr_total_on_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
+  expr_total_on (dom Σ) e m.
+Proof.
+  intros Hm.
+  pose proof (denot_ty_basic_of_formula _ _ _ _ Hm)
+    as [_ Htyped].
+  split.
+  - eauto using basic_typing_contains_fv_tm.
+  - unfold denot_ty_on in Hm.
+    unfold denot_ty_obligations, FStrongTotalIn in Hm.
+    apply res_models_with_store_and_elim_r in Hm.
+    apply res_models_with_store_and_elim_r in Hm.
+    apply res_models_with_store_and_elim_l in Hm.
+    destruct (res_models_with_store_store_resource_atom_vars_elim ∅ m
+      (dom (atom_env_to_lty_env Σ))
+      (fun η ρ m =>
+        expr_total_with_store (lty_env_atom_dom (atom_env_to_lty_env Σ))
+          (open_tm_env η e) ρ m) Hm)
+      as [m0 [Hscope [Htotal Hle]]].
+    rewrite atom_env_to_lty_env_atom_dom in Htotal.
+    rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms in Htotal.
+    rewrite store_restrict_empty in Htotal.
+    cbn [open_tm_env] in Htotal.
+    destruct Htotal as [_ Htotal].
+    intros σ Hσ.
+    pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
+    assert (Hσm0 :
+      (m0 : World) (store_restrict σ (world_dom (m0 : World)))).
+    { assert ((res_restrict m (world_dom (m0 : World)) : World)
+        (store_restrict σ (world_dom (m0 : World)))) as Hraw.
+      { exists σ. split; [exact Hσ | reflexivity]. }
+      rewrite Hrestrict in Hraw. exact Hraw. }
+    assert (HdomΣ : dom Σ ⊆ world_dom (m0 : World)).
+    { unfold formula_scoped_in_world in Hscope.
+      rewrite dom_empty_L in Hscope.
+      intros z Hz. apply Hscope. apply elem_of_union. right.
+      rewrite formula_fv_FStoreResourceAtom_lvars.
+      rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz. }
+    assert (HσD :
+      (res_restrict m0 (dom Σ) : World) (store_restrict σ (dom Σ))).
+    { exists (store_restrict σ (world_dom (m0 : World))).
+      split; [exact Hσm0 |].
+      rewrite store_restrict_twice_subset by set_solver.
+      reflexivity. }
+    specialize (Htotal _ HσD) as [vx Hsteps].
+    exists vx.
+    rewrite map_empty_union in Hsteps.
+    rewrite store_restrict_twice_same in Hsteps.
+    exact Hsteps.
+Qed.
 
 Definition denot_ty_total_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
@@ -532,13 +876,13 @@ Proof.
     set_solver.
   - pose proof (IH1 Σe Στ e) as H1.
     pose proof (IH2 Σe Στ e) as H2.
-    set_solver.
+    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
   - pose proof (IH1 Σe Στ e) as H1.
     pose proof (IH2 Σe Στ e) as H2.
-    set_solver.
+    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
   - pose proof (IH1 Σe Στ e) as H1.
     pose proof (IH2 Σe Στ e) as H2.
-    set_solver.
+    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
   - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
     set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
     pose proof (IHx Σex Στ (tret (vbvar 0))) as Hx.
@@ -547,11 +891,7 @@ Proof.
     rewrite !lty_env_atom_dom_insert_bound in Hx.
     rewrite !lty_env_atom_dom_insert_bound in Hbody.
     cbn [formula_fv].
-    transitivity
-      (lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪
-        (fv_cty τx ∪ fv_cty τ)).
-    { set_solver. }
-    set_solver.
+    eapply fv_subset_env_union_pair; [exact Hx | exact Hbody].
   - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
     set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
     pose proof (IHx Σex Στ (tret (vbvar 0))) as Hx.
@@ -560,11 +900,7 @@ Proof.
     rewrite !lty_env_atom_dom_insert_bound in Hx.
     rewrite !lty_env_atom_dom_insert_bound in Hbody.
     cbn [formula_fv].
-    transitivity
-      (lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪
-        (fv_cty τx ∪ fv_cty τ)).
-    { set_solver. }
-    set_solver.
+    eapply fv_subset_env_union_pair; [exact Hx | exact Hbody].
 Qed.
 
 Lemma denot_ty_body_lvar_fv_subset Σe Στ τ e :

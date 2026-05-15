@@ -7,7 +7,7 @@
     [{[x=1;y=1], [x=2;y=2]}] is not enough: the [x=1] fiber is missing the
     admissible point [x=1;y=2]. *)
 
-From ChoiceLogic Require Import Prelude LogicQualifier Formula.
+From ChoiceLogic Require Import LogicQualifier Formula.
 From Stdlib Require Import Lia.
 
 (** Concrete atoms standing for paper variables x and y. *)

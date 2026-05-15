@@ -5,7 +5,7 @@
     makes the tlet proof support files less tangled. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
-  LocallyNamelessProps StrongNormalization.
+  BasicTypingProps LocallyNamelessProps StrongNormalization.
 From ChoiceTyping Require Export SoundnessCommon.
 From ChoiceTyping Require Export LetResultWorld.
 From ChoiceTyping Require Import Naming.
@@ -47,7 +47,7 @@ Proof.
   replace (store_restrict σ Y) with
     (store_restrict (store_restrict σ X) Y).
   - apply store_closed_restrict. exact (Hclosed σ Hσ).
-  - store_norm. replace (X ∩ Y) with Y by set_solver. reflexivity.
+  - rewrite store_restrict_twice_subset by exact HYX. reflexivity.
 Qed.
 
 Lemma world_closed_on_mono (X Y : aset) (m : WfWorld) :
@@ -61,11 +61,11 @@ Proof.
   - replace (store_restrict σ X) with
       (store_restrict (store_restrict σ Y) X).
     + apply closed_env_restrict. exact Hclosed_env.
-    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
+    + rewrite store_restrict_twice_subset by exact HXY. reflexivity.
   - replace (store_restrict σ X) with
       (store_restrict (store_restrict σ Y) X).
     + apply lc_env_restrict. exact Hlc_env.
-    + store_norm. replace (Y ∩ X) with X by set_solver. reflexivity.
+    + rewrite store_restrict_twice_subset by exact HXY. reflexivity.
 Qed.
 
 Lemma expr_total_on_to_fv_result X e (m : WfWorld) :
@@ -87,16 +87,15 @@ Proof.
       (store_restrict σ (fv_tm e)).
     - exact (proj1 (world_closed_on_store_restrict_closed
         X (fv_tm e) m σ Hfv Hclosed Hσ)).
-    - store_norm. replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
-      reflexivity.
+    - rewrite store_restrict_twice_subset by exact Hfv. reflexivity.
   }
   specialize (Heq Hclosed_fv).
   assert (Hagree :
     store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
     store_restrict (store_restrict σ X) (fv_tm e)).
   {
-    store_norm.
-    replace (X ∩ fv_tm e) with (fv_tm e) by set_solver.
+    rewrite store_restrict_twice_same.
+    rewrite store_restrict_twice_subset by exact Hfv.
     reflexivity.
   }
   specialize (Heq Hagree).
@@ -123,7 +122,7 @@ Proof.
   replace (store_restrict σ X) with σ.
   - apply msubst_closed_tm.
     + eapply world_closed_on_restrict_store_closed; eauto.
-    + exact Hlc.
+    + eauto 6.
     + change (fv_tm e ⊆ dom σ).
       pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
       simpl in Hdom. rewrite Hdom. set_solver.
@@ -142,7 +141,7 @@ Proof.
   intros HXm Hfv Hlc Hclosed Hσ Hsteps.
   eapply steps_closed_result.
   - eapply msubst_closed_tm_of_restrict_world; eauto.
-  - exact Hsteps.
+  - eauto 6.
 Qed.
 
 Lemma body_tm_msubst_restrict_world X e (m : WfWorld) σ :
@@ -163,7 +162,7 @@ Proof.
         Hclosed Hσ)).
     + exact (proj2 (world_closed_on_restrict_store_closed X m σ
         Hclosed Hσ)).
-    + exact Hbody.
+    + eauto 6.
   - symmetry. apply store_restrict_idemp. exact Hdomσ.
 Qed.
 
@@ -209,15 +208,62 @@ Proof.
   rewrite store_restrict_insert_fresh_union.
   2:{
     eapply store_lookup_none_of_dom.
-    - apply wfworld_store_dom. exact Hσ.
-    - exact Hfresh.
+    - apply wfworld_store_dom; eauto 6.
+    - eauto 6.
   }
-  2:{ exact HνX. }
+  2:{ eauto 6. }
   destruct (Hclosed σ Hσ) as [Hclosedσ Hlcσ].
   destruct (Hres σ vx Hσ Hsteps) as [Hvx_closed Hvx_lc].
   split.
   - unfold closed_env in *.
-    apply map_Forall_insert_2; [exact Hvx_closed | exact Hclosedσ].
+    apply map_Forall_insert_2; eauto 6.
   - unfold lc_env in *.
-    apply map_Forall_insert_2; [exact Hvx_lc | exact Hlcσ].
+    apply map_Forall_insert_2; eauto 6.
+Qed.
+
+Lemma let_result_world_on_closed_insert_from_basic_subset
+    (Δ : gmap atom ty) T e x (m : WfWorld) Hfresh Hresult :
+  Δ ⊢ₑ e ⋮ T →
+  dom Δ ⊆ world_dom (m : World) →
+  world_closed_on (dom Δ) m →
+  x ∉ dom Δ →
+  world_closed_on (dom (<[x := T]> Δ))
+    (let_result_world_on e x m Hfresh Hresult).
+Proof.
+  intros Htyped Hdom Hclosed Hx.
+  rewrite dom_insert_L.
+  replace ({[x]} ∪ dom Δ) with (dom Δ ∪ {[x]}) by set_solver.
+  eapply let_result_world_on_store_closed_on_insert.
+  - eauto 6.
+  - eauto 6.
+  - intros σ vx Hσ Hsteps.
+    pose proof (basic_typing_contains_fv_tm Δ e T Htyped) as Hfv.
+    pose proof (typing_tm_lc Δ e T Htyped) as Hlc.
+    assert (Hclosed_fv : world_closed_on (fv_tm e) m).
+    { eapply world_closed_on_mono; [exact Hfv | exact Hclosed]. }
+    eapply (steps_closed_result_of_restrict_world
+      (fv_tm e) e m (store_restrict σ (fv_tm e)) vx).
+    + intros z Hz. apply Hdom. apply Hfv. exact Hz.
+    + set_solver.
+    + eauto 6.
+    + eauto 6.
+    + exists σ. split; eauto 6.
+    + replace (store_restrict (store_restrict σ (fv_tm e)) (fv_tm e))
+        with (store_restrict σ (fv_tm e)).
+      * eauto 6.
+      * store_norm. reflexivity.
+Qed.
+
+Lemma let_result_world_on_closed_insert_from_basic
+    (Δ : gmap atom ty) T e x (m : WfWorld) Hfresh Hresult :
+  Δ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Δ →
+  world_closed_on (dom Δ) m →
+  x ∉ dom Δ →
+  world_closed_on (dom (<[x := T]> Δ))
+    (let_result_world_on e x m Hfresh Hresult).
+Proof.
+  intros Htyped Hdom Hclosed Hx.
+  eapply let_result_world_on_closed_insert_from_basic_subset; eauto.
+  rewrite Hdom. set_solver.
 Qed.

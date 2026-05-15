@@ -50,6 +50,59 @@ explicit proof and add a warning comment:
    atoms and made TLetReduction.v recompile slowly. *)
 ```
 
+## Delete wrappers that add no proof value
+
+Do not keep a lemma, definition, or tactic only because it makes a proof one
+line shorter.  Before simplifying a proof, ask whether the named fact adds a
+semantic boundary, hides a representation intentionally, is used as a stable
+public API, or appears often enough to justify a local abstraction.
+
+Delete or inline candidates like:
+
+```coq
+Ltac denot_sugar_norm := denot_lvars_norm.
+
+Lemma store_has_type_on_lookup Σ X σ x T v :
+  store_has_type_on Σ X σ →
+  x ∈ X →
+  Σ !! x = Some T →
+  σ !! x = Some v →
+  ∅ ⊢ᵥ v ⋮ T.
+Proof. intros; eauto 6. Qed.
+```
+
+The first is only a tactic alias.  The second merely applies the definition of
+`store_has_type_on`; callers can use the hypothesis directly.  The same applies
+to lemmas that only project a conjunction or unfold a definition and then call
+`eauto 6`, unless the lemma name is a deliberate public interface.
+
+When every constructor case has the same proof, merge the proof instead of
+writing repeated cases:
+
+```coq
+Proof.
+  induction 1; simpl; set_solver.
+Qed.
+```
+
+Prefer keeping thin intro/elim lemmas only when they hide a representation that
+callers should not know about, such as a raw-world constructor or an existential
+encoding used across many files.  In that case the short proof is acceptable
+because the lemma is an abstraction boundary, not a convenience wrapper.
+
+The same rule applies at the file/module level.  A `.v` file that only says:
+
+```coq
+From Foo Require Export Bar.
+```
+
+is usually not worth keeping in the main build.  It adds another compiled
+object, another load step, and a wider invalidation surface without adding
+definitions or proof boundaries.  Prefer importing the real dependency
+directly from the files that need it.  Keep a bundle file only when it is an
+intentional public facade used by external clients or when it substantially
+stabilizes many imports.
+
 ## Split automation by layer
 
 Do not build one global tactic that unfolds the whole development.  Each layer
@@ -196,6 +249,23 @@ add it to the appropriate solver.  This is especially useful for:
 - `lvars_fv (D ∪ E)`
 - `world_dom (res_restrict m X)`
 
+Pure set lemmas that only package `set_solver` should not live as ad-hoc local
+lemmas in semantic proof files.  If the same shape appears in several cases,
+move it to `ChoicePrelude` or the local set solver as a general helper:
+
+```coq
+Lemma fv_subset_env_union_pair (X Y A B C D : aset) :
+  A ⊆ X ∪ Y ∪ C →
+  B ⊆ X ∪ Y ∪ D →
+  X ∪ Y ∪ (A ∪ B) ⊆ X ∪ Y ∪ (C ∪ D).
+Proof.
+  set_solver.
+Qed.
+```
+
+If the fact is truly one-use, inline it after clearing unrelated semantic
+hypotheses instead of naming a throwaway lemma.
+
 Also reduce the proof context before calling automation.  Many slow proof
 commands are not slow because the target set fact is hard, but because the
 context contains large semantic hypotheses such as full denotations, typing
@@ -227,6 +297,19 @@ rewrite (big_lemma ... ltac:(set_solver)).
 assert (Hν : ν ∉ D ∪ {[x]} ∪ fv_tm e) by set_solver.
 rewrite (big_lemma ... Hν).
 ```
+
+The same applies to very small subset goals in large semantic contexts.  A goal
+like `dom Δ ⊆ dom (<[x := T]> Δ)` should be proved elementwise instead of by
+calling `set_solver` with hundreds of hypotheses in scope:
+
+```coq
+intros z Hz.
+rewrite dom_insert_L.
+apply elem_of_union_r. exact Hz.
+```
+
+This kind of explicit proof is often faster than `clear - ...; set_solver` and
+documents that the fact is only a one-step domain inclusion.
 
 ## Basic typing solver pattern
 

@@ -2,7 +2,7 @@
 
     Soundness skeleton for the single declarative typing judgment. *)
 
-From ChoiceTyping Require Export SoundnessHelpers.
+From ChoiceTyping Require Export SoundnessCommon TLetDenotation.
 From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessProps
   StrongNormalization.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
@@ -19,7 +19,7 @@ Proof.
   pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ2 Hwf) as Hfv.
   pose proof (Hent e Hfv m HΓ) as Himpl.
   eapply res_models_impl_elim; [exact Himpl |].
-  apply IH. exact HΓ.
+  apply IH; eauto 6.
 Qed.
 
 Lemma fundamental_sub_total_case
@@ -36,7 +36,7 @@ Proof.
   split.
   - eapply fundamental_sub_case; eauto.
     intros n Hn. exact (proj1 (IH n Hn)).
-  - exact Htotal.
+  - eauto 6.
 Qed.
 
 (** The context-subtyping case of the fundamental theorem. *)
@@ -63,7 +63,7 @@ Proof.
   simpl in Hbind.
   unfold denot_ty_in_ctx_under, erase_ctx_under. simpl.
   replace (Σ ∪ {[x := erase_ty τ]}) with (<[x := erase_ty τ]> Σ).
-  - exact Hbind.
+  - eauto 6.
   - apply (map_eq (M := gmap atom)). intros z.
     rewrite lookup_insert.
     destruct (decide (z = x)) as [->|Hzx].
@@ -72,7 +72,7 @@ Proof.
       * rewrite lookup_singleton. rewrite decide_True by reflexivity. reflexivity.
       * apply not_elem_of_dom.
         match goal with
-        | H : x ∉ dom Σ |- _ => exact H
+        | H : x ∉ dom Σ |- _ => eauto 6
         end.
     + rewrite decide_False by congruence.
       rewrite lookup_union.
@@ -87,14 +87,14 @@ Lemma expr_total_on_ret_lc X v (m : WfWorld) :
   expr_total_on X (tret v) m.
 Proof.
   intros Hfv Hlc Henv.
-  split; [simpl; exact Hfv |].
+  split; [simpl; eauto 6 |].
   intros σ Hσ.
   exists (m{store_restrict σ X} v).
   change (m{store_restrict σ X} (tret v) →* tret (m{store_restrict σ X} v)).
   rewrite msubst_ret.
   apply Steps_refl.
   constructor.
-  apply msubst_lc; [apply Henv; exact Hσ | exact Hlc].
+  apply msubst_lc; eauto 6.
 Qed.
 
 Lemma fundamental_var_total_case Σ (x : atom) (τ : choice_ty) :
@@ -171,7 +171,7 @@ Lemma fundamental_const_total_case Σ c :
 Proof.
   intros m Hctx.
   split.
-  - apply fundamental_const_case. exact Hctx.
+  - apply fundamental_const_case; eauto 6.
   - apply expr_total_on_ret_const.
 Qed.
 
@@ -182,7 +182,7 @@ Proof.
   intros [_ Herase].
   apply typing_tm_lc in Herase.
   apply lc_lete_iff_body in Herase as [_ Hbody].
-  exact Hbody.
+  eauto 6.
 Qed.
 
 Lemma choice_typing_wf_inter_l Σ Γ e τ1 τ2 :
@@ -192,7 +192,7 @@ Proof.
   intros [Hwf Herase].
   destruct Hwf as [Hctx Hbasic].
   inversion Hbasic; subst.
-  split; [split; assumption | exact Herase].
+  split; [split; eauto 6 | eauto 6].
 Qed.
 
 Lemma choice_typing_wf_inter_r Σ Γ e τ1 τ2 :
@@ -208,7 +208,7 @@ Proof.
     match goal with
     | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
     end.
-    exact Herase.
+    eauto 6.
 Qed.
 
 Lemma choice_typing_wf_union_l Σ Γ e τ1 τ2 :
@@ -218,7 +218,7 @@ Proof.
   intros [Hwf Herase].
   destruct Hwf as [Hctx Hbasic].
   inversion Hbasic; subst.
-  split; [split; assumption | exact Herase].
+  split; [split; eauto 6 | eauto 6].
 Qed.
 
 Lemma choice_typing_wf_union_r Σ Γ e τ1 τ2 :
@@ -234,7 +234,7 @@ Proof.
     match goal with
     | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
     end.
-    exact Herase.
+    eauto 6.
 Qed.
 
 Lemma choice_typing_wf_sum_l Σ Γ e τ1 τ2 :
@@ -244,7 +244,7 @@ Proof.
   intros [Hwf Herase].
   destruct Hwf as [Hctx Hbasic].
   inversion Hbasic; subst.
-  split; [split; assumption | exact Herase].
+  split; [split; eauto 6 | eauto 6].
 Qed.
 
 Lemma choice_typing_wf_sum_r Σ Γ e τ1 τ2 :
@@ -260,7 +260,7 @@ Proof.
     match goal with
     | H : erase_ty τ1 = erase_ty τ2 |- _ => rewrite H in Herase
     end.
-    exact Herase.
+    eauto 6.
 Qed.
 
 (** The semantic content of [T-Let].
@@ -324,7 +324,7 @@ Proof.
   - exact (proj2 Hwf).
   - intros n Hn. eapply entails_total_to_total_model; eauto.
   - intros x HxL n Hn. eapply entails_total_to_total_model; eauto.
-  - exact Hm.
+  - eauto 6.
 Qed.
 
 Lemma fundamental_total_let_case (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :

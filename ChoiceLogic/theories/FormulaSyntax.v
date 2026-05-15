@@ -1,4 +1,4 @@
-From ChoiceLogic Require Export Prelude LogicQualifier.
+From ChoiceLogic Require Export LogicQualifier.
 
 (** * Choice Logic  (Definitions 1.8 and 1.9)
 
@@ -94,6 +94,15 @@ Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.
 Admitted.
+
+Lemma formula_open_fv_subset_env k x φ X :
+  formula_fv φ ⊆ X →
+  formula_fv (formula_open k x φ) ⊆ X ∪ {[x]}.
+Proof.
+  intros Hφ z Hz.
+  pose proof (formula_open_fv_subset k x φ z Hz).
+  set_solver.
+Qed.
 
 Lemma formula_measure_pos (φ : Formula) :
   0 < formula_measure φ.

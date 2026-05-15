@@ -1,4 +1,3 @@
-From ChoiceAlgebra Require Import Prelude.
 From ChoicePrelude Require Import Store.
 From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality
   Logic.ProofIrrelevance.
@@ -1885,6 +1884,24 @@ Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
 Proof.
   intros Hle1 Hle2.
   exact (raw_sum_le_mono w1 w2 w1' w2' Hdef Hdef' Hle1 Hle2).
+Qed.
+
+Lemma res_restrict_sum
+    (w1 w2 : WfWorld) (X : aset)
+    (Hdef : raw_sum_defined w1 w2)
+    (HdefX : raw_sum_defined (res_restrict w1 X) (res_restrict w2 X)) :
+  res_sum (res_restrict w1 X) (res_restrict w2 X) HdefX =
+  res_restrict (res_sum w1 w2 Hdef) X.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - simpl. unfold raw_sum_defined in Hdef. set_solver.
+  - intros σ. simpl. split.
+    + intros [[σ1 [Hσ1 Hrestrict]] | [σ2 [Hσ2 Hrestrict]]].
+      * exists σ1. split; [left; exact Hσ1 | exact Hrestrict].
+      * exists σ2. split; [right; exact Hσ2 | exact Hrestrict].
+    + intros [σ0 [[Hσ0 | Hσ0] Hrestrict]].
+      * left. exists σ0. split; [exact Hσ0 | exact Hrestrict].
+      * right. exists σ0. split; [exact Hσ0 | exact Hrestrict].
 Qed.
 
 Lemma res_sum_lift_along_restrict

@@ -308,11 +308,3 @@ Proof.
   - apply res_restrict_mono. apply denot_ctx_under_formula_fv_subset.
   - apply res_models_restrict_fv. exact Hm.
 Qed.
-
-Lemma denot_ctx_restrict_stale Γ m :
-  m ⊨ ⟦Γ⟧ →
-  res_restrict m (dom (erase_ctx Γ) ∪ ctx_stale Γ) ⊨ ⟦Γ⟧.
-Proof.
-  unfold denot_ctx.
-  apply denot_ctx_under_restrict_stale.
-Qed.

@@ -7,7 +7,7 @@
     this file provides the corresponding intro/elim and transport lemmas at
     the logic layer, so typing proofs do not need to carry local copies. *)
 
-From ChoiceLogic Require Import Prelude LogicQualifier Formula FormulaTactics.
+From ChoiceLogic Require Import LogicQualifier Formula FormulaTactics.
 
 Section FormulaDerived.
 
@@ -53,7 +53,7 @@ Lemma res_models_and_intro_from_models (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ FAnd φ ψ.
 Proof.
   intros Hφ Hψ.
-  eapply res_models_and_intro.
+  eapply res_models_and_intro; eauto 6.
   - unfold formula_scoped_in_world.
     pose proof (res_models_with_store_fuel_scoped
       (formula_measure φ) ∅ m φ Hφ) as Hscopeφ.
@@ -61,8 +61,16 @@ Proof.
       (formula_measure ψ) ∅ m ψ Hψ) as Hscopeψ.
     unfold formula_scoped_in_world in *.
     set_solver.
-  - exact Hφ.
-  - exact Hψ.
+Qed.
+
+Lemma res_models_and_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  m ⊨ FAnd φ ψ ↔ m ⊨ φ ∧ m ⊨ ψ.
+Proof.
+  split.
+  - intros Hand. split.
+    + eapply res_models_and_elim_l; eauto 6.
+    + eapply res_models_and_elim_r; eauto 6.
+  - intros [Hφ Hψ]. eapply res_models_and_intro_from_models; eauto 6.
 Qed.
 
 Lemma res_models_or_intro_l (m : WfWorldT) (φ ψ : FormulaT) :
@@ -89,13 +97,12 @@ Lemma res_models_or_intro_l_from_model (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ FOr φ ψ.
 Proof.
   intros Hφ Hψscope.
-  eapply res_models_or_intro_l.
+  eapply res_models_or_intro_l; eauto 6.
   - unfold formula_scoped_in_world. simpl.
     pose proof (res_models_with_store_fuel_scoped
       (formula_measure φ) ∅ m φ Hφ) as Hscopeφ.
     unfold formula_scoped_in_world in Hscopeφ.
     set_solver.
-  - exact Hφ.
 Qed.
 
 Lemma res_models_or_intro_r_from_model (m : WfWorldT) (φ ψ : FormulaT) :
@@ -104,13 +111,12 @@ Lemma res_models_or_intro_r_from_model (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ FOr φ ψ.
 Proof.
   intros Hφscope Hψ.
-  eapply res_models_or_intro_r.
+  eapply res_models_or_intro_r; eauto 6.
   - unfold formula_scoped_in_world. simpl.
     pose proof (res_models_with_store_fuel_scoped
       (formula_measure ψ) ∅ m ψ Hψ) as Hscopeψ.
     unfold formula_scoped_in_world in Hscopeψ.
     set_solver.
-  - exact Hψ.
 Qed.
 
 Lemma res_models_or_transport_between_worlds
@@ -158,6 +164,22 @@ Proof.
   - models_fuel_irrel Hψ.
 Qed.
 
+Lemma res_models_star_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FStar φ ψ) →
+  (m ⊨ FStar φ ψ ↔
+   ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+     res_product m1 m2 Hc ⊑ m ∧ m1 ⊨ φ ∧ m2 ⊨ ψ).
+Proof.
+  intros Hscope. split.
+  - unfold res_models, res_models_with_store.
+    simpl. intros [_ [m1 [m2 [Hc [Hle [Hφ Hψ]]]]]].
+    exists m1, m2, Hc. repeat split; eauto.
+    + unfold res_models, res_models_with_store. models_fuel_irrel Hφ.
+    + unfold res_models, res_models_with_store. models_fuel_irrel Hψ.
+  - intros [m1 [m2 [Hc [Hle [Hφ Hψ]]]]].
+    eapply res_models_star_intro; eauto 6.
+Qed.
+
 Lemma res_models_plus_intro
     (m m1 m2 : WfWorldT) (φ ψ : FormulaT) (Hdef : raw_sum_defined m1 m2) :
   formula_scoped_in_world ∅ m (FPlus φ ψ) →
@@ -171,6 +193,44 @@ Proof.
   exists m1, m2, Hdef. split; [exact Hle |]. split.
   - models_fuel_irrel Hφ.
   - models_fuel_irrel Hψ.
+Qed.
+
+Lemma res_models_plus_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FPlus φ ψ) →
+  (m ⊨ FPlus φ ψ ↔
+   ∃ (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+     res_sum m1 m2 Hdef ⊑ m ∧ m1 ⊨ φ ∧ m2 ⊨ ψ).
+Proof.
+  intros Hscope. split.
+  - unfold res_models, res_models_with_store.
+    simpl. intros [_ [m1 [m2 [Hdef [Hle [Hφ Hψ]]]]]].
+    exists m1, m2, Hdef. repeat split; eauto.
+    + unfold res_models, res_models_with_store. models_fuel_irrel Hφ.
+    + unfold res_models, res_models_with_store. models_fuel_irrel Hψ.
+  - intros [m1 [m2 [Hdef [Hle [Hφ Hψ]]]]].
+    eapply res_models_plus_intro; eauto 6.
+Qed.
+
+Lemma res_models_plus_intro_from_models
+    (m m1 m2 : WfWorldT) (φ ψ : FormulaT) (Hdef : raw_sum_defined m1 m2) :
+  res_sum m1 m2 Hdef ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  m ⊨ FPlus φ ψ.
+Proof.
+  intros Hle Hφ Hψ.
+  eapply res_models_plus_intro; [| exact Hle | exact Hφ | exact Hψ].
+  unfold formula_scoped_in_world.
+  cbn [formula_fv].
+  pose proof (raw_le_dom _ _ Hle) as Hdom_sum.
+  pose proof (res_models_with_store_fuel_scoped _ ∅ m1 φ Hφ) as Hscopeφ.
+  pose proof (res_models_with_store_fuel_scoped _ ∅ m2 ψ Hψ) as Hscopeψ.
+  unfold formula_scoped_in_world in Hscopeφ, Hscopeψ.
+  intros z Hz.
+  apply elem_of_union in Hz as [Hz | Hz]; [set_solver |].
+  apply elem_of_union in Hz as [Hz | Hz].
+  - apply Hdom_sum. simpl. apply Hscopeφ. set_solver.
+  - apply Hdom_sum. simpl. rewrite Hdef. apply Hscopeψ. set_solver.
 Qed.
 
 Lemma res_models_plus_map
@@ -250,11 +310,10 @@ Lemma res_models_over_intro_same_from_model (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FOver φ.
 Proof.
   intros Hφ.
-  eapply res_models_over_intro_same.
+  eapply res_models_over_intro_same; eauto 6.
   - pose proof (res_models_with_store_fuel_scoped
       (formula_measure φ) ∅ m φ Hφ) as Hscope.
     unfold formula_scoped_in_world in *. simpl. exact Hscope.
-  - exact Hφ.
 Qed.
 
 Lemma res_models_under_intro_same (m : WfWorldT) (φ : FormulaT) :
@@ -285,11 +344,10 @@ Lemma res_models_under_intro_same_from_model (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FUnder φ.
 Proof.
   intros Hφ.
-  eapply res_models_under_intro_same.
+  eapply res_models_under_intro_same; eauto 6.
   - pose proof (res_models_with_store_fuel_scoped
       (formula_measure φ) ∅ m φ Hφ) as Hscope.
     unfold formula_scoped_in_world in *. simpl. exact Hscope.
-  - exact Hφ.
 Qed.
 
 Lemma res_models_FFibVars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
@@ -310,14 +368,70 @@ Proof.
     models_fuel_irrel (Hfib σ Hproj).
 Qed.
 
+Lemma res_models_FFibVars_iff (m : WfWorldT) (D : lvset) (φ : FormulaT) :
+  formula_scoped_in_world ∅ m (FFibVars D φ) →
+  (m ⊨ FFibVars D φ ↔
+   ∀ σ,
+     ∀ Hproj : res_restrict m (lvars_fv D) σ,
+     res_models_with_store σ
+       (res_fiber_from_projection m (lvars_fv D) σ Hproj)
+       φ).
+Proof.
+  intros Hscope. split.
+  - unfold res_models, res_models_with_store.
+    simpl. intros [_ [_ Hfib]] σ Hproj.
+    specialize (Hfib σ Hproj).
+    rewrite map_empty_union in Hfib.
+    models_fuel_irrel Hfib.
+  - intros Hfib. eapply res_models_FFibVars_intro; eauto 6.
+Qed.
+
+Lemma res_models_impl_future_iff_local (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m φ →
+  formula_scoped_in_world ∅ m ψ →
+  ((∀ m', m ⊑ m' → m' ⊨ φ → m' ⊨ ψ) ↔
+   (m ⊨ φ → m ⊨ ψ)).
+Proof.
+  intros Hφscope Hψscope. split.
+  - intros Hfuture Hφ. eapply Hfuture; [reflexivity | exact Hφ].
+  - intros Hlocal m' Hle Hφ.
+    assert (Hφ_base : m ⊨ φ).
+    {
+      pose proof (res_models_minimal_on (world_dom (m : World)) m' φ
+        ltac:(unfold formula_scoped_in_world in Hφscope; simpl in Hφscope; set_solver))
+        as Hminimal.
+      rewrite <- (res_restrict_eq_of_le m m' Hle) at 1.
+      apply (proj1 Hminimal). exact Hφ.
+    }
+    eapply res_models_kripke; [exact Hle |].
+    eauto 6.
+Qed.
+
+Lemma res_models_impl_future_iff_local_from_impl_scope
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FImpl φ ψ) →
+  ((∀ m', m ⊑ m' → m' ⊨ φ → m' ⊨ ψ) ↔
+   (m ⊨ φ → m ⊨ ψ)).
+Proof.
+  intros Hscope.
+  eapply res_models_impl_future_iff_local;
+    unfold formula_scoped_in_world in *; simpl in *; set_solver.
+Qed.
+
 Lemma res_models_impl_intro (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world ∅ m (FImpl φ ψ) →
-  (∀ m', m ⊑ m' →
-         m' ⊨ φ → m' ⊨ ψ) →
+  (m ⊨ φ → m ⊨ ψ) →
   m ⊨ FImpl φ ψ.
 Proof.
+  intros Hscope Hlocal.
+  pose proof (proj2 (res_models_impl_future_iff_local_from_impl_scope
+    m φ ψ Hscope) Hlocal) as Hfuture.
   unfold res_models.
-  apply res_models_with_store_impl_intro.
+  eapply res_models_with_store_impl_intro; [exact Hscope |].
+  intros m' Hle Hφ.
+  change (m' ⊨ φ) in Hφ.
+  change (m' ⊨ ψ).
+  eauto 6.
 Qed.
 
 Lemma res_models_impl_elim (m : WfWorldT) (φ ψ : FormulaT) :
@@ -329,32 +443,43 @@ Proof.
   apply res_models_with_store_impl_elim.
 Qed.
 
+Lemma res_models_impl_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FImpl φ ψ) →
+  (m ⊨ FImpl φ ψ ↔ (m ⊨ φ → m ⊨ ψ)).
+Proof.
+  intros Hscope. split.
+  - intros Himpl Hφ. eapply res_models_impl_elim; eauto 6.
+  - intros Himpl. eapply res_models_impl_intro; eauto 6.
+Qed.
+
 Lemma res_models_impl_antecedent_strengthen
     (m : WfWorldT) (φ1 φ2 ψ : FormulaT) :
   formula_scoped_in_world ∅ m (FImpl φ2 ψ) →
-  (∀ m', m ⊑ m' → m' ⊨ φ2 → m' ⊨ φ1) →
+  (m ⊨ φ2 → m ⊨ φ1) →
   m ⊨ FImpl φ1 ψ →
   m ⊨ FImpl φ2 ψ.
 Proof.
-  unfold res_models.
-  apply res_models_with_store_impl_antecedent_strengthen.
+  intros Hscope Hφ Himpl.
+  eapply res_models_impl_intro; [exact Hscope |].
+  intros Hφ2.
+  eapply res_models_impl_elim; eauto 6.
 Qed.
 
 Lemma res_models_impl_map
     (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
   formula_scoped_in_world ∅ m (FImpl φ2 ψ2) →
-  (∀ m', m ⊑ m' → m' ⊨ φ2 → m' ⊨ φ1) →
-  (∀ m', m ⊑ m' → m' ⊨ ψ1 → m' ⊨ ψ2) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (m ⊨ ψ1 → m ⊨ ψ2) →
   m ⊨ FImpl φ1 ψ1 →
   m ⊨ FImpl φ2 ψ2.
 Proof.
   intros Hscope Hφ Hψ Himpl.
   eapply res_models_impl_intro; [exact Hscope |].
-  intros m' Hle Hφ2.
-  apply Hψ; [exact Hle |].
+  intros Hφ2.
+  apply Hψ.
   eapply res_models_impl_elim.
-  - eapply res_models_kripke; [exact Hle | exact Himpl].
-  - apply Hφ; [exact Hle | exact Hφ2].
+  - exact Himpl.
+  - apply Hφ. exact Hφ2.
 Qed.
 
 Lemma res_models_wand_intro (m : WfWorldT) (φ ψ : FormulaT) :
@@ -383,6 +508,18 @@ Proof.
   models_fuel_irrel Hψ.
 Qed.
 
+Lemma res_models_wand_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FWand φ ψ) →
+  (m ⊨ FWand φ ψ ↔
+   ∀ (m' : WfWorldT) (Hc : world_compat m' m),
+     m' ⊨ φ →
+     res_product m' m Hc ⊨ ψ).
+Proof.
+  intros Hscope. split.
+  - intros Hwand m' Hc Hφ. eapply res_models_wand_elim; eauto 6.
+  - intros Hwand. eapply res_models_wand_intro; eauto 6.
+Qed.
+
 Lemma res_models_wand_antecedent_strengthen
     (m : WfWorldT) (φ1 φ2 ψ : FormulaT) :
   formula_scoped_in_world ∅ m (FWand φ2 ψ) →
@@ -393,9 +530,7 @@ Proof.
   intros Hscope Hφ Hwand.
   eapply res_models_wand_intro; [exact Hscope |].
   intros m' Hc Hφ2.
-  eapply res_models_wand_elim.
-  - exact Hwand.
-  - apply Hφ; [exact Hc | exact Hφ2].
+  eapply res_models_wand_elim; eauto 6.
 Qed.
 
 Lemma res_models_wand_map
@@ -454,6 +589,34 @@ Proof.
   exists L. split; [exact HLdom |].
   intros y Hy m' Hdom Hrestrict.
   specialize (Hopen y Hy m' Hdom Hrestrict).
+  models_fuel_irrel Hopen.
+Qed.
+
+Lemma res_models_forall_map (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FForall ψ) →
+  (∀ y : atom,
+    y ∉ world_dom m →
+    ∀ m' : WfWorldT,
+      world_dom m' = world_dom m ∪ {[y]} →
+      res_restrict m' (world_dom m) = m →
+      m' ⊨ formula_open 0 y φ →
+      m' ⊨ formula_open 0 y ψ) →
+  m ⊨ FForall φ →
+  m ⊨ FForall ψ.
+Proof.
+  intros Hscope Hmap Hforall.
+  eapply res_models_forall_intro; [exact Hscope |].
+  unfold res_models, res_models_with_store in Hforall.
+  cbn [formula_measure res_models_with_store_fuel
+    formula_scoped_in_world formula_fv] in Hforall.
+  destruct Hforall as [_ [L [HLdom Hopen]]].
+  exists (L ∪ world_dom m).
+  split; [set_solver |].
+  intros y Hy m' Hdom Hrestrict.
+  rewrite not_elem_of_union in Hy.
+  destruct Hy as [HyL Hym].
+  eapply Hmap; eauto.
+  specialize (Hopen y HyL m' Hdom Hrestrict).
   models_fuel_irrel Hopen.
 Qed.
 

@@ -5,8 +5,100 @@
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   BasicTypingProps LocallyNamelessProps.
-From ChoiceTyping Require Import ResultWorldBridge.
+From ChoiceTyping Require Import SoundnessCommon LetResultWorld ResultWorldClosed.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
+
+Lemma store_eq_insert_of_restrict_singleton
+    X (σx σ : Store) ν vx :
+  dom σx = X ∪ {[ν]} →
+  ν ∉ X →
+  store_restrict σx X = σ →
+  store_restrict σx {[ν]} = {[ν := vx]} →
+  σx = <[ν := vx]> σ.
+Proof.
+  intros Hdom HνX HσX Hσν.
+  assert (Hdomσ : dom σ ⊆ X).
+  {
+    rewrite <- HσX, store_restrict_dom. set_solver.
+  }
+  transitivity (store_restrict σx (X ∪ {[ν]})).
+  - symmetry. apply store_restrict_idemp_eq. exact Hdom.
+  - rewrite (store_restrict_union_from_parts σx σ ({[ν := vx]}) X ν);
+      try assumption.
+    change ({[ν := vx]} : Store) with (<[ν := vx]> (∅ : Store)).
+    rewrite store_insert_union_r_fresh by set_solver.
+    rewrite (map_union_empty σ). reflexivity.
+Qed.
+
+Local Lemma inter_self (X : aset) :
+  X ∩ X = X.
+Proof.
+  set_solver.
+Qed.
+
+Local Lemma inter_union_singleton_l (X : aset) (ν : atom) :
+  (X ∪ {[ν]}) ∩ X = X.
+Proof.
+  set_solver.
+Qed.
+
+Local Lemma inter_union_singleton_r_fresh (X : aset) (ν : atom) :
+  ν ∉ X →
+  (X ∪ {[ν]}) ∩ ({[ν]} : aset) = {[ν]}.
+Proof.
+  set_solver.
+Qed.
+
+Lemma FExprResultAt_fiber_expr_result_in_world
+    X e ν (n : WfWorld) σX Hproj :
+  lc_tm e →
+  world_dom (n : World) = X ∪ {[ν]} →
+  n ⊨ FExprResultAt X e ν →
+  expr_result_in_world (store_restrict σX X) e ν
+    (res_fiber_from_projection n X σX Hproj).
+Proof.
+  intros Hlc Hdom Hmodel.
+  unfold FExprResultAt, FExprResultOn in Hmodel.
+  cbn [formula_open] in Hmodel.
+  rewrite lvars_open_of_atoms in Hmodel.
+  destruct (FFibVars_models_elim _ _ _ _ Hmodel) as [_ Hfib].
+  rewrite lvars_fv_of_atoms in Hfib.
+  specialize (Hfib σX Hproj).
+  unfold res_models_with_store, FStoreResourceAtom in Hfib.
+  cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+    formula_fv formula_open lqual_dom logic_qualifier_denote lqual_prop
+    lqual_open stale stale_logic_qualifier into_lvars into_lvars_aset
+    into_lvars_lvset] in Hfib.
+  denot_lvars_norm.
+  rewrite lvars_fv_open_atoms_with_bound in Hfib.
+  rewrite lookup_insert_eq in Hfib.
+  rewrite map_empty_union in Hfib.
+  destruct Hfib as [_ [m0 [Hscope [Hresult Hle]]]].
+  assert (Hm0_eq :
+    m0 = res_fiber_from_projection n X σX Hproj).
+  {
+    apply res_le_same_dom_eq; [exact Hle |].
+    unfold formula_scoped_in_world in Hscope.
+    cbn [formula_fv stale stale_logic_qualifier lqual_dom] in Hscope.
+    denot_lvars_norm.
+    rewrite lvars_fv_open_atoms_with_bound in Hscope.
+    pose proof (raw_le_dom m0
+      (res_fiber_from_projection n X σX Hproj) Hle) as Hle_dom.
+    simpl in *.
+    set_solver.
+  }
+  subst m0.
+  rewrite open_tm_env_singleton_lc in Hresult by exact Hlc.
+  rewrite lvars_fv_of_atoms in Hresult.
+  rewrite map_empty_union in Hresult.
+  store_norm.
+  rewrite (inter_union_singleton_l X ν) in Hresult.
+  replace (X ∪ {[ν]})
+    with (world_dom (res_fiber_from_projection n X σX Hproj : World))
+    in Hresult by (simpl; exact Hdom).
+  rewrite res_restrict_self in Hresult.
+  exact Hresult.
+Qed.
 
 Lemma FExprResultAt_unique_let_result_world
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
@@ -21,9 +113,88 @@ Lemma FExprResultAt_unique_let_result_world
   n ⊨ FExprResultAt (dom Σ) e ν →
   n = let_result_world_on e ν m Hfresh Hresult.
 Proof.
-  (* TODO: prove uniqueness directly from the primitive multi-fiber
-     interpretation of [FExprResultAt]. *)
-Admitted.
+  intros Hty Hdom_m Hclosed Hdom_n Hrestrict Hmodel.
+  pose proof (basic_typing_contains_fv_tm Σ e T Hty) as Hfv.
+  pose proof (typing_tm_lc Σ e T Hty) as Hlc.
+  assert (HνΣ : ν ∉ dom Σ) by (rewrite <- Hdom_m; exact Hfresh).
+  apply wfworld_ext. apply world_ext.
+  - rewrite Hdom_n, let_result_world_on_dom, Hdom_m. reflexivity.
+  - intros σν. split.
+    + intros Hσν_n.
+      set (σ := store_restrict σν (dom Σ)).
+      assert (Hproj : (res_restrict n (dom Σ) : World) σ).
+      { exists σν. split; [exact Hσν_n | reflexivity]. }
+      assert (Hσm : (m : World) σ).
+      { rewrite <- Hrestrict. exact Hproj. }
+      pose proof (FExprResultAt_fiber_expr_result_in_world
+        (dom Σ) e ν n σ Hproj Hlc Hdom_n Hmodel) as Hexpr.
+      assert (Hfiber :
+        (res_fiber_from_projection n (dom Σ) σ Hproj : World) σν).
+      { apply res_fiber_from_projection_member; [exact Hσν_n | reflexivity]. }
+      assert (Hνproj :
+        (res_restrict (res_fiber_from_projection n (dom Σ) σ Hproj) {[ν]} : World)
+          (store_restrict σν {[ν]})).
+      { exists σν. split; [exact Hfiber | reflexivity]. }
+      pose proof (expr_result_in_world_sound
+        (store_restrict σ (dom Σ)) e ν
+        (res_fiber_from_projection n (dom Σ) σ Hproj)
+        (store_restrict σν {[ν]}) Hexpr Hνproj) as Hstore.
+      destruct (expr_result_store_elim ν
+        (subst_map (store_restrict σ (dom Σ)) e)
+        (store_restrict σν {[ν]}) Hstore)
+        as [vx [Hσν_single [_ [_ HstepsX]]]].
+      assert (Hsteps_fv :
+        subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+      {
+        rewrite (subst_map_restrict_to_fv_from_superset e
+          (dom Σ) σ Hfv (proj1 (Hclosed σ Hσm))).
+        exact HstepsX.
+      }
+      assert (Hσν_dom : dom σν = dom Σ ∪ {[ν]}).
+      { rewrite (wfworld_store_dom n σν Hσν_n). exact Hdom_n. }
+      rewrite (store_eq_insert_of_restrict_singleton
+        (dom Σ) σν σ ν vx Hσν_dom HνΣ ltac:(reflexivity) Hσν_single).
+      apply let_result_world_on_member; eauto.
+    + intros Hσν_let.
+      destruct (let_result_world_on_elim e ν m Hfresh Hresult σν Hσν_let)
+        as [σ [vx [Hσm [Hsteps_fv ->]]]].
+      assert (Hproj : (res_restrict n (dom Σ) : World) σ).
+      { rewrite Hrestrict. exact Hσm. }
+      destruct Hproj as [σn [Hσn HσnX]].
+      assert (Hproj' : (res_restrict n (dom Σ) : World) σ).
+      { exists σn. split; [exact Hσn | exact HσnX]. }
+      pose proof (FExprResultAt_fiber_expr_result_in_world
+        (dom Σ) e ν n σ Hproj' Hlc Hdom_n Hmodel) as Hexpr.
+      assert (Hfiber :
+        (res_fiber_from_projection n (dom Σ) σ Hproj' : World) σn).
+      { apply res_fiber_from_projection_member; [exact Hσn | exact HσnX]. }
+      assert (Hνproj :
+        (res_restrict (res_fiber_from_projection n (dom Σ) σ Hproj') {[ν]} : World)
+          (store_restrict σn {[ν]})).
+      { exists σn. split; [exact Hfiber | reflexivity]. }
+      pose proof (expr_result_in_world_sound
+        (store_restrict σ (dom Σ)) e ν
+        (res_fiber_from_projection n (dom Σ) σ Hproj')
+        (store_restrict σn {[ν]}) Hexpr Hνproj) as Hstore.
+      destruct (expr_result_store_elim ν
+        (subst_map (store_restrict σ (dom Σ)) e)
+        (store_restrict σn {[ν]}) Hstore)
+        as [vy [Hσn_single [_ [_ HstepsX]]]].
+      assert (HstepsX_vx :
+        subst_map (store_restrict σ (dom Σ)) e →* tret vx).
+      {
+        rewrite <- (subst_map_restrict_to_fv_from_superset e
+          (dom Σ) σ Hfv (proj1 (Hclosed σ Hσm))).
+        exact Hsteps_fv.
+      }
+      assert (vy = vx) by (eapply steps_result_unique; eauto).
+      subst vy.
+      assert (Hσn_dom : dom σn = dom Σ ∪ {[ν]}).
+      { rewrite (wfworld_store_dom n σn Hσn). exact Hdom_n. }
+      rewrite <- (store_eq_insert_of_restrict_singleton
+        (dom Σ) σn σ ν vx Hσn_dom HνΣ HσnX Hσn_single).
+      exact Hσn.
+Qed.
 
 Lemma set_difference_pull_singleton (X Y : aset) x :
   x ∈ X →
@@ -83,12 +254,11 @@ Proof.
       subst_map (store_restrict σX X) e →* tret vx).
     {
       assert (HσX_id : store_restrict σX X = store_restrict σ X).
-      {
-        rewrite <- HσX_base.
-        rewrite store_restrict_restrict.
-        replace (X ∩ X) with X by set_solver.
-        reflexivity.
-      }
+	    {
+	      rewrite <- HσX_base.
+	      rewrite store_restrict_twice_same.
+	      reflexivity.
+	    }
       rewrite HσX_id.
       rewrite <- (subst_map_restrict_to_fv_from_superset e X σ).
       - exact Hsteps.
@@ -126,7 +296,7 @@ Proof.
       rewrite (subst_map_restrict_to_fv_from_superset e X σ Hfv
         (proj1 (Hclosed σ Hσn))).
       rewrite HσX_base.
-      rewrite store_restrict_idemp in HstepsX by set_solver.
+      rewrite (store_restrict_idemp_eq σX X HdomσX) in HstepsX.
       exact HstepsX.
     }
     exists (<[ν := vx]> σ). split.
@@ -241,21 +411,12 @@ Proof.
               | None => False
               end))) ⊆ X ∪ {[ν]}).
     {
-      pose proof (formula_open_fv_subset 0 ν
-        (FStoreResourceAtom (into_lvars X ∪ {[LVBound 0]})
-          (fun η σ w =>
-            match η !! 0 with
-            | Some ν =>
-                expr_result_in_world
-                  (store_restrict σ (lvars_fv (into_lvars X)))
-                  (open_tm_env η e) ν w
-            | None => False
-            end))) as Hopen.
-      unfold FStoreResourceAtom in Hopen.
+      apply formula_open_fv_subset_env.
+      unfold FStoreResourceAtom.
       cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
-        into_lvars_aset into_lvars_lvset] in Hopen.
+        into_lvars_aset into_lvars_lvset].
       denot_lvars_norm.
-      rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound in Hopen.
+      rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
       set_solver.
     }
     cbn [formula_fv].
@@ -292,16 +453,15 @@ Proof.
            {
              eapply let_result_world_on_fiber_expr_result_in_world; eauto.
            }
-             intros σν.
-             rewrite map_empty_union.
-             rewrite lvars_fv_of_atoms.
-             replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
-             rewrite store_restrict_restrict.
-           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
-           rewrite res_restrict_restrict_eq.
-           replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset)
-             by set_solver.
-           exact (Hexact σν).
+	     intros σν.
+	     rewrite map_empty_union.
+	     rewrite lvars_fv_of_atoms.
+	     replace ((X ∪ {[ν]}) ∩ X) with X
+	       by (symmetry; apply inter_union_singleton_l).
+	     rewrite store_restrict_twice_subset by set_solver.
+	           rewrite res_restrict_restrict_eq.
+	           rewrite (inter_union_singleton_r_fresh X ν HνX).
+	           exact (Hexact σν).
         -- reflexivity.
 Qed.
 
@@ -329,7 +489,10 @@ Proof.
   pose proof (basic_typing_contains_fv_tm Σ e T Hty) as Hfv.
   pose proof (typing_tm_lc Σ e T Hty) as Hlc.
   exists (L ∪ dom Σ ∪ fv_tm e).
-  split; [set_solver |].
+  split.
+  {
+    intros z Hz. apply elem_of_union_l. apply elem_of_union_r. exact Hz.
+  }
   intros ν Hν Hfresh Hresult.
   rewrite !not_elem_of_union in Hν.
   destruct Hν as [[HνL HνΣ] Hνe].
@@ -385,7 +548,13 @@ Proof.
     rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
     rewrite Hdom. set_solver.
   - exists (L ∪ dom Σ ∪ fv_tm e ∪ formula_fv Q).
-    split; [set_solver |].
+    split.
+    {
+      rewrite Hdom.
+      intros z Hz.
+      apply elem_of_union_l. apply elem_of_union_l.
+      apply elem_of_union_r. exact Hz.
+    }
     intros ν Hν n Hdom_n Hrestrict.
     rewrite !not_elem_of_union in Hν.
     destruct Hν as [[[HνL HνΣ] Hνe] HνQ].
@@ -410,35 +579,29 @@ Proof.
       unfold FExprContIn in Hfv_cont.
       cbn [formula_fv] in Hfv_cont.
       rewrite Hdom_n, Hdom.
+      clear -Hzopen Hfv_cont HνΣ HνQ.
       set_solver.
-    + intros n' Hle Hexpr.
-      pose proof (FExprResultOn_scoped_dom (dom Σ) e ν n'
+    + intros Hexpr.
+      pose proof (FExprResultOn_scoped_dom (dom Σ) e ν n
         (res_models_with_store_fuel_scoped _ _ _ _ Hexpr)) as Hscope_expr.
-      assert (Hn'_restrict_m : res_restrict n' (dom Σ) = m).
-      {
-        rewrite <- Hdom.
-        rewrite <- (res_restrict_le_eq n n' (world_dom (m : World)) Hle).
-        - exact Hrestrict.
-        - rewrite Hdom_n. set_solver.
-      }
-      set (nr := res_restrict n' (dom Σ ∪ {[ν]})).
+      set (nr := res_restrict n (dom Σ ∪ {[ν]})).
       assert (Hnr_dom : world_dom (nr : World) = dom Σ ∪ {[ν]}).
       { subst nr. simpl. set_solver. }
       assert (Hnr_restrict : res_restrict nr (dom Σ) = m).
-      {
-        subst nr.
-        rewrite res_restrict_restrict_eq.
-        replace ((dom Σ ∪ {[ν]}) ∩ dom Σ) with (dom Σ) by set_solver.
-        exact Hn'_restrict_m.
-      }
+	{
+	  subst nr.
+	  rewrite res_restrict_restrict_eq.
+	  rewrite (inter_union_singleton_l (dom Σ) ν).
+	  exact Hrestrict.
+	}
       assert (Hexpr_nr : nr ⊨ FExprResultAt (dom Σ) e ν).
       {
         subst nr.
-        pose proof (res_models_minimal_on (dom Σ ∪ {[ν]}) n'
+        pose proof (res_models_minimal_on (dom Σ ∪ {[ν]}) n
           (FExprResultAt (dom Σ) e ν)
           ltac:(rewrite FExprResultAt_fv; reflexivity)) as Hmin.
         apply (proj1 Hmin).
-        change (n' ⊨ FExprResultAt (dom Σ) e ν).
+        change (n ⊨ FExprResultAt (dom Σ) e ν).
         exact Hexpr.
       }
       pose proof (FExprResultAt_unique_let_result_world
@@ -446,11 +609,10 @@ Proof.
         Hnr_dom Hnr_restrict Hexpr_nr) as Hnr_eq.
       assert (HQopen_fv : formula_fv (formula_open 0 ν Q) ⊆ dom Σ ∪ {[ν]}).
       {
-        intros z Hz.
-        pose proof (formula_open_fv_subset 0 ν Q z Hz) as HzQ.
-        set_solver.
+        apply formula_open_fv_subset_env.
+        exact HQfv.
       }
-      apply (proj2 (res_models_minimal_on (dom Σ ∪ {[ν]}) n'
+      apply (proj2 (res_models_minimal_on (dom Σ ∪ {[ν]}) n
         (formula_open 0 ν Q) HQopen_fv)).
       change (nr ⊨ formula_open 0 ν Q).
       rewrite Hnr_eq.

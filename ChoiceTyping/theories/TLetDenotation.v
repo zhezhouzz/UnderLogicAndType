@@ -5,7 +5,8 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetReductionTotal.
-From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprCont.
+From ChoiceTyping Require Import Naming SoundnessCommon LetResultWorld
+  ResultWorldClosed ResultWorldExprCont.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Import Tactics.
@@ -62,7 +63,7 @@ Proof.
     subst m'. eapply tlet_body_ctx_from_result_world; eauto.
   }
   pose proof (Hbody x HxL m' Hctx) as Hbody_model.
-  exact (proj1
+  eapply (proj1
     (denot_ty_total_tlet_reduction
       Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult
       Herase Hwflet Hm Hmodel Hx_tlet)
@@ -79,7 +80,60 @@ Lemma denot_tlet_semantic
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) →
   denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-(** Placeholder: this is the non-total semantic [tlet] statement and should not
-    be used as evidence that the [tlet] case is proved.  The current active
-    route is the total statement [denot_tlet_total_semantic] above. *)
-Admitted.
+  intros Hwf1 Hwflet IH1 IH2.
+  pose (L' := L ∪ dom (erase_ctx_under Σ Γ) ∪ fv_tm e2 ∪ fv_cty τ2).
+  intros m Hctx.
+  apply denot_ty_total_model_formula.
+  refine (denot_tlet_total_semantic
+    Σ Γ τ1 τ2 e1 e2 L' (proj2 Hwf1) (proj2 Hwflet) _ _ m Hctx).
+  - intros n Hn.
+    pose proof (IH1 n Hn) as Hφ.
+    split.
+    + eapply choice_typing_wf_regular_denotation; eauto 6.
+      + split; [exact Hφ |].
+        unfold denot_ty_in_ctx_under in Hφ.
+        eapply denot_ty_expr_total_on_of_formula; eauto 6.
+  - intros x Hx n Hn.
+    subst L'.
+    assert (Hx_body : x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_tm e2)
+      by set_solver.
+    assert (HxL : x ∉ L) by set_solver.
+    assert (Hwf_body :
+      choice_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2).
+    {
+      destruct Hwf1 as [[[HctxΓ HnonemptyΓ] Hbasicτ1] He1].
+      destruct Hwflet as [[_ Hbasicτ2] Hlet].
+      eapply choice_typing_wf_from_erased_basic.
+      - eapply Basic_CtxComma.
+        + exact HctxΓ.
+        + eapply Basic_CtxBind.
+          * intros Hbad. apply Hx_body. apply elem_of_union_l.
+            rewrite erase_ctx_under_dom_basic by exact HctxΓ.
+            exact Hbad.
+          * exact Hbasicτ1.
+        + apply elem_of_disjoint. intros z HzΓ Hzx.
+          simpl in Hzx.
+          apply elem_of_singleton in Hzx. subst z.
+          apply Hx_body. apply elem_of_union_l.
+          rewrite erase_ctx_under_dom_basic by exact HctxΓ.
+          set_solver.
+      - rewrite erase_ctx_under_comma_bind_dom_nf.
+        eapply basic_choice_ty_mono; [| exact Hbasicτ2].
+        intros z Hz. apply elem_of_union_l.
+        rewrite erase_ctx_under_dom_basic by exact HctxΓ.
+        eauto 6.
+      - eauto 6.
+      - rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1)
+          by (intros Hbad; apply Hx_body; apply elem_of_union_l; exact Hbad).
+        eapply basic_typing_tlete_body_for_fresh.
+        + eauto 6.
+        + eauto 6.
+        + eauto 6.
+    }
+    pose proof (IH2 x HxL n Hn) as Hφ.
+    split.
+    + eapply choice_typing_wf_regular_denotation; eauto 6.
+    + split; [exact Hφ |].
+      unfold denot_ty_in_ctx_under in Hφ.
+      eapply denot_ty_expr_total_on_of_formula; eauto 6.
+Qed.

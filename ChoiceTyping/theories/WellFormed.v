@@ -8,7 +8,7 @@
     requires semantic nonemptiness, which depends on denotation and therefore
     lives in this layer. *)
 
-From ChoiceType Require Export BasicTyping Denotation.
+From ChoiceType Require Export BasicTyping DenotationContext.
 
 (** ** Context and type well-formedness *)
 

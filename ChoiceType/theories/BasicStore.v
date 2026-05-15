@@ -180,10 +180,10 @@ Proof.
     subst σ.
     apply store_restrict_lookup_some in Hlookup as [_ Hlookup].
     eapply HtypedY.
-    + simpl. exists σm. split; [exact Hσm | reflexivity].
-    + exact (HXY z Hz).
-    + exact HΣ.
-    + apply store_restrict_lookup_some_2; [exact Hlookup | exact (HXY z Hz)].
+    + simpl. exists σm. split; eauto 6.
+    + eauto 6.
+    + eauto 6.
+    + apply store_restrict_lookup_some_2; eauto 6.
 Qed.
 
 Lemma basic_world_formula_store_typed Σ X m σ :
@@ -202,19 +202,8 @@ Lemma basic_world_formula_store_restrict_typed Σ X m σ :
   store_has_type_on Σ X (store_restrict σ X).
 Proof.
   intros Hbasic Hσ.
-  eapply basic_world_formula_store_typed; [exact Hbasic |].
-  simpl. exists σ. split; [exact Hσ | reflexivity].
-Qed.
-
-Lemma store_has_type_on_lookup Σ X σ x T v :
-  store_has_type_on Σ X σ →
-  x ∈ X →
-  Σ !! x = Some T →
-  σ !! x = Some v →
-  ∅ ⊢ᵥ v ⋮ T.
-Proof.
-  intros Htyped Hx HΣ Hσ.
-  eapply Htyped; eauto.
+  eapply basic_world_formula_store_typed; eauto 6.
+  simpl. exists σ. split; eauto 6.
 Qed.
 
 Lemma store_has_type_on_closed_env Σ X σ :
@@ -262,7 +251,7 @@ Proof.
   eapply (store_has_type_on_closed_env Σ X σ).
   - pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
     simpl in Hdom. set_solver.
-  - exact HXΣ.
+  - eauto 6.
   - eapply basic_world_formula_store_typed; eauto.
 Qed.
 
@@ -275,7 +264,7 @@ Proof.
   intros Hbasic HXΣ Hσ.
   eapply (store_has_type_on_closed_env Σ X (store_restrict σ X)).
   - rewrite store_restrict_dom. set_solver.
-  - exact HXΣ.
+  - eauto 6.
   - eapply basic_world_formula_store_restrict_typed; eauto.
 Qed.
 
@@ -286,11 +275,10 @@ Lemma basic_world_formula_store_lc_env Σ X m σ :
   lc_env σ.
 Proof.
   intros Hbasic HXΣ Hσ.
-  eapply (store_has_type_on_lc_env Σ X σ).
+  eapply (store_has_type_on_lc_env Σ X σ); eauto 6.
   - pose proof (wfworld_store_dom (res_restrict m X) σ Hσ) as Hdom.
     simpl in Hdom. set_solver.
-  - exact HXΣ.
-  - eapply basic_world_formula_store_typed; eauto.
+  - eapply basic_world_formula_store_typed; eauto 6.
 Qed.
 
 Lemma basic_world_formula_store_restrict_lc_env Σ X m σ :
@@ -302,7 +290,7 @@ Proof.
   intros Hbasic HXΣ Hσ.
   eapply (store_has_type_on_lc_env Σ X (store_restrict σ X)).
   - rewrite store_restrict_dom. set_solver.
-  - exact HXΣ.
+  - eauto 6.
   - eapply basic_world_formula_store_restrict_typed; eauto.
 Qed.
 
@@ -321,18 +309,15 @@ Proof.
     rewrite <- Hrestr. simpl.
     exists σ. split; [exact Hσ |].
     pose proof (wfworld_store_dom my σ Hσ) as Hdomσ.
-    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
-      (world_dom (m : World))).
-    replace (store_restrict σ (world_dom (my : World))) with σ.
-    2:{ symmetry. apply store_restrict_idemp.
-        intros z Hz. rewrite <- Hdomσ. exact Hz. }
+	    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
+	      (world_dom (m : World))).
+	    replace (store_restrict σ (world_dom (my : World))) with σ.
+	    2:{ symmetry. apply store_restrict_idemp_eq. exact Hdomσ. }
     reflexivity.
   }
   replace (store_restrict σ X)
     with (store_restrict (store_restrict σ (world_dom (m : World))) X).
-  2:{ rewrite store_restrict_restrict.
-      replace (world_dom (m : World) ∩ X) with X by set_solver.
-      reflexivity. }
+  2:{ rewrite store_restrict_twice_subset by set_solver. reflexivity. }
   eapply basic_world_formula_store_restrict_closed_env; eauto.
 Qed.
 
@@ -351,52 +336,16 @@ Proof.
     rewrite <- Hrestr. simpl.
     exists σ. split; [exact Hσ |].
     pose proof (wfworld_store_dom my σ Hσ) as Hdomσ.
-    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
-      (world_dom (m : World))).
-    replace (store_restrict σ (world_dom (my : World))) with σ.
-    2:{ symmetry. apply store_restrict_idemp.
-        intros z Hz. rewrite <- Hdomσ. exact Hz. }
+	    rewrite <- (store_restrict_restrict σ (world_dom (my : World))
+	      (world_dom (m : World))).
+	    replace (store_restrict σ (world_dom (my : World))) with σ.
+	    2:{ symmetry. apply store_restrict_idemp_eq. exact Hdomσ. }
     reflexivity.
   }
   replace (store_restrict σ X)
     with (store_restrict (store_restrict σ (world_dom (m : World))) X).
-  2:{ rewrite store_restrict_restrict.
-      replace (world_dom (m : World) ∩ X) with X by set_solver.
-      reflexivity. }
+  2:{ rewrite store_restrict_twice_subset by set_solver. reflexivity. }
   eapply basic_world_formula_store_restrict_lc_env; eauto.
-Qed.
-
-Lemma store_has_type_on_insert_self Σ X σ x T v :
-  store_has_type_on (<[x := T]> Σ) X σ →
-  x ∈ X →
-  σ !! x = Some v →
-  ∅ ⊢ᵥ v ⋮ T.
-Proof.
-  intros Htyped Hx Hσ.
-  exact (Htyped x T v Hx (lookup_insert_eq Σ x T) Hσ).
-Qed.
-
-Lemma world_has_type_on_lookup Σ X w σ x T v :
-  world_has_type_on Σ X w →
-  (w : World) σ →
-  x ∈ X →
-  Σ !! x = Some T →
-  σ !! x = Some v →
-  ∅ ⊢ᵥ v ⋮ T.
-Proof.
-  intros [_ Htyped] Hσ Hx HΣ Hlook.
-  eapply store_has_type_on_lookup; eauto.
-Qed.
-
-Lemma world_has_type_on_insert_self Σ X w σ x T v :
-  world_has_type_on (<[x := T]> Σ) X w →
-  (w : World) σ →
-  x ∈ X →
-  σ !! x = Some v →
-  ∅ ⊢ᵥ v ⋮ T.
-Proof.
-  intros [_ Htyped] Hσ Hx Hlook.
-  eapply store_has_type_on_insert_self; eauto.
 Qed.
 
 Lemma store_has_type_on_restrict Σ X Y σ :

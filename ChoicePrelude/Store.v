@@ -381,6 +381,40 @@ Proof.
   intros i x Hx. apply elem_of_dom_2 in Hx. set_solver.
 Qed.
 
+Lemma store_restrict_twice_same s X :
+  store_restrict (store_restrict s X) X = store_restrict s X.
+Proof.
+  rewrite store_restrict_restrict.
+  replace (X ∩ X) with X by set_solver.
+  reflexivity.
+Qed.
+
+Lemma store_restrict_twice_subset s X Y :
+  Y ⊆ X →
+  store_restrict (store_restrict s X) Y = store_restrict s Y.
+Proof.
+  intros HYX.
+  rewrite store_restrict_restrict.
+  replace (X ∩ Y) with Y by set_solver.
+  reflexivity.
+Qed.
+
+Lemma store_restrict_comm s X Y :
+  store_restrict (store_restrict s X) Y =
+  store_restrict (store_restrict s Y) X.
+Proof.
+  rewrite !store_restrict_restrict.
+  replace (X ∩ Y) with (Y ∩ X) by set_solver.
+  reflexivity.
+Qed.
+
+Lemma store_restrict_idemp_eq s X :
+  dom s = X →
+  store_restrict s X = s.
+Proof.
+  intros Hdom. apply store_restrict_idemp. set_solver.
+Qed.
+
 Lemma store_restrict_empty_union_elements (σ : Store) (X : aset) :
   store_restrict ((∅ : Store) ∪ store_restrict σ (list_to_set (elements X) : aset)) X =
   store_restrict σ X.
