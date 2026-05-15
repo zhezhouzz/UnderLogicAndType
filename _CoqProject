@@ -79,8 +79,6 @@ ChoiceTyping/theories/ResultWorldBridge.v
 ChoiceTyping/theories/ResultWorldExprContFamily.v
 ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetReductionFuelSupport.v
-ChoiceTyping/theories/TLetReductionSwapSupport.v
-ChoiceTyping/theories/TLetReductionFamilySupport.v
 ChoiceTyping/theories/TLetReductionEnvIrrel.v
 ChoiceTyping/theories/TLetReduction.v
 ChoiceTyping/theories/TLetReductionTotal.v
