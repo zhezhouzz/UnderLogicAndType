@@ -304,7 +304,7 @@ Proof.
   - exact Hφ.
 Qed.
 
-Lemma res_models_fib_vars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
+Lemma res_models_FFibVars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
   formula_scoped_in_world ∅ m (FFibVars D φ) →
   (∀ σ,
      ∀ Hproj : res_restrict m (lvars_fv D) σ,

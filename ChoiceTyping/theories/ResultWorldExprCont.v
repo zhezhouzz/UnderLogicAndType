@@ -225,7 +225,7 @@ Proof.
   unfold FExprResultAt, FExprResultOn.
   cbn [formula_open].
   rewrite lvars_open_of_atoms.
-  apply fib_vars_models_intro.
+  apply FFibVars_models_intro.
   - unfold formula_scoped_in_world.
     rewrite dom_empty_L.
     assert (Hopen_fv :
@@ -262,7 +262,7 @@ Proof.
     rewrite lvars_fv_of_atoms.
     rewrite let_result_world_on_dom.
     set_solver.
-  - unfold fib_vars_obligation.
+  - unfold FFibVars_obligation.
     rewrite lvars_fv_of_atoms.
     split; [set_solver |].
     intros σX Hproj.

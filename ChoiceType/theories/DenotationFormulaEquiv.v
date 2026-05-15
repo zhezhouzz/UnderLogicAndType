@@ -100,54 +100,6 @@ Proof.
     models_fuel_irrel H.
 Qed.
 
-Lemma fib_vars_store_equiv D φ ψ :
-  formula_fv φ = formula_fv ψ →
-  formula_store_equiv φ ψ →
-  formula_fv (FFibVars D φ) =
-    formula_fv (FFibVars D ψ) ∧
-  formula_store_equiv
-    (FFibVars D φ)
-    (FFibVars D ψ).
-Proof.
-  intros Hfv Heq.
-  split.
-  - simpl. rewrite Hfv. reflexivity.
-  - intros ρ m.
-    unfold res_models_with_store. simpl.
-    split; intros [Hscope [Hdisj Hfib]]; split.
-    + unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
-    + split; [exact Hdisj |].
-      intros σ Hproj.
-      pose proof (Hfib σ Hproj) as Hp.
-      unfold res_models_with_store in Heq.
-      exact (proj1 (Heq _ _) Hp).
-    + unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
-    + split; [exact Hdisj |].
-      intros σ Hproj.
-      pose proof (Hfib σ Hproj) as Hp.
-      unfold res_models_with_store in Heq.
-      exact (proj2 (Heq _ _) Hp).
-Qed.
-
-Lemma list_to_set_permutation_aset (xs ys : list atom) :
-  xs ≡ₚ ys →
-  (list_to_set xs : aset) = list_to_set ys.
-Proof.
-  intros Hperm.
-  apply set_eq. intros z.
-  rewrite !elem_of_list_to_set.
-  by rewrite Hperm.
-Qed.
-
-Lemma fib_vars_insert_store_equiv x D (φ : FQ) :
-  x ∉ lvars_fv D →
-  formula_store_equiv
-    (FFibVars ({[LVFree x]} ∪ D) φ)
-    (FFibVars ({[LVFree x]} ∪ D) φ).
-Proof.
-  intros _. apply formula_store_equiv_refl.
-Qed.
-
 Lemma res_models_of_formula_store_equiv φ ψ (m : WfWorld) :
   formula_store_equiv φ ψ →
   m ⊨ φ ↔ m ⊨ ψ.
