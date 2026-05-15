@@ -109,33 +109,3 @@ Lemma res_models_FTypeQualifier_intro m q :
   res_models m (FTypeQualifier q).
 Proof.
 Admitted.
-
-Lemma res_models_with_store_FTypeQualifier_swap x y q ρ m :
-  res_models_with_store (store_swap x y ρ) (res_swap x y m)
-    (FTypeQualifier q) ↔
-  res_models_with_store ρ m (FTypeQualifier (qual_swap_atom x y q)).
-Proof.
-  (* Legacy explicit-swap/type-qualifier bridge; replaced by LN open bridge. *)
-Admitted.
-
-Lemma res_models_with_store_FTypeQualifier_open_rename_fresh k x y q ρ m :
-  k ∈ qual_bvars q →
-  x ∉ qual_dom q →
-  y ∉ qual_dom q →
-  res_models_with_store ρ m (formula_rename_atom x y
-    (FTypeQualifier (qual_open_atom k x q))) ↔
-  res_models_with_store ρ m (FTypeQualifier (qual_open_atom k y q)).
-Proof.
-  (* Legacy explicit-swap/type-qualifier bridge; replaced by LN open bridge. *)
-Admitted.
-
-Lemma res_models_FTypeQualifier_open_rename_fresh k x y q m :
-  k ∈ qual_bvars q →
-  x ∉ qual_dom q →
-  y ∉ qual_dom q →
-  res_models m (formula_rename_atom x y
-    (FTypeQualifier (qual_open_atom k x q))) ↔
-  res_models m (FTypeQualifier (qual_open_atom k y q)).
-Proof.
-  (* Legacy explicit-swap/type-qualifier bridge; replaced by LN open bridge. *)
-Admitted.

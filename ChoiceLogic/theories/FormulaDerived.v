@@ -493,21 +493,4 @@ Proof.
   models_fuel_irrel Hmodel.
 Qed.
 
-Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaT) :
-  x ∉ D →
-  y ∉ D →
-  formula_fv φ ⊆ D ∪ {[x]} →
-  formula_fv (formula_rename_atom x y φ) ⊆ D ∪ {[y]}.
-Proof.
-  intros HxD HyD Hfv.
-  etrans.
-  - apply formula_fv_rename_atom_subset_open.
-    intros Hy.
-    rewrite elem_of_difference in Hy.
-    destruct Hy as [Hyφ Hyx].
-    pose proof (Hfv _ Hyφ) as HyD_or_x.
-    set_solver.
-  - set_solver.
-Qed.
-
 End FormulaDerived.

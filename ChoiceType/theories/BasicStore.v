@@ -260,41 +260,6 @@ Proof.
       apply Htyped. exact Hσ0.
 Qed.
 
-Lemma logic_qualifier_denote_basic_world_lqual_swap_insert_fresh
-    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) σ w :
-  x ∉ X →
-  y ∉ X →
-  logic_qualifier_denote
-    (lqual_swap x y (basic_world_lqual (<[x := T]> Σ) ({[x]} ∪ X))) σ w ↔
-  logic_qualifier_denote
-    (basic_world_lqual (<[y := T]> Σ) ({[y]} ∪ X)) σ w.
-Proof.
-  (* Legacy explicit-swap helper; will be replaced by LN open/cofinite lemmas. *)
-Admitted.
-
-Lemma res_models_with_store_basic_world_formula_rename_insert_fresh
-    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) ρ m :
-  x ∉ X →
-  y ∉ X →
-  res_models_with_store ρ m (formula_rename_atom x y
-    (basic_world_formula (<[x := T]> Σ) ({[x]} ∪ X))) ↔
-  res_models_with_store ρ m
-    (basic_world_formula (<[y := T]> Σ) ({[y]} ∪ X)).
-Proof.
-  (* Legacy explicit-swap helper; will be replaced by LN open/cofinite lemmas. *)
-Admitted.
-
-Lemma res_models_basic_world_formula_rename_insert_fresh
-    (Σ : gmap atom ty) (X : aset) (x y : atom) (T : ty) m :
-  x ∉ X →
-  y ∉ X →
-  res_models m (formula_rename_atom x y
-    (basic_world_formula (<[x := T]> Σ) ({[x]} ∪ X))) ↔
-  res_models m (basic_world_formula (<[y := T]> Σ) ({[y]} ∪ X)).
-Proof.
-  (* Legacy explicit-swap helper; will be replaced by LN open/cofinite lemmas. *)
-Admitted.
-
 Lemma basic_world_formula_current Σ X m :
   res_models m (basic_world_formula Σ X) →
   world_has_type_on Σ X (res_restrict m X).
