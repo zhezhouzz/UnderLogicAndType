@@ -94,15 +94,6 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma FExprContIn_atom_env_to_lty_env Σ e (Q : FQ) :
-  FExprContIn (atom_env_to_lty_env Σ) e Q = FExprContIn Σ e Q.
-Proof.
-  unfold FExprContIn, FExprResultOn, into_lvars, into_lvars_lvset,
-    into_lvars_aset.
-  rewrite atom_env_to_lty_env_dom.
-  reflexivity.
-Qed.
-
 (** ** Type denotation
 
     [denot_ty_lvar Σe Στ τ e] is the recursive semantic content of

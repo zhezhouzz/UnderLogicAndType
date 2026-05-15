@@ -21,6 +21,15 @@ Qed.
 Local Ltac tlet_regular :=
   eauto 6 using basic_typing_contains_fv_tm, typing_tm_lc.
 
+Local Lemma FExprContIn_atom_env Σ e (Q : FormulaQ) :
+  FExprContIn (atom_env_to_lty_env Σ) e Q = FExprContIn Σ e Q.
+Proof.
+  unfold FExprContIn, FExprResultOn, into_lvars, into_lvars_lvset,
+    into_lvars_aset.
+  rewrite atom_env_to_lty_env_dom.
+  reflexivity.
+Qed.
+
 Lemma FExprCont_tlet_reduction
     (Σ : gmap atom ty) (T1 T2 : ty)
     (m : WfWorld) e1 e2 (x : atom) (Q : FormulaQ)
@@ -371,7 +380,7 @@ Proof.
   intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
   eapply denot_ty_tlet_reduction_add_obligations; eauto.
   cbn [denot_ty_body denot_ty_body_lvar].
-  try rewrite !FExprContIn_atom_env_to_lty_env.
+  rewrite !FExprContIn_atom_env.
   pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
   simpl in Hfvτ.
   destruct φ as [Dφ Pφ]; simpl in *.
@@ -425,7 +434,7 @@ Proof.
   intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
   eapply denot_ty_tlet_reduction_add_obligations; eauto.
   cbn [denot_ty_body denot_ty_body_lvar].
-  try rewrite !FExprContIn_atom_env_to_lty_env.
+  rewrite !FExprContIn_atom_env.
   pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
   simpl in Hfvτ.
   destruct φ as [Dφ Pφ]; simpl in *.
