@@ -113,10 +113,6 @@ Definition FStoreResourceAtom {A : Type} `{IntoLVars A}
     (D : A) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
   FAtom (lqual (into_lvars D) P).
 
-Definition FStoreResourceAtomFVars
-    (D : aset) (P : StoreT → WfWorldT → Prop) : Formula :=
-  @FStoreResourceAtom aset _ D (λ _ σ m, P σ m).
-
 Definition FStoreResourceAtomVars
     (D : lvset) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
   @FStoreResourceAtom lvset _ D P.
