@@ -15,9 +15,6 @@ From ChoiceType Require Export BasicTyping Denotation.
 Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   ∃ r : WfWorld, r ⊨ denot_ctx_in_env Σ Γ.
 
-Definition ctx_nonempty (Γ : ctx) : Prop :=
-  ctx_nonempty_under ∅ Γ.
-
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
 
@@ -30,14 +27,6 @@ Definition wf_choice_ty_under (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : 
 Definition wf_choice_ty (Γ : ctx) (τ : choice_ty) : Prop :=
   wf_choice_ty_under ∅ Γ τ.
 
-(** ** Paper-judgment notations
-
-    These notations make printed statements closer to the paper.  Proof scripts
-    should prefer the explicit names [wf_ctx] and [wf_choice_ty]. *)
-
-Notation "'⊢wf' Γ" := (wf_ctx Γ) (at level 40).
-Notation "Γ '⊢wf' τ" := (wf_choice_ty Γ τ) (at level 40).
-
 (** ** Regularity skeletons *)
 
 Lemma wf_ctx_basic Γ :
@@ -49,16 +38,6 @@ Lemma wf_ctx_under_basic Σ Γ :
   wf_ctx_under Σ Γ →
   basic_ctx (dom Σ) Γ.
 Proof. intros [Hbasic _]. exact Hbasic. Qed.
-
-Lemma wf_ctx_nonempty Γ :
-  wf_ctx Γ →
-  ctx_nonempty Γ.
-Proof. intros [_ Hnonempty]. exact Hnonempty. Qed.
-
-Lemma wf_ctx_under_nonempty Σ Γ :
-  wf_ctx_under Σ Γ →
-  ctx_nonempty_under Σ Γ.
-Proof. intros [_ Hnonempty]. exact Hnonempty. Qed.
 
 Lemma wf_choice_ty_ctx Γ τ :
   wf_choice_ty Γ τ →
@@ -130,7 +109,7 @@ Proof.
   pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf)) as HbasicΓ.
   pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
   pose proof (wf_choice_ty_under_fv_subset Σ Γ τ Hwf) as Hτfv.
-  pose proof (denot_ty_in_ctx_under_formula_fv_subset Σ Γ τ e) as Hdenot_fv.
+  pose proof (denot_ty_in_ctx_under_fv_subset Σ Γ τ e) as Hdenot_fv.
   pose proof (res_models_with_store_fuel_scoped
     (formula_measure (denot_ctx_in_env Σ Γ)) ∅ m (denot_ctx_in_env Σ Γ) Hctx)
     as Hctx_scope.
@@ -157,7 +136,7 @@ Proof.
   pose proof (wf_ctx_basic Γ (wf_choice_ty_ctx Γ τ Hwf)) as HbasicΓ.
   pose proof (basic_ctx_erase_dom ∅ Γ HbasicΓ) as HdomΓ.
   pose proof (wf_choice_ty_fv_subset Γ τ Hwf) as Hτfv.
-  pose proof (denot_ty_under_formula_fv_subset (erase_ctx Γ) τ e) as Hdenot_fv.
+  pose proof (denot_ty_under_fv_subset (erase_ctx Γ) τ e) as Hdenot_fv.
   pose proof (res_models_with_store_fuel_scoped
     (formula_measure (⟦Γ⟧)) ∅ m (⟦Γ⟧) Hctx) as Hctx_scope.
   unfold formula_scoped_in_world in *.

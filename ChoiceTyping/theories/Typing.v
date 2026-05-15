@@ -16,27 +16,6 @@ Definition choice_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
   wf_choice_ty_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
 
-Definition choice_ty_basic_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : Prop :=
-  basic_ctx (dom Σ) Γ ∧ basic_choice_ty (dom Σ ∪ ctx_dom Γ) τ.
-
-Definition choice_typing_basic
-    (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
-  choice_ty_basic_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
-
-Lemma choice_typing_wf_basic_part Σ Γ e τ :
-  choice_typing_wf Σ Γ e τ →
-  choice_typing_basic Σ Γ e τ.
-Proof.
-  intros [[[HbasicΓ _] Hbasicτ] Herase].
-  split; [split |]; eauto.
-Qed.
-
-Lemma choice_typing_wf_ctx_nonempty_part Σ Γ e τ :
-  choice_typing_wf Σ Γ e τ →
-  ctx_nonempty_under Σ Γ.
-Proof. intros [[[_ Hnonempty] _] _]. exact Hnonempty. Qed.
-
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
   denot_ctx_in_env Σ Γ ⊫
     FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty b) (tret v)) FFalse.
@@ -52,18 +31,6 @@ Proof.
     (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))) as Hdom.
   unfold erase_ctx_under in Hfv.
   rewrite dom_union_L, Hdom in Hfv. exact Hfv.
-Qed.
-
-Lemma choice_typing_wf_footprint_subset Σ Γ e τ :
-  choice_typing_wf Σ Γ e τ →
-  fv_tm e ∪ fv_cty τ ⊆ dom Σ ∪ ctx_dom Γ.
-Proof.
-  intros Hwf.
-  destruct Hwf as [Hty Herase].
-  pose proof (choice_typing_wf_fv_tm_subset Σ Γ e τ
-    (conj Hty Herase)) as He.
-  pose proof (wf_choice_ty_under_fv_subset Σ Γ τ Hty) as Hτ.
-  set_solver.
 Qed.
 
 Lemma choice_typing_wf_erase_dom Σ Γ e τ :
@@ -106,16 +73,6 @@ Proof.
   destruct Hwf as [Hwfτ Herase].
   rewrite (choice_typing_wf_erase_dom Σ Γ e τ (conj Hwfτ Herase)).
   exact (wf_choice_ty_under_fv_subset Σ Γ τ Hwfτ).
-Qed.
-
-Lemma choice_typing_wf_footprint_subset_erase_dom Σ Γ e τ :
-  choice_typing_wf Σ Γ e τ →
-  fv_tm e ∪ fv_cty τ ⊆ dom (erase_ctx_under Σ Γ).
-Proof.
-  intros Hwf.
-  pose proof (choice_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ Hwf) as He.
-  pose proof (choice_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ Hwf) as Hτ.
-  set_solver.
 Qed.
 
 Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → choice_ty → Prop :=
@@ -282,10 +239,8 @@ Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm →
       has_choice_type Φ Σ Γ (tmatch v et ef) τ.
 
 #[global] Hint Constructors has_choice_type : core.
-Definition default_has_choice_type : ctx → tm → choice_ty → Prop :=
+#[global] Instance typing_choice_inst : Typing ctx tm choice_ty :=
   has_choice_type default_primop_ctx ∅.
-
-#[global] Instance typing_choice_inst : Typing ctx tm choice_ty := default_has_choice_type.
 Arguments typing_choice_inst /.
 
 (** ** Small admissible helpers kept only where they name core definitions. *)

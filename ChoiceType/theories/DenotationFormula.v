@@ -4,7 +4,7 @@
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
     logic qualifiers.  Core expressions are embedded through
-    [expr_logic_qual], and type qualifiers are embedded directly as
+    expression-result formulas, and type qualifiers are embedded directly as
     store/resource atoms after they have been opened to closed atom-based
     qualifiers.
 
@@ -86,15 +86,6 @@ Lemma expr_result_store_intro ν eρ v :
   expr_result_store ν eρ ({[ν := v]}).
 Proof. intros Hstale Hlc Hsteps. exists v. repeat split; auto. Qed.
 
-Lemma expr_result_store_lookup ν eρ σw :
-  expr_result_store ν eρ σw →
-  ∃ v, σw !! ν = Some v ∧ eρ →* tret v.
-Proof.
-  intros [v [-> [_ [_ Hsteps]]]].
-  exists v. split; [rewrite lookup_singleton; rewrite decide_True by reflexivity; reflexivity |].
-  exact Hsteps.
-Qed.
-
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
   ∀ σν,
     (res_restrict w {[ν]} : World) σν ↔
@@ -105,26 +96,6 @@ Lemma expr_result_in_world_sound ρ e ν w σw :
   (res_restrict w {[ν]} : World) σw →
   expr_result_store ν (subst_map ρ e) σw.
 Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
-
-Lemma expr_result_in_world_complete ρ e ν w σw :
-  expr_result_in_world ρ e ν w →
-  expr_result_store ν (subst_map ρ e) σw →
-  (res_restrict w {[ν]} : World) σw.
-Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
-
-Lemma expr_result_in_world_store_elim ρ e ν w σw :
-  expr_result_in_world ρ e ν w →
-  (res_restrict w {[ν]} : World) σw →
-  ∃ v,
-    σw = {[ν := v]} ∧
-    stale v = ∅ ∧
-    is_lc v ∧
-    subst_map ρ e →* tret v.
-Proof.
-  intros Hres Hw.
-  exact (expr_result_store_elim ν (subst_map ρ e) σw
-    (expr_result_in_world_sound ρ e ν w σw Hres Hw)).
-Qed.
 
 Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
   map_fold (λ k x acc, open_tm k (vfvar x) acc) e η.
@@ -139,9 +110,6 @@ Proof.
   rewrite map_fold_singleton.
   apply open_rec_lc_tm. exact Hlc.
 Qed.
-
-Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  lqual_fvars {[ν]} (fun σ w => expr_result_in_world σ e ν w).
 
 Definition FExprResultOn {A : Type} `{IntoLVars A} (D : A) (e : tm) : FQ :=
   let L := into_lvars D in
@@ -159,30 +127,22 @@ Definition FExprResultAt {A : Type} `{IntoLVars A}
     (D : A) (e : tm) (ν : atom) : FQ :=
   formula_open 0 ν (FExprResultOn D e).
 
+Lemma FExprResultOn_lvars_fv {A : Type} `{IntoLVars A} (D : A) e :
+  formula_fv (FExprResultOn D e) = lvars_fv (into_lvars D).
+Proof.
+  unfold FExprResultOn, FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
+  denot_lvars_norm.
+  rewrite lvars_fv_union, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 Lemma FExprResultOn_fv X e :
   formula_fv (FExprResultOn X e) = X.
 Proof.
-  unfold FExprResultOn, FStoreResourceAtom.
-  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
-    into_lvars_aset into_lvars_lvset].
-  denot_lvars_norm.
-  rewrite lvars_fv_union, !lvars_fv_of_atoms, lvars_fv_singleton_bound.
-  set_solver.
-Qed.
-
-Lemma FExprResultOn_fv_subset X e :
-  formula_fv (FExprResultOn X e) ⊆ X.
-Proof.
-  rewrite FExprResultOn_fv. set_solver.
-Qed.
-
-Lemma FExprResultAt_fv_subset X e ν :
-  formula_fv (FExprResultAt X e ν) ⊆ X ∪ {[ν]}.
-Proof.
-  unfold FExprResultAt.
-  pose proof (formula_open_fv_subset 0 ν (FExprResultOn X e)) as Hopen.
-  rewrite FExprResultOn_fv in Hopen.
-  set_solver.
+  rewrite FExprResultOn_lvars_fv.
+  cbn [into_lvars into_lvars_aset].
+  apply lvars_fv_of_atoms.
 Qed.
 
 Lemma FExprResultAt_fv X e ν :
@@ -218,28 +178,11 @@ Proof.
   unfold FExprContIn.
   cbn [formula_fv].
   denot_lvars_norm.
-  unfold FExprResultOn at 1.
-  unfold FStoreResourceAtom.
-  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
-    into_lvars_lvset].
+  rewrite FExprResultOn_lvars_fv.
+  cbn [into_lvars into_lvars_lvset].
   denot_lvars_norm.
-  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  rewrite lvars_fv_of_atoms.
   set_solver.
-Qed.
-
-Lemma FExprContIn_post_eq
-    (Σ : gmap atom ty) e (P Q : FQ) :
-  P = Q →
-  FExprContIn Σ e P = FExprContIn Σ e Q.
-Proof.
-  intros ->. reflexivity.
-Qed.
-
-Lemma stale_expr_logic_qual e ν :
-  stale (expr_logic_qual e ν) = {[ν]}.
-Proof.
-  unfold expr_logic_qual, stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
-  simpl. rewrite lvars_fv_of_atoms. reflexivity.
 Qed.
 
 Lemma FExprResultOn_scoped_dom X e ν m :

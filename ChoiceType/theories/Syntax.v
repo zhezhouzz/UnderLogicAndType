@@ -153,9 +153,6 @@ Inductive lc_choice_ty : choice_ty → Prop :=
 Arguments lc_cty_inst /.
 #[global] Hint Constructors lc_choice_ty : core.
 
-Definition body_cty (τ : choice_ty) : Prop :=
-  ∃ L : aset, ∀ x : atom, x ∉ L → lc_choice_ty ({0 ~> x} τ).
-
 (** ** Type erasure and lifting *)
 
 (** [erase_ty τ] : the basic type underlying τ (Definition Fig. 2). *)

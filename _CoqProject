@@ -26,7 +26,6 @@ CoreLang/theories/Syntax.v
 CoreLang/theories/Instantiation.v
 CoreLang/theories/BasicTyping.v
 CoreLang/theories/SmallStep.v
-CoreLang/theories/Properties.v
 LocallyNameless/Tactics.v
 LocallyNameless/Classes.v
 CoreLang/theories/LocallyNamelessProps.v
@@ -57,10 +56,8 @@ ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/DenotationFibers.v
 ChoiceType/theories/DenotationFormula.v
-ChoiceType/theories/DenotationExprProps.v
 ChoiceType/theories/DenotationFormulaEquiv.v
 ChoiceType/theories/DenotationType.v
-ChoiceType/theories/DenotationRefinement.v
 ChoiceType/theories/DenotationContext.v
 ChoiceType/theories/Denotation.v
 ChoiceType/theories/Sugar.v
@@ -76,7 +73,7 @@ ChoiceTyping/theories/ResultWorldClosed.v
 ChoiceTyping/theories/ResultWorldBridge.v
 ChoiceTyping/theories/ResultWorldExprCont.v
 ChoiceTyping/theories/TLetTotal.v
-ChoiceTyping/theories/TLetReductionFuelSupport.v
+ChoiceTyping/theories/TLetReductionSupport.v
 ChoiceTyping/theories/TLetReduction.v
 ChoiceTyping/theories/TLetReductionTotal.v
 ChoiceTyping/theories/TLetDenotation.v

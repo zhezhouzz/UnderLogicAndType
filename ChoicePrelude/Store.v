@@ -13,12 +13,6 @@ Definition store_compat (s1 s2 : Store) : Prop := map_compat V s1 s2.
 
 Definition store_restrict (s : Store) (X : aset) : Store := map_restrict V s X.
 
-Definition store_rename_atom (x y : atom) (s : Store) : Store :=
-  match s !! x with
-  | Some v => <[y := v]> (delete x s)
-  | None => delete y s
-  end.
-
 Definition store_swap (x y : atom) (s : Store) : Store :=
   kmap (atom_swap x y) s.
 
@@ -154,98 +148,6 @@ Proof.
   rewrite atom_swap_conjugate. reflexivity.
 Qed.
 
-Lemma store_rename_atom_dom x y s :
-  dom (store_rename_atom x y s) = aset_rename x y (dom s).
-Proof.
-  unfold store_rename_atom, aset_rename.
-  destruct (s !! x) as [v|] eqn:Hx.
-  - destruct (decide (x ∈ dom s)) as [_|Hnotin].
-    + apply set_eq. intros z.
-      change (z ∈ dom (<[y := v]> (delete x s) : gmap atom V) <->
-        z ∈ ({[y]} ∪ dom (s : gmap atom V) ∖ {[x]} : aset)).
-      rewrite elem_of_dom, lookup_insert_is_Some, lookup_delete_is_Some.
-      rewrite elem_of_union, elem_of_singleton, elem_of_difference,
-        elem_of_singleton, elem_of_dom.
-      split.
-      * intros [Hy | [Hny [Hnx His]]].
-        -- left. symmetry. exact Hy.
-        -- right. split; [exact His | congruence].
-      * intros [Hzy | [His Hnx]].
-        -- left. symmetry. exact Hzy.
-        -- destruct (decide (z = y)) as [->|Hzy].
-           ++ left. reflexivity.
-           ++ right. repeat split; eauto; congruence.
-    + exfalso. apply Hnotin. by apply elem_of_dom; exists v.
-  - destruct (decide (x ∈ dom s)) as [Hin|_].
-    + exfalso. apply not_elem_of_dom in Hx. set_solver.
-    + apply set_eq. intros z.
-      change (z ∈ dom (delete y s : gmap atom V) <->
-        z ∈ (dom (s : gmap atom V) ∖ {[y]} : aset)).
-      rewrite elem_of_dom, lookup_delete_is_Some.
-      rewrite elem_of_difference, elem_of_singleton, elem_of_dom.
-      firstorder congruence.
-Qed.
-
-Lemma elem_of_aset_rename x y z X :
-  z ∈ aset_rename x y X ↔
-    (z = y ∧ x ∈ X) ∨ (z ≠ y ∧ z ≠ x ∧ z ∈ X).
-Proof.
-  unfold aset_rename.
-  destruct (decide (x ∈ X)) as [Hx|Hx].
-  - rewrite elem_of_union, elem_of_singleton, elem_of_difference,
-      elem_of_singleton.
-    split.
-    + intros [Hzy | [HzX Hzx]].
-      * left. split; [exact Hzy | exact Hx].
-      * destruct (decide (z = y)) as [Hzy|Hzy].
-        -- left. split; [exact Hzy | exact Hx].
-        -- right. repeat split; assumption.
-    + intros [[Hzy _] | [Hzy [Hzx HzX]]].
-      * left. exact Hzy.
-      * right. set_solver.
-  - rewrite elem_of_difference, elem_of_singleton.
-    split.
-    + intros [HzX Hzy]. right. set_solver.
-    + intros [[-> HyX] | [Hzy [Hzx HzX]]]; set_solver.
-Qed.
-
-Lemma store_rename_atom_lookup x y s z :
-  store_rename_atom x y s !! z =
-    if decide (z = y)
-    then s !! x
-    else if decide (z = x)
-         then None
-         else s !! z.
-Proof.
-  unfold store_rename_atom.
-  destruct (s !! x) as [vx|] eqn:Hx.
-  - destruct (decide (z = y)) as [->|Hzy].
-    + destruct (decide (y = y)); [|congruence].
-      change ((<[y := vx]> (delete x s) : gmap atom V) !! y = Some vx).
-      apply lookup_insert_eq.
-    + change ((<[y := vx]> (delete x s) : gmap atom V) !! z =
-        if decide (z = x) then None else s !! z).
-      rewrite (lookup_insert_ne (delete x s) y z vx) by congruence.
-      destruct (decide (z = y)); [congruence |].
-      destruct (decide (z = x)) as [->|Hzx].
-      * change ((delete x s : gmap atom V) !! x = None). apply lookup_delete_eq.
-      * change ((delete x s : gmap atom V) !! z = s !! z).
-        apply lookup_delete_ne. congruence.
-  - destruct (decide (z = y)) as [->|Hzy].
-    + destruct (decide (y = y)); [|congruence].
-      change ((delete y s : gmap atom V) !! y = None).
-      apply lookup_delete_eq.
-    + change ((delete y s : gmap atom V) !! z =
-        if decide (z = x) then None else s !! z).
-      destruct (decide (z = y)); [congruence |].
-      destruct (decide (z = x)) as [->|Hzx].
-      * transitivity (s !! x).
-        -- apply lookup_delete_ne. congruence.
-        -- exact Hx.
-      * change ((delete y s : gmap atom V) !! z = s !! z).
-        apply lookup_delete_ne. congruence.
-Qed.
-
 Lemma store_restrict_lookup s X z :
   store_restrict s X !! z = if decide (z ∈ X) then s !! z else None.
 Proof.
@@ -291,45 +193,6 @@ Proof.
   eapply kmap_union. apply atom_swap_inj.
 Qed.
 
-Lemma store_restrict_rename_atom x y s X :
-  store_restrict (store_rename_atom y x s) X =
-  store_rename_atom y x (store_restrict s (aset_rename x y X)).
-Proof.
-  apply map_eq. intros z.
-  rewrite store_restrict_lookup, !store_rename_atom_lookup.
-  destruct (decide (z = x)) as [->|Hzx].
-  - destruct (decide (x ∈ X)) as [HxX|HxX].
-    + destruct (decide (y = y)); [|congruence].
-      rewrite store_restrict_lookup.
-      destruct (decide (y ∈ aset_rename x y X)) as [_|Hy].
-      * reflexivity.
-      * exfalso. apply Hy. rewrite elem_of_aset_rename. left. split; [reflexivity | exact HxX].
-    + destruct (decide (y = y)); [|congruence].
-      rewrite store_restrict_lookup.
-      destruct (decide (y ∈ aset_rename x y X)) as [Hy|_].
-      * rewrite elem_of_aset_rename in Hy. set_solver.
-      * reflexivity.
-  - destruct (decide (z = y)) as [->|Hzy].
-    + destruct (decide (y ∈ X)) as [HyX|HyX].
-      * destruct (decide (y = x)); [congruence |].
-        destruct (decide (y = y)); [reflexivity | congruence].
-      * destruct (decide (y = x)); [congruence |].
-        destruct (decide (y = y)); [reflexivity | congruence].
-    + destruct (decide (z ∈ X)) as [HzX|HzX].
-      * rewrite store_restrict_lookup.
-        destruct (decide (z ∈ aset_rename x y X)) as [_|Hzren].
-        -- destruct (decide (z = y)); [congruence |].
-           destruct (decide (z = x)); [congruence |].
-           reflexivity.
-        -- exfalso. apply Hzren. rewrite elem_of_aset_rename. right. set_solver.
-      * rewrite store_restrict_lookup.
-        destruct (decide (z ∈ aset_rename x y X)) as [Hzren|_].
-        -- rewrite elem_of_aset_rename in Hzren. set_solver.
-        -- destruct (decide (z = y)); [congruence |].
-           destruct (decide (z = x)); [congruence |].
-           reflexivity.
-Qed.
-
 Lemma store_compat_refl s : store_compat s s.
 Proof.
   unfold store_compat. intros x v1 v2 H1 H2. hauto.
@@ -337,11 +200,6 @@ Qed.
 
 Lemma store_compat_sym s1 s2 :
   store_compat s1 s2 → store_compat s2 s1.
-Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
-Lemma store_compat_union s1 s2 :
-  store_compat s1 s2 →
-  store_compat (s1 ∪ s2) (s1 ∪ s2).
 Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
 
 Lemma store_compat_union_inv_l s1 s2 s3 :
@@ -452,21 +310,24 @@ Lemma store_compat_insert_r_fresh (s1 s2 : Store) x v :
   x ∉ dom s1 →
   store_compat s1 (<[x := v]> s2).
 Proof.
-  unfold store_compat.
-  intros Hcompat Hx z v1 v2 H1 H2.
-  destruct (decide (z = x)) as [->|Hzx].
-  - exfalso. apply Hx. apply elem_of_dom. eauto.
-  - apply lookup_insert_Some in H2 as [[Hz Heq] | [Hz H2]].
-    + congruence.
-    + eapply Hcompat; eauto.
+  intros Hcompat Hx.
+  apply store_compat_sym.
+  eapply store_compat_insert_l_fresh.
+  - apply store_compat_sym. exact Hcompat.
+  - exact Hx.
+Qed.
+
+Lemma store_insert_union_l (s1 s2 : Store) x v :
+  <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
+Proof.
+  symmetry. apply insert_union_l.
 Qed.
 
 Lemma store_insert_union_l_fresh (s1 s2 : Store) x v :
   x ∉ dom s2 →
   <[x := v]> s1 ∪ s2 = <[x := v]> (s1 ∪ s2).
 Proof.
-  intros _.
-  symmetry. apply insert_union_l.
+  intros _. apply store_insert_union_l.
 Qed.
 
 Lemma store_insert_union_r_fresh (s1 s2 : Store) x v :

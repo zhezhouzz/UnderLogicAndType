@@ -2,9 +2,8 @@
 
     Context-preservation helpers for the [tlet] result world.
 
-    Older graph/fiber proof experiments have been removed from this file.  The
-    remaining lemmas are exactly the facts used by [TLetDenotation] to build the
-    comma-extended context after evaluating the let-bound expression. *)
+    These lemmas build the comma-extended denotation context after evaluating
+    the let-bound expression. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization.
@@ -12,7 +11,7 @@ From ChoiceTyping Require Export RegularDenotation.
 From ChoiceTyping Require Import Naming ResultWorldClosed SoundnessCommon.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-Lemma tlet_split_premises_choice_typing_wf_e1
+Lemma tlet_e1_choice_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1
     (m : WfWorld) :
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
@@ -118,7 +117,7 @@ Qed.
     This is intentionally a denotation-level transport theorem, not a
     constructor-specific typing case.  The proof should follow from a generic
     expression-result transport principle for [denot_ty_on]. *)
-Lemma denot_ty_on_let_result_representative
+Lemma denot_ty_on_let_result_bound
     X Σ τ e x (m : WfWorld) Hfresh Hresult :
   basic_choice_ty (dom Σ) τ →
   fv_tm e ⊆ X →
@@ -130,7 +129,7 @@ Lemma denot_ty_on_let_result_representative
 Proof.
 Admitted.
 
-Lemma let_result_world_on_bound_type
+Lemma let_result_world_on_denot_ty_bound
     Σ Γ τ e x (m : WfWorld) Hfresh Hresult :
   choice_typing_wf Σ Γ e τ →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -142,7 +141,7 @@ Lemma let_result_world_on_bound_type
       τ (tret (vfvar x)).
 Proof.
   intros Hwf Hm Hτ Hx.
-  eapply (denot_ty_on_let_result_representative
+  eapply (denot_ty_on_let_result_bound
     (dom (erase_ctx_under Σ Γ)) (erase_ctx_under Σ Γ) τ e x m Hfresh Hresult).
   - exact (choice_typing_wf_basic_choice_ty_erased Σ Γ e τ Hwf).
   - exact (choice_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ Hwf).
@@ -173,10 +172,10 @@ Proof.
         eapply let_result_world_on_preserves_context; exact Hm.
       * simpl.
         unfold erase_ctx_under.
-        eapply let_result_world_on_bound_type; eauto.
+        eapply let_result_world_on_denot_ty_bound; eauto.
 Qed.
 
-Lemma let_result_world_on_bound_fresh
+Lemma let_result_world_on_fresh_for_bound
     Σ Γ τ e x (m : WfWorld) :
   choice_typing_wf Σ Γ e τ →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -216,7 +215,7 @@ Proof.
   - intros Hbad. apply Hfresh. apply Hdom_world. apply Hfv_e. exact Hbad.
 Qed.
 
-Lemma tlet_split_premises_body_ctx_from_result
+Lemma tlet_body_ctx_from_result_world
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : choice_ty) e1 x
     (m : WfWorld)
     (Hfresh : x ∉ world_dom (m : World))
@@ -230,11 +229,11 @@ Lemma tlet_split_premises_body_ctx_from_result
 Proof.
   intros Herase Hm Hmodel.
   eapply let_result_world_on_denot_ctx_in_env.
-  - eapply tlet_split_premises_choice_typing_wf_e1; eauto.
+  - eapply tlet_e1_choice_typing_wf; eauto.
   - exact Hm.
   - exact (denot_ty_total_model_formula Σ Γ τ1 e1 m Hmodel).
-  - eapply let_result_world_on_bound_fresh.
-    + eapply tlet_split_premises_choice_typing_wf_e1; eauto.
+  - eapply let_result_world_on_fresh_for_bound.
+    + eapply tlet_e1_choice_typing_wf; eauto.
     + exact Hm.
     + exact (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel).
     + exact Hfresh.
@@ -269,7 +268,7 @@ Lemma expr_total_on_tlete_elim_body_strong
   X ⊆ world_dom (m : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
-  world_store_closed_on X m →
+  world_closed_on X m →
   lc_tm (tlete e1 e2) →
   expr_total_on X (tlete e1 e2) m →
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)
@@ -327,7 +326,7 @@ Lemma expr_total_on_tlete_intro_strong
   X ⊆ world_dom (m : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
-  world_store_closed_on X m →
+  world_closed_on X m →
   lc_tm (tlete e1 e2) →
   expr_total_on X e1 m →
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)

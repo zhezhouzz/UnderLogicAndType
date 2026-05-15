@@ -1,10 +1,10 @@
 (** * ChoiceTyping.TLetReductionTotal
 
-    Total/model-level wrappers for the [tlet] reduction theorem.  The
-    fuel-level reduction proof stays in [TLetReduction]. *)
+    Total/model-level bridges for the [tlet] reduction theorem.  The
+    type-denotation reduction proof stays in [TLetReduction]. *)
 
 From ChoiceTyping Require Export TLetReduction.
-From ChoiceTyping Require Import Auxiliary LetResultWorld Naming ResultWorldClosed
+From ChoiceTyping Require Import LetResultWorld Naming ResultWorldClosed
   SoundnessCommon TLetTotal.
 
 Import Tactics.
@@ -34,7 +34,7 @@ Proof.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
-    + eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+    + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
     + exact Htotal1.
     + exact Hbody.
@@ -43,7 +43,7 @@ Proof.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
-    + eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+    + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
     + exact Hlet_total.
 Qed.
@@ -106,35 +106,35 @@ Proof.
     Σ Γ τ1 τ2 x ltac:(set_solver)
     (denot_ty_total_model_regular Σ Γ τ1 e1 m Hmodel1))
     as Hregular_iff.
-	  split; intros Hmodel.
-	  - destruct Hmodel as [[Hregular_body Hformula_body] Htotal_body].
-	    pose proof (proj1 (expr_total_tlet_reduction
-	      Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
-        (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
-        (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
-        ltac:(set_solver))
-	      Htotal_body) as Htotal_target.
-	    split.
-	    + split.
-	      * apply (proj1 Hregular_iff). exact Hregular_body.
-		      * apply (proj1 (denot_ty_tlet_reduction_formula_any_world
-		          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
-		          (proj1 Hregular_iff Hregular_body) He1 Hlet Hctx
-		          Htotal_target Hfreshx)).
-	        exact Hformula_body.
-	    + exact Htotal_target.
-	  - destruct Hmodel as [[Hregular_target Hformula_target] Htotal_target].
-	    split.
-	    + split.
-	      * apply (proj2 Hregular_iff). exact Hregular_target.
-		      * apply (proj2 (denot_ty_tlet_reduction_formula_any_world
-		          τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
-		          Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)).
-	        exact Hformula_target.
-    + apply (proj2 (expr_total_tlet_reduction
+  split; intros Hmodel.
+  - destruct Hmodel as [Hregular_body [Hformula_body Htotal_body]].
+    pose proof (proj1 (expr_total_tlet_reduction
         Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
         (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
         (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
-        ltac:(set_solver))).
-      exact Htotal_target.
+        ltac:(set_solver))
+        Htotal_body) as Htotal_target.
+    split.
+    + apply (proj1 Hregular_iff). exact Hregular_body.
+    + split.
+      * apply (proj1 (denot_ty_tlet_reduction_any_world
+            τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
+            (proj1 Hregular_iff Hregular_body) He1 Hlet Hctx
+            Htotal_target Hfreshx)).
+        exact Hformula_body.
+      * exact Htotal_target.
+  - destruct Hmodel as [Hregular_target [Hformula_target Htotal_target]].
+    split.
+    + apply (proj2 Hregular_iff). exact Hregular_target.
+    + split.
+      * apply (proj2 (denot_ty_tlet_reduction_any_world
+            τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
+            Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)).
+        exact Hformula_target.
+      * apply (proj2 (expr_total_tlet_reduction
+          Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
+          (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
+          (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
+          ltac:(set_solver))).
+        exact Htotal_target.
 Qed.

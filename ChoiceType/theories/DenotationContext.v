@@ -100,7 +100,7 @@ Lemma denot_ctx_under_formula_fv_subset Σ Γ :
 Proof.
   induction Γ in Σ |- *; simpl.
   - set_solver.
-  - pose proof (denot_ty_on_formula_fv_subset
+  - pose proof (denot_ty_on_fv_subset
       (<[x:=erase_ty τ]> Σ) τ (tret (vfvar x))) as Hτ.
     intros z Hz. apply Hτ in Hz. simpl in Hz. set_solver.
   - pose proof (IHΓ1 Σ) as H1.
@@ -241,11 +241,6 @@ Proof.
       * models_fuel_irrel HΓ2.
 Qed.
 
-Lemma denot_ctx_under_bind Σ x τ m :
-  m ⊨ denot_ctx_under Σ (CtxBind x τ) ↔
-  m ⊨ denot_ty_on (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
-Proof. reflexivity. Qed.
-
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
   dom Σ1 = dom Σ2 →
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
@@ -258,8 +253,7 @@ Proof.
     induction Γ as [|x τ|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2];
       intros Σ1 Σ2 Hdom Hagree; simpl.
     - reflexivity.
-    - unfold denot_ty_on.
-      apply denot_ty_fuel_env_agree.
+    - apply denot_ty_on_env_agree.
       + rewrite !dom_insert_L. set_solver.
       + intros z Hz.
         destruct (decide (z = x)) as [->|Hne].
@@ -304,14 +298,6 @@ Proof.
   }
   rewrite Heq. apply formula_equiv_refl.
 Qed.
-
-(** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
-Lemma denot_ctx_bind x τ m :
-  m ⊨ ⟦CtxBind x τ⟧ ↔
-  m ⊨ denot_ty_on
-    (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
-    τ (tret (vfvar x)).
-Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_restrict_stale Σ Γ m :
   m ⊨ denot_ctx_under Σ Γ →

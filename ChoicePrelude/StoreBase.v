@@ -20,15 +20,6 @@ Proof.
   unfold map_compat. intros x v1 v2 H1 H2. hauto.
 Qed.
 
-Lemma map_compat_sym m1 m2 :
-  map_compat m1 m2 → map_compat m2 m1.
-Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
-Lemma map_compat_union m1 m2 :
-  map_compat m1 m2 →
-  map_compat (m1 ∪ m2) (m1 ∪ m2).
-Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
 Lemma map_restrict_dom m X :
   dom (map_restrict m X) = dom m ∩ X.
 Proof.
@@ -86,12 +77,6 @@ Arguments map_compat {_ _ _} _ _ /.
 Arguments map_restrict {_ _ _} _ _ /.
 
 (** ** Atom-keyed stores *)
-
-Definition atom_rename (x y z : atom) : atom :=
-  if decide (z = x) then y else z.
-
-Definition aset_rename (x y : atom) (X : aset) : aset :=
-  if decide (x ∈ X) then {[y]} ∪ (X ∖ {[x]}) else X ∖ {[y]}.
 
 Definition atom_swap (x y z : atom) : atom :=
   if decide (z = x) then y else if decide (z = y) then x else z.

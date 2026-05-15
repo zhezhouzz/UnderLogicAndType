@@ -1,17 +1,18 @@
-(** * ChoiceTyping.TLetReductionFuelSupport
+(** * ChoiceTyping.TLetReductionSupport
 
-    Fuel-level and model-level reduction lemmas for the [tlet] soundness case.
-    The final semantic wrappers stay in [TLetDenotation]. *)
+    Model-level reduction lemmas for the [tlet] soundness case.
+    The final semantic bridge stays in [TLetDenotation]. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Import TLetTotal RegularDenotation
   Naming ResultWorldBridge.
-From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
+From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Import Tactics.
 
-(** Resource/totality and [denot_ty_fuel] obligation helpers for the [tlet] reduction proof. *)
+(** Resource/totality and type-denotation obligation helpers for the [tlet]
+    reduction proof. *)
 Lemma expr_total_on_restrict_self X e (m : WfWorld) :
   expr_total_on X e m →
   expr_total_on X e (res_restrict m X).
@@ -24,33 +25,33 @@ Proof.
   apply Htotal. exact Hσm.
 Qed.
 
-Lemma denot_ty_fuel_intro gas Σ τ e m :
+Lemma denot_ty_intro Σ τ e m :
   basic_choice_ty (dom Σ) τ →
   Σ ⊢ₑ e ⋮ erase_ty τ →
   world_closed_on (dom Σ) m →
   expr_total_on (dom Σ) e m →
-  m ⊨ denot_ty_fuel_body gas Σ τ e →
+  m ⊨ denot_ty_body Σ τ e →
   dom Σ ⊆ world_dom (m : World) →
-  m ⊨ denot_ty_fuel gas Σ τ e.
+  m ⊨ denot_ty_on Σ τ e.
 Proof.
   intros Hbasic Htyped Hclosed Htotal Hbody Hdom.
-  rewrite denot_ty_fuel_unfold.
+  unfold denot_ty_on, denot_ty_body.
   unfold denot_ty_obligations.
   apply res_models_and_intro_from_models.
   - unfold FBasicTypingIn, res_models.
     eapply res_models_with_store_store_resource_atom_vars_intro.
     + unfold formula_scoped_in_world.
-	      rewrite formula_fv_FStoreResourceAtomVars.
+	      rewrite formula_fv_FStoreResourceAtom_lvars.
 	      rewrite !atom_env_to_lty_env_dom.
 	      rewrite lvars_fv_union, !lvars_fv_of_atoms.
       rewrite dom_empty_L. set_solver.
-    + rewrite lty_env_open_atom_env_empty, open_cty_env_empty, open_tm_env_empty.
+    + rewrite lty_env_open_atom_env, open_cty_env_empty, open_tm_env_empty.
       split; assumption.
   - apply res_models_and_intro_from_models.
     + unfold FClosedResourceIn, res_models.
       eapply res_models_with_store_resource_atom_vars_intro.
       * unfold formula_scoped_in_world.
-        rewrite formula_fv_FResourceAtomVars.
+        rewrite formula_fv_FResourceAtom_lvars.
         rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
         rewrite dom_empty_L. set_solver.
       * rewrite atom_env_to_lty_env_atom_dom.
@@ -61,7 +62,7 @@ Proof.
       * unfold FStrongTotalIn, res_models.
         eapply res_models_with_store_store_resource_atom_vars_intro.
         -- unfold formula_scoped_in_world.
-           rewrite formula_fv_FStoreResourceAtomVars.
+           rewrite formula_fv_FStoreResourceAtom_lvars.
            rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
            rewrite dom_empty_L. set_solver.
         -- rewrite atom_env_to_lty_env_atom_dom.
@@ -71,12 +72,12 @@ Proof.
       * exact Hbody.
 Qed.
 
-Lemma denot_ty_fuel_body_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  m ⊨ denot_ty_fuel_body gas Σ τ e.
+Lemma denot_ty_body_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
+  m ⊨ denot_ty_body Σ τ e.
 Proof.
   intros Hm.
-  rewrite denot_ty_fuel_unfold in Hm.
+  unfold denot_ty_on, denot_ty_body in Hm.
   unfold denot_ty_obligations in Hm.
   apply res_models_with_store_and_elim_r in Hm.
   apply res_models_with_store_and_elim_r in Hm.
@@ -84,17 +85,17 @@ Proof.
   exact Hm.
 Qed.
 
-Lemma denot_ty_fuel_basic_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
+Lemma denot_ty_basic_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
   basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros Hm.
-  rewrite denot_ty_fuel_unfold in Hm.
+  unfold denot_ty_on in Hm.
   unfold denot_ty_obligations, FBasicTypingIn in Hm.
   apply res_models_with_store_and_elim_l in Hm.
   destruct (res_models_with_store_store_resource_atom_vars_elim _ _ _ _ Hm)
     as [_ [_ [Hbasic _]]].
-  rewrite lty_env_open_atom_env_empty, open_cty_env_empty, open_tm_env_empty in Hbasic.
+  rewrite lty_env_open_atom_env, open_cty_env_empty, open_tm_env_empty in Hbasic.
   exact Hbasic.
 Qed.
 
@@ -116,12 +117,12 @@ Proof.
   - store_norm. reflexivity.
 Qed.
 
-Lemma denot_ty_fuel_world_closed_on_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
+Lemma denot_ty_world_closed_on_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
   world_closed_on (dom Σ) m.
 Proof.
   intros Hm.
-  rewrite denot_ty_fuel_unfold in Hm.
+  unfold denot_ty_on in Hm.
   unfold denot_ty_obligations, FClosedResourceIn in Hm.
   apply res_models_with_store_and_elim_r in Hm.
   apply res_models_with_store_and_elim_l in Hm.
@@ -137,22 +138,22 @@ Proof.
     unfold formula_scoped_in_world in Hscope.
     rewrite dom_empty_L in Hscope.
     apply Hscope. apply elem_of_union. right.
-    rewrite formula_fv_FResourceAtomVars.
+    rewrite formula_fv_FResourceAtom_lvars.
     rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz.
   - etrans; [apply res_restrict_le | exact Hle].
   - exact Hclosed.
 Qed.
 
-Lemma denot_ty_fuel_expr_total_on_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
+Lemma denot_ty_expr_total_on_of_formula Σ τ e m :
+  m ⊨ denot_ty_on Σ τ e →
   expr_total_on (dom Σ) e m.
 Proof.
   intros Hm.
-  pose proof (denot_ty_fuel_basic_of_formula _ _ _ _ _ Hm)
+  pose proof (denot_ty_basic_of_formula _ _ _ _ Hm)
     as [_ Htyped].
   split.
   - eauto using basic_typing_contains_fv_tm.
-  - rewrite denot_ty_fuel_unfold in Hm.
+  - unfold denot_ty_on in Hm.
     unfold denot_ty_obligations, FStrongTotalIn in Hm.
     apply res_models_with_store_and_elim_r in Hm.
     apply res_models_with_store_and_elim_r in Hm.
@@ -179,7 +180,7 @@ Proof.
     { unfold formula_scoped_in_world in Hscope.
       rewrite dom_empty_L in Hscope.
       intros z Hz. apply Hscope. apply elem_of_union. right.
-      rewrite formula_fv_FStoreResourceAtomVars.
+      rewrite formula_fv_FStoreResourceAtom_lvars.
       rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hz. }
     assert (HσD :
       (res_restrict m0 (dom Σ) : World) (store_restrict σ (dom Σ))).

@@ -6,7 +6,7 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps B
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetReductionTotal.
 From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprCont.
-From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
+From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Import Tactics.
 
@@ -37,7 +37,7 @@ Proof.
     x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2)
     by (subst Fresh; set_solver).
   assert (Hclosed_erased :
-    world_store_closed_on (dom (erase_ctx_under Σ Γ)) m).
+    world_closed_on (dom (erase_ctx_under Σ Γ)) m).
   {
     pose proof (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel)
       as Hbasic.
@@ -59,7 +59,7 @@ Proof.
   assert (Hctx :
     m' ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
   {
-    subst m'. eapply tlet_split_premises_body_ctx_from_result; eauto.
+    subst m'. eapply tlet_body_ctx_from_result_world; eauto.
   }
   pose proof (Hbody x HxL m' Hctx) as Hbody_model.
   exact (proj1

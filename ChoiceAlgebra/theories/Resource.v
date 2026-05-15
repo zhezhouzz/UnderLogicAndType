@@ -171,11 +171,6 @@ Proof.
   intros s. simpl. tauto.
 Qed.
 
-Definition raw_rename_atom (x y : atom) (m : World) : World := {|
-  world_dom    := aset_rename x y (world_dom m);
-  world_stores := λ s, ∃ s0, m s0 ∧ store_rename_atom x y s0 = s;
-|}.
-
 Definition raw_swap (x y : atom) (m : World) : World := {|
   world_dom    := aset_swap x y (world_dom m);
   world_stores := λ s, ∃ s0, m s0 ∧ store_swap x y s0 = s;
@@ -348,21 +343,6 @@ Proof.
   intros <- Hσ. exact Hσ.
 Qed.
 
-Definition res_rename_atom (x y : atom) (w : WfWorld) : WfWorld.
-Proof.
-  refine (exist _ (raw_rename_atom x y w) _).
-  destruct (world_wf w) as [Hne Hdom].
-  constructor.
-  - destruct Hne as [σ Hσ].
-    exists (store_rename_atom x y σ). simpl.
-    exists σ. split; [exact Hσ | reflexivity].
-  - intros σ' Hσ'. simpl in Hσ'.
-    destruct Hσ' as [σ [Hσ Hrename]]. subst σ'.
-    rewrite store_rename_atom_dom.
-    change (aset_rename x y (dom σ) = aset_rename x y (world_dom (w : World))).
-    rewrite (Hdom σ Hσ). reflexivity.
-Defined.
-
 Definition res_swap (x y : atom) (w : WfWorld) : WfWorld.
 Proof.
   refine (exist _ (raw_swap x y w) _).
@@ -510,49 +490,6 @@ Proof.
     res_swap x y m) in Hrestr.
   rewrite <- (aset_swap_involutive x y (world_dom (m : World))).
   rewrite res_restrict_swap, Hrestr, res_swap_involutive. reflexivity.
-Qed.
-
-Lemma res_restrict_rename_atom (x y : atom) (w : WfWorld) (X : aset) :
-  res_restrict (res_rename_atom y x w) X =
-  res_rename_atom y x (res_restrict w (aset_rename x y X)).
-Proof.
-  apply wfworld_ext. apply world_ext.
-  - simpl.
-    change (aset_rename y x (world_dom (w : World)) ∩ X =
-      aset_rename y x (world_dom (w : World) ∩ aset_rename x y X)).
-    apply set_eq. intros z.
-    rewrite elem_of_intersection, !elem_of_aset_rename.
-    split.
-    + intros [Hzren HzX].
-      destruct Hzren as [[Hzx Hyw] | [Hzx [Hzy Hzw]]].
-      * subst z. left. split; [reflexivity |].
-        apply elem_of_intersection. split; [exact Hyw |].
-        rewrite elem_of_aset_rename. left. split; [reflexivity | exact HzX].
-      * right. repeat split; try congruence.
-        apply elem_of_intersection. split; [exact Hzw |].
-        rewrite elem_of_aset_rename. right. repeat split; try congruence; exact HzX.
-    + intros Hzren.
-      destruct Hzren as [[Hzx Hin] | [Hzx [Hzy Hin]]].
-      * apply elem_of_intersection in Hin as [Hw HX].
-        subst z.
-        split.
-        -- left. split; [reflexivity | exact Hw].
-        -- rewrite elem_of_aset_rename in HX.
-           destruct HX as [[_ HxX] | [Hyy [_ _]]]; [exact HxX | congruence].
-      * apply elem_of_intersection in Hin as [Hw HX].
-        split.
-        -- right. repeat split; try congruence; exact Hw.
-        -- rewrite elem_of_aset_rename in HX.
-           destruct HX as [[Hzy' _] | [_ [_ HzX]]]; [congruence | exact HzX].
-  - intros σ. split.
-    + intros [σ0 [[σw [Hσw Hrename]] Hrestrict]]. subst σ0 σ.
-      simpl. exists (store_restrict σw (aset_rename x y X)). split.
-      * exists σw. split; [exact Hσw | reflexivity].
-      * symmetry. apply store_restrict_rename_atom.
-    + intros [σ0 [[σw [Hσw Hrestrict]] Hrename]]. subst σ0 σ.
-      simpl. exists (store_rename_atom y x σw). split.
-      * exists σw. split; [exact Hσw | reflexivity].
-      * apply store_restrict_rename_atom.
 Qed.
 
 Definition res_fiber (w : WfWorld) (σ : StoreT)
@@ -743,16 +680,6 @@ Proof.
       simpl in Hσ. destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
       exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
 Qed.
-
-Lemma res_subset_swap_intro (x y : atom) (w1 w2 : WfWorld) :
-  res_subset w1 w2 →
-  res_subset (res_swap x y w1) (res_swap x y w2).
-Proof. apply (proj2 (res_subset_swap x y w1 w2)). Qed.
-
-Lemma res_subset_swap_elim (x y : atom) (w1 w2 : WfWorld) :
-  res_subset (res_swap x y w1) (res_swap x y w2) →
-  res_subset w1 w2.
-Proof. apply (proj1 (res_subset_swap x y w1 w2)). Qed.
 
 Lemma res_sum_subset_l (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   res_subset w1 (res_sum w1 w2 Hdef).
@@ -1119,16 +1046,6 @@ Proof.
     exact (Hc τ1 τ2 Hτ1 Hτ2).
 Qed.
 
-Lemma world_compat_swap_intro (x y : atom) (w1 w2 : WfWorld) :
-  world_compat w1 w2 →
-  world_compat (res_swap x y w1) (res_swap x y w2).
-Proof. apply (proj2 (world_compat_swap x y w1 w2)). Qed.
-
-Lemma world_compat_swap_elim (x y : atom) (w1 w2 : WfWorld) :
-  world_compat (res_swap x y w1) (res_swap x y w2) →
-  world_compat w1 w2.
-Proof. apply (proj1 (world_compat_swap x y w1 w2)). Qed.
-
 Lemma res_product_swap (x y : atom) (w1 w2 : WfWorld)
     (Hc : world_compat w1 w2)
     (Hc' : world_compat (res_swap x y w1) (res_swap x y w2)) :
@@ -1293,11 +1210,6 @@ Proof.
     rewrite !res_swap_involutive in Hswap. exact Hswap.
   - apply res_swap_le.
 Qed.
-
-Lemma res_swap_le_elim (x y : atom) (w1 w2 : WfWorld) :
-  res_swap x y w1 ⊑ res_swap x y w2 →
-  w1 ⊑ w2.
-Proof. apply (proj1 (res_swap_le_iff x y w1 w2)). Qed.
 
 Lemma res_restrict_le_eq (m n : WfWorld) (X : aset) :
   m ⊑ n →
@@ -2064,16 +1976,22 @@ Proof.
     apply store_union_comm. exact Hcompat.
 Qed.
 
-Lemma res_product_unit_r (w : WfWorld) :
-  ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
+Lemma res_product_unit_r_any (w : WfWorld) (Hc : world_compat w res_unit) :
+  ∀ s, res_product w res_unit Hc s ↔ (w : World) s.
 Proof.
   intros s. simpl. split.
   - intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
     subst s2. rewrite map_union_empty. exact Hs1.
   - intros Hs.
     exists s, ∅. repeat split; eauto.
-    + exact (raw_compat_unit_r (w : World) s ∅ Hs eq_refl).
+    + exact (Hc s ∅ Hs eq_refl).
     + rewrite map_union_empty. reflexivity.
+Qed.
+
+Lemma res_product_unit_r (w : WfWorld) :
+  ∀ s, res_product w res_unit (raw_compat_unit_r w) s ↔ (w : World) s.
+Proof.
+  apply res_product_unit_r_any.
 Qed.
 
 Lemma res_product_unit_r_eq (w : WfWorld) :
@@ -2089,13 +2007,7 @@ Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
 Proof.
   apply wfworld_ext. apply world_ext.
   - simpl. set_solver.
-  - intros s. simpl. split.
-    + intros (s1 & s2 & Hs1 & Hs2 & _ & ->).
-      subst s2. rewrite map_union_empty. exact Hs1.
-    + intros Hs.
-      exists s, ∅. repeat split; eauto.
-      * exact (Hc s ∅ Hs eq_refl).
-      * rewrite map_union_empty. reflexivity.
+  - apply res_product_unit_r_any.
 Qed.
 
 Lemma res_sum_comm (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2)

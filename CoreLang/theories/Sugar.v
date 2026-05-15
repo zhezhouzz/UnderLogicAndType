@@ -1,7 +1,7 @@
 (** * CoreLang.Sugar
 
-    Small derived forms used by examples.  The core syntax remains ANF and
-    boolean-only for matching.  The core language is deterministic; branching
+    Small derived forms used by examples.  The core syntax remains let-normal,
+    with boolean-only matching.  The core language is deterministic; branching
     is ordinary boolean case analysis. *)
 
 From CoreLang Require Export SmallStep OperationalProps LocallyNamelessProps.

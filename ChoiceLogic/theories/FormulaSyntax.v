@@ -106,35 +106,16 @@ Definition FResourceAtom {A : Type} `{IntoLVars A}
     (D : A) (P : WfWorldT → Prop) : Formula :=
   FAtom (lqual (into_lvars D) (λ _ _ m, P m)).
 
-Definition FResourceAtomVars (D : lvset) (P : WfWorldT → Prop) : Formula :=
-  @FResourceAtom lvset _ D P.
-
 Definition FStoreResourceAtom {A : Type} `{IntoLVars A}
     (D : A) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
   FAtom (lqual (into_lvars D) P).
 
-Definition FStoreResourceAtomVars
-    (D : lvset) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
-  @FStoreResourceAtom lvset _ D P.
-
-Lemma formula_fv_FPure P :
-  formula_fv (FPure P) = ∅.
+Lemma formula_fv_FResourceAtom_lvars D P :
+  formula_fv (FResourceAtom D P) = lvars_fv D.
 Proof. reflexivity. Qed.
 
-Lemma formula_fv_FResourceAtom (D : aset) P :
-  formula_fv (FResourceAtom D P) = D.
-Proof. unfold FResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
-
-Lemma formula_fv_FResourceAtomVars D P :
-  formula_fv (FResourceAtomVars D P) = lvars_fv D.
-Proof. reflexivity. Qed.
-
-Lemma formula_fv_FStoreResourceAtom (D : aset) P :
-  formula_fv (FStoreResourceAtom D P) = D.
-Proof. unfold FStoreResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
-
-Lemma formula_fv_FStoreResourceAtomVars D P :
-  formula_fv (FStoreResourceAtomVars D P) = lvars_fv D.
+Lemma formula_fv_FStoreResourceAtom_lvars D P :
+  formula_fv (FStoreResourceAtom D P) = lvars_fv D.
 Proof. reflexivity. Qed.
 
 End Formula.
