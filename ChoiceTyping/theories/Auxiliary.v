@@ -15,9 +15,6 @@ Definition sub_type_under (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) :
       FImpl (denot_ty_in_ctx_under Σ Γ τ1 e)
             (denot_ty_in_ctx_under Σ Γ τ2 e).
 
-Definition sub_type (Γ : ctx) (τ1 τ2 : choice_ty) : Prop :=
-  sub_type_under ∅ Γ τ1 τ2.
-
 Definition ctx_sub_under
     (Σ : gmap atom ty) (X : aset) (Γ1 Γ2 : ctx) : Prop :=
   wf_ctx_under Σ Γ1 ∧
@@ -25,14 +22,3 @@ Definition ctx_sub_under
   ty_env_agree_on X (erase_ctx_under Σ Γ1) (erase_ctx_under Σ Γ2) ∧
   ∀ r, r ⊨ denot_ctx_in_env Σ Γ1 →
        res_restrict r X ⊨ denot_ctx_in_env Σ Γ2.
-
-Lemma sub_type_refl Γ τ :
-  wf_choice_ty Γ τ →
-  sub_type Γ τ τ.
-Proof.
-  intros Hwf.
-  split; [exact Hwf |]. split; [exact Hwf |]. split; [reflexivity |].
-  intros e Hfv m HΓ.
-  apply res_models_impl_refl.
-  eapply denot_ty_scoped_from_ctx_under; eauto.
-Qed.
