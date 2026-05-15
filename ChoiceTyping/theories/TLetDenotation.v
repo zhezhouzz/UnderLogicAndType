@@ -5,7 +5,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetReductionTotal.
-From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprContFamily.
+From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprCont.
 From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
 
 Import Tactics.

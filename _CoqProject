@@ -76,7 +76,7 @@ ChoiceTyping/theories/Naming.v
 ChoiceTyping/theories/SoundnessCommon.v
 ChoiceTyping/theories/ResultWorldClosed.v
 ChoiceTyping/theories/ResultWorldBridge.v
-ChoiceTyping/theories/ResultWorldExprContFamily.v
+ChoiceTyping/theories/ResultWorldExprCont.v
 ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetReductionFuelSupport.v
 ChoiceTyping/theories/TLetReductionEnvIrrel.v

@@ -1,4 +1,4 @@
-(** * ChoiceTyping.ResultWorldExprContFamily
+(** * ChoiceTyping.ResultWorldExprCont
 
     Bridges from LN expression-result continuations to the concrete result
     world used by the [tlet] proof. *)
@@ -7,19 +7,6 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   BasicTypingProps LocallyNamelessProps.
 From ChoiceTyping Require Import ResultWorldBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
-
-(** Renaming the cofinite representative of an expression-result continuation
-    only changes the result coordinate. *)
-Lemma FExprResultOn_dom_rename_from_current_exact_domain
-    (Σ : gmap atom ty) (T : ty) e ν (n : WfWorld) :
-  Σ ⊢ₑ e ⋮ T →
-  ν ∉ dom Σ →
-  world_dom (n : World) = dom Σ ∪ {[ν]} →
-  n ⊨ FExprResultAt (dom Σ) e ν →
-  n ⊨ formula_rename_atom (fresh_for (dom Σ)) ν
-        (FExprResultAt (dom Σ) e (fresh_for (dom Σ))).
-Proof.
-Admitted.
 
 Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
