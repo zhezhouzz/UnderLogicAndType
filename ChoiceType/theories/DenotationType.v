@@ -175,6 +175,12 @@ Definition FResultBasicWorld
       | None => False
       end).
 
+Definition denot_ty_obligations
+    (Σe Στ : lty_env) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
+  FAnd (FBasicTypingIn Σe Στ τ e)
+    (FAnd (FClosedResourceIn Σe)
+      (FAnd (FStrongTotalIn Σe e) φ)).
+
 Lemma formula_fv_FResultBasicWorld Σ b D :
   formula_fv (FResultBasicWorld Σ b D) =
   lvars_fv (lty_env_bvar_scope Σ ∪ D ∪ {[LVBound 0]}).
@@ -339,12 +345,6 @@ Proof.
 Unshelve.
   all: try typeclasses eauto; try set_solver.
 Qed.
-
-Definition denot_ty_obligations
-    (Σe Στ : lty_env) (τ : choice_ty) (e : tm) (φ : FQ) : FQ :=
-  FAnd (FBasicTypingIn Σe Στ τ e)
-    (FAnd (FClosedResourceIn Σe)
-      (FAnd (FStrongTotalIn Σe e) φ)).
 
 Lemma formula_fv_FOver_FTypeQualifier q :
   formula_fv (FOver (FTypeQualifier q)) = qual_dom q.
