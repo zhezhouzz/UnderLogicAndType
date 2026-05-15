@@ -47,13 +47,6 @@ Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_quali
       else q
   end.
 
-Definition qual_swap_atom (x y : atom) (q : type_qualifier) : type_qualifier :=
-  match q with
-  | qual D p =>
-      qual (lvars_swap x y D)
-        (λ β σ a, p β (store_swap x y σ) (store_swap x y a))
-  end.
-
 Definition qual_and (q1 q2 : type_qualifier) : type_qualifier :=
   match q1, q2 with
   | qual D1 p1, qual D2 p2 =>
@@ -101,7 +94,6 @@ Arguments stale_qualifier /.
 Arguments open_qual_atom_inst /.
 
 Notation "q '^q^' x" := (qual_open_atom 0 x q) (at level 20).
-Notation "q '^qs^' '(' x ',' y ')'" := (qual_swap_atom x y q) (at level 20).
 
 (** ** Local closure *)
 

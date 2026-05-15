@@ -27,10 +27,6 @@ Lemma cty_open_preserves_measure τ k x :
   cty_measure ({k ~> x} τ) = cty_measure τ.
 Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
 
-Lemma cty_swap_preserves_measure x y τ :
-  cty_measure (cty_swap_atom x y τ) = cty_measure τ.
-Proof. induction τ; simpl; eauto; lia. Qed.
-
 Definition lty_env : Type := gmap logic_var ty.
 
 Definition lty_env_closed (Σ : lty_env) : Prop :=

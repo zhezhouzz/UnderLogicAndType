@@ -152,36 +152,6 @@ Proof.
   set_solver.
 Qed.
 
-Lemma basic_qualifier_swap x y D q :
-  basic_qualifier D q →
-  basic_qualifier (aset_swap x y D) (qual_swap_atom x y q).
-Proof.
-  unfold basic_qualifier.
-  rewrite qual_dom_swap, qual_bvars_swap.
-  intros [Hdom Hbvars]. split; [| exact Hbvars].
-  intros z Hz. rewrite elem_of_aset_swap in Hz.
-  rewrite elem_of_aset_swap.
-  apply Hdom. exact Hz.
-Qed.
-
-Lemma basic_qualifier_body_swap x y D q :
-  basic_qualifier_body D q →
-  basic_qualifier_body (aset_swap x y D) (qual_swap_atom x y q).
-Proof.
-  intros [L Hbody].
-  exists (aset_swap x y L).
-  intros z Hz.
-  rewrite qual_open_atom_swap.
-  replace (aset_swap x y D ∪ {[z]})
-    with (aset_swap x y (D ∪ {[atom_swap x y z]})).
-  - apply basic_qualifier_swap.
-    apply Hbody.
-    intros Hin. apply Hz.
-    rewrite elem_of_aset_swap. exact Hin.
-  - rewrite aset_swap_union, aset_swap_singleton, atom_swap_involutive.
-    reflexivity.
-Qed.
-
 Lemma basic_choice_ty_mono D E τ :
   D ⊆ E →
   basic_choice_ty D τ →
@@ -209,56 +179,6 @@ Proof.
       | IH : ∀ y, y ∉ _ → ∀ E, _ ⊆ E → basic_choice_ty E _ |- _ =>
           eapply IH; [exact Hx | set_solver]
       end.
-Qed.
-
-Lemma basic_choice_ty_swap x y D τ :
-  basic_choice_ty D τ →
-  basic_choice_ty (aset_swap x y D) (cty_swap_atom x y τ).
-Proof.
-  induction 1; simpl.
-  - constructor. apply basic_qualifier_body_swap. exact H.
-  - constructor. apply basic_qualifier_body_swap. exact H.
-  - econstructor; eauto.
-    rewrite !cty_swap_preserves_erasure. exact H1.
-  - econstructor; eauto.
-    rewrite !cty_swap_preserves_erasure. exact H1.
-  - econstructor; eauto.
-    rewrite !cty_swap_preserves_erasure. exact H1.
-  - eapply Basic_CTArrow with (L := aset_swap x y L).
-    + exact IHbasic_choice_ty.
-    + intros z Hz.
-      replace (aset_swap x y D ∪ {[z]})
-        with (aset_swap x y (D ∪ {[atom_swap x y z]})).
-      * rewrite cty_open_swap_atom.
-        apply H1.
-        intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite aset_swap_union, aset_swap_singleton, atom_swap_involutive.
-        reflexivity.
-  - eapply Basic_CTWand with (L := aset_swap x y L).
-    + exact IHbasic_choice_ty.
-    + intros z Hz.
-      replace (aset_swap x y D ∪ {[z]})
-        with (aset_swap x y (D ∪ {[atom_swap x y z]})).
-      * rewrite cty_open_swap_atom.
-        apply H1.
-        intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite aset_swap_union, aset_swap_singleton, atom_swap_involutive.
-        reflexivity.
-Qed.
-
-Lemma basic_choice_ty_swap_iff x y D τ :
-  basic_choice_ty (aset_swap x y D) (cty_swap_atom x y τ) ↔
-  basic_choice_ty D τ.
-Proof.
-  split.
-  - intros Hswap.
-    pose proof (basic_choice_ty_swap x y _ _ Hswap) as Hback.
-    rewrite aset_swap_involutive in Hback.
-    rewrite cty_swap_atom_involutive in Hback.
-    exact Hback.
-  - apply basic_choice_ty_swap.
 Qed.
 
 Lemma basic_choice_ty_drop_fresh D x τ :
