@@ -15,16 +15,11 @@ Definition denot_ty_regular_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : Prop :=
   basic_ctx (dom Σ) Γ ∧ basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ.
 
-Definition denot_ty_model_in_ctx_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
-    (m : WfWorld) : Prop :=
-  denot_ty_regular_in_ctx_under Σ Γ τ ∧
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
-
 Definition denot_ty_total_model_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
     (m : WfWorld) : Prop :=
-  denot_ty_model_in_ctx_under Σ Γ τ e m ∧
+  denot_ty_regular_in_ctx_under Σ Γ τ ∧
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
   expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
 
 Definition total_model_in_ctx_under
