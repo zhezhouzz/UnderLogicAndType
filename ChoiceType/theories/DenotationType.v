@@ -583,16 +583,6 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultOn_lvars_fv D e :
-  formula_fv (FExprResultOn D e) = lvars_fv D.
-Proof.
-  unfold FExprResultOn, FStoreResourceAtom.
-  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
-  denot_lvars_norm.
-  rewrite lvars_fv_union, lvars_fv_singleton_bound.
-  set_solver.
-Qed.
-
 Lemma FExprContIn_lty_env_formula_fv_subset
     (Σ : lty_env) e (Q : FQ) :
   formula_fv (FExprContIn Σ e Q) ⊆ lty_env_atom_dom Σ ∪ formula_fv Q.

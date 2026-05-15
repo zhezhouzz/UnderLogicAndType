@@ -159,15 +159,22 @@ Definition FExprResultAt {A : Type} `{IntoLVars A}
     (D : A) (e : tm) (ν : atom) : FQ :=
   formula_open 0 ν (FExprResultOn D e).
 
+Lemma FExprResultOn_lvars_fv {A : Type} `{IntoLVars A} (D : A) e :
+  formula_fv (FExprResultOn D e) = lvars_fv (into_lvars D).
+Proof.
+  unfold FExprResultOn, FStoreResourceAtom.
+  cbn [formula_fv stale stale_logic_qualifier lqual_dom].
+  denot_lvars_norm.
+  rewrite lvars_fv_union, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 Lemma FExprResultOn_fv X e :
   formula_fv (FExprResultOn X e) = X.
 Proof.
-  unfold FExprResultOn, FStoreResourceAtom.
-  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
-    into_lvars_aset into_lvars_lvset].
-  denot_lvars_norm.
-  rewrite lvars_fv_union, !lvars_fv_of_atoms, lvars_fv_singleton_bound.
-  set_solver.
+  rewrite FExprResultOn_lvars_fv.
+  cbn [into_lvars into_lvars_aset].
+  apply lvars_fv_of_atoms.
 Qed.
 
 Lemma FExprResultOn_fv_subset X e :
