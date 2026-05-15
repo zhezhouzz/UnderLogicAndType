@@ -1,10 +1,7 @@
 (** * ChoiceTyping.ResultWorldExprContFamily
 
-    Legacy bridges from atom-family expression-result continuations to the
-    concrete result world used by the tlet proof.  The main denotation now uses
-    locally nameless formula bodies through [FExprContIn]; the family-based
-    lemmas below are kept only as an intermediate compatibility layer for the
-    remaining tlet proof scripts. *)
+    Bridges from LN expression-result continuations to the concrete result
+    world used by the [tlet] proof. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
   BasicTypingProps LocallyNamelessProps.
@@ -494,63 +491,3 @@ Proof.
   - eapply FExprContIn_to_let_result_world_on_exact_domain; eauto.
   - eapply let_result_world_on_to_FExprContIn_exact_domain; eauto.
 Qed.
-
-Lemma FExprContFamilyIn_to_let_result_world_on_exact_domain
-    (Σ : gmap atom ty) (T : ty) e
-    (P : atom → FormulaQ) (m : WfWorld) :
-  Σ ⊢ₑ e ⋮ T →
-  world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
-  expr_total_on (dom Σ) e m →
-  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
-  formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContFamilyIn Σ e P →
-  ∃ L : aset,
-    dom Σ ⊆ L ∧
-    ∀ ν,
-      ν ∉ L →
-      ∀ Hfresh Hresult,
-        let_result_world_on e ν m Hfresh Hresult ⊨ P ν.
-Proof.
-  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
-Admitted.
-
-Lemma let_result_world_on_to_FExprContFamilyIn_exact_domain
-    (Σ : gmap atom ty) (T : ty) e
-    (P : atom → FormulaQ) (m : WfWorld) :
-  Σ ⊢ₑ e ⋮ T →
-  world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
-  expr_total_on (dom Σ) e m →
-  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
-  formula_family_rename_stable_on (dom Σ) P →
-  (∃ L : aset,
-    dom Σ ⊆ L ∧
-    ∀ ν,
-      ν ∉ L →
-      ∀ Hfresh Hresult,
-        let_result_world_on e ν m Hfresh Hresult ⊨ P ν) →
-  m ⊨ FExprContFamilyIn Σ e P.
-Proof.
-  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
-Admitted.
-
-Lemma FExprContFamilyIn_iff_let_result_world_on_exact_domain
-    (Σ : gmap atom ty) (T : ty) e
-    (P : atom → FormulaQ) (m : WfWorld) :
-  Σ ⊢ₑ e ⋮ T →
-  world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
-  expr_total_on (dom Σ) e m →
-  (∀ ν, formula_fv (P ν) ⊆ dom Σ ∪ {[ν]}) →
-  formula_family_rename_stable_on (dom Σ) P →
-  m ⊨ FExprContFamilyIn Σ e P ↔
-  ∃ L : aset,
-    dom Σ ⊆ L ∧
-    ∀ ν,
-      ν ∉ L →
-      ∀ Hfresh Hresult,
-        let_result_world_on e ν m Hfresh Hresult ⊨ P ν.
-Proof.
-  (* Legacy atom-family bridge; to be replaced by an LN-body bridge. *)
-Admitted.

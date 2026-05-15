@@ -262,14 +262,6 @@ Definition FExprContIn {E : Type} `{IntoLVars E}
     (Σ : E) (e : tm) (Q : FQ) : FQ :=
   FForall (FImpl (FExprResultOn (into_lvars Σ) e) Q).
 
-(** Legacy compatibility shim for older tlet bridges that still take an
-    explicit atom-indexed family.  New denotation code should use
-    [FExprContIn] with an LN body directly. *)
-Definition FExprContFamilyIn {E : Type} `{IntoLVars E}
-    (Σ : E) (e : tm) (Q : atom → FQ) : FQ :=
-  FForall (FImpl (FExprResultOn (into_lvars Σ) e)
-    (Q (fresh_for (lvars_fv (into_lvars Σ))))).
-
 Lemma FExprContIn_formula_fv_subset
     (Σ : gmap atom ty) e (S : aset) (Q : FQ) :
   dom Σ ⊆ S →
@@ -288,13 +280,6 @@ Proof.
   rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
   set_solver.
 Qed.
-
-Definition formula_family_rename_stable_on
-    (D : aset) (P : atom → FQ) : Prop :=
-  ∀ x y n,
-    x ∉ D →
-    y ∉ D →
-    n ⊨ formula_rename_atom x y (P x) ↔ n ⊨ P y.
 
 Lemma FExprContIn_post_eq
     (Σ : gmap atom ty) e (P Q : FQ) :
