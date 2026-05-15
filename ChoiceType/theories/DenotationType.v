@@ -462,48 +462,6 @@ Lemma denot_ty_on_env_agree Σ1 Σ2 τ e :
 Proof.
 Admitted.
 
-Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
-  dom Σ1 = dom Σ2 →
-  ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
-  denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
-Proof.
-  intros Hdom Hagree.
-  unfold denot_ty_under.
-  apply denot_ty_on_env_agree; assumption.
-Qed.
-
-Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
-  dom Σ1 = dom Σ2 →
-  ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
-  denot_ty_under Σ1 τ e ⊣⊢ denot_ty_under Σ2 τ e.
-Proof.
-  intros Hdom Hagree.
-  rewrite (denot_ty_under_env_agree Σ1 Σ2 τ e Hdom Hagree).
-  apply formula_equiv_refl.
-Qed.
-
-Lemma denot_ty_in_ctx_env_agree Γ1 Γ2 τ e :
-  dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
-  ty_env_agree_on (fv_cty τ ∪ fv_tm e) (erase_ctx Γ1) (erase_ctx Γ2) →
-  denot_ty_in_ctx Γ1 τ e = denot_ty_in_ctx Γ2 τ e.
-Proof.
-  intros Hdom Hagree. unfold denot_ty_in_ctx.
-  apply denot_ty_under_env_agree.
-  - exact Hdom.
-  - exact Hagree.
-Qed.
-
-Lemma denot_ty_in_ctx_env_equiv Γ1 Γ2 τ e :
-  dom (erase_ctx Γ1) = dom (erase_ctx Γ2) →
-  ty_env_agree_on (fv_cty τ ∪ fv_tm e) (erase_ctx Γ1) (erase_ctx Γ2) →
-  denot_ty_in_ctx Γ1 τ e ⊣⊢ denot_ty_in_ctx Γ2 τ e.
-Proof.
-  intros Hdom Hagree. unfold denot_ty_in_ctx.
-  apply denot_ty_under_env_equiv.
-  - exact Hdom.
-  - exact Hagree.
-Qed.
-
 Lemma FExprContIn_fv_lty_env
     (Σ : lty_env) e (Q : FQ) :
   formula_fv (FExprContIn Σ e Q) ⊆ lty_env_atom_dom Σ ∪ formula_fv Q.
@@ -675,13 +633,6 @@ Proof.
   pose proof (denot_ty_on_fv_subset ∅ τ e) as Hfv.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
-
-Lemma denot_ty_on_fv_env_agree Σ1 Σ2 τ e :
-  dom Σ1 = dom Σ2 →
-  formula_fv (denot_ty_on Σ1 τ e) =
-  formula_fv (denot_ty_on Σ2 τ e).
-Proof.
-Admitted.
 
 Lemma denot_ty_under_fv_subset Σ τ e :
   formula_fv (denot_ty_under Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
