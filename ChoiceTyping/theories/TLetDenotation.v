@@ -59,7 +59,7 @@ Proof.
   assert (Hctx :
     m' ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
   {
-    subst m'. eapply tlet_split_premises_body_ctx_from_result; eauto.
+    subst m'. eapply tlet_body_ctx_from_result_world; eauto.
   }
   pose proof (Hbody x HxL m' Hctx) as Hbody_model.
   exact (proj1
