@@ -20,25 +20,7 @@ Definition formula_store_equiv (φ ψ : FQ) : Prop :=
 Lemma formula_equiv_refl φ : φ ⊣⊢ φ.
 Proof. unfold formula_equiv, entails. hauto. Qed.
 
-Lemma formula_equiv_sym φ ψ :
-  φ ⊣⊢ ψ → ψ ⊣⊢ φ.
-Proof. unfold formula_equiv. hauto. Qed.
-
-Lemma formula_equiv_trans φ ψ χ :
-  φ ⊣⊢ ψ → ψ ⊣⊢ χ → φ ⊣⊢ χ.
-Proof. unfold formula_equiv, entails. hauto. Qed.
-
 Lemma formula_store_equiv_refl φ : formula_store_equiv φ φ.
-Proof. unfold formula_store_equiv. hauto. Qed.
-
-Lemma formula_store_equiv_sym φ ψ :
-  formula_store_equiv φ ψ → formula_store_equiv ψ φ.
-Proof. unfold formula_store_equiv. hauto. Qed.
-
-Lemma formula_store_equiv_trans φ ψ χ :
-  formula_store_equiv φ ψ →
-  formula_store_equiv ψ χ →
-  formula_store_equiv φ χ.
 Proof. unfold formula_store_equiv. hauto. Qed.
 
 Lemma formula_store_equiv_and φ1 φ2 ψ1 ψ2 :
@@ -64,40 +46,6 @@ Proof.
       models_fuel_irrel H.
     + pose proof (proj2 (H2 ρ m) ltac:(models_fuel_irrel Hψ2)) as H.
       models_fuel_irrel H.
-Qed.
-
-Lemma formula_store_equiv_over φ ψ :
-  formula_fv φ = formula_fv ψ →
-  formula_store_equiv φ ψ →
-  formula_store_equiv (FOver φ) (FOver ψ).
-Proof.
-  intros Hfv Heq ρ m.
-  unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
-  - exists m0. split; [exact Hsub |].
-    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
-    models_fuel_irrel H.
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
-  - exists m0. split; [exact Hsub |].
-    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
-    models_fuel_irrel H.
-Qed.
-
-Lemma formula_store_equiv_under φ ψ :
-  formula_fv φ = formula_fv ψ →
-  formula_store_equiv φ ψ →
-  formula_store_equiv (FUnder φ) (FUnder ψ).
-Proof.
-  intros Hfv Heq ρ m.
-  unfold res_models_with_store. simpl. split; intros [Hscope [m0 [Hsub Hφ]]]; split.
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite <- Hfv. exact Hscope.
-  - exists m0. split; [exact Hsub |].
-    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
-    models_fuel_irrel H.
-  - unfold formula_scoped_in_world in *. simpl in *. rewrite Hfv. exact Hscope.
-  - exists m0. split; [exact Hsub |].
-    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as H.
-    models_fuel_irrel H.
 Qed.
 
 Lemma res_models_of_formula_store_equiv φ ψ (m : WfWorld) :
