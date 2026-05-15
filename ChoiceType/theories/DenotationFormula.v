@@ -174,21 +174,6 @@ Proof.
   apply lvars_fv_of_atoms.
 Qed.
 
-Lemma FExprResultOn_fv_subset X e :
-  formula_fv (FExprResultOn X e) ⊆ X.
-Proof.
-  rewrite FExprResultOn_fv. set_solver.
-Qed.
-
-Lemma FExprResultAt_fv_subset X e ν :
-  formula_fv (FExprResultAt X e ν) ⊆ X ∪ {[ν]}.
-Proof.
-  unfold FExprResultAt.
-  pose proof (formula_open_fv_subset 0 ν (FExprResultOn X e)) as Hopen.
-  rewrite FExprResultOn_fv in Hopen.
-  set_solver.
-Qed.
-
 Lemma FExprResultAt_fv X e ν :
   formula_fv (FExprResultAt X e ν) = X ∪ {[ν]}.
 Proof.
@@ -227,14 +212,6 @@ Proof.
   denot_lvars_norm.
   rewrite lvars_fv_of_atoms.
   set_solver.
-Qed.
-
-Lemma FExprContIn_post_eq
-    (Σ : gmap atom ty) e (P Q : FQ) :
-  P = Q →
-  FExprContIn Σ e P = FExprContIn Σ e Q.
-Proof.
-  intros ->. reflexivity.
 Qed.
 
 Lemma FExprResultOn_scoped_dom X e ν m :

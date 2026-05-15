@@ -346,18 +346,6 @@ Unshelve.
   all: try typeclasses eauto; try set_solver.
 Qed.
 
-Lemma formula_fv_FOver_FTypeQualifier q :
-  formula_fv (FOver (FTypeQualifier q)) = qual_dom q.
-Proof.
-  cbn [formula_fv]. apply formula_fv_FTypeQualifier.
-Qed.
-
-Lemma formula_fv_FUnder_FTypeQualifier q :
-  formula_fv (FUnder (FTypeQualifier q)) = qual_dom q.
-Proof.
-  cbn [formula_fv]. apply formula_fv_FTypeQualifier.
-Qed.
-
 Fixpoint denot_ty_fuel_body_lvar
     (gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
   match gas with
@@ -571,16 +559,6 @@ Proof.
   apply denot_ty_under_env_equiv.
   - exact Hdom.
   - exact Hagree.
-Qed.
-
-Lemma formula_fv_FResultBasicWorld_lvar_subset Σ b D :
-  formula_fv (FResultBasicWorld Σ b D) ⊆ lvars_fv D.
-Proof.
-  rewrite formula_fv_FResultBasicWorld.
-  unfold lty_env_bvar_scope.
-  rewrite lvars_fv_union, lvars_fv_union.
-  rewrite lvars_fv_of_bvars, lvars_fv_singleton_bound.
-  set_solver.
 Qed.
 
 Lemma FExprContIn_lty_env_formula_fv_subset
