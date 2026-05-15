@@ -321,6 +321,55 @@ Proof.
         -- reflexivity.
 Qed.
 
+Lemma FExprContIn_to_let_result_world_on_exact_domain
+    (Σ : gmap atom ty) (T : ty) e
+    (Q : FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Σ →
+  world_store_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) e m →
+  formula_fv Q ⊆ dom Σ →
+  m ⊨ FExprContIn Σ e Q →
+  ∃ L : aset,
+    dom Σ ⊆ L ∧
+    ∀ ν,
+      ν ∉ L →
+      ∀ Hfresh Hresult,
+        let_result_world_on e ν m Hfresh Hresult ⊨ formula_open 0 ν Q.
+Proof.
+  intros Hty Hdom Hclosed Htotal HQfv Hcont.
+  unfold FExprContIn, res_models, res_models_with_store in Hcont.
+  cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
+    formula_fv formula_open] in Hcont.
+  destruct Hcont as [_ [L [HLdom Hforall]]].
+  pose proof (basic_typing_contains_fv_tm Σ e T Hty) as Hfv.
+  pose proof (typing_tm_lc Σ e T Hty) as Hlc.
+  exists (L ∪ dom Σ ∪ fv_tm e).
+  split; [set_solver |].
+  intros ν Hν Hfresh Hresult.
+  rewrite !not_elem_of_union in Hν.
+  destruct Hν as [[HνL HνΣ] Hνe].
+  set (mν := let_result_world_on e ν m Hfresh Hresult).
+  assert (Himpl : mν ⊨ formula_open 0 ν
+      (FImpl (FExprResultOn (into_lvars Σ) e) Q)).
+  {
+    unfold res_models, res_models_with_store.
+    specialize (Hforall ν HνL mν).
+    eapply res_models_with_store_fuel_irrel; [| | eapply Hforall].
+    - rewrite formula_open_preserves_measure. simpl. lia.
+    - rewrite formula_open_preserves_measure. simpl. lia.
+    - subst mν. rewrite let_result_world_on_dom. reflexivity.
+    - subst mν. rewrite let_result_world_on_restrict. reflexivity.
+  }
+  eapply res_models_impl_elim.
+  - exact Himpl.
+  - subst mν.
+    change (let_result_world_on e ν m Hfresh Hresult
+      ⊨ FExprResultAt (dom Σ) e ν).
+    eapply let_result_world_on_models_FExprResult; eauto.
+    rewrite Hdom. set_solver.
+Qed.
+
 Lemma FExprContFamilyIn_to_let_result_world_on_exact_domain
     (Σ : gmap atom ty) (T : ty) e
     (P : atom → FormulaQ) (m : WfWorld) :
