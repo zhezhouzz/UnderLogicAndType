@@ -60,24 +60,8 @@ Definition qual_and (q1 q2 : type_qualifier) : type_qualifier :=
             (store_restrict a (lvars_fv D2)))
   end.
 
-Definition qual_or (q1 q2 : type_qualifier) : type_qualifier :=
-  match q1, q2 with
-  | qual D1 p1, qual D2 p2 =>
-      qual (D1 ∪ D2)
-        (λ β σ a,
-          p1 (map_restrict value β (lvars_bv D1))
-            (store_restrict σ (lvars_fv D1))
-            (store_restrict a (lvars_fv D1)) ∨
-          p2 (map_restrict value β (lvars_bv D2))
-            (store_restrict σ (lvars_fv D2))
-            (store_restrict a (lvars_fv D2)))
-  end.
-
 Definition qual_top : type_qualifier :=
   qual ∅ (λ _ _ _, True).
-
-Definition qual_bot : type_qualifier :=
-  qual ∅ (λ _ _ _, False).
 
 Definition lc_qualifier (q : type_qualifier) : Prop :=
   qual_bvars q = ∅.
@@ -163,4 +147,3 @@ Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
   (at level 5, format "b0:c= c").
 
 Notation "⊤q" := qual_top.
-Notation "⊥q" := qual_bot.
