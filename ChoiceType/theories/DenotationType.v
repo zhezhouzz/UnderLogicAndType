@@ -133,7 +133,7 @@ Qed.
     resources, and deterministic result reachability.
 
     Keeping the obligations in the recursive formula itself avoids the previous
-    [denot_ty_result] wrapper style: recursive calls are ordinary full
+    record-wrapper style: recursive calls are ordinary full
     formulas, and helper lemmas can reason with Choice Logic connectives
     directly.  [denot_ty_fuel_body] is only a one-step view used by proofs to
     peel the outer obligation layer; it is not recursive by itself.
