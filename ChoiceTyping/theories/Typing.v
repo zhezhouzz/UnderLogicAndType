@@ -16,20 +16,14 @@ Definition choice_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
   wf_choice_ty_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
 
-Definition choice_ty_basic_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : Prop :=
-  basic_ctx (dom Σ) Γ ∧ basic_choice_ty (dom Σ ∪ ctx_dom Γ) τ.
-
-Definition choice_typing_basic
-    (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : choice_ty) : Prop :=
-  choice_ty_basic_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
-
 Lemma choice_typing_wf_basic_part Σ Γ e τ :
   choice_typing_wf Σ Γ e τ →
-  choice_typing_basic Σ Γ e τ.
+  basic_ctx (dom Σ) Γ ∧
+  basic_choice_ty (dom Σ ∪ ctx_dom Γ) τ ∧
+  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros [[[HbasicΓ _] Hbasicτ] Herase].
-  split; [split |]; eauto.
+  repeat split; eauto.
 Qed.
 
 Lemma choice_typing_wf_ctx_nonempty_part Σ Γ e τ :
