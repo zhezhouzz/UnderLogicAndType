@@ -321,11 +321,6 @@ Proof.
   induction 1; simpl; try set_solver.
 Qed.
 
-Lemma basic_ctx_comma_dom_disjoint D Γ1 Γ2 :
-  basic_ctx D (CtxComma Γ1 Γ2) →
-  ctx_dom Γ1 ## ctx_dom Γ2.
-Proof. intros H. inversion H; subst; assumption. Qed.
-
 Lemma basic_ctx_fv_subset D Γ :
   basic_ctx D Γ →
   ctx_fv Γ ⊆ D ∪ ctx_dom Γ.

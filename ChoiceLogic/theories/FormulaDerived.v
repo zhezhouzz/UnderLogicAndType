@@ -21,18 +21,6 @@ Local Notation "m ⊨ φ" :=
   (res_models m φ)
   (at level 70, format "m  ⊨  φ").
 
-Lemma res_models_impl_mono (φ ψ : FormulaT) (m m' : WfWorldT) :
-  m ⊨ FImpl φ ψ →
-  m ⊑ m' →
-  m' ⊨ FImpl φ ψ.
-Proof. intros Hmodel Hle. eapply res_models_kripke; eauto. Qed.
-
-Lemma res_models_and_mono (φ ψ : FormulaT) (m m' : WfWorldT) :
-  m ⊨ FAnd φ ψ →
-  m ⊑ m' →
-  m' ⊨ FAnd φ ψ.
-Proof. intros Hmodel Hle. eapply res_models_kripke; eauto. Qed.
-
 Lemma res_models_and_elim_l (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ FAnd φ ψ →
   m ⊨ φ.

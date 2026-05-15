@@ -744,16 +744,6 @@ Proof.
       exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
 Qed.
 
-Lemma res_subset_swap_intro (x y : atom) (w1 w2 : WfWorld) :
-  res_subset w1 w2 →
-  res_subset (res_swap x y w1) (res_swap x y w2).
-Proof. apply (proj2 (res_subset_swap x y w1 w2)). Qed.
-
-Lemma res_subset_swap_elim (x y : atom) (w1 w2 : WfWorld) :
-  res_subset (res_swap x y w1) (res_swap x y w2) →
-  res_subset w1 w2.
-Proof. apply (proj1 (res_subset_swap x y w1 w2)). Qed.
-
 Lemma res_sum_subset_l (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   res_subset w1 (res_sum w1 w2 Hdef).
 Proof.
@@ -1119,16 +1109,6 @@ Proof.
     exact (Hc τ1 τ2 Hτ1 Hτ2).
 Qed.
 
-Lemma world_compat_swap_intro (x y : atom) (w1 w2 : WfWorld) :
-  world_compat w1 w2 →
-  world_compat (res_swap x y w1) (res_swap x y w2).
-Proof. apply (proj2 (world_compat_swap x y w1 w2)). Qed.
-
-Lemma world_compat_swap_elim (x y : atom) (w1 w2 : WfWorld) :
-  world_compat (res_swap x y w1) (res_swap x y w2) →
-  world_compat w1 w2.
-Proof. apply (proj1 (world_compat_swap x y w1 w2)). Qed.
-
 Lemma res_product_swap (x y : atom) (w1 w2 : WfWorld)
     (Hc : world_compat w1 w2)
     (Hc' : world_compat (res_swap x y w1) (res_swap x y w2)) :
@@ -1293,11 +1273,6 @@ Proof.
     rewrite !res_swap_involutive in Hswap. exact Hswap.
   - apply res_swap_le.
 Qed.
-
-Lemma res_swap_le_elim (x y : atom) (w1 w2 : WfWorld) :
-  res_swap x y w1 ⊑ res_swap x y w2 →
-  w1 ⊑ w2.
-Proof. apply (proj1 (res_swap_le_iff x y w1 w2)). Qed.
 
 Lemma res_restrict_le_eq (m n : WfWorld) (X : aset) :
   m ⊑ n →

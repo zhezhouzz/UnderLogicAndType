@@ -110,20 +110,8 @@ Definition FStoreResourceAtom {A : Type} `{IntoLVars A}
     (D : A) (P : gmap nat atom → StoreT → WfWorldT → Prop) : Formula :=
   FAtom (lqual (into_lvars D) P).
 
-Lemma formula_fv_FPure P :
-  formula_fv (FPure P) = ∅.
-Proof. reflexivity. Qed.
-
-Lemma formula_fv_FResourceAtom {A : Type} `{IntoLVars A} (D : A) P :
-  formula_fv (FResourceAtom D P) = lvars_fv (into_lvars D).
-Proof. reflexivity. Qed.
-
 Lemma formula_fv_FResourceAtom_lvars D P :
   formula_fv (FResourceAtom D P) = lvars_fv D.
-Proof. reflexivity. Qed.
-
-Lemma formula_fv_FStoreResourceAtom {A : Type} `{IntoLVars A} (D : A) P :
-  formula_fv (FStoreResourceAtom D P) = lvars_fv (into_lvars D).
 Proof. reflexivity. Qed.
 
 Lemma formula_fv_FStoreResourceAtom_lvars D P :

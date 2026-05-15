@@ -339,11 +339,6 @@ Lemma store_compat_sym s1 s2 :
   store_compat s1 s2 → store_compat s2 s1.
 Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
 
-Lemma store_compat_union s1 s2 :
-  store_compat s1 s2 →
-  store_compat (s1 ∪ s2) (s1 ∪ s2).
-Proof. unfold store_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
 Lemma store_compat_union_inv_l s1 s2 s3 :
   store_compat (s1 ∪ s2) s3 →
   store_compat s1 s3.

@@ -20,15 +20,6 @@ Proof.
   unfold map_compat. intros x v1 v2 H1 H2. hauto.
 Qed.
 
-Lemma map_compat_sym m1 m2 :
-  map_compat m1 m2 → map_compat m2 m1.
-Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
-Lemma map_compat_union m1 m2 :
-  map_compat m1 m2 →
-  map_compat (m1 ∪ m2) (m1 ∪ m2).
-Proof. unfold map_compat. intros Hc x v1 v2 H1 H2. hauto. Qed.
-
 Lemma map_restrict_dom m X :
   dom (map_restrict m X) = dom m ∩ X.
 Proof.

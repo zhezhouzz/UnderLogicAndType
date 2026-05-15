@@ -59,11 +59,6 @@ Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
 Definition wf_primop_ctx (Φ : primop_ctx) : Prop :=
   ∀ op, wf_primop_sig op (Φ op).
 
-Lemma wf_primop_sig_erasure op sig :
-  wf_primop_sig op sig →
-  primop_erasure_ok op sig.
-Proof. apply wf_primop_erasure. Qed.
-
 (** Default shallow signatures for the current unary CoreLang primitives.
     These are intentionally conservative: arguments and results are typed by
     top qualifiers except where examples can later refine them. *)

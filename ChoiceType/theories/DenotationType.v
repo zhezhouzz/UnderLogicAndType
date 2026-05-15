@@ -23,10 +23,6 @@ Fixpoint cty_measure (τ : choice_ty) : nat :=
 Lemma cty_measure_gt_0 τ : cty_measure τ > 0.
 Proof. induction τ; simpl; lia. Qed.
 
-Lemma cty_open_preserves_measure τ k x :
-  cty_measure ({k ~> x} τ) = cty_measure τ.
-Proof. induction τ in k |- *; simpl; eauto; lia. Qed.
-
 Definition lty_env : Type := gmap logic_var ty.
 
 Definition lty_env_closed (Σ : lty_env) : Prop :=
