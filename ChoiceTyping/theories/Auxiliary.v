@@ -38,47 +38,7 @@ Definition ctx_to_over (Γ Γ' : ctx) : Prop :=
   wf_ctx Γ' ∧
   (FOver (⟦Γ⟧) ⊫ ⟦Γ'⟧).
 
-(** ** Regularity and reflexivity skeletons *)
-
-Lemma sub_type_wf_l Γ τ1 τ2 :
-  sub_type Γ τ1 τ2 →
-  wf_choice_ty Γ τ1.
-Proof. unfold sub_type, sub_type_under. hauto. Qed.
-
-Lemma sub_type_wf_r Γ τ1 τ2 :
-  sub_type Γ τ1 τ2 →
-  wf_choice_ty Γ τ2.
-Proof. unfold sub_type, sub_type_under. hauto. Qed.
-
-Lemma sub_type_erase Γ τ1 τ2 :
-  sub_type Γ τ1 τ2 →
-  erase_ty τ1 = erase_ty τ2.
-Proof. unfold sub_type, sub_type_under. hauto. Qed.
-
-Lemma ctx_sub_wf_l X Γ1 Γ2 :
-  ctx_sub X Γ1 Γ2 →
-  wf_ctx Γ1.
-Proof. unfold ctx_sub. hauto. Qed.
-
-Lemma ctx_sub_wf_r X Γ1 Γ2 :
-  ctx_sub X Γ1 Γ2 →
-  wf_ctx Γ2.
-Proof. unfold ctx_sub. hauto. Qed.
-
-Lemma ctx_sub_env_agree X Γ1 Γ2 :
-  ctx_sub X Γ1 Γ2 →
-  ty_env_agree_on X (erase_ctx Γ1) (erase_ctx Γ2).
-Proof. unfold ctx_sub. hauto. Qed.
-
-Lemma ctx_to_over_wf_l Γ Γ' :
-  ctx_to_over Γ Γ' →
-  wf_ctx Γ.
-Proof. unfold ctx_to_over. hauto. Qed.
-
-Lemma ctx_to_over_wf_r Γ Γ' :
-  ctx_to_over Γ Γ' →
-  wf_ctx Γ'.
-Proof. unfold ctx_to_over. hauto. Qed.
+(** ** Reflexivity skeletons *)
 
 Lemma sub_type_refl Γ τ :
   wf_choice_ty Γ τ →
