@@ -466,8 +466,7 @@ Proof.
   exists L. split; [exact HLdom |].
   intros y Hy m' Hdom Hrestrict.
   specialize (Hopen y Hy m' Hdom Hrestrict).
-  eapply res_models_with_store_fuel_irrel; [| | exact Hopen];
-    rewrite ?formula_open_preserves_measure; simpl; lia.
+  models_fuel_irrel Hopen.
 Qed.
 
 Lemma res_models_exists_intro (m : WfWorldT) (φ : FormulaT) :
@@ -491,8 +490,7 @@ Proof.
   intros y Hy.
   destruct (Hopen y Hy) as [m' [Hdom [Hrestrict Hmodel]]].
   exists m'. repeat split; eauto.
-  eapply res_models_with_store_fuel_irrel; [| | exact Hmodel];
-    rewrite ?formula_open_preserves_measure; simpl; lia.
+  models_fuel_irrel Hmodel.
 Qed.
 
 Lemma formula_rename_atom_fv_subset_pair D x y (φ : FormulaT) :
