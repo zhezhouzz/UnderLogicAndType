@@ -225,12 +225,10 @@ Proof.
   unfold FExprContIn.
   cbn [formula_fv].
   denot_lvars_norm.
-  unfold FExprResultOn at 1.
-  unfold FStoreResourceAtom.
-  cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
-    into_lvars_lvset].
+  rewrite FExprResultOn_lvars_fv.
+  cbn [into_lvars into_lvars_lvset].
   denot_lvars_norm.
-  rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+  rewrite lvars_fv_of_atoms.
   set_solver.
 Qed.
 
