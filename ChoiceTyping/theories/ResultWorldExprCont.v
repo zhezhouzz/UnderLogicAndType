@@ -154,7 +154,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultAtomOn_scoped_in_result_fiber
+Lemma FExprResultOn_body_scoped_in_result_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
@@ -183,7 +183,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultAtomOn_opened_scoped_in_result_fiber
+Lemma FExprResultOn_body_opened_scoped_in_result_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
@@ -277,12 +277,12 @@ Proof.
     rewrite lookup_insert_eq.
     rewrite map_empty_union.
     split.
-    + eapply FExprResultAtomOn_opened_scoped_in_result_fiber; eauto.
+    + eapply FExprResultOn_body_opened_scoped_in_result_fiber; eauto.
     + exists (res_fiber_from_projection
         (let_result_world_on e ν n Hfresh Hresult) X σX Hproj).
       split.
       * rewrite map_empty_union.
-        eapply FExprResultAtomOn_opened_scoped_in_result_fiber; eauto.
+        eapply FExprResultOn_body_opened_scoped_in_result_fiber; eauto.
       * split.
         -- rewrite open_tm_env_singleton_lc by exact Hlc.
            assert (Hexact :
