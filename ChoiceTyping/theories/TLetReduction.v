@@ -7,7 +7,7 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps B
   LocallyNamelessProps StrongNormalization Sugar.
 From ChoiceTyping Require Export TLetTotal RegularDenotation.
 From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprCont
-  TLetReductionFuelSupport TLetReductionEnvIrrel.
+  TLetReductionFuelSupport.
 From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
 
 Import Tactics.
