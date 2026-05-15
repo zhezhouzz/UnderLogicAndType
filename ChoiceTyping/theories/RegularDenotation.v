@@ -58,7 +58,7 @@ Lemma denot_ty_total_model_total Σ Γ τ e m :
   expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
 Proof. intros; hauto. Qed.
 
-Lemma denot_ty_total_model_old Σ Γ τ e m :
+Lemma denot_ty_total_model_to_denot_ty_total_in_ctx_under Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   denot_ty_total_in_ctx_under Σ Γ τ e m.
 Proof.
@@ -68,7 +68,7 @@ Proof.
   - eauto 6 using denot_ty_total_model_total.
 Qed.
 
-Lemma denot_ty_total_model_from_old Σ Γ τ e m :
+Lemma denot_ty_total_model_of_denot_ty_total_in_ctx_under Σ Γ τ e m :
   basic_ctx (dom Σ) Γ →
   basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ →
   denot_ty_total_in_ctx_under Σ Γ τ e m →
@@ -121,9 +121,9 @@ Lemma choice_typing_wf_to_total_model Σ Γ e τ m :
   denot_ty_total_in_ctx_under Σ Γ τ e m →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m.
 Proof.
-  intros Hwf Hold.
+  intros Hwf Hdenot.
   destruct (choice_typing_wf_regular_denotation Σ Γ e τ Hwf) as [Hctx Hτ].
-  eapply denot_ty_total_model_from_old; eauto.
+  eapply denot_ty_total_model_of_denot_ty_total_in_ctx_under; eauto.
 Qed.
 
 Lemma entails_total_to_total_model Σ Γ e τ :

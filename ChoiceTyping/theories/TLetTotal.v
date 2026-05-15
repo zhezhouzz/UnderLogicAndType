@@ -49,10 +49,10 @@ Proof.
   set (Δx := erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))).
   assert (HΔx_dom : dom Δx = dom Δ ∪ {[x]}).
   { subst Δ Δx. apply erase_ctx_under_comma_bind_dom. }
-  assert (Hbasic_old : m ⊨ basic_world_formula Δ (dom Δ)).
+  assert (Hbasic_m : m ⊨ basic_world_formula Δ (dom Δ)).
   { subst Δ. apply denot_ctx_in_env_erased_basic. exact Hctx. }
-  assert (Hcover_old : dom Δ ⊆ world_dom (m : World)).
-  { eapply basic_world_formula_dom_subset. exact Hbasic_old. }
+  assert (Hcover_m : dom Δ ⊆ world_dom (m : World)).
+  { eapply basic_world_formula_dom_subset. exact Hbasic_m. }
   assert (HΔx_env : Δx = <[x := erase_ty τ]> Δ).
   { subst Δ Δx. apply erase_ctx_under_comma_bind_env_fresh. exact Hx. }
   eapply res_models_atom_intro.
@@ -104,7 +104,7 @@ Proof.
         { subst Δ. subst Δx. rewrite erase_ctx_under_comma_bind_dom in Hz.
           set_solver. }
         pose proof (basic_world_formula_store_restrict_typed
-          Δ (dom Δ) m σ Hbasic_old Hσ) as Htyped.
+          Δ (dom Δ) m σ Hbasic_m Hσ) as Htyped.
         eapply Htyped; eauto.
         apply store_restrict_lookup_some_2; [exact Hlookup | exact HzΔ].
 Qed.
