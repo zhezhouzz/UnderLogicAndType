@@ -37,7 +37,7 @@ Proof.
     x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2)
     by (subst Fresh; set_solver).
   assert (Hclosed_erased :
-    world_store_closed_on (dom (erase_ctx_under Σ Γ)) m).
+    world_closed_on (dom (erase_ctx_under Σ Γ)) m).
   {
     pose proof (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel)
       as Hbasic.

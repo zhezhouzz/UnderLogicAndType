@@ -15,7 +15,7 @@ Lemma FExprResultAt_unique_let_result_world
       ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx) :
   Σ ⊢ₑ e ⋮ T →
   world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
+  world_closed_on (dom Σ) m →
   world_dom (n : World) = dom Σ ∪ {[ν]} →
   res_restrict n (dom Σ) = m →
   n ⊨ FExprResultAt (dom Σ) e ν →
@@ -52,7 +52,7 @@ Lemma let_result_world_on_fiber_expr_result_in_world
   lc_tm e →
   ν ∉ X →
   X ⊆ world_dom (n : World) →
-  world_store_closed_on X n →
+  world_closed_on X n →
   expr_result_in_world (store_restrict σX X) e ν
     (res_fiber_from_projection
       (let_result_world_on e ν n Hfresh Hresult) X σX Hproj).
@@ -218,7 +218,7 @@ Lemma let_result_world_on_models_FExprResultAt :
     lc_tm e →
     ν ∉ X →
     X ⊆ world_dom (n : World) →
-    world_store_closed_on X n →
+    world_closed_on X n →
     let_result_world_on e ν n Hfresh Hresult ⊨ FExprResultAt X e ν.
 Proof.
   intros X e ν n Hfresh Hresult Hfv Hlc HνX HX Hclosed.
@@ -310,7 +310,7 @@ Lemma FExprContIn_elim_let_result_world
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
   world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
+  world_closed_on (dom Σ) m →
   expr_total_on (dom Σ) e m →
   formula_fv Q ⊆ dom Σ →
   m ⊨ FExprContIn Σ e Q →
@@ -359,7 +359,7 @@ Lemma FExprContIn_intro_let_result_world
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
   world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
+  world_closed_on (dom Σ) m →
   expr_total_on (dom Σ) e m →
   formula_fv Q ⊆ dom Σ →
   (∃ L : aset,
@@ -462,7 +462,7 @@ Lemma FExprContIn_iff_let_result_world
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
   world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
+  world_closed_on (dom Σ) m →
   expr_total_on (dom Σ) e m →
   formula_fv Q ⊆ dom Σ →
   m ⊨ FExprContIn Σ e Q ↔

@@ -31,7 +31,7 @@ Lemma FExprCont_tlet_reduction
   Σ ⊢ₑ tlete e1 e2 ⋮ T2 →
   x ∉ fv_tm e2 →
   world_dom (m : World) = dom Σ →
-  world_store_closed_on (dom Σ) m →
+  world_closed_on (dom Σ) m →
   expr_total_on (dom Σ) (tlete e1 e2) m →
   formula_fv Q ⊆ dom Σ →
   let_result_world_on e1 x m Hfresh Hresult
@@ -52,7 +52,7 @@ Proof.
   assert (Hfv1 : fv_tm e1 ⊆ dom Σ).
   { tlet_regular. }
   assert (Hclosed_m1 :
-    world_store_closed_on (dom (<[x := T1]> Σ)) m1).
+    world_closed_on (dom (<[x := T1]> Σ)) m1).
   {
     subst m1. rewrite dom_insert_L.
     rewrite union_comm_L.
@@ -60,8 +60,8 @@ Proof.
     - set_solver.
     - exact Hclosed.
     - intros σ vx Hσ Hsteps.
-      assert (Hclosed_fv : world_store_closed_on (fv_tm e1) m).
-      { eapply world_store_closed_on_mono; [exact Hfv1 | exact Hclosed]. }
+      assert (Hclosed_fv : world_closed_on (fv_tm e1) m).
+      { eapply world_closed_on_mono; [exact Hfv1 | exact Hclosed]. }
       eapply (steps_closed_result_of_restrict_world
         (fv_tm e1) e1 m (store_restrict σ (fv_tm e1)) vx).
       + rewrite Hdom. exact Hfv1.
@@ -228,7 +228,7 @@ Lemma let_result_world_on_closed_insert_from_basic
     (Δ : gmap atom ty) T e x (m : WfWorld) Hfresh Hresult :
   Δ ⊢ₑ e ⋮ T →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   x ∉ dom Δ →
   world_closed_on (dom (<[x := T]> Δ))
     (let_result_world_on e x m Hfresh Hresult).
@@ -242,8 +242,8 @@ Proof.
   - intros σ vx Hσ Hsteps.
     pose proof (basic_typing_contains_fv_tm Δ e T Htyped) as Hfv.
     pose proof (typing_tm_lc Δ e T Htyped) as Hlc.
-    assert (Hclosed_fv : world_store_closed_on (fv_tm e) m).
-    { eapply world_store_closed_on_mono; [exact Hfv | exact Hclosed]. }
+    assert (Hclosed_fv : world_closed_on (fv_tm e) m).
+    { eapply world_closed_on_mono; [exact Hfv | exact Hclosed]. }
     eapply (steps_closed_result_of_restrict_world
       (fv_tm e) e m (store_restrict σ (fv_tm e)) vx).
     + rewrite Hdom. exact Hfv.
@@ -266,7 +266,7 @@ Lemma denot_ty_tlet_reduction_add_obligations
     τ2 :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   basic_choice_ty (dom Δ) τ2 →
@@ -358,7 +358,7 @@ Lemma denot_ty_tlet_reduction_over_case
     b φ :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   basic_choice_ty (dom Δ) (CTOver b φ) →
@@ -412,7 +412,7 @@ Lemma denot_ty_tlet_reduction_under_case
     b φ :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   basic_choice_ty (dom Δ) (CTUnder b φ) →
@@ -466,7 +466,7 @@ Lemma denot_ty_tlet_reduction_inter_case
     τa τb :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   basic_choice_ty (dom Δ) (CTInter τa τb) →
@@ -503,7 +503,7 @@ Lemma denot_ty_tlet_reduction_union_case
     τa τb :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   basic_choice_ty (dom Δ) (CTUnion τa τb) →
@@ -560,7 +560,7 @@ Lemma denot_ty_tlet_reduction_on
       ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
   Δ ⊢ₑ e1 ⋮ T1 →
   world_dom (m : World) = dom Δ →
-  world_store_closed_on (dom Δ) m →
+  world_closed_on (dom Δ) m →
   expr_total_on (dom Δ) (tlete e1 e2) m →
   x ∉ dom Δ ∪ fv_tm e2 →
   ∀ τ2,
@@ -623,7 +623,7 @@ Lemma denot_ty_tlet_reduction_ctx_on (τ2 : choice_ty): forall
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   world_dom (m : World) = dom (erase_ctx_under Σ Γ) →
-  world_store_closed_on (dom (erase_ctx_under Σ Γ)) m →
+  world_closed_on (dom (erase_ctx_under Σ Γ)) m →
   expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2 →
   let_result_world_on e1 x m Hfresh Hresult
@@ -664,7 +664,7 @@ Proof.
   intros Σ Γ τ1 e1 e2 m x Hfresh Hresult Hregular He1 Hlet Hdom Hctx Htotal Hx.
   unfold denot_ty_in_ctx_under.
   eapply denot_ty_tlet_reduction_ctx_on; eauto.
-  eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+  eapply denot_ctx_in_env_world_closed_on_erased; eauto.
   exact (proj1 Hregular).
 Qed.
 
@@ -696,8 +696,8 @@ Proof.
   { simpl. set_solver. }
   assert (Hfv1 : fv_tm e1 ⊆ dom Δ).
   { subst Δ. eapply basic_typing_contains_fv_tm. exact He1. }
-  assert (Hclosed_m : world_store_closed_on (dom Δ) m).
-  { subst Δ. eapply denot_ctx_in_env_world_store_closed_on_erased; eauto. }
+  assert (Hclosed_m : world_closed_on (dom Δ) m).
+  { subst Δ. eapply denot_ctx_in_env_world_closed_on_erased; eauto. }
   assert (Hresult0 : ∀ σ, (res_restrict m (dom Δ) : World) σ →
       ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
   {
@@ -713,8 +713,8 @@ Proof.
       replace (dom Δ ∩ fv_tm e1) with (fv_tm e1) by set_solver.
       reflexivity.
   }
-  assert (Hclosed0 : world_store_closed_on (dom Δ) (res_restrict m (dom Δ))).
-  { eapply world_store_closed_on_restrict; [reflexivity | exact Hclosed_m]. }
+  assert (Hclosed0 : world_closed_on (dom Δ) (res_restrict m (dom Δ))).
+  { eapply world_closed_on_restrict; [reflexivity | exact Hclosed_m]. }
   assert (Htotal0 :
       expr_total_on (dom Δ) (tlete e1 e2) (res_restrict m (dom Δ))).
   { apply expr_total_on_restrict_self. exact Htotal. }

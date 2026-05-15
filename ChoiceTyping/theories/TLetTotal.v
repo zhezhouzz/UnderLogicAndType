@@ -268,7 +268,7 @@ Lemma expr_total_on_tlete_elim_body_strong
   X ⊆ world_dom (m : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
-  world_store_closed_on X m →
+  world_closed_on X m →
   lc_tm (tlete e1 e2) →
   expr_total_on X (tlete e1 e2) m →
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)
@@ -326,7 +326,7 @@ Lemma expr_total_on_tlete_intro_strong
   X ⊆ world_dom (m : World) →
   x ∉ X →
   x ∉ fv_tm e2 →
-  world_store_closed_on X m →
+  world_closed_on X m →
   lc_tm (tlete e1 e2) →
   expr_total_on X e1 m →
   expr_total_on (X ∪ {[x]}) (e2 ^^ x)

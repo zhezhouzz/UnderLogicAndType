@@ -34,7 +34,7 @@ Proof.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
-    + eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+    + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
     + exact Htotal1.
     + exact Hbody.
@@ -43,7 +43,7 @@ Proof.
     + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + intros Hbad. apply Hx. apply elem_of_union_l. exact Hbad.
     + intros Hbad. apply Hx. apply elem_of_union_r. exact Hbad.
-    + eapply denot_ctx_in_env_world_store_closed_on_erased; eauto.
+    + eapply denot_ctx_in_env_world_closed_on_erased; eauto.
     + eapply typing_tm_lc; eauto.
     + exact Hlet_total.
 Qed.
