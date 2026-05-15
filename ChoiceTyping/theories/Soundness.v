@@ -318,7 +318,7 @@ Lemma semantic_total_let_rule (Φ : primop_ctx) Σ Γ τ1 τ2 e1 e2 (L : aset) :
     (denot_ty_total_in_ctx_under Σ Γ τ2 (tlete e1 e2)).
 Proof.
   intros Hwf1 Hwf Hbody_wf IH1 IH2 m Hm.
-  apply denot_ty_total_model_to_denot_ty_total_in_ctx_under.
+  apply total_model_to_total_denot.
   eapply (denot_tlet_total_semantic Σ Γ τ1 τ2 e1 e2 L).
   - exact (proj2 Hwf1).
   - exact (proj2 Hwf).

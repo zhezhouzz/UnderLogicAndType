@@ -2,9 +2,8 @@
 
     Context-preservation helpers for the [tlet] result world.
 
-    Older graph/fiber proof experiments have been removed from this file.  The
-    remaining lemmas are exactly the facts used by [TLetDenotation] to build the
-    comma-extended context after evaluating the let-bound expression. *)
+    These lemmas build the comma-extended denotation context after evaluating
+    the let-bound expression. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps StrongNormalization.

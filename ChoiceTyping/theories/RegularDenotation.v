@@ -48,7 +48,7 @@ Lemma denot_ty_total_model_total Σ Γ τ e m :
   expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
 Proof. intros; hauto. Qed.
 
-Lemma denot_ty_total_model_to_denot_ty_total_in_ctx_under Σ Γ τ e m :
+Lemma total_model_to_total_denot Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   denot_ty_total_in_ctx_under Σ Γ τ e m.
 Proof.
@@ -58,7 +58,7 @@ Proof.
   - eauto 6 using denot_ty_total_model_total.
 Qed.
 
-Lemma denot_ty_total_model_of_denot_ty_total_in_ctx_under Σ Γ τ e m :
+Lemma total_model_of_total_denot Σ Γ τ e m :
   basic_ctx (dom Σ) Γ →
   basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ →
   denot_ty_total_in_ctx_under Σ Γ τ e m →
@@ -68,7 +68,7 @@ Proof.
   hauto.
 Qed.
 
-Lemma choice_typing_wf_from_erased_denot_ctx_basic_ty Σ Γ e τ m :
+Lemma choice_typing_wf_from_erased_basic Σ Γ e τ m :
   basic_ctx (dom Σ) Γ →
   basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -90,7 +90,7 @@ Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
   choice_typing_wf Σ Γ e τ.
 Proof.
   intros Herase Hm Hmodel.
-  eapply choice_typing_wf_from_erased_denot_ctx_basic_ty; eauto.
+  eapply choice_typing_wf_from_erased_basic; eauto.
   - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
   - exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
 Qed.
@@ -113,7 +113,7 @@ Lemma choice_typing_wf_to_total_model Σ Γ e τ m :
 Proof.
   intros Hwf Hdenot.
   destruct (choice_typing_wf_regular_denotation Σ Γ e τ Hwf) as [Hctx Hτ].
-  eapply denot_ty_total_model_of_denot_ty_total_in_ctx_under; eauto.
+  eapply total_model_of_total_denot; eauto.
 Qed.
 
 Lemma entails_total_to_total_model Σ Γ e τ :
