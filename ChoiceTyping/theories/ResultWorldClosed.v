@@ -1,7 +1,7 @@
 (** * ChoiceTyping.ResultWorldClosed
 
     Store-closedness and regularity facts for result worlds.  These lemmas are
-    independent of the later fiber/fresh-forall bridges, so keeping them here
+    independent of the later expression-result bridges, so keeping them here
     makes the tlet proof support files less tangled. *)
 
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps
@@ -50,52 +50,6 @@ Proof.
     (store_restrict (store_restrict σ X) Y).
   - apply store_closed_restrict. exact (Hclosed σ Hσ).
   - store_norm. replace (X ∩ Y) with Y by set_solver. reflexivity.
-Qed.
-
-Lemma world_store_closed_on_restrict_closed_env X (m : WfWorld) σ :
-  world_store_closed_on X m →
-  (res_restrict m X : World) σ →
-  closed_env σ.
-Proof.
-  intros Hclosed Hσ.
-  exact (proj1 (world_store_closed_on_restrict_store_closed X m σ Hclosed Hσ)).
-Qed.
-
-Lemma world_store_closed_on_restrict_lc_env X (m : WfWorld) σ :
-  world_store_closed_on X m →
-  (res_restrict m X : World) σ →
-  lc_env σ.
-Proof.
-  intros Hclosed Hσ.
-  exact (proj2 (world_store_closed_on_restrict_store_closed X m σ Hclosed Hσ)).
-Qed.
-
-Lemma world_store_closed_on_restrict_store_restrict_closed X (m : WfWorld) σ :
-  world_store_closed_on X m →
-  (res_restrict m X : World) σ →
-  store_closed (store_restrict σ X).
-Proof.
-  intros Hclosed Hσ.
-  apply store_closed_restrict.
-  eapply world_store_closed_on_restrict_store_closed; eauto.
-Qed.
-
-Lemma world_store_closed_on_restrict_store_restrict_closed_env X (m : WfWorld) σ :
-  world_store_closed_on X m →
-  (res_restrict m X : World) σ →
-  closed_env (store_restrict σ X).
-Proof.
-  intros Hclosed Hσ.
-  exact (proj1 (world_store_closed_on_restrict_store_restrict_closed X m σ Hclosed Hσ)).
-Qed.
-
-Lemma world_store_closed_on_restrict_store_restrict_lc_env X (m : WfWorld) σ :
-  world_store_closed_on X m →
-  (res_restrict m X : World) σ →
-  lc_env (store_restrict σ X).
-Proof.
-  intros Hclosed Hσ.
-  exact (proj2 (world_store_closed_on_restrict_store_restrict_closed X m σ Hclosed Hσ)).
 Qed.
 
 Lemma world_store_closed_on_mono (X Y : aset) (m : WfWorld) :
@@ -207,8 +161,10 @@ Proof.
   }
   replace (store_restrict σ X) with σ.
   - apply body_tm_msubst.
-    + eapply world_store_closed_on_restrict_closed_env; eauto.
-    + eapply world_store_closed_on_restrict_lc_env; eauto.
+    + exact (proj1 (world_store_closed_on_restrict_store_closed X m σ
+        Hclosed Hσ)).
+    + exact (proj2 (world_store_closed_on_restrict_store_closed X m σ
+        Hclosed Hσ)).
     + exact Hbody.
   - symmetry. apply store_restrict_idemp. exact Hdomσ.
 Qed.
