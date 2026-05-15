@@ -117,7 +117,7 @@ Proof.
     split.
     + apply (proj1 Hregular_iff). exact Hregular_body.
     + split.
-      * apply (proj1 (denot_ty_tlet_reduction_formula_any_world
+      * apply (proj1 (denot_ty_tlet_reduction_any_world
             τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
             (proj1 Hregular_iff Hregular_body) He1 Hlet Hctx
             Htotal_target Hfreshx)).
@@ -127,7 +127,7 @@ Proof.
     split.
     + apply (proj2 Hregular_iff). exact Hregular_target.
     + split.
-      * apply (proj2 (denot_ty_tlet_reduction_formula_any_world
+      * apply (proj2 (denot_ty_tlet_reduction_any_world
             τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
             Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)).
         exact Hformula_target.

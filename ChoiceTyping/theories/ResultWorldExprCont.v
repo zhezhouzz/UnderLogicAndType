@@ -8,7 +8,7 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps
 From ChoiceTyping Require Import ResultWorldBridge.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
+Lemma FExprResultAt_unique_let_result_world
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
     (Hfresh : ν ∉ world_dom (m : World))
     (Hresult : ∀ σ, (m : World) σ →
@@ -21,8 +21,8 @@ Lemma FExprResultOn_dom_exact_domain_eq_let_result_world_on
   n ⊨ FExprResultAt (dom Σ) e ν →
   n = let_result_world_on e ν m Hfresh Hresult.
 Proof.
-  (* Fold-based proof removed with primitive multi-fiber; this will be
-     re-proved directly from FFibVars during the LN pass. *)
+  (* TODO: prove uniqueness directly from the primitive multi-fiber
+     interpretation of [FExprResultAt]. *)
 Admitted.
 
 Lemma set_difference_pull_singleton (X Y : aset) x :
@@ -139,7 +139,7 @@ Proof.
       reflexivity.
 Qed.
 
-Lemma let_result_world_on_FExprResultOn_scoped X e ν (n : WfWorld) Hfresh Hresult :
+Lemma let_result_world_on_FExprResultAt_scoped X e ν (n : WfWorld) Hfresh Hresult :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
   formula_scoped_in_world ∅
@@ -154,7 +154,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultOn_body_scoped_in_result_fiber
+Lemma FExprResultAt_body_scoped_in_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
@@ -183,7 +183,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FExprResultOn_body_opened_scoped_in_result_fiber
+Lemma FExprResultAt_body_opened_scoped_in_fiber
     X e ν (n : WfWorld) Hfresh Hresult σX Hproj :
   ν ∉ X →
   X ⊆ world_dom (n : World) →
@@ -277,12 +277,12 @@ Proof.
     rewrite lookup_insert_eq.
     rewrite map_empty_union.
     split.
-    + eapply FExprResultOn_body_opened_scoped_in_result_fiber; eauto.
+    + eapply FExprResultAt_body_opened_scoped_in_fiber; eauto.
     + exists (res_fiber_from_projection
         (let_result_world_on e ν n Hfresh Hresult) X σX Hproj).
       split.
       * rewrite map_empty_union.
-        eapply FExprResultOn_body_opened_scoped_in_result_fiber; eauto.
+        eapply FExprResultAt_body_opened_scoped_in_fiber; eauto.
       * split.
         -- rewrite open_tm_env_singleton_lc by exact Hlc.
            assert (Hexact :
@@ -292,11 +292,11 @@ Proof.
            {
              eapply let_result_world_on_fiber_expr_result_in_world; eauto.
            }
-	           intros σν.
-	           rewrite map_empty_union.
-	           rewrite lvars_fv_of_atoms.
-	           replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
-	           rewrite store_restrict_restrict.
+             intros σν.
+             rewrite map_empty_union.
+             rewrite lvars_fv_of_atoms.
+             replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
+             rewrite store_restrict_restrict.
            replace ((X ∪ {[ν]}) ∩ X) with X by set_solver.
            rewrite res_restrict_restrict_eq.
            replace ((X ∪ {[ν]}) ∩ ({[ν]} : aset)) with ({[ν]} : aset)
@@ -305,7 +305,7 @@ Proof.
         -- reflexivity.
 Qed.
 
-Lemma FExprContIn_to_let_result_world_on_exact_domain
+Lemma FExprContIn_elim_let_result_world
     (Σ : gmap atom ty) (T : ty) e
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -354,7 +354,7 @@ Proof.
     rewrite Hdom. set_solver.
 Qed.
 
-Lemma let_result_world_on_to_FExprContIn_exact_domain
+Lemma FExprContIn_intro_let_result_world
     (Σ : gmap atom ty) (T : ty) e
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -441,7 +441,7 @@ Proof.
         change (n' ⊨ FExprResultAt (dom Σ) e ν).
         exact Hexpr.
       }
-      pose proof (FExprResultOn_dom_exact_domain_eq_let_result_world_on
+      pose proof (FExprResultAt_unique_let_result_world
         Σ T e ν m nr Hfresh Hresult Hty Hdom Hclosed
         Hnr_dom Hnr_restrict Hexpr_nr) as Hnr_eq.
       assert (HQopen_fv : formula_fv (formula_open 0 ν Q) ⊆ dom Σ ∪ {[ν]}).
@@ -457,7 +457,7 @@ Proof.
       exact (Hbody ν HνL Hfresh Hresult).
 Qed.
 
-Lemma FExprContIn_iff_let_result_world_on_exact_domain
+Lemma FExprContIn_iff_let_result_world
     (Σ : gmap atom ty) (T : ty) e
     (Q : FormulaQ) (m : WfWorld) :
   Σ ⊢ₑ e ⋮ T →
@@ -475,6 +475,6 @@ Lemma FExprContIn_iff_let_result_world_on_exact_domain
 Proof.
   intros Hty Hdom Hclosed Htotal HQfv.
   split.
-  - eapply FExprContIn_to_let_result_world_on_exact_domain; eauto.
-  - eapply let_result_world_on_to_FExprContIn_exact_domain; eauto.
+  - eapply FExprContIn_elim_let_result_world; eauto.
+  - eapply FExprContIn_intro_let_result_world; eauto.
 Qed.

@@ -52,13 +52,13 @@ Proof.
   - rewrite dom_empty_L. rewrite set_map_empty. reflexivity.
   - intros x T Σ' Hfresh Hfold IH.
     rewrite Hfold.
-	    replace (dom (map_fold
-	        (fun (x : atom) (T : ty) (acc : lty_env) => <[LVFree x := T]> acc)
-	        (∅ : lty_env) Σ'))
-	      with (set_map (C:=aset) (D:=lvset) LVFree (dom Σ'))
-	      by exact (eq_sym IH).
-	    rewrite dom_insert_L.
-	    rewrite set_map_union_L, set_map_singleton_L.
+      replace (dom (map_fold
+          (fun (x : atom) (T : ty) (acc : lty_env) => <[LVFree x := T]> acc)
+          (∅ : lty_env) Σ'))
+        with (set_map (C:=aset) (D:=lvset) LVFree (dom Σ'))
+        by exact (eq_sym IH).
+      rewrite dom_insert_L.
+      rewrite set_map_union_L, set_map_singleton_L.
     set_solver.
 Qed.
 
@@ -191,7 +191,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma FResultBasicWorld_open_domain_atom_env Σ D ν :
+Lemma FResultBasicWorld_open_fv_atom_env Σ D ν :
   lvars_fv
     (lvars_open 0 ν
       (lty_env_bvar_scope (atom_env_to_lty_env Σ) ∪ D ∪ {[LVBound 0]})) =
@@ -214,7 +214,7 @@ Proof.
     apply lvars_bv_contains_bound_singleton.
 Qed.
 
-Lemma FResultBasicWorld_open_domain_atom_env_into Σ D ν :
+Lemma FResultBasicWorld_open_fv_atom_env_into Σ D ν :
   lvars_fv
     (lvars_open 0 ν
       (into_lvars
@@ -222,10 +222,10 @@ Lemma FResultBasicWorld_open_domain_atom_env_into Σ D ν :
   lvars_fv D ∪ {[ν]}.
 Proof.
   cbn [into_lvars into_lvars_lvset].
-  apply FResultBasicWorld_open_domain_atom_env.
+  apply FResultBasicWorld_open_fv_atom_env.
 Qed.
 
-Lemma formula_store_equiv_FResultBasicWorld_atom_env_insert_fresh_open
+Lemma FResultBasicWorld_insert_fresh_open_equiv
     Σ x T b D ν :
   x ∉ dom Σ ∪ lvars_fv D →
   formula_store_equiv
@@ -241,18 +241,18 @@ Proof.
   unfold res_models_with_store.
   cbn [formula_measure res_models_with_store_fuel formula_scoped_in_world
     formula_fv lqual_dom logic_qualifier_denote lqual_prop].
-  rewrite !FResultBasicWorld_open_domain_atom_env_into.
+  rewrite !FResultBasicWorld_open_fv_atom_env_into.
   rewrite !lty_env_open_atom_env.
   rewrite lookup_insert_eq.
   split; intros [Hscope [m0 [Hscope0 [Htyped Hle]]]]; split.
   - unfold formula_scoped_in_world in *.
     cbn [formula_fv lqual_dom stale stale_logic_qualifier] in *.
-    rewrite !FResultBasicWorld_open_domain_atom_env_into in *.
+    rewrite !FResultBasicWorld_open_fv_atom_env_into in *.
     exact Hscope.
   - exists m0. split.
     + unfold formula_scoped_in_world in *.
       cbn [formula_fv lqual_dom stale stale_logic_qualifier] in *.
-      rewrite !FResultBasicWorld_open_domain_atom_env_into in *.
+      rewrite !FResultBasicWorld_open_fv_atom_env_into in *.
       exact Hscope0.
     + split; [| exact Hle].
       pose proof (world_has_type_on_insert_under_result_irrel
@@ -261,12 +261,12 @@ Proof.
       exact (proj1 Hiff Htyped).
   - unfold formula_scoped_in_world in *.
     cbn [formula_fv lqual_dom stale stale_logic_qualifier] in *.
-    rewrite !FResultBasicWorld_open_domain_atom_env_into in *.
+    rewrite !FResultBasicWorld_open_fv_atom_env_into in *.
     exact Hscope.
   - exists m0. split.
     + unfold formula_scoped_in_world in *.
       cbn [formula_fv lqual_dom stale stale_logic_qualifier] in *.
-      rewrite !FResultBasicWorld_open_domain_atom_env_into in *.
+      rewrite !FResultBasicWorld_open_fv_atom_env_into in *.
       exact Hscope0.
     + split; [| exact Hle].
       pose proof (world_has_type_on_insert_under_result_irrel
@@ -275,7 +275,7 @@ Proof.
       exact (proj2 Hiff Htyped).
 Qed.
 
-Lemma formula_fv_FResultBasicWorld_atom_env_insert_fresh_open
+Lemma FResultBasicWorld_insert_fresh_open_fv
     Σ x T b D ν :
   x ∉ dom Σ ∪ lvars_fv D →
   formula_fv
@@ -289,7 +289,7 @@ Proof.
   unfold FResultBasicWorld, FStoreResourceAtom.
   cbn [formula_open formula_fv lqual_open lqual_dom into_lvars
     into_lvars_lvset stale stale_logic_qualifier].
-  rewrite !FResultBasicWorld_open_domain_atom_env_into.
+  rewrite !FResultBasicWorld_open_fv_atom_env_into.
   reflexivity.
 Qed.
 
