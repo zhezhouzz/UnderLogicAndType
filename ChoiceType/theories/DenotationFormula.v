@@ -106,12 +106,6 @@ Lemma expr_result_in_world_sound ρ e ν w σw :
   expr_result_store ν (subst_map ρ e) σw.
 Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
 
-Lemma expr_result_in_world_complete ρ e ν w σw :
-  expr_result_in_world ρ e ν w →
-  expr_result_store ν (subst_map ρ e) σw →
-  (res_restrict w {[ν]} : World) σw.
-Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
-
 Lemma expr_result_in_world_store_elim ρ e ν w σw :
   expr_result_in_world ρ e ν w →
   (res_restrict w {[ν]} : World) σw →

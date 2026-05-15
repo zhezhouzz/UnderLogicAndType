@@ -50,16 +50,6 @@ Lemma wf_ctx_under_basic Σ Γ :
   basic_ctx (dom Σ) Γ.
 Proof. intros [Hbasic _]. exact Hbasic. Qed.
 
-Lemma wf_ctx_nonempty Γ :
-  wf_ctx Γ →
-  ctx_nonempty Γ.
-Proof. intros [_ Hnonempty]. exact Hnonempty. Qed.
-
-Lemma wf_ctx_under_nonempty Σ Γ :
-  wf_ctx_under Σ Γ →
-  ctx_nonempty_under Σ Γ.
-Proof. intros [_ Hnonempty]. exact Hnonempty. Qed.
-
 Lemma wf_choice_ty_ctx Γ τ :
   wf_choice_ty Γ τ →
   wf_ctx Γ.

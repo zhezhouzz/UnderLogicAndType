@@ -454,24 +454,8 @@ Definition denot_ty_total_in_ctx_under
 Definition entails_total (φ : FQ) (P : WfWorld → Prop) : Prop :=
   ∀ m, m ⊨ φ → P m.
 
-Lemma denot_ty_total_formula Σ Γ τ e m :
-  denot_ty_total_in_ctx_under Σ Γ τ e m →
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
-Proof. intros [H _]. exact H. Qed.
-
-Lemma denot_ty_total_expr_total Σ Γ τ e m :
-  denot_ty_total_in_ctx_under Σ Γ τ e m →
-  expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
-Proof. intros [_ H]. exact H. Qed.
-
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   ∀ x, x ∈ X → Σ1 !! x = Σ2 !! x.
-
-Lemma ty_env_agree_on_mono X Y Σ1 Σ2 :
-  X ⊆ Y →
-  ty_env_agree_on Y Σ1 Σ2 →
-  ty_env_agree_on X Σ1 Σ2.
-Proof. unfold ty_env_agree_on. hauto. Qed.
 
 Lemma ty_env_agree_on_insert_same X Σ1 Σ2 x T :
   ty_env_agree_on (X ∖ {[x]}) Σ1 Σ2 →

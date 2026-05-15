@@ -26,11 +26,6 @@ Proof.
   repeat split; eauto.
 Qed.
 
-Lemma choice_typing_wf_ctx_nonempty_part Σ Γ e τ :
-  choice_typing_wf Σ Γ e τ →
-  ctx_nonempty_under Σ Γ.
-Proof. intros [[[_ Hnonempty] _] _]. exact Hnonempty. Qed.
-
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
   denot_ctx_in_env Σ Γ ⊫
     FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty b) (tret v)) FFalse.
