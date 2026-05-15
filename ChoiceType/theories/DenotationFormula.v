@@ -86,15 +86,6 @@ Lemma expr_result_store_intro ν eρ v :
   expr_result_store ν eρ ({[ν := v]}).
 Proof. intros Hstale Hlc Hsteps. exists v. repeat split; auto. Qed.
 
-Lemma expr_result_store_lookup ν eρ σw :
-  expr_result_store ν eρ σw →
-  ∃ v, σw !! ν = Some v ∧ eρ →* tret v.
-Proof.
-  intros [v [-> [_ [_ Hsteps]]]].
-  exists v. split; [rewrite lookup_singleton; rewrite decide_True by reflexivity; reflexivity |].
-  exact Hsteps.
-Qed.
-
 Definition expr_result_in_world (ρ : Store) (e : tm) (ν : atom) (w : WfWorld) : Prop :=
   ∀ σν,
     (res_restrict w {[ν]} : World) σν ↔
@@ -105,20 +96,6 @@ Lemma expr_result_in_world_sound ρ e ν w σw :
   (res_restrict w {[ν]} : World) σw →
   expr_result_store ν (subst_map ρ e) σw.
 Proof. intros H Hw. exact (proj1 (H σw) Hw). Qed.
-
-Lemma expr_result_in_world_store_elim ρ e ν w σw :
-  expr_result_in_world ρ e ν w →
-  (res_restrict w {[ν]} : World) σw →
-  ∃ v,
-    σw = {[ν := v]} ∧
-    stale v = ∅ ∧
-    is_lc v ∧
-    subst_map ρ e →* tret v.
-Proof.
-  intros Hres Hw.
-  exact (expr_result_store_elim ν (subst_map ρ e) σw
-    (expr_result_in_world_sound ρ e ν w σw Hres Hw)).
-Qed.
 
 Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
   map_fold (λ k x acc, open_tm k (vfvar x) acc) e η.
