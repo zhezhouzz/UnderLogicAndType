@@ -370,6 +370,131 @@ Proof.
     rewrite Hdom. set_solver.
 Qed.
 
+Lemma let_result_world_on_to_FExprContIn_exact_domain
+    (Σ : gmap atom ty) (T : ty) e
+    (Q : FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Σ →
+  world_store_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) e m →
+  formula_fv Q ⊆ dom Σ →
+  (∃ L : aset,
+    dom Σ ⊆ L ∧
+    ∀ ν,
+      ν ∉ L →
+      ∀ Hfresh Hresult,
+        let_result_world_on e ν m Hfresh Hresult ⊨ formula_open 0 ν Q) →
+  m ⊨ FExprContIn Σ e Q.
+Proof.
+  intros Hty Hdom Hclosed Htotal HQfv [L [HLdom Hbody]].
+  pose proof (basic_typing_contains_fv_tm Σ e T Hty) as Hfv.
+  pose proof (typing_tm_lc Σ e T Hty) as Hlc.
+  unfold FExprContIn.
+  eapply res_models_forall_intro.
+  - unfold formula_scoped_in_world.
+    rewrite dom_empty_L.
+    cbn [formula_fv].
+    unfold FExprResultOn, FStoreResourceAtom.
+    cbn [formula_fv stale stale_logic_qualifier lqual_dom into_lvars
+      into_lvars_aset into_lvars_lvset].
+    denot_lvars_norm.
+    rewrite lvars_fv_union, lvars_fv_of_atoms, lvars_fv_singleton_bound.
+    rewrite Hdom. set_solver.
+  - exists (L ∪ dom Σ ∪ fv_tm e ∪ formula_fv Q).
+    split; [set_solver |].
+    intros ν Hν n Hdom_n Hrestrict.
+    rewrite !not_elem_of_union in Hν.
+    destruct Hν as [[[HνL HνΣ] Hνe] HνQ].
+    assert (Hfresh : ν ∉ world_dom (m : World)).
+    { rewrite Hdom. exact HνΣ. }
+    assert (Hresult :
+      ∀ σ, (m : World) σ →
+        ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx).
+    {
+      eapply expr_total_on_to_fv_result; eauto.
+    }
+    eapply res_models_impl_intro.
+    + unfold formula_scoped_in_world.
+      rewrite dom_empty_L.
+      intros z Hz.
+      apply elem_of_union in Hz as [Hz_empty | Hz].
+      { set_solver. }
+      pose proof (formula_open_fv_subset 0 ν
+        (FImpl (FExprResultOn (into_lvars Σ) e) Q) z Hz) as Hzopen.
+      pose proof (FExprContIn_formula_fv_subset
+        Σ e (dom Σ) Q ltac:(set_solver) HQfv) as Hfv_cont.
+      unfold FExprContIn in Hfv_cont.
+      cbn [formula_fv] in Hfv_cont.
+      rewrite Hdom_n, Hdom.
+      set_solver.
+    + intros n' Hle Hexpr.
+      pose proof (FExprResultOn_scoped_dom (dom Σ) e ν n'
+        (res_models_with_store_fuel_scoped _ _ _ _ Hexpr)) as Hscope_expr.
+      assert (Hn'_restrict_m : res_restrict n' (dom Σ) = m).
+      {
+        rewrite <- Hdom.
+        rewrite <- (res_restrict_le_eq n n' (world_dom (m : World)) Hle).
+        - exact Hrestrict.
+        - rewrite Hdom_n. set_solver.
+      }
+      set (nr := res_restrict n' (dom Σ ∪ {[ν]})).
+      assert (Hnr_dom : world_dom (nr : World) = dom Σ ∪ {[ν]}).
+      { subst nr. simpl. set_solver. }
+      assert (Hnr_restrict : res_restrict nr (dom Σ) = m).
+      {
+        subst nr.
+        rewrite res_restrict_restrict_eq.
+        replace ((dom Σ ∪ {[ν]}) ∩ dom Σ) with (dom Σ) by set_solver.
+        exact Hn'_restrict_m.
+      }
+      assert (Hexpr_nr : nr ⊨ FExprResultAt (dom Σ) e ν).
+      {
+        subst nr.
+        pose proof (res_models_minimal_on (dom Σ ∪ {[ν]}) n'
+          (FExprResultAt (dom Σ) e ν)
+          ltac:(rewrite FExprResultAt_fv; reflexivity)) as Hmin.
+        apply (proj1 Hmin).
+        change (n' ⊨ FExprResultAt (dom Σ) e ν).
+        exact Hexpr.
+      }
+      pose proof (FExprResultOn_dom_exact_domain_eq_let_result_world_on
+        Σ T e ν m nr Hfresh Hresult Hty Hdom Hclosed
+        Hnr_dom Hnr_restrict Hexpr_nr) as Hnr_eq.
+      assert (HQopen_fv : formula_fv (formula_open 0 ν Q) ⊆ dom Σ ∪ {[ν]}).
+      {
+        intros z Hz.
+        pose proof (formula_open_fv_subset 0 ν Q z Hz) as HzQ.
+        set_solver.
+      }
+      apply (proj2 (res_models_minimal_on (dom Σ ∪ {[ν]}) n'
+        (formula_open 0 ν Q) HQopen_fv)).
+      change (nr ⊨ formula_open 0 ν Q).
+      rewrite Hnr_eq.
+      exact (Hbody ν HνL Hfresh Hresult).
+Qed.
+
+Lemma FExprContIn_iff_let_result_world_on_exact_domain
+    (Σ : gmap atom ty) (T : ty) e
+    (Q : FormulaQ) (m : WfWorld) :
+  Σ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Σ →
+  world_store_closed_on (dom Σ) m →
+  expr_total_on (dom Σ) e m →
+  formula_fv Q ⊆ dom Σ →
+  m ⊨ FExprContIn Σ e Q ↔
+  ∃ L : aset,
+    dom Σ ⊆ L ∧
+    ∀ ν,
+      ν ∉ L →
+      ∀ Hfresh Hresult,
+        let_result_world_on e ν m Hfresh Hresult ⊨ formula_open 0 ν Q.
+Proof.
+  intros Hty Hdom Hclosed Htotal HQfv.
+  split.
+  - eapply FExprContIn_to_let_result_world_on_exact_domain; eauto.
+  - eapply let_result_world_on_to_FExprContIn_exact_domain; eauto.
+Qed.
+
 Lemma FExprContFamilyIn_to_let_result_world_on_exact_domain
     (Σ : gmap atom ty) (T : ty) e
     (P : atom → FormulaQ) (m : WfWorld) :
