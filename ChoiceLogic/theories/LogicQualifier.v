@@ -27,19 +27,9 @@ Inductive logic_qualifier : Type :=
       (D : lvset)
       (prop : gmap nat atom → StoreT → WfWorldT → Prop).
 
-Definition lqual_vars (q : logic_qualifier) : lvset :=
-  match q with
-  | lqual D _ => D
-  end.
-
 Definition lqual_dom (q : logic_qualifier) : aset :=
   match q with
   | lqual D _ => lvars_fv D
-  end.
-
-Definition lqual_bvars (q : logic_qualifier) : gset nat :=
-  match q with
-  | lqual D _ => lvars_bv D
   end.
 
 Definition lqual_prop (q : logic_qualifier) :
@@ -75,24 +65,6 @@ Proof.
   resource_norm.
   reflexivity.
 Qed.
-
-Definition lqual_and (q1 q2 : logic_qualifier) : logic_qualifier :=
-  match q1, q2 with
-  | lqual d1 p1, lqual d2 p2 =>
-      lqual (d1 ∪ d2) (λ η σ w, p1 η σ w ∧ p2 η σ w)
-  end.
-
-Definition lqual_or (q1 q2 : logic_qualifier) : logic_qualifier :=
-  match q1, q2 with
-  | lqual d1 p1, lqual d2 p2 =>
-      lqual (d1 ∪ d2) (λ η σ w, p1 η σ w ∨ p2 η σ w)
-  end.
-
-Definition lqual_top : logic_qualifier :=
-  lqual ∅ (λ _ _ _, True).
-
-Definition lqual_bot : logic_qualifier :=
-  lqual ∅ (λ _ _ _, False).
 
 #[global] Instance stale_logic_qualifier : Stale logic_qualifier := lqual_dom.
 Arguments stale_logic_qualifier /.
