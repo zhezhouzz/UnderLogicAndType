@@ -8,7 +8,7 @@ From CoreLang Require Import Instantiation InstantiationProps OperationalProps B
 From ChoiceTyping Require Export TLetTotal RegularDenotation.
 From ChoiceTyping Require Import Naming ResultWorldBridge ResultWorldExprCont
   TLetReductionSupport.
-From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationRefinement.
+From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Import Tactics.
 

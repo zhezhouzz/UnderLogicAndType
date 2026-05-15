@@ -59,7 +59,6 @@ ChoiceType/theories/DenotationFibers.v
 ChoiceType/theories/DenotationFormula.v
 ChoiceType/theories/DenotationFormulaEquiv.v
 ChoiceType/theories/DenotationType.v
-ChoiceType/theories/DenotationRefinement.v
 ChoiceType/theories/DenotationContext.v
 ChoiceType/theories/Denotation.v
 ChoiceType/theories/Sugar.v
