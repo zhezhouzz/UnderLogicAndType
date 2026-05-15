@@ -86,18 +86,6 @@ Lemma expr_result_store_intro ν eρ v :
   expr_result_store ν eρ ({[ν := v]}).
 Proof. intros Hstale Hlc Hsteps. exists v. repeat split; auto. Qed.
 
-Lemma expr_result_store_swap_result a ν eρ σ :
-  expr_result_store ν eρ σ →
-  expr_result_store a eρ (store_swap a ν σ).
-Proof.
-  intros [v [-> [Hstale [Hlc Hsteps]]]].
-  exists v. repeat split; auto.
-  unfold store_swap. rewrite kmap_singleton.
-  replace (atom_swap a ν ν) with a
-    by (unfold atom_swap; repeat destruct decide; congruence).
-  reflexivity.
-Qed.
-
 Lemma expr_result_store_lookup ν eρ σw :
   expr_result_store ν eρ σw →
   ∃ v, σw !! ν = Some v ∧ eρ →* tret v.
@@ -123,48 +111,6 @@ Lemma expr_result_in_world_complete ρ e ν w σw :
   expr_result_store ν (subst_map ρ e) σw →
   (res_restrict w {[ν]} : World) σw.
 Proof. intros H Hσ. exact (proj2 (H σw) Hσ). Qed.
-
-Lemma expr_result_in_world_swap_result ρ e a ν (m : WfWorld) :
-  expr_result_in_world ρ e ν m →
-  expr_result_in_world ρ e a (res_swap a ν m).
-Proof.
-  intros H σa. split.
-  - intros Hproj_a.
-    assert (Hproj_ν : (res_restrict m {[ν]} : World) (store_swap a ν σa)).
-    {
-      pose proof (res_restrict_swap_projection a ν (res_swap a ν m) {[a]} σa
-        Hproj_a) as Hproj_swap.
-      rewrite res_swap_involutive in Hproj_swap.
-      rewrite aset_swap_singleton in Hproj_swap.
-      replace (atom_swap a ν a) with ν in Hproj_swap
-        by (unfold atom_swap; repeat destruct decide; congruence).
-      exact Hproj_swap.
-    }
-    pose proof (expr_result_in_world_sound ρ e ν m
-      (store_swap a ν σa) H Hproj_ν) as Hstoreν.
-    pose proof (expr_result_store_swap_result a ν (subst_map ρ e)
-      (store_swap a ν σa) Hstoreν) as Hstorea.
-    rewrite store_swap_involutive in Hstorea. exact Hstorea.
-  - intros Hstorea.
-    assert (Hstoreν : expr_result_store ν (subst_map ρ e) (store_swap a ν σa)).
-    {
-      pose proof (expr_result_store_swap_result ν a (subst_map ρ e) σa Hstorea)
-        as Htmp.
-      rewrite store_swap_sym in Htmp. exact Htmp.
-    }
-    pose proof (expr_result_in_world_complete ρ e ν m
-      (store_swap a ν σa) H Hstoreν) as Hprojν.
-    change ((res_restrict (res_swap a ν m) {[a]} : World) σa).
-    replace ({[a]} : aset) with (aset_swap a ν ({[ν]} : aset)).
-    2:{
-      rewrite aset_swap_singleton.
-      replace (atom_swap a ν ν) with a
-        by (unfold atom_swap; repeat destruct decide; congruence).
-      reflexivity.
-    }
-    rewrite res_restrict_swap. simpl.
-    exists (store_swap a ν σa). split; [exact Hprojν | apply store_swap_involutive].
-Qed.
 
 Lemma expr_result_in_world_store_elim ρ e ν w σw :
   expr_result_in_world ρ e ν w →
