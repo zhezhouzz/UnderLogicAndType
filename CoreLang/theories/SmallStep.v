@@ -245,7 +245,7 @@ Proof.
   - inversion Hty; subst; eauto.
 Qed.
 
-(** ** Preservation (BasicTyping invariant — Admitted here, proved in Properties) *)
+(** ** Preservation *)
 
 Lemma step_preserves_type Γ e e' T :
   Γ ⊢ₑ e ⋮ T → step e e' → Γ ⊢ₑ e' ⋮ T.

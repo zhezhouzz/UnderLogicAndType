@@ -26,7 +26,6 @@ CoreLang/theories/Syntax.v
 CoreLang/theories/Instantiation.v
 CoreLang/theories/BasicTyping.v
 CoreLang/theories/SmallStep.v
-CoreLang/theories/Properties.v
 LocallyNameless/Tactics.v
 LocallyNameless/Classes.v
 CoreLang/theories/LocallyNamelessProps.v
