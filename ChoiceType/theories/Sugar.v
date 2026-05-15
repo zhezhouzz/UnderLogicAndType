@@ -35,30 +35,5 @@ Definition bool_precise_ty (b : bool) : choice_ty :=
 Definition const_precise_ty (c : constant) : choice_ty :=
   precise_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)).
 
-Lemma erase_over_ty b φ :
-  erase_ty (over_ty b φ) = TBase b.
-Proof. reflexivity. Qed.
-
-Lemma erase_under_ty b φ :
-  erase_ty (under_ty b φ) = TBase b.
-Proof. reflexivity. Qed.
-
-Lemma erase_precise_ty b φ :
-  erase_ty (precise_ty b φ) = TBase b.
-Proof. reflexivity. Qed.
-
-Lemma erase_primop_ty arg_b arg_φ ret_b ret_φ :
-  erase_ty (primop_ty arg_b arg_φ ret_b ret_φ) =
-  (TBase arg_b →ₜ TBase ret_b).
-Proof. reflexivity. Qed.
-
-Lemma erase_bool_precise_ty b :
-  erase_ty (bool_precise_ty b) = TBase TBool.
-Proof. reflexivity. Qed.
-
-Lemma erase_const_precise_ty c :
-  erase_ty (const_precise_ty c) = TBase (base_ty_of_const c).
-Proof. reflexivity. Qed.
-
 Notation "'prt' b φ" := (precise_ty b φ)
   (at level 20, b at next level, φ at next level, only printing).

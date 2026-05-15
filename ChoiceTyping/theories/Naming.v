@@ -21,30 +21,6 @@ Record tlet_fresh_name
   tlet_fresh_notin_body : x ∉ X ∪ fv_cty τ ∪ fv_tm e;
 }.
 
-Lemma tlet_fresh_name_notin_X
-    L X τ e (m : WfWorld) x :
-  tlet_fresh_name L X τ e m x →
-  x ∉ X.
-Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
-
-Lemma tlet_fresh_name_notin_fv_cty
-    L X τ e (m : WfWorld) x :
-  tlet_fresh_name L X τ e m x →
-  x ∉ fv_cty τ.
-Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
-
-Lemma tlet_fresh_name_notin_fv_tm
-    L X τ e (m : WfWorld) x :
-  tlet_fresh_name L X τ e m x →
-  x ∉ fv_tm e.
-Proof. intros Hfresh. destruct Hfresh. set_solver. Qed.
-
-Lemma tlet_fresh_name_notin_erased
-    L X τ e (m : WfWorld) x :
-  tlet_fresh_name L X τ e m x →
-  x ∉ X ∪ fv_cty τ ∪ fv_tm e.
-Proof. intros [HL HW HB]. exact HB. Qed.
-
 Lemma tlet_fresh_name_for
     L X τ e (m : WfWorld) :
   tlet_fresh_name L X τ e m

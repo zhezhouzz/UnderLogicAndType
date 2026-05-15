@@ -59,38 +59,10 @@ Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
 Definition wf_primop_ctx (Φ : primop_ctx) : Prop :=
   ∀ op, wf_primop_sig op (Φ op).
 
-Lemma erase_primop_arg_ty sig :
-  erase_ty (primop_arg_ty sig) = TBase sig.(prim_arg_base).
-Proof. destruct sig; reflexivity. Qed.
-
-Lemma erase_primop_result_ty sig :
-  erase_ty (primop_result_ty sig) = TBase sig.(prim_ret_base).
-Proof. destruct sig; reflexivity. Qed.
-
-Lemma erase_primop_sig_ty sig :
-  erase_ty (primop_sig_ty sig) =
-  (TBase sig.(prim_arg_base) →ₜ TBase sig.(prim_ret_base)).
-Proof. destruct sig; reflexivity. Qed.
-
 Lemma wf_primop_sig_erasure op sig :
   wf_primop_sig op sig →
   primop_erasure_ok op sig.
 Proof. apply wf_primop_erasure. Qed.
-
-Lemma wf_primop_sig_arg_basic op sig :
-  wf_primop_sig op sig →
-  basic_choice_ty ∅ (primop_arg_ty sig).
-Proof. apply wf_primop_arg_basic. Qed.
-
-Lemma wf_primop_sig_result_basic op sig :
-  wf_primop_sig op sig →
-  basic_choice_ty ∅ (primop_result_ty sig).
-Proof. apply wf_primop_result_basic. Qed.
-
-Lemma wf_primop_sig_erased_bases op sig :
-  wf_primop_sig op sig →
-  prim_op_type op = (sig.(prim_arg_base), sig.(prim_ret_base)).
-Proof. apply wf_primop_sig_erasure. Qed.
 
 (** Default shallow signatures for the current unary CoreLang primitives.
     These are intentionally conservative: arguments and results are typed by

@@ -241,11 +241,6 @@ Proof.
       * models_fuel_irrel HΓ2.
 Qed.
 
-Lemma denot_ctx_under_bind Σ x τ m :
-  m ⊨ denot_ctx_under Σ (CtxBind x τ) ↔
-  m ⊨ denot_ty_on (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
-Proof. reflexivity. Qed.
-
 Lemma denot_ctx_under_env_equiv Σ1 Σ2 Γ :
   dom Σ1 = dom Σ2 →
   ty_env_agree_on (ctx_stale Γ) Σ1 Σ2 →
@@ -304,14 +299,6 @@ Proof.
   }
   rewrite Heq. apply formula_equiv_refl.
 Qed.
-
-(** [⟦CtxBind x τ⟧] is [⟦τ⟧ (return x)]. *)
-Lemma denot_ctx_bind x τ m :
-  m ⊨ ⟦CtxBind x τ⟧ ↔
-  m ⊨ denot_ty_on
-    (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
-    τ (tret (vfvar x)).
-Proof. reflexivity. Qed.
 
 Lemma denot_ctx_under_restrict_stale Σ Γ m :
   m ⊨ denot_ctx_under Σ Γ →
