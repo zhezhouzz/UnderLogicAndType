@@ -592,6 +592,7 @@ Proof.
 	  subst nr.
 	  rewrite res_restrict_restrict_eq.
 	  rewrite (inter_union_singleton_l (dom Σ) ν).
+	  rewrite <- Hdom.
 	  exact Hrestrict.
 	}
       assert (Hexpr_nr : nr ⊨ FExprResultAt (dom Σ) e ν).

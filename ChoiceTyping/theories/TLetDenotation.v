@@ -53,19 +53,21 @@ Proof.
     - exact (denot_ctx_in_env_store_erased_lc
         Σ Γ m σ Hbasic Hm Hσ).
   }
-  assert (Hresult : ∀ σ, (m : World) σ →
-    ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx).
-  { eapply expr_total_on_to_fv_result; eauto. }
-  set (m' := let_result_world_on e1 x m Hfresh Hresult).
+  assert (Htotal_result :
+    expr_total_result_on (dom (erase_ctx_under Σ Γ)) e1 m).
+  { split; eauto. }
+  set (m' := let_result_world_on_total
+    (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Htotal_result).
   assert (Hctx :
     m' ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1))).
   {
-    subst m'. eapply tlet_body_ctx_from_result_world; eauto.
+    subst m'. unfold let_result_world_on_total.
+    eapply tlet_body_ctx_from_result_world; eauto.
   }
   pose proof (Hbody x HxL m' Hctx) as Hbody_model.
   eapply (proj1
     (denot_ty_total_tlet_reduction
-      Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult
+      Σ Γ τ1 τ2 e1 e2 m x Hfresh Htotal_result
       Herase Hwflet Hm Hmodel Hx_tlet)
     Hbody_model).
 Qed.

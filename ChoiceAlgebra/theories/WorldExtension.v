@@ -1,19 +1,22 @@
-(** * ChoiceTyping.WorldExtension
+(** * ChoiceAlgebra.WorldExtension
 
-    Experimental fiber-wise world extensions used to factor the [tlet]
-    reduction proof.  The construction lives in [ChoiceTyping] while the API is
-    still moving; once stable, the resource-algebra part can move down to
-    [ChoiceAlgebra].
+    Fiber-wise world extensions.
 
-    The original logic semantics remains unchanged.  This file provides a
-    proof-facing interface that turns implicit Kripke/domain extensions into
-    explicit fiber algorithms. *)
+    This file is purely algebraic: it turns implicit Kripke/domain extensions
+    into explicit fiber algorithms.  Formula-specific transport lemmas live in
+    [ChoiceLogic.FormulaWorldExtension]. *)
 
-From ChoiceTyping Require Import SoundnessCommon.
-From ChoiceType Require Import BasicStore.
+From ChoicePrelude Require Import Store.
+From ChoiceAlgebra Require Import Resource.
 From Stdlib Require Import Logic.Classical_Prop.
 
-Local Notation FQ := FormulaQ.
+Section WorldExtension.
+
+Context {V : Type} `{ValueSig V}.
+
+Local Notation StoreT := (gmap atom V) (only parsing).
+Local Notation WorldT := (World (V := V)) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 
 (** A fiber extension [(X, Y, f)] is an algorithm that looks only at a store's
     [X]-projection and returns a nonempty resource over [Y]. *)
@@ -21,42 +24,42 @@ Record fiber_extension := {
   ext_in : aset;
   ext_out : aset;
   ext_disjoint : ext_in ## ext_out;
-  ext_fun : Store -> WfWorld;
+  ext_fun : StoreT -> WfWorldT;
 
   ext_fun_dom :
     forall σ,
       dom σ = ext_in ->
-      world_dom (ext_fun σ : World) = ext_out;
+      world_dom (ext_fun σ : WorldT) = ext_out;
 
   ext_fun_nonempty :
     forall σ,
       dom σ = ext_in ->
-      exists σe, (ext_fun σ : World) σe;
+      exists σe, (ext_fun σ : WorldT) σe;
 }.
 
 Definition mk_fiber_extension
-    (X Y : aset) (f : Store -> WfWorld)
+    (X Y : aset) (f : StoreT -> WfWorldT)
     (Hdisj : X ## Y)
-    (Hdom : forall σ, dom σ = X -> world_dom (f σ : World) = Y)
-    (Hne : forall σ, dom σ = X -> exists σe, (f σ : World) σe)
+    (Hdom : forall σ, dom σ = X -> world_dom (f σ : WorldT) = Y)
+    (Hne : forall σ, dom σ = X -> exists σe, (f σ : WorldT) σe)
     : fiber_extension :=
   {| ext_in := X; ext_out := Y; ext_fun := f;
      ext_disjoint := Hdisj;
      ext_fun_dom := Hdom; ext_fun_nonempty := Hne |}.
 
 Definition mk_forall_extension
-    (X : aset) (y : atom) (f : Store -> WfWorld)
+    (X : aset) (y : atom) (f : StoreT -> WfWorldT)
     (Hfresh : y ∉ X)
-    (Hdom : forall σ, dom σ = X -> world_dom (f σ : World) = {[y]})
-    (Hne : forall σ, dom σ = X -> exists σy, (f σ : World) σy)
+    (Hdom : forall σ, dom σ = X -> world_dom (f σ : WorldT) = {[y]})
+    (Hne : forall σ, dom σ = X -> exists σy, (f σ : WorldT) σy)
     : fiber_extension :=
   mk_fiber_extension X {[y]} f ltac:(set_solver) Hdom Hne.
 
 Definition forall_extension_shape (X : aset) (y : atom) (F : fiber_extension) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
 
-Definition singleton_extension_store (y : atom) : Store :=
-  <[y := inhabitant]> (∅ : Store).
+Definition singleton_extension_store (y : atom) : StoreT :=
+  <[y := inhabitant]> (∅ : StoreT).
 
 Lemma singleton_extension_store_dom y :
   dom (singleton_extension_store y) = {[y]}.
@@ -66,16 +69,16 @@ Proof.
 Qed.
 
 Local Lemma store_with_dom_exists (X : aset) :
-  exists σ : Store, dom σ = X.
+  exists σ : StoreT, dom σ = X.
 Proof.
   induction X as [|x X Hx IH] using set_ind_L.
-  - exists (∅ : Store). rewrite dom_empty_L. reflexivity.
+  - exists (∅ : StoreT). rewrite dom_empty_L. reflexivity.
   - destruct IH as [σ Hdomσ].
     exists (<[x := inhabitant]> σ).
     rewrite dom_insert_L, Hdomσ. reflexivity.
 Qed.
 
-Definition default_world (X : aset) : WfWorld.
+Definition default_world (X : aset) : WfWorldT.
 Proof.
   refine (exist _ {|
     world_dom := X;
@@ -87,30 +90,30 @@ Proof.
 Defined.
 
 Lemma default_world_dom X :
-  world_dom (default_world X : World) = X.
+  world_dom (default_world X : WorldT) = X.
 Proof. reflexivity. Qed.
 
 Definition forall_extension_fiber
-    (m mx : WfWorld) (X : aset) (y : atom)
+    (m mx : WfWorldT) (X : aset) (y : atom)
     (Hfresh : y ∉ X)
-    (Hdom_mx : world_dom (mx : World) = X ∪ {[y]})
+    (Hdom_mx : world_dom (mx : WorldT) = X ∪ {[y]})
     (Hrestrict : res_restrict mx X = m)
-    (σ : Store) : WfWorld.
+    (σ : StoreT) : WfWorldT.
 Proof.
   refine (exist _ {|
     world_dom := {[y]};
     world_stores := fun σy =>
       dom σy = {[y]} /\
-      ((dom σ = X /\ (m : World) σ /\ (mx : World) (σ ∪ σy)) \/
-       (((dom σ <> X) \/ ~ (m : World) σ) /\
+      ((dom σ = X /\ (m : WorldT) σ /\ (mx : WorldT) (σ ∪ σy)) \/
+       (((dom σ <> X) \/ ~ (m : WorldT) σ) /\
         σy = singleton_extension_store y))
   |} _).
   constructor.
-  - destruct (classic (dom σ = X /\ (m : World) σ))
+  - destruct (classic (dom σ = X /\ (m : WorldT) σ))
       as [[Hdomσ Hmσ] | Hnot].
-    + assert (Hproj : (res_restrict mx X : World) σ).
+    + assert (Hproj : (res_restrict mx X : WorldT) σ).
       {
-        change ((res_restrict mx X : WfWorld) σ).
+        change ((res_restrict mx X : WfWorldT) σ).
         rewrite Hrestrict. exact Hmσ.
       }
       destruct Hproj as [σmx [Hmx HσmxX]].
@@ -138,44 +141,44 @@ Proof.
 Defined.
 
 Definition forall_world_extension
-    (m mx : WfWorld) (y : atom)
-    (Hfresh : y ∉ world_dom (m : World))
-    (Hdom_mx : world_dom (mx : World) = world_dom (m : World) ∪ {[y]})
-    (Hrestrict : res_restrict mx (world_dom (m : World)) = m)
+    (m mx : WfWorldT) (y : atom)
+    (Hfresh : y ∉ world_dom (m : WorldT))
+    (Hdom_mx : world_dom (mx : WorldT) = world_dom (m : WorldT) ∪ {[y]})
+    (Hrestrict : res_restrict mx (world_dom (m : WorldT)) = m)
     : fiber_extension :=
-  mk_forall_extension (world_dom (m : World)) y
-    (forall_extension_fiber m mx (world_dom (m : World)) y
+  mk_forall_extension (world_dom (m : WorldT)) y
+    (forall_extension_fiber m mx (world_dom (m : WorldT)) y
       Hfresh Hdom_mx Hrestrict)
     Hfresh
     ltac:(intros; simpl; reflexivity)
     ltac:(intros σ _; destruct (world_wf
-      (forall_extension_fiber m mx (world_dom (m : World)) y
+      (forall_extension_fiber m mx (world_dom (m : WorldT)) y
         Hfresh Hdom_mx Hrestrict σ)) as [Hne _]; exact Hne).
 
 (** Applicability is intentionally hidden behind [m #> F ~~> n].  Callers should
     usually use the projection lemmas below rather than unfold it. *)
-Record extension_applicable (F : fiber_extension) (m : WfWorld) : Prop := {
-  ext_app_in : ext_in F ⊆ world_dom (m : World);
-  ext_app_out : ext_out F ## world_dom (m : World);
+Record extension_applicable (F : fiber_extension) (m : WfWorldT) : Prop := {
+  ext_app_in : ext_in F ⊆ world_dom (m : WorldT);
+  ext_app_out : ext_out F ## world_dom (m : WorldT);
 }.
 
 (** [m #> F ~~> n] says that [n] is obtained by extending every store [σ] of [m]
     with one store from the fiber [F] computed from [σ]'s [ext_in]-projection. *)
-Definition res_extend_by (m : WfWorld) (F : fiber_extension) (n : WfWorld) : Prop :=
+Definition res_extend_by (m : WfWorldT) (F : fiber_extension) (n : WfWorldT) : Prop :=
   extension_applicable F m /\
-  world_dom (n : World) = world_dom (m : World) ∪ ext_out F /\
+  world_dom (n : WorldT) = world_dom (m : WorldT) ∪ ext_out F /\
   forall σ,
-    (n : World) σ <->
+    (n : WorldT) σ <->
       exists σm σe,
-        (m : World) σm /\
-        (ext_fun F (store_restrict σm (ext_in F)) : World) σe /\
+        (m : WorldT) σm /\
+        (ext_fun F (store_restrict σm (ext_in F)) : WorldT) σe /\
         σ = σm ∪ σe.
 
 (** Use an arrow, not [=]: this is a proof-relevant extension relation, not
     Rocq equality.  Keeping [=] in the notation makes goals read as if they
     could be solved by rewriting, and risks confusing nearby equality
     notations/tactics even though the parser can disambiguate after [#>]. *)
-Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
+Local Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
   (at level 70, F at next level, n at next level).
 
 Lemma res_extend_by_applicable m F n :
@@ -187,7 +190,7 @@ Qed.
 
 Lemma res_extend_by_input_subset m F n :
   m #> F ~~> n ->
-  ext_in F ⊆ world_dom (m : World).
+  ext_in F ⊆ world_dom (m : WorldT).
 Proof.
   intros Hext.
   apply (ext_app_in _ _ (res_extend_by_applicable _ _ _ Hext)).
@@ -195,7 +198,7 @@ Qed.
 
 Lemma res_extend_by_output_fresh m F n :
   m #> F ~~> n ->
-  ext_out F ## world_dom (m : World).
+  ext_out F ## world_dom (m : WorldT).
 Proof.
   intros Hext.
   apply (ext_app_out _ _ (res_extend_by_applicable _ _ _ Hext)).
@@ -203,17 +206,17 @@ Qed.
 
 Lemma res_extend_by_dom m F n :
   m #> F ~~> n ->
-  world_dom (n : World) = world_dom (m : World) ∪ ext_out F.
+  world_dom (n : WorldT) = world_dom (m : WorldT) ∪ ext_out F.
 Proof.
   intros [_ [Hdom _]]. eauto.
 Qed.
 
 Lemma res_extend_by_store_iff m F n σ :
   m #> F ~~> n ->
-  (n : World) σ <->
+  (n : WorldT) σ <->
     exists σm σe,
-      (m : World) σm /\
-      (ext_fun F (store_restrict σm (ext_in F)) : World) σe /\
+      (m : WorldT) σm /\
+      (ext_fun F (store_restrict σm (ext_in F)) : WorldT) σe /\
       σ = σm ∪ σe.
 Proof.
   intros [_ [_ Hstores]]. eauto.
@@ -237,11 +240,11 @@ Qed.
 
 Local Lemma ext_projection_dom m F σm :
   extension_applicable F m ->
-  (m : World) σm ->
+  (m : WorldT) σm ->
   dom (store_restrict σm (ext_in F)) = ext_in F.
 Proof.
   intros Happ Hσm.
-  transitivity (world_dom (m : World) ∩ ext_in F).
+  transitivity (world_dom (m : WorldT) ∩ ext_in F).
   - rewrite <- (wfworld_store_dom m σm Hσm).
     apply store_restrict_dom.
   - pose proof (ext_app_in _ _ Happ).
@@ -250,8 +253,8 @@ Qed.
 
 Local Lemma res_extend_store_compat m F σm σe :
   extension_applicable F m ->
-  (m : World) σm ->
-  (ext_fun F (store_restrict σm (ext_in F)) : World) σe ->
+  (m : WorldT) σm ->
+  (ext_fun F (store_restrict σm (ext_in F)) : WorldT) σe ->
   store_compat σm σe.
 Proof.
   intros Happ Hσm Hσe.
@@ -273,7 +276,7 @@ Qed.
 
 Lemma res_extend_by_restrict_base m F n :
   m #> F ~~> n ->
-  res_restrict n (world_dom (m : World)) = m.
+  res_restrict n (world_dom (m : WorldT)) = m.
 Proof.
   intros Hext.
   destruct Hext as [Happ [Hdom_n Hstores]].
@@ -296,12 +299,12 @@ Proof.
         apply ext_fun_dom. exact Hproj_dom.
       }
       assert (Hpiece :
-        store_restrict (σm ∪ σe) (world_dom (m : World)) = σm).
+        store_restrict (σm ∪ σe) (world_dom (m : WorldT)) = σm).
       {
         apply (store_restrict_union_piece_l σm σe
-          (world_dom (m : World)) (ext_out F)).
+          (world_dom (m : WorldT)) (ext_out F)).
         - exact Hcompat.
-        - change (dom σm ⊆ world_dom (m : World)).
+        - change (dom σm ⊆ world_dom (m : WorldT)).
           rewrite Hdomσm. reflexivity.
         - change (dom σe ⊆ ext_out F).
           rewrite Hdomσe. reflexivity.
@@ -326,9 +329,9 @@ Proof.
           apply ext_fun_dom. exact Hproj_dom.
         }
         apply (store_restrict_union_piece_l σ σe
-          (world_dom (m : World)) (ext_out F)).
+          (world_dom (m : WorldT)) (ext_out F)).
         -- exact Hcompat.
-        -- change (dom σ ⊆ world_dom (m : World)).
+        -- change (dom σ ⊆ world_dom (m : WorldT)).
           rewrite Hdomσ. reflexivity.
         -- change (dom σe ⊆ ext_out F).
           rewrite Hdomσe. reflexivity.
@@ -342,16 +345,16 @@ Proof.
   intros Hext.
   pose proof (res_extend_by_restrict_base m F n Hext) as Hrestrict.
   unfold sqsubseteq, wf_world_sqsubseteq, raw_le.
-  change ((m : World) = (res_restrict n (world_dom (m : World)) : World)).
+  change ((m : WorldT) = (res_restrict n (world_dom (m : WorldT)) : WorldT)).
   rewrite Hrestrict. reflexivity.
 Qed.
 
-Lemma forall_world_as_extend_by (m : WfWorld) (y : atom) (my : WfWorld) :
-  y ∉ world_dom (m : World) ->
-  world_dom (my : World) = world_dom (m : World) ∪ {[y]} ->
-  res_restrict my (world_dom (m : World)) = m ->
+Lemma forall_world_as_extend_by (m : WfWorldT) (y : atom) (my : WfWorldT) :
+  y ∉ world_dom (m : WorldT) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
   ∃ F,
-    forall_extension_shape (world_dom (m : World)) y F /\
+    forall_extension_shape (world_dom (m : WorldT)) y F /\
     m #> F ~~> my.
 Proof.
   intros Hy Hdom_my Hrestrict.
@@ -368,7 +371,7 @@ Proof.
     split; [exact Hdom_my |].
     intros σ. split.
     + intros Hmyσ.
-      set (σm := store_restrict σ (world_dom (m : World))).
+      set (σm := store_restrict σ (world_dom (m : WorldT))).
       set (σy := store_restrict σ ({[y]} : aset)).
       exists σm, σy. split.
       {
@@ -376,8 +379,8 @@ Proof.
         rewrite <- Hrestrict.
         simpl. exists σ. split; [exact Hmyσ |].
         rewrite Hdom_my.
-        replace ((world_dom (m : World) ∪ {[y]}) ∩ world_dom (m : World))
-          with (world_dom (m : World)) by set_solver.
+        replace ((world_dom (m : WorldT) ∪ {[y]}) ∩ world_dom (m : WorldT))
+          with (world_dom (m : WorldT)) by set_solver.
         reflexivity.
       }
       split.
@@ -390,24 +393,24 @@ Proof.
           rewrite (wfworld_store_dom my σ Hmyσ), Hdom_my. set_solver.
         - left. repeat split.
           + rewrite store_restrict_twice_same.
-            change (dom (store_restrict σ (world_dom (m : World))) =
-              world_dom (m : World)).
+            change (dom (store_restrict σ (world_dom (m : WorldT))) =
+              world_dom (m : WorldT)).
             rewrite store_restrict_dom.
             pose proof (wfworld_store_dom my σ Hmyσ) as Hdomσ.
             set_solver.
-          + change ((m : World)
+          + change ((m : WorldT)
               (store_restrict
-                (store_restrict σ (world_dom (m : World)))
-                (world_dom (m : World)))).
+                (store_restrict σ (world_dom (m : WorldT)))
+                (world_dom (m : WorldT)))).
             rewrite store_restrict_twice_same.
             rewrite <- Hrestrict.
             simpl. exists σ. split; [exact Hmyσ |].
             rewrite Hdom_my.
-            replace ((world_dom (m : World) ∪ {[y]}) ∩ world_dom (m : World))
-              with (world_dom (m : World)) by set_solver.
+            replace ((world_dom (m : WorldT) ∪ {[y]}) ∩ world_dom (m : WorldT))
+              with (world_dom (m : WorldT)) by set_solver.
             reflexivity.
           + rewrite store_restrict_twice_same.
-            replace (store_restrict σ (world_dom (m : World)) ∪
+            replace (store_restrict σ (world_dom (m : WorldT)) ∪
               store_restrict σ ({[y]} : aset)) with σ.
             * exact Hmyσ.
             * symmetry. apply store_restrict_union_partition.
@@ -441,75 +444,44 @@ Qed.
 
 Lemma res_extend_by_dom_subset m F n :
   m #> F ~~> n ->
-  world_dom (m : World) ⊆ world_dom (n : World).
+  world_dom (m : WorldT) ⊆ world_dom (n : WorldT).
 Proof.
   intros Hext.
   pose proof (res_extend_by_dom _ _ _ Hext).
   set_solver.
 Qed.
 
-Lemma formula_scoped_extend_mono ρ m F n φ :
-  m #> F ~~> n ->
-  formula_scoped_in_world ρ m φ ->
-  formula_scoped_in_world ρ n φ.
-Proof.
-  unfold formula_scoped_in_world.
-  intros Hext Hscope.
-  pose proof (res_extend_by_dom_subset _ _ _ Hext).
-  set_solver.
-Qed.
-
-Lemma res_models_with_store_extend_mono ρ m F n φ :
-  m #> F ~~> n ->
-  res_models_with_store ρ m φ ->
-  res_models_with_store ρ n φ.
-Proof.
-  intros Hext Hmodel.
-  eapply res_models_with_store_kripke.
-  - eapply res_extend_by_le_base. exact Hext.
-  - exact Hmodel.
-Qed.
-
-Lemma res_models_extend_mono m F n φ :
-  m #> F ~~> n ->
-  res_models m φ ->
-  res_models n φ.
-Proof.
-  unfold res_models.
-  apply res_models_with_store_extend_mono.
-Qed.
-
 (** ** Canonical extensions for Kripke growth *)
 
 Definition canonical_extension_fiber
-    (m n : WfWorld) (σ : Store) : WfWorld.
+    (m n : WfWorldT) (σ : StoreT) : WfWorldT.
 Proof.
-  set (X := world_dom (m : World)).
-  set (Y := world_dom (n : World) ∖ world_dom (m : World)).
+  set (X := world_dom (m : WorldT)).
+  set (Y := world_dom (n : WorldT) ∖ world_dom (m : WorldT)).
   refine (exist _ {|
     world_dom := Y;
     world_stores := fun σe =>
       dom σe = Y /\
       ((exists σn,
-          (n : World) σn /\
+          (n : WorldT) σn /\
           store_restrict σn X = σ /\
           σe = store_restrict σn Y) \/
        ~(exists σn,
-          (n : World) σn /\
+          (n : WorldT) σn /\
           store_restrict σn X = σ))
   |} _).
   constructor.
   - destruct (classic (exists σn,
-      (n : World) σn /\ store_restrict σn X = σ))
+      (n : WorldT) σn /\ store_restrict σn X = σ))
       as [[σn [Hnσn HσnX]] | Hnone].
     + exists (store_restrict σn Y). split.
       * subst Y X.
         change (dom (store_restrict σn
-          (world_dom (n : World) ∖ world_dom (m : World))) =
-          world_dom (n : World) ∖ world_dom (m : World)).
+          (world_dom (n : WorldT) ∖ world_dom (m : WorldT))) =
+          world_dom (n : WorldT) ∖ world_dom (m : WorldT)).
         replace (dom (store_restrict σn
-          (world_dom (n : World) ∖ world_dom (m : World))))
-          with (dom σn ∩ (world_dom (n : World) ∖ world_dom (m : World)))
+          (world_dom (n : WorldT) ∖ world_dom (m : WorldT))))
+          with (dom σn ∩ (world_dom (n : WorldT) ∖ world_dom (m : WorldT)))
           by (symmetry; apply store_restrict_dom).
         pose proof (wfworld_store_dom n σn Hnσn) as Hdomσn.
         set_solver.
@@ -520,10 +492,10 @@ Proof.
   - intros σe [Hdomσe _]. exact Hdomσe.
 Defined.
 
-Definition canonical_le_extension (m n : WfWorld) : fiber_extension :=
+Definition canonical_le_extension (m n : WfWorldT) : fiber_extension :=
   mk_fiber_extension
-    (world_dom (m : World))
-    (world_dom (n : World) ∖ world_dom (m : World))
+    (world_dom (m : WorldT))
+    (world_dom (n : WorldT) ∖ world_dom (m : WorldT))
     (canonical_extension_fiber m n)
     ltac:(set_solver)
     ltac:(intros; simpl; reflexivity)
@@ -531,29 +503,29 @@ Definition canonical_le_extension (m n : WfWorld) : fiber_extension :=
       as [Hne _]; exact Hne).
 
 Definition canonical_le_extension_spec
-    (m n : WfWorld) (F : fiber_extension) : Prop :=
-  ext_in F = world_dom (m : World) /\
-  ext_out F = world_dom (n : World) ∖ world_dom (m : World) /\
+    (m n : WfWorldT) (F : fiber_extension) : Prop :=
+  ext_in F = world_dom (m : WorldT) /\
+  ext_out F = world_dom (n : WorldT) ∖ world_dom (m : WorldT) /\
   (forall σ, ext_fun F σ = ext_fun (canonical_le_extension m n) σ) /\
   m #> F ~~> n.
 
 Definition fiber_extension_equiv_on
-    (m : WfWorld) (F G : fiber_extension) : Prop :=
+    (m : WfWorldT) (F G : fiber_extension) : Prop :=
   ext_in F = ext_in G /\
   forall σ σe,
-    (m : World) σ ->
-    ((ext_fun F (store_restrict σ (ext_in F)) : World) σe <->
-     (ext_fun G (store_restrict σ (ext_in G)) : World) σe).
+    (m : WorldT) σ ->
+    ((ext_fun F (store_restrict σ (ext_in F)) : WorldT) σe <->
+     (ext_fun G (store_restrict σ (ext_in G)) : WorldT) σe).
 
 Lemma canonical_le_extension_sound m n :
   m ⊑ n ->
   m #> canonical_le_extension m n ~~> n.
 Proof.
   intros Hle.
-  assert (Hdom_mn : world_dom (m : World) ⊆ world_dom (n : World)).
+  assert (Hdom_mn : world_dom (m : WorldT) ⊆ world_dom (n : WorldT)).
   {
     unfold sqsubseteq, wf_world_sqsubseteq in Hle.
-    exact (raw_le_dom (m : World) (n : World) Hle).
+    exact (raw_le_dom (m : WorldT) (n : WorldT) Hle).
   }
   unfold res_extend_by, canonical_le_extension, mk_fiber_extension. simpl.
   split.
@@ -565,7 +537,7 @@ Proof.
   split.
   {
     apply set_eq. intros z. split.
-    - intros Hz. destruct (decide (z ∈ world_dom (m : World))) as [Hzm | Hzm].
+    - intros Hz. destruct (decide (z ∈ world_dom (m : WorldT))) as [Hzm | Hzm].
       + apply elem_of_union_l. exact Hzm.
       + apply elem_of_union_r. apply elem_of_difference. split; exact Hz || exact Hzm.
     - intros Hz. apply elem_of_union in Hz as [Hz | Hz].
@@ -574,16 +546,16 @@ Proof.
   }
   intros σ. split.
   - intros Hnσ.
-    set (σm := store_restrict σ (world_dom (m : World))).
+    set (σm := store_restrict σ (world_dom (m : WorldT))).
     set (σe := store_restrict σ
-      (world_dom (n : World) ∖ world_dom (m : World))).
+      (world_dom (n : WorldT) ∖ world_dom (m : WorldT))).
     exists σm, σe. split.
     {
       subst σm.
       unfold sqsubseteq, wf_world_sqsubseteq, raw_le in Hle.
       rewrite Hle. simpl. exists σ. split; [exact Hnσ |].
-      replace (world_dom (n : World) ∩ world_dom (m : World))
-        with (world_dom (m : World)) by set_solver.
+      replace (world_dom (n : WorldT) ∩ world_dom (m : WorldT))
+        with (world_dom (m : WorldT)) by set_solver.
       reflexivity.
     }
     split.
@@ -599,13 +571,13 @@ Proof.
       subst σm σe.
       symmetry.
       eapply (store_restrict_union_partition σ
-        (world_dom (m : World))
-        (world_dom (n : World) ∖ world_dom (m : World))).
+        (world_dom (m : WorldT))
+        (world_dom (n : WorldT) ∖ world_dom (m : WorldT))).
       - pose proof (wfworld_store_dom n σ Hnσ) as Hdomσ.
         intros z Hz.
-        assert (Hzn : z ∈ world_dom (n : World)).
+        assert (Hzn : z ∈ world_dom (n : WorldT)).
         { rewrite <- Hdomσ. exact Hz. }
-        destruct (decide (z ∈ world_dom (m : World))) as [Hzm | Hzm].
+        destruct (decide (z ∈ world_dom (m : WorldT))) as [Hzm | Hzm].
         + apply elem_of_union_l. exact Hzm.
         + apply elem_of_union_r. apply elem_of_difference. split; exact Hzn || exact Hzm.
       - set_solver.
@@ -614,24 +586,24 @@ Proof.
     simpl in Hfiber.
     destruct Hfiber as [Hdomσe [[σn [Hnσn [HσnX Hσe]]] | Hnone]].
     + subst σe.
-      assert (Hdomσn : dom σn = world_dom (n : World))
+      assert (Hdomσn : dom σn = world_dom (n : WorldT))
         by exact (wfworld_store_dom n σn Hnσn).
-      assert (Hσm_eq : σm = store_restrict σn (world_dom (m : World))).
+      assert (Hσm_eq : σm = store_restrict σn (world_dom (m : WorldT))).
       {
         pose proof (wfworld_store_dom m σm Hmσm) as Hdomσm.
         rewrite HσnX.
         symmetry. apply store_restrict_idemp_eq. exact Hdomσm.
       }
       subst σm.
-      replace (store_restrict σn (world_dom (m : World)) ∪
-        store_restrict σn (world_dom (n : World) ∖ world_dom (m : World)))
+      replace (store_restrict σn (world_dom (m : WorldT)) ∪
+        store_restrict σn (world_dom (n : WorldT) ∖ world_dom (m : WorldT)))
         with σn.
 	      * exact Hnσn.
 	      * symmetry. apply store_restrict_union_partition.
 	        -- intros z Hz.
-	           assert (Hzn : z ∈ world_dom (n : World)).
+	           assert (Hzn : z ∈ world_dom (n : WorldT)).
 	           { rewrite <- Hdomσn. exact Hz. }
-	           destruct (decide (z ∈ world_dom (m : World))) as [Hzm | Hzm].
+	           destruct (decide (z ∈ world_dom (m : WorldT))) as [Hzm | Hzm].
 	           ++ apply elem_of_union_l. exact Hzm.
 	           ++ apply elem_of_union_r. apply elem_of_difference. split; exact Hzn || exact Hzm.
 	        -- set_solver.
@@ -691,16 +663,16 @@ Proof.
       m #> A ~~> n ->
       m #> B ~~> n ->
       forall σ σe,
-        (m : World) σ ->
-        (ext_fun A (store_restrict σ (ext_in A)) : World) σe ->
-        (ext_fun B (store_restrict σ (ext_in B)) : World) σe).
+        (m : WorldT) σ ->
+        (ext_fun A (store_restrict σ (ext_in A)) : WorldT) σe ->
+        (ext_fun B (store_restrict σ (ext_in B)) : WorldT) σe).
   {
     intros A B HAB HA HB σ σe Hσ HAe.
     pose proof (res_extend_by_applicable _ _ _ HA) as HAppA.
     pose proof (res_extend_by_applicable _ _ _ HB) as HAppB.
     pose proof (res_extend_store_compat m A σ σe HAppA Hσ HAe)
       as HcompatA.
-    assert (Hn : (n : World) (σ ∪ σe)).
+    assert (Hn : (n : WorldT) (σ ∪ σe)).
     {
       apply (proj2 (res_extend_by_store_iff m A n (σ ∪ σe) HA)).
       exists σ, σe. repeat split; eauto.
@@ -709,9 +681,9 @@ Proof.
     destruct Hn as [σB [σBe [HσB [HBe Heq]]]].
     pose proof (res_extend_store_compat m B σB σBe HAppB HσB HBe)
       as HcompatB.
-    assert (Hdomσ : dom σ = world_dom (m : World))
+    assert (Hdomσ : dom σ = world_dom (m : WorldT))
       by exact (wfworld_store_dom m σ Hσ).
-    assert (HdomσB : dom σB = world_dom (m : World))
+    assert (HdomσB : dom σB = world_dom (m : WorldT))
       by exact (wfworld_store_dom m σB HσB).
     assert (HprojA : dom (store_restrict σ (ext_in A)) = ext_in A)
       by (eapply ext_projection_dom; eauto).
@@ -731,19 +703,19 @@ Proof.
     }
     pose proof (res_extend_by_output_unique m A B n HA HB) as Hout.
     assert (HbaseA :
-      store_restrict (σ ∪ σe) (world_dom (m : World)) = σ).
+      store_restrict (σ ∪ σe) (world_dom (m : WorldT)) = σ).
     {
       apply (store_restrict_union_piece_l σ σe
-        (world_dom (m : World)) (ext_out A)); eauto.
+        (world_dom (m : WorldT)) (ext_out A)); eauto.
       - set_solver.
       - set_solver.
       - pose proof (ext_app_out _ _ HAppA). set_solver.
     }
     assert (HbaseB :
-      store_restrict (σB ∪ σBe) (world_dom (m : World)) = σB).
+      store_restrict (σB ∪ σBe) (world_dom (m : WorldT)) = σB).
     {
       apply (store_restrict_union_piece_l σB σBe
-        (world_dom (m : World)) (ext_out B)); eauto.
+        (world_dom (m : WorldT)) (ext_out B)); eauto.
       - set_solver.
       - set_solver.
       - pose proof (ext_app_out _ _ HAppB). set_solver.
@@ -758,7 +730,7 @@ Proof.
       store_restrict (σ ∪ σe) (ext_out A) = σe).
     {
       apply (store_restrict_union_piece_r σ σe
-        (world_dom (m : World)) (ext_out A)); eauto.
+        (world_dom (m : WorldT)) (ext_out A)); eauto.
       - set_solver.
       - set_solver.
       - pose proof (ext_app_out _ _ HAppA). set_solver.
@@ -767,7 +739,7 @@ Proof.
       store_restrict (σ ∪ σBe) (ext_out B) = σBe).
     {
       apply (store_restrict_union_piece_r σ σBe
-        (world_dom (m : World)) (ext_out B)); eauto.
+        (world_dom (m : WorldT)) (ext_out B)); eauto.
       - set_solver.
       - set_solver.
       - pose proof (ext_app_out _ _ HAppB). set_solver.
@@ -802,7 +774,7 @@ Qed.
 
 (** ** Extension interaction API *)
 
-Local Lemma store_restrict_union_ignore_r (s1 s2 : Store) (X : aset) :
+Local Lemma store_restrict_union_ignore_r (s1 s2 : StoreT) (X : aset) :
   dom s2 ## X ->
   store_restrict (s1 ∪ s2) X = store_restrict s1 X.
 Proof.
@@ -822,7 +794,7 @@ Proof.
     rewrite Hs2. symmetry. exact Hs1.
 Qed.
 
-Local Lemma store_union_swap_right (s1 s2 s3 : Store) :
+Local Lemma store_union_swap_right (s1 s2 s3 : StoreT) :
   store_compat s2 s3 ->
   (s1 ∪ s2) ∪ s3 = (s1 ∪ s3) ∪ s2.
 Proof.
@@ -1000,61 +972,7 @@ Proof.
            apply store_union_swap_right. exact Hcompat_extra.
 Qed.
 
-(** ** Formula transport API *)
+End WorldExtension.
 
-Lemma res_models_with_store_forall_by_extension_iff
-    (ρ : Store) (m : WfWorld) (p : FQ) :
-  formula_scoped_in_world ρ m (FForall p) ->
-  (res_models_with_store ρ m (FForall p) <->
-   ∃ L : aset,
-     world_dom (m : World) ⊆ L /\
-     forall y F my,
-       y ∉ L ->
-       forall_extension_shape (world_dom (m : World)) y F ->
-       m #> F ~~> my ->
-       res_models_with_store ρ my (formula_open 0 y p)).
-Proof.
-  intros Hscope. split.
-  - intros Hforall.
-    unfold res_models_with_store in Hforall.
-    cbn [formula_measure res_models_with_store_fuel
-      formula_scoped_in_world formula_fv] in Hforall.
-    destruct Hforall as [_ [L [HLdom Hopen]]].
-    exists L. split; [exact HLdom |].
-    intros y F my Hy HFshape Hext.
-    destruct HFshape as [Hin Hout].
-    pose proof (res_extend_by_dom _ _ _ Hext) as Hdom_my.
-    pose proof (res_extend_by_restrict_base _ _ _ Hext) as Hrestrict.
-    specialize (Hopen y Hy my ltac:(rewrite Hdom_my, Hout; reflexivity) Hrestrict).
-    models_fuel_irrel Hopen.
-  - intros [L [HLdom Hopen]].
-    unfold res_models_with_store.
-    cbn [formula_measure res_models_with_store_fuel
-      formula_scoped_in_world formula_fv].
-    split; [exact Hscope |].
-    exists L. split; [exact HLdom |].
-    intros y Hy my Hdom_my Hrestrict.
-    assert (Hy_m : y ∉ world_dom (m : World)) by set_solver.
-    destruct (forall_world_as_extend_by m y my Hy_m Hdom_my Hrestrict)
-      as [F [HFshape Hext]].
-    specialize (Hopen y F my Hy HFshape Hext).
-    models_fuel_irrel Hopen.
-Qed.
-
-Lemma res_models_forall_by_extension_iff
-    (m : WfWorld) (p : FQ) :
-  formula_scoped_in_world ∅ m (FForall p) ->
-  (res_models m (FForall p) <->
-   ∃ L : aset,
-     world_dom (m : World) ⊆ L /\
-     forall y F my,
-       y ∉ L ->
-       forall_extension_shape (world_dom (m : World)) y F ->
-       m #> F ~~> my ->
-       res_models my (formula_open 0 y p)).
-Proof.
-  intros Hscope.
-  unfold res_models.
-  apply res_models_with_store_forall_by_extension_iff.
-  exact Hscope.
-Qed.
+Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
+  (at level 70, F at next level, n at next level).

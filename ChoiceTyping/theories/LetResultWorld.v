@@ -51,6 +51,23 @@ Proof.
   exact (Heq Hagree).
 Qed.
 
+Definition expr_total_result_on (X : aset) (e : tm) (m : WfWorld) : Prop :=
+  world_closed_on X m ∧ expr_total_on X e m.
+
+Definition expr_total_result_witness X e (m : WfWorld)
+    (Htotal : expr_total_result_on X e m) :
+  ∀ σ, (m : World) σ →
+    ∃ vx, subst_map (store_restrict σ (fv_tm e)) e →* tret vx.
+Proof.
+  intros σ Hσ.
+  destruct Htotal as [Hclosed [Hfv Hsteps]].
+  destruct (Hsteps σ Hσ) as [vx Hvx].
+  exists vx.
+  rewrite (subst_map_restrict_to_fv_from_superset e X σ Hfv
+    (proj1 (Hclosed σ Hσ))).
+  exact Hvx.
+Defined.
+
 Definition let_result_raw_world_on
     (e : tm) (x : atom) (w : WfWorld) : World := {|
   world_dom := world_dom (w : World) ∪ {[x]};
@@ -85,6 +102,13 @@ Definition let_result_world_on
     : WfWorld :=
   exist _ (let_result_raw_world_on e x w)
     (let_result_raw_world_on_wf e x w Hfresh Hresult).
+
+Definition let_result_world_on_total
+    (X : aset) (e : tm) (x : atom) (w : WfWorld)
+    (Hfresh : x ∉ world_dom (w : World))
+    (Htotal : expr_total_result_on X e w) : WfWorld :=
+  let_result_world_on e x w Hfresh
+    (expr_total_result_witness X e w Htotal).
 
 Lemma let_result_world_on_dom e x (w : WfWorld) Hfresh Hresult :
   world_dom (let_result_world_on e x w Hfresh Hresult : World) =

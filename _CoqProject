@@ -17,6 +17,7 @@ ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ResourceTactics.v
+ChoiceAlgebra/theories/WorldExtension.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
 ChoiceAlgebra/examples/ResourceExamples.v
 
@@ -41,6 +42,7 @@ ChoiceLogic/theories/FormulaSyntax.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/FormulaTactics.v
 ChoiceLogic/theories/FormulaDerived.v
+ChoiceLogic/theories/FormulaWorldExtension.v
 ChoiceLogic/theories/ChoiceLogicProps.v
 ChoiceLogic/examples/FiberExamples.v
 
@@ -68,7 +70,6 @@ ChoiceTyping/theories/Naming.v
 ChoiceTyping/theories/SoundnessCommon.v
 ChoiceTyping/theories/ResultWorldClosed.v
 ChoiceTyping/theories/ResultWorldExprCont.v
-ChoiceTyping/theories/WorldExtension.v
 ChoiceTyping/theories/TLetTotal.v
 ChoiceTyping/theories/TLetReduction.v
 ChoiceTyping/theories/TLetReductionTotal.v

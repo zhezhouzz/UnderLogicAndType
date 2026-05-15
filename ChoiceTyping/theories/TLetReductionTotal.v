@@ -13,20 +13,20 @@ Lemma expr_total_tlet_reduction
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
     (m : WfWorld) x
     (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+    (Htotal_result : expr_total_result_on (dom (erase_ctx_under Σ Γ)) e1 m) :
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   basic_ctx (dom Σ) Γ →
   m ⊨ denot_ctx_in_env Σ Γ →
-  expr_total_on (dom (erase_ctx_under Σ Γ)) e1 m →
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_tm e2 →
   expr_total_on (dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))))
     (e2 ^^ x)
-    (let_result_world_on e1 x m Hfresh Hresult)
+    (let_result_world_on_total
+      (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Htotal_result)
   <->
   expr_total_on (dom (erase_ctx_under Σ Γ)) (tlete e1 e2) m.
 Proof.
-  intros Hlet HbasicΓ Hctx Htotal1 Hx.
+  intros Hlet HbasicΓ Hctx Hx.
+  pose proof (proj2 Htotal_result) as Htotal1.
   rewrite erase_ctx_under_comma_bind_dom_nf.
   split.
   - intros Hbody.
@@ -85,8 +85,7 @@ Lemma denot_ty_total_tlet_reduction
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
     (m : WfWorld) x
     (Hfresh : x ∉ world_dom (m : World))
-    (Hresult : ∀ σ, (m : World) σ →
-      ∃ vx, subst_map (store_restrict σ (fv_tm e1)) e1 →* tret vx) :
+    (Htotal_result : expr_total_result_on (dom (erase_ctx_under Σ Γ)) e1 m) :
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 →
   erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 →
   m ⊨ denot_ctx_in_env Σ Γ →
@@ -94,7 +93,8 @@ Lemma denot_ty_total_tlet_reduction
   x ∉ dom (erase_ctx_under Σ Γ) ∪ fv_cty τ2 ∪ fv_tm e2 →
   denot_ty_total_model_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2
     (e2 ^^ x)
-    (let_result_world_on e1 x m Hfresh Hresult)
+    (let_result_world_on_total
+      (dom (erase_ctx_under Σ Γ)) e1 x m Hfresh Htotal_result)
   <->
   denot_ty_total_model_in_ctx_under Σ Γ τ2 (tlete e1 e2) m.
 Proof.
@@ -106,16 +106,16 @@ Proof.
   split; intros Hmodel.
   - destruct Hmodel as [Hregular_body [Hformula_body Htotal_body]].
     pose proof (proj1 (expr_total_tlet_reduction
-        Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
+        Σ Γ τ1 τ2 e1 e2 m x Hfresh Htotal_result Hlet
         (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
-        (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
         ltac:(set_solver))
         Htotal_body) as Htotal_target.
     split.
     + apply (proj1 Hregular_iff); eauto 6.
     + split.
       * apply (proj1 (denot_ty_tlet_reduction_any_world
-            τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
+            τ2 Σ Γ τ1 e1 e2 m x Hfresh
+            (expr_total_result_witness _ _ _ Htotal_result)
             (proj1 Hregular_iff Hregular_body) He1 Hlet Hctx
             Htotal_target Hfreshx)); eauto 6.
       * eauto 6.
@@ -124,11 +124,11 @@ Proof.
     + apply (proj2 Hregular_iff); eauto 6.
     + split.
       * apply (proj2 (denot_ty_tlet_reduction_any_world
-            τ2 Σ Γ τ1 e1 e2 m x Hfresh Hresult
+            τ2 Σ Γ τ1 e1 e2 m x Hfresh
+            (expr_total_result_witness _ _ _ Htotal_result)
             Hregular_target He1 Hlet Hctx Htotal_target Hfreshx)); eauto 6.
       * apply (proj2 (expr_total_tlet_reduction
-          Σ Γ τ1 τ2 e1 e2 m x Hfresh Hresult Hlet
+          Σ Γ τ1 τ2 e1 e2 m x Hfresh Htotal_result Hlet
           (denot_ty_total_model_basic_ctx Σ Γ τ1 e1 m Hmodel1) Hctx
-          (denot_ty_total_model_total Σ Γ τ1 e1 m Hmodel1)
           ltac:(set_solver))); eauto 6.
 Qed.
