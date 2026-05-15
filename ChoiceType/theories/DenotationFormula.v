@@ -4,7 +4,7 @@
 
     The interpretation is given as formulas in [Choice Logic] whose atoms are
     logic qualifiers.  Core expressions are embedded through
-    [expr_logic_qual], and type qualifiers are embedded directly as
+    expression-result formulas, and type qualifiers are embedded directly as
     store/resource atoms after they have been opened to closed atom-based
     qualifiers.
 
@@ -140,9 +140,6 @@ Proof.
   apply open_rec_lc_tm. exact Hlc.
 Qed.
 
-Definition expr_logic_qual (e : tm) (ν : atom) : logic_qualifier :=
-  lqual_fvars {[ν]} (fun σ w => expr_result_in_world σ e ν w).
-
 Definition FExprResultOn {A : Type} `{IntoLVars A} (D : A) (e : tm) : FQ :=
   let L := into_lvars D in
   FFibVars L
@@ -238,13 +235,6 @@ Lemma FExprContIn_post_eq
   FExprContIn Σ e P = FExprContIn Σ e Q.
 Proof.
   intros ->. reflexivity.
-Qed.
-
-Lemma stale_expr_logic_qual e ν :
-  stale (expr_logic_qual e ν) = {[ν]}.
-Proof.
-  unfold expr_logic_qual, stale, stale_logic_qualifier, lqual_dom, lqual_fvars.
-  simpl. rewrite lvars_fv_of_atoms. reflexivity.
 Qed.
 
 Lemma FExprResultOn_scoped_dom X e ν m :

@@ -57,7 +57,6 @@ ChoiceType/theories/LocallyNamelessProps.v
 ChoiceType/theories/BasicTyping.v
 ChoiceType/theories/DenotationFibers.v
 ChoiceType/theories/DenotationFormula.v
-ChoiceType/theories/DenotationExprProps.v
 ChoiceType/theories/DenotationFormulaEquiv.v
 ChoiceType/theories/DenotationType.v
 ChoiceType/theories/DenotationRefinement.v

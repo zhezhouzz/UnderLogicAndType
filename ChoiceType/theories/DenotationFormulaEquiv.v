@@ -3,7 +3,7 @@
     Formula/store equivalence and fiber permutation helpers used by type denotation. *)
 
 From LocallyNameless Require Import Tactics.
-From ChoiceType Require Export DenotationExprProps.
+From ChoiceType Require Export DenotationFormula.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 Local Notation FQ := FormulaQ.
