@@ -263,7 +263,7 @@ Proof.
 Qed.
 
 Local Ltac formula_models_fuel_finish :=
-  rewrite ?formula_rename_preserves_measure; simpl; lia.
+  simpl; lia.
 
 Local Tactic Notation "formula_models_fuel_irrel" constr(H) :=
   eapply res_models_with_store_fuel_irrel; [| | exact H];
@@ -1022,62 +1022,6 @@ Proof.
     + eapply res_models_with_store_kripke; [exact Hle | exact Himpl].
     + eapply Hφ; eauto.
 Qed.
-
-Lemma res_models_with_store_fuel_swap
-    (a b : atom) (gas : nat) (ρ : StoreT) (m : WfWorldT) (φ : Formula) :
-  res_models_with_store_fuel gas ρ m (formula_rename_atom a b φ) ↔
-  res_models_with_store_fuel gas (store_swap a b ρ) (res_swap a b m) φ.
-Proof.
-  (* Temporary compatibility for the explicit-name layer.  The LN refactor
-     removes formula-level swap/rename instead of repairing this legacy proof. *)
-Admitted.
-
-Lemma res_models_swap x y (m : WfWorldT) (φ : Formula) :
-  res_models m (formula_rename_atom x y φ) ↔
-  res_models (res_swap x y m) φ.
-Proof.
-  unfold res_models, res_models_with_store.
-  rewrite formula_rename_preserves_measure.
-  rewrite <- (store_swap_empty x y) at 2.
-  apply res_models_with_store_fuel_swap.
-Qed.
-
-Lemma res_models_with_store_swap x y ρ (m : WfWorldT) (φ : Formula) :
-  res_models_with_store ρ m (formula_rename_atom x y φ) ↔
-  res_models_with_store (store_swap x y ρ) (res_swap x y m) φ.
-Proof.
-  unfold res_models_with_store.
-  rewrite formula_rename_preserves_measure.
-  apply res_models_with_store_fuel_swap.
-Qed.
-
-Lemma entails_rename_atom_fresh x y (φ ψ : Formula) :
-  y ∉ formula_fv φ ∪ formula_fv ψ →
-  entails φ ψ →
-  entails (formula_rename_atom x y φ) (formula_rename_atom x y ψ).
-Proof.
-  intros _ Hent m Hm.
-  unfold entails in Hent.
-  apply res_models_swap.
-  apply Hent.
-  apply res_models_swap.
-  exact Hm.
-Qed.
-
-Lemma entails_rename_atom_fresh_fuel x y (φ ψ : Formula) (m : WfWorldT) :
-  y ∉ formula_fv φ ∪ formula_fv ψ →
-  entails φ ψ →
-  res_models_with_store_fuel
-    (formula_measure (formula_rename_atom x y φ)) ∅ m
-    (formula_rename_atom x y φ) →
-  res_models_with_store_fuel
-    (formula_measure (formula_rename_atom x y ψ)) ∅ m
-    (formula_rename_atom x y ψ).
-Proof.
-  intros Hyfresh Hent Hp.
-  exact (entails_rename_atom_fresh x y φ ψ Hyfresh Hent m Hp).
-Qed.
-
 
 Lemma formula_scoped_forall_from_open
     (ρ : StoreT) (m : WfWorldT) (φ : Formula) (L : aset) :
