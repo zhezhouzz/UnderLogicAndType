@@ -10,19 +10,6 @@ From ChoiceType Require Import BasicStore BasicTyping LocallyNamelessProps.
 
 Local Notation FQ := FormulaQ.
 
-Fixpoint cty_measure (τ : choice_ty) : nat :=
-  match τ with
-  | CTOver _ _ | CTUnder _ _ => 1
-  | CTInter τ1 τ2
-  | CTUnion τ1 τ2
-  | CTSum τ1 τ2
-  | CTArrow τ1 τ2
-  | CTWand τ1 τ2 => 1 + cty_measure τ1 + cty_measure τ2
-  end.
-
-Lemma cty_measure_gt_0 τ : cty_measure τ > 0.
-Proof. induction τ; simpl; lia. Qed.
-
 Definition lty_env : Type := gmap logic_var ty.
 
 Definition lty_env_closed (Σ : lty_env) : Prop :=
@@ -123,10 +110,8 @@ Qed.
     [Στ], including the obligations every denotation needs: basic typing,
     closed resources, and deterministic result reachability.
 
-    The recursion is structural on [τ].  Older versions used an explicit fuel
-    [cty_measure τ]; that bookkeeping is unnecessary because every recursive
-    call is on an immediate subtype.  [denot_ty_body_lvar] is the one-step view
-    used by proofs to peel the outer obligation layer.
+    The recursion is structural on [τ].  [denot_ty_body_lvar] is the one-step
+    view used by proofs to peel the outer obligation layer.
     Expression-result atoms and fresh representatives are driven by the
     environment domains.  The regularity assumptions that [fv_tm e] and
     [fv_cty τ] are contained in the environment are supplied by the basic
@@ -408,32 +393,6 @@ Definition denot_ty_on
   let Σl := atom_env_to_lty_env Σ in
   denot_ty_lvar Σl Σl τ e.
 
-(** Compatibility aliases while higher-level proofs are migrated away from the
-    old fuel-shaped API.  The [gas] argument is intentionally ignored. *)
-Definition denot_ty_fuel_body_lvar
-    (_gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_body_lvar Σe Στ τ e.
-
-Definition denot_ty_fuel_lvar
-    (_gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_lvar Σe Στ τ e.
-
-Definition denot_ty_fuel
-    (_gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_on Σ τ e.
-
-Definition denot_ty_fuel_body
-    (_gas : nat) (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
-  denot_ty_body Σ τ e.
-
-Lemma denot_ty_fuel_unfold gas Σ τ e :
-  denot_ty_fuel gas Σ τ e =
-  let Σl := atom_env_to_lty_env Σ in
-  denot_ty_obligations Σl Σl τ e (denot_ty_fuel_body gas Σ τ e).
-Proof.
-  reflexivity.
-Qed.
-
 Definition denot_ty_under (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_on Σ τ e.
 
@@ -496,10 +455,10 @@ Proof.
     set_solver.
 Qed.
 
-Lemma denot_ty_fuel_env_agree gas Σ1 Σ2 τ e :
+Lemma denot_ty_on_env_agree Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
   ty_env_agree_on (fv_cty τ ∪ fv_tm e) Σ1 Σ2 →
-  denot_ty_fuel gas Σ1 τ e = denot_ty_fuel gas Σ2 τ e.
+  denot_ty_on Σ1 τ e = denot_ty_on Σ2 τ e.
 Proof.
 Admitted.
 
@@ -509,10 +468,8 @@ Lemma denot_ty_under_env_agree Σ1 Σ2 τ e :
   denot_ty_under Σ1 τ e = denot_ty_under Σ2 τ e.
 Proof.
   intros Hdom Hagree.
-  unfold denot_ty_under, denot_ty_on.
-  change (denot_ty_fuel (cty_measure τ) Σ1 τ e =
-    denot_ty_fuel (cty_measure τ) Σ2 τ e).
-  apply denot_ty_fuel_env_agree; assumption.
+  unfold denot_ty_under.
+  apply denot_ty_on_env_agree; assumption.
 Qed.
 
 Lemma denot_ty_under_env_equiv Σ1 Σ2 τ e :
@@ -711,46 +668,6 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_ty_fuel_lvar_formula_fv_subset gas Σe Στ τ e :
-  cty_measure τ <= gas →
-  formula_fv (denot_ty_fuel_lvar gas Σe Στ τ e) ⊆
-    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
-Proof.
-  intros _. apply denot_ty_lvar_formula_fv_subset.
-Qed.
-
-Lemma denot_ty_fuel_formula_fv_subset gas Σ τ e :
-  cty_measure τ <= gas →
-  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
-Proof.
-  intros _. apply denot_ty_on_formula_fv_subset.
-Qed.
-
-Lemma denot_ty_fuel_body_formula_fv_subset gas Σ τ e :
-  cty_measure τ <= gas →
-  formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ ∪ fv_cty τ.
-Proof.
-  intros _. apply denot_ty_body_formula_fv_subset.
-Qed.
-
-Lemma denot_ty_fuel_formula_fv_subset_env
-    gas (Σ : gmap atom ty) (τ : choice_ty) e :
-  cty_measure τ <= gas →
-  fv_cty τ ⊆ dom Σ →
-  formula_fv (denot_ty_fuel gas Σ τ e) ⊆ dom Σ.
-Proof.
-  intros _ Hfv. apply denot_ty_on_formula_fv_subset_env. exact Hfv.
-Qed.
-
-Lemma denot_ty_fuel_body_formula_fv_subset_env
-    gas (Σ : gmap atom ty) (τ : choice_ty) e :
-  cty_measure τ <= gas →
-  fv_cty τ ⊆ dom Σ →
-  formula_fv (denot_ty_fuel_body gas Σ τ e) ⊆ dom Σ.
-Proof.
-  intros _ Hfv. apply denot_ty_body_formula_fv_subset_env. exact Hfv.
-Qed.
-
 Lemma denot_ty_formula_fv_subset τ e :
   formula_fv (denot_ty τ e) ⊆ fv_cty τ.
 Proof.
@@ -759,10 +676,10 @@ Proof.
   intros z Hz. apply Hfv in Hz. set_solver.
 Qed.
 
-Lemma denot_ty_fuel_formula_fv_env_agree gas Σ1 Σ2 τ e :
+Lemma denot_ty_on_formula_fv_env_agree Σ1 Σ2 τ e :
   dom Σ1 = dom Σ2 →
-  formula_fv (denot_ty_fuel gas Σ1 τ e) =
-  formula_fv (denot_ty_fuel gas Σ2 τ e).
+  formula_fv (denot_ty_on Σ1 τ e) =
+  formula_fv (denot_ty_on Σ2 τ e).
 Proof.
 Admitted.
 
@@ -791,13 +708,6 @@ Proof.
   rewrite !atom_env_to_lty_env_dom.
   rewrite !lvars_fv_union, !lvars_fv_of_atoms.
   set_solver.
-Qed.
-
-Lemma denot_ty_fuel_env_fv_subset gas Σ τ e :
-  cty_measure τ <= gas →
-  dom Σ ⊆ formula_fv (denot_ty_fuel gas Σ τ e).
-Proof.
-  intros _. apply denot_ty_on_env_fv_subset.
 Qed.
 
 Lemma denot_ty_under_result_atom_fv Σ x τ :

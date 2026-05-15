@@ -1,7 +1,7 @@
 (** * ChoiceTyping.TLetReductionTotal
 
     Total/model-level wrappers for the [tlet] reduction theorem.  The
-    fuel-level reduction proof stays in [TLetReduction]. *)
+    type-denotation reduction proof stays in [TLetReduction]. *)
 
 From ChoiceTyping Require Export TLetReduction.
 From ChoiceTyping Require Import Auxiliary LetResultWorld Naming ResultWorldClosed

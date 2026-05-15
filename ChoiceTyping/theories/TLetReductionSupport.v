@@ -1,4 +1,4 @@
-(** * ChoiceTyping.TLetReductionFuelSupport
+(** * ChoiceTyping.TLetReductionSupport
 
     Model-level reduction lemmas for the [tlet] soundness case.
     The final semantic wrappers stay in [TLetDenotation]. *)
@@ -99,32 +99,6 @@ Proof.
   exact Hbasic.
 Qed.
 
-Lemma denot_ty_fuel_intro gas Σ τ e m :
-  basic_choice_ty (dom Σ) τ →
-  Σ ⊢ₑ e ⋮ erase_ty τ →
-  world_closed_on (dom Σ) m →
-  expr_total_on (dom Σ) e m →
-  m ⊨ denot_ty_fuel_body gas Σ τ e →
-  dom Σ ⊆ world_dom (m : World) →
-  m ⊨ denot_ty_fuel gas Σ τ e.
-Proof.
-  apply denot_ty_intro.
-Qed.
-
-Lemma denot_ty_fuel_body_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  m ⊨ denot_ty_fuel_body gas Σ τ e.
-Proof.
-  apply denot_ty_body_of_formula.
-Qed.
-
-Lemma denot_ty_fuel_basic_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  basic_choice_ty (dom Σ) τ ∧ Σ ⊢ₑ e ⋮ erase_ty τ.
-Proof.
-  apply denot_ty_basic_of_formula.
-Qed.
-
 Lemma world_closed_on_extend X (m n : WfWorld) :
   X ⊆ world_dom (m : World) →
   m ⊑ n →
@@ -222,18 +196,4 @@ Proof.
     rewrite store_restrict_restrict in Hsteps.
     replace (dom Σ ∩ dom Σ) with (dom Σ) in Hsteps by set_solver.
     exact Hsteps.
-Qed.
-
-Lemma denot_ty_fuel_world_closed_on_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  world_closed_on (dom Σ) m.
-Proof.
-  apply denot_ty_world_closed_on_of_formula.
-Qed.
-
-Lemma denot_ty_fuel_expr_total_on_of_formula gas Σ τ e m :
-  m ⊨ denot_ty_fuel gas Σ τ e →
-  expr_total_on (dom Σ) e m.
-Proof.
-  apply denot_ty_expr_total_on_of_formula.
 Qed.
