@@ -7,8 +7,6 @@ From CoreLang Require Import Instantiation InstantiationProps LocallyNamelessPro
   StrongNormalization.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
-From ChoiceTyping Require Export SoundnessConst.
-
 Lemma fundamental_sub_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ1 τ2 : choice_ty) :
   choice_typing_wf Σ Γ e τ2 →

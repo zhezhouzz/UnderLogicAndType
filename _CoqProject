@@ -84,6 +84,5 @@ ChoiceTyping/theories/TLetReduction.v
 ChoiceTyping/theories/TLetReductionTotal.v
 ChoiceTyping/theories/TLetDenotation.v
 ChoiceTyping/theories/SoundnessHelpers.v
-ChoiceTyping/theories/SoundnessConst.v
 ChoiceTyping/theories/Soundness.v
 ChoiceType/examples/FunctionTypeExamples.v
