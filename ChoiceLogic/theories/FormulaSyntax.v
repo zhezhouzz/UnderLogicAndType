@@ -114,17 +114,17 @@ Lemma formula_fv_FPure P :
   formula_fv (FPure P) = ∅.
 Proof. reflexivity. Qed.
 
-Lemma formula_fv_FResourceAtom (D : aset) P :
-  formula_fv (FResourceAtom D P) = D.
-Proof. unfold FResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
+Lemma formula_fv_FResourceAtom {A : Type} `{IntoLVars A} (D : A) P :
+  formula_fv (FResourceAtom D P) = lvars_fv (into_lvars D).
+Proof. reflexivity. Qed.
 
 Lemma formula_fv_FResourceAtom_lvars D P :
   formula_fv (FResourceAtom D P) = lvars_fv D.
 Proof. reflexivity. Qed.
 
-Lemma formula_fv_FStoreResourceAtom (D : aset) P :
-  formula_fv (FStoreResourceAtom D P) = D.
-Proof. unfold FStoreResourceAtom. simpl. apply lvars_fv_of_atoms. Qed.
+Lemma formula_fv_FStoreResourceAtom {A : Type} `{IntoLVars A} (D : A) P :
+  formula_fv (FStoreResourceAtom D P) = lvars_fv (into_lvars D).
+Proof. reflexivity. Qed.
 
 Lemma formula_fv_FStoreResourceAtom_lvars D P :
   formula_fv (FStoreResourceAtom D P) = lvars_fv D.
