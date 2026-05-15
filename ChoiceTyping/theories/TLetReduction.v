@@ -426,8 +426,9 @@ Lemma denot_ty_fuel_tlet_reduction_full_on_over_case gas
 Proof.
   intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
   eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
-  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar cty_measure].
-  rewrite !FExprContIn_atom_env_to_lty_env.
+  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar denot_ty_body
+    denot_ty_body_lvar cty_measure].
+  try rewrite !FExprContIn_atom_env_to_lty_env.
   pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
   simpl in Hfvτ.
   destruct φ as [Dφ Pφ]; simpl in *.
@@ -480,8 +481,9 @@ Lemma denot_ty_fuel_tlet_reduction_full_on_under_case gas
 Proof.
   intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet.
   eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
-  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar cty_measure].
-  rewrite !FExprContIn_atom_env_to_lty_env.
+  cbn [denot_ty_fuel_body denot_ty_fuel_body_lvar denot_ty_body
+    denot_ty_body_lvar cty_measure].
+  try rewrite !FExprContIn_atom_env_to_lty_env.
   pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hfvτ.
   simpl in Hfvτ.
   destruct φ as [Dφ Pφ]; simpl in *.
@@ -540,7 +542,8 @@ Lemma denot_ty_fuel_tlet_reduction_full_on_inter_case gas
 Proof.
   intros He1 Hdom Hclosed Htotal Hx_base Hbasicτ Hlet HIHa HIHb.
   eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
-  cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty].
+  cbn [denot_ty_fuel_body denot_ty_body denot_ty_body_lvar
+    cty_measure fv_cty erase_ty].
   split; intros Hmodel.
   - apply res_models_and_intro_from_models.
     + apply (proj1 HIHa). eauto using res_models_and_elim_l.
@@ -591,7 +594,8 @@ Proof.
   assert (HfvB_insert : fv_cty τb ⊆ dom (<[x:=T1]> Δ)).
   { rewrite dom_insert_L. set_solver. }
   eapply denot_ty_fuel_tlet_reduction_full_from_body_on; eauto.
-  cbn [denot_ty_fuel_body cty_measure fv_cty erase_ty].
+  cbn [denot_ty_fuel_body denot_ty_body denot_ty_body_lvar
+    cty_measure fv_cty erase_ty].
   split; intros Hmodel.
   - eapply res_models_or_transport_between_worlds; [| | apply (proj1 HIHa) | apply (proj1 HIHb) | exact Hmodel].
     + rewrite Hdom.
@@ -838,24 +842,33 @@ Proof.
         (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x))
       ⊆ dom Δ ∪ {[x]}).
   {
-    unfold denot_ty_in_ctx_under, denot_ty_on.
+    unfold denot_ty_in_ctx_under.
     rewrite Hbody_env.
-    pose proof (denot_ty_fuel_formula_fv_subset_env
-      (cty_measure τ2) (<[x:=erase_ty τ1]> Δ) τ2 (e2 ^^ x)
-      ltac:(lia)
-      ltac:(eapply basic_choice_ty_fv_subset;
+    pose proof (denot_ty_on_formula_fv_subset
+      (<[x:=erase_ty τ1]> Δ) τ2 (e2 ^^ x)) as Hfv.
+    assert (Hτ2 : fv_cty τ2 ⊆ dom (<[x:=erase_ty τ1]> Δ)).
+    { eapply basic_choice_ty_fv_subset;
         eapply basic_choice_ty_mono; [| exact Hbasicτ];
-        rewrite dom_insert_L; set_solver)) as Hfv.
-    rewrite dom_insert_L in Hfv.
-    set_solver.
+        rewrite dom_insert_L; set_solver. }
+    intros z Hz.
+    pose proof (Hfv z Hz) as Hz'.
+    apply elem_of_union in Hz' as [Hz'|Hz'].
+    - rewrite dom_insert_L in Hz'. set_solver.
+    - pose proof (Hτ2 z Hz') as Hzdom.
+      rewrite dom_insert_L in Hzdom. set_solver.
   }
   assert (Htarget_fv :
       formula_fv (denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2)) ⊆ dom Δ).
   {
     subst Δ.
-    unfold denot_ty_in_ctx_under, denot_ty_on.
-    eapply denot_ty_fuel_formula_fv_subset_env; [lia |].
-    eapply basic_choice_ty_fv_subset. exact Hbasicτ.
+    unfold denot_ty_in_ctx_under.
+    pose proof (denot_ty_on_formula_fv_subset
+      (erase_ctx_under Σ Γ) τ2 (tlete e1 e2)) as Hfv.
+    pose proof (basic_choice_ty_fv_subset _ _ Hbasicτ) as Hτ.
+    intros z Hz.
+    pose proof (Hfv z Hz) as Hz'.
+    apply elem_of_union in Hz' as [Hz'|Hz']; [exact Hz'|].
+    exact (Hτ z Hz').
   }
   assert (Hresult_world_restrict :
       res_restrict (let_result_world_on e1 x m Hfresh Hresult)

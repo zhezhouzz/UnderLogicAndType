@@ -254,6 +254,10 @@ Proof.
       intros Σ1 Σ2 Hdom Hagree; simpl.
     - reflexivity.
     - unfold denot_ty_on.
+      change (denot_ty_fuel (cty_measure τ) (<[x:=erase_ty τ]> Σ1) τ
+        (tret (vfvar x)) =
+        denot_ty_fuel (cty_measure τ) (<[x:=erase_ty τ]> Σ2) τ
+        (tret (vfvar x))).
       apply denot_ty_fuel_env_agree.
       + rewrite !dom_insert_L. set_solver.
       + intros z Hz.
