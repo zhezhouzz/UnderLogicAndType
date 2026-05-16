@@ -104,4 +104,56 @@ Proof.
   exact Hscope.
 Qed.
 
+Lemma res_models_forall_by_extension_map
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FForall φ) ->
+  formula_scoped_in_world ∅ m (FForall ψ) ->
+  (∃ L : aset,
+    world_dom (m : World) ⊆ L /\
+    ∀ y F my,
+      y ∉ L ->
+      forall_extension_shape (world_dom (m : World)) y F ->
+      m #> F ~~> my ->
+      res_models my (formula_open 0 y φ) ->
+      res_models my (formula_open 0 y ψ)) ->
+  res_models m (FForall φ) ->
+  res_models m (FForall ψ).
+Proof.
+  intros Hscopeφ Hscopeψ [Lmap [HLmap Hmap]] Hforall.
+  apply (proj2 (res_models_forall_by_extension_iff m ψ Hscopeψ)).
+  destruct (proj1 (res_models_forall_by_extension_iff m φ Hscopeφ) Hforall)
+    as [L [HL Hopen]].
+  exists (L ∪ Lmap). split; [set_solver |].
+  intros y F my Hy HFshape Hext.
+  rewrite not_elem_of_union in Hy.
+  destruct Hy as [HyL HyMap].
+  eapply Hmap; eauto.
+Qed.
+
+Lemma res_models_forall_by_extension_congr
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ m (FForall φ) ->
+  formula_scoped_in_world ∅ m (FForall ψ) ->
+  (∃ L : aset,
+    world_dom (m : World) ⊆ L /\
+    ∀ y F my,
+      y ∉ L ->
+      forall_extension_shape (world_dom (m : World)) y F ->
+      m #> F ~~> my ->
+      (res_models my (formula_open 0 y φ) <->
+       res_models my (formula_open 0 y ψ))) ->
+  res_models m (FForall φ) <-> res_models m (FForall ψ).
+Proof.
+  intros Hscopeφ Hscopeψ [L [HL Hiff]].
+  split.
+  - eapply res_models_forall_by_extension_map; eauto.
+    exists L. split; [exact HL |].
+    intros y F my Hy HFshape Hext Hmodel.
+    exact (proj1 (Hiff y F my Hy HFshape Hext) Hmodel).
+  - eapply res_models_forall_by_extension_map; eauto.
+    exists L. split; [exact HL |].
+    intros y F my Hy HFshape Hext Hmodel.
+    exact (proj2 (Hiff y F my Hy HFshape Hext) Hmodel).
+Qed.
+
 End FormulaWorldExtension.

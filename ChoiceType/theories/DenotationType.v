@@ -35,6 +35,14 @@ Definition lty_env_open (η : gmap nat atom) (Σ : lty_env) : gmap atom ty :=
 Definition open_cty_env (η : gmap nat atom) (τ : choice_ty) : choice_ty :=
   map_fold (fun k x acc => cty_open k x acc) τ η.
 
+Lemma open_cty_env_empty τ :
+  open_cty_env ∅ τ = τ.
+Proof. unfold open_cty_env. rewrite map_fold_empty. reflexivity. Qed.
+
+Lemma open_tm_env_empty e :
+  open_tm_env ∅ e = e.
+Proof. unfold open_tm_env. rewrite map_fold_empty. reflexivity. Qed.
+
 Definition lty_env_atom_dom (Σ : lty_env) : aset :=
   lvars_fv (dom Σ).
 
@@ -485,8 +493,106 @@ Unshelve.
   all: try typeclasses eauto; try set_solver.
 Qed.
 
-Fixpoint denot_ty_body_lvar
-    (Σe Στ : lty_env) (τ : choice_ty) (e : tm) {struct τ} : FQ :=
+Lemma FBasicTypingIn_atom_env_insert_fresh_models Σ x T τ e m :
+  x ∉ dom Σ →
+  x ∉ fv_cty τ ∪ fv_tm e →
+  res_models m (FBasicTypingIn (atom_env_to_lty_env (<[x := T]> Σ))
+    (atom_env_to_lty_env (<[x := T]> Σ)) τ e) →
+  res_models m (FBasicTypingIn (atom_env_to_lty_env Σ)
+    (atom_env_to_lty_env Σ) τ e).
+Proof.
+  intros HxΣ Hx Hmodel.
+  unfold FBasicTypingIn, res_models in *.
+  eapply res_models_with_store_store_resource_atom_vars_intro.
+  - unfold formula_scoped_in_world.
+    rewrite formula_fv_FStoreResourceAtom_lvars.
+    rewrite !atom_env_to_lty_env_dom.
+    rewrite !lvars_fv_union, !lvars_fv_of_atoms.
+    pose proof (res_models_with_store_fuel_scoped _ _ _ _ Hmodel) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    rewrite formula_fv_FStoreResourceAtom_lvars in Hscope.
+    rewrite !atom_env_to_lty_env_dom in Hscope.
+    rewrite !lvars_fv_union, !lvars_fv_of_atoms in Hscope.
+    set_solver.
+  - eapply res_models_with_store_store_resource_atom_vars_elim in Hmodel
+      as [m0 [Hscope [Hbasic Hle]]].
+    rewrite !lty_env_open_atom_env in Hbasic.
+    cbn [open_cty_env open_tm_env] in Hbasic.
+    destruct Hbasic as [Hbasic Htyped].
+    rewrite lty_env_open_atom_env. cbn [open_cty_env open_tm_env].
+    rewrite open_cty_env_empty in Hbasic.
+    rewrite open_tm_env_empty in Htyped.
+    rewrite open_cty_env_empty in Htyped.
+    rewrite open_cty_env_empty, open_tm_env_empty.
+    split.
+    + eapply basic_choice_ty_drop_insert_fresh.
+      * exact HxΣ.
+      * set_solver.
+      * exact Hbasic.
+    + eapply basic_typing_drop_insert_fresh_tm.
+      * intros Hxe. apply Hx. set_solver.
+      * exact Htyped.
+Qed.
+
+Lemma FClosedResourceIn_atom_env_insert_restrict_models Σ x T m :
+  x ∉ dom Σ →
+  res_models m (FClosedResourceIn (atom_env_to_lty_env (<[x := T]> Σ))) →
+  res_models (res_restrict m (dom Σ))
+    (FClosedResourceIn (atom_env_to_lty_env Σ)).
+Proof.
+  intros HxΣ Hmodel.
+  unfold FClosedResourceIn, res_models in *.
+  pose proof (res_models_with_store_fuel_scoped _ _ _ _ Hmodel) as Hscope.
+  eapply res_models_with_store_resource_atom_vars_elim in Hmodel
+    as [m0 [Hscope0 [Hclosed Hle]]].
+  eapply res_models_with_store_resource_atom_vars_witness_intro
+    with (m0 := res_restrict m0 (dom Σ)).
+  - unfold formula_scoped_in_world in *.
+    rewrite !formula_fv_FResourceAtom_lvars in *.
+    rewrite !atom_env_to_lty_env_dom, !lvars_fv_of_atoms in *.
+    rewrite dom_insert_L in Hscope.
+    rewrite !dom_empty_L in *.
+    cbn [world_dom raw_restrict].
+    set_solver.
+  - unfold formula_scoped_in_world in *.
+    rewrite !formula_fv_FResourceAtom_lvars in *.
+    rewrite !atom_env_to_lty_env_dom, !lvars_fv_of_atoms in *.
+    rewrite dom_insert_L in Hscope0.
+    rewrite !dom_empty_L in *.
+    cbn [world_dom raw_restrict].
+    set_solver.
+  - rewrite atom_env_to_lty_env_atom_dom.
+    rewrite res_restrict_restrict_eq.
+    rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms.
+    replace (dom Σ ∩ dom Σ) with (dom Σ) by set_solver.
+    rewrite atom_env_to_lty_env_atom_dom in Hclosed.
+    rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms in Hclosed.
+    rewrite dom_insert_L in Hclosed.
+    assert (Hclosed_big :
+        world_closed_on ({[x]} ∪ dom Σ) (res_restrict m0 (dom Σ))).
+    { eapply (world_closed_on_le ({[x]} ∪ dom Σ)
+        (res_restrict m0 (dom Σ))
+        (res_restrict m0 ({[x]} ∪ dom Σ))).
+      - apply res_restrict_mono. set_solver.
+      - exact Hclosed.
+    }
+    intros σ Hσ.
+    specialize (Hclosed_big σ Hσ).
+    assert (Hdomσ : dom σ ⊆ dom Σ).
+    { pose proof (wfworld_store_dom (res_restrict m0 (dom Σ)) σ Hσ).
+      set_solver. }
+    rewrite store_restrict_idemp in Hclosed_big by set_solver.
+    rewrite store_restrict_idemp by exact Hdomσ.
+    exact Hclosed_big.
+  - eapply res_restrict_le_mono. exact Hle.
+Qed.
+
+Fixpoint denot_ty_body_lvar_gas
+    (gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm)
+    {struct gas} : FQ :=
+  match gas with
+  | 0 => FTrue
+  | S gas' =>
   match τ with
   | CTOver b φ =>
       FExprContIn Σe e (
@@ -503,30 +609,30 @@ Fixpoint denot_ty_body_lvar
   | CTInter τ1 τ2 =>
       FAnd
         (denot_ty_obligations Σe Στ τ1 e
-          (denot_ty_body_lvar Σe Στ τ1 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ1 e))
         (denot_ty_obligations Σe Στ τ2 e
-          (denot_ty_body_lvar Σe Στ τ2 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ2 e))
   | CTUnion τ1 τ2 =>
       FOr
         (denot_ty_obligations Σe Στ τ1 e
-          (denot_ty_body_lvar Σe Στ τ1 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ1 e))
         (denot_ty_obligations Σe Στ τ2 e
-          (denot_ty_body_lvar Σe Στ τ2 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ2 e))
   | CTSum τ1 τ2 =>
       FPlus
         (denot_ty_obligations Σe Στ τ1 e
-          (denot_ty_body_lvar Σe Στ τ1 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ1 e))
         (denot_ty_obligations Σe Στ τ2 e
-          (denot_ty_body_lvar Σe Στ τ2 e))
+          (denot_ty_body_lvar_gas gas' Σe Στ τ2 e))
   | CTArrow τx τ =>
       FForall (
         let Σex := <[LVBound 0 := erase_ty τx]> Σe in
         let Στx := <[LVBound 0 := erase_ty τx]> Στ in
           FImpl
             (denot_ty_obligations Σex Στ τx (tret (vbvar 0))
-              (denot_ty_body_lvar Σex Στ τx (tret (vbvar 0))))
+              (denot_ty_body_lvar_gas gas' Σex Στ τx (tret (vbvar 0))))
             (denot_ty_obligations Σex Στx τ (tapp_tm e (vbvar 0))
-              (denot_ty_body_lvar Σex Στx τ
+              (denot_ty_body_lvar_gas gas' Σex Στx τ
                 (tapp_tm e (vbvar 0)))))
   | CTWand τx τ =>
       FForall (
@@ -534,17 +640,148 @@ Fixpoint denot_ty_body_lvar
         let Στx := <[LVBound 0 := erase_ty τx]> Στ in
           FWand
             (denot_ty_obligations Σex Στ τx (tret (vbvar 0))
-              (denot_ty_body_lvar Σex Στ τx (tret (vbvar 0))))
+              (denot_ty_body_lvar_gas gas' Σex Στ τx (tret (vbvar 0))))
             (denot_ty_obligations Σex Στx τ (tapp_tm e (vbvar 0))
-              (denot_ty_body_lvar Σex Στx τ
+              (denot_ty_body_lvar_gas gas' Σex Στx τ
                 (tapp_tm e (vbvar 0)))))
+  end
   end.
+
+Definition denot_ty_body_lvar
+    (Σe Στ : lty_env) (τ : choice_ty) (e : tm) : FQ :=
+  denot_ty_body_lvar_gas (cty_depth τ) Σe Στ τ e.
+
+Definition denot_ty_lvar_gas
+    (gas : nat) (Σe Στ : lty_env) (τ : choice_ty) (e : tm)
+    : FQ :=
+  denot_ty_obligations Σe Στ τ e
+    (denot_ty_body_lvar_gas gas Σe Στ τ e).
 
 Definition denot_ty_lvar
     (Σe Στ : lty_env) (τ : choice_ty) (e : tm)
     : FQ :=
+  denot_ty_lvar_gas (cty_depth τ) Σe Στ τ e.
+
+Lemma denot_ty_body_lvar_gas_saturate τ :
+  ∀ gas Σe Στ e,
+    cty_depth τ <= gas →
+    denot_ty_body_lvar_gas gas Σe Στ τ e =
+    denot_ty_body_lvar_gas (cty_depth τ) Σe Στ τ e.
+Proof.
+  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
+    |τ1 IH1 τ2 IH2|τx IHx τ IH|τx IHx τ IH];
+    intros [|gas] Σe Στ e Hgas; cbn [cty_depth] in Hgas; try lia;
+    cbn [denot_ty_body_lvar_gas cty_depth].
+  - reflexivity.
+  - reflexivity.
+  - rewrite !(IH1 gas) by lia.
+    rewrite !(IH1 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    rewrite !(IH2 gas) by lia.
+    rewrite !(IH2 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    reflexivity.
+  - rewrite !(IH1 gas) by lia.
+    rewrite !(IH1 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    rewrite !(IH2 gas) by lia.
+    rewrite !(IH2 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    reflexivity.
+  - rewrite !(IH1 gas) by lia.
+    rewrite !(IH1 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    rewrite !(IH2 gas) by lia.
+    rewrite !(IH2 (Nat.max (cty_depth τ1) (cty_depth τ2))) by lia.
+    reflexivity.
+  - rewrite !(IHx gas) by lia.
+    rewrite !(IHx (Nat.max (cty_depth τx) (cty_depth τ))) by lia.
+    rewrite !(IH gas) by lia.
+    rewrite !(IH (Nat.max (cty_depth τx) (cty_depth τ))) by lia.
+    reflexivity.
+  - rewrite !(IHx gas) by lia.
+    rewrite !(IHx (Nat.max (cty_depth τx) (cty_depth τ))) by lia.
+    rewrite !(IH gas) by lia.
+    rewrite !(IH (Nat.max (cty_depth τx) (cty_depth τ))) by lia.
+    reflexivity.
+Qed.
+
+Lemma denot_ty_lvar_gas_saturate gas Σe Στ τ e :
+  cty_depth τ <= gas →
+  denot_ty_lvar_gas gas Σe Στ τ e = denot_ty_lvar Σe Στ τ e.
+Proof.
+  intros Hgas.
+  unfold denot_ty_lvar, denot_ty_lvar_gas.
+  rewrite denot_ty_body_lvar_gas_saturate by exact Hgas.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_obligations_body_gas_saturate gas Σe Στ τ e :
+  cty_depth τ <= gas →
   denot_ty_obligations Σe Στ τ e
-    (denot_ty_body_lvar Σe Στ τ e).
+    (denot_ty_body_lvar_gas gas Σe Στ τ e) =
+  denot_ty_lvar Σe Στ τ e.
+Proof.
+  intros Hgas.
+  unfold denot_ty_lvar, denot_ty_lvar_gas.
+  rewrite denot_ty_body_lvar_gas_saturate by exact Hgas.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_body_lvar_inter Σe Στ τ1 τ2 e :
+  denot_ty_body_lvar Σe Στ (CTInter τ1 τ2) e =
+  FAnd (denot_ty_lvar Σe Στ τ1 e) (denot_ty_lvar Σe Στ τ2 e).
+Proof.
+  unfold denot_ty_body_lvar.
+  cbn [cty_depth denot_ty_body_lvar_gas].
+  rewrite !denot_ty_obligations_body_gas_saturate by lia.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_body_lvar_union Σe Στ τ1 τ2 e :
+  denot_ty_body_lvar Σe Στ (CTUnion τ1 τ2) e =
+  FOr (denot_ty_lvar Σe Στ τ1 e) (denot_ty_lvar Σe Στ τ2 e).
+Proof.
+  unfold denot_ty_body_lvar.
+  cbn [cty_depth denot_ty_body_lvar_gas].
+  rewrite !denot_ty_obligations_body_gas_saturate by lia.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_body_lvar_sum Σe Στ τ1 τ2 e :
+  denot_ty_body_lvar Σe Στ (CTSum τ1 τ2) e =
+  FPlus (denot_ty_lvar Σe Στ τ1 e) (denot_ty_lvar Σe Στ τ2 e).
+Proof.
+  unfold denot_ty_body_lvar.
+  cbn [cty_depth denot_ty_body_lvar_gas].
+  rewrite !denot_ty_obligations_body_gas_saturate by lia.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_body_lvar_arrow Σe Στ τx τ e :
+  denot_ty_body_lvar Σe Στ (CTArrow τx τ) e =
+  FForall (
+    let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+    let Στx := <[LVBound 0 := erase_ty τx]> Στ in
+    FImpl
+      (denot_ty_lvar Σex Στ τx (tret (vbvar 0)))
+      (denot_ty_lvar Σex Στx τ (tapp_tm e (vbvar 0)))).
+Proof.
+  unfold denot_ty_body_lvar.
+  cbn [cty_depth denot_ty_body_lvar_gas].
+  rewrite !denot_ty_obligations_body_gas_saturate by lia.
+  reflexivity.
+Qed.
+
+Lemma denot_ty_body_lvar_wand Σe Στ τx τ e :
+  denot_ty_body_lvar Σe Στ (CTWand τx τ) e =
+  FForall (
+    let Σex := <[LVBound 0 := erase_ty τx]> Σe in
+    let Στx := <[LVBound 0 := erase_ty τx]> Στ in
+    FWand
+      (denot_ty_lvar Σex Στ τx (tret (vbvar 0)))
+      (denot_ty_lvar Σex Στx τ (tapp_tm e (vbvar 0)))).
+Proof.
+  unfold denot_ty_body_lvar.
+  cbn [cty_depth denot_ty_body_lvar_gas].
+  rewrite !denot_ty_obligations_body_gas_saturate by lia.
+  reflexivity.
+Qed.
 
 Definition denot_ty_body
     (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FQ :=
@@ -840,77 +1077,164 @@ Proof.
   set_solver.
 Qed.
 
+Lemma denot_ty_obligations_body_gas_fv_subset gas Σe Στ τ e :
+  formula_fv (denot_ty_body_lvar_gas gas Σe Στ τ e) ⊆
+    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ →
+  formula_fv (denot_ty_obligations Σe Στ τ e
+    (denot_ty_body_lvar_gas gas Σe Στ τ e)) ⊆
+    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
+Proof.
+  intros Hbody.
+  apply denot_ty_obligations_fv_subset.
+  set_solver.
+Qed.
+
+Lemma denot_ty_gas_fv_subset gas :
+  (∀ Σe Στ τ e,
+    formula_fv (denot_ty_body_lvar_gas gas Σe Στ τ e) ⊆
+      lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ) ∧
+  (∀ Σe Στ τ e,
+    formula_fv (denot_ty_lvar_gas gas Σe Στ τ e) ⊆
+      lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ).
+Proof.
+  induction gas as [|gas [IHbody IHlvar]].
+  - split; intros Σe Στ τ e.
+    + cbn [denot_ty_body_lvar_gas formula_fv]. set_solver.
+    + unfold denot_ty_lvar_gas.
+      apply denot_ty_obligations_fv_subset.
+      cbn [denot_ty_body_lvar_gas formula_fv]. set_solver.
+  - assert (HbodyS : ∀ Σe Στ τ e,
+      formula_fv (denot_ty_body_lvar_gas (S gas) Σe Στ τ e) ⊆
+        lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ).
+    {
+      intros Σe Στ τ e.
+      destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τ|τx τ];
+        cbn [denot_ty_body_lvar_gas fv_cty].
+      - destruct φ as [D p]. cbn [qual_vars qual_dom].
+        pose proof (FExprContIn_fv_lty_env Σe e
+          (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
+            (FFibVars (qual_vars (qual D p))
+              (FOver (FTypeQualifier (qual D p)))))) as Hcont.
+        cbn [qual_vars qual_dom formula_fv] in Hcont.
+        rewrite FResultBasicWorld_fv in Hcont.
+        unfold lty_env_bvar_scope in Hcont.
+        rewrite !lvars_fv_union, lvars_fv_of_bvars,
+          lvars_fv_singleton_bound in Hcont.
+        rewrite formula_fv_FTypeQualifier in Hcont.
+        cbn [qual_dom] in Hcont.
+        set_solver.
+      - destruct φ as [D p]. cbn [qual_vars qual_dom].
+        pose proof (FExprContIn_fv_lty_env Σe e
+          (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
+            (FFibVars (qual_vars (qual D p))
+              (FUnder (FTypeQualifier (qual D p)))))) as Hcont.
+        cbn [qual_vars qual_dom formula_fv] in Hcont.
+        rewrite FResultBasicWorld_fv in Hcont.
+        unfold lty_env_bvar_scope in Hcont.
+        rewrite !lvars_fv_union, lvars_fv_of_bvars,
+          lvars_fv_singleton_bound in Hcont.
+        rewrite formula_fv_FTypeQualifier in Hcont.
+        cbn [qual_dom] in Hcont.
+        set_solver.
+      - assert (H1 : formula_fv (denot_ty_obligations Σe Στ τ1 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ1 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ1)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        assert (H2 : formula_fv (denot_ty_obligations Σe Στ τ2 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ2 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ2)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        set_solver.
+      - assert (H1 : formula_fv (denot_ty_obligations Σe Στ τ1 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ1 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ1)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        assert (H2 : formula_fv (denot_ty_obligations Σe Στ τ2 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ2 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ2)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        set_solver.
+      - assert (H1 : formula_fv (denot_ty_obligations Σe Στ τ1 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ1 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ1)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        assert (H2 : formula_fv (denot_ty_obligations Σe Στ τ2 e
+            (denot_ty_body_lvar_gas gas Σe Στ τ2 e)) ⊆
+          lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ2)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        set_solver.
+      - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
+        set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
+        assert (Hx : formula_fv (denot_ty_obligations Σex Στ τx
+              (tret (vbvar 0))
+              (denot_ty_body_lvar_gas gas Σex Στ τx
+                (tret (vbvar 0)))) ⊆
+            lty_env_atom_dom Σex ∪ lty_env_atom_dom Στ ∪ fv_cty τx)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        assert (Hbody : formula_fv (denot_ty_obligations Σex Στx τ
+              (tapp_tm e (vbvar 0))
+              (denot_ty_body_lvar_gas gas Σex Στx τ
+                (tapp_tm e (vbvar 0)))) ⊆
+            lty_env_atom_dom Σex ∪ lty_env_atom_dom Στx ∪ fv_cty τ)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        subst Σex Στx.
+        rewrite !lty_env_atom_dom_insert_bound in Hx.
+        rewrite !lty_env_atom_dom_insert_bound in Hbody.
+        set_solver.
+      - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
+        set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
+        assert (Hx : formula_fv (denot_ty_obligations Σex Στ τx
+              (tret (vbvar 0))
+              (denot_ty_body_lvar_gas gas Σex Στ τx
+                (tret (vbvar 0)))) ⊆
+            lty_env_atom_dom Σex ∪ lty_env_atom_dom Στ ∪ fv_cty τx)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        assert (Hbody : formula_fv (denot_ty_obligations Σex Στx τ
+              (tapp_tm e (vbvar 0))
+              (denot_ty_body_lvar_gas gas Σex Στx τ
+                (tapp_tm e (vbvar 0)))) ⊆
+            lty_env_atom_dom Σex ∪ lty_env_atom_dom Στx ∪ fv_cty τ)
+          by (apply denot_ty_obligations_body_gas_fv_subset; apply IHbody).
+        subst Σex Στx.
+        rewrite !lty_env_atom_dom_insert_bound in Hx.
+        rewrite !lty_env_atom_dom_insert_bound in Hbody.
+        set_solver.
+    }
+    split; [exact HbodyS |].
+    intros Σe Στ τ e.
+    unfold denot_ty_lvar_gas.
+    apply denot_ty_obligations_body_gas_fv_subset.
+    apply HbodyS.
+Qed.
+
+Lemma denot_ty_body_lvar_gas_fv_subset gas Σe Στ τ e :
+  formula_fv (denot_ty_body_lvar_gas gas Σe Στ τ e) ⊆
+    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
+Proof.
+  exact (proj1 (denot_ty_gas_fv_subset gas) Σe Στ τ e).
+Qed.
+
+Lemma denot_ty_lvar_gas_fv_subset gas Σe Στ τ e :
+  formula_fv (denot_ty_lvar_gas gas Σe Στ τ e) ⊆
+    lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
+Proof.
+  exact (proj2 (denot_ty_gas_fv_subset gas) Σe Στ τ e).
+Qed.
+
 Lemma denot_ty_lvar_fv_subset Σe Στ τ e :
   formula_fv (denot_ty_lvar Σe Στ τ e) ⊆
     lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
 Proof.
-  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
-    |τ1 IH1 τ2 IH2|τx IHx τ IH|τx IHx τ IH] in Σe, Στ, e |- *;
-    cbn [fv_cty denot_ty_lvar denot_ty_body_lvar];
-    apply denot_ty_obligations_fv_subset; simpl.
-  - destruct φ as [D p]. cbn [qual_vars qual_dom].
-    pose proof (FExprContIn_fv_lty_env Σe e
-      (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
-        (FFibVars (qual_vars (qual D p))
-          (FOver (FTypeQualifier (qual D p)))))) as Hcont.
-    cbn [qual_vars qual_dom formula_fv] in Hcont.
-    rewrite FResultBasicWorld_fv in Hcont.
-    unfold lty_env_bvar_scope in Hcont.
-    rewrite !lvars_fv_union, lvars_fv_of_bvars,
-      lvars_fv_singleton_bound in Hcont.
-    rewrite formula_fv_FTypeQualifier in Hcont.
-    cbn [qual_dom] in Hcont.
-    set_solver.
-  - destruct φ as [D p]. cbn [qual_vars qual_dom].
-    pose proof (FExprContIn_fv_lty_env Σe e
-      (FAnd (FResultBasicWorld Στ b (qual_vars (qual D p)))
-        (FFibVars (qual_vars (qual D p))
-          (FUnder (FTypeQualifier (qual D p)))))) as Hcont.
-    cbn [qual_vars qual_dom formula_fv] in Hcont.
-    rewrite FResultBasicWorld_fv in Hcont.
-    unfold lty_env_bvar_scope in Hcont.
-    rewrite !lvars_fv_union, lvars_fv_of_bvars,
-      lvars_fv_singleton_bound in Hcont.
-    rewrite formula_fv_FTypeQualifier in Hcont.
-    cbn [qual_dom] in Hcont.
-    set_solver.
-  - pose proof (IH1 Σe Στ e) as H1.
-    pose proof (IH2 Σe Στ e) as H2.
-    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
-  - pose proof (IH1 Σe Στ e) as H1.
-    pose proof (IH2 Σe Στ e) as H2.
-    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
-  - pose proof (IH1 Σe Στ e) as H1.
-    pose proof (IH2 Σe Στ e) as H2.
-    eapply fv_subset_env_union_pair; [exact H1 | exact H2].
-  - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
-    set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
-    pose proof (IHx Σex Στ (tret (vbvar 0))) as Hx.
-    pose proof (IH Σex Στx (tapp_tm e (vbvar 0))) as Hbody.
-    subst Σex Στx.
-    rewrite !lty_env_atom_dom_insert_bound in Hx.
-    rewrite !lty_env_atom_dom_insert_bound in Hbody.
-    cbn [formula_fv].
-    eapply fv_subset_env_union_pair; [exact Hx | exact Hbody].
-  - set (Σex := <[LVBound 0:=erase_ty τx]>Σe).
-    set (Στx := <[LVBound 0:=erase_ty τx]>Στ).
-    pose proof (IHx Σex Στ (tret (vbvar 0))) as Hx.
-    pose proof (IH Σex Στx (tapp_tm e (vbvar 0))) as Hbody.
-    subst Σex Στx.
-    rewrite !lty_env_atom_dom_insert_bound in Hx.
-    rewrite !lty_env_atom_dom_insert_bound in Hbody.
-    cbn [formula_fv].
-    eapply fv_subset_env_union_pair; [exact Hx | exact Hbody].
+  unfold denot_ty_lvar.
+  apply denot_ty_lvar_gas_fv_subset.
 Qed.
 
 Lemma denot_ty_body_lvar_fv_subset Σe Στ τ e :
   formula_fv (denot_ty_body_lvar Σe Στ τ e) ⊆
     lty_env_atom_dom Σe ∪ lty_env_atom_dom Στ ∪ fv_cty τ.
 Proof.
-  pose proof (denot_ty_lvar_fv_subset Σe Στ τ e) as Hfv.
-  unfold denot_ty_lvar in Hfv.
-  cbn [denot_ty_obligations formula_fv] in Hfv.
-  set_solver.
+  unfold denot_ty_body_lvar.
+  apply denot_ty_body_lvar_gas_fv_subset.
 Qed.
 
 Lemma denot_ty_on_fv_subset Σ τ e :
@@ -978,7 +1302,7 @@ Qed.
 Lemma denot_ty_on_env_fv_subset Σ τ e :
   dom Σ ⊆ formula_fv (denot_ty_on Σ τ e).
 Proof.
-  unfold denot_ty_on, denot_ty_lvar.
+  unfold denot_ty_on, denot_ty_lvar, denot_ty_lvar_gas.
   unfold denot_ty_obligations, FBasicTypingIn, FClosedResourceIn,
     FStrongTotalIn, FStoreResourceAtom, FResourceAtom.
   cbn [formula_fv stale stale_logic_qualifier lqual_dom].

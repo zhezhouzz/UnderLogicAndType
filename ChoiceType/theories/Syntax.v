@@ -66,6 +66,19 @@ match τ with
 | CTWand  τx τ    => fv_cty τx ∪ fv_cty τ
 end.
 
+(** A structural fuel bound for denotation proofs.  Public denotation
+    definitions consume [cty_depth τ] fuel, while proof lemmas can quantify
+    over a smaller or larger gas to strengthen induction hypotheses. *)
+Fixpoint cty_depth (τ : choice_ty) : nat :=
+  match τ with
+  | CTOver _ _ | CTUnder _ _ => 1
+  | CTInter τ1 τ2
+  | CTUnion τ1 τ2
+  | CTSum τ1 τ2
+  | CTArrow τ1 τ2
+  | CTWand τ1 τ2 => S (Nat.max (cty_depth τ1) (cty_depth τ2))
+  end.
+
 (** ** Context binder domain *)
 
 Fixpoint ctx_dom (Γ : ctx) : aset :=

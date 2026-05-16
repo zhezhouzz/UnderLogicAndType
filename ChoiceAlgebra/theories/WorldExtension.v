@@ -274,6 +274,44 @@ Proof.
   set_solver.
 Qed.
 
+Lemma res_extend_by_exists m F :
+  extension_applicable F m ->
+  exists n, m #> F ~~> n.
+Proof.
+  intros Happ.
+  unshelve eexists.
+  - refine (exist _ {|
+      world_dom := world_dom (m : WorldT) ∪ ext_out F;
+      world_stores := fun σ =>
+        exists σm σe,
+          (m : WorldT) σm /\
+          (ext_fun F (store_restrict σm (ext_in F)) : WorldT) σe /\
+          σ = σm ∪ σe
+    |} _).
+    constructor.
+    + destruct (world_wf m) as [Hne _].
+      destruct Hne as [σm Hσm].
+      assert (Hproj_dom :
+        dom (store_restrict σm (ext_in F)) = ext_in F)
+        by (eapply ext_projection_dom; eauto).
+      destruct (ext_fun_nonempty F
+        (store_restrict σm (ext_in F)) Hproj_dom) as [σe Hσe].
+      exists (σm ∪ σe), σm, σe. eauto.
+    + intros σ [σm [σe [Hσm [Hσe ->]]]].
+      transitivity (dom σm ∪ dom σe).
+      * apply store_union_dom. eapply res_extend_store_compat; eauto.
+      * assert (Hproj_dom :
+          dom (store_restrict σm (ext_in F)) = ext_in F)
+          by (eapply ext_projection_dom; eauto).
+        rewrite (wfworld_store_dom m σm Hσm).
+        rewrite (wfworld_store_dom
+          (ext_fun F (store_restrict σm (ext_in F))) σe Hσe).
+        rewrite (ext_fun_dom F _ Hproj_dom). set_solver.
+  - split; [exact Happ |].
+    split; [reflexivity |].
+    intros σ. reflexivity.
+Qed.
+
 Lemma res_extend_by_restrict_base m F n :
   m #> F ~~> n ->
   res_restrict n (world_dom (m : WorldT)) = m.

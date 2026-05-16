@@ -48,6 +48,181 @@ Proof.
       models_fuel_irrel H.
 Qed.
 
+Lemma formula_store_equiv_or φ1 φ2 ψ1 ψ2 :
+  formula_fv φ1 = formula_fv ψ1 →
+  formula_fv φ2 = formula_fv ψ2 →
+  formula_store_equiv φ1 ψ1 →
+  formula_store_equiv φ2 ψ2 →
+  formula_store_equiv (FOr φ1 φ2) (FOr ψ1 ψ2).
+Proof.
+  intros Hfv1 Hfv2 H1 H2 ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv1, <- Hfv2. exact Hscope.
+  - destruct Hmodel as [Hφ1 | Hφ2].
+    + left.
+      pose proof (proj1 (H1 ρ m) ltac:(models_fuel_irrel Hφ1)) as H.
+      models_fuel_irrel H.
+    + right.
+      pose proof (proj1 (H2 ρ m) ltac:(models_fuel_irrel Hφ2)) as H.
+      models_fuel_irrel H.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv1, Hfv2. exact Hscope.
+  - destruct Hmodel as [Hψ1 | Hψ2].
+    + left.
+      pose proof (proj2 (H1 ρ m) ltac:(models_fuel_irrel Hψ1)) as H.
+      models_fuel_irrel H.
+    + right.
+      pose proof (proj2 (H2 ρ m) ltac:(models_fuel_irrel Hψ2)) as H.
+      models_fuel_irrel H.
+Qed.
+
+Lemma formula_store_equiv_impl φ1 φ2 ψ1 ψ2 :
+  formula_fv φ1 = formula_fv ψ1 →
+  formula_fv φ2 = formula_fv ψ2 →
+  formula_store_equiv φ1 ψ1 →
+  formula_store_equiv φ2 ψ2 →
+  formula_store_equiv (FImpl φ1 φ2) (FImpl ψ1 ψ2).
+Proof.
+  intros Hfv1 Hfv2 H1 H2 ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv1, <- Hfv2. exact Hscope.
+  - intros m' Hle Hψ1.
+    pose proof (proj2 (H1 ρ m') ltac:(models_fuel_irrel Hψ1)) as Hφ1.
+    specialize (Hmodel m' Hle ltac:(models_fuel_irrel Hφ1)) as Hφ2.
+    pose proof (proj1 (H2 ρ m') ltac:(models_fuel_irrel Hφ2)) as Hψ2.
+    models_fuel_irrel Hψ2.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv1, Hfv2. exact Hscope.
+  - intros m' Hle Hφ1.
+    pose proof (proj1 (H1 ρ m') ltac:(models_fuel_irrel Hφ1)) as Hψ1.
+    specialize (Hmodel m' Hle ltac:(models_fuel_irrel Hψ1)) as Hψ2.
+    pose proof (proj2 (H2 ρ m') ltac:(models_fuel_irrel Hψ2)) as Hφ2.
+    models_fuel_irrel Hφ2.
+Qed.
+
+Lemma formula_store_equiv_wand φ1 φ2 ψ1 ψ2 :
+  formula_fv φ1 = formula_fv ψ1 →
+  formula_fv φ2 = formula_fv ψ2 →
+  formula_store_equiv φ1 ψ1 →
+  formula_store_equiv φ2 ψ2 →
+  formula_store_equiv (FWand φ1 φ2) (FWand ψ1 ψ2).
+Proof.
+  intros Hfv1 Hfv2 H1 H2 ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv1, <- Hfv2. exact Hscope.
+  - intros m' Hc Hψ1.
+    pose proof (proj2 (H1 ρ m') ltac:(models_fuel_irrel Hψ1)) as Hφ1.
+    specialize (Hmodel m' Hc ltac:(models_fuel_irrel Hφ1)) as Hφ2.
+    pose proof (proj1 (H2 ρ (res_product m' m Hc))
+      ltac:(models_fuel_irrel Hφ2)) as Hψ2.
+    models_fuel_irrel Hψ2.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv1, Hfv2. exact Hscope.
+  - intros m' Hc Hφ1.
+    pose proof (proj1 (H1 ρ m') ltac:(models_fuel_irrel Hφ1)) as Hψ1.
+    specialize (Hmodel m' Hc ltac:(models_fuel_irrel Hψ1)) as Hψ2.
+    pose proof (proj2 (H2 ρ (res_product m' m Hc))
+      ltac:(models_fuel_irrel Hψ2)) as Hφ2.
+    models_fuel_irrel Hφ2.
+Qed.
+
+Lemma formula_store_equiv_plus φ1 φ2 ψ1 ψ2 :
+  formula_fv φ1 = formula_fv ψ1 →
+  formula_fv φ2 = formula_fv ψ2 →
+  formula_store_equiv φ1 ψ1 →
+  formula_store_equiv φ2 ψ2 →
+  formula_store_equiv (FPlus φ1 φ2) (FPlus ψ1 ψ2).
+Proof.
+  intros Hfv1 Hfv2 H1 H2 ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv1, <- Hfv2. exact Hscope.
+  - destruct Hmodel as [m1 [m2 [Hdef [Hle [Hφ1 Hφ2]]]]].
+    exists m1, m2, Hdef. split; [exact Hle |]. split.
+    + pose proof (proj1 (H1 ρ m1) ltac:(models_fuel_irrel Hφ1)) as H.
+      models_fuel_irrel H.
+    + pose proof (proj1 (H2 ρ m2) ltac:(models_fuel_irrel Hφ2)) as H.
+      models_fuel_irrel H.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv1, Hfv2. exact Hscope.
+  - destruct Hmodel as [m1 [m2 [Hdef [Hle [Hψ1 Hψ2]]]]].
+    exists m1, m2, Hdef. split; [exact Hle |]. split.
+    + pose proof (proj2 (H1 ρ m1) ltac:(models_fuel_irrel Hψ1)) as H.
+      models_fuel_irrel H.
+    + pose proof (proj2 (H2 ρ m2) ltac:(models_fuel_irrel Hψ2)) as H.
+      models_fuel_irrel H.
+Qed.
+
+Lemma formula_store_equiv_over φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_store_equiv (FOver φ) (FOver ψ).
+Proof.
+  intros Hfv Heq ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv. exact Hscope.
+  - destruct Hmodel as [m0 [Hsub Hφ]].
+    exists m0. split; [exact Hsub |].
+    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as Hψ.
+    models_fuel_irrel Hψ.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv. exact Hscope.
+  - destruct Hmodel as [m0 [Hsub Hψ]].
+    exists m0. split; [exact Hsub |].
+    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hψ)) as Hφ.
+    models_fuel_irrel Hφ.
+Qed.
+
+Lemma formula_store_equiv_under φ ψ :
+  formula_fv φ = formula_fv ψ →
+  formula_store_equiv φ ψ →
+  formula_store_equiv (FUnder φ) (FUnder ψ).
+Proof.
+  intros Hfv Heq ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv. exact Hscope.
+  - destruct Hmodel as [m0 [Hsub Hφ]].
+    exists m0. split; [exact Hsub |].
+    pose proof (proj1 (Heq ρ m0) ltac:(models_fuel_irrel Hφ)) as Hψ.
+    models_fuel_irrel Hψ.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv. exact Hscope.
+  - destruct Hmodel as [m0 [Hsub Hψ]].
+    exists m0. split; [exact Hsub |].
+    pose proof (proj2 (Heq ρ m0) ltac:(models_fuel_irrel Hψ)) as Hφ.
+    models_fuel_irrel Hφ.
+Qed.
+
+Lemma formula_store_equiv_forall φ ψ :
+  formula_fv φ = formula_fv ψ →
+  (∀ y, formula_store_equiv (formula_open 0 y φ) (formula_open 0 y ψ)) →
+  formula_store_equiv (FForall φ) (FForall ψ).
+Proof.
+  intros Hfv Hopen ρ m.
+  unfold res_models_with_store. simpl. split; intros [Hscope Hmodel]; split.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite <- Hfv. exact Hscope.
+  - destruct Hmodel as [L [HL Hbody]].
+    exists L. split; [exact HL |].
+    intros y Hy my Hdom Hrestrict.
+    specialize (Hbody y Hy my Hdom Hrestrict).
+    pose proof (proj1 (Hopen y ρ my) ltac:(models_fuel_irrel Hbody)) as Hψ.
+    models_fuel_irrel Hψ.
+  - unfold formula_scoped_in_world in *. simpl in *.
+    rewrite Hfv. exact Hscope.
+  - destruct Hmodel as [L [HL Hbody]].
+    exists L. split; [exact HL |].
+    intros y Hy my Hdom Hrestrict.
+    specialize (Hbody y Hy my Hdom Hrestrict).
+    pose proof (proj2 (Hopen y ρ my) ltac:(models_fuel_irrel Hbody)) as Hφ.
+    models_fuel_irrel Hφ.
+Qed.
+
 Lemma res_models_of_formula_store_equiv φ ψ (m : WfWorld) :
   formula_store_equiv φ ψ →
   m ⊨ φ ↔ m ⊨ ψ.

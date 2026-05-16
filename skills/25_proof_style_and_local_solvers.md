@@ -220,6 +220,25 @@ pose proof (lemma _ Hx') as Hlem.
 When a proof really needs a shared intermediate state, keep the `assert`, but
 name it by the semantic fact it represents rather than by a local proof step.
 
+## Follow user proof drafts when provided
+
+This rule only applies when the user has explicitly written a proof draft,
+intended proof architecture, or high-level proof script.  For ordinary simple
+lemmas, local cleanup, and small tactic fixes, prove them directly using local
+judgment.
+
+When a user draft is present, treat it as the main line unless local checking
+exposes a concrete flaw.  First encode the draft's structure in the repo so the
+proof shape is reviewable.  If a supporting lemma is missing or hard, extract a
+named lemma with the exact statement needed by the draft.  Prove easy helpers
+immediately, but if a helper cannot be proved promptly, leave it temporarily
+`Admitted` and continue wiring the draft through the main proof.
+
+The point is to let the user inspect the proof architecture and the extracted
+lemma statements.  Do not spend a long time proving a helper if that prevents
+the user's draft from being reflected in code; the user may want to correct the
+lemma statement or prove that helper themselves.
+
 ## Use set solving as the final step
 
 `set_solver` is excellent, but large denotation goals often contain opaque

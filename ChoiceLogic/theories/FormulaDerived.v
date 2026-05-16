@@ -350,6 +350,35 @@ Proof.
     unfold formula_scoped_in_world in *. simpl. exact Hscope.
 Qed.
 
+Lemma res_models_with_store_resource_atom_vars_witness_intro
+    (ρ : StoreT) (m m0 : WfWorldT) D (P : WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FResourceAtom D P) →
+  formula_scoped_in_world ρ m0 (FResourceAtom D P) →
+  P (res_restrict m0 (lvars_fv D)) →
+  m0 ⊑ m →
+  res_models_with_store ρ m (FResourceAtom D P).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hscope0 HP Hle.
+  split; [exact Hscope |].
+  exists m0. repeat split; eauto.
+Qed.
+
+Lemma res_models_with_store_store_resource_atom_vars_witness_intro
+    (ρ : StoreT) (m m0 : WfWorldT) D
+    (P : gmap nat atom → StoreT → WfWorldT → Prop) :
+  formula_scoped_in_world ρ m (FStoreResourceAtom D P) →
+  formula_scoped_in_world ρ m0 (FStoreResourceAtom D P) →
+  P ∅ (store_restrict ρ (lvars_fv D)) (res_restrict m0 (lvars_fv D)) →
+  m0 ⊑ m →
+  res_models_with_store ρ m (FStoreResourceAtom D P).
+Proof.
+  unfold res_models_with_store.
+  simpl. intros Hscope Hscope0 HP Hle.
+  split; [exact Hscope |].
+  exists m0. repeat split; eauto.
+Qed.
+
 Lemma res_models_FFibVars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
   formula_scoped_in_world ∅ m (FFibVars D φ) →
   (∀ σ,
@@ -592,6 +621,31 @@ Proof.
   models_fuel_irrel Hopen.
 Qed.
 
+Lemma res_models_forall_iff (m : WfWorldT) (φ : FormulaT) :
+  formula_scoped_in_world ∅ m (FForall φ) →
+  (m ⊨ FForall φ ↔
+   ∃ L : aset,
+     world_dom m ⊆ L ∧
+     ∀ y : atom,
+       y ∉ L →
+       ∀ m' : WfWorldT,
+         world_dom m' = world_dom m ∪ {[y]} →
+         res_restrict m' (world_dom m) = m →
+         m' ⊨ formula_open 0 y φ).
+Proof.
+  intros Hscope. split.
+  - unfold res_models, res_models_with_store.
+    cbn [formula_measure res_models_with_store_fuel
+      formula_scoped_in_world formula_fv].
+    intros [_ [L [HLdom Hopen]]].
+    exists L. split; [exact HLdom |].
+    intros y Hy m' Hdom Hrestrict.
+    specialize (Hopen y Hy m' Hdom Hrestrict).
+    models_fuel_irrel Hopen.
+  - intros Hforall.
+    eapply res_models_forall_intro; eauto.
+Qed.
+
 Lemma res_models_forall_map (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world ∅ m (FForall ψ) →
   (∀ y : atom,
@@ -617,6 +671,41 @@ Proof.
   destruct Hy as [HyL Hym].
   eapply Hmap; eauto.
   specialize (Hopen y HyL m' Hdom Hrestrict).
+  models_fuel_irrel Hopen.
+Qed.
+
+Lemma res_models_forall_transport
+    (m n : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world ∅ n (FForall ψ) →
+  (∃ L : aset,
+    world_dom (m : World) ∪ world_dom (n : World) ⊆ L ∧
+    ∀ y (ny : WfWorldT),
+      y ∉ L →
+      world_dom (ny : World) = world_dom (n : World) ∪ {[y]} →
+      res_restrict ny (world_dom (n : World)) = n →
+      (∀ my : WfWorldT,
+        world_dom (my : World) = world_dom (m : World) ∪ {[y]} →
+        res_restrict my (world_dom (m : World)) = m →
+        my ⊨ formula_open 0 y φ) →
+      ny ⊨ formula_open 0 y ψ) →
+  m ⊨ FForall φ →
+  n ⊨ FForall ψ.
+Proof.
+  intros Hscope [Lmap [HLmap Hmap]] Hforall.
+  eapply res_models_forall_intro; [exact Hscope |].
+  unfold res_models, res_models_with_store in Hforall.
+  cbn [formula_measure res_models_with_store_fuel
+    formula_scoped_in_world formula_fv] in Hforall.
+  destruct Hforall as [_ [L [HLdom Hopen]]].
+  exists (L ∪ Lmap).
+  split; [set_solver |].
+  intros y Hy ny Hdom_ny Hrestrict_ny.
+  rewrite not_elem_of_union in Hy.
+  destruct Hy as [HyL HyMap].
+  specialize (Hopen y HyL).
+  eapply Hmap; eauto.
+  intros my Hdom_my Hrestrict_my.
+  specialize (Hopen my Hdom_my Hrestrict_my).
   models_fuel_irrel Hopen.
 Qed.
 
