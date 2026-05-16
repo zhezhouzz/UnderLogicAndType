@@ -404,7 +404,7 @@ Lemma erase_ctx_under_comma_bind_dom Σ Γ x τ :
   dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))) =
   dom (erase_ctx_under Σ Γ) ∪ {[x]}.
 Proof.
-  unfold erase_ctx_under. simpl.
+  cbn [erase_ctx].
   rewrite !dom_union_L, dom_singleton_L. set_solver.
 Qed.
 
@@ -417,7 +417,6 @@ Proof.
     as Hbasic.
   pose proof (basic_ctx_fv_subset (dom Σ) Γ Hbasic) as Hfv.
   rewrite ctx_stale_eq_fv_dom.
-  unfold erase_ctx_under.
   rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
   set_solver.
 Qed.

@@ -29,7 +29,6 @@ Proof.
     as Hfv.
   pose proof (basic_ctx_erase_dom (dom Σ) Γ
     (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))) as Hdom.
-  unfold erase_ctx_under in Hfv.
   rewrite dom_union_L, Hdom in Hfv. exact Hfv.
 Qed.
 
@@ -38,7 +37,6 @@ Lemma choice_typing_wf_erase_dom Σ Γ e τ :
   dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
 Proof.
   intros [Hwf _].
-  unfold erase_ctx_under.
   rewrite dom_union_L.
   rewrite (basic_ctx_erase_dom (dom Σ) Γ
     (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))).

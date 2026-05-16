@@ -50,10 +50,35 @@ Definition expr_result_extension (X : aset) (e : tm) (x : atom) (Hfresh : x ∉ 
     ltac:(intros σ _; destruct (world_wf (expr_result_extension_fiber X e x σ))
       as [Hne _]; exact Hne).
 
+Definition result_extension := expr_result_extension.
+
 Lemma expr_result_extension_shape X (e : tm) x Hfresh :
   forall_extension_shape X x (expr_result_extension X e x Hfresh).
 Proof. unfold forall_extension_shape, expr_result_extension, mk_forall_extension,
   mk_fiber_extension; simpl; eauto. Qed.
+
+Lemma result_extension_shape X (e : tm) x Hfresh :
+  forall_extension_shape X x (result_extension X e x Hfresh).
+Proof. apply expr_result_extension_shape. Qed.
+
+Lemma result_extension_applicable e x (m : WfWorld)
+    (Hfresh : x ∉ world_dom (m : World)) :
+  extension_applicable
+    (result_extension (world_dom (m : World)) e x Hfresh) m.
+Proof.
+  unfold result_extension, expr_result_extension, mk_forall_extension,
+    mk_fiber_extension.
+  constructor; simpl; set_solver.
+Qed.
+
+Lemma result_extension_world_exists e x (m : WfWorld)
+    (Hfresh : x ∉ world_dom (m : World)) :
+  ∃ mx,
+    m #> result_extension (world_dom (m : World)) e x Hfresh ~~> mx.
+Proof.
+  apply res_extend_by_exists.
+  apply result_extension_applicable.
+Qed.
 
 Lemma expr_result_extension_extend_by
     X (e : tm) x (m : WfWorld) HfreshX Hfreshm Hresult :
@@ -116,6 +141,29 @@ Proof.
       * exact Hsteps.
       * rewrite store_restrict_twice_subset by exact Hfv.
         reflexivity.
+Qed.
+
+Lemma result_extension_extend_by_let_result
+    e x (m : WfWorld) Hfresh Hresult :
+  fv_tm e ⊆ world_dom (m : World) →
+  m #> result_extension (world_dom (m : World)) e x Hfresh ~~>
+    let_result_world_on e x m Hfresh Hresult.
+Proof.
+  intros Hfv.
+  unfold result_extension.
+  eapply expr_result_extension_extend_by; eauto.
+Qed.
+
+Lemma result_extension_world_eq_let_result
+    e x (m mx : WfWorld) Hfresh Hresult :
+  fv_tm e ⊆ world_dom (m : World) →
+  m #> result_extension (world_dom (m : World)) e x Hfresh ~~> mx →
+  mx = let_result_world_on e x m Hfresh Hresult.
+Proof.
+  intros Hfv Hext.
+  eapply res_extend_by_unique.
+  - exact Hext.
+  - apply result_extension_extend_by_let_result. exact Hfv.
 Qed.
 
 Lemma let_result_world_on_total_as_extend_by
@@ -578,6 +626,29 @@ Proof.
   eapply FExprResultAt_unique_let_result_world; eauto.
 Qed.
 
+Lemma FExprResultAt_as_concrete_result_extension
+    (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld)
+    (Hfresh : ν ∉ world_dom (m : World)) :
+  Σ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Σ →
+  world_closed_on (dom Σ) m →
+  world_dom (n : World) = dom Σ ∪ {[ν]} →
+  res_restrict n (dom Σ) = m →
+  n ⊨ FExprResultAt (dom Σ) e ν →
+  ∃ Hresult,
+    n = let_result_world_on e ν m Hfresh Hresult ∧
+    m #> result_extension (world_dom (m : World)) e ν Hfresh ~~> n.
+Proof.
+  intros Hty Hdom_m Hclosed Hdom_n Hrestrict Hmodel.
+  destruct (FExprResultAt_as_let_result_world
+    Σ T e ν m n Hfresh Hty Hdom_m Hclosed Hdom_n Hrestrict Hmodel)
+    as [Hresult ->].
+  exists Hresult. split; [reflexivity |].
+  apply result_extension_extend_by_let_result.
+  rewrite Hdom_m.
+  eapply basic_typing_contains_fv_tm. exact Hty.
+Qed.
+
 Lemma result_extension_as_let_result_world
     (Σ : gmap atom ty) (T : ty) e ν (m n : WfWorld) F
     (Hfresh : ν ∉ world_dom (m : World)) :
@@ -601,6 +672,30 @@ Proof.
   assert (Hrestrict : res_restrict n (dom Σ) = m).
   { rewrite <- Hdom_m. eapply res_extend_by_restrict_base. exact Hext. }
   eapply FExprResultAt_as_let_result_world; eauto.
+Qed.
+
+Lemma let_result_world_as_concrete_result_extension
+    (Σ : gmap atom ty) (T : ty) e ν (m : WfWorld)
+    (Hfresh : ν ∉ world_dom (m : World)) Hresult :
+  Σ ⊢ₑ e ⋮ T →
+  world_dom (m : World) = dom Σ →
+  world_closed_on (dom Σ) m →
+  ν ∉ dom Σ →
+  m #> result_extension (world_dom (m : World)) e ν Hfresh ~~>
+    let_result_world_on e ν m Hfresh Hresult ∧
+  let_result_world_on e ν m Hfresh Hresult ⊨ FExprResultAt (dom Σ) e ν.
+Proof.
+  intros Hty Hdom_m Hclosed HνΣ.
+  split.
+  - apply result_extension_extend_by_let_result.
+    rewrite Hdom_m.
+    eapply basic_typing_contains_fv_tm. exact Hty.
+  - eapply let_result_world_on_models_FExprResultAt.
+    + eapply basic_typing_contains_fv_tm. exact Hty.
+    + eapply typing_tm_lc. exact Hty.
+    + exact HνΣ.
+    + rewrite Hdom_m. reflexivity.
+    + exact Hclosed.
 Qed.
 
 Lemma let_result_world_as_result_extension

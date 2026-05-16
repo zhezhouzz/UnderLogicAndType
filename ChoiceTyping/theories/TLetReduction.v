@@ -9,7 +9,7 @@ From ChoiceLogic Require Export FormulaDerived FormulaWorldExtension.
 From ChoiceTyping Require Export TLetTotal RegularDenotation.
 From ChoiceTyping Require Import Naming SoundnessCommon LetResultWorld
   ResultWorldClosed ResultWorldExprCont ResultWorldExtension.
-From ChoiceType Require Import BasicStore LocallyNamelessProps.
+From ChoiceType Require Import BasicStore LocallyNamelessProps DenotationNotation.
 
 Import Tactics.
 
@@ -561,10 +561,18 @@ Proof.
   destruct Hν as [[[HνL HνΣ] Hνx] Hνe2].
   assert (Hfreshν_tlet : ν ∉ world_dom (m : World)).
   { rewrite Hdom. exact HνΣ. }
-  destruct (result_extension_as_let_result_world
-    Σ T2 (tlete e1 e2) ν m n F Hfreshν_tlet
-    Hlet Hdom Hclosed HνΣ HFshape Hext Hresult_tlet_model)
-    as [Hresultν_tlet ->].
+  destruct HFshape as [_ HFout].
+  assert (Hdom_n : world_dom (n : World) = dom Σ ∪ {[ν]}).
+  {
+    rewrite (res_extend_by_dom _ _ _ Hext), Hdom, HFout.
+    reflexivity.
+  }
+  assert (Hrestrict_n : res_restrict n (dom Σ) = m).
+  { rewrite <- Hdom. eapply res_extend_by_restrict_base. exact Hext. }
+  destruct (FExprResultAt_as_concrete_result_extension
+    Σ T2 (tlete e1 e2) ν m n Hfreshν_tlet
+    Hlet Hdom Hclosed Hdom_n Hrestrict_n Hresult_tlet_model)
+    as [Hresultν_tlet [-> _]].
   assert (Hfreshν_body :
     ν ∉ world_dom (let_result_world_on e1 x m Hfresh Hresult : World)).
   {
@@ -580,16 +588,26 @@ Proof.
     eapply (let_result_world_body_total
       Σ T1 T2 e1 e2 x m Hfresh Hresult); eauto.
   }
-  destruct (let_result_world_as_result_extension
-    (<[x := T1]> Σ) T2 (e2 ^^ x) ν
-    (let_result_world_on e1 x m Hfresh Hresult)
-    Hfreshν_body Hresultν_body He2 Hdom_m1 Hclosed_m1
-    ltac:(rewrite dom_insert_L; set_solver))
-    as [Fbody [HFbody [Hext_body Hbody_result]]].
+  pose (Fbody := result_extension
+    (world_dom (let_result_world_on e1 x m Hfresh Hresult : World))
+    (e2 ^^ x) ν Hfreshν_body).
   set (mbodyν :=
     let_result_world_on (e2 ^^ x) ν
       (let_result_world_on e1 x m Hfresh Hresult)
       Hfreshν_body Hresultν_body).
+  assert (HFbody :
+    forall_extension_shape
+      (world_dom (let_result_world_on e1 x m Hfresh Hresult : World))
+      ν Fbody).
+  { subst Fbody. apply result_extension_shape. }
+  assert (Hbody_concrete :
+    let_result_world_on e1 x m Hfresh Hresult #> Fbody ~~> mbodyν ∧
+    mbodyν ⊨ FExprResultAt (dom (<[x := T1]> Σ)) (e2 ^^ x) ν).
+  {
+    subst Fbody mbodyν.
+    eapply let_result_world_as_concrete_result_extension; eauto.
+  }
+  destruct Hbody_concrete as [Hext_body Hbody_result].
   pose proof (Hbody ν Fbody mbodyν HνL HFbody Hext_body Hbody_result)
     as Hnested.
   pose proof (proj1 (res_models_minimal_on
@@ -671,12 +689,21 @@ Proof.
       ∃ vx, subst_map (store_restrict σ (fv_tm (tlete e1 e2)))
         (tlete e1 e2) →* tret vx).
   { exact (expr_total_on_to_fv_result _ _ _ Hclosed Htotal_let). }
-  destruct (let_result_world_as_result_extension
-    Σ T2 (tlete e1 e2) ν m Hfreshν_tlet Hresultν_tlet
-    Hlet Hdom Hclosed HνΣ)
-    as [Ftlet [HFtlet [Hext_tlet Htlet_result]]].
+  pose (Ftlet := result_extension
+    (world_dom (m : World)) (tlete e1 e2) ν Hfreshν_tlet).
   set (mtletν := let_result_world_on
     (tlete e1 e2) ν m Hfreshν_tlet Hresultν_tlet).
+  assert (HFtlet :
+    forall_extension_shape (world_dom (m : World)) ν Ftlet).
+  { subst Ftlet. apply result_extension_shape. }
+  assert (Htlet_concrete :
+    m #> Ftlet ~~> mtletν ∧
+    mtletν ⊨ FExprResultAt (dom Σ) (tlete e1 e2) ν).
+  {
+    subst Ftlet mtletν.
+    eapply let_result_world_as_concrete_result_extension; eauto.
+  }
+  destruct Htlet_concrete as [Hext_tlet Htlet_result].
   pose proof (Hwhole ν Ftlet mtletν HνL HFtlet Hext_tlet Htlet_result)
     as Hwholeν.
   assert (Hrestrict :
@@ -1355,41 +1382,39 @@ Qed.
 
 Local Definition tlet_arrow_source_arg
     (Δ : gmap atom ty) (T1 : ty) (x : atom) τx : FormulaQ :=
-  let Σx := atom_env_to_lty_env (<[x := T1]> Δ) in
-  denot_ty_lvar (<[LVBound 0 := erase_ty τx]> Σx)
-    Σx τx (tret (vbvar 0)).
+  let Σx := (↑ₗ (<[x := T1]> Δ))%choice in
+  denot_ty_lvar (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σx)
+    Σx τx (ret #0)%core.
 
 Local Definition tlet_arrow_source_conseq
     (Δ : gmap atom ty) (T1 : ty) (x : atom) τx τ e2 : FormulaQ :=
-  let Σx := atom_env_to_lty_env (<[x := T1]> Δ) in
-  denot_ty_lvar (<[LVBound 0 := erase_ty τx]> Σx)
-    (<[LVBound 0 := erase_ty τx]> Σx) τ
+  let Σx := (↑ₗ (<[x := T1]> Δ))%choice in
+  denot_ty_lvar (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σx)
+    (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σx) τ
     (tapp_tm (e2 ^^ x) (vbvar 0)).
 
 Local Definition tlet_arrow_target_arg
     (Δ : gmap atom ty) τx : FormulaQ :=
-  let Σ := atom_env_to_lty_env Δ in
-  denot_ty_lvar (<[LVBound 0 := erase_ty τx]> Σ)
-    Σ τx (tret (vbvar 0)).
+  let Σ := (↑ₗ Δ)%choice in
+  denot_ty_lvar (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σ)
+    Σ τx (ret #0)%core.
 
 Local Definition tlet_arrow_target_conseq
     (Δ : gmap atom ty) τx τ e1 e2 : FormulaQ :=
-  let Σ := atom_env_to_lty_env Δ in
-  denot_ty_lvar (<[LVBound 0 := erase_ty τx]> Σ)
-    (<[LVBound 0 := erase_ty τx]> Σ) τ
+  let Σ := (↑ₗ Δ)%choice in
+  denot_ty_lvar (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σ)
+    (<[(#ₗ 0)%choice := (⌊τx⌋)%choice]> Σ) τ
     (tapp_tm (tlete e1 e2) (vbvar 0)).
 
 Local Definition tlet_arrow_source_body
     (Δ : gmap atom ty) (T1 : ty) (x : atom) τx τ e2 : FormulaQ :=
-  FImpl
-    (tlet_arrow_source_arg Δ T1 x τx)
-    (tlet_arrow_source_conseq Δ T1 x τx τ e2).
+  <{ $ (tlet_arrow_source_arg Δ T1 x τx) →
+     $ (tlet_arrow_source_conseq Δ T1 x τx τ e2) }>.
 
 Local Definition tlet_arrow_target_body
     (Δ : gmap atom ty) τx τ e1 e2 : FormulaQ :=
-  FImpl
-    (tlet_arrow_target_arg Δ τx)
-    (tlet_arrow_target_conseq Δ τx τ e1 e2).
+  <{ $ (tlet_arrow_target_arg Δ τx) →
+     $ (tlet_arrow_target_conseq Δ τx τ e1 e2) }>.
 
 
 Lemma denot_ty_tlet_reduction_on
@@ -1629,52 +1654,59 @@ Proof.
         (let_result_world_on e10 x0 n1 Hfresh1 Hresult1)
         (let_result_world_on e10 x0 n2 Hfresh2 Hresult2)
         _ _ Hdefx); eauto.
-  - (* CTArrow: reduce obligations, then transport the function body. *)
-    inversion Hbasicτ as [| | | | |D τx' τ' L HbasicX HbasicBody|]; subst.
-    eapply denot_ty_tlet_reduction_add_obligations; eauto.
-    unfold denot_ty_body.
-    rewrite !denot_ty_body_lvar_arrow.
-    change
-      (let_result_world_on e10 x0 m0 Hfresh0 Hresult0
-        ⊨ FForall (tlet_arrow_source_body Δ0 T10 x0 τx τ e20) <->
-       m0 ⊨ FForall (tlet_arrow_target_body Δ0 τx τ e10 e20)).
-    assert (Hsource_forall_scope :
-      formula_scoped_in_world ∅
-        (let_result_world_on e10 x0 m0 Hfresh0 Hresult0)
-        (FForall (tlet_arrow_source_body Δ0 T10 x0 τx τ e20))).
-    { admit. (* Source [FForall] scope after unfolding the Arrow body. *) }
-    assert (Htarget_forall_scope :
-      formula_scoped_in_world ∅ m0
-        (FForall (tlet_arrow_target_body Δ0 τx τ e10 e20))).
+	  - (* CTArrow: reduce obligations, then transport the function body. *)
+	    inversion Hbasicτ as [| | | | |D τx' τ' L HbasicX HbasicBody|]; subst.
+	    pose (Fx := result_extension (dom m0) e10 x0 Hfresh0).
+	    remember (let_result_world_on e10 x0 m0 Hfresh0 Hresult0) as mx.
+	    assert (HFx :
+	      forall_extension_shape (dom m0) x0 Fx).
+	    { subst Fx. apply result_extension_shape. }
+	    assert (Hmx : m0 #> Fx ~~> mx).
+	    {
+	      subst Fx mx.
+	      apply result_extension_extend_by_let_result.
+	      rewrite Hdom.
+	      eapply basic_typing_contains_fv_tm. exact He1.
+	    }
+	    rewrite Heqmx.
+	    eapply denot_ty_tlet_reduction_add_obligations; eauto.
+	    unfold denot_ty_body.
+	    rewrite !denot_ty_body_lvar_arrow.
+	    rewrite <- Heqmx.
+	    change
+	      (mx ⊨ <{ ∀. $ (tlet_arrow_source_body Δ0 T10 x0 τx τ e20) }> <->
+	       m0 ⊨ <{ ∀. $ (tlet_arrow_target_body Δ0 τx τ e10 e20) }>).
+	    assert (Hsource_forall_scope :
+	      formula_scoped_in_world ∅
+	        mx
+	        <{ ∀. $ (tlet_arrow_source_body Δ0 T10 x0 τx τ e20) }>).
+	    { admit. (* Source [FForall] scope after unfolding the Arrow body. *) }
+	    assert (Htarget_forall_scope :
+	      formula_scoped_in_world ∅ m0
+        <{ ∀. $ (tlet_arrow_target_body Δ0 τx τ e10 e20) }>).
     { admit. (* Target [FForall] scope after unfolding the Arrow body. *) }
-    assert (Htransport :
-      ∃ L0 : aset,
-        world_dom (m0 : World) ∪
-          world_dom (let_result_world_on e10 x0 m0 Hfresh0 Hresult0 : World)
-          ⊆ L0 ∧
-        (∀ y F my Hfresh_my Hresult_my G,
-          y ∉ L0 →
-          forall_extension_shape (world_dom (m0 : World)) y F →
-          m0 #> F ~~> my →
-          forall_extension_shape
-            (world_dom
-              (let_result_world_on e10 x0 m0 Hfresh0 Hresult0 : World)) y G →
-          let_result_world_on e10 x0 m0 Hfresh0 Hresult0 #> G ~~>
-            let_result_world_on e10 x0 my Hfresh_my Hresult_my →
-          let_result_world_on e10 x0 my Hfresh_my Hresult_my
-            ⊨ formula_open 0 y
+	    assert (Htransport :
+	      ∃ L0 : aset,
+	        dom m0 ∪ dom mx ⊆ L0 ∧
+	        (∀ y F my Hfresh_my Hresult_my G,
+	          y ∉ L0 →
+	          forall_extension_shape (dom m0) y F →
+	          m0 #> F ~~> my →
+	          forall_extension_shape (dom mx) y G →
+	          mx #> G ~~>
+	            let_result_world_on e10 x0 my Hfresh_my Hresult_my →
+	          let_result_world_on e10 x0 my Hfresh_my Hresult_my
+	            ⊨ formula_open 0 y
                 (tlet_arrow_source_body Δ0 T10 x0 τx τ e20) →
           my ⊨ formula_open 0 y
                 (tlet_arrow_target_body Δ0 τx τ e10 e20)) ∧
-        (∀ y G n (my : WfWorld) Hfresh_my Hresult_my,
-          y ∉ L0 →
-          forall_extension_shape
-            (world_dom
-              (let_result_world_on e10 x0 m0 Hfresh0 Hresult0 : World)) y G →
-          let_result_world_on e10 x0 m0 Hfresh0 Hresult0 #> G ~~> n →
-          world_dom (my : World) = world_dom (m0 : World) ∪ {[y]} →
-          res_restrict my (world_dom (m0 : World)) = m0 →
-          n = let_result_world_on e10 x0 my Hfresh_my Hresult_my →
+	        (∀ y G n (my : WfWorld) Hfresh_my Hresult_my,
+	          y ∉ L0 →
+	          forall_extension_shape (dom mx) y G →
+	          mx #> G ~~> n →
+	          dom my = dom m0 ∪ {[y]} →
+	          res_restrict my (dom m0) = m0 →
+	          n = let_result_world_on e10 x0 my Hfresh_my Hresult_my →
           my ⊨ formula_open 0 y
                 (tlet_arrow_target_body Δ0 τx τ e10 e20) →
           n ⊨ formula_open 0 y
@@ -1691,11 +1723,17 @@ Proof.
          This was the useful script shape; the local proof is admitted here
          because letting Rocq infer the large formulas made this file exceed
          the 40s compile threshold. *)
-      admit.
-    }
-    eapply (let_result_world_on_forall_transport_iff
-      Δ0 T10 e10 x0 m0 Hfresh0 Hresult0
-      (tlet_arrow_source_body Δ0 T10 x0 τx τ e20)
+	      admit.
+	    }
+	    (* The current reusable transport lemma still has the legacy
+	       [let_result_world_on] statement.  The proof-facing state above is
+	       expressed through [Fx], [mx], and [Hmx]; this final conversion is the
+	       small wrapper that should eventually become a dedicated
+	       extension-style transport lemma. *)
+	    subst mx.
+	    eapply (let_result_world_on_forall_transport_iff
+	      Δ0 T10 e10 x0 m0 Hfresh0 Hresult0
+	      (tlet_arrow_source_body Δ0 T10 x0 τx τ e20)
       (tlet_arrow_target_body Δ0 τx τ e10 e20)); eauto.
   - (* CTWand: same shape as Arrow, with separating implication. *)
     eapply denot_ty_tlet_reduction_add_obligations; eauto.

@@ -1104,6 +1104,9 @@ Qed.
 
 End Store.
 
+Notation "σ '|ₛ' X" := (store_restrict σ X)
+  (at level 30, format "σ  |ₛ  X").
+
 (** ** Store-side proof automation
 
     [store_norm] exposes the finite-map/set normal forms that recur around

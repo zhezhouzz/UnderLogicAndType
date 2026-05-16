@@ -16,6 +16,7 @@ ChoicePrelude/Store.v
 ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Resource.v
+ChoiceAlgebra/theories/ResourceNotation.v
 ChoiceAlgebra/theories/ResourceTactics.v
 ChoiceAlgebra/theories/WorldExtension.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
@@ -23,6 +24,7 @@ ChoiceAlgebra/examples/ResourceExamples.v
 
 CoreLang/theories/Prelude.v
 CoreLang/theories/Syntax.v
+CoreLang/theories/SyntaxNotation.v
 CoreLang/theories/Instantiation.v
 CoreLang/theories/BasicTyping.v
 CoreLang/theories/SmallStep.v
@@ -39,6 +41,7 @@ CoreLang/theories/OperationalResults.v
 
 ChoiceLogic/theories/LogicQualifier.v
 ChoiceLogic/theories/FormulaSyntax.v
+ChoiceLogic/theories/FormulaNotation.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/FormulaTactics.v
 ChoiceLogic/theories/FormulaDerived.v
@@ -58,6 +61,8 @@ ChoiceType/theories/DenotationFibers.v
 ChoiceType/theories/DenotationFormula.v
 ChoiceType/theories/DenotationFormulaEquiv.v
 ChoiceType/theories/DenotationType.v
+ChoiceType/theories/ConversionNotation.v
+ChoiceType/theories/DenotationNotation.v
 ChoiceType/theories/DenotationContext.v
 ChoiceType/theories/Sugar.v
 ChoiceTyping/theories/WellFormed.v

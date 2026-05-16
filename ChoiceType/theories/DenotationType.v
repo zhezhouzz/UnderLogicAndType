@@ -802,8 +802,8 @@ Definition denot_ty (τ : choice_ty) (e : tm) : FQ :=
 Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=
   denot_ty_under (erase_ctx Γ) τ e.
 
-Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
-  Σ ∪ erase_ctx Γ.
+Notation "'erase_ctx_under' Σ Γ" := (Σ ∪ erase_ctx Γ)
+  (at level 10, Σ at level 9, Γ at level 9, only parsing).
 
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FQ :=

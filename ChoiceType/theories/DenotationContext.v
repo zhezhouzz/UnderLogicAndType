@@ -84,7 +84,6 @@ Proof.
   rewrite !basic_world_formula_fv.
   pose proof (erase_ctx_dom_subset Γ) as Herase.
   pose proof (denot_ctx_under_dom_subset_formula_fv Σ Γ) as Hctx.
-  unfold erase_ctx_under.
   rewrite dom_union_L.
   set_solver.
 Qed.

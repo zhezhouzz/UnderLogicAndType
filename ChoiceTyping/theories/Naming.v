@@ -72,7 +72,7 @@ Lemma erase_ctx_under_comma_bind_dom_nf Σ Γ x τ :
   dom (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ))) =
   dom (erase_ctx_under Σ Γ) ∪ {[x]}.
 Proof.
-  unfold erase_ctx_under. simpl.
+  cbn [erase_ctx].
   rewrite !dom_union_L, dom_singleton_L. set_solver.
 Qed.
 
@@ -82,7 +82,7 @@ Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
   <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
 Proof.
   intros Hfresh.
-  unfold erase_ctx_under. simpl.
+  cbn [erase_ctx].
   apply (map_eq (M := gmap atom)). intros z.
   rewrite lookup_insert.
   destruct (decide (z = x)) as [->|Hzx].
@@ -105,7 +105,6 @@ Lemma erase_ctx_under_dom_basic Σ Γ :
   dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
 Proof.
   intros Hbasic.
-  unfold erase_ctx_under.
   rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hbasic).
   reflexivity.
 Qed.

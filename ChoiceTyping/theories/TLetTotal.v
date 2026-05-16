@@ -457,9 +457,7 @@ Proof.
     + apply denot_ctx_under_comma. split.
       * apply denot_ctx_in_env_ctx.
         eapply let_result_world_on_preserves_context; eauto 6.
-      * simpl.
-        unfold erase_ctx_under.
-        eapply let_result_world_on_denot_ty_bound; eauto.
+      * simpl.        eapply let_result_world_on_denot_ty_bound; eauto.
 Qed.
 
 Lemma let_result_world_on_fresh_for_bound
@@ -490,9 +488,7 @@ Proof.
     - exact Hz.
     - symmetry.
       pose proof (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwfτ))
-        as Hctx.
-      unfold erase_ctx_under.
-      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
+        as Hctx.      rewrite dom_union_L, (basic_ctx_erase_dom (dom Σ) Γ Hctx).
       reflexivity.
   }
   apply not_elem_of_union. split.

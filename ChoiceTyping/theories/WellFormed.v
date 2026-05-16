@@ -120,7 +120,6 @@ Proof.
   apply Hdenot_fv in Hzfv.
   apply Hctx_scope.
   pose proof (denot_ctx_in_env_dom_subset_formula_fv Σ Γ) as Hctx_fv.
-  unfold erase_ctx_under in Hzfv.
   rewrite dom_union_L, HdomΓ in Hzfv.
   set_solver.
 Qed.

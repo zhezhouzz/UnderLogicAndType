@@ -45,8 +45,9 @@ Notation "x '\\' e"            := (close_one x 0 e) (at level 20).
 Notation "Γ '⊢' e '⋮' T"      := (has_type Γ e T)
   (at level 20, e constr, T constr).
 Notation "'⟦' a '⟧'"           := (denote a) (at level 20, format "⟦ a ⟧").
-(** Multi-substitution: use [subst_map σ e] directly to avoid clashing with
-    stdpp's singleton-set notation [{[ _ ]}] which has the same '{[' prefix. *)
+(** Multi-substitution: use [subst_map σ e] directly at this low layer to avoid
+    clashing with stdpp's singleton-set notation [{[ _ ]}].  The concrete
+    CoreLang instantiation layer provides [m{σ} e] for [msubst]. *)
 
 (** ** Hint databases *)
 #[global] Hint Unfold stale subst_one open_one close_one is_lc subst_map has_type denote : class_simpl.

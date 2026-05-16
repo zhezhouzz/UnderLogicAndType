@@ -20,6 +20,8 @@ Definition closed_env (σ : env) : Prop :=
 Definition msubst (σ : env) {A : Type} `{SubstV value A} (a : A) : A :=
   map_fold (fun x vx acc => {x := vx} acc) a σ.
 
+Notation "'m{' σ '}' e" := (subst_map σ e)
+  (at level 20, format "m{ σ } e", σ constr, only printing).
 Notation "'m{' σ '}' e" := (msubst σ e)
   (at level 20, format "m{ σ } e", σ constr).
 

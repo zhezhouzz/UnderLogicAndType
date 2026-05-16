@@ -61,7 +61,7 @@ Proof.
   pose proof (wf_ctx_under_basic Σ (CtxBind x τ) Hwfctx) as Hbasicctx.
   inversion Hbasicctx; subst; clear Hbasicctx.
   simpl in Hbind.
-  unfold denot_ty_in_ctx_under, erase_ctx_under. simpl.
+  unfold denot_ty_in_ctx_under. cbn [erase_ctx].
   replace (Σ ∪ {[x := erase_ty τ]}) with (<[x := erase_ty τ]> Σ).
   - eauto 6.
   - apply (map_eq (M := gmap atom)). intros z.
@@ -114,7 +114,7 @@ Proof.
   - eapply (expr_total_on_ret_lc
       (dom (erase_ctx_under Σ (CtxBind x τ))) (vfvar x) m).
     + change ({[x]} ⊆ dom (erase_ctx_under Σ (CtxBind x τ))).
-      unfold erase_ctx_under. simpl.
+      cbn [erase_ctx].
       rewrite dom_union_L, dom_singleton_L. set_solver.
     + constructor.
     + intros σ Hσ.
@@ -122,7 +122,7 @@ Proof.
       * pose proof (denot_ctx_in_env_store_erased_lc
           Σ (CtxBind x τ) m σ Hbasicctx Hctx Hσ) as Hlc.
         simpl in Hlc. exact Hlc.
-      * unfold erase_ctx_under. simpl.
+      * cbn [erase_ctx].
         rewrite dom_union_L, dom_singleton_L. set_solver.
 Qed.
 

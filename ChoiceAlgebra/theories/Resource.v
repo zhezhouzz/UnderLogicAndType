@@ -2194,3 +2194,11 @@ Arguments stale_world /.
 #[global] Instance stale_wfworld {V : Type} `{ValueSig V} : Stale (WfWorld (V := V)) :=
   λ w, world_dom (w : World (V := V)).
 Arguments stale_wfworld /.
+
+#[global] Instance dom_world {V : Type} `{ValueSig V} : Dom (World (V := V)) aset :=
+  world_dom.
+Arguments dom_world /.
+
+#[global] Instance dom_wfworld {V : Type} `{ValueSig V} : Dom (WfWorld (V := V)) aset :=
+  λ w, world_dom (w : World (V := V)).
+Arguments dom_wfworld /.

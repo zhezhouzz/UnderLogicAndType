@@ -1,5 +1,5 @@
 From ChoiceAlgebra Require Export
-  Resource ResourceTactics WorldExtension ChoiceAlgebra.
+  Resource ResourceNotation ResourceTactics WorldExtension ChoiceAlgebra.
 From ChoicePrelude Require Export Prelude MapFilterDom Store.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
