@@ -1,84 +1,16 @@
 -R ChoicePrelude ChoicePrelude
 -R ChoiceAlgebra/theories ChoiceAlgebra
--R ChoiceAlgebra/examples ChoiceAlgebraExamples
--R ChoiceLogic/theories ChoiceLogic
--R ChoiceLogic/examples ChoiceLogicExamples
--R CoreLang/theories CoreLang
--R LocallyNameless LocallyNameless
--R ChoiceType/theories ChoiceType
--R ChoiceType/examples ChoiceTypeExamples
--R ChoiceTyping/theories ChoiceTyping
 
 ChoicePrelude/Prelude.v
-ChoicePrelude/MapFilterDom.v
-ChoicePrelude/StoreBase.v
+ChoicePrelude/StoreCore.v
+ChoicePrelude/StoreKeyAction.v
+ChoicePrelude/StoreRestrict.v
+ChoicePrelude/StoreBind.v
+ChoicePrelude/StoreInterface.v
 ChoicePrelude/Store.v
-ChoicePrelude/examples/StoreExamples.v
 
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ResourceNotation.v
 ChoiceAlgebra/theories/ResourceTactics.v
 ChoiceAlgebra/theories/WorldExtension.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
-ChoiceAlgebra/examples/ResourceExamples.v
-
-CoreLang/theories/Prelude.v
-CoreLang/theories/Syntax.v
-CoreLang/theories/SyntaxNotation.v
-CoreLang/theories/Instantiation.v
-CoreLang/theories/BasicTyping.v
-CoreLang/theories/SmallStep.v
-LocallyNameless/Tactics.v
-LocallyNameless/Classes.v
-CoreLang/theories/LocallyNamelessProps.v
-CoreLang/theories/Sugar.v
-CoreLang/theories/LocallyNamelessExtra.v
-CoreLang/theories/InstantiationProps.v
-CoreLang/theories/BasicTypingProps.v
-CoreLang/theories/OperationalProps.v
-CoreLang/theories/StrongNormalization.v
-CoreLang/theories/OperationalResults.v
-
-ChoiceLogic/theories/LogicQualifier.v
-ChoiceLogic/theories/FormulaSyntax.v
-ChoiceLogic/theories/FormulaNotation.v
-ChoiceLogic/theories/Formula.v
-ChoiceLogic/theories/FormulaTactics.v
-ChoiceLogic/theories/FormulaDerived.v
-ChoiceLogic/theories/FormulaWorldExtension.v
-ChoiceLogic/theories/ChoiceLogicProps.v
-ChoiceLogic/examples/FiberExamples.v
-
-ChoiceType/theories/Prelude.v
-ChoiceType/theories/Qualifier.v
-ChoiceType/theories/QualifierProps.v
-ChoiceType/theories/QualifierBridge.v
-ChoiceType/theories/Syntax.v
-ChoiceType/theories/BasicStore.v
-ChoiceType/theories/LocallyNamelessProps.v
-ChoiceType/theories/BasicTyping.v
-ChoiceType/theories/DenotationFibers.v
-ChoiceType/theories/DenotationFormula.v
-ChoiceType/theories/DenotationFormulaEquiv.v
-ChoiceType/theories/DenotationType.v
-ChoiceType/theories/ConversionNotation.v
-ChoiceType/theories/DenotationNotation.v
-ChoiceType/theories/DenotationContext.v
-ChoiceType/theories/Sugar.v
-ChoiceTyping/theories/WellFormed.v
-ChoiceTyping/theories/Auxiliary.v
-ChoiceTyping/theories/PrimOpContext.v
-ChoiceTyping/theories/Typing.v
-ChoiceTyping/theories/RegularDenotation.v
-ChoiceTyping/theories/LetResultWorld.v
-ChoiceTyping/theories/Naming.v
-ChoiceTyping/theories/SoundnessCommon.v
-ChoiceTyping/theories/ResultWorldClosed.v
-ChoiceTyping/theories/ResultWorldExprCont.v
-ChoiceTyping/theories/ResultWorldExtension.v
-ChoiceTyping/theories/TLetTotal.v
-ChoiceTyping/theories/TLetReduction.v
-ChoiceTyping/theories/TLetReductionTotal.v
-ChoiceTyping/theories/TLetDenotation.v
-ChoiceTyping/theories/Soundness.v
-ChoiceType/examples/FunctionTypeExamples.v
