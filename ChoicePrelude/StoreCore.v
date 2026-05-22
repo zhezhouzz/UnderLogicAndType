@@ -1,6 +1,6 @@
 (** * Generic stores: core definitions *)
 
-From ChoicePrelude Require Export Prelude.
+From ChoicePrelude Require Import Prelude.
 
 Section AbstractStoreCore.
 

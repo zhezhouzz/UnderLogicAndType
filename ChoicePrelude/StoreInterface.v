@@ -1,6 +1,6 @@
 (** * Concrete store interfaces *)
 
-From ChoicePrelude Require Export StoreBind.
+From ChoicePrelude Require Import Prelude StoreCore StoreKeyAction StoreRestrict StoreBind.
 
 Section StoreInterface.
 

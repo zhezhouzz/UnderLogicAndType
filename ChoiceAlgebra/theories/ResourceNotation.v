@@ -5,8 +5,8 @@
     The definitions remain in [Resource].  This file only adds a compact
     surface syntax, with explicit-proof variants next to proof-inferred ones. *)
 
-From ChoicePrelude Require Import Store.
-From ChoiceAlgebra Require Export Resource.
+From ChoicePrelude Require Import Prelude Store.
+From ChoiceAlgebra Require Import Resource.
 
 Notation "m1 '×[' Hc ']' m2" :=
   (res_product m1 m2 Hc)
@@ -33,24 +33,19 @@ Notation "m '|ᵣ' X" :=
   (at level 35, X at level 35, right associativity,
    format "m  |ᵣ  X").
 
-Notation "m '⇂[' X ',' σ '|>' Hproj ']'" :=
-  (res_fiber_from_projection m X σ Hproj)
-  (at level 35, X at level 0, σ at level 0, Hproj at level 0,
-   format "m  ⇂[ X ,  σ  |>  Hproj ]").
-
-Notation "m '⇂[' X ',' σ ']'" :=
-  (res_fiber_from_projection m X σ _)
-  (at level 35, X at level 0, σ at level 0,
-   format "m  ⇂[ X ,  σ ]").
+Notation "wfib '∈ᶠ' 'Fiber(' w ',' X ',' σ ')'" :=
+  (res_fiber_from_projection w X σ wfib)
+  (at level 70, w at level 0, X at level 0, σ at level 0,
+   format "wfib  ∈ᶠ  Fiber( w ,  X ,  σ )").
 
 Module ResourceNotationSmoke.
   Section Smoke.
     Context {V : Type} `{ValueSig V}.
     Variables m n : WfWorld (V := V).
+    Variable wfib : WfWorld (V := V).
     Variable σ : gmap atom V.
     Variable Hc : world_compat m n.
     Variable Hdef : raw_sum_defined m n.
-    Variable Hproj : res_restrict m (world_dom (m : World (V := V))) σ.
 
     Example product_notation :
       m ×[Hc] n = res_product m n Hc := eq_refl.
@@ -62,9 +57,9 @@ Module ResourceNotationSmoke.
       m |ᵣ world_dom (m : World (V := V)) =
       res_restrict m (world_dom (m : World (V := V))) := eq_refl.
 
-    Example fiber_notation :
-      m ⇂[world_dom (m : World (V := V)), σ |> Hproj] =
-      res_fiber_from_projection m (world_dom (m : World (V := V))) σ Hproj :=
+    Example fiber_projection_notation :
+      wfib ∈ᶠ Fiber(m, world_dom (m : World (V := V)), σ) =
+      res_fiber_from_projection m (world_dom (m : World (V := V))) σ wfib :=
       eq_refl.
   End Smoke.
 End ResourceNotationSmoke.

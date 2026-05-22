@@ -9,8 +9,15 @@ ChoicePrelude/StoreBind.v
 ChoicePrelude/StoreInterface.v
 ChoicePrelude/Store.v
 
+ChoiceAlgebra/theories/ResourceCore.v
+ChoiceAlgebra/theories/ResourceKeyAction.v
+ChoiceAlgebra/theories/ResourceRestrict.v
+ChoiceAlgebra/theories/ResourceAlgebra.v
+ChoiceAlgebra/theories/ResourceExtension.v
+ChoiceAlgebra/theories/ResourceExtensionDerived.v
+ChoiceAlgebra/theories/ResourceInterface.v
+ChoiceAlgebra/theories/ResourceExtensionCompat.v
 ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ResourceNotation.v
 ChoiceAlgebra/theories/ResourceTactics.v
-ChoiceAlgebra/theories/WorldExtension.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v

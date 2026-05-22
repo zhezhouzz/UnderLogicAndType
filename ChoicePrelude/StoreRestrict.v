@@ -1,6 +1,6 @@
 (** * Generic stores: restriction lemmas *)
 
-From ChoicePrelude Require Export StoreKeyAction.
+From ChoicePrelude Require Import Prelude StoreCore StoreKeyAction.
 
 Section AbstractStoreRestrict.
 
@@ -276,6 +276,39 @@ Proof.
   - rewrite !storeA_swap_lookup_inv.
     symmetry. apply storeA_restrict_lookup_none_r.
     intros Hbad. apply Hz. rewrite elem_of_gset_swap. exact Hbad.
+Qed.
+
+Lemma storeA_restrict_shift {K : Type} `{Countable K} `{!ShiftKey K}
+    (k : nat) (s : StoreA K) (X : gset K) :
+  (storeA_restrict (storeA_shift k s) (set_map (key_shift k) X) : gmap K V) =
+  storeA_shift k (storeA_restrict s X).
+Proof.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (storeA_shift k s) (set_map (key_shift k) X) : gmap K V)
+      !! z =
+    (storeA_shift k (storeA_restrict s X) : gmap K V) !! z).
+  rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ set_map (key_shift k) X)) as [Hz|Hz].
+  - apply elem_of_map in Hz as [u [Heq Hu]]. subst z.
+    rewrite !storeA_shift_lookup.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (u ∈ X)) as [_|Hnot]; [reflexivity | contradiction].
+  - transitivity (@None V).
+    + reflexivity.
+    + symmetry. apply not_elem_of_dom.
+      intros Hdom.
+      change (z ∈ dom (@storeA_shift V K _ _ _ k
+        (@storeA_restrict V K _ _ s X) : gmap K V)) in Hdom.
+      pose proof (storeA_shift_dom (V:=V) (K:=K) k
+        (@storeA_restrict V K _ _ s X)) as Hdom_shift.
+      change (dom (@storeA_shift V K _ _ _ k
+        (@storeA_restrict V K _ _ s X) : gmap K V) =
+        set_map (key_shift k)
+          (dom (@storeA_restrict V K _ _ s X : gmap K V))) in Hdom_shift.
+      rewrite Hdom_shift in Hdom.
+      apply elem_of_map in Hdom as [u [Heq Hdomu]]. subst z.
+      apply storeA_restrict_dom_subset in Hdomu.
+      apply Hz. apply elem_of_map. exists u. split; [reflexivity | exact Hdomu].
 Qed.
 
 Lemma storeA_restrict_empty_union_elements_subset {K : Type} `{Countable K}
@@ -677,6 +710,32 @@ Proof.
     apply storeA_restrict_lookup_none_l.
     apply lookup_union_None. split; [|exact H2].
     apply not_elem_of_dom. intros Hz1. set_solver.
+Qed.
+
+Lemma storeA_restrict_union_ignore_r {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  dom (s2 : gmap K V) ## X →
+  (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
+  storeA_restrict s1 X.
+Proof.
+  intros Hdisj.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) X
+    : gmap K V) !! z = (storeA_restrict s1 X : gmap K V) !! z).
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
+  destruct ((s1 : gmap K V) !! z) as [v|] eqn:Hs1.
+  - rewrite (lookup_union_l' (s1 : gmap K V) (s2 : gmap K V) z) by eauto.
+    rewrite Hs1. reflexivity.
+  - rewrite (lookup_union_r (M:=gmap K) (A:=V)
+      (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
+    assert ((s2 : gmap K V) !! z = None) as Hs2.
+    {
+      apply not_elem_of_dom. intros Hz2.
+      assert (Hzempty : z ∈ (∅ : gset K)) by set_solver.
+      apply elem_of_empty in Hzempty. exact Hzempty.
+    }
+    rewrite Hs2. reflexivity.
 Qed.
 
 Lemma storeA_restrict_union_base_singleton {K : Type} `{Countable K}

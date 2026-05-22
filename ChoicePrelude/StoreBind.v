@@ -1,6 +1,6 @@
 (** * Generic stores: compatibility, bind, and union lemmas *)
 
-From ChoicePrelude Require Export StoreRestrict.
+From ChoicePrelude Require Import Prelude StoreCore StoreKeyAction StoreRestrict.
 
 Section AbstractStoreBind.
 
@@ -107,6 +107,45 @@ Proof.
       * left. assert (Hv : v1 = v) by (eapply Hcompat; eauto). subst. reflexivity.
       * right. split; [reflexivity | exact H2].
     + left. exact H1.
+Qed.
+
+Lemma storeA_union_swap_right {K : Type} `{Countable K}
+    (s1 s2 s3 : StoreA K) :
+  s2 ≈A s3 →
+  @union (gmap K V) _ (@union (gmap K V) _ s1 s2) s3 =
+  @union (gmap K V) _ (@union (gmap K V) _ s1 s3) s2.
+Proof.
+  intros Hcompat.
+  apply storeA_map_eq. intros i.
+  rewrite option_eq. intros v.
+  setoid_rewrite (lookup_union_Some_raw (M:=gmap K) (A:=V)).
+  split.
+  - intros [H12 | [H12none H3]].
+    + rewrite lookup_union_Some_raw in H12.
+      destruct H12 as [H1 | [H1none H2]].
+      * left. rewrite lookup_union_Some_raw. left. exact H1.
+      * destruct ((s3 : gmap K V) !! i) as [v3|] eqn:H3i.
+        -- assert (v = v3) by (eapply Hcompat; eauto).
+           subst. left. rewrite lookup_union_Some_raw. right. eauto.
+        -- right. split.
+           ++ rewrite lookup_union_None. eauto.
+           ++ exact H2.
+    + rewrite lookup_union_None in H12none.
+      destruct H12none as [H1none H2none].
+      left. rewrite lookup_union_Some_raw. right. eauto.
+  - intros [H13 | [H13none H2]].
+    + rewrite lookup_union_Some_raw in H13.
+      destruct H13 as [H1 | [H1none H3]].
+      * left. rewrite lookup_union_Some_raw. left. exact H1.
+      * destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2i.
+        -- assert (v2 = v) by (eapply Hcompat; eauto).
+           subst. left. rewrite lookup_union_Some_raw. right. eauto.
+        -- right. split.
+           ++ rewrite lookup_union_None. eauto.
+           ++ exact H3.
+    + rewrite lookup_union_None in H13none.
+      destruct H13none as [H1none H3none].
+      left. rewrite lookup_union_Some_raw. right. eauto.
 Qed.
 
 Lemma storeA_union_absorb_l {K : Type} `{Countable K}

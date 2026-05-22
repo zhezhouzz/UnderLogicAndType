@@ -477,6 +477,78 @@ Proof.
   rewrite gset_swap_elem. set_solver.
 Qed.
 
+Lemma gset_swap_union {A : Type} `{Countable A} (x y : A) (X Y : gset A) :
+  gset_swap x y (X ∪ Y) = gset_swap x y X ∪ gset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_union, !gset_swap_elem, elem_of_union. reflexivity.
+Qed.
+
+Lemma gset_swap_intersection {A : Type} `{Countable A} (x y : A) (X Y : gset A) :
+  gset_swap x y (X ∩ Y) = gset_swap x y X ∩ gset_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_intersection, !gset_swap_elem, elem_of_intersection. reflexivity.
+Qed.
+
+Lemma gset_swap_singleton {A : Type} `{Countable A} (x y z : A) :
+  gset_swap x y ({[z]} : gset A) = {[key_swap x y z]}.
+Proof.
+  apply set_eq. intros u.
+  rewrite gset_swap_elem, !elem_of_singleton.
+  split; intro Hu.
+  - rewrite <- Hu. symmetry. apply key_swap_involutive.
+  - subst u. apply key_swap_involutive.
+Qed.
+
+Lemma elem_of_gset_shift {A : Type} `{Countable A} `{!ShiftKey A}
+    (k : nat) (z : A) (D : gset A) :
+  key_shift k z ∈ (set_map (key_shift k) D : gset A) ↔ z ∈ D.
+Proof.
+  split.
+  - intros [z0 [Hz Hz0]]%elem_of_map.
+    apply (key_shift_inj k) in Hz. subst z0. exact Hz0.
+  - intros Hz.
+    apply elem_of_map. exists z. split; [reflexivity | exact Hz].
+Qed.
+
+Lemma gset_shift_union {A : Type} `{Countable A} `{!ShiftKey A}
+    (k : nat) (X Y : gset A) :
+  set_map (key_shift k) (X ∪ Y) =
+  ((set_map (key_shift k) X : gset A) ∪ set_map (key_shift k) Y).
+Proof.
+  apply set_eq. intros z.
+  split.
+  - intros [u [-> Hu]]%elem_of_map.
+    apply elem_of_union in Hu as [Hu | Hu].
+    + apply elem_of_union. left.
+      apply elem_of_map. exists u. split; [reflexivity | exact Hu].
+    + apply elem_of_union. right.
+      apply elem_of_map. exists u. split; [reflexivity | exact Hu].
+  - intros [Hz | Hz]%elem_of_union.
+    + apply elem_of_map in Hz as [u [Heq Hu]]. subst z.
+      apply elem_of_map. exists u. split; [reflexivity | set_solver].
+    + apply elem_of_map in Hz as [u [Heq Hu]]. subst z.
+      apply elem_of_map. exists u. split; [reflexivity | set_solver].
+Qed.
+
+Lemma gset_shift_intersection {A : Type} `{Countable A} `{!ShiftKey A}
+    (k : nat) (X Y : gset A) :
+  set_map (key_shift k) (X ∩ Y) =
+  ((set_map (key_shift k) X : gset A) ∩ set_map (key_shift k) Y).
+Proof.
+  apply set_eq. intros z.
+  split.
+  - intros [u [-> Hu]]%elem_of_map.
+    apply elem_of_intersection in Hu as [HuX HuY].
+    apply elem_of_intersection. split; apply elem_of_map; eexists; split; eauto.
+  - intros [HzX HzY]%elem_of_intersection.
+    apply elem_of_map in HzX as [u [HeqX HuX]]. subst z.
+    apply elem_of_map in HzY as [v [Hv HuY]].
+    apply (key_shift_inj k) in Hv. subst v.
+    apply elem_of_map. exists u. split; [reflexivity | set_solver].
+Qed.
+
 #[global] Instance lawful_swap_action_gset {A : Type} `{Countable A} :
   LawfulSwapAction A (gset A).
 Proof.

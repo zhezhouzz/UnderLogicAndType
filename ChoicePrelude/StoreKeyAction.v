@@ -1,6 +1,6 @@
 (** * Generic stores: key actions *)
 
-From ChoicePrelude Require Export StoreCore.
+From ChoicePrelude Require Import Prelude StoreCore.
 
 Section AbstractStoreKeyAction.
 
@@ -85,6 +85,60 @@ Proof.
     K (gmap K) _ _ _ _ _ _ _ _ _
     (key_swap x y) _ V (s1 : gmap K V) (s2 : gmap K V)).
   apply key_swap_inj.
+Qed.
+
+Lemma storeA_swap_involutive {K : Type} `{Countable K} `{!SwapKey K}
+    (x y : K) (s : StoreA K) :
+  @storeA_swap V K _ _ _ x y (@storeA_swap V K _ _ _ x y s) = s.
+Proof.
+  apply storeA_map_eq. intros z.
+  change (((@storeA_swap V K _ _ _ x y
+    (@storeA_swap V K _ _ _ x y s) : gmap K V) !! z) =
+    ((s : gmap K V) !! z)).
+  rewrite storeA_swap_lookup_inv, storeA_swap_lookup_inv.
+  rewrite key_swap_involutive. reflexivity.
+Qed.
+
+Lemma storeA_swap_sym {K : Type} `{Countable K} `{!SwapKey K}
+    (x y : K) (s : StoreA K) :
+  @storeA_swap V K _ _ _ x y s = @storeA_swap V K _ _ _ y x s.
+Proof.
+  apply storeA_map_eq. intros z.
+  change (((@storeA_swap V K _ _ _ x y s : gmap K V) !! z) =
+    ((@storeA_swap V K _ _ _ y x s : gmap K V) !! z)).
+  rewrite !storeA_swap_lookup_inv.
+  rewrite key_swap_sym. reflexivity.
+Qed.
+
+Lemma storeA_swap_conjugate {K : Type} `{Countable K} `{!SwapKey K}
+    (a b x y : K) (s : StoreA K) :
+  @storeA_swap V K _ _ _ a b (@storeA_swap V K _ _ _ x y s) =
+  @storeA_swap V K _ _ _ (key_swap a b x) (key_swap a b y)
+    (@storeA_swap V K _ _ _ a b s).
+Proof.
+  apply storeA_map_eq. intros z.
+  change (((@storeA_swap V K _ _ _ a b
+    (@storeA_swap V K _ _ _ x y s) : gmap K V) !! z) =
+    ((@storeA_swap V K _ _ _ (key_swap a b x) (key_swap a b y)
+      (@storeA_swap V K _ _ _ a b s) : gmap K V) !! z)).
+  rewrite !storeA_swap_lookup_inv.
+  rewrite key_swap_conjugate_inv. reflexivity.
+Qed.
+
+Lemma storeA_swap_conjugate_inv {K : Type} `{Countable K} `{!SwapKey K}
+    (a b x y : K) (s : StoreA K) :
+  @storeA_swap V K _ _ _ x y (@storeA_swap V K _ _ _ a b s) =
+  @storeA_swap V K _ _ _ a b
+    (@storeA_swap V K _ _ _ (key_swap a b x) (key_swap a b y) s).
+Proof.
+  apply storeA_map_eq. intros z.
+  change (((@storeA_swap V K _ _ _ x y
+    (@storeA_swap V K _ _ _ a b s) : gmap K V) !! z) =
+    ((@storeA_swap V K _ _ _ a b
+      (@storeA_swap V K _ _ _ (key_swap a b x) (key_swap a b y) s) :
+      gmap K V) !! z)).
+  rewrite !storeA_swap_lookup_inv.
+  rewrite key_swap_conjugate. reflexivity.
 Qed.
 
 Lemma storeA_shift_lookup {K : Type} `{Countable K} `{!ShiftKey K}

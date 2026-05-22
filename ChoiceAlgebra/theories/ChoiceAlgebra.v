@@ -77,7 +77,7 @@ End ChoiceAlgebraLemmas.
 (** ** Concrete instance: (WfWorld, res_sum, res_product, res_unit, ⊑)
 
     Carrier is [WfWorld] — the sigma type [{m : World | wf_world m}].
-    Product and sum are the partial operations from Resource.v. *)
+    Product and sum are the partial operations exported by [Resource]. *)
 
 Section WfWorldChoiceAlgebra.
 

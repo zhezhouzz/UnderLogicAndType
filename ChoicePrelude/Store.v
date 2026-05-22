@@ -1,5 +1,6 @@
 (** * Stores *)
 
+From ChoicePrelude Require Import Prelude.
 From ChoicePrelude Require Export StoreCore.
 From ChoicePrelude Require Export StoreKeyAction.
 From ChoicePrelude Require Export StoreRestrict.
