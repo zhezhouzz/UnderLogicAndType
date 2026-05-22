@@ -82,19 +82,26 @@ Qed.
 
 Lemma expr_total_on_ret_lc X v (m : WfWorld) :
   stale v ⊆ X →
+  X ⊆ world_dom (m : World) →
   is_lc v →
   (∀ σ, (m : World) σ → lc_env (store_restrict σ X)) →
-  expr_total_on X (tret v) m.
+  expr_total_on (tret v) m.
 Proof.
-  intros Hfv Hlc Henv.
-  split; [simpl; eauto 6 |].
-  intros σ Hσ.
-  exists (m{store_restrict σ X} v).
-  change (m{store_restrict σ X} (tret v) →* tret (m{store_restrict σ X} v)).
-  rewrite msubst_ret.
-  apply Steps_refl.
-  constructor.
-  apply msubst_lc; eauto 6.
+  intros Hfv HX Hlc Henv.
+  split.
+  - simpl. set_solver.
+  - intros ρ Hρ.
+    exists (m{store_restrict ρ (fv_value v)} v).
+    change (m{store_restrict ρ (fv_value v)} (tret v) →*
+      tret (m{store_restrict ρ (fv_value v)} v)).
+    rewrite msubst_ret.
+    apply Steps_refl.
+    constructor.
+    apply msubst_lc; [| exact Hlc].
+    replace (store_restrict ρ (fv_value v)) with
+      (store_restrict (store_restrict ρ X) (fv_value v)).
+    + apply lc_env_restrict. apply Henv. exact Hρ.
+    + rewrite store_restrict_twice_subset by exact Hfv. reflexivity.
 Qed.
 
 Lemma fundamental_var_total_case Σ (x : atom) (τ : choice_ty) :
@@ -116,6 +123,7 @@ Proof.
     + change ({[x]} ⊆ dom (erase_ctx_under Σ (CtxBind x τ))).
       cbn [erase_ctx].
       rewrite dom_union_L, dom_singleton_L. set_solver.
+    + eapply denot_ctx_in_env_world_covers_erased; eauto.
     + constructor.
     + intros σ Hσ.
       replace (dom (erase_ctx_under Σ (CtxBind x τ))) with (dom Σ ∪ {[x]}).
@@ -152,16 +160,18 @@ Lemma fundamental_const_case Σ c :
 Proof.
 Admitted.
 
-Lemma expr_total_on_ret_const X c m :
-  expr_total_on X (tret (vconst c)) m.
+Lemma expr_total_on_ret_const c m :
+  expr_total_on (tret (vconst c)) m.
 Proof.
   split.
   - simpl. set_solver.
   - intros σ _.
     exists (vconst c).
-    change (m{store_restrict σ X} (tret (vconst c)) →* tret (vconst c)).
+    change (m{store_restrict σ (fv_tm (tret (vconst c)))} (tret (vconst c)) →*
+      tret (vconst c)).
     rewrite msubst_ret. simpl.
-    rewrite (msubst_fresh (store_restrict σ X) (vconst c)) by set_solver.
+    rewrite (msubst_fresh (store_restrict σ (fv_tm (tret (vconst c)))) (vconst c))
+      by set_solver.
     apply Steps_refl. constructor. constructor.
 Qed.
 

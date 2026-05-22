@@ -5,7 +5,7 @@
     context-domain, and open/substitution side conditions. *)
 
 From CoreLang Require Import Instantiation InstantiationProps.
-From ChoiceTyping Require Export LetResultWorld.
+From ChoiceTyping Require Export Typing.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 
 (** ** Fresh representatives for tlet body binders *)

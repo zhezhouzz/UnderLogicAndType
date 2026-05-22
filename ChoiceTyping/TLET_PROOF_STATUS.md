@@ -1,50 +1,41 @@
 # TLet Proof Status
 
-This note records the current boundary of the `tlet` proof work after the
-cleanup of obsolete result-equivalence routes.
+This note records the current boundary of the `tlet` proof work after moving
+the main route away from concrete `let_result_world_on` entrypoints.
 
 ## Current Main Route
 
-The active proof path is:
+The active proof path is extension-style:
 
-1. `ChoiceTyping/theories/LetResultWorld.v` defines the exact operational
-   result world `let_result_world_on e x m`.
-2. `ChoiceTyping/theories/ResultWorldExprContFamily.v` connects result worlds with
-   `FExprContIn`.
-3. `ChoiceTyping/theories/TLetDenotation.v` uses that bridge in
-   `FExprCont_tlet_reduction`, then lifts the result through
-   `denot_ty_fuel_tlet_reduction_formula`.
-4. `denot_tlet_total_semantic` is the statement currently used by
-   `ChoiceTyping/theories/Soundness.v`.
+1. `ChoiceTyping/theories/ResultWorldExtension.v` defines `result_extends` and
+   `result_extends_on`, the proof-facing representation of adding the result
+   coordinate.
+2. `ChoiceTyping/theories/TLetTotal.v` provides the extension-facing context
+   update `tlet_body_ctx_from_result_world`.
+3. `ChoiceTyping/theories/TLetExprCont.v` states `FExprCont_tlet_reduction`
+   directly over `result_extends`.
+4. `ChoiceTyping/theories/TLetReduction.v` states the type-denotation tlet
+   reduction directly over `result_extends`.
+5. `ChoiceTyping/theories/TLetReductionTotal.v` and
+   `ChoiceTyping/theories/TLetDenotation.v` use the extension route.
 
-The intended principle is that the intermediate coordinate `x` is introduced
-by `let_result_world_on e1 x m` before the final result coordinate `ν` is
-introduced by `FExprContIn`.  This is the point where the proof tracks the
-`input -> x -> ν` pairing.
+The concrete model in `LetResultWorld.v` remains only as a bottom-level sanity
+bridge for the operational construction, not as the public proof entrypoint.
 
 ## Stable Building Blocks
 
-In `ChoiceTyping/theories/LetResultWorld.v`:
+In `ChoiceTyping/theories/ResultWorldExtension.v`:
 
-- `let_result_world_on_member`
-- `let_result_world_on_elim`
-- `let_result_world_on_dom`
-- `let_result_world_on_restrict`
-- `let_result_world_on_restrict_input`
-- `let_result_world_on_le`
-- `let_result_world_on_tlete_decompose`
-
-In `ChoiceTyping/theories/ResultWorldExprContFamily.v`:
-
-- `FExprContIn_to_let_result_world_on_exact_domain`
-- `let_result_world_on_to_FExprContIn_exact_domain`
-- `FExprContIn_iff_let_result_world_on_exact_domain`
+- `result_extends`
+- `result_extends_on`
+- `result_extends_exists`
+- `result_extends_on_exists`
+- `result_extends_on_member`
+- `result_extends_on_elim`
+- `result_extends_on_forall_extension_commute`
 
 In `ChoiceTyping/theories/TLetDenotation.v`:
 
-- `FExprCont_tlet_reduction`
-- `denot_ty_fuel_tlet_reduction_formula`
-- `denot_ty_tlet_reduction_formula`
 - `denot_ty_total_tlet_reduction`
 - `denot_tlet_total_semantic`
 
@@ -52,14 +43,15 @@ In `ChoiceTyping/theories/TLetDenotation.v`:
 
 The current tlet route still depends on admitted or partially admitted pieces:
 
-- `denot_ty_fuel_tlet_reduction_formula_on_arrow_case`
-- `denot_ty_fuel_tlet_reduction_formula_on_wand_case`
-- `denot_ty_fuel_tlet_reduction_formula_on`
+- `tlet_body_ctx_from_result_world`
+- `expr_total_on_tlete_elim_body_ext`
+- `FExprCont_tlet_reduction`
+- `denot_ty_tlet_reduction_on_ext_core`
 - `expr_total_tlet_reduction`
-- `denot_ty_regular_tlet_context_iff`
+- `denot_ty_total_tlet_reduction`
 
-The older expression-result bridge files, graph route, and the thin
-`TLetExprResult.v` wrapper have been removed.
+The older concrete result-world public wrappers have been removed from the
+main tlet files.
 
 ## Removed Routes
 

@@ -1,0 +1,199 @@
+(** * ChoiceType.TypeLanguage.Interface
+
+    Public surface for the type-language layer.  Other layers should import
+    this file instead of reaching into the implementation files directly. *)
+
+From LocallyNameless Require Import Classes.
+From ChoiceType.TypeLanguage Require Export WellFormed Tactics.
+
+Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=
+  lvars_wf_at 0 D (qual_vars q).
+
+Definition basic_qualifier_body (D : aset) (q : type_qualifier) : Prop :=
+  lvars_wf_at 1 D (qual_vars q).
+
+Lemma basic_qualifier_mono D E q :
+  D ⊆ E ->
+  basic_qualifier D q ->
+  basic_qualifier E q.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_body_mono D E q :
+  D ⊆ E ->
+  basic_qualifier_body D q ->
+  basic_qualifier_body E q.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_lc D q :
+  basic_qualifier D q ->
+  lc_qualifier q.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_body_lc D q :
+  basic_qualifier_body D q ->
+  body_qualifier q.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_fv_subset D q :
+  basic_qualifier D q ->
+  qual_dom q ⊆ D.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_body_fv_subset D q :
+  basic_qualifier_body D q ->
+  qual_dom q ⊆ D.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_body_open D q x :
+  x ∉ D ->
+  basic_qualifier_body D q ->
+  basic_qualifier (D ∪ {[x]}) (q ^q^ x).
+Proof.
+Admitted.
+
+Lemma basic_qualifier_top D :
+  basic_qualifier D qual_top.
+Proof.
+Admitted.
+
+Lemma basic_qualifier_body_top D :
+  basic_qualifier_body D qual_top.
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_over D b q :
+  basic_qualifier_body D q ->
+  basic_choice_ty D (CTOver b q).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_under D b q :
+  basic_qualifier_body D q ->
+  basic_choice_ty D (CTUnder b q).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_inter D τ1 τ2 :
+  basic_choice_ty D τ1 ->
+  basic_choice_ty D τ2 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  basic_choice_ty D (CTInter τ1 τ2).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_union D τ1 τ2 :
+  basic_choice_ty D τ1 ->
+  basic_choice_ty D τ2 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  basic_choice_ty D (CTUnion τ1 τ2).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_sum D τ1 τ2 :
+  basic_choice_ty D τ1 ->
+  basic_choice_ty D τ2 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  basic_choice_ty D (CTSum τ1 τ2).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_arrow D τx τ :
+  basic_choice_ty D τx ->
+  wf_choice_ty_at 1 D τ ->
+  basic_choice_ty D (CTArrow τx τ).
+Proof.
+Admitted.
+
+Lemma basic_choice_ty_wand D τx τ :
+  basic_choice_ty D τx ->
+  wf_choice_ty_at 1 D τ ->
+  basic_choice_ty D (CTWand τx τ).
+Proof.
+Admitted.
+
+Lemma basic_ctx_empty D :
+  basic_ctx D CtxEmpty.
+Proof.
+Admitted.
+
+Lemma basic_ctx_bind D x τ :
+  x ∉ D ->
+  basic_choice_ty D τ ->
+  basic_ctx D (CtxBind x τ).
+Proof.
+Admitted.
+
+Lemma basic_ctx_comma D Γ1 Γ2 :
+  basic_ctx D Γ1 ->
+  basic_ctx (D ∪ ctx_dom Γ1) Γ2 ->
+  ctx_dom Γ1 ## ctx_dom Γ2 ->
+  basic_ctx D (CtxComma Γ1 Γ2).
+Proof.
+Admitted.
+
+Lemma basic_ctx_star D Γ1 Γ2 :
+  basic_ctx D Γ1 ->
+  basic_ctx D Γ2 ->
+  ctx_dom Γ1 ## ctx_dom Γ2 ->
+  basic_ctx D (CtxStar Γ1 Γ2).
+Proof.
+Admitted.
+
+Lemma basic_ctx_sum D Γ1 Γ2 :
+  basic_ctx D Γ1 ->
+  basic_ctx D Γ2 ->
+  ctx_dom Γ1 = ctx_dom Γ2 ->
+  erase_ctx Γ1 = erase_ctx Γ2 ->
+  basic_ctx D (CtxSum Γ1 Γ2).
+Proof.
+Admitted.
+
+#[global] Instance OpenFv_qualifier : OpenFv atom type_qualifier.
+Proof.
+Admitted.
+
+#[global] Instance OpenFv_cty : OpenFv atom choice_ty.
+Proof.
+Admitted.
+
+Lemma qual_open_fv_prime_except k x q :
+  qual_dom q ∖ {[x]} ⊆ qual_dom (qual_open_atom k x q).
+Proof.
+Admitted.
+
+Lemma qual_open_fv_prime_fresh k x q :
+  x ∉ qual_dom q ->
+  qual_dom q ⊆ qual_dom (qual_open_atom k x q).
+Proof.
+Admitted.
+
+Lemma cty_open_fv_prime_except k x τ :
+  fv_cty τ ∖ {[x]} ⊆ fv_cty ({k ~> x} τ).
+Proof.
+Admitted.
+
+Lemma cty_open_fv_prime_fresh k x τ :
+  x ∉ fv_cty τ ->
+  fv_cty τ ⊆ fv_cty ({k ~> x} τ).
+Proof.
+Admitted.
+
+#[global] Hint Resolve
+  basic_choice_ty_lc
+  basic_choice_ty_fv_subset
+  basic_qualifier_lc
+  basic_qualifier_body_lc
+  basic_qualifier_fv_subset
+  basic_qualifier_body_fv_subset
+  basic_ctx_dom_fresh
+  basic_ctx_empty
+  basic_ctx_bind
+  basic_ctx_star
+  basic_ctx_sum
+  : type_lang.

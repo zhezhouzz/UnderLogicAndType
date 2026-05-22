@@ -8,10 +8,20 @@ From ChoiceType Require Export Prelude.
 
 (** ** Syntax *)
 
-Inductive type_qualifier : Type :=
+Record StorewithDom (D: lvset) : Type := {
+  lstore: lstore;
+  lstore_dom : D = dom lstore;
+}.
+
+Record type_qualifier : Type := {
+  tqual_dom : lvset;
+  tqual_prop : StorewithDom tqual_dom → Prop;
+}
+
+(* Inductive type_qualifier : Type :=
   | qual
       (D : lvset)
-      (prop : gmap nat value → gmap atom value → gmap atom value → Prop).
+      (prop : gmap nat value → gmap atom value → gmap atom value → Prop). *)
 
 Definition qual_bvars (q : type_qualifier) : gset nat :=
   match q with
@@ -37,6 +47,12 @@ Definition qual_prop (q : type_qualifier) :
 Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_qualifier :=
   match q with
   | qual D p =>
+      qual (lvars_open k x D) (λ s, p (raw_swap k x s))
+end.
+
+(* Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_qualifier :=
+  match q with
+  | qual D p =>
       if decide (k ∈ lvars_bv D) then
         qual (lvars_open k x D)
           (λ β σ a,
@@ -45,7 +61,7 @@ Definition qual_open_atom (k : nat) (x : atom) (q : type_qualifier) : type_quali
                    (store_restrict σ (lvars_fv D))
                    (store_restrict a (lvars_fv D)))
       else q
-  end.
+  end. *)
 
 Definition qual_and (q1 q2 : type_qualifier) : type_qualifier :=
   match q1, q2 with

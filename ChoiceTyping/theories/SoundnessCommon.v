@@ -7,7 +7,7 @@
 From CoreLang Require Import Instantiation InstantiationProps OperationalProps BasicTypingProps
   LocallyNamelessProps.
 From ChoiceLogic Require Export FormulaDerived.
-From ChoiceTyping Require Export LetResultWorld.
+From ChoiceTyping Require Export Typing.
 From ChoiceTyping Require Import Naming.
 From ChoiceType Require Import BasicStore LocallyNamelessProps.
 

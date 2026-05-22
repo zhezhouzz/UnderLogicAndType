@@ -20,7 +20,7 @@ Definition denot_ty_total_model_in_ctx_under
     (m : WfWorld) : Prop :=
   denot_ty_regular_in_ctx_under Σ Γ τ ∧
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
-  expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
+  expr_total_on e m.
 
 Definition total_model_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : Prop :=
@@ -45,7 +45,7 @@ Proof. intros; hauto. Qed.
 
 Lemma denot_ty_total_model_total Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
-  expr_total_on (dom (erase_ctx_under Σ Γ)) e m.
+  expr_total_on e m.
 Proof. intros; hauto. Qed.
 
 Lemma total_model_to_total_denot Σ Γ τ e m :

@@ -1,5 +1,9 @@
 -R ChoicePrelude ChoicePrelude
 -R ChoiceAlgebra/theories ChoiceAlgebra
+-R ChoiceLogic/theories ChoiceLogic
+-R LocallyNameless LocallyNameless
+-R CoreLang/theories CoreLang
+-R ChoiceType/theories ChoiceType
 
 ChoicePrelude/Prelude.v
 ChoicePrelude/StoreCore.v
@@ -21,3 +25,40 @@ ChoiceAlgebra/theories/Resource.v
 ChoiceAlgebra/theories/ResourceNotation.v
 ChoiceAlgebra/theories/ResourceTactics.v
 ChoiceAlgebra/theories/ChoiceAlgebra.v
+
+ChoiceLogic/theories/LogicQualifier.v
+ChoiceLogic/theories/FormulaSyntax.v
+ChoiceLogic/theories/Formula.v
+ChoiceLogic/theories/FormulaTactics.v
+ChoiceLogic/theories/FormulaDerived.v
+ChoiceLogic/theories/FormulaWorldExtension.v
+ChoiceLogic/theories/ChoiceLogicProps.v
+ChoiceLogic/theories/FormulaNotation.v
+ChoiceLogic/theories/LogicInterface.v
+
+LocallyNameless/Classes.v
+LocallyNameless/Tactics.v
+
+CoreLang/theories/Prelude.v
+CoreLang/theories/Syntax.v
+CoreLang/theories/SyntaxNotation.v
+CoreLang/theories/LocallyNamelessExtra.v
+CoreLang/theories/LocallyNamelessProps.v
+CoreLang/theories/BasicTyping.v
+CoreLang/theories/BasicTypingProps.v
+CoreLang/theories/Instantiation.v
+CoreLang/theories/InstantiationProps.v
+CoreLang/theories/SmallStep.v
+CoreLang/theories/OperationalResults.v
+CoreLang/theories/OperationalProps.v
+CoreLang/theories/StrongNormalization.v
+CoreLang/theories/Sugar.v
+
+ChoiceType/theories/TypeLanguage/Qualifier.v
+ChoiceType/theories/TypeLanguage/Renaming.v
+ChoiceType/theories/TypeLanguage/Syntax.v
+ChoiceType/theories/TypeLanguage/WellFormed.v
+ChoiceType/theories/TypeLanguage/Env.v
+ChoiceType/theories/TypeLanguage/Notation.v
+ChoiceType/theories/TypeLanguage/Tactics.v
+ChoiceType/theories/TypeLanguage/Interface.v

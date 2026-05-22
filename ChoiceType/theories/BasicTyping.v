@@ -80,15 +80,48 @@ Inductive basic_ctx : aset → ctx → Prop :=
 
 #[global] Hint Constructors basic_choice_ty basic_ctx : core.
 
+(** A uniform scoping judgment.  The concrete predicates remain the canonical
+    definitions; this class is notation-level glue for proof-facing statements
+    that only care that an object is scoped by an atom domain. *)
+Class ScopedIn A := scoped_in : aset → A → Prop.
+
+#[global] Instance scoped_choice_ty : ScopedIn choice_ty := basic_choice_ty.
+#[global] Instance scoped_ctx : ScopedIn ctx := basic_ctx.
+
 (** ** Paper-judgment notations
 
     These notations are for printed goals and statements.  Proof scripts should
     keep using the explicit names [basic_choice_ty] and [basic_ctx]. *)
 
+Notation "D '⊢s' x" := (scoped_in D x)
+  (at level 40, x at level 40).
+
 Notation "D '⊢sτ' τ" := (basic_choice_ty D τ)
   (at level 40, τ at level 40, only printing).
 Notation "D '⊢sΓ' Γ" := (basic_ctx D Γ)
   (at level 40, Γ at level 40, only printing).
+
+Module BasicScopingNotationSmoke.
+  Section Smoke.
+    Variable D : aset.
+    Variable τ : choice_ty.
+    Variable Γ : ctx.
+
+    Example scoped_ty_notation :
+      (D ⊢s τ) = basic_choice_ty D τ := eq_refl.
+
+    Example scoped_ctx_notation :
+      (D ⊢s Γ) = basic_ctx D Γ := eq_refl.
+  End Smoke.
+End BasicScopingNotationSmoke.
+
+Lemma scoped_choice_ty_iff D τ :
+  D ⊢s τ ↔ basic_choice_ty D τ.
+Proof. reflexivity. Qed.
+
+Lemma scoped_ctx_iff D Γ :
+  D ⊢s Γ ↔ basic_ctx D Γ.
+Proof. reflexivity. Qed.
 
 (** ** Regularity and domain facts
 

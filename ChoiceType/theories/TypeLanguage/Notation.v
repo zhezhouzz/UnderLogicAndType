@@ -1,10 +1,9 @@
-(** * ChoiceType.ConversionNotation
+(** * ChoiceType.TypeLanguage.Notation
 
-    Uniform notation for the small structural conversions that otherwise make
-    denotation goals noisy. *)
+    Public syntax notation for the pure choice-type language layer. *)
 
 From CoreLang Require Export SyntaxNotation.
-From ChoiceType Require Export DenotationType.
+From ChoiceType.TypeLanguage Require Export Env.
 
 Declare Scope choice_scope.
 Delimit Scope choice_scope with choice.
@@ -13,8 +12,8 @@ Bind Scope choice_scope with ctx.
 Bind Scope choice_scope with logic_var.
 Bind Scope choice_scope with lty_env.
 
-Class Erase A B := erase : A → B.
-Class Lift A B := lift : A → B.
+Class Erase A B := erase : A -> B.
+Class Lift A B := lift : A -> B.
 
 #[global] Instance erase_choice_ty : Erase choice_ty ty := erase_ty.
 #[global] Instance erase_ctx_inst : Erase ctx (gmap atom ty) := erase_ctx.
@@ -30,13 +29,14 @@ Notation "⌈ x ⌉" := (lift x)
 
 Notation "'#ₗ' k" := (LVBound k)
   (at level 5, format "#ₗ k") : choice_scope.
+
 Notation "'$ₗ' x" := (LVFree x)
   (at level 5, format "$ₗ x") : choice_scope.
 
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
   (at level 20, format "↑ₗ Σ") : choice_scope.
 
-Module ConversionNotationSmoke.
+Module TypeLanguageNotationSmoke.
   Section Smoke.
     Variable τ : choice_ty.
     Variable Γ : ctx.
@@ -62,9 +62,6 @@ Module ConversionNotationSmoke.
     Example mopen_ty_notation :
       (η ⊙ τ)%choice = open_cty_env η τ := eq_refl.
 
-    Example mopen_tm_notation :
-      (η ⊙ e)%choice = open_tm_env η e := eq_refl.
-
     Example mopen_lty_env_notation :
       (η ⊙ Σ)%choice = lty_env_open η Σ := eq_refl.
 
@@ -74,4 +71,4 @@ Module ConversionNotationSmoke.
     Example atom_env_notation :
       (↑ₗ Δ)%choice = atom_env_to_lty_env Δ := eq_refl.
   End Smoke.
-End ConversionNotationSmoke.
+End TypeLanguageNotationSmoke.
