@@ -1,74 +1,179 @@
 From ChoiceAlgebra Require Export
-  Resource ResourceNotation ResourceTactics WorldExtension ChoiceAlgebra.
-From ChoicePrelude Require Export Prelude MapFilterDom Store.
-From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
+  Resource ResourceNotation ResourceTactics ChoiceAlgebra.
+From ChoiceAlgebra Require Import ResourceRestrict.
+From ChoicePrelude Require Export Prelude Store.
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality
+  Logic.ProofIrrelevance.
 
 (** * Logic qualifiers
 
-    Logic qualifiers are resource-level atoms.  They carry:
-    - a finite domain [d] of referenced variables;
-    - a predicate over the domain-restricted explicit store and world.
+    A logic qualifier is a predicate over a locally-nameless resource whose
+    domain is exactly the qualifier domain.  At denotation time an atom-keyed
+    world is lifted to the free-lvar view, restricted to the qualifier domain,
+    and then passed to the predicate.
 
-    The predicate also receives a locally-nameless binder environment.  The
-    environment maps bound logic-variable indices to the fresh atom chosen by
-    [formula_open].  Store and world domains remain atom-based; bound variables
-    are interpreted only before an atom is evaluated.
-
-    We do not require [dom store = d] or [world_dom w = d].  Denotation
-    restricts both inputs to [d] before calling the predicate. *)
+    Opening is just key swapping: the domain swaps [LVBound k] with [LVFree x],
+    and the predicate swaps the incoming lworld back before interpreting it. *)
 
 Section LogicQualifier.
 
 Context {V : Type} `{ValueSig V}.
 
+Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation StoreT := (gmap atom V) (only parsing).
+Local Notation LWorldT := (LWorld (V := V)) (only parsing).
+Local Notation LWfWorldT := (LWfWorld (V := V)) (only parsing).
 
-Inductive logic_qualifier : Type :=
-  | lqual
-      (D : lvset)
-      (prop : gmap nat atom → StoreT → WfWorldT → Prop).
+Record LWorldOn (D : lvset) : Type := {
+  lw : LWfWorldT;
+  lw_dom : lworld_dom (lraw_world lw) = D;
+}.
 
-Definition lqual_dom (q : logic_qualifier) : aset :=
-  match q with
-  | lqual D _ => lvars_fv D
-  end.
+Arguments lw {_} _.
+Arguments lw_dom {_} _.
 
-Definition lqual_prop (q : logic_qualifier) :
-    gmap nat atom → StoreT → WfWorldT → Prop :=
-  match q with
-  | lqual _ p => p
-  end.
+Definition lworld_on_lift
+    (D : lvset) (m : WfWorldT)
+    (Hlc : lc_lvars D)
+    (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)) : LWorldOn D.
+Proof.
+  refine {| lw :=
+    @resA_restrict logic_var _ _ V (res_lift_free (res_restrict m (lvars_fv D))) D |}.
+  simpl.
+  apply set_eq. intros v. split.
+  - intros Hv. apply elem_of_intersection in Hv as [_ Hv]. exact Hv.
+  - intros Hv. apply elem_of_intersection. split; [| exact Hv].
+    unfold lvars_of_atoms. apply elem_of_map.
+    destruct v as [k | x].
+    + exfalso. exact (Hlc (LVBound k) Hv).
+    + exists x. split; [reflexivity |].
+      simpl. apply elem_of_intersection. split.
+      * apply Hsub. rewrite lvars_fv_elem. exact Hv.
+      * rewrite lvars_fv_elem. exact Hv.
+Defined.
+
+Definition lworld_on_swap
+    (a b : logic_var) {D : lvset} (w : LWorldOn D)
+    : LWorldOn (gset_swap a b D).
+Proof.
+  refine {| lw := lres_swap a b (lw w) |}.
+  rewrite lworld_dom_lres_swap, (lw_dom w). reflexivity.
+Defined.
+
+Definition lworld_on_open_back
+    (k : nat) (x : atom) (D : lvset)
+    (w : LWorldOn (lvars_open k x D)) : LWorldOn D.
+Proof.
+  refine {| lw := lres_swap (LVBound k) (LVFree x) (lw w) |}.
+  rewrite lworld_dom_lres_swap, (lw_dom w).
+  rewrite lvars_open_unfold, gset_swap_involutive. reflexivity.
+Defined.
+
+Record logic_qualifier : Type := lqual {
+  lqual_dom : lvset;
+  lqual_prop : LWorldOn lqual_dom → Prop;
+}.
+
+Definition lqual_lvars (q : logic_qualifier) : lvset :=
+  lqual_dom q.
+
+Definition lqual_fv (q : logic_qualifier) : aset :=
+  lvars_fv (lqual_dom q).
 
 Definition logic_qualifier_denote
-    (q : logic_qualifier)
-    (σ : StoreT)
-  (w : WfWorldT) : Prop :=
+    (q : logic_qualifier) (m : WfWorldT) : Prop :=
   match q with
-  | lqual D p =>
-      let d := lvars_fv D in
-      p ∅ (store_restrict σ d) (res_restrict w d)
+  | lqual D P =>
+      ∃ (Hlc : lc_lvars D)
+        (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)),
+        P (lworld_on_lift D m Hlc Hsub)
   end.
 
-Definition lqual_fvars (d : aset) (prop : StoreT → WfWorldT → Prop) : logic_qualifier :=
-  lqual (lvars_of_atoms d) (λ _ σ w, prop σ w).
+Definition lqual_fvars
+    (d : aset) (prop : LWorldOn (lvars_of_atoms d) → Prop)
+    : logic_qualifier :=
+  lqual (lvars_of_atoms d) prop.
 
-Definition lqual_open (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifier :=
+Definition lqual_open
+    (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifier :=
   match q with
-  | lqual D p => lqual (lvars_open k x D) (λ η σ w, p (<[k := x]> η) σ w)
-  end.
+  | lqual D P =>
+	      lqual (lvars_open k x D)
+	        (λ w, P (lworld_on_open_back k x D w))
+	  end.
 
-Lemma logic_qualifier_denote_restrict q σ w X :
-  lqual_dom q ⊆ X →
-  logic_qualifier_denote q σ (res_restrict w X) ↔
-  logic_qualifier_denote q σ w.
+Lemma lworld_on_ext D (w1 w2 : LWorldOn D) :
+  lw w1 = lw w2 →
+  w1 = w2.
 Proof.
-  destruct q as [D p]. simpl. intros HdX.
-  resource_norm.
+  destruct w1 as [w1 Hdom1], w2 as [w2 Hdom2]. simpl.
+  intros ->. f_equal. apply proof_irrelevance.
+Qed.
+
+Lemma logic_qualifier_denote_restrict q w X :
+  lqual_fv q ⊆ X →
+  logic_qualifier_denote q (res_restrict w X) ↔
+  logic_qualifier_denote q w.
+Proof.
+  destruct q as [D P]. simpl. intros HfvX. split.
+  - intros [Hlc [Hsub HP]].
+    exists Hlc.
+    assert (Hsubw : lvars_fv D ⊆ world_dom (w : WorldT)).
+    {
+      intros x Hx.
+      pose proof (Hsub x Hx) as Hx_restrict.
+      simpl in Hx_restrict.
+      apply elem_of_intersection in Hx_restrict as [Hxw _].
+      exact Hxw.
+    }
+    exists Hsubw.
+    enough (lworld_on_lift D (res_restrict w X) Hlc Hsub =
+            lworld_on_lift D w Hlc Hsubw) as Heq.
+    { rewrite <- Heq. exact HP. }
+    apply lworld_on_ext. unfold lworld_on_lift. simpl.
+    rewrite res_restrict_restrict_eq.
+    replace (X ∩ lvars_fv D) with (lvars_fv D) by set_solver.
+    reflexivity.
+  - intros [Hlc [Hsub HP]].
+    exists Hlc.
+    assert (Hsubr : lvars_fv D ⊆ world_dom (res_restrict w X : WorldT)).
+    {
+      simpl. set_solver.
+    }
+    exists Hsubr.
+    enough (lworld_on_lift D w Hlc Hsub =
+            lworld_on_lift D (res_restrict w X) Hlc Hsubr) as Heq.
+    { rewrite <- Heq. exact HP. }
+    apply lworld_on_ext. unfold lworld_on_lift. simpl.
+    rewrite res_restrict_restrict_eq.
+    replace (X ∩ lvars_fv D) with (lvars_fv D) by set_solver.
+    reflexivity.
+Qed.
+
+Lemma logic_qualifier_denote_mono
+    (q : logic_qualifier) (m0 m : WfWorldT) :
+  logic_qualifier_denote q m0 →
+  lqual_fv q ⊆ world_dom (m0 : WorldT) →
+  m0 ⊑ m →
+  logic_qualifier_denote q m.
+Proof.
+  destruct q as [D P]. simpl. intros [Hlc [Hsub0 HP]] _ Hle.
+  exists Hlc.
+  assert (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (raw_le_dom _ _ Hle) as Hdom.
+    set_solver.
+  }
+  exists Hsub.
+  enough (lworld_on_lift D m0 Hlc Hsub0 =
+          lworld_on_lift D m Hlc Hsub) as Heq.
+  { rewrite <- Heq. exact HP. }
+  apply lworld_on_ext. unfold lworld_on_lift. simpl.
+  rewrite (res_restrict_le_eq m0 m (lvars_fv D) Hle Hsub0).
   reflexivity.
 Qed.
 
-#[global] Instance stale_logic_qualifier : Stale logic_qualifier := lqual_dom.
+#[global] Instance stale_logic_qualifier : Stale logic_qualifier := lqual_fv.
 Arguments stale_logic_qualifier /.
 
 End LogicQualifier.

@@ -308,9 +308,9 @@ Lemma storeA_compat_restrict {K : Type} `{Countable K}
 Proof.
   unfold storeA_compat, map_compat.
   intros Hcomp x y z H2 H3.
-  apply storeA_restrict_lookup_some in H2.
-  apply storeA_restrict_lookup_some in H3.
-  hauto.
+  apply storeA_restrict_lookup_some in H2 as [_ H2].
+  apply storeA_restrict_lookup_some in H3 as [_ H3].
+  eapply Hcomp; eauto.
 Qed.
 
 Lemma storeA_compat_restrict_r {K : Type} `{Countable K}
@@ -319,7 +319,8 @@ Lemma storeA_compat_restrict_r {K : Type} `{Countable K}
 Proof.
   unfold storeA_compat, map_compat.
   intros Hcomp x y z H2 H3.
-  apply storeA_restrict_lookup_some in H3. hauto.
+  apply storeA_restrict_lookup_some in H3 as [_ H3].
+  eapply Hcomp; eauto.
 Qed.
 
 Lemma storeA_compat_restrict_l_full_r {K : Type} `{Countable K}

@@ -8,7 +8,6 @@
 From stdpp Require Export gmap sets fin_sets fin_map_dom fin_maps countable.
 From Corelib Require Export Program.Wf.
 From Stdlib Require Export Lia.
-From Hammer Require Export Hammer.
 
 (** ** Shared atom and freshness infrastructure *)
 
@@ -76,15 +75,19 @@ Section dom_gmap_filter.
     apply leibniz_equiv_iff. intros i.
     rewrite elem_of_intersection, !elem_of_dom.
     unfold is_Some.
-    setoid_rewrite map_lookup_filter_Some.
-    hauto.
+    split.
+    - intros [v Hfilter].
+      apply map_lookup_filter_Some in Hfilter as [Hm Hi].
+      split; [exists v; exact Hm | exact Hi].
+    - intros [[v Hm] Hi].
+      exists v. apply map_lookup_filter_Some_2; [exact Hm | exact Hi].
   Qed.
 
   Lemma gmap_filter_key_pair (m : gmap K A) (X : gset K) :
     filter (λ '(k, _), k ∈ X) m = filter (λ kv : K * A, kv.1 ∈ X) m.
   Proof.
     apply map_filter_strong_ext_1.
-    intros i x. hauto.
+    intros i x. reflexivity.
   Qed.
 
   Corollary dom_gmap_filter_key_in_pair (m : gmap K A) (X : gset K) :
@@ -109,7 +112,7 @@ Definition map_restrict (m : gmap K A) (X : gset K) : gmap K A :=
 
 Lemma map_compat_refl m : map_compat m m.
 Proof.
-  unfold map_compat. intros x v1 v2 H1 H2. hauto.
+  unfold map_compat. intros x v1 v2 H1 H2. congruence.
 Qed.
 
 Lemma map_restrict_dom m X :

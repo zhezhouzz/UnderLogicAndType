@@ -12,29 +12,41 @@ Lemma basic_typing_contains_fv_mut :
 Proof.
   apply has_type_mutind with
       (P := fun Γ v T _ => fv_value v ⊆ dom Γ)
-      (P0 := fun Γ e T _ => fv_tm e ⊆ dom Γ);
-      simpl; try set_solver.
+      (P0 := fun Γ e T _ => fv_tm e ⊆ dom Γ).
+  - cbn [fv_value]. set_solver.
   - intros Γ x T Hlookup.
+    cbn [fv_value].
     apply elem_of_dom_2 in Hlookup. set_solver.
   - intros Γ s T e L Hty IH.
+    cbn [fv_value].
     pose (x := fresh_for (L ∪ fv_tm e)).
     assert (Hx : x ∉ L ∪ fv_tm e) by (subst x; apply fresh_for_not_in).
     specialize (IH x ltac:(set_solver)).
     pose proof (open_fv_tm' e (vfvar x) 0) as Hopen.
     rewrite dom_insert in IH. set_solver.
   - intros Γ sx T vf L Hty IH.
+    cbn [fv_value].
     pose (x := fresh_for (L ∪ fv_value vf)).
     assert (Hx : x ∉ L ∪ fv_value vf) by (subst x; apply fresh_for_not_in).
     specialize (IH x ltac:(set_solver)).
     pose proof (open_fv_value' vf (vfvar x) 0) as Hopen.
     rewrite dom_insert in IH. set_solver.
+  - intros Γ v T Hty IH.
+    cbn [fv_tm]. exact IH.
   - intros Γ T1 T2 e1 e2 L Hty1 IH1 Hty2 IH2.
+    cbn [fv_tm].
     pose (x := fresh_for (L ∪ fv_tm e2)).
     assert (Hx : x ∉ L ∪ fv_tm e2) by (subst x; apply fresh_for_not_in).
     specialize (IH2 x ltac:(set_solver)).
     rewrite dom_insert in IH2.
     pose proof (open_fv_tm' e2 (vfvar x) 0) as Hopen.
     set_solver.
+  - intros Γ op v arg_b ret_b Hop Hty IH.
+    cbn [fv_tm]. exact IH.
+  - intros Γ s1 s2 v1 v2 Hty1 IH1 Hty2 IH2.
+    cbn [fv_tm]. set_solver.
+  - intros Γ v T et ef Htyv IHv Htyt IHt Htyf IHf.
+    cbn [fv_tm]. set_solver.
 Qed.
 
 Lemma basic_typing_contains_fv_value Γ v T :
@@ -425,7 +437,8 @@ Proof.
   intros Hfresh Hty.
   eapply basic_typing_env_agree_value; [exact Hty |].
   intros z Hz.
-  rewrite lookup_insert_ne; [reflexivity | set_solver].
+  change (Γ !! z = (<[x := U]> Γ : gmap atom ty) !! z).
+  symmetry. apply lookup_insert_ne. set_solver.
 Qed.
 
 Lemma basic_typing_drop_insert_fresh_tm Γ e T x U :
@@ -436,7 +449,8 @@ Proof.
   intros Hfresh Hty.
   eapply basic_typing_env_agree_tm; [exact Hty |].
   intros z Hz.
-  rewrite lookup_insert_ne; [reflexivity | set_solver].
+  change (Γ !! z = (<[x := U]> Γ : gmap atom ty) !! z).
+  symmetry. apply lookup_insert_ne. set_solver.
 Qed.
 
 Lemma basic_typing_subst_value Γ x s v T vx :
@@ -580,6 +594,39 @@ Proof.
     end.
 Qed.
 
+Lemma basic_typing_tlete_body_for_fresh Γ e1 e2 T1 T2 x :
+  Γ ⊢ₑ e1 ⋮ T1 →
+  Γ ⊢ₑ tlete e1 e2 ⋮ T2 →
+  x ∉ dom Γ →
+  <[x := T1]> Γ ⊢ₑ e2 ^^ x ⋮ T2.
+Proof.
+  intros He1 Hlet Hxfresh.
+  inversion Hlet; subst.
+  assert (T0 = T1) as ->.
+  { eapply basic_typing_unique_tm; eauto. }
+  pose proof (basic_typing_contains_fv_tm Γ (tlete e1 e2) T2 Hlet)
+    as Hfvlet.
+  pose (y := fresh_for (L ∪ dom Γ ∪ fv_tm e2 ∪ {[x]})).
+  assert (Hy : y ∉ L ∪ dom Γ ∪ fv_tm e2 ∪ {[x]})
+    by (subst y; apply fresh_for_not_in).
+  match goal with
+  | Hopen : ∀ z : atom, z ∉ L → <[z:=T1]> Γ ⊢ₑ e2 ^^ z ⋮ T2 |- _ =>
+      pose proof (Hopen y ltac:(set_solver)) as Hybody
+  end.
+  eapply basic_typing_open_tm with (x := y) (U := T1).
+  - set_solver.
+  - constructor. apply lookup_insert_eq.
+  - replace (<[y:=T1]> (<[x:=T1]> Γ))
+      with (<[x:=T1]> (<[y:=T1]> Γ))
+      by (apply insert_insert_ne; simpl in Hfvlet; set_solver).
+    eapply (basic_typing_weaken_insert_tm (<[y := T1]> Γ) (e2 ^^ y) T2 x T1).
+    + apply not_elem_of_dom.
+      replace (((<[y := T1]> Γ : gmap atom ty) !! x)) with (Γ !! x).
+      * by apply not_elem_of_dom.
+      * symmetry. apply lookup_insert_ne. simpl in Hfvlet. set_solver.
+    + exact Hybody.
+Qed.
+
 Lemma basic_typing_strengthen_value Γ x Tx v T :
   <[x := Tx]> Γ ⊢ᵥ v ⋮ T →
   x ∉ fv_value v →
@@ -593,16 +640,17 @@ Proof.
         ∀ Γ, Γx = <[x := Tx]> Γ → x ∉ fv_tm e → Γ ⊢ₑ e ⋮ T);
       intros Γ0 Heq Hfresh; subst; simpl in Hfresh; eauto.
   - econstructor.
-    rewrite lookup_insert_ne in e by set_solver.
+    replace ((<[x := Tx]> Γ0 : gmap atom ty) !! x0) with (Γ0 !! x0) in e.
+    2:{ symmetry. apply lookup_insert_ne. set_solver. }
     exact e.
   - apply VT_Lam with (L := L ∪ {[x]}). intros y Hy.
     eapply H; [set_solver | |].
-    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + apply insert_insert_ne. set_solver.
     + pose proof (open_fv_tm e (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - apply VT_Fix with (L := L ∪ {[x]}). intros y Hy.
     eapply H; [set_solver | |].
-    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + apply insert_insert_ne. set_solver.
     + pose proof (open_fv_value vf (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - eapply TT_Let with (T1 := T1) (L := L ∪ {[x]}).
@@ -615,7 +663,7 @@ Proof.
     | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
         eapply IH; [set_solver | |]
     end.
-    * rewrite insert_insert_ne by set_solver. reflexivity.
+    * apply insert_insert_ne. set_solver.
     * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - econstructor.
@@ -655,16 +703,17 @@ Proof.
         ∀ Γ, Γx = <[x := Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ T);
       intros Γ0 Heq Hfresh; subst; simpl in Hfresh; eauto.
   - econstructor.
-    rewrite lookup_insert_ne in e by set_solver.
+    replace ((<[x := Tx]> Γ0 : gmap atom ty) !! x0) with (Γ0 !! x0) in e.
+    2:{ symmetry. apply lookup_insert_ne. set_solver. }
     exact e.
   - apply VT_Lam with (L := L ∪ {[x]}). intros y Hy.
     eapply H; [set_solver | |].
-    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + apply insert_insert_ne. set_solver.
     + pose proof (open_fv_tm e (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - apply VT_Fix with (L := L ∪ {[x]}). intros y Hy.
     eapply H; [set_solver | |].
-    + rewrite insert_insert_ne by set_solver. reflexivity.
+    + apply insert_insert_ne. set_solver.
     + pose proof (open_fv_value vf (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - eapply TT_Let with (T1 := T1) (L := L ∪ {[x]}).
@@ -677,7 +726,7 @@ Proof.
     | IH : ∀ y : atom, y ∉ _ → ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm (e2 ^^ y) → Γ ⊢ₑ e2 ^^ y ⋮ _ |- _ =>
         eapply IH; [set_solver | |]
     end.
-    * rewrite insert_insert_ne by set_solver. reflexivity.
+    * apply insert_insert_ne. set_solver.
     * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
   - econstructor.

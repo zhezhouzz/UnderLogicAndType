@@ -1,135 +1,140 @@
-From ChoiceLogic Require Import LogicQualifier Formula FormulaTactics.
+(** * ChoiceLogic.ChoiceLogicProps
 
-(** * Choice Logic Properties  (§1.2–1.3)
+    High-level algebraic properties of the store-free formula semantics. *)
 
-    Key theorems about the logic:
-    1.  Modality monotonicity w.r.t. entailment
-    2.  Modality set-level characterisations (o, u as closure operators)
-    3.  Collapse of nested modalities (Theorem 1.11) *)
+From ChoiceLogic Require Import Formula FormulaTactics FormulaDerived.
 
 Section ChoiceLogicProps.
 
 Context {V : Type} `{ValueSig V}.
 
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
-
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 
 Notation sat m φ := (res_models m φ).
-Notation "φ ⊫ ψ" := (entails φ ψ) (at level 85, ψ at level 84, no associativity).
+Notation "φ ⊫ ψ" := (entails φ ψ)
+  (at level 85, ψ at level 84, no associativity).
 
-(** *** §1 Modality monotonicity *)
-
-(** o and u are monotone w.r.t. entailment. *)
+(** Over and under remain monotone.  Ordinary forall monotonicity is no longer
+    exported as a separate lemma: the extension-form map lemmas are the useful
+    interface under the new semantics. *)
 Lemma over_mono (p q : FormulaT) :
   (p ⊫ q) → (FOver p ⊫ FOver q).
 Proof.
-  unfold entails, sat, res_models, res_models_with_store in *.
-  intros Hip m [Hscope [m' [Hsub Hp]]].
-  pose proof (Hip m' Hp) as Hq.
-  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
-    as Hq_scope.
+  unfold entails, res_models. intros Hpq m Hover.
+  simpl in Hover |- *.
+  destruct Hover as [_ [m' [Hsub Hp]]].
+  assert (Hq : res_models_fuel (formula_measure q) m' q).
+  {
+    unfold res_models in Hpq.
+    apply Hpq. exact Hp.
+  }
   split.
-  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
-    destruct Hsub as [Hdom _]. symmetry. exact Hdom.
+  - destruct Hsub as [Hdom _].
+    change (formula_scoped_in_world m q).
+    eapply formula_scoped_world_dom_eq; [symmetry; exact Hdom |].
+    eapply res_models_fuel_scoped; exact Hq.
   - exists m'. split; [exact Hsub | exact Hq].
 Qed.
 
 Lemma under_mono (p q : FormulaT) :
   (p ⊫ q) → (FUnder p ⊫ FUnder q).
 Proof.
-  unfold entails, sat, res_models, res_models_with_store in *.
-  intros Hip m [Hscope [m' [Hsub Hp]]].
-  pose proof (Hip m' Hp) as Hq.
-  pose proof (res_models_with_store_fuel_scoped (formula_measure q) ∅ m' q Hq)
-    as Hq_scope.
+  unfold entails, res_models. intros Hpq m Hunder.
+  simpl in Hunder |- *.
+  destruct Hunder as [_ [m' [Hsub Hp]]].
+  assert (Hq : res_models_fuel (formula_measure q) m' q).
+  {
+    unfold res_models in Hpq.
+    apply Hpq. exact Hp.
+  }
   split.
-  - eapply formula_scoped_world_dom_eq; [| exact Hq_scope].
-    destruct Hsub as [Hdom _]. exact Hdom.
+  - destruct Hsub as [Hdom _].
+    change (formula_scoped_in_world m q).
+    eapply formula_scoped_world_dom_eq; [exact Hdom |].
+    eapply res_models_fuel_scoped; exact Hq.
   - exists m'. split; [exact Hsub | exact Hq].
 Qed.
-
-(** Ordinary quantifiers are monotone. *)
-Lemma forall_mono (p q : FormulaT) :
-  (p ⊫ q) → (FForall p ⊫ FForall q).
-Proof.
-Admitted.
-
-Lemma exists_mono (p q : FormulaT) :
-  (p ⊫ q) → (FExists p ⊫ FExists q).
-Proof.
-Admitted.
-
-(** *** §2 Modality set-level characterisations
-
-    Write ⟦φ⟧ for the extension of φ: the set of worlds satisfying φ. *)
 
 Definition ext (φ : FormulaT) : WfWorldT → Prop :=
   λ m, sat m φ.
 
-(** Over-closure: O(R) = { m' | ∃ m ∈ R. m ⊆ m' }, using same-domain subset. *)
 Definition over_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m m'.
 
-(** Under-closure: U(R) = { m' | ∃ m ∈ R. m' ⊆ m }, using same-domain subset. *)
 Definition under_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m' m.
 
-(** FOver p in m ↔ ∃ m' ⊇ m. m' ⊨ p, i.e., m lies in the *under*-closure of ext p. *)
 Lemma over_ext_eq (p : FormulaT) :
   ∀ m, ext (FOver p) m ↔ under_closure (ext p) m.
 Proof.
-  intros m. unfold ext, under_closure, sat, res_models, res_models_with_store.
-  simpl. split.
-  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. split.
-    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
-        as Hscope.
-      eapply formula_scoped_world_dom_eq; [| exact Hscope].
-      destruct Hsub as [Hdom _]. symmetry. exact Hdom.
-    + exists m'. split; [exact Hsub | exact Hp].
+  intros m. unfold ext, sat, under_closure, res_models.
+  split.
+  - simpl. intros [_ [m' [Hsub Hp]]].
+    exists m'. split; [| exact Hsub].
+    unfold res_models. models_fuel_irrel Hp.
+  - intros [m' [Hp Hsub]]. simpl. split.
+    + destruct Hsub as [Hdom _].
+      change (formula_scoped_in_world m p).
+      eapply formula_scoped_world_dom_eq; [symmetry; exact Hdom |].
+      eapply res_models_fuel_scoped; exact Hp.
+    + exists m'. split; [exact Hsub |].
+      unfold res_models in Hp. models_fuel_irrel Hp.
 Qed.
 
-(** FUnder p in m ↔ ∃ m' ⊆ m. m' ⊨ p, i.e., m lies in the *over*-closure of ext p. *)
 Lemma under_ext_eq (p : FormulaT) :
   ∀ m, ext (FUnder p) m ↔ over_closure (ext p) m.
 Proof.
-  intros m. unfold ext, over_closure, sat, res_models, res_models_with_store.
-  simpl. split.
-  - intros [_ [m' [Hsub Hp]]]. exists m'. split; [exact Hp | exact Hsub].
-  - intros [m' [Hp Hsub]]. split.
-    + pose proof (res_models_with_store_fuel_scoped (formula_measure p) ∅ m' p Hp)
-        as Hscope.
-      eapply formula_scoped_world_dom_eq; [| exact Hscope].
-      destruct Hsub as [Hdom _]. exact Hdom.
-    + exists m'. split; [exact Hsub | exact Hp].
+  intros m. unfold ext, sat, over_closure, res_models.
+  split.
+  - simpl. intros [_ [m' [Hsub Hp]]].
+    exists m'. split; [| exact Hsub].
+    unfold res_models. models_fuel_irrel Hp.
+  - intros [m' [Hp Hsub]]. simpl. split.
+    + destruct Hsub as [Hdom _].
+      change (formula_scoped_in_world m p).
+      eapply formula_scoped_world_dom_eq; [exact Hdom |].
+      eapply res_models_fuel_scoped; exact Hp.
+    + exists m'. split; [exact Hsub |].
+      unfold res_models in Hp. models_fuel_irrel Hp.
 Qed.
 
-(** ** Adjunction: ∗ and −∗ *)
-
-Lemma star_wand_adjunction (p q r : FormulaT) :
-  (FAnd (FStar p q) r ⊫ FStar p (FAnd q r)) →
-  (p ⊫ FWand q r) →
-  (FStar p q ⊫ r).
+Lemma over_closure_mono (R S : WfWorldT → Prop) :
+  (∀ m, R m → S m) →
+  ∀ m, over_closure R m → over_closure S m.
 Proof.
-  intros _ Hp_wand.
-  unfold entails, sat, res_models, res_models_with_store in *.
-  intros m [Hscope [m1 [m2 [Hc [Hprod [Hp Hq]]]]]].
-  assert (Hp_exact : res_models_with_store_fuel (formula_measure p) ∅ m1 p).
-  { models_fuel_irrel Hp. }
-  pose proof (Hp_wand m1 Hp_exact) as Hwand.
-  simpl in Hwand. destruct Hwand as [_ Hwand_body].
-  destruct (res_product_comm_eq m1 m2 Hc) as [Hc' Hcomm].
-  assert (Hq_wand :
-      res_models_with_store_fuel (formula_measure q + formula_measure r) ∅ m2 q).
-  { models_fuel_irrel Hq. }
-  pose proof (Hwand_body m2 Hc' Hq_wand) as Hr_comm.
-  assert (Hr_exact :
-      res_models_with_store_fuel (formula_measure r) ∅ (res_product m2 m1 Hc') r).
-  { models_fuel_irrel Hr_comm. }
-  eapply res_models_with_store_fuel_kripke; [| exact Hr_exact].
-  rewrite <- Hcomm. exact Hprod.
+  intros HRS m [m' [HR Hsub]].
+  exists m'. split; [apply HRS; exact HR | exact Hsub].
+Qed.
+
+Lemma under_closure_mono (R S : WfWorldT → Prop) :
+  (∀ m, R m → S m) →
+  ∀ m, under_closure R m → under_closure S m.
+Proof.
+  intros HRS m [m' [HR Hsub]].
+  exists m'. split; [apply HRS; exact HR | exact Hsub].
+Qed.
+
+Lemma over_closure_idempotent (R : WfWorldT → Prop) :
+  ∀ m, over_closure (over_closure R) m ↔ over_closure R m.
+Proof.
+  intros m. split.
+  - intros [m1 [[m0 [HR Hsub01]] Hsub1m]].
+    exists m0. split; [exact HR |].
+    eapply res_subset_trans; eauto.
+  - intros HR.
+    exists m. split; [exact HR | apply res_subset_refl].
+Qed.
+
+Lemma under_closure_idempotent (R : WfWorldT → Prop) :
+  ∀ m, under_closure (under_closure R) m ↔ under_closure R m.
+Proof.
+  intros m. split.
+  - intros [m1 [[m0 [HR Hsub10]] Hsubm1]].
+    exists m0. split; [exact HR |].
+    eapply res_subset_trans; eauto.
+  - intros HR.
+    exists m. split; [exact HR | apply res_subset_refl].
 Qed.
 
 End ChoiceLogicProps.

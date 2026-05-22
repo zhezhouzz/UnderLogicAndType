@@ -288,6 +288,16 @@ Proof.
       exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
 Qed.
 
+Lemma resA_subset_restrict_mono (w1 w2 : WfWorldAT) (X : gset K) :
+  resA_subset w1 w2 →
+  resA_subset (resA_restrict w1 X) (resA_restrict w2 X).
+Proof.
+  intros [Hdom Hin]. split.
+  - simpl. rewrite Hdom. reflexivity.
+  - intros σ [σ0 [Hσ0 Hrestrict]].
+    exists σ0. split; [apply Hin; exact Hσ0 | exact Hrestrict].
+Qed.
+
 Lemma resA_sum_subset_l (w1 w2 : WfWorldAT) (Hdef : rawA_sum_defined w1 w2) :
   resA_subset w1 (resA_sum w1 w2 Hdef).
 Proof.
@@ -902,6 +912,23 @@ Proof.
   - simpl. set_solver.
 Qed.
 
+Lemma resA_restrict_eq_subset
+    (m n : WfWorldAT) (X Y : gset K) :
+  Y ⊆ X →
+  resA_restrict m X = resA_restrict n X →
+  resA_restrict m Y = resA_restrict n Y.
+Proof.
+  intros HYX Hproj.
+  transitivity (resA_restrict (resA_restrict m X) Y).
+  - rewrite resA_restrict_restrict_eq.
+    replace (X ∩ Y) with Y by set_solver.
+    reflexivity.
+  - rewrite Hproj.
+    rewrite resA_restrict_restrict_eq.
+    replace (X ∩ Y) with Y by set_solver.
+    reflexivity.
+Qed.
+
 Lemma resA_fiber_from_projection_le
     (m n wfib_m wfib_n : WfWorldAT) (X : gset K) (σ : StoreAT) :
   resA_fiber_from_projection m X σ wfib_m →
@@ -951,6 +978,106 @@ Proof.
         replace (worldA_dom (m : WorldAT) ∩ dom (σ : gmap K V))
           with (dom (σ : gmap K V)) by set_solver.
         reflexivity.
+Qed.
+
+Lemma resA_fiber_from_projection_eq_on
+    (m n wfib_m wfib_n : WfWorldAT) (D X : gset K) (σ : StoreAT) :
+  D ⊆ X →
+  resA_restrict m X = resA_restrict n X →
+  resA_fiber_from_projection m D σ wfib_m →
+  resA_fiber_from_projection n D σ wfib_n →
+  resA_restrict wfib_m X = resA_restrict wfib_n X.
+Proof.
+  intros HDX Hproj [Hσproj_m Heq_m] [Hσproj_n Heq_n].
+  assert (HdomσX : dom (σ : gmap K V) ⊆ X).
+  {
+    destruct Hσproj_m as [σm [Hσm Hrestr]].
+    change (dom (σ : gmap K V) ⊆ X).
+    rewrite <- Hrestr.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) ⊆ X).
+    pose proof (storeA_restrict_dom σm D) as Hdomr.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+      dom (σm : gmap K V) ∩ D) in Hdomr.
+    rewrite Hdomr. set_solver.
+  }
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl.
+    pose proof (f_equal (fun w : WfWorldAT => worldA_dom (w : WorldAT)) Hproj)
+      as Hdom.
+    simpl in Hdom. rewrite Heq_m, Heq_n. simpl. set_solver.
+  - intros τ. simpl. rewrite Heq_m, Heq_n. split.
+    + intros [τm [[Hτm HτD] HτX]].
+      assert (HτmX : (resA_restrict m X : WorldAT)
+          (@storeA_restrict V K _ _ τm X)).
+      { exists τm. split; [exact Hτm | reflexivity]. }
+      rewrite Hproj in HτmX.
+      destruct HτmX as [τn [Hτn HτnX]].
+      exists τn. split.
+      * split; [exact Hτn |].
+        transitivity (@storeA_restrict V K _ _ τm (dom (σ : gmap K V))).
+        -- eapply storeA_restrict_eq_mono; [exact HdomσX | exact HτnX].
+        -- exact HτD.
+      * rewrite HτnX. exact HτX.
+    + intros [τn [[Hτn HτD] HτX]].
+      assert (HτnX : (resA_restrict n X : WorldAT)
+          (@storeA_restrict V K _ _ τn X)).
+      { exists τn. split; [exact Hτn | reflexivity]. }
+      rewrite <- Hproj in HτnX.
+      destruct HτnX as [τm [Hτm HτmX]].
+      exists τm. split.
+      * split; [exact Hτm |].
+        transitivity (@storeA_restrict V K _ _ τn (dom (σ : gmap K V))).
+        -- eapply storeA_restrict_eq_mono; [exact HdomσX | exact HτmX].
+        -- exact HτD.
+      * rewrite HτmX. exact HτX.
+Qed.
+
+Lemma resA_fiber_member_projection_transport_on
+    (m n nfib : WfWorldAT) (D X : gset K) :
+  D ⊆ X →
+  D ⊆ worldA_dom (m : WorldAT) →
+  resA_restrict m X = resA_restrict n X →
+  resA_fiber_member n D nfib →
+  ∃ mfib,
+    resA_fiber_member m D mfib ∧
+    resA_restrict mfib X = resA_restrict nfib X.
+Proof.
+  intros HDX HDm Hproj [σ Hfiber_n].
+  pose proof (resA_restrict_eq_subset m n X D HDX Hproj) as HprojD.
+  destruct Hfiber_n as [Hσproj_n Heq_n].
+  assert ((resA_restrict m D : WorldAT) σ) as Hσproj_m.
+  { rewrite HprojD. exact Hσproj_n. }
+  destruct Hσproj_m as [σm [Hσm Hrestrict_m]].
+  assert (Hdomσ : dom (σ : gmap K V) = D).
+  {
+    rewrite <- Hrestrict_m.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) = D).
+    pose proof (storeA_restrict_dom σm D) as Hdomr.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+      dom (σm : gmap K V) ∩ D) in Hdomr.
+    rewrite Hdomr.
+    pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+    change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
+    rewrite Hdomσm. set_solver.
+  }
+  assert (Hnonempty_m :
+      ∃ σm0, (m : WorldAT) σm0 ∧
+        @storeA_restrict V K _ _ σm0 (dom (σ : gmap K V)) = σ).
+  {
+    exists σm. split; [exact Hσm |].
+    rewrite Hdomσ. exact Hrestrict_m.
+  }
+  set (mfib := resA_fiber m σ Hnonempty_m).
+  assert (Hfiber_m : resA_fiber_from_projection m D σ mfib).
+  {
+    split.
+    - exists σm. split; [exact Hσm | exact Hrestrict_m].
+    - subst mfib. unfold resA_fiber. simpl. reflexivity.
+  }
+  exists mfib. split.
+  - exists σ. exact Hfiber_m.
+  - eapply resA_fiber_from_projection_eq_on; eauto.
+    split; [exact Hσproj_n | exact Heq_n].
 Qed.
 
 Definition rawA_pullback_projection (n p : WfWorldAT) : WorldAT := {|
@@ -1322,6 +1449,42 @@ Proof.
   - apply resA_le_product_l.
 Qed.
 
+Lemma resA_subset_lift_under_projection_on
+    (m n mu : WfWorldAT) (X : gset K) :
+  resA_restrict m X = resA_restrict n X →
+  resA_subset mu m →
+  ∃ nu : WfWorldAT,
+    resA_subset nu n ∧ resA_restrict mu X ⊑ nu.
+Proof.
+  intros Hproj Hsub.
+  assert (HsubX : resA_subset (resA_restrict mu X) (resA_restrict n X)).
+  {
+    rewrite <- Hproj.
+    apply resA_subset_restrict_mono. exact Hsub.
+  }
+  eapply resA_subset_lift_under.
+  - apply resA_restrict_le.
+  - exact HsubX.
+Qed.
+
+Lemma resA_subset_lift_over_projection_on
+    (m n mo : WfWorldAT) (X : gset K) :
+  resA_restrict m X = resA_restrict n X →
+  resA_subset m mo →
+  ∃ no : WfWorldAT,
+    resA_subset n no ∧ resA_restrict mo X ⊑ no.
+Proof.
+  intros Hproj Hsub.
+  assert (HsubX : resA_subset (resA_restrict n X) (resA_restrict mo X)).
+  {
+    rewrite <- Hproj.
+    apply resA_subset_restrict_mono. exact Hsub.
+  }
+  eapply resA_subset_lift_over.
+  - apply resA_restrict_le.
+  - exact HsubX.
+Qed.
+
 Lemma resA_product_restrict_wand_le
     (n m : WfWorldAT) (S X Y : gset K)
     (Hc_small : worldA_compat (resA_restrict n X) m)
@@ -1397,6 +1560,34 @@ Proof.
           Hsmall_compat Hcompat HYS HYσm).
 Qed.
 
+Lemma resA_product_restrict_same_le
+    (m m1 m2 : WfWorldAT) (X : gset K)
+    (Hc : worldA_compat m1 m2) :
+  resA_product m1 m2 Hc ⊑ m →
+  ∃ HcX : worldA_compat (resA_restrict m1 X) (resA_restrict m2 X),
+    resA_product (resA_restrict m1 X) (resA_restrict m2 X) HcX
+      ⊑ resA_restrict m X.
+Proof.
+  intros Hle.
+  assert (Hc_left : worldA_compat (resA_restrict m1 X) m2).
+  {
+    eapply worldA_compat_le_l.
+    - apply resA_restrict_le.
+    - exact Hc.
+  }
+  assert (HcX : worldA_compat (resA_restrict m1 X) (resA_restrict m2 X)).
+  {
+    eapply worldA_compat_le_r.
+    - apply resA_restrict_le.
+    - exact Hc_left.
+  }
+  exists HcX.
+  eapply resA_le_restrict.
+  - etrans; [| exact Hle].
+    eapply resA_product_le_mono; apply resA_restrict_le.
+  - simpl. set_solver.
+Qed.
+
 Lemma resA_sum_le_mono (w1 w2 w1' w2' : WfWorldAT)
     (Hdef : rawA_sum_defined w1 w2) (Hdef' : rawA_sum_defined w1' w2') :
   w1 ⊑ w1' → w2 ⊑ w2' →
@@ -1422,6 +1613,27 @@ Proof.
     + intros [σ0 [[Hσ0 | Hσ0] Hrestrict]].
       * left. exists σ0. split; [exact Hσ0 | exact Hrestrict].
       * right. exists σ0. split; [exact Hσ0 | exact Hrestrict].
+Qed.
+
+Lemma resA_sum_restrict_same_le
+    (m m1 m2 : WfWorldAT) (X : gset K)
+    (Hdef : rawA_sum_defined m1 m2) :
+  resA_sum m1 m2 Hdef ⊑ m →
+  ∃ HdefX : rawA_sum_defined (resA_restrict m1 X) (resA_restrict m2 X),
+    resA_sum (resA_restrict m1 X) (resA_restrict m2 X) HdefX
+      ⊑ resA_restrict m X.
+Proof.
+  intros Hle.
+  assert (HdefX : rawA_sum_defined (resA_restrict m1 X) (resA_restrict m2 X)).
+  {
+    unfold rawA_sum_defined in *. simpl.
+    rewrite Hdef. reflexivity.
+  }
+  exists HdefX.
+  eapply resA_le_restrict.
+  - etrans; [| exact Hle].
+    eapply resA_sum_le_mono; apply resA_restrict_le.
+  - simpl. set_solver.
 Qed.
 
 Lemma resA_slice_sum_le_base

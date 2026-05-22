@@ -14,16 +14,16 @@ Lemma lc_lam_iff_body s e :
   lc_value (vlam s e) ↔ body_tm e.
 Proof.
   split.
-  - intros H. inversion H; subst. hauto.
-  - hauto.
+  - intros H. inversion H; subst. eexists; eauto.
+  - intros [L H]. econstructor. exact H.
 Qed.
 
 Lemma lc_fix_iff_body Tf vf :
   lc_value (vfix Tf vf) ↔ body_val vf.
 Proof.
   split.
-  - intros H. inversion H; subst. hauto.
-  - hauto.
+  - intros H. inversion H; subst. eexists; eauto.
+  - intros [L H]. econstructor. exact H.
 Qed.
 
 Lemma lc_ret_iff_value v :
@@ -64,8 +64,8 @@ Lemma lc_match_iff_parts v et ef :
   lc_tm (tmatch v et ef) ↔ lc_value v ∧ lc_tm et ∧ lc_tm ef.
 Proof.
   split.
-  - inversion 1; subst; hauto.
-  - hauto.
+  - inversion 1; subst; eauto.
+  - intros [? [? ?]]. econstructor; eauto.
 Qed.
 
 Lemma close_open_var_value (v : value) (x : atom) k :
@@ -283,8 +283,8 @@ Lemma subst_lc_mutual :
 Proof.
   apply lc_mutind; simpl; intros; eauto.
   - destruct (decide (x = x0)).
-    + hauto.
-    + hauto.
+    + subst. rewrite decide_True by reflexivity. exact H.
+    + rewrite decide_False by congruence. constructor.
   - eapply LC_lam with (L := L ∪ {[x]}); intros y Hy.
     replace (vfvar y) with (value_subst x u (vfvar y))
       by (simpl; rewrite decide_False by set_solver; reflexivity).

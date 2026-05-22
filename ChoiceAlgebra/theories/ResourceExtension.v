@@ -118,6 +118,31 @@ Proof.
   - pose proof (extA_app_in _ _ Happ). set_solver.
 Qed.
 
+Local Lemma extA_output_store_dom F σ we σe :
+  dom (σ : gmap K V) = extA_in F →
+  extA_rel F σ we →
+  (we : WorldAT) σe →
+  dom (σe : gmap K V) = extA_out F.
+Proof.
+  intros Hdomσ HF Hσe.
+  pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
+  change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
+  rewrite Hdom_we.
+  eapply extA_rel_dom; eauto.
+Qed.
+
+Local Lemma extA_output_store_dom_from_base m F σm we σe :
+  extension_applicableA F m →
+  (m : WorldAT) σm →
+  extA_rel F (@storeA_restrict V K _ _ σm (extA_in F)) we →
+  (we : WorldAT) σe →
+  dom (σe : gmap K V) = extA_out F.
+Proof.
+  intros Happ Hσm HF Hσe.
+  eapply extA_output_store_dom; [| exact HF | exact Hσe].
+  eapply extA_projection_dom; eauto.
+Qed.
+
 Local Lemma resA_extend_store_compat m F σm we σe :
   extension_applicableA F m →
   (m : WorldAT) σm →
@@ -130,16 +155,8 @@ Proof.
   change (dom (σm : gmap K V) ∩ dom (σe : gmap K V) = ∅).
   pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
   change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
-  assert (Hproj_dom :
-      dom (@storeA_restrict V K _ _ σm (extA_in F)) = extA_in F)
-    by (eapply extA_projection_dom; eauto).
   assert (Hdomσe : dom (σe : gmap K V) = extA_out F).
-  {
-    pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
-    change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
-    rewrite Hdom_we.
-    eapply extA_rel_dom; eauto.
-  }
+  { eapply extA_output_store_dom_from_base; eauto. }
   rewrite Hdomσm, Hdomσe.
   pose proof (extA_app_out _ _ Happ). set_solver.
 Qed.
@@ -174,15 +191,12 @@ Proof.
       transitivity (dom (σm : gmap K V) ∪ dom (σe : gmap K V)).
       * apply storeA_union_dom.
         eapply resA_extend_store_compat; eauto.
-      * assert (Hproj_dom :
-          dom (@storeA_restrict V K _ _ σm (extA_in F)) = extA_in F)
-          by (eapply extA_projection_dom; eauto).
-        pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-        pose proof (wfworldA_store_dom we σe Hσe) as Hdomσe.
+      * pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+        pose proof (extA_output_store_dom_from_base m F σm we σe
+          Happ Hσm HF Hσe) as Hdomσe.
         change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
-        change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdomσe.
         rewrite Hdomσm, Hdomσe.
-        rewrite (extA_rel_dom F _ we Hproj_dom HF). set_solver.
+        set_solver.
   - split; [exact Happ |].
     split; [reflexivity |].
     intros σ. reflexivity.
@@ -204,6 +218,100 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma resA_extend_by_projection_eq m n F my ny :
+  resA_restrict m (extA_in F) = resA_restrict n (extA_in F) →
+  m #> F ~~A> my →
+  n #> F ~~A> ny →
+  resA_restrict my (extA_in F ∪ extA_out F) =
+  resA_restrict ny (extA_in F ∪ extA_out F).
+Proof.
+  intros Hproj Hmy Hny.
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl.
+    rewrite (resA_extend_by_dom _ _ _ Hmy).
+    rewrite (resA_extend_by_dom _ _ _ Hny).
+    pose proof (resA_extend_by_applicable _ _ _ Hmy) as Happ_m.
+    pose proof (resA_extend_by_applicable _ _ _ Hny) as Happ_n.
+    pose proof (extA_app_in _ _ Happ_m) as Hin_m.
+    pose proof (extA_app_in _ _ Happ_n) as Hin_n.
+    pose proof (extA_app_out _ _ Happ_m) as Hout_m.
+    pose proof (extA_app_out _ _ Happ_n) as Hout_n.
+    set_solver.
+  - intros σ. split.
+    + intros [σmy [Hσmy Hrestrict]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hmy)) in Hσmy.
+      destruct Hσmy as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+      assert (Hσm_proj :
+          (resA_restrict m (extA_in F) : WorldAT)
+            (@storeA_restrict V K _ _ σm (extA_in F))).
+      { exists σm. split; [exact Hσm | reflexivity]. }
+      rewrite Hproj in Hσm_proj.
+      destruct Hσm_proj as [σn [Hσn Hσn_proj]].
+      pose proof (extA_output_store_dom_from_base m F σm we σe
+        (resA_extend_by_applicable _ _ _ Hmy) Hσm HF Hσe) as Hdomσe.
+      exists (@union (gmap K V) _ (σn : gmap K V) (σe : gmap K V)).
+      split.
+      * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hny)).
+        exists σn, we, σe. repeat split; eauto.
+        rewrite Hσn_proj. exact HF.
+      * rewrite <- Hrestrict.
+        rewrite !storeA_restrict_union_cover.
+        -- rewrite Hσn_proj. reflexivity.
+        -- eapply (resA_extend_store_compat m F σm we σe); eauto.
+           exact (resA_extend_by_applicable _ _ _ Hmy).
+        -- pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+           change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
+           rewrite Hdomσm.
+           exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hmy)).
+        -- rewrite Hdomσe. set_solver.
+        -- eapply (resA_extend_store_compat n F σn we σe).
+           ++ exact (resA_extend_by_applicable _ _ _ Hny).
+           ++ exact Hσn.
+           ++ rewrite Hσn_proj. exact HF.
+           ++ exact Hσe.
+        -- pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+           change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
+           rewrite Hdomσn.
+           exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hny)).
+        -- rewrite Hdomσe. set_solver.
+    + intros [σny [Hσny Hrestrict]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hny)) in Hσny.
+      destruct Hσny as [σn [we [σe [Hσn [HF [Hσe ->]]]]]].
+      assert (Hσn_proj :
+          (resA_restrict n (extA_in F) : WorldAT)
+            (@storeA_restrict V K _ _ σn (extA_in F))).
+      { exists σn. split; [exact Hσn | reflexivity]. }
+      rewrite <- Hproj in Hσn_proj.
+      destruct Hσn_proj as [σm [Hσm Hσm_proj]].
+      pose proof (extA_output_store_dom_from_base n F σn we σe
+        (resA_extend_by_applicable _ _ _ Hny) Hσn HF Hσe) as Hdomσe.
+      exists (@union (gmap K V) _ (σm : gmap K V) (σe : gmap K V)).
+      split.
+      * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hmy)).
+        exists σm, we, σe. repeat split; eauto.
+        rewrite Hσm_proj. exact HF.
+      * rewrite <- Hrestrict.
+        rewrite !storeA_restrict_union_cover.
+        -- rewrite Hσm_proj. reflexivity.
+        -- eapply (resA_extend_store_compat n F σn we σe); eauto.
+           exact (resA_extend_by_applicable _ _ _ Hny).
+        -- pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+           change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
+           rewrite Hdomσn.
+           exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hny)).
+        -- rewrite Hdomσe. set_solver.
+        -- eapply (resA_extend_store_compat m F σm we σe).
+           ++ exact (resA_extend_by_applicable _ _ _ Hmy).
+           ++ exact Hσm.
+           ++ rewrite Hσm_proj. exact HF.
+           ++ exact Hσe.
+        -- pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+           change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
+           rewrite Hdomσm.
+           exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hmy)).
+        -- rewrite Hdomσe. set_solver.
+Qed.
+
 Lemma resA_extend_by_restrict_base m F n :
   m #> F ~~A> n →
   resA_restrict n (worldA_dom (m : WorldAT)) = m.
@@ -221,16 +329,8 @@ Proof.
         as Hcompat.
       pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
       change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
-      assert (Hproj_dom :
-          dom (@storeA_restrict V K _ _ σm (extA_in F)) = extA_in F)
-        by (eapply extA_projection_dom; eauto).
-      assert (Hdomσe : dom (σe : gmap K V) = extA_out F).
-      {
-        pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
-        change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
-        rewrite Hdom_we.
-        eapply extA_rel_dom; eauto.
-      }
+      pose proof (extA_output_store_dom_from_base m F σm we σe
+        Happ Hσm HF Hσe) as Hdomσe.
       assert (Hpiece :
           @storeA_restrict V K _ _ (@union (gmap K V) _ σm σe)
             (worldA_dom (m : WorldAT)) = σm).
@@ -260,13 +360,8 @@ Proof.
         exists σ, we, σe. repeat split; eauto.
       * pose proof (resA_extend_store_compat m F σ we σe Happ Hσ HF Hσe)
           as Hcompat.
-        assert (Hdomσe : dom (σe : gmap K V) = extA_out F).
-        {
-          pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
-          change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
-          rewrite Hdom_we.
-          eapply extA_rel_dom; eauto.
-        }
+        pose proof (extA_output_store_dom_from_base m F σ we σe
+          Happ Hσ HF Hσe) as Hdomσe.
         apply (storeA_restrict_union_piece_l σ σe
           (worldA_dom (m : WorldAT)) (extA_out F)).
         -- exact Hcompat.
@@ -275,6 +370,17 @@ Proof.
         -- change (dom (σe : gmap K V) ⊆ extA_out F).
            rewrite Hdomσe. reflexivity.
         -- pose proof (extA_app_out _ _ Happ). set_solver.
+Qed.
+
+Lemma resA_extend_by_le m F n :
+  m #> F ~~A> n →
+  m ⊑ n.
+Proof.
+  intros Hext.
+  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
+  change ((m : WorldAT) = rawA_restrict n (worldA_dom (m : WorldAT))).
+  exact (f_equal (fun w : WfWorldAT => (w : WorldAT))
+    (eq_sym (resA_extend_by_restrict_base m F n Hext))).
 Qed.
 
 Lemma resA_extend_store_restrict_base m F σm we σe :
@@ -290,14 +396,8 @@ Proof.
     as Hcompat.
   pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
   change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
-  assert (Hdomσe : dom (σe : gmap K V) = extA_out F).
-  {
-    pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
-    change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
-    rewrite Hdom_we.
-    eapply extA_rel_dom; [|exact HF].
-    eapply extA_projection_dom; [exact Happ | exact Hσm].
-  }
+  pose proof (extA_output_store_dom_from_base m F σm we σe
+    Happ Hσm HF Hσe) as Hdomσe.
   apply (storeA_restrict_union_piece_l σm σe
     (worldA_dom (m : WorldAT)) (extA_out F)).
   - exact Hcompat.
@@ -305,7 +405,117 @@ Proof.
     rewrite Hdomσm. reflexivity.
   - change (dom (σe : gmap K V) ⊆ extA_out F).
     rewrite Hdomσe. reflexivity.
-  - pose proof (extA_app_out _ _ Happ). set_solver.
+	  - pose proof (extA_app_out _ _ Happ). set_solver.
+Qed.
+
+Local Lemma resA_extend_store_restrict_other_input m F G σm we σe :
+  extension_applicableA F m →
+  extension_applicableA G m →
+  (m : WorldAT) σm →
+  extA_rel F (@storeA_restrict V K _ _ σm (extA_in F)) we →
+  (we : WorldAT) σe →
+  @storeA_restrict V K _ _ (@union (gmap K V) _ σm σe)
+    (extA_in G) =
+  @storeA_restrict V K _ _ σm (extA_in G).
+Proof.
+  intros HappF HappG Hσm HF Hσe.
+  apply storeA_restrict_union_ignore_r.
+  rewrite (extA_output_store_dom_from_base m F σm we σe
+    HappF Hσm HF Hσe).
+  pose proof (extA_app_in _ _ HappG).
+  pose proof (extA_app_out _ _ HappF).
+  set_solver.
+Qed.
+
+Lemma resA_extend_by_base_le m n F my ny :
+  m ⊑ n →
+  m #> F ~~A> my →
+  n #> F ~~A> ny →
+  my ⊑ ny.
+Proof.
+  intros Hmn Hmy Hny.
+  pose proof (rawA_le_dom m n Hmn) as Hdom_mn.
+  pose proof (resA_extend_by_applicable _ _ _ Hmy) as Happ_m.
+  pose proof (resA_extend_by_applicable _ _ _ Hny) as Happ_n.
+  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
+  apply worldA_ext.
+  - rewrite (resA_extend_by_dom _ _ _ Hmy).
+    simpl. rewrite (resA_extend_by_dom _ _ _ Hny). set_solver.
+  - intros σ. split.
+    + intros Hσmy.
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hmy)) in Hσmy.
+      destruct Hσmy as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+      assert (Hσn_restricted : rawA_restrict n (worldA_dom (m : WorldAT)) σm).
+      {
+        change ((rawA_restrict n (worldA_dom (m : WorldAT)) : WorldAT) σm).
+        rewrite <- Hmn. exact Hσm.
+      }
+      destruct Hσn_restricted as [σn [Hσn Hrestrict_m]].
+      assert (HF_n :
+          extA_rel F (@storeA_restrict V K _ _ σn (extA_in F)) we).
+      {
+        replace (@storeA_restrict V K _ _ σn (extA_in F))
+          with (@storeA_restrict V K _ _ σm (extA_in F)); [exact HF |].
+        subst σm.
+        rewrite storeA_restrict_twice_subset; [reflexivity |].
+        exact (extA_app_in _ _ Happ_m).
+      }
+      exists (@union (gmap K V) _ (σn : gmap K V) (σe : gmap K V)).
+      split.
+      * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hny)).
+        exists σn, we, σe. repeat split; eauto.
+      * assert (Hcompat :
+            @storeA_compat V K _ _ σn σe).
+        { eapply resA_extend_store_compat; eauto. }
+        pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+        change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
+        pose proof (extA_output_store_dom_from_base n F σn we σe
+          Happ_n Hσn HF_n Hσe) as Hdomσe_out.
+        rewrite (resA_extend_by_dom _ _ _ Hmy).
+        rewrite (storeA_restrict_union_cover σn σe
+          (worldA_dom (m : WorldAT)) (extA_out F)); eauto.
+        -- rewrite Hrestrict_m.
+           rewrite storeA_restrict_idemp; [reflexivity |].
+           rewrite Hdomσe_out. set_solver.
+        -- rewrite Hdomσn. exact Hdom_mn.
+        -- rewrite Hdomσe_out. set_solver.
+    + intros [σny [Hσny Hrestrict]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hny)) in Hσny.
+      destruct Hσny as [σn [we [σe [Hσn [HF [Hσe ->]]]]]].
+      assert (Hσm : (m : WorldAT)
+          (@storeA_restrict V K _ _ σn (worldA_dom (m : WorldAT)))).
+      {
+        assert (Hraw : (rawA_restrict n (worldA_dom (m : WorldAT)) : WorldAT)
+          (@storeA_restrict V K _ _ σn (worldA_dom (m : WorldAT)))).
+        { exists σn. split; [exact Hσn | reflexivity]. }
+        rewrite <- Hmn in Hraw. exact Hraw.
+      }
+      assert (HF_m :
+          extA_rel F (@storeA_restrict V K _ _
+            (@storeA_restrict V K _ _ σn (worldA_dom (m : WorldAT)))
+            (extA_in F)) we).
+      {
+        rewrite storeA_restrict_twice_subset; [exact HF |].
+        exact (extA_app_in _ _ Happ_m).
+      }
+      apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hmy)).
+      exists (@storeA_restrict V K _ _ σn (worldA_dom (m : WorldAT))), we, σe.
+      repeat split; eauto.
+      assert (Hcompat :
+          @storeA_compat V K _ _ σn σe).
+      { eapply resA_extend_store_compat; eauto. }
+      pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+      change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
+      pose proof (extA_output_store_dom_from_base n F σn we σe
+        Happ_n Hσn HF Hσe) as Hdomσe_out.
+      rewrite (resA_extend_by_dom _ _ _ Hmy) in Hrestrict.
+      rewrite (storeA_restrict_union_cover σn σe
+        (worldA_dom (m : WorldAT)) (extA_out F)) in Hrestrict; eauto.
+      * rewrite (storeA_restrict_idemp σe (extA_out F)) in Hrestrict;
+          [symmetry; exact Hrestrict |].
+        rewrite Hdomσe_out. set_solver.
+      * rewrite Hdomσn. exact Hdom_mn.
+      * rewrite Hdomσe_out. set_solver.
 Qed.
 
 Lemma fiber_extensionA_functional_outputs_eq m F σ w1 w2 σe1 σe2 :
@@ -509,33 +719,20 @@ Proof.
       destruct HmFσ as [σm [wF [σfe [Hmσ [HFrel [HFstore ->]]]]]].
       pose proof (resA_extend_store_compat m F σm wF σfe
         HAppF_m Hmσ HFrel HFstore) as HcompatF.
-      assert (Hdomσfe : dom (σfe : gmap K V) = extA_out F).
-      {
-        pose proof (wfworldA_store_dom wF σfe HFstore) as Hdom_wF.
-        change (dom (σfe : gmap K V) = worldA_dom (wF : WorldAT)) in Hdom_wF.
-        rewrite Hdom_wF.
-        eapply extA_rel_dom; [|exact HFrel].
-        eapply extA_projection_dom; [exact HAppF_m | exact Hmσ].
-      }
+      pose proof (extA_output_store_dom_from_base m F σm wF σfe
+        HAppF_m Hmσ HFrel HFstore) as Hdomσfe.
       assert (HprojG :
           @storeA_restrict V K _ _ (@union (gmap K V) _ σm σfe) (extA_in G) =
           @storeA_restrict V K _ _ σm (extA_in G)).
       {
-        apply storeA_restrict_union_ignore_r.
-        rewrite Hdomσfe.
-        pose proof (extA_app_in _ _ HAppG_m). set_solver.
+        exact (resA_extend_store_restrict_other_input m F G σm wF σfe
+          HAppF_m HAppG_m Hmσ HFrel HFstore).
       }
       rewrite HprojG in HGrel.
       pose proof (resA_extend_store_compat m G σm wG σge
         HAppG_m Hmσ HGrel HGstore) as HcompatG.
-      assert (Hdomσge : dom (σge : gmap K V) = extA_out G).
-      {
-        pose proof (wfworldA_store_dom wG σge HGstore) as Hdom_wG.
-        change (dom (σge : gmap K V) = worldA_dom (wG : WorldAT)) in Hdom_wG.
-        rewrite Hdom_wG.
-        eapply extA_rel_dom; [|exact HGrel].
-        eapply extA_projection_dom; [exact HAppG_m | exact Hmσ].
-      }
+      pose proof (extA_output_store_dom_from_base m G σm wG σge
+        HAppG_m Hmσ HGrel HGstore) as Hdomσge.
       exists (@union (gmap K V) _ (σm : gmap K V) (σge : gmap K V)), wF, σfe.
       split.
       * apply (proj2 (resA_extend_by_store_iff _ _ _ _ HG)).
@@ -546,9 +743,8 @@ Proof.
                (@union (gmap K V) _ σm σge) (extA_in F) =
              @storeA_restrict V K _ _ σm (extA_in F)).
            {
-             apply storeA_restrict_union_ignore_r.
-             rewrite Hdomσge.
-             pose proof (extA_app_in _ _ HAppF_m). set_solver.
+             exact (resA_extend_store_restrict_other_input m G F σm wG σge
+               HAppG_m HAppF_m Hmσ HGrel HGstore).
            }
            rewrite HprojF. exact HFrel.
         -- split; [exact HFstore |].
@@ -567,33 +763,20 @@ Proof.
       destruct HmGσ as [σm [wG [σge [Hmσ [HGrel [HGstore ->]]]]]].
       pose proof (resA_extend_store_compat m G σm wG σge
         HAppG_m Hmσ HGrel HGstore) as HcompatG.
-      assert (Hdomσge : dom (σge : gmap K V) = extA_out G).
-      {
-        pose proof (wfworldA_store_dom wG σge HGstore) as Hdom_wG.
-        change (dom (σge : gmap K V) = worldA_dom (wG : WorldAT)) in Hdom_wG.
-        rewrite Hdom_wG.
-        eapply extA_rel_dom; [|exact HGrel].
-        eapply extA_projection_dom; [exact HAppG_m | exact Hmσ].
-      }
+      pose proof (extA_output_store_dom_from_base m G σm wG σge
+        HAppG_m Hmσ HGrel HGstore) as Hdomσge.
       assert (HprojF :
           @storeA_restrict V K _ _ (@union (gmap K V) _ σm σge) (extA_in F) =
           @storeA_restrict V K _ _ σm (extA_in F)).
       {
-        apply storeA_restrict_union_ignore_r.
-        rewrite Hdomσge.
-        pose proof (extA_app_in _ _ HAppF_m). set_solver.
+        exact (resA_extend_store_restrict_other_input m G F σm wG σge
+          HAppG_m HAppF_m Hmσ HGrel HGstore).
       }
       rewrite HprojF in HFrel.
       pose proof (resA_extend_store_compat m F σm wF σfe
         HAppF_m Hmσ HFrel HFstore) as HcompatF.
-      assert (Hdomσfe : dom (σfe : gmap K V) = extA_out F).
-      {
-        pose proof (wfworldA_store_dom wF σfe HFstore) as Hdom_wF.
-        change (dom (σfe : gmap K V) = worldA_dom (wF : WorldAT)) in Hdom_wF.
-        rewrite Hdom_wF.
-        eapply extA_rel_dom; [|exact HFrel].
-        eapply extA_projection_dom; [exact HAppF_m | exact Hmσ].
-      }
+      pose proof (extA_output_store_dom_from_base m F σm wF σfe
+        HAppF_m Hmσ HFrel HFstore) as Hdomσfe.
       exists (@union (gmap K V) _ (σm : gmap K V) (σfe : gmap K V)), wG, σge.
       split.
       * apply (proj2 (resA_extend_by_store_iff _ _ _ _ HF)).
@@ -604,9 +787,8 @@ Proof.
                (@union (gmap K V) _ σm σfe) (extA_in G) =
              @storeA_restrict V K _ _ σm (extA_in G)).
            {
-             apply storeA_restrict_union_ignore_r.
-             rewrite Hdomσfe.
-             pose proof (extA_app_in _ _ HAppG_m). set_solver.
+             exact (resA_extend_store_restrict_other_input m F G σm wF σfe
+               HAppF_m HAppG_m Hmσ HFrel HFstore).
            }
            rewrite HprojG. exact HGrel.
         -- split; [exact HGstore |].

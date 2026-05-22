@@ -7,7 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
-From ChoicePrelude Require Import StoreBase.
+From ChoicePrelude Require Import Prelude.
 
 (** ** Base and basic types *)
 
@@ -122,6 +122,30 @@ Arguments open_tm_atom_inst /.
 (** [e ^^ x] works for both [value] and [tm], and for both [value] and [atom]
     second arguments via the four [Open] instances above. *)
 
+(** ** Shifting bound indices
+
+    [value_shift k v] lifts every loose bound index at or above cutoff [k].
+    It is the operation needed when a not-necessarily locally-closed value is
+    moved underneath a fresh term binder. *)
+
+Fixpoint value_shift (k : nat) (v : value) : value :=
+  match v with
+  | vconst _ => v
+  | vfvar _ => v
+  | vbvar n => if decide (k <= n) then vbvar (S n) else v
+  | vlam s e => vlam s (tm_shift (S k) e)
+  | vfix Tf vf => vfix Tf (value_shift (S k) vf)
+  end
+with tm_shift (k : nat) (e : tm) : tm :=
+  match e with
+  | tret v => tret (value_shift k v)
+  | tlete e1 e2 => tlete (tm_shift k e1) (tm_shift (S k) e2)
+  | tprim op v => tprim op (value_shift k v)
+  | tapp v1 v2 => tapp (value_shift k v1) (value_shift k v2)
+  | tmatch v et ef =>
+      tmatch (value_shift k v) (tm_shift k et) (tm_shift k ef)
+  end.
+
 (** ** Closing *)
 
 Fixpoint close_value (x : atom) (k : nat) (v : value) : value :=
@@ -170,6 +194,18 @@ with fv_tm (e : tm) : aset :=
 #[global] Instance stale_tm_inst    : Stale tm    := fv_tm.
 Arguments stale_value_inst /.
 Arguments stale_tm_inst /.
+
+Lemma fv_value_shift k v :
+  fv_value (value_shift k v) = fv_value v
+with fv_tm_shift k e :
+  fv_tm (tm_shift k e) = fv_tm e.
+Proof.
+  - destruct v; simpl; try reflexivity.
+    + destruct decide; reflexivity.
+    + apply fv_tm_shift.
+    + apply fv_value_shift.
+  - destruct e; simpl; rewrite ?fv_value_shift, ?fv_tm_shift; set_solver.
+Qed.
 
 (** ** Atom swap
 

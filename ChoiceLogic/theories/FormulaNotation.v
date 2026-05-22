@@ -19,8 +19,6 @@ Notation "'pure' P" := (FPure P)
   (at level 10, P at level 9) : formula_scope.
 Notation "'res' D '|' P" := (FResourceAtom D P)
   (at level 10, D at level 9, P at level 9) : formula_scope.
-Notation "'store' D '|' P" := (FStoreResourceAtom D P)
-  (at level 10, D at level 9, P at level 9) : formula_scope.
 Notation "'over' φ" := (FOver φ)
   (at level 30, φ at level 30) : formula_scope.
 Notation "'under' φ" := (FUnder φ)
@@ -41,8 +39,6 @@ Notation "φ → ψ" := (FImpl φ ψ)
   (at level 99, right associativity) : formula_scope.
 Notation "'∀.' φ" := (FForall φ)
   (at level 100, φ at level 200) : formula_scope.
-Notation "'∃.' φ" := (FExists φ)
-  (at level 100, φ at level 200) : formula_scope.
 
 Notation "<{ φ }>" := φ (φ custom form at level 99).
 Notation "( φ )" := φ (in custom form, φ at level 99, only parsing).
@@ -58,9 +54,6 @@ Notation "'@atom' q" := (FAtom q)
 Notation "'@pure' P" := (FPure P)
   (in custom form at level 10, P constr at level 9, only parsing).
 Notation "'@res' D '|' P" := (FResourceAtom D P)
-  (in custom form at level 10, D constr at level 9,
-   P constr at level 9, only parsing).
-Notation "'@store' D '|' P" := (FStoreResourceAtom D P)
   (in custom form at level 10, D constr at level 9,
    P constr at level 9, only parsing).
 
@@ -86,8 +79,6 @@ Notation "φ → ψ" := (FImpl φ ψ)
   (in custom form at level 80, right associativity, only parsing).
 
 Notation "'∀.' φ" := (FForall φ)
-  (in custom form at level 90, φ custom form at level 90, only parsing).
-Notation "'∃.' φ" := (FExists φ)
   (in custom form at level 90, φ custom form at level 90, only parsing).
 
 Module FormulaNotationSmoke.

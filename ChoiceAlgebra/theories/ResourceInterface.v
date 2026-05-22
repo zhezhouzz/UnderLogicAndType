@@ -15,13 +15,16 @@ Definition LWorld : Type := @WorldA logic_var _ _ V.
 Definition LWfWorld : Type := @WfWorldA logic_var _ _ V.
 
 Definition world_dom (m : World) : aset := worldA_dom m.
+Definition lworld_dom (m : LWorld) : lvset := worldA_dom m.
 Definition world_stores (m : World) : Store → Prop := worldA_stores m.
 Definition wf_world (m : World) : Prop := wf_worldA m.
 Definition raw_world (w : WfWorld) : World := proj1_sig w.
+Definition lraw_world (w : LWfWorld) : LWorld := proj1_sig w.
 Definition world_wf (w : WfWorld) : wf_world (raw_world w) := proj2_sig w.
 
 Coercion world_stores : World >-> Funclass.
 Coercion raw_world : WfWorld >-> World.
+Coercion lraw_world : LWfWorld >-> LWorld.
 
 Definition raw_unit : World := rawA_unit.
 Definition raw_restrict (m : World) (X : aset) : World := rawA_restrict m X.
@@ -37,6 +40,77 @@ Definition res_fiber (w : WfWorld) (σ : Store)
   resA_fiber w σ Hne.
 Definition res_swap (x y : atom) (w : WfWorld) : WfWorld := resA_swap x y w.
 Definition res_shift (k : nat) (w : WfWorld) : WfWorld := resA_shift k w.
+Definition lres_swap (x y : logic_var) (w : LWfWorld) : LWfWorld := resA_swap x y w.
+
+Lemma lworld_dom_lres_swap (x y : logic_var) (w : LWfWorld) :
+  lworld_dom (lres_swap x y w : LWorld) =
+  gset_swap x y (lworld_dom (lraw_world w)).
+Proof. reflexivity. Qed.
+
+(** Atom worlds can be viewed as locally-nameless worlds whose keys are all
+    free logic variables.  The implementation lives at the concrete interface
+    because it relates the two public key instances [atom] and [logic_var]. *)
+Definition lstore_lift_free
+    (σ : @StoreA V atom _ _) : @StoreA V logic_var _ _ :=
+  kmap LVFree σ.
+
+Lemma dom_lstore_lift_free (σ : @StoreA V atom _ _) :
+  dom (lstore_lift_free σ : gmap logic_var V) = lvars_of_atoms (dom σ).
+Proof.
+  unfold lstore_lift_free, lvars_of_atoms.
+  change (dom (kmap (M2:=gmap logic_var) LVFree (σ : gmap atom V)) =
+    set_map LVFree (dom (σ : gmap atom V))).
+  assert (Hinj : Inj (=) (=) LVFree).
+  { intros x y Heq. inversion Heq. reflexivity. }
+  rewrite (dom_kmap_L (M:=gmap atom) (M2:=gmap logic_var)
+    (Inj0:=Hinj) LVFree (σ : gmap atom V)).
+  reflexivity.
+Qed.
+
+Lemma lstore_lift_free_lookup_free (σ : @StoreA V atom _ _) x :
+  (lstore_lift_free σ : gmap logic_var V) !! LVFree x = (σ : gmap atom V) !! x.
+Proof.
+  unfold lstore_lift_free.
+  change ((kmap (M2:=gmap logic_var) LVFree (σ : gmap atom V)) !! LVFree x =
+    (σ : gmap atom V) !! x).
+  assert (Hinj : Inj (=) (=) LVFree).
+  { intros a b Heq. inversion Heq. reflexivity. }
+  rewrite (lookup_kmap (M1:=gmap atom) (M2:=gmap logic_var)
+    (Inj0:=Hinj) LVFree (σ : gmap atom V) x).
+  reflexivity.
+Qed.
+
+Lemma lstore_lift_free_lookup_bound (σ : @StoreA V atom _ _) k :
+  (lstore_lift_free σ : gmap logic_var V) !! LVBound k = None.
+Proof.
+  apply not_elem_of_dom.
+  rewrite dom_lstore_lift_free.
+  unfold lvars_of_atoms.
+  rewrite elem_of_map.
+  intros [x [Hbad _]]. discriminate.
+Qed.
+
+Definition res_lift_free
+    (w : @WfWorldA atom _ _ V) : @WfWorldA logic_var _ _ V.
+Proof.
+  refine (exist _ {|
+    worldA_dom := lvars_of_atoms (world_dom (w : World));
+    worldA_stores := fun τ =>
+      ∃ σ : @StoreA V atom _ _, (w : World) σ ∧ τ = lstore_lift_free σ
+  |} _).
+  destruct (worldA_wf w) as [Hne Hdom].
+  split.
+  - destruct Hne as [σ Hσ].
+    exists (lstore_lift_free σ). exists σ. split; [exact Hσ | reflexivity].
+  - intros τ [σ [Hσ ->]].
+    rewrite dom_lstore_lift_free.
+    rewrite (Hdom σ Hσ).
+    reflexivity.
+Defined.
+
+Lemma res_lift_free_dom (w : @WfWorldA atom _ _ V) :
+  lworld_dom (res_lift_free w : LWorld) = lvars_of_atoms (world_dom (w : World)).
+Proof. reflexivity. Qed.
 
 Definition world_compat (m1 m2 : World) : Prop := worldA_compat m1 m2.
 Definition raw_product (m1 m2 : World) : World := rawA_product m1 m2.
@@ -200,6 +274,11 @@ Proof. apply resA_subset_antisym. Qed.
 Lemma res_subset_swap (x y : atom) (w1 w2 : WfWorld) :
   res_subset (res_swap x y w1) (res_swap x y w2) ↔ res_subset w1 w2.
 Proof. apply resA_subset_swap. Qed.
+
+Lemma res_subset_restrict_mono (w1 w2 : WfWorld) (X : aset) :
+  res_subset w1 w2 →
+  res_subset (res_restrict w1 X) (res_restrict w2 X).
+Proof. apply resA_subset_restrict_mono. Qed.
 
 Lemma res_sum_subset_l (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   res_subset w1 (res_sum w1 w2 Hdef).
@@ -442,6 +521,13 @@ Lemma res_restrict_le_eq_from_base
   res_restrict n X = res_restrict m X.
 Proof. apply resA_restrict_le_eq_from_base. Qed.
 
+Lemma res_restrict_eq_subset
+    (m n : WfWorld) (X Y : aset) :
+  Y ⊆ X →
+  res_restrict m X = res_restrict n X →
+  res_restrict m Y = res_restrict n Y.
+Proof. apply resA_restrict_eq_subset. Qed.
+
 Lemma res_fiber_from_projection_le
     (m n wfib_m wfib_n : WfWorld) (X : aset) (σ : Store) :
   res_fiber_from_projection m X σ wfib_m →
@@ -450,6 +536,26 @@ Lemma res_fiber_from_projection_le
   X ⊆ world_dom (m : World) →
   wfib_m ⊑ wfib_n.
 Proof. apply resA_fiber_from_projection_le. Qed.
+
+Lemma res_fiber_from_projection_eq_on
+    (m n wfib_m wfib_n : WfWorld) (D X : aset) (σ : Store) :
+  D ⊆ X →
+  res_restrict m X = res_restrict n X →
+  res_fiber_from_projection m D σ wfib_m →
+  res_fiber_from_projection n D σ wfib_n →
+  res_restrict wfib_m X = res_restrict wfib_n X.
+Proof. apply resA_fiber_from_projection_eq_on. Qed.
+
+Lemma res_fiber_member_projection_transport_on
+    (m n nfib : WfWorld) (D X : aset) :
+  D ⊆ X →
+  D ⊆ world_dom (m : World) →
+  res_restrict m X = res_restrict n X →
+  res_fiber_member n D nfib →
+  ∃ mfib,
+    res_fiber_member m D mfib ∧
+    res_restrict mfib X = res_restrict nfib X.
+Proof. apply resA_fiber_member_projection_transport_on. Qed.
 
 Lemma res_le_same_dom_eq (w1 w2 : WfWorld) :
   w1 ⊑ w2 →
@@ -535,6 +641,22 @@ Lemma res_subset_lift_over (m n mo : WfWorld) :
     res_subset n no ∧ mo ⊑ no.
 Proof. apply resA_subset_lift_over. Qed.
 
+Lemma res_subset_lift_under_projection_on
+    (m n mu : WfWorld) (X : aset) :
+  res_restrict m X = res_restrict n X →
+  res_subset mu m →
+  ∃ nu : WfWorld,
+    res_subset nu n ∧ res_restrict mu X ⊑ nu.
+Proof. apply resA_subset_lift_under_projection_on. Qed.
+
+Lemma res_subset_lift_over_projection_on
+    (m n mo : WfWorld) (X : aset) :
+  res_restrict m X = res_restrict n X →
+  res_subset m mo →
+  ∃ no : WfWorld,
+    res_subset n no ∧ res_restrict mo X ⊑ no.
+Proof. apply resA_subset_lift_over_projection_on. Qed.
+
 Lemma res_product_restrict_wand_le
     (n m : WfWorld) (S X Y : aset)
     (Hc_small : world_compat (res_restrict n X) m)
@@ -544,6 +666,15 @@ Lemma res_product_restrict_wand_le
   res_restrict (res_product (res_restrict n X) m Hc_small) Y ⊑
   res_product n (res_restrict m S) Hc.
 Proof. apply resA_product_restrict_wand_le. Qed.
+
+Lemma res_product_restrict_same_le
+    (m m1 m2 : WfWorld) (X : aset)
+    (Hc : world_compat m1 m2) :
+  res_product m1 m2 Hc ⊑ m →
+  ∃ HcX : world_compat (res_restrict m1 X) (res_restrict m2 X),
+    res_product (res_restrict m1 X) (res_restrict m2 X) HcX
+      ⊑ res_restrict m X.
+Proof. apply resA_product_restrict_same_le. Qed.
 
 Lemma res_sum_le_mono (w1 w2 w1' w2' : WfWorld)
     (Hdef : raw_sum_defined w1 w2) (Hdef' : raw_sum_defined w1' w2') :
@@ -558,6 +689,15 @@ Lemma res_restrict_sum
   res_sum (res_restrict w1 X) (res_restrict w2 X) HdefX =
   res_restrict (res_sum w1 w2 Hdef) X.
 Proof. apply resA_restrict_sum. Qed.
+
+Lemma res_sum_restrict_same_le
+    (m m1 m2 : WfWorld) (X : aset)
+    (Hdef : raw_sum_defined m1 m2) :
+  res_sum m1 m2 Hdef ⊑ m →
+  ∃ HdefX : raw_sum_defined (res_restrict m1 X) (res_restrict m2 X),
+    res_sum (res_restrict m1 X) (res_restrict m2 X) HdefX
+      ⊑ res_restrict m X.
+Proof. apply resA_sum_restrict_same_le. Qed.
 
 Lemma res_sum_lift_along_restrict
     (m n1 n2 : WfWorld) (X : aset) (Hdef : raw_sum_defined n1 n2) :
@@ -644,6 +784,46 @@ Lemma res_extend_by_restrict_base m F n :
   res_restrict n (world_dom m) = m.
 Proof. apply resA_extend_by_restrict_base. Qed.
 
+Lemma res_extend_by_dom m F n :
+  m #> F ~~> n →
+  world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
+Proof. apply resA_extend_by_dom. Qed.
+
+Lemma res_extend_by_le m F n :
+  m #> F ~~> n →
+  m ⊑ n.
+Proof. apply resA_extend_by_le. Qed.
+
+Lemma res_extend_by_applicable m F n :
+  m #> F ~~> n →
+  extension_applicable F m.
+Proof. apply resA_extend_by_applicable. Qed.
+
+Lemma res_extend_by_input_dom m F n :
+  m #> F ~~> n →
+  extA_in F ⊆ world_dom (m : World).
+Proof.
+  intros Hext.
+  pose proof (res_extend_by_applicable m F n Hext) as Happ.
+  exact (extA_app_in _ _ Happ).
+Qed.
+
+Lemma res_extend_by_output_fresh m F n :
+  m #> F ~~> n →
+  extA_out F ## world_dom (m : World).
+Proof.
+  intros Hext.
+  pose proof (res_extend_by_applicable m F n Hext) as Happ.
+  exact (extA_app_out _ _ Happ).
+Qed.
+
+Lemma res_extend_by_base_le m n F my ny :
+  m ⊑ n →
+  m #> F ~~> my →
+  n #> F ~~> ny →
+  my ⊑ ny.
+Proof. apply resA_extend_by_base_le. Qed.
+
 Lemma res_extend_by_exists m F :
   extension_applicable F m →
   ∃ n, m #> F ~~> n.
@@ -654,6 +834,14 @@ Lemma res_extend_by_unique m F n1 n2 :
   m #> F ~~> n2 →
   n1 = n2.
 Proof. apply resA_extend_by_unique. Qed.
+
+Lemma res_extend_by_projection_eq m n F my ny :
+  res_restrict m (extA_in F) = res_restrict n (extA_in F) →
+  m #> F ~~> my →
+  n #> F ~~> ny →
+  res_restrict my (extA_in F ∪ extA_out F) =
+  res_restrict ny (extA_in F ∪ extA_out F).
+Proof. apply resA_extend_by_projection_eq. Qed.
 
 Lemma res_extend_by_fiber_equiv_on m F G n :
   extA_in F = extA_in G →
