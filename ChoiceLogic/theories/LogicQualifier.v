@@ -1,9 +1,6 @@
-From ChoiceAlgebra Require Export
-  Resource ResourceNotation ResourceTactics ChoiceAlgebra.
+From ChoiceAlgebra Require Export Resource.
 From ChoiceAlgebra Require Import ResourceRestrict.
 From ChoicePrelude Require Export Prelude Store.
-From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality
-  Logic.ProofIrrelevance.
 
 (** * Logic qualifiers
 
@@ -21,57 +18,11 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LWorldT := (LWorld (V := V)) (only parsing).
-Local Notation LWfWorldT := (LWfWorld (V := V)) (only parsing).
-
-Record LWorldOn (D : lvset) : Type := {
-  lw : LWfWorldT;
-  lw_dom : lworld_dom (lraw_world lw) = D;
-}.
-
-Arguments lw {_} _.
-Arguments lw_dom {_} _.
-
-Definition lworld_on_lift
-    (D : lvset) (m : WfWorldT)
-    (Hlc : lc_lvars D)
-    (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)) : LWorldOn D.
-Proof.
-  refine {| lw :=
-    @resA_restrict logic_var _ _ V (res_lift_free (res_restrict m (lvars_fv D))) D |}.
-  simpl.
-  apply set_eq. intros v. split.
-  - intros Hv. apply elem_of_intersection in Hv as [_ Hv]. exact Hv.
-  - intros Hv. apply elem_of_intersection. split; [| exact Hv].
-    unfold lvars_of_atoms. apply elem_of_map.
-    destruct v as [k | x].
-    + exfalso. exact (Hlc (LVBound k) Hv).
-    + exists x. split; [reflexivity |].
-      simpl. apply elem_of_intersection. split.
-      * apply Hsub. rewrite lvars_fv_elem. exact Hv.
-      * rewrite lvars_fv_elem. exact Hv.
-Defined.
-
-Definition lworld_on_swap
-    (a b : logic_var) {D : lvset} (w : LWorldOn D)
-    : LWorldOn (gset_swap a b D).
-Proof.
-  refine {| lw := lres_swap a b (lw w) |}.
-  rewrite lworld_dom_lres_swap, (lw_dom w). reflexivity.
-Defined.
-
-Definition lworld_on_open_back
-    (k : nat) (x : atom) (D : lvset)
-    (w : LWorldOn (lvars_open k x D)) : LWorldOn D.
-Proof.
-  refine {| lw := lres_swap (LVBound k) (LVFree x) (lw w) |}.
-  rewrite lworld_dom_lres_swap, (lw_dom w).
-  rewrite lvars_open_unfold, gset_swap_involutive. reflexivity.
-Defined.
+Local Notation LWorldOnT := (LWorldOn (V := V)) (only parsing).
 
 Record logic_qualifier : Type := lqual {
   lqual_dom : lvset;
-  lqual_prop : LWorldOn lqual_dom → Prop;
+  lqual_prop : LWorldOnT lqual_dom → Prop;
 }.
 
 Definition lqual_lvars (q : logic_qualifier) : lvset :=
@@ -90,7 +41,7 @@ Definition logic_qualifier_denote
   end.
 
 Definition lqual_fvars
-    (d : aset) (prop : LWorldOn (lvars_of_atoms d) → Prop)
+    (d : aset) (prop : LWorldOnT (lvars_of_atoms d) → Prop)
     : logic_qualifier :=
   lqual (lvars_of_atoms d) prop.
 
@@ -101,14 +52,6 @@ Definition lqual_open
 	      lqual (lvars_open k x D)
 	        (λ w, P (lworld_on_open_back k x D w))
 	  end.
-
-Lemma lworld_on_ext D (w1 w2 : LWorldOn D) :
-  lw w1 = lw w2 →
-  w1 = w2.
-Proof.
-  destruct w1 as [w1 Hdom1], w2 as [w2 Hdom2]. simpl.
-  intros ->. f_equal. apply proof_irrelevance.
-Qed.
 
 Lemma logic_qualifier_denote_restrict q w X :
   lqual_fv q ⊆ X →

@@ -1,8 +1,8 @@
-(** * ChoiceType.TypeLanguage.Tactics
+(** * ChoiceTypeLanguage.Tactics
 
     Lightweight normalization helpers for the syntax/type-language layer. *)
 
-From ChoiceType.TypeLanguage Require Export Notation.
+From ChoiceTypeLanguage Require Export Notation.
 
 Ltac mopen_norm :=
   rewrite ?mopen_insert_norm.

@@ -5,7 +5,7 @@
     later syntactic categories can reuse the same multi-substitution facts once
     they provide the corresponding single-substitution lemmas. *)
 
-From ChoicePrelude Require Import Store.
+From ChoiceBase Require Import AtomEnv.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
   LocallyNamelessExtra.
 From LocallyNameless Require Import Classes Tactics.
@@ -17,8 +17,7 @@ Lemma closed_env_insert σ x v :
 Proof.
   intros Hfresh Hclosed.
   unfold closed_env in *.
-  pose proof (map_Forall_insert (λ _ v, stale v = ∅) σ x v Hfresh) as Hiff.
-  exact (proj1 Hiff Hclosed).
+  apply map_Forall_insert in Hclosed; [exact Hclosed | exact Hfresh].
 Qed.
 
 Lemma closed_env_lookup σ x v :
@@ -46,8 +45,8 @@ Lemma closed_env_delete σ x :
 Proof.
   unfold closed_env. intros Hclosed.
   apply map_Forall_lookup_2. intros y v Hlookup.
-  pose proof (lookup_delete_Some σ x y v) as Hiff.
-  exact (map_Forall_lookup_1 _ _ _ _ Hclosed (proj2 (proj1 Hiff Hlookup))).
+  rewrite lookup_delete_Some in Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hclosed (proj2 Hlookup)).
 Qed.
 
 Lemma closed_env_store_swap x y σ :
@@ -70,8 +69,7 @@ Lemma lc_env_insert σ x v :
 Proof.
   intros Hfresh Hlc.
   unfold lc_env in *.
-  pose proof (map_Forall_insert (λ _ v, is_lc v) σ x v Hfresh) as Hiff.
-  exact (proj1 Hiff Hlc).
+  apply map_Forall_insert in Hlc; [exact Hlc | exact Hfresh].
 Qed.
 
 Lemma lc_env_lookup σ x v :
@@ -109,8 +107,8 @@ Lemma lc_env_delete σ x :
 Proof.
   unfold lc_env. intros Hlc.
   apply map_Forall_lookup_2. intros y v Hlookup.
-  pose proof (lookup_delete_Some σ x y v) as Hiff.
-  exact (map_Forall_lookup_1 _ _ _ _ Hlc (proj2 (proj1 Hiff Hlookup))).
+  rewrite lookup_delete_Some in Hlookup.
+  exact (map_Forall_lookup_1 _ _ _ _ Hlc (proj2 Hlookup)).
 Qed.
 
 Definition store_closed (σ : env) : Prop :=
@@ -123,50 +121,6 @@ Proof.
   intros [Hclosed Hlc]. split.
   - by apply closed_env_restrict.
   - by apply lc_env_restrict.
-Qed.
-
-Lemma closed_env_restrict_union_sets σ X Y :
-  closed_env (store_restrict σ X) ->
-  closed_env (store_restrict σ Y) ->
-  closed_env (store_restrict σ (X ∪ Y)).
-Proof.
-  unfold closed_env.
-  intros HX HY.
-  apply map_Forall_lookup_2. intros z v Hlookup.
-  apply store_restrict_lookup_some in Hlookup as [HzXY Hlookup].
-  destruct (decide (z ∈ X)) as [HzX | HzX].
-  - exact (map_Forall_lookup_1 _ _ _ _ HX
-      (store_restrict_lookup_some_2 σ X z v Hlookup HzX)).
-  - assert (HzY : z ∈ Y) by set_solver.
-    exact (map_Forall_lookup_1 _ _ _ _ HY
-      (store_restrict_lookup_some_2 σ Y z v Hlookup HzY)).
-Qed.
-
-Lemma lc_env_restrict_union_sets σ X Y :
-  lc_env (store_restrict σ X) ->
-  lc_env (store_restrict σ Y) ->
-  lc_env (store_restrict σ (X ∪ Y)).
-Proof.
-  unfold lc_env.
-  intros HX HY.
-  apply map_Forall_lookup_2. intros z v Hlookup.
-  apply store_restrict_lookup_some in Hlookup as [HzXY Hlookup].
-  destruct (decide (z ∈ X)) as [HzX | HzX].
-  - exact (map_Forall_lookup_1 _ _ _ _ HX
-      (store_restrict_lookup_some_2 σ X z v Hlookup HzX)).
-  - assert (HzY : z ∈ Y) by set_solver.
-    exact (map_Forall_lookup_1 _ _ _ _ HY
-      (store_restrict_lookup_some_2 σ Y z v Hlookup HzY)).
-Qed.
-
-Lemma store_closed_restrict_union_sets σ X Y :
-  store_closed (store_restrict σ X) ->
-  store_closed (store_restrict σ Y) ->
-  store_closed (store_restrict σ (X ∪ Y)).
-Proof.
-  intros [HclosedX HlcX] [HclosedY HlcY]. split.
-  - eapply closed_env_restrict_union_sets; eauto.
-  - eapply lc_env_restrict_union_sets; eauto.
 Qed.
 
 Lemma store_closed_store_swap x y σ :
@@ -290,9 +244,9 @@ Proof.
   - intros y vy σ' Hfresh Hfold IH Γ Hlookup.
     rewrite Hfold in Hlookup.
     unfold env_delete_step in Hlookup.
-    pose proof (lookup_delete_Some (map_fold env_delete_step Γ σ') y x T) as Hiff.
-    destruct (proj1 Hiff Hlookup) as [Hxy Hlookup'].
-    specialize (IH Γ Hlookup') as [HΓ Hσ'].
+    rewrite lookup_delete_Some in Hlookup.
+    destruct Hlookup as [Hxy Hlookup].
+    specialize (IH Γ Hlookup) as [HΓ Hσ'].
     split; [exact HΓ |].
     rewrite lookup_insert_ne by congruence. exact Hσ'.
 Qed.
@@ -362,8 +316,8 @@ Lemma delete_lookup_none {A} (Γ : gmap atom A) x :
 Proof.
   intros Hnone. apply map_eq. intros y.
   destruct (decide (y = x)) as [->|Hyx].
-  - transitivity (@None A); [apply lookup_delete_eq | symmetry; exact Hnone].
-  - apply lookup_delete_ne. congruence.
+  - rewrite lookup_delete_eq. symmetry. exact Hnone.
+  - rewrite lookup_delete_ne by congruence. reflexivity.
 Qed.
 
 Lemma msubst_basic_typing_tm Γ σ e T :
@@ -732,17 +686,16 @@ Proof.
       assert (Hclosed_insert :
           closed_env (<[x := vx]> (map_restrict value σ' X))).
       {
-        replace (<[x := vx]> (map_restrict value σ' X))
-          with (map_restrict value (<[x := vx]> σ') X).
-        2:{ apply map_restrict_insert_in. exact Hx. }
+        change (closed_env (map_restrict value (<[x := vx]> σ') X)) in Hclosed_restrict.
+        unfold map_restrict in Hclosed_restrict.
+        rewrite map_filter_insert_True in Hclosed_restrict by exact Hx.
         exact Hclosed_restrict.
       }
       destruct (closed_env_insert
         (map_restrict value σ' X) x vx Hfresh_restrict Hclosed_insert)
         as [Hvx Hclosedσ].
-      replace (map_restrict value (<[x := vx]> σ') X)
-        with (<[x := vx]> (map_restrict value σ' X)).
-      2:{ symmetry. apply map_restrict_insert_in. exact Hx. }
+      unfold map_restrict at 1.
+      rewrite map_filter_insert_True by exact Hx.
       fold (map_restrict value σ' X).
       change (m{<[x := vx]> (map_restrict value σ' X)} a =
               {x := vx} (m{σ'} a)).
@@ -759,14 +712,13 @@ Proof.
       rewrite HIH. reflexivity.
     + assert (Hclosedσ : closed_env (map_restrict value σ' X)).
       {
-        replace (map_restrict value σ' X)
-          with (map_restrict value (<[x := vx]> σ') X).
-        2:{ apply map_restrict_insert_notin. exact Hx. }
+        change (closed_env (map_restrict value (<[x := vx]> σ') X)) in Hclosed_restrict.
+        unfold map_restrict in Hclosed_restrict.
+        rewrite map_filter_insert_not in Hclosed_restrict by (intros vi; exact Hx).
         exact Hclosed_restrict.
       }
-      replace (map_restrict value (<[x := vx]> σ') X)
-        with (map_restrict value σ' X).
-      2:{ symmetry. apply map_restrict_insert_notin. exact Hx. }
+      unfold map_restrict at 1.
+      rewrite map_filter_insert_not by (intros vi; exact Hx).
       fold (map_restrict value σ' X).
       change (m{map_restrict value σ' X} a =
               {x := vx} (m{σ'} a)).
@@ -782,49 +734,6 @@ Proof.
       rewrite <- HIH.
       pose proof (msubstFvA (map_restrict value σ' X) a Hclosedσ) as Hfv.
       set_solver.
-Qed.
-
-Lemma subst_map_eq_on_fv (e : tm) (σ ρ : Store) :
-  closed_env (store_restrict σ (fv_tm e)) →
-  store_restrict ρ (fv_tm e) = store_restrict σ (fv_tm e) →
-  subst_map ρ e = subst_map σ e.
-Proof.
-  intros Hclosed Hagree.
-  pose proof (@msubst_restrict_closed_on
-    tm stale_tm_inst subst_tm_inst _ _ _ ρ (fv_tm e) e) as Hρ.
-  specialize (Hρ ltac:(
-    change (closed_env (store_restrict ρ (fv_tm e)));
-    rewrite Hagree; exact Hclosed) ltac:(reflexivity)).
-  change (subst_map (store_restrict ρ (fv_tm e)) e = subst_map ρ e) in Hρ.
-  pose proof (@msubst_restrict_closed_on
-    tm stale_tm_inst subst_tm_inst _ _ _ σ (fv_tm e) e) as Hσ.
-  specialize (Hσ Hclosed ltac:(reflexivity)).
-  change (subst_map (store_restrict σ (fv_tm e)) e = subst_map σ e) in Hσ.
-  rewrite <- Hρ, <- Hσ, Hagree. reflexivity.
-Qed.
-
-Lemma subst_map_restrict_to_fv_from_superset (e : tm) X (σ : Store) :
-  fv_tm e ⊆ X →
-  closed_env (store_restrict σ X) →
-  subst_map (store_restrict σ (fv_tm e)) e =
-  subst_map (store_restrict σ X) e.
-Proof.
-  intros Hfv Hclosed.
-  pose proof (subst_map_eq_on_fv e
-    (store_restrict σ X) (store_restrict σ (fv_tm e))) as Heq.
-  assert (Hclosed_fv :
-    closed_env (store_restrict (store_restrict σ X) (fv_tm e))).
-  { apply closed_env_restrict. exact Hclosed. }
-  specialize (Heq Hclosed_fv).
-  assert (Hagree :
-    store_restrict (store_restrict σ (fv_tm e)) (fv_tm e) =
-    store_restrict (store_restrict σ X) (fv_tm e)).
-  {
-    rewrite store_restrict_twice_same.
-    rewrite store_restrict_twice_subset by exact Hfv.
-    reflexivity.
-  }
-  exact (Heq Hagree).
 Qed.
 
 Lemma MsubstRestrict_all
@@ -1063,19 +972,13 @@ Proof.
   intros Hclosed Hlc Hlookup Hfresh.
   replace (m{σ} (open_tm k (vfvar x) e)) with
     (m{<[x := vx]> (delete x σ)} (open_tm k (vfvar x) e)).
-  2:{
-    replace (<[x := vx]> (delete x σ)) with σ.
-    - reflexivity.
-    - symmetry. apply insert_delete_id. exact Hlookup.
-  }
+  2:{ rewrite (insert_delete_id σ x vx Hlookup). reflexivity. }
   apply msubst_intro_open_tm.
   - apply closed_env_delete. exact Hclosed.
   - eapply closed_env_lookup; eauto.
   - eapply lc_env_lookup; eauto.
   - apply lc_env_delete. exact Hlc.
-  - assert (Hxdom : x ∉ dom (delete x σ)).
-    { apply not_elem_of_dom. apply lookup_delete_eq. }
-    set_solver.
+  - rewrite (dom_delete_L σ x). set_solver.
 Qed.
 
 Lemma msubst_open_lookup_swap_tm σ e k x y vx :
@@ -1096,8 +999,8 @@ Proof.
   }
   assert (Hlookup_swap : store_swap x y σ !! x = Some vx).
   {
-    rewrite store_swap_lookup_inv, atom_swap_l.
-    exact Hlookup.
+    rewrite store_swap_lookup_inv.
+    rewrite atom_swap_l. exact Hlookup.
   }
   rewrite (msubst_open_lookup_tm (store_swap x y σ) e k x vx)
     by (try apply closed_env_store_swap; try exact Hclosed;

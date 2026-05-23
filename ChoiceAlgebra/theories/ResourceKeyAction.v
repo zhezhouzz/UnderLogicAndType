@@ -5,30 +5,44 @@ From ChoiceAlgebra Require Import ResourceCore.
 
 Section ResourceKeyActionA.
 
-Context {K : Type} `{Countable K} `{!SwapKey K}.
+Context {K : Type} `{Countable K}.
 Context {V : Type} `{ValueSig V}.
 
 Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
 Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
-Definition rawA_swap (x y : K) (m : WorldAT) : WorldAT := {|
-  worldA_dom    := gset_swap x y (worldA_dom m);
+Definition rawA_rekey (f : K → K) (m : WorldAT) : WorldAT := {|
+  worldA_dom    := set_map f (worldA_dom m);
   worldA_stores := λ σ, ∃ σ0 : StoreAT,
-    m σ0 ∧ @storeA_swap V K _ _ _ x y σ0 = σ;
+    m σ0 ∧ @storeA_rekey V K _ _ f σ0 = σ;
 |}.
 
-Definition resA_swap (x y : K) (w : WfWorldAT) : WfWorldAT.
+Definition resA_rekey (f : K → K) (Hf : Inj (=) (=) f)
+    (w : WfWorldAT) : WfWorldAT.
 Proof.
-  refine (exist _ (rawA_swap x y w) _).
+  refine (exist _ (rawA_rekey f w) _).
   destruct (worldA_wf w) as [Hne Hdom].
   split.
   - destruct Hne as [σ Hσ].
-    exists (@storeA_swap V K _ _ _ x y σ). exists σ. split; [exact Hσ | reflexivity].
-  - intros σ [σ0 [Hσ0 Hswap]]. subst σ.
-    rewrite storeA_swap_dom.
-    rewrite (Hdom σ0 Hσ0). reflexivity.
+    exists (@storeA_rekey V K _ _ f σ). exists σ. split; [exact Hσ | reflexivity].
+  - intros σ [σ0 [Hσ0 Hrekey]].
+    rewrite <- Hrekey.
+    change (dom (@storeA_rekey V K _ _ f σ0 : gmap K V) =
+      set_map f (worldA_dom (w : WorldAT) : gset K)).
+    rewrite storeA_rekey_dom by exact Hf.
+    pose proof (Hdom σ0 Hσ0) as Hσdom.
+    change (dom (σ0 : gmap K V) = worldA_dom (w : WorldAT)) in Hσdom.
+    rewrite Hσdom. reflexivity.
 Defined.
+
+Context `{!SwapKey K}.
+
+Definition rawA_swap (x y : K) (m : WorldAT) : WorldAT :=
+  rawA_rekey (key_swap x y) m.
+
+Definition resA_swap (x y : K) (w : WfWorldAT) : WfWorldAT :=
+  resA_rekey (key_swap x y) (key_swap_inj x y) w.
 
 Lemma resA_swap_involutive (x y : K) (w : WfWorldAT) :
   resA_swap x y (resA_swap x y w) = w.
@@ -37,11 +51,16 @@ Proof.
   - simpl. apply gset_swap_involutive.
   - intros σ. simpl. split.
     + intros [σ1 [[σ0 [Hσ0 Hswap0]] Hswap1]].
-      subst σ1 σ. rewrite storeA_swap_involutive. exact Hσ0.
+      rewrite <- Hswap1, <- Hswap0.
+      change (w (@storeA_swap V K _ _ _ x y
+        (@storeA_swap V K _ _ _ x y σ0))).
+      rewrite storeA_swap_involutive. exact Hσ0.
     + intros Hσ.
       exists (@storeA_swap V K _ _ _ x y σ). split.
       * exists σ. split; [exact Hσ | reflexivity].
-      * apply storeA_swap_involutive.
+      * change (@storeA_swap V K _ _ _ x y
+          (@storeA_swap V K _ _ _ x y σ) = σ).
+        apply storeA_swap_involutive.
 Qed.
 
 Lemma resA_swap_sym (x y : K) (w : WfWorldAT) :
@@ -51,8 +70,12 @@ Proof.
   - simpl. apply gset_swap_sym.
   - intros σ. simpl. split.
     + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
+      change (@storeA_swap V K _ _ _ y x σ0 = σ).
+      change (@storeA_swap V K _ _ _ x y σ0 = σ) in Hswap.
       rewrite <- storeA_swap_sym. exact Hswap.
     + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
+      change (@storeA_swap V K _ _ _ x y σ0 = σ).
+      change (@storeA_swap V K _ _ _ y x σ0 = σ) in Hswap.
       rewrite storeA_swap_sym. exact Hswap.
 Qed.
 
@@ -93,23 +116,11 @@ Qed.
 
 Context `{!ShiftKey K}.
 
-Definition rawA_shift (k : nat) (m : WorldAT) : WorldAT := {|
-  worldA_dom    := set_map (key_shift k) (worldA_dom m);
-  worldA_stores := λ σ, ∃ σ0 : StoreAT,
-    m σ0 ∧ @storeA_shift V K _ _ _ k σ0 = σ;
-|}.
+Definition rawA_shift (k : nat) (m : WorldAT) : WorldAT :=
+  rawA_rekey (key_shift k) m.
 
-Definition resA_shift (k : nat) (w : WfWorldAT) : WfWorldAT.
-Proof.
-  refine (exist _ (rawA_shift k w) _).
-  destruct (worldA_wf w) as [Hne Hdom].
-  split.
-  - destruct Hne as [σ Hσ].
-    exists (@storeA_shift V K _ _ _ k σ). exists σ. split; [exact Hσ | reflexivity].
-  - intros σ [σ0 [Hσ0 Hshift]]. subst σ.
-    rewrite storeA_shift_dom.
-    rewrite (Hdom σ0 Hσ0). reflexivity.
-Defined.
+Definition resA_shift (k : nat) (w : WfWorldAT) : WfWorldAT :=
+  resA_rekey (key_shift k) (key_shift_inj k) w.
 
 End ResourceKeyActionA.
 
@@ -119,10 +130,10 @@ Context {V : Type} `{ValueSig V}.
 
 Definition rawA_open (k : nat) (x : atom)
     (m : @WorldA logic_var _ _ V) : @WorldA logic_var _ _ V :=
-  @rawA_swap logic_var _ _ _ V (LVBound k) (LVFree x) m.
+  rawA_swap (LVBound k) (LVFree x) m.
 
 Definition resA_open (k : nat) (x : atom)
     (w : @WfWorldA logic_var _ _ V) : @WfWorldA logic_var _ _ V :=
-  @resA_swap logic_var _ _ _ V (LVBound k) (LVFree x) w.
+  resA_swap (LVBound k) (LVFree x) w.
 
 End ResourceOpenA.

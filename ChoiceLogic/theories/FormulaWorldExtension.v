@@ -5,7 +5,7 @@
     intentionally absent: forall is now defined directly by extension. *)
 
 From ChoiceAlgebra Require Import Resource.
-From ChoiceLogic Require Import Formula FormulaTactics FormulaDerived.
+From ChoiceLogic Require Import Formula FormulaDerived.
 
 Section FormulaWorldExtension.
 

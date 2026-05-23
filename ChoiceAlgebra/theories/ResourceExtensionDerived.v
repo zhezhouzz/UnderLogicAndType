@@ -103,75 +103,15 @@ Proof.
   }
   set (n1' := resA_slice_restrict n X m1 Hsub_m1_n).
   set (n2' := resA_slice_restrict n X m2 Hsub_m2_n).
-  assert (Happ1 : extension_applicableA F m1).
-  {
-    destruct Hext as [Happ _].
-    constructor.
-    - rewrite Hdom_m1. subst X. exact (extA_app_in _ _ Happ).
-    - rewrite Hdom_m1. subst X. exact (extA_app_out _ _ Happ).
-  }
-  assert (Happ2 : extension_applicableA F m2).
-  {
-    destruct Hext as [Happ _].
-    constructor.
-    - rewrite Hdom_m2. subst X. exact (extA_app_in _ _ Happ).
-    - rewrite Hdom_m2. subst X. exact (extA_app_out _ _ Happ).
-  }
   assert (Hm1ext : resA_extend_by m1 F n1').
   {
-    subst n1'. unfold resA_extend_by. split; [exact Happ1 |].
-    split.
-    - simpl. subst m1 X.
-      rewrite (resA_extend_by_dom _ _ _ Hext). set_solver.
-    - intros σ. split.
-      + intros [Hσn Hσm1].
-        apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσn.
-        destruct Hσn as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
-        exists σm, we, σe. repeat split; eauto.
-        replace σm with (@storeA_restrict V K _ _
-          (@union (gmap K V) _ σm σe) X).
-        * exact Hσm1.
-        * subst X.
-          exact (resA_extend_store_restrict_base m F σm we σe
-            (resA_extend_by_applicable _ _ _ Hext) Hσm HFrel Hσe).
-      + intros [σm [we [σe [Hσm1 [HFrel [Hσe ->]]]]]].
-        split.
-        * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext)).
-          exists σm, we, σe. repeat split; eauto.
-          exact (proj2 Hsub_m1_m σm Hσm1).
-        * pose proof (proj2 Hsub_m1_m σm Hσm1) as Hσm.
-          subst X.
-          rewrite (resA_extend_store_restrict_base m F σm we σe
-            (resA_extend_by_applicable _ _ _ Hext) Hσm HFrel Hσe).
-          exact Hσm1.
+    subst n1' X.
+    eapply resA_extend_by_slice_restrict_base; eauto.
   }
   assert (Hm2ext : resA_extend_by m2 F n2').
   {
-    subst n2'. unfold resA_extend_by. split; [exact Happ2 |].
-    split.
-    - simpl. subst m2 X.
-      rewrite (resA_extend_by_dom _ _ _ Hext). set_solver.
-    - intros σ. split.
-      + intros [Hσn Hσm2].
-        apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσn.
-        destruct Hσn as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
-        exists σm, we, σe. repeat split; eauto.
-        replace σm with (@storeA_restrict V K _ _
-          (@union (gmap K V) _ σm σe) X).
-        * exact Hσm2.
-        * subst X.
-          exact (resA_extend_store_restrict_base m F σm we σe
-            (resA_extend_by_applicable _ _ _ Hext) Hσm HFrel Hσe).
-      + intros [σm [we [σe [Hσm2 [HFrel [Hσe ->]]]]]].
-        split.
-        * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext)).
-          exists σm, we, σe. repeat split; eauto.
-          exact (proj2 Hsub_m2_m σm Hσm2).
-        * pose proof (proj2 Hsub_m2_m σm Hσm2) as Hσm.
-          subst X.
-          rewrite (resA_extend_store_restrict_base m F σm we σe
-            (resA_extend_by_applicable _ _ _ Hext) Hσm HFrel Hσe).
-          exact Hσm2.
+    subst n2' X.
+    eapply resA_extend_by_slice_restrict_base; eauto.
   }
   assert (Hdefm : rawA_sum_defined (m1 : WorldAT) (m2 : WorldAT)).
   { unfold rawA_sum_defined. rewrite Hdom_m1, Hdom_m2. reflexivity. }

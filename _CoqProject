@@ -1,24 +1,55 @@
+-R ChoiceBase ChoiceBase
 -R ChoicePrelude ChoicePrelude
 -R ChoiceAlgebra/theories ChoiceAlgebra
 -R ChoiceLogic/theories ChoiceLogic
+-R ChoiceTypeLanguage/theories ChoiceTypeLanguage
 -R LocallyNameless LocallyNameless
 -R CoreLang/theories CoreLang
 -R ChoiceType/theories ChoiceType
 
+ChoiceBase/Prelude.v
+ChoiceBase/LogicVar.v
+ChoiceBase/AtomEnv.v
+
+ChoicePrelude/PreludeCore.v
+ChoicePrelude/LogicVarCore.v
+ChoicePrelude/LogicVarOpen.v
+ChoicePrelude/LogicVarAtoms.v
+ChoicePrelude/LogicVarOpenEnv.v
+ChoicePrelude/LogicVarInterface.v
+ChoicePrelude/LogicVar.v
 ChoicePrelude/Prelude.v
 ChoicePrelude/StoreCore.v
 ChoicePrelude/StoreKeyAction.v
+ChoicePrelude/StoreRestrictCore.v
+ChoicePrelude/StoreRestrictUnion.v
 ChoicePrelude/StoreRestrict.v
 ChoicePrelude/StoreBind.v
+ChoicePrelude/StoreInterfaceCore.v
+ChoicePrelude/StoreInterfaceLookupSwap.v
+ChoicePrelude/StoreInterfaceRestrict.v
+ChoicePrelude/StoreInterfaceCompat.v
 ChoicePrelude/StoreInterface.v
 ChoicePrelude/Store.v
 
 ChoiceAlgebra/theories/ResourceCore.v
 ChoiceAlgebra/theories/ResourceKeyAction.v
 ChoiceAlgebra/theories/ResourceRestrict.v
+ChoiceAlgebra/theories/ResourceAlgebraBase.v
+ChoiceAlgebra/theories/ResourceAlgebraOrder.v
+ChoiceAlgebra/theories/ResourceAlgebraPullback.v
+ChoiceAlgebra/theories/ResourceAlgebraSum.v
+ChoiceAlgebra/theories/ResourceAlgebraCore.v
+ChoiceAlgebra/theories/ResourceAlgebraLaws.v
 ChoiceAlgebra/theories/ResourceAlgebra.v
+ChoiceAlgebra/theories/ResourceExtensionCore.v
+ChoiceAlgebra/theories/ResourceExtensionEquiv.v
 ChoiceAlgebra/theories/ResourceExtension.v
 ChoiceAlgebra/theories/ResourceExtensionDerived.v
+ChoiceAlgebra/theories/ResourceInterfaceCore.v
+ChoiceAlgebra/theories/ResourceInterfaceBasic.v
+ChoiceAlgebra/theories/ResourceInterfaceOrder.v
+ChoiceAlgebra/theories/ResourceInterfaceExtension.v
 ChoiceAlgebra/theories/ResourceInterface.v
 ChoiceAlgebra/theories/ResourceExtensionCompat.v
 ChoiceAlgebra/theories/Resource.v
@@ -28,8 +59,15 @@ ChoiceAlgebra/theories/ChoiceAlgebra.v
 
 ChoiceLogic/theories/LogicQualifier.v
 ChoiceLogic/theories/FormulaSyntax.v
+ChoiceLogic/theories/FormulaScope.v
+ChoiceLogic/theories/FormulaSemantics.v
 ChoiceLogic/theories/Formula.v
 ChoiceLogic/theories/FormulaTactics.v
+ChoiceLogic/theories/FormulaConnectivesCore.v
+ChoiceLogic/theories/FormulaImpl.v
+ChoiceLogic/theories/FormulaWand.v
+ChoiceLogic/theories/FormulaConnectives.v
+ChoiceLogic/theories/FormulaForall.v
 ChoiceLogic/theories/FormulaDerived.v
 ChoiceLogic/theories/FormulaWorldExtension.v
 ChoiceLogic/theories/ChoiceLogicProps.v
@@ -54,11 +92,25 @@ CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
 
-ChoiceType/theories/TypeLanguage/Qualifier.v
-ChoiceType/theories/TypeLanguage/Renaming.v
-ChoiceType/theories/TypeLanguage/Syntax.v
-ChoiceType/theories/TypeLanguage/WellFormed.v
-ChoiceType/theories/TypeLanguage/Env.v
-ChoiceType/theories/TypeLanguage/Notation.v
-ChoiceType/theories/TypeLanguage/Tactics.v
-ChoiceType/theories/TypeLanguage/Interface.v
+ChoiceTypeLanguage/theories/Qualifier.v
+ChoiceTypeLanguage/theories/Renaming.v
+ChoiceTypeLanguage/theories/SyntaxCore.v
+ChoiceTypeLanguage/theories/SyntaxLvars.v
+ChoiceTypeLanguage/theories/SyntaxOpen.v
+ChoiceTypeLanguage/theories/SyntaxEquiv.v
+ChoiceTypeLanguage/theories/Syntax.v
+ChoiceTypeLanguage/theories/WFLvars.v
+ChoiceTypeLanguage/theories/WFChoiceTy.v
+ChoiceTypeLanguage/theories/WFContext.v
+ChoiceTypeLanguage/theories/WellFormed.v
+ChoiceTypeLanguage/theories/MultiOpen.v
+ChoiceTypeLanguage/theories/TypeOpen.v
+ChoiceTypeLanguage/theories/LtyEnvCore.v
+ChoiceTypeLanguage/theories/LtyEnvOpen.v
+ChoiceTypeLanguage/theories/LtyEnvAtom.v
+ChoiceTypeLanguage/theories/LtyEnvProjection.v
+ChoiceTypeLanguage/theories/LtyEnvBind.v
+ChoiceTypeLanguage/theories/Env.v
+ChoiceTypeLanguage/theories/Notation.v
+ChoiceTypeLanguage/theories/Tactics.v
+ChoiceTypeLanguage/theories/Interface.v

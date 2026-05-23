@@ -1,9 +1,9 @@
-(** * ChoiceType.TypeLanguage.Notation
+(** * ChoiceTypeLanguage.Notation
 
     Public syntax notation for the pure choice-type language layer. *)
 
 From CoreLang Require Export SyntaxNotation.
-From ChoiceType.TypeLanguage Require Export Env.
+From ChoiceTypeLanguage Require Export Env.
 
 Declare Scope choice_scope.
 Delimit Scope choice_scope with choice.

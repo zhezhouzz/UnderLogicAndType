@@ -1,10 +1,10 @@
-(** * ChoiceType.TypeLanguage.Interface
+(** * ChoiceTypeLanguage.Interface
 
     Public surface for the type-language layer.  Other layers should import
     this file instead of reaching into the implementation files directly. *)
 
 From LocallyNameless Require Import Classes.
-From ChoiceType.TypeLanguage Require Export WellFormed Tactics.
+From ChoiceTypeLanguage Require Export WellFormed Tactics.
 
 Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=
   lvars_wf_at 0 D (qual_vars q).
@@ -17,67 +17,91 @@ Lemma basic_qualifier_mono D E q :
   basic_qualifier D q ->
   basic_qualifier E q.
 Proof.
-Admitted.
+  apply lvars_wf_at_mono.
+Qed.
 
 Lemma basic_qualifier_body_mono D E q :
   D ⊆ E ->
   basic_qualifier_body D q ->
   basic_qualifier_body E q.
 Proof.
-Admitted.
+  apply lvars_wf_at_mono.
+Qed.
 
 Lemma basic_qualifier_lc D q :
   basic_qualifier D q ->
   lc_qualifier q.
 Proof.
-Admitted.
+  intros Hwf [k|x] Hv; cbn [lc_logic_var_key].
+  - exfalso.
+    specialize (Hwf (LVBound k) Hv). cbn [lvar_wf_at] in Hwf. lia.
+  - exact I.
+Qed.
 
 Lemma basic_qualifier_body_lc D q :
   basic_qualifier_body D q ->
   body_qualifier q.
 Proof.
-Admitted.
+  intros Hwf.
+  exists D. intros x Hx.
+  apply basic_qualifier_lc with (D := D ∪ {[x]}).
+  unfold basic_qualifier.
+  rewrite qual_open_atom_vars.
+  apply lvars_wf_at_open_body; assumption.
+Qed.
 
 Lemma basic_qualifier_fv_subset D q :
   basic_qualifier D q ->
   qual_dom q ⊆ D.
 Proof.
-Admitted.
+  apply lvars_wf_at_fv_subset.
+Qed.
 
 Lemma basic_qualifier_body_fv_subset D q :
   basic_qualifier_body D q ->
   qual_dom q ⊆ D.
 Proof.
-Admitted.
+  apply lvars_wf_at_fv_subset.
+Qed.
 
 Lemma basic_qualifier_body_open D q x :
   x ∉ D ->
   basic_qualifier_body D q ->
   basic_qualifier (D ∪ {[x]}) (q ^q^ x).
 Proof.
-Admitted.
+  intros Hx Hwf.
+  unfold basic_qualifier, basic_qualifier_body in *.
+  rewrite qual_open_atom_vars.
+  apply lvars_wf_at_open_body; assumption.
+Qed.
 
 Lemma basic_qualifier_top D :
   basic_qualifier D qual_top.
 Proof.
-Admitted.
+  unfold basic_qualifier, qual_top. cbn [qual_vars qual_lvars].
+  intros v Hv. set_solver.
+Qed.
 
 Lemma basic_qualifier_body_top D :
   basic_qualifier_body D qual_top.
 Proof.
-Admitted.
+  unfold basic_qualifier_body, qual_top. cbn [qual_vars qual_lvars].
+  intros v Hv. set_solver.
+Qed.
 
 Lemma basic_choice_ty_over D b q :
   basic_qualifier_body D q ->
   basic_choice_ty D (CTOver b q).
 Proof.
-Admitted.
+  exact id.
+Qed.
 
 Lemma basic_choice_ty_under D b q :
   basic_qualifier_body D q ->
   basic_choice_ty D (CTUnder b q).
 Proof.
-Admitted.
+  exact id.
+Qed.
 
 Lemma basic_choice_ty_inter D τ1 τ2 :
   basic_choice_ty D τ1 ->
@@ -85,7 +109,8 @@ Lemma basic_choice_ty_inter D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTInter τ1 τ2).
 Proof.
-Admitted.
+  intros H1 H2 Herase. repeat split; assumption.
+Qed.
 
 Lemma basic_choice_ty_union D τ1 τ2 :
   basic_choice_ty D τ1 ->
@@ -93,7 +118,8 @@ Lemma basic_choice_ty_union D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTUnion τ1 τ2).
 Proof.
-Admitted.
+  intros H1 H2 Herase. repeat split; assumption.
+Qed.
 
 Lemma basic_choice_ty_sum D τ1 τ2 :
   basic_choice_ty D τ1 ->
@@ -101,33 +127,38 @@ Lemma basic_choice_ty_sum D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTSum τ1 τ2).
 Proof.
-Admitted.
+  intros H1 H2 Herase. repeat split; assumption.
+Qed.
 
 Lemma basic_choice_ty_arrow D τx τ :
   basic_choice_ty D τx ->
   wf_choice_ty_at 1 D τ ->
   basic_choice_ty D (CTArrow τx τ).
 Proof.
-Admitted.
+  intros Hx Hbody. split; assumption.
+Qed.
 
 Lemma basic_choice_ty_wand D τx τ :
   basic_choice_ty D τx ->
   wf_choice_ty_at 1 D τ ->
   basic_choice_ty D (CTWand τx τ).
 Proof.
-Admitted.
+  intros Hx Hbody. split; assumption.
+Qed.
 
 Lemma basic_ctx_empty D :
   basic_ctx D CtxEmpty.
 Proof.
-Admitted.
+  exact I.
+Qed.
 
 Lemma basic_ctx_bind D x τ :
   x ∉ D ->
   basic_choice_ty D τ ->
   basic_ctx D (CtxBind x τ).
 Proof.
-Admitted.
+  intros Hx Hτ. split; assumption.
+Qed.
 
 Lemma basic_ctx_comma D Γ1 Γ2 :
   basic_ctx D Γ1 ->
@@ -135,7 +166,8 @@ Lemma basic_ctx_comma D Γ1 Γ2 :
   ctx_dom Γ1 ## ctx_dom Γ2 ->
   basic_ctx D (CtxComma Γ1 Γ2).
 Proof.
-Admitted.
+  intros H1 H2 Hdisj. repeat split; assumption.
+Qed.
 
 Lemma basic_ctx_star D Γ1 Γ2 :
   basic_ctx D Γ1 ->
@@ -143,7 +175,8 @@ Lemma basic_ctx_star D Γ1 Γ2 :
   ctx_dom Γ1 ## ctx_dom Γ2 ->
   basic_ctx D (CtxStar Γ1 Γ2).
 Proof.
-Admitted.
+  intros H1 H2 Hdisj. repeat split; assumption.
+Qed.
 
 Lemma basic_ctx_sum D Γ1 Γ2 :
   basic_ctx D Γ1 ->
@@ -152,37 +185,62 @@ Lemma basic_ctx_sum D Γ1 Γ2 :
   erase_ctx Γ1 = erase_ctx Γ2 ->
   basic_ctx D (CtxSum Γ1 Γ2).
 Proof.
-Admitted.
+  intros H1 H2 Hdom Herase. repeat split; assumption.
+Qed.
 
 #[global] Instance OpenFv_qualifier : OpenFv atom type_qualifier.
 Proof.
-Admitted.
+  intros q x k.
+  cbn [Stale_atom stale_qualifier].
+  intros y Hy.
+  pose proof (qual_open_atom_dom_subset k x q y Hy) as Hy'.
+  apply elem_of_union in Hy' as [Hyq|Hyx].
+  - apply elem_of_union_r. exact Hyq.
+  - apply elem_of_union_l. exact Hyx.
+Qed.
 
 #[global] Instance OpenFv_cty : OpenFv atom choice_ty.
 Proof.
-Admitted.
+  intros τ x k.
+  cbn [Stale_atom stale_cty_inst].
+  intros y Hy.
+  pose proof (cty_open_fv_subset k x τ y Hy) as Hy'.
+  apply elem_of_union in Hy' as [Hyτ|Hyx].
+  - apply elem_of_union_r. exact Hyτ.
+  - apply elem_of_union_l. exact Hyx.
+Qed.
 
 Lemma qual_open_fv_prime_except k x q :
   qual_dom q ∖ {[x]} ⊆ qual_dom (qual_open_atom k x q).
 Proof.
-Admitted.
+  destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
+  apply lvars_fv_open_prime_except.
+Qed.
 
 Lemma qual_open_fv_prime_fresh k x q :
   x ∉ qual_dom q ->
   qual_dom q ⊆ qual_dom (qual_open_atom k x q).
 Proof.
-Admitted.
+  destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
+  apply lvars_fv_open_prime_fresh.
+Qed.
 
 Lemma cty_open_fv_prime_except k x τ :
   fv_cty τ ∖ {[x]} ⊆ fv_cty ({k ~> x} τ).
 Proof.
-Admitted.
+  unfold fv_cty.
+  rewrite cty_open_vars.
+  apply lvars_fv_open_prime_except.
+Qed.
 
 Lemma cty_open_fv_prime_fresh k x τ :
   x ∉ fv_cty τ ->
   fv_cty τ ⊆ fv_cty ({k ~> x} τ).
 Proof.
-Admitted.
+  unfold fv_cty.
+  rewrite cty_open_vars.
+  apply lvars_fv_open_prime_fresh.
+Qed.
 
 #[global] Hint Resolve
   basic_choice_ty_lc
