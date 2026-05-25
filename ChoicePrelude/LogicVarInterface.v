@@ -126,6 +126,18 @@ Proof.
   tauto.
 Qed.
 
+Lemma lvars_fv_difference_singleton_free (D : lvset) x :
+  lvars_fv (D ∖ {[LVFree x]}) = lvars_fv D ∖ {[x]}.
+Proof.
+  apply set_eq. intros y.
+  rewrite !lvars_fv_elem, !elem_of_difference, !elem_of_singleton.
+  split.
+  - intros [HyD Hyx]. split; [apply lvars_fv_elem; exact HyD|].
+    intros ->. apply Hyx. reflexivity.
+  - intros [HyD Hyx]. split; [apply lvars_fv_elem in HyD; exact HyD|].
+    intros Heq. inversion Heq. subst. contradiction.
+Qed.
+
 Lemma lvars_bv_union (D1 D2 : lvset) :
   lvars_bv (D1 ∪ D2) = lvars_bv D1 ∪ lvars_bv D2.
 Proof.

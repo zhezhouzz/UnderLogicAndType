@@ -21,6 +21,19 @@ Lemma res_extend_by_restrict_base (m : WfWorld) (F : @fiber_extension V) (n : Wf
   res_restrict n (world_dom m) = m.
 Proof. apply resA_extend_by_restrict_base. Qed.
 
+Lemma res_extend_by_restrict_subdom_base
+    (m n : WfWorld) (F : @fiber_extension V) X :
+  X ⊆ world_dom (m : World) ->
+  m #> F ~~> n ->
+  res_restrict n X = res_restrict m X.
+Proof.
+  intros HXm Hext.
+  rewrite <- (res_extend_by_restrict_base m F n Hext).
+  rewrite res_restrict_restrict_eq.
+  replace (world_dom (m : World) ∩ X) with X by set_solver.
+  reflexivity.
+Qed.
+
 Lemma res_extend_by_dom (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
   m #> F ~~> n →
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.

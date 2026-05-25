@@ -45,6 +45,89 @@ Proof.
         -- apply Hz. exists w. split; [exact Hw | exact Hwx].
 Qed.
 
+Lemma lvars_at_depth_0 D :
+  lvars_at_depth 0 D = D.
+Proof.
+  apply set_eq. intros u.
+  rewrite lvars_at_depth_elem.
+  split.
+  - intros [v [Hv Hvu]].
+    destruct v as [n|x]; cbn [logic_var_at_depth] in Hvu.
+    + destruct (decide (0 <= n)); inversion Hvu. subst u.
+      replace (n - 0) with n by lia. exact Hv.
+    + inversion Hvu. subst u. exact Hv.
+  - intros Hu.
+    exists u. split; [exact Hu|].
+    destruct u as [n|x]; cbn [logic_var_at_depth].
+    + rewrite decide_True by lia. replace (n - 0) with n by lia. reflexivity.
+    + reflexivity.
+Qed.
+
+Lemma lvars_at_depth_empty d :
+  lvars_at_depth d ∅ = ∅.
+Proof.
+  apply set_eq. intros u. rewrite lvars_at_depth_elem. set_solver.
+Qed.
+
+Lemma lvars_at_depth_union d D E :
+  lvars_at_depth d (D ∪ E) =
+  lvars_at_depth d D ∪ lvars_at_depth d E.
+Proof.
+  apply set_eq. intros u.
+  rewrite elem_of_union, !lvars_at_depth_elem.
+  split.
+  - intros [v [Hv Hvu]].
+    apply elem_of_union in Hv as [Hv|Hv].
+    + left. exists v. split; [exact Hv | exact Hvu].
+    + right. exists v. split; [exact Hv | exact Hvu].
+  - intros Hu.
+    destruct Hu as [[v [Hv Hvu]]|[v [Hv Hvu]]].
+    + exists v. split; [set_solver | exact Hvu].
+    + exists v. split; [set_solver | exact Hvu].
+Qed.
+
+Lemma lvars_at_depth_singleton_free d x :
+  lvars_at_depth d ({[LVFree x]} : lvset) = {[LVFree x]}.
+Proof.
+  apply set_eq. intros u. rewrite lvars_at_depth_elem.
+  split.
+  - intros [v [Hv Hvu]].
+    rewrite elem_of_singleton in Hv. subst v.
+    inversion Hvu. subst u. set_solver.
+  - intros Hu.
+    rewrite elem_of_singleton in Hu. subst u.
+    exists (LVFree x). split; [set_solver | reflexivity].
+Qed.
+
+Lemma lvars_at_depth_singleton_bound0_succ d :
+  lvars_at_depth (S d) ({[LVBound 0]} : lvset) = ∅.
+Proof.
+  apply set_eq. intros u.
+  rewrite lvars_at_depth_elem.
+  split.
+  - intros [v [Hv Hvu]].
+    rewrite elem_of_singleton in Hv. subst v.
+    cbn [logic_var_at_depth] in Hvu.
+    destruct (decide (S d <= 0)); [lia|discriminate].
+  - set_solver.
+Qed.
+
+Lemma lvars_at_depth_mono d D E :
+  D ⊆ E ->
+  lvars_at_depth d D ⊆ lvars_at_depth d E.
+Proof.
+  intros Hsub u Hu.
+  apply lvars_at_depth_elem in Hu as [v [Hv Hvu]].
+  apply lvars_at_depth_elem.
+  exists v. split; [set_solver | exact Hvu].
+Qed.
+
+Lemma lvars_at_depth_difference_subset d D E :
+  lvars_at_depth d (D ∖ E) ⊆ lvars_at_depth d D.
+Proof.
+  apply lvars_at_depth_mono. set_solver.
+Qed.
+
 Lemma logic_var_at_depth_open d k x v :
   logic_var_at_depth d (logic_var_open (d + k) x v) =
   option_map (logic_var_open k x) (logic_var_at_depth d v).
@@ -229,6 +312,42 @@ Proof.
   apply choice_ty_lvars_fv_at.
 Qed.
 
+Lemma choice_ty_lvars_over_fv b q :
+  lvars_fv (choice_ty_lvars (CTOver b q)) = qual_dom q.
+Proof.
+  cbn [choice_ty_lvars choice_ty_lvars_at].
+  rewrite lvars_fv_lvars_at_depth. reflexivity.
+Qed.
+
+Lemma choice_ty_lvars_under_fv b q :
+  lvars_fv (choice_ty_lvars (CTUnder b q)) = qual_dom q.
+Proof.
+  cbn [choice_ty_lvars choice_ty_lvars_at].
+  rewrite lvars_fv_lvars_at_depth. reflexivity.
+Qed.
+
+Lemma choice_ty_over_fresh_open_qual_dom x y b q :
+  LVFree x ∉ choice_ty_lvars (CTOver b q) ->
+  x <> y ->
+  x ∉ qual_dom (q ^q^ y).
+Proof.
+  intros Hx Hxy.
+  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
+  intros Hbad. apply Hx. apply lvars_fv_elem.
+  rewrite choice_ty_lvars_over_fv. exact Hbad.
+Qed.
+
+Lemma choice_ty_under_fresh_open_qual_dom x y b q :
+  LVFree x ∉ choice_ty_lvars (CTUnder b q) ->
+  x <> y ->
+  x ∉ qual_dom (q ^q^ y).
+Proof.
+  intros Hx Hxy.
+  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
+  intros Hbad. apply Hx. apply lvars_fv_elem.
+  rewrite choice_ty_lvars_under_fv. exact Hbad.
+Qed.
+
 Lemma lvars_at_depth_succ_body d D :
   lvars_at_depth d D ⊆
   lvars_shift_from 0 (lvars_at_depth (S d) D) ∪ {[LVBound 0]}.
@@ -259,6 +378,34 @@ Proof.
     exists (LVFree x). split; [reflexivity |].
     apply lvars_at_depth_elem.
     exists (LVFree x). split; [exact Hv | reflexivity].
+Qed.
+
+Lemma lvars_bv_at_depth_succ_empty_of_open0 x D :
+  lvars_bv (lvars_open 0 x D) = ∅ ->
+  lvars_bv (lvars_at_depth 1 D) = ∅.
+Proof.
+  intros Hopen.
+  apply set_eq. intros n.
+  rewrite elem_of_empty.
+  split; [|set_solver].
+  intros Hn.
+  rewrite lvars_bv_elem in Hn.
+  apply lvars_at_depth_elem in Hn as [v [Hv Hdepth]].
+  destruct v as [m|y]; cbn [logic_var_at_depth] in Hdepth; [|discriminate].
+  destruct (decide (1 <= m)) as [Hm|Hm]; [|discriminate].
+  inversion Hdepth. subst n.
+  assert (LVBound m ∈ lvars_open 0 x D) as Hopened.
+  {
+    rewrite lvars_open_unfold.
+    unfold gset_swap.
+    apply elem_of_map. exists (LVBound m). split; [|exact Hv].
+    symmetry. apply eq_swap_fresh.
+    - intros Heq. inversion Heq. lia.
+    - discriminate.
+  }
+  assert (m ∈ lvars_bv (lvars_open 0 x D)).
+  { rewrite lvars_bv_elem. exact Hopened. }
+  rewrite Hopen in H. set_solver.
 Qed.
 
 Lemma logic_var_at_depth_shift_from d k v :
@@ -312,6 +459,69 @@ Proof.
     + unfold lvars_shift_from. apply elem_of_map. exists w.
       split; [reflexivity|exact Hw].
     + rewrite logic_var_at_depth_shift_from, Hwv. reflexivity.
+Qed.
+
+Lemma logic_var_at_depth_shift_under d k v :
+  k <= d ->
+  logic_var_at_depth (S d) (logic_var_shift_from k v) =
+  logic_var_at_depth d v.
+Proof.
+  intros Hkd.
+  destruct v as [n|x]; cbn [logic_var_shift_from logic_var_at_depth].
+  - destruct (decide (k <= n)) as [Hkn|Hkn].
+    + cbn [logic_var_at_depth].
+      destruct (decide (S d <= S n)) as [Hsdn|Hsdn].
+      * destruct (decide (d <= n)) as [_|Hbad]; [|lia].
+        replace (S n - S d) with (n - d) by lia. reflexivity.
+      * destruct (decide (d <= n)) as [Hbad|_]; [lia|reflexivity].
+    + cbn [logic_var_at_depth].
+      destruct (decide (S d <= n)) as [Hsdn|Hsdn].
+      * lia.
+      * destruct (decide (d <= n)) as [Hdn|Hdn].
+        -- assert (n = d) by lia. subst n. lia.
+        -- reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma lvars_at_depth_shift_under d k D :
+  k <= d ->
+  lvars_at_depth (S d) (lvars_shift_from k D) =
+  lvars_at_depth d D.
+Proof.
+  intros Hkd. apply set_eq. intros u.
+  split.
+  - intros Hu.
+    apply lvars_at_depth_elem in Hu as [v [Hv Hvu]].
+    unfold lvars_shift_from in Hv.
+    apply elem_of_map in Hv as [w [-> Hw]].
+    rewrite logic_var_at_depth_shift_under in Hvu by exact Hkd.
+    apply lvars_at_depth_elem. exists w. split; [exact Hw | exact Hvu].
+  - intros Hu.
+    apply lvars_at_depth_elem in Hu as [v [Hv Hvu]].
+    apply lvars_at_depth_elem.
+    exists (logic_var_shift_from k v). split.
+    + unfold lvars_shift_from. apply elem_of_map. exists v.
+      split; [reflexivity | exact Hv].
+    + rewrite logic_var_at_depth_shift_under by exact Hkd. exact Hvu.
+Qed.
+
+Lemma choice_ty_lvars_at_shift_under d k τ :
+  k <= d ->
+  choice_ty_lvars_at (S d) (cty_shift k τ) =
+  choice_ty_lvars_at d τ.
+Proof.
+  induction τ in d, k |- *; cbn [choice_ty_lvars_at cty_shift]; intros Hkd.
+  - rewrite qual_shift_from_vars.
+    apply lvars_at_depth_shift_under. lia.
+  - rewrite qual_shift_from_vars.
+    apply lvars_at_depth_shift_under. lia.
+  - rewrite IHτ1, IHτ2 by exact Hkd. reflexivity.
+  - rewrite IHτ1, IHτ2 by exact Hkd. reflexivity.
+  - rewrite IHτ1, IHτ2 by exact Hkd. reflexivity.
+  - rewrite IHτ1 by exact Hkd.
+    rewrite IHτ2 by lia. reflexivity.
+  - rewrite IHτ1 by exact Hkd.
+    rewrite IHτ2 by lia. reflexivity.
 Qed.
 
 Lemma lvars_shift_from_succ_body_union D1 D1' D2 D2' :
@@ -410,4 +620,18 @@ Proof.
   rewrite <- (Nat.add_0_l k) at 1.
   rewrite choice_ty_lvars_at_shift.
   apply lvars_shift_from_fv.
+Qed.
+
+Lemma choice_ty_lvars_open_shift_fresh x y τ :
+  x <> y ->
+  LVFree x ∉ choice_ty_lvars τ ->
+  LVFree x ∉ choice_ty_lvars (cty_open 0 y (cty_shift 0 τ)).
+Proof.
+  intros Hxy Hfresh Hin.
+  apply lvars_fv_elem in Hin.
+  pose proof (cty_open_fv_subset 0 y (cty_shift 0 τ) x Hin) as Hsub.
+  rewrite cty_shift_fv in Hsub.
+  apply elem_of_union in Hsub as [Hinτ|Hy].
+  - apply Hfresh. apply lvars_fv_elem. exact Hinτ.
+  - rewrite elem_of_singleton in Hy. congruence.
 Qed.

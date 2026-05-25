@@ -3,6 +3,8 @@
 -R ChoiceAlgebra/theories ChoiceAlgebra
 -R ChoiceLogic/theories ChoiceLogic
 -R ChoiceTypeLanguage/theories ChoiceTypeLanguage
+-R ChoiceBasicDenotation/theories ChoiceBasicDenotation
+-R Denotation/theories Denotation
 -R LocallyNameless LocallyNameless
 -R CoreLang/theories CoreLang
 -R ChoiceType/theories ChoiceType
@@ -114,3 +116,14 @@ ChoiceTypeLanguage/theories/Env.v
 ChoiceTypeLanguage/theories/Notation.v
 ChoiceTypeLanguage/theories/Tactics.v
 ChoiceTypeLanguage/theories/Interface.v
+
+ChoiceBasicDenotation/theories/StoreTyping.v
+ChoiceBasicDenotation/theories/Term.v
+ChoiceBasicDenotation/theories/Qualifier.v
+ChoiceBasicDenotation/theories/BasicTypingFormula.v
+ChoiceBasicDenotation/theories/Interface.v
+
+Denotation/theories/TypeDenotation.v
+Denotation/theories/Context.v
+Denotation/theories/TLetForallExtension.v
+Denotation/theories/TLet.v

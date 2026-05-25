@@ -247,6 +247,55 @@ Proof.
     destruct (η !! j), (ξ !! j); reflexivity.
 Qed.
 
+Definition open_env_atoms (η : gmap nat atom) : aset :=
+  map_fold (fun _ x acc => {[x]} ∪ acc) ∅ η.
+
+Lemma open_env_atoms_empty :
+  open_env_atoms ∅ = ∅.
+Proof.
+  unfold open_env_atoms.
+  rewrite map_fold_empty. reflexivity.
+Qed.
+
+Lemma open_env_atoms_insert k x η :
+  η !! k = None ->
+  open_env_atoms (<[k := x]> η) = {[x]} ∪ open_env_atoms η.
+Proof.
+  intros Hfresh.
+  unfold open_env_atoms.
+  rewrite map_fold_insert_L.
+  - reflexivity.
+  - intros i j xi xj acc Hij _ _.
+    set_solver.
+  - exact Hfresh.
+Qed.
+
+Lemma open_env_atoms_lookup η k x :
+  η !! k = Some x ->
+  x ∈ open_env_atoms η.
+Proof.
+  revert k x.
+  refine (fin_maps.map_fold_ind
+    (fun η => forall k x, η !! k = Some x -> x ∈ open_env_atoms η)
+    _ _ η).
+  - intros k x Hlookup.
+    rewrite lookup_empty in Hlookup. discriminate.
+  - intros i y η0 Hfresh Hfold IH k x Hlookup.
+    rewrite open_env_atoms_insert by exact Hfresh.
+    destruct (decide (k = i)) as [->|Hki].
+    + rewrite lookup_insert_eq in Hlookup. inversion Hlookup. set_solver.
+    + rewrite lookup_insert_ne in Hlookup by congruence.
+      apply elem_of_union_r. apply IH with (k := k). exact Hlookup.
+Qed.
+
+Lemma open_env_avoids_atom_of_notin_atoms x η :
+  x ∉ open_env_atoms η ->
+  open_env_avoids_atom x η.
+Proof.
+  intros Hx k Hlookup.
+  apply Hx. eapply open_env_atoms_lookup. exact Hlookup.
+Qed.
+
 Lemma lvars_fv_mono (D E : lvset) :
   D ⊆ E ->
   lvars_fv D ⊆ lvars_fv E.
@@ -339,6 +388,38 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma lvars_open_env_open_one_fresh η k x D :
+  x ∉ lvars_fv D ->
+  lvars_open_env η (lvars_open k x D) =
+  lvars_open_env (<[k := x]> η) D.
+Proof.
+  intros Hx.
+  unfold lvars_open_env.
+  apply set_eq. intros v.
+  rewrite !elem_of_map.
+  split.
+  - intros [u [-> Hu]].
+    exists (logic_var_open k x u). split.
+    + rewrite <- logic_var_open_env_open_one_fresh.
+      * rewrite logic_var_open_involutive. reflexivity.
+      * intros Hbad.
+        apply Hx. apply lvars_fv_elem.
+        assert (HuD : logic_var_open k x u ∈ D).
+        {
+          apply lvars_open_elem_open with (k := k) (x := x).
+          rewrite logic_var_open_involutive. exact Hu.
+        }
+        rewrite Hbad in HuD. exact HuD.
+    + apply lvars_open_elem_open with (k := k) (x := x).
+      rewrite logic_var_open_involutive. exact Hu.
+  - intros [u [-> Hu]].
+    exists (logic_var_open k x u). split.
+    + rewrite logic_var_open_env_open_one_fresh.
+      * reflexivity.
+      * intros ->. apply Hx. apply lvars_fv_elem. exact Hu.
+    + apply lvars_open_elem_open. exact Hu.
+Qed.
+
 Lemma lvars_open_env_simul_empty D :
   lvars_open_env_simul ∅ D = D.
 Proof.
@@ -406,6 +487,64 @@ Proof.
       * rewrite lookup_delete_ne by congruence.
         rewrite lookup_insert_ne by congruence.
         exact Hnz.
+Qed.
+
+Lemma open_env_fresh_for_lvars_insert_open_back η k x D :
+  k ∈ lvars_bv D ->
+  x ∉ lvars_fv D ->
+  open_env_fresh_for_lvars η (lvars_open k x D) ->
+  open_env_fresh_for_lvars (<[k := x]> η) D.
+Proof.
+  intros HkD HxD Hfresh j z Hjz Hbad.
+  destruct (decide (j = k)) as [->|Hjk].
+  - rewrite lookup_insert_eq in Hjz. inversion Hjz. subst z.
+    assert (Hdel : delete k (<[k:=x]> η) = delete k η).
+    {
+      apply map_eq. intros n.
+      destruct (decide (n = k)) as [->|Hnk].
+      - rewrite !lookup_delete_eq. reflexivity.
+      - rewrite !lookup_delete_ne by congruence.
+        rewrite lookup_insert_ne by congruence. reflexivity.
+    }
+    rewrite Hdel in Hbad.
+    apply lvars_fv_elem in Hbad.
+    unfold lvars_open_env in Hbad.
+    apply elem_of_map in Hbad as [v [Hv HvD]].
+    destruct v as [n|y]; cbn [logic_var_open_env] in Hv.
+    + destruct (delete k η !! n) as [w|] eqn:Hηn; [|discriminate].
+      inversion Hv. subst w.
+      rewrite lookup_delete_Some in Hηn.
+	      destruct Hηn as [Hnk Hηn].
+	      eapply Hfresh; [exact Hηn|].
+	      apply lvars_fv_elem.
+	      unfold lvars_open_env.
+	      apply elem_of_map.
+	      exists (LVFree x). split; [reflexivity|].
+	      replace (LVFree x) with (logic_var_open k x (LVBound k)).
+	      apply lvars_open_elem_open.
+	      rewrite lvars_bv_elem in HkD. exact HkD.
+	      rewrite logic_var_open_unfold, eq_swap_l. reflexivity.
+    + inversion Hv. subst y.
+      apply HxD. apply lvars_fv_elem. exact HvD.
+  - rewrite lookup_insert_ne in Hjz by congruence.
+    eapply Hfresh; [exact Hjz|].
+    assert (Hmap :
+      delete j (<[k:=x]> η) = <[k:=x]> (delete j η)).
+    {
+      apply map_eq. intros n.
+      destruct (decide (n = j)) as [->|Hnj].
+      - rewrite lookup_delete_eq.
+        rewrite lookup_insert_ne by congruence.
+        rewrite lookup_delete_eq. reflexivity.
+      - rewrite !lookup_delete_ne by congruence.
+        destruct (decide (n = k)) as [->|Hnk].
+        + rewrite !lookup_insert_eq. reflexivity.
+        + rewrite !lookup_insert_ne by congruence.
+          rewrite lookup_delete_ne by congruence. reflexivity.
+    }
+    rewrite (lvars_open_env_open_one_fresh (delete j η) k x D HxD).
+    rewrite <- Hmap.
+    exact Hbad.
 Qed.
 
 Lemma lvars_fv_open_env_lookup η D k x :

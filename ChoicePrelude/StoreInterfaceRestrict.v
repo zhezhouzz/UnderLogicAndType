@@ -300,6 +300,19 @@ Lemma store_restrict_union_base_singleton (s1 s2 : Store) (D : aset) (y : atom) 
 Proof. apply storeA_restrict_union_base_singleton. Qed.
 
 
+Lemma store_restrict_union_base_project
+    (sbase sfull : Store) (X : aset) (y : atom) :
+  X ⊆ dom sbase ->
+  dom sfull = dom sbase ∪ {[y]} ->
+  y ∉ dom sbase ->
+  (store_restrict sfull X : gmap atom V) = store_restrict sbase X ->
+  (store_restrict
+    (sbase ∪ store_restrict sfull {[y]})
+    (X ∪ {[y]}) : gmap atom V) =
+  store_restrict sfull (X ∪ {[y]}).
+Proof. apply storeA_restrict_union_base_project. Qed.
+
+
 Lemma store_restrict_wand_product
     (sn sm : Store) (S X Y : aset) :
   store_compat (store_restrict sn X) sm →

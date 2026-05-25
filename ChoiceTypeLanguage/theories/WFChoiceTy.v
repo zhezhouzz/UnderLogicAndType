@@ -20,6 +20,46 @@ Fixpoint cty_lc_at (d : nat) (τ : choice_ty) : Prop :=
 Definition lc_choice_ty (τ : choice_ty) : Prop :=
   cty_lc_at 0 τ.
 
+Fixpoint choice_ty_shape_ok (τ : choice_ty) : Prop :=
+  match τ with
+  | CTOver _ _ | CTUnder _ _ => True
+  | CTInter τ1 τ2 | CTUnion τ1 τ2 | CTSum τ1 τ2 =>
+      choice_ty_shape_ok τ1 /\
+      choice_ty_shape_ok τ2 /\
+      erase_ty τ1 = erase_ty τ2
+  | CTArrow τx τ | CTWand τx τ =>
+      choice_ty_shape_ok τx /\ choice_ty_shape_ok τ
+  end.
+
+Definition basic_choice_ty_lvars (D : lvset) (τ : choice_ty) : Prop :=
+  choice_ty_lvars τ ⊆ D /\ choice_ty_shape_ok τ.
+
+Lemma basic_choice_ty_lvars_mono D E τ :
+  D ⊆ E ->
+  basic_choice_ty_lvars D τ ->
+  basic_choice_ty_lvars E τ.
+Proof.
+  intros HDE [Hvars Hshape]. split; [set_solver|exact Hshape].
+Qed.
+
+Lemma basic_choice_ty_lvars_insert D x τ :
+  basic_choice_ty_lvars D τ ->
+  basic_choice_ty_lvars ({[LVFree x]} ∪ D) τ.
+Proof.
+  apply basic_choice_ty_lvars_mono. set_solver.
+Qed.
+
+Lemma basic_choice_ty_lvars_insert_fresh
+    (Σ : gmap logic_var ty) x T τ :
+  basic_choice_ty_lvars (dom Σ) τ ->
+  basic_choice_ty_lvars (dom (<[LVFree x := T]> Σ)) τ.
+Proof.
+  intros Hbasic.
+  eapply basic_choice_ty_lvars_mono; [|exact Hbasic].
+  rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)).
+  set_solver.
+Qed.
+
 Fixpoint wf_choice_ty_at (d : nat) (D : aset) (τ : choice_ty) : Prop :=
   match τ with
   | CTOver _ φ | CTUnder _ φ =>
@@ -37,7 +77,7 @@ Fixpoint wf_choice_ty_at (d : nat) (D : aset) (τ : choice_ty) : Prop :=
   end.
 
 Definition basic_choice_ty (D : aset) (τ : choice_ty) : Prop :=
-  wf_choice_ty_at 0 D τ.
+  basic_choice_ty_lvars (lvars_of_atoms D) τ.
 
 #[global] Instance lc_cty_inst : Lc choice_ty := lc_choice_ty.
 Arguments lc_cty_inst /.
@@ -102,12 +142,133 @@ Proof.
   end; repeat split; eauto.
 Qed.
 
+Lemma lvars_at_depth_subset_of_atoms_wf d D L :
+  lvars_at_depth d L ⊆ lvars_of_atoms D ->
+  lvars_wf_at d D L.
+Proof.
+  intros Hsub [n|x] Hv; cbn [lvar_wf_at].
+  - destruct (decide (d <= n)) as [Hdn|Hdn]; [|lia].
+    assert (LVBound (n - d) ∈ lvars_at_depth d L) as Hin.
+    {
+      apply lvars_at_depth_elem.
+      exists (LVBound n). split; [exact Hv|].
+      cbn [logic_var_at_depth]. destruct (decide (d <= n)); [reflexivity|lia].
+    }
+    specialize (Hsub _ Hin).
+    unfold lvars_of_atoms in Hsub.
+    apply elem_of_map in Hsub as [? [Hbad _]]. discriminate.
+  - assert (LVFree x ∈ lvars_at_depth d L) as Hin.
+    {
+      apply lvars_at_depth_elem.
+      exists (LVFree x). split; [exact Hv|reflexivity].
+    }
+    specialize (Hsub _ Hin).
+    unfold lvars_of_atoms in Hsub.
+    apply elem_of_map in Hsub as [y [Heq Hy]].
+    inversion Heq. subst. exact Hy.
+Qed.
+
+Lemma lvars_wf_at_subset_of_atoms_depth d D L :
+  lvars_wf_at d D L ->
+  lvars_at_depth d L ⊆ lvars_of_atoms D.
+Proof.
+  intros Hwf u Hu.
+  apply lvars_at_depth_elem in Hu as [[n|x] [Hv Hdepth]].
+  - cbn [logic_var_at_depth] in Hdepth.
+    destruct (decide (d <= n)) as [Hdn|Hdn]; [|discriminate].
+    exfalso.
+    specialize (Hwf (LVBound n) Hv). cbn [lvar_wf_at] in Hwf. lia.
+  - cbn [logic_var_at_depth] in Hdepth.
+    inversion Hdepth. subst u.
+    unfold lvars_of_atoms. apply elem_of_map.
+    exists x. split; [reflexivity|].
+    exact (Hwf (LVFree x) Hv).
+Qed.
+
+Lemma wf_choice_ty_at_iff_lvars_shape d D τ :
+  wf_choice_ty_at d D τ <->
+  choice_ty_lvars_at d τ ⊆ lvars_of_atoms D /\ choice_ty_shape_ok τ.
+Proof.
+  induction τ in d |- *; cbn [wf_choice_ty_at choice_ty_lvars_at choice_ty_shape_ok].
+  - split.
+    + intros Hwf. split; [apply lvars_wf_at_subset_of_atoms_depth|exact I].
+      exact Hwf.
+    + intros [Hsub _]. apply lvars_at_depth_subset_of_atoms_wf. exact Hsub.
+  - split.
+    + intros Hwf. split; [apply lvars_wf_at_subset_of_atoms_depth|exact I].
+      exact Hwf.
+    + intros [Hsub _]. apply lvars_at_depth_subset_of_atoms_wf. exact Hsub.
+  - rewrite IHτ1, IHτ2. split.
+    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
+      split; [set_solver|repeat split; assumption].
+    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
+      repeat split; try assumption; set_solver.
+  - rewrite IHτ1, IHτ2. split.
+    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
+      split; [set_solver|repeat split; assumption].
+    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
+      repeat split; try assumption; set_solver.
+  - rewrite IHτ1, IHτ2. split.
+    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
+      split; [set_solver|repeat split; assumption].
+    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
+      repeat split; try assumption; set_solver.
+  - rewrite IHτ1, IHτ2. split.
+    + intros [[Hsub1 Hshape1] [Hsub2 Hshape2]].
+      split; [set_solver|split; assumption].
+    + intros [Hsub [Hshape1 Hshape2]].
+      split; [split|split]; try assumption; set_solver.
+  - rewrite IHτ1, IHτ2. split.
+    + intros [[Hsub1 Hshape1] [Hsub2 Hshape2]].
+      split; [set_solver|split; assumption].
+    + intros [Hsub [Hshape1 Hshape2]].
+      split; [split|split]; try assumption; set_solver.
+Qed.
+
+Lemma basic_choice_ty_iff_wf_choice_ty_at D τ :
+  basic_choice_ty D τ <-> wf_choice_ty_at 0 D τ.
+Proof.
+  unfold basic_choice_ty, basic_choice_ty_lvars, choice_ty_lvars.
+  symmetry. apply wf_choice_ty_at_iff_lvars_shape.
+Qed.
+
 Lemma basic_choice_ty_mono D E τ :
   D ⊆ E ->
   basic_choice_ty D τ ->
   basic_choice_ty E τ.
 Proof.
-  apply wf_choice_ty_at_mono.
+  unfold basic_choice_ty, basic_choice_ty_lvars.
+  intros HDE [Hvars Hshape]. split; [|exact Hshape].
+  intros v Hv.
+  specialize (Hvars v Hv).
+  unfold lvars_of_atoms in *.
+  apply elem_of_map in Hvars as [x [-> Hx]].
+  apply elem_of_map. exists x. split; [reflexivity|].
+  apply HDE. exact Hx.
+Qed.
+
+Lemma choice_ty_shape_ok_open k x τ :
+  choice_ty_shape_ok (cty_open k x τ) <-> choice_ty_shape_ok τ.
+Proof.
+  induction τ in k |- *; cbn [choice_ty_shape_ok cty_open];
+    try tauto.
+  all: try rewrite !cty_open_preserves_erasure.
+  all: try rewrite IHτ1, IHτ2.
+  all: tauto.
+Qed.
+
+Lemma basic_choice_ty_lvars_open k x D τ :
+  basic_choice_ty_lvars (lvars_open k x D) (cty_open k x τ) <->
+  basic_choice_ty_lvars D τ.
+Proof.
+  unfold basic_choice_ty_lvars.
+  split; intros [Hvars Hshape]; split.
+  - rewrite cty_open_vars in Hvars.
+    apply lvars_open_subseteq_iff in Hvars. exact Hvars.
+  - apply choice_ty_shape_ok_open in Hshape. exact Hshape.
+  - rewrite cty_open_vars.
+    apply lvars_open_subseteq_iff. exact Hvars.
+  - apply choice_ty_shape_ok_open. exact Hshape.
 Qed.
 
 Lemma wf_choice_ty_at_lc d D τ :
@@ -126,6 +287,7 @@ Lemma basic_choice_ty_lc D τ :
   basic_choice_ty D τ ->
   lc_choice_ty τ.
 Proof.
+  rewrite basic_choice_ty_iff_wf_choice_ty_at.
   apply wf_choice_ty_at_lc.
 Qed.
 
@@ -207,7 +369,13 @@ Lemma basic_choice_ty_fv_subset D τ :
   basic_choice_ty D τ ->
   fv_cty τ ⊆ D.
 Proof.
-  apply wf_choice_ty_at_fv_subset.
+  unfold basic_choice_ty, basic_choice_ty_lvars, fv_cty.
+  intros [Hvars _] x Hx.
+  apply lvars_fv_elem in Hx.
+  specialize (Hvars (LVFree x) Hx).
+  unfold lvars_of_atoms in Hvars.
+  apply elem_of_map in Hvars as [y [Heq Hy]].
+  inversion Heq. subst. exact Hy.
 Qed.
 
 Lemma basic_choice_ty_lvar_cty_vars_equiv D τ1 τ2 :
@@ -220,7 +388,12 @@ Proof.
     τ1 ≡τv τ2 ->
     wf_choice_ty_at d D τ1 ->
     wf_choice_ty_at d D τ2) as Hgen.
-  { intros τ2 Heq Hwf. eapply Hgen; eauto. }
+  {
+    intros τ2 Heq Hwf.
+    apply basic_choice_ty_iff_wf_choice_ty_at.
+    eapply Hgen; [exact Heq|].
+    apply basic_choice_ty_iff_wf_choice_ty_at. exact Hwf.
+  }
   clear D τ1.
   intros d D τ1.
   induction τ1 in d |- *; intros τ2 Heq Hwf;
@@ -328,7 +501,16 @@ Lemma basic_choice_ty_drop_fresh D x τ :
   basic_choice_ty (D ∪ {[x]}) τ ->
   basic_choice_ty D τ.
 Proof.
-  apply wf_choice_ty_at_drop_fresh.
+  unfold basic_choice_ty, basic_choice_ty_lvars, fv_cty.
+  intros Hfresh [Hvars Hshape]. split; [|exact Hshape].
+  intros v Hv.
+  specialize (Hvars v Hv).
+  unfold lvars_of_atoms in *.
+  apply elem_of_map in Hvars as [y [-> Hy]].
+  apply elem_of_union in Hy as [Hy|Hy].
+  - apply elem_of_map. exists y. split; [reflexivity|exact Hy].
+  - rewrite elem_of_singleton in Hy. subst y.
+    exfalso. apply Hfresh. apply lvars_fv_elem. exact Hv.
 Qed.
 
 Lemma basic_choice_ty_drop_insert_fresh
@@ -487,7 +669,9 @@ Lemma basic_choice_ty_open_body D τ x :
   wf_choice_ty_at 1 D τ ->
   basic_choice_ty (D ∪ {[x]}) ({0 ~> x} τ).
 Proof.
-  apply wf_choice_ty_at_open_at.
+  intros Hx Hwf.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  apply wf_choice_ty_at_open_at; assumption.
 Qed.
 
 Lemma basic_choice_ty_open_body_cofinite D τ (L0 : aset) :
@@ -508,14 +692,20 @@ Lemma basic_choice_ty_arrow_inv D τx τ :
   basic_choice_ty D (CTArrow τx τ) ->
   basic_choice_ty D τx /\ wf_choice_ty_at 1 D τ.
 Proof.
-  intros H. exact H.
+  rewrite basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at].
+  intros [Hτx Hτ]. split; [|exact Hτ].
+  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hτx.
 Qed.
 
 Lemma basic_choice_ty_wand_inv D τx τ :
   basic_choice_ty D (CTWand τx τ) ->
   basic_choice_ty D τx /\ wf_choice_ty_at 1 D τ.
 Proof.
-  intros H. exact H.
+  rewrite basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at].
+  intros [Hτx Hτ]. split; [|exact Hτ].
+  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hτx.
 Qed.
 
 Lemma basic_choice_ty_open_arrow_body_cofinite
@@ -568,6 +758,7 @@ Lemma basic_choice_ty_shift D τ k :
   basic_choice_ty D τ ->
   basic_choice_ty D (cty_shift k τ).
 Proof.
+  rewrite !basic_choice_ty_iff_wf_choice_ty_at.
   intros H.
   eapply wf_choice_ty_at_shift; [lia|exact H].
 Qed.

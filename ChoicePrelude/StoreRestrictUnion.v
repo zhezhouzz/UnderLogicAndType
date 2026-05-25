@@ -469,6 +469,40 @@ Proof.
       apply storeA_restrict_lookup_none_r. set_solver.
 Qed.
 
+Lemma storeA_restrict_union_base_project {K : Type} `{Countable K}
+    (sbase sfull : StoreA K) (X : gset K) (y : K) :
+  X ⊆ dom (sbase : gmap K V) ->
+  dom (sfull : gmap K V) = dom (sbase : gmap K V) ∪ {[y]} ->
+  y ∉ dom (sbase : gmap K V) ->
+  (storeA_restrict sfull X : gmap K V) =
+    storeA_restrict sbase X ->
+  (storeA_restrict
+    (@union (gmap K V) _ sbase
+      (storeA_restrict sfull ({[y]} : gset K)))
+    (X ∪ {[y]}) : gmap K V) =
+  storeA_restrict sfull (X ∪ {[y]}).
+Proof.
+  intros HXsbase Hdomfull Hy Hagree.
+  transitivity (storeA_restrict
+    (@union (gmap K V) _ sbase
+      (storeA_restrict
+        (storeA_restrict sfull (X ∪ {[y]}) : StoreA K)
+        ({[y]} : gset K)))
+    (X ∪ {[y]})).
+  - f_equal. f_equal.
+    symmetry. apply storeA_restrict_twice_subset. set_solver.
+  - apply storeA_restrict_union_base_singleton.
+    + exact HXsbase.
+    + pose proof (storeA_restrict_dom sfull (X ∪ {[y]})) as Hdom_restrict.
+      change (dom (storeA_restrict sfull (X ∪ {[y]}) : gmap K V) =
+        dom (sfull : gmap K V) ∩ (X ∪ {[y]})) in Hdom_restrict.
+      rewrite Hdom_restrict, Hdomfull.
+      apply set_eq. intros z. set_solver.
+    + exact Hy.
+    + rewrite storeA_restrict_twice_subset by set_solver.
+      symmetry. exact Hagree.
+Qed.
+
 Lemma storeA_restrict_wand_product {K : Type} `{Countable K}
     (sn sm : StoreA K) (S X Y : gset K) :
   storeA_compat (storeA_restrict sn X) sm →

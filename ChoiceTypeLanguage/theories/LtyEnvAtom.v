@@ -274,7 +274,7 @@ Qed.
 Lemma lty_env_open_atom_env η Σ :
   lty_env_open η (atom_env_to_lty_env Σ) = Σ.
 Proof.
-  refine (fin_maps.map_fold_ind
+  refine (fin_maps.map_fold_ind (M:=gmap atom)
     (fun Σ => lty_env_open η (atom_env_to_lty_env Σ) = Σ) _ _ Σ).
   - unfold lty_env_open, atom_env_to_lty_env, storeA_map_key.
     rewrite kmap_empty. reflexivity.
@@ -310,6 +310,161 @@ Proof.
       * apply insert_insert_ne. congruence.
     + apply atom_env_to_lty_env_lookup_free_none.
       apply not_elem_of_dom. exact Hfresh.
+Qed.
+
+Lemma lty_env_to_atom_env_atom_env Σ :
+  lty_env_to_atom_env (atom_env_to_lty_env Σ) = Σ.
+Proof.
+  unfold lty_env_to_atom_env.
+  apply lty_env_open_atom_env.
+Qed.
+
+Lemma lty_env_to_atom_env_lookup_some Σ x T :
+  lty_env_to_atom_env Σ !! x = Some T ->
+  Σ !! LVFree x = Some T.
+Proof.
+  unfold lty_env_to_atom_env, lty_env_open.
+  refine (fin_maps.map_fold_ind (M:=gmap logic_var)
+    (fun Σ => forall x T,
+      map_fold
+        (fun v U acc =>
+          match lvar_to_atom ∅ v with
+          | Some y => <[y:=U]> acc
+          | None => acc
+          end) ∅ Σ !! x = Some T ->
+      Σ !! LVFree x = Some T) _ _ Σ x T).
+  - intros a U Hlookup.
+    rewrite (map_fold_empty (K:=logic_var) (M:=gmap logic_var)) in Hlookup.
+    rewrite lookup_empty in Hlookup. discriminate.
+  - intros v U Σ' Hfresh Hfold IH a T0.
+    rewrite Hfold.
+    destruct v as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
+    + intros Hlookup.
+      change ((<[LVBound k := U]> (Σ' : gmap logic_var ty) :
+        gmap logic_var ty) !! LVFree a = Some T0).
+      rewrite (lookup_insert_ne (M:=gmap logic_var)) by discriminate.
+      apply IH. exact Hlookup.
+    + intros Hlookup.
+      apply (proj1 (lookup_insert_Some (M:=gmap atom)
+        (map_fold
+           (fun v U acc =>
+             match lvar_to_atom ∅ v with
+             | Some y => <[y:=U]> acc
+             | None => acc
+             end) ∅ Σ') y a U T0)) in Hlookup.
+      destruct Hlookup as [[-> ->]|[Hya Hlookup]].
+      * change ((<[LVFree a := T0]> (Σ' : gmap logic_var ty) :
+          gmap logic_var ty) !! LVFree a = Some T0).
+        rewrite lookup_insert_eq. reflexivity.
+      * change ((<[LVFree y := U]> (Σ' : gmap logic_var ty) :
+          gmap logic_var ty) !! LVFree a = Some T0).
+        rewrite (lookup_insert_ne (M:=gmap logic_var)) by congruence.
+        apply IH. exact Hlookup.
+Qed.
+
+Lemma lty_env_to_atom_env_lookup_free_some Σ x T :
+  (Σ : gmap logic_var ty) !! LVFree x = Some T ->
+  lty_env_to_atom_env Σ !! x = Some T.
+Proof.
+  unfold lty_env_to_atom_env, lty_env_open.
+  refine (fin_maps.map_fold_ind (M:=gmap logic_var)
+    (fun Σ => forall x T,
+      (Σ : gmap logic_var ty) !! LVFree x = Some T ->
+      map_fold
+        (fun v U acc =>
+          match lvar_to_atom ∅ v with
+          | Some y => <[y:=U]> acc
+          | None => acc
+          end) ∅ Σ !! x = Some T) _ _ Σ x T).
+  - intros a U Hlookup.
+    rewrite lookup_empty in Hlookup. discriminate.
+  - intros v U Σ' Hfresh Hfold IH a T0 Hlookup.
+    destruct v as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
+    + rewrite Hfold.
+      change ((<[LVBound k := U]> (Σ' : gmap logic_var ty) :
+        gmap logic_var ty) !! LVFree a = Some T0) in Hlookup.
+      rewrite (lookup_insert_ne (M:=gmap logic_var)) in Hlookup by discriminate.
+      apply IH. exact Hlookup.
+    + rewrite Hfold.
+      change ((<[LVFree y := U]> (Σ' : gmap logic_var ty) :
+        gmap logic_var ty) !! LVFree a = Some T0) in Hlookup.
+      destruct (decide (y = a)) as [->|Hya].
+      * rewrite (lookup_insert_eq (M:=gmap logic_var)) in Hlookup.
+        inversion Hlookup. subst U.
+        cbn [lvar_to_atom logic_var_to_atom].
+        change (((<[a:=T0]>
+          (map_fold
+             (fun v U acc =>
+               match lvar_to_atom ∅ v with
+               | Some y => <[y:=U]> acc
+               | None => acc
+               end) ∅ Σ' : gmap atom ty)) : gmap atom ty) !! a = Some T0).
+        exact (lookup_insert_eq
+          (M:=gmap atom)
+          (map_fold
+             (fun v U acc =>
+               match lvar_to_atom ∅ v with
+               | Some y => <[y:=U]> acc
+               | None => acc
+               end) ∅ Σ' : gmap atom ty) a T0).
+      * rewrite (lookup_insert_ne (M:=gmap logic_var)) in Hlookup by congruence.
+        cbn [lvar_to_atom logic_var_to_atom].
+        change (((<[y:=U]>
+          (map_fold
+             (fun v U acc =>
+               match lvar_to_atom ∅ v with
+               | Some y => <[y:=U]> acc
+               | None => acc
+               end) ∅ Σ' : gmap atom ty)) : gmap atom ty) !! a = Some T0).
+        replace (((<[y:=U]>
+          (map_fold
+             (fun v U acc =>
+               match lvar_to_atom ∅ v with
+               | Some y => <[y:=U]> acc
+               | None => acc
+               end) ∅ Σ' : gmap atom ty)) : gmap atom ty) !! a)
+          with ((map_fold
+             (fun v U acc =>
+               match lvar_to_atom ∅ v with
+               | Some y => <[y:=U]> acc
+               | None => acc
+               end) ∅ Σ' : gmap atom ty) !! a).
+        -- apply IH. exact Hlookup.
+        -- symmetry. apply lookup_insert_ne. congruence.
+Qed.
+
+Lemma lty_env_to_atom_env_lookup Σ x :
+  lty_env_to_atom_env Σ !! x = (Σ : gmap logic_var ty) !! LVFree x.
+Proof.
+  destruct (lty_env_to_atom_env Σ !! x) as [T|] eqn:Hatom.
+  - apply lty_env_to_atom_env_lookup_some in Hatom. symmetry. exact Hatom.
+  - destruct ((Σ : gmap logic_var ty) !! LVFree x) as [T|] eqn:Hlv;
+      [|reflexivity].
+    pose proof (lty_env_to_atom_env_lookup_free_some Σ x T Hlv) as Hatom'.
+    rewrite Hatom in Hatom'. discriminate.
+Qed.
+
+Lemma lty_env_to_atom_env_swap x y Σ :
+  lty_env_to_atom_env (lty_env_swap x y Σ) =
+  store_swap x y (lty_env_to_atom_env Σ).
+Proof.
+  apply map_eq. intros z.
+  rewrite lty_env_to_atom_env_lookup.
+  rewrite store_swap_lookup_inv.
+  rewrite lty_env_to_atom_env_lookup.
+  rewrite lty_env_swap_lookup_inv.
+  reflexivity.
+Qed.
+
+Lemma lty_env_to_atom_env_dom_subset Σ :
+  dom (lty_env_to_atom_env Σ) ⊆ lty_env_atom_dom Σ.
+Proof.
+  intros x Hx.
+  apply elem_of_dom in Hx as [T HT].
+  apply lty_env_to_atom_env_lookup_some in HT.
+  unfold lty_env_atom_dom.
+  apply lvars_fv_elem.
+  eapply storeA_elem_of_dom_lookup_some. exact HT.
 Qed.
 
 Lemma lty_env_open_one_atom_env k x Σ :

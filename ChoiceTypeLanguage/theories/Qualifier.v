@@ -92,11 +92,47 @@ Proof.
   destruct q. reflexivity.
 Qed.
 
+Lemma lvars_fv_qual_vars q :
+  lvars_fv (qual_vars q) = qual_dom q.
+Proof. reflexivity. Qed.
+
+Lemma lvars_fv_qual_vars_difference_free q x :
+  lvars_fv (qual_vars q ∖ {[LVFree x]}) = qual_dom q ∖ {[x]}.
+Proof.
+  rewrite lvars_fv_difference_singleton_free.
+  rewrite lvars_fv_qual_vars. reflexivity.
+Qed.
+
+Lemma lvars_open_qual_vars_difference_bound k x q :
+  lvars_open k x (qual_vars q ∖ {[LVBound k]}) =
+  qual_vars (qual_open_atom k x q) ∖ {[LVFree x]}.
+Proof.
+  rewrite qual_open_atom_vars.
+  apply lvars_open_difference_bound.
+Qed.
+
+Lemma lvars_open_qual_vars_difference_bound0 x q :
+  lvars_open 0 x (qual_vars q ∖ {[LVBound 0]}) =
+  qual_vars (qual_open_atom 0 x q) ∖ {[LVFree x]}.
+Proof.
+  apply lvars_open_qual_vars_difference_bound.
+Qed.
+
 Lemma qual_open_atom_dom_subset k x q :
   qual_dom (qual_open_atom k x q) ⊆ qual_dom q ∪ {[x]}.
 Proof.
   destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
   apply lvars_fv_open_subset.
+Qed.
+
+Lemma qual_open_atom_dom_fresh_ne k x y q :
+  x ∉ qual_dom q ->
+  x <> y ->
+  x ∉ qual_dom (qual_open_atom k y q).
+Proof.
+  intros Hx Hy Hbad.
+  pose proof (qual_open_atom_dom_subset k y q x Hbad).
+  set_solver.
 Qed.
 
 Lemma qual_open_atom_bvars k x q :

@@ -49,6 +49,58 @@ Definition formula_stale : Formula → aset := formula_fv.
 #[global] Instance stale_formula : Stale Formula := formula_fv.
 Arguments stale_formula /.
 
+Lemma formula_fv_true :
+  formula_fv FTrue = ∅.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_false :
+  formula_fv FFalse = ∅.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_atom q :
+  formula_fv (FAtom q) = lvars_fv (lqual_lvars q).
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_and p q :
+  formula_fv (FAnd p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_or p q :
+  formula_fv (FOr p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_impl p q :
+  formula_fv (FImpl p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_star p q :
+  formula_fv (FStar p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_wand p q :
+  formula_fv (FWand p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_plus p q :
+  formula_fv (FPlus p q) = formula_fv p ∪ formula_fv q.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
+Lemma formula_fv_forall p :
+  formula_fv (FForall p) = formula_fv p.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_over p :
+  formula_fv (FOver p) = formula_fv p.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_under p :
+  formula_fv (FUnder p) = formula_fv p.
+Proof. reflexivity. Qed.
+
+Lemma formula_fv_fibvars D p :
+  formula_fv (FFibVars D p) = lvars_fv D ∪ formula_fv p.
+Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1

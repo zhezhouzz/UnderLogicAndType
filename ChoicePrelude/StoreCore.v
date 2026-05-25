@@ -97,6 +97,14 @@ Proof.
   intros Hzx. apply (lookup_insert_ne (M:=gmap K) (A:=V)). done.
 Qed.
 
+Lemma storeA_lookup_insert {K : Type} `{Countable K}
+    (s : StoreA K) x v :
+  <[x := v]> s !! x = Some v.
+Proof.
+  change (((<[x := v]> (s : gmap K V)) : gmap K V) !! x = Some v).
+  rewrite lookup_insert. destruct (decide (x = x)); congruence.
+Qed.
+
 Lemma storeA_agree_on_mono {K : Type} `{Countable K}
     D E (s1 s2 : StoreA K) :
   D ⊆ E ->

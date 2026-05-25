@@ -472,6 +472,13 @@ Qed.
 Definition res_models (m : WfWorldT) (φ : FormulaT) : Prop :=
   res_models_fuel (formula_measure φ) m φ.
 
+Lemma res_models_scoped (m : WfWorldT) (φ : FormulaT) :
+  res_models m φ ->
+  formula_scoped_in_world m φ.
+Proof.
+  unfold res_models. apply res_models_fuel_scoped.
+Qed.
+
 Definition entails (φ ψ : FormulaT) : Prop :=
   ∀ m, res_models m φ → res_models m ψ.
 

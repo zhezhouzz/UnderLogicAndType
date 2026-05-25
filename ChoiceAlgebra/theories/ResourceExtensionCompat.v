@@ -8,7 +8,7 @@
 From ChoicePrelude Require Import Prelude Store.
 From ChoiceAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
   ResourceAlgebra ResourceExtension ResourceExtensionDerived ResourceInterface.
-From Stdlib Require Import Logic.ClassicalEpsilon.
+From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon.
 
 Section ResourceExtensionCompat.
 
@@ -59,6 +59,233 @@ Definition mk_forall_extension
 
 Definition forall_extension_shape (X : aset) (y : atom) (F : FiberExtensionT) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
+
+Definition one_point_projected_output_raw
+    (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
+  @mk_worldA atom _ _ V {[y]}
+    (fun σy =>
+      (exists σmy : StoreT,
+        (my : WorldT) σmy /\
+        store_restrict σmy X = σX /\
+        σy = store_restrict σmy {[y]}) \/
+      ((forall σmy : StoreT,
+          (my : WorldT) σmy ->
+          store_restrict σmy X <> σX) /\
+        σy = ({[y := inhabitant]} : StoreT))).
+
+Definition one_point_projected_output
+    (m my : WfWorldT) (X : aset) (y : atom) (σX : StoreT)
+    (Hy : y ∉ world_dom (m : WorldT))
+    (Hdom_my : world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]})
+    : WfWorldT.
+Proof.
+  refine (exist _ (one_point_projected_output_raw my X y σX) _).
+  split.
+  - destruct (classic (exists σmy : StoreT,
+      (my : WorldT) σmy /\ store_restrict σmy X = σX))
+      as [[σmy [Hmy Hproj]]|Hnone].
+    + exists (store_restrict σmy {[y]}). left.
+      exists σmy. repeat split; eauto.
+    + exists ({[y := inhabitant]} : StoreT). right.
+      split; [|reflexivity].
+      intros σmy Hmy Hproj. apply Hnone. exists σmy. split; assumption.
+  - intros σy Hσy.
+    destruct Hσy as [[σmy [Hmy [_ ->]]]|[_ ->]].
+    + replace (dom (store_restrict σmy {[y]} : StoreT))
+        with (dom (σmy : gmap atom V) ∩ {[y]}).
+      pose proof (wfworld_store_dom my σmy Hmy) as Hσmy_dom.
+      change (dom (σmy : gmap atom V) = world_dom (my : WorldT))
+        in Hσmy_dom.
+      rewrite Hσmy_dom, Hdom_my.
+      apply set_eq. intros z. set_solver.
+      symmetry.
+      change (dom (store_restrict σmy {[y]} : gmap atom V) =
+        dom (σmy : gmap atom V) ∩ {[y]}).
+      apply store_restrict_dom.
+    + change (dom ({[y := inhabitant]} : gmap atom V) = {[y]}).
+      apply set_eq. intros z. apply dom_singleton.
+Defined.
+
+Definition one_point_projected_extension
+    (m my : WfWorldT) (X : aset) (y : atom)
+    (Hy : y ∉ world_dom (m : WorldT))
+    (Hdisj : X ## {[y]})
+    (Hdom_my : world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]})
+    : FiberExtensionT :=
+  mk_fiber_extension X {[y]}
+    (fun σX => one_point_projected_output m my X y σX Hy Hdom_my)
+    Hdisj
+    ltac:(intros; reflexivity)
+    ltac:(intros σX _; destruct
+      (world_wf (one_point_projected_output m my X y σX Hy Hdom_my))
+      as [Hne _]; exact Hne).
+
+Lemma one_point_projected_extension_projection_eq
+    (m my : WfWorldT) (X : aset) (y : atom)
+    (Hy : y ∉ world_dom (m : WorldT))
+    (Hdisj : X ## {[y]})
+    (Hdom_my : world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]})
+    (Hrestrict : res_restrict my (world_dom (m : WorldT)) = m) :
+  X ⊆ world_dom (m : WorldT) ->
+  forall n : WfWorldT,
+    res_extend_by m
+      (one_point_projected_extension m my X y Hy Hdisj Hdom_my)
+      n ->
+    res_restrict n (X ∪ {[y]}) = res_restrict my (X ∪ {[y]}).
+Proof.
+  intros HXm n Hext.
+  apply wfworld_ext. apply world_ext.
+  - simpl.
+    pose proof (res_extend_by_dom m
+      (one_point_projected_extension m my X y Hy Hdisj Hdom_my) n Hext)
+      as Hdom_n.
+    change (world_dom (n : WorldT) ∩ (X ∪ {[y]}) =
+      world_dom (my : WorldT) ∩ (X ∪ {[y]})).
+    transitivity ((world_dom (m : WorldT) ∪ {[y]}) ∩ (X ∪ {[y]})).
+    + rewrite Hdom_n. reflexivity.
+    + rewrite Hdom_my. reflexivity.
+  - intros σ. split.
+    + intros [σn [Hσn Hrestrict_n]].
+      destruct Hext as [_ [_ Hstores]].
+      apply (proj1 (Hstores σn)) in Hσn.
+      destruct Hσn as [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
+      simpl in Hrel. subst we.
+      simpl in Hσe.
+      destruct Hσe as [[σmy [Hσmy [HprojX ->]]]|[Hnone ->]].
+      * exists σmy. split; [exact Hσmy |].
+        rewrite <- Hrestrict_n.
+        symmetry.
+        apply store_restrict_union_base_project.
+        -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+           change (X ⊆ dom (σm : gmap atom V)). set_solver.
+        -- transitivity (world_dom (my : WorldT)).
+           ++ apply (wfworld_store_dom my); exact Hσmy.
+           ++ rewrite Hdom_my.
+              pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+              set_solver.
+        -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
+           change (y ∉ dom (σm : gmap atom V)). set_solver.
+        -- exact HprojX.
+      * exfalso.
+        rewrite <- Hrestrict in Hσm.
+        destruct Hσm as [σmy [Hσmy Hproj_m]].
+        eapply Hnone; [exact Hσmy |].
+        rewrite <- Hproj_m.
+        symmetry. apply store_restrict_twice_subset. exact HXm.
+    + intros [σmy [Hσmy Hrestrict_my]].
+      destruct Hext as [_ [_ Hstores]].
+      set (σm := store_restrict σmy (world_dom (m : WorldT)) : StoreT).
+      assert (Hσm : (m : WorldT) σm).
+      {
+        rewrite <- Hrestrict.
+        exists σmy. split; [exact Hσmy | reflexivity].
+      }
+      set (σe := store_restrict σmy {[y]} : StoreT).
+      assert (Hrel :
+          (one_point_projected_output m my X y
+            (store_restrict σm X) Hy Hdom_my : WorldT) σe).
+      {
+        left. exists σmy. repeat split; eauto.
+        subst σm.
+        symmetry. apply store_restrict_twice_subset. exact HXm.
+      }
+      assert (Hσn : (n : WorldT) (σm ∪ σe)).
+      {
+        apply (proj2 (Hstores (σm ∪ σe))).
+        exists σm,
+          (one_point_projected_output m my X y
+            (store_restrict σm X) Hy Hdom_my),
+          σe.
+        repeat split; eauto.
+      }
+      exists (σm ∪ σe). split; [exact Hσn |].
+      rewrite <- Hrestrict_my.
+      subst σm σe.
+      apply store_restrict_union_base_project.
+      * change (X ⊆ dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V)).
+        rewrite store_restrict_dom.
+        assert (Hdomσmy :
+            dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
+        {
+          transitivity (world_dom (my : WorldT)).
+          - apply (wfworld_store_dom my); exact Hσmy.
+          - exact Hdom_my.
+        }
+        rewrite Hdomσmy. set_solver.
+      * assert (Hdomσmy :
+            dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
+        {
+          transitivity (world_dom (my : WorldT)).
+          - apply (wfworld_store_dom my); exact Hσmy.
+          - exact Hdom_my.
+        }
+        change (dom (σmy : gmap atom V) =
+          dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V) ∪
+          {[y]}).
+        rewrite store_restrict_dom, Hdomσmy.
+        apply set_eq. intros z. set_solver.
+      * change (y ∉ dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V)).
+        rewrite store_restrict_dom.
+        assert (Hdomσmy :
+            dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
+        {
+          transitivity (world_dom (my : WorldT)).
+          - apply (wfworld_store_dom my); exact Hσmy.
+          - exact Hdom_my.
+        }
+        rewrite Hdomσmy. set_solver.
+      * rewrite store_restrict_twice_subset by exact HXm.
+        reflexivity.
+Qed.
+
+Lemma one_point_projected_extension_extend_by_projection
+    (m my : WfWorldT) (X : aset) (y : atom)
+    (Hy : y ∉ world_dom (m : WorldT))
+    (Hdisj : X ## {[y]})
+    (Hdom_my : world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]})
+    (Hrestrict : res_restrict my (world_dom (m : WorldT)) = m) :
+  X ⊆ world_dom (m : WorldT) ->
+  exists n : WfWorldT,
+    res_extend_by m
+      (one_point_projected_extension m my X y Hy Hdisj Hdom_my)
+      n /\
+    res_restrict n (X ∪ {[y]}) = res_restrict my (X ∪ {[y]}).
+Proof.
+  intros HXm.
+  set (F := one_point_projected_extension m my X y Hy Hdisj Hdom_my).
+  assert (Happ : extension_applicable F m).
+  {
+    constructor.
+    - subst F. simpl. exact HXm.
+    - subst F. simpl. set_solver.
+  }
+  destruct (res_extend_by_exists m F Happ) as [n Hext].
+  exists n. split; [exact Hext |].
+  subst F.
+  eapply one_point_projected_extension_projection_eq; eauto.
+Qed.
+
+Lemma forall_extension_from_world_dom_projection
+    (m my : WfWorldT) (X : aset) (y : atom) :
+  X ⊆ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  exists (F : FiberExtensionT) (n : WfWorldT),
+    ext_in F = X /\
+    ext_out F = {[y]} /\
+    res_extend_by m F n /\
+    res_restrict n (X ∪ {[y]}) = res_restrict my (X ∪ {[y]}).
+Proof.
+  intros HXm Hy Hdom_my Hrestrict.
+  assert (Hdisj : X ## {[y]}) by set_solver.
+  destruct (one_point_projected_extension_extend_by_projection
+    m my X y Hy Hdisj Hdom_my Hrestrict HXm) as [n [Hext Hproj]].
+  exists (one_point_projected_extension m my X y Hy Hdisj Hdom_my), n.
+  split; [reflexivity |].
+  split; [reflexivity |].
+  split; [exact Hext | exact Hproj].
+Qed.
 
 Local Lemma ext_rel_exists (F : FiberExtensionT) σ :
   dom σ = ext_in F ->

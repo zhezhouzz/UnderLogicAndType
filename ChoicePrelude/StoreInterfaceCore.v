@@ -49,6 +49,199 @@ Definition lstore_swap (x y : logic_var) (s : LStore) : LStore :=
 Definition lstore_shift (k : nat) (s : LStore) : LStore :=
   lstore_rekey (key_shift k) s.
 
+Definition lstore_to_store (s : LStore) : Store :=
+  map_fold (fun v a acc =>
+    match v with
+    | LVFree x => <[x := a]> acc
+    | LVBound _ => acc
+    end) (∅ : Store) s.
+
+Definition lstore_bound_part (s : LStore) : gmap nat V :=
+  map_fold (fun v a acc =>
+    match v with
+    | LVFree _ => acc
+    | LVBound k => <[k := a]> acc
+    end) (∅ : gmap nat V) s.
+
+Local Lemma raw_gmap_lookup_insert_value
+    {K : Type} `{Countable K} (m : gmap K V) i (a : V) :
+  @gmap_lookup K _ _ V i (<[i := a]> m) = Some a.
+Proof.
+  change (((<[i := a]> m : gmap K V) !! i) = Some a).
+  rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+Qed.
+
+Local Lemma raw_gmap_lookup_insert_ne
+    {K : Type} `{Countable K} (m : gmap K V) i j (a : V) :
+  i <> j ->
+  @gmap_lookup K _ _ V j (<[i := a]> m) =
+  @gmap_lookup K _ _ V j m.
+Proof.
+  intros Hneq.
+  change (((<[i := a]> m : gmap K V) !! j) = (m : gmap K V) !! j).
+  apply lookup_insert_ne. exact Hneq.
+Qed.
+
+Lemma lstore_to_store_lookup (s : LStore) x :
+  (lstore_to_store s : gmap atom V) !! x =
+  (s : gmap logic_var V) !! LVFree x.
+Proof.
+  unfold lstore_to_store.
+  refine (@fin_maps.map_fold_ind logic_var (gmap logic_var) _ _ _ _ _ _ _ _ _
+    V
+    (fun s => forall x,
+      @gmap_lookup atom _ _ V x (map_fold
+        (fun v a acc =>
+          match v with
+          | LVFree x => <[x := a]> acc
+          | LVBound _ => acc
+          end) (∅ : gmap atom V) s) =
+      @gmap_lookup logic_var _ _ V (LVFree x) s) _ _ (s : gmap logic_var V) x).
+  - intros x0. cbn. reflexivity.
+  - intros v a s' Hfresh Hfold IH x0.
+    rewrite Hfold. cbn.
+    destruct v as [k|y].
+    + change ((map_fold
+          (fun v a acc =>
+            match v with
+            | LVFree x => <[x:=a]> acc
+            | LVBound _ => acc
+            end) (∅ : gmap atom V) s') !! x0 =
+        @gmap_lookup logic_var _ _ V (LVFree x0)
+          (<[LVBound k:=a]> s' : gmap logic_var V)).
+      assert (Hne : @gmap_lookup logic_var _ _ V (LVFree x0)
+          (<[LVBound k:=a]> s' : gmap logic_var V) =
+        @gmap_lookup logic_var _ _ V (LVFree x0) s').
+      { apply raw_gmap_lookup_insert_ne. discriminate. }
+      rewrite Hne. apply IH.
+    + destruct (decide (x0 = y)) as [->|Hxy].
+      * change (((<[y:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree x => <[x:=a]> acc
+              | LVBound _ => acc
+              end) (∅ : gmap atom V) s') : gmap atom V) !! y) =
+          @gmap_lookup logic_var _ _ V (LVFree y)
+            (<[LVFree y:=a]> s' : gmap logic_var V)).
+        assert (Hleft : ((<[y:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree x => <[x:=a]> acc
+              | LVBound _ => acc
+              end) (∅ : gmap atom V) s') : gmap atom V) !! y) = Some a).
+        { apply raw_gmap_lookup_insert_value. }
+        assert (Hright : @gmap_lookup logic_var _ _ V (LVFree y)
+            (<[LVFree y:=a]> s' : gmap logic_var V) = Some a).
+        { apply raw_gmap_lookup_insert_value. }
+        rewrite Hleft, Hright. reflexivity.
+      * change (((<[y:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree x => <[x:=a]> acc
+              | LVBound _ => acc
+              end) (∅ : gmap atom V) s') : gmap atom V) !! x0) =
+          @gmap_lookup logic_var _ _ V (LVFree x0)
+            (<[LVFree y:=a]> s' : gmap logic_var V)).
+        assert (Hleft : ((<[y:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree x => <[x:=a]> acc
+              | LVBound _ => acc
+              end) (∅ : gmap atom V) s') : gmap atom V) !! x0) =
+          (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree x => <[x:=a]> acc
+              | LVBound _ => acc
+              end) (∅ : gmap atom V) s') !! x0).
+        { apply raw_gmap_lookup_insert_ne. congruence. }
+        assert (Hright : @gmap_lookup logic_var _ _ V (LVFree x0)
+            (<[LVFree y:=a]> s' : gmap logic_var V) =
+          @gmap_lookup logic_var _ _ V (LVFree x0) s').
+        { apply raw_gmap_lookup_insert_ne. congruence. }
+        rewrite Hleft, Hright. apply IH.
+Qed.
+
+Lemma lstore_bound_part_lookup (s : LStore) k :
+  lstore_bound_part s !! k =
+  (s : gmap logic_var V) !! LVBound k.
+Proof.
+  unfold lstore_bound_part.
+  refine (@fin_maps.map_fold_ind logic_var (gmap logic_var) _ _ _ _ _ _ _ _ _
+    V
+    (fun s => forall k,
+      @gmap_lookup nat _ _ V k (map_fold
+        (fun v a acc =>
+          match v with
+          | LVFree _ => acc
+          | LVBound k => <[k := a]> acc
+          end) (∅ : gmap nat V) s) =
+      @gmap_lookup logic_var _ _ V (LVBound k) s) _ _ (s : gmap logic_var V) k).
+  - intros k0. cbn. reflexivity.
+  - intros v a s' Hfresh Hfold IH k0.
+    rewrite Hfold. cbn.
+    destruct v as [j|y].
+    + destruct (decide (k0 = j)) as [->|Hkj].
+      * change (((<[j:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree _ => acc
+              | LVBound k => <[k:=a]> acc
+              end) (∅ : gmap nat V) s') : gmap nat V) !! j) =
+          @gmap_lookup logic_var _ _ V (LVBound j)
+            (<[LVBound j:=a]> s' : gmap logic_var V)).
+        assert (Hleft : ((<[j:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree _ => acc
+              | LVBound k => <[k:=a]> acc
+              end) (∅ : gmap nat V) s') : gmap nat V) !! j) = Some a).
+        { apply raw_gmap_lookup_insert_value. }
+        assert (Hright : @gmap_lookup logic_var _ _ V (LVBound j)
+            (<[LVBound j:=a]> s' : gmap logic_var V) = Some a).
+        { apply raw_gmap_lookup_insert_value. }
+        rewrite Hleft, Hright. reflexivity.
+      * change (((<[j:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree _ => acc
+              | LVBound k => <[k:=a]> acc
+              end) (∅ : gmap nat V) s') : gmap nat V) !! k0) =
+          @gmap_lookup logic_var _ _ V (LVBound k0)
+            (<[LVBound j:=a]> s' : gmap logic_var V)).
+        assert (Hleft : ((<[j:=a]> (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree _ => acc
+              | LVBound k => <[k:=a]> acc
+              end) (∅ : gmap nat V) s') : gmap nat V) !! k0) =
+          (map_fold
+            (fun v a acc =>
+              match v with
+              | LVFree _ => acc
+              | LVBound k => <[k:=a]> acc
+              end) (∅ : gmap nat V) s') !! k0).
+        { apply raw_gmap_lookup_insert_ne. congruence. }
+        assert (Hright : @gmap_lookup logic_var _ _ V (LVBound k0)
+            (<[LVBound j:=a]> s' : gmap logic_var V) =
+          @gmap_lookup logic_var _ _ V (LVBound k0) s').
+        { apply raw_gmap_lookup_insert_ne. congruence. }
+        rewrite Hleft, Hright. apply IH.
+    + change ((map_fold
+          (fun v a acc =>
+            match v with
+            | LVFree _ => acc
+            | LVBound k => <[k:=a]> acc
+            end) (∅ : gmap nat V) s') !! k0 =
+        @gmap_lookup logic_var _ _ V (LVBound k0)
+          (<[LVFree y:=a]> s' : gmap logic_var V)).
+      assert (Hne : @gmap_lookup logic_var _ _ V (LVBound k0)
+          (<[LVFree y:=a]> s' : gmap logic_var V) =
+        @gmap_lookup logic_var _ _ V (LVBound k0) s').
+      { apply raw_gmap_lookup_insert_ne. discriminate. }
+      rewrite Hne. apply IH.
+Qed.
+
 Lemma lstore_rekey_dom
     (f : logic_var → logic_var) (Hf : Inj (=) (=) f) (s : LStore) :
   dom (lstore_rekey f s : LStore) = set_map f (dom (s : LStore)).

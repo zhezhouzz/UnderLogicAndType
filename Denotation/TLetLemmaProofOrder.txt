@@ -1,0 +1,234 @@
+TLet dependency lemma review and proof order
+============================================
+
+Scope
+-----
+This list excludes the five intentionally-admitted non-Over/non-Arrow branches
+inside `tlet_intro_denotation` in `Denotation/theories/TLet.v`.
+
+Current admit statistics in this scope
+--------------------------------------
+
+- ChoiceBasicDenotation/BasicTypingFormula.v: 2 named admits
+  * `basic_tm_has_ltype_open_one_cofinite`
+  * `formula_open_expr_basic_typing_formula`
+- ChoiceBasicDenotation/Term.v: 4 named admits
+  * `expr_total_formula_tlete_intro_from_result_extension`
+  * `expr_result_formula_of_result_extends`
+  * `expr_result_at_world_tlete_elim_body_ext`
+  * `expr_result_formula_tlete_elim_body_from_result_extension`
+- Denotation/TypeDenotation.v: 2 named admits
+  * `formula_open_denot_ty_lvar_gas_typed_bind_current`
+  * `formula_fv_denot_ty_lvar_gas_mono_env_or_term`
+- Denotation/TLet.v: 2 named admits plus the intentionally-admitted branches
+  * `tlet_arrow_arg_extend_obligation`
+  * `tlet_arrow_result_from_body_denotation`
+  * intentional branches: CTUnder, CTInter, CTUnion, CTSum, CTWand
+
+Already proved / no longer pending
+----------------------------------
+
+- `value_shift_lc_id`, `tm_shift_lc_id`
+  These are already available in the new route and are not blockers.
+
+- `value_lvars_no_bv_of_lc`, `tm_lvars_no_bv_of_lc`
+  The current Term layer compiles with the split lstore instantiation route.
+  They are no longer part of the active TLet blocker list.
+
+- `lstore_instantiate_open_back_mutual`
+  The split lstore/open-back normalization needed by formula/result opening is
+  already present enough for the current compilation path.
+
+- `expr_eval_in_atom_store_tlete_elim`,
+  `expr_eval_in_atom_store_tlete_intro`,
+  `expr_total_on_tlete_elim_e1`
+  These wrappers are proved in `Term.v`.  The lower core lemmas are the ones
+  used directly.
+
+- `lstore_instantiate_tm_split_restrict_fv`,
+  `expr_eval_in_atom_store_restrict_fv_closed_on`
+  Proved in `Term.v`.  The second lemma no longer needs global closedness of
+  the whole store; it follows from the structural fact that lstore
+  instantiation only inspects `fv_tm e`.
+
+- `tlet_over_forall_fv_subset`, `tlet_arrow_forall_fv_subset`
+  Both FV transport obligations are now proved at the TLet level.  Arrow uses
+  the upper-bound FV helper `formula_fv_denot_ty_lvar_gas_mono_env_or_term`.
+
+- `basic_tm_has_ltype_open_one` (old iff)
+  Deleted.  The iff was not needed by TLet and forced an unnecessary alpha
+  renaming obligation.  The active interface is cofinite/forward only.
+
+Proof order for remaining work
+------------------------------
+
+1. BasicTypingFormula cofinite opening
+
+- `basic_tm_has_ltype_open_one_cofinite`
+  Status: provable; prove this first.
+  Reuse:
+  * `open_tm_env_insert_commute`
+  * `ChoiceTypeLanguage/theories/LtyEnvOpen.v`:
+    `lty_env_open_lvars_insert_fresh`
+  Needed small helper shape:
+  * compose arbitrary `η` by switching to `delete k η` and then inserting
+    `[k := y]`.
+  Proof sketch:
+  Choose `L` containing `lvars_fv (dom Σ)`, `fv_tm e`, and the currently visible
+  atoms needed by the arbitrary `η`.  Given target `η`, reduce
+  `open_tm_env η (open_tm k (vfvar y) e)` and
+  `lty_env_open_lvars η (lty_env_open_one k y Σ)` to the original
+  `basic_tm_has_ltype Σ e T` obligation under `<[k := y]> (delete k η)`.
+
+- `formula_open_expr_basic_typing_formula`
+  Status: should not be proved through a standalone iff.
+  Preferred proof:
+  Use `logic_qualifier_ext` plus the cofinite/renaming route only if exact
+  formula equality remains necessary for `formula_open_denot_ty_lvar_gas`.
+  Alternative:
+  Replace consumers by a models-level transport lemma and delete this exact
+  equality later.
+
+2. Basic world closure support
+
+- `wfworld_closed_on`, `wfworld_closed`
+  Status: added and proved support wrappers in
+  `ChoiceBasicDenotation/theories/StoreTyping.v`.
+
+- `basic_world_formula_wfworld_closed_on_dom`
+  Status: proved.
+  Meaning:
+  A world satisfying `basic_world_formula Σ` is closed on the atom projection
+  of `dom Σ`, not necessarily on its whole domain.
+
+- `basic_world_formula_wfworld_closed_on_atoms`
+  Status: proved.
+  This is the form that result-extension lemmas should use:
+  if `lvars_of_atoms X ⊆ dom Σ`, then the world is closed on `X`.
+
+3. Result extension world models
+
+- `expr_result_extension_world_models_closed`
+  Status: proved.
+  Statement now uses `wfworld_closed_on (fv_tm e) m`.
+  Reuse:
+  * `res_extend_by_store_iff`
+  * `expr_result_extension_apply_total_iff`
+  * `expr_eval_in_atom_store_restrict_fv_closed_on`
+  * `expr_total_on_atom_world`
+  Proof shape:
+  Unfold `expr_result_at_world`.  For a store in `res_lift_free mx`, project to
+  an atom store in `mx`, decompose it through `res_extend_by_store_iff`, obtain
+  evaluation of `e` from totality on the base store, use `wfworld_closed_on` to
+  justify restricting to `fv_tm e`, then identify the singleton output via
+  `expr_result_extension_apply_total_iff`.
+
+- `expr_result_extension_world_models`
+  Status: proved wrapper.
+  It now derives `wfworld_closed_on (fv_tm e) m` from
+  `basic_world_formula Σ` and `lvars_of_atoms (fv_tm e) ⊆ dom Σ`.
+
+- `expr_result_formula_of_result_extends`
+  Status: thin wrapper after the closed-world lemma.
+  Reuse:
+  * `expr_result_formula_models_iff`
+  * `expr_result_extension_world_models`
+
+4. TLet total/result formula wrappers
+
+- `expr_total_formula_tlete_intro_from_result_extension`
+  Status: provable after the operational totality composition is in place.
+  Reuse:
+  * `expr_total_formula_models_iff`
+  * `expr_eval_in_atom_store_tlete_intro`
+  * `expr_result_extension_apply_total_iff`
+  * `wfworld_closed_on` from the basic-world premise
+  Proof sketch:
+  For each base store in `m`, totality gives an `e1` result.  The result
+  extension turns that into a store in `mx`; body totality gives a result for
+  `e2 ^^ x`; `expr_eval_in_atom_store_tlete_intro` combines them.
+
+- `expr_result_at_world_tlete_elim_body_ext`
+  Status: provable after `expr_result_extension_world_models_closed`.
+  Reuse:
+  * `expr_eval_in_atom_store_tlete_elim`
+  * `expr_result_extension_apply_total_iff`
+  * `res_extend_by_store_iff`
+  Proof sketch:
+  A result of `tlete e1 e2` in `my` decomposes into an `e1` result plus an
+  opened-body result.  The extension `Fx` supplies exactly the additional
+  singleton result cell in `mxy`.
+
+- `expr_result_formula_tlete_elim_body_from_result_extension`
+  Status: thin wrapper after the at-world lemma.
+  Reuse:
+  * `expr_result_formula_models_iff`
+
+5. Denotation open/FV support
+
+- `formula_fv_denot_ty_lvar_gas_mono_env_or_term`
+  Status: true-looking, but current direct proof should be optimized before
+  attempting again.
+  Why it exists:
+  TLet Arrow needs an upper-bound FV transport where extra FV from `e1` is
+  absorbed by the target environment instead of the target term.
+  Suggested helper:
+  * `fv_tapp_shift_env_or_term`
+      `fv_tm e1 ⊆ E ∪ fv_tm e2 ->
+       fv_tm (tapp_tm (tm_shift 0 e1) (vbvar 0)) ⊆
+       E ∪ fv_tm (tapp_tm (tm_shift 0 e2) (vbvar 0))`.
+  Reuse:
+  * `fv_tapp_tm`
+  * `tm_shift_fv`
+  * existing `formula_fv_denot_ty_lvar_gas_mono_env_term` proof shape
+  Proof sketch:
+  Redo the gas induction, but use the small tapp FV helper in Arrow/Wand
+  branches instead of asking `set_solver` to solve the whole expanded goal.
+
+- `formula_open_denot_ty_lvar_gas_typed_bind_current`
+  Status: provable, but depends on formula-open component lemmas.
+  Reuse:
+  * `formula_open_choice_ty_wf_formula`
+  * `formula_open_basic_world_formula`
+  * `formula_open_expr_basic_typing_formula`
+  * `formula_open_expr_total_formula`
+  * `formula_open_expr_result_formula`
+  * `type_qualifier_formula_open`
+  Proof sketch:
+  Induct on gas and destruct `τ`; each atom uses its formula-open lemma.
+  Arrow/Wand use the typed-bind-current normalizers.
+
+6. TLet Arrow helpers
+
+- `tlet_arrow_arg_extend_obligation`
+  Status: provable after FV support cleanup.
+  Reuse:
+  * `res_models_extend_base_iff`
+  * `formula_fv_denot_ty_lvar_gas_subset_env_term`
+  * `formula_fv_denot_ty_lvar_gas_insert_fresh_upper`
+  Proof sketch:
+  The argument denotation does not inspect `x` under the freshness premise, so
+  it transports from `my` to `mxy` across `Fx`.
+
+- `tlet_arrow_result_from_body_denotation`
+  Status: prove last among named helpers.
+  Reuse:
+  * `expr_basic_typing_formula_tlete_intro`
+  * `expr_total_formula_tlete_intro_from_result_extension`
+  * `expr_result_formula_tlete_elim_body_from_result_extension`
+  * `formula_open_denot_ty_lvar_gas_typed_bind_current`
+  Proof sketch:
+  Treat `my` as the base world and `mxy` as the `e1` result-extension world.
+  The premise over `mxy` is the opened body denotation needed by the IH for the
+  result type.
+
+Things I still would not hard-prove in their old shape
+------------------------------------------------------
+
+- The deleted `basic_tm_has_ltype_open_one` iff.
+  If an exact equality later genuinely needs the reverse direction, add a
+  separate alpha-renaming lemma rather than restoring the old iff.
+
+- Exact FV equality for TLet forall transport.
+  The correct route is upper-bound subset, already reflected in the current
+  TLet proof.

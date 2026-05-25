@@ -93,14 +93,18 @@ Lemma basic_choice_ty_over D b q :
   basic_qualifier_body D q ->
   basic_choice_ty D (CTOver b q).
 Proof.
-  exact id.
+  intros Hq.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  exact Hq.
 Qed.
 
 Lemma basic_choice_ty_under D b q :
   basic_qualifier_body D q ->
   basic_choice_ty D (CTUnder b q).
 Proof.
-  exact id.
+  intros Hq.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  exact Hq.
 Qed.
 
 Lemma basic_choice_ty_inter D τ1 τ2 :
@@ -109,7 +113,10 @@ Lemma basic_choice_ty_inter D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTInter τ1 τ2).
 Proof.
-  intros H1 H2 Herase. repeat split; assumption.
+  intros H1 H2 Herase.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at]. repeat split; try assumption;
+    apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
 Qed.
 
 Lemma basic_choice_ty_union D τ1 τ2 :
@@ -118,7 +125,10 @@ Lemma basic_choice_ty_union D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTUnion τ1 τ2).
 Proof.
-  intros H1 H2 Herase. repeat split; assumption.
+  intros H1 H2 Herase.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at]. repeat split; try assumption;
+    apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
 Qed.
 
 Lemma basic_choice_ty_sum D τ1 τ2 :
@@ -127,7 +137,10 @@ Lemma basic_choice_ty_sum D τ1 τ2 :
   erase_ty τ1 = erase_ty τ2 ->
   basic_choice_ty D (CTSum τ1 τ2).
 Proof.
-  intros H1 H2 Herase. repeat split; assumption.
+  intros H1 H2 Herase.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at]. repeat split; try assumption;
+    apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
 Qed.
 
 Lemma basic_choice_ty_arrow D τx τ :
@@ -135,7 +148,10 @@ Lemma basic_choice_ty_arrow D τx τ :
   wf_choice_ty_at 1 D τ ->
   basic_choice_ty D (CTArrow τx τ).
 Proof.
-  intros Hx Hbody. split; assumption.
+  intros Hx Hbody.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at]. split; [|exact Hbody].
+  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hx.
 Qed.
 
 Lemma basic_choice_ty_wand D τx τ :
@@ -143,7 +159,10 @@ Lemma basic_choice_ty_wand D τx τ :
   wf_choice_ty_at 1 D τ ->
   basic_choice_ty D (CTWand τx τ).
 Proof.
-  intros Hx Hbody. split; assumption.
+  intros Hx Hbody.
+  apply basic_choice_ty_iff_wf_choice_ty_at.
+  cbn [wf_choice_ty_at]. split; [|exact Hbody].
+  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hx.
 Qed.
 
 Lemma basic_ctx_empty D :

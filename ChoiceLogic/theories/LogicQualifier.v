@@ -1,6 +1,7 @@
 From ChoiceAlgebra Require Export Resource.
 From ChoiceAlgebra Require Import ResourceRestrict.
 From ChoicePrelude Require Export Prelude Store.
+From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** * Logic qualifiers
 
@@ -52,6 +53,22 @@ Definition lqual_open
 	      lqual (lvars_open k x D)
 	        (λ w, P (lworld_on_open_back k x D w))
 	  end.
+
+Lemma logic_qualifier_ext (q1 q2 : logic_qualifier) :
+  lqual_dom q1 = lqual_dom q2 ->
+  (forall (w1 : LWorldOnT (lqual_dom q1))
+          (w2 : LWorldOnT (lqual_dom q2)),
+      @lw V (lqual_dom q1) w1 = @lw V (lqual_dom q2) w2 ->
+      lqual_prop q1 w1 <-> lqual_prop q2 w2) ->
+  q1 = q2.
+Proof.
+  destruct q1 as [D1 P1], q2 as [D2 P2]. simpl.
+  intros HD HP. subst D2.
+  f_equal.
+  apply functional_extensionality. intros w.
+  apply propositional_extensionality.
+  apply HP. reflexivity.
+Qed.
 
 Lemma logic_qualifier_denote_restrict q w X :
   lqual_fv q ⊆ X →

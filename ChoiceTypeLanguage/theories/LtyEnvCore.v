@@ -36,6 +36,12 @@ Definition lty_env_open (η : gmap nat atom) (Σ : lty_env) : gmap atom ty :=
     | None => acc
     end) ∅ Σ.
 
+(** Plain projection from an lvar-keyed type environment to an atom-keyed one.
+    It is [lty_env_open] with no bound-variable assignment, so it keeps
+    [LVFree x] entries and drops unopened bound entries. *)
+Definition lty_env_to_atom_env (Σ : lty_env) : gmap atom ty :=
+  lty_env_open ∅ Σ.
+
 Definition lty_env_open_lvars (η : gmap nat atom) (Σ : lty_env) : lty_env :=
   storeA_rekey (logic_var_open_env η) Σ.
 

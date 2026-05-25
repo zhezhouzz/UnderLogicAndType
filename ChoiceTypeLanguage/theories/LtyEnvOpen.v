@@ -131,6 +131,24 @@ Proof.
   intros ->. apply Hhead. apply lvars_fv_open_env_free. exact Hv.
 Qed.
 
+Lemma lty_env_open_lvars_open_one η k x Σ :
+  x ∉ lvars_fv (dom Σ) ->
+  open_env_fresh_for_lvars η (dom (lty_env_open_one k x Σ)) ->
+  lty_env_open_lvars η (lty_env_open_one k x Σ) =
+  lty_env_open_lvars (<[k := x]> η) Σ.
+Proof.
+  intros Hx Hfresh.
+  unfold lty_env_open_lvars, lty_env_open_one.
+  rewrite storeA_rekey_compose_inj_on.
+  2:{ intros a b _ _ Hab. eapply logic_var_open_inj_fresh. exact Hab. }
+  2:{
+    apply open_env_fresh_for_lvars_inj_on. exact Hfresh.
+  }
+  apply storeA_rekey_ext_on_dom. intros v Hv.
+  apply logic_var_open_env_open_one_fresh.
+  intros ->. apply Hx. apply lvars_fv_elem. exact Hv.
+Qed.
+
 Lemma logic_var_bv_elem_singleton v k :
   k ∈ lvars_bv ({[v]} : lvset) <-> v = LVBound k.
 Proof.

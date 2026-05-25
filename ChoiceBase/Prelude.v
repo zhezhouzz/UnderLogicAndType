@@ -502,6 +502,14 @@ Proof.
   rewrite elem_of_intersection, !gset_swap_elem, elem_of_intersection. reflexivity.
 Qed.
 
+Lemma gset_swap_difference_l {A : Type} `{Countable A} (x y : A) (D : gset A) :
+  gset_swap x y (D ∖ {[x]}) = gset_swap x y D ∖ {[y]}.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_difference, !gset_swap_elem, elem_of_singleton.
+  unfold eq_swap. repeat destruct decide; subst; set_solver.
+Qed.
+
 Lemma gset_swap_singleton {A : Type} `{Countable A} (x y z : A) :
   gset_swap x y ({[z]} : gset A) = {[key_swap x y z]}.
 Proof.

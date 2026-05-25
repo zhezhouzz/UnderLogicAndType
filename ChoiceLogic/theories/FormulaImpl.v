@@ -82,6 +82,19 @@ Proof.
   exact Hlocal.
 Qed.
 
+Lemma res_models_impl_intro_scoped (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world m φ →
+  formula_scoped_in_world m ψ →
+  (m ⊨ φ → m ⊨ ψ) →
+  m ⊨ FImpl φ ψ.
+Proof.
+  intros Hφscope Hψscope Hlocal.
+  eapply res_models_impl_intro.
+  - apply (proj2 (formula_scoped_impl_iff m φ ψ)).
+    split; assumption.
+  - exact Hlocal.
+Qed.
+
 Lemma res_models_impl_iff_future (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world m (FImpl φ ψ) →
   (m ⊨ FImpl φ ψ ↔
@@ -134,6 +147,19 @@ Proof.
   intros Hscope. split.
   - intros Himpl Hφ. eapply res_models_impl_elim; eauto.
   - intros Himpl. eapply res_models_impl_intro; eauto.
+Qed.
+
+Lemma res_models_impl_iff_scoped (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world m φ →
+  formula_scoped_in_world m ψ →
+  (m ⊨ FImpl φ ψ ↔
+    (m ⊨ φ →
+      m ⊨ ψ)).
+Proof.
+  intros Hφscope Hψscope.
+  eapply res_models_impl_iff.
+  apply (proj2 (formula_scoped_impl_iff m φ ψ)).
+  split; assumption.
 Qed.
 
 Lemma res_models_impl_antecedent_strengthen_future

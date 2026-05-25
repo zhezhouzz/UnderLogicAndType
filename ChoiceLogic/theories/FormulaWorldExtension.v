@@ -28,6 +28,23 @@ Proof.
   set_solver.
 Qed.
 
+Lemma formula_scoped_open_of_extend
+    (m : WfWorldT) (F : fiber_extension (V := V))
+    (my : WfWorldT) (φ : FormulaT) y :
+  ext_in F = formula_fv φ →
+  ext_out F = {[y]} →
+  res_extend_by m F my →
+  formula_scoped_in_world my (formula_open 0 y φ).
+Proof.
+  intros HFin HFout Hext.
+  eapply formula_scoped_open_from_fv.
+  pose proof (res_extend_by_input_dom m F my Hext) as Hin.
+  pose proof (res_extend_by_dom m F my Hext) as Hdom.
+  unfold ext_in in HFin. unfold ext_out in HFout.
+  rewrite Hdom, <- HFin, HFout.
+  set_solver.
+Qed.
+
 Lemma formula_scoped_extend_base_iff
     (m : WfWorldT) (F : fiber_extension (V := V))
     (n : WfWorldT) (φ : FormulaT) :
@@ -67,6 +84,23 @@ Proof.
     eapply res_models_kripke; [| exact Hnr].
     apply res_restrict_le.
   - apply res_models_extend_mono with (F := F). exact Hext.
+Qed.
+
+Lemma formula_fv_in_base_dom_of_extend_scoped
+    gas (m n : WfWorldT) (F : fiber_extension (V := V)) x
+    (p : FormulaT) :
+  res_extend_by m F n ->
+  ext_out F = {[x]} ->
+  res_models_fuel gas n p ->
+  x ∉ formula_fv p ->
+  formula_fv p ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hext Hout Hmodel Hfresh.
+  pose proof (res_models_fuel_scoped gas n p Hmodel) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  rewrite (res_extend_by_dom m F n Hext) in Hscope.
+  unfold ext_out in Hout. rewrite Hout in Hscope.
+  set_solver.
 Qed.
 
 Lemma res_models_extend_input_widen_to_iff
@@ -152,12 +186,14 @@ Lemma res_models_forall_map_same_fv_by_extension
     (m : WfWorldT) (φ ψ : FormulaT) :
   formula_fv φ = formula_fv ψ →
   formula_scoped_in_world m (FForall ψ) →
-  (∀ (y : atom) (F : fiber_extension (V := V)) (my : WfWorldT),
-    ext_in F = formula_fv φ →
-    ext_out F = {[y]} →
-    res_extend_by m F my →
-  res_models my (formula_open 0 y φ) →
-  res_models my (formula_open 0 y ψ)) →
+  (∃ L : aset,
+    ∀ y : atom, y ∉ L →
+    ∀ (F : fiber_extension (V := V)) (my : WfWorldT),
+      ext_in F = formula_fv φ →
+      ext_out F = {[y]} →
+      res_extend_by m F my →
+    res_models my (formula_open 0 y φ) →
+    res_models my (formula_open 0 y ψ)) →
   res_models m (FForall φ) →
   res_models m (FForall ψ).
 Proof.
@@ -169,19 +205,34 @@ Lemma res_models_forall_transport_by_extension
     (m n : WfWorldT) (φ ψ : FormulaT) :
   formula_fv φ = formula_fv ψ →
   formula_scoped_in_world n (FForall ψ) →
-  (∀ (y : atom) (F : fiber_extension (V := V))
-      (my ny : WfWorldT),
-    ext_in F = formula_fv φ →
-    ext_out F = {[y]} →
-    res_extend_by m F my →
-    res_extend_by n F ny →
-  res_models my (formula_open 0 y φ) →
-  res_models ny (formula_open 0 y ψ)) →
+  (∃ L : aset,
+    ∀ y : atom, y ∉ L →
+    ∀ (F : fiber_extension (V := V)) (my ny : WfWorldT),
+      ext_in F = formula_fv φ →
+      ext_out F = {[y]} →
+      res_extend_by m F my →
+      res_extend_by n F ny →
+    res_models my (formula_open 0 y φ) →
+    res_models ny (formula_open 0 y ψ)) →
   res_models m (FForall φ) →
   res_models n (FForall ψ).
 Proof.
-  intros Hfv Hscope Htransport Hforall.
-  eapply res_models_forall_transport; eauto.
+  intros Hfv Hscope [L Htransport] Hforall.
+  eapply res_models_forall_transport; [| exact Hscope | | exact Hforall].
+  - rewrite <- Hfv. reflexivity.
+  - exists L.
+    intros y Hy F my ny _ HFout [Fφ [Hwid [HFinφ Hmy]]] Hny Hφ.
+    assert (Hinφn : ext_in Fφ ⊆ world_dom (n : WorldT)).
+    {
+      rewrite HFinφ. rewrite Hfv. exact Hscope.
+    }
+    assert (Hnyφ : res_extend_by n Fφ ny).
+    {
+      apply (proj1 (res_extend_by_input_widen_to_iff n F Fφ ny Hwid Hinφn)).
+      exact Hny.
+    }
+    eapply Htransport; [exact Hy | exact HFinφ | | exact Hmy | exact Hnyφ | exact Hφ].
+    rewrite (input_widen_out _ _ Hwid). exact HFout.
 Qed.
 
 Lemma res_models_one_point_extension_pushout

@@ -472,6 +472,94 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_vlam σ s e :
+  m{σ} (vlam s e) = vlam s (m{σ} e).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (vlam s e) σ =
+      vlam s (map_fold (fun x vx acc => {x := vx} acc) e σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) e).
+    setoid_rewrite (Hfold value (fun x vx acc => {x := vx} acc) (vlam s e)).
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma msubst_vfix σ Tf vf :
+  m{σ} (vfix Tf vf) = vfix Tf (m{σ} vf).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (vfix Tf vf) σ =
+      vfix Tf (map_fold (fun x vx acc => {x := vx} acc) vf σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) vf).
+    setoid_rewrite (Hfold value (fun x vx acc => {x := vx} acc) (vfix Tf vf)).
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma subst_map_value_eq_msubst σ (v : value) :
+  subst_map σ v = m{σ} v.
+Proof. reflexivity. Qed.
+
+Lemma subst_map_tm_eq_msubst σ (e : tm) :
+  subst_map σ e = m{σ} e.
+Proof. reflexivity. Qed.
+
+Lemma subst_map_vlam σ s e :
+  subst_map σ (vlam s e) = vlam s (subst_map σ e).
+Proof.
+  change (m{σ} (vlam s e) = vlam s (m{σ} e)).
+  apply msubst_vlam.
+Qed.
+
+Lemma subst_map_vfix σ Tf vf :
+  subst_map σ (vfix Tf vf) = vfix Tf (subst_map σ vf).
+Proof.
+  change (m{σ} (vfix Tf vf) = vfix Tf (m{σ} vf)).
+  apply msubst_vfix.
+Qed.
+
+Lemma subst_map_ret σ v :
+  subst_map σ (tret v) = tret (subst_map σ v).
+Proof.
+  change (m{σ} (tret v) = tret (m{σ} v)).
+  apply msubst_ret.
+Qed.
+
+Lemma subst_map_lete σ e1 e2 :
+  subst_map σ (tlete e1 e2) = tlete (subst_map σ e1) (subst_map σ e2).
+Proof.
+  change (m{σ} (tlete e1 e2) = tlete (m{σ} e1) (m{σ} e2)).
+  apply msubst_lete.
+Qed.
+
+Lemma subst_map_tprim σ op v :
+  subst_map σ (tprim op v) = tprim op (subst_map σ v).
+Proof.
+  change (m{σ} (tprim op v) = tprim op (m{σ} v)).
+  apply msubst_tprim.
+Qed.
+
+Lemma subst_map_tapp σ v1 v2 :
+  subst_map σ (tapp v1 v2) = tapp (subst_map σ v1) (subst_map σ v2).
+Proof.
+  change (m{σ} (tapp v1 v2) = tapp (m{σ} v1) (m{σ} v2)).
+  apply msubst_tapp.
+Qed.
+
+Lemma subst_map_tmatch σ v et ef :
+  subst_map σ (tmatch v et ef) =
+  tmatch (subst_map σ v) (subst_map σ et) (subst_map σ ef).
+Proof.
+  change (m{σ} (tmatch v et ef) = tmatch (m{σ} v) (m{σ} et) (m{σ} ef)).
+  apply msubst_tmatch.
+Qed.
+
 Lemma msubst_fvar_lookup_closed σ x v :
   closed_env σ →
   σ !! x = Some v →
@@ -498,6 +586,25 @@ Proof.
     + replace (m{σ'} (vfvar x)) with v by (symmetry; apply IH; assumption).
       apply subst_fresh.
       rewrite (closed_env_lookup σ' x v Hclosed' Hlookup). set_solver.
+Qed.
+
+Lemma subst_map_value_fresh σ (v : value) :
+  dom σ ∩ stale v = ∅ ->
+  subst_map σ v = v.
+Proof.
+  intros Hfresh.
+  change (m{σ} v = v).
+  apply msubst_fresh. exact Hfresh.
+Qed.
+
+Lemma subst_map_fvar_lookup_closed σ x v :
+  closed_env σ ->
+  σ !! x = Some v ->
+  subst_map σ (vfvar x) = v.
+Proof.
+  intros Hclosed Hlookup.
+  change (m{σ} (vfvar x) = v).
+  apply msubst_fvar_lookup_closed; assumption.
 Qed.
 
 Lemma msubst_ret_fvar_lookup_closed σ x v :

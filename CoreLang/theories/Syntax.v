@@ -7,6 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
+From ChoiceBase Require Import LogicVar.
 
 (** ** Base and basic types *)
 
@@ -169,6 +170,42 @@ with fv_tm (e : tm) : aset :=
 #[global] Instance stale_tm_inst    : Stale tm    := fv_tm.
 Arguments stale_value_inst /.
 Arguments stale_tm_inst /.
+
+(** ** Locally-nameless lvar support
+
+    [fv_tm] records only free atom variables.  Denotational objects that run
+    terms against an lvar-keyed store also need to know which dangling bound
+    variables may be opened by the store.  The [_at] variants are cutoff-aware:
+    bound variables below the cutoff are locally bound by the syntax being
+    traversed, while bound variables at or above the cutoff are exposed as
+    external [LVBound] keys after subtracting the cutoff. *)
+
+Definition bvar_lvars_at (d n : nat) : lvset :=
+  if decide (d <= n) then {[LVBound (n - d)]} else ∅.
+
+Fixpoint value_lvars_at (d : nat) (v : value) : lvset :=
+  match v with
+  | vconst _ => ∅
+  | vfvar x => {[LVFree x]}
+  | vbvar n => bvar_lvars_at d n
+  | vlam _ e => tm_lvars_at (S d) e
+  | vfix _ vf => value_lvars_at (S d) vf
+  end
+with tm_lvars_at (d : nat) (e : tm) : lvset :=
+  match e with
+  | tret v => value_lvars_at d v
+  | tlete e1 e2 => tm_lvars_at d e1 ∪ tm_lvars_at (S d) e2
+  | tprim _ v => value_lvars_at d v
+  | tapp v1 v2 => value_lvars_at d v1 ∪ value_lvars_at d v2
+  | tmatch v et ef =>
+      value_lvars_at d v ∪ tm_lvars_at d et ∪ tm_lvars_at d ef
+  end.
+
+Definition value_lvars (v : value) : lvset :=
+  value_lvars_at 0 v.
+
+Definition tm_lvars (e : tm) : lvset :=
+  tm_lvars_at 0 e.
 
 (** ** Atom swap
 

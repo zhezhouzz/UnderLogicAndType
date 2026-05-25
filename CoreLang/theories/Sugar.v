@@ -11,25 +11,240 @@ Definition vtrue : value := vconst (cbool true).
 Definition vfalse : value := vconst (cbool false).
 Definition vnat (n : nat) : value := vconst (cnat n).
 
-Fixpoint tapp_tm (ef : tm) (vx : value) : tm :=
-  match ef with
-  | tret vf => tapp vf vx
-  | tlete e1 e2 => tlete e1 (tapp_tm e2 vx)
-  | _ => tlete ef (tapp (vbvar 0) vx)
+Fixpoint value_shift (k : nat) (v : value) : value :=
+  match v with
+  | vconst _ => v
+  | vfvar _ => v
+  | vbvar n =>
+      match bool_decide (k <= n) with
+      | true => vbvar (S n)
+      | false => v
+      end
+  | vlam T e => vlam T (tm_shift (S k) e)
+  | vfix T vf => vfix T (value_shift (S k) vf)
+  end
+with tm_shift (k : nat) (e : tm) : tm :=
+  match e with
+  | tret v => tret (value_shift k v)
+  | tlete e1 e2 => tlete (tm_shift k e1) (tm_shift (S k) e2)
+  | tprim op v => tprim op (value_shift k v)
+  | tapp v1 v2 => tapp (value_shift k v1) (value_shift k v2)
+  | tmatch v et ef =>
+      tmatch (value_shift k v) (tm_shift k et) (tm_shift k ef)
   end.
+
+Definition tapp_tm (ef : tm) (vx : value) : tm :=
+  tlete ef (tapp (vbvar 0) (value_shift 0 vx)).
+
+Lemma value_shift_fv k v :
+  fv_value (value_shift k v) = fv_value v
+with tm_shift_fv k e :
+  fv_tm (tm_shift k e) = fv_tm e.
+Proof.
+  - destruct v; cbn [value_shift fv_value]; try reflexivity.
+    + destruct (bool_decide (k <= n)); reflexivity.
+    + apply tm_shift_fv.
+    + apply value_shift_fv.
+  - destruct e; cbn [tm_shift fv_tm]; rewrite ?value_shift_fv, ?tm_shift_fv; reflexivity.
+Qed.
+
+Lemma value_shift_swap_atom x y k v :
+  value_shift k (value_swap_atom x y v) =
+  value_swap_atom x y (value_shift k v)
+with tm_shift_swap_atom x y k e :
+  tm_shift k (tm_swap_atom x y e) =
+  tm_swap_atom x y (tm_shift k e).
+Proof.
+  - destruct v; cbn [value_shift value_swap_atom]; try reflexivity.
+    + destruct (bool_decide (k <= n)); reflexivity.
+    + rewrite tm_shift_swap_atom. reflexivity.
+    + rewrite value_shift_swap_atom. reflexivity.
+  - destruct e; cbn [tm_shift tm_swap_atom];
+      rewrite ?value_shift_swap_atom, ?tm_shift_swap_atom; reflexivity.
+Qed.
+
+Lemma value_tm_shift_open_fvar_mutual :
+  (forall v k cutoff x,
+      cutoff <= k ->
+      open_value (S k) (vfvar x) (value_shift cutoff v) =
+      value_shift cutoff (open_value k (vfvar x) v)) *
+  (forall e k cutoff x,
+      cutoff <= k ->
+      open_tm (S k) (vfvar x) (tm_shift cutoff e) =
+      tm_shift cutoff (open_tm k (vfvar x) e)).
+Proof.
+  apply value_tm_mutind; cbn [open_value open_tm value_shift tm_shift];
+    intros; try reflexivity.
+  - destruct (decide (k = n)) as [->|Hkn].
+    + rewrite !bool_decide_eq_true_2 by lia.
+      cbn [open_value].
+      destruct (decide (S n = S n)) as [_|Hbad]; [|congruence].
+      destruct (decide (n = n)) as [_|Hbad]; [reflexivity|congruence].
+    + destruct (bool_decide (cutoff <= n)) eqn:Hcut.
+      * apply bool_decide_eq_true_1 in Hcut.
+        cbn [open_value value_shift].
+        rewrite bool_decide_eq_true_2 by exact Hcut.
+        destruct (decide (S k = S n)) as [Hsk|_]; [inversion Hsk; congruence|].
+        destruct (decide (k = n)) as [Hbad|_]; [congruence|reflexivity].
+      * apply bool_decide_eq_false_1 in Hcut.
+        cbn [open_value value_shift].
+        rewrite bool_decide_eq_false_2 by exact Hcut.
+        destruct (decide (S k = n)) as [Hsk|_]; [lia|].
+        destruct (decide (k = n)) as [Hbad|_]; [congruence|reflexivity].
+  - rewrite H by lia. reflexivity.
+  - rewrite H by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
+Qed.
+
+Lemma value_shift_open_value_fvar v k cutoff x :
+  cutoff <= k ->
+  open_value (S k) (vfvar x) (value_shift cutoff v) =
+  value_shift cutoff (open_value k (vfvar x) v).
+Proof. exact (fst value_tm_shift_open_fvar_mutual v k cutoff x). Qed.
+
+Lemma tm_shift_open_tm_fvar e k cutoff x :
+  cutoff <= k ->
+  open_tm (S k) (vfvar x) (tm_shift cutoff e) =
+  tm_shift cutoff (open_tm k (vfvar x) e).
+Proof. exact (snd value_tm_shift_open_fvar_mutual e k cutoff x). Qed.
+
+Lemma value_tm_shift_open_fvar_before_mutual :
+  (forall v k cutoff x,
+      k < cutoff ->
+      open_value k (vfvar x) (value_shift cutoff v) =
+      value_shift cutoff (open_value k (vfvar x) v)) *
+  (forall e k cutoff x,
+      k < cutoff ->
+      open_tm k (vfvar x) (tm_shift cutoff e) =
+      tm_shift cutoff (open_tm k (vfvar x) e)).
+Proof.
+  apply value_tm_mutind; cbn [open_value open_tm value_shift tm_shift];
+    intros; try reflexivity.
+  - destruct (bool_decide (cutoff <= n)) eqn:Hcut.
+    + apply bool_decide_eq_true_1 in Hcut.
+      cbn [open_value value_shift].
+      destruct (decide (k = S n)) as [Hbad|_]; [lia|].
+      destruct (decide (k = n)) as [->|Hkn]; [lia|].
+      cbn [value_shift]. rewrite bool_decide_eq_true_2 by exact Hcut.
+      reflexivity.
+    + apply bool_decide_eq_false_1 in Hcut.
+      cbn [open_value value_shift].
+      destruct (decide (k = n)) as [->|Hkn]; [reflexivity|].
+      cbn [value_shift]. rewrite bool_decide_eq_false_2 by exact Hcut.
+      reflexivity.
+  - rewrite H by lia. reflexivity.
+  - rewrite H by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
+Qed.
+
+Lemma value_shift_open_value_fvar_before v k cutoff x :
+  k < cutoff ->
+  open_value k (vfvar x) (value_shift cutoff v) =
+  value_shift cutoff (open_value k (vfvar x) v).
+Proof. exact (fst value_tm_shift_open_fvar_before_mutual v k cutoff x). Qed.
+
+Lemma tm_shift_open_tm_fvar_before e k cutoff x :
+  k < cutoff ->
+  open_tm k (vfvar x) (tm_shift cutoff e) =
+  tm_shift cutoff (open_tm k (vfvar x) e).
+Proof. exact (snd value_tm_shift_open_fvar_before_mutual e k cutoff x). Qed.
+
+Lemma value_tm_shift_lc_id_mutual :
+  (forall v, lc_value v -> forall k, value_shift k v = v) /\
+  (forall e, lc_tm e -> forall k, tm_shift k e = e).
+Proof.
+  apply lc_mutind; cbn [value_shift tm_shift]; intros; try reflexivity.
+  - f_equal.
+    pose (x := fresh_for (L ∪ fv_tm e)).
+    assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_tm e)); set_solver).
+    assert (Hxfv : x ∉ fv_tm e) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_tm e)); set_solver).
+    assert (Hopen :
+      open_tm 0 (vfvar x) (tm_shift (S k) e) =
+      open_tm 0 (vfvar x) e).
+    {
+      rewrite tm_shift_open_tm_fvar_before by lia.
+      rewrite H by exact HxL.
+      reflexivity.
+    }
+    apply (f_equal (close_tm x 0)) in Hopen.
+    rewrite !close_open_var_tm in Hopen by (rewrite ?tm_shift_fv; exact Hxfv).
+    exact Hopen.
+  - f_equal.
+    pose (x := fresh_for (L ∪ fv_value vf)).
+    assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_value vf)); set_solver).
+    assert (Hxfv : x ∉ fv_value vf) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_value vf)); set_solver).
+    assert (Hopen :
+      open_value 0 (vfvar x) (value_shift (S k) vf) =
+      open_value 0 (vfvar x) vf).
+    {
+      rewrite value_shift_open_value_fvar_before by lia.
+      rewrite H by exact HxL.
+      reflexivity.
+    }
+    apply (f_equal (close_value x 0)) in Hopen.
+    rewrite !close_open_var_value in Hopen by (rewrite ?value_shift_fv; exact Hxfv).
+    exact Hopen.
+  - rewrite H. reflexivity.
+  - f_equal.
+    + rewrite H. reflexivity.
+    + pose (x := fresh_for (L ∪ fv_tm e2)).
+      assert (HxL : x ∉ L) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_tm e2)); set_solver).
+      assert (Hxfv : x ∉ fv_tm e2) by (subst x; pose proof (fresh_for_not_in (L ∪ fv_tm e2)); set_solver).
+      assert (Hopen :
+        open_tm 0 (vfvar x) (tm_shift (S k) e2) =
+        open_tm 0 (vfvar x) e2).
+      {
+        rewrite tm_shift_open_tm_fvar_before by lia.
+        rewrite H0 by exact HxL.
+        reflexivity.
+      }
+      apply (f_equal (close_tm x 0)) in Hopen.
+      rewrite !close_open_var_tm in Hopen by (rewrite ?tm_shift_fv; exact Hxfv).
+      exact Hopen.
+  - rewrite H. reflexivity.
+  - rewrite H, H0. reflexivity.
+  - rewrite H, H0, H1. reflexivity.
+Qed.
+
+Lemma value_shift_lc_id k v :
+  lc_value v ->
+  value_shift k v = v.
+Proof. intros Hlc. exact (proj1 value_tm_shift_lc_id_mutual v Hlc k). Qed.
+
+Lemma tm_shift_lc_id k e :
+  lc_tm e ->
+  tm_shift k e = e.
+Proof. intros Hlc. exact (proj2 value_tm_shift_lc_id_mutual e Hlc k). Qed.
 
 Lemma fv_tapp_tm ef vx :
   fv_tm (tapp_tm ef vx) = fv_tm ef ∪ fv_value vx.
 Proof.
-  induction ef; simpl; set_solver.
+  unfold tapp_tm. cbn [fv_tm fv_value].
+  rewrite value_shift_fv. set_solver.
 Qed.
 
 Lemma tm_swap_atom_tapp_tm x y ef vx :
   tm_swap_atom x y (tapp_tm ef vx) =
   tapp_tm (tm_swap_atom x y ef) (value_swap_atom x y vx).
 Proof.
-  induction ef; simpl; try reflexivity.
-  rewrite IHef2. reflexivity.
+  unfold tapp_tm. cbn [tm_swap_atom value_swap_atom].
+  rewrite value_shift_swap_atom. reflexivity.
 Qed.
 
 Lemma tm_swap_atom_tapp_tm_fvar_fresh x y ef :
@@ -49,14 +264,11 @@ Lemma open_tapp_tm_lc_arg ef vx k u :
   lc_value vx →
   open_tm k u (tapp_tm ef vx) = tapp_tm (open_tm k u ef) vx.
 Proof.
-  intros Hvx. revert k.
-  induction ef; intros k; simpl;
-    try rewrite (open_rec_lc_value vx Hvx k u);
-    try rewrite (open_rec_lc_value vx Hvx (S k) u);
-    try (destruct (decide (S k = 0)); [lia | reflexivity]);
-    try reflexivity.
-  rewrite IHef2.
-  reflexivity.
+  intros Hvx.
+  unfold tapp_tm. cbn [open_tm open_value].
+  rewrite value_shift_lc_id by exact Hvx.
+  rewrite open_rec_lc_value by exact Hvx.
+  destruct (decide (S k = 0)); [lia|reflexivity].
 Qed.
 
 Lemma body_tapp_tm_body vx :
@@ -74,28 +286,17 @@ Lemma lc_tapp_tm ef vx :
   lc_value vx →
   lc_tm (tapp_tm ef vx).
 Proof.
-  intros Hef. revert vx.
-  induction Hef; intros vx Hvx; simpl.
-  - repeat constructor; eauto.
-  - eapply LC_lete; [exact Hef |].
-    intros x Hx.
-    rewrite open_tapp_tm_lc_arg by exact Hvx.
-    eauto.
-  - eapply LC_lete with (L := ∅); [constructor; exact H |].
-    intros x _.
-    change (lc_tm (tapp (vfvar x) (open_value 0 (vfvar x) vx))).
-    rewrite (open_rec_lc_value vx Hvx 0 (vfvar x)).
-    repeat constructor. exact Hvx.
-  - eapply LC_lete with (L := ∅); [constructor; assumption |].
-    intros x _.
-    change (lc_tm (tapp (vfvar x) (open_value 0 (vfvar x) vx))).
-    rewrite (open_rec_lc_value vx Hvx 0 (vfvar x)).
-    repeat constructor. exact Hvx.
-  - eapply LC_lete with (L := ∅); [constructor; assumption |].
-    intros x _.
-    change (lc_tm (tapp (vfvar x) (open_value 0 (vfvar x) vx))).
-    rewrite (open_rec_lc_value vx Hvx 0 (vfvar x)).
-    repeat constructor. exact Hvx.
+  intros Hef Hvx.
+  unfold tapp_tm.
+  eapply LC_lete with (L := ∅); [exact Hef|].
+  intros x _.
+  change (lc_tm (tapp (vfvar x)
+    (open_value 0 (vfvar x) (value_shift 0 vx)))).
+  assert (Hshift_lc : lc_value (value_shift 0 vx)).
+  { rewrite value_shift_lc_id by exact Hvx. exact Hvx. }
+  rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar x)).
+  rewrite value_shift_lc_id by exact Hvx.
+  repeat constructor. exact Hvx.
 Qed.
 
 Lemma basic_typing_tapp_tm Γ ef vx Tx T :
@@ -103,38 +304,22 @@ Lemma basic_typing_tapp_tm Γ ef vx Tx T :
   Γ ⊢ᵥ vx ⋮ Tx →
   Γ ⊢ₑ tapp_tm ef vx ⋮ T.
 Proof.
-  intros Hef Hvx. remember (Tx →ₜ T) as Tf eqn:HTf.
-  revert Tx T vx Hvx HTf.
-  induction Hef; intros Tx0 T0 vx Hvx HTf; subst; simpl.
-  - eapply TT_App; eauto.
-  - eapply TT_Let with (T1 := T1) (L := L ∪ fv_value vx ∪ dom Γ).
-    + exact Hef.
-    + intros x Hx.
-      change (<[x:=T1]> Γ ⊢ₑ open_tm 0 (vfvar x) (tapp_tm e2 vx) ⋮ T0).
-      rewrite open_tapp_tm_lc_arg by exact (typing_value_lc _ _ _ Hvx).
-      refine (H0 x _ Tx0 T0 vx _ _).
-      * set_solver.
-      * eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
-      * reflexivity.
-  - discriminate.
-  - eapply TT_Let with (L := dom Γ ∪ fv_value vx).
-    + eapply TT_App; eauto.
-    + intros x Hx.
-      cbn.
-      rewrite (open_rec_lc_value vx (typing_value_lc _ _ _ Hvx) 0 (vfvar x)).
-      eapply TT_App.
-      * eapply VT_FVar. rewrite lookup_insert.
-        destruct (decide (x = x)); [reflexivity | congruence].
-      * eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
-  - eapply TT_Let with (L := dom Γ ∪ fv_value vx).
-    + eapply TT_Match; eauto.
-    + intros x Hx.
-      cbn.
-      rewrite (open_rec_lc_value vx (typing_value_lc _ _ _ Hvx) 0 (vfvar x)).
-      eapply TT_App.
-      * eapply VT_FVar. rewrite lookup_insert.
-        destruct (decide (x = x)); [reflexivity | congruence].
-      * eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
+  intros Hef Hvx.
+  unfold tapp_tm.
+  eapply TT_Let with (L := dom Γ ∪ fv_value vx).
+  - exact Hef.
+  - intros x Hx.
+    change (<[x:=Tx →ₜ T]> Γ ⊢ₑ
+      tapp (vfvar x) (open_value 0 (vfvar x) (value_shift 0 vx)) ⋮ T).
+    assert (Hshift_lc : lc_value (value_shift 0 vx)).
+    { rewrite value_shift_lc_id by exact (typing_value_lc _ _ _ Hvx).
+      exact (typing_value_lc _ _ _ Hvx). }
+    rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar x)).
+    rewrite value_shift_lc_id by exact (typing_value_lc _ _ _ Hvx).
+    eapply TT_App.
+    + eapply VT_FVar. rewrite lookup_insert.
+      destruct (decide (x = x)); [reflexivity | congruence].
+    + eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
 Qed.
 
 Lemma basic_typing_tret_fvar_insert Γ x T :

@@ -36,6 +36,34 @@ Proof.
   unfold lvars_open. apply swap_involutive.
 Qed.
 
+Lemma lvars_open_elem_open k x v D :
+  logic_var_open k x v ∈ lvars_open k x D <-> v ∈ D.
+Proof.
+  rewrite lvars_open_unfold. rewrite elem_of_gset_swap.
+  change (key_swap (LVBound k) (LVFree x) (logic_var_open k x v))
+    with (logic_var_open k x (logic_var_open k x v)).
+  rewrite logic_var_open_involutive. reflexivity.
+Qed.
+
+Lemma lvars_open_subseteq_iff k x D E :
+  lvars_open k x D ⊆ lvars_open k x E <-> D ⊆ E.
+Proof.
+  split; intros Hsub v Hv.
+  - apply lvars_open_elem_open with (k := k) (x := x).
+    apply Hsub.
+    apply lvars_open_elem_open. exact Hv.
+  - rewrite lvars_open_unfold in Hv.
+    apply elem_of_gset_swap in Hv.
+    rewrite lvars_open_unfold. apply elem_of_gset_swap.
+    apply Hsub. exact Hv.
+Qed.
+
+Lemma lvars_open_union k x D E :
+  lvars_open k x (D ∪ E) = lvars_open k x D ∪ lvars_open k x E.
+Proof.
+  rewrite !lvars_open_unfold, gset_swap_union. reflexivity.
+Qed.
+
 Lemma lvars_open_fresh_index k x D :
   k ∉ lvars_bv D ->
   x ∉ lvars_fv D ->
@@ -46,6 +74,33 @@ Proof.
   apply gset_swap_fresh.
   - intros Hbad. apply Hk. rewrite lvars_bv_elem. exact Hbad.
   - intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
+Qed.
+
+Lemma lvars_open_difference_bound k x D :
+  lvars_open k x (D ∖ {[LVBound k]}) =
+  lvars_open k x D ∖ {[LVFree x]}.
+Proof.
+  rewrite !lvars_open_unfold.
+  apply gset_swap_difference_l.
+Qed.
+
+Lemma lvars_bv_open_insert_dom k x D (η : gmap nat atom) :
+  lvars_bv (lvars_open k x D) ⊆ dom η ->
+  lvars_bv D ⊆ dom (<[k := x]> η).
+Proof.
+  intros Hsub n Hn.
+  destruct (decide (n = k)) as [->|Hnk].
+  - apply elem_of_dom. exists x. rewrite lookup_insert_eq. reflexivity.
+  - apply elem_of_dom.
+    assert (n ∈ lvars_bv (lvars_open k x D)) as Hopen.
+    {
+      rewrite lvars_bv_elem in Hn |- *.
+      rewrite lvars_open_unfold, gset_swap_elem.
+      rewrite eq_swap_fresh by congruence. exact Hn.
+    }
+    apply Hsub in Hopen.
+    apply elem_of_dom in Hopen as [y Hy].
+    exists y. rewrite lookup_insert_ne by congruence. exact Hy.
 Qed.
 
 Lemma lvars_fv_open_prime_except k x D :
