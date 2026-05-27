@@ -46,7 +46,7 @@ wfw_product, wfw_sum, wfw_restrict, wfw_fiber : WfWorld → … → WfWorld  (pu
 
 ## Why
 
-- Fixes `ca_le_refl` in `ChoiceAlgebra`: when the carrier is `WfWorld`,
+- Fixes `ca_le_refl` in `ContextAlgebra`: when the carrier is `WfWorld`,
   `res_le_refl w` is provable because `wft_pf w : wf_world w` is in scope.
 - Partial orders (`⊑`, `PreOrder`, `AntiSymm`) are registered on `WfWorld`
   using stdpp conventions (see skill 12).

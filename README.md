@@ -1,7 +1,7 @@
 # UnderLogicAndType
 
 Rocq formalization accompanying the POPL 2027 paper
-*"Underapproximate Types"* (Choice Logic and Choice Types).
+*"Underapproximate Types"* (Context Logic and Context Types).
 
 ## Dependencies
 
@@ -50,30 +50,30 @@ The formalization is split into several libraries with the following dependency
 shape:
 
 ```
-ChoiceBase ──→ ChoicePrelude ──→ ChoiceAlgebra ──→ ChoiceLogic
+ContextBase ──→ ContextPrelude ──→ ContextAlgebra ──→ ContextLogic
     │               │                  │                │
     │               └──────────────────┴────────────────┤
     │                                                    v
-    └────────→ CoreLang ─────────→ ChoiceTypeLanguage ──→ ChoiceBasicDenotation
+    └────────→ CoreLang ─────────→ ContextTypeLanguage ──→ ContextBasicDenotation
                                                                   │
                                                                   v
                                                               Denotation
                                                                   │
                                                                   v
-                                                             ChoiceTyping
+                                                             ContextTyping
 
-LocallyNameless supports CoreLang, ChoiceTypeLanguage, and the denotation
+LocallyNameless supports CoreLang, ContextTypeLanguage, and the denotation
 proof files.
 ```
 
-Most libraries live under `<Library>/theories/`.  `ChoicePrelude/` and
+Most libraries live under `<Library>/theories/`.  `ContextPrelude/` and
 `LocallyNameless/` are top-level support libraries.  The current route splits
-the old monolithic choice-type layer into three pieces:
-`ChoiceTypeLanguage` for syntax and LN well-formedness,
-`ChoiceBasicDenotation` for basic store/world/term atoms, and `Denotation` for
-the recursive choice-type denotation.
+the old monolithic context-type layer into three pieces:
+`ContextTypeLanguage` for syntax and LN well-formedness,
+`ContextBasicDenotation` for basic store/world/term atoms, and `Denotation` for
+the recursive context-type denotation.
 
-### `ChoicePrelude/` — Shared prelude
+### `ContextPrelude/` — Shared prelude
 
 Common infrastructure shared by the algebra, logic, and language layers.
 It contains no program syntax and no dependency on `CoreLang`.
@@ -83,21 +83,21 @@ It contains no program syntax and no dependency on `CoreLang`.
 | `Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, swap/rekey classes, and `ValueSig` |
 | `Store*.v` | Polymorphic `StoreA` infrastructure, atom/lvar specializations, restriction, compatibility, and bind/rekey operations |
 
-### `ChoiceAlgebra/` — The algebraic layer
+### `ContextAlgebra/` — The algebraic layer
 
-Resources and the abstract choice algebra.  Store operations live in
-`ChoicePrelude/Store.v`, so this layer no longer carries a store wrapper.
+Resources and the abstract context algebra.  Store operations live in
+`ContextPrelude/Store.v`, so this layer no longer carries a store wrapper.
 
 | File | Contents |
 |------|----------|
 | `Resource*.v` | `WorldA`/`WfWorldA`, resource restriction, algebraic order, sum/product, fiber extensions, and atom-specialized interfaces |
 | `ResourceNotation.v` / `ResourceTactics.v` | Proof-facing notation and focused resource tactics |
 
-### `ChoiceLogic/` — The logic layer
+### `ContextLogic/` — The logic layer
 
-Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
+Formula syntax and the satisfaction relation, built on top of `ContextAlgebra`.
 The logic layer is deliberately independent of `CoreLang`: program expressions
-are embedded into formulas later, by `ChoiceBasicDenotation`, through logic
+are embedded into formulas later, by `ContextBasicDenotation`, through logic
 qualifier atoms.
 
 | File | Contents |
@@ -120,11 +120,11 @@ Small Ltac support and reusable typeclasses for locally-nameless metatheory.
 The formalization intentionally uses two different binding representations in
 different layers.
 
-### Core language, choice types, and logic formulas: locally nameless
+### Core language, context types, and logic formulas: locally nameless
 
 `CoreLang` terms and values use the standard locally-nameless (LN)
 representation: free variables are `atom`s and binders are represented by
-natural-number bound variables.  `ChoiceTypeLanguage` and `ChoiceLogic` now use
+natural-number bound variables.  `ContextTypeLanguage` and `ContextLogic` now use
 the same discipline for type/qualifier/formula binders.  Free logical
 variables are `LVFree x`; bound coordinates are `LVBound k`.
 
@@ -138,7 +138,7 @@ This representation is good for syntax with real binders:
 
 The main cost is bookkeeping around open/close operations.  In particular,
 type qualifiers may be non-closed while they sit under a binder, so
-`ChoiceTypeLanguage/theories/Qualifier.v` keeps the qualifier domain explicitly.
+`ContextTypeLanguage/theories/Qualifier.v` keeps the qualifier domain explicitly.
 Logic qualifiers are also dependent-domain predicates over lvar-keyed worlds.
 Opening a qualifier or formula swaps `LVBound k` with `LVFree x`; the semantic
 predicate swaps the incoming lworld back before interpreting it.
@@ -146,8 +146,8 @@ predicate swaps the incoming lworld back before interpreting it.
 In short:
 
 - Core language binders use LN with `value` payloads.
-- Choice-type, qualifier, and formula binders use LN with `atom` payloads.
-- Type denotation bridges terms and formulas by embedding totality, result,
+- Context-type, qualifier, and formula binders use LN with `atom` payloads.
+- Context-type denotation bridges terms and formulas by embedding totality, result,
   basic-typing, and qualifier predicates as shallow logic atoms.
 
 ### `CoreLang/` — The programming language
@@ -179,12 +179,12 @@ match.
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
 
-### `ChoiceTypeLanguage/` — Choice type syntax and LN metatheory
+### `ContextTypeLanguage/` — Context type syntax and LN metatheory
 
-Choice type syntax layered on top of `CoreLang`, but without semantic
+Context type syntax layered on top of `CoreLang`, but without semantic
 denotation.
 
-Dependent choice types and qualifiers use an atom-only opening discipline:
+Dependent context types and qualifiers use an atom-only opening discipline:
 locally-nameless bound variables in type refinements are opened with a fresh
 `atom`, not an arbitrary `value`.  Accordingly, the function-application
 typing rules only apply directly to arguments of the form `vfvar x`; an
@@ -194,49 +194,47 @@ with store-based lookup while preserving expressiveness through let-binding.
 
 | File | Contents |
 |------|----------|
-| File family | Contents |
-|-------------|----------|
 | `Qualifier.v` | Dependent-domain type qualifiers over lvar-keyed stores |
-| `Syntax*.v` | Choice type and context syntax, erasure, lifting, lvar/fv/open facts |
+| `Syntax*.v` | Context type and context syntax, erasure, lifting, lvar/fv/open facts |
 | `LtyEnv*.v` / `Env.v` | Lvar-keyed type environments, atom projection, typed binder insertion |
 | `WellFormed.v` / `Interface.v` | Basic qualifier/type/context well-scopedness API |
 | `Notation.v` / `Sugar.v` | Public syntax notation and small derived type forms |
 
-### `ChoiceBasicDenotation/` — Basic semantic atoms
+### `ContextBasicDenotation/` — Basic semantic atoms
 
 Store/world typing, expression totality/result atoms, and the formulas that
-embed CoreLang basic typing and type-qualifier semantics into `ChoiceLogic`.
+embed CoreLang basic typing and type-qualifier semantics into `ContextLogic`.
 
 | File family | Contents |
 |-------------|----------|
 | `StoreTyping.v` | `storeA_has_type`, `worldA_has_type`, typed extensions, and `basic_world_formula` |
 | `Term*.v` | Expression evaluation, totality, result extensions, and tlet operational bridges |
 | `Qualifier.v` | Interpreting type qualifiers as logic qualifiers over lworlds |
-| `BasicTypingFormula.v` | Logic atoms for choice-type well-formedness and CoreLang basic typing |
+| `BasicTypingFormula.v` | Logic atoms for context-type well-formedness and CoreLang basic typing |
 | `Notation.v` / `Interface.v` | Value-specialized aliases and public re-export |
 
-### `Denotation/` — Recursive choice-type denotation
+### `Denotation/` — Recursive context-type denotation
 
 The gas-indexed denotation `denot_ty_lvar_gas`, the atom-context wrapper
 `denot_ty`, context denotation, and the current direct TLet proof.
 
 | File family | Contents |
 |-------------|----------|
-| `TypeDenotation*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
+| `ContextTypeDenotation*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
 | `Context.v` | Context denotation and denotation instances |
 | `TLetSupport.v` / `TLet.v` | Shared TLet support tactics and the TLet introduction theorem |
 | `Notation.v` | Denotation-level notation (`m ⊨ φ`, `φ ⊫ ψ`, value-specialized aliases) |
 
-### `ChoiceTyping/` — Paper-level typing layer
+### `ContextTyping/` — Paper-level typing layer
 
 The paper-level typing infrastructure sits above the syntax and denotation
 layers.  It imports `Denotation` directly instead of going through the old
-ChoiceType denotation stack.
+Context-type denotation stack.
 
 The current declarative rules follow the paper's bunched presentation more
 closely:
 
-- every typing constructor carries an explicit `choice_typing_wf` side
+- every typing constructor carries an explicit `context_typing_wf` side
   condition for the conclusion, packaging context/type well-formedness together
   with erased Core basic typing;
 - constants have precise refinement types, i.e. the intersection of over and
@@ -249,7 +247,7 @@ closely:
   without the older context-hole/`ToOver` premise;
 - boolean `tmatch` is split into three rules: both branches reachable, true
   only, and false only.  Unreachable branches are still required to be
-  well-typed after erasure, but they do not contribute a ChoiceTyping
+  well-typed after erasure, but they do not contribute a ContextTyping
   context/type branch.
 
 | File | Contents |

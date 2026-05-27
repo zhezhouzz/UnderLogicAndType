@@ -1,13 +1,13 @@
 # Skill: Formula atoms as logic qualifiers
 
 > Priority: P3 historical/reference.  This describes the pre-LN / early
-> shallow-atom route.  Current ChoiceLogic uses LN formulas and shallow atoms
+> shallow-atom route.  Current ContextLogic uses LN formulas and shallow atoms
 > such as `expr_result_formula`, `type_qualifier_formula`, and
 > `basic_world_formula`; do not use this note as the current design source.
 
 ## Current convention
 
-`ChoiceLogic.Formula` is not parameterized by an arbitrary atom type.  Atomic
+`ContextLogic.Formula` is not parameterized by an arbitrary atom type.  Atomic
 formulas store logic qualifiers:
 
 ```coq
@@ -25,7 +25,7 @@ store environment.
 
 ## Qualifier embedding
 
-ChoiceType still has a type-level shallow qualifier:
+Context type layer still has a context-type shallow qualifier:
 
 ```coq
 type_qualifier : Type
@@ -45,7 +45,7 @@ expr_logic_qual : tm -> atom -> logic_qualifier
 ```
 
 Use `FAtom (type_qualifier_to_logic q)` or `FAtom (expr_logic_qual e ν)` when
-translating into a Choice Logic formula.
+translating into a Context Logic formula.
 
 ## Logic qualifier denotation
 

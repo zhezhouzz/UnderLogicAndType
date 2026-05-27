@@ -38,7 +38,7 @@ Useful helpers:
   Use this in primitive-operation soundness instead of unfolding both
   multi-substitution and `steps_inv` in the same proof.
 
-Pattern for derived choice forms:
+Pattern for derived context forms:
 
 1. Prove the let body is a `body_tm` once, instead of proving specialized
    `lc_tm (tlete (tret ...) ...)` facts.
@@ -66,12 +66,12 @@ Lemma derived_left_result et ef v :
   lc_tm et ->
   lc_tm ef ->
   et ->* tret v ->
-  derived_choice et ef ->* tret v.
+  derived_context et ef ->* tret v.
 Proof.
   intros Het Hef Hsteps.
-  unfold derived_choice.
+  unfold derived_context.
   eapply reduction_lete_intro.
-  - apply body_of_choice_body; eauto.
+  - apply body_of_context_body; eauto.
   - apply generator_reaches_left.
   - change (tmatch vtrue (open_tm 0 vtrue et) (open_tm 0 vtrue ef) ->* tret v).
     rewrite (open_rec_lc_tm et Het 0 vtrue).

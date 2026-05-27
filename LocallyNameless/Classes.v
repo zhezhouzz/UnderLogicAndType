@@ -3,7 +3,7 @@
     Reusable theorem classes for locally-nameless developments.
 
     Unlike UnderType's original infrastructure, opening is parameterized by
-    the payload type [O].  CoreLang opens terms with values, while ChoiceType
+    the payload type [O].  CoreLang opens terms with values, while ContextType
     qualifiers and types open binders with atoms. *)
 
 From CoreLang Require Export Syntax.

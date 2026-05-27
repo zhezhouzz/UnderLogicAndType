@@ -1,15 +1,15 @@
-# Partial Choice Algebra Remaining Work
+# Partial Context Algebra Remaining Work
 
 > Priority: P3 historical/reference.  This records an old branch checkpoint.
-> Check the current `ChoiceAlgebra` and `ChoiceLogic` files before acting on any
+> Check the current `ContextAlgebra` and `ContextLogic` files before acting on any
 > listed "remaining" work.
 
 This note records the unfinished proof work left on
-`codex/partial-choice-algebra` before switching to the instantiation migration.
+`codex/partial-context-algebra` before switching to the instantiation migration.
 
 ## Completed on the Branch
 
-- `ChoiceAlgebra` operations now expose partial definedness:
+- `ContextAlgebra` operations now expose partial definedness:
   - `ca_times_def` is `world_compat`.
   - `ca_plus_def` is `raw_sum_defined`.
   - `ca_times` / `ca_plus` take explicit definedness proofs.
@@ -27,13 +27,13 @@ This note records the unfinished proof work left on
 
 ## Remaining Admits
 
-- `ChoiceAlgebra/theories/Resource.v`
+- `ContextAlgebra/theories/Resource.v`
   - `res_product_le_mono`.
     This should use the target compatibility proof `Hc' : world_compat w1' w2'`.
     A raw product monotonicity lemma without such a compatibility assumption is
     misleading for the partial operation and was removed.
 
-- `ChoiceLogic/theories/ChoiceLogicProps.v`
+- `ContextLogic/theories/ContextLogicProps.v`
   - `forall_mono` and `exists_mono`.
     These appear to need a semantic rename/entailment lemma, because the
     cofinite semantics checks `formula_rename_atom x y p`.
@@ -45,11 +45,11 @@ This note records the unfinished proof work left on
 
 - Keep partial operations partial.  Do not repair missing definedness by adding
   fallback worlds.
-- Prefer moving store/map facts into `ChoicePrelude/Store.v` instead of proving
+- Prefer moving store/map facts into `ContextPrelude/Store.v` instead of proving
   them inline in resource proofs.
 - When stdpp union associativity is overloaded, an explicit term such as
   `assoc_L (∪) s1 s2 s3` is more stable than bare `rewrite assoc_L`.
-- Choice Logic uses explicit atom binders with cofinite semantics, not locally
+- Context Logic uses explicit atom binders with cofinite semantics, not locally
   nameless binders.  For alpha-renaming/equivariance lemmas, use a
   nominal-style `swap`/finite-permutation operation rather than the existing
   covering `rename`.  Covering rename (`x ↦ y`, deleting or overwriting the old
@@ -72,7 +72,7 @@ This note records the unfinished proof work left on
   `aset_swap x y {[atom_swap x y z]}`, add a small transport lemma in
   `Resource.v` instead of leaving a local `wfworld_ext/world_ext` block in
   `Formula.v`.
-- In Choice Logic monotonicity proofs, the common pattern
+- In Context Logic monotonicity proofs, the common pattern
   “rename entailment at a fresh atom, then adjust fuel” should go through
   `entails_rename_atom_fresh_fuel`.  This avoids four near-identical
   `pose proof ...; assert Hp_exact ...; rewrite formula_rename_preserves_measure`

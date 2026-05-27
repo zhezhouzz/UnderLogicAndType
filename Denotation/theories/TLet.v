@@ -3,13 +3,13 @@
     The key [tlet] introduction shape for the new denotation route. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import TypeDenotation TLetSupport.
+From Denotation Require Import ContextTypeDenotation TLetSupport.
 
 Section TLetDenotation.
 Lemma tlet_intro_denotation_gas_zero
     (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
-    (τ : choice_ty) :
+    (τ : context_ty) :
   lty_env_closed Σ ->
   lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
   lty_env_to_atom_env Σ ⊢ₑ (tlete e1 e2) ⋮ erase_ty τ ->
@@ -17,7 +17,7 @@ Lemma tlet_intro_denotation_gas_zero
   m ⊨ expr_total_formula e1 ->
   m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
   LVFree x ∉ dom Σ ->
-  LVFree x ∉ choice_ty_lvars τ ->
+  LVFree x ∉ context_ty_lvars τ ->
   res_extend_by m Fx mx ->
   mx ⊨ denot_ty_lvar_gas 0
     (<[LVFree x := T1]> Σ) τ (e2 ^^ x) ->
@@ -29,10 +29,10 @@ Proof.
   destruct Hmx as [[Hmx_wf [Hmx_world [Hmx_basic Hmx_total]]] _].
   split.
   - split.
-    + apply choice_ty_wf_formula_models_iff.
+    + apply context_ty_wf_formula_models_iff.
     apply basic_world_formula_models_iff in Hbase_world
       as [Hlc_base [Hscope_base _]].
-    apply choice_ty_wf_formula_models_iff in Hmx_wf
+    apply context_ty_wf_formula_models_iff in Hmx_wf
       as [_ [_ [Hvars_mx Hshape]]].
     split; [exact Hlc_base|].
     split; [exact Hscope_base|].
@@ -86,14 +86,14 @@ Qed.
 Lemma tlet_intro_denotation
     (gas : nat) (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
-    (τ : choice_ty) :
+    (τ : context_ty) :
   lty_env_closed Σ ->
   lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
 	  lty_env_to_atom_env Σ ⊢ₑ (tlete e1 e2) ⋮ erase_ty τ ->
 		  expr_result_extension_witness e1 x Fx ->
 		  m ⊨ expr_total_formula e1 ->
 		  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
-		  LVFree x ∉ dom Σ ∪ choice_ty_lvars τ ->
+		  LVFree x ∉ dom Σ ∪ context_ty_lvars τ ->
 		  res_extend_by m Fx mx ->
 	  mx ⊨ denot_ty_lvar_gas gas
 	    (<[LVFree x := T1]> Σ) τ (e2 ^^ x) ->
@@ -108,7 +108,7 @@ Proof.
 		       [He1], [Htotal], [HΣ], [Hfresh], and the guard already present in
 		       [Hmx]. *)
 				    assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-				    assert (Hxτ : LVFree x ∉ choice_ty_lvars τ) by tlet_support_solver.
+				    assert (Hxτ : LVFree x ∉ context_ty_lvars τ) by tlet_support_solver.
 				    eapply tlet_intro_denotation_gas_zero; eauto.
   - destruct τ as [b φ | b φ | τ1 τ2 | τ1 τ2 | τ1 τ2 | τx τr | τx τr];
       cbn [denot_ty_lvar_gas] in Hmx |- *.
@@ -116,7 +116,7 @@ Proof.
 	      normalize_models_ands_in Hmx; normalize_models_ands_goal.
 		      destruct Hmx as [Hmx_guard Hmx_over_body].
 		      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-		      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTOver b φ))
+		      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTOver b φ))
 		        by tlet_support_solver.
 		      assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
 		        (<[LVFree x := T1]> Σ) (CTOver b φ) (e2 ^^ x)).
@@ -133,7 +133,7 @@ Proof.
 		        Hmx_zero) as Hm_zero.
 		      assert (Hguard_m :
 		        m ⊨ FAnd
-		          (choice_ty_wf_formula
+		          (context_ty_wf_formula
 		            (denot_relevant_env Σ (CTOver b φ) (tlete e1 e2))
 		            (CTOver b φ))
 		          (FAnd
@@ -220,7 +220,7 @@ Proof.
 	                   denot_relevant_lvars.
 	                 change (lvars_of_atoms (fv_tm (tlete e1 e2)) ⊆
 	                   dom (storeA_restrict (Σ : gmap logic_var ty)
-	                     (choice_ty_lvars (CTOver b φ) ∪
+	                     (context_ty_lvars (CTOver b φ) ∪
 	                      tm_lvars (tlete e1 e2)))).
 	                 rewrite storeA_restrict_dom.
 	                 intros v Hv.
@@ -248,7 +248,7 @@ Proof.
 		      normalize_models_ands_in Hmx; normalize_models_ands_goal.
 		      destruct Hmx as [Hmx_guard Hmx_under_body].
 		      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-		      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTUnder b φ))
+		      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTUnder b φ))
 		        by tlet_support_solver.
 		      assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
 		        (<[LVFree x := T1]> Σ) (CTUnder b φ) (e2 ^^ x)).
@@ -265,7 +265,7 @@ Proof.
 		        Hmx_zero) as Hm_zero.
 		      assert (Hguard_m :
 		        m ⊨ FAnd
-		          (choice_ty_wf_formula
+		          (context_ty_wf_formula
 		            (denot_relevant_env Σ (CTUnder b φ) (tlete e1 e2))
 		            (CTUnder b φ))
 		          (FAnd
@@ -352,7 +352,7 @@ Proof.
 		                denot_relevant_lvars.
 		              change (lvars_of_atoms (fv_tm (tlete e1 e2)) ⊆
 		                dom (storeA_restrict (Σ : gmap logic_var ty)
-		                  (choice_ty_lvars (CTUnder b φ) ∪
+		                  (context_ty_lvars (CTUnder b φ) ∪
 		                   tm_lvars (tlete e1 e2)))).
 		              rewrite storeA_restrict_dom.
 		              intros v Hv.
@@ -379,7 +379,7 @@ Proof.
     + normalize_models_ands_in Hmx; normalize_models_ands_goal.
       destruct Hmx as [Hmx_guard Hmx_inter].
       assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTInter τ1 τ2))
+      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTInter τ1 τ2))
         by tlet_support_solver.
       assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
         (<[LVFree x := T1]> Σ) (CTInter τ1 τ2) (e2 ^^ x)).
@@ -409,10 +409,10 @@ Proof.
           - cbn [erase_ty] in Hlet. exact Hlet.
           - exact HFx.
           - exact Htotal.
-          - eapply basic_world_formula_denot_relevant_mono_choice;
+          - eapply basic_world_formula_denot_relevant_mono_context;
               [|exact Hbase_world].
-            cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-          - cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+            cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+          - cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
             set_solver.
           - exact Hext.
           - exact Hmx1.
@@ -427,17 +427,17 @@ Proof.
           - assert (Herase : erase_ty τ1 = erase_ty τ2).
             {
               destruct Hmx_guard as [Hwf _].
-              apply choice_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
-              cbn [choice_ty_shape_ok] in Hshape. tauto.
+              apply context_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
+              cbn [context_ty_shape_ok] in Hshape. tauto.
             }
             cbn [erase_ty] in Hlet.
             rewrite <- Herase. exact Hlet.
           - exact HFx.
           - exact Htotal.
-          - eapply basic_world_formula_denot_relevant_mono_choice;
+          - eapply basic_world_formula_denot_relevant_mono_context;
               [|exact Hbase_world].
-            cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-          - cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+            cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+          - cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
             set_solver.
           - exact Hext.
           - exact Hmx2.
@@ -446,7 +446,7 @@ Proof.
     + normalize_models_ands_in Hmx; normalize_models_ands_goal.
       destruct Hmx as [Hmx_guard Hmx_union].
       assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTUnion τ1 τ2))
+      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTUnion τ1 τ2))
         by tlet_support_solver.
       assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
         (<[LVFree x := T1]> Σ) (CTUnion τ1 τ2) (e2 ^^ x)).
@@ -463,7 +463,7 @@ Proof.
         Hmx_zero) as Hm_zero.
       assert (Hguard_m :
         m ⊨ FAnd
-          (choice_ty_wf_formula
+          (context_ty_wf_formula
             (denot_relevant_env Σ (CTUnion τ1 τ2) (tlete e1 e2))
             (CTUnion τ1 τ2))
           (FAnd
@@ -490,10 +490,10 @@ Proof.
           (denot_ty_lvar_gas gas Σ τ2 (tlete e1 e2))).
         -- eapply formula_fv_denot_ty_lvar_gas_scope_from_guard;
              [|exact Hguard_m].
-           cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
+           cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
         -- eapply formula_fv_denot_ty_lvar_gas_scope_from_guard;
              [|exact Hguard_m].
-           cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
+           cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
         -- intros Hmx1.
            eapply IH with
              (Σ := Σ) (T1 := T1) (e1 := e1) (e2 := e2)
@@ -503,10 +503,10 @@ Proof.
            ++ cbn [erase_ty] in Hlet. exact Hlet.
            ++ exact HFx.
            ++ exact Htotal.
-           ++ eapply basic_world_formula_denot_relevant_mono_choice;
+           ++ eapply basic_world_formula_denot_relevant_mono_context;
                 [|exact Hbase_world].
-              cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-           ++ cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+              cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+           ++ cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
               set_solver.
            ++ exact Hext.
            ++ exact Hmx1.
@@ -519,17 +519,17 @@ Proof.
            ++ assert (Herase : erase_ty τ1 = erase_ty τ2).
               {
                 destruct Hmx_guard as [Hwf _].
-                apply choice_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
-                cbn [choice_ty_shape_ok] in Hshape. tauto.
+                apply context_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
+                cbn [context_ty_shape_ok] in Hshape. tauto.
               }
               cbn [erase_ty] in Hlet.
               rewrite <- Herase. exact Hlet.
            ++ exact HFx.
            ++ exact Htotal.
-           ++ eapply basic_world_formula_denot_relevant_mono_choice;
+           ++ eapply basic_world_formula_denot_relevant_mono_context;
                 [|exact Hbase_world].
-              cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-           ++ cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+              cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+           ++ cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
               set_solver.
            ++ exact Hext.
            ++ exact Hmx2.
@@ -537,7 +537,7 @@ Proof.
 	    + normalize_models_ands_in Hmx; normalize_models_ands_goal.
 	      destruct Hmx as [Hmx_guard Hmx_sum].
 	      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-	      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTSum τ1 τ2))
+	      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTSum τ1 τ2))
 	        by tlet_support_solver.
 	      assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
 	        (<[LVFree x := T1]> Σ) (CTSum τ1 τ2) (e2 ^^ x)).
@@ -554,7 +554,7 @@ Proof.
 	        Hmx_zero) as Hm_zero.
 	      assert (Hguard_m :
 	        m ⊨ FAnd
-	          (choice_ty_wf_formula
+	          (context_ty_wf_formula
 	            (denot_relevant_env Σ (CTSum τ1 τ2) (tlete e1 e2))
 	            (CTSum τ1 τ2))
 	          (FAnd
@@ -595,10 +595,10 @@ Proof.
 		           ++ exact HFx.
 		           ++ eapply expr_total_formula_res_subset; [exact Hsub_m1 | exact Htotal].
 		           ++ eapply basic_world_formula_res_subset; [exact Hsub_m1 |].
-		              eapply basic_world_formula_denot_relevant_mono_choice;
+		              eapply basic_world_formula_denot_relevant_mono_context;
 		                [|exact Hbase_world].
-		              cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-	           ++ cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+		              cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+	           ++ cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
 	              set_solver.
 	           ++ exact Hext1.
 	           ++ exact Hn1.
@@ -612,18 +612,18 @@ Proof.
 	           ++ assert (Herase : erase_ty τ1 = erase_ty τ2).
 	              {
 	                destruct Hmx_guard as [Hwf _].
-	                apply choice_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
-	                cbn [choice_ty_shape_ok] in Hshape. tauto.
+	                apply context_ty_wf_formula_basic_lvars in Hwf as [_ Hshape].
+	                cbn [context_ty_shape_ok] in Hshape. tauto.
 	              }
 	              cbn [erase_ty] in Hlet.
 		              rewrite <- Herase. exact Hlet.
 		           ++ exact HFx.
 		           ++ eapply expr_total_formula_res_subset; [exact Hsub_m2 | exact Htotal].
 		           ++ eapply basic_world_formula_res_subset; [exact Hsub_m2 |].
-		              eapply basic_world_formula_denot_relevant_mono_choice;
+		              eapply basic_world_formula_denot_relevant_mono_context;
 		                [|exact Hbase_world].
-		              cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver.
-	           ++ cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh |- *.
+		              cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+	           ++ cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
 	              set_solver.
 	           ++ exact Hext2.
 	           ++ exact Hn2.
@@ -633,7 +633,7 @@ Proof.
 	      destruct Hmx_guard_parts as
 	        [Hmx_wf [Hmx_world [Hmx_basic_typing Hmx_total]]].
 	      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
-	      assert (Hxτ : LVFree x ∉ choice_ty_lvars (CTArrow τx τr))
+	      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTArrow τx τr))
 	        by tlet_support_solver.
 	      assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
 	        (<[LVFree x := T1]> Σ) (CTArrow τx τr) (e2 ^^ x)).
@@ -650,7 +650,7 @@ Proof.
 	        Hmx_zero) as Hm_zero.
 	      assert (Hguard_m :
 	        m ⊨ FAnd
-	          (choice_ty_wf_formula
+	          (context_ty_wf_formula
 	            (denot_relevant_env Σ (CTArrow τx τr) (tlete e1 e2))
 	            (CTArrow τx τr))
 	          (FAnd
@@ -740,9 +740,9 @@ Proof.
 	          assert (Hy_rel :
 	            y ∈ fv_cty (CTArrow τx τr) ∪ fv_tm (e2 ^^ x)).
 	          { apply Hrel. exact Hyfv. }
-	          unfold fv_cty, choice_ty_lvars in Hy_rel.
-	          cbn [choice_ty_lvars_at] in Hy_rel.
-	          rewrite lvars_fv_union, !choice_ty_lvars_fv_at in Hy_rel.
+	          unfold fv_cty, context_ty_lvars in Hy_rel.
+	          cbn [context_ty_lvars_at] in Hy_rel.
+	          rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hy_rel.
 	          exfalso. apply Hy.
 	          clear Hrel Hyfv HyD.
 	          apply elem_of_union in Hy_rel as [Hycty|Hye2x].
@@ -771,9 +771,9 @@ Proof.
 	          assert (Hy_rel :
 	            y ∈ fv_cty (CTArrow τx τr) ∪ fv_tm (tlete e1 e2)).
 	          { apply Hrel. exact Hyfv. }
-	          unfold fv_cty, choice_ty_lvars in Hy_rel.
-	          cbn [choice_ty_lvars_at fv_tm] in Hy_rel.
-	          rewrite lvars_fv_union, !choice_ty_lvars_fv_at in Hy_rel.
+	          unfold fv_cty, context_ty_lvars in Hy_rel.
+	          cbn [context_ty_lvars_at fv_tm] in Hy_rel.
+	          rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hy_rel.
 	          exfalso. apply Hy.
 	          clear Hrel Hyfv HyD.
 	          clear - Hy_rel. set_solver.
@@ -784,9 +784,9 @@ Proof.
 	        use_models_impl Hbody_after_outer Hbody_after_inner.
 	        {
 	          assert (Hxy0 : x <> y) by tlet_support_solver.
-	          assert (Hxτx : LVFree x ∉ choice_ty_lvars τx).
+	          assert (Hxτx : LVFree x ∉ context_ty_lvars τx).
 	          {
-	            cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh.
+	            cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
 	            set_solver.
 	          }
 	          assert (Hmy_arg_source :
@@ -862,16 +862,16 @@ Proof.
 		              with (X := denot_relevant_lvars (cty_open 0 y τr)
 		                (tapp_tm (e2 ^^ x) (vfvar y))).
 		            - reflexivity.
-		            - apply arrow_body_relevant_env_agree_from_basic_choice.
+		            - apply arrow_body_relevant_env_agree_from_basic_context_ty.
 		              + apply (proj2 (lc_lvars_no_bv _)).
 		                apply lty_env_closed_insert_free. exact HΣ.
 		              + change (LVFree y ∉ dom
 		                  ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
 		                    : gmap logic_var ty)).
 		                rewrite dom_insert_L. tlet_support_solver.
-		              + pose proof (choice_ty_wf_formula_basic_lvars _ _ _ Hmx_wf)
+		              + pose proof (context_ty_wf_formula_basic_lvars _ _ _ Hmx_wf)
 		                  as Hbasic_src_rel.
-			                eapply basic_choice_ty_lvars_mono;
+			                eapply basic_context_ty_lvars_mono;
 			                  [|exact Hbasic_src_rel].
 			                intros v Hv.
 			                change (v ∈ dom
@@ -1027,16 +1027,16 @@ Proof.
 	              exact Hworld.
 	            }
 	            assert (Hbasic_arrow_Σ :
-	              basic_choice_ty_lvars
+	              basic_context_ty_lvars
 	                (dom (Σ : gmap logic_var ty) : gset logic_var)
 	                (CTArrow τx τr)).
 	            {
 	              pose proof Hguard_m as Hguard_parts.
 	              repeat rewrite res_models_and_iff in Hguard_parts.
 	              destruct Hguard_parts as [Hwf _].
-	              pose proof (choice_ty_wf_formula_basic_lvars _ _ _ Hwf)
+	              pose proof (context_ty_wf_formula_basic_lvars _ _ _ Hwf)
 	                as Hbasic_rel.
-	              eapply basic_choice_ty_lvars_mono; [|exact Hbasic_rel].
+	              eapply basic_context_ty_lvars_mono; [|exact Hbasic_rel].
 	              apply denot_relevant_env_dom_subset_direct.
 	            }
 	            eapply basic_world_formula_arrow_body_from_source_and_arg.
@@ -1049,21 +1049,21 @@ Proof.
 	          - change (LVFree x ∉ dom
 	              ((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
 	                : gmap logic_var ty) ∪
-	              choice_ty_lvars (cty_open 0 y τr)).
+	              context_ty_lvars (cty_open 0 y τr)).
 	            rewrite dom_insert_L.
 	            assert (Hxτr_open :
-	              LVFree x ∉ choice_ty_lvars (cty_open 0 y τr)).
+	              LVFree x ∉ context_ty_lvars (cty_open 0 y τr)).
 	            {
 	              intros Hbad.
 	              apply lvars_fv_elem in Hbad.
 	              pose proof (cty_open_fv_subset 0 y τr x Hbad) as Hfvbad.
 	              cbn [fv_value] in Hfvbad.
-	              cbn [choice_ty_lvars choice_ty_lvars_at] in Hfresh.
+	              cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
 	              apply elem_of_union in Hfvbad as [Hxτr|Hxy].
 	              - apply Hfresh.
 	                apply elem_of_union_r. apply elem_of_union_r.
 	                apply lvars_fv_elem.
-	                rewrite choice_ty_lvars_fv_at. exact Hxτr.
+	                rewrite context_ty_lvars_fv_at. exact Hxτr.
 	              - assert (x <> y) by tlet_support_solver.
 	                set_solver.
 	            }
@@ -1090,16 +1090,16 @@ Proof.
 		          | ].
 		        rewrite open_tapp_tm_shift_bvar0_lc by tlet_lc_solver.
 		        assert (Hbasic_arrow_Σ_final :
-		          basic_choice_ty_lvars
+		          basic_context_ty_lvars
 		            (dom (Σ : gmap logic_var ty) : gset logic_var)
 		            (CTArrow τx τr)).
 		        {
 		          pose proof Hguard_m as Hguard_parts.
 		          repeat rewrite res_models_and_iff in Hguard_parts.
 		          destruct Hguard_parts as [Hwf _].
-		          pose proof (choice_ty_wf_formula_basic_lvars _ _ _ Hwf)
+		          pose proof (context_ty_wf_formula_basic_lvars _ _ _ Hwf)
 		            as Hbasic_rel.
-		          eapply basic_choice_ty_lvars_mono; [|exact Hbasic_rel].
+		          eapply basic_context_ty_lvars_mono; [|exact Hbasic_rel].
 		          apply denot_relevant_env_dom_subset_direct.
 		        }
 		        eapply res_models_denot_ty_lvar_gas_env_agree_on
@@ -1108,7 +1108,7 @@ Proof.
 		            (tapp_tm (tlete e1 e2) (vfvar y)));
 		          [ reflexivity
 		          | symmetry;
-		            apply arrow_body_relevant_env_agree_from_basic_choice;
+		            apply arrow_body_relevant_env_agree_from_basic_context_ty;
 		            [ apply (proj2 (lc_lvars_no_bv _)); exact HΣ
 		            | tlet_support_solver
 			            | exact Hbasic_arrow_Σ_final

@@ -5,12 +5,12 @@
 
 From LocallyNameless Require Export Classes Tactics.
 From CoreLang Require Export Syntax Sugar BasicTypingProps.
-From ChoiceAlgebra Require Export Resource ResourceExtensionCore.
-From ChoiceLogic Require Export Formula.
-From ChoiceTypeLanguage Require Export Interface.
-From ChoiceBasicDenotation Require Import Notation.
-From ChoiceBasicDenotation Require Export Interface.
-From ChoiceLogic Require Export FormulaTactics FormulaDerived FormulaForall
+From ContextAlgebra Require Export Resource ResourceExtensionCore.
+From ContextLogic Require Export Formula.
+From ContextTypeLanguage Require Export Interface.
+From ContextBasicDenotation Require Import Notation.
+From ContextBasicDenotation Require Export Interface.
+From ContextLogic Require Export FormulaTactics FormulaDerived FormulaForall
   FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).

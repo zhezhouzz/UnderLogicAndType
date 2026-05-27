@@ -11,8 +11,8 @@ Rocq 的 Section 机制：Section 结束时，只有在定义中**实际出现**
 ## 具体案例
 
 ```coq
-Section ChoiceLogic.
-  (* WorldT is imported from ChoicePrelude.Prelude. *)
+Section ContextLogic.
+  (* WorldT is imported from ContextPrelude.Prelude. *)
 
   Inductive Formula : Type :=
     | FForall (x : atom) (φ : Formula)

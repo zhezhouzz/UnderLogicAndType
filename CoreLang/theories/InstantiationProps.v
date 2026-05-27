@@ -5,7 +5,7 @@
     later syntactic categories can reuse the same multi-substitution facts once
     they provide the corresponding single-substitution lemmas. *)
 
-From ChoiceBase Require Import AtomEnv.
+From ContextBase Require Import AtomEnv.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
   LocallyNamelessExtra.
 From LocallyNameless Require Import Classes Tactics.

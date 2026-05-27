@@ -7,7 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
-From ChoiceBase Require Import LogicVar.
+From ContextBase Require Import LogicVar.
 
 (** ** Base and basic types *)
 

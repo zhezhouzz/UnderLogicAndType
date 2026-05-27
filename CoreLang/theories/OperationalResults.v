@@ -2,7 +2,7 @@
 
     Pure operational comparisons between open expressions.
 
-    These relations live outside Choice Logic and Choice Type.  Logic
+    These relations live outside Context Logic and Context Type.  Logic
     entailment follows the Kripke/domain-restriction order on worlds; it is not
     a same-domain subset relation on result sets.  For open terms, the result
     set is a relation from an input store domain [X] to possible results, so

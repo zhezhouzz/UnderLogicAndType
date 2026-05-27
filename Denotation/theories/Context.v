@@ -1,10 +1,10 @@
 (** * Denotation.Context
 
     Denotation of type contexts, expressed directly with the new recursive
-    choice-type denotation. *)
+    context-type denotation. *)
 
 From Denotation Require Export Notation.
-From Denotation Require Import TypeDenotation.
+From Denotation Require Import ContextTypeDenotation.
 
 Section ContextDenotation.
 
@@ -37,18 +37,18 @@ Definition denot_ctx_in_env (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
       (denot_ctx_under Σ Γ)).
 
 Definition denot_ty_under
-    (Σ : gmap atom ty) (τ : choice_ty) (e : tm) : FormulaT :=
+    (Σ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty Σ τ e.
 
-Definition denot_ty_in_ctx (Γ : ctx) (τ : choice_ty) (e : tm) : FormulaT :=
+Definition denot_ty_in_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty (erase_ctx Γ) τ e.
 
 Definition denot_ty_in_ctx_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : FormulaT :=
+    (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty (erase_ctx_under Σ Γ) τ e.
 
 Definition denot_ty_total_in_ctx_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
+    (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm)
     (m : WfWorldT) : Prop :=
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
   m ⊨ expr_total_formula e.
@@ -62,7 +62,7 @@ Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
 End ContextDenotation.
 
 #[global] Instance denot_cty_inst :
-    Denotation choice_ty (tm -> Formula (V := value)) :=
+    Denotation context_ty (tm -> Formula (V := value)) :=
   fun τ e => denot_ty ∅ τ e.
 #[global] Instance denot_ctx_inst :
     Denotation ctx (Formula (V := value)) := denot_ctx.

@@ -270,7 +270,7 @@ add it to the appropriate solver.  This is especially useful for:
 
 Pure set lemmas that only package `set_solver` should not live as ad-hoc local
 lemmas in semantic proof files.  If the same shape appears in several cases,
-move it to `ChoicePrelude` or the local set solver as a general helper:
+move it to `ContextPrelude` or the local set solver as a general helper:
 
 ```coq
 Lemma fv_subset_env_union_pair (X Y A B C D : aset) :
@@ -347,8 +347,8 @@ Example skeleton:
 ```coq
 Ltac basic_regular :=
   repeat match goal with
-  | H : choice_typing _ _ _ _ |- _ =>
-      pose proof (choice_typing_regular _ _ _ _ H); clear H
+  | H : context_typing _ _ _ _ |- _ =>
+      pose proof (context_typing_regular _ _ _ _ H); clear H
   | H : _ ⊢ₑ _ ⋮ _ |- _ =>
       pose proof (basic_typing_regular _ _ _ H)
   end.

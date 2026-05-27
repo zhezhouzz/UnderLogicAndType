@@ -3,7 +3,7 @@
     Shared support lemmas and tactics for the [tlet] introduction proof. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import TypeDenotation.
+From Denotation Require Import ContextTypeDenotation.
 
 Ltac normalize_formula_fv :=
   repeat first
@@ -14,7 +14,7 @@ Ltac normalize_formula_fv :=
     | rewrite formula_fv_forall | rewrite formula_fv_over
     | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
   rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_choice_ty_wf_formula;
+  rewrite ?formula_fv_context_ty_wf_formula;
   rewrite ?formula_fv_expr_basic_typing_formula;
   rewrite ?formula_fv_expr_total_formula;
   rewrite ?formula_fv_expr_result_formula;
@@ -29,7 +29,7 @@ Ltac normalize_formula_fv :=
     | rewrite formula_fv_forall | rewrite formula_fv_over
     | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
   rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_choice_ty_wf_formula;
+  rewrite ?formula_fv_context_ty_wf_formula;
   rewrite ?formula_fv_expr_basic_typing_formula;
   rewrite ?formula_fv_expr_total_formula;
   rewrite ?formula_fv_expr_result_formula;
@@ -121,14 +121,14 @@ Proof.
   - set_solver.
 Qed.
 
-Lemma tlet_choice_ty_lvars_insert_free_fv_drop
+Lemma tlet_context_ty_lvars_insert_free_fv_drop
     (Σ : lty_env) τ x T :
-  LVFree x ∉ choice_ty_lvars τ ->
-  basic_choice_ty_lvars (dom (<[LVFree x := T]> Σ)) τ ->
+  LVFree x ∉ context_ty_lvars τ ->
+  basic_context_ty_lvars (dom (<[LVFree x := T]> Σ)) τ ->
   fv_cty τ ⊆ lvars_fv (dom Σ).
 Proof.
   intros Hfresh [Hsub _].
-  rewrite <- choice_ty_lvars_fv.
+  rewrite <- context_ty_lvars_fv.
   eapply tlet_lvars_fv_subset_insert_free_drop; eauto.
 Qed.
 
@@ -221,19 +221,19 @@ Ltac solve_formula_fv_subset :=
 
 Ltac harvest_tlet_models :=
   repeat match goal with
-  | H : ?m ⊨ choice_ty_wf_formula ?Σ ?τ |- _ =>
+  | H : ?m ⊨ context_ty_wf_formula ?Σ ?τ |- _ =>
       lazymatch goal with
       | Hscope : lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) |- _ => fail
       | _ =>
-          let Hscope := fresh "Hchoice_scope" in
-          pose proof (choice_ty_wf_formula_scope_dom Σ τ m H) as Hscope
+          let Hscope := fresh "Hcontext_scope" in
+          pose proof (context_ty_wf_formula_scope_dom Σ τ m H) as Hscope
       end
-  | H : ?m ⊨ choice_ty_wf_formula ?Σ ?τ |- _ =>
+  | H : ?m ⊨ context_ty_wf_formula ?Σ ?τ |- _ =>
       lazymatch goal with
-      | Hbasic : basic_choice_ty_lvars (dom Σ) τ |- _ => fail
+      | Hbasic : basic_context_ty_lvars (dom Σ) τ |- _ => fail
       | _ =>
-          let Hbasic := fresh "Hchoice_lvars" in
-          pose proof (choice_ty_wf_formula_basic_lvars Σ τ m H) as Hbasic
+          let Hbasic := fresh "Hcontext_lvars" in
+          pose proof (context_ty_wf_formula_basic_lvars Σ τ m H) as Hbasic
       end
   | H : ?m ⊨ expr_basic_typing_formula ?Σ ?e ?T |- _ =>
       lazymatch goal with
@@ -263,20 +263,20 @@ Ltac harvest_tlet_models :=
           let Hfv := fresh "Hfv_basic" in
           pose proof (basic_typing_contains_fv_tm Γ e T H) as Hfv
       end
-  | Hfresh : LVFree ?x ∉ choice_ty_lvars ?τ,
-    Hbasic : basic_choice_ty_lvars (dom (<[LVFree ?x := ?T]> ?Σ)) ?τ |- _ =>
+  | Hfresh : LVFree ?x ∉ context_ty_lvars ?τ,
+    Hbasic : basic_context_ty_lvars (dom (<[LVFree ?x := ?T]> ?Σ)) ?τ |- _ =>
       lazymatch goal with
       | Hfv : fv_cty τ ⊆ lvars_fv (dom Σ) |- _ => fail
       | _ =>
           let Hfv := fresh "Hfv_cty_drop" in
-          pose proof (tlet_choice_ty_lvars_insert_free_fv_drop
+          pose proof (tlet_context_ty_lvars_insert_free_fv_drop
             Σ τ x T Hfresh Hbasic) as Hfv
       end
   end;
   repeat match goal with
-  | H : basic_choice_ty_lvars _ _ |- _ =>
-      let Hsub := fresh "Hchoice_lvars_sub" in
-      let Hshape := fresh "Hchoice_shape" in
+  | H : basic_context_ty_lvars _ _ |- _ =>
+      let Hsub := fresh "Hcontext_lvars_sub" in
+      let Hshape := fresh "Hcontext_shape" in
       destruct H as [Hsub Hshape]
   end.
 
@@ -286,7 +286,7 @@ Ltac solve_formula_scoped :=
   | unfold formula_scoped_in_world;
     harvest_tlet_models;
     normalize_formula_fv;
-    rewrite ?choice_ty_lvars_fv in *;
+    rewrite ?context_ty_lvars_fv in *;
     rewrite ?lvars_fv_lvars_at_depth in *;
     cbn [fv_tm fv_value] in *;
     tlet_normalize_freshness;
@@ -325,14 +325,14 @@ Ltac normalize_tlet_forall_fv :=
   rewrite ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under,
     ?formula_fv_fibvars;
   rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_choice_ty_wf_formula;
+  rewrite ?formula_fv_context_ty_wf_formula;
   rewrite ?formula_fv_expr_basic_typing_formula;
   rewrite ?formula_fv_expr_total_formula;
   rewrite ?formula_fv_expr_result_formula;
   rewrite ?formula_fv_type_qualifier_formula;
   cbn [formula_lvars basic_world_formula basic_world_lqual
     expr_result_formula expr_result_lqual type_qualifier_formula
-    type_qualifier_lqual choice_ty_wf_formula choice_ty_wf_lqual
+    type_qualifier_lqual context_ty_wf_formula context_ty_wf_lqual
     expr_basic_typing_formula expr_basic_typing_lqual
     expr_total_formula expr_total_lqual
     lqual_fvars lqual_lvars lqual_dom];
@@ -346,7 +346,7 @@ Ltac normalize_tlet_forall_fv :=
   end;
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
   rewrite ?tlet_lvars_fv_dom_insert_free;
-  rewrite ?choice_ty_lvars_over_fv, ?choice_ty_lvars_under_fv;
+  rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
   rewrite ?tm_shift_fv, ?cty_shift_fv;
   rewrite ?tm_lvars_fv;
   rewrite ?lvars_fv_lvars_at_depth;
@@ -358,7 +358,7 @@ Ltac normalize_tlet_forall_fv :=
   cbn [fv_tm fv_value].
 
 Lemma tlet_over_fib_formula_fresh_x x y b φ :
-  LVFree x ∉ choice_ty_lvars (CTOver b φ) ->
+  LVFree x ∉ context_ty_lvars (CTOver b φ) ->
   x <> y ->
   x ∉ formula_fv
     (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
@@ -366,12 +366,12 @@ Lemma tlet_over_fib_formula_fresh_x x y b φ :
 Proof.
   intros Hfresh Hxy.
   normalize_tlet_forall_fv.
-  pose proof (choice_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  pose proof (context_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
   set_solver.
 Qed.
 
 Lemma tlet_under_fib_formula_fresh_x x y b φ :
-  LVFree x ∉ choice_ty_lvars (CTUnder b φ) ->
+  LVFree x ∉ context_ty_lvars (CTUnder b φ) ->
   x <> y ->
   x ∉ formula_fv
     (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
@@ -379,7 +379,7 @@ Lemma tlet_under_fib_formula_fresh_x x y b φ :
 Proof.
   intros Hfresh Hxy.
   normalize_tlet_forall_fv.
-  pose proof (choice_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  pose proof (context_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
   set_solver.
 Qed.
 
@@ -402,9 +402,9 @@ Proof.
     fast_set_solver!!.
 Qed.
 
-Lemma denot_relevant_env_lookup_mono_choice
+Lemma denot_relevant_env_lookup_mono_context
     (Σ : lty_env) τsmall τbig e v T :
-  choice_ty_lvars τsmall ⊆ choice_ty_lvars τbig ->
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   denot_relevant_env Σ τsmall e !! v = Some T ->
   denot_relevant_env Σ τbig e !! v = Some T.
 Proof.
@@ -412,16 +412,16 @@ Proof.
   unfold denot_relevant_env, lty_env_restrict_lvars,
     denot_relevant_lvars in Hlookup |- *.
   change ((storeA_restrict (Σ : gmap logic_var ty)
-    (choice_ty_lvars τsmall ∪ tm_lvars e)) !! v = Some T) in Hlookup.
+    (context_ty_lvars τsmall ∪ tm_lvars e)) !! v = Some T) in Hlookup.
   change ((storeA_restrict (Σ : gmap logic_var ty)
-    (choice_ty_lvars τbig ∪ tm_lvars e)) !! v = Some T).
+    (context_ty_lvars τbig ∪ tm_lvars e)) !! v = Some T).
   apply storeA_restrict_lookup_some in Hlookup as [Hv HΣ].
   apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].
 Qed.
 
-Lemma denot_relevant_env_dom_mono_choice
+Lemma denot_relevant_env_dom_mono_context
     (Σ : lty_env) τsmall τbig e :
-  choice_ty_lvars τsmall ⊆ choice_ty_lvars τbig ->
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   dom (denot_relevant_env Σ τsmall e) ⊆
   dom (denot_relevant_env Σ τbig e).
 Proof.
@@ -432,12 +432,12 @@ Proof.
   change (v ∈ dom ((denot_relevant_env Σ τbig e : lty_env)
     : gmap logic_var ty)).
   apply elem_of_dom. exists T.
-  eapply denot_relevant_env_lookup_mono_choice; eauto.
+  eapply denot_relevant_env_lookup_mono_context; eauto.
 Qed.
 
-Lemma basic_world_formula_denot_relevant_mono_choice
+Lemma basic_world_formula_denot_relevant_mono_context
     (Σ : lty_env) τsmall τbig e (m : WfWorldT) :
-  choice_ty_lvars τsmall ⊆ choice_ty_lvars τbig ->
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   m ⊨ basic_world_formula (denot_relevant_env Σ τbig e) ->
   m ⊨ basic_world_formula (denot_relevant_env Σ τsmall e).
 Proof.
@@ -445,7 +445,7 @@ Proof.
   apply basic_world_formula_models_iff in Hworld
     as [Hlc_big [Hscope_big Htyped_big]].
   apply basic_world_formula_models_iff.
-  pose proof (denot_relevant_env_dom_mono_choice Σ τsmall τbig e Hτ)
+  pose proof (denot_relevant_env_dom_mono_context Σ τsmall τbig e Hτ)
     as Hdom.
   split.
   - intros v Hv. apply Hlc_big. exact (Hdom v Hv).
@@ -460,14 +460,14 @@ Proof.
       * intros v Hv. apply Hdom_big. exact (Hdom v Hv).
       * intros σ Hσ v T val HΣv Hσv.
         eapply Hstores_big; [exact Hσ| |exact Hσv].
-        eapply denot_relevant_env_lookup_mono_choice; eauto.
+        eapply denot_relevant_env_lookup_mono_context; eauto.
 Qed.
 
 Lemma formula_fv_denot_ty_lvar_gas_scope_from_guard
     gas Σ τsmall τbig e (m : WfWorldT) :
-  choice_ty_lvars τsmall ⊆ choice_ty_lvars τbig ->
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   m ⊨ FAnd
-    (choice_ty_wf_formula (denot_relevant_env Σ τbig e) τbig)
+    (context_ty_wf_formula (denot_relevant_env Σ τbig e) τbig)
     (FAnd (basic_world_formula (denot_relevant_env Σ τbig e))
       (FAnd
         (expr_basic_typing_formula (denot_relevant_env Σ τbig e) e
@@ -483,13 +483,13 @@ Proof.
   - pose proof (res_models_fuel_scoped _ _ _ Htotal_e) as Hscope_e.
     unfold formula_scoped_in_world in Hscope_e.
     rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_e.
-    pose proof (choice_ty_wf_formula_fv_cty_subset
+    pose proof (context_ty_wf_formula_fv_cty_subset
       (denot_relevant_env Σ τbig e) τbig m Hwf) as Hτbig_fv.
     pose proof (proj1 (basic_world_formula_models_iff
       (denot_relevant_env Σ τbig e) m) Hworld) as [_ [Hworld_dom _]].
     assert (Hτsmall_fv : fv_cty τsmall ⊆ fv_cty τbig).
     {
-      rewrite <- !choice_ty_lvars_fv.
+      rewrite <- !context_ty_lvars_fv.
       apply lvars_fv_mono. exact Hτ.
     }
     set_solver.
@@ -650,7 +650,7 @@ Lemma tlet_arrow_arg_relevant_env_agree
     (Σ : lty_env) T1 x y τx τr e1 e2 :
   lty_env_closed Σ ->
   x <> y ->
-  LVFree x ∉ choice_ty_lvars τx ->
+  LVFree x ∉ context_ty_lvars τx ->
   lty_env_restrict_lvars
     (<[LVFree y := erase_ty τx]>
       (denot_relevant_env (<[LVFree x := T1]> Σ)
@@ -677,7 +677,7 @@ Proof.
       rewrite cty_shift_fv in Hxfv.
       apply elem_of_union in Hxfv as [Hxτfv|Hxyfv].
       + apply Hxτx. apply lvars_fv_elem.
-        rewrite choice_ty_lvars_fv. exact Hxτfv.
+        rewrite context_ty_lvars_fv. exact Hxτfv.
       + set_solver.
     - cbn [tm_lvars tm_lvars_at value_lvars_at] in Hxret.
       set_solver.
@@ -727,7 +727,7 @@ Proof.
     + rewrite !lookup_insert_ne by congruence.
       destruct (decide (z = x)) as [->|Hzx].
       * exfalso. exact (HxX HvX).
-      * assert (Hzτx : LVFree z ∈ choice_ty_lvars τx).
+      * assert (Hzτx : LVFree z ∈ context_ty_lvars τx).
         {
           unfold X in HvX.
           unfold denot_relevant_lvars in HvX.
@@ -737,7 +737,7 @@ Proof.
               as Hzfv.
             rewrite cty_shift_fv in Hzfv.
             apply elem_of_union in Hzfv as [Hzτfv|Hzyfv].
-            + apply lvars_fv_elem. rewrite choice_ty_lvars_fv. exact Hzτfv.
+            + apply lvars_fv_elem. rewrite context_ty_lvars_fv. exact Hzτfv.
             + set_solver.
           - cbn [tm_lvars tm_lvars_at value_lvars_at] in Hzret.
             set_solver.
@@ -760,11 +760,11 @@ Proof.
         destruct (decide (LVFree z ∈ denot_relevant_lvars
           (CTArrow τx τr) (e2 ^^ x))) as [Hzsrc|Hbad].
         2:{ exfalso. apply Hbad. unfold denot_relevant_lvars.
-            cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver. }
+            cbn [context_ty_lvars context_ty_lvars_at]. set_solver. }
         destruct (decide (LVFree z ∈ denot_relevant_lvars
           (CTArrow τx τr) (tlete e1 e2))) as [Hztgt|Hbad].
         2:{ exfalso. apply Hbad. unfold denot_relevant_lvars.
-            cbn [choice_ty_lvars choice_ty_lvars_at]. set_solver. }
+            cbn [context_ty_lvars context_ty_lvars_at]. set_solver. }
         change (((<[LVFree x := T1]> (Σ : gmap logic_var ty))
           : gmap logic_var ty) !! LVFree z =
           (storeA_restrict Σ
@@ -832,22 +832,22 @@ Proof.
       exists (LVFree z). split; [exact Hu|reflexivity].
 Qed.
 
-Lemma choice_ty_lvars_open_body_without_fresh_closed
+Lemma context_ty_lvars_open_body_without_fresh_closed
     (D : lvset) τ y :
   lc_lvars D ->
   LVFree y ∉ D ->
-  choice_ty_lvars_at 1 τ ⊆ D ->
-  choice_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
-  choice_ty_lvars_at 1 τ.
+  context_ty_lvars_at 1 τ ⊆ D ->
+  context_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
+  context_ty_lvars_at 1 τ.
 Proof.
   intros Hlc HyD Hτ.
   rewrite cty_open_vars.
-  unfold choice_ty_open_lvars.
-  rewrite <- (choice_ty_lvars_depth τ 1).
+  unfold context_ty_open_lvars.
+  rewrite <- (context_ty_lvars_depth τ 1).
   eapply lvars_open0_difference_subset_depth1 with (D := D).
   - exact Hlc.
   - exact HyD.
-  - rewrite choice_ty_lvars_depth. exact Hτ.
+  - rewrite context_ty_lvars_depth. exact Hτ.
 Qed.
 
 Lemma tm_lvars_tapp_tm_fvar_without_arg e y :
@@ -874,22 +874,22 @@ Qed.
 
 Lemma arrow_body_relevant_lvars_subset
     τx τr e_src e_body y :
-  choice_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    choice_ty_lvars_at 1 τr ->
+  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τr ->
   tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
   denot_relevant_lvars (cty_open 0 y τr) e_body ∖ {[LVFree y]} ⊆
   denot_relevant_lvars (CTArrow τx τr) e_src.
 Proof.
   intros Hτ He.
   unfold denot_relevant_lvars.
-  cbn [choice_ty_lvars choice_ty_lvars_at].
+  cbn [context_ty_lvars context_ty_lvars_at].
   set_solver.
 Qed.
 
 Lemma arrow_body_relevant_env_agree
     (Σsrc : lty_env) Ty y τx τr e_src e_body :
-  choice_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    choice_ty_lvars_at 1 τr ->
+  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τr ->
   tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
   lty_env_restrict_lvars
     (<[LVFree y := Ty]>
@@ -903,11 +903,11 @@ Proof.
   eapply arrow_body_relevant_lvars_subset; eauto.
 Qed.
 
-Lemma arrow_body_relevant_env_agree_from_basic_choice
+Lemma arrow_body_relevant_env_agree_from_basic_context_ty
     (Σsrc : lty_env) Ty y τx τr e_src e_body :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
   LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  basic_choice_ty_lvars
+  basic_context_ty_lvars
     (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr) ->
   tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
   lty_env_restrict_lvars
@@ -919,12 +919,12 @@ Lemma arrow_body_relevant_env_agree_from_basic_choice
 Proof.
   intros Hlc HyΣ Hbasic He.
   apply arrow_body_relevant_env_agree; [|exact He].
-  apply choice_ty_lvars_open_body_without_fresh_closed
+  apply context_ty_lvars_open_body_without_fresh_closed
     with (D := (dom (Σsrc : gmap logic_var ty) : gset logic_var)).
   - exact Hlc.
   - exact HyΣ.
   - destruct Hbasic as [Hvars _].
-    cbn [choice_ty_lvars choice_ty_lvars_at] in Hvars.
+    cbn [context_ty_lvars context_ty_lvars_at] in Hvars.
     set_solver.
 Qed.
 
@@ -964,7 +964,7 @@ Lemma basic_world_formula_arrow_body_from_source_and_arg
     (Σsrc : lty_env) Ty y τx τr e_src e_body (m : WfWorldT) :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
   LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  basic_choice_ty_lvars
+  basic_context_ty_lvars
     (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr) ->
   tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
   m ⊨ basic_world_formula (denot_relevant_env Σsrc (CTArrow τx τr) e_src) ->
@@ -981,7 +981,7 @@ Proof.
     m Hsrc Hy) as Hunion.
   eapply basic_world_formula_subenv; [|exact Hunion].
   intros v Tv Hlook.
-  pose proof (arrow_body_relevant_env_agree_from_basic_choice
+  pose proof (arrow_body_relevant_env_agree_from_basic_context_ty
     Σsrc Ty y τx τr e_src e_body Hlc HyΣ Hbasic He) as Hagree.
   change ((lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
     (denot_relevant_lvars (cty_open 0 y τr) e_body) : lty_env) !!
@@ -1029,7 +1029,7 @@ Proof.
   (* Operational associativity for the derived application form:
      applying the result of [let e1 in e2] to [y] is observationally the
      same as evaluating [e1] first and then applying the opened body.  This
-     should be proved below the type denotation layer from the small-step
+     should be proved below the context-type denotation layer from the small-step
      let decomposition/recomposition lemmas, and then lifted through the
      recursive denotation by gas induction.
 
@@ -1071,14 +1071,14 @@ Lemma tlet_intro_denotation_wand_case
     τx τr :
   (forall (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
      (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
-     (τ : choice_ty),
+     (τ : context_ty),
     lty_env_closed Σ ->
     lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
     lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ ->
     expr_result_extension_witness e1 x Fx ->
     m ⊨ expr_total_formula e1 ->
     m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
-    LVFree x ∉ dom Σ ∪ choice_ty_lvars τ ->
+    LVFree x ∉ dom Σ ∪ context_ty_lvars τ ->
     res_extend_by m Fx mx ->
     mx ⊨ denot_ty_lvar_gas gas (<[LVFree x := T1]> Σ) τ (e2 ^^ x) ->
     m ⊨ denot_ty_lvar_gas gas Σ τ (tlete e1 e2)) ->
@@ -1089,7 +1089,7 @@ Lemma tlet_intro_denotation_wand_case
   m ⊨ expr_total_formula e1 ->
   m ⊨ basic_world_formula
     (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2)) ->
-  LVFree x ∉ dom Σ ∪ choice_ty_lvars (CTWand τx τr) ->
+  LVFree x ∉ dom Σ ∪ context_ty_lvars (CTWand τx τr) ->
   res_extend_by m Fx mx ->
   mx ⊨ denot_ty_lvar_gas (S gas)
     (<[LVFree x := T1]> Σ) (CTWand τx τr) (e2 ^^ x) ->
@@ -1107,7 +1107,7 @@ Proof.
         [mx ⊨ denot_ty_lvar_gas (S gas) ... (CTWand τx τr) (e2 ^^ x)]
         into its guard and forall/wand body with [normalize_models_ands] and
         the existing formula-open/open-env normalizers.  The guard obligations
-        are the same shape as Arrow: choice-type wf, basic world, basic
+        are the same shape as Arrow: context-type wf, basic world, basic
         typing, and totality for [tlete e1 e2].
 
      2. Use [res_models_forall_ext_transport] in the same way as Arrow to
@@ -1139,7 +1139,7 @@ Ltac open_formula_syntax_step :=
   rewrite ?formula_open_fibvars;
   rewrite ?formula_open_over;
   rewrite ?formula_open_under;
-  rewrite ?formula_open_choice_ty_wf_formula;
+  rewrite ?formula_open_context_ty_wf_formula;
   rewrite ?formula_open_expr_total_formula by solve_tlet_sidecond;
   rewrite ?formula_open_basic_world_bind0 by solve_tlet_sidecond;
   rewrite ?formula_open_basic_world_formula;
@@ -1264,7 +1264,7 @@ Lemma tlet_arrow_arg_extend_obligation
     (my mxy : WfWorldT) (Fx : FiberExtensionT) :
   LVFree x ∉ dom Σ ->
   x <> y ->
-  LVFree x ∉ choice_ty_lvars τx ->
+  LVFree x ∉ context_ty_lvars τx ->
   extension_has_ltype (<[LVFree x := T1]> ∅)
     (res_restrict my (ext_in Fx)) Fx ->
   res_extend_by my Fx mxy ->
@@ -1284,8 +1284,8 @@ Proof.
       : gmap logic_var ty)).
   { rewrite dom_insert_L. set_solver. }
   assert (Hxτopen :
-    LVFree x ∉ choice_ty_lvars (cty_open 0 y (cty_shift 0 τx))).
-  { apply choice_ty_lvars_open_shift_fresh; assumption. }
+    LVFree x ∉ context_ty_lvars (cty_open 0 y (cty_shift 0 τx))).
+  { apply context_ty_lvars_open_shift_fresh; assumption. }
   assert (Hmxy_old : mxy ⊨ denot_ty_lvar_gas gas
     (<[LVFree y := Ty]> Σ)
     (cty_open 0 y (cty_shift 0 τx))
@@ -1299,8 +1299,8 @@ Qed.
 
 Ltac solve_tlet_guard :=
   match goal with
-  | |- _ ⊨ choice_ty_wf_formula _ _ =>
-      eapply choice_ty_wf_formula_drop_fresh_lvar; eauto; solve_tlet_sidecond
+  | |- _ ⊨ context_ty_wf_formula _ _ =>
+      eapply context_ty_wf_formula_drop_fresh_lvar; eauto; solve_tlet_sidecond
   | |- _ ⊨ basic_world_formula _ =>
       eapply basic_world_formula_drop_result_extension; eauto; solve_tlet_sidecond
   | |- _ ⊨ expr_basic_typing_formula _ (tlete _ _) _ =>

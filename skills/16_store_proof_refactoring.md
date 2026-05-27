@@ -2,7 +2,7 @@
 
 ## 背景
 
-在证明 `ChoicePrelude/examples/StoreExamples.v` 里的 store compatibility 例子时，
+在证明 `ContextPrelude/examples/StoreExamples.v` 里的 store compatibility 例子时，
 直接在 example 文件中展开 `store_restrict` / `map_restrict` 会遇到两类干扰：
 
 - `Store` 是 `Section Store` 里的别名，离开定义文件后有时会让 typeclass inference
@@ -10,7 +10,7 @@
 - 对 concrete example 使用 `vm_compute` 很方便，但对
   `store_compat : forall key/value, ...` 这种全称性质，计算不会自动完成 key 的分情况讨论。
 
-最终更稳的做法是：把通用 lemma 移到 `ChoicePrelude/Store.v`，在定义所在的 section
+最终更稳的做法是：把通用 lemma 移到 `ContextPrelude/Store.v`，在定义所在的 section
 里证明；example 文件只调用这些 lemma。
 
 ## 判断一个 lemma 是否该移出 example
@@ -247,7 +247,7 @@ basic_world_formula_store_restrict_closed_env
 basic_world_formula_store_restrict_lc_env
 ```
 
-In `ChoiceTyping.Soundness`, use the wrappers
+In `ContextTyping.Soundness`, use the wrappers
 `denot_ctx_in_env_world_has_type_on`,
 `denot_ctx_in_env_store_restrict_closed`, and
 `denot_ctx_in_env_store_restrict_lc` instead of unfolding the context

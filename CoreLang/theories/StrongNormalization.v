@@ -125,7 +125,7 @@ Proof.
 Qed.
 
 (** The tlet facts below are intentionally stated at the operational layer.
-    They are the principles the ChoiceTyping totality proof should use.  Their
+    They are the principles the ContextTyping totality proof should use.  Their
     proofs are independent of refinements/resources, so they belong here even
     when later proof engineering temporarily admits them. *)
 

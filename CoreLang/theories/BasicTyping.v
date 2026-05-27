@@ -2,7 +2,7 @@
 
     Standard simple (basic) type system for the core language.
     This is the "erased" type system [⊢_basic] referenced by the
-    choice-type erasure and lifting functions.
+    context-type erasure and lifting functions.
 
     Contexts are [gmap atom ty]; typing uses the [Typing] typeclass so
     that the notation [Γ ⊢ e ⋮ T] works for both values and terms. *)

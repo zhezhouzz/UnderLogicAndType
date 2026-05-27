@@ -90,13 +90,13 @@ Then split the inserted-key and old-key cases.  In the inserted-key case, use
 the induction hypothesis, then use `subst_fresh`; `closed_env_lookup` supplies
 the closedness of the looked-up value.
 
-At the ChoiceType layer, `store_has_type_on_closed_env` is the intended bridge
+At the Context type layer, `store_has_type_on_closed_env` is the intended bridge
 from basic store typing to `closed_env`.
 
 ## Restriction Locality
 
 Prefer `map_restrict value σ X` in CoreLang instantiation lemmas.  The more
-semantic `store_restrict` wrapper is useful in ChoicePrelude/ChoiceAlgebra, but
+semantic `store_restrict` wrapper is useful in ContextPrelude/ContextAlgebra, but
 inside generic `map_fold` proofs it can leave Rocq trying to infer finite-map
 instances for the `Store` type alias instead of the concrete `gmap`.
 
@@ -161,7 +161,7 @@ rewrite (msubst_store_swap_fresh _ _ σ e)
   by (try exact Hclosed; set_solver).
 ```
 
-This is especially useful in ChoiceType denotation proofs after an `FForall` or
+This is especially useful in Context-type denotation proofs after an `FForall` or
 `FExists` body has been renamed from its syntactic representative to a fresh
 semantic atom.  The swap changes the result coordinate, but if both swapped
 atoms are fresh for the embedded expression, the expression substitution itself
@@ -170,6 +170,6 @@ does not change.
 ## Design Boundary
 
 This migration intentionally starts in CoreLang with `value` substitution.
-ChoiceType qualifiers/types open binders with atoms, so their instantiation
+ContextType qualifiers/types open binders with atoms, so their instantiation
 lemmas should be added in a later layer with care rather than forced into the
 CoreLang value-opening interface.

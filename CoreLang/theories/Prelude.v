@@ -6,7 +6,7 @@
     uniform classes and notations so that lemma statements are
     syntactically identical across syntactic categories. *)
 
-From ChoiceBase Require Export Prelude.
+From ContextBase Require Export Prelude.
 From stdpp Require Export fin vector.
 
 (** ** Core typeclasses *)

@@ -1,8 +1,8 @@
 # Recent LN Denotation Failure Patterns
 
-This note records concrete mistakes from the recent TypeDenotation/tlet proof
+This note records concrete mistakes from the recent ContextTypeDenotation/tlet proof
 work.  Read it before continuing LN helper proofs, especially in
-`Denotation/theories/*` and `ChoiceBasicDenotation/theories/*`.
+`Denotation/theories/*` and `ContextBasicDenotation/theories/*`.
 
 The goal is not to remember one proof script, but to avoid repeating the same
 classes of errors: choosing the wrong lemma level, forgetting existing helpers,
@@ -16,9 +16,9 @@ Before inventing a lemma, search for the exact concept and its nearby variants.
 Use targeted searches such as:
 
 ```sh
-rg -n "open_cty_env|cty_open|qual_open|formula_open|typed_lty_env_bind" ChoiceTypeLanguage ChoiceBasicDenotation Denotation -S
-rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ChoiceTypeLanguage ChoicePrelude -S
-rg -n "expr_result_formula|expr_basic_typing_formula|basic_world_formula|res_models_forall_ext_transport" ChoiceBasicDenotation Denotation ChoiceLogic -S
+rg -n "open_cty_env|cty_open|qual_open|formula_open|typed_lty_env_bind" ContextTypeLanguage ContextBasicDenotation Denotation -S
+rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ContextTypeLanguage ContextPrelude -S
+rg -n "expr_result_formula|expr_basic_typing_formula|basic_world_formula|res_models_forall_ext_transport" ContextBasicDenotation Denotation ContextLogic -S
 ```
 
 Then read the definitions and the closest existing lemma before patching.
@@ -214,15 +214,15 @@ Then compose these in the high-level proof.
 Compile bottom-up after each helper group:
 
 ```sh
-make ChoiceBasicDenotation/theories/Term.vo
-make Denotation/theories/TypeDenotation.vo
+make ContextBasicDenotation/theories/Term.vo
+make Denotation/theories/ContextTypeDenotation.vo
 make Denotation/theories/TLet.vo
 ```
 
 Scan remaining review points explicitly:
 
 ```sh
-rg -n "Admitted\.|\\badmit\\b|Axiom" ChoiceBasicDenotation Denotation -S
+rg -n "Admitted\.|\\badmit\\b|Axiom" ContextBasicDenotation Denotation -S
 ```
 
 Send `ntfy` low-priority checkpoints after completing a helper group and
