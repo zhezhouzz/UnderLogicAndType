@@ -1,27 +1,27 @@
 # ChoiceType Instantiation Migration
 
-This migration brings part of the UnderType/HATs refinement-type and context
-locally-nameless infrastructure into the current ChoiceType split.
+This is a historical migration note from the older monolithic ChoiceType era.
+The current code is split across `ChoiceTypeLanguage`, `ChoiceBasicDenotation`,
+`Denotation`, and `ChoiceTyping`; use this file only for substitution/LN
+background, not as the current module map.
 
 ## Files
 
-- `ChoiceType/theories/QualifierProps.v`
-  - proof-oriented qualifier lemmas moved out of `Qualifier.v`.
-- `ChoiceType/theories/LocallyNamelessProps.v`
-  - structural substitution facts for `choice_ty`.
-- `ChoiceType/theories/InstantiationProps.v`
-  - multi-substitution instances reusing `CoreLang.InstantiationProps`;
-  - atom-open multi-substitution classes and instances for ChoiceType syntax.
+- `ChoiceTypeLanguage/theories/*`
+  - current syntax, qualifier, environment, and LN/open/fv lemmas.
+- `ChoiceBasicDenotation/theories/*`
+  - current shallow logic atoms for totality, result, basic typing, and worlds.
+- `Denotation/theories/*`
+  - current recursive type denotation and direct TLet proof route.
 
 ## Important Design Boundaries
 
 ### Shallow Qualifiers
 
-`type_qualifier` is shallowly embedded as a Rocq proposition.  It currently has
-atom-open and value-substitution operations, but no close operation.  Do not
-migrate close/open-close lemmas from UnderType for qualifiers unless the
-qualifier representation changes or a real close operation becomes part of the
-design.
+`type_qualifier` is now a dependent-domain qualifier over lstores.  It has LN
+open/shift support, but no value-substitution operation.  Do not migrate
+old open/substitution lemmas from UnderType unless a proof explicitly needs a
+new operation in the current representation.
 
 Some equality lemmas over qualifiers may need functional extensionality because
 the proposition field is a Rocq function.

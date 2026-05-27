@@ -14,6 +14,8 @@ Bind Scope choice_scope with lty_env.
 
 Class Erase A B := erase : A -> B.
 Class Lift A B := lift : A -> B.
+Arguments erase {_ _ _} _.
+Arguments lift {_ _ _} _.
 
 #[global] Instance erase_choice_ty : Erase choice_ty ty := erase_ty.
 #[global] Instance erase_ctx_inst : Erase ctx (gmap atom ty) := erase_ctx.

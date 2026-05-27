@@ -48,6 +48,9 @@ Definition lty_env_open_lvars (η : gmap nat atom) (Σ : lty_env) : lty_env :=
 Definition lty_env_atom_dom (Σ : lty_env) : aset :=
   lvars_fv (dom Σ).
 
+#[global] Instance stale_lty_env : Stale lty_env := lty_env_atom_dom.
+Arguments stale_lty_env /.
+
 Definition lty_env_bvar_scope (Σ : lty_env) : lvset :=
   lvars_of_bvars (lvars_bv (dom Σ)).
 

@@ -10,6 +10,9 @@
 
 From ChoiceTyping Require Export Typing.
 From ChoiceTyping Require Import Naming.
+From CoreLang Require Import BasicTyping.
+From ChoiceAlgebra Require Import ResourceInterface.
+From ChoiceBasicDenotation Require Import Term.
 
 Definition denot_ty_regular_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) : Prop :=
@@ -17,10 +20,10 @@ Definition denot_ty_regular_in_ctx_under
 
 Definition denot_ty_total_model_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm)
-    (m : WfWorld) : Prop :=
+    (m : WfWorldT) : Prop :=
   denot_ty_regular_in_ctx_under Σ Γ τ ∧
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
-  expr_total_on e m.
+  m ⊨ expr_total_formula e.
 
 Definition total_model_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : choice_ty) (e : tm) : Prop :=
@@ -31,22 +34,22 @@ Definition total_model_in_ctx_under
 Lemma denot_ty_total_model_regular Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   denot_ty_regular_in_ctx_under Σ Γ τ.
-Proof. intros; hauto. Qed.
+Proof. intros [H _]. exact H. Qed.
 
 Lemma denot_ty_total_model_basic_ctx Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   basic_ctx (dom Σ) Γ.
-Proof. intros; hauto. Qed.
+Proof. intros [[H _] _]. exact H. Qed.
 
 Lemma denot_ty_total_model_formula Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e.
-Proof. intros; hauto. Qed.
+Proof. intros [_ [H _]]. exact H. Qed.
 
 Lemma denot_ty_total_model_total Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
-  expr_total_on e m.
-Proof. intros; hauto. Qed.
+  m ⊨ expr_total_formula e.
+Proof. intros [_ [_ H]]. exact H. Qed.
 
 Lemma total_model_to_total_denot Σ Γ τ e m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
@@ -64,8 +67,10 @@ Lemma total_model_of_total_denot Σ Γ τ e m :
   denot_ty_total_in_ctx_under Σ Γ τ e m →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m.
 Proof.
-  intros.
-  hauto.
+  intros Hctx Hτ [Hden Htotal].
+  split.
+  - split; assumption.
+  - split; assumption.
 Qed.
 
 Lemma choice_typing_wf_from_erased_basic Σ Γ e τ m :
@@ -76,11 +81,11 @@ Lemma choice_typing_wf_from_erased_basic Σ Γ e τ m :
   choice_typing_wf Σ Γ e τ.
 Proof.
   intros Hctx Hτ Hm Herase.
-  split; [| eauto 6].
+  split; [|exact Herase].
   split.
-  - split; [eauto 6 | exists m; eauto 6].
-  - rewrite <- (erase_ctx_under_dom_basic Σ Γ Hctx).
-    eauto 6.
+  - split; [exact Hctx|]. exists m. exact Hm.
+  - rewrite erase_ctx_under_dom_basic in Hτ by exact Hctx.
+    exact Hτ.
 Qed.
 
 Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
@@ -89,10 +94,10 @@ Lemma denot_ty_total_model_choice_typing_wf Σ Γ e τ m :
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   choice_typing_wf Σ Γ e τ.
 Proof.
-  intros Herase Hm Hmodel.
-  eapply choice_typing_wf_from_erased_basic; eauto 6
-    using denot_ty_total_model_basic_ctx.
-  exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
+  intros Herase Hctx Hmodel.
+  eapply choice_typing_wf_from_erased_basic; eauto.
+  - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
+  - exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
 Qed.
 
 Lemma choice_typing_wf_regular_denotation Σ Γ e τ :
@@ -101,9 +106,9 @@ Lemma choice_typing_wf_regular_denotation Σ Γ e τ :
 Proof.
   intros Hwf.
   split.
-  - destruct Hwf as [Hwfτ _].
-    eauto 6 using wf_ctx_under_basic, wf_choice_ty_under_ctx.
-  - eauto 6 using choice_typing_wf_basic_choice_ty_erased.
+  - exact (wf_ctx_under_basic Σ Γ
+      (wf_choice_ty_under_ctx Σ Γ τ (proj1 Hwf))).
+  - exact (choice_typing_wf_basic_choice_ty_erased Σ Γ e τ Hwf).
 Qed.
 
 Lemma choice_typing_wf_to_total_model Σ Γ e τ m :
@@ -111,9 +116,10 @@ Lemma choice_typing_wf_to_total_model Σ Γ e τ m :
   denot_ty_total_in_ctx_under Σ Γ τ e m →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m.
 Proof.
-  intros Hwf Hdenot.
-  destruct (choice_typing_wf_regular_denotation Σ Γ e τ Hwf) as [Hctx Hτ].
+  intros Hwf Htotal.
   eapply total_model_of_total_denot; eauto.
+  - exact (proj1 (choice_typing_wf_regular_denotation Σ Γ e τ Hwf)).
+  - exact (proj2 (choice_typing_wf_regular_denotation Σ Γ e τ Hwf)).
 Qed.
 
 Lemma entails_total_to_total_model Σ Γ e τ :

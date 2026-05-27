@@ -1,20 +1,16 @@
-(** * ChoiceTyping.Soundness
+(** * ChoiceTyping.SoundnessDirect
 
-    Public soundness entry for the new denotation route.
-
-    This file intentionally no longer imports the old [SoundnessCommon] /
-    [TLetReduction] / continuation-helper stack.  The only proof case wired in this
-    checkpoint is TLet, via [fundamental_let_case_direct].  The remaining cases
-    are left as the top-level induction skeleton so they can be restored one by
-    one without reintroducing the old route. *)
+    A compile-facing soundness entry for the new route.  The point of this
+    file is to make the TLet case consume [TLetDenotation] directly while the
+    broad old [Soundness.v]/[SoundnessCommon.v] surface is being retired. *)
 
 From CoreLang Require Import BasicTyping.
 From ChoiceAlgebra Require Import ResourceInterface ResourceExtensionCore.
 From ChoiceBasicDenotation Require Import Interface.
 From Denotation Require Import TypeDenotation.
-From ChoiceTyping Require Export SoundnessDirect.
+From ChoiceTyping Require Export TLetDenotation.
 
-Lemma fundamental_let_case
+Lemma fundamental_let_case_direct
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : choice_ty) e1 e2
     (m mx : WfWorld (V := value)) (Fx : fiber_extension (V := value))
     (x : atom) :
@@ -33,13 +29,9 @@ Lemma fundamental_let_case
           τ2 (e2 ^^ x) ->
   m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-  eapply fundamental_let_case_direct.
+  eapply denot_tlet_semantic_direct.
 Qed.
 
-(** The full [Fundamental] induction is deliberately not re-exported from a
-    skeleton theorem.  It should come back only as the non-TLet cases are rebuilt
-    on the new denotation route.
-
-    Corollaries from the old safety/refinement route are deliberately not
-    rebuilt here yet; they should be reintroduced after the non-TLet cases use
-    the new denotation definitions. *)
+(** The full induction will be restored case by case.  Non-TLet cases are not
+    part of this checkpoint; the current branch only wires the TLet rule to the
+    new denotation route, without exporting a fake top-level skeleton. *)

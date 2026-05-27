@@ -7,7 +7,6 @@
 -R Denotation/theories Denotation
 -R LocallyNameless LocallyNameless
 -R CoreLang/theories CoreLang
--R ChoiceType/theories ChoiceType
 
 ChoiceBase/Prelude.v
 ChoiceBase/LogicVar.v
@@ -116,14 +115,41 @@ ChoiceTypeLanguage/theories/Env.v
 ChoiceTypeLanguage/theories/Notation.v
 ChoiceTypeLanguage/theories/Tactics.v
 ChoiceTypeLanguage/theories/Interface.v
+ChoiceTypeLanguage/theories/Sugar.v
 
+ChoiceBasicDenotation/theories/Notation.v
 ChoiceBasicDenotation/theories/StoreTyping.v
+ChoiceBasicDenotation/theories/TermSyntax.v
+ChoiceBasicDenotation/theories/TermEval.v
+ChoiceBasicDenotation/theories/TermOpen.v
+ChoiceBasicDenotation/theories/TermExtension.v
+ChoiceBasicDenotation/theories/TermTLet.v
 ChoiceBasicDenotation/theories/Term.v
 ChoiceBasicDenotation/theories/Qualifier.v
 ChoiceBasicDenotation/theories/BasicTypingFormula.v
 ChoiceBasicDenotation/theories/Interface.v
 
+Denotation/theories/Notation.v
+Denotation/theories/TypeDenotationCore.v
+Denotation/theories/TypeDenotationDefinition.v
+Denotation/theories/TypeDenotationLvars.v
+Denotation/theories/TypeDenotationOpen.v
+Denotation/theories/TypeDenotationOpenModels.v
+Denotation/theories/TypeDenotationSaturate.v
 Denotation/theories/TypeDenotation.v
 Denotation/theories/Context.v
-Denotation/theories/TLetForallExtension.v
+Denotation/theories/TLetSupport.v
 Denotation/theories/TLet.v
+
+-R ChoiceTyping/theories ChoiceTyping
+
+ChoiceTyping/theories/WellFormed.v
+ChoiceTyping/theories/PrimOpContext.v
+ChoiceTyping/theories/Auxiliary.v
+ChoiceTyping/theories/Typing.v
+ChoiceTyping/theories/Naming.v
+ChoiceTyping/theories/RegularDenotation.v
+ChoiceTyping/theories/TLetDirect.v
+ChoiceTyping/theories/TLetDenotation.v
+ChoiceTyping/theories/SoundnessDirect.v
+ChoiceTyping/theories/Soundness.v

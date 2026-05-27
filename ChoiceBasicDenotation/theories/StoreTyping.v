@@ -2,10 +2,7 @@
 
     Basic typing for stores, worlds, and extension outputs. *)
 
-From CoreLang Require Import BasicTyping BasicTypingProps Instantiation InstantiationProps.
-From ChoiceAlgebra Require Import Resource ResourceCore ResourceExtensionCore ResourceKeyAction.
-From ChoiceLogic Require Import Formula.
-From ChoiceTypeLanguage Require Import Interface.
+From ChoiceBasicDenotation Require Import Notation.
 
 Section StoreTyping.
 
@@ -130,7 +127,7 @@ Proof.
       rewrite Hlw. exact Htyped.
 Qed.
 
-Lemma formula_open_basic_world_typed_bind_current y Σ T :
+Lemma formula_open_basic_world_bind0 y Σ T :
   LVFree y ∉ dom Σ ->
   lty_env_closed Σ ->
   formula_open 0 y (basic_world_formula (typed_lty_env_bind Σ T)) =
@@ -469,6 +466,101 @@ Proof.
   - intros Hden. split.
     + destruct Hden as [_ [Hsub _]]. exact Hsub.
     + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
+Qed.
+
+Lemma basic_world_formula_subenv
+    (Σsmall Σbig : lty_env) (m : WfWorld) :
+  (forall v T, Σsmall !! v = Some T -> Σbig !! v = Some T) ->
+  res_models m (basic_world_formula Σbig) ->
+  res_models m (basic_world_formula Σsmall).
+Proof.
+  intros Hlookup Hbig.
+  apply basic_world_formula_models_iff in Hbig as [Hlc_big [Hscope_big Htyped_big]].
+  apply basic_world_formula_models_iff.
+  assert (Hdom : dom (Σsmall : gmap logic_var ty) ⊆
+                 dom (Σbig : gmap logic_var ty)).
+  {
+    intros v Hv.
+    apply elem_of_dom in Hv as [T Hv].
+    apply elem_of_dom. exists T. eapply Hlookup. exact Hv.
+  }
+  split.
+  - intros v Hv. apply Hlc_big. exact (Hdom v Hv).
+  - split.
+    + intros a Ha. apply Hscope_big.
+      apply lvars_fv_elem in Ha. apply lvars_fv_elem.
+      exact (Hdom (LVFree a) Ha).
+    + unfold lworld_has_type, worldA_has_type in Htyped_big |- *.
+      destruct Htyped_big as [Hdom_big Hstores_big].
+      split.
+      * intros v Hv. apply Hdom_big. exact (Hdom v Hv).
+      * intros σ Hσ v T val HΣ Hv.
+        eapply Hstores_big; [exact Hσ | | exact Hv].
+        eapply Hlookup. exact HΣ.
+Qed.
+
+Lemma basic_world_formula_union
+    (Σ1 Σ2 : lty_env) (m : WfWorld) :
+  res_models m (basic_world_formula Σ1) ->
+  res_models m (basic_world_formula Σ2) ->
+  res_models m (basic_world_formula
+    ((@union (gmap logic_var ty) _ Σ1 Σ2) : lty_env)).
+Proof.
+  intros H1 H2.
+  apply basic_world_formula_models_iff in H1 as [Hlc1 [Hscope1 Htyped1]].
+  apply basic_world_formula_models_iff in H2 as [Hlc2 [Hscope2 Htyped2]].
+  apply basic_world_formula_models_iff.
+  split.
+  - intros v Hv.
+    change (v ∈ dom ((Σ1 : gmap logic_var ty) ∪ (Σ2 : gmap logic_var ty))) in Hv.
+    rewrite dom_union_L in Hv.
+    apply elem_of_union in Hv as [Hv|Hv]; [apply Hlc1 | apply Hlc2]; exact Hv.
+  - split.
+    + intros a Ha.
+      change (a ∈ lvars_fv
+        (dom ((Σ1 : gmap logic_var ty) ∪ (Σ2 : gmap logic_var ty)))) in Ha.
+      rewrite dom_union_L, lvars_fv_union in Ha.
+      apply elem_of_union in Ha as [Ha|Ha]; [apply Hscope1 | apply Hscope2]; exact Ha.
+    + unfold lworld_has_type, worldA_has_type in Htyped1, Htyped2 |- *.
+      destruct Htyped1 as [Hdom1 Hstores1].
+      destruct Htyped2 as [Hdom2 Hstores2].
+      split.
+      * intros v Hv.
+        change (v ∈ dom ((Σ1 : gmap logic_var ty) ∪ (Σ2 : gmap logic_var ty))) in Hv.
+        rewrite dom_union_L in Hv.
+        apply elem_of_union in Hv as [Hv|Hv]; [apply Hdom1 | apply Hdom2]; exact Hv.
+      * intros σ Hσ v T val HΣ Hv.
+        change (((Σ1 : gmap logic_var ty) ∪ (Σ2 : gmap logic_var ty)) !!
+          v = Some T) in HΣ.
+        rewrite storeA_lookup_union_Some_raw in HΣ.
+        destruct HΣ as [HΣ1 | [_ HΣ2]].
+        -- eapply Hstores1; eauto.
+        -- eapply Hstores2; eauto.
+Qed.
+
+Lemma basic_world_formula_res_subset
+    (Σ : lty_env) (m n : WfWorld) :
+  res_subset n m ->
+  res_models m (basic_world_formula Σ) ->
+  res_models n (basic_world_formula Σ).
+Proof.
+  intros Hsub Hm.
+  destruct Hsub as [Hdom Hstores].
+  apply basic_world_formula_models_iff in Hm as [Hlc [Hscope Htyped]].
+  apply basic_world_formula_models_iff.
+  split; [exact Hlc|]. split.
+  - intros a Ha.
+    set_solver.
+  - unfold lworld_has_type, worldA_has_type in Htyped |- *.
+    destruct Htyped as [Hdom_typed Hstores_typed].
+    split.
+    + intros v Hv.
+      rewrite !res_lift_free_dom in Hdom_typed.
+      rewrite !res_lift_free_dom.
+      set_solver.
+    + intros σ Hσ. apply Hstores_typed.
+      destruct Hσ as [σa [Hσa ->]].
+      exists σa. split; [apply Hstores; exact Hσa | reflexivity].
 Qed.
 
 Lemma basic_world_formula_wfworld_closed_on_dom

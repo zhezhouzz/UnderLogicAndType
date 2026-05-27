@@ -328,6 +328,24 @@ Proof.
   - intros Hv. exists v. split; [symmetry; apply logic_var_open_env_empty|exact Hv].
 Qed.
 
+Lemma lvars_open_env_union η (D E : lvset) :
+  lvars_open_env η (D ∪ E) =
+  lvars_open_env η D ∪ lvars_open_env η E.
+Proof.
+  unfold lvars_open_env.
+  apply set_eq. intros v.
+  rewrite elem_of_union.
+  repeat rewrite elem_of_map.
+  split.
+  - intros [u [-> Hu]].
+    apply elem_of_union in Hu as [Hu|Hu].
+    + left. exists u. split; [reflexivity|exact Hu].
+    + right. exists u. split; [reflexivity|exact Hu].
+  - intros [[u [-> Hu]]|[u [-> Hu]]].
+    + exists u. split; [reflexivity|set_solver].
+    + exists u. split; [reflexivity|set_solver].
+Qed.
+
 Lemma lvars_open_env_mono η (D E : lvset) :
   D ⊆ E ->
   lvars_open_env η D ⊆ lvars_open_env η E.

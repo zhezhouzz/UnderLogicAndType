@@ -1,9 +1,9 @@
 # Expression Result Semantics
 
 > Priority: P3 historical/reference.  This note predates the current
-> locally-nameless logic-variable refactor and the `FStoreResourceAtom`-style
-> atom sugar.  Use it to understand old tlet proof attempts, not as the current
-> expression-result encoding.
+> locally-nameless logic-variable refactor and the current
+> `expr_result_formula`/lworld encoding.  It is useful for old tlet proof
+> attempts, but its concrete names should not be copied into new proofs.
 
 When proving soundness cases that mention Core evaluation, avoid making the
 Choice Logic formula layer carry all operational structure.

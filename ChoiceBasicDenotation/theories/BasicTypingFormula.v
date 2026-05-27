@@ -4,20 +4,169 @@
     ChoiceLogic formulas.  We keep only the component formulas; obligation
     wrapper sugar is intentionally avoided on the new route. *)
 
-From CoreLang Require Import BasicTyping BasicTypingProps LocallyNamelessProps
-  LocallyNamelessExtra.
-From ChoiceLogic Require Import Formula.
-From ChoiceTypeLanguage Require Import Interface.
-From ChoiceBasicDenotation Require Import StoreTyping Term.
+From CoreLang Require Import LocallyNamelessExtra.
+From ChoiceBasicDenotation Require Import Notation StoreTyping Term.
 
 Section BasicTypingFormula.
 
-Local Notation WorldT := (World (V := value)) (only parsing).
-Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
-
 Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
   map_fold (fun k x acc => open_tm k (vfvar x) acc) e η.
+Definition open_env_atom_swap (x y : atom) (η : gmap nat atom)
+    : gmap nat atom :=
+  atom_swap x y <$> η.
+
+Lemma open_env_atom_swap_lookup x y η k :
+  open_env_atom_swap x y η !! k =
+  atom_swap x y <$> (η !! k).
+Proof.
+  unfold open_env_atom_swap. apply lookup_fmap.
+Qed.
+
+Lemma open_env_atom_swap_dom x y η :
+  dom (open_env_atom_swap x y η) = dom η.
+Proof.
+  unfold open_env_atom_swap.
+  apply dom_fmap_L.
+Qed.
+
+Lemma open_env_atom_swap_involutive x y η :
+  open_env_atom_swap x y (open_env_atom_swap x y η) = η.
+Proof.
+  apply map_eq. intros k.
+  rewrite !open_env_atom_swap_lookup.
+  destruct (η !! k) as [a|]; cbn; [rewrite atom_swap_involutive|];
+    reflexivity.
+Qed.
+
+Lemma open_env_atom_swap_delete x y η k :
+  delete k (open_env_atom_swap x y η) =
+  open_env_atom_swap x y (delete k η).
+Proof.
+  apply map_eq. intros j.
+  destruct (decide (j = k)) as [->|Hjk].
+  - rewrite lookup_delete_eq.
+    unfold open_env_atom_swap. rewrite lookup_fmap, lookup_delete_eq.
+    reflexivity.
+  - rewrite lookup_delete_ne by congruence.
+    unfold open_env_atom_swap.
+    rewrite !lookup_fmap, lookup_delete_ne by congruence.
+    reflexivity.
+Qed.
+
+Lemma logic_var_open_env_atom_swap x y η v :
+  logic_var_open_env η (logic_var_swap x y v) =
+  logic_var_swap x y (logic_var_open_env (open_env_atom_swap x y η) v).
+Proof.
+  destruct v as [k|a].
+  - rewrite logic_var_swap_unfold.
+    rewrite eq_swap_fresh by congruence.
+    cbn [logic_var_open_env].
+    rewrite open_env_atom_swap_lookup.
+    destruct (η !! k) as [b|] eqn:Hη; cbn.
+    + rewrite logic_var_swap_unfold.
+      rewrite logic_var_free_eq_swap.
+      rewrite atom_swap_involutive. reflexivity.
+    + rewrite logic_var_swap_unfold.
+      rewrite eq_swap_fresh by congruence. reflexivity.
+  - cbn [logic_var_open_env].
+    rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
+    reflexivity.
+Qed.
+
+Lemma lvars_swap_elem_iff x y D v :
+  v ∈ lvars_swap x y D <-> logic_var_swap x y v ∈ D.
+Proof.
+  rewrite lvars_swap_unfold, gset_swap_elem.
+  change (key_swap (LVFree x) (LVFree y) v) with (logic_var_swap x y v).
+  reflexivity.
+Qed.
+
+Lemma lvars_open_env_atom_swap x y η D :
+  lvars_open_env η (lvars_swap x y D) =
+  lvars_swap x y (lvars_open_env (open_env_atom_swap x y η) D).
+Proof.
+  apply set_eq. intros v.
+  unfold lvars_open_env.
+  split.
+  - intros Hv.
+    apply elem_of_map in Hv as [u [-> Hu]].
+    apply lvars_swap_elem_iff in Hu.
+    apply lvars_swap_elem_iff.
+    apply elem_of_map.
+    exists (logic_var_swap x y u). split.
+    + pose proof (logic_var_open_env_atom_swap x y η
+        (logic_var_swap x y u)) as Hop.
+      rewrite logic_var_swap_involutive in Hop.
+      apply (f_equal (logic_var_swap x y)) in Hop.
+      rewrite logic_var_swap_involutive in Hop.
+      exact Hop.
+    + exact Hu.
+  - intros Hv.
+    apply lvars_swap_elem_iff in Hv.
+    apply elem_of_map in Hv as [u [Hu_eq Hu]].
+    apply elem_of_map.
+    exists (logic_var_swap x y u). split.
+    + pose proof (logic_var_open_env_atom_swap x y η u) as Hop.
+      rewrite Hop.
+      rewrite <- Hu_eq.
+      rewrite logic_var_swap_involutive. reflexivity.
+    + apply lvars_swap_elem_iff.
+      rewrite logic_var_swap_involutive. exact Hu.
+Qed.
+
+Lemma open_env_fresh_for_lvars_atom_swap x y η D :
+  open_env_fresh_for_lvars η (lvars_swap x y D) ->
+  open_env_fresh_for_lvars (open_env_atom_swap x y η) D.
+Proof.
+  intros Hfresh k a Hka Hbad.
+  rewrite open_env_atom_swap_lookup in Hka.
+  destruct (η !! k) as [b|] eqn:Hη; cbn in Hka; [|discriminate].
+  inversion Hka. subst a.
+  eapply Hfresh; [exact Hη|].
+  rewrite lvars_open_env_atom_swap.
+  rewrite lvars_fv_swap.
+  rewrite elem_of_aset_swap.
+  rewrite <- open_env_atom_swap_delete.
+  exact Hbad.
+Qed.
+
+Lemma lty_env_open_lvars_atom_swap x y η Σ :
+  open_env_fresh_for_lvars η (dom (lty_env_swap x y Σ)) ->
+  lty_env_open_lvars η (lty_env_swap x y Σ) =
+  lty_env_swap x y
+    (lty_env_open_lvars (open_env_atom_swap x y η) Σ).
+Proof.
+  intros Hfresh.
+  assert (HfreshΣ :
+    open_env_fresh_for_lvars (open_env_atom_swap x y η) (dom Σ)).
+  {
+    apply open_env_fresh_for_lvars_atom_swap.
+    rewrite <- lty_env_swap_dom. exact Hfresh.
+  }
+  unfold lty_env_open_lvars, lty_env_swap.
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_open_env η) (logic_var_swap x y) Σ).
+  2:{ intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab. }
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact Hfresh. }
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_swap x y) (logic_var_open_env (open_env_atom_swap x y η)) Σ).
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact HfreshΣ. }
+  2:{ intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_open_env_atom_swap.
+Qed.
+
+Lemma lty_env_to_atom_env_open_lvars_atom_swap x y η Σ :
+  open_env_fresh_for_lvars η (dom (lty_env_swap x y Σ)) ->
+  lty_env_to_atom_env (lty_env_open_lvars η (lty_env_swap x y Σ)) =
+  store_swap x y
+    (lty_env_to_atom_env
+      (lty_env_open_lvars (open_env_atom_swap x y η) Σ)).
+Proof.
+  intros Hfresh.
+  rewrite lty_env_open_lvars_atom_swap by exact Hfresh.
+  apply lty_env_to_atom_env_swap.
+Qed.
 
 Lemma open_tm_env_singleton k y e :
   open_tm_env (<[k := y]> ∅) e =
@@ -76,6 +225,55 @@ Proof.
   - intros i j xi xj acc Hij _ _.
     apply open_swap_tm; [apply LC_fvar | apply LC_fvar | exact Hij].
   - exact Hfresh.
+Qed.
+
+Lemma open_env_atom_swap_insert x y η k a :
+  open_env_atom_swap x y (<[k := a]> η) =
+  <[k := atom_swap x y a]> (open_env_atom_swap x y η).
+Proof.
+  unfold open_env_atom_swap.
+  apply map_eq. intros j.
+  rewrite lookup_fmap.
+  destruct (decide (j = k)) as [->|Hjk].
+  - rewrite !lookup_insert_eq. reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    rewrite lookup_fmap. reflexivity.
+Qed.
+
+Lemma open_env_atom_swap_avoids x y z η :
+  open_env_avoids_atom z η ->
+  open_env_avoids_atom (atom_swap x y z) (open_env_atom_swap x y η).
+Proof.
+  intros Havoid k Hlookup.
+  rewrite open_env_atom_swap_lookup in Hlookup.
+  destruct (η !! k) as [a|] eqn:Hη; cbn in Hlookup; [|discriminate].
+  inversion Hlookup as [Heq].
+  apply atom_swap_inj in Heq. subst a.
+  apply (Havoid k). exact Hη.
+Qed.
+
+Lemma open_tm_env_atom_swap x y η e :
+  open_tm_env η (tm_swap_atom x y e) =
+  tm_swap_atom x y (open_tm_env (open_env_atom_swap x y η) e).
+Proof.
+  unfold open_tm_env.
+  revert e.
+  induction η as [|k a η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros e. rewrite !map_fold_empty. reflexivity.
+  - intros e.
+    rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)).
+    rewrite open_env_atom_swap_insert.
+    rewrite (map_fold_insert_L
+      (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)
+      e k (atom_swap x y a) (open_env_atom_swap x y η)).
+    2:{
+      intros i j xi xj acc Hij _ _.
+      apply open_swap_tm; [apply LC_fvar | apply LC_fvar | exact Hij].
+    }
+    2:{ rewrite open_env_atom_swap_lookup, Hfresh. reflexivity. }
+    rewrite IH.
+    rewrite open_tm_swap_atom.
+    reflexivity.
 Qed.
 
 Lemma open_tm_env_open_fresh_plain η k x e :
@@ -305,7 +503,7 @@ Proof.
     + intros ->. apply HzD. apply lvars_fv_elem. exact HvD.
 Qed.
 
-Lemma lty_env_to_atom_env_open_lvars_insert_open_swap_back_fresh
+Lemma lty_env_to_atom_env_open_swap_back
     (η : gmap nat atom) k y z (Σ : lty_env) :
   η !! k = Some z ->
   y ∉ lvars_fv (dom Σ) ->
@@ -361,7 +559,7 @@ Proof.
   - intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab.
 Qed.
 
-Lemma basic_typing_open_env_insert_open_swap_back_fresh
+Lemma basic_typing_open_env_swap_back
     (η : gmap nat atom) k y z Σ e T :
   η !! k = Some z ->
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
@@ -380,7 +578,7 @@ Proof.
   pose proof (basic_typing_swap_tm _ _ _ y z Hty) as Hswap.
   rewrite open_tm_env_insert_open_swap_back in Hswap by
     (try exact Hηk; try exact Hfreshη; try exact Hfreshy; set_solver).
-  rewrite lty_env_to_atom_env_open_lvars_insert_open_swap_back_fresh in Hswap
+  rewrite lty_env_to_atom_env_open_swap_back in Hswap
     by (try exact Hηk; try exact Havoid; try exact HfreshΣ; set_solver).
   exact Hswap.
 Qed.
@@ -421,7 +619,6 @@ Definition basic_tm_has_ltype
     lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η ->
     lty_env_to_atom_env (lty_env_open_lvars η Σ) ⊢ₑ
       open_tm_env η e ⋮ T.
-
 Lemma lty_env_to_atom_env_open_lvars_insert_free_subset
     η (Σ : lty_env) x T :
   LVFree x ∉ dom Σ ->
@@ -494,6 +691,107 @@ Proof.
         set_solver.
 Qed.
 
+Lemma lvars_swap_mono x y (D E : lvset) :
+  D ⊆ E ->
+  lvars_swap x y D ⊆ lvars_swap x y E.
+Proof.
+  intros Hsub v Hv.
+  apply lvars_swap_elem_iff in Hv.
+  apply lvars_swap_elem_iff.
+  apply Hsub. exact Hv.
+Qed.
+
+Lemma lvars_swap_union x y (D E : lvset) :
+  lvars_swap x y (D ∪ E) = lvars_swap x y D ∪ lvars_swap x y E.
+Proof.
+  apply set_eq. intros v.
+  rewrite elem_of_union.
+  rewrite !lvars_swap_elem_iff.
+  rewrite elem_of_union. reflexivity.
+Qed.
+
+Lemma open_env_fresh_for_lvars_atom_swap_inv x y η D :
+  open_env_fresh_for_lvars η D ->
+  open_env_fresh_for_lvars (open_env_atom_swap x y η) (lvars_swap x y D).
+Proof.
+  intros Hfresh k a Hka Hbad.
+  rewrite open_env_atom_swap_lookup in Hka.
+  destruct (η !! k) as [b|] eqn:Hη; cbn in Hka; [|discriminate].
+  inversion Hka. subst a.
+  eapply Hfresh; [exact Hη|].
+  rewrite open_env_atom_swap_delete in Hbad.
+  rewrite lvars_open_env_atom_swap in Hbad.
+  rewrite open_env_atom_swap_involutive in Hbad.
+  rewrite lvars_fv_swap in Hbad.
+  rewrite elem_of_aset_swap in Hbad.
+  rewrite atom_swap_involutive in Hbad.
+  exact Hbad.
+Qed.
+
+Lemma basic_tm_has_ltype_swap_atom x y Σ e T :
+  basic_tm_has_ltype Σ e T ->
+  basic_tm_has_ltype (lty_env_swap x y Σ) (tm_swap_atom x y e) T.
+Proof.
+  intros [Hsub Hty]. split.
+  - rewrite tm_lvars_swap_atom.
+    rewrite lty_env_swap_dom.
+    apply lvars_swap_mono. exact Hsub.
+  - intros η Hfresh Hbv.
+    set (η' := open_env_atom_swap x y η).
+    assert (Hfresh' :
+      open_env_fresh_for_lvars η' (dom Σ ∪ tm_lvars e)).
+    {
+      subst η'.
+      apply open_env_fresh_for_lvars_atom_swap.
+      rewrite lvars_swap_union.
+      rewrite <- lty_env_swap_dom.
+      rewrite <- tm_lvars_swap_atom.
+      exact Hfresh.
+    }
+    assert (Hbv' : lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η').
+    {
+      subst η'. rewrite open_env_atom_swap_dom.
+      intros k Hk. apply Hbv.
+      rewrite !lvars_bv_union in Hk |- *.
+      rewrite lty_env_swap_dom.
+      rewrite tm_lvars_swap_atom.
+      rewrite !lvars_bv_swap.
+      exact Hk.
+    }
+    subst η'.
+    specialize (Hty (open_env_atom_swap x y η) Hfresh' Hbv').
+    pose proof (basic_typing_swap_tm _ _ _ x y Hty) as Hswap.
+    rewrite <- open_tm_env_atom_swap in Hswap.
+    rewrite <- lty_env_to_atom_env_open_lvars_atom_swap in Hswap.
+    + exact Hswap.
+    + eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+      set_solver.
+Qed.
+
+Lemma logic_var_swap_open_one x y k v :
+  logic_var_swap x y (logic_var_open k x v) =
+  logic_var_open k y (logic_var_swap x y v).
+Proof.
+  rewrite !logic_var_open_unfold, !logic_var_swap_unfold.
+  unfold eq_swap.
+  repeat destruct decide; subst; try congruence; reflexivity.
+Qed.
+
+Lemma lty_env_swap_open_one x y k Σ :
+  lty_env_swap x y (lty_env_open_one k x Σ) =
+  lty_env_open_one k y (lty_env_swap x y Σ).
+Proof.
+  unfold lty_env_swap, lty_env_open_one.
+  rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
+  2:{ apply logic_var_swap_inj. }
+  2:{ intros a b H. eapply logic_var_open_inj_fresh. exact H. }
+  rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
+  2:{ intros a b H. eapply logic_var_open_inj_fresh. exact H. }
+  2:{ apply logic_var_swap_inj. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_swap_open_one.
+Qed.
+
 (** The syntactic well-formedness of [τ] is not a runtime property of the
     world, but we still package it as a world-independent logic qualifier.
     Unlike [basic_choice_ty], this version is scoped by the lvar-domain of [Σ]
@@ -503,28 +801,22 @@ Definition choice_ty_wf_lqual
     (Σ : lty_env) (τ : choice_ty) : LogicQualifierT :=
   lqual (dom Σ)
     (fun _ => basic_choice_ty_lvars (dom Σ) τ).
-
 Definition choice_ty_wf_formula
     (Σ : lty_env) (τ : choice_ty) : Formula :=
   FAtom (choice_ty_wf_lqual Σ τ).
-
 Lemma formula_fv_choice_ty_wf_formula Σ τ :
   formula_fv (choice_ty_wf_formula Σ τ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.
-
 Definition expr_basic_typing_lqual
     (Σ : lty_env) (e : tm) (T : ty) : LogicQualifierT :=
   lqual (dom Σ)
     (fun _ => basic_tm_has_ltype Σ e T).
-
 Definition expr_basic_typing_formula
     (Σ : lty_env) (e : tm) (T : ty) : Formula :=
   FAtom (expr_basic_typing_lqual Σ e T).
-
 Lemma formula_fv_expr_basic_typing_formula Σ e T :
   formula_fv (expr_basic_typing_formula Σ e T) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.
-
 Lemma formula_open_choice_ty_wf_formula k y Σ τ :
   formula_open k y (choice_ty_wf_formula Σ τ) =
   choice_ty_wf_formula (lty_env_open_one k y Σ) (cty_open k y τ).
@@ -714,7 +1006,7 @@ Proof.
         eapply open_env_fresh_for_lvars_mono; [|exact Hfreshξ].
         intros v Hv. apply elem_of_union_l. exact Hv.
       }
-      eapply basic_typing_open_env_insert_open_swap_back_fresh.
+      eapply basic_typing_open_env_swap_back.
       * exact Hηk.
       * subst D. rewrite lvars_fv_union, tm_lvars_fv in HyD. exact HyD.
       * exact HzΣ.
@@ -789,6 +1081,66 @@ Proof.
   split.
   - apply basic_tm_has_ltype_open_one_cofinite.
   - apply basic_tm_has_ltype_close_one_cofinite.
+Qed.
+
+Lemma basic_tm_has_ltype_open_one_rename_fresh k y z Σ e T :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  z ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  basic_tm_has_ltype (lty_env_open_one k y Σ)
+    (open_tm k (vfvar y) e) T ->
+  basic_tm_has_ltype (lty_env_open_one k z Σ)
+    (open_tm k (vfvar z) e) T.
+Proof.
+  intros Hy Hz Hty.
+  pose proof (basic_tm_has_ltype_swap_atom y z
+    (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T Hty) as Hswap.
+  rewrite lty_env_swap_open_one in Hswap.
+  rewrite lty_env_swap_fresh in Hswap.
+  2:{ unfold lty_env_atom_dom. set_solver. }
+  2:{ unfold lty_env_atom_dom. set_solver. }
+  rewrite tm_swap_atom_open_tm_fresh in Hswap by set_solver.
+  exact Hswap.
+Qed.
+
+Lemma basic_tm_has_ltype_close_one_fresh k y Σ e T :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  basic_tm_has_ltype (lty_env_open_one k y Σ)
+    (open_tm k (vfvar y) e) T ->
+  basic_tm_has_ltype Σ e T.
+Proof.
+  intros Hy Hopen.
+  apply (basic_tm_has_ltype_close_one_cofinite k).
+  exists ({[y]} ∪ lvars_fv (dom Σ) ∪ fv_tm e).
+  intros z Hz.
+  eapply basic_tm_has_ltype_open_one_rename_fresh; [exact Hy| |exact Hopen].
+  set_solver.
+Qed.
+
+Lemma basic_tm_has_ltype_open_one_fresh_iff k y Σ e T :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  basic_tm_has_ltype Σ e T <->
+  basic_tm_has_ltype (lty_env_open_one k y Σ)
+    (open_tm k (vfvar y) e) T.
+Proof.
+  intros Hy. split.
+  - apply basic_tm_has_ltype_open_one_fresh. exact Hy.
+  - apply basic_tm_has_ltype_close_one_fresh. exact Hy.
+Qed.
+
+Lemma formula_open_expr_basic_typing_formula k y Σ e T :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  formula_open k y (expr_basic_typing_formula Σ e T) =
+  expr_basic_typing_formula
+    (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T.
+Proof.
+  intros Hy.
+  unfold expr_basic_typing_formula, expr_basic_typing_lqual.
+  cbn [formula_open lqual_open].
+  f_equal.
+  apply logic_qualifier_ext.
+  - rewrite lty_env_open_one_dom. reflexivity.
+  - intros w1 w2 Hlw. cbn [lqual_prop].
+    apply basic_tm_has_ltype_open_one_fresh_iff. exact Hy.
 Qed.
 
 Lemma basic_typing_lty_env_to_atom_env_fv_subset Σ e T :
@@ -940,6 +1292,99 @@ Proof.
   intros Hmodels.
   apply expr_basic_typing_formula_models_iff in Hmodels as [_ [_ Hbasic]].
   exact Hbasic.
+Qed.
+
+Lemma res_models_open_expr_basic_typing_to_open
+    k y Σ e T (m : WfWorldT) :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  res_models m (formula_open k y (expr_basic_typing_formula Σ e T)) ->
+  res_models m
+    (expr_basic_typing_formula
+      (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T).
+Proof.
+  intros Hy Hmodels.
+  unfold res_models, expr_basic_typing_formula, expr_basic_typing_lqual in Hmodels.
+  cbn [formula_open lqual_open formula_measure res_models_fuel] in Hmodels.
+  destruct Hmodels as [_ Hden].
+  unfold logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  destruct Hden as [Hlc [Hsub Hbasic]].
+  apply expr_basic_typing_formula_models_iff.
+  split.
+  - rewrite lty_env_open_one_dom. exact Hlc.
+  - split.
+    + rewrite lty_env_open_one_dom. exact Hsub.
+    + apply basic_tm_has_ltype_open_one_fresh; assumption.
+Qed.
+
+Lemma res_models_open_expr_basic_typing_bind0_to_open
+    y Σ T e U (m : WfWorldT) :
+  LVFree y ∉ dom Σ ->
+  lty_env_closed Σ ->
+  y ∉ fv_tm e ->
+  res_models m
+    (formula_open 0 y (expr_basic_typing_formula (typed_lty_env_bind Σ T) e U)) ->
+  res_models m
+    (expr_basic_typing_formula
+      (<[LVFree y := T]> Σ) (open_tm 0 (vfvar y) e) U).
+Proof.
+  intros Hfresh Hclosed Hye Hmodels.
+  apply res_models_open_expr_basic_typing_to_open in Hmodels.
+  - rewrite typed_lty_env_bind_open_current in Hmodels by assumption.
+    exact Hmodels.
+  - rewrite typed_lty_env_bind_lvars_fv_dom.
+    intros Hy.
+    apply elem_of_union in Hy as [HyΣ|Hy]; [|exact (Hye Hy)].
+    apply Hfresh. apply lvars_fv_elem. exact HyΣ.
+Qed.
+
+Lemma res_models_open_expr_basic_typing_iff
+    k y Σ e T (m : WfWorldT) :
+  y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+  res_models m (formula_open k y (expr_basic_typing_formula Σ e T)) <->
+  res_models m
+    (expr_basic_typing_formula
+      (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T).
+Proof.
+  intros Hy. split.
+  - apply res_models_open_expr_basic_typing_to_open.
+    exact Hy.
+  - intros Hmodels.
+    apply expr_basic_typing_formula_models_iff in Hmodels
+      as [Hlc [Hsub Hbasic]].
+    unfold res_models, expr_basic_typing_formula, expr_basic_typing_lqual.
+    cbn [formula_open lqual_open formula_measure res_models_fuel].
+    split.
+    + rewrite lty_env_open_one_dom in Hsub. exact Hsub.
+    + unfold logic_qualifier_denote.
+      cbn [lqual_dom lqual_prop].
+      split.
+      * rewrite lty_env_open_one_dom in Hlc. exact Hlc.
+      * split.
+        -- rewrite lty_env_open_one_dom in Hsub. exact Hsub.
+        -- eapply basic_tm_has_ltype_close_one_fresh; eauto.
+Qed.
+
+Lemma res_models_open_expr_basic_typing_bind0_iff
+    y Σ T e U (m : WfWorldT) :
+  LVFree y ∉ dom Σ ->
+  lty_env_closed Σ ->
+  y ∉ fv_tm e ->
+  res_models m
+    (formula_open 0 y (expr_basic_typing_formula (typed_lty_env_bind Σ T) e U)) <->
+  res_models m
+    (expr_basic_typing_formula
+      (<[LVFree y := T]> Σ) (open_tm 0 (vfvar y) e) U).
+Proof.
+  intros Hfresh Hclosed Hye.
+  rewrite (res_models_open_expr_basic_typing_iff
+    0 y (typed_lty_env_bind Σ T) e U m).
+  - rewrite typed_lty_env_bind_open_current by assumption.
+    reflexivity.
+  - rewrite typed_lty_env_bind_lvars_fv_dom.
+    intros Hy.
+    apply elem_of_union in Hy as [HyΣ|Hy]; [|exact (Hye Hy)].
+    apply Hfresh. apply lvars_fv_elem. exact HyΣ.
 Qed.
 
 Lemma expr_basic_typing_formula_insert_fresh_lvar

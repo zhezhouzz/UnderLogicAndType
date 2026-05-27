@@ -70,6 +70,28 @@ Proof.
   apply HP. reflexivity.
 Qed.
 
+Lemma lqual_open_commute_fresh i j x y q :
+  i <> j ->
+  x <> y ->
+  lqual_open i x (lqual_open j y q) =
+  lqual_open j y (lqual_open i x q).
+Proof.
+  intros Hij Hxy.
+  destruct q as [D P].
+  cbn [lqual_open].
+  apply logic_qualifier_ext.
+  - apply lvars_open_commute_fresh; assumption.
+  - intros w1 w2 Hlw. cbn [lqual_prop].
+    enough
+      (lworld_on_open_back j y D
+        (lworld_on_open_back i x (lvars_open j y D) w1) =
+       lworld_on_open_back i x D
+        (lworld_on_open_back j y (lvars_open i x D) w2)) as ->.
+    { reflexivity. }
+    apply lworld_on_ext.
+    eapply lworld_on_open_back_commute_fresh; eauto.
+Qed.
+
 Lemma logic_qualifier_denote_restrict q w X :
   lqual_fv q ⊆ X →
   logic_qualifier_denote q (res_restrict w X) ↔

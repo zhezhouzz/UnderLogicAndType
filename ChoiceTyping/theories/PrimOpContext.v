@@ -4,7 +4,9 @@
     unary type [prim_op_type]; this layer refines it with over-approximate
     argument qualifiers and precise result qualifiers. *)
 
-From ChoiceType Require Export Sugar BasicTyping DenotationContext.
+From CoreLang Require Import BasicTyping.
+From ChoiceTypeLanguage Require Export Sugar.
+From Denotation Require Export Context.
 
 Record primop_sig := mk_primop_sig {
   prim_arg_base : base_ty;
@@ -78,29 +80,19 @@ Qed.
 Lemma default_primop_ctx_arg_basic op :
   basic_choice_ty ∅ (primop_arg_ty (default_primop_ctx op)).
 Proof.
-  unfold default_primop_ctx.
+  unfold default_primop_ctx, primop_arg_ty, over_ty.
   destruct (prim_op_type op) as [arg_b ret_b].
-  simpl. constructor. apply basic_qualifier_body_top.
+  apply basic_choice_ty_over.
+  apply basic_qualifier_body_top.
 Qed.
 
 Lemma default_primop_ctx_result_basic op :
   basic_choice_ty ∅ (primop_result_ty (default_primop_ctx op)).
 Proof.
-  unfold default_primop_ctx.
+  unfold default_primop_ctx, primop_result_ty, precise_ty, over_ty, under_ty.
   destruct (prim_op_type op) as [arg_b ret_b].
-  simpl. constructor; constructor; try reflexivity; apply basic_qualifier_body_top.
-Qed.
-
-Lemma default_primop_ctx_semantic_ok op :
-  primop_semantic_ok op (default_primop_ctx op).
-Proof. Admitted.
-
-Lemma default_primop_ctx_wf :
-  wf_primop_ctx default_primop_ctx.
-Proof.
-  intros op. constructor.
-  - apply default_primop_ctx_erasure_ok.
-  - apply default_primop_ctx_arg_basic.
-  - apply default_primop_ctx_result_basic.
-  - apply default_primop_ctx_semantic_ok.
+  apply basic_choice_ty_inter.
+  - apply basic_choice_ty_over. apply basic_qualifier_body_top.
+  - apply basic_choice_ty_under. apply basic_qualifier_body_top.
+  - reflexivity.
 Qed.

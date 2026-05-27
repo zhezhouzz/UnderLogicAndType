@@ -4,7 +4,7 @@
     prelude may know about polymorphic stores, but it should not depend on
     worlds or the algebraic resource order. *)
 
-From ChoiceAlgebra Require Import Resource.
+From ChoiceAlgebra Require Import Resource ResourceCore.
 From ChoicePrelude Require Import Prelude Store.
 
 Ltac resource_world_norm :=
@@ -25,7 +25,7 @@ Ltac resource_restrict_norm :=
 Ltac resource_store_dom_solver :=
   try solve
   [ set_solver
-  | eapply wfworld_store_dom_subset; [eassumption | set_solver]
+  | eapply wfworldA_store_dom_subset; [eassumption | set_solver]
   ].
 
 Ltac resource_norm :=

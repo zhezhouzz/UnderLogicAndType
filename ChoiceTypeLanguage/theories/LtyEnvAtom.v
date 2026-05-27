@@ -159,6 +159,23 @@ Proof.
   apply lty_env_swap_lookup.
 Qed.
 
+Lemma lty_env_swap_dom x y Σ :
+  dom (lty_env_swap x y Σ) = lvars_swap x y (dom Σ).
+Proof.
+  unfold lty_env_swap, lvars_swap.
+  change (dom (storeA_rekey (logic_var_swap x y) Σ : gmap logic_var ty) =
+    gset_swap (LVFree x) (LVFree y) (dom (Σ : gmap logic_var ty))).
+  rewrite storeA_rekey_dom by apply logic_var_swap_inj.
+  unfold gset_swap.
+  apply set_eq. intros v.
+  rewrite !elem_of_map.
+  split.
+  - intros [u [-> Hu]]. exists u. split; [|exact Hu].
+    rewrite logic_var_swap_unfold. reflexivity.
+  - intros [u [-> Hu]]. exists u. split; [|exact Hu].
+    rewrite <- logic_var_swap_unfold. reflexivity.
+Qed.
+
 Lemma lty_env_swap_insert x y Σ v T :
   lty_env_swap x y (<[v := T]> Σ) =
   <[match v with
@@ -442,6 +459,31 @@ Proof.
       [|reflexivity].
     pose proof (lty_env_to_atom_env_lookup_free_some Σ x T Hlv) as Hatom'.
     rewrite Hatom in Hatom'. discriminate.
+Qed.
+
+Lemma lty_env_to_atom_env_insert_free Σ x T :
+  lty_env_to_atom_env (<[LVFree x := T]> Σ) =
+  <[x := T]> (lty_env_to_atom_env Σ).
+Proof.
+  apply map_eq. intros y.
+  rewrite lty_env_to_atom_env_lookup.
+  destruct (decide (y = x)) as [->|Hyx].
+  - change ((((<[LVFree x := T]> (Σ : gmap logic_var ty))
+        : gmap logic_var ty) !! LVFree x) =
+      (((<[x := T]> (lty_env_to_atom_env Σ)) : gmap atom ty) !! x)).
+    rewrite (lookup_insert_eq (M:=gmap logic_var)).
+    change (Some T =
+      (((<[x := T]> (lty_env_to_atom_env Σ)) : gmap atom ty) !! x)).
+    symmetry.
+    exact (lookup_insert_eq (M:=gmap atom) (lty_env_to_atom_env Σ) x T).
+  - rewrite (lookup_insert_ne (M:=gmap logic_var) (Σ : gmap logic_var ty) (LVFree x) (LVFree y) T)
+      by congruence.
+    change ((Σ : gmap logic_var ty) !! LVFree y =
+      (((<[x := T]> (lty_env_to_atom_env Σ)) : gmap atom ty) !! y)).
+    transitivity (lty_env_to_atom_env Σ !! y).
+    + symmetry. apply lty_env_to_atom_env_lookup.
+    + symmetry.
+      apply lookup_insert_ne. congruence.
 Qed.
 
 Lemma lty_env_to_atom_env_swap x y Σ :

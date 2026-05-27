@@ -311,6 +311,36 @@ Proof.
   - apply res_models_forall_rev_intro. exact Hscope.
 Qed.
 
+Lemma res_models_forall_full_world_map
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  (** This is the "full-world" view of [FForall].  The primitive semantics
+      only asks extensions to read [formula_fv φ], but nested denotation
+      transports often open a formula under several binders and then need to
+      compare witnesses whose input domain is the whole current world.  The
+      proof converts [FForall φ] to that full-world form with
+      [res_models_forall_rev], maps the opened body there, and packages the
+      result back with [res_models_forall_rev_intro].  This is intentionally
+      independent of any [formula_fv φ = formula_fv ψ] side condition; the
+      world-domain restriction/restrict-back hypotheses carry the alignment. *)
+  formula_scoped_in_world m (FForall ψ) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        my ⊨ formula_open 0 y φ ->
+        my ⊨ formula_open 0 y ψ) ->
+  m ⊨ FForall φ ->
+  m ⊨ FForall ψ.
+Proof.
+  intros Hψscope [Lmap Hmap] Hφ.
+  pose proof (res_models_forall_rev m φ Hφ) as [Lφ Hφfull].
+  eapply res_models_forall_rev_intro; [exact Hψscope |].
+  exists (Lmap ∪ Lφ). intros y Hy my Hdom Hrestrict.
+  eapply Hmap; [set_solver | exact Hdom | exact Hrestrict |].
+  eapply Hφfull; [set_solver | exact Hdom | exact Hrestrict].
+Qed.
+
 Lemma res_models_forall_ext_transport_by_extension
     (m mx : WfWorldT) (F : fiber_extension (V := V)) (φ ψ : FormulaT) :
   formula_scoped_in_world m (FForall ψ) →

@@ -11,6 +11,7 @@ From LocallyNameless Require Import Classes.
 From ChoiceTypeLanguage Require Export Syntax.
 
 Class MOpen Env A B := mopen : Env -> A -> B.
+Arguments mopen {_ _ _ _} _ _.
 
 Notation "η ⊙ x" := (mopen η x)
   (at level 30, right associativity, format "η  ⊙  x").

@@ -12,22 +12,6 @@ Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=
 Definition basic_qualifier_body (D : aset) (q : type_qualifier) : Prop :=
   lvars_wf_at 1 D (qual_vars q).
 
-Lemma basic_qualifier_mono D E q :
-  D ⊆ E ->
-  basic_qualifier D q ->
-  basic_qualifier E q.
-Proof.
-  apply lvars_wf_at_mono.
-Qed.
-
-Lemma basic_qualifier_body_mono D E q :
-  D ⊆ E ->
-  basic_qualifier_body D q ->
-  basic_qualifier_body E q.
-Proof.
-  apply lvars_wf_at_mono.
-Qed.
-
 Lemma basic_qualifier_lc D q :
   basic_qualifier D q ->
   lc_qualifier q.
@@ -62,24 +46,6 @@ Lemma basic_qualifier_body_fv_subset D q :
   qual_dom q ⊆ D.
 Proof.
   apply lvars_wf_at_fv_subset.
-Qed.
-
-Lemma basic_qualifier_body_open D q x :
-  x ∉ D ->
-  basic_qualifier_body D q ->
-  basic_qualifier (D ∪ {[x]}) (q ^q^ x).
-Proof.
-  intros Hx Hwf.
-  unfold basic_qualifier, basic_qualifier_body in *.
-  rewrite qual_open_atom_vars.
-  apply lvars_wf_at_open_body; assumption.
-Qed.
-
-Lemma basic_qualifier_top D :
-  basic_qualifier D qual_top.
-Proof.
-  unfold basic_qualifier, qual_top. cbn [qual_vars qual_lvars].
-  intros v Hv. set_solver.
 Qed.
 
 Lemma basic_qualifier_body_top D :
@@ -119,52 +85,6 @@ Proof.
     apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
 Qed.
 
-Lemma basic_choice_ty_union D τ1 τ2 :
-  basic_choice_ty D τ1 ->
-  basic_choice_ty D τ2 ->
-  erase_ty τ1 = erase_ty τ2 ->
-  basic_choice_ty D (CTUnion τ1 τ2).
-Proof.
-  intros H1 H2 Herase.
-  apply basic_choice_ty_iff_wf_choice_ty_at.
-  cbn [wf_choice_ty_at]. repeat split; try assumption;
-    apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
-Qed.
-
-Lemma basic_choice_ty_sum D τ1 τ2 :
-  basic_choice_ty D τ1 ->
-  basic_choice_ty D τ2 ->
-  erase_ty τ1 = erase_ty τ2 ->
-  basic_choice_ty D (CTSum τ1 τ2).
-Proof.
-  intros H1 H2 Herase.
-  apply basic_choice_ty_iff_wf_choice_ty_at.
-  cbn [wf_choice_ty_at]. repeat split; try assumption;
-    apply basic_choice_ty_iff_wf_choice_ty_at; assumption.
-Qed.
-
-Lemma basic_choice_ty_arrow D τx τ :
-  basic_choice_ty D τx ->
-  wf_choice_ty_at 1 D τ ->
-  basic_choice_ty D (CTArrow τx τ).
-Proof.
-  intros Hx Hbody.
-  apply basic_choice_ty_iff_wf_choice_ty_at.
-  cbn [wf_choice_ty_at]. split; [|exact Hbody].
-  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hx.
-Qed.
-
-Lemma basic_choice_ty_wand D τx τ :
-  basic_choice_ty D τx ->
-  wf_choice_ty_at 1 D τ ->
-  basic_choice_ty D (CTWand τx τ).
-Proof.
-  intros Hx Hbody.
-  apply basic_choice_ty_iff_wf_choice_ty_at.
-  cbn [wf_choice_ty_at]. split; [|exact Hbody].
-  apply basic_choice_ty_iff_wf_choice_ty_at. exact Hx.
-Qed.
-
 Lemma basic_ctx_empty D :
   basic_ctx D CtxEmpty.
 Proof.
@@ -177,15 +97,6 @@ Lemma basic_ctx_bind D x τ :
   basic_ctx D (CtxBind x τ).
 Proof.
   intros Hx Hτ. split; assumption.
-Qed.
-
-Lemma basic_ctx_comma D Γ1 Γ2 :
-  basic_ctx D Γ1 ->
-  basic_ctx (D ∪ ctx_dom Γ1) Γ2 ->
-  ctx_dom Γ1 ## ctx_dom Γ2 ->
-  basic_ctx D (CtxComma Γ1 Γ2).
-Proof.
-  intros H1 H2 Hdisj. repeat split; assumption.
 Qed.
 
 Lemma basic_ctx_star D Γ1 Γ2 :
@@ -227,38 +138,6 @@ Proof.
   apply elem_of_union in Hy' as [Hyτ|Hyx].
   - apply elem_of_union_r. exact Hyτ.
   - apply elem_of_union_l. exact Hyx.
-Qed.
-
-Lemma qual_open_fv_prime_except k x q :
-  qual_dom q ∖ {[x]} ⊆ qual_dom (qual_open_atom k x q).
-Proof.
-  destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
-  apply lvars_fv_open_prime_except.
-Qed.
-
-Lemma qual_open_fv_prime_fresh k x q :
-  x ∉ qual_dom q ->
-  qual_dom q ⊆ qual_dom (qual_open_atom k x q).
-Proof.
-  destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
-  apply lvars_fv_open_prime_fresh.
-Qed.
-
-Lemma cty_open_fv_prime_except k x τ :
-  fv_cty τ ∖ {[x]} ⊆ fv_cty ({k ~> x} τ).
-Proof.
-  unfold fv_cty.
-  rewrite cty_open_vars.
-  apply lvars_fv_open_prime_except.
-Qed.
-
-Lemma cty_open_fv_prime_fresh k x τ :
-  x ∉ fv_cty τ ->
-  fv_cty τ ⊆ fv_cty ({k ~> x} τ).
-Proof.
-  unfold fv_cty.
-  rewrite cty_open_vars.
-  apply lvars_fv_open_prime_fresh.
 Qed.
 
 #[global] Hint Resolve

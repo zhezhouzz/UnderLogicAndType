@@ -8,12 +8,16 @@
     requires semantic nonemptiness, which depends on denotation and therefore
     lives in this layer. *)
 
-From ChoiceType Require Export BasicTyping DenotationContext.
+From CoreLang Require Import BasicTyping.
+From ChoiceAlgebra Require Import ResourceInterface.
+From ChoiceLogic Require Import FormulaScope.
+From ChoiceTypeLanguage Require Export Sugar.
+From Denotation Require Export Context.
 
 (** ** Context and type well-formedness *)
 
 Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
-  ∃ r : WfWorld, r ⊨ denot_ctx_in_env Σ Γ.
+  ∃ r : WfWorldT, r ⊨ denot_ctx_in_env Σ Γ.
 
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
@@ -97,40 +101,4 @@ Proof.
   intros Hwf.
   eapply basic_choice_ty_fv_subset.
   exact (wf_choice_ty_under_basic Σ Γ τ Hwf).
-Qed.
-
-Lemma denot_ty_scoped_from_ctx_under Σ Γ τ e m :
-  wf_choice_ty_under Σ Γ τ →
-  fv_tm e ⊆ dom Σ ∪ ctx_dom Γ →
-  m ⊨ denot_ctx_in_env Σ Γ →
-  formula_scoped_in_world ∅ m (denot_ty_in_ctx_under Σ Γ τ e).
-Proof.
-  (* Re-prove against the new single-env [denot_ty_in_ctx_under_fv_subset].
-     The old proof was tied to the previous [dom (Σ ∪ erase_ctx Γ)] shape. *)
-Admitted.
-
-Lemma denot_ty_scoped_from_ctx Γ τ e m :
-  wf_choice_ty Γ τ →
-  fv_tm e ⊆ ctx_dom Γ →
-  m ⊨ ⟦Γ⟧ →
-  formula_scoped_in_world ∅ m (denot_ty_in_ctx Γ τ e).
-Proof.
-  intros Hwf Hfv Hctx.
-  unfold denot_ty_in_ctx.
-  pose proof (wf_ctx_basic Γ (wf_choice_ty_ctx Γ τ Hwf)) as HbasicΓ.
-  pose proof (basic_ctx_erase_dom ∅ Γ HbasicΓ) as HdomΓ.
-  pose proof (wf_choice_ty_fv_subset Γ τ Hwf) as Hτfv.
-  pose proof (denot_ty_under_fv_subset (erase_ctx Γ) τ e) as Hdenot_fv.
-  pose proof (res_models_with_store_fuel_scoped
-    (formula_measure (⟦Γ⟧)) ∅ m (⟦Γ⟧) Hctx) as Hctx_scope.
-  unfold formula_scoped_in_world in *.
-  intros z Hz.
-  rewrite dom_empty_L in Hz.
-  assert (Hzfv : z ∈ formula_fv (denot_ty_under (erase_ctx Γ) τ e)) by set_solver.
-  apply Hdenot_fv in Hzfv.
-  apply Hctx_scope.
-  unfold denot_ctx in Hctx_scope.
-  pose proof (denot_ctx_dom_subset_formula_fv Γ) as Hctx_fv.
-  rewrite HdomΓ in Hzfv.
-  set_solver.
 Qed.

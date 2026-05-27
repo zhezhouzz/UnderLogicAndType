@@ -195,6 +195,28 @@ Proof.
   revert k. induction φ; intros k; simpl; eauto; lia.
 Qed.
 
+Lemma formula_open_commute_fresh i j x y φ :
+  i <> j ->
+  x <> y ->
+  formula_open i x (formula_open j y φ) =
+  formula_open j y (formula_open i x φ).
+Proof.
+  intros Hij Hxy.
+  induction φ in i, j, Hij |- *; cbn [formula_open]; try reflexivity.
+  - rewrite lqual_open_commute_fresh by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ by lia. reflexivity.
+  - rewrite IHφ by assumption. reflexivity.
+  - rewrite IHφ by assumption. reflexivity.
+  - rewrite lvars_open_commute_fresh by assumption.
+    rewrite IHφ by assumption. reflexivity.
+Qed.
+
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.

@@ -43,6 +43,59 @@ Definition resA_pullback_projection (n p : WfWorldAT) (Hle : p ⊑ n) : WfWorldA
   exist _ (rawA_pullback_projection n p)
     (rawA_pullback_projection_wf n p Hle).
 
+Definition rawA_pullback_subset_projection (n p : WfWorldAT) : WorldAT := {|
+  worldA_dom := worldA_dom (n : WorldAT);
+  worldA_stores := fun σ =>
+    (n : WorldAT) σ ∧
+    (p : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (p : WorldAT)));
+|}.
+
+Lemma rawA_pullback_subset_projection_wf (n p : WfWorldAT) :
+  resA_subset p (resA_restrict n (worldA_dom (p : WorldAT))) →
+  wf_worldA (rawA_pullback_subset_projection n p).
+Proof.
+  intros Hsub. constructor.
+  - destruct Hsub as [_ Hstores].
+    destruct (worldA_wf p) as [[σp Hp] _].
+    specialize (Hstores σp Hp).
+    simpl in Hstores.
+    destruct Hstores as [σn [Hσn Hproj]].
+    exists σn. split; [exact Hσn |].
+    rewrite Hproj. exact Hp.
+  - intros σ [Hσ _]. simpl. exact (wfworldA_store_dom n σ Hσ).
+Qed.
+
+Definition resA_pullback_subset_projection (n p : WfWorldAT)
+    (Hsub : resA_subset p (resA_restrict n (worldA_dom (p : WorldAT)))) :
+    WfWorldAT :=
+  exist _ (rawA_pullback_subset_projection n p)
+    (rawA_pullback_subset_projection_wf n p Hsub).
+
+Lemma resA_pullback_subset_projection_subset (n p : WfWorldAT) Hsub :
+  resA_subset (resA_pullback_subset_projection n p Hsub) n.
+Proof.
+  split; [reflexivity |].
+  intros σ [Hσ _]. exact Hσ.
+Qed.
+
+Lemma resA_pullback_subset_projection_restrict (n p : WfWorldAT) Hsub :
+  resA_restrict (resA_pullback_subset_projection n p Hsub)
+    (worldA_dom (p : WorldAT)) = p.
+Proof.
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl. destruct Hsub as [Hdom _]. simpl in Hdom. set_solver.
+  - intros σ. simpl. split.
+    + intros [σn [[Hσn Hpσ] Hrestrict]].
+      subst σ. exact Hpσ.
+    + intros Hpσ.
+      destruct Hsub as [_ Hstores].
+      specialize (Hstores σ Hpσ).
+      simpl in Hstores.
+      destruct Hstores as [σn [Hσn Hproj]].
+      exists σn. split; [split; [exact Hσn | rewrite Hproj; exact Hpσ] |].
+      exact Hproj.
+Qed.
+
 Lemma resA_pullback_projection_subset (n p : WfWorldAT) Hle :
   resA_subset (resA_pullback_projection n p Hle) n.
 Proof.
@@ -69,6 +122,92 @@ Proof.
       destruct Hσ as [σn [Hσn Hproj]].
       exists σn. split; [split; [exact Hσn | rewrite Hproj; exact Hpσ] |].
       exact Hproj.
+Qed.
+
+Lemma resA_sum_pullback_subset_projection_full
+    (n n1 n2 : WfWorldAT) (Hdef : rawA_sum_defined n1 n2) :
+  resA_sum n1 n2 Hdef ⊑ n →
+  ∃ (Hsub1 : resA_subset n1 (resA_restrict n (worldA_dom (n1 : WorldAT))))
+    (Hsub2 : resA_subset n2 (resA_restrict n (worldA_dom (n2 : WorldAT))))
+    (Hdef_full : rawA_sum_defined
+      (resA_pullback_subset_projection n n1 Hsub1)
+      (resA_pullback_subset_projection n n2 Hsub2)),
+    resA_sum
+      (resA_pullback_subset_projection n n1 Hsub1)
+      (resA_pullback_subset_projection n n2 Hsub2)
+      Hdef_full ⊑ n.
+Proof.
+  intros Hsum_le.
+  change ((resA_sum n1 n2 Hdef : WorldAT) =
+    rawA_restrict n (worldA_dom (resA_sum n1 n2 Hdef : WorldAT))) in Hsum_le.
+  pose proof (rawA_le_dom (resA_sum n1 n2 Hdef) n Hsum_le) as Hdom_sum_n.
+  assert (Hsub1 : resA_subset n1 (resA_restrict n (worldA_dom (n1 : WorldAT)))).
+  {
+    split.
+    - simpl. unfold rawA_sum_defined in Hdef. set_solver.
+    - intros σ Hσ.
+      assert ((resA_restrict n (worldA_dom (resA_sum n1 n2 Hdef : WorldAT)) : WorldAT) σ)
+        as Hrestrict.
+      { change ((rawA_restrict n (worldA_dom (resA_sum n1 n2 Hdef : WorldAT))
+           : WorldAT) σ).
+        rewrite <- Hsum_le. simpl. left. exact Hσ. }
+      exact Hrestrict.
+  }
+  assert (Hsub2 : resA_subset n2 (resA_restrict n (worldA_dom (n2 : WorldAT)))).
+  {
+    split.
+    - simpl. unfold rawA_sum_defined in Hdef. set_solver.
+    - intros σ Hσ.
+      assert ((resA_restrict n (worldA_dom (resA_sum n1 n2 Hdef : WorldAT)) : WorldAT) σ)
+        as Hrestrict.
+      { change ((rawA_restrict n (worldA_dom (resA_sum n1 n2 Hdef : WorldAT))
+           : WorldAT) σ).
+        rewrite <- Hsum_le. simpl. right. exact Hσ. }
+      unfold rawA_sum_defined in Hdef.
+      replace (worldA_dom (resA_sum n1 n2 Hdef : WorldAT))
+        with (worldA_dom (n2 : WorldAT)) in Hrestrict by (simpl; symmetry; exact Hdef).
+      exact Hrestrict.
+  }
+  assert (Hdef_full : rawA_sum_defined
+      (resA_pullback_subset_projection n n1 Hsub1)
+      (resA_pullback_subset_projection n n2 Hsub2)).
+  { unfold rawA_sum_defined. reflexivity. }
+  exists Hsub1, Hsub2, Hdef_full.
+  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
+  apply worldA_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [Hleft | Hright]; destruct Hleft as [Hσ _] || destruct Hright as [Hσ _].
+      * exists σ. split; [exact Hσ |].
+        apply storeA_restrict_idemp.
+        pose proof (wfworldA_store_dom n σ Hσ) as Hdomσ.
+        change (dom (σ : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσ.
+        set_solver.
+      * exists σ. split; [exact Hσ |].
+        apply storeA_restrict_idemp.
+        pose proof (wfworldA_store_dom n σ Hσ) as Hdomσ.
+        change (dom (σ : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσ.
+        set_solver.
+    + intros [σn [Hσ Hrestrict]].
+      subst σ.
+      rewrite storeA_restrict_idemp by
+        (pose proof (wfworldA_store_dom n σn Hσ) as Hdomσ;
+         change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσ;
+         set_solver).
+      assert (Hσsum : (resA_sum n1 n2 Hdef : WorldAT)
+          (@storeA_restrict V K _ _ σn (worldA_dom (n1 : WorldAT)))).
+      {
+        rewrite Hsum_le. simpl.
+        exists σn. split; [exact Hσ | reflexivity].
+      }
+      simpl in Hσsum.
+      destruct Hσsum as [Hσ1 | Hσ2].
+      * left. split; [exact Hσ | exact Hσ1].
+	      * right. split; [exact Hσ |].
+	        unfold rawA_sum_defined in Hdef.
+	        replace (worldA_dom (n2 : WorldAT)) with (worldA_dom (n1 : WorldAT))
+	          by exact Hdef.
+	        exact Hσ2.
 Qed.
 
 Lemma resA_product_le_mono (w1 w2 w1' w2' : WfWorldAT)

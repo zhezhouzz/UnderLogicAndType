@@ -3,40 +3,8 @@
     Auxiliary judgments for the choice typing rules. *)
 
 From CoreLang Require Import BasicTypingProps Sugar.
+From ChoiceLogic Require Import Formula.
 From ChoiceTyping Require Export WellFormed.
-From ChoiceType Require Import LocallyNamelessProps.
-
-Lemma basic_typing_tlet_tapp_fvar_open_arrow_body
-    (Δ : gmap atom ty) y e1 e2 τx τ :
-  y ∉ dom Δ ->
-  Δ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τ) ->
-  (<[y := erase_ty τx]> Δ) ⊢ₑ
-    tlete e1 (tapp_tm e2 (vfvar y)) ⋮ erase_ty ({0 ~> y} τ).
-Proof.
-  intros Hy Hlet.
-  inversion Hlet as [|Γ T1 T2 e1' e2' L He1 Hbody| | |]; subst.
-  rewrite cty_open_preserves_erasure.
-  eapply TT_Let with (L := L ∪ {[y]}).
-  - eapply basic_typing_weaken_insert_tm; eauto.
-  - intros z Hz.
-    rewrite open_tapp_tm_fvar.
-    eapply basic_typing_tapp_tm.
-    + assert (<[y := erase_ty τx]> (<[z := T1]> Δ) =
-              <[z := T1]> (<[y := erase_ty τx]> Δ)) as Hperm.
-      {
-        apply map_eq. intros w.
-        rewrite !lookup_insert.
-        repeat case_decide; subst; try set_solver; reflexivity.
-      }
-      rewrite <- Hperm.
-      eapply basic_typing_weaken_insert_tm.
-      * rewrite dom_insert_L. set_solver.
-      * apply Hbody. set_solver.
-    + apply VT_FVar.
-      rewrite lookup_insert_ne by set_solver.
-      rewrite lookup_insert.
-      destruct (decide (y = y)); [reflexivity | congruence].
-Qed.
 
 (** ** Semantic subtyping *)
 

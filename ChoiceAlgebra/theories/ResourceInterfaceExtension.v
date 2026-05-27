@@ -21,19 +21,6 @@ Lemma res_extend_by_restrict_base (m : WfWorld) (F : @fiber_extension V) (n : Wf
   res_restrict n (world_dom m) = m.
 Proof. apply resA_extend_by_restrict_base. Qed.
 
-Lemma res_extend_by_restrict_subdom_base
-    (m n : WfWorld) (F : @fiber_extension V) X :
-  X ⊆ world_dom (m : World) ->
-  m #> F ~~> n ->
-  res_restrict n X = res_restrict m X.
-Proof.
-  intros HXm Hext.
-  rewrite <- (res_extend_by_restrict_base m F n Hext).
-  rewrite res_restrict_restrict_eq.
-  replace (world_dom (m : World) ∩ X) with X by set_solver.
-  reflexivity.
-Qed.
-
 Lemma res_extend_by_dom (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
   m #> F ~~> n →
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
@@ -67,24 +54,10 @@ Proof.
   exact (extA_app_out _ _ Happ).
 Qed.
 
-Lemma res_extend_by_base_le
-    (m n : WfWorld) (F : @fiber_extension V) (my ny : WfWorld) :
-  m ⊑ n →
-  m #> F ~~> my →
-  n #> F ~~> ny →
-  my ⊑ ny.
-Proof. apply resA_extend_by_base_le. Qed.
-
 Lemma res_extend_by_exists (m : WfWorld) (F : @fiber_extension V) :
   extension_applicable F m →
   ∃ n, m #> F ~~> n.
 Proof. apply resA_extend_by_exists. Qed.
-
-Lemma res_extend_by_unique (m : WfWorld) (F : @fiber_extension V) (n1 n2 : WfWorld) :
-  m #> F ~~> n1 →
-  m #> F ~~> n2 →
-  n1 = n2.
-Proof. apply resA_extend_by_unique. Qed.
 
 Lemma res_extend_by_projection_eq
     (m n : WfWorld) (F : @fiber_extension V) (my ny : WfWorld) :
@@ -94,14 +67,6 @@ Lemma res_extend_by_projection_eq
   res_restrict my (extA_in F ∪ extA_out F) =
   res_restrict ny (extA_in F ∪ extA_out F).
 Proof. apply resA_extend_by_projection_eq. Qed.
-
-Lemma res_extend_by_fiber_equiv_on
-    (m : WfWorld) (F G : @fiber_extension V) (n : WfWorld) :
-  extA_in F = extA_in G →
-  m #> F ~~> n →
-  m #> G ~~> n →
-  fiber_extension_equiv_on m F G.
-Proof. apply resA_extend_by_fiber_equiv_on. Qed.
 
 Lemma res_extend_by_commute
     (m : WfWorld) (F G : @fiber_extension V)

@@ -168,6 +168,92 @@ Proof.
     eapply res_models_kripke; [exact Hle2 | exact Hn2].
 Qed.
 
+Lemma res_models_pullback_subset_projection
+    (n p : WfWorldT) Hsub (φ : FormulaT) :
+  formula_fv φ ⊆ world_dom (p : WorldT) →
+  res_models p φ →
+  res_models (res_pullback_subset_projection n p Hsub) φ.
+Proof.
+  intros Hfv Hp.
+  set (pb := res_pullback_subset_projection n p Hsub).
+  assert (Hpb : res_restrict pb (world_dom (p : WorldT)) = p).
+  { subst pb. apply res_pullback_subset_projection_restrict. }
+  fold pb.
+  unfold res_models in *.
+  eapply res_models_fuel_projection; [| exact Hp].
+  rewrite <- Hpb.
+  rewrite res_restrict_restrict_eq.
+  replace (world_dom (p : WorldT) ∩ formula_fv φ) with (formula_fv φ)
+    by set_solver.
+  reflexivity.
+Qed.
+
+Lemma res_models_plus_extend_pullback_agree_on
+    (m : WfWorldT) (F : fiber_extension (V := V)) (n : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 : FormulaT) :
+  res_extend_by m F n →
+  res_models n (FPlus φ1 φ2) →
+  fiber_extension_functional_on m F →
+  (∀ (m1 n1 : WfWorldT),
+    world_dom (m1 : WorldT) = world_dom (m : WorldT) →
+    res_subset m1 m →
+    res_extend_by m1 F n1 →
+    res_models n1 φ1 →
+    res_models m1 ψ1) →
+  (∀ (m2 n2 : WfWorldT),
+    world_dom (m2 : WorldT) = world_dom (m : WorldT) →
+    res_subset m2 m →
+    res_extend_by m2 F n2 →
+    res_models n2 φ2 →
+    res_models m2 ψ2) →
+  res_models m (FPlus ψ1 ψ2).
+Proof.
+  intros Hext Hplus Hfun Hψ1 Hψ2.
+  pose proof (res_models_fuel_scoped _ _ _ Hplus) as Hscope_plus.
+  pose proof (proj1 (res_models_plus_iff n φ1 φ2 Hscope_plus) Hplus)
+    as [n1 [n2 [Hdef [Hsum_le [Hn1 Hn2]]]]].
+  destruct (res_sum_pullback_subset_projection_full n n1 n2 Hdef Hsum_le)
+    as (Hsub1 & Hsub2 & Hdef_full & Hsum_full_le).
+  set (n1f := res_pullback_subset_projection n n1 Hsub1).
+  set (n2f := res_pullback_subset_projection n n2 Hsub2).
+  assert (Hn1f : res_models n1f φ1).
+  {
+    subst n1f.
+    eapply res_models_pullback_subset_projection; [| exact Hn1].
+    eapply res_models_fuel_scoped. exact Hn1.
+  }
+  assert (Hn2f : res_models n2f φ2).
+  {
+    subst n2f.
+    eapply res_models_pullback_subset_projection; [| exact Hn2].
+    eapply res_models_fuel_scoped. exact Hn2.
+  }
+  assert (Hdom_m_n1f : world_dom (m : WorldT) ⊆ world_dom (n1f : WorldT)).
+  {
+    subst n1f.
+    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
+    pose proof (res_extend_by_dom m F n Hext) as Hdom.
+    simpl. set_solver.
+  }
+  assert (Hdom_m_n2f : world_dom (m : WorldT) ⊆ world_dom (n2f : WorldT)).
+  {
+    subst n2f.
+    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
+    pose proof (res_extend_by_dom m F n Hext) as Hdom.
+    simpl. set_solver.
+  }
+  destruct (res_extend_by_sum_pullback m F n n1f n2f Hdef_full
+    Hext Hfun Hdom_m_n1f Hdom_m_n2f Hsum_full_le)
+    as (m1 & m2 & Hdefm & n1' & n2' &
+      Hdom_m1 & Hdom_m2 & Hsub_m1 & Hsub_m2 & Hsum_m &
+      Hext1 & Hle1 & Hext2 & Hle2).
+  eapply res_models_plus_intro_from_models; [exact Hsum_m | |].
+  - eapply Hψ1; [exact Hdom_m1 | exact Hsub_m1 | exact Hext1 |].
+    eapply res_models_kripke; [exact Hle1 | exact Hn1f].
+  - eapply Hψ2; [exact Hdom_m2 | exact Hsub_m2 | exact Hext2 |].
+    eapply res_models_kripke; [exact Hle2 | exact Hn2f].
+Qed.
+
 Lemma res_models_resource_atom_extend_iff
     (m : WfWorldT) (F : fiber_extension (V := V))
     (my : WfWorldT) (D : lvset)

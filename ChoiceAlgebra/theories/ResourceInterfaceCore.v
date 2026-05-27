@@ -27,30 +27,33 @@ Coercion raw_world : WfWorld >-> World.
 Coercion lraw_world : LWfWorld >-> LWorld.
 
 Definition raw_unit : World := rawA_unit.
-Definition raw_rekey (f : atom → atom) (m : World) : World := rawA_rekey f m.
 Definition raw_restrict (m : World) (X : aset) : World := rawA_restrict m X.
 Definition raw_fiber (m : World) (σ : Store) : World := rawA_fiber m σ.
-Definition raw_swap (x y : atom) (m : World) : World := rawA_swap x y m.
-Definition raw_shift (k : nat) (m : World) : World := rawA_shift k m.
 Definition raw_le (m1 m2 : World) : Prop := rawA_le m1 m2.
 
 Definition res_unit : WfWorld := resA_unit.
-Definition res_rekey (f : atom → atom) (Hf : Inj (=) (=) f)
-    (w : WfWorld) : WfWorld := resA_rekey f Hf w.
 Definition res_restrict (w : WfWorld) (X : aset) : WfWorld := resA_restrict w X.
-Definition res_fiber (w : WfWorld) (σ : Store)
-    (Hne : ∃ σ0, (w : World) σ0 ∧ store_restrict σ0 (dom σ) = σ) : WfWorld :=
-  resA_fiber w σ Hne.
-Definition res_swap (x y : atom) (w : WfWorld) : WfWorld := resA_swap x y w.
-Definition res_shift (k : nat) (w : WfWorld) : WfWorld := resA_shift k w.
-Definition lres_rekey (f : logic_var → logic_var) (Hf : Inj (=) (=) f)
-    (w : LWfWorld) : LWfWorld := resA_rekey f Hf w.
 Definition lres_swap (x y : logic_var) (w : LWfWorld) : LWfWorld := resA_swap x y w.
 
 Lemma lworld_dom_lres_swap (x y : logic_var) (w : LWfWorld) :
   lworld_dom (lres_swap x y w : LWorld) =
   gset_swap x y (lworld_dom (lraw_world w)).
 Proof. reflexivity. Qed.
+
+Lemma lres_open_swap_commute_fresh i j x y (w : LWfWorld) :
+  i <> j ->
+  x <> y ->
+  lres_swap (LVBound i) (LVFree x)
+    (lres_swap (LVBound j) (LVFree y) w) =
+  lres_swap (LVBound j) (LVFree y)
+    (lres_swap (LVBound i) (LVFree x) w).
+Proof.
+  intros Hij Hxy.
+  unfold lres_swap.
+  rewrite resA_swap_conjugate.
+  rewrite !key_swap_fresh by congruence.
+  reflexivity.
+Qed.
 
 (** Atom worlds can be viewed as locally-nameless worlds whose keys are all
     free logic variables.  The implementation lives at the concrete interface
@@ -145,14 +148,6 @@ Proof.
       * rewrite lvars_fv_elem. exact Hv.
 Defined.
 
-Definition lworld_on_swap
-    (a b : logic_var) {D : lvset} (w : LWorldOn D)
-    : LWorldOn (gset_swap a b D).
-Proof.
-  refine {| lw := lres_swap a b (lw w) |}.
-  rewrite lworld_dom_lres_swap, (lw_dom w). reflexivity.
-Defined.
-
 Definition lworld_on_open_back
     (k : nat) (x : atom) (D : lvset)
     (w : LWorldOn (lvars_open k x D)) : LWorldOn D.
@@ -161,6 +156,23 @@ Proof.
   rewrite lworld_dom_lres_swap, (lw_dom w).
   rewrite lvars_open_unfold, gset_swap_involutive. reflexivity.
 Defined.
+
+Lemma lworld_on_open_back_commute_fresh i j x y D
+    (w1 : LWorldOn (lvars_open i x (lvars_open j y D)))
+    (w2 : LWorldOn (lvars_open j y (lvars_open i x D))) :
+  i <> j ->
+  x <> y ->
+  lw w1 = lw w2 ->
+  lw (lworld_on_open_back j y D
+        (lworld_on_open_back i x (lvars_open j y D) w1)) =
+  lw (lworld_on_open_back i x D
+        (lworld_on_open_back j y (lvars_open i x D) w2)).
+Proof.
+  intros Hij Hxy Hlw.
+  cbn [lworld_on_open_back lw].
+  rewrite Hlw.
+  symmetry. apply lres_open_swap_commute_fresh; assumption.
+Qed.
 
 Lemma lworld_on_ext D (w1 w2 : LWorldOn D) :
   lw w1 = lw w2 →
@@ -178,20 +190,9 @@ Definition res_product (w1 w2 : WfWorld) (Hc : world_compat (w1 : World) (w2 : W
   resA_product w1 w2 Hc.
 Definition res_sum (w1 w2 : WfWorld) (Hdef : raw_sum_defined (w1 : World) (w2 : World)) : WfWorld :=
   resA_sum w1 w2 Hdef.
-Definition res_le (w1 w2 : WfWorld) : Prop := resA_le w1 w2.
 Definition res_subset (w1 w2 : WfWorld) : Prop := resA_subset w1 w2.
 
 Definition singleton_world (σ : Store) : World := singleton_worldA σ.
-Definition raw_slice_restrict (n : WfWorld) (X : aset) (p : WfWorld) : World :=
-  rawA_slice_restrict n X p.
-Definition res_slice_restrict
-    (n : WfWorld) (X : aset) (p : WfWorld)
-    (Hsub : res_subset p (res_restrict n X)) : WfWorld :=
-  resA_slice_restrict n X p Hsub.
-Definition raw_pullback_projection (n p : WfWorld) : World :=
-  rawA_pullback_projection n p.
-Definition res_pullback_projection (n p : WfWorld) (Hle : p ⊑ n) : WfWorld :=
-  resA_pullback_projection n p Hle.
 
 Definition fiber_extension : Type := @fiber_extensionA atom _ _ V.
 Definition extension_applicable (F : fiber_extension) (m : WfWorld) : Prop :=
@@ -200,14 +201,9 @@ Definition res_extend_by (m : WfWorld) (F : fiber_extension) (n : WfWorld) : Pro
   resA_extend_by m F n.
 Definition fiber_extension_functional_on (m : WfWorld) (F : fiber_extension) : Prop :=
   fiber_extensionA_functional_on m F.
-Definition fiber_extension_equiv_on (m : WfWorld) (F G : fiber_extension) : Prop :=
-  fiber_extensionA_equiv_on m F G.
 Definition res_fiber_from_projection
     (w : WfWorld) (X : aset) (σ : Store) (wfib : WfWorld) : Prop :=
   resA_fiber_from_projection w X σ wfib.
-Definition res_fiber_of_projection
-    (w : WfWorld) (X : aset) (σ : Store) (wfib : WfWorld) : Prop :=
-  res_fiber_from_projection w X σ wfib.
 Definition res_fiber_member (w : WfWorld) (X : aset) (wfib : WfWorld) : Prop :=
   resA_fiber_member w X wfib.
 

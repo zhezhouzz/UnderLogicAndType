@@ -7,7 +7,9 @@
     denotational meaning; their direct proof rules are derived/optional and
     are deliberately not part of this core definition. *)
 
-From CoreLang Require Import BasicTypingProps.
+From CoreLang Require Import BasicTyping BasicTypingProps.
+From ChoiceLogic Require Import Formula.
+From ChoicePrelude Require Import Store.
 From ChoiceTyping Require Export Auxiliary PrimOpContext.
 
 (** ** The typing judgment *)
@@ -24,12 +26,33 @@ Lemma choice_typing_wf_fv_tm_subset Σ Γ e τ :
   choice_typing_wf Σ Γ e τ →
   fv_tm e ⊆ dom Σ ∪ ctx_dom Γ.
 Proof.
-  intros [Hwf Herase].
-  pose proof (basic_typing_contains_fv_tm (erase_ctx_under Σ Γ) e (erase_ty τ) Herase)
-    as Hfv.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ
-    (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))) as Hdom.
-  rewrite dom_union_L, Hdom in Hfv. exact Hfv.
+  intros Hct.
+  destruct Hct as [Hwf Hty].
+  pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
+  pose proof (wf_choice_ty_under_ctx Σ Γ τ Hwf) as Hctx.
+  pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
+  assert (Hdom : dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
+  { pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+    unfold erase_ctx_under.
+    apply set_eq. intros z. split.
+    - intros Hz.
+      apply elem_of_dom in Hz as [T Hz].
+      apply store_lookup_union_Some_raw in Hz as [HzΣ|[_ HzΓ]].
+      + apply elem_of_union_l. apply elem_of_dom. eauto.
+      + apply elem_of_union_r. rewrite <- HdomΓ. apply elem_of_dom. eauto.
+    - intros Hz.
+      apply elem_of_union in Hz as [HzΣ|HzΓ].
+      + apply elem_of_dom in HzΣ as [T HzΣ].
+        apply elem_of_dom. exists T.
+        apply store_lookup_union_Some_raw. left. exact HzΣ.
+      + rewrite <- HdomΓ in HzΓ.
+        apply elem_of_dom in HzΓ as [T HzΓ].
+        apply elem_of_dom.
+        destruct (Σ !! z) as [TΣ|] eqn:HΣ.
+        * exists TΣ. apply store_lookup_union_Some_raw. left. exact HΣ.
+        * exists T. apply store_lookup_union_Some_raw. right. eauto. }
+  rewrite Hdom in Hfv.
+  exact Hfv.
 Qed.
 
 Lemma choice_typing_wf_erase_dom Σ Γ e τ :
@@ -37,20 +60,38 @@ Lemma choice_typing_wf_erase_dom Σ Γ e τ :
   dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
 Proof.
   intros [Hwf _].
-  rewrite dom_union_L.
-  rewrite (basic_ctx_erase_dom (dom Σ) Γ
-    (wf_ctx_under_basic Σ Γ (wf_choice_ty_under_ctx Σ Γ τ Hwf))).
-  reflexivity.
+  pose proof (wf_choice_ty_under_ctx Σ Γ τ Hwf) as Hctx.
+  pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+  unfold erase_ctx_under.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_dom in Hz as [T Hz].
+    apply store_lookup_union_Some_raw in Hz as [HzΣ|[_ HzΓ]].
+    + apply elem_of_union_l. apply elem_of_dom. eauto.
+    + apply elem_of_union_r. rewrite <- HdomΓ. apply elem_of_dom. eauto.
+  - intros Hz.
+    apply elem_of_union in Hz as [HzΣ|HzΓ].
+    + apply elem_of_dom in HzΣ as [T HzΣ].
+      apply elem_of_dom. exists T.
+      apply store_lookup_union_Some_raw. left. exact HzΣ.
+    + rewrite <- HdomΓ in HzΓ.
+      apply elem_of_dom in HzΓ as [T HzΓ].
+      apply elem_of_dom.
+      destruct (Σ !! z) as [TΣ|] eqn:HΣ.
+      * exists TΣ. apply store_lookup_union_Some_raw. left. exact HΣ.
+      * exists T. apply store_lookup_union_Some_raw. right. eauto.
 Qed.
 
 Lemma choice_typing_wf_basic_choice_ty_erased Σ Γ e τ :
   choice_typing_wf Σ Γ e τ →
   basic_choice_ty (dom (erase_ctx_under Σ Γ)) τ.
 Proof.
-  intros Hwf.
-  destruct Hwf as [Hwfτ Herase].
-  pose proof (wf_choice_ty_under_basic Σ Γ τ Hwfτ) as Hbasic.
-  rewrite (choice_typing_wf_erase_dom Σ Γ e τ (conj Hwfτ Herase)).
+  intros Hct.
+  pose proof Hct as Hct0.
+  destruct Hct as [Hwf _].
+  pose proof (wf_choice_ty_under_basic Σ Γ τ Hwf) as Hbasic.
+  rewrite (choice_typing_wf_erase_dom Σ Γ e τ Hct0).
   exact Hbasic.
 Qed.
 
@@ -67,10 +108,11 @@ Lemma choice_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ :
   choice_typing_wf Σ Γ e τ →
   fv_cty τ ⊆ dom (erase_ctx_under Σ Γ).
 Proof.
-  intros Hwf.
-  destruct Hwf as [Hwfτ Herase].
-  rewrite (choice_typing_wf_erase_dom Σ Γ e τ (conj Hwfτ Herase)).
-  exact (wf_choice_ty_under_fv_subset Σ Γ τ Hwfτ).
+  intros Hct.
+  pose proof Hct as Hct0.
+  destruct Hct as [Hwf _].
+  rewrite (choice_typing_wf_erase_dom Σ Γ e τ Hct0).
+  eapply wf_choice_ty_under_fv_subset. exact Hwf.
 Qed.
 
 Inductive has_choice_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → choice_ty → Prop :=
@@ -259,7 +301,9 @@ Lemma typing_regular Φ Γ e τ :
 Proof.
   intros Hty.
   pose proof (typing_wf Φ Γ e τ Hty) as [Hwf _].
-  split; [exact (wf_choice_ty_ctx Γ τ Hwf) | exact Hwf].
+  split.
+  - exact (wf_choice_ty_under_ctx ∅ Γ τ Hwf).
+  - exact Hwf.
 Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
@@ -273,6 +317,5 @@ Lemma typing_lc Φ Γ e τ :
   lc_tm e.
 Proof.
   intros Hty.
-  apply typing_tm_lc with (Γ := erase_ctx_under ∅ Γ) (T := erase_ty τ).
-  apply typing_erase with (Φ := Φ). exact Hty.
+  eapply typing_tm_lc. exact (typing_erase Φ Γ e τ Hty).
 Qed.

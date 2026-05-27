@@ -71,6 +71,16 @@ Proof.
   rewrite lvars_fv_union. set_solver.
 Qed.
 
+Lemma formula_scoped_and_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FAnd φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_and_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_and_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FAnd φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_and_iff m φ ψ)) in Hscope. tauto. Qed.
+
 Lemma formula_scoped_or_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FOr φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
@@ -78,6 +88,16 @@ Proof.
   unfold formula_scoped_in_world, formula_fv. simpl.
   rewrite lvars_fv_union. set_solver.
 Qed.
+
+Lemma formula_scoped_or_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FOr φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_or_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_or_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FOr φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_or_iff m φ ψ)) in Hscope. tauto. Qed.
 
 Lemma formula_scoped_impl_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FImpl φ ψ) ↔
@@ -87,6 +107,16 @@ Proof.
   rewrite lvars_fv_union. set_solver.
 Qed.
 
+Lemma formula_scoped_impl_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FImpl φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_impl_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_impl_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FImpl φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_impl_iff m φ ψ)) in Hscope. tauto. Qed.
+
 Lemma formula_scoped_star_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FStar φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
@@ -94,6 +124,16 @@ Proof.
   unfold formula_scoped_in_world, formula_fv. simpl.
   rewrite lvars_fv_union. set_solver.
 Qed.
+
+Lemma formula_scoped_star_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FStar φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_star_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_star_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FStar φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_star_iff m φ ψ)) in Hscope. tauto. Qed.
 
 Lemma formula_scoped_wand_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FWand φ ψ) ↔
@@ -103,6 +143,16 @@ Proof.
   rewrite lvars_fv_union. set_solver.
 Qed.
 
+Lemma formula_scoped_wand_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FWand φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_wand_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_wand_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FWand φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_wand_iff m φ ψ)) in Hscope. tauto. Qed.
+
 Lemma formula_scoped_plus_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FPlus φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
@@ -111,20 +161,45 @@ Proof.
   rewrite lvars_fv_union. set_solver.
 Qed.
 
+Lemma formula_scoped_plus_l (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FPlus φ ψ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_plus_iff m φ ψ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_plus_r (m : WfWorldT) φ ψ :
+  formula_scoped_in_world m (FPlus φ ψ) ->
+  formula_scoped_in_world m ψ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_plus_iff m φ ψ)) in Hscope. tauto. Qed.
+
 Lemma formula_scoped_forall_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FForall φ) ↔
   formula_scoped_in_world m φ.
 Proof. reflexivity. Qed.
+
+Lemma formula_scoped_forall_body (m : WfWorldT) φ :
+  formula_scoped_in_world m (FForall φ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_forall_iff m φ)); exact Hscope. Qed.
 
 Lemma formula_scoped_over_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FOver φ) ↔
   formula_scoped_in_world m φ.
 Proof. reflexivity. Qed.
 
+Lemma formula_scoped_over_body (m : WfWorldT) φ :
+  formula_scoped_in_world m (FOver φ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_over_iff m φ)); exact Hscope. Qed.
+
 Lemma formula_scoped_under_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FUnder φ) ↔
   formula_scoped_in_world m φ.
 Proof. reflexivity. Qed.
+
+Lemma formula_scoped_under_body (m : WfWorldT) φ :
+  formula_scoped_in_world m (FUnder φ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_under_iff m φ)); exact Hscope. Qed.
 
 Lemma formula_scoped_fibvars_iff (m : WfWorldT) D φ :
   formula_scoped_in_world m (FFibVars D φ) ↔
@@ -133,6 +208,16 @@ Proof.
   unfold formula_scoped_in_world, formula_fv. simpl.
   rewrite lvars_fv_union. set_solver.
 Qed.
+
+Lemma formula_scoped_fibvars_l (m : WfWorldT) D φ :
+  formula_scoped_in_world m (FFibVars D φ) ->
+  lvars_fv D ⊆ world_dom (m : WorldT).
+Proof. intros Hscope. apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope. tauto. Qed.
+
+Lemma formula_scoped_fibvars_r (m : WfWorldT) D φ :
+  formula_scoped_in_world m (FFibVars D φ) ->
+  formula_scoped_in_world m φ.
+Proof. intros Hscope. apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope. tauto. Qed.
 
 Lemma formula_scoped_open_from_fv
     (m : WfWorldT) k x φ :

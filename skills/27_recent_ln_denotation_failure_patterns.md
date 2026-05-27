@@ -2,7 +2,7 @@
 
 This note records concrete mistakes from the recent TypeDenotation/tlet proof
 work.  Read it before continuing LN helper proofs, especially in
-`ChoiceType/theories/TypeDenotation/*`.
+`Denotation/theories/*` and `ChoiceBasicDenotation/theories/*`.
 
 The goal is not to remember one proof script, but to avoid repeating the same
 classes of errors: choosing the wrong lemma level, forgetting existing helpers,
@@ -16,23 +16,23 @@ Before inventing a lemma, search for the exact concept and its nearby variants.
 Use targeted searches such as:
 
 ```sh
-rg -n "open_cty_env|cty_open|qual_open|formula_open|typed_lty_env_bind" ChoiceType/theories -S
-rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ChoiceType/theories ChoicePrelude -S
-rg -n "FExprContIn|FForallTypedBind|FDenotObligationIn|formula_store_equiv" ChoiceType/theories/TypeDenotation -S
+rg -n "open_cty_env|cty_open|qual_open|formula_open|typed_lty_env_bind" ChoiceTypeLanguage ChoiceBasicDenotation Denotation -S
+rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ChoiceTypeLanguage ChoicePrelude -S
+rg -n "expr_result_formula|expr_basic_typing_formula|basic_world_formula|res_models_forall_ext_transport" ChoiceBasicDenotation Denotation ChoiceLogic -S
 ```
 
 Then read the definitions and the closest existing lemma before patching.
 Several recent slowdowns came from forgetting helpers that were already present
 or nearly present, such as:
 
-- `FExprResultAtLvar_fv`
-- `FExprResultOn_lvars_fv`
+- `formula_fv_expr_result_formula`
+- `formula_open_expr_result_formula`
 - `lvars_fv_difference_subset`
 - `lty_env_open_one_dom`
 - `logic_var_shift_inj`
 - `lookup_kmap`, `lookup_kmap_Some`, `lookup_insert_is_Some'`
-- `formula_fv_FStoreResourceAtom_lvars`
-- `formula_fv_FTypeQualifier`
+- `formula_fv_denot_ty_lvar_gas_subset_relevant`
+- `res_models_forall_ext_transport`
 
 If the closest lemma is too specialized, generalize it cleanly rather than
 building another one-off theorem for the current proof state.
@@ -44,8 +44,8 @@ For each stuck goal, classify it before trying tactics:
 - Pure syntax: variables, lvar sets, term/type/qualifier open/shift/fv/lc.
 - Environment map-fold: `lty_env_open_one`, `lty_env_open_lvars`,
   `open_cty_env`, domain and lookup facts.
-- Formula syntax: `formula_open`, `formula_fv`, wrappers such as
-  `FForallTypedBind` and `FExprContIn`.
+- Formula syntax: `formula_open`, `formula_fv`, `FForall`, `FFibVars`, and
+  shallow atoms such as `expr_result_formula` and `type_qualifier_formula`.
 - Formula semantics: `res_models_with_store`, fibers, over/under, resource
   splitting, store restriction.
 - Denotation recursion: gas-indexed induction and typed binder cases.
@@ -188,9 +188,9 @@ pause and choose the right equality:
 - If Leibniz equality becomes noisy, use `qual_equiv`, `formula_store_equiv`,
   or another setoid relation with `Proper` instances.
 
-Do not keep unfolding `qual_open_atom`, `FTypeQualifier`, `FStoreResourceAtom`,
-or fiber semantics inside a denotation theorem.  Extract wrapper-level
-normalization and transport lemmas.
+Do not keep unfolding `qual_open_atom`, `type_qualifier_formula`,
+`expr_result_formula`, or fiber semantics inside a denotation theorem.  Extract
+wrapper-level normalization and transport lemmas.
 
 ## Avoid over-specific helper statements
 
@@ -203,8 +203,8 @@ Prefer helpers classified by syntax:
 - `forall` normalization
 - `impl` / `wand` congruence
 - atom wrapper open/fv law
-- typed-forall open/fv law
-- continuation open/fv law
+- forall open/fv law
+- result/basic-typing formula open/fv law
 - environment bind/shift/open commute
 
 Then compose these in the high-level proof.
@@ -214,15 +214,15 @@ Then compose these in the high-level proof.
 Compile bottom-up after each helper group:
 
 ```sh
-make ChoiceType/theories/TypeDenotation/Env.vo
-make ChoiceType/theories/TypeDenotation/Lemmas.vo
-make ChoiceType/theories/TypeDenotation/Denotation.vo
+make ChoiceBasicDenotation/theories/Term.vo
+make Denotation/theories/TypeDenotation.vo
+make Denotation/theories/TLet.vo
 ```
 
 Scan remaining review points explicitly:
 
 ```sh
-rg -n "Admitted\.|\\badmit\\b|Axiom" ChoiceType/theories/TypeDenotation -S
+rg -n "Admitted\.|\\badmit\\b|Axiom" ChoiceBasicDenotation Denotation -S
 ```
 
 Send `ntfy` low-priority checkpoints after completing a helper group and

@@ -2,13 +2,9 @@
 
     Interpreting type qualifiers as exact logic-qualifier worlds. *)
 
-From ChoiceAlgebra Require Import Resource ResourceCore.
-From ChoiceLogic Require Import Formula.
-From ChoiceTypeLanguage Require Import Interface.
+From ChoiceBasicDenotation Require Import Notation.
 
 Section QualifierDenotation.
-
-Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
 Definition lstore_in_lworld_on
     {D : lvset} (s : LStoreOn D) (w : LWorldOn D) : Prop :=

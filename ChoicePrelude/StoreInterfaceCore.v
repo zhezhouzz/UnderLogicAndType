@@ -20,8 +20,6 @@ Global Typeclasses Transparent Store LStore.
 #[global] Instance store_singleton : SingletonM atom V Store := map_singleton.
 #[global] Instance lstore_lookup : Lookup logic_var V LStore := lookup.
 
-Definition store_compat (s1 s2 : Store) : Prop := storeA_compat s1 s2.
-
 Definition store_restrict (s : Store) (X : aset) : Store := storeA_restrict s X.
 
 Definition store_rekey (f : atom → atom) (s : Store) : Store :=
@@ -30,24 +28,11 @@ Definition store_rekey (f : atom → atom) (s : Store) : Store :=
 Definition store_swap (x y : atom) (s : Store) : Store :=
   store_rekey (key_swap x y) s.
 
-Definition store_shift (k : nat) (s : Store) : Store :=
-  store_rekey (key_shift k) s.
-
-Definition store_bind (s1 s2 s : Store) : Prop := storeA_bind s1 s2 s.
-
-Definition lstore_compat (s1 s2 : LStore) : Prop := storeA_compat s1 s2.
-
-Definition lstore_restrict (s : LStore) (X : lvset) : LStore :=
-  storeA_restrict s X.
-
 Definition lstore_rekey (f : logic_var → logic_var) (s : LStore) : LStore :=
   storeA_rekey f s.
 
 Definition lstore_swap (x y : logic_var) (s : LStore) : LStore :=
   lstore_rekey (key_swap x y) s.
-
-Definition lstore_shift (k : nat) (s : LStore) : LStore :=
-  lstore_rekey (key_shift k) s.
 
 Definition lstore_to_store (s : LStore) : Store :=
   map_fold (fun v a acc =>
@@ -242,16 +227,6 @@ Proof.
       rewrite Hne. apply IH.
 Qed.
 
-Lemma lstore_rekey_dom
-    (f : logic_var → logic_var) (Hf : Inj (=) (=) f) (s : LStore) :
-  dom (lstore_rekey f s : LStore) = set_map f (dom (s : LStore)).
-Proof.
-  unfold lstore_rekey.
-  apply storeA_rekey_dom. exact Hf.
-Qed.
-
-Definition lstore_bind (s1 s2 s : LStore) : Prop := storeA_bind s1 s2 s.
-
 Definition lc_lstore (s : LStore) : Prop := lc_lvars (dom s).
 
 Definition LStoreOn (D : lvset) : Type :=
@@ -293,13 +268,6 @@ Lemma lstore_on_rekey_id_on_dom
 Proof.
   apply storeA_on_rekey_id_on_dom.
 Qed.
-
-Definition lstore_on_swap
-    (a b : logic_var) {D : lvset} (s : LStoreOn D)
-    : LStoreOn (gset_swap a b D).
-Proof.
-  exact (storeA_on_rekey (key_swap a b) (key_swap_inj a b) s).
-Defined.
 
 Definition lstore_on_open_back
     (k : nat) (x : atom) (D : lvset)

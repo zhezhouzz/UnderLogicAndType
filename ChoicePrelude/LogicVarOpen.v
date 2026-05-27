@@ -64,6 +64,34 @@ Proof.
   rewrite !lvars_open_unfold, gset_swap_union. reflexivity.
 Qed.
 
+Lemma logic_var_open_commute_fresh i j x y v :
+  i <> j ->
+  x <> y ->
+  logic_var_open i x (logic_var_open j y v) =
+  logic_var_open j y (logic_var_open i x v).
+Proof.
+  intros Hij Hxy.
+  destruct v as [n|a];
+    unfold logic_var_open, swap, swap_action_self, eq_swap;
+    repeat destruct decide; subst; try congruence; reflexivity.
+Qed.
+
+Lemma lvars_open_commute_fresh i j x y D :
+  i <> j ->
+  x <> y ->
+  lvars_open i x (lvars_open j y D) =
+  lvars_open j y (lvars_open i x D).
+Proof.
+  intros Hij Hxy.
+  apply set_eq. intros v.
+  rewrite !lvars_open_unfold, !elem_of_gset_swap.
+  change
+    (logic_var_open j y (logic_var_open i x v) ∈ D <->
+     logic_var_open i x (logic_var_open j y v) ∈ D).
+  rewrite (logic_var_open_commute_fresh i j x y v Hij Hxy).
+  reflexivity.
+Qed.
+
 Lemma lvars_open_fresh_index k x D :
   k ∉ lvars_bv D ->
   x ∉ lvars_fv D ->

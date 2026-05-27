@@ -2,9 +2,9 @@
 
 This note records the current proof-engineering policy for the LN
 TypeDenotation route.  It should be read before proving or refactoring
-`ChoiceType/theories/TypeDenotation/*`, tlet denotation helpers, or formula
-normalization lemmas that mention qualifiers, logic atoms, fibers, typed
-forall, or expression continuations.
+`Denotation/theories/*`, tlet denotation helpers, or formula normalization
+lemmas that mention qualifiers, logic atoms, fibers, forall, or expression
+result atoms.
 
 ## Prefer the right equality level
 
@@ -68,40 +68,44 @@ formula_store_equiv φ ψ :=
 ```
 
 Add congruence lemmas for connectives and wrappers (`FAnd`, `FImpl`, `FWand`,
-`FOver`, `FUnder`, `FFibVars`, `FForallTypedBind`, `FExprContIn`) instead of
-unfolding the whole formula in every proof.
+`FOver`, `FUnder`, `FFibVars`, `FForall`, `expr_result_formula`,
+`expr_basic_typing_formula`, `basic_world_formula`) instead of unfolding the
+whole formula in every proof.
 
-## Typed forall and denotation obligations
+## Formula atoms and denotation guards
 
-Do not repeatedly unfold `FDenotObligationIn`, `FForallTypedBind`, or
-`FExprContIn` in main proofs.
+Do not repeatedly unfold the shallow atom encodings from
+`ChoiceBasicDenotation` in main proofs.  The current denotation no longer has
+typed-forall or denotation-obligation syntax sugar; use the component formulas
+directly and hide repetitive opening/fv facts behind named lemmas.
 
 Preferred API shape:
 
 - Projection lemmas:
 
 ```coq
-res_models_with_store ρ m (FDenotObligationIn Σ τ e) -> ...
+res_models m (basic_world_formula Σ) -> ...
 ```
 
 - Intro/transport lemmas:
 
 ```coq
-res_models_with_store ρ m (FClosedResourceIn Σx) ->
+res_models m (expr_result_formula e x) ->
 ... ->
-res_models_with_store ρ m (FDenotObligationIn Σ τ e)
+res_models m (expr_basic_typing_formula Σ e U)
 ```
 
 - Syntax/fv/open normalization lemmas:
 
 ```coq
-formula_open k x (FForallTypedBind Σ T Q) = ...
-formula_fv (FExprContIn Σ T e Q) ⊆ ...
+formula_open k x (expr_result_formula e z) = ...
+formula_fv (denot_ty_lvar_gas gas Σ τ e) ⊆ ...
 ```
 
-When a typed forall introduces a bound value, the guard should be handled by
-the typed-forall abstraction.  Main denotation proofs should call helper
-lemmas for the typed guard, not reconstruct the guard by unfolding.
+When a forall introduces a bound value, the guard is an ordinary implication
+inside `FForall`.  Main denotation proofs should call helper lemmas for the
+guard and use forall transport lemmas, not reconstruct the guard by unfolding
+the whole recursive denotation.
 
 ## Bottom-up proof order
 
@@ -113,7 +117,7 @@ upward:
 2. Map-fold normalization: `open_env`, `open_lvars`, environment shift/open
    commutation, and domain/fv lemmas.
 3. Atom wrapper normalization: formula open/fv and same-store transport.
-4. Typed forall / continuation / denotation obligation APIs.
+4. BasicDenotation atom APIs: result, total, basic typing, and basic world.
 5. Gas-indexed denotation lemmas, such as fv subset, open normalization, and
    environment agreement.
 6. Main semantic proofs such as cont and tlet.

@@ -440,16 +440,18 @@ proofs.
 
 ## Preserve explicit scripts at known hot spots
 
-Some proof locations should remain explicit.  A real example is the over/under
-case in `TLetReduction.v`: a broad
+Some proof locations should remain explicit.  A historical example from the
+old tlet-reduction route was the over/under case in `TLetReduction.v`: a broad
 
 ```coq
-eapply FExprCont_tlet_reduction; eauto; try set_solver.
+eapply old_tlet_reduction_helper; eauto; try set_solver.
 ```
 
-made the file compile very slowly.  The fix was to pass the key arguments and
-hypotheses explicitly.  In these cases, keep the explicit script and leave a
-comment explaining why bounded automation is intentionally avoided.
+made the file compile very slowly.  The current direct TLet route no longer
+uses that helper, but the compile-time lesson still applies: pass key
+arguments and hypotheses explicitly when semantic search space is large.  In
+these cases, keep the explicit script and leave a comment explaining why
+bounded automation is intentionally avoided.
 
 The rule is:
 

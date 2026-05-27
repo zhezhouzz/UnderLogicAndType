@@ -50,24 +50,28 @@ The formalization is split into several libraries with the following dependency
 shape:
 
 ```
-ChoicePrelude ──→ ChoiceAlgebra ──→ ChoiceLogic ──┐
-      │                                            │
-      └────────────────→ CoreLang ────────────────┤
-                                                    v
-                                               ChoiceType
+ChoiceBase ──→ ChoicePrelude ──→ ChoiceAlgebra ──→ ChoiceLogic
+    │               │                  │                │
+    │               └──────────────────┴────────────────┤
+    │                                                    v
+    └────────→ CoreLang ─────────→ ChoiceTypeLanguage ──→ ChoiceBasicDenotation
+                                                                  │
+                                                                  v
+                                                              Denotation
+                                                                  │
+                                                                  v
+                                                             ChoiceTyping
 
-CoreLang.Syntax ──→ LocallyNameless.Classes
-LocallyNameless ──→ CoreLang / ChoiceType instance and proof files
+LocallyNameless supports CoreLang, ChoiceTypeLanguage, and the denotation
+proof files.
 ```
 
 Most libraries live under `<Library>/theories/`.  `ChoicePrelude/` and
-`LocallyNameless/` are top-level support libraries.  `ChoicePrelude` does not
-depend on `CoreLang`; it only provides abstract infrastructure such as `atom`,
-`aset`, `ValueSig`, stores, and freshness helpers.  `LocallyNameless` contains
-reusable LN tactics plus parameterized LN typeclasses.  The typeclass file
-currently imports `CoreLang.Syntax` for value-specific substitution classes;
-payload-independent opening is still parameterized so qualifiers can open with
-atoms while CoreLang opens with values.
+`LocallyNameless/` are top-level support libraries.  The current route splits
+the old monolithic choice-type layer into three pieces:
+`ChoiceTypeLanguage` for syntax and LN well-formedness,
+`ChoiceBasicDenotation` for basic store/world/term atoms, and `Denotation` for
+the recursive choice-type denotation.
 
 ### `ChoicePrelude/` — Shared prelude
 
@@ -76,9 +80,8 @@ It contains no program syntax and no dependency on `CoreLang`.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, and `ValueSig` |
-| `MapFilterDom.v` | Reusable `dom`/`filter` lemmas for finite maps |
-| `Store.v` | Polymorphic map operations, atom-keyed stores, restriction, compatibility, and renaming |
+| `Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, swap/rekey classes, and `ValueSig` |
+| `Store*.v` | Polymorphic `StoreA` infrastructure, atom/lvar specializations, restriction, compatibility, and bind/rekey operations |
 
 ### `ChoiceAlgebra/` — The algebraic layer
 
@@ -87,27 +90,21 @@ Resources and the abstract choice algebra.  Store operations live in
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Re-exports the shared prelude |
-| `Resource.v` | Resources (worlds), resource operations, partial order |
-| `ChoiceAlgebra.v` | Abstract choice algebra class; `WfWorld` instance |
-
-Examples live in `ChoiceAlgebra/examples/`.
+| `Resource*.v` | `WorldA`/`WfWorldA`, resource restriction, algebraic order, sum/product, fiber extensions, and atom-specialized interfaces |
+| `ResourceNotation.v` / `ResourceTactics.v` | Proof-facing notation and focused resource tactics |
 
 ### `ChoiceLogic/` — The logic layer
 
 Formula syntax and the satisfaction relation, built on top of `ChoiceAlgebra`.
 The logic layer is deliberately independent of `CoreLang`: program expressions
-are embedded into formulas later, by `ChoiceType`, through logic qualifier
-atoms.
+are embedded into formulas later, by `ChoiceBasicDenotation`, through logic
+qualifier atoms.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Re-exports `ChoiceAlgebra` and `ChoicePrelude` |
-| `LogicQualifier.v` | Logic-level qualifier atoms and `logic_qualifier_denote` |
-| `Formula.v` | Formula syntax (`FAtom`, `FForall`, `FExists`, `FFib`, …), formula renaming, and `res_models` |
-| `ChoiceLogicProps.v` | Key theorems (modality monotonicity, closure, collapse, adjunction) |
-
-Examples live in `ChoiceLogic/examples/`.
+| `LogicQualifier.v` | Dependent-domain logic qualifier atoms over lvar-keyed worlds |
+| `Formula*.v` | Formula syntax (`FAtom`, `FForall`, `FFibVars`, over/under, separating connectives), opening, scope, and `res_models` |
+| `FormulaTactics.v` | Small formula-normalization tactics |
 
 ### `LocallyNameless/` — Proof support
 
@@ -123,13 +120,13 @@ Small Ltac support and reusable typeclasses for locally-nameless metatheory.
 The formalization intentionally uses two different binding representations in
 different layers.
 
-### Core language and choice types: locally nameless
+### Core language, choice types, and logic formulas: locally nameless
 
 `CoreLang` terms and values use the standard locally-nameless (LN)
 representation: free variables are `atom`s and binders are represented by
-natural-number bound variables.  `ChoiceType` also uses LN for dependent
-choice types and type qualifiers, because dependent refinements need to refer
-to the result coordinate bound by a type former.
+natural-number bound variables.  `ChoiceTypeLanguage` and `ChoiceLogic` now use
+the same discipline for type/qualifier/formula binders.  Free logical
+variables are `LVFree x`; bound coordinates are `LVBound k`.
 
 This representation is good for syntax with real binders:
 
@@ -141,51 +138,17 @@ This representation is good for syntax with real binders:
 
 The main cost is bookkeeping around open/close operations.  In particular,
 type qualifiers may be non-closed while they sit under a binder, so
-`ChoiceType/theories/Qualifier.v` keeps explicit bound-variable metadata.
-
-### Choice logic: explicit names with cofinite semantics
-
-`ChoiceLogic` formulas use explicit atom binders:
-
-```coq
-FForall x p
-FExists x p
-FFib x p
-```
-
-The atom `x` in `FForall x p` is only a syntactic representative.  The
-satisfaction relation gives it a cofinite interpretation: to model a universal
-or existential formula, the representative is renamed to every sufficiently
-fresh atom outside a finite avoidance set.  This is implemented by
-`formula_rename_atom` and exposed by the smart constructor/spec
-`fresh_forall`.
-
-This design was chosen after weighing two alternatives.
-
-Using LN for formulas would make binders more standard, but it would also force
-formula opening to reach into every embedded atom.  Since type denotation needs
-program expressions such as `tapp y x` to depend on formula binders, an LN
-formula representation would either make `ChoiceLogic` depend directly on
-`CoreLang`, or require shifting embedded `tm`/`value` syntax whenever a new
-formula binder is introduced.  That substantially complicates the logic layer.
-
-Using explicit names keeps `ChoiceLogic` independent from `CoreLang` and keeps
-logic qualifier atoms shallow.  Program expressions are converted to logic
-qualifier atoms only in `ChoiceType/theories/Denotation.v`.  The cost is that
-we must define named renaming for stores, worlds, qualifiers, and formulas, and
-we use cofinite semantics to recover the intended alpha-invariant behavior of
-quantifiers.
+`ChoiceTypeLanguage/theories/Qualifier.v` keeps the qualifier domain explicitly.
+Logic qualifiers are also dependent-domain predicates over lvar-keyed worlds.
+Opening a qualifier or formula swaps `LVBound k` with `LVFree x`; the semantic
+predicate swaps the incoming lworld back before interpreting it.
 
 In short:
 
-- Core language binders and choice-type binders use LN, where structural
-  opening is the right tool.
-- Choice-logic binders use explicit atoms plus cofinite renaming, preserving a
-  clean dependency boundary between logic and programs.
-- Type denotation bridges the two worlds by choosing syntactic binder
-  representatives with `fresh_forall`; these names are not semantically
-  privileged, because formula satisfaction immediately interprets them through
-  cofinite renaming.
+- Core language binders use LN with `value` payloads.
+- Choice-type, qualifier, and formula binders use LN with `atom` payloads.
+- Type denotation bridges terms and formulas by embedding totality, result,
+  basic-typing, and qualifier predicates as shallow logic atoms.
 
 ### `CoreLang/` — The programming language
 
@@ -216,9 +179,10 @@ match.
 | `BasicTypingProps.v` | Basic typing lemmas |
 | `OperationalProps.v` | Operational semantics lemmas |
 
-### `ChoiceType/` — Choice types and denotation
+### `ChoiceTypeLanguage/` — Choice type syntax and LN metatheory
 
-Choice types layered on top of `CoreLang` and `ChoiceLogic`.
+Choice type syntax layered on top of `CoreLang`, but without semantic
+denotation.
 
 Dependent choice types and qualifiers use an atom-only opening discipline:
 locally-nameless bound variables in type refinements are opened with a fresh
@@ -230,19 +194,44 @@ with store-based lookup while preserving expressiveness through let-binding.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | Imports `CoreLang` and `ChoiceLogic`; fixes ChoiceType notations to CoreLang `value`s |
-| `Qualifier.v` | Type-level shallow qualifiers (`type_qualifier`); interpretation `qual_interp` |
-| `QualifierBridge.v` | Lifting closed type qualifiers into logic qualifier atoms |
-| `Syntax.v` | Choice type syntax (`choice_ty`, `ctx`); erasure, lifting, atom opening/swap |
-| `Sugar.v` | Derived type forms such as over/under/precise refinements and unary primop types |
-| `BasicTyping.v` | Basic domain/LN checks for qualifiers, types, and tree-like contexts |
-| `Denotation.v` | Type denotation `⟦τ⟧ e` and context denotation `⟦Γ⟧` as formulas |
+| File family | Contents |
+|-------------|----------|
+| `Qualifier.v` | Dependent-domain type qualifiers over lvar-keyed stores |
+| `Syntax*.v` | Choice type and context syntax, erasure, lifting, lvar/fv/open facts |
+| `LtyEnv*.v` / `Env.v` | Lvar-keyed type environments, atom projection, typed binder insertion |
+| `WellFormed.v` / `Interface.v` | Basic qualifier/type/context well-scopedness API |
+| `Notation.v` / `Sugar.v` | Public syntax notation and small derived type forms |
 
-### `ChoiceTyping/` — Unstable typing layer
+### `ChoiceBasicDenotation/` — Basic semantic atoms
 
-The paper-level typing infrastructure is kept outside `ChoiceType` while its
-definitions are still changing.  `ChoiceType` retains `BasicTyping.v` because
-denotation is expected to depend on basic domain/LN well-scopedness.
+Store/world typing, expression totality/result atoms, and the formulas that
+embed CoreLang basic typing and type-qualifier semantics into `ChoiceLogic`.
+
+| File family | Contents |
+|-------------|----------|
+| `StoreTyping.v` | `storeA_has_type`, `worldA_has_type`, typed extensions, and `basic_world_formula` |
+| `Term*.v` | Expression evaluation, totality, result extensions, and tlet operational bridges |
+| `Qualifier.v` | Interpreting type qualifiers as logic qualifiers over lworlds |
+| `BasicTypingFormula.v` | Logic atoms for choice-type well-formedness and CoreLang basic typing |
+| `Notation.v` / `Interface.v` | Value-specialized aliases and public re-export |
+
+### `Denotation/` — Recursive choice-type denotation
+
+The gas-indexed denotation `denot_ty_lvar_gas`, the atom-context wrapper
+`denot_ty`, context denotation, and the current direct TLet proof.
+
+| File family | Contents |
+|-------------|----------|
+| `TypeDenotation*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
+| `Context.v` | Context denotation and denotation instances |
+| `TLetSupport.v` / `TLet.v` | Shared TLet support tactics and the TLet introduction theorem |
+| `Notation.v` | Denotation-level notation (`m ⊨ φ`, `φ ⊫ ψ`, value-specialized aliases) |
+
+### `ChoiceTyping/` — Paper-level typing layer
+
+The paper-level typing infrastructure sits above the syntax and denotation
+layers.  It imports `Denotation` directly instead of going through the old
+ChoiceType denotation stack.
 
 The current declarative rules follow the paper's bunched presentation more
 closely:
@@ -269,4 +258,5 @@ closely:
 | `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
 | `PrimOpContext.v` | Unary primitive-operation signatures and well-formedness |
 | `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
-| `Soundness.v` | Fundamental theorem and corollaries (safety, coverage, refinement, incorrectness) |
+| `TLetDirect.v` / `TLetDenotation.v` | Direct bridge from the typing TLet case to `Denotation.TLet` |
+| `SoundnessDirect.v` / `Soundness.v` | Current soundness entry points on the new denotation route |

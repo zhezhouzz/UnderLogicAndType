@@ -490,3 +490,40 @@ Proof.
     apply cty_vars_equiv_shift_from.
     symmetry. apply open_cty_env_insert_fresh_vars_equiv; assumption.
 Qed.
+
+Lemma open_cty_env_lift_shift0_exact η τ :
+  open_env_values_inj η ->
+  open_cty_env (open_env_lift η) (cty_shift 0 τ) =
+  cty_shift 0 (open_cty_env η τ).
+Proof.
+  unfold open_cty_env.
+  refine (fin_maps.map_fold_ind
+    (fun η =>
+      open_env_values_inj η ->
+      map_fold (fun k x acc => cty_open k x acc)
+        (cty_shift 0 τ) (open_env_lift η) =
+      cty_shift 0
+        (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
+  - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH Hinj.
+    pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite open_env_lift_insert.
+    change (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
+      (cty_shift 0 τ) (<[S k:=x]> (open_env_lift η')))
+      with (open_cty_env (<[S k := x]> (open_env_lift η'))
+        (cty_shift 0 τ)).
+    rewrite open_cty_env_insert_fresh.
+    2:{ apply open_env_lift_lookup_none. exact Hfresh. }
+    2:{ apply open_env_avoids_atom_lift. exact Havoid. }
+    2:{ apply open_env_values_inj_lift. exact Hinjη. }
+    change (open_cty_env (open_env_lift η') (cty_shift 0 τ))
+      with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
+        (cty_shift 0 τ) (open_env_lift η')).
+    rewrite IH by exact Hinjη.
+    rewrite cty_open_shift_under_gen by lia.
+    change (cty_shift 0 (cty_open k x (open_cty_env η' τ)) =
+      cty_shift 0 (open_cty_env (<[k:=x]> η') τ)).
+    rewrite open_cty_env_insert_fresh by assumption.
+    reflexivity.
+Qed.
