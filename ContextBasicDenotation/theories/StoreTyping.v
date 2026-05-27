@@ -53,6 +53,47 @@ Proof.
   apply store_closed_restrict. exact Hclosed.
 Qed.
 
+Lemma wfworld_closed_on_le X (m n : WfWorld) :
+  X ⊆ world_dom (m : World) ->
+  m ⊑ n ->
+  wfworld_closed_on X m ->
+  wfworld_closed_on X n.
+Proof.
+  intros HXm Hle Hclosed σ Hσ.
+  assert (Hmσ : (m : World) (store_restrict σ (world_dom (m : World)))).
+  {
+    change ((m : World) = raw_restrict (n : World) (world_dom (m : World)))
+      in Hle.
+    rewrite Hle.
+    unfold raw_restrict.
+    cbn [world_stores worldA_stores].
+    exists σ. split; [exact Hσ |].
+    apply storeA_map_eq. intros a.
+    change (((store_restrict σ (world_dom (m : World)) : gmap atom value) !! a) =
+      ((store_restrict σ
+          (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+            (world_dom (m : World))) : aset) : gmap atom value) !! a)).
+    rewrite !store_restrict_lookup.
+    pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
+    pose proof (f_equal world_dom Hle) as Hdomle.
+    destruct (decide (a ∈ world_dom (m : World))) as [Ham|Ham];
+      destruct (decide (a ∈ worldA_dom
+        (ResourceRestrict.rawA_restrict (n : World) (world_dom (m : World)))))
+      as [Har|Har]; try reflexivity; exfalso.
+    - apply Har.
+      change (a ∈ world_dom (raw_restrict (n : World)
+        (world_dom (m : World)) : World)).
+      rewrite <- Hdomle. exact Ham.
+    - apply Ham.
+      change (a ∈ world_dom (raw_restrict (n : World)
+        (world_dom (m : World)) : World)) in Har.
+      rewrite Hdomle. exact Har.
+  }
+  specialize (Hclosed _ Hmσ).
+  rewrite store_restrict_twice_subset in Hclosed by exact HXm.
+  exact Hclosed.
+Qed.
+
 Lemma storeA_has_type_swap
     {K : Type} `{Countable K} `{!SwapKey K}
     (x y : K) (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) :

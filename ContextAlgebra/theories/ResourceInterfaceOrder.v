@@ -62,6 +62,12 @@ Lemma world_compat_le_r (w m n : WfWorld) :
   world_compat w m.
 Proof. apply worldA_compat_le_r. Qed.
 
+Lemma world_compat_le_l (w m n : WfWorld) :
+  m ⊑ n →
+  world_compat n w →
+  world_compat m w.
+Proof. apply worldA_compat_le_l. Qed.
+
 Lemma world_compat_restrict_l_full_r (n m : WfWorld) (S X : aset) :
   X ⊆ S →
   world_compat n (res_restrict m S) →

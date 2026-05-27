@@ -433,6 +433,54 @@ Proof.
     rewrite Hs2. reflexivity.
 Qed.
 
+Lemma storeA_restrict_union_ignore_l {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  dom (s1 : gmap K V) ## X →
+  (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
+  storeA_restrict s2 X.
+Proof.
+  intros Hdisj.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) X
+    : gmap K V) !! z = (storeA_restrict s2 X : gmap K V) !! z).
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
+  assert ((s1 : gmap K V) !! z = None) as Hs1.
+  {
+    apply not_elem_of_dom. intros Hz1.
+    assert (Hzempty : z ∈ (∅ : gset K)) by set_solver.
+    apply elem_of_empty in Hzempty. exact Hzempty.
+  }
+  rewrite (lookup_union_r (M:=gmap K) (A:=V)
+    (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
+  reflexivity.
+Qed.
+
+Lemma storeA_restrict_union_absorb_r {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  storeA_compat s1 s2 →
+  X ⊆ dom (s2 : gmap K V) →
+  (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
+  storeA_restrict s2 X.
+Proof.
+  intros Hcompat Hsub.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) X
+    : gmap K V) !! z = (storeA_restrict s2 X : gmap K V) !! z).
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
+  destruct ((s2 : gmap K V) !! z) as [v2|] eqn:Hs2.
+  - destruct ((s1 : gmap K V) !! z) as [v1|] eqn:Hs1.
+    + assert (v1 = v2) by (eapply Hcompat; eauto). subst.
+      rewrite (lookup_union_l' (s1 : gmap K V) (s2 : gmap K V) z) by eauto.
+      exact Hs1.
+    + rewrite (lookup_union_r (M:=gmap K) (A:=V)
+        (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
+      exact Hs2.
+  - exfalso.
+    apply not_elem_of_dom in Hs2. apply Hs2. apply Hsub. exact HzX.
+Qed.
+
 Lemma storeA_restrict_union_base_singleton {K : Type} `{Countable K}
     (s1 s2 : StoreA K) (D : gset K) (y : K) :
   D ⊆ dom (s1 : gmap K V) →

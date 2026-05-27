@@ -322,6 +322,87 @@ Proof.
     + eapply basic_typing_weaken_insert_value; [set_solver | exact Hvx].
 Qed.
 
+Lemma basic_typing_tapp_tm_fvar_inv Γ e y T :
+  Γ ⊢ₑ tapp_tm e (vfvar y) ⋮ T ->
+  exists Tx, Γ ⊢ₑ e ⋮ (Tx →ₜ T) /\ Γ ⊢ᵥ vfvar y ⋮ Tx.
+Proof.
+  unfold tapp_tm.
+  intros Hty.
+  inversion Hty as
+    [|Γ0 Tfun Tbody ef ebody L Hef Hbody| | |]; subst.
+  pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e ∪ {[y]})).
+  assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e ∪ {[y]})
+    by (subst x; apply fresh_for_not_in).
+  specialize (Hbody x ltac:(set_solver)).
+  change (<[x:=Tfun]> Γ ⊢ₑ tapp (vfvar x) (vfvar y) ⋮ T) in Hbody.
+  inversion Hbody as [| | |Γ1 s1 s2 v1 v2 Hfun Harg|]; subst.
+  inversion Hfun; subst.
+  rewrite lookup_insert in H1.
+  destruct (decide (x = x)); [|congruence].
+  simplify_eq.
+  exists s1. split.
+  - exact Hef.
+  - eapply basic_typing_drop_insert_fresh_value; [|exact Harg].
+    cbn [fv_value]. set_solver.
+Qed.
+
+Lemma basic_typing_tapp_tm_tlete_assoc Γ e1 e2 y T :
+  Γ ⊢ₑ tlete e1 (tapp_tm e2 (vfvar y)) ⋮ T ->
+  Γ ⊢ₑ tapp_tm (tlete e1 e2) (vfvar y) ⋮ T.
+Proof.
+  intros Hty.
+  inversion Hty as
+    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+  pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})).
+  assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})
+    by (subst x; apply fresh_for_not_in).
+  pose proof (Hbody x ltac:(set_solver)) as Hbody_x.
+  change (<[x:=T1]> Γ ⊢ₑ tapp_tm (e2 ^^ x) (vfvar y) ⋮ T) in Hbody_x.
+  apply basic_typing_tapp_tm_fvar_inv in Hbody_x as [Tx [He2x Hy]].
+  eapply basic_typing_tapp_tm.
+  - eapply TT_Let with (L := L ∪ fv_tm e2 ∪ {[y]}).
+    + exact He1.
+    + intros z Hz.
+      pose proof (Hbody z ltac:(set_solver)) as Hbody_z.
+      change (<[z:=T1]> Γ ⊢ₑ tapp_tm (e2 ^^ z) (vfvar y) ⋮ T)
+        in Hbody_z.
+      apply basic_typing_tapp_tm_fvar_inv in Hbody_z as [Txz [He2z Hyz]].
+      assert (HyΓ : Γ ⊢ᵥ vfvar y ⋮ Tx).
+      {
+        eapply basic_typing_drop_insert_fresh_value; [|exact Hy].
+        cbn [fv_value]. set_solver.
+      }
+      assert (HyzΓ : Γ ⊢ᵥ vfvar y ⋮ Txz).
+      {
+        eapply basic_typing_drop_insert_fresh_value; [|exact Hyz].
+        cbn [fv_value]. set_solver.
+      }
+      assert (Txz = Tx) by (eapply basic_typing_unique_value; eauto).
+      subst Txz. exact He2z.
+  - eapply basic_typing_drop_insert_fresh_value; [|exact Hy].
+    cbn [fv_value]. set_solver.
+Qed.
+
+Lemma basic_typing_tapp_tm_tlete_assoc_rev Γ e1 e2 y T :
+  Γ ⊢ₑ tapp_tm (tlete e1 e2) (vfvar y) ⋮ T ->
+  Γ ⊢ₑ tlete e1 (tapp_tm e2 (vfvar y)) ⋮ T.
+Proof.
+  intros Hty.
+  apply basic_typing_tapp_tm_fvar_inv in Hty as [Tx [Hlet Hy]].
+  inversion Hlet as
+    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+  eapply TT_Let with (L := L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]}).
+  - exact He1.
+  - intros z Hz.
+    pose proof (Hbody z ltac:(set_solver)) as He2z.
+    change (<[z:=T1]> Γ ⊢ₑ tapp_tm (e2 ^^ z) (vfvar y) ⋮ T).
+    eapply basic_typing_tapp_tm.
+    + exact He2z.
+    + eapply basic_typing_weaken_insert_value.
+      * cbn [fv_value]. set_solver.
+      * exact Hy.
+Qed.
+
 Lemma basic_typing_tret_fvar_insert Γ x T :
   <[x := T]> Γ ⊢ₑ tret (vfvar x) ⋮ T.
 Proof.

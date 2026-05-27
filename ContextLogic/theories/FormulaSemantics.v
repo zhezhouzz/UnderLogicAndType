@@ -68,7 +68,7 @@ Fixpoint res_models_fuel
             res_fiber_member m (lvars_fv D) mfib →
             res_models_fuel gas' mfib p
       end
-  end.
+  end.  
 
 Lemma res_models_fuel_scoped
     (gas : nat) (m : WfWorldT) (φ : FormulaT) :

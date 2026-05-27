@@ -68,6 +68,179 @@ Lemma res_extend_by_projection_eq
   res_restrict ny (extA_in F ∪ extA_out F).
 Proof. apply resA_extend_by_projection_eq. Qed.
 
+Lemma extension_applicable_product_r_fresh
+    (n m : WfWorld) (F : @fiber_extension V)
+    (Hc_m : world_compat n m) :
+  extA_out F ## world_dom (n : World) ->
+  extension_applicable F m ->
+  extension_applicable F (res_product n m Hc_m).
+Proof.
+  intros Hout_n Happ.
+  constructor.
+  - cbn. pose proof (extA_app_in _ _ Happ). set_solver.
+  - cbn. pose proof (extA_app_out _ _ Happ). set_solver.
+Qed.
+
+Lemma world_compat_restrict_l_extend_by_fresh
+    (n m mx : WfWorld) (F : @fiber_extension V) (X : aset) :
+  extA_out F ## X ->
+  m #> F ~~> mx ->
+  world_compat n m ->
+  world_compat (res_restrict n X) mx.
+Proof.
+  intros HoutX [Happ [_ Hstores]] Hc σnX σmx HσnX Hσmx.
+  simpl in HσnX.
+  destruct HσnX as [σn [Hσn Hrestrict]]. subst σnX.
+  apply Hstores in Hσmx as
+    (σm & we & σe & Hσm & HF & Hσe & ->).
+  apply storeA_compat_union_intro_r.
+  - apply storeA_compat_sym.
+    apply storeA_compat_restrict_r.
+    apply storeA_compat_sym.
+    exact (Hc σn σm Hσn Hσm).
+  - apply storeA_disj_dom_compat.
+    pose proof (extA_output_store_dom_from_base m F σm we σe
+      Happ Hσm HF Hσe) as Hdomσe.
+    change (dom (storeA_restrict σn X : gmap atom V) ∩
+      dom (σe : gmap atom V) = ∅).
+    pose proof (@storeA_restrict_dom V atom _ _ σn X) as HdomσnX.
+    change (dom (storeA_restrict σn X : gmap atom V) =
+      dom (σn : gmap atom V) ∩ X) in HdomσnX.
+    rewrite HdomσnX, Hdomσe.
+    set_solver.
+Qed.
+
+Lemma res_extend_by_product_r_store_forward
+    (n m mx : WfWorld) (F : @fiber_extension V)
+    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
+  extA_out F ## world_dom (n : World) ->
+  m #> F ~~> mx ->
+  (res_product n mx Hc_mx : World) σ ->
+  ∃ σbase we σe,
+    (res_product n m Hc_m : World) σbase ∧
+    extA_rel F (storeA_restrict σbase (extA_in F)) we ∧
+    (we : World) σe ∧
+    σ = σbase ∪ σe.
+Proof.
+  intros Hout_n [Happ [_ Hstores_mx]]
+    (σn & σmx & Hσn & Hσmx & Hcompat_n_mx & ->).
+  apply Hstores_mx in Hσmx as
+    (σm & we & σe & Hσm & HF & Hσe & ->).
+  exists (σn ∪ σm), we, σe.
+  split.
+  - exists σn, σm.
+    split; [exact Hσn|].
+    split; [exact Hσm|].
+    split; [exact (Hc_m σn σm Hσn Hσm)|].
+    reflexivity.
+  - split.
+    + assert (Hrestr :
+      @storeA_restrict V atom _ _
+        (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
+        (extA_in F) =
+      @storeA_restrict V atom _ _ σm (extA_in F)).
+      {
+        apply storeA_restrict_union_absorb_r.
+        - exact (Hc_m σn σm Hσn Hσm).
+        - pose proof (wfworld_store_dom m σm Hσm) as Hdom_m.
+          change (dom (σm : gmap atom V) = world_dom (m : World)) in Hdom_m.
+          rewrite Hdom_m.
+          exact (extA_app_in _ _ Happ).
+      }
+      change (extA_rel F
+        (@storeA_restrict V atom _ _
+          (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
+          (extA_in F)) we).
+      rewrite Hrestr. exact HF.
+    + split.
+      * exact Hσe.
+      * change ((σn : gmap atom V) ∪ ((σm : gmap atom V) ∪ (σe : gmap atom V)) =
+          ((σn : gmap atom V) ∪ (σm : gmap atom V)) ∪ (σe : gmap atom V)).
+        exact (@assoc_L (gmap atom V) union _
+          (σn : gmap atom V) (σm : gmap atom V) (σe : gmap atom V)).
+Qed.
+
+Lemma res_extend_by_product_r_store_backward
+    (n m mx : WfWorld) (F : @fiber_extension V)
+    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
+  extA_out F ## world_dom (n : World) ->
+  m #> F ~~> mx ->
+  (∃ σbase we σe,
+    (res_product n m Hc_m : World) σbase ∧
+    extA_rel F (storeA_restrict σbase (extA_in F)) we ∧
+    (we : World) σe ∧
+    σ = σbase ∪ σe) ->
+  (res_product n mx Hc_mx : World) σ.
+Proof.
+  intros Hout_n [Happ [_ Hstores_mx]]
+    (σnm & we & σe & Hσnm & HF & Hσe & ->).
+  destruct Hσnm as
+    (σn & σm & Hσn & Hσm & Hcompat_n_m & ->).
+  assert (Hrestr :
+      @storeA_restrict V atom _ _
+        (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
+        (extA_in F) =
+      @storeA_restrict V atom _ _ σm (extA_in F)).
+  {
+    apply storeA_restrict_union_absorb_r.
+    - exact Hcompat_n_m.
+    - pose proof (wfworld_store_dom m σm Hσm) as Hdom_m.
+      change (dom (σm : gmap atom V) = world_dom (m : World)) in Hdom_m.
+      rewrite Hdom_m.
+      exact (extA_app_in _ _ Happ).
+  }
+  change (extA_rel F
+    (@storeA_restrict V atom _ _
+      (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
+      (extA_in F)) we) in HF.
+  rewrite Hrestr in HF.
+  exists σn, (σm ∪ σe).
+  repeat split.
+  - exact Hσn.
+  - apply Hstores_mx.
+    exists σm, we, σe.
+    split; [exact Hσm|].
+    split; [exact HF|].
+    split; [exact Hσe|].
+    reflexivity.
+  - apply storeA_compat_union_intro_r.
+    + exact Hcompat_n_m.
+    + apply storeA_disj_dom_compat.
+      pose proof (wfworld_store_dom n σn Hσn) as Hdom_n.
+	      pose proof (wfworld_store_dom we σe Hσe) as Hdom_e.
+	      change (dom (σn : gmap atom V) = world_dom (n : World)) in Hdom_n.
+	      change (dom (σe : gmap atom V) = world_dom (we : World)) in Hdom_e.
+	      rewrite Hdom_n.
+	      pose proof (extA_output_store_dom_from_base m F σm we σe
+	        Happ Hσm HF Hσe) as Hdom_σe.
+	      rewrite Hdom_σe. set_solver.
+  - change (((σn : gmap atom V) ∪ (σm : gmap atom V)) ∪ (σe : gmap atom V) =
+      (σn : gmap atom V) ∪ ((σm : gmap atom V) ∪ (σe : gmap atom V))).
+    exact (eq_sym (@assoc_L (gmap atom V) union _
+      (σn : gmap atom V) (σm : gmap atom V) (σe : gmap atom V))).
+Qed.
+
+Lemma res_extend_by_product_r_fresh
+    (n m mx : WfWorld) (F : @fiber_extension V)
+    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) :
+  extA_out F ## world_dom (n : World) ->
+  m #> F ~~> mx ->
+  res_product n m Hc_m #> F ~~> res_product n mx Hc_mx.
+Proof.
+  intros Hout_n Hext.
+  pose proof (res_extend_by_applicable m F mx Hext) as Happ.
+  pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
+  split.
+  - eapply extension_applicable_product_r_fresh; eauto.
+  - split.
+    + change (world_dom (n : World) ∪ world_dom (mx : World) =
+        (world_dom (n : World) ∪ world_dom (m : World)) ∪ extA_out F).
+      rewrite Hdom_mx. set_solver.
+    + intros σ. split.
+      * eapply res_extend_by_product_r_store_forward; eauto.
+      * eapply res_extend_by_product_r_store_backward; eauto.
+Qed.
+
 Lemma res_extend_by_commute
     (m : WfWorld) (F G : @fiber_extension V)
     (mF mG mFG mGF : WfWorld) :

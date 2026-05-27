@@ -619,6 +619,72 @@ Definition basic_tm_has_ltype
     lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η ->
     lty_env_to_atom_env (lty_env_open_lvars η Σ) ⊢ₑ
       open_tm_env η e ⋮ T.
+
+Lemma lc_tlete_tapp_tm_assoc_source e1 e2 y :
+  lc_tm (tlete e1 e2) ->
+  lc_tm (tlete e1 (tapp_tm e2 (vfvar y))).
+Proof.
+  intros Hlc.
+  apply lc_lete_iff_body in Hlc as [Hlc1 Hbody2].
+  apply lc_lete_iff_body. split; [exact Hlc1|].
+  destruct Hbody2 as [L HL].
+  exists L. intros x Hx.
+  change (lc_tm (open_tm 0 (vfvar x) (tapp_tm e2 (vfvar y)))).
+  rewrite open_tapp_tm_lc_arg by constructor.
+  apply lc_tapp_tm; [apply HL; exact Hx | constructor].
+Qed.
+
+Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc
+    (Σ : lty_env) e1 e2 y T :
+  lc_tm (tlete e1 e2) ->
+  basic_tm_has_ltype Σ (tlete e1 (tapp_tm e2 (vfvar y))) T ->
+  basic_tm_has_ltype Σ (tapp_tm (tlete e1 e2) (vfvar y)) T.
+Proof.
+  intros Hlc [Hsub Hty].
+  split.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hsub.
+  - intros η Hfresh Hbv.
+    rewrite open_tm_env_lc.
+    + assert (Hfresh_src : open_env_fresh_for_lvars η
+        (dom Σ ∪ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))))).
+      { rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hfresh. }
+      assert (Hbv_src :
+        lvars_bv (dom Σ ∪ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y)))) ⊆
+        dom η).
+      { rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hbv. }
+      pose proof (Hty η Hfresh_src Hbv_src) as Htyη.
+      rewrite open_tm_env_lc in Htyη by
+        (apply lc_tlete_tapp_tm_assoc_source; exact Hlc).
+      apply basic_typing_tapp_tm_tlete_assoc.
+      exact Htyη.
+    + apply lc_tapp_tm; [exact Hlc | constructor].
+Qed.
+
+Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc_rev
+    (Σ : lty_env) e1 e2 y T :
+  lc_tm (tlete e1 e2) ->
+  basic_tm_has_ltype Σ (tapp_tm (tlete e1 e2) (vfvar y)) T ->
+  basic_tm_has_ltype Σ (tlete e1 (tapp_tm e2 (vfvar y))) T.
+Proof.
+  intros Hlc [Hsub Hty].
+  split.
+  - rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hsub.
+  - intros η Hfresh Hbv.
+    rewrite open_tm_env_lc.
+    + assert (Hfresh_tgt : open_env_fresh_for_lvars η
+        (dom Σ ∪ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y)))).
+      { rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hfresh. }
+      assert (Hbv_tgt :
+        lvars_bv (dom Σ ∪ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y))) ⊆
+        dom η).
+      { rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hbv. }
+      pose proof (Hty η Hfresh_tgt Hbv_tgt) as Htyη.
+      rewrite open_tm_env_lc in Htyη by
+        (apply lc_tapp_tm; [exact Hlc | constructor]).
+      apply basic_typing_tapp_tm_tlete_assoc_rev.
+      exact Htyη.
+    + apply lc_tlete_tapp_tm_assoc_source. exact Hlc.
+Qed.
 Lemma lty_env_to_atom_env_open_lvars_insert_free_subset
     η (Σ : lty_env) x T :
   LVFree x ∉ dom Σ ->
@@ -1292,6 +1358,38 @@ Proof.
   intros Hmodels.
   apply expr_basic_typing_formula_models_iff in Hmodels as [_ [_ Hbasic]].
   exact Hbasic.
+Qed.
+
+Lemma expr_basic_typing_formula_tapp_tm_tlete_assoc
+    (Σ : lty_env) e1 e2 y T (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tlete e1 (tapp_tm e2 (vfvar y))) T) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tapp_tm (tlete e1 e2) (vfvar y)) T).
+Proof.
+  intros Hlc Hmodels.
+  apply expr_basic_typing_formula_models_iff in Hmodels as [HlcΣ [Hsub Hbasic]].
+  apply expr_basic_typing_formula_models_iff.
+  split; [exact HlcΣ|].
+  split; [exact Hsub|].
+  eapply basic_tm_has_ltype_tapp_tm_tlete_assoc; eauto.
+Qed.
+
+Lemma expr_basic_typing_formula_tapp_tm_tlete_assoc_rev
+    (Σ : lty_env) e1 e2 y T (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tapp_tm (tlete e1 e2) (vfvar y)) T) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tlete e1 (tapp_tm e2 (vfvar y))) T).
+Proof.
+  intros Hlc Hmodels.
+  apply expr_basic_typing_formula_models_iff in Hmodels as [HlcΣ [Hsub Hbasic]].
+  apply expr_basic_typing_formula_models_iff.
+  split; [exact HlcΣ|].
+  split; [exact Hsub|].
+  eapply basic_tm_has_ltype_tapp_tm_tlete_assoc_rev; eauto.
 Qed.
 
 Lemma res_models_open_expr_basic_typing_to_open

@@ -49,6 +49,34 @@ Proof.
       * exact Happ.
 Qed.
 
+Lemma steps_tapp_tm_fun_equiv e e' vx v :
+  lc_tm e ->
+  lc_tm e' ->
+  lc_value vx ->
+  (forall vf, e →* tret vf <-> e' →* tret vf) ->
+  (tapp_tm e vx →* tret v) <->
+  (tapp_tm e' vx →* tret v).
+Proof.
+  intros Hlc Hlc' Hvx Hequiv.
+  split.
+  - intros Hsteps.
+    unfold tapp_tm in Hsteps.
+    apply reduction_lete in Hsteps as [vf [He Happ]].
+    eapply reduction_lete_intro.
+    + apply body_tapp_tm_body.
+      rewrite value_shift_lc_id by exact Hvx. exact Hvx.
+    + apply Hequiv. exact He.
+    + exact Happ.
+  - intros Hsteps.
+    unfold tapp_tm in Hsteps.
+    apply reduction_lete in Hsteps as [vf [He' Happ]].
+    eapply reduction_lete_intro.
+    + apply body_tapp_tm_body.
+      rewrite value_shift_lc_id by exact Hvx. exact Hvx.
+    + apply Hequiv. exact He'.
+    + exact Happ.
+Qed.
+
 Lemma subst_map_vbvar σ n :
   subst_map σ (vbvar n) = vbvar n.
 Proof.
@@ -125,6 +153,43 @@ Proof.
         -- exact (proj2 Hclosed).
         -- apply lc_lete_iff_body in Hlc as [_ Hbody]. exact Hbody.
     + apply msubst_lc; [exact (proj2 Hclosed) | exact Hvx].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma expr_eval_in_atom_store_tapp_tm_fun_equiv σ e e' x v :
+  store_closed σ ->
+  lc_tm e ->
+  lc_tm e' ->
+  (forall vf,
+    expr_eval_in_atom_store σ e vf <->
+    expr_eval_in_atom_store σ e' vf) ->
+  expr_eval_in_atom_store σ (tapp_tm e (vfvar x)) v <->
+  expr_eval_in_atom_store σ (tapp_tm e' (vfvar x)) v.
+Proof.
+  intros Hclosed Hlc Hlc' Hequiv.
+  unfold expr_eval_in_atom_store.
+  rewrite !expr_eval_in_store_no_bvars_iff.
+  - rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    rewrite !msubst_tapp_tm_lc_arg by (constructor || exact (proj2 Hclosed)).
+    apply steps_tapp_tm_fun_equiv.
+    + apply msubst_lc; [exact (proj2 Hclosed) | exact Hlc].
+    + apply msubst_lc; [exact (proj2 Hclosed) | exact Hlc'].
+    + apply msubst_lc; [exact (proj2 Hclosed) | constructor].
+    + intros vf.
+      specialize (Hequiv vf).
+      unfold expr_eval_in_atom_store in Hequiv.
+      rewrite !expr_eval_in_store_no_bvars_iff in Hequiv.
+      * rewrite !lstore_free_part_lift_free in Hequiv.
+        rewrite !subst_map_tm_eq_msubst in Hequiv.
+        exact Hequiv.
+      * apply lc_lstore_lift_free.
+      * rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+      * apply lc_lstore_lift_free.
+      * rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.

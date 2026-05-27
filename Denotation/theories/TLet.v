@@ -1076,11 +1076,12 @@ Proof.
 		            (<[LVFree y := erase_ty τx]> Σ)
 		            (cty_open 0 y τr)
 		            (tapp_tm (tlete e1 e2) (vfvar y))).
-		        {
-		          eapply denot_ty_lvar_gas_tapp_tlete_assoc.
-		          - tlet_lc_solver.
-		          - exact HIH_result.
-		        }
+				        {
+				          eapply denot_ty_lvar_gas_tapp_tlete_assoc.
+				          - apply lty_env_closed_insert_free. exact HΣ.
+				          - tlet_lc_solver.
+				          - exact HIH_result.
+				        }
 		        eapply res_models_open_denot_ty_lvar_gas_from_open;
 		          [ exact Hy_target_rel
 		          | exact Hclosed_target_rel
