@@ -1,0 +1,660 @@
+Lemma dependency graph for Denotation and ContextTyping
+=========================================================
+
+Status
+------
+
+This file records the current proof route after the Context Logic / Context
+Type refactor.  The graph is based on source-level dependencies in the proof
+scripts, not on a kernel-level proof-term extraction.  It should be maintained
+as a design map: when a high-level lemma starts depending on a wrapper whose
+only purpose was legacy compatibility, that wrapper should either be removed or
+marked here as intentionally kept.
+
+Current unchecked proof nodes:
+
+- Denotation/theories/TLetSupport.v:
+  - denot_ty_lvar_gas_tapp_tlete_assoc
+  - tlet_intro_denotation_wand_case
+
+Everything else in ContextBase, ContextPrelude, ContextAlgebra, ContextLogic,
+ContextTypeLanguage, ContextBasicDenotation, Denotation, and ContextTyping is
+currently closed.
+
+
+Root proof route
+----------------
+
+The current top-level TLet route is intentionally thin:
+
+1. ContextTyping/theories/Soundness.v
+
+   fundamental_let_case
+     depends on: fundamental_let_case_direct
+     role: public TLet soundness entry.
+     similarity/replacement:
+       This is a compatibility wrapper.  It can be replaced directly by
+       fundamental_let_case_direct if we do not need the public name.
+
+2. ContextTyping/theories/SoundnessDirect.v
+
+   fundamental_let_case_direct
+     depends on: denot_tlet_semantic_direct
+     role: compile-facing direct route.
+     similarity/replacement:
+       This is also a thin wrapper.  Keep it only if we want a stable
+       SoundnessDirect entry while the rest of the typing induction is restored.
+
+3. ContextTyping/theories/TLetDenotation.v
+
+   denot_tlet_semantic_direct
+     depends on: denot_tlet_direct_in_ctx
+     role: semantic TLet bridge name for ContextTyping.
+     similarity/replacement:
+       Thin wrapper.  It can be inlined into SoundnessDirect, but keeping it
+       separates "typing case bridge" from "direct denotation call".
+
+4. ContextTyping/theories/TLetDirect.v
+
+   denot_tlet_direct_in_ctx
+     depends on:
+       - erase_ctx_under_comma_bind_env_fresh
+       - atom_env_to_lty_env_insert
+       - atom_env_to_lty_env_closed
+       - lty_env_to_atom_env_atom_env
+       - tlet_intro_denotation
+     role:
+       Converts the atom context used by ContextTyping into the lvar context
+       consumed by Denotation.TLet.  This is the real bridge from typing to the
+       denotation theorem.
+     similarity/replacement:
+       This lemma is necessary unless the typing judgment is changed to expose
+       lty_env directly.  The two atom/lvar conversion rewrites are genuine
+       boundary lemmas, not proof duplication.
+
+   denot_tlet_direct_total_model_in_ctx
+     depends on:
+       - denot_tlet_direct_in_ctx
+       - denot_ty_total_model_total
+     role:
+       Convenience variant when totality is packaged in a total-model premise.
+     similarity/replacement:
+       Replaceable by denot_tlet_direct_in_ctx plus denot_ty_total_model_total.
+       Static scan suggests it is not on the current main TLet route.
+
+
+Main denotation theorem
+-----------------------
+
+5. Denotation/theories/TLet.v
+
+   tlet_intro_denotation
+     depends on:
+       - tlet_intro_denotation_gas_zero
+       - normalize_models_ands / normalize_models_ands_in / normalize_models_ands_goal
+       - tlet_support_solver / solve_tlet_sidecond / solve_tlet_guard
+       - denot_ty_lvar_gas_scope_from_relevant_guard
+       - res_models_forall_ext_transport
+       - res_models_impl_intro / res_models_impl_elim
+       - expr_result_formula_tlete_to_body_ext
+       - res_models_open_denot_ty_lvar_gas_to_open
+       - res_models_open_denot_ty_lvar_gas_from_open
+       - denot_ty_lvar_gas_tapp_tlete_assoc
+       - tlet_intro_denotation_wand_case
+     role:
+       The main gas induction proving that the opened body denotation in the
+       extended context implies the let-expression denotation in the base
+       context.
+     similarity/replacement:
+       This is the core theorem and should not be replaced by wrappers.  The
+       proof currently relies on two named obligations in TLetSupport.  The
+       Over/Under/Arrow cases use a common pattern: split the guard, transport
+       the forall witness across the result extension, and then recurse or
+       transport the opened denotation.
+
+   tlet_intro_denotation_gas_zero
+     depends on:
+       - context_ty_wf_formula_models_iff
+       - basic_world_formula_models_iff
+       - expr_basic_typing_formula_tlete_intro
+       - basic_typing_lty_env_to_atom_env_denot_relevant_env
+       - expr_total_formula_tlete_intro_from_result_extension
+       - storeA_restrict_dom
+       - dom_insert_L
+       - formula_scoped_true_iff
+     role:
+       Base guard transfer for gas 0.
+     similarity/replacement:
+       This is specific to TLet but its subproofs are exactly the formula-level
+       wrappers from ContextBasicDenotation and Denotation.Core.  It should stay
+       here unless the guard itself becomes a separate reusable API.
+
+
+TLet support layer
+------------------
+
+6. Denotation/theories/TLetSupport.v
+
+   tlet_support_solver, tlet_normalize_freshness, solve_formula_fv_subset,
+   normalize_tlet_forall_fv
+     depend on:
+       - lvars_fv and formula_fv normalization lemmas
+       - context_ty_lvars and tm_lvars normalization lemmas
+       - LocallyNameless set-solver support
+     role:
+       Keep repeated freshness/FV side conditions out of the main TLet proof.
+     similarity/replacement:
+       These tactics replace many one-off "fresh from support" lemmas.  If a
+       future lemma only unfolds a TLet support set and calls set_solver, prefer
+       using these tactics instead of adding another named lemma.
+
+   formula_lvars_fv_basic_world_formula
+   formula_lvars_fv_expr_result_formula
+   formula_lvars_fv_type_qualifier_formula
+     depend on:
+       - formula_lvars_at_fv
+       - formula_fv of the corresponding atom formula
+     role:
+       Convert formula-lvars goals into formula-fv goals for the solver.
+     similarity/replacement:
+       These are solver-facing wrappers.  They are replaceable by
+       formula_lvars_at_fv plus the atom-specific formula_fv lemmas, but keeping
+       them makes the TLet normalizer smaller.
+
+   basic_world_formula_denot_relevant_mono_context
+     depends on:
+       - denot_relevant_env_lookup_mono_context
+       - denot_relevant_env_dom_mono_context
+       - basic_world_formula_subenv-style reasoning
+     role:
+       Transfers basic_world_formula from a larger relevant environment to a
+       smaller one.
+     similarity/replacement:
+       A wrapper around lower environment monotonicity and BasicDenotation
+       world typing.  It is used several times in TLet, so it is worth keeping
+       unless a general "basic_world_formula_mono_lty_env" is exposed.
+
+   denot_ty_lvar_gas_scope_from_guard
+     depends on:
+       - formula_fv_denot_ty_lvar_gas_subset_relevant
+       - formula_fv scope of the guard formula
+     role:
+       Builds formula_scoped_in_world for the denotation formula from the
+       guard model.
+     similarity/replacement:
+       This is a good abstraction.  It replaces many fragile local FV-subset
+       proofs in TLet.
+
+   arrow_body_relevant_env_agree
+   arrow_body_relevant_env_agree_from_basic_context_ty
+     depend on:
+       - denot_relevant_env
+       - typed_lty_env_bind
+       - basic_context_ty facts
+     role:
+       Relate the relevant env for an Arrow body after opening the parameter.
+     similarity/replacement:
+       The first lemma is the general form; the second is a convenient wrapper
+       that extracts the premise from basic_context_ty.  If cleanup is desired,
+       keep arrow_body_relevant_env_agree and inline the wrapper at call sites.
+
+   basic_world_formula_arrow_body_from_source_and_arg
+     depends on:
+       - arrow_body_relevant_env_agree_from_basic_context_ty
+       - basic_world_formula agreement/subenv facts
+     role:
+       Supplies the basic-world premise needed when the Arrow body is opened.
+     similarity/replacement:
+       This is Arrow-specific but structurally it is "basic world under
+       relevant-env agreement".  It could be replaced by a more general
+       BasicDenotation lemma about lty_env agreement.
+
+   denot_ty_lvar_gas_tapp_tlete_assoc
+     status: Admitted.
+     intended dependencies:
+       - expr_eval_in_atom_store_tapp_tm_tlete_assoc, or an equivalent
+         operational equivalence for derived application and let.
+       - expr_result_formula transport through operational equivalence.
+       - expr_total_formula and expr_basic_typing_formula congruence for this
+         derived term associativity.
+       - gas induction over denot_ty_lvar_gas.
+     role:
+       Converts denotation of tlete e1 (tapp_tm e2 y) into denotation of
+       tapp_tm (tlete e1 e2) y at the end of the Arrow/Wand result branch.
+     similarity/replacement:
+       This is not a wrapper.  It should eventually be proved from a more
+       general observational transport lemma for terms.
+
+   tlet_intro_denotation_wand_case
+     status: Admitted.
+     intended dependencies:
+       - the same forall extension transport used by Arrow
+       - separating implication/resource-product transport
+       - recursive IH
+       - denot_ty_lvar_gas_tapp_tlete_assoc for the result term shape
+     role:
+       Wand-specific branch of tlet_intro_denotation.
+     similarity/replacement:
+       Should mirror Arrow.  If a future abstraction covers both Arrow and
+       Wand, this lemma can become a small instantiation.
+
+   tlet_extensions_commute_obligation
+   tlet_extensions_commute_widened_obligation
+   tlet_arrow_arg_extend_obligation
+     role:
+       Named obligations preserved near the TLet support code.
+     similarity/replacement:
+       Static scan suggests these are not on the current main proof route.
+       They look like earlier proof-shape documentation and should be reviewed
+       after Wand/assoc are closed.  If unused, delete them or turn the useful
+       statement into a lower-layer extension lemma.
+
+
+Recursive denotation infrastructure
+-----------------------------------
+
+7. Denotation/theories/ContextTypeDenotationDefinition.v
+
+   denot_ty_lvar_gas
+     depends on:
+       - context_ty_wf_formula
+       - basic_world_formula
+       - expr_basic_typing_formula
+       - expr_total_formula
+       - expr_result_formula
+       - type_qualifier_formula
+       - FForall/FImpl/FFibVars/FOver/FUnder/FStar/FWand/FPlus
+       - denot_relevant_env
+       - typed_lty_env_bind
+       - cty_shift and tm_shift
+     role:
+       Central recursive encoding of context types into Context Logic.
+     similarity/replacement:
+       This is the source definition.  All wrappers should point here.
+
+   formula_open_env_denot_ty_lvar_gas
+     depends on:
+       - formula_open_env_* syntax lemmas
+       - open_cty_env_lift_shift0_exact
+       - open_tm_env_lift_shift0 and related term-open lemmas
+     role:
+       Environment-open transport for the recursive denotation.
+     similarity/replacement:
+       General exact transport.  Models-level lemmas in
+       ContextTypeDenotationOpen are preferred by top proofs because dependent
+       qualifiers make exact equality brittle.
+
+   denot_ty_lvar_gas_env_agree_on
+   res_models_denot_ty_lvar_gas_env_agree_on
+     depend on:
+       - formula_open_env_denot_ty_lvar_gas
+       - denot_relevant_env / lty_env agreement
+     role:
+       Transport denotation across equivalent relevant environments.
+     similarity/replacement:
+       Keep the models-level version as the preferred API.  Exact formula
+       equality is useful for rewriting but should not be the top-level proof
+       interface.
+
+8. Denotation/theories/ContextTypeDenotationOpen.v
+   Denotation/theories/ContextTypeDenotationOpenModels.v
+
+   denot_ty
+     depends on:
+       - denot_ty_lvar_gas
+       - cty_depth
+     role:
+       Atom-context public wrapper with enough gas.
+     similarity/replacement:
+       Public wrapper.  Keep.
+
+   formula_open_over_body, formula_open_under_body,
+   res_models_open_arrow_body_iff, res_models_open_wand_body_iff,
+   res_models_open_denot_ty_lvar_gas_iff
+     depend on:
+       - formula_open_env_denot_ty_lvar_gas
+       - formula_open syntax lemmas
+       - typed_lty_env_bind/open facts
+       - cty_shift/open and tm_shift/open facts
+     role:
+       Convert denotation formulas under binders into opened body formulas.
+     similarity/replacement:
+       The iff lemma is the general API.  The to_open/from_open wrappers below
+       are proof-facing projections.
+
+   res_models_open_denot_ty_lvar_gas_to_open
+   res_models_open_denot_ty_lvar_gas_from_open
+     depend on:
+       - res_models_open_denot_ty_lvar_gas_iff
+     role:
+       Directional projections used heavily by TLet.
+     similarity/replacement:
+       Replaceable by proj1/proj2 of the iff lemma.  Keep while TLet is proof
+       script heavy; remove later if wrapper cleanup is prioritized.
+
+9. Denotation/theories/ContextTypeDenotationLvars.v
+   Denotation/theories/ContextTypeDenotationSaturate.v
+
+   formula_lvars_at_denot_ty_lvar_gas_subset_relevant
+     depends on:
+       - formula_lvars_at for FormulaT
+       - denot_relevant_lvars
+       - context_ty_lvars/tm_lvars shape lemmas
+     role:
+       Lvar-level upper bound for the recursive denotation formula.
+     similarity/replacement:
+       This is the more general/lower lemma.  formula_fv lemmas should be
+       derived from it.
+
+   formula_fv_denot_ty_lvar_gas_subset_relevant
+     depends on:
+       - formula_lvars_at_denot_ty_lvar_gas_subset_relevant
+       - formula_lvars_at_fv
+     role:
+       FV upper bound used by formula_scoped_in_world automation.
+     similarity/replacement:
+       Derivative but useful.  Keep as solver-facing API.
+
+   denot_ty_lvar_gas_scope_from_relevant_guard
+     depends on:
+       - formula_fv_denot_ty_lvar_gas_subset_relevant
+       - basic_world_formula guard facts
+     role:
+       Turns the restricted guard into a scope proof for the whole denotation.
+     similarity/replacement:
+       Preferred replacement for local formula_fv subset proofs.
+
+   denot_ty_lvar_gas_saturate
+   denot_ty_lvar_gas_saturate_ge
+     depend on:
+       - cty_depth
+       - cty_shift_preserves_depth
+     role:
+       Gas saturation.
+     similarity/replacement:
+       Static scan suggests these are not used by the current TLet route.  Keep
+       if denot_ty wrappers need depth-insensitive rewriting; otherwise they
+       can be moved out of the hot import path.
+
+   denot_ty_lvar_gas_insert_fresh_lty_env_eq
+   denot_ty_lvar_gas_insert_fresh_lty_env
+   denot_ty_lvar_gas_extend_typed_extension
+   denot_ty_lvar_guard_extend_typed_extension
+     depend on:
+       - denot_ty_lvar_gas_env_agree_on
+       - res_models_extend_mono
+       - extension_has_ltype
+       - basic_world_formula typed-extension lemmas
+     role:
+       Fresh-context and typed-extension weakening.
+     similarity/replacement:
+       The semantic/model versions are preferable to exact equality in top
+       proofs.  Static scan shows the typed-extension versions are not on the
+       current main route except through local wrappers; review after TLet Wand
+       is closed.
+
+
+Basic denotation layer
+----------------------
+
+10. ContextBasicDenotation/theories/BasicTypingFormula.v
+    ContextBasicDenotation/theories/StoreTyping.v
+    ContextBasicDenotation/theories/Term.v
+    ContextBasicDenotation/theories/TermTLet.v
+    ContextBasicDenotation/theories/Qualifier.v
+
+   context_ty_wf_formula_models_iff
+   basic_world_formula_models_iff
+   expr_basic_typing_formula_models_iff
+   expr_total_formula_* and expr_result_formula_*
+     depend on:
+       - basic_context_ty / basic_tm_has_ltype
+       - store/lstore/world/lworld has-type definitions
+       - expr_eval_in_store / expr_eval_in_atom_store
+       - resource/world lifting and restriction facts
+     role:
+       Encode basic typing, totality, result, and qualifier facts as Context
+       Logic atoms.  Top denotation proofs should use these formula-level
+       wrappers instead of raw semantic predicates.
+     similarity/replacement:
+       These are legitimate boundary lemmas.  They should remain in
+       ContextBasicDenotation, not Denotation.
+
+   expr_result_extension_witness
+   expr_result_extension_apply_total_iff
+   expr_result_formula_tlete_to_body_ext
+     depend on:
+       - expr_eval_in_atom_store_agree_on_fv
+       - expr_eval_in_atom_store restrictions to fv_tm
+       - res_extend_by and extension_has_ltype facts
+       - small-step determinism/uniqueness
+     role:
+       Convert total evaluation of e1 into a result extension, and then use
+       that extension to move from the let result to the opened body.
+     similarity/replacement:
+       expr_result_formula_tlete_to_body_ext is TLet-shaped but belongs in
+       BasicDenotation because it talks only about term result atoms, not type
+       denotation.  It may later be generalized to an observational transport
+       theorem.
+
+   expr_basic_typing_formula_tlete_intro
+   expr_total_formula_tlete_intro_from_result_extension
+     depend on:
+       - basic_tm_has_ltype let rule
+       - expr_result_extension_witness
+       - operational totality of let
+     role:
+       Gas-zero guard construction.
+     similarity/replacement:
+       Formula-level wrappers around basic typing/operational facts.  Keep.
+
+
+Context Logic layer
+-------------------
+
+11. ContextLogic/theories/FormulaForall.v
+
+   res_models_forall_iff / res_models_forall_intro
+     role:
+       Primitive cofinite semantics of FForall over formula_fv.
+
+   res_models_forall_transport
+     depends on:
+       - fiber_extension_input_widen
+       - res_extend_by_exists
+       - res_models_forall_iff
+     role:
+       Transport between forall formulas when the target fv is contained in the
+       source fv.
+     similarity/replacement:
+       Useful generally, but current TLet mostly uses the extension-specific
+       transport below because the resources differ after adding e1's result.
+
+   res_models_forall_rev
+   res_models_forall_rev_intro
+   res_models_forall_full_world_iff
+     depend on:
+       - forall_extension_from_world_dom_projection
+       - res_models_minimal_on
+       - res_extend_by_restrict_base
+     role:
+       Equivalence between fv-input forall and full-world-input forall.  This
+       explains why the new FForall semantics can be used where old proofs used
+       full world domains.
+     similarity/replacement:
+       Not always needed directly in top proofs, but valuable as a reviewer
+       explanation and as the base for extension transport.
+
+   res_models_forall_ext_transport_by_extension
+   res_models_forall_ext_transport
+     depend on:
+       - res_models_forall_rev
+       - res_models_forall_rev_intro
+       - res_extend_by_commute_input_widen
+       - res_extend_by_exists
+     role:
+       Main TLet transport: if mx models a forall body after result extension
+       Fx, transport that forall obligation back to m by commuting the fresh
+       forall extension with Fx.
+     similarity/replacement:
+       This supersedes older same-fv forall congruence lemmas for TLet.  Prefer
+       it over res_models_forall_map_same_fv/res_models_forall_congr_same_fv in
+       top Denotation proofs.
+
+12. ContextLogic general formula/resource facts
+
+   res_models_and_iff, res_models_impl_intro, res_models_impl_elim,
+   formula_scoped_* destructors, res_models_minimal_on,
+   res_models_agree_on_formula_fv, res_models_kripke
+     depend on:
+       - formula_fv
+       - formula_scoped_in_world
+       - resource agreement/restriction
+     role:
+       Logic proof plumbing used by TLet tactics.
+     similarity/replacement:
+       These are core logic APIs.  Keep them general.  Avoid adding TLet-shaped
+       wrappers when one of these plus a small FV normalization proof suffices.
+
+
+Context type language layer
+---------------------------
+
+13. ContextTypeLanguage/theories/*
+
+   open_cty_env_lift_shift0_exact
+     depends on:
+       - type_qualifier extensionality
+       - cty/open/shift locally nameless lemmas
+     role:
+       Exact equality needed by formula_open_env_denot_ty_lvar_gas in
+       Arrow/Wand cases.
+     similarity/replacement:
+       This is a low-level LN/type-language fact.  It replaced a named admit.
+       Keep it in ContextTypeLanguage because it is independent of denotation.
+
+   typed_lty_env_bind, lty_env_open, atom_env_to_lty_env,
+   lty_env_to_atom_env, lty_env_to_atom_env_atom_env,
+   atom_env_to_lty_env_insert, atom_env_to_lty_env_closed
+     role:
+       Atom/lvar environment bridge.
+     similarity/replacement:
+       These are boundary facts.  They are not duplicate store lemmas because
+       lty_env_to_atom_env is a projection from lvar keys to atom keys, not a
+       same-key rekey.
+
+   basic_context_ty, basic_tm_has_ltype and open/insert/cofinite lemmas
+     role:
+       Syntax/basic-typing well-formedness used by BasicDenotation formulas.
+     similarity/replacement:
+       If a lemma only mentions stores/maps and not context_ty/tm syntax, move
+       it down to ContextPrelude.  If it mentions open/substitution over
+       context_ty or tm, keep it here.
+
+
+Context Algebra and Prelude layer
+---------------------------------
+
+14. ContextAlgebra/theories/*
+
+   res_extend_by, res_extend_by_exists, res_extend_by_dom,
+   res_extend_by_restrict_base, res_extend_by_le,
+   res_extend_by_commute_input_widen, fiber_extension_input_widen,
+   forall_extension_from_world_dom_projection
+     depend on:
+       - resource/world restriction
+       - fiber extension input/output domains
+       - store/resource union/restrict facts
+     role:
+       The algebraic backbone of FForall and TLet extension commuting.
+     similarity/replacement:
+       These should stay general over keys/resources where possible.  TLet
+       should not duplicate them with term-specific names unless term semantics
+       is genuinely involved.
+
+   extension_has_ltype
+     depends on:
+       - lworld/world typing
+       - extension output typing
+     role:
+       Typed extension bridge used when result extensions add a fresh variable.
+     similarity/replacement:
+       Keep the general lworld/lstore form.  Atom wrappers should be thin and
+       only handle atom_env_to_lty_env/lc conversion.
+
+15. ContextPrelude/theories/*
+
+   storeA_restrict_dom, storeA lookup/restrict/union/rekey lemmas,
+   lvars_fv/dom/open/swap facts
+     role:
+       Generic map/key infrastructure.
+     similarity/replacement:
+       These are the preferred home for map-only lemmas.  Any environment lemma
+       that only says something about dom/lookup/restrict for StoreA should be
+       pushed down here rather than repeated in ContextTypeLanguage.
+
+
+Static unused or low-use candidates
+-----------------------------------
+
+The following are not on the current root route from fundamental_let_case to
+tlet_intro_denotation, or are only used by wrappers.  They are candidates for
+future cleanup after the two remaining TLetSupport obligations are closed.
+
+ContextTyping:
+
+- denot_tlet_direct_total_model_in_ctx
+  Replace with denot_tlet_direct_in_ctx plus denot_ty_total_model_total.
+
+- context_typing_wf_regular_denotation
+- context_typing_wf_to_total_model
+- entails_total_to_total_model
+  These package total-model/regularity facts.  They are not used by the direct
+  TLet route.  Keep if they are the intended public API for non-TLet cases;
+  otherwise delay exporting them.
+
+- sub_type_under
+- ctx_sub_under
+- branch_unreachable
+  Used by the typing syntax/rules, not by the current direct TLet proof route.
+  Keep if the typing system skeleton is considered live.
+
+Denotation:
+
+- denot_ty_lvar_gas_saturate
+- denot_ty_lvar_gas_saturate_ge
+  Currently not used by the TLet route.  They are general gas facts and may be
+  useful for the public denot_ty wrapper; consider moving them away from hot
+  imports if compile time matters.
+
+- denot_ty_lvar_gas_extend_typed_extension
+- denot_ty_lvar_gas_extend_typed_extension_zero
+- denot_ty_lvar_guard_extend_typed_extension
+  Useful typed-extension weakening facts, but static scan shows they are not
+  directly used by current TLet.  Review after Wand is closed.
+
+- tlet_extensions_commute_obligation
+- tlet_extensions_commute_widened_obligation
+- tlet_arrow_arg_extend_obligation
+  Appear to be older proof-plan obligations.  If no future branch uses them,
+  delete or replace with general ContextAlgebra extension lemmas.
+
+ContextLogic:
+
+- res_models_forall_map_same_fv
+- res_models_forall_congr_same_fv
+  Older same-fv transport style.  For current TLet, res_models_forall_ext_transport
+  is the stronger/relevant tool.  Keep only for simple congruence proofs.
+
+- res_models_forall_full_world_iff
+  Not always used directly, but it is conceptually important: it documents the
+  equivalence between the new fv-input FForall and the old full-world intuition.
+  Keep for now.
+
+General cleanup rule:
+
+If a lemma's proof is just "apply a more general lemma" and the lemma is not a
+stable public boundary name, prefer deleting it and updating call sites to the
+general lemma.  If a lemma packages a cross-layer conversion, for example
+atom_env_to_lty_env or lty_env_to_atom_env, keep it even when the proof is short.
+
