@@ -60,6 +60,7 @@ ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/LogicQualifier.v
 ContextLogic/theories/FormulaSyntax.v
+ContextLogic/theories/FormulaSyntaxTactics.v
 ContextLogic/theories/FormulaScope.v
 ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/Formula.v
@@ -135,6 +136,7 @@ Denotation/theories/ContextTypeDenotationDefinition.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationOpenModels.v
+Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturate.v
 Denotation/theories/ContextTypeDenotation.v
 Denotation/theories/Context.v

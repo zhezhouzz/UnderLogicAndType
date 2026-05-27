@@ -3,7 +3,7 @@
     Split out from [ContextTypeDenotation.v] to keep individual proof files small. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationOpenModels.
+From Denotation Require Export ContextTypeDenotationTactics.
 
 Section ContextTypeDenotation.
 
@@ -268,68 +268,6 @@ Proof.
       * eapply res_models_extend_mono; eauto.
 Qed.
 
-Ltac denot_ty_fv_norm :=
-  cbn [denot_ty_lvar_gas denot_relevant_env lty_env_restrict_lvars
-    denot_relevant_lvars formula_lvars formula_fv];
-  repeat first
-    [ rewrite formula_fv_true | rewrite formula_fv_false
-    | rewrite formula_fv_and | rewrite formula_fv_or
-    | rewrite formula_fv_impl | rewrite formula_fv_star
-    | rewrite formula_fv_wand | rewrite formula_fv_plus
-    | rewrite formula_fv_forall | rewrite formula_fv_over
-    | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
-  rewrite ?formula_fv_context_ty_wf_formula;
-  rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_expr_basic_typing_formula;
-  rewrite ?formula_fv_expr_total_formula;
-  rewrite ?formula_fv_expr_result_formula;
-  rewrite ?formula_fv_type_qualifier_formula;
-  rewrite ?storeA_restrict_dom;
-  rewrite ?typed_lty_env_bind_lvars_fv_dom;
-  rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
-  rewrite ?tm_shift_fv, ?cty_shift_fv;
-  cbn [fv_tm fv_value];
-  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
-    ?lvars_fv_singleton_bound, ?lvars_fv_singleton_free;
-  rewrite ?formula_fv_true, ?formula_fv_false, ?tm_lvars_fv,
-    ?context_ty_lvars_fv.
-
-Ltac denot_ty_fv_norm_in H :=
-  cbn [denot_ty_lvar_gas denot_relevant_env lty_env_restrict_lvars
-    denot_relevant_lvars formula_lvars formula_fv] in H;
-  repeat first
-    [ rewrite formula_fv_true in H | rewrite formula_fv_false in H
-    | rewrite formula_fv_and in H | rewrite formula_fv_or in H
-    | rewrite formula_fv_impl in H | rewrite formula_fv_star in H
-    | rewrite formula_fv_wand in H | rewrite formula_fv_plus in H
-    | rewrite formula_fv_forall in H | rewrite formula_fv_over in H
-    | rewrite formula_fv_under in H | rewrite formula_fv_fibvars in H ];
-  rewrite ?formula_fv_context_ty_wf_formula in H;
-  rewrite ?formula_fv_basic_world_formula in H;
-  rewrite ?formula_fv_expr_basic_typing_formula in H;
-  rewrite ?formula_fv_expr_total_formula in H;
-  rewrite ?formula_fv_expr_result_formula in H;
-  rewrite ?formula_fv_type_qualifier_formula in H;
-  rewrite ?storeA_restrict_dom in H;
-  rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
-  rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
-  rewrite ?tm_shift_fv, ?cty_shift_fv in H;
-  cbn [fv_tm fv_value] in H;
-  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
-    ?lvars_fv_singleton_bound, ?lvars_fv_singleton_free in H;
-  rewrite ?formula_fv_true, ?formula_fv_false, ?tm_lvars_fv,
-    ?context_ty_lvars_fv in H.
-
-Ltac denot_ty_fv_set :=
-  denot_ty_fv_norm;
-  match goal with
-  | |- context [lvars_fv (dom (denot_relevant_env ?Σ ?τ ?e))] =>
-      let Hrel := fresh "Hrel" in
-      pose proof (denot_relevant_env_fv_subset Σ τ e) as Hrel
-  | _ => idtac
-  end;
-  set_solver.
-
 Lemma formula_fv_denot_ty_lvar_gas_subset_relevant gas Σ τ e :
   formula_fv (denot_ty_lvar_gas gas Σ τ e) ⊆
   fv_tm e ∪ fv_cty τ.
@@ -359,10 +297,7 @@ Lemma formula_fv_denot_ty_lvar_gas_guard_subset gas Σ τ e :
 Proof.
   destruct gas; cbn [denot_ty_lvar_gas denot_relevant_env
     lty_env_restrict_lvars denot_relevant_lvars];
-    repeat rewrite ?formula_fv_and, ?formula_fv_true,
-      ?formula_fv_context_ty_wf_formula, ?formula_fv_basic_world_formula,
-      ?formula_fv_expr_basic_typing_formula, ?formula_fv_expr_total_formula;
-    rewrite ?storeA_restrict_dom, ?tm_lvars_fv;
+    normalize_denotation_formula_fv;
     set_solver.
 Qed.
 
@@ -398,8 +333,7 @@ Proof.
     pose proof (res_models_fuel_scoped _ _ _ Htotal) as He.
     pose proof (context_ty_wf_formula_fv_cty_subset Σ τ m Hwf) as Hτ.
     unfold formula_scoped_in_world in He.
-    rewrite formula_fv_expr_total_formula in He.
-    rewrite tm_lvars_fv in He.
+    normalize_denotation_formula_fv_in He.
     intros a Ha.
     apply elem_of_union in Ha as [Ha | Ha].
     + apply elem_of_union in Ha as [Ha | Ha].
@@ -431,8 +365,7 @@ Proof.
     pose proof (context_ty_wf_formula_fv_cty_subset
       (denot_relevant_env Σ τ e) τ m Hwf) as Hτ.
     unfold formula_scoped_in_world in He.
-    rewrite formula_fv_expr_total_formula in He.
-    rewrite tm_lvars_fv in He.
+    normalize_denotation_formula_fv_in He.
     set_solver.
 Qed.
 

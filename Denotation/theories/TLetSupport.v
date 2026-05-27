@@ -3,38 +3,10 @@
     Shared support lemmas and tactics for the [tlet] introduction proof. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import ContextTypeDenotation.
+From Denotation Require Import ContextTypeDenotation ContextTypeDenotationTactics.
 
 Ltac normalize_formula_fv :=
-  repeat first
-    [ rewrite formula_fv_true | rewrite formula_fv_false
-    | rewrite formula_fv_and | rewrite formula_fv_or
-    | rewrite formula_fv_impl | rewrite formula_fv_star
-    | rewrite formula_fv_wand | rewrite formula_fv_plus
-    | rewrite formula_fv_forall | rewrite formula_fv_over
-    | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
-  rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_context_ty_wf_formula;
-  rewrite ?formula_fv_expr_basic_typing_formula;
-  rewrite ?formula_fv_expr_total_formula;
-  rewrite ?formula_fv_expr_result_formula;
-  rewrite ?formula_fv_type_qualifier_formula;
-  cbn [formula_fv formula_lvars];
-  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms, ?lvars_fv_singleton_free;
-  repeat first
-    [ rewrite formula_fv_true | rewrite formula_fv_false
-    | rewrite formula_fv_and | rewrite formula_fv_or
-    | rewrite formula_fv_impl | rewrite formula_fv_star
-    | rewrite formula_fv_wand | rewrite formula_fv_plus
-    | rewrite formula_fv_forall | rewrite formula_fv_over
-    | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
-  rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_context_ty_wf_formula;
-  rewrite ?formula_fv_expr_basic_typing_formula;
-  rewrite ?formula_fv_expr_total_formula;
-  rewrite ?formula_fv_expr_result_formula;
-  rewrite ?formula_fv_type_qualifier_formula;
-  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms, ?lvars_fv_singleton_free.
+  normalize_denotation_formula_fv.
 
 Lemma fiber_extension_singleton_out_fresh_in
     (F : FiberExtensionT) y :
@@ -319,17 +291,7 @@ Proof.
 Qed.
 
 Ltac normalize_tlet_forall_fv :=
-  rewrite ?formula_fv_true, ?formula_fv_false;
-  rewrite ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl;
-  rewrite ?formula_fv_star, ?formula_fv_wand, ?formula_fv_plus;
-  rewrite ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under,
-    ?formula_fv_fibvars;
-  rewrite ?formula_fv_basic_world_formula;
-  rewrite ?formula_fv_context_ty_wf_formula;
-  rewrite ?formula_fv_expr_basic_typing_formula;
-  rewrite ?formula_fv_expr_total_formula;
-  rewrite ?formula_fv_expr_result_formula;
-  rewrite ?formula_fv_type_qualifier_formula;
+  normalize_denotation_formula_fv;
   cbn [formula_lvars basic_world_formula basic_world_lqual
     expr_result_formula expr_result_lqual type_qualifier_formula
     type_qualifier_lqual context_ty_wf_formula context_ty_wf_lqual
@@ -347,14 +309,10 @@ Ltac normalize_tlet_forall_fv :=
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
   rewrite ?tlet_lvars_fv_dom_insert_free;
   rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
-  rewrite ?tm_shift_fv, ?cty_shift_fv;
-  rewrite ?tm_lvars_fv;
   rewrite ?lvars_fv_lvars_at_depth;
   rewrite ?lvars_fv_qual_vars_difference_free, ?lvars_fv_qual_vars;
-  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms, ?lvars_fv_singleton_bound,
-    ?lvars_fv_singleton_free, ?lvars_fv_difference_singleton_free,
-    ?tlet_lvars_fv_empty;
-  rewrite ?tm_lvars_fv;
+  rewrite ?tlet_lvars_fv_empty;
+  normalize_denotation_formula_fv;
   cbn [fv_tm fv_value].
 
 Lemma tlet_over_fib_formula_fresh_x x y b φ :
@@ -482,7 +440,7 @@ Proof.
   - apply formula_fv_denot_ty_lvar_gas_subset_relevant.
   - pose proof (res_models_fuel_scoped _ _ _ Htotal_e) as Hscope_e.
     unfold formula_scoped_in_world in Hscope_e.
-    rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_e.
+    normalize_denotation_formula_fv_in Hscope_e.
     pose proof (context_ty_wf_formula_fv_cty_subset
       (denot_relevant_env Σ τbig e) τbig m Hwf) as Hτbig_fv.
     pose proof (proj1 (basic_world_formula_models_iff

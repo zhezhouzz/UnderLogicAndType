@@ -1,4 +1,5 @@
 From ContextLogic Require Export FormulaScope.
+From ContextLogic Require Import FormulaSyntaxTactics.
 
 (** * Context Logic semantics *)
 
@@ -241,24 +242,24 @@ Proof.
       by exact Hproj.
     apply (proj2 (logic_qualifier_denote_restrict a m (lqual_fv a) ltac:(set_solver))).
     exact Hmodel.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp Hq]. split.
     + eapply IH; [| exact Hp].
       eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
     + eapply IH; [| exact Hq].
       eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp | Hq].
     + left. eapply IH; [| exact Hp].
       eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
     + right. eapply IH; [| exact Hq].
       eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     intros n' Hle_n Hpn'.
     assert (Hscope_n : formula_scoped_in_world n (FImpl p q)).
     {
       eapply formula_scoped_projection_on; [| exact Hproj | exact Hscope].
-      unfold formula_fv. simpl. rewrite lvars_fv_union. set_solver.
+      formula_fv_syntax_norm. set_solver.
     }
     apply (proj1 (formula_scoped_impl_iff n p q)) in Hscope_n
       as [Hp_scope_n Hq_scope_n].
@@ -275,11 +276,11 @@ Proof.
     transitivity (res_restrict n (formula_fv q)).
     + eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
     + apply res_restrict_le_eq; [exact Hle_n | exact Hq_scope_n].
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [m1 [m2 [Hc [Hprod [Hp Hq]]]]].
     set (X := formula_fv (FStar p q)).
     assert (HprojX : res_restrict m X = res_restrict n X).
-    { subst X. unfold formula_fv. simpl. rewrite lvars_fv_union. exact Hproj. }
+    { subst X. formula_fv_syntax_norm. exact Hproj. }
     destruct (res_product_restrict_same_le m m1 m2 X Hc Hprod) as [HcX HprodX].
     exists (res_restrict m1 X), (res_restrict m2 X), HcX.
     split.
@@ -291,18 +292,18 @@ Proof.
     + eapply IH; [| exact Hp].
       rewrite res_restrict_restrict_eq.
       replace (X ∩ formula_fv p) with (formula_fv p)
-        by (subst X; unfold formula_fv; cbn [formula_lvars]; rewrite lvars_fv_union; set_solver).
+        by (subst X; formula_fv_syntax_norm; set_solver).
       reflexivity.
     + eapply IH; [| exact Hq].
       rewrite res_restrict_restrict_eq.
       replace (X ∩ formula_fv q) with (formula_fv q)
-        by (subst X; unfold formula_fv; cbn [formula_lvars]; rewrite lvars_fv_union; set_solver).
+        by (subst X; formula_fv_syntax_norm; set_solver).
       reflexivity.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     intros narg Hc_n Hpnarg.
     set (X := formula_fv (FWand p q)).
     assert (HprojX : res_restrict m X = res_restrict n X).
-    { subst X. unfold formula_fv. simpl. rewrite lvars_fv_union. exact Hproj. }
+    { subst X. formula_fv_syntax_norm. exact Hproj. }
     assert (Hc_mid : world_compat narg (res_restrict m X)).
     {
       rewrite HprojX.
@@ -313,7 +314,7 @@ Proof.
     assert (Hc_small : world_compat (res_restrict narg (formula_fv p)) m).
     {
       eapply world_compat_restrict_l_full_r with (S := X).
-      - subst X. unfold formula_fv. cbn [formula_lvars]. rewrite lvars_fv_union. set_solver.
+      - subst X. formula_fv_syntax_norm. set_solver.
       - exact Hc_mid.
     }
     assert (Hp_small : res_models_fuel gas (res_restrict narg (formula_fv p)) p).
@@ -335,8 +336,7 @@ Proof.
       - eapply (res_product_restrict_wand_le narg m X (formula_fv p) (formula_fv q)
           Hc_small Hc_mid).
         + subst X.
-          unfold formula_fv at 2. cbn [formula_lvars].
-          rewrite lvars_fv_union. set_solver.
+          formula_fv_syntax_norm. set_solver.
         + apply (proj1 (formula_scoped_wand_iff m p q)) in Hscope.
           exact (proj2 Hscope).
       - eapply res_product_le_mono; [reflexivity |].
@@ -351,11 +351,11 @@ Proof.
       * exact Hle_orig_target.
       * pose proof (res_models_fuel_scoped gas orig q Hq_orig) as Hscope_orig.
         unfold formula_scoped_in_world in Hscope_orig. simpl. set_solver.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [m1 [m2 [Hdef [Hsum [Hp Hq]]]]].
     set (X := formula_fv (FPlus p q)).
     assert (HprojX : res_restrict m X = res_restrict n X).
-    { subst X. unfold formula_fv. simpl. rewrite lvars_fv_union. exact Hproj. }
+    { subst X. formula_fv_syntax_norm. exact Hproj. }
     destruct (res_sum_restrict_same_le m m1 m2 X Hdef Hsum) as [HdefX HsumX].
     exists (res_restrict m1 X), (res_restrict m2 X), HdefX.
     split.
@@ -367,12 +367,12 @@ Proof.
     + eapply IH; [| exact Hp].
       rewrite res_restrict_restrict_eq.
       replace (X ∩ formula_fv p) with (formula_fv p)
-        by (subst X; unfold formula_fv; cbn [formula_lvars]; rewrite lvars_fv_union; set_solver).
+        by (subst X; formula_fv_syntax_norm; set_solver).
       reflexivity.
     + eapply IH; [| exact Hq].
       rewrite res_restrict_restrict_eq.
       replace (X ∩ formula_fv q) with (formula_fv q)
-        by (subst X; unfold formula_fv; cbn [formula_lvars]; rewrite lvars_fv_union; set_solver).
+        by (subst X; formula_fv_syntax_norm; set_solver).
       reflexivity.
   - destruct Hmodel as [L Hforall].
     exists (L ∪ world_dom (m : WorldT)).
@@ -420,7 +420,7 @@ Proof.
     apply res_restrict_le_eq.
     + exact Hle_X.
     + subst X. eapply res_models_fuel_scoped; exact HpX.
-  - unfold formula_fv in Hproj; simpl in Hproj; rewrite lvars_fv_union in Hproj.
+  - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hlc Hfib]. split; [exact Hlc |].
     intros nfib Hmember_n.
     set (Dfv := lvars_fv D).
@@ -428,7 +428,7 @@ Proof.
     assert (HDfvm : Dfv ⊆ world_dom (m : WorldT)).
     {
       unfold formula_scoped_in_world, formula_fv in Hscope.
-      simpl in Hscope. rewrite lvars_fv_union in Hscope.
+      formula_fv_syntax_norm_in Hscope.
       subst Dfv. set_solver.
     }
     assert (HprojX :

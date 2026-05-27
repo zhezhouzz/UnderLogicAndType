@@ -1,4 +1,5 @@
 From ContextLogic Require Export FormulaSyntax.
+From ContextLogic Require Import FormulaSyntaxTactics.
 
 (** * Context Logic semantics
 
@@ -48,14 +49,14 @@ Qed.
 Lemma formula_scoped_true_iff (m : WfWorldT) :
   formula_scoped_in_world m FTrue ↔ True.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm.
   split; [trivial | intros _ z Hz; rewrite lvars_fv_elem in Hz; set_solver].
 Qed.
 
 Lemma formula_scoped_false_iff (m : WfWorldT) :
   formula_scoped_in_world m FFalse ↔ True.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm.
   split; [trivial | intros _ z Hz; rewrite lvars_fv_elem in Hz; set_solver].
 Qed.
 
@@ -67,8 +68,7 @@ Lemma formula_scoped_and_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FAnd φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_and_l (m : WfWorldT) φ ψ :
@@ -85,8 +85,7 @@ Lemma formula_scoped_or_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FOr φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_or_l (m : WfWorldT) φ ψ :
@@ -103,8 +102,7 @@ Lemma formula_scoped_impl_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FImpl φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_impl_l (m : WfWorldT) φ ψ :
@@ -121,8 +119,7 @@ Lemma formula_scoped_star_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FStar φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_star_l (m : WfWorldT) φ ψ :
@@ -139,8 +136,7 @@ Lemma formula_scoped_wand_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FWand φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_wand_l (m : WfWorldT) φ ψ :
@@ -157,8 +153,7 @@ Lemma formula_scoped_plus_iff (m : WfWorldT) φ ψ :
   formula_scoped_in_world m (FPlus φ ψ) ↔
   formula_scoped_in_world m φ ∧ formula_scoped_in_world m ψ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_plus_l (m : WfWorldT) φ ψ :
@@ -205,8 +200,7 @@ Lemma formula_scoped_fibvars_iff (m : WfWorldT) D φ :
   formula_scoped_in_world m (FFibVars D φ) ↔
   lvars_fv D ⊆ world_dom (m : WorldT) ∧ formula_scoped_in_world m φ.
 Proof.
-  unfold formula_scoped_in_world, formula_fv. simpl.
-  rewrite lvars_fv_union. set_solver.
+  unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
 Lemma formula_scoped_fibvars_l (m : WfWorldT) D φ :
