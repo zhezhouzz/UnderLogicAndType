@@ -536,4 +536,51 @@ Proof.
     split; [exact Hσproj_n | exact Heq_n].
 Qed.
 
+Lemma resA_fiber_from_projection_transport_on
+    (m n nfib : WfWorldAT) (σ : StoreAT) (D X : gset K) :
+  D ⊆ X →
+  D ⊆ worldA_dom (m : WorldAT) →
+  resA_restrict m X = resA_restrict n X →
+  resA_fiber_from_projection n D σ nfib →
+  ∃ mfib,
+    resA_fiber_from_projection m D σ mfib ∧
+    resA_restrict mfib X = resA_restrict nfib X.
+Proof.
+  intros HDX HDm Hproj Hfiber_n.
+  pose proof (resA_restrict_eq_subset m n X D HDX Hproj) as HprojD.
+  destruct Hfiber_n as [Hσproj_n Heq_n].
+  assert ((resA_restrict m D : WorldAT) σ) as Hσproj_m.
+  { rewrite HprojD. exact Hσproj_n. }
+  destruct Hσproj_m as [σm [Hσm Hrestrict_m]].
+  assert (Hdomσ : dom (σ : gmap K V) = D).
+  {
+    rewrite <- Hrestrict_m.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) = D).
+    pose proof (storeA_restrict_dom σm D) as Hdomr.
+    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+      dom (σm : gmap K V) ∩ D) in Hdomr.
+    rewrite Hdomr.
+    pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+    change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
+    rewrite Hdomσm. set_solver.
+  }
+  assert (Hnonempty_m :
+      ∃ σm0, (m : WorldAT) σm0 ∧
+        @storeA_restrict V K _ _ σm0 (dom (σ : gmap K V)) = σ).
+  {
+    exists σm. split; [exact Hσm |].
+    rewrite Hdomσ. exact Hrestrict_m.
+  }
+  set (mfib := resA_fiber m σ Hnonempty_m).
+  assert (Hfiber_m : resA_fiber_from_projection m D σ mfib).
+  {
+    split.
+    - exists σm. split; [exact Hσm | exact Hrestrict_m].
+    - subst mfib. unfold resA_fiber. simpl. reflexivity.
+  }
+  exists mfib. split; [exact Hfiber_m |].
+  eapply resA_fiber_from_projection_eq_on; eauto.
+  split; [exact Hσproj_n | exact Heq_n].
+Qed.
+
 End ResourceAlgebraA.

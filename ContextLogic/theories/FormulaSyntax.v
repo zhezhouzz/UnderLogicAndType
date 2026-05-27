@@ -13,6 +13,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
+Local Notation LStoreT := (@StoreA V logic_var _ _) (only parsing).
 
 Inductive Formula : Type :=
   | FTrue
@@ -109,6 +110,60 @@ Fixpoint formula_measure (φ : Formula) : nat :=
   | FForall p | FOver p | FUnder p | FFibVars _ p =>
       1 + formula_measure p
   end.
+
+Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
+  match φ with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | FAtom q => FAtom (lqual_mlsubst ρ q)
+  | FAnd p q => FAnd (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FOr p q => FOr (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FImpl p q => FImpl (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FStar p q => FStar (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FWand p q => FWand (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FPlus p q => FPlus (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FForall p => FForall (formula_mlsubst ρ p)
+  | FOver p => FOver (formula_mlsubst ρ p)
+  | FUnder p => FUnder (formula_mlsubst ρ p)
+  | FFibVars D p =>
+      FFibVars (D ∖ dom (ρ : gmap logic_var V)) (formula_mlsubst ρ p)
+  end.
+
+Definition formula_msubst_store (σ : Store (V := V)) (φ : Formula) : Formula :=
+  formula_mlsubst (lstore_lift_free σ) φ.
+
+Lemma formula_mlsubst_preserves_measure ρ φ :
+  formula_measure (formula_mlsubst ρ φ) = formula_measure φ.
+Proof.
+  induction φ; simpl; eauto; lia.
+Qed.
+
+Lemma formula_msubst_store_preserves_measure σ φ :
+  formula_measure (formula_msubst_store σ φ) = formula_measure φ.
+Proof. apply formula_mlsubst_preserves_measure. Qed.
+
+Lemma formula_mlsubst_fv_subset ρ φ :
+  formula_fv (formula_mlsubst ρ φ) ⊆ formula_fv φ.
+Proof.
+  induction φ;
+    unfold formula_fv in *; cbn [formula_mlsubst formula_lvars];
+    try set_solver.
+  - destruct a as [D P]. cbn [lqual_mlsubst lqual_lvars].
+    eapply lvars_fv_mono. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union.
+    pose proof (lvars_fv_mono (D ∖ dom (ρ : gmap logic_var V)) D ltac:(set_solver)).
+    set_solver.
+Qed.
+
+Lemma formula_msubst_store_fv_subset σ φ :
+  formula_fv (formula_msubst_store σ φ) ⊆ formula_fv φ.
+Proof. apply formula_mlsubst_fv_subset. Qed.
 
 Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   match φ with

@@ -56,6 +56,17 @@ Lemma res_fiber_member_projection_transport_on
     res_restrict mfib X = res_restrict nfib X.
 Proof. apply resA_fiber_member_projection_transport_on. Qed.
 
+Lemma res_fiber_from_projection_transport_on
+    (m n nfib : WfWorld) (σ : Store) (D X : aset) :
+  D ⊆ X →
+  D ⊆ world_dom (m : World) →
+  res_restrict m X = res_restrict n X →
+  res_fiber_from_projection n D σ nfib →
+  ∃ mfib,
+    res_fiber_from_projection m D σ mfib ∧
+    res_restrict mfib X = res_restrict nfib X.
+Proof. apply resA_fiber_from_projection_transport_on. Qed.
+
 Lemma world_compat_le_r (w m n : WfWorld) :
   m ⊑ n →
   world_compat w n →

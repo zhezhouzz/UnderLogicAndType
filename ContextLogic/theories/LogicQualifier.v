@@ -1,5 +1,5 @@
 From ContextAlgebra Require Export Resource.
-From ContextAlgebra Require Import ResourceRestrict.
+From ContextAlgebra Require Import ResourceCore ResourceAlgebraBase ResourceRestrict.
 From ContextPrelude Require Export Prelude Store.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
@@ -19,6 +19,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation LStoreT := (@StoreA V logic_var _ _) (only parsing).
 Local Notation LWorldOnT := (LWorldOn (V := V)) (only parsing).
 
 Record logic_qualifier : Type := lqual {
@@ -50,9 +51,60 @@ Definition lqual_open
     (k : nat) (x : atom) (q : logic_qualifier) : logic_qualifier :=
   match q with
   | lqual D P =>
-	      lqual (lvars_open k x D)
-	        (λ w, P (lworld_on_open_back k x D w))
-	  end.
+		      lqual (lvars_open k x D)
+		        (λ w, P (lworld_on_open_back k x D w))
+		  end.
+
+Definition lworld_on_mlsubst_back
+    (D : lvset) (ρ : LStoreT)
+    (w : LWorldOnT (D ∖ dom (ρ : gmap logic_var V))) : LWorldOnT D.
+Proof.
+  set (ρD := storeA_restrict ρ D).
+  set (wρ := (exist _ (singleton_worldA ρD) (wf_singleton_worldA ρD)
+    : LWfWorld)).
+  assert (Hc : worldA_compat (@lw V _ w : LWorld) (wρ : LWorld)).
+  {
+    apply disj_dom_worldA_compat.
+    change (lworld_dom (@lw V _ w : LWorld) ∩ lworld_dom (wρ : LWorld) = ∅).
+    rewrite (@lw_dom V _ w).
+    unfold wρ.
+    unfold lworld_dom, lraw_world.
+    cbn [proj1_sig singleton_worldA worldA_dom].
+    change (dom ρD) with (dom (storeA_restrict ρ D)).
+    rewrite storeA_restrict_dom.
+    set_solver.
+  }
+  refine {| lw := resA_product (@lw V _ w) wρ Hc |}.
+  change (lworld_dom (resA_product (@lw V _ w) wρ Hc : LWorld) = D).
+  unfold wρ.
+  unfold lworld_dom, lraw_world, resA_product.
+  change (worldA_dom (rawA_product (@lw V _ w : LWorld) (singleton_worldA ρD)) = D).
+  cbn [rawA_product singleton_worldA worldA_dom].
+  change (lworld_dom (@lw V _ w : LWorld) ∪ dom ρD = D).
+  rewrite (@lw_dom V _ w).
+  change (dom ρD) with (dom (storeA_restrict ρ D)).
+  rewrite storeA_restrict_dom.
+  apply set_eq. intros z.
+  rewrite elem_of_union, elem_of_difference, elem_of_intersection.
+  split.
+  - intros [[HzD _] | [_ HzD]]; exact HzD.
+  - intros HzD.
+    destruct (decide (z ∈ dom (ρ : gmap logic_var V))) as [Hzρ | Hzρ].
+    + right. split; assumption.
+    + left. split; assumption.
+Defined.
+
+Definition lqual_mlsubst
+    (ρ : LStoreT) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual D P =>
+      lqual (D ∖ dom (ρ : gmap logic_var V))
+        (fun w => P (lworld_on_mlsubst_back D ρ w))
+  end.
+
+Definition lqual_msubst_store
+    (σ : Store (V := V)) (q : logic_qualifier) : logic_qualifier :=
+  lqual_mlsubst (lstore_lift_free σ) q.
 
 Lemma logic_qualifier_ext (q1 q2 : logic_qualifier) :
   lqual_dom q1 = lqual_dom q2 ->

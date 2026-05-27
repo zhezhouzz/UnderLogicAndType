@@ -5,6 +5,8 @@ From Stdlib Require Import Lia.
 
 Ltac models_fuel_finish :=
   rewrite ?formula_open_preserves_measure;
+  rewrite ?formula_mlsubst_preserves_measure;
+  rewrite ?formula_msubst_store_preserves_measure;
   simpl; lia.
 
 Tactic Notation "models_fuel_irrel" constr(H) :=

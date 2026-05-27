@@ -287,51 +287,49 @@ Proof.
 Qed.
 
 Lemma res_models_FFibVars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
-  formula_scoped_in_world m (FFibVars D φ) →
-  lc_lvars D →
-  (∀ mfib : WfWorldT,
-    res_fiber_member m (lvars_fv D) mfib →
-    mfib ⊨ φ) →
-  m ⊨ FFibVars D φ.
+	  formula_scoped_in_world m (FFibVars D φ) →
+	  lc_lvars D →
+	  (∀ (σ : Store (V := V)) (mfib : WfWorldT),
+	    res_fiber_from_projection m (lvars_fv D) σ mfib →
+	    mfib ⊨ formula_msubst_store σ φ) →
+	  m ⊨ FFibVars D φ.
 Proof.
   unfold res_models.
   simpl. intros Hscope Hlc Hfib. split; [exact Hscope |].
   split; [exact Hlc |].
-  intros mfib Hmember.
-  specialize (Hfib mfib Hmember).
-  models_fuel_irrel Hfib.
+	  intros σ mfib Hproj.
+	  specialize (Hfib σ mfib Hproj).
+	  models_fuel_irrel Hfib.
 Qed.
 
 Lemma res_models_FFibVars_projection_intro
     (m : WfWorldT) (D : lvset) (φ : FormulaT) :
   formula_scoped_in_world m (FFibVars D φ) →
   lc_lvars D →
-  (∀ σ mfib,
-    res_fiber_from_projection m (lvars_fv D) σ mfib →
-    mfib ⊨ φ) →
-  m ⊨ FFibVars D φ.
+	  (∀ σ mfib,
+	    res_fiber_from_projection m (lvars_fv D) σ mfib →
+	    mfib ⊨ formula_msubst_store σ φ) →
+	  m ⊨ FFibVars D φ.
 Proof.
   intros Hscope Hlc Hfib.
   eapply res_models_FFibVars_intro; [exact Hscope | exact Hlc |].
-  intros mfib Hmember.
-  destruct Hmember as [σ Hproj].
-  eapply Hfib. exact Hproj.
+	  exact Hfib.
 Qed.
 
 Lemma res_models_FFibVars_iff (m : WfWorldT) (D : lvset) (φ : FormulaT) :
   formula_scoped_in_world m (FFibVars D φ) →
-  (m ⊨ FFibVars D φ ↔
-    lc_lvars D ∧
-    ∀ mfib : WfWorldT,
-      res_fiber_member m (lvars_fv D) mfib →
-      mfib ⊨ φ).
+	(m ⊨ FFibVars D φ ↔
+	  lc_lvars D ∧
+	  ∀ (σ : Store (V := V)) (mfib : WfWorldT),
+	    res_fiber_from_projection m (lvars_fv D) σ mfib →
+	    mfib ⊨ formula_msubst_store σ φ).
 Proof.
   intros Hscope. split.
   - unfold res_models. simpl.
     intros [_ [Hlc Hfib]]. split; [exact Hlc |].
-    intros mfib Hmember.
-    specialize (Hfib mfib Hmember).
-    models_fuel_irrel Hfib.
+	    intros σ mfib Hproj.
+	    specialize (Hfib σ mfib Hproj).
+	    models_fuel_irrel Hfib.
   - intros [Hlc Hfib].
     eapply res_models_FFibVars_intro; eauto.
 Qed.
@@ -339,19 +337,18 @@ Qed.
 Lemma res_models_FFibVars_projection_iff
     (m : WfWorldT) (D : lvset) (φ : FormulaT) :
   formula_scoped_in_world m (FFibVars D φ) →
-  (m ⊨ FFibVars D φ ↔
-    lc_lvars D ∧
-    ∀ σ mfib,
-      res_fiber_from_projection m (lvars_fv D) σ mfib →
-      mfib ⊨ φ).
+	(m ⊨ FFibVars D φ ↔
+	  lc_lvars D ∧
+	  ∀ σ mfib,
+	    res_fiber_from_projection m (lvars_fv D) σ mfib →
+	    mfib ⊨ formula_msubst_store σ φ).
 Proof.
   intros Hscope. split.
   - intros Hmodel.
     pose proof (proj1 (res_models_FFibVars_iff m D φ Hscope) Hmodel)
       as [Hlc Hfib].
     split; [exact Hlc |].
-    intros σ mfib Hproj.
-    apply Hfib. exists σ. exact Hproj.
+	    exact Hfib.
   - intros [Hlc Hfib].
     eapply res_models_FFibVars_projection_intro; eauto.
 Qed.

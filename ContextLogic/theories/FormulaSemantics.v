@@ -62,11 +62,11 @@ Fixpoint res_models_fuel
       | FUnder p =>
           ∃ m' : WfWorldT,
             res_subset m' m ∧ res_models_fuel gas' m' p
-      | FFibVars D p =>
-          lc_lvars D ∧
-          ∀ mfib : WfWorldT,
-            res_fiber_member m (lvars_fv D) mfib →
-            res_models_fuel gas' mfib p
+	      | FFibVars D p =>
+	          lc_lvars D ∧
+	          ∀ (σ : Store (V := V)) (mfib : WfWorldT),
+	            res_fiber_from_projection m (lvars_fv D) σ mfib →
+	            res_models_fuel gas' mfib (formula_msubst_store σ p)
       end
   end.  
 
@@ -143,10 +143,13 @@ Proof.
     - destruct Hmodel as [m' [Hsub Hp]].
       exists m'. split; [exact Hsub |].
       exact (IHn p gasA' gasB' m' ltac:(lia) ltac:(lia) ltac:(lia) Hp).
-    - destruct Hmodel as [Hlc Hfib]. split; [exact Hlc |].
-      intros mfib Hmember.
-      exact (IHn p gasA' gasB' mfib ltac:(lia) ltac:(lia) ltac:(lia)
-        (Hfib mfib Hmember)).
+	    - destruct Hmodel as [Hlc Hfib]. split; [exact Hlc |].
+	      intros σ mfib Hproj.
+	      exact (IHn (formula_msubst_store σ p) gasA' gasB' mfib
+	        ltac:(rewrite formula_msubst_store_preserves_measure; lia)
+	        ltac:(rewrite formula_msubst_store_preserves_measure; lia)
+	        ltac:(rewrite formula_msubst_store_preserves_measure; lia)
+	        (Hfib σ mfib Hproj)).
   }
   eapply Hstrong with (n := formula_measure φ); eauto.
 Qed.
@@ -422,9 +425,9 @@ Proof.
     + subst X. eapply res_models_fuel_scoped; exact HpX.
   - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hlc Hfib]. split; [exact Hlc |].
-    intros nfib Hmember_n.
-    set (Dfv := lvars_fv D).
-    assert (HDfvX : Dfv ⊆ Dfv ∪ formula_fv p) by set_solver.
+	    intros σ nfib Hproj_n.
+	    set (Dfv := lvars_fv D).
+	    assert (HDfvX : Dfv ⊆ Dfv ∪ formula_fv p) by set_solver.
     assert (HDfvm : Dfv ⊆ world_dom (m : WorldT)).
     {
       unfold formula_scoped_in_world, formula_fv in Hscope.
@@ -435,14 +438,15 @@ Proof.
       res_restrict m (Dfv ∪ formula_fv p) =
       res_restrict n (Dfv ∪ formula_fv p)).
     { unfold Dfv, formula_fv. exact Hproj. }
-    pose proof (res_fiber_member_projection_transport_on
-      m n nfib Dfv (Dfv ∪ formula_fv p)
-      HDfvX HDfvm HprojX Hmember_n) as Htransport.
-    destruct Htransport as [mfib [Hmember_m Hfib_proj]].
-    pose proof (Hfib mfib Hmember_m) as Hpm.
-    apply (IH mfib nfib p).
-    + eapply res_restrict_eq_subset; [| exact Hfib_proj]. set_solver.
-    + exact Hpm.
+	    pose proof (res_fiber_from_projection_transport_on
+	      m n nfib σ Dfv (Dfv ∪ formula_fv p)
+	      HDfvX HDfvm HprojX Hproj_n) as Htransport.
+	    destruct Htransport as [mfib [Hproj_m Hfib_proj]].
+	    pose proof (Hfib σ mfib Hproj_m) as Hpm.
+	    apply (IH mfib nfib (formula_msubst_store σ p)).
+	    + eapply res_restrict_eq_subset; [| exact Hfib_proj].
+	      pose proof (formula_msubst_store_fv_subset σ p). set_solver.
+	    + exact Hpm.
 Qed.
 
 Lemma res_models_fuel_restrict_fv
