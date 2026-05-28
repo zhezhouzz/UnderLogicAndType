@@ -2,7 +2,6 @@
 
 From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction.
-From ContextStore Require Import AtomEnv.
 
 Section StoreFilterMapKey.
 
@@ -725,14 +724,14 @@ Qed.
 
 Lemma lvar_store_to_atom_store_swap x y (s : LVarStore) :
   lvar_store_to_atom_store (lvar_store_swap x y s) =
-  (kmap (swap x y) (lvar_store_to_atom_store s) : gmap atom V).
+  (@storeA_swap V atom _ _ x y (lvar_store_to_atom_store s) : gmap atom V).
 Proof.
   apply (map_eq (M:=gmap atom)). intros z.
   rewrite lvar_store_to_atom_store_lookup.
   transitivity (lvar_store_to_atom_store s !! swap x y z).
   - rewrite lvar_store_swap_lookup_inv.
     symmetry. apply lvar_store_to_atom_store_lookup.
-  - symmetry. apply kmap_swap_lookup_inv.
+  - symmetry. apply storeA_swap_lookup_inv.
 Qed.
 
 Lemma lvar_store_to_atom_store_dom_subset (s : LVarStore) :

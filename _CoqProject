@@ -20,7 +20,6 @@ ContextBase/BaseTactics.v
 ContextStore/StoreCore.v
 ContextStore/StoreKeyAction.v
 ContextStore/StoreFilterMapKey.v
-ContextStore/AtomEnv.v
 ContextStore/StoreRestrictCore.v
 ContextStore/StoreRestrictUnion.v
 ContextStore/StoreBind.v
