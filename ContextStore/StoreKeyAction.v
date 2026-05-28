@@ -548,8 +548,8 @@ Proof.
   destruct (decide (z = x)) as [->|Hzx].
 	  - base_swap_normalize.
 	    change (((s : gmap K V) !! y) = ((s : gmap K V) !! x)).
-    pose proof (storeA_lookup_none_of_not_elem_dom s x Hx) as Hsx.
-    pose proof (storeA_lookup_none_of_not_elem_dom s y Hy) as Hsy.
+    assert (Hsx : (s : gmap K V) !! x = None) by better_map_solver.
+    assert (Hsy : (s : gmap K V) !! y = None) by better_map_solver.
     change (((s : gmap K V) !! x) = None) in Hsx.
     change (((s : gmap K V) !! y) = None) in Hsy.
     rewrite Hsx, Hsy.
@@ -557,8 +557,8 @@ Proof.
 	  - destruct (decide (z = y)) as [->|Hzy].
 	    + base_swap_normalize.
 	      change (((s : gmap K V) !! x) = ((s : gmap K V) !! y)).
-      pose proof (storeA_lookup_none_of_not_elem_dom s x Hx) as Hsx.
-      pose proof (storeA_lookup_none_of_not_elem_dom s y Hy) as Hsy.
+      assert (Hsx : (s : gmap K V) !! x = None) by better_map_solver.
+      assert (Hsy : (s : gmap K V) !! y = None) by better_map_solver.
       change (((s : gmap K V) !! x) = None) in Hsx.
       change (((s : gmap K V) !! y) = None) in Hsy.
       rewrite Hsx, Hsy.

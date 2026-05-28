@@ -68,47 +68,6 @@ Proof.
   intros Hlook. apply (map_eq (M:=gmap K)). exact Hlook.
 Qed.
 
-Lemma storeA_elem_of_dom_lookup_some {K : Type} `{Countable K}
-    (s : StoreA K) x v :
-  s !! x = Some v →
-  x ∈ dom s.
-Proof.
-  intros Hlook.
-  change ((s : gmap K V) !! x = Some v) in Hlook.
-  change (x ∈ dom (s : gmap K V)).
-  better_map_solver.
-Qed.
-
-Lemma storeA_lookup_none_of_not_elem_dom {K : Type} `{Countable K}
-    (s : StoreA K) x :
-  x ∉ dom s →
-  s !! x = None.
-Proof.
-  intros Hnot.
-  change (x ∉ dom (s : gmap K V)) in Hnot.
-  change ((s : gmap K V) !! x = None).
-  better_map_solver.
-Qed.
-
-Lemma storeA_lookup_insert_ne {K : Type} `{Countable K}
-    (s : StoreA K) x z v :
-  z ≠ x →
-  <[x := v]> s !! z = s !! z.
-Proof.
-  intros Hzx.
-  change ((<[x := v]> (s : gmap K V) : gmap K V) !! z =
-    (s : gmap K V) !! z).
-  apply map_lookup_insert_ne. exact Hzx.
-Qed.
-
-Lemma storeA_lookup_insert {K : Type} `{Countable K}
-    (s : StoreA K) x v :
-  <[x := v]> s !! x = Some v.
-Proof.
-  change (((<[x := v]> (s : gmap K V)) : gmap K V) !! x = Some v).
-  apply map_lookup_insert.
-Qed.
-
 Lemma storeA_agree_on_mono {K : Type} `{Countable K}
     D E (s1 s2 : StoreA K) :
   D ⊆ E ->
@@ -181,14 +140,6 @@ Proof.
     rewrite !map_lookup_insert. reflexivity.
 Qed.
 
-Lemma storeA_lookup_union_Some_raw {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) i v :
-  ((@union (gmap K V) _ s1 s2) !! i = Some v) ↔
-    s1 !! i = Some v ∨ (s1 !! i = None ∧ s2 !! i = Some v).
-Proof.
-  apply map_lookup_union_Some_raw.
-Qed.
-
 Lemma storeA_bind_dom {K : Type} `{Countable K}
     (s1 s2 s : StoreA K) :
   storeA_bind s1 s2 s →
@@ -198,15 +149,6 @@ Proof.
   change (dom (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
     dom (s1 : gmap K V) ∪ dom (s2 : gmap K V)).
   better_set_solver.
-Qed.
-
-Lemma storeA_lookup_none_of_dom {K : Type} `{Countable K}
-    (σ : StoreA K) (X : gset K) (x : K) :
-  dom (σ : gmap K V) = X →
-  x ∉ X →
-  (σ : gmap K V) !! x = None.
-Proof.
-  intros Hdom Hx. better_map_solver.
 Qed.
 
 End AbstractStoreCore.

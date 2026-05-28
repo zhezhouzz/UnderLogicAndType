@@ -11,20 +11,6 @@ Context {V : Type} `{ValueSig V}.
 Local Notation Store := (@StoreA V atom _ _) (only parsing).
 Local Notation LStore := (@StoreA V logic_var _ _) (only parsing).
 
-Lemma store_lookup_none_of_not_elem_dom (s : Store) x :
-  x ∉ dom s →
-  s !! x = None.
-Proof.
-  apply storeA_lookup_none_of_not_elem_dom.
-Qed.
-
-Lemma store_lookup_union_Some_raw (s1 s2 : Store) i v :
-  ((@union (gmap atom V) _ (s1 : gmap atom V) (s2 : gmap atom V)) !! i = Some v) ↔
-    s1 !! i = Some v ∨ (s1 !! i = None ∧ s2 !! i = Some v).
-Proof.
-  apply storeA_lookup_union_Some_raw.
-Qed.
-
 Lemma lstore_swap_fresh (a b : logic_var) (s : LStore) :
   a ∉ dom (s : LStore) ->
   b ∉ dom (s : LStore) ->

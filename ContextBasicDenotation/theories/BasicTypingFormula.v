@@ -1582,7 +1582,7 @@ Proof.
       { intros ->. exact (Hxτ Hv). }
       apply elem_of_dom in Hvars as [Tv HTv].
       rewrite lookup_insert_ne in HTv by congruence.
-      eapply storeA_elem_of_dom_lookup_some. exact HTv.
+      apply elem_of_dom_2 in HTv. exact HTv.
 Qed.
 
 Lemma expr_basic_typing_formula_tlete_intro

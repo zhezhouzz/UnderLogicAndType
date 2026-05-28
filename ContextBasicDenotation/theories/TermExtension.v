@@ -259,7 +259,7 @@ Proof.
                         : gmap logic_var value) !! LVFree x = Some u).
                      rewrite lstore_lift_free_lookup_free.
                      change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! x = Some u).
-                     rewrite storeA_lookup_union_Some_raw.
+                     rewrite map_lookup_union_Some_raw.
                      right. split; [exact Hx_not_m|exact Hu].
               ** rewrite lookup_insert_ne in HΣout by congruence.
                  rewrite lookup_empty in HΣout. discriminate.

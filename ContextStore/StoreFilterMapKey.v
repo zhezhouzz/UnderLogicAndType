@@ -743,7 +743,8 @@ Proof.
   apply lvar_store_to_atom_store_lookup_some in Hv.
   unfold lvar_store_atom_dom.
   apply lvars_fv_elem.
-  eapply storeA_elem_of_dom_lookup_some. exact Hv.
+  change (((s : LVarStore) : gmap logic_var V) !! LVFree x = Some v) in Hv.
+  apply elem_of_dom_2 in Hv. exact Hv.
 Qed.
 
 End StoreFilterMapKey.

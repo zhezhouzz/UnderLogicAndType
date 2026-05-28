@@ -810,7 +810,7 @@ Proof.
         rewrite lstore_lift_free_lookup_free.
         change (((σm : gmap atom value) ∪ ({[x := u]} : gmap atom value)) !! x =
           Some u).
-        apply storeA_lookup_union_Some_raw. right.
+        apply map_lookup_union_Some_raw. right.
         split.
         ++ apply eq_None_not_Some. intros [w Hlook].
            pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh_out.
@@ -824,7 +824,7 @@ Proof.
            rewrite Hout in Hfresh_out.
            set_solver.
         ++ change ((<[x := u]> (∅ : StoreT)) !! x = Some u).
-           apply storeA_lookup_insert.
+           apply map_lookup_insert.
       -- assert (Hrestrict_union :
           store_restrict (σm ∪ ({[x := u]} : StoreT)) (fv_tm e) =
           store_restrict σm (fv_tm e)).
