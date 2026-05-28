@@ -21,7 +21,9 @@ Lemma res_models_open_denot_ty_bind0_iff
       (open_tm 0 (vfvar y) e).
 Proof.
   intros Hfresh Hclosed Hy Hτ.
-  rewrite <- (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
+  replace (<[LVFree y := T]> Σ) with
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ T))
+    by exact (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
   apply res_models_open_denot_ty_lvar_gas_iff.
   - rewrite typed_lty_env_bind_lvars_fv_dom.
     intros Hbad. apply Hfresh. apply lvars_fv_elem. exact Hbad.
@@ -75,7 +77,9 @@ Lemma res_models_open_denot_ty_lvar_gas_to_open
     (open_tm 0 (vfvar y) e).
 Proof.
   intros Hfresh Hclosed Hy Hτ.
-  rewrite <- (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
+  replace (<[LVFree y := T]> Σ) with
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ T))
+    by exact (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
   apply (proj1 (res_models_open_denot_ty_lvar_gas_iff
     0 y gas (typed_lty_env_bind Σ T) τ e m
     ltac:(rewrite typed_lty_env_bind_lvars_fv_dom;
@@ -97,7 +101,9 @@ Lemma res_models_open_denot_ty_lvar_gas_from_open
     (denot_ty_lvar_gas gas (typed_lty_env_bind Σ T) τ e).
 Proof.
   intros Hfresh Hclosed Hy Hτ.
-  rewrite <- (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
+  replace (<[LVFree y := T]> Σ) with
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ T))
+    by exact (typed_lty_env_bind_open_current y Σ T Hfresh Hclosed).
   apply (proj2 (res_models_open_denot_ty_lvar_gas_iff
     0 y gas (typed_lty_env_bind Σ T) τ e m
     ltac:(rewrite typed_lty_env_bind_lvars_fv_dom;

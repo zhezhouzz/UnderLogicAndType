@@ -5,6 +5,7 @@
     provides the TypeLanguage instances used by opening notation. *)
 
 From LocallyNameless Require Import Classes.
+From ContextStore Require Export Store.
 From ContextTypeLanguage Require Export TypeOpen.
 
 Notation lty_env := (@StoreA ty logic_var _ _) (only parsing).
@@ -32,8 +33,8 @@ Notation lty_env_bvar_scope :=
 Notation lty_env_swap :=
   (@lvar_store_swap ty) (only parsing).
 
-Definition typed_lty_env_bind (Σ : lty_env) (T : ty) : lty_env :=
-  <[LVBound 0 := T]> (lvar_store_shift Σ).
+Notation typed_lty_env_bind :=
+  (@lvar_store_bind ty) (only parsing).
 
 #[global] Instance stale_lty_env : Stale lty_env := lvar_store_atom_dom.
 Arguments stale_lty_env /.

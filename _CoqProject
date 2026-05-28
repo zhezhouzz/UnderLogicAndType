@@ -23,6 +23,7 @@ ContextStore/AtomEnv.v
 ContextStore/StoreRestrictCore.v
 ContextStore/StoreRestrictUnion.v
 ContextStore/StoreBind.v
+ContextStore/LVarStore.v
 ContextStore/StoreInterfaceCore.v
 ContextStore/StoreInterfaceLookupSwap.v
 ContextStore/StoreInterfaceRestrict.v

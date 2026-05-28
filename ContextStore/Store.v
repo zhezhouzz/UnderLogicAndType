@@ -8,6 +8,7 @@ From ContextStore Require Export AtomEnv.
 From ContextStore Require Export StoreRestrictCore.
 From ContextStore Require Export StoreRestrictUnion.
 From ContextStore Require Export StoreBind.
+From ContextStore Require Export LVarStore.
 From ContextStore Require Export StoreInterfaceCompat.
 
 Notation "σ '|ₛ' X" := (store_restrict σ X)
