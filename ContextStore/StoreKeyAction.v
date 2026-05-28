@@ -581,6 +581,22 @@ Proof.
   rewrite swap_conjugate_inv. reflexivity.
 Qed.
 
+Lemma storeA_swap_commute_fresh {K : Type} `{Countable K}
+    (a b c d : K) (s : StoreA K) :
+  c <> a ->
+  c <> b ->
+  d <> a ->
+  d <> b ->
+  @storeA_swap V K _ _ a b (@storeA_swap V K _ _ c d s : StoreA K) =
+  @storeA_swap V K _ _ c d (@storeA_swap V K _ _ a b s : StoreA K).
+Proof.
+  intros Hca Hcb Hda Hdb.
+  rewrite storeA_swap_conjugate.
+  rewrite (swap_fresh a b c) by congruence.
+  rewrite (swap_fresh a b d) by congruence.
+  reflexivity.
+Qed.
+
 Lemma storeA_swap_conjugate_inv {K : Type} `{Countable K} 
     (a b x y : K) (s : StoreA K) :
    @storeA_swap V K _ _ x y (@storeA_swap V K _ _ a b s : StoreA K) =

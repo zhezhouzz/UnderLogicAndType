@@ -167,13 +167,13 @@ Proof.
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
     + replace (lstore_on_open_back k x D s1) with s2; [exact HP|].
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
 Qed.
 
@@ -200,13 +200,13 @@ Proof.
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
     + replace (lstore_on_open_back k x D s1) with s2; [exact HP|].
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
 Qed.
 
@@ -266,7 +266,8 @@ Proof.
           (lstore_swap (LVBound j) (LVFree y) (lso_store s2))).
       rewrite <- Hs.
       symmetry.
-      apply lstore_swap_commute_fresh; congruence.
+      unfold lstore_swap, lstore_rekey.
+      apply storeA_swap_commute_fresh; congruence.
     }
     rewrite Hback. tauto.
 Qed.

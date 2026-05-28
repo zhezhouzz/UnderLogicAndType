@@ -2,14 +2,14 @@
 
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion StoreBind.
-From ContextStore Require Export StoreInterfaceLookupSwap.
+From ContextStore Require Export StoreInterfaceCore.
 
 Section StoreInterface.
 
 Context {V : Type} `{ValueSig V}.
 
 Local Notation Store := (@StoreA V atom _ _) (only parsing).
-Local Notation LStore := (@StoreA V logic_var _ _) (only parsing).
+Local Notation store_restrict := storeA_restrict (only parsing).
 
 Lemma store_restrict_lookup (s : Store) (X : aset) (z : atom) :
   ((store_restrict s X : gmap atom V) !! z) =

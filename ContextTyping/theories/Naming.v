@@ -85,9 +85,7 @@ Proof.
     + apply map_lookup_union_Some_raw in Hzrest as [HzΓ|[_ Hzx]].
       * apply elem_of_union_l. apply elem_of_dom. exists T.
         apply map_lookup_union_Some_raw. right. eauto.
-      * cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
-          singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
-          map_insert] in Hzx.
+      * cbv [map_singleton singleton singletonM insert map_insert] in Hzx.
         destruct (decide (z = x)) as [->|Hzx_ne]; [set_solver|].
         change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
           x (∅ : gmap atom ty)) !! z = Some T) in Hzx.
@@ -115,9 +113,7 @@ Proof.
            apply map_lookup_union_Some_raw. right.
            split.
            ++ exact HΓ.
-           ++ cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
-                singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
-                map_insert].
+           ++ cbv [map_singleton singleton singletonM insert map_insert].
               change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
                 x (∅ : gmap atom ty)) !! x = Some (erase_ty τ)).
               rewrite (lookup_partial_alter_eq (K := atom) (M := gmap atom)).

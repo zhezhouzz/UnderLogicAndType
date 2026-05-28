@@ -25,7 +25,6 @@ ContextStore/StoreRestrictUnion.v
 ContextStore/StoreBind.v
 ContextStore/LVarStore.v
 ContextStore/StoreInterfaceCore.v
-ContextStore/StoreInterfaceLookupSwap.v
 ContextStore/StoreInterfaceRestrict.v
 ContextStore/Store.v
 

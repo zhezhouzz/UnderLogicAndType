@@ -73,7 +73,10 @@ Proof.
       ((store_restrict σ
           (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
             (world_dom (m : World))) : aset) : gmap atom value) !! a)).
-    rewrite !store_restrict_lookup.
+    rewrite (store_restrict_lookup σ (world_dom (m : World)) a).
+    rewrite (store_restrict_lookup σ
+      (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+        (world_dom (m : World))) : aset) a).
     pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
     pose proof (f_equal world_dom Hle) as Hdomle.
     destruct (decide (a ∈ world_dom (m : World))) as [Ham|Ham];
@@ -360,7 +363,7 @@ Proof.
     destruct Hσ as [σ0 [Hσ0 Hrestrict]].
     intros x T v HΣ Hσx.
     rewrite <- Hrestrict in Hσx.
-    apply storeA_restrict_lookup_some in Hσx as [_ Hσ0x].
+    apply store_restrict_lookup_some in Hσx as [_ Hσ0x].
     eapply Hstores; eauto.
 Qed.
 

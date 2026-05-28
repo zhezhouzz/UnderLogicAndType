@@ -125,10 +125,11 @@ Proof.
   { eapply wfworld_store_dom. exact Hσ. }
   assert (Hdom : dom (store_restrict σ (ext_in F)) = fv_tm e).
   {
-    pose proof (storeA_restrict_dom σ (ext_in F)) as Hrestrict_dom.
+    pose proof (store_restrict_dom σ (ext_in F)) as Hrestrict_dom.
     change (dom (store_restrict σ (ext_in F) : StoreT) =
       dom σ ∩ ext_in F) in Hrestrict_dom.
-    rewrite Hrestrict_dom, Hdomσ.
+    transitivity (dom σ ∩ ext_in F); [exact Hrestrict_dom |].
+    rewrite Hdomσ.
     pose proof (res_extend_by_input_dom m F mx Hext) as Hin_dom.
     rewrite Hin. set_solver.
   }

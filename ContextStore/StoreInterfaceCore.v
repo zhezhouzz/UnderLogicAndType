@@ -21,7 +21,7 @@ Global Typeclasses Transparent Store LStore.
 #[global] Instance store_singleton : SingletonM atom V Store := map_singleton.
 #[global] Instance lstore_lookup : Lookup logic_var V LStore := lookup.
 
-Definition store_restrict (s : Store) (X : aset) : Store := storeA_restrict s X.
+Notation store_restrict := storeA_restrict (only parsing).
 
 Definition store_rekey (f : atom → atom) (s : Store) : Store :=
   storeA_rekey f s.
