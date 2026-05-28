@@ -12,7 +12,7 @@ Lemma storeA_rekey_lookup {K : Type} `{Countable K}
   ((storeA_rekey f s : gmap K V) !! f z) =
   ((s : gmap K V) !! z).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (kmap (M2:=gmap K) f s !! f z = s !! z).
   rewrite (lookup_kmap (M1:=gmap K) (M2:=gmap K)
     (Inj0:=Hf) f s z).
@@ -23,7 +23,7 @@ Lemma storeA_rekey_dom {K : Type} `{Countable K}
     (f : K → K) (Hf : Inj (=) (=) f) (s : StoreA K) :
   dom (storeA_rekey f s : gmap K V) = set_map f (dom (s : gmap K V)).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (dom (kmap (M2:=gmap K) f s) =
     set_map f (dom (s : gmap K V))).
   rewrite (dom_kmap_L (M:=gmap K) (M2:=gmap K)
@@ -79,7 +79,7 @@ Lemma storeA_rekey_lookup_Some_inj_on {K : Type} `{Countable K}
     exists x, z = f x /\ (s : gmap K V) !! x = Some v).
 Proof.
   intros Hinj.
-  unfold storeA_rekey, kmap.
+  unfold storeA_rekey, storeA_map_key, kmap.
   rewrite <- elem_of_list_to_map.
   - rewrite list_elem_of_fmap.
     split.
@@ -146,7 +146,7 @@ Proof.
   intros Hnone Hfresh.
   apply not_elem_of_dom. intros Hin.
   apply elem_of_dom in Hin as [v Hv].
-  unfold storeA_rekey, kmap in Hv.
+  unfold storeA_rekey, storeA_map_key, kmap in Hv.
   apply elem_of_list_to_map_2 in Hv.
   apply list_elem_of_fmap in Hv as [[y vy] [Hy Hlook]].
   simpl in Hy. injection Hy as Hkey Hval. subst vy.
@@ -217,7 +217,7 @@ Lemma storeA_rekey_ext_on_dom {K : Type} `{Countable K}
   storeA_rekey f s = storeA_rekey g s.
 Proof.
   intros Hext.
-  unfold storeA_rekey, kmap.
+  unfold storeA_rekey, storeA_map_key, kmap.
   f_equal.
   set (l := map_to_list (s : gmap K V)).
   assert (Hdom : forall x v, (x, v) ∈ l -> x ∈ dom (s : gmap K V)).
@@ -311,7 +311,7 @@ Lemma storeA_rekey_empty {K : Type} `{Countable K}
     (f : K → K) :
   storeA_rekey f (∅ : StoreA K) = (∅ : gmap K V).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (kmap (M2:=gmap K) f (∅ : gmap K V) =
     (∅ : gmap K V)).
   apply kmap_empty.
@@ -322,7 +322,7 @@ Lemma storeA_rekey_insert {K : Type} `{Countable K}
   storeA_rekey f (<[z := v]> s) =
   <[f z := v]> (storeA_rekey f s : gmap K V).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (kmap f (<[z := v]> (s : gmap K V)) =
     (<[f z := v]> (kmap f (s : gmap K V)) : gmap K V)).
   refine (@kmap_insert K (gmap K) _ _ _ _ _ _ _ _ _
@@ -335,7 +335,7 @@ Lemma storeA_rekey_delete {K : Type} `{Countable K}
   storeA_rekey f (delete z s) =
   delete (f z) (storeA_rekey f s : gmap K V).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (kmap (M2:=gmap K) f (delete z (s : gmap K V)) =
     delete (f z) (kmap (M2:=gmap K) f (s : gmap K V))).
   refine (@kmap_delete K (gmap K) _ _ _ _ _ _ _ _ _
@@ -349,7 +349,7 @@ Lemma storeA_rekey_union {K : Type} `{Countable K}
   @union (gmap K V) _
     (storeA_rekey f s1 : gmap K V) (storeA_rekey f s2 : gmap K V).
 Proof.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change (kmap f (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
     @union (gmap K V) _
       (kmap f (s1 : gmap K V))

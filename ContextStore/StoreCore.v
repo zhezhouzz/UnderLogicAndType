@@ -40,14 +40,14 @@ Definition storeA_restrict {K : Type} `{Countable K}
     (s : StoreA K) (X : gset K) : StoreA K :=
   map_restrict V s X.
 
-Definition storeA_rekey {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) : StoreA K :=
-  kmap f s.
-
 Definition storeA_map_key
     {K K' : Type} `{Countable K} `{Countable K'}
     (f : K → K') (s : StoreA K) : StoreA K' :=
   kmap f s.
+
+Definition storeA_rekey {K : Type} `{Countable K}
+    (f : K → K) (s : StoreA K) : StoreA K :=
+  storeA_map_key f s.
 
 Definition storeA_swap {K : Type} `{Countable K} 
     (x y : K) (s : StoreA K) : StoreA K :=

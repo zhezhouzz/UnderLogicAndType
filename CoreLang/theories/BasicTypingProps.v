@@ -1,5 +1,5 @@
 From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
-From ContextBase Require Import AtomEnv.
+From ContextStore Require Import AtomEnv.
 
 (** * Basic typing facts for CoreLang
 

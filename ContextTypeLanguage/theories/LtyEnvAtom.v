@@ -3,7 +3,7 @@
     Atom-environment lifting, lvar swapping, and atom-env interaction laws. *)
 
 From LocallyNameless Require Import Classes.
-From ContextBase Require Import AtomEnv.
+From ContextStore Require Import AtomEnv.
 From ContextTypeLanguage Require Export LtyEnvOpen.
 
 Lemma atom_env_to_lty_env_dom Σ :
@@ -97,7 +97,7 @@ Proof.
       * inversion Hu.
     + symmetry. apply atom_env_to_lty_env_lookup_bound_none.
   - unfold lty_env_shift, lty_env_shift_from.
-    unfold storeA_rekey.
+    unfold storeA_rekey, storeA_map_key.
     change ((kmap (M2:=gmap logic_var) (logic_var_shift_from 0)
         (atom_env_to_lty_env Σ)) !! LVFree x =
       atom_env_to_lty_env Σ !! LVFree x).
@@ -138,7 +138,7 @@ Lemma lty_env_swap_lookup x y Σ v :
 Proof.
   rewrite logic_var_swap_match.
   unfold lty_env_swap.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change ((kmap (M2:=gmap logic_var) (logic_var_swap x y) Σ) !!
       logic_var_swap x y v = (Σ : gmap logic_var ty) !! v).
   rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
@@ -294,11 +294,12 @@ Lemma lty_env_open_atom_env η Σ :
 Proof.
   refine (fin_maps.map_fold_ind (M:=gmap atom)
     (fun Σ => lty_env_open η (atom_env_to_lty_env Σ) = Σ) _ _ Σ).
-  - unfold lty_env_open, atom_env_to_lty_env, storeA_map_key.
+  - unfold lty_env_open, lvar_store_open, atom_env_to_lty_env,
+      atom_store_to_lvar_store, storeA_filter_map_key, storeA_map_key.
     rewrite kmap_empty. reflexivity.
   - intros x T Σ' Hfresh Hfold IH.
     rewrite atom_env_to_lty_env_insert.
-    unfold lty_env_open at 1.
+    unfold lty_env_open, lvar_store_open, storeA_filter_map_key at 1.
     rewrite (map_fold_insert_L
       (M:=gmap logic_var)
       (fun v U acc =>

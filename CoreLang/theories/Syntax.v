@@ -24,6 +24,14 @@ Notation "s1 '→ₜ' s2" := (TArrow s1 s2) (at level 30, right associativity).
 #[global] Instance base_ty_eqdec : EqDecision base_ty. Proof. solve_decision. Defined.
 #[global] Instance ty_eqdec      : EqDecision ty.      Proof. solve_decision. Defined.
 
+#[global] Instance ty_inhabited : Inhabited ty :=
+  populate (TBase TBool).
+
+#[global] Instance corelang_ty_sig : ValueSig ty := {|
+  valuesig_eqdec := ty_eqdec;
+  valuesig_inhabited := ty_inhabited;
+|}.
+
 (** ** Constants and primitive operations *)
 
 Inductive constant : Type :=

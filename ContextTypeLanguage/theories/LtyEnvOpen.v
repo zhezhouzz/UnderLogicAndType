@@ -29,7 +29,7 @@ Lemma lty_env_open_lvars_empty Σ :
 Proof.
   unfold lty_env_open_lvars.
   apply storeA_map_eq. intros v.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change ((kmap (M2:=gmap logic_var) (logic_var_open_env ∅) Σ) !! v =
     (Σ : gmap logic_var ty) !! v).
   rewrite <- (logic_var_open_env_empty v) at 1.
@@ -222,7 +222,7 @@ Proof.
     apply elem_of_map in Hv as [u [-> Hu]].
     rewrite storeA_rekey_dom in Hu by apply logic_var_shift_from_inj.
     apply elem_of_map in Hu as [w [-> Hw]].
-    unfold storeA_rekey.
+    unfold storeA_rekey, storeA_map_key.
     change ((kmap (M2:=gmap logic_var) (logic_var_open (S k) x)
         (kmap (M2:=gmap logic_var) (logic_var_shift_from j) Σ) !!
         logic_var_open (S k) x (logic_var_shift_from j w)) =

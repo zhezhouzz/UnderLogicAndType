@@ -20,21 +20,14 @@ Definition lty_env_closed (Σ : lty_env) : Prop :=
   lvars_bv (dom Σ) = ∅.
 
 Definition atom_env_to_lty_env (Σ : gmap atom ty) : lty_env :=
-  storeA_map_key LVFree Σ.
-
-Definition lvar_to_atom (η : gmap nat atom) (v : logic_var) : option atom :=
-  logic_var_to_atom η v.
+  atom_store_to_lvar_store Σ.
 
 (** [lty_env_open] interprets an lvar-keyed type environment back as an
     atom-keyed one.  Free lvars project to their atoms, bound lvars project
     through [η], and unassigned bound lvars are discarded.  This is a partial
     projection, not a same-key rekeying operation. *)
 Definition lty_env_open (η : gmap nat atom) (Σ : lty_env) : gmap atom ty :=
-  map_fold (fun v T acc =>
-    match lvar_to_atom η v with
-    | Some x => <[x := T]> acc
-    | None => acc
-    end) ∅ Σ.
+  lvar_store_open η Σ.
 
 (** Plain projection from an lvar-keyed type environment to an atom-keyed one.
     It is [lty_env_open] with no bound-variable assignment, so it keeps
@@ -145,7 +138,7 @@ Proof.
   unfold lvars_shift_from in Hv.
   apply elem_of_map in Hv as [u [-> Hu]].
   unfold lty_env_shift_from.
-  unfold storeA_rekey.
+  unfold storeA_rekey, storeA_map_key.
   change ((kmap (M2:=gmap logic_var) (logic_var_shift_from k) Σ1) !!
       logic_var_shift_from k u =
     (kmap (M2:=gmap logic_var) (logic_var_shift_from k) Σ2) !!

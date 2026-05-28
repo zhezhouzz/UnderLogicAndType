@@ -15,10 +15,11 @@ ContextBase/Prelude.v
 ContextBase/LogicVar.v
 ContextBase/LogicVarOpenEnv.v
 ContextBase/LogicVarShift.v
-ContextBase/AtomEnv.v
 
 ContextStore/StoreCore.v
 ContextStore/StoreKeyAction.v
+ContextStore/StoreFilterMapKey.v
+ContextStore/AtomEnv.v
 ContextStore/StoreRestrictCore.v
 ContextStore/StoreRestrictUnion.v
 ContextStore/StoreBind.v

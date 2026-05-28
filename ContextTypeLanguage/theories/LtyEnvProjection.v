@@ -169,7 +169,7 @@ Lemma lty_env_open_insert_bound_atom_env k x T η Σ :
   <[x := T]> (lty_env_open η Σ).
 Proof.
   intros Hη Havoid Hfresh Hbound Hfree.
-  unfold lty_env_open at 1.
+  unfold lty_env_open, lvar_store_open, storeA_filter_map_key at 1.
   rewrite (map_fold_insert_L
     (fun v U acc =>
       match lvar_to_atom (<[k:=x]> η) v with
