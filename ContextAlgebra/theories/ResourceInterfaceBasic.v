@@ -10,7 +10,7 @@ Section ResourceInterface.
 
 Context {V : Type} `{ValueSig V}.
 
-Local Notation Store := (@Store V) (only parsing).
+Local Notation StoreT := (gmap atom V) (only parsing).
 Local Notation World := (@World V) (only parsing).
 Local Notation WfWorld := (@WfWorld V) (only parsing).
 
@@ -25,7 +25,7 @@ Lemma wfworld_ext (w1 w2 : WfWorld) :
   w1 = w2.
 Proof. apply wfworldA_ext. Qed.
 
-Lemma wfworld_store_dom (w : WfWorld) (σ : Store) :
+Lemma wfworld_store_dom (w : WfWorld) (σ : StoreT) :
   w σ → dom σ = world_dom (w : World).
 Proof. apply wfworldA_store_dom. Qed.
 
@@ -44,7 +44,7 @@ Proof. apply resA_subset_trans. Qed.
 Lemma raw_compat_unit_r (m : World) : world_compat m raw_unit.
 Proof. apply rawA_compat_unit_r. Qed.
 
-Lemma wf_singleton_world (σ : Store) : wf_world (singleton_world σ).
+Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof. apply wf_singleton_worldA. Qed.
 
 End ResourceInterface.

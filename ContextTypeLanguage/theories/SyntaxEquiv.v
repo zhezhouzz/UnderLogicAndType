@@ -135,12 +135,12 @@ Lemma erase_ctx_dom_subset Γ :
 Proof.
   induction Γ as [|x τ|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2]; simpl.
   - rewrite dom_empty_L. set_solver.
-  - intros y Hy. set_unfold.
-    rewrite elem_of_dom in Hy. destruct Hy as [v Hy].
-    destruct (decide (x = y)) as [-> | Hneq]; [reflexivity |].
-    unfold store_singleton, Store in Hy.
-    pose proof (lookup_singleton_ne (M:=gmap atom) x y (erase_ty τ) Hneq) as Hnone.
-    rewrite Hnone in Hy. discriminate.
+  - intros y Hy.
+    apply elem_of_dom in Hy as [v Hy].
+    apply elem_of_singleton.
+    pose proof (lookup_singleton_Some (M:=gmap atom) x y (erase_ty τ) v) as Hsingle.
+    apply Hsingle in Hy as [Hxy _].
+    symmetry. exact Hxy.
   - intros y Hy. set_unfold.
     destruct Hy as [Hy | Hy].
     + pose proof (IH1 y Hy). set_solver.

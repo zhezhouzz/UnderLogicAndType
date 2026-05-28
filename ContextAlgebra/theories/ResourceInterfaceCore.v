@@ -10,6 +10,8 @@ Section ResourceInterface.
 
 Context {V : Type} `{ValueSig V}.
 
+Local Notation StoreT := (gmap atom V) (only parsing).
+
 Definition World : Type := @WorldA atom _ _ V.
 Definition WfWorld : Type := @WfWorldA atom _ _ V.
 Definition LWorld : Type := @WorldA logic_var _ _ V.
@@ -17,7 +19,7 @@ Definition LWfWorld : Type := @WfWorldA logic_var _ _ V.
 
 Definition world_dom (m : World) : aset := worldA_dom m.
 Definition lworld_dom (m : LWorld) : lvset := worldA_dom m.
-Definition world_stores (m : World) : Store → Prop := worldA_stores m.
+Definition world_stores (m : World) : StoreT → Prop := worldA_stores m.
 Definition wf_world (m : World) : Prop := wf_worldA m.
 Definition raw_world (w : WfWorld) : World := proj1_sig w.
 Definition lraw_world (w : LWfWorld) : LWorld := proj1_sig w.
@@ -29,7 +31,7 @@ Coercion lraw_world : LWfWorld >-> LWorld.
 
 Definition raw_unit : World := rawA_unit.
 Definition raw_restrict (m : World) (X : aset) : World := rawA_restrict m X.
-Definition raw_fiber (m : World) (σ : Store) : World := rawA_fiber m σ.
+Definition raw_fiber (m : World) (σ : StoreT) : World := rawA_fiber m σ.
 Definition raw_le (m1 m2 : World) : Prop := rawA_le m1 m2.
 
 Definition res_unit : WfWorld := resA_unit.
@@ -192,7 +194,7 @@ Definition res_sum (w1 w2 : WfWorld) (Hdef : raw_sum_defined (w1 : World) (w2 : 
   resA_sum w1 w2 Hdef.
 Definition res_subset (w1 w2 : WfWorld) : Prop := resA_subset w1 w2.
 
-Definition singleton_world (σ : Store) : World := singleton_worldA σ.
+Definition singleton_world (σ : StoreT) : World := singleton_worldA σ.
 
 Definition fiber_extension : Type := @fiber_extensionA atom _ _ V.
 Definition extension_applicable (F : fiber_extension) (m : WfWorld) : Prop :=
@@ -202,7 +204,7 @@ Definition res_extend_by (m : WfWorld) (F : fiber_extension) (n : WfWorld) : Pro
 Definition fiber_extension_functional_on (m : WfWorld) (F : fiber_extension) : Prop :=
   fiber_extensionA_functional_on m F.
 Definition res_fiber_from_projection
-    (w : WfWorld) (X : aset) (σ : Store) (wfib : WfWorld) : Prop :=
+    (w : WfWorld) (X : aset) (σ : StoreT) (wfib : WfWorld) : Prop :=
   resA_fiber_from_projection w X σ wfib.
 Definition res_fiber_member (w : WfWorld) (X : aset) (wfib : WfWorld) : Prop :=
   resA_fiber_member w X wfib.

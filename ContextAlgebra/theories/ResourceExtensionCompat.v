@@ -18,7 +18,7 @@ Context {V : Type} `{ValueSig V}.
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation FiberExtensionT := (fiber_extension (V := V)) (only parsing).
-Local Notation StoreT := (Store (V := V)) (only parsing).
+Local Notation StoreT := (gmap atom V) (only parsing).
 
 Definition ext_in (F : FiberExtensionT) : aset := extA_in F.
 Definition ext_out (F : FiberExtensionT) : aset := extA_out F.
@@ -102,7 +102,7 @@ Proof.
       symmetry.
       change (dom (store_restrict σmy {[y]} : gmap atom V) =
         dom (σmy : gmap atom V) ∩ {[y]}).
-      apply store_restrict_dom.
+      apply storeA_restrict_dom.
     + change (dom ({[y := inhabitant]} : gmap atom V) = {[y]}).
       apply set_eq. intros z. apply dom_singleton.
 Defined.
@@ -156,7 +156,7 @@ Proof.
       * exists σmy. split; [exact Hσmy |].
         rewrite <- Hrestrict_n.
         symmetry.
-        apply store_restrict_union_base_project.
+        apply storeA_restrict_union_base_project.
         -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
            change (X ⊆ dom (σm : gmap atom V)). set_solver.
         -- transitivity (world_dom (my : WorldT)).
@@ -172,7 +172,7 @@ Proof.
         destruct Hσm as [σmy [Hσmy Hproj_m]].
         eapply Hnone; [exact Hσmy |].
         rewrite <- Hproj_m.
-        symmetry. apply store_restrict_twice_subset. exact HXm.
+        symmetry. apply storeA_restrict_twice_subset. exact HXm.
     + intros [σmy [Hσmy Hrestrict_my]].
       destruct Hext as [_ [_ Hstores]].
       set (σm := store_restrict σmy (world_dom (m : WorldT)) : StoreT).
@@ -188,7 +188,7 @@ Proof.
       {
         left. exists σmy. repeat split; eauto.
         subst σm.
-        symmetry. apply store_restrict_twice_subset. exact HXm.
+        symmetry. apply storeA_restrict_twice_subset. exact HXm.
       }
       assert (Hσn : (n : WorldT) (σm ∪ σe)).
       {
@@ -202,9 +202,9 @@ Proof.
       exists (σm ∪ σe). split; [exact Hσn |].
       rewrite <- Hrestrict_my.
       subst σm σe.
-      apply store_restrict_union_base_project.
+      apply storeA_restrict_union_base_project.
       * change (X ⊆ dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V)).
-        rewrite store_restrict_dom.
+        rewrite storeA_restrict_dom.
         assert (Hdomσmy :
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
@@ -223,10 +223,10 @@ Proof.
         change (dom (σmy : gmap atom V) =
           dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V) ∪
           {[y]}).
-        rewrite store_restrict_dom, Hdomσmy.
+        rewrite storeA_restrict_dom, Hdomσmy.
         apply set_eq. intros z. set_solver.
       * change (y ∉ dom (store_restrict σmy (world_dom (m : WorldT)) : gmap atom V)).
-        rewrite store_restrict_dom.
+        rewrite storeA_restrict_dom.
         assert (Hdomσmy :
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
@@ -235,7 +235,7 @@ Proof.
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
-      * rewrite store_restrict_twice_subset by exact HXm.
+      * rewrite storeA_restrict_twice_subset by exact HXm.
         reflexivity.
 Qed.
 
@@ -348,15 +348,15 @@ Definition fiber_extension_input_widen
     ltac:(intros σ w Hσ Hrel;
       eapply extA_rel_dom; [| exact Hrel];
       change (dom (store_restrict σ (ext_in F) : gmap atom V) = ext_in F);
-      rewrite store_restrict_dom; set_solver)
+      rewrite storeA_restrict_dom; set_solver)
     ltac:(intros σ Hσ;
       eapply extA_rel_nonempty;
       change (dom (store_restrict σ (ext_in F) : gmap atom V) = ext_in F);
-      rewrite store_restrict_dom; set_solver)
+      rewrite storeA_restrict_dom; set_solver)
     ltac:(intros σ w1 w2 σe Hσ Hrel1 Hrel2;
       eapply extA_rel_extensional; [| exact Hrel1 | exact Hrel2];
       change (dom (store_restrict σ (ext_in F) : gmap atom V) = ext_in F);
-      rewrite store_restrict_dom; set_solver).
+      rewrite storeA_restrict_dom; set_solver).
 
 Record fiber_extension_input_widen_to
     (F F' : FiberExtensionT) : Prop := {
@@ -385,7 +385,7 @@ Lemma fiber_extension_input_widen_to_refl F :
   F ~>i F.
 Proof.
   constructor; [reflexivity | reflexivity |].
-  intros σ w Hσ. rewrite store_restrict_idemp_eq by exact Hσ.
+  intros σ w Hσ. rewrite storeA_restrict_idemp_eq by exact Hσ.
   reflexivity.
 Qed.
 
@@ -437,7 +437,7 @@ Local Lemma input_widen_projection_eq
   store_restrict σ (ext_in F).
 Proof.
   intros Hwid Hin' Hσ.
-  rewrite store_restrict_twice_subset; [reflexivity |].
+  rewrite storeA_restrict_twice_subset; [reflexivity |].
   exact (input_widen_in _ _ Hwid).
 Qed.
 
@@ -461,7 +461,7 @@ Proof.
            exists σm, we, σe. repeat split; eauto.
            assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
            { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite store_restrict_dom.
+             rewrite storeA_restrict_dom.
              pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
              change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
              rewrite Hdomσm. set_solver. }
@@ -473,7 +473,7 @@ Proof.
            exists σm, we, σe. repeat split; eauto.
            assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
            { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite store_restrict_dom.
+             rewrite storeA_restrict_dom.
              pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
              change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
              rewrite Hdomσm. set_solver. }
@@ -492,7 +492,7 @@ Proof.
            exists σm, we, σe. repeat split; eauto.
            assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
            { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite store_restrict_dom.
+             rewrite storeA_restrict_dom.
              pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
              change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
              rewrite Hdomσm. set_solver. }
@@ -504,7 +504,7 @@ Proof.
            exists σm, we, σe. repeat split; eauto.
            assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
            { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite store_restrict_dom.
+             rewrite storeA_restrict_dom.
              pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
              change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
              rewrite Hdomσm. set_solver. }

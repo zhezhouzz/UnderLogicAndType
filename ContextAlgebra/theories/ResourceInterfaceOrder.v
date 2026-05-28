@@ -10,7 +10,7 @@ Section ResourceInterface.
 
 Context {V : Type} `{ValueSig V}.
 
-Local Notation Store := (@Store V) (only parsing).
+Local Notation StoreT := (gmap atom V) (only parsing).
 Local Notation World := (@World V) (only parsing).
 Local Notation WfWorld := (@WfWorld V) (only parsing).
 
@@ -58,7 +58,7 @@ Lemma res_fiber_member_projection_transport_on
 Proof. apply resA_fiber_member_projection_transport_on. Qed.
 
 Lemma res_fiber_from_projection_transport_on
-    (m n nfib : WfWorld) (σ : Store) (D X : aset) :
+    (m n nfib : WfWorld) (σ : StoreT) (D X : aset) :
   D ⊆ X →
   D ⊆ world_dom (m : World) →
   res_restrict m X = res_restrict n X →

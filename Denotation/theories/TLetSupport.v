@@ -1049,20 +1049,11 @@ Proof.
           (CTArrow τx τr) (tlete e1 e2))) as [Hztgt|Hbad].
         2:{ exfalso. apply Hbad. unfold denot_relevant_lvars.
             cbn [context_ty_lvars context_ty_lvars_at]. set_solver. }
-        change (((<[LVFree x := T1]> (Σ : gmap logic_var ty))
-          : gmap logic_var ty) !! LVFree z =
-          (storeA_restrict Σ
-            (denot_relevant_lvars (CTArrow τx τr) (tlete e1 e2))
-            : gmap logic_var ty) !! LVFree z).
-        try rewrite decide_True by assumption.
-        rewrite lookup_insert_ne by congruence.
-        destruct (Σ !! LVFree z) eqn:HΣz.
-        -- symmetry.
-           replace (Σ !! LVFree z) with (Some t) by (symmetry; exact HΣz).
-           apply storeA_restrict_lookup_some_2; [exact HΣz|exact Hztgt].
-	        -- symmetry.
-	           replace (Σ !! LVFree z) with (@None ty) by (symmetry; exact HΣz).
-	           apply storeA_restrict_lookup_none_l. exact HΣz.
+	        try rewrite decide_True by assumption.
+	        rewrite lookup_insert_ne by congruence.
+	        destruct (Σ !! LVFree z) eqn:HΣz.
+	        -- symmetry. apply storeA_restrict_lookup_some_2; [exact HΣz|exact Hztgt].
+	        -- symmetry. apply storeA_restrict_lookup_none_l. exact HΣz.
 Qed.
 
 Lemma tlet_wand_arg_relevant_env_agree

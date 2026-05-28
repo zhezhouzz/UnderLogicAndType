@@ -550,9 +550,9 @@ Proof.
         Some u) as Hrestrict.
       { apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }
       rewrite Hrestrict. reflexivity.
-    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
-        None) as Hrestrict.
-      { better_store_solver. }
+	    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
+	        None) as Hrestrict.
+	      { apply storeA_restrict_lookup_none_l. exact Hlook. }
       rewrite Hrestrict. reflexivity.
   - 
     rewrite !lstore_bound_part_lookup.
@@ -568,9 +568,9 @@ Proof.
         Some u) as Hrestrict.
       { apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hbound_in]. }
       rewrite Hrestrict. reflexivity.
-    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
-        None) as Hrestrict.
-      { better_store_solver. }
+	    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
+	        None) as Hrestrict.
+	      { apply storeA_restrict_lookup_none_l. exact Hlook. }
       rewrite Hrestrict. reflexivity.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
@@ -665,8 +665,26 @@ Proof.
   apply value_tm_mutind;
     cbn [fv_value fv_tm lstore_instantiate_value_split_at
       lstore_instantiate_tm_split_at]; intros; try reflexivity.
-  - rewrite store_restrict_lookup.
-    destruct (decide (x ∈ X)); [reflexivity|set_solver].
+  - change (match ((storeA_restrict σf X : gmap atom value) !! x) with
+            | Some u => u
+            | None => vfvar x
+            end =
+            match (σf : gmap atom value) !! x with
+            | Some u => u
+            | None => vfvar x
+            end).
+    assert (Hx : x ∈ X) by set_solver.
+    replace (((storeA_restrict σf X : gmap atom value) !! x))
+      with ((σf : gmap atom value) !! x); [reflexivity|].
+    destruct (σf !! x) as [v|] eqn:Hlook.
+    + symmetry.
+      replace ((σf : gmap atom value) !! x) with (Some v)
+        by (symmetry; exact Hlook).
+      apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hx].
+    + symmetry.
+      replace ((σf : gmap atom value) !! x) with (@None value)
+        by (symmetry; exact Hlook).
+      apply storeA_restrict_lookup_none_l. exact Hlook.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
@@ -771,29 +789,18 @@ Proof.
       rewrite (lookup_partial_alter_ne (M:=gmap atom) (A:=value)
         (fun _ : option value => Some vx) (σf : gmap atom value) x0 x)
         by congruence.
-      destruct (σf !! x) as [u|] eqn:Hlookup.
-      * change (match (σf : gmap atom value) !! x with
-                | Some u0 => u0
-                | None => vfvar x
-                end = open_value d vx u).
-        replace (match (σf : gmap atom value) !! x with
-                 | Some u0 => u0
-                 | None => vfvar x
-                 end) with u.
-        symmetry. apply open_rec_lc_value.
-        eapply lc_env_lookup; eauto.
-        change ((σf : gmap atom value) !! x = Some u) in Hlookup.
-        destruct ((σf : gmap atom value) !! x) eqn:Hlook.
-        -- injection Hlookup as ->. reflexivity.
-        -- rewrite Hlookup in Hlook. discriminate.
-      * replace (match (σf : gmap atom value) !! x with
-                 | Some u0 => u0
-                 | None => vfvar x
-                 end) with (vfvar x).
-        -- cbn [open_value]. reflexivity.
-        -- change ((σf : gmap atom value) !! x = None) in Hlookup.
-           destruct ((σf : gmap atom value) !! x) eqn:Hlook;
-             [rewrite Hlookup in Hlook; discriminate | reflexivity].
+	      destruct ((σf : gmap atom value) !! x) as [u|] eqn:Hlookup.
+	      * replace (match (σf : gmap atom value) !! x with
+	                   | Some u0 => u0
+	                   | None => vfvar x
+	                   end) with u by (rewrite Hlookup; reflexivity).
+	        symmetry. apply open_rec_lc_value.
+	        eapply (lc_env_lookup σf x u); eauto.
+	      * replace (match (σf : gmap atom value) !! x with
+	                   | Some u0 => u0
+	                   | None => vfvar x
+	                   end) with (vfvar x) by (rewrite Hlookup; reflexivity).
+	        cbn [open_value]. reflexivity.
   - destruct (decide (d = n)) as [->|Hneq].
     + cbn [lstore_instantiate_value_split_at].
       unfold map_insert.

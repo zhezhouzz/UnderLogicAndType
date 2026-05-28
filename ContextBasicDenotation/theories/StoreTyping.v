@@ -49,7 +49,7 @@ Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
 Proof.
   intros HXY Hclosed σ Hσ.
   specialize (Hclosed σ Hσ).
-  rewrite <- (store_restrict_twice_subset σ Y X HXY).
+  rewrite <- (storeA_restrict_twice_subset σ Y X HXY).
   apply store_closed_restrict. exact Hclosed.
 Qed.
 
@@ -68,32 +68,19 @@ Proof.
     unfold raw_restrict.
     cbn [world_stores worldA_stores].
     exists σ. split; [exact Hσ |].
-    apply storeA_map_eq. intros a.
-    change (((store_restrict σ (world_dom (m : World)) : gmap atom value) !! a) =
-      ((store_restrict σ
-          (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
-            (world_dom (m : World))) : aset) : gmap atom value) !! a)).
-    rewrite (store_restrict_lookup σ (world_dom (m : World)) a).
-    rewrite (store_restrict_lookup σ
-      (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
-        (world_dom (m : World))) : aset) a).
-    pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
-    pose proof (f_equal world_dom Hle) as Hdomle.
-    destruct (decide (a ∈ world_dom (m : World))) as [Ham|Ham];
-      destruct (decide (a ∈ worldA_dom
-        (ResourceRestrict.rawA_restrict (n : World) (world_dom (m : World)))))
-      as [Har|Har]; try reflexivity; exfalso.
-    - apply Har.
-      change (a ∈ world_dom (raw_restrict (n : World)
-        (world_dom (m : World)) : World)).
-      rewrite <- Hdomle. exact Ham.
-    - apply Ham.
-      change (a ∈ world_dom (raw_restrict (n : World)
-        (world_dom (m : World)) : World)) in Har.
-      rewrite Hdomle. exact Har.
+	    pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
+	    pose proof (f_equal world_dom Hle) as Hdomle.
+	    change (world_dom (m : World) =
+	      worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+	        (world_dom (m : World)))) in Hdomle.
+	    change (storeA_restrict σ (world_dom (m : World)) =
+	      storeA_restrict σ
+	        (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+	          (world_dom (m : World))) : aset)).
+	    rewrite <- Hdomle. reflexivity.
   }
   specialize (Hclosed _ Hmσ).
-  rewrite store_restrict_twice_subset in Hclosed by exact HXm.
+  rewrite storeA_restrict_twice_subset in Hclosed by exact HXm.
   exact Hclosed.
 Qed.
 
@@ -247,7 +234,7 @@ Proof.
            ++ change (((@atom_store_to_lvar_store ty) Σout
                  : gmap logic_var ty) !! LVFree x = Some T) in HΣ.
               rewrite atom_store_to_lvar_store_lookup_free in HΣ.
-              change (((lstore_lift_free σ0 : LStore) : gmap logic_var value) !!
+              change (((lstore_lift_free σ0 : LStore (V := value)) : gmap logic_var value) !!
                 LVFree x = Some u) in Hu.
               rewrite lstore_lift_free_lookup_free in Hu.
               unfold world_has_type, worldA_has_type in Htyped.
@@ -298,7 +285,7 @@ Proof.
 Qed.
 
 Lemma storeA_has_type_lift_free_restrict_fv
-    (Σ : lty_env) (σ : Store) :
+    (Σ : lty_env) (σ : Store (V := value)) :
   lc_lvars (dom Σ) ->
   storeA_has_type Σ
     (lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))) <->
@@ -311,24 +298,24 @@ Proof.
       eapply elem_of_dom_2; exact HΣ.
     + eapply Htyped; [exact HΣ|].
       change (((lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))
-        : LStore) : gmap logic_var value) !! LVFree x = Some u).
+        : LStore (V := value)) : gmap logic_var value) !! LVFree x = Some u).
       rewrite lstore_lift_free_lookup_free.
       apply storeA_restrict_lookup_some_2.
-      * change (((lstore_lift_free σ : LStore) : gmap logic_var value)
+      * change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value)
           !! LVFree x = Some u) in Hu.
         rewrite lstore_lift_free_lookup_free in Hu. exact Hu.
       * apply lvars_fv_elem. change (LVFree x ∈ dom (Σ : gmap logic_var ty)).
         eapply elem_of_dom_2; exact HΣ.
   - destruct v as [k | x].
     + change (((lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))
-        : LStore) : gmap logic_var value) !! LVBound k = Some u) in Hu.
+        : LStore (V := value)) : gmap logic_var value) !! LVBound k = Some u) in Hu.
       rewrite lstore_lift_free_lookup_bound in Hu. discriminate.
     + eapply Htyped; [exact HΣ|].
       change (((lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))
-        : LStore) : gmap logic_var value) !! LVFree x = Some u) in Hu.
+        : LStore (V := value)) : gmap logic_var value) !! LVFree x = Some u) in Hu.
       rewrite lstore_lift_free_lookup_free in Hu.
       apply storeA_restrict_lookup_some in Hu as [_ Hu].
-      change (((lstore_lift_free σ : LStore) : gmap logic_var value) !! LVFree x = Some u).
+      change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value) !! LVFree x = Some u).
       rewrite lstore_lift_free_lookup_free. exact Hu.
 Qed.
 
@@ -363,7 +350,7 @@ Proof.
     destruct Hσ as [σ0 [Hσ0 Hrestrict]].
     intros x T v HΣ Hσx.
     rewrite <- Hrestrict in Hσx.
-    apply store_restrict_lookup_some in Hσx as [_ Hσ0x].
+    apply storeA_restrict_lookup_some in Hσx as [_ Hσ0x].
     eapply Hstores; eauto.
 Qed.
 
@@ -632,14 +619,14 @@ Proof.
   specialize (Hstores Hlift).
   split.
   - unfold closed_env. intros x v Hlookup.
-    apply store_restrict_lookup_some in Hlookup as [Hx Hlookup].
+    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
     rewrite lvars_fv_elem in Hx.
     change (LVFree x ∈ dom (Σ : gmap logic_var ty)) in Hx.
     apply elem_of_dom in Hx as [T HΣ].
     pose proof (Hstores (LVFree x) T v HΣ) as Hval.
     assert (Hlookup_lift : lstore_lift_free σ !! LVFree x = Some v).
     {
-      change (((lstore_lift_free σ : LStore) : gmap logic_var value) !!
+      change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value) !!
         LVFree x = Some v).
       rewrite lstore_lift_free_lookup_free. exact Hlookup.
     }
@@ -647,14 +634,14 @@ Proof.
     cbn [stale stale_value_inst].
     apply basic_typing_closed_value in Hval. exact Hval.
   - unfold lc_env. intros x v Hlookup.
-    apply store_restrict_lookup_some in Hlookup as [Hx Hlookup].
+    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
     rewrite lvars_fv_elem in Hx.
     change (LVFree x ∈ dom (Σ : gmap logic_var ty)) in Hx.
     apply elem_of_dom in Hx as [T HΣ].
     pose proof (Hstores (LVFree x) T v HΣ) as Hval.
     assert (Hlookup_lift : lstore_lift_free σ !! LVFree x = Some v).
     {
-      change (((lstore_lift_free σ : LStore) : gmap logic_var value) !!
+      change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value) !!
         LVFree x = Some v).
       rewrite lstore_lift_free_lookup_free. exact Hlookup.
     }
@@ -747,10 +734,10 @@ Proof.
            ++ exfalso.
               apply (Hlc_base (LVBound k)).
               apply elem_of_dom_2 in HΣbase. exact HΣbase.
-           ++ change (((lstore_lift_free σm : LStore)
+           ++ change (((lstore_lift_free σm : LStore (V := value))
                 : gmap logic_var value) !! LVFree a = Some u).
               rewrite lstore_lift_free_lookup_free.
-              change (((lstore_lift_free (σm ∪ σe) : LStore)
+              change (((lstore_lift_free (σm ∪ σe) : LStore (V := value))
                 : gmap logic_var value) !! LVFree a = Some u) in Hu.
               rewrite lstore_lift_free_lookup_free in Hu.
               change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u) in Hu.
@@ -780,10 +767,10 @@ Proof.
            ++ exfalso.
               apply (Hlc_out (LVBound k)).
               apply elem_of_dom_2 in HΣout. exact HΣout.
-           ++ change (((lstore_lift_free σe : LStore)
+           ++ change (((lstore_lift_free σe : LStore (V := value))
                 : gmap logic_var value) !! LVFree a = Some u).
               rewrite lstore_lift_free_lookup_free.
-              change (((lstore_lift_free (σm ∪ σe) : LStore)
+              change (((lstore_lift_free (σm ∪ σe) : LStore (V := value))
                 : gmap logic_var value) !! LVFree a = Some u) in Hu.
               rewrite lstore_lift_free_lookup_free in Hu.
               change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u) in Hu.
@@ -927,7 +914,7 @@ Proof.
       change (dom (σ : gmap atom value) = world_dom (m : World)) in Hdomσ.
       assert (Hproj_dom : dom (store_restrict σ (ext_in Fx) : gmap atom value) = ext_in Fx).
       {
-        rewrite store_restrict_dom.
+        rewrite storeA_restrict_dom.
         pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin.
         unfold ext_in in Hin. rewrite Hdomσ. set_solver.
       }
@@ -951,10 +938,10 @@ Proof.
         apply (HlcΣ (LVBound k)).
         change ((Σ : gmap logic_var ty) !! LVBound k = Some U) in HΣ.
         apply elem_of_dom_2 in HΣ. exact HΣ.
-      * change (((lstore_lift_free (σ ∪ σe) : LStore)
+      * change (((lstore_lift_free (σ ∪ σe) : LStore (V := value))
            : gmap logic_var value) !! LVFree a = Some u).
         rewrite lstore_lift_free_lookup_free.
-        change (((lstore_lift_free σ : LStore)
+        change (((lstore_lift_free σ : LStore (V := value))
           : gmap logic_var value) !! LVFree a = Some u) in Hu.
         rewrite lstore_lift_free_lookup_free in Hu.
         change (((σ : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u).

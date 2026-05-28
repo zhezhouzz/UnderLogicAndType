@@ -158,6 +158,18 @@ Proof.
   unfold map_restrict. apply dom_gmap_filter_key_in_pair.
 Qed.
 
+Lemma map_restrict_lookup (m : gmap K A) X x :
+  map_restrict m X !! x =
+  if decide (x ∈ X) then m !! x else None.
+Proof.
+  unfold map_restrict.
+  destruct (decide (x ∈ X)) as [Hx|Hx].
+  - destruct (m !! x) eqn:Hm.
+    + apply map_lookup_filter_Some_2; [exact Hm | exact Hx].
+    + apply map_lookup_filter_None. left. exact Hm.
+  - apply map_lookup_filter_None. right. intros v _ Hin. exact (Hx Hin).
+Qed.
+
 Lemma map_restrict_idemp m X :
   dom m ⊆ X → map_restrict m X = m.
 Proof.

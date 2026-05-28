@@ -92,7 +92,7 @@ Proof.
     apply elem_of_union in Hbad as [Hbad|Hbad].
     + apply elem_of_union. left.
       apply elem_of_dom in Hbad as [u Hlook].
-      apply store_restrict_lookup_some in Hlook as [_ Hlook].
+      apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
       apply elem_of_dom_2 in Hlook. exact Hlook.
     + apply elem_of_union. right. exact Hbad.
   - apply lc_lete_iff_body in Hlc as [_ Hbody].
@@ -132,7 +132,7 @@ Proof.
   {
     subst σT.
     intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
-    - rewrite store_restrict_dom in Hbad. set_solver.
+    - rewrite storeA_restrict_dom in Hbad. set_solver.
     - exact (Hxe2 Hbad).
   }
   destruct (expr_eval_in_atom_store_tlete_elim_core e1 e2 x σT v
@@ -143,8 +143,8 @@ Proof.
     store_restrict (store_restrict σ (fv_tm e1)) (fv_tm e1)).
   {
     subst σT.
-    rewrite (store_restrict_twice_subset σ (fv_tm (tlete e1 e2)) (fv_tm e1)).
-    - rewrite store_restrict_twice_same. reflexivity.
+    rewrite (storeA_restrict_twice_subset σ (fv_tm (tlete e1 e2)) (fv_tm e1)).
+    - rewrite storeA_restrict_twice_same. reflexivity.
     - cbn [fv_tm]. set_solver.
   }
   apply (proj1 (expr_eval_in_atom_store_agree_on_fv
@@ -392,7 +392,7 @@ Proof.
     set (σX := store_restrict σ (fv_tm e1)).
     assert (HσX_dom : dom (σX : gmap atom value) = fv_tm e1).
     {
-      subst σX. rewrite store_restrict_dom.
+      subst σX. rewrite storeA_restrict_dom.
       pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
       unfold ext_in in Hin_sub. rewrite <- Hin.
       pose proof (wfworldA_store_dom m σ Hσ) as Hσdom.
@@ -788,7 +788,7 @@ Proof.
       assert (Hproj_dom :
         dom (store_restrict σm (fv_tm e) : gmap atom value) = fv_tm e).
       {
-        rewrite store_restrict_dom.
+        rewrite storeA_restrict_dom.
         pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
         unfold ext_in in Hin_sub.
         pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
@@ -970,7 +970,7 @@ Proof.
       set (σX := store_restrict σm (fv_tm e1)).
       assert (HσX_dom : dom (σX : gmap atom value) = fv_tm e1).
       {
-        subst σX. rewrite store_restrict_dom.
+        subst σX. rewrite storeA_restrict_dom.
         pose proof (wfworldA_store_dom my σm Hσm) as Hσm_dom.
         change (dom (σm : gmap atom value) =
           world_dom (my : WorldT)) in Hσm_dom.

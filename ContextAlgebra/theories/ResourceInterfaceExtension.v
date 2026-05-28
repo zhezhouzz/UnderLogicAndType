@@ -10,7 +10,7 @@ Section ResourceInterface.
 
 Context {V : Type} `{ValueSig V}.
 
-Local Notation Store := (@Store V) (only parsing).
+Local Notation StoreT := (gmap atom V) (only parsing).
 Local Notation World := (@World V) (only parsing).
 Local Notation WfWorld := (@WfWorld V) (only parsing).
 

@@ -125,7 +125,7 @@ Proof.
   { eapply wfworld_store_dom. exact Hσ. }
   assert (Hdom : dom (store_restrict σ (ext_in F)) = fv_tm e).
   {
-    pose proof (store_restrict_dom σ (ext_in F)) as Hrestrict_dom.
+    pose proof (storeA_restrict_dom σ (ext_in F)) as Hrestrict_dom.
     change (dom (store_restrict σ (ext_in F) : StoreT) =
       dom σ ∩ ext_in F) in Hrestrict_dom.
     transitivity (dom σ ∩ ext_in F); [exact Hrestrict_dom |].
@@ -187,7 +187,7 @@ Proof.
              destruct Hσout as [σm [Hσm Hrestrict]].
              rewrite <- Hrestrict.
              change (dom (store_restrict σm (ext_in Fx) : gmap atom value) = ext_in Fx).
-             rewrite store_restrict_dom.
+             rewrite storeA_restrict_dom.
              pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
              unfold ext_in in Hin_sub.
              pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
