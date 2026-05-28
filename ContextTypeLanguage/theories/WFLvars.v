@@ -63,7 +63,6 @@ Lemma lvars_wf_at_open_body D L x :
   lvars_wf_at 0 (D ∪ {[x]}) (lvars_open 0 x L).
 Proof.
   intros Hx Hwf v Hv.
-  rewrite lvars_open_unfold in Hv.
   rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct k as [|k].
@@ -88,7 +87,6 @@ Lemma lvars_wf_at_open_at d D L x :
   lvars_wf_at d (D ∪ {[x]}) (lvars_open d x L).
 Proof.
   intros Hx Hwf v Hv.
-  rewrite lvars_open_unfold in Hv.
   rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct (decide (k = d)) as [->|Hkd].

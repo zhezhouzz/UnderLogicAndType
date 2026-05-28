@@ -635,8 +635,7 @@ Proof.
         unfold lty_env_open_one.
         apply (storeA_rekey_empty (V := ty) (K := logic_var)
           (logic_var_open (S k) x)).
-      * rewrite logic_var_open_unfold.
-        unfold swap. repeat destruct decide; try lia; try congruence.
+      * unfold swap. repeat destruct decide; try lia; try congruence.
     + apply open_env_lift_lookup_none. exact Hfresh.
     + apply open_env_avoids_atom_lift. exact Havoid.
     + intros i z Hiz Hbad.
@@ -691,8 +690,7 @@ Proof.
   - rewrite tm_shift_open_tm_fvar by lia.
     replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
     + reflexivity.
-    + rewrite logic_var_open_unfold.
-      unfold swap. repeat destruct decide; try lia; try congruence.
+    + unfold swap. repeat destruct decide; try lia; try congruence.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
@@ -915,8 +913,6 @@ Proof.
   intros Hy.
   unfold denot_relevant_env, lty_env_restrict_lvars, lty_env_open_one.
   rewrite <- denot_relevant_lvars_open by exact Hy.
-  rewrite lvars_open_unfold.
-  unfold logic_var_open.
   symmetry. apply storeA_restrict_swap.
 Qed.
 

@@ -155,7 +155,7 @@ Definition lworld_on_open_back
 Proof.
   refine {| lw := lres_swap (LVBound k) (LVFree x) (lw w) |}.
   rewrite lworld_dom_lres_swap, (lw_dom w).
-  rewrite lvars_open_unfold, set_swap_involutive. reflexivity.
+  rewrite set_swap_involutive. reflexivity.
 Defined.
 
 Lemma lworld_on_open_back_commute_fresh i j x y D

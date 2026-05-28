@@ -192,20 +192,18 @@ Proof.
   - subst n.
     rewrite decide_True by lia.
     replace (d + k - d) with k by lia.
-    rewrite lvars_open_unfold, set_swap_singleton.
-    change (swap (LVBound k) (LVFree y) (LVBound k)) with
-      (logic_var_open k y (LVBound k)).
-    rewrite logic_var_open_unfold, swap_l.
+    rewrite set_swap_singleton.
+    unfold swap. repeat destruct decide; try congruence.
     reflexivity.
   - destruct (decide (d <= n)) as [Hdn|Hdn].
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_True by exact Hdn.
-	      rewrite lvars_open_unfold, set_swap_singleton.
+		      rewrite set_swap_singleton.
 	      rewrite swap_fresh.
 	      * reflexivity.
       * intros Heq. inversion Heq. lia.
       * discriminate.
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_False by exact Hdn.
-      rewrite lvars_open_unfold, set_swap_empty. reflexivity.
+	      rewrite set_swap_empty. reflexivity.
 Qed.
 
 Lemma value_tm_lvars_at_open_mutual :
@@ -219,8 +217,8 @@ Lemma value_tm_lvars_at_open_mutual :
       lvars_open k y (tm_lvars_at d e)).
 Proof.
   apply value_tm_mutind; cbn [open_value open_tm value_lvars_at tm_lvars_at];
-    intros; try solve [rewrite lvars_open_unfold, set_swap_empty; reflexivity].
-  - rewrite lvars_open_unfold. symmetry. apply set_swap_fresh.
+    intros; try solve [rewrite set_swap_empty; reflexivity].
+  - symmetry. apply set_swap_fresh.
     + set_solver.
     + rewrite lvars_fv_singleton_free in H. set_solver.
   - apply bvar_lvars_at_open.
@@ -232,15 +230,15 @@ Proof.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     replace (S (d + k)) with (S d + k) by lia.
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- set_swap_union. reflexivity.
+    rewrite <- set_swap_union. reflexivity.
   - apply H. exact H0.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- set_swap_union. reflexivity.
+    rewrite <- set_swap_union. reflexivity.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- !set_swap_union. set_solver.
+    rewrite <- !set_swap_union. set_solver.
 Qed.
 
 Lemma value_lvars_at_open v d k y :

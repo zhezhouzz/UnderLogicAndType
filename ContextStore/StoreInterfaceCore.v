@@ -278,7 +278,7 @@ Proof.
   rewrite storeA_rekey_dom by apply swap_inj.
   change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) = D).
   rewrite (lso_dom s).
-  rewrite lvars_open_unfold, set_swap_involutive. reflexivity.
+  rewrite set_swap_involutive. reflexivity.
 Defined.
 
 Definition lstore_on_open_front
@@ -294,7 +294,7 @@ Proof.
   rewrite storeA_rekey_dom by apply swap_inj.
   change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) =
     lvars_open k x D).
-  rewrite (lso_dom s), lvars_open_unfold. reflexivity.
+  rewrite (lso_dom s). reflexivity.
 Defined.
 
 Lemma lstore_on_open_back_front k x D (s : LStoreOn D) :

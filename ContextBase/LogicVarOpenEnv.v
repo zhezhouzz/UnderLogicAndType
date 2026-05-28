@@ -51,16 +51,14 @@ Lemma logic_var_open_env_singleton_fresh k x v :
   logic_var_open_env (<[k := x]> ∅) v = logic_var_open k x v.
 Proof.
   intros Hfresh.
-  destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
+  destruct v as [j|y]; cbn [logic_var_open_env].
   - destruct (decide (j = k)) as [->|Hjk].
     + rewrite lookup_insert_eq.
-      rewrite logic_var_open_unfold, swap_l. reflexivity.
+      rewrite swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       rewrite lookup_empty.
-      rewrite logic_var_open_unfold.
       rewrite swap_fresh by congruence. reflexivity.
-  - rewrite logic_var_open_unfold.
-    assert (Hyx : y <> x).
+  - assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
     rewrite swap_fresh by congruence. reflexivity.
 Qed.
@@ -71,16 +69,14 @@ Lemma logic_var_open_env_open_one_fresh η k x v :
   logic_var_open_env (<[k := x]> η) v.
 Proof.
   intros Hfresh.
-  destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
+  destruct v as [j|y]; cbn [logic_var_open_env].
   - destruct (decide (j = k)) as [->|Hjk].
-    + rewrite logic_var_open_unfold, swap_l.
+    + rewrite swap_l.
       cbn [logic_var_open_env]. rewrite lookup_insert_eq. reflexivity.
-    + rewrite logic_var_open_unfold.
-      rewrite swap_fresh by congruence.
+    + rewrite swap_fresh by congruence.
       cbn [logic_var_open_env]. rewrite lookup_insert_ne by congruence.
       reflexivity.
-  - rewrite logic_var_open_unfold.
-    assert (Hyx : y <> x).
+  - assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
     rewrite swap_fresh by congruence. reflexivity.
 Qed.
@@ -92,25 +88,25 @@ Lemma logic_var_open_env_open_fresh η k x v :
   logic_var_open k x (logic_var_open_env η v).
 Proof.
   intros Hη Havoid.
-  destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
+  destruct v as [j|y]; cbn [logic_var_open_env].
   - destruct (decide (j = k)) as [->|Hjk].
-    + rewrite logic_var_open_unfold, swap_l.
+    + rewrite swap_l.
       cbn [logic_var_open_env]. rewrite Hη.
-      rewrite logic_var_open_unfold, swap_l. reflexivity.
-    + rewrite logic_var_open_unfold, swap_fresh by congruence.
+      rewrite swap_l. reflexivity.
+    + rewrite swap_fresh by congruence.
       cbn [logic_var_open_env].
       destruct (η !! j) as [z|] eqn:Hηj.
       * assert (z <> x).
         { intros ->. specialize (Havoid j). contradiction. }
-        rewrite logic_var_open_unfold, swap_fresh by congruence.
+        rewrite swap_fresh by congruence.
         reflexivity.
-      * rewrite logic_var_open_unfold, swap_fresh by congruence.
+      * rewrite swap_fresh by congruence.
         reflexivity.
   - destruct (decide (y = x)) as [->|Hyx].
-    + rewrite logic_var_open_unfold, swap_r.
+    + rewrite swap_r.
       cbn [logic_var_open_env]. rewrite Hη.
       reflexivity.
-    + rewrite logic_var_open_unfold, swap_fresh by congruence.
+    + rewrite swap_fresh by congruence.
       reflexivity.
 Qed.
 
@@ -124,18 +120,15 @@ Proof.
   destruct v as [j|y]; cbn [logic_var_open_env].
   - destruct (decide (j = k)) as [->|Hjk].
     + rewrite lookup_insert_eq, Hη.
-      rewrite logic_var_open_unfold, swap_l. reflexivity.
+      rewrite swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       destruct (η !! j) as [z|] eqn:Hηj.
-      * rewrite logic_var_open_unfold.
-        assert (Hzx : z <> x).
+      * assert (Hzx : z <> x).
         { intros ->. apply Hfresh.
           cbn [logic_var_open_env]. rewrite Hηj. reflexivity. }
         rewrite swap_fresh by congruence. reflexivity.
-      * rewrite logic_var_open_unfold.
-        rewrite swap_fresh by congruence. reflexivity.
-  - rewrite logic_var_open_unfold.
-    assert (Hyx : y <> x).
+      * rewrite swap_fresh by congruence. reflexivity.
+  - assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
     rewrite swap_fresh by congruence. reflexivity.
 Qed.
@@ -349,7 +342,6 @@ Lemma lvars_open_env_insert_fresh η k x D :
 Proof.
   intros Hη Hfresh.
   unfold lvars_open_env.
-  rewrite lvars_open_unfold.
   unfold set_swap.
   apply set_eq. intros v.
   rewrite !elem_of_map.
@@ -388,12 +380,8 @@ Proof.
       * rewrite logic_var_open_involutive. reflexivity.
       * intros Hbad.
         apply Hx. apply lvars_fv_elem.
-        assert (HuD : logic_var_open k x u ∈ D).
-        {
-          apply lvars_open_elem_open with (k := k) (x := x).
-          rewrite logic_var_open_involutive. exact Hu.
-        }
-        rewrite Hbad in HuD. exact HuD.
+        apply elem_of_set_swap in Hu.
+        rewrite Hbad in Hu. exact Hu.
     + apply lvars_open_elem_open with (k := k) (x := x).
       rewrite logic_var_open_involutive. exact Hu.
   - intros [u [-> Hu]].
@@ -501,13 +489,13 @@ Proof.
 	      destruct Hηn as [Hnk Hηn].
 	      eapply Hfresh; [exact Hηn|].
 	      apply lvars_fv_elem.
-	      unfold lvars_open_env.
-	      apply elem_of_map.
-	      exists (LVFree x). split; [reflexivity|].
-	      replace (LVFree x) with (logic_var_open k x (LVBound k)).
-	      apply lvars_open_elem_open.
-	      rewrite lvars_bv_elem in HkD. exact HkD.
-	      rewrite logic_var_open_unfold, swap_l. reflexivity.
+		      unfold lvars_open_env.
+		      apply elem_of_map.
+		      exists (LVFree x). split; [reflexivity|].
+		      replace (LVFree x) with (logic_var_open k x (LVBound k)).
+		      apply elem_of_set_swap.
+		      rewrite swap_r. rewrite lvars_bv_elem in HkD. exact HkD.
+		      rewrite swap_l. reflexivity.
     + inversion Hv. subst y.
       apply HxD. apply lvars_fv_elem. exact HvD.
   - rewrite lookup_insert_ne in Hjz by congruence.

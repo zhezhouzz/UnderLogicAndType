@@ -20,10 +20,10 @@ Proof.
   intros Hlc Hy.
   rewrite formula_open_expr_result_formula.
   - rewrite open_tm_shift0_lc by exact Hlc.
-    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
-    reflexivity.
-    unfold logic_var_open, swap, swap.
-    repeat destruct decide; try lia; try congruence.
+	    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
+	    reflexivity.
+	    unfold swap.
+	    repeat destruct decide; try lia; try congruence.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
@@ -127,11 +127,10 @@ Proof.
   - replace (lty_env_open_one (S k) y (∅ : lty_env)) with
       ((∅ : gmap logic_var ty) : lty_env).
     reflexivity.
-    unfold lty_env_open_one.
-    apply (storeA_rekey_empty (V := ty) (K := logic_var)
-      (logic_var_open (S k) y)).
-  - rewrite logic_var_open_unfold.
-    unfold swap. repeat destruct decide; try lia; try congruence.
+	    unfold lty_env_open_one.
+	    apply (storeA_rekey_empty (V := ty) (K := logic_var)
+	      (logic_var_open (S k) y)).
+	  - unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma lvars_open_qual_vars_difference_bound0_under k y q :
@@ -140,18 +139,17 @@ Lemma lvars_open_qual_vars_difference_bound0_under k y q :
 Proof.
   rewrite qual_open_atom_vars.
   apply set_eq. intros v.
-  rewrite lvars_open_unfold.
   rewrite set_swap_elem.
   rewrite elem_of_difference, elem_of_difference.
   split.
   - intros [Hv Hnot]. split.
-    + rewrite lvars_open_unfold. rewrite set_swap_elem. exact Hv.
+    + rewrite set_swap_elem. exact Hv.
     + intros Hbad. apply Hnot.
       rewrite elem_of_singleton in Hbad |- *.
       subst v.
       unfold swap. repeat destruct decide; try lia; try congruence.
   - intros [Hv Hnot]. split.
-    + rewrite lvars_open_unfold in Hv. rewrite set_swap_elem in Hv. exact Hv.
+    + rewrite set_swap_elem in Hv. exact Hv.
     + intros Hbad. apply Hnot.
       rewrite elem_of_singleton in Hbad |- *.
       destruct v as [n|a]; cbn in Hbad;

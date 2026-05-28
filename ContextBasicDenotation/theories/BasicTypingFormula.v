@@ -410,7 +410,7 @@ Proof.
   intros HyD Hsub n Hn.
   apply elem_of_dom.
   rewrite lvars_bv_elem in Hn.
-  rewrite lvars_open_unfold, set_swap_elem in Hn.
+  rewrite set_swap_elem in Hn.
   destruct (decide (n = k)) as [->|Hnk].
   - exfalso. apply HyD. apply lvars_fv_elem.
     rewrite swap_l in Hn. exact Hn.
@@ -451,12 +451,11 @@ Proof.
       * rewrite lookup_delete_eq in Hv. discriminate.
       * rewrite lookup_delete_ne in Hv by congruence.
         rewrite lookup_delete_ne in Hv by congruence.
-        rewrite logic_var_open_unfold, swap_fresh by congruence.
+        rewrite swap_fresh by congruence.
         cbn [logic_var_open_env].
         rewrite lookup_delete_ne by congruence.
         exact Hv.
   - inversion Hv. subst x.
-    rewrite logic_var_open_unfold.
     destruct (decide (a = y)) as [->|Hay].
     + exfalso. apply (Havoid j).
       rewrite lookup_delete_ne by congruence. exact Hjx.
@@ -850,7 +849,7 @@ Lemma logic_var_swap_open_one x y k v :
   logic_var_swap x y (logic_var_open k x v) =
   logic_var_open k y (logic_var_swap x y v).
 Proof.
-  rewrite !logic_var_open_unfold, !logic_var_swap_unfold.
+  rewrite !logic_var_swap_unfold.
   unfold swap.
   repeat destruct decide; subst; try congruence; reflexivity.
 Qed.

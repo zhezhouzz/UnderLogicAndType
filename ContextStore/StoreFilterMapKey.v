@@ -519,7 +519,6 @@ Proof.
   replace (logic_var_open 0 x (LVBound 0)) with (LVFree x).
   rewrite lvar_store_open_one_atom_store by exact Hx.
   reflexivity.
-  rewrite logic_var_open_unfold.
   unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 

@@ -220,7 +220,7 @@ Proof.
   intros Hxy Hx Hy.
   apply qual_open_atom_fresh_index.
   - rewrite qual_open_atom_bvars, lvars_bv_elem.
-    rewrite lvars_open_unfold, set_swap_elem.
+    rewrite set_swap_elem.
     unfold swap.
     repeat destruct decide; try congruence.
     intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
@@ -241,7 +241,6 @@ Proof.
   destruct q as [D P].
   apply qual_ext.
   - cbn [qual_lvars qual_open_atom].
-    rewrite !lvars_open_unfold.
     rewrite set_swap_conjugate.
     replace (swap (LVBound i) (LVFree x) (LVBound j))
       with (LVBound j).
