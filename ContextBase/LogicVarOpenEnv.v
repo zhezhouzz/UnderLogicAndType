@@ -605,37 +605,21 @@ Proof.
   - inversion Heq. subst x2. reflexivity.
 Qed.
 
-Lemma logic_var_to_atom_empty_open_env η v :
-  logic_var_to_atom ∅ (logic_var_open_env η v) =
-  logic_var_to_atom η v.
-Proof.
-  destruct v as [k|x]; cbn [logic_var_open_env logic_var_to_atom].
-  - destruct (η !! k); reflexivity.
-  - reflexivity.
-Qed.
-
-Lemma lvars_to_atoms_open_env_simul η D :
-  lvars_to_atoms ∅ (lvars_open_env_simul η D) =
-  lvars_to_atoms η D.
+Lemma lvars_fv_open_env_simul_union η D E :
+  lvars_fv (lvars_open_env_simul η (D ∪ E)) =
+  lvars_fv (lvars_open_env_simul η D) ∪
+  lvars_fv (lvars_open_env_simul η E).
 Proof.
   apply set_eq. intros x.
-  rewrite !lvars_to_atoms_elem.
   unfold lvars_open_env_simul, lvars_open_env.
+  rewrite lvars_fv_elem, elem_of_union, !lvars_fv_elem.
+  rewrite !elem_of_map.
   split.
-  - intros [v [Hv Hatom]].
-    apply elem_of_map in Hv as [u [-> Hu]].
-    exists u. split; [exact Hu|].
-    rewrite <- logic_var_to_atom_empty_open_env. exact Hatom.
-  - intros [v [Hv Hatom]].
-    exists (logic_var_open_env η v). split.
-    + apply elem_of_map. exists v. split; [reflexivity|exact Hv].
-    + rewrite logic_var_to_atom_empty_open_env. exact Hatom.
-Qed.
-
-Lemma lvars_to_atoms_open_env_simul_union η D E :
-  lvars_to_atoms ∅ (lvars_open_env_simul η (D ∪ E)) =
-  lvars_to_atoms η D ∪ lvars_to_atoms η E.
-Proof.
-  rewrite lvars_to_atoms_open_env_simul.
-  apply lvars_to_atoms_union.
+  - intros [v [Hv HDE]].
+    apply elem_of_union in HDE as [HD|HE].
+    + left. exists v. split; [exact Hv|exact HD].
+    + right. exists v. split; [exact Hv|exact HE].
+  - intros [[v [Hv HD]]|[v [Hv HE]]].
+    + exists v. split; [exact Hv|better_set_solver].
+    + exists v. split; [exact Hv|better_set_solver].
 Qed.

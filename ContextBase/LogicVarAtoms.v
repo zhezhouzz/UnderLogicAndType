@@ -61,47 +61,6 @@ Definition logic_var_to_atom (η : gmap nat atom) (v : logic_var) : option atom 
   | LVFree x => Some x
   end.
 
-Definition lvars_to_atoms (η : gmap nat atom) (D : lvset) : aset :=
-  set_fold
-    (λ v acc,
-      match logic_var_to_atom η v with
-      | Some x => {[x]} ∪ acc
-      | None => acc
-      end) ∅ D.
-
-Lemma lvars_to_atoms_elem η D x :
-  x ∈ lvars_to_atoms η D ↔
-  ∃ v, v ∈ D ∧ logic_var_to_atom η v = Some x.
-Proof.
-  unfold lvars_to_atoms.
-  refine (set_fold_ind_L
-    (fun acc D => ∀ x, x ∈ acc ↔
-      ∃ v, v ∈ D ∧ logic_var_to_atom η v = Some x)
-    (λ v acc,
-      match logic_var_to_atom η v with
-      | Some x => {[x]} ∪ acc
-      | None => acc
-      end) ∅ _ _ D x).
-  - intros y. better_set_solver.
-  - intros v D' acc Hfresh IH z.
-    destruct (logic_var_to_atom η v) as [a|] eqn:Hv.
-    + pose proof (IH z) as Hz. split.
-      * intros Hz'. apply elem_of_union in Hz' as [Hz'|Hz'].
-        -- exists v. rewrite elem_of_singleton in Hz'. subst. better_set_solver.
-        -- apply Hz in Hz' as [u [HuD Hu]]. exists u. better_set_solver.
-      * intros [u [HuD Hu]].
-        apply elem_of_union in HuD as [HuD|HuD].
-        -- rewrite elem_of_singleton in HuD. subst u.
-           apply elem_of_union. left. rewrite Hu in Hv. inversion Hv. better_set_solver.
-        -- apply elem_of_union. right. apply Hz. exists u. better_set_solver.
-    + pose proof (IH z) as Hz. split.
-      * intros Hz'. apply Hz in Hz' as [u [HuD Hu]]. exists u. better_set_solver.
-      * intros [u [HuD Hu]].
-        apply elem_of_union in HuD as [HuD|HuD].
-        -- rewrite elem_of_singleton in HuD. subst u. rewrite Hu in Hv. discriminate.
-        -- apply Hz. exists u. better_set_solver.
-Qed.
-
 Definition logic_var_swap (x y : atom) : logic_var → logic_var :=
   swap (LVFree x) (LVFree y).
 
@@ -150,37 +109,3 @@ Definition lvars_of_atoms (X : aset) : lvset :=
 
 Definition lvars_of_bvars (B : gset nat) : lvset :=
   set_map LVBound B.
-
-Lemma lvars_to_atoms_of_atoms η (X : aset) :
-  lvars_to_atoms η (lvars_of_atoms X) = X.
-Proof.
-  apply set_eq. intros x.
-  rewrite lvars_to_atoms_elem.
-  split.
-  - intros [v [HvD Hv]].
-    unfold lvars_of_atoms in HvD.
-    apply elem_of_map in HvD as [a [-> Ha]].
-    cbn in Hv. inversion Hv. subst. exact Ha.
-  - intros Hx. exists (LVFree x). split; [|reflexivity].
-    unfold lvars_of_atoms. apply elem_of_map.
-    exists x. split; [reflexivity | exact Hx].
-Qed.
-
-Lemma lvars_to_atoms_union η (D E : lvset) :
-  lvars_to_atoms η (D ∪ E) =
-  lvars_to_atoms η D ∪ lvars_to_atoms η E.
-Proof.
-  apply set_eq. intros x.
-  rewrite lvars_to_atoms_elem.
-  rewrite elem_of_union.
-  rewrite !lvars_to_atoms_elem.
-  split.
-  - intros [v [Hv Hatom]].
-    apply elem_of_union in Hv as [Hv|Hv].
-    + left. exists v. split; [exact Hv|exact Hatom].
-    + right. exists v. split; [exact Hv|exact Hatom].
-  - intros Hx.
-    destruct Hx as [[v [Hv Hatom]]|[v [Hv Hatom]]].
-    + exists v. split; [better_set_solver|exact Hatom].
-    + exists v. split; [better_set_solver|exact Hatom].
-Qed.
