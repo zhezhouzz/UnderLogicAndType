@@ -36,20 +36,6 @@ Fixpoint plug_ctx (Δ : ctx_hole) (Γ : ctx) : ctx :=
   | CtxHoleSum   Δ1 Δ2  => CtxSum   (plug_ctx Δ1 Γ) (plug_ctx Δ2 Γ)
   end.
 
-Definition logic_var_at_depth (d : nat) (v : logic_var) : option logic_var :=
-  match v with
-  | LVFree x => Some (LVFree x)
-  | LVBound n =>
-      if decide (d <= n) then Some (LVBound (n - d)) else None
-  end.
-
-Definition lvars_at_depth (d : nat) (D : lvset) : lvset :=
-  set_fold (fun v acc =>
-    match logic_var_at_depth d v with
-    | Some u => {[u]} ∪ acc
-    | None => acc
-    end) ∅ D.
-
 Fixpoint context_ty_lvars_at (d : nat) (τ : context_ty) : lvset :=
   match τ with
   | CTOver _ φ | CTUnder _ φ => lvars_at_depth (S d) (qual_vars φ)

@@ -37,39 +37,6 @@ Proof.
   rewrite map_fold_singleton. reflexivity.
 Qed.
 
-Lemma open_env_values_inj_singleton k x :
-  open_env_values_inj (<[k := x]> ∅).
-Proof.
-  intros i j y Hi Hj.
-  destruct (decide (i = k)) as [->|Hik].
-  - rewrite lookup_insert_eq in Hi. inversion Hi; subst y.
-    destruct (decide (j = k)) as [->|Hjk]; [reflexivity|].
-    rewrite lookup_insert_ne in Hj by congruence.
-    rewrite lookup_empty in Hj. discriminate.
-  - rewrite lookup_insert_ne in Hi by congruence.
-    rewrite lookup_empty in Hi. discriminate.
-Qed.
-
-Lemma open_env_fresh_for_lvars_singleton k x D :
-  x ∉ lvars_fv D ->
-  open_env_fresh_for_lvars (<[k := x]> ∅) D.
-Proof.
-  intros Hx i z Hi.
-  destruct (decide (i = k)) as [->|Hik].
-  - rewrite lookup_insert_eq in Hi. inversion Hi; subst z.
-    replace (delete k (<[k := x]> (∅ : gmap nat atom))) with
-      (∅ : gmap nat atom).
-    + rewrite lvars_open_env_empty. exact Hx.
-    + apply map_eq. intros j.
-      destruct (decide (j = k)) as [->|Hjk].
-      * rewrite lookup_delete_eq, lookup_empty. reflexivity.
-      * rewrite lookup_delete_ne by congruence.
-        rewrite lookup_insert_ne by congruence.
-        rewrite lookup_empty. reflexivity.
-  - rewrite lookup_insert_ne in Hi by congruence.
-    rewrite lookup_empty in Hi. discriminate.
-Qed.
-
 Lemma formula_open_env_insert_fresh η k x φ :
   η !! k = None ->
   open_env_avoids_atom x η ->
@@ -325,7 +292,7 @@ Proof.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros Σ e _ _.
     rewrite formula_open_env_empty, lty_env_open_lvars_empty.
-    unfold open_tm_env. rewrite map_fold_empty. reflexivity.
+    rewrite map_fold_empty. reflexivity.
   - intros Σ e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -376,7 +343,7 @@ Proof.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros e _ _.
     rewrite formula_open_env_empty.
-    unfold open_tm_env. rewrite map_fold_empty. reflexivity.
+    rewrite map_fold_empty. reflexivity.
   - intros e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -410,7 +377,7 @@ Proof.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros e z _ _.
     rewrite formula_open_env_empty.
-    unfold open_tm_env. rewrite map_fold_empty.
+    rewrite map_fold_empty.
     better_base_solver.
   - intros e z Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
@@ -670,7 +637,7 @@ Lemma open_tm_env_lift_shift0 η e :
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
   - rewrite kmap_empty.
-    unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
+    rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
@@ -704,7 +671,7 @@ Proof.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros e _ _.
     rewrite kmap_empty, formula_open_env_empty.
-    unfold open_tm_env. rewrite map_fold_empty. reflexivity.
+    rewrite map_fold_empty. reflexivity.
   - intros e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -733,7 +700,7 @@ Lemma open_tm_env_lift_tapp_shift_bvar0 η e :
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
   - rewrite kmap_empty.
-    unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
+    rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
@@ -749,7 +716,7 @@ Lemma open_tm_env_lift_tret_bound0 η :
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
   - rewrite kmap_empty.
-    unfold open_tm_env. rewrite map_fold_empty. reflexivity.
+    rewrite map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
@@ -975,7 +942,7 @@ Proof.
   - intros Σ τ e _ _.
     rewrite lty_env_open_lvars_empty, open_cty_env_empty.
     rewrite (lty_env_open_lvars_empty Σ).
-    unfold open_tm_env. rewrite map_fold_empty. reflexivity.
+    rewrite map_fold_empty. reflexivity.
   - intros Σ τ e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -1197,62 +1164,6 @@ Proof.
     destruct (decide (v ∈ denot_relevant_lvars τ e)) as [_|Hvrel].
     + reflexivity.
     + exfalso. apply Hvrel. apply Hsub. set_solver.
-Qed.
-
-Lemma lvars_at_depth_free_elem d D x :
-  LVFree x ∈ lvars_at_depth d D <-> LVFree x ∈ D.
-Proof.
-  rewrite lvars_at_depth_elem.
-  split.
-  - intros [v [Hv Hdepth]].
-    destruct v as [n|y]; cbn [logic_var_at_depth] in Hdepth.
-    + destruct (decide (d <= n)); discriminate.
-    + inversion Hdepth. subst. exact Hv.
-  - intros Hx.
-    exists (LVFree x). split; [exact Hx | reflexivity].
-Qed.
-
-Lemma lvars_at_depth_depth d c D :
-  lvars_at_depth d (lvars_at_depth c D) = lvars_at_depth (c + d) D.
-Proof.
-  apply set_eq. intros u.
-  rewrite (lvars_at_depth_elem d (lvars_at_depth c D) u).
-  rewrite (lvars_at_depth_elem (c + d) D u).
-  split.
-  - intros [v [Hv Hvu]].
-    apply lvars_at_depth_elem in Hv as [w [Hw Hwv]].
-    exists w. split; [exact Hw|].
-    destruct w as [n|x].
-    + cbn [logic_var_at_depth] in Hwv.
-      destruct (decide (c <= n)) as [Hcn|Hcn]; [|discriminate].
-      inversion Hwv. subst v.
-      cbn [logic_var_at_depth] in Hvu.
-      destruct (decide (d <= n - c)) as [Hdn|Hdn]; [|discriminate].
-      inversion Hvu. subst u.
-      cbn [logic_var_at_depth].
-      destruct (decide (c + d <= n)) as [_|Hbad]; [|lia].
-      replace (n - (c + d)) with (n - c - d) by lia.
-      reflexivity.
-    + cbn [logic_var_at_depth] in Hwv. inversion Hwv. subst v.
-      cbn [logic_var_at_depth] in Hvu.
-      inversion Hvu. subst u. reflexivity.
-  - intros [v [Hv Hvu]].
-    destruct v as [n|x].
-    + cbn [logic_var_at_depth] in Hvu.
-      destruct (decide (c + d <= n)) as [Hcdn|Hcdn]; [|discriminate].
-      inversion Hvu. subst u.
-      exists (#ₗ (n - c))%ctx. split.
-      * apply lvars_at_depth_elem. exists (LVBound n). split; [exact Hv|].
-        cbn [logic_var_at_depth].
-        destruct (decide (c <= n)) as [_|Hbad]; [reflexivity|lia].
-      * cbn [logic_var_at_depth].
-        destruct (decide (d <= n - c)) as [_|Hbad]; [|lia].
-        replace (n - c - d) with (n - (c + d)) by lia.
-        reflexivity.
-    + cbn [logic_var_at_depth] in Hvu. inversion Hvu. subst u.
-      exists (LVFree x). split.
-      * apply lvars_at_depth_elem. exists (LVFree x). split; [exact Hv|reflexivity].
-      * reflexivity.
 Qed.
 
 Lemma context_ty_lvars_at_depth τ c d :

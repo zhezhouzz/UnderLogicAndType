@@ -34,6 +34,9 @@ Definition logic_var_open_env_inj_on η (D : lvset) : Prop :=
     logic_var_open_env η v1 = logic_var_open_env η v2 ->
     v1 = v2.
 
+Notation open_env_atom_swap :=
+  (fun x y η => swap x y <$> η) (only parsing).
+
 Lemma logic_var_open_env_empty v :
   logic_var_open_env ∅ v = v.
 Proof.
@@ -187,6 +190,246 @@ Proof.
     + rewrite open_env_lift_lookup_none by exact Hη. congruence.
 Qed.
 
+Lemma open_env_atom_swap_lookup (x y : atom) (η : gmap nat atom) (k : nat) :
+  open_env_atom_swap x y η !! k =
+  swap x y <$> (η !! k).
+Proof.
+  apply lookup_fmap.
+Qed.
+
+Lemma open_env_atom_swap_dom (x y : atom) (η : gmap nat atom) :
+  dom (open_env_atom_swap x y η) = dom η.
+Proof.
+  apply dom_fmap_L.
+Qed.
+
+Lemma open_env_atom_swap_involutive (x y : atom) (η : gmap nat atom) :
+  open_env_atom_swap x y (open_env_atom_swap x y η) = η.
+Proof.
+  apply map_eq. intros k.
+  rewrite !open_env_atom_swap_lookup.
+  destruct (η !! k) as [a|]; cbn.
+  - rewrite swap_involutive. reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma open_env_atom_swap_delete (x y : atom) (η : gmap nat atom) (k : nat) :
+  delete k (open_env_atom_swap x y η) =
+  open_env_atom_swap x y (delete k η).
+Proof.
+  apply map_eq. intros j.
+  destruct (decide (j = k)) as [->|Hjk].
+  - rewrite lookup_delete_eq.
+    rewrite lookup_fmap, lookup_delete_eq.
+    reflexivity.
+  - rewrite lookup_delete_ne by congruence.
+    rewrite !lookup_fmap, lookup_delete_ne by congruence.
+    reflexivity.
+Qed.
+
+Lemma open_env_atom_swap_insert
+    (x y : atom) (η : gmap nat atom) (k : nat) (a : atom) :
+  open_env_atom_swap x y (<[k := a]> η) =
+  <[k := swap x y a]> (open_env_atom_swap x y η).
+Proof.
+  apply map_eq. intros j.
+  rewrite lookup_fmap.
+  destruct (decide (j = k)) as [->|Hjk].
+  - rewrite !lookup_insert_eq. reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    rewrite lookup_fmap. reflexivity.
+Qed.
+
+Lemma open_env_atom_swap_avoids (x y z : atom) (η : gmap nat atom) :
+  open_env_avoids_atom z η ->
+  open_env_avoids_atom (swap x y z) (open_env_atom_swap x y η).
+Proof.
+  intros Havoid k Hlookup.
+  rewrite open_env_atom_swap_lookup in Hlookup.
+  destruct (η !! k) as [a|] eqn:Hη; cbn in Hlookup; [|discriminate].
+  inversion Hlookup as [Heq].
+  apply swap_inj in Heq. subst a.
+  apply (Havoid k). exact Hη.
+Qed.
+
+Definition open_env_values_inj (η : gmap nat atom) : Prop :=
+  forall i j x,
+    η !! i = Some x ->
+    η !! j = Some x ->
+    i = j.
+
+Lemma open_env_values_inj_empty :
+  open_env_values_inj ∅.
+Proof.
+  intros i j x Hi _.
+  rewrite lookup_empty in Hi. discriminate.
+Qed.
+
+Lemma open_env_values_inj_insert (k : nat) (x : atom) (η : gmap nat atom) :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  open_env_values_inj η ->
+  open_env_values_inj (<[k := x]> η).
+Proof.
+  intros Hfresh Havoid Hinj i j z Hi Hj.
+  destruct (decide (i = k)) as [->|Hik].
+  - rewrite lookup_insert in Hi.
+    destruct (decide (k = k)) as [_|Hbad]; [|congruence].
+    assert (z = x) by congruence. subst z.
+    destruct (decide (j = k)) as [->|Hjk]; [reflexivity|].
+    rewrite lookup_insert_ne in Hj by congruence.
+    exfalso. exact (Havoid j Hj).
+  - rewrite lookup_insert_ne in Hi by congruence.
+    destruct (decide (j = k)) as [->|Hjk].
+    + rewrite lookup_insert in Hj.
+      destruct (decide (k = k)) as [_|Hbad]; [|congruence].
+      assert (z = x) by congruence. subst z.
+      exfalso. exact (Havoid i Hi).
+    + rewrite lookup_insert_ne in Hj by congruence.
+      apply (Hinj i j z); assumption.
+Qed.
+
+Lemma open_env_values_inj_lift (η : gmap nat atom) :
+  open_env_values_inj η ->
+  open_env_values_inj ((kmap S η)).
+Proof.
+  intros Hinj i j x Hi Hj.
+  destruct i as [|i].
+  - rewrite open_env_lift_lookup_zero_none in Hi. discriminate.
+  - destruct j as [|j].
+    + rewrite open_env_lift_lookup_zero_none in Hj. discriminate.
+    + assert (η !! i = Some x) as Hiη.
+      {
+        rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
+          S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η i) in Hi.
+        exact Hi.
+      }
+      assert (η !! j = Some x) as Hjη.
+      {
+        rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
+          S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η j) in Hj.
+        exact Hj.
+      }
+      f_equal. eapply Hinj; eassumption.
+Qed.
+
+Lemma open_env_values_inj_insert_inv (η : gmap nat atom) (k : nat) (x : atom) :
+  η !! k = None ->
+  open_env_values_inj (<[k := x]> η) ->
+  open_env_values_inj η /\ open_env_avoids_atom x η.
+Proof.
+  intros Hfresh Hinj.
+  split.
+  - intros i j y Hi Hj.
+    eapply Hinj.
+    + rewrite lookup_insert_ne by congruence. exact Hi.
+    + rewrite lookup_insert_ne by congruence. exact Hj.
+  - intros j Hj.
+    pose proof (Hinj k j x) as Hsame.
+    rewrite lookup_insert_eq in Hsame.
+    rewrite lookup_insert_ne in Hsame by congruence.
+    specialize (Hsame eq_refl Hj). congruence.
+Qed.
+
+Lemma open_env_values_inj_singleton (k : nat) (x : atom) :
+  open_env_values_inj (<[k := x]> ∅).
+Proof.
+  intros i j y Hi Hj.
+  destruct (decide (i = k)) as [->|Hik].
+  - rewrite lookup_insert_eq in Hi. inversion Hi; subst y.
+    destruct (decide (j = k)) as [->|Hjk]; [reflexivity|].
+    rewrite lookup_insert_ne in Hj by congruence.
+    rewrite lookup_empty in Hj. discriminate.
+  - rewrite lookup_insert_ne in Hi by congruence.
+    rewrite lookup_empty in Hi. discriminate.
+Qed.
+
+Lemma logic_var_open_env_atom_swap
+    (x y : atom) (η : gmap nat atom) (v : logic_var) :
+  logic_var_open_env η (logic_var_swap x y v) =
+  logic_var_swap x y (logic_var_open_env (open_env_atom_swap x y η) v).
+Proof.
+  destruct v as [k|a].
+  - change (logic_var_swap x y (LVBound k)) with
+      (swap (LVFree x) (LVFree y) (LVBound k)).
+    rewrite swap_fresh by congruence.
+    cbn [logic_var_open_env].
+    rewrite open_env_atom_swap_lookup.
+    destruct (η !! k) as [b|] eqn:Hη; cbn.
+    + rewrite logic_var_free_swap, swap_involutive. reflexivity.
+    + change (logic_var_swap x y (LVBound k)) with
+        (swap (LVFree x) (LVFree y) (LVBound k)).
+      rewrite swap_fresh by congruence. reflexivity.
+  - cbn [logic_var_open_env].
+    rewrite logic_var_free_swap.
+    reflexivity.
+Qed.
+
+Lemma lvars_swap_elem_iff (x y : atom) (D : lvset) (v : logic_var) :
+  v ∈ lvars_swap x y D <-> logic_var_swap x y v ∈ D.
+Proof.
+  rewrite set_swap_elem.
+  change (swap (LVFree x) (LVFree y) v) with (logic_var_swap x y v).
+  reflexivity.
+Qed.
+
+Lemma lvars_open_env_atom_swap
+    (x y : atom) (η : gmap nat atom) (D : lvset) :
+  lvars_open_env η (lvars_swap x y D) =
+  lvars_swap x y (lvars_open_env (open_env_atom_swap x y η) D).
+Proof.
+  apply set_eq. intros v.
+  unfold lvars_open_env.
+  split.
+  - intros Hv.
+    apply elem_of_map in Hv as [u [-> Hu]].
+    apply lvars_swap_elem_iff in Hu.
+    apply lvars_swap_elem_iff.
+    apply elem_of_map.
+    exists (logic_var_swap x y u). split.
+    + pose proof (logic_var_open_env_atom_swap x y η
+        (logic_var_swap x y u)) as Hop.
+      apply (f_equal (logic_var_swap x y)) in Hop.
+      replace (logic_var_swap x y (logic_var_swap x y u)) with u in Hop
+        by (symmetry; apply logic_var_swap_involutive).
+      replace (logic_var_swap x y (logic_var_swap x y
+        (logic_var_open_env (open_env_atom_swap x y η)
+           (logic_var_swap x y u)))) with
+        (logic_var_open_env (open_env_atom_swap x y η)
+           (logic_var_swap x y u)) in Hop
+        by (symmetry; apply logic_var_swap_involutive).
+      exact Hop.
+    + exact Hu.
+  - intros Hv.
+    apply lvars_swap_elem_iff in Hv.
+    apply elem_of_map in Hv as [u [Hu_eq Hu]].
+    apply elem_of_map.
+    exists (logic_var_swap x y u). split.
+    + pose proof (logic_var_open_env_atom_swap x y η u) as Hop.
+      rewrite Hop.
+      rewrite <- Hu_eq.
+      symmetry. apply logic_var_swap_involutive.
+    + apply lvars_swap_elem_iff.
+      rewrite logic_var_swap_involutive. exact Hu.
+Qed.
+
+Lemma open_env_fresh_for_lvars_atom_swap
+    (x y : atom) (η : gmap nat atom) (D : lvset) :
+  open_env_fresh_for_lvars η (lvars_swap x y D) ->
+  open_env_fresh_for_lvars (open_env_atom_swap x y η) D.
+Proof.
+  intros Hfresh k a Hka Hbad.
+  rewrite open_env_atom_swap_lookup in Hka.
+  destruct (η !! k) as [b|] eqn:Hη; cbn in Hka; [|discriminate].
+  inversion Hka. subst a.
+  eapply Hfresh; [exact Hη|].
+  rewrite lvars_open_env_atom_swap.
+  rewrite lvars_fv_swap.
+  rewrite elem_of_set_swap.
+  rewrite <- open_env_atom_swap_delete.
+  exact Hbad.
+Qed.
+
 Definition open_env_atoms (η : gmap nat atom) : aset :=
   map_fold (fun _ x acc => {[x]} ∪ acc) ∅ η.
 
@@ -245,6 +488,26 @@ Proof.
   split.
   - intros [u [-> Hu]]. rewrite logic_var_open_env_empty. exact Hu.
   - intros Hv. exists v. split; [symmetry; apply logic_var_open_env_empty|exact Hv].
+Qed.
+
+Lemma open_env_fresh_for_lvars_singleton (k : nat) (x : atom) (D : lvset) :
+  x ∉ lvars_fv D ->
+  open_env_fresh_for_lvars (<[k := x]> ∅) D.
+Proof.
+  intros Hx i z Hi.
+  destruct (decide (i = k)) as [->|Hik].
+  - rewrite lookup_insert_eq in Hi. inversion Hi; subst z.
+    replace (delete k (<[k := x]> (∅ : gmap nat atom))) with
+      (∅ : gmap nat atom).
+    + rewrite lvars_open_env_empty. exact Hx.
+    + apply map_eq. intros j.
+      destruct (decide (j = k)) as [->|Hjk].
+      * rewrite lookup_delete_eq, lookup_empty. reflexivity.
+      * rewrite lookup_delete_ne by congruence.
+        rewrite lookup_insert_ne by congruence.
+        rewrite lookup_empty. reflexivity.
+  - rewrite lookup_insert_ne in Hi by congruence.
+    rewrite lookup_empty in Hi. discriminate.
 Qed.
 
 Lemma lvars_open_env_union η (D E : lvset) :

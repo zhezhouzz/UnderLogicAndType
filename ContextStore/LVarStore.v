@@ -157,6 +157,44 @@ Proof.
   intros ->. apply Hx. apply lvars_fv_elem. exact Hv.
 Qed.
 
+Lemma lvar_store_open_lvars_atom_swap x y η (s : LVarStore) :
+  open_env_fresh_for_lvars η (dom (lvar_store_swap x y s)) ->
+  lvar_store_open_lvars η (lvar_store_swap x y s) =
+  lvar_store_swap x y
+    (lvar_store_open_lvars (open_env_atom_swap x y η) s).
+Proof.
+  intros Hfresh.
+  assert (HfreshΣ :
+    open_env_fresh_for_lvars (open_env_atom_swap x y η) (dom s)).
+  {
+    apply open_env_fresh_for_lvars_atom_swap.
+    rewrite <- lvar_store_swap_dom. exact Hfresh.
+  }
+  unfold lvar_store_open_lvars, lvar_store_swap.
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_open_env η) (logic_var_swap x y) s).
+  2:{ intros a b _ _ Hab. eapply swap_inj. exact Hab. }
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact Hfresh. }
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_swap x y) (logic_var_open_env (open_env_atom_swap x y η)) s).
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact HfreshΣ. }
+  2:{ intros a b _ _ Hab. eapply swap_inj. exact Hab. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_open_env_atom_swap.
+Qed.
+
+Lemma lvar_store_to_atom_store_open_lvars_atom_swap x y η (s : LVarStore) :
+  open_env_fresh_for_lvars η (dom (lvar_store_swap x y s)) ->
+  lvar_store_to_atom_store (lvar_store_open_lvars η (lvar_store_swap x y s)) =
+  (@storeA_swap V atom _ _ x y
+    (lvar_store_to_atom_store
+      (lvar_store_open_lvars (open_env_atom_swap x y η) s)) : gmap atom V).
+Proof.
+  intros Hfresh.
+  rewrite lvar_store_open_lvars_atom_swap by exact Hfresh.
+  apply lvar_store_to_atom_store_swap.
+Qed.
+
 Lemma logic_var_bv_elem_singleton v k :
   k ∈ lvars_bv ({[v]} : lvset) <-> v = LVBound k.
 Proof.
