@@ -1,6 +1,6 @@
 (** * Generic stores: compatibility, bind, and union lemmas *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion.
 
 Section AbstractStoreBind.

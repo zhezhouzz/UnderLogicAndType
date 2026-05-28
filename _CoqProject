@@ -8,18 +8,12 @@
 -R LocallyNameless LocallyNameless
 -R CoreLang/theories CoreLang
 
-ContextBase/SetTactics.v
-ContextBase/MapTactics.v
-ContextBase/Atoms.v
+ContextBase/Tactics.v
 ContextBase/Swap/Swap.v
 ContextBase/Swap/SetSwap.v
-ContextBase/KeyShift.v
 ContextBase/Prelude.v
 ContextBase/LogicVar.v
-ContextBase/LogicVarOpen.v
-ContextBase/LogicVarAtoms.v
 ContextBase/LogicVarOpenEnv.v
-ContextBase/LogicVarInterface.v
 ContextBase/LogicVarShift.v
 ContextBase/AtomEnv.v
 

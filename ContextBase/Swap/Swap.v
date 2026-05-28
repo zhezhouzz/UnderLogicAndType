@@ -1,6 +1,6 @@
 (** * Generic point swap *)
 
-From ContextBase Require Export Atoms.
+From ContextBase Require Export Tactics.
 
 Definition swap {A : Type} `{EqDecision A} (x y z : A) : A :=
   if decide (z = x) then y else if decide (z = y) then x else z.

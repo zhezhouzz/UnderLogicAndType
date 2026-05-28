@@ -5,7 +5,7 @@
     old proof-facing names available while routing all semantics through that
     relation-shaped core. *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
   ResourceAlgebra ResourceExtension ResourceExtensionDerived ResourceInterface.

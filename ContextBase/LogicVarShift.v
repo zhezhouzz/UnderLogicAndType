@@ -1,7 +1,7 @@
 (** * Binder-depth shifts for logic variables and lvar sets *)
 
 From Stdlib Require Import Logic.FunctionalExtensionality.
-From ContextBase Require Export LogicVarInterface.
+From ContextBase Require Export LogicVarOpenEnv.
 
 Class Shift A := shift_from : nat -> A -> A.
 Notation "'↑[' k ']'" := (shift_from k)

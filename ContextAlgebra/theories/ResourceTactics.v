@@ -5,7 +5,7 @@
     worlds or the algebraic resource order. *)
 
 From ContextAlgebra Require Import Resource ResourceCore.
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 
 Ltac resource_world_norm :=

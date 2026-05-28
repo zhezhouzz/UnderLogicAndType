@@ -1,6 +1,6 @@
 From ContextAlgebra Require Export Resource.
 From ContextAlgebra Require Import ResourceCore ResourceAlgebraBase ResourceRestrict.
-From ContextBase Require Export Prelude LogicVarInterface.
+From ContextBase Require Export Prelude LogicVar.
 From ContextStore Require Export Store.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 

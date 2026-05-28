@@ -5,7 +5,7 @@
     The definitions remain in [Resource].  This file only adds a compact
     surface syntax, with explicit-proof variants next to proof-inferred ones. *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import Resource.
 

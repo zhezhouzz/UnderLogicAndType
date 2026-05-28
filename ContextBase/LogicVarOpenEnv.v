@@ -2,7 +2,7 @@
 
     Finite simultaneous opening environments for logic-variable sets. *)
 
-From ContextBase Require Export LogicVarAtoms.
+From ContextBase Require Export LogicVar.
 
 Definition logic_var_open_env
     (η : gmap nat atom) (v : logic_var) : logic_var :=
@@ -281,27 +281,6 @@ Lemma open_env_avoids_atom_of_notin_atoms x η :
 Proof.
   intros Hx k Hlookup.
   apply Hx. eapply open_env_atoms_lookup. exact Hlookup.
-Qed.
-
-Lemma lvars_fv_mono (D E : lvset) :
-  D ⊆ E ->
-  lvars_fv D ⊆ lvars_fv E.
-Proof.
-  intros HDE x Hx.
-  apply lvars_fv_elem.
-  apply lvars_fv_elem in Hx.
-  exact (HDE _ Hx).
-Qed.
-
-Lemma lvars_open_mono k x (D E : lvset) :
-  D ⊆ E ->
-  lvars_open k x D ⊆ lvars_open k x E.
-Proof.
-  intros HDE v Hv.
-  unfold lvars_open in *.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  apply elem_of_map. exists u. split; [reflexivity|].
-  exact (HDE _ Hu).
 Qed.
 
 Lemma lvars_open_env_empty D :

@@ -1,6 +1,6 @@
 (** * Generic stores: core definitions *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From Stdlib Require Import Logic.ProofIrrelevance.
 
 Section AbstractStoreCore.

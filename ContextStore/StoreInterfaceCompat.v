@@ -1,6 +1,6 @@
 (** * Concrete store compatibility interface lemmas *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion StoreBind.
 From ContextStore Require Export StoreInterfaceRestrict.
 

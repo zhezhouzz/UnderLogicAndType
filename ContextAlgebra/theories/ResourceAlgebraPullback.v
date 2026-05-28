@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict.
 From Stdlib Require Import Logic.ProofIrrelevance.

@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextAlgebra Require Import Resource.
 
 (** * Context Algebra  (Definitions 1.6)

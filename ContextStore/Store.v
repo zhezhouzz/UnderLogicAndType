@@ -1,6 +1,6 @@
 (** * Stores *)
 
-From ContextBase Require Import Prelude LogicVarInterface.
+From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Export StoreCore.
 From ContextStore Require Export StoreKeyAction.
 From ContextStore Require Export StoreRestrictCore.

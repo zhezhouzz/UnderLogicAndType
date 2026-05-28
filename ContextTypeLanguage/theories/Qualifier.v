@@ -9,7 +9,7 @@
     input after swapping the store back. *)
 
 From CoreLang Require Export Prelude Syntax.
-From ContextBase Require Export Prelude LogicVarInterface.
+From ContextBase Require Export Prelude LogicVar.
 From ContextStore Require Export Store.
 From Stdlib Require Import Logic.FunctionalExtensionality
   Logic.ProofIrrelevance Logic.PropExtensionality.
