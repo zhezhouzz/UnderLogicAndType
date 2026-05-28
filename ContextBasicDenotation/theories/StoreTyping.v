@@ -209,17 +209,23 @@ Proof.
   split.
   - exact Hin.
   - split.
-    + rewrite atom_env_to_lty_env_dom.
+    + change (lc_lvars (dom ((@atom_store_to_lvar_store ty) Σout
+          : gmap logic_var ty))).
+      rewrite atom_store_to_lvar_store_dom.
       intros [k|x] Hv; cbn [lc_logic_var_key]; [|exact I].
       unfold lvars_of_atoms in Hv.
       apply elem_of_map in Hv as [? [Hbad _]]. discriminate.
     + split.
-      * rewrite atom_env_to_lty_env_dom, lvars_fv_of_atoms. exact Hout.
+      * change (lvars_fv (dom ((@atom_store_to_lvar_store ty) Σout
+            : gmap logic_var ty)) = ext_out F).
+        rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms. exact Hout.
       * intros σin mout Hσin HF.
         specialize (Hstores σin mout Hσin HF) as Htyped.
         unfold lworld_has_type, worldA_has_type.
         split.
-        -- rewrite atom_env_to_lty_env_dom, res_lift_free_dom.
+        -- change (dom ((@atom_store_to_lvar_store ty) Σout
+              : gmap logic_var ty) ⊆ lworld_dom (res_lift_free mout : LWorld)).
+           rewrite atom_store_to_lvar_store_dom, res_lift_free_dom.
            unfold world_has_type, worldA_has_type in Htyped.
            destruct Htyped as [Hdom _].
            intros v Hv.
@@ -232,8 +238,12 @@ Proof.
            destruct Hτ as [σ0 [Hσ0 ->]].
            intros v T u HΣ Hu.
            destruct v as [k|x].
-           ++ rewrite atom_env_to_lty_env_lookup_bound_none in HΣ. discriminate.
-           ++ rewrite atom_env_to_lty_env_lookup_free in HΣ.
+           ++ change (((@atom_store_to_lvar_store ty) Σout
+                 : gmap logic_var ty) !! LVBound k = Some T) in HΣ.
+              rewrite atom_store_to_lvar_store_lookup_bound_none in HΣ. discriminate.
+           ++ change (((@atom_store_to_lvar_store ty) Σout
+                 : gmap logic_var ty) !! LVFree x = Some T) in HΣ.
+              rewrite atom_store_to_lvar_store_lookup_free in HΣ.
               change (((lstore_lift_free σ0 : LStore) : gmap logic_var value) !!
                 LVFree x = Some u) in Hu.
               rewrite lstore_lift_free_lookup_free in Hu.

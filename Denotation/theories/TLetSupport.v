@@ -3206,7 +3206,7 @@ Proof.
   {
     eapply basic_typing_env_agree_tm; [exact He1|].
     intros a Ha.
-    rewrite !lty_env_to_atom_env_lookup.
+    rewrite !lvar_store_to_atom_store_lookup.
     change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
       : gmap logic_var ty) !! LVFree a =
       (Σ : gmap logic_var ty) !! LVFree a).
@@ -3223,7 +3223,7 @@ Proof.
     eapply basic_typing_tapp_tm.
     - eapply basic_typing_env_agree_tm; [exact Hlet|].
       intros a Ha.
-      rewrite !lty_env_to_atom_env_lookup.
+      rewrite !lvar_store_to_atom_store_lookup.
       change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
         : gmap logic_var ty) !! LVFree a =
         (Σ : gmap logic_var ty) !! LVFree a).
@@ -3231,7 +3231,7 @@ Proof.
       intros Hbad. inversion Hbad. subst a.
       apply Hy_support. fast_set_solver!!.
     - constructor.
-      rewrite lty_env_to_atom_env_lookup.
+      rewrite lvar_store_to_atom_store_lookup.
       change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
         : gmap logic_var ty) !! LVFree y = Some (erase_ty τx)).
       rewrite lookup_insert.

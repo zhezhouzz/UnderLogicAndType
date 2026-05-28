@@ -1067,7 +1067,7 @@ Lemma lty_env_to_atom_env_restrict_lvars_lookup Σ D x :
   lty_env_to_atom_env Σ !! x.
 Proof.
   intros HxD.
-  rewrite !lty_env_to_atom_env_lookup.
+  rewrite !lvar_store_to_atom_store_lookup.
   unfold lty_env_restrict_lvars.
   destruct ((Σ : gmap logic_var ty) !! LVFree x) as [T|] eqn:HΣ.
   - apply storeA_restrict_lookup_some_2; assumption.

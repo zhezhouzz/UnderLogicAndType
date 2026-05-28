@@ -32,11 +32,14 @@ Proof.
   intros He1 Hlet HFx Htotal Hworld Hxfresh Hxlvar Hext Hbody.
   unfold denot_ty_in_ctx_under, denot_ty in Hbody |- *.
   rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1 Hxfresh) in Hbody.
-  rewrite atom_env_to_lty_env_insert in Hbody.
+  replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (erase_ctx_under Σ Γ)))
+    with (<[LVFree x := erase_ty τ1]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ))) in Hbody.
+  2:{ symmetry. apply atom_store_to_lvar_store_insert. }
   eapply tlet_intro_denotation; eauto.
-  - apply atom_env_to_lty_env_closed.
-  - rewrite lty_env_to_atom_env_atom_env. exact He1.
-  - rewrite lty_env_to_atom_env_atom_env. exact Hlet.
+  - apply atom_store_to_lvar_store_closed.
+  - rewrite lvar_store_to_atom_store_atom_store. exact He1.
+  - rewrite lvar_store_to_atom_store_atom_store. exact Hlet.
 Qed.
 
 Lemma denot_tlet_direct_total_model_in_ctx

@@ -348,7 +348,7 @@ Proof.
   assert (Hfv_let : fv_tm (tlete e1 e2) ⊆ lvars_fv (dom Σ)).
   {
     pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv_atom.
-    pose proof (lty_env_to_atom_env_dom_subset Σ) as Hdom.
+    pose proof (lvar_store_to_atom_store_dom_subset Σ) as Hdom.
     unfold lty_env_atom_dom in Hdom. set_solver.
   }
   pose proof (expr_total_formula_to_atom_world _ _ Htotal1) as Htotal1_atom.

@@ -265,6 +265,15 @@ Proof.
   apply logic_var_open_shift_from_under_gen. exact Hjk.
 Qed.
 
+Lemma lvar_store_open_one_insert k x v A (s : LVarStore) :
+  lvar_store_open_one k x (<[v := A]> s) =
+  <[logic_var_open k x v := A]> (lvar_store_open_one k x s).
+Proof.
+  unfold lvar_store_open_one.
+  apply storeA_rekey_insert.
+  apply logic_var_open_inj.
+Qed.
+
 Lemma lvar_store_shift_atom_store (s : AtomStore) :
   lvar_store_shift (atom_store_to_lvar_store s) = atom_store_to_lvar_store s.
 Proof.
@@ -442,6 +451,76 @@ Proof.
            ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
            ++ symmetry. exact Hlooky.
       * rewrite swap_fresh by congruence. reflexivity.
+Qed.
+
+Lemma lvar_store_swap_atom_store_fresh (s : AtomStore) x y :
+  x ∉ dom (s : gmap atom V) ->
+  y ∉ dom (s : gmap atom V) ->
+  lvar_store_swap x y (atom_store_to_lvar_store s) =
+  atom_store_to_lvar_store s.
+Proof.
+  intros Hx Hy.
+  apply storeA_map_eq. intros v.
+  rewrite lvar_store_swap_lookup_inv.
+  destruct v as [k|z]; cbn.
+  - rewrite !atom_store_to_lvar_store_lookup_bound_none. reflexivity.
+  - destruct (decide (z = x)) as [->|Hzx].
+    + rewrite swap_l.
+      rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
+      reflexivity.
+    + destruct (decide (z = y)) as [->|Hzy].
+      * rewrite swap_r.
+        rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
+        reflexivity.
+      * rewrite swap_fresh by congruence. reflexivity.
+Qed.
+
+Lemma lvar_store_swap_atom_store_insert_fresh (s : AtomStore) x y v :
+  x ∉ dom (s : gmap atom V) ->
+  y ∉ dom (s : gmap atom V) ->
+  x <> y ->
+  lvar_store_swap y x (atom_store_to_lvar_store (<[y := v]> s)) =
+  <[LVFree x := v]> (atom_store_to_lvar_store s).
+Proof.
+  intros Hx Hy Hxy.
+  rewrite atom_store_to_lvar_store_insert.
+  rewrite lvar_store_swap_insert.
+  cbn.
+  rewrite swap_l.
+  rewrite lvar_store_swap_atom_store_fresh by assumption.
+  reflexivity.
+Qed.
+
+Lemma lvar_store_open_one_atom_store k x (s : AtomStore) :
+  x ∉ dom (s : gmap atom V) ->
+  lvar_store_open_one k x (atom_store_to_lvar_store s) =
+  atom_store_to_lvar_store s.
+Proof.
+  intros Hx.
+  unfold lvar_store_open_one.
+  change (storeA_swap (LVBound k) (LVFree x)
+    (atom_store_to_lvar_store s) = atom_store_to_lvar_store s).
+  apply storeA_swap_fresh.
+  - apply not_elem_of_dom.
+    apply atom_store_to_lvar_store_lookup_bound_none.
+  - apply not_elem_of_dom.
+    apply atom_store_to_lvar_store_lookup_free_none. exact Hx.
+Qed.
+
+Lemma lvar_store_open_one_bind_atom_store x v (s : AtomStore) :
+  x ∉ dom (s : gmap atom V) ->
+  lvar_store_open_one 0 x
+    (<[LVBound 0 := v]> (lvar_store_shift (atom_store_to_lvar_store s))) =
+  <[LVFree x := v]> (atom_store_to_lvar_store s).
+Proof.
+  intros Hx.
+  rewrite lvar_store_shift_atom_store.
+  rewrite lvar_store_open_one_insert.
+  replace (logic_var_open 0 x (LVBound 0)) with (LVFree x).
+  rewrite lvar_store_open_one_atom_store by exact Hx.
+  reflexivity.
+  rewrite logic_var_open_unfold.
+  unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma lvar_store_open_atom_store η (s : AtomStore) :

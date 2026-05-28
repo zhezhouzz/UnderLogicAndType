@@ -141,7 +141,7 @@ Proof.
     open_env_fresh_for_lvars (open_env_atom_swap x y η) (dom Σ)).
   {
     apply open_env_fresh_for_lvars_atom_swap.
-    rewrite <- lty_env_swap_dom. exact Hfresh.
+    rewrite <- lvar_store_swap_dom. exact Hfresh.
   }
   unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_swap, lvar_store_swap.
   rewrite (storeA_rekey_compose_inj_on
@@ -165,7 +165,7 @@ Lemma lty_env_to_atom_env_open_lvars_atom_swap x y η Σ :
 Proof.
   intros Hfresh.
   rewrite lty_env_open_lvars_atom_swap by exact Hfresh.
-  apply lty_env_to_atom_env_swap.
+  apply lvar_store_to_atom_store_swap.
 Qed.
 
 Lemma open_tm_env_singleton k y e :
@@ -516,7 +516,7 @@ Lemma lty_env_to_atom_env_open_swap_back
   lty_env_to_atom_env (lty_env_open_lvars η Σ).
 Proof.
   intros Hηk HyΣ HzΣ Havoid Hfresh.
-  rewrite <- lty_env_to_atom_env_swap.
+  rewrite <- lvar_store_to_atom_store_swap.
   f_equal.
   unfold lty_env_swap, lvar_store_swap, lty_env_open_lvars, lvar_store_open_lvars.
   assert (Hybig : y ∉ lvars_fv ({[LVBound k]} ∪ dom Σ)).
@@ -695,9 +695,9 @@ Lemma lty_env_to_atom_env_open_lvars_insert_free_subset
 Proof.
   intros HxΣ Hfresh.
   apply map_subseteq_spec. intros a U Ha.
-  apply lty_env_to_atom_env_lookup_some in Ha as Ha_lv.
+  apply lvar_store_to_atom_store_lookup_some in Ha as Ha_lv.
   rewrite lty_env_open_lvars_insert_entry.
-  - apply lty_env_to_atom_env_lookup_free_some.
+  - apply lvar_store_to_atom_store_lookup_free_some.
     destruct (decide (a = x)) as [->|Hax].
     + assert (HnoneΣ : Σ !! LVFree x = None).
       {
@@ -709,6 +709,10 @@ Proof.
       pose proof (lty_env_open_lvars_lookup_fresh
         η (LVFree x) T Σ HnoneΣ Hfresh) as Hnone.
       cbn [logic_var_open_env] in Hnone.
+      change (((@lvar_store_open_lvars ty) η Σ
+        : gmap logic_var ty) !! LVFree x = None) in Hnone.
+      change (((@lvar_store_open_lvars ty) η Σ
+        : gmap logic_var ty) !! LVFree x = Some U) in Ha_lv.
       rewrite Hnone in Ha_lv. discriminate.
     + change (((<[LVFree x := T]>
           ((lty_env_open_lvars η Σ : lty_env) : gmap logic_var ty))
@@ -800,7 +804,9 @@ Lemma basic_tm_has_ltype_swap_atom x y Σ e T :
 Proof.
   intros [Hsub Hty]. split.
   - rewrite tm_lvars_swap_atom.
-    rewrite lty_env_swap_dom.
+    change (lvars_swap x y (tm_lvars e) ⊆
+      dom ((@lvar_store_swap ty) x y Σ : gmap logic_var ty)).
+    rewrite (lvar_store_swap_dom (V:=ty) x y Σ).
     apply lvars_swap_mono. exact Hsub.
   - intros η Hfresh Hbv.
     set (η' := open_env_atom_swap x y η).
@@ -809,9 +815,12 @@ Proof.
     {
       subst η'.
       apply open_env_fresh_for_lvars_atom_swap.
+      change (open_env_fresh_for_lvars η
+        (dom ((@lvar_store_swap ty) x y Σ : gmap logic_var ty) ∪
+          tm_lvars (tm_swap_atom x y e))) in Hfresh.
+      rewrite (lvar_store_swap_dom (V:=ty) x y Σ) in Hfresh.
+      rewrite tm_lvars_swap_atom in Hfresh.
       rewrite lvars_swap_union.
-      rewrite <- lty_env_swap_dom.
-      rewrite <- tm_lvars_swap_atom.
       exact Hfresh.
     }
     assert (Hbv' : lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η').
@@ -819,7 +828,10 @@ Proof.
       subst η'. rewrite open_env_atom_swap_dom.
       intros k Hk. apply Hbv.
       rewrite !lvars_bv_union in Hk |- *.
-      rewrite lty_env_swap_dom.
+      change (k ∈ lvars_bv (dom ((@lvar_store_swap ty) x y Σ
+          : gmap logic_var ty)) ∪
+        lvars_bv (tm_lvars (tm_swap_atom x y e))).
+      rewrite (lvar_store_swap_dom (V:=ty) x y Σ).
       rewrite tm_lvars_swap_atom.
       rewrite !lvars_bv_swap.
       exact Hk.
@@ -1126,7 +1138,7 @@ Proof.
     apply elem_of_map in Hv as [x [-> Hx]].
     apply Hfv in Hx.
     apply elem_of_dom in Hx as [Tx HTx].
-    apply lty_env_to_atom_env_lookup_some in HTx.
+    apply lvar_store_to_atom_store_lookup_some in HTx.
     change ((Σ : gmap logic_var ty) !! LVFree x = Some Tx) in HTx.
     apply elem_of_dom_2 in HTx. exact HTx.
   - intros η _ _.
@@ -1161,7 +1173,7 @@ Proof.
   pose proof (basic_tm_has_ltype_swap_atom y z
     (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T Hty) as Hswap.
   rewrite lty_env_swap_open_one in Hswap.
-  rewrite lty_env_swap_fresh in Hswap.
+  rewrite lvar_store_swap_fresh in Hswap.
   2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
   2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
   rewrite tm_swap_atom_open_tm_fresh in Hswap by set_solver.
@@ -1215,7 +1227,7 @@ Lemma basic_typing_lty_env_to_atom_env_fv_subset Σ e T :
 Proof.
   intros Hty.
   pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
-  pose proof (lty_env_to_atom_env_dom_subset Σ) as Hdom.
+  pose proof (lvar_store_to_atom_store_dom_subset Σ) as Hdom.
   unfold lty_env_atom_dom, lvar_store_atom_dom in Hdom.
   set_solver.
 Qed.

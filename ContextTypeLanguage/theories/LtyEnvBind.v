@@ -34,7 +34,13 @@ Lemma typed_lty_env_bind_atom_env_insert_dom
   {[LVFree x]}.
 Proof.
   intros _.
-  rewrite atom_env_to_lty_env_insert.
+  change (dom (typed_lty_env_bind ((@atom_store_to_lvar_store ty)
+      (<[x := Tx]> Δ)) Ty) =
+    dom (typed_lty_env_bind ((@atom_store_to_lvar_store ty) Δ) Ty) ∪
+    {[LVFree x]}).
+  replace ((@atom_store_to_lvar_store ty) (<[x := Tx]> Δ))
+    with (<[LVFree x := Tx]> ((@atom_store_to_lvar_store ty) Δ)).
+  2:{ symmetry. apply atom_store_to_lvar_store_insert. }
   rewrite !typed_lty_env_bind_dom.
   change (lvars_shift_from 0
       (dom ((<[LVFree x := Tx]> (atom_env_to_lty_env Δ) : lty_env)
@@ -359,8 +365,11 @@ Lemma lty_env_open_typed_bind_atom_env (Δ : gmap atom ty) T x :
 Proof.
   intros Hx.
   unfold typed_lty_env_bind.
-  rewrite lty_env_open_one_bind_atom_env by exact Hx.
-  rewrite atom_env_to_lty_env_insert.
+  change (lvar_store_open_one 0 x
+      (<[LVBound 0 := T]> (lvar_store_shift ((@atom_store_to_lvar_store ty) Δ))) =
+    (@atom_store_to_lvar_store ty) (<[x := T]> Δ)).
+  rewrite lvar_store_open_one_bind_atom_store by exact Hx.
+  rewrite <- (@atom_store_to_lvar_store_insert ty x T Δ).
   reflexivity.
 Qed.
 

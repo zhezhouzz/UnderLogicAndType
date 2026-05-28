@@ -934,7 +934,7 @@ Proof.
 	          - eapply basic_typing_env_agree_tm; [exact He1|].
 	            intros z Hz.
 	            assert (Hzy : z <> y) by tlet_support_solver.
-	            rewrite !lty_env_to_atom_env_lookup.
+	            rewrite !lvar_store_to_atom_store_lookup.
 	            change (((<[LVFree y := erase_ty τx]>
 	                (Σ : gmap logic_var ty)) : gmap logic_var ty) !!
 	              LVFree z = (Σ : gmap logic_var ty) !! LVFree z).
@@ -948,7 +948,7 @@ Proof.
 		            + eapply basic_typing_env_agree_tm; [exact He1|].
 		              intros z Hz.
 		              assert (Hzy : z <> y) by tlet_support_solver.
-		              rewrite !lty_env_to_atom_env_lookup.
+		              rewrite !lvar_store_to_atom_store_lookup.
 		              change (((<[LVFree y := erase_ty τx]>
 		                  (Σ : gmap logic_var ty)) : gmap logic_var ty) !!
 		                LVFree z = (Σ : gmap logic_var ty) !! LVFree z).
@@ -978,7 +978,7 @@ Proof.
 			                  set_solver.
 			                }
 			                assert (Hwy : w <> y) by (intros ->; exact (Hy_e2z Hw)).
-			                rewrite lty_env_to_atom_env_insert_free.
+				                rewrite (lvar_store_to_atom_store_insert_free (V:=ty)).
 			                change ((((<[z := T1]> (<[y := erase_ty τx]>
 			                  (lty_env_to_atom_env Σ))) : gmap atom ty) !! w) =
 				                  (((<[z := T1]> (lty_env_to_atom_env Σ))
@@ -1000,7 +1000,7 @@ Proof.
 			                      ** symmetry. apply lookup_insert_ne. congruence.
 		              * apply VT_FVar.
 		                rewrite lookup_insert_ne by tlet_support_solver.
-		                rewrite lty_env_to_atom_env_insert_free.
+			                rewrite (lvar_store_to_atom_store_insert_free (V:=ty)).
 		                apply lookup_insert_eq.
 	          - exact HFx.
 	          - eapply res_models_kripke; [exact Hle | exact Htotal].
