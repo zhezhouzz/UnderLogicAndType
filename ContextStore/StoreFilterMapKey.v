@@ -11,7 +11,7 @@ Context {V : Type} `{ValueSig V}.
 
 Definition storeA_filter_map_key
     {K K' : Type} `{Countable K} `{Countable K'}
-    (f : K -> option K') (s : StoreA K) : StoreA K' :=
+    (f : K -> option K') (s : gmap K V) : gmap K' V :=
   map_fold (fun k v (acc : gmap K' V) =>
     match f k with
     | Some k' => <[k' := v]> acc
@@ -21,7 +21,7 @@ Definition storeA_filter_map_key
 Lemma storeA_filter_map_key_empty
     {K K' : Type} `{Countable K} `{Countable K'}
     (f : K -> option K') :
-  storeA_filter_map_key f (∅ : StoreA K) = (∅ : StoreA K').
+  storeA_filter_map_key f (∅ : gmap K V) = (∅ : gmap K' V).
 Proof.
   unfold storeA_filter_map_key. reflexivity.
 Qed.
@@ -279,7 +279,7 @@ Proof.
       * inversion Hu.
     + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
   - unfold lvar_store_shift, lvar_store_shift_from.
-    unfold storeA_rekey, storeA_map_key.
+    unfold kmap.
     change ((kmap (M2:=gmap logic_var) (logic_var_shift_from 0)
         (atom_store_to_lvar_store s)) !! LVFree x =
       atom_store_to_lvar_store s !! LVFree x).
@@ -311,7 +311,7 @@ Lemma lvar_store_swap_lookup x y (s : LVarStore) v :
 Proof.
   rewrite logic_var_swap_match.
   unfold lvar_store_swap.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change ((kmap (M2:=gmap logic_var) (swap (LVFree x) (LVFree y)) s) !!
       swap (LVFree x) (LVFree y) v = (s : gmap logic_var V) !! v).
   rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
@@ -415,14 +415,14 @@ Proof.
       * exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
       * destruct (s !! LVFree x) eqn:Hlookx.
         -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
-        -- symmetry. exact Hlookx.
+        -- reflexivity.
     + destruct (decide (z = y)) as [->|Hzy].
       * rewrite swap_r.
         destruct (s !! LVFree x) eqn:Hlookx.
         -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
         -- destruct (s !! LVFree y) eqn:Hlooky.
            ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
-           ++ symmetry. exact Hlooky.
+           ++ reflexivity.
       * base_swap_normalize. reflexivity.
 Qed.
 
@@ -501,7 +501,7 @@ Proof.
   refine (fin_maps.map_fold_ind (M:=gmap atom)
     (fun s => lvar_store_open η (atom_store_to_lvar_store s) = s) _ _ s).
   - unfold lvar_store_open, atom_store_to_lvar_store,
-      storeA_filter_map_key, storeA_map_key.
+      storeA_filter_map_key.
     rewrite kmap_empty. reflexivity.
   - intros x v s' Hfresh Hfold IH.
     rewrite atom_store_to_lvar_store_insert.

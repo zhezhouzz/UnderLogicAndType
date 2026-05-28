@@ -8,7 +8,7 @@ From LocallyNameless Require Import Classes.
 From ContextStore Require Export Store.
 From ContextTypeLanguage Require Export TypeOpen.
 
-Notation lty_env := (@StoreA ty logic_var _ _) (only parsing).
+Notation lty_env := (gmap logic_var ty) (only parsing).
 
 Notation lty_env_shift_from :=
   (@lvar_store_shift_from ty) (only parsing).

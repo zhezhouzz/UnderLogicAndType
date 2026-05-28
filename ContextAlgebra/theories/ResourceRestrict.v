@@ -9,7 +9,7 @@ Section ResourceRestrictA.
 Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
-Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
+Local Notation StoreAT := (gmap K V) (only parsing).
 Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
@@ -179,7 +179,7 @@ Proof.
       * rewrite <- Hrestrict, <- Hrekey.
         symmetry. apply storeA_restrict_rekey. exact Hf.
     + intros [σx [[σw [Hσw Hrestrict]] Hrekey]].
-      exists (@storeA_rekey V K _ _ f σw). split.
+      exists (storeA_map_key f σw). split.
       * exists σw. split; [exact Hσw | reflexivity].
       * rewrite <- Hrekey, <- Hrestrict.
         apply storeA_restrict_rekey. exact Hf.

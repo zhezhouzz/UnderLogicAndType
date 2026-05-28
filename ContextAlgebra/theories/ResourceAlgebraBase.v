@@ -10,7 +10,7 @@ Section ResourceAlgebraA.
 Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
-Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
+Local Notation StoreAT := (gmap K V) (only parsing).
 Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 

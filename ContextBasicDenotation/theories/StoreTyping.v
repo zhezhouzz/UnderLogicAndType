@@ -8,7 +8,7 @@ Section StoreTyping.
 
 Definition storeA_has_type
     {K : Type} `{Countable K}
-    (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) : Prop :=
+    (Σ : gmap K ty) (σ : gmap K value) : Prop :=
   forall x T v,
     Σ !! x = Some T ->
     σ !! x = Some v ->
@@ -16,11 +16,11 @@ Definition storeA_has_type
 
 Definition worldA_has_type
     {K : Type} `{Countable K}
-    (Σ : @StoreA ty K _ _) (m : @WorldA K _ _ value) : Prop :=
+    (Σ : gmap K ty) (m : @WorldA K _ _ value) : Prop :=
   dom Σ ⊆ worldA_dom m /\
   forall σ, m σ -> storeA_has_type Σ σ.
 
-Definition world_has_type (Σ : StoreA atom) (m : World) : Prop :=
+Definition world_has_type (Σ : gmap atom ty) (m : World) : Prop :=
   worldA_has_type Σ m.
 
 Definition lworld_has_type (Σ : lty_env) (m : LWorld) : Prop :=
@@ -99,7 +99,7 @@ Qed.
 
 Lemma storeA_has_type_swap
     {K : Type} `{Countable K} 
-    (x y : K) (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) :
+    (x y : K) (Σ : gmap K ty) (σ : gmap K value) :
   storeA_has_type (storeA_swap x y Σ) σ <->
   storeA_has_type Σ (storeA_swap x y σ).
 Proof.
@@ -184,7 +184,7 @@ Proof.
 Qed.
 
 Definition extension_has_type
-    (Σout : StoreA atom) (min : WfWorld) (F : fiber_extension) : Prop :=
+    (Σout : gmap atom ty) (min : WfWorld) (F : fiber_extension) : Prop :=
   world_dom (min : World) = ext_in F /\
   dom Σout = ext_out F /\
   forall σ my,
@@ -203,7 +203,7 @@ Definition extension_has_ltype
     lworld_has_type Σout (res_lift_free my : LWorld).
 
 Lemma extension_has_type_to_ltype
-    (Σout : StoreA atom) (min : WfWorld) F :
+    (Σout : gmap atom ty) (min : WfWorld) F :
   extension_has_type Σout min F ->
   extension_has_ltype (atom_env_to_lty_env Σout) min F.
 Proof.
@@ -256,7 +256,7 @@ Proof.
 Qed.
 
 Lemma extension_has_type_input_resource_eq
-    (Σout : StoreA atom) (min1 min2 : WfWorld) F :
+    (Σout : gmap atom ty) (min1 min2 : WfWorld) F :
   min1 = min2 ->
   extension_has_type Σout min1 F ->
   extension_has_type Σout min2 F.
@@ -271,7 +271,7 @@ Proof. intros -> Htyped. exact Htyped. Qed.
 
 Lemma storeA_has_type_restrict
     {K : Type} `{Countable K}
-    (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) X :
+    (Σ : gmap K ty) (σ : gmap K value) X :
   storeA_has_type Σ σ ->
   storeA_has_type (storeA_restrict Σ X) σ.
 Proof.
@@ -282,7 +282,7 @@ Qed.
 
 Lemma storeA_has_type_restrict_store
     {K : Type} `{Countable K}
-    (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) X :
+    (Σ : gmap K ty) (σ : gmap K value) X :
   dom Σ ⊆ X ->
   storeA_has_type Σ (storeA_restrict σ X) <->
   storeA_has_type Σ σ.
@@ -334,7 +334,7 @@ Qed.
 
 Lemma worldA_has_type_restrict_env
     {K : Type} `{Countable K}
-    (Σ : @StoreA ty K _ _) (m : @WorldA K _ _ value) X :
+    (Σ : gmap K ty) (m : @WorldA K _ _ value) X :
   worldA_has_type Σ m ->
   worldA_has_type (storeA_restrict Σ X) m.
 Proof.
@@ -352,7 +352,7 @@ Proof.
 Qed.
 
 Lemma world_has_type_restrict_world
-    (Σ : StoreA atom) (m : WfWorld) X :
+    (Σ : gmap atom ty) (m : WfWorld) X :
   dom Σ ⊆ X ->
   world_has_type Σ (m : World) ->
   world_has_type Σ (res_restrict m X : World).
@@ -368,7 +368,7 @@ Proof.
 Qed.
 
 Lemma world_has_type_extend_by
-    (Σbase Σout : StoreA atom) (m my : WfWorld) F :
+    (Σbase Σout : gmap atom ty) (m my : WfWorld) F :
   world_has_type Σbase (m : World) ->
   extension_has_type Σout (res_restrict m (ext_in F)) F ->
   dom Σbase ## dom Σout ->
@@ -382,7 +382,7 @@ Proof.
   destruct Hext as [Happ [Hmy_dom Hmy_stores]].
   split.
   - intros x Hx.
-    change (x ∈ dom ((Σbase ∪ Σout : StoreA atom) : gmap atom ty)) in Hx.
+    change (x ∈ dom ((Σbase ∪ Σout : gmap atom ty) : gmap atom ty)) in Hx.
     apply elem_of_dom in Hx as [T Hlookup].
     rewrite map_lookup_union_Some_raw in Hlookup.
     change (x ∈ worldA_dom (raw_world my)).

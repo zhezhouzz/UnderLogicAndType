@@ -138,7 +138,7 @@ Proof.
   - intros y Hy. set_unfold.
     rewrite elem_of_dom in Hy. destruct Hy as [v Hy].
     destruct (decide (x = y)) as [-> | Hneq]; [reflexivity |].
-    unfold store_singleton, Store, StoreA in Hy.
+    unfold store_singleton, Store in Hy.
     pose proof (lookup_singleton_ne (M:=gmap atom) x y (erase_ty τ) Hneq) as Hnone.
     rewrite Hnone in Hy. discriminate.
   - intros y Hy. set_unfold.

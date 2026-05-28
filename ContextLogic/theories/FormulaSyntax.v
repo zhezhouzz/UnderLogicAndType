@@ -13,7 +13,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
-Local Notation LStoreT := (@StoreA V logic_var _ _) (only parsing).
+Local Notation LStoreT := (gmap logic_var V) (only parsing).
 
 Inductive Formula : Type :=
   | FTrue

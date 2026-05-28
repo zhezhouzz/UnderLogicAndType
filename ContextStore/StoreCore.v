@@ -7,13 +7,9 @@ Section AbstractStoreCore.
 
 Context {V : Type} `{ValueSig V}.
 
-Definition StoreA (K : Type) `{Countable K} : Type := gmap K V.
-
-Typeclasses Transparent StoreA.
-
 Record StoreAOn {K : Type} `{Countable K} (D : gset K) : Type := {
-  storeAO_store : StoreA K;
-  storeAO_dom : dom (storeAO_store : StoreA K) = D;
+  storeAO_store : gmap K V;
+  storeAO_dom : dom (storeAO_store : gmap K V) = D;
 }.
 
 Local Arguments storeAO_store {_ _ _ _} _.
@@ -29,39 +25,33 @@ Proof.
 Qed.
 
 Definition storeA_compat {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) : Prop :=
+    (s1 s2 : gmap K V) : Prop :=
   map_compat V s1 s2.
 
 Definition storeA_agree_on {K : Type} `{Countable K}
-    (D : gset K) (s1 s2 : StoreA K) : Prop :=
+    (D : gset K) (s1 s2 : gmap K V) : Prop :=
   forall x, x ∈ D -> s1 !! x = s2 !! x.
 
 Definition storeA_restrict {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) : StoreA K :=
+    (s : gmap K V) (X : gset K) : gmap K V :=
   map_restrict V s X.
 
-Definition storeA_map_key
-    {K K' : Type} `{Countable K} `{Countable K'}
-    (f : K → K') (s : StoreA K) : StoreA K' :=
-  kmap f s.
-
-Definition storeA_rekey {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) : StoreA K :=
-  storeA_map_key f s.
+Notation "'storeA_map_key' f s" := (kmap (M2:=gmap _) f s)
+  (at level 10, f at next level, s at next level, only parsing).
 
 Definition storeA_swap {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) : StoreA K :=
-  storeA_rekey (swap x y) s.
+    (x y : K) (s : gmap K V) : gmap K V :=
+  storeA_map_key (swap x y) s.
 
 Definition storeA_shift {K : Type} `{Countable K} `{!ShiftKey K}
-    (k : nat) (s : StoreA K) : StoreA K :=
-  storeA_rekey (key_shift k) s.
+    (k : nat) (s : gmap K V) : gmap K V :=
+  storeA_map_key (key_shift k) s.
 
 Definition storeA_bind {K : Type} `{Countable K}
-    (s1 s2 s : StoreA K) : Prop :=
+    (s1 s2 s : gmap K V) : Prop :=
   dom s1 ## dom s2 ∧ s = @union (gmap K V) _ s1 s2.
 
-Lemma storeA_map_eq {K : Type} `{Countable K} (s1 s2 : StoreA K) :
+Lemma storeA_map_eq {K : Type} `{Countable K} (s1 s2 : gmap K V) :
   (∀ x, s1 !! x = s2 !! x) →
   s1 = s2.
 Proof.
@@ -69,7 +59,7 @@ Proof.
 Qed.
 
 Lemma storeA_agree_on_mono {K : Type} `{Countable K}
-    D E (s1 s2 : StoreA K) :
+    D E (s1 s2 : gmap K V) :
   D ⊆ E ->
   storeA_agree_on E s1 s2 ->
   storeA_agree_on D s1 s2.
@@ -78,14 +68,14 @@ Proof.
 Qed.
 
 Lemma storeA_agree_on_refl {K : Type} `{Countable K}
-    D (s : StoreA K) :
+    D (s : gmap K V) :
   storeA_agree_on D s s.
 Proof.
   intros x Hx. reflexivity.
 Qed.
 
 Lemma storeA_agree_on_sym {K : Type} `{Countable K}
-    D (s1 s2 : StoreA K) :
+    D (s1 s2 : gmap K V) :
   storeA_agree_on D s1 s2 ->
   storeA_agree_on D s2 s1.
 Proof.
@@ -93,7 +83,7 @@ Proof.
 Qed.
 
 Lemma storeA_agree_on_union {K : Type} `{Countable K}
-    D1 D2 (s1 s2 : StoreA K) :
+    D1 D2 (s1 s2 : gmap K V) :
   storeA_agree_on D1 s1 s2 ->
   storeA_agree_on D2 s1 s2 ->
   storeA_agree_on (D1 ∪ D2) s1 s2.
@@ -103,7 +93,7 @@ Proof.
 Qed.
 
 Lemma storeA_agree_on_insert_same {K : Type} `{Countable K}
-    D (s1 s2 : StoreA K) x v :
+    D (s1 s2 : gmap K V) x v :
   storeA_agree_on (D ∖ {[x]}) s1 s2 ->
   storeA_agree_on D (<[x := v]> s1) (<[x := v]> s2).
 Proof.
@@ -119,7 +109,7 @@ Proof.
 Qed.
 
 Lemma storeA_agree_on_insert_same_keep {K : Type} `{Countable K}
-    D (s1 s2 : StoreA K) x v :
+    D (s1 s2 : gmap K V) x v :
   storeA_agree_on D s1 s2 ->
   storeA_agree_on (D ∪ {[x]}) (<[x := v]> s1) (<[x := v]> s2).
 Proof.
@@ -141,7 +131,7 @@ Proof.
 Qed.
 
 Lemma storeA_bind_dom {K : Type} `{Countable K}
-    (s1 s2 s : StoreA K) :
+    (s1 s2 s : gmap K V) :
   storeA_bind s1 s2 s →
   dom s = dom s1 ∪ dom s2.
 Proof.
@@ -156,6 +146,11 @@ End AbstractStoreCore.
 Arguments storeAO_store {_ _ _ _ _} _.
 Arguments storeAO_dom {_ _ _ _ _} _.
 
+Notation "'storeA_map_key' f s" := (kmap (M2:=gmap _) f s)
+  (at level 10, f at next level, s at next level, only parsing).
+Notation "'storeA_rekey' f s" := (kmap (M2:=gmap _) f s)
+  (at level 10, f at next level, s at next level, only parsing).
+
 (** ** Generic stores: key actions *)
 
 Section AbstractStoreCore.
@@ -163,11 +158,11 @@ Section AbstractStoreCore.
 Context {V : Type} `{ValueSig V}.
 
 Lemma storeA_rekey_lookup {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) (s : StoreA K) (z : K) :
+    (f : K → K) (Hf : Inj (=) (=) f) (s : gmap K V) (z : K) :
   ((storeA_rekey f s : gmap K V) !! f z) =
   ((s : gmap K V) !! z).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (kmap (M2:=gmap K) f s !! f z = s !! z).
   rewrite (lookup_kmap (M1:=gmap K) (M2:=gmap K)
     (Inj0:=Hf) f s z).
@@ -175,10 +170,10 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_dom {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) (s : StoreA K) :
+    (f : K → K) (Hf : Inj (=) (=) f) (s : gmap K V) :
   dom (storeA_rekey f s : gmap K V) = set_map f (dom (s : gmap K V)).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (dom (kmap (M2:=gmap K) f s) =
     set_map f (dom (s : gmap K V))).
   rewrite (dom_kmap_L (M:=gmap K) (M2:=gmap K)
@@ -187,7 +182,7 @@ Proof.
 Qed.
 
 Definition storeA_rekey_inj_on_dom {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) : Prop :=
+    (f : K → K) (s : gmap K V) : Prop :=
   forall x y,
     x ∈ dom (s : gmap K V) ->
     y ∈ dom (s : gmap K V) ->
@@ -195,7 +190,7 @@ Definition storeA_rekey_inj_on_dom {K : Type} `{Countable K}
     x = y.
 
 Lemma storeA_rekey_mapped_fst_nodup {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) :
+    (f : K → K) (s : gmap K V) :
   storeA_rekey_inj_on_dom f s ->
   NoDup ((prod_map f id <$> map_to_list (s : gmap K V)).*1).
 Proof.
@@ -228,13 +223,13 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_lookup_Some_inj_on {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) (z : K) (v : V) :
+    (f : K → K) (s : gmap K V) (z : K) (v : V) :
   storeA_rekey_inj_on_dom f s ->
   ((storeA_rekey f s : gmap K V) !! z = Some v <->
     exists x, z = f x /\ (s : gmap K V) !! x = Some v).
 Proof.
   intros Hinj.
-  unfold storeA_rekey, storeA_map_key, kmap.
+  unfold kmap.
   rewrite <- elem_of_list_to_map.
   - rewrite list_elem_of_fmap.
     split.
@@ -248,7 +243,7 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_lookup_None_inj_on {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) (z : K) :
+    (f : K → K) (s : gmap K V) (z : K) :
   storeA_rekey_inj_on_dom f s ->
   ((storeA_rekey f s : gmap K V) !! z = None <->
     forall x, z = f x -> (s : gmap K V) !! x = None).
@@ -270,7 +265,7 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_dom_inj_on {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) :
+    (f : K → K) (s : gmap K V) :
   storeA_rekey_inj_on_dom f s ->
   dom (storeA_rekey f s : gmap K V) = set_map f (dom (s : gmap K V)).
 Proof.
@@ -291,7 +286,7 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_lookup_none_inj_on {K : Type} `{Countable K}
-    (f : K → K) (s : StoreA K) (x : K) :
+    (f : K → K) (s : gmap K V) (x : K) :
   (s : gmap K V) !! x = None ->
   (forall y,
       y ∈ dom (s : gmap K V) ->
@@ -301,7 +296,7 @@ Proof.
   intros Hnone Hfresh.
   apply not_elem_of_dom. intros Hin.
   apply elem_of_dom in Hin as [v Hv].
-  unfold storeA_rekey, storeA_map_key, kmap in Hv.
+  unfold kmap in Hv.
   apply elem_of_list_to_map_2 in Hv.
   apply list_elem_of_fmap in Hv as [[y vy] [Hy Hlook]].
   simpl in Hy. injection Hy as Hkey Hval. subst vy.
@@ -310,7 +305,7 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_insert_inj_on {K : Type} `{Countable K}
-    (f : K → K) z v (s : StoreA K) :
+    (f : K → K) z v (s : gmap K V) :
   (s : gmap K V) !! z = None ->
   storeA_rekey_inj_on_dom f (<[z := v]> (s : gmap K V)) ->
   storeA_rekey f (<[z := v]> s) =
@@ -367,12 +362,12 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_ext_on_dom {K : Type} `{Countable K}
-    (f g : K → K) (s : StoreA K) :
+    (f g : K → K) (s : gmap K V) :
   (forall x, x ∈ dom (s : gmap K V) -> f x = g x) ->
   storeA_rekey f s = storeA_rekey g s.
 Proof.
   intros Hext.
-  unfold storeA_rekey, storeA_map_key, kmap.
+  unfold kmap.
   f_equal.
   set (l := map_to_list (s : gmap K V)).
   assert (Hdom : forall x v, (x, v) ∈ l -> x ∈ dom (s : gmap K V)).
@@ -391,7 +386,7 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_compose_inj_on {K : Type} `{Countable K}
-    (f g : K → K) (s : StoreA K) :
+    (f g : K → K) (s : gmap K V) :
   storeA_rekey_inj_on_dom g s ->
   storeA_rekey_inj_on_dom f (storeA_rekey g s) ->
   storeA_rekey f (storeA_rekey g s) =
@@ -441,9 +436,9 @@ Qed.
 
 Lemma storeA_rekey_compose {K : Type} `{Countable K}
     (f g : K → K) (Hf : Inj (=) (=) f) (Hg : Inj (=) (=) g)
-    (s : StoreA K) :
-  storeA_rekey (V:=V) (K:=K) f (storeA_rekey (V:=V) (K:=K) g s) =
-  storeA_rekey (V:=V) (K:=K) (fun x => f (g x)) s.
+    (s : gmap K V) :
+  storeA_rekey f (storeA_rekey g s) =
+  storeA_rekey (fun x => f (g x)) s.
 Proof.
   apply storeA_rekey_compose_inj_on.
   - intros a b _ _ Hab. apply Hg. exact Hab.
@@ -464,20 +459,20 @@ Defined.
 
 Lemma storeA_rekey_empty {K : Type} `{Countable K}
     (f : K → K) :
-  storeA_rekey f (∅ : StoreA K) = (∅ : gmap K V).
+  storeA_rekey f (∅ : gmap K V) = (∅ : gmap K V).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (kmap (M2:=gmap K) f (∅ : gmap K V) =
     (∅ : gmap K V)).
   apply kmap_empty.
 Qed.
 
 Lemma storeA_rekey_insert {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) z v (s : StoreA K) :
+    (f : K → K) (Hf : Inj (=) (=) f) z v (s : gmap K V) :
   storeA_rekey f (<[z := v]> s) =
   <[f z := v]> (storeA_rekey f s : gmap K V).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (kmap f (<[z := v]> (s : gmap K V)) =
     (<[f z := v]> (kmap f (s : gmap K V)) : gmap K V)).
   refine (@kmap_insert K (gmap K) _ _ _ _ _ _ _ _ _
@@ -486,11 +481,11 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_delete {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) z (s : StoreA K) :
+    (f : K → K) (Hf : Inj (=) (=) f) z (s : gmap K V) :
   storeA_rekey f (delete z s) =
   delete (f z) (storeA_rekey f s : gmap K V).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (kmap (M2:=gmap K) f (delete z (s : gmap K V)) =
     delete (f z) (kmap (M2:=gmap K) f (s : gmap K V))).
   refine (@kmap_delete K (gmap K) _ _ _ _ _ _ _ _ _
@@ -499,12 +494,12 @@ Proof.
 Qed.
 
 Lemma storeA_rekey_union {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) (s1 s2 : StoreA K) :
+    (f : K → K) (Hf : Inj (=) (=) f) (s1 s2 : gmap K V) :
   storeA_rekey f (@union (gmap K V) _ s1 s2) =
   @union (gmap K V) _
     (storeA_rekey f s1 : gmap K V) (storeA_rekey f s2 : gmap K V).
 Proof.
-  unfold storeA_rekey, storeA_map_key.
+  unfold kmap.
   change (kmap f (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
     @union (gmap K V) _
       (kmap f (s1 : gmap K V))
@@ -515,11 +510,11 @@ Proof.
 Qed.
 
 Lemma storeA_map_key_lookup {K K' : Type} `{Countable K} `{Countable K'}
-    (f : K → K') (Hf : Inj (=) (=) f) (s : StoreA K) (z : K) :
+    (f : K → K') (Hf : Inj (=) (=) f) (s : gmap K V) (z : K) :
   ((storeA_map_key f s : gmap K' V) !! f z) =
   ((s : gmap K V) !! z).
 Proof.
-  unfold storeA_map_key.
+  unfold kmap.
   change (kmap (M1:=gmap K) (M2:=gmap K') f s !! f z = s !! z).
   rewrite (lookup_kmap (M1:=gmap K) (M2:=gmap K')
     (Inj0:=Hf) f s z).
@@ -527,10 +522,10 @@ Proof.
 Qed.
 
 Lemma storeA_map_key_dom {K K' : Type} `{Countable K} `{Countable K'}
-    (f : K → K') (Hf : Inj (=) (=) f) (s : StoreA K) :
+    (f : K → K') (Hf : Inj (=) (=) f) (s : gmap K V) :
   dom (storeA_map_key f s : gmap K' V) = set_map f (dom (s : gmap K V)).
 Proof.
-  unfold storeA_map_key.
+  unfold kmap.
   change (dom (kmap (M1:=gmap K) (M2:=gmap K') f s) =
     set_map f (dom (s : gmap K V))).
   rewrite (dom_kmap_L (M:=gmap K) (M2:=gmap K')
@@ -539,11 +534,11 @@ Proof.
 Qed.
 
 Lemma storeA_map_key_insert {K K' : Type} `{Countable K} `{Countable K'}
-    (f : K → K') (Hf : Inj (=) (=) f) z v (s : StoreA K) :
+    (f : K → K') (Hf : Inj (=) (=) f) z v (s : gmap K V) :
   storeA_map_key f (<[z := v]> s) =
   <[f z := v]> (storeA_map_key f s : gmap K' V).
 Proof.
-  unfold storeA_map_key.
+  unfold kmap.
   change (kmap f (<[z := v]> (s : gmap K V)) =
     (<[f z := v]> (kmap f (s : gmap K V)) : gmap K' V)).
   refine (@kmap_insert K (gmap K) _ _ _ _ _ _ _ _ _
@@ -586,7 +581,7 @@ Section AbstractStoreCore.
 Context {V : Type} `{ValueSig V}.
 
 Lemma storeA_swap_lookup {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) (z : K) :
+    (x y : K) (s : gmap K V) (z : K) :
   ((@storeA_swap V K _ _ x y s : gmap K V) !! swap x y z) =
   ((s : gmap K V) !! z).
 Proof.
@@ -599,7 +594,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_lookup_inv {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) (z : K) :
+    (x y : K) (s : gmap K V) (z : K) :
   ((@storeA_swap V K _ _ x y s : gmap K V) !! z) =
   ((s : gmap K V) !! swap x y z).
 Proof.
@@ -608,7 +603,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_dom {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) :
+    (x y : K) (s : gmap K V) :
   dom (@storeA_swap V K _ _ x y s : gmap K V) =
   set_swap x y (dom (s : gmap K V)).
 Proof.
@@ -622,7 +617,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_delete {K : Type} `{Countable K}
-    (x y z : K) (s : StoreA K) :
+    (x y z : K) (s : gmap K V) :
    @storeA_swap V K _ _ x y (delete z s) =
   delete (swap x y z) (@storeA_swap V K _ _ x y s : gmap K V).
 Proof.
@@ -637,7 +632,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_insert {K : Type} `{Countable K}
-    (x y z : K) (v : V) (s : StoreA K) :
+    (x y z : K) (v : V) (s : gmap K V) :
    @storeA_swap V K _ _ x y (<[z := v]> s) =
   <[swap x y z := v]> (@storeA_swap V K _ _ x y s : gmap K V).
 Proof.
@@ -652,7 +647,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_union {K : Type} `{Countable K}
-    (x y : K) (s1 s2 : StoreA K) :
+    (x y : K) (s1 s2 : gmap K V) :
    @storeA_swap V K _ _ x y (@union (gmap K V) _ s1 s2) =
   @union (gmap K V) _ (@storeA_swap V K _ _ x y s1 : gmap K V) (@storeA_swap V K _ _ x y s2 : gmap K V).
 Proof.
@@ -668,8 +663,8 @@ Proof.
 Qed.
 
 Lemma storeA_swap_involutive {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) :
-   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y s : StoreA K) = s.
+    (x y : K) (s : gmap K V) :
+   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y s : gmap K V) = s.
 Proof.
   apply storeA_map_eq. intros z.
   change (((@storeA_swap V K _ _ x y
@@ -680,7 +675,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_sym {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) :
+    (x y : K) (s : gmap K V) :
    @storeA_swap V K _ _ x y s =  @storeA_swap V K _ _ y x s.
 Proof.
   apply storeA_map_eq. intros z.
@@ -691,7 +686,7 @@ Proof.
 Qed.
 
 Lemma storeA_swap_fresh {K : Type} `{Countable K}
-    (x y : K) (s : StoreA K) :
+    (x y : K) (s : gmap K V) :
   x ∉ dom (s : gmap K V) ->
   y ∉ dom (s : gmap K V) ->
    @storeA_swap V K _ _ x y s = s.
@@ -722,10 +717,10 @@ Proof.
 Qed.
 
 Lemma storeA_swap_conjugate {K : Type} `{Countable K}
-    (a b x y : K) (s : StoreA K) :
-   @storeA_swap V K _ _ a b (@storeA_swap V K _ _ x y s : StoreA K) =
+    (a b x y : K) (s : gmap K V) :
+   @storeA_swap V K _ _ a b (@storeA_swap V K _ _ x y s : gmap K V) =
    @storeA_swap V K _ _ (swap a b x) (swap a b y)
-    (@storeA_swap V K _ _ a b s : StoreA K).
+    (@storeA_swap V K _ _ a b s : gmap K V).
 Proof.
   apply storeA_map_eq. intros z.
   change (((@storeA_swap V K _ _ a b
@@ -737,13 +732,13 @@ Proof.
 Qed.
 
 Lemma storeA_swap_commute_fresh {K : Type} `{Countable K}
-    (a b c d : K) (s : StoreA K) :
+    (a b c d : K) (s : gmap K V) :
   c <> a ->
   c <> b ->
   d <> a ->
   d <> b ->
-  @storeA_swap V K _ _ a b (@storeA_swap V K _ _ c d s : StoreA K) =
-  @storeA_swap V K _ _ c d (@storeA_swap V K _ _ a b s : StoreA K).
+  @storeA_swap V K _ _ a b (@storeA_swap V K _ _ c d s : gmap K V) =
+  @storeA_swap V K _ _ c d (@storeA_swap V K _ _ a b s : gmap K V).
 Proof.
   intros Hca Hcb Hda Hdb.
   rewrite storeA_swap_conjugate.
@@ -753,10 +748,10 @@ Proof.
 Qed.
 
 Lemma storeA_swap_conjugate_inv {K : Type} `{Countable K}
-    (a b x y : K) (s : StoreA K) :
-   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ a b s : StoreA K) =
+    (a b x y : K) (s : gmap K V) :
+   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ a b s : gmap K V) =
    @storeA_swap V K _ _ a b
-    (@storeA_swap V K _ _ (swap a b x) (swap a b y) s : StoreA K).
+    (@storeA_swap V K _ _ (swap a b x) (swap a b y) s : gmap K V).
 Proof.
   apply storeA_map_eq. intros z.
   change (((@storeA_swap V K _ _ x y
@@ -775,7 +770,7 @@ Section AbstractStoreCore.
 Context {V : Type} `{ValueSig V}.
 
 Lemma storeA_shift_lookup {K : Type} `{Countable K} `{!ShiftKey K}
-    (k : nat) (s : StoreA K) (z : K) :
+    (k : nat) (s : gmap K V) (z : K) :
   ((storeA_shift k s : gmap K V) !! key_shift k z) =
   ((s : gmap K V) !! z).
 Proof.
@@ -784,7 +779,7 @@ Proof.
 Qed.
 
 Lemma storeA_shift_dom {K : Type} `{Countable K} `{!ShiftKey K}
-    (k : nat) (s : StoreA K) :
+    (k : nat) (s : gmap K V) :
   dom (storeA_shift k s : gmap K V) =
   set_map (key_shift k) (dom (s : gmap K V)).
 Proof.
@@ -793,14 +788,14 @@ Proof.
 Qed.
 
 Lemma storeA_shift_empty {K : Type} `{Countable K} `{!ShiftKey K} k :
-  storeA_shift k (∅ : StoreA K) = (∅ : gmap K V).
+  storeA_shift k (∅ : gmap K V) = (∅ : gmap K V).
 Proof.
   unfold storeA_shift.
   apply storeA_rekey_empty.
 Qed.
 
 Lemma storeA_shift_insert {K : Type} `{Countable K} `{!ShiftKey K}
-    k z v (s : StoreA K) :
+    k z v (s : gmap K V) :
   storeA_shift k (<[z := v]> s) =
   <[key_shift k z := v]> (storeA_shift k s : gmap K V).
 Proof.
@@ -809,7 +804,7 @@ Proof.
 Qed.
 
 Lemma storeA_shift_union {K : Type} `{Countable K} `{!ShiftKey K}
-    k (s1 s2 : StoreA K) :
+    k (s1 s2 : gmap K V) :
   storeA_shift k (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
   (storeA_shift k s1 : gmap K V) ∪ (storeA_shift k s2 : gmap K V).
 Proof.

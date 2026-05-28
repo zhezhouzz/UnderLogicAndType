@@ -553,7 +553,7 @@ Proof.
       * discriminate.
     + symmetry. apply lvar_store_closed_lookup_bound_none. exact Hclosed.
   - unfold lvar_store_shift, lvar_store_shift_from.
-    unfold storeA_rekey, storeA_map_key.
+    unfold kmap.
     change ((kmap (M2:=gmap logic_var) (logic_var_shift_from 0) s) !!
       LVFree x = (s : gmap logic_var V) !! LVFree x).
     change (LVFree x) with (logic_var_shift_from 0 (LVFree x)) at 1.

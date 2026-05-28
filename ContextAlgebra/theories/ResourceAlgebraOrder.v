@@ -12,7 +12,7 @@ Section ResourceAlgebraA.
 Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
-Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
+Local Notation StoreAT := (gmap K V) (only parsing).
 Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
@@ -236,8 +236,8 @@ Proof.
       change (@storeA_compat V K _ _
         (@storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y τ0)) σ2) in Hcompat.
       rewrite storeA_swap_involutive in Hcompat.
-      replace (@storeA_rekey V K _ _ (swap x y)
-        (@storeA_rekey V K _ _ (swap x y) τ0)) with (τ0 : StoreAT).
+      replace (storeA_map_key (swap x y)
+        (storeA_map_key (swap x y) τ0)) with (τ0 : StoreAT).
       2:{
         symmetry. exact (storeA_swap_involutive x y τ0).
       }

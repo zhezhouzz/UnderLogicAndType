@@ -277,7 +277,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := s]> Γ)
             : gmap atom ty) =
           <[z := s]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
@@ -296,7 +296,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := sx]> Γ)
             : gmap atom ty) =
           <[z := sx]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
@@ -315,7 +315,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := T1]> Γ)
             : gmap atom ty) =
           <[z := T1]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
@@ -344,7 +344,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := s]> Γ)
             : gmap atom ty) =
           <[z := s]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
@@ -363,7 +363,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := sx]> Γ)
             : gmap atom ty) =
           <[z := sx]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
@@ -382,7 +382,7 @@ Proof.
       * change ((@storeA_swap ty atom _ _ x y (<[swap x y z := T1]> Γ)
             : gmap atom ty) =
           <[z := T1]> (@storeA_swap ty atom _ _ x y Γ : gmap atom ty)).
-        unfold storeA_swap, storeA_rekey, storeA_map_key.
+        unfold storeA_swap.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.

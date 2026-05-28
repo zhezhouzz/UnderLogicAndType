@@ -59,10 +59,10 @@ Qed.
     free logic variables.  The implementation lives at the concrete interface
     because it relates the two public key instances [atom] and [logic_var]. *)
 Definition lstore_lift_free
-    (σ : @StoreA V atom _ _) : @StoreA V logic_var _ _ :=
+    (σ : gmap atom V) : gmap logic_var V :=
   kmap LVFree σ.
 
-Lemma dom_lstore_lift_free (σ : @StoreA V atom _ _) :
+Lemma dom_lstore_lift_free (σ : gmap atom V) :
   dom (lstore_lift_free σ : gmap logic_var V) = lvars_of_atoms (dom σ).
 Proof.
   unfold lstore_lift_free, lvars_of_atoms.
@@ -75,7 +75,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma lstore_lift_free_lookup_free (σ : @StoreA V atom _ _) x :
+Lemma lstore_lift_free_lookup_free (σ : gmap atom V) x :
   (lstore_lift_free σ : gmap logic_var V) !! LVFree x = (σ : gmap atom V) !! x.
 Proof.
   unfold lstore_lift_free.
@@ -88,7 +88,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma lstore_lift_free_lookup_bound (σ : @StoreA V atom _ _) k :
+Lemma lstore_lift_free_lookup_bound (σ : gmap atom V) k :
   (lstore_lift_free σ : gmap logic_var V) !! LVBound k = None.
 Proof.
   apply not_elem_of_dom.
@@ -104,7 +104,7 @@ Proof.
   refine (exist _ {|
     worldA_dom := lvars_of_atoms (world_dom (w : World));
     worldA_stores := fun τ =>
-      ∃ σ : @StoreA V atom _ _, (w : World) σ ∧ τ = lstore_lift_free σ
+      ∃ σ : gmap atom V, (w : World) σ ∧ τ = lstore_lift_free σ
   |} _).
   destruct (worldA_wf w) as [Hne Hdom].
   split.

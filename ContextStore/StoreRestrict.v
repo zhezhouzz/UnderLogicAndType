@@ -8,7 +8,7 @@ Section AbstractStoreRestrict.
 Context {V : Type} `{ValueSig V}.
 
 Lemma storeA_restrict_dom {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) :
+    (s : gmap K V) (X : gset K) :
   dom (@storeA_restrict V K _ _ s X) = dom s ∩ X.
 Proof.
   unfold storeA_restrict. apply map_restrict_dom.
@@ -24,7 +24,7 @@ Proof.
 Defined.
 
 Lemma storeA_restrict_lookup {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) (z : K) :
+    (s : gmap K V) (X : gset K) (z : K) :
   ((storeA_restrict s X : gmap K V) !! z) =
   if decide (z ∈ X) then ((s : gmap K V) !! z) else None.
 Proof.
@@ -37,7 +37,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_lookup_some_2 {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) (x : K) (y : V) :
+    (s : gmap K V) (X : gset K) (x : K) (y : V) :
   ((s : gmap K V) !! x) = Some y →
   x ∈ X →
   ((storeA_restrict s X : gmap K V) !! x) = Some y.
@@ -47,7 +47,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_lookup_some {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) (x : K) (y : V) :
+    (s : gmap K V) (X : gset K) (x : K) (y : V) :
   ((storeA_restrict s X : gmap K V) !! x) = Some y →
   x ∈ X ∧ ((s : gmap K V) !! x) = Some y.
 Proof.
@@ -56,7 +56,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_lookup_none_l {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) (z : K) :
+    (s : gmap K V) (X : gset K) (z : K) :
   ((s : gmap K V) !! z) = None →
   ((storeA_restrict s X : gmap K V) !! z) = None.
 Proof.
@@ -65,7 +65,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_lookup_none_r {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) (z : K) :
+    (s : gmap K V) (X : gset K) (z : K) :
   z ∉ X →
   ((storeA_restrict s X : gmap K V) !! z) = None.
 Proof.
@@ -74,7 +74,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_dom_subset {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) :
+    (s : gmap K V) (X : gset K) :
   dom (storeA_restrict s X : gmap K V) ⊆ X.
 Proof.
   change (dom (@storeA_restrict V K _ _ s X) ⊆ X).
@@ -83,7 +83,7 @@ Qed.
 
 
 Lemma storeA_restrict_rekey {K : Type} `{Countable K}
-    (f : K → K) (Hf : Inj (=) (=) f) (s : StoreA K) (X : gset K) :
+    (f : K → K) (Hf : Inj (=) (=) f) (s : gmap K V) (X : gset K) :
   (storeA_restrict (storeA_rekey f s) (set_map f X) : gmap K V) =
   storeA_rekey f (storeA_restrict s X).
 Proof.
@@ -108,13 +108,13 @@ Qed.
 
 
 Lemma storeA_restrict_empty {K : Type} `{Countable K} X :
-  storeA_restrict (∅ : StoreA K) X = (∅ : gmap K V).
+  storeA_restrict (∅ : gmap K V) X = (∅ : gmap K V).
 Proof.
   unfold storeA_restrict. apply map_restrict_idemp. better_set_solver.
 Qed.
 
 
-Lemma storeA_restrict_empty_set {K : Type} `{Countable K} (s : StoreA K) :
+Lemma storeA_restrict_empty_set {K : Type} `{Countable K} (s : gmap K V) :
   storeA_restrict s ∅ = (∅ : gmap K V).
 Proof.
   apply storeA_map_eq. intros z.
@@ -127,7 +127,7 @@ Qed.
 
 
 Lemma storeA_restrict_idemp {K : Type} `{Countable K}
-    (s : StoreA K) X :
+    (s : gmap K V) X :
   dom (s : gmap K V) ⊆ X → storeA_restrict s X = (s : gmap K V).
 Proof.
   unfold storeA_restrict. apply map_restrict_idemp.
@@ -135,7 +135,7 @@ Qed.
 
 
 Lemma storeA_restrict_restrict {K : Type} `{Countable K}
-    (s : StoreA K) X Y :
+    (s : gmap K V) X Y :
   storeA_restrict (storeA_restrict s X) Y = (storeA_restrict s (X ∩ Y) : gmap K V).
 Proof.
   unfold storeA_restrict. apply map_restrict_restrict.
@@ -143,7 +143,7 @@ Qed.
 
 
 Lemma storeA_restrict_twice_same {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) :
+    (s : gmap K V) (X : gset K) :
   storeA_restrict (storeA_restrict s X) X = (storeA_restrict s X : gmap K V).
 Proof.
   rewrite storeA_restrict_restrict.
@@ -153,7 +153,7 @@ Qed.
 
 
 Lemma storeA_restrict_twice_subset {K : Type} `{Countable K}
-    (s : StoreA K) (X Y : gset K) :
+    (s : gmap K V) (X Y : gset K) :
   Y ⊆ X →
   storeA_restrict (storeA_restrict s X) Y = (storeA_restrict s Y : gmap K V).
 Proof.
@@ -165,7 +165,7 @@ Qed.
 
 
 Lemma storeA_restrict_comm {K : Type} `{Countable K}
-    (s : StoreA K) (X Y : gset K) :
+    (s : gmap K V) (X Y : gset K) :
   storeA_restrict (storeA_restrict s X) Y =
   (storeA_restrict (storeA_restrict s Y) X : gmap K V).
 Proof.
@@ -176,7 +176,7 @@ Qed.
 
 
 Lemma storeA_restrict_idemp_eq {K : Type} `{Countable K}
-    (s : StoreA K) (X : gset K) :
+    (s : gmap K V) (X : gset K) :
   dom (s : gmap K V) = X →
   storeA_restrict s X = (s : gmap K V).
 Proof.
@@ -185,7 +185,7 @@ Qed.
 
 
 Lemma storeA_restrict_insert_in {K : Type} `{Countable K}
-    (s : StoreA K) X x v :
+    (s : gmap K V) X x v :
   x ∈ X →
   storeA_restrict (<[x := v]> s) X =
   <[x := v]> (storeA_restrict s X : gmap K V).
@@ -195,7 +195,7 @@ Qed.
 
 
 Lemma storeA_restrict_insert_notin {K : Type} `{Countable K}
-    (s : StoreA K) X x v :
+    (s : gmap K V) X x v :
   x ∉ X →
   storeA_restrict (<[x := v]> s) X =
   (storeA_restrict s X : gmap K V).
@@ -204,7 +204,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_eq_mono {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X Y : gset K) :
+    (s1 s2 : gmap K V) (X Y : gset K) :
   X ⊆ Y →
   (storeA_restrict s1 Y : gmap K V) = storeA_restrict s2 Y →
   (storeA_restrict s1 X : gmap K V) = storeA_restrict s2 X.
@@ -221,7 +221,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_swap_fresh {K : Type} `{Countable K} 
-    (x y : K) (s : StoreA K) (X : gset K) :
+    (x y : K) (s : gmap K V) (X : gset K) :
   x ∉ X →
   y ∉ X →
   (storeA_restrict (storeA_swap x y s) X : gmap K V) =
@@ -248,7 +248,7 @@ Qed.
 
 
 Lemma storeA_restrict_empty_union_elements {K : Type} `{Countable K}
-    (σ : StoreA K) (X : gset K) :
+    (σ : gmap K V) (X : gset K) :
   (storeA_restrict
     (@union (gmap K V) _ (∅ : gmap K V)
       (storeA_restrict σ (list_to_set (elements X) : gset K)))
@@ -268,7 +268,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_lookup_transport {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (X : gset K) (x : K) (v : V) :
   x ∈ X →
   (storeA_restrict s1 X : gmap K V) = storeA_restrict s2 X →
   (s1 : gmap K V) !! x = Some v →
@@ -287,7 +287,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_swap {K : Type} `{Countable K} 
-    (x y : K) (s : StoreA K) (X : gset K) :
+    (x y : K) (s : gmap K V) (X : gset K) :
   (storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) =
   storeA_swap x y (storeA_restrict s X).
 Proof.
@@ -307,7 +307,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_shift {K : Type} `{Countable K} `{!ShiftKey K}
-    (k : nat) (s : StoreA K) (X : gset K) :
+    (k : nat) (s : gmap K V) (X : gset K) :
   (storeA_restrict (storeA_shift k s) (set_map (key_shift k) X) : gmap K V) =
   storeA_shift k (storeA_restrict s X).
 Proof.
@@ -348,7 +348,7 @@ Section AbstractStoreRestrict.
 Context {V : Type} `{ValueSig V}.
 
 Lemma storeA_restrict_empty_union_elements_subset {K : Type} `{Countable K}
-    (σ τ : StoreA K) (X F : gset K) :
+    (σ τ : gmap K V) (X F : gset K) :
   F ⊆ X →
   (storeA_restrict τ X : gmap K V) = σ →
   (storeA_restrict
@@ -368,7 +368,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_induce_disjoint {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   (s1 : gmap K V) ##ₘ
     (storeA_restrict s2 (dom (s2 : gmap K V) ∖ dom (s1 : gmap K V)) : gmap K V) ∧
   @union (gmap K V) _ s1 s2 =
@@ -399,7 +399,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   storeA_compat s1 s2 →
   (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
   @union (gmap K V) _ (storeA_restrict s1 X) (storeA_restrict s2 X).
@@ -437,7 +437,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_cover {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X1 X2 : gset K) :
+    (s1 s2 : gmap K V) (X1 X2 : gset K) :
   storeA_compat s1 s2 →
   X1 ⊆ dom (s1 : gmap K V) →
   X2 ⊆ dom (s2 : gmap K V) →
@@ -480,7 +480,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_insert_singleton {K : Type} `{Countable K}
-    (σ : StoreA K) (x : K) (v : V) :
+    (σ : gmap K V) (x : K) (v : V) :
   (storeA_restrict (<[x := v]> σ) ({[x]} : gset K) : gmap K V) =
   ({[x := v]} : gmap K V).
 Proof.
@@ -497,7 +497,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_singleton_lookup {K : Type} `{Countable K}
-    (σ : StoreA K) (x : K) (v : V) :
+    (σ : gmap K V) (x : K) (v : V) :
   (σ : gmap K V) !! x = Some v →
   (storeA_restrict σ ({[x]} : gset K) : gmap K V) =
   ({[x := v]} : gmap K V).
@@ -516,7 +516,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_insert_singleton_ne {K : Type} `{Countable K}
-    (σ : StoreA K) (x y : K) (v : V) :
+    (σ : gmap K V) (x y : K) (v : V) :
   x ≠ y →
   (storeA_restrict (<[x := v]> σ) ({[y]} : gset K) : gmap K V) =
   storeA_restrict σ ({[y]} : gset K).
@@ -527,7 +527,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_insert_fresh_union {K : Type} `{Countable K}
-    (σ : StoreA K) (X : gset K) (x : K) (v : V) :
+    (σ : gmap K V) (X : gset K) (x : K) (v : V) :
   (σ : gmap K V) !! x = None →
   x ∉ X →
   (storeA_restrict (<[x := v]> σ) (X ∪ {[x]}) : gmap K V) =
@@ -557,10 +557,10 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_insert_fresh_union_lookup_none {K : Type} `{Countable K}
-    (σ : StoreA K) (X : gset K) (x : K) (v : V) :
+    (σ : gmap K V) (X : gset K) (x : K) (v : V) :
   (σ : gmap K V) !! x = None →
   x ∉ X →
-  (<[x := v]> (storeA_restrict σ X : gmap K V) : StoreA K) !! x = Some v.
+  (<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! x = Some v.
 Proof.
   intros _ _.
   change ((<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! x = Some v).
@@ -568,7 +568,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_singleton_insert {K : Type} `{Countable K}
-    (σ : StoreA K) (X : gset K) (x : K) (v : V) :
+    (σ : gmap K V) (X : gset K) (x : K) (v : V) :
   dom (σ : gmap K V) ⊆ X →
   x ∉ X →
   (storeA_restrict (@union (gmap K V) _ σ ({[x := v]} : gmap K V)) (X ∪ {[x]}) : gmap K V) =
@@ -602,7 +602,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_from_parts {K : Type} `{Countable K}
-    (σ ρ σx : StoreA K) (S : gset K) (x : K) :
+    (σ ρ σx : gmap K V) (S : gset K) (x : K) :
   x ∉ S →
   (storeA_restrict σ S : gmap K V) = ρ →
   (storeA_restrict σ ({[x]} : gset K) : gmap K V) = σx →
@@ -644,7 +644,7 @@ Proof.
 Qed.
 
 Lemma storeA_eq_insert_of_restrict_singleton {K : Type} `{Countable K}
-    (X : gset K) (σx σ : StoreA K) (ν : K) (vx : V) :
+    (X : gset K) (σx σ : gmap K V) (ν : K) (vx : V) :
   dom (σx : gmap K V) = X ∪ {[ν]} →
   ν ∉ X →
   (storeA_restrict σx X : gmap K V) = σ →
@@ -676,7 +676,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_partition {K : Type} `{Countable K}
-    (s : StoreA K) (X Y : gset K) :
+    (s : gmap K V) (X Y : gset K) :
   dom (s : gmap K V) ⊆ X ∪ Y →
   X ∩ Y = ∅ →
   @union (gmap K V) _ (storeA_restrict s X) (storeA_restrict s Y) = s.
@@ -700,7 +700,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_piece_l {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X Y : gset K) :
+    (s1 s2 : gmap K V) (X Y : gset K) :
   storeA_compat s1 s2 →
   dom (s1 : gmap K V) ⊆ X →
   dom (s2 : gmap K V) ⊆ Y →
@@ -713,8 +713,8 @@ Proof.
   - transitivity (Some v1).
     + apply storeA_restrict_lookup_some_2; [|apply elem_of_dom_2 in H1; better_set_solver].
       apply map_lookup_union_Some_raw. left. exact H1.
-    + symmetry. exact H1.
-  - transitivity (@None V); [|symmetry; exact H1].
+    + reflexivity.
+  - transitivity (@None V); [|reflexivity].
     destruct (decide (z ∈ X)) as [HzX|HzX]; [|apply storeA_restrict_lookup_none_r; exact HzX].
     apply storeA_restrict_lookup_none_l.
     apply map_lookup_union_None. split; [exact H1|].
@@ -722,7 +722,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_piece_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X Y : gset K) :
+    (s1 s2 : gmap K V) (X Y : gset K) :
   storeA_compat s1 s2 →
   dom (s1 : gmap K V) ⊆ X →
   dom (s2 : gmap K V) ⊆ Y →
@@ -738,8 +738,8 @@ Proof.
       * assert (v1 = v2) by (eapply Hcompat; eauto). subst.
         apply map_lookup_union_Some_raw. left. exact H1.
       * apply map_lookup_union_Some_raw. right. eauto.
-    + symmetry. exact H2.
-  - transitivity (@None V); [|symmetry; exact H2].
+    + reflexivity.
+  - transitivity (@None V); [|reflexivity].
     destruct (decide (z ∈ Y)) as [HzY|HzY]; [|apply storeA_restrict_lookup_none_r; exact HzY].
     apply storeA_restrict_lookup_none_l.
     apply map_lookup_union_None. split; [|exact H2].
@@ -747,7 +747,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_ignore_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   dom (s2 : gmap K V) ## X →
   (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
   storeA_restrict s1 X.
@@ -773,7 +773,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_ignore_l {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   dom (s1 : gmap K V) ## X →
   (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
   storeA_restrict s2 X.
@@ -796,7 +796,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_absorb_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   storeA_compat s1 s2 →
   X ⊆ dom (s2 : gmap K V) →
   (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
@@ -821,7 +821,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_base_singleton {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (D : gset K) (y : K) :
+    (s1 s2 : gmap K V) (D : gset K) (y : K) :
   D ⊆ dom (s1 : gmap K V) →
   dom (s2 : gmap K V) = D ∪ {[y]} →
   y ∉ dom (s1 : gmap K V) →
@@ -843,7 +843,7 @@ Proof.
     apply map_lookup_union_Some_raw. left. exact Hs1.
   - destruct (decide (i = y)) as [->|Hiy].
     + destruct ((s2 : gmap K V) !! y) as [vy|] eqn:Hs2y.
-      * transitivity (Some vy); [|symmetry; exact Hs2y].
+      * transitivity (Some vy); [|reflexivity].
         apply storeA_restrict_lookup_some_2; last better_set_solver.
         apply map_lookup_union_Some_raw. right. split.
         -- by apply not_elem_of_dom.
@@ -857,7 +857,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_union_base_project {K : Type} `{Countable K}
-    (sbase sfull : StoreA K) (X : gset K) (y : K) :
+    (sbase sfull : gmap K V) (X : gset K) (y : K) :
   X ⊆ dom (sbase : gmap K V) ->
   dom (sfull : gmap K V) = dom (sbase : gmap K V) ∪ {[y]} ->
   y ∉ dom (sbase : gmap K V) ->
@@ -873,7 +873,7 @@ Proof.
   transitivity (storeA_restrict
     (@union (gmap K V) _ sbase
       (storeA_restrict
-        (storeA_restrict sfull (X ∪ {[y]}) : StoreA K)
+        (storeA_restrict sfull (X ∪ {[y]}) : gmap K V)
         ({[y]} : gset K)))
     (X ∪ {[y]})).
   - f_equal. f_equal.
@@ -891,7 +891,7 @@ Proof.
 Qed.
 
 Lemma storeA_restrict_wand_product {K : Type} `{Countable K}
-    (sn sm : StoreA K) (S X Y : gset K) :
+    (sn sm : gmap K V) (S X Y : gset K) :
   storeA_compat (storeA_restrict sn X) sm →
   storeA_compat sn (storeA_restrict sm S) →
   Y ⊆ S →
@@ -944,14 +944,14 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation "s1 ≈A s2" := (@storeA_compat V _ _ _ s1 s2) (at level 70).
 
-Lemma storeA_compat_refl {K : Type} `{Countable K} (s : StoreA K) :
+Lemma storeA_compat_refl {K : Type} `{Countable K} (s : gmap K V) :
   @storeA_compat V K _ _ s s.
 Proof.
   unfold storeA_compat, map_compat. intros x v1 v2 H1 H2. congruence.
 Qed.
 
 
-Lemma storeA_compat_sym {K : Type} `{Countable K} (s1 s2 : StoreA K) :
+Lemma storeA_compat_sym {K : Type} `{Countable K} (s1 s2 : gmap K V) :
   @storeA_compat V K _ _ s1 s2 → @storeA_compat V K _ _ s2 s1.
 Proof.
   unfold storeA_compat, map_compat.
@@ -959,7 +959,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_swap {K : Type} `{Countable K} 
-    (x y : K) (s1 s2 : StoreA K) :
+    (x y : K) (s1 s2 : gmap K V) :
   storeA_swap x y s1 ≈A storeA_swap x y s2 ↔
   s1 ≈A s2.
 Proof.
@@ -975,7 +975,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_union_inv_l {K : Type} `{Countable K}
-    (s1 s2 s3 : StoreA K) :
+    (s1 s2 s3 : gmap K V) :
   @union (gmap K V) _ s1 s2 ≈A s3 →
   s1 ≈A s3.
 Proof.
@@ -988,7 +988,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_union_inv_r {K : Type} `{Countable K}
-    (s1 s2 s3 : StoreA K) :
+    (s1 s2 s3 : gmap K V) :
   s1 ≈A s2 →
   @union (gmap K V) _ s1 s2 ≈A s3 →
   s2 ≈A s3.
@@ -1010,7 +1010,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_union_intro_r {K : Type} `{Countable K}
-    (s1 s2 s3 : StoreA K) :
+    (s1 s2 s3 : gmap K V) :
   s1 ≈A s2 →
   s1 ≈A s3 →
   s1 ≈A @union (gmap K V) _ s2 s3.
@@ -1025,7 +1025,7 @@ Proof.
 Qed.
 
 Lemma storeA_union_comm {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 →
   @union (gmap K V) _ s1 s2 = @union (gmap K V) _ s2 s1.
 Proof.
@@ -1046,7 +1046,7 @@ Proof.
 Qed.
 
 Lemma storeA_union_swap_right {K : Type} `{Countable K}
-    (s1 s2 s3 : StoreA K) :
+    (s1 s2 s3 : gmap K V) :
   s2 ≈A s3 →
   @union (gmap K V) _ (@union (gmap K V) _ s1 s2) s3 =
   @union (gmap K V) _ (@union (gmap K V) _ s1 s3) s2.
@@ -1085,7 +1085,7 @@ Proof.
 Qed.
 
 Lemma storeA_union_absorb_l {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 →
   dom (s2 : gmap K V) ⊆ dom (s1 : gmap K V) →
   @union (gmap K V) _ s1 s2 = s1.
@@ -1096,7 +1096,7 @@ Proof.
     + apply (proj2 (map_lookup_union_Some_raw
         (s1 : gmap K V) (s2 : gmap K V) i v1)).
       left. exact Hs1.
-    + symmetry. exact Hs1.
+    + reflexivity.
   - destruct ((s2 : gmap K V) !! i) as [v2|] eqn:Hs2.
     + exfalso.
       assert (Hin1 : i ∈ dom (s1 : gmap K V)).
@@ -1106,11 +1106,11 @@ Proof.
       * apply (proj2 (map_lookup_union_None
           (s1 : gmap K V) (s2 : gmap K V) i)).
         split; assumption.
-      * symmetry. exact Hs1.
+      * reflexivity.
 Qed.
 
 Lemma storeA_union_absorb_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 →
   dom (s1 : gmap K V) ⊆ dom (s2 : gmap K V) →
   @union (gmap K V) _ s1 s2 = s2.
@@ -1123,7 +1123,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_insert_l_fresh {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (x : K) (v : V) :
   s1 ≈A s2 →
   x ∉ dom (s2 : gmap K V) →
   <[x := v]> (s1 : gmap K V) ≈A s2.
@@ -1138,7 +1138,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_insert_r_fresh {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (x : K) (v : V) :
   s1 ≈A s2 →
   x ∉ dom (s1 : gmap K V) →
   s1 ≈A <[x := v]> (s2 : gmap K V).
@@ -1151,7 +1151,7 @@ Proof.
 Qed.
 
 Lemma storeA_insert_union_l {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (x : K) (v : V) :
   @union (gmap K V) _ (<[x := v]> (s1 : gmap K V)) s2 =
   <[x := v]> (@union (gmap K V) _ s1 s2).
 Proof.
@@ -1162,7 +1162,7 @@ Proof.
 Qed.
 
 Lemma storeA_insert_union_l_fresh {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (x : K) (v : V) :
   x ∉ dom (s2 : gmap K V) →
   @union (gmap K V) _ (<[x := v]> (s1 : gmap K V)) s2 =
   <[x := v]> (@union (gmap K V) _ s1 s2).
@@ -1171,7 +1171,7 @@ Proof.
 Qed.
 
 Lemma storeA_insert_union_r_fresh {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (x : K) (v : V) :
+    (s1 s2 : gmap K V) (x : K) (v : V) :
   x ∉ dom (s1 : gmap K V) →
   @union (gmap K V) _ s1 (<[x := v]> (s2 : gmap K V)) =
   <[x := v]> (@union (gmap K V) _ s1 s2).
@@ -1187,7 +1187,7 @@ Proof.
 Qed.
 
 Lemma storeA_union_singleton_insert_fresh {K : Type} `{Countable K}
-    (σ : StoreA K) (x : K) (v : V) :
+    (σ : gmap K V) (x : K) (v : V) :
   x ∉ dom (σ : gmap K V) →
   @union (gmap K V) _ σ ({[x := v]} : gmap K V) =
   <[x := v]> (σ : gmap K V).
@@ -1201,7 +1201,7 @@ Proof.
 Qed.
 
 Lemma storeA_union_dom {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 →
   dom (@union (gmap K V) _ s1 s2) =
   dom (s1 : gmap K V) ∪ dom (s2 : gmap K V).
@@ -1210,7 +1210,7 @@ Proof.
 Qed.
 
 Lemma storeA_disj_dom_compat {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   dom (s1 : gmap K V) ∩ dom (s2 : gmap K V) = ∅ →
   s1 ≈A s2.
 Proof.
@@ -1223,7 +1223,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_restrict_singleton_fresh {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (y : K) :
+    (s1 s2 : gmap K V) (y : K) :
   y ∉ dom (s1 : gmap K V) →
   s1 ≈A storeA_restrict s2 ({[y]} : gset K).
 Proof.
@@ -1238,7 +1238,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_restrict {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   s1 ≈A s2 →
   storeA_restrict s1 X ≈A storeA_restrict s2 X.
 Proof.
@@ -1250,7 +1250,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_restrict_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   s1 ≈A s2 → s1 ≈A storeA_restrict s2 X.
 Proof.
   unfold storeA_compat, map_compat.
@@ -1260,7 +1260,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_restrict_l_full_r {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) (X : gset K) :
+    (s1 s2 : gmap K V) (X : gset K) :
   dom (s1 : gmap K V) ⊆ X →
   s1 ≈A storeA_restrict s2 X →
   s1 ≈A s2.
@@ -1274,7 +1274,7 @@ Proof.
 Qed.
 
 Lemma storeA_compat_restrict_eq {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 →
   dom (s1 : gmap K V) ⊆ dom (s2 : gmap K V) →
   storeA_restrict s2 (dom (s1 : gmap K V)) = s1.
@@ -1289,15 +1289,15 @@ Proof.
     { assert (v1 = v2) by (eapply Hcomp; eauto). subst. exact H2. }
     transitivity (Some v1).
     + apply storeA_restrict_lookup_some_2; [exact H2' | exact Hin1].
-    + symmetry. exact H1.
-  - transitivity (@None V); [|symmetry; exact H1].
+    + reflexivity.
+  - transitivity (@None V); [|reflexivity].
     apply storeA_restrict_lookup_none_r.
     intros Hin.
     apply elem_of_dom in Hin as [v Hlook]. congruence.
 Qed.
 
 Lemma storeA_compat_spec {K : Type} `{Countable K}
-    (s1 s2 : StoreA K) :
+    (s1 s2 : gmap K V) :
   s1 ≈A s2 ↔
   storeA_restrict s1 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) =
   storeA_restrict s2 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)).

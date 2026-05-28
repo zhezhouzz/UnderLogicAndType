@@ -132,16 +132,16 @@ Proof.
   { better_set_solver. }
   assert (HxΓ : x ∉ dom (erase_ctx Γ)).
   { better_set_solver. }
-  change (Σ ∪ ((erase_ctx Γ : @StoreA ty atom _ _) ∪
-      ({[x := erase_ty τ]} : @StoreA ty atom _ _)) =
+  change (Σ ∪ ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty)) =
     <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
-  replace ((erase_ctx Γ : @StoreA ty atom _ _) ∪
-      ({[x := erase_ty τ]} : @StoreA ty atom _ _))
-    with (<[x := erase_ty τ]> (erase_ctx Γ : @StoreA ty atom _ _)).
+  replace ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty))
+    with (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty)).
   2:{
     symmetry.
     apply (storeA_union_singleton_insert_fresh
-      (V := ty) (K := atom) (erase_ctx Γ : @StoreA ty atom _ _)
+      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
       x (erase_ty τ)).
     exact HxΓ.
   }
@@ -149,7 +149,7 @@ Proof.
       gmap atom ty) =
     <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
   apply (storeA_insert_union_r_fresh (V := ty) (K := atom)
-    (Σ : @StoreA ty atom _ _) (erase_ctx Γ : @StoreA ty atom _ _)
+    (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
     x (erase_ty τ)).
   exact HxΣ.
 Qed.

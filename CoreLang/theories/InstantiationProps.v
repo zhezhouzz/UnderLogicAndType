@@ -1112,7 +1112,7 @@ Proof.
   assert (Hlookup_swap :
     (@storeA_swap value atom _ _ x y σ : env) !! x = Some vx).
   {
-    unfold storeA_swap, storeA_rekey, storeA_map_key.
+    unfold storeA_swap.
     change ((kmap (swap x y) σ : gmap atom value) !! x = Some vx).
     replace ((kmap (swap x y) σ : gmap atom value) !! x) with
       ((kmap (swap x y) σ : gmap atom value) !! swap x y y)

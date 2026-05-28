@@ -20,7 +20,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LStoreT := (@StoreA V logic_var _ _) (only parsing).
+Local Notation LStoreT := (gmap logic_var V) (only parsing).
 Local Notation LWorldOnT := (LWorldOn (V := V)) (only parsing).
 
 Record logic_qualifier : Type := lqual {

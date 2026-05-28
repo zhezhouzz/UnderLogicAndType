@@ -612,8 +612,6 @@ Proof.
       apply lvars_fv_elem in Hbad.
       unfold lvars_open_env in Hbad.
       apply elem_of_map in Hbad as [v [Hv HvIn]].
-      change (v ∈ dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty))) in HvIn.
-      rewrite dom_insert_L, dom_empty_L in HvIn.
       assert (Hv0 : v = LVBound 0) by set_solver.
       subst v.
       cbn [logic_var_open_env] in Hv.
@@ -1339,7 +1337,6 @@ Qed.
 Lemma lvars_at_depth_dom_singleton_bound0_succ d T :
   lvars_at_depth (S d) (dom (<[LVBound 0 := T]> (∅ : lty_env))) = ∅.
 Proof.
-  unfold lty_env, StoreA.
   rewrite dom_insert_L, dom_empty_L, lvars_at_depth_union.
   rewrite lvars_at_depth_singleton_bound0_succ, lvars_at_depth_empty.
   set_solver.

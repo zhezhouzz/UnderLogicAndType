@@ -10,7 +10,7 @@ Section ResourceCoreA.
 Context {K : Type} `{Countable K}.
 Context {V : Type} `{ValueSig V}.
 
-Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
+Local Notation StoreAT := (gmap K V) (only parsing).
 
 Record WorldA := mk_worldA {
   worldA_dom    : gset K;

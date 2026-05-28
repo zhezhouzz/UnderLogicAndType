@@ -7,8 +7,8 @@ Section StoreInterface.
 
 Context {V : Type} `{ValueSig V}.
 
-Definition Store : Type := @StoreA V atom _ _.
-Definition LStore : Type := @StoreA V logic_var _ _.
+Definition Store : Type := gmap atom V.
+Definition LStore : Type := gmap logic_var V.
 
 Global Typeclasses Transparent Store LStore.
 
@@ -273,7 +273,7 @@ Definition lstore_on_open_back
 Proof.
   refine {| storeAO_store := lstore_swap (LVBound k) (LVFree x) (lso_store s) |}.
   unfold lstore_swap, lstore_rekey.
-  change (dom ((@storeA_rekey V logic_var _ _
+  change (dom ((storeA_map_key
       (swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) = D).
   rewrite storeA_rekey_dom by apply swap_inj.
   change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) = D).
@@ -288,7 +288,7 @@ Proof.
   refine {| storeAO_store :=
     lstore_swap (LVBound k) (LVFree x) (lso_store s) |}.
   unfold lstore_swap, lstore_rekey.
-  change (dom ((@storeA_rekey V logic_var _ _
+  change (dom ((storeA_map_key
       (swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) =
     lvars_open k x D).
   rewrite storeA_rekey_dom by apply swap_inj.

@@ -9,14 +9,14 @@ Section ResourceKeyActionA.
 Context {K : Type} `{Countable K}.
 Context {V : Type} `{ValueSig V}.
 
-Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
+Local Notation StoreAT := (gmap K V) (only parsing).
 Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Definition rawA_rekey (f : K → K) (m : WorldAT) : WorldAT := {|
   worldA_dom    := set_map f (worldA_dom m);
   worldA_stores := λ σ, ∃ σ0 : StoreAT,
-    m σ0 ∧ @storeA_rekey V K _ _ f σ0 = σ;
+    m σ0 ∧ storeA_map_key f σ0 = σ;
 |}.
 
 Definition resA_rekey (f : K → K) (Hf : Inj (=) (=) f)
@@ -26,10 +26,10 @@ Proof.
   destruct (worldA_wf w) as [Hne Hdom].
   split.
   - destruct Hne as [σ Hσ].
-    exists (@storeA_rekey V K _ _ f σ). exists σ. split; [exact Hσ | reflexivity].
+    exists (storeA_map_key f σ). exists σ. split; [exact Hσ | reflexivity].
   - intros σ [σ0 [Hσ0 Hrekey]].
     rewrite <- Hrekey.
-    change (dom (@storeA_rekey V K _ _ f σ0 : gmap K V) =
+    change (dom (storeA_map_key f σ0 : gmap K V) =
       set_map f (worldA_dom (w : WorldAT) : gset K)).
     rewrite storeA_rekey_dom by exact Hf.
     pose proof (Hdom σ0 Hσ0) as Hσdom.
