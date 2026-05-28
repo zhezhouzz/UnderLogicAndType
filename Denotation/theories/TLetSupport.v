@@ -1614,7 +1614,7 @@ Proof.
               change (LVFree x ∉ dom
                 (storeA_restrict (Σ : gmap logic_var ty)
                    (denot_relevant_lvars τ (tlete e1 e2)))).
-              rewrite storeA_restrict_dom. set_solver.
+              better_store_solver.
            ++ apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
               exact Hlet.
   - cbn [res_models res_models_fuel formula_measure].

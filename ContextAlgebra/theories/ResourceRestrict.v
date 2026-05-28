@@ -113,7 +113,7 @@ Proof.
   replace (X ∩ dom (@storeA_restrict V K _ _ σw X))
     with (dom (@storeA_restrict V K _ _ σw X)).
   - reflexivity.
-  - rewrite storeA_restrict_dom. set_solver.
+  - better_store_solver.
 Qed.
 
 Lemma resA_projection_from_fiber_projection
@@ -149,7 +149,7 @@ Proof.
         (@storeA_restrict V K _ _ s Y) (dom σY)).
       - rewrite storeA_restrict_restrict.
         replace (Y ∩ dom σY) with (dom σY) by
-          (rewrite <- HrestrictY; rewrite storeA_restrict_dom; set_solver).
+          (rewrite <- HrestrictY; better_store_solver).
         reflexivity.
       - rewrite HrestrictY. set_solver.
     }

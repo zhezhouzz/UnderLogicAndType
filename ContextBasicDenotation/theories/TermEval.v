@@ -489,8 +489,8 @@ Proof.
   destruct (decide (z ∈ D)) as [HzD|HzD].
   2:{
     transitivity (@None value).
-    - apply storeA_restrict_lookup_none_r. exact HzD.
-    - symmetry. apply storeA_restrict_lookup_none_r. exact HzD.
+    - better_store_solver.
+    - symmetry. better_store_solver.
   }
   destruct z as [k|y].
   - exfalso. exact (Hlc (LVBound k) HzD).
@@ -500,13 +500,13 @@ Proof.
     + transitivity (Some u).
       * apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyD].
+        better_store_solver.
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free. exact Hσy.
     + transitivity (@None value).
       * apply storeA_restrict_lookup_none_l.
         rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_none_l. exact Hσy.
+        better_store_solver.
       * symmetry. apply storeA_restrict_lookup_none_l.
         rewrite lstore_lift_free_lookup_free. exact Hσy.
 Qed.

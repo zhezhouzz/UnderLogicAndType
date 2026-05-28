@@ -49,9 +49,9 @@ Proof.
       destruct Hσ' as [σ2 [Hσ2 Hrestrict2]].
       pose proof (wfworldA_store_dom w2 σ2 Hσ2) as Hσ2dom.
       change (dom (σ2 : gmap K V) = worldA_dom (w2 : WorldAT)) in Hσ2dom.
-      rewrite storeA_restrict_idemp in Hrestrict2 by set_solver.
+      rewrite storeA_restrict_idemp in Hrestrict2 by better_store_solver.
       subst σ'.
-      rewrite storeA_restrict_idemp in Hrestrict by set_solver.
+      rewrite storeA_restrict_idemp in Hrestrict by better_store_solver.
       subst. exact Hσ2.
 Qed.
 

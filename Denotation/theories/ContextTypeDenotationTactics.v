@@ -19,7 +19,7 @@ Ltac normalize_denotation_formula_fv :=
   rewrite ?formula_fv_expr_total_formula;
   rewrite ?formula_fv_expr_result_formula;
   rewrite ?formula_fv_type_qualifier_formula;
-  rewrite ?storeA_restrict_dom;
+  store_normalize;
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
   rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
   cbn [formula_fv formula_lvars fv_tm fv_value];
@@ -43,7 +43,7 @@ Ltac normalize_denotation_formula_fv_in H :=
   rewrite ?formula_fv_expr_total_formula in H;
   rewrite ?formula_fv_expr_result_formula in H;
   rewrite ?formula_fv_type_qualifier_formula in H;
-  rewrite ?storeA_restrict_dom in H;
+  store_normalize;
   rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
   rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
   cbn [formula_fv formula_lvars fv_tm fv_value] in H;
@@ -72,4 +72,3 @@ Ltac denot_ty_fv_set :=
   | _ => idtac
   end;
   set_solver.
-

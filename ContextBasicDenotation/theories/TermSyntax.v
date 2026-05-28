@@ -552,7 +552,7 @@ Proof.
       rewrite Hrestrict. reflexivity.
     + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
         None) as Hrestrict.
-      { apply storeA_restrict_lookup_none_l. exact Hlook. }
+      { better_store_solver. }
       rewrite Hrestrict. reflexivity.
   - 
     rewrite !lstore_bound_part_lookup.
@@ -570,7 +570,7 @@ Proof.
       rewrite Hrestrict. reflexivity.
     + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
         None) as Hrestrict.
-      { apply storeA_restrict_lookup_none_l. exact Hlook. }
+      { better_store_solver. }
       rewrite Hrestrict. reflexivity.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.

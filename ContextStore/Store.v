@@ -1,6 +1,6 @@
 (** * Stores *)
 
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Export StoreCore.
 From ContextStore Require Export StoreFilterMapKey.
 From ContextStore Require Export StoreRestrict.
@@ -14,52 +14,71 @@ Notation "σ '|ₛ' X" := (storeA_restrict σ X)
 
 (** ** Store-side proof automation
 
-    [store_norm] exposes the finite-map/set normal forms that recur around
-    [storeA_restrict].  [store_solver] is intentionally opt-in and conservative:
-    it performs store-specific rewrites, then leaves pure freshness/domain
-    obligations to [better_set_solver]. *)
+    [store_normalize] exposes the finite-map/set normal forms that recur around
+    [storeA_restrict], [storeA_swap], and the other generic store operations.
+    [better_store_solver] follows the same shape as [better_set_solver] and
+    [better_base_solver]: first normalize store expressions, then discharge the
+    remaining map/set/base obligations with the shared automation. *)
 
-Ltac store_set_norm :=
-  repeat progress (map_normalize; set_normalize).
+Set Warnings "-cast-in-pattern".
 
-Ltac store_restrict_norm :=
+Ltac store_set_normalize :=
+  repeat progress (try map_normalize; try set_normalize).
+
+Ltac store_restrict_normalize :=
   repeat match goal with
-  | H : context[dom (storeA_restrict ?σ ?X)] |- _ =>
-      rewrite (store_restrict_dom σ X) in H
-  | |- context[dom (storeA_restrict ?σ ?X)] =>
-      rewrite (store_restrict_dom σ X)
+  | H : context[dom (storeA_restrict ?σ ?X : gmap _ _)] |- _ =>
+      rewrite (storeA_restrict_dom σ X) in H
+  | |- context[dom (storeA_restrict ?σ ?X : gmap _ _)] =>
+      rewrite (storeA_restrict_dom σ X)
   | H : context[storeA_restrict (storeA_restrict ?σ ?X) ?Y] |- _ =>
-      rewrite (store_restrict_restrict σ X Y) in H
+      rewrite (storeA_restrict_restrict σ X Y) in H
   | |- context[storeA_restrict (storeA_restrict ?σ ?X) ?Y] =>
-      rewrite (store_restrict_restrict σ X Y)
+      rewrite (storeA_restrict_restrict σ X Y)
   | H : context[storeA_restrict ∅ ?X] |- _ =>
-      rewrite (store_restrict_empty X) in H
+      rewrite (storeA_restrict_empty X) in H
   | |- context[storeA_restrict ∅ ?X] =>
-      rewrite (store_restrict_empty X)
+      rewrite (storeA_restrict_empty X)
   | H : context[storeA_restrict ?σ ∅] |- _ =>
-      rewrite (store_restrict_empty_set σ) in H
+      rewrite (storeA_restrict_empty_set σ) in H
   | |- context[storeA_restrict ?σ ∅] =>
-      rewrite (store_restrict_empty_set σ)
+      rewrite (storeA_restrict_empty_set σ)
+  | Hsub : dom (?σ : gmap _ _) ⊆ ?X,
+    H : context[storeA_restrict ?σ ?X] |- _ =>
+      rewrite (storeA_restrict_idemp σ X Hsub) in H
+  | Hsub : dom (?σ : gmap _ _) ⊆ ?X
+    |- context[storeA_restrict ?σ ?X] =>
+      rewrite (storeA_restrict_idemp σ X Hsub)
+  | Hdom : dom (?σ : gmap _ _) = ?X,
+    H : context[storeA_restrict ?σ ?X] |- _ =>
+      rewrite (storeA_restrict_idemp_eq σ X Hdom) in H
+  | Hdom : dom (?σ : gmap _ _) = ?X
+    |- context[storeA_restrict ?σ ?X] =>
+      rewrite (storeA_restrict_idemp_eq σ X Hdom)
   end.
 
-Ltac store_insert_norm :=
+Ltac store_insert_normalize :=
   repeat match goal with
   | H : context[storeA_restrict (<[?x := ?v]> ?σ) ?X] |- _ =>
-      rewrite (store_restrict_insert_in σ X x v) in H by better_set_solver
+      rewrite (storeA_restrict_insert_in σ X x v) in H by better_set_solver
   | H : context[storeA_restrict (<[?x := ?v]> ?σ) ?X] |- _ =>
-      rewrite (store_restrict_insert_notin σ X x v) in H by better_set_solver
+      rewrite (storeA_restrict_insert_notin σ X x v) in H by better_set_solver
   | |- context[storeA_restrict (<[?x := ?v]> ?σ) ?X] =>
-      rewrite (store_restrict_insert_in σ X x v) by better_set_solver
+      rewrite (storeA_restrict_insert_in σ X x v) by better_set_solver
   | |- context[storeA_restrict (<[?x := ?v]> ?σ) ?X] =>
-      rewrite (store_restrict_insert_notin σ X x v) by better_set_solver
+      rewrite (storeA_restrict_insert_notin σ X x v) by better_set_solver
   end.
 
-Ltac store_lookup_norm :=
+Ltac store_lookup_normalize :=
   repeat match goal with
   | H : context[storeA_restrict ?σ ?X !! ?x] |- _ =>
-      rewrite (store_restrict_lookup σ X x) in H
+      rewrite (storeA_restrict_lookup σ X x) in H
   | |- context[storeA_restrict ?σ ?X !! ?x] =>
-      rewrite (store_restrict_lookup σ X x)
+      rewrite (storeA_restrict_lookup σ X x)
+  | H : context[@gmap_lookup ?K ?EqK ?CountK ?A ?x (storeA_restrict ?σ ?X)] |- _ =>
+      rewrite (@storeA_restrict_lookup A _ K CountK σ X x) in H
+  | |- context[@gmap_lookup ?K ?EqK ?CountK ?A ?x (storeA_restrict ?σ ?X)] =>
+      rewrite (@storeA_restrict_lookup A _ K CountK σ X x)
   | H : context[decide (?P)] |- _ =>
       rewrite (decide_True P) in H by better_set_solver
   | |- context[decide (?P)] =>
@@ -70,11 +89,81 @@ Ltac store_lookup_norm :=
       rewrite (decide_False P) by better_set_solver
   end.
 
-Ltac store_norm :=
-  repeat progress (store_set_norm; store_restrict_norm; store_insert_norm; store_lookup_norm).
+Ltac store_key_normalize :=
+  repeat match goal with
+  | H : context[dom (storeA_swap ?x ?y ?σ : gmap _ _)] |- _ =>
+      rewrite (storeA_swap_dom x y σ) in H
+  | |- context[dom (storeA_swap ?x ?y ?σ : gmap _ _)] =>
+      rewrite (storeA_swap_dom x y σ)
+  | H : context[storeA_swap ?x ?y (storeA_swap ?x ?y ?σ)] |- _ =>
+      rewrite (storeA_swap_involutive x y σ) in H
+  | |- context[storeA_swap ?x ?y (storeA_swap ?x ?y ?σ)] =>
+      rewrite (storeA_swap_involutive x y σ)
+  | H : context[storeA_swap ?x ?y ∅] |- _ =>
+      rewrite (storeA_rekey_empty (swap x y)) in H
+  | |- context[storeA_swap ?x ?y ∅] =>
+      rewrite (storeA_rekey_empty (swap x y))
+  | H : context[storeA_shift ?k ∅] |- _ =>
+      rewrite (storeA_shift_empty k) in H
+  | |- context[storeA_shift ?k ∅] =>
+      rewrite (storeA_shift_empty k)
+  | H : context[dom (storeA_shift ?k ?σ : gmap _ _)] |- _ =>
+      rewrite (storeA_shift_dom k σ) in H
+  | |- context[dom (storeA_shift ?k ?σ : gmap _ _)] =>
+      rewrite (storeA_shift_dom k σ)
+  end.
 
-Ltac store_solver :=
-  store_norm; try solve [better_map_solver | better_set_solver | eauto 6 | reflexivity | congruence].
+Ltac store_normalize :=
+  try repeat progress
+    (try store_set_normalize;
+     try store_restrict_normalize;
+     try store_insert_normalize;
+     try store_lookup_normalize;
+     try store_key_normalize).
+
+Ltac store_finish :=
+  first
+    [ solve [reflexivity]
+    | solve [congruence]
+    | solve [better_base_solver]
+    | solve [better_map_solver]
+    | solve [better_set_solver]
+    | solve [eauto 8] ].
+
+Ltac better_store_solver :=
+  store_normalize;
+  repeat match goal with
+  | H : (storeA_restrict ?σ ?X : gmap _ _) !! ?x = Some ?v |- _ =>
+      apply storeA_restrict_lookup_some in H as [? ?]
+  | Hlook : (?σ : gmap _ _) !! ?x = Some ?v,
+    Hx : ?x ∈ ?X
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = Some ?v =>
+      exact (storeA_restrict_lookup_some_2 σ X x v Hlook Hx)
+  | Hlook : (?σ : gmap _ _) !! ?x = None
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = None =>
+      exact (storeA_restrict_lookup_none_l σ X x Hlook)
+  | Hx : ?x ∉ ?X
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = None =>
+      exact (storeA_restrict_lookup_none_r σ X x Hx)
+  | |- dom (storeA_restrict ?σ ?X : gmap _ _) ⊆ ?X =>
+      exact (storeA_restrict_dom_subset σ X)
+  | Hdom : dom (?σ : gmap _ _) = ?X
+    |- storeA_restrict ?σ ?X = ?σ =>
+      exact (storeA_restrict_idemp_eq σ X Hdom)
+  | Hsub : dom (?σ : gmap _ _) ⊆ ?X
+    |- storeA_restrict ?σ ?X = ?σ =>
+      exact (storeA_restrict_idemp σ X Hsub)
+  | Hdisj : dom (?σ1 : gmap _ _) ## dom (?σ2 : gmap _ _)
+    |- storeA_compat ?σ1 ?σ2 =>
+      exact (storeA_disj_dom_compat σ1 σ2 Hdisj)
+  end;
+  store_normalize;
+  store_finish.
+
+Ltac store_norm := store_normalize.
+Ltac store_solver := better_store_solver.
+
+Set Warnings "+cast-in-pattern".
 
 #[global] Instance stale_store {A} : Stale (gmap atom A) := dom.
 Arguments stale_store /.
