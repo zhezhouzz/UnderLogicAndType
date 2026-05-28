@@ -15,6 +15,7 @@ ContextBase/Prelude.v
 ContextBase/LogicVar.v
 ContextBase/LogicVarOpenEnv.v
 ContextBase/LogicVarShift.v
+ContextBase/BaseTactics.v
 
 ContextStore/StoreCore.v
 ContextStore/StoreKeyAction.v

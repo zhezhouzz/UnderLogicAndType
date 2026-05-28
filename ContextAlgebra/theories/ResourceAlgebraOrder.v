@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict.
 From Stdlib Require Import Logic.ProofIrrelevance.
@@ -175,7 +175,7 @@ Proof.
     change (set_swap x y (worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)) =
       set_swap x y (worldA_dom (w1 : WorldAT)) ∪
       set_swap x y (worldA_dom (w2 : WorldAT))).
-    rewrite set_swap_union. reflexivity.
+    better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [Hprod Hswap]].
       rewrite <- Hswap.

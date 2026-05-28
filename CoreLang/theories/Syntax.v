@@ -7,7 +7,7 @@
     category so that all LN lemmas share a single notation. *)
 
 From CoreLang Require Export Prelude.
-From ContextBase Require Import LogicVar.
+From ContextBase Require Import LogicVar BaseTactics.
 
 (** ** Base and basic types *)
 
@@ -246,16 +246,15 @@ with fv_tm_swap_atom x y e :
   fv_tm (tm_swap_atom x y e) = set_swap x y (fv_tm e).
 Proof.
   - destruct v; simpl; try reflexivity.
-    + symmetry. apply set_swap_singleton.
+    + better_base_solver.
     + apply fv_tm_swap_atom.
     + apply fv_value_swap_atom.
   - destruct e; simpl.
     + apply fv_value_swap_atom.
-    + rewrite !fv_tm_swap_atom, set_swap_union. reflexivity.
+    + rewrite !fv_tm_swap_atom. better_base_solver.
     + apply fv_value_swap_atom.
-    + rewrite !fv_value_swap_atom, set_swap_union. reflexivity.
-    + rewrite fv_value_swap_atom, !fv_tm_swap_atom, !set_swap_union.
-      reflexivity.
+    + rewrite !fv_value_swap_atom. better_base_solver.
+    + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
 Qed.
 
 Lemma value_swap_atom_involutive x y v :
@@ -264,7 +263,7 @@ with tm_swap_atom_involutive x y e :
   tm_swap_atom x y (tm_swap_atom x y e) = e.
 Proof.
   - destruct v; simpl; try reflexivity.
-    + rewrite swap_involutive. reflexivity.
+    + better_base_solver.
     + rewrite tm_swap_atom_involutive. reflexivity.
     + rewrite value_swap_atom_involutive. reflexivity.
   - destruct e; simpl; rewrite ?value_swap_atom_involutive,
@@ -281,7 +280,7 @@ with tm_swap_atom_fresh x y e :
   tm_swap_atom x y e = e.
 Proof.
   - destruct v; simpl; intros Hx Hy; try reflexivity.
-    + rewrite swap_fresh by set_solver. reflexivity.
+    + better_base_solver.
     + rewrite tm_swap_atom_fresh by set_solver. reflexivity.
     + rewrite value_swap_atom_fresh by set_solver. reflexivity.
   - destruct e; simpl; intros Hx Hy; try rewrite !value_swap_atom_fresh by set_solver;

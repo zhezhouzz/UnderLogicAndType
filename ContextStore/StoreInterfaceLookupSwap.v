@@ -1,6 +1,6 @@
 (** * Concrete store lookup and swap interface lemmas *)
 
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion StoreBind.
 From ContextStore Require Export StoreInterfaceCore.
 
@@ -52,9 +52,7 @@ Proof.
     @storeA_swap V logic_var _ _ c d
       (@storeA_swap V logic_var _ _ a b s)).
   rewrite storeA_swap_conjugate.
-  replace (swap a b c) with c by (symmetry; apply swap_fresh; congruence).
-  replace (swap a b d) with d by (symmetry; apply swap_fresh; congruence).
-  reflexivity.
+  better_base_solver.
 Qed.
 
 End StoreInterface.

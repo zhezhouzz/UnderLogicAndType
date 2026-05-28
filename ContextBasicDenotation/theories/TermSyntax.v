@@ -3,6 +3,7 @@
     Totality and result extensions for core terms. *)
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
+From ContextBase Require Import BaseTactics.
 
 Section TermDenotation.
 
@@ -76,19 +77,18 @@ Proof.
     end.
   - unfold bvar_lvars_at.
     destruct decide.
-    + rewrite set_swap_singleton.
-      rewrite swap_fresh by congruence. reflexivity.
-    + rewrite set_swap_empty. reflexivity.
+    + better_base_solver.
+    + better_base_solver.
   - apply H.
   - apply H.
   - apply H.
   - rewrite H, H0.
-    rewrite set_swap_union. reflexivity.
+    better_base_solver.
   - apply H.
   - rewrite H, H0.
-    rewrite set_swap_union. reflexivity.
+    better_base_solver.
   - rewrite H, H0, H1.
-    rewrite !set_swap_union. set_solver.
+    better_base_solver.
 Qed.
 
 Lemma value_lvars_at_swap_atom x y v d :
