@@ -12,7 +12,7 @@ From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestri
 
 Section ResourceExtensionDerivedA.
 
-Context {K : Type} `{Countable K} `{!SwapKey K}.
+Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
 Local Notation StoreAT := (@StoreA V K _ _) (only parsing).

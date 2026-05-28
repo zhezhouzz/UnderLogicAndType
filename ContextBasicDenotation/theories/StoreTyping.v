@@ -95,22 +95,22 @@ Proof.
 Qed.
 
 Lemma storeA_has_type_swap
-    {K : Type} `{Countable K} `{!SwapKey K}
+    {K : Type} `{Countable K} 
     (x y : K) (Σ : @StoreA ty K _ _) (σ : @StoreA value K _ _) :
   storeA_has_type (storeA_swap x y Σ) σ <->
   storeA_has_type Σ (storeA_swap x y σ).
 Proof.
   split; intros Htyped z T v HΣ Hσ.
-  - eapply Htyped with (x := key_swap x y z).
-    + change (((storeA_swap x y Σ : gmap K ty) !! key_swap x y z) = Some T).
+  - eapply Htyped with (x := swap x y z).
+    + change (((storeA_swap x y Σ : gmap K ty) !! swap x y z) = Some T).
       rewrite storeA_swap_lookup. exact HΣ.
     + change (((storeA_swap x y σ : gmap K value) !! z) = Some v) in Hσ.
       rewrite storeA_swap_lookup_inv in Hσ. exact Hσ.
   - change (((storeA_swap x y Σ : gmap K ty) !! z) = Some T) in HΣ.
     rewrite storeA_swap_lookup_inv in HΣ.
-    eapply Htyped with (x := key_swap x y z).
+    eapply Htyped with (x := swap x y z).
     + exact HΣ.
-    + change (((storeA_swap x y σ : gmap K value) !! key_swap x y z) = Some v).
+    + change (((storeA_swap x y σ : gmap K value) !! swap x y z) = Some v).
       rewrite storeA_swap_lookup. exact Hσ.
 Qed.
 

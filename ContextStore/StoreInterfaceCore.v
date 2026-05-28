@@ -27,13 +27,13 @@ Definition store_rekey (f : atom → atom) (s : Store) : Store :=
   storeA_rekey f s.
 
 Definition store_swap (x y : atom) (s : Store) : Store :=
-  store_rekey (key_swap x y) s.
+  store_rekey (swap x y) s.
 
 Definition lstore_rekey (f : logic_var → logic_var) (s : LStore) : LStore :=
   storeA_rekey f s.
 
 Definition lstore_swap (x y : logic_var) (s : LStore) : LStore :=
-  lstore_rekey (key_swap x y) s.
+  lstore_rekey (swap x y) s.
 
 Definition lstore_to_store (s : LStore) : Store :=
   map_fold (fun v a acc =>
@@ -54,7 +54,7 @@ Local Lemma raw_gmap_lookup_insert_value
   @gmap_lookup K _ _ V i (<[i := a]> m) = Some a.
 Proof.
   change (((<[i := a]> m : gmap K V) !! i) = Some a).
-  rewrite lookup_insert. rewrite decide_True by reflexivity. reflexivity.
+  apply map_lookup_insert.
 Qed.
 
 Local Lemma raw_gmap_lookup_insert_ne
@@ -65,7 +65,7 @@ Local Lemma raw_gmap_lookup_insert_ne
 Proof.
   intros Hneq.
   change (((<[i := a]> m : gmap K V) !! j) = (m : gmap K V) !! j).
-  apply lookup_insert_ne. exact Hneq.
+  apply map_lookup_insert_ne. congruence.
 Qed.
 
 Lemma lstore_to_store_lookup (s : LStore) x :
@@ -277,11 +277,11 @@ Proof.
   refine {| storeAO_store := lstore_swap (LVBound k) (LVFree x) (lso_store s) |}.
   unfold lstore_swap, lstore_rekey.
   change (dom ((@storeA_rekey V logic_var _ _
-      (key_swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) = D).
-  rewrite storeA_rekey_dom by apply key_swap_inj.
-  change (gset_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) = D).
+      (swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) = D).
+  rewrite storeA_rekey_dom by apply swap_inj.
+  change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) = D).
   rewrite (lso_dom s).
-  rewrite lvars_open_unfold, gset_swap_involutive. reflexivity.
+  rewrite lvars_open_unfold, set_swap_involutive. reflexivity.
 Defined.
 
 Definition lstore_on_open_front
@@ -292,10 +292,10 @@ Proof.
     lstore_swap (LVBound k) (LVFree x) (lso_store s) |}.
   unfold lstore_swap, lstore_rekey.
   change (dom ((@storeA_rekey V logic_var _ _
-      (key_swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) =
+      (swap (LVBound k) (LVFree x)) (lso_store s)) : gmap logic_var V) =
     lvars_open k x D).
-  rewrite storeA_rekey_dom by apply key_swap_inj.
-  change (gset_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) =
+  rewrite storeA_rekey_dom by apply swap_inj.
+  change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) =
     lvars_open k x D).
   rewrite (lso_dom s), lvars_open_unfold. reflexivity.
 Defined.
@@ -306,8 +306,8 @@ Proof.
   apply lstore_on_ext.
   unfold lstore_on_open_back, lstore_on_open_front. cbn [lso_store].
   unfold lstore_swap, lstore_rekey.
-  change (@storeA_swap V logic_var _ _ _ (LVBound k) (LVFree x)
-      (@storeA_swap V logic_var _ _ _ (LVBound k) (LVFree x)
+  change (@storeA_swap V logic_var _ _ (LVBound k) (LVFree x)
+      (@storeA_swap V logic_var _ _ (LVBound k) (LVFree x)
         (lso_store s)) =
     lso_store s).
   apply storeA_swap_involutive.
@@ -320,8 +320,8 @@ Proof.
   apply lstore_on_ext.
   unfold lstore_on_open_back, lstore_on_open_front. cbn [lso_store].
   unfold lstore_swap, lstore_rekey.
-  change (@storeA_swap V logic_var _ _ _ (LVBound k) (LVFree x)
-      (@storeA_swap V logic_var _ _ _ (LVBound k) (LVFree x)
+  change (@storeA_swap V logic_var _ _ (LVBound k) (LVFree x)
+      (@storeA_swap V logic_var _ _ (LVBound k) (LVFree x)
         (lso_store s)) =
     lso_store s).
   apply storeA_swap_involutive.

@@ -7,7 +7,7 @@ From Stdlib Require Import Logic.ProofIrrelevance.
 
 Section ResourceAlgebraA.
 
-Context {K : Type} `{Countable K} `{!SwapKey K}.
+Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
 Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
@@ -267,22 +267,22 @@ Proof.
   split.
   - intros [Hdom Hin]. split.
     + simpl in Hdom.
-      change (gset_swap x y (worldA_dom (w1 : WorldAT)) =
-        gset_swap x y (worldA_dom (w2 : WorldAT))) in Hdom.
-      rewrite <- (gset_swap_involutive x y (worldA_dom (w1 : WorldAT))).
-      rewrite <- (gset_swap_involutive x y (worldA_dom (w2 : WorldAT))).
+      change (set_swap x y (worldA_dom (w1 : WorldAT)) =
+        set_swap x y (worldA_dom (w2 : WorldAT))) in Hdom.
+      rewrite <- (set_swap_involutive x y (worldA_dom (w1 : WorldAT))).
+      rewrite <- (set_swap_involutive x y (worldA_dom (w2 : WorldAT))).
       by rewrite Hdom.
     + intros σ Hσ.
-      pose proof (Hin (@storeA_swap V K _ _ _ x y σ)) as Hin'.
+      pose proof (Hin (@storeA_swap V K _ _ x y σ)) as Hin'.
       simpl in Hin'.
-      assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ _ x y σ)).
+      assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ x y σ)).
       { exists σ. split; [exact Hσ | reflexivity]. }
       destruct (Hin' Hs1) as [σ2 [Hσ2 Hswap]].
       assert (σ2 = σ).
       {
         rewrite <- (storeA_swap_involutive x y σ2).
-        change (@storeA_swap V K _ _ _ x y σ2 =
-          @storeA_swap V K _ _ _ x y σ) in Hswap.
+        change (@storeA_swap V K _ _ x y σ2 =
+          @storeA_swap V K _ _ x y σ) in Hswap.
         rewrite Hswap. apply storeA_swap_involutive.
       }
       subst. exact Hσ2.
@@ -435,7 +435,7 @@ Qed.
 
 Lemma resA_swap_singleton_world (x y : K) (σ : StoreAT) :
   (resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) : WorldAT) =
-  singleton_worldA (@storeA_swap V K _ _ _ x y σ).
+  singleton_worldA (@storeA_swap V K _ _ x y σ).
 Proof.
   apply worldA_ext.
   - simpl. symmetry. apply storeA_swap_dom.
@@ -446,8 +446,8 @@ Qed.
 
 Lemma resA_swap_singleton_wfworld (x y : K) (σ : StoreAT) :
   resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) =
-  exist _ (singleton_worldA (@storeA_swap V K _ _ _ x y σ))
-    (wf_singleton_worldA (@storeA_swap V K _ _ _ x y σ)).
+  exist _ (singleton_worldA (@storeA_swap V K _ _ x y σ))
+    (wf_singleton_worldA (@storeA_swap V K _ _ x y σ)).
 Proof.
   apply wfworldA_ext. apply resA_swap_singleton_world.
 Qed.

@@ -258,7 +258,7 @@ Qed.
 Lemma open_cty_env_arrow η τx τ :
   open_env_values_inj η ->
   open_cty_env η (CTArrow τx τ) =
-  CTArrow (open_cty_env η τx) (open_cty_env (open_env_lift η) τ).
+  CTArrow (open_cty_env η τx) (open_cty_env ((kmap S η)) τ).
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -282,7 +282,7 @@ Qed.
 Lemma open_cty_env_wand η τx τ :
   open_env_values_inj η ->
   open_cty_env η (CTWand τx τ) =
-  CTWand (open_cty_env η τx) (open_cty_env (open_env_lift η) τ).
+  CTWand (open_cty_env η τx) (open_cty_env ((kmap S η)) τ).
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -306,7 +306,7 @@ Qed.
 Lemma open_cty_env_over η b q :
   open_env_values_inj η ->
   open_cty_env η (CTOver b q) =
-  CTOver b (qual_open_env (open_env_lift η) q).
+  CTOver b (qual_open_env ((kmap S η)) q).
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -329,7 +329,7 @@ Qed.
 Lemma open_cty_env_under η b q :
   open_env_values_inj η ->
   open_cty_env η (CTUnder b q) =
-  CTUnder b (qual_open_env (open_env_lift η) q).
+  CTUnder b (qual_open_env ((kmap S η)) q).
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -406,7 +406,7 @@ Qed.
 Lemma open_cty_env_arrow_vars_equiv η τx τ :
   open_env_values_inj η ->
   open_cty_env η (CTArrow τx τ) ≡τv
-  CTArrow (open_cty_env η τx) (open_cty_env (open_env_lift η) τ).
+  CTArrow (open_cty_env η τx) (open_cty_env ((kmap S η)) τ).
 Proof.
   intros Hinj. rewrite open_cty_env_arrow by exact Hinj. reflexivity.
 Qed.
@@ -414,16 +414,16 @@ Qed.
 Lemma open_cty_env_wand_vars_equiv η τx τ :
   open_env_values_inj η ->
   open_cty_env η (CTWand τx τ) ≡τv
-  CTWand (open_cty_env η τx) (open_cty_env (open_env_lift η) τ).
+  CTWand (open_cty_env η τx) (open_cty_env ((kmap S η)) τ).
 Proof.
   intros Hinj. rewrite open_cty_env_wand by exact Hinj. reflexivity.
 Qed.
 
 Lemma open_cty_env_over_vars_equiv η b q :
   open_env_values_inj η ->
-  open_env_fresh_for_lvars (open_env_lift η) (qual_vars q) ->
+  open_env_fresh_for_lvars ((kmap S η)) (qual_vars q) ->
   open_cty_env η (CTOver b q) ≡τv
-  CTOver b (qual_with_vars (lvars_open_env (open_env_lift η) (qual_vars q))).
+  CTOver b (qual_with_vars (lvars_open_env ((kmap S η)) (qual_vars q))).
 Proof.
   intros Hinj Hfresh.
   rewrite open_cty_env_over by exact Hinj.
@@ -434,9 +434,9 @@ Qed.
 
 Lemma open_cty_env_under_vars_equiv η b q :
   open_env_values_inj η ->
-  open_env_fresh_for_lvars (open_env_lift η) (qual_vars q) ->
+  open_env_fresh_for_lvars ((kmap S η)) (qual_vars q) ->
   open_cty_env η (CTUnder b q) ≡τv
-  CTUnder b (qual_with_vars (lvars_open_env (open_env_lift η) (qual_vars q))).
+  CTUnder b (qual_with_vars (lvars_open_env ((kmap S η)) (qual_vars q))).
 Proof.
   intros Hinj Hfresh.
   rewrite open_cty_env_under by exact Hinj.
@@ -447,7 +447,7 @@ Qed.
 
 Lemma open_cty_env_lift_shift0_vars_equiv η τ :
   open_env_values_inj η ->
-  open_cty_env (open_env_lift η) (cty_shift 0 τ) ≡τv
+  open_cty_env ((kmap S η)) (cty_shift 0 τ) ≡τv
   cty_shift 0 (open_cty_env η τ).
 Proof.
   unfold open_cty_env.
@@ -455,7 +455,7 @@ Proof.
     (fun η =>
       open_env_values_inj η ->
       map_fold (fun k x acc => cty_open k x acc)
-        (cty_shift 0 τ) (open_env_lift η) ≡τv
+        (cty_shift 0 τ) ((kmap S η)) ≡τv
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
   - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
@@ -464,19 +464,19 @@ Proof.
       as [Hinjη Havoid].
     rewrite open_env_lift_insert.
     change (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
-      (cty_shift 0 τ) (<[S k:=x]> (open_env_lift η')))
-      with (open_cty_env (<[S k := x]> (open_env_lift η'))
+      (cty_shift 0 τ) (<[S k:=x]> (kmap S η')))
+      with (open_cty_env (<[S k := x]> (kmap S η'))
         (cty_shift 0 τ)).
     transitivity
       (cty_open (S k) x
-        (open_cty_env (open_env_lift η') (cty_shift 0 τ))).
+        (open_cty_env (kmap S η') (cty_shift 0 τ))).
     { apply open_cty_env_insert_fresh_vars_equiv.
       - apply open_env_lift_lookup_none. exact Hfresh.
       - apply open_env_avoids_atom_lift. exact Havoid.
       - apply open_env_values_inj_lift. exact Hinjη. }
-    change (open_cty_env (open_env_lift η') (cty_shift 0 τ))
+    change (open_cty_env (kmap S η') (cty_shift 0 τ))
       with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
-        (cty_shift 0 τ) (open_env_lift η')).
+        (cty_shift 0 τ) (kmap S η')).
     transitivity
       (cty_open (S k) x
         (cty_shift 0
@@ -493,7 +493,7 @@ Qed.
 
 Lemma open_cty_env_lift_shift0_exact η τ :
   open_env_values_inj η ->
-  open_cty_env (open_env_lift η) (cty_shift 0 τ) =
+  open_cty_env ((kmap S η)) (cty_shift 0 τ) =
   cty_shift 0 (open_cty_env η τ).
 Proof.
   unfold open_cty_env.
@@ -501,7 +501,7 @@ Proof.
     (fun η =>
       open_env_values_inj η ->
       map_fold (fun k x acc => cty_open k x acc)
-        (cty_shift 0 τ) (open_env_lift η) =
+        (cty_shift 0 τ) ((kmap S η)) =
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
   - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
@@ -510,16 +510,16 @@ Proof.
       as [Hinjη Havoid].
     rewrite open_env_lift_insert.
     change (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
-      (cty_shift 0 τ) (<[S k:=x]> (open_env_lift η')))
-      with (open_cty_env (<[S k := x]> (open_env_lift η'))
+      (cty_shift 0 τ) (<[S k:=x]> (kmap S η')))
+      with (open_cty_env (<[S k := x]> (kmap S η'))
         (cty_shift 0 τ)).
     rewrite open_cty_env_insert_fresh.
     2:{ apply open_env_lift_lookup_none. exact Hfresh. }
     2:{ apply open_env_avoids_atom_lift. exact Havoid. }
     2:{ apply open_env_values_inj_lift. exact Hinjη. }
-    change (open_cty_env (open_env_lift η') (cty_shift 0 τ))
+    change (open_cty_env (kmap S η') (cty_shift 0 τ))
       with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
-        (cty_shift 0 τ) (open_env_lift η')).
+        (cty_shift 0 τ) (kmap S η')).
     rewrite IH by exact Hinjη.
     rewrite cty_open_shift_under_gen by lia.
     change (cty_shift 0 (cty_open k x (open_cty_env η' τ)) =

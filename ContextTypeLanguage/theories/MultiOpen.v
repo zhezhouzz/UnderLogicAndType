@@ -57,11 +57,11 @@ Qed.
 Proof.
   constructor. intros i j x y D Hij Hxy.
   rewrite !lvars_open_unfold.
-  rewrite gset_swap_conjugate.
-  replace (eq_swap (LVBound i) (LVFree x) (LVBound j)) with (LVBound j).
-  2:{ unfold eq_swap. repeat destruct decide; congruence. }
-  replace (eq_swap (LVBound i) (LVFree x) (LVFree y)) with (LVFree y).
-  2:{ unfold eq_swap. repeat destruct decide; congruence. }
+  rewrite set_swap_conjugate.
+  replace (swap (LVBound i) (LVFree x) (LVBound j)) with (LVBound j).
+  2:{ unfold swap. repeat destruct decide; congruence. }
+  replace (swap (LVBound i) (LVFree x) (LVFree y)) with (LVFree y).
+  2:{ unfold swap. repeat destruct decide; congruence. }
   reflexivity.
 Qed.
 
@@ -120,7 +120,7 @@ Qed.
 
 Lemma open_env_values_inj_lift η :
   open_env_values_inj η ->
-  open_env_values_inj (open_env_lift η).
+  open_env_values_inj ((kmap S η)).
 Proof.
   intros Hinj i j x Hi Hj.
   destruct i as [|i].
@@ -129,14 +129,12 @@ Proof.
     + rewrite open_env_lift_lookup_zero_none in Hj. discriminate.
     + assert (η !! i = Some x) as Hiη.
       {
-        unfold open_env_lift in Hi.
         rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
           S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η i) in Hi.
         exact Hi.
       }
       assert (η !! j = Some x) as Hjη.
       {
-        unfold open_env_lift in Hj.
         rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
           S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η j) in Hj.
         exact Hj.

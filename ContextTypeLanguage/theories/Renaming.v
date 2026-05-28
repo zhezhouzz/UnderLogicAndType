@@ -48,7 +48,7 @@ Lemma logic_var_open_shift_from_under_gen j k x v :
 Proof.
   intros Hjk.
   destruct v as [n|y];
-    unfold logic_var_open, swap, swap_action_self, eq_swap, logic_var_shift_from;
+    unfold logic_var_open, swap, swap, logic_var_shift_from;
     repeat (destruct (decide _) as [?|?]; subst;
       simpl in *;
       repeat match goal with
@@ -107,9 +107,9 @@ Proof.
 Qed.
 
 Lemma open_env_shift_from_zero η :
-  open_env_shift_from 0 η = open_env_lift η.
+  open_env_shift_from 0 η = (kmap S η).
 Proof.
-  unfold open_env_shift_from, open_env_lift.
+  unfold open_env_shift_from.
   assert (Hkey : open_env_shift_key_from 0 = S).
   { apply functional_extensionality. apply open_env_shift_key_from_zero. }
   rewrite Hkey. reflexivity.
@@ -193,7 +193,7 @@ Proof.
   unfold lstore_shift_from, lstore_swap, lstore_rekey.
   rewrite !storeA_rekey_compose;
     try apply logic_var_shift_from_inj;
-    try apply key_swap_inj.
+    try apply swap_inj.
   apply storeA_rekey_ext_on_dom. intros v _.
   symmetry. apply logic_var_open_shift_from_under_gen. exact Hjk.
 Qed.
@@ -381,12 +381,12 @@ Proof.
   intros Hjk.
   apply set_eq. intros z.
   rewrite !lvars_open_unfold.
-  unfold gset_swap, lvars_shift_from.
+  unfold set_swap, lvars_shift_from.
   rewrite !elem_of_map.
   split.
   - intros [u [Hz Hu]].
     apply elem_of_map in Hu as [v [Hu Hv]].
-    exists (eq_swap (LVBound k) (LVFree x) v). split.
+    exists (swap (LVBound k) (LVFree x) v). split.
     + subst z u.
       pose proof (logic_var_open_shift_from_under_gen j k x v Hjk) as Hop.
       rewrite !logic_var_open_unfold in Hop. exact Hop.

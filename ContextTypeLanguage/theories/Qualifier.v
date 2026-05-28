@@ -16,8 +16,6 @@ From Stdlib Require Import Logic.FunctionalExtensionality
 
 Local Notation LStoreT := (LStore (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
-Local Existing Instance eq_swap_key.
-
 Record type_qualifier : Type := tqual {
   qual_lvars : lvset;
   qual_prop : LStoreOnT qual_lvars -> Prop;
@@ -222,8 +220,8 @@ Proof.
   intros Hxy Hx Hy.
   apply qual_open_atom_fresh_index.
   - rewrite qual_open_atom_bvars, lvars_bv_elem.
-    rewrite lvars_open_unfold, gset_swap_elem.
-    unfold eq_swap.
+    rewrite lvars_open_unfold, set_swap_elem.
+    unfold swap.
     repeat destruct decide; try congruence.
     intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
   - intros Hyopen.
@@ -244,13 +242,13 @@ Proof.
   apply qual_ext.
   - cbn [qual_lvars qual_open_atom].
     rewrite !lvars_open_unfold.
-    rewrite gset_swap_conjugate.
-    replace (eq_swap (LVBound i) (LVFree x) (LVBound j))
+    rewrite set_swap_conjugate.
+    replace (swap (LVBound i) (LVFree x) (LVBound j))
       with (LVBound j).
-    2:{ symmetry. apply eq_swap_fresh; congruence. }
-    replace (eq_swap (LVBound i) (LVFree x) (LVFree y))
+    2:{ symmetry. apply swap_fresh; congruence. }
+    replace (swap (LVBound i) (LVFree x) (LVFree y))
       with (LVFree y).
-    2:{ symmetry. apply eq_swap_fresh; congruence. }
+    2:{ symmetry. apply swap_fresh; congruence. }
     reflexivity.
   - intros s1 s2 Hs.
     cbn [qual_prop qual_open_atom].

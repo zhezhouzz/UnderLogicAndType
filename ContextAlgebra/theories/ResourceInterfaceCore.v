@@ -38,7 +38,7 @@ Definition lres_swap (x y : logic_var) (w : LWfWorld) : LWfWorld := resA_swap x 
 
 Lemma lworld_dom_lres_swap (x y : logic_var) (w : LWfWorld) :
   lworld_dom (lres_swap x y w : LWorld) =
-  gset_swap x y (lworld_dom (lraw_world w)).
+  set_swap x y (lworld_dom (lraw_world w)).
 Proof. reflexivity. Qed.
 
 Lemma lres_open_swap_commute_fresh i j x y (w : LWfWorld) :
@@ -52,7 +52,7 @@ Proof.
   intros Hij Hxy.
   unfold lres_swap.
   rewrite resA_swap_conjugate.
-  rewrite !key_swap_fresh by congruence.
+  rewrite !swap_fresh by congruence.
   reflexivity.
 Qed.
 
@@ -155,7 +155,7 @@ Definition lworld_on_open_back
 Proof.
   refine {| lw := lres_swap (LVBound k) (LVFree x) (lw w) |}.
   rewrite lworld_dom_lres_swap, (lw_dom w).
-  rewrite lvars_open_unfold, gset_swap_involutive. reflexivity.
+  rewrite lvars_open_unfold, set_swap_involutive. reflexivity.
 Defined.
 
 Lemma lworld_on_open_back_commute_fresh i j x y D

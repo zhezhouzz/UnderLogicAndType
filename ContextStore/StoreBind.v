@@ -23,14 +23,14 @@ Proof.
   intros Hc x v1 v2 H1 H2. symmetry. eapply Hc; eauto.
 Qed.
 
-Lemma storeA_compat_swap {K : Type} `{Countable K} `{!SwapKey K}
+Lemma storeA_compat_swap {K : Type} `{Countable K} 
     (x y : K) (s1 s2 : StoreA K) :
   storeA_swap x y s1 ≈A storeA_swap x y s2 ↔
   s1 ≈A s2.
 Proof.
   split.
   - intros Hc z v1 v2 H1 H2.
-    pose proof (Hc (key_swap x y z) v1 v2) as Hc'.
+    pose proof (Hc (swap x y z) v1 v2) as Hc'.
     rewrite !storeA_swap_lookup in Hc'.
     exact (Hc' H1 H2).
   - intros Hc z v1 v2 H1 H2.
@@ -47,7 +47,7 @@ Proof.
   unfold storeA_compat, map_compat.
   intros Hc i v1 v3 H1 H3.
   eapply Hc; [| exact H3].
-  apply (proj2 (lookup_union_Some_raw (M:=gmap K) (A:=V)
+  apply (proj2 (map_lookup_union_Some_raw
     (s1 : gmap K V) (s2 : gmap K V) i v1)).
   left. exact H1.
 Qed.
@@ -63,13 +63,13 @@ Proof.
   destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
   - assert (Hv : v1 = v3).
     { eapply Hc; [| exact H3].
-      apply (proj2 (lookup_union_Some_raw (M:=gmap K) (A:=V)
+      apply (proj2 (map_lookup_union_Some_raw
         (s1 : gmap K V) (s2 : gmap K V) i v1)).
       left. exact H1. }
     assert (Hv' : v1 = v2) by (eapply H12; eauto).
     congruence.
   - eapply Hc; [| exact H3].
-    apply (proj2 (lookup_union_Some_raw (M:=gmap K) (A:=V)
+    apply (proj2 (map_lookup_union_Some_raw
       (s1 : gmap K V) (s2 : gmap K V) i v2)).
     right. split; [exact H1 | exact H2].
 Qed.
@@ -82,7 +82,7 @@ Lemma storeA_compat_union_intro_r {K : Type} `{Countable K}
 Proof.
   unfold storeA_compat, map_compat.
   intros H12 H13 i v1 v23 H1 H23.
-  apply (proj1 (lookup_union_Some_raw (M:=gmap K) (A:=V)
+  apply (proj1 (map_lookup_union_Some_raw
     (s2 : gmap K V) (s3 : gmap K V) i v23)) in H23.
   destruct H23 as [H2 | [H2none H3]].
   - eapply H12; eauto.
@@ -96,7 +96,7 @@ Lemma storeA_union_comm {K : Type} `{Countable K}
 Proof.
   intros Hcompat. apply storeA_map_eq. intros i.
   rewrite option_eq. intros v.
-  setoid_rewrite (lookup_union_Some_raw (M:=gmap K) (A:=V)).
+  setoid_rewrite (map_lookup_union_Some_raw).
   split.
   - intros [H1 | [H1 H2]].
     + destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2.
@@ -119,34 +119,34 @@ Proof.
   intros Hcompat.
   apply storeA_map_eq. intros i.
   rewrite option_eq. intros v.
-  setoid_rewrite (lookup_union_Some_raw (M:=gmap K) (A:=V)).
+  setoid_rewrite (map_lookup_union_Some_raw).
   split.
   - intros [H12 | [H12none H3]].
-    + rewrite lookup_union_Some_raw in H12.
+    + rewrite map_lookup_union_Some_raw in H12.
       destruct H12 as [H1 | [H1none H2]].
-      * left. rewrite lookup_union_Some_raw. left. exact H1.
+      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
       * destruct ((s3 : gmap K V) !! i) as [v3|] eqn:H3i.
         -- assert (v = v3) by (eapply Hcompat; eauto).
-           subst. left. rewrite lookup_union_Some_raw. right. eauto.
+           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
         -- right. split.
-           ++ rewrite lookup_union_None. eauto.
+           ++ rewrite map_lookup_union_None. eauto.
            ++ exact H2.
-    + rewrite lookup_union_None in H12none.
+    + rewrite map_lookup_union_None in H12none.
       destruct H12none as [H1none H2none].
-      left. rewrite lookup_union_Some_raw. right. eauto.
+      left. rewrite map_lookup_union_Some_raw. right. eauto.
   - intros [H13 | [H13none H2]].
-    + rewrite lookup_union_Some_raw in H13.
+    + rewrite map_lookup_union_Some_raw in H13.
       destruct H13 as [H1 | [H1none H3]].
-      * left. rewrite lookup_union_Some_raw. left. exact H1.
+      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
       * destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2i.
         -- assert (v2 = v) by (eapply Hcompat; eauto).
-           subst. left. rewrite lookup_union_Some_raw. right. eauto.
+           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
         -- right. split.
-           ++ rewrite lookup_union_None. eauto.
+           ++ rewrite map_lookup_union_None. eauto.
            ++ exact H3.
-    + rewrite lookup_union_None in H13none.
+    + rewrite map_lookup_union_None in H13none.
       destruct H13none as [H1none H3none].
-      left. rewrite lookup_union_Some_raw. right. eauto.
+      left. rewrite map_lookup_union_Some_raw. right. eauto.
 Qed.
 
 Lemma storeA_union_absorb_l {K : Type} `{Countable K}
@@ -158,7 +158,7 @@ Proof.
   intros _ Hsub. apply storeA_map_eq. intros i.
   destruct ((s1 : gmap K V) !! i) as [v1|] eqn:Hs1.
   - transitivity (Some v1).
-    + apply (proj2 (lookup_union_Some_raw (M:=gmap K) (A:=V)
+    + apply (proj2 (map_lookup_union_Some_raw
         (s1 : gmap K V) (s2 : gmap K V) i v1)).
       left. exact Hs1.
     + symmetry. exact Hs1.
@@ -168,7 +168,7 @@ Proof.
       { apply Hsub. by apply elem_of_dom_2 in Hs2. }
       apply not_elem_of_dom in Hs1. contradiction.
     + transitivity (@None V).
-      * apply (proj2 (lookup_union_None (M:=gmap K) (A:=V)
+      * apply (proj2 (map_lookup_union_None
           (s1 : gmap K V) (s2 : gmap K V) i)).
         split; assumption.
       * symmetry. exact Hs1.
@@ -284,7 +284,7 @@ Proof.
   intros x v1 v2 H1 H2.
   assert (x ∈ dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) as Hin.
   { apply elem_of_intersection. split; [by apply elem_of_dom_2 in H1 | by apply elem_of_dom_2 in H2]. }
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma storeA_compat_restrict_singleton_fresh {K : Type} `{Countable K}

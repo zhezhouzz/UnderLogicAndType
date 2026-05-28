@@ -18,13 +18,6 @@ Definition logic_var_open_env
 Definition open_env_avoids_atom (x : atom) (η : gmap nat atom) : Prop :=
   forall k, η !! k <> Some x.
 
-Definition open_env_precompose
-    (η ξ : gmap nat atom) : gmap nat atom :=
-  η ∪ ξ.
-
-Definition open_env_lift (η : gmap nat atom) : gmap nat atom :=
-  kmap S η.
-
 Definition lvars_open_env (η : gmap nat atom) (D : lvset) : lvset :=
   set_map (logic_var_open_env η) D.
 
@@ -61,15 +54,15 @@ Proof.
   destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
   - destruct (decide (j = k)) as [->|Hjk].
     + rewrite lookup_insert_eq.
-      rewrite logic_var_open_unfold, eq_swap_l. reflexivity.
+      rewrite logic_var_open_unfold, swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       rewrite lookup_empty.
       rewrite logic_var_open_unfold.
-      rewrite eq_swap_fresh by congruence. reflexivity.
+      rewrite swap_fresh by congruence. reflexivity.
   - rewrite logic_var_open_unfold.
     assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
-    rewrite eq_swap_fresh by congruence. reflexivity.
+    rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
 Lemma logic_var_open_env_open_one_fresh η k x v :
@@ -80,16 +73,16 @@ Proof.
   intros Hfresh.
   destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
   - destruct (decide (j = k)) as [->|Hjk].
-    + rewrite logic_var_open_unfold, eq_swap_l.
+    + rewrite logic_var_open_unfold, swap_l.
       cbn [logic_var_open_env]. rewrite lookup_insert_eq. reflexivity.
     + rewrite logic_var_open_unfold.
-      rewrite eq_swap_fresh by congruence.
+      rewrite swap_fresh by congruence.
       cbn [logic_var_open_env]. rewrite lookup_insert_ne by congruence.
       reflexivity.
   - rewrite logic_var_open_unfold.
     assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
-    rewrite eq_swap_fresh by congruence. reflexivity.
+    rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
 Lemma logic_var_open_env_open_fresh η k x v :
@@ -101,23 +94,23 @@ Proof.
   intros Hη Havoid.
   destruct v as [j|y]; cbn [logic_var_open_env logic_var_open].
   - destruct (decide (j = k)) as [->|Hjk].
-    + rewrite logic_var_open_unfold, eq_swap_l.
+    + rewrite logic_var_open_unfold, swap_l.
       cbn [logic_var_open_env]. rewrite Hη.
-      rewrite logic_var_open_unfold, eq_swap_l. reflexivity.
-    + rewrite logic_var_open_unfold, eq_swap_fresh by congruence.
+      rewrite logic_var_open_unfold, swap_l. reflexivity.
+    + rewrite logic_var_open_unfold, swap_fresh by congruence.
       cbn [logic_var_open_env].
       destruct (η !! j) as [z|] eqn:Hηj.
       * assert (z <> x).
         { intros ->. specialize (Havoid j). contradiction. }
-        rewrite logic_var_open_unfold, eq_swap_fresh by congruence.
+        rewrite logic_var_open_unfold, swap_fresh by congruence.
         reflexivity.
-      * rewrite logic_var_open_unfold, eq_swap_fresh by congruence.
+      * rewrite logic_var_open_unfold, swap_fresh by congruence.
         reflexivity.
   - destruct (decide (y = x)) as [->|Hyx].
-    + rewrite logic_var_open_unfold, eq_swap_r.
+    + rewrite logic_var_open_unfold, swap_r.
       cbn [logic_var_open_env]. rewrite Hη.
       reflexivity.
-    + rewrite logic_var_open_unfold, eq_swap_fresh by congruence.
+    + rewrite logic_var_open_unfold, swap_fresh by congruence.
       reflexivity.
 Qed.
 
@@ -131,32 +124,32 @@ Proof.
   destruct v as [j|y]; cbn [logic_var_open_env].
   - destruct (decide (j = k)) as [->|Hjk].
     + rewrite lookup_insert_eq, Hη.
-      rewrite logic_var_open_unfold, eq_swap_l. reflexivity.
+      rewrite logic_var_open_unfold, swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       destruct (η !! j) as [z|] eqn:Hηj.
       * rewrite logic_var_open_unfold.
         assert (Hzx : z <> x).
         { intros ->. apply Hfresh.
           cbn [logic_var_open_env]. rewrite Hηj. reflexivity. }
-        rewrite eq_swap_fresh by congruence. reflexivity.
+        rewrite swap_fresh by congruence. reflexivity.
       * rewrite logic_var_open_unfold.
-        rewrite eq_swap_fresh by congruence. reflexivity.
+        rewrite swap_fresh by congruence. reflexivity.
   - rewrite logic_var_open_unfold.
     assert (Hyx : y <> x).
     { intros ->. apply Hfresh. reflexivity. }
-    rewrite eq_swap_fresh by congruence. reflexivity.
+    rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
 Lemma open_env_lift_empty :
-  open_env_lift ∅ = ∅.
+  (kmap S (∅ : gmap nat atom) : gmap nat atom) = ∅.
 Proof.
-  unfold open_env_lift. apply kmap_empty.
+  apply kmap_empty.
 Qed.
 
 Lemma open_env_lift_insert k x η :
-  open_env_lift (<[k := x]> η) = <[S k := x]> (open_env_lift η).
+  (kmap S (<[k := x]> η) : gmap nat atom) =
+  <[S k := x]> (kmap S η : gmap nat atom).
 Proof.
-  unfold open_env_lift.
   rewrite (kmap_insert (M1:=gmap nat) (M2:=gmap nat)
     S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k x).
   reflexivity.
@@ -164,19 +157,17 @@ Qed.
 
 Lemma open_env_lift_lookup_none η k :
   η !! k = None ->
-  open_env_lift η !! S k = None.
+  (kmap S η : gmap nat atom) !! S k = None.
 Proof.
   intros Hnone.
-  unfold open_env_lift.
   rewrite lookup_kmap_None.
   - intros j Hj. apply Nat.succ_inj in Hj. subst j. exact Hnone.
   - intros ? ? ?. lia.
 Qed.
 
 Lemma open_env_lift_lookup_zero_none η :
-  open_env_lift η !! 0 = None.
+  (kmap S η : gmap nat atom) !! 0 = None.
 Proof.
-  unfold open_env_lift.
   rewrite lookup_kmap_None.
   - intros j Hj. lia.
   - intros ? ? ?. lia.
@@ -201,44 +192,40 @@ Qed.
 
 Lemma open_env_avoids_atom_lift x η :
   open_env_avoids_atom x η ->
-  open_env_avoids_atom x (open_env_lift η).
+  open_env_avoids_atom x (kmap S η : gmap nat atom).
 Proof.
   intros Havoid k.
   destruct k as [|k].
   - rewrite open_env_lift_lookup_zero_none. congruence.
   - destruct (η !! k) as [y|] eqn:Hη.
-    + unfold open_env_lift.
-      rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
+    + rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
         S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k).
       intros Hxy. apply (Havoid k). exact Hxy.
     + rewrite open_env_lift_lookup_none by exact Hη. congruence.
 Qed.
 
-Lemma open_env_precompose_empty ξ :
-  open_env_precompose ∅ ξ = ξ.
+Lemma open_env_precompose_empty (ξ : gmap nat atom) :
+  (∅ ∪ ξ) = ξ.
 Proof.
-  unfold open_env_precompose.
   apply map_eq. intros k.
   rewrite lookup_union, lookup_empty.
   destruct (ξ !! k); reflexivity.
 Qed.
 
-Lemma open_env_precompose_empty_r η :
-  open_env_precompose η ∅ = η.
+Lemma open_env_precompose_empty_r (η : gmap nat atom) :
+  (η ∪ ∅) = η.
 Proof.
-  unfold open_env_precompose.
   apply map_eq. intros k.
   rewrite lookup_union, lookup_empty.
   destruct (η !! k); reflexivity.
 Qed.
 
-Lemma open_env_precompose_insert_fresh η k x ξ :
+Lemma open_env_precompose_insert_fresh (η : gmap nat atom) k x (ξ : gmap nat atom) :
   η !! k = None ->
-  open_env_precompose (<[k := x]> η) ξ =
-  open_env_precompose η (<[k := x]> ξ).
+  ((<[k := x]> η) ∪ ξ) =
+  (η ∪ (<[k := x]> ξ)).
 Proof.
   intros Hfresh.
-  unfold open_env_precompose.
   apply map_eq. intros j.
   destruct (decide (j = k)) as [->|Hjk].
   - rewrite !lookup_union, !lookup_insert_eq.
@@ -266,7 +253,7 @@ Proof.
   rewrite map_fold_insert_L.
   - reflexivity.
   - intros i j xi xj acc Hij _ _.
-    set_solver.
+    better_set_solver.
   - exact Hfresh.
 Qed.
 
@@ -283,7 +270,7 @@ Proof.
   - intros i y η0 Hfresh Hfold IH k x Hlookup.
     rewrite open_env_atoms_insert by exact Hfresh.
     destruct (decide (k = i)) as [->|Hki].
-    + rewrite lookup_insert_eq in Hlookup. inversion Hlookup. set_solver.
+    + rewrite lookup_insert_eq in Hlookup. inversion Hlookup. better_set_solver.
     + rewrite lookup_insert_ne in Hlookup by congruence.
       apply elem_of_union_r. apply IH with (k := k). exact Hlookup.
 Qed.
@@ -342,8 +329,8 @@ Proof.
     + left. exists u. split; [reflexivity|exact Hu].
     + right. exists u. split; [reflexivity|exact Hu].
   - intros [[u [-> Hu]]|[u [-> Hu]]].
-    + exists u. split; [reflexivity|set_solver].
-    + exists u. split; [reflexivity|set_solver].
+    + exists u. split; [reflexivity|better_set_solver].
+    + exists u. split; [reflexivity|better_set_solver].
 Qed.
 
 Lemma lvars_open_env_mono η (D E : lvset) :
@@ -384,7 +371,7 @@ Proof.
   intros Hη Hfresh.
   unfold lvars_open_env.
   rewrite lvars_open_unfold.
-  unfold gset_swap.
+  unfold set_swap.
   apply set_eq. intros v.
   rewrite !elem_of_map.
   split.
@@ -541,7 +528,7 @@ Proof.
 	      replace (LVFree x) with (logic_var_open k x (LVBound k)).
 	      apply lvars_open_elem_open.
 	      rewrite lvars_bv_elem in HkD. exact HkD.
-	      rewrite logic_var_open_unfold, eq_swap_l. reflexivity.
+	      rewrite logic_var_open_unfold, swap_l. reflexivity.
     + inversion Hv. subst y.
       apply HxD. apply lvars_fv_elem. exact HvD.
   - rewrite lookup_insert_ne in Hjz by congruence.

@@ -118,20 +118,20 @@ Qed.
 
 Lemma logic_var_swap_match x y v :
   match v with
-  | LVFree z => LVFree (atom_swap x y z)
+  | LVFree z => LVFree (swap x y z)
   | LVBound k => LVBound k
   end = logic_var_swap x y v.
 Proof.
   destruct v as [k|z].
   - rewrite logic_var_swap_unfold.
-    unfold eq_swap. repeat destruct decide; congruence.
-  - rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
+    unfold swap. repeat destruct decide; congruence.
+  - rewrite logic_var_swap_unfold, logic_var_free_swap.
     reflexivity.
 Qed.
 
 Lemma lty_env_swap_lookup x y Σ v :
   lty_env_swap x y Σ !! (match v with
-                         | LVFree z => LVFree (atom_swap x y z)
+                         | LVFree z => LVFree (swap x y z)
                          | LVBound k => LVBound k
                          end) = Σ !! v.
 Proof.
@@ -149,7 +149,7 @@ Qed.
 Lemma lty_env_swap_lookup_inv x y Σ v :
   lty_env_swap x y Σ !! v =
   Σ !! (match v with
-        | LVFree z => LVFree (atom_swap x y z)
+        | LVFree z => LVFree (swap x y z)
         | LVBound k => LVBound k
         end).
 Proof.
@@ -164,9 +164,9 @@ Lemma lty_env_swap_dom x y Σ :
 Proof.
   unfold lty_env_swap, lvars_swap.
   change (dom (storeA_rekey (logic_var_swap x y) Σ : gmap logic_var ty) =
-    gset_swap (LVFree x) (LVFree y) (dom (Σ : gmap logic_var ty))).
+    set_swap (LVFree x) (LVFree y) (dom (Σ : gmap logic_var ty))).
   rewrite storeA_rekey_dom by apply logic_var_swap_inj.
-  unfold gset_swap.
+  unfold set_swap.
   apply set_eq. intros v.
   rewrite !elem_of_map.
   split.
@@ -179,7 +179,7 @@ Qed.
 Lemma lty_env_swap_insert x y Σ v T :
   lty_env_swap x y (<[v := T]> Σ) =
   <[match v with
-     | LVFree z => LVFree (atom_swap x y z)
+     | LVFree z => LVFree (swap x y z)
      | LVBound k => LVBound k
      end := T]> (lty_env_swap x y Σ).
 Proof.
@@ -190,21 +190,21 @@ Qed.
 
 Lemma lty_env_swap_atom_dom x y Σ :
   lty_env_atom_dom (lty_env_swap x y Σ) =
-  aset_swap x y (lty_env_atom_dom Σ).
+  set_swap x y (lty_env_atom_dom Σ).
 Proof.
   apply set_eq. intros z.
   unfold lty_env_atom_dom.
-  rewrite elem_of_aset_swap, !lvars_fv_elem.
+  rewrite elem_of_set_swap, !lvars_fv_elem.
   split.
   - intros Hz.
     change (LVFree z ∈ dom ((lty_env_swap x y Σ : lty_env)
       : gmap logic_var ty)) in Hz.
     apply elem_of_dom in Hz as [T Hz].
     rewrite lty_env_swap_lookup_inv in Hz.
-    change (LVFree (atom_swap x y z) ∈ dom (Σ : gmap logic_var ty)).
+    change (LVFree (swap x y z) ∈ dom (Σ : gmap logic_var ty)).
     apply elem_of_dom. exists T. exact Hz.
   - intros Hz.
-    change (LVFree (atom_swap x y z) ∈ dom (Σ : gmap logic_var ty)) in Hz.
+    change (LVFree (swap x y z) ∈ dom (Σ : gmap logic_var ty)) in Hz.
     apply elem_of_dom in Hz as [T Hlookup].
     change (LVFree z ∈ dom ((lty_env_swap x y Σ : lty_env)
       : gmap logic_var ty)).
@@ -235,20 +235,20 @@ Proof.
   destruct v as [k|z]; cbn.
   - reflexivity.
   - destruct (decide (z = x)) as [->|Hzx].
-    + rewrite atom_swap_l.
+    + rewrite swap_l.
       destruct (Σ !! LVFree y) eqn:Hlooky.
       * exfalso. apply Hy. eapply lty_env_atom_dom_lookup_free. exact Hlooky.
       * destruct (Σ !! LVFree x) eqn:Hlookx.
         -- exfalso. apply Hx. eapply lty_env_atom_dom_lookup_free. exact Hlookx.
         -- symmetry. exact Hlookx.
     + destruct (decide (z = y)) as [->|Hzy].
-      * rewrite atom_swap_r.
+      * rewrite swap_r.
         destruct (Σ !! LVFree x) eqn:Hlookx.
         -- exfalso. apply Hx. eapply lty_env_atom_dom_lookup_free. exact Hlookx.
         -- destruct (Σ !! LVFree y) eqn:Hlooky.
            ++ exfalso. apply Hy. eapply lty_env_atom_dom_lookup_free. exact Hlooky.
            ++ symmetry. exact Hlooky.
-      * rewrite atom_swap_fresh by congruence. reflexivity.
+      * rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
 Lemma lty_env_swap_atom_env_fresh Δ x y :
@@ -262,14 +262,14 @@ Proof.
   destruct v as [k|z]; cbn.
   - rewrite !atom_env_to_lty_env_lookup_bound_none. reflexivity.
   - destruct (decide (z = x)) as [->|Hzx].
-    + rewrite atom_swap_l.
+    + rewrite swap_l.
       rewrite !atom_env_to_lty_env_lookup_free_none by assumption.
       reflexivity.
     + destruct (decide (z = y)) as [->|Hzy].
-      * rewrite atom_swap_r.
+      * rewrite swap_r.
         rewrite !atom_env_to_lty_env_lookup_free_none by assumption.
         reflexivity.
-      * rewrite atom_swap_fresh by congruence. reflexivity.
+      * rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
 Lemma lty_env_swap_atom_env_insert_fresh Δ x y T :
@@ -283,7 +283,7 @@ Proof.
   rewrite atom_env_to_lty_env_insert.
   rewrite lty_env_swap_insert.
   cbn.
-  rewrite atom_swap_l.
+  rewrite swap_l.
   rewrite lty_env_swap_atom_env_fresh by assumption.
   reflexivity.
 Qed.
@@ -541,7 +541,7 @@ Proof.
   rewrite lty_env_open_one_atom_env by exact Hx.
   reflexivity.
   rewrite logic_var_open_unfold.
-  unfold eq_swap. repeat destruct decide; try lia; try congruence.
+  unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma lvars_shift_from_of_atoms k X :

@@ -20,7 +20,7 @@ Definition storeA_on_restrict {K : Type} `{Countable K}
 Proof.
   destruct s as [s Hdom].
   refine {| storeAO_store := storeA_restrict s D' |}.
-  rewrite storeA_restrict_dom, Hdom. set_solver.
+  rewrite storeA_restrict_dom, Hdom. better_set_solver.
 Defined.
 
 Lemma storeA_restrict_lookup {K : Type} `{Countable K}
@@ -78,7 +78,7 @@ Lemma storeA_restrict_dom_subset {K : Type} `{Countable K}
   dom (storeA_restrict s X : gmap K V) ⊆ X.
 Proof.
   change (dom (@storeA_restrict V K _ _ s X) ⊆ X).
-  rewrite storeA_restrict_dom. set_solver.
+  rewrite storeA_restrict_dom. better_set_solver.
 Qed.
 
 
@@ -110,7 +110,7 @@ Qed.
 Lemma storeA_restrict_empty {K : Type} `{Countable K} X :
   storeA_restrict (∅ : StoreA K) X = (∅ : gmap K V).
 Proof.
-  unfold storeA_restrict. apply map_restrict_idemp. set_solver.
+  unfold storeA_restrict. apply map_restrict_idemp. better_set_solver.
 Qed.
 
 
@@ -122,7 +122,7 @@ Proof.
     (∅ : gmap K V) !! z).
   rewrite (lookup_empty (M:=gmap K) (A:=V)).
   unfold map_restrict.
-  apply map_lookup_filter_None. right. intros v _ Hin. set_solver.
+  apply map_lookup_filter_None. right. intros v _ Hin. better_set_solver.
 Qed.
 
 
@@ -147,7 +147,7 @@ Lemma storeA_restrict_twice_same {K : Type} `{Countable K}
   storeA_restrict (storeA_restrict s X) X = (storeA_restrict s X : gmap K V).
 Proof.
   rewrite storeA_restrict_restrict.
-  replace (X ∩ X) with X by set_solver.
+  replace (X ∩ X) with X by better_set_solver.
   reflexivity.
 Qed.
 
@@ -159,7 +159,7 @@ Lemma storeA_restrict_twice_subset {K : Type} `{Countable K}
 Proof.
   intros HYX.
   rewrite storeA_restrict_restrict.
-  replace (X ∩ Y) with Y by set_solver.
+  replace (X ∩ Y) with Y by better_set_solver.
   reflexivity.
 Qed.
 
@@ -170,7 +170,7 @@ Lemma storeA_restrict_comm {K : Type} `{Countable K}
   (storeA_restrict (storeA_restrict s Y) X : gmap K V).
 Proof.
   rewrite !storeA_restrict_restrict.
-  replace (X ∩ Y) with (Y ∩ X) by set_solver.
+  replace (X ∩ Y) with (Y ∩ X) by better_set_solver.
   reflexivity.
 Qed.
 
@@ -180,7 +180,7 @@ Lemma storeA_restrict_idemp_eq {K : Type} `{Countable K}
   dom (s : gmap K V) = X →
   storeA_restrict s X = (s : gmap K V).
 Proof.
-  intros Hdom. apply storeA_restrict_idemp. set_solver.
+  intros Hdom. apply storeA_restrict_idemp. better_set_solver.
 Qed.
 
 
@@ -220,13 +220,13 @@ Proof.
   destruct (decide (x ∈ X)) as [Hx|Hx]; [|reflexivity].
   pose proof (f_equal (fun s : gmap K V => s !! x) HY) as HeqX.
   rewrite !storeA_restrict_lookup in HeqX.
-  destruct (decide (x ∈ Y)) as [_|Hbad]; [exact HeqX | set_solver].
+  destruct (decide (x ∈ Y)) as [_|Hbad]; [exact HeqX | better_set_solver].
 Qed.
 
 
 
 
-Lemma storeA_restrict_swap_fresh {K : Type} `{Countable K} `{!SwapKey K}
+Lemma storeA_restrict_swap_fresh {K : Type} `{Countable K} 
     (x y : K) (s : StoreA K) (X : gset K) :
   x ∉ X →
   y ∉ X →
@@ -239,13 +239,13 @@ Proof.
     + transitivity (Some v).
       * apply storeA_restrict_lookup_some_2; [| exact Hz].
         rewrite storeA_swap_lookup_inv.
-        rewrite key_swap_fresh by set_solver.
+        rewrite swap_fresh by better_set_solver.
         exact Hs.
       * symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].
     + transitivity (@None V).
       * apply storeA_restrict_lookup_none_l.
         rewrite storeA_swap_lookup_inv.
-        rewrite key_swap_fresh by set_solver. exact Hs.
+        rewrite swap_fresh by better_set_solver. exact Hs.
       * symmetry. by apply storeA_restrict_lookup_none_l.
   - transitivity (@None V).
     + by apply storeA_restrict_lookup_none_r.
@@ -270,7 +270,7 @@ Proof.
   - reflexivity.
   - apply set_eq. intros z.
     rewrite elem_of_intersection, elem_of_list_to_set, elem_of_elements.
-    set_solver.
+    better_set_solver.
 Qed.
 
 Lemma storeA_restrict_lookup_transport {K : Type} `{Countable K}
@@ -292,24 +292,24 @@ Proof.
   exact Hlook2.
 Qed.
 
-Lemma storeA_restrict_swap {K : Type} `{Countable K} `{!SwapKey K}
+Lemma storeA_restrict_swap {K : Type} `{Countable K} 
     (x y : K) (s : StoreA K) (X : gset K) :
-  (storeA_restrict (storeA_swap x y s) (gset_swap x y X) : gmap K V) =
+  (storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) =
   storeA_swap x y (storeA_restrict s X).
 Proof.
   apply storeA_map_eq. intros z.
-  change ((storeA_restrict (storeA_swap x y s) (gset_swap x y X) : gmap K V) !! z =
+  change ((storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) !! z =
     (storeA_swap x y (storeA_restrict s X) : gmap K V) !! z).
   rewrite storeA_restrict_lookup.
-  destruct (decide (z ∈ gset_swap x y X)) as [Hz|Hz].
+  destruct (decide (z ∈ set_swap x y X)) as [Hz|Hz].
   - rewrite !storeA_swap_lookup_inv.
-    rewrite elem_of_gset_swap in Hz.
-    destruct ((s : gmap K V) !! key_swap x y z) as [v|] eqn:Hs.
+    rewrite elem_of_set_swap in Hz.
+    destruct ((s : gmap K V) !! swap x y z) as [v|] eqn:Hs.
     + symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].
     + symmetry. apply storeA_restrict_lookup_none_l. exact Hs.
   - rewrite !storeA_swap_lookup_inv.
     symmetry. apply storeA_restrict_lookup_none_r.
-    intros Hbad. apply Hz. rewrite elem_of_gset_swap. exact Hbad.
+    intros Hbad. apply Hz. rewrite elem_of_set_swap. exact Hbad.
 Qed.
 
 Lemma storeA_restrict_shift {K : Type} `{Countable K} `{!ShiftKey K}

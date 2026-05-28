@@ -234,7 +234,6 @@ Lemma open_env_shift0_lookup_zero_none η :
 Proof.
   rewrite open_env_shift_from_zero.
   apply eq_None_not_Some. intros [x Hx].
-  unfold open_env_lift in Hx.
   apply lookup_kmap_Some in Hx as [i [Hi _]].
   - lia.
   - intros i j Hij. lia.
@@ -317,7 +316,7 @@ Proof.
     rewrite lty_env_open_one_shift_under_gen by lia.
     reflexivity.
   - rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma typed_lty_env_bind_open_current y Σ T :
@@ -332,7 +331,7 @@ Proof.
   replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
   2:{
     rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
   }
   rewrite lty_env_shift_closed by exact Hclosed.
   rewrite lty_env_open_one_fresh_noop.
@@ -385,7 +384,7 @@ Qed.
 
 Lemma typed_lty_env_bind_open_env_lift η Σ T :
   open_env_fresh_for_lvars η (dom Σ) ->
-  lty_env_open_lvars (open_env_lift η) (typed_lty_env_bind Σ T) =
+  lty_env_open_lvars ((kmap S η)) (typed_lty_env_bind Σ T) =
   typed_lty_env_bind (lty_env_open_lvars η Σ) T.
 Proof.
   intros Hfresh.

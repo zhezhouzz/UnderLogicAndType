@@ -244,7 +244,7 @@ Qed.
 Lemma formula_open_env_forall η φ :
   open_env_values_inj η ->
   formula_open_env η (FForall φ) =
-  FForall (formula_open_env (open_env_lift η) φ).
+  FForall (formula_open_env ((kmap S η)) φ).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
   - intros _. rewrite formula_open_env_empty, open_env_lift_empty,
@@ -481,9 +481,9 @@ Proof.
 Qed.
 
 Lemma lvars_open_env_lift_qual_vars_difference_bound0 η q :
-  open_env_fresh_for_lvars (open_env_lift η) (qual_vars q) ->
-  lvars_open_env (open_env_lift η) (qual_vars q ∖ {[LVBound 0]}) =
-  qual_vars (qual_open_env (open_env_lift η) q) ∖ {[LVBound 0]}.
+  open_env_fresh_for_lvars ((kmap S η)) (qual_vars q) ->
+  lvars_open_env ((kmap S η)) (qual_vars q ∖ {[LVBound 0]}) =
+  qual_vars (qual_open_env ((kmap S η)) q) ∖ {[LVBound 0]}.
 Proof.
   intros Hfresh.
   rewrite qual_open_env_vars by exact Hfresh.
@@ -502,7 +502,7 @@ Proof.
       * destruct n as [|n].
         -- rewrite open_env_lift_lookup_zero_none in Hbad.
            reflexivity.
-        -- destruct (open_env_lift η !! S n); discriminate.
+        -- destruct ((kmap S η) !! S n); discriminate.
       * discriminate.
   - intros [Hv Hnot].
     apply elem_of_map in Hv as [u [-> HuD]].
@@ -517,7 +517,7 @@ Proof.
 Qed.
 
 Lemma lvars_fv_open_env_lift_subset_at_depth1 η D :
-  lvars_fv (lvars_open_env (open_env_lift η) D) ⊆
+  lvars_fv (lvars_open_env ((kmap S η)) D) ⊆
   lvars_fv (lvars_open_env η (lvars_at_depth 1 D)).
 Proof.
   intros x Hx.
@@ -531,8 +531,7 @@ Proof.
   - cbn [logic_var_open_env] in Hv.
     destruct n as [|n].
     + rewrite open_env_lift_lookup_zero_none in Hv. discriminate.
-    + unfold open_env_lift in Hv.
-      rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
+    + rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
         S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η n) in Hv.
       destruct (η !! n) as [y|] eqn:Hηn; [|discriminate].
       inversion Hv. subst y.
@@ -551,20 +550,18 @@ Qed.
 
 Lemma open_env_lift_fresh_for_lvars_at_depth1 η D :
   open_env_fresh_for_lvars η (lvars_at_depth 1 D) ->
-  open_env_fresh_for_lvars (open_env_lift η) D.
+  open_env_fresh_for_lvars ((kmap S η)) D.
 Proof.
   intros Hfresh j x Hjx Hbad.
   destruct j as [|j].
   - rewrite open_env_lift_lookup_zero_none in Hjx. discriminate.
-  - unfold open_env_lift in Hjx.
-    apply lookup_kmap_Some in Hjx as [i [HSi Hηi]].
+  - apply lookup_kmap_Some in Hjx as [i [HSi Hηi]].
     2:{ intros ? ? ?. lia. }
     injection HSi as ->.
     eapply Hfresh; [exact Hηi|].
-    replace (delete (S i) (open_env_lift η)) with
-      (open_env_lift (delete i η)) in Hbad.
+    replace (delete (S i) ((kmap S η))) with
+      (kmap S (delete i η) : gmap nat atom) in Hbad.
     2:{
-      unfold open_env_lift.
       exact (@kmap_delete nat (gmap nat) _ _ _ _ _ _ _ _ _
         nat (gmap nat) _ _ _ _ _ _ _ _ _
         S (ltac:(intros ? ? ?; lia)) atom η i).
@@ -573,7 +570,7 @@ Proof.
 Qed.
 
 Lemma open_env_lift_fresh_for_bound0_singleton η :
-  open_env_fresh_for_lvars (open_env_lift η) ({[LVBound 0]}).
+  open_env_fresh_for_lvars ((kmap S η)) ({[LVBound 0]}).
 Proof.
   intros i x Hi Hbad.
   apply lvars_fv_elem in Hbad.
@@ -581,7 +578,7 @@ Proof.
   apply elem_of_map in Hbad as [v [Hv HvIn]].
   apply elem_of_singleton in HvIn. subst v.
   cbn [logic_var_open_env] in Hv.
-  assert (Hnone : delete i (open_env_lift η) !! 0 = None).
+  assert (Hnone : delete i (kmap S η : gmap nat atom) !! 0 = None).
   {
     destruct (decide (i = 0)) as [->|Hi0].
     - rewrite lookup_delete_eq. reflexivity.
@@ -592,7 +589,7 @@ Proof.
 Qed.
 
 Lemma logic_var_open_env_lift_bound0 η :
-  logic_var_open_env (open_env_lift η) (LVBound 0) = LVBound 0.
+  logic_var_open_env ((kmap S η)) (LVBound 0) = LVBound 0.
 Proof.
   cbn [logic_var_open_env].
   rewrite open_env_lift_lookup_zero_none. reflexivity.
@@ -619,7 +616,7 @@ Qed.
 
 Lemma lty_env_open_lvars_lift_bound0_singleton η T :
   open_env_values_inj η ->
-  lty_env_open_lvars (open_env_lift η)
+  lty_env_open_lvars ((kmap S η))
     ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env) =
   ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
 Proof.
@@ -639,7 +636,7 @@ Proof.
         apply (storeA_rekey_empty (V := ty) (K := logic_var)
           (logic_var_open (S k) x)).
       * rewrite logic_var_open_unfold.
-        unfold eq_swap. repeat destruct decide; try lia; try congruence.
+        unfold swap. repeat destruct decide; try lia; try congruence.
     + apply open_env_lift_lookup_none. exact Hfresh.
     + apply open_env_avoids_atom_lift. exact Havoid.
     + intros i z Hiz Hbad.
@@ -654,12 +651,13 @@ Proof.
       assert (Hv0 : v = LVBound 0) by set_solver.
       subst v.
       cbn [logic_var_open_env] in Hv.
-      assert (Hnone : delete i (<[S k:=x]> (open_env_lift η)) !! 0 = None).
+      assert (Hnone :
+        delete i (<[S k:=x]> (kmap S η : gmap nat atom)) !! 0 = None).
       {
         destruct (decide (i = 0)) as [->|Hi0].
         - rewrite lookup_delete_eq. reflexivity.
         - rewrite lookup_delete_ne by congruence.
-          change ((<[S k:=x]> (open_env_lift η) : gmap nat atom) !! 0 = None).
+          change ((<[S k:=x]> ((kmap S η)) : gmap nat atom) !! 0 = None).
           destruct (decide (0 = S k)) as [Hbad0|Hneq0]; [lia|].
           rewrite lookup_insert_ne by (intros H; apply Hneq0; symmetry; exact H).
           apply open_env_lift_lookup_zero_none.
@@ -668,7 +666,7 @@ Proof.
 Qed.
 
 Lemma open_tm_env_lift_shift0 η e :
-  open_tm_env (open_env_lift η) (tm_shift 0 e) =
+  open_tm_env ((kmap S η)) (tm_shift 0 e) =
   tm_shift 0 (open_tm_env η e).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -694,14 +692,14 @@ Proof.
     replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
     + reflexivity.
     + rewrite logic_var_open_unfold.
-      unfold eq_swap. repeat destruct decide; try lia; try congruence.
+      unfold swap. repeat destruct decide; try lia; try congruence.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
 Lemma formula_open_env_lift_expr_result_formula_shift0_core η e :
   open_env_fresh_for_lvars η (tm_lvars e) ->
   open_env_values_inj η ->
-  formula_open_env (open_env_lift η)
+  formula_open_env ((kmap S η))
     (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
   expr_result_formula (tm_shift 0 (open_tm_env η e)) (LVBound 0).
 Proof.
@@ -733,7 +731,7 @@ Proof.
 Qed.
 
 Lemma open_tm_env_lift_tapp_shift_bvar0 η e :
-  open_tm_env (open_env_lift η) (tapp_tm (tm_shift 0 e) (vbvar 0)) =
+  open_tm_env ((kmap S η)) (tapp_tm (tm_shift 0 e) (vbvar 0)) =
   tapp_tm (tm_shift 0 (open_tm_env η e)) (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
@@ -751,7 +749,7 @@ Proof.
 Qed.
 
 Lemma open_tm_env_lift_tret_bound0 η :
-  open_tm_env (open_env_lift η) (tret (vbvar 0)) = tret (vbvar 0).
+  open_tm_env ((kmap S η)) (tret (vbvar 0)) = tret (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
   - rewrite open_env_lift_empty.

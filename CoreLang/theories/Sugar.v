@@ -255,8 +255,8 @@ Proof.
   intros Hx Hy.
   rewrite tm_swap_atom_tapp_tm.
   rewrite tm_swap_atom_fresh by assumption.
-  simpl. replace (atom_swap x y x) with y
-    by (symmetry; apply atom_swap_l).
+  simpl. replace (swap x y x) with y
+    by (symmetry; apply swap_l).
   reflexivity.
 Qed.
 

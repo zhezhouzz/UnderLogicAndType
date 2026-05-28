@@ -56,7 +56,7 @@ Proof.
   unfold closed_env. intros Hclosed.
   apply map_Forall_lookup_2. intros z v Hlookup.
   rewrite store_swap_lookup_inv in Hlookup.
-  exact (closed_env_lookup σ (atom_swap x y z) v Hclosed Hlookup).
+  exact (closed_env_lookup σ (swap x y z) v Hclosed Hlookup).
 Qed.
 
 Definition lc_env (σ : env) : Prop :=
@@ -945,7 +945,7 @@ Proof.
   f_equal.
   apply map_restrict_agree. intros z Hz.
   rewrite store_swap_lookup_inv.
-  rewrite atom_swap_fresh by set_solver.
+  rewrite swap_fresh by set_solver.
   reflexivity.
 Qed.
 
@@ -1107,7 +1107,7 @@ Proof.
   assert (Hlookup_swap : store_swap x y σ !! x = Some vx).
   {
     rewrite store_swap_lookup_inv.
-    rewrite atom_swap_l. exact Hlookup.
+    rewrite swap_l. exact Hlookup.
   }
   rewrite (msubst_open_lookup_tm (store_swap x y σ) e k x vx)
     by (try apply closed_env_store_swap; try exact Hclosed;
@@ -1118,8 +1118,8 @@ Proof.
   assert (Hdelete :
     delete x (store_swap x y σ) = store_swap x y (delete y σ)).
   {
-    assert (Hatom : atom_swap x y y = x).
-    { apply atom_swap_r. }
+    assert (Hatom : swap x y y = x).
+    { apply swap_r. }
     rewrite <- Hatom at 1. symmetry. apply store_swap_delete.
   }
   change (m{delete x (store_swap x y σ)} e = m{delete y σ} e).

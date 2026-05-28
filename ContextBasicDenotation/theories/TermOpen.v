@@ -21,11 +21,11 @@ Proof. reflexivity. Qed.
 
 Lemma lstore_swap_lookup_inv_value a b (σ : LStoreT) z :
   ((lstore_swap a b σ : gmap logic_var value) !! z) =
-  ((σ : gmap logic_var value) !! key_swap a b z).
+  ((σ : gmap logic_var value) !! swap a b z).
 Proof.
   unfold lstore_swap, lstore_rekey.
   change ((storeA_swap a b σ : gmap logic_var value) !! z =
-    (σ : gmap logic_var value) !! key_swap a b z).
+    (σ : gmap logic_var value) !! swap a b z).
   apply storeA_swap_lookup_inv.
 Qed.
 
@@ -52,14 +52,14 @@ Proof.
     intros; try reflexivity.
   - unfold lstore_free_part.
     rewrite !lstore_to_store_lookup, lstore_swap_lookup_inv_value.
-    rewrite key_swap_fresh by (set_solver || congruence).
+    rewrite swap_fresh by (set_solver || congruence).
     reflexivity.
   - destruct (decide (d + k = n)) as [Heq|Hneq].
     + subst n.
       destruct (decide (d <= d + k)) as [_|Hbad]; [|lia].
       rewrite lstore_bound_part_lookup, lstore_swap_lookup_inv_value.
       replace (d + k - d) with k by lia.
-      rewrite key_swap_l.
+      rewrite swap_l.
       cbn [lstore_instantiate_value_split_at].
       unfold lstore_free_part. rewrite lstore_to_store_lookup.
       destruct ((σ : gmap logic_var value) !! LVFree y) as [u|] eqn:Hlook;
@@ -71,14 +71,14 @@ Proof.
         unfold bvar_lvars_at.
         rewrite decide_True by lia.
         replace (d + k - d) with k by lia.
-        rewrite lvars_open_unfold, gset_swap_singleton.
-        rewrite key_swap_l.
+        rewrite lvars_open_unfold, set_swap_singleton.
+        rewrite swap_l.
         apply elem_of_singleton. reflexivity.
       }
       apply not_elem_of_dom in Hlook. exact (Hlook H1).
     + destruct (decide (d <= n)) as [Hdn|Hdn].
       * rewrite lstore_bound_part_lookup, lstore_swap_lookup_inv_value.
-        rewrite key_swap_fresh.
+        rewrite swap_fresh.
         -- cbn [lstore_instantiate_value_split_at].
            rewrite decide_True by exact Hdn.
            rewrite lstore_bound_part_lookup. reflexivity.
@@ -270,7 +270,7 @@ Proof.
   - split.
     + unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_dom].
       rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
-      rewrite lvars_open_unfold, gset_swap_involutive. set_solver.
+      rewrite lvars_open_unfold, set_swap_involutive. set_solver.
     + intros σ Hσ.
       unfold lworld_on_open_back in Hσ. cbn [lw lraw_world raw_worldA worldA_stores] in Hσ.
       destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
@@ -315,24 +315,24 @@ Proof.
   rewrite tm_lvars_open by exact Hy.
   split; intros [Hz [v [Hlookup Heval]]].
   - split.
-    + rewrite lvars_open_unfold, gset_swap_elem.
-      rewrite logic_var_open_unfold, eq_swap_involutive.
+    + rewrite lvars_open_unfold, set_swap_elem.
+      rewrite logic_var_open_unfold, swap_involutive.
       exact Hz.
     + exists v. split.
       * rewrite lstore_swap_lookup_inv_value in Hlookup.
-        change (key_swap (LVBound k) (LVFree y) z) with
+        change (swap (LVBound k) (LVFree y) z) with
           (logic_var_open k y z) in Hlookup.
         exact Hlookup.
       * apply expr_eval_in_store_open_back_iff in Heval;
           [exact Heval | exact Hy | exact Hdom].
   - split.
-    + rewrite lvars_open_unfold, gset_swap_elem in Hz.
-      rewrite logic_var_open_unfold, eq_swap_involutive in Hz.
+    + rewrite lvars_open_unfold, set_swap_elem in Hz.
+      rewrite logic_var_open_unfold, swap_involutive in Hz.
       exact Hz.
     + exists v. split.
       * change ((lstore_swap (LVBound k) (LVFree y) σ : gmap logic_var value) !! z = Some v).
         rewrite lstore_swap_lookup_inv_value.
-        change (key_swap (LVBound k) (LVFree y) z) with (logic_var_open k y z).
+        change (swap (LVBound k) (LVFree y) z) with (logic_var_open k y z).
         exact Hlookup.
       * apply expr_eval_in_store_open_back_iff; [exact Hy | exact Hdom | exact Heval].
 Qed.
@@ -351,8 +351,8 @@ Proof.
   rewrite tm_lvars_open by exact Hy.
   split; intros [Hz [_ Hstores]].
   - split.
-    + rewrite lvars_open_unfold, gset_swap_elem.
-      rewrite logic_var_open_unfold, eq_swap_involutive.
+    + rewrite lvars_open_unfold, set_swap_elem.
+      rewrite logic_var_open_unfold, swap_involutive.
       exact Hz.
     + split.
       * change (worldA_dom (@lw value _ w : LWorldT)) with
@@ -381,8 +381,8 @@ Proof.
         apply expr_result_at_store_open_back_iff in Hres;
           [exact Hres | exact Hy | exact Hτdom].
   - split.
-    + rewrite lvars_open_unfold, gset_swap_elem in Hz.
-      rewrite logic_var_open_unfold, eq_swap_involutive in Hz.
+    + rewrite lvars_open_unfold, set_swap_elem in Hz.
+      rewrite logic_var_open_unfold, swap_involutive in Hz.
       exact Hz.
     + split.
       * change (tm_lvars e ∪ {[z]} ⊆
@@ -390,7 +390,7 @@ Proof.
             (@lw value _ (lworld_on_open_back k y (tm_lvars e ∪ {[z]}) w) : LWorldT)).
         unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_dom].
         rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
-        rewrite lvars_open_unfold, gset_swap_involutive. set_solver.
+        rewrite lvars_open_unfold, set_swap_involutive. set_solver.
       * intros σ Hσ.
         unfold lworld_on_open_back in Hσ. cbn [lw lraw_world raw_worldA worldA_stores] in Hσ.
         destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
@@ -413,10 +413,10 @@ Lemma tm_lvars_open_result_domain k y e z :
   tm_lvars (open_tm k (vfvar y) e) ∪ {[logic_var_open k y z]}.
 Proof.
   intros Hy.
-  rewrite lvars_open_unfold, gset_swap_union, <- lvars_open_unfold.
+  rewrite lvars_open_unfold, set_swap_union, <- lvars_open_unfold.
   rewrite tm_lvars_open by exact Hy.
-  rewrite gset_swap_singleton.
-  change (key_swap (LVBound k) (LVFree y) z) with (logic_var_open k y z).
+  rewrite set_swap_singleton.
+  change (swap (LVBound k) (LVFree y) z) with (logic_var_open k y z).
   reflexivity.
 Qed.
 

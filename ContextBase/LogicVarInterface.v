@@ -28,7 +28,7 @@ Proof.
   rewrite lvars_bv_elem.
   unfold lvars_of_atoms.
   rewrite elem_of_empty, elem_of_map.
-  split; [intros [a [Hbad _]]; discriminate | set_solver].
+  split; [intros [a [Hbad _]]; discriminate | better_set_solver].
 Qed.
 
 Lemma lvars_bv_empty_subset_of_atoms_fv (D : lvset) :
@@ -39,7 +39,7 @@ Proof.
   destruct v as [k|x].
   - exfalso.
     assert (k ∈ lvars_bv D) by (apply lvars_bv_elem; exact Hv).
-    rewrite Hbv in H. set_solver.
+    rewrite Hbv in H. better_set_solver.
   - unfold lvars_of_atoms. apply elem_of_map.
     exists x. split; [reflexivity|].
     apply lvars_fv_elem. exact Hv.
@@ -50,7 +50,7 @@ Lemma lvars_fv_singleton_bound k :
 Proof.
   apply set_eq. intros x.
   rewrite lvars_fv_elem.
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma lvars_fv_singleton_free x :
@@ -69,18 +69,18 @@ Lemma lvars_fv_open k x (D : lvset) :
 Proof.
   apply set_eq. intros y.
   rewrite lvars_fv_elem.
-  change (LVFree y ∈ gset_swap (LVBound k) (LVFree x) D ↔
+  change (LVFree y ∈ set_swap (LVBound k) (LVFree x) D ↔
     y ∈ (lvars_fv D ∖ {[x]}) ∪
       (if decide (k ∈ lvars_bv D) then {[x]} else ∅)).
-  rewrite gset_swap_elem.
+  rewrite set_swap_elem.
   destruct (decide (y = x)) as [->|Hyx].
-  - rewrite eq_swap_r.
+  - rewrite swap_r.
     destruct (decide (k ∈ lvars_bv D)) as [Hk|Hk].
     + rewrite elem_of_union, elem_of_difference, elem_of_singleton.
       rewrite lvars_bv_elem in Hk. tauto.
     + rewrite elem_of_union, elem_of_difference, elem_of_singleton.
       rewrite elem_of_empty. rewrite lvars_bv_elem in Hk. tauto.
-  - rewrite eq_swap_fresh by congruence.
+  - rewrite swap_fresh by congruence.
     destruct (decide (k ∈ lvars_bv D)); rewrite elem_of_union,
       elem_of_difference, !elem_of_singleton, ?elem_of_empty, lvars_fv_elem;
       tauto.
@@ -123,9 +123,9 @@ Lemma lvars_bv_swap x y (D : lvset) :
 Proof.
   apply set_eq. intros k.
   rewrite !lvars_bv_elem.
-  change (LVBound k ∈ gset_swap (LVFree x) (LVFree y) D ↔ LVBound k ∈ D).
-  rewrite gset_swap_elem.
-  rewrite eq_swap_fresh by congruence.
+  change (LVBound k ∈ set_swap (LVFree x) (LVFree y) D ↔ LVBound k ∈ D).
+  rewrite set_swap_elem.
+  rewrite swap_fresh by congruence.
   reflexivity.
 Qed.
 
@@ -140,7 +140,7 @@ Lemma lvars_fv_open_subset k x (D : lvset) :
 Proof.
   intros y Hy.
   rewrite lvars_fv_open in Hy.
-  destruct (decide (k ∈ lvars_bv D)); set_solver.
+  destruct (decide (k ∈ lvars_bv D)); better_set_solver.
 Qed.
 
 #[global] Instance stale_logic_var : Stale logic_var := logic_var_fv.

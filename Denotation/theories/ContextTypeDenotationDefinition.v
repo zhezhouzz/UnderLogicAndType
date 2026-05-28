@@ -161,13 +161,13 @@ Proof.
   (* Main mopen theorem.  The intended proof is by induction on [gas].
      The guard part is handled by [formula_open_env_denot_guard].  Recursive
      branches use the IH directly; Arrow/Wand recurse under
-     [formula_open_env_forall] with [open_env_lift η]. *)
+     [formula_open_env_forall] with [(kmap S η)]. *)
   revert Σ τ e η.
   induction gas as [|gas IH]; intros Σ τ e η Hfresh Hinj.
   - apply formula_open_env_denot_ty_lvar_gas_zero; assumption.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr].
     + assert (Hfreshφ :
-        open_env_fresh_for_lvars (open_env_lift η) (qual_vars φ)).
+        open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ)).
       {
         apply open_env_lift_fresh_for_lvars_at_depth1.
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
@@ -189,7 +189,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono (open_env_lift η)
+        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
           (dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty)))
           ({[LVBound 0]} : lvset)).
         - intros v Hv.
@@ -214,7 +214,7 @@ Proof.
       2:{ apply open_env_values_inj_lift. exact Hinj. }
       reflexivity.
     + assert (Hfreshφ :
-        open_env_fresh_for_lvars (open_env_lift η) (qual_vars φ)).
+        open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ)).
       {
         apply open_env_lift_fresh_for_lvars_at_depth1.
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
@@ -236,7 +236,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono (open_env_lift η)
+        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
           (dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty)))
           ({[LVBound 0]} : lvset)).
         - intros v Hv.
@@ -351,7 +351,7 @@ Proof.
         exact Hv.
       }
       assert (Hfresh_arg :
-        open_env_fresh_for_lvars (open_env_lift η)
+        open_env_fresh_for_lvars ((kmap S η))
           (dom (typed_lty_env_bind
             (denot_relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)) ∪
            denot_relevant_lvars (cty_shift 0 τx) (tret (vbvar 0)))).
@@ -361,7 +361,7 @@ Proof.
         apply lvars_at_depth_arrow_arg_lift_support_subset.
       }
       assert (Hfresh_body :
-        open_env_fresh_for_lvars (open_env_lift η)
+        open_env_fresh_for_lvars ((kmap S η))
           (dom (typed_lty_env_bind
             (denot_relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)) ∪
            denot_relevant_lvars τr
@@ -380,7 +380,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono (open_env_lift η)
+        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
           (dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty)))
           ({[LVBound 0]} : lvset)).
         - intros v Hv.
@@ -393,13 +393,13 @@ Proof.
       rewrite (IH
         (typed_lty_env_bind
           (denot_relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)) (open_env_lift η)).
+        (cty_shift 0 τx) (tret (vbvar 0)) ((kmap S η))).
       2: exact Hfresh_arg.
       2:{ apply open_env_values_inj_lift. exact Hinj. }
       rewrite (IH
         (typed_lty_env_bind
           (denot_relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
-        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) (open_env_lift η)).
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) ((kmap S η))).
       2: exact Hfresh_body.
       2:{ apply open_env_values_inj_lift. exact Hinj. }
       rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
@@ -420,7 +420,7 @@ Proof.
         exact Hv.
       }
       assert (Hfresh_arg :
-        open_env_fresh_for_lvars (open_env_lift η)
+        open_env_fresh_for_lvars ((kmap S η))
           (dom (typed_lty_env_bind
             (denot_relevant_env Σ (CTWand τx τr) e) (erase_ty τx)) ∪
            denot_relevant_lvars (cty_shift 0 τx) (tret (vbvar 0)))).
@@ -430,7 +430,7 @@ Proof.
         apply lvars_at_depth_wand_arg_lift_support_subset.
       }
       assert (Hfresh_body :
-        open_env_fresh_for_lvars (open_env_lift η)
+        open_env_fresh_for_lvars ((kmap S η))
           (dom (typed_lty_env_bind
             (denot_relevant_env Σ (CTWand τx τr) e) (erase_ty τx)) ∪
            denot_relevant_lvars τr
@@ -450,7 +450,7 @@ Proof.
       rewrite formula_open_env_wand.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono (open_env_lift η)
+        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
           (dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty)))
           ({[LVBound 0]} : lvset)).
         - intros v Hv.
@@ -463,13 +463,13 @@ Proof.
       rewrite (IH
         (typed_lty_env_bind
           (denot_relevant_env Σ (CTWand τx τr) e) (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)) (open_env_lift η)).
+        (cty_shift 0 τx) (tret (vbvar 0)) ((kmap S η))).
       2: exact Hfresh_arg.
       2:{ apply open_env_values_inj_lift. exact Hinj. }
       rewrite (IH
         (typed_lty_env_bind
           (denot_relevant_env Σ (CTWand τx τr) e) (erase_ty τx))
-        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) (open_env_lift η)).
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) ((kmap S η))).
       2: exact Hfresh_body.
       2:{ apply open_env_values_inj_lift. exact Hinj. }
       rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.

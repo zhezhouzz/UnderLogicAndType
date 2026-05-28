@@ -133,18 +133,9 @@ Proof.
   unfold erase_ctx_under in *.
   cbn [erase_ctx] in *.
   assert (HxΣ : x ∉ dom Σ).
-  { intros HxΣ. apply Hfresh.
-    apply elem_of_dom in HxΣ as [T HxΣ].
-    apply elem_of_dom. exists T.
-    apply store_lookup_union_Some_raw. left. exact HxΣ. }
+  { better_set_solver. }
   assert (HxΓ : x ∉ dom (erase_ctx Γ)).
-  { intros HxΓ. apply Hfresh.
-    apply elem_of_dom in HxΓ as [T HxΓ].
-    apply elem_of_dom. exists T.
-    apply store_lookup_union_Some_raw. right.
-    split.
-    - apply store_lookup_none_of_not_elem_dom. exact HxΣ.
-    - exact HxΓ. }
+  { better_set_solver. }
   change (Σ ∪ ((erase_ctx Γ : @StoreA ty atom _ _) ∪
       ({[x := erase_ty τ]} : @StoreA ty atom _ _)) =
     <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
@@ -174,23 +165,7 @@ Proof.
   intros Hbasic.
   unfold erase_ctx_under.
   pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-  apply set_eq. intros z. split.
-  - intros Hz.
-    apply elem_of_dom in Hz as [T Hz].
-    apply store_lookup_union_Some_raw in Hz as [HzΣ|[_ HzΓ]].
-    + apply elem_of_union_l. apply elem_of_dom. eauto.
-    + apply elem_of_union_r. rewrite <- HdomΓ. apply elem_of_dom. eauto.
-  - intros Hz.
-    apply elem_of_union in Hz as [HzΣ|HzΓ].
-    + apply elem_of_dom in HzΣ as [T HzΣ].
-      apply elem_of_dom. exists T.
-      apply store_lookup_union_Some_raw. left. exact HzΣ.
-    + rewrite <- HdomΓ in HzΓ.
-      apply elem_of_dom in HzΓ as [T HzΓ].
-      apply elem_of_dom.
-      destruct (Σ !! z) as [TΣ|] eqn:HΣ.
-      * exists TΣ. apply store_lookup_union_Some_raw. left. exact HΣ.
-      * exists T. apply store_lookup_union_Some_raw. right. eauto.
+  better_set_solver.
 Qed.
 
 Ltac ctx_name_norm :=

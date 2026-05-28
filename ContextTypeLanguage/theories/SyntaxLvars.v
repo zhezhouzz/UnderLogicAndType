@@ -136,18 +136,18 @@ Proof.
   - destruct (decide (d + k = n)) as [Heq|Hneq].
     + subst n.
       rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       destruct (decide (LVBound (d + k) = LVBound (d + k))) as [_|Hbad];
         [|congruence].
       cbn [logic_var_at_depth].
       destruct (decide (d <= d + k)) as [_|Hbad]; [|lia].
       cbn [option_map].
       rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       replace (d + k - d) with k by lia.
       destruct (decide (LVBound k = LVBound k)) as [_|Hbad]; [reflexivity|congruence].
     + rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       destruct (decide (LVBound n = LVBound (d + k))) as [Heq|_];
         [inversion Heq; lia|].
       destruct (decide (LVBound n = LVFree x)) as [Hbad|_]; [discriminate|].
@@ -155,7 +155,7 @@ Proof.
       destruct (decide (d <= n)) as [Hdn|Hdn].
       * cbn [option_map].
         rewrite logic_var_open_unfold.
-        unfold eq_swap.
+        unfold swap.
         destruct (decide (LVBound (n - d) = LVBound k)) as [Heq|_].
         -- inversion Heq. lia.
         -- destruct (decide (LVBound (n - d) = LVFree x)) as [Hbad|_];
@@ -163,26 +163,26 @@ Proof.
       * reflexivity.
   - destruct (decide (x = y)) as [->|Hxy].
     + rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       destruct (decide (LVFree y = LVBound (d + k))) as [Hbad|_];
         [discriminate|].
       destruct (decide (LVFree y = LVFree y)) as [_|Hbad]; [|congruence].
       cbn [logic_var_at_depth option_map].
       destruct (decide (d <= d + k)) as [_|Hbad]; [|lia].
       rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       replace (d + k - d) with k by lia.
       destruct (decide (LVFree y = LVBound k)) as [Hbad|_]; [discriminate|].
       destruct (decide (LVFree y = LVFree y)) as [_|Hbad]; [reflexivity|congruence].
     + rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       destruct (decide (LVFree y = LVBound (d + k))) as [Hbad|_];
         [discriminate|].
       destruct (decide (LVFree y = LVFree x)) as [Heq|_];
         [inversion Heq; congruence|].
       cbn [logic_var_at_depth option_map].
       rewrite logic_var_open_unfold.
-      unfold eq_swap.
+      unfold swap.
       destruct (decide (LVFree y = LVBound k)) as [Hbad|_]; [discriminate|].
       destruct (decide (LVFree y = LVFree x)) as [Heq|_];
         [inversion Heq; congruence|reflexivity].
@@ -197,26 +197,26 @@ Proof.
   - intros Hu.
     apply lvars_at_depth_elem in Hu as [v [Hv Hvu]].
     rewrite lvars_open_unfold in Hv.
-    apply elem_of_gset_swap in Hv.
-    change (key_swap (LVBound (d + k)) (LVFree x) v ∈ D) with
+    apply elem_of_set_swap in Hv.
+    change (swap (LVBound (d + k)) (LVFree x) v ∈ D) with
       (logic_var_open (d + k) x v ∈ D) in Hv.
-    rewrite lvars_open_unfold. apply elem_of_gset_swap.
-    change (key_swap (LVBound k) (LVFree x) u ∈ lvars_at_depth d D) with
+    rewrite lvars_open_unfold. apply elem_of_set_swap.
+    change (swap (LVBound k) (LVFree x) u ∈ lvars_at_depth d D) with
       (logic_var_open k x u ∈ lvars_at_depth d D).
     apply lvars_at_depth_elem. exists (logic_var_open (d + k) x v).
     split; [exact Hv|].
     rewrite logic_var_at_depth_open, Hvu. reflexivity.
   - intros Hu.
     rewrite lvars_open_unfold in Hu.
-    apply elem_of_gset_swap in Hu.
-    change (key_swap (LVBound k) (LVFree x) u ∈ lvars_at_depth d D) with
+    apply elem_of_set_swap in Hu.
+    change (swap (LVBound k) (LVFree x) u ∈ lvars_at_depth d D) with
       (logic_var_open k x u ∈ lvars_at_depth d D) in Hu.
     apply lvars_at_depth_elem in Hu as [v [Hv Hvu]].
     apply lvars_at_depth_elem.
     exists (logic_var_open (d + k) x v).
     split.
-    + rewrite lvars_open_unfold. apply elem_of_gset_swap.
-      change (key_swap (LVBound (d + k)) (LVFree x)
+    + rewrite lvars_open_unfold. apply elem_of_set_swap.
+      change (swap (LVBound (d + k)) (LVFree x)
         (logic_var_open (d + k) x v) ∈ D) with
         (logic_var_open (d + k) x (logic_var_open (d + k) x v) ∈ D).
       rewrite logic_var_open_involutive. exact Hv.
@@ -243,31 +243,31 @@ Proof.
       (cty_open (d + k) x (CTInter τ1 τ2)).
     cbn [cty_open context_ty_lvars_at].
     rewrite IHτ1, IHτ2.
-    symmetry. rewrite lvars_open_unfold, gset_swap_union. reflexivity.
+    symmetry. rewrite lvars_open_unfold, set_swap_union. reflexivity.
   - change ({d + k ~> x} CTUnion τ1 τ2) with
       (cty_open (d + k) x (CTUnion τ1 τ2)).
     cbn [cty_open context_ty_lvars_at].
     rewrite IHτ1, IHτ2.
-    symmetry. rewrite lvars_open_unfold, gset_swap_union. reflexivity.
+    symmetry. rewrite lvars_open_unfold, set_swap_union. reflexivity.
   - change ({d + k ~> x} CTSum τ1 τ2) with
       (cty_open (d + k) x (CTSum τ1 τ2)).
     cbn [cty_open context_ty_lvars_at].
     rewrite IHτ1, IHτ2.
-    symmetry. rewrite lvars_open_unfold, gset_swap_union. reflexivity.
+    symmetry. rewrite lvars_open_unfold, set_swap_union. reflexivity.
   - change ({d + k ~> x} CTArrow τ1 τ2) with
       (cty_open (d + k) x (CTArrow τ1 τ2)).
     cbn [cty_open context_ty_lvars_at].
     rewrite IHτ1.
     replace (S (d + k)) with (S d + k) by lia.
     rewrite IHτ2.
-    symmetry. rewrite lvars_open_unfold, gset_swap_union. reflexivity.
+    symmetry. rewrite lvars_open_unfold, set_swap_union. reflexivity.
   - change ({d + k ~> x} CTWand τ1 τ2) with
       (cty_open (d + k) x (CTWand τ1 τ2)).
     cbn [cty_open context_ty_lvars_at].
     rewrite IHτ1.
     replace (S (d + k)) with (S d + k) by lia.
     rewrite IHτ2.
-    symmetry. rewrite lvars_open_unfold, gset_swap_union. reflexivity.
+    symmetry. rewrite lvars_open_unfold, set_swap_union. reflexivity.
 Qed.
 
 Lemma cty_open_vars k x τ :
@@ -397,9 +397,9 @@ Proof.
   assert (LVBound m ∈ lvars_open 0 x D) as Hopened.
   {
     rewrite lvars_open_unfold.
-    unfold gset_swap.
+    unfold set_swap.
     apply elem_of_map. exists (LVBound m). split; [|exact Hv].
-    symmetry. apply eq_swap_fresh.
+    symmetry. apply swap_fresh.
     - intros Heq. inversion Heq. lia.
     - discriminate.
   }

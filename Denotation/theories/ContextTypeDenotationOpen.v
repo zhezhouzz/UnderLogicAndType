@@ -22,7 +22,7 @@ Proof.
   - rewrite open_tm_shift0_lc by exact Hlc.
     replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
     reflexivity.
-    unfold logic_var_open, swap, swap_action_self, eq_swap.
+    unfold logic_var_open, swap, swap.
     repeat destruct decide; try lia; try congruence.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
@@ -110,7 +110,7 @@ Qed.
 Lemma formula_open_env_lift_expr_result_formula_shift0 η e :
   open_env_fresh_for_lvars η (tm_lvars e) ->
   open_env_values_inj η ->
-  formula_open_env (open_env_lift η)
+  formula_open_env ((kmap S η))
     (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
   expr_result_formula (tm_shift 0 (open_tm_env η e)) (LVBound 0).
 Proof.
@@ -131,7 +131,7 @@ Proof.
     apply (storeA_rekey_empty (V := ty) (K := logic_var)
       (logic_var_open (S k) y)).
   - rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma lvars_open_qual_vars_difference_bound0_under k y q :
@@ -141,21 +141,21 @@ Proof.
   rewrite qual_open_atom_vars.
   apply set_eq. intros v.
   rewrite lvars_open_unfold.
-  rewrite gset_swap_elem.
+  rewrite set_swap_elem.
   rewrite elem_of_difference, elem_of_difference.
   split.
   - intros [Hv Hnot]. split.
-    + rewrite lvars_open_unfold. rewrite gset_swap_elem. exact Hv.
+    + rewrite lvars_open_unfold. rewrite set_swap_elem. exact Hv.
     + intros Hbad. apply Hnot.
       rewrite elem_of_singleton in Hbad |- *.
       subst v.
-      unfold eq_swap. repeat destruct decide; try lia; try congruence.
+      unfold swap. repeat destruct decide; try lia; try congruence.
   - intros [Hv Hnot]. split.
-    + rewrite lvars_open_unfold in Hv. rewrite gset_swap_elem in Hv. exact Hv.
+    + rewrite lvars_open_unfold in Hv. rewrite set_swap_elem in Hv. exact Hv.
     + intros Hbad. apply Hnot.
       rewrite elem_of_singleton in Hbad |- *.
       destruct v as [n|a]; cbn in Hbad;
-        unfold eq_swap in Hbad;
+        unfold swap in Hbad;
         repeat destruct decide; try lia; try congruence.
 Qed.
 

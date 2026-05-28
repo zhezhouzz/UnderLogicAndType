@@ -48,10 +48,10 @@ Proof.
   refine (set_fold_ind_L
     (fun acc D => ∀ x, x ∈ acc ↔ LVFree x ∈ D)
     (λ v acc, logic_var_fv v ∪ acc) ∅ _ _ D x).
-  - intros y. set_solver.
+  - intros y. better_set_solver.
   - intros v D' acc Hfresh IH z.
     destruct v as [k|a]; cbn [logic_var_fv];
-      pose proof (IH z); set_solver.
+      pose proof (IH z); better_set_solver.
 Qed.
 
 Lemma lvars_bv_elem D k :
@@ -61,8 +61,8 @@ Proof.
   refine (set_fold_ind_L
     (fun acc D => ∀ k, k ∈ acc ↔ LVBound k ∈ D)
     (λ v acc, logic_var_bv v ∪ acc) ∅ _ _ D k).
-  - intros j. set_solver.
+  - intros j. better_set_solver.
   - intros v D' acc Hfresh IH j.
     destruct v as [i|y]; cbn [logic_var_bv];
-      pose proof (IH j); set_solver.
+      pose proof (IH j); better_set_solver.
 Qed.

@@ -9,7 +9,7 @@ From ContextAlgebra Require Import ResourceAlgebraBase.
 
 Section ResourceAlgebraA.
 
-Context {K : Type} `{Countable K} `{!SwapKey K}.
+Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
 
 Local Notation StoreAT := (@StoreA V K _ _) (only parsing).
@@ -146,12 +146,12 @@ Lemma worldA_compat_swap (x y : K) (w1 w2 : WfWorldAT) :
 Proof.
   split.
   - intros Hc σ1 σ2 Hσ1 Hσ2.
-    pose proof (Hc (@storeA_swap V K _ _ _ x y σ1)
-      (@storeA_swap V K _ _ _ x y σ2)) as Hc'.
+    pose proof (Hc (@storeA_swap V K _ _ x y σ1)
+      (@storeA_swap V K _ _ x y σ2)) as Hc'.
     simpl in Hc'.
-    assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ _ x y σ1)).
+    assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ x y σ1)).
     { exists σ1. split; [exact Hσ1 | reflexivity]. }
-    assert (Hs2 : rawA_swap x y w2 (@storeA_swap V K _ _ _ x y σ2)).
+    assert (Hs2 : rawA_swap x y w2 (@storeA_swap V K _ _ x y σ2)).
     { exists σ2. split; [exact Hσ2 | reflexivity]. }
     pose proof (Hc' Hs1 Hs2) as Hcompat.
     exact (proj1 (storeA_compat_swap x y σ1 σ2) Hcompat).
@@ -172,15 +172,15 @@ Lemma resA_product_swap (x y : K) (w1 w2 : WfWorldAT)
 Proof.
   apply wfworldA_ext. apply worldA_ext.
   - simpl.
-    change (gset_swap x y (worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)) =
-      gset_swap x y (worldA_dom (w1 : WorldAT)) ∪
-      gset_swap x y (worldA_dom (w2 : WorldAT))).
-    rewrite gset_swap_union. reflexivity.
+    change (set_swap x y (worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)) =
+      set_swap x y (worldA_dom (w1 : WorldAT)) ∪
+      set_swap x y (worldA_dom (w2 : WorldAT))).
+    rewrite set_swap_union. reflexivity.
   - intros σ. simpl. split.
     + intros [σ0 [Hprod Hswap]].
       rewrite <- Hswap.
       destruct Hprod as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-      exists (@storeA_swap V K _ _ _ x y σ1), (@storeA_swap V K _ _ _ x y σ2).
+      exists (@storeA_swap V K _ _ x y σ1), (@storeA_swap V K _ _ x y σ2).
       repeat split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * exists σ2. split; [exact Hσ2 | reflexivity].
@@ -192,11 +192,11 @@ Proof.
       rewrite <- Hswap1, <- Hswap2.
       exists (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)). split.
       * exists σ1, σ2. repeat split; eauto.
-      * change (@storeA_swap V K _ _ _ x y
+      * change (@storeA_swap V K _ _ x y
           (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)) =
           @union (gmap K V) _
-            (@storeA_swap V K _ _ _ x y σ1 : gmap K V)
-            (@storeA_swap V K _ _ _ x y σ2 : gmap K V)).
+            (@storeA_swap V K _ _ x y σ1 : gmap K V)
+            (@storeA_swap V K _ _ x y σ2 : gmap K V)).
         rewrite storeA_swap_union. reflexivity.
 Qed.
 
@@ -225,29 +225,29 @@ Lemma resA_product_double_swap_l (x y : K) (w1 w2 : WfWorldAT)
 Proof.
   apply wfworldA_ext. apply worldA_ext.
   - simpl.
-    change (gset_swap x y (gset_swap x y (worldA_dom (w1 : WorldAT))) ∪
+    change (set_swap x y (set_swap x y (worldA_dom (w1 : WorldAT))) ∪
       worldA_dom (w2 : WorldAT) =
       worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)).
-    rewrite gset_swap_involutive. reflexivity.
+    rewrite set_swap_involutive. reflexivity.
   - intros σ. simpl. split.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
       rewrite <- Hswap1, <- Hswap0 in Hcompat |- *.
       change (@storeA_compat V K _ _
-        (@storeA_swap V K _ _ _ x y (@storeA_swap V K _ _ _ x y τ0)) σ2) in Hcompat.
+        (@storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y τ0)) σ2) in Hcompat.
       rewrite storeA_swap_involutive in Hcompat.
-      replace (@storeA_rekey V K _ _ (key_swap x y)
-        (@storeA_rekey V K _ _ (key_swap x y) τ0)) with (τ0 : StoreAT).
+      replace (@storeA_rekey V K _ _ (swap x y)
+        (@storeA_rekey V K _ _ (swap x y) τ0)) with (τ0 : StoreAT).
       2:{
         symmetry. exact (storeA_swap_involutive x y τ0).
       }
       exists τ0, σ2. repeat split; eauto.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       exists σ1, σ2. split.
-      * exists (@storeA_swap V K _ _ _ x y σ1). split.
+      * exists (@storeA_swap V K _ _ x y σ1). split.
         -- exists σ1. split; [exact Hσ1 | reflexivity].
-        -- change (@storeA_swap V K _ _ _ x y
-             (@storeA_swap V K _ _ _ x y σ1) = σ1).
+        -- change (@storeA_swap V K _ _ x y
+             (@storeA_swap V K _ _ x y σ1) = σ1).
            apply storeA_swap_involutive.
       * split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
 Qed.
@@ -327,7 +327,7 @@ Proof.
   unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
   change ((resA_swap x y w1 : WorldAT) =
     (resA_restrict (resA_swap x y w2)
-      (gset_swap x y (worldA_dom (w1 : WorldAT))) : WorldAT)).
+      (set_swap x y (worldA_dom (w1 : WorldAT))) : WorldAT)).
   rewrite (resA_restrict_swap x y w2 (worldA_dom (w1 : WorldAT))).
   rewrite (resA_restrict_eq_of_le w1 w2 Hle). reflexivity.
 Qed.

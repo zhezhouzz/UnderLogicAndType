@@ -216,7 +216,7 @@ Definition tm_lvars (e : tm) : lvset :=
 Fixpoint value_swap_atom (x y : atom) (v : value) : value :=
   match v with
   | vconst _ => v
-  | vfvar z => vfvar (atom_swap x y z)
+  | vfvar z => vfvar (swap x y z)
   | vbvar _ => v
   | vlam s e => vlam s (tm_swap_atom x y e)
   | vfix Tf vf => vfix Tf (value_swap_atom x y vf)
@@ -233,20 +233,20 @@ with tm_swap_atom (x y : atom) (e : tm) : tm :=
   end.
 
 Lemma fv_value_swap_atom x y v :
-  fv_value (value_swap_atom x y v) = aset_swap x y (fv_value v)
+  fv_value (value_swap_atom x y v) = set_swap x y (fv_value v)
 with fv_tm_swap_atom x y e :
-  fv_tm (tm_swap_atom x y e) = aset_swap x y (fv_tm e).
+  fv_tm (tm_swap_atom x y e) = set_swap x y (fv_tm e).
 Proof.
   - destruct v; simpl; try reflexivity.
-    + symmetry. apply aset_swap_singleton.
+    + symmetry. apply set_swap_singleton.
     + apply fv_tm_swap_atom.
     + apply fv_value_swap_atom.
   - destruct e; simpl.
     + apply fv_value_swap_atom.
-    + rewrite !fv_tm_swap_atom, aset_swap_union. reflexivity.
+    + rewrite !fv_tm_swap_atom, set_swap_union. reflexivity.
     + apply fv_value_swap_atom.
-    + rewrite !fv_value_swap_atom, aset_swap_union. reflexivity.
-    + rewrite fv_value_swap_atom, !fv_tm_swap_atom, !aset_swap_union.
+    + rewrite !fv_value_swap_atom, set_swap_union. reflexivity.
+    + rewrite fv_value_swap_atom, !fv_tm_swap_atom, !set_swap_union.
       reflexivity.
 Qed.
 
@@ -256,7 +256,7 @@ with tm_swap_atom_involutive x y e :
   tm_swap_atom x y (tm_swap_atom x y e) = e.
 Proof.
   - destruct v; simpl; try reflexivity.
-    + rewrite atom_swap_involutive. reflexivity.
+    + rewrite swap_involutive. reflexivity.
     + rewrite tm_swap_atom_involutive. reflexivity.
     + rewrite value_swap_atom_involutive. reflexivity.
   - destruct e; simpl; rewrite ?value_swap_atom_involutive,
@@ -273,7 +273,7 @@ with tm_swap_atom_fresh x y e :
   tm_swap_atom x y e = e.
 Proof.
   - destruct v; simpl; intros Hx Hy; try reflexivity.
-    + rewrite atom_swap_fresh by set_solver. reflexivity.
+    + rewrite swap_fresh by set_solver. reflexivity.
     + rewrite tm_swap_atom_fresh by set_solver. reflexivity.
     + rewrite value_swap_atom_fresh by set_solver. reflexivity.
   - destruct e; simpl; intros Hx Hy; try rewrite !value_swap_atom_fresh by set_solver;
@@ -297,18 +297,18 @@ Qed.
 
 Lemma open_value_swap_atom x y k z v :
   open_value k (vfvar z) (value_swap_atom x y v) =
-  value_swap_atom x y (open_value k (vfvar (atom_swap x y z)) v).
+  value_swap_atom x y (open_value k (vfvar (swap x y z)) v).
 Proof.
   rewrite value_swap_atom_open. simpl.
-  rewrite atom_swap_involutive. reflexivity.
+  rewrite swap_involutive. reflexivity.
 Qed.
 
 Lemma open_tm_swap_atom x y k z e :
   open_tm k (vfvar z) (tm_swap_atom x y e) =
-  tm_swap_atom x y (open_tm k (vfvar (atom_swap x y z)) e).
+  tm_swap_atom x y (open_tm k (vfvar (swap x y z)) e).
 Proof.
   rewrite tm_swap_atom_open. simpl.
-  rewrite atom_swap_involutive. reflexivity.
+  rewrite swap_involutive. reflexivity.
 Qed.
 
 (** ** Single-variable substitution *)

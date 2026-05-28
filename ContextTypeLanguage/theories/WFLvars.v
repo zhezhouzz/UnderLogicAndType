@@ -64,21 +64,21 @@ Lemma lvars_wf_at_open_body D L x :
 Proof.
   intros Hx Hwf v Hv.
   rewrite lvars_open_unfold in Hv.
-  rewrite gset_swap_elem in Hv.
+  rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct k as [|k].
-    + rewrite eq_swap_l in Hv.
+    + rewrite swap_l in Hv.
       assert (LVFree x ∈ L) as Hxin by exact Hv.
       exfalso. apply Hx. exact (Hwf (LVFree x) Hxin).
     + exfalso.
-      rewrite eq_swap_fresh in Hv by congruence.
+      rewrite swap_fresh in Hv by congruence.
       assert (LVBound (S k) ∈ L) as Hk.
       { exact Hv. }
       specialize (Hwf (LVBound (S k)) Hk). cbn [lvar_wf_at] in Hwf. lia.
   - destruct (decide (x = y)) as [->|Hxy].
     + set_solver.
     + assert (LVFree y ∈ L) as Hy.
-      { rewrite eq_swap_fresh in Hv by congruence. exact Hv. }
+      { rewrite swap_fresh in Hv by congruence. exact Hv. }
       apply elem_of_union. left. exact (Hwf (LVFree y) Hy).
 Qed.
 
@@ -89,17 +89,17 @@ Lemma lvars_wf_at_open_at d D L x :
 Proof.
   intros Hx Hwf v Hv.
   rewrite lvars_open_unfold in Hv.
-  rewrite gset_swap_elem in Hv.
+  rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct (decide (k = d)) as [->|Hkd].
-    + rewrite eq_swap_l in Hv.
+    + rewrite swap_l in Hv.
       exfalso. apply Hx. exact (Hwf (LVFree x) Hv).
-    + rewrite eq_swap_fresh in Hv by congruence.
+    + rewrite swap_fresh in Hv by congruence.
       specialize (Hwf (LVBound k) Hv). cbn [lvar_wf_at] in Hwf.
       lia.
   - destruct (decide (x = y)) as [->|Hxy].
     + apply elem_of_union_r. set_solver.
-    + rewrite eq_swap_fresh in Hv by congruence.
+    + rewrite swap_fresh in Hv by congruence.
       apply elem_of_union_l. exact (Hwf (LVFree y) Hv).
 Qed.
 

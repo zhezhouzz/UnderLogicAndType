@@ -34,23 +34,7 @@ Proof.
   assert (Hdom : dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
   { pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
     unfold erase_ctx_under.
-    apply set_eq. intros z. split.
-    - intros Hz.
-      apply elem_of_dom in Hz as [T Hz].
-      apply store_lookup_union_Some_raw in Hz as [HzΣ|[_ HzΓ]].
-      + apply elem_of_union_l. apply elem_of_dom. eauto.
-      + apply elem_of_union_r. rewrite <- HdomΓ. apply elem_of_dom. eauto.
-    - intros Hz.
-      apply elem_of_union in Hz as [HzΣ|HzΓ].
-      + apply elem_of_dom in HzΣ as [T HzΣ].
-        apply elem_of_dom. exists T.
-        apply store_lookup_union_Some_raw. left. exact HzΣ.
-      + rewrite <- HdomΓ in HzΓ.
-        apply elem_of_dom in HzΓ as [T HzΓ].
-        apply elem_of_dom.
-        destruct (Σ !! z) as [TΣ|] eqn:HΣ.
-        * exists TΣ. apply store_lookup_union_Some_raw. left. exact HΣ.
-        * exists T. apply store_lookup_union_Some_raw. right. eauto. }
+    better_set_solver. }
   rewrite Hdom in Hfv.
   exact Hfv.
 Qed.
@@ -64,23 +48,7 @@ Proof.
   pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
   pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
   unfold erase_ctx_under.
-  apply set_eq. intros z. split.
-  - intros Hz.
-    apply elem_of_dom in Hz as [T Hz].
-    apply store_lookup_union_Some_raw in Hz as [HzΣ|[_ HzΓ]].
-    + apply elem_of_union_l. apply elem_of_dom. eauto.
-    + apply elem_of_union_r. rewrite <- HdomΓ. apply elem_of_dom. eauto.
-  - intros Hz.
-    apply elem_of_union in Hz as [HzΣ|HzΓ].
-    + apply elem_of_dom in HzΣ as [T HzΣ].
-      apply elem_of_dom. exists T.
-      apply store_lookup_union_Some_raw. left. exact HzΣ.
-    + rewrite <- HdomΓ in HzΓ.
-      apply elem_of_dom in HzΓ as [T HzΓ].
-      apply elem_of_dom.
-      destruct (Σ !! z) as [TΣ|] eqn:HΣ.
-      * exists TΣ. apply store_lookup_union_Some_raw. left. exact HΣ.
-      * exists T. apply store_lookup_union_Some_raw. right. eauto.
+  better_set_solver.
 Qed.
 
 Lemma context_typing_wf_basic_context_ty_erased Σ Γ e τ :

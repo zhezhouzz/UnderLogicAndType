@@ -1102,20 +1102,20 @@ Proof.
   intros Hlc HyD Hdepth u Hu.
   apply elem_of_difference in Hu as [Hu Hyu].
   rewrite lvars_open_unfold in Hu.
-  apply elem_of_gset_swap in Hu.
-  change (key_swap (LVBound 0) (LVFree y) u ∈ L) with
+  apply elem_of_set_swap in Hu.
+  change (swap (LVBound 0) (LVFree y) u ∈ L) with
     (logic_var_open 0 y u ∈ L) in Hu.
   destruct u as [k|z].
   - destruct k as [|k].
     + rewrite logic_var_open_unfold in Hu.
-      unfold eq_swap in Hu.
+      unfold swap in Hu.
       destruct (decide (LVBound 0 = LVBound 0)) as [_|Hbad]; [|congruence].
       exfalso. apply HyD.
       apply Hdepth.
       apply lvars_at_depth_elem.
       exists (LVFree y). split; [exact Hu|reflexivity].
     + rewrite logic_var_open_unfold in Hu.
-      unfold eq_swap in Hu.
+      unfold swap in Hu.
       destruct (decide (LVBound (S k) = LVBound 0)) as [Hbad|_];
         [inversion Hbad|].
       destruct (decide (LVBound (S k) = LVFree y)) as [Hbad|_];
@@ -1134,7 +1134,7 @@ Proof.
   - destruct (decide (z = y)) as [->|Hzy].
     + exfalso. apply Hyu. set_solver.
     + rewrite logic_var_open_unfold in Hu.
-      unfold eq_swap in Hu.
+      unfold swap in Hu.
       destruct (decide (LVFree z = LVBound 0)) as [Hbad|_];
         [discriminate|].
       destruct (decide (LVFree z = LVFree y)) as [Hbad|_];
@@ -1294,7 +1294,7 @@ Proof.
     apply (storeA_rekey_empty (V := ty) (K := logic_var)
       (logic_var_open 0 y)).
   - rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma basic_world_formula_arrow_body_from_source_and_arg

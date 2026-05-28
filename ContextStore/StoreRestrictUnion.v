@@ -41,7 +41,7 @@ Proof.
   - rewrite map_disjoint_alt. intros i.
     destruct (decide (i ∈ dom (s1 : gmap K V))) as [Hi|Hi].
     + right. unfold s2'.
-      apply storeA_restrict_lookup_none_r. set_solver.
+      apply storeA_restrict_lookup_none_r. better_set_solver.
     + left. apply not_elem_of_dom. exact Hi.
   - apply storeA_map_eq. intros i.
     destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
@@ -73,26 +73,26 @@ Proof.
   - destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
     + transitivity (Some v1).
       * apply storeA_restrict_lookup_some_2; [|exact HiX].
-        apply lookup_union_Some_raw. left. exact H1.
-      * symmetry. apply lookup_union_Some_raw. left.
+        apply map_lookup_union_Some_raw. left. exact H1.
+      * symmetry. apply map_lookup_union_Some_raw. left.
         apply storeA_restrict_lookup_some_2; [exact H1|exact HiX].
     + destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2.
       * transitivity (Some v2).
         -- apply storeA_restrict_lookup_some_2; [|exact HiX].
            rewrite (lookup_union_r (M:=gmap K) (A:=V) (s1 : gmap K V) (s2 : gmap K V) i H1).
            exact H2.
-        -- symmetry. apply lookup_union_Some_raw. right.
+        -- symmetry. apply map_lookup_union_Some_raw. right.
            split; [apply storeA_restrict_lookup_none_l; exact H1|].
            apply storeA_restrict_lookup_some_2; [exact H2|exact HiX].
       * transitivity (@None V).
         -- apply storeA_restrict_lookup_none_l.
            rewrite (lookup_union_r (M:=gmap K) (A:=V) (s1 : gmap K V) (s2 : gmap K V) i H1).
            exact H2.
-        -- symmetry. apply lookup_union_None.
+        -- symmetry. apply map_lookup_union_None.
            split; apply storeA_restrict_lookup_none_l; assumption.
   - transitivity (@None V).
     + apply storeA_restrict_lookup_none_r. exact HiX.
-    + symmetry. apply lookup_union_None.
+    + symmetry. apply map_lookup_union_None.
       split; apply storeA_restrict_lookup_none_r; exact HiX.
 Qed.
 
@@ -110,32 +110,32 @@ Proof.
     (@union (gmap K V) _ (storeA_restrict s1 X1 : gmap K V)
       (storeA_restrict s2 X2 : gmap K V)) !! i).
   destruct (decide (i ∈ X1)) as [Hi1 | Hni1].
-  - assert (i ∈ dom (s1 : gmap K V)) as Hidom1 by set_solver.
+  - assert (i ∈ dom (s1 : gmap K V)) as Hidom1 by better_set_solver.
     apply elem_of_dom in Hidom1 as [v1 Hlookup1].
     assert (Hrestrict1 : (storeA_restrict s1 X1 : gmap K V) !! i = Some v1).
     { apply storeA_restrict_lookup_some_2; [exact Hlookup1 | exact Hi1]. }
     transitivity (Some v1).
-    + apply storeA_restrict_lookup_some_2; last set_solver.
-      apply lookup_union_Some_raw. left. exact Hlookup1.
-    + symmetry. apply lookup_union_Some_raw. left. exact Hrestrict1.
+    + apply storeA_restrict_lookup_some_2; last better_set_solver.
+      apply map_lookup_union_Some_raw. left. exact Hlookup1.
+    + symmetry. apply map_lookup_union_Some_raw. left. exact Hrestrict1.
   - destruct (decide (i ∈ X2)) as [Hi2 | Hni2].
-    + assert (i ∈ dom (s2 : gmap K V)) as Hidom2 by set_solver.
+    + assert (i ∈ dom (s2 : gmap K V)) as Hidom2 by better_set_solver.
       apply elem_of_dom in Hidom2 as [v2 Hlookup2].
       assert (Hleft_none : (storeA_restrict s1 X1 : gmap K V) !! i = None).
       { apply storeA_restrict_lookup_none_r. exact Hni1. }
       assert (Hrestrict2 : (storeA_restrict s2 X2 : gmap K V) !! i = Some v2).
       { apply storeA_restrict_lookup_some_2; [exact Hlookup2 | exact Hi2]. }
       transitivity (Some v2).
-      * apply storeA_restrict_lookup_some_2; last set_solver.
+      * apply storeA_restrict_lookup_some_2; last better_set_solver.
         destruct ((s1 : gmap K V) !! i) as [v1|] eqn:Hlookup1.
-        -- apply lookup_union_Some_raw. left.
+        -- apply map_lookup_union_Some_raw. left.
            assert (v1 = v2) by (eapply Hcompat; eauto). subst. exact Hlookup1.
-        -- apply lookup_union_Some_raw. right. exact (conj Hlookup1 Hlookup2).
-      * symmetry. apply lookup_union_Some_raw. right.
+        -- apply map_lookup_union_Some_raw. right. exact (conj Hlookup1 Hlookup2).
+      * symmetry. apply map_lookup_union_Some_raw. right.
         split; [exact Hleft_none | exact Hrestrict2].
     + transitivity (@None V).
-      * apply storeA_restrict_lookup_none_r. set_solver.
-      * symmetry. apply lookup_union_None.
+      * apply storeA_restrict_lookup_none_r. better_set_solver.
+      * symmetry. apply map_lookup_union_None.
         split; apply storeA_restrict_lookup_none_r; assumption.
 Qed.
 
@@ -147,11 +147,11 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [change ((<[x:=v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | set_solver].
+    + apply storeA_restrict_lookup_some_2; [change ((<[x:=v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | better_set_solver].
     + symmetry. change (({[x := v]} : gmap K V) !! x = Some v).
       rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
   - transitivity (@None V).
-    + apply storeA_restrict_lookup_none_r. set_solver.
+    + apply storeA_restrict_lookup_none_r. better_set_solver.
     + symmetry. change (({[x := v]} : gmap K V) !! z = None).
       apply lookup_singleton_ne. congruence.
 Qed.
@@ -166,11 +166,11 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [exact Hlook | set_solver].
+    + apply storeA_restrict_lookup_some_2; [exact Hlook | better_set_solver].
     + symmetry. change (({[x := v]} : gmap K V) !! x = Some v).
       rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
   - transitivity (@None V).
-    + apply storeA_restrict_lookup_none_r. set_solver.
+    + apply storeA_restrict_lookup_none_r. better_set_solver.
     + symmetry. change (({[x := v]} : gmap K V) !! z = None).
       apply lookup_singleton_ne. congruence.
 Qed.
@@ -182,7 +182,7 @@ Lemma storeA_restrict_insert_singleton_ne {K : Type} `{Countable K}
   storeA_restrict σ ({[y]} : gset K).
 Proof.
   intros Hxy.
-  rewrite storeA_restrict_insert_notin by set_solver.
+  rewrite storeA_restrict_insert_notin by better_set_solver.
   reflexivity.
 Qed.
 
@@ -197,7 +197,7 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | set_solver].
+    + apply storeA_restrict_lookup_some_2; [change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | better_set_solver].
     + symmetry. change ((<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! x = Some v).
       rewrite lookup_insert. destruct (decide (x = x)); [reflexivity|congruence].
   - change ((storeA_restrict (<[x := v]> (σ : gmap K V)) (X ∪ {[x]}) : gmap K V) !! z =
@@ -206,13 +206,13 @@ Proof.
     destruct (decide (z ∈ X)) as [HzX|HzX].
     + destruct ((σ : gmap K V) !! z) as [vz|] eqn:Hz.
       * transitivity (Some vz).
-        -- apply storeA_restrict_lookup_some_2; [rewrite lookup_insert_ne by congruence; exact Hz | set_solver].
+        -- apply storeA_restrict_lookup_some_2; [rewrite lookup_insert_ne by congruence; exact Hz | better_set_solver].
         -- symmetry. apply storeA_restrict_lookup_some_2; [exact Hz | exact HzX].
       * transitivity (@None V).
         -- apply storeA_restrict_lookup_none_l. rewrite lookup_insert_ne by congruence. exact Hz.
         -- symmetry. apply storeA_restrict_lookup_none_l. exact Hz.
     + transitivity (@None V).
-      * apply storeA_restrict_lookup_none_r. set_solver.
+      * apply storeA_restrict_lookup_none_r. better_set_solver.
       * symmetry. apply storeA_restrict_lookup_none_r. exact HzX.
 Qed.
 
@@ -238,9 +238,9 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [|set_solver].
-      apply lookup_union_Some_raw. right. split.
-      * apply not_elem_of_dom. set_solver.
+    + apply storeA_restrict_lookup_some_2; [|better_set_solver].
+      apply map_lookup_union_Some_raw. right. split.
+      * apply not_elem_of_dom. better_set_solver.
       * change (({[x := v]} : gmap K V) !! x = Some v).
         rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
     + symmetry. change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v).
@@ -250,12 +250,12 @@ Proof.
     rewrite lookup_insert_ne by congruence.
     destruct ((σ : gmap K V) !! z) as [vz|] eqn:Hz.
     + transitivity (Some vz).
-      * apply storeA_restrict_lookup_some_2; [apply lookup_union_Some_raw; left; exact Hz | apply elem_of_dom_2 in Hz; set_solver].
+      * apply storeA_restrict_lookup_some_2; [apply map_lookup_union_Some_raw; left; exact Hz | apply elem_of_dom_2 in Hz; better_set_solver].
       * reflexivity.
     + transitivity (@None V); [|reflexivity].
       destruct (decide (z ∈ X ∪ {[x]})) as [HzX|HzX].
       * apply storeA_restrict_lookup_none_l.
-        apply lookup_union_None. split; [exact Hz|].
+        apply map_lookup_union_None. split; [exact Hz|].
         change (({[x := v]} : gmap K V) !! z = None).
         apply lookup_singleton_ne. congruence.
       * apply storeA_restrict_lookup_none_r. exact HzX.
@@ -278,12 +278,12 @@ Proof.
   destruct (decide (z ∈ S)) as [HzS|HzS].
   - destruct ((σ : gmap K V) !! z) as [vz|] eqn:Hz.
     + transitivity (Some vz).
-      * apply storeA_restrict_lookup_some_2; [exact Hz|set_solver].
-      * symmetry. apply lookup_union_Some_raw. left.
+      * apply storeA_restrict_lookup_some_2; [exact Hz|better_set_solver].
+      * symmetry. apply map_lookup_union_Some_raw. left.
         apply storeA_restrict_lookup_some_2; [exact Hz|exact HzS].
     + transitivity (@None V).
       * apply storeA_restrict_lookup_none_l. exact Hz.
-      * symmetry. apply lookup_union_None.
+      * symmetry. apply map_lookup_union_None.
         split; apply storeA_restrict_lookup_none_l; exact Hz.
   - destruct (decide (z = x)) as [->|Hzx].
     + rewrite (lookup_union_r (M:=gmap K) (A:=V)
@@ -292,15 +292,15 @@ Proof.
         by (apply storeA_restrict_lookup_none_r; exact Hx).
       destruct ((σ : gmap K V) !! x) as [vx|] eqn:Hxlook.
       * transitivity (Some vx).
-        -- apply storeA_restrict_lookup_some_2; [exact Hxlook|set_solver].
-        -- symmetry. apply storeA_restrict_lookup_some_2; [exact Hxlook|set_solver].
+        -- apply storeA_restrict_lookup_some_2; [exact Hxlook|better_set_solver].
+        -- symmetry. apply storeA_restrict_lookup_some_2; [exact Hxlook|better_set_solver].
       * transitivity (@None V).
         -- apply storeA_restrict_lookup_none_l. exact Hxlook.
         -- symmetry. apply storeA_restrict_lookup_none_l. exact Hxlook.
     + transitivity (@None V).
-      * apply storeA_restrict_lookup_none_r. set_solver.
-      * symmetry. apply lookup_union_None.
-        split; apply storeA_restrict_lookup_none_r; set_solver.
+      * apply storeA_restrict_lookup_none_r. better_set_solver.
+      * symmetry. apply map_lookup_union_None.
+        split; apply storeA_restrict_lookup_none_r; better_set_solver.
 Qed.
 
 Lemma storeA_eq_insert_of_restrict_singleton {K : Type} `{Countable K}
@@ -330,7 +330,7 @@ Proof.
     rewrite lookup_insert_ne by congruence.
     destruct ((σx : gmap K V) !! z) as [vz|] eqn:Hz.
     + assert (z ∈ X) as HzX.
-      { apply elem_of_dom_2 in Hz. rewrite Hdom in Hz. set_solver. }
+      { apply elem_of_dom_2 in Hz. rewrite Hdom in Hz. better_set_solver. }
       rewrite <- HX.
       symmetry. apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].
     + rewrite <- HX.
@@ -349,15 +349,15 @@ Proof.
     (storeA_restrict s Y : gmap K V)) !! z = (s : gmap K V) !! z).
   destruct (decide (z ∈ X)) as [HzX|HzX].
   - destruct ((s : gmap K V) !! z) as [v|] eqn:Hz.
-    + apply lookup_union_Some_raw. left.
+    + apply map_lookup_union_Some_raw. left.
       apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].
-    + rewrite lookup_union_None. split; apply storeA_restrict_lookup_none_l; exact Hz.
+    + rewrite map_lookup_union_None. split; apply storeA_restrict_lookup_none_l; exact Hz.
   - rewrite (lookup_union_r (M:=gmap K) (A:=V)
       (storeA_restrict s X : gmap K V) (storeA_restrict s Y : gmap K V) z)
       by (apply storeA_restrict_lookup_none_r; exact HzX).
     destruct ((s : gmap K V) !! z) as [v|] eqn:Hz.
     + apply storeA_restrict_lookup_some_2; [exact Hz|].
-      apply elem_of_dom_2 in Hz. set_solver.
+      apply elem_of_dom_2 in Hz. better_set_solver.
     + apply storeA_restrict_lookup_none_l. exact Hz.
 Qed.
 
@@ -373,14 +373,14 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct ((s1 : gmap K V) !! z) as [v1|] eqn:H1.
   - transitivity (Some v1).
-    + apply storeA_restrict_lookup_some_2; [|apply elem_of_dom_2 in H1; set_solver].
-      apply lookup_union_Some_raw. left. exact H1.
+    + apply storeA_restrict_lookup_some_2; [|apply elem_of_dom_2 in H1; better_set_solver].
+      apply map_lookup_union_Some_raw. left. exact H1.
     + symmetry. exact H1.
   - transitivity (@None V); [|symmetry; exact H1].
     destruct (decide (z ∈ X)) as [HzX|HzX]; [|apply storeA_restrict_lookup_none_r; exact HzX].
     apply storeA_restrict_lookup_none_l.
-    apply lookup_union_None. split; [exact H1|].
-    apply not_elem_of_dom. intros Hz2. set_solver.
+    apply map_lookup_union_None. split; [exact H1|].
+    apply not_elem_of_dom. intros Hz2. better_set_solver.
 Qed.
 
 Lemma storeA_restrict_union_piece_r {K : Type} `{Countable K}
@@ -395,17 +395,17 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct ((s2 : gmap K V) !! z) as [v2|] eqn:H2.
   - transitivity (Some v2).
-    + apply storeA_restrict_lookup_some_2; [|apply elem_of_dom_2 in H2; set_solver].
+    + apply storeA_restrict_lookup_some_2; [|apply elem_of_dom_2 in H2; better_set_solver].
       destruct ((s1 : gmap K V) !! z) as [v1|] eqn:H1.
       * assert (v1 = v2) by (eapply Hcompat; eauto). subst.
-        apply lookup_union_Some_raw. left. exact H1.
-      * apply lookup_union_Some_raw. right. eauto.
+        apply map_lookup_union_Some_raw. left. exact H1.
+      * apply map_lookup_union_Some_raw. right. eauto.
     + symmetry. exact H2.
   - transitivity (@None V); [|symmetry; exact H2].
     destruct (decide (z ∈ Y)) as [HzY|HzY]; [|apply storeA_restrict_lookup_none_r; exact HzY].
     apply storeA_restrict_lookup_none_l.
-    apply lookup_union_None. split; [|exact H2].
-    apply not_elem_of_dom. intros Hz1. set_solver.
+    apply map_lookup_union_None. split; [|exact H2].
+    apply not_elem_of_dom. intros Hz1. better_set_solver.
 Qed.
 
 Lemma storeA_restrict_union_ignore_r {K : Type} `{Countable K}
@@ -428,7 +428,7 @@ Proof.
     assert ((s2 : gmap K V) !! z = None) as Hs2.
     {
       apply not_elem_of_dom. intros Hz2.
-      assert (Hzempty : z ∈ (∅ : gset K)) by set_solver.
+      assert (Hzempty : z ∈ (∅ : gset K)) by better_set_solver.
       apply elem_of_empty in Hzempty. exact Hzempty.
     }
     rewrite Hs2. reflexivity.
@@ -449,7 +449,7 @@ Proof.
   assert ((s1 : gmap K V) !! z = None) as Hs1.
   {
     apply not_elem_of_dom. intros Hz1.
-    assert (Hzempty : z ∈ (∅ : gset K)) by set_solver.
+    assert (Hzempty : z ∈ (∅ : gset K)) by better_set_solver.
     apply elem_of_empty in Hzempty. exact Hzempty.
   }
   rewrite (lookup_union_r (M:=gmap K) (A:=V)
@@ -494,28 +494,28 @@ Proof.
   intros HDs1 Hdom2 Hy Hagree.
   apply storeA_map_eq. intros i.
   destruct (decide (i ∈ D)) as [HiD|HiD].
-  - assert (i ∈ dom (s1 : gmap K V)) as Hi_s1 by set_solver.
+  - assert (i ∈ dom (s1 : gmap K V)) as Hi_s1 by better_set_solver.
     apply elem_of_dom in Hi_s1 as [v1 Hs1].
     assert (Hs1D : (storeA_restrict s1 D : gmap K V) !! i = Some v1).
     { apply storeA_restrict_lookup_some_2; [exact Hs1|exact HiD]. }
     rewrite Hagree in Hs1D.
     apply storeA_restrict_lookup_some in Hs1D as [_ Hs2].
     transitivity (Some v1); [|symmetry; exact Hs2].
-    apply storeA_restrict_lookup_some_2; last set_solver.
-    apply lookup_union_Some_raw. left. exact Hs1.
+    apply storeA_restrict_lookup_some_2; last better_set_solver.
+    apply map_lookup_union_Some_raw. left. exact Hs1.
   - destruct (decide (i = y)) as [->|Hiy].
     + destruct ((s2 : gmap K V) !! y) as [vy|] eqn:Hs2y.
       * transitivity (Some vy); [|symmetry; exact Hs2y].
-        apply storeA_restrict_lookup_some_2; last set_solver.
-        apply lookup_union_Some_raw. right. split.
+        apply storeA_restrict_lookup_some_2; last better_set_solver.
+        apply map_lookup_union_Some_raw. right. split.
         -- by apply not_elem_of_dom.
-        -- apply storeA_restrict_lookup_some_2; [exact Hs2y|set_solver].
-      * assert (y ∈ dom (s2 : gmap K V)) by (rewrite Hdom2; set_solver).
+        -- apply storeA_restrict_lookup_some_2; [exact Hs2y|better_set_solver].
+      * assert (y ∈ dom (s2 : gmap K V)) by (rewrite Hdom2; better_set_solver).
         apply not_elem_of_dom in Hs2y. contradiction.
     + assert ((s2 : gmap K V) !! i = None) as Hi_none.
-      { apply not_elem_of_dom. rewrite Hdom2. set_solver. }
+      { apply not_elem_of_dom. rewrite Hdom2. better_set_solver. }
       transitivity (@None V); [|symmetry; exact Hi_none].
-      apply storeA_restrict_lookup_none_r. set_solver.
+      apply storeA_restrict_lookup_none_r. better_set_solver.
 Qed.
 
 Lemma storeA_restrict_union_base_project {K : Type} `{Countable K}
@@ -539,16 +539,16 @@ Proof.
         ({[y]} : gset K)))
     (X ∪ {[y]})).
   - f_equal. f_equal.
-    symmetry. apply storeA_restrict_twice_subset. set_solver.
+    symmetry. apply storeA_restrict_twice_subset. better_set_solver.
   - apply storeA_restrict_union_base_singleton.
     + exact HXsbase.
     + pose proof (storeA_restrict_dom sfull (X ∪ {[y]})) as Hdom_restrict.
       change (dom (storeA_restrict sfull (X ∪ {[y]}) : gmap K V) =
         dom (sfull : gmap K V) ∩ (X ∪ {[y]})) in Hdom_restrict.
       rewrite Hdom_restrict, Hdomfull.
-      apply set_eq. intros z. set_solver.
+      apply set_eq. intros z. better_set_solver.
     + exact Hy.
-    + rewrite storeA_restrict_twice_subset by set_solver.
+    + rewrite storeA_restrict_twice_subset by better_set_solver.
       symmetry. exact Hagree.
 Qed.
 
@@ -564,8 +564,8 @@ Proof.
   intros Hsmall Hfull HYS HYm.
   apply storeA_map_eq. intros i.
   destruct (decide (i ∈ Y)) as [HiY|HiY].
-  - assert (HiS : i ∈ S) by set_solver.
-    assert (Him : i ∈ dom (sm : gmap K V)) by set_solver.
+  - assert (HiS : i ∈ S) by better_set_solver.
+    assert (Him : i ∈ dom (sm : gmap K V)) by better_set_solver.
     apply elem_of_dom in Him as [vm Hsm].
     destruct ((sn : gmap K V) !! i) as [vn|] eqn:Hsn.
     + assert (vn = vm).
@@ -574,21 +574,21 @@ Proof.
       subst vn.
       transitivity (Some vm).
       * apply storeA_restrict_lookup_some_2; [|exact HiY].
-        apply lookup_union_Some_raw. left. exact Hsn.
+        apply map_lookup_union_Some_raw. left. exact Hsn.
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HiY].
         destruct (decide (i ∈ X)) as [HiX|HiX].
-        -- apply lookup_union_Some_raw. left.
+        -- apply map_lookup_union_Some_raw. left.
            apply storeA_restrict_lookup_some_2; [exact Hsn|exact HiX].
-        -- apply lookup_union_Some_raw. right. split.
+        -- apply map_lookup_union_Some_raw. right. split.
            ++ apply storeA_restrict_lookup_none_r. exact HiX.
            ++ exact Hsm.
     + transitivity (Some vm).
       * apply storeA_restrict_lookup_some_2; [|exact HiY].
-        apply lookup_union_Some_raw. right. split.
+        apply map_lookup_union_Some_raw. right. split.
         -- exact Hsn.
         -- apply storeA_restrict_lookup_some_2; [exact Hsm|exact HiS].
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HiY].
-        apply lookup_union_Some_raw. right. split.
+        apply map_lookup_union_Some_raw. right. split.
         -- apply storeA_restrict_lookup_none_l. exact Hsn.
         -- exact Hsm.
   - transitivity (@None V).

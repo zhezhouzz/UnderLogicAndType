@@ -14,7 +14,7 @@ Proof.
     lvars_open k x (dom (Σ : gmap logic_var ty))).
   rewrite storeA_rekey_dom by (intros a b H; eapply logic_var_open_inj_fresh; exact H).
   rewrite lvars_open_unfold.
-  unfold gset_swap.
+  unfold set_swap.
   apply set_eq. intros v.
   rewrite !elem_of_map.
   split.
@@ -163,7 +163,7 @@ Lemma logic_var_open_fresh_noop k x v :
 Proof.
   intros Hk Hx.
   rewrite logic_var_open_unfold.
-  apply eq_swap_fresh; congruence.
+  apply swap_fresh; congruence.
 Qed.
 
 Lemma lty_env_open_one_fresh_noop k x Σ :
@@ -301,13 +301,13 @@ Proof.
     cbn [logic_var_shift_from].
     destruct (decide (0 <= k)) as [_|Hbad]; [|lia].
     rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
   }
   rewrite lty_env_open_one_insert.
   replace (logic_var_open k x (LVBound k)) with (LVFree x).
   2:{
     rewrite logic_var_open_unfold.
-    unfold eq_swap. repeat destruct decide; try lia; try congruence.
+    unfold swap. repeat destruct decide; try lia; try congruence.
   }
   rewrite lty_env_shift_insert_free.
   unfold lty_env_shift.
@@ -341,7 +341,7 @@ Lemma lty_env_bvar_scope_shift_open_noop k x Σ :
 Proof.
   intros Hfresh.
   rewrite lvars_open_unfold.
-  apply gset_swap_fresh.
+  apply set_swap_fresh.
   - exact Hfresh.
   - unfold lty_env_bvar_scope, lvars_of_bvars.
     intros Hin. apply elem_of_map in Hin as [n [Hbad _]].
@@ -360,8 +360,8 @@ Proof.
   rewrite lty_env_open_one_dom.
   apply set_eq. intros n.
   rewrite !lvars_bv_elem.
-  rewrite lvars_open_unfold, gset_swap_elem.
-  unfold eq_swap.
+  rewrite lvars_open_unfold, set_swap_elem.
+  unfold swap.
   destruct (decide (LVBound n = LVBound k)) as [Hnk|Hnk].
   - inversion Hnk. subst n.
     repeat destruct decide; try congruence.
@@ -387,10 +387,10 @@ Lemma lvars_open_shift_union_bound0 k x D :
   lvars_open (S k) x (lvars_shift_from 0 D ∪ {[LVBound 0]}) =
   lvars_shift_from 0 (lvars_open k x D) ∪ {[LVBound 0]}.
 Proof.
-  rewrite lvars_open_unfold, gset_swap_union, <- lvars_open_unfold.
+  rewrite lvars_open_unfold, set_swap_union, <- lvars_open_unfold.
   rewrite lvars_open_shift_from_under_gen by lia.
-  rewrite gset_swap_singleton.
-  rewrite key_swap_fresh by discriminate.
+  rewrite set_swap_singleton.
+  rewrite swap_fresh by discriminate.
   reflexivity.
 Qed.
 

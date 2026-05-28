@@ -49,9 +49,9 @@ Definition storeA_map_key
     (f : K → K') (s : StoreA K) : StoreA K' :=
   kmap f s.
 
-Definition storeA_swap {K : Type} `{Countable K} `{!SwapKey K}
+Definition storeA_swap {K : Type} `{Countable K} 
     (x y : K) (s : StoreA K) : StoreA K :=
-  storeA_rekey (key_swap x y) s.
+  storeA_rekey (swap x y) s.
 
 Definition storeA_shift {K : Type} `{Countable K} `{!ShiftKey K}
     (k : nat) (s : StoreA K) : StoreA K :=
@@ -76,7 +76,7 @@ Proof.
   intros Hlook.
   change ((s : gmap K V) !! x = Some v) in Hlook.
   change (x ∈ dom (s : gmap K V)).
-  by apply elem_of_dom_2 in Hlook.
+  better_map_solver.
 Qed.
 
 Lemma storeA_lookup_none_of_not_elem_dom {K : Type} `{Countable K}
@@ -85,8 +85,9 @@ Lemma storeA_lookup_none_of_not_elem_dom {K : Type} `{Countable K}
   s !! x = None.
 Proof.
   intros Hnot.
-  destruct (s !! x) as [v|] eqn:Hlook; [| reflexivity].
-  exfalso. apply Hnot. by eapply storeA_elem_of_dom_lookup_some.
+  change (x ∉ dom (s : gmap K V)) in Hnot.
+  change ((s : gmap K V) !! x = None).
+  better_map_solver.
 Qed.
 
 Lemma storeA_lookup_insert_ne {K : Type} `{Countable K}
@@ -94,7 +95,10 @@ Lemma storeA_lookup_insert_ne {K : Type} `{Countable K}
   z ≠ x →
   <[x := v]> s !! z = s !! z.
 Proof.
-  intros Hzx. apply (lookup_insert_ne (M:=gmap K) (A:=V)). done.
+  intros Hzx.
+  change ((<[x := v]> (s : gmap K V) : gmap K V) !! z =
+    (s : gmap K V) !! z).
+  apply map_lookup_insert_ne. exact Hzx.
 Qed.
 
 Lemma storeA_lookup_insert {K : Type} `{Countable K}
@@ -102,7 +106,7 @@ Lemma storeA_lookup_insert {K : Type} `{Countable K}
   <[x := v]> s !! x = Some v.
 Proof.
   change (((<[x := v]> (s : gmap K V)) : gmap K V) !! x = Some v).
-  rewrite lookup_insert. destruct (decide (x = x)); congruence.
+  apply map_lookup_insert.
 Qed.
 
 Lemma storeA_agree_on_mono {K : Type} `{Countable K}
@@ -148,11 +152,11 @@ Proof.
   destruct (decide (y = x)) as [->|Hyx].
   - change ((<[x := v]> (s1 : gmap K V) !! x) =
       (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !lookup_insert. destruct (decide (x = x)); congruence.
+    rewrite !map_lookup_insert. reflexivity.
   - change ((<[x := v]> (s1 : gmap K V) !! y) =
       (<[x := v]> (s2 : gmap K V) !! y)).
-    rewrite !lookup_insert_ne by congruence.
-    apply Hag. apply elem_of_difference. split; [exact Hy|set_solver].
+    rewrite !map_lookup_insert_ne by congruence.
+    apply Hag. apply elem_of_difference. split; [exact Hy|better_set_solver].
 Qed.
 
 Lemma storeA_agree_on_insert_same_keep {K : Type} `{Countable K}
@@ -166,15 +170,15 @@ Proof.
     destruct (decide (y = x)) as [->|Hyx].
     + change ((<[x := v]> (s1 : gmap K V) !! x) =
         (<[x := v]> (s2 : gmap K V) !! x)).
-      rewrite !lookup_insert. destruct (decide (x = x)); congruence.
+      rewrite !map_lookup_insert. reflexivity.
     + change ((<[x := v]> (s1 : gmap K V) !! y) =
         (<[x := v]> (s2 : gmap K V) !! y)).
-      rewrite !lookup_insert_ne by congruence. apply Hag, Hy.
+      rewrite !map_lookup_insert_ne by congruence. apply Hag, Hy.
   - intros y Hy.
     rewrite elem_of_singleton in Hy. subst y.
     change ((<[x := v]> (s1 : gmap K V) !! x) =
       (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !lookup_insert. destruct (decide (x = x)); congruence.
+    rewrite !map_lookup_insert. reflexivity.
 Qed.
 
 Lemma storeA_lookup_union_Some_raw {K : Type} `{Countable K}
@@ -182,7 +186,7 @@ Lemma storeA_lookup_union_Some_raw {K : Type} `{Countable K}
   ((@union (gmap K V) _ s1 s2) !! i = Some v) ↔
     s1 !! i = Some v ∨ (s1 !! i = None ∧ s2 !! i = Some v).
 Proof.
-  apply (lookup_union_Some_raw (M:=gmap K) (A:=V)).
+  apply map_lookup_union_Some_raw.
 Qed.
 
 Lemma storeA_bind_dom {K : Type} `{Countable K}
@@ -193,7 +197,7 @@ Proof.
   intros [_ ->].
   change (dom (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
     dom (s1 : gmap K V) ∪ dom (s2 : gmap K V)).
-  apply dom_union_L.
+  better_set_solver.
 Qed.
 
 Lemma storeA_lookup_none_of_dom {K : Type} `{Countable K}
@@ -202,10 +206,7 @@ Lemma storeA_lookup_none_of_dom {K : Type} `{Countable K}
   x ∉ X →
   (σ : gmap K V) !! x = None.
 Proof.
-  intros Hdom Hx.
-  destruct ((σ : gmap K V) !! x) as [v|] eqn:Hlookup; [| reflexivity].
-  exfalso. apply Hx.
-  rewrite <- Hdom. by apply elem_of_dom_2 in Hlookup.
+  intros Hdom Hx. better_map_solver.
 Qed.
 
 End AbstractStoreCore.

@@ -259,27 +259,27 @@ Proof.
       simpl.
     + constructor.
     + econstructor. rewrite store_swap_lookup. exact e.
-    + eapply VT_Lam with (L := aset_swap x y L).
+    + eapply VT_Lam with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
       rewrite open_tm_swap_atom.
       replace (<[z:=s]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+        with (store_swap x y (<[swap x y z := s]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
-    + eapply VT_Fix with (L := aset_swap x y L).
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
         open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
           ((sx →ₜ T) →ₜ T)).
       rewrite open_value_swap_atom.
       replace (<[z:=sx]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+        with (store_swap x y (<[swap x y z := sx]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
@@ -287,10 +287,10 @@ Proof.
         open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
       rewrite open_tm_swap_atom.
       replace (<[z:=T1]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+        with (store_swap x y (<[swap x y z := T1]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
@@ -301,27 +301,27 @@ Proof.
       simpl.
     + constructor.
     + econstructor. rewrite store_swap_lookup. exact e.
-    + eapply VT_Lam with (L := aset_swap x y L).
+    + eapply VT_Lam with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
       rewrite open_tm_swap_atom.
       replace (<[z:=s]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := s]> Γ)).
+        with (store_swap x y (<[swap x y z := s]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
-    + eapply VT_Fix with (L := aset_swap x y L).
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
+    + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
         open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
           ((sx →ₜ T) →ₜ T)).
       rewrite open_value_swap_atom.
       replace (<[z:=sx]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := sx]> Γ)).
+        with (store_swap x y (<[swap x y z := sx]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
@@ -329,10 +329,10 @@ Proof.
         open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
       rewrite open_tm_swap_atom.
       replace (<[z:=T1]> (store_swap x y Γ))
-        with (store_swap x y (<[atom_swap x y z := T1]> Γ)).
+        with (store_swap x y (<[swap x y z := T1]> Γ)).
       * apply H. intros Hin. apply Hz.
-        rewrite elem_of_aset_swap. exact Hin.
-      * rewrite store_swap_insert, atom_swap_involutive. reflexivity.
+        rewrite elem_of_set_swap. exact Hin.
+      * rewrite store_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.

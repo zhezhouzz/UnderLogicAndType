@@ -52,7 +52,7 @@ Proof.
     intros Hin. specialize (Hlc (LVBound k) Hin). exact Hlc.
   - intros Hbv [k|x] Hin; cbn [lc_logic_var_key]; [|exact I].
     assert (k ∈ lvars_bv D) by (rewrite lvars_bv_elem; exact Hin).
-    rewrite Hbv in H. set_solver.
+    rewrite Hbv in H. better_set_solver.
 Qed.
 
 Definition logic_var_to_atom (η : gmap nat atom) (v : logic_var) : option atom :=
@@ -82,38 +82,38 @@ Proof.
       | Some x => {[x]} ∪ acc
       | None => acc
       end) ∅ _ _ D x).
-  - intros y. set_solver.
+  - intros y. better_set_solver.
   - intros v D' acc Hfresh IH z.
     destruct (logic_var_to_atom η v) as [a|] eqn:Hv.
     + pose proof (IH z) as Hz. split.
       * intros Hz'. apply elem_of_union in Hz' as [Hz'|Hz'].
-        -- exists v. rewrite elem_of_singleton in Hz'. subst. set_solver.
-        -- apply Hz in Hz' as [u [HuD Hu]]. exists u. set_solver.
+        -- exists v. rewrite elem_of_singleton in Hz'. subst. better_set_solver.
+        -- apply Hz in Hz' as [u [HuD Hu]]. exists u. better_set_solver.
       * intros [u [HuD Hu]].
         apply elem_of_union in HuD as [HuD|HuD].
         -- rewrite elem_of_singleton in HuD. subst u.
-           apply elem_of_union. left. rewrite Hu in Hv. inversion Hv. set_solver.
-        -- apply elem_of_union. right. apply Hz. exists u. set_solver.
+           apply elem_of_union. left. rewrite Hu in Hv. inversion Hv. better_set_solver.
+        -- apply elem_of_union. right. apply Hz. exists u. better_set_solver.
     + pose proof (IH z) as Hz. split.
-      * intros Hz'. apply Hz in Hz' as [u [HuD Hu]]. exists u. set_solver.
+      * intros Hz'. apply Hz in Hz' as [u [HuD Hu]]. exists u. better_set_solver.
       * intros [u [HuD Hu]].
         apply elem_of_union in HuD as [HuD|HuD].
         -- rewrite elem_of_singleton in HuD. subst u. rewrite Hu in Hv. discriminate.
-        -- apply Hz. exists u. set_solver.
+        -- apply Hz. exists u. better_set_solver.
 Qed.
 
 Definition logic_var_swap (x y : atom) : logic_var → logic_var :=
   swap (LVFree x) (LVFree y).
 
 Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
-  swap (LVFree x) (LVFree y) D.
+  set_swap (LVFree x) (LVFree y) D.
 
 Lemma logic_var_swap_unfold x y v :
-  logic_var_swap x y v = eq_swap (LVFree x) (LVFree y) v.
+  logic_var_swap x y v = swap (LVFree x) (LVFree y) v.
 Proof. reflexivity. Qed.
 
 Lemma lvars_swap_unfold x y D :
-  lvars_swap x y D = gset_swap (LVFree x) (LVFree y) D.
+  lvars_swap x y D = set_swap (LVFree x) (LVFree y) D.
 Proof. reflexivity. Qed.
 
 Lemma logic_var_swap_sym x y v :
@@ -125,23 +125,23 @@ Qed.
 Lemma lvars_swap_sym x y D :
   lvars_swap x y D = lvars_swap y x D.
 Proof.
-  unfold lvars_swap. apply swap_sym.
+  unfold lvars_swap. apply set_swap_sym.
 Qed.
 
-Lemma logic_var_free_eq_swap x y z :
-  eq_swap (LVFree x) (LVFree y) (LVFree z) = LVFree (atom_swap x y z).
+Lemma logic_var_free_swap x y z :
+  swap (LVFree x) (LVFree y) (LVFree z) = LVFree (swap x y z).
 Proof.
-  unfold atom_swap, eq_swap. repeat destruct decide; congruence.
+  unfold swap. repeat destruct decide; congruence.
 Qed.
 
 Lemma lvars_fv_swap x y (D : lvset) :
-  lvars_fv (lvars_swap x y D) = aset_swap x y (lvars_fv D).
+  lvars_fv (lvars_swap x y D) = set_swap x y (lvars_fv D).
 Proof.
   apply set_eq. intros z.
-  rewrite lvars_fv_elem, elem_of_aset_swap, lvars_fv_elem.
-  change (LVFree z ∈ gset_swap (LVFree x) (LVFree y) D ↔
-    LVFree (atom_swap x y z) ∈ D).
-  rewrite gset_swap_elem, logic_var_free_eq_swap.
+  rewrite lvars_fv_elem, elem_of_set_swap, lvars_fv_elem.
+  change (LVFree z ∈ set_swap (LVFree x) (LVFree y) D ↔
+    LVFree (swap x y z) ∈ D).
+  rewrite set_swap_elem, logic_var_free_swap.
   reflexivity.
 Qed.
 
@@ -181,6 +181,6 @@ Proof.
     + right. exists v. split; [exact Hv|exact Hatom].
   - intros Hx.
     destruct Hx as [[v [Hv Hatom]]|[v [Hv Hatom]]].
-    + exists v. split; [set_solver|exact Hatom].
-    + exists v. split; [set_solver|exact Hatom].
+    + exists v. split; [better_set_solver|exact Hatom].
+    + exists v. split; [better_set_solver|exact Hatom].
 Qed.

@@ -14,14 +14,14 @@ Definition logic_var_open (k : nat) (x : atom) : logic_var → logic_var :=
   swap (LVBound k) (LVFree x).
 
 Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
-  swap (LVBound k) (LVFree x) D.
+  set_swap (LVBound k) (LVFree x) D.
 
 Lemma logic_var_open_unfold k x v :
-  logic_var_open k x v = eq_swap (LVBound k) (LVFree x) v.
+  logic_var_open k x v = swap (LVBound k) (LVFree x) v.
 Proof. reflexivity. Qed.
 
 Lemma lvars_open_unfold k x D :
-  lvars_open k x D = gset_swap (LVBound k) (LVFree x) D.
+  lvars_open k x D = set_swap (LVBound k) (LVFree x) D.
 Proof. reflexivity. Qed.
 
 Lemma logic_var_open_involutive k x v :
@@ -33,14 +33,14 @@ Qed.
 Lemma lvars_open_involutive k x D :
   lvars_open k x (lvars_open k x D) = D.
 Proof.
-  unfold lvars_open. apply swap_involutive.
+  unfold lvars_open. apply set_swap_involutive.
 Qed.
 
 Lemma lvars_open_elem_open k x v D :
   logic_var_open k x v ∈ lvars_open k x D <-> v ∈ D.
 Proof.
-  rewrite lvars_open_unfold. rewrite elem_of_gset_swap.
-  change (key_swap (LVBound k) (LVFree x) (logic_var_open k x v))
+  rewrite lvars_open_unfold. rewrite elem_of_set_swap.
+  change (swap (LVBound k) (LVFree x) (logic_var_open k x v))
     with (logic_var_open k x (logic_var_open k x v)).
   rewrite logic_var_open_involutive. reflexivity.
 Qed.
@@ -53,15 +53,15 @@ Proof.
     apply Hsub.
     apply lvars_open_elem_open. exact Hv.
   - rewrite lvars_open_unfold in Hv.
-    apply elem_of_gset_swap in Hv.
-    rewrite lvars_open_unfold. apply elem_of_gset_swap.
+    apply elem_of_set_swap in Hv.
+    rewrite lvars_open_unfold. apply elem_of_set_swap.
     apply Hsub. exact Hv.
 Qed.
 
 Lemma lvars_open_union k x D E :
   lvars_open k x (D ∪ E) = lvars_open k x D ∪ lvars_open k x E.
 Proof.
-  rewrite !lvars_open_unfold, gset_swap_union. reflexivity.
+  rewrite !lvars_open_unfold, set_swap_union. reflexivity.
 Qed.
 
 Lemma logic_var_open_commute_fresh i j x y v :
@@ -72,7 +72,7 @@ Lemma logic_var_open_commute_fresh i j x y v :
 Proof.
   intros Hij Hxy.
   destruct v as [n|a];
-    unfold logic_var_open, swap, swap_action_self, eq_swap;
+    unfold logic_var_open, swap;
     repeat destruct decide; subst; try congruence; reflexivity.
 Qed.
 
@@ -84,7 +84,7 @@ Lemma lvars_open_commute_fresh i j x y D :
 Proof.
   intros Hij Hxy.
   apply set_eq. intros v.
-  rewrite !lvars_open_unfold, !elem_of_gset_swap.
+  rewrite !lvars_open_unfold, !elem_of_set_swap.
   change
     (logic_var_open j y (logic_var_open i x v) ∈ D <->
      logic_var_open i x (logic_var_open j y v) ∈ D).
@@ -99,7 +99,7 @@ Lemma lvars_open_fresh_index k x D :
 Proof.
   intros Hk Hx.
   rewrite lvars_open_unfold.
-  apply gset_swap_fresh.
+  apply set_swap_fresh.
   - intros Hbad. apply Hk. rewrite lvars_bv_elem. exact Hbad.
   - intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
 Qed.
@@ -109,7 +109,7 @@ Lemma lvars_open_difference_bound k x D :
   lvars_open k x D ∖ {[LVFree x]}.
 Proof.
   rewrite !lvars_open_unfold.
-  apply gset_swap_difference_l.
+  apply set_swap_difference_l.
 Qed.
 
 Lemma lvars_bv_open_insert_dom k x D (η : gmap nat atom) :
@@ -123,8 +123,8 @@ Proof.
     assert (n ∈ lvars_bv (lvars_open k x D)) as Hopen.
     {
       rewrite lvars_bv_elem in Hn |- *.
-      rewrite lvars_open_unfold, gset_swap_elem.
-      rewrite eq_swap_fresh by congruence. exact Hn.
+      rewrite lvars_open_unfold, set_swap_elem.
+      rewrite swap_fresh by congruence. exact Hn.
     }
     apply Hsub in Hopen.
     apply elem_of_dom in Hopen as [y Hy].
@@ -137,9 +137,9 @@ Proof.
   intros y Hy.
   apply elem_of_difference in Hy as [HyD Hyx].
   apply lvars_fv_elem.
-  rewrite lvars_open_unfold. apply elem_of_gset_swap.
+  rewrite lvars_open_unfold. apply elem_of_set_swap.
   rewrite elem_of_singleton in Hyx.
-  rewrite key_swap_fresh by congruence.
+  rewrite swap_fresh by congruence.
   apply lvars_fv_elem. exact HyD.
 Qed.
 
@@ -160,20 +160,20 @@ Proof.
 Qed.
 
 Lemma lvars_open_sym k x D :
-  lvars_open k x D = swap (LVFree x) (LVBound k) D.
+  lvars_open k x D = set_swap (LVFree x) (LVBound k) D.
 Proof.
-  unfold lvars_open. apply swap_sym.
+  unfold lvars_open. apply set_swap_sym.
 Qed.
 
-Lemma logic_var_open_onesided_eq_swap_fresh k x v :
+Lemma logic_var_open_onesided_swap_fresh k x v :
   x ∉ logic_var_fv v →
   logic_var_open_onesided k x v = logic_var_open k x v.
 Proof.
   destruct v as [j|y]; simpl.
-  - unfold logic_var_open, swap, swap_action_self, eq_swap.
+  - unfold logic_var_open, swap.
     repeat destruct decide; congruence.
   - intros Hfresh.
-    unfold logic_var_open, swap, swap_action_self, eq_swap.
+    unfold logic_var_open, swap.
     rewrite not_elem_of_singleton in Hfresh.
     repeat destruct decide; congruence.
 Qed.
@@ -181,7 +181,7 @@ Qed.
 Definition lvars_open_onesided (k : nat) (x : atom) (D : lvset) : lvset :=
   set_map (logic_var_open_onesided k x) D.
 
-Lemma lvars_open_onesided_eq_swap_fresh k x D :
+Lemma lvars_open_onesided_swap_fresh k x D :
   x ∉ lvars_fv D →
   lvars_open_onesided k x D = lvars_open k x D.
 Proof.
@@ -189,17 +189,17 @@ Proof.
   apply set_eq. intros v.
   unfold lvars_open_onesided.
   rewrite lvars_open_unfold.
-  unfold gset_swap.
+  unfold set_swap.
   rewrite !elem_of_map.
   split.
   - intros [u [Hv Hu]]. exists u. split; [|exact Hu].
-    rewrite Hv. apply logic_var_open_onesided_eq_swap_fresh.
+    rewrite Hv. apply logic_var_open_onesided_swap_fresh.
     intros Hbad. apply Hfresh. apply lvars_fv_elem.
     destruct u as [j|y]; cbn [logic_var_fv] in Hbad;
-      [set_solver | rewrite elem_of_singleton in Hbad; subst; exact Hu].
+      [better_set_solver | rewrite elem_of_singleton in Hbad; subst; exact Hu].
   - intros [u [Hv Hu]]. exists u. split; [|exact Hu].
-    rewrite Hv. symmetry. apply logic_var_open_onesided_eq_swap_fresh.
+    rewrite Hv. symmetry. apply logic_var_open_onesided_swap_fresh.
     intros Hbad. apply Hfresh. apply lvars_fv_elem.
     destruct u as [j|y]; cbn [logic_var_fv] in Hbad;
-      [set_solver | rewrite elem_of_singleton in Hbad; subst; exact Hu].
+      [better_set_solver | rewrite elem_of_singleton in Hbad; subst; exact Hu].
 Qed.

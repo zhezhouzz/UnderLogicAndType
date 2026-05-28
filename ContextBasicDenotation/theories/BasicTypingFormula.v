@@ -13,11 +13,11 @@ Definition open_tm_env (η : gmap nat atom) (e : tm) : tm :=
   map_fold (fun k x acc => open_tm k (vfvar x) acc) e η.
 Definition open_env_atom_swap (x y : atom) (η : gmap nat atom)
     : gmap nat atom :=
-  atom_swap x y <$> η.
+  swap x y <$> η.
 
 Lemma open_env_atom_swap_lookup x y η k :
   open_env_atom_swap x y η !! k =
-  atom_swap x y <$> (η !! k).
+  swap x y <$> (η !! k).
 Proof.
   unfold open_env_atom_swap. apply lookup_fmap.
 Qed.
@@ -34,7 +34,7 @@ Lemma open_env_atom_swap_involutive x y η :
 Proof.
   apply map_eq. intros k.
   rewrite !open_env_atom_swap_lookup.
-  destruct (η !! k) as [a|]; cbn; [rewrite atom_swap_involutive|];
+  destruct (η !! k) as [a|]; cbn; [rewrite swap_involutive|];
     reflexivity.
 Qed.
 
@@ -59,25 +59,25 @@ Lemma logic_var_open_env_atom_swap x y η v :
 Proof.
   destruct v as [k|a].
   - rewrite logic_var_swap_unfold.
-    rewrite eq_swap_fresh by congruence.
+    rewrite swap_fresh by congruence.
     cbn [logic_var_open_env].
     rewrite open_env_atom_swap_lookup.
     destruct (η !! k) as [b|] eqn:Hη; cbn.
     + rewrite logic_var_swap_unfold.
-      rewrite logic_var_free_eq_swap.
-      rewrite atom_swap_involutive. reflexivity.
+      rewrite logic_var_free_swap.
+      rewrite swap_involutive. reflexivity.
     + rewrite logic_var_swap_unfold.
-      rewrite eq_swap_fresh by congruence. reflexivity.
+      rewrite swap_fresh by congruence. reflexivity.
   - cbn [logic_var_open_env].
-    rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
+    rewrite logic_var_swap_unfold, logic_var_free_swap.
     reflexivity.
 Qed.
 
 Lemma lvars_swap_elem_iff x y D v :
   v ∈ lvars_swap x y D <-> logic_var_swap x y v ∈ D.
 Proof.
-  rewrite lvars_swap_unfold, gset_swap_elem.
-  change (key_swap (LVFree x) (LVFree y) v) with (logic_var_swap x y v).
+  rewrite lvars_swap_unfold, set_swap_elem.
+  change (swap (LVFree x) (LVFree y) v) with (logic_var_swap x y v).
   reflexivity.
 Qed.
 
@@ -125,7 +125,7 @@ Proof.
   eapply Hfresh; [exact Hη|].
   rewrite lvars_open_env_atom_swap.
   rewrite lvars_fv_swap.
-  rewrite elem_of_aset_swap.
+  rewrite elem_of_set_swap.
   rewrite <- open_env_atom_swap_delete.
   exact Hbad.
 Qed.
@@ -229,7 +229,7 @@ Qed.
 
 Lemma open_env_atom_swap_insert x y η k a :
   open_env_atom_swap x y (<[k := a]> η) =
-  <[k := atom_swap x y a]> (open_env_atom_swap x y η).
+  <[k := swap x y a]> (open_env_atom_swap x y η).
 Proof.
   unfold open_env_atom_swap.
   apply map_eq. intros j.
@@ -242,13 +242,13 @@ Qed.
 
 Lemma open_env_atom_swap_avoids x y z η :
   open_env_avoids_atom z η ->
-  open_env_avoids_atom (atom_swap x y z) (open_env_atom_swap x y η).
+  open_env_avoids_atom (swap x y z) (open_env_atom_swap x y η).
 Proof.
   intros Havoid k Hlookup.
   rewrite open_env_atom_swap_lookup in Hlookup.
   destruct (η !! k) as [a|] eqn:Hη; cbn in Hlookup; [|discriminate].
   inversion Hlookup as [Heq].
-  apply atom_swap_inj in Heq. subst a.
+  apply swap_inj in Heq. subst a.
   apply (Havoid k). exact Hη.
 Qed.
 
@@ -265,7 +265,7 @@ Proof.
     rewrite open_env_atom_swap_insert.
     rewrite (map_fold_insert_L
       (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)
-      e k (atom_swap x y a) (open_env_atom_swap x y η)).
+      e k (swap x y a) (open_env_atom_swap x y η)).
     2:{
       intros i j xi xj acc Hij _ _.
       apply open_swap_tm; [apply LC_fvar | apply LC_fvar | exact Hij].
@@ -367,7 +367,7 @@ Proof.
   intros Hx Hy.
   rewrite tm_swap_atom_open.
   cbn [value_swap_atom].
-  rewrite atom_swap_l.
+  rewrite swap_l.
   rewrite tm_swap_atom_fresh by assumption.
   reflexivity.
 Qed.
@@ -410,11 +410,11 @@ Proof.
   intros HyD Hsub n Hn.
   apply elem_of_dom.
   rewrite lvars_bv_elem in Hn.
-  rewrite lvars_open_unfold, gset_swap_elem in Hn.
+  rewrite lvars_open_unfold, set_swap_elem in Hn.
   destruct (decide (n = k)) as [->|Hnk].
   - exfalso. apply HyD. apply lvars_fv_elem.
-    rewrite eq_swap_l in Hn. exact Hn.
-  - rewrite eq_swap_fresh in Hn by congruence.
+    rewrite swap_l in Hn. exact Hn.
+  - rewrite swap_fresh in Hn by congruence.
     assert (Hndom : n ∈ dom η).
     { apply Hsub. rewrite lvars_bv_elem. exact Hn. }
     apply elem_of_dom in Hndom as [x Hηn].
@@ -451,7 +451,7 @@ Proof.
       * rewrite lookup_delete_eq in Hv. discriminate.
       * rewrite lookup_delete_ne in Hv by congruence.
         rewrite lookup_delete_ne in Hv by congruence.
-        rewrite logic_var_open_unfold, eq_swap_fresh by congruence.
+        rewrite logic_var_open_unfold, swap_fresh by congruence.
         cbn [logic_var_open_env].
         rewrite lookup_delete_ne by congruence.
         exact Hv.
@@ -460,7 +460,7 @@ Proof.
     destruct (decide (a = y)) as [->|Hay].
     + exfalso. apply (Havoid j).
       rewrite lookup_delete_ne by congruence. exact Hjx.
-    + rewrite eq_swap_fresh by congruence.
+    + rewrite swap_fresh by congruence.
       cbn [logic_var_open_env]. reflexivity.
 Qed.
 
@@ -481,15 +481,15 @@ Proof.
   - destruct (decide (n = k)) as [->|Hnk].
     + rewrite lookup_insert_eq.
       rewrite Hηk.
-      rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
-      rewrite atom_swap_l. reflexivity.
+      rewrite logic_var_swap_unfold, logic_var_free_swap.
+      rewrite swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       rewrite lookup_delete_ne by congruence.
       destruct (η !! n) as [b|] eqn:Hηn;
         [|rewrite logic_var_swap_unfold;
-          rewrite eq_swap_fresh by congruence; reflexivity].
-      rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
-      rewrite atom_swap_fresh; [reflexivity| |].
+          rewrite swap_fresh by congruence; reflexivity].
+      rewrite logic_var_swap_unfold, logic_var_free_swap.
+      rewrite swap_fresh; [reflexivity| |].
       * intros ->. apply (Havoid n).
         rewrite lookup_delete_ne by congruence. exact Hηn.
       * intros ->.
@@ -497,8 +497,8 @@ Proof.
         apply lvars_fv_open_env_lookup with (k := n).
         -- rewrite lookup_delete_ne by congruence. exact Hηn.
         -- apply elem_of_union_r. exact HvD.
-  - rewrite logic_var_swap_unfold, logic_var_free_eq_swap.
-    rewrite atom_swap_fresh; [reflexivity| |].
+  - rewrite logic_var_swap_unfold, logic_var_free_swap.
+    rewrite swap_fresh; [reflexivity| |].
     + intros ->. apply HyD. apply lvars_fv_elem. exact HvD.
     + intros ->. apply HzD. apply lvars_fv_elem. exact HvD.
 Qed.
@@ -789,8 +789,8 @@ Proof.
   rewrite lvars_open_env_atom_swap in Hbad.
   rewrite open_env_atom_swap_involutive in Hbad.
   rewrite lvars_fv_swap in Hbad.
-  rewrite elem_of_aset_swap in Hbad.
-  rewrite atom_swap_involutive in Hbad.
+  rewrite elem_of_set_swap in Hbad.
+  rewrite swap_involutive in Hbad.
   exact Hbad.
 Qed.
 
@@ -839,7 +839,7 @@ Lemma logic_var_swap_open_one x y k v :
   logic_var_open k y (logic_var_swap x y v).
 Proof.
   rewrite !logic_var_open_unfold, !logic_var_swap_unfold.
-  unfold eq_swap.
+  unfold swap.
   repeat destruct decide; subst; try congruence; reflexivity.
 Qed.
 
