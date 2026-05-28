@@ -1,8 +1,8 @@
-(** * ContextPrelude.LogicVarAtoms
+(** * ContextBase.LogicVarAtoms
 
     Shifts, atom projections, and atom swaps for logic-variable sets. *)
 
-From ContextPrelude Require Export LogicVarOpen.
+From ContextBase Require Export LogicVarOpen.
 
 Definition logic_var_shift (v : logic_var) : logic_var :=
   match v with

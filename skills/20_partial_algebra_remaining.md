@@ -45,7 +45,7 @@ This note records the unfinished proof work left on
 
 - Keep partial operations partial.  Do not repair missing definedness by adding
   fallback worlds.
-- Prefer moving store/map facts into `ContextPrelude/Store.v` instead of proving
+- Prefer moving store/map facts into `ContextStore/Store.v` instead of proving
   them inline in resource proofs.
 - When stdpp union associativity is overloaded, an explicit term such as
   `assoc_L (∪) s1 s2 s3` is more stable than bare `rewrite assoc_L`.

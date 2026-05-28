@@ -5,7 +5,8 @@
     The definitions remain in [Resource].  This file only adds a compact
     surface syntax, with explicit-proof variants next to proof-inferred ones. *)
 
-From ContextPrelude Require Import Prelude Store.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import Store.
 From ContextAlgebra Require Import Resource.
 
 Notation "m1 '×[' Hc ']' m2" :=

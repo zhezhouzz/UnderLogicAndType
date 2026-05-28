@@ -1,6 +1,7 @@
 (** * Generic stores: restriction lemmas *)
 
-From ContextPrelude Require Import Prelude StoreCore StoreKeyAction.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import StoreCore StoreKeyAction.
 
 Section AbstractStoreRestrict.
 

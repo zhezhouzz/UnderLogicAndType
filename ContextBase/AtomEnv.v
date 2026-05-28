@@ -1,6 +1,6 @@
 (** * Atom-key finite-map environments
 
-    This module is intentionally below ContextPrelude's generic [StoreA]
+    This module is intentionally below ContextStore's generic [StoreA]
     interface.  CoreLang only needs atom-key maps, restriction, and bijective
     atom swapping for syntax/typing/substitution lemmas, so those operations
     live here instead of depending on the full store/resource stack. *)

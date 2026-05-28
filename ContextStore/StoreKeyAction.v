@@ -1,6 +1,7 @@
 (** * Generic stores: key actions *)
 
-From ContextPrelude Require Import Prelude StoreCore.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import StoreCore.
 
 Section AbstractStoreKeyAction.
 

@@ -13,11 +13,10 @@ marked here as intentionally kept.
 
 Current unchecked proof nodes:
 
-- Denotation/theories/TLetSupport.v:
-  - denot_ty_lvar_gas_tapp_tlete_assoc
-  - tlet_intro_denotation_wand_case
+- None in the core ContextBase/ContextStore/ContextAlgebra/ContextLogic/
+  ContextTypeLanguage/ContextBasicDenotation/Denotation/ContextTyping route.
 
-Everything else in ContextBase, ContextPrelude, ContextAlgebra, ContextLogic,
+Everything in ContextBase, ContextStore, ContextAlgebra, ContextLogic,
 ContextTypeLanguage, ContextBasicDenotation, Denotation, and ContextTyping is
 currently closed.
 
@@ -548,7 +547,7 @@ Context type language layer
        Syntax/basic-typing well-formedness used by BasicDenotation formulas.
      similarity/replacement:
        If a lemma only mentions stores/maps and not context_ty/tm syntax, move
-       it down to ContextPrelude.  If it mentions open/substitution over
+       it down to ContextStore or ContextBase.  If it mentions open/substitution over
        context_ty or tm, keep it here.
 
 
@@ -582,16 +581,18 @@ Context Algebra and Prelude layer
        Keep the general lworld/lstore form.  Atom wrappers should be thin and
        only handle atom_env_to_lty_env/lc conversion.
 
-15. ContextPrelude/theories/*
+15. ContextBase/* and ContextStore/*
 
    storeA_restrict_dom, storeA lookup/restrict/union/rekey lemmas,
    lvars_fv/dom/open/swap facts
      role:
        Generic map/key infrastructure.
      similarity/replacement:
-       These are the preferred home for map-only lemmas.  Any environment lemma
-       that only says something about dom/lookup/restrict for StoreA should be
-       pushed down here rather than repeated in ContextTypeLanguage.
+       ContextStore is the preferred home for StoreA/map-only lemmas.
+       ContextBase is the preferred home for logic_var/lvar-set facts.  Any
+       environment lemma that only says something about dom/lookup/restrict for
+       StoreA should be pushed down to ContextStore rather than repeated in
+       ContextTypeLanguage.
 
 
 Static unused or low-use candidates
@@ -657,4 +658,3 @@ If a lemma's proof is just "apply a more general lemma" and the lemma is not a
 stable public boundary name, prefer deleting it and updating call sites to the
 general lemma.  If a lemma packages a cross-layer conversion, for example
 atom_env_to_lty_env or lty_env_to_atom_env, keep it even when the proof is short.
-

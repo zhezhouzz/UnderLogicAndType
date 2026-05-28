@@ -1,5 +1,5 @@
 -R ContextBase ContextBase
--R ContextPrelude ContextPrelude
+-R ContextStore ContextStore
 -R ContextAlgebra/theories ContextAlgebra
 -R ContextLogic/theories ContextLogic
 -R ContextTypeLanguage/theories ContextTypeLanguage
@@ -10,28 +10,22 @@
 
 ContextBase/Prelude.v
 ContextBase/LogicVar.v
+ContextBase/LogicVarOpen.v
+ContextBase/LogicVarAtoms.v
+ContextBase/LogicVarOpenEnv.v
+ContextBase/LogicVarInterface.v
 ContextBase/AtomEnv.v
 
-ContextPrelude/PreludeCore.v
-ContextPrelude/LogicVarCore.v
-ContextPrelude/LogicVarOpen.v
-ContextPrelude/LogicVarAtoms.v
-ContextPrelude/LogicVarOpenEnv.v
-ContextPrelude/LogicVarInterface.v
-ContextPrelude/LogicVar.v
-ContextPrelude/Prelude.v
-ContextPrelude/StoreCore.v
-ContextPrelude/StoreKeyAction.v
-ContextPrelude/StoreRestrictCore.v
-ContextPrelude/StoreRestrictUnion.v
-ContextPrelude/StoreRestrict.v
-ContextPrelude/StoreBind.v
-ContextPrelude/StoreInterfaceCore.v
-ContextPrelude/StoreInterfaceLookupSwap.v
-ContextPrelude/StoreInterfaceRestrict.v
-ContextPrelude/StoreInterfaceCompat.v
-ContextPrelude/StoreInterface.v
-ContextPrelude/Store.v
+ContextStore/StoreCore.v
+ContextStore/StoreKeyAction.v
+ContextStore/StoreRestrictCore.v
+ContextStore/StoreRestrictUnion.v
+ContextStore/StoreBind.v
+ContextStore/StoreInterfaceCore.v
+ContextStore/StoreInterfaceLookupSwap.v
+ContextStore/StoreInterfaceRestrict.v
+ContextStore/StoreInterfaceCompat.v
+ContextStore/Store.v
 
 ContextAlgebra/theories/ResourceCore.v
 ContextAlgebra/theories/ResourceKeyAction.v

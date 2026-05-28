@@ -1,8 +1,8 @@
-(** * ContextPrelude.LogicVarInterface
+(** * ContextBase.LogicVarInterface
 
     Public helper lemmas for logic-variable sets. *)
 
-From ContextPrelude Require Export LogicVarOpenEnv.
+From ContextBase Require Export LogicVarOpenEnv.
 
 Class IntoLVars A := into_lvars : A → lvset.
 

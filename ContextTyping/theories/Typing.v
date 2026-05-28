@@ -9,7 +9,7 @@
 
 From CoreLang Require Import BasicTyping BasicTypingProps.
 From ContextLogic Require Import Formula.
-From ContextPrelude Require Import Store.
+From ContextStore Require Import Store.
 From ContextTyping Require Export Auxiliary PrimOpContext.
 
 (** ** The typing judgment *)

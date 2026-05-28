@@ -12,7 +12,7 @@ Rocq 的 Section 机制：Section 结束时，只有在定义中**实际出现**
 
 ```coq
 Section ContextLogic.
-  (* WorldT is imported from ContextPrelude.Prelude. *)
+  (* WorldT is imported from ContextBase.Prelude. *)
 
   Inductive Formula : Type :=
     | FForall (x : atom) (φ : Formula)

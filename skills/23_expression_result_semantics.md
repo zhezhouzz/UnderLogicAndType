@@ -142,7 +142,7 @@ store_restrict_empty_set : store_restrict s ∅ = ∅
 ```
 
 Do not re-prove this locally with a raw `map_eq` in a polymorphic typing proof:
-the `gmap`/`Store` instances can become ambiguous outside `ContextPrelude.Store`.
+the `gmap`/`Store` instances can become ambiguous outside `ContextStore.Store`.
 
 When a `fib_vars` model on a let-result world must imply that the base world
 covers the whole input domain `X`, extract it from scopedness:

@@ -96,7 +96,7 @@ from basic store typing to `closed_env`.
 ## Restriction Locality
 
 Prefer `map_restrict value σ X` in CoreLang instantiation lemmas.  The more
-semantic `store_restrict` wrapper is useful in ContextPrelude/ContextAlgebra, but
+semantic `store_restrict` wrapper is useful in ContextStore/ContextAlgebra, but
 inside generic `map_fold` proofs it can leave Rocq trying to infer finite-map
 instances for the `Store` type alias instead of the concrete `gmap`.
 

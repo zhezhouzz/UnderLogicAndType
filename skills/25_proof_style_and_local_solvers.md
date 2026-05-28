@@ -270,7 +270,7 @@ add it to the appropriate solver.  This is especially useful for:
 
 Pure set lemmas that only package `set_solver` should not live as ad-hoc local
 lemmas in semantic proof files.  If the same shape appears in several cases,
-move it to `ContextPrelude` or the local set solver as a general helper:
+move it to `ContextBase`/`ContextStore` or the local set solver as a general helper:
 
 ```coq
 Lemma fv_subset_env_union_pair (X Y A B C D : aset) :

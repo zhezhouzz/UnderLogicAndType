@@ -1,8 +1,8 @@
-(** * ContextPrelude.LogicVarOpenEnv
+(** * ContextBase.LogicVarOpenEnv
 
     Finite simultaneous opening environments for logic-variable sets. *)
 
-From ContextPrelude Require Export LogicVarAtoms.
+From ContextBase Require Export LogicVarAtoms.
 
 Definition logic_var_open_env
     (η : gmap nat atom) (v : logic_var) : logic_var :=

@@ -1,11 +1,12 @@
 (** * Stores *)
 
-From ContextPrelude Require Import Prelude.
-From ContextPrelude Require Export StoreCore.
-From ContextPrelude Require Export StoreKeyAction.
-From ContextPrelude Require Export StoreRestrict.
-From ContextPrelude Require Export StoreBind.
-From ContextPrelude Require Export StoreInterface.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Export StoreCore.
+From ContextStore Require Export StoreKeyAction.
+From ContextStore Require Export StoreRestrictCore.
+From ContextStore Require Export StoreRestrictUnion.
+From ContextStore Require Export StoreBind.
+From ContextStore Require Export StoreInterfaceCompat.
 
 Notation "σ '|ₛ' X" := (store_restrict σ X)
   (at level 30, format "σ  |ₛ  X").

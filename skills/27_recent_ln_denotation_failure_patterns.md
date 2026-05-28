@@ -17,7 +17,7 @@ Use targeted searches such as:
 
 ```sh
 rg -n "open_cty_env|cty_open|qual_open|formula_open|typed_lty_env_bind" ContextTypeLanguage ContextBasicDenotation Denotation -S
-rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ContextTypeLanguage ContextPrelude -S
+rg -n "lvars_fv|lvars_bv|lvars_shift|dom .*shift|lookup_kmap" ContextTypeLanguage ContextBase ContextStore -S
 rg -n "expr_result_formula|expr_basic_typing_formula|basic_world_formula|res_models_forall_ext_transport" ContextBasicDenotation Denotation ContextLogic -S
 ```
 

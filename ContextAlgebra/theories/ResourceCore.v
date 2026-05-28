@@ -1,4 +1,5 @@
-From ContextPrelude Require Import Prelude Store.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import Store.
 From Stdlib Require Import Logic.PropExtensionality Logic.FunctionalExtensionality
   Logic.ProofIrrelevance.
 

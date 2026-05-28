@@ -1,6 +1,7 @@
 (** * Concrete store interfaces *)
 
-From ContextPrelude Require Import Prelude StoreCore StoreKeyAction StoreRestrict StoreBind.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion StoreBind.
 
 Section StoreInterface.
 

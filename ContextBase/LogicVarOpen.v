@@ -1,8 +1,8 @@
-(** * ContextPrelude.LogicVarOpen
+(** * ContextBase.LogicVarOpen
 
     Opening operations for logic-variable sets. *)
 
-From ContextPrelude Require Export LogicVarCore.
+From ContextBase Require Export LogicVar.
 
 Definition logic_var_open_onesided (k : nat) (x : atom) (v : logic_var) : logic_var :=
   match v with

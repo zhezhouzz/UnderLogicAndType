@@ -1,4 +1,5 @@
-From ContextPrelude Require Import Prelude Store.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction.
 
 (** * Restriction and fibers for abstract resources *)

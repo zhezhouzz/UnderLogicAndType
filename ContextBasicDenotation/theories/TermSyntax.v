@@ -615,7 +615,7 @@ Lemma lstore_bound_part_empty_of_lc σ :
 Proof.
   intros Hlc.
   apply map_eq. intros k.
-  rewrite ContextPrelude.StoreInterfaceCore.lstore_bound_part_lookup, lookup_empty.
+  rewrite ContextStore.StoreInterfaceCore.lstore_bound_part_lookup, lookup_empty.
   apply eq_None_not_Some. intros [v Hlookup].
   assert (Hbound : LVBound k ∈ dom (σ : gmap logic_var value)).
   { rewrite elem_of_dom. eauto. }

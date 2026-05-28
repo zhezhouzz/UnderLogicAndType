@@ -1,6 +1,7 @@
 (** * Fiber extension equivalence and commuting lemmas *)
 
-From ContextPrelude Require Import Prelude Store.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
   ResourceAlgebra ResourceExtensionCore.
 

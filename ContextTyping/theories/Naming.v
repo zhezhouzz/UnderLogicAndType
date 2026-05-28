@@ -6,7 +6,7 @@
 
 From CoreLang Require Import Instantiation InstantiationProps.
 From ContextTyping Require Export Typing.
-From ContextPrelude Require Import Store.
+From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import SyntaxOpen.
 
@@ -85,8 +85,8 @@ Proof.
     + apply store_lookup_union_Some_raw in Hzrest as [HzΓ|[_ Hzx]].
       * apply elem_of_union_l. apply elem_of_dom. exists T.
         apply store_lookup_union_Some_raw. right. eauto.
-      * cbv [ContextPrelude.StoreInterfaceCore.store_singleton map_singleton
-          singleton singletonM insert ContextPrelude.StoreInterfaceCore.store_insert
+      * cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
+          singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
           map_insert] in Hzx.
         destruct (decide (z = x)) as [->|Hzx_ne]; [set_solver|].
         change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
@@ -115,8 +115,8 @@ Proof.
            apply store_lookup_union_Some_raw. right.
            split.
            ++ exact HΓ.
-           ++ cbv [ContextPrelude.StoreInterfaceCore.store_singleton map_singleton
-                singleton singletonM insert ContextPrelude.StoreInterfaceCore.store_insert
+           ++ cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
+                singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
                 map_insert].
               change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
                 x (∅ : gmap atom ty)) !! x = Some (erase_ty τ)).

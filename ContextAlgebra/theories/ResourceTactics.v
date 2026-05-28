@@ -1,11 +1,12 @@
 (** * Resource proof automation
 
-    This file keeps resource-specific Ltac outside [ContextPrelude].  The
+    This file keeps resource-specific Ltac outside [ContextStore].  The
     prelude may know about polymorphic stores, but it should not depend on
     worlds or the algebraic resource order. *)
 
 From ContextAlgebra Require Import Resource ResourceCore.
-From ContextPrelude Require Import Prelude Store.
+From ContextBase Require Import Prelude LogicVarInterface.
+From ContextStore Require Import Store.
 
 Ltac resource_world_norm :=
   cbn [world_dom world_stores raw_unit raw_product raw_sum raw_restrict raw_fiber] in *.

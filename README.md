@@ -50,11 +50,11 @@ The formalization is split into several libraries with the following dependency
 shape:
 
 ```
-ContextBase ──→ ContextPrelude ──→ ContextAlgebra ──→ ContextLogic
-    │               │                  │                │
-    │               └──────────────────┴────────────────┤
-    │                                                    v
-    └────────→ CoreLang ─────────→ ContextTypeLanguage ──→ ContextBasicDenotation
+ContextBase ──→ ContextStore ──→ ContextAlgebra ──→ ContextLogic
+    │              │                 │                │
+    │              └─────────────────┴────────────────┤
+    │                                                  v
+    └────────→ CoreLang ────────→ ContextTypeLanguage ──→ ContextBasicDenotation
                                                                   │
                                                                   v
                                                               Denotation
@@ -66,27 +66,29 @@ LocallyNameless supports CoreLang, ContextTypeLanguage, and the denotation
 proof files.
 ```
 
-Most libraries live under `<Library>/theories/`.  `ContextPrelude/` and
-`LocallyNameless/` are top-level support libraries.  The current route splits
+Most libraries live under `<Library>/theories/`.  `ContextBase/`,
+`ContextStore/`, and `LocallyNameless/` are top-level support libraries.  The current route splits
 the old monolithic context-type layer into three pieces:
 `ContextTypeLanguage` for syntax and LN well-formedness,
 `ContextBasicDenotation` for basic store/world/term atoms, and `Denotation` for
 the recursive context-type denotation.
 
-### `ContextPrelude/` — Shared prelude
+### `ContextBase/` and `ContextStore/` — Shared infrastructure
 
-Common infrastructure shared by the algebra, logic, and language layers.
-It contains no program syntax and no dependency on `CoreLang`.
+`ContextBase` contains the atom/lvar/freshness infrastructure shared by all
+layers. `ContextStore` contains the polymorphic store infrastructure and the
+atom/lvar store specializations.  Neither layer contains program syntax.
 
 | File | Contents |
 |------|----------|
-| `Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, swap/rekey classes, and `ValueSig` |
-| `Store*.v` | Polymorphic `StoreA` infrastructure, atom/lvar specializations, restriction, compatibility, and bind/rekey operations |
+| `ContextBase/Prelude.v` | `atom`, finite atom sets, freshness helpers, `Stale`, and `ValueSig` |
+| `ContextBase/LogicVar*.v` | lvar syntax, open/swap support, atom projection, and lvar-set helper lemmas |
+| `ContextStore/Store*.v` | Polymorphic `StoreA` infrastructure, atom/lvar specializations, restriction, compatibility, and bind/rekey operations |
 
 ### `ContextAlgebra/` — The algebraic layer
 
 Resources and the abstract context algebra.  Store operations live in
-`ContextPrelude/Store.v`, so this layer no longer carries a store wrapper.
+`ContextStore/Store.v`, so this layer no longer carries a store wrapper.
 
 | File | Contents |
 |------|----------|
