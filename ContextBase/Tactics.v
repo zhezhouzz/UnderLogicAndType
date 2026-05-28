@@ -326,8 +326,14 @@ Ltac better_map_solver :=
   repeat match goal with
   | H : ?m !! ?x = Some ?v |- ?x ∈ dom ?m =>
       apply elem_of_dom_2 in H; exact H
+  | H : ?m !! ?x = Some ?v |- exists v, ?m !! ?x = Some v =>
+      exists v; exact H
+  | H : ?x ∈ dom ?m |- exists v, ?m !! ?x = Some v =>
+      apply elem_of_dom in H; exact H
   | H : ?x ∉ dom ?m |- ?m !! ?x = None =>
       apply not_elem_of_dom; exact H
+  | H : ?m !! ?x = None |- ?x ∉ dom ?m =>
+      apply not_elem_of_dom in H; exact H
   | Hdom : dom ?m = ?X, Hx : ?x ∉ ?X |- ?m !! ?x = None =>
       apply not_elem_of_dom; rewrite Hdom; exact Hx
   | Hdom : dom ?m = ?X, Hx : ?x ∈ dom ?m |- ?x ∈ ?X =>

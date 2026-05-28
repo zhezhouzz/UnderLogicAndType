@@ -234,14 +234,13 @@ Proof.
                  assert (Hx_not_m : σm !! x = None).
                  {
                    change (((σm : gmap atom value) !! x) = None).
-	                   apply not_elem_of_dom.
-	                   pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hfresh.
-	                   change (ext_out Fx ## world_dom (m : WorldT)) in Hfresh.
-	                   rewrite Hout in Hfresh.
+                   pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hfresh.
+                   change (ext_out Fx ## world_dom (m : WorldT)) in Hfresh.
+                   rewrite Hout in Hfresh.
                    pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
                    change (dom (σm : gmap atom value) = world_dom (m : WorldT)) in Hσm_dom.
-                   rewrite Hσm_dom.
-                   set_solver.
+                   apply not_elem_of_dom.
+                   rewrite Hσm_dom. set_solver.
                  }
                  destruct Hmx_typed as [_ Hstores_typed].
                  specialize (Hstores_typed (lstore_lift_free (σm ∪ σe))).
@@ -251,16 +250,15 @@ Proof.
                  { exists (σm ∪ σe). split; [exact Hmx_store|reflexivity]. }
 	                 specialize (Hstores_typed Hlift_mx).
 	                 eapply (Hstores_typed (LVFree x) U u).
-	                 --- change ((<[LVFree x := U]> (Σ : gmap logic_var ty)
-	                        : gmap logic_var ty) !! LVFree x = Some U).
-	                     rewrite lookup_insert.
-	                     destruct (decide (LVFree x = LVFree x)); [reflexivity|congruence].
+                 --- change ((<[LVFree x := U]> (Σ : gmap logic_var ty)
+                        : gmap logic_var ty) !! LVFree x = Some U).
+                     apply map_lookup_insert.
                  --- change (((lstore_lift_free (σm ∪ σe) : LStoreT)
                         : gmap logic_var value) !! LVFree x = Some u).
                      rewrite lstore_lift_free_lookup_free.
                      change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! x = Some u).
-                     rewrite map_lookup_union_Some_raw.
-                     right. split; [exact Hx_not_m|exact Hu].
+                     apply map_lookup_union_Some_raw. right.
+                     split; [exact Hx_not_m|exact Hu].
               ** rewrite lookup_insert_ne in HΣout by congruence.
                  rewrite lookup_empty in HΣout. discriminate.
 Qed.

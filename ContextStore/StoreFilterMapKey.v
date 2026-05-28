@@ -744,7 +744,7 @@ Proof.
   unfold lvar_store_atom_dom.
   apply lvars_fv_elem.
   change (((s : LVarStore) : gmap logic_var V) !! LVFree x = Some v) in Hv.
-  apply elem_of_dom_2 in Hv. exact Hv.
+  better_map_solver.
 Qed.
 
 End StoreFilterMapKey.

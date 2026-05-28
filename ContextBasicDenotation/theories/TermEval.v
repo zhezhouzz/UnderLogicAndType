@@ -317,15 +317,19 @@ Proof.
   cbn [fv_value] in Hopen.
   destruct (decide (z = x)) as [->|Hzx].
   - assert ((σ : gmap atom value) !! x = None) as Hσx.
-    { apply not_elem_of_dom. exact Hxσ. }
+    { better_map_solver. }
     change ((((σ : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! x) =
       ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! x)).
     transitivity ((({[x := vx]} : gmap atom value) !! x)).
     + apply lookup_union_r. exact Hσx.
     + transitivity (Some vx).
       * change ((<[x := vx]> (∅ : StoreT)) !! x = Some vx).
+        change (((<[x := vx]> (∅ : gmap atom value) : gmap atom value) !! x) = Some vx).
         apply map_lookup_insert.
-      * symmetry. apply map_lookup_insert.
+      * symmetry.
+        change (((<[x := vx]> (store_restrict σ X : gmap atom value) :
+          gmap atom value) !! x) = Some vx).
+        apply map_lookup_insert.
   - assert (HzX : z ∈ X).
     { set_solver. }
     destruct ((σ : gmap atom value) !! z) as [vz|] eqn:Hσz.
@@ -337,7 +341,10 @@ Proof.
         -- rewrite Hσz. reflexivity.
       * symmetry.
         transitivity ((store_restrict σ X : StoreT) !! z).
-        -- apply map_lookup_insert_ne. congruence.
+        -- change (((<[x := vx]> (store_restrict σ X : gmap atom value) :
+              gmap atom value) !! z) =
+            ((store_restrict σ X : gmap atom value) !! z)).
+           apply map_lookup_insert_ne. congruence.
         -- apply storeA_restrict_lookup_some_2; [exact Hσz|exact HzX].
     + change ((((σ : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! z) =
         ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! z)).
@@ -346,11 +353,16 @@ Proof.
         -- apply lookup_union_r. exact Hσz.
         -- change ((<[x := vx]> (∅ : StoreT)) !! z = None).
            transitivity ((∅ : StoreT) !! z).
-           ++ apply map_lookup_insert_ne. congruence.
+           ++ change (((<[x := vx]> (∅ : gmap atom value) :
+                gmap atom value) !! z) = ((∅ : gmap atom value) !! z)).
+              apply map_lookup_insert_ne. congruence.
            ++ reflexivity.
       * symmetry.
         transitivity ((store_restrict σ X : StoreT) !! z).
-        -- apply map_lookup_insert_ne. congruence.
+        -- change (((<[x := vx]> (store_restrict σ X : gmap atom value) :
+              gmap atom value) !! z) =
+            ((store_restrict σ X : gmap atom value) !! z)).
+           apply map_lookup_insert_ne. congruence.
         -- apply storeA_restrict_lookup_none_l. exact Hσz.
 Qed.
 
