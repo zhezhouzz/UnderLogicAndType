@@ -307,7 +307,7 @@ Lemma open_value_swap_atom x y k z v :
   value_swap_atom x y (open_value k (vfvar (swap x y z)) v).
 Proof.
   rewrite value_swap_atom_open. simpl.
-  rewrite swap_involutive. reflexivity.
+  better_base_solver.
 Qed.
 
 Lemma open_tm_swap_atom x y k z e :
@@ -315,7 +315,7 @@ Lemma open_tm_swap_atom x y k z e :
   tm_swap_atom x y (open_tm k (vfvar (swap x y z)) e).
 Proof.
   rewrite tm_swap_atom_open. simpl.
-  rewrite swap_involutive. reflexivity.
+  better_base_solver.
 Qed.
 
 (** ** Single-variable substitution *)

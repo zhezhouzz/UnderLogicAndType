@@ -6,6 +6,7 @@
 
 From CoreLang Require Import LocallyNamelessExtra.
 From ContextBasicDenotation Require Import Notation StoreTyping TermTLet.
+From ContextBase Require Import BaseTactics.
 
 Section BasicTypingFormula.
 
@@ -34,8 +35,7 @@ Lemma open_env_atom_swap_involutive x y η :
 Proof.
   apply map_eq. intros k.
   rewrite !open_env_atom_swap_lookup.
-  destruct (η !! k) as [a|]; cbn; [rewrite swap_involutive|];
-    reflexivity.
+  destruct (η !! k) as [a|]; cbn; better_base_solver.
 Qed.
 
 Lemma open_env_atom_swap_delete x y η k :
@@ -58,13 +58,13 @@ Lemma logic_var_open_env_atom_swap x y η v :
   logic_var_swap x y (logic_var_open_env (open_env_atom_swap x y η) v).
 Proof.
   destruct v as [k|a].
-  - rewrite swap_fresh by congruence.
+  - base_swap_normalize.
     cbn [logic_var_open_env].
     rewrite open_env_atom_swap_lookup.
     destruct (η !! k) as [b|] eqn:Hη; cbn.
     + rewrite logic_var_free_swap.
-      rewrite swap_involutive. reflexivity.
-    + rewrite swap_fresh by congruence. reflexivity.
+      better_base_solver.
+    + better_base_solver.
   - cbn [logic_var_open_env].
     rewrite logic_var_free_swap.
     reflexivity.
@@ -112,9 +112,9 @@ Proof.
     + pose proof (logic_var_open_env_atom_swap x y η u) as Hop.
       rewrite Hop.
       rewrite <- Hu_eq.
-      rewrite swap_involutive. reflexivity.
+      better_base_solver.
     + apply lvars_swap_elem_iff.
-      rewrite swap_involutive. exact Hu.
+      base_swap_normalize. exact Hu.
 Qed.
 
 Lemma open_env_fresh_for_lvars_atom_swap x y η D :
@@ -346,7 +346,7 @@ Proof.
         (map_fold (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e η) =
       lvars_open_env η (tm_lvars e))
     _ _ η).
-  - intros _. rewrite map_fold_empty, lvars_open_env_empty. reflexivity.
+  - intros _. rewrite map_fold_empty. better_base_solver.
   - intros k x η0 Hfresh Hfold IH Henv.
     rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e x).
     rewrite tm_lvars_open.
@@ -370,7 +370,7 @@ Proof.
   intros Hx Hy.
   rewrite tm_swap_atom_open.
   cbn [value_swap_atom].
-  rewrite swap_l.
+  base_swap_normalize.
   rewrite tm_swap_atom_fresh by assumption.
   reflexivity.
 Qed.
@@ -417,7 +417,7 @@ Proof.
   destruct (decide (n = k)) as [->|Hnk].
   - exfalso. apply HyD. apply lvars_fv_elem.
     rewrite swap_l in Hn. exact Hn.
-  - rewrite swap_fresh in Hn by congruence.
+  - base_swap_normalize.
     assert (Hndom : n ∈ dom η).
     { apply Hsub. rewrite lvars_bv_elem. exact Hn. }
     apply elem_of_dom in Hndom as [x Hηn].
@@ -454,7 +454,7 @@ Proof.
       * rewrite lookup_delete_eq in Hv. discriminate.
       * rewrite lookup_delete_ne in Hv by congruence.
         rewrite lookup_delete_ne in Hv by congruence.
-        rewrite swap_fresh by congruence.
+        base_swap_normalize.
         cbn [logic_var_open_env].
         rewrite lookup_delete_ne by congruence.
         exact Hv.
@@ -462,7 +462,7 @@ Proof.
     destruct (decide (a = y)) as [->|Hay].
     + exfalso. apply (Havoid j).
       rewrite lookup_delete_ne by congruence. exact Hjx.
-    + rewrite swap_fresh by congruence.
+    + base_swap_normalize.
       cbn [logic_var_open_env]. reflexivity.
 Qed.
 
@@ -488,7 +488,7 @@ Proof.
     + rewrite lookup_insert_ne by congruence.
       rewrite lookup_delete_ne by congruence.
       destruct (η !! n) as [b|] eqn:Hηn;
-        [|rewrite swap_fresh by congruence; reflexivity].
+        [|base_swap_normalize; reflexivity].
       rewrite logic_var_free_swap.
       rewrite swap_fresh; [reflexivity| |].
       * intros ->. apply (Havoid n).
@@ -795,7 +795,7 @@ Proof.
   rewrite open_env_atom_swap_involutive in Hbad.
   rewrite lvars_fv_swap in Hbad.
   rewrite elem_of_set_swap in Hbad.
-  rewrite swap_involutive in Hbad.
+  base_swap_normalize.
   exact Hbad.
 Qed.
 

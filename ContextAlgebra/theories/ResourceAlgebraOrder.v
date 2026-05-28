@@ -228,7 +228,7 @@ Proof.
     change (set_swap x y (set_swap x y (worldA_dom (w1 : WorldAT))) ∪
       worldA_dom (w2 : WorldAT) =
       worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)).
-    rewrite set_swap_involutive. reflexivity.
+    better_base_solver.
   - intros σ. simpl. split.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].

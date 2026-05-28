@@ -1,4 +1,5 @@
 From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
+From ContextBase Require Import BaseTactics.
 From ContextStore Require Import AtomEnv.
 
 (** * Basic typing facts for CoreLang
@@ -268,7 +269,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := s]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ᵥ
@@ -279,7 +280,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := sx]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
@@ -290,7 +291,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := T1]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
@@ -310,7 +311,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := s]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
       change (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ᵥ
@@ -321,7 +322,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := sx]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
@@ -332,7 +333,7 @@ Proof.
         with ((kmap (swap x y) (<[swap x y z := T1]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert. better_base_solver.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.

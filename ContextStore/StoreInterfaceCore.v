@@ -1,6 +1,6 @@
 (** * Concrete store interfaces *)
 
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore StoreRestrictUnion StoreBind.
 
 Section StoreInterface.
@@ -278,7 +278,7 @@ Proof.
   rewrite storeA_rekey_dom by apply swap_inj.
   change (set_swap (LVBound k) (LVFree x) (dom (lso_store s : LStore)) = D).
   rewrite (lso_dom s).
-  rewrite set_swap_involutive. reflexivity.
+  better_base_solver.
 Defined.
 
 Definition lstore_on_open_front

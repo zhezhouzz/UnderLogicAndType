@@ -1,6 +1,6 @@
 (** * Generic stores: restriction lemmas *)
 
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction.
 
 Section AbstractStoreRestrict.
@@ -233,13 +233,13 @@ Proof.
     + transitivity (Some v).
       * apply storeA_restrict_lookup_some_2; [| exact Hz].
         rewrite storeA_swap_lookup_inv.
-        rewrite swap_fresh by better_set_solver.
+        base_swap_normalize.
         exact Hs.
       * symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].
     + transitivity (@None V).
       * apply storeA_restrict_lookup_none_l.
         rewrite storeA_swap_lookup_inv.
-        rewrite swap_fresh by better_set_solver. exact Hs.
+        base_swap_normalize. exact Hs.
       * symmetry. by apply storeA_restrict_lookup_none_l.
   - transitivity (@None V).
     + by apply storeA_restrict_lookup_none_r.

@@ -1,6 +1,6 @@
 (** * Generic stores: partial key projection *)
 
-From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift.
+From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction.
 From ContextStore Require Import AtomEnv.
 
@@ -449,7 +449,7 @@ Proof.
         -- destruct (s !! LVFree y) eqn:Hlooky.
            ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
            ++ symmetry. exact Hlooky.
-      * rewrite swap_fresh by congruence. reflexivity.
+      * base_swap_normalize. reflexivity.
 Qed.
 
 Lemma lvar_store_swap_atom_store_fresh (s : AtomStore) x y :
@@ -471,7 +471,7 @@ Proof.
       * rewrite swap_r.
         rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
         reflexivity.
-      * rewrite swap_fresh by congruence. reflexivity.
+      * base_swap_normalize. reflexivity.
 Qed.
 
 Lemma lvar_store_swap_atom_store_insert_fresh (s : AtomStore) x y v :

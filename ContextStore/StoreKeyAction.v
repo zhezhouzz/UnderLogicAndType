@@ -1,6 +1,6 @@
 (** * Generic stores: key actions *)
 
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import StoreCore.
 
 Section AbstractStoreKeyAction.
@@ -521,7 +521,7 @@ Proof.
     (@storeA_swap V K _ _ x y s) : gmap K V) !! z) =
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv, storeA_swap_lookup_inv.
-  rewrite swap_involutive. reflexivity.
+  better_base_solver.
 Qed.
 
 Lemma storeA_swap_sym {K : Type} `{Countable K} 
@@ -546,24 +546,24 @@ Proof.
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv.
   destruct (decide (z = x)) as [->|Hzx].
-  - rewrite swap_l.
-    change (((s : gmap K V) !! y) = ((s : gmap K V) !! x)).
+	  - base_swap_normalize.
+	    change (((s : gmap K V) !! y) = ((s : gmap K V) !! x)).
     pose proof (storeA_lookup_none_of_not_elem_dom s x Hx) as Hsx.
     pose proof (storeA_lookup_none_of_not_elem_dom s y Hy) as Hsy.
     change (((s : gmap K V) !! x) = None) in Hsx.
     change (((s : gmap K V) !! y) = None) in Hsy.
     rewrite Hsx, Hsy.
     reflexivity.
-  - destruct (decide (z = y)) as [->|Hzy].
-    + rewrite swap_r.
-      change (((s : gmap K V) !! x) = ((s : gmap K V) !! y)).
+	  - destruct (decide (z = y)) as [->|Hzy].
+	    + base_swap_normalize.
+	      change (((s : gmap K V) !! x) = ((s : gmap K V) !! y)).
       pose proof (storeA_lookup_none_of_not_elem_dom s x Hx) as Hsx.
       pose proof (storeA_lookup_none_of_not_elem_dom s y Hy) as Hsy.
       change (((s : gmap K V) !! x) = None) in Hsx.
       change (((s : gmap K V) !! y) = None) in Hsy.
       rewrite Hsx, Hsy.
       reflexivity.
-    + rewrite swap_fresh by congruence. reflexivity.
+	    + better_base_solver.
 Qed.
 
 Lemma storeA_swap_conjugate {K : Type} `{Countable K} 

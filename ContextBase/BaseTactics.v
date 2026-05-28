@@ -56,13 +56,80 @@ Ltac base_swap_normalize_step :=
 
 Ltac base_swap_normalize := repeat base_swap_normalize_step.
 
+Ltac base_open_env_normalize_step :=
+  match goal with
+  | H : context[logic_var_open_env ∅ ?v] |- _ =>
+      rewrite (logic_var_open_env_empty v) in H
+  | |- context[logic_var_open_env ∅ ?v] =>
+      rewrite (logic_var_open_env_empty v)
+  | H : context[lvars_open_env ∅ ?D] |- _ =>
+      rewrite (lvars_open_env_empty D) in H
+  | |- context[lvars_open_env ∅ ?D] =>
+      rewrite (lvars_open_env_empty D)
+  | H : context[lvars_open_env ?η (?D ∪ ?E)] |- _ =>
+      rewrite (lvars_open_env_union η D E) in H
+  | |- context[lvars_open_env ?η (?D ∪ ?E)] =>
+      rewrite (lvars_open_env_union η D E)
+  | H : context[(kmap S ?η) !! 0] |- _ =>
+      rewrite (open_env_lift_lookup_zero_none η) in H
+  | |- context[(kmap S ?η) !! 0] =>
+      rewrite (open_env_lift_lookup_zero_none η)
+  | Hnone : ?η !! ?k = None,
+    H : context[(kmap S ?η) !! S ?k] |- _ =>
+      rewrite (open_env_lift_lookup_none η k Hnone) in H
+  | Hnone : ?η !! ?k = None
+    |- context[(kmap S ?η) !! S ?k] =>
+      rewrite (open_env_lift_lookup_none η k Hnone)
+  | H : context[open_env_atoms ∅] |- _ =>
+      rewrite open_env_atoms_empty in H
+  | |- context[open_env_atoms ∅] =>
+      rewrite open_env_atoms_empty
+  | Hnone : ?η !! ?k = None,
+    H : context[open_env_atoms (<[?k := ?x]> ?η)] |- _ =>
+      rewrite (open_env_atoms_insert k x η Hnone) in H
+  | Hnone : ?η !! ?k = None
+    |- context[open_env_atoms (<[?k := ?x]> ?η)] =>
+      rewrite (open_env_atoms_insert k x η Hnone)
+  end.
+
+Ltac base_open_env_normalize := repeat base_open_env_normalize_step.
+
+#[global] Hint Resolve
+  open_env_avoids_atom_empty
+  open_env_avoids_atom_lift
+  open_env_avoids_atom_of_notin_atoms
+  open_env_fresh_for_lvars_empty
+  open_env_fresh_for_lvars_inj_on
+  open_env_fresh_for_lvars_mono
+  lvars_open_env_mono
+  lvars_fv_open_env_lookup
+  lvars_fv_open_env_free
+  : base_solver.
+
 Ltac better_base_solver :=
   base_swap_normalize;
+  base_open_env_normalize;
   map_normalize;
   set_normalize;
   first
     [ solve [reflexivity]
+    | solve [apply swap_involutive]
+    | solve [apply swap_sym]
+    | solve [apply swap_l]
+    | solve [apply swap_r]
+    | solve [apply swap_fresh; congruence]
+    | solve [apply set_swap_involutive]
+    | solve [apply set_swap_sym]
+    | solve [apply set_swap_conjugate]
+    | solve [apply set_swap_conjugate_inv]
+    | solve [apply set_swap_fresh; better_set_solver]
+    | solve
+        [ match goal with
+          | H : open_env_fresh_for_lvars ?η ?D
+            |- logic_var_open_env_inj_on ?η ?D =>
+              exact (open_env_fresh_for_lvars_inj_on η D H)
+          end ]
     | solve [congruence]
     | solve [better_map_solver]
     | solve [better_set_solver]
-    | solve [eauto 8] ].
+    | solve [eauto 8 with base_solver] ].

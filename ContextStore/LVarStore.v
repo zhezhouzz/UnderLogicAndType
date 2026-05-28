@@ -5,7 +5,7 @@
     just the [V := ty] instance of these definitions. *)
 
 From LocallyNameless Require Import Classes.
-From ContextBase Require Import LogicVar LogicVarOpenEnv LogicVarShift.
+From ContextBase Require Import LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
 From ContextStore Require Import StoreCore StoreKeyAction.
 From ContextStore Require Import StoreFilterMapKey.
 From ContextStore Require Import StoreBind.
@@ -172,7 +172,7 @@ Lemma logic_var_open_fresh_noop k x v :
   logic_var_open k x v = v.
 Proof.
   intros Hk Hx.
-  apply swap_fresh; congruence.
+  better_base_solver.
 Qed.
 
 Lemma lvar_store_open_one_fresh_noop k x (s : LVarStore) :

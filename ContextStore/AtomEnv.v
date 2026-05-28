@@ -6,6 +6,7 @@
     live here instead of depending on the full store/resource stack. *)
 
 From ContextBase Require Export Prelude.
+From ContextBase Require Import BaseTactics.
 
 #[global] Instance stale_atom_env {A} : Stale (gmap atom A) := dom.
 
@@ -49,7 +50,7 @@ Lemma kmap_swap_involutive (x y : atom) (m : gmap atom A) :
   (kmap (swap x y) (kmap (swap x y) m : gmap atom A) : gmap atom A) = m.
 Proof.
   apply map_eq. intros z.
-  rewrite !kmap_swap_lookup_inv, swap_involutive. reflexivity.
+  rewrite !kmap_swap_lookup_inv. better_base_solver.
 Qed.
 
 Lemma kmap_swap_sym (x y : atom) (m : gmap atom A) :

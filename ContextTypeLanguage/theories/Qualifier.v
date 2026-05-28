@@ -9,7 +9,7 @@
     input after swapping the store back. *)
 
 From CoreLang Require Export Prelude Syntax.
-From ContextBase Require Export Prelude LogicVar.
+From ContextBase Require Export Prelude LogicVar BaseTactics.
 From ContextStore Require Export Store.
 From Stdlib Require Import Logic.FunctionalExtensionality
   Logic.ProofIrrelevance Logic.PropExtensionality.
@@ -244,10 +244,10 @@ Proof.
     rewrite set_swap_conjugate.
     replace (swap (LVBound i) (LVFree x) (LVBound j))
       with (LVBound j).
-    2:{ symmetry. apply swap_fresh; congruence. }
+    2:{ better_base_solver. }
     replace (swap (LVBound i) (LVFree x) (LVFree y))
       with (LVFree y).
-    2:{ symmetry. apply swap_fresh; congruence. }
+    2:{ better_base_solver. }
     reflexivity.
   - intros s1 s2 Hs.
     cbn [qual_prop qual_open_atom].

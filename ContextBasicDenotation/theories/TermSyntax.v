@@ -195,9 +195,9 @@ Proof.
     reflexivity.
   - destruct (decide (d <= n)) as [Hdn|Hdn].
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_True by exact Hdn.
-		      rewrite set_swap_singleton.
-	      rewrite swap_fresh.
-	      * reflexivity.
+      rewrite set_swap_singleton.
+      rewrite swap_fresh.
+      * reflexivity.
       * intros Heq. inversion Heq. lia.
       * discriminate.
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_False by exact Hdn.

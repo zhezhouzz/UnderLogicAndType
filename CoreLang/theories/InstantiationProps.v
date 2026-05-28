@@ -5,6 +5,7 @@
     later syntactic categories can reuse the same multi-substitution facts once
     they provide the corresponding single-substitution lemmas. *)
 
+From ContextBase Require Import BaseTactics.
 From ContextStore Require Import AtomEnv.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
   LocallyNamelessExtra.
@@ -945,7 +946,7 @@ Proof.
   f_equal.
   apply map_restrict_agree. intros z Hz.
   rewrite kmap_swap_lookup_inv.
-  rewrite swap_fresh by set_solver.
+  base_swap_normalize.
   reflexivity.
 Qed.
 

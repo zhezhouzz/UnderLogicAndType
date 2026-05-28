@@ -3,6 +3,7 @@
     Lvar support computations for context syntax. *)
 
 From ContextTypeLanguage Require Export SyntaxCore.
+From ContextBase Require Import BaseTactics.
 
 Lemma lvars_at_depth_elem d D u :
   u ∈ lvars_at_depth d D <->
@@ -386,7 +387,7 @@ Proof.
   inversion Hdepth. subst n.
   assert (LVBound m ∈ lvars_open 0 x D) as Hopened.
   {
-unfold set_swap.
+    unfold set_swap.
     apply elem_of_map. exists (LVBound m). split; [|exact Hv].
     symmetry. apply swap_fresh.
     - intros Heq. inversion Heq. lia.

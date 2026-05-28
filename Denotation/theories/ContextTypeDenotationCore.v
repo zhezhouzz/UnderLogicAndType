@@ -9,6 +9,7 @@
     [ContextBasicDenotation] directly. *)
 
 From Denotation Require Import Notation.
+From ContextBase Require Import BaseTactics.
 
 Section ContextTypeDenotation.
 
@@ -258,8 +259,7 @@ Proof.
     cbn [formula_open].
     rewrite open_env_lift_insert.
     rewrite formula_open_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -411,7 +411,7 @@ Proof.
   - intros e z _ _.
     rewrite formula_open_env_empty.
     unfold open_tm_env. rewrite map_fold_empty.
-    rewrite logic_var_open_env_empty. reflexivity.
+    better_base_solver.
   - intros e z Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -511,9 +511,9 @@ Proof.
     apply elem_of_difference. split; [exact HuD|].
     intros Hbad. apply Hnot.
     rewrite elem_of_singleton in Hbad |- *.
-    subst u.
-    cbn [logic_var_open_env].
-    rewrite open_env_lift_lookup_zero_none. reflexivity.
+	    subst u.
+	    cbn [logic_var_open_env].
+	    better_base_solver.
 Qed.
 
 Lemma lvars_fv_open_env_lift_subset_at_depth1 η D :
@@ -636,8 +636,8 @@ Proof.
         apply (storeA_rekey_empty (V := ty) (K := logic_var)
           (logic_var_open (S k) x)).
       * unfold swap. repeat destruct decide; try lia; try congruence.
-    + apply open_env_lift_lookup_none. exact Hfresh.
-    + apply open_env_avoids_atom_lift. exact Havoid.
+    + better_base_solver.
+    + better_base_solver.
     + intros i z Hiz Hbad.
       replace (dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lvset)
         with ({[LVBound 0]} : lvset) in Hbad
@@ -672,8 +672,7 @@ Proof.
   - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
     rewrite <- (tm_shift_open_tm_fvar (open_tm_env η e) k 0 x ltac:(lia)).
@@ -713,8 +712,8 @@ Proof.
       (tm_lvars e) Hnone Hfresh) as Hfreshη.
     rewrite open_env_lift_insert.
     rewrite formula_open_env_insert_fresh.
-    2:{ apply open_env_lift_lookup_none. exact Hnone. }
-    2:{ apply open_env_avoids_atom_lift. exact Havoid. }
+    2:{ better_base_solver. }
+    2:{ better_base_solver. }
     2:{ apply open_env_values_inj_lift. exact Hinjη. }
     rewrite IH by (exact Hfreshη || exact Hinjη).
     rewrite formula_open_expr_result_formula_shift0_under_core.
@@ -736,8 +735,7 @@ Proof.
   - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
     unfold tapp_tm.
@@ -753,8 +751,7 @@ Proof.
   - rewrite kmap_empty.
     unfold open_tm_env. rewrite map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     cbn [open_tm open_value].
     destruct decide as [Hbad|_]; [lia|reflexivity].
@@ -922,8 +919,8 @@ Lemma context_ty_lvars_open_cty_env η τ :
   lvars_open_env η (context_ty_lvars τ).
 Proof.
   revert τ.
-  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
-  - intros τ _. rewrite open_cty_env_empty, lvars_open_env_empty. reflexivity.
+	  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+	  - intros τ _. rewrite open_cty_env_empty. better_base_solver.
   - intros τ Hfresh.
     pose proof (IH τ ltac:(eapply open_env_fresh_for_lvars_insert_tail; eassumption))
       as HIH.
@@ -963,8 +960,7 @@ Proof.
     - unfold denot_relevant_lvars. set_solver.
     - exact Hfresh.
   }
-  rewrite lvars_open_env_union.
-  reflexivity.
+	  better_base_solver.
 Qed.
 
 Lemma denot_relevant_env_open_env η Σ τ e :
