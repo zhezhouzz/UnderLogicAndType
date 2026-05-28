@@ -99,9 +99,9 @@ Proof.
     assert (Hinj := open_env_fresh_for_lvars_inj_on η
       (dom (<[v := A]> s)) Hfresh).
     assert (HyD : y ∈ dom (<[v := A]> (s : gmap logic_var V))).
-    { rewrite dom_insert_L. apply elem_of_union_r. exact Hy. }
+    { better_set_solver. }
     assert (HvD : v ∈ dom (<[v := A]> (s : gmap logic_var V))).
-    { rewrite dom_insert_L. apply elem_of_union_l. apply elem_of_singleton. reflexivity. }
+    { better_set_solver. }
     pose proof (Hinj y v HyD HvD Heq) as ->.
     apply elem_of_dom in Hy as [U Hy].
     change ((s : gmap logic_var V) !! v = None) in Hnone.
@@ -401,7 +401,7 @@ Proof.
     reflexivity. }
   rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
   unfold lvars_shift_from.
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma lvar_store_bind_atom_store_insert_dom
@@ -433,9 +433,7 @@ Proof.
     intros n Hn. apply lvars_bv_elem in Hn.
     rewrite elem_of_singleton in Hn. discriminate.
   }
-  apply set_eq. intros v.
-  rewrite !elem_of_union, !elem_of_singleton.
-  tauto.
+  apply set_eq. intros v. better_set_solver.
 Qed.
 
 Lemma lvar_store_bind_lvars_fv_dom (s : LVarStore) A :
@@ -443,7 +441,7 @@ Lemma lvar_store_bind_lvars_fv_dom (s : LVarStore) A :
 Proof.
   rewrite lvar_store_bind_dom.
   rewrite lvars_fv_union, lvars_shift_from_fv, lvars_fv_singleton_bound.
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma lvar_store_bind_atom_dom (s : LVarStore) A :
@@ -501,7 +499,7 @@ Proof.
     with ({[LVFree x := Ax]} : gmap logic_var V).
   rewrite storeA_union_singleton_insert_fresh.
   - apply lvar_store_insert_free_commute. exact Hxy.
-  - rewrite dom_insert_L. set_solver.
+  - rewrite dom_insert_L. better_set_solver.
 Qed.
 
 Lemma lvar_store_closed_insert_free (s : LVarStore) x A :

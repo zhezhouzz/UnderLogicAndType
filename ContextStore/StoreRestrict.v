@@ -487,13 +487,13 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [change ((<[x:=v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | better_set_solver].
+    + apply storeA_restrict_lookup_some_2; [change ((<[x:=v]> (σ : gmap K V) : gmap K V) !! x = Some v); better_map_solver | better_set_solver].
     + symmetry. change (({[x := v]} : gmap K V) !! x = Some v).
-      rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
+      better_map_solver.
   - transitivity (@None V).
     + apply storeA_restrict_lookup_none_r. better_set_solver.
     + symmetry. change (({[x := v]} : gmap K V) !! z = None).
-      apply lookup_singleton_ne. congruence.
+      better_map_solver.
 Qed.
 
 Lemma storeA_restrict_singleton_lookup {K : Type} `{Countable K}
@@ -508,11 +508,11 @@ Proof.
   - transitivity (Some v).
     + apply storeA_restrict_lookup_some_2; [exact Hlook | better_set_solver].
     + symmetry. change (({[x := v]} : gmap K V) !! x = Some v).
-      rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
+      better_map_solver.
   - transitivity (@None V).
     + apply storeA_restrict_lookup_none_r. better_set_solver.
     + symmetry. change (({[x := v]} : gmap K V) !! z = None).
-      apply lookup_singleton_ne. congruence.
+      better_map_solver.
 Qed.
 
 Lemma storeA_restrict_insert_singleton_ne {K : Type} `{Countable K}
@@ -537,19 +537,19 @@ Proof.
   apply storeA_map_eq. intros z.
   destruct (decide (z = x)) as [->|Hzx].
   - transitivity (Some v).
-    + apply storeA_restrict_lookup_some_2; [change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v); rewrite lookup_insert; destruct (decide (x = x)); [reflexivity|congruence] | better_set_solver].
+    + apply storeA_restrict_lookup_some_2; [change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v); better_map_solver | better_set_solver].
     + symmetry. change ((<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! x = Some v).
-      rewrite lookup_insert. destruct (decide (x = x)); [reflexivity|congruence].
+      better_map_solver.
   - change ((storeA_restrict (<[x := v]> (σ : gmap K V)) (X ∪ {[x]}) : gmap K V) !! z =
       (<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! z).
-    rewrite lookup_insert_ne by congruence.
+    rewrite map_lookup_insert_ne by congruence.
     destruct (decide (z ∈ X)) as [HzX|HzX].
     + destruct ((σ : gmap K V) !! z) as [vz|] eqn:Hz.
       * transitivity (Some vz).
-        -- apply storeA_restrict_lookup_some_2; [rewrite lookup_insert_ne by congruence; exact Hz | better_set_solver].
+        -- apply storeA_restrict_lookup_some_2; [rewrite map_lookup_insert_ne by congruence; exact Hz | better_set_solver].
         -- symmetry. apply storeA_restrict_lookup_some_2; [exact Hz | exact HzX].
       * transitivity (@None V).
-        -- apply storeA_restrict_lookup_none_l. rewrite lookup_insert_ne by congruence. exact Hz.
+        -- apply storeA_restrict_lookup_none_l. rewrite map_lookup_insert_ne by congruence. exact Hz.
         -- symmetry. apply storeA_restrict_lookup_none_l. exact Hz.
     + transitivity (@None V).
       * apply storeA_restrict_lookup_none_r. better_set_solver.
@@ -564,7 +564,7 @@ Lemma storeA_restrict_insert_fresh_union_lookup_none {K : Type} `{Countable K}
 Proof.
   intros _ _.
   change ((<[x := v]> (storeA_restrict σ X : gmap K V) : gmap K V) !! x = Some v).
-  rewrite lookup_insert. destruct (decide (x = x)); [reflexivity|congruence].
+  better_map_solver.
 Qed.
 
 Lemma storeA_restrict_union_singleton_insert {K : Type} `{Countable K}
@@ -582,12 +582,12 @@ Proof.
       apply map_lookup_union_Some_raw. right. split.
       * apply not_elem_of_dom. better_set_solver.
       * change (({[x := v]} : gmap K V) !! x = Some v).
-        rewrite lookup_singleton. destruct (decide (x = x)); [reflexivity|congruence].
+        better_map_solver.
     + symmetry. change ((<[x := v]> (σ : gmap K V) : gmap K V) !! x = Some v).
-      rewrite lookup_insert. destruct (decide (x = x)); [reflexivity|congruence].
+      better_map_solver.
   - change ((storeA_restrict (@union (gmap K V) _ (σ : gmap K V) ({[x := v]} : gmap K V)) (X ∪ {[x]}) : gmap K V) !! z =
       (<[x := v]> (σ : gmap K V) : gmap K V) !! z).
-    rewrite lookup_insert_ne by congruence.
+    rewrite map_lookup_insert_ne by congruence.
     destruct ((σ : gmap K V) !! z) as [vz|] eqn:Hz.
     + transitivity (Some vz).
       * apply storeA_restrict_lookup_some_2; [apply map_lookup_union_Some_raw; left; exact Hz | apply elem_of_dom_2 in Hz; better_set_solver].
@@ -597,7 +597,7 @@ Proof.
       * apply storeA_restrict_lookup_none_l.
         apply map_lookup_union_None. split; [exact Hz|].
         change (({[x := v]} : gmap K V) !! z = None).
-        apply lookup_singleton_ne. congruence.
+        better_map_solver.
       * apply storeA_restrict_lookup_none_r. exact HzX.
 Qed.
 
@@ -656,18 +656,16 @@ Proof.
   destruct (decide (z = ν)) as [->|Hzν].
   - change ((σx : gmap K V) !! ν =
       (<[ν := vx]> (σ : gmap K V) : gmap K V) !! ν).
-    rewrite lookup_insert.
-    destruct (decide (ν = ν)) as [_|Hbad]; [|congruence].
+    rewrite map_lookup_insert.
     pose proof (f_equal (fun s : gmap K V => s !! ν) Hνsingle) as Hlook.
     change ((storeA_restrict σx ({[ν]} : gset K) : gmap K V) !! ν =
       ({[ν := vx]} : gmap K V) !! ν) in Hlook.
-    rewrite lookup_singleton in Hlook.
-    destruct (decide (ν = ν)) as [_|Hbad]; [|congruence].
+    rewrite map_lookup_singleton in Hlook.
     apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
     exact Hlook.
   - change ((σx : gmap K V) !! z =
       (<[ν := vx]> (σ : gmap K V) : gmap K V) !! z).
-    rewrite lookup_insert_ne by congruence.
+    rewrite map_lookup_insert_ne by congruence.
     destruct ((σx : gmap K V) !! z) as [vz|] eqn:Hz.
     + assert (z ∈ X) as HzX.
       { apply elem_of_dom_2 in Hz. rewrite Hdom in Hz. better_set_solver. }

@@ -140,7 +140,7 @@ Proof.
   rewrite (dom_insert_L (M:=gmap logic_var) (D:=gset logic_var)
     (s : gmap logic_var V) (LVBound k) v).
   rewrite lvars_fv_union, lvars_fv_singleton_bound.
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma lvar_store_shift_free_notin_from k x (s : LVarStore) :
@@ -526,11 +526,11 @@ Proof.
     + intros i j Ai Aj acc Hne Hi Hj.
       destruct i as [ki|xi], j as [kj|xj];
         cbn [lvar_to_atom logic_var_to_atom] in *; try reflexivity.
-      * rewrite lookup_insert_ne in Hi by congruence.
+      * rewrite map_lookup_insert_ne in Hi by congruence.
         rewrite atom_store_to_lvar_store_lookup_bound_none in Hi. discriminate.
-      * rewrite lookup_insert_ne in Hi by congruence.
+      * rewrite map_lookup_insert_ne in Hi by congruence.
         rewrite atom_store_to_lvar_store_lookup_bound_none in Hi. discriminate.
-      * rewrite lookup_insert_ne in Hj by congruence.
+      * rewrite map_lookup_insert_ne in Hj by congruence.
         rewrite atom_store_to_lvar_store_lookup_bound_none in Hj. discriminate.
       * apply insert_insert_ne. congruence.
     + apply atom_store_to_lvar_store_lookup_free_none.
@@ -561,14 +561,14 @@ Proof.
   - intros a A Hlookup.
     rewrite (map_fold_empty (K:=logic_var) (M:=gmap logic_var)) in Hlookup.
     change ((∅ : gmap atom V) !! a = Some A) in Hlookup.
-    rewrite lookup_empty in Hlookup. discriminate.
+    better_map_solver.
   - intros w A s' Hfresh Hfold IH a B.
     rewrite Hfold.
     destruct w as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
     + intros Hlookup.
       change ((<[LVBound k := A]> (s' : gmap logic_var V) :
         gmap logic_var V) !! LVFree a = Some B).
-      rewrite (lookup_insert_ne (M:=gmap logic_var)) by discriminate.
+      rewrite map_lookup_insert_ne by discriminate.
       apply IH. exact Hlookup.
     + intros Hlookup.
       apply (proj1 (lookup_insert_Some (M:=gmap atom)
@@ -581,10 +581,10 @@ Proof.
       destruct Hlookup as [[-> ->]|[Hya Hlookup]].
       * change ((<[LVFree a := B]> (s' : gmap logic_var V) :
           gmap logic_var V) !! LVFree a = Some B).
-        rewrite lookup_insert_eq. reflexivity.
+        rewrite map_lookup_insert. reflexivity.
       * change ((<[LVFree y := A]> (s' : gmap logic_var V) :
           gmap logic_var V) !! LVFree a = Some B).
-        rewrite (lookup_insert_ne (M:=gmap logic_var)) by congruence.
+        rewrite map_lookup_insert_ne by congruence.
         apply IH. exact Hlookup.
 Qed.
 
@@ -604,19 +604,19 @@ Proof.
           end) ∅ s !! x = Some v) _ _ s x v).
   - intros a A Hlookup.
     change ((∅ : gmap logic_var V) !! LVFree a = Some A) in Hlookup.
-    rewrite lookup_empty in Hlookup. discriminate.
+    better_map_solver.
   - intros w A s' Hfresh Hfold IH a B Hlookup.
     destruct w as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
     + rewrite Hfold.
       change ((<[LVBound k := A]> (s' : gmap logic_var V) :
         gmap logic_var V) !! LVFree a = Some B) in Hlookup.
-      rewrite (lookup_insert_ne (M:=gmap logic_var)) in Hlookup by discriminate.
+      rewrite map_lookup_insert_ne in Hlookup by discriminate.
       apply IH. exact Hlookup.
     + rewrite Hfold.
       change ((<[LVFree y := A]> (s' : gmap logic_var V) :
         gmap logic_var V) !! LVFree a = Some B) in Hlookup.
       destruct (decide (y = a)) as [->|Hya].
-      * rewrite (lookup_insert_eq (M:=gmap logic_var)) in Hlookup.
+      * rewrite map_lookup_insert in Hlookup.
         inversion Hlookup. subst A.
         cbn [lvar_to_atom logic_var_to_atom].
         change (((<[a:=B]>
@@ -626,15 +626,14 @@ Proof.
                | Some y => <[y:=A]> acc
                | None => acc
                end) ∅ s' : gmap atom V)) : gmap atom V) !! a = Some B).
-        exact (lookup_insert_eq
-          (M:=gmap atom)
+        exact (map_lookup_insert
           (map_fold
              (fun w A acc =>
                match lvar_to_atom ∅ w with
                | Some y => <[y:=A]> acc
                | None => acc
                end) ∅ s' : gmap atom V) a B).
-      * rewrite (lookup_insert_ne (M:=gmap logic_var)) in Hlookup by congruence.
+      * rewrite map_lookup_insert_ne in Hlookup by congruence.
         cbn [lvar_to_atom logic_var_to_atom].
         change (((<[y:=A]>
           (map_fold
@@ -657,7 +656,7 @@ Proof.
                | None => acc
                end) ∅ s' : gmap atom V) !! a).
         -- apply IH. exact Hlookup.
-        -- symmetry. apply lookup_insert_ne. congruence.
+        -- symmetry. apply map_lookup_insert_ne. congruence.
 Qed.
 
 Lemma lvar_store_to_atom_store_lookup (s : LVarStore) x :
@@ -682,19 +681,19 @@ Proof.
   - change ((((<[LVFree x := v]> (s : gmap logic_var V))
         : gmap logic_var V) !! LVFree x) =
       (((<[x := v]> (lvar_store_to_atom_store s)) : gmap atom V) !! x)).
-    rewrite (lookup_insert_eq (M:=gmap logic_var)).
+    rewrite map_lookup_insert.
     change (Some v =
       (((<[x := v]> (lvar_store_to_atom_store s)) : gmap atom V) !! x)).
     symmetry.
-    exact (lookup_insert_eq (M:=gmap atom) (lvar_store_to_atom_store s) x v).
-  - rewrite (lookup_insert_ne (M:=gmap logic_var) (s : gmap logic_var V) (LVFree x) (LVFree y) v)
+    exact (map_lookup_insert (lvar_store_to_atom_store s) x v).
+  - rewrite (map_lookup_insert_ne (s : gmap logic_var V) (LVFree x) (LVFree y) v)
       by congruence.
     change ((s : gmap logic_var V) !! LVFree y =
       (((<[x := v]> (lvar_store_to_atom_store s)) : gmap atom V) !! y)).
     transitivity (lvar_store_to_atom_store s !! y).
     + symmetry. apply lvar_store_to_atom_store_lookup.
     + symmetry.
-      apply (lookup_insert_ne (M:=gmap atom)). congruence.
+      apply map_lookup_insert_ne. congruence.
 Qed.
 
 Lemma lvar_store_to_atom_store_swap x y (s : LVarStore) :

@@ -193,6 +193,19 @@ Lemma map_lookup_insert_ne {K A : Type} `{Countable K}
   (<[x := v]> m) !! y = m !! y.
 Proof. intros Hyx. apply lookup_insert_ne. congruence. Qed.
 
+Lemma map_lookup_singleton {K A : Type} `{Countable K}
+    (x : K) (v : A) :
+  ({[x := v]} : gmap K A) !! x = Some v.
+Proof.
+  rewrite lookup_singleton. destruct (decide (x = x)); congruence.
+Qed.
+
+Lemma map_lookup_singleton_ne {K A : Type} `{Countable K}
+    (x y : K) (v : A) :
+  y ≠ x →
+  ({[x := v]} : gmap K A) !! y = None.
+Proof. intros Hyx. apply lookup_singleton_ne. congruence. Qed.
+
 Lemma map_lookup_union_Some_raw {K A : Type} `{Countable K}
     (m1 m2 : gmap K A) i v :
   (m1 ∪ m2) !! i = Some v ↔
@@ -241,6 +254,18 @@ Ltac map_normalize_step :=
   | |- context[?m ∪ ∅] => rewrite map_union_empty
   | H : context[∅ !! _] |- _ => rewrite lookup_empty in H
   | |- context[∅ !! _] => rewrite lookup_empty
+  | H : context[{[?i := ?v]} !! ?i] |- _ =>
+      rewrite map_lookup_singleton in H
+  | |- context[{[?i := ?v]} !! ?i] =>
+      rewrite map_lookup_singleton
+  | Hne : ?j ≠ ?i, H : context[{[?i := ?v]} !! ?j] |- _ =>
+      rewrite map_lookup_singleton_ne in H by exact Hne
+  | Hne : ?j ≠ ?i |- context[{[?i := ?v]} !! ?j] =>
+      rewrite map_lookup_singleton_ne by exact Hne
+  | Hne : ?i ≠ ?j, H : context[{[?i := ?v]} !! ?j] |- _ =>
+      rewrite map_lookup_singleton_ne in H by congruence
+  | Hne : ?i ≠ ?j |- context[{[?i := ?v]} !! ?j] =>
+      rewrite map_lookup_singleton_ne by congruence
   | H : context[(delete ?i ?m) !! ?i] |- _ =>
       rewrite lookup_delete_eq in H
   | |- context[(delete ?i ?m) !! ?i] =>
@@ -254,13 +279,13 @@ Ltac map_normalize_step :=
   | Hne : ?i ≠ ?j |- context[(delete ?i ?m) !! ?j] =>
       rewrite lookup_delete_ne by congruence
   | H : context[(<[?i := ?v]> ?m) !! ?i] |- _ =>
-      rewrite lookup_insert in H
+      rewrite map_lookup_insert in H
   | |- context[(<[?i := ?v]> ?m) !! ?i] =>
-      rewrite lookup_insert
+      rewrite map_lookup_insert
   | H : context[@gmap_lookup ?K ?EqK ?CountK ?A ?i (<[?i := ?v]> ?m)] |- _ =>
-      rewrite lookup_insert in H
+      rewrite map_lookup_insert in H
   | |- context[@gmap_lookup ?K ?EqK ?CountK ?A ?i (<[?i := ?v]> ?m)] =>
-      rewrite lookup_insert
+      rewrite map_lookup_insert
   | Hne : ?j ≠ ?i, H : context[(<[?i := ?v]> ?m) !! ?j] |- _ =>
       rewrite lookup_insert_ne in H by exact Hne
   | Hne : ?j ≠ ?i |- context[(<[?i := ?v]> ?m) !! ?j] =>
@@ -313,10 +338,10 @@ Ltac map_lookup_case_step :=
   match goal with
   | H : context[(<[?i := ?v]> ?m) !! ?j] |- _ =>
       destruct (decide (j = i)); subst;
-      [rewrite lookup_insert in H | rewrite lookup_insert_ne in H by congruence]
+      [rewrite map_lookup_insert in H | rewrite lookup_insert_ne in H by congruence]
   | |- context[(<[?i := ?v]> ?m) !! ?j] =>
       destruct (decide (j = i)); subst;
-      [rewrite lookup_insert | rewrite lookup_insert_ne by congruence]
+      [rewrite map_lookup_insert | rewrite lookup_insert_ne by congruence]
   end.
 
 Ltac better_map_solver :=
@@ -344,7 +369,7 @@ Ltac better_map_solver :=
   eauto 8;
   try reflexivity;
   try congruence;
-  try (map_lookup_case_step; eauto 8; try reflexivity; try congruence);
+  try (repeat map_lookup_case_step; eauto 8; try reflexivity; try congruence);
   try better_set_solver.
 
 Tactic Notation "better_map_solver" "!" :=

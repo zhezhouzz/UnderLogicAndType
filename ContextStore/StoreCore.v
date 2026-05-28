@@ -321,28 +321,28 @@ Proof.
   change (((storeA_rekey f (<[z := v]> s) : gmap K V) !! y) =
     ((<[f z := v]> (storeA_rekey f s : gmap K V)) !! y)).
   destruct (decide (y = f z)) as [->|Hy].
-  - rewrite lookup_insert_eq.
+  - rewrite map_lookup_insert.
     apply storeA_rekey_lookup_Some_inj_on.
     + exact Hinj.
     + exists z. split; [reflexivity|].
       change ((<[z := v]> (s : gmap K V)) !! z = Some v).
-      rewrite lookup_insert_eq. reflexivity.
-  - rewrite lookup_insert_ne by (intros Heq; apply Hy; symmetry; exact Heq).
+      rewrite map_lookup_insert. reflexivity.
+  - rewrite map_lookup_insert_ne by exact Hy.
     destruct ((storeA_rekey f s : gmap K V) !! y) as [w|] eqn:Hylook.
     + apply storeA_rekey_lookup_Some_inj_on.
       * exact Hinj.
       * apply storeA_rekey_lookup_Some_inj_on in Hylook as [x [Hyx Hx]].
         -- exists x. split; [exact Hyx|].
            change ((<[z := v]> (s : gmap K V)) !! x = Some w).
-           rewrite lookup_insert_ne.
+           rewrite map_lookup_insert_ne.
            ++ exact Hx.
            ++ intros ->. apply Hy. exact Hyx.
         -- intros a b Ha Hb Hab.
            apply Hinj.
            ++ change (a ∈ dom (<[z := v]> (s : gmap K V))).
-              rewrite dom_insert_L. apply elem_of_union_r. exact Ha.
+              better_set_solver.
            ++ change (b ∈ dom (<[z := v]> (s : gmap K V))).
-              rewrite dom_insert_L. apply elem_of_union_r. exact Hb.
+              better_set_solver.
            ++ exact Hab.
     + apply storeA_rekey_lookup_None_inj_on.
       * exact Hinj.
@@ -350,15 +350,15 @@ Proof.
         destruct (decide (x = z)) as [->|Hxz].
         -- exfalso. apply Hy. exact Hyx.
         -- change ((<[z := v]> (s : gmap K V)) !! x = None).
-           rewrite lookup_insert_ne by (intros Heq; apply Hxz; symmetry; exact Heq).
+           rewrite map_lookup_insert_ne by exact Hxz.
            assert (Hinj_s : storeA_rekey_inj_on_dom f s).
            {
              intros a b Ha Hb Hab.
               apply Hinj.
               ** change (a ∈ dom (<[z := v]> (s : gmap K V))).
-                 rewrite dom_insert_L. apply elem_of_union_r. exact Ha.
+                 better_set_solver.
               ** change (b ∈ dom (<[z := v]> (s : gmap K V))).
-                 rewrite dom_insert_L. apply elem_of_union_r. exact Hb.
+                 better_set_solver.
               ** exact Hab.
            }
            pose proof (storeA_rekey_lookup_None_inj_on f s y Hinj_s)
