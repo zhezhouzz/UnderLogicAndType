@@ -5,7 +5,7 @@
     global atom type, finite atom sets, an abstract value interface, freshness
     helpers, and the [Stale] interface used by all later layers. *)
 
-From ContextBase.Swap Require Export Atom.
+From ContextBase Require Export KeyShift.
 
 (** ** Polymorphic finite-map compatibility and restriction *)
 
