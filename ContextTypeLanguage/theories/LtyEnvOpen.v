@@ -9,7 +9,7 @@ From ContextTypeLanguage Require Export LtyEnvCore.
 Lemma lty_env_open_one_dom k x Σ :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).
 Proof.
-  unfold lty_env_open_one.
+  unfold lty_env_open_one, lvar_store_open_one.
   change (dom (storeA_rekey (logic_var_open k x) Σ : gmap logic_var ty) =
     lvars_open k x (dom (Σ : gmap logic_var ty))).
   rewrite storeA_rekey_dom by (intros a b H; eapply logic_var_open_inj_fresh; exact H).
@@ -27,7 +27,7 @@ Qed.
 Lemma lty_env_open_lvars_empty Σ :
   lty_env_open_lvars ∅ Σ = Σ.
 Proof.
-  unfold lty_env_open_lvars.
+  unfold lty_env_open_lvars, lvar_store_open_lvars.
   apply storeA_map_eq. intros v.
   unfold storeA_rekey, storeA_map_key.
   change ((kmap (M2:=gmap logic_var) (logic_var_open_env ∅) Σ) !! v =
@@ -45,7 +45,7 @@ Lemma lty_env_open_lvars_singleton k x Σ :
   lty_env_open_one k x Σ.
 Proof.
   intros Hfresh.
-  unfold lty_env_open_lvars, lty_env_open_one.
+  unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_open_one, lvar_store_open_one.
   apply storeA_rekey_ext_on_dom. intros v Hv.
   apply logic_var_open_env_singleton_fresh.
   intros ->. apply Hfresh. exact Hv.
@@ -80,7 +80,7 @@ Lemma lty_env_open_lvars_lookup_fresh η v T Σ :
   lty_env_open_lvars η Σ !! logic_var_open_env η v = None.
 Proof.
   intros Hnone Hfresh.
-  unfold lty_env_open_lvars.
+  unfold lty_env_open_lvars, lvar_store_open_lvars.
   change ((storeA_rekey (logic_var_open_env η) Σ : gmap logic_var ty) !!
     logic_var_open_env η v = None).
   apply storeA_rekey_lookup_none_inj_on.
@@ -105,7 +105,7 @@ Lemma lty_env_open_lvars_insert_entry η v T Σ :
   <[logic_var_open_env η v := T]> (lty_env_open_lvars η Σ).
 Proof.
   intros Hnone Hinj.
-  unfold lty_env_open_lvars.
+  unfold lty_env_open_lvars, lvar_store_open_lvars.
   apply storeA_rekey_insert_inj_on; exact Hnone || exact Hinj.
 Qed.
 
@@ -117,7 +117,7 @@ Lemma lty_env_open_lvars_insert_fresh η k x Σ :
   lty_env_open_one k x (lty_env_open_lvars η Σ).
 Proof.
   intros Hη Havoid Hfresh.
-  unfold lty_env_open_lvars, lty_env_open_one.
+  unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_open_one, lvar_store_open_one.
   assert (Hfreshη : open_env_fresh_for_lvars η (dom Σ)).
   { eapply open_env_fresh_for_lvars_insert_tail; eassumption. }
   assert (Hhead : x ∉ lvars_fv (lvars_open_env η (dom Σ))).
@@ -138,7 +138,7 @@ Lemma lty_env_open_lvars_open_one η k x Σ :
   lty_env_open_lvars (<[k := x]> η) Σ.
 Proof.
   intros Hx Hfresh.
-  unfold lty_env_open_lvars, lty_env_open_one.
+  unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_open_one, lvar_store_open_one.
   rewrite storeA_rekey_compose_inj_on.
   2:{ intros a b _ _ Hab. eapply logic_var_open_inj_fresh. exact Hab. }
   2:{
@@ -172,7 +172,7 @@ Lemma lty_env_open_one_fresh_noop k x Σ :
   lty_env_open_one k x Σ = Σ.
 Proof.
   intros Hk Hx.
-  unfold lty_env_open_one.
+  unfold lty_env_open_one, lvar_store_open_one.
   change (storeA_swap (LVBound k) (LVFree x) Σ = Σ).
   apply storeA_swap_fresh; assumption.
 Qed.
@@ -180,7 +180,7 @@ Qed.
 Lemma lty_env_open_one_involutive k x Σ :
   lty_env_open_one k x (lty_env_open_one k x Σ) = Σ.
 Proof.
-  unfold lty_env_open_one.
+  unfold lty_env_open_one, lvar_store_open_one.
   change (storeA_swap (LVBound k) (LVFree x)
     (storeA_swap (LVBound k) (LVFree x) Σ) = Σ).
   apply storeA_swap_involutive.
@@ -190,7 +190,7 @@ Lemma lty_env_open_one_insert k x v T Σ :
   lty_env_open_one k x (<[v := T]> Σ) =
   <[logic_var_open k x v := T]> (lty_env_open_one k x Σ).
 Proof.
-  unfold lty_env_open_one.
+  unfold lty_env_open_one, lvar_store_open_one.
   apply storeA_rekey_insert.
   intros a b H. eapply logic_var_open_inj_fresh. exact H.
 Qed.
@@ -310,7 +310,7 @@ Proof.
     unfold swap. repeat destruct decide; try lia; try congruence.
   }
   rewrite lty_env_shift_insert_free.
-  unfold lty_env_shift.
+  unfold lty_env_shift, lvar_store_shift.
   rewrite lty_env_open_one_shift_under_gen by lia.
   reflexivity.
 Qed.
@@ -343,7 +343,7 @@ Proof.
   rewrite lvars_open_unfold.
   apply set_swap_fresh.
   - exact Hfresh.
-  - unfold lty_env_bvar_scope, lvars_of_bvars.
+  - unfold lty_env_bvar_scope, lvar_store_bvar_scope, lvars_of_bvars.
     intros Hin. apply elem_of_map in Hin as [n [Hbad _]].
     discriminate.
 Qed.
@@ -355,7 +355,7 @@ Lemma lty_env_bvar_scope_shift_open_one_noop k x Σ :
   lty_env_bvar_scope (lty_env_shift Σ).
 Proof.
   intros Hbound Hfree.
-  unfold lty_env_bvar_scope.
+  unfold lty_env_bvar_scope, lvar_store_bvar_scope.
   f_equal.
   rewrite lty_env_open_one_dom.
   apply set_eq. intros n.
@@ -367,7 +367,7 @@ Proof.
     repeat destruct decide; try congruence.
     split; intros Hin; [exfalso; exact (Hfree Hin)|].
     exfalso. apply Hbound.
-    unfold lty_env_bvar_scope, lvars_of_bvars.
+    unfold lty_env_bvar_scope, lvar_store_bvar_scope, lvars_of_bvars.
     apply elem_of_map. exists k. split; [reflexivity|].
     rewrite lvars_bv_elem. exact Hin.
   - repeat destruct decide; try congruence.
@@ -404,7 +404,7 @@ Qed.
 Lemma lty_env_atom_dom_open_one k x Σ :
   lty_env_atom_dom (lty_env_open_one k x Σ) ⊆ lty_env_atom_dom Σ ∪ {[x]}.
 Proof.
-  unfold lty_env_atom_dom.
+  unfold lty_env_atom_dom, lvar_store_atom_dom.
   rewrite lty_env_open_one_dom.
   apply lvars_fv_open_subset.
 Qed.

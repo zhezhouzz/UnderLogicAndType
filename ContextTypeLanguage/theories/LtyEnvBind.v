@@ -84,7 +84,7 @@ Qed.
 Lemma typed_lty_env_bind_atom_dom Σ T :
   lty_env_atom_dom (typed_lty_env_bind Σ T) = lty_env_atom_dom Σ.
 Proof.
-  unfold lty_env_atom_dom.
+  unfold lty_env_atom_dom, lvar_store_atom_dom.
   apply typed_lty_env_bind_lvars_fv_dom.
 Qed.
 
@@ -180,7 +180,7 @@ Proof.
     + change (((lty_env_shift Σ : lty_env) : gmap logic_var ty) !!
         LVBound k = None).
       apply not_elem_of_dom. intros Hdom.
-      unfold lty_env_shift, lty_env_shift_from in Hdom.
+      unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hdom.
       change (LVBound k ∈
         dom (storeA_rekey (logic_var_shift_from 0) Σ : gmap logic_var ty))
         in Hdom.
@@ -195,7 +195,7 @@ Proof.
         rewrite Hclosed in H. set_solver.
       * discriminate.
     + symmetry. apply lty_env_closed_lookup_bound_none. exact Hclosed.
-  - unfold lty_env_shift, lty_env_shift_from.
+  - unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
     unfold storeA_rekey, storeA_map_key.
     change ((kmap (M2:=gmap logic_var) (logic_var_shift_from 0) Σ) !!
       LVFree x = (Σ : gmap logic_var ty) !! LVFree x).
@@ -250,7 +250,7 @@ Lemma lty_env_shift_lookup_bound0_none Σ :
   (lty_env_shift Σ : gmap logic_var ty) !! LVBound 0 = None.
 Proof.
   apply not_elem_of_dom. intros Hin.
-  unfold lty_env_shift, lty_env_shift_from in Hin.
+  unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hin.
   rewrite storeA_rekey_dom in Hin by apply logic_var_shift_from_inj.
   unfold lvars_shift_from in Hin.
   apply elem_of_map in Hin as [v [Hv _]].
@@ -267,7 +267,7 @@ Proof.
     open_env_fresh_for_lvars (open_env_shift_from 0 η)
       (dom (lty_env_shift Σ))).
   {
-    unfold lty_env_shift, lty_env_shift_from.
+    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
     change (open_env_fresh_for_lvars (open_env_shift_from 0 η)
       (dom (storeA_rekey (logic_var_shift_from 0) Σ : gmap logic_var ty))).
     rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
@@ -284,7 +284,7 @@ Proof.
     rewrite elem_of_singleton in Hv2. congruence.
   - rewrite elem_of_singleton in Hv1. subst v1.
     rewrite logic_var_open_env_shift0_bound0 in Heq.
-    unfold lty_env_shift, lty_env_shift_from in Hv2.
+    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv2.
     rewrite storeA_rekey_dom in Hv2 by apply logic_var_shift_from_inj.
     unfold lvars_shift_from in Hv2.
     apply elem_of_map in Hv2 as [v [Hv _]].
@@ -293,7 +293,7 @@ Proof.
     exfalso. symmetry in Heq. exact (logic_var_shift0_ne_bound0 _ Heq).
   - rewrite elem_of_singleton in Hv2. subst v2.
     rewrite logic_var_open_env_shift0_bound0 in Heq.
-    unfold lty_env_shift, lty_env_shift_from in Hv1.
+    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv1.
     rewrite storeA_rekey_dom in Hv1 by apply logic_var_shift_from_inj.
     unfold lvars_shift_from in Hv1.
     apply elem_of_map in Hv1 as [v [Hv _]].
@@ -312,7 +312,7 @@ Proof.
   unfold typed_lty_env_bind.
   rewrite lty_env_open_one_insert.
   replace (logic_var_open (S k) x (LVBound 0)) with (LVBound 0).
-  - unfold lty_env_shift.
+  - unfold lty_env_shift, lvar_store_shift.
     rewrite lty_env_open_one_shift_under_gen by lia.
     reflexivity.
   - rewrite logic_var_open_unfold.

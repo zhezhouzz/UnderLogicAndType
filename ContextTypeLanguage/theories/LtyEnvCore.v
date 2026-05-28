@@ -8,16 +8,16 @@ From ContextTypeLanguage Require Export TypeOpen.
 Definition lty_env : Type := @StoreA ty logic_var _ _.
 
 Definition lty_env_shift_from (k : nat) (Σ : lty_env) : lty_env :=
-  storeA_rekey (logic_var_shift_from k) Σ.
+  lvar_store_shift_from k Σ.
 
 Definition lty_env_shift (Σ : lty_env) : lty_env :=
-  lty_env_shift_from 0 Σ.
+  lvar_store_shift Σ.
 
 Definition lty_env_open_one (k : nat) (x : atom) (Σ : lty_env) : lty_env :=
-  storeA_rekey (logic_var_open k x) Σ.
+  lvar_store_open_one k x Σ.
 
 Definition lty_env_closed (Σ : lty_env) : Prop :=
-  lvars_bv (dom Σ) = ∅.
+  lvar_store_closed Σ.
 
 Definition atom_env_to_lty_env (Σ : gmap atom ty) : lty_env :=
   atom_store_to_lvar_store Σ.
@@ -36,16 +36,16 @@ Definition lty_env_to_atom_env (Σ : lty_env) : gmap atom ty :=
   lty_env_open ∅ Σ.
 
 Definition lty_env_open_lvars (η : gmap nat atom) (Σ : lty_env) : lty_env :=
-  storeA_rekey (logic_var_open_env η) Σ.
+  lvar_store_open_lvars η Σ.
 
 Definition lty_env_atom_dom (Σ : lty_env) : aset :=
-  lvars_fv (dom Σ).
+  lvar_store_atom_dom Σ.
 
 #[global] Instance stale_lty_env : Stale lty_env := lty_env_atom_dom.
 Arguments stale_lty_env /.
 
 Definition lty_env_bvar_scope (Σ : lty_env) : lvset :=
-  lvars_of_bvars (lvars_bv (dom Σ)).
+  lvar_store_bvar_scope Σ.
 
 Definition typed_lty_env_bind (Σ : lty_env) (T : ty) : lty_env :=
   <[LVBound 0 := T]> (lty_env_shift Σ).
@@ -55,7 +55,7 @@ Definition lty_env_agree_on_lvars
   storeA_agree_on D Σ1 Σ2.
 
 Definition lty_env_swap (x y : atom) (Σ : lty_env) : lty_env :=
-  storeA_rekey (logic_var_swap x y) Σ.
+  lvar_store_swap x y Σ.
 
 #[global] Instance open_lty_env_atom_inst : Open atom lty_env :=
   lty_env_open_one.
@@ -116,7 +116,8 @@ Qed.
 Lemma lty_env_atom_dom_shift_from k Σ :
   lty_env_atom_dom (lty_env_shift_from k Σ) = lty_env_atom_dom Σ.
 Proof.
-  unfold lty_env_atom_dom, lty_env_shift_from.
+  unfold lty_env_atom_dom, lvar_store_atom_dom, lty_env_shift_from,
+    lvar_store_shift_from.
   change (lvars_fv (dom (storeA_rekey (logic_var_shift_from k) Σ : gmap logic_var ty)) =
     lvars_fv (dom (Σ : gmap logic_var ty))).
   rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
@@ -137,7 +138,7 @@ Proof.
   intros Hag v Hv.
   unfold lvars_shift_from in Hv.
   apply elem_of_map in Hv as [u [-> Hu]].
-  unfold lty_env_shift_from.
+  unfold lty_env_shift_from, lvar_store_shift_from.
   unfold storeA_rekey, storeA_map_key.
   change ((kmap (M2:=gmap logic_var) (logic_var_shift_from k) Σ1) !!
       logic_var_shift_from k u =
@@ -162,7 +163,7 @@ Qed.
 Lemma lty_env_atom_dom_insert_bound Σ k T :
   lty_env_atom_dom (<[LVBound k := T]> Σ) = lty_env_atom_dom Σ.
 Proof.
-  unfold lty_env_atom_dom.
+  unfold lty_env_atom_dom, lvar_store_atom_dom.
   rewrite (dom_insert_L (M:=gmap logic_var) (D:=gset logic_var) Σ (LVBound k) T).
   rewrite lvars_fv_union, lvars_fv_singleton_bound.
   set_solver.
@@ -172,7 +173,7 @@ Lemma lty_env_shift_insert_from k v T Σ :
   lty_env_shift_from k (<[v := T]> Σ) =
   <[logic_var_shift_from k v := T]> (lty_env_shift_from k Σ).
 Proof.
-  unfold lty_env_shift_from.
+  unfold lty_env_shift_from, lvar_store_shift_from.
   apply storeA_rekey_insert, logic_var_shift_from_inj.
 Qed.
 
@@ -197,7 +198,8 @@ Lemma lty_env_open_lvars_shift_from k η Σ :
   lty_env_shift_from k (lty_env_open_lvars η Σ).
 Proof.
   intros Hfresh.
-  unfold lty_env_open_lvars, lty_env_shift_from.
+  unfold lty_env_open_lvars, lvar_store_open_lvars,
+    lty_env_shift_from, lvar_store_shift_from.
   assert (Hfresh_shift :
     open_env_fresh_for_lvars (open_env_shift_from k η)
       (dom (storeA_rekey (logic_var_shift_from k) Σ : gmap logic_var ty))).
@@ -243,7 +245,7 @@ Lemma lty_env_shift_free_notin_from k x Σ :
   LVFree x ∉ dom (lty_env_shift_from k Σ).
 Proof.
   intros Hfresh.
-  unfold lty_env_shift_from.
+  unfold lty_env_shift_from, lvar_store_shift_from.
   change (LVFree x ∉ dom (storeA_rekey (logic_var_shift_from k) Σ : gmap logic_var ty)).
   rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
   intros Hin. apply elem_of_map in Hin as [v [Hv HvD]].

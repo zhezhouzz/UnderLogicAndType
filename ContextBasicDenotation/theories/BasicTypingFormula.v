@@ -143,7 +143,7 @@ Proof.
     apply open_env_fresh_for_lvars_atom_swap.
     rewrite <- lty_env_swap_dom. exact Hfresh.
   }
-  unfold lty_env_open_lvars, lty_env_swap.
+  unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_swap, lvar_store_swap.
   rewrite (storeA_rekey_compose_inj_on
     (logic_var_open_env η) (logic_var_swap x y) Σ).
   2:{ intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab. }
@@ -518,7 +518,7 @@ Proof.
   intros Hηk HyΣ HzΣ Havoid Hfresh.
   rewrite <- lty_env_to_atom_env_swap.
   f_equal.
-  unfold lty_env_swap, lty_env_open_lvars.
+  unfold lty_env_swap, lvar_store_swap, lty_env_open_lvars, lvar_store_open_lvars.
   assert (Hybig : y ∉ lvars_fv ({[LVBound k]} ∪ dom Σ)).
   {
     intros Hbad.
@@ -590,7 +590,7 @@ Lemma lty_env_to_atom_env_open_lvars_closed η (Σ : lty_env) :
 Proof.
   intros Hclosed.
   assert (lty_env_open_lvars η Σ = Σ) as ->; [|reflexivity].
-  unfold lty_env_open_lvars.
+  unfold lty_env_open_lvars, lvar_store_open_lvars.
   assert (Hid : storeA_rekey (fun v : logic_var => v) Σ = Σ).
   {
     apply storeA_map_eq. intros z.
@@ -847,7 +847,7 @@ Lemma lty_env_swap_open_one x y k Σ :
   lty_env_swap x y (lty_env_open_one k x Σ) =
   lty_env_open_one k y (lty_env_swap x y Σ).
 Proof.
-  unfold lty_env_swap, lty_env_open_one.
+  unfold lty_env_swap, lvar_store_swap, lty_env_open_one, lvar_store_open_one.
   rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
   2:{ apply logic_var_swap_inj. }
   2:{ intros a b H. eapply logic_var_open_inj_fresh. exact H. }
@@ -1162,8 +1162,8 @@ Proof.
     (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T Hty) as Hswap.
   rewrite lty_env_swap_open_one in Hswap.
   rewrite lty_env_swap_fresh in Hswap.
-  2:{ unfold lty_env_atom_dom. set_solver. }
-  2:{ unfold lty_env_atom_dom. set_solver. }
+  2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
+  2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
   rewrite tm_swap_atom_open_tm_fresh in Hswap by set_solver.
   exact Hswap.
 Qed.
@@ -1216,7 +1216,7 @@ Proof.
   intros Hty.
   pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
   pose proof (lty_env_to_atom_env_dom_subset Σ) as Hdom.
-  unfold lty_env_atom_dom in Hdom.
+  unfold lty_env_atom_dom, lvar_store_atom_dom in Hdom.
   set_solver.
 Qed.
 
