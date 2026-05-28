@@ -70,7 +70,7 @@ Proof.
 	              change (LVFree x ∉ dom
 	                (storeA_restrict (Σ : gmap logic_var ty)
 	                   (denot_relevant_lvars τ (tlete e1 e2)))).
-	              rewrite storeA_restrict_dom. set_solver.
+	              better_store_solver.
 	           ++ apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
 	              exact Hlet.
   - cbn [res_models res_models_fuel formula_measure].
@@ -859,24 +859,23 @@ Proof.
 	              (tapp_tm (e2 ^^ x) (vfvar y))).
 	          {
 	            eapply res_models_denot_ty_lvar_gas_env_agree_on
-		              with (X := denot_relevant_lvars (cty_open 0 y τr)
-		                (tapp_tm (e2 ^^ x) (vfvar y))).
-		            - reflexivity.
-		            - apply arrow_body_relevant_env_agree_from_basic_context_ty.
-		              + apply (proj2 (lc_lvars_no_bv _)).
-		                apply lty_env_closed_insert_free. exact HΣ.
-		              + change (LVFree y ∉ dom
-		                  ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
-		                    : gmap logic_var ty)).
-		                rewrite dom_insert_L. tlet_support_solver.
-		              + pose proof (context_ty_wf_formula_basic_lvars _ _ _ Hmx_wf)
-		                  as Hbasic_src_rel.
-			                eapply basic_context_ty_lvars_mono;
-			                  [|exact Hbasic_src_rel].
-			                intros v Hv.
-			                change (v ∈ dom
-			                  (denot_relevant_env (<[LVFree x := T1]> Σ)
-			                    (CTArrow τx τr) (e2 ^^ x) : lty_env)) in Hv.
+	              with (X := denot_relevant_lvars (cty_open 0 y τr)
+	                (tapp_tm (e2 ^^ x) (vfvar y))).
+	            - reflexivity.
+	            - apply arrow_body_relevant_env_agree_from_basic_context_ty.
+	              + apply lty_env_closed_insert_free. exact HΣ.
+	              + change (LVFree y ∉ dom
+	                  ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
+	                    : gmap logic_var ty)).
+	                rewrite dom_insert_L. tlet_support_solver.
+	              + pose proof (context_ty_wf_formula_basic_lvars _ _ _ Hmx_wf)
+	                  as Hbasic_src_rel.
+	                eapply basic_context_ty_lvars_mono;
+	                  [|exact Hbasic_src_rel].
+	                intros v Hv.
+	                change (v ∈ dom
+	                  (denot_relevant_env (<[LVFree x := T1]> Σ)
+	                    (CTArrow τx τr) (e2 ^^ x) : lty_env)) in Hv.
 			                change (v ∈ dom
 			                  ((denot_relevant_env (<[LVFree x := T1]> Σ)
 			                    (CTArrow τx τr) (e2 ^^ x) : lty_env)
@@ -1040,7 +1039,7 @@ Proof.
 	              apply denot_relevant_env_dom_subset_direct.
 	            }
 	            eapply basic_world_formula_arrow_body_from_source_and_arg.
-	            + apply (proj2 (lc_lvars_no_bv _)). exact HΣ.
+	            + exact HΣ.
 	            + tlet_support_solver.
 	            + exact Hbasic_arrow_Σ.
 	            + apply tm_lvars_tlet_tapp_tm_fvar_without_arg.
@@ -1110,7 +1109,7 @@ Proof.
 		          [ reflexivity
 		          | symmetry;
 		            apply arrow_body_relevant_env_agree_from_basic_context_ty;
-		            [ apply (proj2 (lc_lvars_no_bv _)); exact HΣ
+		            [ exact HΣ
 		            | tlet_support_solver
 			            | exact Hbasic_arrow_Σ_final
 			            | apply tm_lvars_tapp_tm_fvar_without_arg ]

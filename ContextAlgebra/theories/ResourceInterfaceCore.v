@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
   ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws ResourceExtensionCore ResourceExtensionEquiv ResourceExtensionDerived.
@@ -52,8 +52,7 @@ Proof.
   intros Hij Hxy.
   unfold lres_swap.
   rewrite resA_swap_conjugate.
-  rewrite !swap_fresh by congruence.
-  reflexivity.
+  better_base_solver.
 Qed.
 
 (** Atom worlds can be viewed as locally-nameless worlds whose keys are all
@@ -155,7 +154,7 @@ Definition lworld_on_open_back
 Proof.
   refine {| lw := lres_swap (LVBound k) (LVFree x) (lw w) |}.
   rewrite lworld_dom_lres_swap, (lw_dom w).
-  rewrite lvars_open_unfold, set_swap_involutive. reflexivity.
+  better_base_solver.
 Defined.
 
 Lemma lworld_on_open_back_commute_fresh i j x y D

@@ -9,7 +9,7 @@
     input after swapping the store back. *)
 
 From CoreLang Require Export Prelude Syntax.
-From ContextBase Require Export Prelude LogicVar.
+From ContextBase Require Export Prelude LogicVar BaseTactics.
 From ContextStore Require Export Store.
 From Stdlib Require Import Logic.FunctionalExtensionality
   Logic.ProofIrrelevance Logic.PropExtensionality.
@@ -167,13 +167,13 @@ Proof.
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
     + replace (lstore_on_open_back k x D s1) with s2; [exact HP|].
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
 Qed.
 
@@ -200,13 +200,13 @@ Proof.
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
     + replace (lstore_on_open_back k x D s1) with s2; [exact HP|].
       symmetry. apply lstore_on_ext. cbn [lso_store].
       unfold lstore_on_open_back. cbn [lso_store].
       transitivity (lso_store s1).
-      * apply lstore_swap_fresh; assumption.
+      * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
       * exact Hs.
 Qed.
 
@@ -220,7 +220,7 @@ Proof.
   intros Hxy Hx Hy.
   apply qual_open_atom_fresh_index.
   - rewrite qual_open_atom_bvars, lvars_bv_elem.
-    rewrite lvars_open_unfold, set_swap_elem.
+    rewrite set_swap_elem.
     unfold swap.
     repeat destruct decide; try congruence.
     intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
@@ -241,14 +241,13 @@ Proof.
   destruct q as [D P].
   apply qual_ext.
   - cbn [qual_lvars qual_open_atom].
-    rewrite !lvars_open_unfold.
     rewrite set_swap_conjugate.
     replace (swap (LVBound i) (LVFree x) (LVBound j))
       with (LVBound j).
-    2:{ symmetry. apply swap_fresh; congruence. }
+    2:{ better_base_solver. }
     replace (swap (LVBound i) (LVFree x) (LVFree y))
       with (LVFree y).
-    2:{ symmetry. apply swap_fresh; congruence. }
+    2:{ better_base_solver. }
     reflexivity.
   - intros s1 s2 Hs.
     cbn [qual_prop qual_open_atom].
@@ -267,7 +266,8 @@ Proof.
           (lstore_swap (LVBound j) (LVFree y) (lso_store s2))).
       rewrite <- Hs.
       symmetry.
-      apply lstore_swap_commute_fresh; congruence.
+      unfold lstore_swap, lstore_rekey.
+      apply storeA_swap_commute_fresh; congruence.
     }
     rewrite Hback. tauto.
 Qed.

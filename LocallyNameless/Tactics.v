@@ -1,3 +1,4 @@
+From ContextBase Require Export Tactics.
 From CoreLang Require Export Syntax.
 From Stdlib Require Import Arith.Compare_dec.
 
@@ -95,128 +96,9 @@ Ltac invclear H := inversion H; subst; clear H.
 
 (** ** Set/map normalization
 
-    The main entry point is [my_set_solver].  It first normalizes common map/set
-    shapes such as [dom (<[_:=_]> _)], [_ !! _ = None], [∅ ∪ _], and [_ ∪ ∅],
-    then falls back to the pruned set solvers.
-
-    Prefer plain [set_solver] for tiny side conditions.  Use [my_set_solver]
-    when the goal contains map domains, stale/fv unions, or when [set_solver]
-    becomes slow.  Use [set_solver!!] only for pure set side conditions: it
-    prunes hypotheses aggressively and should not be used on a main proof goal
-    whose non-set hypotheses may still be needed. *)
-
-(** [fast_set_solver] is weaker than stdpp's [set_solver] but often much faster.
-    It unfolds set membership and uses first-order propositional reasoning. *)
-Ltac fast_set_solver :=
-  solve [try fast_done; repeat (set_unfold; subst; intuition)].
-
-Ltac set_fold_not :=
-  change (?x ∈ ?v → False) with (x ∉ v) in *;
-  change (?x = ?v → False) with (x ≠ v) in *.
-
-(** [set_prune_hyps_safe] keeps hypotheses that look set-relevant and clears
-    unrelated ones.  It is used by [set_solver!] and is normally safe for side
-    conditions. *)
-Ltac set_prune_hyps_safe :=
-  simpl;
-  set_fold_not;
-  repeat
-    match goal with
-    | H : ?T |- _ =>
-      lazymatch T with
-      | _ ⊆ _ => fail
-      | _ ≡ ∅ => rewrite H in *; clear H
-      | _ ≡ _ => fail
-      | _ ∈ _ => fail
-      | _ ∉ _ => fail
-      | _ ≠ _ => fail
-      | context [_ → _ ⊆ _] => fail
-      | context [_ → _ ≡ _] => fail
-      | context [_ → _ ∈ _] => fail
-      | context [_ → _ ∉ _] => fail
-      | context [_ → _ ≠ _] => fail
-      | _ => clear H
-      end
-    end;
-  repeat
-    match goal with
-    | H : _ ∉ {[_]} |- _ => apply not_elem_of_singleton_1 in H
-    end;
-  repeat
-    match goal with
-    | H : ?S ⊆ ?U, H' : ?S ⊆ ?V |- _ =>
-      let rec go U :=
-          lazymatch U with
-          | ?U1 ∪ ?U2 => go U1; go U2
-          | _ =>
-            lazymatch V with
-            | context[U] => idtac
-            end
-          end in go U; clear H'
-    end.
-
-Tactic Notation "set_hyp_filter" constr(T) ">>=" tactic3(tac) :=
-  lazymatch T with
-  | _ ⊆ _ => fail
-  | _ ≡ _ => fail
-  | context [_ → _ ⊆ _] => fail
-  | context [_ → _ ≡ _] => fail
-  | _ => tac T
-  end.
-
-Tactic Notation "set_hyp_filter" constr(T) constr(x) ">>=" tactic3(tac) :=
-  lazymatch T with
-  | context[x] =>
-    lazymatch T with
-    | _ ∈ _ => fail
-    | _ ∉ _ => fail
-    | _ ≠ _ => fail
-    | context [_ → _ ∈ _] => fail
-    | context [_ → _ ∉ _] => fail
-    | context [_ → _ ≠ _] => fail
-    | _ => tac T
-    end
-  | _ => tac T
-  end.
-
-(** [set_prune_hyps] is more aggressive: for subset/freshness goals it also
-    clears hypotheses that mention none of the relevant variables.  This is a
-    performance tool, not a general proof-cleanup tactic. *)
-Ltac set_prune_hyps :=
-  set_prune_hyps_safe;
-  try
-    lazymatch goal with
-    | |- _ ⊆ _ =>
-      repeat
-        match goal with
-        | H : ?T |- _ =>
-          set_hyp_filter T >>= (fun _ => clear H)
-        end
-    | |- ?y ∉ _ =>
-      repeat
-        match goal with
-        | H : ?T |- _ =>
-          set_hyp_filter T >>= (fun T =>
-            set_hyp_filter T y >>= (fun _ => clear H))
-        end
-    | |- ?x ≠ ?y =>
-      repeat
-        match goal with
-        | H : ?T |- _ =>
-          set_hyp_filter T >>= (fun T =>
-            set_hyp_filter T x >>= (fun T =>
-              set_hyp_filter T y >>= (fun _ => clear H)))
-        end
-    end.
-
-Tactic Notation "set_solver" "!" :=
-  set_prune_hyps_safe; set_solver.
-Tactic Notation "set_solver" "!!" :=
-  set_prune_hyps; set_solver.
-Tactic Notation "fast_set_solver" "!" :=
-  set_prune_hyps_safe; fast_set_solver.
-Tactic Notation "fast_set_solver" "!!" :=
-  set_prune_hyps; fast_set_solver.
+    The main entry point is [my_set_solver].  It keeps the locally-nameless
+    proof-script API stable, but delegates the actual set/map work to the
+    shared [ContextBase] solvers. *)
 
 (** [crush_binders] simplifies obvious [decide] tests produced by open/close
     and substitution functions.  For branch-heavy proofs use [var_dec_solver],
@@ -248,116 +130,11 @@ Ltac inv_lc :=
   end.
 
 Ltac ln_simpl :=
-  simpl in *; crush_binders; try set_solver; try congruence; eauto.
+  simpl in *; crush_binders; try better_set_solver; try congruence; eauto.
 
-(** ** Small set facts used by locally-nameless scripts
+Ltac my_set_simpl := set_normalize.
 
-    These lemmas give [my_set_solver] a few normal forms that occur constantly
-    in LN proofs, especially when the same fresh variable appears on both sides
-    of a union.  Keep them small and set-theoretic. *)
-
-Lemma setunion_cons_cons (x : atom) (s1 s2 : aset) :
-  {[x]} ∪ s1 ∪ ({[x]} ∪ s2) = {[x]} ∪ s1 ∪ s2.
-Proof. set_solver. Qed.
-
-Lemma setunion_empty_left (s : aset) :
-  ∅ ∪ s = s.
-Proof. set_solver. Qed.
-
-Lemma subseteq_subtract_both (x : atom) (s1 s2 : aset) :
-  x ∉ s1 →
-  x ∉ s2 →
-  {[x]} ∪ s1 ⊆ {[x]} ∪ s2 →
-  s1 ⊆ s2.
-Proof. set_solver. Qed.
-
-Lemma setunion_cons_right (x : atom) (s : aset) :
-  s ∪ ({[x]} ∪ ∅) = {[x]} ∪ s.
-Proof. set_solver. Qed.
-
-Lemma subseteq_subtract_both' (x : atom) (s1 s2 : aset) :
-  x ∉ s1 →
-  x ∉ s2 →
-  {[x]} ∪ s1 ⊆ s2 ∪ ({[x]} ∪ ∅) →
-  s1 ⊆ s2.
-Proof. set_solver. Qed.
-
-Lemma subseteq_trans_cons (x : atom) (s1 s2 s3 : aset) :
-  {[x]} ∪ s1 ⊆ {[x]} ∪ s2 →
-  s2 ⊆ {[x]} ∪ s3 →
-  {[x]} ∪ s1 ⊆ {[x]} ∪ s3.
-Proof. set_solver. Qed.
-
-Lemma setunion_mono_cons (x : atom) (s1 s2 s3 s4 : aset) :
-  {[x]} ∪ s1 ⊆ {[x]} ∪ s2 →
-  {[x]} ∪ s3 ⊆ {[x]} ∪ s4 →
-  {[x]} ∪ (s1 ∪ s3) ⊆ {[x]} ∪ (s2 ∪ s4).
-Proof. set_solver. Qed.
-
-Lemma setunion_mono_two_cons (x y : atom) (s1 s2 : aset) :
-  s1 ⊆ {[x]} ∪ {[y]} ∪ s2 →
-  {[x]} ∪ {[y]} ∪ s1 ⊆ {[x]} ∪ {[y]} ∪ s2.
-Proof. set_solver. Qed.
-
-Lemma subseteq_open_two_fv
-    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
-  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  ({[y]} ∪ ((body1 ∪ body2) ∖ {[x]})) ∖ {[y]} ⊆
-    D ∪ e ∪ τ1 ∪ τ2.
-Proof. set_solver. Qed.
-
-Lemma subseteq_arrow_formula_fv
-    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
-  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  (e ∪ {[y]} ∪ (({[y]} ∪ (body1 ∪ body2)) ∖ {[x]})) ∖ {[y]} ⊆
-    D ∪ e ∪ τ1 ∪ τ2.
-Proof. set_solver. Qed.
-
-Lemma subseteq_arrow_formula_fv_nested
-    (x y : atom) (D e τ1 τ2 body1 body2 : aset) :
-  body1 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  body2 ⊆ {[x]} ∪ {[y]} ∪ D ∪ e ∪ τ1 ∪ τ2 →
-  (e ∪ {[y]} ∪ ({[y]} ∪ (body1 ∪ body2)) ∖ {[x]}) ∖ {[y]} ⊆
-    D ∪ e ∪ (τ1 ∪ τ2).
-Proof. set_solver. Qed.
-
-Ltac my_set_simpl_aux :=
-  match goal with
-  | |- _ !! _ = None => rewrite <- not_elem_of_dom
-  | H : stale _ = ∅ |- _ => rewrite H in *; clear H
-  | H : context[∅ ∪ ?d] |- _ =>
-      setoid_rewrite setunion_empty_left in H
-  | |- context[∅ ∪ ?d] =>
-      setoid_rewrite setunion_empty_left
-  | H : context[?s ∪ ∅] |- _ =>
-      setoid_rewrite (right_id ∅ (∪) s) in H
-  | |- context[?s ∪ ∅] =>
-      setoid_rewrite (right_id ∅ (∪) s)
-  end.
-
-Ltac my_set_simpl := repeat my_set_simpl_aux.
-
-Ltac my_map_simpl_aux :=
-  match goal with
-  | H : context[dom ∅] |- _ => rewrite dom_empty_L in H
-  | |- context[dom ∅] => rewrite dom_empty_L
-  | H : context[dom ({[_:=_]})] |- _ => rewrite dom_singleton_L in H
-  | |- context[dom ({[_:=_]})] => rewrite dom_singleton_L
-  | H : context[dom (<[_:=_]> _)] |- _ => rewrite dom_insert_L in H
-  | |- context[dom (<[_:=_]> _)] => rewrite dom_insert_L
-  | H : context[dom (delete _ _)] |- _ => rewrite dom_delete_L in H
-  | |- context[dom (delete _ _)] => rewrite dom_delete_L
-  | H : context[dom (_ ∪ _)] |- _ => rewrite dom_union_L in H
-  | |- context[dom (_ ∪ _)] => rewrite dom_union_L
-  | H : context[∅ ∪ _] |- _ => rewrite map_empty_union in H
-  | |- context[∅ ∪ _] => rewrite map_empty_union
-  | H : context[_ ∪ ∅] |- _ => rewrite map_union_empty in H
-  | |- context[_ ∪ ∅] => rewrite map_union_empty
-  end.
-
-Ltac my_map_simpl := repeat my_map_simpl_aux.
+Ltac my_map_simpl := map_normalize.
 
 (** [my_set_norm] exposes the normal set/map shape expected by
     [set_solver].  It does not finish goals by itself; use it before rewriting
@@ -372,8 +149,7 @@ Ltac my_set_norm :=
     rewriting belongs in [store_solver] or [resource_solver]. *)
 Ltac solve_set :=
   my_set_norm;
-  try fast_set_solver!!;
-  try set_solver.
+  try solve [better_map_solver | better_set_solver].
 
 (** [my_set_solver] is the default local solver for stale/fv/dom side
     conditions.  It intentionally leaves hard non-set goals untouched, so it can
@@ -382,24 +158,6 @@ Ltac solve_set :=
 Ltac my_set_solver :=
   my_set_norm;
   eauto 6;
-  try match goal with
-  | |- {[?x]} ∪ (?s1 ∪ ?s3) ⊆ {[?x]} ∪ (?s2 ∪ ?s4) =>
-      apply setunion_mono_cons; eauto 6
-  | |- {[?x]} ∪ {[?y]} ∪ ?s1 ⊆ {[?x]} ∪ {[?y]} ∪ ?s2 =>
-      apply setunion_mono_two_cons; eauto 6
-  | H1 : ?body1 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2,
-    H2 : ?body2 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2
-      |- (?e ∪ {[?y]} ∪ (({[?y]} ∪ (?body1 ∪ ?body2)) ∖ {[?x]})) ∖ {[?y]} ⊆
-          ?D ∪ ?e ∪ ?τ1 ∪ ?τ2 =>
-      eapply subseteq_arrow_formula_fv; [exact H1 | exact H2]
-  | H1 : ?body1 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2,
-    H2 : ?body2 ⊆ {[?x]} ∪ {[?y]} ∪ ?D ∪ ?e ∪ ?τ1 ∪ ?τ2
-      |- ({[?y]} ∪ ((?body1 ∪ ?body2) ∖ {[?x]})) ∖ {[?y]} ⊆
-          ?D ∪ ?e ∪ ?τ1 ∪ ?τ2 =>
-      eapply subseteq_open_two_fv; [exact H1 | exact H2]
-  | H : {[?x]} ∪ ?s1 ⊆ {[?x]} ∪ ?s2 |- ?s1 ⊆ ?s2 =>
-      eapply subseteq_subtract_both; eauto 6; fast_set_solver
-  end;
   solve_set.
 
 (** [smart_ln_simpl] is the stronger version of [ln_simpl] to use after this

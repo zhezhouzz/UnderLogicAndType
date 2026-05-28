@@ -1101,21 +1101,18 @@ Lemma lvars_open0_difference_subset_depth1
 Proof.
   intros Hlc HyD Hdepth u Hu.
   apply elem_of_difference in Hu as [Hu Hyu].
-  rewrite lvars_open_unfold in Hu.
   apply elem_of_set_swap in Hu.
   change (swap (LVBound 0) (LVFree y) u ∈ L) with
     (logic_var_open 0 y u ∈ L) in Hu.
   destruct u as [k|z].
   - destruct k as [|k].
-    + rewrite logic_var_open_unfold in Hu.
-      unfold swap in Hu.
+    + unfold swap in Hu.
       destruct (decide (LVBound 0 = LVBound 0)) as [_|Hbad]; [|congruence].
       exfalso. apply HyD.
       apply Hdepth.
       apply lvars_at_depth_elem.
       exists (LVFree y). split; [exact Hu|reflexivity].
-    + rewrite logic_var_open_unfold in Hu.
-      unfold swap in Hu.
+    + unfold swap in Hu.
       destruct (decide (LVBound (S k) = LVBound 0)) as [Hbad|_];
         [inversion Hbad|].
       destruct (decide (LVBound (S k) = LVFree y)) as [Hbad|_];
@@ -1133,8 +1130,7 @@ Proof.
       exfalso. exact (Hlc (LVBound k) Hbad).
   - destruct (decide (z = y)) as [->|Hzy].
     + exfalso. apply Hyu. set_solver.
-    + rewrite logic_var_open_unfold in Hu.
-      unfold swap in Hu.
+    + unfold swap in Hu.
       destruct (decide (LVFree z = LVBound 0)) as [Hbad|_];
         [discriminate|].
       destruct (decide (LVFree z = LVFree y)) as [Hbad|_];
@@ -1293,8 +1289,7 @@ Proof.
     unfold lty_env_open_one.
     apply (storeA_rekey_empty (V := ty) (K := logic_var)
       (logic_var_open 0 y)).
-  - rewrite logic_var_open_unfold.
-    unfold swap. repeat destruct decide; try lia; try congruence.
+  - unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma basic_world_formula_arrow_body_from_source_and_arg
@@ -1525,11 +1520,10 @@ Proof.
       with (X := denot_relevant_lvars (cty_open 0 y τr)
         (tapp_tm (e2 ^^ x) (vfvar y))).
     - reflexivity.
-	    - apply wand_body_relevant_env_agree_from_basic_context_ty.
-	      + apply (proj2 (lc_lvars_no_bv _)).
-	        apply lty_env_closed_insert_free. exact HΣ.
-	      + exact Hy_insert.
-	      + exact Hbasic_src_rel.
+    - apply wand_body_relevant_env_agree_from_basic_context_ty.
+      + apply lty_env_closed_insert_free. exact HΣ.
+      + exact Hy_insert.
+      + exact Hbasic_src_rel.
       + apply tm_lvars_tapp_tm_fvar_without_arg.
     - change (w ⊨ denot_ty_lvar_gas gas
         (<[LVFree y := erase_ty τx]>
@@ -1620,7 +1614,7 @@ Proof.
               change (LVFree x ∉ dom
                 (storeA_restrict (Σ : gmap logic_var ty)
                    (denot_relevant_lvars τ (tlete e1 e2)))).
-              rewrite storeA_restrict_dom. set_solver.
+              better_store_solver.
            ++ apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
               exact Hlet.
   - cbn [res_models res_models_fuel formula_measure].
@@ -3190,7 +3184,7 @@ Proof.
     exfalso. apply Hfresh. apply elem_of_union_r. exact Hv.
   }
   assert (HlcΣ : lc_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)).
-  { apply (proj2 (lc_lvars_no_bv _)). exact HΣ. }
+  { exact HΣ. }
   assert (HyΣ : LVFree y ∉ (dom (Σ : gmap logic_var ty) : gset logic_var)).
   {
     intros HyΣ.
@@ -3352,8 +3346,6 @@ Proof.
     + reflexivity.
   - exact Htarget_body_small.
 Qed.
-
-
 
 Lemma tlet_intro_denotation_wand_case
     gas (Σ : lty_env) (T1 : ty) (e1 e2 : tm)

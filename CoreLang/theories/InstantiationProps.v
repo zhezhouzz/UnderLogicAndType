@@ -5,10 +5,13 @@
     later syntactic categories can reuse the same multi-substitution facts once
     they provide the corresponding single-substitution lemmas. *)
 
-From ContextStore Require Import AtomEnv.
+From ContextBase Require Import BaseTactics.
+From ContextStore Require Import StoreCore.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
   LocallyNamelessExtra.
 From LocallyNameless Require Import Classes Tactics.
+
+#[local] Instance stale_env : Stale env := dom.
 
 Lemma closed_env_insert σ x v :
   σ !! x = None ->
@@ -49,13 +52,13 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hclosed (proj2 Hlookup)).
 Qed.
 
-Lemma closed_env_kmap_swap x y σ :
+Lemma closed_env_storeA_swap x y σ :
   closed_env σ ->
-  closed_env (kmap (swap x y) σ : env).
+  closed_env (@storeA_swap value atom _ _ x y σ : env).
 Proof.
   unfold closed_env. intros Hclosed.
   apply map_Forall_lookup_2. intros z v Hlookup.
-  rewrite kmap_swap_lookup_inv in Hlookup.
+  rewrite storeA_swap_lookup_inv in Hlookup.
   exact (closed_env_lookup σ (swap x y z) v Hclosed Hlookup).
 Qed.
 
@@ -91,13 +94,13 @@ Proof.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
 Qed.
 
-Lemma lc_env_kmap_swap x y σ :
+Lemma lc_env_storeA_swap x y σ :
   lc_env σ ->
-  lc_env (kmap (swap x y) σ : env).
+  lc_env (@storeA_swap value atom _ _ x y σ : env).
 Proof.
   unfold lc_env. intros Hlc.
   apply map_Forall_lookup_2. intros z v Hlookup.
-  rewrite kmap_swap_lookup_inv in Hlookup.
+  rewrite storeA_swap_lookup_inv in Hlookup.
   exact (map_Forall_lookup_1 _ _ _ _ Hlc Hlookup).
 Qed.
 
@@ -123,13 +126,13 @@ Proof.
   - by apply lc_env_restrict.
 Qed.
 
-Lemma store_closed_kmap_swap x y σ :
+Lemma store_closed_storeA_swap x y σ :
   store_closed σ ->
-  store_closed (kmap (swap x y) σ : env).
+  store_closed (@storeA_swap value atom _ _ x y σ : env).
 Proof.
   intros [Hclosed Hlc]. split.
-  - by apply closed_env_kmap_swap.
-  - by apply lc_env_kmap_swap.
+  - by apply closed_env_storeA_swap.
+  - by apply lc_env_storeA_swap.
 Qed.
 
 Ltac gen_closed_env :=
@@ -929,23 +932,24 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma msubst_kmap_swap_fresh
+Lemma msubst_storeA_swap_fresh
     (A : Type) `{Stale A} `{SubstV value A} `{MsubstRestrict A}
     x y (σ : env) (a : A) :
   closed_env σ ->
   x ∉ stale a ->
   y ∉ stale a ->
-  m{(kmap (swap x y) σ : env)} a = m{σ} a.
+  m{(@storeA_swap value atom _ _ x y σ : env)} a = m{σ} a.
 Proof.
   intros Hclosed Hx Hy.
-  rewrite <- (msubst_restrict (kmap (swap x y) σ : env) (stale a) a)
-    by (try apply closed_env_kmap_swap; try exact Hclosed; reflexivity).
+  rewrite <- (msubst_restrict
+      (@storeA_swap value atom _ _ x y σ : env) (stale a) a)
+    by (try apply closed_env_storeA_swap; try exact Hclosed; reflexivity).
   rewrite <- (msubst_restrict σ (stale a) a)
     by (try exact Hclosed; reflexivity).
   f_equal.
   apply map_restrict_agree. intros z Hz.
-  rewrite kmap_swap_lookup_inv.
-  rewrite swap_fresh by set_solver.
+  rewrite storeA_swap_lookup_inv.
+  base_swap_normalize.
   reflexivity.
 Qed.
 
@@ -1094,38 +1098,48 @@ Lemma msubst_open_lookup_swap_tm σ e k x y vx :
   σ !! y = Some vx ->
   x ∉ fv_tm e ->
   y ∉ fv_tm e ->
-  m{(kmap (swap x y) σ : env)} (open_tm k (vfvar x) e) =
+  m{(@storeA_swap value atom _ _ x y σ : env)}
+    (open_tm k (vfvar x) e) =
   m{σ} (open_tm k (vfvar y) e).
 Proof.
   intros Hclosed Hlc Hlookup Hx Hy.
-  assert (Hlc_swap : lc_env (kmap (swap x y) σ : env)).
+  assert (Hlc_swap : lc_env (@storeA_swap value atom _ _ x y σ : env)).
   {
     unfold lc_env in *. apply map_Forall_lookup_2. intros z v Hz.
-    rewrite kmap_swap_lookup_inv in Hz.
+    rewrite storeA_swap_lookup_inv in Hz.
     eapply lc_env_lookup; eauto.
   }
-  assert (Hlookup_swap : (kmap (swap x y) σ : env) !! x = Some vx).
+  assert (Hlookup_swap :
+    (@storeA_swap value atom _ _ x y σ : env) !! x = Some vx).
   {
+    unfold storeA_swap, storeA_rekey, storeA_map_key.
     change ((kmap (swap x y) σ : gmap atom value) !! x = Some vx).
-    rewrite kmap_swap_lookup_inv.
-    rewrite swap_l. exact Hlookup.
+    replace ((kmap (swap x y) σ : gmap atom value) !! x) with
+      ((kmap (swap x y) σ : gmap atom value) !! swap x y y)
+      by (rewrite swap_r; reflexivity).
+    rewrite (lookup_kmap (M1:=gmap atom) (M2:=gmap atom)
+      (Inj0:=swap_inj x y) (swap x y) σ y).
+    exact Hlookup.
   }
-  rewrite (msubst_open_lookup_tm (kmap (swap x y) σ : env) e k x vx)
-    by (try apply closed_env_kmap_swap; try exact Hclosed;
+  rewrite (msubst_open_lookup_tm
+      (@storeA_swap value atom _ _ x y σ : env) e k x vx)
+    by (try apply closed_env_storeA_swap; try exact Hclosed;
         try exact Hlc_swap; try exact Hlookup_swap; try exact Hx).
   rewrite (msubst_open_lookup_tm σ e k y vx)
     by (try exact Hclosed; try exact Hlc; try exact Hlookup; try exact Hy).
   f_equal.
   assert (Hdelete :
-    delete x (kmap (swap x y) σ : env) = (kmap (swap x y) (delete y σ) : env)).
+    delete x (@storeA_swap value atom _ _ x y σ : env) =
+      (@storeA_swap value atom _ _ x y (delete y σ) : env)).
   {
     assert (Hatom : swap x y y = x).
     { apply swap_r. }
-    rewrite <- Hatom at 1. symmetry. apply kmap_swap_delete.
+    rewrite <- Hatom at 1. symmetry. apply storeA_swap_delete.
   }
-  change (m{delete x (kmap (swap x y) σ : env)} e = m{delete y σ} e).
+  change (m{delete x (@storeA_swap value atom _ _ x y σ : env)} e =
+    m{delete y σ} e).
   rewrite Hdelete.
-  rewrite (msubst_kmap_swap_fresh tm x y (delete y σ) e).
+  rewrite (msubst_storeA_swap_fresh tm x y (delete y σ) e).
   - reflexivity.
   - apply closed_env_delete. exact Hclosed.
   - exact Hx.

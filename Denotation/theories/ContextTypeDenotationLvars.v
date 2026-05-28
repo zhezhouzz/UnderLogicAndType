@@ -39,8 +39,8 @@ Lemma formula_lvars_at_open d k y (φ : FormulaT) :
   lvars_open k y (formula_lvars_at d φ).
 Proof.
   induction φ in d, k |- *; cbn [formula_open formula_lvars_at].
-  - rewrite lvars_open_unfold. set_solver.
-  - rewrite lvars_open_unfold. set_solver.
+  - set_solver.
+  - set_solver.
   - match goal with
     | |- context [lqual_open _ _ ?q] => destruct q as [D P]
     end.

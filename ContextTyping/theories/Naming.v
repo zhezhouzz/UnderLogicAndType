@@ -79,15 +79,13 @@ Proof.
   apply set_eq. intros z. split.
   - intros Hz.
     apply elem_of_dom in Hz as [T Hz].
-    apply store_lookup_union_Some_raw in Hz as [HzΣ|[HΣ Hzrest]].
+    apply map_lookup_union_Some_raw in Hz as [HzΣ|[HΣ Hzrest]].
     + apply elem_of_union_l. apply elem_of_dom. exists T.
-      apply store_lookup_union_Some_raw. left. exact HzΣ.
-    + apply store_lookup_union_Some_raw in Hzrest as [HzΓ|[_ Hzx]].
+      apply map_lookup_union_Some_raw. left. exact HzΣ.
+    + apply map_lookup_union_Some_raw in Hzrest as [HzΓ|[_ Hzx]].
       * apply elem_of_union_l. apply elem_of_dom. exists T.
-        apply store_lookup_union_Some_raw. right. eauto.
-      * cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
-          singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
-          map_insert] in Hzx.
+        apply map_lookup_union_Some_raw. right. eauto.
+      * cbv [map_singleton singleton singletonM insert map_insert] in Hzx.
         destruct (decide (z = x)) as [->|Hzx_ne]; [set_solver|].
         change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
           x (∅ : gmap atom ty)) !! z = Some T) in Hzx.
@@ -98,26 +96,24 @@ Proof.
     apply elem_of_union in Hz as [Hz|Hz].
     + apply elem_of_dom in Hz as [T Hz].
       apply elem_of_dom.
-      apply store_lookup_union_Some_raw in Hz as [HzΣ|[HΣ HzΓ]].
-      * exists T. apply store_lookup_union_Some_raw. left. exact HzΣ.
-      * exists T. apply store_lookup_union_Some_raw. right.
-        split; [exact HΣ|]. apply store_lookup_union_Some_raw. left. exact HzΓ.
+      apply map_lookup_union_Some_raw in Hz as [HzΣ|[HΣ HzΓ]].
+      * exists T. apply map_lookup_union_Some_raw. left. exact HzΣ.
+      * exists T. apply map_lookup_union_Some_raw. right.
+        split; [exact HΣ|]. apply map_lookup_union_Some_raw. left. exact HzΓ.
     + apply elem_of_singleton in Hz. subst z.
       destruct (Σ !! x) as [TΣ|] eqn:HΣ.
       * apply elem_of_dom. exists TΣ.
-        apply store_lookup_union_Some_raw. left. exact HΣ.
+        apply map_lookup_union_Some_raw. left. exact HΣ.
       * destruct (erase_ctx Γ !! x) as [TΓ|] eqn:HΓ.
         -- apply elem_of_dom. exists TΓ.
-           apply store_lookup_union_Some_raw. right. split; [exact HΣ|].
-           apply store_lookup_union_Some_raw. left. exact HΓ.
+           apply map_lookup_union_Some_raw. right. split; [exact HΣ|].
+           apply map_lookup_union_Some_raw. left. exact HΓ.
         -- apply elem_of_dom. exists (erase_ty τ).
-           apply store_lookup_union_Some_raw. right. split; [exact HΣ|].
-           apply store_lookup_union_Some_raw. right.
+           apply map_lookup_union_Some_raw. right. split; [exact HΣ|].
+           apply map_lookup_union_Some_raw. right.
            split.
            ++ exact HΓ.
-           ++ cbv [ContextStore.StoreInterfaceCore.store_singleton map_singleton
-                singleton singletonM insert ContextStore.StoreInterfaceCore.store_insert
-                map_insert].
+           ++ cbv [map_singleton singleton singletonM insert map_insert].
               change ((partial_alter (λ _ : option ty, Some (erase_ty τ))
                 x (∅ : gmap atom ty)) !! x = Some (erase_ty τ)).
               rewrite (lookup_partial_alter_eq (K := atom) (M := gmap atom)).

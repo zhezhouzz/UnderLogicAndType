@@ -9,6 +9,7 @@
     [ContextBasicDenotation] directly. *)
 
 From Denotation Require Import Notation.
+From ContextBase Require Import BaseTactics.
 
 Section ContextTypeDenotation.
 
@@ -247,7 +248,7 @@ Lemma formula_open_env_forall η φ :
   FForall (formula_open_env ((kmap S η)) φ).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros _. rewrite formula_open_env_empty, open_env_lift_empty,
+  - intros _. rewrite formula_open_env_empty, kmap_empty,
       formula_open_env_empty.
     reflexivity.
   - intros Hinj.
@@ -258,8 +259,7 @@ Proof.
     cbn [formula_open].
     rewrite open_env_lift_insert.
     rewrite formula_open_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -346,7 +346,7 @@ Proof.
                      lvars_fv (lvars_open_env η (dom Σ))).
       {
         rewrite lty_env_open_lvars_dom.
-        - unfold lvars_open_env_simul, lvars_open_env. set_solver.
+        - unfold lvars_open_env. set_solver.
         - eapply open_env_fresh_for_lvars_mono;
             [intros v Hv; apply elem_of_union_l; exact Hv|exact Hfreshη].
       }
@@ -411,7 +411,7 @@ Proof.
   - intros e z _ _.
     rewrite formula_open_env_empty.
     unfold open_tm_env. rewrite map_fold_empty.
-    rewrite logic_var_open_env_empty. reflexivity.
+    better_base_solver.
   - intros e z Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
       as [Hinjη Havoid].
@@ -511,9 +511,9 @@ Proof.
     apply elem_of_difference. split; [exact HuD|].
     intros Hbad. apply Hnot.
     rewrite elem_of_singleton in Hbad |- *.
-    subst u.
-    cbn [logic_var_open_env].
-    rewrite open_env_lift_lookup_zero_none. reflexivity.
+	    subst u.
+	    cbn [logic_var_open_env].
+	    better_base_solver.
 Qed.
 
 Lemma lvars_fv_open_env_lift_subset_at_depth1 η D :
@@ -621,7 +621,7 @@ Lemma lty_env_open_lvars_lift_bound0_singleton η T :
   ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros _. rewrite open_env_lift_empty, lty_env_open_lvars_empty. reflexivity.
+  - intros _. rewrite kmap_empty, lty_env_open_lvars_empty. reflexivity.
   - intros Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
       as [Hinjη Havoid].
@@ -635,10 +635,9 @@ Proof.
         unfold lty_env_open_one.
         apply (storeA_rekey_empty (V := ty) (K := logic_var)
           (logic_var_open (S k) x)).
-      * rewrite logic_var_open_unfold.
-        unfold swap. repeat destruct decide; try lia; try congruence.
-    + apply open_env_lift_lookup_none. exact Hfresh.
-    + apply open_env_avoids_atom_lift. exact Havoid.
+      * unfold swap. repeat destruct decide; try lia; try congruence.
+    + better_base_solver.
+    + better_base_solver.
     + intros i z Hiz Hbad.
       replace (dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lvset)
         with ({[LVBound 0]} : lvset) in Hbad
@@ -670,11 +669,10 @@ Lemma open_tm_env_lift_shift0 η e :
   tm_shift 0 (open_tm_env η e).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
     rewrite <- (tm_shift_open_tm_fvar (open_tm_env η e) k 0 x ltac:(lia)).
@@ -691,8 +689,7 @@ Proof.
   - rewrite tm_shift_open_tm_fvar by lia.
     replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
     + reflexivity.
-    + rewrite logic_var_open_unfold.
-      unfold swap. repeat destruct decide; try lia; try congruence.
+    + unfold swap. repeat destruct decide; try lia; try congruence.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
@@ -706,7 +703,7 @@ Proof.
   revert e.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros e _ _.
-    rewrite open_env_lift_empty, formula_open_env_empty.
+    rewrite kmap_empty, formula_open_env_empty.
     unfold open_tm_env. rewrite map_fold_empty. reflexivity.
   - intros e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
@@ -715,8 +712,8 @@ Proof.
       (tm_lvars e) Hnone Hfresh) as Hfreshη.
     rewrite open_env_lift_insert.
     rewrite formula_open_env_insert_fresh.
-    2:{ apply open_env_lift_lookup_none. exact Hnone. }
-    2:{ apply open_env_avoids_atom_lift. exact Havoid. }
+    2:{ better_base_solver. }
+    2:{ better_base_solver. }
     2:{ apply open_env_values_inj_lift. exact Hinjη. }
     rewrite IH by (exact Hfreshη || exact Hinjη).
     rewrite formula_open_expr_result_formula_shift0_under_core.
@@ -735,11 +732,10 @@ Lemma open_tm_env_lift_tapp_shift_bvar0 η e :
   tapp_tm (tm_shift 0 (open_tm_env η e)) (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
     unfold tapp_tm.
@@ -752,11 +748,10 @@ Lemma open_tm_env_lift_tret_bound0 η :
   open_tm_env ((kmap S η)) (tret (vbvar 0)) = tret (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
-    rewrite open_tm_env_insert_fresh_plain
-      by (apply open_env_lift_lookup_none; exact Hfresh).
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
     rewrite IH.
     cbn [open_tm open_value].
     destruct decide as [Hbad|_]; [lia|reflexivity].
@@ -915,8 +910,6 @@ Proof.
   intros Hy.
   unfold denot_relevant_env, lty_env_restrict_lvars, lty_env_open_one.
   rewrite <- denot_relevant_lvars_open by exact Hy.
-  rewrite lvars_open_unfold.
-  unfold logic_var_open.
   symmetry. apply storeA_restrict_swap.
 Qed.
 
@@ -926,8 +919,8 @@ Lemma context_ty_lvars_open_cty_env η τ :
   lvars_open_env η (context_ty_lvars τ).
 Proof.
   revert τ.
-  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
-  - intros τ _. rewrite open_cty_env_empty, lvars_open_env_empty. reflexivity.
+	  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+	  - intros τ _. rewrite open_cty_env_empty. better_base_solver.
   - intros τ Hfresh.
     pose proof (IH τ ltac:(eapply open_env_fresh_for_lvars_insert_tail; eassumption))
       as HIH.
@@ -967,8 +960,7 @@ Proof.
     - unfold denot_relevant_lvars. set_solver.
     - exact Hfresh.
   }
-  rewrite lvars_open_env_union.
-  reflexivity.
+	  better_base_solver.
 Qed.
 
 Lemma denot_relevant_env_open_env η Σ τ e :
@@ -1035,23 +1027,16 @@ Lemma lty_env_restrict_lvars_closed Σ D :
 Proof.
   intros Hclosed.
   unfold lty_env_closed in *.
-  apply set_eq. intros k.
-  rewrite elem_of_empty.
-  split; [|set_solver].
-  intros Hk.
-  rewrite lvars_bv_elem in Hk.
-  unfold lty_env_restrict_lvars in Hk.
-  change (LVBound k ∈ dom
-    (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty)) in Hk.
+  intros v Hv.
+  unfold lty_env_restrict_lvars in Hv.
+  change (v ∈ dom
+    (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty)) in Hv.
   pose proof (storeA_restrict_dom (Σ : lty_env) D) as Hdom_restrict.
   change (dom (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty) =
     dom (Σ : gmap logic_var ty) ∩ D) in Hdom_restrict.
-  rewrite Hdom_restrict in Hk.
-  apply elem_of_intersection in Hk as [Hk _].
-  assert (k ∈ lvars_bv (dom (Σ : gmap logic_var ty))).
-  { rewrite lvars_bv_elem. exact Hk. }
-  unfold lvar_store_closed in Hclosed.
-  rewrite Hclosed in H. set_solver.
+  rewrite Hdom_restrict in Hv.
+  apply elem_of_intersection in Hv as [Hv _].
+  exact (Hclosed v Hv).
 Qed.
 
 Lemma denot_relevant_env_closed Σ τ e :
@@ -1344,7 +1329,8 @@ Proof.
     lvars_at_depth d (dom Σ)).
   rewrite storeA_restrict_dom.
   transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. set_solver.
+  - apply lvars_at_depth_mono. intros v Hv.
+    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
   - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
 Qed.
 
@@ -1434,7 +1420,8 @@ Proof.
     lvars_at_depth d (dom Σ)).
   rewrite storeA_restrict_dom.
   transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. set_solver.
+  - apply lvars_at_depth_mono. intros v Hv.
+    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
   - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
 Qed.
 

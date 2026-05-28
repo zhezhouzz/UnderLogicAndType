@@ -72,8 +72,7 @@ Proof.
     unfold lworld_dom, lraw_world.
     cbn [proj1_sig singleton_worldA worldA_dom].
     change (dom ρD) with (dom (storeA_restrict ρ D)).
-    rewrite storeA_restrict_dom.
-    set_solver.
+    better_store_solver.
   }
   refine {| lw := resA_product (@lw V _ w) wρ Hc |}.
   change (lworld_dom (resA_product (@lw V _ w) wρ Hc : LWorld) = D).
@@ -84,7 +83,7 @@ Proof.
   change (lworld_dom (@lw V _ w : LWorld) ∪ dom ρD = D).
   rewrite (@lw_dom V _ w).
   change (dom ρD) with (dom (storeA_restrict ρ D)).
-  rewrite storeA_restrict_dom.
+  store_normalize.
   apply set_eq. intros z.
   rewrite elem_of_union, elem_of_difference, elem_of_intersection.
   split.

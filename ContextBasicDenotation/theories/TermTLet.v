@@ -810,21 +810,24 @@ Proof.
         rewrite lstore_lift_free_lookup_free.
         change (((σm : gmap atom value) ∪ ({[x := u]} : gmap atom value)) !! x =
           Some u).
-        apply storeA_lookup_union_Some_raw. right.
-        split.
-        ++ apply eq_None_not_Some. intros [w Hlook].
-           pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh_out.
-           change (ext_out F ## world_dom (m : WorldT)) in Hfresh_out.
-           unfold ext_out in Hfresh_out.
-           pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
-           change (dom (σm : gmap atom value) = world_dom (m : WorldT)) in Hσm_dom.
-           change (((σm : gmap atom value) !! x) = Some w) in Hlook.
-           apply elem_of_dom_2 in Hlook.
-           rewrite Hσm_dom in Hlook.
-           rewrite Hout in Hfresh_out.
-           set_solver.
-        ++ change ((<[x := u]> (∅ : StoreT)) !! x = Some u).
-           apply storeA_lookup_insert.
+        assert (Hσm_x_none : σm !! x = None).
+        {
+          apply eq_None_not_Some. intros [w Hlook].
+          pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh_out.
+          change (ext_out F ## world_dom (m : WorldT)) in Hfresh_out.
+          unfold ext_out in Hfresh_out.
+          pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
+          change (dom (σm : gmap atom value) = world_dom (m : WorldT)) in Hσm_dom.
+          change (((σm : gmap atom value) !! x) = Some w) in Hlook.
+          apply elem_of_dom_2 in Hlook.
+          rewrite Hσm_dom in Hlook.
+          rewrite Hout in Hfresh_out.
+          set_solver.
+        }
+        apply map_lookup_union_Some_raw. right.
+        split; [exact Hσm_x_none|].
+        change ((<[x := u]> (∅ : StoreT)) !! x = Some u).
+        apply map_lookup_insert.
       -- assert (Hrestrict_union :
           store_restrict (σm ∪ ({[x := u]} : StoreT)) (fv_tm e) =
           store_restrict σm (fv_tm e)).

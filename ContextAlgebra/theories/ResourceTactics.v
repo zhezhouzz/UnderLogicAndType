@@ -25,13 +25,20 @@ Ltac resource_restrict_norm :=
 
 Ltac resource_store_dom_solver :=
   try solve
-  [ set_solver
-  | eapply wfworldA_store_dom_subset; [eassumption | set_solver]
+  [ better_store_solver
+  | better_set_solver
+  | eapply wfworldA_store_dom_subset; [eassumption | better_set_solver]
   ].
 
 Ltac resource_norm :=
-  repeat progress (resource_world_norm; store_norm; resource_restrict_norm).
+  repeat progress (resource_world_norm; store_normalize; resource_restrict_norm).
 
 Ltac resource_solver :=
   resource_norm;
-  try solve [store_solver | resource_store_dom_solver | set_solver | eauto 6 | reflexivity | congruence].
+  try solve
+    [ better_store_solver
+    | resource_store_dom_solver
+    | better_set_solver
+    | eauto 6
+    | reflexivity
+    | congruence ].

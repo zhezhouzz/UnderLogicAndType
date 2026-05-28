@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction.
 
@@ -113,7 +113,7 @@ Proof.
   replace (X ∩ dom (@storeA_restrict V K _ _ σw X))
     with (dom (@storeA_restrict V K _ _ σw X)).
   - reflexivity.
-  - rewrite storeA_restrict_dom. set_solver.
+  - better_store_solver.
 Qed.
 
 Lemma resA_projection_from_fiber_projection
@@ -149,7 +149,7 @@ Proof.
         (@storeA_restrict V K _ _ s Y) (dom σY)).
       - rewrite storeA_restrict_restrict.
         replace (Y ∩ dom σY) with (dom σY) by
-          (rewrite <- HrestrictY; rewrite storeA_restrict_dom; set_solver).
+          (rewrite <- HrestrictY; better_store_solver).
         reflexivity.
       - rewrite HrestrictY. set_solver.
     }
@@ -210,10 +210,9 @@ Lemma resA_swap_extension_dom (x y : K) (m my : WfWorldAT) (z : K) :
   worldA_dom (resA_swap x y m : WorldAT) ∪ {[swap x y z]}.
 Proof.
   intros Hdom. simpl.
-  change (set_swap x y (worldA_dom (my : WorldAT)) =
-    set_swap x y (worldA_dom (m : WorldAT)) ∪ {[swap x y z]}).
-  rewrite Hdom, set_swap_union, set_swap_singleton.
-  reflexivity.
+	  change (set_swap x y (worldA_dom (my : WorldAT)) =
+	    set_swap x y (worldA_dom (m : WorldAT)) ∪ {[swap x y z]}).
+	  rewrite Hdom. better_base_solver.
 Qed.
 
 Lemma resA_swap_extension_dom_cancel
@@ -225,10 +224,9 @@ Proof.
   intros Hdom. simpl in Hdom |- *.
   change (worldA_dom (my : WorldAT) =
     set_swap x y (worldA_dom (m : WorldAT)) ∪ {[z]}) in Hdom.
-  change (set_swap x y (worldA_dom (my : WorldAT)) =
-    worldA_dom (m : WorldAT) ∪ {[swap x y z]}).
-  rewrite Hdom, set_swap_union, set_swap_involutive, set_swap_singleton.
-  reflexivity.
+	  change (set_swap x y (worldA_dom (my : WorldAT)) =
+	    worldA_dom (m : WorldAT) ∪ {[swap x y z]}).
+	  rewrite Hdom. better_base_solver.
 Qed.
 
 Lemma resA_swap_restrict_extension

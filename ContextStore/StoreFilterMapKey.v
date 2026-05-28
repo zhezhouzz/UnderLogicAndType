@@ -1,8 +1,9 @@
 (** * Generic stores: partial key projection *)
 
-From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift.
-From ContextStore Require Import StoreCore StoreKeyAction.
-From ContextStore Require Import AtomEnv.
+From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
+From ContextStore Require Import StoreCore.
+
+Notation lvar_to_atom := logic_var_to_atom (only parsing).
 
 Section StoreFilterMapKey.
 
@@ -25,14 +26,11 @@ Proof.
   unfold storeA_filter_map_key. reflexivity.
 Qed.
 
-Definition AtomStore : Type := @StoreA V atom _ _.
-Definition LVarStore : Type := @StoreA V logic_var _ _.
+Local Notation AtomStore := (gmap atom V) (only parsing).
+Local Notation LVarStore := (gmap logic_var V) (only parsing).
 
 Definition atom_store_to_lvar_store (s : AtomStore) : LVarStore :=
   storeA_map_key LVFree s.
-
-Definition lvar_to_atom (η : gmap nat atom) (v : logic_var) : option atom :=
-  logic_var_to_atom η v.
 
 Definition lvar_store_open (η : gmap nat atom) (s : LVarStore) : AtomStore :=
   storeA_filter_map_key (lvar_to_atom η) s.
@@ -58,7 +56,7 @@ Definition lvar_store_atom_dom (s : LVarStore) : aset :=
   lvars_fv (dom (s : gmap logic_var V)).
 
 Definition lvar_store_closed (s : LVarStore) : Prop :=
-  lvars_bv (dom (s : gmap logic_var V)) = ∅.
+  lc_lvars (dom (s : gmap logic_var V)).
 
 Definition lvar_store_bvar_scope (s : LVarStore) : lvset :=
   lvars_of_bvars (lvars_bv (dom (s : gmap logic_var V))).
@@ -89,6 +87,7 @@ Lemma atom_store_to_lvar_store_closed (s : AtomStore) :
 Proof.
   unfold lvar_store_closed.
   rewrite !atom_store_to_lvar_store_dom.
+  apply (proj2 (lc_lvars_no_bv _)).
   apply lvars_bv_of_atoms.
 Qed.
 
@@ -142,22 +141,6 @@ Proof.
     (s : gmap logic_var V) (LVBound k) v).
   rewrite lvars_fv_union, lvars_fv_singleton_bound.
   set_solver.
-Qed.
-
-Lemma logic_var_open_inj_fresh k x v1 v2 :
-  logic_var_open k x v1 = logic_var_open k x v2 ->
-  v1 = v2.
-Proof.
-  intros Heq.
-  rewrite <- (logic_var_open_involutive k x v1).
-  rewrite <- (logic_var_open_involutive k x v2).
-  by rewrite Heq.
-Qed.
-
-Lemma logic_var_open_inj k x :
-  Inj (=) (=) (logic_var_open k x).
-Proof.
-  intros v1 v2 Heq. eapply logic_var_open_inj_fresh. exact Heq.
 Qed.
 
 Lemma lvar_store_shift_free_notin_from k x (s : LVarStore) :
@@ -258,9 +241,9 @@ Proof.
   intros Hjk.
   unfold lvar_store_open_one, lvar_store_shift_from.
   rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
-    try apply logic_var_open_inj.
+    try apply swap_inj.
   rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
-    try apply logic_var_open_inj.
+    try apply swap_inj.
   apply storeA_rekey_ext_on_dom. intros v _.
   apply logic_var_open_shift_from_under_gen. exact Hjk.
 Qed.
@@ -271,7 +254,7 @@ Lemma lvar_store_open_one_insert k x v A (s : LVarStore) :
 Proof.
   unfold lvar_store_open_one.
   apply storeA_rekey_insert.
-  apply logic_var_open_inj.
+  apply swap_inj.
 Qed.
 
 Lemma lvar_store_shift_atom_store (s : AtomStore) :
@@ -307,15 +290,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma logic_var_swap_inj x y :
-  Inj (=) (=) (logic_var_swap x y).
-Proof.
-  intros v1 v2 Heq.
-  rewrite <- (logic_var_swap_involutive x y v1).
-  rewrite <- (logic_var_swap_involutive x y v2).
-  by rewrite Heq.
-Qed.
-
 Lemma logic_var_swap_match x y v :
   match v with
   | LVFree z => LVFree (swap x y z)
@@ -323,9 +297,8 @@ Lemma logic_var_swap_match x y v :
   end = logic_var_swap x y v.
 Proof.
   destruct v as [k|z].
-  - rewrite logic_var_swap_unfold.
-    unfold swap. repeat destruct decide; congruence.
-  - rewrite logic_var_swap_unfold, logic_var_free_swap.
+  - unfold swap. repeat destruct decide; congruence.
+  - rewrite logic_var_free_swap.
     reflexivity.
 Qed.
 
@@ -339,11 +312,11 @@ Proof.
   rewrite logic_var_swap_match.
   unfold lvar_store_swap.
   unfold storeA_rekey, storeA_map_key.
-  change ((kmap (M2:=gmap logic_var) (logic_var_swap x y) s) !!
-      logic_var_swap x y v = (s : gmap logic_var V) !! v).
+  change ((kmap (M2:=gmap logic_var) (swap (LVFree x) (LVFree y)) s) !!
+      swap (LVFree x) (LVFree y) v = (s : gmap logic_var V) !! v).
   rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-    (Inj0:=logic_var_swap_inj x y)
-    (logic_var_swap x y) s v).
+    (Inj0:=swap_inj (LVFree x) (LVFree y))
+    (swap (LVFree x) (LVFree y)) s v).
   reflexivity.
 Qed.
 
@@ -364,18 +337,18 @@ Lemma lvar_store_swap_dom x y (s : LVarStore) :
   dom (lvar_store_swap x y s : gmap logic_var V) =
   lvars_swap x y (dom (s : gmap logic_var V)).
 Proof.
-  unfold lvar_store_swap, lvars_swap.
+  unfold lvar_store_swap.
   change (dom (storeA_rekey (logic_var_swap x y) s : gmap logic_var V) =
     set_swap (LVFree x) (LVFree y) (dom (s : gmap logic_var V))).
-  rewrite storeA_rekey_dom by apply logic_var_swap_inj.
+  rewrite storeA_rekey_dom by apply swap_inj.
   unfold set_swap.
   apply set_eq. intros v.
   rewrite !elem_of_map.
   split.
   - intros [u [-> Hu]]. exists u. split; [|exact Hu].
-    rewrite logic_var_swap_unfold. reflexivity.
+    reflexivity.
   - intros [u [-> Hu]]. exists u. split; [|exact Hu].
-    rewrite <- logic_var_swap_unfold. reflexivity.
+    reflexivity.
 Qed.
 
 Lemma lvar_store_swap_insert x y (s : LVarStore) v A :
@@ -387,7 +360,7 @@ Lemma lvar_store_swap_insert x y (s : LVarStore) v A :
 Proof.
   rewrite logic_var_swap_match.
   unfold lvar_store_swap.
-  apply storeA_rekey_insert, logic_var_swap_inj.
+  apply storeA_rekey_insert, swap_inj.
 Qed.
 
 Lemma lvar_store_swap_atom_dom x y (s : LVarStore) :
@@ -450,7 +423,7 @@ Proof.
         -- destruct (s !! LVFree y) eqn:Hlooky.
            ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
            ++ symmetry. exact Hlooky.
-      * rewrite swap_fresh by congruence. reflexivity.
+      * base_swap_normalize. reflexivity.
 Qed.
 
 Lemma lvar_store_swap_atom_store_fresh (s : AtomStore) x y :
@@ -472,7 +445,7 @@ Proof.
       * rewrite swap_r.
         rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
         reflexivity.
-      * rewrite swap_fresh by congruence. reflexivity.
+      * base_swap_normalize. reflexivity.
 Qed.
 
 Lemma lvar_store_swap_atom_store_insert_fresh (s : AtomStore) x y v :
@@ -519,7 +492,6 @@ Proof.
   replace (logic_var_open 0 x (LVBound 0)) with (LVFree x).
   rewrite lvar_store_open_one_atom_store by exact Hx.
   reflexivity.
-  rewrite logic_var_open_unfold.
   unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
@@ -727,14 +699,14 @@ Qed.
 
 Lemma lvar_store_to_atom_store_swap x y (s : LVarStore) :
   lvar_store_to_atom_store (lvar_store_swap x y s) =
-  (kmap (swap x y) (lvar_store_to_atom_store s) : gmap atom V).
+  (@storeA_swap V atom _ _ x y (lvar_store_to_atom_store s) : gmap atom V).
 Proof.
   apply (map_eq (M:=gmap atom)). intros z.
   rewrite lvar_store_to_atom_store_lookup.
   transitivity (lvar_store_to_atom_store s !! swap x y z).
   - rewrite lvar_store_swap_lookup_inv.
     symmetry. apply lvar_store_to_atom_store_lookup.
-  - symmetry. apply kmap_swap_lookup_inv.
+  - symmetry. apply storeA_swap_lookup_inv.
 Qed.
 
 Lemma lvar_store_to_atom_store_dom_subset (s : LVarStore) :
@@ -746,7 +718,8 @@ Proof.
   apply lvar_store_to_atom_store_lookup_some in Hv.
   unfold lvar_store_atom_dom.
   apply lvars_fv_elem.
-  eapply storeA_elem_of_dom_lookup_some. exact Hv.
+  change (((s : LVarStore) : gmap logic_var V) !! LVFree x = Some v) in Hv.
+  better_map_solver.
 Qed.
 
 End StoreFilterMapKey.

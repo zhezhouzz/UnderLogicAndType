@@ -152,11 +152,11 @@ Proof.
   - intros σ. simpl. split.
     + intros Hσ.
       pose proof (Hdom σ Hσ) as Hd. exists σ. split; [exact Hσ |].
-      apply storeA_restrict_idemp. set_solver.
+      better_store_solver.
     + intros (σ' & Hσ' & Heq).
       pose proof (Hdom σ' Hσ') as Hd.
       assert (Hstep : @storeA_restrict V K _ _ σ' (worldA_dom m) = σ')
-        by (apply storeA_restrict_idemp; set_solver).
+        by better_store_solver.
       rewrite Hstep in Heq. subst. exact Hσ'.
 Qed.
 
@@ -179,14 +179,14 @@ Proof.
     destruct Hσ1 as [σ' [Hσ2 Hrestrict]].
     pose proof (wfA_dom _ Hwf2 σ' Hσ2) as Hd2.
     rewrite Hdeq in Hrestrict.
-    rewrite storeA_restrict_idemp in Hrestrict by set_solver.
+    rewrite storeA_restrict_idemp in Hrestrict by better_store_solver.
     subst. exact Hσ2.
   - intros Hσ2.
     rewrite H21 in Hσ2. cbn in Hσ2.
     destruct Hσ2 as [σ' [Hσ1 Hrestrict]].
     pose proof (wfA_dom _ Hwf1 σ' Hσ1) as Hd1.
     rewrite <- Hdeq in Hrestrict.
-    rewrite storeA_restrict_idemp in Hrestrict by set_solver.
+    rewrite storeA_restrict_idemp in Hrestrict by better_store_solver.
     subst. exact Hσ1.
 Qed.
 
@@ -489,14 +489,14 @@ Proof.
            replace (X ∩ dom (σ : gmap K V)) with (dom (σ : gmap K V))
              by (rewrite Hdomσ; set_solver).
            reflexivity.
-        -- rewrite Hrestr. apply storeA_restrict_idemp. set_solver.
+        -- rewrite Hrestr. apply storeA_restrict_idemp; better_store_solver.
       * transitivity (@storeA_restrict V K _ _
           (@storeA_restrict V K _ _ σw X) (dom σ)).
         -- rewrite storeA_restrict_restrict.
            replace (X ∩ dom (σ : gmap K V)) with (dom (σ : gmap K V))
              by (rewrite Hdomσ; set_solver).
            reflexivity.
-        -- rewrite Hrestr. apply storeA_restrict_idemp. set_solver.
+        -- rewrite Hrestr. apply storeA_restrict_idemp; better_store_solver.
 Qed.
 
 Lemma resA_restrict_fiber_from_projection_eq_singleton

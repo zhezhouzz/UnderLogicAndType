@@ -56,7 +56,6 @@ Qed.
   OpenCommute lvset lvars_open eq.
 Proof.
   constructor. intros i j x y D Hij Hxy.
-  rewrite !lvars_open_unfold.
   rewrite set_swap_conjugate.
   replace (swap (LVBound i) (LVFree x) (LVBound j)) with (LVBound j).
   2:{ unfold swap. repeat destruct decide; congruence. }

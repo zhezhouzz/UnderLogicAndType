@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict.
 From Stdlib Require Import Logic.ProofIrrelevance.
@@ -49,9 +49,9 @@ Proof.
       destruct Hσ' as [σ2 [Hσ2 Hrestrict2]].
       pose proof (wfworldA_store_dom w2 σ2 Hσ2) as Hσ2dom.
       change (dom (σ2 : gmap K V) = worldA_dom (w2 : WorldAT)) in Hσ2dom.
-      rewrite storeA_restrict_idemp in Hrestrict2 by set_solver.
+      rewrite storeA_restrict_idemp in Hrestrict2 by better_store_solver.
       subst σ'.
-      rewrite storeA_restrict_idemp in Hrestrict by set_solver.
+      rewrite storeA_restrict_idemp in Hrestrict by better_store_solver.
       subst. exact Hσ2.
 Qed.
 
@@ -175,7 +175,7 @@ Proof.
     change (set_swap x y (worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)) =
       set_swap x y (worldA_dom (w1 : WorldAT)) ∪
       set_swap x y (worldA_dom (w2 : WorldAT))).
-    rewrite set_swap_union. reflexivity.
+    better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [Hprod Hswap]].
       rewrite <- Hswap.
@@ -228,7 +228,7 @@ Proof.
     change (set_swap x y (set_swap x y (worldA_dom (w1 : WorldAT))) ∪
       worldA_dom (w2 : WorldAT) =
       worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)).
-    rewrite set_swap_involutive. reflexivity.
+    better_base_solver.
   - intros σ. simpl. split.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].

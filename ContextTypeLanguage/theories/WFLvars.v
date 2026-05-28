@@ -3,6 +3,7 @@
     Formation/scoping predicates for logic-variable sets. *)
 
 From ContextTypeLanguage Require Export SyntaxEquiv.
+From ContextBase Require Import BaseTactics.
 
 Definition lvar_wf_at (d : nat) (D : aset) (v : logic_var) : Prop :=
   match v with
@@ -63,7 +64,6 @@ Lemma lvars_wf_at_open_body D L x :
   lvars_wf_at 0 (D ∪ {[x]}) (lvars_open 0 x L).
 Proof.
   intros Hx Hwf v Hv.
-  rewrite lvars_open_unfold in Hv.
   rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct k as [|k].
@@ -71,14 +71,14 @@ Proof.
       assert (LVFree x ∈ L) as Hxin by exact Hv.
       exfalso. apply Hx. exact (Hwf (LVFree x) Hxin).
     + exfalso.
-      rewrite swap_fresh in Hv by congruence.
+      base_swap_normalize.
       assert (LVBound (S k) ∈ L) as Hk.
       { exact Hv. }
       specialize (Hwf (LVBound (S k)) Hk). cbn [lvar_wf_at] in Hwf. lia.
   - destruct (decide (x = y)) as [->|Hxy].
     + set_solver.
     + assert (LVFree y ∈ L) as Hy.
-      { rewrite swap_fresh in Hv by congruence. exact Hv. }
+      { base_swap_normalize. exact Hv. }
       apply elem_of_union. left. exact (Hwf (LVFree y) Hy).
 Qed.
 
@@ -88,18 +88,17 @@ Lemma lvars_wf_at_open_at d D L x :
   lvars_wf_at d (D ∪ {[x]}) (lvars_open d x L).
 Proof.
   intros Hx Hwf v Hv.
-  rewrite lvars_open_unfold in Hv.
   rewrite set_swap_elem in Hv.
   destruct v as [k|y]; cbn [lvar_wf_at].
   - destruct (decide (k = d)) as [->|Hkd].
     + rewrite swap_l in Hv.
       exfalso. apply Hx. exact (Hwf (LVFree x) Hv).
-    + rewrite swap_fresh in Hv by congruence.
+    + base_swap_normalize.
       specialize (Hwf (LVBound k) Hv). cbn [lvar_wf_at] in Hwf.
       lia.
   - destruct (decide (x = y)) as [->|Hxy].
     + apply elem_of_union_r. set_solver.
-    + rewrite swap_fresh in Hv by congruence.
+    + base_swap_normalize.
       apply elem_of_union_l. exact (Hwf (LVFree y) Hv).
 Qed.
 

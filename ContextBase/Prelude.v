@@ -243,14 +243,6 @@ Definition fresh_for (s : aset) : atom := fresh s.
 Lemma fresh_for_not_in (s : aset) : fresh_for s ∉ s.
 Proof. apply is_fresh. Qed.
 
-Lemma fv_subset_env_union_pair (X Y A B C D : aset) :
-  A ⊆ X ∪ Y ∪ C →
-  B ⊆ X ∪ Y ∪ D →
-  X ∪ Y ∪ (A ∪ B) ⊆ X ∪ Y ∪ (C ∪ D).
-Proof.
-  better_set_solver.
-Qed.
-
 Ltac pick_fresh x s :=
   let a := fresh x in
   set (a := fresh_for s);

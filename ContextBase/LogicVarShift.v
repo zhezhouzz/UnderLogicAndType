@@ -36,7 +36,7 @@ Lemma logic_var_open_shift_from_under_gen j k x v :
 Proof.
   intros Hjk.
   destruct v as [n|y];
-    unfold logic_var_open, swap, swap, logic_var_shift_from;
+    unfold swap, logic_var_shift_from;
     repeat (destruct (decide _) as [?|?]; subst;
       simpl in *;
       repeat match goal with
@@ -287,7 +287,6 @@ Lemma lvars_open_shift_from_under_gen j k x D :
 Proof.
   intros Hjk.
   apply set_eq. intros z.
-  rewrite !lvars_open_unfold.
   unfold set_swap, lvars_shift_from.
   rewrite !elem_of_map.
   split.
@@ -296,14 +295,14 @@ Proof.
     exists (swap (LVBound k) (LVFree x) v). split.
     + subst z u.
       pose proof (logic_var_open_shift_from_under_gen j k x v Hjk) as Hop.
-      rewrite !logic_var_open_unfold in Hop. exact Hop.
+      exact Hop.
     + apply elem_of_map. exists v. split; [reflexivity|exact Hv].
   - intros [u [Hz Hu]].
     apply elem_of_map in Hu as [v [Hu Hv]].
     exists (logic_var_shift_from j v). split.
     + subst z u.
       pose proof (logic_var_open_shift_from_under_gen j k x v Hjk) as Hop.
-      rewrite !logic_var_open_unfold in Hop. symmetry. exact Hop.
+      symmetry. exact Hop.
     + apply elem_of_map. exists v. split; [reflexivity|exact Hv].
 Qed.
 

@@ -1,4 +1,4 @@
-From ContextBase Require Import Prelude LogicVar.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore.
 
@@ -47,7 +47,7 @@ Lemma resA_swap_involutive (x y : K) (w : WfWorldAT) :
   resA_swap x y (resA_swap x y w) = w.
 Proof.
   apply wfworldA_ext. apply worldA_ext.
-  - simpl. apply set_swap_involutive.
+  - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ1 [[σ0 [Hσ0 Hswap0]] Hswap1]].
       rewrite <- Hswap1, <- Hswap0.
@@ -66,7 +66,7 @@ Lemma resA_swap_sym (x y : K) (w : WfWorldAT) :
   resA_swap x y w = resA_swap y x w.
 Proof.
   apply wfworldA_ext. apply worldA_ext.
-  - simpl. apply set_swap_sym.
+  - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
       change (@storeA_swap V K _ _ y x σ0 = σ).
@@ -83,7 +83,7 @@ Lemma resA_swap_conjugate a b x y (w : WfWorldAT) :
   resA_swap (swap a b x) (swap a b y) (resA_swap a b w).
 Proof.
   apply wfworldA_ext. apply worldA_ext.
-  - simpl. apply set_swap_conjugate.
+  - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
       exists (@storeA_swap V K _ _ a b σ1). split.
@@ -100,7 +100,7 @@ Lemma resA_swap_conjugate_inv a b x y (w : WfWorldAT) :
   resA_swap a b (resA_swap (swap a b x) (swap a b y) w).
 Proof.
   apply wfworldA_ext. apply worldA_ext.
-  - simpl. apply set_swap_conjugate_inv.
+  - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
       exists (@storeA_swap V K _ _ (swap a b x) (swap a b y) σ1).

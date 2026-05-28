@@ -3,6 +3,7 @@
     Totality and result extensions for core terms. *)
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
+From ContextBase Require Import BaseTactics.
 
 Section TermDenotation.
 
@@ -66,31 +67,28 @@ Proof.
       tm_lvars_at d (tm_swap_atom x y e) =
       lvars_swap x y (tm_lvars_at d e));
     cbn [value_swap_atom tm_swap_atom value_lvars_at tm_lvars_at]; intros;
-    try solve [rewrite lvars_swap_unfold, set_swap_empty; reflexivity].
-  - rewrite lvars_swap_unfold, set_swap_singleton.
+    try solve [rewrite set_swap_empty; reflexivity].
+  - rewrite set_swap_singleton.
     match goal with
     | |- {[LVFree (swap ?x ?y ?a)]} =
          {[swap (LVFree ?x) (LVFree ?y) (LVFree ?a)]} =>
-        change (swap (LVFree x) (LVFree y) (LVFree a))
-          with (logic_var_swap x y (LVFree a));
-        rewrite logic_var_swap_unfold, logic_var_free_swap;
+        rewrite logic_var_free_swap;
         reflexivity
     end.
   - unfold bvar_lvars_at.
     destruct decide.
-    + rewrite lvars_swap_unfold, set_swap_singleton.
-      rewrite swap_fresh by congruence. reflexivity.
-    + rewrite lvars_swap_unfold, set_swap_empty. reflexivity.
+    + better_base_solver.
+    + better_base_solver.
   - apply H.
   - apply H.
   - apply H.
   - rewrite H, H0.
-    rewrite !lvars_swap_unfold, set_swap_union. reflexivity.
+    better_base_solver.
   - apply H.
   - rewrite H, H0.
-    rewrite !lvars_swap_unfold, set_swap_union. reflexivity.
+    better_base_solver.
   - rewrite H, H0, H1.
-    rewrite !lvars_swap_unfold, !set_swap_union. set_solver.
+    better_base_solver.
 Qed.
 
 Lemma value_lvars_at_swap_atom x y v d :
@@ -192,20 +190,18 @@ Proof.
   - subst n.
     rewrite decide_True by lia.
     replace (d + k - d) with k by lia.
-    rewrite lvars_open_unfold, set_swap_singleton.
-    change (swap (LVBound k) (LVFree y) (LVBound k)) with
-      (logic_var_open k y (LVBound k)).
-    rewrite logic_var_open_unfold, swap_l.
+    rewrite set_swap_singleton.
+    unfold swap. repeat destruct decide; try congruence.
     reflexivity.
   - destruct (decide (d <= n)) as [Hdn|Hdn].
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_True by exact Hdn.
-	      rewrite lvars_open_unfold, set_swap_singleton.
-	      rewrite swap_fresh.
-	      * reflexivity.
+      rewrite set_swap_singleton.
+      rewrite swap_fresh.
+      * reflexivity.
       * intros Heq. inversion Heq. lia.
       * discriminate.
     + cbn [value_lvars_at]. unfold bvar_lvars_at. rewrite decide_False by exact Hdn.
-      rewrite lvars_open_unfold, set_swap_empty. reflexivity.
+	      rewrite set_swap_empty. reflexivity.
 Qed.
 
 Lemma value_tm_lvars_at_open_mutual :
@@ -219,8 +215,8 @@ Lemma value_tm_lvars_at_open_mutual :
       lvars_open k y (tm_lvars_at d e)).
 Proof.
   apply value_tm_mutind; cbn [open_value open_tm value_lvars_at tm_lvars_at];
-    intros; try solve [rewrite lvars_open_unfold, set_swap_empty; reflexivity].
-  - rewrite lvars_open_unfold. symmetry. apply set_swap_fresh.
+    intros; try solve [rewrite set_swap_empty; reflexivity].
+  - symmetry. apply set_swap_fresh.
     + set_solver.
     + rewrite lvars_fv_singleton_free in H. set_solver.
   - apply bvar_lvars_at_open.
@@ -232,15 +228,15 @@ Proof.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     replace (S (d + k)) with (S d + k) by lia.
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- set_swap_union. reflexivity.
+    rewrite <- set_swap_union. reflexivity.
   - apply H. exact H0.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- set_swap_union. reflexivity.
+    rewrite <- set_swap_union. reflexivity.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
-    rewrite !lvars_open_unfold, <- !set_swap_union. set_solver.
+    rewrite <- !set_swap_union. set_solver.
 Qed.
 
 Lemma value_lvars_at_open v d k y :
@@ -556,7 +552,7 @@ Proof.
       rewrite Hrestrict. reflexivity.
     + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
         None) as Hrestrict.
-      { apply storeA_restrict_lookup_none_l. exact Hlook. }
+      { better_store_solver. }
       rewrite Hrestrict. reflexivity.
   - 
     rewrite !lstore_bound_part_lookup.
@@ -574,7 +570,7 @@ Proof.
       rewrite Hrestrict. reflexivity.
     + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
         None) as Hrestrict.
-      { apply storeA_restrict_lookup_none_l. exact Hlook. }
+      { better_store_solver. }
       rewrite Hrestrict. reflexivity.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
@@ -615,7 +611,7 @@ Lemma lstore_bound_part_empty_of_lc σ :
 Proof.
   intros Hlc.
   apply map_eq. intros k.
-  rewrite ContextStore.StoreInterfaceCore.lstore_bound_part_lookup, lookup_empty.
+  rewrite ContextStore.StoreInterface.lstore_bound_part_lookup, lookup_empty.
   apply eq_None_not_Some. intros [v Hlookup].
   assert (Hbound : LVBound k ∈ dom (σ : gmap logic_var value)).
   { rewrite elem_of_dom. eauto. }

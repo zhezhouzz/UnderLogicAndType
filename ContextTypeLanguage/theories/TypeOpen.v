@@ -7,6 +7,7 @@
     lvar-keyed type environment projection machinery stays in [Env.v]. *)
 
 From ContextTypeLanguage Require Export MultiOpen.
+From ContextBase Require Import BaseTactics.
 
 Definition open_cty_env (η : gmap nat atom) (τ : context_ty) : context_ty :=
   map_fold (fun k x acc => cty_open k x acc) τ η.
@@ -262,7 +263,7 @@ Lemma open_cty_env_arrow η τx τ :
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros τx τ _. rewrite open_env_lift_empty, !open_cty_env_empty.
+  - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
     reflexivity.
   - intros τx τ Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -273,8 +274,7 @@ Proof.
     rewrite open_cty_env_insert_fresh by assumption.
     rewrite open_env_lift_insert.
     rewrite open_cty_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -286,7 +286,7 @@ Lemma open_cty_env_wand η τx τ :
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros τx τ _. rewrite open_env_lift_empty, !open_cty_env_empty.
+  - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
     reflexivity.
   - intros τx τ Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -297,8 +297,7 @@ Proof.
     rewrite open_cty_env_insert_fresh by assumption.
     rewrite open_env_lift_insert.
     rewrite open_cty_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -310,7 +309,7 @@ Lemma open_cty_env_over η b q :
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _. rewrite open_env_lift_empty, open_cty_env_empty, qual_open_env_empty.
+  - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
     reflexivity.
   - intros q Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -320,8 +319,7 @@ Proof.
     cbn [cty_open].
     rewrite open_env_lift_insert.
     rewrite qual_open_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -333,7 +331,7 @@ Lemma open_cty_env_under η b q :
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _. rewrite open_env_lift_empty, open_cty_env_empty, qual_open_env_empty.
+  - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
     reflexivity.
   - intros q Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -343,8 +341,7 @@ Proof.
     cbn [cty_open].
     rewrite open_env_lift_insert.
     rewrite qual_open_env_insert_fresh
-      by (try apply open_env_lift_lookup_none;
-          try apply open_env_avoids_atom_lift;
+      by (try better_base_solver;
           try apply open_env_values_inj_lift; assumption).
     reflexivity.
 Qed.
@@ -365,7 +362,7 @@ Lemma qual_open_env_vars η q :
 Proof.
   revert q.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _. rewrite qual_open_env_empty, lvars_open_env_empty. reflexivity.
+  - intros q _. rewrite qual_open_env_empty. better_base_solver.
   - intros q Hfresh.
     pose proof (IH q ltac:(eapply open_env_fresh_for_lvars_insert_tail; eassumption))
       as HIH.
@@ -458,7 +455,7 @@ Proof.
         (cty_shift 0 τ) ((kmap S η)) ≡τv
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
-  - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
+  - intros _. rewrite kmap_empty, !map_fold_empty. reflexivity.
   - intros k x η' Hfresh Hfold IH Hinj.
     pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
       as [Hinjη Havoid].
@@ -470,10 +467,10 @@ Proof.
     transitivity
       (cty_open (S k) x
         (open_cty_env (kmap S η') (cty_shift 0 τ))).
-    { apply open_cty_env_insert_fresh_vars_equiv.
-      - apply open_env_lift_lookup_none. exact Hfresh.
-      - apply open_env_avoids_atom_lift. exact Havoid.
-      - apply open_env_values_inj_lift. exact Hinjη. }
+	    { apply open_cty_env_insert_fresh_vars_equiv.
+	      - better_base_solver.
+	      - better_base_solver.
+	      - apply open_env_values_inj_lift. exact Hinjη. }
     change (open_cty_env (kmap S η') (cty_shift 0 τ))
       with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
         (cty_shift 0 τ) (kmap S η')).
@@ -504,7 +501,7 @@ Proof.
         (cty_shift 0 τ) ((kmap S η)) =
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
-  - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
+  - intros _. rewrite kmap_empty, !map_fold_empty. reflexivity.
   - intros k x η' Hfresh Hfold IH Hinj.
     pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
       as [Hinjη Havoid].
@@ -513,9 +510,9 @@ Proof.
       (cty_shift 0 τ) (<[S k:=x]> (kmap S η')))
       with (open_cty_env (<[S k := x]> (kmap S η'))
         (cty_shift 0 τ)).
-    rewrite open_cty_env_insert_fresh.
-    2:{ apply open_env_lift_lookup_none. exact Hfresh. }
-    2:{ apply open_env_avoids_atom_lift. exact Havoid. }
+	    rewrite open_cty_env_insert_fresh.
+	    2:{ better_base_solver. }
+	    2:{ better_base_solver. }
     2:{ apply open_env_values_inj_lift. exact Hinjη. }
     change (open_cty_env (kmap S η') (cty_shift 0 τ))
       with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)

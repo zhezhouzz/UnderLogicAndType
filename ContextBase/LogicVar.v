@@ -49,32 +49,28 @@ Definition logic_var_open_onesided (k : nat) (x : atom) (v : logic_var) : logic_
   | LVFree y => LVFree y
   end.
 
-Definition logic_var_open (k : nat) (x : atom) : logic_var → logic_var :=
-  swap (LVBound k) (LVFree x).
+Notation logic_var_open :=
+  (fun k x => swap (LVBound k) (LVFree x)) (only parsing).
 
-Definition lvars_open (k : nat) (x : atom) (D : lvset) : lvset :=
-  set_swap (LVBound k) (LVFree x) D.
-Definition lvars_open_onesided (k : nat) (x : atom) (D : lvset) : lvset :=
-  set_map (logic_var_open_onesided k x) D.
+Notation lvars_open :=
+  (fun k x => set_swap (LVBound k) (LVFree x)) (only parsing).
+
+Notation lvars_open_onesided :=
+  (fun k x => set_map (logic_var_open_onesided k x)) (only parsing).
 
 (** ** Shifts, locality, and atom projections *)
-
-Definition logic_var_shift (v : logic_var) : logic_var :=
-  match v with
-  | LVBound k => LVBound (S k)
-  | LVFree x => LVFree x
-  end.
 
 Definition logic_var_shift_by (k : nat) (v : logic_var) : logic_var :=
   match v with
   | LVBound n => LVBound (k + n)
   | LVFree x => LVFree x
   end.
-Definition lvars_shift (D : lvset) : lvset :=
-  set_map logic_var_shift D.
 
 Definition lvars_shift_by (k : nat) (D : lvset) : lvset :=
   set_map (logic_var_shift_by k) D.
+
+Notation logic_var_shift := (logic_var_shift_by 1) (only parsing).
+Notation lvars_shift := (lvars_shift_by 1) (only parsing).
 
 Definition lc_logic_var_key (v : logic_var) : Prop :=
   match v with
@@ -91,11 +87,11 @@ Definition logic_var_to_atom (η : gmap nat atom) (v : logic_var) : option atom 
   | LVFree x => Some x
   end.
 
-Definition logic_var_swap (x y : atom) : logic_var → logic_var :=
-  swap (LVFree x) (LVFree y).
+Notation logic_var_swap :=
+  (fun x y => swap (LVFree x) (LVFree y)) (only parsing).
 
-Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
-  set_swap (LVFree x) (LVFree y) D.
+Notation lvars_swap :=
+  (fun x y => set_swap (LVFree x) (LVFree y)) (only parsing).
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 
@@ -157,30 +153,22 @@ Qed.
 
 (** ** Opening lemmas *)
 
-Lemma logic_var_open_unfold k x v :
-  logic_var_open k x v = swap (LVBound k) (LVFree x) v.
-Proof. reflexivity. Qed.
-
-Lemma lvars_open_unfold k x D :
-  lvars_open k x D = set_swap (LVBound k) (LVFree x) D.
-Proof. reflexivity. Qed.
-
 Lemma logic_var_open_involutive k x v :
   logic_var_open k x (logic_var_open k x v) = v.
 Proof.
-  unfold logic_var_open. apply swap_involutive.
+  apply swap_involutive.
 Qed.
 
 Lemma lvars_open_involutive k x D :
   lvars_open k x (lvars_open k x D) = D.
 Proof.
-  unfold lvars_open. apply set_swap_involutive.
+  apply set_swap_involutive.
 Qed.
 
 Lemma lvars_open_elem_open k x v D :
   logic_var_open k x v ∈ lvars_open k x D <-> v ∈ D.
 Proof.
-  rewrite lvars_open_unfold. rewrite elem_of_set_swap.
+  rewrite elem_of_set_swap.
   change (swap (LVBound k) (LVFree x) (logic_var_open k x v))
     with (logic_var_open k x (logic_var_open k x v)).
   rewrite logic_var_open_involutive. reflexivity.
@@ -193,9 +181,8 @@ Proof.
   - apply lvars_open_elem_open with (k := k) (x := x).
     apply Hsub.
     apply lvars_open_elem_open. exact Hv.
-  - rewrite lvars_open_unfold in Hv.
-    apply elem_of_set_swap in Hv.
-    rewrite lvars_open_unfold. apply elem_of_set_swap.
+  - apply elem_of_set_swap in Hv.
+    apply elem_of_set_swap.
     apply Hsub. exact Hv.
 Qed.
 
@@ -203,17 +190,14 @@ Lemma lvars_open_mono k x (D E : lvset) :
   D ⊆ E ->
   lvars_open k x D ⊆ lvars_open k x E.
 Proof.
-  intros HDE v Hv.
-  unfold lvars_open in *.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  apply elem_of_map. exists u. split; [reflexivity|].
-  exact (HDE _ Hu).
+  intros HDE.
+  apply lvars_open_subseteq_iff. exact HDE.
 Qed.
 
 Lemma lvars_open_union k x D E :
   lvars_open k x (D ∪ E) = lvars_open k x D ∪ lvars_open k x E.
 Proof.
-  rewrite !lvars_open_unfold, set_swap_union. reflexivity.
+  apply set_map_union_L.
 Qed.
 
 Lemma logic_var_open_commute_fresh i j x y v :
@@ -224,7 +208,7 @@ Lemma logic_var_open_commute_fresh i j x y v :
 Proof.
   intros Hij Hxy.
   destruct v as [n|a];
-    unfold logic_var_open, swap;
+    unfold swap;
     repeat destruct decide; subst; try congruence; reflexivity.
 Qed.
 
@@ -236,12 +220,19 @@ Lemma lvars_open_commute_fresh i j x y D :
 Proof.
   intros Hij Hxy.
   apply set_eq. intros v.
-  rewrite !lvars_open_unfold, !elem_of_set_swap.
   change
-    (logic_var_open j y (logic_var_open i x v) ∈ D <->
-     logic_var_open i x (logic_var_open j y v) ∈ D).
-  rewrite (logic_var_open_commute_fresh i j x y v Hij Hxy).
+    (v ∈ set_swap (LVBound i) (LVFree x)
+       (set_swap (LVBound j) (LVFree y) D) <->
+     v ∈ set_swap (LVBound j) (LVFree y)
+       (set_swap (LVBound i) (LVFree x) D)).
+  rewrite !set_swap_elem.
+  change
+    (swap (LVBound j) (LVFree y) (swap (LVBound i) (LVFree x) v) ∈ D <->
+     swap (LVBound i) (LVFree x) (swap (LVBound j) (LVFree y) v) ∈ D).
+  replace (swap (LVBound j) (LVFree y) (swap (LVBound i) (LVFree x) v))
+    with (swap (LVBound i) (LVFree x) (swap (LVBound j) (LVFree y) v)).
   reflexivity.
+  exact (logic_var_open_commute_fresh i j x y v Hij Hxy).
 Qed.
 
 Lemma lvars_open_fresh_index k x D :
@@ -250,7 +241,6 @@ Lemma lvars_open_fresh_index k x D :
   lvars_open k x D = D.
 Proof.
   intros Hk Hx.
-  rewrite lvars_open_unfold.
   apply set_swap_fresh.
   - intros Hbad. apply Hk. rewrite lvars_bv_elem. exact Hbad.
   - intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
@@ -260,7 +250,6 @@ Lemma lvars_open_difference_bound k x D :
   lvars_open k x (D ∖ {[LVBound k]}) =
   lvars_open k x D ∖ {[LVFree x]}.
 Proof.
-  rewrite !lvars_open_unfold.
   apply set_swap_difference_l.
 Qed.
 
@@ -275,7 +264,7 @@ Proof.
     assert (n ∈ lvars_bv (lvars_open k x D)) as Hopen.
     {
       rewrite lvars_bv_elem in Hn |- *.
-      rewrite lvars_open_unfold, set_swap_elem.
+      rewrite set_swap_elem.
       rewrite swap_fresh by congruence. exact Hn.
     }
     apply Hsub in Hopen.
@@ -289,7 +278,7 @@ Proof.
   intros y Hy.
   apply elem_of_difference in Hy as [HyD Hyx].
   apply lvars_fv_elem.
-  rewrite lvars_open_unfold. apply elem_of_set_swap.
+  apply elem_of_set_swap.
   rewrite elem_of_singleton in Hyx.
   rewrite swap_fresh by congruence.
   apply lvars_fv_elem. exact HyD.
@@ -308,13 +297,13 @@ Qed.
 Lemma logic_var_open_sym k x v :
   logic_var_open k x v = swap (LVFree x) (LVBound k) v.
 Proof.
-  unfold logic_var_open. apply swap_sym.
+  apply swap_sym.
 Qed.
 
 Lemma lvars_open_sym k x D :
   lvars_open k x D = set_swap (LVFree x) (LVBound k) D.
 Proof.
-  unfold lvars_open. apply set_swap_sym.
+  apply set_swap_sym.
 Qed.
 
 Lemma logic_var_open_onesided_swap_fresh k x v :
@@ -322,10 +311,10 @@ Lemma logic_var_open_onesided_swap_fresh k x v :
   logic_var_open_onesided k x v = logic_var_open k x v.
 Proof.
   destruct v as [j|y]; simpl.
-  - unfold logic_var_open, swap.
+  - unfold swap.
     repeat destruct decide; congruence.
   - intros Hfresh.
-    unfold logic_var_open, swap.
+    unfold swap.
     rewrite not_elem_of_singleton in Hfresh.
     repeat destruct decide; congruence.
 Qed.
@@ -335,8 +324,6 @@ Lemma lvars_open_onesided_swap_fresh k x D :
 Proof.
   intros Hfresh.
   apply set_eq. intros v.
-  unfold lvars_open_onesided.
-  rewrite lvars_open_unfold.
   unfold set_swap.
   rewrite !elem_of_map.
   split.
@@ -365,24 +352,16 @@ Qed.
   key_shift_inj := logic_var_shift_by_inj
 }.
 
-Lemma logic_var_swap_unfold x y v :
-  logic_var_swap x y v = swap (LVFree x) (LVFree y) v.
-Proof. reflexivity. Qed.
-
-Lemma lvars_swap_unfold x y D :
-  lvars_swap x y D = set_swap (LVFree x) (LVFree y) D.
-Proof. reflexivity. Qed.
-
 Lemma logic_var_swap_sym x y v :
   logic_var_swap x y v = logic_var_swap y x v.
 Proof.
-  unfold logic_var_swap. apply swap_sym.
+  apply swap_sym.
 Qed.
 
 Lemma lvars_swap_sym x y D :
   lvars_swap x y D = lvars_swap y x D.
 Proof.
-  unfold lvars_swap. apply set_swap_sym.
+  apply set_swap_sym.
 Qed.
 
 Lemma logic_var_free_swap x y z :
@@ -395,10 +374,13 @@ Lemma lvars_fv_swap x y (D : lvset) :
   lvars_fv (lvars_swap x y D) = set_swap x y (lvars_fv D).
 Proof.
   apply set_eq. intros z.
-  rewrite lvars_fv_elem, elem_of_set_swap, lvars_fv_elem.
-  change (LVFree z ∈ set_swap (LVFree x) (LVFree y) D ↔
-    LVFree (swap x y z) ∈ D).
-  rewrite set_swap_elem, logic_var_free_swap.
+  change (z ∈ lvars_fv (set_swap (LVFree x) (LVFree y) D) <->
+    z ∈ set_swap x y (lvars_fv D)).
+  rewrite lvars_fv_elem.
+  rewrite (set_swap_elem (LVFree x) (LVFree y) (LVFree z) D).
+  rewrite (set_swap_elem x y z (lvars_fv D)).
+  rewrite lvars_fv_elem.
+  rewrite logic_var_free_swap.
   reflexivity.
 Qed.
 
@@ -537,7 +519,7 @@ Qed.
 Lemma logic_var_swap_involutive x y v :
   logic_var_swap x y (logic_var_swap x y v) = v.
 Proof.
-  unfold logic_var_swap. apply swap_involutive.
+  apply swap_involutive.
 Qed.
 
 Lemma lvars_fv_open_subset k x (D : lvset) :
