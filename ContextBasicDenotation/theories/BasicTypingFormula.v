@@ -149,12 +149,12 @@ Proof.
   unfold lty_env_open_lvars, lvar_store_open_lvars, lty_env_swap, lvar_store_swap.
   rewrite (storeA_rekey_compose_inj_on
     (logic_var_open_env η) (logic_var_swap x y) Σ).
-  2:{ intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab. }
+  2:{ intros a b _ _ Hab. eapply swap_inj. exact Hab. }
   2:{ apply open_env_fresh_for_lvars_inj_on. exact Hfresh. }
   rewrite (storeA_rekey_compose_inj_on
     (logic_var_swap x y) (logic_var_open_env (open_env_atom_swap x y η)) Σ).
   2:{ apply open_env_fresh_for_lvars_inj_on. exact HfreshΣ. }
-  2:{ intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab. }
+  2:{ intros a b _ _ Hab. eapply swap_inj. exact Hab. }
   apply storeA_rekey_ext_on_dom. intros v _.
   apply logic_var_open_env_atom_swap.
 Qed.
@@ -557,7 +557,7 @@ Proof.
     apply logic_var_open_env_insert_delete_swap_back_on with
       (D := (dom Σ : lvset)); assumption.
   - apply open_env_fresh_for_lvars_inj_on. exact Hfresh_insert_dom.
-  - intros a b _ _ Hab. eapply logic_var_swap_inj. exact Hab.
+  - intros a b _ _ Hab. eapply swap_inj. exact Hab.
 Qed.
 
 Lemma basic_typing_open_env_swap_back
@@ -605,10 +605,7 @@ Proof.
   - apply storeA_rekey_ext_on_dom. intros v Hv.
     destruct v as [k|x]; cbn [logic_var_open_env]; [|reflexivity].
     exfalso.
-    change (lvars_bv (dom (Σ : gmap logic_var ty)) = ∅) in Hclosed.
-    assert (k ∈ lvars_bv (dom (Σ : gmap logic_var ty))).
-    { rewrite lvars_bv_elem. exact Hv. }
-    rewrite Hclosed in H. set_solver.
+    exact (Hclosed (LVBound k) Hv).
   - exact Hid.
 Qed.
 
@@ -861,11 +858,11 @@ Lemma lty_env_swap_open_one x y k Σ :
 Proof.
   unfold lty_env_swap, lvar_store_swap, lty_env_open_one, lvar_store_open_one.
   rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
-  2:{ apply logic_var_swap_inj. }
-  2:{ intros a b H. eapply logic_var_open_inj_fresh. exact H. }
+  2:{ apply swap_inj. }
+  2:{ intros a b H. eapply swap_inj. exact H. }
   rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
-  2:{ intros a b H. eapply logic_var_open_inj_fresh. exact H. }
-  2:{ apply logic_var_swap_inj. }
+  2:{ intros a b H. eapply swap_inj. exact H. }
+  2:{ apply swap_inj. }
   apply storeA_rekey_ext_on_dom. intros v _.
   apply logic_var_swap_open_one.
 Qed.
@@ -1597,7 +1594,7 @@ Proof.
   split; [exact Hlc|].
   split; [exact Hsub|].
   apply basic_tm_has_ltype_of_atom_typing; [|exact Hty].
-  apply lc_lvars_no_bv. exact Hlc.
+  exact Hlc.
 Qed.
 
 End BasicTypingFormula.

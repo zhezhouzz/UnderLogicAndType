@@ -1520,11 +1520,10 @@ Proof.
       with (X := denot_relevant_lvars (cty_open 0 y τr)
         (tapp_tm (e2 ^^ x) (vfvar y))).
     - reflexivity.
-	    - apply wand_body_relevant_env_agree_from_basic_context_ty.
-	      + apply (proj2 (lc_lvars_no_bv _)).
-	        apply lty_env_closed_insert_free. exact HΣ.
-	      + exact Hy_insert.
-	      + exact Hbasic_src_rel.
+    - apply wand_body_relevant_env_agree_from_basic_context_ty.
+      + apply lty_env_closed_insert_free. exact HΣ.
+      + exact Hy_insert.
+      + exact Hbasic_src_rel.
       + apply tm_lvars_tapp_tm_fvar_without_arg.
     - change (w ⊨ denot_ty_lvar_gas gas
         (<[LVFree y := erase_ty τx]>
@@ -3185,7 +3184,7 @@ Proof.
     exfalso. apply Hfresh. apply elem_of_union_r. exact Hv.
   }
   assert (HlcΣ : lc_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)).
-  { apply (proj2 (lc_lvars_no_bv _)). exact HΣ. }
+  { exact HΣ. }
   assert (HyΣ : LVFree y ∉ (dom (Σ : gmap logic_var ty) : gset logic_var)).
   {
     intros HyΣ.

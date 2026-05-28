@@ -1027,23 +1027,16 @@ Lemma lty_env_restrict_lvars_closed Σ D :
 Proof.
   intros Hclosed.
   unfold lty_env_closed in *.
-  apply set_eq. intros k.
-  rewrite elem_of_empty.
-  split; [|set_solver].
-  intros Hk.
-  rewrite lvars_bv_elem in Hk.
-  unfold lty_env_restrict_lvars in Hk.
-  change (LVBound k ∈ dom
-    (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty)) in Hk.
+  intros v Hv.
+  unfold lty_env_restrict_lvars in Hv.
+  change (v ∈ dom
+    (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty)) in Hv.
   pose proof (storeA_restrict_dom (Σ : lty_env) D) as Hdom_restrict.
   change (dom (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty) =
     dom (Σ : gmap logic_var ty) ∩ D) in Hdom_restrict.
-  rewrite Hdom_restrict in Hk.
-  apply elem_of_intersection in Hk as [Hk _].
-  assert (k ∈ lvars_bv (dom (Σ : gmap logic_var ty))).
-  { rewrite lvars_bv_elem. exact Hk. }
-  unfold lvar_store_closed in Hclosed.
-  rewrite Hclosed in H. set_solver.
+  rewrite Hdom_restrict in Hv.
+  apply elem_of_intersection in Hv as [Hv _].
+  exact (Hclosed v Hv).
 Qed.
 
 Lemma denot_relevant_env_closed Σ τ e :
@@ -1336,7 +1329,8 @@ Proof.
     lvars_at_depth d (dom Σ)).
   rewrite storeA_restrict_dom.
   transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. set_solver.
+  - apply lvars_at_depth_mono. intros v Hv.
+    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
   - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
 Qed.
 
@@ -1426,7 +1420,8 @@ Proof.
     lvars_at_depth d (dom Σ)).
   rewrite storeA_restrict_dom.
   transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. set_solver.
+  - apply lvars_at_depth_mono. intros v Hv.
+    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
   - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
 Qed.
 
