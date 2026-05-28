@@ -1,7 +1,7 @@
 (** * Generic stores: partial key projection *)
 
 From ContextBase Require Import Prelude LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
-From ContextStore Require Import StoreCore StoreKeyAction.
+From ContextStore Require Import StoreCore.
 
 Notation lvar_to_atom := logic_var_to_atom (only parsing).
 

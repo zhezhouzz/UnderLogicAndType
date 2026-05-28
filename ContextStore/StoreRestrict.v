@@ -1,7 +1,347 @@
-(** * Generic stores: restriction/union lemmas *)
+(** * Generic stores: restriction lemmas *)
 
-From ContextBase Require Import Prelude LogicVar.
-From ContextStore Require Import StoreCore StoreKeyAction StoreRestrictCore.
+From ContextBase Require Import Prelude LogicVar BaseTactics.
+From ContextStore Require Import StoreCore.
+
+Section AbstractStoreRestrict.
+
+Context {V : Type} `{ValueSig V}.
+
+Lemma storeA_restrict_dom {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) :
+  dom (@storeA_restrict V K _ _ s X) = dom s ∩ X.
+Proof.
+  unfold storeA_restrict. apply map_restrict_dom.
+Qed.
+
+Definition storeA_on_restrict {K : Type} `{Countable K}
+    (D' : gset K) {D : gset K} (s : StoreAOn (V:=V) D)
+    (Hsub : D' ⊆ D) : StoreAOn (V:=V) D'.
+Proof.
+  destruct s as [s Hdom].
+  refine {| storeAO_store := storeA_restrict s D' |}.
+  rewrite storeA_restrict_dom, Hdom. better_set_solver.
+Defined.
+
+Lemma storeA_restrict_lookup {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) (z : K) :
+  ((storeA_restrict s X : gmap K V) !! z) =
+  if decide (z ∈ X) then ((s : gmap K V) !! z) else None.
+Proof.
+  unfold storeA_restrict, map_restrict.
+  destruct (decide (z ∈ X)) as [Hz|Hz].
+  - destruct ((s : gmap K V) !! z) eqn:Hs.
+    + apply map_lookup_filter_Some_2; [exact Hs | exact Hz].
+    + apply map_lookup_filter_None. left. exact Hs.
+  - apply map_lookup_filter_None. right. intros v _ Hin. contradiction.
+Qed.
+
+Lemma storeA_restrict_lookup_some_2 {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) (x : K) (y : V) :
+  ((s : gmap K V) !! x) = Some y →
+  x ∈ X →
+  ((storeA_restrict s X : gmap K V) !! x) = Some y.
+Proof.
+  intros Hlookup Hin. rewrite storeA_restrict_lookup.
+  destruct (decide (x ∈ X)) as [_|Hnot]; [exact Hlookup|contradiction].
+Qed.
+
+Lemma storeA_restrict_lookup_some {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) (x : K) (y : V) :
+  ((storeA_restrict s X : gmap K V) !! x) = Some y →
+  x ∈ X ∧ ((s : gmap K V) !! x) = Some y.
+Proof.
+  rewrite storeA_restrict_lookup.
+  destruct (decide (x ∈ X)); intros Hlookup; [auto | discriminate].
+Qed.
+
+Lemma storeA_restrict_lookup_none_l {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) (z : K) :
+  ((s : gmap K V) !! z) = None →
+  ((storeA_restrict s X : gmap K V) !! z) = None.
+Proof.
+  intros Hlook. rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ X)); exact Hlook || reflexivity.
+Qed.
+
+Lemma storeA_restrict_lookup_none_r {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) (z : K) :
+  z ∉ X →
+  ((storeA_restrict s X : gmap K V) !! z) = None.
+Proof.
+  intros Hnot. rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ X)); [contradiction | reflexivity].
+Qed.
+
+Lemma storeA_restrict_dom_subset {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) :
+  dom (storeA_restrict s X : gmap K V) ⊆ X.
+Proof.
+  change (dom (@storeA_restrict V K _ _ s X) ⊆ X).
+  rewrite storeA_restrict_dom. better_set_solver.
+Qed.
+
+
+Lemma storeA_restrict_rekey {K : Type} `{Countable K}
+    (f : K → K) (Hf : Inj (=) (=) f) (s : StoreA K) (X : gset K) :
+  (storeA_restrict (storeA_rekey f s) (set_map f X) : gmap K V) =
+  storeA_rekey f (storeA_restrict s X).
+Proof.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (storeA_rekey f s) (set_map f X) : gmap K V) !! z =
+    (storeA_rekey f (storeA_restrict s X) : gmap K V) !! z).
+  rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ set_map f X)) as [Hz|Hz].
+  - apply elem_of_map in Hz as [u [-> Hu]].
+    rewrite !storeA_rekey_lookup by exact Hf.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (u ∈ X)) as [_|Hnot]; [reflexivity | contradiction].
+  - transitivity (@None V).
+    + reflexivity.
+    + symmetry. apply not_elem_of_dom. intros Hdom.
+      change (z ∈ dom (storeA_rekey f (storeA_restrict s X) : gmap K V)) in Hdom.
+      rewrite storeA_rekey_dom in Hdom by exact Hf.
+      apply elem_of_map in Hdom as [u [-> Hu]].
+      apply storeA_restrict_dom_subset in Hu.
+      apply Hz. apply elem_of_map. exists u. split; [reflexivity | exact Hu].
+Qed.
+
+
+Lemma storeA_restrict_empty {K : Type} `{Countable K} X :
+  storeA_restrict (∅ : StoreA K) X = (∅ : gmap K V).
+Proof.
+  unfold storeA_restrict. apply map_restrict_idemp. better_set_solver.
+Qed.
+
+
+Lemma storeA_restrict_empty_set {K : Type} `{Countable K} (s : StoreA K) :
+  storeA_restrict s ∅ = (∅ : gmap K V).
+Proof.
+  apply storeA_map_eq. intros z.
+  change ((map_restrict V (s : gmap K V) (∅ : gset K)) !! z =
+    (∅ : gmap K V) !! z).
+  rewrite (lookup_empty (M:=gmap K) (A:=V)).
+  unfold map_restrict.
+  apply map_lookup_filter_None. right. intros v _ Hin. better_set_solver.
+Qed.
+
+
+Lemma storeA_restrict_idemp {K : Type} `{Countable K}
+    (s : StoreA K) X :
+  dom (s : gmap K V) ⊆ X → storeA_restrict s X = (s : gmap K V).
+Proof.
+  unfold storeA_restrict. apply map_restrict_idemp.
+Qed.
+
+
+Lemma storeA_restrict_restrict {K : Type} `{Countable K}
+    (s : StoreA K) X Y :
+  storeA_restrict (storeA_restrict s X) Y = (storeA_restrict s (X ∩ Y) : gmap K V).
+Proof.
+  unfold storeA_restrict. apply map_restrict_restrict.
+Qed.
+
+
+Lemma storeA_restrict_twice_same {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) :
+  storeA_restrict (storeA_restrict s X) X = (storeA_restrict s X : gmap K V).
+Proof.
+  rewrite storeA_restrict_restrict.
+  replace (X ∩ X) with X by better_set_solver.
+  reflexivity.
+Qed.
+
+
+Lemma storeA_restrict_twice_subset {K : Type} `{Countable K}
+    (s : StoreA K) (X Y : gset K) :
+  Y ⊆ X →
+  storeA_restrict (storeA_restrict s X) Y = (storeA_restrict s Y : gmap K V).
+Proof.
+  intros HYX.
+  rewrite storeA_restrict_restrict.
+  replace (X ∩ Y) with Y by better_set_solver.
+  reflexivity.
+Qed.
+
+
+Lemma storeA_restrict_comm {K : Type} `{Countable K}
+    (s : StoreA K) (X Y : gset K) :
+  storeA_restrict (storeA_restrict s X) Y =
+  (storeA_restrict (storeA_restrict s Y) X : gmap K V).
+Proof.
+  rewrite !storeA_restrict_restrict.
+  replace (X ∩ Y) with (Y ∩ X) by better_set_solver.
+  reflexivity.
+Qed.
+
+
+Lemma storeA_restrict_idemp_eq {K : Type} `{Countable K}
+    (s : StoreA K) (X : gset K) :
+  dom (s : gmap K V) = X →
+  storeA_restrict s X = (s : gmap K V).
+Proof.
+  intros Hdom. apply storeA_restrict_idemp. better_set_solver.
+Qed.
+
+
+Lemma storeA_restrict_insert_in {K : Type} `{Countable K}
+    (s : StoreA K) X x v :
+  x ∈ X →
+  storeA_restrict (<[x := v]> s) X =
+  <[x := v]> (storeA_restrict s X : gmap K V).
+Proof.
+  unfold storeA_restrict. apply map_restrict_insert_in.
+Qed.
+
+
+Lemma storeA_restrict_insert_notin {K : Type} `{Countable K}
+    (s : StoreA K) X x v :
+  x ∉ X →
+  storeA_restrict (<[x := v]> s) X =
+  (storeA_restrict s X : gmap K V).
+Proof.
+  unfold storeA_restrict. apply map_restrict_insert_notin.
+Qed.
+
+Lemma storeA_restrict_eq_mono {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X Y : gset K) :
+  X ⊆ Y →
+  (storeA_restrict s1 Y : gmap K V) = storeA_restrict s2 Y →
+  (storeA_restrict s1 X : gmap K V) = storeA_restrict s2 X.
+Proof.
+  intros HXY HY.
+  apply storeA_map_eq. intros x.
+  change ((storeA_restrict s1 X : gmap K V) !! x =
+    (storeA_restrict s2 X : gmap K V) !! x).
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (x ∈ X)) as [Hx|Hx]; [|reflexivity].
+  pose proof (f_equal (fun s : gmap K V => s !! x) HY) as HeqX.
+  rewrite !storeA_restrict_lookup in HeqX.
+  destruct (decide (x ∈ Y)) as [_|Hbad]; [exact HeqX | better_set_solver].
+Qed.
+
+Lemma storeA_restrict_swap_fresh {K : Type} `{Countable K} 
+    (x y : K) (s : StoreA K) (X : gset K) :
+  x ∉ X →
+  y ∉ X →
+  (storeA_restrict (storeA_swap x y s) X : gmap K V) =
+  storeA_restrict s X.
+Proof.
+  intros Hx Hy. apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ X)) as [Hz | Hz].
+  - destruct ((s : gmap K V) !! z) as [v|] eqn:Hs.
+    + transitivity (Some v).
+      * apply storeA_restrict_lookup_some_2; [| exact Hz].
+        rewrite storeA_swap_lookup_inv.
+        base_swap_normalize.
+        exact Hs.
+      * symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].
+    + transitivity (@None V).
+      * apply storeA_restrict_lookup_none_l.
+        rewrite storeA_swap_lookup_inv.
+        base_swap_normalize. exact Hs.
+      * symmetry. by apply storeA_restrict_lookup_none_l.
+  - transitivity (@None V).
+    + by apply storeA_restrict_lookup_none_r.
+    + symmetry. by apply storeA_restrict_lookup_none_r.
+Qed.
+
+
+Lemma storeA_restrict_empty_union_elements {K : Type} `{Countable K}
+    (σ : StoreA K) (X : gset K) :
+  (storeA_restrict
+    (@union (gmap K V) _ (∅ : gmap K V)
+      (storeA_restrict σ (list_to_set (elements X) : gset K)))
+    X : gmap K V) =
+  storeA_restrict σ X.
+Proof.
+  replace (@union (gmap K V) _ (∅ : gmap K V)
+      (storeA_restrict σ (list_to_set (elements X) : gset K)))
+    with (storeA_restrict σ (list_to_set (elements X) : gset K) : gmap K V)
+    by (symmetry; apply (map_empty_union (M:=gmap K) (A:=V))).
+  rewrite storeA_restrict_restrict.
+  replace ((list_to_set (elements X) : gset K) ∩ X) with X.
+  - reflexivity.
+  - apply set_eq. intros z.
+    rewrite elem_of_intersection, elem_of_list_to_set, elem_of_elements.
+    better_set_solver.
+Qed.
+
+Lemma storeA_restrict_lookup_transport {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) (x : K) (v : V) :
+  x ∈ X →
+  (storeA_restrict s1 X : gmap K V) = storeA_restrict s2 X →
+  (s1 : gmap K V) !! x = Some v →
+  (s2 : gmap K V) !! x = Some v.
+Proof.
+  intros Hx Heq Hlook.
+  pose proof (f_equal (fun s : gmap K V => s !! x) Heq) as Heqx.
+  change ((storeA_restrict s1 X : gmap K V) !! x =
+    (storeA_restrict s2 X : gmap K V) !! x) in Heqx.
+  assert ((storeA_restrict s1 X : gmap K V) !! x = Some v) as Hrx.
+  { apply storeA_restrict_lookup_some_2; [exact Hlook | exact Hx]. }
+  rewrite Hrx in Heqx.
+  symmetry in Heqx.
+  apply storeA_restrict_lookup_some in Heqx as [_ Hlook2].
+  exact Hlook2.
+Qed.
+
+Lemma storeA_restrict_swap {K : Type} `{Countable K} 
+    (x y : K) (s : StoreA K) (X : gset K) :
+  (storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) =
+  storeA_swap x y (storeA_restrict s X).
+Proof.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (storeA_swap x y s) (set_swap x y X) : gmap K V) !! z =
+    (storeA_swap x y (storeA_restrict s X) : gmap K V) !! z).
+  rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ set_swap x y X)) as [Hz|Hz].
+  - rewrite !storeA_swap_lookup_inv.
+    rewrite elem_of_set_swap in Hz.
+    destruct ((s : gmap K V) !! swap x y z) as [v|] eqn:Hs.
+    + symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].
+    + symmetry. apply storeA_restrict_lookup_none_l. exact Hs.
+  - rewrite !storeA_swap_lookup_inv.
+    symmetry. apply storeA_restrict_lookup_none_r.
+    intros Hbad. apply Hz. rewrite elem_of_set_swap. exact Hbad.
+Qed.
+
+Lemma storeA_restrict_shift {K : Type} `{Countable K} `{!ShiftKey K}
+    (k : nat) (s : StoreA K) (X : gset K) :
+  (storeA_restrict (storeA_shift k s) (set_map (key_shift k) X) : gmap K V) =
+  storeA_shift k (storeA_restrict s X).
+Proof.
+  apply storeA_map_eq. intros z.
+  change ((storeA_restrict (storeA_shift k s) (set_map (key_shift k) X) : gmap K V)
+      !! z =
+    (storeA_shift k (storeA_restrict s X) : gmap K V) !! z).
+  rewrite storeA_restrict_lookup.
+  destruct (decide (z ∈ set_map (key_shift k) X)) as [Hz|Hz].
+  - apply elem_of_map in Hz as [u [Heq Hu]]. subst z.
+    rewrite !storeA_shift_lookup.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (u ∈ X)) as [_|Hnot]; [reflexivity | contradiction].
+  - transitivity (@None V).
+    + reflexivity.
+    + symmetry. apply not_elem_of_dom.
+      intros Hdom.
+      change (z ∈ dom (@storeA_shift V K _ _ _ k
+        (@storeA_restrict V K _ _ s X) : gmap K V)) in Hdom.
+      pose proof (storeA_shift_dom (V:=V) (K:=K) k
+        (@storeA_restrict V K _ _ s X)) as Hdom_shift.
+      change (dom (@storeA_shift V K _ _ _ k
+        (@storeA_restrict V K _ _ s X) : gmap K V) =
+        set_map (key_shift k)
+          (dom (@storeA_restrict V K _ _ s X : gmap K V))) in Hdom_shift.
+      rewrite Hdom_shift in Hdom.
+      apply elem_of_map in Hdom as [u [Heq Hdomu]]. subst z.
+      apply storeA_restrict_dom_subset in Hdomu.
+      apply Hz. apply elem_of_map. exists u. split; [reflexivity | exact Hdomu].
+Qed.
+
+End AbstractStoreRestrict.
+
+(** ** Restriction/union lemmas *)
 
 Section AbstractStoreRestrict.
 
@@ -594,6 +934,397 @@ Proof.
   - transitivity (@None V).
     + apply storeA_restrict_lookup_none_r. exact HiY.
     + symmetry. apply storeA_restrict_lookup_none_r. exact HiY.
+Qed.
+
+End AbstractStoreRestrict.
+
+(** ** Compatibility, bind, and union lemmas *)
+
+Section AbstractStoreRestrict.
+
+Context {V : Type} `{ValueSig V}.
+
+Local Notation "s1 ≈A s2" := (@storeA_compat V _ _ _ s1 s2) (at level 70).
+
+Lemma storeA_compat_refl {K : Type} `{Countable K} (s : StoreA K) :
+  @storeA_compat V K _ _ s s.
+Proof.
+  unfold storeA_compat, map_compat. intros x v1 v2 H1 H2. congruence.
+Qed.
+
+
+Lemma storeA_compat_sym {K : Type} `{Countable K} (s1 s2 : StoreA K) :
+  @storeA_compat V K _ _ s1 s2 → @storeA_compat V K _ _ s2 s1.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hc x v1 v2 H1 H2. symmetry. eapply Hc; eauto.
+Qed.
+
+Lemma storeA_compat_swap {K : Type} `{Countable K} 
+    (x y : K) (s1 s2 : StoreA K) :
+  storeA_swap x y s1 ≈A storeA_swap x y s2 ↔
+  s1 ≈A s2.
+Proof.
+  split.
+  - intros Hc z v1 v2 H1 H2.
+    pose proof (Hc (swap x y z) v1 v2) as Hc'.
+    rewrite !storeA_swap_lookup in Hc'.
+    exact (Hc' H1 H2).
+  - intros Hc z v1 v2 H1 H2.
+    rewrite storeA_swap_lookup_inv in H1.
+    rewrite storeA_swap_lookup_inv in H2.
+    exact (Hc _ _ _ H1 H2).
+Qed.
+
+Lemma storeA_compat_union_inv_l {K : Type} `{Countable K}
+    (s1 s2 s3 : StoreA K) :
+  @union (gmap K V) _ s1 s2 ≈A s3 →
+  s1 ≈A s3.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hc i v1 v3 H1 H3.
+  eapply Hc; [| exact H3].
+  apply (proj2 (map_lookup_union_Some_raw
+    (s1 : gmap K V) (s2 : gmap K V) i v1)).
+  left. exact H1.
+Qed.
+
+Lemma storeA_compat_union_inv_r {K : Type} `{Countable K}
+    (s1 s2 s3 : StoreA K) :
+  s1 ≈A s2 →
+  @union (gmap K V) _ s1 s2 ≈A s3 →
+  s2 ≈A s3.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros H12 Hc i v2 v3 H2 H3.
+  destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
+  - assert (Hv : v1 = v3).
+    { eapply Hc; [| exact H3].
+      apply (proj2 (map_lookup_union_Some_raw
+        (s1 : gmap K V) (s2 : gmap K V) i v1)).
+      left. exact H1. }
+    assert (Hv' : v1 = v2) by (eapply H12; eauto).
+    congruence.
+  - eapply Hc; [| exact H3].
+    apply (proj2 (map_lookup_union_Some_raw
+      (s1 : gmap K V) (s2 : gmap K V) i v2)).
+    right. split; [exact H1 | exact H2].
+Qed.
+
+Lemma storeA_compat_union_intro_r {K : Type} `{Countable K}
+    (s1 s2 s3 : StoreA K) :
+  s1 ≈A s2 →
+  s1 ≈A s3 →
+  s1 ≈A @union (gmap K V) _ s2 s3.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros H12 H13 i v1 v23 H1 H23.
+  apply (proj1 (map_lookup_union_Some_raw
+    (s2 : gmap K V) (s3 : gmap K V) i v23)) in H23.
+  destruct H23 as [H2 | [H2none H3]].
+  - eapply H12; eauto.
+  - eapply H13; eauto.
+Qed.
+
+Lemma storeA_union_comm {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 →
+  @union (gmap K V) _ s1 s2 = @union (gmap K V) _ s2 s1.
+Proof.
+  intros Hcompat. apply storeA_map_eq. intros i.
+  rewrite option_eq. intros v.
+  setoid_rewrite (map_lookup_union_Some_raw).
+  split.
+  - intros [H1 | [H1 H2]].
+    + destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2.
+      * left. assert (Hv : v = v2) by (eapply Hcompat; eauto). subst. reflexivity.
+      * right. split; [reflexivity | exact H1].
+    + left. exact H2.
+  - intros [H2 | [H2 H1]].
+    + destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
+      * left. assert (Hv : v1 = v) by (eapply Hcompat; eauto). subst. reflexivity.
+      * right. split; [reflexivity | exact H2].
+    + left. exact H1.
+Qed.
+
+Lemma storeA_union_swap_right {K : Type} `{Countable K}
+    (s1 s2 s3 : StoreA K) :
+  s2 ≈A s3 →
+  @union (gmap K V) _ (@union (gmap K V) _ s1 s2) s3 =
+  @union (gmap K V) _ (@union (gmap K V) _ s1 s3) s2.
+Proof.
+  intros Hcompat.
+  apply storeA_map_eq. intros i.
+  rewrite option_eq. intros v.
+  setoid_rewrite (map_lookup_union_Some_raw).
+  split.
+  - intros [H12 | [H12none H3]].
+    + rewrite map_lookup_union_Some_raw in H12.
+      destruct H12 as [H1 | [H1none H2]].
+      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
+      * destruct ((s3 : gmap K V) !! i) as [v3|] eqn:H3i.
+        -- assert (v = v3) by (eapply Hcompat; eauto).
+           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
+        -- right. split.
+           ++ rewrite map_lookup_union_None. eauto.
+           ++ exact H2.
+    + rewrite map_lookup_union_None in H12none.
+      destruct H12none as [H1none H2none].
+      left. rewrite map_lookup_union_Some_raw. right. eauto.
+  - intros [H13 | [H13none H2]].
+    + rewrite map_lookup_union_Some_raw in H13.
+      destruct H13 as [H1 | [H1none H3]].
+      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
+      * destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2i.
+        -- assert (v2 = v) by (eapply Hcompat; eauto).
+           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
+        -- right. split.
+           ++ rewrite map_lookup_union_None. eauto.
+           ++ exact H3.
+    + rewrite map_lookup_union_None in H13none.
+      destruct H13none as [H1none H3none].
+      left. rewrite map_lookup_union_Some_raw. right. eauto.
+Qed.
+
+Lemma storeA_union_absorb_l {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 →
+  dom (s2 : gmap K V) ⊆ dom (s1 : gmap K V) →
+  @union (gmap K V) _ s1 s2 = s1.
+Proof.
+  intros _ Hsub. apply storeA_map_eq. intros i.
+  destruct ((s1 : gmap K V) !! i) as [v1|] eqn:Hs1.
+  - transitivity (Some v1).
+    + apply (proj2 (map_lookup_union_Some_raw
+        (s1 : gmap K V) (s2 : gmap K V) i v1)).
+      left. exact Hs1.
+    + symmetry. exact Hs1.
+  - destruct ((s2 : gmap K V) !! i) as [v2|] eqn:Hs2.
+    + exfalso.
+      assert (Hin1 : i ∈ dom (s1 : gmap K V)).
+      { apply Hsub. by apply elem_of_dom_2 in Hs2. }
+      apply not_elem_of_dom in Hs1. contradiction.
+    + transitivity (@None V).
+      * apply (proj2 (map_lookup_union_None
+          (s1 : gmap K V) (s2 : gmap K V) i)).
+        split; assumption.
+      * symmetry. exact Hs1.
+Qed.
+
+Lemma storeA_union_absorb_r {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 →
+  dom (s1 : gmap K V) ⊆ dom (s2 : gmap K V) →
+  @union (gmap K V) _ s1 s2 = s2.
+Proof.
+  intros Hcompat Hsub.
+  rewrite storeA_union_comm by exact Hcompat.
+  apply storeA_union_absorb_l.
+  - apply storeA_compat_sym. exact Hcompat.
+  - exact Hsub.
+Qed.
+
+Lemma storeA_compat_insert_l_fresh {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (x : K) (v : V) :
+  s1 ≈A s2 →
+  x ∉ dom (s2 : gmap K V) →
+  <[x := v]> (s1 : gmap K V) ≈A s2.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hcompat Hx z v1 v2 H1 H2.
+  destruct (decide (z = x)) as [->|Hzx].
+  - exfalso. apply Hx. by apply elem_of_dom_2 in H2.
+  - apply (lookup_insert_Some (M:=gmap K) (A:=V)) in H1 as [[Hzx' Hv]|[Hzx' H1]].
+    + congruence.
+    + eapply Hcompat; eauto.
+Qed.
+
+Lemma storeA_compat_insert_r_fresh {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (x : K) (v : V) :
+  s1 ≈A s2 →
+  x ∉ dom (s1 : gmap K V) →
+  s1 ≈A <[x := v]> (s2 : gmap K V).
+Proof.
+  intros Hcompat Hx.
+  apply storeA_compat_sym.
+  eapply storeA_compat_insert_l_fresh.
+  - apply storeA_compat_sym. exact Hcompat.
+  - exact Hx.
+Qed.
+
+Lemma storeA_insert_union_l {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (x : K) (v : V) :
+  @union (gmap K V) _ (<[x := v]> (s1 : gmap K V)) s2 =
+  <[x := v]> (@union (gmap K V) _ s1 s2).
+Proof.
+  apply storeA_map_eq. intros i.
+  pose proof (insert_union_l (M:=gmap K) (A:=V)
+    (s1 : gmap K V) (s2 : gmap K V) x v) as Hins.
+  exact (f_equal (λ m : gmap K V, m !! i) (eq_sym Hins)).
+Qed.
+
+Lemma storeA_insert_union_l_fresh {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (x : K) (v : V) :
+  x ∉ dom (s2 : gmap K V) →
+  @union (gmap K V) _ (<[x := v]> (s1 : gmap K V)) s2 =
+  <[x := v]> (@union (gmap K V) _ s1 s2).
+Proof.
+  intros _. apply storeA_insert_union_l.
+Qed.
+
+Lemma storeA_insert_union_r_fresh {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (x : K) (v : V) :
+  x ∉ dom (s1 : gmap K V) →
+  @union (gmap K V) _ s1 (<[x := v]> (s2 : gmap K V)) =
+  <[x := v]> (@union (gmap K V) _ s1 s2).
+Proof.
+  intros Hx.
+  apply storeA_map_eq. intros i.
+  pose proof (insert_union_r (M:=gmap K) (A:=V)
+    (s1 : gmap K V) (s2 : gmap K V) x v) as Hins.
+  assert (Hnone : (s1 : gmap K V) !! x = None).
+  { apply not_elem_of_dom. exact Hx. }
+  specialize (Hins Hnone).
+  exact (f_equal (λ m : gmap K V, m !! i) (eq_sym Hins)).
+Qed.
+
+Lemma storeA_union_singleton_insert_fresh {K : Type} `{Countable K}
+    (σ : StoreA K) (x : K) (v : V) :
+  x ∉ dom (σ : gmap K V) →
+  @union (gmap K V) _ σ ({[x := v]} : gmap K V) =
+  <[x := v]> (σ : gmap K V).
+Proof.
+  intros Hfresh.
+  change ({[x := v]} : gmap K V) with (<[x := v]> (∅ : gmap K V)).
+  rewrite storeA_insert_union_r_fresh by exact Hfresh.
+  apply storeA_map_eq. intros i.
+  pose proof (map_union_empty (σ : gmap K V)) as Hempty.
+  exact (f_equal (λ m : gmap K V, (<[x := v]> m) !! i) Hempty).
+Qed.
+
+Lemma storeA_union_dom {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 →
+  dom (@union (gmap K V) _ s1 s2) =
+  dom (s1 : gmap K V) ∪ dom (s2 : gmap K V).
+Proof.
+  intros _. apply dom_union_L.
+Qed.
+
+Lemma storeA_disj_dom_compat {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  dom (s1 : gmap K V) ∩ dom (s2 : gmap K V) = ∅ →
+  s1 ≈A s2.
+Proof.
+  intros Hdisj.
+  unfold storeA_compat, map_compat.
+  intros x v1 v2 H1 H2.
+  assert (x ∈ dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) as Hin.
+  { apply elem_of_intersection. split; [by apply elem_of_dom_2 in H1 | by apply elem_of_dom_2 in H2]. }
+  better_set_solver.
+Qed.
+
+Lemma storeA_compat_restrict_singleton_fresh {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (y : K) :
+  y ∉ dom (s1 : gmap K V) →
+  s1 ≈A storeA_restrict s2 ({[y]} : gset K).
+Proof.
+  intros Hy.
+  apply storeA_disj_dom_compat.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_intersection in Hz as [Hz1 Hz2].
+    pose proof (storeA_restrict_dom_subset s2 ({[y]} : gset K) z Hz2) as Hzy.
+    rewrite elem_of_singleton in Hzy. subst. contradiction.
+  - intros Hz. apply elem_of_empty in Hz. contradiction.
+Qed.
+
+Lemma storeA_compat_restrict {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  s1 ≈A s2 →
+  storeA_restrict s1 X ≈A storeA_restrict s2 X.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hcomp x y z H2 H3.
+  apply storeA_restrict_lookup_some in H2 as [_ H2].
+  apply storeA_restrict_lookup_some in H3 as [_ H3].
+  eapply Hcomp; eauto.
+Qed.
+
+Lemma storeA_compat_restrict_r {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  s1 ≈A s2 → s1 ≈A storeA_restrict s2 X.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hcomp x y z H2 H3.
+  apply storeA_restrict_lookup_some in H3 as [_ H3].
+  eapply Hcomp; eauto.
+Qed.
+
+Lemma storeA_compat_restrict_l_full_r {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) (X : gset K) :
+  dom (s1 : gmap K V) ⊆ X →
+  s1 ≈A storeA_restrict s2 X →
+  s1 ≈A s2.
+Proof.
+  unfold storeA_compat, map_compat.
+  intros Hdom Hcomp x v1 v2 H1 H2.
+  assert (Hx : x ∈ X).
+  { apply Hdom. by apply elem_of_dom_2 in H1. }
+  eapply Hcomp; [exact H1 |].
+  apply storeA_restrict_lookup_some_2; [exact H2 | exact Hx].
+Qed.
+
+Lemma storeA_compat_restrict_eq {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 →
+  dom (s1 : gmap K V) ⊆ dom (s2 : gmap K V) →
+  storeA_restrict s2 (dom (s1 : gmap K V)) = s1.
+Proof.
+  unfold storeA_compat, map_compat. intros Hcomp Hsub.
+  apply storeA_map_eq. intros i.
+  destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
+  - assert (i ∈ dom (s1 : gmap K V)) as Hin1 by (by apply elem_of_dom_2 in H1).
+    assert (i ∈ dom (s2 : gmap K V)) as Hin2 by (apply Hsub; exact Hin1).
+    apply elem_of_dom in Hin2 as [v2 H2].
+    assert (H2' : (s2 : gmap K V) !! i = Some v1).
+    { assert (v1 = v2) by (eapply Hcomp; eauto). subst. exact H2. }
+    transitivity (Some v1).
+    + apply storeA_restrict_lookup_some_2; [exact H2' | exact Hin1].
+    + symmetry. exact H1.
+  - transitivity (@None V); [|symmetry; exact H1].
+    apply storeA_restrict_lookup_none_r.
+    intros Hin.
+    apply elem_of_dom in Hin as [v Hlook]. congruence.
+Qed.
+
+Lemma storeA_compat_spec {K : Type} `{Countable K}
+    (s1 s2 : StoreA K) :
+  s1 ≈A s2 ↔
+  storeA_restrict s1 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) =
+  storeA_restrict s2 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)).
+Proof.
+  split.
+  - intros Hcompat.
+    unfold storeA_restrict.
+    apply map_restrict_agree. intros x Hin.
+    apply elem_of_intersection in Hin as [Hin1 Hin2].
+    destruct ((s1 : gmap K V) !! x) as [v1|] eqn:H1;
+      destruct ((s2 : gmap K V) !! x) as [v2|] eqn:H2.
+    + f_equal. eapply Hcompat; eauto.
+    + apply not_elem_of_dom in H2. contradiction.
+    + apply not_elem_of_dom in H1. contradiction.
+    + apply not_elem_of_dom in H1. contradiction.
+  - intros Heq.
+    unfold storeA_compat, map_compat.
+    intros x v1 v2 H1 H2.
+    assert (Hin : x ∈ dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)).
+    { apply elem_of_intersection. split; [by apply elem_of_dom_2 in H1 | by apply elem_of_dom_2 in H2]. }
+    assert (Hr1 : (storeA_restrict s1 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) : gmap K V) !! x = Some v1).
+    { apply storeA_restrict_lookup_some_2; [exact H1 | exact Hin]. }
+    assert (Hr2 : (storeA_restrict s2 (dom (s1 : gmap K V) ∩ dom (s2 : gmap K V)) : gmap K V) !! x = Some v2).
+    { apply storeA_restrict_lookup_some_2; [exact H2 | exact Hin]. }
+    rewrite Heq in Hr1. rewrite Hr2 in Hr1. by inversion Hr1.
 Qed.
 
 End AbstractStoreRestrict.

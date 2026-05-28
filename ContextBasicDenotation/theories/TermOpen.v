@@ -106,12 +106,12 @@ Proof.
     apply H; assumption.
   - change (lstore_instantiate_tm_split_at d
         (lstore_free_part (lstore_swap (LVBound k) (LVFree y) σ))
-        (StoreInterfaceCore.lstore_bound_part
+        (StoreInterface.lstore_bound_part
           (lstore_swap (LVBound k) (LVFree y) σ)) e1)
       with (lstore_instantiate_tm_at d
         (lstore_swap (LVBound k) (LVFree y) σ) e1).
     change (lstore_instantiate_tm_split_at d (lstore_free_part σ)
-        (StoreInterfaceCore.lstore_bound_part σ)
+        (StoreInterface.lstore_bound_part σ)
         (open_tm (d + k) (vfvar y) e1))
       with (lstore_instantiate_tm_at d σ
         (open_tm (d + k) (vfvar y) e1)).

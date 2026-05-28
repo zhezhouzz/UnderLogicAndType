@@ -18,14 +18,10 @@ ContextBase/LogicVarShift.v
 ContextBase/BaseTactics.v
 
 ContextStore/StoreCore.v
-ContextStore/StoreKeyAction.v
 ContextStore/StoreFilterMapKey.v
-ContextStore/StoreRestrictCore.v
-ContextStore/StoreRestrictUnion.v
-ContextStore/StoreBind.v
+ContextStore/StoreRestrict.v
 ContextStore/LVarStore.v
-ContextStore/StoreInterfaceCore.v
-ContextStore/StoreInterfaceRestrict.v
+ContextStore/StoreInterface.v
 ContextStore/Store.v
 
 ContextAlgebra/theories/ResourceCore.v

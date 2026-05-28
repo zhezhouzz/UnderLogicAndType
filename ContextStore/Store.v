@@ -2,13 +2,10 @@
 
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Export StoreCore.
-From ContextStore Require Export StoreKeyAction.
 From ContextStore Require Export StoreFilterMapKey.
-From ContextStore Require Export StoreRestrictCore.
-From ContextStore Require Export StoreRestrictUnion.
-From ContextStore Require Export StoreBind.
+From ContextStore Require Export StoreRestrict.
 From ContextStore Require Export LVarStore.
-From ContextStore Require Export StoreInterfaceRestrict.
+From ContextStore Require Export StoreInterface.
 
 Notation store_restrict := storeA_restrict (only parsing).
 

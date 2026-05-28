@@ -6,7 +6,7 @@
     they provide the corresponding single-substitution lemmas. *)
 
 From ContextBase Require Import BaseTactics.
-From ContextStore Require Import StoreCore StoreKeyAction.
+From ContextStore Require Import StoreCore.
 From CoreLang Require Import Instantiation BasicTyping BasicTypingProps
   LocallyNamelessExtra.
 From LocallyNameless Require Import Classes Tactics.

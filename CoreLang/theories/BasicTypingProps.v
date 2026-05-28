@@ -1,6 +1,6 @@
 From CoreLang Require Import BasicTyping LocallyNamelessProps LocallyNamelessExtra.
 From ContextBase Require Import BaseTactics.
-From ContextStore Require Import StoreCore StoreKeyAction.
+From ContextStore Require Import StoreCore.
 
 (** * Basic typing facts for CoreLang
 

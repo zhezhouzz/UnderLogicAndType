@@ -6,9 +6,9 @@
 
 From LocallyNameless Require Import Classes.
 From ContextBase Require Import LogicVar LogicVarOpenEnv LogicVarShift BaseTactics.
-From ContextStore Require Import StoreCore StoreKeyAction.
+From ContextStore Require Import StoreCore.
 From ContextStore Require Import StoreFilterMapKey.
-From ContextStore Require Import StoreBind.
+From ContextStore Require Import StoreRestrict.
 
 Section LVarStore.
 
