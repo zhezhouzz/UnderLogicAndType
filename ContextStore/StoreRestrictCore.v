@@ -203,9 +203,6 @@ Proof.
   unfold storeA_restrict. apply map_restrict_insert_notin.
 Qed.
 
-
-
-
 Lemma storeA_restrict_eq_mono {K : Type} `{Countable K}
     (s1 s2 : StoreA K) (X Y : gset K) :
   X ⊆ Y →
@@ -222,9 +219,6 @@ Proof.
   rewrite !storeA_restrict_lookup in HeqX.
   destruct (decide (x ∈ Y)) as [_|Hbad]; [exact HeqX | better_set_solver].
 Qed.
-
-
-
 
 Lemma storeA_restrict_swap_fresh {K : Type} `{Countable K} 
     (x y : K) (s : StoreA K) (X : gset K) :

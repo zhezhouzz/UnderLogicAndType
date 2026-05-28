@@ -3348,8 +3348,6 @@ Proof.
   - exact Htarget_body_small.
 Qed.
 
-
-
 Lemma tlet_intro_denotation_wand_case
     gas (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)

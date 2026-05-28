@@ -390,26 +390,4 @@ Proof.
     rewrite Heq in Hr1. rewrite Hr2 in Hr1. by inversion Hr1.
 Qed.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 End AbstractStoreBind.
