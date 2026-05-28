@@ -203,6 +203,68 @@ Proof.
   apply lvar_store_shift_insert.
 Qed.
 
+Lemma lvar_store_atom_dom_shift_from k (s : LVarStore) :
+  lvar_store_atom_dom (lvar_store_shift_from k s) = lvar_store_atom_dom s.
+Proof.
+  unfold lvar_store_atom_dom, lvar_store_shift_from.
+  change (lvars_fv (dom (storeA_rekey (logic_var_shift_from k) s : gmap logic_var V)) =
+    lvars_fv (dom (s : gmap logic_var V))).
+  rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+  apply lvars_shift_from_fv.
+Qed.
+
+Lemma lvar_store_atom_dom_shift (s : LVarStore) :
+  lvar_store_atom_dom (lvar_store_shift s) = lvar_store_atom_dom s.
+Proof.
+  apply lvar_store_atom_dom_shift_from.
+Qed.
+
+Lemma lvar_store_open_lvars_shift_from k η (s : LVarStore) :
+  open_env_fresh_for_lvars η (dom (s : gmap logic_var V)) ->
+  lvar_store_open_lvars (open_env_shift_from k η)
+    (lvar_store_shift_from k s) =
+  lvar_store_shift_from k (lvar_store_open_lvars η s).
+Proof.
+  intros Hfresh.
+  unfold lvar_store_open_lvars, lvar_store_shift_from.
+  assert (Hfresh_shift :
+    open_env_fresh_for_lvars (open_env_shift_from k η)
+      (dom (storeA_rekey (logic_var_shift_from k) s : gmap logic_var V))).
+  {
+    rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+    change (open_env_fresh_for_lvars (open_env_shift_from k η)
+      (lvars_shift_from k (dom (s : gmap logic_var V)))).
+    apply open_env_shift_from_fresh_for_lvars. exact Hfresh.
+  }
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_open_env (open_env_shift_from k η))
+    (logic_var_shift_from k) s).
+  2:{ intros a b _ _ Hab. eapply logic_var_shift_from_inj. exact Hab. }
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact Hfresh_shift. }
+  rewrite (storeA_rekey_compose_inj_on
+    (logic_var_shift_from k)
+    (logic_var_open_env η) s).
+  2:{ apply open_env_fresh_for_lvars_inj_on. exact Hfresh. }
+  2:{ intros a b _ _ Hab. eapply logic_var_shift_from_inj. exact Hab. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_open_env_shift_from.
+Qed.
+
+Lemma lvar_store_open_one_shift_under_gen j k x (s : LVarStore) :
+  j <= k ->
+  lvar_store_open_one (S k) x (lvar_store_shift_from j s) =
+  lvar_store_shift_from j (lvar_store_open_one k x s).
+Proof.
+  intros Hjk.
+  unfold lvar_store_open_one, lvar_store_shift_from.
+  rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
+    try apply logic_var_open_inj.
+  rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
+    try apply logic_var_open_inj.
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_open_shift_from_under_gen. exact Hjk.
+Qed.
+
 Lemma lvar_store_shift_atom_store (s : AtomStore) :
   lvar_store_shift (atom_store_to_lvar_store s) = atom_store_to_lvar_store s.
 Proof.

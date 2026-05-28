@@ -1050,7 +1050,7 @@ Proof.
   apply elem_of_intersection in Hk as [Hk _].
   assert (k ∈ lvars_bv (dom (Σ : gmap logic_var ty))).
   { rewrite lvars_bv_elem. exact Hk. }
-  change (k ∈ lvars_bv (dom (Σ : lty_env))) in H.
+  unfold lvar_store_closed in Hclosed.
   rewrite Hclosed in H. set_solver.
 Qed.
 

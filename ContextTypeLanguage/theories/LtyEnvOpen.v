@@ -27,16 +27,13 @@ Qed.
 Lemma lty_env_open_lvars_empty Σ :
   lty_env_open_lvars ∅ Σ = Σ.
 Proof.
-  unfold lty_env_open_lvars, lvar_store_open_lvars.
+  unfold lvar_store_open_lvars.
   apply storeA_map_eq. intros v.
-  unfold storeA_rekey, storeA_map_key.
-  change ((kmap (M2:=gmap logic_var) (logic_var_open_env ∅) Σ) !! v =
+  change ((storeA_rekey (logic_var_open_env ∅) Σ : gmap logic_var ty) !! v =
     (Σ : gmap logic_var ty) !! v).
   rewrite <- (logic_var_open_env_empty v) at 1.
-  rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-    (Inj0:=fun a b H => ltac:(rewrite !logic_var_open_env_empty in H; exact H))
-    (logic_var_open_env ∅) Σ v).
-  reflexivity.
+  apply storeA_rekey_lookup.
+  intros a b H. rewrite !logic_var_open_env_empty in H. exact H.
 Qed.
 
 Lemma lty_env_open_lvars_singleton k x Σ :
@@ -208,61 +205,7 @@ Lemma lty_env_open_one_shift_under_gen j k x Σ :
   lty_env_open_one (S k) x (lty_env_shift_from j Σ) =
   lty_env_shift_from j (lty_env_open_one k x Σ).
 Proof.
-  intros Hjk.
-  apply storeA_map_eq. intros v.
-  unfold lty_env_open_one, lty_env_shift_from.
-  change ((storeA_rekey (logic_var_open (S k) x)
-      (storeA_rekey (logic_var_shift_from j) Σ) : gmap logic_var ty) !! v =
-    (storeA_rekey (logic_var_shift_from j)
-      (storeA_rekey (logic_var_open k x) Σ) : gmap logic_var ty) !! v).
-  destruct (decide (v ∈ dom (storeA_rekey (logic_var_open (S k) x)
-      (storeA_rekey (logic_var_shift_from j) Σ) : gmap logic_var ty))) as [Hv|Hv].
-  - rewrite storeA_rekey_dom in Hv by
-      (intros a b H; eapply logic_var_open_inj_fresh; exact H).
-    apply elem_of_map in Hv as [u [-> Hu]].
-    rewrite storeA_rekey_dom in Hu by apply logic_var_shift_from_inj.
-    apply elem_of_map in Hu as [w [-> Hw]].
-    unfold storeA_rekey, storeA_map_key.
-    change ((kmap (M2:=gmap logic_var) (logic_var_open (S k) x)
-        (kmap (M2:=gmap logic_var) (logic_var_shift_from j) Σ) !!
-        logic_var_open (S k) x (logic_var_shift_from j w)) =
-      (kmap (M2:=gmap logic_var) (logic_var_shift_from j)
-        (kmap (M2:=gmap logic_var) (logic_var_open k x) Σ) !!
-        logic_var_open (S k) x (logic_var_shift_from j w))).
-    rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=fun a b H => ltac:(eapply logic_var_open_inj_fresh; exact H))
-      (logic_var_open (S k) x)
-      (kmap (M2:=gmap logic_var) (logic_var_shift_from j) Σ)
-      (logic_var_shift_from j w)).
-    rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=logic_var_shift_from_inj j)
-      (logic_var_shift_from j) Σ w).
-    rewrite logic_var_open_shift_from_under_gen by exact Hjk.
-    rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=logic_var_shift_from_inj j)
-      (logic_var_shift_from j)
-      (kmap (M2:=gmap logic_var) (logic_var_open k x) Σ)
-      (logic_var_open k x w)).
-    rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=fun a b H => ltac:(eapply logic_var_open_inj_fresh; exact H))
-      (logic_var_open k x) Σ w).
-    reflexivity.
-  - transitivity (@None ty).
-    + apply not_elem_of_dom. exact Hv.
-    + symmetry. apply not_elem_of_dom. intros Hr.
-      apply Hv.
-      rewrite storeA_rekey_dom by
-        (intros a b H; eapply logic_var_open_inj_fresh; exact H).
-      rewrite storeA_rekey_dom in Hr by apply logic_var_shift_from_inj.
-      apply elem_of_map in Hr as [u [-> Hu]].
-      rewrite storeA_rekey_dom in Hu by
-        (intros a b H; eapply logic_var_open_inj_fresh; exact H).
-      apply elem_of_map in Hu as [w [-> Hw]].
-      apply elem_of_map. exists (logic_var_shift_from j w).
-      split.
-      * symmetry. apply logic_var_open_shift_from_under_gen. exact Hjk.
-      * rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
-        apply elem_of_map. exists w. split; [reflexivity|exact Hw].
+  apply lvar_store_open_one_shift_under_gen.
 Qed.
 
 Lemma lty_env_open_one_shift_under j k x Σ :
@@ -293,7 +236,7 @@ Lemma lty_env_open_one_shift_insert_bound k x T Σ :
   lty_env_open_one (S k) x (lty_env_shift (<[LVBound k := T]> Σ)) =
   lty_env_shift (lty_env_open_one k x (<[LVBound k := T]> Σ)).
 Proof.
-  rewrite lty_env_shift_insert.
+  rewrite lvar_store_shift_insert.
   rewrite lty_env_open_one_insert.
   replace (logic_var_open (S k) x (logic_var_shift_from 0 (LVBound k)))
     with (LVFree x).
@@ -309,7 +252,7 @@ Proof.
     rewrite logic_var_open_unfold.
     unfold swap. repeat destruct decide; try lia; try congruence.
   }
-  rewrite lty_env_shift_insert_free.
+  rewrite lvar_store_shift_insert_free.
   unfold lty_env_shift, lvar_store_shift.
   rewrite lty_env_open_one_shift_under_gen by lia.
   reflexivity.

@@ -29,4 +29,4 @@ Ltac type_lvars_norm :=
 
 Ltac type_env_norm :=
   rewrite ?open_cty_env_empty in *;
-  rewrite ?lty_env_atom_dom_shift in *.
+  rewrite ?lvar_store_atom_dom_shift in *.

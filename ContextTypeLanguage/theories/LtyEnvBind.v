@@ -34,22 +34,17 @@ Lemma typed_lty_env_bind_atom_env_insert_dom
   {[LVFree x]}.
 Proof.
   intros _.
-  assert (Hdomins :
-    dom (atom_env_to_lty_env (<[x := Tx]> Δ)) =
-    {[LVFree x]} ∪ dom (atom_env_to_lty_env Δ)).
-  {
-    rewrite atom_env_to_lty_env_insert.
-    change (dom ((<[LVFree x := Tx]> (atom_env_to_lty_env Δ) : lty_env)
-        : gmap logic_var ty) =
-      {[LVFree x]} ∪
-        dom ((atom_env_to_lty_env Δ : lty_env) : gmap logic_var ty)).
-    rewrite (dom_insert_L (M:=gmap logic_var) (D:=gset logic_var)
-      (((atom_env_to_lty_env Δ : lty_env) : gmap logic_var ty))
-      (LVFree x) Tx).
-    reflexivity.
-  }
+  rewrite atom_env_to_lty_env_insert.
   rewrite !typed_lty_env_bind_dom.
-  rewrite Hdomins.
+  change (lvars_shift_from 0
+      (dom ((<[LVFree x := Tx]> (atom_env_to_lty_env Δ) : lty_env)
+        : gmap logic_var ty)) ∪ {[LVBound 0]} =
+    (lvars_shift_from 0
+      (dom (atom_env_to_lty_env Δ : gmap logic_var ty)) ∪
+      {[LVBound 0]}) ∪ {[LVFree x]}).
+  rewrite (dom_insert_L (M:=gmap logic_var) (D:=gset logic_var)
+    (((atom_env_to_lty_env Δ : lty_env) : gmap logic_var ty))
+    (LVFree x) Tx).
   rewrite lvars_shift_from_union.
   replace (lvars_shift_from 0 ({[LVFree x]} : lvset)) with
     ({[LVFree x]} : lvset).
@@ -84,7 +79,7 @@ Qed.
 Lemma typed_lty_env_bind_atom_dom Σ T :
   lty_env_atom_dom (typed_lty_env_bind Σ T) = lty_env_atom_dom Σ.
 Proof.
-  unfold lty_env_atom_dom, lvar_store_atom_dom.
+  unfold lvar_store_atom_dom, lvar_store_atom_dom.
   apply typed_lty_env_bind_lvars_fv_dom.
 Qed.
 
@@ -110,7 +105,7 @@ Lemma typed_lty_env_bind_insert_free
   <[LVFree x := Tx]> (typed_lty_env_bind Σ T).
 Proof.
   unfold typed_lty_env_bind.
-  rewrite lty_env_shift_insert_free.
+  rewrite (lvar_store_shift_insert_free (V:=ty)).
   apply (map_eq (M := gmap logic_var)). intros z.
   change (((<[LVBound 0 := T]> (<[LVFree x := Tx]>
               (lty_env_shift Σ : gmap logic_var ty)))
@@ -144,7 +139,7 @@ Lemma lty_env_closed_insert_free Σ x T :
   lty_env_closed (<[LVFree x := T]> Σ).
 Proof.
   intros Hclosed.
-  unfold lty_env_closed in *.
+  unfold lvar_store_closed in *.
   change (lvars_bv (dom (Σ : gmap logic_var ty)) = ∅) in Hclosed.
   change (lvars_bv (dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
     : gmap logic_var ty)) = ∅).
@@ -163,9 +158,10 @@ Proof.
   intros Hclosed.
   change (((Σ : lty_env) : gmap logic_var ty) !! LVBound k = None).
   apply not_elem_of_dom. intros Hdom.
-  unfold lty_env_closed in Hclosed.
+  unfold lvar_store_closed in Hclosed.
   assert (k ∈ lvars_bv (dom Σ)).
   { rewrite lvars_bv_elem. exact Hdom. }
+  change (k ∈ lvars_bv (dom (Σ : gmap logic_var ty))) in H.
   rewrite Hclosed in H. set_solver.
 Qed.
 
@@ -180,7 +176,7 @@ Proof.
     + change (((lty_env_shift Σ : lty_env) : gmap logic_var ty) !!
         LVBound k = None).
       apply not_elem_of_dom. intros Hdom.
-      unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hdom.
+      unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hdom.
       change (LVBound k ∈
         dom (storeA_rekey (logic_var_shift_from 0) Σ : gmap logic_var ty))
         in Hdom.
@@ -189,13 +185,14 @@ Proof.
       destruct u as [n|y]; cbn [logic_var_shift_from] in Hu.
       * destruct (decide (0 <= n)) as [_|Hbad]; [|lia].
         inversion Hu. subst k.
-        unfold lty_env_closed in Hclosed.
+        unfold lvar_store_closed in Hclosed.
         assert (n ∈ lvars_bv (dom Σ)).
         { rewrite lvars_bv_elem. exact Hudom. }
+        change (n ∈ lvars_bv (dom (Σ : gmap logic_var ty))) in H.
         rewrite Hclosed in H. set_solver.
       * discriminate.
     + symmetry. apply lty_env_closed_lookup_bound_none. exact Hclosed.
-  - unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
+  - unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
     unfold storeA_rekey, storeA_map_key.
     change ((kmap (M2:=gmap logic_var) (logic_var_shift_from 0) Σ) !!
       LVFree x = (Σ : gmap logic_var ty) !! LVFree x).
@@ -250,7 +247,7 @@ Lemma lty_env_shift_lookup_bound0_none Σ :
   (lty_env_shift Σ : gmap logic_var ty) !! LVBound 0 = None.
 Proof.
   apply not_elem_of_dom. intros Hin.
-  unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hin.
+  unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hin.
   rewrite storeA_rekey_dom in Hin by apply logic_var_shift_from_inj.
   unfold lvars_shift_from in Hin.
   apply elem_of_map in Hin as [v [Hv _]].
@@ -267,7 +264,7 @@ Proof.
     open_env_fresh_for_lvars (open_env_shift_from 0 η)
       (dom (lty_env_shift Σ))).
   {
-    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
+    unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from.
     change (open_env_fresh_for_lvars (open_env_shift_from 0 η)
       (dom (storeA_rekey (logic_var_shift_from 0) Σ : gmap logic_var ty))).
     rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
@@ -284,7 +281,7 @@ Proof.
     rewrite elem_of_singleton in Hv2. congruence.
   - rewrite elem_of_singleton in Hv1. subst v1.
     rewrite logic_var_open_env_shift0_bound0 in Heq.
-    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv2.
+    unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv2.
     rewrite storeA_rekey_dom in Hv2 by apply logic_var_shift_from_inj.
     unfold lvars_shift_from in Hv2.
     apply elem_of_map in Hv2 as [v [Hv _]].
@@ -293,7 +290,7 @@ Proof.
     exfalso. symmetry in Heq. exact (logic_var_shift0_ne_bound0 _ Heq).
   - rewrite elem_of_singleton in Hv2. subst v2.
     rewrite logic_var_open_env_shift0_bound0 in Heq.
-    unfold lty_env_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv1.
+    unfold lvar_store_shift, lvar_store_shift, lty_env_shift_from, lvar_store_shift_from in Hv1.
     rewrite storeA_rekey_dom in Hv1 by apply logic_var_shift_from_inj.
     unfold lvars_shift_from in Hv1.
     apply elem_of_map in Hv1 as [v [Hv _]].
@@ -312,7 +309,7 @@ Proof.
   unfold typed_lty_env_bind.
   rewrite lty_env_open_one_insert.
   replace (logic_var_open (S k) x (LVBound 0)) with (LVBound 0).
-  - unfold lty_env_shift, lvar_store_shift.
+  - unfold lvar_store_shift, lvar_store_shift.
     rewrite lty_env_open_one_shift_under_gen by lia.
     reflexivity.
   - rewrite logic_var_open_unfold.
@@ -337,9 +334,10 @@ Proof.
   rewrite lty_env_open_one_fresh_noop.
   - reflexivity.
   - intros Hbound.
-    unfold lty_env_closed in Hclosed.
+    unfold lvar_store_closed in Hclosed.
     assert (0 ∈ lvars_bv (dom Σ)).
     { rewrite lvars_bv_elem. exact Hbound. }
+    change (0 ∈ lvars_bv (dom (Σ : gmap logic_var ty))) in H.
     rewrite Hclosed in H. set_solver.
   - exact Hfresh.
 Qed.
@@ -376,7 +374,8 @@ Proof.
   rewrite (lty_env_open_lvars_insert_entry
     (open_env_shift_from 0 η) (LVBound 0) T (lty_env_shift Σ)).
   - rewrite logic_var_open_env_shift0_bound0.
-    rewrite lty_env_open_lvars_shift_from by exact Hfresh.
+    unfold lvar_store_shift.
+    rewrite (lvar_store_open_lvars_shift_from (V:=ty) 0 η Σ) by exact Hfresh.
     reflexivity.
   - apply lty_env_shift_lookup_bound0_none.
   - apply logic_var_open_env_shift0_typed_bind_inj_on. exact Hfresh.
