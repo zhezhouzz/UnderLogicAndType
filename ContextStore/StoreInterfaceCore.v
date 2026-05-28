@@ -26,9 +26,6 @@ Definition store_restrict (s : Store) (X : aset) : Store := storeA_restrict s X.
 Definition store_rekey (f : atom → atom) (s : Store) : Store :=
   storeA_rekey f s.
 
-Definition store_swap (x y : atom) (s : Store) : Store :=
-  store_rekey (swap x y) s.
-
 Definition lstore_rekey (f : logic_var → logic_var) (s : LStore) : LStore :=
   storeA_rekey f s.
 

@@ -247,92 +247,92 @@ Qed.
 
 Lemma basic_typing_swap_value Γ v T x y :
   Γ ⊢ᵥ v ⋮ T →
-  store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T
+  (kmap (swap x y) Γ : gmap atom ty) ⊢ᵥ value_swap_atom x y v ⋮ T
 with basic_typing_swap_tm Γ e T x y :
   Γ ⊢ₑ e ⋮ T →
-  store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T.
+  (kmap (swap x y) Γ : gmap atom ty) ⊢ₑ tm_swap_atom x y e ⋮ T.
 Proof.
   - intros Hty.
     induction Hty using value_has_type_mut with
       (P0 := fun Γ e T _ =>
-        store_swap x y Γ ⊢ₑ tm_swap_atom x y e ⋮ T);
+        (kmap (swap x y) Γ : gmap atom ty) ⊢ₑ tm_swap_atom x y e ⋮ T);
       simpl.
     + constructor.
-    + econstructor. rewrite store_swap_lookup. exact e.
+    + econstructor. rewrite kmap_swap_lookup. exact e.
     + eapply VT_Lam with (L := set_swap x y L).
       intros z Hz.
-      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+      change (<[z:=s]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
       rewrite open_tm_swap_atom.
-      replace (<[z:=s]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := s]> Γ)).
+      replace (<[z:=s]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := s]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
-      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+      change (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ᵥ
         open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
           ((sx →ₜ T) →ₜ T)).
       rewrite open_value_swap_atom.
-      replace (<[z:=sx]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := sx]> Γ)).
+      replace (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := sx]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
-      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+      change (<[z:=T1]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
       rewrite open_tm_swap_atom.
-      replace (<[z:=T1]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := T1]> Γ)).
+      replace (<[z:=T1]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := T1]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
   - intros Hty.
     induction Hty using tm_has_type_mut with
       (P := fun Γ v T _ =>
-        store_swap x y Γ ⊢ᵥ value_swap_atom x y v ⋮ T);
+        (kmap (swap x y) Γ : gmap atom ty) ⊢ᵥ value_swap_atom x y v ⋮ T);
       simpl.
     + constructor.
-    + econstructor. rewrite store_swap_lookup. exact e.
+    + econstructor. rewrite kmap_swap_lookup. exact e.
     + eapply VT_Lam with (L := set_swap x y L).
       intros z Hz.
-      change (<[z:=s]> (store_swap x y Γ) ⊢ₑ
+      change (<[z:=s]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e) ⋮ T).
       rewrite open_tm_swap_atom.
-      replace (<[z:=s]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := s]> Γ)).
+      replace (<[z:=s]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := s]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + eapply VT_Fix with (L := set_swap x y L).
       intros z Hz.
-      change (<[z:=sx]> (store_swap x y Γ) ⊢ᵥ
+      change (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ᵥ
         open_value 0 (vfvar z) (value_swap_atom x y vf) ⋮
           ((sx →ₜ T) →ₜ T)).
       rewrite open_value_swap_atom.
-      replace (<[z:=sx]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := sx]> Γ)).
+      replace (<[z:=sx]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := sx]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + eapply TT_Let; [eauto |].
       intros z Hz.
-      change (<[z:=T1]> (store_swap x y Γ) ⊢ₑ
+      change (<[z:=T1]> ((kmap (swap x y) Γ : gmap atom ty)) ⊢ₑ
         open_tm 0 (vfvar z) (tm_swap_atom x y e2) ⋮ T2).
       rewrite open_tm_swap_atom.
-      replace (<[z:=T1]> (store_swap x y Γ))
-        with (store_swap x y (<[swap x y z := T1]> Γ)).
+      replace (<[z:=T1]> ((kmap (swap x y) Γ : gmap atom ty)))
+        with ((kmap (swap x y) (<[swap x y z := T1]> Γ) : gmap atom ty)).
       * apply H. intros Hin. apply Hz.
         rewrite elem_of_set_swap. exact Hin.
-      * rewrite store_swap_insert, swap_involutive. reflexivity.
+      * rewrite kmap_swap_insert, swap_involutive. reflexivity.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.

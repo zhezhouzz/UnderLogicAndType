@@ -25,24 +25,6 @@ Proof.
   apply storeA_lookup_union_Some_raw.
 Qed.
 
-Lemma store_swap_lookup (x y : atom) (s : Store) (z : atom) :
-  ((store_swap x y s : gmap atom V) !! swap x y z) =
-  ((s : gmap atom V) !! z).
-Proof.
-  unfold store_swap.
-  change (((storeA_swap x y s : gmap atom V) !! swap x y z) =
-    ((s : gmap atom V) !! z)).
-  apply storeA_swap_lookup.
-Qed.
-
-Lemma store_swap_lookup_inv (x y : atom) (s : Store) (z : atom) :
-  ((store_swap x y s : gmap atom V) !! z) =
-  ((s : gmap atom V) !! swap x y z).
-Proof.
-  rewrite <- (swap_involutive x y z) at 1.
-  apply store_swap_lookup.
-Qed.
-
 Lemma lstore_swap_fresh (a b : logic_var) (s : LStore) :
   a ∉ dom (s : LStore) ->
   b ∉ dom (s : LStore) ->
@@ -73,26 +55,6 @@ Proof.
   replace (swap a b c) with c by (symmetry; apply swap_fresh; congruence).
   replace (swap a b d) with d by (symmetry; apply swap_fresh; congruence).
   reflexivity.
-Qed.
-
-Lemma store_swap_delete (x y z : atom) (s : Store) :
-  (store_swap x y (delete z s) : gmap atom V) =
-  delete (swap x y z) (store_swap x y s).
-Proof.
-  unfold store_swap.
-  change (storeA_swap x y (delete z s) =
-    delete (swap x y z) (storeA_swap x y s)).
-  apply storeA_swap_delete.
-Qed.
-
-Lemma store_swap_insert (x y z : atom) (v : V) (s : Store) :
-  (store_swap x y (<[z := v]> s) : gmap atom V) =
-  <[swap x y z := v]> (store_swap x y s).
-Proof.
-  unfold store_swap.
-  change (storeA_swap x y (<[z := v]> s) =
-    <[swap x y z := v]> (storeA_swap x y s)).
-  apply storeA_swap_insert.
 Qed.
 
 End StoreInterface.

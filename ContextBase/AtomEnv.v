@@ -13,130 +13,70 @@ Section AtomEnv.
 
 Context {A : Type}.
 
-Definition atom_env_swap (x y : atom) (m : gmap atom A) : gmap atom A :=
-  kmap (swap x y) m.
-
-Definition store_swap := atom_env_swap.
-
-Lemma atom_env_swap_lookup (x y : atom) (m : gmap atom A) (z : atom) :
-  atom_env_swap x y m !! swap x y z = m !! z.
+Lemma kmap_swap_lookup (x y : atom) (m : gmap atom A) (z : atom) :
+  (kmap (swap x y) m : gmap atom A) !! swap x y z = m !! z.
 Proof.
-  unfold atom_env_swap.
   rewrite (lookup_kmap (M1:=gmap atom) (M2:=gmap atom)
     (Inj0:=swap_inj x y) (swap x y) m z).
   reflexivity.
 Qed.
 
-Lemma store_swap_lookup (x y : atom) (m : gmap atom A) (z : atom) :
-  store_swap x y m !! swap x y z = m !! z.
-Proof.
-  apply atom_env_swap_lookup.
-Qed.
-
-Lemma atom_env_swap_lookup_inv (x y : atom) (m : gmap atom A) (z : atom) :
-  atom_env_swap x y m !! z = m !! swap x y z.
+Lemma kmap_swap_lookup_inv (x y : atom) (m : gmap atom A) (z : atom) :
+  (kmap (swap x y) m : gmap atom A) !! z = m !! swap x y z.
 Proof.
   rewrite <- (swap_involutive x y z) at 1.
-  apply atom_env_swap_lookup.
+  apply kmap_swap_lookup.
 Qed.
 
-Lemma store_swap_lookup_inv (x y : atom) (m : gmap atom A) (z : atom) :
-  store_swap x y m !! z = m !! swap x y z.
+Lemma kmap_swap_dom (x y : atom) (m : gmap atom A) :
+  dom (kmap (swap x y) m : gmap atom A) = set_swap x y (dom m).
 Proof.
-  apply atom_env_swap_lookup_inv.
-Qed.
-
-Lemma atom_env_swap_dom (x y : atom) (m : gmap atom A) :
-  dom (atom_env_swap x y m) = set_swap x y (dom m).
-Proof.
-  unfold atom_env_swap, set_swap.
+  unfold set_swap.
   rewrite (dom_kmap_L (M:=gmap atom) (M2:=gmap atom)
     (Inj0:=swap_inj x y) (swap x y) m).
   reflexivity.
 Qed.
 
-Lemma store_swap_dom (x y : atom) (m : gmap atom A) :
-  dom (store_swap x y m) = set_swap x y (dom m).
-Proof.
-  apply atom_env_swap_dom.
-Qed.
-
-Lemma atom_env_swap_empty (x y : atom) :
-  atom_env_swap x y (∅ : gmap atom A) = ∅.
+Lemma kmap_swap_empty (x y : atom) :
+  (kmap (swap x y) (∅ : gmap atom A) : gmap atom A) = ∅.
 Proof.
   apply map_eq. intros z.
-  rewrite atom_env_swap_lookup_inv.
+  rewrite kmap_swap_lookup_inv.
   rewrite !lookup_empty. reflexivity.
 Qed.
 
-Lemma store_swap_empty (x y : atom) :
-  store_swap x y (∅ : gmap atom A) = ∅.
-Proof.
-  apply atom_env_swap_empty.
-Qed.
-
-Lemma atom_env_swap_involutive (x y : atom) (m : gmap atom A) :
-  atom_env_swap x y (atom_env_swap x y m) = m.
+Lemma kmap_swap_involutive (x y : atom) (m : gmap atom A) :
+  (kmap (swap x y) (kmap (swap x y) m : gmap atom A) : gmap atom A) = m.
 Proof.
   apply map_eq. intros z.
-  rewrite !atom_env_swap_lookup_inv, swap_involutive. reflexivity.
+  rewrite !kmap_swap_lookup_inv, swap_involutive. reflexivity.
 Qed.
 
-Lemma store_swap_involutive (x y : atom) (m : gmap atom A) :
-  store_swap x y (store_swap x y m) = m.
-Proof.
-  apply atom_env_swap_involutive.
-Qed.
-
-Lemma atom_env_swap_sym (x y : atom) (m : gmap atom A) :
-  atom_env_swap x y m = atom_env_swap y x m.
+Lemma kmap_swap_sym (x y : atom) (m : gmap atom A) :
+  (kmap (swap x y) m : gmap atom A) = kmap (swap y x) m.
 Proof.
   apply map_eq. intros z.
-  rewrite !atom_env_swap_lookup_inv, swap_sym. reflexivity.
+  rewrite !kmap_swap_lookup_inv, swap_sym. reflexivity.
 Qed.
 
-Lemma store_swap_sym (x y : atom) (m : gmap atom A) :
-  store_swap x y m = store_swap y x m.
+Lemma kmap_swap_delete (x y z : atom) (m : gmap atom A) :
+  (kmap (swap x y) (delete z m) : gmap atom A) =
+  delete (swap x y z) (kmap (swap x y) m : gmap atom A).
 Proof.
-  apply atom_env_swap_sym.
-Qed.
-
-Lemma atom_env_swap_delete (x y z : atom) (m : gmap atom A) :
-  atom_env_swap x y (delete z m) =
-  delete (swap x y z) (atom_env_swap x y m).
-Proof.
-  unfold atom_env_swap.
   rewrite (kmap_delete (M1:=gmap atom) (M2:=gmap atom)
     (Inj0:=swap_inj x y) (swap x y) m z).
   reflexivity.
 Qed.
 
-Lemma store_swap_delete (x y z : atom) (m : gmap atom A) :
-  store_swap x y (delete z m) =
-  delete (swap x y z) (store_swap x y m).
+Lemma kmap_swap_insert (x y z : atom) (v : A) (m : gmap atom A) :
+  (kmap (swap x y) (<[z := v]> m) : gmap atom A) =
+  <[swap x y z := v]> (kmap (swap x y) m : gmap atom A).
 Proof.
-  apply atom_env_swap_delete.
-Qed.
-
-Lemma atom_env_swap_insert (x y z : atom) (v : A) (m : gmap atom A) :
-  atom_env_swap x y (<[z := v]> m) =
-  <[swap x y z := v]> (atom_env_swap x y m).
-Proof.
-  unfold atom_env_swap.
   rewrite (kmap_insert (M1:=gmap atom) (M2:=gmap atom)
     (Inj0:=swap_inj x y) (swap x y) m z v).
   reflexivity.
 Qed.
 
-Lemma store_swap_insert (x y z : atom) (v : A) (m : gmap atom A) :
-  store_swap x y (<[z := v]> m) =
-  <[swap x y z := v]> (store_swap x y m).
-Proof.
-  apply atom_env_swap_insert.
-Qed.
-
 End AtomEnv.
 
-Arguments atom_env_swap {_} _ _ _.
-Arguments store_swap {_} _ _ _.
 Arguments stale_atom_env /.

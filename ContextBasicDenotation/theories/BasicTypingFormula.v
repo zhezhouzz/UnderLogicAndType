@@ -159,9 +159,9 @@ Qed.
 Lemma lty_env_to_atom_env_open_lvars_atom_swap x y η Σ :
   open_env_fresh_for_lvars η (dom (lty_env_swap x y Σ)) ->
   lty_env_to_atom_env (lty_env_open_lvars η (lty_env_swap x y Σ)) =
-  store_swap x y
+  (kmap (swap x y)
     (lty_env_to_atom_env
-      (lty_env_open_lvars (open_env_atom_swap x y η) Σ)).
+      (lty_env_open_lvars (open_env_atom_swap x y η) Σ)) : gmap atom ty).
 Proof.
   intros Hfresh.
   rewrite lty_env_open_lvars_atom_swap by exact Hfresh.
@@ -510,9 +510,9 @@ Lemma lty_env_to_atom_env_open_swap_back
   z ∉ lvars_fv (dom Σ) ->
   open_env_avoids_atom y (delete k η) ->
   open_env_fresh_for_lvars η ({[LVBound k]} ∪ dom Σ) ->
-  store_swap y z
+  (kmap (swap y z)
     (lty_env_to_atom_env
-      (lty_env_open_lvars (<[k := y]> (delete k η)) Σ)) =
+      (lty_env_open_lvars (<[k := y]> (delete k η)) Σ)) : gmap atom ty) =
   lty_env_to_atom_env (lty_env_open_lvars η Σ).
 Proof.
   intros Hηk HyΣ HzΣ Havoid Hfresh.

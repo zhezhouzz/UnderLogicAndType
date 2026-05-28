@@ -3,6 +3,7 @@
     Atom-environment lifting, lvar swapping, and atom-env interaction laws. *)
 
 From LocallyNameless Require Import Classes.
+From ContextBase Require Import AtomEnv.
 From ContextTypeLanguage Require Export LtyEnvOpen.
 
 Lemma atom_env_to_lty_env_dom Σ :
@@ -488,14 +489,14 @@ Qed.
 
 Lemma lty_env_to_atom_env_swap x y Σ :
   lty_env_to_atom_env (lty_env_swap x y Σ) =
-  store_swap x y (lty_env_to_atom_env Σ).
+  (kmap (swap x y) (lty_env_to_atom_env Σ) : gmap atom ty).
 Proof.
   apply map_eq. intros z.
   rewrite lty_env_to_atom_env_lookup.
-  rewrite store_swap_lookup_inv.
-  rewrite lty_env_to_atom_env_lookup.
-  rewrite lty_env_swap_lookup_inv.
-  reflexivity.
+  transitivity (lty_env_to_atom_env Σ !! swap x y z).
+  - rewrite lty_env_swap_lookup_inv.
+    symmetry. apply lty_env_to_atom_env_lookup.
+  - symmetry. apply kmap_swap_lookup_inv.
 Qed.
 
 Lemma lty_env_to_atom_env_dom_subset Σ :
