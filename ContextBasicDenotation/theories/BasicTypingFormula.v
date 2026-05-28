@@ -58,25 +58,22 @@ Lemma logic_var_open_env_atom_swap x y η v :
   logic_var_swap x y (logic_var_open_env (open_env_atom_swap x y η) v).
 Proof.
   destruct v as [k|a].
-  - rewrite logic_var_swap_unfold.
-    rewrite swap_fresh by congruence.
+  - rewrite swap_fresh by congruence.
     cbn [logic_var_open_env].
     rewrite open_env_atom_swap_lookup.
     destruct (η !! k) as [b|] eqn:Hη; cbn.
-    + rewrite logic_var_swap_unfold.
-      rewrite logic_var_free_swap.
+    + rewrite logic_var_free_swap.
       rewrite swap_involutive. reflexivity.
-    + rewrite logic_var_swap_unfold.
-      rewrite swap_fresh by congruence. reflexivity.
+    + rewrite swap_fresh by congruence. reflexivity.
   - cbn [logic_var_open_env].
-    rewrite logic_var_swap_unfold, logic_var_free_swap.
+    rewrite logic_var_free_swap.
     reflexivity.
 Qed.
 
 Lemma lvars_swap_elem_iff x y D v :
   v ∈ lvars_swap x y D <-> logic_var_swap x y v ∈ D.
 Proof.
-  rewrite lvars_swap_unfold, set_swap_elem.
+  rewrite set_swap_elem.
   change (swap (LVFree x) (LVFree y) v) with (logic_var_swap x y v).
   reflexivity.
 Qed.
@@ -94,12 +91,18 @@ Proof.
     apply lvars_swap_elem_iff.
     apply elem_of_map.
     exists (logic_var_swap x y u). split.
-    + pose proof (logic_var_open_env_atom_swap x y η
-        (logic_var_swap x y u)) as Hop.
-      rewrite logic_var_swap_involutive in Hop.
-      apply (f_equal (logic_var_swap x y)) in Hop.
-      rewrite logic_var_swap_involutive in Hop.
-      exact Hop.
+	    + pose proof (logic_var_open_env_atom_swap x y η
+	        (logic_var_swap x y u)) as Hop.
+	      apply (f_equal (logic_var_swap x y)) in Hop.
+	      replace (logic_var_swap x y (logic_var_swap x y u)) with u in Hop
+	        by (symmetry; apply logic_var_swap_involutive).
+	      replace (logic_var_swap x y (logic_var_swap x y
+	        (logic_var_open_env (open_env_atom_swap x y η)
+	           (logic_var_swap x y u)))) with
+	        (logic_var_open_env (open_env_atom_swap x y η)
+	           (logic_var_swap x y u)) in Hop
+	        by (symmetry; apply logic_var_swap_involutive).
+	      exact Hop.
     + exact Hu.
   - intros Hv.
     apply lvars_swap_elem_iff in Hv.
@@ -109,9 +112,9 @@ Proof.
     + pose proof (logic_var_open_env_atom_swap x y η u) as Hop.
       rewrite Hop.
       rewrite <- Hu_eq.
-      rewrite logic_var_swap_involutive. reflexivity.
+      rewrite swap_involutive. reflexivity.
     + apply lvars_swap_elem_iff.
-      rewrite logic_var_swap_involutive. exact Hu.
+      rewrite swap_involutive. exact Hu.
 Qed.
 
 Lemma open_env_fresh_for_lvars_atom_swap x y η D :
@@ -480,14 +483,13 @@ Proof.
   - destruct (decide (n = k)) as [->|Hnk].
     + rewrite lookup_insert_eq.
       rewrite Hηk.
-      rewrite logic_var_swap_unfold, logic_var_free_swap.
+      rewrite logic_var_free_swap.
       rewrite swap_l. reflexivity.
     + rewrite lookup_insert_ne by congruence.
       rewrite lookup_delete_ne by congruence.
       destruct (η !! n) as [b|] eqn:Hηn;
-        [|rewrite logic_var_swap_unfold;
-          rewrite swap_fresh by congruence; reflexivity].
-      rewrite logic_var_swap_unfold, logic_var_free_swap.
+        [|rewrite swap_fresh by congruence; reflexivity].
+      rewrite logic_var_free_swap.
       rewrite swap_fresh; [reflexivity| |].
       * intros ->. apply (Havoid n).
         rewrite lookup_delete_ne by congruence. exact Hηn.
@@ -496,7 +498,7 @@ Proof.
         apply lvars_fv_open_env_lookup with (k := n).
         -- rewrite lookup_delete_ne by congruence. exact Hηn.
         -- apply elem_of_union_r. exact HvD.
-  - rewrite logic_var_swap_unfold, logic_var_free_swap.
+  - rewrite logic_var_free_swap.
     rewrite swap_fresh; [reflexivity| |].
     + intros ->. apply HyD. apply lvars_fv_elem. exact HvD.
     + intros ->. apply HzD. apply lvars_fv_elem. exact HvD.
@@ -849,7 +851,6 @@ Lemma logic_var_swap_open_one x y k v :
   logic_var_swap x y (logic_var_open k x v) =
   logic_var_open k y (logic_var_swap x y v).
 Proof.
-  rewrite !logic_var_swap_unfold.
   unfold swap.
   repeat destruct decide; subst; try congruence; reflexivity.
 Qed.

@@ -21,10 +21,6 @@ Definition open_env_avoids_atom (x : atom) (η : gmap nat atom) : Prop :=
 Definition lvars_open_env (η : gmap nat atom) (D : lvset) : lvset :=
   set_map (logic_var_open_env η) D.
 
-Definition lvars_open_env_simul
-    (η : gmap nat atom) (D : lvset) : lvset :=
-  lvars_open_env η D.
-
 Definition open_env_fresh_for_lvars
     (η : gmap nat atom) (D : lvset) : Prop :=
   forall k x,
@@ -133,12 +129,6 @@ Proof.
     rewrite swap_fresh by congruence. reflexivity.
 Qed.
 
-Lemma open_env_lift_empty :
-  (kmap S (∅ : gmap nat atom) : gmap nat atom) = ∅.
-Proof.
-  apply kmap_empty.
-Qed.
-
 Lemma open_env_lift_insert k x η :
   (kmap S (<[k := x]> η) : gmap nat atom) =
   <[S k := x]> (kmap S η : gmap nat atom).
@@ -195,36 +185,6 @@ Proof.
         S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k).
       intros Hxy. apply (Havoid k). exact Hxy.
     + rewrite open_env_lift_lookup_none by exact Hη. congruence.
-Qed.
-
-Lemma open_env_precompose_empty (ξ : gmap nat atom) :
-  (∅ ∪ ξ) = ξ.
-Proof.
-  apply map_eq. intros k.
-  rewrite lookup_union, lookup_empty.
-  destruct (ξ !! k); reflexivity.
-Qed.
-
-Lemma open_env_precompose_empty_r (η : gmap nat atom) :
-  (η ∪ ∅) = η.
-Proof.
-  apply map_eq. intros k.
-  rewrite lookup_union, lookup_empty.
-  destruct (η !! k); reflexivity.
-Qed.
-
-Lemma open_env_precompose_insert_fresh (η : gmap nat atom) k x (ξ : gmap nat atom) :
-  η !! k = None ->
-  ((<[k := x]> η) ∪ ξ) =
-  (η ∪ (<[k := x]> ξ)).
-Proof.
-  intros Hfresh.
-  apply map_eq. intros j.
-  destruct (decide (j = k)) as [->|Hjk].
-  - rewrite !lookup_union, !lookup_insert_eq.
-    rewrite Hfresh. destruct (ξ !! k); reflexivity.
-  - rewrite !lookup_union, !lookup_insert_ne by congruence.
-    destruct (η !! j), (ξ !! j); reflexivity.
 Qed.
 
 Definition open_env_atoms (η : gmap nat atom) : aset :=
@@ -390,19 +350,6 @@ Proof.
       * reflexivity.
       * intros ->. apply Hx. apply lvars_fv_elem. exact Hu.
     + apply lvars_open_elem_open. exact Hu.
-Qed.
-
-Lemma lvars_open_env_simul_empty D :
-  lvars_open_env_simul ∅ D = D.
-Proof.
-  apply lvars_open_env_empty.
-Qed.
-
-Lemma lvars_open_env_simul_fresh η D :
-  open_env_fresh_for_lvars η D ->
-  lvars_open_env η D = lvars_open_env_simul η D.
-Proof.
-  reflexivity.
 Qed.
 
 Lemma open_env_fresh_for_lvars_empty D :
@@ -572,13 +519,13 @@ Proof.
   - inversion Heq. subst x2. reflexivity.
 Qed.
 
-Lemma lvars_fv_open_env_simul_union η D E :
-  lvars_fv (lvars_open_env_simul η (D ∪ E)) =
-  lvars_fv (lvars_open_env_simul η D) ∪
-  lvars_fv (lvars_open_env_simul η E).
+Lemma lvars_fv_open_env_union η D E :
+  lvars_fv (lvars_open_env η (D ∪ E)) =
+  lvars_fv (lvars_open_env η D) ∪
+  lvars_fv (lvars_open_env η E).
 Proof.
   apply set_eq. intros x.
-  unfold lvars_open_env_simul, lvars_open_env.
+  unfold lvars_open_env.
   rewrite lvars_fv_elem, elem_of_union, !lvars_fv_elem.
   rewrite !elem_of_map.
   split.

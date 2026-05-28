@@ -76,10 +76,10 @@ Qed.
 Lemma lvar_store_open_lvars_dom η (s : LVarStore) :
   open_env_fresh_for_lvars η (dom s) ->
   dom (lvar_store_open_lvars η s) =
-  lvars_open_env_simul η (dom s).
+  lvars_open_env η (dom s).
 Proof.
   intros Hfresh.
-  unfold lvar_store_open_lvars, lvars_open_env_simul, lvars_open_env.
+  unfold lvar_store_open_lvars, lvars_open_env.
   change (dom (storeA_rekey (logic_var_open_env η) s : gmap logic_var V) =
     set_map (logic_var_open_env η) (dom (s : gmap logic_var V))).
   apply storeA_rekey_dom_inj_on.

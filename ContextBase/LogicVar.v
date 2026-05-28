@@ -87,11 +87,11 @@ Definition logic_var_to_atom (η : gmap nat atom) (v : logic_var) : option atom 
   | LVFree x => Some x
   end.
 
-Definition logic_var_swap (x y : atom) : logic_var → logic_var :=
-  swap (LVFree x) (LVFree y).
+Notation logic_var_swap :=
+  (fun x y => swap (LVFree x) (LVFree y)) (only parsing).
 
-Definition lvars_swap (x y : atom) (D : lvset) : lvset :=
-  set_swap (LVFree x) (LVFree y) D.
+Notation lvars_swap :=
+  (fun x y => set_swap (LVFree x) (LVFree y)) (only parsing).
 Definition lvars_of_atoms (X : aset) : lvset :=
   set_map LVFree X.
 
@@ -352,24 +352,16 @@ Qed.
   key_shift_inj := logic_var_shift_by_inj
 }.
 
-Lemma logic_var_swap_unfold x y v :
-  logic_var_swap x y v = swap (LVFree x) (LVFree y) v.
-Proof. reflexivity. Qed.
-
-Lemma lvars_swap_unfold x y D :
-  lvars_swap x y D = set_swap (LVFree x) (LVFree y) D.
-Proof. reflexivity. Qed.
-
 Lemma logic_var_swap_sym x y v :
   logic_var_swap x y v = logic_var_swap y x v.
 Proof.
-  unfold logic_var_swap. apply swap_sym.
+  apply swap_sym.
 Qed.
 
 Lemma lvars_swap_sym x y D :
   lvars_swap x y D = lvars_swap y x D.
 Proof.
-  unfold lvars_swap. apply set_swap_sym.
+  apply set_swap_sym.
 Qed.
 
 Lemma logic_var_free_swap x y z :
@@ -382,10 +374,13 @@ Lemma lvars_fv_swap x y (D : lvset) :
   lvars_fv (lvars_swap x y D) = set_swap x y (lvars_fv D).
 Proof.
   apply set_eq. intros z.
-  rewrite lvars_fv_elem, elem_of_set_swap, lvars_fv_elem.
-  change (LVFree z ∈ set_swap (LVFree x) (LVFree y) D ↔
-    LVFree (swap x y z) ∈ D).
-  rewrite set_swap_elem, logic_var_free_swap.
+  change (z ∈ lvars_fv (set_swap (LVFree x) (LVFree y) D) <->
+    z ∈ set_swap x y (lvars_fv D)).
+  rewrite lvars_fv_elem.
+  rewrite (set_swap_elem (LVFree x) (LVFree y) (LVFree z) D).
+  rewrite (set_swap_elem x y z (lvars_fv D)).
+  rewrite lvars_fv_elem.
+  rewrite logic_var_free_swap.
   reflexivity.
 Qed.
 
@@ -524,7 +519,7 @@ Qed.
 Lemma logic_var_swap_involutive x y v :
   logic_var_swap x y (logic_var_swap x y v) = v.
 Proof.
-  unfold logic_var_swap. apply swap_involutive.
+  apply swap_involutive.
 Qed.
 
 Lemma lvars_fv_open_subset k x (D : lvset) :

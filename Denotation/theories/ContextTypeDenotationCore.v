@@ -247,7 +247,7 @@ Lemma formula_open_env_forall η φ :
   FForall (formula_open_env ((kmap S η)) φ).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros _. rewrite formula_open_env_empty, open_env_lift_empty,
+  - intros _. rewrite formula_open_env_empty, kmap_empty,
       formula_open_env_empty.
     reflexivity.
   - intros Hinj.
@@ -346,7 +346,7 @@ Proof.
                      lvars_fv (lvars_open_env η (dom Σ))).
       {
         rewrite lty_env_open_lvars_dom.
-        - unfold lvars_open_env_simul, lvars_open_env. set_solver.
+        - unfold lvars_open_env. set_solver.
         - eapply open_env_fresh_for_lvars_mono;
             [intros v Hv; apply elem_of_union_l; exact Hv|exact Hfreshη].
       }
@@ -621,7 +621,7 @@ Lemma lty_env_open_lvars_lift_bound0_singleton η T :
   ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros _. rewrite open_env_lift_empty, lty_env_open_lvars_empty. reflexivity.
+  - intros _. rewrite kmap_empty, lty_env_open_lvars_empty. reflexivity.
   - intros Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
       as [Hinjη Havoid].
@@ -669,7 +669,7 @@ Lemma open_tm_env_lift_shift0 η e :
   tm_shift 0 (open_tm_env η e).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain
@@ -704,7 +704,7 @@ Proof.
   revert e.
   induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
   - intros e _ _.
-    rewrite open_env_lift_empty, formula_open_env_empty.
+    rewrite kmap_empty, formula_open_env_empty.
     unfold open_tm_env. rewrite map_fold_empty. reflexivity.
   - intros e Hfresh Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
@@ -733,7 +733,7 @@ Lemma open_tm_env_lift_tapp_shift_bvar0 η e :
   tapp_tm (tm_shift 0 (open_tm_env η e)) (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite !map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain
@@ -750,7 +750,7 @@ Lemma open_tm_env_lift_tret_bound0 η :
   open_tm_env ((kmap S η)) (tret (vbvar 0)) = tret (vbvar 0).
 Proof.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - rewrite open_env_lift_empty.
+  - rewrite kmap_empty.
     unfold open_tm_env. rewrite map_fold_empty. reflexivity.
   - rewrite open_env_lift_insert.
     rewrite open_tm_env_insert_fresh_plain

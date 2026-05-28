@@ -28,7 +28,7 @@ Proof. apply lvar_store_open_lvars_open_one_empty. Qed.
 Lemma lty_env_open_lvars_dom η (Σ : lty_env) :
   open_env_fresh_for_lvars η (dom Σ) ->
   dom (lty_env_open_lvars η Σ) =
-  lvars_open_env_simul η (dom Σ).
+  lvars_open_env η (dom Σ).
 Proof. apply lvar_store_open_lvars_dom. Qed.
 
 Lemma lty_env_open_lvars_lookup_fresh η v T (Σ : lty_env) :

@@ -262,7 +262,7 @@ Lemma open_cty_env_arrow η τx τ :
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros τx τ _. rewrite open_env_lift_empty, !open_cty_env_empty.
+  - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
     reflexivity.
   - intros τx τ Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -286,7 +286,7 @@ Lemma open_cty_env_wand η τx τ :
 Proof.
   revert τx τ.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros τx τ _. rewrite open_env_lift_empty, !open_cty_env_empty.
+  - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
     reflexivity.
   - intros τx τ Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -310,7 +310,7 @@ Lemma open_cty_env_over η b q :
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _. rewrite open_env_lift_empty, open_cty_env_empty, qual_open_env_empty.
+  - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
     reflexivity.
   - intros q Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -333,7 +333,7 @@ Lemma open_cty_env_under η b q :
 Proof.
   revert q.
   induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _. rewrite open_env_lift_empty, open_cty_env_empty, qual_open_env_empty.
+  - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
     reflexivity.
   - intros q Hinj.
     pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
@@ -458,7 +458,7 @@ Proof.
         (cty_shift 0 τ) ((kmap S η)) ≡τv
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
-  - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
+  - intros _. rewrite kmap_empty, !map_fold_empty. reflexivity.
   - intros k x η' Hfresh Hfold IH Hinj.
     pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
       as [Hinjη Havoid].
@@ -504,7 +504,7 @@ Proof.
         (cty_shift 0 τ) ((kmap S η)) =
       cty_shift 0
         (map_fold (fun k x acc => cty_open k x acc) τ η)) _ _ η).
-  - intros _. rewrite open_env_lift_empty, !map_fold_empty. reflexivity.
+  - intros _. rewrite kmap_empty, !map_fold_empty. reflexivity.
   - intros k x η' Hfresh Hfold IH Hinj.
     pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
       as [Hinjη Havoid].

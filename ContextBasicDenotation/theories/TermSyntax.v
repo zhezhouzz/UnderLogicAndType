@@ -66,31 +66,29 @@ Proof.
       tm_lvars_at d (tm_swap_atom x y e) =
       lvars_swap x y (tm_lvars_at d e));
     cbn [value_swap_atom tm_swap_atom value_lvars_at tm_lvars_at]; intros;
-    try solve [rewrite lvars_swap_unfold, set_swap_empty; reflexivity].
-  - rewrite lvars_swap_unfold, set_swap_singleton.
+    try solve [rewrite set_swap_empty; reflexivity].
+  - rewrite set_swap_singleton.
     match goal with
     | |- {[LVFree (swap ?x ?y ?a)]} =
          {[swap (LVFree ?x) (LVFree ?y) (LVFree ?a)]} =>
-        change (swap (LVFree x) (LVFree y) (LVFree a))
-          with (logic_var_swap x y (LVFree a));
-        rewrite logic_var_swap_unfold, logic_var_free_swap;
+        rewrite logic_var_free_swap;
         reflexivity
     end.
   - unfold bvar_lvars_at.
     destruct decide.
-    + rewrite lvars_swap_unfold, set_swap_singleton.
+    + rewrite set_swap_singleton.
       rewrite swap_fresh by congruence. reflexivity.
-    + rewrite lvars_swap_unfold, set_swap_empty. reflexivity.
+    + rewrite set_swap_empty. reflexivity.
   - apply H.
   - apply H.
   - apply H.
   - rewrite H, H0.
-    rewrite !lvars_swap_unfold, set_swap_union. reflexivity.
+    rewrite set_swap_union. reflexivity.
   - apply H.
   - rewrite H, H0.
-    rewrite !lvars_swap_unfold, set_swap_union. reflexivity.
+    rewrite set_swap_union. reflexivity.
   - rewrite H, H0, H1.
-    rewrite !lvars_swap_unfold, !set_swap_union. set_solver.
+    rewrite !set_swap_union. set_solver.
 Qed.
 
 Lemma value_lvars_at_swap_atom x y v d :

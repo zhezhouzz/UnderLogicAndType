@@ -323,9 +323,8 @@ Lemma logic_var_swap_match x y v :
   end = logic_var_swap x y v.
 Proof.
   destruct v as [k|z].
-  - rewrite logic_var_swap_unfold.
-    unfold swap. repeat destruct decide; congruence.
-  - rewrite logic_var_swap_unfold, logic_var_free_swap.
+  - unfold swap. repeat destruct decide; congruence.
+  - rewrite logic_var_free_swap.
     reflexivity.
 Qed.
 
@@ -364,7 +363,7 @@ Lemma lvar_store_swap_dom x y (s : LVarStore) :
   dom (lvar_store_swap x y s : gmap logic_var V) =
   lvars_swap x y (dom (s : gmap logic_var V)).
 Proof.
-  unfold lvar_store_swap, lvars_swap.
+  unfold lvar_store_swap.
   change (dom (storeA_rekey (logic_var_swap x y) s : gmap logic_var V) =
     set_swap (LVFree x) (LVFree y) (dom (s : gmap logic_var V))).
   rewrite storeA_rekey_dom by apply logic_var_swap_inj.
@@ -373,9 +372,9 @@ Proof.
   rewrite !elem_of_map.
   split.
   - intros [u [-> Hu]]. exists u. split; [|exact Hu].
-    rewrite logic_var_swap_unfold. reflexivity.
+    reflexivity.
   - intros [u [-> Hu]]. exists u. split; [|exact Hu].
-    rewrite <- logic_var_swap_unfold. reflexivity.
+    reflexivity.
 Qed.
 
 Lemma lvar_store_swap_insert x y (s : LVarStore) v A :
