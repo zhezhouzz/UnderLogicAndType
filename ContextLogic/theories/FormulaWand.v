@@ -2,7 +2,7 @@
 
     Derived proof principles for wand formulas. *)
 
-From ContextLogic Require Import LogicQualifier Formula FormulaTactics FormulaConnectivesCore FormulaImpl.
+From ContextLogic Require Import LogicQualifier FormulaSemantics FormulaTactics FormulaConnectivesCore FormulaImpl.
 
 Section FormulaConnectives.
 

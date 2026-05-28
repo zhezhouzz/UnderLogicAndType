@@ -3,7 +3,7 @@
     Shared support lemmas and tactics for the [tlet] introduction proof. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import ContextTypeDenotation ContextTypeDenotationTactics.
+From Denotation Require Import ContextTypeDenotationSaturate ContextTypeDenotationTactics.
 From ContextAlgebra Require Import ResourceAlgebraPullback.
 From ContextLogic Require Import FormulaSyntaxTactics.
 From CoreLang Require Import InstantiationProps.

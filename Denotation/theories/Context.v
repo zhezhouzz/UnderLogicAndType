@@ -4,7 +4,7 @@
     context-type denotation. *)
 
 From Denotation Require Export Notation.
-From Denotation Require Import ContextTypeDenotation.
+From Denotation Require Import ContextTypeDenotationSaturate.
 
 Section ContextDenotation.
 

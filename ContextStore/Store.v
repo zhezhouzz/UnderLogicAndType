@@ -9,7 +9,7 @@ From ContextStore Require Export StoreRestrictCore.
 From ContextStore Require Export StoreRestrictUnion.
 From ContextStore Require Export StoreBind.
 From ContextStore Require Export LVarStore.
-From ContextStore Require Export StoreInterfaceCompat.
+From ContextStore Require Export StoreInterfaceRestrict.
 
 Notation "σ '|ₛ' X" := (store_restrict σ X)
   (at level 30, format "σ  |ₛ  X").

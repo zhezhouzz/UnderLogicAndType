@@ -11,8 +11,8 @@
 From ContextTyping Require Export Typing.
 From ContextTyping Require Import Naming.
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterface.
-From ContextBasicDenotation Require Import Term.
+From ContextAlgebra Require Import ResourceInterfaceExtension.
+From ContextBasicDenotation Require Import TermTLet.
 
 Definition denot_ty_regular_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) : Prop :=

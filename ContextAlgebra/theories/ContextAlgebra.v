@@ -1,5 +1,5 @@
 From ContextBase Require Import Prelude LogicVar.
-From ContextAlgebra Require Import Resource.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
 
 (** * Context Algebra  (Definitions 1.6)
 
@@ -77,7 +77,8 @@ End ContextAlgebraLemmas.
 (** ** Concrete instance: (WfWorld, res_sum, res_product, res_unit, ⊑)
 
     Carrier is [WfWorld] — the sigma type [{m : World | wf_world m}].
-    Product and sum are the partial operations exported by [Resource]. *)
+    Product and sum are the partial operations exported by the resource
+    interface files. *)
 
 Section WfWorldContextAlgebra.
 

@@ -9,9 +9,9 @@
 From Stdlib Require Export Logic.ClassicalDescription Logic.ClassicalEpsilon.
 From CoreLang Require Export BasicTyping BasicTypingProps Instantiation
   InstantiationProps LocallyNamelessProps OperationalProps SmallStep Sugar.
-From ContextAlgebra Require Export Resource ResourceCore ResourceExtensionCore
+From ContextAlgebra Require Export ResourceInterfaceExtension ResourceExtensionCompat ResourceCore ResourceExtensionCore
   ResourceKeyAction.
-From ContextLogic Require Export Formula.
+From ContextLogic Require Export FormulaSemantics.
 From ContextTypeLanguage Require Export Interface.
 
 Notation StoreT := (Store (V := value)) (only parsing).

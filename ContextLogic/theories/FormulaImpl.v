@@ -2,7 +2,7 @@
 
     Derived proof principles for implication formulas. *)
 
-From ContextLogic Require Import LogicQualifier Formula FormulaTactics FormulaConnectivesCore.
+From ContextLogic Require Import LogicQualifier FormulaSemantics FormulaTactics FormulaConnectivesCore.
 
 Section FormulaConnectives.
 

@@ -3,8 +3,8 @@
     Derived proof principles for forall under the extension-based formula
     semantics. *)
 
-From ContextLogic Require Import Formula FormulaTactics FormulaConnectives.
-From ContextAlgebra Require Import Resource.
+From ContextLogic Require Import FormulaSemantics FormulaTactics FormulaConnectivesCore FormulaImpl FormulaWand.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
 
 Section FormulaForall.
 

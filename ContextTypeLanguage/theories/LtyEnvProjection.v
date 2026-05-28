@@ -3,7 +3,7 @@
     Projection from lvar-keyed type environments to atom-keyed environments. *)
 
 From LocallyNameless Require Import Classes.
-From ContextTypeLanguage Require Export LtyEnvAtom.
+From ContextTypeLanguage Require Export LtyEnvOpen.
 
 Lemma map_fold_ext_on_lookup
     {K A B : Type} `{Countable K}

@@ -4,7 +4,7 @@
     prelude may know about polymorphic stores, but it should not depend on
     worlds or the algebraic resource order. *)
 
-From ContextAlgebra Require Import Resource ResourceCore.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat ResourceCore.
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 

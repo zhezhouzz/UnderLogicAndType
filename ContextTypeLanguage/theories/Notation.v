@@ -3,7 +3,7 @@
     Public syntax notation for the pure context-type language layer. *)
 
 From CoreLang Require Export SyntaxNotation.
-From ContextTypeLanguage Require Export Env.
+From ContextTypeLanguage Require Export LtyEnvBind.
 
 Declare Scope context_scope.
 Delimit Scope context_scope with ctx.

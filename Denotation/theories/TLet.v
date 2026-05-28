@@ -3,7 +3,7 @@
     The key [tlet] introduction shape for the new denotation route. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import ContextTypeDenotation TLetSupport.
+From Denotation Require Import ContextTypeDenotationSaturate TLetSupport.
 
 Section TLetDenotation.
 Lemma tlet_intro_denotation_gas_zero

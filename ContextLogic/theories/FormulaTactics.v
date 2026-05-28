@@ -1,6 +1,6 @@
 (** * ContextLogic.FormulaTactics *)
 
-From ContextLogic Require Import Formula.
+From ContextLogic Require Import FormulaSemantics.
 From Stdlib Require Import Lia.
 
 Ltac models_fuel_finish :=

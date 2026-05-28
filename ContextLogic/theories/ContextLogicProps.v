@@ -2,7 +2,7 @@
 
     High-level algebraic properties of the store-free formula semantics. *)
 
-From ContextLogic Require Import Formula FormulaTactics FormulaDerived.
+From ContextLogic Require Import FormulaSemantics FormulaTactics FormulaConnectivesCore FormulaImpl FormulaWand FormulaForall.
 
 Section ContextLogicProps.
 

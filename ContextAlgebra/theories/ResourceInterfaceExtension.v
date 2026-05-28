@@ -2,7 +2,7 @@
 
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict ResourceAlgebra ResourceExtension ResourceExtensionDerived.
+From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws ResourceExtensionCore ResourceExtensionEquiv ResourceExtensionDerived.
 From ContextAlgebra Require Export ResourceInterfaceOrder.
 From Stdlib Require Import Logic.ProofIrrelevance.
 

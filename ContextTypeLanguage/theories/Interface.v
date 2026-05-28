@@ -4,7 +4,7 @@
     this file instead of reaching into the implementation files directly. *)
 
 From LocallyNameless Require Import Classes.
-From ContextTypeLanguage Require Export WellFormed Tactics.
+From ContextTypeLanguage Require Export WFContext Tactics.
 
 Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=
   lvars_wf_at 0 D (qual_vars q).

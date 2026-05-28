@@ -3,7 +3,7 @@
     Auxiliary judgments for the context typing rules. *)
 
 From CoreLang Require Import BasicTypingProps Sugar.
-From ContextLogic Require Import Formula.
+From ContextLogic Require Import FormulaSemantics.
 From ContextTyping Require Export WellFormed.
 
 (** ** Semantic subtyping *)

@@ -2,12 +2,12 @@
 
     Proof-facing notation for resource algebra operations.
 
-    The definitions remain in [Resource].  This file only adds a compact
+    The definitions remain in the resource interface files.  This file only adds a compact
     surface syntax, with explicit-proof variants next to proof-inferred ones. *)
 
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
-From ContextAlgebra Require Import Resource.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
 
 Notation "m1 '×[' Hc ']' m2" :=
   (res_product m1 m2 Hc)

@@ -1,9 +1,12 @@
 From ContextLogic Require Export
   LogicQualifier
   FormulaSyntax
-  Formula
+  FormulaSemantics
   FormulaTactics
-  FormulaDerived
+  FormulaConnectivesCore
+  FormulaImpl
+  FormulaWand
+  FormulaForall
   FormulaWorldExtension
   ContextLogicProps
   FormulaNotation.

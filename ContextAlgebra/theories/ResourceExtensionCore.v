@@ -1,7 +1,7 @@
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
-  ResourceAlgebra.
+  ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws.
 
 (** * Fiber extensions for abstract resources *)
 

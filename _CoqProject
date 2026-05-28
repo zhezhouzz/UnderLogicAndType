@@ -27,7 +27,6 @@ ContextStore/LVarStore.v
 ContextStore/StoreInterfaceCore.v
 ContextStore/StoreInterfaceLookupSwap.v
 ContextStore/StoreInterfaceRestrict.v
-ContextStore/StoreInterfaceCompat.v
 ContextStore/Store.v
 
 ContextAlgebra/theories/ResourceCore.v
@@ -37,20 +36,15 @@ ContextAlgebra/theories/ResourceAlgebraBase.v
 ContextAlgebra/theories/ResourceAlgebraOrder.v
 ContextAlgebra/theories/ResourceAlgebraPullback.v
 ContextAlgebra/theories/ResourceAlgebraSum.v
-ContextAlgebra/theories/ResourceAlgebraCore.v
 ContextAlgebra/theories/ResourceAlgebraLaws.v
-ContextAlgebra/theories/ResourceAlgebra.v
 ContextAlgebra/theories/ResourceExtensionCore.v
 ContextAlgebra/theories/ResourceExtensionEquiv.v
-ContextAlgebra/theories/ResourceExtension.v
 ContextAlgebra/theories/ResourceExtensionDerived.v
 ContextAlgebra/theories/ResourceInterfaceCore.v
 ContextAlgebra/theories/ResourceInterfaceBasic.v
 ContextAlgebra/theories/ResourceInterfaceOrder.v
 ContextAlgebra/theories/ResourceInterfaceExtension.v
-ContextAlgebra/theories/ResourceInterface.v
 ContextAlgebra/theories/ResourceExtensionCompat.v
-ContextAlgebra/theories/Resource.v
 ContextAlgebra/theories/ResourceNotation.v
 ContextAlgebra/theories/ResourceTactics.v
 ContextAlgebra/theories/ContextAlgebra.v
@@ -60,14 +54,11 @@ ContextLogic/theories/FormulaSyntax.v
 ContextLogic/theories/FormulaSyntaxTactics.v
 ContextLogic/theories/FormulaScope.v
 ContextLogic/theories/FormulaSemantics.v
-ContextLogic/theories/Formula.v
 ContextLogic/theories/FormulaTactics.v
 ContextLogic/theories/FormulaConnectivesCore.v
 ContextLogic/theories/FormulaImpl.v
 ContextLogic/theories/FormulaWand.v
-ContextLogic/theories/FormulaConnectives.v
 ContextLogic/theories/FormulaForall.v
-ContextLogic/theories/FormulaDerived.v
 ContextLogic/theories/FormulaWorldExtension.v
 ContextLogic/theories/ContextLogicProps.v
 ContextLogic/theories/FormulaNotation.v
@@ -97,19 +88,15 @@ ContextTypeLanguage/theories/SyntaxCore.v
 ContextTypeLanguage/theories/SyntaxLvars.v
 ContextTypeLanguage/theories/SyntaxOpen.v
 ContextTypeLanguage/theories/SyntaxEquiv.v
-ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/WFLvars.v
 ContextTypeLanguage/theories/WFContextTy.v
 ContextTypeLanguage/theories/WFContext.v
-ContextTypeLanguage/theories/WellFormed.v
 ContextTypeLanguage/theories/MultiOpen.v
 ContextTypeLanguage/theories/TypeOpen.v
 ContextTypeLanguage/theories/LtyEnvCore.v
 ContextTypeLanguage/theories/LtyEnvOpen.v
-ContextTypeLanguage/theories/LtyEnvAtom.v
 ContextTypeLanguage/theories/LtyEnvProjection.v
 ContextTypeLanguage/theories/LtyEnvBind.v
-ContextTypeLanguage/theories/Env.v
 ContextTypeLanguage/theories/Notation.v
 ContextTypeLanguage/theories/Tactics.v
 ContextTypeLanguage/theories/Interface.v
@@ -122,10 +109,8 @@ ContextBasicDenotation/theories/TermEval.v
 ContextBasicDenotation/theories/TermOpen.v
 ContextBasicDenotation/theories/TermExtension.v
 ContextBasicDenotation/theories/TermTLet.v
-ContextBasicDenotation/theories/Term.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
-ContextBasicDenotation/theories/Interface.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationCore.v
@@ -135,7 +120,6 @@ Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationOpenModels.v
 Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturate.v
-Denotation/theories/ContextTypeDenotation.v
 Denotation/theories/Context.v
 Denotation/theories/TLetSupport.v
 Denotation/theories/TLet.v

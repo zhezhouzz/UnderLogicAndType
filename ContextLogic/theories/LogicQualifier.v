@@ -1,4 +1,4 @@
-From ContextAlgebra Require Export Resource.
+From ContextAlgebra Require Export ResourceInterfaceExtension ResourceExtensionCompat.
 From ContextAlgebra Require Import ResourceCore ResourceAlgebraBase ResourceRestrict.
 From ContextBase Require Export Prelude LogicVar.
 From ContextStore Require Export Store.

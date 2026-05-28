@@ -8,7 +8,7 @@
 
 From Stdlib Require Import Classes.RelationClasses Classes.Morphisms.
 From LocallyNameless Require Import Classes.
-From ContextTypeLanguage Require Export Syntax.
+From ContextTypeLanguage Require Export SyntaxEquiv.
 
 Class MOpen Env A B := mopen : Env -> A -> B.
 Arguments mopen {_ _ _ _} _ _.

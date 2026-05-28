@@ -8,7 +8,7 @@
     are deliberately not part of this core definition. *)
 
 From CoreLang Require Import BasicTyping BasicTypingProps.
-From ContextLogic Require Import Formula.
+From ContextLogic Require Import FormulaSemantics.
 From ContextStore Require Import Store.
 From ContextTyping Require Export Auxiliary PrimOpContext.
 

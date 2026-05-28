@@ -5,11 +5,11 @@
     continuation/reduction helper stack. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterface ResourceExtensionCore.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCore.
 From ContextTyping Require Export RegularDenotation.
 From ContextTyping Require Import Naming.
-From ContextBasicDenotation Require Import Interface.
-From Denotation Require Import Context ContextTypeDenotation TLet.
+From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier BasicTypingFormula.
+From Denotation Require Import Context ContextTypeDenotationSaturate TLet.
 
 Lemma denot_tlet_direct_in_ctx
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) e1 e2

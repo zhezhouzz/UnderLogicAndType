@@ -8,9 +8,9 @@
     [Denotation.TLet.tlet_intro_denotation]. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterface ResourceExtensionCore.
-From ContextBasicDenotation Require Import Interface.
-From Denotation Require Import ContextTypeDenotation.
+From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCore.
+From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier BasicTypingFormula.
+From Denotation Require Import ContextTypeDenotationSaturate.
 From ContextTyping Require Export TLetDirect.
 
 Lemma denot_tlet_semantic_direct

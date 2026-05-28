@@ -8,7 +8,7 @@
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
-  ResourceAlgebra ResourceExtension ResourceExtensionDerived ResourceInterface.
+  ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws ResourceExtensionCore ResourceExtensionEquiv ResourceExtensionDerived ResourceInterfaceExtension.
 From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon.
 
 Section ResourceExtensionCompat.

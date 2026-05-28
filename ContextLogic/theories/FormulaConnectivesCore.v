@@ -4,7 +4,7 @@
     keeps only statements that still describe useful structure under the new
     dependent-lqual and extension-based forall definitions. *)
 
-From ContextLogic Require Import LogicQualifier Formula FormulaTactics.
+From ContextLogic Require Import LogicQualifier FormulaSemantics FormulaTactics.
 
 Section FormulaConnectives.
 

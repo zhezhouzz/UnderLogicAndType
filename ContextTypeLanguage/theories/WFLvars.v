@@ -2,7 +2,7 @@
 
     Formation/scoping predicates for logic-variable sets. *)
 
-From ContextTypeLanguage Require Export Syntax.
+From ContextTypeLanguage Require Export SyntaxEquiv.
 
 Definition lvar_wf_at (d : nat) (D : aset) (v : logic_var) : Prop :=
   match v with

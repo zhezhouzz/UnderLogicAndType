@@ -1,11 +1,11 @@
 From ContextBase Require Import Prelude LogicVar.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
-  ResourceAlgebra ResourceExtension.
+  ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws ResourceExtensionCore ResourceExtensionEquiv.
 
 (** * Derived extension lemmas
 
-    This file is intentionally after [ResourceExtension].  Long legacy proofs
+    This file is intentionally after the core extension files.  Long legacy proofs
     that are really extension arguments should land here, not in the basic
     resource files.  During the definition-migration phase these are named
     review points. *)
