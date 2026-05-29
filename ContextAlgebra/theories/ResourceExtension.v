@@ -172,7 +172,6 @@ Lemma extA_output_store_dom F σ we σe :
 Proof.
   intros Hdomσ HF Hσe.
   pose proof (wfworldA_store_dom we σe Hσe) as Hdom_we.
-  change (dom (σe : gmap K V) = worldA_dom (we : WorldAT)) in Hdom_we.
   rewrite Hdom_we.
   eapply extA_rel_dom; eauto.
 Qed.
@@ -200,7 +199,6 @@ Proof.
   apply storeA_disj_dom_compat.
   change (dom (σm : gmap K V) ∩ dom (σe : gmap K V) = ∅).
   pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-  change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
   assert (Hdomσe : dom (σe : gmap K V) = extA_out F).
   { eapply extA_output_store_dom_from_base; eauto. }
   rewrite Hdomσm, Hdomσe.
@@ -240,7 +238,6 @@ Proof.
       * pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
         pose proof (extA_output_store_dom_from_base m F σm we σe
           Happ Hσm HF Hσe) as Hdomσe.
-        change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
         rewrite Hdomσm, Hdomσe.
         set_solver.
   - split; [exact Happ |].
@@ -306,7 +303,6 @@ Proof.
         -- eapply (resA_extend_store_compat m F σm we σe); eauto.
            exact (resA_extend_by_applicable _ _ _ Hmy).
         -- pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-           change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
            rewrite Hdomσm.
            exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hmy)).
         -- rewrite Hdomσe. set_solver.
@@ -316,7 +312,6 @@ Proof.
            ++ rewrite Hσn_proj. exact HF.
            ++ exact Hσe.
         -- pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-           change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
            rewrite Hdomσn.
            exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hny)).
         -- rewrite Hdomσe. set_solver.
@@ -342,7 +337,6 @@ Proof.
         -- eapply (resA_extend_store_compat n F σn we σe); eauto.
            exact (resA_extend_by_applicable _ _ _ Hny).
         -- pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-           change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
            rewrite Hdomσn.
            exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hny)).
         -- rewrite Hdomσe. set_solver.
@@ -352,7 +346,6 @@ Proof.
            ++ rewrite Hσm_proj. exact HF.
            ++ exact Hσe.
         -- pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-           change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
            rewrite Hdomσm.
            exact (extA_app_in _ _ (resA_extend_by_applicable _ _ _ Hmy)).
         -- rewrite Hdomσe. set_solver.
@@ -374,7 +367,6 @@ Proof.
       pose proof (resA_extend_store_compat m F σm we σe Happ Hσm HF Hσe)
         as Hcompat.
       pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-      change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
       pose proof (extA_output_store_dom_from_base m F σm we σe
         Happ Hσm HF Hσe) as Hdomσe.
       assert (Hpiece :
@@ -393,7 +385,6 @@ Proof.
       rewrite Hpiece in Hrestrict. subst. exact Hσm.
     + intros Hσ.
       pose proof (wfworldA_store_dom m σ Hσ) as Hdomσ.
-      change (dom (σ : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσ.
       assert (Hproj_dom :
           dom (storeA_restrict σ (extA_in F)) = extA_in F)
         by (eapply extA_projection_dom; eauto).
@@ -441,7 +432,6 @@ Proof.
   pose proof (resA_extend_store_compat m F σm we σe Happ Hσm HF Hσe)
     as Hcompat.
   pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-  change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
   pose proof (extA_output_store_dom_from_base m F σm we σe
     Happ Hσm HF Hσe) as Hdomσe.
   apply (storeA_restrict_union_piece_l σm σe
@@ -551,7 +541,6 @@ Proof.
             storeA_compat σn σe).
         { eapply resA_extend_store_compat; eauto. }
         pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-        change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
         pose proof (extA_output_store_dom_from_base n F σn we σe
           Happ_n Hσn HF_n Hσe) as Hdomσe_out.
         rewrite (resA_extend_by_dom _ _ _ Hmy).
@@ -588,7 +577,6 @@ Proof.
           storeA_compat σn σe).
       { eapply resA_extend_store_compat; eauto. }
       pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-      change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
       pose proof (extA_output_store_dom_from_base n F σn we σe
         Happ_n Hσn HF Hσe) as Hdomσe_out.
       rewrite (resA_extend_by_dom _ _ _ Hmy) in Hrestrict.
@@ -951,7 +939,6 @@ Proof.
         apply storeA_restrict_union_absorb_r.
         - exact (Hc_m σn σm Hσn Hσm).
         - pose proof (wfworldA_store_dom m σm Hσm) as Hdom_m.
-          change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdom_m.
           rewrite Hdom_m.
           exact (extA_app_in _ _ Happ).
       }
@@ -992,7 +979,6 @@ Proof.
     apply storeA_restrict_union_absorb_r.
     - exact Hcompat_n_m.
     - pose proof (wfworldA_store_dom m σm Hσm) as Hdom_m.
-      change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdom_m.
       rewrite Hdom_m.
       exact (extA_app_in _ _ Happ).
   }
@@ -1014,7 +1000,6 @@ Proof.
     + exact Hcompat_n_m.
     + apply storeA_disj_dom_compat.
       pose proof (wfworldA_store_dom n σn Hσn) as Hdom_n.
-      change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdom_n.
       rewrite Hdom_n.
       pose proof (extA_output_store_dom_from_base m F σm we σe
         Happ Hσm HF Hσe) as Hdom_σe.
@@ -1346,8 +1331,6 @@ Proof.
     - intros τ [σn [σy [Hσn [Hσy [Hagree ->]]]]].
       pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
       pose proof (wfworldA_store_dom my σy Hσy) as Hdomσy.
-      change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
-      change (dom (σy : gmap K V) = worldA_dom (my : WorldAT)) in Hdomσy.
       assert (Hcompat :
           storeA_compat σn (storeA_restrict σy ({[y]} : gset K))).
       {
@@ -1392,11 +1375,9 @@ Proof.
            ++ subst τ. exact Hσn.
            ++ apply storeA_compat_restrict_singleton_fresh.
               pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-              change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
               change (y ∉ (dom (σn : gmap K V) : gset K)).
               rewrite Hdomσn. exact Hy_n.
            ++ pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-              change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
               intros z Hz. change (z ∈ (dom (σn : gmap K V) : gset K)) in Hz.
               rewrite Hdomσn in Hz. exact Hz.
            ++ apply storeA_restrict_dom_subset.
@@ -1427,11 +1408,9 @@ Proof.
                 (worldA_dom (n : WorldAT)) ({[y]} : gset K)).
               ** apply storeA_compat_restrict_singleton_fresh.
                  pose proof (wfworldA_store_dom n τ Hτn) as Hdomτ.
-                 change (dom (τ : gmap K V) = worldA_dom (n : WorldAT)) in Hdomτ.
                  change (y ∉ (dom (τ : gmap K V) : gset K)).
                  rewrite Hdomτ. exact Hy_n.
               ** pose proof (wfworldA_store_dom n τ Hτn) as Hdomτ.
-                 change (dom (τ : gmap K V) = worldA_dom (n : WorldAT)) in Hdomτ.
                  intros z Hz. change (z ∈ (dom (τ : gmap K V) : gset K)) in Hz.
                  rewrite Hdomτ in Hz. exact Hz.
               ** apply storeA_restrict_dom_subset.
@@ -1458,10 +1437,6 @@ Proof.
               exact Hrestrict.
            ++ pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
               pose proof (wfworldA_store_dom my τ Hτmy) as Hdomτ.
-              change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
-              change (dom (τ : gmap K V) = worldA_dom (my : WorldAT)) in Hdomτ.
-              change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
-              change (dom (τ : gmap K V) = worldA_dom (my : WorldAT)) in Hdomτ.
               rewrite Hdom_my.
               apply storeA_restrict_union_base_singleton.
               ** intros z Hz. change (z ∈ (dom (σn : gmap K V) : gset K)).
@@ -1489,16 +1464,13 @@ Proof.
            {
              apply storeA_restrict_union_base_singleton.
              - pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-               change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
                intros z Hz. change (z ∈ (dom (σn : gmap K V) : gset K)).
                rewrite Hdomσn. apply Hdom_m_n. exact Hz.
              - pose proof (wfworldA_store_dom my σy Hσy) as Hdomσy.
-               change (dom (σy : gmap K V) = worldA_dom (my : WorldAT)) in Hdomσy.
                change ((dom (σy : gmap K V) : gset K) =
                  worldA_dom (m : WorldAT) ∪ {[y]}).
                rewrite Hdomσy, Hdom_my. reflexivity.
              - pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
-               change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσn.
                change (y ∉ (dom (σn : gmap K V) : gset K)).
                rewrite Hdomσn. exact Hy_n.
              - exact Hagree.
