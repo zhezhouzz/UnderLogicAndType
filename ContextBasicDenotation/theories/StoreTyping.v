@@ -360,19 +360,14 @@ Proof.
   destruct Hext as [Happ [Hmy_dom Hmy_stores]].
   split.
   - intros x Hx.
-    change (x ∈ dom ((Σbase ∪ Σout : gmap atom ty) : gmap atom ty)) in Hx.
     apply elem_of_dom in Hx as [T Hlookup].
     rewrite map_lookup_union_Some_raw in Hlookup.
-    change (x ∈ worldA_dom (raw_world my)).
     replace (worldA_dom (raw_world my))
       with (worldA_dom (raw_world m) ∪ extA_out F) by (symmetry; exact Hmy_dom).
     destruct Hlookup as [Hbase | [_ Hout]].
-    + change ((Σbase : gmap atom ty) !! x = Some T) in Hbase.
-      apply elem_of_dom_2 in Hbase.
+    + apply elem_of_dom_2 in Hbase.
       apply Hbase_dom in Hbase. set_solver.
-    + change ((Σout : gmap atom ty) !! x = Some T) in Hout.
-      apply elem_of_dom_2 in Hout.
-      change (x ∈ dom (Σout : gmap atom ty)) in Hout.
+    + apply elem_of_dom_2 in Hout.
       rewrite Hout_dom in Hout. set_solver.
   - intros σ Hσ.
     apply (proj1 (Hmy_stores σ)) in Hσ.
@@ -386,7 +381,6 @@ Proof.
       destruct Hσ as [Hσm_lookup | [Hσm_none Hσe_lookup]].
       * eapply Hbase_stores; eauto.
       * exfalso.
-        change ((Σbase : gmap atom ty) !! x = Some T) in HΣbase.
         apply elem_of_dom_2 in HΣbase.
         apply Hbase_dom in HΣbase.
         pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
@@ -399,9 +393,7 @@ Proof.
     + rewrite map_lookup_union_Some_raw in Hσ.
       destruct Hσ as [Hσm_lookup | [_ Hσe_lookup]].
       * exfalso.
-        change ((Σout : gmap atom ty) !! x = Some T) in HΣout.
         apply elem_of_dom_2 in HΣout.
-        change (x ∈ dom (Σout : gmap atom ty)) in HΣout.
         rewrite Hout_dom in HΣout.
         pose proof (extA_app_out _ _ Happ) as Hout_disj.
         pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
@@ -609,11 +601,10 @@ Proof.
   { exists σ. split; [exact Hσ | reflexivity]. }
   specialize (Hstores Hlift).
   split.
-  - unfold closed_env. intros x v Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
-    rewrite lvars_fv_elem in Hx.
-    change (LVFree x ∈ dom (Σ : gmap logic_var ty)) in Hx.
-    apply elem_of_dom in Hx as [T HΣ].
+	  - unfold closed_env. intros x v Hlookup.
+	    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
+	    rewrite lvars_fv_elem in Hx.
+	    apply elem_of_dom in Hx as [T HΣ].
     pose proof (Hstores (LVFree x) T v HΣ) as Hval.
     assert (Hlookup_lift : lstore_lift_free σ !! LVFree x = Some v).
     {
@@ -624,11 +615,10 @@ Proof.
     specialize (Hval Hlookup_lift).
     cbn [stale stale_value_inst].
     apply basic_typing_closed_value in Hval. exact Hval.
-  - unfold lc_env. intros x v Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
-    rewrite lvars_fv_elem in Hx.
-    change (LVFree x ∈ dom (Σ : gmap logic_var ty)) in Hx.
-    apply elem_of_dom in Hx as [T HΣ].
+	  - unfold lc_env. intros x v Hlookup.
+	    apply storeA_restrict_lookup_some in Hlookup as [Hx Hlookup].
+	    rewrite lvars_fv_elem in Hx.
+	    apply elem_of_dom in Hx as [T HΣ].
     pose proof (Hstores (LVFree x) T v HΣ) as Hval.
     assert (Hlookup_lift : lstore_lift_free σ !! LVFree x = Some v).
     {
