@@ -3,7 +3,7 @@
 From ContextBase Require Import Prelude LogicVar BaseTactics.
 From ContextStore Require Import StoreCore.
 
-Section AbstractStoreRestrict.
+Section StoreRestrictCore.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -339,11 +339,11 @@ Proof.
       apply Hz. apply elem_of_map. exists u. split; [reflexivity | exact Hdomu].
 Qed.
 
-End AbstractStoreRestrict.
+End StoreRestrictCore.
 
 (** ** Restriction/union lemmas *)
 
-Section AbstractStoreRestrict.
+Section StoreRestrictUnion.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -930,11 +930,11 @@ Proof.
     + symmetry. apply storeA_restrict_lookup_none_r. exact HiY.
 Qed.
 
-End AbstractStoreRestrict.
+End StoreRestrictUnion.
 
 (** ** Compatibility, bind, and union lemmas *)
 
-Section AbstractStoreRestrict.
+Section StoreRestrictCompat.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -1285,4 +1285,4 @@ Proof.
     rewrite Heq in Hr1. rewrite Hr2 in Hr1. by inversion Hr1.
 Qed.
 
-End AbstractStoreRestrict.
+End StoreRestrictCompat.

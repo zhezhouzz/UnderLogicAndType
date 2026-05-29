@@ -590,21 +590,9 @@ Proof.
       exact Hrestrict.
 Qed.
 
-End ResourceAlgebraA.
-
-
 
 
 (** * Order and fiber transport lemmas for abstract resource algebra *)
-
-Section ResourceAlgebraA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Lemma resA_le_same_dom_eq (w1 w2 : WfWorldAT) :
   w1 ⊑ w2 →
@@ -1174,21 +1162,9 @@ Proof.
   split; [exact Hσproj_n | exact Heq_n].
 Qed.
 
-End ResourceAlgebraA.
-
-
 
 
 (** * Pullback and product-lifting lemmas for abstract resource algebra *)
-
-Section ResourceAlgebraA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Definition rawA_pullback_projection (n p : WfWorldAT) : WorldAT := {|
   worldA_dom := worldA_dom (n : WorldAT);
@@ -1837,21 +1813,9 @@ Proof.
   - simpl. set_solver.
 Qed.
 
-End ResourceAlgebraA.
-
-
 
 
 (** * Sum/restrict lifting lemmas for abstract resource algebra *)
-
-Section ResourceAlgebraA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Lemma resA_sum_le_mono (w1 w2 w1' w2' : WfWorldAT)
     (Hdef : rawA_sum_defined w1 w2) (Hdef' : rawA_sum_defined w1' w2') :
@@ -1997,20 +1961,9 @@ Proof.
                  apply (resA_slice_sum_le_base m n1 n2 X Hdef Hsum_eq Hsub1 Hsub2).
 Qed.
 
-End ResourceAlgebraA.
-
 
 
 (** * Algebraic laws for abstract resources *)
-
-Section ResourceAlgebraA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Lemma resA_product_comm (w1 w2 : WfWorldAT) (Hc : worldA_compat w1 w2)
     (Hc' : worldA_compat w2 w1) :

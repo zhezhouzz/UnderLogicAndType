@@ -250,19 +250,12 @@ Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
 Notation "wfib ∈ᶠ Fiber( w , X )" :=
   (res_fiber_member w X wfib) (at level 70).
 
-End ResourceInterface.
 
 
 (** * Concrete resource basic interface lemmas *)
 
 
-Section ResourceInterface.
 
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreT := (gmap atom V) (only parsing).
-Local Notation World := (@World V) (only parsing).
-Local Notation WfWorld := (@WfWorld V) (only parsing).
 
 Lemma world_ext (m1 m2 : World) :
   world_dom m1 = world_dom m2 →
@@ -297,19 +290,12 @@ Proof. apply rawA_compat_unit_r. Qed.
 Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof. apply wf_singleton_worldA. Qed.
 
-End ResourceInterface.
 
 
 (** * Concrete resource key action and order interface lemmas *)
 
 
-Section ResourceInterface.
 
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreT := (gmap atom V) (only parsing).
-Local Notation World := (@World V) (only parsing).
-Local Notation WfWorld := (@WfWorld V) (only parsing).
 
 Lemma res_restrict_restrict_eq (w : WfWorld) (X Y : aset) :
   res_restrict (res_restrict w X) Y =
@@ -494,44 +480,37 @@ Lemma res_sum_assoc_eq (w1 w2 w3 : WfWorld)
     res_sum w1 (res_sum w2 w3 H23) H1_23.
 Proof. apply resA_sum_assoc_eq. Qed.
 
-End ResourceInterface.
 
 
 (** * Concrete resource extension interface lemmas *)
 
 
-Section ResourceInterface.
 
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreT := (gmap atom V) (only parsing).
-Local Notation World := (@World V) (only parsing).
-Local Notation WfWorld := (@WfWorld V) (only parsing).
 
 Local Notation "m '#>' F '~~>' n" := (res_extend_by m F n)
   (at level 70, F at next level, n at next level).
 
-Lemma res_extend_by_restrict_base (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_restrict_base (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   res_restrict n (world_dom m) = m.
 Proof. apply resA_extend_by_restrict_base. Qed.
 
-Lemma res_extend_by_dom (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_dom (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
 Proof. apply resA_extend_by_dom. Qed.
 
-Lemma res_extend_by_le (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   m ⊑ n.
 Proof. apply resA_extend_by_le. Qed.
 
-Lemma res_extend_by_applicable (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_applicable (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   extension_applicable F m.
 Proof. apply resA_extend_by_applicable. Qed.
 
-Lemma res_extend_by_input_dom (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_input_dom (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   extA_in F ⊆ world_dom (m : World).
 Proof.
@@ -540,7 +519,7 @@ Proof.
   exact (extA_app_in _ _ Happ).
 Qed.
 
-Lemma res_extend_by_output_fresh (m : WfWorld) (F : @fiber_extension V) (n : WfWorld) :
+Lemma res_extend_by_output_fresh (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   extA_out F ## world_dom (m : World).
 Proof.
@@ -549,13 +528,13 @@ Proof.
   exact (extA_app_out _ _ Happ).
 Qed.
 
-Lemma res_extend_by_exists (m : WfWorld) (F : @fiber_extension V) :
+Lemma res_extend_by_exists (m : WfWorld) (F : fiber_extension) :
   extension_applicable F m →
   ∃ n, m #> F ~~> n.
 Proof. apply resA_extend_by_exists. Qed.
 
 Lemma res_extend_by_projection_eq
-    (m n : WfWorld) (F : @fiber_extension V) (my ny : WfWorld) :
+    (m n : WfWorld) (F : fiber_extension) (my ny : WfWorld) :
   res_restrict m (extA_in F) = res_restrict n (extA_in F) →
   m #> F ~~> my →
   n #> F ~~> ny →
@@ -564,7 +543,7 @@ Lemma res_extend_by_projection_eq
 Proof. apply resA_extend_by_projection_eq. Qed.
 
 Lemma extension_applicable_product_r_fresh
-    (n m : WfWorld) (F : @fiber_extension V)
+    (n m : WfWorld) (F : fiber_extension)
     (Hc_m : world_compat n m) :
   extA_out F ## world_dom (n : World) ->
   extension_applicable F m ->
@@ -577,7 +556,7 @@ Proof.
 Qed.
 
 Lemma world_compat_restrict_l_extend_by_fresh
-    (n m mx : WfWorld) (F : @fiber_extension V) (X : aset) :
+    (n m mx : WfWorld) (F : fiber_extension) (X : aset) :
   extA_out F ## X ->
   m #> F ~~> mx ->
   world_compat n m ->
@@ -606,7 +585,7 @@ Proof.
 Qed.
 
 Lemma res_extend_by_product_r_store_forward
-    (n m mx : WfWorld) (F : @fiber_extension V)
+    (n m mx : WfWorld) (F : fiber_extension)
     (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
   extA_out F ## world_dom (n : World) ->
   m #> F ~~> mx ->
@@ -656,7 +635,7 @@ Proof.
 Qed.
 
 Lemma res_extend_by_product_r_store_backward
-    (n m mx : WfWorld) (F : @fiber_extension V)
+    (n m mx : WfWorld) (F : fiber_extension)
     (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
   extA_out F ## world_dom (n : World) ->
   m #> F ~~> mx ->
@@ -716,7 +695,7 @@ Proof.
 Qed.
 
 Lemma res_extend_by_product_r_fresh
-    (n m mx : WfWorld) (F : @fiber_extension V)
+    (n m mx : WfWorld) (F : fiber_extension)
     (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) :
   extA_out F ## world_dom (n : World) ->
   m #> F ~~> mx ->
@@ -737,7 +716,7 @@ Proof.
 Qed.
 
 Lemma res_extend_by_commute
-    (m : WfWorld) (F G : @fiber_extension V)
+    (m : WfWorld) (F G : fiber_extension)
     (mF mG mFG mGF : WfWorld) :
   m #> F ~~> mF →
   m #> G ~~> mG →

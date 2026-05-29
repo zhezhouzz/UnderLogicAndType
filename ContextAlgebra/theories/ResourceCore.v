@@ -59,20 +59,12 @@ Proof.
   intros Hσ HX. rewrite (wfworldA_store_dom w σ Hσ). exact HX.
 Qed.
 
-End ResourceCoreA.
 
 
+(** ** Key actions lifted from stores to resources *)
 
-(** * Key actions lifted from stores to resources *)
-
-Section ResourceCoreA.
-
-Context {K : Type} `{Countable K}.
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
+Local Notation WorldAT := WorldA (only parsing).
+Local Notation WfWorldAT := WfWorldA (only parsing).
 
 Definition rawA_rekey (f : K → K) (m : WorldAT) : WorldAT := {|
   worldA_dom    := set_map f (worldA_dom m);
@@ -202,7 +194,7 @@ End ResourceOpenA.
 
 (** * Restriction and fibers for abstract resources *)
 
-Section ResourceCoreA.
+Section ResourceRestrictA.
 
 Context {K : Type} `{Countable K} .
 Context {V : Type} `{ValueSig V}.
@@ -568,7 +560,7 @@ Proof.
   apply resA_restrict_rekey.
 Qed.
 
-End ResourceCoreA.
+End ResourceRestrictA.
 
 Section ResourceOpenRestrictA.
 

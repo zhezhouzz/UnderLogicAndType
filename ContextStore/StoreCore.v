@@ -3,7 +3,7 @@
 From ContextBase Require Import Prelude LogicVar BaseTactics.
 From Stdlib Require Import Logic.ProofIrrelevance.
 
-Section AbstractStoreCore.
+Section StoreCoreDefs.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -141,7 +141,7 @@ Proof.
   better_set_solver.
 Qed.
 
-End AbstractStoreCore.
+End StoreCoreDefs.
 
 Arguments storeAO_store {_ _ _ _ _} _.
 Arguments storeAO_dom {_ _ _ _ _} _.
@@ -153,7 +153,7 @@ Notation "'storeA_rekey' f s" := (kmap (M2:=gmap _) f s)
 
 (** ** Generic stores: key actions *)
 
-Section AbstractStoreCore.
+Section StoreKeyAction.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -580,9 +580,9 @@ Proof.
     apply elem_of_dom in HuD as [w Hw]. congruence.
 Qed.
 
-End AbstractStoreCore.
+End StoreKeyAction.
 
-Section AbstractStoreCore.
+Section StoreSwap.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -763,9 +763,9 @@ Proof.
   rewrite swap_conjugate. reflexivity.
 Qed.
 
-End AbstractStoreCore.
+End StoreSwap.
 
-Section AbstractStoreCore.
+Section StoreShift.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -812,4 +812,4 @@ Proof.
   apply storeA_rekey_union, key_shift_inj.
 Qed.
 
-End AbstractStoreCore.
+End StoreShift.

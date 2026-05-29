@@ -556,21 +556,10 @@ Proof.
       * rewrite Hdomσe_out. set_solver.
 Qed.
 
-End ResourceExtensionA.
 
 
 (** * Fiber extension equivalence and commuting lemmas *)
 
-
-Section ResourceExtensionA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
-Local Notation fiber_extensionA := (@fiber_extensionA K _ _ V).
 
 Local Notation "m '#>' F '~~A>' n" := (resA_extend_by m F n)
   (at level 70, F at next level, n at next level).
@@ -864,9 +853,6 @@ Proof.
            apply storeA_union_swap_right. exact Hcompat_extra.
 Qed.
 
-End ResourceExtensionA.
-
-
 
 (** * Derived extension lemmas
 
@@ -874,15 +860,6 @@ End ResourceExtensionA.
     that are really extension arguments should land here, not in the basic
     resource files.  During the definition-migration phase these are named
     review points. *)
-
-Section ResourceExtensionA.
-
-Context {K : Type} `{Countable K} .
-Context {V : Type} `{ValueSig V}.
-
-Local Notation StoreAT := (gmap K V) (only parsing).
-Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
-Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Lemma resA_extend_by_sum_pullback
     (m : WfWorldAT) F (n n1 n2 : WfWorldAT)
