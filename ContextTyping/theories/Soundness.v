@@ -13,7 +13,8 @@ From CoreLang Require Import BasicTyping SmallStep StrongNormalization.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula.
-From Denotation Require Import ContextTypeDenotationSaturate TLet.
+From Denotation Require Import ContextTypeDenotationSaturate
+  ContextTypeDenotationCases TLet.
 From ContextTyping Require Export TLet.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
@@ -276,7 +277,10 @@ Lemma denot_const_direct_in_ctx Σ c :
   denot_ctx_in_env Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof.
-Admitted.
+  intros Hwf m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply const_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma fundamental_const_case Σ c :
   context_typing_wf Σ CtxEmpty (tret (vconst c)) (const_precise_ty c) ->
@@ -403,7 +407,10 @@ Lemma denot_letd_direct_in_ctx
   denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf IH1 IH2 m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply letd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_lam_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -416,7 +423,10 @@ Lemma denot_lam_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply lam_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_lamd_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -429,7 +439,10 @@ Lemma denot_lamd_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply lamd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_app_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
@@ -441,7 +454,10 @@ Lemma denot_app_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply app_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_appd_direct_in_ctx
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
@@ -454,7 +470,10 @@ Lemma denot_appd_direct_in_ctx
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply appd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_fix_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
@@ -470,7 +489,10 @@ Lemma denot_fix_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (erase_ty (CTArrow τx τ)) vf)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply fix_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_fixd_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
@@ -486,7 +508,10 @@ Lemma denot_fixd_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (erase_ty (CTWand τx τ)) vf)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply fixd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_appop_direct_in_ctx
     (Φ : primop_ctx) Σ Γ op x :
@@ -500,7 +525,10 @@ Lemma denot_appop_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op)))
       (tprim op (vfvar x)).
 Proof.
-Admitted.
+  intros _ Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply appop_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_match_both_direct_in_ctx
     (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
@@ -515,7 +543,10 @@ Lemma denot_match_both_direct_in_ctx
     denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHtrue IHfalse IHt IHf m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply match_both_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_match_true_direct_in_ctx
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -528,7 +559,10 @@ Lemma denot_match_true_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHtrue _ IHt Hef m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply match_true_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 Lemma denot_match_false_direct_in_ctx
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -541,7 +575,10 @@ Lemma denot_match_false_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHfalse _ Het IHf m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply match_false_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+Qed.
 
 (** ** Fundamental theorem *)
 
