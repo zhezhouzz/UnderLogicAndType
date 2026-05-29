@@ -179,30 +179,7 @@ Ltac solve_tlet_sidecond :=
 
 Ltac solve_tlet_impl_scope :=
   first
-  [ eassumption
-  | match goal with
-    | Hscope : formula_scoped_in_world ?m (FImpl ?p0 (FImpl ?p ?q))
-      |- formula_scoped_in_world ?m (FImpl ?p ?q) =>
-        eapply formula_scoped_impl_r; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FImpl ?p ?q)
-      |- formula_scoped_in_world ?m ?p =>
-        eapply formula_scoped_impl_l; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FImpl ?p ?q)
-      |- formula_scoped_in_world ?m ?q =>
-        eapply formula_scoped_impl_r; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FAnd ?p ?q)
-      |- formula_scoped_in_world ?m ?p =>
-        eapply formula_scoped_and_l; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FAnd ?p ?q)
-      |- formula_scoped_in_world ?m ?q =>
-        eapply formula_scoped_and_r; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FForall ?p)
-      |- formula_scoped_in_world ?m ?p =>
-        eapply formula_scoped_forall_body; exact Hscope
-    | Hscope : formula_scoped_in_world ?m (FFibVars ?D ?p)
-      |- formula_scoped_in_world ?m ?p =>
-        eapply formula_scoped_fibvars_r; exact Hscope
-    end
+  [ formula_scope_solve
   | solve_formula_scoped
   ].
 

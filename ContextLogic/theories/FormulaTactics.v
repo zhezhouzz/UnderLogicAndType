@@ -36,3 +36,58 @@ Ltac formula_scope_syntax_norm :=
 Ltac formula_syntax_norm :=
   formula_open_syntax_norm;
   formula_scope_syntax_norm.
+
+Ltac formula_scope_step :=
+  match goal with
+  | Hscope : formula_scoped_in_world ?m (FAnd ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_and_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FAnd ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_and_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FOr ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_or_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FOr ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_or_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FImpl ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_impl_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FImpl ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_impl_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FStar ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_star_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FStar ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_star_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FWand ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_wand_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FWand ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_wand_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FPlus ?p ?q)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_plus_l; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FPlus ?p ?q)
+    |- formula_scoped_in_world ?m ?q =>
+      eapply formula_scoped_plus_r; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FForall ?p)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_forall_body; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FOver ?p)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_over_body; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FUnder ?p)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_under_body; exact Hscope
+  | Hscope : formula_scoped_in_world ?m (FFibVars ?D ?p)
+    |- formula_scoped_in_world ?m ?p =>
+      eapply formula_scoped_fibvars_r; exact Hscope
+  end.
+
+Ltac formula_scope_solve :=
+  solve [eassumption | formula_scope_step | formula_scope_syntax_norm; tauto].
