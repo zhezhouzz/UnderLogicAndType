@@ -104,14 +104,14 @@ Proof.
   - intros σ. simpl. split.
     + intros [σ1 [[σ0 [Hσ0 Hswap0]] Hswap1]].
       rewrite <- Hswap1, <- Hswap0.
-      change (w (@storeA_swap V K _ _ x y
-        (@storeA_swap V K _ _ x y σ0))).
+      change (w (storeA_swap x y
+        (storeA_swap x y σ0))).
       rewrite storeA_swap_involutive. exact Hσ0.
     + intros Hσ.
-      exists (@storeA_swap V K _ _ x y σ). split.
+      exists (storeA_swap x y σ). split.
       * exists σ. split; [exact Hσ | reflexivity].
-      * change (@storeA_swap V K _ _ x y
-          (@storeA_swap V K _ _ x y σ) = σ).
+      * change (storeA_swap x y
+          (storeA_swap x y σ) = σ).
         apply storeA_swap_involutive.
 Qed.
 
@@ -122,12 +122,12 @@ Proof.
   - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
-      change (@storeA_swap V K _ _ y x σ0 = σ).
-      change (@storeA_swap V K _ _ x y σ0 = σ) in Hswap.
+      change (storeA_swap y x σ0 = σ).
+      change (storeA_swap x y σ0 = σ) in Hswap.
       rewrite <- storeA_swap_sym. exact Hswap.
     + intros [σ0 [Hσ0 Hswap]]. exists σ0. split; [exact Hσ0 |].
-      change (@storeA_swap V K _ _ x y σ0 = σ).
-      change (@storeA_swap V K _ _ y x σ0 = σ) in Hswap.
+      change (storeA_swap x y σ0 = σ).
+      change (storeA_swap y x σ0 = σ) in Hswap.
       rewrite storeA_swap_sym. exact Hswap.
 Qed.
 
@@ -139,11 +139,11 @@ Proof.
   - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
-      exists (@storeA_swap V K _ _ a b σ1). split.
+      exists (storeA_swap a b σ1). split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * symmetry. apply storeA_swap_conjugate.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
-      exists (@storeA_swap V K _ _ x y σ1). split.
+      exists (storeA_swap x y σ1). split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * apply storeA_swap_conjugate.
 Qed.
@@ -156,12 +156,12 @@ Proof.
   - simpl. better_base_solver.
   - intros σ. simpl. split.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
-      exists (@storeA_swap V K _ _ (swap a b x) (swap a b y) σ1).
+      exists (storeA_swap (swap a b x) (swap a b y) σ1).
       split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * symmetry. apply storeA_swap_conjugate_inv.
     + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]]. subst σ0 σ.
-      exists (@storeA_swap V K _ _ a b σ1). split.
+      exists (storeA_swap a b σ1). split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * apply storeA_swap_conjugate_inv.
 Qed.
@@ -206,7 +206,7 @@ Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 Definition rawA_restrict (m : WorldAT) (X : gset K) : WorldAT := {|
   worldA_dom    := worldA_dom m ∩ X;
   worldA_stores := λ σ, ∃ σ0 : StoreAT,
-    m σ0 ∧ @storeA_restrict V K _ _ σ0 X = σ;
+    m σ0 ∧ storeA_restrict σ0 X = σ;
 |}.
 
 Definition resA_restrict (w : WfWorldAT) (X : gset K) : WfWorldAT.
@@ -215,14 +215,14 @@ Proof.
   destruct (worldA_wf w) as [Hne Hdom].
   split.
   - destruct Hne as [σ Hσ].
-    exists (@storeA_restrict V K _ _ σ X). exists σ. split; [exact Hσ | reflexivity].
+    exists (storeA_restrict σ X). exists σ. split; [exact Hσ | reflexivity].
   - intros σ [σ0 [Hσ0 Hrestrict]]. subst σ.
     rewrite storeA_restrict_dom.
     rewrite (Hdom σ0 Hσ0). reflexivity.
 Defined.
 
 Lemma wfworldA_store_restrict_dom (w : WfWorldAT) (σ : StoreAT) (X : gset K) :
-  w σ → dom (@storeA_restrict V K _ _ σ X) = worldA_dom (w : WorldAT) ∩ X.
+  w σ → dom (storeA_restrict σ X) = worldA_dom (w : WorldAT) ∩ X.
 Proof.
   intros Hσ. rewrite storeA_restrict_dom.
   rewrite (wfworldA_store_dom w σ Hσ). reflexivity.
@@ -231,7 +231,7 @@ Qed.
 Lemma resA_restrict_lift_store
     (w : WfWorldAT) (X : gset K) (σ : StoreAT) :
   (resA_restrict w X : WorldAT) σ →
-  ∃ σw, (w : WorldAT) σw ∧ @storeA_restrict V K _ _ σw X = σ.
+  ∃ σw, (w : WorldAT) σw ∧ storeA_restrict σw X = σ.
 Proof.
   intros Hσ. exact Hσ.
 Qed.
@@ -240,14 +240,14 @@ Lemma resA_restrict_eq_lift_store
     (w wX : WfWorldAT) (X : gset K) (σ : StoreAT) :
   resA_restrict w X = wX →
   (wX : WorldAT) σ →
-  ∃ σw, (w : WorldAT) σw ∧ @storeA_restrict V K _ _ σw X = σ.
+  ∃ σw, (w : WorldAT) σw ∧ storeA_restrict σw X = σ.
 Proof.
   intros <- Hσ. exact Hσ.
 Qed.
 
 Definition rawA_fiber (m : WorldAT) (σ : StoreAT) : WorldAT := {|
   worldA_dom    := worldA_dom m;
-  worldA_stores := λ σ0, m σ0 ∧ @storeA_restrict V K _ _ σ0 (dom σ) = σ;
+  worldA_stores := λ σ0, m σ0 ∧ storeA_restrict σ0 (dom σ) = σ;
 |}.
 
 Lemma rawA_fiber_commute (m : WorldAT) (σ1 σ2 : StoreAT) :
@@ -259,7 +259,7 @@ Proof.
 Qed.
 
 Definition resA_fiber (w : WfWorldAT) (σ : StoreAT)
-    (Hne : ∃ σ0, (w : WorldAT) σ0 ∧ @storeA_restrict V K _ _ σ0 (dom σ) = σ)
+    (Hne : ∃ σ0, (w : WorldAT) σ0 ∧ storeA_restrict σ0 (dom σ) = σ)
     : WfWorldAT.
 Proof.
   refine (exist _ (rawA_fiber w σ) _).
@@ -290,18 +290,18 @@ Lemma resA_fiber_from_projection_member
     (w wfib : WfWorldAT) (X : gset K) (σ σw : StoreAT) :
   resA_fiber_from_projection w X σ wfib →
   (w : WorldAT) σw →
-  @storeA_restrict V K _ _ σw X = σ →
+  storeA_restrict σw X = σ →
   (wfib : WorldAT) σw.
 Proof.
   intros [Hproj Heq] Hσw Hrestrict.
   rewrite Heq. simpl. split; [exact Hσw |].
   rewrite <- Hrestrict.
   rewrite <- (storeA_restrict_idemp
-    (@storeA_restrict V K _ _ σw X)
-    (dom (@storeA_restrict V K _ _ σw X))) at 2 by set_solver.
+    (storeA_restrict σw X)
+    (dom (storeA_restrict σw X))) at 2 by set_solver.
   rewrite storeA_restrict_restrict.
-  replace (X ∩ dom (@storeA_restrict V K _ _ σw X))
-    with (dom (@storeA_restrict V K _ _ σw X)).
+  replace (X ∩ dom (storeA_restrict σw X))
+    with (dom (storeA_restrict σw X)).
   - reflexivity.
   - better_store_solver.
 Qed.
@@ -332,11 +332,11 @@ Proof.
   exists s. split.
   - rewrite HeqY. simpl. split; [exact Hs |].
     assert (Hrestrict_dom :
-      @storeA_restrict V K _ _ s (dom σY) =
-      @storeA_restrict V K _ _ s Y).
+      storeA_restrict s (dom σY) =
+      storeA_restrict s Y).
     {
       rewrite <- (storeA_restrict_idemp
-        (@storeA_restrict V K _ _ s Y) (dom σY)).
+        (storeA_restrict s Y) (dom σY)).
       - rewrite storeA_restrict_restrict.
         replace (Y ∩ dom σY) with (dom σY) by
           (rewrite <- HrestrictY; better_store_solver).
@@ -364,7 +364,7 @@ Proof.
       split; apply elem_of_map; eexists; split; eauto.
   - intros σ. simpl. split.
     + intros [σr [[σw [Hσw Hrekey]] Hrestrict]].
-      exists (@storeA_restrict V K _ _ σw X). split.
+      exists (storeA_restrict σw X). split.
       * exists σw. split; [exact Hσw | reflexivity].
       * rewrite <- Hrestrict, <- Hrekey.
         symmetry. apply storeA_restrict_rekey. exact Hf.
@@ -385,11 +385,11 @@ Qed.
 Lemma resA_restrict_swap_projection x y (w : WfWorldAT) (X : gset K) (σ : StoreAT) :
   (resA_restrict w X : WorldAT) σ →
   (resA_restrict (resA_swap x y w) (set_swap x y X) : WorldAT)
-    (@storeA_swap V K _ _ x y σ).
+    (storeA_swap x y σ).
 Proof.
   intros Hproj.
   change ((resA_restrict (resA_swap x y w) (set_swap x y X) : WorldAT)
-    (@storeA_swap V K _ _ x y σ)).
+    (storeA_swap x y σ)).
   rewrite resA_restrict_swap. simpl.
   exists σ. split; [exact Hproj | reflexivity].
 Qed.
@@ -454,7 +454,7 @@ Proof.
       exists σw. split; [exact Hσw |].
       rewrite storeA_restrict_restrict. reflexivity.
     + intros [σw [Hσw Hxy]]. subst σ.
-      exists (@storeA_restrict V K _ _ σw X). split.
+      exists (storeA_restrict σw X). split.
       * exists σw. split; [exact Hσw | reflexivity].
       * rewrite storeA_restrict_restrict. reflexivity.
 Qed.
@@ -480,12 +480,12 @@ Qed.
 
 Lemma resA_fiber_swap (x y : K) (w : WfWorldAT) (σ : StoreAT)
     (Hne : ∃ σ0, (w : WorldAT) σ0 ∧
-      @storeA_restrict V K _ _ σ0 (dom σ) = σ)
+      storeA_restrict σ0 (dom σ) = σ)
     (Hne' : ∃ σ0, (resA_swap x y w : WorldAT) σ0 ∧
-      @storeA_restrict V K _ _ σ0 (dom (@storeA_swap V K _ _ x y σ)) =
-        @storeA_swap V K _ _ x y σ) :
+      storeA_restrict σ0 (dom (storeA_swap x y σ)) =
+        storeA_swap x y σ) :
   resA_swap x y (resA_fiber w σ Hne) =
-  resA_fiber (resA_swap x y w) (@storeA_swap V K _ _ x y σ) Hne'.
+  resA_fiber (resA_swap x y w) (storeA_swap x y σ) Hne'.
 Proof.
   apply wfworldA_ext. apply worldA_ext.
   - simpl. reflexivity.
@@ -494,22 +494,22 @@ Proof.
       rewrite <- Hswap.
       split.
       * exists τ0. split; [exact Hτ0 | reflexivity].
-      * change (@storeA_restrict V K _ _
-          (@storeA_swap V K _ _ x y τ0)
-          (dom (@storeA_swap V K _ _ x y σ : gmap K V)) =
-          @storeA_swap V K _ _ x y σ).
+      * change (storeA_restrict
+          (storeA_swap x y τ0)
+          (dom (storeA_swap x y σ : gmap K V)) =
+          storeA_swap x y σ).
         rewrite (storeA_swap_dom x y σ), storeA_restrict_swap. f_equal.
         exact Hrestr.
     + intros [[τ0 [Hτ0 Hswap]] Hrestr].
       rewrite <- Hswap in Hrestr |- *.
       exists τ0. split.
       * split; [exact Hτ0 |].
-        change (@storeA_restrict V K _ _
-          (@storeA_swap V K _ _ x y τ0)
-          (dom (@storeA_swap V K _ _ x y σ : gmap K V)) =
-          @storeA_swap V K _ _ x y σ) in Hrestr.
+        change (storeA_restrict
+          (storeA_swap x y τ0)
+          (dom (storeA_swap x y σ : gmap K V)) =
+          storeA_swap x y σ) in Hrestr.
         rewrite storeA_swap_dom, storeA_restrict_swap in Hrestr.
-        apply (f_equal (@storeA_swap V K _ _ x y)) in Hrestr.
+        apply (f_equal (storeA_swap x y)) in Hrestr.
         rewrite !storeA_swap_involutive in Hrestr. exact Hrestr.
       * reflexivity.
 Qed.
@@ -518,7 +518,7 @@ Lemma resA_fiber_from_projection_swap x y (w wfib wfib' : WfWorldAT)
     (X : gset K) (σ : StoreAT) :
   resA_fiber_from_projection w X σ wfib →
   resA_fiber_from_projection (resA_swap x y w) (set_swap x y X)
-    (@storeA_swap V K _ _ x y σ) wfib' →
+    (storeA_swap x y σ) wfib' →
   resA_swap x y wfib = wfib'.
 Proof.
   intros [Hproj Heq] [Hproj' Heq'].
@@ -531,22 +531,22 @@ Proof.
       rewrite <- Hswap.
       split.
       * exists τ0. split; [exact Hτ0 | reflexivity].
-      * change (@storeA_restrict V K _ _
-          (@storeA_swap V K _ _ x y τ0)
-          (dom (@storeA_swap V K _ _ x y σ : gmap K V)) =
-          @storeA_swap V K _ _ x y σ).
+      * change (storeA_restrict
+          (storeA_swap x y τ0)
+          (dom (storeA_swap x y σ : gmap K V)) =
+          storeA_swap x y σ).
         rewrite (storeA_swap_dom x y σ), storeA_restrict_swap. f_equal.
         exact Hrestr.
     + intros [[τ0 [Hτ0 Hswap]] Hrestr].
       rewrite <- Hswap in Hrestr |- *.
       exists τ0. split.
       * split; [exact Hτ0 |].
-        change (@storeA_restrict V K _ _
-          (@storeA_swap V K _ _ x y τ0)
-          (dom (@storeA_swap V K _ _ x y σ : gmap K V)) =
-          @storeA_swap V K _ _ x y σ) in Hrestr.
+        change (storeA_restrict
+          (storeA_swap x y τ0)
+          (dom (storeA_swap x y σ : gmap K V)) =
+          storeA_swap x y σ) in Hrestr.
         rewrite storeA_swap_dom, storeA_restrict_swap in Hrestr.
-        apply (f_equal (@storeA_swap V K _ _ x y)) in Hrestr.
+        apply (f_equal (storeA_swap x y)) in Hrestr.
         rewrite !storeA_swap_involutive in Hrestr. exact Hrestr.
       * reflexivity.
 Qed.

@@ -76,9 +76,9 @@ Ltac store_lookup_normalize :=
   | |- context[storeA_restrict ?σ ?X !! ?x] =>
       rewrite (storeA_restrict_lookup σ X x)
   | H : context[@gmap_lookup ?K ?EqK ?CountK ?A ?x (storeA_restrict ?σ ?X)] |- _ =>
-      rewrite (@storeA_restrict_lookup A _ K CountK σ X x) in H
+      rewrite (@storeA_restrict_lookup A K CountK σ X x) in H
   | |- context[@gmap_lookup ?K ?EqK ?CountK ?A ?x (storeA_restrict ?σ ?X)] =>
-      rewrite (@storeA_restrict_lookup A _ K CountK σ X x)
+      rewrite (@storeA_restrict_lookup A K CountK σ X x)
   | H : context[decide (?P)] |- _ =>
       rewrite (decide_True P) in H by better_set_solver
   | |- context[decide (?P)] =>

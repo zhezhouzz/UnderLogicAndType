@@ -5,11 +5,11 @@ From ContextStore Require Import StoreCore.
 
 Section StoreRestrictCore.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Lemma storeA_restrict_dom {K : Type} `{Countable K}
     (s : gmap K V) (X : gset K) :
-  dom (@storeA_restrict V K _ _ s X) = dom s ∩ X.
+  dom (storeA_restrict s X) = dom s ∩ X.
 Proof.
   unfold storeA_restrict. apply map_restrict_dom.
 Qed.
@@ -77,7 +77,7 @@ Lemma storeA_restrict_dom_subset {K : Type} `{Countable K}
     (s : gmap K V) (X : gset K) :
   dom (storeA_restrict s X : gmap K V) ⊆ X.
 Proof.
-  change (dom (@storeA_restrict V K _ _ s X) ⊆ X).
+  change (dom (storeA_restrict s X) ⊆ X).
   rewrite storeA_restrict_dom. better_set_solver.
 Qed.
 
@@ -325,14 +325,14 @@ Proof.
     + reflexivity.
     + symmetry. apply not_elem_of_dom.
       intros Hdom.
-      change (z ∈ dom (@storeA_shift V K _ _ _ k
-        (@storeA_restrict V K _ _ s X) : gmap K V)) in Hdom.
+      change (z ∈ dom (storeA_shift k
+        (storeA_restrict s X) : gmap K V)) in Hdom.
       pose proof (storeA_shift_dom (V:=V) (K:=K) k
-        (@storeA_restrict V K _ _ s X)) as Hdom_shift.
-      change (dom (@storeA_shift V K _ _ _ k
-        (@storeA_restrict V K _ _ s X) : gmap K V) =
+        (storeA_restrict s X)) as Hdom_shift.
+      change (dom (storeA_shift k
+        (storeA_restrict s X) : gmap K V) =
         set_map (key_shift k)
-          (dom (@storeA_restrict V K _ _ s X : gmap K V))) in Hdom_shift.
+          (dom (storeA_restrict s X : gmap K V))) in Hdom_shift.
       rewrite Hdom_shift in Hdom.
       apply elem_of_map in Hdom as [u [Heq Hdomu]]. subst z.
       apply storeA_restrict_dom_subset in Hdomu.
@@ -345,7 +345,7 @@ End StoreRestrictCore.
 
 Section StoreRestrictUnion.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Lemma storeA_restrict_empty_union_elements_subset {K : Type} `{Countable K}
     (σ τ : gmap K V) (X F : gset K) :
@@ -936,19 +936,19 @@ End StoreRestrictUnion.
 
 Section StoreRestrictCompat.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
-Local Notation "s1 ≈A s2" := (@storeA_compat V _ _ _ s1 s2) (at level 70).
+Local Notation "s1 ≈A s2" := (storeA_compat s1 s2) (at level 70).
 
 Lemma storeA_compat_refl {K : Type} `{Countable K} (s : gmap K V) :
-  @storeA_compat V K _ _ s s.
+  storeA_compat s s.
 Proof.
   unfold storeA_compat, map_compat. intros x v1 v2 H1 H2. congruence.
 Qed.
 
 
 Lemma storeA_compat_sym {K : Type} `{Countable K} (s1 s2 : gmap K V) :
-  @storeA_compat V K _ _ s1 s2 → @storeA_compat V K _ _ s2 s1.
+  storeA_compat s1 s2 → storeA_compat s2 s1.
 Proof.
   unfold storeA_compat, map_compat.
   intros Hc x v1 v2 H1 H2. symmetry. eapply Hc; eauto.

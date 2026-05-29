@@ -577,7 +577,7 @@ Proof.
       Happ Hσm HF Hσe) as Hdomσe.
     change (dom (storeA_restrict σn X : gmap atom V) ∩
       dom (σe : gmap atom V) = ∅).
-    pose proof (@storeA_restrict_dom V atom _ _ σn X) as HdomσnX.
+    pose proof (storeA_restrict_dom σn X) as HdomσnX.
     change (dom (storeA_restrict σn X : gmap atom V) =
       dom (σn : gmap atom V) ∩ X) in HdomσnX.
     rewrite HdomσnX, Hdomσe.
@@ -609,10 +609,10 @@ Proof.
     reflexivity.
   - split.
     + assert (Hrestr :
-      @storeA_restrict V atom _ _
+      storeA_restrict
         (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
         (extA_in F) =
-      @storeA_restrict V atom _ _ σm (extA_in F)).
+      storeA_restrict σm (extA_in F)).
       {
         apply storeA_restrict_union_absorb_r.
         - exact (Hc_m σn σm Hσn Hσm).
@@ -622,7 +622,7 @@ Proof.
           exact (extA_app_in _ _ Happ).
       }
       change (extA_rel F
-        (@storeA_restrict V atom _ _
+        (storeA_restrict
           (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
           (extA_in F)) we).
       rewrite Hrestr. exact HF.
@@ -651,10 +651,10 @@ Proof.
   destruct Hσnm as
     (σn & σm & Hσn & Hσm & Hcompat_n_m & ->).
   assert (Hrestr :
-      @storeA_restrict V atom _ _
+      storeA_restrict
         (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
         (extA_in F) =
-      @storeA_restrict V atom _ _ σm (extA_in F)).
+      storeA_restrict σm (extA_in F)).
   {
     apply storeA_restrict_union_absorb_r.
     - exact Hcompat_n_m.
@@ -664,7 +664,7 @@ Proof.
       exact (extA_app_in _ _ Happ).
   }
   change (extA_rel F
-    (@storeA_restrict V atom _ _
+    (storeA_restrict
       (@union (gmap atom V) _ (σn : gmap atom V) (σm : gmap atom V))
       (extA_in F)) we) in HF.
   rewrite Hrestr in HF.

@@ -5,7 +5,7 @@ From Stdlib Require Import Logic.ProofIrrelevance.
 
 Section StoreCoreDefs.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Record StoreAOn {K : Type} `{Countable K} (D : gset K) : Type := {
   storeAO_store : gmap K V;
@@ -155,7 +155,7 @@ Notation "'storeA_rekey' f s" := (kmap (M2:=gmap _) f s)
 
 Section StoreKeyAction.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Lemma storeA_rekey_lookup {K : Type} `{Countable K}
     (f : K → K) (Hf : Inj (=) (=) f) (s : gmap K V) (z : K) :
@@ -584,11 +584,11 @@ End StoreKeyAction.
 
 Section StoreSwap.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Lemma storeA_swap_lookup {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) (z : K) :
-  ((@storeA_swap V K _ _ x y s : gmap K V) !! swap x y z) =
+  ((storeA_swap x y s : gmap K V) !! swap x y z) =
   ((s : gmap K V) !! z).
 Proof.
   unfold storeA_swap.
@@ -601,7 +601,7 @@ Qed.
 
 Lemma storeA_swap_lookup_inv {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) (z : K) :
-  ((@storeA_swap V K _ _ x y s : gmap K V) !! z) =
+  ((storeA_swap x y s : gmap K V) !! z) =
   ((s : gmap K V) !! swap x y z).
 Proof.
   rewrite <- (swap_involutive x y z) at 1.
@@ -610,7 +610,7 @@ Qed.
 
 Lemma storeA_swap_dom {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) :
-  dom (@storeA_swap V K _ _ x y s : gmap K V) =
+  dom (storeA_swap x y s : gmap K V) =
   set_swap x y (dom (s : gmap K V)).
 Proof.
   unfold storeA_swap, set_swap.
@@ -624,8 +624,8 @@ Qed.
 
 Lemma storeA_swap_delete {K : Type} `{Countable K}
     (x y z : K) (s : gmap K V) :
-   @storeA_swap V K _ _ x y (delete z s) =
-  delete (swap x y z) (@storeA_swap V K _ _ x y s : gmap K V).
+   storeA_swap x y (delete z s) =
+  delete (swap x y z) (storeA_swap x y s : gmap K V).
 Proof.
   unfold storeA_swap.
   change (kmap (M2:=gmap K) (swap x y) (delete z (s : gmap K V)) =
@@ -639,8 +639,8 @@ Qed.
 
 Lemma storeA_swap_insert {K : Type} `{Countable K}
     (x y z : K) (v : V) (s : gmap K V) :
-   @storeA_swap V K _ _ x y (<[z := v]> s) =
-  <[swap x y z := v]> (@storeA_swap V K _ _ x y s : gmap K V).
+   storeA_swap x y (<[z := v]> s) =
+  <[swap x y z := v]> (storeA_swap x y s : gmap K V).
 Proof.
   unfold storeA_swap.
   change (kmap (swap x y) (<[z := v]> (s : gmap K V)) =
@@ -654,8 +654,8 @@ Qed.
 
 Lemma storeA_swap_union {K : Type} `{Countable K}
     (x y : K) (s1 s2 : gmap K V) :
-   @storeA_swap V K _ _ x y (@union (gmap K V) _ s1 s2) =
-  @union (gmap K V) _ (@storeA_swap V K _ _ x y s1 : gmap K V) (@storeA_swap V K _ _ x y s2 : gmap K V).
+   storeA_swap x y (@union (gmap K V) _ s1 s2) =
+  @union (gmap K V) _ (storeA_swap x y s1 : gmap K V) (storeA_swap x y s2 : gmap K V).
 Proof.
   unfold storeA_swap.
   change (kmap (swap x y) (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
@@ -670,11 +670,11 @@ Qed.
 
 Lemma storeA_swap_involutive {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) :
-   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y s : gmap K V) = s.
+   storeA_swap x y (storeA_swap x y s : gmap K V) = s.
 Proof.
   apply storeA_map_eq. intros z.
-  change (((@storeA_swap V K _ _ x y
-    (@storeA_swap V K _ _ x y s) : gmap K V) !! z) =
+  change (((storeA_swap x y
+    (storeA_swap x y s) : gmap K V) !! z) =
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv, storeA_swap_lookup_inv.
   better_base_solver.
@@ -682,11 +682,11 @@ Qed.
 
 Lemma storeA_swap_sym {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) :
-   @storeA_swap V K _ _ x y s =  @storeA_swap V K _ _ y x s.
+   storeA_swap x y s =  storeA_swap y x s.
 Proof.
   apply storeA_map_eq. intros z.
-  change (((@storeA_swap V K _ _ x y s : gmap K V) !! z) =
-    ((@storeA_swap V K _ _ y x s : gmap K V) !! z)).
+  change (((storeA_swap x y s : gmap K V) !! z) =
+    ((storeA_swap y x s : gmap K V) !! z)).
   rewrite !storeA_swap_lookup_inv.
   rewrite swap_sym. reflexivity.
 Qed.
@@ -695,12 +695,12 @@ Lemma storeA_swap_fresh {K : Type} `{Countable K}
     (x y : K) (s : gmap K V) :
   x ∉ dom (s : gmap K V) ->
   y ∉ dom (s : gmap K V) ->
-   @storeA_swap V K _ _ x y s = s.
+   storeA_swap x y s = s.
 Proof.
   intros Hx Hy.
   rewrite not_elem_of_dom in Hx, Hy.
   apply storeA_map_eq. intros z.
-  change (((@storeA_swap V K _ _ x y s : gmap K V) !! z) =
+  change (((storeA_swap x y s : gmap K V) !! z) =
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv.
   destruct (decide (z = x)) as [->|Hzx].
@@ -718,15 +718,15 @@ Qed.
 
 Lemma storeA_swap_conjugate {K : Type} `{Countable K}
     (a b x y : K) (s : gmap K V) :
-   @storeA_swap V K _ _ a b (@storeA_swap V K _ _ x y s : gmap K V) =
-   @storeA_swap V K _ _ (swap a b x) (swap a b y)
-    (@storeA_swap V K _ _ a b s : gmap K V).
+   storeA_swap a b (storeA_swap x y s : gmap K V) =
+   storeA_swap (swap a b x) (swap a b y)
+    (storeA_swap a b s : gmap K V).
 Proof.
   apply storeA_map_eq. intros z.
-  change (((@storeA_swap V K _ _ a b
-    (@storeA_swap V K _ _ x y s) : gmap K V) !! z) =
-    ((@storeA_swap V K _ _ (swap a b x) (swap a b y)
-      (@storeA_swap V K _ _ a b s) : gmap K V) !! z)).
+  change (((storeA_swap a b
+    (storeA_swap x y s) : gmap K V) !! z) =
+    ((storeA_swap (swap a b x) (swap a b y)
+      (storeA_swap a b s) : gmap K V) !! z)).
   rewrite !storeA_swap_lookup_inv.
   rewrite swap_conjugate_inv. reflexivity.
 Qed.
@@ -737,8 +737,8 @@ Lemma storeA_swap_commute_fresh {K : Type} `{Countable K}
   c <> b ->
   d <> a ->
   d <> b ->
-  @storeA_swap V K _ _ a b (@storeA_swap V K _ _ c d s : gmap K V) =
-  @storeA_swap V K _ _ c d (@storeA_swap V K _ _ a b s : gmap K V).
+  storeA_swap a b (storeA_swap c d s : gmap K V) =
+  storeA_swap c d (storeA_swap a b s : gmap K V).
 Proof.
   intros Hca Hcb Hda Hdb.
   rewrite storeA_swap_conjugate.
@@ -749,15 +749,15 @@ Qed.
 
 Lemma storeA_swap_conjugate_inv {K : Type} `{Countable K}
     (a b x y : K) (s : gmap K V) :
-   @storeA_swap V K _ _ x y (@storeA_swap V K _ _ a b s : gmap K V) =
-   @storeA_swap V K _ _ a b
-    (@storeA_swap V K _ _ (swap a b x) (swap a b y) s : gmap K V).
+   storeA_swap x y (storeA_swap a b s : gmap K V) =
+   storeA_swap a b
+    (storeA_swap (swap a b x) (swap a b y) s : gmap K V).
 Proof.
   apply storeA_map_eq. intros z.
-  change (((@storeA_swap V K _ _ x y
-    (@storeA_swap V K _ _ a b s) : gmap K V) !! z) =
-    ((@storeA_swap V K _ _ a b
-      (@storeA_swap V K _ _ (swap a b x) (swap a b y) s) :
+  change (((storeA_swap x y
+    (storeA_swap a b s) : gmap K V) !! z) =
+    ((storeA_swap a b
+      (storeA_swap (swap a b x) (swap a b y) s) :
       gmap K V) !! z)).
   rewrite !storeA_swap_lookup_inv.
   rewrite swap_conjugate. reflexivity.
@@ -767,7 +767,7 @@ End StoreSwap.
 
 Section StoreShift.
 
-Context {V : Type} `{ValueSig V}.
+Context {V : Type}.
 
 Lemma storeA_shift_lookup {K : Type} `{Countable K} `{!ShiftKey K}
     (k : nat) (s : gmap K V) (z : K) :

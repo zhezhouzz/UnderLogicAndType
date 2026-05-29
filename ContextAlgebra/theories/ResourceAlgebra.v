@@ -15,7 +15,7 @@ Local Notation WorldAT := (@WorldA K _ _ V) (only parsing).
 Local Notation WfWorldAT := (@WfWorldA K _ _ V) (only parsing).
 
 Definition worldA_compat (m1 m2 : WorldAT) : Prop :=
-  ∀ σ1 σ2, m1 σ1 → m2 σ2 → @storeA_compat V K _ _ σ1 σ2.
+  ∀ σ1 σ2, m1 σ1 → m2 σ2 → storeA_compat σ1 σ2.
 
 Lemma disj_dom_worldA_compat (w1 w2 : WfWorldAT) :
   worldA_dom (w1 : WorldAT) ∩ worldA_dom (w2 : WorldAT) = ∅ →
@@ -36,7 +36,7 @@ Lemma worldA_compat_store_restrict_overlap
   worldA_compat w1 w2 →
   w1 σ1 →
   w2 σ2 →
-  @storeA_restrict V K _ _ σ1 X = @storeA_restrict V K _ _ σ2 X.
+  storeA_restrict σ1 X = storeA_restrict σ2 X.
 Proof.
   intros -> Hcompat Hσ1 Hσ2.
   pose proof (proj1 (storeA_compat_spec σ1 σ2)
@@ -56,7 +56,7 @@ Definition rawA_unit : WorldAT := {|
 Definition rawA_product (m1 m2 : WorldAT) : WorldAT := {|
   worldA_dom    := worldA_dom m1 ∪ worldA_dom m2;
   worldA_stores := λ σ, ∃ σ1 σ2 : StoreAT,
-    m1 σ1 ∧ m2 σ2 ∧ @storeA_compat V K _ _ σ1 σ2 ∧
+    m1 σ1 ∧ m2 σ2 ∧ storeA_compat σ1 σ2 ∧
     σ = @union (gmap K V) _ σ1 σ2;
 |}.
 
@@ -155,7 +155,7 @@ Proof.
       better_store_solver.
     + intros (σ' & Hσ' & Heq).
       pose proof (Hdom σ' Hσ') as Hd.
-      assert (Hstep : @storeA_restrict V K _ _ σ' (worldA_dom m) = σ')
+      assert (Hstep : storeA_restrict σ' (worldA_dom m) = σ')
         by better_store_solver.
       rewrite Hstep in Heq. subst. exact Hσ'.
 Qed.
@@ -214,11 +214,11 @@ Proof.
       cbn in Hσ1.
       destruct Hσ1 as [σ3 [Hσ3 Hrestrict]].
       rewrite H12. cbn.
-      exists (@storeA_restrict V K _ _ σ3 (worldA_dom m2)).
+      exists (storeA_restrict σ3 (worldA_dom m2)).
       split.
       * assert (Hm2store :
           (rawA_restrict m3 (worldA_dom m2) : WorldAT)
-            (@storeA_restrict V K _ _ σ3 (worldA_dom m2))).
+            (storeA_restrict σ3 (worldA_dom m2))).
         { cbn. exists σ3. split; [exact Hσ3 | reflexivity]. }
         rewrite <- H23 in Hm2store. exact Hm2store.
       * rewrite storeA_restrict_restrict.
@@ -273,16 +273,16 @@ Proof.
       rewrite <- (set_swap_involutive x y (worldA_dom (w2 : WorldAT))).
       by rewrite Hdom.
     + intros σ Hσ.
-      pose proof (Hin (@storeA_swap V K _ _ x y σ)) as Hin'.
+      pose proof (Hin (storeA_swap x y σ)) as Hin'.
       simpl in Hin'.
-      assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ x y σ)).
+      assert (Hs1 : rawA_swap x y w1 (storeA_swap x y σ)).
       { exists σ. split; [exact Hσ | reflexivity]. }
       destruct (Hin' Hs1) as [σ2 [Hσ2 Hswap]].
       assert (σ2 = σ).
       {
         rewrite <- (storeA_swap_involutive x y σ2).
-        change (@storeA_swap V K _ _ x y σ2 =
-          @storeA_swap V K _ _ x y σ) in Hswap.
+        change (storeA_swap x y σ2 =
+          storeA_swap x y σ) in Hswap.
         rewrite Hswap. apply storeA_swap_involutive.
       }
       subst. exact Hσ2.
@@ -367,7 +367,7 @@ Definition singleton_worldA (σ : StoreAT) : WorldAT := {|
 Lemma rawA_restrict_to_singleton_if_projection_constant
     (w : WfWorldAT) (X : gset K) (σX : StoreAT) :
   (∀ σ, (w : WorldAT) σ →
-    @storeA_restrict V K _ _ σ X = σX) →
+    storeA_restrict σ X = σX) →
   rawA_restrict w X = singleton_worldA σX.
 Proof.
   intros Hconst.
@@ -376,12 +376,12 @@ Proof.
   - simpl.
     pose proof (Hconst σw Hσw) as HσX.
     pose proof (f_equal (fun s : gmap K V => dom s) HσX) as HdomσX.
-    change (dom (@storeA_restrict V K _ _ σw X : gmap K V) =
+    change (dom (storeA_restrict σw X : gmap K V) =
       dom (σX : gmap K V)) in HdomσX.
     change (worldA_dom (w : WorldAT) ∩ X = dom (σX : gmap K V)).
     rewrite <- HdomσX.
     pose proof (storeA_restrict_dom σw X) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σw X : gmap K V) =
+    change (dom (storeA_restrict σw X : gmap K V) =
       dom (σw : gmap K V) ∩ X) in Hdomr.
     rewrite Hdomr.
     pose proof (wfworldA_store_dom w σw Hσw) as Hdomw.
@@ -404,15 +404,15 @@ Lemma worldA_compat_of_common_overlap_singleton
 Proof.
   intros HX Hw1 Hw2 σ1 σ2 Hσ1 Hσ2.
   apply (proj2 (storeA_compat_spec σ1 σ2)).
-  assert (H1 : @storeA_restrict V K _ _ σ1 X = σX).
+  assert (H1 : storeA_restrict σ1 X = σX).
   {
-    assert (Hraw : rawA_restrict w1 X (@storeA_restrict V K _ _ σ1 X)).
+    assert (Hraw : rawA_restrict w1 X (storeA_restrict σ1 X)).
     { exists σ1. split; [exact Hσ1 | reflexivity]. }
     rewrite Hw1 in Hraw. simpl in Hraw. exact Hraw.
   }
-  assert (H2 : @storeA_restrict V K _ _ σ2 X = σX).
+  assert (H2 : storeA_restrict σ2 X = σX).
   {
-    assert (Hraw : rawA_restrict w2 X (@storeA_restrict V K _ _ σ2 X)).
+    assert (Hraw : rawA_restrict w2 X (storeA_restrict σ2 X)).
     { exists σ2. split; [exact Hσ2 | reflexivity]. }
     rewrite Hw2 in Hraw. simpl in Hraw. exact Hraw.
   }
@@ -435,7 +435,7 @@ Qed.
 
 Lemma resA_swap_singleton_world (x y : K) (σ : StoreAT) :
   (resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) : WorldAT) =
-  singleton_worldA (@storeA_swap V K _ _ x y σ).
+  singleton_worldA (storeA_swap x y σ).
 Proof.
   apply worldA_ext.
   - simpl. symmetry. apply storeA_swap_dom.
@@ -446,8 +446,8 @@ Qed.
 
 Lemma resA_swap_singleton_wfworld (x y : K) (σ : StoreAT) :
   resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) =
-  exist _ (singleton_worldA (@storeA_swap V K _ _ x y σ))
-    (wf_singleton_worldA (@storeA_swap V K _ _ x y σ)).
+  exist _ (singleton_worldA (storeA_swap x y σ))
+    (wf_singleton_worldA (storeA_swap x y σ)).
 Proof.
   apply wfworldA_ext. apply resA_swap_singleton_world.
 Qed.
@@ -465,10 +465,10 @@ Proof.
   assert (Hdomσ : dom (σ : gmap K V) = worldA_dom (w : WorldAT) ∩ X).
   {
     pose proof (f_equal (fun s : gmap K V => dom s) Hrestr) as Hdomrestr.
-    change (dom (@storeA_restrict V K _ _ σw X : gmap K V) =
+    change (dom (storeA_restrict σw X : gmap K V) =
       dom (σ : gmap K V)) in Hdomrestr.
     pose proof (storeA_restrict_dom σw X) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σw X : gmap K V) =
+    change (dom (storeA_restrict σw X : gmap K V) =
       dom (σw : gmap K V) ∩ X) in Hdomr.
     rewrite <- Hdomrestr, Hdomr. set_solver.
   }
@@ -483,15 +483,15 @@ Proof.
     + intros ->.
       exists σw. split.
       * split; [exact Hσw |].
-        transitivity (@storeA_restrict V K _ _
-          (@storeA_restrict V K _ _ σw X) (dom σ)).
+        transitivity (storeA_restrict
+          (storeA_restrict σw X) (dom σ)).
         -- rewrite storeA_restrict_restrict.
            replace (X ∩ dom (σ : gmap K V)) with (dom (σ : gmap K V))
              by (rewrite Hdomσ; set_solver).
            reflexivity.
         -- rewrite Hrestr. apply storeA_restrict_idemp; better_store_solver.
-      * transitivity (@storeA_restrict V K _ _
-          (@storeA_restrict V K _ _ σw X) (dom σ)).
+      * transitivity (storeA_restrict
+          (storeA_restrict σw X) (dom σ)).
         -- rewrite storeA_restrict_restrict.
            replace (X ∩ dom (σ : gmap K V)) with (dom (σ : gmap K V))
              by (rewrite Hdomσ; set_solver).
@@ -540,7 +540,7 @@ Qed.
 Definition rawA_slice_restrict (n : WfWorldAT) (X : gset K) (p : WfWorldAT) : WorldAT := {|
   worldA_dom := worldA_dom (n : WorldAT);
   worldA_stores := fun σ =>
-    (n : WorldAT) σ ∧ (p : WorldAT) (@storeA_restrict V K _ _ σ X);
+    (n : WorldAT) σ ∧ (p : WorldAT) (storeA_restrict σ X);
 |}.
 
 Lemma rawA_slice_restrict_wf (n : WfWorldAT) (X : gset K) (p : WfWorldAT) :
@@ -705,12 +705,12 @@ Lemma worldA_compat_restrict_l_full_r (n m : WfWorldAT) (S X : gset K) :
 Proof.
   intros HXS Hcompat σn σm Hσn Hσm.
   simpl in Hσn. destruct Hσn as [τn [Hτn Hrestrict]]. subst σn.
-  assert (Hrσm : (resA_restrict m S : WorldAT) (@storeA_restrict V K _ _ σm S)).
+  assert (Hrσm : (resA_restrict m S : WorldAT) (storeA_restrict σm S)).
   { simpl. exists σm. split; [exact Hσm | reflexivity]. }
-  pose proof (Hcompat τn (@storeA_restrict V K _ _ σm S) Hτn Hrσm) as Hstore.
+  pose proof (Hcompat τn (storeA_restrict σm S) Hτn Hrσm) as Hstore.
   apply storeA_compat_restrict_l_full_r with (X := S).
   - pose proof (storeA_restrict_dom τn X) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ τn X : gmap K V) =
+    change (dom (storeA_restrict τn X : gmap K V) =
       dom (τn : gmap K V) ∩ X) in Hdomr.
     rewrite Hdomr. set_solver.
   - apply storeA_compat_sym.
@@ -724,12 +724,12 @@ Lemma worldA_compat_swap (x y : K) (w1 w2 : WfWorldAT) :
 Proof.
   split.
   - intros Hc σ1 σ2 Hσ1 Hσ2.
-    pose proof (Hc (@storeA_swap V K _ _ x y σ1)
-      (@storeA_swap V K _ _ x y σ2)) as Hc'.
+    pose proof (Hc (storeA_swap x y σ1)
+      (storeA_swap x y σ2)) as Hc'.
     simpl in Hc'.
-    assert (Hs1 : rawA_swap x y w1 (@storeA_swap V K _ _ x y σ1)).
+    assert (Hs1 : rawA_swap x y w1 (storeA_swap x y σ1)).
     { exists σ1. split; [exact Hσ1 | reflexivity]. }
-    assert (Hs2 : rawA_swap x y w2 (@storeA_swap V K _ _ x y σ2)).
+    assert (Hs2 : rawA_swap x y w2 (storeA_swap x y σ2)).
     { exists σ2. split; [exact Hσ2 | reflexivity]. }
     pose proof (Hc' Hs1 Hs2) as Hcompat.
     exact (proj1 (storeA_compat_swap x y σ1 σ2) Hcompat).
@@ -758,7 +758,7 @@ Proof.
     + intros [σ0 [Hprod Hswap]].
       rewrite <- Hswap.
       destruct Hprod as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-      exists (@storeA_swap V K _ _ x y σ1), (@storeA_swap V K _ _ x y σ2).
+      exists (storeA_swap x y σ1), (storeA_swap x y σ2).
       repeat split.
       * exists σ1. split; [exact Hσ1 | reflexivity].
       * exists σ2. split; [exact Hσ2 | reflexivity].
@@ -770,11 +770,11 @@ Proof.
       rewrite <- Hswap1, <- Hswap2.
       exists (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)). split.
       * exists σ1, σ2. repeat split; eauto.
-      * change (@storeA_swap V K _ _ x y
+      * change (storeA_swap x y
           (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)) =
           @union (gmap K V) _
-            (@storeA_swap V K _ _ x y σ1 : gmap K V)
-            (@storeA_swap V K _ _ x y σ2 : gmap K V)).
+            (storeA_swap x y σ1 : gmap K V)
+            (storeA_swap x y σ2 : gmap K V)).
         rewrite storeA_swap_union. reflexivity.
 Qed.
 
@@ -811,8 +811,8 @@ Proof.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
       rewrite <- Hswap1, <- Hswap0 in Hcompat |- *.
-      change (@storeA_compat V K _ _
-        (@storeA_swap V K _ _ x y (@storeA_swap V K _ _ x y τ0)) σ2) in Hcompat.
+      change (storeA_compat
+        (storeA_swap x y (storeA_swap x y τ0)) σ2) in Hcompat.
       rewrite storeA_swap_involutive in Hcompat.
       replace (storeA_map_key (swap x y)
         (storeA_map_key (swap x y) τ0)) with (τ0 : StoreAT).
@@ -822,10 +822,10 @@ Proof.
       exists τ0, σ2. repeat split; eauto.
     + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
       exists σ1, σ2. split.
-      * exists (@storeA_swap V K _ _ x y σ1). split.
+      * exists (storeA_swap x y σ1). split.
         -- exists σ1. split; [exact Hσ1 | reflexivity].
-        -- change (@storeA_swap V K _ _ x y
-             (@storeA_swap V K _ _ x y σ1) = σ1).
+        -- change (storeA_swap x y
+             (storeA_swap x y σ1) = σ1).
            apply storeA_swap_involutive.
       * split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
 Qed.
@@ -978,11 +978,11 @@ Proof.
     simpl in Hproj_n.
     destruct Hproj_n as [σn [Hσn Hrestr]].
     pose proof (f_equal (fun s : gmap K V => dom s) Hrestr) as Hdomrestr.
-    change (dom (@storeA_restrict V K _ _ σn X : gmap K V) =
+    change (dom (storeA_restrict σn X : gmap K V) =
       dom (σ : gmap K V)) in Hdomrestr.
     rewrite <- Hdomrestr.
     pose proof (storeA_restrict_dom σn X) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σn X : gmap K V) =
+    change (dom (storeA_restrict σn X : gmap K V) =
       dom (σn : gmap K V) ∩ X) in Hdomr.
     rewrite Hdomr. set_solver.
   }
@@ -996,7 +996,7 @@ Proof.
       destruct Hmτ as [τn [Hnτ Hrestrict]].
       exists τn. split.
       * split; [exact Hnτ |].
-        transitivity (@storeA_restrict V K _ _ τ (dom σ)); [| exact Hτ].
+        transitivity (storeA_restrict τ (dom σ)); [| exact Hτ].
         rewrite <- Hrestrict.
         rewrite storeA_restrict_restrict.
         replace (worldA_dom (m : WorldAT) ∩ dom (σ : gmap K V))
@@ -1007,7 +1007,7 @@ Proof.
       split.
       * unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
         rewrite Hle. simpl. exists τn. split; [exact Hnτ | exact Hrestrict].
-      * transitivity (@storeA_restrict V K _ _ τn (dom σ)); [| exact Hτn].
+      * transitivity (storeA_restrict τn (dom σ)); [| exact Hτn].
         rewrite <- Hrestrict.
         rewrite storeA_restrict_restrict.
         replace (worldA_dom (m : WorldAT) ∩ dom (σ : gmap K V))
@@ -1029,9 +1029,9 @@ Proof.
     destruct Hσproj_m as [σm [Hσm Hrestr]].
     change (dom (σ : gmap K V) ⊆ X).
     rewrite <- Hrestr.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) ⊆ X).
+    change (dom (storeA_restrict σm D : gmap K V) ⊆ X).
     pose proof (storeA_restrict_dom σm D) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+    change (dom (storeA_restrict σm D : gmap K V) =
       dom (σm : gmap K V) ∩ D) in Hdomr.
     rewrite Hdomr. set_solver.
   }
@@ -1043,25 +1043,25 @@ Proof.
   - intros τ. simpl. rewrite Heq_m, Heq_n. split.
     + intros [τm [[Hτm HτD] HτX]].
       assert (HτmX : (resA_restrict m X : WorldAT)
-          (@storeA_restrict V K _ _ τm X)).
+          (storeA_restrict τm X)).
       { exists τm. split; [exact Hτm | reflexivity]. }
       rewrite Hproj in HτmX.
       destruct HτmX as [τn [Hτn HτnX]].
       exists τn. split.
       * split; [exact Hτn |].
-        transitivity (@storeA_restrict V K _ _ τm (dom (σ : gmap K V))).
+        transitivity (storeA_restrict τm (dom (σ : gmap K V))).
         -- eapply storeA_restrict_eq_mono; [exact HdomσX | exact HτnX].
         -- exact HτD.
       * rewrite HτnX. exact HτX.
     + intros [τn [[Hτn HτD] HτX]].
       assert (HτnX : (resA_restrict n X : WorldAT)
-          (@storeA_restrict V K _ _ τn X)).
+          (storeA_restrict τn X)).
       { exists τn. split; [exact Hτn | reflexivity]. }
       rewrite <- Hproj in HτnX.
       destruct HτnX as [τm [Hτm HτmX]].
       exists τm. split.
       * split; [exact Hτm |].
-        transitivity (@storeA_restrict V K _ _ τn (dom (σ : gmap K V))).
+        transitivity (storeA_restrict τn (dom (σ : gmap K V))).
         -- eapply storeA_restrict_eq_mono; [exact HdomσX | exact HτmX].
         -- exact HτD.
       * rewrite HτmX. exact HτX.
@@ -1086,9 +1086,9 @@ Proof.
   assert (Hdomσ : dom (σ : gmap K V) = D).
   {
     rewrite <- Hrestrict_m.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) = D).
+    change (dom (storeA_restrict σm D : gmap K V) = D).
     pose proof (storeA_restrict_dom σm D) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+    change (dom (storeA_restrict σm D : gmap K V) =
       dom (σm : gmap K V) ∩ D) in Hdomr.
     rewrite Hdomr.
     pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
@@ -1097,7 +1097,7 @@ Proof.
   }
   assert (Hnonempty_m :
       ∃ σm0, (m : WorldAT) σm0 ∧
-        @storeA_restrict V K _ _ σm0 (dom (σ : gmap K V)) = σ).
+        storeA_restrict σm0 (dom (σ : gmap K V)) = σ).
   {
     exists σm. split; [exact Hσm |].
     rewrite Hdomσ. exact Hrestrict_m.
@@ -1134,9 +1134,9 @@ Proof.
   assert (Hdomσ : dom (σ : gmap K V) = D).
   {
     rewrite <- Hrestrict_m.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) = D).
+    change (dom (storeA_restrict σm D : gmap K V) = D).
     pose proof (storeA_restrict_dom σm D) as Hdomr.
-    change (dom (@storeA_restrict V K _ _ σm D : gmap K V) =
+    change (dom (storeA_restrict σm D : gmap K V) =
       dom (σm : gmap K V) ∩ D) in Hdomr.
     rewrite Hdomr.
     pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
@@ -1145,7 +1145,7 @@ Proof.
   }
   assert (Hnonempty_m :
       ∃ σm0, (m : WorldAT) σm0 ∧
-        @storeA_restrict V K _ _ σm0 (dom (σ : gmap K V)) = σ).
+        storeA_restrict σm0 (dom (σ : gmap K V)) = σ).
   {
     exists σm. split; [exact Hσm |].
     rewrite Hdomσ. exact Hrestrict_m.
@@ -1170,7 +1170,7 @@ Definition rawA_pullback_projection (n p : WfWorldAT) : WorldAT := {|
   worldA_dom := worldA_dom (n : WorldAT);
   worldA_stores := fun σ =>
     (n : WorldAT) σ ∧
-    (p : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (p : WorldAT)));
+    (p : WorldAT) (storeA_restrict σ (worldA_dom (p : WorldAT)));
 |}.
 
 Lemma rawA_pullback_projection_wf (n p : WfWorldAT) :
@@ -1198,7 +1198,7 @@ Definition rawA_pullback_subset_projection (n p : WfWorldAT) : WorldAT := {|
   worldA_dom := worldA_dom (n : WorldAT);
   worldA_stores := fun σ =>
     (n : WorldAT) σ ∧
-    (p : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (p : WorldAT)));
+    (p : WorldAT) (storeA_restrict σ (worldA_dom (p : WorldAT)));
 |}.
 
 Lemma rawA_pullback_subset_projection_wf (n p : WfWorldAT) :
@@ -1346,7 +1346,7 @@ Proof.
          change (dom (σn : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσ;
          set_solver).
       assert (Hσsum : (resA_sum n1 n2 Hdef : WorldAT)
-          (@storeA_restrict V K _ _ σn (worldA_dom (n1 : WorldAT)))).
+          (storeA_restrict σn (worldA_dom (n1 : WorldAT)))).
       {
         rewrite Hsum_le. simpl.
         exists σn. split; [exact Hσ | reflexivity].
@@ -1393,8 +1393,8 @@ Proof.
            set_solver.
     + intros [σ' [Hσ' Hrestrict]].
       destruct Hσ' as [σ1' [σ2' [Hσ1' [Hσ2' [Hcompat' ->]]]]].
-      set (σ1 := @storeA_restrict V K _ _ σ1' (worldA_dom (w1 : WorldAT))).
-      set (σ2 := @storeA_restrict V K _ _ σ2' (worldA_dom (w2 : WorldAT))).
+      set (σ1 := storeA_restrict σ1' (worldA_dom (w1 : WorldAT))).
+      set (σ2 := storeA_restrict σ2' (worldA_dom (w2 : WorldAT))).
       assert (Hσ1 : (w1 : WorldAT) σ1).
       {
         rewrite Hle1. simpl. exists σ1'. split; [exact Hσ1' | reflexivity].
@@ -1432,7 +1432,7 @@ Proof.
     worldA_dom := worldA_dom (n : WorldAT);
     worldA_stores := λ σ,
       (n : WorldAT) σ ∧
-      (mu : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT)))
+      (mu : WorldAT) (storeA_restrict σ (worldA_dom (m : WorldAT)))
   |} : WorldAT)).
   assert (Hwf_nu : wf_worldA raw_nu).
   {
@@ -1480,7 +1480,7 @@ Proof.
         -- apply storeA_union_absorb_l.
            ++ apply storeA_compat_restrict_r. exact (Hc σ σ2 Hσ Hσ2).
            ++ pose proof (storeA_restrict_dom σ2 (worldA_dom (w1 : WorldAT))) as Hdomr.
-              change (dom (@storeA_restrict V K _ _ σ2 (worldA_dom (w1 : WorldAT)) : gmap K V) =
+              change (dom (storeA_restrict σ2 (worldA_dom (w1 : WorldAT)) : gmap K V) =
                 dom (σ2 : gmap K V) ∩ worldA_dom (w1 : WorldAT)) in Hdomr.
               rewrite Hdomr.
               pose proof (wfworldA_store_dom w1 σ Hσ) as Hdomσ.
@@ -1494,11 +1494,11 @@ Proof.
       rewrite storeA_restrict_union in Hrestrict by exact Hcompat.
       rewrite storeA_restrict_idemp in Hrestrict.
       * rewrite (storeA_union_absorb_l σ1
-          (@storeA_restrict V K _ _ σ2 (worldA_dom (w1 : WorldAT)))) in Hrestrict.
+          (storeA_restrict σ2 (worldA_dom (w1 : WorldAT)))) in Hrestrict.
         -- subst. exact Hσ1.
         -- apply storeA_compat_restrict_r. exact Hcompat.
         -- pose proof (storeA_restrict_dom σ2 (worldA_dom (w1 : WorldAT))) as Hdomr.
-           change (dom (@storeA_restrict V K _ _ σ2 (worldA_dom (w1 : WorldAT)) : gmap K V) =
+           change (dom (storeA_restrict σ2 (worldA_dom (w1 : WorldAT)) : gmap K V) =
              dom (σ2 : gmap K V) ∩ worldA_dom (w1 : WorldAT)) in Hdomr.
            rewrite Hdomr.
            pose proof (wfworldA_store_dom w1 σ1 Hσ1) as Hdomσ1.
@@ -1581,25 +1581,25 @@ Proof.
     pose proof (wfworldA_store_dom n σ Hσn) as Hdomσ.
     change (dom (σ : gmap K V) = worldA_dom (n : WorldAT)) in Hdomσ.
     assert (Hm_proj :
-        (m : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT)))).
+        (m : WorldAT) (storeA_restrict σ (worldA_dom (m : WorldAT)))).
     {
       unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
       rewrite Hle at 1. simpl. exists σ. split; [exact Hσn | reflexivity].
     }
     assert (Hmo_proj :
-        (mo : WorldAT) (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT)))).
+        (mo : WorldAT) (storeA_restrict σ (worldA_dom (m : WorldAT)))).
     { exact (Hin_m_mo _ Hm_proj). }
     assert (Hextra :
         (resA_restrict n (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT)) : WorldAT)
-          (@storeA_restrict V K _ _ σ
+          (storeA_restrict σ
             (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT)))).
     {
       simpl. exists σ. split; [exact Hσn | reflexivity].
     }
     assert (Hstore_part_compat :
-        @storeA_compat V K _ _
-          (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT)))
-          (@storeA_restrict V K _ _ σ
+        storeA_compat
+          (storeA_restrict σ (worldA_dom (m : WorldAT)))
+          (storeA_restrict σ
             (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT)))).
     {
       apply storeA_disj_dom_compat.
@@ -1609,9 +1609,9 @@ Proof.
         pose proof (storeA_restrict_dom σ (worldA_dom (m : WorldAT))) as Hdom1.
         pose proof (storeA_restrict_dom σ
           (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT))) as Hdom2.
-        change (dom (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT)) : gmap K V) =
+        change (dom (storeA_restrict σ (worldA_dom (m : WorldAT)) : gmap K V) =
           dom (σ : gmap K V) ∩ worldA_dom (m : WorldAT)) in Hdom1.
-        change (dom (@storeA_restrict V K _ _ σ
+        change (dom (storeA_restrict σ
           (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT)) : gmap K V) =
           dom (σ : gmap K V) ∩
             (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT))) in Hdom2.
@@ -1623,8 +1623,8 @@ Proof.
       - intros Hin. apply elem_of_empty in Hin. contradiction.
     }
     simpl.
-    exists (@storeA_restrict V K _ _ σ (worldA_dom (m : WorldAT))),
-      (@storeA_restrict V K _ _ σ
+    exists (storeA_restrict σ (worldA_dom (m : WorldAT))),
+      (storeA_restrict σ
         (worldA_dom (n : WorldAT) ∖ worldA_dom (m : WorldAT))).
     repeat split.
     + exact Hmo_proj.
@@ -1728,39 +1728,39 @@ Proof.
       destruct Hτ as [τn [τm [Hτn [Hτm [Hcompat ->]]]]].
       simpl in Hτn. destruct Hτn as [σn [Hσn HnX]]. subst τn.
       assert (Htarget_compat :
-          @storeA_compat V K _ _ σn (@storeA_restrict V K _ _ τm S)).
+          storeA_compat σn (storeA_restrict τm S)).
       {
-        apply (Hc σn (@storeA_restrict V K _ _ τm S)).
+        apply (Hc σn (storeA_restrict τm S)).
         - exact Hσn.
         - simpl. exists τm. split; [exact Hτm | reflexivity].
       }
       exists (@union (gmap K V) _ (σn : gmap K V)
-        (@storeA_restrict V K _ _ τm S : gmap K V)).
+        (storeA_restrict τm S : gmap K V)).
       split.
-      * simpl. exists σn, (@storeA_restrict V K _ _ τm S).
+      * simpl. exists σn, (storeA_restrict τm S).
         repeat split; eauto.
       * replace (((worldA_dom (n : WorldAT) ∩ X) ∪ worldA_dom (m : WorldAT)) ∩ Y)
           with Y by set_solver.
-        transitivity (@storeA_restrict V K _ _
-          (@union (gmap K V) _ (@storeA_restrict V K _ _ σn X : gmap K V)
+        transitivity (storeA_restrict
+          (@union (gmap K V) _ (storeA_restrict σn X : gmap K V)
             (τm : gmap K V)) Y).
         -- assert (HYτm : Y ⊆ dom (τm : gmap K V)).
            { pose proof (wfworldA_store_dom m τm Hτm) as Hdomτm.
              change (dom (τm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomτm.
              rewrite Hdomτm. exact HYm. }
-           exact (@storeA_restrict_wand_product V K _ _ σn τm S X Y
+           exact (storeA_restrict_wand_product σn τm S X Y
              Hcompat Htarget_compat HYS HYτm).
         -- exact Hrestrict.
     + intros [τ [Hτ Hrestrict]].
       destruct Hτ as [τn [τm [Hτn [Hτm [Hcompat ->]]]]].
       simpl in Hτm. destruct Hτm as [σm [Hσm HmS]]. subst τm.
-      set (σnX := @storeA_restrict V K _ _ τn X).
+      set (σnX := storeA_restrict τn X).
       exists (@union (gmap K V) _ (σnX : gmap K V) (σm : gmap K V)).
       split.
       * exists σnX, σm. repeat split.
         -- subst σnX. simpl. exists τn. split; [exact Hτn | reflexivity].
         -- exact Hσm.
-        -- subst σnX. apply (Hc_small (@storeA_restrict V K _ _ τn X) σm).
+        -- subst σnX. apply (Hc_small (storeA_restrict τn X) σm).
            ++ simpl. exists τn. split; [exact Hτn | reflexivity].
            ++ exact Hσm.
       * subst σnX.
@@ -1769,9 +1769,9 @@ Proof.
         rewrite <- Hrestrict.
         symmetry.
         assert (Hsmall_compat :
-            @storeA_compat V K _ _ (@storeA_restrict V K _ _ τn X) σm).
+            storeA_compat (storeA_restrict τn X) σm).
         {
-          apply (Hc_small (@storeA_restrict V K _ _ τn X) σm).
+          apply (Hc_small (storeA_restrict τn X) σm).
           - simpl. exists τn. split; [exact Hτn | reflexivity].
           - exact Hσm.
         }
@@ -1781,7 +1781,7 @@ Proof.
           change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
           rewrite Hdomσm. exact HYm.
         }
-        exact (@storeA_restrict_wand_product V K _ _ τn σm S X Y
+        exact (storeA_restrict_wand_product τn σm S X Y
           Hsmall_compat Hcompat HYS HYσm).
 Qed.
 
@@ -1899,7 +1899,7 @@ Proof.
       change (dom (σm : gmap K V) = worldA_dom (m : WorldAT)) in Hdomσm.
       rewrite storeA_restrict_idemp in Hrestrict by (rewrite Hdomσm; set_solver).
       subst σ.
-      assert (Hproj : (resA_restrict m X : WorldAT) (@storeA_restrict V K _ _ σm X)).
+      assert (Hproj : (resA_restrict m X : WorldAT) (storeA_restrict σm X)).
       { exists σm. split; [exact Hσm | reflexivity]. }
       rewrite <- Hsum_eq in Hproj.
       simpl in Hproj.
@@ -2138,7 +2138,7 @@ Proof.
   - intros Hcompat.
     destruct (wfA_ne _ (worldA_wf w1)) as [σ1 Hσ1].
     destruct (wfA_ne _ (worldA_wf w2)) as [σ2 Hσ2].
-    exists (@storeA_restrict V K _ _ σ1 X). split.
+    exists (storeA_restrict σ1 X). split.
     + apply rawA_restrict_to_singleton_if_projection_constant.
       intros σ Hσ.
       pose proof (worldA_compat_store_restrict_overlap
