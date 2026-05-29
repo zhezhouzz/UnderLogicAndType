@@ -3026,321 +3026,6 @@ Proof.
 	              exact Hres.
       * exact Hbody.
 Qed.
-Lemma tlet_wand_open_body_transport
-    gas (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
-    (m mx my myx : WfWorldT) (Fx : FiberExtensionT)
-    (x y : atom) τx τr :
-  (forall (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
-     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
-     (τ : context_ty),
-    lty_env_closed Σ ->
-    lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
-    lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ ->
-    expr_result_extension_witness e1 x Fx ->
-    m ⊨ expr_total_formula e1 ->
-    m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
-    LVFree x ∉ dom Σ ∪ context_ty_lvars τ ->
-    res_extend_by m Fx mx ->
-    mx ⊨ denot_ty_lvar_gas gas (<[LVFree x := T1]> Σ) τ (e2 ^^ x) ->
-    m ⊨ denot_ty_lvar_gas gas Σ τ (tlete e1 e2)) ->
-  lty_env_closed Σ ->
-  lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
-  lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTWand τx τr) ->
-  expr_result_extension_witness e1 x Fx ->
-  m ⊨ expr_total_formula e1 ->
-  m ⊨ basic_world_formula
-    (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2)) ->
-  LVFree x ∉ dom Σ ∪ context_ty_lvars (CTWand τx τr) ->
-  y ∉ lvars_fv (dom Σ) ∪ fv_tm e1 ∪ fv_tm e2 ∪
-    fv_cty τx ∪ fv_cty τr ∪ {[x]} ->
-  x <> y ->
-  y ∉ fv_cty τx ->
-  y ∉ fv_cty τr ->
-  LVFree y ∉ dom
-    (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2) : lty_env) ->
-  LVFree y ∉ dom
-    (denot_relevant_env (<[LVFree x := T1]> Σ)
-      (CTWand τx τr) (e2 ^^ x) : lty_env) ->
-  LVFree y ∉ dom (<[LVFree x := T1]> Σ : lty_env) ->
-  lc_tm (e2 ^^ x) ->
-  y ∉ fv_tm (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0)) ->
-  basic_context_ty_lvars
-    (dom (<[LVFree x := T1]> Σ : lty_env) : gset logic_var)
-    (CTWand τx τr) ->
-  m ⊑ my ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  res_extend_by my Fx myx ->
-  formula_scoped_in_world my
-    (formula_open 0 y
-      (denot_wand_body_formula gas
-        (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-        τx τr (tlete e1 e2))) ->
-  myx ⊨ formula_open 0 y
-    (denot_wand_body_formula gas
-      (denot_relevant_env (<[LVFree x := T1]> Σ)
-        (CTWand τx τr) (e2 ^^ x))
-      τx τr (e2 ^^ x)) ->
-  my ⊨ formula_open 0 y
-    (denot_wand_body_formula gas
-      (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-      τx τr (tlete e1 e2)).
-Proof.
-  intros IH HΣ He1 Hlet HFx Htotal Hbase_world Hfresh
-    Hy_support Hxy Hyτx Hyτr Hy_target_rel Hy_source_rel Hy_insert
-    Hlc_e2x Hy_body_fv Hbasic_src_rel
-    Hle Hdom_my HmyFx Hscope_target Hbody.
-  unfold denot_wand_body_formula in Hscope_target, Hbody |- *.
-  rewrite formula_open_impl in Hbody |- *.
-  rewrite formula_open_wand in Hbody |- *.
-  rewrite ?formula_open_basic_world_bind0 in Hbody |- * by tlet_support_solver.
-  eapply res_models_impl_intro; [exact Hscope_target|].
-  intros Hbasic.
-  pose proof (res_models_impl_elim _ _ _ Hbody
-    ltac:(eapply res_models_extend_mono; [exact HmyFx | exact Hbasic]))
-    as Hsource_wand.
-  pose proof (formula_scoped_impl_r _ _ _ Hscope_target) as Hscope_target_wand.
-  eapply res_models_wand_intro; [exact Hscope_target_wand|].
-  intros n Hc Harg.
-  assert (Hxτx : LVFree x ∉ context_ty_lvars τx).
-  {
-    cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
-    fast_set_solver!!.
-  }
-  set (source_arg :=
-    formula_open 0 y
-      (denot_ty_lvar_gas gas
-        (typed_lty_env_bind
-          (denot_relevant_env (<[LVFree x := T1]> Σ)
-            (CTWand τx τr) (e2 ^^ x))
-          (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)))).
-  set (source_body :=
-    formula_open 0 y
-      (denot_ty_lvar_gas gas
-        (typed_lty_env_bind
-          (denot_relevant_env (<[LVFree x := T1]> Σ)
-            (CTWand τx τr) (e2 ^^ x))
-          (erase_ty τx))
-        τr
-        (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0)))).
-  change (myx ⊨ FWand source_arg source_body) in Hsource_wand.
-  pose proof (tlet_wand_arg_source_from_target
-    gas Σ T1 x y τx τr e1 e2 n
-    HΣ Hxy Hxτx
-    Hyτx Hy_target_rel Hy_source_rel Harg) as Harg_source_n.
-  change (n ⊨ source_arg) in Harg_source_n.
-  set (n0 := res_restrict n (formula_fv source_arg)).
-  assert (Harg_source_n0 : n0 ⊨ source_arg).
-  { subst n0. apply res_models_restrict_fv. exact Harg_source_n. }
-  assert (Hout_source_arg : extA_out Fx ## formula_fv source_arg).
-  {
-    pose proof (proj2 (expr_result_extension_witness_shape _ _ _ HFx))
-      as HoutFx.
-    unfold ext_out in HoutFx.
-    pose proof (tlet_wand_source_arg_fresh_x
-      gas Σ T1 x y τx τr e1 e2 HΣ Hxy Hxτx) as Hxfv.
-    rewrite HoutFx. set_solver.
-  }
-  assert (Hc0_my : world_compat n0 my).
-  { subst n0. eapply world_compat_le_l; [apply res_restrict_le | exact Hc]. }
-  assert (Hc0_myx : world_compat n0 myx).
-  {
-    eapply world_compat_restrict_l_extend_by_fresh;
-      [exact Hout_source_arg | exact HmyFx | exact Hc].
-  }
-  pose proof (res_models_wand_elim n0 myx Hc0_myx
-    source_arg source_body Hsource_wand Harg_source_n0)
-    as Hsource_body_prod.
-  assert (Hsource_body_for_ih :
-    res_product n0 myx Hc0_myx ⊨ denot_ty_lvar_gas gas
-      (<[LVFree x := T1]> (<[LVFree y := erase_ty τx]> Σ))
-      (cty_open 0 y τr)
-      ((tapp_tm e2 (vfvar y)) ^^ x)).
-	  {
-	    subst source_body.
-	    eapply tlet_wand_source_body_open_for_ih.
-	    - exact HΣ.
-	    - exact Hxy.
-	    - cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
-	      fast_set_solver!!.
-	    - exact Hy_source_rel.
-	    - exact Hy_insert.
-	    - exact Hlc_e2x.
-	    - exact Hy_body_fv.
-	    - exact Hyτr.
-	    - exact Hbasic_src_rel.
-	    - exact Hsource_body_prod.
-	  }
-  assert (Hout_n0_dom : extA_out Fx ## world_dom (n0 : WorldT)).
-  {
-	    subst n0.
-	    pose proof (proj2 (expr_result_extension_witness_shape _ _ _ HFx))
-	      as HoutFx.
-	    unfold ext_out in HoutFx.
-	    unfold world_dom, res_restrict. simpl.
-	    rewrite HoutFx in Hout_source_arg.
-	    set_solver.
-	  }
-  pose proof (res_extend_by_product_r_fresh n0 my myx Fx
-    Hc0_my Hc0_myx Hout_n0_dom HmyFx) as Hprod_ext.
-  assert (Hbasic_src_rel0 :
-    basic_context_ty_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)
-      (CTWand τx τr)).
-  {
-    destruct Hbasic_src_rel as [Hvars Hshape]. split; [|exact Hshape].
-    intros v Hv.
-    specialize (Hvars v Hv).
-    change (v ∈ dom ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
-      : gmap logic_var ty)) in Hvars.
-    rewrite dom_insert_L in Hvars.
-    apply elem_of_union in Hvars as [Hvx|HvΣ]; [|exact HvΣ].
-    apply elem_of_singleton in Hvx. subst v.
-    exfalso. apply Hfresh. apply elem_of_union_r. exact Hv.
-  }
-  assert (HlcΣ : lc_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)).
-  { exact HΣ. }
-  assert (HyΣ : LVFree y ∉ (dom (Σ : gmap logic_var ty) : gset logic_var)).
-  {
-    intros HyΣ.
-    assert (Hyfv : y ∈ lvars_fv (dom (Σ : gmap logic_var ty) : gset logic_var)).
-    { apply lvars_fv_elem. exact HyΣ. }
-    apply Hy_support.
-    fast_set_solver!!.
-  }
-  assert (Hclosed_Σy : lty_env_closed (<[LVFree y := erase_ty τx]> Σ)).
-  { apply lty_env_closed_insert_free. exact HΣ. }
-  assert (He1_Σy :
-    lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ e1 ⋮ T1).
-  {
-    apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact He1].
-  }
-  assert (Hlet_Σy :
-    lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ
-      tlete e1 (tapp_tm e2 (vfvar y)) ⋮ erase_ty (cty_open 0 y τr)).
-  {
-    rewrite cty_open_preserves_erasure.
-    apply basic_typing_tapp_tm_tlete_assoc_rev.
-    eapply basic_typing_tapp_tm.
-    - apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact Hlet].
-    - constructor.
-      apply lty_env_to_atom_env_insert_free_lookup_eq.
-  }
-  assert (Htotal_prod :
-    res_product n0 my Hc0_my ⊨ expr_total_formula e1).
-  {
-    eapply res_models_kripke.
-    - etransitivity.
-      + exact Hle.
-      + apply res_product_le_r.
-    - exact Htotal.
-  }
-  assert (Hbase_world_prod :
-    res_product n0 my Hc0_my ⊨ basic_world_formula
-      (denot_relevant_env (<[LVFree y := erase_ty τx]> Σ)
-        (cty_open 0 y τr) (tlete e1 (tapp_tm e2 (vfvar y))))).
-  {
-    eapply basic_world_formula_wand_body_from_source_and_arg.
-    - exact HlcΣ.
-    - exact HyΣ.
-    - exact Hbasic_src_rel0.
-    - apply tm_lvars_tlet_tapp_tm_fvar_without_arg.
-    - eapply res_models_kripke.
-      + apply res_product_le_r.
-      + eapply res_models_kripke; [exact Hle|exact Hbase_world].
-    - eapply res_models_kripke.
-      + apply res_product_le_r.
-      + rewrite formula_open_basic_world_formula in Hbasic.
-        rewrite lty_env_open_one_bound0_singleton in Hbasic.
-        exact Hbasic.
-  }
-  assert (Hfresh_x_Σy :
-    LVFree x ∉ dom (<[LVFree y := erase_ty τx]> Σ) ∪
-      context_ty_lvars (cty_open 0 y τr)).
-  {
-    intros Hbad.
-    apply elem_of_union in Hbad as [Hdom|Hτ].
-    - change (LVFree x ∈ dom ((<[LVFree y := erase_ty τx]>
-        (Σ : gmap logic_var ty)) : gmap logic_var ty)) in Hdom.
-      rewrite dom_insert_L in Hdom.
-      apply elem_of_union in Hdom as [Hyx|HxΣ].
-      + apply elem_of_singleton in Hyx. inversion Hyx. congruence.
-      + cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
-        fast_set_solver!!.
-    - assert (Hdiff :
-        LVFree x ∈ context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]}).
-      { set_solver. }
-      pose proof (context_ty_lvars_open_body_without_fresh_closed
-        (dom (Σ : gmap logic_var ty) : gset logic_var) τr y
-        HlcΣ HyΣ ltac:(destruct Hbasic_src_rel0 as [Hvars _];
-          cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *;
-          set_solver)) as Hsubset.
-      specialize (Hsubset _ Hdiff).
-      cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
-      fast_set_solver!!.
-  }
-  pose proof (IH (<[LVFree y := erase_ty τx]> Σ) T1 e1
-    (tapp_tm e2 (vfvar y))
-    (res_product n0 my Hc0_my) (res_product n0 myx Hc0_myx)
-    Fx x (cty_open 0 y τr)
-    Hclosed_Σy He1_Σy Hlet_Σy HFx Htotal_prod Hbase_world_prod
-    Hfresh_x_Σy Hprod_ext Hsource_body_for_ih) as HIH_result.
-  assert (Htarget_body_small :
-    res_product n0 my Hc0_my ⊨ formula_open 0 y
-      (denot_ty_lvar_gas gas
-        (typed_lty_env_bind
-          (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-          (erase_ty τx))
-        τr
-        (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0)))).
-  {
-    assert (Hassoc :
-      res_product n0 my Hc0_my ⊨ denot_ty_lvar_gas gas
-        (<[LVFree y := erase_ty τx]> Σ)
-        (cty_open 0 y τr)
-        (tapp_tm (tlete e1 e2) (vfvar y))).
-    {
-      eapply denot_ty_lvar_gas_tapp_tlete_assoc.
-      - exact Hclosed_Σy.
-      - eapply typing_tm_lc. exact Hlet.
-      - exact HIH_result.
-    }
-    pose proof (res_models_denot_ty_lvar_gas_env_agree_on
-      gas (<[LVFree y := erase_ty τx]> Σ)
-      (<[LVFree y := erase_ty τx]>
-        (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2)))
-      (cty_open 0 y τr) (tapp_tm (tlete e1 e2) (vfvar y))
-      (denot_relevant_lvars (cty_open 0 y τr)
-        (tapp_tm (tlete e1 e2) (vfvar y)))
-      (res_product n0 my Hc0_my)
-      ltac:(intros v Hv; exact Hv)
-      ltac:(symmetry;
-        eapply wand_body_relevant_env_agree_from_basic_context_ty;
-        [exact HlcΣ|exact HyΣ|exact Hbasic_src_rel0|
-         apply tm_lvars_tapp_tm_fvar_without_arg])
-      Hassoc) as Henv.
-    replace (tapp_tm (tlete e1 e2) (vfvar y)) with
-      (open_tm 0 (vfvar y)
-        (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0))) in Henv.
-    2:{
-      rewrite open_tapp_tm_shift_bvar0_lc.
-      - reflexivity.
-      - eapply typing_tm_lc. exact Hlet.
-    }
-    eapply res_models_open_denot_ty_lvar_gas_from_open.
-    - exact Hy_target_rel.
-    - apply denot_relevant_env_closed. exact HΣ.
-    - rewrite fv_tapp_tm, tm_shift_fv. cbn [fv_value].
-      fast_set_solver!!.
-    - exact Hyτr.
-    - exact Henv.
-  }
-  eapply res_models_kripke.
-  - eapply res_product_le_mono.
-    + apply res_restrict_le.
-    + reflexivity.
-  - exact Htarget_body_small.
-Qed.
-
 Lemma tlet_intro_denotation_wand_case
     gas (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
@@ -3505,7 +3190,249 @@ Proof.
 	    eapply basic_context_ty_lvars_mono; [|exact Hbasic_rel].
 	    apply denot_relevant_env_dom_subset_direct.
 	  }
-	  eapply tlet_wand_open_body_transport; eauto.
+	  unfold denot_wand_body_formula in Htarget_open_scope, Hmyx_body |- *.
+	  rewrite formula_open_impl in Hmyx_body |- *.
+	  rewrite formula_open_wand in Hmyx_body |- *.
+	  rewrite ?formula_open_basic_world_bind0 in Hmyx_body |- * by tlet_support_solver.
+	  eapply res_models_impl_intro; [exact Htarget_open_scope|].
+	  intros Hbasic.
+	  pose proof (res_models_impl_elim _ _ _ Hmyx_body
+	    ltac:(eapply res_models_extend_mono; [exact HmyFx | exact Hbasic]))
+	    as Hsource_wand.
+	  pose proof (formula_scoped_impl_r _ _ _ Htarget_open_scope)
+	    as Hscope_target_wand.
+	  eapply res_models_wand_intro; [exact Hscope_target_wand|].
+	  intros n Hc Harg.
+	  set (source_arg :=
+	    formula_open 0 y
+	      (denot_ty_lvar_gas gas
+	        (typed_lty_env_bind
+	          (denot_relevant_env (<[LVFree x := T1]> Σ)
+	            (CTWand τx τr) (e2 ^^ x))
+	          (erase_ty τx))
+	        (cty_shift 0 τx) (tret (vbvar 0)))).
+	  set (source_body :=
+	    formula_open 0 y
+	      (denot_ty_lvar_gas gas
+	        (typed_lty_env_bind
+	          (denot_relevant_env (<[LVFree x := T1]> Σ)
+	            (CTWand τx τr) (e2 ^^ x))
+	          (erase_ty τx))
+	        τr
+	        (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0)))).
+	  change (myx ⊨ FWand source_arg source_body) in Hsource_wand.
+	  pose proof (tlet_wand_arg_source_from_target
+	    gas Σ T1 x y τx τr e1 e2 n
+	    HΣ Hxy Hxτx
+	    Hyτx Hy_target_rel Hy_source_rel Harg) as Harg_source_n.
+	  change (n ⊨ source_arg) in Harg_source_n.
+	  set (n0 := res_restrict n (formula_fv source_arg)).
+	  assert (Harg_source_n0 : n0 ⊨ source_arg).
+	  { subst n0. apply res_models_restrict_fv. exact Harg_source_n. }
+	  assert (Hout_source_arg : extA_out Fx ## formula_fv source_arg).
+	  {
+	    pose proof (proj2 (expr_result_extension_witness_shape _ _ _ HFx))
+	      as HoutFx.
+	    unfold ext_out in HoutFx.
+	    pose proof (tlet_wand_source_arg_fresh_x
+	      gas Σ T1 x y τx τr e1 e2 HΣ Hxy Hxτx) as Hxfv.
+	    rewrite HoutFx. set_solver.
+	  }
+	  assert (Hc0_my : world_compat n0 my).
+	  { subst n0. eapply world_compat_le_l; [apply res_restrict_le | exact Hc]. }
+	  assert (Hc0_myx : world_compat n0 myx).
+	  {
+	    eapply world_compat_restrict_l_extend_by_fresh;
+	      [exact Hout_source_arg | exact HmyFx | exact Hc].
+	  }
+	  pose proof (res_models_wand_elim n0 myx Hc0_myx
+	    source_arg source_body Hsource_wand Harg_source_n0)
+	    as Hsource_body_prod.
+	  assert (Hsource_body_for_ih :
+	    res_product n0 myx Hc0_myx ⊨ denot_ty_lvar_gas gas
+	      (<[LVFree x := T1]> (<[LVFree y := erase_ty τx]> Σ))
+	      (cty_open 0 y τr)
+	      ((tapp_tm e2 (vfvar y)) ^^ x)).
+	  {
+	    subst source_body.
+	    eapply tlet_wand_source_body_open_for_ih.
+	    - exact HΣ.
+	    - exact Hxy.
+	    - cbn [context_ty_lvars context_ty_lvars_at] in Hfresh |- *.
+	      fast_set_solver!!.
+	    - exact Hy_source_rel.
+	    - exact Hy_insert.
+	    - exact Hlc_e2x.
+	    - exact Hy_body_fv.
+	    - exact Hyτr.
+	    - exact Hbasic_src_rel.
+	    - exact Hsource_body_prod.
+	  }
+	  assert (Hout_n0_dom : extA_out Fx ## world_dom (n0 : WorldT)).
+	  {
+	    subst n0.
+	    pose proof (proj2 (expr_result_extension_witness_shape _ _ _ HFx))
+	      as HoutFx.
+	    unfold ext_out in HoutFx.
+	    unfold world_dom, res_restrict. simpl.
+	    rewrite HoutFx in Hout_source_arg.
+	    set_solver.
+	  }
+	  pose proof (res_extend_by_product_r_fresh n0 my myx Fx
+	    Hc0_my Hc0_myx Hout_n0_dom HmyFx) as Hprod_ext.
+	  assert (Hbasic_src_rel0 :
+	    basic_context_ty_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)
+	      (CTWand τx τr)).
+	  {
+	    destruct Hbasic_src_rel as [Hvars Hshape]. split; [|exact Hshape].
+	    intros v Hv.
+	    specialize (Hvars v Hv).
+	    change (v ∈ dom ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
+	      : gmap logic_var ty)) in Hvars.
+	    rewrite dom_insert_L in Hvars.
+	    apply elem_of_union in Hvars as [Hvx|HvΣ]; [|exact HvΣ].
+	    apply elem_of_singleton in Hvx. subst v.
+	    exfalso. apply Hfresh. apply elem_of_union_r. exact Hv.
+	  }
+	  assert (HlcΣ : lc_lvars (dom (Σ : gmap logic_var ty) : gset logic_var)).
+	  { exact HΣ. }
+	  assert (HyΣ : LVFree y ∉ (dom (Σ : gmap logic_var ty) : gset logic_var)).
+	  {
+	    intros HyΣ.
+	    assert (Hyfv : y ∈ lvars_fv (dom (Σ : gmap logic_var ty) : gset logic_var)).
+	    { apply lvars_fv_elem. exact HyΣ. }
+	    apply Hy.
+	    fast_set_solver!!.
+	  }
+	  assert (Hclosed_Σy : lty_env_closed (<[LVFree y := erase_ty τx]> Σ)).
+	  { apply lty_env_closed_insert_free. exact HΣ. }
+	  assert (He1_Σy :
+	    lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ e1 ⋮ T1).
+	  {
+	    apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact He1].
+	  }
+	  assert (Hlet_Σy :
+	    lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ
+	      tlete e1 (tapp_tm e2 (vfvar y)) ⋮ erase_ty (cty_open 0 y τr)).
+	  {
+	    rewrite cty_open_preserves_erasure.
+	    apply basic_typing_tapp_tm_tlete_assoc_rev.
+	    eapply basic_typing_tapp_tm.
+	    - apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact Hlet].
+	    - constructor.
+	      apply lty_env_to_atom_env_insert_free_lookup_eq.
+	  }
+	  assert (Htotal_prod :
+	    res_product n0 my Hc0_my ⊨ expr_total_formula e1).
+	  {
+	    eapply res_models_kripke.
+	    - etransitivity.
+	      + exact Hle.
+	      + apply res_product_le_r.
+	    - exact Htotal.
+	  }
+	  assert (Hbase_world_prod :
+	    res_product n0 my Hc0_my ⊨ basic_world_formula
+	      (denot_relevant_env (<[LVFree y := erase_ty τx]> Σ)
+	        (cty_open 0 y τr) (tlete e1 (tapp_tm e2 (vfvar y))))).
+	  {
+	    eapply basic_world_formula_wand_body_from_source_and_arg.
+	    - exact HlcΣ.
+	    - exact HyΣ.
+	    - exact Hbasic_src_rel0.
+	    - apply tm_lvars_tlet_tapp_tm_fvar_without_arg.
+	    - eapply res_models_kripke.
+	      + apply res_product_le_r.
+	      + eapply res_models_kripke; [exact Hle|exact Hbase_world].
+	    - eapply res_models_kripke.
+	      + apply res_product_le_r.
+	      + rewrite formula_open_basic_world_formula in Hbasic.
+	        rewrite lty_env_open_one_bound0_singleton in Hbasic.
+	        exact Hbasic.
+	  }
+	  assert (Hfresh_x_Σy :
+	    LVFree x ∉ dom (<[LVFree y := erase_ty τx]> Σ) ∪
+	      context_ty_lvars (cty_open 0 y τr)).
+	  {
+	    intros Hbad.
+	    apply elem_of_union in Hbad as [Hdom|Hτ].
+	    - change (LVFree x ∈ dom ((<[LVFree y := erase_ty τx]>
+	        (Σ : gmap logic_var ty)) : gmap logic_var ty)) in Hdom.
+	      rewrite dom_insert_L in Hdom.
+		      apply elem_of_union in Hdom as [Hyx|HxΣ_dom].
+		      + apply elem_of_singleton in Hyx. inversion Hyx. congruence.
+		      + cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
+		        fast_set_solver!!.
+	    - assert (Hdiff :
+	        LVFree x ∈ context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]}).
+	      { set_solver. }
+	      pose proof (context_ty_lvars_open_body_without_fresh_closed
+	        (dom (Σ : gmap logic_var ty) : gset logic_var) τr y
+	        HlcΣ HyΣ ltac:(destruct Hbasic_src_rel0 as [Hvars _];
+	          cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *;
+	          set_solver)) as Hsubset.
+	      specialize (Hsubset _ Hdiff).
+	      cbn [context_ty_lvars context_ty_lvars_at] in Hfresh.
+	      fast_set_solver!!.
+	  }
+	  pose proof (IH (<[LVFree y := erase_ty τx]> Σ) T1 e1
+	    (tapp_tm e2 (vfvar y))
+	    (res_product n0 my Hc0_my) (res_product n0 myx Hc0_myx)
+	    Fx x (cty_open 0 y τr)
+	    Hclosed_Σy He1_Σy Hlet_Σy HFx Htotal_prod Hbase_world_prod
+	    Hfresh_x_Σy Hprod_ext Hsource_body_for_ih) as HIH_result.
+	  assert (Htarget_body_small :
+	    res_product n0 my Hc0_my ⊨ formula_open 0 y
+	      (denot_ty_lvar_gas gas
+	        (typed_lty_env_bind
+	          (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
+	          (erase_ty τx))
+	        τr
+	        (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0)))).
+	  {
+	    assert (Hassoc :
+	      res_product n0 my Hc0_my ⊨ denot_ty_lvar_gas gas
+	        (<[LVFree y := erase_ty τx]> Σ)
+	        (cty_open 0 y τr)
+	        (tapp_tm (tlete e1 e2) (vfvar y))).
+	    {
+	      eapply denot_ty_lvar_gas_tapp_tlete_assoc.
+	      - exact Hclosed_Σy.
+	      - eapply typing_tm_lc. exact Hlet.
+	      - exact HIH_result.
+	    }
+	    pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+	      gas (<[LVFree y := erase_ty τx]> Σ)
+	      (<[LVFree y := erase_ty τx]>
+	        (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2)))
+	      (cty_open 0 y τr) (tapp_tm (tlete e1 e2) (vfvar y))
+	      (denot_relevant_lvars (cty_open 0 y τr)
+	        (tapp_tm (tlete e1 e2) (vfvar y)))
+	      (res_product n0 my Hc0_my)
+	      ltac:(intros v Hv; exact Hv)
+	      ltac:(symmetry;
+	        eapply wand_body_relevant_env_agree_from_basic_context_ty;
+	        [exact HlcΣ|exact HyΣ|exact Hbasic_src_rel0|
+	         apply tm_lvars_tapp_tm_fvar_without_arg])
+	      Hassoc) as Henv.
+	    replace (tapp_tm (tlete e1 e2) (vfvar y)) with
+	      (open_tm 0 (vfvar y)
+	        (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0))) in Henv.
+	    2:{
+	      rewrite open_tapp_tm_shift_bvar0_lc.
+	      - reflexivity.
+	      - eapply typing_tm_lc. exact Hlet.
+	    }
+	    eapply res_models_open_denot_ty_lvar_gas_from_open.
+	    - exact Hy_target_rel.
+	    - apply denot_relevant_env_closed. exact HΣ.
+	    - rewrite fv_tapp_tm, tm_shift_fv. cbn [fv_value].
+	      fast_set_solver!!.
+	    - exact Hyτr.
+	    - exact Henv.
+	  }
+		  eapply res_models_kripke; [|exact Htarget_body_small].
+		  eapply res_product_le_mono; [apply res_restrict_le|reflexivity].
 Qed.
 
 Ltac open_formula_syntax_step :=
