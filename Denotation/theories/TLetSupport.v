@@ -261,67 +261,6 @@ Proof.
     fast_set_solver!!.
 Qed.
 
-Lemma denot_relevant_env_lookup_mono_context
-    (Σ : lty_env) τsmall τbig e v T :
-  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
-  denot_relevant_env Σ τsmall e !! v = Some T ->
-  denot_relevant_env Σ τbig e !! v = Some T.
-Proof.
-  intros Hτ Hlookup.
-  unfold denot_relevant_env, lty_env_restrict_lvars,
-    denot_relevant_lvars in Hlookup |- *.
-  change ((storeA_restrict (Σ : gmap logic_var ty)
-    (context_ty_lvars τsmall ∪ tm_lvars e)) !! v = Some T) in Hlookup.
-  change ((storeA_restrict (Σ : gmap logic_var ty)
-    (context_ty_lvars τbig ∪ tm_lvars e)) !! v = Some T).
-  apply storeA_restrict_lookup_some in Hlookup as [Hv HΣ].
-  apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].
-Qed.
-
-Lemma denot_relevant_env_dom_mono_context
-    (Σ : lty_env) τsmall τbig e :
-  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
-  dom (denot_relevant_env Σ τsmall e) ⊆
-  dom (denot_relevant_env Σ τbig e).
-Proof.
-  intros Hτ v Hv.
-  change (v ∈ dom ((denot_relevant_env Σ τsmall e : lty_env)
-    : gmap logic_var ty)) in Hv.
-  apply elem_of_dom in Hv as [T Hlookup].
-  change (v ∈ dom ((denot_relevant_env Σ τbig e : lty_env)
-    : gmap logic_var ty)).
-  apply elem_of_dom. exists T.
-  eapply denot_relevant_env_lookup_mono_context; eauto.
-Qed.
-
-Lemma basic_world_formula_denot_relevant_mono_context
-    (Σ : lty_env) τsmall τbig e (m : WfWorldT) :
-  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
-  m ⊨ basic_world_formula (denot_relevant_env Σ τbig e) ->
-  m ⊨ basic_world_formula (denot_relevant_env Σ τsmall e).
-Proof.
-  intros Hτ Hworld.
-  apply basic_world_formula_models_iff in Hworld
-    as [Hlc_big [Hscope_big Htyped_big]].
-  apply basic_world_formula_models_iff.
-  pose proof (denot_relevant_env_dom_mono_context Σ τsmall τbig e Hτ)
-    as Hdom.
-  split.
-  - intros v Hv. apply Hlc_big. exact (Hdom v Hv).
-  - split.
-    + intros a Ha.
-      apply Hscope_big.
-      apply lvars_fv_elem in Ha.
-      apply lvars_fv_elem. exact (Hdom (LVFree a) Ha).
-    + unfold lworld_has_type, worldA_has_type in Htyped_big |- *.
-      destruct Htyped_big as [Hdom_big Hstores_big].
-      split.
-      * intros v Hv. apply Hdom_big. exact (Hdom v Hv).
-      * intros σ Hσ v T val HΣv Hσv.
-        eapply Hstores_big; [exact Hσ| |exact Hσv].
-        eapply denot_relevant_env_lookup_mono_context; eauto.
-Qed.
-
 Lemma formula_fv_denot_ty_lvar_gas_scope_from_guard
     gas Σ τsmall τbig e (m : WfWorldT) :
   context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
@@ -812,21 +751,6 @@ Proof.
       (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr)).
     exact Hbasic.
   - exact He.
-Qed.
-
-Lemma denot_relevant_env_dom_subset_direct (Σ : lty_env) τ e :
-  dom (denot_relevant_env Σ τ e : lty_env) ⊆
-  dom (Σ : gmap logic_var ty).
-Proof.
-  intros v Hv.
-  change (v ∈ dom ((denot_relevant_env Σ τ e : lty_env)
-    : gmap logic_var ty)) in Hv.
-  apply elem_of_dom in Hv as [T Hlookup].
-  unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-  change ((storeA_restrict Σ (denot_relevant_lvars τ e)
-    : gmap logic_var ty) !! v = Some T) in Hlookup.
-  apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-  eapply elem_of_dom_2. exact Hlookup.
 Qed.
 
 Lemma lty_env_open_one_bound0_singleton y T :
