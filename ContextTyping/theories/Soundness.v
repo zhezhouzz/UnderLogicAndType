@@ -165,41 +165,6 @@ Proof.
   apply denot_const_direct_in_ctx.
 Qed.
 
-(** The actual semantic TLet bridge: this is the proof-facing one-hop call into
-    [Denotation.TLet.tlet_intro_denotation].  The induction-facing
-    [fundamental_let_case] below only chooses the witness extension/world and
-    then calls this lemma. *)
-Lemma fundamental_let_case_direct
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) e1 e2
-    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
-  erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 ->
-  erase_ctx_under Σ Γ ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 ->
-  expr_result_extension_witness e1 x Fx ->
-  m ⊨ expr_total_formula e1 ->
-  m ⊨ basic_world_formula
-        (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-          τ2 (tlete e1 e2)) ->
-  x ∉ dom (erase_ctx_under Σ Γ) ->
-  LVFree x ∉ dom (atom_env_to_lty_env (erase_ctx_under Σ Γ)) ∪
-    context_ty_lvars τ2 ->
-  res_extend_by m Fx mx ->
-  mx ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
-          τ2 (e2 ^^ x) ->
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
-Proof.
-  intros He1 Hlet HFx Htotal Hworld Hxfresh Hxlvar Hext Hbody.
-  unfold denot_ty_in_ctx_under, denot_ty in Hbody |- *.
-  rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1 Hxfresh) in Hbody.
-  replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (erase_ctx_under Σ Γ)))
-    with (<[LVFree x := erase_ty τ1]>
-      (atom_env_to_lty_env (erase_ctx_under Σ Γ))) in Hbody.
-  2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-  eapply tlet_intro_denotation; eauto.
-  - apply atom_store_to_lvar_store_closed.
-  - rewrite lvar_store_to_atom_store_atom_store. exact He1.
-  - rewrite lvar_store_to_atom_store_atom_store. exact Hlet.
-Qed.
-
 (** Extending a context denotation with the result extension of [e1].
 
     This is the one remaining semantic context-construction obligation for the
@@ -282,10 +247,20 @@ Proof.
       rewrite Hout. set_solver.
   }
   destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
-  eapply fundamental_let_case_direct with
-    (mx := mx) (Fx := Fx) (x := x); eauto.
-  - exact (proj2 Hwf1).
-  - exact (proj2 Hwflet).
+  pose proof (IH2 x HxL mx ltac:(
+    eapply denot_ctx_in_env_comma_bind_from_result_extension; eauto))
+    as Hbody.
+  unfold denot_ty_in_ctx_under, denot_ty in Hbody |- *.
+  rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1 Hxctx) in Hbody.
+  replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (erase_ctx_under Σ Γ)))
+    with (<[LVFree x := erase_ty τ1]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ))) in Hbody.
+  2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+  eapply tlet_intro_denotation with
+    (T1 := erase_ty τ1) (Fx := Fx) (x := x) (mx := mx); eauto.
+  - apply atom_store_to_lvar_store_closed.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf1).
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwflet).
   - eapply denot_ctx_in_env_relevant_basic_world. exact Hctx.
   - intros Hbad.
     apply elem_of_union in Hbad as [Hbad|Hbad].
@@ -295,8 +270,6 @@ Proof.
     + apply lvars_fv_elem in Hbad.
       rewrite context_ty_lvars_fv in Hbad.
       set_solver.
-  - apply IH2; [exact HxL|].
-    eapply denot_ctx_in_env_comma_bind_from_result_extension; eauto.
 Qed.
 
 Lemma denot_letd_direct_in_ctx
