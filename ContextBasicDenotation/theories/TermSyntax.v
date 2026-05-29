@@ -4,6 +4,8 @@
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBase Require Import BaseTactics.
+From Stdlib Require Import List.
+Import ListNotations.
 
 Section TermDenotation.
 
@@ -475,6 +477,136 @@ Proof.
   rewrite elem_of_union, elem_of_singleton in Hy'.
   destruct Hy' as [Hy'|Hy']; [exact (Hfresh Hy')|].
   inversion Hy'. congruence.
+Qed.
+
+Lemma open_tapp_tm_fvar_lc_arg e x y :
+  open_tm 0 (vfvar x) (tapp_tm e (vfvar y)) =
+  tapp_tm (open_tm 0 (vfvar x) e) (vfvar y).
+Proof.
+  apply open_tapp_tm_lc_arg. constructor.
+Qed.
+
+Lemma open_tm_shift0_lc y e :
+  lc_tm e ->
+  open_tm 0 (vfvar y) (tm_shift 0 e) = e.
+Proof.
+  intros Hlc.
+  rewrite tm_shift_lc_id by exact Hlc.
+  apply open_rec_lc_tm. exact Hlc.
+Qed.
+
+Lemma open_tapp_tm_shift_bvar0_lc e y :
+  lc_tm e ->
+  open_tm 0 (vfvar y) (tapp_tm (tm_shift 0 e) (vbvar 0)) =
+  tapp_tm e (vfvar y).
+Proof.
+  intros Hlc.
+  unfold tapp_tm.
+  cbn [open_tm open_value value_shift].
+  rewrite bool_decide_eq_true_2 by lia.
+  rewrite open_tm_shift0_lc by exact Hlc.
+  destruct (decide (1 = 0)); [lia|].
+  destruct (decide (1 = 1)); [|lia].
+  reflexivity.
+Qed.
+
+Lemma tm_lvars_tapp_tm_fvar e y :
+  tm_lvars (tapp_tm e (vfvar y)) = tm_lvars e ∪ {[LVFree y]}.
+Proof.
+  unfold tapp_tm, tm_lvars.
+  cbn [tm_lvars_at value_lvars_at value_shift].
+  unfold bvar_lvars_at.
+  destruct (decide (1 <= 0)); [lia|].
+  better_set_solver.
+Qed.
+
+Lemma fv_tm_tapp_tm_tlete_assoc e1 e2 vx :
+  fv_tm (tapp_tm (tlete e1 e2) vx) =
+  fv_tm (tlete e1 (tapp_tm e2 vx)).
+Proof.
+  rewrite !fv_tapp_tm.
+  apply set_eq. intros a.
+  cbn [fv_tm]. rewrite !fv_tapp_tm. rewrite !elem_of_union.
+  firstorder.
+Qed.
+
+Lemma tm_lvars_tapp_tm_tlete_assoc_fvar e1 e2 y :
+  tm_lvars (tapp_tm (tlete e1 e2) (vfvar y)) =
+  tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))).
+Proof.
+  unfold tapp_tm, tm_lvars.
+  cbn [tm_lvars_at value_lvars_at value_shift].
+  apply set_eq. intros z.
+  rewrite !elem_of_union. firstorder.
+Qed.
+
+Fixpoint tapp_tm_fvar_spine (e : tm) (ys : list atom) : tm :=
+  match ys with
+  | [] => e
+  | y :: ys' => tapp_tm (tapp_tm_fvar_spine e ys') (vfvar y)
+  end.
+
+Lemma fv_tm_tapp_tm_fvar_spine e ys :
+  fv_tm (tapp_tm_fvar_spine e ys) = fv_tm e ∪ list_to_set ys.
+Proof.
+  induction ys as [|y ys IH]; cbn [tapp_tm_fvar_spine].
+  - better_set_solver.
+  - rewrite fv_tapp_tm, IH. cbn [fv_value].
+    better_set_solver.
+Qed.
+
+Lemma tm_lvars_tapp_tm_fvar_spine e ys :
+  tm_lvars (tapp_tm_fvar_spine e ys) =
+  tm_lvars e ∪ lvars_of_atoms (list_to_set ys).
+Proof.
+  induction ys as [|y ys IH]; cbn [tapp_tm_fvar_spine].
+  - cbn [list_to_set]. unfold lvars_of_atoms. rewrite set_map_empty.
+    better_set_solver.
+  - rewrite tm_lvars_tapp_tm_fvar, IH.
+    cbn [list_to_set].
+    unfold lvars_of_atoms.
+    rewrite set_map_union_L, set_map_singleton_L.
+    better_set_solver.
+Qed.
+
+Lemma fv_tm_tapp_tlete_assoc_spine e1 e2 y ys :
+  fv_tm (tapp_tm_fvar_spine
+    (tapp_tm (tlete e1 e2) (vfvar y)) ys) =
+  fv_tm (tapp_tm_fvar_spine
+    (tlete e1 (tapp_tm e2 (vfvar y))) ys).
+Proof.
+  rewrite !fv_tm_tapp_tm_fvar_spine.
+  rewrite fv_tm_tapp_tm_tlete_assoc. reflexivity.
+Qed.
+
+Lemma tm_lvars_tapp_tlete_assoc_spine e1 e2 y ys :
+  tm_lvars (tapp_tm_fvar_spine
+    (tapp_tm (tlete e1 e2) (vfvar y)) ys) =
+  tm_lvars (tapp_tm_fvar_spine
+    (tlete e1 (tapp_tm e2 (vfvar y))) ys).
+Proof.
+  rewrite !tm_lvars_tapp_tm_fvar_spine.
+  rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma lc_tapp_tm_fvar_spine e ys :
+  lc_tm e ->
+  lc_tm (tapp_tm_fvar_spine e ys).
+Proof.
+  induction ys as [|y ys IH]; cbn [tapp_tm_fvar_spine]; intros Hlc.
+  - exact Hlc.
+  - apply lc_tapp_tm; [apply IH; exact Hlc | constructor].
+Qed.
+
+Lemma open_tapp_tm_fvar_spine_shift_bvar0_lc e ys y :
+  lc_tm (tapp_tm_fvar_spine e ys) ->
+  open_tm 0 (vfvar y)
+    (tapp_tm (tm_shift 0 (tapp_tm_fvar_spine e ys)) (vbvar 0)) =
+  tapp_tm_fvar_spine e (y :: ys).
+Proof.
+  intros Hlc.
+  cbn [tapp_tm_fvar_spine].
+  apply open_tapp_tm_shift_bvar0_lc. exact Hlc.
 Qed.
 
 Definition lstore_free_part (σ : LStoreT) : StoreT :=

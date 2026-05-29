@@ -820,15 +820,6 @@ Lemma tm_lvars_at_tapp_shift0_bound0 e d :
   tm_lvars_at d e.
 Proof. apply tm_lvars_at_tapp_shift_bound0. lia. Qed.
 
-Lemma open_tm_shift0_lc y e :
-  lc_tm e ->
-  open_tm 0 (vfvar y) (tm_shift 0 e) = e.
-Proof.
-  intros Hlc.
-  rewrite tm_shift_lc_id by exact Hlc.
-  apply open_rec_lc_tm. exact Hlc.
-Qed.
-
 Definition lty_env_restrict_lvars (Σ : lty_env) (D : lvset) : lty_env :=
   storeA_restrict Σ D.
 

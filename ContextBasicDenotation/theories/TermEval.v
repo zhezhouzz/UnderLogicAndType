@@ -196,26 +196,6 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
-Lemma fv_tm_tapp_tm_tlete_assoc e1 e2 vx :
-  fv_tm (tapp_tm (tlete e1 e2) vx) =
-  fv_tm (tlete e1 (tapp_tm e2 vx)).
-Proof.
-  rewrite !fv_tapp_tm.
-  apply set_eq. intros a.
-  cbn [fv_tm]. rewrite !fv_tapp_tm. rewrite !elem_of_union.
-  firstorder.
-Qed.
-
-Lemma tm_lvars_tapp_tm_tlete_assoc_fvar e1 e2 y :
-  tm_lvars (tapp_tm (tlete e1 e2) (vfvar y)) =
-  tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))).
-Proof.
-  unfold tapp_tm, tm_lvars.
-  cbn [tm_lvars_at value_lvars_at value_shift].
-  apply set_eq. intros z.
-  rewrite !elem_of_union. firstorder.
-Qed.
-
 Lemma expr_eval_in_atom_store_restrict_fv σ e v :
   closed_env σ ->
   expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e v <->
