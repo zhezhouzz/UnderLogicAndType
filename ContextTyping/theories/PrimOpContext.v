@@ -5,7 +5,7 @@
     argument qualifiers and precise result qualifiers. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextTypeLanguage Require Export Sugar.
+From ContextTypeLanguage Require Export Notation.
 From Denotation Require Export Context.
 
 Record primop_sig := mk_primop_sig {

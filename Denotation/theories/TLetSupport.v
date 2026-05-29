@@ -5,7 +5,7 @@
 From Denotation Require Import Notation.
 From Denotation Require Import ContextTypeDenotationSaturate ContextTypeDenotationTactics.
 From ContextAlgebra Require Import ResourceAlgebra.
-From ContextLogic Require Import FormulaSyntaxTactics.
+From ContextLogic Require Import FormulaSyntax.
 From CoreLang Require Import InstantiationProps.
 From Stdlib Require Import List.
 Import ListNotations.

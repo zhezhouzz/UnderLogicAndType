@@ -5,7 +5,7 @@
     intentionally absent: forall is now defined directly by extension. *)
 
 From ContextAlgebra Require Import ResourceInterface ResourceCompat.
-From ContextLogic Require Import FormulaSemantics FormulaConnectivesCore FormulaImpl FormulaWand FormulaForall.
+From ContextLogic Require Import FormulaSemantics FormulaConnectives.
 
 Section FormulaWorldExtension.
 

@@ -3,7 +3,7 @@
     Public syntax notation for the pure context-type language layer. *)
 
 From CoreLang Require Export SyntaxNotation.
-From ContextTypeLanguage Require Export LtyEnvBind.
+From ContextTypeLanguage Require Export WF.
 
 Declare Scope context_scope.
 Delimit Scope context_scope with ctx.
@@ -74,3 +74,95 @@ Module TypeLanguageNotationSmoke.
       (↑ₗ Δ)%ctx = atom_env_to_lty_env Δ := eq_refl.
   End Smoke.
 End TypeLanguageNotationSmoke.
+
+(** * ContextTypeLanguage.Notation
+
+    Lightweight normalization helpers for the syntax/type-language layer. *)
+
+
+Ltac mopen_norm :=
+  rewrite ?mopen_insert_norm.
+
+Ltac type_lvars_norm :=
+  repeat match goal with
+  | |- context[into_lvars ?X] =>
+      let T := type of X in
+      lazymatch T with
+      | lvset => change (into_lvars X) with X
+      | aset => change (into_lvars X) with (lvars_of_atoms X)
+      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X))
+      | gmap logic_var ty => change (into_lvars X) with (dom X)
+      end
+  | H : context[into_lvars ?X] |- _ =>
+      let T := type of X in
+      lazymatch T with
+      | lvset => change (into_lvars X) with X in H
+      | aset => change (into_lvars X) with (lvars_of_atoms X) in H
+      | gmap atom ty => change (into_lvars X) with (lvars_of_atoms (dom X)) in H
+      | gmap logic_var ty => change (into_lvars X) with (dom X) in H
+      end
+  end.
+
+Ltac type_env_norm :=
+  rewrite ?open_cty_env_empty in *;
+  rewrite ?lvar_store_atom_dom_shift in *.
+
+(** * ContextTypeLanguage.Notation
+
+    Small context-type abbreviations used by the paper-facing typing layer. *)
+
+
+Fixpoint lvar_value_keys (v : value) : lvset :=
+  match v with
+  | vconst _ => ∅
+  | vfvar x => {[LVFree x]}
+  | vbvar k => {[LVBound k]}
+  | vlam _ e => tm_lvars e
+  | vfix _ vf => lvar_value_keys vf
+  end.
+
+Definition denote_lvar_value (σ : LStore (V := value)) (v : value) : option value :=
+  match v with
+  | vbvar k => (σ : gmap logic_var value) !! LVBound k
+  | vfvar x => (σ : gmap logic_var value) !! LVFree x
+  | vconst c => Some (vconst c)
+  | vlam T e => Some (vlam T e)
+  | vfix T vf => Some (vfix T vf)
+  end.
+
+Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
+  tqual (lvar_value_keys v1 ∪ lvar_value_keys v2)
+    (fun σ => denote_lvar_value (lso_store σ) v1 =
+              denote_lvar_value (lso_store σ) v2).
+
+Definition over_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
+  CTOver b φ.
+
+Definition under_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
+  CTUnder b φ.
+
+Definition precise_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
+  CTInter (over_ty b φ) (under_ty b φ).
+
+Definition primop_ty
+    (arg_b : base_ty) (arg_φ : type_qualifier)
+    (ret_b : base_ty) (ret_φ : type_qualifier) : context_ty :=
+  CTArrow (over_ty arg_b arg_φ) (precise_ty ret_b ret_φ).
+
+Definition bool_qual (b : bool) : type_qualifier :=
+  mk_q_eq (vbvar 0) (vconst (cbool b)).
+
+Definition bool_precise_ty (b : bool) : context_ty :=
+  precise_ty TBool (bool_qual b).
+
+Definition const_precise_ty (c : constant) : context_ty :=
+  precise_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)).
+
+Notation "'b0:v=' v" := (mk_q_eq (vbvar 0) v)
+  (at level 5, format "b0:v= v").
+Notation "'b0:x=' x" := (mk_q_eq (vbvar 0) (vfvar x))
+  (at level 5, format "b0:x= x").
+Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
+  (at level 5, format "b0:c= c").
+Notation "'prt' b φ" := (precise_ty b φ)
+  (at level 20, b at next level, φ at next level, only printing).

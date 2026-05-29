@@ -10,8 +10,8 @@
 
 From CoreLang Require Import BasicTyping.
 From ContextAlgebra Require Import ResourceInterface.
-From ContextLogic Require Import FormulaScope.
-From ContextTypeLanguage Require Export Sugar.
+From ContextLogic Require Import FormulaSemantics.
+From ContextTypeLanguage Require Export Notation.
 From Denotation Require Export Context.
 
 (** ** Context and type well-formedness *)

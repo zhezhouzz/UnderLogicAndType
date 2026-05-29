@@ -11,7 +11,7 @@ From CoreLang Require Export BasicTyping BasicTypingProps Instantiation
   InstantiationProps LocallyNamelessProps OperationalProps SmallStep Sugar.
 From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceCore ResourceExtension.
 From ContextLogic Require Export FormulaSemantics.
-From ContextTypeLanguage Require Export Interface.
+From ContextTypeLanguage Require Export Notation.
 
 Notation StoreT := (Store (V := value)) (only parsing).
 Notation LStoreT := (LStore (V := value)) (only parsing).
