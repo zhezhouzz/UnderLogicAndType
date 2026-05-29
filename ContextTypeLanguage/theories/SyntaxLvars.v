@@ -59,6 +59,46 @@ Proof.
   apply context_ty_lvars_at_open.
 Qed.
 
+Lemma context_ty_lvars_at_depth τ c d :
+  lvars_at_depth d (context_ty_lvars_at c τ) =
+  context_ty_lvars_at (c + d) τ.
+Proof.
+  induction τ in c, d |- *; cbn [context_ty_lvars_at];
+    rewrite ?lvars_at_depth_union, ?IHτ1, ?IHτ2.
+  - rewrite lvars_at_depth_depth. reflexivity.
+  - rewrite lvars_at_depth_depth. reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - replace (S c + d) with (S (c + d)) by lia. reflexivity.
+  - replace (S c + d) with (S (c + d)) by lia. reflexivity.
+Qed.
+
+Lemma context_ty_lvars_depth τ d :
+  lvars_at_depth d (context_ty_lvars τ) = context_ty_lvars_at d τ.
+Proof.
+  unfold context_ty_lvars.
+  rewrite context_ty_lvars_at_depth. reflexivity.
+Qed.
+
+Lemma context_ty_lvars_open_body_without_fresh_closed
+    (D : lvset) τ y :
+  lc_lvars D ->
+  LVFree y ∉ D ->
+  context_ty_lvars_at 1 τ ⊆ D ->
+  context_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
+  context_ty_lvars_at 1 τ.
+Proof.
+  intros Hlc HyD Hτ.
+  rewrite cty_open_vars.
+  unfold context_ty_open_lvars.
+  rewrite <- (context_ty_lvars_depth τ 1).
+  eapply lvars_open0_difference_subset_depth1 with (D := D).
+  - exact Hlc.
+  - exact HyD.
+  - rewrite context_ty_lvars_depth. exact Hτ.
+Qed.
+
 Lemma context_ty_lvars_fv_at d τ :
   lvars_fv (context_ty_lvars_at d τ) = fv_cty τ.
 Proof.

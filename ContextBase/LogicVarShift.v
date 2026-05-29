@@ -333,6 +333,53 @@ Proof.
   - better_set_solver.
 Qed.
 
+Lemma lvars_open0_difference_subset_depth1
+    (D L : lvset) y :
+  lc_lvars D ->
+  LVFree y ∉ D ->
+  lvars_at_depth 1 L ⊆ D ->
+  lvars_open 0 y L ∖ {[LVFree y]} ⊆ lvars_at_depth 1 L.
+Proof.
+  intros Hlc HyD Hdepth u Hu.
+  apply elem_of_difference in Hu as [Hu Hyu].
+  apply elem_of_set_swap in Hu.
+  change (swap (LVBound 0) (LVFree y) u ∈ L) with
+    (logic_var_open 0 y u ∈ L) in Hu.
+  destruct u as [k|z].
+  - destruct k as [|k].
+    + unfold swap in Hu.
+      destruct (decide (LVBound 0 = LVBound 0)) as [_|Hbad]; [|congruence].
+      exfalso. apply HyD.
+      apply Hdepth.
+      apply lvars_at_depth_elem.
+      exists (LVFree y). split; [exact Hu|reflexivity].
+    + unfold swap in Hu.
+      destruct (decide (LVBound (S k) = LVBound 0)) as [Hbad|_];
+        [inversion Hbad|].
+      destruct (decide (LVBound (S k) = LVFree y)) as [Hbad|_];
+          [discriminate|].
+      assert (Hbad : LVBound k ∈ D).
+      {
+        apply Hdepth.
+        apply lvars_at_depth_elem.
+        exists (LVBound (S k)). split; [exact Hu|].
+        cbn [logic_var_at_depth].
+        rewrite decide_True by lia.
+        replace (S k - 1) with k by lia.
+        reflexivity.
+      }
+      exfalso. exact (Hlc (LVBound k) Hbad).
+  - destruct (decide (z = y)) as [->|Hzy].
+    + exfalso. apply Hyu. set_solver.
+    + unfold swap in Hu.
+      destruct (decide (LVFree z = LVBound 0)) as [Hbad|_];
+        [discriminate|].
+      destruct (decide (LVFree z = LVFree y)) as [Hbad|_];
+        [inversion Hbad; congruence|].
+      apply lvars_at_depth_elem.
+      exists (LVFree z). split; [exact Hu|reflexivity].
+Qed.
+
 Lemma lvars_at_depth_mono d D E :
   D ⊆ E ->
   lvars_at_depth d D ⊆ lvars_at_depth d E.

@@ -71,6 +71,22 @@ Proof.
   symmetry. apply lvar_store_open_lvars_singleton. exact Hfresh.
 Qed.
 
+Lemma lvar_store_open_one_bound0_singleton y A :
+  lvar_store_open_one 0 y
+    ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore) =
+  ((<[LVFree y := A]> (∅ : gmap logic_var V)) : LVarStore).
+Proof.
+  rewrite lvar_store_open_one_insert.
+  replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
+  - replace (lvar_store_open_one 0 y (∅ : LVarStore)) with
+      ((∅ : gmap logic_var V) : LVarStore).
+    reflexivity.
+    unfold lvar_store_open_one.
+    apply (storeA_rekey_empty (V := V) (K := logic_var)
+      (logic_var_open 0 y)).
+  - unfold swap. repeat destruct decide; try lia; try congruence.
+Qed.
+
 Lemma lvar_store_open_lvars_dom η (s : LVarStore) :
   open_env_fresh_for_lvars η (dom s) ->
   dom (lvar_store_open_lvars η s) =

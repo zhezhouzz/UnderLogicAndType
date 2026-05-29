@@ -744,7 +744,7 @@ Proof.
 	                (lty_env_open_one 0 y
 	                  ((<[LVBound 0 := erase_ty τx]>
 	                      (∅ : gmap logic_var ty)) : lty_env))) in Hmy_world.
-	              rewrite lty_env_open_one_bound0_singleton in Hmy_world.
+	              rewrite lvar_store_open_one_bound0_singleton in Hmy_world.
 	              exact Hmy_world.
 	            }
 	            assert (Htarget_world_my :

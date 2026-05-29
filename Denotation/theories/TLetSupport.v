@@ -584,93 +584,6 @@ Proof.
   apply tlet_arrow_arg_relevant_env_agree; assumption.
 Qed.
 
-Lemma lvars_open0_difference_subset_depth1
-    (D L : lvset) y :
-  lc_lvars D ->
-  LVFree y ∉ D ->
-  lvars_at_depth 1 L ⊆ D ->
-  lvars_open 0 y L ∖ {[LVFree y]} ⊆ lvars_at_depth 1 L.
-Proof.
-  intros Hlc HyD Hdepth u Hu.
-  apply elem_of_difference in Hu as [Hu Hyu].
-  apply elem_of_set_swap in Hu.
-  change (swap (LVBound 0) (LVFree y) u ∈ L) with
-    (logic_var_open 0 y u ∈ L) in Hu.
-  destruct u as [k|z].
-  - destruct k as [|k].
-    + unfold swap in Hu.
-      destruct (decide (LVBound 0 = LVBound 0)) as [_|Hbad]; [|congruence].
-      exfalso. apply HyD.
-      apply Hdepth.
-      apply lvars_at_depth_elem.
-      exists (LVFree y). split; [exact Hu|reflexivity].
-    + unfold swap in Hu.
-      destruct (decide (LVBound (S k) = LVBound 0)) as [Hbad|_];
-        [inversion Hbad|].
-      destruct (decide (LVBound (S k) = LVFree y)) as [Hbad|_];
-          [discriminate|].
-      assert (Hbad : LVBound k ∈ D).
-      {
-        apply Hdepth.
-        apply lvars_at_depth_elem.
-        exists (LVBound (S k)). split; [exact Hu|].
-        cbn [logic_var_at_depth].
-        rewrite decide_True by lia.
-        replace (S k - 1) with k by lia.
-        reflexivity.
-      }
-      exfalso. exact (Hlc (LVBound k) Hbad).
-  - destruct (decide (z = y)) as [->|Hzy].
-    + exfalso. apply Hyu. set_solver.
-    + unfold swap in Hu.
-      destruct (decide (LVFree z = LVBound 0)) as [Hbad|_];
-        [discriminate|].
-      destruct (decide (LVFree z = LVFree y)) as [Hbad|_];
-        [inversion Hbad; congruence|].
-      apply lvars_at_depth_elem.
-      exists (LVFree z). split; [exact Hu|reflexivity].
-Qed.
-
-Lemma context_ty_lvars_open_body_without_fresh_closed
-    (D : lvset) τ y :
-  lc_lvars D ->
-  LVFree y ∉ D ->
-  context_ty_lvars_at 1 τ ⊆ D ->
-  context_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
-  context_ty_lvars_at 1 τ.
-Proof.
-  intros Hlc HyD Hτ.
-  rewrite cty_open_vars.
-  unfold context_ty_open_lvars.
-  rewrite <- (context_ty_lvars_depth τ 1).
-  eapply lvars_open0_difference_subset_depth1 with (D := D).
-  - exact Hlc.
-  - exact HyD.
-  - rewrite context_ty_lvars_depth. exact Hτ.
-Qed.
-
-Lemma tm_lvars_tapp_tm_fvar_without_arg e y :
-  tm_lvars (tapp_tm e (vfvar y)) ∖ {[LVFree y]} ⊆ tm_lvars e.
-Proof.
-  unfold tapp_tm, tm_lvars.
-  cbn [tm_lvars_at value_lvars_at value_shift].
-  unfold bvar_lvars_at.
-  destruct (decide (1 <= 0)); [lia|].
-  set_solver.
-Qed.
-
-Lemma tm_lvars_tlet_tapp_tm_fvar_without_arg e1 e2 y :
-  tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))) ∖ {[LVFree y]} ⊆
-  tm_lvars (tlete e1 e2).
-Proof.
-  unfold tapp_tm, tm_lvars.
-  cbn [tm_lvars_at value_lvars_at value_shift].
-  unfold bvar_lvars_at.
-  destruct (decide (2 <= 0)); [lia|].
-  destruct (decide (2 <= 1)); [lia|].
-  set_solver.
-Qed.
-
 Lemma arrow_body_relevant_lvars_subset
     τx τr e_src e_body y :
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
@@ -751,22 +664,6 @@ Proof.
       (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr)).
     exact Hbasic.
   - exact He.
-Qed.
-
-Lemma lty_env_open_one_bound0_singleton y T :
-  lty_env_open_one 0 y
-    ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env) =
-  ((<[LVFree y := T]> (∅ : gmap logic_var ty)) : lty_env).
-Proof.
-  rewrite lty_env_open_one_insert.
-  replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
-  - replace (lty_env_open_one 0 y (∅ : lty_env)) with
-      ((∅ : gmap logic_var ty) : lty_env).
-    reflexivity.
-    unfold lty_env_open_one.
-    apply (storeA_rekey_empty (V := ty) (K := logic_var)
-      (logic_var_open 0 y)).
-  - unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
 Lemma basic_world_formula_arrow_body_from_source_and_arg
@@ -2679,7 +2576,7 @@ Proof.
 	    - eapply res_models_kripke.
 	      + apply res_product_le_r.
 	      + rewrite formula_open_basic_world_formula in Hbasic.
-	        rewrite lty_env_open_one_bound0_singleton in Hbasic.
+	        rewrite lvar_store_open_one_bound0_singleton in Hbasic.
 	        exact Hbasic.
 	  }
 	  assert (Hfresh_x_Σy :

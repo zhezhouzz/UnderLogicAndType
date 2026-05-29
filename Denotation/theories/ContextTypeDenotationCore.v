@@ -1277,28 +1277,6 @@ Proof.
     + exfalso. apply Hvrel. apply Hsub. set_solver.
 Qed.
 
-Lemma context_ty_lvars_at_depth τ c d :
-  lvars_at_depth d (context_ty_lvars_at c τ) =
-  context_ty_lvars_at (c + d) τ.
-Proof.
-  induction τ in c, d |- *; cbn [context_ty_lvars_at];
-    rewrite ?lvars_at_depth_union, ?IHτ1, ?IHτ2.
-  - rewrite lvars_at_depth_depth. reflexivity.
-  - rewrite lvars_at_depth_depth. reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - replace (S c + d) with (S (c + d)) by lia. reflexivity.
-  - replace (S c + d) with (S (c + d)) by lia. reflexivity.
-Qed.
-
-Lemma context_ty_lvars_depth τ d :
-  lvars_at_depth d (context_ty_lvars τ) = context_ty_lvars_at d τ.
-Proof.
-  unfold context_ty_lvars.
-  rewrite context_ty_lvars_at_depth. reflexivity.
-Qed.
-
 Lemma lvars_at_depth_denot_relevant_env_subset d Σ τ e :
   lvars_at_depth d (dom (denot_relevant_env Σ τ e)) ⊆
   lvars_at_depth d (dom Σ) ∪ context_ty_lvars_at d τ ∪ tm_lvars_at d e.

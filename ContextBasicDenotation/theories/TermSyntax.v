@@ -623,6 +623,28 @@ Proof.
   apply open_tapp_tm_shift_bvar0_lc. exact Hlc.
 Qed.
 
+Lemma tm_lvars_tapp_tm_fvar_without_arg e y :
+  tm_lvars (tapp_tm e (vfvar y)) ∖ {[LVFree y]} ⊆ tm_lvars e.
+Proof.
+  unfold tapp_tm, tm_lvars.
+  cbn [tm_lvars_at value_lvars_at value_shift].
+  unfold bvar_lvars_at.
+  destruct (decide (1 <= 0)); [lia|].
+  better_set_solver.
+Qed.
+
+Lemma tm_lvars_tlet_tapp_tm_fvar_without_arg e1 e2 y :
+  tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))) ∖ {[LVFree y]} ⊆
+  tm_lvars (tlete e1 e2).
+Proof.
+  unfold tapp_tm, tm_lvars.
+  cbn [tm_lvars_at value_lvars_at value_shift].
+  unfold bvar_lvars_at.
+  destruct (decide (2 <= 0)); [lia|].
+  destruct (decide (2 <= 1)); [lia|].
+  better_set_solver.
+Qed.
+
 Definition lstore_free_part (σ : LStoreT) : StoreT :=
   lstore_to_store σ.
 
