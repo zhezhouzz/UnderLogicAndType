@@ -152,32 +152,6 @@ Ltac normalize_tlet_forall_fv :=
   normalize_denotation_formula_fv;
   cbn [fv_tm fv_value].
 
-Lemma tlet_over_fib_formula_fresh_x x y b φ :
-  LVFree x ∉ context_ty_lvars (CTOver b φ) ->
-  x <> y ->
-  x ∉ formula_fv
-    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
-      (FOver (type_qualifier_formula (φ ^q^ y)))).
-Proof.
-  intros Hfresh Hxy.
-  normalize_tlet_forall_fv.
-  pose proof (context_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
-  set_solver.
-Qed.
-
-Lemma tlet_under_fib_formula_fresh_x x y b φ :
-  LVFree x ∉ context_ty_lvars (CTUnder b φ) ->
-  x <> y ->
-  x ∉ formula_fv
-    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
-      (FUnder (type_qualifier_formula (φ ^q^ y)))).
-Proof.
-  intros Hfresh Hxy.
-  normalize_tlet_forall_fv.
-  pose proof (context_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
-  set_solver.
-Qed.
-
 Lemma tlet_arrow_result_env_term_subset Σ T1 x e1 e2 τx τr :
   lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τr) ->
   lvars_fv (dom (typed_lty_env_bind Σ (erase_ty τx))) ∪

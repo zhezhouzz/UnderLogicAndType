@@ -92,6 +92,36 @@ Proof.
   apply formula_fv_type_qualifier_formula.
 Qed.
 
+Lemma formula_fv_over_fib_type_qualifier_open_fresh x y b φ :
+  LVFree x ∉ context_ty_lvars (CTOver b φ) ->
+  x <> y ->
+  x ∉ formula_fv
+    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
+      (FOver (type_qualifier_formula (φ ^q^ y)))).
+Proof.
+  intros Hfresh Hxy.
+  rewrite formula_fv_fibvars, formula_fv_over,
+    formula_fv_type_qualifier_formula,
+    lvars_fv_qual_vars_difference_free.
+  pose proof (context_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  set_solver.
+Qed.
+
+Lemma formula_fv_under_fib_type_qualifier_open_fresh x y b φ :
+  LVFree x ∉ context_ty_lvars (CTUnder b φ) ->
+  x <> y ->
+  x ∉ formula_fv
+    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
+      (FUnder (type_qualifier_formula (φ ^q^ y)))).
+Proof.
+  intros Hfresh Hxy.
+  rewrite formula_fv_fibvars, formula_fv_under,
+    formula_fv_type_qualifier_formula,
+    lvars_fv_qual_vars_difference_free.
+  pose proof (context_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  set_solver.
+Qed.
+
 Ltac rewrite_tm_support :=
   repeat match goal with
   | |- context [lvars_at_depth ?d (tm_lvars ?e)] =>

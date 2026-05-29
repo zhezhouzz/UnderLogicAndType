@@ -154,7 +154,7 @@ Proof.
 	             - destruct HFx as [_ [_ HoutFx] _].
 	               eapply formula_fv_in_base_dom_of_extend_scoped;
 	                 [exact HmyFx | exact HoutFx | exact Hbody_after_inner |].
-		               eapply tlet_over_fib_formula_fresh_x.
+		               eapply formula_fv_over_fib_type_qualifier_open_fresh.
 		               + intros Hbad. apply Hfresh. apply elem_of_union_r. exact Hbad.
 		               + tlet_support_solver. }
 		    + clear IH.
@@ -241,7 +241,7 @@ Proof.
 		          - destruct HFx as [_ [_ HoutFx] _].
 		            eapply formula_fv_in_base_dom_of_extend_scoped;
 		              [exact HmyFx | exact HoutFx | exact Hbody_after_inner |].
-		            eapply tlet_under_fib_formula_fresh_x.
+		            eapply formula_fv_under_fib_type_qualifier_open_fresh.
 		            + intros Hbad. apply Hfresh. apply elem_of_union_r. exact Hbad.
 		            + tlet_support_solver. }
     + normalize_models_ands_in Hmx; normalize_models_ands_goal.
