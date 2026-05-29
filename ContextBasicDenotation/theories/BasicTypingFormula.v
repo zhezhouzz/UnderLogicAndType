@@ -411,13 +411,11 @@ Proof.
   rewrite lty_env_open_lvars_insert_entry.
   - apply lvar_store_to_atom_store_lookup_free_some.
     destruct (decide (a = x)) as [->|Hax].
-    + assert (HnoneΣ : Σ !! LVFree x = None).
-      {
-        change (((Σ : gmap logic_var ty) !! LVFree x) = None).
-        apply not_elem_of_dom_1.
-        change (LVFree x ∉ dom (Σ : gmap logic_var ty)).
-        exact HxΣ.
-      }
+	    + assert (HnoneΣ : Σ !! LVFree x = None).
+	      {
+	        apply not_elem_of_dom_1.
+	        exact HxΣ.
+	      }
       pose proof (lty_env_open_lvars_lookup_fresh
         η (LVFree x) T Σ HnoneΣ Hfresh) as Hnone.
       cbn [logic_var_open_env] in Hnone.
@@ -433,10 +431,9 @@ Proof.
       destruct (decide (LVFree x = LVFree a)) as [Heq|_].
       * inversion Heq. congruence.
       * exact Ha_lv.
-  - change (((Σ : gmap logic_var ty) !! LVFree x) = None).
-    apply not_elem_of_dom_1.
-    change (LVFree x ∉ dom (Σ : gmap logic_var ty)).
-    exact HxΣ.
+	  - change (((Σ : gmap logic_var ty) !! LVFree x) = None).
+	    apply not_elem_of_dom_1.
+	    exact HxΣ.
   - apply open_env_fresh_for_lvars_inj_on. exact Hfresh.
 Qed.
 
@@ -1026,21 +1023,17 @@ Proof.
   intros HxΣ Hout Hext Hm.
   apply context_ty_wf_formula_models_iff in Hm as [Hlc [Hsub Hbasic]].
   apply context_ty_wf_formula_models_iff.
-  split.
-  - intros v Hv.
-    change (v ∈ dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
-      : gmap logic_var ty)) in Hv.
-    rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Hv.
+	  split.
+	  - intros v Hv.
+	    rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Hv.
     apply elem_of_union in Hv as [Hv|Hv].
     + rewrite elem_of_singleton in Hv. subst v. exact I.
     + exact (Hlc v Hv).
   - split.
     + pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_dom.
-      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
-      intros a Ha.
-      change (a ∈ lvars_fv (dom ((<[LVFree x := T]>
-        (Σ : gmap logic_var ty)) : gmap logic_var ty))) in Ha.
-      rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Ha.
+	      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
+	      intros a Ha.
+	      rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Ha.
       rewrite lvars_fv_union, lvars_fv_singleton_free in Ha.
       apply elem_of_union in Ha as [Ha|Ha].
       * rewrite elem_of_singleton in Ha. subst a.
@@ -1251,21 +1244,17 @@ Proof.
   intros HxΣ Hout Hext Hm.
   apply expr_basic_typing_formula_models_iff in Hm as [Hlc [Hsub Hbasic]].
   apply expr_basic_typing_formula_models_iff.
-  split.
-  - intros v Hv.
-    change (v ∈ dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
-      : gmap logic_var ty)) in Hv.
-    rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Hv.
+	  split.
+	  - intros v Hv.
+	    rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Hv.
     apply elem_of_union in Hv as [Hv|Hv].
     + rewrite elem_of_singleton in Hv. subst v. exact I.
     + exact (Hlc v Hv).
   - split.
     + pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_dom.
-      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
-      intros a Ha.
-      change (a ∈ lvars_fv (dom ((<[LVFree x := T]>
-        (Σ : gmap logic_var ty)) : gmap logic_var ty))) in Ha.
-      rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Ha.
+	      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
+	      intros a Ha.
+	      rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)) in Ha.
       rewrite lvars_fv_union, lvars_fv_singleton_free in Ha.
       apply elem_of_union in Ha as [Ha|Ha].
       * rewrite elem_of_singleton in Ha. subst a.
@@ -1287,16 +1276,13 @@ Proof.
   intros HxΣ Hxτ Hout Hext Hmx.
   apply context_ty_wf_formula_models_iff in Hmx as [Hlcx [Hsubx Hbasicx]].
   apply context_ty_wf_formula_models_iff.
-  split.
-  - intros v Hv.
-    apply Hlcx.
-    destruct (decide (v = LVFree x)) as [->|Hvne].
-    + change (LVFree x ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty))).
-      apply elem_of_dom. exists T. rewrite lookup_insert_eq. reflexivity.
-    + change (v ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty))).
-      change (v ∈ dom (Σ : gmap logic_var ty)) in Hv.
-      apply elem_of_dom in Hv as [Tv HTv].
-      apply elem_of_dom. exists Tv.
+	  split.
+	  - intros v Hv.
+	    apply Hlcx.
+	    destruct (decide (v = LVFree x)) as [->|Hvne].
+	    + apply elem_of_dom. exists T. rewrite lookup_insert_eq. reflexivity.
+	    + apply elem_of_dom in Hv as [Tv HTv].
+	      apply elem_of_dom. exists Tv.
       rewrite lookup_insert_ne by congruence. exact HTv.
   - split.
     + pose proof (res_extend_by_dom m Fx mx Hext) as Hdom.
@@ -1308,21 +1294,18 @@ Proof.
       * exact Hzm.
       * rewrite elem_of_singleton in Hzx. subst z.
         exfalso. apply HxΣ. rewrite <- lvars_fv_elem. exact Hz.
-      * rewrite lvars_fv_elem.
-        rewrite lvars_fv_elem in Hz.
-        change (LVFree z ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty))).
-        destruct (decide (z = x)) as [->|Hzx].
-        -- exfalso. exact (HxΣ Hz).
-        -- change (LVFree z ∈ dom (Σ : gmap logic_var ty)) in Hz.
-           apply elem_of_dom in Hz as [Tz HTz].
-           apply elem_of_dom. exists Tz.
+	      * rewrite lvars_fv_elem.
+	        rewrite lvars_fv_elem in Hz.
+	        destruct (decide (z = x)) as [->|Hzx].
+	        -- exfalso. exact (HxΣ Hz).
+	        -- apply elem_of_dom in Hz as [Tz HTz].
+	           apply elem_of_dom. exists Tz.
            rewrite lookup_insert_ne by congruence. exact HTz.
     + destruct Hbasicx as [Hvars Hshape].
-      split; [| exact Hshape].
-      intros v Hv.
-      specialize (Hvars v Hv).
-      change (v ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty))) in Hvars.
-      assert (Hvne : v <> LVFree x).
+	      split; [| exact Hshape].
+	      intros v Hv.
+	      specialize (Hvars v Hv).
+	      assert (Hvne : v <> LVFree x).
       { intros ->. exact (Hxτ Hv). }
       apply elem_of_dom in Hvars as [Tv HTv].
       rewrite lookup_insert_ne in HTv by congruence.
