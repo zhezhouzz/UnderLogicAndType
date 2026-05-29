@@ -60,6 +60,21 @@ Proof.
   set_solver.
 Qed.
 
+Lemma basic_context_ty_lvars_insert_free_fv_drop
+    (Σ : gmap logic_var ty) τ x T :
+  LVFree x ∉ context_ty_lvars τ ->
+  basic_context_ty_lvars (dom (<[LVFree x := T]> Σ)) τ ->
+  fv_cty τ ⊆ lvars_fv (dom Σ).
+Proof.
+  intros Hfresh [Hsub _].
+  rewrite <- context_ty_lvars_fv.
+  eapply lvars_fv_subset_insert_free_drop; [exact Hfresh|].
+  intros v Hv.
+  specialize (Hsub v Hv).
+  rewrite dom_insert_L in Hsub.
+  exact Hsub.
+Qed.
+
 Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
   match τ with
   | CTOver _ φ | CTUnder _ φ =>

@@ -61,6 +61,28 @@ Definition mk_forall_extension
 Definition forall_extension_shape (X : aset) (y : atom) (F : FiberExtensionT) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
 
+Lemma fiber_extension_singleton_out_notin_input
+    (F : FiberExtensionT) y :
+  ext_out F = {[y]} ->
+  y ∉ ext_in F.
+Proof.
+  intros Hout.
+  pose proof (extA_disjoint F) as Hdisj.
+  unfold ext_out, ext_in in *.
+  rewrite Hout in Hdisj. set_solver.
+Qed.
+
+Lemma fiber_extension_singleton_output_fresh_in_eq
+    (F : FiberExtensionT) y X :
+  ext_in F = X ->
+  ext_out F = {[y]} ->
+  y ∉ X.
+Proof.
+  intros HFin HFout.
+  rewrite <- HFin.
+  eapply fiber_extension_singleton_out_notin_input; eauto.
+Qed.
+
 Definition one_point_projected_output_raw
     (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
   @mk_worldA atom _ _ V {[y]}

@@ -10,27 +10,6 @@ From CoreLang Require Import InstantiationProps.
 From Stdlib Require Import List.
 Import ListNotations.
 
-Lemma fiber_extension_singleton_out_fresh_in
-    (F : FiberExtensionT) y :
-  ext_out F = {[y]} ->
-  y ∉ ext_in F.
-Proof.
-  intros Hout.
-  pose proof (extA_disjoint F) as Hdisj.
-  unfold ext_out, ext_in in *.
-  rewrite Hout in Hdisj. set_solver.
-Qed.
-
-Lemma tlet_forall_fresh_from_input
-    (F : FiberExtensionT) y X :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  y ∉ X.
-Proof.
-  intros HFin HFout.
-  rewrite <- HFin. eapply fiber_extension_singleton_out_fresh_in; eauto.
-Qed.
-
 Lemma tlet_fresh_tm_from_forall_input
     (F : FiberExtensionT) y X e :
   ext_in F = X ->
@@ -39,7 +18,8 @@ Lemma tlet_fresh_tm_from_forall_input
   y ∉ fv_tm e.
 Proof.
   intros HFin HFout Hsub.
-  pose proof (tlet_forall_fresh_from_input F y X HFin HFout).
+  pose proof (fiber_extension_singleton_output_fresh_in_eq
+    F y X HFin HFout).
   set_solver.
 Qed.
 
@@ -51,59 +31,9 @@ Lemma tlet_fresh_lty_env_from_forall_input
   LVFree y ∉ dom Σ.
 Proof.
   intros HFin HFout Hsub Hy.
-  pose proof (tlet_forall_fresh_from_input F y X HFin HFout) as HyX.
+  pose proof (fiber_extension_singleton_output_fresh_in_eq
+    F y X HFin HFout) as HyX.
   apply HyX, Hsub. apply lvars_fv_elem. exact Hy.
-Qed.
-
-Lemma tlet_atom_notin_lvars_fv_iff_free_notin y (D : lvset) :
-  y ∉ lvars_fv D ↔ LVFree y ∉ D.
-Proof.
-  rewrite lvars_fv_elem. tauto.
-Qed.
-
-Lemma tlet_lvars_fv_empty :
-  lvars_fv (∅ : lvset) = ∅.
-Proof.
-  apply set_eq. intros x. rewrite lvars_fv_elem. set_solver.
-Qed.
-
-Lemma tlet_lvars_fv_dom_insert_free (Σ : lty_env) x T :
-  lvars_fv (dom (<[LVFree x := T]> Σ)) =
-  {[x]} ∪ lvars_fv (dom Σ).
-Proof.
-  change (lvars_fv (dom ((<[LVFree x := T]> (Σ : gmap logic_var ty)) :
-    gmap logic_var ty)) = {[x]} ∪ lvars_fv (dom (Σ : gmap logic_var ty))).
-  rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
-  set_solver.
-Qed.
-
-Lemma tlet_lvars_fv_subset_insert_free_drop
-    (D : lvset) (Σ : lty_env) x T :
-  LVFree x ∉ D ->
-  D ⊆ dom (<[LVFree x := T]> Σ) ->
-  lvars_fv D ⊆ lvars_fv (dom Σ).
-Proof.
-  intros Hfresh Hsub y Hy.
-  rewrite lvars_fv_elem in Hy |- *.
-  specialize (Hsub (LVFree y) Hy).
-  change (LVFree y ∈ dom
-    ((<[LVFree x := T]> (Σ : gmap logic_var ty)) :
-      gmap logic_var ty)) in Hsub.
-  rewrite dom_insert_L in Hsub.
-  destruct (decide (y = x)) as [-> | Hneq].
-  - exfalso. exact (Hfresh Hy).
-  - set_solver.
-Qed.
-
-Lemma tlet_context_ty_lvars_insert_free_fv_drop
-    (Σ : lty_env) τ x T :
-  LVFree x ∉ context_ty_lvars τ ->
-  basic_context_ty_lvars (dom (<[LVFree x := T]> Σ)) τ ->
-  fv_cty τ ⊆ lvars_fv (dom Σ).
-Proof.
-  intros Hfresh [Hsub _].
-  rewrite <- context_ty_lvars_fv.
-  eapply tlet_lvars_fv_subset_insert_free_drop; eauto.
 Qed.
 
 Lemma tlet_fresh_qualifier_from_forall_input
@@ -114,7 +44,8 @@ Lemma tlet_fresh_qualifier_from_forall_input
   y ∉ qual_dom φ.
 Proof.
   intros HFin HFout Hsub.
-  pose proof (tlet_forall_fresh_from_input F y X HFin HFout).
+  pose proof (fiber_extension_singleton_output_fresh_in_eq
+    F y X HFin HFout).
   set_solver.
 Qed.
 
@@ -123,9 +54,9 @@ Qed.
 Ltac tlet_normalize_freshness :=
   repeat match goal with
   | H : LVFree ?y ∉ ?D |- _ =>
-      rewrite <- (tlet_atom_notin_lvars_fv_iff_free_notin y D) in H
+      rewrite <- (atom_notin_lvars_fv_iff_free_notin y D) in H
   | |- LVFree ?y ∉ ?D =>
-      rewrite <- (tlet_atom_notin_lvars_fv_iff_free_notin y D)
+      rewrite <- (atom_notin_lvars_fv_iff_free_notin y D)
   | H : context[stale ?x] |- _ =>
       lazymatch type of x with
       | atom => change (stale x) with ({[x]} : aset) in H
@@ -137,7 +68,7 @@ Ltac tlet_normalize_freshness :=
   end;
   cbn [stale stale_lty_env lty_env_atom_dom stale_tm_inst
        stale_qualifier stale_cty_inst stale_logic_var Stale_atom] in *;
-  rewrite ?tlet_lvars_fv_dom_insert_free in *;
+  rewrite ?lvar_store_lvars_fv_dom_insert_free in *;
   rewrite ?lvars_fv_union, ?lvars_fv_singleton_free in *.
 
 Ltac tlet_support_solver :=
@@ -209,7 +140,7 @@ Ltac harvest_tlet_models :=
       | Hfv : fv_cty τ ⊆ lvars_fv (dom Σ) |- _ => fail
       | _ =>
           let Hfv := fresh "Hfv_cty_drop" in
-          pose proof (tlet_context_ty_lvars_insert_free_fv_drop
+          pose proof (basic_context_ty_lvars_insert_free_fv_drop
             Σ τ x T Hfresh Hbasic) as Hfv
       end
   end;
@@ -277,11 +208,11 @@ Ltac normalize_tlet_forall_fv :=
         with (formula_fv (denot_ty_lvar_gas gas Σ τ e)) in H
   end;
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
-  rewrite ?tlet_lvars_fv_dom_insert_free;
+  rewrite ?lvar_store_lvars_fv_dom_insert_free;
   rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
   rewrite ?lvars_fv_lvars_at_depth;
   rewrite ?lvars_fv_qual_vars_difference_free, ?lvars_fv_qual_vars;
-  rewrite ?tlet_lvars_fv_empty;
+  rewrite ?lvars_fv_empty;
   normalize_denotation_formula_fv;
   cbn [fv_tm fv_value].
 
@@ -326,7 +257,7 @@ Proof.
     rewrite (tm_shift_fv 0 (tlete e1 e2)).
     cbn [fv_value].
     set_solver.
-  - rewrite ?typed_lty_env_bind_lvars_fv_dom, ?tlet_lvars_fv_dom_insert_free.
+  - rewrite ?typed_lty_env_bind_lvars_fv_dom, ?lvar_store_lvars_fv_dom_insert_free.
     fast_set_solver!!.
 Qed.
 
@@ -470,7 +401,7 @@ Ltac solve_tlet_sidecond :=
   | tlet_support_solver
   | eauto using
 	      lty_env_closed_insert_free,
-	      tlet_forall_fresh_from_input,
+	      fiber_extension_singleton_output_fresh_in_eq,
 	      tlet_fresh_tm_from_forall_input,
 	      tlet_fresh_lty_env_from_forall_input,
 	      tlet_fresh_qualifier_from_forall_input

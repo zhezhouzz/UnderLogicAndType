@@ -125,6 +125,12 @@ Proof.
       pose proof (IH z); better_set_solver.
 Qed.
 
+Lemma atom_notin_lvars_fv_iff_free_notin y (D : lvset) :
+  y ∉ lvars_fv D ↔ LVFree y ∉ D.
+Proof.
+  rewrite lvars_fv_elem. tauto.
+Qed.
+
 Lemma lvars_bv_elem D k :
   k ∈ lvars_bv D ↔ LVBound k ∈ D.
 Proof.
@@ -439,6 +445,12 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma lvars_fv_empty :
+  lvars_fv (∅ : lvset) = ∅.
+Proof.
+  apply set_eq. intros x. rewrite lvars_fv_elem. better_set_solver.
+Qed.
+
 Lemma lvars_fv_open k x (D : lvset) :
   lvars_fv (lvars_open k x D) =
   (lvars_fv D ∖ {[x]}) ∪
@@ -481,6 +493,20 @@ Proof.
   apply lvars_fv_elem.
   apply lvars_fv_elem in Hx.
   exact (HDE _ Hx).
+Qed.
+
+Lemma lvars_fv_subset_insert_free_drop
+    (D E : lvset) x :
+  LVFree x ∉ D ->
+  D ⊆ {[LVFree x]} ∪ E ->
+  lvars_fv D ⊆ lvars_fv E.
+Proof.
+  intros Hfresh Hsub y Hy.
+  rewrite lvars_fv_elem in Hy |- *.
+  specialize (Hsub (LVFree y) Hy).
+  destruct (decide (y = x)) as [->|Hneq].
+  - contradiction.
+  - better_set_solver.
 Qed.
 
 Lemma lvars_fv_difference_singleton_free (D : lvset) x :

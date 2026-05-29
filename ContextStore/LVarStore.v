@@ -497,6 +497,32 @@ Proof.
   better_set_solver.
 Qed.
 
+Lemma lvar_store_lvars_fv_dom_insert_free (s : LVarStore) x A :
+  lvars_fv (dom (<[LVFree x := A]> s)) =
+  {[x]} ∪ lvars_fv (dom s).
+Proof.
+  change (lvars_fv (dom ((<[LVFree x := A]> (s : gmap logic_var V)) :
+    gmap logic_var V)) = {[x]} ∪ lvars_fv (dom (s : gmap logic_var V))).
+  rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+  better_set_solver.
+Qed.
+
+Lemma lvar_store_lvars_fv_subset_insert_free_drop
+    (D : lvset) (s : LVarStore) x A :
+  LVFree x ∉ D ->
+  D ⊆ dom (<[LVFree x := A]> s) ->
+  lvars_fv D ⊆ lvars_fv (dom s).
+Proof.
+  intros Hfresh Hsub.
+  eapply lvars_fv_subset_insert_free_drop; [exact Hfresh|].
+  intros v Hv.
+  specialize (Hsub v Hv).
+  change (v ∈ dom ((<[LVFree x := A]> (s : gmap logic_var V)) :
+    gmap logic_var V)) in Hsub.
+  rewrite dom_insert_L in Hsub.
+  exact Hsub.
+Qed.
+
 Lemma lvar_store_bind_atom_dom (s : LVarStore) A :
   lvar_store_atom_dom (lvar_store_bind s A) = lvar_store_atom_dom s.
 Proof.
