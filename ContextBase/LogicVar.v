@@ -175,6 +175,14 @@ Proof.
   apply swap_involutive.
 Qed.
 
+Lemma logic_var_swap_open_one x y k v :
+  logic_var_swap x y (logic_var_open k x v) =
+  logic_var_open k y (logic_var_swap x y v).
+Proof.
+  unfold swap.
+  repeat destruct decide; subst; try congruence; reflexivity.
+Qed.
+
 Lemma lvars_open_involutive k x D :
   lvars_open k x (lvars_open k x D) = D.
 Proof.

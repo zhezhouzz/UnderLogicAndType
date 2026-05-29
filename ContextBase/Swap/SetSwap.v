@@ -77,6 +77,17 @@ Proof.
   rewrite set_swap_elem. better_set_solver.
 Qed.
 
+Lemma set_swap_mono {A : Type} `{Countable A}
+    (x y : A) (X Y : gset A) :
+  X ⊆ Y ->
+  set_swap x y X ⊆ set_swap x y Y.
+Proof.
+  intros Hsub z Hz.
+  apply set_swap_elem in Hz.
+  apply set_swap_elem.
+  exact (Hsub _ Hz).
+Qed.
+
 Lemma set_swap_union {A : Type} `{Countable A} (x y : A) (X Y : gset A) :
   set_swap x y (X ∪ Y) = set_swap x y X ∪ set_swap x y Y.
 Proof.

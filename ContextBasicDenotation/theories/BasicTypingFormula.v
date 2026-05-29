@@ -257,43 +257,6 @@ Proof.
         set_solver.
 Qed.
 
-Lemma lvars_swap_mono x y (D E : lvset) :
-  D ⊆ E ->
-  lvars_swap x y D ⊆ lvars_swap x y E.
-Proof.
-  intros Hsub v Hv.
-  apply lvars_swap_elem_iff in Hv.
-  apply lvars_swap_elem_iff.
-  apply Hsub. exact Hv.
-Qed.
-
-Lemma lvars_swap_union x y (D E : lvset) :
-  lvars_swap x y (D ∪ E) = lvars_swap x y D ∪ lvars_swap x y E.
-Proof.
-  apply set_eq. intros v.
-  rewrite elem_of_union.
-  rewrite !lvars_swap_elem_iff.
-  rewrite elem_of_union. reflexivity.
-Qed.
-
-Lemma open_env_fresh_for_lvars_atom_swap_inv x y η D :
-  open_env_fresh_for_lvars η D ->
-  open_env_fresh_for_lvars (open_env_atom_swap x y η) (lvars_swap x y D).
-Proof.
-  intros Hfresh k a Hka Hbad.
-  rewrite open_env_atom_swap_lookup in Hka.
-  destruct (η !! k) as [b|] eqn:Hη; cbn in Hka; [|discriminate].
-  inversion Hka. subst a.
-  eapply Hfresh; [exact Hη|].
-  rewrite open_env_atom_swap_delete in Hbad.
-  rewrite lvars_open_env_atom_swap in Hbad.
-  rewrite open_env_atom_swap_involutive in Hbad.
-  rewrite lvars_fv_swap in Hbad.
-  rewrite elem_of_set_swap in Hbad.
-  base_swap_normalize.
-  exact Hbad.
-Qed.
-
 Lemma basic_tm_has_ltype_swap_atom x y Σ e T :
   basic_tm_has_ltype Σ e T ->
   basic_tm_has_ltype (lty_env_swap x y Σ) (tm_swap_atom x y e) T.
@@ -303,7 +266,7 @@ Proof.
     change (lvars_swap x y (tm_lvars e) ⊆
       dom ((@lvar_store_swap ty) x y Σ : gmap logic_var ty)).
     rewrite (lvar_store_swap_dom (V:=ty) x y Σ).
-    apply lvars_swap_mono. exact Hsub.
+    apply set_swap_mono. exact Hsub.
   - intros η Hfresh Hbv.
     set (η' := open_env_atom_swap x y η).
     assert (Hfresh' :
@@ -316,7 +279,7 @@ Proof.
           tm_lvars (tm_swap_atom x y e))) in Hfresh.
       rewrite (lvar_store_swap_dom (V:=ty) x y Σ) in Hfresh.
       rewrite tm_lvars_swap_atom in Hfresh.
-      rewrite lvars_swap_union.
+      rewrite set_swap_union.
       exact Hfresh.
     }
     assert (Hbv' : lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η').
@@ -343,29 +306,6 @@ Proof.
     + exact Hswap.
     + eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
       set_solver.
-Qed.
-
-Lemma logic_var_swap_open_one x y k v :
-  logic_var_swap x y (logic_var_open k x v) =
-  logic_var_open k y (logic_var_swap x y v).
-Proof.
-  unfold swap.
-  repeat destruct decide; subst; try congruence; reflexivity.
-Qed.
-
-Lemma lty_env_swap_open_one x y k Σ :
-  lty_env_swap x y (lty_env_open_one k x Σ) =
-  lty_env_open_one k y (lty_env_swap x y Σ).
-Proof.
-  unfold lty_env_swap, lvar_store_swap, lty_env_open_one, lvar_store_open_one.
-  rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
-  2:{ apply swap_inj. }
-  2:{ intros a b H. eapply swap_inj. exact H. }
-  rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
-  2:{ intros a b H. eapply swap_inj. exact H. }
-  2:{ apply swap_inj. }
-  apply storeA_rekey_ext_on_dom. intros v _.
-  apply logic_var_swap_open_one.
 Qed.
 
 (** The syntactic well-formedness of [τ] is not a runtime property of the
@@ -698,7 +638,7 @@ Proof.
   intros Hy Hz Hty.
   pose proof (basic_tm_has_ltype_swap_atom y z
     (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T Hty) as Hswap.
-  rewrite lty_env_swap_open_one in Hswap.
+  rewrite lvar_store_swap_open_one in Hswap.
   rewrite lvar_store_swap_fresh in Hswap.
   2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
   2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }

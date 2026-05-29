@@ -300,6 +300,21 @@ Proof.
   apply storeA_swap_involutive.
 Qed.
 
+Lemma lvar_store_swap_open_one x y k (s : LVarStore) :
+  lvar_store_swap x y (lvar_store_open_one k x s) =
+  lvar_store_open_one k y (lvar_store_swap x y s).
+Proof.
+  unfold lvar_store_swap, lvar_store_open_one.
+  rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
+  2:{ apply swap_inj. }
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  2:{ apply swap_inj. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_swap_open_one.
+Qed.
+
 Lemma lvar_store_open_one_insert_fresh k x v A (s : LVarStore) :
   logic_var_open k x v ∉ dom (lvar_store_open_one k x s) ->
   lvar_store_open_one k x (<[v := A]> s) =

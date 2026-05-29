@@ -440,6 +440,25 @@ Proof.
   exact Hbad.
 Qed.
 
+Lemma open_env_fresh_for_lvars_atom_swap_inv
+    (x y : atom) (η : gmap nat atom) (D : lvset) :
+  open_env_fresh_for_lvars η D ->
+  open_env_fresh_for_lvars (open_env_atom_swap x y η) (lvars_swap x y D).
+Proof.
+  intros Hfresh k a Hka Hbad.
+  rewrite open_env_atom_swap_lookup in Hka.
+  destruct (η !! k) as [b|] eqn:Hη; cbn in Hka; [|discriminate].
+  inversion Hka. subst a.
+  eapply Hfresh; [exact Hη|].
+  rewrite open_env_atom_swap_delete in Hbad.
+  rewrite lvars_open_env_atom_swap in Hbad.
+  rewrite open_env_atom_swap_involutive in Hbad.
+  rewrite lvars_fv_swap in Hbad.
+  rewrite elem_of_set_swap in Hbad.
+  unfold swap in Hbad.
+  repeat destruct decide; subst; try congruence.
+Qed.
+
 Definition open_env_atoms (η : gmap nat atom) : aset :=
   map_fold (fun _ x acc => {[x]} ∪ acc) ∅ η.
 
