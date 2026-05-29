@@ -699,42 +699,6 @@ Proof.
   eapply expr_total_formula_tapp_tm_tlete_assoc; eauto.
 Qed.
 
-Lemma denot_ty_lvar_guard_tapp_tlete_assoc
-    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
-  lc_tm (tlete e1 e2) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y))))
-          (tlete e1 (tapp_tm e2 (vfvar y))) (erase_ty τ))
-        (expr_total_formula (tlete e1 (tapp_tm e2 (vfvar y)))))) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)))
-          (tapp_tm (tlete e1 e2) (vfvar y)) (erase_ty τ))
-        (expr_total_formula (tapp_tm (tlete e1 e2) (vfvar y))))).
-Proof.
-  intros Hlc Hguard.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split; [eapply tapp_tlete_assoc_context_wf; eauto|].
-  split; [eapply tapp_tlete_assoc_basic_world; eauto|].
-  split.
-  - eapply tapp_tlete_assoc_basic_typing; eauto.
-  - eapply tapp_tlete_assoc_total; eauto.
-Qed.
-
 Lemma tapp_tlete_assoc_context_wf_rev
     (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
   m ⊨ context_ty_wf_formula
@@ -802,42 +766,6 @@ Proof.
       eauto.
   }
   eapply expr_total_formula_tapp_tm_tlete_assoc_rev; eauto.
-Qed.
-
-Lemma denot_ty_lvar_guard_tapp_tlete_assoc_rev
-    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
-  lc_tm (tlete e1 e2) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)))
-          (tapp_tm (tlete e1 e2) (vfvar y)) (erase_ty τ))
-        (expr_total_formula (tapp_tm (tlete e1 e2) (vfvar y))))) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y))))
-          (tlete e1 (tapp_tm e2 (vfvar y))) (erase_ty τ))
-        (expr_total_formula (tlete e1 (tapp_tm e2 (vfvar y)))))).
-Proof.
-  intros Hlc Hguard.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split; [eapply tapp_tlete_assoc_context_wf_rev; eauto|].
-  split; [eapply tapp_tlete_assoc_basic_world_rev; eauto|].
-  split.
-  - eapply tapp_tlete_assoc_basic_typing_rev; eauto.
-  - eapply tapp_tlete_assoc_total_rev; eauto.
 Qed.
 
 (** ** [tapp]/[tlete] guard transport tactics *)
@@ -1043,52 +971,6 @@ Proof.
     - exact Hbasic.
   }
   eapply expr_total_formula_tapp_tlete_assoc_spine; eauto.
-Qed.
-
-Lemma denot_ty_lvar_guard_tapp_tlete_assoc_spine
-    (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
-  lc_tm (tlete e1 e2) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ
-        (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ
-          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ
-            (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs)))
-          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))
-          (erase_ty τ))
-        (expr_total_formula
-          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))))) ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env Σ τ
-        (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env Σ τ
-          (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env Σ τ
-            (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)))
-          (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))
-          (erase_ty τ))
-        (expr_total_formula
-          (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))))).
-Proof.
-  intros Hlc Hguard.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split; [eapply tapp_tlete_assoc_spine_context_wf; eauto|].
-  split; [eapply tapp_tlete_assoc_spine_basic_world; eauto|].
-  split.
-  - eapply tapp_tlete_assoc_spine_basic_typing; eauto.
-  - eapply tapp_tlete_assoc_spine_total; eauto.
 Qed.
 
 Lemma denot_ty_lvar_gas_tapp_tlete_assoc_spine
