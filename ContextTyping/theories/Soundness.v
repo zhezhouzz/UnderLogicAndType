@@ -165,24 +165,11 @@ Proof.
   apply denot_const_direct_in_ctx.
 Qed.
 
-(** This is the single induction-to-direct conversion point for [T-Let].
-    Its proof should choose a fresh binder, build the expression-result
-    extension witness, construct the extended world, obtain the body IH under
-    the comma-extended context, and finish with [denot_tlet_direct_in_ctx]. *)
-Lemma fundamental_let_case_from_induction
-    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
-    (τ1 τ2 : context_ty) e1 e2 (L : aset) :
-  context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) ->
-  (forall x, x ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
-      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
-  denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
-Proof.
-Admitted.
-
-Lemma fundamental_let_case
+(** The actual semantic TLet bridge: this is the proof-facing one-hop call into
+    [Denotation.TLet.tlet_intro_denotation].  The induction-facing
+    [fundamental_let_case] below only chooses the witness extension/world and
+    then calls this lemma. *)
+Lemma fundamental_let_case_direct
     (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) e1 e2
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
   erase_ctx_under Σ Γ ⊢ₑ e1 ⋮ erase_ty τ1 ->
@@ -211,6 +198,105 @@ Proof.
   - apply atom_store_to_lvar_store_closed.
   - rewrite lvar_store_to_atom_store_atom_store. exact He1.
   - rewrite lvar_store_to_atom_store_atom_store. exact Hlet.
+Qed.
+
+(** Extending a context denotation with the result extension of [e1].
+
+    This is the one remaining semantic context-construction obligation for the
+    induction-facing TLet case.  It should be proved from the typed result
+    extension facts in [ContextBasicDenotation.TermExtension] and the comma
+    definition of [denot_ctx_under], rather than by rebuilding any old TLet
+    helper stack. *)
+Lemma denot_ctx_in_env_comma_bind_from_result_extension
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
+    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
+  context_typing_wf Σ Γ e1 τ1 ->
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
+  expr_result_extension_witness e1 x Fx ->
+  x ∉ dom (erase_ctx_under Σ Γ) ->
+  res_extend_by m Fx mx ->
+  mx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)).
+Proof.
+Admitted.
+
+Lemma denot_ctx_in_env_relevant_basic_world
+    (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e).
+Proof.
+  intros Hctx.
+  unfold denot_ctx_in_env in Hctx.
+  repeat rewrite res_models_and_iff in Hctx.
+  eapply basic_world_formula_subenv.
+  - intros v T Hv.
+    eapply storeA_restrict_lookup_some in Hv as [_ Hv].
+    exact Hv.
+  - exact (proj1 (proj2 Hctx)).
+Qed.
+
+Lemma fundamental_let_case
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
+    (τ1 τ2 : context_ty) e1 e2 (L : aset) :
+  context_typing_wf Σ Γ e1 τ1 ->
+  context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
+  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) ->
+  (forall x, x ∉ L ->
+    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
+  denot_ctx_in_env Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
+Proof.
+  intros Hwf1 Hwflet IH1 IH2 m Hctx.
+  pose proof (IH1 m Hctx) as Hden1.
+  pose proof (denot_ty_in_ctx_under_total Σ Γ τ1 e1 m Hden1) as Htotal.
+  set (x := fresh_for
+    (L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (m : WorldT) ∪
+     fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)).
+  pose proof (fresh_for_not_in
+    (L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (m : WorldT) ∪
+     fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)) as Hfresh.
+  change (x ∉
+    L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (m : WorldT) ∪
+    fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2) in Hfresh.
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hxctx : x ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+  assert (Hxworld : x ∉ world_dom (m : WorldT)) by set_solver.
+  assert (Hxe1 : x ∉ fv_tm e1) by set_solver.
+  destruct (expr_result_extension_witness_exists e1 x Hxe1)
+    as [Fx HFx].
+  assert (Happ : extension_applicable Fx m).
+  {
+    constructor.
+    - destruct HFx as [_ [Hin _] _].
+      unfold ext_in in Hin.
+      rewrite Hin.
+      pose proof (res_models_scoped m (expr_total_formula e1) Htotal)
+        as Hscope_total.
+      unfold formula_scoped_in_world in Hscope_total.
+      rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_total.
+      exact Hscope_total.
+    - destruct HFx as [_ [_ Hout] _].
+      unfold ext_out in Hout.
+      rewrite Hout. set_solver.
+  }
+  destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
+  eapply fundamental_let_case_direct with
+    (mx := mx) (Fx := Fx) (x := x); eauto.
+  - exact (proj2 Hwf1).
+  - exact (proj2 Hwflet).
+  - eapply denot_ctx_in_env_relevant_basic_world. exact Hctx.
+  - intros Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    + apply lvars_fv_elem in Hbad.
+      rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hbad.
+      set_solver.
+    + apply lvars_fv_elem in Hbad.
+      rewrite context_ty_lvars_fv in Hbad.
+      set_solver.
+  - apply IH2; [exact HxL|].
+    eapply denot_ctx_in_env_comma_bind_from_result_extension; eauto.
 Qed.
 
 Lemma denot_letd_direct_in_ctx
@@ -375,7 +461,7 @@ Proof.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
-  - eapply fundamental_let_case_from_induction; eauto.
+  - eapply fundamental_let_case; eauto using typing_wf_under.
   - eapply denot_letd_direct_in_ctx; eauto.
   - eapply denot_lam_direct_in_ctx; eauto.
   - eapply denot_lamd_direct_in_ctx; eauto.
