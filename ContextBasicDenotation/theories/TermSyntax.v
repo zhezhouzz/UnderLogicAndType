@@ -500,6 +500,32 @@ Proof.
   apply lc_tapp_tm; [apply HL; exact Hx | constructor].
 Qed.
 
+Lemma tlet_lc_open_body_from_lc e1 e2 x :
+  lc_tm (tlete e1 e2) ->
+  lc_tm (e2 ^^ x).
+Proof.
+  intros Hlc.
+  apply lc_lete_iff_body in Hlc as [_ Hbody].
+  apply body_open_tm; [exact Hbody | constructor].
+Qed.
+
+Lemma tlet_lc_open_body_from_basic Γ e1 e2 T x :
+  Γ ⊢ₑ tlete e1 e2 ⋮ T ->
+  lc_tm (e2 ^^ x).
+Proof.
+  intros Htyped.
+  eapply tlet_lc_open_body_from_lc.
+  eapply basic_typing_regular_tm. exact Htyped.
+Qed.
+
+Lemma tlet_lc_tapp_open_body_from_basic Γ e1 e2 T x y :
+  Γ ⊢ₑ tlete e1 e2 ⋮ T ->
+  lc_tm (tapp_tm (e2 ^^ x) (vfvar y)).
+Proof.
+  intros Htyped.
+  apply lc_tapp_tm; [eapply tlet_lc_open_body_from_basic; eauto | constructor].
+Qed.
+
 Lemma open_tm_shift0_lc y e :
   lc_tm e ->
   open_tm 0 (vfvar y) (tm_shift 0 e) = e.
