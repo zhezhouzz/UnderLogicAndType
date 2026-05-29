@@ -837,6 +837,16 @@ Proof.
       * eapply open_env_fresh_for_lvars_insert_tail; eassumption.
 Qed.
 
+Lemma tm_lvars_free_notin_of_fv x e :
+  x ∉ fv_tm e ->
+  LVFree x ∉ tm_lvars e.
+Proof.
+  intros Hx Hbad.
+  apply Hx.
+  rewrite <- tm_lvars_fv.
+  apply lvars_fv_elem. exact Hbad.
+Qed.
+
 Lemma tm_swap_atom_open_tm_fresh x y k e :
   x ∉ fv_tm e ->
   y ∉ fv_tm e ->

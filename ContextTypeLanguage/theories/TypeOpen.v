@@ -379,6 +379,32 @@ Proof.
     + eapply open_env_fresh_for_lvars_insert_head; eassumption.
 Qed.
 
+Lemma context_ty_lvars_open_cty_env η τ :
+  open_env_fresh_for_lvars η (context_ty_lvars τ) ->
+  context_ty_lvars (open_cty_env η τ) =
+  lvars_open_env η (context_ty_lvars τ).
+Proof.
+  revert τ.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros τ _. rewrite open_cty_env_empty. better_base_solver.
+  - intros τ Hfresh.
+    pose proof (IH τ ltac:(eapply open_env_fresh_for_lvars_insert_tail; eassumption))
+      as HIH.
+    change (context_ty_lvars
+      (map_fold (fun k x acc => cty_open k x acc) τ (<[k:=x]> η)) =
+      lvars_open_env (<[k:=x]> η) (context_ty_lvars τ)).
+    rewrite (Hfold context_ty (fun k x acc => cty_open k x acc)).
+    fold (open_cty_env η τ).
+    rewrite cty_open_vars.
+    unfold context_ty_open_lvars.
+    replace (context_ty_lvars (open_cty_env η τ))
+      with (lvars_open_env η (context_ty_lvars τ)) by (symmetry; exact HIH).
+    rewrite lvars_open_env_insert_fresh.
+    + reflexivity.
+    + exact Hnone.
+    + eapply open_env_fresh_for_lvars_insert_head; eassumption.
+Qed.
+
 Lemma open_cty_env_inter_vars_equiv η τ1 τ2 :
   open_cty_env η (CTInter τ1 τ2) ≡τv
   CTInter (open_cty_env η τ1) (open_cty_env η τ2).
