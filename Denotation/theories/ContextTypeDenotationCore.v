@@ -834,12 +834,8 @@ Lemma denot_relevant_env_dom_subset_direct (Σ : lty_env) τ e :
   dom (Σ : gmap logic_var ty).
 Proof.
   intros v Hv.
-  change (v ∈ dom ((denot_relevant_env Σ τ e : lty_env)
-    : gmap logic_var ty)) in Hv.
   apply elem_of_dom in Hv as [T Hlookup].
   unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-  change ((storeA_restrict Σ (denot_relevant_lvars τ e)
-    : gmap logic_var ty) !! v = Some T) in Hlookup.
   apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
   eapply elem_of_dom_2. exact Hlookup.
 Qed.
@@ -853,10 +849,6 @@ Proof.
   intros Hτ Hlookup.
   unfold denot_relevant_env, lty_env_restrict_lvars,
     denot_relevant_lvars in Hlookup |- *.
-  change ((storeA_restrict (Σ : gmap logic_var ty)
-    (context_ty_lvars τsmall ∪ tm_lvars e)) !! v = Some T) in Hlookup.
-  change ((storeA_restrict (Σ : gmap logic_var ty)
-    (context_ty_lvars τbig ∪ tm_lvars e)) !! v = Some T).
   apply storeA_restrict_lookup_some in Hlookup as [Hv HΣ].
   apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].
 Qed.
@@ -868,11 +860,7 @@ Lemma denot_relevant_env_dom_mono_context
   dom (denot_relevant_env Σ τbig e).
 Proof.
   intros Hτ v Hv.
-  change (v ∈ dom ((denot_relevant_env Σ τsmall e : lty_env)
-    : gmap logic_var ty)) in Hv.
   apply elem_of_dom in Hv as [T Hlookup].
-  change (v ∈ dom ((denot_relevant_env Σ τbig e : lty_env)
-    : gmap logic_var ty)).
   apply elem_of_dom. exists T.
   eapply denot_relevant_env_lookup_mono_context; eauto.
 Qed.
@@ -1006,13 +994,10 @@ Proof.
       eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
       unfold denot_relevant_env, lty_env_restrict_lvars.
       intros v Hv.
-      change (v ∈ dom (storeA_restrict (Σ : gmap logic_var ty)
-        (denot_relevant_lvars τ e) : gmap logic_var ty)) in Hv.
       apply elem_of_dom in Hv as [Tv Hlook].
       apply storeA_restrict_lookup_some in Hlook as [Hvrel HΣv].
       apply elem_of_union.
-      left. change (v ∈ dom (Σ : gmap logic_var ty)).
-      eapply elem_of_dom_2. exact HΣv.
+      left. eapply elem_of_dom_2. exact HΣv.
     }
     rewrite IH by (exact Hfreshη || exact Hinjη).
     rewrite open_cty_env_insert_fresh by (exact Hnone || exact Havoid || exact Hinjη).
@@ -1046,11 +1031,7 @@ Proof.
   unfold lty_env_closed in *.
   intros v Hv.
   unfold lty_env_restrict_lvars in Hv.
-  change (v ∈ dom
-    (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty)) in Hv.
   pose proof (storeA_restrict_dom (Σ : lty_env) D) as Hdom_restrict.
-  change (dom (storeA_restrict (Σ : gmap logic_var ty) D : gmap logic_var ty) =
-    dom (Σ : gmap logic_var ty) ∩ D) in Hdom_restrict.
   rewrite Hdom_restrict in Hv.
   apply elem_of_intersection in Hv as [Hv _].
   exact (Hclosed v Hv).
@@ -1104,8 +1085,6 @@ Lemma lty_env_restrict_lvars_fv_subset Σ D :
   lvars_fv (dom (lty_env_restrict_lvars Σ D)) ⊆ lvars_fv D.
 Proof.
   unfold lty_env_restrict_lvars.
-  change (lvars_fv (dom (storeA_restrict (Σ : gmap logic_var ty) D)) ⊆
-    lvars_fv D).
   rewrite storeA_restrict_dom.
   apply lvars_fv_mono. set_solver.
 Qed.
@@ -1114,8 +1093,6 @@ Lemma lty_env_restrict_lvars_fv_dom_subset Σ D :
   lvars_fv (dom (lty_env_restrict_lvars Σ D)) ⊆ lvars_fv (dom Σ).
 Proof.
   unfold lty_env_restrict_lvars.
-  change (lvars_fv (dom (storeA_restrict (Σ : gmap logic_var ty) D)) ⊆
-    lvars_fv (dom Σ)).
   rewrite storeA_restrict_dom.
   apply lvars_fv_mono. set_solver.
 Qed.
@@ -1127,10 +1104,7 @@ Lemma lty_env_restrict_lvars_insert_fresh Σ D x T :
 Proof.
   intros HxD.
   unfold lty_env_restrict_lvars.
-  change (storeA_restrict (<[LVFree x := T]> (Σ : gmap logic_var ty)) D =
-    storeA_restrict (Σ : gmap logic_var ty) D).
-  unfold storeA_restrict.
-  apply map_restrict_insert_notin. exact HxD.
+  apply storeA_restrict_insert_notin. exact HxD.
 Qed.
 
 Lemma denot_relevant_env_fv_subset Σ τ e :
@@ -1165,9 +1139,6 @@ Proof.
   intros Hlvars Hworld Hbasic.
   eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
   unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-  change (lvars_of_atoms (fv_tm e_tgt) ⊆
-    dom (storeA_restrict (Σ : gmap logic_var ty)
-      (context_ty_lvars τ ∪ tm_lvars e_src))).
   rewrite storeA_restrict_dom.
   intros v Hv.
   unfold lvars_of_atoms in Hv.
@@ -1183,9 +1154,6 @@ Proof.
     specialize (Hsub _ Ha_lvars).
     unfold denot_relevant_env, denot_relevant_lvars,
       lty_env_restrict_lvars in Hsub.
-    change (LVFree a ∈ dom
-      (storeA_restrict (Σ : gmap logic_var ty)
-        (context_ty_lvars τ ∪ tm_lvars e_src))) in Hsub.
     rewrite storeA_restrict_dom in Hsub.
     apply elem_of_intersection in Hsub as [HaΣ _].
     exact HaΣ.
@@ -1234,13 +1202,7 @@ Lemma denot_relevant_env_insert_fresh Σ τ e x T :
 Proof.
   intros Hxτ Hxe.
   unfold denot_relevant_env, lty_env_restrict_lvars.
-  change (storeA_restrict
-    (<[LVFree x := T]> (Σ : gmap logic_var ty))
-    (denot_relevant_lvars τ e) =
-    storeA_restrict (Σ : gmap logic_var ty)
-      (denot_relevant_lvars τ e)).
-  unfold storeA_restrict.
-  apply map_restrict_insert_notin.
+  apply storeA_restrict_insert_notin.
   apply denot_relevant_lvars_insert_fresh; assumption.
 Qed.
 
