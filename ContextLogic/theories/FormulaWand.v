@@ -120,4 +120,28 @@ Proof.
   - intros m' Hc Hψ1. apply Hψ. exact Hψ1.
 Qed.
 
+Lemma res_models_impl_wand_map
+    (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 χ1 χ2 : FormulaT) :
+  formula_scoped_in_world m (FImpl φ2 (FWand ψ2 χ2)) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (∀ (n : WfWorldT) (Hc : world_compat n m),
+    n ⊨ ψ2 → n ⊨ ψ1) →
+  (∀ (n : WfWorldT) (Hc : world_compat n m),
+    res_product n m Hc ⊨ χ1 →
+    res_product n m Hc ⊨ χ2) →
+  m ⊨ FImpl φ1 (FWand ψ1 χ1) →
+  m ⊨ FImpl φ2 (FWand ψ2 χ2).
+Proof.
+  intros Hscope Hφ Hψ Hχ Himpl.
+  eapply res_models_impl_intro; [exact Hscope |].
+  intros Hφ2.
+  eapply res_models_wand_map.
+  - eapply formula_scoped_impl_r. exact Hscope.
+  - exact Hψ.
+  - exact Hχ.
+  - eapply res_models_impl_elim; [exact Himpl |].
+    apply Hφ. exact Hφ2.
+Qed.
+
 End FormulaConnectives.
