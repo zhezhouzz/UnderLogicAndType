@@ -75,6 +75,30 @@ Proof.
     rewrite Htarget in Hsome. discriminate.
 Qed.
 
+Lemma lstore_to_store_restrict_lookup (s : LStore) X x :
+  LVFree x ∈ X ->
+  (lstore_to_store (storeA_restrict s X) : gmap atom V) !! x =
+  (lstore_to_store s : gmap atom V) !! x.
+Proof.
+  intros Hx.
+  rewrite !lstore_to_store_lookup.
+  destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hs.
+  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hx].
+  - apply storeA_restrict_lookup_none_l. exact Hs.
+Qed.
+
+Lemma lstore_bound_part_restrict_lookup (s : LStore) X k :
+  LVBound k ∈ X ->
+  lstore_bound_part (storeA_restrict s X) !! k =
+  lstore_bound_part s !! k.
+Proof.
+  intros Hk.
+  rewrite !lstore_bound_part_lookup.
+  destruct ((s : gmap logic_var V) !! LVBound k) as [v|] eqn:Hs.
+  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hk].
+  - apply storeA_restrict_lookup_none_l. exact Hs.
+Qed.
+
 Definition lc_lstore (s : LStore) : Prop := lc_lvars (dom s).
 
 Definition LStoreOn (D : lvset) : Type :=

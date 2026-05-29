@@ -544,18 +544,9 @@ Proof.
       lstore_instantiate_tm_at lstore_instantiate_value_split_at
       lstore_instantiate_tm_split_at]; intros; try reflexivity.
   - unfold lstore_free_part.
-    rewrite !lstore_to_store_lookup.
-    destruct (((σ : gmap logic_var value) !! LVFree x)) as [u|] eqn:Hlook.
-    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
-        Some u) as Hrestrict.
-      { apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }
-      rewrite Hrestrict. reflexivity.
-	    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVFree x) =
-	        None) as Hrestrict.
-	      { apply storeA_restrict_lookup_none_l. exact Hlook. }
-      rewrite Hrestrict. reflexivity.
+    rewrite lstore_to_store_restrict_lookup by set_solver.
+    reflexivity.
   - 
-    rewrite !lstore_bound_part_lookup.
     destruct (decide (d <= n)) as [Hdn|Hdn]; [|reflexivity].
     assert (Hbound_in : LVBound (n - d) ∈ X).
     {
@@ -563,15 +554,8 @@ Proof.
       unfold bvar_lvars_at.
       destruct (decide (d <= n)); [set_solver|lia].
     }
-    destruct (((σ : gmap logic_var value) !! LVBound (n - d))) as [u|] eqn:Hlook.
-    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
-        Some u) as Hrestrict.
-      { apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hbound_in]. }
-      rewrite Hrestrict. reflexivity.
-	    + assert (((storeA_restrict σ X : gmap logic_var value) !! LVBound (n - d)) =
-	        None) as Hrestrict.
-	      { apply storeA_restrict_lookup_none_l. exact Hlook. }
-      rewrite Hrestrict. reflexivity.
+    rewrite lstore_bound_part_restrict_lookup by exact Hbound_in.
+    reflexivity.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
   - f_equal. apply H. exact H0.
