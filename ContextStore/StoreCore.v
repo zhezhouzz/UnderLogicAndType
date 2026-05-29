@@ -294,6 +294,22 @@ Proof.
     exists x. split; [exact Hz|exact Hv].
 Qed.
 
+Lemma storeA_rekey_inj_on_dom_compose {K : Type} `{Countable K}
+    (f g : K → K) (s : gmap K V) :
+  storeA_rekey_inj_on_dom g s ->
+  storeA_rekey_inj_on_dom f (storeA_rekey g s) ->
+  storeA_rekey_inj_on_dom (fun x => f (g x)) s.
+Proof.
+  intros Hg Hf x y Hx Hy Heq.
+  apply Hg; [exact Hx|exact Hy|].
+  apply Hf.
+  - rewrite storeA_rekey_dom_inj_on by exact Hg.
+    apply elem_of_map. exists x. split; [reflexivity|exact Hx].
+  - rewrite storeA_rekey_dom_inj_on by exact Hg.
+    apply elem_of_map. exists y. split; [reflexivity|exact Hy].
+  - exact Heq.
+Qed.
+
 Lemma storeA_rekey_lookup_none_inj_on {K : Type} `{Countable K}
     (f : K → K) (s : gmap K V) (x : K) :
   (s : gmap K V) !! x = None ->
@@ -393,17 +409,7 @@ Lemma storeA_rekey_compose_inj_on {K : Type} `{Countable K}
   storeA_rekey (fun x => f (g x)) s.
 Proof.
   intros Hg Hf.
-  assert (Hcomp : storeA_rekey_inj_on_dom (fun x => f (g x)) s).
-  {
-    intros x y Hx Hy Heq.
-    apply Hg; [exact Hx|exact Hy|].
-    apply Hf.
-    - rewrite storeA_rekey_dom_inj_on by exact Hg.
-      apply elem_of_map. exists x. split; [reflexivity|exact Hx].
-    - rewrite storeA_rekey_dom_inj_on by exact Hg.
-      apply elem_of_map. exists y. split; [reflexivity|exact Hy].
-    - exact Heq.
-  }
+  pose proof (storeA_rekey_inj_on_dom_compose f g s Hg Hf) as Hcomp.
   apply storeA_map_eq. intros z.
   change (((storeA_rekey f (storeA_rekey g s) : gmap K V) !! z) =
     ((storeA_rekey (fun x => f (g x)) s : gmap K V) !! z)).
