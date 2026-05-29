@@ -365,31 +365,14 @@ Proof.
   assert (HyTransport : y ∉ Ltransport) by set_solver.
   assert (Hyφ : y ∉ Lφ) by set_solver.
   assert (Hymx : y ∉ world_dom (mx : WorldT)) by set_solver.
-  assert (HappF_my : extension_applicable F my).
-  {
-    constructor.
-    - pose proof (res_extend_by_input_dom m F mx HmF) as HFinF.
-      pose proof (res_extend_by_dom m Fy my HmFy) as Hdom_my.
-      set_solver.
-    - pose proof (res_extend_by_output_fresh m F mx HmF) as HoutF.
-      pose proof (res_extend_by_dom m Fy my HmFy) as Hdom_my.
-      pose proof (res_extend_by_dom m F mx HmF) as Hdom_mx.
-      set_solver.
-  }
-  destruct (res_extend_by_exists my F HappF_my) as [myx HmyF].
   assert (HFinFy_mx : ext_in Fy ⊆ world_dom (mx : WorldT)).
   {
     pose proof (res_extend_by_dom m F mx HmF) as Hdom_mx.
     unfold formula_scoped_in_world in Hψscope.
     rewrite HFin. set_solver.
   }
-  assert (HmxFy : res_extend_by mx Fy myx).
-  {
-    apply (proj2 (res_extend_by_commute_input_widen
-      m mx F Fy Fy my myx HmF HmFy
-      (fiber_extension_input_widen_to_refl Fy) HFinFy_mx)).
-    exact HmyF.
-  }
+  destruct (res_extend_by_commute_exists_right m mx my F Fy HmF HmFy
+    HFinFy_mx ltac:(rewrite HFout; set_solver)) as [myx [HmyF HmxFy]].
   assert (Hdom_myx : world_dom (myx : WorldT) =
       world_dom (mx : WorldT) ∪ {[y]}).
   {

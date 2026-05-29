@@ -1002,7 +1002,8 @@ Proof.
     + rewrite elem_of_singleton in Hv. subst v. exact I.
     + exact (Hlc v Hv).
   - split.
-    + pose proof (res_extend_by_dom m Fx mx Hext) as Hdom.
+    + pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_dom.
+      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
       intros a Ha.
       change (a ∈ lvars_fv (dom ((<[LVFree x := T]>
         (Σ : gmap logic_var ty)) : gmap logic_var ty))) in Ha.
@@ -1011,8 +1012,8 @@ Proof.
       apply elem_of_union in Ha as [Ha|Ha].
       * rewrite elem_of_singleton in Ha. subst a.
         unfold ext_out in Hout.
-        rewrite Hdom, Hout. set_solver.
-      * rewrite Hdom. set_solver.
+        rewrite Hout in Hout_dom. set_solver.
+      * set_solver.
     + change (basic_context_ty_lvars
         (dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
           : gmap logic_var ty)) τ).
@@ -1210,7 +1211,8 @@ Proof.
     + rewrite elem_of_singleton in Hv. subst v. exact I.
     + exact (Hlc v Hv).
   - split.
-    + pose proof (res_extend_by_dom m Fx mx Hext) as Hdom.
+    + pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_dom.
+      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
       intros a Ha.
       change (a ∈ lvars_fv (dom ((<[LVFree x := T]>
         (Σ : gmap logic_var ty)) : gmap logic_var ty))) in Ha.
@@ -1219,8 +1221,8 @@ Proof.
       apply elem_of_union in Ha as [Ha|Ha].
       * rewrite elem_of_singleton in Ha. subst a.
         unfold ext_out in Hout.
-        rewrite Hdom, Hout. set_solver.
-      * rewrite Hdom. set_solver.
+        rewrite Hout in Hout_dom. set_solver.
+      * set_solver.
     + apply basic_tm_has_ltype_insert_fresh_lvar; assumption.
 Qed.
 

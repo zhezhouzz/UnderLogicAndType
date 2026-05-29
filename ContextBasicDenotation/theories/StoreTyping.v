@@ -686,21 +686,20 @@ Proof.
     destruct Hv as [Hv|Hv]; [apply Hlc_base | apply Hlc_out]; exact Hv.
   - split.
     + intros a Ha.
-      pose proof (res_extend_by_dom m Fx mx Hext) as Hdom_mx.
-      change (world_dom (mx : World) = world_dom (m : World) ∪ ext_out Fx) in Hdom_mx.
-      rewrite Hdom_mx.
+      pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_mx.
+      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
       change (a ∈ lvars_fv
         (dom ((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty)))) in Ha.
       rewrite dom_union_L, lvars_fv_union in Ha.
       apply elem_of_union in Ha.
       destruct Ha as [Ha|Ha].
-      * apply elem_of_union_l. exact (Hsub_base a Ha).
-      * apply elem_of_union_r. rewrite <- Hout_dom. exact Ha.
+      * set_solver.
+      * rewrite Hout_dom in Ha. set_solver.
     + unfold lworld_has_type, worldA_has_type. split.
       * intros v Hv.
         rewrite res_lift_free_dom.
-        pose proof (res_extend_by_dom m Fx mx Hext) as Hdom_mx.
-        change (world_dom (mx : World) = world_dom (m : World) ∪ ext_out Fx) in Hdom_mx.
+        pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_mx.
+        pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
         change (v ∈ dom ((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty))) in Hv.
         rewrite dom_union_L in Hv.
         apply elem_of_union in Hv.
@@ -711,10 +710,12 @@ Proof.
         -- unfold lvars_of_atoms. apply elem_of_map.
            exists a. split; [reflexivity|].
            change (a ∈ world_dom (mx : World)).
-           rewrite Hdom_mx.
            destruct Hv as [Hv|Hv].
-           ++ apply elem_of_union_l. apply Hsub_base. apply lvars_fv_elem. exact Hv.
-           ++ apply elem_of_union_r. rewrite <- Hout_dom. apply lvars_fv_elem. exact Hv.
+           ++ pose proof (Hsub_base a ltac:(apply lvars_fv_elem; exact Hv)).
+              set_solver.
+           ++ apply Hout_mx.
+              change (a ∈ ext_out Fx).
+              rewrite <- Hout_dom. apply lvars_fv_elem. exact Hv.
       * intros τ Hτ.
         destruct Hτ as [σ [Hσ ->]].
         apply (proj1 (resA_extend_by_store_iff m Fx mx σ Hext)) in Hσ.

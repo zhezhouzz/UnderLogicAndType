@@ -1222,6 +1222,11 @@ Definition resA_pullback_subset_projection (n p : WfWorldAT)
   exist _ (rawA_pullback_subset_projection n p)
     (rawA_pullback_subset_projection_wf n p Hsub).
 
+Lemma resA_pullback_subset_projection_dom (n p : WfWorldAT) Hsub :
+  worldA_dom (resA_pullback_subset_projection n p Hsub : WorldAT) =
+  worldA_dom (n : WorldAT).
+Proof. reflexivity. Qed.
+
 Lemma resA_pullback_subset_projection_subset (n p : WfWorldAT) Hsub :
   resA_subset (resA_pullback_subset_projection n p Hsub) n.
 Proof.
@@ -2030,6 +2035,14 @@ Proof.
   apply wfworldA_ext. apply worldA_ext.
   - simpl. set_solver.
   - apply resA_product_comm.
+Qed.
+
+Lemma resA_le_product_r (w1 w2 : WfWorldAT) (Hc : worldA_compat w1 w2) :
+  w2 ⊑ resA_product w1 w2 Hc.
+Proof.
+  destruct (resA_product_comm_eq w1 w2 Hc) as [Hc' Heq].
+  rewrite Heq.
+  apply resA_le_product_l.
 Qed.
 
 Lemma resA_sum_comm_eq (w1 w2 : WfWorldAT) (Hdef : rawA_sum_defined w1 w2) :

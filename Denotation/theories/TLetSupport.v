@@ -1532,15 +1532,6 @@ Proof.
     [exact Hxy | exact Hbody_full].
 Qed.
 
-Lemma res_product_le_r_tlet (n m : WfWorldT)
-    (Hc : world_compat n m) :
-  m ⊑ res_product n m Hc.
-Proof.
-  destruct (res_product_comm_eq n m Hc) as [Hc' Heq].
-  rewrite Heq.
-  apply resA_le_product_l.
-Qed.
-
 Lemma tlet_intro_denotation_gas_zero_support
     (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
@@ -3208,7 +3199,7 @@ Proof.
     eapply res_models_kripke.
     - etransitivity.
       + exact Hle.
-      + apply res_product_le_r_tlet.
+      + apply res_product_le_r.
     - exact Htotal.
   }
   assert (Hbase_world_prod :
@@ -3222,10 +3213,10 @@ Proof.
     - exact Hbasic_src_rel0.
     - apply tm_lvars_tlet_tapp_tm_fvar_without_arg.
     - eapply res_models_kripke.
-      + apply res_product_le_r_tlet.
+      + apply res_product_le_r.
       + eapply res_models_kripke; [exact Hle|exact Hbase_world].
     - eapply res_models_kripke.
-      + apply res_product_le_r_tlet.
+      + apply res_product_le_r.
       + rewrite formula_open_basic_world_formula in Hbasic.
         rewrite lty_env_open_one_bound0_singleton in Hbasic.
         exact Hbasic.

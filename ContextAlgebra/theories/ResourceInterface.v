@@ -378,6 +378,11 @@ Lemma res_pullback_subset_projection_restrict (n p : WfWorld) Hsub :
     (world_dom (p : World)) = p.
 Proof. apply resA_pullback_subset_projection_restrict. Qed.
 
+Lemma res_pullback_subset_projection_dom (n p : WfWorld) Hsub :
+  world_dom (res_pullback_subset_projection n p Hsub : World) =
+  world_dom (n : World).
+Proof. apply resA_pullback_subset_projection_dom. Qed.
+
 Lemma res_sum_pullback_subset_projection_full
     (n n1 n2 : WfWorld) (Hdef : raw_sum_defined n1 n2) :
   res_sum n1 n2 Hdef ⊑ n →
@@ -457,6 +462,10 @@ Lemma res_product_comm_eq (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
     res_product w1 w2 Hc = res_product w2 w1 Hc'.
 Proof. apply resA_product_comm_eq. Qed.
 
+Lemma res_product_le_r (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  w2 ⊑ res_product w1 w2 Hc.
+Proof. apply resA_le_product_r. Qed.
+
 Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   ∃ Hdef' : raw_sum_defined w2 w1,
     res_sum w1 w2 Hdef = res_sum w2 w1 Hdef'.
@@ -499,6 +508,16 @@ Lemma res_extend_by_dom (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
 Proof. apply resA_extend_by_dom. Qed.
+
+Lemma res_extend_by_dom_base_subset (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
+  m #> F ~~> n →
+  world_dom (m : World) ⊆ world_dom (n : World).
+Proof. apply resA_extend_by_dom_base_subset. Qed.
+
+Lemma res_extend_by_dom_output_subset (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
+  m #> F ~~> n →
+  extA_out F ⊆ world_dom (n : World).
+Proof. apply resA_extend_by_dom_output_subset. Qed.
 
 Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →

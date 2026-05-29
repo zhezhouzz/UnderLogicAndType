@@ -231,16 +231,14 @@ Proof.
   assert (Hdom_m_n1f : world_dom (m : WorldT) ⊆ world_dom (n1f : WorldT)).
   {
     subst n1f.
-    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
-    pose proof (res_extend_by_dom m F n Hext) as Hdom.
-    simpl. set_solver.
+    rewrite res_pullback_subset_projection_dom.
+    eapply res_extend_by_dom_base_subset; exact Hext.
   }
   assert (Hdom_m_n2f : world_dom (m : WorldT) ⊆ world_dom (n2f : WorldT)).
   {
     subst n2f.
-    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
-    pose proof (res_extend_by_dom m F n Hext) as Hdom.
-    simpl. set_solver.
+    rewrite res_pullback_subset_projection_dom.
+    eapply res_extend_by_dom_base_subset; exact Hext.
   }
   destruct (res_extend_by_sum_pullback m F n n1f n2f Hdef_full
     Hext Hfun Hdom_m_n1f Hdom_m_n2f Hsum_full_le)

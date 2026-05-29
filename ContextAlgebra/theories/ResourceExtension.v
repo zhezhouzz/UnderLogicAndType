@@ -97,6 +97,24 @@ Lemma resA_extend_by_dom m F n :
   worldA_dom (n : WorldAT) = worldA_dom (m : WorldAT) ∪ extA_out F.
 Proof. intros [_ [Hdom _]]. exact Hdom. Qed.
 
+Lemma resA_extend_by_dom_base_subset m F n :
+  m #> F ~~A> n →
+  worldA_dom (m : WorldAT) ⊆ worldA_dom (n : WorldAT).
+Proof.
+  intros Hext.
+  rewrite (resA_extend_by_dom m F n Hext).
+  set_solver.
+Qed.
+
+Lemma resA_extend_by_dom_output_subset m F n :
+  m #> F ~~A> n →
+  extA_out F ⊆ worldA_dom (n : WorldAT).
+Proof.
+  intros Hext.
+  rewrite (resA_extend_by_dom m F n Hext).
+  set_solver.
+Qed.
+
 Lemma resA_extend_by_store_iff m F n σ :
   m #> F ~~A> n →
   (n : WorldAT) σ ↔
