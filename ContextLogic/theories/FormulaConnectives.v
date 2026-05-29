@@ -98,31 +98,48 @@ Proof.
     + apply Hb. unfold res_models. models_fuel_irrel Hright.
 Qed.
 
+Lemma formula_scoped_star_from_models
+    (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
+    (Hc : world_compat m1 m2) :
+  res_product m1 m2 Hc ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  formula_scoped_in_world m (FStar φ ψ).
+Proof.
+  intros Hle Hφ Hψ.
+  pose proof (res_models_scoped m1 φ Hφ) as Hscopeφ.
+  pose proof (res_models_scoped m2 ψ Hψ) as Hscopeψ.
+  unfold formula_scoped_in_world in *.
+  formula_fv_syntax_norm.
+  pose proof (raw_le_dom (res_product m1 m2 Hc : WorldT) (m : WorldT) Hle)
+    as Hdom.
+  change (world_dom (m1 : WorldT) ∪ world_dom (m2 : WorldT) ⊆
+          world_dom (m : WorldT)) in Hdom.
+  set_solver.
+Qed.
+
 Lemma res_models_star_intro
     (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
     (Hc : world_compat m1 m2) :
-  formula_scoped_in_world m (FStar φ ψ) →
   res_product m1 m2 Hc ⊑ m →
   m1 ⊨ φ →
   m2 ⊨ ψ →
   m ⊨ FStar φ ψ.
 Proof.
-  unfold res_models.
-  simpl. intros Hscope Hle Hφ Hψ.
-  split; [exact Hscope |].
+  intros Hle Hφ Hψ. unfold res_models. simpl.
+  split; [eapply formula_scoped_star_from_models; eauto |].
   exists m1, m2, Hc. split; [exact Hle |]. split.
   - models_fuel_irrel Hφ.
   - models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_star_iff (m : WfWorldT) (φ ψ : FormulaT) :
-  formula_scoped_in_world m (FStar φ ψ) →
   (m ⊨ FStar φ ψ ↔
     ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
       res_product m1 m2 Hc ⊑ m ∧
       m1 ⊨ φ ∧ m2 ⊨ ψ).
 Proof.
-  intros Hscope. split.
+  split.
   - unfold res_models. simpl.
     intros [_ [m1 [m2 [Hc [Hle [Hφ Hψ]]]]]].
     exists m1, m2, Hc. repeat split; eauto;
@@ -131,31 +148,50 @@ Proof.
     eapply res_models_star_intro; eauto.
 Qed.
 
+Lemma formula_scoped_plus_from_models
+    (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
+    (Hdef : raw_sum_defined m1 m2) :
+  res_sum m1 m2 Hdef ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  formula_scoped_in_world m (FPlus φ ψ).
+Proof.
+  intros Hle Hφ Hψ.
+  pose proof (res_models_scoped m1 φ Hφ) as Hscopeφ.
+  pose proof (res_models_scoped m2 ψ Hψ) as Hscopeψ.
+  unfold formula_scoped_in_world in *.
+  formula_fv_syntax_norm.
+  pose proof (raw_le_dom (res_sum m1 m2 Hdef : WorldT) (m : WorldT) Hle)
+    as Hdom.
+  change (world_dom (m1 : WorldT) = world_dom (m2 : WorldT)) in Hdef.
+  change (world_dom (m1 : WorldT) ⊆ world_dom (m : WorldT)) in Hdom.
+  intros z Hz. apply elem_of_union in Hz as [Hz | Hz].
+  - apply Hdom. exact (Hscopeφ z Hz).
+  - apply Hdom. rewrite Hdef. exact (Hscopeψ z Hz).
+Qed.
+
 Lemma res_models_plus_intro
     (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
     (Hdef : raw_sum_defined m1 m2) :
-  formula_scoped_in_world m (FPlus φ ψ) →
   res_sum m1 m2 Hdef ⊑ m →
   m1 ⊨ φ →
   m2 ⊨ ψ →
   m ⊨ FPlus φ ψ.
 Proof.
-  unfold res_models.
-  simpl. intros Hscope Hle Hφ Hψ.
-  split; [exact Hscope |].
+  intros Hle Hφ Hψ. unfold res_models. simpl.
+  split; [eapply formula_scoped_plus_from_models; eauto |].
   exists m1, m2, Hdef. split; [exact Hle |]. split.
   - models_fuel_irrel Hφ.
   - models_fuel_irrel Hψ.
 Qed.
 
 Lemma res_models_plus_iff (m : WfWorldT) (φ ψ : FormulaT) :
-  formula_scoped_in_world m (FPlus φ ψ) →
   (m ⊨ FPlus φ ψ ↔
     ∃ (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
       res_sum m1 m2 Hdef ⊑ m ∧
       m1 ⊨ φ ∧ m2 ⊨ ψ).
 Proof.
-  intros Hscope. split.
+  split.
   - unfold res_models. simpl.
     intros [_ [m1 [m2 [Hdef [Hle [Hφ Hψ]]]]]].
     exists m1, m2, Hdef. repeat split; eauto;
@@ -164,63 +200,25 @@ Proof.
     eapply res_models_plus_intro; eauto.
 Qed.
 
-Lemma res_models_plus_intro_from_models
-    (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
-    (Hdef : raw_sum_defined m1 m2) :
-  res_sum m1 m2 Hdef ⊑ m →
-  m1 ⊨ φ →
-  m2 ⊨ ψ →
-  m ⊨ FPlus φ ψ.
-Proof.
-  intros Hle Hφ Hψ.
-  eapply res_models_plus_intro; [| exact Hle | exact Hφ | exact Hψ].
-  unfold formula_scoped_in_world, formula_fv.
-  cbn [formula_lvars].
-  rewrite lvars_fv_union.
-  pose proof (raw_le_dom _ _ Hle) as Hdom_sum.
-  pose proof (res_models_fuel_scoped _ _ _ Hφ) as Hscopeφ.
-  pose proof (res_models_fuel_scoped _ _ _ Hψ) as Hscopeψ.
-  unfold formula_scoped_in_world in Hscopeφ, Hscopeψ.
-  assert (Hscopeψ_m1 : lvars_fv (formula_lvars ψ) ⊆ world_dom (m1 : WorldT)).
-  {
-    change (world_dom (m1 : WorldT) = world_dom (m2 : WorldT)) in Hdef.
-    rewrite Hdef. exact Hscopeψ.
-  }
-  intros z Hz.
-  apply elem_of_union in Hz as [Hz | Hz].
-  - apply Hdom_sum. simpl. apply Hscopeφ. exact Hz.
-  - apply Hdom_sum. simpl. apply Hscopeψ_m1. exact Hz.
-Qed.
-
 Lemma res_models_plus_map
     (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
-  formula_scoped_in_world m (FPlus φ2 ψ2) →
   (∀ m', m' ⊨ φ1 → m' ⊨ φ2) →
   (∀ m', m' ⊨ ψ1 → m' ⊨ ψ2) →
   m ⊨ FPlus φ1 ψ1 →
   m ⊨ FPlus φ2 ψ2.
 Proof.
-  unfold res_models.
-  simpl. intros Hscope Hφ Hψ [_ Hplus]. split; [exact Hscope |].
-  destruct Hplus as [m1 [m2 [Hdef [Hle [Hm1 Hm2]]]]].
-  exists m1, m2, Hdef. split; [exact Hle |]. split.
-  - assert (Hm1_model : m1 ⊨ φ1).
-    { unfold res_models. models_fuel_irrel Hm1. }
-    pose proof (Hφ m1 Hm1_model) as Hm1'.
-    models_fuel_irrel Hm1'.
-  - assert (Hm2_model : m2 ⊨ ψ1).
-    { unfold res_models. models_fuel_irrel Hm2. }
-    pose proof (Hψ m2 Hm2_model) as Hm2'.
-    models_fuel_irrel Hm2'.
+  intros Hφ Hψ Hplus.
+  apply res_models_plus_iff in Hplus as [m1 [m2 [Hdef [Hle [Hm1 Hm2]]]]].
+  eapply res_models_plus_intro; eauto.
 Qed.
 
 Lemma res_models_atom_intro (m : WfWorldT) (q : LogicQualifierT) :
-  formula_scoped_in_world m (FAtom q) →
   logic_qualifier_denote q m →
   m ⊨ FAtom q.
 Proof.
-  unfold res_models.
-  simpl. intros Hscope Hq. split; [exact Hscope | exact Hq].
+  unfold res_models. simpl. intros Hq. split; [| exact Hq].
+  destruct q as [D P]. simpl in Hq |- *.
+  destruct Hq as [Hlc [Hsub HP]]. exact Hsub.
 Qed.
 
 Lemma res_models_over_intro_same (m : WfWorldT) (φ : FormulaT) :
@@ -268,28 +266,25 @@ Qed.
 Lemma res_models_resource_atom_intro
     (m : WfWorldT) (D : lvset)
     (P : LWorldOn (V := V) D → Prop) :
-  formula_scoped_in_world m (FResourceAtom D P) →
   logic_qualifier_denote (lqual D P) m →
   m ⊨ FResourceAtom D P.
 Proof.
-  intros Hscope Hden.
-  eapply res_models_atom_intro; [exact Hscope | exact Hden].
+  intros Hden.
+  eapply res_models_atom_intro. exact Hden.
 Qed.
 
 Lemma res_models_resource_atom_witness_intro
     (m m0 : WfWorldT) (D : lvset)
     (P : LWorldOn (V := V) D → Prop) :
-  formula_scoped_in_world m (FResourceAtom D P) →
-  formula_scoped_in_world m0 (FResourceAtom D P) →
   logic_qualifier_denote (lqual D P) m0 →
   m0 ⊑ m →
   m ⊨ FResourceAtom D P.
 Proof.
-  intros Hscope Hscope0 Hden Hle.
-  eapply res_models_resource_atom_intro; [exact Hscope |].
+  intros Hden Hle.
+  eapply res_models_resource_atom_intro.
   eapply logic_qualifier_denote_mono.
   - exact Hden.
-  - exact Hscope0.
+  - destruct Hden as [_ [Hsub _]]. exact Hsub.
   - exact Hle.
 Qed.
 
@@ -957,24 +952,6 @@ Proof.
     rewrite (input_widen_out _ _ Hwid). exact HFout.
 Qed.
 
-Lemma res_models_forall_map
-    (m : WfWorldT) (φ ψ : FormulaT) :
-  formula_fv φ = formula_fv ψ →
-  formula_scoped_in_world m (FForall ψ) →
-  (∃ L : aset,
-    ∀ y : atom, y ∉ L →
-    ∀ (F : fiber_extension (V := V)) (my : WfWorldT),
-      ext_in F = formula_fv φ →
-      ext_out F = {[y]} →
-      res_extend_by m F my →
-      my ⊨ formula_open 0 y φ →
-      my ⊨ formula_open 0 y ψ) →
-  m ⊨ FForall φ →
-  m ⊨ FForall ψ.
-Proof.
-  apply res_models_forall_map_same_fv.
-Qed.
-
 Lemma res_models_forall_congr_same_fv
     (m : WfWorldT) (φ ψ : FormulaT) :
   formula_fv φ = formula_fv ψ →
@@ -1371,4 +1348,3 @@ Proof.
 Qed.
 
 End FormulaConnectives.
-

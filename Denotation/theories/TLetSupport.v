@@ -1142,13 +1142,11 @@ Proof.
       * intros Hτ2. eapply IH; eauto.
       * exact Hbody.
     + solve_tapp_tlete_guard_assoc.
-    + pose proof (res_models_fuel_scoped _ _ _ Hbody) as Hscope.
-      apply res_models_plus_iff in Hbody as
+    + apply res_models_plus_iff in Hbody as
         [m1 [m2 [Hdef [Hle [H1 H2]]]]].
-      * eapply res_models_plus_intro_from_models; [exact Hle| |].
-        -- eapply IH; eauto.
-        -- eapply IH; eauto.
-      * exact Hscope.
+      eapply res_models_plus_intro; [exact Hle| |].
+      * eapply IH; eauto.
+      * eapply IH; eauto.
     + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_full_world_map m φsrc)
@@ -1621,13 +1619,11 @@ Proof.
       * intros Hτ2. eapply IH; eauto.
       * exact Hbody.
     + solve_tapp_tlete_guard_assoc.
-    + pose proof (res_models_fuel_scoped _ _ _ Hbody) as Hscope.
-      apply res_models_plus_iff in Hbody as
+    + apply res_models_plus_iff in Hbody as
         [m1 [m2 [Hdef [Hle [H1 H2]]]]].
-      * eapply res_models_plus_intro_from_models; [exact Hle| |].
-        -- eapply IH; eauto.
-        -- eapply IH; eauto.
-      * exact Hscope.
+      eapply res_models_plus_intro; [exact Hle| |].
+      * eapply IH; eauto.
+      * eapply IH; eauto.
     + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_full_world_map m φsrc)

@@ -641,30 +641,7 @@ Proof.
                      (erase_ty (cty_open k y (CTSum τ1 τ2))))
                    (expr_total_formula (open_tm k (vfvar y) e))))).
            { repeat rewrite res_models_and_iff. exact Hguard. }
-           eapply res_models_plus_map; [| | | exact Hbody].
-           ++ apply formula_scoped_in_world_from_formula_fv.
-              rewrite formula_fv_plus.
-              assert (Hscope1 :
-                formula_fv
-                  (denot_ty_lvar_gas gas (lty_env_open_one k y Σ)
-                    (cty_open k y τ1) (open_tm k (vfvar y) e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
-                  [| exact HguardF].
-                unfold context_ty_lvars. cbn [context_ty_lvars_at]. set_solver.
-              }
-              assert (Hscope2 :
-                formula_fv
-                  (denot_ty_lvar_gas gas (lty_env_open_one k y Σ)
-                    (cty_open k y τ2) (open_tm k (vfvar y) e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
-                  [| exact HguardF].
-                unfold context_ty_lvars. cbn [context_ty_lvars_at]. set_solver.
-              }
-              set_solver.
+           eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj1 (IH k Σ τ1 e m' HΣ Hy
                 ltac:(unfold fv_cty, context_ty_lvars in Hτ;
@@ -696,64 +673,7 @@ Proof.
                      (erase_ty (cty_open k y (CTSum τ1 τ2))))
                    (expr_total_formula (open_tm k (vfvar y) e))))).
            { repeat rewrite res_models_and_iff. exact Hguard. }
-           eapply res_models_plus_map; [| | | exact Hbody].
-           ++ apply formula_scoped_in_world_from_formula_fv.
-              rewrite formula_fv_plus.
-              assert (Hscope :
-                fv_tm (open_tm k (vfvar y) e) ∪
-                fv_cty (cty_open k y (CTSum τ1 τ2)) ⊆
-                world_dom (m : WorldT)).
-              {
-                apply (denot_guard_term_type_fv_scope
-                  (lty_env_open_one k y Σ)
-                  (cty_open k y (CTSum τ1 τ2))
-                  (open_tm k (vfvar y) e) m HguardF).
-              }
-              assert (Hscope1 :
-                formula_fv
-                  (formula_open k y
-                    (denot_ty_lvar_gas gas Σ τ1 e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                transitivity
-                  (fv_tm (open_tm k (vfvar y) e) ∪
-                   fv_cty (cty_open k y τ1)).
-                - apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
-                  + exact Hy.
-                  + unfold fv_cty, context_ty_lvars in Hτ |- *.
-                    cbn [context_ty_lvars_at] in Hτ.
-                    rewrite lvars_fv_union in Hτ. set_solver.
-                - intros a Ha. apply Hscope.
-                  apply elem_of_union in Ha as [Ha|Ha].
-                  + apply elem_of_union_l. exact Ha.
-                  + apply elem_of_union_r.
-                    unfold fv_cty, context_ty_lvars in Ha |- *.
-                    cbn [cty_open context_ty_lvars_at].
-                    rewrite lvars_fv_union. apply elem_of_union_l. exact Ha.
-              }
-              assert (Hscope2 :
-                formula_fv
-                  (formula_open k y
-                    (denot_ty_lvar_gas gas Σ τ2 e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                transitivity
-                  (fv_tm (open_tm k (vfvar y) e) ∪
-                   fv_cty (cty_open k y τ2)).
-                - apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
-                  + exact Hy.
-                  + unfold fv_cty, context_ty_lvars in Hτ |- *.
-                    cbn [context_ty_lvars_at] in Hτ.
-                    rewrite lvars_fv_union in Hτ. set_solver.
-                - intros a Ha. apply Hscope.
-                  apply elem_of_union in Ha as [Ha|Ha].
-                  + apply elem_of_union_l. exact Ha.
-                  + apply elem_of_union_r.
-                    unfold fv_cty, context_ty_lvars in Ha |- *.
-                    cbn [cty_open context_ty_lvars_at].
-                    rewrite lvars_fv_union. apply elem_of_union_r. exact Ha.
-              }
-              set_solver.
+           eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj2 (IH k Σ τ1 e m' HΣ Hy
                 ltac:(unfold fv_cty, context_ty_lvars in Hτ;
