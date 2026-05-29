@@ -9,7 +9,7 @@
     lives in this layer. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterfaceExtension.
+From ContextAlgebra Require Import ResourceInterface.
 From ContextLogic Require Import FormulaScope.
 From ContextTypeLanguage Require Export Sugar.
 From Denotation Require Export Context.

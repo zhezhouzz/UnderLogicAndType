@@ -1,3 +1,8 @@
+From ContextBase Require Import Prelude LogicVar BaseTactics.
+From ContextStore Require Import Store.
+From ContextAlgebra Require Import ResourceCore ResourceAlgebra ResourceExtension ResourceInterface.
+From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon Logic.ProofIrrelevance.
+
 (** * Compatibility wrappers for resource extensions
 
     The core extension interface is relation-shaped: a fiber extension relates
@@ -5,13 +10,8 @@
     old proof-facing names available while routing all semantics through that
     relation-shaped core. *)
 
-From ContextBase Require Import Prelude LogicVar.
-From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceCore ResourceKeyAction ResourceRestrict
-  ResourceAlgebraBase ResourceAlgebraOrder ResourceAlgebraPullback ResourceAlgebraSum ResourceAlgebraLaws ResourceExtensionCore ResourceExtensionEquiv ResourceExtensionDerived ResourceInterfaceExtension.
-From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon.
 
-Section ResourceExtensionCompat.
+Section ResourceCompat.
 
 Context {V : Type} `{ValueSig V}.
 
@@ -576,7 +576,7 @@ Proof.
     exact Hny'.
 Qed.
 
-End ResourceExtensionCompat.
+End ResourceCompat.
 
 Notation "F '~>i' F'" := (fiber_extension_input_widen_to F F')
   (at level 70).

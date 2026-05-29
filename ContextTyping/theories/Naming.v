@@ -7,7 +7,7 @@
 From CoreLang Require Import Instantiation InstantiationProps.
 From ContextTyping Require Export Typing.
 From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceInterfaceExtension.
+From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import SyntaxOpen.
 
 (** ** Fresh representatives for tlet body binders *)

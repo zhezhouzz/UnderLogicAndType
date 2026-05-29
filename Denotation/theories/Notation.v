@@ -5,7 +5,7 @@
 
 From LocallyNameless Require Export Classes Tactics.
 From CoreLang Require Export Syntax Sugar BasicTypingProps.
-From ContextAlgebra Require Export ResourceInterfaceExtension ResourceExtensionCompat ResourceExtensionCore.
+From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceExtension.
 From ContextLogic Require Export FormulaSemantics.
 From ContextTypeLanguage Require Export Interface.
 From ContextBasicDenotation Require Import Notation.

@@ -1,13 +1,14 @@
-(** * ContextAlgebra.ResourceNotation
+From ContextBase Require Import Prelude LogicVar BaseTactics.
+From ContextStore Require Import Store.
+From ContextAlgebra Require Import ResourceCore ResourceInterface ResourceCompat.
+
+(** * ContextAlgebra.ResourceSurface
 
     Proof-facing notation for resource algebra operations.
 
     The definitions remain in the resource interface files.  This file only adds a compact
     surface syntax, with explicit-proof variants next to proof-inferred ones. *)
 
-From ContextBase Require Import Prelude LogicVar.
-From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
 
 Notation "m1 '×[' Hc ']' m2" :=
   (res_product m1 m2 Hc)
@@ -39,7 +40,7 @@ Notation "wfib '∈ᶠ' 'Fiber(' w ',' X ',' σ ')'" :=
   (at level 70, w at level 0, X at level 0, σ at level 0,
    format "wfib  ∈ᶠ  Fiber( w ,  X ,  σ )").
 
-Module ResourceNotationSmoke.
+Module ResourceSurfaceSmoke.
   Section Smoke.
     Context {V : Type} `{ValueSig V}.
     Variables m n : WfWorld (V := V).
@@ -63,4 +64,47 @@ Module ResourceNotationSmoke.
       res_fiber_from_projection m (world_dom (m : World (V := V))) σ wfib :=
       eq_refl.
   End Smoke.
-End ResourceNotationSmoke.
+End ResourceSurfaceSmoke.
+
+
+(** * Resource proof automation
+
+    This file keeps resource-specific Ltac outside [ContextStore].  The
+    prelude may know about polymorphic stores, but it should not depend on
+    worlds or the algebraic resource order. *)
+
+
+Ltac resource_world_norm :=
+  cbn [world_dom world_stores raw_unit raw_product raw_sum raw_restrict raw_fiber] in *.
+
+Ltac resource_restrict_norm :=
+  repeat match goal with
+  | H : context[res_restrict (res_restrict ?w ?X) ?Y] |- _ =>
+      rewrite (res_restrict_restrict_eq w X Y) in H
+  | |- context[res_restrict (res_restrict ?w ?X) ?Y] =>
+      rewrite (res_restrict_restrict_eq w X Y)
+  | Hle : ?m ⊑ ?n, H : context[res_restrict ?n (world_dom ?m)] |- _ =>
+      rewrite (res_restrict_eq_of_le m n Hle) in H
+  | Hle : ?m ⊑ ?n |- context[res_restrict ?n (world_dom ?m)] =>
+      rewrite (res_restrict_eq_of_le m n Hle)
+  end.
+
+Ltac resource_store_dom_solver :=
+  try solve
+  [ better_store_solver
+  | better_set_solver
+  | eapply wfworldA_store_dom_subset; [eassumption | better_set_solver]
+  ].
+
+Ltac resource_norm :=
+  repeat progress (resource_world_norm; store_normalize; resource_restrict_norm).
+
+Ltac resource_solver :=
+  resource_norm;
+  try solve
+    [ better_store_solver
+    | resource_store_dom_solver
+    | better_set_solver
+    | eauto 6
+    | reflexivity
+    | congruence ].

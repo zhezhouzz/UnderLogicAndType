@@ -5,7 +5,7 @@
     continuation/reduction helper stack. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCore.
+From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextTyping Require Export RegularDenotation.
 From ContextTyping Require Import Naming.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier BasicTypingFormula.

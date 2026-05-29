@@ -4,7 +4,7 @@
     store-free semantics.  The old forall-by-extension equivalence lemmas are
     intentionally absent: forall is now defined directly by extension. *)
 
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
+From ContextAlgebra Require Import ResourceInterface ResourceCompat.
 From ContextLogic Require Import FormulaSemantics FormulaConnectivesCore FormulaImpl FormulaWand FormulaForall.
 
 Section FormulaWorldExtension.

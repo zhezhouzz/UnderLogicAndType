@@ -5,7 +5,7 @@
     broad old [Soundness.v]/[SoundnessCommon.v] surface is being retired. *)
 
 From CoreLang Require Import BasicTyping.
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCore.
+From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier BasicTypingFormula.
 From Denotation Require Import ContextTypeDenotationSaturate.
 From ContextTyping Require Export TLetDenotation.

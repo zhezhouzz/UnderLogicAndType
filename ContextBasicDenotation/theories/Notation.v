@@ -9,8 +9,7 @@
 From Stdlib Require Export Logic.ClassicalDescription Logic.ClassicalEpsilon.
 From CoreLang Require Export BasicTyping BasicTypingProps Instantiation
   InstantiationProps LocallyNamelessProps OperationalProps SmallStep Sugar.
-From ContextAlgebra Require Export ResourceInterfaceExtension ResourceExtensionCompat ResourceCore ResourceExtensionCore
-  ResourceKeyAction.
+From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceCore ResourceExtension.
 From ContextLogic Require Export FormulaSemantics.
 From ContextTypeLanguage Require Export Interface.
 

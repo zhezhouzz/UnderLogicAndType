@@ -71,11 +71,11 @@ Proof.
 	    pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
 	    pose proof (f_equal world_dom Hle) as Hdomle.
 	    change (world_dom (m : World) =
-	      worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+	      worldA_dom (ResourceCore.rawA_restrict (n : World)
 	        (world_dom (m : World)))) in Hdomle.
 	    change (storeA_restrict σ (world_dom (m : World)) =
 	      storeA_restrict σ
-	        (worldA_dom (ResourceRestrict.rawA_restrict (n : World)
+	        (worldA_dom (ResourceCore.rawA_restrict (n : World)
 	          (world_dom (m : World))) : aset)).
 	    rewrite <- Hdomle. reflexivity.
   }

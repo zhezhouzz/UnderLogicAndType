@@ -1,5 +1,5 @@
 From ContextBase Require Import Prelude LogicVar.
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
+From ContextAlgebra Require Import ResourceInterface ResourceCompat.
 
 (** * Context Algebra  (Definitions 1.6)
 

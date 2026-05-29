@@ -25,23 +25,11 @@ ContextStore/StoreInterface.v
 ContextStore/Store.v
 
 ContextAlgebra/theories/ResourceCore.v
-ContextAlgebra/theories/ResourceKeyAction.v
-ContextAlgebra/theories/ResourceRestrict.v
-ContextAlgebra/theories/ResourceAlgebraBase.v
-ContextAlgebra/theories/ResourceAlgebraOrder.v
-ContextAlgebra/theories/ResourceAlgebraPullback.v
-ContextAlgebra/theories/ResourceAlgebraSum.v
-ContextAlgebra/theories/ResourceAlgebraLaws.v
-ContextAlgebra/theories/ResourceExtensionCore.v
-ContextAlgebra/theories/ResourceExtensionEquiv.v
-ContextAlgebra/theories/ResourceExtensionDerived.v
-ContextAlgebra/theories/ResourceInterfaceCore.v
-ContextAlgebra/theories/ResourceInterfaceBasic.v
-ContextAlgebra/theories/ResourceInterfaceOrder.v
-ContextAlgebra/theories/ResourceInterfaceExtension.v
-ContextAlgebra/theories/ResourceExtensionCompat.v
-ContextAlgebra/theories/ResourceNotation.v
-ContextAlgebra/theories/ResourceTactics.v
+ContextAlgebra/theories/ResourceAlgebra.v
+ContextAlgebra/theories/ResourceExtension.v
+ContextAlgebra/theories/ResourceInterface.v
+ContextAlgebra/theories/ResourceCompat.v
+ContextAlgebra/theories/ResourceSurface.v
 ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/LogicQualifier.v

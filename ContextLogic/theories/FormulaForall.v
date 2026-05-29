@@ -4,7 +4,7 @@
     semantics. *)
 
 From ContextLogic Require Import FormulaSemantics FormulaTactics FormulaConnectivesCore FormulaImpl FormulaWand.
-From ContextAlgebra Require Import ResourceInterfaceExtension ResourceExtensionCompat.
+From ContextAlgebra Require Import ResourceInterface ResourceCompat.
 
 Section FormulaForall.
 
