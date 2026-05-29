@@ -67,6 +67,31 @@ Proof.
     symmetry. rewrite lvars_open_union. reflexivity.
 Qed.
 
+Lemma formula_lvars_fv_basic_world_formula Σ :
+  lvars_fv (formula_lvars (basic_world_formula Σ)) = lvars_fv (dom Σ).
+Proof.
+  change (lvars_fv (formula_lvars (basic_world_formula Σ)))
+    with (formula_fv (basic_world_formula Σ)).
+  apply formula_fv_basic_world_formula.
+Qed.
+
+Lemma formula_lvars_fv_expr_result_formula e x :
+  lvars_fv (formula_lvars (expr_result_formula e x)) =
+  lvars_fv (tm_lvars e ∪ {[x]}).
+Proof.
+  change (lvars_fv (formula_lvars (expr_result_formula e x)))
+    with (formula_fv (expr_result_formula e x)).
+  apply formula_fv_expr_result_formula.
+Qed.
+
+Lemma formula_lvars_fv_type_qualifier_formula φ :
+  lvars_fv (formula_lvars (type_qualifier_formula φ)) = qual_dom φ.
+Proof.
+  change (lvars_fv (formula_lvars (type_qualifier_formula φ)))
+    with (formula_fv (type_qualifier_formula φ)).
+  apply formula_fv_type_qualifier_formula.
+Qed.
+
 Ltac rewrite_tm_support :=
   repeat match goal with
   | |- context [lvars_at_depth ?d (tm_lvars ?e)] =>

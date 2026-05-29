@@ -178,6 +178,44 @@ Proof.
     apply denot_relevant_lvars_insert_fresh; assumption.
 Qed.
 
+Lemma denot_ty_lvar_gas_zero_of_guard
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))) ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e.
+Proof.
+  intros Hguard.
+  cbn [denot_ty_lvar_gas].
+  rewrite res_models_and_iff. split.
+  - exact Hguard.
+  - cbn [res_models res_models_fuel formula_measure].
+    split; [apply formula_scoped_true_iff; exact I | exact I].
+Qed.
+
+Lemma denot_ty_lvar_gas_guard_of_zero
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))).
+Proof.
+  intros Hzero.
+  cbn [denot_ty_lvar_gas] in Hzero.
+  rewrite res_models_and_iff in Hzero.
+  exact (proj1 Hzero).
+Qed.
+
 Lemma denot_ty_lvar_gas_insert_fresh_lty_env
     gas (Σ : lty_env) τ e x T (m : WfWorldT) :
   LVFree x ∉ dom Σ ->
@@ -312,6 +350,38 @@ Proof.
   - change (lvars_fv (dom (<[LVFree x := T]> (Σ : gmap logic_var ty))) ∪
       fv_tm e ∪ fv_cty τ ⊆ lvars_fv (dom Σ) ∪ fv_tm e ∪ fv_cty τ ∪ {[x]}).
     rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+    set_solver.
+Qed.
+
+Lemma formula_fv_denot_ty_lvar_gas_scope_from_guard
+    gas Σ τsmall τbig e (m : WfWorldT) :
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τbig e) τbig)
+    (FAnd (basic_world_formula (denot_relevant_env Σ τbig e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τbig e) e
+          (erase_ty τbig))
+        (expr_total_formula e))) ->
+  formula_fv (denot_ty_lvar_gas gas Σ τsmall e) ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hτ Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [_ Htotal_e]]].
+  transitivity (fv_tm e ∪ fv_cty τsmall).
+  - apply formula_fv_denot_ty_lvar_gas_subset_relevant.
+  - pose proof (res_models_fuel_scoped _ _ _ Htotal_e) as Hscope_e.
+    unfold formula_scoped_in_world in Hscope_e.
+    normalize_denotation_formula_fv_in Hscope_e.
+    pose proof (context_ty_wf_formula_fv_cty_subset
+      (denot_relevant_env Σ τbig e) τbig m Hwf) as Hτbig_fv.
+    pose proof (proj1 (basic_world_formula_models_iff
+      (denot_relevant_env Σ τbig e) m) Hworld) as [_ [Hworld_dom _]].
+    assert (Hτsmall_fv : fv_cty τsmall ⊆ fv_cty τbig).
+    {
+      rewrite <- !context_ty_lvars_fv.
+      apply lvars_fv_mono. exact Hτ.
+    }
     set_solver.
 Qed.
 
