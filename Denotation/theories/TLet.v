@@ -26,6 +26,15 @@ Proof.
   apply tlet_intro_denotation_gas_zero_support.
 Qed.
 
+Ltac pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x τ
+    HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard :=
+  let Hzero := fresh "Hm_zero" in
+  pose proof (tlet_intro_denotation_gas_zero
+    Σ T1 e1 e2 m mx Fx x τ
+    HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
+    ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hzero;
+  pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hzero) as Hguard_m.
+
 (** [tlet_intro_ih_sigma] is the reusable induction-hypothesis shape that the
     structural cases, especially [CTArrow], should consume.  It says: if [e1]
     is total and well-typed in the base lvar context, and evaluating [e1]
@@ -67,19 +76,7 @@ Proof.
 		      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
 		      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTOver b φ))
 		        by tlet_support_solver.
-		      pose proof (tlet_intro_denotation_gas_zero
-		        Σ T1 e1 e2 m mx Fx x (CTOver b φ)
-		        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-		        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
-		      pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-		        as Hguard_m.
-		      assert (Hdenot_scope_m :
-		        formula_scoped_in_world m
-		          (denot_ty_lvar_gas (S gas) Σ (CTOver b φ) (tlete e1 e2))).
-		      {
-		        eapply denot_ty_lvar_gas_scope_from_relevant_guard.
-		        exact Hguard_m.
-		      }
+		      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTOver b φ) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
 		      assert (Hbody_scope_m :
 		        formula_scoped_in_world m
 		          (FForall
@@ -90,23 +87,18 @@ Proof.
 		                  (tm_shift 0 (tlete e1 e2)) (LVBound 0))
 		                (FFibVars (qual_vars φ ∖ {[LVBound 0]})
 		                  (FOver (type_qualifier_formula φ))))))).
-		      {
-		        cbn [denot_ty_lvar_gas] in Hdenot_scope_m.
-		        eapply formula_scoped_and_r. exact Hdenot_scope_m.
-		      }
+		      { solve_denot_ty_lvar_body_scope_from_guard_at
+		          (S gas) Σ (CTOver b φ) (tlete e1 e2) Hguard_m. }
 			      split.
-			      * repeat rewrite res_models_and_iff in Hguard_m.
-			        exact Hguard_m.
+			      * solve_denot_guard_goal Hguard_m.
 				      * refine (res_models_forall_ext_transport
 				          m mx Fx _ _ Hbody_scope_m Hext _ Hmx_over_body).
 				        exists (lvars_fv (dom Σ) ∪ fv_tm e1 ∪ fv_tm e2 ∪
 				           qual_dom φ ∪ {[x]}).
 				           intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 			           normalize_formula_open_syntax.
-		           pose proof (formula_scoped_forall_open_res_le
-		             m my y _ Hbody_scope_m Hle
-		             ltac:(rewrite Hdom_my; set_solver))
-		             as Hopened_scope_my.
+		           pose_formula_scoped_forall_open_from_dom
+		             m my y Hbody_scope_m Hle Hdom_my.
 		           normalize_formula_open_syntax.
 			           eapply res_models_impl_intro.
 			           { exact Hopened_scope_my. }
@@ -171,19 +163,7 @@ Proof.
 		      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
 		      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTUnder b φ))
 		        by tlet_support_solver.
-		      pose proof (tlet_intro_denotation_gas_zero
-		        Σ T1 e1 e2 m mx Fx x (CTUnder b φ)
-		        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-		        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
-		      pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-		        as Hguard_m.
-		      assert (Hdenot_scope_m :
-		        formula_scoped_in_world m
-		          (denot_ty_lvar_gas (S gas) Σ (CTUnder b φ) (tlete e1 e2))).
-		      {
-		        eapply denot_ty_lvar_gas_scope_from_relevant_guard.
-		        exact Hguard_m.
-		      }
+		      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTUnder b φ) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
 		      assert (Hbody_scope_m :
 		        formula_scoped_in_world m
 		          (FForall
@@ -194,23 +174,18 @@ Proof.
 		                  (tm_shift 0 (tlete e1 e2)) (LVBound 0))
 		                (FFibVars (qual_vars φ ∖ {[LVBound 0]})
 		                  (FUnder (type_qualifier_formula φ))))))).
-		      {
-		        cbn [denot_ty_lvar_gas] in Hdenot_scope_m.
-		        eapply formula_scoped_and_r. exact Hdenot_scope_m.
-		      }
+		      { solve_denot_ty_lvar_body_scope_from_guard_at
+		          (S gas) Σ (CTUnder b φ) (tlete e1 e2) Hguard_m. }
 		      split.
-		      * repeat rewrite res_models_and_iff in Hguard_m.
-		        exact Hguard_m.
+		      * solve_denot_guard_goal Hguard_m.
 		      * refine (res_models_forall_ext_transport
 		          m mx Fx _ _ Hbody_scope_m Hext _ Hmx_under_body).
 		        exists (lvars_fv (dom Σ) ∪ fv_tm e1 ∪ fv_tm e2 ∪
 		           qual_dom φ ∪ {[x]}).
 		        intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 		        normalize_formula_open_syntax.
-		        pose proof (formula_scoped_forall_open_res_le
-		          m my y _ Hbody_scope_m Hle
-		          ltac:(rewrite Hdom_my; set_solver))
-		          as Hopened_scope_my.
+		        pose_formula_scoped_forall_open_from_dom
+		          m my y Hbody_scope_m Hle Hdom_my.
 		        normalize_formula_open_syntax.
 		        eapply res_models_impl_intro.
 		        { exact Hopened_scope_my. }
@@ -274,15 +249,9 @@ Proof.
       assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
       assert (Hxτ : LVFree x ∉ context_ty_lvars (CTInter τ1 τ2))
         by tlet_support_solver.
-      pose proof (tlet_intro_denotation_gas_zero
-        Σ T1 e1 e2 m mx Fx x (CTInter τ1 τ2)
-        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
+      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTInter τ1 τ2) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
       split.
-      * pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-          as Hguard_m.
-        repeat rewrite res_models_and_iff in Hguard_m.
-        exact Hguard_m.
+      * solve_denot_guard_goal Hguard_m.
       * destruct Hmx_inter as [Hmx1 Hmx2].
         assert (Hm1 : m ⊨ denot_ty_lvar_gas gas Σ τ1 (tlete e1 e2)).
         {
@@ -333,15 +302,9 @@ Proof.
       assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
       assert (Hxτ : LVFree x ∉ context_ty_lvars (CTUnion τ1 τ2))
         by tlet_support_solver.
-      pose proof (tlet_intro_denotation_gas_zero
-        Σ T1 e1 e2 m mx Fx x (CTUnion τ1 τ2)
-        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
-      pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-        as Hguard_m.
+      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTUnion τ1 τ2) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
       split.
-      * repeat rewrite res_models_and_iff in Hguard_m.
-        exact Hguard_m.
+      * solve_denot_guard_goal Hguard_m.
       * eapply (res_models_or_transport_between_worlds
           mx m
           (denot_ty_lvar_gas gas (<[LVFree x := T1]> Σ) τ1 (e2 ^^ x))
@@ -399,15 +362,9 @@ Proof.
 	      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
 	      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTSum τ1 τ2))
 	        by tlet_support_solver.
-	      pose proof (tlet_intro_denotation_gas_zero
-	        Σ T1 e1 e2 m mx Fx x (CTSum τ1 τ2)
-	        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-	        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
-	      pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-	        as Hguard_m.
+	      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTSum τ1 τ2) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
 	      split.
-	      * repeat rewrite res_models_and_iff in Hguard_m.
-	        exact Hguard_m.
+	      * solve_denot_guard_goal Hguard_m.
 	      * eapply (res_models_plus_extend_pullback_agree_on
 	          m Fx mx
 	          (denot_ty_lvar_gas gas (<[LVFree x := T1]> Σ)
@@ -470,20 +427,7 @@ Proof.
 	      assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
 	      assert (Hxτ : LVFree x ∉ context_ty_lvars (CTArrow τx τr))
 	        by tlet_support_solver.
-	      pose proof (tlet_intro_denotation_gas_zero
-	        Σ T1 e1 e2 m mx Fx x (CTArrow τx τr)
-	        HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
-	        ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard)) as Hm_zero.
-	      pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
-	        as Hguard_m.
-	      assert (Hdenot_scope_m :
-	        formula_scoped_in_world m
-	          (denot_ty_lvar_gas (S gas) Σ (CTArrow τx τr)
-	            (tlete e1 e2))).
-	      {
-	        eapply denot_ty_lvar_gas_scope_from_relevant_guard.
-	        exact Hguard_m.
-	      }
+	      pose_tlet_guard_from_mx_guard_at Σ T1 e1 e2 m mx Fx x (CTArrow τx τr) HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_guard.
 	      assert (Hbody_scope_m :
 	        formula_scoped_in_world m
 	          (FForall
@@ -505,23 +449,18 @@ Proof.
 	                  τr
 	                  (tapp_tm (tm_shift 0 (tlete e1 e2))
 	                    (vbvar 0))))))).
-	      {
-	        cbn [denot_ty_lvar_gas] in Hdenot_scope_m.
-	        eapply formula_scoped_and_r. exact Hdenot_scope_m.
-	      }
+	      { solve_denot_ty_lvar_body_scope_from_guard_at
+	          (S gas) Σ (CTArrow τx τr) (tlete e1 e2) Hguard_m. }
 	      split.
-	      * repeat rewrite res_models_and_iff in Hguard_m.
-	        exact Hguard_m.
+	      * solve_denot_guard_goal Hguard_m.
 	      * refine (res_models_forall_ext_transport
 	          m mx Fx _ _ Hbody_scope_m Hext _ Hmx_arrow_body).
 	        exists (lvars_fv (dom Σ) ∪ fv_tm e1 ∪ fv_tm e2 ∪
 	             fv_cty τx ∪ fv_cty τr ∪ {[x]}).
 	        intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 	        normalize_formula_open_syntax.
-	        pose proof (formula_scoped_forall_open_res_le
-	          m my y _ Hbody_scope_m Hle
-	          ltac:(rewrite Hdom_my; set_solver))
-	          as Hopened_scope_my.
+	        pose_formula_scoped_forall_open_from_dom
+	          m my y Hbody_scope_m Hle Hdom_my.
 	        normalize_formula_open_syntax.
 	        eapply res_models_impl_intro.
 	        { exact Hopened_scope_my. }

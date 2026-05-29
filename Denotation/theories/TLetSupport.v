@@ -1646,6 +1646,24 @@ Ltac solve_denot_ty_lvar_gas_zero_from_guard Hguard :=
   repeat rewrite res_models_and_iff;
   exact Hguard.
 
+Ltac solve_denot_ty_lvar_body_scope_from_guard_at gas Σ τ e Hguard :=
+  let Hscope := fresh "Hdenot_scope" in
+  pose proof (denot_ty_lvar_gas_scope_from_relevant_guard
+    gas Σ τ e _ Hguard) as Hscope;
+  cbn [denot_ty_lvar_gas] in Hscope;
+  eapply formula_scoped_and_r;
+  exact Hscope.
+
+Ltac solve_denot_guard_goal Hguard :=
+  repeat rewrite res_models_and_iff in Hguard;
+  exact Hguard.
+
+Ltac pose_formula_scoped_forall_open_from_dom m n y Hscope Hle Hdom :=
+  let Hopened := fresh "Hopened_scope_my" in
+  pose proof (formula_scoped_forall_open_res_le
+    m n y _ Hscope Hle
+    ltac:(rewrite Hdom; set_solver)) as Hopened.
+
 Definition denot_wand_body_formula
     (gas : nat) (Σg : lty_env) (τx τr : context_ty) (e : tm) : FormulaT :=
   let Σx := typed_lty_env_bind Σg (erase_ty τx) in
@@ -3354,13 +3372,6 @@ Proof.
     as Hm_zero.
   pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
     as Hguard_m.
-  assert (Hdenot_scope_m :
-    formula_scoped_in_world m
-      (denot_ty_lvar_gas (S gas) Σ (CTWand τx τr) (tlete e1 e2))).
-  {
-    eapply denot_ty_lvar_gas_scope_from_relevant_guard.
-    exact Hguard_m.
-  }
   assert (Hbody_scope_m :
     formula_scoped_in_world m
       (FForall
@@ -3378,13 +3389,10 @@ Proof.
                 (erase_ty τx))
               τr
               (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0))))))).
-  {
-    cbn [denot_ty_lvar_gas] in Hdenot_scope_m.
-    eapply formula_scoped_and_r. exact Hdenot_scope_m.
-  }
+  { solve_denot_ty_lvar_body_scope_from_guard_at
+      (S gas) Σ (CTWand τx τr) (tlete e1 e2) Hguard_m. }
   split.
-  - repeat rewrite res_models_and_iff in Hguard_m.
-    exact Hguard_m.
+  - solve_denot_guard_goal Hguard_m.
 	- refine (res_models_forall_ext_transport
 	    m mx Fx _ _ Hbody_scope_m Hext _ Hmx_wand_body).
 	  exists (lvars_fv (dom Σ) ∪ fv_tm e1 ∪ fv_tm e2 ∪
