@@ -315,6 +315,46 @@ Proof.
     set_solver.
 Qed.
 
+Lemma denot_ty_lvar_guard_wfworld_closed_on_term
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))) ->
+  wfworld_closed_on (fv_tm e) m.
+Proof.
+  intros Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic _]]].
+  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term; eauto.
+Qed.
+
+Lemma denot_ty_lvar_guard_wfworld_closed_on_term_le
+    (Σ : lty_env) τ e (m n : WfWorldT) :
+  m ⊑ n ->
+  m ⊨ FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))) ->
+  wfworld_closed_on (fv_tm e) n.
+Proof.
+  intros Hle Hguard.
+  eapply wfworld_closed_on_le.
+  - repeat rewrite res_models_and_iff in Hguard.
+    destruct Hguard as [_ [_ [_ Htotal]]].
+    pose proof (res_models_fuel_scoped _ _ _ Htotal) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    normalize_denotation_formula_fv_in Hscope.
+    exact Hscope.
+  - exact Hle.
+  - eapply denot_ty_lvar_guard_wfworld_closed_on_term.
+    exact Hguard.
+Qed.
+
 Lemma denot_ty_lvar_gas_scope_from_guard
     gas Σ τ e (m : WfWorldT) :
   m ⊨ FAnd (context_ty_wf_formula Σ τ)

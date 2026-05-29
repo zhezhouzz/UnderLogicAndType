@@ -1144,6 +1144,67 @@ Proof.
     set_solver.
 Qed.
 
+Lemma denot_relevant_env_eq_of_tm_lvars_eq
+    (Σ : lty_env) τ e e' :
+  tm_lvars e = tm_lvars e' ->
+  denot_relevant_env Σ τ e = denot_relevant_env Σ τ e'.
+Proof.
+  intros Heq.
+  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
+  rewrite Heq. reflexivity.
+Qed.
+
+Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq
+    (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
+  tm_lvars e_tgt = tm_lvars e_src ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ e_src) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ e_src) e_src (erase_ty τ) ->
+  wfworld_closed_on (fv_tm e_tgt) m.
+Proof.
+  intros Hlvars Hworld Hbasic.
+  eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
+  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
+  change (lvars_of_atoms (fv_tm e_tgt) ⊆
+    dom (storeA_restrict (Σ : gmap logic_var ty)
+      (context_ty_lvars τ ∪ tm_lvars e_src))).
+  rewrite storeA_restrict_dom.
+  intros v Hv.
+  unfold lvars_of_atoms in Hv.
+  apply elem_of_map in Hv as [a [-> Ha]].
+  apply elem_of_intersection. split.
+  - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
+      as [Hsub _].
+    assert (Ha_lvars : LVFree a ∈ tm_lvars e_src).
+    {
+      rewrite <- Hlvars.
+      apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+    }
+    specialize (Hsub _ Ha_lvars).
+    unfold denot_relevant_env, denot_relevant_lvars,
+      lty_env_restrict_lvars in Hsub.
+    change (LVFree a ∈ dom
+      (storeA_restrict (Σ : gmap logic_var ty)
+        (context_ty_lvars τ ∪ tm_lvars e_src))) in Hsub.
+    rewrite storeA_restrict_dom in Hsub.
+    apply elem_of_intersection in Hsub as [HaΣ _].
+    exact HaΣ.
+  - apply elem_of_union_r.
+    rewrite <- Hlvars.
+    apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+Qed.
+
+Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ e) e (erase_ty τ) ->
+  wfworld_closed_on (fv_tm e) m.
+Proof.
+  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+  reflexivity.
+Qed.
+
 Lemma tm_lvars_free_notin_of_fv x e :
   x ∉ fv_tm e ->
   LVFree x ∉ tm_lvars e.
