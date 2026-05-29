@@ -1,4 +1,5 @@
 From ContextLogic Require Export LogicQualifier.
+From ContextBase Require Import BaseTactics LogicVarOpenEnv LogicVarShift.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
 (** * Context Logic syntax
@@ -270,6 +271,286 @@ Proof.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite lvars_open_commute_fresh by assumption.
     rewrite IHφ by assumption. reflexivity.
+Qed.
+
+Definition formula_open_env (η : gmap nat atom) (φ : Formula) : Formula :=
+  map_fold (fun k x acc => formula_open k x acc) φ η.
+
+Lemma formula_open_env_empty φ :
+  formula_open_env ∅ φ = φ.
+Proof.
+  unfold formula_open_env. rewrite map_fold_empty. reflexivity.
+Qed.
+
+Lemma formula_open_env_singleton k x φ :
+  formula_open_env (<[k := x]> ∅) φ = formula_open k x φ.
+Proof.
+  unfold formula_open_env.
+  change (<[k := x]> (∅ : gmap nat atom)) with ({[k := x]} : gmap nat atom).
+  rewrite map_fold_singleton. reflexivity.
+Qed.
+
+Lemma formula_open_env_insert_fresh η k x φ :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  open_env_values_inj η ->
+  formula_open_env (<[k := x]> η) φ =
+  formula_open k x (formula_open_env η φ).
+Proof.
+  intros Hfresh Havoid Hinj.
+  unfold formula_open_env.
+  apply (map_fold_insert_L (M:=gmap nat) (A:=atom) (B:=Formula)
+    (fun k x acc => formula_open k x acc) φ k x η).
+  - intros i j xi xj acc Hij Hi Hj.
+    apply formula_open_commute_fresh; [exact Hij|].
+    intros Heq. subst xj.
+    pose proof (open_env_values_inj_insert k x η Hfresh Havoid Hinj)
+      as Hinj'.
+    apply Hij. eapply Hinj'; eassumption.
+  - exact Hfresh.
+Qed.
+
+Lemma formula_open_env_true η :
+  formula_open_env η FTrue = FTrue.
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) FTrue η = FTrue)
+    _ _ η).
+  - rewrite map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH. rewrite Hfold, IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_false η :
+  formula_open_env η FFalse = FFalse.
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) FFalse η = FFalse)
+    _ _ η).
+  - rewrite map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH. rewrite Hfold, IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_and η φ ψ :
+  formula_open_env η (FAnd φ ψ) =
+  FAnd (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FAnd φ ψ) η =
+      FAnd
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_or η φ ψ :
+  formula_open_env η (FOr φ ψ) =
+  FOr (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FOr φ ψ) η =
+      FOr
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_impl η φ ψ :
+  formula_open_env η (FImpl φ ψ) =
+  FImpl (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FImpl φ ψ) η =
+      FImpl
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_star η φ ψ :
+  formula_open_env η (FStar φ ψ) =
+  FStar (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FStar φ ψ) η =
+      FStar
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_wand η φ ψ :
+  formula_open_env η (FWand φ ψ) =
+  FWand (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FWand φ ψ) η =
+      FWand
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_plus η φ ψ :
+  formula_open_env η (FPlus φ ψ) =
+  FPlus (formula_open_env η φ) (formula_open_env η ψ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FPlus φ ψ) η =
+      FPlus
+        (map_fold (fun k x acc => formula_open k x acc) φ η)
+        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_over η φ :
+  formula_open_env η (FOver φ) =
+  FOver (formula_open_env η φ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FOver φ) η =
+      FOver (map_fold (fun k x acc => formula_open k x acc) φ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_under η φ :
+  formula_open_env η (FUnder φ) =
+  FUnder (formula_open_env η φ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FUnder φ) η =
+      FUnder (map_fold (fun k x acc => formula_open k x acc) φ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
+Lemma formula_open_env_fibvars η D φ :
+  open_env_fresh_for_lvars η D ->
+  formula_open_env η (FFibVars D φ) =
+  FFibVars (lvars_open_env η D) (formula_open_env η φ).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros _. rewrite formula_open_env_empty, lvars_open_env_empty.
+    reflexivity.
+  - intros Henv.
+    pose proof (open_env_fresh_for_lvars_insert_head η k x D Hfresh Henv)
+      as Hhead.
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x D Hfresh Henv)
+      as Htail.
+    unfold formula_open_env.
+    rewrite !Hfold.
+    fold (formula_open_env η (FFibVars D φ)).
+    fold (formula_open_env η φ).
+    rewrite IH by exact Htail.
+    cbn [formula_open].
+    rewrite lvars_open_env_insert_fresh by (exact Hfresh || exact Hhead).
+    reflexivity.
+Qed.
+
+Lemma formula_open_env_forall η φ :
+  open_env_values_inj η ->
+  formula_open_env η (FForall φ) =
+  FForall (formula_open_env ((kmap S η)) φ).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros _. rewrite formula_open_env_empty, kmap_empty,
+      formula_open_env_empty.
+    reflexivity.
+  - intros Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite formula_open_env_insert_fresh by assumption.
+    rewrite IH by exact Hinjη.
+    cbn [formula_open].
+    rewrite open_env_lift_insert.
+    rewrite formula_open_env_insert_fresh
+      by (try better_base_solver;
+          try apply open_env_values_inj_lift; assumption).
+    reflexivity.
+Qed.
+
+Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
+  match φ with
+  | FTrue | FFalse => ∅
+  | FAtom q => lvars_at_depth d (lqual_lvars q)
+  | FAnd p q | FOr p q | FImpl p q
+  | FStar p q | FWand p q | FPlus p q =>
+      formula_lvars_at d p ∪ formula_lvars_at d q
+  | FForall p => formula_lvars_at (S d) p
+  | FOver p | FUnder p => formula_lvars_at d p
+  | FFibVars D p => lvars_at_depth d D ∪ formula_lvars_at d p
+  end.
+
+Lemma formula_lvars_at_fv d (φ : Formula) :
+  lvars_fv (formula_lvars_at d φ) = formula_fv φ.
+Proof.
+  induction φ in d |- *; cbn [formula_lvars_at];
+    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
+      ?IHφ1, ?IHφ2, ?IHφ;
+    rewrite ?formula_fv_true, ?formula_fv_false, ?formula_fv_atom,
+      ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl,
+      ?formula_fv_star, ?formula_fv_wand, ?formula_fv_plus,
+      ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under,
+      ?formula_fv_fibvars;
+    rewrite ?lvars_fv_lvars_at_depth;
+    reflexivity.
+Qed.
+
+Lemma formula_lvars_at_open d k y (φ : Formula) :
+  formula_lvars_at d (formula_open (d + k) y φ) =
+  lvars_open k y (formula_lvars_at d φ).
+Proof.
+  induction φ in d, k |- *; cbn [formula_open formula_lvars_at].
+  - set_solver.
+  - set_solver.
+  - match goal with
+    | |- context [lqual_open _ _ ?q] => destruct q as [D P]
+    end.
+    cbn [lqual_open lqual_lvars lqual_dom].
+    apply lvars_at_depth_open.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - rewrite IHφ1, IHφ2.
+    symmetry. rewrite lvars_open_union. reflexivity.
+  - replace (S (d + k)) with (S d + k) by lia.
+    apply IHφ.
+  - apply IHφ.
+  - apply IHφ.
+  - rewrite lvars_at_depth_open.
+    rewrite IHφ.
+    symmetry. rewrite lvars_open_union. reflexivity.
 Qed.
 
 Lemma formula_open_fv_subset k x φ :

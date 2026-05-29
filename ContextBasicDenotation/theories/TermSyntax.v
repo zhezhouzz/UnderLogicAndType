@@ -2,6 +2,7 @@
 
     Totality and result extensions for core terms. *)
 
+From CoreLang Require Import LocallyNamelessExtra.
 From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBase Require Import BaseTactics.
 From Stdlib Require Import List.
@@ -669,6 +670,215 @@ Proof.
   destruct (decide (2 <= 0)); [lia|].
   destruct (decide (2 <= 1)); [lia|].
   better_set_solver.
+Qed.
+
+Lemma open_tm_env_singleton k y e :
+  open_tm_env (<[k := y]> ∅) e =
+  open_tm k (vfvar y) e.
+Proof.
+  cbn beta.
+  change (<[k:=y]> (∅ : gmap nat atom)) with ({[k:=y]} : gmap nat atom).
+  rewrite map_fold_singleton.
+  reflexivity.
+Qed.
+
+Lemma open_tm_env_lc η e :
+  lc_tm e ->
+  open_tm_env η e = e.
+Proof.
+  intros Hlc.
+  cbn beta.
+  revert e Hlc.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros e Hlc. rewrite map_fold_empty. reflexivity.
+  - intros e Hlc.
+    rewrite Hfold.
+    rewrite IH by exact Hlc.
+    apply open_rec_lc_tm. exact Hlc.
+Qed.
+
+Lemma open_same_index_fvar_mutual x y :
+  (forall v k,
+    open_value k (vfvar y) (open_value k (vfvar x) v) =
+    open_value k (vfvar x) v) *
+  (forall e k,
+    open_tm k (vfvar y) (open_tm k (vfvar x) e) =
+    open_tm k (vfvar x) e).
+Proof.
+  apply value_tm_mutind; simpl; intros; try reflexivity; try (f_equal; eauto).
+  - destruct (decide (k = n)) as [->|Hkn]; simpl.
+    + destruct (decide (n = n)) as [_|Hbad]; [reflexivity | congruence].
+    + destruct (decide (k = n)) as [Hbad|_]; [congruence | reflexivity].
+Qed.
+
+Lemma open_tm_same_index_fvar x y k e :
+  open_tm k (vfvar y) (open_tm k (vfvar x) e) =
+  open_tm k (vfvar x) e.
+Proof. exact (snd (open_same_index_fvar_mutual x y) e k). Qed.
+
+Lemma open_tm_env_insert_fresh_plain η k x e :
+  η !! k = None ->
+  open_tm_env (<[k := x]> η) e =
+  open_tm k (vfvar x) (open_tm_env η e).
+Proof.
+  intros Hfresh.
+  cbn beta.
+  rewrite (map_fold_insert_L
+    (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e k x η).
+  - reflexivity.
+  - intros i j xi xj acc Hij _ _.
+    apply open_swap_tm; [apply LC_fvar | apply LC_fvar | exact Hij].
+  - exact Hfresh.
+Qed.
+
+Lemma open_tm_env_atom_swap x y η e :
+  open_tm_env η (tm_swap_atom x y e) =
+  tm_swap_atom x y (open_tm_env (open_env_atom_swap x y η) e).
+Proof.
+  cbn beta.
+  revert e.
+  induction η as [|k a η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros e. rewrite !map_fold_empty. reflexivity.
+  - intros e.
+    rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)).
+    rewrite open_env_atom_swap_insert.
+    rewrite (map_fold_insert_L
+      (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)
+      e k (swap x y a) (open_env_atom_swap x y η)).
+    2:{
+      intros i j xi xj acc Hij _ _.
+      apply open_swap_tm; [apply LC_fvar | apply LC_fvar | exact Hij].
+    }
+    2:{ rewrite open_env_atom_swap_lookup, Hfresh. reflexivity. }
+    rewrite IH.
+    rewrite open_tm_swap_atom.
+    reflexivity.
+Qed.
+
+Lemma open_tm_env_open_fresh_plain η k x e :
+  η !! k = None ->
+  open_tm_env η (open_tm k (vfvar x) e) =
+  open_tm k (vfvar x) (open_tm_env η e).
+Proof.
+  cbn beta.
+  refine (fin_maps.map_fold_ind
+    (fun η => η !! k = None ->
+      map_fold (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)
+        (open_tm k (vfvar x) e) η =
+      open_tm k (vfvar x)
+        (map_fold (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e η))
+    _ _ η).
+  - intros _. rewrite !map_fold_empty. reflexivity.
+  - intros i y η0 Hfresh Hfold IH Hnone.
+    rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc)
+      (open_tm k (vfvar x) e) y).
+    rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e y).
+    assert (Hik : i <> k).
+    {
+      intros ->.
+      rewrite lookup_insert_eq in Hnone. discriminate.
+    }
+    assert (Hnone0 : η0 !! k = None).
+    {
+      rewrite lookup_insert_ne in Hnone by congruence.
+      exact Hnone.
+    }
+    rewrite IH by exact Hnone0.
+    apply open_swap_tm; [apply LC_fvar | apply LC_fvar | congruence].
+Qed.
+
+Lemma open_tm_env_open_tm k x η e :
+  open_tm_env η (open_tm k (vfvar x) e) =
+  open_tm_env (<[k := x]> η) e.
+Proof.
+  destruct (η !! k) as [y|] eqn:Hηk.
+  - rewrite <-(insert_delete_id η k y Hηk) at 1.
+    rewrite open_tm_env_insert_fresh_plain by apply lookup_delete_eq.
+    rewrite open_tm_env_open_fresh_plain by apply lookup_delete_eq.
+    rewrite open_tm_same_index_fvar.
+    replace (<[k := x]> η) with (<[k := x]> (delete k η)).
+    2:{
+      apply map_eq. intro z.
+      destruct (decide (z = k)) as [->|Hzk].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        rewrite lookup_delete_ne by congruence.
+        reflexivity.
+    }
+    rewrite open_tm_env_insert_fresh_plain by apply lookup_delete_eq.
+    reflexivity.
+  - rewrite open_tm_env_open_fresh_plain by exact Hηk.
+    symmetry. apply open_tm_env_insert_fresh_plain. exact Hηk.
+Qed.
+
+Lemma tm_lvars_open_tm_env η e :
+  open_env_fresh_for_lvars η (tm_lvars e) ->
+  tm_lvars (open_tm_env η e) = lvars_open_env η (tm_lvars e).
+Proof.
+  cbn beta.
+  refine (fin_maps.map_fold_ind
+    (fun η => open_env_fresh_for_lvars η (tm_lvars e) ->
+      tm_lvars
+        (map_fold (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e η) =
+      lvars_open_env η (tm_lvars e))
+    _ _ η).
+  - intros _. rewrite map_fold_empty. better_base_solver.
+  - intros k x η0 Hfresh Hfold IH Henv.
+    rewrite (Hfold tm (fun k0 x0 acc => open_tm k0 (vfvar x0) acc) e x).
+    rewrite tm_lvars_open.
+    + rewrite IH.
+      * symmetry. apply lvars_open_env_insert_fresh.
+        -- exact Hfresh.
+        -- eapply open_env_fresh_for_lvars_insert_head; eassumption.
+      * eapply open_env_fresh_for_lvars_insert_tail; eassumption.
+    + rewrite <- tm_lvars_fv.
+      rewrite IH.
+      * eapply open_env_fresh_for_lvars_insert_head; eassumption.
+      * eapply open_env_fresh_for_lvars_insert_tail; eassumption.
+Qed.
+
+Lemma tm_swap_atom_open_tm_fresh x y k e :
+  x ∉ fv_tm e ->
+  y ∉ fv_tm e ->
+  tm_swap_atom x y (open_tm k (vfvar x) e) =
+  open_tm k (vfvar y) e.
+Proof.
+  intros Hx Hy.
+  rewrite tm_swap_atom_open.
+  cbn [value_swap_atom].
+  base_swap_normalize.
+  rewrite tm_swap_atom_fresh by assumption.
+  reflexivity.
+Qed.
+
+Lemma open_tm_env_insert_open_swap_back η k y z e :
+  η !! k = Some z ->
+  y ∉ fv_tm e ->
+  open_env_fresh_for_lvars η (tm_lvars e) ->
+  open_env_fresh_for_lvars (<[k := y]> (delete k η)) (tm_lvars e) ->
+  tm_swap_atom y z
+    (open_tm_env (<[k := y]> (delete k η)) e) =
+  open_tm_env η e.
+Proof.
+  intros Hηk Hye Hfreshη Hfreshy.
+  assert (Hη : η = <[k := z]> (delete k η)).
+  { symmetry. apply insert_delete_id. exact Hηk. }
+  rewrite Hη at 2.
+  rewrite !open_tm_env_insert_fresh_plain by apply lookup_delete_eq.
+  apply tm_swap_atom_open_tm_fresh.
+  - rewrite <- tm_lvars_fv.
+    rewrite tm_lvars_open_tm_env.
+    + eapply open_env_fresh_for_lvars_insert_head;
+        [apply lookup_delete_eq | exact Hfreshy].
+    + eapply open_env_fresh_for_lvars_insert_tail;
+        [apply lookup_delete_eq | exact Hfreshy].
+  - rewrite <- tm_lvars_fv.
+    rewrite tm_lvars_open_tm_env.
+    + change (z ∉ lvars_fv (lvars_open_env (delete k η) (tm_lvars e))).
+      eapply Hfreshη. exact Hηk.
+    + rewrite Hη in Hfreshη.
+      eapply open_env_fresh_for_lvars_insert_tail; [apply lookup_delete_eq|].
+      exact Hfreshη.
 Qed.
 
 Definition lstore_free_part (σ : LStoreT) : StoreT :=

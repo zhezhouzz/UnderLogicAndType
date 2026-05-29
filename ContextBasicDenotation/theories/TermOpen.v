@@ -20,6 +20,15 @@ Lemma formula_fv_expr_result_formula e x :
   lvars_fv (tm_lvars e ∪ {[x]}).
 Proof. reflexivity. Qed.
 
+Lemma formula_lvars_fv_expr_result_formula e x :
+  lvars_fv (formula_lvars (expr_result_formula e x)) =
+  lvars_fv (tm_lvars e ∪ {[x]}).
+Proof.
+  change (lvars_fv (formula_lvars (expr_result_formula e x)))
+    with (formula_fv (expr_result_formula e x)).
+  apply formula_fv_expr_result_formula.
+Qed.
+
 Lemma lstore_swap_lookup_inv_value a b (σ : LStoreT) z :
   ((lstore_swap a b σ : gmap logic_var value) !! z) =
   ((σ : gmap logic_var value) !! swap a b z).
@@ -410,6 +419,91 @@ Proof.
       (@lw value _ w1)).
     + apply expr_result_at_world_open_back_iff. exact Hy.
     + rewrite Hlw. reflexivity.
+Qed.
+
+Lemma formula_open_env_expr_total_formula η e :
+  open_env_fresh_for_lvars η (tm_lvars e) ->
+  open_env_values_inj η ->
+  formula_open_env η (expr_total_formula e) =
+  expr_total_formula (open_tm_env η e).
+Proof.
+  revert e.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros e _ _.
+    rewrite formula_open_env_empty.
+    rewrite map_fold_empty. reflexivity.
+  - intros e Hfresh Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
+      as [Hinjη Havoid].
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x
+      (tm_lvars e) Hnone Hfresh) as Hfreshη.
+    rewrite formula_open_env_insert_fresh.
+    2: exact Hnone.
+    2: exact Havoid.
+    2: exact Hinjη.
+    rewrite IH by (exact Hfreshη || exact Hinjη).
+    rewrite formula_open_expr_total_formula.
+    2:{
+      pose proof (open_env_fresh_for_lvars_insert_head η k x
+        (tm_lvars e) Hnone Hfresh) as Hhead.
+      rewrite <- tm_lvars_fv.
+      rewrite tm_lvars_open_tm_env.
+      - exact Hhead.
+      - exact Hfreshη.
+    }
+    rewrite open_tm_env_insert_fresh_plain by exact Hnone.
+    reflexivity.
+Qed.
+
+Lemma formula_open_env_expr_result_formula η e z :
+  open_env_fresh_for_lvars η (tm_lvars e ∪ {[z]}) ->
+  open_env_values_inj η ->
+  formula_open_env η (expr_result_formula e z) =
+  expr_result_formula (open_tm_env η e) (logic_var_open_env η z).
+Proof.
+  revert e z.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros e z _ _.
+    rewrite formula_open_env_empty.
+    rewrite map_fold_empty.
+    better_base_solver.
+  - intros e z Hfresh Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
+      as [Hinjη Havoid].
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x
+      (tm_lvars e ∪ {[z]}) Hnone Hfresh) as Hfreshη.
+    rewrite formula_open_env_insert_fresh.
+    2: exact Hnone.
+    2: exact Havoid.
+    2: exact Hinjη.
+    rewrite IH by (exact Hfreshη || exact Hinjη).
+    rewrite formula_open_expr_result_formula.
+    2:{
+      pose proof (open_env_fresh_for_lvars_insert_head η k x
+        (tm_lvars e ∪ {[z]}) Hnone Hfresh) as Hhead.
+      rewrite <- tm_lvars_fv.
+      rewrite tm_lvars_open_tm_env.
+      - intros Hbad. apply Hhead.
+        rewrite lvars_open_env_union, lvars_fv_union.
+        apply elem_of_union_l. exact Hbad.
+      - eapply open_env_fresh_for_lvars_mono.
+        + intros v Hv. apply elem_of_union_l. exact Hv.
+        + exact Hfreshη.
+    }
+    rewrite open_tm_env_insert_fresh_plain by exact Hnone.
+    rewrite logic_var_open_env_insert_fresh.
+    { reflexivity. }
+    { exact Hnone. }
+    { pose proof (open_env_fresh_for_lvars_insert_head η k x
+        (tm_lvars e ∪ {[z]}) Hnone Hfresh) as Hhead.
+      intros Hz.
+      apply Hhead.
+      rewrite lvars_open_env_union, lvars_fv_union.
+      apply elem_of_union_r.
+      apply lvars_fv_elem.
+      unfold lvars_open_env.
+      apply elem_of_map.
+      exists z. split; [symmetry; exact Hz|set_solver]. }
 Qed.
 
 End TermDenotation.

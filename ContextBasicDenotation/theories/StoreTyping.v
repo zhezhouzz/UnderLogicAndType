@@ -42,6 +42,14 @@ Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.
 
+Lemma formula_lvars_fv_basic_world_formula Σ :
+  lvars_fv (formula_lvars (basic_world_formula Σ)) = lvars_fv (dom Σ).
+Proof.
+  change (lvars_fv (formula_lvars (basic_world_formula Σ)))
+    with (formula_fv (basic_world_formula Σ)).
+  apply formula_fv_basic_world_formula.
+Qed.
+
 Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
   X ⊆ Y ->
   wfworld_closed_on Y m ->
@@ -164,6 +172,28 @@ Proof.
   rewrite formula_open_basic_world_formula.
   rewrite typed_lty_env_bind_open_current by assumption.
   reflexivity.
+Qed.
+
+Lemma formula_open_env_basic_world_formula η Σ :
+  open_env_fresh_for_lvars η (dom Σ) ->
+  open_env_values_inj η ->
+  formula_open_env η (basic_world_formula Σ) =
+  basic_world_formula (lty_env_open_lvars η Σ).
+Proof.
+  revert Σ.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros Σ _ _.
+    rewrite formula_open_env_empty, lty_env_open_lvars_empty. reflexivity.
+  - intros Σ Hfresh Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
+      as [Hinjη Havoid].
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x
+      (dom Σ) Hnone Hfresh) as Hfreshη.
+    rewrite formula_open_env_insert_fresh by assumption.
+    rewrite IH by (exact Hfreshη || exact Hinjη).
+    rewrite formula_open_basic_world_formula.
+    rewrite lty_env_open_lvars_insert_fresh by assumption.
+    reflexivity.
 Qed.
 
 Definition extension_has_type
