@@ -486,6 +486,20 @@ Proof.
   apply open_tapp_tm_lc_arg. constructor.
 Qed.
 
+Lemma lc_tlete_tapp_tm_assoc_source e1 e2 y :
+  lc_tm (tlete e1 e2) ->
+  lc_tm (tlete e1 (tapp_tm e2 (vfvar y))).
+Proof.
+  intros Hlc.
+  apply lc_lete_iff_body in Hlc as [Hlc1 Hbody2].
+  apply lc_lete_iff_body. split; [exact Hlc1|].
+  destruct Hbody2 as [L HL].
+  exists L. intros x Hx.
+  change (lc_tm (open_tm 0 (vfvar x) (tapp_tm e2 (vfvar y)))).
+  rewrite open_tapp_tm_lc_arg by constructor.
+  apply lc_tapp_tm; [apply HL; exact Hx | constructor].
+Qed.
+
 Lemma open_tm_shift0_lc y e :
   lc_tm e ->
   open_tm 0 (vfvar y) (tm_shift 0 e) = e.

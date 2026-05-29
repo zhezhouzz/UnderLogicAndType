@@ -729,6 +729,186 @@ Proof.
   apply expr_result_formula_to_atom_world. exact Hmodels.
 Qed.
 
+Lemma expr_eval_in_atom_store_tapp_tlete_assoc_spine σ e1 e2 y ys v :
+  store_closed σ ->
+  lc_tm (tlete e1 e2) ->
+  expr_eval_in_atom_store σ
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) v <->
+  expr_eval_in_atom_store σ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) v.
+Proof.
+  intros Hclosed Hlc.
+  induction ys as [|z ys IH] in v |- *; cbn [tapp_tm_fvar_spine].
+  - apply expr_eval_in_atom_store_tapp_tm_tlete_assoc;
+      [exact Hclosed | exact Hlc | constructor].
+  - apply expr_eval_in_atom_store_tapp_tm_fun_equiv.
+    + exact Hclosed.
+    + apply lc_tapp_tm_fvar_spine.
+      apply lc_tlete_tapp_tm_assoc_source. exact Hlc.
+    + apply lc_tapp_tm_fvar_spine.
+      apply lc_tapp_tm; [exact Hlc | constructor].
+    + exact IH.
+Qed.
+
+Lemma expr_eval_in_atom_store_tapp_tlete_assoc_spine_closed_on σ e1 e2 y ys v :
+  store_closed (store_restrict σ (fv_tm (tapp_tm_fvar_spine
+    (tapp_tm (tlete e1 e2) (vfvar y)) ys))) ->
+  lc_tm (tlete e1 e2) ->
+  expr_eval_in_atom_store σ
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) v <->
+  expr_eval_in_atom_store σ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) v.
+Proof.
+  intros Hclosed Hlc.
+  rewrite <- (expr_eval_in_atom_store_restrict_fv_exact σ
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) v).
+  rewrite <- (expr_eval_in_atom_store_restrict_fv_exact σ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) v).
+  rewrite <- fv_tm_tapp_tlete_assoc_spine.
+  apply expr_eval_in_atom_store_tapp_tlete_assoc_spine; assumption.
+Qed.
+
+Lemma expr_total_on_atom_world_tapp_tlete_assoc_spine
+    e1 e2 y ys (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  expr_total_on_atom_world
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) m ->
+  expr_total_on_atom_world
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) m.
+Proof.
+  intros Hclosed Hlc Htotal.
+  unfold expr_total_on_atom_world, expr_total_on in *.
+  destruct Htotal as [Hdom Hstores].
+  split.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hdom.
+  - intros τ Hτ.
+    destruct Hτ as [σ [Hσ ->]].
+    destruct (Hstores (lstore_lift_free σ)) as [v Heval].
+    { exists σ. split; [exact Hσ | reflexivity]. }
+    exists v.
+    apply (proj1 (expr_eval_in_atom_store_tapp_tlete_assoc_spine_closed_on
+      σ e1 e2 y ys v (Hclosed σ Hσ) Hlc)).
+    exact Heval.
+Qed.
+
+Lemma expr_total_formula_tapp_tlete_assoc_spine
+    e1 e2 y ys (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_total_formula
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys)) ->
+  res_models m (expr_total_formula
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys)).
+Proof.
+  intros Hclosed Hlc Hmodels.
+  apply expr_total_atom_world_to_formula.
+  eapply expr_total_on_atom_world_tapp_tlete_assoc_spine; eauto.
+  apply expr_total_formula_to_atom_world. exact Hmodels.
+Qed.
+
+Lemma expr_result_at_world_tapp_tlete_assoc_spine
+    e1 e2 y ys z (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  expr_result_at_world
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) z
+    (lraw_world (res_lift_free m)) ->
+  expr_result_at_world
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) z
+    (lraw_world (res_lift_free m)).
+Proof.
+  intros Hclosed Hlc Hres.
+  destruct Hres as [Hzfresh [Hdom Hstores]].
+  split.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hzfresh.
+  - split.
+    + rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hdom.
+    + intros τ Hτ.
+      destruct Hτ as [σ [Hσ ->]].
+      specialize (Hstores (lstore_lift_free σ)
+        ltac:(exists σ; split; [exact Hσ | reflexivity])).
+      destruct Hstores as [_ [v [Hlookup Heval]]].
+      split.
+      * rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hzfresh.
+      * exists v. split; [exact Hlookup |].
+        apply (proj1 (expr_eval_in_atom_store_tapp_tlete_assoc_spine_closed_on
+          σ e1 e2 y ys v (Hclosed σ Hσ) Hlc)).
+        exact Heval.
+Qed.
+
+Lemma expr_result_formula_tapp_tlete_assoc_spine
+    e1 e2 y ys z (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_result_formula
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) z) ->
+  res_models m (expr_result_formula
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) z).
+Proof.
+  intros Hclosed Hlc Hmodels.
+  apply expr_result_atom_world_to_formula.
+  eapply expr_result_at_world_tapp_tlete_assoc_spine; eauto.
+  apply expr_result_formula_to_atom_world. exact Hmodels.
+Qed.
+
+Lemma expr_result_at_world_tapp_tlete_assoc_spine_rev
+    e1 e2 y ys z (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  expr_result_at_world
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) z
+    (lraw_world (res_lift_free m)) ->
+  expr_result_at_world
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) z
+    (lraw_world (res_lift_free m)).
+Proof.
+  intros Hclosed Hlc Hres.
+  destruct Hres as [Hzfresh [Hdom Hstores]].
+  split.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine in Hzfresh. exact Hzfresh.
+  - split.
+    + rewrite tm_lvars_tapp_tlete_assoc_spine in Hdom. exact Hdom.
+    + intros τ Hτ.
+      destruct Hτ as [σ [Hσ ->]].
+      specialize (Hstores (lstore_lift_free σ)
+        ltac:(exists σ; split; [exact Hσ | reflexivity])).
+      destruct Hstores as [_ [v [Hlookup Heval]]].
+      split.
+      * rewrite tm_lvars_tapp_tlete_assoc_spine in Hzfresh. exact Hzfresh.
+      * exists v. split; [exact Hlookup |].
+        apply (proj2 (expr_eval_in_atom_store_tapp_tlete_assoc_spine_closed_on
+          σ e1 e2 y ys v (Hclosed σ Hσ) Hlc)).
+        exact Heval.
+Qed.
+
+Lemma expr_result_formula_tapp_tlete_assoc_spine_rev
+    e1 e2 y ys z (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm_fvar_spine
+      (tapp_tm (tlete e1 e2) (vfvar y)) ys)) m ->
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_result_formula
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) z) ->
+  res_models m (expr_result_formula
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) z).
+Proof.
+  intros Hclosed Hlc Hmodels.
+  apply expr_result_atom_world_to_formula.
+  eapply expr_result_at_world_tapp_tlete_assoc_spine_rev; eauto.
+  apply expr_result_formula_to_atom_world. exact Hmodels.
+Qed.
+
 Lemma expr_result_extension_world_models_closed
     e x F (m mx : WfWorldT) :
   wfworld_closed_on (fv_tm e) m ->

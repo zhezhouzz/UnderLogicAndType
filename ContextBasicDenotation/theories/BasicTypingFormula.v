@@ -299,20 +299,6 @@ Definition basic_tm_has_ltype
     lty_env_to_atom_env (lty_env_open_lvars η Σ) ⊢ₑ
       open_tm_env η e ⋮ T.
 
-Lemma lc_tlete_tapp_tm_assoc_source e1 e2 y :
-  lc_tm (tlete e1 e2) ->
-  lc_tm (tlete e1 (tapp_tm e2 (vfvar y))).
-Proof.
-  intros Hlc.
-  apply lc_lete_iff_body in Hlc as [Hlc1 Hbody2].
-  apply lc_lete_iff_body. split; [exact Hlc1|].
-  destruct Hbody2 as [L HL].
-  exists L. intros x Hx.
-  change (lc_tm (open_tm 0 (vfvar x) (tapp_tm e2 (vfvar y)))).
-  rewrite open_tapp_tm_lc_arg by constructor.
-  apply lc_tapp_tm; [apply HL; exact Hx | constructor].
-Qed.
-
 Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc
     (Σ : lty_env) e1 e2 y T :
   lc_tm (tlete e1 e2) ->
@@ -363,6 +349,53 @@ Proof.
       apply basic_typing_tapp_tm_tlete_assoc_rev.
       exact Htyη.
     + apply lc_tlete_tapp_tm_assoc_source. exact Hlc.
+Qed.
+
+Lemma basic_typing_tapp_tlete_assoc_spine Γ e1 e2 y ys T :
+  Γ ⊢ₑ tapp_tm_fvar_spine
+    (tlete e1 (tapp_tm e2 (vfvar y))) ys ⋮ T ->
+  Γ ⊢ₑ tapp_tm_fvar_spine
+    (tapp_tm (tlete e1 e2) (vfvar y)) ys ⋮ T.
+Proof.
+  induction ys as [|z ys IH] in T |- *; cbn [tapp_tm_fvar_spine].
+  - apply basic_typing_tapp_tm_tlete_assoc.
+  - intros Hty.
+    apply basic_typing_tapp_tm_fvar_inv in Hty as [Tx [Hfun Hz]].
+    eapply basic_typing_tapp_tm.
+    + apply IH. exact Hfun.
+    + exact Hz.
+Qed.
+
+Lemma basic_tm_has_ltype_tapp_tlete_assoc_spine
+    (Σ : lty_env) e1 e2 y ys T :
+  lc_tm (tlete e1 e2) ->
+  basic_tm_has_ltype Σ
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) T ->
+  basic_tm_has_ltype Σ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) T.
+Proof.
+  intros Hlc [Hsub Hty].
+  split.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hsub.
+  - intros η Hfresh Hbv.
+    rewrite open_tm_env_lc.
+    + assert (Hfresh_src : open_env_fresh_for_lvars η
+        (dom Σ ∪ tm_lvars
+          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys))).
+      { rewrite <- tm_lvars_tapp_tlete_assoc_spine. exact Hfresh. }
+      assert (Hbv_src :
+        lvars_bv (dom Σ ∪ tm_lvars
+          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys)) ⊆
+        dom η).
+      { rewrite <- tm_lvars_tapp_tlete_assoc_spine. exact Hbv. }
+      pose proof (Hty η Hfresh_src Hbv_src) as Htyη.
+      rewrite open_tm_env_lc in Htyη by
+        (apply lc_tapp_tm_fvar_spine;
+         apply lc_tlete_tapp_tm_assoc_source; exact Hlc).
+      apply basic_typing_tapp_tlete_assoc_spine.
+      exact Htyη.
+    + apply lc_tapp_tm_fvar_spine.
+      apply lc_tapp_tm; [exact Hlc | constructor].
 Qed.
 Lemma lty_env_to_atom_env_open_lvars_insert_free_subset
     η (Σ : lty_env) x T :
@@ -1096,6 +1129,22 @@ Proof.
   split; [exact HlcΣ|].
   split; [exact Hsub|].
   eapply basic_tm_has_ltype_tapp_tm_tlete_assoc_rev; eauto.
+Qed.
+
+Lemma expr_basic_typing_formula_tapp_tlete_assoc_spine
+    (Σ : lty_env) e1 e2 y ys T (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) T) ->
+  res_models m (expr_basic_typing_formula Σ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) T).
+Proof.
+  intros Hlc Hmodels.
+  apply expr_basic_typing_formula_models_iff in Hmodels as [HlcΣ [Hsub Hbasic]].
+  apply expr_basic_typing_formula_models_iff.
+  split; [exact HlcΣ|].
+  split; [exact Hsub|].
+  eapply basic_tm_has_ltype_tapp_tlete_assoc_spine; eauto.
 Qed.
 
 Lemma res_models_open_expr_basic_typing_to_open
