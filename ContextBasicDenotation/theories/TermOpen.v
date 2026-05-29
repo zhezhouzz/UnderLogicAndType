@@ -247,24 +247,14 @@ Proof.
         (lworld_dom (@lw value _ w)).
       rewrite (@lw_dom value _ w). set_solver.
     + intros τ Hτ.
-      pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)) as Hres.
-      assert (Hτswap :
-        worldA_stores
-          (@lw value _ (lworld_on_open_back k y (tm_lvars e) w) : LWorldT)
-          (lstore_swap (LVBound k) (LVFree y) τ)).
-      {
-        unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_stores].
-        exists τ. split; [exact Hτ | reflexivity].
-      }
-      specialize (Hres Hτswap).
+      pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)
+        (lworld_on_open_back_store_swap_member k y (tm_lvars e) w τ Hτ))
+        as Hres.
       destruct Hres as [v Heval]. exists v.
       assert (Hτdom :
         lvars_open k y (tm_lvars e) ⊆ dom (τ : gmap logic_var value)).
       {
-        pose proof (wfworldA_store_dom (@lw value _ w) τ Hτ) as Hdomτ.
-        change (dom (τ : gmap logic_var value) =
-          lworld_dom (@lw value _ w)) in Hdomτ.
-        rewrite Hdomτ, (@lw_dom value _ w). set_solver.
+        rewrite (lworld_on_store_dom_eq _ w τ Hτ). set_solver.
       }
       apply expr_eval_in_store_open_back_iff in Heval;
         [exact Heval | exact Hy | exact Hτdom].
@@ -273,16 +263,12 @@ Proof.
       rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
       better_base_solver.
     + intros σ Hσ.
-      unfold lworld_on_open_back in Hσ. cbn [lw lraw_world raw_worldA worldA_stores] in Hσ.
-      destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
+      apply lworld_on_open_back_store_swap_inv in Hσ as [σ0 [Hσ0 ->]].
       destruct (Hstores σ0 Hσ0) as [v Heval]. exists v.
       assert (Hσ0dom :
         lvars_open k y (tm_lvars e) ⊆ dom (σ0 : gmap logic_var value)).
       {
-        pose proof (wfworldA_store_dom (@lw value _ w) σ0 Hσ0) as Hdomσ0.
-        change (dom (σ0 : gmap logic_var value) =
-          lworld_dom (@lw value _ w)) in Hdomσ0.
-        rewrite Hdomσ0, (@lw_dom value _ w). set_solver.
+        rewrite (lworld_on_store_dom_eq _ w σ0 Hσ0). set_solver.
       }
       apply expr_eval_in_store_open_back_iff; [exact Hy | exact Hσ0dom | exact Heval].
 Qed.
@@ -360,24 +346,13 @@ Proof.
           (lworld_dom (@lw value _ w)).
         rewrite (@lw_dom value _ w). set_solver.
       * intros τ Hτ.
-        pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)) as Hres.
-        assert (Hσswap :
-          worldA_stores
-            (@lw value _ (lworld_on_open_back k y (tm_lvars e ∪ {[z]}) w) : LWorldT)
-            (lstore_swap (LVBound k) (LVFree y) τ)).
-        {
-          unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_stores].
-          exists τ. split; [exact Hτ | reflexivity].
-        }
-        specialize (Hres Hσswap).
+        pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)
+          (lworld_on_open_back_store_swap_member
+            k y (tm_lvars e ∪ {[z]}) w τ Hτ)) as Hres.
         assert (Hτdom :
           lvars_open k y (tm_lvars e) ⊆ dom (τ : gmap logic_var value)).
         {
-          pose proof (wfworldA_store_dom (@lw value _ w) τ Hτ) as Hdomτ.
-          change (dom (τ : gmap logic_var value) =
-            lworld_dom (@lw value _ w)) in Hdomτ.
-          rewrite Hdomτ, (@lw_dom value _ w).
-          set_solver.
+          rewrite (lworld_on_store_dom_eq _ w τ Hτ). set_solver.
         }
         apply expr_result_at_store_open_back_iff in Hres;
           [exact Hres | exact Hy | exact Hτdom].
@@ -393,16 +368,11 @@ Proof.
       rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
       better_base_solver.
       * intros σ Hσ.
-        unfold lworld_on_open_back in Hσ. cbn [lw lraw_world raw_worldA worldA_stores] in Hσ.
-        destruct Hσ as [σ0 [Hσ0 Hswap]]. subst σ.
+        apply lworld_on_open_back_store_swap_inv in Hσ as [σ0 [Hσ0 ->]].
         assert (Hσ0dom :
           lvars_open k y (tm_lvars e) ⊆ dom (σ0 : gmap logic_var value)).
         {
-          pose proof (wfworldA_store_dom (@lw value _ w) σ0 Hσ0) as Hdomσ0.
-          change (dom (σ0 : gmap logic_var value) =
-            lworld_dom (@lw value _ w)) in Hdomσ0.
-          rewrite Hdomσ0, (@lw_dom value _ w).
-          set_solver.
+          rewrite (lworld_on_store_dom_eq _ w σ0 Hσ0). set_solver.
         }
         apply expr_result_at_store_open_back_iff; [exact Hy | exact Hσ0dom |].
         apply Hstores. exact Hσ0.

@@ -159,6 +159,43 @@ Proof.
   better_base_solver.
 Defined.
 
+Lemma lworld_on_store_dom_eq D (w : LWorldOn D) (τ : gmap logic_var V) :
+  worldA_stores (lw w : LWorld) τ ->
+  dom (τ : gmap logic_var V) = D.
+Proof.
+  intros Hτ.
+  pose proof (wfworldA_store_dom (lw w) τ Hτ) as Hdom.
+  change (dom (τ : gmap logic_var V) = lworld_dom (lw w : LWorld)) in Hdom.
+  rewrite Hdom, (lw_dom w). reflexivity.
+Qed.
+
+Lemma lworld_on_open_back_store_swap_member
+    k x D (w : LWorldOn (lvars_open k x D)) (τ : gmap logic_var V) :
+  worldA_stores (lw w : LWorld) τ ->
+  worldA_stores
+    (lw (lworld_on_open_back k x D w) : LWorld)
+    (lstore_swap (LVBound k) (LVFree x) τ).
+Proof.
+  intros Hτ.
+  unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_stores].
+  exists τ. split; [exact Hτ|reflexivity].
+Qed.
+
+Lemma lworld_on_open_back_store_swap_inv
+    k x D (w : LWorldOn (lvars_open k x D)) (σ : gmap logic_var V) :
+  worldA_stores
+    (lw (lworld_on_open_back k x D w) : LWorld) σ ->
+  exists σ0 : gmap logic_var V,
+    worldA_stores (lw w : LWorld) σ0 /\
+    σ = lstore_swap (LVBound k) (LVFree x) σ0.
+Proof.
+  unfold lworld_on_open_back.
+  cbn [lw lraw_world raw_worldA worldA_stores].
+  intros [σ0 [Hσ0 Hσ]]. exists σ0. split; [exact Hσ0|].
+  unfold lstore_swap, lstore_rekey.
+  symmetry. exact Hσ.
+Qed.
+
 Lemma lworld_on_open_back_commute_fresh i j x y D
     (w1 : LWorldOn (lvars_open i x (lvars_open j y D)))
     (w2 : LWorldOn (lvars_open j y (lvars_open i x D))) :
