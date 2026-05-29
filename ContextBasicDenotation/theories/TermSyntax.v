@@ -881,6 +881,21 @@ Proof.
       exact Hfreshη.
 Qed.
 
+Lemma open_tm_env_lift_shift0 η e :
+  open_tm_env ((kmap S η)) (tm_shift 0 e) =
+  tm_shift 0 (open_tm_env η e).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite kmap_empty.
+    rewrite !map_fold_empty. reflexivity.
+  - rewrite open_env_lift_insert.
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
+    rewrite IH.
+    rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
+    rewrite <- (tm_shift_open_tm_fvar (open_tm_env η e) k 0 x ltac:(lia)).
+    reflexivity.
+Qed.
+
 Definition lstore_free_part (σ : LStoreT) : StoreT :=
   lstore_to_store σ.
 
