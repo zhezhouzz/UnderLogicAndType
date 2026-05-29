@@ -569,6 +569,26 @@ Ltac normalize_models_ands_goal :=
 Ltac normalize_models_ands :=
   normalize_models_ands_goal.
 
+Ltac destruct_models_formula_hyps :=
+  repeat match goal with
+  | H : _ ⊨ FAnd _ _ |- _ =>
+      rewrite res_models_and_iff in H; destruct H
+  | H : res_models _ _ /\ _ |- _ =>
+      destruct H
+  | H : _ /\ res_models _ _ |- _ =>
+      destruct H
+  end.
+
+Ltac split_models_formula_goal :=
+  repeat match goal with
+  | |- _ ⊨ FAnd _ _ =>
+      rewrite res_models_and_iff; split
+  | |- res_models _ _ /\ _ =>
+      split
+  | |- _ /\ res_models _ _ =>
+      split
+  end.
+
 Lemma open_tapp_tm_fvar_lc_arg e x y :
   open_tm 0 (vfvar x) (tapp_tm e (vfvar y)) =
   tapp_tm (open_tm 0 (vfvar x) e) (vfvar y).
@@ -1675,6 +1695,67 @@ Definition denot_wand_body_formula
         (tapp_tm (tm_shift 0 e) (vbvar 0)))).
 
 
+Lemma denot_relevant_env_eq_of_tm_lvars_eq
+    (Σ : lty_env) τ e e' :
+  tm_lvars e = tm_lvars e' ->
+  denot_relevant_env Σ τ e = denot_relevant_env Σ τ e'.
+Proof.
+  intros Heq.
+  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
+  rewrite Heq. reflexivity.
+Qed.
+
+Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq
+    (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
+  tm_lvars e_tgt = tm_lvars e_src ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ e_src) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ e_src) e_src (erase_ty τ) ->
+  wfworld_closed_on (fv_tm e_tgt) m.
+Proof.
+  intros Hlvars Hworld Hbasic.
+  eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
+  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
+  change (lvars_of_atoms (fv_tm e_tgt) ⊆
+    dom (storeA_restrict (Σ : gmap logic_var ty)
+      (context_ty_lvars τ ∪ tm_lvars e_src))).
+  rewrite storeA_restrict_dom.
+  intros v Hv.
+  unfold lvars_of_atoms in Hv.
+  apply elem_of_map in Hv as [a [-> Ha]].
+  apply elem_of_intersection. split.
+  - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
+      as [Hsub _].
+    assert (Ha_lvars : LVFree a ∈ tm_lvars e_src).
+    {
+      rewrite <- Hlvars.
+      apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+    }
+    specialize (Hsub _ Ha_lvars).
+    unfold denot_relevant_env, denot_relevant_lvars,
+      lty_env_restrict_lvars in Hsub.
+    change (LVFree a ∈ dom
+      (storeA_restrict (Σ : gmap logic_var ty)
+        (context_ty_lvars τ ∪ tm_lvars e_src))) in Hsub.
+    rewrite storeA_restrict_dom in Hsub.
+    apply elem_of_intersection in Hsub as [HaΣ _].
+    exact HaΣ.
+  - apply elem_of_union_r.
+    rewrite <- Hlvars.
+    apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+Qed.
+
+Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ e) e (erase_ty τ) ->
+  wfworld_closed_on (fv_tm e) m.
+Proof.
+  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+  reflexivity.
+Qed.
+
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
@@ -1688,31 +1769,7 @@ Proof.
   intros Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [_ [Hworld [Hbasic _]]].
-  eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
-  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-  change (lvars_of_atoms (fv_tm e) ⊆
-    dom (storeA_restrict (Σ : gmap logic_var ty)
-      (context_ty_lvars τ ∪ tm_lvars e))).
-  rewrite storeA_restrict_dom.
-  intros v Hv.
-  unfold lvars_of_atoms in Hv.
-  apply elem_of_map in Hv as [a [-> Ha]].
-  apply elem_of_intersection. split.
-  - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
-      as [Hsub _].
-    assert (Ha_lvars : LVFree a ∈ tm_lvars e).
-    { apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha. }
-    specialize (Hsub _ Ha_lvars).
-    unfold denot_relevant_env, denot_relevant_lvars,
-      lty_env_restrict_lvars in Hsub.
-    change (LVFree a ∈ dom
-      (storeA_restrict (Σ : gmap logic_var ty)
-        (context_ty_lvars τ ∪ tm_lvars e))) in Hsub.
-    rewrite storeA_restrict_dom in Hsub.
-    apply elem_of_intersection in Hsub as [HaΣ _].
-    exact HaΣ.
-  - apply elem_of_union_r.
-    apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term; eauto.
 Qed.
 
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term_le
@@ -1783,35 +1840,10 @@ Proof.
   - assert (Hclosed :
       wfworld_closed_on (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) m).
     {
-      eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
-      unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-      change (lvars_of_atoms (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) ⊆
-        dom (storeA_restrict (Σ : gmap logic_var ty)
-          (context_ty_lvars τ ∪ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y)))))).
-      rewrite storeA_restrict_dom.
-      intros v Hv.
-      unfold lvars_of_atoms in Hv.
-      apply elem_of_map in Hv as [a [-> Ha]].
-      apply elem_of_intersection. split.
-      - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
-          as [Hsub _].
-        assert (Ha_src :
-          LVFree a ∈ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y)))).
-        {
-          rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar.
-          apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
-        }
-        specialize (Hsub _ Ha_src).
-        change (LVFree a ∈ dom
-          (storeA_restrict (Σ : gmap logic_var ty)
-            (context_ty_lvars τ ∪
-             tm_lvars (tlete e1 (tapp_tm e2 (vfvar y)))))) in Hsub.
-        rewrite storeA_restrict_dom in Hsub.
-        apply elem_of_intersection in Hsub as [HaΣ _].
-        exact HaΣ.
-      - apply elem_of_union_r.
-        rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar.
-        apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+      - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+      - exact Hworld.
+      - exact Hbasic.
     }
     eapply expr_total_formula_tapp_tm_tlete_assoc; eauto.
 Qed.
@@ -1860,60 +1892,96 @@ Proof.
   - assert (Hclosed :
       wfworld_closed_on (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) m).
     {
-      eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
-      unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-      change (lvars_of_atoms (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) ⊆
-        dom (storeA_restrict (Σ : gmap logic_var ty)
-          (context_ty_lvars τ ∪ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y))))).
-      rewrite storeA_restrict_dom.
-      intros v Hv.
-      unfold lvars_of_atoms in Hv.
-      apply elem_of_map in Hv as [a [-> Ha]].
-      apply elem_of_intersection. split.
-      - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
-          as [Hsub _].
-        assert (Ha_tgt :
-          LVFree a ∈ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y))).
-        { apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha. }
-        specialize (Hsub _ Ha_tgt).
-        change (LVFree a ∈ dom
-          (storeA_restrict (Σ : gmap logic_var ty)
-            (context_ty_lvars τ ∪
-             tm_lvars (tapp_tm (tlete e1 e2) (vfvar y))))) in Hsub.
-        rewrite storeA_restrict_dom in Hsub.
-        apply elem_of_intersection in Hsub as [HaΣ _].
-        exact HaΣ.
-      - apply elem_of_union_r.
-        apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term;
+        eauto.
     }
     eapply expr_total_formula_tapp_tm_tlete_assoc_rev; eauto.
 Qed.
 
-Ltac solve_tapp_tlete_guard_assoc :=
+Ltac solve_tapp_tlete_lvars_assoc :=
+  first
+  [ rewrite tm_lvars_tapp_tm_tlete_assoc_fvar; reflexivity
+  | rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar; reflexivity
+  | rewrite tm_lvars_tapp_tlete_assoc_spine; reflexivity
+  | rewrite <- tm_lvars_tapp_tlete_assoc_spine; reflexivity
+  ].
+
+Ltac solve_tapp_tlete_closed :=
   match goal with
-  | Hguard : ?m ⊨ context_ty_wf_formula
-        (denot_relevant_env ?Σ ?τ (tlete ?e1 (tapp_tm ?e2 (vfvar ?y)))) ?τ
-      ∧ ?m ⊨ basic_world_formula
-          (denot_relevant_env ?Σ ?τ (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))))
-        ∧ ?m ⊨ expr_basic_typing_formula
-            (denot_relevant_env ?Σ ?τ (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))))
-            (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (erase_ty ?τ)
-          ∧ ?m ⊨ expr_total_formula (tlete ?e1 (tapp_tm ?e2 (vfvar ?y)))
-    |- ?m ⊨ context_ty_wf_formula
-        (denot_relevant_env ?Σ ?τ (tapp_tm (tlete ?e1 ?e2) (vfvar ?y))) ?τ
-      ∧ ?m ⊨ basic_world_formula
-          (denot_relevant_env ?Σ ?τ (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)))
-        ∧ ?m ⊨ expr_basic_typing_formula
-            (denot_relevant_env ?Σ ?τ (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)))
-            (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (erase_ty ?τ)
-          ∧ ?m ⊨ expr_total_formula (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) =>
-      let Hassoc := fresh "Hguard_assoc" in
-      pose proof (denot_ty_lvar_guard_tapp_tlete_assoc
-        Σ τ e1 e2 y m ltac:(eassumption)
-        ltac:(repeat rewrite res_models_and_iff; exact Hguard)) as Hassoc;
-      repeat rewrite res_models_and_iff in Hassoc;
-      exact Hassoc
+  | Hworld : ?m ⊨ basic_world_formula (denot_relevant_env ?Σ ?τ ?esrc),
+    Hbasic : ?m ⊨ expr_basic_typing_formula
+      (denot_relevant_env ?Σ ?τ ?esrc) ?esrc (erase_ty ?τ)
+    |- wfworld_closed_on (fv_tm ?etgt) ?m =>
+      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq;
+      [ solve_tapp_tlete_lvars_assoc | exact Hworld | exact Hbasic ]
   end.
+
+Ltac solve_tapp_tlete_guard_atom :=
+  first
+  [ eassumption
+  | match goal with
+    | H : ?m ⊨ context_ty_wf_formula (denot_relevant_env ?Σ ?τ ?esrc) ?τ
+      |- ?m ⊨ context_ty_wf_formula (denot_relevant_env ?Σ ?τ ?etgt) ?τ =>
+        rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ etgt esrc
+          ltac:(solve_tapp_tlete_lvars_assoc));
+        exact H
+    | H : ?m ⊨ basic_world_formula (denot_relevant_env ?Σ ?τ ?esrc)
+      |- ?m ⊨ basic_world_formula (denot_relevant_env ?Σ ?τ ?etgt) =>
+        rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ etgt esrc
+          ltac:(solve_tapp_tlete_lvars_assoc));
+        exact H
+    | H : ?m ⊨ expr_basic_typing_formula
+        (denot_relevant_env ?Σ ?τ ?esrc) ?esrc ?T
+      |- ?m ⊨ expr_basic_typing_formula
+        (denot_relevant_env ?Σ ?τ ?etgt) ?etgt ?T =>
+        rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ etgt esrc
+          ltac:(solve_tapp_tlete_lvars_assoc));
+        lazymatch goal with
+        | |- ?m ⊨ expr_basic_typing_formula _
+            (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) ?T =>
+            eapply expr_basic_typing_formula_tapp_tm_tlete_assoc;
+            [ eassumption | exact H ]
+        | |- ?m ⊨ expr_basic_typing_formula _
+            (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) ?T =>
+            eapply expr_basic_typing_formula_tapp_tm_tlete_assoc_rev;
+            [ eassumption | exact H ]
+        | |- ?m ⊨ expr_basic_typing_formula _
+            (tapp_tm_fvar_spine
+              (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs)) ?T =>
+            eapply expr_basic_typing_formula_tapp_tlete_assoc_spine;
+            [ eassumption | exact H ]
+        end
+    end
+  | match goal with
+    | H : ?m ⊨ expr_total_formula
+        (tlete ?e1 (tapp_tm ?e2 (vfvar ?y)))
+      |- ?m ⊨ expr_total_formula (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) =>
+        eapply expr_total_formula_tapp_tm_tlete_assoc;
+        [ solve_tapp_tlete_closed | eassumption | exact H ]
+    | H : ?m ⊨ expr_total_formula
+        (tapp_tm (tlete ?e1 ?e2) (vfvar ?y))
+      |- ?m ⊨ expr_total_formula (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) =>
+        eapply expr_total_formula_tapp_tm_tlete_assoc_rev;
+        [ solve_tapp_tlete_closed | eassumption | exact H ]
+    | H : ?m ⊨ expr_total_formula
+        (tapp_tm_fvar_spine
+          (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs))
+      |- ?m ⊨ expr_total_formula
+        (tapp_tm_fvar_spine
+          (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs)) =>
+        eapply expr_total_formula_tapp_tlete_assoc_spine;
+        [ solve_tapp_tlete_closed | eassumption | exact H ]
+    end
+  ].
+
+Ltac solve_tapp_tlete_guard_assoc :=
+  destruct_models_formula_hyps;
+  split_models_formula_goal;
+  [ solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  ].
 
 Ltac transport_open_denot_in H :=
   lazymatch type of H with
@@ -2033,77 +2101,22 @@ Proof.
         (fv_tm (tapp_tm_fvar_spine
           (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) m).
     {
-      eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
-      unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-      change (lvars_of_atoms (fv_tm (tapp_tm_fvar_spine
-          (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) ⊆
-        dom (storeA_restrict (Σ : gmap logic_var ty)
-          (context_ty_lvars τ ∪ tm_lvars
-            (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))))).
-      rewrite storeA_restrict_dom.
-      intros v Hv.
-      unfold lvars_of_atoms in Hv.
-      apply elem_of_map in Hv as [a [-> Ha]].
-      apply elem_of_intersection. split.
-      - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
-          as [Hsub _].
-        assert (Ha_src :
-          LVFree a ∈ tm_lvars
-            (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
-        {
-          rewrite <- tm_lvars_tapp_tlete_assoc_spine.
-          apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
-        }
-        specialize (Hsub _ Ha_src).
-        change (LVFree a ∈ dom
-          (storeA_restrict (Σ : gmap logic_var ty)
-            (context_ty_lvars τ ∪ tm_lvars
-              (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))))) in Hsub.
-        rewrite storeA_restrict_dom in Hsub.
-        apply elem_of_intersection in Hsub as [HaΣ _].
-        exact HaΣ.
-      - apply elem_of_union_r.
-        rewrite <- tm_lvars_tapp_tlete_assoc_spine.
-        apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+      - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+      - exact Hworld.
+      - exact Hbasic.
     }
     eapply expr_total_formula_tapp_tlete_assoc_spine; eauto.
 Qed.
 
 Ltac solve_tapp_tlete_guard_assoc_spine :=
-  match goal with
-  | Hguard : ?m ⊨ context_ty_wf_formula
-        (denot_relevant_env ?Σ ?τ
-          (tapp_tm_fvar_spine (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs))) ?τ
-      ∧ ?m ⊨ basic_world_formula
-          (denot_relevant_env ?Σ ?τ
-            (tapp_tm_fvar_spine (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs)))
-        ∧ ?m ⊨ expr_basic_typing_formula
-            (denot_relevant_env ?Σ ?τ
-              (tapp_tm_fvar_spine (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs)))
-            (tapp_tm_fvar_spine (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs))
-            (erase_ty ?τ)
-          ∧ ?m ⊨ expr_total_formula
-              (tapp_tm_fvar_spine (tlete ?e1 (tapp_tm ?e2 (vfvar ?y))) (?z :: ?zs))
-    |- ?m ⊨ context_ty_wf_formula
-        (denot_relevant_env ?Σ ?τ
-          (tapp_tm_fvar_spine (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs))) ?τ
-      ∧ ?m ⊨ basic_world_formula
-          (denot_relevant_env ?Σ ?τ
-            (tapp_tm_fvar_spine (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs)))
-        ∧ ?m ⊨ expr_basic_typing_formula
-            (denot_relevant_env ?Σ ?τ
-              (tapp_tm_fvar_spine (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs)))
-            (tapp_tm_fvar_spine (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs))
-            (erase_ty ?τ)
-          ∧ ?m ⊨ expr_total_formula
-              (tapp_tm_fvar_spine (tapp_tm (tlete ?e1 ?e2) (vfvar ?y)) (?z :: ?zs)) =>
-      let Hassoc := fresh "Hguard_assoc_spine" in
-      pose proof (denot_ty_lvar_guard_tapp_tlete_assoc_spine
-        Σ τ e1 e2 y z zs m ltac:(eassumption)
-        ltac:(repeat rewrite res_models_and_iff; exact Hguard)) as Hassoc;
-      repeat rewrite res_models_and_iff in Hassoc;
-      exact Hassoc
-  end.
+  destruct_models_formula_hyps;
+  split_models_formula_goal;
+  [ solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  | solve_tapp_tlete_guard_atom
+  ].
 
 Lemma denot_ty_lvar_gas_tapp_tlete_assoc_spine
     gas (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
