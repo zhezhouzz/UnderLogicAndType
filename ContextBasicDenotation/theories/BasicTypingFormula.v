@@ -747,7 +747,7 @@ Proof.
   intros Hfresh Hty.
   eapply basic_typing_env_agree_tm; [exact Hty|].
   intros a Ha.
-  apply lty_env_to_atom_env_insert_free_lookup_ne.
+  apply lvar_store_to_atom_store_insert_free_lookup_ne.
   intros ->. exact (Hfresh Ha).
 Qed.
 

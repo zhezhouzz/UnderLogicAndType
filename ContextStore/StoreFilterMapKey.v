@@ -724,6 +724,26 @@ Proof.
       apply map_lookup_insert_ne. congruence.
 Qed.
 
+Lemma lvar_store_to_atom_store_insert_free_lookup_ne
+    (s : LVarStore) x v a :
+  a <> x ->
+  lvar_store_to_atom_store (<[LVFree x := v]> s) !! a =
+  lvar_store_to_atom_store s !! a.
+Proof.
+  intros Hax.
+  rewrite lvar_store_to_atom_store_insert_free.
+  apply lookup_insert_ne. congruence.
+Qed.
+
+Lemma lvar_store_to_atom_store_insert_free_lookup_eq
+    (s : LVarStore) x v :
+  lvar_store_to_atom_store (<[LVFree x := v]> s) !! x = Some v.
+Proof.
+  rewrite lvar_store_to_atom_store_insert_free.
+  rewrite lookup_insert.
+  destruct (decide (x = x)); [reflexivity|congruence].
+Qed.
+
 Lemma lvar_store_to_atom_store_swap x y (s : LVarStore) :
   lvar_store_to_atom_store (lvar_store_swap x y s) =
   (@storeA_swap V atom _ _ x y (lvar_store_to_atom_store s) : gmap atom V).

@@ -2178,9 +2178,9 @@ Proof.
 	    apply basic_typing_tapp_tm_tlete_assoc_rev.
 	    eapply basic_typing_tapp_tm.
 	    - apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact Hlet].
-	    - constructor.
-	      apply lty_env_to_atom_env_insert_free_lookup_eq.
-	  }
+		    - constructor.
+		      apply lvar_store_to_atom_store_insert_free_lookup_eq.
+		  }
 	  assert (Htotal_prod :
 	    res_product n0 my Hc0_my ⊨ expr_total_formula e1).
 	  {

@@ -312,32 +312,6 @@ Proof.
     + apply insert_insert_ne. congruence.
 Qed.
 
-Lemma lty_env_to_atom_env_insert_free_lookup_ne
-    (Σ : lty_env) x T a :
-  a <> x ->
-  lty_env_to_atom_env (<[LVFree x := T]> Σ) !! a =
-  lty_env_to_atom_env Σ !! a.
-Proof.
-  intros Hax.
-  rewrite !lvar_store_to_atom_store_lookup.
-  change (((<[LVFree x := T]> (Σ : gmap logic_var ty))
-    : gmap logic_var ty) !! LVFree a =
-    (Σ : gmap logic_var ty) !! LVFree a).
-  rewrite lookup_insert_ne by congruence.
-  reflexivity.
-Qed.
-
-Lemma lty_env_to_atom_env_insert_free_lookup_eq
-    (Σ : lty_env) x T :
-  lty_env_to_atom_env (<[LVFree x := T]> Σ) !! x = Some T.
-Proof.
-  rewrite lvar_store_to_atom_store_lookup.
-  change (((<[LVFree x := T]> (Σ : gmap logic_var ty))
-    : gmap logic_var ty) !! LVFree x = Some T).
-  rewrite lookup_insert.
-  destruct (decide (LVFree x = LVFree x)); [reflexivity|congruence].
-Qed.
-
 Lemma lty_env_open_step_commute
     (η : gmap nat atom) (i j : logic_var)
     (Ti Tj : ty) (acc : gmap atom ty) :
