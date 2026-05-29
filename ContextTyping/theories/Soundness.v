@@ -106,7 +106,11 @@ Lemma denot_ty_in_ctx_under_total
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
   m ⊨ expr_total_formula e.
 Proof.
-Admitted.
+  intros Hden.
+  pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  exact (proj2 (proj2 (proj2 Hguard))).
+Qed.
 
 (** ** Direct case bridges *)
 
@@ -140,7 +144,25 @@ Lemma denot_var_direct_in_ctx Σ x τ :
   denot_ctx_in_env Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf m Hctx.
+  unfold denot_ctx_in_env in Hctx.
+  repeat rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ [_ Hbind]].
+  destruct Hwf as [Hwfτ _].
+  pose proof (wf_context_ty_under_ctx Σ (CtxBind x τ) τ Hwfτ) as Hwfctx.
+  pose proof (wf_ctx_under_basic Σ (CtxBind x τ) Hwfctx) as Hbasicctx.
+  cbn [basic_ctx] in Hbasicctx.
+  destruct Hbasicctx as [HxΣ _].
+  unfold denot_ty_in_ctx_under, erase_ctx_under.
+  cbn [denot_ctx_under] in Hbind.
+  replace (Σ ∪ erase_ctx (CtxBind x τ))
+    with (<[x := erase_ty τ]> Σ).
+  - exact Hbind.
+  - cbn [erase_ctx].
+    symmetry.
+    apply (storeA_union_singleton_insert_fresh
+      (V := ty) (K := atom) (Σ : gmap atom ty) x (erase_ty τ) HxΣ).
+Qed.
 
 Lemma fundamental_var_case Σ x τ :
   context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ ->
@@ -148,6 +170,105 @@ Lemma fundamental_var_case Σ x τ :
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
   apply denot_var_direct_in_ctx.
+Qed.
+
+Lemma basic_world_formula_empty (m : WfWorldT) :
+  m ⊨ basic_world_formula (∅ : lty_env).
+Proof.
+  apply basic_world_formula_models_iff.
+  split.
+  - rewrite dom_empty_L. unfold lc_lvars. set_solver.
+  - split.
+    + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    + unfold lworld_has_type, worldA_has_type, storeA_has_type.
+      split; [rewrite dom_empty_L; set_solver|].
+      intros σ _ v T val Hlookup _.
+      rewrite lookup_empty in Hlookup. discriminate.
+Qed.
+
+Lemma context_ty_wf_formula_const_precise_empty c (m : WfWorldT) :
+  m ⊨ context_ty_wf_formula (∅ : lty_env)
+    (CTInter
+      (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))).
+Proof.
+  apply context_ty_wf_formula_models_iff.
+  split.
+  - rewrite dom_empty_L. unfold lc_lvars. set_solver.
+  - split.
+    + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    + unfold const_precise_ty, precise_ty, over_ty, under_ty, mk_q_eq,
+        basic_context_ty_lvars.
+      cbn [context_ty_lvars context_ty_lvars_at qual_vars qual_lvars
+        lvar_value_keys lvars_at_depth context_ty_shape_ok erase_ty].
+      rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
+        !lvars_at_depth_empty.
+      split; [set_solver|].
+      repeat split; reflexivity.
+Qed.
+
+Lemma expr_basic_typing_formula_ret_const_empty c (m : WfWorldT) :
+  m ⊨ expr_basic_typing_formula (∅ : lty_env)
+    (tret (vconst c)) (TBase (base_ty_of_const c)).
+Proof.
+  apply expr_basic_typing_formula_models_iff.
+  split.
+  - rewrite dom_empty_L. unfold lc_lvars. set_solver.
+  - split.
+    + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    + unfold basic_tm_has_ltype.
+      split; [cbn [tm_lvars lvar_value_keys]; set_solver|].
+      intros η _ _.
+      change (lty_env_open_lvars η (∅ : lty_env))
+        with (storeA_rekey (logic_var_open_env η) (∅ : gmap logic_var ty)).
+      rewrite storeA_rekey_empty.
+      rewrite open_tm_env_lc by (constructor; constructor).
+      cbn [lty_env_to_atom_env].
+      constructor. constructor.
+Qed.
+
+Lemma expr_total_formula_ret_const c (m : WfWorldT) :
+  m ⊨ expr_total_formula (tret (vconst c)).
+Proof.
+  apply expr_total_atom_world_to_formula.
+  unfold expr_total_on_atom_world, expr_total_on.
+  split.
+  - cbn [tm_lvars lvar_value_keys]. set_solver.
+  - intros σ _.
+    exists (vconst c).
+    unfold expr_eval_in_store, lstore_instantiate_tm,
+      lstore_instantiate_tm_at, lstore_instantiate_value_at.
+    cbn [lstore_instantiate_tm_split_at
+      lstore_instantiate_value_split_at].
+    apply Steps_refl. constructor. constructor.
+Qed.
+
+Lemma denot_relevant_env_const_precise_atom_env_empty Σ c :
+  denot_relevant_env (atom_env_to_lty_env Σ)
+    (CTInter
+      (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
+      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
+    (tret (vconst c)) = (∅ : lty_env).
+Proof.
+  apply map_eq. intros v.
+  destruct v as [k|x].
+  - unfold denot_relevant_env, lty_env_restrict_lvars.
+    apply eq_None_not_Some. intros [T Hlookup].
+    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
+    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
+    discriminate.
+  - apply eq_None_not_Some. intros [T Hlookup].
+    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
+    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
+    apply lvars_fv_elem in Hin.
+    unfold denot_relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq in Hin.
+    cty_lvars_syntax_norm_in Hin.
+    unfold qual_vars in Hin.
+    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
+      lvar_value_keys] in Hin.
+    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
+      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
+    set_solver.
 Qed.
 
 Lemma denot_const_direct_in_ctx Σ c :

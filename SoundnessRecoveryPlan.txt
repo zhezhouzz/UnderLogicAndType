@@ -1,0 +1,76 @@
+Soundness recovery plan
+=======================
+
+Current baseline
+----------------
+
+- Branch: codex/soundness-recovery.
+- Current Fundamental statement is restored in ContextTyping/theories/Soundness.v.
+- Current TLet branch is no longer routed through old helper stacks:
+  Fundamental -> fundamental_let_case -> tlet_intro_denotation.
+- The remaining problem is that several simple cases that should already be
+  recovered are still only names around admitted bridge lemmas.
+
+Execution order
+---------------
+
+1. Re-check the current Soundness.v proof spine.
+   - Keep Fundamental as the main theorem.
+   - Keep each induction branch calling one case lemma.
+   - For TLet, keep the direct call to tlet_intro_denotation inside
+     fundamental_let_case.
+
+2. Finish the guard extraction lemmas.
+   - denot_ty_in_ctx_under_context_ty_wf: already proved.
+   - denot_ty_in_ctx_under_basic_world: already proved.
+   - denot_ty_in_ctx_under_basic_typing: already proved.
+   - denot_ty_in_ctx_under_total: should be proved by the same guard split,
+     not left as a review-point admit.
+
+3. Restore the variable case as a real proof.
+   - Prove denot_var_direct_in_ctx, or inline it into fundamental_var_case.
+   - Proof shape:
+     * pull the CtxBind component out of denot_ctx_in_env;
+     * use basic_ctx freshness from context_typing_wf to rewrite
+       erase_ctx_under Σ (CtxBind x τ) into <[x := erase_ty τ]> Σ;
+     * the goal is then exactly the singleton context denotation.
+   - This mirrors the old ChoiceTyping proof, adjusted to the current
+     Context names.
+
+4. Restore the constant case as far as the old development actually had it.
+   - Old ChoiceTyping/Soundness.v left fundamental_const_case admitted.
+   - First recover any easy guard/total/basic-typing components if they are
+     now direct.
+   - If the precise Over/Under refinement body still needs value-adequacy
+     work, keep denot_const_direct_in_ctx as the single named admitted bridge,
+     not several old-route wrappers.
+
+5. Keep Sub proved and do not regress it.
+   - fundamental_sub_case is already a real proof via sub_type_under and
+     res_models_impl_elim.
+   - No additional bridge should be introduced.
+
+6. Leave the known complex branches at direct bridge boundaries.
+   - denot_letd_direct_in_ctx
+   - denot_lam_direct_in_ctx / denot_lamd_direct_in_ctx
+   - denot_app_direct_in_ctx / denot_appd_direct_in_ctx
+   - denot_fix_direct_in_ctx / denot_fixd_direct_in_ctx
+   - denot_appop_direct_in_ctx
+   - denot_match_*_direct_in_ctx
+   These statements should stay precise and review-facing, but can remain
+   admitted until their denotation-specific proofs are resumed.
+
+7. Compile after each restored block.
+   - First compile ContextTyping/theories/Soundness.vo.
+   - Then run full make.
+   - Commit after a full successful make.
+
+Immediate target for this round
+-------------------------------
+
+- Prove denot_ty_in_ctx_under_total.
+- Prove denot_var_direct_in_ctx/fundamental_var_case.
+- Audit denot_const_direct_in_ctx against the old branch and either prove the
+  now-easy part or document that it is the same remaining constant bridge as in
+  the old development.
+- Re-run make and commit.
