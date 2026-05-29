@@ -3189,15 +3189,7 @@ Proof.
   assert (He1_Σy :
     lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ e1 ⋮ T1).
   {
-    eapply basic_typing_env_agree_tm; [exact He1|].
-    intros a Ha.
-    rewrite !lvar_store_to_atom_store_lookup.
-    change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
-      : gmap logic_var ty) !! LVFree a =
-      (Σ : gmap logic_var ty) !! LVFree a).
-    rewrite lookup_insert_ne; [reflexivity|].
-    intros Hbad. inversion Hbad. subst a.
-    apply Hy_support. fast_set_solver!!.
+    apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact He1].
   }
   assert (Hlet_Σy :
     lty_env_to_atom_env (<[LVFree y := erase_ty τx]> Σ) ⊢ₑ
@@ -3206,21 +3198,9 @@ Proof.
     rewrite cty_open_preserves_erasure.
     apply basic_typing_tapp_tm_tlete_assoc_rev.
     eapply basic_typing_tapp_tm.
-    - eapply basic_typing_env_agree_tm; [exact Hlet|].
-      intros a Ha.
-      rewrite !lvar_store_to_atom_store_lookup.
-      change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
-        : gmap logic_var ty) !! LVFree a =
-        (Σ : gmap logic_var ty) !! LVFree a).
-      rewrite lookup_insert_ne; [reflexivity|].
-      intros Hbad. inversion Hbad. subst a.
-      apply Hy_support. fast_set_solver!!.
+    - apply basic_typing_lty_env_insert_free_away; [tlet_support_solver|exact Hlet].
     - constructor.
-      rewrite lvar_store_to_atom_store_lookup.
-      change (((<[LVFree y := erase_ty τx]> (Σ : gmap logic_var ty))
-        : gmap logic_var ty) !! LVFree y = Some (erase_ty τx)).
-      rewrite lookup_insert.
-      destruct (decide (LVFree y = LVFree y)); [reflexivity|congruence].
+      apply lty_env_to_atom_env_insert_free_lookup_eq.
   }
   assert (Htotal_prod :
     res_product n0 my Hc0_my ⊨ expr_total_formula e1).

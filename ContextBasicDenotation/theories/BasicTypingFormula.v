@@ -1039,6 +1039,18 @@ Proof.
     apply basic_tm_has_ltype_open_one_fresh_iff. exact Hy.
 Qed.
 
+Lemma basic_typing_lty_env_insert_free_away Σ x T e U :
+  x ∉ fv_tm e ->
+  lty_env_to_atom_env Σ ⊢ₑ e ⋮ U ->
+  lty_env_to_atom_env (<[LVFree x := T]> Σ) ⊢ₑ e ⋮ U.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_typing_env_agree_tm; [exact Hty|].
+  intros a Ha.
+  apply lty_env_to_atom_env_insert_free_lookup_ne.
+  intros ->. exact (Hfresh Ha).
+Qed.
+
 Lemma basic_typing_lty_env_to_atom_env_fv_subset Σ e T :
   lty_env_to_atom_env Σ ⊢ₑ e ⋮ T ->
   fv_tm e ⊆ lvars_fv (dom Σ).

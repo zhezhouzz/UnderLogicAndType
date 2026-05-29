@@ -927,32 +927,18 @@ Proof.
 	            (m := my)
 	            (mx := myx)
 	            (Fx := Fx)
-	            (x := x)
-	            (τ := cty_open 0 y τr).
-	          - apply lty_env_closed_insert_free. exact HΣ.
-	          - eapply basic_typing_env_agree_tm; [exact He1|].
-	            intros z Hz.
-	            assert (Hzy : z <> y) by tlet_support_solver.
-	            rewrite !lvar_store_to_atom_store_lookup.
-	            change (((<[LVFree y := erase_ty τx]>
-	                (Σ : gmap logic_var ty)) : gmap logic_var ty) !!
-	              LVFree z = (Σ : gmap logic_var ty) !! LVFree z).
-	            rewrite lookup_insert_ne by congruence.
-	            reflexivity.
-		          - rewrite cty_open_preserves_erasure.
-		            inversion Hlet; subst.
-		            assert (T0 = T1) by (eapply basic_typing_unique_tm; eauto).
-		            subst T0.
-		            eapply TT_Let with (L := L ∪ {[y]} ∪ fv_tm e2 ∪ dom (lty_env_to_atom_env Σ)).
-		            + eapply basic_typing_env_agree_tm; [exact He1|].
-		              intros z Hz.
-		              assert (Hzy : z <> y) by tlet_support_solver.
-		              rewrite !lvar_store_to_atom_store_lookup.
-		              change (((<[LVFree y := erase_ty τx]>
-		                  (Σ : gmap logic_var ty)) : gmap logic_var ty) !!
-		                LVFree z = (Σ : gmap logic_var ty) !! LVFree z).
-		              rewrite lookup_insert_ne by congruence.
-		              reflexivity.
+		            (x := x)
+		            (τ := cty_open 0 y τr).
+		          - apply lty_env_closed_insert_free. exact HΣ.
+		          - apply basic_typing_lty_env_insert_free_away;
+		              [tlet_support_solver|exact He1].
+			          - rewrite cty_open_preserves_erasure.
+			            inversion Hlet; subst.
+			            assert (T0 = T1) by (eapply basic_typing_unique_tm; eauto).
+			            subst T0.
+			            eapply TT_Let with (L := L ∪ {[y]} ∪ fv_tm e2 ∪ dom (lty_env_to_atom_env Σ)).
+			            + apply basic_typing_lty_env_insert_free_away;
+			                [tlet_support_solver|exact He1].
 		            + intros z Hz.
 		              change ((tapp_tm e2 (vfvar y)) ^^ z) with
 		                (open_tm 0 (vfvar z) (tapp_tm e2 (vfvar y))).
