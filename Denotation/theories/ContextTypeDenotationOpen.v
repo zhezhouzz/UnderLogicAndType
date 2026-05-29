@@ -101,22 +101,6 @@ Proof.
   apply formula_open_env_lift_expr_result_formula_shift0_core.
 Qed.
 
-Lemma lty_env_open_one_succ_bound0_singleton k y T :
-  lty_env_open_one (S k) y
-    ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env) =
-  ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
-Proof.
-  rewrite lty_env_open_one_insert.
-  replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
-  - replace (lty_env_open_one (S k) y (∅ : lty_env)) with
-      ((∅ : gmap logic_var ty) : lty_env).
-    reflexivity.
-	    unfold lty_env_open_one.
-	    apply (storeA_rekey_empty (V := ty) (K := logic_var)
-	      (logic_var_open (S k) y)).
-	  - unfold swap. repeat destruct decide; try lia; try congruence.
-Qed.
-
 Lemma lvars_open_qual_vars_difference_bound0_under k y q :
   lvars_open (S k) y (qual_vars q ∖ {[LVBound 0]}) =
   qual_vars (qual_open_atom (S k) y q) ∖ {[LVBound 0]}.
@@ -162,7 +146,7 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
@@ -192,7 +176,7 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
@@ -340,7 +324,7 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   match goal with
   | H : formula_open (S k) y
           (denot_ty_lvar_gas gas _ (cty_shift 0 τx) (tret (vbvar 0))) = _
@@ -435,7 +419,7 @@ Proof.
   rewrite formula_open_impl.
   rewrite formula_open_wand.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   match goal with
   | H : formula_open (S k) y
           (denot_ty_lvar_gas gas _ (cty_shift 0 τx) (tret (vbvar 0))) = _

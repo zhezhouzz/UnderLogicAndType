@@ -87,6 +87,22 @@ Proof.
   - unfold swap. repeat destruct decide; try lia; try congruence.
 Qed.
 
+Lemma lvar_store_open_one_succ_bound0_singleton k y A :
+  lvar_store_open_one (S k) y
+    ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore) =
+  ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore).
+Proof.
+  rewrite lvar_store_open_one_insert.
+  replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
+  - replace (lvar_store_open_one (S k) y (∅ : LVarStore)) with
+      ((∅ : gmap logic_var V) : LVarStore).
+    reflexivity.
+    unfold lvar_store_open_one.
+    apply (storeA_rekey_empty (V := V) (K := logic_var)
+      (logic_var_open (S k) y)).
+  - unfold swap. repeat destruct decide; try lia; try congruence.
+Qed.
+
 Lemma lvar_store_open_lvars_dom η (s : LVarStore) :
   open_env_fresh_for_lvars η (dom s) ->
   dom (lvar_store_open_lvars η s) =
