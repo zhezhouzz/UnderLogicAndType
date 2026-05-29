@@ -55,7 +55,7 @@ Ltac harvest_tlet_models :=
   repeat match goal with
   | H : ?m ⊨ context_ty_wf_formula ?Σ ?τ |- _ =>
       lazymatch goal with
-      | Hscope : lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) |- _ => fail
+      | Hscope : lvars_fv (dom Σ) ⊆ world_dom m |- _ => fail
       | _ =>
           let Hscope := fresh "Hcontext_scope" in
           pose proof (context_ty_wf_formula_scope_dom Σ τ m H) as Hscope
@@ -69,7 +69,7 @@ Ltac harvest_tlet_models :=
       end
   | H : ?m ⊨ expr_basic_typing_formula ?Σ ?e ?T |- _ =>
       lazymatch goal with
-      | Hscope : lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) |- _ => fail
+      | Hscope : lvars_fv (dom Σ) ⊆ world_dom m |- _ => fail
       | _ =>
           let Hscope := fresh "Hexpr_basic_scope" in
           pose proof (expr_basic_typing_formula_scope_dom Σ e T m H) as Hscope
@@ -520,23 +520,16 @@ Proof.
       split; [exact Hscope_base|].
       split; [|exact Hshape].
       intros v Hv.
-      assert (Hv_mx : v ∈ dom (denot_relevant_env
-        (<[LVFree x := T1]> Σ) τ (e2 ^^ x))).
-      { exact (Hvars_mx v Hv). }
-      unfold denot_relevant_env, lty_env_restrict_lvars in Hv_mx |- *.
-      change (v ∈ dom (storeA_restrict
-        ((<[LVFree x := T1]> (Σ : gmap logic_var ty)) : lty_env)
-        (denot_relevant_lvars τ (e2 ^^ x)))) in Hv_mx.
-      rewrite storeA_restrict_dom in Hv_mx.
-      apply elem_of_intersection in Hv_mx as [Hv_insert _].
-      change (v ∈ dom (storeA_restrict (Σ : gmap logic_var ty)
-        (denot_relevant_lvars τ (tlete e1 e2)))).
-      rewrite storeA_restrict_dom.
-      apply elem_of_intersection. split.
-      { change (v ∈ dom ((<[LVFree x := T1]> (Σ : gmap logic_var ty))
-          : gmap logic_var ty)) in Hv_insert.
-        rewrite dom_insert_L in Hv_insert.
-        apply elem_of_union in Hv_insert as [Hvx|HvΣ].
+	      assert (Hv_mx : v ∈ dom (denot_relevant_env
+	        (<[LVFree x := T1]> Σ) τ (e2 ^^ x))).
+	      { exact (Hvars_mx v Hv). }
+	      unfold denot_relevant_env, lty_env_restrict_lvars in Hv_mx |- *.
+	      rewrite storeA_restrict_dom in Hv_mx.
+	      apply elem_of_intersection in Hv_mx as [Hv_insert _].
+	      rewrite storeA_restrict_dom.
+	      apply elem_of_intersection. split.
+	      { rewrite dom_insert_L in Hv_insert.
+	        apply elem_of_union in Hv_insert as [Hvx|HvΣ].
         - rewrite elem_of_singleton in Hvx. subst v. contradiction.
         - exact HvΣ. }
       { unfold denot_relevant_lvars. set_solver. }
@@ -546,13 +539,10 @@ Proof.
         -- eapply expr_basic_typing_formula_tlete_intro; [exact Hbase_world|].
            apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
            exact Hlet.
-        -- eapply expr_total_formula_tlete_intro_from_result_extension
-             with (Σ := denot_relevant_env Σ τ (tlete e1 e2)); eauto.
-           ++ unfold denot_relevant_env, lty_env_restrict_lvars.
-              change (LVFree x ∉ dom
-                (storeA_restrict (Σ : gmap logic_var ty)
-                   (denot_relevant_lvars τ (tlete e1 e2)))).
-              better_store_solver.
+	        -- eapply expr_total_formula_tlete_intro_from_result_extension
+	             with (Σ := denot_relevant_env Σ τ (tlete e1 e2)); eauto.
+	           ++ unfold denot_relevant_env, lty_env_restrict_lvars.
+	              better_store_solver.
            ++ apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
               exact Hlet.
   - cbn [res_models res_models_fuel formula_measure].
