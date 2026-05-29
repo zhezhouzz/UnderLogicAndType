@@ -751,3 +751,101 @@ Lemma ctx_dom_subset_stale Γ :
 Proof.
   induction Γ; simpl; set_solver.
 Qed.
+
+(** * ContextTypeLanguage.Syntax
+
+    Syntax-shape normalization tactics for context types and contexts.  These
+    are deliberately pure: denotation-specific formula atoms should extend
+    these tactics rather than duplicate the structural rewrites. *)
+
+Ltac cty_lvars_syntax_norm :=
+  cbn [context_ty_lvars context_ty_lvars_at context_ty_open_lvars
+    context_ty_shift_lvars];
+  rewrite ?cty_open_vars, ?cty_shift_vars;
+  rewrite ?context_ty_lvars_fv, ?context_ty_lvars_fv_at;
+  rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
+  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
+    ?lvars_fv_singleton_bound, ?lvars_fv_singleton_free,
+    ?lvars_bv_union.
+
+Ltac cty_lvars_syntax_norm_in H :=
+  cbn [context_ty_lvars context_ty_lvars_at context_ty_open_lvars
+    context_ty_shift_lvars] in H;
+  rewrite ?cty_open_vars in H;
+  rewrite ?cty_shift_vars in H;
+  rewrite ?context_ty_lvars_fv in H;
+  rewrite ?context_ty_lvars_fv_at in H;
+  rewrite ?context_ty_lvars_over_fv in H;
+  rewrite ?context_ty_lvars_under_fv in H;
+  rewrite ?lvars_fv_union in H;
+  rewrite ?lvars_fv_of_atoms in H;
+  rewrite ?lvars_fv_singleton_bound in H;
+  rewrite ?lvars_fv_singleton_free in H;
+  rewrite ?lvars_bv_union in H.
+
+Ltac cty_fv_syntax_norm :=
+  unfold fv_cty, bv_cty;
+  cty_lvars_syntax_norm.
+
+Ltac cty_fv_syntax_norm_in H :=
+  unfold fv_cty, bv_cty in H;
+  cty_lvars_syntax_norm_in H.
+
+Ltac cty_open_syntax_norm :=
+  cbn [cty_open open_one open_cty_atom_inst];
+  rewrite ?cty_open_preserves_erasure, ?cty_open_preserves_depth.
+
+Ltac cty_open_syntax_norm_in H :=
+  cbn [cty_open open_one open_cty_atom_inst] in H;
+  rewrite ?cty_open_preserves_erasure in H;
+  rewrite ?cty_open_preserves_depth in H.
+
+Ltac cty_shift_syntax_norm :=
+  cbn [cty_shift shift shift_cty_inst];
+  rewrite ?cty_shift_preserves_erasure, ?cty_shift_preserves_depth;
+  rewrite ?cty_shift_fv, ?cty_shift_vars.
+
+Ltac cty_shift_syntax_norm_in H :=
+  cbn [cty_shift shift shift_cty_inst] in H;
+  rewrite ?cty_shift_preserves_erasure in H;
+  rewrite ?cty_shift_preserves_depth in H;
+  rewrite ?cty_shift_fv in H;
+  rewrite ?cty_shift_vars in H.
+
+Ltac cty_erase_syntax_norm :=
+  cbn [erase_ty erase_ctx lift_ty lift_ctx];
+  rewrite ?cty_open_preserves_erasure, ?cty_shift_preserves_erasure;
+  rewrite ?cty_vars_equiv_erase.
+
+Ltac cty_erase_syntax_norm_in H :=
+  cbn [erase_ty erase_ctx lift_ty lift_ctx] in H;
+  rewrite ?cty_open_preserves_erasure in H;
+  rewrite ?cty_shift_preserves_erasure in H.
+
+Ltac ctx_syntax_norm :=
+  cbn [ctx_dom ctx_fv ctx_stale erase_ctx plug_ctx];
+  rewrite ?ctx_stale_eq_fv_dom;
+  store_normalize;
+  rewrite ?dom_empty_L, ?dom_singleton_L, ?dom_union_L.
+
+Ltac ctx_syntax_norm_in H :=
+  cbn [ctx_dom ctx_fv ctx_stale erase_ctx plug_ctx] in H;
+  rewrite ?ctx_stale_eq_fv_dom in H;
+  store_normalize;
+  rewrite ?dom_empty_L in H;
+  rewrite ?dom_singleton_L in H;
+  rewrite ?dom_union_L in H.
+
+Ltac type_syntax_norm :=
+  cty_fv_syntax_norm;
+  cty_open_syntax_norm;
+  cty_shift_syntax_norm;
+  cty_erase_syntax_norm;
+  ctx_syntax_norm.
+
+Ltac type_syntax_norm_in H :=
+  cty_fv_syntax_norm_in H;
+  cty_open_syntax_norm_in H;
+  cty_shift_syntax_norm_in H;
+  cty_erase_syntax_norm_in H;
+  ctx_syntax_norm_in H.

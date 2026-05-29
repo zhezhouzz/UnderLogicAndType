@@ -81,7 +81,8 @@ End TypeLanguageNotationSmoke.
 
 
 Ltac mopen_norm :=
-  rewrite ?mopen_insert_norm.
+  rewrite ?mopen_insert_norm;
+  type_open_env_syntax_norm.
 
 Ltac type_lvars_norm :=
   repeat match goal with
@@ -104,7 +105,7 @@ Ltac type_lvars_norm :=
   end.
 
 Ltac type_env_norm :=
-  rewrite ?open_cty_env_empty in *;
+  type_open_env_syntax_norm;
   rewrite ?lvar_store_atom_dom_shift in *.
 
 (** * ContextTypeLanguage.Notation

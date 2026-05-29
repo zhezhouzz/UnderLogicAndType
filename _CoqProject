@@ -60,7 +60,6 @@ CoreLang/theories/Sugar.v
 
 ContextTypeLanguage/theories/Qualifier.v
 ContextTypeLanguage/theories/Syntax.v
-ContextTypeLanguage/theories/MultiOpen.v
 ContextTypeLanguage/theories/TypeOpen.v
 ContextTypeLanguage/theories/LtyEnv.v
 ContextTypeLanguage/theories/WF.v
