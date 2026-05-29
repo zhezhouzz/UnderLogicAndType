@@ -97,22 +97,49 @@ Lemma resA_extend_by_dom m F n :
   worldA_dom (n : WorldAT) = worldA_dom (m : WorldAT) ∪ extA_out F.
 Proof. intros [_ [Hdom _]]. exact Hdom. Qed.
 
-Lemma resA_extend_by_dom_base_subset m F n :
+Lemma resA_extend_by_dom_subsets m F n :
   m #> F ~~A> n →
-  worldA_dom (m : WorldAT) ⊆ worldA_dom (n : WorldAT).
+  worldA_dom (m : WorldAT) ⊆ worldA_dom (n : WorldAT) ∧
+  extA_out F ⊆ worldA_dom (n : WorldAT).
 Proof.
   intros Hext.
   rewrite (resA_extend_by_dom m F n Hext).
   set_solver.
 Qed.
 
+Lemma resA_extend_by_dom_base_subset m F n :
+  m #> F ~~A> n →
+  worldA_dom (m : WorldAT) ⊆ worldA_dom (n : WorldAT).
+Proof.
+  intros Hext. exact (proj1 (resA_extend_by_dom_subsets m F n Hext)).
+Qed.
+
 Lemma resA_extend_by_dom_output_subset m F n :
   m #> F ~~A> n →
   extA_out F ⊆ worldA_dom (n : WorldAT).
 Proof.
-  intros Hext.
-  rewrite (resA_extend_by_dom m F n Hext).
-  set_solver.
+  intros Hext. exact (proj2 (resA_extend_by_dom_subsets m F n Hext)).
+Qed.
+
+Lemma extension_applicableA_after_parallel_extension_right
+    (m mx my : WfWorldAT) (F G : fiber_extensionA) :
+  m #> F ~~A> mx →
+  m #> G ~~A> my →
+  extA_out G ## worldA_dom (mx : WorldAT) →
+  extension_applicableA F my.
+Proof.
+  intros HmF HmG HoutG.
+  constructor.
+  - pose proof (resA_extend_by_applicable m F mx HmF) as HappF.
+    pose proof (resA_extend_by_dom m G my HmG) as Hdom_my.
+    rewrite Hdom_my.
+    pose proof (extA_app_in F m HappF). set_solver.
+  - pose proof (resA_extend_by_applicable m F mx HmF) as HappF.
+    pose proof (resA_extend_by_dom m F mx HmF) as Hdom_mx.
+    pose proof (resA_extend_by_dom m G my HmG) as Hdom_my.
+    rewrite Hdom_my.
+    rewrite Hdom_mx in HoutG.
+    pose proof (extA_app_out F m HappF). set_solver.
 Qed.
 
 Lemma resA_extend_by_store_iff m F n σ :

@@ -587,17 +587,8 @@ Lemma res_extend_by_commute_exists_right
     res_extend_by mx Fy myx.
 Proof.
   intros HmF HmFy HinFy HoutFy.
-  assert (HappF_my : extension_applicable F my).
-  {
-    constructor.
-    - pose proof (res_extend_by_input_dom m F mx HmF) as HFinF.
-      pose proof (res_extend_by_dom m Fy my HmFy) as Hdom_my.
-      set_solver.
-    - pose proof (res_extend_by_output_fresh m F mx HmF) as HoutF.
-      pose proof (res_extend_by_dom m Fy my HmFy) as Hdom_my.
-      pose proof (res_extend_by_dom m F mx HmF) as Hdom_mx.
-      set_solver.
-  }
+  pose proof (extension_applicable_after_parallel_extension_right
+    m mx my F Fy HmF HmFy HoutFy) as HappF_my.
   destruct (res_extend_by_exists my F HappF_my) as [myx HmyF].
   exists myx. split; [exact HmyF |].
   apply (proj2 (res_extend_by_commute_input_widen

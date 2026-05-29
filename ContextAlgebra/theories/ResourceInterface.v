@@ -509,6 +509,12 @@ Lemma res_extend_by_dom (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
 Proof. apply resA_extend_by_dom. Qed.
 
+Lemma res_extend_by_dom_subsets (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
+  m #> F ~~> n →
+  world_dom (m : World) ⊆ world_dom (n : World) ∧
+  extA_out F ⊆ world_dom (n : World).
+Proof. apply resA_extend_by_dom_subsets. Qed.
+
 Lemma res_extend_by_dom_base_subset (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   world_dom (m : World) ⊆ world_dom (n : World).
@@ -518,6 +524,14 @@ Lemma res_extend_by_dom_output_subset (m : WfWorld) (F : fiber_extension) (n : W
   m #> F ~~> n →
   extA_out F ⊆ world_dom (n : World).
 Proof. apply resA_extend_by_dom_output_subset. Qed.
+
+Lemma extension_applicable_after_parallel_extension_right
+    (m mx my : WfWorld) (F G : fiber_extension) :
+  m #> F ~~> mx →
+  m #> G ~~> my →
+  extA_out G ## world_dom (mx : World) →
+  extension_applicable F my.
+Proof. apply extension_applicableA_after_parallel_extension_right. Qed.
 
 Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
