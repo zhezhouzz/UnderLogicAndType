@@ -363,16 +363,12 @@ Proof.
   destruct (wfA_ne _ (worldA_wf w)) as [σw Hσw].
   apply worldA_ext.
   - simpl.
-    pose proof (Hconst σw Hσw) as HσX.
-    pose proof (f_equal (fun s : gmap K V => dom s) HσX) as HdomσX.
-    change (dom (storeA_restrict σw X : gmap K V) =
-      dom (σX : gmap K V)) in HdomσX.
-    change (worldA_dom (w : WorldAT) ∩ X = dom (σX : gmap K V)).
-    rewrite <- HdomσX.
-    pose proof (storeA_restrict_dom σw X) as Hdomr.
-    change (dom (storeA_restrict σw X : gmap K V) =
-      dom (σw : gmap K V) ∩ X) in Hdomr.
-    rewrite Hdomr.
+	    pose proof (Hconst σw Hσw) as HσX.
+	    pose proof (f_equal (fun s : gmap K V => dom s) HσX) as HdomσX.
+	    change (worldA_dom (w : WorldAT) ∩ X = dom (σX : gmap K V)).
+	    rewrite <- HdomσX.
+	    pose proof (storeA_restrict_dom σw X) as Hdomr.
+	    rewrite Hdomr.
     pose proof (wfworldA_store_dom w σw Hσw) as Hdomw.
     rewrite Hdomw. reflexivity.
   - intros σ. simpl. split.
@@ -448,14 +444,10 @@ Proof.
   destruct Hproj as [σw [Hσw Hrestr]].
   pose proof (wfworldA_store_dom w σw Hσw) as Hdomσw.
   assert (Hdomσ : dom (σ : gmap K V) = worldA_dom (w : WorldAT) ∩ X).
-  {
-    pose proof (f_equal (fun s : gmap K V => dom s) Hrestr) as Hdomrestr.
-    change (dom (storeA_restrict σw X : gmap K V) =
-      dom (σ : gmap K V)) in Hdomrestr.
-    pose proof (storeA_restrict_dom σw X) as Hdomr.
-    change (dom (storeA_restrict σw X : gmap K V) =
-      dom (σw : gmap K V) ∩ X) in Hdomr.
-    rewrite <- Hdomrestr, Hdomr. set_solver.
+	  {
+	    pose proof (f_equal (fun s : gmap K V => dom s) Hrestr) as Hdomrestr.
+	    pose proof (storeA_restrict_dom σw X) as Hdomr.
+	    rewrite <- Hdomrestr, Hdomr. set_solver.
   }
   apply worldA_ext.
   - simpl. rewrite Heq. simpl.
@@ -1003,16 +995,12 @@ Lemma resA_fiber_from_projection_eq_on
   resA_restrict wfib_m X = resA_restrict wfib_n X.
 Proof.
   intros HDX Hproj [Hσproj_m Heq_m] [Hσproj_n Heq_n].
-  assert (HdomσX : dom (σ : gmap K V) ⊆ X).
-  {
-    destruct Hσproj_m as [σm [Hσm Hrestr]].
-    change (dom (σ : gmap K V) ⊆ X).
-    rewrite <- Hrestr.
-    change (dom (storeA_restrict σm D : gmap K V) ⊆ X).
-    pose proof (storeA_restrict_dom σm D) as Hdomr.
-    change (dom (storeA_restrict σm D : gmap K V) =
-      dom (σm : gmap K V) ∩ D) in Hdomr.
-    rewrite Hdomr. set_solver.
+	  assert (HdomσX : dom (σ : gmap K V) ⊆ X).
+	  {
+	    destruct Hσproj_m as [σm [Hσm Hrestr]].
+	    rewrite <- Hrestr.
+	    pose proof (storeA_restrict_dom σm D) as Hdomr.
+	    rewrite Hdomr. set_solver.
   }
   apply wfworldA_ext. apply worldA_ext.
   - simpl.
@@ -1062,14 +1050,11 @@ Proof.
   assert ((resA_restrict m D : WorldAT) σ) as Hσproj_m.
   { rewrite HprojD. exact Hσproj_n. }
   destruct Hσproj_m as [σm [Hσm Hrestrict_m]].
-  assert (Hdomσ : dom (σ : gmap K V) = D).
-  {
-    rewrite <- Hrestrict_m.
-    change (dom (storeA_restrict σm D : gmap K V) = D).
-    pose proof (storeA_restrict_dom σm D) as Hdomr.
-    change (dom (storeA_restrict σm D : gmap K V) =
-      dom (σm : gmap K V) ∩ D) in Hdomr.
-    rewrite Hdomr.
+	  assert (Hdomσ : dom (σ : gmap K V) = D).
+	  {
+	    rewrite <- Hrestrict_m.
+	    pose proof (storeA_restrict_dom σm D) as Hdomr.
+	    rewrite Hdomr.
     pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
     rewrite Hdomσm. set_solver.
   }
