@@ -26,6 +26,122 @@ Proof.
   unfold storeA_filter_map_key. reflexivity.
 Qed.
 
+Lemma storeA_filter_map_key_lookup_some_inv
+    {K K' : Type} `{Countable K} `{Countable K'}
+    (f : K -> option K') (s : gmap K V) k' v :
+  storeA_filter_map_key f s !! k' = Some v ->
+  exists k, s !! k = Some v /\ f k = Some k'.
+Proof.
+  unfold storeA_filter_map_key.
+  refine (fin_maps.map_fold_ind (M:=gmap K)
+    (fun s => forall tgt v,
+      map_fold
+        (fun k v acc =>
+          match f k with
+          | Some tgt' => <[tgt' := v]> acc
+          | None => acc
+          end) ∅ s !! tgt = Some v ->
+      exists k, s !! k = Some v /\ f k = Some tgt) _ _ s k' v).
+  - intros tgt val Hlookup.
+    change ((∅ : gmap K' V) !! tgt = Some val) in Hlookup.
+    better_map_solver.
+  - intros src val s' Hfresh Hfold IH tgt v' Hlookup.
+    rewrite Hfold in Hlookup.
+    destruct (f src) as [fk|] eqn:Hfk.
+    + apply lookup_insert_Some in Hlookup as [[-> ->]|[Hne Hlookup]].
+      * exists src. split; [apply map_lookup_insert|exact Hfk].
+      * apply IH in Hlookup as [k0 [Hk0 Hfk0]].
+        exists k0. split; [|exact Hfk0].
+        rewrite map_lookup_insert_ne; [exact Hk0|].
+        intros ->. rewrite Hfresh in Hk0. discriminate.
+    + apply IH in Hlookup as [k0 [Hk0 Hfk0]].
+      exists k0. split; [|exact Hfk0].
+      rewrite map_lookup_insert_ne; [exact Hk0|].
+      intros ->. rewrite Hfk in Hfk0. discriminate.
+Qed.
+
+Lemma storeA_filter_map_key_lookup_some_unique
+    {K K' : Type} `{Countable K} `{Countable K'}
+    (f : K -> option K') (s : gmap K V) k k' v :
+  s !! k = Some v ->
+  f k = Some k' ->
+  (forall k0 v0, s !! k0 = Some v0 -> f k0 = Some k' -> k0 = k) ->
+  storeA_filter_map_key f s !! k' = Some v.
+Proof.
+  unfold storeA_filter_map_key.
+  refine (fin_maps.map_fold_ind (M:=gmap K)
+    (fun s => forall k tgt v,
+      s !! k = Some v ->
+      f k = Some tgt ->
+      (forall k0 v0, s !! k0 = Some v0 -> f k0 = Some tgt -> k0 = k) ->
+      map_fold
+        (fun k v acc =>
+          match f k with
+          | Some tgt' => <[tgt' := v]> acc
+          | None => acc
+          end) ∅ s !! tgt = Some v) _ _ s k k' v).
+  - intros src tgt val Hlookup _ _.
+    change ((∅ : gmap K V) !! src = Some val) in Hlookup.
+    better_map_solver.
+  - intros i vi s' Hfresh Hfold IH src tgt val Hlookup Hfk Huniq.
+    rewrite Hfold.
+    destruct (decide (i = src)) as [->|Hik].
+    + rewrite map_lookup_insert in Hlookup. inversion Hlookup. subst vi.
+      rewrite Hfk. apply map_lookup_insert.
+    + rewrite map_lookup_insert_ne in Hlookup by congruence.
+      destruct (f i) as [fi|] eqn:Hfi.
+      * destruct (decide (fi = tgt)) as [->|Hne].
+        -- exfalso.
+           pose proof (Huniq i vi (map_lookup_insert s' i vi) Hfi) as Hi.
+           congruence.
+        -- rewrite map_lookup_insert_ne by congruence.
+           eapply IH; [exact Hlookup|exact Hfk|].
+           intros k0 v0 Hk0 Hfk0.
+           eapply Huniq; [|exact Hfk0].
+           rewrite map_lookup_insert_ne; [exact Hk0|].
+           intros ->. rewrite Hfresh in Hk0. discriminate.
+      * eapply IH; [exact Hlookup|exact Hfk|].
+        intros k0 v0 Hk0 Hfk0.
+        eapply Huniq; [|exact Hfk0].
+        rewrite map_lookup_insert_ne; [exact Hk0|].
+        intros ->. rewrite Hfi in Hfk0. discriminate.
+Qed.
+
+Lemma storeA_filter_map_key_lookup_none_no_preimage
+    {K K' : Type} `{Countable K} `{Countable K'}
+    (f : K -> option K') (s : gmap K V) k' :
+  (forall k v, s !! k = Some v -> f k <> Some k') ->
+  storeA_filter_map_key f s !! k' = None.
+Proof.
+  unfold storeA_filter_map_key.
+  refine (fin_maps.map_fold_ind (M:=gmap K)
+    (fun s => forall tgt,
+      (forall k v, s !! k = Some v -> f k <> Some tgt) ->
+      map_fold
+        (fun k v acc =>
+          match f k with
+          | Some tgt' => <[tgt' := v]> acc
+          | None => acc
+          end) ∅ s !! tgt = None) _ _ s k').
+  - intros tgt _.
+    change ((∅ : gmap K' V) !! tgt = None).
+    better_map_solver.
+  - intros i vi s' Hfresh Hfold IH tgt Hnone.
+    rewrite Hfold.
+    destruct (f i) as [fi|] eqn:Hfi.
+    + destruct (decide (fi = tgt)) as [->|Hne].
+      * exfalso. exact (Hnone i vi (map_lookup_insert s' i vi) Hfi).
+      * rewrite map_lookup_insert_ne by congruence.
+        apply IH. intros k v Hk Hfk.
+        apply (Hnone k v); [|exact Hfk].
+        rewrite map_lookup_insert_ne; [exact Hk|].
+        intros ->. rewrite Hfresh in Hk. discriminate.
+    + apply IH. intros k v Hk Hfk.
+      apply (Hnone k v); [|exact Hfk].
+      rewrite map_lookup_insert_ne; [exact Hk|].
+      intros ->. rewrite Hfi in Hfk. discriminate.
+Qed.
+
 Local Notation AtomStore := (gmap atom V) (only parsing).
 Local Notation LVarStore := (gmap logic_var V) (only parsing).
 
@@ -549,43 +665,12 @@ Lemma lvar_store_to_atom_store_lookup_some (s : LVarStore) x v :
   s !! LVFree x = Some v.
 Proof.
   unfold lvar_store_to_atom_store, lvar_store_open.
-  refine (fin_maps.map_fold_ind (M:=gmap logic_var)
-    (fun s => forall x v,
-      map_fold
-        (fun w A acc =>
-          match lvar_to_atom ∅ w with
-          | Some y => <[y:=A]> acc
-          | None => acc
-          end) ∅ s !! x = Some v ->
-      s !! LVFree x = Some v) _ _ s x v).
-  - intros a A Hlookup.
-    rewrite (map_fold_empty (K:=logic_var) (M:=gmap logic_var)) in Hlookup.
-    change ((∅ : gmap atom V) !! a = Some A) in Hlookup.
-    better_map_solver.
-  - intros w A s' Hfresh Hfold IH a B.
-    rewrite Hfold.
-    destruct w as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
-    + intros Hlookup.
-      change ((<[LVBound k := A]> (s' : gmap logic_var V) :
-        gmap logic_var V) !! LVFree a = Some B).
-      rewrite map_lookup_insert_ne by discriminate.
-      apply IH. exact Hlookup.
-    + intros Hlookup.
-      apply (proj1 (lookup_insert_Some (M:=gmap atom)
-        (map_fold
-           (fun w A acc =>
-             match lvar_to_atom ∅ w with
-             | Some y => <[y:=A]> acc
-             | None => acc
-             end) ∅ s') y a A B)) in Hlookup.
-      destruct Hlookup as [[-> ->]|[Hya Hlookup]].
-      * change ((<[LVFree a := B]> (s' : gmap logic_var V) :
-          gmap logic_var V) !! LVFree a = Some B).
-        rewrite map_lookup_insert. reflexivity.
-      * change ((<[LVFree y := A]> (s' : gmap logic_var V) :
-          gmap logic_var V) !! LVFree a = Some B).
-        rewrite map_lookup_insert_ne by congruence.
-        apply IH. exact Hlookup.
+  intros Hlookup.
+  apply storeA_filter_map_key_lookup_some_inv in Hlookup as [[k|y] [Hsrc Hmap]].
+  - cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+    rewrite lookup_empty in Hmap. discriminate.
+  - cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+    inversion Hmap. subst y. exact Hsrc.
 Qed.
 
 Lemma lvar_store_to_atom_store_lookup_free_some (s : LVarStore) x v :
@@ -593,82 +678,27 @@ Lemma lvar_store_to_atom_store_lookup_free_some (s : LVarStore) x v :
   lvar_store_to_atom_store s !! x = Some v.
 Proof.
   unfold lvar_store_to_atom_store, lvar_store_open.
-  refine (fin_maps.map_fold_ind (M:=gmap logic_var)
-    (fun s => forall x v,
-      (s : gmap logic_var V) !! LVFree x = Some v ->
-      map_fold
-        (fun w A acc =>
-          match lvar_to_atom ∅ w with
-          | Some y => <[y:=A]> acc
-          | None => acc
-          end) ∅ s !! x = Some v) _ _ s x v).
-  - intros a A Hlookup.
-    change ((∅ : gmap logic_var V) !! LVFree a = Some A) in Hlookup.
-    better_map_solver.
-  - intros w A s' Hfresh Hfold IH a B Hlookup.
-    destruct w as [k|y]; cbn [lvar_to_atom logic_var_to_atom].
-    + rewrite Hfold.
-      change ((<[LVBound k := A]> (s' : gmap logic_var V) :
-        gmap logic_var V) !! LVFree a = Some B) in Hlookup.
-      rewrite map_lookup_insert_ne in Hlookup by discriminate.
-      apply IH. exact Hlookup.
-    + rewrite Hfold.
-      change ((<[LVFree y := A]> (s' : gmap logic_var V) :
-        gmap logic_var V) !! LVFree a = Some B) in Hlookup.
-      destruct (decide (y = a)) as [->|Hya].
-      * rewrite map_lookup_insert in Hlookup.
-        inversion Hlookup. subst A.
-        cbn [lvar_to_atom logic_var_to_atom].
-        change (((<[a:=B]>
-          (map_fold
-             (fun w A acc =>
-               match lvar_to_atom ∅ w with
-               | Some y => <[y:=A]> acc
-               | None => acc
-               end) ∅ s' : gmap atom V)) : gmap atom V) !! a = Some B).
-        exact (map_lookup_insert
-          (map_fold
-             (fun w A acc =>
-               match lvar_to_atom ∅ w with
-               | Some y => <[y:=A]> acc
-               | None => acc
-               end) ∅ s' : gmap atom V) a B).
-      * rewrite map_lookup_insert_ne in Hlookup by congruence.
-        cbn [lvar_to_atom logic_var_to_atom].
-        change (((<[y:=A]>
-          (map_fold
-             (fun w A acc =>
-               match lvar_to_atom ∅ w with
-               | Some y => <[y:=A]> acc
-               | None => acc
-               end) ∅ s' : gmap atom V)) : gmap atom V) !! a = Some B).
-        replace (((<[y:=A]>
-          (map_fold
-             (fun w A acc =>
-               match lvar_to_atom ∅ w with
-               | Some y => <[y:=A]> acc
-               | None => acc
-               end) ∅ s' : gmap atom V)) : gmap atom V) !! a)
-          with ((map_fold
-             (fun w A acc =>
-               match lvar_to_atom ∅ w with
-               | Some y => <[y:=A]> acc
-               | None => acc
-               end) ∅ s' : gmap atom V) !! a).
-        -- apply IH. exact Hlookup.
-        -- symmetry. apply map_lookup_insert_ne. congruence.
+  intros Hlookup.
+  eapply storeA_filter_map_key_lookup_some_unique; [exact Hlookup|reflexivity|].
+  intros [k|y] A Hsrc Hmap.
+  - cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+    rewrite lookup_empty in Hmap. discriminate.
+  - cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+    inversion Hmap. reflexivity.
 Qed.
 
 Lemma lvar_store_to_atom_store_lookup (s : LVarStore) x :
   lvar_store_to_atom_store s !! x = (s : gmap logic_var V) !! LVFree x.
 Proof.
-  destruct (lvar_store_to_atom_store s !! x) as [v|] eqn:Hatom.
-  - apply lvar_store_to_atom_store_lookup_some in Hatom.
-    symmetry. exact Hatom.
-  - destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hlv;
-      [|reflexivity].
-    pose proof (lvar_store_to_atom_store_lookup_free_some s x v Hlv) as Hatom'.
-    rewrite Hatom in Hatom'. discriminate.
+  destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hlookup.
+  - apply lvar_store_to_atom_store_lookup_free_some. exact Hlookup.
+  - unfold lvar_store_to_atom_store, lvar_store_open.
+    apply storeA_filter_map_key_lookup_none_no_preimage.
+    intros [k|y] A Hsrc Hmap.
+    + cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+      rewrite lookup_empty in Hmap. discriminate.
+    + cbn [lvar_to_atom logic_var_to_atom] in Hmap.
+      inversion Hmap. subst y. rewrite Hlookup in Hsrc. discriminate.
 Qed.
 
 Lemma lvar_store_to_atom_store_insert_free (s : LVarStore) x v :
