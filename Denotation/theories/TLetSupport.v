@@ -112,20 +112,7 @@ Ltac harvest_tlet_models :=
       destruct H as [Hsub Hshape]
   end.
 
-(** ** Formula scoping and model syntax tactics *)
-
-Ltac solve_formula_scoped :=
-  solve
-  [ eapply res_models_scoped; eassumption
-  | unfold formula_scoped_in_world;
-    harvest_tlet_models;
-    normalize_denotation_formula_fv;
-    rewrite ?context_ty_lvars_fv in *;
-    rewrite ?lvars_fv_lvars_at_depth in *;
-    cbn [fv_tm fv_value] in *;
-    tlet_normalize_freshness;
-    fast_set_solver!!
-  ].
+(** ** Formula FV and model syntax tactics *)
 
 Ltac normalize_tlet_forall_fv :=
   normalize_denotation_formula_fv;
@@ -175,12 +162,6 @@ Ltac solve_tlet_sidecond :=
 	      fiber_extension_singleton_output_fresh_in_eq,
 	      fiber_extension_singleton_output_fresh_subset,
 	      lvars_fv_subset_notin_free
-  ].
-
-Ltac solve_tlet_impl_scope :=
-  first
-  [ formula_scope_solve
-  | solve_formula_scoped
   ].
 
 Lemma tlet_arrow_arg_relevant_env_agree
