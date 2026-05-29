@@ -90,13 +90,6 @@ Denotation/theories/TLet.v
 
 -R ContextTyping/theories ContextTyping
 
-ContextTyping/theories/WellFormed.v
-ContextTyping/theories/PrimOpContext.v
-ContextTyping/theories/Auxiliary.v
 ContextTyping/theories/Typing.v
-ContextTyping/theories/Naming.v
-ContextTyping/theories/RegularDenotation.v
-ContextTyping/theories/TLetDirect.v
-ContextTyping/theories/TLetDenotation.v
-ContextTyping/theories/SoundnessDirect.v
+ContextTyping/theories/TLet.v
 ContextTyping/theories/Soundness.v
