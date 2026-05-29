@@ -189,6 +189,15 @@ Definition storeA_rekey_inj_on_dom {K : Type} `{Countable K}
     f x = f y ->
     x = y.
 
+Lemma storeA_rekey_inj_on_dom_insert_inv {K : Type} `{Countable K}
+    (f : K → K) z v (s : gmap K V) :
+  storeA_rekey_inj_on_dom f (<[z := v]> (s : gmap K V)) ->
+  storeA_rekey_inj_on_dom f s.
+Proof.
+  intros Hinj x y Hx Hy Hxy.
+  apply Hinj; [better_set_solver|better_set_solver|exact Hxy].
+Qed.
+
 Lemma storeA_rekey_mapped_fst_nodup {K : Type} `{Countable K}
     (f : K → K) (s : gmap K V) :
   storeA_rekey_inj_on_dom f s ->
@@ -346,17 +355,8 @@ Proof.
         -- exfalso. apply Hy. exact Hyx.
         -- change ((<[z := v]> (s : gmap K V)) !! x = None).
            rewrite map_lookup_insert_ne by exact Hxz.
-           assert (Hinj_s : storeA_rekey_inj_on_dom f s).
-           {
-             intros a b Ha Hb Hab.
-              apply Hinj.
-              ** change (a ∈ dom (<[z := v]> (s : gmap K V))).
-                 better_set_solver.
-              ** change (b ∈ dom (<[z := v]> (s : gmap K V))).
-                 better_set_solver.
-              ** exact Hab.
-           }
-           pose proof (storeA_rekey_lookup_None_inj_on f s y Hinj_s)
+           pose proof (storeA_rekey_lookup_None_inj_on f s y
+             (storeA_rekey_inj_on_dom_insert_inv f z v s Hinj))
              as [Hto _].
            exact (Hto Hylook x Hyx).
 Qed.
@@ -691,27 +691,21 @@ Lemma storeA_swap_fresh {K : Type} `{Countable K}
   y ∉ dom (s : gmap K V) ->
    @storeA_swap V K _ _ x y s = s.
 Proof.
-  intros Hx Hy. apply storeA_map_eq. intros z.
+  intros Hx Hy.
+  rewrite not_elem_of_dom in Hx, Hy.
+  apply storeA_map_eq. intros z.
   change (((@storeA_swap V K _ _ x y s : gmap K V) !! z) =
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv.
   destruct (decide (z = x)) as [->|Hzx].
 	  - base_swap_normalize.
 	    change (((s : gmap K V) !! y) = ((s : gmap K V) !! x)).
-    assert (Hsx : (s : gmap K V) !! x = None) by better_map_solver.
-    assert (Hsy : (s : gmap K V) !! y = None) by better_map_solver.
-    change (((s : gmap K V) !! x) = None) in Hsx.
-    change (((s : gmap K V) !! y) = None) in Hsy.
-    rewrite Hsx, Hsy.
+    rewrite Hx, Hy.
     reflexivity.
 	  - destruct (decide (z = y)) as [->|Hzy].
 	    + base_swap_normalize.
 	      change (((s : gmap K V) !! x) = ((s : gmap K V) !! y)).
-      assert (Hsx : (s : gmap K V) !! x = None) by better_map_solver.
-      assert (Hsy : (s : gmap K V) !! y = None) by better_map_solver.
-      change (((s : gmap K V) !! x) = None) in Hsx.
-      change (((s : gmap K V) !! y) = None) in Hsy.
-      rewrite Hsx, Hsy.
+      rewrite Hx, Hy.
       reflexivity.
 	    + better_base_solver.
 Qed.
