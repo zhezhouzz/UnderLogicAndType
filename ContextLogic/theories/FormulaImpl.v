@@ -164,6 +164,25 @@ Proof.
   eapply res_models_impl_elim; eauto.
 Qed.
 
+Lemma res_models_impl2_map
+    (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 χ1 χ2 : FormulaT) :
+  formula_scoped_in_world m (FImpl φ2 (FImpl ψ2 χ2)) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (m ⊨ ψ2 → m ⊨ ψ1) →
+  (m ⊨ χ1 → m ⊨ χ2) →
+  m ⊨ FImpl φ1 (FImpl ψ1 χ1) →
+  m ⊨ FImpl φ2 (FImpl ψ2 χ2).
+Proof.
+  intros Hscope Hφ Hψ Hχ Himpl.
+  eapply res_models_impl2_intro; [exact Hscope |].
+  intros Hφ2 Hψ2.
+  apply Hχ.
+  eapply res_models_impl2_elim; [exact Himpl | |].
+  - apply Hφ. exact Hφ2.
+  - apply Hψ. exact Hψ2.
+Qed.
+
 Lemma res_models_impl_iff (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world m (FImpl φ ψ) →
   (m ⊨ FImpl φ ψ ↔

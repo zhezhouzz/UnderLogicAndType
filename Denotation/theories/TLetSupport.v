@@ -1031,9 +1031,9 @@ Proof.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
-        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic Hresult.
-        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
+        eapply res_models_impl2_map;
+          [exact Hscope_tgt_outer | exact id | | exact id | exact Hopen].
+        intros Hresult.
         eapply expr_result_formula_tapp_tlete_assoc_spine_rev.
         -- rewrite fv_tm_tapp_tlete_assoc_spine.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -1089,9 +1089,9 @@ Proof.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
-        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic Hresult.
-        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
+        eapply res_models_impl2_map;
+          [exact Hscope_tgt_outer | exact id | | exact id | exact Hopen].
+        intros Hresult.
         eapply expr_result_formula_tapp_tlete_assoc_spine_rev.
         -- rewrite fv_tm_tapp_tlete_assoc_spine.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -1512,9 +1512,9 @@ Proof.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
-        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic Hresult.
-        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
+        eapply res_models_impl2_map;
+          [exact Hscope_tgt_outer | exact id | | exact id | exact Hopen].
+        intros Hresult.
         eapply expr_result_formula_tapp_tm_tlete_assoc_rev.
         -- rewrite fv_tm_tapp_tm_tlete_assoc.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -1566,9 +1566,9 @@ Proof.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
-        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic Hresult.
-        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
+        eapply res_models_impl2_map;
+          [exact Hscope_tgt_outer | exact id | | exact id | exact Hopen].
+        intros Hresult.
         eapply expr_result_formula_tapp_tm_tlete_assoc_rev.
         -- rewrite fv_tm_tapp_tm_tlete_assoc.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
