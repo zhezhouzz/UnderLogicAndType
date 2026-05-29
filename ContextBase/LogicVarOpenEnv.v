@@ -45,6 +45,16 @@ Proof.
   - reflexivity.
 Qed.
 
+Lemma logic_var_open_env_not_free_of_lvars_fv η D x v :
+  v ∈ D ->
+  x ∉ lvars_fv (lvars_open_env η D) ->
+  logic_var_open_env η v <> LVFree x.
+Proof.
+  intros Hv Hfresh Hbad.
+  apply Hfresh. rewrite lvars_fv_elem.
+  apply elem_of_map. exists v. split; [symmetry; exact Hbad|exact Hv].
+Qed.
+
 Lemma logic_var_open_env_singleton_fresh k x v :
   v <> LVFree x ->
   logic_var_open_env (<[k := x]> ∅) v = logic_var_open k x v.
@@ -571,19 +581,15 @@ Proof.
   split.
   - intros [u [-> Hu]].
     exists (logic_var_open_env η u). split.
-    + assert (Hnot : logic_var_open_env η u <> LVFree x).
-      { intros Hbad. apply Hfresh. rewrite lvars_fv_elem.
-        apply elem_of_map. exists u. split; [symmetry; exact Hbad|exact Hu]. }
-      rewrite (logic_var_open_env_insert_fresh η k x u Hη Hnot).
+    + rewrite (logic_var_open_env_insert_fresh η k x u Hη
+        (logic_var_open_env_not_free_of_lvars_fv η D x u Hu Hfresh)).
       reflexivity.
     + apply elem_of_map. exists u. split; [reflexivity|exact Hu].
   - intros [u [-> Hu]].
     apply elem_of_map in Hu as [w [-> Hw]].
     exists w. split; [|exact Hw].
-    assert (Hnot : logic_var_open_env η w <> LVFree x).
-    { intros Hbad. apply Hfresh. rewrite lvars_fv_elem.
-      apply elem_of_map. exists w. split; [symmetry; exact Hbad|exact Hw]. }
-    rewrite (logic_var_open_env_insert_fresh η k x w Hη Hnot).
+    rewrite (logic_var_open_env_insert_fresh η k x w Hη
+      (logic_var_open_env_not_free_of_lvars_fv η D x w Hw Hfresh)).
     reflexivity.
 Qed.
 
