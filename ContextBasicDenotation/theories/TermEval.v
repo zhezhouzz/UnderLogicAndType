@@ -314,16 +314,12 @@ Proof.
     { better_map_solver. }
     change ((((σ : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! x) =
       ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! x)).
-    transitivity ((({[x := vx]} : gmap atom value) !! x)).
-    + apply lookup_union_r. exact Hσx.
-    + transitivity (Some vx).
-      * change ((<[x := vx]> (∅ : StoreT)) !! x = Some vx).
-        change (((<[x := vx]> (∅ : gmap atom value) : gmap atom value) !! x) = Some vx).
-        apply map_lookup_insert.
-      * symmetry.
-        change (((<[x := vx]> (store_restrict σ X : gmap atom value) :
-          gmap atom value) !! x) = Some vx).
-        apply map_lookup_insert.
+	    transitivity ((({[x := vx]} : gmap atom value) !! x)).
+	    + apply lookup_union_r. exact Hσx.
+	    + transitivity (Some vx).
+	      * apply map_lookup_insert.
+	      * symmetry.
+	        apply map_lookup_insert.
   - assert (HzX : z ∈ X).
     { set_solver. }
     destruct ((σ : gmap atom value) !! z) as [vz|] eqn:Hσz.
@@ -344,13 +340,10 @@ Proof.
         ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! z)).
       transitivity (@None value).
       * transitivity ((({[x := vx]} : StoreT) !! z)).
-        -- apply lookup_union_r. exact Hσz.
-        -- change ((<[x := vx]> (∅ : StoreT)) !! z = None).
-           transitivity ((∅ : StoreT) !! z).
-           ++ change (((<[x := vx]> (∅ : gmap atom value) :
-                gmap atom value) !! z) = ((∅ : gmap atom value) !! z)).
-              apply map_lookup_insert_ne. congruence.
-           ++ reflexivity.
+	        -- apply lookup_union_r. exact Hσz.
+	        -- transitivity ((∅ : StoreT) !! z).
+	           ++ apply map_lookup_insert_ne. congruence.
+	           ++ reflexivity.
       * symmetry.
         transitivity ((store_restrict σ X : StoreT) !! z).
         -- change (((<[x := vx]> (store_restrict σ X : gmap atom value) :
@@ -562,13 +555,11 @@ Proof.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
       as [Hex | _].
-    + destruct (constructive_indefinite_description _ Hex) as [v _].
-      unfold world_dom, singleton_world. simpl.
-      change (dom ({[x := v]} : gmap atom value) = {[x]}).
-      apply dom_singleton_L.
-    + unfold world_dom, singleton_world. simpl.
-      change (dom ({[x := inhabitant]} : gmap atom value) = {[x]}).
-      apply dom_singleton_L.
+	    + destruct (constructive_indefinite_description _ Hex) as [v _].
+	      unfold world_dom, singleton_world. simpl.
+	      apply dom_singleton_L.
+	    + unfold world_dom, singleton_world. simpl.
+	      apply dom_singleton_L.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
       as [Hex | _].
