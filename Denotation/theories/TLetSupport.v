@@ -1603,6 +1603,49 @@ Proof.
     split; [apply formula_scoped_true_iff; exact I | exact I].
 Qed.
 
+Lemma denot_ty_lvar_gas_zero_of_guard
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))) ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e.
+Proof.
+  intros Hguard.
+  cbn [denot_ty_lvar_gas].
+  rewrite res_models_and_iff. split.
+  - exact Hguard.
+  - cbn [res_models res_models_fuel formula_measure].
+    split; [apply formula_scoped_true_iff; exact I | exact I].
+Qed.
+
+Lemma denot_ty_lvar_gas_guard_of_zero
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))).
+Proof.
+  intros Hzero.
+  cbn [denot_ty_lvar_gas] in Hzero.
+  rewrite res_models_and_iff in Hzero.
+  exact (proj1 Hzero).
+Qed.
+
+Ltac solve_denot_ty_lvar_gas_zero_from_guard Hguard :=
+  apply denot_ty_lvar_gas_zero_of_guard;
+  repeat rewrite res_models_and_iff;
+  exact Hguard.
+
 Definition denot_wand_body_formula
     (gas : nat) (Σg : lty_env) (τx τr : context_ty) (e : tm) : FormulaT :=
   let Σx := typed_lty_env_bind Σg (erase_ty τx) in
@@ -3346,37 +3389,13 @@ Proof.
   assert (HxΣ : LVFree x ∉ dom Σ) by tlet_support_solver.
   assert (Hxτ : LVFree x ∉ context_ty_lvars (CTWand τx τr))
     by tlet_support_solver.
-  assert (Hmx_zero : mx ⊨ denot_ty_lvar_gas 0
-    (<[LVFree x := T1]> Σ) (CTWand τx τr) (e2 ^^ x)).
-  {
-    cbn [denot_ty_lvar_gas].
-    rewrite res_models_and_iff. split.
-    - repeat rewrite res_models_and_iff. exact Hmx_guard.
-    - cbn [res_models res_models_fuel formula_measure].
-      split; [apply formula_scoped_true_iff; exact I | exact I].
-  }
   pose proof (tlet_intro_denotation_gas_zero_support
     Σ T1 e1 e2 m mx Fx x (CTWand τx τr)
-    HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext Hmx_zero)
+    HΣ He1 Hlet HFx Htotal Hbase_world HxΣ Hxτ Hext
+    ltac:(solve_denot_ty_lvar_gas_zero_from_guard Hmx_guard))
     as Hm_zero.
-  assert (Hguard_m :
-    m ⊨ FAnd
-      (context_ty_wf_formula
-        (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-        (CTWand τx τr))
-      (FAnd
-        (basic_world_formula
-          (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2)))
-        (FAnd
-          (expr_basic_typing_formula
-            (denot_relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-            (tlete e1 e2) (erase_ty (CTWand τx τr)))
-          (expr_total_formula (tlete e1 e2))))).
-  {
-    cbn [denot_ty_lvar_gas] in Hm_zero.
-    rewrite res_models_and_iff in Hm_zero.
-    exact (proj1 Hm_zero).
-  }
+  pose proof (denot_ty_lvar_gas_guard_of_zero _ _ _ _ Hm_zero)
+    as Hguard_m.
   assert (Hdenot_scope_m :
     formula_scoped_in_world m
       (denot_ty_lvar_gas (S gas) Σ (CTWand τx τr) (tlete e1 e2))).
