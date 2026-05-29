@@ -92,16 +92,12 @@ Lemma storeA_has_type_swap
 Proof.
   split; intros Htyped z T v HΣ Hσ.
   - eapply Htyped with (x := swap x y z).
-    + change (((storeA_swap x y Σ : gmap K ty) !! swap x y z) = Some T).
-      rewrite storeA_swap_lookup. exact HΣ.
-    + change (((storeA_swap x y σ : gmap K value) !! z) = Some v) in Hσ.
-      rewrite storeA_swap_lookup_inv in Hσ. exact Hσ.
-  - change (((storeA_swap x y Σ : gmap K ty) !! z) = Some T) in HΣ.
-    rewrite storeA_swap_lookup_inv in HΣ.
+    + rewrite storeA_swap_lookup. exact HΣ.
+    + rewrite storeA_swap_lookup_inv in Hσ. exact Hσ.
+  - rewrite storeA_swap_lookup_inv in HΣ.
     eapply Htyped with (x := swap x y z).
     + exact HΣ.
-    + change (((storeA_swap x y σ : gmap K value) !! swap x y z) = Some v).
-      rewrite storeA_swap_lookup. exact Hσ.
+    + rewrite storeA_swap_lookup. exact Hσ.
 Qed.
 
 Lemma lworld_has_type_swap k y Σ (w : LWfWorld) :
@@ -275,10 +271,9 @@ Lemma storeA_has_type_restrict_store
   storeA_has_type Σ σ.
 Proof.
   intros HΣX. split; intros Htyped x T v HΣ Hσ.
-  - eapply Htyped; [exact HΣ|].
-    apply storeA_restrict_lookup_some_2; [exact Hσ|].
-    apply HΣX. change (x ∈ dom (Σ : gmap K ty)).
-    eapply elem_of_dom_2; exact HΣ.
+	  - eapply Htyped; [exact HΣ|].
+	    apply storeA_restrict_lookup_some_2; [exact Hσ|].
+	    apply HΣX. eapply elem_of_dom_2; exact HΣ.
   - eapply Htyped; [exact HΣ|].
     apply storeA_restrict_lookup_some in Hσ as [_ Hσ].
     exact Hσ.
@@ -290,22 +285,20 @@ Lemma storeA_has_type_lift_free_restrict_fv
   storeA_has_type Σ
     (lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))) <->
   storeA_has_type Σ (lstore_lift_free σ).
-Proof.
-  intros Hlc. split; intros Htyped v T u HΣ Hu.
-  - destruct v as [k | x].
-    + exfalso. apply (Hlc (LVBound k)).
-      change (LVBound k ∈ dom (Σ : gmap logic_var ty)).
-      eapply elem_of_dom_2; exact HΣ.
+	Proof.
+	  intros Hlc. split; intros Htyped v T u HΣ Hu.
+	  - destruct v as [k | x].
+	    + exfalso. apply (Hlc (LVBound k)).
+	      eapply elem_of_dom_2; exact HΣ.
     + eapply Htyped; [exact HΣ|].
       change (((lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))
         : LStore (V := value)) : gmap logic_var value) !! LVFree x = Some u).
       rewrite lstore_lift_free_lookup_free.
       apply storeA_restrict_lookup_some_2.
-      * change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value)
-          !! LVFree x = Some u) in Hu.
-        rewrite lstore_lift_free_lookup_free in Hu. exact Hu.
-      * apply lvars_fv_elem. change (LVFree x ∈ dom (Σ : gmap logic_var ty)).
-        eapply elem_of_dom_2; exact HΣ.
+	      * change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value)
+	          !! LVFree x = Some u) in Hu.
+	        rewrite lstore_lift_free_lookup_free in Hu. exact Hu.
+	      * apply lvars_fv_elem. eapply elem_of_dom_2; exact HΣ.
   - destruct v as [k | x].
     + change (((lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))
         : LStore (V := value)) : gmap logic_var value) !! LVBound k = Some u) in Hu.
@@ -324,15 +317,13 @@ Lemma worldA_has_type_restrict_env
     (Σ : gmap K ty) (m : @WorldA K _ _ value) X :
   worldA_has_type Σ m ->
   worldA_has_type (storeA_restrict Σ X) m.
-Proof.
-  intros [Hdom Hstores]. split.
-  - intros x Hx.
-    change (x ∈ dom (storeA_restrict Σ X : gmap K ty)) in Hx.
-    apply elem_of_dom in Hx as [T HT].
-    apply storeA_restrict_lookup_some in HT as [_ HT].
-    apply Hdom.
-    change (x ∈ dom (Σ : gmap K ty)).
-    eapply elem_of_dom_2; exact HT.
+	Proof.
+	  intros [Hdom Hstores]. split.
+	  - intros x Hx.
+	    apply elem_of_dom in Hx as [T HT].
+	    apply storeA_restrict_lookup_some in HT as [_ HT].
+	    apply Hdom.
+	    eapply elem_of_dom_2; exact HT.
   - intros σ Hσ.
     apply storeA_has_type_restrict.
     exact (Hstores σ Hσ).
