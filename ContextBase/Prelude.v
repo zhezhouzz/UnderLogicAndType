@@ -152,6 +152,32 @@ Proof.
   unfold map_compat. intros x v1 v2 H1 H2. congruence.
 Qed.
 
+Lemma map_delete_insert_same (m : gmap K A) k v :
+  delete k (<[k := v]> m) = delete k m.
+Proof.
+  apply map_eq. intros i.
+  destruct (decide (i = k)) as [->|Hik].
+  - rewrite !lookup_delete_eq. reflexivity.
+  - rewrite !lookup_delete_ne by congruence.
+    rewrite lookup_insert_ne by congruence. reflexivity.
+Qed.
+
+Lemma map_delete_insert_ne (m : gmap K A) i k v :
+  i ≠ k →
+  delete i (<[k := v]> m) = <[k := v]> (delete i m).
+Proof.
+  intros Hik. apply map_eq. intros j.
+  destruct (decide (j = i)) as [->|Hji].
+  - rewrite lookup_delete_eq.
+    rewrite lookup_insert_ne by congruence.
+    rewrite lookup_delete_eq. reflexivity.
+  - rewrite !lookup_delete_ne by congruence.
+    destruct (decide (j = k)) as [->|Hjk].
+    + rewrite !lookup_insert_eq. reflexivity.
+    + rewrite !lookup_insert_ne by congruence.
+      rewrite lookup_delete_ne by congruence. reflexivity.
+Qed.
+
 Lemma map_restrict_dom m X :
   dom (map_restrict m X) = dom m ∩ X.
 Proof.

@@ -680,15 +680,7 @@ Proof.
   intros HkD HxD Hfresh j z Hjz Hbad.
   destruct (decide (j = k)) as [->|Hjk].
   - rewrite lookup_insert_eq in Hjz. inversion Hjz. subst z.
-    assert (Hdel : delete k (<[k:=x]> η) = delete k η).
-    {
-      apply map_eq. intros n.
-      destruct (decide (n = k)) as [->|Hnk].
-      - rewrite !lookup_delete_eq. reflexivity.
-      - rewrite !lookup_delete_ne by congruence.
-        rewrite lookup_insert_ne by congruence. reflexivity.
-    }
-    rewrite Hdel in Hbad.
+    rewrite map_delete_insert_same in Hbad.
     apply lvars_fv_elem in Hbad.
     unfold lvars_open_env in Hbad.
     apply elem_of_map in Hbad as [v [Hv HvD]].
@@ -710,22 +702,8 @@ Proof.
       apply HxD. apply lvars_fv_elem. exact HvD.
   - rewrite lookup_insert_ne in Hjz by congruence.
     eapply Hfresh; [exact Hjz|].
-    assert (Hmap :
-      delete j (<[k:=x]> η) = <[k:=x]> (delete j η)).
-    {
-      apply map_eq. intros n.
-      destruct (decide (n = j)) as [->|Hnj].
-      - rewrite lookup_delete_eq.
-        rewrite lookup_insert_ne by congruence.
-        rewrite lookup_delete_eq. reflexivity.
-      - rewrite !lookup_delete_ne by congruence.
-        destruct (decide (n = k)) as [->|Hnk].
-        + rewrite !lookup_insert_eq. reflexivity.
-        + rewrite !lookup_insert_ne by congruence.
-          rewrite lookup_delete_ne by congruence. reflexivity.
-    }
     rewrite (lvars_open_env_open_one_fresh (delete j η) k x D HxD).
-    rewrite <- Hmap.
+    rewrite <- map_delete_insert_ne by congruence.
     exact Hbad.
 Qed.
 
