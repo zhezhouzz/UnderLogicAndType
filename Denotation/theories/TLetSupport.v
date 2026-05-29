@@ -1332,18 +1332,22 @@ Proof.
           rewrite Hdom.
           set_solver.
         }
-        eapply res_models_impl_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hwand.
-        pose proof (res_models_fuel_scoped _ _ _ Hwand) as Hscope_src_wand.
-        pose proof (proj1 (res_models_wand_iff my _ _ Hscope_src_wand) Hwand)
-          as Hwand_elim.
-        clear Hwand. rename Hwand_elim into Hwand.
-        pose proof (formula_scoped_impl_r _ _ _ Hscope_tgt_outer)
-             as Hscope_tgt_wand.
-        apply (proj2 (res_models_wand_iff _ _ _ Hscope_tgt_wand)).
-        intros n1 Hc Harg.
-        assert (Henv_wand :
+        eapply res_models_impl_wand_map;
+          [exact Hscope_tgt_outer | exact id | | | exact Hopen].
+        -- intros n1 Hc Harg.
+           assert (Henv_wand :
+             denot_relevant_env Σ (CTWand τx τr)
+               (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) =
+             denot_relevant_env Σ (CTWand τx τr)
+               (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
+           {
+             unfold denot_relevant_env, denot_relevant_lvars,
+               lty_env_restrict_lvars.
+             rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+           }
+           rewrite Henv_wand in Harg. exact Harg.
+        -- intros n1 Hc Hres.
+           assert (Henv_wand :
           denot_relevant_env Σ (CTWand τx τr)
             (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) =
           denot_relevant_env Σ (CTWand τx τr)
@@ -1353,8 +1357,6 @@ Proof.
             lty_env_restrict_lvars.
           rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
         }
-        rewrite Henv_wand in Harg.
-        pose proof (Hwand n1 Hc Harg) as Hres.
         pose proof (res_models_open_denot_ty_lvar_gas_to_open
           a gas
           (denot_relevant_env Σ (CTWand τx τr)
