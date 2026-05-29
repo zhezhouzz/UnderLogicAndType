@@ -992,13 +992,12 @@ Proof.
   unfold storeA_compat, map_compat.
   intros H12 Hc i v2 v3 H2 H3.
   destruct ((s1 : gmap K V) !! i) as [v1|] eqn:H1.
-  - assert (Hv : v1 = v3).
-    { eapply Hc; [| exact H3].
+  - transitivity v1.
+    + symmetry. eapply H12; eauto.
+    + eapply Hc; [| exact H3].
       apply (proj2 (map_lookup_union_Some_raw
         (s1 : gmap K V) (s2 : gmap K V) i v1)).
-      left. exact H1. }
-    assert (Hv' : v1 = v2) by (eapply H12; eauto).
-    congruence.
+      left. exact H1.
   - eapply Hc; [| exact H3].
     apply (proj2 (map_lookup_union_Some_raw
       (s1 : gmap K V) (s2 : gmap K V) i v2)).
@@ -1263,10 +1262,9 @@ Lemma storeA_compat_restrict_l_full_r {K : Type} `{Countable K}
 Proof.
   unfold storeA_compat, map_compat.
   intros Hdom Hcomp x v1 v2 H1 H2.
-  assert (Hx : x ∈ X).
-  { apply Hdom. by apply elem_of_dom_2 in H1. }
   eapply Hcomp; [exact H1 |].
-  apply storeA_restrict_lookup_some_2; [exact H2 | exact Hx].
+  apply storeA_restrict_lookup_some_2; [exact H2 |].
+  apply Hdom. by apply elem_of_dom_2 in H1.
 Qed.
 
 Lemma storeA_compat_restrict_eq {K : Type} `{Countable K}
