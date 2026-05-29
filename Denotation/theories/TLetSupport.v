@@ -488,6 +488,83 @@ Proof.
     [exact Hxy | exact Hbody_full].
 Qed.
 
+Lemma tlet_zero_context_wf
+    (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
+    (m mx : WfWorldT) (x : atom) (τ : context_ty) :
+  LVFree x ∉ context_ty_lvars τ ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
+  mx ⊨ context_ty_wf_formula
+    (denot_relevant_env (<[LVFree x := T1]> Σ) τ (e2 ^^ x)) τ ->
+  m ⊨ context_ty_wf_formula (denot_relevant_env Σ τ (tlete e1 e2)) τ.
+Proof.
+  intros Hxτ Hbase_world Hmx_wf.
+  apply context_ty_wf_formula_models_iff.
+  apply basic_world_formula_models_iff in Hbase_world
+    as [Hlc_base [Hscope_base _]].
+  apply context_ty_wf_formula_models_iff in Hmx_wf
+    as [_ [_ [Hvars_mx Hshape]]].
+  split; [exact Hlc_base|].
+  split; [exact Hscope_base|].
+  split; [|exact Hshape].
+  intros v Hv.
+  assert (Hv_mx : v ∈ dom (denot_relevant_env
+    (<[LVFree x := T1]> Σ) τ (e2 ^^ x))).
+  { exact (Hvars_mx v Hv). }
+  unfold denot_relevant_env, lty_env_restrict_lvars in Hv_mx |- *.
+  rewrite storeA_restrict_dom in Hv_mx.
+  apply elem_of_intersection in Hv_mx as [Hv_insert _].
+  rewrite storeA_restrict_dom.
+  apply elem_of_intersection. split.
+  - rewrite dom_insert_L in Hv_insert.
+    apply elem_of_union in Hv_insert as [Hvx|HvΣ].
+    + rewrite elem_of_singleton in Hvx. subst v. contradiction.
+    + exact HvΣ.
+  - unfold denot_relevant_lvars. set_solver.
+Qed.
+
+Lemma tlet_zero_basic_world
+    (Σ : lty_env) (e1 e2 : tm) (τ : context_ty) (m : WfWorldT) :
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)).
+Proof. exact (fun H => H). Qed.
+
+Lemma tlet_zero_basic_typing
+    (Σ : lty_env) (e1 e2 : tm) (τ : context_ty) (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ (tlete e1 e2) ⋮ erase_ty τ ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tlete e1 e2))
+    (tlete e1 e2) (erase_ty τ).
+Proof.
+  intros Hlet Hbase_world.
+  eapply expr_basic_typing_formula_tlete_intro; [exact Hbase_world|].
+  apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
+  exact Hlet.
+Qed.
+
+Lemma tlet_zero_total
+    (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
+    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
+    (τ : context_ty) :
+  lty_env_to_atom_env Σ ⊢ₑ e1 ⋮ T1 ->
+  lty_env_to_atom_env Σ ⊢ₑ (tlete e1 e2) ⋮ erase_ty τ ->
+  expr_result_extension_witness e1 x Fx ->
+  m ⊨ expr_total_formula e1 ->
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tlete e1 e2)) ->
+  LVFree x ∉ dom Σ ->
+  res_extend_by m Fx mx ->
+  mx ⊨ expr_total_formula (e2 ^^ x) ->
+  m ⊨ expr_total_formula (tlete e1 e2).
+Proof.
+  intros He1 Hlet HFx Htotal Hbase_world HxΣ Hext Hmx_total.
+  eapply expr_total_formula_tlete_intro_from_result_extension
+    with (Σ := denot_relevant_env Σ τ (tlete e1 e2)); eauto.
+  - unfold denot_relevant_env, lty_env_restrict_lvars.
+    better_store_solver.
+  - apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
+    exact Hlet.
+Qed.
+
 Lemma tlet_intro_denotation_gas_zero_support
     (Σ : lty_env) (T1 : ty) (e1 e2 : tm)
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom)
@@ -511,40 +588,12 @@ Proof.
   destruct Hmx as [[Hmx_wf [Hmx_world [Hmx_basic Hmx_total]]] _].
   split.
   - split.
-    + apply context_ty_wf_formula_models_iff.
-      apply basic_world_formula_models_iff in Hbase_world
-        as [Hlc_base [Hscope_base _]].
-      apply context_ty_wf_formula_models_iff in Hmx_wf
-        as [_ [_ [Hvars_mx Hshape]]].
-      split; [exact Hlc_base|].
-      split; [exact Hscope_base|].
-      split; [|exact Hshape].
-      intros v Hv.
-	      assert (Hv_mx : v ∈ dom (denot_relevant_env
-	        (<[LVFree x := T1]> Σ) τ (e2 ^^ x))).
-	      { exact (Hvars_mx v Hv). }
-	      unfold denot_relevant_env, lty_env_restrict_lvars in Hv_mx |- *.
-	      rewrite storeA_restrict_dom in Hv_mx.
-	      apply elem_of_intersection in Hv_mx as [Hv_insert _].
-	      rewrite storeA_restrict_dom.
-	      apply elem_of_intersection. split.
-	      { rewrite dom_insert_L in Hv_insert.
-	        apply elem_of_union in Hv_insert as [Hvx|HvΣ].
-        - rewrite elem_of_singleton in Hvx. subst v. contradiction.
-        - exact HvΣ. }
-      { unfold denot_relevant_lvars. set_solver. }
+    + eapply tlet_zero_context_wf; eauto.
     + split.
-      * exact Hbase_world.
+      * apply tlet_zero_basic_world. exact Hbase_world.
       * split.
-        -- eapply expr_basic_typing_formula_tlete_intro; [exact Hbase_world|].
-           apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
-           exact Hlet.
-	        -- eapply expr_total_formula_tlete_intro_from_result_extension
-	             with (Σ := denot_relevant_env Σ τ (tlete e1 e2)); eauto.
-	           ++ unfold denot_relevant_env, lty_env_restrict_lvars.
-	              better_store_solver.
-           ++ apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
-              exact Hlet.
+        -- eapply tlet_zero_basic_typing; eauto.
+        -- eapply tlet_zero_total; eauto.
   - cbn [res_models res_models_fuel formula_measure].
     split; [apply formula_scoped_true_iff; exact I | exact I].
 Qed.
@@ -579,6 +628,77 @@ Definition denot_wand_body_formula
         (tapp_tm (tm_shift 0 e) (vbvar 0)))).
 
 
+Lemma tapp_tlete_assoc_context_wf
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) τ ->
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) τ.
+Proof.
+  intros Hwf.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - exact Hwf.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_basic_world
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))).
+Proof.
+  intros Hworld.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - exact Hworld.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_basic_typing
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y))))
+    (tlete e1 (tapp_tm e2 (vfvar y))) (erase_ty τ) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)))
+    (tapp_tm (tlete e1 e2) (vfvar y)) (erase_ty τ).
+Proof.
+  intros Hlc Hbasic.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - eapply expr_basic_typing_formula_tapp_tm_tlete_assoc; eauto.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_total
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y))))
+    (tlete e1 (tapp_tm e2 (vfvar y))) (erase_ty τ) ->
+  m ⊨ expr_total_formula (tlete e1 (tapp_tm e2 (vfvar y))) ->
+  m ⊨ expr_total_formula (tapp_tm (tlete e1 e2) (vfvar y)).
+Proof.
+  intros Hlc Hworld Hbasic Htotal.
+  assert (Hclosed :
+      wfworld_closed_on (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) m).
+  {
+    eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+    - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+    - exact Hworld.
+    - exact Hbasic.
+  }
+  eapply expr_total_formula_tapp_tm_tlete_assoc; eauto.
+Qed.
+
 Lemma denot_ty_lvar_guard_tapp_tlete_assoc
     (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
   lc_tm (tlete e1 e2) ->
@@ -608,27 +728,80 @@ Proof.
   intros Hlc Hguard.
   repeat rewrite res_models_and_iff in Hguard |- *.
   destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  assert (Henv :
-    denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)) =
-    denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))).
-  {
-    unfold denot_relevant_env, lty_env_restrict_lvars, denot_relevant_lvars.
-    rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
-  }
-  rewrite Henv.
-  split; [exact Hwf|].
-  split; [exact Hworld|].
+  split; [eapply tapp_tlete_assoc_context_wf; eauto|].
+  split; [eapply tapp_tlete_assoc_basic_world; eauto|].
   split.
-  - eapply expr_basic_typing_formula_tapp_tm_tlete_assoc; eauto.
-  - assert (Hclosed :
+  - eapply tapp_tlete_assoc_basic_typing; eauto.
+  - eapply tapp_tlete_assoc_total; eauto.
+Qed.
+
+Lemma tapp_tlete_assoc_context_wf_rev
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) τ ->
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))) τ.
+Proof.
+  intros Hwf.
+  rewrite <- (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - exact Hwf.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_basic_world_rev
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))).
+Proof.
+  intros Hworld.
+  rewrite <- (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - exact Hworld.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_basic_typing_rev
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)))
+    (tapp_tm (tlete e1 e2) (vfvar y)) (erase_ty τ) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y))))
+    (tlete e1 (tapp_tm e2 (vfvar y))) (erase_ty τ).
+Proof.
+  intros Hlc Hbasic.
+  rewrite <- (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm (tlete e1 e2) (vfvar y))
+    (tlete e1 (tapp_tm e2 (vfvar y)))).
+  - eapply expr_basic_typing_formula_tapp_tm_tlete_assoc_rev; eauto.
+  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_total_rev
+    (Σ : lty_env) τ e1 e2 y (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y))) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)))
+    (tapp_tm (tlete e1 e2) (vfvar y)) (erase_ty τ) ->
+  m ⊨ expr_total_formula (tapp_tm (tlete e1 e2) (vfvar y)) ->
+  m ⊨ expr_total_formula (tlete e1 (tapp_tm e2 (vfvar y))).
+Proof.
+  intros Hlc Hworld Hbasic Htotal.
+  assert (Hclosed :
       wfworld_closed_on (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) m).
-    {
-      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
-      - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
-      - exact Hworld.
-      - exact Hbasic.
-    }
-    eapply expr_total_formula_tapp_tm_tlete_assoc; eauto.
+  {
+    eapply denot_relevant_basic_world_typing_wfworld_closed_on_term;
+      eauto.
+  }
+  eapply expr_total_formula_tapp_tm_tlete_assoc_rev; eauto.
 Qed.
 
 Lemma denot_ty_lvar_guard_tapp_tlete_assoc_rev
@@ -660,25 +833,11 @@ Proof.
   intros Hlc Hguard.
   repeat rewrite res_models_and_iff in Hguard |- *.
   destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  assert (Henv :
-    denot_relevant_env Σ τ (tapp_tm (tlete e1 e2) (vfvar y)) =
-    denot_relevant_env Σ τ (tlete e1 (tapp_tm e2 (vfvar y)))).
-  {
-    unfold denot_relevant_env, lty_env_restrict_lvars, denot_relevant_lvars.
-    rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
-  }
-  rewrite <- Henv.
-  split; [exact Hwf|].
-  split; [exact Hworld|].
+  split; [eapply tapp_tlete_assoc_context_wf_rev; eauto|].
+  split; [eapply tapp_tlete_assoc_basic_world_rev; eauto|].
   split.
-  - eapply expr_basic_typing_formula_tapp_tm_tlete_assoc_rev; eauto.
-  - assert (Hclosed :
-      wfworld_closed_on (fv_tm (tapp_tm (tlete e1 e2) (vfvar y))) m).
-    {
-      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term;
-        eauto.
-    }
-    eapply expr_total_formula_tapp_tm_tlete_assoc_rev; eauto.
+  - eapply tapp_tlete_assoc_basic_typing_rev; eauto.
+  - eapply tapp_tlete_assoc_total_rev; eauto.
 Qed.
 
 (** ** [tapp]/[tlete] guard transport tactics *)
@@ -800,6 +959,92 @@ Ltac transport_open_denot_in H :=
   | _ => idtac
   end.
 
+Lemma tapp_tlete_assoc_spine_context_wf
+    (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))) τ ->
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) τ.
+Proof.
+  intros Hwf.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
+  - exact Hwf.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_spine_basic_world
+    (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))).
+Proof.
+  intros Hworld.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
+  - exact Hworld.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_spine_basic_typing
+    (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs)))
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))
+    (erase_ty τ) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)))
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))
+    (erase_ty τ).
+Proof.
+  intros Hlc Hbasic.
+  rewrite (denot_relevant_env_eq_of_tm_lvars_eq Σ τ
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
+  - eapply expr_basic_typing_formula_tapp_tlete_assoc_spine; eauto.
+  - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+Qed.
+
+Lemma tapp_tlete_assoc_spine_total
+    (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
+  lc_tm (tlete e1 e2) ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))) ->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ
+      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs)))
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))
+    (erase_ty τ) ->
+  m ⊨ expr_total_formula
+    (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs)) ->
+  m ⊨ expr_total_formula
+    (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)).
+Proof.
+  intros Hlc Hworld Hbasic Htotal.
+  assert (Hclosed :
+      wfworld_closed_on
+        (fv_tm (tapp_tm_fvar_spine
+          (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) m).
+  {
+    eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+    - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
+    - exact Hworld.
+    - exact Hbasic.
+  }
+  eapply expr_total_formula_tapp_tlete_assoc_spine; eauto.
+Qed.
+
 Lemma denot_ty_lvar_guard_tapp_tlete_assoc_spine
     (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
   lc_tm (tlete e1 e2) ->
@@ -839,31 +1084,11 @@ Proof.
   intros Hlc Hguard.
   repeat rewrite res_models_and_iff in Hguard |- *.
   destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  assert (Henv :
-    denot_relevant_env Σ τ
-      (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) =
-    denot_relevant_env Σ τ
-      (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) (z :: zs))).
-  {
-    unfold denot_relevant_env, lty_env_restrict_lvars, denot_relevant_lvars.
-    rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
-  }
-  rewrite Henv.
-  split; [exact Hwf|].
-  split; [exact Hworld|].
+  split; [eapply tapp_tlete_assoc_spine_context_wf; eauto|].
+  split; [eapply tapp_tlete_assoc_spine_basic_world; eauto|].
   split.
-  - eapply expr_basic_typing_formula_tapp_tlete_assoc_spine; eauto.
-  - assert (Hclosed :
-      wfworld_closed_on
-        (fv_tm (tapp_tm_fvar_spine
-          (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs))) m).
-    {
-      eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
-      - rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
-      - exact Hworld.
-      - exact Hbasic.
-    }
-    eapply expr_total_formula_tapp_tlete_assoc_spine; eauto.
+  - eapply tapp_tlete_assoc_spine_basic_typing; eauto.
+  - eapply tapp_tlete_assoc_spine_total; eauto.
 Qed.
 
 Lemma denot_ty_lvar_gas_tapp_tlete_assoc_spine
