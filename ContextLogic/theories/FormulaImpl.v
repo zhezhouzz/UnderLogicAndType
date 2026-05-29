@@ -270,3 +270,15 @@ Proof.
 Qed.
 
 End FormulaConnectives.
+
+Ltac use_models_impl H Hout :=
+  lazymatch type of H with
+  | res_models ?m (FImpl ?p ?q) =>
+      let Harg := fresh "Harg" in
+      assert (Harg : res_models m p);
+      [ | pose proof (res_models_impl_elim m p q H Harg) as Hout;
+          clear Harg ]
+  | res_models ?m (formula_open ?k ?x (FImpl ?p ?q)) =>
+      rewrite formula_open_impl in H;
+      use_models_impl H Hout
+  end.

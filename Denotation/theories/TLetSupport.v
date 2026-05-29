@@ -206,44 +206,6 @@ Ltac solve_tlet_impl_scope :=
   | solve_formula_scoped
   ].
 
-Ltac use_models_impl H Hout :=
-  lazymatch type of H with
-  | res_models ?m (FImpl ?p ?q) =>
-      let Harg := fresh "Harg" in
-      assert (Harg : m ⊨ p);
-      [ | pose proof (res_models_impl_elim m p q H Harg) as Hout;
-          clear Harg ]
-  | res_models ?m (formula_open ?k ?x (FImpl ?p ?q)) =>
-      rewrite formula_open_impl in H;
-      use_models_impl H Hout
-  end.
-
-Ltac normalize_models_ands_in H :=
-  repeat rewrite res_models_and_iff in H.
-
-Ltac normalize_models_ands_goal :=
-  repeat rewrite res_models_and_iff.
-
-Ltac destruct_models_formula_hyps :=
-  repeat match goal with
-  | H : _ ⊨ FAnd _ _ |- _ =>
-      rewrite res_models_and_iff in H; destruct H
-  | H : res_models _ _ /\ _ |- _ =>
-      destruct H
-  | H : _ /\ res_models _ _ |- _ =>
-      destruct H
-  end.
-
-Ltac split_models_formula_goal :=
-  repeat match goal with
-  | |- _ ⊨ FAnd _ _ =>
-      rewrite res_models_and_iff; split
-  | |- res_models _ _ /\ _ =>
-      split
-  | |- _ /\ res_models _ _ =>
-      split
-  end.
-
 Lemma tlet_arrow_arg_relevant_env_agree
     (Σ : lty_env) T1 x y τx τr e1 e2 :
   lty_env_closed Σ ->
