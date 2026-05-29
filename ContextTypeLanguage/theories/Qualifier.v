@@ -476,3 +476,27 @@ Lemma qual_shift_open_commute k x q :
 Proof.
   apply qual_open_shift_from_under_gen. lia.
 Qed.
+
+Lemma lvars_open_qual_vars_difference_bound0_under k y q :
+  lvars_open (S k) y (qual_vars q ∖ {[LVBound 0]}) =
+  qual_vars (qual_open_atom (S k) y q) ∖ {[LVBound 0]}.
+Proof.
+  rewrite qual_open_atom_vars.
+  apply set_eq. intros v.
+  rewrite set_swap_elem.
+  rewrite elem_of_difference, elem_of_difference.
+  split.
+  - intros [Hv Hnot]. split.
+    + rewrite set_swap_elem. exact Hv.
+    + intros Hbad. apply Hnot.
+      rewrite elem_of_singleton in Hbad |- *.
+      subst v.
+      unfold swap. repeat destruct decide; try lia; try congruence.
+  - intros [Hv Hnot]. split.
+    + rewrite set_swap_elem in Hv. exact Hv.
+    + intros Hbad. apply Hnot.
+      rewrite elem_of_singleton in Hbad |- *.
+      destruct v as [n|a]; cbn in Hbad;
+        unfold swap in Hbad;
+        repeat destruct decide; try lia; try congruence.
+Qed.

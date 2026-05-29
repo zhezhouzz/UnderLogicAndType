@@ -715,4 +715,24 @@ Proof.
   set_solver.
 Qed.
 
+Lemma lty_env_open_one_denot_relevant_bind_under k y Σ τ e T :
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ fv_tm e ->
+  lty_env_open_one (S k) y
+    (typed_lty_env_bind (denot_relevant_env Σ τ e) T) =
+  typed_lty_env_bind
+    (denot_relevant_env (lty_env_open_one k y Σ)
+      (cty_open k y τ) (open_tm k (vfvar y) e))
+    T.
+Proof.
+  intros HΣ Hy.
+  rewrite typed_lty_env_bind_open_under.
+  - rewrite denot_relevant_env_open_one by exact Hy.
+    reflexivity.
+  - intros Hbad.
+    apply HΣ.
+    eapply lty_env_restrict_lvars_fv_dom_subset.
+    apply lvars_fv_elem. exact Hbad.
+Qed.
+
 End RelevantEnv.

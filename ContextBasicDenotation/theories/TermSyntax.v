@@ -1400,4 +1400,22 @@ Proof.
   apply lstore_instantiate_tm_split_empty_bound. exact Hclosed.
 Qed.
 
+Lemma open_tret_bvar0_under k y :
+  open_tm (S k) (vfvar y) (tret (vbvar 0)) = tret (vbvar 0).
+Proof.
+  cbn [open_tm open_value].
+  destruct decide; [lia|reflexivity].
+Qed.
+
+Lemma open_tapp_tm_shift_bvar0_under k y e :
+  open_tm (S k) (vfvar y)
+    (tapp_tm (tm_shift 0 e) (vbvar 0)) =
+  tapp_tm (tm_shift 0 (open_tm k (vfvar y) e)) (vbvar 0).
+Proof.
+  unfold tapp_tm.
+  cbn [open_tm open_value value_shift].
+  rewrite tm_shift_open_tm_fvar by lia.
+  repeat (destruct decide; try lia); reflexivity.
+Qed.
+
 End TermDenotation.

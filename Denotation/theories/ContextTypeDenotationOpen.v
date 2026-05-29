@@ -101,30 +101,6 @@ Proof.
   apply formula_open_env_lift_expr_result_formula_shift0_core.
 Qed.
 
-Lemma lvars_open_qual_vars_difference_bound0_under k y q :
-  lvars_open (S k) y (qual_vars q ∖ {[LVBound 0]}) =
-  qual_vars (qual_open_atom (S k) y q) ∖ {[LVBound 0]}.
-Proof.
-  rewrite qual_open_atom_vars.
-  apply set_eq. intros v.
-  rewrite set_swap_elem.
-  rewrite elem_of_difference, elem_of_difference.
-  split.
-  - intros [Hv Hnot]. split.
-    + rewrite set_swap_elem. exact Hv.
-    + intros Hbad. apply Hnot.
-      rewrite elem_of_singleton in Hbad |- *.
-      subst v.
-      unfold swap. repeat destruct decide; try lia; try congruence.
-  - intros [Hv Hnot]. split.
-    + rewrite set_swap_elem in Hv. exact Hv.
-    + intros Hbad. apply Hnot.
-      rewrite elem_of_singleton in Hbad |- *.
-      destruct v as [n|a]; cbn in Hbad;
-        unfold swap in Hbad;
-        repeat destruct decide; try lia; try congruence.
-Qed.
-
 Lemma formula_open_over_body k y b φ e :
   y ∉ fv_tm e ->
   y ∉ qual_dom φ ->
@@ -183,44 +159,6 @@ Proof.
   rewrite formula_open_under.
   rewrite type_qualifier_formula_open by exact Hφ.
   reflexivity.
-Qed.
-
-Lemma open_tret_bvar0_under k y :
-  open_tm (S k) (vfvar y) (tret (vbvar 0)) = tret (vbvar 0).
-Proof.
-  cbn [open_tm open_value].
-  destruct decide; [lia|reflexivity].
-Qed.
-
-Lemma open_tapp_tm_shift_bvar0_under k y e :
-  open_tm (S k) (vfvar y)
-    (tapp_tm (tm_shift 0 e) (vbvar 0)) =
-  tapp_tm (tm_shift 0 (open_tm k (vfvar y) e)) (vbvar 0).
-Proof.
-  unfold tapp_tm.
-  cbn [open_tm open_value value_shift].
-  rewrite tm_shift_open_tm_fvar by lia.
-  repeat (destruct decide; try lia); reflexivity.
-Qed.
-
-Lemma lty_env_open_one_denot_relevant_bind_under k y Σ τ e T :
-  y ∉ lvars_fv (dom Σ) ->
-  y ∉ fv_tm e ->
-  lty_env_open_one (S k) y
-    (typed_lty_env_bind (denot_relevant_env Σ τ e) T) =
-  typed_lty_env_bind
-    (denot_relevant_env (lty_env_open_one k y Σ)
-      (cty_open k y τ) (open_tm k (vfvar y) e))
-    T.
-Proof.
-  intros HΣ Hy.
-  rewrite typed_lty_env_bind_open_under.
-  - rewrite denot_relevant_env_open_one by exact Hy.
-    reflexivity.
-  - intros Hbad.
-    apply HΣ.
-    eapply lty_env_restrict_lvars_fv_dom_subset.
-    apply lvars_fv_elem. exact Hbad.
 Qed.
 
 (** Proof plan for the Arrow/Wand open-body transports below.
