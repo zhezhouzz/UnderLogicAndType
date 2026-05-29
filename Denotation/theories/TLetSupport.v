@@ -597,12 +597,6 @@ Ltac solve_denot_guard_goal Hguard :=
   repeat rewrite res_models_and_iff in Hguard;
   exact Hguard.
 
-Ltac pose_formula_scoped_forall_open_from_dom m n y Hscope Hle Hdom :=
-  let Hopened := fresh "Hopened_scope_my" in
-  pose proof (formula_scoped_forall_open_res_le
-    m n y _ Hscope Hle
-    ltac:(rewrite Hdom; set_solver)) as Hopened.
-
 Definition denot_wand_body_formula
     (gas : nat) (Σg : lty_env) (τx τr : context_ty) (e : tm) : FormulaT :=
   let Σx := typed_lty_env_bind Σg (erase_ty τx) in

@@ -91,3 +91,9 @@ Ltac formula_scope_step :=
 
 Ltac formula_scope_solve :=
   solve [eassumption | formula_scope_step | formula_scope_syntax_norm; tauto].
+
+Ltac pose_formula_scoped_forall_open_from_dom m n y Hscope Hle Hdom :=
+  let Hopened := fresh "Hopened_scope_my" in
+  pose proof (formula_scoped_forall_open_res_le
+    m n y _ Hscope Hle
+    ltac:(rewrite Hdom; set_solver)) as Hopened.
