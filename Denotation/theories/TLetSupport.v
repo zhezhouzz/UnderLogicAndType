@@ -152,25 +152,6 @@ Ltac normalize_tlet_forall_fv :=
   normalize_denotation_formula_fv;
   cbn [fv_tm fv_value].
 
-Lemma tlet_arrow_result_env_term_subset Σ T1 x e1 e2 τx τr :
-  lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ erase_ty (CTArrow τx τr) ->
-  lvars_fv (dom (typed_lty_env_bind Σ (erase_ty τx))) ∪
-    fv_tm (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0)) ⊆
-  lvars_fv (dom (typed_lty_env_bind (<[LVFree x := T1]> Σ) (erase_ty τx))) ∪
-    fv_tm (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0)).
-Proof.
-  intros Hlet.
-  pose proof (basic_typing_lty_env_to_atom_env_fv_subset _ _ _ Hlet) as Hfv_let.
-  transitivity (lvars_fv (dom (typed_lty_env_bind Σ (erase_ty τx))) ∪
-    fv_tm (tlete e1 e2)).
-  - rewrite (fv_tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0)).
-    rewrite (tm_shift_fv 0 (tlete e1 e2)).
-    cbn [fv_value].
-    set_solver.
-  - rewrite ?typed_lty_env_bind_lvars_fv_dom, ?lvar_store_lvars_fv_dom_insert_free.
-    fast_set_solver!!.
-Qed.
-
 Ltac tlet_lc_solver :=
   solve
   [ constructor
