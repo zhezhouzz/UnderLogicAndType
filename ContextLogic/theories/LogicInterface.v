@@ -2,13 +2,8 @@ From ContextLogic Require Export
   LogicQualifier
   FormulaSyntax
   FormulaSemantics
-  FormulaTactics
-  FormulaConnectivesCore
-  FormulaImpl
-  FormulaWand
-  FormulaForall
+  FormulaConnectives
   FormulaWorldExtension
-  ContextLogicProps
   FormulaNotation.
 
 (** * Public logic interface

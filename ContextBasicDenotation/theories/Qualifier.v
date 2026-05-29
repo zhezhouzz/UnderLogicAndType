@@ -126,9 +126,76 @@ Proof.
   apply type_qualifier_lqual_open. exact Hfresh.
 Qed.
 
+Lemma type_qualifier_formula_open_env η q :
+  open_env_fresh_for_lvars η (qual_vars q) ->
+  open_env_values_inj η ->
+  formula_open_env η (type_qualifier_formula q) =
+  type_qualifier_formula (qual_open_env η q).
+Proof.
+  revert q.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros q _ _.
+    rewrite formula_open_env_empty, qual_open_env_empty. reflexivity.
+  - intros q Hfresh Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
+      as [Hinjη Havoid].
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x
+      (qual_vars q) Hnone Hfresh) as Hfreshη.
+    rewrite formula_open_env_insert_fresh by assumption.
+    rewrite IH by (exact Hfreshη || exact Hinjη).
+    rewrite type_qualifier_formula_open.
+    2:{
+      pose proof (open_env_fresh_for_lvars_insert_head η k x
+        (qual_vars q) Hnone Hfresh) as Hhead.
+      unfold qual_dom.
+      rewrite qual_open_env_vars by exact Hfreshη.
+      exact Hhead.
+    }
+    rewrite qual_open_env_insert_fresh by assumption.
+    reflexivity.
+Qed.
+
 Lemma formula_fv_type_qualifier_formula q :
   formula_fv (type_qualifier_formula q) = qual_dom q.
 Proof. reflexivity. Qed.
+
+Lemma formula_lvars_fv_type_qualifier_formula φ :
+  lvars_fv (formula_lvars (type_qualifier_formula φ)) = qual_dom φ.
+Proof.
+  change (lvars_fv (formula_lvars (type_qualifier_formula φ)))
+    with (formula_fv (type_qualifier_formula φ)).
+  apply formula_fv_type_qualifier_formula.
+Qed.
+
+Lemma formula_fv_over_fib_type_qualifier_open_fresh x y b φ :
+  LVFree x ∉ context_ty_lvars (CTOver b φ) ->
+  x <> y ->
+  x ∉ formula_fv
+    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
+      (FOver (type_qualifier_formula (φ ^q^ y)))).
+Proof.
+  intros Hfresh Hxy.
+  rewrite formula_fv_fibvars, formula_fv_over,
+    formula_fv_type_qualifier_formula,
+    lvars_fv_qual_vars_difference_free.
+  pose proof (context_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  set_solver.
+Qed.
+
+Lemma formula_fv_under_fib_type_qualifier_open_fresh x y b φ :
+  LVFree x ∉ context_ty_lvars (CTUnder b φ) ->
+  x <> y ->
+  x ∉ formula_fv
+    (FFibVars (qual_vars (φ ^q^ y) ∖ {[LVFree y]})
+      (FUnder (type_qualifier_formula (φ ^q^ y)))).
+Proof.
+  intros Hfresh Hxy.
+  rewrite formula_fv_fibvars, formula_fv_under,
+    formula_fv_type_qualifier_formula,
+    lvars_fv_qual_vars_difference_free.
+  pose proof (context_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
+  set_solver.
+Qed.
 
 Lemma type_qualifier_formula_models_iff q (m : WfWorldT) :
   res_models m (type_qualifier_formula q) <->

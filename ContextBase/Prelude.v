@@ -178,6 +178,26 @@ Proof.
       rewrite lookup_delete_ne by congruence. reflexivity.
 Qed.
 
+Lemma map_fold_ext_on_lookup
+    {B : Type} (f g : K -> A -> B -> B) (b : B) (m : gmap K A) :
+  (forall i x, m !! i = Some x -> forall acc, f i x acc = g i x acc) ->
+  map_fold f b m = map_fold g b m.
+Proof.
+  intros Hext.
+  rewrite !map_fold_foldr.
+  assert (Haux : forall l,
+    (forall i x, (i, x) ∈ l -> m !! i = Some x) ->
+    foldr (uncurry f) b l = foldr (uncurry g) b l).
+  {
+    induction l as [|[i x] l IH]; intros Hl; simpl; [reflexivity|].
+    rewrite Hext by (apply Hl; left; reflexivity).
+    f_equal. apply IH. intros j y Hjy.
+    apply Hl. right. exact Hjy.
+  }
+  apply Haux. intros i x Hin.
+  rewrite <- elem_of_map_to_list. exact Hin.
+Qed.
+
 Lemma map_restrict_dom m X :
   dom (map_restrict m X) = dom m ∩ X.
 Proof.

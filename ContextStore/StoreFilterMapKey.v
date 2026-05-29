@@ -43,7 +43,6 @@ Proof.
           end) ∅ s !! tgt = Some v ->
       exists k, s !! k = Some v /\ f k = Some tgt) _ _ s k' v).
   - intros tgt val Hlookup.
-    change ((∅ : gmap K' V) !! tgt = Some val) in Hlookup.
     better_map_solver.
   - intros src val s' Hfresh Hfold IH tgt v' Hlookup.
     rewrite Hfold in Hlookup.
@@ -81,7 +80,6 @@ Proof.
           | None => acc
           end) ∅ s !! tgt = Some v) _ _ s k k' v).
   - intros src tgt val Hlookup _ _.
-    change ((∅ : gmap K V) !! src = Some val) in Hlookup.
     better_map_solver.
   - intros i vi s' Hfresh Hfold IH src tgt val Hlookup Hfk Huniq.
     rewrite Hfold.
@@ -653,6 +651,148 @@ Proof.
       apply not_elem_of_dom. exact Hfresh.
 Qed.
 
+Lemma lvar_store_open_env_insert_fresh k x η (s : LVarStore) :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  s !! LVBound k = None ->
+  s !! LVFree x = None ->
+  lvar_store_open (<[k := x]> η) s = lvar_store_open η s.
+Proof.
+  intros Hη Havoid Hbound Hfree.
+  unfold lvar_store_open.
+  apply map_fold_ext_on_lookup. intros v U Hv acc.
+  erewrite lvar_to_atom_insert_open_env_fresh; try reflexivity; eauto.
+  - intros ->.
+    rewrite Hbound in Hv. discriminate.
+  - intros ->.
+    rewrite Hfree in Hv. discriminate.
+Qed.
+
+Lemma lvar_store_open_insert_bound_commute
+    (k : nat) (x : atom) (A : V) (η : gmap nat atom)
+    (s : LVarStore) (j : logic_var) (U : V) (acc : gmap atom V) :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  s !! LVFree x = None ->
+  j <> LVBound k ->
+  (<[LVBound k := A]> s) !! j = Some U ->
+  <[x := A]>
+    (match lvar_to_atom (<[k := x]> η) j with
+     | Some y => <[y := U]> acc
+     | None => acc
+     end) =
+  match lvar_to_atom (<[k := x]> η) j with
+  | Some y => <[y := U]> (<[x := A]> acc)
+  | None => <[x := A]> acc
+  end.
+Proof.
+  intros Hη Havoid Hfree Hj Hlookup.
+  destruct j as [n|y]; cbn [lvar_to_atom logic_var_to_atom].
+  - destruct (decide (n = k)) as [->|Hnk]; [congruence|].
+    rewrite lookup_insert_ne by congruence.
+    destruct (η !! n) as [z|] eqn:Hηn; [|reflexivity].
+    apply insert_insert_ne. intros ->. exact (Havoid n Hηn).
+  - destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lookup_insert_ne in Hlookup by congruence.
+      rewrite Hfree in Hlookup. discriminate.
+    + apply insert_insert_ne. congruence.
+Qed.
+
+Lemma lvar_store_open_step_commute
+    (η : gmap nat atom) (i j : logic_var)
+    (Ai Aj : V) (acc : gmap atom V) :
+  i <> j ->
+  (forall x,
+    lvar_to_atom η i = Some x ->
+    lvar_to_atom η j = Some x ->
+    i = j) ->
+  match lvar_to_atom η i with
+  | Some x => <[x:=Ai]>
+      (match lvar_to_atom η j with
+       | Some y => <[y:=Aj]> acc
+       | None => acc
+       end)
+  | None =>
+      match lvar_to_atom η j with
+      | Some y => <[y:=Aj]> acc
+      | None => acc
+      end
+  end =
+  match lvar_to_atom η j with
+  | Some y => <[y:=Aj]>
+      (match lvar_to_atom η i with
+       | Some x => <[x:=Ai]> acc
+       | None => acc
+       end)
+  | None =>
+      match lvar_to_atom η i with
+      | Some x => <[x:=Ai]> acc
+      | None => acc
+      end
+  end.
+Proof.
+  intros Hne Hinj.
+  destruct (lvar_to_atom η i) as [x|] eqn:Hi;
+    destruct (lvar_to_atom η j) as [y|] eqn:Hj; try reflexivity.
+  destruct (decide (x = y)) as [Hxy|Hxy].
+  - subst y. exfalso. apply Hne. exact (Hinj x eq_refl eq_refl).
+  - apply insert_insert_ne. congruence.
+Qed.
+
+Lemma lvar_store_open_insert_bound_atom_store k x A η (s : LVarStore) :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  open_env_fresh_for_lvars (<[k := x]> η)
+    (dom (<[LVBound k := A]> s : LVarStore)) ->
+  s !! LVBound k = None ->
+  s !! LVFree x = None ->
+  lvar_store_open (<[k := x]> η) (<[LVBound k := A]> s) =
+  <[x := A]> (lvar_store_open η s).
+Proof.
+  intros Hη Havoid Hfresh Hbound Hfree.
+  unfold lvar_store_open, storeA_filter_map_key at 1.
+  rewrite (map_fold_insert_L
+    (fun v U acc =>
+      match lvar_to_atom (<[k:=x]> η) v with
+      | Some y => <[y:=U]> acc
+      | None => acc
+      end)
+    (∅ : gmap atom V) (LVBound k) A s).
+  - cbn [lvar_to_atom logic_var_to_atom].
+    rewrite lookup_insert_eq.
+    change (map_fold
+      (fun v U acc =>
+        match lvar_to_atom (<[k:=x]> η) v with
+        | Some y => <[y:=U]> acc
+        | None => acc
+        end) ∅ s)
+      with (lvar_store_open (<[k:=x]> η) s).
+    rewrite lvar_store_open_env_insert_fresh by assumption.
+    reflexivity.
+  - intros j1 j2 U1 U2 acc Hne Hj1 Hj2.
+    destruct (decide (j1 = LVBound k)) as [->|Hj1k].
+    + cbn [lvar_to_atom logic_var_to_atom]. rewrite lookup_insert_eq.
+      rewrite lookup_insert_eq in Hj1.
+      injection Hj1 as HU1. symmetry in HU1. subst U1.
+      eapply (lvar_store_open_insert_bound_commute k x A η s j2 U2 acc);
+        try assumption; congruence.
+    + destruct (decide (j2 = LVBound k)) as [->|Hj2k].
+      * cbn [lvar_to_atom logic_var_to_atom]. rewrite lookup_insert_eq.
+        rewrite lookup_insert_eq in Hj2.
+        injection Hj2 as HU2. symmetry in HU2. subst U2.
+        symmetry.
+        eapply (lvar_store_open_insert_bound_commute k x A η s j1 U1 acc);
+          try assumption; congruence.
+      * eapply lvar_store_open_step_commute; [exact Hne|].
+        intros y Hy1 Hy2.
+        eapply lvar_to_atom_inj_on_fresh; try eassumption.
+        -- change (j1 ∈ dom (<[LVBound k:=A]> (s : gmap logic_var V))).
+           apply elem_of_dom. exists U1. exact Hj1.
+        -- change (j2 ∈ dom (<[LVBound k:=A]> (s : gmap logic_var V))).
+           apply elem_of_dom. exists U2. exact Hj2.
+  - exact Hbound.
+Qed.
+
 Lemma lvar_store_to_atom_store_atom_store (s : AtomStore) :
   lvar_store_to_atom_store (atom_store_to_lvar_store s) = s.
 Proof.
@@ -724,6 +864,26 @@ Proof.
     + symmetry. apply lvar_store_to_atom_store_lookup.
     + symmetry.
       apply map_lookup_insert_ne. congruence.
+Qed.
+
+Lemma lvar_store_to_atom_store_insert_free_lookup_ne
+    (s : LVarStore) x v a :
+  a <> x ->
+  lvar_store_to_atom_store (<[LVFree x := v]> s) !! a =
+  lvar_store_to_atom_store s !! a.
+Proof.
+  intros Hax.
+  rewrite lvar_store_to_atom_store_insert_free.
+  apply lookup_insert_ne. congruence.
+Qed.
+
+Lemma lvar_store_to_atom_store_insert_free_lookup_eq
+    (s : LVarStore) x v :
+  lvar_store_to_atom_store (<[LVFree x := v]> s) !! x = Some v.
+Proof.
+  rewrite lvar_store_to_atom_store_insert_free.
+  rewrite lookup_insert.
+  destruct (decide (x = x)); [reflexivity|congruence].
 Qed.
 
 Lemma lvar_store_to_atom_store_swap x y (s : LVarStore) :

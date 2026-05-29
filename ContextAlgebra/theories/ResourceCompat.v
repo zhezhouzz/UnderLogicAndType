@@ -61,6 +61,41 @@ Definition mk_forall_extension
 Definition forall_extension_shape (X : aset) (y : atom) (F : FiberExtensionT) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
 
+Lemma fiber_extension_singleton_out_notin_input
+    (F : FiberExtensionT) y :
+  ext_out F = {[y]} ->
+  y ∉ ext_in F.
+Proof.
+  intros Hout.
+  pose proof (extA_disjoint F) as Hdisj.
+  unfold ext_out, ext_in in *.
+  rewrite Hout in Hdisj. set_solver.
+Qed.
+
+Lemma fiber_extension_singleton_output_fresh_in_eq
+    (F : FiberExtensionT) y X :
+  ext_in F = X ->
+  ext_out F = {[y]} ->
+  y ∉ X.
+Proof.
+  intros HFin HFout.
+  rewrite <- HFin.
+  eapply fiber_extension_singleton_out_notin_input; eauto.
+Qed.
+
+Lemma fiber_extension_singleton_output_fresh_subset
+    (F : FiberExtensionT) y X Y :
+  ext_in F = X ->
+  ext_out F = {[y]} ->
+  Y ⊆ X ->
+  y ∉ Y.
+Proof.
+  intros HFin HFout Hsub.
+  pose proof (fiber_extension_singleton_output_fresh_in_eq
+    F y X HFin HFout).
+  better_set_solver.
+Qed.
+
 Definition one_point_projected_output_raw
     (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
   @mk_worldA atom _ _ V {[y]}
@@ -574,6 +609,27 @@ Proof.
     subst ny'.
     apply (proj1 (res_extend_by_input_widen_to_iff n F F' ny Hwid Hin')).
     exact Hny'.
+Qed.
+
+Lemma res_extend_by_commute_exists_right
+    (m mx my : WfWorldT) (F Fy : FiberExtensionT) :
+  res_extend_by m F mx ->
+  res_extend_by m Fy my ->
+  ext_in Fy ⊆ world_dom (mx : WorldT) ->
+  ext_out Fy ## world_dom (mx : WorldT) ->
+  ∃ myx,
+    res_extend_by my F myx ∧
+    res_extend_by mx Fy myx.
+Proof.
+  intros HmF HmFy HinFy HoutFy.
+  pose proof (extension_applicable_after_parallel_extension_right
+    m mx my F Fy HmF HmFy HoutFy) as HappF_my.
+  destruct (res_extend_by_exists my F HappF_my) as [myx HmyF].
+  exists myx. split; [exact HmyF |].
+  apply (proj2 (res_extend_by_commute_input_widen
+    m mx F Fy Fy my myx HmF HmFy
+    (fiber_extension_input_widen_to_refl Fy) HinFy)).
+  exact HmyF.
 Qed.
 
 End ResourceCompat.

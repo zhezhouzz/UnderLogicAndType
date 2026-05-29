@@ -5,7 +5,7 @@
     intentionally absent: forall is now defined directly by extension. *)
 
 From ContextAlgebra Require Import ResourceInterface ResourceCompat.
-From ContextLogic Require Import FormulaSemantics FormulaConnectivesCore FormulaImpl FormulaWand FormulaForall.
+From ContextLogic Require Import FormulaSemantics FormulaConnectives.
 
 Section FormulaWorldExtension.
 
@@ -143,8 +143,7 @@ Lemma res_models_plus_extend_pullback
   res_models m (FPlus ψ1 ψ2).
 Proof.
   intros Hext Hdomφ1 Hdomφ2 Hplus Hfun Hψ1 Hψ2.
-  pose proof (res_models_fuel_scoped _ _ _ Hplus) as Hscope_plus.
-  pose proof (proj1 (res_models_plus_iff n φ1 φ2 Hscope_plus) Hplus)
+  pose proof (proj1 (res_models_plus_iff n φ1 φ2) Hplus)
     as [n1 [n2 [Hdef [Hsum_le [Hn1 Hn2]]]]].
   assert (Hdom_m_n1 : world_dom (m : WorldT) ⊆ world_dom (n1 : WorldT)).
   {
@@ -161,7 +160,7 @@ Proof.
     as (m1 & m2 & Hdefm & n1' & n2' &
       Hdom_m1 & Hdom_m2 & Hsub_m1 & Hsub_m2 & Hsum_m &
       Hext1 & Hle1 & Hext2 & Hle2).
-  eapply res_models_plus_intro_from_models; [exact Hsum_m | |].
+  eapply res_models_plus_intro; [exact Hsum_m | |].
   - eapply Hψ1; [exact Hdom_m1 | exact Hsub_m1 | exact Hext1 |].
     eapply res_models_kripke; [exact Hle1 | exact Hn1].
   - eapply Hψ2; [exact Hdom_m2 | exact Hsub_m2 | exact Hext2 |].
@@ -170,11 +169,11 @@ Qed.
 
 Lemma res_models_pullback_subset_projection
     (n p : WfWorldT) Hsub (φ : FormulaT) :
-  formula_fv φ ⊆ world_dom (p : WorldT) →
   res_models p φ →
   res_models (res_pullback_subset_projection n p Hsub) φ.
 Proof.
-  intros Hfv Hp.
+  intros Hp.
+  pose proof (res_models_scoped p φ Hp) as Hfv.
   set (pb := res_pullback_subset_projection n p Hsub).
   assert (Hpb : res_restrict pb (world_dom (p : WorldT)) = p).
   { subst pb. apply res_pullback_subset_projection_restrict. }
@@ -209,8 +208,7 @@ Lemma res_models_plus_extend_pullback_agree_on
   res_models m (FPlus ψ1 ψ2).
 Proof.
   intros Hext Hplus Hfun Hψ1 Hψ2.
-  pose proof (res_models_fuel_scoped _ _ _ Hplus) as Hscope_plus.
-  pose proof (proj1 (res_models_plus_iff n φ1 φ2 Hscope_plus) Hplus)
+  pose proof (proj1 (res_models_plus_iff n φ1 φ2) Hplus)
     as [n1 [n2 [Hdef [Hsum_le [Hn1 Hn2]]]]].
   destruct (res_sum_pullback_subset_projection_full n n1 n2 Hdef Hsum_le)
     as (Hsub1 & Hsub2 & Hdef_full & Hsum_full_le).
@@ -219,35 +217,31 @@ Proof.
   assert (Hn1f : res_models n1f φ1).
   {
     subst n1f.
-    eapply res_models_pullback_subset_projection; [| exact Hn1].
-    eapply res_models_fuel_scoped. exact Hn1.
+    eapply res_models_pullback_subset_projection. exact Hn1.
   }
   assert (Hn2f : res_models n2f φ2).
   {
     subst n2f.
-    eapply res_models_pullback_subset_projection; [| exact Hn2].
-    eapply res_models_fuel_scoped. exact Hn2.
+    eapply res_models_pullback_subset_projection. exact Hn2.
   }
   assert (Hdom_m_n1f : world_dom (m : WorldT) ⊆ world_dom (n1f : WorldT)).
   {
     subst n1f.
-    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
-    pose proof (res_extend_by_dom m F n Hext) as Hdom.
-    simpl. set_solver.
+    rewrite res_pullback_subset_projection_dom.
+    eapply res_extend_by_dom_base_subset; exact Hext.
   }
   assert (Hdom_m_n2f : world_dom (m : WorldT) ⊆ world_dom (n2f : WorldT)).
   {
     subst n2f.
-    pose proof (res_extend_by_input_dom m F n Hext) as Hin.
-    pose proof (res_extend_by_dom m F n Hext) as Hdom.
-    simpl. set_solver.
+    rewrite res_pullback_subset_projection_dom.
+    eapply res_extend_by_dom_base_subset; exact Hext.
   }
   destruct (res_extend_by_sum_pullback m F n n1f n2f Hdef_full
     Hext Hfun Hdom_m_n1f Hdom_m_n2f Hsum_full_le)
     as (m1 & m2 & Hdefm & n1' & n2' &
       Hdom_m1 & Hdom_m2 & Hsub_m1 & Hsub_m2 & Hsum_m &
       Hext1 & Hle1 & Hext2 & Hle2).
-  eapply res_models_plus_intro_from_models; [exact Hsum_m | |].
+  eapply res_models_plus_intro; [exact Hsum_m | |].
   - eapply Hψ1; [exact Hdom_m1 | exact Hsub_m1 | exact Hext1 |].
     eapply res_models_kripke; [exact Hle1 | exact Hn1f].
   - eapply Hψ2; [exact Hdom_m2 | exact Hsub_m2 | exact Hext2 |].
@@ -266,59 +260,6 @@ Proof.
   intros Hext Hfv.
   apply res_models_extend_base_iff with (F := F); [exact Hext |].
   rewrite formula_fv_FResourceAtom_lvars. exact Hfv.
-Qed.
-
-Lemma res_models_forall_map_same_fv_by_extension
-    (m : WfWorldT) (φ ψ : FormulaT) :
-  formula_fv φ = formula_fv ψ →
-  formula_scoped_in_world m (FForall ψ) →
-  (∃ L : aset,
-    ∀ y : atom, y ∉ L →
-    ∀ (F : fiber_extension (V := V)) (my : WfWorldT),
-      ext_in F = formula_fv φ →
-      ext_out F = {[y]} →
-      res_extend_by m F my →
-    res_models my (formula_open 0 y φ) →
-    res_models my (formula_open 0 y ψ)) →
-  res_models m (FForall φ) →
-  res_models m (FForall ψ).
-Proof.
-  intros Hfv Hscope Hmap Hforall.
-  eapply res_models_forall_map_same_fv; eauto.
-Qed.
-
-Lemma res_models_forall_transport_by_extension
-    (m n : WfWorldT) (φ ψ : FormulaT) :
-  formula_fv φ = formula_fv ψ →
-  formula_scoped_in_world n (FForall ψ) →
-  (∃ L : aset,
-    ∀ y : atom, y ∉ L →
-    ∀ (F : fiber_extension (V := V)) (my ny : WfWorldT),
-      ext_in F = formula_fv φ →
-      ext_out F = {[y]} →
-      res_extend_by m F my →
-      res_extend_by n F ny →
-    res_models my (formula_open 0 y φ) →
-    res_models ny (formula_open 0 y ψ)) →
-  res_models m (FForall φ) →
-  res_models n (FForall ψ).
-Proof.
-  intros Hfv Hscope [L Htransport] Hforall.
-  eapply res_models_forall_transport; [| exact Hscope | | exact Hforall].
-  - rewrite <- Hfv. reflexivity.
-  - exists L.
-    intros y Hy F my ny _ HFout [Fφ [Hwid [HFinφ Hmy]]] Hny Hφ.
-    assert (Hinφn : ext_in Fφ ⊆ world_dom (n : WorldT)).
-    {
-      rewrite HFinφ. rewrite Hfv. exact Hscope.
-    }
-    assert (Hnyφ : res_extend_by n Fφ ny).
-    {
-      apply (proj1 (res_extend_by_input_widen_to_iff n F Fφ ny Hwid Hinφn)).
-      exact Hny.
-    }
-    eapply Htransport; [exact Hy | exact HFinφ | | exact Hmy | exact Hnyφ | exact Hφ].
-    rewrite (input_widen_out _ _ Hwid). exact HFout.
 Qed.
 
 Lemma res_models_one_point_extension_pushout

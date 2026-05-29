@@ -34,16 +34,9 @@ ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/LogicQualifier.v
 ContextLogic/theories/FormulaSyntax.v
-ContextLogic/theories/FormulaSyntaxTactics.v
-ContextLogic/theories/FormulaScope.v
 ContextLogic/theories/FormulaSemantics.v
-ContextLogic/theories/FormulaTactics.v
-ContextLogic/theories/FormulaConnectivesCore.v
-ContextLogic/theories/FormulaImpl.v
-ContextLogic/theories/FormulaWand.v
-ContextLogic/theories/FormulaForall.v
+ContextLogic/theories/FormulaConnectives.v
 ContextLogic/theories/FormulaWorldExtension.v
-ContextLogic/theories/ContextLogicProps.v
 ContextLogic/theories/FormulaNotation.v
 ContextLogic/theories/LogicInterface.v
 
@@ -66,24 +59,11 @@ CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
 
 ContextTypeLanguage/theories/Qualifier.v
-ContextTypeLanguage/theories/Renaming.v
-ContextTypeLanguage/theories/SyntaxCore.v
-ContextTypeLanguage/theories/SyntaxLvars.v
-ContextTypeLanguage/theories/SyntaxOpen.v
-ContextTypeLanguage/theories/SyntaxEquiv.v
-ContextTypeLanguage/theories/WFLvars.v
-ContextTypeLanguage/theories/WFContextTy.v
-ContextTypeLanguage/theories/WFContext.v
-ContextTypeLanguage/theories/MultiOpen.v
+ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/TypeOpen.v
-ContextTypeLanguage/theories/LtyEnvCore.v
-ContextTypeLanguage/theories/LtyEnvOpen.v
-ContextTypeLanguage/theories/LtyEnvProjection.v
-ContextTypeLanguage/theories/LtyEnvBind.v
+ContextTypeLanguage/theories/LtyEnv.v
+ContextTypeLanguage/theories/WF.v
 ContextTypeLanguage/theories/Notation.v
-ContextTypeLanguage/theories/Tactics.v
-ContextTypeLanguage/theories/Interface.v
-ContextTypeLanguage/theories/Sugar.v
 
 ContextBasicDenotation/theories/Notation.v
 ContextBasicDenotation/theories/StoreTyping.v
@@ -94,9 +74,9 @@ ContextBasicDenotation/theories/TermExtension.v
 ContextBasicDenotation/theories/TermTLet.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
+ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
-Denotation/theories/ContextTypeDenotationCore.v
 Denotation/theories/ContextTypeDenotationDefinition.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
@@ -109,13 +89,6 @@ Denotation/theories/TLet.v
 
 -R ContextTyping/theories ContextTyping
 
-ContextTyping/theories/WellFormed.v
-ContextTyping/theories/PrimOpContext.v
-ContextTyping/theories/Auxiliary.v
 ContextTyping/theories/Typing.v
-ContextTyping/theories/Naming.v
-ContextTyping/theories/RegularDenotation.v
-ContextTyping/theories/TLetDirect.v
-ContextTyping/theories/TLetDenotation.v
-ContextTyping/theories/SoundnessDirect.v
+ContextTyping/theories/TLet.v
 ContextTyping/theories/Soundness.v

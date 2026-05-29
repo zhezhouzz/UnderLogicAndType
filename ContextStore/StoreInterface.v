@@ -1,6 +1,6 @@
 (** * Concrete store interfaces *)
 
-From ContextBase Require Import Prelude LogicVar BaseTactics.
+From ContextBase Require Import Prelude LogicVar LogicVarShift BaseTactics.
 From ContextStore Require Import StoreCore StoreRestrict StoreFilterMapKey.
 
 Section StoreInterface.
@@ -196,6 +196,70 @@ Proof.
         (lso_store s)) =
     lso_store s).
   apply storeA_swap_involutive.
+Qed.
+
+Definition lstore_shift_from (k : nat) (s : LStore) : LStore :=
+  lstore_rekey (logic_var_shift_from k) s.
+
+Definition lstore_on_shift_from
+    (k : nat) {D : lvset} (s : LStoreOn D)
+    : LStoreOn (lvars_shift_from k D) :=
+  lstore_on_rekey (logic_var_shift_from k) (logic_var_shift_from_inj k) s.
+
+Lemma lstore_shift_from_below_id k D (s : LStoreOn D) :
+  (forall n, n ∈ lvars_bv D -> n < k) ->
+  lso_store (lstore_on_shift_from k s) = lso_store s.
+Proof.
+  intros Hbelow.
+  apply lstore_on_rekey_id_on_dom.
+  intros [n|x] Hin; cbn [logic_var_shift_from].
+  - destruct (decide (k <= n)) as [Hbad|_].
+    + exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hin)).
+      lia.
+    + reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma lstore_shift_from_open_swap j k x (s : LStore) :
+  j <= k ->
+  lstore_shift_from j (lstore_swap (LVBound k) (LVFree x) s) =
+  lstore_swap (LVBound (S k)) (LVFree x) (lstore_shift_from j s).
+Proof.
+  intros Hjk.
+  unfold lstore_shift_from, lstore_swap, lstore_rekey.
+  rewrite !storeA_rekey_compose;
+    try apply logic_var_shift_from_inj;
+    try apply swap_inj.
+  apply storeA_rekey_ext_on_dom. intros v _.
+  symmetry. apply logic_var_open_shift_from_under_gen. exact Hjk.
+Qed.
+
+Lemma lstore_on_shift_from_open_front j k x D (s : LStoreOn D) :
+  j <= k ->
+  lso_store (lstore_on_shift_from j (lstore_on_open_front k x s)) =
+  lso_store (lstore_on_open_front (S k) x (lstore_on_shift_from j s)).
+Proof.
+  intros Hjk.
+  destruct s as [s Hdom]. simpl.
+  unfold lstore_on_shift_from, lstore_on_open_front, lstore_on_rekey,
+    storeA_on_rekey.
+  cbn [lso_store storeAO_store].
+  apply lstore_shift_from_open_swap. exact Hjk.
+Qed.
+
+Lemma lstore_on_shift_from_open_back j k x D
+    (s : LStoreOn (lvars_open k x D)) :
+  j <= k ->
+  lso_store (lstore_on_shift_from j (lstore_on_open_back k x D s)) =
+  lstore_swap (LVBound (S k)) (LVFree x)
+    (lso_store (lstore_on_shift_from j s)).
+Proof.
+  intros Hjk.
+  destruct s as [s Hdom]. simpl.
+  unfold lstore_on_shift_from, lstore_on_open_back, lstore_on_rekey,
+    storeA_on_rekey.
+  cbn [lso_store storeAO_store].
+  apply lstore_shift_from_open_swap. exact Hjk.
 Qed.
 
 End StoreInterface.

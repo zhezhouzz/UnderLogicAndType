@@ -20,6 +20,7 @@ Ltac normalize_denotation_formula_fv :=
   rewrite ?formula_fv_expr_result_formula;
   rewrite ?formula_fv_type_qualifier_formula;
   store_normalize;
+  type_syntax_norm;
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
   rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
   cbn [formula_fv formula_lvars fv_tm fv_value];
@@ -44,6 +45,7 @@ Ltac normalize_denotation_formula_fv_in H :=
   rewrite ?formula_fv_expr_result_formula in H;
   rewrite ?formula_fv_type_qualifier_formula in H;
   store_normalize;
+  type_syntax_norm_in H;
   rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
   rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
   cbn [formula_fv formula_lvars fv_tm fv_value] in H;

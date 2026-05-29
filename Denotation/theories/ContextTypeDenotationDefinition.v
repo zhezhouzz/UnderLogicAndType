@@ -3,7 +3,6 @@
     Split out from [ContextTypeDenotation.v] to keep individual proof files small. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationCore.
 
 Section ContextTypeDenotation.
 

@@ -125,6 +125,22 @@ Proof.
       pose proof (IH z); better_set_solver.
 Qed.
 
+Lemma atom_notin_lvars_fv_iff_free_notin y (D : lvset) :
+  y ∉ lvars_fv D ↔ LVFree y ∉ D.
+Proof.
+  rewrite lvars_fv_elem. tauto.
+Qed.
+
+Lemma lvars_fv_subset_notin_free y (D : lvset) (X : aset) :
+  lvars_fv D ⊆ X ->
+  y ∉ X ->
+  LVFree y ∉ D.
+Proof.
+  intros Hsub Hy.
+  rewrite <- atom_notin_lvars_fv_iff_free_notin.
+  better_set_solver.
+Qed.
+
 Lemma lvars_bv_elem D k :
   k ∈ lvars_bv D ↔ LVBound k ∈ D.
 Proof.
@@ -157,6 +173,14 @@ Lemma logic_var_open_involutive k x v :
   logic_var_open k x (logic_var_open k x v) = v.
 Proof.
   apply swap_involutive.
+Qed.
+
+Lemma logic_var_swap_open_one x y k v :
+  logic_var_swap x y (logic_var_open k x v) =
+  logic_var_open k y (logic_var_swap x y v).
+Proof.
+  unfold swap.
+  repeat destruct decide; subst; try congruence; reflexivity.
 Qed.
 
 Lemma lvars_open_involutive k x D :
@@ -439,6 +463,12 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma lvars_fv_empty :
+  lvars_fv (∅ : lvset) = ∅.
+Proof.
+  apply set_eq. intros x. rewrite lvars_fv_elem. better_set_solver.
+Qed.
+
 Lemma lvars_fv_open k x (D : lvset) :
   lvars_fv (lvars_open k x D) =
   (lvars_fv D ∖ {[x]}) ∪
@@ -481,6 +511,20 @@ Proof.
   apply lvars_fv_elem.
   apply lvars_fv_elem in Hx.
   exact (HDE _ Hx).
+Qed.
+
+Lemma lvars_fv_subset_insert_free_drop
+    (D E : lvset) x :
+  LVFree x ∉ D ->
+  D ⊆ {[LVFree x]} ∪ E ->
+  lvars_fv D ⊆ lvars_fv E.
+Proof.
+  intros Hfresh Hsub y Hy.
+  rewrite lvars_fv_elem in Hy |- *.
+  specialize (Hsub (LVFree y) Hy).
+  destruct (decide (y = x)) as [->|Hneq].
+  - contradiction.
+  - better_set_solver.
 Qed.
 
 Lemma lvars_fv_difference_singleton_free (D : lvset) x :

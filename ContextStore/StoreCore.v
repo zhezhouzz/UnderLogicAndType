@@ -99,12 +99,8 @@ Lemma storeA_agree_on_insert_same {K : Type} `{Countable K}
 Proof.
   intros Hag y Hy.
   destruct (decide (y = x)) as [->|Hyx].
-  - change ((<[x := v]> (s1 : gmap K V) !! x) =
-      (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !map_lookup_insert. reflexivity.
-  - change ((<[x := v]> (s1 : gmap K V) !! y) =
-      (<[x := v]> (s2 : gmap K V) !! y)).
-    rewrite !map_lookup_insert_ne by congruence.
+  - better_map_solver.
+  - rewrite !lookup_insert_ne by congruence.
     apply Hag. apply elem_of_difference. split; [exact Hy|better_set_solver].
 Qed.
 
@@ -117,17 +113,11 @@ Proof.
   apply storeA_agree_on_union.
   - intros y Hy.
     destruct (decide (y = x)) as [->|Hyx].
-    + change ((<[x := v]> (s1 : gmap K V) !! x) =
-        (<[x := v]> (s2 : gmap K V) !! x)).
-      rewrite !map_lookup_insert. reflexivity.
-    + change ((<[x := v]> (s1 : gmap K V) !! y) =
-        (<[x := v]> (s2 : gmap K V) !! y)).
-      rewrite !map_lookup_insert_ne by congruence. apply Hag, Hy.
+    + better_map_solver.
+    + rewrite !lookup_insert_ne by congruence. apply Hag, Hy.
   - intros y Hy.
     rewrite elem_of_singleton in Hy. subst y.
-    change ((<[x := v]> (s1 : gmap K V) !! x) =
-      (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !map_lookup_insert. reflexivity.
+    better_map_solver.
 Qed.
 
 Lemma storeA_bind_dom {K : Type} `{Countable K}
@@ -136,8 +126,6 @@ Lemma storeA_bind_dom {K : Type} `{Countable K}
   dom s = dom s1 ∪ dom s2.
 Proof.
   intros [_ ->].
-  change (dom (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
-    dom (s1 : gmap K V) ∪ dom (s2 : gmap K V)).
   better_set_solver.
 Qed.
 
@@ -349,28 +337,24 @@ Proof.
       rewrite map_lookup_insert. reflexivity.
   - rewrite map_lookup_insert_ne by exact Hy.
     destruct ((storeA_rekey f s : gmap K V) !! y) as [w|] eqn:Hylook.
-    + apply storeA_rekey_lookup_Some_inj_on.
-      * exact Hinj.
-      * apply storeA_rekey_lookup_Some_inj_on in Hylook as [x [Hyx Hx]].
-        -- exists x. split; [exact Hyx|].
-           change ((<[z := v]> (s : gmap K V)) !! x = Some w).
-           rewrite map_lookup_insert_ne.
-           ++ exact Hx.
-           ++ intros ->. apply Hy. exact Hyx.
-        -- intros a b Ha Hb Hab.
-           apply Hinj.
-           ++ change (a ∈ dom (<[z := v]> (s : gmap K V))).
-              better_set_solver.
-           ++ change (b ∈ dom (<[z := v]> (s : gmap K V))).
-              better_set_solver.
+	    + apply storeA_rekey_lookup_Some_inj_on.
+	      * exact Hinj.
+	      * apply storeA_rekey_lookup_Some_inj_on in Hylook as [x [Hyx Hx]].
+	        -- exists x. split; [exact Hyx|].
+	           rewrite map_lookup_insert_ne.
+	           ++ exact Hx.
+	           ++ intros ->. apply Hy. exact Hyx.
+	        -- intros a b Ha Hb Hab.
+	           apply Hinj.
+	           ++ better_set_solver.
+	           ++ better_set_solver.
            ++ exact Hab.
     + apply storeA_rekey_lookup_None_inj_on.
       * exact Hinj.
       * intros x Hyx.
-        destruct (decide (x = z)) as [->|Hxz].
-        -- exfalso. apply Hy. exact Hyx.
-        -- change ((<[z := v]> (s : gmap K V)) !! x = None).
-           rewrite map_lookup_insert_ne by exact Hxz.
+	        destruct (decide (x = z)) as [->|Hxz].
+	        -- exfalso. apply Hy. exact Hyx.
+	        -- rewrite map_lookup_insert_ne by exact Hxz.
            pose proof (storeA_rekey_lookup_None_inj_on f s y
              (storeA_rekey_inj_on_dom_insert_inv f z v s Hinj))
              as [Hto _].
@@ -703,16 +687,14 @@ Proof.
   change (((storeA_swap x y s : gmap K V) !! z) =
     ((s : gmap K V) !! z)).
   rewrite storeA_swap_lookup_inv.
-  destruct (decide (z = x)) as [->|Hzx].
-	  - base_swap_normalize.
-	    change (((s : gmap K V) !! y) = ((s : gmap K V) !! x)).
-    rewrite Hx, Hy.
-    reflexivity.
-	  - destruct (decide (z = y)) as [->|Hzy].
-	    + base_swap_normalize.
-	      change (((s : gmap K V) !! x) = ((s : gmap K V) !! y)).
-      rewrite Hx, Hy.
-      reflexivity.
+	  destruct (decide (z = x)) as [->|Hzx].
+		  - base_swap_normalize.
+	    rewrite Hx, Hy.
+	    reflexivity.
+		  - destruct (decide (z = y)) as [->|Hzy].
+		    + base_swap_normalize.
+	      rewrite Hx, Hy.
+	      reflexivity.
 	    + better_base_solver.
 Qed.
 

@@ -71,6 +71,38 @@ Proof.
   symmetry. apply lvar_store_open_lvars_singleton. exact Hfresh.
 Qed.
 
+Lemma lvar_store_open_one_bound0_singleton y A :
+  lvar_store_open_one 0 y
+    ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore) =
+  ((<[LVFree y := A]> (∅ : gmap logic_var V)) : LVarStore).
+Proof.
+  rewrite lvar_store_open_one_insert.
+  replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
+  - replace (lvar_store_open_one 0 y (∅ : LVarStore)) with
+      ((∅ : gmap logic_var V) : LVarStore).
+    reflexivity.
+    unfold lvar_store_open_one.
+    apply (storeA_rekey_empty (V := V) (K := logic_var)
+      (logic_var_open 0 y)).
+  - unfold swap. repeat destruct decide; try lia; try congruence.
+Qed.
+
+Lemma lvar_store_open_one_succ_bound0_singleton k y A :
+  lvar_store_open_one (S k) y
+    ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore) =
+  ((<[LVBound 0 := A]> (∅ : gmap logic_var V)) : LVarStore).
+Proof.
+  rewrite lvar_store_open_one_insert.
+  replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
+  - replace (lvar_store_open_one (S k) y (∅ : LVarStore)) with
+      ((∅ : gmap logic_var V) : LVarStore).
+    reflexivity.
+    unfold lvar_store_open_one.
+    apply (storeA_rekey_empty (V := V) (K := logic_var)
+      (logic_var_open (S k) y)).
+  - unfold swap. repeat destruct decide; try lia; try congruence.
+Qed.
+
 Lemma lvar_store_open_lvars_dom η (s : LVarStore) :
   open_env_fresh_for_lvars η (dom s) ->
   dom (lvar_store_open_lvars η s) =
@@ -248,6 +280,24 @@ Proof.
   apply lvar_store_to_atom_store_swap.
 Qed.
 
+Lemma lvar_store_to_atom_store_open_lvars_insert_delete_swap_back
+    η k y z (s : LVarStore) :
+  η !! k = Some z ->
+  y ∉ lvars_fv (dom s) ->
+  z ∉ lvars_fv (dom s) ->
+  open_env_avoids_atom y (delete k η) ->
+  open_env_fresh_for_lvars η ({[LVBound k]} ∪ dom s) ->
+  (@storeA_swap V atom _ _ y z
+    (lvar_store_to_atom_store
+      (lvar_store_open_lvars (<[k := y]> (delete k η)) s)) : gmap atom V) =
+  lvar_store_to_atom_store (lvar_store_open_lvars η s).
+Proof.
+  intros Hηk HyΣ HzΣ Havoid Hfresh.
+  rewrite <- lvar_store_to_atom_store_swap.
+  f_equal.
+  apply lvar_store_open_lvars_insert_delete_swap_back; assumption.
+Qed.
+
 Lemma logic_var_bv_elem_singleton v k :
   k ∈ lvars_bv ({[v]} : lvset) <-> v = LVBound k.
 Proof.
@@ -282,6 +332,21 @@ Proof.
   change (storeA_swap (LVBound k) (LVFree x)
     (storeA_swap (LVBound k) (LVFree x) s) = s).
   apply storeA_swap_involutive.
+Qed.
+
+Lemma lvar_store_swap_open_one x y k (s : LVarStore) :
+  lvar_store_swap x y (lvar_store_open_one k x s) =
+  lvar_store_open_one k y (lvar_store_swap x y s).
+Proof.
+  unfold lvar_store_swap, lvar_store_open_one.
+  rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
+  2:{ apply swap_inj. }
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  2:{ apply swap_inj. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_swap_open_one.
 Qed.
 
 Lemma lvar_store_open_one_insert_fresh k x v A (s : LVarStore) :
@@ -497,6 +562,32 @@ Proof.
   better_set_solver.
 Qed.
 
+Lemma lvar_store_lvars_fv_dom_insert_free (s : LVarStore) x A :
+  lvars_fv (dom (<[LVFree x := A]> s)) =
+  {[x]} ∪ lvars_fv (dom s).
+Proof.
+  change (lvars_fv (dom ((<[LVFree x := A]> (s : gmap logic_var V)) :
+    gmap logic_var V)) = {[x]} ∪ lvars_fv (dom (s : gmap logic_var V))).
+  rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+  better_set_solver.
+Qed.
+
+Lemma lvar_store_lvars_fv_subset_insert_free_drop
+    (D : lvset) (s : LVarStore) x A :
+  LVFree x ∉ D ->
+  D ⊆ dom (<[LVFree x := A]> s) ->
+  lvars_fv D ⊆ lvars_fv (dom s).
+Proof.
+  intros Hfresh Hsub.
+  eapply lvars_fv_subset_insert_free_drop; [exact Hfresh|].
+  intros v Hv.
+  specialize (Hsub v Hv).
+  change (v ∈ dom ((<[LVFree x := A]> (s : gmap logic_var V)) :
+    gmap logic_var V)) in Hsub.
+  rewrite dom_insert_L in Hsub.
+  exact Hsub.
+Qed.
+
 Lemma lvar_store_bind_atom_dom (s : LVarStore) A :
   lvar_store_atom_dom (lvar_store_bind s A) = lvar_store_atom_dom s.
 Proof.
@@ -614,6 +705,70 @@ Proof.
       (Inj0:=logic_var_shift_from_inj 0)
       (logic_var_shift_from 0) s (LVFree x)).
     reflexivity.
+Qed.
+
+Lemma lvar_store_to_atom_store_open_lvars_closed η (s : LVarStore) :
+  lvar_store_closed s ->
+  lvar_store_to_atom_store (lvar_store_open_lvars η s) =
+  lvar_store_to_atom_store s.
+Proof.
+  intros Hclosed.
+  assert (lvar_store_open_lvars η s = s) as ->; [|reflexivity].
+  unfold lvar_store_open_lvars.
+  assert (Hid : storeA_rekey (fun v : logic_var => v) s = s).
+  {
+    apply storeA_map_eq. intros z.
+    change (((storeA_rekey (fun v : logic_var => v) s : LVarStore)
+        : gmap logic_var V) !! z = (s : gmap logic_var V) !! z).
+    change z with ((fun v : logic_var => v) z) at 1.
+    exact (storeA_rekey_lookup (V:=V) (fun v : logic_var => v)
+      ltac:(intros a b Hab; exact Hab) s z).
+  }
+  transitivity (storeA_rekey (fun v : logic_var => v) s).
+  - apply storeA_rekey_ext_on_dom. intros v Hv.
+    destruct v as [k|x]; cbn [logic_var_open_env]; [|reflexivity].
+    exfalso.
+    exact (Hclosed (LVBound k) Hv).
+  - exact Hid.
+Qed.
+
+Lemma lvar_store_to_atom_store_open_lvars_insert_free_subset
+    η (s : LVarStore) x A :
+  LVFree x ∉ dom s ->
+  open_env_fresh_for_lvars η (dom (<[LVFree x := A]> s)) ->
+  lvar_store_to_atom_store (lvar_store_open_lvars η s) ⊆
+  lvar_store_to_atom_store (lvar_store_open_lvars η (<[LVFree x := A]> s)).
+Proof.
+  intros Hxs Hfresh.
+  apply map_subseteq_spec. intros a U Ha.
+  apply lvar_store_to_atom_store_lookup_some in Ha as Ha_lv.
+  rewrite lvar_store_open_lvars_insert_entry.
+  - apply lvar_store_to_atom_store_lookup_free_some.
+    destruct (decide (a = x)) as [->|Hax].
+    + assert (Hnones : s !! LVFree x = None).
+      {
+        apply not_elem_of_dom_1.
+        exact Hxs.
+      }
+      pose proof (lvar_store_open_lvars_lookup_fresh
+        η (LVFree x) A s Hnones Hfresh) as Hnone.
+      cbn [logic_var_open_env] in Hnone.
+      change (((lvar_store_open_lvars η s : LVarStore)
+        : gmap logic_var V) !! LVFree x = None) in Hnone.
+      change (((lvar_store_open_lvars η s : LVarStore)
+        : gmap logic_var V) !! LVFree x = Some U) in Ha_lv.
+      rewrite Hnone in Ha_lv. discriminate.
+    + change (((<[LVFree x := A]>
+          ((lvar_store_open_lvars η s : LVarStore) : gmap logic_var V))
+          : gmap logic_var V) !! LVFree a = Some U).
+      rewrite lookup_insert.
+      destruct (decide (LVFree x = LVFree a)) as [Heq|_].
+      * inversion Heq. congruence.
+      * exact Ha_lv.
+  - change (((s : LVarStore) : gmap logic_var V) !! LVFree x = None).
+    apply not_elem_of_dom_1.
+    exact Hxs.
+  - apply open_env_fresh_for_lvars_inj_on. exact Hfresh.
 Qed.
 
 Lemma lvar_store_bind_free_notin x (s : LVarStore) A :

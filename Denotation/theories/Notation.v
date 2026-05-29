@@ -7,11 +7,11 @@ From LocallyNameless Require Export Classes Tactics.
 From CoreLang Require Export Syntax Sugar BasicTypingProps.
 From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceExtension.
 From ContextLogic Require Export FormulaSemantics.
-From ContextTypeLanguage Require Export Interface.
-From ContextBasicDenotation Require Import Notation.
-From ContextBasicDenotation Require Export StoreTyping TermTLet Qualifier BasicTypingFormula.
-From ContextLogic Require Export FormulaTactics FormulaConnectivesCore FormulaImpl FormulaWand FormulaForall
-  FormulaWorldExtension.
+From ContextTypeLanguage Require Export Notation.
+From ContextBasicDenotation Require Export Notation.
+From ContextBasicDenotation Require Export StoreTyping TermTLet Qualifier
+  BasicTypingFormula RelevantEnv.
+From ContextLogic Require Export FormulaSemantics FormulaConnectives FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).
 Notation StoreT := (Store (V := value)) (only parsing).

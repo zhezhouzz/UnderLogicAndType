@@ -11,22 +11,6 @@ Definition denot_ty
     (Δ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty_lvar_gas (cty_depth τ) (atom_env_to_lty_env Δ) τ e.
 
-Lemma formula_open_expr_result_formula_shift0 y e :
-  lc_tm e ->
-  y ∉ fv_tm e ->
-  formula_open 0 y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
-  expr_result_formula e (LVFree y).
-Proof.
-  intros Hlc Hy.
-  rewrite formula_open_expr_result_formula.
-  - rewrite open_tm_shift0_lc by exact Hlc.
-	    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
-	    reflexivity.
-	    unfold swap.
-	    repeat destruct decide; try lia; try congruence.
-  - rewrite tm_shift_fv. exact Hy.
-Qed.
-
 Lemma res_models_open_denot_ty_lvar_guard_to_open
     k y Σ τ e (m : WfWorldT) :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ∪ fv_cty τ ->
@@ -117,46 +101,6 @@ Proof.
   apply formula_open_env_lift_expr_result_formula_shift0_core.
 Qed.
 
-Lemma lty_env_open_one_succ_bound0_singleton k y T :
-  lty_env_open_one (S k) y
-    ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env) =
-  ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
-Proof.
-  rewrite lty_env_open_one_insert.
-  replace (logic_var_open (S k) y (LVBound 0)) with (LVBound 0).
-  - replace (lty_env_open_one (S k) y (∅ : lty_env)) with
-      ((∅ : gmap logic_var ty) : lty_env).
-    reflexivity.
-	    unfold lty_env_open_one.
-	    apply (storeA_rekey_empty (V := ty) (K := logic_var)
-	      (logic_var_open (S k) y)).
-	  - unfold swap. repeat destruct decide; try lia; try congruence.
-Qed.
-
-Lemma lvars_open_qual_vars_difference_bound0_under k y q :
-  lvars_open (S k) y (qual_vars q ∖ {[LVBound 0]}) =
-  qual_vars (qual_open_atom (S k) y q) ∖ {[LVBound 0]}.
-Proof.
-  rewrite qual_open_atom_vars.
-  apply set_eq. intros v.
-  rewrite set_swap_elem.
-  rewrite elem_of_difference, elem_of_difference.
-  split.
-  - intros [Hv Hnot]. split.
-    + rewrite set_swap_elem. exact Hv.
-    + intros Hbad. apply Hnot.
-      rewrite elem_of_singleton in Hbad |- *.
-      subst v.
-      unfold swap. repeat destruct decide; try lia; try congruence.
-  - intros [Hv Hnot]. split.
-    + rewrite set_swap_elem in Hv. exact Hv.
-    + intros Hbad. apply Hnot.
-      rewrite elem_of_singleton in Hbad |- *.
-      destruct v as [n|a]; cbn in Hbad;
-        unfold swap in Hbad;
-        repeat destruct decide; try lia; try congruence.
-Qed.
-
 Lemma formula_open_over_body k y b φ e :
   y ∉ fv_tm e ->
   y ∉ qual_dom φ ->
@@ -178,7 +122,7 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
@@ -208,51 +152,13 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
   rewrite formula_open_under.
   rewrite type_qualifier_formula_open by exact Hφ.
   reflexivity.
-Qed.
-
-Lemma open_tret_bvar0_under k y :
-  open_tm (S k) (vfvar y) (tret (vbvar 0)) = tret (vbvar 0).
-Proof.
-  cbn [open_tm open_value].
-  destruct decide; [lia|reflexivity].
-Qed.
-
-Lemma open_tapp_tm_shift_bvar0_under k y e :
-  open_tm (S k) (vfvar y)
-    (tapp_tm (tm_shift 0 e) (vbvar 0)) =
-  tapp_tm (tm_shift 0 (open_tm k (vfvar y) e)) (vbvar 0).
-Proof.
-  unfold tapp_tm.
-  cbn [open_tm open_value value_shift].
-  rewrite tm_shift_open_tm_fvar by lia.
-  repeat (destruct decide; try lia); reflexivity.
-Qed.
-
-Lemma lty_env_open_one_denot_relevant_bind_under k y Σ τ e T :
-  y ∉ lvars_fv (dom Σ) ->
-  y ∉ fv_tm e ->
-  lty_env_open_one (S k) y
-    (typed_lty_env_bind (denot_relevant_env Σ τ e) T) =
-  typed_lty_env_bind
-    (denot_relevant_env (lty_env_open_one k y Σ)
-      (cty_open k y τ) (open_tm k (vfvar y) e))
-    T.
-Proof.
-  intros HΣ Hy.
-  rewrite typed_lty_env_bind_open_under.
-  - rewrite denot_relevant_env_open_one by exact Hy.
-    reflexivity.
-  - intros Hbad.
-    apply HΣ.
-    eapply lty_env_restrict_lvars_fv_dom_subset.
-    apply lvars_fv_elem. exact Hbad.
 Qed.
 
 (** Proof plan for the Arrow/Wand open-body transports below.
@@ -356,7 +262,7 @@ Proof.
   rewrite formula_open_forall.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   match goal with
   | H : formula_open (S k) y
           (denot_ty_lvar_gas gas _ (cty_shift 0 τx) (tret (vbvar 0))) = _
@@ -451,7 +357,7 @@ Proof.
   rewrite formula_open_impl.
   rewrite formula_open_wand.
   rewrite formula_open_basic_world_formula.
-  rewrite lty_env_open_one_succ_bound0_singleton.
+  rewrite lvar_store_open_one_succ_bound0_singleton.
   match goal with
   | H : formula_open (S k) y
           (denot_ty_lvar_gas gas _ (cty_shift 0 τx) (tret (vbvar 0))) = _
@@ -735,30 +641,7 @@ Proof.
                      (erase_ty (cty_open k y (CTSum τ1 τ2))))
                    (expr_total_formula (open_tm k (vfvar y) e))))).
            { repeat rewrite res_models_and_iff. exact Hguard. }
-           eapply res_models_plus_map; [| | | exact Hbody].
-           ++ apply formula_scoped_in_world_from_formula_fv.
-              rewrite formula_fv_plus.
-              assert (Hscope1 :
-                formula_fv
-                  (denot_ty_lvar_gas gas (lty_env_open_one k y Σ)
-                    (cty_open k y τ1) (open_tm k (vfvar y) e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
-                  [| exact HguardF].
-                unfold context_ty_lvars. cbn [context_ty_lvars_at]. set_solver.
-              }
-              assert (Hscope2 :
-                formula_fv
-                  (denot_ty_lvar_gas gas (lty_env_open_one k y Σ)
-                    (cty_open k y τ2) (open_tm k (vfvar y) e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
-                  [| exact HguardF].
-                unfold context_ty_lvars. cbn [context_ty_lvars_at]. set_solver.
-              }
-              set_solver.
+           eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj1 (IH k Σ τ1 e m' HΣ Hy
                 ltac:(unfold fv_cty, context_ty_lvars in Hτ;
@@ -790,64 +673,7 @@ Proof.
                      (erase_ty (cty_open k y (CTSum τ1 τ2))))
                    (expr_total_formula (open_tm k (vfvar y) e))))).
            { repeat rewrite res_models_and_iff. exact Hguard. }
-           eapply res_models_plus_map; [| | | exact Hbody].
-           ++ apply formula_scoped_in_world_from_formula_fv.
-              rewrite formula_fv_plus.
-              assert (Hscope :
-                fv_tm (open_tm k (vfvar y) e) ∪
-                fv_cty (cty_open k y (CTSum τ1 τ2)) ⊆
-                world_dom (m : WorldT)).
-              {
-                apply (denot_guard_term_type_fv_scope
-                  (lty_env_open_one k y Σ)
-                  (cty_open k y (CTSum τ1 τ2))
-                  (open_tm k (vfvar y) e) m HguardF).
-              }
-              assert (Hscope1 :
-                formula_fv
-                  (formula_open k y
-                    (denot_ty_lvar_gas gas Σ τ1 e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                transitivity
-                  (fv_tm (open_tm k (vfvar y) e) ∪
-                   fv_cty (cty_open k y τ1)).
-                - apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
-                  + exact Hy.
-                  + unfold fv_cty, context_ty_lvars in Hτ |- *.
-                    cbn [context_ty_lvars_at] in Hτ.
-                    rewrite lvars_fv_union in Hτ. set_solver.
-                - intros a Ha. apply Hscope.
-                  apply elem_of_union in Ha as [Ha|Ha].
-                  + apply elem_of_union_l. exact Ha.
-                  + apply elem_of_union_r.
-                    unfold fv_cty, context_ty_lvars in Ha |- *.
-                    cbn [cty_open context_ty_lvars_at].
-                    rewrite lvars_fv_union. apply elem_of_union_l. exact Ha.
-              }
-              assert (Hscope2 :
-                formula_fv
-                  (formula_open k y
-                    (denot_ty_lvar_gas gas Σ τ2 e)) ⊆
-                world_dom (m : WorldT)).
-              {
-                transitivity
-                  (fv_tm (open_tm k (vfvar y) e) ∪
-                   fv_cty (cty_open k y τ2)).
-                - apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
-                  + exact Hy.
-                  + unfold fv_cty, context_ty_lvars in Hτ |- *.
-                    cbn [context_ty_lvars_at] in Hτ.
-                    rewrite lvars_fv_union in Hτ. set_solver.
-                - intros a Ha. apply Hscope.
-                  apply elem_of_union in Ha as [Ha|Ha].
-                  + apply elem_of_union_l. exact Ha.
-                  + apply elem_of_union_r.
-                    unfold fv_cty, context_ty_lvars in Ha |- *.
-                    cbn [cty_open context_ty_lvars_at].
-                    rewrite lvars_fv_union. apply elem_of_union_r. exact Ha.
-              }
-              set_solver.
+           eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj2 (IH k Σ τ1 e m' HΣ Hy
                 ltac:(unfold fv_cty, context_ty_lvars in Hτ;

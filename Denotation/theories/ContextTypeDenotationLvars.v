@@ -7,66 +7,6 @@ From Denotation Require Export ContextTypeDenotationDefinition.
 
 Section ContextTypeDenotation.
 
-Fixpoint formula_lvars_at (d : nat) (φ : FormulaT) : lvset :=
-  match φ with
-  | FTrue | FFalse => ∅
-  | FAtom q => lvars_at_depth d (lqual_lvars q)
-  | FAnd p q | FOr p q | FImpl p q
-  | FStar p q | FWand p q | FPlus p q =>
-      formula_lvars_at d p ∪ formula_lvars_at d q
-  | FForall p => formula_lvars_at (S d) p
-  | FOver p | FUnder p => formula_lvars_at d p
-  | FFibVars D p => lvars_at_depth d D ∪ formula_lvars_at d p
-  end.
-
-Lemma formula_lvars_at_fv d (φ : FormulaT) :
-  lvars_fv (formula_lvars_at d φ) = formula_fv φ.
-Proof.
-  induction φ in d |- *; cbn [formula_lvars_at];
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?IHφ1, ?IHφ2, ?IHφ;
-    rewrite ?formula_fv_true, ?formula_fv_false, ?formula_fv_atom,
-      ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl,
-      ?formula_fv_star, ?formula_fv_wand, ?formula_fv_plus,
-      ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under,
-      ?formula_fv_fibvars;
-    rewrite ?lvars_fv_lvars_at_depth;
-    reflexivity.
-Qed.
-
-Lemma formula_lvars_at_open d k y (φ : FormulaT) :
-  formula_lvars_at d (formula_open (d + k) y φ) =
-  lvars_open k y (formula_lvars_at d φ).
-Proof.
-  induction φ in d, k |- *; cbn [formula_open formula_lvars_at].
-  - set_solver.
-  - set_solver.
-  - match goal with
-    | |- context [lqual_open _ _ ?q] => destruct q as [D P]
-    end.
-    cbn [lqual_open lqual_lvars lqual_dom].
-    apply lvars_at_depth_open.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - replace (S (d + k)) with (S d + k) by lia.
-    apply IHφ.
-  - apply IHφ.
-  - apply IHφ.
-  - rewrite lvars_at_depth_open.
-    rewrite IHφ.
-    symmetry. rewrite lvars_open_union. reflexivity.
-Qed.
-
 Ltac rewrite_tm_support :=
   repeat match goal with
   | |- context [lvars_at_depth ?d (tm_lvars ?e)] =>

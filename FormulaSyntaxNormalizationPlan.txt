@@ -1,0 +1,67 @@
+Formula syntax / scope normalization plan
+=========================================
+
+Goal
+----
+
+Centralize the formula syntax normalization layer in
+ContextLogic/theories/FormulaSyntax.v, and leave FormulaSemantics.v focused on
+resource models plus the small amount of scope automation that depends on
+world_dom.  After that, upper layers should reuse these tactics instead of
+hand-rewriting formula_fv/formula_open/formula_open_env constructor lemmas.
+
+Round 1: move pure syntax normalization to FormulaSyntax.v
+----------------------------------------------------------
+
+1. Add formula_open_syntax_norm and formula_open_syntax_norm_in next to the
+   existing formula_fv_syntax_norm tactics.
+2. Add formula_open_env_syntax_norm and formula_open_env_syntax_norm_in using
+   the formula_open_env_* constructor lemmas already proved in FormulaSyntax.v.
+3. Add a combined formula_syntax_norm / formula_syntax_norm_in that only does
+   pure syntax normalization: fv, single open, and open-env/mopen.
+4. Remove the duplicate pure formula_open_syntax_norm from FormulaSemantics.v.
+   Any semantics-level tactic should call the syntax-level tactic.
+
+Status: done.  ContextLogic local compilation passed after moving the tactics.
+
+Round 2: make scope automation a semantic wrapper over syntax normalization
+---------------------------------------------------------------------------
+
+1. Keep formula_scoped_in_world as the public name for now, but treat it as a
+   thin scope abbreviation: formula_fv φ ⊆ world_dom m.
+   A full Notation-only replacement is possible later, but changing it in this
+   batch would force many proof-search patterns to change at once.
+2. Rewrite formula_scope_syntax_norm so it is a semantic scope normalizer:
+   it may rewrite the formula_scoped_*_iff lemmas, but it should rely on the
+   syntax-level fv/open normalization rather than duplicating syntax rewrites.
+3. Keep formula_scope_step and formula_scope_solve in FormulaSemantics.v,
+   because they depend on formula_scoped_in_world and world_dom.
+
+Status: done for this batch.  FormulaSemantics now has scope-only
+normalizers, including an in-hypothesis version, and delegates pure formula
+syntax normalization to FormulaSyntax.v.
+
+Round 3: replace local naked formula rewrites where safe
+-------------------------------------------------------
+
+1. Replace repeated constructor rewrites of formula_open/formula_open_env in
+   ContextLogic proofs with the new syntax normalizers.
+2. Scan BasicDenotation and Denotation for repeated pure formula syntax
+   rewrites.  Replace only the obvious syntax-only blocks; keep atom-specific
+   denotation rewrites in their existing files.
+3. Do not mix this with denotation-specific normalization.  Denotation can
+   build extra tactics on top of formula_syntax_norm later.
+
+Status: intentionally conservative in this batch.  The scan found many
+denotation-specific formula_open_env rewrites whose side conditions are tied
+to type/term atoms, so they should be normalized by Denotation-specific tactics
+on top of formula_syntax_norm rather than by the base tactic alone.
+
+Round 4: compile, commit, and report
+------------------------------------
+
+1. Compile ContextLogic first.
+2. Run full make -j2.
+3. Commit the refactor after full compilation succeeds.
+4. Send a high-priority notification only when the whole checklist is complete
+   or if a real blocker appears.
