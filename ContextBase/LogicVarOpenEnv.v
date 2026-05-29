@@ -459,6 +459,28 @@ Proof.
   repeat destruct decide; subst; try congruence.
 Qed.
 
+Lemma lvar_to_atom_insert_open_env_fresh η k x v :
+  η !! k = None ->
+  open_env_avoids_atom x η ->
+  v <> LVBound k ->
+  v <> LVFree x ->
+  logic_var_to_atom (<[k := x]> η) v = logic_var_to_atom η v.
+Proof.
+  intros Hη Havoid Hbound Hfree.
+  destruct v as [n|y]; cbn [logic_var_to_atom].
+  - rewrite lookup_insert_ne by congruence. reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma lvar_to_atom_open_env_free η v x :
+  logic_var_to_atom η v = Some x ->
+  logic_var_open_env η v = LVFree x.
+Proof.
+  destruct v as [k|y]; cbn [logic_var_to_atom logic_var_open_env].
+  - intros ->. reflexivity.
+  - intros H. inversion H. reflexivity.
+Qed.
+
 Definition open_env_atoms (η : gmap nat atom) : aset :=
   map_fold (fun _ x acc => {[x]} ∪ acc) ∅ η.
 
@@ -882,6 +904,22 @@ Proof.
     eapply Hfresh; [exact Hη2|].
     apply lvars_fv_open_env_free. exact Hv1.
   - inversion Heq. subst x2. reflexivity.
+Qed.
+
+Lemma lvar_to_atom_inj_on_fresh η D v1 v2 x :
+  open_env_fresh_for_lvars η D ->
+  v1 ∈ D ->
+  v2 ∈ D ->
+  logic_var_to_atom η v1 = Some x ->
+  logic_var_to_atom η v2 = Some x ->
+  v1 = v2.
+Proof.
+  intros Hfresh Hv1 Hv2 Hx1 Hx2.
+  pose proof (open_env_fresh_for_lvars_inj_on η D Hfresh) as Hinj.
+  eapply Hinj; try eassumption.
+  rewrite (lvar_to_atom_open_env_free η v1 x Hx1).
+  rewrite (lvar_to_atom_open_env_free η v2 x Hx2).
+  reflexivity.
 Qed.
 
 Lemma lvars_fv_open_env_union η D E :

@@ -259,40 +259,6 @@ Proof. apply lvar_store_atom_dom_open_one. Qed.
     Projection from lvar-keyed type environments to atom-keyed environments. *)
 
 
-Lemma map_fold_ext_on_lookup
-    {K A B : Type} `{Countable K}
-    (f g : K -> A -> B -> B) (b : B) (m : gmap K A) :
-  (forall i x, m !! i = Some x -> forall acc, f i x acc = g i x acc) ->
-  map_fold f b m = map_fold g b m.
-Proof.
-  intros Hext.
-  rewrite !map_fold_foldr.
-  assert (Haux : forall l,
-    (forall i x, (i, x) ∈ l -> m !! i = Some x) ->
-    foldr (uncurry f) b l = foldr (uncurry g) b l).
-  {
-    induction l as [|[i x] l IH]; intros Hl; simpl; [reflexivity|].
-    rewrite Hext by (apply Hl; left; reflexivity).
-    f_equal. apply IH. intros j y Hjy.
-    apply Hl. right. exact Hjy.
-  }
-  apply Haux. intros i x Hin.
-  rewrite <- elem_of_map_to_list. exact Hin.
-Qed.
-
-Lemma lvar_to_atom_insert_open_env_fresh η k x v :
-  η !! k = None ->
-  open_env_avoids_atom x η ->
-  v <> LVBound k ->
-  v <> LVFree x ->
-  lvar_to_atom (<[k := x]> η) v = lvar_to_atom η v.
-Proof.
-  intros Hη Havoid Hbound Hfree.
-  destruct v as [n|y]; cbn [lvar_to_atom logic_var_to_atom].
-  - rewrite lookup_insert_ne by congruence. reflexivity.
-  - reflexivity.
-Qed.
-
 Lemma lty_env_open_env_insert_fresh k x η Σ :
   η !! k = None ->
   open_env_avoids_atom x η ->
@@ -344,31 +310,6 @@ Proof.
     + rewrite lookup_insert_ne in Hlookup by congruence.
       rewrite Hfree in Hlookup. discriminate.
     + apply insert_insert_ne. congruence.
-Qed.
-
-Lemma lvar_to_atom_open_env_free η v x :
-  lvar_to_atom η v = Some x ->
-  logic_var_open_env η v = LVFree x.
-Proof.
-  destruct v as [k|y]; cbn [lvar_to_atom logic_var_to_atom logic_var_open_env].
-  - intros ->. reflexivity.
-  - intros H. inversion H. reflexivity.
-Qed.
-
-Lemma lvar_to_atom_inj_on_fresh η D v1 v2 x :
-  open_env_fresh_for_lvars η D ->
-  v1 ∈ D ->
-  v2 ∈ D ->
-  lvar_to_atom η v1 = Some x ->
-  lvar_to_atom η v2 = Some x ->
-  v1 = v2.
-Proof.
-  intros Hfresh Hv1 Hv2 Hx1 Hx2.
-  pose proof (open_env_fresh_for_lvars_inj_on η D Hfresh) as Hinj.
-  eapply Hinj; try eassumption.
-  rewrite (lvar_to_atom_open_env_free η v1 x Hx1).
-  rewrite (lvar_to_atom_open_env_free η v2 x Hx2).
-  reflexivity.
 Qed.
 
 Lemma lty_env_to_atom_env_insert_free_lookup_ne
