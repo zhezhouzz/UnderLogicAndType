@@ -11,22 +11,6 @@ Definition denot_ty
     (Δ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty_lvar_gas (cty_depth τ) (atom_env_to_lty_env Δ) τ e.
 
-Lemma formula_open_expr_result_formula_shift0 y e :
-  lc_tm e ->
-  y ∉ fv_tm e ->
-  formula_open 0 y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
-  expr_result_formula e (LVFree y).
-Proof.
-  intros Hlc Hy.
-  rewrite formula_open_expr_result_formula.
-  - rewrite open_tm_shift0_lc by exact Hlc.
-	    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
-	    reflexivity.
-	    unfold swap.
-	    repeat destruct decide; try lia; try congruence.
-  - rewrite tm_shift_fv. exact Hy.
-Qed.
-
 Lemma res_models_open_denot_ty_lvar_guard_to_open
     k y Σ τ e (m : WfWorldT) :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ∪ fv_cty τ ->

@@ -506,6 +506,22 @@ Proof.
       exists z. split; [symmetry; exact Hz|set_solver]. }
 Qed.
 
+Lemma formula_open_expr_result_formula_shift0 y e :
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  formula_open 0 y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
+  expr_result_formula e (LVFree y).
+Proof.
+  intros Hlc Hy.
+  rewrite formula_open_expr_result_formula.
+  - rewrite open_tm_shift0_lc by exact Hlc.
+    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
+    reflexivity.
+    unfold swap.
+    repeat destruct decide; try lia; try congruence.
+  - rewrite tm_shift_fv. exact Hy.
+Qed.
+
 Lemma formula_open_expr_result_formula_shift0_under_core k y e :
   y ∉ fv_tm e ->
   formula_open (S k) y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
