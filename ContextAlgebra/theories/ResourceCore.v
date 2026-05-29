@@ -236,6 +236,14 @@ Proof.
   intros Hσ. exact Hσ.
 Qed.
 
+Lemma resA_restrict_project_store
+    (w : WfWorldAT) (X : gset K) (σ : StoreAT) :
+  (w : WorldAT) σ →
+  (resA_restrict w X : WorldAT) (storeA_restrict σ X).
+Proof.
+  intros Hσ. exists σ. split; [exact Hσ | reflexivity].
+Qed.
+
 Lemma resA_restrict_eq_lift_store
     (w wX : WfWorldAT) (X : gset K) (σ : StoreAT) :
   resA_restrict w X = wX →
@@ -243,6 +251,15 @@ Lemma resA_restrict_eq_lift_store
   ∃ σw, (w : WorldAT) σw ∧ storeA_restrict σw X = σ.
 Proof.
   intros <- Hσ. exact Hσ.
+Qed.
+
+Lemma resA_restrict_eq_project_store
+    (w wX : WfWorldAT) (X : gset K) (σ : StoreAT) :
+  resA_restrict w X = wX →
+  (w : WorldAT) σ →
+  (wX : WorldAT) (storeA_restrict σ X).
+Proof.
+  intros <- Hσ. apply resA_restrict_project_store. exact Hσ.
 Qed.
 
 Definition rawA_fiber (m : WorldAT) (σ : StoreAT) : WorldAT := {|
