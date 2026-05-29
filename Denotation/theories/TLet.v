@@ -650,7 +650,7 @@ Proof.
 	          eapply denot_ty_lvar_gas_insert_commute_tapp_open;
 	            [ tlet_support_solver | exact Hbody_full ].
 	        }
-	        normalize_open_denot_goal.
+	        rewrite ?open_tapp_tm_fvar_lc_arg.
 	        assert (HxΣ0 : LVFree x ∉
 	          dom (<[LVFree y := erase_ty τx]> Σ)).
 	        {

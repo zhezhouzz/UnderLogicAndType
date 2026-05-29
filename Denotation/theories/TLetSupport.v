@@ -10,9 +10,6 @@ From CoreLang Require Import InstantiationProps.
 From Stdlib Require Import List.
 Import ListNotations.
 
-Ltac normalize_formula_fv :=
-  normalize_denotation_formula_fv.
-
 Lemma fiber_extension_singleton_out_fresh_in
     (F : FiberExtensionT) y :
   ext_out F = {[y]} ->
@@ -121,6 +118,8 @@ Proof.
   set_solver.
 Qed.
 
+(** ** Freshness and FV side-condition tactics *)
+
 Ltac tlet_normalize_freshness :=
   repeat match goal with
   | H : LVFree ?y ∉ ?D |- _ =>
@@ -159,42 +158,6 @@ Ltac tlet_support_solver :=
   | |- _ <> _ =>
       first [fast_set_solver!! | set_solver]
   end.
-
-Ltac solve_formula_fv_subset :=
-  repeat match goal with
-  | H : lty_env_to_atom_env ?Σ ⊢ₑ ?e ⋮ ?T |- _ =>
-      lazymatch goal with
-      | Hfv : fv_tm e ⊆ lvars_fv (dom Σ) |- _ => fail
-      | _ =>
-          let Hfv := fresh "Hfv_lty" in
-          pose proof (basic_typing_lty_env_to_atom_env_fv_subset Σ e T H) as Hfv
-      end
-  | H : ?Γ ⊢ₑ ?e ⋮ ?T |- _ =>
-      lazymatch goal with
-      | Hfv : fv_tm e ⊆ dom Γ |- _ => fail
-      | _ =>
-          let Hfv := fresh "Hfv_basic" in
-          pose proof (basic_typing_contains_fv_tm Γ e T H) as Hfv
-      end
-  | |- context[fv_tm (open_tm ?k ?u ?e)] =>
-      lazymatch goal with
-      | Hfv : fv_tm (open_tm k u e) ⊆ fv_value u ∪ fv_tm e |- _ => fail
-      | _ =>
-          let Hfv := fresh "Hfv_open" in
-          pose proof (open_fv_tm e u k) as Hfv
-      end
-  | H : context[fv_tm (open_tm ?k ?u ?e)] |- _ =>
-      lazymatch goal with
-      | Hfv : fv_tm (open_tm k u e) ⊆ fv_value u ∪ fv_tm e |- _ => fail
-      | _ =>
-          let Hfv := fresh "Hfv_open" in
-          pose proof (open_fv_tm e u k) as Hfv
-      end
-  end;
-  normalize_formula_fv;
-  cbn [fv_tm fv_value] in *;
-  tlet_normalize_freshness;
-  set_solver.
 
 Ltac harvest_tlet_models :=
   repeat match goal with
@@ -257,12 +220,14 @@ Ltac harvest_tlet_models :=
       destruct H as [Hsub Hshape]
   end.
 
+(** ** Formula scoping and model syntax tactics *)
+
 Ltac solve_formula_scoped :=
   solve
   [ eapply res_models_scoped; eassumption
   | unfold formula_scoped_in_world;
     harvest_tlet_models;
-    normalize_formula_fv;
+    normalize_denotation_formula_fv;
     rewrite ?context_ty_lvars_fv in *;
     rewrite ?lvars_fv_lvars_at_depth in *;
     cbn [fv_tm fv_value] in *;
@@ -540,14 +505,6 @@ Ltac solve_tlet_impl_scope :=
   | solve_formula_scoped
   ].
 
-Ltac intro_models_impl H :=
-  match goal with
-  | |- ?m ⊨ FImpl ?p ?q =>
-      eapply res_models_impl_intro;
-      [solve_tlet_impl_scope
-      | intro H]
-  end.
-
 Ltac use_models_impl H Hout :=
   lazymatch type of H with
   | res_models ?m (FImpl ?p ?q) =>
@@ -565,9 +522,6 @@ Ltac normalize_models_ands_in H :=
 
 Ltac normalize_models_ands_goal :=
   repeat rewrite res_models_and_iff.
-
-Ltac normalize_models_ands :=
-  normalize_models_ands_goal.
 
 Ltac destruct_models_formula_hyps :=
   repeat match goal with
@@ -1661,6 +1615,8 @@ Proof.
   exact (proj1 Hzero).
 Qed.
 
+(** ** Denotation guard projection tactics *)
+
 Ltac solve_denot_ty_lvar_gas_zero_from_guard Hguard :=
   apply denot_ty_lvar_gas_zero_of_guard;
   repeat rewrite res_models_and_iff;
@@ -1898,6 +1854,8 @@ Proof.
     eapply expr_total_formula_tapp_tm_tlete_assoc_rev; eauto.
 Qed.
 
+(** ** [tapp]/[tlete] guard transport tactics *)
+
 Ltac solve_tapp_tlete_lvars_assoc :=
   first
   [ rewrite tm_lvars_tapp_tm_tlete_assoc_fvar; reflexivity
@@ -1983,6 +1941,8 @@ Ltac solve_tapp_tlete_guard_assoc :=
   | solve_tapp_tlete_guard_atom
   ].
 
+(** ** Denotation opening transport tactics *)
+
 Ltac transport_open_denot_in H :=
   lazymatch type of H with
   | res_models ?m
@@ -2010,36 +1970,6 @@ Ltac transport_open_denot_in H :=
         H) as Hopened;
       clear H; rename Hopened into H;
       cbn [open_tm open_value value_shift] in H
-  | _ => idtac
-  end.
-
-Ltac transport_open_denot_from_open_in H :=
-  lazymatch type of H with
-  | res_models ?m
-      (denot_ty_lvar_gas ?gas (<[LVFree ?y := ?T]> ?Σ)
-        (cty_open 0 ?y ?τ) (open_tm 0 (vfvar ?y) ?e)) =>
-      let Hclosed := fresh H "_formula_open" in
-      pose proof (res_models_open_denot_ty_lvar_gas_from_open
-        y gas Σ T τ e m
-        ltac:(solve_tlet_sidecond)
-        ltac:(solve_tlet_sidecond)
-        ltac:(solve_tlet_sidecond)
-        ltac:(solve_tlet_sidecond)
-        H) as Hclosed;
-      clear H; rename Hclosed into H
-  | res_models ?m
-      (denot_ty_lvar_gas ?gas
-        (lty_env_open_one ?k ?y ?Σ)
-        (cty_open ?k ?y ?τ)
-        (open_tm ?k (vfvar ?y) ?e)) =>
-      let Hclosed := fresh H "_formula_open" in
-      pose proof (res_models_open_denot_ty_lvar_gas_from_open_at
-        k y gas Σ τ e m
-        ltac:(solve_tlet_sidecond)
-        ltac:(solve_tlet_sidecond)
-        ltac:(solve_tlet_sidecond)
-        H) as Hclosed;
-      clear H; rename Hclosed into H
   | _ => idtac
   end.
 
@@ -2109,15 +2039,6 @@ Proof.
     eapply expr_total_formula_tapp_tlete_assoc_spine; eauto.
 Qed.
 
-Ltac solve_tapp_tlete_guard_assoc_spine :=
-  destruct_models_formula_hyps;
-  split_models_formula_goal;
-  [ solve_tapp_tlete_guard_atom
-  | solve_tapp_tlete_guard_atom
-  | solve_tapp_tlete_guard_atom
-  | solve_tapp_tlete_guard_atom
-  ].
-
 Lemma denot_ty_lvar_gas_tapp_tlete_assoc_spine
     gas (Σ : lty_env) τ e1 e2 y z zs (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -2133,19 +2054,19 @@ Proof.
     repeat rewrite res_models_and_iff in Hm |- *.
     destruct Hm as [Hguard Htrue].
     split.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + exact Htrue.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
       cbn [denot_ty_lvar_gas] in Hm |- *;
       repeat rewrite res_models_and_iff in Hm |- *;
       destruct Hm as [Hguard Hbody];
       split.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_map_same_fv m φsrc)
       end.
       * apply set_eq. intros a.
-        normalize_formula_fv.
+        normalize_denotation_formula_fv.
         rewrite !tm_shift_fv;
         try rewrite <- fv_tm_tapp_tlete_assoc_spine;
         try rewrite <- tm_lvars_tapp_tlete_assoc_spine;
@@ -2154,7 +2075,7 @@ Proof.
           (S gas) Σ (CTOver b φ)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_and_r; exact Hscope_full.
       * exists (fv_tm (tapp_tm_fvar_spine
@@ -2183,7 +2104,7 @@ Proof.
         {
           unfold formula_scoped_in_world in *.
           normalize_denotation_formula_fv_in Hscope_src.
-          normalize_formula_fv.
+          normalize_denotation_formula_fv.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
@@ -2198,12 +2119,12 @@ Proof.
         -- exact Hlc.
         -- exact Hresult.
       * exact Hbody.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_map_same_fv m φsrc)
       end.
       * apply set_eq. intros a.
-        normalize_formula_fv.
+        normalize_denotation_formula_fv.
         rewrite !tm_shift_fv;
         try rewrite <- fv_tm_tapp_tlete_assoc_spine;
         try rewrite <- tm_lvars_tapp_tlete_assoc_spine;
@@ -2212,7 +2133,7 @@ Proof.
           (S gas) Σ (CTUnder b φ)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_and_r; exact Hscope_full.
       * exists (fv_tm (tapp_tm_fvar_spine
@@ -2241,7 +2162,7 @@ Proof.
         {
           unfold formula_scoped_in_world in *.
           normalize_denotation_formula_fv_in Hscope_src.
-          normalize_formula_fv.
+          normalize_denotation_formula_fv.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
@@ -2256,11 +2177,11 @@ Proof.
         -- exact Hlc.
         -- exact Hresult.
       * exact Hbody.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + repeat rewrite res_models_and_iff in Hbody |- *.
       destruct Hbody as [H1 H2].
       split; [eapply IH | eapply IH]; eauto.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + pose proof (res_models_fuel_scoped _ _ _ Hbody) as Hscope.
       eapply res_models_or_transport_between_worlds
         with (m := m) (φa := denot_ty_lvar_gas gas Σ τ1
@@ -2271,7 +2192,7 @@ Proof.
           (S gas) Σ (CTUnion τ1 τ2)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_or_l.
         eapply formula_scoped_and_r. exact Hscope_full.
@@ -2279,14 +2200,14 @@ Proof.
           (S gas) Σ (CTUnion τ1 τ2)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_or_r.
         eapply formula_scoped_and_r. exact Hscope_full.
       * intros Hτ1. eapply IH; eauto.
       * intros Hτ2. eapply IH; eauto.
       * exact Hbody.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + pose proof (res_models_fuel_scoped _ _ _ Hbody) as Hscope.
       apply res_models_plus_iff in Hbody as
         [m1 [m2 [Hdef [Hle [H1 H2]]]]].
@@ -2294,7 +2215,7 @@ Proof.
         -- eapply IH; eauto.
         -- eapply IH; eauto.
       * exact Hscope.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_full_world_map m φsrc)
       end.
@@ -2302,7 +2223,7 @@ Proof.
           (S gas) Σ (CTArrow τx τr)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_and_r; exact Hscope_full.
       * exists (fv_tm (tapp_tm_fvar_spine
@@ -2315,7 +2236,7 @@ Proof.
           (S gas) Σ (CTArrow τx τr)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full_my.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full_my.
         cbn [denot_ty_lvar_gas] in Hscope_full_my.
         pose proof (formula_scoped_and_r _ _ _ Hscope_full_my)
           as Htarget_forall_scope.
@@ -2423,7 +2344,7 @@ Proof.
         clear Hres. rename Hres_formula into Hres.
         exact Hres.
       * exact Hbody.
-    + solve_tapp_tlete_guard_assoc_spine.
+    + solve_tapp_tlete_guard_assoc.
     + lazymatch type of Hbody with
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_full_world_map m φsrc)
       end.
@@ -2431,7 +2352,7 @@ Proof.
           (S gas) Σ (CTWand τx τr)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full.
         cbn [denot_ty_lvar_gas] in Hscope_full.
         eapply formula_scoped_and_r; exact Hscope_full.
       * exists (fv_tm (tapp_tm_fvar_spine
@@ -2449,7 +2370,7 @@ Proof.
           (S gas) Σ (CTWand τx τr)
           (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) m
           ltac:(repeat rewrite res_models_and_iff;
-            solve_tapp_tlete_guard_assoc_spine)) as Hscope_full_my.
+            solve_tapp_tlete_guard_assoc)) as Hscope_full_my.
         cbn [denot_ty_lvar_gas] in Hscope_full_my.
         pose proof (formula_scoped_and_r _ _ _ Hscope_full_my)
           as Htarget_forall_scope.
@@ -2630,7 +2551,7 @@ Proof.
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_map_same_fv m φsrc)
       end.
       * apply set_eq. intros a.
-        normalize_formula_fv.
+        normalize_denotation_formula_fv.
         rewrite !tm_shift_fv;
         try rewrite <- fv_tm_tapp_tm_tlete_assoc;
         try rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar;
@@ -2664,7 +2585,7 @@ Proof.
         {
           unfold formula_scoped_in_world in *.
           normalize_denotation_formula_fv_in Hscope_src.
-          normalize_formula_fv.
+          normalize_denotation_formula_fv.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
@@ -2684,7 +2605,7 @@ Proof.
       | m ⊨ FForall ?φsrc => eapply (res_models_forall_map_same_fv m φsrc)
       end.
       * apply set_eq. intros a.
-        normalize_formula_fv.
+        normalize_denotation_formula_fv.
         rewrite !tm_shift_fv;
         try rewrite <- fv_tm_tapp_tm_tlete_assoc;
         try rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar;
@@ -2718,7 +2639,7 @@ Proof.
         {
           unfold formula_scoped_in_world in *.
           normalize_denotation_formula_fv_in Hscope_src.
-          normalize_formula_fv.
+          normalize_denotation_formula_fv.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
@@ -3435,28 +3356,7 @@ Proof.
 		  eapply res_product_le_mono; [apply res_restrict_le|reflexivity].
 Qed.
 
-Ltac open_formula_syntax_step :=
-  rewrite ?formula_open_impl;
-  rewrite ?formula_open_fibvars;
-  rewrite ?formula_open_over;
-  rewrite ?formula_open_under;
-  rewrite ?formula_open_context_ty_wf_formula;
-  rewrite ?formula_open_expr_total_formula by solve_tlet_sidecond;
-  rewrite ?formula_open_basic_world_bind0 by solve_tlet_sidecond;
-  rewrite ?formula_open_basic_world_formula;
-  rewrite ?formula_open_expr_result_formula_shift0 by solve_tlet_sidecond;
-  rewrite ?formula_open_expr_result_formula by solve_tlet_sidecond;
-  rewrite ?lvars_open_qual_vars_difference_bound0;
-  rewrite ?type_qualifier_formula_open by solve_tlet_sidecond;
-  rewrite ?open_tapp_tm_fvar_lc_arg.
-
-Ltac normalize_open_denot_goal :=
-  idtac;
-  rewrite ?open_tapp_tm_fvar_lc_arg.
-
-Ltac normalize_open_denot_in H :=
-  transport_open_denot_in H;
-  rewrite ?open_tapp_tm_fvar_lc_arg in H.
+(** ** Formula-open normalization *)
 
 Ltac normalize_formula_open_syntax :=
   rewrite ?formula_open_impl in *;
@@ -3537,22 +3437,3 @@ Proof.
   eapply denot_ty_lvar_gas_insert_fresh_lty_env; eauto.
   cbn [fv_tm fv_value]. set_solver.
 Qed.
-
-Ltac solve_tlet_guard :=
-  match goal with
-  | |- _ ⊨ context_ty_wf_formula _ _ =>
-      eapply context_ty_wf_formula_drop_fresh_lvar; eauto; solve_tlet_sidecond
-  | |- _ ⊨ basic_world_formula _ =>
-      eapply basic_world_formula_drop_result_extension; eauto; solve_tlet_sidecond
-  | |- _ ⊨ expr_basic_typing_formula _ (tlete _ _) _ =>
-      eapply expr_basic_typing_formula_tlete_intro; eauto;
-      eapply basic_world_formula_drop_result_extension; eauto; solve_tlet_sidecond
-  | |- _ ⊨ expr_total_formula (tlete _ _) =>
-      eapply expr_total_formula_tlete_intro_from_result_extension; eauto;
-      first
-        [ eapply basic_world_formula_drop_result_extension; eauto;
-          solve_tlet_sidecond
-        | solve_tlet_sidecond ]
-  | |- formula_scoped_in_world _ _ =>
-      solve_formula_scoped
-  end.
