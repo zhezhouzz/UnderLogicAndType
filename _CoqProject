@@ -78,7 +78,6 @@ ContextBasicDenotation/theories/BasicTypingFormula.v
 ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
-Denotation/theories/ContextTypeDenotationCore.v
 Denotation/theories/ContextTypeDenotationDefinition.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v

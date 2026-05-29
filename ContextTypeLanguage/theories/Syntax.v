@@ -427,6 +427,17 @@ Proof.
   apply lvars_shift_from_fv.
 Qed.
 
+Lemma context_ty_lvars_shift_free_notin k x τ :
+  LVFree x ∉ context_ty_lvars τ ->
+  LVFree x ∉ context_ty_lvars (cty_shift k τ).
+Proof.
+  intros Hfresh Hin.
+  apply Hfresh. apply lvars_fv_elem.
+  apply lvars_fv_elem in Hin.
+  change (x ∈ fv_cty (cty_shift k τ)) in Hin.
+  rewrite cty_shift_fv in Hin. exact Hin.
+Qed.
+
 Lemma context_ty_lvars_open_shift_fresh x y τ :
   x <> y ->
   LVFree x ∉ context_ty_lvars τ ->
@@ -740,4 +751,3 @@ Lemma ctx_dom_subset_stale Γ :
 Proof.
   induction Γ; simpl; set_solver.
 Qed.
-
