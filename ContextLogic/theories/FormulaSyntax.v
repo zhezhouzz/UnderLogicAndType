@@ -659,3 +659,57 @@ Ltac formula_fv_syntax_norm_in H :=
   rewrite ?formula_fv_under in H;
   rewrite ?formula_fv_fibvars in H;
   rewrite ?lvars_fv_union in H.
+
+Ltac formula_open_syntax_norm :=
+  rewrite ?formula_open_true, ?formula_open_false, ?formula_open_atom;
+  rewrite ?formula_open_and, ?formula_open_or, ?formula_open_impl;
+  rewrite ?formula_open_star, ?formula_open_wand, ?formula_open_plus;
+  rewrite ?formula_open_forall;
+  rewrite ?formula_open_over, ?formula_open_under, ?formula_open_fibvars.
+
+Ltac formula_open_syntax_norm_in H :=
+  rewrite ?formula_open_true in H;
+  rewrite ?formula_open_false in H;
+  rewrite ?formula_open_atom in H;
+  rewrite ?formula_open_and in H;
+  rewrite ?formula_open_or in H;
+  rewrite ?formula_open_impl in H;
+  rewrite ?formula_open_star in H;
+  rewrite ?formula_open_wand in H;
+  rewrite ?formula_open_plus in H;
+  rewrite ?formula_open_forall in H;
+  rewrite ?formula_open_over in H;
+  rewrite ?formula_open_under in H;
+  rewrite ?formula_open_fibvars in H.
+
+Ltac formula_open_env_syntax_norm :=
+  rewrite ?formula_open_env_true, ?formula_open_env_false;
+  rewrite ?formula_open_env_and, ?formula_open_env_or, ?formula_open_env_impl;
+  rewrite ?formula_open_env_star, ?formula_open_env_wand, ?formula_open_env_plus;
+  rewrite ?formula_open_env_over, ?formula_open_env_under;
+  try rewrite ?formula_open_env_fibvars by eauto;
+  try rewrite ?formula_open_env_forall by eauto.
+
+Ltac formula_open_env_syntax_norm_in H :=
+  rewrite ?formula_open_env_true in H;
+  rewrite ?formula_open_env_false in H;
+  rewrite ?formula_open_env_and in H;
+  rewrite ?formula_open_env_or in H;
+  rewrite ?formula_open_env_impl in H;
+  rewrite ?formula_open_env_star in H;
+  rewrite ?formula_open_env_wand in H;
+  rewrite ?formula_open_env_plus in H;
+  rewrite ?formula_open_env_over in H;
+  rewrite ?formula_open_env_under in H;
+  try rewrite ?formula_open_env_fibvars in H by eauto;
+  try rewrite ?formula_open_env_forall in H by eauto.
+
+Ltac formula_syntax_norm :=
+  formula_fv_syntax_norm;
+  formula_open_syntax_norm;
+  formula_open_env_syntax_norm.
+
+Ltac formula_syntax_norm_in H :=
+  formula_fv_syntax_norm_in H;
+  formula_open_syntax_norm_in H;
+  formula_open_env_syntax_norm_in H.
