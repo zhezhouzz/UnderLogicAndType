@@ -10,45 +10,6 @@ From CoreLang Require Import InstantiationProps.
 From Stdlib Require Import List.
 Import ListNotations.
 
-Lemma tlet_fresh_tm_from_forall_input
-    (F : FiberExtensionT) y X e :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  fv_tm e ⊆ X ->
-  y ∉ fv_tm e.
-Proof.
-  intros HFin HFout Hsub.
-  pose proof (fiber_extension_singleton_output_fresh_in_eq
-    F y X HFin HFout).
-  set_solver.
-Qed.
-
-Lemma tlet_fresh_lty_env_from_forall_input
-    (F : FiberExtensionT) y X (Σ : lty_env) :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  lvars_fv (dom Σ) ⊆ X ->
-  LVFree y ∉ dom Σ.
-Proof.
-  intros HFin HFout Hsub Hy.
-  pose proof (fiber_extension_singleton_output_fresh_in_eq
-    F y X HFin HFout) as HyX.
-  apply HyX, Hsub. apply lvars_fv_elem. exact Hy.
-Qed.
-
-Lemma tlet_fresh_qualifier_from_forall_input
-    (F : FiberExtensionT) y X (φ : type_qualifier) :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  qual_dom φ ⊆ X ->
-  y ∉ qual_dom φ.
-Proof.
-  intros HFin HFout Hsub.
-  pose proof (fiber_extension_singleton_output_fresh_in_eq
-    F y X HFin HFout).
-  set_solver.
-Qed.
-
 (** ** Freshness and FV side-condition tactics *)
 
 Ltac tlet_normalize_freshness :=
@@ -257,9 +218,8 @@ Ltac solve_tlet_sidecond :=
   | eauto using
 	      lty_env_closed_insert_free,
 	      fiber_extension_singleton_output_fresh_in_eq,
-	      tlet_fresh_tm_from_forall_input,
-	      tlet_fresh_lty_env_from_forall_input,
-	      tlet_fresh_qualifier_from_forall_input
+	      fiber_extension_singleton_output_fresh_subset,
+	      lvars_fv_subset_notin_free
   ].
 
 Ltac solve_tlet_impl_scope :=

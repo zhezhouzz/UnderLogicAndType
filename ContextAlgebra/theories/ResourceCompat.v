@@ -83,6 +83,19 @@ Proof.
   eapply fiber_extension_singleton_out_notin_input; eauto.
 Qed.
 
+Lemma fiber_extension_singleton_output_fresh_subset
+    (F : FiberExtensionT) y X Y :
+  ext_in F = X ->
+  ext_out F = {[y]} ->
+  Y ⊆ X ->
+  y ∉ Y.
+Proof.
+  intros HFin HFout Hsub.
+  pose proof (fiber_extension_singleton_output_fresh_in_eq
+    F y X HFin HFout).
+  better_set_solver.
+Qed.
+
 Definition one_point_projected_output_raw
     (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
   @mk_worldA atom _ _ V {[y]}

@@ -131,6 +131,16 @@ Proof.
   rewrite lvars_fv_elem. tauto.
 Qed.
 
+Lemma lvars_fv_subset_notin_free y (D : lvset) (X : aset) :
+  lvars_fv D ⊆ X ->
+  y ∉ X ->
+  LVFree y ∉ D.
+Proof.
+  intros Hsub Hy.
+  rewrite <- atom_notin_lvars_fv_iff_free_notin.
+  better_set_solver.
+Qed.
+
 Lemma lvars_bv_elem D k :
   k ∈ lvars_bv D ↔ LVBound k ∈ D.
 Proof.
