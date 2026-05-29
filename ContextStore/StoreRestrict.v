@@ -1047,36 +1047,9 @@ Lemma storeA_union_swap_right {K : Type} `{Countable K}
   @union (gmap K V) _ (@union (gmap K V) _ s1 s3) s2.
 Proof.
   intros Hcompat.
-  apply storeA_map_eq. intros i.
-  rewrite option_eq. intros v.
-  setoid_rewrite (map_lookup_union_Some_raw).
-  split.
-  - intros [H12 | [H12none H3]].
-    + rewrite map_lookup_union_Some_raw in H12.
-      destruct H12 as [H1 | [H1none H2]].
-      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
-      * destruct ((s3 : gmap K V) !! i) as [v3|] eqn:H3i.
-        -- assert (v = v3) by (eapply Hcompat; eauto).
-           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
-        -- right. split.
-           ++ rewrite map_lookup_union_None. eauto.
-           ++ exact H2.
-    + rewrite map_lookup_union_None in H12none.
-      destruct H12none as [H1none H2none].
-      left. rewrite map_lookup_union_Some_raw. right. eauto.
-  - intros [H13 | [H13none H2]].
-    + rewrite map_lookup_union_Some_raw in H13.
-      destruct H13 as [H1 | [H1none H3]].
-      * left. rewrite map_lookup_union_Some_raw. left. exact H1.
-      * destruct ((s2 : gmap K V) !! i) as [v2|] eqn:H2i.
-        -- assert (v2 = v) by (eapply Hcompat; eauto).
-           subst. left. rewrite map_lookup_union_Some_raw. right. eauto.
-        -- right. split.
-           ++ rewrite map_lookup_union_None. eauto.
-           ++ exact H3.
-    + rewrite map_lookup_union_None in H13none.
-      destruct H13none as [H1none H3none].
-      left. rewrite map_lookup_union_Some_raw. right. eauto.
+  rewrite <- !map_union_assoc.
+  rewrite (storeA_union_comm s2 s3 Hcompat).
+  reflexivity.
 Qed.
 
 Lemma storeA_union_absorb_l {K : Type} `{Countable K}
@@ -1172,13 +1145,8 @@ Lemma storeA_insert_union_r_fresh {K : Type} `{Countable K}
   <[x := v]> (@union (gmap K V) _ s1 s2).
 Proof.
   intros Hx.
-  apply storeA_map_eq. intros i.
-  pose proof (insert_union_r (M:=gmap K) (A:=V)
-    (s1 : gmap K V) (s2 : gmap K V) x v) as Hins.
-  assert (Hnone : (s1 : gmap K V) !! x = None).
-  { apply not_elem_of_dom. exact Hx. }
-  specialize (Hins Hnone).
-  exact (f_equal (λ m : gmap K V, m !! i) (eq_sym Hins)).
+  symmetry. apply insert_union_r.
+  apply not_elem_of_dom. exact Hx.
 Qed.
 
 Lemma storeA_union_singleton_insert_fresh {K : Type} `{Countable K}
@@ -1190,9 +1158,7 @@ Proof.
   intros Hfresh.
   change ({[x := v]} : gmap K V) with (<[x := v]> (∅ : gmap K V)).
   rewrite storeA_insert_union_r_fresh by exact Hfresh.
-  apply storeA_map_eq. intros i.
-  pose proof (map_union_empty (σ : gmap K V)) as Hempty.
-  exact (f_equal (λ m : gmap K V, (<[x := v]> m) !! i) Hempty).
+  rewrite map_union_empty. reflexivity.
 Qed.
 
 Lemma storeA_union_dom {K : Type} `{Countable K}
