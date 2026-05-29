@@ -156,6 +156,11 @@ Ltac better_store_solver :=
   | Hdisj : dom (?σ1 : gmap _ _) ## dom (?σ2 : gmap _ _)
     |- storeA_compat ?σ1 ?σ2 =>
       exact (storeA_disj_dom_compat σ1 σ2 Hdisj)
+  | Hc : storeA_compat ?σ1 ?σ2,
+    H1 : (?σ1 : gmap _ _) !! ?x = Some ?v1,
+    H2 : (?σ2 : gmap _ _) !! ?x = Some ?v2
+    |- ?v1 = ?v2 =>
+      eapply Hc; [exact H1 | exact H2]
   end;
   store_normalize;
   store_finish.

@@ -450,29 +450,27 @@ Proof.
     (@union (gmap K V) _ (storeA_restrict s1 X1 : gmap K V)
       (storeA_restrict s2 X2 : gmap K V)) !! i).
   destruct (decide (i ∈ X1)) as [Hi1 | Hni1].
-  - assert (i ∈ dom (s1 : gmap K V)) as Hidom1 by better_set_solver.
-    apply elem_of_dom in Hidom1 as [v1 Hlookup1].
-    assert (Hrestrict1 : (storeA_restrict s1 X1 : gmap K V) !! i = Some v1).
-    { apply storeA_restrict_lookup_some_2; [exact Hlookup1 | exact Hi1]. }
+  - specialize (HX1 i Hi1).
+    apply elem_of_dom in HX1 as [v1 Hlookup1].
     transitivity (Some v1).
     + apply storeA_restrict_lookup_some_2; last better_set_solver.
       apply map_lookup_union_Some_raw. left. exact Hlookup1.
-    + symmetry. apply map_lookup_union_Some_raw. left. exact Hrestrict1.
+    + symmetry. apply map_lookup_union_Some_raw. left.
+      apply storeA_restrict_lookup_some_2; [exact Hlookup1 | exact Hi1].
   - destruct (decide (i ∈ X2)) as [Hi2 | Hni2].
-    + assert (i ∈ dom (s2 : gmap K V)) as Hidom2 by better_set_solver.
-      apply elem_of_dom in Hidom2 as [v2 Hlookup2].
-      assert (Hleft_none : (storeA_restrict s1 X1 : gmap K V) !! i = None).
-      { apply storeA_restrict_lookup_none_r. exact Hni1. }
-      assert (Hrestrict2 : (storeA_restrict s2 X2 : gmap K V) !! i = Some v2).
-      { apply storeA_restrict_lookup_some_2; [exact Hlookup2 | exact Hi2]. }
+    + specialize (HX2 i Hi2).
+      apply elem_of_dom in HX2 as [v2 Hlookup2].
       transitivity (Some v2).
       * apply storeA_restrict_lookup_some_2; last better_set_solver.
         destruct ((s1 : gmap K V) !! i) as [v1|] eqn:Hlookup1.
         -- apply map_lookup_union_Some_raw. left.
-           assert (v1 = v2) by (eapply Hcompat; eauto). subst. exact Hlookup1.
+           pose proof (Hcompat _ _ _ Hlookup1 Hlookup2) as Heq.
+           rewrite Heq in Hlookup1. exact Hlookup1.
         -- apply map_lookup_union_Some_raw. right. exact (conj Hlookup1 Hlookup2).
       * symmetry. apply map_lookup_union_Some_raw. right.
-        split; [exact Hleft_none | exact Hrestrict2].
+        split.
+        -- apply storeA_restrict_lookup_none_r. exact Hni1.
+        -- apply storeA_restrict_lookup_some_2; [exact Hlookup2 | exact Hi2].
     + transitivity (@None V).
       * apply storeA_restrict_lookup_none_r. better_set_solver.
       * symmetry. apply map_lookup_union_None.
@@ -902,14 +900,12 @@ Proof.
   intros Hsmall Hfull HYS HYm.
   apply storeA_map_eq. intros i.
   destruct (decide (i ∈ Y)) as [HiY|HiY].
-  - assert (HiS : i ∈ S) by better_set_solver.
-    assert (Him : i ∈ dom (sm : gmap K V)) by better_set_solver.
-    apply elem_of_dom in Him as [vm Hsm].
+  - specialize (HYm i HiY).
+    apply elem_of_dom in HYm as [vm Hsm].
     destruct ((sn : gmap K V) !! i) as [vn|] eqn:Hsn.
-    + assert (vn = vm).
-      { eapply Hfull; [exact Hsn|].
-        apply storeA_restrict_lookup_some_2; [exact Hsm|exact HiS]. }
-      subst vn.
+    + pose proof (Hfull i vn vm Hsn
+        (storeA_restrict_lookup_some_2 sm S i vm Hsm ltac:(better_set_solver))) as Heq.
+      rewrite Heq in Hsn.
       transitivity (Some vm).
       * apply storeA_restrict_lookup_some_2; [|exact HiY].
         apply map_lookup_union_Some_raw. left. exact Hsn.
@@ -924,7 +920,7 @@ Proof.
       * apply storeA_restrict_lookup_some_2; [|exact HiY].
         apply map_lookup_union_Some_raw. right. split.
         -- exact Hsn.
-        -- apply storeA_restrict_lookup_some_2; [exact Hsm|exact HiS].
+        -- apply storeA_restrict_lookup_some_2; [exact Hsm|better_set_solver].
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HiY].
         apply map_lookup_union_Some_raw. right. split.
         -- apply storeA_restrict_lookup_none_l. exact Hsn.
