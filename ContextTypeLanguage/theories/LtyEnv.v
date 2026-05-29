@@ -108,6 +108,54 @@ Lemma lty_env_open_lvars_insert_fresh η k x (Σ : lty_env) :
   lty_env_open_one k x (lty_env_open_lvars η Σ).
 Proof. apply lvar_store_open_lvars_insert_fresh. Qed.
 
+Lemma lty_env_open_lvars_lift_bound0_singleton η T :
+  open_env_values_inj η ->
+  lty_env_open_lvars ((kmap S η))
+    ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env) =
+  ((<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lty_env).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros _. rewrite kmap_empty, lty_env_open_lvars_empty. reflexivity.
+  - intros Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite open_env_lift_insert.
+    rewrite lty_env_open_lvars_insert_fresh.
+    + rewrite IH by exact Hinjη.
+      rewrite lvar_store_open_one_insert.
+      replace (logic_var_open (S k) x (LVBound 0)) with (LVBound 0).
+      * replace (lty_env_open_one (S k) x (∅ : lty_env)) with
+          ((∅ : gmap logic_var ty) : lty_env); [reflexivity|].
+        unfold lty_env_open_one.
+        apply (storeA_rekey_empty (V := ty) (K := logic_var)
+          (logic_var_open (S k) x)).
+      * unfold swap. repeat destruct decide; try lia; try congruence.
+    + better_base_solver.
+    + better_base_solver.
+    + intros i z Hiz Hbad.
+      replace (dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty)) : lvset)
+        with ({[LVBound 0]} : lvset) in Hbad
+        by (rewrite dom_insert_L, dom_empty_L; set_solver).
+      apply lvars_fv_elem in Hbad.
+      unfold lvars_open_env in Hbad.
+      apply elem_of_map in Hbad as [v [Hv HvIn]].
+      assert (Hv0 : v = LVBound 0) by set_solver.
+      subst v.
+      cbn [logic_var_open_env] in Hv.
+      assert (Hnone :
+        delete i (<[S k:=x]> (kmap S η : gmap nat atom)) !! 0 = None).
+      {
+        destruct (decide (i = 0)) as [->|Hi0].
+        - rewrite lookup_delete_eq. reflexivity.
+        - rewrite lookup_delete_ne by congruence.
+          change ((<[S k:=x]> ((kmap S η)) : gmap nat atom) !! 0 = None).
+          destruct (decide (0 = S k)) as [Hbad0|Hneq0]; [lia|].
+          rewrite lookup_insert_ne by (intros H; apply Hneq0; symmetry; exact H).
+          apply open_env_lift_lookup_zero_none.
+      }
+      rewrite Hnone in Hv. discriminate.
+Qed.
+
 Lemma lty_env_open_lvars_insert_delete_swap_back
     η k y z (Σ : lty_env) :
   η !! k = Some z ->
@@ -574,4 +622,3 @@ Lemma typed_lty_env_bind_open_env_lift η (Σ : lty_env) T :
   lty_env_open_lvars ((kmap S η)) (typed_lty_env_bind Σ T) =
   typed_lty_env_bind (lty_env_open_lvars η Σ) T.
 Proof. apply lvar_store_bind_open_env_lift. Qed.
-

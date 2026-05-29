@@ -405,6 +405,140 @@ Proof.
     + eapply open_env_fresh_for_lvars_insert_head; eassumption.
 Qed.
 
+Lemma lvars_open_env_lift_qual_vars_difference_bound0 η q :
+  open_env_fresh_for_lvars ((kmap S η)) (qual_vars q) ->
+  lvars_open_env ((kmap S η)) (qual_vars q ∖ {[LVBound 0]}) =
+  qual_vars (qual_open_env ((kmap S η)) q) ∖ {[LVBound 0]}.
+Proof.
+  intros Hfresh.
+  rewrite qual_open_env_vars by exact Hfresh.
+  apply set_eq. intros v.
+  rewrite elem_of_difference.
+  unfold lvars_open_env.
+  split.
+  - intros Hv.
+    apply elem_of_map in Hv as [u [-> Hu]].
+    apply elem_of_difference in Hu as [HuD Hu0].
+    split.
+    + apply elem_of_map. exists u. split; [reflexivity|exact HuD].
+    + intros Hbad. apply Hu0.
+      rewrite elem_of_singleton in Hbad |- *.
+      destruct u as [n|a]; cbn [logic_var_open_env] in Hbad.
+      * destruct n as [|n].
+        -- rewrite open_env_lift_lookup_zero_none in Hbad.
+           reflexivity.
+        -- destruct ((kmap S η) !! S n); discriminate.
+      * discriminate.
+  - intros [Hv Hnot].
+    apply elem_of_map in Hv as [u [-> HuD]].
+    apply elem_of_map.
+    exists u. split; [reflexivity|].
+    apply elem_of_difference. split; [exact HuD|].
+    intros Hbad. apply Hnot.
+    rewrite elem_of_singleton in Hbad |- *.
+    subst u.
+    cbn [logic_var_open_env].
+    better_base_solver.
+Qed.
+
+Lemma lvars_fv_open_env_lift_subset_at_depth1 η D :
+  lvars_fv (lvars_open_env ((kmap S η)) D) ⊆
+  lvars_fv (lvars_open_env η (lvars_at_depth 1 D)).
+Proof.
+  intros x Hx.
+  apply lvars_fv_elem in Hx.
+  unfold lvars_open_env in Hx.
+  apply elem_of_map in Hx as [v [Hv Hvd]].
+  apply lvars_fv_elem.
+  unfold lvars_open_env.
+  apply elem_of_map.
+  destruct v as [n|a].
+  - cbn [logic_var_open_env] in Hv.
+    destruct n as [|n].
+    + rewrite open_env_lift_lookup_zero_none in Hv. discriminate.
+    + rewrite (lookup_kmap (M1:=gmap nat) (M2:=gmap nat)
+        S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η n) in Hv.
+      destruct (η !! n) as [y|] eqn:Hηn; [|discriminate].
+      inversion Hv. subst y.
+      exists (LVBound n). split.
+      * cbn [logic_var_open_env]. rewrite Hηn. reflexivity.
+      * rewrite lvars_at_depth_elem.
+        exists (LVBound (S n)). split; [exact Hvd|].
+        cbn [logic_var_at_depth].
+        rewrite decide_True by lia.
+        replace (S n - 1) with n by lia. reflexivity.
+  - cbn [logic_var_open_env] in Hv. inversion Hv. subst a.
+    exists (LVFree x). split; [reflexivity|].
+    rewrite lvars_at_depth_elem.
+    exists (LVFree x). split; [exact Hvd|reflexivity].
+Qed.
+
+Lemma open_env_lift_fresh_for_lvars_at_depth1 η D :
+  open_env_fresh_for_lvars η (lvars_at_depth 1 D) ->
+  open_env_fresh_for_lvars ((kmap S η)) D.
+Proof.
+  intros Hfresh j x Hjx Hbad.
+  destruct j as [|j].
+  - rewrite open_env_lift_lookup_zero_none in Hjx. discriminate.
+  - apply lookup_kmap_Some in Hjx as [i [HSi Hηi]].
+    2:{ intros ? ? ?. lia. }
+    injection HSi as ->.
+    eapply Hfresh; [exact Hηi|].
+    replace (delete (S i) ((kmap S η))) with
+      (kmap S (delete i η) : gmap nat atom) in Hbad.
+    2:{
+      exact (@kmap_delete nat (gmap nat) _ _ _ _ _ _ _ _ _
+        nat (gmap nat) _ _ _ _ _ _ _ _ _
+        S (ltac:(intros ? ? ?; lia)) atom η i).
+    }
+    eapply lvars_fv_open_env_lift_subset_at_depth1. exact Hbad.
+Qed.
+
+Lemma open_env_lift_fresh_for_bound0_singleton η :
+  open_env_fresh_for_lvars ((kmap S η)) ({[LVBound 0]}).
+Proof.
+  intros i x Hi Hbad.
+  apply lvars_fv_elem in Hbad.
+  unfold lvars_open_env in Hbad.
+  apply elem_of_map in Hbad as [v [Hv HvIn]].
+  apply elem_of_singleton in HvIn. subst v.
+  cbn [logic_var_open_env] in Hv.
+  assert (Hnone : delete i (kmap S η : gmap nat atom) !! 0 = None).
+  {
+    destruct (decide (i = 0)) as [->|Hi0].
+    - rewrite lookup_delete_eq. reflexivity.
+    - rewrite lookup_delete_ne by congruence.
+      apply open_env_lift_lookup_zero_none.
+  }
+  rewrite Hnone in Hv. discriminate.
+Qed.
+
+Lemma logic_var_open_env_lift_bound0 η :
+  logic_var_open_env ((kmap S η)) (LVBound 0) = LVBound 0.
+Proof.
+  cbn [logic_var_open_env].
+  rewrite open_env_lift_lookup_zero_none. reflexivity.
+Qed.
+
+Lemma open_env_fresh_for_bound0_singleton_nozero η :
+  η !! 0 = None ->
+  open_env_fresh_for_lvars η ({[LVBound 0]}).
+Proof.
+  intros Hzero i x Hi Hbad.
+  apply lvars_fv_elem in Hbad.
+  unfold lvars_open_env in Hbad.
+  apply elem_of_map in Hbad as [v [Hv HvIn]].
+  apply elem_of_singleton in HvIn. subst v.
+  cbn [logic_var_open_env] in Hv.
+  assert (Hnone : delete i η !! 0 = None).
+  {
+    destruct (decide (i = 0)) as [->|Hi0].
+    - rewrite lookup_delete_eq. reflexivity.
+    - rewrite lookup_delete_ne by congruence. exact Hzero.
+  }
+  rewrite Hnone in Hv. discriminate.
+Qed.
+
 Lemma open_cty_env_inter_vars_equiv η τ1 τ2 :
   open_cty_env η (CTInter τ1 τ2) ≡τv
   CTInter (open_cty_env η τ1) (open_cty_env η τ2).

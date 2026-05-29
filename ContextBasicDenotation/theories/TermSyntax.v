@@ -906,6 +906,134 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma open_tm_env_lift_tapp_shift_bvar0 η e :
+  open_tm_env ((kmap S η)) (tapp_tm (tm_shift 0 e) (vbvar 0)) =
+  tapp_tm (tm_shift 0 (open_tm_env η e)) (vbvar 0).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite kmap_empty.
+    rewrite !map_fold_empty. reflexivity.
+  - rewrite open_env_lift_insert.
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
+    rewrite IH.
+    rewrite open_tm_env_insert_fresh_plain by exact Hfresh.
+    unfold tapp_tm.
+    cbn [open_tm open_value value_shift].
+    rewrite tm_shift_open_tm_fvar by lia.
+    repeat (destruct decide; try lia); try congruence; reflexivity.
+Qed.
+
+Lemma open_tm_env_lift_tret_bound0 η :
+  open_tm_env ((kmap S η)) (tret (vbvar 0)) = tret (vbvar 0).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite kmap_empty.
+    rewrite map_fold_empty. reflexivity.
+  - rewrite open_env_lift_insert.
+    rewrite open_tm_env_insert_fresh_plain by better_base_solver.
+    rewrite IH.
+    cbn [open_tm open_value].
+    destruct decide as [Hbad|_]; [lia|reflexivity].
+Qed.
+
+Lemma bvar_lvars_at_shift_under d k n :
+  k <= d ->
+  value_lvars_at (S d) (value_shift k (vbvar n)) =
+  value_lvars_at d (vbvar n).
+Proof.
+  intros Hkd.
+  cbn [value_shift value_lvars_at]. unfold bvar_lvars_at.
+  destruct (bool_decide (k <= n)) eqn:Hknb.
+  - apply bool_decide_eq_true_1 in Hknb.
+    cbn [value_lvars_at]. unfold bvar_lvars_at.
+    destruct (decide (S d <= S n)) as [Hsdn|Hsdn].
+    + destruct (decide (d <= n)) as [_|Hbad]; [|lia].
+      replace (S n - S d) with (n - d) by lia.
+      reflexivity.
+    + destruct (decide (d <= n)) as [Hbad|_]; [lia|reflexivity].
+  - apply bool_decide_eq_false_1 in Hknb.
+    cbn [value_lvars_at]. unfold bvar_lvars_at.
+    destruct (decide (S d <= n)) as [Hsdn|Hsdn].
+    + lia.
+    + destruct (decide (d <= n)) as [Hdn|Hdn].
+      * assert (n = d) by lia. subst n. lia.
+      * reflexivity.
+Qed.
+
+Lemma value_tm_lvars_at_shift_under_mutual :
+  (forall v d k,
+      k <= d ->
+      value_lvars_at (S d) (value_shift k v) = value_lvars_at d v) *
+  (forall e d k,
+      k <= d ->
+      tm_lvars_at (S d) (tm_shift k e) = tm_lvars_at d e).
+Proof.
+  apply value_tm_mutind; cbn [value_shift tm_shift value_lvars_at tm_lvars_at];
+    intros; try reflexivity.
+  - apply bvar_lvars_at_shift_under. exact H.
+  - rewrite H by lia. reflexivity.
+  - rewrite H by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by lia. reflexivity.
+  - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
+Qed.
+
+Lemma value_lvars_at_shift_under v d k :
+  k <= d ->
+  value_lvars_at (S d) (value_shift k v) = value_lvars_at d v.
+Proof. exact (fst value_tm_lvars_at_shift_under_mutual v d k). Qed.
+
+Lemma tm_lvars_at_shift_under e d k :
+  k <= d ->
+  tm_lvars_at (S d) (tm_shift k e) = tm_lvars_at d e.
+Proof. exact (snd value_tm_lvars_at_shift_under_mutual e d k). Qed.
+
+Lemma value_lvars_at_bound0_under d :
+  value_lvars_at (S d) (vbvar 0) = ∅.
+Proof.
+  cbn [value_lvars_at]. unfold bvar_lvars_at.
+  destruct (decide (S d <= 0)); [lia|reflexivity].
+Qed.
+
+Lemma tm_lvars_at_tret_bound0_under d :
+  tm_lvars_at (S d) (tret (vbvar 0)) = ∅.
+Proof. cbn [tm_lvars_at]. apply value_lvars_at_bound0_under. Qed.
+
+Lemma tm_lvars_at_tapp_shift_bound0 e d k :
+  k <= d ->
+  tm_lvars_at (S d) (tapp_tm (tm_shift k e) (vbvar 0)) ⊆
+  tm_lvars_at d e.
+Proof.
+  induction e in d, k |- *; cbn [tm_shift tapp_tm tm_lvars_at]; intros Hkd.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite value_lvars_at_bound0_under. set_solver.
+  - pose proof (IHe2 (S d) (S k) ltac:(lia)) as Hbody.
+    rewrite tm_lvars_at_shift_under by lia. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite value_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+Qed.
+
+Lemma tm_lvars_at_tapp_shift0_bound0 e d :
+  tm_lvars_at (S d) (tapp_tm (tm_shift 0 e) (vbvar 0)) ⊆
+  tm_lvars_at d e.
+Proof. apply tm_lvars_at_tapp_shift_bound0. lia. Qed.
+
 Definition lstore_free_part (σ : LStoreT) : StoreT :=
   lstore_to_store σ.
 
