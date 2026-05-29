@@ -643,18 +643,12 @@ Proof.
   intros Hdom Hν HX Hνsingle.
   apply storeA_map_eq. intros z.
   destruct (decide (z = ν)) as [->|Hzν].
-  - change ((σx : gmap K V) !! ν =
-      (<[ν := vx]> (σ : gmap K V) : gmap K V) !! ν).
-    rewrite map_lookup_insert.
+  - rewrite map_lookup_insert.
     pose proof (f_equal (fun s : gmap K V => s !! ν) Hνsingle) as Hlook.
-    change ((storeA_restrict σx ({[ν]} : gset K) : gmap K V) !! ν =
-      ({[ν := vx]} : gmap K V) !! ν) in Hlook.
     rewrite map_lookup_singleton in Hlook.
     apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
     exact Hlook.
-  - change ((σx : gmap K V) !! z =
-      (<[ν := vx]> (σ : gmap K V) : gmap K V) !! z).
-    rewrite map_lookup_insert_ne by congruence.
+  - rewrite map_lookup_insert_ne by congruence.
     destruct ((σx : gmap K V) !! z) as [vz|] eqn:Hz.
     + assert (z ∈ X) as HzX.
       { apply elem_of_dom_2 in Hz. rewrite Hdom in Hz. better_set_solver. }
