@@ -2156,17 +2156,9 @@ Proof.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
-        eapply res_models_impl_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic.
-        match goal with
-        | |- my ⊨ ?G =>
-            assert (Hscope_tgt_inner : formula_scoped_in_world my G)
-        end.
-        { eapply formula_scoped_impl_r. exact Hscope_tgt_outer. }
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Hresult.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        eapply res_models_impl_elim; [exact Hinner|].
+        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
+        intros Hbasic Hresult.
+        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
         eapply expr_result_formula_tapp_tlete_assoc_spine_rev.
         -- rewrite fv_tm_tapp_tlete_assoc_spine.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -2222,17 +2214,9 @@ Proof.
           try rewrite fv_tm_tapp_tlete_assoc_spine.
           exact Hscope_src.
         }
-        eapply res_models_impl_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic.
-        match goal with
-        | |- my ⊨ ?G =>
-            assert (Hscope_tgt_inner : formula_scoped_in_world my G)
-        end.
-        { eapply formula_scoped_impl_r. exact Hscope_tgt_outer. }
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Hresult.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        eapply res_models_impl_elim; [exact Hinner|].
+        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
+        intros Hbasic Hresult.
+        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
         eapply expr_result_formula_tapp_tlete_assoc_spine_rev.
         -- rewrite fv_tm_tapp_tlete_assoc_spine.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -2321,12 +2305,8 @@ Proof.
           by tlet_support_solver.
         rewrite ?formula_open_basic_world_bind0 in Hopened_scope_my
           by tlet_support_solver.
-        eapply res_models_impl_intro; [exact Hopened_scope_my|].
-        intros Hbasic.
-        pose proof (formula_scoped_impl_r _ _ _ Hopened_scope_my)
-          as Hscope_tgt_inner.
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Harg.
+        eapply res_models_impl2_intro; [exact Hopened_scope_my|].
+        intros Hbasic Harg.
         assert (Henv_arrow :
           denot_relevant_env Σ (CTArrow τx τr)
             (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) (z :: zs)) =
@@ -2338,8 +2318,7 @@ Proof.
           rewrite tm_lvars_tapp_tlete_assoc_spine. reflexivity.
         }
         rewrite Henv_arrow in Harg.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        pose proof (res_models_impl_elim _ _ _ Hinner Harg) as Hres.
+        pose proof (res_models_impl2_elim _ _ _ _ Hopen Hbasic Harg) as Hres.
         pose proof (res_models_open_denot_ty_lvar_gas_to_open
           a gas
           (denot_relevant_env Σ (CTArrow τx τr)
@@ -2658,17 +2637,9 @@ Proof.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
-        eapply res_models_impl_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic.
-        match goal with
-        | |- my ⊨ ?G =>
-            assert (Hscope_tgt_inner : formula_scoped_in_world my G)
-        end.
-        { eapply formula_scoped_impl_r. exact Hscope_tgt_outer. }
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Hresult.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        eapply res_models_impl_elim; [exact Hinner|].
+        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
+        intros Hbasic Hresult.
+        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
         eapply expr_result_formula_tapp_tm_tlete_assoc_rev.
         -- rewrite fv_tm_tapp_tm_tlete_assoc.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -2720,17 +2691,9 @@ Proof.
           try rewrite fv_tm_tapp_tm_tlete_assoc.
           exact Hscope_src.
         }
-        eapply res_models_impl_intro; [exact Hscope_tgt_outer|].
-        intros Hbasic.
-        match goal with
-        | |- my ⊨ ?G =>
-            assert (Hscope_tgt_inner : formula_scoped_in_world my G)
-        end.
-        { eapply formula_scoped_impl_r. exact Hscope_tgt_outer. }
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Hresult.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        eapply res_models_impl_elim; [exact Hinner|].
+        eapply res_models_impl2_intro; [exact Hscope_tgt_outer|].
+        intros Hbasic Hresult.
+        eapply res_models_impl2_elim; [exact Hopen | exact Hbasic |].
         eapply expr_result_formula_tapp_tm_tlete_assoc_rev.
         -- rewrite fv_tm_tapp_tm_tlete_assoc.
            eapply denot_ty_lvar_guard_wfworld_closed_on_term_le.
@@ -2817,12 +2780,8 @@ Proof.
           by tlet_support_solver.
         rewrite ?formula_open_basic_world_bind0 in Hopened_scope_my
           by tlet_support_solver.
-        eapply res_models_impl_intro; [exact Hopened_scope_my|].
-        intros Hbasic.
-        pose proof (formula_scoped_impl_r _ _ _ Hopened_scope_my)
-          as Hscope_tgt_inner.
-        eapply res_models_impl_intro; [exact Hscope_tgt_inner|].
-        intros Harg.
+        eapply res_models_impl2_intro; [exact Hopened_scope_my|].
+        intros Hbasic Harg.
         assert (Henv_arrow :
           denot_relevant_env Σ (CTArrow τx τr)
             (tapp_tm (tlete e1 e2) (vfvar y)) =
@@ -2834,8 +2793,7 @@ Proof.
           rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. reflexivity.
         }
         rewrite Henv_arrow in Harg.
-        pose proof (res_models_impl_elim _ _ _ Hopen Hbasic) as Hinner.
-        pose proof (res_models_impl_elim _ _ _ Hinner Harg) as Hres.
+        pose proof (res_models_impl2_elim _ _ _ _ Hopen Hbasic Harg) as Hres.
         pose proof (res_models_open_denot_ty_lvar_gas_to_open
           z gas
           (denot_relevant_env Σ (CTArrow τx τr)
@@ -3440,12 +3398,8 @@ Proof.
 	          τx τr (tlete e1 e2)))).
 	  {
 	    unfold denot_wand_body_formula.
-	    pose proof (formula_scoped_forall_body m _ Hbody_scope_m)
-	      as Hforall_body_scope_m.
-	    assert (Hy_my : y ∈ world_dom (my : WorldT)).
-	    { rewrite Hdom_my. set_solver. }
-	    eapply formula_scoped_open_res_le;
-	      [exact Hforall_body_scope_m | exact Hle | exact Hy_my].
+	    eapply formula_scoped_forall_open_res_le;
+	      [exact Hbody_scope_m | exact Hle | rewrite Hdom_my; set_solver].
 	  }
 	  assert (Hxy : x <> y).
 	  { intros ->. apply Hy. fast_set_solver!!. }

@@ -103,12 +103,9 @@ Proof.
 				           qual_dom φ ∪ {[x]}).
 				           intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 			           normalize_formula_open_syntax.
-		           pose proof (formula_scoped_forall_body m _ Hbody_scope_m)
-		             as Hforall_body_scope_m.
-		           assert (Hy_my : y ∈ world_dom (my : WorldT)).
-		           { rewrite Hdom_my. set_solver. }
-		           pose proof (formula_scoped_open_res_le
-		             m my 0 y _ Hforall_body_scope_m Hle Hy_my)
+		           pose proof (formula_scoped_forall_open_res_le
+		             m my y _ Hbody_scope_m Hle
+		             ltac:(rewrite Hdom_my; set_solver))
 		             as Hopened_scope_my.
 		           normalize_formula_open_syntax.
 			           eapply res_models_impl_intro.
@@ -210,12 +207,9 @@ Proof.
 		           qual_dom φ ∪ {[x]}).
 		        intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 		        normalize_formula_open_syntax.
-		        pose proof (formula_scoped_forall_body m _ Hbody_scope_m)
-		          as Hforall_body_scope_m.
-		        assert (Hy_my : y ∈ world_dom (my : WorldT)).
-		        { rewrite Hdom_my. set_solver. }
-		        pose proof (formula_scoped_open_res_le
-		          m my 0 y _ Hforall_body_scope_m Hle Hy_my)
+		        pose proof (formula_scoped_forall_open_res_le
+		          m my y _ Hbody_scope_m Hle
+		          ltac:(rewrite Hdom_my; set_solver))
 		          as Hopened_scope_my.
 		        normalize_formula_open_syntax.
 		        eapply res_models_impl_intro.
@@ -524,12 +518,9 @@ Proof.
 	             fv_cty τx ∪ fv_cty τr ∪ {[x]}).
 	        intros y Hy my myx Hle Hdom_my HmyFx Hmyx_body.
 	        normalize_formula_open_syntax.
-	        pose proof (formula_scoped_forall_body m _ Hbody_scope_m)
-	          as Hforall_body_scope_m.
-	        assert (Hy_my : y ∈ world_dom (my : WorldT)).
-	        { rewrite Hdom_my. set_solver. }
-	        pose proof (formula_scoped_open_res_le
-	          m my 0 y _ Hforall_body_scope_m Hle Hy_my)
+	        pose proof (formula_scoped_forall_open_res_le
+	          m my y _ Hbody_scope_m Hle
+	          ltac:(rewrite Hdom_my; set_solver))
 	          as Hopened_scope_my.
 	        normalize_formula_open_syntax.
 	        eapply res_models_impl_intro.

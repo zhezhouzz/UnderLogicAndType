@@ -138,6 +138,32 @@ Proof.
   eapply res_models_impl_elim_future; [reflexivity | exact Himpl | exact Hφ].
 Qed.
 
+Lemma res_models_impl2_intro
+    (m : WfWorldT) (φ ψ χ : FormulaT) :
+  formula_scoped_in_world m (FImpl φ (FImpl ψ χ)) →
+  (m ⊨ φ → m ⊨ ψ → m ⊨ χ) →
+  m ⊨ FImpl φ (FImpl ψ χ).
+Proof.
+  intros Hscope Hlocal.
+  eapply res_models_impl_intro; [exact Hscope |].
+  intros Hφ.
+  eapply res_models_impl_intro.
+  - eapply formula_scoped_impl_r. exact Hscope.
+  - intros Hψ. exact (Hlocal Hφ Hψ).
+Qed.
+
+Lemma res_models_impl2_elim
+    (m : WfWorldT) (φ ψ χ : FormulaT) :
+  m ⊨ FImpl φ (FImpl ψ χ) →
+  m ⊨ φ →
+  m ⊨ ψ →
+  m ⊨ χ.
+Proof.
+  intros Himpl Hφ Hψ.
+  eapply res_models_impl_elim; [| exact Hψ].
+  eapply res_models_impl_elim; eauto.
+Qed.
+
 Lemma res_models_impl_iff (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world m (FImpl φ ψ) →
   (m ⊨ FImpl φ ψ ↔

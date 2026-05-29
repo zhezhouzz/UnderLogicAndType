@@ -259,4 +259,16 @@ Proof.
   set_solver.
 Qed.
 
+Lemma formula_scoped_forall_open_res_le
+    (m n : WfWorldT) x φ :
+  formula_scoped_in_world m (FForall φ) →
+  m ⊑ n →
+  x ∈ world_dom (n : WorldT) →
+  formula_scoped_in_world n (formula_open 0 x φ).
+Proof.
+  intros Hscope Hle Hx.
+  eapply formula_scoped_open_res_le; [| exact Hle | exact Hx].
+  eapply formula_scoped_forall_body. exact Hscope.
+Qed.
+
 End Formula.
