@@ -99,12 +99,8 @@ Lemma storeA_agree_on_insert_same {K : Type} `{Countable K}
 Proof.
   intros Hag y Hy.
   destruct (decide (y = x)) as [->|Hyx].
-  - change ((<[x := v]> (s1 : gmap K V) !! x) =
-      (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !map_lookup_insert. reflexivity.
-  - change ((<[x := v]> (s1 : gmap K V) !! y) =
-      (<[x := v]> (s2 : gmap K V) !! y)).
-    rewrite !map_lookup_insert_ne by congruence.
+  - better_map_solver.
+  - rewrite !lookup_insert_ne by congruence.
     apply Hag. apply elem_of_difference. split; [exact Hy|better_set_solver].
 Qed.
 
@@ -117,17 +113,11 @@ Proof.
   apply storeA_agree_on_union.
   - intros y Hy.
     destruct (decide (y = x)) as [->|Hyx].
-    + change ((<[x := v]> (s1 : gmap K V) !! x) =
-        (<[x := v]> (s2 : gmap K V) !! x)).
-      rewrite !map_lookup_insert. reflexivity.
-    + change ((<[x := v]> (s1 : gmap K V) !! y) =
-        (<[x := v]> (s2 : gmap K V) !! y)).
-      rewrite !map_lookup_insert_ne by congruence. apply Hag, Hy.
+    + better_map_solver.
+    + rewrite !lookup_insert_ne by congruence. apply Hag, Hy.
   - intros y Hy.
     rewrite elem_of_singleton in Hy. subst y.
-    change ((<[x := v]> (s1 : gmap K V) !! x) =
-      (<[x := v]> (s2 : gmap K V) !! x)).
-    rewrite !map_lookup_insert. reflexivity.
+    better_map_solver.
 Qed.
 
 Lemma storeA_bind_dom {K : Type} `{Countable K}
@@ -136,8 +126,6 @@ Lemma storeA_bind_dom {K : Type} `{Countable K}
   dom s = dom s1 ∪ dom s2.
 Proof.
   intros [_ ->].
-  change (dom (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
-    dom (s1 : gmap K V) ∪ dom (s2 : gmap K V)).
   better_set_solver.
 Qed.
 
