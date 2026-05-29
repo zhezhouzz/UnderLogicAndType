@@ -43,7 +43,6 @@ Proof.
           end) ∅ s !! tgt = Some v ->
       exists k, s !! k = Some v /\ f k = Some tgt) _ _ s k' v).
   - intros tgt val Hlookup.
-    change ((∅ : gmap K' V) !! tgt = Some val) in Hlookup.
     better_map_solver.
   - intros src val s' Hfresh Hfold IH tgt v' Hlookup.
     rewrite Hfold in Hlookup.
@@ -81,7 +80,6 @@ Proof.
           | None => acc
           end) ∅ s !! tgt = Some v) _ _ s k k' v).
   - intros src tgt val Hlookup _ _.
-    change ((∅ : gmap K V) !! src = Some val) in Hlookup.
     better_map_solver.
   - intros i vi s' Hfresh Hfold IH src tgt val Hlookup Hfk Huniq.
     rewrite Hfold.

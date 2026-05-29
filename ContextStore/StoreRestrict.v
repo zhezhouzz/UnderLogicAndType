@@ -747,11 +747,7 @@ Proof.
   - rewrite (lookup_union_r (M:=gmap K) (A:=V)
       (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
     assert ((s2 : gmap K V) !! z = None) as Hs2.
-    {
-      apply not_elem_of_dom. intros Hz2.
-      assert (Hzempty : z ∈ (∅ : gset K)) by better_set_solver.
-      apply elem_of_empty in Hzempty. exact Hzempty.
-    }
+    { apply not_elem_of_dom. intros Hz2. better_set_solver. }
     rewrite Hs2. reflexivity.
 Qed.
 
@@ -768,11 +764,7 @@ Proof.
   rewrite !storeA_restrict_lookup.
   destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
   assert ((s1 : gmap K V) !! z = None) as Hs1.
-  {
-    apply not_elem_of_dom. intros Hz1.
-    assert (Hzempty : z ∈ (∅ : gset K)) by better_set_solver.
-    apply elem_of_empty in Hzempty. exact Hzempty.
-  }
+  { apply not_elem_of_dom. intros Hz1. better_set_solver. }
   rewrite (lookup_union_r (M:=gmap K) (A:=V)
     (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
   reflexivity.
