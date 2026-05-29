@@ -713,6 +713,67 @@ Proof.
     exact Hbad.
 Qed.
 
+Lemma lvars_bv_delete_open_dom (η : gmap nat atom) k y D :
+  y ∉ lvars_fv D ->
+  lvars_bv D ⊆ dom η ->
+  lvars_bv (lvars_open k y D) ⊆ dom (delete k η).
+Proof.
+  intros HyD Hsub n Hn.
+  apply elem_of_dom.
+  rewrite lvars_bv_elem in Hn.
+  rewrite set_swap_elem in Hn.
+  destruct (decide (n = k)) as [->|Hnk].
+  - exfalso. apply HyD. apply lvars_fv_elem.
+    rewrite swap_l in Hn. exact Hn.
+  - rewrite swap_fresh in Hn by congruence.
+    assert (Hndom : n ∈ dom η).
+    { apply Hsub. rewrite lvars_bv_elem. exact Hn. }
+    apply elem_of_dom in Hndom as [x Hηn].
+    exists x. rewrite lookup_delete_ne by congruence. exact Hηn.
+Qed.
+
+Lemma open_env_fresh_for_lvars_delete_open_fresh_atom
+    (η : gmap nat atom) k y D :
+  y ∉ lvars_fv D ->
+  open_env_avoids_atom y (delete k η) ->
+  open_env_fresh_for_lvars η D ->
+  open_env_fresh_for_lvars (delete k η) (lvars_open k y D).
+Proof.
+  intros HyD Havoid Hfresh j x Hjx Hbad.
+  rewrite lookup_delete_Some in Hjx.
+  destruct Hjx as [Hjk Hjx].
+  eapply Hfresh; [exact Hjx|].
+  apply lvars_fv_elem.
+  apply lvars_fv_elem in Hbad.
+  unfold lvars_open_env in Hbad |- *.
+  apply elem_of_map in Hbad as [v [Hv HvDopen]].
+  assert (HuD : logic_var_open k y v ∈ D).
+  {
+    apply lvars_open_elem_open with (k := k) (x := y).
+    rewrite logic_var_open_involutive. exact HvDopen.
+  }
+  apply elem_of_map.
+  exists (logic_var_open k y v). split; [|exact HuD].
+  destruct v as [n|a]; cbn [logic_var_open_env] in Hv |- *.
+  - destruct (decide (n = k)) as [->|Hnk].
+    + rewrite lookup_delete_ne in Hv by congruence.
+      rewrite lookup_delete_eq in Hv. discriminate.
+    + destruct (decide (n = j)) as [->|Hnj].
+	      * rewrite lookup_delete_eq in Hv. discriminate.
+	      * rewrite lookup_delete_ne in Hv by congruence.
+	        rewrite lookup_delete_ne in Hv by congruence.
+	        rewrite swap_fresh by congruence.
+	        cbn [logic_var_open_env].
+	        rewrite lookup_delete_ne by congruence.
+	        exact Hv.
+  - inversion Hv. subst x.
+    destruct (decide (a = y)) as [->|Hay].
+    + exfalso. apply (Havoid j).
+      rewrite lookup_delete_ne by congruence. exact Hjx.
+    + rewrite swap_fresh by congruence.
+      cbn [logic_var_open_env]. reflexivity.
+Qed.
+
 Lemma lvars_fv_open_env_lookup η D k x :
   η !! k = Some x ->
   LVBound k ∈ D ->
@@ -735,6 +796,44 @@ Proof.
   unfold lvars_open_env.
   apply elem_of_map.
   exists (LVFree x). split; [reflexivity|exact Hx].
+Qed.
+
+Lemma logic_var_open_env_insert_delete_swap_back_on
+    (η : gmap nat atom) k y z D v :
+  η !! k = Some z ->
+  y ∉ lvars_fv D ->
+  z ∉ lvars_fv D ->
+  open_env_avoids_atom y (delete k η) ->
+  open_env_fresh_for_lvars η ({[LVBound k]} ∪ D) ->
+  v ∈ D ->
+  logic_var_swap y z
+    (logic_var_open_env (<[k := y]> (delete k η)) v) =
+  logic_var_open_env η v.
+Proof.
+  intros Hηk HyD HzD Havoid Hfresh HvD.
+  destruct v as [n|a]; cbn [logic_var_open_env].
+  - destruct (decide (n = k)) as [->|Hnk].
+    + rewrite lookup_insert_eq.
+      rewrite Hηk.
+      rewrite logic_var_free_swap.
+      rewrite swap_l. reflexivity.
+    + rewrite lookup_insert_ne by congruence.
+      rewrite lookup_delete_ne by congruence.
+      destruct (η !! n) as [b|] eqn:Hηn.
+      2:{ rewrite swap_fresh by discriminate. reflexivity. }
+      rewrite logic_var_free_swap.
+      rewrite swap_fresh; [reflexivity| |].
+      * intros ->. apply (Havoid n).
+        rewrite lookup_delete_ne by congruence. exact Hηn.
+      * intros ->.
+        eapply Hfresh; [exact Hηk|].
+        apply lvars_fv_open_env_lookup with (k := n).
+        -- rewrite lookup_delete_ne by congruence. exact Hηn.
+        -- apply elem_of_union_r. exact HvD.
+  - rewrite logic_var_free_swap.
+    rewrite swap_fresh; [reflexivity| |].
+    + intros ->. apply HyD. apply lvars_fv_elem. exact HvD.
+    + intros ->. apply HzD. apply lvars_fv_elem. exact HvD.
 Qed.
 
 Lemma open_env_fresh_for_lvars_inj_on η D :

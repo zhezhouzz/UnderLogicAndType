@@ -52,6 +52,18 @@ Lemma lty_env_open_lvars_insert_fresh η k x (Σ : lty_env) :
   lty_env_open_one k x (lty_env_open_lvars η Σ).
 Proof. apply lvar_store_open_lvars_insert_fresh. Qed.
 
+Lemma lty_env_open_lvars_insert_delete_swap_back
+    η k y z (Σ : lty_env) :
+  η !! k = Some z ->
+  y ∉ lvars_fv (dom Σ) ->
+  z ∉ lvars_fv (dom Σ) ->
+  open_env_avoids_atom y (delete k η) ->
+  open_env_fresh_for_lvars η ({[LVBound k]} ∪ dom Σ) ->
+  lty_env_swap y z
+    (lty_env_open_lvars (<[k := y]> (delete k η)) Σ) =
+  lty_env_open_lvars η Σ.
+Proof. apply lvar_store_open_lvars_insert_delete_swap_back. Qed.
+
 Lemma lty_env_open_lvars_open_one η k x (Σ : lty_env) :
   x ∉ lvars_fv (dom Σ) ->
   open_env_fresh_for_lvars η (dom (lty_env_open_one k x Σ)) ->

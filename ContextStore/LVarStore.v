@@ -141,6 +141,59 @@ Proof.
   intros ->. apply Hhead. apply lvars_fv_open_env_free. exact Hv.
 Qed.
 
+Lemma lvar_store_open_lvars_insert_delete_swap_back
+    η k y z (s : LVarStore) :
+  η !! k = Some z ->
+  y ∉ lvars_fv (dom s) ->
+  z ∉ lvars_fv (dom s) ->
+  open_env_avoids_atom y (delete k η) ->
+  open_env_fresh_for_lvars η ({[LVBound k]} ∪ dom s) ->
+  lvar_store_swap y z
+    (lvar_store_open_lvars (<[k := y]> (delete k η)) s) =
+  lvar_store_open_lvars η s.
+Proof.
+  intros Hηk Hy Hz Havoid Hfresh.
+  unfold lvar_store_swap, lvar_store_open_lvars.
+  assert (Hybig : y ∉ lvars_fv ({[LVBound k]} ∪ dom s)).
+  {
+    intros Hbad.
+    rewrite lvars_fv_union in Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply lvars_fv_elem in Hbad. better_set_solver.
+    - exact (Hy Hbad).
+  }
+  assert (Hfresh_delete :
+    open_env_fresh_for_lvars (delete k η)
+      (lvars_open k y ({[LVBound k]} ∪ dom s))).
+  {
+    apply open_env_fresh_for_lvars_delete_open_fresh_atom; assumption.
+  }
+  assert (Hfresh_insert :
+    open_env_fresh_for_lvars (<[k := y]> (delete k η))
+      ({[LVBound k]} ∪ dom s)).
+  {
+    eapply open_env_fresh_for_lvars_insert_open_back.
+    - rewrite lvars_bv_elem.
+      apply elem_of_union_l.
+      apply elem_of_singleton.
+      reflexivity.
+    - exact Hybig.
+    - exact Hfresh_delete.
+  }
+  assert (Hfresh_insert_dom :
+    open_env_fresh_for_lvars (<[k := y]> (delete k η)) (dom s)).
+  {
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh_insert].
+    better_set_solver.
+  }
+  rewrite storeA_rekey_compose_inj_on.
+  - apply storeA_rekey_ext_on_dom. intros v Hv.
+    apply logic_var_open_env_insert_delete_swap_back_on with
+      (D := (dom s : lvset)); assumption.
+  - apply open_env_fresh_for_lvars_inj_on. exact Hfresh_insert_dom.
+  - intros a b _ _ Hab. eapply swap_inj. exact Hab.
+Qed.
+
 Lemma lvar_store_open_lvars_open_one η k x (s : LVarStore) :
   x ∉ lvars_fv (dom s) ->
   open_env_fresh_for_lvars η (dom (lvar_store_open_one k x s)) ->
