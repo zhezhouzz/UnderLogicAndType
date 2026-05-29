@@ -111,4 +111,22 @@ Proof.
     Hy Hτ)).
 Qed.
 
+Lemma denot_ty_lvar_gas_insert_commute_tapp_open
+    gas (Σ : lty_env) x y T1 Ty τ e2 (m : WfWorldT) :
+  x <> y ->
+  m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree y := Ty]> (<[LVFree x := T1]> Σ))
+      τ (tapp_tm (e2 ^^ x) (vfvar y)) ->
+  m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree x := T1]> (<[LVFree y := Ty]> Σ))
+      τ ((tapp_tm e2 (vfvar y)) ^^ x).
+Proof.
+  intros Hxy Hm.
+  rewrite lty_env_insert_free_commute by exact Hxy.
+  change (((tapp_tm e2 (vfvar y)) ^^ x)) with
+    (open_tm 0 (vfvar x) (tapp_tm e2 (vfvar y))).
+  rewrite open_tapp_tm_fvar_lc_arg.
+  exact Hm.
+Qed.
+
 End ContextTypeDenotation.
