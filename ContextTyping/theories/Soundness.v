@@ -326,7 +326,8 @@ Lemma denot_ty_lvar_gas_sum_left_to_ctx
   m ⊨ denot_ty_lvar_gas (cty_depth τ)
     (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
 Proof.
-Admitted.
+  unfold erase_ctx_under. cbn [erase_ctx]. auto.
+Qed.
 
 Lemma denot_ty_lvar_gas_sum_right_to_ctx
     (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
@@ -336,7 +337,11 @@ Lemma denot_ty_lvar_gas_sum_right_to_ctx
   m ⊨ denot_ty_lvar_gas (cty_depth τ)
     (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
 Proof.
-Admitted.
+  intros Herase Hden.
+  unfold erase_ctx_under. cbn [erase_ctx].
+  rewrite Herase.
+  exact Hden.
+Qed.
 
 Lemma basic_typing_star_union_lty_env
     (Σ : gmap atom ty) Γ1 Γ2 e T :
