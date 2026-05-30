@@ -280,6 +280,19 @@ Proof.
   eapply denot_ty_lvar_gas_extend_typed_extension; eauto.
 Qed.
 
+Lemma denot_ty_lvar_gas_result_extension_to_var
+    gas (Σ : lty_env) τ e x
+    (m mx : WfWorldT) (Fx : FiberExtensionT) :
+  lty_env_closed Σ ->
+  LVFree x ∉ dom Σ ->
+  expr_result_extension_witness e x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ e ->
+  mx ⊨ denot_ty_lvar_gas gas
+    (<[LVFree x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+Proof.
+Admitted.
+
 Lemma denot_ty_lvar_guard_extend_typed_extension
     (Σ : lty_env) τ e x T
     (m mx : WfWorldT) (Fx : FiberExtensionT) :

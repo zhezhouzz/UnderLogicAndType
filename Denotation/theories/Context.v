@@ -377,7 +377,24 @@ Lemma denot_ctx_under_comma_bind_from_result_denotation
   res_extend_by m Fx mx ->
   mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
 Proof.
-Admitted.
+  intros Hctx Hden HFx Hfresh Hext.
+  set (ΣΓ := atom_env_to_lty_env (erase_ctx_under Σ Γ)).
+  assert (HxΣΓ : LVFree x ∉ dom (ΣΓ : gmap logic_var ty)).
+  {
+    subst ΣΓ.
+    rewrite atom_store_to_lvar_store_dom.
+    unfold lvars_of_atoms.
+    intros HxD. apply elem_of_map in HxD as [z [Hz HzD]].
+    inversion Hz. subst z. exact (Hfresh HzD).
+  }
+  unfold denot_ty_in_ctx_under, denot_ty in Hden.
+  pose proof (denot_ty_lvar_gas_result_extension_to_var
+    (cty_depth τ1) ΣΓ τ1 e1 x m mx Fx
+    ltac:(subst ΣΓ; apply atom_store_to_lvar_store_closed)
+    HxΣΓ HFx Hext Hden) as Harg.
+  subst ΣΓ.
+  eapply denot_ctx_under_comma_bind_from_arg_denotation; eauto.
+Qed.
 
 Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
     (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
