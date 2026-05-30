@@ -12,7 +12,7 @@
 From CoreLang Require Import BasicTyping SmallStep StrongNormalization.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
-  BasicTypingFormula.
+  BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturate
   ContextTypeDenotationCases TLet.
 From ContextTyping Require Export TLet.
@@ -115,6 +115,51 @@ Qed.
 
 (** ** Direct case bridges *)
 
+Lemma context_typing_wf_denot_static_guard
+    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
+  context_typing_wf Σ Γ e τ ->
+  m ⊨ denot_ctx_under Σ Γ ->
+  m ⊨ FAnd
+    (context_ty_wf_formula
+      (denot_relevant_env
+        (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e) τ)
+    (FAnd
+      (basic_world_formula
+        (denot_relevant_env
+          (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e))
+      (expr_basic_typing_formula
+        (denot_relevant_env
+          (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e)
+        e (erase_ty τ))).
+Proof.
+  intros Hwf Hctx.
+  pose proof (denot_ctx_under_relevant_basic_world Σ Γ τ e m Hctx)
+    as Hworld.
+  pose proof (basic_world_formula_models_iff
+    (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e)
+    m) as Hworld_iff.
+  apply Hworld_iff in Hworld as [Hlc [Hscope Htyped_world]].
+  rewrite res_models_and_iff. split.
+  - apply context_ty_wf_formula_models_iff.
+    split; [exact Hlc|]. split; [exact Hscope|].
+    apply basic_context_ty_lvars_denot_relevant_env.
+    pose proof (context_typing_wf_basic_context_ty_erased Σ Γ e τ Hwf)
+      as Hτ.
+    unfold basic_context_ty in Hτ.
+    rewrite atom_store_to_lvar_store_dom.
+    exact Hτ.
+  - rewrite res_models_and_iff. split.
+    + apply basic_world_formula_models_iff.
+      split; [exact Hlc|]. split; [exact Hscope|exact Htyped_world].
+    + apply expr_basic_typing_formula_models_iff.
+      split; [exact Hlc|]. split; [exact Hscope|].
+      apply basic_tm_has_ltype_of_atom_typing.
+      * apply denot_relevant_env_closed. apply atom_store_to_lvar_store_closed.
+      * apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
+      rewrite lvar_store_to_atom_store_atom_store.
+      exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
+Qed.
+
 Lemma fundamental_sub_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (e : tm) (τ1 τ2 : context_ty) :
@@ -162,7 +207,8 @@ Lemma denot_var_direct_in_ctx Σ x τ :
 Proof.
   intros Hwf m Hctx.
   pose proof (denot_ctx_under_bind_inv Σ x τ m Hctx) as Hbind.
-  destruct Hwf as [Hwfτ _].
+  pose proof (context_typing_wf_wf_context_ty_under Σ (CtxBind x τ)
+    (tret (vfvar x)) τ Hwf) as Hwfτ.
   pose proof (wf_context_ty_under_ctx Σ (CtxBind x τ) τ Hwfτ) as Hwfctx.
   pose proof (wf_ctx_under_basic Σ (CtxBind x τ) Hwfctx) as Hbasicctx.
   cbn [basic_ctx] in Hbasicctx.
@@ -193,7 +239,9 @@ Lemma denot_const_direct_in_ctx Σ c :
 Proof.
   intros Hwf m Hctx.
   unfold denot_ty_in_ctx_under, denot_ty.
-  eapply const_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+  eapply const_direct_denotation_gas_in_ctx; eauto;
+    try exact (context_typing_wf_basic_typing Σ CtxEmpty
+      (tret (vconst c)) (const_precise_ty c) Hwf).
 Qed.
 
 Lemma fundamental_const_case Σ c :
@@ -284,8 +332,10 @@ Proof.
   eapply tlet_intro_denotation with
     (T1 := erase_ty τ1) (Fx := Fx) (x := x) (mx := mx); eauto.
   - apply atom_store_to_lvar_store_closed.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf1).
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwflet).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ e1 τ1 Hwf1).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
   - eapply denot_ctx_under_relevant_basic_world. exact Hctx.
   - intros Hbad.
     apply elem_of_union in Hbad as [Hbad|Hbad].
@@ -356,7 +406,9 @@ Proof.
   eapply letd_intro_denotation with
     (m1 := m1) (m2 := m2) (mx1 := mx1) (mbody := mbody)
     (Hc := Hc) (Hcbody := Hcbody) (Fx := Fx) (x := x).
-  - apply basic_typing_star_union_lty_env. exact (proj2 Hwf).
+  - apply basic_typing_star_union_lty_env.
+    exact (context_typing_wf_basic_typing Σ (CtxStar Γ1 Γ2)
+      (tlete e1 e2) τ2 Hwf).
   - exact Hle.
   - exact HFx.
   - exact Hext.
@@ -380,7 +432,11 @@ Proof.
   unfold denot_ty_in_ctx_under, denot_ty.
   eapply lam_intro_denotation
     with (L := L ∪ dom (erase_ctx_under Σ Γ)).
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ
+      (CTArrow τx τ) (tret (vlam (erase_ty τx) e)) m Hwf Hctx).
   - intros y F my Hy Hext Harg.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
@@ -409,7 +465,11 @@ Proof.
   unfold denot_ty_in_ctx_under, denot_ty.
   eapply lamd_intro_denotation
     with (L := L ∪ dom (erase_ctx_under Σ Γ)).
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ
+      (CTWand τx τ) (tret (vlam (erase_ty τx) e)) m Hwf Hctx).
   - intros y marg Hc Hy Harg.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
@@ -438,7 +498,11 @@ Proof.
   pose proof (IHarg m Hctx) as Harg.
   unfold denot_ty_in_ctx_under, denot_ty in Hfun, Harg |- *.
   eapply app_elim_denotation.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ
+      ({0 ~> x} τ) (tapp v1 (vfvar x)) m Hwf Hctx).
   - exact Hfun.
   - exact Harg.
 Qed.
@@ -463,7 +527,12 @@ Proof.
   eapply denot_ty_lvar_gas_star_union_to_ctx.
   eapply appd_elim_denotation with
     (mfun := mfun) (marg := marg) (Hc := Hc).
-  - apply basic_typing_star_union_lty_env. exact (proj2 Hwf).
+  - apply basic_typing_star_union_lty_env.
+    exact (context_typing_wf_basic_typing Σ (CtxStar Γ1 Γ2)
+      (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf).
+  - rewrite <- atom_env_to_lty_env_erase_ctx_under_star.
+    exact (context_typing_wf_denot_static_guard Σ (CtxStar Γ1 Γ2)
+      ({0 ~> x} τ) (tapp v1 (vfvar x)) m Hwf Hctx).
   - exact Hle.
   - exact Hfun.
   - exact Harg.
@@ -489,7 +558,11 @@ Proof.
   unfold denot_ty_in_ctx_under, denot_ty.
   eapply fix_intro_denotation
     with (L := L ∪ dom (erase_ctx_under Σ Γ)); eauto.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ
+      (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)) m Hwf Hctx).
   - intros y F my Hy Hext Harg.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
@@ -521,7 +594,11 @@ Proof.
   unfold denot_ty_in_ctx_under, denot_ty.
   eapply fixd_intro_denotation
     with (L := L ∪ dom (erase_ctx_under Σ Γ)); eauto.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tret (vfix (TBase b →ₜ t) vf)) (CTWand τx τ) Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ
+      (CTWand τx τ) (tret (vfix (TBase b →ₜ t) vf)) m Hwf Hctx).
   - intros y marg Hc Hy Harg.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
@@ -541,8 +618,10 @@ Lemma appop_context_typing_arg_lookup
     ({0 ~> x} (primop_result_ty (Φ op))) ->
   erase_ctx_under Σ Γ !! x = Some (erase_ty (primop_arg_ty (Φ op))).
 Proof.
-  intros Hsig [_ Hbasic].
-  rewrite cty_open_preserves_erasure in Hbasic.
+  intros Hsig Hwf.
+  pose proof (context_typing_wf_basic_typing Σ Γ
+    (tprim op (vfvar x))
+    ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
   inversion Hbasic as
     [| |Γop op' v arg_b ret_b Hop_type Harg_basic| |]; subst; clear Hbasic.
   inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
@@ -579,7 +658,9 @@ Proof.
   - exact (wf_primop_arg_basic op (Φ op) Hsig).
   - exact (wf_primop_result_basic op (Φ op) Hsig).
   - exact Hlookup.
-  - exact (proj2 Hwf).
+  - exact (context_typing_wf_basic_typing Σ Γ
+      (tprim op (vfvar x))
+      ({0 ~> x} (primop_result_ty (Φ op))) Hwf).
   - exact Hop.
   - exact Harg.
 Qed.
@@ -605,13 +686,18 @@ Proof.
   pose proof (IHt mt Hctxt) as Ht.
   pose proof (IHf mf Hctxf) as Hf.
   unfold denot_ty_in_ctx_under, denot_ty in Htrue, Hfalse, Ht, Hf |- *.
-  destruct Hwf as [Hwf_cty Hbasic].
+  pose proof (context_typing_wf_wf_context_ty_under Σ (CtxSum Γt Γf)
+    (tmatch v et ef) (CTSum τt τf) Hwf) as Hwf_cty.
+  pose proof (context_typing_wf_basic_typing Σ (CtxSum Γt Γf)
+    (tmatch v et ef) (CTSum τt τf) Hwf) as Hbasic.
   destruct Hwf_cty as [[Hbasic_ctx _] _].
   cbn [basic_ctx] in Hbasic_ctx.
   destruct Hbasic_ctx as [_ [_ [_ Herase]]].
   eapply match_both_intro_denotation with
     (mt := mt) (mf := mf) (Hdef := Hdef).
   - rewrite lvar_store_to_atom_store_atom_store. exact Hbasic.
+  - exact (context_typing_wf_denot_static_guard Σ (CtxSum Γt Γf)
+      (CTSum τt τf) (tmatch v et ef) m Hwf Hctx).
   - exact Hle.
   - apply denot_ty_lvar_gas_sum_left_to_ctx. exact Htrue.
   - eapply denot_ty_lvar_gas_sum_right_to_ctx; eauto.
@@ -636,7 +722,11 @@ Proof.
   pose proof (Hunreach m Hctx) as Hunreach_m.
   unfold denot_ty_in_ctx_under, denot_ty in Htrue, Het, Hunreach_m |- *.
   eapply match_true_intro_denotation.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tmatch v et ef) τ Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ τ
+      (tmatch v et ef) m Hwf Hctx).
   - exact Hunreach_m.
   - exact Htrue.
   - exact Het.
@@ -660,7 +750,11 @@ Proof.
   pose proof (Hunreach m Hctx) as Hunreach_m.
   unfold denot_ty_in_ctx_under, denot_ty in Hfalse, Hef, Hunreach_m |- *.
   eapply match_false_intro_denotation.
-  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ
+      (tmatch v et ef) τ Hwf).
+  - exact (context_typing_wf_denot_static_guard Σ Γ τ
+      (tmatch v et ef) m Hwf Hctx).
   - exact Hunreach_m.
   - exact Hfalse.
   - rewrite lvar_store_to_atom_store_atom_store. exact Het.

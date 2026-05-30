@@ -257,29 +257,28 @@ Qed.
 
 Lemma context_typing_wf_from_erased_basic Σ Γ e τ m :
   basic_ctx (dom Σ) Γ →
-  basic_context_ty (dom (erase_ctx_under Σ Γ)) τ →
+  context_ty_wf_for_ctx Σ Γ τ →
   m ⊨ denot_ctx_under Σ Γ →
   erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
   context_typing_wf Σ Γ e τ.
 Proof.
   intros Hctx Hτ Hm Herase.
-  split; [|exact Herase].
-  split.
+  constructor.
   - split; [exact Hctx|]. exists m. exact Hm.
-  - rewrite erase_ctx_under_dom_basic in Hτ by exact Hctx.
-    exact Hτ.
+  - exact Hτ.
+  - exact Herase.
 Qed.
 
 Lemma denot_ty_total_model_context_typing_wf Σ Γ e τ m :
+  context_ty_wf_for_ctx Σ Γ τ →
   erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
   m ⊨ denot_ctx_under Σ Γ →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   context_typing_wf Σ Γ e τ.
 Proof.
-  intros Herase Hctx Hmodel.
+  intros Hτ Herase Hctx Hmodel.
   eapply context_typing_wf_from_erased_basic; eauto.
-  - exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
-  - exact (proj2 (denot_ty_total_model_regular Σ Γ τ e m Hmodel)).
+  exact (denot_ty_total_model_basic_ctx Σ Γ τ e m Hmodel).
 Qed.
 
 Lemma context_typing_wf_regular_denotation Σ Γ e τ :
@@ -289,7 +288,8 @@ Proof.
   intros Hwf.
   split.
   - exact (wf_ctx_under_basic Σ Γ
-      (wf_context_ty_under_ctx Σ Γ τ (proj1 Hwf))).
+      (wf_context_ty_under_ctx Σ Γ τ
+        (context_typing_wf_wf_context_ty_under Σ Γ e τ Hwf))).
   - exact (context_typing_wf_basic_context_ty_erased Σ Γ e τ Hwf).
 Qed.
 

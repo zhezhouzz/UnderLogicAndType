@@ -894,6 +894,15 @@ Lemma lam_intro_denotation
     gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTArrow τx τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ (CTArrow τx τ)
+      (tret (vlam (erase_ty τx) e))) (CTArrow τx τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ (CTArrow τx τ)
+        (tret (vlam (erase_ty τx) e))))
+      (expr_basic_typing_formula (denot_relevant_env Σ (CTArrow τx τ)
+        (tret (vlam (erase_ty τx) e)))
+        (tret (vlam (erase_ty τx) e)) (erase_ty (CTArrow τx τ)))) ->
   (forall y F my, y ∉ L ->
     res_extend_by m F my ->
     my ⊨ denot_ty_lvar_gas (cty_depth τx)
@@ -909,6 +918,15 @@ Lemma lamd_intro_denotation
     gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTWand τx τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ (CTWand τx τ)
+      (tret (vlam (erase_ty τx) e))) (CTWand τx τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ (CTWand τx τ)
+        (tret (vlam (erase_ty τx) e))))
+      (expr_basic_typing_formula (denot_relevant_env Σ (CTWand τx τ)
+        (tret (vlam (erase_ty τx) e)))
+        (tret (vlam (erase_ty τx) e)) (erase_ty (CTWand τx τ)))) ->
   (forall y marg Hc, y ∉ L ->
     marg ⊨ denot_ty_lvar_gas (cty_depth τx)
       (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
@@ -922,6 +940,15 @@ Admitted.
 Lemma app_elim_denotation
     gas (Σ : lty_env) τx τ v1 x (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ ({0 ~> x} τ)
+      (tapp v1 (vfvar x))) ({0 ~> x} τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ ({0 ~> x} τ)
+        (tapp v1 (vfvar x))))
+      (expr_basic_typing_formula (denot_relevant_env Σ ({0 ~> x} τ)
+        (tapp v1 (vfvar x))) (tapp v1 (vfvar x))
+        (erase_ty ({0 ~> x} τ)))) ->
   m ⊨ denot_ty_lvar_gas (cty_depth (CTArrow τx τ))
     Σ (CTArrow τx τ) (tret v1) ->
   m ⊨ denot_ty_lvar_gas (cty_depth τx) Σ τx (tret (vfvar x)) ->
@@ -935,6 +962,15 @@ Lemma appd_elim_denotation
     (m mfun marg : WfWorldT) (Hc : world_compat mfun marg) :
   lty_env_to_atom_env (Σ1 ∪ Σ2) ⊢ₑ
     tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env (Σ1 ∪ Σ2) ({0 ~> x} τ)
+      (tapp v1 (vfvar x))) ({0 ~> x} τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env (Σ1 ∪ Σ2) ({0 ~> x} τ)
+        (tapp v1 (vfvar x))))
+      (expr_basic_typing_formula (denot_relevant_env (Σ1 ∪ Σ2) ({0 ~> x} τ)
+        (tapp v1 (vfvar x))) (tapp v1 (vfvar x))
+        (erase_ty ({0 ~> x} τ)))) ->
   res_product mfun marg Hc ⊑ m ->
   mfun ⊨ denot_ty_lvar_gas (cty_depth (CTWand τx τ))
     Σ1 (CTWand τx τ) (tret v1) ->
@@ -950,6 +986,15 @@ Lemma fix_intro_denotation
   erase_ty τ = t ->
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTArrow τx τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ (CTArrow τx τ)
+      (tret (vfix (TBase b →ₜ t) vf))) (CTArrow τx τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ (CTArrow τx τ)
+        (tret (vfix (TBase b →ₜ t) vf))))
+      (expr_basic_typing_formula (denot_relevant_env Σ (CTArrow τx τ)
+        (tret (vfix (TBase b →ₜ t) vf)))
+        (tret (vfix (TBase b →ₜ t) vf)) (erase_ty (CTArrow τx τ)))) ->
   (forall y F my, y ∉ L ->
     res_extend_by m F my ->
     my ⊨ denot_ty_lvar_gas (cty_depth τx)
@@ -970,6 +1015,15 @@ Lemma fixd_intro_denotation
   erase_ty τ = t ->
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTWand τx τ) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ (CTWand τx τ)
+      (tret (vfix (TBase b →ₜ t) vf))) (CTWand τx τ))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ (CTWand τx τ)
+        (tret (vfix (TBase b →ₜ t) vf))))
+      (expr_basic_typing_formula (denot_relevant_env Σ (CTWand τx τ)
+        (tret (vfix (TBase b →ₜ t) vf)))
+        (tret (vfix (TBase b →ₜ t) vf)) (erase_ty (CTWand τx τ)))) ->
   (forall y marg Hc, y ∉ L ->
     marg ⊨ denot_ty_lvar_gas (cty_depth τx)
       (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
@@ -1175,6 +1229,15 @@ Lemma match_both_intro_denotation
     (m mt mf : WfWorldT) (Hdef : raw_sum_defined mt mf) :
   lty_env_to_atom_env Σ ⊢ₑ
     tmatch v et ef ⋮ erase_ty (CTSum τt τf) ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ (CTSum τt τf)
+      (tmatch v et ef)) (CTSum τt τf))
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ (CTSum τt τf)
+        (tmatch v et ef)))
+      (expr_basic_typing_formula (denot_relevant_env Σ (CTSum τt τf)
+        (tmatch v et ef)) (tmatch v et ef)
+        (erase_ty (CTSum τt τf)))) ->
   res_sum mt mf Hdef ⊑ m ->
   mt ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
     (bool_precise_ty true) (tret v) ->
@@ -1190,6 +1253,12 @@ Admitted.
 Lemma match_true_intro_denotation
     gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ (tmatch v et ef)) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ (tmatch v et ef)))
+      (expr_basic_typing_formula (denot_relevant_env Σ τ (tmatch v et ef))
+        (tmatch v et ef) (erase_ty τ))) ->
   m ⊨ FImpl
     (denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
       (bool_precise_ty false) (tret v))
@@ -1206,6 +1275,12 @@ Admitted.
 Lemma match_false_intro_denotation
     gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ (tmatch v et ef)) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ (tmatch v et ef)))
+      (expr_basic_typing_formula (denot_relevant_env Σ τ (tmatch v et ef))
+        (tmatch v et ef) (erase_ty τ))) ->
   m ⊨ FImpl
     (denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
       (bool_precise_ty true) (tret v))

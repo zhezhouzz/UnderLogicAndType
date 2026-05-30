@@ -490,7 +490,26 @@ Proof.
     destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
       destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
       destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
-      reflexivity.
+	      reflexivity.
+Qed.
+
+Lemma atom_env_to_lty_env_erase_ctx_under_star
+    (Σ : gmap atom ty) Γ1 Γ2 :
+  atom_env_to_lty_env (erase_ctx_under Σ (CtxStar Γ1 Γ2)) =
+  atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
+  atom_env_to_lty_env (erase_ctx_under Σ Γ2).
+Proof.
+  unfold erase_ctx_under.
+  cbn [erase_ctx].
+  rewrite <- atom_store_to_lvar_store_union.
+  f_equal.
+  apply map_eq. intros x.
+  unfold store_union.
+  rewrite !lookup_union.
+  destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
+    destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
+    destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
+    reflexivity.
 Qed.
 
 Lemma denot_ty_lvar_gas_sum_left_to_ctx

@@ -251,6 +251,17 @@ Proof.
   set_solver.
 Qed.
 
+Lemma basic_context_ty_lvars_denot_relevant_env Σ τ e :
+  basic_context_ty_lvars (dom Σ) τ ->
+  basic_context_ty_lvars (dom (denot_relevant_env Σ τ e)) τ.
+Proof.
+  intros [Hvars Hshape]. split; [|exact Hshape].
+  intros v Hv.
+  unfold denot_relevant_env, lty_env_restrict_lvars, denot_relevant_lvars.
+  rewrite storeA_restrict_dom.
+  apply elem_of_intersection. split; [apply Hvars; exact Hv|set_solver].
+Qed.
+
 Lemma lty_env_restrict_lvars_fv_subset Σ D :
   lvars_fv (dom (lty_env_restrict_lvars Σ D)) ⊆ lvars_fv D.
 Proof.

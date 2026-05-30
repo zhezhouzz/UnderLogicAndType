@@ -155,6 +155,30 @@ Implementation order
    should be phrased in terms of semantic/basic premises, and Soundness should
    derive those premises from `context_typing_wf`.
 
+2a. Strengthen the well-formedness side condition used by typing.
+
+   The old `context_typing_wf` was only a packed regularity definition:
+
+     `wf_context_ty_under Σ Γ τ /\ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ`.
+
+   Keep that shape as `context_typing_regular`, but replace
+   `context_typing_wf` by an inductive predicate whose type side condition is
+   syntax-directed.  In particular, the `CTWand τx τr` case must record
+   `basic_context_ty (dom Σ) τx`, not merely
+   `basic_context_ty (dom Σ ∪ ctx_dom Γ) τx`.  This is the invariant needed by
+   `CtxStar Γ (CtxBind y τx)`: a disjoint function parameter may not depend on
+   the captured context.
+
+   Prove projection lemmas immediately:
+
+   - `context_typing_wf_regular`
+   - `context_typing_wf_basic_typing`
+   - `context_typing_wf_basic_context_ty_erased`
+   - `context_typing_wf_wand_arg_global`
+
+   Existing consumers should use these projections instead of destructing
+   `context_typing_wf` as the old pair.
+
 3. Prove easy erased-environment transport bridges immediately.  These are
    mostly `erase_ctx_under` equality/agreement plus
    `atom_env_to_lty_env_insert_free`.
@@ -172,3 +196,23 @@ Implementation order
    `Denotation/theories/ContextTypeDenotationCases.v` as named obligations until
    their individual case proof is tackled.  Do not replace them with old
    wrapper stacks.
+
+7. Strengthen the direct Denotation case helpers with an explicit guard premise
+   where needed.
+
+   The robust split is:
+
+   - Soundness derives the *static* denotation guard
+
+       `context_ty_wf ∧ basic_world ∧ expr_basic_typing`
+
+     from `context_typing_wf` and `denot_ctx_under`.
+   - Each Denotation-level helper proves the genuinely semantic/operational
+     part, especially `expr_total_formula`, for its own case.
+
+   This avoids making App/Match helpers assume their own totality result while
+   still removing hidden dependencies on the old packed `context_typing_wf`.
+   For value-introduction helpers such as `lam_intro_denotation`,
+   `lamd_intro_denotation`, `fix_intro_denotation`, and
+   `fixd_intro_denotation`, a later cleanup may strengthen the static guard to a
+   zero-gas guard once the generic `tret` totality lemma is in place.
