@@ -210,7 +210,7 @@ Definition denot_ty_total_model_in_ctx_under
 Definition total_model_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : Prop :=
   ∀ m,
-    m ⊨ denot_ctx_in_env Σ Γ →
+    m ⊨ denot_ctx_under Σ Γ →
     denot_ty_total_model_in_ctx_under Σ Γ τ e m.
 
 Lemma denot_ty_total_model_regular Σ Γ τ e m :
@@ -258,7 +258,7 @@ Qed.
 Lemma context_typing_wf_from_erased_basic Σ Γ e τ m :
   basic_ctx (dom Σ) Γ →
   basic_context_ty (dom (erase_ctx_under Σ Γ)) τ →
-  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ denot_ctx_under Σ Γ →
   erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
   context_typing_wf Σ Γ e τ.
 Proof.
@@ -272,7 +272,7 @@ Qed.
 
 Lemma denot_ty_total_model_context_typing_wf Σ Γ e τ m :
   erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ →
-  m ⊨ denot_ctx_in_env Σ Γ →
+  m ⊨ denot_ctx_under Σ Γ →
   denot_ty_total_model_in_ctx_under Σ Γ τ e m →
   context_typing_wf Σ Γ e τ.
 Proof.
@@ -306,7 +306,7 @@ Qed.
 
 Lemma entails_total_to_total_model Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  entails_total (denot_ctx_in_env Σ Γ)
+  entails_total (denot_ctx_under Σ Γ)
     (denot_ty_total_in_ctx_under Σ Γ τ e) →
   total_model_in_ctx_under Σ Γ τ e.
 Proof.

@@ -30,7 +30,7 @@ Execution order
 3. Restore the variable case as a real proof.
    - Prove denot_var_direct_in_ctx, or inline it into fundamental_var_case.
    - Proof shape:
-     * pull the CtxBind component out of denot_ctx_in_env;
+     * pull the CtxBind component out of denot_ctx_under;
      * use basic_ctx freshness from context_typing_wf to rewrite
        erase_ctx_under Σ (CtxBind x τ) into <[x := erase_ty τ]> Σ;
      * the goal is then exactly the singleton context denotation.

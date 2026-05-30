@@ -24,7 +24,7 @@ From Denotation Require Export Context.
 (** ** Context and type well-formedness *)
 
 Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
-  ∃ r : WfWorldT, r ⊨ denot_ctx_in_env Σ Γ.
+  ∃ r : WfWorldT, r ⊨ denot_ctx_under Σ Γ.
 
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
@@ -122,7 +122,7 @@ Definition sub_type_under (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) 
   wf_context_ty_under Σ Γ τ2 ∧
   erase_ty τ1 = erase_ty τ2 ∧
   ∀ e, fv_tm e ⊆ dom Σ ∪ ctx_dom Γ →
-    denot_ctx_in_env Σ Γ ⊫
+    denot_ctx_under Σ Γ ⊫
       FImpl (denot_ty_in_ctx_under Σ Γ τ1 e)
             (denot_ty_in_ctx_under Σ Γ τ2 e).
 
@@ -131,8 +131,8 @@ Definition ctx_sub_under
   wf_ctx_under Σ Γ1 ∧
   wf_ctx_under Σ Γ2 ∧
   ty_env_agree_on X (erase_ctx_under Σ Γ1) (erase_ctx_under Σ Γ2) ∧
-  ∀ r, r ⊨ denot_ctx_in_env Σ Γ1 →
-       res_restrict r X ⊨ denot_ctx_in_env Σ Γ2.
+  ∀ r, r ⊨ denot_ctx_under Σ Γ1 →
+       res_restrict r X ⊨ denot_ctx_under Σ Γ2.
 
 (** * ContextTyping.PrimOpContext
 
@@ -247,7 +247,7 @@ Definition context_typing_wf
   wf_context_ty_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
 
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty b) (tret v)) FFalse.
 
 Lemma context_typing_wf_fv_tm_subset Σ Γ e τ :

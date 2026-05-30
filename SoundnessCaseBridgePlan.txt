@@ -10,7 +10,7 @@ The Fundamental proof should look like the proven TLet branch:
 2. It derives concrete `denot_ty_lvar_gas` premises for the current world.
 3. It calls a Denotation-level helper such as `lam_intro_denotation`.
 
-Denotation-level helpers should not mention `denot_ctx_in_env`, `Γ`, or typing
+Denotation-level helpers should not mention `denot_ctx_under`, `Γ`, or typing
 induction hypotheses.  They may still mention basic typing and operational
 premises when those are genuinely part of the semantic case.
 
@@ -32,13 +32,13 @@ Case-by-case plan
     `denot_ty_lvar_gas ... (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)`;
   - call `lam_intro_denotation`.
 - Needed bridge lemma:
-  `denot_ctx_in_env_comma_bind_from_arg_denotation`.
+  `denot_ctx_under_comma_bind_from_arg_denotation`.
 
 3. LamD
 
 - Same as Lam, but the body context is `CtxStar Γ (CtxBind y τx)`.
 - Need a separating bridge:
-  `denot_ctx_in_env_star_bind_from_arg_denotation`.
+  `denot_ctx_under_star_bind_from_arg_denotation`.
 - This will use existing `FStar`/resource product lemmas.
 
 4. App
@@ -121,10 +121,10 @@ Implementation order
    - from `m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2)`, `res_models_plus_iff`
      does the analogous sum split.
 
-   During migration, keep `denot_ctx_in_env Σ Γ := denot_ctx_under Σ Γ` as a
-   compatibility alias so the proof spine stays stable.  After the bridge
-   lemmas compile, replace all uses of `denot_ctx_in_env` with
-   `denot_ctx_under` and delete `denot_ctx_in_env` entirely.
+   During migration, a compatibility alias `denot_ctx_in_env` was kept briefly.
+   Once the bridge lemmas compile, replace all uses of `denot_ctx_in_env` with
+   `denot_ctx_under` and delete `denot_ctx_in_env` entirely.  The live context
+   denotation should be just `denot_ctx_under`.
 
 1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
    the judgment support `X` and then satisfies the target context.  Prove the
@@ -140,10 +140,10 @@ Implementation order
    into the Denotation layer.  Soundness should only instantiate IHs and call
    these bridges.  The bridge family is:
 
-   - `denot_ctx_in_env_comma_bind_from_arg_denotation`
-   - `denot_ctx_in_env_star_bind_from_arg_denotation`
-   - `denot_ctx_in_env_star_elim`
-   - `denot_ctx_in_env_sum_elim`
+   - `denot_ctx_under_comma_bind_from_arg_denotation`
+   - `denot_ctx_under_star_bind_from_arg_denotation`
+   - `denot_ctx_under_star_elim`
+   - `denot_ctx_under_sum_elim`
    - `denot_ty_in_ctx_under_comma_bind_to_lvar_insert`
    - `denot_ty_in_ctx_under_star_bind_to_lvar_insert`
    - `denot_ty_lvar_gas_star_union_to_ctx`
@@ -159,7 +159,7 @@ Implementation order
    mostly `erase_ctx_under` equality/agreement plus
    `atom_env_to_lty_env_insert_free`.
 
-4. Prove `star_elim` and `sum_elim` by unfolding `denot_ctx_in_env`, applying
+4. Prove `star_elim` and `sum_elim` by unfolding `denot_ctx_under`, applying
    `res_models_star_iff` / `res_models_plus_iff`, and pushing the outer
    `basic_world_formula` assumptions down with `basic_world_formula_subenv`.
 

@@ -120,8 +120,8 @@ Lemma fundamental_sub_case
     (e : tm) (τ1 τ2 : context_ty) :
   context_typing_wf Σ Γ e τ2 ->
   sub_type_under Σ Γ τ1 τ2 ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e) ->
-  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 e.
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e) ->
+  denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ2 e.
 Proof.
   intros Hwf Hsub IH m HΓ.
   destruct Hsub as [_ [_ [_ Hent]]].
@@ -135,20 +135,18 @@ Lemma fundamental_ctx_sub_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
     (e : tm) (τ : context_ty) :
   ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 ->
-  (denot_ctx_in_env Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τ e) ->
-  denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ e.
+  (denot_ctx_under Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τ e) ->
+  denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ e.
 Proof.
 Admitted.
 
 Lemma denot_var_direct_in_ctx Σ x τ :
   context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ ->
-  denot_ctx_in_env Σ (CtxBind x τ) ⊫
+  denot_ctx_under Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
   intros Hwf m Hctx.
-  unfold denot_ctx_in_env in Hctx.
-  repeat rewrite res_models_and_iff in Hctx.
-  destruct Hctx as [_ [_ Hbind]].
+  pose proof (denot_ctx_under_bind_inv Σ x τ m Hctx) as Hbind.
   destruct Hwf as [Hwfτ _].
   pose proof (wf_context_ty_under_ctx Σ (CtxBind x τ) τ Hwfτ) as Hwfctx.
   pose proof (wf_ctx_under_basic Σ (CtxBind x τ) Hwfctx) as Hbasicctx.
@@ -158,7 +156,7 @@ Proof.
   cbn [denot_ctx_under] in Hbind.
   replace (Σ ∪ erase_ctx (CtxBind x τ))
     with (<[x := erase_ty τ]> Σ).
-  - unfold res_models. models_fuel_irrel Hbind.
+  - exact Hbind.
   - cbn [erase_ctx].
     symmetry.
     apply (storeA_union_singleton_insert_fresh
@@ -167,7 +165,7 @@ Qed.
 
 Lemma fundamental_var_case Σ x τ :
   context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ ->
-  denot_ctx_in_env Σ (CtxBind x τ) ⊫
+  denot_ctx_under Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
   apply denot_var_direct_in_ctx.
@@ -175,7 +173,7 @@ Qed.
 
 Lemma denot_const_direct_in_ctx Σ c :
   context_typing_wf Σ CtxEmpty (tret (vconst c)) (const_precise_ty c) ->
-  denot_ctx_in_env Σ CtxEmpty ⊫
+  denot_ctx_under Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof.
   intros Hwf m Hctx.
@@ -185,7 +183,7 @@ Qed.
 
 Lemma fundamental_const_case Σ c :
   context_typing_wf Σ CtxEmpty (tret (vconst c)) (const_precise_ty c) ->
-  denot_ctx_in_env Σ CtxEmpty ⊫
+  denot_ctx_under Σ CtxEmpty ⊫
     denot_ty_in_ctx_under Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
 Proof.
   apply denot_const_direct_in_ctx.
@@ -198,16 +196,16 @@ Qed.
     extension facts in [ContextBasicDenotation.TermExtension] and the comma
     definition of [denot_ctx_under], rather than by rebuilding any old TLet
     helper stack. *)
-Lemma denot_ctx_in_env_comma_bind_from_result_extension
+Lemma denot_ctx_under_comma_bind_from_result_extension
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
   context_typing_wf Σ Γ e1 τ1 ->
-  m ⊨ denot_ctx_in_env Σ Γ ->
+  m ⊨ denot_ctx_under Σ Γ ->
   m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
   expr_result_extension_witness e1 x Fx ->
   x ∉ dom (erase_ctx_under Σ Γ) ->
   res_extend_by m Fx mx ->
-  mx ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)).
+  mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
 Proof.
 Admitted.
 
@@ -216,11 +214,11 @@ Lemma fundamental_let_case
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
   context_typing_wf Σ Γ e1 τ1 ->
   context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ1 e1) ->
   (forall x, x ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+    denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) ⊫
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
   intros Hwf1 Hwflet IH1 IH2 m Hctx.
@@ -258,7 +256,7 @@ Proof.
   }
   destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
   pose proof (IH2 x HxL mx ltac:(
-    eapply denot_ctx_in_env_comma_bind_from_result_extension; eauto))
+    eapply denot_ctx_under_comma_bind_from_result_extension; eauto))
     as Hbody.
   unfold denot_ty_in_ctx_under, denot_ty in Hbody |- *.
   rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ x τ1 Hxctx) in Hbody.
@@ -271,7 +269,7 @@ Proof.
   - apply atom_store_to_lvar_store_closed.
   - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf1).
   - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwflet).
-  - eapply denot_ctx_in_env_relevant_basic_world. exact Hctx.
+  - eapply denot_ctx_under_relevant_basic_world. exact Hctx.
   - intros Hbad.
     apply elem_of_union in Hbad as [Hbad|Hbad].
     + apply lvars_fv_elem in Hbad.
@@ -285,15 +283,15 @@ Qed.
 Lemma fundamental_letd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
   context_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 ->
-  (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) ->
+  (denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) ->
   (forall x, x ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
+    denot_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
       denot_ty_in_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
-  denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
   intros Hwf IH1 IH2 m Hctx.
-  destruct (denot_ctx_in_env_star_elim Σ Γ1 Γ2 m Hctx)
+  destruct (denot_ctx_under_star_elim Σ Γ1 Γ2 m Hctx)
     as [m1 [m2 [Hc [Hle [Hctx1 Hctx2]]]]].
   pose proof (IH1 m1 Hctx1) as Hden1.
   pose proof (denot_ty_in_ctx_under_total Σ Γ1 τ1 e1 m1 Hden1) as Htotal.
@@ -332,7 +330,7 @@ Proof.
   set (mbody := res_product m2 mx1 Hcbody).
   pose proof (IH2 x HxL mbody ltac:(
     subst mbody;
-    eapply denot_ctx_in_env_star_bind_from_result_extension; eauto;
+    eapply denot_ctx_under_star_bind_from_result_extension; eauto;
     exact Hden1)) as Hbody.
   unfold denot_ty_in_ctx_under, denot_ty in Hden1, Hbody |- *.
   eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
@@ -354,10 +352,10 @@ Lemma fundamental_lam_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
+    denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
         ({0 ~> y} τ) (e ^^ y)) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
@@ -370,7 +368,7 @@ Proof.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
     pose proof (IH y HyL my ltac:(
-      eapply denot_ctx_in_env_comma_bind_from_arg_denotation; eauto))
+      eapply denot_ctx_under_comma_bind_from_arg_denotation; eauto))
       as Hbody.
     eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert in Hbody;
       [| exact Hydom].
@@ -383,10 +381,10 @@ Lemma fundamental_lamd_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
+    denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
         ({0 ~> y} τ) (e ^^ y)) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
@@ -399,7 +397,7 @@ Proof.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
     pose proof (IH y HyL (res_product marg m Hc) ltac:(
-      eapply denot_ctx_in_env_star_bind_from_arg_denotation; eauto))
+      eapply denot_ctx_under_star_bind_from_arg_denotation; eauto))
       as Hbody.
     eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
       [| exact Hydom].
@@ -411,11 +409,11 @@ Qed.
 Lemma fundamental_app_case
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ) (tret v1)) ->
-  (denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τx (tret (vfvar x))) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
   intros Hwf IHfun IHarg m Hctx.
@@ -431,16 +429,16 @@ Qed.
 Lemma fundamental_appd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
   context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (denot_ctx_in_env Σ Γ1 ⊫
+  (denot_ctx_under Σ Γ1 ⊫
     denot_ty_in_ctx_under Σ Γ1 (CTWand τx τ) (tret v1)) ->
-  (denot_ctx_in_env Σ Γ2 ⊫
+  (denot_ctx_under Σ Γ2 ⊫
     denot_ty_in_ctx_under Σ Γ2 τx (tret (vfvar x))) ->
-  denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
   intros Hwf IHfun IHarg m Hctx.
-  destruct (denot_ctx_in_env_star_elim Σ Γ1 Γ2 m Hctx)
+  destruct (denot_ctx_under_star_elim Σ Γ1 Γ2 m Hctx)
     as [mfun [marg [Hc [Hle [Hctx_fun Hctx_arg]]]]].
   pose proof (IHfun mfun Hctx_fun) as Hfun.
   pose proof (IHarg marg Hctx_arg) as Harg.
@@ -462,11 +460,11 @@ Lemma fundamental_fix_case
     (tret (vfix (TBase b →ₜ t) vf))
     (CTArrow τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
+    denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
         (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
@@ -479,7 +477,7 @@ Proof.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
     pose proof (IH y HyL my ltac:(
-      eapply denot_ctx_in_env_comma_bind_from_arg_denotation; eauto))
+      eapply denot_ctx_under_comma_bind_from_arg_denotation; eauto))
       as Hbody.
     eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert in Hbody;
       [| exact Hydom].
@@ -494,11 +492,11 @@ Lemma fundamental_fixd_case
     (tret (vfix (TBase b →ₜ t) vf))
     (CTWand τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
+    denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
         (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
@@ -511,7 +509,7 @@ Proof.
     assert (HyL : y ∉ L) by set_solver.
     assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
     pose proof (IH y HyL (res_product marg m Hc) ltac:(
-      eapply denot_ctx_in_env_star_bind_from_arg_denotation; eauto))
+      eapply denot_ctx_under_star_bind_from_arg_denotation; eauto))
       as Hbody.
     eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
       [| exact Hydom].
@@ -546,9 +544,9 @@ Lemma fundamental_appop_case
   context_typing_wf Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) ->
-  (denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op)))
       (tprim op (vfvar x)).
 Proof.
@@ -572,18 +570,18 @@ Qed.
 Lemma fundamental_match_both_case
     (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf) ->
-  (denot_ctx_in_env Σ Γt ⊫
+  (denot_ctx_under Σ Γt ⊫
     denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) ->
-  (denot_ctx_in_env Σ Γf ⊫
+  (denot_ctx_under Σ Γf ⊫
     denot_ty_in_ctx_under Σ Γf (bool_precise_ty false) (tret v)) ->
-  (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt τt et) ->
-  (denot_ctx_in_env Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf τf ef) ->
-  denot_ctx_in_env Σ (CtxSum Γt Γf) ⊫
+  (denot_ctx_under Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt τt et) ->
+  (denot_ctx_under Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf τf ef) ->
+  denot_ctx_under Σ (CtxSum Γt Γf) ⊫
     denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
   intros Hwf IHtrue IHfalse IHt IHf m Hctx.
-  destruct (denot_ctx_in_env_sum_elim Σ Γt Γf m Hctx)
+  destruct (denot_ctx_under_sum_elim Σ Γt Γf m Hctx)
     as [mt [mf [Hdef [Hle [Hctxt Hctxf]]]]].
   pose proof (IHtrue mt Hctxt) as Htrue.
   pose proof (IHfalse mf Hctxf) as Hfalse.
@@ -607,12 +605,12 @@ Qed.
 Lemma fundamental_match_true_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
   context_typing_wf Σ Γ (tmatch v et ef) τ ->
-  (denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (bool_precise_ty true) (tret v)) ->
   branch_unreachable Σ Γ v false ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ et) ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ et) ->
   erase_ctx_under Σ Γ ⊢ₑ ef ⋮ erase_ty τ ->
-  denot_ctx_in_env Σ Γ ⊫
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
   intros Hwf IHtrue Hunreach IHt Hef m Hctx.
@@ -631,12 +629,12 @@ Qed.
 Lemma fundamental_match_false_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
   context_typing_wf Σ Γ (tmatch v et ef) τ ->
-  (denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (bool_precise_ty false) (tret v)) ->
   branch_unreachable Σ Γ v true ->
   erase_ctx_under Σ Γ ⊢ₑ et ⋮ erase_ty τ ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ ef) ->
-  denot_ctx_in_env Σ Γ ⊫
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ ef) ->
+  denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
   intros Hwf IHfalse Hunreach Het IHf m Hctx.
@@ -658,7 +656,7 @@ Theorem Fundamental
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
   wf_primop_ctx Φ ->
   has_context_type Φ Σ Γ e τ ->
-  denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e.
+  denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e.
 Proof.
   intros HΦ Hty.
   induction Hty; eauto using fundamental_var_case, fundamental_const_case.

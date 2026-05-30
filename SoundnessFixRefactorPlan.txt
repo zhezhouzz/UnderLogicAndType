@@ -7,7 +7,7 @@ Goal
 Recover the paper-facing Fix/FixD rules and make the semantic case helpers
 look like the TLet helper: Denotation-level lemmas should talk about
 `denot_ty_lvar_gas` facts and operational/basic premises, not about
-`denot_ctx_in_env` or the typing induction context.
+`denot_ctx_under` or the typing induction context.
 
 1. Core well-founded relation
 -----------------------------
@@ -68,7 +68,7 @@ look like the TLet helper: Denotation-level lemmas should talk about
 5. Soundness layer
 ------------------
 
-- Soundness wrappers consume `denot_ctx_in_env` and IHs.
+- Soundness wrappers consume `denot_ctx_under` and IHs.
 - They call the new Denotation-level helpers.
 - Fix/FixD wrappers pass the new erasure premises and decreasing recursive
   self type.

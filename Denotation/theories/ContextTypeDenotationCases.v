@@ -768,7 +768,7 @@ Qed.
 
 Lemma const_direct_denotation_gas_in_ctx
     gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ CtxEmpty ->
+  m ⊨ denot_ctx_under Σ CtxEmpty ->
   erase_ctx_under Σ CtxEmpty ⊢ₑ
     tret (vconst c) ⋮ erase_ty (const_precise_ty c) ->
   m ⊨ denot_ty_lvar_gas gas
