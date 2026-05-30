@@ -889,8 +889,11 @@ Lemma lam_intro_denotation
     gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTArrow τx τ) ->
-  (forall y, y ∉ L ->
-    m ⊨ denot_ty_lvar_gas gas
+  (forall y F my, y ∉ L ->
+    res_extend_by m F my ->
+    my ⊨ denot_ty_lvar_gas (cty_depth τx)
+      (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
+    my ⊨ denot_ty_lvar_gas gas
       (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)) ->
   m ⊨ denot_ty_lvar_gas gas
     Σ (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
@@ -901,8 +904,10 @@ Lemma lamd_intro_denotation
     gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTWand τx τ) ->
-  (forall y, y ∉ L ->
-    m ⊨ denot_ty_lvar_gas gas
+  (forall y marg Hc, y ∉ L ->
+    marg ⊨ denot_ty_lvar_gas (cty_depth τx)
+      (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
+    res_product marg m Hc ⊨ denot_ty_lvar_gas gas
       (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)) ->
   m ⊨ denot_ty_lvar_gas gas
     Σ (CTWand τx τ) (tret (vlam (erase_ty τx) e)).

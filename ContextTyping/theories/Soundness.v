@@ -227,6 +227,55 @@ Proof.
   - exact (proj1 (proj2 Hctx)).
 Qed.
 
+Lemma denot_ctx_in_env_comma_bind_from_arg_denotation
+    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
+    (m my : WfWorldT) (F : FiberExtensionT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  res_extend_by m F my ->
+  my ⊨ denot_ty_lvar_gas (cty_depth τx)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τx (tret (vfvar y)) ->
+  my ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)).
+Proof.
+Admitted.
+
+Lemma denot_ctx_in_env_star_bind_from_arg_denotation
+    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
+    (m marg : WfWorldT) (Hc : world_compat marg m) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  marg ⊨ denot_ty_lvar_gas (cty_depth τx)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τx (tret (vfvar y)) ->
+  res_product marg m Hc ⊨ denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)).
+Proof.
+Admitted.
+
+Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τ e.
+Proof.
+Admitted.
+
+Lemma denot_ty_in_ctx_under_star_bind_to_lvar_insert
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τ e.
+Proof.
+Admitted.
+
 Lemma fundamental_let_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
@@ -321,7 +370,23 @@ Lemma fundamental_lam_case
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply lam_intro_denotation
+    with (L := L ∪ dom (erase_ctx_under Σ Γ)).
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - intros y F my Hy Hext Harg.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+    pose proof (IH y HyL my ltac:(
+      eapply denot_ctx_in_env_comma_bind_from_arg_denotation; eauto))
+      as Hbody.
+    eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert in Hbody;
+      [| exact Hydom].
+    rewrite denot_ty_lvar_gas_saturate.
+    + exact Hbody.
+    + rewrite cty_open_preserves_depth. cbn [cty_depth]. lia.
+Qed.
 
 Lemma fundamental_lamd_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -334,7 +399,23 @@ Lemma fundamental_lamd_case
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply lamd_intro_denotation
+    with (L := L ∪ dom (erase_ctx_under Σ Γ)).
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - intros y marg Hc Hy Harg.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+    pose proof (IH y HyL (res_product marg m Hc) ltac:(
+      eapply denot_ctx_in_env_star_bind_from_arg_denotation; eauto))
+      as Hbody.
+    eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
+      [| exact Hydom].
+    rewrite denot_ty_lvar_gas_saturate.
+    + exact Hbody.
+    + rewrite cty_open_preserves_depth. cbn [cty_depth]. lia.
+Qed.
 
 Lemma fundamental_app_case
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
