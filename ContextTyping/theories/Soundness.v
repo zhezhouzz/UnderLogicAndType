@@ -298,7 +298,7 @@ Proof.
       set_solver.
 Qed.
 
-Lemma denot_letd_direct_in_ctx
+Lemma fundamental_letd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
   context_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 ->
   (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) ->
@@ -310,7 +310,7 @@ Lemma denot_letd_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_lam_direct_in_ctx
+Lemma fundamental_lam_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   (forall y, y ∉ L ->
@@ -323,7 +323,7 @@ Lemma denot_lam_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_lamd_direct_in_ctx
+Lemma fundamental_lamd_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
   (forall y, y ∉ L ->
@@ -336,7 +336,7 @@ Lemma denot_lamd_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_app_direct_in_ctx
+Lemma fundamental_app_case
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
   (denot_ctx_in_env Σ Γ ⊫
@@ -348,7 +348,7 @@ Lemma denot_app_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_appd_direct_in_ctx
+Lemma fundamental_appd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
   context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
   (denot_ctx_in_env Σ Γ1 ⊫
@@ -361,7 +361,7 @@ Lemma denot_appd_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_fix_direct_in_ctx
+Lemma fundamental_fix_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
   erase_ty τx = TBase b ->
   erase_ty τ = t ->
@@ -379,7 +379,7 @@ Lemma denot_fix_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_fixd_direct_in_ctx
+Lemma fundamental_fixd_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
   erase_ty τx = TBase b ->
   erase_ty τ = t ->
@@ -419,7 +419,7 @@ Proof.
   exact Hlookup.
 Qed.
 
-Lemma denot_appop_direct_in_ctx
+Lemma fundamental_appop_case
     (Φ : primop_ctx) Σ Γ op x :
   wf_primop_sig op (Φ op) ->
   context_typing_wf Σ Γ
@@ -448,7 +448,7 @@ Proof.
   - exact Harg.
 Qed.
 
-Lemma denot_match_both_direct_in_ctx
+Lemma fundamental_match_both_case
     (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf) ->
   (denot_ctx_in_env Σ Γt ⊫
@@ -463,7 +463,7 @@ Lemma denot_match_both_direct_in_ctx
 Proof.
 Admitted.
 
-Lemma denot_match_true_direct_in_ctx
+Lemma fundamental_match_true_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
   context_typing_wf Σ Γ (tmatch v et ef) τ ->
   (denot_ctx_in_env Σ Γ ⊫
@@ -474,9 +474,20 @@ Lemma denot_match_true_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHtrue Hunreach IHt Hef m Hctx.
+  pose proof (IHtrue m Hctx) as Htrue.
+  pose proof (IHt m Hctx) as Het.
+  pose proof (Hunreach m Hctx) as Hunreach_m.
+  unfold denot_ty_in_ctx_under, denot_ty in Htrue, Het, Hunreach_m |- *.
+  eapply match_true_intro_denotation.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - exact Hunreach_m.
+  - exact Htrue.
+  - exact Het.
+  - rewrite lvar_store_to_atom_store_atom_store. exact Hef.
+Qed.
 
-Lemma denot_match_false_direct_in_ctx
+Lemma fundamental_match_false_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
   context_typing_wf Σ Γ (tmatch v et ef) τ ->
   (denot_ctx_in_env Σ Γ ⊫
@@ -487,7 +498,18 @@ Lemma denot_match_false_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHfalse Hunreach Het IHf m Hctx.
+  pose proof (IHfalse m Hctx) as Hfalse.
+  pose proof (IHf m Hctx) as Hef.
+  pose proof (Hunreach m Hctx) as Hunreach_m.
+  unfold denot_ty_in_ctx_under, denot_ty in Hfalse, Hef, Hunreach_m |- *.
+  eapply match_false_intro_denotation.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - exact Hunreach_m.
+  - exact Hfalse.
+  - rewrite lvar_store_to_atom_store_atom_store. exact Het.
+  - exact Hef.
+Qed.
 
 (** ** Fundamental theorem *)
 
@@ -502,17 +524,17 @@ Proof.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
   - eapply fundamental_let_case; eauto using typing_wf_under.
-  - eapply denot_letd_direct_in_ctx; eauto.
-  - eapply denot_lam_direct_in_ctx; eauto.
-  - eapply denot_lamd_direct_in_ctx; eauto.
-  - eapply denot_app_direct_in_ctx; eauto.
-  - eapply denot_appd_direct_in_ctx; eauto.
-  - eapply denot_fix_direct_in_ctx; eauto.
-  - eapply denot_fixd_direct_in_ctx; eauto.
-  - eapply denot_appop_direct_in_ctx; eauto.
-  - eapply denot_match_both_direct_in_ctx; eauto.
-  - eapply denot_match_true_direct_in_ctx; eauto.
-  - eapply denot_match_false_direct_in_ctx; eauto.
+  - eapply fundamental_letd_case; eauto.
+  - eapply fundamental_lam_case; eauto.
+  - eapply fundamental_lamd_case; eauto.
+  - eapply fundamental_app_case; eauto.
+  - eapply fundamental_appd_case; eauto.
+  - eapply fundamental_fix_case; eauto.
+  - eapply fundamental_fixd_case; eauto.
+  - eapply fundamental_appop_case; eauto.
+  - eapply fundamental_match_both_case; eauto.
+  - eapply fundamental_match_true_case; eauto.
+  - eapply fundamental_match_false_case; eauto.
 Qed.
 
 (** ** Corollary targets *)

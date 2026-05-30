@@ -1,0 +1,117 @@
+Soundness case bridge implementation plan
+=========================================
+
+Principle
+---------
+
+The Fundamental proof should look like the proven TLet branch:
+
+1. The Soundness case consumes `denot_ctx_in_env` and induction hypotheses.
+2. It derives concrete `denot_ty_lvar_gas` premises for the current world.
+3. It calls a Denotation-level helper such as `lam_intro_denotation`.
+
+Denotation-level helpers should not mention `denot_ctx_in_env`, `Γ`, or typing
+induction hypotheses.  They may still mention basic typing and operational
+premises when those are genuinely part of the semantic case.
+
+Case-by-case plan
+-----------------
+
+1. AppOp
+
+- Already has a direct helper, `appop_intro_denotation`, whose proof is complete.
+- Keep the Soundness bridge proved by extracting the argument IH and calling
+  `appop_intro_denotation`.
+
+2. Lam
+
+- Soundness bridge:
+  - pick/receive the fresh parameter from the Arrow forall proof obligation;
+  - build the context denotation for `CtxComma Γ (CtxBind y τx)`;
+  - call the body IH to get
+    `denot_ty_lvar_gas ... (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)`;
+  - call `lam_intro_denotation`.
+- Needed bridge lemma:
+  `denot_ctx_in_env_comma_bind_from_arg_denotation`.
+
+3. LamD
+
+- Same as Lam, but the body context is `CtxStar Γ (CtxBind y τx)`.
+- Need a separating bridge:
+  `denot_ctx_in_env_star_bind_from_arg_denotation`.
+- This will use existing `FStar`/resource product lemmas.
+
+4. App
+
+- Extract function and argument IHs on the same world.
+- Use the Arrow denotation's forall witness and transport the fresh witness
+  back to the actual argument variable.
+- Needed helper family:
+  - argument fvar-to-witness transport;
+  - result open/rename transport.
+
+5. AppD
+
+- Split the `CtxStar Γ1 Γ2` context into function and argument resources.
+- Use function IH on the function resource and argument IH on the argument
+  resource.
+- Eliminate the Wand denotation and transport the fresh witness as in App.
+
+6. LetD
+
+- Split `CtxStar Γ1 Γ2`.
+- Use IH1 to build the result extension for `e1`.
+- Combine the result-extension world with the Γ2 resource to satisfy the body
+  context `CtxStar Γ2 (CtxBind x τ1)`.
+- Call `letd_intro_denotation`.
+
+7. Fix
+
+- Denotation helper should follow HATs' `denotation_application_fixed` shape.
+- The body premise is not merely a recursive IH; it says that after opening the
+  ordinary argument `y`, the opened body denotes a function expecting recursive
+  self:
+
+    `CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)`
+
+- The Denotation proof will:
+  - use `constant_lt_for_base_well_founded b`;
+  - perform well-founded induction on the current base constant;
+  - build the recursive self denotation from the induction hypothesis.
+
+8. FixD
+
+- Same HATs-shaped recursive helper as Fix.
+- The Soundness bridge builds the body context with `CtxStar`.
+
+9. MatchBoth
+
+- Split the `CtxSum` context via `FPlus`.
+- Call the two scrutinee IHs and the two branch IHs on their corresponding
+  branch worlds.
+- Call `match_both_intro_denotation`.
+
+10. MatchTrue / MatchFalse
+
+- The Denotation-level helper must receive an unreachable premise.
+- The Soundness bridge turns typing-level `branch_unreachable` into a current
+  world formula:
+
+    `m ⊨ FImpl (denot_ty_lvar_gas (cty_depth (bool_precise_ty b)) Σ
+          (bool_precise_ty b) (tret v)) FFalse`
+
+- Then it calls `match_true_intro_denotation` or
+  `match_false_intro_denotation`.
+
+Implementation order
+--------------------
+
+1. Change MatchTrue/MatchFalse helper statements to include the semantic
+   unreachable premise.
+2. Prove the Soundness bridges for MatchTrue/MatchFalse using the new helper
+   statements.
+3. Keep the existing AppOp bridge proved.
+4. Rename/prove the remaining old `denot_*_direct_in_ctx` wrappers one case at
+   a time into `fundamental_*_case` bridges.
+5. Leave hard Denotation core cases as named obligations, but do not hide
+   Soundness bridge work behind old direct wrapper names.

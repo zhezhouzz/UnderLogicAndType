@@ -1093,8 +1093,10 @@ Lemma match_both_intro_denotation
     gas (Σ : lty_env) v τt τf et ef (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ
     tmatch v et ef ⋮ erase_ty (CTSum τt τf) ->
-  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty true) (tret v) ->
-  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty false) (tret v) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
+    (bool_precise_ty true) (tret v) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
+    (bool_precise_ty false) (tret v) ->
   m ⊨ denot_ty_lvar_gas gas Σ τt et ->
   m ⊨ denot_ty_lvar_gas gas Σ τf ef ->
   m ⊨ denot_ty_lvar_gas gas
@@ -1105,7 +1107,12 @@ Admitted.
 Lemma match_true_intro_denotation
     gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
-  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty true) (tret v) ->
+  m ⊨ FImpl
+    (denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
+      (bool_precise_ty false) (tret v))
+    FFalse ->
+  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
+    (bool_precise_ty true) (tret v) ->
   m ⊨ denot_ty_lvar_gas gas Σ τ et ->
   lty_env_to_atom_env Σ ⊢ₑ ef ⋮ erase_ty τ ->
   m ⊨ denot_ty_lvar_gas gas
@@ -1116,7 +1123,12 @@ Admitted.
 Lemma match_false_intro_denotation
     gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
-  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty false) (tret v) ->
+  m ⊨ FImpl
+    (denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
+      (bool_precise_ty true) (tret v))
+    FFalse ->
+  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
+    (bool_precise_ty false) (tret v) ->
   lty_env_to_atom_env Σ ⊢ₑ et ⋮ erase_ty τ ->
   m ⊨ denot_ty_lvar_gas gas Σ τ ef ->
   m ⊨ denot_ty_lvar_gas gas
