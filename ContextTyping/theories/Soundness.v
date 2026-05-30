@@ -254,6 +254,20 @@ Lemma denot_ctx_in_env_star_bind_from_arg_denotation
 Proof.
 Admitted.
 
+Lemma denot_ctx_in_env_star_bind_from_result_extension
+    (Σ : gmap atom ty) Γ1 Γ τ1 e1 x
+    (m2 m1 mx1 mbody : WfWorldT)
+    (Hcbody : world_compat m2 mx1) (Fx : FiberExtensionT) :
+  x ∉ dom (erase_ctx_under Σ Γ) ->
+  m2 ⊨ denot_ctx_in_env Σ Γ ->
+  m1 ⊨ denot_ty_in_ctx_under Σ Γ1 τ1 e1 ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m1 Fx mx1 ->
+  res_product m2 mx1 Hcbody ⊑ mbody ->
+  mbody ⊨ denot_ctx_in_env Σ (CtxStar Γ (CtxBind x τ1)).
+Proof.
+Admitted.
+
 Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
     (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
   y ∉ dom (erase_ctx_under Σ Γ) ->
@@ -301,6 +315,14 @@ Lemma basic_typing_star_union_lty_env
   lty_env_to_atom_env
     (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
      atom_env_to_lty_env (erase_ctx_under Σ Γ2)) ⊢ₑ e ⋮ T.
+Proof.
+Admitted.
+
+Lemma letd_body_world_compat
+    (m1 m2 mx1 : WfWorldT) (Hc : world_compat m1 m2)
+    (Fx : FiberExtensionT) :
+  res_extend_by m1 Fx mx1 ->
+  world_compat m2 mx1.
 Proof.
 Admitted.
 
@@ -385,7 +407,62 @@ Lemma fundamental_letd_case
   denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf IH1 IH2 m Hctx.
+  destruct (denot_ctx_in_env_star_elim Σ Γ1 Γ2 m Hctx)
+    as [m1 [m2 [Hc [Hle [Hctx1 Hctx2]]]]].
+  pose proof (IH1 m1 Hctx1) as Hden1.
+  pose proof (denot_ty_in_ctx_under_total Σ Γ1 τ1 e1 m1 Hden1) as Htotal.
+  set (x := fresh_for
+    (L ∪ dom (erase_ctx_under Σ Γ2) ∪ world_dom (m1 : WorldT) ∪
+     world_dom (m2 : WorldT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)).
+  pose proof (fresh_for_not_in
+    (L ∪ dom (erase_ctx_under Σ Γ2) ∪ world_dom (m1 : WorldT) ∪
+     world_dom (m2 : WorldT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)) as Hfresh.
+  change (x ∉
+    L ∪ dom (erase_ctx_under Σ Γ2) ∪ world_dom (m1 : WorldT) ∪
+    world_dom (m2 : WorldT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2) in Hfresh.
+  assert (HxL : x ∉ L) by set_solver.
+  assert (HxΓ2 : x ∉ dom (erase_ctx_under Σ Γ2)) by set_solver.
+  assert (Hxe1 : x ∉ fv_tm e1) by set_solver.
+  destruct (expr_result_extension_witness_exists e1 x Hxe1)
+    as [Fx HFx].
+  assert (Happ : extension_applicable Fx m1).
+  {
+    constructor.
+    - destruct HFx as [_ [Hin _] _].
+      unfold ext_in in Hin.
+      rewrite Hin.
+      pose proof (res_models_scoped m1 (expr_total_formula e1) Htotal)
+        as Hscope_total.
+      unfold formula_scoped_in_world in Hscope_total.
+      rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_total.
+      exact Hscope_total.
+    - destruct HFx as [_ [_ Hout] _].
+      unfold ext_out in Hout.
+      rewrite Hout. set_solver.
+  }
+  destruct (res_extend_by_exists m1 Fx Happ) as [mx1 Hext].
+  pose proof (letd_body_world_compat m1 m2 mx1 Hc Fx Hext) as Hcbody.
+  set (mbody := res_product m2 mx1 Hcbody).
+  pose proof (IH2 x HxL mbody ltac:(
+    subst mbody;
+    eapply denot_ctx_in_env_star_bind_from_result_extension; eauto;
+    exact Hden1)) as Hbody.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden1, Hbody |- *.
+  eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
+    [| exact HxΓ2].
+  eapply denot_ty_lvar_gas_star_union_to_ctx.
+  eapply letd_intro_denotation with
+    (m1 := m1) (m2 := m2) (mx1 := mx1) (mbody := mbody)
+    (Hc := Hc) (Hcbody := Hcbody) (Fx := Fx) (x := x).
+  - apply basic_typing_star_union_lty_env. exact (proj2 Hwf).
+  - exact Hle.
+  - exact HFx.
+  - exact Hext.
+  - subst mbody. reflexivity.
+  - exact Hden1.
+  - exact Hbody.
+Qed.
 
 Lemma fundamental_lam_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -507,7 +584,21 @@ Lemma fundamental_fix_case
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-Admitted.
+  intros Hτx Hτ Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply fix_intro_denotation
+    with (L := L ∪ dom (erase_ctx_under Σ Γ)); eauto.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - intros y F my Hy Hext Harg.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+    pose proof (IH y HyL my ltac:(
+      eapply denot_ctx_in_env_comma_bind_from_arg_denotation; eauto))
+      as Hbody.
+    eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert in Hbody;
+      [| exact Hydom].
+    exact Hbody.
+Qed.
 
 Lemma fundamental_fixd_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
@@ -525,7 +616,21 @@ Lemma fundamental_fixd_case
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-Admitted.
+  intros Hτx Hτ Hwf IH m Hctx.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply fixd_intro_denotation
+    with (L := L ∪ dom (erase_ctx_under Σ Γ)); eauto.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - intros y marg Hc Hy Harg.
+    assert (HyL : y ∉ L) by set_solver.
+    assert (Hydom : y ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+    pose proof (IH y HyL (res_product marg m Hc) ltac:(
+      eapply denot_ctx_in_env_star_bind_from_arg_denotation; eauto))
+      as Hbody.
+    eapply denot_ty_in_ctx_under_star_bind_to_lvar_insert in Hbody;
+      [| exact Hydom].
+    exact Hbody.
+Qed.
 
 Lemma appop_context_typing_arg_lookup
     (Φ : primop_ctx) Σ Γ op x :

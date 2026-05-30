@@ -873,13 +873,18 @@ Proof.
 Qed.
 
 Lemma letd_intro_denotation
-    gas (Σ1 Σ2 : lty_env) τ1 τ2 e1 e2 (L : aset)
-    (m : WfWorldT) :
+    gas (Σ1 Σ2 : lty_env) τ1 τ2 e1 e2
+    (m m1 m2 mx1 mbody : WfWorldT)
+    (Hc : world_compat m1 m2) (Hcbody : world_compat m2 mx1)
+    (Fx : FiberExtensionT) (x : atom) :
   lty_env_to_atom_env (Σ1 ∪ Σ2) ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 ->
-  m ⊨ denot_ty_lvar_gas gas Σ1 τ1 e1 ->
-  (forall x, x ∉ L ->
-    m ⊨ denot_ty_lvar_gas gas
-      (<[LVFree x := erase_ty τ1]> Σ2) τ2 (e2 ^^ x)) ->
+  res_product m1 m2 Hc ⊑ m ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m1 Fx mx1 ->
+  res_product m2 mx1 Hcbody ⊑ mbody ->
+  m1 ⊨ denot_ty_lvar_gas (cty_depth τ1) Σ1 τ1 e1 ->
+  mbody ⊨ denot_ty_lvar_gas gas
+    (<[LVFree x := erase_ty τ1]> Σ2) τ2 (e2 ^^ x) ->
   m ⊨ denot_ty_lvar_gas gas
     (Σ1 ∪ Σ2) τ2 (tlete e1 e2).
 Proof.
@@ -945,8 +950,12 @@ Lemma fix_intro_denotation
   erase_ty τ = t ->
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTArrow τx τ) ->
-  (forall y, y ∉ L ->
-    m ⊨ denot_ty_lvar_gas gas
+  (forall y F my, y ∉ L ->
+    res_extend_by m F my ->
+    my ⊨ denot_ty_lvar_gas (cty_depth τx)
+      (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
+    my ⊨ denot_ty_lvar_gas
+      (cty_depth (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)))
       (<[LVFree y := erase_ty τx]> Σ)
       (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
       (tret ({0 ~> vfvar y} vf))) ->
@@ -961,8 +970,11 @@ Lemma fixd_intro_denotation
   erase_ty τ = t ->
   lty_env_to_atom_env Σ ⊢ₑ
     tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTWand τx τ) ->
-  (forall y, y ∉ L ->
-    m ⊨ denot_ty_lvar_gas gas
+  (forall y marg Hc, y ∉ L ->
+    marg ⊨ denot_ty_lvar_gas (cty_depth τx)
+      (<[LVFree y := erase_ty τx]> Σ) τx (tret (vfvar y)) ->
+    res_product marg m Hc ⊨ denot_ty_lvar_gas
+      (cty_depth (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)))
       (<[LVFree y := erase_ty τx]> Σ)
       (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
       (tret ({0 ~> vfvar y} vf))) ->
