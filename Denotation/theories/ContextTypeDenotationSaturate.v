@@ -198,6 +198,21 @@ Proof.
     split; [apply formula_scoped_true_iff; exact I | exact I].
 Qed.
 
+Lemma denot_ty_lvar_gas_guard
+    gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas gas Σ τ e ->
+  m ⊨ FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (FAnd
+        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+          (erase_ty τ))
+        (expr_total_formula e))).
+Proof.
+  destruct gas; cbn [denot_ty_lvar_gas]; rewrite res_models_and_iff; tauto.
+Qed.
+
 Lemma denot_ty_lvar_gas_guard_of_zero
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ denot_ty_lvar_gas 0 Σ τ e ->

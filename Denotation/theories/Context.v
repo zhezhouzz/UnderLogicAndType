@@ -54,6 +54,24 @@ Definition entails_total (φ : FormulaT) (P : WfWorldT -> Prop) : Prop :=
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
 
+Lemma atom_env_to_lty_env_restrict_lvars_agree_on
+    (Δ1 Δ2 : gmap atom ty) (D : lvset) X :
+  ty_env_agree_on X Δ1 Δ2 ->
+  lvars_fv D ⊆ X ->
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ1) D =
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ2) D.
+Proof.
+  intros Hagree Hfv.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D)) as [Hv|Hv]; [|reflexivity].
+  destruct v as [k|x].
+  - rewrite !atom_store_to_lvar_store_lookup_bound_none. reflexivity.
+  - rewrite !atom_store_to_lvar_store_lookup_free.
+    apply Hagree. apply Hfv. apply lvars_fv_elem. exact Hv.
+Qed.
+
 (** ** Context bridge lemmas for the Fundamental proof
 
     These statements are semantic context-denotation facts.  They live below
@@ -131,6 +149,54 @@ Ltac solve_basic_world_formula :=
       end
     | eauto ].
 
+Lemma basic_world_formula_insert_from_arg_denotation
+    (Σ : lty_env) (τ : context_ty) y T gas (m : WfWorldT) :
+  LVFree y ∉ dom Σ ->
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ denot_ty_lvar_gas gas (<[LVFree y := T]> Σ) τ (tret (vfvar y)) ->
+  m ⊨ basic_world_formula (<[LVFree y := T]> Σ).
+Proof.
+  intros HyΣ Hworld Harg.
+  pose proof (denot_ty_lvar_gas_guard gas
+    (<[LVFree y := T]> Σ) τ (tret (vfvar y)) m Harg) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hrel_world _]].
+  assert (Hy_world : m ⊨ basic_world_formula
+    (<[LVFree y := T]> (∅ : gmap logic_var ty))).
+  {
+    eapply basic_world_formula_subenv; [|exact Hrel_world].
+    intros v U Hv.
+    change (((<[LVFree y := T]> (∅ : gmap logic_var ty))
+      : gmap logic_var ty) !! v = Some U) in Hv.
+    destruct v as [k|z].
+    - rewrite lookup_insert_ne in Hv by discriminate.
+      rewrite lookup_empty in Hv. discriminate.
+    - destruct (decide (z = y)) as [->|Hzy].
+      + change ((<[LVFree y := T]> (∅ : gmap logic_var ty) : gmap logic_var ty)
+            !! LVFree y = Some U) in Hv.
+        rewrite lookup_insert_eq in Hv. inversion Hv. subst U.
+        unfold denot_relevant_env, lty_env_restrict_lvars.
+        apply storeA_restrict_lookup_some_2.
+        * apply map_lookup_insert.
+        * unfold denot_relevant_lvars.
+          cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
+          set_solver.
+      + rewrite lookup_insert_ne in Hv by congruence.
+        rewrite lookup_empty in Hv. discriminate.
+  }
+  pose proof (basic_world_formula_union Σ
+    (<[LVFree y := T]> (∅ : gmap logic_var ty) : lty_env)
+    m Hworld Hy_world) as Hunion.
+  change (m ⊨ basic_world_formula
+    ((Σ : gmap logic_var ty) ∪
+      (<[LVFree y := T]> (∅ : gmap logic_var ty)))) in Hunion.
+  change (<[LVFree y := T]> (∅ : gmap logic_var ty))
+    with ({[LVFree y := T]} : gmap logic_var ty) in Hunion.
+  rewrite storeA_union_singleton_insert_fresh in Hunion.
+  - exact Hunion.
+  - exact HyΣ.
+Qed.
+
 Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
   x ∉ dom (erase_ctx_under Σ Γ) →
   erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
@@ -207,7 +273,72 @@ Lemma denot_ctx_under_comma_bind_from_arg_denotation
     τx (tret (vfvar y)) ->
   my ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)).
 Proof.
-Admitted.
+  intros Hy Hctx Hext Harg.
+  set (ΣΓ := atom_env_to_lty_env (erase_ctx_under Σ Γ)).
+  assert (HyΣΓ : LVFree y ∉ dom (ΣΓ : gmap logic_var ty)).
+  {
+    subst ΣΓ.
+    rewrite atom_store_to_lvar_store_dom.
+    unfold lvars_of_atoms.
+    intros HyD. apply elem_of_map in HyD as [z [Hz HzD]].
+    inversion Hz. subst z. exact (Hy HzD).
+  }
+  pose proof (res_models_extend_mono m F my
+    (denot_ctx_under Σ Γ) Hext Hctx) as Hctx_my.
+  pose proof (denot_ctx_under_basic_world Σ Γ my Hctx_my) as Hworld_old.
+  assert (Hworld_insert :
+    my ⊨ basic_world_formula (<[LVFree y := erase_ty τx]> ΣΓ)).
+  {
+    eapply basic_world_formula_insert_from_arg_denotation; eauto.
+  }
+  cbn [denot_ctx_under].
+  rewrite res_models_and_iff. split.
+  - subst ΣΓ.
+    rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ y τx Hy).
+    replace (atom_env_to_lty_env (<[y := erase_ty τx]> (erase_ctx_under Σ Γ)))
+      with (<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx_under Σ Γ))).
+    {
+      change (my ⊨ basic_world_formula
+        (<[LVFree y := erase_ty τx]>
+          (atom_env_to_lty_env (erase_ctx_under Σ Γ)))) in Hworld_insert.
+      exact Hworld_insert.
+    }
+    { symmetry. apply atom_store_to_lvar_store_insert. }
+  - rewrite res_models_and_iff. split.
+    + exact Hctx_my.
+    + cbn [denot_ctx_under].
+      rewrite res_models_and_iff. split.
+      * subst ΣΓ.
+        unfold erase_ctx_under.
+        cbn [erase_ctx].
+        replace ((Σ ∪ erase_ctx Γ) ∪ {[y := erase_ty τx]} : gmap atom ty)
+          with (<[y := erase_ty τx]> (Σ ∪ erase_ctx Γ : gmap atom ty)).
+        2:{
+          symmetry.
+          apply (storeA_union_singleton_insert_fresh
+            (V := ty) (K := atom)
+            (Σ ∪ erase_ctx Γ : gmap atom ty) y (erase_ty τx)).
+          exact Hy.
+        }
+        replace (atom_env_to_lty_env
+            (<[y := erase_ty τx]> (Σ ∪ erase_ctx Γ : gmap atom ty)))
+          with (<[LVFree y := erase_ty τx]>
+            (atom_env_to_lty_env (erase_ctx_under Σ Γ))).
+        -- exact Hworld_insert.
+        -- unfold erase_ctx_under. symmetry. apply atom_store_to_lvar_store_insert.
+      * subst ΣΓ.
+        unfold denot_ty.
+        replace (atom_env_to_lty_env (<[y := erase_ty τx]>
+            (Σ ∪ erase_ctx Γ : gmap atom ty)))
+          with (<[LVFree y := erase_ty τx]>
+            (atom_env_to_lty_env (erase_ctx_under Σ Γ))).
+        2:{
+          unfold erase_ctx_under.
+          symmetry. apply atom_store_to_lvar_store_insert.
+        }
+        exact Harg.
+Qed.
 
 Lemma denot_ctx_under_star_bind_from_arg_denotation
     (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
