@@ -917,19 +917,23 @@ Admitted.
 Lemma app_elim_denotation
     gas (Σ : lty_env) τx τ v1 x (m : WfWorldT) :
   lty_env_to_atom_env Σ ⊢ₑ tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
-  m ⊨ denot_ty_lvar_gas gas Σ (CTArrow τx τ) (tret v1) ->
-  m ⊨ denot_ty_lvar_gas gas Σ τx (tret (vfvar x)) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth (CTArrow τx τ))
+    Σ (CTArrow τx τ) (tret v1) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τx) Σ τx (tret (vfvar x)) ->
   m ⊨ denot_ty_lvar_gas gas
     Σ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
 Admitted.
 
 Lemma appd_elim_denotation
-    gas (Σ1 Σ2 : lty_env) τx τ v1 x (m : WfWorldT) :
+    gas (Σ1 Σ2 : lty_env) τx τ v1 x
+    (m mfun marg : WfWorldT) (Hc : world_compat mfun marg) :
   lty_env_to_atom_env (Σ1 ∪ Σ2) ⊢ₑ
     tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
-  m ⊨ denot_ty_lvar_gas gas Σ1 (CTWand τx τ) (tret v1) ->
-  m ⊨ denot_ty_lvar_gas gas Σ2 τx (tret (vfvar x)) ->
+  res_product mfun marg Hc ⊑ m ->
+  mfun ⊨ denot_ty_lvar_gas (cty_depth (CTWand τx τ))
+    Σ1 (CTWand τx τ) (tret v1) ->
+  marg ⊨ denot_ty_lvar_gas (cty_depth τx) Σ2 τx (tret (vfvar x)) ->
   m ⊨ denot_ty_lvar_gas gas
     (Σ1 ∪ Σ2) ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.

@@ -276,6 +276,34 @@ Lemma denot_ty_in_ctx_under_star_bind_to_lvar_insert
 Proof.
 Admitted.
 
+Lemma denot_ctx_in_env_star_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ denot_ctx_in_env Σ Γ1 /\
+    m2 ⊨ denot_ctx_in_env Σ Γ2.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_star_union_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
+     atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ e.
+Proof.
+Admitted.
+
+Lemma basic_typing_star_union_lty_env
+    (Σ : gmap atom ty) Γ1 Γ2 e T :
+  erase_ctx_under Σ (CtxStar Γ1 Γ2) ⊢ₑ e ⋮ T ->
+  lty_env_to_atom_env
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
+     atom_env_to_lty_env (erase_ctx_under Σ Γ2)) ⊢ₑ e ⋮ T.
+Proof.
+Admitted.
+
 Lemma fundamental_let_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
@@ -427,7 +455,15 @@ Lemma fundamental_app_case
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg m Hctx.
+  pose proof (IHfun m Hctx) as Hfun.
+  pose proof (IHarg m Hctx) as Harg.
+  unfold denot_ty_in_ctx_under, denot_ty in Hfun, Harg |- *.
+  eapply app_elim_denotation.
+  - rewrite lvar_store_to_atom_store_atom_store. exact (proj2 Hwf).
+  - exact Hfun.
+  - exact Harg.
+Qed.
 
 Lemma fundamental_appd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
@@ -440,7 +476,20 @@ Lemma fundamental_appd_case
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg m Hctx.
+  destruct (denot_ctx_in_env_star_elim Σ Γ1 Γ2 m Hctx)
+    as [mfun [marg [Hc [Hle [Hctx_fun Hctx_arg]]]]].
+  pose proof (IHfun mfun Hctx_fun) as Hfun.
+  pose proof (IHarg marg Hctx_arg) as Harg.
+  unfold denot_ty_in_ctx_under, denot_ty in Hfun, Harg.
+  eapply denot_ty_lvar_gas_star_union_to_ctx.
+  eapply appd_elim_denotation with
+    (mfun := mfun) (marg := marg) (Hc := Hc).
+  - apply basic_typing_star_union_lty_env. exact (proj2 Hwf).
+  - exact Hle.
+  - exact Hfun.
+  - exact Harg.
+Qed.
 
 Lemma fundamental_fix_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
