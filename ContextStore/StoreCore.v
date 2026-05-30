@@ -536,6 +536,22 @@ Proof.
     f _ V (s : gmap K V) z v).
 Qed.
 
+Lemma storeA_map_key_union {K K' : Type} `{Countable K} `{Countable K'}
+    (f : K → K') (Hf : Inj (=) (=) f) (s1 s2 : gmap K V) :
+  storeA_map_key f (@union (gmap K V) _ s1 s2) =
+  @union (gmap K' V) _
+    (storeA_map_key f s1 : gmap K' V) (storeA_map_key f s2 : gmap K' V).
+Proof.
+  unfold kmap.
+  change (kmap f (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
+    @union (gmap K' V) _
+      (kmap f (s1 : gmap K V))
+      (kmap f (s2 : gmap K V))).
+  refine (@kmap_union K (gmap K) _ _ _ _ _ _ _ _ _
+    K' (gmap K') _ _ _ _ _ _ _ _ _
+    f _ V (s1 : gmap K V) (s2 : gmap K V)).
+Qed.
+
 Lemma storeA_on_rekey_id_on_dom {K : Type} `{Countable K}
     (f : K → K) (Hf : Inj (=) (=) f)
     (D : gset K) (s : StoreAOn (V:=V) D) :

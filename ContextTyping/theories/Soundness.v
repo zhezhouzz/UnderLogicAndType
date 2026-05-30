@@ -222,7 +222,9 @@ Lemma denot_ctx_under_comma_bind_from_result_extension
   res_extend_by m Fx mx ->
   mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
 Proof.
-Admitted.
+  intros _ Hctx Hden HFx Hfresh Hext.
+  eapply denot_ctx_under_comma_bind_from_result_denotation; eauto.
+Qed.
 
 Lemma fundamental_let_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)

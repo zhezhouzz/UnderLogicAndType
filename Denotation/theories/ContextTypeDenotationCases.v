@@ -1060,7 +1060,68 @@ Lemma denot_ctx_bind_from_arg_denotation
     τ (tret (vfvar x)) ->
   m ⊨ denot_ctx (CtxBind x τ).
 Proof.
-Admitted.
+  intros Hbasic Hlookup Harg.
+  pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+    (cty_depth τ)
+    (atom_env_to_lty_env Σ)
+    (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
+    τ (tret (vfvar x)) ({[LVFree x]}) m
+    (denot_relevant_lvars_basic_ret_fvar_subset x τ Hbasic)
+    (atom_env_to_lty_env_restrict_singleton_lookup
+      Σ x (erase_ty τ) Hlookup)
+    Harg) as Harg_single.
+  unfold denot_ctx.
+  cbn [denot_ctx_under].
+  rewrite res_models_and_iff. split.
+  - replace (erase_ctx_under (erase_ctx (CtxBind x τ)) (CtxBind x τ))
+      with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
+    2:{
+      unfold erase_ctx_under. cbn [erase_ctx].
+      change (<[x := erase_ty τ]> (∅ : gmap atom ty))
+        with ({[x := erase_ty τ]} : gmap atom ty).
+      symmetry.
+      apply (union_singleton_r (M:=gmap atom)
+        ({[x := erase_ty τ]} : gmap atom ty) x
+        (erase_ty τ) (erase_ty τ)).
+      apply lookup_singleton_eq.
+    }
+    replace (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
+      with (<[LVFree x := erase_ty τ]> (∅ : lty_env)).
+    2:{
+      unfold store_insert, store_empty.
+      rewrite atom_store_to_lvar_store_insert.
+      unfold atom_store_to_lvar_store.
+      rewrite kmap_empty.
+      reflexivity.
+    }
+    eapply basic_world_formula_insert_from_arg_denotation
+      with (τ := τ) (gas := cty_depth τ)
+        (y := x) (T := erase_ty τ) (Σ := ∅).
+    + rewrite dom_empty_L. set_solver.
+    + apply basic_world_formula_empty.
+    + replace (<[LVFree x := erase_ty τ]> (∅ : lty_env))
+        with (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty))).
+      * exact Harg_single.
+      * symmetry.
+        unfold store_insert, store_empty.
+        rewrite atom_store_to_lvar_store_insert.
+        unfold atom_store_to_lvar_store.
+        rewrite kmap_empty.
+        reflexivity.
+  - unfold denot_ty.
+    replace (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
+      with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
+    2:{
+      cbn [erase_ctx]. unfold store_insert, store_empty, store_singleton.
+      apply map_eq. intros z.
+      destruct (decide (z = x)) as [->|Hzx].
+      - rewrite !lookup_insert_eq. reflexivity.
+      - rewrite !lookup_insert_ne by congruence.
+        rewrite lookup_empty. symmetry.
+        apply lookup_singleton_ne. congruence.
+    }
+    exact Harg_single.
+Qed.
 
 Lemma appop_intro_denotation
     gas (Σ : gmap atom ty) op x τarg τres (m : WfWorldT) :

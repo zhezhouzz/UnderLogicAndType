@@ -367,6 +367,18 @@ Lemma denot_ctx_under_star_bind_from_result_extension
 Proof.
 Admitted.
 
+Lemma denot_ctx_under_comma_bind_from_result_denotation
+    (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
+    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
+  m ⊨ denot_ctx_under Σ Γ ->
+  m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
+  expr_result_extension_witness e1 x Fx ->
+  x ∉ dom (erase_ctx_under Σ Γ) ->
+  res_extend_by m Fx mx ->
+  mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
+Proof.
+Admitted.
+
 Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
     (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
   y ∉ dom (erase_ctx_under Σ Γ) ->
@@ -448,7 +460,21 @@ Lemma denot_ty_lvar_gas_star_union_to_ctx
      atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
   m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ e.
 Proof.
-Admitted.
+  intros Hden.
+  unfold denot_ty_in_ctx_under, denot_ty, erase_ctx_under in *.
+  cbn [erase_ctx].
+  rewrite <- atom_store_to_lvar_store_union in Hden.
+  replace ((Σ ∪ erase_ctx Γ1) ∪ (Σ ∪ erase_ctx Γ2) : gmap atom ty)
+    with (Σ ∪ (erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty) in Hden.
+  - exact Hden.
+  - apply map_eq. intros x.
+    unfold store_union.
+    rewrite !lookup_union.
+    destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
+      destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
+      destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
+      reflexivity.
+Qed.
 
 Lemma denot_ty_lvar_gas_sum_left_to_ctx
     (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
@@ -481,7 +507,22 @@ Lemma basic_typing_star_union_lty_env
     (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
      atom_env_to_lty_env (erase_ctx_under Σ Γ2)) ⊢ₑ e ⋮ T.
 Proof.
-Admitted.
+  intros Hbasic.
+  unfold erase_ctx_under in *.
+  cbn [erase_ctx] in *.
+  rewrite <- atom_store_to_lvar_store_union.
+  rewrite lvar_store_to_atom_store_atom_store.
+  replace ((Σ ∪ erase_ctx Γ1) ∪ (Σ ∪ erase_ctx Γ2) : gmap atom ty)
+    with (Σ ∪ (erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty).
+  - exact Hbasic.
+  - apply map_eq. intros x.
+    unfold store_union.
+    rewrite !lookup_union.
+    destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
+      destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
+      destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
+      reflexivity.
+Qed.
 
 Lemma letd_body_world_compat
     e1 x (m1 m2 mx1 : WfWorldT) (Hc : world_compat m1 m2)

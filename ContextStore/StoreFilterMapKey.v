@@ -196,6 +196,15 @@ Proof.
   intros a b Heq. inversion Heq. reflexivity.
 Qed.
 
+Lemma atom_store_to_lvar_store_union (s1 s2 : AtomStore) :
+  atom_store_to_lvar_store (s1 ∪ s2) =
+  atom_store_to_lvar_store s1 ∪ atom_store_to_lvar_store s2.
+Proof.
+  unfold atom_store_to_lvar_store.
+  apply storeA_map_key_union.
+  intros a b Heq. inversion Heq. reflexivity.
+Qed.
+
 Lemma atom_store_to_lvar_store_closed (s : AtomStore) :
   lvar_store_closed (atom_store_to_lvar_store s).
 Proof.
