@@ -872,109 +872,93 @@ Proof.
         | exact (const_under_denotation_gas gas' Σ c m) ] ].
 Qed.
 
-Lemma letd_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ1 Γ2 τ1 τ2 e1 e2 (L : aset)
+Lemma letd_intro_denotation
+    gas (Σ1 Σ2 : lty_env) τ1 τ2 e1 e2 (L : aset)
     (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ->
-  erase_ctx_under Σ (CtxStar Γ1 Γ2) ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 ->
-  (denot_ctx_in_env Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) ->
+  lty_env_to_atom_env (Σ1 ∪ Σ2) ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 ->
+  m ⊨ denot_ty_lvar_gas gas Σ1 τ1 e1 ->
   (forall x, x ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
-      denot_ty_in_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
+    m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree x := erase_ty τ1]> Σ2) τ2 (e2 ^^ x)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ (CtxStar Γ1 Γ2)))
-    τ2 (tlete e1 e2).
+    (Σ1 ∪ Σ2) τ2 (tlete e1 e2).
 Proof.
 Admitted.
 
-Lemma lam_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ τx τ e (L : aset) (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ
+Lemma lam_intro_denotation
+    gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTArrow τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
-        ({0 ~> y} τ) (e ^^ y)) ->
+    m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
+    Σ (CTArrow τx τ) (tret (vlam (erase_ty τx) e)).
 Proof.
 Admitted.
 
-Lemma lamd_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ τx τ e (L : aset) (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ
+Lemma lamd_intro_denotation
+    gas (Σ : lty_env) τx τ e (L : aset) (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ
     tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTWand τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
-        ({0 ~> y} τ) (e ^^ y)) ->
+    m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    (CTWand τx τ) (tret (vlam (erase_ty τx) e)).
+    Σ (CTWand τx τ) (tret (vlam (erase_ty τx) e)).
 Proof.
 Admitted.
 
-Lemma app_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ τx τ v1 x (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
-  (denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ) (tret v1)) ->
-  (denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ τx (tret (vfvar x))) ->
+Lemma app_elim_denotation
+    gas (Σ : lty_env) τx τ v1 x (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
+  m ⊨ denot_ty_lvar_gas gas Σ (CTArrow τx τ) (tret v1) ->
+  m ⊨ denot_ty_lvar_gas gas Σ τx (tret (vfvar x)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    ({0 ~> x} τ) (tapp v1 (vfvar x)).
+    Σ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
 Admitted.
 
-Lemma appd_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ1 Γ2 τx τ v1 x (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ->
-  erase_ctx_under Σ (CtxStar Γ1 Γ2) ⊢ₑ
+Lemma appd_elim_denotation
+    gas (Σ1 Σ2 : lty_env) τx τ v1 x (m : WfWorldT) :
+  lty_env_to_atom_env (Σ1 ∪ Σ2) ⊢ₑ
     tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
-  (denot_ctx_in_env Σ Γ1 ⊫
-    denot_ty_in_ctx_under Σ Γ1 (CTWand τx τ) (tret v1)) ->
-  (denot_ctx_in_env Σ Γ2 ⊫
-    denot_ty_in_ctx_under Σ Γ2 τx (tret (vfvar x))) ->
+  m ⊨ denot_ty_lvar_gas gas Σ1 (CTWand τx τ) (tret v1) ->
+  m ⊨ denot_ty_lvar_gas gas Σ2 τx (tret (vfvar x)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ (CtxStar Γ1 Γ2)))
-    ({0 ~> x} τ) (tapp v1 (vfvar x)).
+    (Σ1 ∪ Σ2) ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
 Admitted.
 
-Lemma fix_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ τx τ vf (L : aset) (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ
-    tret (vfix (erase_ty (CTArrow τx τ)) vf) ⋮ erase_ty (CTArrow τx τ) ->
+Lemma fix_intro_denotation
+    gas (Σ : lty_env) τx τ vf b t (L : aset) (m : WfWorldT) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
+  lty_env_to_atom_env Σ ⊢ₑ
+    tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTArrow τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
-        (CTArrow (CTArrow τx τ) ({0 ~> y} τ))
-        (tret ({0 ~> vfvar y} vf))) ->
+    m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree y := erase_ty τx]> Σ)
+      (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
+      (tret ({0 ~> vfvar y} vf))) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    (CTArrow τx τ) (tret (vfix (erase_ty (CTArrow τx τ)) vf)).
+    Σ (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
 Admitted.
 
-Lemma fixd_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ τx τ vf (L : aset) (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ
-    tret (vfix (erase_ty (CTWand τx τ)) vf) ⋮ erase_ty (CTWand τx τ) ->
+Lemma fixd_intro_denotation
+    gas (Σ : lty_env) τx τ vf b t (L : aset) (m : WfWorldT) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
+  lty_env_to_atom_env Σ ⊢ₑ
+    tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTWand τx τ) ->
   (forall y, y ∉ L ->
-    denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
-        (CTWand (CTWand τx τ) ({0 ~> y} τ))
-        (tret ({0 ~> vfvar y} vf))) ->
+    m ⊨ denot_ty_lvar_gas gas
+      (<[LVFree y := erase_ty τx]> Σ)
+      (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
+      (tret ({0 ~> vfvar y} vf))) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    (CTWand τx τ) (tret (vfix (erase_ty (CTWand τx τ)) vf)).
+    Σ (CTWand τx τ) (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
 Admitted.
 
@@ -1047,36 +1031,32 @@ Proof.
   exact (map_lookup_insert (∅ : gmap atom ty) x T).
 Qed.
 
-Lemma appop_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ op x τarg τres (m : WfWorldT) :
+Lemma appop_intro_denotation
+    gas (Σ : gmap atom ty) op x τarg τres (m : WfWorldT) :
   cty_depth ({0 ~> x} τres) <= gas ->
   basic_context_ty ∅ τarg ->
   basic_context_ty ∅ τres ->
-  erase_ctx_under Σ Γ !! x = Some (erase_ty τarg) ->
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ
+  Σ !! x = Some (erase_ty τarg) ->
+  Σ ⊢ₑ
     tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
   (denot_ctx (CtxBind x τarg) ⊫
     denot_ty_in_ctx (CtxBind x τarg) ({0 ~> x} τres)
       (tprim op (vfvar x))) ->
-  (denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ τarg (tret (vfvar x))) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
+    τarg (tret (vfvar x)) ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
-    ({0 ~> x} τres) (tprim op (vfvar x)).
+    (atom_env_to_lty_env Σ) ({0 ~> x} τres) (tprim op (vfvar x)).
 Proof.
-  intros Hgas Hbasic_arg Hbasic_res Hlookup Hctx _ Hop IH.
+  intros Hgas Hbasic_arg Hbasic_res Hlookup _ Hop Harg.
   rewrite denot_ty_lvar_gas_saturate by exact Hgas.
-  pose proof (IH m Hctx) as Harg.
-  unfold denot_ty_in_ctx_under, denot_ty in Harg.
   pose proof (res_models_denot_ty_lvar_gas_env_agree_on
     (cty_depth τarg)
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
+    (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
     τarg (tret (vfvar x)) ({[LVFree x]}) m
     (denot_relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
     (atom_env_to_lty_env_restrict_singleton_lookup
-      (erase_ctx_under Σ Γ) x (erase_ty τarg) Hlookup)
+      Σ x (erase_ty τarg) Hlookup)
     Harg) as Harg_single.
   assert (Harg_bind : m ⊨ denot_ctx (CtxBind x τarg)).
   {
@@ -1109,46 +1089,38 @@ Proof.
     | exact Hres_single ].
 Qed.
 
-Lemma match_both_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γt Γf v τt τf et ef (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ (CtxSum Γt Γf) ->
-  erase_ctx_under Σ (CtxSum Γt Γf) ⊢ₑ
+Lemma match_both_intro_denotation
+    gas (Σ : lty_env) v τt τf et ef (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ
     tmatch v et ef ⋮ erase_ty (CTSum τt τf) ->
-  (denot_ctx_in_env Σ Γt ⊫
-    denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) ->
-  (denot_ctx_in_env Σ Γf ⊫
-    denot_ty_in_ctx_under Σ Γf (bool_precise_ty false) (tret v)) ->
-  (denot_ctx_in_env Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt τt et) ->
-  (denot_ctx_in_env Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf τf ef) ->
+  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty true) (tret v) ->
+  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty false) (tret v) ->
+  m ⊨ denot_ty_lvar_gas gas Σ τt et ->
+  m ⊨ denot_ty_lvar_gas gas Σ τf ef ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γt Γf)))
-    (CTSum τt τf) (tmatch v et ef).
+    Σ (CTSum τt τf) (tmatch v et ef).
 Proof.
 Admitted.
 
-Lemma match_true_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ v τ et ef (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
-  (denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ (bool_precise_ty true) (tret v)) ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ et) ->
-  erase_ctx_under Σ Γ ⊢ₑ ef ⋮ erase_ty τ ->
+Lemma match_true_intro_denotation
+    gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
+  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty true) (tret v) ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ et ->
+  lty_env_to_atom_env Σ ⊢ₑ ef ⋮ erase_ty τ ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ (tmatch v et ef).
+    Σ τ (tmatch v et ef).
 Proof.
 Admitted.
 
-Lemma match_false_direct_denotation_gas_in_ctx
-    gas (Σ : gmap atom ty) Γ v τ et ef (m : WfWorldT) :
-  m ⊨ denot_ctx_in_env Σ Γ ->
-  erase_ctx_under Σ Γ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
-  (denot_ctx_in_env Σ Γ ⊫
-    denot_ty_in_ctx_under Σ Γ (bool_precise_ty false) (tret v)) ->
-  erase_ctx_under Σ Γ ⊢ₑ et ⋮ erase_ty τ ->
-  (denot_ctx_in_env Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ ef) ->
+Lemma match_false_intro_denotation
+    gas (Σ : lty_env) v τ et ef (m : WfWorldT) :
+  lty_env_to_atom_env Σ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
+  m ⊨ denot_ty_lvar_gas gas Σ (bool_precise_ty false) (tret v) ->
+  lty_env_to_atom_env Σ ⊢ₑ et ⋮ erase_ty τ ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ ef ->
   m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ (tmatch v et ef).
+    Σ τ (tmatch v et ef).
 Proof.
 Admitted.
 

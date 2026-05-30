@@ -4,6 +4,7 @@
 
 From CoreLang Require Export SyntaxNotation.
 From ContextTypeLanguage Require Export WF.
+From Stdlib Require Import Arith.Wf_nat.
 
 Declare Scope context_scope.
 Delimit Scope context_scope with ctx.
@@ -112,7 +113,6 @@ Ltac type_env_norm :=
 
     Small context-type abbreviations used by the paper-facing typing layer. *)
 
-
 Fixpoint lvar_value_keys (v : value) : lvset :=
   match v with
   | vconst _ => ∅
@@ -136,6 +136,39 @@ Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
     (fun σ => denote_lvar_value (lso_store σ) v1 =
               denote_lvar_value (lso_store σ) v2).
 
+(** Default well-founded orders used by context-type fixed points.  This is
+    the HAT-style construction: each base type chooses a measure into [nat],
+    and recursive calls are required to decrease under that measure. *)
+Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
+  match b, c with
+  | TNat, cnat n => n
+  | TNat, cbool false => 0
+  | TNat, cbool true => 1
+  | TBool, cbool false => 0
+  | TBool, cbool true => 1
+  | TBool, cnat n => n
+  end.
+
+Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=
+  ltof _ (constant_measure_for_base b).
+
+Notation " c1 '≺[' b ']' c2 " :=
+  (constant_lt_for_base b c1 c2) (at level 20, b at next level).
+
+Lemma constant_lt_for_base_well_founded b :
+  well_founded (constant_lt_for_base b).
+Proof.
+  unfold constant_lt_for_base. apply well_founded_ltof.
+Qed.
+
+Definition mk_q_lt_base (b : base_ty) (v1 v2 : value) : type_qualifier :=
+  tqual (lvar_value_keys v1 ∪ lvar_value_keys v2)
+    (fun σ =>
+       exists c1 c2,
+         denote_lvar_value (lso_store σ) v1 = Some (vconst c1) /\
+         denote_lvar_value (lso_store σ) v2 = Some (vconst c2) /\
+         c1 ≺[b] c2).
+
 Definition over_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
   CTOver b φ.
 
@@ -149,6 +182,12 @@ Definition primop_ty
     (arg_b : base_ty) (arg_φ : type_qualifier)
     (ret_b : base_ty) (ret_φ : type_qualifier) : context_ty :=
   CTArrow (over_ty arg_b arg_φ) (precise_ty ret_b ret_φ).
+
+Definition fix_rec_call_ty
+    (b : base_ty) (x : atom) (τx τ : context_ty) : context_ty :=
+  CTArrow
+    (CTInter τx (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))))
+    τ.
 
 Definition bool_qual (b : bool) : type_qualifier :=
   mk_q_eq (vbvar 0) (vconst (cbool b)).
@@ -165,5 +204,7 @@ Notation "'b0:x=' x" := (mk_q_eq (vbvar 0) (vfvar x))
   (at level 5, format "b0:x= x").
 Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
   (at level 5, format "b0:c= c").
+Notation "'b0:x≺[' b ']' x" := (mk_q_lt_base b (vbvar 0) (vfvar x))
+  (at level 5, b at next level, x constr, format "b0:x≺[ b ] x").
 Notation "'prt' b φ" := (precise_ty b φ)
   (at level 20, b at next level, φ at next level, only printing).

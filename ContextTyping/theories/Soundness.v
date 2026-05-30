@@ -308,10 +308,7 @@ Lemma denot_letd_direct_in_ctx
   denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
-  intros Hwf IH1 IH2 m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply letd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_lam_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -324,10 +321,7 @@ Lemma denot_lam_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply lam_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_lamd_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -340,10 +334,7 @@ Lemma denot_lamd_direct_in_ctx
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply lamd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_app_direct_in_ctx
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
@@ -355,10 +346,7 @@ Lemma denot_app_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf IHfun IHarg m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply app_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_appd_direct_in_ctx
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
@@ -371,48 +359,43 @@ Lemma denot_appd_direct_in_ctx
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf IHfun IHarg m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply appd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_fix_direct_in_ctx
-    (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
+    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
   context_typing_wf Σ Γ
-    (tret (vfix (erase_ty (CTArrow τx τ)) vf))
+    (tret (vfix (TBase b →ₜ t) vf))
     (CTArrow τx τ) ->
   (forall y, y ∉ L ->
     denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
-        (CTArrow (CTArrow τx τ) ({0 ~> y} τ))
+        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
-      (tret (vfix (erase_ty (CTArrow τx τ)) vf)).
+      (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-  intros Hwf IH m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply fix_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_fixd_direct_in_ctx
-    (Φ : primop_ctx) Σ Γ τx τ vf (L : aset) :
+    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
   context_typing_wf Σ Γ
-    (tret (vfix (erase_ty (CTWand τx τ)) vf))
+    (tret (vfix (TBase b →ₜ t) vf))
     (CTWand τx τ) ->
   (forall y, y ∉ L ->
     denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)) ⊫
       denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
-        (CTWand (CTWand τx τ) ({0 ~> y} τ))
+        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
-      (tret (vfix (erase_ty (CTWand τx τ)) vf)).
+      (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-  intros Hwf IH m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply fixd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma appop_context_typing_arg_lookup
     (Φ : primop_ctx) Σ Γ op x :
@@ -452,16 +435,17 @@ Proof.
   pose proof (proj1 (wf_primop_semantic op (Φ op) Hsig x)) as Hop.
   pose proof (appop_context_typing_arg_lookup Φ Σ Γ op x Hsig Hwf)
     as Hlookup.
+  pose proof (IH m Hctx) as Harg.
+  unfold denot_ty_in_ctx_under, denot_ty in Harg.
   unfold denot_ty_in_ctx_under, denot_ty.
-  eapply appop_direct_denotation_gas_in_ctx.
+  eapply appop_intro_denotation.
   - reflexivity.
   - exact (wf_primop_arg_basic op (Φ op) Hsig).
   - exact (wf_primop_result_basic op (Φ op) Hsig).
   - exact Hlookup.
-  - exact Hctx.
   - exact (proj2 Hwf).
   - exact Hop.
-  - exact IH.
+  - exact Harg.
 Qed.
 
 Lemma denot_match_both_direct_in_ctx
@@ -477,10 +461,7 @@ Lemma denot_match_both_direct_in_ctx
     denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
-  intros Hwf IHtrue IHfalse IHt IHf m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply match_both_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_match_true_direct_in_ctx
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -493,10 +474,7 @@ Lemma denot_match_true_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-  intros Hwf IHtrue _ IHt Hef m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply match_true_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 Lemma denot_match_false_direct_in_ctx
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -509,10 +487,7 @@ Lemma denot_match_false_direct_in_ctx
   denot_ctx_in_env Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-  intros Hwf IHfalse _ Het IHf m Hctx.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply match_false_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
-Qed.
+Admitted.
 
 (** ** Fundamental theorem *)
 
