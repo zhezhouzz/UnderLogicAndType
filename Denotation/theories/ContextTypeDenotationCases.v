@@ -978,8 +978,81 @@ Lemma fixd_direct_denotation_gas_in_ctx
 Proof.
 Admitted.
 
+Lemma lvars_of_atoms_empty :
+  lvars_of_atoms (∅ : aset) = (∅ : lvset).
+Proof.
+  unfold lvars_of_atoms.
+  rewrite set_map_empty. reflexivity.
+Qed.
+
+Lemma denot_relevant_lvars_basic_ret_fvar_subset x τ :
+  basic_context_ty ∅ τ ->
+  denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hbasic v Hv.
+  unfold basic_context_ty, basic_context_ty_lvars in Hbasic.
+  destruct Hbasic as [Hτ _].
+  rewrite lvars_of_atoms_empty in Hτ.
+  unfold denot_relevant_lvars in Hv.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+  set_solver.
+Qed.
+
+Lemma denot_relevant_lvars_basic_open_tprim_fvar_subset op x τ :
+  basic_context_ty ∅ τ ->
+  denot_relevant_lvars ({0 ~> x} τ) (tprim op (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hbasic v Hv.
+  unfold basic_context_ty, basic_context_ty_lvars in Hbasic.
+  destruct Hbasic as [Hτ _].
+  rewrite lvars_of_atoms_empty in Hτ.
+  assert (Hempty : context_ty_lvars τ = (∅ : lvset)) by set_solver.
+  unfold denot_relevant_lvars in Hv.
+  rewrite cty_open_vars in Hv.
+  unfold context_ty_open_lvars in Hv.
+  rewrite Hempty, set_swap_empty in Hv.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+  set_solver.
+Qed.
+
+Lemma atom_env_to_lty_env_restrict_singleton_lookup_eq
+    (Δ1 Δ2 : gmap atom ty) x T :
+  Δ1 !! x = Some T ->
+  Δ2 !! x = Some T ->
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ1) ({[LVFree x]}) =
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ2) ({[LVFree x]}).
+Proof.
+  intros Hlookup1 Hlookup2.
+  unfold lty_env_restrict_lvars.
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env Δ1 : gmap logic_var ty) (LVFree x) T).
+  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup1. }
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env Δ2 : gmap logic_var ty) (LVFree x) T).
+  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup2. }
+  reflexivity.
+Qed.
+
+Lemma atom_env_to_lty_env_restrict_singleton_lookup
+    (Δ : gmap atom ty) x T :
+  Δ !! x = Some T ->
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ) ({[LVFree x]}) =
+  lty_env_restrict_lvars
+    (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty))) ({[LVFree x]}).
+Proof.
+  intros Hlookup.
+  eapply (atom_env_to_lty_env_restrict_singleton_lookup_eq
+    Δ (<[x := T]> (∅ : gmap atom ty)) x T);
+    [exact Hlookup|].
+  exact (map_lookup_insert (∅ : gmap atom ty) x T).
+Qed.
+
 Lemma appop_direct_denotation_gas_in_ctx
     gas (Σ : gmap atom ty) Γ op x τarg τres (m : WfWorldT) :
+  cty_depth ({0 ~> x} τres) <= gas ->
+  basic_context_ty ∅ τarg ->
+  basic_context_ty ∅ τres ->
+  erase_ctx_under Σ Γ !! x = Some (erase_ty τarg) ->
   m ⊨ denot_ctx_in_env Σ Γ ->
   erase_ctx_under Σ Γ ⊢ₑ
     tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
@@ -992,7 +1065,49 @@ Lemma appop_direct_denotation_gas_in_ctx
     (atom_env_to_lty_env (erase_ctx_under Σ Γ))
     ({0 ~> x} τres) (tprim op (vfvar x)).
 Proof.
-Admitted.
+  intros Hgas Hbasic_arg Hbasic_res Hlookup Hctx _ Hop IH.
+  rewrite denot_ty_lvar_gas_saturate by exact Hgas.
+  pose proof (IH m Hctx) as Harg.
+  unfold denot_ty_in_ctx_under, denot_ty in Harg.
+  pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+    (cty_depth τarg)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ))
+    (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
+    τarg (tret (vfvar x)) ({[LVFree x]}) m
+    (denot_relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
+    (atom_env_to_lty_env_restrict_singleton_lookup
+      (erase_ctx_under Σ Γ) x (erase_ty τarg) Hlookup)
+    Harg) as Harg_single.
+  assert (Harg_bind : m ⊨ denot_ctx (CtxBind x τarg)).
+  {
+    unfold denot_ctx, denot_ctx_under, denot_ty, erase_ctx.
+    eapply res_models_denot_ty_lvar_gas_env_agree_on
+      with (Σ1 := atom_env_to_lty_env
+          (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
+        (X := {[LVFree x]});
+      [ apply denot_relevant_lvars_basic_ret_fvar_subset;
+        exact Hbasic_arg
+      | eapply atom_env_to_lty_env_restrict_singleton_lookup_eq;
+        [ exact (map_lookup_insert (∅ : gmap atom ty) x (erase_ty τarg))
+        | exact (map_lookup_insert ({[x := erase_ty τarg]} : gmap atom ty)
+            x (erase_ty τarg)) ]
+      | exact Harg_single ].
+  }
+  pose proof (Hop m Harg_bind) as Hres_single.
+  unfold denot_ty_in_ctx, denot_ty in Hres_single.
+  change (erase_ctx (CtxBind x τarg))
+    with (<[x := erase_ty τarg]> (∅ : gmap atom ty)) in Hres_single.
+  eapply res_models_denot_ty_lvar_gas_env_agree_on
+    with (Σ1 := atom_env_to_lty_env
+        (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
+      (X := {[LVFree x]});
+    [ apply denot_relevant_lvars_basic_open_tprim_fvar_subset;
+      exact Hbasic_res
+    | symmetry;
+      apply atom_env_to_lty_env_restrict_singleton_lookup;
+      exact Hlookup
+    | exact Hres_single ].
+Qed.
 
 Lemma match_both_direct_denotation_gas_in_ctx
     gas (Σ : gmap atom ty) Γt Γf v τt τf et ef (m : WfWorldT) :

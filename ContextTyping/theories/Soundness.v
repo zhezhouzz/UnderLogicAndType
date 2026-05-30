@@ -414,6 +414,28 @@ Proof.
   eapply fixd_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
 Qed.
 
+Lemma appop_context_typing_arg_lookup
+    (Φ : primop_ctx) Σ Γ op x :
+  wf_primop_sig op (Φ op) ->
+  context_typing_wf Σ Γ
+    (tprim op (vfvar x))
+    ({0 ~> x} (primop_result_ty (Φ op))) ->
+  erase_ctx_under Σ Γ !! x = Some (erase_ty (primop_arg_ty (Φ op))).
+Proof.
+  intros Hsig [_ Hbasic].
+  rewrite cty_open_preserves_erasure in Hbasic.
+  inversion Hbasic as
+    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| |]; subst; clear Hbasic.
+  inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
+  pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.
+  unfold primop_erasure_ok in Herasure.
+  rewrite Hop_type in Herasure.
+  inversion Herasure. subst.
+  unfold primop_arg_ty, over_ty.
+  cbn [erase_ty].
+  exact Hlookup.
+Qed.
+
 Lemma denot_appop_direct_in_ctx
     (Φ : primop_ctx) Σ Γ op x :
   wf_primop_sig op (Φ op) ->
@@ -428,8 +450,18 @@ Lemma denot_appop_direct_in_ctx
 Proof.
   intros Hsig Hwf IH m Hctx.
   pose proof (proj1 (wf_primop_semantic op (Φ op) Hsig x)) as Hop.
+  pose proof (appop_context_typing_arg_lookup Φ Σ Γ op x Hsig Hwf)
+    as Hlookup.
   unfold denot_ty_in_ctx_under, denot_ty.
-  eapply appop_direct_denotation_gas_in_ctx; eauto; try exact (proj2 Hwf).
+  eapply appop_direct_denotation_gas_in_ctx.
+  - reflexivity.
+  - exact (wf_primop_arg_basic op (Φ op) Hsig).
+  - exact (wf_primop_result_basic op (Φ op) Hsig).
+  - exact Hlookup.
+  - exact Hctx.
+  - exact (proj2 Hwf).
+  - exact Hop.
+  - exact IH.
 Qed.
 
 Lemma denot_match_both_direct_in_ctx
