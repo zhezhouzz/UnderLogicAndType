@@ -1111,15 +1111,17 @@ Proof.
 Qed.
 
 Lemma match_both_intro_denotation
-    gas (Σ : lty_env) v τt τf et ef (m : WfWorldT) :
+    gas (Σ : lty_env) v τt τf et ef
+    (m mt mf : WfWorldT) (Hdef : raw_sum_defined mt mf) :
   lty_env_to_atom_env Σ ⊢ₑ
     tmatch v et ef ⋮ erase_ty (CTSum τt τf) ->
-  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
+  res_sum mt mf Hdef ⊑ m ->
+  mt ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty true)) Σ
     (bool_precise_ty true) (tret v) ->
-  m ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
+  mf ⊨ denot_ty_lvar_gas (cty_depth (bool_precise_ty false)) Σ
     (bool_precise_ty false) (tret v) ->
-  m ⊨ denot_ty_lvar_gas gas Σ τt et ->
-  m ⊨ denot_ty_lvar_gas gas Σ τf ef ->
+  mt ⊨ denot_ty_lvar_gas (cty_depth τt) Σ τt et ->
+  mf ⊨ denot_ty_lvar_gas (cty_depth τf) Σ τf ef ->
   m ⊨ denot_ty_lvar_gas gas
     Σ (CTSum τt τf) (tmatch v et ef).
 Proof.

@@ -300,12 +300,41 @@ Lemma denot_ctx_in_env_star_elim
 Proof.
 Admitted.
 
+Lemma denot_ctx_in_env_sum_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ (CtxSum Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ denot_ctx_in_env Σ Γ1 /\
+    m2 ⊨ denot_ctx_in_env Σ Γ2.
+Proof.
+Admitted.
+
 Lemma denot_ty_lvar_gas_star_union_to_ctx
     (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
   m ⊨ denot_ty_lvar_gas (cty_depth τ)
     (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
      atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
   m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_sum_left_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_sum_right_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  erase_ctx Γ1 = erase_ctx Γ2 ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
 Proof.
 Admitted.
 
@@ -696,7 +725,27 @@ Lemma fundamental_match_both_case
     denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf IHtrue IHfalse IHt IHf m Hctx.
+  destruct (denot_ctx_in_env_sum_elim Σ Γt Γf m Hctx)
+    as [mt [mf [Hdef [Hle [Hctxt Hctxf]]]]].
+  pose proof (IHtrue mt Hctxt) as Htrue.
+  pose proof (IHfalse mf Hctxf) as Hfalse.
+  pose proof (IHt mt Hctxt) as Ht.
+  pose proof (IHf mf Hctxf) as Hf.
+  unfold denot_ty_in_ctx_under, denot_ty in Htrue, Hfalse, Ht, Hf |- *.
+  destruct Hwf as [Hwf_cty Hbasic].
+  destruct Hwf_cty as [[Hbasic_ctx _] _].
+  cbn [basic_ctx] in Hbasic_ctx.
+  destruct Hbasic_ctx as [_ [_ [_ Herase]]].
+  eapply match_both_intro_denotation with
+    (mt := mt) (mf := mf) (Hdef := Hdef).
+  - rewrite lvar_store_to_atom_store_atom_store. exact Hbasic.
+  - exact Hle.
+  - apply denot_ty_lvar_gas_sum_left_to_ctx. exact Htrue.
+  - eapply denot_ty_lvar_gas_sum_right_to_ctx; eauto.
+  - apply denot_ty_lvar_gas_sum_left_to_ctx. exact Ht.
+  - eapply denot_ty_lvar_gas_sum_right_to_ctx; eauto.
+Qed.
 
 Lemma fundamental_match_true_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
