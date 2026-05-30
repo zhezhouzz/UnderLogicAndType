@@ -59,6 +59,260 @@ Definition entails_total (φ : FormulaT) (P : WfWorldT -> Prop) : Prop :=
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
 
+(** ** Context bridge lemmas for the Fundamental proof
+
+    These statements are semantic context-denotation facts.  They live below
+    [ContextTyping] so the Fundamental proof only instantiates induction
+    hypotheses and calls the appropriate bridge. *)
+
+Lemma denot_ctx_in_env_relevant_basic_world
+    (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  m ⊨ basic_world_formula
+    (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e).
+Proof.
+  intros Hctx.
+  unfold denot_ctx_in_env in Hctx.
+  repeat rewrite res_models_and_iff in Hctx.
+  eapply basic_world_formula_subenv.
+  - intros v T Hv.
+    eapply storeA_restrict_lookup_some in Hv as [_ Hv].
+    exact Hv.
+  - exact (proj1 (proj2 Hctx)).
+Qed.
+
+Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
+  x ∉ dom (erase_ctx_under Σ Γ) →
+  erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
+  <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
+Proof.
+  intros Hfresh.
+  unfold erase_ctx_under in *.
+  cbn [erase_ctx] in *.
+  assert (HxΣ : x ∉ dom Σ) by better_set_solver.
+  assert (HxΓ : x ∉ dom (erase_ctx Γ)) by better_set_solver.
+  change (Σ ∪ ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty)) =
+    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
+  replace ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty))
+    with (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty)).
+  2:{
+    symmetry.
+    apply (storeA_union_singleton_insert_fresh
+      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
+      x (erase_ty τ)).
+    exact HxΓ.
+  }
+  change (Σ ∪ (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty) :
+      gmap atom ty) =
+    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
+  apply (storeA_insert_union_r_fresh (V := ty) (K := atom)
+    (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
+    x (erase_ty τ)).
+  exact HxΣ.
+Qed.
+
+Lemma erase_ctx_under_star_bind_env_fresh Σ Γ x τ :
+  x ∉ dom (erase_ctx_under Σ Γ) →
+  erase_ctx_under Σ (CtxStar Γ (CtxBind x τ)) =
+  <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
+Proof.
+  intros Hfresh.
+  unfold erase_ctx_under in *.
+  cbn [erase_ctx] in *.
+  assert (HxΣ : x ∉ dom Σ) by better_set_solver.
+  assert (HxΓ : x ∉ dom (erase_ctx Γ)) by better_set_solver.
+  change (Σ ∪ ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty)) =
+    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
+  replace ((erase_ctx Γ : gmap atom ty) ∪
+      ({[x := erase_ty τ]} : gmap atom ty))
+    with (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty)).
+  2:{
+    symmetry.
+    apply (storeA_union_singleton_insert_fresh
+      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
+      x (erase_ty τ)).
+    exact HxΓ.
+  }
+  change (Σ ∪ (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty) :
+      gmap atom ty) =
+    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
+  apply (storeA_insert_union_r_fresh (V := ty) (K := atom)
+    (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
+    x (erase_ty τ)).
+  exact HxΣ.
+Qed.
+
+Lemma denot_ctx_in_env_comma_bind_from_arg_denotation
+    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
+    (m my : WfWorldT) (F : FiberExtensionT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  res_extend_by m F my ->
+  my ⊨ denot_ty_lvar_gas (cty_depth τx)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τx (tret (vfvar y)) ->
+  my ⊨ denot_ctx_in_env Σ (CtxComma Γ (CtxBind y τx)).
+Proof.
+Admitted.
+
+Lemma denot_ctx_in_env_star_bind_from_arg_denotation
+    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
+    (m marg : WfWorldT) (Hc : world_compat marg m) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ctx_in_env Σ Γ ->
+  marg ⊨ denot_ty_lvar_gas (cty_depth τx)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τx (tret (vfvar y)) ->
+  res_product marg m Hc ⊨ denot_ctx_in_env Σ (CtxStar Γ (CtxBind y τx)).
+Proof.
+Admitted.
+
+Lemma denot_ctx_in_env_star_bind_from_result_extension
+    (Σ : gmap atom ty) Γ1 Γ τ1 e1 x
+    (m2 m1 mx1 mbody : WfWorldT)
+    (Hcbody : world_compat m2 mx1) (Fx : FiberExtensionT) :
+  x ∉ dom (erase_ctx_under Σ Γ) ->
+  m2 ⊨ denot_ctx_in_env Σ Γ ->
+  m1 ⊨ denot_ty_in_ctx_under Σ Γ1 τ1 e1 ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m1 Fx mx1 ->
+  res_product m2 mx1 Hcbody ⊑ mbody ->
+  mbody ⊨ denot_ctx_in_env Σ (CtxStar Γ (CtxBind x τ1)).
+Proof.
+Admitted.
+
+Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τ e.
+Proof.
+  intros Hy Hden.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
+  rewrite (erase_ctx_under_comma_bind_env_fresh Σ Γ y τx Hy) in Hden.
+  replace (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    with (atom_env_to_lty_env
+      (<[y := erase_ty τx]> (erase_ctx_under Σ Γ))).
+  2:{ apply atom_store_to_lvar_store_insert. }
+  exact Hden.
+Qed.
+
+Lemma denot_ty_in_ctx_under_star_bind_to_lvar_insert
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx_under Σ Γ) ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    τ e.
+Proof.
+  intros Hy Hden.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
+  rewrite (erase_ctx_under_star_bind_env_fresh Σ Γ y τx Hy) in Hden.
+  replace (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    with (atom_env_to_lty_env
+      (<[y := erase_ty τx]> (erase_ctx_under Σ Γ))).
+  2:{ apply atom_store_to_lvar_store_insert. }
+  exact Hden.
+Qed.
+
+Lemma denot_ctx_in_env_star_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ (CtxStar Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ denot_ctx_in_env Σ Γ1 /\
+    m2 ⊨ denot_ctx_in_env Σ Γ2.
+Proof.
+Admitted.
+
+Lemma denot_ctx_in_env_sum_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ denot_ctx_in_env Σ (CtxSum Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ denot_ctx_in_env Σ Γ1 /\
+    m2 ⊨ denot_ctx_in_env Σ Γ2.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_star_union_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
+     atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
+  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_sum_left_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
+Proof.
+  unfold erase_ctx_under. cbn [erase_ctx]. auto.
+Qed.
+
+Lemma denot_ty_lvar_gas_sum_right_to_ctx
+    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
+  erase_ctx Γ1 = erase_ctx Γ2 ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
+Proof.
+  intros Herase Hden.
+  unfold erase_ctx_under. cbn [erase_ctx].
+  rewrite Herase.
+  exact Hden.
+Qed.
+
+Lemma basic_typing_star_union_lty_env
+    (Σ : gmap atom ty) Γ1 Γ2 e T :
+  erase_ctx_under Σ (CtxStar Γ1 Γ2) ⊢ₑ e ⋮ T ->
+  lty_env_to_atom_env
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
+     atom_env_to_lty_env (erase_ctx_under Σ Γ2)) ⊢ₑ e ⋮ T.
+Proof.
+Admitted.
+
+Lemma letd_body_world_compat
+    e1 x (m1 m2 mx1 : WfWorldT) (Hc : world_compat m1 m2)
+    (Fx : FiberExtensionT) :
+  expr_result_extension_witness e1 x Fx ->
+  x ∉ world_dom (m2 : WorldT) ->
+  res_extend_by m1 Fx mx1 ->
+  world_compat m2 mx1.
+Proof.
+  intros HFx Hx Hext.
+  assert (Hout : ext_out Fx ## world_dom (m2 : WorldT)).
+  {
+    destruct HFx as [_ [_ Hout] _].
+    unfold ext_out in *. rewrite Hout. set_solver.
+  }
+  assert (Hc_sym : world_compat m2 m1).
+  {
+    intros σ2 σ1 Hσ2 Hσ1.
+    apply storeA_compat_sym. exact (Hc σ1 σ2 Hσ1 Hσ2).
+  }
+  pose proof (world_compat_restrict_l_extend_by_fresh
+    m2 m1 mx1 Fx (world_dom (m2 : WorldT)) Hout Hext Hc_sym) as Hcompat.
+  rewrite (res_restrict_eq_of_le m2 m2 ltac:(reflexivity)) in Hcompat.
+  exact Hcompat.
+Qed.
+
 End ContextDenotation.
 
 #[global] Instance denot_cty_inst :

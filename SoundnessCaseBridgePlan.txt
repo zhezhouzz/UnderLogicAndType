@@ -106,12 +106,49 @@ Case-by-case plan
 Implementation order
 --------------------
 
-1. Change MatchTrue/MatchFalse helper statements to include the semantic
-   unreachable premise.
-2. Prove the Soundness bridges for MatchTrue/MatchFalse using the new helper
-   statements.
-3. Keep the existing AppOp bridge proved.
-4. Rename/prove the remaining old `denot_*_direct_in_ctx` wrappers one case at
-   a time into `fundamental_*_case` bridges.
-5. Leave hard Denotation core cases as named obligations, but do not hide
-   Soundness bridge work behind old direct wrapper names.
+1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
+   the judgment support `X` and then satisfies the target context.  Prove the
+   Fundamental case through one Denotation-level transport lemma:
+
+   `denot_ty_in_ctx_under_ctx_sub_transport`.
+
+   This helper packages the two facts that otherwise make the case noisy:
+   denotation only observes `fv_tm e ∪ fv_cty τ`, and erased environments that
+   agree on that support give the same type denotation.
+
+2. Move context bridge lemmas out of `ContextTyping/theories/Soundness.v` and
+   into the Denotation layer.  Soundness should only instantiate IHs and call
+   these bridges.  The bridge family is:
+
+   - `denot_ctx_in_env_comma_bind_from_arg_denotation`
+   - `denot_ctx_in_env_star_bind_from_arg_denotation`
+   - `denot_ctx_in_env_star_elim`
+   - `denot_ctx_in_env_sum_elim`
+   - `denot_ty_in_ctx_under_comma_bind_to_lvar_insert`
+   - `denot_ty_in_ctx_under_star_bind_to_lvar_insert`
+   - `denot_ty_lvar_gas_star_union_to_ctx`
+   - `basic_typing_star_union_lty_env`
+   - `letd_body_world_compat`
+
+   The result-extension bridges should also live below Soundness, but their
+   statements must avoid importing the typing judgment into Denotation.  They
+   should be phrased in terms of semantic/basic premises, and Soundness should
+   derive those premises from `context_typing_wf`.
+
+3. Prove easy erased-environment transport bridges immediately.  These are
+   mostly `erase_ctx_under` equality/agreement plus
+   `atom_env_to_lty_env_insert_free`.
+
+4. Prove `star_elim` and `sum_elim` by unfolding `denot_ctx_in_env`, applying
+   `res_models_star_iff` / `res_models_plus_iff`, and pushing the outer
+   `basic_world_formula` assumptions down with `basic_world_formula_subenv`.
+
+5. Prove the argument-bind context bridges using a general preservation lemma:
+   if a world extension or product does not remove the relevant context support,
+   old context formulas remain true, and the new bind comes directly from the
+   supplied argument denotation.
+
+6. Leave genuinely semantic case lemmas in
+   `Denotation/theories/ContextTypeDenotationCases.v` as named obligations until
+   their individual case proof is tackled.  Do not replace them with old
+   wrapper stacks.
