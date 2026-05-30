@@ -158,7 +158,7 @@ Proof.
   cbn [denot_ctx_under] in Hbind.
   replace (Σ ∪ erase_ctx (CtxBind x τ))
     with (<[x := erase_ty τ]> Σ).
-  - exact Hbind.
+  - unfold res_models. models_fuel_irrel Hbind.
   - cbn [erase_ctx].
     symmetry.
     apply (storeA_union_singleton_insert_fresh

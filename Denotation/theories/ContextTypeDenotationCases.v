@@ -1052,6 +1052,16 @@ Proof.
   exact (map_lookup_insert (∅ : gmap atom ty) x T).
 Qed.
 
+Lemma denot_ctx_bind_from_arg_denotation
+    (Σ : gmap atom ty) x τ (m : WfWorldT) :
+  basic_context_ty ∅ τ ->
+  Σ !! x = Some (erase_ty τ) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ) (atom_env_to_lty_env Σ)
+    τ (tret (vfvar x)) ->
+  m ⊨ denot_ctx (CtxBind x τ).
+Proof.
+Admitted.
+
 Lemma appop_intro_denotation
     gas (Σ : gmap atom ty) op x τarg τres (m : WfWorldT) :
   cty_depth ({0 ~> x} τres) <= gas ->
@@ -1081,18 +1091,7 @@ Proof.
     Harg) as Harg_single.
   assert (Harg_bind : m ⊨ denot_ctx (CtxBind x τarg)).
   {
-    unfold denot_ctx, denot_ctx_under, denot_ty, erase_ctx.
-    eapply res_models_denot_ty_lvar_gas_env_agree_on
-      with (Σ1 := atom_env_to_lty_env
-          (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
-        (X := {[LVFree x]});
-      [ apply denot_relevant_lvars_basic_ret_fvar_subset;
-        exact Hbasic_arg
-      | eapply atom_env_to_lty_env_restrict_singleton_lookup_eq;
-        [ exact (map_lookup_insert (∅ : gmap atom ty) x (erase_ty τarg))
-        | exact (map_lookup_insert ({[x := erase_ty τarg]} : gmap atom ty)
-            x (erase_ty τarg)) ]
-      | exact Harg_single ].
+    eapply denot_ctx_bind_from_arg_denotation; eauto.
   }
   pose proof (Hop m Harg_bind) as Hres_single.
   unfold denot_ty_in_ctx, denot_ty in Hres_single.

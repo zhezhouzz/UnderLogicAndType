@@ -12,29 +12,27 @@ Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
   Σ ∪ erase_ctx Γ.
 
 Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
-  match Γ with
-  | CtxEmpty =>
-      FTrue
-  | CtxBind x τ =>
-      denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
-  | CtxComma Γ1 Γ2 =>
-      FAnd
-        (denot_ctx_under Σ Γ1)
-        (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
-  | CtxStar Γ1 Γ2 =>
-      FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
-  | CtxSum Γ1 Γ2 =>
-      FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
-  end.
+  FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    (match Γ with
+    | CtxEmpty =>
+        FTrue
+    | CtxBind x τ =>
+        denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+    | CtxComma Γ1 Γ2 =>
+        FAnd
+          (denot_ctx_under Σ Γ1)
+          (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
+    | CtxStar Γ1 Γ2 =>
+        FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+    | CtxSum Γ1 Γ2 =>
+        FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+    end).
 
 Definition denot_ctx (Γ : ctx) : FormulaT :=
   denot_ctx_under (erase_ctx Γ) Γ.
 
 Definition denot_ctx_in_env (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
-  FAnd (basic_world_formula (atom_env_to_lty_env Σ))
-    (FAnd
-      (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
-      (denot_ctx_under Σ Γ)).
+  denot_ctx_under Σ Γ.
 
 Definition denot_ty_under
     (Σ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
@@ -65,6 +63,14 @@ Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
     [ContextTyping] so the Fundamental proof only instantiates induction
     hypotheses and calls the appropriate bridge. *)
 
+Lemma denot_ctx_under_basic_world
+    (Σ : gmap atom ty) (Γ : ctx) (m : WfWorldT) :
+  m ⊨ denot_ctx_under Σ Γ ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)).
+Proof.
+  destruct Γ; cbn [denot_ctx_under]; rewrite res_models_and_iff; tauto.
+Qed.
+
 Lemma denot_ctx_in_env_relevant_basic_world
     (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
   m ⊨ denot_ctx_in_env Σ Γ ->
@@ -72,13 +78,12 @@ Lemma denot_ctx_in_env_relevant_basic_world
     (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e).
 Proof.
   intros Hctx.
-  unfold denot_ctx_in_env in Hctx.
-  repeat rewrite res_models_and_iff in Hctx.
+  pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
   eapply basic_world_formula_subenv.
   - intros v T Hv.
     eapply storeA_restrict_lookup_some in Hv as [_ Hv].
     exact Hv.
-  - exact (proj1 (proj2 Hctx)).
+  - exact Hworld.
 Qed.
 
 Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
@@ -234,7 +239,15 @@ Lemma denot_ctx_in_env_star_elim
     m1 ⊨ denot_ctx_in_env Σ Γ1 /\
     m2 ⊨ denot_ctx_in_env Σ Γ2.
 Proof.
-Admitted.
+  intros Hctx.
+  unfold denot_ctx_in_env in Hctx |- *.
+  cbn [denot_ctx_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ Hstar].
+  apply res_models_star_iff in Hstar as
+    [m1 [m2 [Hc [Hle [HΓ1 HΓ2]]]]].
+  exists m1, m2, Hc. repeat split; assumption.
+Qed.
 
 Lemma denot_ctx_in_env_sum_elim
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
@@ -244,7 +257,15 @@ Lemma denot_ctx_in_env_sum_elim
     m1 ⊨ denot_ctx_in_env Σ Γ1 /\
     m2 ⊨ denot_ctx_in_env Σ Γ2.
 Proof.
-Admitted.
+  intros Hctx.
+  unfold denot_ctx_in_env in Hctx |- *.
+  cbn [denot_ctx_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ Hplus].
+  apply res_models_plus_iff in Hplus as
+    [m1 [m2 [Hdef [Hle [HΓ1 HΓ2]]]]].
+  exists m1, m2, Hdef. repeat split; assumption.
+Qed.
 
 Lemma denot_ty_lvar_gas_star_union_to_ctx
     (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :

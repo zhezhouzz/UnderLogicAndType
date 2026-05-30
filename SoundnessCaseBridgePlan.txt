@@ -6,7 +6,7 @@ Principle
 
 The Fundamental proof should look like the proven TLet branch:
 
-1. The Soundness case consumes `denot_ctx_in_env` and induction hypotheses.
+1. The Soundness case consumes context denotation and induction hypotheses.
 2. It derives concrete `denot_ty_lvar_gas` premises for the current world.
 3. It calls a Denotation-level helper such as `lam_intro_denotation`.
 
@@ -105,6 +105,26 @@ Case-by-case plan
 
 Implementation order
 --------------------
+
+0. Redesign context denotation so the basic-world guard lives inside
+   `denot_ctx_under` itself:
+
+   `denot_ctx_under Σ Γ :=
+      FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+        (match Γ with ... end)`.
+
+   This makes `CtxStar` and `CtxSum` decompose by pure Logic lemmas:
+
+   - from `m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2)`, `res_models_star_iff`
+     directly produces branch worlds satisfying `denot_ctx_under Σ Γ1` and
+     `denot_ctx_under Σ Γ2`;
+   - from `m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2)`, `res_models_plus_iff`
+     does the analogous sum split.
+
+   During migration, keep `denot_ctx_in_env Σ Γ := denot_ctx_under Σ Γ` as a
+   compatibility alias so the proof spine stays stable.  After the bridge
+   lemmas compile, replace all uses of `denot_ctx_in_env` with
+   `denot_ctx_under` and delete `denot_ctx_in_env` entirely.
 
 1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
    the judgment support `X` and then satisfies the target context.  Prove the
