@@ -1063,9 +1063,12 @@ Implementation order
          `basic_tm_has_ltype_lvars`
          `basic_value_has_ltype_lc` / `basic_tm_has_ltype_lc` if needed
 
-     - Prove substitution/instantiation directly by induction:
+     - Prove substitution/instantiation directly by mutual induction, but in
+       a depth-general form because lambdas/fixes/lets recurse under binders:
 
-         `basic_tm_has_ltype_msubst_store`
+         `basic_value_has_ltype_msubst_store_at d`
+         `basic_tm_has_ltype_msubst_store_at d`
+         `basic_tm_has_ltype_msubst_store` as the `d = 0` corollary
 
        Variable cases split on whether a free atom is fixed by `σ`; fixed
        variables use `atom_store_has_ltype`, residual variables use lookup in

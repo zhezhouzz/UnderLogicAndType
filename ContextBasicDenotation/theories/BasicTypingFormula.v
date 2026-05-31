@@ -107,6 +107,22 @@ Lemma basic_tm_has_ltype_to_open_env Σ e T :
   basic_tm_has_ltype_by_open_env Σ e T.
 Admitted.
 
+Lemma basic_value_has_ltype_msubst_store_at
+    d σ Σ v T :
+  atom_store_has_ltype Σ σ ->
+  basic_value_has_ltype Σ v T ->
+  basic_value_has_ltype (lty_env_msubst_store σ Σ)
+    (lstore_instantiate_value_at d (lstore_lift_free σ) v) T.
+Admitted.
+
+Lemma basic_tm_has_ltype_msubst_store_at
+    d σ Σ e T :
+  atom_store_has_ltype Σ σ ->
+  basic_tm_has_ltype Σ e T ->
+  basic_tm_has_ltype (lty_env_msubst_store σ Σ)
+    (lstore_instantiate_tm_at d (lstore_lift_free σ) e) T.
+Admitted.
+
 Lemma basic_tm_has_ltype_msubst_store
     σ Σ e T :
   atom_store_has_ltype Σ σ ->
@@ -114,14 +130,9 @@ Lemma basic_tm_has_ltype_msubst_store
   basic_tm_has_ltype (lty_env_msubst_store σ Σ)
     (lstore_instantiate_tm (lstore_lift_free σ) e) T.
 Proof.
-  (* The proof is a pure BasicTyping/OpenEnv transport:
-     - rewrite [lstore_instantiate_tm (lstore_lift_free σ)] to [subst_map σ]
-       using [atom_store_has_ltype_closed];
-     - commute [open_tm_env] with the closed substitution [σ];
-     - identify the opened residual atom environment with
-       [env_delete σ (lty_env_to_atom_env (lty_env_open_lvars η Σ))];
-     - finish with [msubst_basic_typing_tm]. *)
-Admitted.
+  intros Hσ Hty.
+  exact (basic_tm_has_ltype_msubst_store_at 0 σ Σ e T Hσ Hty).
+Qed.
 
 Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc
     (Σ : lty_env) e1 e2 y T :
