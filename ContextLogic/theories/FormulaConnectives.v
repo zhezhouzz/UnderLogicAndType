@@ -276,6 +276,36 @@ Proof.
   eapply res_models_fuel_scoped; eauto.
 Qed.
 
+Lemma res_models_over_map
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FOver ψ) →
+  (∀ n : WfWorldT, res_subset m n → n ⊨ φ → n ⊨ ψ) →
+  m ⊨ FOver φ →
+  m ⊨ FOver ψ.
+Proof.
+  unfold res_models. cbn [formula_measure res_models_fuel].
+  intros Hscope Hmap [_ [n [Hle Hφ]]].
+  split; [exact Hscope|].
+  exists n. split; [exact Hle|].
+  apply Hmap; [exact Hle|].
+  unfold res_models. models_fuel_irrel Hφ.
+Qed.
+
+Lemma res_models_under_map
+    (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FUnder ψ) →
+  (∀ n : WfWorldT, res_subset n m → n ⊨ φ → n ⊨ ψ) →
+  m ⊨ FUnder φ →
+  m ⊨ FUnder ψ.
+Proof.
+  unfold res_models. cbn [formula_measure res_models_fuel].
+  intros Hscope Hmap [_ [n [Hle Hφ]]].
+  split; [exact Hscope|].
+  exists n. split; [exact Hle|].
+  apply Hmap; [exact Hle|].
+  unfold res_models. models_fuel_irrel Hφ.
+Qed.
+
 Lemma res_models_resource_atom_intro
     (m : WfWorldT) (D : lvset)
     (P : LWorldOn (V := V) D → Prop) :
@@ -366,6 +396,26 @@ Proof.
 	    exact Hfib.
   - intros [Hlc Hfib].
     eapply res_models_FFibVars_projection_intro; eauto.
+Qed.
+
+Lemma res_models_FFibVars_map
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FFibVars D ψ) →
+  (∀ σ mfib,
+    res_fiber_from_projection m (lvars_fv D) σ mfib →
+    mfib ⊨ formula_msubst_store σ φ →
+    mfib ⊨ formula_msubst_store σ ψ) →
+  m ⊨ FFibVars D φ →
+  m ⊨ FFibVars D ψ.
+Proof.
+  intros Hscopeψ Hmap Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscopeφ.
+  pose proof (proj1 (res_models_FFibVars_iff m D φ Hscopeφ) Hmodel)
+    as [Hlc Hfib].
+  eapply res_models_FFibVars_intro; [exact Hscopeψ | exact Hlc |].
+  intros σ mfib Hproj.
+  apply Hmap; [exact Hproj|].
+  apply Hfib. exact Hproj.
 Qed.
 
 Lemma res_models_FFibVars_singleton_elim

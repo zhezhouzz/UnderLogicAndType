@@ -298,6 +298,20 @@ Lemma typed_lty_env_bind_dom (Σ : lty_env) T :
   lvars_shift_from 0 (dom Σ) ∪ {[LVBound 0]}.
 Proof. apply lvar_store_bind_dom. Qed.
 
+Lemma typed_lty_env_bind_lookup_free (Σ : lty_env) T x :
+  typed_lty_env_bind Σ T !! LVFree x = Σ !! LVFree x.
+Proof.
+  unfold typed_lty_env_bind, lvar_store_bind.
+  rewrite lookup_insert_ne by discriminate.
+  unfold lvar_store_shift, lvar_store_shift_from.
+  change ((storeA_rekey (logic_var_shift_from 0) Σ
+    : gmap logic_var ty) !! logic_var_shift_from 0 (LVFree x) =
+    Σ !! LVFree x).
+  apply storeA_rekey_lookup.
+  apply logic_var_shift_from_inj.
+Qed.
+
+
 Lemma typed_lty_env_bind_atom_env_insert_dom
     (Δ : gmap atom ty) x Tx Ty :
   x ∉ dom Δ ->

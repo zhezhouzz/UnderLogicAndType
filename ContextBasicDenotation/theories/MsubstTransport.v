@@ -244,6 +244,94 @@ Proof.
     exact HP.
 Qed.
 
+Lemma type_qualifier_formula_msubst_store2_models
+    σ1 σ2 q (m : WfWorldT) :
+  res_models m
+    (formula_msubst_store σ2
+      (formula_msubst_store σ1 (type_qualifier_formula q))) ->
+  res_models m
+    (type_qualifier_formula
+      (qual_msubst_store σ2 (qual_msubst_store σ1 q))).
+Proof.
+  intros Hm.
+  destruct q as [D P].
+  change (formula_msubst_store σ2
+    (formula_msubst_store σ1
+      (type_qualifier_formula {| qual_lvars := D; qual_prop := P |})))
+    with (FAtom (lqual_msubst_store σ2
+      (lqual_msubst_store σ1
+        (type_qualifier_lqual {| qual_lvars := D; qual_prop := P |}))))
+    in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, type_qualifier_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop] in Hden.
+  change (atom_store_to_lvar_store σ1) with (lstore_lift_free σ1) in Hden.
+  change (atom_store_to_lvar_store σ2) with (lstore_lift_free σ2) in Hden.
+  destruct Hden as [Hlc [Hsub Hholds]].
+  apply res_models_atom_intro.
+  unfold type_qualifier_formula, type_qualifier_lqual,
+    qual_msubst_store, qual_mlsubst, logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop].
+  change (atom_store_to_lvar_store σ1) with (lstore_lift_free σ1).
+  change (atom_store_to_lvar_store σ2) with (lstore_lift_free σ2).
+  exists Hlc, Hsub.
+  intros s.
+  specialize (Hholds
+    (lstore_on_mlsubst_back D (lstore_lift_free σ1)
+      (lstore_on_mlsubst_back (D ∖ dom (lstore_lift_free σ1 : LStoreT))
+        (lstore_lift_free σ2) s))).
+  rewrite lstore_in_lworld_on_mlsubst_back in Hholds.
+  rewrite lstore_in_lworld_on_mlsubst_back in Hholds.
+  exact Hholds.
+Qed.
+
+Lemma type_qualifier_formula_msubst_store_assoc_models
+    σ1 σ2 q (m : WfWorldT) :
+  res_models m
+    (formula_msubst_store σ2
+      (formula_msubst_store σ1 (type_qualifier_formula q))) ->
+  res_models m
+    (formula_msubst_store σ2
+      (type_qualifier_formula (qual_msubst_store σ1 q))).
+Proof.
+  intros Hm.
+  destruct q as [D P].
+  change (formula_msubst_store σ2
+    (formula_msubst_store σ1
+      (type_qualifier_formula {| qual_lvars := D; qual_prop := P |})))
+    with (FAtom (lqual_msubst_store σ2
+      (lqual_msubst_store σ1
+        (type_qualifier_lqual {| qual_lvars := D; qual_prop := P |}))))
+    in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, type_qualifier_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop] in Hden.
+  change (atom_store_to_lvar_store σ1) with (lstore_lift_free σ1) in Hden.
+  change (atom_store_to_lvar_store σ2) with (lstore_lift_free σ2) in Hden.
+  destruct Hden as [Hlc [Hsub Hholds]].
+  apply res_models_atom_intro.
+  unfold type_qualifier_formula, type_qualifier_lqual,
+    qual_msubst_store, qual_mlsubst, logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop].
+  change (atom_store_to_lvar_store σ1) with (lstore_lift_free σ1).
+  change (atom_store_to_lvar_store σ2) with (lstore_lift_free σ2).
+  exists Hlc, Hsub.
+  intros s.
+  specialize (Hholds (lstore_on_mlsubst_back D (lstore_lift_free σ1) s)).
+  rewrite lstore_in_lworld_on_mlsubst_back in Hholds.
+  exact Hholds.
+Qed.
+
 Lemma expr_result_formula_msubst_store_models
     σ e x (m : WfWorldT) :
   store_closed σ ->

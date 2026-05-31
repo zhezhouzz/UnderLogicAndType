@@ -331,6 +331,26 @@ Proof.
   tauto.
 Qed.
 
+Lemma qual_msubst_store_open_fibvars_domain σ φ k y :
+  y ∉ dom (σ : gmap atom value) ->
+  set_swap (LVBound k) (LVFree y) (qual_vars φ ∖ {[LVBound k]})
+    ∖ dom (lstore_lift_free σ : LStoreT) =
+  set_swap (LVBound k) (LVFree y)
+    (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound k]}).
+Proof.
+  intros Hy.
+  rewrite qual_msubst_store_vars, dom_lstore_lift_free.
+  set (R := lvars_of_atoms (dom (σ : gmap atom value))).
+  assert (Hbound : LVBound k ∉ R).
+  { subst R. unfold lvars_of_atoms. rewrite elem_of_map.
+    intros (z & Hz & _). discriminate. }
+  assert (Hfree : LVFree y ∉ R).
+  { subst R. unfold lvars_of_atoms. rewrite elem_of_map.
+    intros (z & Hz & Hzσ). inversion Hz. subst. exact (Hy Hzσ). }
+  rewrite <- set_swap_difference_fresh by assumption.
+  f_equal. set_solver.
+Qed.
+
 Lemma denot_ty_lvar_gas_msubst_store_over_body
     σ Σ b φ e (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->
@@ -352,7 +372,124 @@ Lemma denot_ty_lvar_gas_msubst_store_over_body
           (FFibVars
             (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
             (FOver (type_qualifier_formula (qual_msubst_store σ φ))))))).
-Admitted.
+Proof.
+  intros Hσty Hsrc.
+  pose proof (atom_store_has_ltype_closed _ _ Hσty) as Hclosed.
+  set (src :=
+    FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula (tm_shift 0 e) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FOver (type_qualifier_formula φ))))).
+  set (dst :=
+    FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula
+          (tm_shift 0 (lstore_instantiate_tm (lstore_lift_free σ) e))
+          (LVBound 0))
+        (FFibVars
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
+          (FOver (type_qualifier_formula (qual_msubst_store σ φ)))))).
+  assert (Hfv : formula_fv (formula_msubst_store σ src) = formula_fv dst).
+  { subst src dst. apply formula_fv_over_msubst_store_body. exact Hclosed. }
+  eapply (res_models_forall_map_same_fv m (formula_msubst_store σ src) dst).
+  - exact Hfv.
+  - pose proof (res_models_scoped _ _ Hsrc) as Hscope_src.
+    change (formula_scoped_in_world m (FForall (formula_msubst_store σ src)))
+      in Hscope_src.
+    unfold formula_scoped_in_world in Hscope_src |- *.
+    rewrite formula_fv_forall in Hscope_src |- *.
+    rewrite <- Hfv. exact Hscope_src.
+  - exists (dom (σ : gmap atom value) ∪ fv_tm e ∪ qual_dom φ).
+    intros y Hy F my HFin HFout Hext Hopen.
+    assert (Hyσ : y ∉ dom (σ : gmap atom value)) by set_solver.
+    assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+    assert (Hyφσ : y ∉ qual_dom (qual_msubst_store σ φ)).
+    { intros Hybad. apply Hyφ. eapply qual_dom_msubst_store_subset; exact Hybad. }
+    assert (Htarget_open_scope :
+      formula_scoped_in_world my (formula_open 0 y dst)).
+    {
+      eapply formula_scoped_open_of_extend.
+      - rewrite <- Hfv. exact HFin.
+      - exact HFout.
+      - exact Hext.
+    }
+    subst src dst.
+    rewrite formula_open_msubst_store_fresh in Hopen by exact Hyσ.
+    formula_msubst_syntax_norm_in Hopen.
+    formula_open_syntax_norm_in Hopen.
+    formula_open_syntax_norm_in Htarget_open_scope.
+    formula_open_syntax_norm.
+    eapply res_models_impl2_map; [| | | | exact Hopen].
+    + exact Htarget_open_scope.
+    + intros Hworld.
+      change (my ⊨ FAtom (lqual_msubst_store σ
+        (lqual_open 0 y
+          (basic_world_lqual (<[LVBound 0 := TBase b]> ∅))))).
+      rewrite lqual_msubst_store_fresh by
+        (unfold lqual_fv, lqual_open, basic_world_lqual;
+         cbn [lqual_dom];
+         eapply elem_of_disjoint; intros z Hzσ Hzopen;
+         pose proof (lvars_fv_open_subset 0 y
+           (dom (<[LVBound 0 := TBase b]> ∅ : lty_env)) z Hzopen)
+           as Hzopen';
+         rewrite dom_insert_L, dom_empty_L, lvars_fv_union,
+           lvars_fv_singleton_bound, lvars_fv_empty in Hzopen';
+         set_solver).
+      exact Hworld.
+    + intros Hresult.
+      eapply expr_result_formula_msubst_store_open_shift_models_back;
+        [exact Hclosed|set_solver|exact Hresult].
+    + intros Hfib.
+      rewrite formula_open_over in Hfib.
+      rewrite type_qualifier_formula_open in Hfib by exact Hyφ.
+      formula_msubst_syntax_norm_in Hfib.
+      change (my ⊨ FFibVars
+        (set_swap (LVBound 0) (LVFree y) (qual_vars φ ∖ {[LVBound 0]})
+          ∖ dom (lstore_lift_free σ : LStoreT))
+        (FOver (formula_msubst_store σ
+          (type_qualifier_formula (φ ^q^ y))))) in Hfib.
+      rewrite (qual_msubst_store_open_fibvars_domain σ φ 0 y Hyσ) in Hfib.
+      eapply (res_models_FFibVars_map my
+        (set_swap (LVBound 0) (LVFree y)
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]}))
+        (FOver (formula_msubst_store σ
+          (type_qualifier_formula (φ ^q^ y))))
+        (formula_open 0 y
+          (FOver (type_qualifier_formula (qual_msubst_store σ φ))))).
+      * eapply formula_scoped_impl_r.
+        eapply formula_scoped_impl_r.
+        exact Htarget_open_scope.
+      * intros σfib mfib Hproj Hover.
+        formula_msubst_syntax_norm_in Hover.
+        eapply res_models_over_map.
+        -- pose proof (res_fiber_from_projection_world_dom my mfib
+             (lvars_fv
+               (set_swap (LVBound 0) (LVFree y)
+                 (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})))
+             σfib Hproj) as Hdomfib.
+           pose proof (formula_scoped_impl_r my _ _ Htarget_open_scope)
+             as Hscope_impl1.
+           pose proof (formula_scoped_impl_r my _ _ Hscope_impl1)
+             as Hscope_fib.
+           pose proof (formula_scoped_fibvars_r my _ _ Hscope_fib)
+             as Hscope_over_my.
+           eapply formula_scoped_in_world_from_formula_fv.
+           unfold formula_scoped_in_world in Hscope_over_my.
+           rewrite Hdomfib.
+           intros a Ha.
+           apply Hscope_over_my.
+           eapply formula_msubst_store_fv_subset; exact Ha.
+        -- intros n _ Hqual.
+           rewrite type_qualifier_formula_open by exact Hyφσ.
+           rewrite qual_open_msubst_store_fresh by exact Hyσ.
+           eapply type_qualifier_formula_msubst_store_assoc_models.
+           exact Hqual.
+        -- exact Hover.
+      * exact Hfib.
+  - change (m ⊨ FForall (formula_msubst_store σ src)) in Hsrc.
+    exact Hsrc.
+Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_under_body
     σ Σ b φ e (m : WfWorldT) :
@@ -375,7 +512,124 @@ Lemma denot_ty_lvar_gas_msubst_store_under_body
           (FFibVars
             (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
             (FUnder (type_qualifier_formula (qual_msubst_store σ φ))))))).
-Admitted.
+Proof.
+  intros Hσty Hsrc.
+  pose proof (atom_store_has_ltype_closed _ _ Hσty) as Hclosed.
+  set (src :=
+    FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula (tm_shift 0 e) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FUnder (type_qualifier_formula φ))))).
+  set (dst :=
+    FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula
+          (tm_shift 0 (lstore_instantiate_tm (lstore_lift_free σ) e))
+          (LVBound 0))
+        (FFibVars
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
+          (FUnder (type_qualifier_formula (qual_msubst_store σ φ)))))).
+  assert (Hfv : formula_fv (formula_msubst_store σ src) = formula_fv dst).
+  { subst src dst. apply formula_fv_under_msubst_store_body. exact Hclosed. }
+  eapply (res_models_forall_map_same_fv m (formula_msubst_store σ src) dst).
+  - exact Hfv.
+  - pose proof (res_models_scoped _ _ Hsrc) as Hscope_src.
+    change (formula_scoped_in_world m (FForall (formula_msubst_store σ src)))
+      in Hscope_src.
+    unfold formula_scoped_in_world in Hscope_src |- *.
+    rewrite formula_fv_forall in Hscope_src |- *.
+    rewrite <- Hfv. exact Hscope_src.
+  - exists (dom (σ : gmap atom value) ∪ fv_tm e ∪ qual_dom φ).
+    intros y Hy F my HFin HFout Hext Hopen.
+    assert (Hyσ : y ∉ dom (σ : gmap atom value)) by set_solver.
+    assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+    assert (Hyφσ : y ∉ qual_dom (qual_msubst_store σ φ)).
+    { intros Hybad. apply Hyφ. eapply qual_dom_msubst_store_subset; exact Hybad. }
+    assert (Htarget_open_scope :
+      formula_scoped_in_world my (formula_open 0 y dst)).
+    {
+      eapply formula_scoped_open_of_extend.
+      - rewrite <- Hfv. exact HFin.
+      - exact HFout.
+      - exact Hext.
+    }
+    subst src dst.
+    rewrite formula_open_msubst_store_fresh in Hopen by exact Hyσ.
+    formula_msubst_syntax_norm_in Hopen.
+    formula_open_syntax_norm_in Hopen.
+    formula_open_syntax_norm_in Htarget_open_scope.
+    formula_open_syntax_norm.
+    eapply res_models_impl2_map; [| | | | exact Hopen].
+    + exact Htarget_open_scope.
+    + intros Hworld.
+      change (my ⊨ FAtom (lqual_msubst_store σ
+        (lqual_open 0 y
+          (basic_world_lqual (<[LVBound 0 := TBase b]> ∅))))).
+      rewrite lqual_msubst_store_fresh by
+        (unfold lqual_fv, lqual_open, basic_world_lqual;
+         cbn [lqual_dom];
+         eapply elem_of_disjoint; intros z Hzσ Hzopen;
+         pose proof (lvars_fv_open_subset 0 y
+           (dom (<[LVBound 0 := TBase b]> ∅ : lty_env)) z Hzopen)
+           as Hzopen';
+         rewrite dom_insert_L, dom_empty_L, lvars_fv_union,
+           lvars_fv_singleton_bound, lvars_fv_empty in Hzopen';
+         set_solver).
+      exact Hworld.
+    + intros Hresult.
+      eapply expr_result_formula_msubst_store_open_shift_models_back;
+        [exact Hclosed|set_solver|exact Hresult].
+    + intros Hfib.
+      rewrite formula_open_under in Hfib.
+      rewrite type_qualifier_formula_open in Hfib by exact Hyφ.
+      formula_msubst_syntax_norm_in Hfib.
+      change (my ⊨ FFibVars
+        (set_swap (LVBound 0) (LVFree y) (qual_vars φ ∖ {[LVBound 0]})
+          ∖ dom (lstore_lift_free σ : LStoreT))
+        (FUnder (formula_msubst_store σ
+          (type_qualifier_formula (φ ^q^ y))))) in Hfib.
+      rewrite (qual_msubst_store_open_fibvars_domain σ φ 0 y Hyσ) in Hfib.
+      eapply (res_models_FFibVars_map my
+        (set_swap (LVBound 0) (LVFree y)
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]}))
+        (FUnder (formula_msubst_store σ
+          (type_qualifier_formula (φ ^q^ y))))
+        (formula_open 0 y
+          (FUnder (type_qualifier_formula (qual_msubst_store σ φ))))).
+      * eapply formula_scoped_impl_r.
+        eapply formula_scoped_impl_r.
+        exact Htarget_open_scope.
+      * intros σfib mfib Hproj Hunder.
+        formula_msubst_syntax_norm_in Hunder.
+        eapply res_models_under_map.
+        -- pose proof (res_fiber_from_projection_world_dom my mfib
+             (lvars_fv
+               (set_swap (LVBound 0) (LVFree y)
+                 (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})))
+             σfib Hproj) as Hdomfib.
+           pose proof (formula_scoped_impl_r my _ _ Htarget_open_scope)
+             as Hscope_impl1.
+           pose proof (formula_scoped_impl_r my _ _ Hscope_impl1)
+             as Hscope_fib.
+           pose proof (formula_scoped_fibvars_r my _ _ Hscope_fib)
+             as Hscope_under_my.
+           eapply formula_scoped_in_world_from_formula_fv.
+           unfold formula_scoped_in_world in Hscope_under_my.
+           rewrite Hdomfib.
+           intros a Ha.
+           apply Hscope_under_my.
+           eapply formula_msubst_store_fv_subset; exact Ha.
+        -- intros n _ Hqual.
+           rewrite type_qualifier_formula_open by exact Hyφσ.
+           rewrite qual_open_msubst_store_fresh by exact Hyσ.
+           eapply type_qualifier_formula_msubst_store_assoc_models.
+           exact Hqual.
+        -- exact Hunder.
+      * exact Hfib.
+  - change (m ⊨ FForall (formula_msubst_store σ src)) in Hsrc.
+    exact Hsrc.
+Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_arrow_body
     gas σ Σ τx τr e (m : WfWorldT) :

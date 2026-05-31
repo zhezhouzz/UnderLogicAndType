@@ -118,6 +118,15 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma qual_dom_msubst_store_subset σ q :
+  qual_dom (qual_msubst_store σ q) ⊆ qual_dom q.
+Proof.
+  unfold qual_dom.
+  rewrite qual_msubst_store_vars.
+  rewrite lvars_fv_difference_of_atoms.
+  set_solver.
+Qed.
+
 Lemma atom_store_to_lvar_store_restrict_lvars_subset_eq
     (σ : StoreT) (D : lvset) (X : aset) :
   lvars_fv D ⊆ X ->
@@ -183,6 +192,66 @@ Proof.
       as ->.
     { reflexivity. }
     apply lstore_on_mlsubst_back_restrict_eq; [symmetry; exact HρD|exact Hs].
+Qed.
+
+Lemma qual_open_msubst_store_fresh k y σ q :
+  y ∉ dom (σ : gmap atom value) ->
+  qual_open_atom k y (qual_msubst_store σ q) =
+  qual_msubst_store σ (qual_open_atom k y q).
+Proof.
+  intros Hy.
+  destruct q as [D P].
+  cbn [qual_open_atom qual_msubst_store qual_mlsubst].
+  apply qual_ext.
+  - change (set_swap (LVBound k) (LVFree y)
+        (D ∖ dom (atom_store_to_lvar_store σ : LStoreT)) =
+      set_swap (LVBound k) (LVFree y) D
+        ∖ dom (atom_store_to_lvar_store σ : LStoreT)).
+    assert (Hbound : LVBound k ∉
+        dom (atom_store_to_lvar_store σ : LStoreT)).
+    {
+      rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]].
+      discriminate.
+    }
+    assert (Hfree : LVFree y ∉
+        dom (atom_store_to_lvar_store σ : LStoreT)).
+    {
+      rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hyx Ha]].
+      inversion Hyx; subst. exact (Hy Ha).
+    }
+    apply set_swap_difference_fresh; assumption.
+  - intros s1 s2 Hs. cbn [qual_prop].
+    change (P (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ)
+          (lstore_on_open_back k y
+            (D ∖ dom (atom_store_to_lvar_store σ : LStoreT)) s1)) <->
+      P (lstore_on_open_back k y D
+          (lstore_on_mlsubst_back (lvars_open k y D)
+            (atom_store_to_lvar_store σ) s2))).
+    enough
+      (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ)
+        (lstore_on_open_back k y
+          (D ∖ dom (atom_store_to_lvar_store σ : LStoreT)) s1) =
+       lstore_on_open_back k y D
+        (lstore_on_mlsubst_back (lvars_open k y D)
+          (atom_store_to_lvar_store σ) s2)) as ->.
+    { reflexivity. }
+    eapply lstore_on_open_mlsubst_back_fresh; eauto.
+    + rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]].
+      discriminate.
+    + rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hyx Ha]].
+      inversion Hyx; subst. exact (Hy Ha).
 Qed.
 
 Lemma lvars_fv_qual_vars q :

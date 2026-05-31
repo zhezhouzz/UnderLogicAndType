@@ -1382,3 +1382,128 @@ Implementation order
      the split cases.  The existing Denotation helpers should stay in their
      non-fiberwise shape; the new transport lemmas adapt the selected fiber to
      those helpers.
+
+14. Logic-syntax mapper route for the remaining denotation msubst body admits.
+
+   The remaining admits in `ContextTypeDenotationMsubst.v` should not be proved
+   by unfolding Over/Under/Arrow/Wand-specific denotation shapes.  The missing
+   proof principle is a Logic-level mapper for formulas built from
+   `FForall`, `FImpl`, `FFibVars`, `FOver`, and `FUnder`, combined with
+   atom-level payload transports from BasicDenotation.
+
+   New proof order:
+
+   1. Keep the exact lower equality
+      `lworld_on_open_mlsubst_back_fresh` proved in `LogicQualifier.v`.
+      This is the only place that should reason about exact `LWorldOn`
+      equality for open/mlsubst back maps.
+
+   2. Keep the result atom payload transports in BasicDenotation:
+      - `expr_result_formula_msubst_store_models`
+      - `expr_result_formula_msubst_store_models_back`
+      - `expr_result_formula_msubst_store_open_shift_models`
+      - `expr_result_formula_msubst_store_open_shift_models_back`
+
+      These are payload facts; Denotation should not unfold
+      `expr_result_lqual` directly.
+
+   3. Add Logic-level mapping lemmas in `FormulaConnectives.v`, not in
+      Denotation:
+
+      - `res_models_FFibVars_map`
+
+        ```
+        formula_scoped_in_world m (FFibVars D ψ) ->
+        lc_lvars D ->
+        (forall σ mfib,
+           res_fiber_from_projection m (lvars_fv D) σ mfib ->
+           mfib ⊨ formula_msubst_store σ φ ->
+           mfib ⊨ formula_msubst_store σ ψ) ->
+        m ⊨ FFibVars D φ ->
+        m ⊨ FFibVars D ψ
+        ```
+
+      - Optional `res_models_over_map_same_world` and
+        `res_models_under_map_same_world` only if the direct proof repeatedly
+        unfolds `FOver`/`FUnder`.  Their shape should be simply:
+
+        ```
+        (m ⊨ φ -> m ⊨ ψ) -> m ⊨ FOver φ -> m ⊨ FOver ψ
+        ```
+
+        with the necessary scope premise supplied separately if Rocq needs it.
+
+      - Reuse existing `res_models_forall_map_same_fv` and
+        `res_models_impl2_map`; do not introduce denotation-specific forall
+        mappers.
+
+   4. Prove Over/Under body transports in Denotation by the generic spine:
+
+      ```
+      res_models_forall_map_same_fv
+      res_models_impl2_map
+      res_models_FFibVars_map
+      ```
+
+      The first implication premise uses the existing basic-world atom
+      transport.  The second premise uses the new back direction for
+      `expr_result_formula`.  The final `FOver/FUnder(type_qualifier_formula)`
+      payload uses `type_qualifier_formula_msubst_store_models`.
+
+   5. Prove Arrow/Wand body transports with the same spine plus the induction
+      hypothesis for the recursive denotation atoms.  If exact formula equality
+      is too strong, use models-level transport and keep only the necessary
+      FV equality/subset facts for `res_models_forall_map_same_fv`.
+
+   6. After these four body transports compile, rerun full `make`, then commit.
+
+   Progress update:
+
+   - The Logic-level mapper lemmas now live in `FormulaConnectives.v`:
+     `res_models_over_map`, `res_models_under_map`, and
+     `res_models_FFibVars_map`.
+   - The BasicDenotation payload layer now has sequential qualifier msubst
+     transport:
+     `type_qualifier_formula_msubst_store2_models` and
+     `type_qualifier_formula_msubst_store_assoc_models`.
+   - The Over/Under body transports in `ContextTypeDenotationMsubst.v` are
+     proved and compile.  Their last payload step uses the Logic-syntax mapper
+     route plus the sequential qualifier msubst transport, not a
+     denotation-shape-specific unfold.
+   - A small TypeLanguage syntax lemma is now exposed as the remaining named
+     obligation:
+
+     ```
+     qual_open_msubst_store_fresh :
+       y ∉ dom σ ->
+       qual_open_atom k y (qual_msubst_store σ q) =
+       qual_msubst_store σ (qual_open_atom k y q)
+     ```
+
+     This is the type-qualifier analogue of the already-proved
+     `lqual_open_msubst_store_fresh`.  The intended proof should use the
+     generic `lstore_on_open_mlsubst_back_fresh`; the remaining nuisance is the
+     dependent-domain cast produced by `qual_ext`.
+
+   Remaining order:
+
+   1. DONE: prove `qual_open_msubst_store_fresh` as an exact equality.  The
+      proof follows `lqual_open_msubst_store_fresh`, using the Store-level
+      `lstore_on_open_mlsubst_back_fresh` helper and an explicit `change` to
+      avoid dependent-domain cast noise from `qual_ext`.
+   2. Strengthen the recursive msubst induction interface from one-way models
+      transport to models-level equivalence.  Arrow/Wand need the reverse
+      direction in their negative argument position; the old one-way
+      induction hypothesis is sufficient only for positive positions.
+   3. Prove Arrow body transport by the same `FForall`/`FImpl` mapper spine.
+      The first implication premise uses the reverse projection of the
+      strengthened induction hypothesis; the result premise uses the forward
+      projection after normalizing:
+      - `context_ty_msubst_store` through `cty_shift 0`;
+      - `lty_env_msubst_store` through `typed_lty_env_bind`;
+      - `lstore_instantiate_tm` through `tm_shift 0` and `tapp_tm`.
+   4. Prove Wand body transport analogously, replacing the inner implication
+      mapper with the existing wand connective mapper or adding the Logic-level
+      `res_models_wand_map` if it is not already present.
+   5. Rerun `make Denotation/theories/ContextTypeDenotationMsubst.vo`, then
+      full `make`, then commit.

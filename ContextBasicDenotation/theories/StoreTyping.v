@@ -90,6 +90,16 @@ Proof.
   eapply elem_of_dom_2. exact Hlook.
 Qed.
 
+Lemma atom_store_has_ltype_typed_lty_env_bind Σ σ T :
+  atom_store_has_ltype Σ σ ->
+  atom_store_has_ltype (typed_lty_env_bind Σ T) σ.
+Proof.
+  intros Hty x v Hlook.
+  destruct (Hty x v Hlook) as [Tx [HΣ Hv]].
+  exists Tx. split; [|exact Hv].
+  rewrite typed_lty_env_bind_lookup_free. exact HΣ.
+Qed.
+
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.

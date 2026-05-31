@@ -238,6 +238,45 @@ Proof.
   apply storeA_swap_involutive.
 Qed.
 
+Lemma lstore_on_open_mlsubst_back_fresh
+    k y D (ρ : LStore)
+    (s1 : LStoreOn (lvars_open k y
+      (D ∖ dom (ρ : gmap logic_var V))))
+    (s2 : LStoreOn (lvars_open k y D
+      ∖ dom (ρ : gmap logic_var V))) :
+  LVBound k ∉ dom (ρ : gmap logic_var V) ->
+  LVFree y ∉ dom (ρ : gmap logic_var V) ->
+  lso_store s1 = lso_store s2 ->
+  lstore_on_mlsubst_back D ρ
+    (lstore_on_open_back k y (D ∖ dom (ρ : gmap logic_var V)) s1) =
+  lstore_on_open_back k y D
+    (lstore_on_mlsubst_back (lvars_open k y D) ρ s2).
+Proof.
+  intros Hbound Hfree Hs.
+  apply lstore_on_ext.
+  unfold lstore_on_mlsubst_back, lstore_on_open_back.
+  cbn [lso_store storeAO_store].
+  unfold lstore_swap, lstore_rekey.
+  change (storeA_swap (LVBound k) (LVFree y) (lso_store s1) ∪
+      storeA_restrict ρ D =
+    storeA_swap (LVBound k) (LVFree y)
+      (lso_store s2 ∪ storeA_restrict ρ (lvars_open k y D))).
+  transitivity
+    (storeA_swap (LVBound k) (LVFree y) (lso_store s2) ∪
+      storeA_swap (LVBound k) (LVFree y)
+        (storeA_restrict ρ (lvars_open k y D))).
+  - rewrite Hs.
+    f_equal.
+    rewrite <- storeA_restrict_swap.
+    replace (set_swap (LVBound k) (LVFree y) (lvars_open k y D))
+      with D by better_base_solver.
+    replace (storeA_swap (LVBound k) (LVFree y) ρ) with ρ; [reflexivity|].
+    symmetry.
+    apply storeA_swap_fresh; assumption.
+  - symmetry.
+    apply storeA_swap_union.
+Qed.
+
 Definition lstore_shift_from (k : nat) (s : LStore) : LStore :=
   lstore_rekey (logic_var_shift_from k) s.
 
