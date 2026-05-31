@@ -186,17 +186,12 @@ Proof.
   intros [_ [_ [Hagree Hctx]]] IH m HΓ1.
   pose proof (Hctx m HΓ1) as HΓ2.
   pose proof (IH (res_restrict m (fv_tm e ∪ fv_cty τ)) HΓ2) as Hden.
-  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
-  eapply res_models_kripke; [apply res_restrict_le |].
-  eapply res_models_denot_ty_lvar_gas_env_agree_on
-    with (X := denot_relevant_lvars τ e).
-  - reflexivity.
-  - apply atom_env_to_lty_env_restrict_lvars_agree_on
-      with (X := fv_tm e ∪ fv_cty τ).
-    + intros x Hx. symmetry. apply Hagree. exact Hx.
-    + unfold denot_relevant_lvars.
-      rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
-      set_solver.
+  eapply (denot_ty_in_ctx_under_restrict_agree_transport
+    Σ Γ1 Γ2 (fv_tm e ∪ fv_cty τ) τ e m).
+  - unfold denot_relevant_lvars.
+    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
+    set_solver.
+  - exact Hagree.
   - exact Hden.
 Qed.
 

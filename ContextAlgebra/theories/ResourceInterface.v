@@ -290,6 +290,90 @@ Proof. apply rawA_compat_unit_r. Qed.
 Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof. apply wf_singleton_worldA. Qed.
 
+Lemma raw_fiber_empty (m : World) :
+  raw_fiber m (∅ : StoreT) = m.
+Proof. apply rawA_fiber_empty. Qed.
+
+Lemma res_fiber_from_projection_empty_store_dom
+    (m mfib : WfWorld) (σ : StoreT) :
+  res_fiber_from_projection m ∅ σ mfib ->
+  dom (σ : StoreT) = ∅.
+Proof.
+  intros [Hproj _].
+  pose proof (wfworld_store_dom (res_restrict m ∅) σ Hproj) as Hdom.
+  change (dom (σ : StoreT) = world_dom (res_restrict m ∅ : World)) in Hdom.
+  simpl in Hdom. set_solver.
+Qed.
+
+Lemma res_fiber_from_projection_empty_eq
+    (m mfib : WfWorld) (σ : StoreT) :
+  res_fiber_from_projection m ∅ σ mfib ->
+  mfib = m.
+Proof.
+  intros Hfib.
+  pose proof (res_fiber_from_projection_empty_store_dom m mfib σ Hfib)
+    as Hdomσ.
+  assert (Hσ : σ = (∅ : StoreT)).
+  {
+    apply map_eq. intros x.
+    apply not_elem_of_dom. rewrite Hdomσ. set_solver.
+  }
+  destruct Hfib as [_ Heq].
+  apply wfworld_ext.
+  transitivity (raw_fiber (m : World) σ).
+  - exact Heq.
+  - rewrite Hσ. apply raw_fiber_empty.
+Qed.
+
+Lemma res_fiber_from_projection_empty_self (m : WfWorld) :
+  res_fiber_from_projection m ∅ (∅ : StoreT) m.
+Proof.
+  split.
+  - destruct (world_wf m) as [[σ Hσ] _].
+    pose proof (resA_restrict_project_store m ∅ σ Hσ) as Hproj.
+    rewrite storeA_restrict_empty_set in Hproj.
+    exact Hproj.
+  - symmetry. apply raw_fiber_empty.
+Qed.
+
+Lemma res_fiber_from_projection_store_source
+    (m mfib : WfWorld) (X : aset) (σ τ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  (mfib : World) τ ->
+  (m : World) τ.
+Proof.
+  intros [_ Hfib] Hτ.
+  destruct mfib as [wmfib Hwfib].
+  cbn [raw_world raw_worldA world_stores] in Hτ, Hfib.
+  change (wmfib = rawA_fiber (m : World) σ) in Hfib.
+  change (wmfib τ) in Hτ.
+  rewrite Hfib in Hτ.
+  exact (proj1 Hτ).
+Qed.
+
+Lemma res_fiber_from_projection_world_dom
+    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  world_dom (mfib : World) = world_dom (m : World).
+Proof.
+  intros [_ Hfib].
+  pose proof (f_equal world_dom Hfib) as Hdom.
+  exact Hdom.
+Qed.
+
+Lemma res_restrict_fiber_from_projection_dom_singleton
+    (w wfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection w X σ wfib →
+  (res_restrict wfib (dom σ) : World) = singleton_world σ.
+Proof. apply resA_restrict_fiber_from_projection_dom_singleton. Qed.
+
+Lemma res_restrict_fiber_from_projection_eq_singleton
+    (w wfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection w X σ wfib →
+  dom σ = X →
+  (res_restrict wfib X : World) = singleton_world σ.
+Proof. apply resA_restrict_fiber_from_projection_eq_singleton. Qed.
+
 
 
 (** * Concrete resource key action and order interface lemmas *)
@@ -350,6 +434,31 @@ Lemma res_fiber_from_projection_transport_on
     res_fiber_from_projection m D σ mfib ∧
     res_restrict mfib X = res_restrict nfib X.
 Proof. apply resA_fiber_from_projection_transport_on. Qed.
+
+Lemma res_fiber_from_projection_store_compat
+    (m mfibX mfibY : WfWorld) (X Y : aset) (σX σY : StoreT) :
+  res_fiber_from_projection m X σX mfibX →
+  res_fiber_from_projection mfibX Y σY mfibY →
+  storeA_compat σX σY.
+Proof. apply resA_fiber_from_projection_store_compat. Qed.
+
+Lemma res_fiber_from_projection_nested_union_l
+    (m mfibX mfibXY : WfWorld) (X Y : aset) (σX σY : StoreT) :
+  res_fiber_from_projection m X σX mfibX ->
+  res_fiber_from_projection mfibX Y σY mfibXY ->
+  storeA_compat σX σY ->
+  res_fiber_from_projection m (X ∪ Y) (σX ∪ σY) mfibXY.
+Proof. apply resA_fiber_from_projection_nested_union_l. Qed.
+
+Lemma res_fiber_from_projection_nested_union_r
+    (m mfibXY : WfWorld) (X Y : aset) (σXY : StoreT) :
+  res_fiber_from_projection m (X ∪ Y) σXY mfibXY ->
+  exists σX mfibX σY,
+    σX = storeA_restrict σXY X /\
+    σY = storeA_restrict σXY Y /\
+    res_fiber_from_projection m X σX mfibX /\
+    res_fiber_from_projection mfibX Y σY mfibXY.
+Proof. apply resA_fiber_from_projection_nested_union_r. Qed.
 
 Lemma world_compat_le_r (w m n : WfWorld) :
   m ⊑ n →

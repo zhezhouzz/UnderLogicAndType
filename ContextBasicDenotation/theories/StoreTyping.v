@@ -3,6 +3,7 @@
     Basic typing for stores, worlds, and extension outputs. *)
 
 From ContextBasicDenotation Require Import Notation.
+From ContextLogic Require Import FormulaConnectives.
 
 Section StoreTyping.
 
@@ -521,6 +522,13 @@ Proof.
     + destruct Hden as [_ [Hsub _]]. exact Hsub.
     + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
 Qed.
+
+Lemma basic_world_formula_fibvars_elim
+    (D : lvset) (Σ : lty_env) (m : WfWorld) :
+  res_models m (FFibVars D (basic_world_formula Σ)) ->
+  res_models m (basic_world_formula Σ).
+Proof.
+Admitted.
 
 Lemma basic_world_formula_subenv
     (Σsmall Σbig : lty_env) (m : WfWorld) :

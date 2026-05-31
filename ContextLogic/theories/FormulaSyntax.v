@@ -133,6 +133,77 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
 Definition formula_msubst_store (σ : Store (V := V)) (φ : Formula) : Formula :=
   formula_mlsubst (lstore_lift_free σ) φ.
 
+Lemma formula_mlsubst_union
+    (ρ1 ρ2 : LStoreT) (φ : Formula) :
+  storeA_compat ρ1 ρ2 ->
+  formula_mlsubst ρ2 (formula_mlsubst ρ1 φ) =
+  formula_mlsubst (ρ1 ∪ ρ2) φ.
+Proof.
+  intros Hcompat.
+  induction φ; cbn [formula_mlsubst];
+    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; eauto using storeA_compat_restrict_r; reflexivity).
+  - f_equal. apply lqual_mlsubst_union. exact Hcompat.
+  - rewrite IHφ by exact Hcompat.
+    f_equal.
+    rewrite dom_union_L.
+    set_solver.
+Qed.
+
+Lemma formula_msubst_store_fibvars σ D φ :
+  formula_msubst_store σ (FFibVars D φ) =
+  FFibVars (D ∖ lvars_of_atoms (dom (σ : Store (V := V))))
+    (formula_msubst_store σ φ).
+Proof.
+  unfold formula_msubst_store. cbn [formula_mlsubst].
+  rewrite dom_lstore_lift_free. reflexivity.
+Qed.
+
+Lemma formula_msubst_store_union
+    (σ1 σ2 : Store (V := V)) (φ : Formula) :
+  storeA_compat σ1 σ2 ->
+  formula_msubst_store σ2 (formula_msubst_store σ1 φ) =
+  formula_msubst_store (σ1 ∪ σ2) φ.
+Proof.
+  intros Hcompat.
+  unfold formula_msubst_store.
+  rewrite formula_mlsubst_union.
+  - f_equal.
+    unfold lstore_lift_free.
+    symmetry.
+    change (storeA_map_key LVFree (σ1 ∪ σ2) =
+      (storeA_map_key LVFree σ1 : gmap logic_var V) ∪
+      storeA_map_key LVFree σ2).
+    apply storeA_map_key_union.
+    intros a b Hab. inversion Hab. reflexivity.
+  - unfold storeA_compat, map_compat in *.
+    intros v a b Hv1 Hv2.
+    destruct v as [k | x].
+    + rewrite lstore_lift_free_lookup_bound in Hv1. discriminate.
+    + rewrite !lstore_lift_free_lookup_free in Hv1, Hv2.
+      eapply Hcompat; eauto.
+Qed.
+
+
+Lemma formula_msubst_store_empty (σ : Store (V := V)) (φ : Formula) :
+  dom (σ : gmap atom V) = ∅ ->
+  formula_msubst_store σ φ = φ.
+Proof.
+  intros Hdom.
+  assert (Hσ : (σ : gmap atom V) = ∅).
+  {
+    apply (map_eq (M:=gmap atom)). intros x.
+    apply not_elem_of_dom.
+    rewrite Hdom. set_solver.
+  }
+  rewrite Hσ.
+  unfold formula_msubst_store, lstore_lift_free.
+  rewrite kmap_empty.
+  induction φ; cbn [formula_mlsubst];
+    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
+  - rewrite lqual_mlsubst_empty. reflexivity.
+  - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
+Qed.
+
 Lemma formula_mlsubst_preserves_measure ρ φ :
   formula_measure (formula_mlsubst ρ φ) = formula_measure φ.
 Proof.
@@ -704,12 +775,20 @@ Ltac formula_open_env_syntax_norm_in H :=
   try rewrite ?formula_open_env_fibvars in H by eauto;
   try rewrite ?formula_open_env_forall in H by eauto.
 
+Ltac formula_msubst_syntax_norm :=
+  rewrite ?formula_msubst_store_fibvars.
+
+Ltac formula_msubst_syntax_norm_in H :=
+  rewrite ?formula_msubst_store_fibvars in H.
+
 Ltac formula_syntax_norm :=
   formula_fv_syntax_norm;
   formula_open_syntax_norm;
-  formula_open_env_syntax_norm.
+  formula_open_env_syntax_norm;
+  formula_msubst_syntax_norm.
 
 Ltac formula_syntax_norm_in H :=
   formula_fv_syntax_norm_in H;
   formula_open_syntax_norm_in H;
-  formula_open_env_syntax_norm_in H.
+  formula_open_env_syntax_norm_in H;
+  formula_msubst_syntax_norm_in H.

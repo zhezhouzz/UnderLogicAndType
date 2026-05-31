@@ -19,6 +19,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation StoreT := (Store (V := V)) (only parsing).
 Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 Local Notation "m ⊨ φ" := (res_models m φ)
@@ -353,6 +354,197 @@ Proof.
 	    exact Hfib.
   - intros [Hlc Hfib].
     eapply res_models_FFibVars_projection_intro; eauto.
+Qed.
+
+Lemma res_models_FFibVars_empty_iff (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FFibVars ∅ φ ↔ m ⊨ φ.
+Proof.
+  split.
+  - intros Hmodel.
+    pose proof (res_models_scoped m (FFibVars ∅ φ) Hmodel) as Hscope.
+    pose proof (proj1 (res_models_FFibVars_iff m ∅ φ Hscope) Hmodel)
+      as [_ Hfib].
+    specialize (Hfib (∅ : StoreT) m
+      (res_fiber_from_projection_empty_self m)).
+    rewrite formula_msubst_store_empty in Hfib; [exact Hfib | reflexivity].
+  - intros Hmodel.
+    pose proof (res_models_scoped m φ Hmodel) as Hscope.
+    eapply res_models_FFibVars_intro.
+    + apply (proj2 (formula_scoped_fibvars_iff m ∅ φ)).
+      split; [rewrite lvars_fv_empty; set_solver | exact Hscope].
+    + unfold lc_lvars. set_solver.
+    + intros σ mfib Hproj.
+      rewrite formula_msubst_store_empty.
+      * pose proof (res_fiber_from_projection_empty_eq m mfib σ Hproj) as ->.
+        exact Hmodel.
+      * eapply res_fiber_from_projection_empty_store_dom; exact Hproj.
+Qed.
+
+Lemma res_models_FFibVars_and_l
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FAnd φ ψ) ->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope_and.
+  pose proof (proj1 (res_models_FFibVars_iff m D (FAnd φ ψ) Hscope_and)
+    Hmodel) as [Hlc Hfib].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D φ)).
+    apply (proj1 (formula_scoped_fibvars_iff m D (FAnd φ ψ))) in Hscope_and.
+    destruct Hscope_and as [HD Hinner].
+    apply (proj1 (formula_scoped_and_iff m φ ψ)) in Hinner.
+    split; [exact HD | tauto].
+  - exact Hlc.
+  - intros σ mfib Hproj.
+    specialize (Hfib σ mfib Hproj).
+    cbn [formula_msubst_store formula_mlsubst] in Hfib.
+    rewrite res_models_and_iff in Hfib. tauto.
+Qed.
+
+Lemma res_models_FFibVars_and_r
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FAnd φ ψ) ->
+  m ⊨ FFibVars D ψ.
+Proof.
+  intros Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope_and.
+  pose proof (proj1 (res_models_FFibVars_iff m D (FAnd φ ψ) Hscope_and)
+    Hmodel) as [Hlc Hfib].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D ψ)).
+    apply (proj1 (formula_scoped_fibvars_iff m D (FAnd φ ψ))) in Hscope_and.
+    destruct Hscope_and as [HD Hinner].
+    apply (proj1 (formula_scoped_and_iff m φ ψ)) in Hinner.
+    split; [exact HD | tauto].
+  - exact Hlc.
+  - intros σ mfib Hproj.
+    specialize (Hfib σ mfib Hproj).
+    cbn [formula_msubst_store formula_mlsubst] in Hfib.
+    rewrite res_models_and_iff in Hfib. tauto.
+Qed.
+
+Lemma res_models_FFibVars_same_fv
+    (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
+  lc_lvars D2 ->
+  lvars_fv D1 = lvars_fv D2 ->
+  m ⊨ FFibVars D1 φ ->
+  m ⊨ FFibVars D2 φ.
+Proof.
+  intros Hlc2 Hfv Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope1.
+  pose proof (proj1 (res_models_FFibVars_iff m D1 φ Hscope1) Hmodel)
+    as [_ Hfib1].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D2 φ)).
+    apply (proj1 (formula_scoped_fibvars_iff m D1 φ)) in Hscope1.
+    destruct Hscope1 as [HD1 Hφ].
+    split; [rewrite <- Hfv; exact HD1 | exact Hφ].
+  - exact Hlc2.
+  - intros σ mfib Hproj2.
+    apply Hfib1.
+    rewrite Hfv. exact Hproj2.
+Qed.
+
+Lemma res_models_FFibVars_nested_union_l
+    (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
+  m ⊨ FFibVars D1 (FFibVars D2 φ) ->
+  m ⊨ FFibVars (D1 ∪ D2) φ.
+Proof.
+Admitted.
+
+Lemma res_models_FFibVars_nested_union_r
+    (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
+  m ⊨ FFibVars (D1 ∪ D2) φ ->
+  m ⊨ FFibVars D1 (FFibVars D2 φ).
+Proof.
+Admitted.
+
+Lemma res_models_FFibVars_nested_union_iff
+    (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
+  m ⊨ FFibVars D1 (FFibVars D2 φ) <->
+  m ⊨ FFibVars (D1 ∪ D2) φ.
+Proof.
+  split.
+  - apply res_models_FFibVars_nested_union_l.
+  - apply res_models_FFibVars_nested_union_r.
+Qed.
+
+Lemma res_models_FFibVars_nested_elim
+    (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
+  lvars_fv D1 ⊆ lvars_fv D2 ->
+  m ⊨ FFibVars D1 (FFibVars D2 φ) ->
+  m ⊨ FFibVars D2 φ.
+Proof.
+  intros Hsub Hmodel.
+  apply res_models_FFibVars_nested_union_iff in Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m (D1 ∪ D2) φ Hscope) Hmodel)
+    as [HlcU _].
+  eapply res_models_FFibVars_same_fv; [| | exact Hmodel].
+  - intros v Hv. apply HlcU. set_solver.
+  - rewrite lvars_fv_union. set_solver.
+Qed.
+
+Lemma res_models_FFibVars_idemp_elim
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) :
+  m ⊨ FFibVars D (FFibVars D φ) ->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hmodel.
+  apply res_models_FFibVars_nested_union_iff in Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m (D ∪ D) φ Hscope) Hmodel)
+    as [HlcU _].
+  eapply res_models_FFibVars_same_fv; [| | exact Hmodel].
+  - intros v Hv. apply HlcU. set_solver.
+  - rewrite lvars_fv_union. set_solver.
+Qed.
+
+Lemma res_models_FFibVars_star_distrib_l
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FStar φ ψ) ->
+  m ⊨ FStar (FFibVars D φ) (FFibVars D ψ).
+Proof.
+Admitted.
+
+Lemma res_models_FFibVars_plus_distrib_l
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FPlus φ ψ) ->
+  m ⊨ FPlus (FFibVars D φ) (FFibVars D ψ).
+Proof.
+Admitted.
+
+Lemma res_models_FFibVars_star_elim_shared
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FStar (FFibVars D φ) (FFibVars D ψ)) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ FFibVars D φ /\
+    m2 ⊨ FFibVars D ψ.
+Proof.
+  intros Hmodel.
+  apply res_models_FFibVars_star_distrib_l in Hmodel.
+  apply res_models_star_iff in Hmodel as
+    [m1 [m2 [Hc [Hle [Hφ Hψ]]]]].
+  exists m1, m2, Hc. split; [exact Hle |].
+  split; eapply res_models_FFibVars_idemp_elim; eauto.
+Qed.
+
+Lemma res_models_FFibVars_plus_elim_shared
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FPlus (FFibVars D φ) (FFibVars D ψ)) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ FFibVars D φ /\
+    m2 ⊨ FFibVars D ψ.
+Proof.
+  intros Hmodel.
+  apply res_models_FFibVars_plus_distrib_l in Hmodel.
+  apply res_models_plus_iff in Hmodel as
+    [m1 [m2 [Hdef [Hle [Hφ Hψ]]]]].
+  exists m1, m2, Hdef. split; [exact Hle |].
+  split; eapply res_models_FFibVars_idemp_elim; eauto.
 Qed.
 
 End FormulaConnectives.

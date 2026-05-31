@@ -275,6 +275,16 @@ Proof.
   intros σ. simpl. tauto.
 Qed.
 
+Lemma rawA_fiber_empty (m : WorldAT) :
+  rawA_fiber m (∅ : StoreAT) = m.
+Proof.
+  apply worldA_ext; [reflexivity |].
+  intros σ. simpl. split.
+  - tauto.
+  - intros Hσ. split; [exact Hσ |].
+    apply storeA_restrict_empty_set.
+Qed.
+
 Definition resA_fiber (w : WfWorldAT) (σ : StoreAT)
     (Hne : ∃ σ0, (w : WorldAT) σ0 ∧ storeA_restrict σ0 (dom σ) = σ)
     : WfWorldAT.

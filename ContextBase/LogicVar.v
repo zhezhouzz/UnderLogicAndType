@@ -539,6 +539,24 @@ Proof.
     intros Heq. inversion Heq. subst. contradiction.
 Qed.
 
+Lemma lvars_fv_difference_of_atoms (D : lvset) (X : aset) :
+  lvars_fv (D ∖ lvars_of_atoms X) = lvars_fv D ∖ X.
+Proof.
+  apply set_eq. intros y.
+  rewrite !lvars_fv_elem, !elem_of_difference.
+  split.
+  - intros [HyD HyX]. split; [apply lvars_fv_elem; exact HyD |].
+    intros Hy.
+    apply HyX.
+    unfold lvars_of_atoms.
+    apply elem_of_map. exists y. split; [reflexivity | exact Hy].
+  - intros [HyD HyX]. split; [apply lvars_fv_elem in HyD; exact HyD |].
+    intros Hy.
+    unfold lvars_of_atoms in Hy.
+    apply elem_of_map in Hy as [x [Heq Hx]].
+    inversion Heq. subst. contradiction.
+Qed.
+
 Lemma lvars_bv_union (D1 D2 : lvset) :
   lvars_bv (D1 ∪ D2) = lvars_bv D1 ∪ lvars_bv D2.
 Proof.

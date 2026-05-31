@@ -354,94 +354,6 @@ Proof.
     + rewrite const_qual_open_vars. set_solver.
 Qed.
 
-Lemma lqual_mlsubst_empty (q : LogicQualifierT) :
-  lqual_mlsubst (∅ : LStoreT) q = q.
-Proof.
-  destruct q as [D P].
-  cbn [lqual_mlsubst].
-  apply logic_qualifier_ext.
-  - change (D ∖ (∅ : lvset) = D).
-    apply difference_empty_L.
-  - intros w1 w2 Hlw. cbn [lqual_prop].
-    cbn [lqual_dom] in Hlw.
-    enough (lworld_on_mlsubst_back D (∅ : LStoreT) w1 = w2) as ->.
-    { reflexivity. }
-    apply lworld_on_ext.
-    unfold lworld_on_mlsubst_back.
-    cbn [lw].
-    transitivity (@lw value (D ∖ dom (∅ : LStoreT)) w1).
-    + apply wfworldA_ext. apply worldA_ext.
-      * simpl.
-        unfold storeA_restrict.
-        replace (map_restrict value (∅ : LStoreT) D) with (∅ : LStoreT)
-          by (symmetry; apply map_restrict_idemp;
-              rewrite dom_empty_L; apply empty_subseteq).
-        change (dom (∅ : LStoreT)) with (∅ : lvset).
-        apply set_eq. intros z.
-        rewrite elem_of_union, elem_of_empty. tauto.
-      * intros σ. simpl.
-        unfold storeA_restrict.
-        replace (map_restrict value (∅ : LStoreT) D) with (∅ : LStoreT)
-          by (symmetry; apply map_restrict_idemp;
-              rewrite dom_empty_L; apply empty_subseteq).
-        split.
-        -- intros (σ1 & σ2 & Hσ1 & -> & _ & ->).
-           replace (σ1 ∪ ∅) with σ1 by (symmetry; apply map_union_empty).
-           exact Hσ1.
-        -- intros Hσ.
-           exists σ, (∅ : LStoreT). repeat split; try exact Hσ; try reflexivity.
-           ++ exact (ResourceAlgebra.rawA_compat_unit_r
-                (@lw value _ w1 : LWorldT) σ (∅ : LStoreT) Hσ eq_refl).
-           ++ symmetry. apply map_union_empty.
-    + exact Hlw.
-Qed.
-
-Lemma formula_msubst_store_empty (σ : StoreT) (φ : FormulaT) :
-  dom (σ : gmap atom value) = ∅ ->
-  formula_msubst_store σ φ = φ.
-Proof.
-  intros Hdom.
-  assert (Hσ : (σ : gmap atom value) = ∅).
-  {
-    apply (map_eq (M:=gmap atom)). intros x.
-    apply not_elem_of_dom.
-    rewrite Hdom. set_solver.
-  }
-  rewrite Hσ.
-  unfold formula_msubst_store, lstore_lift_free.
-  rewrite kmap_empty.
-  induction φ; cbn [formula_mlsubst];
-    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
-  - rewrite lqual_mlsubst_empty. reflexivity.
-  - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
-Qed.
-
-Lemma res_fiber_from_projection_empty_store_dom
-    (m mfib : WfWorldT) σ :
-  res_fiber_from_projection m ∅ σ mfib ->
-  dom (σ : StoreT) = ∅.
-Proof.
-  intros [Hproj _].
-  pose proof (wfworld_store_dom (res_restrict m ∅) σ Hproj) as Hdom.
-  change (dom (σ : StoreT) = world_dom (res_restrict m ∅ : WorldT)) in Hdom.
-  simpl in Hdom. set_solver.
-Qed.
-
-Lemma res_fiber_from_projection_store_source
-    (m mfib : WfWorldT) X σ τ :
-  res_fiber_from_projection m X σ mfib ->
-  (mfib : WorldT) τ ->
-  (m : WorldT) τ.
-Proof.
-  intros [_ Hfib] Hτ.
-  destruct mfib as [wmfib Hwfib].
-  cbn [raw_world raw_worldA world_stores] in Hτ, Hfib.
-  change (wmfib = rawA_fiber (m : WorldT) σ) in Hfib.
-  change (wmfib τ) in Hτ.
-  rewrite Hfib in Hτ.
-  exact (proj1 Hτ).
-Qed.
-
 Lemma const_fib_over_from_expr c y (m : WfWorldT) :
   m ⊨ expr_result_formula (tret (vconst c)) (LVFree y) ->
   m ⊨ FFibVars
@@ -1125,19 +1037,15 @@ Proof.
       Σ x (erase_ty τ) Hlookup)
     Harg) as Harg_single.
   unfold denot_ctx.
-  cbn [denot_ctx_under].
+  cbn [denot_ctx_under ctx_base_vars].
+  apply (proj2 (res_models_FFibVars_empty_iff m _)).
   rewrite res_models_and_iff. split.
-  - replace (erase_ctx_under (erase_ctx (CtxBind x τ)) (CtxBind x τ))
+  - replace (erase_ctx_under ∅ (CtxBind x τ))
       with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
     2:{
       unfold erase_ctx_under. cbn [erase_ctx].
-      change (<[x := erase_ty τ]> (∅ : gmap atom ty))
-        with ({[x := erase_ty τ]} : gmap atom ty).
-      symmetry.
-      apply (union_singleton_r (M:=gmap atom)
-        ({[x := erase_ty τ]} : gmap atom ty) x
-        (erase_ty τ) (erase_ty τ)).
-      apply lookup_singleton_eq.
+      unfold store_union, store_singleton, store_empty.
+      rewrite map_empty_union. reflexivity.
     }
     replace (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
       with (<[LVFree x := erase_ty τ]> (∅ : lty_env)).
@@ -1163,17 +1071,6 @@ Proof.
         rewrite kmap_empty.
         reflexivity.
   - unfold denot_ty.
-    replace (<[x := erase_ty τ]> (erase_ctx (CtxBind x τ)))
-      with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
-    2:{
-      cbn [erase_ctx]. unfold store_insert, store_empty, store_singleton.
-      apply map_eq. intros z.
-      destruct (decide (z = x)) as [->|Hzx].
-      - rewrite !lookup_insert_eq. reflexivity.
-      - rewrite !lookup_insert_ne by congruence.
-        rewrite lookup_empty. symmetry.
-        apply lookup_singleton_ne. congruence.
-    }
     exact Harg_single.
 Qed.
 
