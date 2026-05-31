@@ -1271,6 +1271,25 @@ Implementation order
         should use the formula-level msubst normalization from step 1 plus
         existing impl/forall/wand mapping lemmas.
 
+        Current status:
+
+        - The gas-zero case is proved by `denot_ty_lvar_gas_zero_msubst_store_models_relevant`.
+        - The structural Inter/Union/Sum branches are wired through the IH.
+          Inter exposes the reusable obligation
+          `denot_ty_lvar_gas_msubst_store_agree_relevant`, which records that
+          the transformed denotation only observes the relevant part of the
+          frozen atom store.
+        - The Over/Under branches no longer contain anonymous admits in the
+          induction proof.  They reduce to named formula-transport obligations:
+          `denot_ty_lvar_gas_msubst_store_over_body` and
+          `denot_ty_lvar_gas_msubst_store_under_body`.
+        - The Arrow/Wand branches are also reduced to named body obligations,
+          parameterized by the structural induction hypothesis:
+          `denot_ty_lvar_gas_msubst_store_arrow_body` and
+          `denot_ty_lvar_gas_msubst_store_wand_body`.
+        - The main induction proof now has no anonymous admits and is closed
+          with `Qed`, depending only on the named obligations above.
+
    Soundness layer:
 
    - Rewrite `sub`, `ctx-sub`, and `appop` through
