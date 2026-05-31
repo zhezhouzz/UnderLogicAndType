@@ -1087,6 +1087,24 @@ Implementation order
        the second preserves fixed-store typing under fresh binders, and the
        third normalizes the environment in binder cases.
 
+      Immediate proof order for this block:
+
+      1. Prove the binder-environment normalization
+         `lty_env_msubst_store_insert_fresh`.  This is a pure environment
+         lemma and should not depend on term syntax.
+      2. Prove lvar-support regularity for the new inductive typing relation:
+         `basic_value_has_ltype_lvars` and `basic_tm_has_ltype_lvars`.
+      3. Add/prove the atom-typing bridge for closed atom syntax.  The public
+         helper `basic_value_has_ltype_of_empty_atom_typing` should be a small
+         corollary of the more useful atom-env bridge, not a new proof path.
+      4. Prove `basic_value_has_ltype_msubst_store_at` and
+         `basic_tm_has_ltype_msubst_store_at` by the mutual induction above.
+         Binder cases use steps 1 and 2 plus
+         `atom_store_has_ltype_insert_fresh`.
+      5. Only after the inductive route is stable, repair compatibility lemmas
+         (`*_to_open_env`, open/close/swap/tapp-tlete transport).  These are
+         not allowed to drive the main msubst proof anymore.
+
      - Prove compatibility with the old open-env specification only as a
        bridge theorem, not as the definition.  This avoids the fragile
        arbitrary-`η` proof path in the main msubst proof.

@@ -216,6 +216,106 @@ Proof.
   apply lstore_instantiate_tm_split_insert_open; set_solver.
 Qed.
 
+Lemma lstore_instantiate_split_open_fresh_mutual :
+  (forall v d k x (σ : StoreT),
+      store_closed σ ->
+      x ∉ dom (σ : gmap atom value) ∪ fv_value v ->
+      lstore_instantiate_value_split_at d σ ∅
+        (open_value k (vfvar x) v) =
+      open_value k (vfvar x)
+        (lstore_instantiate_value_split_at d σ ∅ v)) *
+  (forall e d k x (σ : StoreT),
+      store_closed σ ->
+      x ∉ dom (σ : gmap atom value) ∪ fv_tm e ->
+      lstore_instantiate_tm_split_at d σ ∅
+        (open_tm k (vfvar x) e) =
+      open_tm k (vfvar x)
+        (lstore_instantiate_tm_split_at d σ ∅ e)).
+Proof.
+  apply value_tm_mutind;
+    cbn [open_value open_tm fv_value fv_tm
+      lstore_instantiate_value_split_at lstore_instantiate_tm_split_at];
+    intros; try reflexivity.
+  - destruct ((σ : gmap atom value) !! x) as [u|] eqn:Hlookup.
+    + rewrite open_rec_lc_value.
+      * reflexivity.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some w => w
+                 | None => vfvar x
+                 end) with u by (rewrite Hlookup; reflexivity).
+        destruct H as [_ Hlc]. exact (lc_env_lookup σ x u Hlc Hlookup).
+    + replace (match (σ : gmap atom value) !! x with
+               | Some w => w
+               | None => vfvar x
+               end) with (vfvar x) by (rewrite Hlookup; reflexivity).
+      reflexivity.
+  - destruct (decide (k = n)) as [->|Hkn].
+    + cbn [lstore_instantiate_value_split_at].
+      assert (Hσx : (σ : gmap atom value) !! x = None).
+      {
+        apply not_elem_of_dom.
+        intros Hdom. apply H0. set_solver.
+      }
+      destruct (decide (d <= n)) as [Hdn|Hdn].
+      * rewrite lookup_empty. cbn [open_value].
+        destruct (decide (n = n)); [|congruence].
+        replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) by (rewrite Hσx; reflexivity).
+        reflexivity.
+      * cbn [open_value]. destruct (decide (n = n)); [|congruence].
+        replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) by (rewrite Hσx; reflexivity).
+        reflexivity.
+    + cbn [lstore_instantiate_value_split_at].
+      destruct (decide (d <= n)); rewrite ?lookup_empty;
+        cbn [open_value]; destruct (decide (k = n)); try congruence; reflexivity.
+  - f_equal. apply H; set_solver.
+  - f_equal. apply H; set_solver.
+  - f_equal. apply H; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal. apply H; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+Qed.
+
+Lemma lstore_instantiate_value_at_open0_fresh_lift_free
+    d x (σ : StoreT) v :
+  store_closed σ ->
+  x ∉ dom (σ : gmap atom value) ∪ fv_value v ->
+  lstore_instantiate_value_at (S d) (lstore_lift_free σ : LStoreT)
+    (open_value 0 (vfvar x) v) =
+  open_value 0 (vfvar x)
+    (lstore_instantiate_value_at (S d) (lstore_lift_free σ : LStoreT) v).
+Proof.
+  intros Hclosed Hfresh.
+  unfold lstore_instantiate_value_at.
+  rewrite !lstore_free_part_lift_free.
+  rewrite !lstore_bound_part_empty_of_lc by apply lc_lstore_lift_free.
+  exact (fst lstore_instantiate_split_open_fresh_mutual
+    v (S d) 0 x σ Hclosed Hfresh).
+Qed.
+
+Lemma lstore_instantiate_tm_at_open0_fresh_lift_free
+    d x (σ : StoreT) e :
+  store_closed σ ->
+  x ∉ dom (σ : gmap atom value) ∪ fv_tm e ->
+  lstore_instantiate_tm_at (S d) (lstore_lift_free σ : LStoreT)
+    (open_tm 0 (vfvar x) e) =
+  open_tm 0 (vfvar x)
+    (lstore_instantiate_tm_at (S d) (lstore_lift_free σ : LStoreT) e).
+Proof.
+  intros Hclosed Hfresh.
+  unfold lstore_instantiate_tm_at.
+  rewrite !lstore_free_part_lift_free.
+  rewrite !lstore_bound_part_empty_of_lc by apply lc_lstore_lift_free.
+  exact (snd lstore_instantiate_split_open_fresh_mutual
+    e (S d) 0 x σ Hclosed Hfresh).
+Qed.
+
 Lemma lstore_instantiate_tm_open_back k y e σ :
   y ∉ fv_tm e ->
   lvars_open k y (tm_lvars e) ⊆ dom (σ : gmap logic_var value) ->

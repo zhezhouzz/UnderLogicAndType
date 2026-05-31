@@ -328,10 +328,14 @@ Proof.
   - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
       as Hbasic_ltype.
     pose proof (basic_tm_has_ltype_lvars _ _ _ Hbasic_ltype) as Hsub.
-    assert (Ha_lvars : LVFree a ∈ tm_lvars e_src).
+    assert (Ha_lvars : LVFree a ∈ lvars_of_atoms (fv_tm e_src)).
     {
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists a. split; [reflexivity|].
+      rewrite <- (tm_lvars_fv e_src).
       rewrite <- Hlvars.
-      apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
+      rewrite (tm_lvars_fv e_tgt).
+      exact Ha.
     }
     specialize (Hsub _ Ha_lvars).
     unfold denot_relevant_env, denot_relevant_lvars,
