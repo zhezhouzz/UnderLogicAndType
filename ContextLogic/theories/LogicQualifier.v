@@ -1,6 +1,7 @@
 From ContextAlgebra Require Export ResourceInterface ResourceCompat.
 From ContextAlgebra Require Import ResourceCore ResourceAlgebra.
 From ContextBase Require Export Prelude LogicVar.
+From ContextBase Require Import BaseTactics.
 From ContextStore Require Export Store.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
@@ -319,6 +320,34 @@ Proof.
       * rewrite HρD. reflexivity.
 Qed.
 
+Lemma lstore_lift_free_open_restrict_swap_fresh
+    k y (σ : Store (V := V)) D :
+  y ∉ dom (σ : gmap atom V) ->
+  storeA_swap (LVBound k) (LVFree y)
+    (storeA_restrict (lstore_lift_free σ : LStoreT)
+      (lvars_open k y D)) =
+  storeA_restrict (lstore_lift_free σ : LStoreT) D.
+Proof.
+  intros Hy.
+  rewrite <- storeA_restrict_swap.
+  replace (set_swap (LVBound k) (LVFree y) (lvars_open k y D))
+    with D by better_base_solver.
+  replace (storeA_swap (LVBound k) (LVFree y)
+      (lstore_lift_free σ : LStoreT))
+    with (lstore_lift_free σ : LStoreT); [reflexivity|].
+  symmetry.
+  apply storeA_swap_fresh.
+  - rewrite dom_lstore_lift_free.
+    unfold lvars_of_atoms.
+    rewrite elem_of_map.
+    intros (z & Hz & _). discriminate.
+  - rewrite dom_lstore_lift_free.
+    unfold lvars_of_atoms.
+    rewrite elem_of_map.
+    intros (z & Hz & Hzσ).
+    inversion Hz. subst. exact (Hy Hzσ).
+Qed.
+
 Lemma lworld_on_open_mlsubst_back_fresh
     k y D (σ : Store (V := V))
     (w1 : LWorldOnT (lvars_open k y
@@ -333,7 +362,79 @@ Lemma lworld_on_open_mlsubst_back_fresh
   lworld_on_open_back k y D
     (lworld_on_mlsubst_back (lvars_open k y D)
       (lstore_lift_free σ) w2).
-Admitted.
+Proof.
+  intros Hy Hlw.
+  apply lworld_on_ext.
+  apply wfworldA_ext. apply worldA_ext.
+  - set (wl := lworld_on_mlsubst_back D (lstore_lift_free σ)
+        (lworld_on_open_back k y
+          (D ∖ dom (lstore_lift_free σ : LStoreT)) w1)).
+    set (wr := lworld_on_open_back k y D
+        (lworld_on_mlsubst_back (lvars_open k y D)
+          (lstore_lift_free σ) w2)).
+    change (lworld_dom (lraw_world (lw D wl)) =
+      lworld_dom (lraw_world (lw D wr))).
+    rewrite (lw_dom D wl), (lw_dom D wr).
+    reflexivity.
+  - unfold lworld_on_mlsubst_back, lworld_on_open_back.
+    intros τ.
+    cbn [lw resA_product rawA_product singleton_worldA worldA_stores
+      proj1_sig resA_swap resA_rekey rawA_rekey].
+    split.
+    + intros (τ0 & τD & Hτ0 & -> & Hc & ->).
+      destruct Hτ0 as (τ1 & Hτ1 & Hτ0).
+      change (storeA_swap (LVBound k) (LVFree y) τ1 = τ0) in Hτ0.
+      rewrite <- Hτ0 in Hc.
+      rewrite <- Hτ0.
+      exists (τ1 ∪ storeA_restrict (lstore_lift_free σ : LStoreT)
+          (lvars_open k y D)).
+      split.
+      * exists τ1, (storeA_restrict (lstore_lift_free σ : LStoreT)
+            (lvars_open k y D)).
+        split; [rewrite <- Hlw; exact Hτ1|].
+        split; [reflexivity|].
+        split; [|reflexivity].
+        apply (proj1 (storeA_compat_swap (LVBound k) (LVFree y)
+          τ1 (storeA_restrict (lstore_lift_free σ : LStoreT)
+            (lvars_open k y D)))).
+        rewrite lstore_lift_free_open_restrict_swap_fresh by exact Hy.
+        exact Hc.
+      * change (storeA_swap (LVBound k) (LVFree y)
+          (τ1 ∪ storeA_restrict (lstore_lift_free σ : LStoreT)
+            (lvars_open k y D)) =
+          storeA_swap (LVBound k) (LVFree y) τ1 ∪
+            storeA_restrict (lstore_lift_free σ : LStoreT) D).
+        rewrite storeA_swap_union.
+        rewrite lstore_lift_free_open_restrict_swap_fresh by exact Hy.
+        reflexivity.
+    + intros (τ0 & Hτ0 & Hτ).
+      destruct Hτ0 as (τ1 & τD & Hτ1 & -> & Hc & ->).
+      rewrite <- Hτ.
+      exists (storeA_swap (LVBound k) (LVFree y) τ1).
+      exists (storeA_restrict (lstore_lift_free σ : LStoreT) D).
+      split.
+      * exists τ1. split.
+        -- rewrite Hlw. exact Hτ1.
+        -- reflexivity.
+      * split; [reflexivity|].
+        split.
+        -- replace (storeA_restrict (lstore_lift_free σ : LStoreT) D)
+             with (storeA_swap (LVBound k) (LVFree y)
+               (storeA_restrict (lstore_lift_free σ : LStoreT)
+                 (lvars_open k y D)))
+             by (apply lstore_lift_free_open_restrict_swap_fresh; exact Hy).
+           apply (proj2 (storeA_compat_swap (LVBound k) (LVFree y)
+             τ1 (storeA_restrict (lstore_lift_free σ : LStoreT)
+               (lvars_open k y D)))).
+           exact Hc.
+        -- replace (storeA_restrict (lstore_lift_free σ : LStoreT) D)
+             with (storeA_swap (LVBound k) (LVFree y)
+               (storeA_restrict (lstore_lift_free σ : LStoreT)
+                 (lvars_open k y D)))
+             by (apply lstore_lift_free_open_restrict_swap_fresh; exact Hy).
+           rewrite <- storeA_swap_union.
+           reflexivity.
+Qed.
 
 Lemma lqual_msubst_store_restrict_fv
     (σ : Store (V := V)) (q : logic_qualifier) :
