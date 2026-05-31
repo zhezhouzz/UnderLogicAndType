@@ -191,7 +191,65 @@ Lemma formula_fv_over_msubst_store_body
           (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
           (FOver (type_qualifier_formula (qual_msubst_store σ φ)))))).
 Proof.
-Admitted.
+  intros Hclosed.
+  formula_msubst_syntax_norm.
+  formula_fv_syntax_norm.
+  assert (Hbasic_src :
+    lvars_fv
+      (formula_lvars
+        (formula_msubst_store σ
+          (basic_world_formula (<[LVBound 0 := TBase b]> ∅)))) = ∅).
+  {
+    change (formula_fv
+      (formula_msubst_store σ
+        (basic_world_formula (<[LVBound 0 := TBase b]> ∅))) = ∅).
+    apply set_eq. intros a. split; [|set_solver].
+    intros Ha.
+    pose proof (formula_msubst_store_fv_subset σ
+      (basic_world_formula (<[LVBound 0 := TBase b]> ∅)) a Ha) as Hsub.
+    rewrite formula_fv_basic_world_formula in Hsub.
+    rewrite dom_insert_L, dom_empty_L in Hsub.
+    rewrite lvars_fv_union, lvars_fv_singleton_bound, lvars_fv_empty in Hsub.
+    set_solver.
+  }
+  rewrite Hbasic_src.
+  rewrite formula_lvars_fv_basic_world_formula.
+  rewrite dom_insert_L, dom_empty_L.
+  rewrite lvars_fv_union, lvars_fv_singleton_bound, lvars_fv_empty.
+  change (lvars_fv
+    (formula_lvars
+      (formula_msubst_store σ
+        (expr_result_formula (tm_shift 0 e) (LVBound 0)))))
+    with (lvars_fv
+      ((tm_lvars (tm_shift 0 e) ∪ {[LVBound 0]})
+        ∖ dom (lstore_lift_free σ : LStoreT))).
+  change (lvars_fv
+    (formula_lvars
+      (formula_msubst_store σ (type_qualifier_formula φ))))
+    with (lvars_fv
+      (qual_vars φ ∖ dom (lstore_lift_free σ : LStoreT))).
+  rewrite formula_lvars_fv_expr_result_formula.
+  rewrite formula_lvars_fv_type_qualifier_formula.
+  unfold qual_dom.
+  rewrite qual_msubst_store_vars.
+  rewrite dom_lstore_lift_free.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !lvars_fv_union, !lvars_fv_singleton_bound.
+  rewrite ?tm_lvars_shift_fv.
+  rewrite ?(tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+  change (qual_lvars (qual_msubst_store σ φ))
+    with (qual_vars (qual_msubst_store σ φ)).
+  rewrite qual_msubst_store_vars.
+  rewrite dom_lstore_lift_free.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !lvars_fv_difference_singleton_bound.
+  apply set_eq. intros a.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !elem_of_union, !elem_of_difference, !elem_of_empty.
+  rewrite (elem_of_union (lvars_fv (tm_lvars e)) ∅ a).
+  rewrite elem_of_empty.
+  tauto.
+Qed.
 
 Lemma formula_fv_under_msubst_store_body
     σ b φ e :
@@ -213,7 +271,65 @@ Lemma formula_fv_under_msubst_store_body
           (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
           (FUnder (type_qualifier_formula (qual_msubst_store σ φ)))))).
 Proof.
-Admitted.
+  intros Hclosed.
+  formula_msubst_syntax_norm.
+  formula_fv_syntax_norm.
+  assert (Hbasic_src :
+    lvars_fv
+      (formula_lvars
+        (formula_msubst_store σ
+          (basic_world_formula (<[LVBound 0 := TBase b]> ∅)))) = ∅).
+  {
+    change (formula_fv
+      (formula_msubst_store σ
+        (basic_world_formula (<[LVBound 0 := TBase b]> ∅))) = ∅).
+    apply set_eq. intros a. split; [|set_solver].
+    intros Ha.
+    pose proof (formula_msubst_store_fv_subset σ
+      (basic_world_formula (<[LVBound 0 := TBase b]> ∅)) a Ha) as Hsub.
+    rewrite formula_fv_basic_world_formula in Hsub.
+    rewrite dom_insert_L, dom_empty_L in Hsub.
+    rewrite lvars_fv_union, lvars_fv_singleton_bound, lvars_fv_empty in Hsub.
+    set_solver.
+  }
+  rewrite Hbasic_src.
+  rewrite formula_lvars_fv_basic_world_formula.
+  rewrite dom_insert_L, dom_empty_L.
+  rewrite lvars_fv_union, lvars_fv_singleton_bound, lvars_fv_empty.
+  change (lvars_fv
+    (formula_lvars
+      (formula_msubst_store σ
+        (expr_result_formula (tm_shift 0 e) (LVBound 0)))))
+    with (lvars_fv
+      ((tm_lvars (tm_shift 0 e) ∪ {[LVBound 0]})
+        ∖ dom (lstore_lift_free σ : LStoreT))).
+  change (lvars_fv
+    (formula_lvars
+      (formula_msubst_store σ (type_qualifier_formula φ))))
+    with (lvars_fv
+      (qual_vars φ ∖ dom (lstore_lift_free σ : LStoreT))).
+  rewrite formula_lvars_fv_expr_result_formula.
+  rewrite formula_lvars_fv_type_qualifier_formula.
+  unfold qual_dom.
+  rewrite qual_msubst_store_vars.
+  rewrite dom_lstore_lift_free.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !lvars_fv_union, !lvars_fv_singleton_bound.
+  rewrite ?tm_lvars_shift_fv.
+  rewrite ?(tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+  change (qual_lvars (qual_msubst_store σ φ))
+    with (qual_vars (qual_msubst_store σ φ)).
+  rewrite qual_msubst_store_vars.
+  rewrite dom_lstore_lift_free.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !lvars_fv_difference_singleton_bound.
+  apply set_eq. intros a.
+  rewrite !lvars_fv_difference_of_atoms.
+  rewrite !elem_of_union, !elem_of_difference, !elem_of_empty.
+  rewrite (elem_of_union (lvars_fv (tm_lvars e)) ∅ a).
+  rewrite elem_of_empty.
+  tauto.
+Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_over_body
     σ Σ b φ e (m : WfWorldT) :

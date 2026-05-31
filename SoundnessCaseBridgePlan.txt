@@ -1360,8 +1360,10 @@ Implementation order
              equality between the source msubsted body and target body:
              `formula_fv_over_msubst_store_body` /
              `formula_fv_under_msubst_store_body`.  These are currently named
-             obligations; the proof should be discharged by improving the
-             formula-fv syntax normalizer for msubsted atoms
+             proved.  The proof also exposed and added the Base-level fact
+             `lvars_fv_difference_singleton_bound`; a future cleanup can still
+             move the repeated atom-fv normalization into the formula syntax
+             normalizer for msubsted atoms
              (`basic_world_formula`, `expr_result_formula`,
              `type_qualifier_formula`) rather than by hand-expanding the whole
              denotation case.

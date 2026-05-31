@@ -539,6 +539,16 @@ Proof.
     intros Heq. inversion Heq. subst. contradiction.
 Qed.
 
+Lemma lvars_fv_difference_singleton_bound (D : lvset) k :
+  lvars_fv (D ∖ {[LVBound k]}) = lvars_fv D.
+Proof.
+  apply set_eq. intros y.
+  rewrite !lvars_fv_elem, elem_of_difference, elem_of_singleton.
+  split.
+  - tauto.
+  - intros Hy. split; [exact Hy|discriminate].
+Qed.
+
 Lemma lvars_fv_difference_of_atoms (D : lvset) (X : aset) :
   lvars_fv (D ∖ lvars_of_atoms X) = lvars_fv D ∖ X.
 Proof.
