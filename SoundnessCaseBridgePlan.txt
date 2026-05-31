@@ -1101,6 +1101,12 @@ Implementation order
          `basic_tm_has_ltype_msubst_store_at` by the mutual induction above.
          Binder cases use steps 1 and 2 plus
          `atom_store_has_ltype_insert_fresh`.
+         Status: done.  The proof now also has lvar weakening, atom-env
+         typing bridge, and the fresh open/instantiate commute lemmas needed
+         by binder cases.
+         Follow-up status: the old empty-atom helper is now a corollary of a
+         general atom-env bridge, and the closed lty-env roundtrip bridge is
+         proved for the remaining compatibility theorem.
       5. Only after the inductive route is stable, repair compatibility lemmas
          (`*_to_open_env`, open/close/swap/tapp-tlete transport).  These are
          not allowed to drive the main msubst proof anymore.

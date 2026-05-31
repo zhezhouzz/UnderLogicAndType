@@ -561,7 +561,11 @@ Lemma basic_tm_has_ltype_insert_fresh_lvar
   LVFree x ∉ dom Σ ->
   basic_tm_has_ltype Σ e U ->
   basic_tm_has_ltype (<[LVFree x := T]> Σ) e U.
-Admitted.
+Proof.
+  intros Hfresh Hty.
+  eapply basic_tm_has_ltype_weaken; [exact Hty|].
+  apply insert_subseteq. apply not_elem_of_dom. exact Hfresh.
+Qed.
 
 Lemma basic_tm_has_ltype_swap_atom x y Σ e T :
   basic_tm_has_ltype Σ e T ->
@@ -666,11 +670,29 @@ Lemma basic_tm_has_ltype_close_one_cofinite k Σ e T :
   basic_tm_has_ltype Σ e T.
 Admitted.
 
+Lemma atom_env_lty_env_roundtrip_closed (Σ : lty_env) :
+  lty_env_closed Σ ->
+  atom_env_to_lty_env (lty_env_to_atom_env Σ) = Σ.
+Proof.
+  intros Hclosed.
+  apply map_eq. intros [k|x].
+  - rewrite atom_store_to_lvar_store_lookup_bound_none.
+    symmetry. apply lty_env_closed_lookup_bound_none. exact Hclosed.
+  - rewrite atom_store_to_lvar_store_lookup_free.
+    apply lvar_store_to_atom_store_lookup.
+Qed.
+
 Lemma basic_tm_has_ltype_of_atom_typing Σ e T :
   lty_env_closed Σ ->
   lty_env_to_atom_env Σ ⊢ₑ e ⋮ T ->
   basic_tm_has_ltype Σ e T.
-Admitted.
+Proof.
+  intros Hclosed Hty.
+  pose proof (basic_tm_has_ltype_of_atom_env_typing
+    (lty_env_to_atom_env Σ) e T Hty) as Hbasic.
+  rewrite atom_env_lty_env_roundtrip_closed in Hbasic by exact Hclosed.
+  exact Hbasic.
+Qed.
 
 Lemma basic_tm_has_ltype_open_one_cofinite_iff k Σ e T :
   basic_tm_has_ltype Σ e T <->
