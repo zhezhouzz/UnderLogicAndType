@@ -567,6 +567,13 @@ Proof.
     rewrite IHφ by assumption. reflexivity.
 Qed.
 
+Lemma formula_open_msubst_store_fresh k y
+    (σ : Store (V := V)) (φ : Formula) :
+  y ∉ dom (σ : gmap atom V) ->
+  formula_open k y (formula_msubst_store σ φ) =
+  formula_msubst_store σ (formula_open k y φ).
+Admitted.
+
 Definition formula_open_env (η : gmap nat atom) (φ : Formula) : Formula :=
   map_fold (fun k x acc => formula_open k x acc) φ η.
 

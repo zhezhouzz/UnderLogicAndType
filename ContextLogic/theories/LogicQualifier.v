@@ -512,6 +512,13 @@ Proof.
     + exact Hlw.
 Qed.
 
+Lemma lqual_open_msubst_store_fresh k y
+    (σ : Store (V := V)) (q : logic_qualifier) :
+  y ∉ dom (σ : gmap atom V) ->
+  lqual_open k y (lqual_msubst_store σ q) =
+  lqual_msubst_store σ (lqual_open k y q).
+Admitted.
+
 Lemma lqual_open_commute_fresh i j x y q :
   i <> j ->
   x <> y ->
