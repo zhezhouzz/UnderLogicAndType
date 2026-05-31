@@ -507,6 +507,36 @@ Proof.
   apply lvars_at_depth_mono. better_set_solver.
 Qed.
 
+Lemma lvars_at_depth_difference_of_atoms d D X :
+  lvars_at_depth d (D ∖ lvars_of_atoms X) =
+  lvars_at_depth d D ∖ lvars_of_atoms X.
+Proof.
+  apply set_eq. intros u.
+  split.
+  - intros Hu0.
+    apply lvars_at_depth_elem in Hu0 as [v [Hv Hvu]].
+    apply elem_of_difference in Hv as [Hv Hu].
+    apply elem_of_difference. split.
+    + apply lvars_at_depth_elem. eexists. split; [exact Hv | exact Hvu].
+    + destruct v as [n|x]; cbn [logic_var_at_depth] in Hvu.
+      * destruct (decide (d <= n)); inversion Hvu. subst u.
+        intros Hbad. unfold lvars_of_atoms in Hbad.
+        apply elem_of_map in Hbad as [a [Hbad _]]. discriminate.
+      * inversion Hvu. subst u.
+        intros Hbad. apply Hu. exact Hbad.
+  - intros Hu0.
+    apply elem_of_difference in Hu0 as [Hu0 Hu].
+    apply lvars_at_depth_elem in Hu0 as [v [Hv Hvu]].
+    apply lvars_at_depth_elem. eexists. split; [|exact Hvu].
+    apply elem_of_difference. split; [exact Hv|].
+    intros HvX. apply Hu.
+    destruct v as [n|x]; cbn [logic_var_at_depth] in Hvu.
+    + destruct (decide (d <= n)); inversion Hvu. subst u.
+      unfold lvars_of_atoms in HvX.
+      apply elem_of_map in HvX as [a [HvX _]]. discriminate.
+    + inversion Hvu. subst u. exact HvX.
+Qed.
+
 Lemma logic_var_at_depth_open d k x v :
   logic_var_at_depth d (logic_var_open (d + k) x v) =
   option_map (logic_var_open k x) (logic_var_at_depth d v).

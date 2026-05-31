@@ -41,6 +41,25 @@ Fixpoint context_ty_shape_ok (τ : context_ty) : Prop :=
 Definition basic_context_ty_lvars (D : lvset) (τ : context_ty) : Prop :=
   context_ty_lvars τ ⊆ D /\ context_ty_shape_ok τ.
 
+Lemma context_ty_shape_ok_msubst_store σ τ :
+  context_ty_shape_ok (context_ty_msubst_store σ τ) <->
+  context_ty_shape_ok τ.
+Proof.
+  induction τ; cbn [context_ty_msubst_store context_ty_shape_ok];
+    try rewrite ?IHτ1, ?IHτ2, ?erase_ty_context_ty_msubst_store; tauto.
+Qed.
+
+Lemma basic_context_ty_lvars_msubst_store σ D τ :
+  basic_context_ty_lvars D τ ->
+  basic_context_ty_lvars
+    (D ∖ lvars_of_atoms (dom (σ : gmap atom value)))
+    (context_ty_msubst_store σ τ).
+Proof.
+  intros [Hvars Hshape]. split.
+  - rewrite context_ty_lvars_msubst_store. set_solver.
+  - apply context_ty_shape_ok_msubst_store. exact Hshape.
+Qed.
+
 Lemma basic_context_ty_lvars_mono D E τ :
   D ⊆ E ->
   basic_context_ty_lvars D τ ->

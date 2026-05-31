@@ -125,6 +125,31 @@ Proof.
   exact (storeA_on_restrict D' s Hsub).
 Defined.
 
+Definition lstore_on_mlsubst_back
+    (D : lvset) (ρ : LStore)
+    (s : LStoreOn (D ∖ dom (ρ : gmap logic_var V))) : LStoreOn D.
+Proof.
+  refine {| storeAO_store :=
+    (lso_store s ∪ storeA_restrict ρ D : gmap logic_var V) |}.
+  change (dom ((lso_store s : gmap logic_var V) ∪
+      (storeA_restrict ρ D : gmap logic_var V)) = D).
+  rewrite dom_union_L.
+  change (dom (lso_store s : LStore) ∪
+    dom (storeA_restrict ρ D : LStore) = D).
+  rewrite (lso_dom s).
+  replace (dom (storeA_restrict ρ D : LStore))
+    with (dom (ρ : gmap logic_var V) ∩ D).
+  2:{ symmetry. apply (@storeA_restrict_dom V logic_var _ _ ρ D). }
+  apply set_eq. intros z.
+  rewrite elem_of_union, elem_of_difference, elem_of_intersection.
+  split.
+  - intros [[HzD _]|[_ HzD]]; exact HzD.
+  - intros HzD.
+    destruct (decide (z ∈ dom (ρ : gmap logic_var V))) as [Hzρ|Hzρ].
+    + right. split; assumption.
+    + left. split; assumption.
+Defined.
+
 Definition lstore_on_rekey
     (f : logic_var → logic_var) (Hf : Inj (=) (=) f)
     {D : lvset} (s : LStoreOn D) : LStoreOn (set_map f D).

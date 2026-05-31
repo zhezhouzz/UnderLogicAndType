@@ -75,9 +75,11 @@ ContextBasicDenotation/theories/TermTLet.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
 ContextBasicDenotation/theories/RelevantEnv.v
+ContextBasicDenotation/theories/MsubstTransport.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
+Denotation/theories/ContextTypeDenotationMsubst.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationOpenModels.v

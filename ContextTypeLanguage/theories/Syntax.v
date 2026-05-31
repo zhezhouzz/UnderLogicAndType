@@ -140,6 +140,23 @@ Fixpoint cty_shift (k : nat) (τ : context_ty) : context_ty :=
 
 #[global] Instance shift_cty_inst : Shift context_ty := cty_shift.
 
+Fixpoint context_ty_msubst_store
+    (σ : gmap atom value) (τ : context_ty) : context_ty :=
+  match τ with
+  | CTOver b φ => CTOver b (qual_msubst_store σ φ)
+  | CTUnder b φ => CTUnder b (qual_msubst_store σ φ)
+  | CTInter τ1 τ2 =>
+      CTInter (context_ty_msubst_store σ τ1) (context_ty_msubst_store σ τ2)
+  | CTUnion τ1 τ2 =>
+      CTUnion (context_ty_msubst_store σ τ1) (context_ty_msubst_store σ τ2)
+  | CTSum τ1 τ2 =>
+      CTSum (context_ty_msubst_store σ τ1) (context_ty_msubst_store σ τ2)
+  | CTArrow τx τ =>
+      CTArrow (context_ty_msubst_store σ τx) (context_ty_msubst_store σ τ)
+  | CTWand τx τ =>
+      CTWand (context_ty_msubst_store σ τx) (context_ty_msubst_store σ τ)
+  end.
+
 Fixpoint erase_ty (τ : context_ty) : ty :=
   match τ with
   | CTOver b _ => TBase b
@@ -177,6 +194,35 @@ Coercion lift_ty : ty >-> context_ty.
 (** * ContextTypeLanguage.Syntax
 
     Lvar support computations for context syntax. *)
+
+Lemma context_ty_lvars_at_msubst_store d σ τ :
+  context_ty_lvars_at d (context_ty_msubst_store σ τ) =
+  context_ty_lvars_at d τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
+Proof.
+  induction τ in d |- *; cbn [context_ty_msubst_store context_ty_lvars_at].
+  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
+    reflexivity.
+  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
+    reflexivity.
+  - rewrite IHτ1, IHτ2. set_solver.
+  - rewrite IHτ1, IHτ2. set_solver.
+  - rewrite IHτ1, IHτ2. set_solver.
+  - rewrite IHτ1, IHτ2. set_solver.
+  - rewrite IHτ1, IHτ2. set_solver.
+Qed.
+
+Lemma context_ty_lvars_msubst_store σ τ :
+  context_ty_lvars (context_ty_msubst_store σ τ) =
+  context_ty_lvars τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
+Proof.
+  apply context_ty_lvars_at_msubst_store.
+Qed.
+
+Lemma erase_ty_context_ty_msubst_store σ τ :
+  erase_ty (context_ty_msubst_store σ τ) = erase_ty τ.
+Proof.
+  induction τ; cbn [context_ty_msubst_store erase_ty]; congruence.
+Qed.
 
 
 Lemma context_ty_lvars_at_open d k x τ :

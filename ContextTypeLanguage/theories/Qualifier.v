@@ -16,6 +16,7 @@ From Stdlib Require Import Logic.FunctionalExtensionality
 
 Local Notation LStoreT := (LStore (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
+Local Notation StoreT := (Store (V := value)) (only parsing).
 Record type_qualifier : Type := tqual {
   qual_lvars : lvset;
   qual_prop : LStoreOnT qual_lvars -> Prop;
@@ -37,6 +38,17 @@ Definition qual_open_atom
       tqual (lvars_open k x D)
         (fun s => P (lstore_on_open_back k x D s))
   end.
+
+Definition qual_mlsubst (ρ : LStoreT) (q : type_qualifier) : type_qualifier :=
+  match q with
+  | tqual D P =>
+      tqual (D ∖ dom (ρ : gmap logic_var value))
+        (fun s => P (lstore_on_mlsubst_back D ρ s))
+  end.
+
+Definition qual_msubst_store (σ : StoreT) (q : type_qualifier) :
+    type_qualifier :=
+  qual_mlsubst (atom_store_to_lvar_store σ) q.
 
 Definition qual_top : type_qualifier :=
   tqual ∅ (fun _ => True).
@@ -88,6 +100,22 @@ Lemma qual_open_atom_vars k x q :
   qual_vars (qual_open_atom k x q) = lvars_open k x (qual_vars q).
 Proof.
   destruct q. reflexivity.
+Qed.
+
+Lemma qual_mlsubst_vars ρ q :
+  qual_vars (qual_mlsubst ρ q) =
+  qual_vars q ∖ dom (ρ : gmap logic_var value).
+Proof.
+  destruct q. reflexivity.
+Qed.
+
+Lemma qual_msubst_store_vars σ q :
+  qual_vars (qual_msubst_store σ q) =
+  qual_vars q ∖ lvars_of_atoms (dom (σ : gmap atom value)).
+Proof.
+  unfold qual_msubst_store.
+  rewrite qual_mlsubst_vars, atom_store_to_lvar_store_dom.
+  reflexivity.
 Qed.
 
 Lemma lvars_fv_qual_vars q :

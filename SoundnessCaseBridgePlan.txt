@@ -908,6 +908,77 @@ Implementation order
        qualifier mlsubst/open support
        lty-env projection/instantiation support as needed.
 
+   Refined transport statement:
+
+   - `denot_relevant_env Σ τ e` is only the denotation guard's syntactic
+     restriction:
+
+       `storeA_restrict Σ (context_ty_lvars τ ∪ tm_lvars e)`.
+
+     It should not be the place where the fixed store typing premise is stated.
+     The general transport should instead assume the ordinary well-scoped
+     invariant:
+
+       `denot_relevant_lvars τ e ⊆ dom Σ`
+
+     and the fixed store is inside the original ambient environment:
+
+       `lvars_of_atoms (dom σ) ⊆ dom Σ`.
+
+   - Define the fixed-store typing premise on the original environment:
+
+       `atom_store_has_ltype Σ σ :=
+          forall x v, σ !! x = Some v ->
+            exists T, Σ !! LVFree x = Some T /\ ∅ ⊢ᵥ v ⋮ T`.
+
+     This pointwise form is stronger and clearer than `storeA_has_type Σ
+     (lstore_lift_free σ)`: it requires every key actually present in `σ` to
+     have a corresponding type in `Σ`, not merely keys that happen to overlap
+     with `Σ`.
+
+   - The environment part of substitution is just deletion of fixed atom keys:
+
+       `lty_env_msubst_store σ Σ :=
+          storeA_restrict Σ (dom Σ ∖ lvars_of_atoms (dom σ))`.
+
+     Current implementation status:
+
+     - `lstore_on_mlsubst_back` is in `ContextStore/StoreInterface.v`.
+     - `qual_mlsubst` / `qual_msubst_store` are in
+       `ContextTypeLanguage/Qualifier.v`.
+     - `context_ty_msubst_store` and its lvar/erasure lemmas are in
+       `ContextTypeLanguage/Syntax.v`.
+     - `lty_env_msubst_store` and lookup/domain lemmas are in
+       `ContextTypeLanguage/LtyEnv.v`.
+     - `atom_store_has_ltype`, its domain-subset lemma, and the closed-store
+       consequence are in `ContextBasicDenotation/StoreTyping.v`.
+     - `ContextBasicDenotation/MsubstTransport.v` contains the models-level
+       atom transports.  `context_ty_wf_formula_msubst_store_models` and
+       `basic_world_formula_msubst_store_models` are proved.  The latter uses
+       one lower Store/Logic bridge obligation,
+       `lworld_has_type_msubst_store_from_back`, which packages the direct
+       product-store argument for `lworld_on_mlsubst_back`.
+       `expr_basic_typing_formula_msubst_store_models` and
+       `expr_total_formula_msubst_store_models` remain the next atom-level
+       obligations to prove from TermEval/BasicTypingFormula.
+
+   - The main theorem should therefore have shape:
+
+       `denot_relevant_lvars τ e ⊆ dom Σ ->
+        lvars_of_atoms (dom σ) ⊆ dom Σ ->
+        atom_store_has_ltype Σ σ ->
+        m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)
+        <->
+        m ⊨ denot_ty_lvar_gas gas
+              (lty_env_msubst_store σ Σ)
+              (context_ty_msubst_store σ τ)
+              (lstore_instantiate_tm (lstore_lift_free σ) e)`.
+
+     Extra variables in `σ` that are not used by `τ/e` may delete extra
+     irrelevant keys from the right-hand environment.  This is fine, but the
+     proof must use the existing environment-agree/on-relevant-support lemmas
+     rather than pretending exact environments are unchanged.
+
    - Add atom-formula transport lemmas, preferably models-level iff lemmas
      rather than exact equalities:
 
@@ -922,6 +993,17 @@ Implementation order
      the formula, the semantics agrees with the corresponding instantiated
      syntax/context.  Exact equality is fine only when it is definitional and
      does not fight dependent qualifier paths.
+
+     The two critical atom transports are:
+
+       `expr_basic_typing_formula_msubst_store`:
+          driven by `basic_tm_has_ltype_msubst_store`; variable cases split
+          on whether the free variable is fixed by `σ`.
+
+       `expr_total_formula_msubst_store`:
+          driven by `expr_eval_in_store` and `lstore_instantiate_tm`; it should
+          need only `store_closed σ`, which follows from
+          `atom_store_has_ltype Σ σ`.
 
    - Then prove the main transport for type denotation:
 

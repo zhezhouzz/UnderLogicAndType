@@ -14,6 +14,7 @@ From ContextTypeLanguage Require Export TypeOpen.
 
 
 Notation lty_env := (gmap logic_var ty) (only parsing).
+Local Notation StoreT := (Store (V := value)) (only parsing).
 
 Notation lty_env_shift_from :=
   (@lvar_store_shift_from ty) (only parsing).
@@ -41,6 +42,9 @@ Notation lty_env_swap :=
 Notation typed_lty_env_bind :=
   (@lvar_store_bind ty) (only parsing).
 
+Definition lty_env_msubst_store (σ : StoreT) (Σ : lty_env) : lty_env :=
+  storeA_restrict Σ (dom Σ ∖ lvars_of_atoms (dom (σ : gmap atom value))).
+
 #[global] Instance stale_lty_env : Stale lty_env := lvar_store_atom_dom.
 Arguments stale_lty_env /.
 
@@ -60,6 +64,36 @@ Arguments stale_lty_env /.
 
     Type-language compatibility names for generic lvar-store opening laws. *)
 
+
+Lemma lty_env_msubst_store_dom σ (Σ : lty_env) :
+  dom (lty_env_msubst_store σ Σ) =
+  dom Σ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
+Proof.
+  unfold lty_env_msubst_store.
+  rewrite storeA_restrict_dom.
+  set_solver.
+Qed.
+
+Lemma lty_env_msubst_store_lookup_some σ (Σ : lty_env) v T :
+  lty_env_msubst_store σ Σ !! v = Some T ->
+  Σ !! v = Some T /\ v ∉ lvars_of_atoms (dom (σ : gmap atom value)).
+Proof.
+  intros Hlook.
+  apply storeA_restrict_lookup_some in Hlook as [Hin HΣ].
+  apply elem_of_difference in Hin as [_ Hfresh].
+  split; assumption.
+Qed.
+
+Lemma lty_env_msubst_store_lookup_some_2 σ (Σ : lty_env) v T :
+  Σ !! v = Some T ->
+  v ∉ lvars_of_atoms (dom (σ : gmap atom value)) ->
+  lty_env_msubst_store σ Σ !! v = Some T.
+Proof.
+  intros Hlook Hfresh.
+  apply storeA_restrict_lookup_some_2.
+  - exact Hlook.
+  - apply elem_of_difference. split; [by apply elem_of_dom_2 in Hlook|exact Hfresh].
+Qed.
 
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).

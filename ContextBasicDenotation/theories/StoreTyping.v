@@ -15,6 +15,13 @@ Definition storeA_has_type
     σ !! x = Some v ->
     ∅ ⊢ᵥ v ⋮ T.
 
+Definition atom_store_has_ltype (Σ : lty_env) (σ : StoreT) : Prop :=
+  forall x v,
+    σ !! x = Some v ->
+    exists T,
+      Σ !! LVFree x = Some T /\
+      ∅ ⊢ᵥ v ⋮ T.
+
 Definition worldA_has_type
     {K : Type} `{Countable K}
     (Σ : gmap K ty) (m : @WorldA K _ _ value) : Prop :=
@@ -38,6 +45,35 @@ Definition basic_world_lqual (Σ : lty_env) : logic_qualifier :=
 
 Definition basic_world_formula (Σ : lty_env) : Formula :=
   FAtom (basic_world_lqual Σ).
+
+Lemma atom_store_has_ltype_dom_subset Σ σ :
+  atom_store_has_ltype Σ σ ->
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ dom Σ.
+Proof.
+  intros Hty v Hv.
+  unfold lvars_of_atoms in Hv.
+  apply elem_of_map in Hv as [x [Hv Hx]].
+  subst v.
+  apply elem_of_dom in Hx as [v Hv].
+  destruct (Hty x v Hv) as [T [HΣ _]].
+  apply elem_of_dom_2 in HΣ. exact HΣ.
+Qed.
+
+Lemma atom_store_has_ltype_closed Σ σ :
+  atom_store_has_ltype Σ σ ->
+  store_closed σ.
+Proof.
+  intros Hty. split.
+  - unfold closed_env. apply map_Forall_lookup_2.
+    intros x v Hlook.
+    destruct (Hty x v Hlook) as [T [_ Hv]].
+    pose proof (basic_typing_contains_fv_value ∅ v T Hv).
+    set_solver.
+  - unfold lc_env. apply map_Forall_lookup_2.
+    intros x v Hlook.
+    destruct (Hty x v Hlook) as [T [_ Hv]].
+    exact (typing_value_lc _ _ _ Hv).
+Qed.
 
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
