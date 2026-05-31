@@ -75,6 +75,21 @@ Proof.
     exact (typing_value_lc _ _ _ Hv).
 Qed.
 
+Lemma atom_store_has_ltype_restrict_lvars Σ σ D :
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ D ->
+  atom_store_has_ltype Σ σ ->
+  atom_store_has_ltype (storeA_restrict Σ D) σ.
+Proof.
+  intros Hdom Hty x v Hlook.
+  destruct (Hty x v Hlook) as [T [HΣ Hv]].
+  exists T. split; [|exact Hv].
+  apply storeA_restrict_lookup_some_2; [exact HΣ|].
+  apply Hdom.
+  unfold lvars_of_atoms.
+  apply elem_of_map. exists x. split; [reflexivity|].
+  eapply elem_of_dom_2. exact Hlook.
+Qed.
+
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.

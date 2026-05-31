@@ -904,9 +904,41 @@ Implementation order
    - Do not define a fake `formula_msubst_store` on terms or types.  Instead
      reuse the real syntax operations:
 
-       `lstore_instantiate_tm σ e`
-       qualifier mlsubst/open support
-       lty-env projection/instantiation support as needed.
+     `lstore_instantiate_tm σ e`
+     qualifier mlsubst/open support
+     lty-env projection/instantiation support as needed.
+
+   Freshness/open-env cleanup before the main transport:
+
+   - The old `basic_tm_has_ltype_by_open_env` / `*_to_open_env` route is now a
+     compatibility/spec bridge only.  It should not be used to prove
+     `formula_msubst_store` transport.  Since public `basic_tm_has_ltype` is
+     the inductive lvar-level relation, the old `open_env_fresh_for_lvars η`
+     premises can disappear from the active msubst proof path.  Remaining
+     exact `formula_open_env_*` lemmas may still need freshness, but those are
+     syntax/open normalization facts, not BasicTyping obligations.
+
+   - First normalize the fixed store to the variables a formula can see:
+
+       `formula_msubst_store_restrict_fv_subset`:
+         `formula_fv φ ⊆ X ->
+          formula_msubst_store σ φ =
+          formula_msubst_store (store_restrict σ X) φ`.
+
+     This is proved in `FormulaSyntax.v` from the qualifier-level lemma
+     `lqual_msubst_store_restrict_subset`.  The key low-level fact is that a
+     lifted atom store restricted to a lvar domain `D` only depends on
+     `lvars_fv D`:
+
+       `lstore_lift_free_restrict_lvars_subset_eq`.
+
+     The remaining named proof obligation at this level is only the dependent
+     `LWorldOn` path equation:
+
+       `lworld_on_mlsubst_back_restrict_eq`.
+
+     It should be proved by extensionality of the produced `LWorldOn`, not by
+     rewriting through the `resA_product` compatibility proof term.
 
    Refined transport statement:
 
@@ -961,22 +993,30 @@ Implementation order
        `expr_total_formula_msubst_store_models` remain the next atom-level
        obligations to prove from TermEval/BasicTypingFormula.
 
-   - The main theorem should therefore have shape:
+   - The main theorem should therefore be proved first in the relevant-store
+     form:
 
        `denot_relevant_lvars τ e ⊆ dom Σ ->
-        lvars_of_atoms (dom σ) ⊆ dom Σ ->
+        lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e ->
         atom_store_has_ltype Σ σ ->
         m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)
-        <->
         m ⊨ denot_ty_lvar_gas gas
               (lty_env_msubst_store σ Σ)
               (context_ty_msubst_store σ τ)
               (lstore_instantiate_tm (lstore_lift_free σ) e)`.
 
-     Extra variables in `σ` that are not used by `τ/e` may delete extra
-     irrelevant keys from the right-hand environment.  This is fine, but the
-     proof must use the existing environment-agree/on-relevant-support lemmas
-     rather than pretending exact environments are unchanged.
+     This is intentionally one-way: for `type_qualifier_formula`, the frozen
+     formula is stronger than the residual qualifier formula.  A full iff would
+     be false without extra exactness assumptions on the qualifier predicate.
+
+   - Public/full-fiber uses should first replace `σ` by
+
+       `store_restrict σ (lvars_fv (denot_relevant_lvars τ e))`
+
+     using `formula_msubst_store_restrict_fv_subset` together with
+     `formula_fv_denot_ty_lvar_gas_subset_relevant`, then call the relevant
+     theorem above.  This keeps extra selected-fiber variables from deleting
+     irrelevant keys from the right-hand environment.
 
    - Add atom-formula transport lemmas, preferably models-level iff lemmas
      rather than exact equalities:

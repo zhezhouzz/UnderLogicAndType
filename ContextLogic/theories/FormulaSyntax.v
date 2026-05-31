@@ -158,6 +158,99 @@ Proof.
   rewrite dom_lstore_lift_free. reflexivity.
 Qed.
 
+Lemma formula_msubst_store_restrict_fv_subset
+    (σ : Store (V := V)) (φ : Formula) (X : aset) :
+  formula_fv φ ⊆ X ->
+  formula_msubst_store σ φ =
+  formula_msubst_store (store_restrict σ X) φ.
+Proof.
+  revert X.
+  induction φ; intros X Hsub;
+    unfold formula_msubst_store; cbn [formula_mlsubst];
+    try reflexivity.
+  - change (FAtom (lqual_msubst_store σ a) =
+      FAtom (lqual_msubst_store (store_restrict σ X) a)).
+    f_equal. apply lqual_msubst_store_restrict_subset.
+    rewrite formula_fv_atom in Hsub. exact Hsub.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_and in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_or in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_impl in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_star in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_wand in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    fold (formula_msubst_store (store_restrict σ X) φ1).
+    fold (formula_msubst_store (store_restrict σ X) φ2).
+    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
+      rewrite formula_fv_plus in Hsub; set_solver.
+  - fold (formula_msubst_store σ φ).
+    fold (formula_msubst_store (store_restrict σ X) φ).
+    rewrite (IHφ X); [reflexivity|].
+    rewrite formula_fv_forall in Hsub. exact Hsub.
+  - fold (formula_msubst_store σ φ).
+    fold (formula_msubst_store (store_restrict σ X) φ).
+    rewrite (IHφ X); [reflexivity|].
+    rewrite formula_fv_over in Hsub. exact Hsub.
+  - fold (formula_msubst_store σ φ).
+    fold (formula_msubst_store (store_restrict σ X) φ).
+    rewrite (IHφ X); [reflexivity|].
+    rewrite formula_fv_under in Hsub. exact Hsub.
+  - fold (formula_msubst_store σ φ).
+    fold (formula_msubst_store (store_restrict σ X) φ).
+    rewrite (IHφ X).
+    2:{ rewrite formula_fv_fibvars in Hsub. set_solver. }
+    f_equal.
+    change (D ∖ dom (lstore_lift_free σ : LStoreT) =
+      D ∖ dom (lstore_lift_free (store_restrict σ X) : LStoreT)).
+    assert (HρD :
+      storeA_restrict
+        (lstore_lift_free (store_restrict σ X) : LStoreT) D =
+      storeA_restrict (lstore_lift_free σ : LStoreT) D).
+    {
+      apply lstore_lift_free_restrict_lvars_subset_eq.
+      rewrite formula_fv_fibvars in Hsub. set_solver.
+    }
+    pose proof (f_equal (fun s : gmap logic_var V => dom s) HρD)
+      as Hdom_restrict.
+    rewrite !storeA_restrict_dom in Hdom_restrict.
+    apply set_eq. intros v.
+    rewrite !elem_of_difference.
+    set_solver.
+Qed.
+
+Lemma formula_msubst_store_restrict_fv
+    (σ : Store (V := V)) (φ : Formula) :
+  formula_msubst_store σ φ =
+  formula_msubst_store (store_restrict σ (formula_fv φ)) φ.
+Proof.
+  apply formula_msubst_store_restrict_fv_subset. reflexivity.
+Qed.
+
 Lemma formula_msubst_store_union
     (σ1 σ2 : Store (V := V)) (φ : Formula) :
   storeA_compat σ1 σ2 ->

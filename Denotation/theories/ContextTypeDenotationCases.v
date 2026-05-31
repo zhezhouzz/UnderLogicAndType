@@ -335,7 +335,7 @@ Proof.
       * reflexivity.
     + transitivity (storeA_restrict (lstore_lift_free σ : LStoreT)
           (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))).
-      * apply lstore_lift_free_restrict_fv_lvars_eq. exact Hlc.
+      * apply lstore_lift_free_restrict_fv_lvars_eq.
       * apply map_eq. intros z.
         destruct (decide (z = LVFree y)) as [->|Hz].
         -- transitivity (Some (vconst c)).
@@ -358,8 +358,7 @@ Proof.
     destruct HσD as [σm [Hσm HσD]].
     rewrite <- HσD in Hs.
     rewrite (lstore_lift_free_restrict_fv_lvars_eq σm
-      (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))
-      Hlc) in Hs.
+      (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))) in Hs.
     rewrite <- Hs.
     apply storeA_restrict_lookup_some_2.
     + rewrite lstore_lift_free_lookup_free.

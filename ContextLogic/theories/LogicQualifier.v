@@ -107,6 +107,79 @@ Definition lqual_msubst_store
     (σ : Store (V := V)) (q : logic_qualifier) : logic_qualifier :=
   lqual_mlsubst (lstore_lift_free σ) q.
 
+Lemma lstore_lift_free_restrict_fv_lvars_eq
+    (σ : Store (V := V)) (D : lvset) :
+  storeA_restrict
+    (lstore_lift_free (store_restrict σ (lvars_fv D)) : LStoreT) D =
+  storeA_restrict (lstore_lift_free σ : LStoreT) D.
+Proof.
+  apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ D)) as [HzD|HzD].
+  2:{
+    transitivity (@None V).
+    - apply storeA_restrict_lookup_none_r. exact HzD.
+    - symmetry. apply storeA_restrict_lookup_none_r. exact HzD.
+  }
+  destruct z as [k|x].
+  - transitivity (@None V).
+    + apply storeA_restrict_lookup_none_l.
+      rewrite lstore_lift_free_lookup_bound. reflexivity.
+    + symmetry. apply storeA_restrict_lookup_none_l.
+      rewrite lstore_lift_free_lookup_bound. reflexivity.
+  - assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HzD).
+    destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hσx.
+    + transitivity (Some v).
+      * apply storeA_restrict_lookup_some_2; [|exact HzD].
+        rewrite lstore_lift_free_lookup_free.
+        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxD].
+      * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
+        rewrite lstore_lift_free_lookup_free. exact Hσx.
+    + transitivity (@None V).
+      * apply storeA_restrict_lookup_none_l.
+        rewrite lstore_lift_free_lookup_free.
+        apply storeA_restrict_lookup_none_l. exact Hσx.
+      * symmetry. apply storeA_restrict_lookup_none_l.
+        rewrite lstore_lift_free_lookup_free. exact Hσx.
+Qed.
+
+Lemma lstore_lift_free_restrict_lvars_subset_eq
+    (σ : Store (V := V)) (D : lvset) (X : aset) :
+  lvars_fv D ⊆ X ->
+  storeA_restrict
+    (lstore_lift_free (store_restrict σ X) : LStoreT) D =
+  storeA_restrict (lstore_lift_free σ : LStoreT) D.
+Proof.
+  intros HDX.
+  apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ D)) as [HzD|HzD].
+  2:{
+    transitivity (@None V).
+    - apply storeA_restrict_lookup_none_r. exact HzD.
+    - symmetry. apply storeA_restrict_lookup_none_r. exact HzD.
+  }
+  destruct z as [k|x].
+  - transitivity (@None V).
+    + apply storeA_restrict_lookup_none_l.
+      rewrite lstore_lift_free_lookup_bound. reflexivity.
+    + symmetry. apply storeA_restrict_lookup_none_l.
+      rewrite lstore_lift_free_lookup_bound. reflexivity.
+  - assert (HxX : x ∈ X).
+    { apply HDX. apply lvars_fv_elem. exact HzD. }
+    destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hσx.
+    + transitivity (Some v).
+      * apply storeA_restrict_lookup_some_2; [|exact HzD].
+        rewrite lstore_lift_free_lookup_free.
+        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxX].
+      * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
+        rewrite lstore_lift_free_lookup_free. exact Hσx.
+    + transitivity (@None V).
+      * apply storeA_restrict_lookup_none_l.
+        rewrite lstore_lift_free_lookup_free.
+        apply storeA_restrict_lookup_none_l. exact Hσx.
+      * symmetry. apply storeA_restrict_lookup_none_l.
+        rewrite lstore_lift_free_lookup_free. exact Hσx.
+Qed.
+
 Lemma lworld_on_mlsubst_back_union
     (D : lvset) (ρ1 ρ2 : LStoreT)
     (w1 : LWorldOnT ((D ∖ dom (ρ1 : gmap logic_var V))
@@ -208,6 +281,91 @@ Proof.
   apply propositional_extensionality.
   apply HP. reflexivity.
 Qed.
+
+Lemma lworld_on_mlsubst_back_restrict_eq
+    (D : lvset) (ρ1 ρ2 : LStoreT)
+    (w1 : LWorldOnT (D ∖ dom (ρ1 : gmap logic_var V)))
+    (w2 : LWorldOnT (D ∖ dom (ρ2 : gmap logic_var V))) :
+  storeA_restrict ρ1 D = storeA_restrict ρ2 D ->
+  @lw V _ w1 = @lw V _ w2 ->
+  lworld_on_mlsubst_back D ρ1 w1 =
+  lworld_on_mlsubst_back D ρ2 w2.
+Proof.
+  intros HρD Hlw.
+  assert (Hwiff : forall σ,
+      (@lw V _ w1 : LWorld) σ <-> (@lw V _ w2 : LWorld) σ).
+  { intros σ. rewrite Hlw. reflexivity. }
+  apply lworld_on_ext.
+  apply wfworldA_ext. apply worldA_ext.
+  - set (wl := lworld_on_mlsubst_back D ρ1 w1).
+    set (wr := lworld_on_mlsubst_back D ρ2 w2).
+    change (lworld_dom (lraw_world (lw D wl)) =
+      lworld_dom (lraw_world (lw D wr))).
+    rewrite (lw_dom D wl), (lw_dom D wr).
+    reflexivity.
+  - unfold lworld_on_mlsubst_back.
+    intros τ. cbn [lw resA_product rawA_product singleton_worldA
+      worldA_stores proj1_sig].
+    split.
+    + intros (τ0 & τD & Hτ0 & -> & Hc & ->).
+      exists τ0, (storeA_restrict ρ2 D). repeat split.
+      * apply Hwiff. exact Hτ0.
+      * rewrite <- HρD. exact Hc.
+      * rewrite <- HρD. reflexivity.
+    + intros (τ0 & τD & Hτ0 & -> & Hc & ->).
+      exists τ0, (storeA_restrict ρ1 D). repeat split.
+      * apply (proj2 (Hwiff τ0)). exact Hτ0.
+      * rewrite HρD. exact Hc.
+      * rewrite HρD. reflexivity.
+Qed.
+
+Lemma lqual_msubst_store_restrict_fv
+    (σ : Store (V := V)) (q : logic_qualifier) :
+  lqual_msubst_store σ q =
+  lqual_msubst_store (store_restrict σ (lqual_fv q)) q.
+Proof.
+  unfold lqual_msubst_store.
+  destruct q as [D P].
+  cbn [lqual_fv lqual_dom].
+  assert (HρD :
+    storeA_restrict (lstore_lift_free σ : LStoreT) D =
+    storeA_restrict
+      (lstore_lift_free (store_restrict σ (lvars_fv D)) : LStoreT) D).
+  { symmetry. apply lstore_lift_free_restrict_fv_lvars_eq. }
+  eapply logic_qualifier_ext.
+  - change (D ∖ dom (lstore_lift_free σ : LStoreT) =
+      D ∖ dom (lstore_lift_free (store_restrict σ (lvars_fv D)) : LStoreT)).
+    pose proof (f_equal (fun s : gmap logic_var V => dom s) HρD)
+      as Hdom_restrict.
+    rewrite !storeA_restrict_dom in Hdom_restrict.
+    apply set_eq. intros v.
+    rewrite !elem_of_difference.
+    set_solver.
+  - intros w1 w2 Hlw.
+    cbn [lqual_prop lqual_dom lqual_mlsubst lqual_msubst_store lqual_fv].
+    change (P (lworld_on_mlsubst_back D (lstore_lift_free σ) w1) <->
+      P (lworld_on_mlsubst_back D
+        (lstore_lift_free (store_restrict σ (lvars_fv D))) w2)).
+    enough (lworld_on_mlsubst_back D (lstore_lift_free σ) w1 =
+      lworld_on_mlsubst_back D
+        (lstore_lift_free (store_restrict σ (lvars_fv D))) w2) as ->.
+    { reflexivity. }
+    eapply lworld_on_mlsubst_back_restrict_eq; [exact HρD|exact Hlw].
+Qed.
+
+Lemma lqual_msubst_store_restrict_subset
+    (σ : Store (V := V)) (q : logic_qualifier) (X : aset) :
+  lqual_fv q ⊆ X ->
+  lqual_msubst_store σ q =
+  lqual_msubst_store (store_restrict σ X) q.
+Proof.
+  intros Hsub.
+  rewrite (lqual_msubst_store_restrict_fv σ q).
+  rewrite (lqual_msubst_store_restrict_fv (store_restrict σ X) q).
+  f_equal.
+  symmetry. apply storeA_restrict_twice_subset. exact Hsub.
+Qed.
+
 
 Lemma lqual_mlsubst_union
     (ρ1 ρ2 : LStoreT) (q : logic_qualifier) :
