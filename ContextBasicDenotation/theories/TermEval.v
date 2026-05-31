@@ -580,6 +580,80 @@ Proof.
     + apply Hstores. exists σm. split; [exact Hσm|reflexivity].
 Qed.
 
+Lemma expr_result_at_world_msubst_store_from_back
+    σ e x
+    (w : LWorldOn (V := value)
+      ((tm_lvars e ∪ {[x]}) ∖ dom (lstore_lift_free σ : LStoreT))) :
+  store_closed σ ->
+  x ∉ dom (lstore_lift_free σ : LStoreT) ->
+  expr_result_at_world e x
+    (@lw value _ (lworld_on_mlsubst_back (tm_lvars e ∪ {[x]})
+      (lstore_lift_free σ) w) : LWorldT) ->
+  expr_result_at_world
+    (lstore_instantiate_tm (lstore_lift_free σ) e) x
+    (@lw value _ w : LWorldT).
+Proof.
+  intros Hclosed Hxρ [Hxe [Hdom Hstores]].
+  split.
+  - rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+    set_solver.
+  - split.
+    + rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+      change ((tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT)) ∪ {[x]} ⊆
+        lworld_dom (@lw value _ w : LWorldT)).
+      rewrite (@lw_dom value _ w). set_solver.
+    + intros τ Hτ.
+      pose proof (lworld_on_store_dom_eq
+        ((tm_lvars e ∪ {[x]}) ∖ dom (lstore_lift_free σ : LStoreT))
+        w τ Hτ) as Hτdom.
+      set (D := tm_lvars e ∪ {[x]}).
+      set (ρD := storeA_restrict (lstore_lift_free σ : LStoreT) D).
+      assert (Hcompat : storeA_compat τ ρD).
+      {
+        apply storeA_disj_dom_compat.
+        rewrite Hτdom. unfold ρD. rewrite storeA_restrict_dom. set_solver.
+      }
+      assert (Hback_store :
+        worldA_stores
+          (@lw value _
+            (lworld_on_mlsubst_back D (lstore_lift_free σ) w)
+            : LWorldT)
+          ((τ : gmap logic_var value) ∪ ρD)).
+      {
+        unfold lworld_on_mlsubst_back.
+        cbn [lw resA_product rawA_product singleton_worldA worldA_stores].
+        exists τ, ρD. repeat split; try exact Hτ; try exact Hcompat;
+          try reflexivity.
+      }
+      destruct (Hstores _ Hback_store) as [_ [v [Hlookup Heval]]].
+      split.
+      * rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+        set_solver.
+      * exists v. split.
+        -- apply (proj1 (map_lookup_union_Some_raw
+             (τ : gmap logic_var value) ρD x v)) in Hlookup
+             as [Hτx | [Hτnone Hρx]].
+           ++ exact Hτx.
+           ++ exfalso. apply Hxρ.
+              unfold ρD in Hρx.
+              apply storeA_restrict_lookup_some in Hρx as [_ Hρx].
+              apply elem_of_dom_2 in Hρx. exact Hρx.
+        -- unfold expr_eval_in_store in *.
+           assert (HsubD :
+             D ∖ dom (lstore_lift_free σ : LStoreT) ⊆ dom (τ : LStoreT)).
+           { subst D. set_solver. }
+           assert (Hdisjτ :
+             dom (τ : LStoreT) ## dom (lstore_lift_free σ : LStoreT)).
+           { subst D. set_solver. }
+           pose proof (snd lstore_instantiate_lift_free_then_residual_at_mutual
+             e 0 σ τ D Hclosed ltac:(subst D; set_solver)
+             HsubD Hdisjτ) as Hinst.
+           change (lstore_instantiate_tm_at 0 τ
+             (lstore_instantiate_tm_at 0 (lstore_lift_free σ : LStoreT) e)
+             →* tret v).
+           rewrite Hinst. exact Heval.
+Qed.
+
 Definition expr_result_output_world (e : tm) (x : atom) (σ : StoreT) : WfWorldT.
 Proof.
   destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))

@@ -1037,7 +1037,23 @@ Implementation order
 
      3. Formula-level atom transports in `MsubstTransport.v` should then only
         unpack `lqual_msubst_store`, apply the two semantic/syntax transports
-        above, and repack the corresponding `res_models` iff.
+        above, and repack the corresponding `res_models` implication.
+
+        Important correction: for `type_qualifier_formula`, exact equality and
+        a full iff are generally too strong.  `formula_msubst_store σ
+        (type_qualifier_formula q)` says the back-world exactly characterizes
+        the original predicate on all full `qual_vars q` stores.  By contrast,
+        `type_qualifier_formula (qual_msubst_store σ q)` only characterizes the
+        residual predicate after plugging in the fixed store.  The former
+        implies the latter, but not conversely.  The proved lemma is therefore
+        the sound direction:
+
+          `type_qualifier_formula_msubst_store_models :
+             m ⊨ formula_msubst_store σ (type_qualifier_formula q) ->
+             m ⊨ type_qualifier_formula (qual_msubst_store σ q)`.
+
+        Denotation transport should use this strong-to-weak direction in
+        Over/Under/FibVars elimination, not an exact atom rewrite.
 
 
 
@@ -1147,17 +1163,31 @@ Implementation order
           TermEval helper `expr_total_on_msubst_store_from_back` plus the
           lvar-support lemma
           `tm_lvars_lstore_instantiate_lift_free_closed`.
-        - The remaining lower obligations are therefore precise:
-          (a) prove `basic_tm_has_ltype_msubst_store`, whose nontrivial step is
-          choosing/opening environments after fixed fvars have been deleted;
-          (b) prove `expr_total_on_msubst_store_from_back`, whose nontrivial
-          step is the operational composition of `lstore_instantiate_tm`; and
-          (c) prove the support equality
-          `tm_lvars_lstore_instantiate_lift_free_closed`.
+        - Lower-obligation status:
+          (a) `basic_tm_has_ltype_msubst_store` is proved using the new
+          inductive BasicTyping relation and no longer depends on the old
+          arbitrary-open-env definition;
+          (b) `expr_total_on_msubst_store_from_back` is proved.  The proof uses
+          the back-world decomposition into a residual lstore and the fixed
+          free store restricted to `tm_lvars e`;
+          (c) `tm_lvars_lstore_instantiate_lift_free_closed` is proved from a
+          depth-general mutual syntax lemma.
+
+        - New reusable syntax support now available for the main denotation
+          transport:
+
+            `lstore_instantiate_lift_free_then_residual_at_mutual`
+            `lstore_instantiate_tm_lift_free_then_residual`
+
+          These state the operational composition law needed by total/result
+          formulas: first instantiating by a closed lifted atom store and then
+          by a residual lstore is the same as instantiating once by the union
+          of the residual store and the fixed store restricted to the relevant
+          lvars.
 
    - Then prove the main transport for type denotation:
 
-       `denot_ty_lvar_gas_msubst_store_models_iff`
+       `denot_ty_lvar_gas_msubst_store_models`
 
      Shape, up to the final names:
 
@@ -1170,6 +1200,36 @@ Implementation order
      fully defined, first prove the restricted versions needed by the active
      Soundness cases and keep the missing general syntax operation as a named
      obligation.
+
+     Immediate sub-plan for this theorem:
+
+     1. Add formula-level msubst transport lemmas for the two non-guard atoms
+        that occur in recursive denotation bodies:
+
+          `type_qualifier_formula_msubst_store_models`
+          `expr_result_formula_msubst_store_models` (or the exact equality if
+          its atom is genuinely extensional enough)
+
+        These should be syntax/semantic alignment lemmas, not TLet-specific
+        helpers.  They belong in BasicDenotation near the corresponding atom
+        definitions.  For type qualifiers, keep the strong-to-weak
+        models-level direction; exact equality is false in general because
+        freezing a free store removes alternative values from the residual
+        qualifier domain.
+
+     2. Prove the guard transport as a reusable tactic/lemma that splits the
+        outer nested `FAnd` and applies:
+
+          `context_ty_wf_formula_msubst_store_models`
+          `basic_world_formula_msubst_store_models`
+          `expr_basic_typing_formula_msubst_store_models`
+          `expr_total_formula_msubst_store_models`
+
+     3. Prove `denot_ty_lvar_gas_msubst_store_models` by induction on gas.
+        The structural cases use `res_models_and_iff`, `res_models_or`/
+        `res_models_plus` maps, and the IH.  The Over/Under/Arrow/Wand cases
+        should use the formula-level msubst normalization from step 1 plus
+        existing impl/forall/wand mapping lemmas.
 
    Soundness layer:
 

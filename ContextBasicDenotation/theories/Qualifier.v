@@ -3,6 +3,7 @@
     Interpreting type qualifiers as exact logic-qualifier worlds. *)
 
 From ContextBasicDenotation Require Import Notation.
+From ContextAlgebra Require Import ResourceAlgebra.
 
 Section QualifierDenotation.
 
@@ -26,6 +27,90 @@ Lemma type_qualifier_holds_lworld_store_iff q
   type_qualifier_holds_lworld q w ->
   qual_prop q s <-> lstore_in_lworld_on s w.
 Proof. intros H. apply H. Qed.
+
+Lemma atom_store_to_lvar_store_lift_free (σ : Store (V := value)) :
+  atom_store_to_lvar_store σ = lstore_lift_free σ.
+Proof.
+  unfold atom_store_to_lvar_store, lstore_lift_free.
+  reflexivity.
+Qed.
+
+Lemma lstore_in_lworld_on_mlsubst_back D ρ
+    (s : LStoreOn (D ∖ dom (ρ : gmap logic_var value)))
+    (w : LWorldOn (D ∖ dom (ρ : gmap logic_var value))) :
+  lstore_in_lworld_on (lstore_on_mlsubst_back D ρ s)
+    (lworld_on_mlsubst_back D ρ w) <->
+  lstore_in_lworld_on s w.
+Proof.
+  unfold lstore_in_lworld_on, lstore_on_mlsubst_back,
+    lworld_on_mlsubst_back.
+  cbn [lw lso_store storeAO_store resA_product rawA_product
+    singleton_worldA worldA_stores proj1_sig].
+  set (ρD := storeA_restrict ρ D).
+  split.
+  - intros (σw & σρ & Hσw & -> & Hcompat & Hunion).
+    change (((lso_store s : gmap logic_var value) ∪ ρD) =
+      ((σw : gmap logic_var value) ∪ ρD)) in Hunion.
+    assert (Hσw_dom : dom (σw : LStoreT) =
+        D ∖ dom (ρ : gmap logic_var value)).
+    {
+      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) σw Hσw)
+        as Hdom.
+      change (dom (σw : LStoreT) = lworld_dom (@lw value _ w : LWorldT))
+        in Hdom.
+      rewrite (@lw_dom value _ w) in Hdom. exact Hdom.
+    }
+    assert (Hs_dom : dom (lso_store s : LStoreT) =
+        D ∖ dom (ρ : gmap logic_var value)).
+    { apply lso_dom. }
+    assert (HρD_dom : dom (ρD : LStoreT) ⊆ dom (ρ : LStoreT) ∩ D).
+    {
+      unfold ρD.
+      change (dom (storeA_restrict ρ D : gmap logic_var value) ⊆
+        dom (ρ : LStoreT) ∩ D).
+      rewrite storeA_restrict_dom. set_solver.
+    }
+    assert (Hσw_eq :
+      storeA_restrict (σw ∪ ρD : LStoreT)
+        (D ∖ dom (ρ : gmap logic_var value)) = σw).
+    {
+      eapply (storeA_restrict_union_piece_l
+        (σw : gmap logic_var value) ρD
+        (D ∖ dom (ρ : gmap logic_var value)) (dom (ρ : LStoreT) ∩ D)).
+      - exact Hcompat.
+      - change (dom (σw : LStoreT) ⊆ D ∖ dom (ρ : gmap logic_var value)).
+        rewrite Hσw_dom. set_solver.
+      - exact HρD_dom.
+      - set_solver.
+    }
+    assert (Hs_eq :
+      storeA_restrict (((lso_store s : gmap logic_var value) ∪ ρD) : LStoreT)
+        (D ∖ dom (ρ : gmap logic_var value)) = lso_store s).
+    {
+      eapply (storeA_restrict_union_piece_l
+        (lso_store s : gmap logic_var value) ρD
+        (D ∖ dom (ρ : gmap logic_var value)) (dom (ρ : LStoreT) ∩ D)).
+      - apply storeA_disj_dom_compat.
+        change (dom (lso_store s : LStoreT) ∩ dom (ρD : LStoreT) = ∅).
+        rewrite Hs_dom. set_solver.
+      - change (dom (lso_store s : LStoreT) ⊆
+          D ∖ dom (ρ : gmap logic_var value)).
+        rewrite Hs_dom. set_solver.
+      - exact HρD_dom.
+      - set_solver.
+    }
+    rewrite <- Hunion in Hσw_eq.
+    rewrite Hs_eq in Hσw_eq.
+    subst σw. exact Hσw.
+  - intros Hs.
+    exists (lso_store s), ρD. repeat split; try exact Hs; try reflexivity.
+    apply storeA_disj_dom_compat.
+    change (dom (lso_store s : LStoreT) ∩ dom (ρD : LStoreT) = ∅).
+    unfold ρD.
+    change (dom (lso_store s : LStoreT) ∩
+      dom (storeA_restrict ρ D : gmap logic_var value) = ∅).
+    rewrite (lso_dom s), storeA_restrict_dom. set_solver.
+Qed.
 
 Lemma lstore_in_lworld_on_open_back k x D
     (s : LStoreOn (lvars_open k x D))

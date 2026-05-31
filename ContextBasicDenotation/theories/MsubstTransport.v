@@ -5,7 +5,7 @@
     the TypeLanguage-level substitution operations on contexts, qualifiers,
     and terms. *)
 
-From ContextBasicDenotation Require Import Notation StoreTyping TermEval
+From ContextBasicDenotation Require Import Notation StoreTyping TermEval TermOpen Qualifier
   BasicTypingFormula RelevantEnv.
 From ContextLogic Require Import FormulaConnectives.
 From ContextAlgebra Require Import ResourceAlgebra.
@@ -199,6 +199,80 @@ Proof.
   unfold expr_total_lqual, logic_qualifier_denote.
   rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
   exists Hlc, Hsub. exact Htotal'.
+Qed.
+
+Lemma type_qualifier_formula_msubst_store_models
+    σ q (m : WfWorldT) :
+  res_models m (formula_msubst_store σ (type_qualifier_formula q)) ->
+  res_models m (type_qualifier_formula (qual_msubst_store σ q)).
+Proof.
+  intros Hm.
+  destruct q as [D P].
+  change (formula_msubst_store σ
+    (type_qualifier_formula {| qual_lvars := D; qual_prop := P |}))
+    with (FAtom (lqual_msubst_store σ
+      (type_qualifier_lqual {| qual_lvars := D; qual_prop := P |}))) in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, type_qualifier_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop] in Hden.
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  destruct Hden as [Hlc [Hsub Hholds]].
+  apply res_models_atom_intro.
+  unfold type_qualifier_formula, type_qualifier_lqual,
+    qual_msubst_store, qual_mlsubst, logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop type_qualifier_holds_lworld
+    qual_vars qual_lvars qual_prop].
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  exists Hlc, Hsub.
+  intros s.
+  specialize (Hholds (lstore_on_mlsubst_back D (lstore_lift_free σ) s)).
+  split; intros HP.
+  - apply (proj1 (lstore_in_lworld_on_mlsubst_back D
+      (lstore_lift_free σ) s
+      (lworld_on_lift (D ∖ dom (lstore_lift_free σ : LStoreT))
+        m Hlc Hsub))).
+    apply Hholds. exact HP.
+  - apply Hholds.
+    apply (proj2 (lstore_in_lworld_on_mlsubst_back D
+      (lstore_lift_free σ) s
+      (lworld_on_lift (D ∖ dom (lstore_lift_free σ : LStoreT))
+        m Hlc Hsub))).
+    exact HP.
+Qed.
+
+Lemma expr_result_formula_msubst_store_models
+    σ e x (m : WfWorldT) :
+  store_closed σ ->
+  x ∉ dom (lstore_lift_free σ : LStoreT) ->
+  res_models m (formula_msubst_store σ (expr_result_formula e x)) ->
+  res_models m (expr_result_formula
+    (lstore_instantiate_tm (lstore_lift_free σ) e) x).
+Proof.
+  intros Hclosed Hxρ Hm.
+  change (formula_msubst_store σ (expr_result_formula e x))
+    with (FAtom (lqual_msubst_store σ (expr_result_lqual e x))) in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, expr_result_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  destruct Hden as [Hlc [Hsub Hresult]].
+  pose proof (expr_result_at_world_msubst_store_from_back σ e x
+    (lworld_on_lift ((tm_lvars e ∪ {[x]})
+      ∖ dom (lstore_lift_free σ : LStoreT)) m Hlc Hsub)
+    Hclosed Hxρ Hresult) as Hresult'.
+  apply res_models_atom_intro.
+  unfold expr_result_lqual, logic_qualifier_denote.
+  rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+  replace ((tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT)) ∪ {[x]})
+    with ((tm_lvars e ∪ {[x]}) ∖ dom (lstore_lift_free σ : LStoreT))
+    by set_solver.
+  exists Hlc, Hsub. exact Hresult'.
 Qed.
 
 End MsubstTransport.

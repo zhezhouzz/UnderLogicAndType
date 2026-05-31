@@ -309,6 +309,71 @@ Proof.
   rewrite Heq. reflexivity.
 Qed.
 
+Lemma denot_relevant_lvars_msubst_store σ τ e :
+  store_closed σ ->
+  denot_relevant_lvars (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e) =
+  denot_relevant_lvars τ e ∖ dom (lstore_lift_free σ : LStoreT).
+Proof.
+  intros Hclosed.
+  unfold denot_relevant_lvars.
+  rewrite context_ty_lvars_msubst_store.
+  rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+  rewrite dom_lstore_lift_free. set_solver.
+Qed.
+
+Lemma denot_relevant_env_msubst_store σ Σ τ e :
+  store_closed σ ->
+  lty_env_msubst_store σ (denot_relevant_env Σ τ e) =
+  denot_relevant_env (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e).
+Proof.
+  intros Hclosed.
+  unfold denot_relevant_env, lty_env_restrict_lvars, lty_env_msubst_store.
+  rewrite denot_relevant_lvars_msubst_store by exact Hclosed.
+  rewrite dom_lstore_lift_free.
+  apply storeA_map_eq. intros v.
+  destruct ((Σ : gmap logic_var ty) !! v) as [T|] eqn:HΣv.
+  - destruct (decide (v ∈ denot_relevant_lvars τ e)) as [HvR|HvR];
+      destruct (decide (v ∈ lvars_of_atoms (dom (σ : gmap atom value)))) as [HvF|HvF].
+    + transitivity (@None ty).
+      * apply storeA_restrict_lookup_none_r.
+        rewrite storeA_restrict_dom. set_solver.
+      * symmetry. apply storeA_restrict_lookup_none_l.
+        apply storeA_restrict_lookup_none_r. set_solver.
+    + transitivity (Some T).
+      * assert (Hinner :
+            storeA_restrict Σ (denot_relevant_lvars τ e) !! v = Some T).
+        { apply storeA_restrict_lookup_some_2; [exact HΣv|exact HvR]. }
+        apply storeA_restrict_lookup_some_2; [exact Hinner|].
+        apply elem_of_difference. split.
+        -- eapply elem_of_dom_2. exact Hinner.
+        -- exact HvF.
+      * assert (Hinner :
+            storeA_restrict Σ
+              (dom (Σ : gmap logic_var ty)
+                ∖ lvars_of_atoms (dom (σ : gmap atom value))) !! v = Some T).
+        {
+          apply storeA_restrict_lookup_some_2; [exact HΣv|].
+          apply elem_of_difference. split; [eapply elem_of_dom_2; exact HΣv|exact HvF].
+        }
+        symmetry. apply storeA_restrict_lookup_some_2; [exact Hinner|set_solver].
+    + transitivity (@None ty).
+      * apply storeA_restrict_lookup_none_l.
+        apply storeA_restrict_lookup_none_r. exact HvR.
+      * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+    + transitivity (@None ty).
+      * apply storeA_restrict_lookup_none_l.
+        apply storeA_restrict_lookup_none_r. exact HvR.
+      * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+  - transitivity (@None ty).
+    + apply storeA_restrict_lookup_none_l.
+      apply storeA_restrict_lookup_none_l. exact HΣv.
+    + symmetry. apply storeA_restrict_lookup_none_l.
+      apply storeA_restrict_lookup_none_l. exact HΣv.
+Qed.
+
 Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq
     (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
   tm_lvars e_tgt = tm_lvars e_src ->
