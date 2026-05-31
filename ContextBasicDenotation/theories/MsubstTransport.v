@@ -8,6 +8,7 @@
 From ContextBasicDenotation Require Import Notation StoreTyping TermEval
   BasicTypingFormula RelevantEnv.
 From ContextLogic Require Import FormulaConnectives.
+From ContextAlgebra Require Import ResourceAlgebra.
 
 Section MsubstTransport.
 
@@ -22,7 +23,60 @@ Lemma lworld_has_type_msubst_store_from_back
   lworld_has_type
     (storeA_restrict Σ (dom Σ ∖ dom (lstore_lift_free σ : LStoreT)))
     (@lw value _ w : LWorldT).
-Admitted.
+Proof.
+  intros _ [Hdom Hstores]. split.
+  - intros v Hv.
+    rewrite storeA_restrict_dom in Hv.
+    assert (Hv' : v ∈ dom Σ ∖ dom (lstore_lift_free σ : LStoreT)) by set_solver.
+    change (v ∈ lworld_dom (@lw value _ w : LWorldT)).
+    rewrite (@lw_dom value _ w). exact Hv'.
+  - intros τ Hτ.
+    intros v T u HΣv Hτv.
+    apply storeA_restrict_lookup_some in HΣv as [HvD HΣv].
+    apply elem_of_difference in HvD as [_ Hvfresh].
+    assert (Hτdom : dom (τ : LStoreT) =
+      dom Σ ∖ dom (lstore_lift_free σ : LStoreT)).
+    {
+      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) τ Hτ) as Hdomτ.
+      change (dom (τ : LStoreT) = lworld_dom (@lw value _ w : LWorldT)) in Hdomτ.
+      rewrite (@lw_dom value _ w) in Hdomτ. exact Hdomτ.
+    }
+    set (ρD := storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ)).
+    assert (HρDdom : dom (ρD : LStoreT) =
+      dom (lstore_lift_free σ : LStoreT) ∩ dom Σ).
+    {
+      unfold ρD.
+      apply (@storeA_restrict_dom value logic_var _ _
+        (lstore_lift_free σ : LStoreT) (dom Σ)).
+    }
+    assert (Hcompat : storeA_compat τ ρD).
+    {
+      unfold storeA_compat, map_compat.
+      intros z a b Hzτ Hzρ.
+      apply elem_of_dom_2 in Hzτ.
+      apply elem_of_dom_2 in Hzρ.
+      change (z ∈ dom (τ : LStoreT)) in Hzτ.
+      change (z ∈ dom (ρD : LStoreT)) in Hzρ.
+      rewrite Hτdom in Hzτ.
+      rewrite HρDdom in Hzρ.
+      set_solver.
+    }
+    assert (Hback_store :
+      worldA_stores
+        (@lw value _ (lworld_on_mlsubst_back (dom Σ)
+          (lstore_lift_free σ) w) : LWorldT)
+        (τ ∪ ρD)).
+    {
+      unfold lworld_on_mlsubst_back.
+      cbn [lw resA_product rawA_product singleton_worldA worldA_stores].
+      exists τ, ρD.
+      repeat split; try exact Hτ; try exact Hcompat; try reflexivity.
+      all: unfold ρD; reflexivity.
+    }
+    specialize (Hstores _ Hback_store v T u HΣv).
+    apply Hstores.
+    apply map_lookup_union_Some_raw. left. exact Hτv.
+Qed.
 
 Lemma context_ty_wf_formula_msubst_store_models
     σ Σ τ (m : WfWorldT) :

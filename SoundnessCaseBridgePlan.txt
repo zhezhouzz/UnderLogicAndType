@@ -954,11 +954,10 @@ Implementation order
        consequence are in `ContextBasicDenotation/StoreTyping.v`.
      - `ContextBasicDenotation/MsubstTransport.v` contains the models-level
        atom transports.  `context_ty_wf_formula_msubst_store_models` and
-       `basic_world_formula_msubst_store_models` are proved.  The latter uses
-       one lower Store/Logic bridge obligation,
-       `lworld_has_type_msubst_store_from_back`, which packages the direct
-       product-store argument for `lworld_on_mlsubst_back`.
-       `expr_basic_typing_formula_msubst_store_models` and
+       `basic_world_formula_msubst_store_models` are proved, including the
+       lower Store/Logic bridge `lworld_has_type_msubst_store_from_back`,
+       which packages the direct product-store argument for
+       `lworld_on_mlsubst_back`.  `expr_basic_typing_formula_msubst_store_models` and
        `expr_total_formula_msubst_store_models` remain the next atom-level
        obligations to prove from TermEval/BasicTypingFormula.
 
