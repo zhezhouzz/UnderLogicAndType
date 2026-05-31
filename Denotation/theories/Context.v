@@ -162,13 +162,6 @@ Proof.
   all: eapply res_models_FFibVars_and_l; exact Hctx.
 Qed.
 
-Lemma denot_ctx_under_bind_inv
-    (Σ : gmap atom ty) x τ (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ (CtxBind x τ) ->
-  m ⊨ denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
-Proof.
-Admitted.
-
 Lemma denot_ctx_under_comma_inv
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ->
@@ -418,76 +411,6 @@ Proof.
     (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
     x (erase_ty τ)).
   exact HxΣ.
-Qed.
-
-Lemma denot_ctx_under_comma_bind_from_arg_denotation
-    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
-    (m my : WfWorldT) (F : FiberExtensionT) :
-  y ∉ dom (erase_ctx_under Σ Γ) ->
-  m ⊨ denot_ctx_under Σ Γ ->
-  res_extend_by m F my ->
-  my ⊨ denot_ty_lvar_gas (cty_depth τx)
-    (<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
-    τx (tret (vfvar y)) ->
-  my ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)).
-Proof.
-Admitted.
-
-Lemma denot_ctx_under_star_bind_from_arg_denotation
-    (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y
-    (m marg : WfWorldT) (Hc : world_compat marg m) :
-  y ∉ dom (erase_ctx_under Σ Γ) ->
-  m ⊨ denot_ctx_under Σ Γ ->
-  marg ⊨ denot_ty_lvar_gas (cty_depth τx)
-    (<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
-    τx (tret (vfvar y)) ->
-  res_product marg m Hc ⊨ denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)).
-Proof.
-Admitted.
-
-Lemma denot_ctx_under_star_bind_from_result_extension
-    (Σ : gmap atom ty) Γ1 Γ τ1 e1 x
-    (m2 m1 mx1 mbody : WfWorldT)
-    (Hcbody : world_compat m2 mx1) (Fx : FiberExtensionT) :
-  x ∉ dom (erase_ctx_under Σ Γ) ->
-  m2 ⊨ denot_ctx_under Σ Γ ->
-  m1 ⊨ denot_ty_in_ctx_under Σ Γ1 τ1 e1 ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m1 Fx mx1 ->
-  res_product m2 mx1 Hcbody ⊑ mbody ->
-  mbody ⊨ denot_ctx_under Σ (CtxStar Γ (CtxBind x τ1)).
-Proof.
-Admitted.
-
-Lemma denot_ctx_under_comma_bind_from_result_denotation
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
-    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
-  m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
-  expr_result_extension_witness e1 x Fx ->
-  x ∉ dom (erase_ctx_under Σ Γ) ->
-  res_extend_by m Fx mx ->
-  mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
-Proof.
-  intros Hctx Hden HFx Hfresh Hext.
-  set (ΣΓ := atom_env_to_lty_env (erase_ctx_under Σ Γ)).
-  assert (HxΣΓ : LVFree x ∉ dom (ΣΓ : gmap logic_var ty)).
-  {
-    subst ΣΓ.
-    rewrite atom_store_to_lvar_store_dom.
-    unfold lvars_of_atoms.
-    intros HxD. apply elem_of_map in HxD as [z [Hz HzD]].
-    inversion Hz. subst z. exact (Hfresh HzD).
-  }
-  unfold denot_ty_in_ctx_under, denot_ty in Hden.
-  pose proof (denot_ty_lvar_gas_result_extension_to_var
-    (cty_depth τ1) ΣΓ τ1 e1 x m mx Fx
-    ltac:(subst ΣΓ; apply atom_store_to_lvar_store_closed)
-    HxΣΓ HFx Hext Hden) as Harg.
-  subst ΣΓ.
-  eapply denot_ctx_under_comma_bind_from_arg_denotation; eauto.
 Qed.
 
 Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert

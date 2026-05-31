@@ -271,6 +271,89 @@ Proof.
     + exact Hlw.
 Qed.
 
+Lemma lqual_msubst_store_fresh
+    (σ : Store (V := V)) (q : logic_qualifier) :
+  dom (σ : gmap atom V) ## lqual_fv q ->
+  lqual_msubst_store σ q = q.
+Proof.
+  intros Hfresh.
+  unfold lqual_msubst_store.
+  destruct q as [D P].
+  cbn [lqual_mlsubst lqual_fv lqual_dom lqual_prop].
+  apply logic_qualifier_ext.
+  - apply leibniz_equiv.
+    set_unfold. intros v.
+    split.
+    + intros [Hv _]. exact Hv.
+    + intros HvD. split; [exact HvD|].
+      destruct v as [k|x].
+      * intros Hbad.
+        rewrite dom_lstore_lift_free in Hbad.
+        unfold lvars_of_atoms in Hbad.
+        apply elem_of_map in Hbad as [a [Hbad _]].
+        discriminate.
+      * intros Hbad.
+        rewrite dom_lstore_lift_free in Hbad.
+        unfold lvars_of_atoms in Hbad.
+        apply elem_of_map in Hbad as [a [Hax Ha]].
+        inversion Hax; subst.
+        apply (Hfresh a); [exact Ha|].
+        apply lvars_fv_elem. exact HvD.
+  - intros w1 w2 Hlw. cbn [lqual_prop lqual_dom] in *.
+    enough (lworld_on_mlsubst_back D (lstore_lift_free σ) w1 = w2) as ->.
+    { reflexivity. }
+    apply lworld_on_ext.
+    unfold lworld_on_mlsubst_back.
+    cbn [lw].
+    transitivity (@lw V _ w1).
+    + apply wfworldA_ext. apply worldA_ext.
+      * simpl.
+        assert (Hrestrict_empty :
+            storeA_restrict (lstore_lift_free σ) D = (∅ : LStoreT)).
+        {
+          apply map_eq. intros v.
+          rewrite lookup_empty.
+          apply eq_None_not_Some. intros [val Hlook].
+          apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
+          destruct v as [k|x].
+          - rewrite lstore_lift_free_lookup_bound in Hlook. discriminate.
+          - rewrite lstore_lift_free_lookup_free in Hlook.
+            apply (Hfresh x).
+            + apply elem_of_dom. eauto.
+            + apply lvars_fv_elem. exact HvD.
+        }
+        rewrite Hrestrict_empty.
+        change (dom (∅ : LStoreT)) with (∅ : lvset).
+        rewrite union_empty_r_L.
+        reflexivity.
+      * intros τ. simpl.
+        assert (Hrestrict_empty :
+            storeA_restrict (lstore_lift_free σ) D = (∅ : LStoreT)).
+        {
+          apply map_eq. intros v.
+          rewrite lookup_empty.
+          apply eq_None_not_Some. intros [val Hlook].
+          apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
+          destruct v as [k|x].
+          - rewrite lstore_lift_free_lookup_bound in Hlook. discriminate.
+          - rewrite lstore_lift_free_lookup_free in Hlook.
+            apply (Hfresh x).
+            + apply elem_of_dom. eauto.
+            + apply lvars_fv_elem. exact HvD.
+        }
+        rewrite Hrestrict_empty.
+        split.
+        -- intros (τ1 & τ2 & Hτ1 & -> & _ & ->).
+           rewrite map_union_empty. exact Hτ1.
+        -- intros Hτ.
+           exists τ, (∅ : LStoreT). repeat split;
+             try exact Hτ; try reflexivity.
+           ++ exact (ResourceAlgebra.rawA_compat_unit_r
+                (@lw V _ w1 : LWorldT) τ (∅ : LStoreT) Hτ eq_refl).
+           ++ symmetry. apply map_union_empty.
+    + exact Hlw.
+Qed.
+
 Lemma lqual_open_commute_fresh i j x y q :
   i <> j ->
   x <> y ->

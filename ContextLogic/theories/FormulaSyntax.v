@@ -204,6 +204,81 @@ Proof.
   - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
 Qed.
 
+Lemma formula_msubst_store_fresh (σ : Store (V := V)) (φ : Formula) :
+  dom (σ : gmap atom V) ## formula_fv φ ->
+  formula_msubst_store σ φ = φ.
+Proof.
+  induction φ; intros Hfresh;
+    unfold formula_msubst_store; cbn [formula_mlsubst];
+    try reflexivity.
+  - change (FAtom (lqual_msubst_store σ a) = FAtom a).
+    f_equal. apply lqual_msubst_store_fresh.
+    rewrite formula_fv_atom in Hfresh. exact Hfresh.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_and in Hfresh. set_solver.
+    + rewrite formula_fv_and in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_or in Hfresh. set_solver.
+    + rewrite formula_fv_or in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_impl in Hfresh. set_solver.
+    + rewrite formula_fv_impl in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_star in Hfresh. set_solver.
+    + rewrite formula_fv_star in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_wand in Hfresh. set_solver.
+    + rewrite formula_fv_wand in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ1).
+    fold (formula_msubst_store σ φ2).
+    rewrite IHφ1, IHφ2; [reflexivity| |].
+    + rewrite formula_fv_plus in Hfresh. set_solver.
+    + rewrite formula_fv_plus in Hfresh. set_solver.
+  - fold (formula_msubst_store σ φ).
+    rewrite IHφ; [reflexivity|].
+    rewrite formula_fv_forall in Hfresh. exact Hfresh.
+  - fold (formula_msubst_store σ φ).
+    rewrite IHφ; [reflexivity|].
+    rewrite formula_fv_over in Hfresh. exact Hfresh.
+  - fold (formula_msubst_store σ φ).
+    rewrite IHφ; [reflexivity|].
+    rewrite formula_fv_under in Hfresh. exact Hfresh.
+  - fold (formula_msubst_store σ φ).
+    rewrite IHφ.
+    + f_equal.
+      apply set_eq. intros v.
+      rewrite elem_of_difference.
+      split.
+      * intros [Hv _]. exact Hv.
+      * intros HvD. split; [exact HvD|].
+        destruct v as [k|x].
+        -- intros Hbad.
+           rewrite dom_lstore_lift_free in Hbad.
+           unfold lvars_of_atoms in Hbad.
+           apply elem_of_map in Hbad as [a [Hbad _]].
+           discriminate.
+        -- intros Hbad.
+           rewrite dom_lstore_lift_free in Hbad.
+           unfold lvars_of_atoms in Hbad.
+           apply elem_of_map in Hbad as [a [Hax Ha]].
+           inversion Hax; subst.
+           rewrite formula_fv_fibvars in Hfresh.
+           apply elem_of_disjoint in Hfresh.
+           apply (Hfresh a Ha).
+           apply elem_of_union_l. apply lvars_fv_elem. exact HvD.
+    + rewrite formula_fv_fibvars in Hfresh. set_solver.
+Qed.
+
 Lemma formula_mlsubst_preserves_measure ρ φ :
   formula_measure (formula_mlsubst ρ φ) = formula_measure φ.
 Proof.

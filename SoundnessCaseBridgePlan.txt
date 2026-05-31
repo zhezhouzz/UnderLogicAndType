@@ -595,3 +595,78 @@ Implementation order
    `lamd_intro_denotation`, `fix_intro_denotation`, and
    `fixd_intro_denotation`, a later cleanup may strengthen the static guard to a
    zero-gas guard once the generic `tret` totality lemma is in place.
+
+8. Active route: prove Fundamental fiberwise, not by ambient direct denotation.
+
+   The live theorem concludes
+
+     `denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ e`.
+
+   For each case, the proof shape is:
+
+   - introduce the ambient world `m` and `Hctx`;
+   - apply `denot_ty_in_ctx_under_fiber_intro`;
+   - fix an arbitrary base projection
+
+       `res_fiber_from_projection m (dom Σ) σΣ mfib`;
+
+   - use `denot_ctx_under_projected_body` to get the context body in that
+     selected fiber:
+
+       `mfib ⊨ formula_msubst_store σΣ (denot_ctx_under_body Σ Γ)`;
+
+   - prove the case goal inside that same fiber:
+
+       `mfib ⊨ formula_msubst_store σΣ
+          (denot_ty_in_ctx_under Σ Γ τ e)`.
+
+   This is the only sound route currently.  Do not prove or use either of the
+   following false ambient shortcuts:
+
+   - `res_restrict m X = singleton_world σ -> m ⊨ φ ->
+      m ⊨ formula_msubst_store σ φ`;
+   - `res_fiber_from_projection m X σ mfib -> mfib ⊑ m`.
+
+9. First concrete proof layer for route 8.
+
+   Add syntax-level freshness lemmas for `mlsubst`, because simple cases such
+   as constants reduce to formulas whose free variables are disjoint from the
+   projected base store:
+
+   - `lqual_msubst_store_fresh`;
+   - `formula_msubst_store_fresh`.
+
+   These lemmas are intentionally freshness based, not singleton/fiber based.
+   Then use them to prove the first real fiber case:
+
+   - `fundamental_const_case_fiber`.
+
+   After this, repeat the same pattern for `var` and `appop`: if the case only
+   needs the selected fiber's context body plus a direct denotation helper,
+   prove a small case-specific msubst transport lemma in the Denotation layer;
+   otherwise leave a precisely named obligation and keep the Fundamental spine
+   fiberwise.
+
+   Current progress:
+
+   - `lqual_msubst_store_fresh`, `formula_msubst_store_fresh`, and
+     `formula_fv_const_precise_denot_ty_lvar_gas_empty` are proved.
+   - `fundamental_const_case_fiber` is proved.
+   - `fundamental_var_case_fiber` is proved directly from
+     `denot_ctx_under_projected_body`; it does not use the obsolete ambient
+     `denot_ctx_under_bind_inv` route.
+   - The reusable scoped side-condition helper
+     `denot_ty_in_ctx_under_fiber_scoped_from_context_typing` is proved in
+     `Soundness.v`.
+   - `fundamental_sub_case_fiber` and `fundamental_ctx_sub_case_fiber` now use
+     the fiberwise spine, with the remaining nontrivial msubst transports named
+     as:
+       `sub_type_under_msubst_transport`;
+       `ctx_sub_under_msubst_transport`.
+   - `fundamental_appop_case_fiber` now uses the fiberwise spine and the
+     Denotation-level named obligation
+       `appop_intro_denotation_msubst`.
+   - The obsolete ambient Soundness case block and the unused admitted ambient
+     context-construction bridges in `Denotation.Context` have been deleted.
+     Future context-construction lemmas should be reintroduced only in the
+     fiberwise shape.

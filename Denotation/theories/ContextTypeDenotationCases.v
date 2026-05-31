@@ -155,6 +155,27 @@ Proof.
     set_solver.
 Qed.
 
+Lemma formula_fv_const_precise_denot_ty_lvar_gas_empty gas Σ c :
+  formula_fv (denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
+    (const_precise_ty c) (tret (vconst c))) = ∅.
+Proof.
+  apply set_eq. intros x. split; [|set_solver].
+  intros Hx.
+  pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant gas
+    (atom_env_to_lty_env Σ) (const_precise_ty c) (tret (vconst c)) x Hx)
+    as Hsub.
+  unfold const_precise_ty, precise_ty, over_ty, under_ty, mk_q_eq in Hsub.
+  unfold fv_cty, qual_vars in Hsub.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at qual_lvars
+    qual_vars lvar_value_keys] in Hsub.
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0_succ,
+    ?lvars_at_depth_empty in Hsub.
+  rewrite ?lvars_fv_union, ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hsub.
+  destruct c; cbn [base_ty_of_const] in Hsub;
+    rewrite ?union_empty_l_L, ?union_empty_r_L in Hsub;
+    exfalso; exact (not_elem_of_empty x Hsub).
+Qed.
+
 Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
   denot_relevant_env (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
@@ -1120,6 +1141,29 @@ Proof.
       exact Hlookup
     | exact Hres_single ].
 Qed.
+
+Lemma appop_intro_denotation_msubst
+    gas (Σ : gmap atom ty) Γ op x τarg τres
+    (σΣ : StoreT) (m : WfWorldT) :
+  cty_depth ({0 ~> x} τres) <= gas ->
+  basic_context_ty ∅ τarg ->
+  basic_context_ty ∅ τres ->
+  erase_ctx_under Σ Γ !! x = Some (erase_ty τarg) ->
+  erase_ctx_under Σ Γ ⊢ₑ
+    tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
+  (denot_ctx (CtxBind x τarg) ⊫
+    denot_ty_in_ctx (CtxBind x τarg) ({0 ~> x} τres)
+      (tprim op (vfvar x))) ->
+  m ⊨ formula_msubst_store σΣ
+    (denot_ty_lvar_gas (cty_depth τarg)
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ))
+      τarg (tret (vfvar x))) ->
+  m ⊨ formula_msubst_store σΣ
+    (denot_ty_lvar_gas gas
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ))
+      ({0 ~> x} τres) (tprim op (vfvar x))).
+Proof.
+Admitted.
 
 Lemma match_both_intro_denotation
     (Σ : lty_env) v τt τf et ef
