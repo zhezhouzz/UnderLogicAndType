@@ -316,6 +316,113 @@ Proof.
     e (S d) 0 x σ Hclosed Hfresh).
 Qed.
 
+Lemma lstore_instantiate_tm_open_fresh_lift_free
+    k x (σ : StoreT) e :
+  store_closed σ ->
+  x ∉ dom (σ : gmap atom value) ∪ fv_tm e ->
+  lstore_instantiate_tm (lstore_lift_free σ : LStoreT)
+    (open_tm k (vfvar x) e) =
+  open_tm k (vfvar x)
+    (lstore_instantiate_tm (lstore_lift_free σ : LStoreT) e).
+Proof.
+  intros Hclosed Hfresh.
+  unfold lstore_instantiate_tm, lstore_instantiate_tm_at.
+  rewrite !lstore_free_part_lift_free.
+  rewrite !lstore_bound_part_empty_of_lc by apply lc_lstore_lift_free.
+  exact (snd lstore_instantiate_split_open_fresh_mutual
+    e 0 k x σ Hclosed Hfresh).
+Qed.
+
+Lemma lstore_instantiate_shift_lift_free_mutual :
+  (forall v d k (σ : StoreT),
+      store_closed σ ->
+      lstore_instantiate_value_split_at d σ ∅
+        (value_shift (d + k) v) =
+      value_shift (d + k)
+        (lstore_instantiate_value_split_at d σ ∅ v)) *
+  (forall e d k (σ : StoreT),
+      store_closed σ ->
+      lstore_instantiate_tm_split_at d σ ∅
+        (tm_shift (d + k) e) =
+      tm_shift (d + k)
+        (lstore_instantiate_tm_split_at d σ ∅ e)).
+Proof.
+  apply value_tm_mutind;
+    cbn [value_shift tm_shift lstore_instantiate_value_split_at
+      lstore_instantiate_tm_split_at];
+    intros; try reflexivity.
+  - destruct ((σ : gmap atom value) !! x) as [u|] eqn:Hlookup.
+    + destruct H as [_ Hlc].
+      cbn [value_shift].
+      pose proof (lc_env_lookup σ x u Hlc Hlookup) as Hu.
+      rewrite value_shift_lc_id.
+      * reflexivity.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with u.
+        -- exact Hu.
+        -- rewrite Hlookup. reflexivity.
+    + replace (match (σ : gmap atom value) !! x with
+               | Some u => u
+               | None => vfvar x
+               end) with (vfvar x).
+      * reflexivity.
+      * rewrite Hlookup. reflexivity.
+  - destruct (bool_decide (d + k <= n)) eqn:Hshift;
+      cbn [lstore_instantiate_value_split_at].
+    + apply bool_decide_eq_true_1 in Hshift.
+      destruct (decide (d <= S n)) as [_|Hbad]; [|lia].
+      rewrite lookup_empty.
+      cbn [value_shift].
+      destruct (decide (d <= n)) as [_|Hbad]; [|lia].
+      rewrite lookup_empty.
+      cbn [value_shift].
+      rewrite bool_decide_eq_true_2 by exact Hshift.
+      reflexivity.
+    + apply bool_decide_eq_false_1 in Hshift.
+      destruct (decide (d <= n)) as [_|Hdn].
+      * rewrite lookup_empty.
+        cbn [value_shift].
+        rewrite bool_decide_eq_false_2 by exact Hshift.
+        reflexivity.
+      * cbn [value_shift].
+        rewrite bool_decide_eq_false_2 by exact Hshift.
+        reflexivity.
+  - f_equal.
+    replace (S (d + k)) with (S d + k) by lia.
+    apply H; assumption.
+  - f_equal.
+    replace (S (d + k)) with (S d + k) by lia.
+    apply H; assumption.
+  - f_equal. apply H; assumption.
+  - f_equal; [apply H |].
+    + assumption.
+    + replace (S (d + k)) with (S d + k) by lia.
+      apply H0; assumption.
+  - f_equal. apply H; assumption.
+  - f_equal; [apply H | apply H0]; assumption.
+  - f_equal; [apply H | apply H0 | apply H1]; assumption.
+Qed.
+
+Lemma lstore_instantiate_tm_shift_lift_free
+    k (σ : StoreT) e :
+  store_closed σ ->
+  lstore_instantiate_tm (lstore_lift_free σ : LStoreT)
+    (tm_shift k e) =
+  tm_shift k
+    (lstore_instantiate_tm (lstore_lift_free σ : LStoreT) e).
+Proof.
+  intros Hclosed.
+  unfold lstore_instantiate_tm, lstore_instantiate_tm_at.
+  rewrite !lstore_free_part_lift_free.
+  rewrite !lstore_bound_part_empty_of_lc by apply lc_lstore_lift_free.
+  change k with (0 + k) at 1.
+  change k with (0 + k) at 2.
+  exact (snd lstore_instantiate_shift_lift_free_mutual
+    e 0 k σ Hclosed).
+Qed.
+
 Lemma lstore_instantiate_tm_open_back k y e σ :
   y ∉ fv_tm e ->
   lvars_open k y (tm_lvars e) ⊆ dom (σ : gmap logic_var value) ->

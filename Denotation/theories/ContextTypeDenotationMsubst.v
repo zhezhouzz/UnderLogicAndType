@@ -171,6 +171,50 @@ Proof.
   - exact Hmodels.
 Qed.
 
+Lemma formula_fv_over_msubst_store_body
+    σ b φ e :
+  store_closed σ ->
+  formula_fv
+    (formula_msubst_store σ
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FOver (type_qualifier_formula φ)))))) =
+  formula_fv
+    (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula
+          (tm_shift 0 (lstore_instantiate_tm (lstore_lift_free σ) e))
+          (LVBound 0))
+        (FFibVars
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
+          (FOver (type_qualifier_formula (qual_msubst_store σ φ)))))).
+Proof.
+Admitted.
+
+Lemma formula_fv_under_msubst_store_body
+    σ b φ e :
+  store_closed σ ->
+  formula_fv
+    (formula_msubst_store σ
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FUnder (type_qualifier_formula φ)))))) =
+  formula_fv
+    (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+      (FImpl
+        (expr_result_formula
+          (tm_shift 0 (lstore_instantiate_tm (lstore_lift_free σ) e))
+          (LVBound 0))
+        (FFibVars
+          (qual_vars (qual_msubst_store σ φ) ∖ {[LVBound 0]})
+          (FUnder (type_qualifier_formula (qual_msubst_store σ φ)))))).
+Proof.
+Admitted.
+
 Lemma denot_ty_lvar_gas_msubst_store_over_body
     σ Σ b φ e (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->

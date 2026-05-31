@@ -1341,6 +1341,30 @@ Implementation order
              the existing denotation env-agree transport.
           5. Use `formula_open_msubst_store_fresh` and the double-subst normal
              form to prove the Over/Under body transports.
+             The result-atom part should not be specialized to opening depth
+             `0`: after unfolding a `FForall`, the relevant open depth changes
+             under nested binders.  First prove the term-level transport laws at
+             arbitrary `k`:
+
+             - `lstore_instantiate_tm_open_fresh_lift_free`
+             - `lstore_instantiate_tm_shift_lift_free`
+
+             with `store_closed σ` and `y ∉ dom σ`.  The Over/Under proof then
+             normalizes `formula_open`/`formula_msubst_store`, applies
+             `expr_result_formula_msubst_store_models`, and rewrites the
+             instantiated `open`/`shift` term to the target result atom.
+             Current status: the term-level helpers and the shared
+             BasicDenotation wrapper
+             `expr_result_formula_msubst_store_open_shift_models` are proved.
+             The remaining Over/Under forall step also needs a small FV
+             equality between the source msubsted body and target body:
+             `formula_fv_over_msubst_store_body` /
+             `formula_fv_under_msubst_store_body`.  These are currently named
+             obligations; the proof should be discharged by improving the
+             formula-fv syntax normalizer for msubsted atoms
+             (`basic_world_formula`, `expr_result_formula`,
+             `type_qualifier_formula`) rather than by hand-expanding the whole
+             denotation case.
           6. Use the same transport plus the induction hypothesis to prove
              Arrow/Wand body transports.
 

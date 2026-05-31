@@ -275,4 +275,69 @@ Proof.
   exists Hlc, Hsub. exact Hresult'.
 Qed.
 
+Lemma logic_var_open_bound0_fresh_lift_free k y (σ : StoreT) :
+  y ∉ dom (σ : gmap atom value) ->
+  swap (LVBound k) (LVFree y) (LVBound 0) ∉
+    dom (lstore_lift_free σ : LStoreT).
+Proof.
+  intros Hy.
+  rewrite dom_lstore_lift_free.
+  destruct k as [|k].
+  - rewrite swap_l.
+    unfold lvars_of_atoms. intros Hbad.
+    apply elem_of_map in Hbad as [z [Hz Hzdom]].
+    inversion Hz. subst z. exact (Hy Hzdom).
+  - rewrite swap_fresh by discriminate.
+    unfold lvars_of_atoms. intros Hbad.
+    apply elem_of_map in Hbad as [z [Hz _]].
+    discriminate Hz.
+Qed.
+
+Lemma expr_result_formula_msubst_store_open_shift_models
+    σ e k y (m : WfWorldT) :
+  store_closed σ ->
+  y ∉ dom (σ : gmap atom value) ∪ fv_tm e ->
+  res_models m
+    (formula_msubst_store σ
+      (formula_open k y
+        (expr_result_formula (tm_shift 0 e) (LVBound 0)))) ->
+  res_models m
+    (formula_open k y
+      (expr_result_formula
+        (tm_shift 0 (lstore_instantiate_tm (lstore_lift_free σ) e))
+        (LVBound 0))).
+Proof.
+  intros Hclosed Hfresh Hmodel.
+  rewrite formula_open_expr_result_formula in Hmodel.
+  2:{ rewrite tm_shift_fv. set_solver. }
+  rewrite formula_open_expr_result_formula.
+  2:{
+    rewrite tm_shift_fv.
+    assert (Hfvinst :
+      fv_tm (lstore_instantiate_tm (lstore_lift_free σ) e) ⊆ fv_tm e).
+    {
+      rewrite lstore_instantiate_tm_no_bvars.
+      - change (lstore_to_store (lstore_lift_free σ))
+          with (lstore_free_part (lstore_lift_free σ)).
+        rewrite lstore_free_part_lift_free.
+        pose proof (msubst_fv_delete_tm σ e (proj1 Hclosed)).
+        set_solver.
+      - apply lc_lstore_lift_free.
+      - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+    }
+    set_solver.
+  }
+  eapply expr_result_formula_msubst_store_models in Hmodel.
+  2:{ exact Hclosed. }
+  2:{
+    apply logic_var_open_bound0_fresh_lift_free.
+    set_solver.
+  }
+  - rewrite lstore_instantiate_tm_open_fresh_lift_free in Hmodel
+      by (exact Hclosed || (rewrite tm_shift_fv; exact Hfresh)).
+    rewrite lstore_instantiate_tm_shift_lift_free in Hmodel
+      by exact Hclosed.
+    exact Hmodel.
+Qed.
+
 End MsubstTransport.

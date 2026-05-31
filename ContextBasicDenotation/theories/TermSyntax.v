@@ -54,6 +54,10 @@ Lemma tm_lvars_fv e :
   lvars_fv (tm_lvars e) = fv_tm e.
 Proof. apply tm_lvars_at_fv. Qed.
 
+Lemma tm_lvars_shift_fv k e :
+  lvars_fv (tm_lvars (tm_shift k e)) = lvars_fv (tm_lvars e).
+Proof. rewrite !tm_lvars_fv, tm_shift_fv. reflexivity. Qed.
+
 Lemma value_tm_lvars_at_swap_atom_mutual :
   (forall v x y d,
       value_lvars_at d (value_swap_atom x y v) =
