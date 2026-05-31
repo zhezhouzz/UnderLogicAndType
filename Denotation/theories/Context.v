@@ -18,6 +18,14 @@ Lemma ctx_base_vars_fv (Σ : gmap atom ty) :
   lvars_fv (ctx_base_vars Σ) = dom Σ.
 Proof. unfold ctx_base_vars. apply lvars_fv_of_atoms. Qed.
 
+Lemma ctx_base_vars_lc (Σ : gmap atom ty) :
+  lc_lvars (ctx_base_vars Σ).
+Proof.
+  intros [k|x] Hx; cbn [lc_logic_var_key]; [|exact I].
+  unfold ctx_base_vars, lvars_of_atoms in Hx.
+  apply elem_of_map in Hx as [a [Hbad _]]. discriminate.
+Qed.
+
 Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
   FFibVars (ctx_base_vars Σ)
     (FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
@@ -75,6 +83,37 @@ Definition denot_ty_in_ctx_under
 Definition denot_ty_in_ctx_under_fiber
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   FFibVars (ctx_base_vars Σ) (denot_ty_in_ctx_under Σ Γ τ e).
+
+Lemma denot_ty_in_ctx_under_fiber_intro
+    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
+  formula_scoped_in_world m (denot_ty_in_ctx_under_fiber Σ Γ τ e) ->
+  (forall σΣ mfib,
+    res_fiber_from_projection m (dom Σ) σΣ mfib ->
+    mfib ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ τ e)) ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e.
+Proof.
+  intros Hscope Hfib.
+  unfold denot_ty_in_ctx_under_fiber.
+  eapply res_models_FFibVars_intro.
+  - exact Hscope.
+  - apply ctx_base_vars_lc.
+  - intros σΣ mfib Hproj.
+    apply Hfib. rewrite <- ctx_base_vars_fv. exact Hproj.
+Qed.
+
+Lemma denot_ty_in_ctx_under_fiber_elim_projection
+    (Σ : gmap atom ty) Γ τ e (m mfib : WfWorldT) (σΣ : StoreT) :
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
+  mfib ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ τ e).
+Proof.
+  intros Hproj Hden.
+  unfold denot_ty_in_ctx_under_fiber in Hden.
+  pose proof (res_models_scoped _ _ Hden) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hden)
+    as [_ Hfib].
+  apply Hfib. rewrite ctx_base_vars_fv. exact Hproj.
+Qed.
 
 Definition denot_ty_total_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm)

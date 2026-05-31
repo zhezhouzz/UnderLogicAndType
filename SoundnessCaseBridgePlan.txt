@@ -485,13 +485,25 @@ Implementation order
 
      `denot_ty_in_ctx_under_fiber Σ Γ τ e`.
 
-   The induction proof should unfold the goal's outer `FFibVars`, choose the
-   same base projection as the context premise, and prove each case inside that
-   chosen fiber.  Old direct case lemmas such as `fundamental_letd_case`,
-   `fundamental_appd_case`, and `fundamental_match_both_case` are legacy
-   reference points only; the new case lemmas should have fiberwise conclusions.
-   At top-level corollaries with `Σ = ∅`, discharge the wrapper using
-   `res_models_FFibVars_empty_iff`.
+     The induction proof should unfold the goal's outer `FFibVars`, choose the
+     same base projection as the context premise, and prove each case inside that
+     chosen fiber.  Old direct case lemmas such as `fundamental_letd_case`,
+     `fundamental_appd_case`, and `fundamental_match_both_case` are legacy
+     reference points only; the new case lemmas should have fiberwise conclusions.
+     At top-level corollaries with `Σ = ∅`, discharge the wrapper using
+     `res_models_FFibVars_empty_iff`.
+
+   Current proved support:
+
+     `ctx_base_vars_lc`
+     `denot_ty_in_ctx_under_fiber_intro`
+     `denot_ty_in_ctx_under_fiber_elim_projection`
+
+   The proof-facing `Fundamental` theorem now uses only the fiberwise case
+   lemmas.  The next proof layer is to prove those case lemmas by applying
+   `denot_ty_in_ctx_under_fiber_intro`, then using
+   `denot_ctx_under_projected_body` to obtain the substituted context body in
+   the selected fiber.
 
 1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
    the judgment support `X` and then satisfies the target context.  Prove the
