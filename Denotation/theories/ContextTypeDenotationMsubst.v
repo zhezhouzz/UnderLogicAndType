@@ -18,7 +18,7 @@ Definition denot_msubst_induction_hyp (gas : nat) : Prop :=
   forall σ0 Σ0 τ0 e0 (m0 : WfWorldT),
     denot_relevant_lvars τ0 e0 ⊆ dom Σ0 ->
     atom_store_has_ltype Σ0 σ0 ->
-    m0 ⊨ formula_msubst_store σ0 (denot_ty_lvar_gas gas Σ0 τ0 e0) ->
+    m0 ⊨ formula_msubst_store σ0 (denot_ty_lvar_gas gas Σ0 τ0 e0) <->
     m0 ⊨ denot_ty_lvar_gas gas
       (lty_env_msubst_store σ0 Σ0)
       (context_ty_msubst_store σ0 τ0)
@@ -699,6 +699,17 @@ Lemma denot_ty_lvar_gas_msubst_store_wand_body
             (tapp_tm (tm_shift 0 e') (vbvar 0)))))).
 Admitted.
 
+Lemma denot_ty_lvar_gas_msubst_store_models_relevant_back
+    gas σ Σ τ e (m : WfWorldT) :
+  subseteq (denot_relevant_lvars τ e) (dom Σ) ->
+  atom_store_has_ltype Σ σ ->
+  res_models m (denot_ty_lvar_gas gas
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e)) ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)).
+Admitted.
+
 Lemma denot_ty_lvar_gas_msubst_store_models_relevant
     gas σ Σ τ e (m : WfWorldT) :
   subseteq (denot_relevant_lvars τ e) (dom Σ) ->
@@ -716,38 +727,42 @@ Proof.
   - intros Hscope Hσrel Hσty Hm.
     assert (IHfull : denot_msubst_induction_hyp gas).
     {
-      intros σ0 Σ0 τ0 e0 m0 Hscope0 Hty0 Hmodels0.
-      set (σr := denot_msubst_relevant_store σ0 τ0 e0).
-      eapply denot_ty_lvar_gas_msubst_store_agree_relevant
-        with (σ1 := σr).
-      - unfold σr, denot_msubst_relevant_store.
-        rewrite storeA_restrict_twice_same. reflexivity.
-      - unfold σr, denot_msubst_relevant_store.
-        apply store_closed_restrict.
-        eapply atom_store_has_ltype_closed; exact Hty0.
-      - eapply atom_store_has_ltype_closed; exact Hty0.
-      - eapply IH.
-        + exact Hscope0.
+      intros σ0 Σ0 τ0 e0 m0 Hscope0 Hty0.
+      split.
+      - intros Hmodels0.
+        set (σr := denot_msubst_relevant_store σ0 τ0 e0).
+        eapply denot_ty_lvar_gas_msubst_store_agree_relevant
+          with (σ1 := σr).
         + unfold σr, denot_msubst_relevant_store.
-          intros v Hv.
-          unfold lvars_of_atoms in Hv.
-          apply elem_of_map in Hv as [x [-> Hx]].
-          apply storeA_restrict_dom_subset in Hx.
-          rewrite lvars_fv_elem in Hx. exact Hx.
+          rewrite storeA_restrict_twice_same. reflexivity.
         + unfold σr, denot_msubst_relevant_store.
-          intros x v Hxv.
-          apply storeA_restrict_lookup_some in Hxv as [_ Hxv].
-          exact (Hty0 x v Hxv).
-        + unfold σr, denot_msubst_relevant_store.
-          rewrite <- (formula_msubst_store_restrict_fv_subset σ0
-            (denot_ty_lvar_gas gas Σ0 τ0 e0)
-            (lvars_fv (denot_relevant_lvars τ0 e0))).
-          * exact Hmodels0.
-          * transitivity (fv_tm e0 ∪ fv_cty τ0).
-            -- apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
-            -- unfold denot_relevant_lvars.
-               rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
-               set_solver.
+          apply store_closed_restrict.
+          eapply atom_store_has_ltype_closed; exact Hty0.
+        + eapply atom_store_has_ltype_closed; exact Hty0.
+        + eapply IH.
+          * exact Hscope0.
+          * unfold σr, denot_msubst_relevant_store.
+            intros v Hv.
+            unfold lvars_of_atoms in Hv.
+            apply elem_of_map in Hv as [x [-> Hx]].
+            apply storeA_restrict_dom_subset in Hx.
+            rewrite lvars_fv_elem in Hx. exact Hx.
+          * unfold σr, denot_msubst_relevant_store.
+            intros x v Hxv.
+            apply storeA_restrict_lookup_some in Hxv as [_ Hxv].
+            exact (Hty0 x v Hxv).
+          * unfold σr, denot_msubst_relevant_store.
+            rewrite <- (formula_msubst_store_restrict_fv_subset σ0
+              (denot_ty_lvar_gas gas Σ0 τ0 e0)
+              (lvars_fv (denot_relevant_lvars τ0 e0))).
+            -- exact Hmodels0.
+            -- transitivity (fv_tm e0 ∪ fv_cty τ0).
+               ++ apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
+               ++ unfold denot_relevant_lvars.
+                  rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
+                  set_solver.
+      - intros Hmodels0.
+        eapply denot_ty_lvar_gas_msubst_store_models_relevant_back; eauto.
     }
     destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
       cbn [denot_ty_lvar_gas] in Hm |- *;
@@ -933,6 +948,22 @@ Proof.
         eapply denot_ty_lvar_gas_msubst_store_wand_body;
           [exact IHfull|exact Hscope|exact Hσrel|exact Hσty|].
         exact Hbody.
+Qed.
+
+Lemma denot_ty_lvar_gas_msubst_store_models_relevant_iff
+    gas σ Σ τ e (m : WfWorldT) :
+  subseteq (denot_relevant_lvars τ e) (dom Σ) ->
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
+  atom_store_has_ltype Σ σ ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)) <->
+  res_models m (denot_ty_lvar_gas gas
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e)).
+Proof.
+  intros Hscope Hσrel Hσty. split.
+  - eapply denot_ty_lvar_gas_msubst_store_models_relevant; eauto.
+  - eapply denot_ty_lvar_gas_msubst_store_models_relevant_back; eauto.
 Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_models

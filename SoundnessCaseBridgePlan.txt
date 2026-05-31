@@ -1495,6 +1495,15 @@ Implementation order
       transport to models-level equivalence.  Arrow/Wand need the reverse
       direction in their negative argument position; the old one-way
       induction hypothesis is sufficient only for positive positions.
+      Current code status:
+      - `denot_msubst_induction_hyp` is now an `iff`.
+      - The old one-way theorem is still present as
+        `denot_ty_lvar_gas_msubst_store_models_relevant`.
+      - The public iff wrapper is now
+        `denot_ty_lvar_gas_msubst_store_models_relevant_iff`.
+      - The reverse direction is isolated as the named obligation
+        `denot_ty_lvar_gas_msubst_store_models_relevant_back`; this is the
+        next proof target.
    3. Prove Arrow body transport by the same `FForall`/`FImpl` mapper spine.
       The first implication premise uses the reverse projection of the
       strengthened induction hypothesis; the result premise uses the forward
