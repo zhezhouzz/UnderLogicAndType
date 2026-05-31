@@ -442,6 +442,12 @@ Lemma res_fiber_from_projection_store_compat
   storeA_compat σX σY.
 Proof. apply resA_fiber_from_projection_store_compat. Qed.
 
+Lemma res_fiber_from_projection_exists
+    (m : WfWorld) (X : aset) :
+  X ⊆ world_dom (m : World) →
+  ∃ σ mfib, res_fiber_from_projection m X σ mfib.
+Proof. apply resA_fiber_from_projection_exists. Qed.
+
 Lemma res_fiber_from_projection_nested_union_l
     (m mfibX mfibXY : WfWorld) (X Y : aset) (σX σY : StoreT) :
   res_fiber_from_projection m X σX mfibX ->
@@ -459,6 +465,17 @@ Lemma res_fiber_from_projection_nested_union_r
     res_fiber_from_projection m X σX mfibX /\
     res_fiber_from_projection mfibX Y σY mfibXY.
 Proof. apply resA_fiber_from_projection_nested_union_r. Qed.
+
+Lemma res_fiber_from_projection_nested_union_residual_r
+    (m mfibXY : WfWorld) (X Y : aset) (σXY : StoreT) :
+  res_fiber_from_projection m (X ∪ Y) σXY mfibXY ->
+  exists σX mfibX σY,
+    σX = storeA_restrict σXY X /\
+    σY = storeA_restrict σXY (Y ∖ X) /\
+    σX ∪ σY = σXY /\
+    res_fiber_from_projection m X σX mfibX /\
+    res_fiber_from_projection mfibX (Y ∖ X) σY mfibXY.
+Proof. apply resA_fiber_from_projection_nested_union_residual_r. Qed.
 
 Lemma world_compat_le_r (w m n : WfWorld) :
   m ⊑ n →

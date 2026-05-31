@@ -1168,6 +1168,30 @@ Proof.
   - exfalso. rewrite HdomσX in HzσX. set_solver.
 Qed.
 
+Lemma resA_fiber_from_projection_exists
+    (m : WfWorldAT) (X : gset K) :
+  X ⊆ worldA_dom (m : WorldAT) →
+  ∃ σ mfib, resA_fiber_from_projection m X σ mfib.
+Proof.
+  intros HX.
+  destruct (wfA_ne _ (worldA_wf m)) as [σm Hσm].
+  set (σX := storeA_restrict σm X).
+  assert (HσX_dom : storeA_restrict σm (dom (σX : gmap K V)) = σX).
+  {
+    subst σX.
+    eapply (storeA_restrict_projection_dom σm (storeA_restrict σm X) X).
+    reflexivity.
+  }
+  assert (HneX :
+    ∃ σ0, (m : WorldAT) σ0 ∧
+      storeA_restrict σ0 (dom (σX : gmap K V)) = σX).
+  { exists σm. split; [exact Hσm | exact HσX_dom]. }
+  exists σX, (resA_fiber m σX HneX).
+  split.
+  - exists σm. split; [exact Hσm | reflexivity].
+  - unfold resA_fiber. simpl. reflexivity.
+Qed.
+
 Lemma rawA_fiber_nested_union (m : WorldAT) (σX σY : StoreAT) :
   storeA_compat σX σY →
   rawA_fiber (rawA_fiber m σX) σY =
@@ -1296,6 +1320,85 @@ Proof.
       rewrite <- storeA_restrict_union_same.
       symmetry. apply storeA_restrict_idemp.
       rewrite <- HrestrictXY, storeA_restrict_dom. set_solver.
+    + subst σX σY.
+      apply storeA_compat_restricts_same.
+Qed.
+
+Lemma resA_fiber_from_projection_nested_union_residual_r
+    (m mfibXY : WfWorldAT) (X Y : gset K) (σXY : StoreAT) :
+  resA_fiber_from_projection m (X ∪ Y) σXY mfibXY →
+  ∃ σX mfibX σY,
+    σX = storeA_restrict σXY X ∧
+    σY = storeA_restrict σXY (Y ∖ X) ∧
+    σX ∪ σY = σXY ∧
+    resA_fiber_from_projection m X σX mfibX ∧
+    resA_fiber_from_projection mfibX (Y ∖ X) σY mfibXY.
+Proof.
+  intros [HprojXY HeqXY].
+  destruct HprojXY as [σm [Hσm HrestrictXY]].
+  set (σX := storeA_restrict σXY X).
+  set (σY := storeA_restrict σXY (Y ∖ X)).
+  assert (HσX_from_m : storeA_restrict σm X = σX).
+  {
+    subst σX.
+    rewrite <- HrestrictXY.
+    rewrite storeA_restrict_restrict.
+    replace ((X ∪ Y) ∩ X) with X by set_solver.
+    reflexivity.
+  }
+  assert (HσY_from_m : storeA_restrict σm (Y ∖ X) = σY).
+  {
+    subst σY.
+    rewrite <- HrestrictXY.
+    rewrite storeA_restrict_restrict.
+    replace ((X ∪ Y) ∩ (Y ∖ X)) with (Y ∖ X) by set_solver.
+    reflexivity.
+  }
+  assert (HσX_dom : storeA_restrict σm (dom (σX : gmap K V)) = σX).
+  { eapply storeA_restrict_projection_dom. exact HσX_from_m. }
+  assert (HneX :
+    ∃ σ0, (m : WorldAT) σ0 ∧
+      storeA_restrict σ0 (dom (σX : gmap K V)) = σX).
+  { exists σm. split; [exact Hσm | exact HσX_dom]. }
+  set (mfibX := resA_fiber m σX HneX).
+  exists σX, mfibX, σY.
+  split; [reflexivity |].
+  split; [reflexivity |].
+  assert (Hσ_union : σX ∪ σY = σXY).
+  {
+    subst σX σY.
+    apply storeA_restrict_union_partition.
+    - pose proof (f_equal (fun s : gmap K V => dom s) HrestrictXY)
+        as HdomXY.
+      rewrite storeA_restrict_dom in HdomXY.
+      intros z Hz.
+      rewrite <- HdomXY in Hz.
+      apply elem_of_intersection in Hz as [_ HzXY].
+      apply elem_of_union in HzXY as [HzX | HzY].
+      + apply elem_of_union_l. exact HzX.
+      + destruct (decide (z ∈ X)) as [HzX | HzX].
+        * apply elem_of_union_l. exact HzX.
+        * apply elem_of_union_r. apply elem_of_difference. split; assumption.
+    - better_set_solver.
+  }
+  split; [exact Hσ_union |].
+  assert (HfibX : resA_fiber_from_projection m X σX mfibX).
+  {
+    split.
+    - exists σm. split; [exact Hσm | exact HσX_from_m].
+    - subst mfibX. unfold resA_fiber. simpl. reflexivity.
+  }
+  split; [exact HfibX |].
+  split.
+  - exists σm. split.
+    + subst mfibX. unfold resA_fiber. simpl.
+      split; [exact Hσm | exact HσX_dom].
+    + exact HσY_from_m.
+  - rewrite HeqXY.
+    subst mfibX.
+    unfold resA_fiber. simpl.
+    rewrite (rawA_fiber_nested_union (m : WorldAT) σX σY).
+    + f_equal. symmetry. exact Hσ_union.
     + subst σX σY.
       apply storeA_compat_restricts_same.
 Qed.

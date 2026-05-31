@@ -451,14 +451,163 @@ Lemma res_models_FFibVars_nested_union_l
   m ⊨ FFibVars D1 (FFibVars D2 φ) ->
   m ⊨ FFibVars (D1 ∪ D2) φ.
 Proof.
-Admitted.
+  intros Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope_nested.
+  pose proof (proj1 (res_models_FFibVars_iff m D1 (FFibVars D2 φ)
+    Hscope_nested) Hmodel) as [Hlc1 Hfib1].
+  assert (Hscope_union : formula_scoped_in_world m (FFibVars (D1 ∪ D2) φ)).
+  {
+    apply (proj2 (formula_scoped_fibvars_iff m (D1 ∪ D2) φ)).
+    apply (proj1 (formula_scoped_fibvars_iff m D1 (FFibVars D2 φ)))
+      in Hscope_nested as [HD1 Hscope_inner].
+    apply (proj1 (formula_scoped_fibvars_iff m D2 φ))
+      in Hscope_inner as [HD2 Hφ].
+    split; [rewrite lvars_fv_union; set_solver | exact Hφ].
+  }
+  assert (HlcU : lc_lvars (D1 ∪ D2)).
+  {
+    apply (proj1 (formula_scoped_fibvars_iff m D1 (FFibVars D2 φ)))
+      in Hscope_nested as [HD1 _].
+    destruct (res_fiber_from_projection_exists m (lvars_fv D1) HD1)
+      as [σ1 [mfib1 Hproj1]].
+    specialize (Hfib1 σ1 mfib1 Hproj1).
+    rewrite formula_msubst_store_fibvars in Hfib1.
+    pose proof (res_models_scoped _ _ Hfib1) as Hscope_inner.
+    pose proof (proj1 (res_models_FFibVars_iff mfib1
+      (D2 ∖ lvars_of_atoms (dom (σ1 : StoreT)))
+      (formula_msubst_store σ1 φ) Hscope_inner) Hfib1) as [Hlc2res _].
+    intros v Hv.
+    apply elem_of_union in Hv as [Hv1 | Hv2].
+    - exact (Hlc1 v Hv1).
+    - destruct v as [k | x]; cbn [lc_logic_var_key]; [|exact I].
+      apply (Hlc2res (LVBound k)).
+      apply elem_of_difference. split; [exact Hv2 |].
+      unfold lvars_of_atoms.
+      intros Hatom. apply elem_of_map in Hatom as [x [Heq _]].
+      discriminate.
+  }
+  eapply res_models_FFibVars_intro.
+  - exact Hscope_union.
+  - exact HlcU.
+  - intros σXY mfibXY HprojXY.
+    rewrite lvars_fv_union in HprojXY.
+    destruct (res_fiber_from_projection_nested_union_residual_r
+      m mfibXY (lvars_fv D1) (lvars_fv D2) σXY HprojXY)
+      as [σ1 [mfib1 [σ2 [Hσ1 [Hσ2 [Hσunion [Hproj1 Hproj2]]]]]]].
+    subst σ1 σ2.
+    specialize (Hfib1 (storeA_restrict σXY (lvars_fv D1)) mfib1 Hproj1).
+    rewrite formula_msubst_store_fibvars in Hfib1.
+    pose proof (res_models_scoped _ _ Hfib1) as Hscope_inner.
+    pose proof (proj1 (res_models_FFibVars_iff mfib1
+      (D2 ∖ lvars_of_atoms
+        (dom (storeA_restrict σXY (lvars_fv D1) : StoreT)))
+      (formula_msubst_store (storeA_restrict σXY (lvars_fv D1)) φ)
+      Hscope_inner) Hfib1) as [_ Hfib2].
+    assert (Hdomσ1 : dom (storeA_restrict σXY (lvars_fv D1) : StoreT) =
+        lvars_fv D1).
+    {
+      destruct Hproj1 as [Hproj1 _].
+      pose proof (wfworld_store_dom (res_restrict m (lvars_fv D1))
+        (storeA_restrict σXY (lvars_fv D1)) Hproj1) as Hdom.
+      simpl in Hdom.
+      change (dom (storeA_restrict σXY (lvars_fv D1) : StoreT) =
+        world_dom (m : WorldT) ∩ lvars_fv D1) in Hdom.
+      apply (proj1 (formula_scoped_fibvars_iff m D1 (FFibVars D2 φ)))
+        in Hscope_nested as [HD1 _].
+      rewrite Hdom. set_solver.
+    }
+    rewrite Hdomσ1 in Hfib2.
+    rewrite lvars_fv_difference_of_atoms in Hfib2.
+    specialize (Hfib2 (storeA_restrict σXY (lvars_fv D2 ∖ lvars_fv D1))
+      mfibXY).
+    specialize (Hfib2 Hproj2).
+    rewrite formula_msubst_store_union in Hfib2.
+    + change (mfibXY ⊨ formula_msubst_store
+        ((storeA_restrict σXY (lvars_fv D1) : StoreT) ∪
+         storeA_restrict σXY (lvars_fv D2 ∖ lvars_fv D1)) φ) in Hfib2.
+      replace ((storeA_restrict σXY (lvars_fv D1) : StoreT) ∪
+          storeA_restrict σXY (lvars_fv D2 ∖ lvars_fv D1))
+        with σXY in Hfib2 by (symmetry; exact Hσunion).
+      exact Hfib2.
+    + eapply res_fiber_from_projection_store_compat; eauto.
+Qed.
 
 Lemma res_models_FFibVars_nested_union_r
     (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
   m ⊨ FFibVars (D1 ∪ D2) φ ->
   m ⊨ FFibVars D1 (FFibVars D2 φ).
 Proof.
-Admitted.
+  intros Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope_union.
+  pose proof (proj1 (res_models_FFibVars_iff m (D1 ∪ D2) φ
+    Hscope_union) Hmodel) as [HlcU HfibU].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D1 (FFibVars D2 φ))).
+    apply (proj1 (formula_scoped_fibvars_iff m (D1 ∪ D2) φ))
+      in Hscope_union as [HDU Hφ].
+    split.
+    + rewrite lvars_fv_union in HDU. set_solver.
+    + apply (proj2 (formula_scoped_fibvars_iff m D2 φ)).
+      split; [rewrite lvars_fv_union in HDU; set_solver | exact Hφ].
+  - intros v Hv. apply HlcU. set_solver.
+  - intros σ1 mfib1 Hproj1.
+    rewrite formula_msubst_store_fibvars.
+    eapply res_models_FFibVars_intro.
+    + pose proof (res_models_scoped _ _ Hmodel) as HscopeU.
+      pose proof (formula_scoped_fibvars_r _ _ _ HscopeU) as Hscopeφ.
+      apply (proj2 (formula_scoped_fibvars_iff mfib1
+        (D2 ∖ lvars_of_atoms (dom (σ1 : StoreT)))
+        (formula_msubst_store σ1 φ))).
+      split.
+      * pose proof (res_fiber_from_projection_world_dom m mfib1
+          (lvars_fv D1) σ1 Hproj1) as Hdom_mfib1.
+        rewrite Hdom_mfib1.
+        apply (proj1 (formula_scoped_fibvars_iff m (D1 ∪ D2) φ))
+          in HscopeU as [HDU _].
+        rewrite lvars_fv_difference_of_atoms, lvars_fv_union in *.
+        set_solver.
+      * unfold formula_scoped_in_world in *.
+        pose proof (res_fiber_from_projection_world_dom m mfib1
+          (lvars_fv D1) σ1 Hproj1) as Hdom_mfib1.
+        rewrite Hdom_mfib1.
+        pose proof (formula_msubst_store_fv_subset σ1 φ) as Hfvsub.
+        set_solver.
+    + intros v Hv.
+      apply HlcU.
+      apply elem_of_union_r.
+      apply elem_of_difference in Hv as [Hv _].
+      exact Hv.
+    + intros σ2 mfibXY Hproj2.
+      assert (Hdomσ1 : dom (σ1 : StoreT) = lvars_fv D1).
+      {
+        destruct Hproj1 as [Hproj1' _].
+        pose proof (wfworld_store_dom (res_restrict m (lvars_fv D1))
+          σ1 Hproj1') as Hdom.
+        simpl in Hdom.
+        change (dom (σ1 : StoreT) =
+          world_dom (m : WorldT) ∩ lvars_fv D1) in Hdom.
+        apply (proj1 (formula_scoped_fibvars_iff m (D1 ∪ D2) φ))
+          in Hscope_union as [HDU _].
+        rewrite lvars_fv_union in HDU.
+        rewrite Hdom. set_solver.
+      }
+      rewrite Hdomσ1 in Hproj2.
+      rewrite lvars_fv_difference_of_atoms in Hproj2.
+      pose proof (res_fiber_from_projection_store_compat
+        m mfib1 mfibXY (lvars_fv D1) (lvars_fv D2 ∖ lvars_fv D1)
+        σ1 σ2 Hproj1 Hproj2) as Hcompat12.
+      pose proof (res_fiber_from_projection_nested_union_l
+        m mfib1 mfibXY (lvars_fv D1) (lvars_fv D2 ∖ lvars_fv D1)
+        σ1 σ2 Hproj1 Hproj2 Hcompat12) as HprojU.
+      replace (lvars_fv D1 ∪ (lvars_fv D2 ∖ lvars_fv D1))
+        with (lvars_fv D1 ∪ lvars_fv D2) in HprojU.
+      2:{ apply set_eq. intros z.
+          rewrite !elem_of_union, elem_of_difference. tauto. }
+      rewrite lvars_fv_union in HfibU.
+      specialize (HfibU (σ1 ∪ σ2) mfibXY HprojU).
+      rewrite formula_msubst_store_union by exact Hcompat12.
+      exact HfibU.
+Qed.
 
 Lemma res_models_FFibVars_nested_union_iff
     (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
