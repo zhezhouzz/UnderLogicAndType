@@ -1075,6 +1075,18 @@ Implementation order
        `lty_env_msubst_store`.  The closed-store invariant from
        `atom_store_has_ltype_closed` ensures substituted values add no lvars.
 
+
+       Binder/variable support lemmas needed by this mutual induction are now
+       explicit obligations in `BasicTypingFormula.v`:
+
+         `basic_value_has_ltype_of_empty_atom_typing`
+         `atom_store_has_ltype_insert_fresh`
+         `lty_env_msubst_store_insert_fresh`
+
+       These are intentionally small: the first handles fixed closed values,
+       the second preserves fixed-store typing under fresh binders, and the
+       third normalizes the environment in binder cases.
+
      - Prove compatibility with the old open-env specification only as a
        bridge theorem, not as the definition.  This avoids the fragile
        arbitrary-`η` proof path in the main msubst proof.

@@ -107,6 +107,31 @@ Lemma basic_tm_has_ltype_to_open_env Σ e T :
   basic_tm_has_ltype_by_open_env Σ e T.
 Admitted.
 
+Lemma basic_value_has_ltype_of_empty_atom_typing Σ v T :
+  ∅ ⊢ᵥ v ⋮ T ->
+  basic_value_has_ltype Σ v T.
+Admitted.
+
+Lemma atom_store_has_ltype_insert_fresh Σ σ x T :
+  x ∉ dom (σ : gmap atom value) ->
+  atom_store_has_ltype Σ σ ->
+  atom_store_has_ltype (<[LVFree x := T]> Σ) σ.
+Proof.
+  intros Hx Htyped y v Hy.
+  destruct (Htyped y v Hy) as [U [HΣ Hv]].
+  exists U. split; [|exact Hv].
+  rewrite lookup_insert_ne; [exact HΣ|].
+  intros Heq. inversion Heq. subst y.
+  apply Hx. change (x ∈ dom (σ : gmap atom value)).
+  rewrite elem_of_dom. eauto.
+Qed.
+
+Lemma lty_env_msubst_store_insert_fresh σ Σ x T :
+  x ∉ dom (σ : gmap atom value) ->
+  lty_env_msubst_store σ (<[LVFree x := T]> Σ) =
+  <[LVFree x := T]> (lty_env_msubst_store σ Σ).
+Admitted.
+
 Lemma basic_value_has_ltype_msubst_store_at
     d σ Σ v T :
   atom_store_has_ltype Σ σ ->
