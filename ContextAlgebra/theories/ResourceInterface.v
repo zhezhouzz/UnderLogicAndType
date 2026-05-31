@@ -374,6 +374,14 @@ Lemma res_restrict_fiber_from_projection_eq_singleton
   (res_restrict wfib X : World) = singleton_world σ.
 Proof. apply resA_restrict_fiber_from_projection_eq_singleton. Qed.
 
+Lemma res_fiber_singleton_projection_inv
+    (w wfib : WfWorld) (X : aset) (σ σX : StoreT) :
+  dom σX = X →
+  (res_restrict w X : World) = singleton_world σX →
+  res_fiber_from_projection w X σ wfib →
+  σ = σX ∧ wfib = w.
+Proof. apply resA_fiber_singleton_projection_inv. Qed.
+
 
 
 (** * Concrete resource key action and order interface lemmas *)
@@ -578,6 +586,72 @@ Lemma res_sum_restrict_same_le
     res_sum (res_restrict m1 X) (res_restrict m2 X) HdefX
       ⊑ res_restrict m X.
 Proof. apply resA_sum_restrict_same_le. Qed.
+
+Lemma res_product_le_singleton_restrict_inv
+    (m m1 m2 : WfWorld) (Hc : world_compat m1 m2)
+    (X : aset) (σX : StoreT) :
+  res_product m1 m2 Hc ⊑ m →
+  X ⊆ world_dom (m1 : World) →
+  X ⊆ world_dom (m2 : World) →
+  (res_restrict m X : World) = singleton_world σX →
+  (res_restrict m1 X : World) = singleton_world σX ∧
+  (res_restrict m2 X : World) = singleton_world σX.
+Proof. apply resA_product_le_singleton_restrict_inv. Qed.
+
+Lemma res_sum_le_singleton_restrict_inv
+    (m m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2)
+    (X : aset) (σX : StoreT) :
+  res_sum m1 m2 Hdef ⊑ m →
+  X ⊆ world_dom (m1 : World) →
+  X ⊆ world_dom (m2 : World) →
+  (res_restrict m X : World) = singleton_world σX →
+  (res_restrict m1 X : World) = singleton_world σX ∧
+  (res_restrict m2 X : World) = singleton_world σX.
+Proof. apply resA_sum_le_singleton_restrict_inv. Qed.
+
+Lemma res_subset_singleton_restrict
+    (p m : WfWorld) (X : aset) (σX : StoreT) :
+  res_subset p m →
+  X ⊆ world_dom (p : World) →
+  (res_restrict m X : World) = singleton_world σX →
+  (res_restrict p X : World) = singleton_world σX.
+Proof. apply resA_subset_singleton_restrict. Qed.
+
+Lemma res_restrict_union_singleton
+    (m : WfWorld) (X Y : aset) (σX σY : StoreT) :
+  (res_restrict m X : World) = singleton_world σX →
+  (res_restrict m Y : World) = singleton_world σY →
+  ∃ σXY : StoreT,
+    (res_restrict m (X ∪ Y) : World) = singleton_world σXY.
+Proof. apply resA_restrict_union_singleton. Qed.
+
+Lemma res_product_le_singleton_pullback
+    (m n1 n2 : WfWorld) (Hc : world_compat n1 n2)
+    (X : aset) (σX : StoreT) :
+  res_product n1 n2 Hc ⊑ m →
+  dom σX = X →
+  (res_restrict m X : World) = singleton_world σX →
+  ∃ (m1 m2 : WfWorld) (Hc' : world_compat m1 m2),
+    res_product m1 m2 Hc' ⊑ m ∧
+    (res_restrict m1 X : World) = singleton_world σX ∧
+    (res_restrict m2 X : World) = singleton_world σX ∧
+    res_restrict m1 (world_dom (n1 : World)) = n1 ∧
+    res_restrict m2 (world_dom (n2 : World)) = n2.
+Proof. apply resA_product_le_singleton_pullback. Qed.
+
+Lemma res_sum_le_singleton_pullback
+    (m n1 n2 : WfWorld) (Hdef : raw_sum_defined n1 n2)
+    (X : aset) (σX : StoreT) :
+  res_sum n1 n2 Hdef ⊑ m →
+  dom σX = X →
+  (res_restrict m X : World) = singleton_world σX →
+  ∃ (m1 m2 : WfWorld) (Hdef' : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef' ⊑ m ∧
+    (res_restrict m1 X : World) = singleton_world σX ∧
+    (res_restrict m2 X : World) = singleton_world σX ∧
+    res_restrict m1 (world_dom (n1 : World)) = n1 ∧
+    res_restrict m2 (world_dom (n2 : World)) = n2.
+Proof. apply resA_sum_le_singleton_pullback. Qed.
 
 Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
   res_product w res_unit Hc = w.

@@ -229,17 +229,185 @@ Implementation order
      sets do not rule out extra bound lvars in `D2`.
      The same helper now gives the proved wrapper:
        `res_models_FFibVars_idemp_elim`.
-   - Fiber/product decomposition:
-     when a product world satisfies a singleton projection on `X`, the two
-     product components inherit that same singleton projection on `X`, under
-     any required domain/support hypotheses.  It is fine for this lemma to have
-     explicit side conditions such as `X ⊆ world_dom m1` and
-     `X ⊆ world_dom m2`; Soundness can derive them from the context formulas.
-     Do not expose this directly unless necessary.  The current preferred
-     Logic-facing obligation is the distributivity lemma:
-       `res_models_FFibVars_star_distrib_l`.
-     The former shared eliminator is now proved by:
-       distributivity + `res_models_FFibVars_idemp_elim` + `res_models_star_iff`.
+   - Singleton fiber connective splitting:
+     the old unconditional distributivity obligations
+       `res_models_FFibVars_star_distrib_l`
+       `res_models_FFibVars_plus_distrib_l`
+     are too strong after `FFibVars` started substituting the chosen projection
+     store into the body.  `FFibVars D (FStar φ ψ)` only says that every
+     `D`-projection fiber can be split; if the ambient world has more than one
+     possible `D` projection, the splits for different fibers need not assemble
+     into one global split of `m`.
+
+     Replace those obligations by singleton-projection versions.  First add
+     Algebra/Logic helpers saying that a singleton projection makes the
+     `FFibVars` witness unique:
+
+       `res_fiber_singleton_projection_inv`:
+         `dom σD = X ->
+          res_restrict m X = singleton_world σD ->
+          res_fiber_from_projection m X σ mfib ->
+          σ = σD /\ mfib = m`.
+
+       `res_models_FFibVars_singleton_elim`:
+         `dom σD = lvars_fv D ->
+          res_restrict m (lvars_fv D) = singleton_world σD ->
+          m ⊨ FFibVars D φ ->
+          m ⊨ formula_msubst_store σD φ`.
+
+       `res_models_FFibVars_singleton_intro`:
+         `lc_lvars D ->
+          dom σD = lvars_fv D ->
+          res_restrict m (lvars_fv D) = singleton_world σD ->
+          m ⊨ formula_msubst_store σD φ ->
+          m ⊨ FFibVars D φ`.
+
+     The first useful algebra helpers are product/sum inheritance helpers.
+     These are proved and remain useful when the branch worlds already contain
+     the fixed domain:
+
+       `res_product_le_singleton_restrict_inv`:
+         `res_product m1 m2 Hc ⊑ m ->
+          X ⊆ world_dom (m1 : WorldT) ->
+          X ⊆ world_dom (m2 : WorldT) ->
+          res_restrict m X = singleton_world σ ->
+          res_restrict m1 X = singleton_world σ /\
+          res_restrict m2 X = singleton_world σ`.
+
+       `res_sum_le_singleton_restrict_inv`:
+         same shape for `res_sum`.
+
+     However, this is not enough for the shared eliminator after `mlsubst`.
+     The reason is subtle but important: substituting the singleton store into
+     `FFibVars D φ` rewrites it to a residual fiber over
+     `D ∖ lvars_of_atoms (dom σD)`, whose free-variable projection is empty
+     when `dom σD = lvars_fv D`.  Therefore the star/plus split of
+     `formula_msubst_store σD (FFibVars D φ)` can return components whose
+     worlds do not contain `lvars_fv D` at all.  We cannot simply invert
+     singleton projection on those components.
+
+     The next required algebra fact is a singleton pullback/lift operation:
+     if `m` has a singleton projection `σD` on `X`, and a component `mi`
+     produced by a product/sum split is below `m`, construct an enlarged
+     component `miD` that adds exactly this singleton `X` projection while
+     remaining below `m`.  The two enlarged components should still be
+     compatible/summable because they share the same singleton overlap.
+
+      `res_product_le_singleton_pullback` (planned):
+         from `res_product m1 m2 Hc ⊑ m` and
+         `res_restrict m X = singleton_world σX`, construct `m1D`, `m2D`,
+         `HcD` such that
+           `res_product m1D m2D HcD ⊑ m`,
+           `res_restrict m1D X = singleton_world σX`,
+           `res_restrict m2D X = singleton_world σX`,
+           and `m1D/m2D` agree with `m1/m2` on the old branch formula support.
+
+        Use the concrete construction
+
+          `m1D := res_restrict m (world_dom (m1 : WorldT) ∪ X)`
+          `m2D := res_restrict m (world_dom (m2 : WorldT) ∪ X)`.
+
+        This construction is chosen because both enlarged worlds are directly
+        obtained from the ambient `m`, so the final `⊑ m` proof is a restrict
+        proof rather than a reconstruction of arbitrary ambient stores.  It
+        should provide:
+
+          `res_restrict m1D (world_dom (m1 : WorldT)) = m1`
+          `res_restrict m2D (world_dom (m2 : WorldT)) = m2`
+
+        using `m1 ⊑ res_product m1 m2 Hc ⊑ m` and the corresponding right
+        component fact, and:
+
+          `res_restrict m1D X = singleton_world σX`
+          `res_restrict m2D X = singleton_world σX`
+
+        by commuting nested restrictions with
+        `res_restrict m X = singleton_world σX`.
+
+        Compatibility of `m1D` and `m2D` is the only real algebraic point.
+        Their overlap is
+        `(world_dom m1 ∪ X) ∩ (world_dom m2 ∪ X)`.  Agreement on the old
+        `world_dom m1 ∩ world_dom m2` part follows from the original
+        `world_compat m1 m2` after restricting `m` back to `m1`/`m2`; agreement
+        on the `X` part follows from the singleton projection.  Package this
+        either as part of the pullback proof or as a smaller helper:
+
+          `world_compat_restrict_union_singleton_overlap`.
+
+        After this lemma, branch model transport is:
+
+          `n1 ⊨ θ`
+          `formula_fv θ ⊆ world_dom (n1 : WorldT)`
+          `res_restrict m1D (world_dom (n1 : WorldT)) = n1`
+          ------------------------------------------------
+          `m1D ⊨ θ`
+
+        using `res_models_minimal_on` / `res_models_kripke`.
+
+      `res_sum_le_singleton_pullback` (planned):
+         analogous for `res_sum`.
+
+        For sum, prefer reusing the existing
+        `res_sum_lift_along_restrict`/slice-pullback infrastructure when
+        possible.  If the lifted worlds become full-domain subworlds of `m`,
+        derive the singleton projection by a small subset lemma:
+
+          `res_subset_singleton_restrict`:
+            `res_subset p m ->
+             X ⊆ world_dom (p : WorldT) ->
+             res_restrict m X = singleton_world σX ->
+             res_restrict p X = singleton_world σX`.
+
+        The product route cannot use full-domain pullback directly because two
+        full-domain subworlds need not be compatible unless the whole ambient
+        world is singleton; hence the narrower `world_dom ni ∪ X` construction.
+
+     The Logic-facing replacement for the old shared eliminator is then:
+
+       `res_models_FFibVars_star_elim_shared_singleton`:
+         `dom σD = lvars_fv D ->
+          res_restrict m (lvars_fv D) = singleton_world σD ->
+          m ⊨ FFibVars D (FStar (FFibVars D φ) (FFibVars D ψ)) ->
+          exists m1 m2 Hc,
+            res_product m1 m2 Hc ⊑ m /\
+            m1 ⊨ FFibVars D φ /\
+            m2 ⊨ FFibVars D ψ`.
+
+       `res_models_FFibVars_plus_elim_shared_singleton`:
+         analogous for `FPlus`.
+
+     Revised proof shape for star:
+       1. use `res_models_FFibVars_singleton_elim` to turn the outer
+          `FFibVars` into
+          `m ⊨ formula_msubst_store σD (FStar ...)`;
+       2. simplify the substitution through `FStar`;
+       3. use `res_models_star_iff` to obtain `m1`, `m2`;
+       4. use the product singleton pullback lemma to enlarge these components
+          to `m1D`, `m2D` carrying the fixed projection;
+       5. use the branch support/agreement part of the pullback lemma to
+          transport the already obtained branch models from `m1/m2` to
+          `m1D/m2D`;
+       6. rewrite `formula_msubst_store_fibvars`, use empty/residual-fv
+          normalization and `res_models_FFibVars_singleton_intro` to rebuild
+          `m1D ⊨ FFibVars D φ` and `m2D ⊨ FFibVars D ψ`.
+     The plus proof is the same with `res_models_plus_iff` and sum inheritance.
+
+     Denotation should not call an unconditional
+     `denot_ctx_under_star_elim`.  Replace it by a singleton-aware eliminator:
+
+       `denot_ctx_under_star_elim_singleton`:
+         `dom σΣ = dom Σ ->
+          res_restrict m (dom Σ) = singleton_world σΣ ->
+          m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
+          exists m1 m2 Hc,
+            res_product m1 m2 Hc ⊑ m /\
+            m1 ⊨ denot_ctx_under Σ Γ1 /\
+            m2 ⊨ denot_ctx_under Σ Γ2`.
+
+     The analogous `denot_ctx_under_sum_elim_singleton` handles `CtxSum`.
+     Upper proofs obtain the singleton premise by working inside the outer
+     `FFibVars (ctx_base_vars Σ)` fiber of `denot_ctx_under`; it is not a
+     consequence of an arbitrary ambient `m ⊨ denot_ctx_under Σ Γ`.
    - Models-level `FFibVars` connective helpers, especially for `FAnd`,
      `FStar`, and `FPlus`.  Avoid formula equality when `formula_msubst_store`
      would make equality too strong; prefer `m ⊨ ... -> ...` / iff lemmas.

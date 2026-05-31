@@ -14,6 +14,10 @@ Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
 Definition ctx_base_vars (Σ : gmap atom ty) : lvset :=
   lvars_of_atoms (dom Σ).
 
+Lemma ctx_base_vars_fv (Σ : gmap atom ty) :
+  lvars_fv (ctx_base_vars Σ) = dom Σ.
+Proof. unfold ctx_base_vars. apply lvars_fv_of_atoms. Qed.
+
 Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
   FFibVars (ctx_base_vars Σ)
     (FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
@@ -439,6 +443,60 @@ Proof.
     destruct (res_models_FFibVars_plus_elim_shared _ _ _ _ Hplus)
       as [m1 [m2 [Hdef [Hle [HΓ1 HΓ2]]]]];
     exists m1, m2, Hdef; split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
+Qed.
+
+Lemma denot_ctx_under_star_elim_singleton
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) (σΣ : StoreT) :
+  dom σΣ = dom Σ ->
+  (res_restrict m (dom Σ) : WorldT) = singleton_world σΣ ->
+  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ denot_ctx_under Σ Γ1 /\
+    m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  intros HdomσΣ Hsingleton Hctx.
+  cbn [denot_ctx_under] in Hctx.
+  pose proof (res_models_FFibVars_and_r _ _ _ _ Hctx) as Hstar.
+  assert (HdomD : dom σΣ = lvars_fv (ctx_base_vars Σ)).
+  { rewrite ctx_base_vars_fv. exact HdomσΣ. }
+  assert (HsingletonD :
+      (res_restrict m (lvars_fv (ctx_base_vars Σ)) : WorldT) =
+      singleton_world σΣ).
+  { rewrite ctx_base_vars_fv. exact Hsingleton. }
+  destruct Γ1; destruct Γ2; cbn [denot_ctx_under] in Hstar |- *.
+  all: destruct (res_models_FFibVars_star_elim_shared_singleton
+      m (ctx_base_vars Σ) _ _ σΣ HdomD HsingletonD Hstar)
+      as [m1 [m2 [Hc [Hle [HΓ1 HΓ2]]]]];
+    exists m1, m2, Hc;
+    split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
+Qed.
+
+Lemma denot_ctx_under_sum_elim_singleton
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) (σΣ : StoreT) :
+  dom σΣ = dom Σ ->
+  (res_restrict m (dom Σ) : WorldT) = singleton_world σΣ ->
+  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ denot_ctx_under Σ Γ1 /\
+    m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  intros HdomσΣ Hsingleton Hctx.
+  cbn [denot_ctx_under] in Hctx.
+  pose proof (res_models_FFibVars_and_r _ _ _ _ Hctx) as Hplus.
+  assert (HdomD : dom σΣ = lvars_fv (ctx_base_vars Σ)).
+  { rewrite ctx_base_vars_fv. exact HdomσΣ. }
+  assert (HsingletonD :
+      (res_restrict m (lvars_fv (ctx_base_vars Σ)) : WorldT) =
+      singleton_world σΣ).
+  { rewrite ctx_base_vars_fv. exact Hsingleton. }
+  destruct Γ1; destruct Γ2; cbn [denot_ctx_under] in Hplus |- *.
+  all: destruct (res_models_FFibVars_plus_elim_shared_singleton
+      m (ctx_base_vars Σ) _ _ σΣ HdomD HsingletonD Hplus)
+      as [m1 [m2 [Hdef [Hle [HΓ1 HΓ2]]]]];
+    exists m1, m2, Hdef;
+    split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
 Qed.
 
 Lemma denot_ty_lvar_gas_star_union_to_ctx

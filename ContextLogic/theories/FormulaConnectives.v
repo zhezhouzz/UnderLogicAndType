@@ -35,6 +35,18 @@ Proof.
     [set_solver | exact Hfv].
 Qed.
 
+Lemma res_models_of_restrict_eq
+    (m n : WfWorldT) (S : aset) (φ : FormulaT) :
+  formula_fv φ ⊆ S ->
+  res_restrict m S = n ->
+  n ⊨ φ ->
+  m ⊨ φ.
+Proof.
+  intros Hfv <- Hmodel.
+  apply (proj2 (res_models_minimal_on S m φ Hfv)).
+  exact Hmodel.
+Qed.
+
 Lemma res_models_and_intro_from_models (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ φ →
   m ⊨ ψ →
@@ -356,6 +368,69 @@ Proof.
     eapply res_models_FFibVars_projection_intro; eauto.
 Qed.
 
+Lemma res_models_FFibVars_singleton_elim
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σD : StoreT) :
+  dom σD = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  m ⊨ FFibVars D φ ->
+  m ⊨ formula_msubst_store σD φ.
+Proof.
+  intros HdomσD Hsingleton Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m D φ Hscope) Hmodel)
+    as [_ Hfib].
+  destruct (res_fiber_from_projection_exists m (lvars_fv D)) as
+    [σ [mfib Hproj]].
+  { apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope.
+    exact (proj1 Hscope). }
+  pose proof (res_fiber_singleton_projection_inv
+    m mfib (lvars_fv D) σ σD HdomσD Hsingleton Hproj) as [-> ->].
+  exact (Hfib σD m Hproj).
+Qed.
+
+Lemma res_models_FFibVars_singleton_intro
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σD : StoreT) :
+  formula_scoped_in_world m (FFibVars D φ) ->
+  lc_lvars D ->
+  dom σD = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  m ⊨ formula_msubst_store σD φ ->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hscope Hlc HdomσD Hsingleton Hmodel.
+  eapply res_models_FFibVars_projection_intro; [exact Hscope | exact Hlc |].
+  intros σ mfib Hproj.
+  pose proof (res_fiber_singleton_projection_inv
+    m mfib (lvars_fv D) σ σD HdomσD Hsingleton Hproj) as [-> ->].
+  exact Hmodel.
+Qed.
+
+Lemma formula_scoped_FFibVars_from_singleton_msubst
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σD : StoreT) :
+  dom σD = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  formula_scoped_in_world m (formula_msubst_store σD φ) ->
+  formula_scoped_in_world m (FFibVars D φ).
+Proof.
+  intros HdomσD Hsingleton Hscope_msubst.
+  assert (HDsub : lvars_fv D ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (f_equal world_dom Hsingleton) as Hdom.
+    simpl in Hdom.
+    change (world_dom (m : WorldT) ∩ lvars_fv D = dom (σD : StoreT)) in Hdom.
+    rewrite HdomσD in Hdom. set_solver.
+  }
+  apply (proj2 (formula_scoped_fibvars_iff m D φ)). split.
+  - exact HDsub.
+  - eapply formula_scoped_in_world_from_formula_fv.
+    pose proof (formula_msubst_store_fv_restore σD φ) as Hrestore.
+    unfold formula_scoped_in_world in Hscope_msubst.
+    intros x Hx.
+    apply Hrestore in Hx. apply elem_of_union in Hx as [Hx | Hx].
+    + exact (Hscope_msubst x Hx).
+    + apply HDsub. rewrite <- HdomσD. exact Hx.
+Qed.
+
 Lemma res_models_FFibVars_empty_iff (m : WfWorldT) (φ : FormulaT) :
   m ⊨ FFibVars ∅ φ ↔ m ⊨ φ.
 Proof.
@@ -444,6 +519,21 @@ Proof.
   - intros σ mfib Hproj2.
     apply Hfib1.
     rewrite Hfv. exact Hproj2.
+Qed.
+
+Lemma res_models_msubst_store_full_FFibVars_elim
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σD : StoreT) :
+  dom σD = lvars_fv D ->
+  m ⊨ formula_msubst_store σD (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σD φ.
+Proof.
+  intros HdomσD Hmodel.
+  rewrite formula_msubst_store_fibvars in Hmodel.
+  eapply res_models_FFibVars_empty_iff.
+  eapply res_models_FFibVars_same_fv; [| | exact Hmodel].
+  - unfold lc_lvars. set_solver.
+  - rewrite lvars_fv_empty, lvars_fv_difference_of_atoms.
+    rewrite HdomσD. set_solver.
 Qed.
 
 Lemma res_models_FFibVars_nested_union_l
@@ -648,6 +738,130 @@ Proof.
   eapply res_models_FFibVars_same_fv; [| | exact Hmodel].
   - intros v Hv. apply HlcU. set_solver.
   - rewrite lvars_fv_union. set_solver.
+Qed.
+
+Lemma res_models_FFibVars_star_elim_shared_singleton
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) (σD : StoreT) :
+  dom σD = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  m ⊨ FFibVars D (FStar (FFibVars D φ) (FFibVars D ψ)) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ FFibVars D φ /\
+    m2 ⊨ FFibVars D ψ.
+Proof.
+  intros HdomσD Hsingleton Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m D
+    (FStar (FFibVars D φ) (FFibVars D ψ)) Hscope) Hmodel)
+    as [HlcD _].
+  pose proof (res_models_FFibVars_singleton_elim
+    m D (FStar (FFibVars D φ) (FFibVars D ψ)) σD
+    HdomσD Hsingleton Hmodel) as Hstar.
+  cbn [formula_msubst_store formula_mlsubst] in Hstar.
+  apply res_models_star_iff in Hstar as
+    [n1 [n2 [Hc [Hle [Hn1 Hn2]]]]].
+  destruct (res_product_le_singleton_pullback
+    m n1 n2 Hc (lvars_fv D) σD Hle HdomσD Hsingleton)
+    as [m1 [m2 [Hc' [Hle' [Hsing1 [Hsing2 [Hrest1 Hrest2]]]]]]].
+  exists m1, m2, Hc'. split; [exact Hle' |].
+  split.
+  - pose proof (res_models_msubst_store_full_FFibVars_elim
+      n1 D φ σD HdomσD Hn1) as Hn1φ.
+    assert (Hm1φ : m1 ⊨ formula_msubst_store σD φ).
+    {
+      eapply (res_models_of_restrict_eq m1 n1 (world_dom (n1 : WorldT))
+        (formula_msubst_store σD φ)).
+      - eapply res_models_scoped; exact Hn1φ.
+      - exact Hrest1.
+      - exact Hn1φ.
+    }
+    eapply res_models_FFibVars_singleton_intro.
+    + eapply formula_scoped_FFibVars_from_singleton_msubst; eauto.
+      eapply res_models_scoped; exact Hm1φ.
+    + exact HlcD.
+    + exact HdomσD.
+    + exact Hsing1.
+    + exact Hm1φ.
+  - pose proof (res_models_msubst_store_full_FFibVars_elim
+      n2 D ψ σD HdomσD Hn2) as Hn2ψ.
+    assert (Hm2ψ : m2 ⊨ formula_msubst_store σD ψ).
+    {
+      eapply (res_models_of_restrict_eq m2 n2 (world_dom (n2 : WorldT))
+        (formula_msubst_store σD ψ)).
+      - eapply res_models_scoped; exact Hn2ψ.
+      - exact Hrest2.
+      - exact Hn2ψ.
+    }
+    eapply res_models_FFibVars_singleton_intro.
+    + eapply formula_scoped_FFibVars_from_singleton_msubst; eauto.
+      eapply res_models_scoped; exact Hm2ψ.
+    + exact HlcD.
+    + exact HdomσD.
+    + exact Hsing2.
+    + exact Hm2ψ.
+Qed.
+
+Lemma res_models_FFibVars_plus_elim_shared_singleton
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) (σD : StoreT) :
+  dom σD = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  m ⊨ FFibVars D (FPlus (FFibVars D φ) (FFibVars D ψ)) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ FFibVars D φ /\
+    m2 ⊨ FFibVars D ψ.
+Proof.
+  intros HdomσD Hsingleton Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m D
+    (FPlus (FFibVars D φ) (FFibVars D ψ)) Hscope) Hmodel)
+    as [HlcD _].
+  pose proof (res_models_FFibVars_singleton_elim
+    m D (FPlus (FFibVars D φ) (FFibVars D ψ)) σD
+    HdomσD Hsingleton Hmodel) as Hplus.
+  cbn [formula_msubst_store formula_mlsubst] in Hplus.
+  apply res_models_plus_iff in Hplus as
+    [n1 [n2 [Hdef [Hle [Hn1 Hn2]]]]].
+  destruct (res_sum_le_singleton_pullback
+    m n1 n2 Hdef (lvars_fv D) σD Hle HdomσD Hsingleton)
+    as [m1 [m2 [Hdef' [Hle' [Hsing1 [Hsing2 [Hrest1 Hrest2]]]]]]].
+  exists m1, m2, Hdef'. split; [exact Hle' |].
+  split.
+  - pose proof (res_models_msubst_store_full_FFibVars_elim
+      n1 D φ σD HdomσD Hn1) as Hn1φ.
+    assert (Hm1φ : m1 ⊨ formula_msubst_store σD φ).
+    {
+      eapply (res_models_of_restrict_eq m1 n1 (world_dom (n1 : WorldT))
+        (formula_msubst_store σD φ)).
+      - eapply res_models_scoped; exact Hn1φ.
+      - exact Hrest1.
+      - exact Hn1φ.
+    }
+    eapply res_models_FFibVars_singleton_intro.
+    + eapply formula_scoped_FFibVars_from_singleton_msubst; eauto.
+      eapply res_models_scoped; exact Hm1φ.
+    + exact HlcD.
+    + exact HdomσD.
+    + exact Hsing1.
+    + exact Hm1φ.
+  - pose proof (res_models_msubst_store_full_FFibVars_elim
+      n2 D ψ σD HdomσD Hn2) as Hn2ψ.
+    assert (Hm2ψ : m2 ⊨ formula_msubst_store σD ψ).
+    {
+      eapply (res_models_of_restrict_eq m2 n2 (world_dom (n2 : WorldT))
+        (formula_msubst_store σD ψ)).
+      - eapply res_models_scoped; exact Hn2ψ.
+      - exact Hrest2.
+      - exact Hn2ψ.
+    }
+    eapply res_models_FFibVars_singleton_intro.
+    + eapply formula_scoped_FFibVars_from_singleton_msubst; eauto.
+      eapply res_models_scoped; exact Hm2ψ.
+    + exact HlcD.
+    + exact HdomσD.
+    + exact Hsing2.
+    + exact Hm2ψ.
 Qed.
 
 Lemma res_models_FFibVars_star_distrib_l

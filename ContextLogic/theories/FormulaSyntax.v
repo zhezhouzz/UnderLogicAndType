@@ -220,7 +220,7 @@ Proof.
   induction φ;
     unfold formula_fv in *; cbn [formula_mlsubst formula_lvars];
     try set_solver.
-  - destruct a as [D P]. cbn [lqual_mlsubst lqual_lvars].
+  - destruct a as [D P]. cbn [lqual_mlsubst lqual_lvars] in *.
     eapply lvars_fv_mono. set_solver.
   - rewrite !lvars_fv_union. set_solver.
   - rewrite !lvars_fv_union. set_solver.
@@ -236,6 +236,61 @@ Qed.
 Lemma formula_msubst_store_fv_subset σ φ :
   formula_fv (formula_msubst_store σ φ) ⊆ formula_fv φ.
 Proof. apply formula_mlsubst_fv_subset. Qed.
+
+Lemma formula_mlsubst_lvars_restore ρ φ :
+  formula_lvars φ ⊆ formula_lvars (formula_mlsubst ρ φ) ∪ dom ρ.
+Proof.
+  induction φ; cbn [formula_lvars formula_mlsubst].
+  - set_solver.
+  - set_solver.
+  - destruct a as [D P]. cbn [lqual_mlsubst].
+    change (D ⊆ (D ∖ dom (ρ : gmap logic_var V)) ∪ dom ρ).
+    intros v Hv.
+    destruct (decide (v ∈ dom (ρ : gmap logic_var V))); set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + pose proof (IHφ1 v Hv). set_solver.
+    + pose proof (IHφ2 v Hv). set_solver.
+  - exact IHφ.
+  - exact IHφ.
+  - exact IHφ.
+  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
+    + destruct (decide (v ∈ dom (ρ : gmap logic_var V))); set_solver.
+    + pose proof (IHφ v Hv). set_solver.
+Qed.
+
+Lemma formula_mlsubst_fv_restore ρ φ :
+  formula_fv φ ⊆ formula_fv (formula_mlsubst ρ φ) ∪ lvars_fv (dom ρ).
+Proof.
+  unfold formula_fv.
+  pose proof (lvars_fv_mono (formula_lvars φ)
+    (formula_lvars (formula_mlsubst ρ φ) ∪ dom ρ)
+    (formula_mlsubst_lvars_restore ρ φ)) as Hfv.
+  rewrite lvars_fv_union in Hfv. exact Hfv.
+Qed.
+
+Lemma formula_msubst_store_fv_restore σ φ :
+  formula_fv φ ⊆ formula_fv (formula_msubst_store σ φ) ∪ dom (σ : Store (V := V)).
+Proof.
+  unfold formula_msubst_store.
+  pose proof (formula_mlsubst_fv_restore (lstore_lift_free σ) φ) as Hrestore.
+  rewrite dom_lstore_lift_free, lvars_fv_of_atoms in Hrestore.
+  exact Hrestore.
+Qed.
 
 Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   match φ with
