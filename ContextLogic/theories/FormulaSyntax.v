@@ -572,7 +572,50 @@ Lemma formula_open_msubst_store_fresh k y
   y ∉ dom (σ : gmap atom V) ->
   formula_open k y (formula_msubst_store σ φ) =
   formula_msubst_store σ (formula_open k y φ).
-Admitted.
+Proof.
+  intros Hy.
+  induction φ in k |- *; cbn [formula_open formula_msubst_store formula_mlsubst];
+    repeat match goal with
+    | |- context[formula_mlsubst (lstore_lift_free ?σ0) ?p] =>
+        change (formula_mlsubst (lstore_lift_free σ0) p)
+          with (formula_msubst_store σ0 p)
+    end;
+    try reflexivity.
+  - change (FAtom (lqual_open k y (lqual_msubst_store σ a)) =
+      FAtom (lqual_msubst_store σ (lqual_open k y a))).
+    rewrite lqual_open_msubst_store_fresh by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
+  - rewrite IHφ by exact Hy. reflexivity.
+  - rewrite IHφ by exact Hy. reflexivity.
+  - rewrite IHφ by exact Hy. reflexivity.
+  - rewrite IHφ by exact Hy.
+    f_equal.
+    apply set_eq. intros z.
+    rewrite elem_of_difference, !set_swap_elem, elem_of_difference.
+    assert (Hbound : LVBound k ∉ dom (lstore_lift_free σ : LStoreT)).
+    {
+      rewrite dom_lstore_lift_free.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]].
+      discriminate.
+    }
+    assert (Hfree : LVFree y ∉ dom (lstore_lift_free σ : LStoreT)).
+    {
+      rewrite dom_lstore_lift_free.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hyx Ha]].
+      inversion Hyx; subst. exact (Hy Ha).
+    }
+    unfold swap.
+    repeat destruct decide; subst; better_set_solver.
+Qed.
 
 Definition formula_open_env (η : gmap nat atom) (φ : Formula) : Formula :=
   map_fold (fun k x acc => formula_open k x acc) φ η.

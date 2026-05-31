@@ -1289,10 +1289,10 @@ Implementation order
           `denot_ty_lvar_gas_msubst_store_wand_body`.
         - The main induction proof now has no anonymous admits and is closed
           with `Qed`, depending only on the named obligations above.
-        - The first lower syntax obligation needed by the forall branches is
-          now named at Logic level:
-          `formula_open_msubst_store_fresh`.  It depends on the corresponding
-          qualifier-level obligation `lqual_open_msubst_store_fresh`.
+        - The first lower syntax lemma needed by the forall branches is now
+          proved at Logic level: `formula_open_msubst_store_fresh`.  It depends
+          only on the remaining qualifier-level obligation
+          `lqual_open_msubst_store_fresh`.
 
    Soundness layer:
 
