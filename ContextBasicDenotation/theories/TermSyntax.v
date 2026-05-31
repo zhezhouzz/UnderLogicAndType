@@ -1399,6 +1399,30 @@ Proof.
   apply lstore_instantiate_tm_at_restrict_lvars.
 Qed.
 
+Lemma lstore_instantiate_tm_lift_free_agree_subset
+    (σ1 σ2 : StoreT) e X :
+  fv_tm e ⊆ X ->
+  storeA_restrict σ1 X = storeA_restrict σ2 X ->
+  lstore_instantiate_tm (lstore_lift_free σ1) e =
+  lstore_instantiate_tm (lstore_lift_free σ2) e.
+Proof.
+  intros Hsub Hagree.
+  rewrite <- (lstore_instantiate_tm_restrict_lvars e
+    (lstore_lift_free σ1) (tm_lvars e)) by reflexivity.
+  rewrite <- (lstore_instantiate_tm_restrict_lvars e
+    (lstore_lift_free σ2) (tm_lvars e)) by reflexivity.
+  f_equal.
+  transitivity
+    (storeA_restrict
+      (lstore_lift_free (storeA_restrict σ1 X) : LStoreT)
+      (tm_lvars e)).
+  - symmetry. apply lstore_lift_free_restrict_lvars_subset_eq.
+    rewrite tm_lvars_fv. exact Hsub.
+  - rewrite Hagree.
+    apply lstore_lift_free_restrict_lvars_subset_eq.
+    rewrite tm_lvars_fv. exact Hsub.
+Qed.
+
 Lemma lstore_instantiate_no_lvars_at_mutual :
   (forall v d (σ : LStoreT),
       value_lvars_at d v = ∅ ->

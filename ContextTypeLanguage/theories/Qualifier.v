@@ -118,6 +118,73 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma atom_store_to_lvar_store_restrict_lvars_subset_eq
+    (σ : StoreT) (D : lvset) (X : aset) :
+  lvars_fv D ⊆ X ->
+  storeA_restrict (atom_store_to_lvar_store (store_restrict σ X)) D =
+  storeA_restrict (atom_store_to_lvar_store σ : LStoreT) D.
+Proof.
+  intros HDX.
+  apply storeA_map_eq. intros v.
+  destruct (decide (v ∈ D)) as [HvD|HvD].
+  2:{
+    transitivity (@None value).
+    - apply storeA_restrict_lookup_none_r. exact HvD.
+    - symmetry. apply storeA_restrict_lookup_none_r. exact HvD.
+  }
+  destruct v as [k|x].
+  - transitivity (@None value).
+    + apply storeA_restrict_lookup_none_l.
+      apply atom_store_to_lvar_store_lookup_bound_none.
+    + symmetry. apply storeA_restrict_lookup_none_l.
+      apply atom_store_to_lvar_store_lookup_bound_none.
+  - assert (HxX : x ∈ X).
+    { apply HDX. apply lvars_fv_elem. exact HvD. }
+    destruct ((σ : gmap atom value) !! x) as [v|] eqn:Hσx.
+    + transitivity (Some v).
+      * apply storeA_restrict_lookup_some_2; [|exact HvD].
+        rewrite atom_store_to_lvar_store_lookup_free.
+        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxX].
+      * symmetry. apply storeA_restrict_lookup_some_2; [|exact HvD].
+        rewrite atom_store_to_lvar_store_lookup_free. exact Hσx.
+    + transitivity (@None value).
+      * apply storeA_restrict_lookup_none_l.
+        rewrite atom_store_to_lvar_store_lookup_free.
+        apply storeA_restrict_lookup_none_l. exact Hσx.
+      * symmetry. apply storeA_restrict_lookup_none_l.
+        rewrite atom_store_to_lvar_store_lookup_free. exact Hσx.
+Qed.
+
+Lemma qual_msubst_store_restrict_subset
+    (σ : StoreT) (q : type_qualifier) (X : aset) :
+  qual_dom q ⊆ X ->
+  qual_msubst_store σ q =
+  qual_msubst_store (store_restrict σ X) q.
+Proof.
+  intros Hsub.
+  destruct q as [D P].
+  cbn [qual_msubst_store qual_mlsubst qual_dom qual_vars qual_lvars].
+  assert (HρD :
+    storeA_restrict (atom_store_to_lvar_store (store_restrict σ X)) D =
+    storeA_restrict (atom_store_to_lvar_store σ : LStoreT) D).
+  { apply atom_store_to_lvar_store_restrict_lvars_subset_eq. exact Hsub. }
+  apply qual_ext.
+  - change (D ∖ dom (atom_store_to_lvar_store σ : LStoreT) =
+      D ∖ dom (atom_store_to_lvar_store (store_restrict σ X) : LStoreT)).
+    pose proof (f_equal (fun s : gmap logic_var value => dom s) HρD)
+      as Hdom.
+    rewrite !storeA_restrict_dom in Hdom.
+    apply set_eq. intros v.
+    rewrite !elem_of_difference.
+    set_solver.
+  - intros s1 s2 Hs. cbn [qual_prop].
+    enough (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ) s1 =
+      lstore_on_mlsubst_back D (atom_store_to_lvar_store (store_restrict σ X)) s2)
+      as ->.
+    { reflexivity. }
+    apply lstore_on_mlsubst_back_restrict_eq; [symmetry; exact HρD|exact Hs].
+Qed.
+
 Lemma lvars_fv_qual_vars q :
   lvars_fv (qual_vars q) = qual_dom q.
 Proof. reflexivity. Qed.

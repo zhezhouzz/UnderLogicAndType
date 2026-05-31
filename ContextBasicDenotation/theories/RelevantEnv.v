@@ -278,6 +278,74 @@ Proof.
   apply lvars_fv_mono. set_solver.
 Qed.
 
+Lemma lty_env_restrict_lvars_msubst_store_agree
+    Σ σ1 σ2 R R' :
+  R' ⊆ R ->
+  storeA_restrict σ1 (lvars_fv R) =
+  storeA_restrict σ2 (lvars_fv R) ->
+  lty_env_restrict_lvars (lty_env_msubst_store σ1 Σ) R' =
+  lty_env_restrict_lvars (lty_env_msubst_store σ2 Σ) R'.
+Proof.
+  intros HR Hagree.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars, lty_env_msubst_store.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ R')) as [HvR'|HvR']; [|reflexivity].
+  assert (HvR : v ∈ R) by set_solver.
+  destruct ((Σ : gmap logic_var ty) !! v) as [T|] eqn:HΣv.
+  2:{ repeat destruct decide; reflexivity. }
+  destruct v as [k|x].
+  - assert (Hb1 : LVBound k ∉ lvars_of_atoms (dom (σ1 : gmap atom value))).
+    {
+      intros Hbad. unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]]. discriminate.
+    }
+    assert (Hb2 : LVBound k ∉ lvars_of_atoms (dom (σ2 : gmap atom value))).
+    {
+      intros Hbad. unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]]. discriminate.
+    }
+    destruct decide; destruct decide; set_solver.
+  - assert (HxR : x ∈ lvars_fv R).
+    { apply lvars_fv_elem. exact HvR. }
+    destruct ((σ1 : gmap atom value) !! x) as [v1|] eqn:Hσ1;
+      destruct ((σ2 : gmap atom value) !! x) as [v2|] eqn:Hσ2.
+    + assert (Hσ1dom : LVFree x ∈ lvars_of_atoms (dom (σ1 : gmap atom value))).
+      { unfold lvars_of_atoms. apply elem_of_map. exists x.
+        split; [reflexivity|apply elem_of_dom; eauto]. }
+      assert (Hσ2dom : LVFree x ∈ lvars_of_atoms (dom (σ2 : gmap atom value))).
+      { unfold lvars_of_atoms. apply elem_of_map. exists x.
+        split; [reflexivity|apply elem_of_dom; eauto]. }
+      destruct decide; destruct decide; set_solver.
+    + exfalso.
+      pose proof (storeA_restrict_lookup_transport σ1 σ2
+        (lvars_fv R) x v1 HxR Hagree Hσ1) as Hσ2'.
+      replace ((σ2 : gmap atom value) !! x) with (@None value) in Hσ2'
+        by (symmetry; exact Hσ2).
+      discriminate Hσ2'.
+    + exfalso.
+      pose proof (storeA_restrict_lookup_transport σ2 σ1
+        (lvars_fv R) x v2 HxR (eq_sym Hagree) Hσ2) as Hσ1'.
+      replace ((σ1 : gmap atom value) !! x) with (@None value) in Hσ1'
+        by (symmetry; exact Hσ1).
+      discriminate Hσ1'.
+    + assert (Hσ1dom : LVFree x ∉ lvars_of_atoms (dom (σ1 : gmap atom value))).
+      {
+        intros Hbad. unfold lvars_of_atoms in Hbad.
+        apply elem_of_map in Hbad as [a [Ha Hdom]].
+        inversion Ha; subst.
+        apply not_elem_of_dom in Hσ1. exact (Hσ1 Hdom).
+      }
+      assert (Hσ2dom : LVFree x ∉ lvars_of_atoms (dom (σ2 : gmap atom value))).
+      {
+        intros Hbad. unfold lvars_of_atoms in Hbad.
+        apply elem_of_map in Hbad as [a [Ha Hdom]].
+        inversion Ha; subst.
+        apply not_elem_of_dom in Hσ2. exact (Hσ2 Hdom).
+      }
+      destruct decide; destruct decide; set_solver.
+Qed.
+
 Lemma lty_env_restrict_lvars_insert_fresh Σ D x T :
   LVFree x ∉ D ->
   lty_env_restrict_lvars (<[LVFree x := T]> Σ) D =

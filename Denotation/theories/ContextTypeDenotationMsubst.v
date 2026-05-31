@@ -114,8 +114,10 @@ Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_agree_relevant
     gas σ1 σ2 Σ τ e (m : WfWorldT) :
-  store_restrict σ1 (lvars_fv (denot_relevant_lvars τ e)) =
-  store_restrict σ2 (lvars_fv (denot_relevant_lvars τ e)) ->
+  storeA_restrict σ1 (lvars_fv (denot_relevant_lvars τ e)) =
+  storeA_restrict σ2 (lvars_fv (denot_relevant_lvars τ e)) ->
+  store_closed σ1 ->
+  store_closed σ2 ->
   res_models m (denot_ty_lvar_gas gas
     (lty_env_msubst_store σ1 Σ)
     (context_ty_msubst_store σ1 τ)
@@ -124,7 +126,50 @@ Lemma denot_ty_lvar_gas_msubst_store_agree_relevant
     (lty_env_msubst_store σ2 Σ)
     (context_ty_msubst_store σ2 τ)
     (lstore_instantiate_tm (lstore_lift_free σ2) e)).
-Admitted.
+Proof.
+  intros Hagree Hclosed1 Hclosed2 Hmodels.
+  set (R := denot_relevant_lvars τ e).
+  assert (Hτ :
+    context_ty_msubst_store σ1 τ =
+    context_ty_msubst_store σ2 τ).
+  {
+    fold R in Hagree.
+    rewrite (context_ty_msubst_store_restrict_subset σ1 τ (lvars_fv R)).
+    2:{
+      unfold R, denot_relevant_lvars.
+      rewrite lvars_fv_union, context_ty_lvars_fv. set_solver.
+    }
+    rewrite (context_ty_msubst_store_restrict_subset σ2 τ (lvars_fv R)).
+    2:{
+      unfold R, denot_relevant_lvars.
+      rewrite lvars_fv_union, context_ty_lvars_fv. set_solver.
+    }
+    change (store_restrict σ1 (lvars_fv R) =
+      store_restrict σ2 (lvars_fv R)) in Hagree.
+    rewrite Hagree. reflexivity.
+  }
+  assert (He :
+    lstore_instantiate_tm (lstore_lift_free σ1) e =
+    lstore_instantiate_tm (lstore_lift_free σ2) e).
+  {
+    apply lstore_instantiate_tm_lift_free_agree_subset
+      with (X := lvars_fv R).
+    - unfold R, denot_relevant_lvars.
+      rewrite lvars_fv_union, tm_lvars_fv. set_solver.
+    - exact Hagree.
+  }
+  rewrite <- Hτ.
+  rewrite <- He.
+  eapply res_models_denot_ty_lvar_gas_env_agree_on.
+  - reflexivity.
+  - apply lty_env_restrict_lvars_msubst_store_agree
+      with (R := R).
+    + unfold R.
+      rewrite (denot_relevant_lvars_msubst_store σ1 τ e Hclosed1).
+      set_solver.
+    + exact Hagree.
+  - exact Hmodels.
+Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_over_body
     σ Σ b φ e (m : WfWorldT) :
@@ -263,6 +308,10 @@ Proof.
         with (σ1 := σr).
       - unfold σr, denot_msubst_relevant_store.
         rewrite storeA_restrict_twice_same. reflexivity.
+      - unfold σr, denot_msubst_relevant_store.
+        apply store_closed_restrict.
+        eapply atom_store_has_ltype_closed; exact Hty0.
+      - eapply atom_store_has_ltype_closed; exact Hty0.
       - eapply IH.
         + exact Hscope0.
         + unfold σr, denot_msubst_relevant_store.
@@ -314,6 +363,10 @@ Proof.
              with (σ1 := σ1).
            ++ unfold σ1, denot_msubst_relevant_store.
               rewrite storeA_restrict_twice_same. reflexivity.
+           ++ unfold σ1, denot_msubst_relevant_store.
+              apply store_closed_restrict.
+              eapply atom_store_has_ltype_closed; exact Hσty.
+           ++ eapply atom_store_has_ltype_closed; exact Hσty.
            ++ eapply IH.
               ** intros v Hv. apply Hscope.
                  unfold denot_relevant_lvars, context_ty_lvars in *.
@@ -348,6 +401,10 @@ Proof.
              with (σ1 := σ2).
            ++ unfold σ2, denot_msubst_relevant_store.
               rewrite storeA_restrict_twice_same. reflexivity.
+           ++ unfold σ2, denot_msubst_relevant_store.
+              apply store_closed_restrict.
+              eapply atom_store_has_ltype_closed; exact Hσty.
+           ++ eapply atom_store_has_ltype_closed; exact Hσty.
            ++ eapply IH.
               ** intros v Hv. apply Hscope.
                  unfold denot_relevant_lvars, context_ty_lvars in *.

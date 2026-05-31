@@ -251,6 +251,18 @@ Proof.
   apply formula_msubst_store_restrict_fv_subset. reflexivity.
 Qed.
 
+Lemma formula_msubst_store_agree_fv
+    (σ1 σ2 : Store (V := V)) (φ : Formula) :
+  store_restrict σ1 (formula_fv φ) =
+  store_restrict σ2 (formula_fv φ) ->
+  formula_msubst_store σ1 φ = formula_msubst_store σ2 φ.
+Proof.
+  intros Hagree.
+  rewrite (formula_msubst_store_restrict_fv σ1 φ).
+  rewrite (formula_msubst_store_restrict_fv σ2 φ).
+  rewrite Hagree. reflexivity.
+Qed.
+
 Lemma formula_msubst_store_union
     (σ1 σ2 : Store (V := V)) (φ : Formula) :
   storeA_compat σ1 σ2 ->

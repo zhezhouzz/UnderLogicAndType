@@ -339,6 +339,46 @@ Proof.
   apply context_ty_lvars_fv_at.
 Qed.
 
+Lemma context_ty_msubst_store_restrict_subset σ τ X :
+  fv_cty τ ⊆ X ->
+  context_ty_msubst_store σ τ =
+  context_ty_msubst_store (store_restrict σ X) τ.
+Proof.
+  induction τ in X |- *; intros Hsub;
+    cbn [context_ty_msubst_store].
+  - f_equal. apply qual_msubst_store_restrict_subset.
+    intros a Ha. apply Hsub.
+    unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth. exact Ha.
+  - f_equal. apply qual_msubst_store_restrict_subset.
+    intros a Ha. apply Hsub.
+    unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth. exact Ha.
+  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
+      rewrite lvars_fv_union; set_solver.
+  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
+      rewrite lvars_fv_union; set_solver.
+  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
+      rewrite lvars_fv_union; set_solver.
+  - f_equal.
+    + apply IHτ1. intros a Ha. apply Hsub.
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+    + apply IHτ2. intros a Ha. apply Hsub.
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+  - f_equal.
+    + apply IHτ1. intros a Ha. apply Hsub.
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+    + apply IHτ2. intros a Ha. apply Hsub.
+      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+Qed.
+
 Lemma context_ty_lvars_over_fv b q :
   lvars_fv (context_ty_lvars (CTOver b q)) = qual_dom q.
 Proof.

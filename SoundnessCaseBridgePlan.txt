@@ -1290,9 +1290,59 @@ Implementation order
         - The main induction proof now has no anonymous admits and is closed
           with `Qed`, depending only on the named obligations above.
         - The first lower syntax lemma needed by the forall branches is now
-          proved at Logic level: `formula_open_msubst_store_fresh`.  It depends
-          only on the remaining qualifier-level obligation
-          `lqual_open_msubst_store_fresh`.
+          proved at Logic level: `formula_open_msubst_store_fresh`.
+          `lqual_open_msubst_store_fresh` is also proved.  Its only remaining
+          primitive dependency is the expected dependent-world path equation
+          `lworld_on_open_mlsubst_back_fresh`, which says that open-back and
+          mlsubst-back commute when the opened atom is fresh for the frozen
+          atom store.
+
+        Revised route after review:
+
+        - Do not prove `denot_ty_lvar_gas_msubst_store_agree_relevant` as a
+          special denotation lemma first.  Generalize the idea to arbitrary
+          logic formulas:
+
+            `formula_msubst_store_agree_fv`
+
+          This says that `formula_msubst_store σ φ` only depends on `σ`
+          restricted to `formula_fv φ`.  Then instantiate it with the existing
+          bound
+          `formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open`, i.e. the
+          denotation formula only sees `e` and `τ`.
+
+        - Treat double msubst as Logic syntax infrastructure, not as a
+          Denotation-specific workaround.  Reuse/prove the union normal form:
+
+            `formula_msubst_store_union`
+
+          plus fv-restrict variants when the two stores overlap only outside
+          the relevant formula support.
+
+        - Proof order from here:
+          1. Keep/prove `formula_msubst_store_agree_fv`.
+          2. Add the needed model-level corollary outside `FormulaSyntax`
+             (where `res_models` is available).
+          3. Prove or keep isolated the lower path helper
+             `lworld_on_open_mlsubst_back_fresh`; the public qualifier and
+             formula-level open/msubst lemmas should remain the interface used
+             above it.
+          4. Use these Logic-level tools to prove
+             `denot_ty_lvar_gas_msubst_store_agree_relevant`.
+             The statement must carry `store_closed σ1` and `store_closed σ2`.
+             Without closed stores, a value stored at a relevant atom can
+             introduce fresh lvars into the instantiated term; then the
+             transformed denotation may observe lty-env entries outside the
+             original `denot_relevant_lvars τ e`.
+             Current status: proved.  The proof uses the lower support lemmas
+             `context_ty_msubst_store_restrict_subset`,
+             `lstore_instantiate_tm_lift_free_agree_subset`, and
+             `lty_env_restrict_lvars_msubst_store_agree`, then finishes with
+             the existing denotation env-agree transport.
+          5. Use `formula_open_msubst_store_fresh` and the double-subst normal
+             form to prove the Over/Under body transports.
+          6. Use the same transport plus the induction hypothesis to prove
+             Arrow/Wand body transports.
 
    Soundness layer:
 

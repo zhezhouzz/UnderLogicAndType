@@ -110,6 +110,22 @@ Proof.
   unfold swap. repeat destruct decide; subst; better_set_solver.
 Qed.
 
+Lemma set_swap_difference_fresh {A : Type} `{Countable A}
+    (x y : A) (D R : gset A) :
+  x ∉ R ->
+  y ∉ R ->
+  set_swap x y (D ∖ R) = set_swap x y D ∖ R.
+Proof.
+  intros Hx Hy.
+  apply set_eq. intros z.
+  rewrite elem_of_difference, !set_swap_elem, elem_of_difference.
+  assert (HR : z ∈ R <-> swap x y z ∈ R).
+  {
+    unfold swap. repeat destruct decide; subst; set_solver.
+  }
+  set_solver.
+Qed.
+
 Lemma set_swap_singleton {A : Type} `{Countable A} (x y z : A) :
   set_swap x y ({[z]} : gset A) = {[swap x y z]}.
 Proof.

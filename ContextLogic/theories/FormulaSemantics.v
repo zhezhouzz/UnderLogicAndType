@@ -794,6 +794,18 @@ Proof.
   apply res_models_minimal_on. set_solver.
 Qed.
 
+Lemma res_models_formula_msubst_store_agree_fv
+    (σ1 σ2 : Store (V := V)) (φ : FormulaT) (m : WfWorldT) :
+  store_restrict σ1 (formula_fv φ) =
+  store_restrict σ2 (formula_fv φ) ->
+  res_models m (formula_msubst_store σ1 φ) ->
+  res_models m (formula_msubst_store σ2 φ).
+Proof.
+  intros Hagree Hmodels.
+  rewrite <- (formula_msubst_store_agree_fv σ1 σ2 φ Hagree).
+  exact Hmodels.
+Qed.
+
 Lemma res_models_impl_refl (m : WfWorldT) (φ : FormulaT) :
   formula_scoped_in_world m φ →
   res_models m (FImpl φ φ).

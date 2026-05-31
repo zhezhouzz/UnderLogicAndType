@@ -150,6 +150,21 @@ Proof.
     + left. split; assumption.
 Defined.
 
+Lemma lstore_on_mlsubst_back_restrict_eq
+    D (ρ1 ρ2 : LStore)
+    (s1 : LStoreOn (D ∖ dom (ρ1 : gmap logic_var V)))
+    (s2 : LStoreOn (D ∖ dom (ρ2 : gmap logic_var V))) :
+  storeA_restrict ρ1 D = storeA_restrict ρ2 D ->
+  lso_store s1 = lso_store s2 ->
+  lstore_on_mlsubst_back D ρ1 s1 =
+  lstore_on_mlsubst_back D ρ2 s2.
+Proof.
+  intros Hρ Hs.
+  apply lstore_on_ext.
+  unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
+  rewrite Hs, Hρ. reflexivity.
+Qed.
+
 Definition lstore_on_rekey
     (f : logic_var → logic_var) (Hf : Inj (=) (=) f)
     {D : lvset} (s : LStoreOn D) : LStoreOn (set_map f D).

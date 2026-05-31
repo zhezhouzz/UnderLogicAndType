@@ -319,6 +319,22 @@ Proof.
       * rewrite HρD. reflexivity.
 Qed.
 
+Lemma lworld_on_open_mlsubst_back_fresh
+    k y D (σ : Store (V := V))
+    (w1 : LWorldOnT (lvars_open k y
+      (D ∖ dom (lstore_lift_free σ : LStoreT))))
+    (w2 : LWorldOnT (lvars_open k y D
+      ∖ dom (lstore_lift_free σ : LStoreT))) :
+  y ∉ dom (σ : gmap atom V) ->
+  @lw V _ w1 = @lw V _ w2 ->
+  lworld_on_mlsubst_back D (lstore_lift_free σ)
+    (lworld_on_open_back k y
+      (D ∖ dom (lstore_lift_free σ : LStoreT)) w1) =
+  lworld_on_open_back k y D
+    (lworld_on_mlsubst_back (lvars_open k y D)
+      (lstore_lift_free σ) w2).
+Admitted.
+
 Lemma lqual_msubst_store_restrict_fv
     (σ : Store (V := V)) (q : logic_qualifier) :
   lqual_msubst_store σ q =
@@ -517,7 +533,43 @@ Lemma lqual_open_msubst_store_fresh k y
   y ∉ dom (σ : gmap atom V) ->
   lqual_open k y (lqual_msubst_store σ q) =
   lqual_msubst_store σ (lqual_open k y q).
-Admitted.
+Proof.
+  intros Hy.
+  destruct q as [D P].
+  cbn [lqual_open lqual_msubst_store lqual_mlsubst].
+  eapply logic_qualifier_ext.
+  - change (set_swap (LVBound k) (LVFree y)
+        (D ∖ dom (lstore_lift_free σ : LStoreT)) =
+      set_swap (LVBound k) (LVFree y) D
+        ∖ dom (lstore_lift_free σ : LStoreT)).
+    assert (Hbound : LVBound k ∉ dom (lstore_lift_free σ : LStoreT)).
+    {
+      rewrite dom_lstore_lift_free.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hbad _]].
+      discriminate.
+    }
+    assert (Hfree : LVFree y ∉ dom (lstore_lift_free σ : LStoreT)).
+    {
+      rewrite dom_lstore_lift_free.
+      intros Hbad.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Hyx Ha]].
+      inversion Hyx; subst. exact (Hy Ha).
+    }
+    apply set_swap_difference_fresh; assumption.
+  - intros w1 w2 Hlw. cbn [lqual_prop].
+    enough
+      (lworld_on_mlsubst_back D (lstore_lift_free σ)
+        (lworld_on_open_back k y
+          (D ∖ dom (lstore_lift_free σ : LStoreT)) w1) =
+       lworld_on_open_back k y D
+        (lworld_on_mlsubst_back (lvars_open k y D)
+          (lstore_lift_free σ) w2)) as ->.
+    { reflexivity. }
+    eapply lworld_on_open_mlsubst_back_fresh; eauto.
+Qed.
 
 Lemma lqual_open_commute_fresh i j x y q :
   i <> j ->
