@@ -127,6 +127,47 @@ Proof.
     all: unfold ctx_base_vars; rewrite !lvars_fv_of_atoms; set_solver.
 Qed.
 
+Lemma denot_ctx_under_fiber_from_projection
+    (Σ : gmap atom ty) Γ (m mfib : WfWorldT) (σΣ : StoreT) :
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ctx_under Σ Γ ->
+  mfib ⊨ denot_ctx_under Σ Γ.
+Proof.
+  intros Hproj Hctx.
+  destruct Γ; cbn [denot_ctx_under] in Hctx |- *.
+  all: (
+    pose proof (res_models_scoped _ _ Hctx) as Hscope;
+    pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hctx)
+      as [Hlc Hfib];
+    assert (HprojD :
+        res_fiber_from_projection m (lvars_fv (ctx_base_vars Σ)) σΣ mfib)
+      by (rewrite ctx_base_vars_fv; exact Hproj);
+    pose proof (Hfib σΣ mfib HprojD) as Hbody;
+    assert (Hdomσ : dom σΣ = lvars_fv (ctx_base_vars Σ)) by (
+      rewrite ctx_base_vars_fv;
+      destruct Hproj as [HσΣ _];
+      pose proof (wfworld_store_dom (res_restrict m (dom Σ)) σΣ HσΣ)
+        as Hdom;
+      simpl in Hdom;
+      change (dom (σΣ : StoreT) = world_dom (m : WorldT) ∩ dom Σ) in Hdom;
+      apply formula_scoped_fibvars_l in Hscope;
+      rewrite ctx_base_vars_fv in Hscope;
+      rewrite Hdom; set_solver);
+    assert (Hsingleton :
+        (res_restrict mfib (lvars_fv (ctx_base_vars Σ)) : WorldT) =
+        singleton_world σΣ) by (
+      rewrite ctx_base_vars_fv;
+      eapply res_restrict_fiber_from_projection_eq_singleton; eauto;
+      rewrite <- ctx_base_vars_fv; exact Hdomσ);
+    eapply res_models_FFibVars_singleton_intro;
+    [ eapply formula_scoped_FFibVars_from_singleton_msubst; eauto;
+      eapply res_models_scoped; exact Hbody
+    | exact Hlc
+    | exact Hdomσ
+    | exact Hsingleton
+    | exact Hbody ]).
+Qed.
+
 Lemma denot_ctx_under_relevant_basic_world
     (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
   m ⊨ denot_ctx_under Σ Γ ->
@@ -461,6 +502,72 @@ Proof.
       as [m1 [m2 [Hdef [Hle [HΓ1 HΓ2]]]]];
     exists m1, m2, Hdef;
     split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
+Qed.
+
+Lemma denot_ctx_under_star_elim_in_fiber
+    (Σ : gmap atom ty) Γ1 Γ2 (m mfib : WfWorldT) (σΣ : StoreT) :
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ mfib /\
+    m1 ⊨ denot_ctx_under Σ Γ1 /\
+    m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  intros Hproj Hctx.
+  pose proof (denot_ctx_under_fiber_from_projection
+    Σ (CtxStar Γ1 Γ2) m mfib σΣ Hproj Hctx) as Hfib_ctx.
+  assert (Hdomσ : dom σΣ = dom Σ).
+  {
+    destruct Hproj as [HσΣ _].
+    pose proof (wfworld_store_dom (res_restrict m (dom Σ)) σΣ HσΣ)
+      as Hdom.
+    simpl in Hdom.
+    change (dom (σΣ : StoreT) = world_dom (m : WorldT) ∩ dom Σ) in Hdom.
+    pose proof (res_models_scoped _ _ Hctx) as Hscope.
+    cbn [denot_ctx_under] in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope.
+    rewrite Hdom. set_solver.
+  }
+  assert (Hsingleton :
+      (res_restrict mfib (dom Σ) : WorldT) = singleton_world σΣ).
+  {
+    eapply res_restrict_fiber_from_projection_eq_singleton; eauto.
+  }
+  eapply denot_ctx_under_star_elim_singleton; eauto.
+Qed.
+
+Lemma denot_ctx_under_sum_elim_in_fiber
+    (Σ : gmap atom ty) Γ1 Γ2 (m mfib : WfWorldT) (σΣ : StoreT) :
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ mfib /\
+    m1 ⊨ denot_ctx_under Σ Γ1 /\
+    m2 ⊨ denot_ctx_under Σ Γ2.
+Proof.
+  intros Hproj Hctx.
+  pose proof (denot_ctx_under_fiber_from_projection
+    Σ (CtxSum Γ1 Γ2) m mfib σΣ Hproj Hctx) as Hfib_ctx.
+  assert (Hdomσ : dom σΣ = dom Σ).
+  {
+    destruct Hproj as [HσΣ _].
+    pose proof (wfworld_store_dom (res_restrict m (dom Σ)) σΣ HσΣ)
+      as Hdom.
+    simpl in Hdom.
+    change (dom (σΣ : StoreT) = world_dom (m : WorldT) ∩ dom Σ) in Hdom.
+    pose proof (res_models_scoped _ _ Hctx) as Hscope.
+    cbn [denot_ctx_under] in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope.
+    rewrite Hdom. set_solver.
+  }
+  assert (Hsingleton :
+      (res_restrict mfib (dom Σ) : WorldT) = singleton_world σΣ).
+  {
+    eapply res_restrict_fiber_from_projection_eq_singleton; eauto.
+  }
+  eapply denot_ctx_under_sum_elim_singleton; eauto.
 Qed.
 
 Lemma denot_ty_lvar_gas_star_union_to_ctx
