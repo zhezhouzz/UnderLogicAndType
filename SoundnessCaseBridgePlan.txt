@@ -115,7 +115,9 @@ Implementation order
           (match Γ with ... end))`.
 
    This keeps the denotation entirely inside Context Logic while making the
-   intended invariant explicit: a world satisfying `denot_ctx_under Σ Γ` has a
+   intended invariant explicit: every `dom Σ` fiber of a world satisfying
+   `denot_ctx_under Σ Γ` must satisfy the context body after substituting that
+   fiber projection.  It does *not* imply that the ambient world itself has a
    singleton projection on `dom Σ`.  The recursive call for
    `CtxComma Γ1 Γ2` is simply
 
@@ -405,9 +407,34 @@ Implementation order
             m2 ⊨ denot_ctx_under Σ Γ2`.
 
      The analogous `denot_ctx_under_sum_elim_singleton` handles `CtxSum`.
-     Upper proofs obtain the singleton premise by working inside the outer
-     `FFibVars (ctx_base_vars Σ)` fiber of `denot_ctx_under`; it is not a
+     Upper proofs obtain the singleton premise only after choosing a concrete
+     outer `FFibVars (ctx_base_vars Σ)` fiber of `denot_ctx_under`; it is not a
      consequence of an arbitrary ambient `m ⊨ denot_ctx_under Σ Γ`.
+
+     Current proved Denotation helpers:
+
+       `denot_ctx_under_fiber_from_projection`:
+         `res_fiber_from_projection m (dom Σ) σΣ mfib ->
+          m ⊨ denot_ctx_under Σ Γ ->
+          mfib ⊨ denot_ctx_under Σ Γ`.
+
+       `denot_ctx_under_star_elim_in_fiber` / `...sum...`:
+         split a chosen `dom Σ` fiber `mfib`, not the original ambient world.
+
+     Do not try to prove either of the following false routes:
+
+       `res_fiber_from_projection m X σ mfib -> mfib ⊑ m`
+       `res_restrict m X = singleton_world σ -> m ⊨ φ ->
+        m ⊨ formula_msubst_store σ φ`.
+
+     The first is false because `⊑` is raw restriction equality; since a fiber
+     has the same domain as its source, it would imply `mfib = m`.  The second
+     is false because substituting the projection store changes the formula's
+     interpretation.  Star/sum/appd/letd soundness must therefore be proved by
+     a fiberwise bridge: choose each base fiber from `denot_ctx_under`, prove
+     the corresponding denotation inside that fiber, and rebuild the required
+     top-level denotation using a Denotation-specific fiberwise introduction
+     lemma, not by transporting arbitrary formulas through `mlsubst`.
    - Models-level `FFibVars` connective helpers, especially for `FAnd`,
      `FStar`, and `FPlus`.  Avoid formula equality when `formula_msubst_store`
      would make equality too strong; prefer `m ⊨ ... -> ...` / iff lemmas.
