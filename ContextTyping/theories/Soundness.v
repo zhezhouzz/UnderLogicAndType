@@ -663,30 +663,238 @@ Proof.
   - exact Hef.
 Qed.
 
+(** ** Fiberwise case bridges
+
+    The new Fundamental statement is fiberwise over [ctx_base_vars Σ].  These
+    are the proof-facing case boundaries for that route.  They intentionally do
+    not call the old ambient direct lemmas above. *)
+
+Lemma fundamental_var_case_fiber Σ x τ :
+  context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ ->
+  denot_ctx_under Σ (CtxBind x τ) ⊫
+    denot_ty_in_ctx_under_fiber Σ (CtxBind x τ) τ (tret (vfvar x)).
+Proof.
+Admitted.
+
+Lemma fundamental_const_case_fiber Σ c :
+  context_typing_wf Σ CtxEmpty (tret (vconst c)) (const_precise_ty c) ->
+  denot_ctx_under Σ CtxEmpty ⊫
+    denot_ty_in_ctx_under_fiber Σ CtxEmpty (const_precise_ty c) (tret (vconst c)).
+Proof.
+Admitted.
+
+Lemma fundamental_sub_case_fiber
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
+    (e : tm) (τ1 τ2 : context_ty) :
+  context_typing_wf Σ Γ e τ2 ->
+  sub_type_under Σ Γ τ1 τ2 ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ1 e) ->
+  denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ2 e.
+Proof.
+Admitted.
+
+Lemma fundamental_ctx_sub_case_fiber
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
+    (e : tm) (τ : context_ty) :
+  ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 ->
+  (denot_ctx_under Σ Γ2 ⊫ denot_ty_in_ctx_under_fiber Σ Γ2 τ e) ->
+  denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under_fiber Σ Γ1 τ e.
+Proof.
+Admitted.
+
+Lemma fundamental_let_case_fiber
+    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
+    (τ1 τ2 : context_ty) e1 e2 (L : aset) :
+  context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ1 e1) ->
+  (forall x, x ∉ L ->
+    denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxComma Γ (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ τ2 (tlete e1 e2).
+Proof.
+Admitted.
+
+Lemma fundamental_letd_case_fiber
+    (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
+  context_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 ->
+  (denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under_fiber Σ Γ1 τ1 e1) ->
+  (forall x, x ∉ L ->
+    denot_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
+    denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
+Proof.
+Admitted.
+
+Lemma fundamental_lam_case_fiber
+    (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
+  context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
+  (forall y, y ∉ L ->
+    denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxComma Γ (CtxBind y τx))
+        ({0 ~> y} τ) (e ^^ y)) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
+      (tret (vlam (erase_ty τx) e)).
+Proof.
+Admitted.
+
+Lemma fundamental_lamd_case_fiber
+    (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
+  context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
+  (forall y, y ∉ L ->
+    denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ (CtxBind y τx))
+        ({0 ~> y} τ) (e ^^ y)) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
+      (tret (vlam (erase_ty τx) e)).
+Proof.
+Admitted.
+
+Lemma fundamental_app_case_fiber
+    (Φ : primop_ctx) Σ Γ τx τ v1 x :
+  context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ) (tret v1)) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ τx (tret (vfvar x))) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
+Proof.
+Admitted.
+
+Lemma fundamental_appd_case_fiber
+    (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
+  context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
+  (denot_ctx_under Σ Γ1 ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ1 (CTWand τx τ) (tret v1)) ->
+  (denot_ctx_under Σ Γ2 ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ2 τx (tret (vfvar x))) ->
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
+    denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
+      (tapp v1 (vfvar x)).
+Proof.
+Admitted.
+
+Lemma fundamental_fix_case_fiber
+    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
+  context_typing_wf Σ Γ
+    (tret (vfix (TBase b →ₜ t) vf))
+    (CTArrow τx τ) ->
+  (forall y, y ∉ L ->
+    denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxComma Γ (CtxBind y τx))
+        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
+        (tret ({0 ~> vfvar y} vf))) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
+      (tret (vfix (TBase b →ₜ t) vf)).
+Proof.
+Admitted.
+
+Lemma fundamental_fixd_case_fiber
+    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
+  context_typing_wf Σ Γ
+    (tret (vfix (TBase b →ₜ t) vf))
+    (CTWand τx τ) ->
+  (forall y, y ∉ L ->
+    denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
+      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ (CtxBind y τx))
+        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
+        (tret ({0 ~> vfvar y} vf))) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
+      (tret (vfix (TBase b →ₜ t) vf)).
+Proof.
+Admitted.
+
+Lemma fundamental_appop_case_fiber
+    (Φ : primop_ctx) Σ Γ op x :
+  wf_primop_sig op (Φ op) ->
+  context_typing_wf Σ Γ
+    (tprim op (vfvar x))
+    ({0 ~> x} (primop_result_ty (Φ op))) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (primop_arg_ty (Φ op)) (tret (vfvar x))) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ ({0 ~> x} (primop_result_ty (Φ op)))
+      (tprim op (vfvar x)).
+Proof.
+Admitted.
+
+Lemma fundamental_match_both_case_fiber
+    (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
+  context_typing_wf Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf) ->
+  (denot_ctx_under Σ Γt ⊫
+    denot_ty_in_ctx_under_fiber Σ Γt (bool_precise_ty true) (tret v)) ->
+  (denot_ctx_under Σ Γf ⊫
+    denot_ty_in_ctx_under_fiber Σ Γf (bool_precise_ty false) (tret v)) ->
+  (denot_ctx_under Σ Γt ⊫ denot_ty_in_ctx_under_fiber Σ Γt τt et) ->
+  (denot_ctx_under Σ Γf ⊫ denot_ty_in_ctx_under_fiber Σ Γf τf ef) ->
+  denot_ctx_under Σ (CtxSum Γt Γf) ⊫
+    denot_ty_in_ctx_under_fiber Σ (CtxSum Γt Γf) (CTSum τt τf)
+      (tmatch v et ef).
+Proof.
+Admitted.
+
+Lemma fundamental_match_true_case_fiber
+    (Φ : primop_ctx) Σ Γ v τ et ef :
+  context_typing_wf Σ Γ (tmatch v et ef) τ ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (bool_precise_ty true) (tret v)) ->
+  branch_unreachable Σ Γ v false ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ et) ->
+  erase_ctx_under Σ Γ ⊢ₑ ef ⋮ erase_ty τ ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
+Proof.
+Admitted.
+
+Lemma fundamental_match_false_case_fiber
+    (Φ : primop_ctx) Σ Γ v τ et ef :
+  context_typing_wf Σ Γ (tmatch v et ef) τ ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ (bool_precise_ty false) (tret v)) ->
+  branch_unreachable Σ Γ v true ->
+  erase_ctx_under Σ Γ ⊢ₑ et ⋮ erase_ty τ ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ ef) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
+Proof.
+Admitted.
+
 (** ** Fundamental theorem *)
 
 Theorem Fundamental
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
   wf_primop_ctx Φ ->
   has_context_type Φ Σ Γ e τ ->
-  denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e.
+  denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ e.
 Proof.
   intros HΦ Hty.
-  induction Hty; eauto using fundamental_var_case, fundamental_const_case.
-  - eapply fundamental_sub_case; eauto.
-  - eapply fundamental_ctx_sub_case; eauto.
-  - eapply fundamental_let_case; eauto using typing_wf_under.
-  - eapply fundamental_letd_case; eauto.
-  - eapply fundamental_lam_case; eauto.
-  - eapply fundamental_lamd_case; eauto.
-  - eapply fundamental_app_case; eauto.
-  - eapply fundamental_appd_case; eauto.
-  - eapply fundamental_fix_case; eauto.
-  - eapply fundamental_fixd_case; eauto.
-  - eapply fundamental_appop_case; eauto.
-  - eapply fundamental_match_both_case; eauto.
-  - eapply fundamental_match_true_case; eauto.
-  - eapply fundamental_match_false_case; eauto.
+  induction Hty.
+  - eapply fundamental_var_case_fiber; eauto.
+  - eapply fundamental_const_case_fiber; eauto.
+  - eapply fundamental_sub_case_fiber; eauto.
+  - eapply fundamental_ctx_sub_case_fiber; eauto.
+  - eapply fundamental_let_case_fiber; eauto.
+  - eapply fundamental_letd_case_fiber; eauto.
+  - eapply fundamental_lam_case_fiber; eauto.
+  - eapply fundamental_lamd_case_fiber; eauto.
+  - eapply fundamental_app_case_fiber; eauto.
+  - eapply fundamental_appd_case_fiber; eauto.
+  - eapply fundamental_fix_case_fiber; eauto.
+  - eapply fundamental_fixd_case_fiber; eauto.
+  - eapply fundamental_appop_case_fiber; eauto.
+  - eapply fundamental_match_both_case_fiber; eauto.
+  - eapply fundamental_match_true_case_fiber; eauto.
+  - eapply fundamental_match_false_case_fiber; eauto.
 Qed.
 
 (** ** Corollary targets *)

@@ -413,6 +413,14 @@ Implementation order
 
      Current proved Denotation helpers:
 
+       `denot_ctx_under_body` and `denot_ctx_under_unfold_body`:
+         name the body under the outer `FFibVars (ctx_base_vars Σ)` wrapper.
+
+       `denot_ctx_under_projected_body`:
+         `res_fiber_from_projection m (dom Σ) σΣ mfib ->
+          m ⊨ denot_ctx_under Σ Γ ->
+          mfib ⊨ formula_msubst_store σΣ (denot_ctx_under_body Σ Γ)`.
+
        `denot_ctx_under_fiber_from_projection`:
          `res_fiber_from_projection m (dom Σ) σΣ mfib ->
           m ⊨ denot_ctx_under Σ Γ ->
@@ -459,6 +467,31 @@ Implementation order
    During migration, delete the old compatibility alias `denot_ctx_in_env`
    entirely if it still exists.  The live context denotation should be just
    `denot_ctx_under`.
+
+0b. Change the Fundamental theorem to the fiberwise statement.
+
+   The old direct ambient conclusion
+
+     `denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e`
+
+   is not aligned with the new context denotation.  `denot_ctx_under Σ Γ`
+   only gives the context body after choosing a `dom Σ` fiber and applying the
+   corresponding `formula_msubst_store`.  Therefore the live theorem should be:
+
+     `denot_ctx_under Σ Γ ⊫
+        FFibVars (ctx_base_vars Σ) (denot_ty_in_ctx_under Σ Γ τ e)`.
+
+   Equivalently, use the named wrapper:
+
+     `denot_ty_in_ctx_under_fiber Σ Γ τ e`.
+
+   The induction proof should unfold the goal's outer `FFibVars`, choose the
+   same base projection as the context premise, and prove each case inside that
+   chosen fiber.  Old direct case lemmas such as `fundamental_letd_case`,
+   `fundamental_appd_case`, and `fundamental_match_both_case` are legacy
+   reference points only; the new case lemmas should have fiberwise conclusions.
+   At top-level corollaries with `Σ = ∅`, discharge the wrapper using
+   `res_models_FFibVars_empty_iff`.
 
 1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
    the judgment support `X` and then satisfies the target context.  Prove the

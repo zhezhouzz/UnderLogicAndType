@@ -36,6 +36,28 @@ Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
           FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
       end)).
 
+Definition denot_ctx_under_body (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
+  FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+    (match Γ with
+    | CtxEmpty =>
+        FTrue
+    | CtxBind x τ =>
+        denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+    | CtxComma Γ1 Γ2 =>
+        FAnd
+          (denot_ctx_under Σ Γ1)
+          (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
+    | CtxStar Γ1 Γ2 =>
+        FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+    | CtxSum Γ1 Γ2 =>
+        FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+    end).
+
+Lemma denot_ctx_under_unfold_body Σ Γ :
+  denot_ctx_under Σ Γ =
+  FFibVars (ctx_base_vars Σ) (denot_ctx_under_body Σ Γ).
+Proof. destruct Γ; reflexivity. Qed.
+
 Definition denot_ctx (Γ : ctx) : FormulaT :=
   denot_ctx_under ∅ Γ.
 
@@ -49,6 +71,10 @@ Definition denot_ty_in_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty (erase_ctx_under Σ Γ) τ e.
+
+Definition denot_ty_in_ctx_under_fiber
+    (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
+  FFibVars (ctx_base_vars Σ) (denot_ty_in_ctx_under Σ Γ τ e).
 
 Definition denot_ty_total_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm)
@@ -125,6 +151,21 @@ Proof.
     all:
       eapply res_models_FFibVars_nested_elim; [| exact Hright].
     all: unfold ctx_base_vars; rewrite !lvars_fv_of_atoms; set_solver.
+Qed.
+
+Lemma denot_ctx_under_projected_body
+    (Σ : gmap atom ty) Γ (m mfib : WfWorldT) (σΣ : StoreT) :
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ctx_under Σ Γ ->
+  mfib ⊨ formula_msubst_store σΣ (denot_ctx_under_body Σ Γ).
+Proof.
+  intros Hproj Hctx.
+  rewrite denot_ctx_under_unfold_body in Hctx.
+  pose proof (res_models_scoped _ _ Hctx) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hctx)
+    as [_ Hfib].
+  apply Hfib.
+  rewrite ctx_base_vars_fv. exact Hproj.
 Qed.
 
 Lemma denot_ctx_under_fiber_from_projection
