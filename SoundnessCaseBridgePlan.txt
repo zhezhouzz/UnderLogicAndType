@@ -416,11 +416,9 @@ Implementation order
        `res_models_FFibVars_empty_iff`,
        `res_models_FFibVars_and_l`,
        `res_models_FFibVars_and_r`.
-     Current sum/product distributivity obligations:
-       `res_models_FFibVars_star_distrib_l`,
-       `res_models_FFibVars_plus_distrib_l`.
-     The shared star/plus eliminators are no longer obligations; they are
-     proved wrappers over these distributivity lemmas.
+     The old unconditional star/plus distributivity lemmas have been deleted.
+     The only supported route is through the singleton-projection eliminators
+     above; upper proofs must expose the outer context fiber before splitting.
 
    The context basic-world projection has been moved to the BasicDenotation
    layer as:
@@ -451,8 +449,8 @@ Implementation order
 
    - `denot_ctx_under_comma_bind_from_arg_denotation`
    - `denot_ctx_under_star_bind_from_arg_denotation`
-   - `denot_ctx_under_star_elim`
-   - `denot_ctx_under_sum_elim`
+   - `denot_ctx_under_star_elim_singleton`
+   - `denot_ctx_under_sum_elim_singleton`
    - `denot_ty_in_ctx_under_comma_bind_to_lvar_insert`
    - `denot_ty_in_ctx_under_star_bind_to_lvar_insert`
    - `denot_ty_lvar_gas_star_union_to_ctx`

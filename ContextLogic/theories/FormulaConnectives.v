@@ -864,52 +864,6 @@ Proof.
     + exact Hm2ψ.
 Qed.
 
-Lemma res_models_FFibVars_star_distrib_l
-    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
-  m ⊨ FFibVars D (FStar φ ψ) ->
-  m ⊨ FStar (FFibVars D φ) (FFibVars D ψ).
-Proof.
-Admitted.
-
-Lemma res_models_FFibVars_plus_distrib_l
-    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
-  m ⊨ FFibVars D (FPlus φ ψ) ->
-  m ⊨ FPlus (FFibVars D φ) (FFibVars D ψ).
-Proof.
-Admitted.
-
-Lemma res_models_FFibVars_star_elim_shared
-    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
-  m ⊨ FFibVars D (FStar (FFibVars D φ) (FFibVars D ψ)) ->
-  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m /\
-    m1 ⊨ FFibVars D φ /\
-    m2 ⊨ FFibVars D ψ.
-Proof.
-  intros Hmodel.
-  apply res_models_FFibVars_star_distrib_l in Hmodel.
-  apply res_models_star_iff in Hmodel as
-    [m1 [m2 [Hc [Hle [Hφ Hψ]]]]].
-  exists m1, m2, Hc. split; [exact Hle |].
-  split; eapply res_models_FFibVars_idemp_elim; eauto.
-Qed.
-
-Lemma res_models_FFibVars_plus_elim_shared
-    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
-  m ⊨ FFibVars D (FPlus (FFibVars D φ) (FFibVars D ψ)) ->
-  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef ⊑ m /\
-    m1 ⊨ FFibVars D φ /\
-    m2 ⊨ FFibVars D ψ.
-Proof.
-  intros Hmodel.
-  apply res_models_FFibVars_plus_distrib_l in Hmodel.
-  apply res_models_plus_iff in Hmodel as
-    [m1 [m2 [Hdef [Hle [Hφ Hψ]]]]].
-  exists m1, m2, Hdef. split; [exact Hle |].
-  split; eapply res_models_FFibVars_idemp_elim; eauto.
-Qed.
-
 End FormulaConnectives.
 
 Ltac normalize_models_ands_in H :=

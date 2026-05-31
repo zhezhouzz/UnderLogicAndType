@@ -409,42 +409,6 @@ Proof.
   exact Hden.
 Qed.
 
-Lemma denot_ctx_under_star_elim
-    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
-  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m /\
-    m1 ⊨ denot_ctx_under Σ Γ1 /\
-    m2 ⊨ denot_ctx_under Σ Γ2.
-Proof.
-  intros Hctx.
-  cbn [denot_ctx_under] in Hctx.
-  pose proof (res_models_FFibVars_and_r _ _ _ _ Hctx) as Hstar.
-  destruct Γ1, Γ2; cbn [denot_ctx_under] in Hstar |- *.
-  all:
-    destruct (res_models_FFibVars_star_elim_shared _ _ _ _ Hstar)
-      as [m1 [m2 [Hc [Hle [HΓ1 HΓ2]]]]];
-    exists m1, m2, Hc; split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
-Qed.
-
-Lemma denot_ctx_under_sum_elim
-    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ->
-  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef ⊑ m /\
-    m1 ⊨ denot_ctx_under Σ Γ1 /\
-    m2 ⊨ denot_ctx_under Σ Γ2.
-Proof.
-  intros Hctx.
-  cbn [denot_ctx_under] in Hctx.
-  pose proof (res_models_FFibVars_and_r _ _ _ _ Hctx) as Hplus.
-  destruct Γ1, Γ2; cbn [denot_ctx_under] in Hplus |- *.
-  all:
-    destruct (res_models_FFibVars_plus_elim_shared _ _ _ _ Hplus)
-      as [m1 [m2 [Hdef [Hle [HΓ1 HΓ2]]]]];
-    exists m1, m2, Hdef; split; [exact Hle | split; [exact HΓ1 | exact HΓ2]].
-Qed.
-
 Lemma denot_ctx_under_star_elim_singleton
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) (σΣ : StoreT) :
   dom σΣ = dom Σ ->
