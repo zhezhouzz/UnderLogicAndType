@@ -1031,6 +1031,64 @@ Proof.
   eapply res_models_impl_elim_future; [reflexivity | exact Himpl | exact Hφ].
 Qed.
 
+Lemma res_models_FFibVars_impl_elim
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D (FImpl φ ψ) ->
+  m ⊨ FFibVars D φ ->
+  m ⊨ FFibVars D ψ.
+Proof.
+  intros Himpl Hφ.
+  pose proof (res_models_scoped _ _ Himpl) as Hscope_impl.
+  pose proof (proj1 (res_models_FFibVars_iff m D (FImpl φ ψ) Hscope_impl)
+    Himpl) as [Hlc Hfib_impl].
+  pose proof (res_models_scoped _ _ Hφ) as Hscope_φ.
+  pose proof (proj1 (res_models_FFibVars_iff m D φ Hscope_φ) Hφ)
+    as [_ Hfib_φ].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D ψ)).
+    apply (proj1 (formula_scoped_fibvars_iff m D (FImpl φ ψ)))
+      in Hscope_impl.
+    destruct Hscope_impl as [HD Hscope_inner].
+    apply (proj1 (formula_scoped_impl_iff m φ ψ)) in Hscope_inner.
+    split; [exact HD | tauto].
+  - exact Hlc.
+  - intros σ mfib Hproj.
+    specialize (Hfib_impl σ mfib Hproj).
+    specialize (Hfib_φ σ mfib Hproj).
+    cbn [formula_msubst_store formula_mlsubst] in Hfib_impl.
+    eapply res_models_impl_elim; [exact Hfib_impl | exact Hfib_φ].
+Qed.
+
+Lemma res_models_FFibVars_impl_intro
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FFibVars D (FImpl φ ψ)) ->
+  lc_lvars D ->
+  (forall σ mfib,
+    res_fiber_from_projection m (lvars_fv D) σ mfib ->
+    mfib ⊨ formula_msubst_store σ φ ->
+    mfib ⊨ formula_msubst_store σ ψ) ->
+  m ⊨ FFibVars D (FImpl φ ψ).
+Proof.
+  intros Hscope Hlc Hlocal.
+  eapply res_models_FFibVars_intro; [exact Hscope | exact Hlc |].
+  intros σ mfib Hproj.
+  formula_msubst_syntax_norm.
+  eapply res_models_impl_intro.
+  - apply (proj2 (formula_scoped_impl_iff mfib
+      (formula_msubst_store σ φ) (formula_msubst_store σ ψ))).
+    pose proof (proj1 (formula_scoped_fibvars_iff m D (FImpl φ ψ))
+      Hscope) as [_ Hscope_impl].
+    apply (proj1 (formula_scoped_impl_iff m φ ψ)) in Hscope_impl
+      as [Hscopeφ Hscopeψ].
+    pose proof (res_fiber_from_projection_world_dom m mfib
+      (lvars_fv D) σ Hproj) as Hdom.
+    split; eapply formula_scoped_in_world_from_formula_fv;
+      intros a Ha; rewrite Hdom.
+    + apply Hscopeφ. eapply formula_msubst_store_fv_subset. exact Ha.
+    + apply Hscopeψ. eapply formula_msubst_store_fv_subset. exact Ha.
+  - apply Hlocal. exact Hproj.
+Qed.
+
 Lemma res_models_impl2_intro
     (m : WfWorldT) (φ ψ χ : FormulaT) :
   formula_scoped_in_world m (FImpl φ (FImpl ψ χ)) →

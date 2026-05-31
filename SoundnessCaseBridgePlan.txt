@@ -670,3 +670,284 @@ Implementation order
      context-construction bridges in `Denotation.Context` have been deleted.
      Future context-construction lemmas should be reintroduced only in the
      fiberwise shape.
+
+10. Revised active route: reduce the fiberwise theorem to a fibered implication.
+
+   The new key observation is that most case proofs should not be re-proved as
+   bespoke `formula_msubst_store` transports.  The common shape
+
+     `FFibVars (ctx_base_vars Σ) (denot_ctx_under_body Σ Γ)
+      ⊫
+      FFibVars (ctx_base_vars Σ) p`
+
+   should instead be handled through the Logic connective:
+
+     `FFibVars (ctx_base_vars Σ)
+        (FImpl (denot_ctx_under_body Σ Γ) p)`.
+
+   In words: after fixing the base `dom Σ` fiber, the body of the proof is the
+   old ambient implication from the context body to the target formula.  The new
+   route only strengthens the proof by requiring the selected `dom Σ`
+   projection to be fixed/singleton inside the chosen fiber; most Denotation
+   helpers do not need to mention this fiberwise premise.
+
+   First prove the Logic helper:
+
+     `res_models_FFibVars_impl_elim`:
+       `m ⊨ FFibVars D (FImpl φ ψ) ->
+        m ⊨ FFibVars D φ ->
+        m ⊨ FFibVars D ψ`.
+
+   Proof outline:
+   - take the same `σ, mfib` projection for both `FFibVars` premises;
+   - unfold/normalize
+       `formula_msubst_store σ (FImpl φ ψ)`
+     to
+       `FImpl (formula_msubst_store σ φ)
+              (formula_msubst_store σ ψ)`;
+   - apply `res_models_impl_elim`.
+
+   Also add an intro/map helper if it improves the case scripts:
+
+     `res_models_FFibVars_impl_intro`:
+       prove `m ⊨ FFibVars D (FImpl φ ψ)` by proving, for every selected fiber,
+       that `formula_msubst_store σ φ` implies `formula_msubst_store σ ψ`.
+
+   After this helper, the Soundness case shape should become:
+
+   1. Prove or obtain
+
+        `m ⊨ FFibVars (ctx_base_vars Σ)
+              (FImpl (denot_ctx_under_body Σ Γ)
+                     (denot_ty_in_ctx_under Σ Γ τ e))`.
+
+   2. Rewrite `Hctx : m ⊨ denot_ctx_under Σ Γ` using
+      `denot_ctx_under_unfold_body`, so it has the matching
+
+        `m ⊨ FFibVars (ctx_base_vars Σ) (denot_ctx_under_body Σ Γ)`.
+
+   3. Apply `res_models_FFibVars_impl_elim`.
+
+   This replaces the current pilot obligations:
+
+     `sub_type_under_msubst_transport`;
+     `ctx_sub_under_msubst_transport`;
+     `appop_intro_denotation_msubst`.
+
+   These obligations should be deleted once their cases are rewritten through
+   the shared `FFibVars/FImpl` proof shape.
+
+11. Updated case-by-case plan under the unified route.
+
+   Const:
+   - Already proved directly via freshness because the precise constant
+     denotation has no atom free variables.
+   - It may stay as a direct proof; no need to force it through implication.
+
+   Var:
+   - Already proved directly from `denot_ctx_under_projected_body`.
+   - It may stay direct, since this is exactly the context-body projection.
+
+   Sub:
+   - Prove the fibered implication:
+
+       `FFibVars D
+          (FImpl (denot_ctx_under_body Σ Γ)
+                 (denot_ty_in_ctx_under Σ Γ τ2 e))`.
+
+   - Inside the selected fiber, use the old `sub_type_under` implication on the
+     substituted context body.  If direct use of `sub_type_under` still expects
+     `denot_ctx_under Σ Γ`, prove a small bridge from selected-fiber context
+     body to the old implication premise, not a general false ambient
+     substitution theorem.
+
+   CtxSub:
+   - Same outer route as Sub.
+   - The old `ctx_sub_under` support/restrict part should be used inside the
+     selected fiber, with agreement transport for
+     `denot_ty_in_ctx_under`.  Keep the proof as a context/body implication;
+     do not expose a case-specific msubst lemma.
+
+   TLet:
+   - Prove the fibered implication from `denot_ctx_under_body Σ Γ` to the
+     `tlete` denotation.
+   - Inside the selected fiber, derive totality for `e1` from the fibered IH,
+     construct the result extension, use the body IH, and call
+     `denot_tlet_direct_in_ctx` / `tlet_intro_denotation`.
+   - The Denotation-level `tlet_intro_denotation` remains non-fiberwise.
+
+   LetD:
+   - Same route, but inside the selected fiber use
+     `denot_ctx_under_star_elim_in_fiber`.
+   - Feed the split branch worlds to the two IHs and call
+     `letd_intro_denotation`.
+
+   Lam:
+   - Prove the fibered implication from the context body to the Arrow
+     denotation.
+   - In the Arrow forall body, build the context body for
+     `CtxComma Γ (CtxBind y τx)` and call the body IH.
+   - Use `lam_intro_denotation` unchanged.
+
+   LamD:
+   - Same as Lam, but use the separating/product context bridge for
+     `CtxStar Γ (CtxBind y τx)`.
+   - Use `lamd_intro_denotation` unchanged.
+
+   App:
+   - Inside the implication proof, obtain the function and argument denotations
+     from the two IHs using the same outer context body.
+   - Call `app_elim_denotation` unchanged.
+
+   AppD:
+   - Inside the selected base fiber, split the `CtxStar Γ1 Γ2` body with
+     `denot_ctx_under_star_elim_in_fiber`.
+   - Apply the two IHs to the split worlds, then call
+     `appd_elim_denotation`.
+
+   Fix/FixD:
+   - Keep the Denotation helpers `fix_intro_denotation` and
+     `fixd_intro_denotation` non-fiberwise.
+   - The Soundness bridge only supplies the selected-fiber context body and the
+     opened recursive-body IH.
+   - Any well-founded recursion details remain in the Denotation helper.
+
+   AppOp:
+   - Delete `appop_intro_denotation_msubst`.
+   - Prove the fibered implication using the existing complete
+     `appop_intro_denotation` inside the selected fiber.
+   - The primop semantic premise remains the old
+     `wf_primop_semantic` entailment.
+
+   MatchBoth:
+   - Inside the selected base fiber, split `CtxSum Γt Γf` with
+     `denot_ctx_under_sum_elim_in_fiber`.
+   - Apply the four IHs on the branch worlds and call
+     `match_both_intro_denotation`.
+
+   MatchTrue / MatchFalse:
+   - `branch_unreachable` should be used through the same
+     `FFibVars/FImpl` route.
+   - If necessary, introduce a fibered unreachable bridge:
+
+       from the selected context body and `branch_unreachable`,
+       derive the selected-fiber implication to `FFalse`.
+
+   - Then call `match_true_intro_denotation` /
+     `match_false_intro_denotation` unchanged.
+
+12. Execution order for the revised plan.
+
+   1. Prove `res_models_FFibVars_impl_elim` in `FormulaConnectives.v`.
+      Add `res_models_FFibVars_impl_intro` only if it materially simplifies
+      the case scripts.
+
+   2. Rewrite the pilot cases in `Soundness.v`:
+      `sub`, `ctx-sub`, `appop`.
+      Delete:
+        `sub_type_under_msubst_transport`;
+        `ctx_sub_under_msubst_transport`;
+        `appop_intro_denotation_msubst`.
+
+   3. Recompile `ContextLogic`, `Denotation`, and `ContextTyping/Soundness`.
+
+   4. Rewrite the additive/non-splitting cases:
+      `let`, `lam`, `app`, `fix`, `match_true`, `match_false`.
+
+   5. Rewrite the splitting cases:
+      `letd`, `lamd`, `appd`, `match_both`.
+      Use the existing singleton-aware star/sum fiber eliminators.
+
+   6. Remove any remaining fiber-specific case obligations that are replaced by
+      the shared implication route.
+
+   7. Run full `make` and commit the checkpoint.
+
+13. `formula_msubst_store` normalization and denotation transport.
+
+   The fibered implication route should not force every existing
+   Denotation-level helper to become fiber-aware.  The right bridge is to make
+   the selected-fiber substitution explicit and then normalize it back to the
+   ordinary denotation shape that helpers such as `tlet_intro_denotation`,
+   `lam_intro_denotation`, and `appop_intro_denotation` already understand.
+
+   Logic layer:
+
+   - Strengthen the existing syntax Ltac for `formula_msubst_store`.
+     It should normalize through the formula constructors
+     (`FAnd`, `FImpl`, `FStar`, `FPlus`, `FFibVars`, `FOver`, `FUnder`,
+     `FForall`) and leave atom-specific formulas to upper layers.
+     The current `formula_msubst_syntax_norm` only rewrites the `FFibVars`
+     case; extend it so case scripts stop writing
+     `cbn [formula_msubst_store formula_mlsubst]` by hand.
+
+   - Prove the connective-level eliminator first:
+
+       `res_models_FFibVars_impl_elim`:
+         `m ⊨ FFibVars D (FImpl φ ψ) ->
+          m ⊨ FFibVars D φ ->
+          m ⊨ FFibVars D ψ`.
+
+     This is the first reusable proof step for all fiberwise Soundness cases.
+     Add an intro lemma only if the later case scripts need it.
+
+     Current progress:
+       `res_models_FFibVars_impl_elim` is proved.
+       `res_models_FFibVars_impl_intro` is also proved; it packages the common
+       "prove the selected-fiber implication after `formula_msubst_store`
+       normalization" pattern.
+       `formula_msubst_syntax_norm` now normalizes all pure formula
+       constructors, not just `FFibVars`.
+
+   BasicDenotation / TypeLanguage / Denotation layer:
+
+   - Do not define a fake `formula_msubst_store` on terms or types.  Instead
+     reuse the real syntax operations:
+
+       `lstore_instantiate_tm σ e`
+       qualifier mlsubst/open support
+       lty-env projection/instantiation support as needed.
+
+   - Add atom-formula transport lemmas, preferably models-level iff lemmas
+     rather than exact equalities:
+
+       `formula_msubst_store_expr_total_formula`
+       `formula_msubst_store_expr_basic_typing_formula`
+       `formula_msubst_store_expr_result_formula`
+       `formula_msubst_store_type_qualifier_formula`
+       `formula_msubst_store_context_ty_wf_formula`
+       `formula_msubst_store_basic_world_formula`
+
+     Each lemma should say that after substituting the selected base store into
+     the formula, the semantics agrees with the corresponding instantiated
+     syntax/context.  Exact equality is fine only when it is definitional and
+     does not fight dependent qualifier paths.
+
+   - Then prove the main transport for type denotation:
+
+       `denot_ty_lvar_gas_msubst_store_models_iff`
+
+     Shape, up to the final names:
+
+       `m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)
+        <->
+        m ⊨ denot_ty_lvar_gas gas Σ' τ' e'`
+
+     where `Σ'`, `τ'`, and `e'` are the appropriate instantiated
+     environment/type/term views.  If type/context instantiation is not yet
+     fully defined, first prove the restricted versions needed by the active
+     Soundness cases and keep the missing general syntax operation as a named
+     obligation.
+
+   Soundness layer:
+
+   - Rewrite `sub`, `ctx-sub`, and `appop` through
+     `res_models_FFibVars_impl_elim` plus the denotation msubst transport.
+     Delete case-specific obligations such as
+     `appop_intro_denotation_msubst` once the shared transport route is in
+     place.
+
+   - After the pilot cases compile, use the same route for TLet/Lam/App/Fix and
+     the split cases.  The existing Denotation helpers should stay in their
+     non-fiberwise shape; the new transport lemmas adapt the selected fiber to
+     those helpers.

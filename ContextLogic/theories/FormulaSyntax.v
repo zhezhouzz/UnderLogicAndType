@@ -905,11 +905,91 @@ Ltac formula_open_env_syntax_norm_in H :=
   try rewrite ?formula_open_env_fibvars in H by eauto;
   try rewrite ?formula_open_env_forall in H by eauto.
 
+Ltac formula_msubst_syntax_norm_once :=
+  match goal with
+  | |- context[formula_msubst_store ?σ FTrue] =>
+      change (formula_msubst_store σ FTrue) with FTrue
+  | |- context[formula_msubst_store ?σ FFalse] =>
+      change (formula_msubst_store σ FFalse) with FFalse
+  | |- context[formula_msubst_store ?σ (FAtom ?q)] =>
+      change (formula_msubst_store σ (FAtom q))
+        with (FAtom (lqual_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FAnd ?p ?q)] =>
+      change (formula_msubst_store σ (FAnd p q))
+        with (FAnd (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FOr ?p ?q)] =>
+      change (formula_msubst_store σ (FOr p q))
+        with (FOr (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FImpl ?p ?q)] =>
+      change (formula_msubst_store σ (FImpl p q))
+        with (FImpl (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FStar ?p ?q)] =>
+      change (formula_msubst_store σ (FStar p q))
+        with (FStar (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FWand ?p ?q)] =>
+      change (formula_msubst_store σ (FWand p q))
+        with (FWand (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FPlus ?p ?q)] =>
+      change (formula_msubst_store σ (FPlus p q))
+        with (FPlus (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FForall ?p)] =>
+      change (formula_msubst_store σ (FForall p))
+        with (FForall (formula_msubst_store σ p))
+  | |- context[formula_msubst_store ?σ (FOver ?p)] =>
+      change (formula_msubst_store σ (FOver p))
+        with (FOver (formula_msubst_store σ p))
+  | |- context[formula_msubst_store ?σ (FUnder ?p)] =>
+      change (formula_msubst_store σ (FUnder p))
+        with (FUnder (formula_msubst_store σ p))
+  | |- context[formula_msubst_store ?σ (FFibVars ?D ?p)] =>
+      rewrite (formula_msubst_store_fibvars σ D p)
+  end.
+
+Ltac formula_msubst_syntax_norm_once_in H :=
+  match type of H with
+  | context[formula_msubst_store ?σ FTrue] =>
+      change (formula_msubst_store σ FTrue) with FTrue in H
+  | context[formula_msubst_store ?σ FFalse] =>
+      change (formula_msubst_store σ FFalse) with FFalse in H
+  | context[formula_msubst_store ?σ (FAtom ?q)] =>
+      change (formula_msubst_store σ (FAtom q))
+        with (FAtom (lqual_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FAnd ?p ?q)] =>
+      change (formula_msubst_store σ (FAnd p q))
+        with (FAnd (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FOr ?p ?q)] =>
+      change (formula_msubst_store σ (FOr p q))
+        with (FOr (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FImpl ?p ?q)] =>
+      change (formula_msubst_store σ (FImpl p q))
+        with (FImpl (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FStar ?p ?q)] =>
+      change (formula_msubst_store σ (FStar p q))
+        with (FStar (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FWand ?p ?q)] =>
+      change (formula_msubst_store σ (FWand p q))
+        with (FWand (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FPlus ?p ?q)] =>
+      change (formula_msubst_store σ (FPlus p q))
+        with (FPlus (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FForall ?p)] =>
+      change (formula_msubst_store σ (FForall p))
+        with (FForall (formula_msubst_store σ p)) in H
+  | context[formula_msubst_store ?σ (FOver ?p)] =>
+      change (formula_msubst_store σ (FOver p))
+        with (FOver (formula_msubst_store σ p)) in H
+  | context[formula_msubst_store ?σ (FUnder ?p)] =>
+      change (formula_msubst_store σ (FUnder p))
+        with (FUnder (formula_msubst_store σ p)) in H
+  | context[formula_msubst_store ?σ (FFibVars ?D ?p)] =>
+      rewrite (formula_msubst_store_fibvars σ D p) in H
+  end.
+
 Ltac formula_msubst_syntax_norm :=
-  rewrite ?formula_msubst_store_fibvars.
+  repeat formula_msubst_syntax_norm_once.
 
 Ltac formula_msubst_syntax_norm_in H :=
-  rewrite ?formula_msubst_store_fibvars in H.
+  repeat formula_msubst_syntax_norm_once_in H.
 
 Ltac formula_syntax_norm :=
   formula_fv_syntax_norm;
