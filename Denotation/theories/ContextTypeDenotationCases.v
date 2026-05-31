@@ -100,15 +100,7 @@ Proof.
   - rewrite dom_empty_L. unfold lc_lvars. set_solver.
   - split.
     + rewrite dom_empty_L, lvars_fv_empty. set_solver.
-    + unfold basic_tm_has_ltype.
-      split; [cbn [tm_lvars lvar_value_keys]; set_solver|].
-      intros η _ _.
-      change (lty_env_open_lvars η (∅ : lty_env))
-        with (storeA_rekey (logic_var_open_env η) (∅ : gmap logic_var ty)).
-      rewrite storeA_rekey_empty.
-      rewrite open_tm_env_lc by (constructor; constructor).
-      cbn [lty_env_to_atom_env].
-      constructor. constructor.
+    + constructor. constructor.
 Qed.
 
 Lemma expr_total_formula_ret_const c (m : WfWorldT) :

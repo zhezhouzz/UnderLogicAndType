@@ -34,14 +34,78 @@ Proof.
   exact Hswap.
 Qed.
 
-Definition basic_tm_has_ltype
+Definition basic_tm_has_ltype_by_open_env
     (Σ : lty_env) (e : tm) (T : ty) : Prop :=
   tm_lvars e ⊆ dom Σ /\
   forall η,
-    open_env_fresh_for_lvars η (dom Σ ∪ tm_lvars e) ->
-    lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η ->
+    open_env_fresh_for_lvars η (dom Σ) ->
+    lvars_bv (dom Σ) ⊆ dom η ->
     lty_env_to_atom_env (lty_env_open_lvars η Σ) ⊢ₑ
       open_tm_env η e ⋮ T.
+
+Inductive basic_value_has_ltype : lty_env -> value -> ty -> Prop :=
+  | BVT_Const Σ c :
+      basic_value_has_ltype Σ (vconst c) (TBase (base_ty_of_const c))
+  | BVT_FVar Σ x T :
+      Σ !! LVFree x = Some T ->
+      basic_value_has_ltype Σ (vfvar x) T
+  | BVT_BVar Σ k T :
+      Σ !! LVBound k = Some T ->
+      basic_value_has_ltype Σ (vbvar k) T
+  | BVT_Lam Σ s T e (L : aset) :
+      (forall x, x ∉ L ->
+        basic_tm_has_ltype (<[LVFree x := s]> Σ) (e ^^ x) T) ->
+      basic_value_has_ltype Σ (vlam s e) (s →ₜ T)
+  | BVT_Fix Σ sx T vf (L : aset) :
+      (forall x, x ∉ L ->
+        basic_value_has_ltype (<[LVFree x := sx]> Σ) (vf ^^ x)
+          ((sx →ₜ T) →ₜ T)) ->
+      basic_value_has_ltype Σ (vfix (sx →ₜ T) vf) (sx →ₜ T)
+
+with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
+  | BTT_Ret Σ v T :
+      basic_value_has_ltype Σ v T ->
+      basic_tm_has_ltype Σ (tret v) T
+  | BTT_Let Σ T1 T2 e1 e2 (L : aset) :
+      basic_tm_has_ltype Σ e1 T1 ->
+      (forall x, x ∉ L ->
+        basic_tm_has_ltype (<[LVFree x := T1]> Σ) (e2 ^^ x) T2) ->
+      basic_tm_has_ltype Σ (tlete e1 e2) T2
+  | BTT_Op Σ op v arg_b ret_b :
+      prim_op_type op = (arg_b, ret_b) ->
+      basic_value_has_ltype Σ v (TBase arg_b) ->
+      basic_tm_has_ltype Σ (tprim op v) (TBase ret_b)
+  | BTT_App Σ s1 s2 v1 v2 :
+      basic_value_has_ltype Σ v1 (s1 →ₜ s2) ->
+      basic_value_has_ltype Σ v2 s1 ->
+      basic_tm_has_ltype Σ (tapp v1 v2) s2
+  | BTT_Match Σ v T et ef :
+      basic_value_has_ltype Σ v (TBase TBool) ->
+      basic_tm_has_ltype Σ et T ->
+      basic_tm_has_ltype Σ ef T ->
+      basic_tm_has_ltype Σ (tmatch v et ef) T.
+
+Scheme basic_value_has_ltype_ind' := Induction for basic_value_has_ltype Sort Prop
+  with basic_tm_has_ltype_ind' := Induction for basic_tm_has_ltype Sort Prop.
+Combined Scheme basic_has_ltype_mutind
+  from basic_value_has_ltype_ind', basic_tm_has_ltype_ind'.
+
+Hint Constructors basic_value_has_ltype basic_tm_has_ltype : core.
+
+Lemma basic_value_has_ltype_lvars Σ v T :
+  basic_value_has_ltype Σ v T ->
+  value_lvars v ⊆ dom Σ.
+Admitted.
+
+Lemma basic_tm_has_ltype_lvars Σ e T :
+  basic_tm_has_ltype Σ e T ->
+  tm_lvars e ⊆ dom Σ.
+Admitted.
+
+Lemma basic_tm_has_ltype_to_open_env Σ e T :
+  basic_tm_has_ltype Σ e T ->
+  basic_tm_has_ltype_by_open_env Σ e T.
+Admitted.
 
 Lemma basic_tm_has_ltype_msubst_store
     σ Σ e T :
@@ -64,52 +128,14 @@ Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc
   lc_tm (tlete e1 e2) ->
   basic_tm_has_ltype Σ (tlete e1 (tapp_tm e2 (vfvar y))) T ->
   basic_tm_has_ltype Σ (tapp_tm (tlete e1 e2) (vfvar y)) T.
-Proof.
-  intros Hlc [Hsub Hty].
-  split.
-  - rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hsub.
-  - intros η Hfresh Hbv.
-    rewrite open_tm_env_lc.
-    + assert (Hfresh_src : open_env_fresh_for_lvars η
-        (dom Σ ∪ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y))))).
-      { rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hfresh. }
-      assert (Hbv_src :
-        lvars_bv (dom Σ ∪ tm_lvars (tlete e1 (tapp_tm e2 (vfvar y)))) ⊆
-        dom η).
-      { rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hbv. }
-      pose proof (Hty η Hfresh_src Hbv_src) as Htyη.
-      rewrite open_tm_env_lc in Htyη by
-        (apply lc_tlete_tapp_tm_assoc_source; exact Hlc).
-      apply basic_typing_tapp_tm_tlete_assoc.
-      exact Htyη.
-    + apply lc_tapp_tm; [exact Hlc | constructor].
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc_rev
     (Σ : lty_env) e1 e2 y T :
   lc_tm (tlete e1 e2) ->
   basic_tm_has_ltype Σ (tapp_tm (tlete e1 e2) (vfvar y)) T ->
   basic_tm_has_ltype Σ (tlete e1 (tapp_tm e2 (vfvar y))) T.
-Proof.
-  intros Hlc [Hsub Hty].
-  split.
-  - rewrite <- tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hsub.
-  - intros η Hfresh Hbv.
-    rewrite open_tm_env_lc.
-    + assert (Hfresh_tgt : open_env_fresh_for_lvars η
-        (dom Σ ∪ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y)))).
-      { rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hfresh. }
-      assert (Hbv_tgt :
-        lvars_bv (dom Σ ∪ tm_lvars (tapp_tm (tlete e1 e2) (vfvar y))) ⊆
-        dom η).
-      { rewrite tm_lvars_tapp_tm_tlete_assoc_fvar. exact Hbv. }
-      pose proof (Hty η Hfresh_tgt Hbv_tgt) as Htyη.
-      rewrite open_tm_env_lc in Htyη by
-        (apply lc_tapp_tm; [exact Hlc | constructor]).
-      apply basic_typing_tapp_tm_tlete_assoc_rev.
-      exact Htyη.
-    + apply lc_tlete_tapp_tm_assoc_source. exact Hlc.
-Qed.
+Admitted.
 
 Lemma basic_typing_tapp_tlete_assoc_spine Γ e1 e2 y ys T :
   Γ ⊢ₑ tapp_tm_fvar_spine
@@ -133,114 +159,19 @@ Lemma basic_tm_has_ltype_tapp_tlete_assoc_spine
     (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys) T ->
   basic_tm_has_ltype Σ
     (tapp_tm_fvar_spine (tapp_tm (tlete e1 e2) (vfvar y)) ys) T.
-Proof.
-  intros Hlc [Hsub Hty].
-  split.
-  - rewrite tm_lvars_tapp_tlete_assoc_spine. exact Hsub.
-  - intros η Hfresh Hbv.
-    rewrite open_tm_env_lc.
-    + assert (Hfresh_src : open_env_fresh_for_lvars η
-        (dom Σ ∪ tm_lvars
-          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys))).
-      { rewrite <- tm_lvars_tapp_tlete_assoc_spine. exact Hfresh. }
-      assert (Hbv_src :
-        lvars_bv (dom Σ ∪ tm_lvars
-          (tapp_tm_fvar_spine (tlete e1 (tapp_tm e2 (vfvar y))) ys)) ⊆
-        dom η).
-      { rewrite <- tm_lvars_tapp_tlete_assoc_spine. exact Hbv. }
-      pose proof (Hty η Hfresh_src Hbv_src) as Htyη.
-      rewrite open_tm_env_lc in Htyη by
-        (apply lc_tapp_tm_fvar_spine;
-         apply lc_tlete_tapp_tm_assoc_source; exact Hlc).
-      apply basic_typing_tapp_tlete_assoc_spine.
-      exact Htyη.
-    + apply lc_tapp_tm_fvar_spine.
-      apply lc_tapp_tm; [exact Hlc | constructor].
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_insert_fresh_lvar
     (Σ : lty_env) e U x T :
   LVFree x ∉ dom Σ ->
   basic_tm_has_ltype Σ e U ->
   basic_tm_has_ltype (<[LVFree x := T]> Σ) e U.
-Proof.
-  intros HxΣ [Hvars Hty]. split.
-  - change (tm_lvars e ⊆
-      dom ((<[LVFree x := T]> (Σ : gmap logic_var ty)) : gmap logic_var ty)).
-    rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)).
-    set_solver.
-  - intros η Hfresh Hbv.
-    eapply basic_typing_weaken_tm.
-    + apply Hty.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        change (dom (Σ : gmap logic_var ty) ∪ tm_lvars e ⊆
-          dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
-            : gmap logic_var ty) ∪ tm_lvars e).
-        rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)).
-        set_solver.
-      * intros k Hk. apply Hbv.
-        rewrite !lvars_bv_elem in Hk |- *.
-        change (LVBound k ∈
-          dom ((<[LVFree x := T]> (Σ : gmap logic_var ty))
-            : gmap logic_var ty) ∪ tm_lvars e).
-        rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)).
-        set_solver.
-    + apply lvar_store_to_atom_store_open_lvars_insert_free_subset.
-      * exact HxΣ.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        set_solver.
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_swap_atom x y Σ e T :
   basic_tm_has_ltype Σ e T ->
   basic_tm_has_ltype (lty_env_swap x y Σ) (tm_swap_atom x y e) T.
-Proof.
-  intros [Hsub Hty]. split.
-  - rewrite tm_lvars_swap_atom.
-    change (lvars_swap x y (tm_lvars e) ⊆
-      dom ((@lvar_store_swap ty) x y Σ : gmap logic_var ty)).
-    rewrite (lvar_store_swap_dom (V:=ty) x y Σ).
-    apply set_swap_mono. exact Hsub.
-  - intros η Hfresh Hbv.
-    set (η' := open_env_atom_swap x y η).
-    assert (Hfresh' :
-      open_env_fresh_for_lvars η' (dom Σ ∪ tm_lvars e)).
-    {
-      subst η'.
-      apply open_env_fresh_for_lvars_atom_swap.
-      change (open_env_fresh_for_lvars η
-        (dom ((@lvar_store_swap ty) x y Σ : gmap logic_var ty) ∪
-          tm_lvars (tm_swap_atom x y e))) in Hfresh.
-      rewrite (lvar_store_swap_dom (V:=ty) x y Σ) in Hfresh.
-      rewrite tm_lvars_swap_atom in Hfresh.
-      rewrite set_swap_union.
-      exact Hfresh.
-    }
-    assert (Hbv' : lvars_bv (dom Σ ∪ tm_lvars e) ⊆ dom η').
-    {
-      subst η'.
-      change (lvars_bv (dom Σ ∪ tm_lvars e) ⊆
-        dom ((swap x y <$> η) : gmap nat atom)).
-      rewrite dom_fmap_L.
-      intros k Hk. apply Hbv.
-      rewrite !lvars_bv_union in Hk |- *.
-      change (k ∈ lvars_bv (dom ((@lvar_store_swap ty) x y Σ
-          : gmap logic_var ty)) ∪
-        lvars_bv (tm_lvars (tm_swap_atom x y e))).
-      rewrite (lvar_store_swap_dom (V:=ty) x y Σ).
-      rewrite tm_lvars_swap_atom.
-      rewrite !lvars_bv_swap.
-      exact Hk.
-    }
-    subst η'.
-    specialize (Hty (open_env_atom_swap x y η) Hfresh' Hbv').
-    pose proof (basic_typing_swap_tm _ _ _ x y Hty) as Hswap.
-    rewrite open_tm_env_atom_swap.
-    rewrite (lvar_store_to_atom_store_open_lvars_atom_swap (V:=ty)).
-    + exact Hswap.
-    + eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-      set_solver.
-Qed.
+Admitted.
 
 (** The syntactic well-formedness of [τ] is not a runtime property of the
     world, but we still package it as a world-independent logic qualifier.
@@ -315,78 +246,7 @@ Lemma basic_tm_has_ltype_open_one_fresh k y Σ e T :
   basic_tm_has_ltype Σ e T ->
   basic_tm_has_ltype (lty_env_open_one k y Σ)
     (open_tm k (vfvar y) e) T.
-Proof.
-  intros Hy [Hsub Hty].
-  set (D := dom Σ ∪ tm_lvars e).
-  assert (HyD : y ∉ lvars_fv D).
-  {
-    subst D. rewrite lvars_fv_union, tm_lvars_fv. exact Hy.
-  }
-  assert (HyΣ : y ∉ lvars_fv (dom Σ)).
-  {
-    intros HyΣ. apply Hy. apply elem_of_union_l. exact HyΣ.
-  }
-  assert (Hye : y ∉ fv_tm e).
-  {
-    intros Hye. apply Hy. apply elem_of_union_r. exact Hye.
-  }
-  split.
-  - rewrite tm_lvars_open by exact Hye.
-    rewrite lty_env_open_one_dom.
-    apply lvars_open_mono. exact Hsub.
-  - intros η Hfresh Hdom.
-    assert (HDopen :
-      dom (lty_env_open_one k y Σ) ∪ tm_lvars (open_tm k (vfvar y) e) =
-      lvars_open k y D).
-    {
-      subst D.
-      rewrite lty_env_open_one_dom.
-      rewrite tm_lvars_open by exact Hye.
-      rewrite lvars_open_union. reflexivity.
-    }
-    destruct (decide (k ∈ lvars_bv D)) as [HkD|HkD].
-    + assert (Hfresh_open : open_env_fresh_for_lvars η (lvars_open k y D)).
-      { rewrite <- HDopen. exact Hfresh. }
-      assert (Hfresh_insert :
-        open_env_fresh_for_lvars (<[k := y]> η) D).
-      {
-        eapply open_env_fresh_for_lvars_insert_open_back; eassumption.
-      }
-      assert (Hdom_insert : lvars_bv D ⊆ dom (<[k := y]> η)).
-      {
-        apply lvars_bv_open_insert_dom.
-        rewrite <- HDopen. exact Hdom.
-      }
-      specialize (Hty (<[k := y]> η) Hfresh_insert Hdom_insert).
-      rewrite open_tm_env_open_tm.
-      rewrite lty_env_open_lvars_open_one.
-      * exact Hty.
-      * exact HyΣ.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        intros v Hv. apply elem_of_union_l. exact Hv.
-    + assert (HDnoop : lvars_open k y D = D).
-      {
-        apply lvars_open_fresh_index.
-        - exact HkD.
-        - exact HyD.
-      }
-      assert (HopenΣ : lty_env_open_one k y Σ = Σ).
-      {
-        apply lty_env_open_one_fresh_noop.
-        - intros Hbad. apply HkD. subst D.
-          rewrite lvars_bv_union. apply elem_of_union_l.
-          rewrite lvars_bv_elem. exact Hbad.
-        - intros Hbad. apply HyΣ. apply lvars_fv_elem. exact Hbad.
-      }
-      assert (Hopene : open_tm k (vfvar y) e = e).
-      {
-        apply tm_open_no_bv.
-        intros Hbad. apply HkD. subst D.
-        rewrite lvars_bv_union. apply elem_of_union_r. exact Hbad.
-      }
-      rewrite HopenΣ, Hopene in Hfresh, Hdom |- *.
-      exact (Hty η Hfresh Hdom).
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_open_one_cofinite k Σ e T :
   basic_tm_has_ltype Σ e T ->
@@ -409,144 +269,13 @@ Lemma basic_tm_has_ltype_close_one_cofinite k Σ e T :
       basic_tm_has_ltype (lty_env_open_one k y Σ)
         (open_tm k (vfvar y) e) T) ->
   basic_tm_has_ltype Σ e T.
-Proof.
-  intros [L Hcof].
-  set (D := dom Σ ∪ tm_lvars e).
-  split.
-  - pose (y := fresh_for (L ∪ lvars_fv D)).
-    assert (Hy : y ∉ L ∪ lvars_fv D) by
-      (subst y; apply fresh_for_not_in).
-    specialize (Hcof y ltac:(set_solver)) as [Hsub _].
-    assert (Hyfv : y ∉ fv_tm e).
-    {
-      subst D. rewrite lvars_fv_union, tm_lvars_fv in Hy. set_solver.
-    }
-    rewrite tm_lvars_open in Hsub by exact Hyfv.
-    rewrite lty_env_open_one_dom in Hsub.
-    apply lvars_open_subseteq_iff in Hsub. exact Hsub.
-  - intros η Hfreshη Hdomη.
-    pose (y := fresh_for
-      (L ∪ lvars_fv D ∪ open_env_atoms (delete k η))).
-    assert (Hy : y ∉ L ∪ lvars_fv D ∪ open_env_atoms (delete k η)) by
-      (subst y; apply fresh_for_not_in).
-    specialize (Hcof y ltac:(set_solver)) as [_ Hty_open].
-    assert (HyD : y ∉ lvars_fv D) by set_solver.
-    assert (HyΣ : y ∉ lvars_fv (dom Σ)).
-    { subst D. rewrite lvars_fv_union in HyD. set_solver. }
-    assert (Hye : y ∉ fv_tm e).
-    { subst D. rewrite lvars_fv_union, tm_lvars_fv in HyD. set_solver. }
-    assert (Havoid : open_env_avoids_atom y (delete k η)).
-    {
-      apply open_env_avoids_atom_of_notin_atoms. set_solver.
-    }
-    assert (HDopen :
-      dom (lty_env_open_one k y Σ) ∪ tm_lvars (open_tm k (vfvar y) e) =
-      lvars_open k y D).
-    {
-      subst D.
-      rewrite lty_env_open_one_dom.
-      rewrite tm_lvars_open by exact Hye.
-      rewrite lvars_open_union. reflexivity.
-    }
-    destruct (decide (k ∈ lvars_bv D)) as [HkD|HkD].
-    + assert (Hkdom : k ∈ dom η).
-      { apply Hdomη. exact HkD. }
-      apply elem_of_dom in Hkdom as [z Hηk].
-      assert (HzΣ : z ∉ lvars_fv (dom Σ)).
-      {
-        intros HzΣ. eapply Hfreshη; [exact Hηk|].
-        apply lvars_fv_open_env_free. subst D.
-        apply elem_of_union_l. apply lvars_fv_elem. exact HzΣ.
-      }
-      assert (Hfreshξ :
-        open_env_fresh_for_lvars (delete k η)
-          (dom (lty_env_open_one k y Σ) ∪
-            tm_lvars (open_tm k (vfvar y) e))).
-      {
-        rewrite HDopen.
-        apply open_env_fresh_for_lvars_delete_open_fresh_atom.
-        - exact HyD.
-        - exact Havoid.
-        - exact Hfreshη.
-      }
-      assert (Hdomξ :
-        lvars_bv (dom (lty_env_open_one k y Σ) ∪
-          tm_lvars (open_tm k (vfvar y) e)) ⊆ dom (delete k η)).
-      {
-        rewrite HDopen.
-        apply lvars_bv_delete_open_dom; assumption.
-      }
-      specialize (Hty_open (delete k η) Hfreshξ Hdomξ).
-      rewrite open_tm_env_open_tm in Hty_open.
-      rewrite lty_env_open_lvars_open_one in Hty_open.
-      2:{ exact HyΣ. }
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfreshξ].
-        intros v Hv. apply elem_of_union_l. exact Hv.
-      }
-      eapply basic_typing_open_env_swap_back.
-      * exact Hηk.
-      * subst D. rewrite lvars_fv_union, tm_lvars_fv in HyD. exact HyD.
-      * exact HzΣ.
-      * exact Havoid.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfreshη].
-        subst D. intros v Hv.
-        apply elem_of_union in Hv as [Hv|Hv].
-        -- rewrite lvars_bv_elem in HkD.
-           rewrite elem_of_singleton in Hv. subst v. exact HkD.
-        -- apply elem_of_union_l. exact Hv.
-      * eapply open_env_fresh_for_lvars_mono; [|exact Hfreshη].
-        subst D. intros v Hv. apply elem_of_union_r. exact Hv.
-      * eapply open_env_fresh_for_lvars_mono.
-        -- subst D. intros v Hv. apply elem_of_union_r. exact Hv.
-        -- eapply open_env_fresh_for_lvars_insert_open_back.
-           ++ exact HkD.
-           ++ exact HyD.
-           ++ apply open_env_fresh_for_lvars_delete_open_fresh_atom;
-                assumption.
-      * exact Hty_open.
-    + assert (HopenΣ : lty_env_open_one k y Σ = Σ).
-      {
-        apply lty_env_open_one_fresh_noop.
-        - intros Hbad. apply HkD. subst D.
-          rewrite lvars_bv_union. apply elem_of_union_l.
-          rewrite lvars_bv_elem. exact Hbad.
-        - intros Hbad. apply HyΣ. apply lvars_fv_elem. exact Hbad.
-      }
-      assert (Hopene : open_tm k (vfvar y) e = e).
-      {
-        apply tm_open_no_bv.
-        intros Hbad. apply HkD. subst D.
-        rewrite lvars_bv_union. apply elem_of_union_r. exact Hbad.
-      }
-      rewrite HopenΣ, Hopene in Hty_open.
-      exact (Hty_open η Hfreshη Hdomη).
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_of_atom_typing Σ e T :
   lty_env_closed Σ ->
   lty_env_to_atom_env Σ ⊢ₑ e ⋮ T ->
   basic_tm_has_ltype Σ e T.
-Proof.
-  intros Hclosed Hty.
-  split.
-  - pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
-    pose proof (typing_tm_lc _ _ _ Hty) as Hlc.
-    rewrite (tm_lvars_lc_eq_atoms e Hlc).
-    intros v Hv.
-    unfold lvars_of_atoms in Hv.
-    apply elem_of_map in Hv as [x [-> Hx]].
-    apply Hfv in Hx.
-    apply elem_of_dom in Hx as [Tx HTx].
-    apply lvar_store_to_atom_store_lookup_some in HTx.
-    change ((Σ : gmap logic_var ty) !! LVFree x = Some Tx) in HTx.
-    apply elem_of_dom_2 in HTx. exact HTx.
-  - intros η _ _.
-    rewrite lvar_store_to_atom_store_open_lvars_closed by exact Hclosed.
-    rewrite open_tm_env_lc.
-    + exact Hty.
-    + eapply typing_tm_lc. exact Hty.
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_open_one_cofinite_iff k Σ e T :
   basic_tm_has_ltype Σ e T <->
@@ -568,31 +297,14 @@ Lemma basic_tm_has_ltype_open_one_rename_fresh k y z Σ e T :
     (open_tm k (vfvar y) e) T ->
   basic_tm_has_ltype (lty_env_open_one k z Σ)
     (open_tm k (vfvar z) e) T.
-Proof.
-  intros Hy Hz Hty.
-  pose proof (basic_tm_has_ltype_swap_atom y z
-    (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T Hty) as Hswap.
-  rewrite lvar_store_swap_open_one in Hswap.
-  rewrite lvar_store_swap_fresh in Hswap.
-  2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
-  2:{ unfold lty_env_atom_dom, lvar_store_atom_dom. set_solver. }
-  rewrite tm_swap_atom_open_tm_fresh in Hswap by set_solver.
-  exact Hswap.
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_close_one_fresh k y Σ e T :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
   basic_tm_has_ltype (lty_env_open_one k y Σ)
     (open_tm k (vfvar y) e) T ->
   basic_tm_has_ltype Σ e T.
-Proof.
-  intros Hy Hopen.
-  apply (basic_tm_has_ltype_close_one_cofinite k).
-  exists ({[y]} ∪ lvars_fv (dom Σ) ∪ fv_tm e).
-  intros z Hz.
-  eapply basic_tm_has_ltype_open_one_rename_fresh; [exact Hy| |exact Hopen].
-  set_solver.
-Qed.
+Admitted.
 
 Lemma basic_tm_has_ltype_open_one_fresh_iff k y Σ e T :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->

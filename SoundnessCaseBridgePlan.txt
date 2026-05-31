@@ -1039,6 +1039,67 @@ Implementation order
         unpack `lqual_msubst_store`, apply the two semantic/syntax transports
         above, and repack the corresponding `res_models` iff.
 
+
+
+
+
+     Inductive BasicTyping refactor (chosen route):
+
+     - Keep the old open-env specification under a compatibility name:
+
+         `basic_tm_has_ltype_by_open_env Σ e T`
+
+       This remains useful as a sanity/spec theorem and for proving that the
+       new lvar-level typing agrees with the old CoreLang typing when the
+       lty-env is lc/atom-only.
+
+     - Redefine the public `basic_tm_has_ltype` as a real mutually-inductive
+       lvar-level basic typing relation, mirroring CoreLang's `⊢ᵥ/⊢ₑ` rules
+       but with `logic_var` keys and cofinite binders using `LVFree y`.
+
+     - Prove regular lemmas for the new inductive relation:
+
+         `basic_value_has_ltype_lvars`
+         `basic_tm_has_ltype_lvars`
+         `basic_value_has_ltype_lc` / `basic_tm_has_ltype_lc` if needed
+
+     - Prove substitution/instantiation directly by induction:
+
+         `basic_tm_has_ltype_msubst_store`
+
+       Variable cases split on whether a free atom is fixed by `σ`; fixed
+       variables use `atom_store_has_ltype`, residual variables use lookup in
+       `lty_env_msubst_store`.  The closed-store invariant from
+       `atom_store_has_ltype_closed` ensures substituted values add no lvars.
+
+     - Prove compatibility with the old open-env specification only as a
+       bridge theorem, not as the definition.  This avoids the fragile
+       arbitrary-`η` proof path in the main msubst proof.
+
+     Refinement after simplifying `basic_tm_has_ltype`:
+
+     - Since `basic_tm_has_ltype Σ e T` already contains
+       `tm_lvars e ⊆ dom Σ`, its cofinite/open-env side conditions should be
+       over `dom Σ`, not `dom Σ ∪ tm_lvars e`.  This keeps the definition
+       focused on the context domain and makes the msubst transport statement
+       shorter.
+     - After this change, the remaining alpha/open-env issue for
+       `basic_tm_has_ltype_msubst_store` is exactly about extending a residual
+       opening environment for `dom Σ ∖ fixed` to one fresh for `dom Σ`, while
+       preserving the opened residual term/context up to CoreLang typing.
+     - The fixed atom store is completely closed in the proof.  This follows
+       from `atom_store_has_ltype Σ σ`, since every fixed value is typed under
+       the empty CoreLang environment.  We should use this invariant
+       immediately:
+
+         `atom_store_has_ltype Σ σ -> store_closed σ`
+
+       The closedness invariant means fixed values contribute no fvars and no
+       bvars.  Thus the remaining msubst obligations split cleanly into a
+       pure alpha/open-env transport and an operational composition lemma for
+       `lstore_instantiate_tm`; there is no extra variable support coming from
+       the fixed values.
+
         Current implementation status:
 
         - `expr_basic_typing_formula_msubst_store_models` is proved from the

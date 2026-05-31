@@ -326,7 +326,8 @@ Proof.
   apply elem_of_map in Hv as [a [-> Ha]].
   apply elem_of_intersection. split.
   - pose proof (expr_basic_typing_formula_basic_ltype _ _ _ _ Hbasic)
-      as [Hsub _].
+      as Hbasic_ltype.
+    pose proof (basic_tm_has_ltype_lvars _ _ _ Hbasic_ltype) as Hsub.
     assert (Ha_lvars : LVFree a ∈ tm_lvars e_src).
     {
       rewrite <- Hlvars.
