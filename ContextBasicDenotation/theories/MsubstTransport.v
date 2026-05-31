@@ -152,7 +152,27 @@ Lemma expr_basic_typing_formula_msubst_store_models
   res_models m (expr_basic_typing_formula
     (lty_env_msubst_store σ Σ)
     (lstore_instantiate_tm (lstore_lift_free σ) e) T).
-Admitted.
+Proof.
+  intros Hσtyped Hm.
+  change (formula_msubst_store σ (expr_basic_typing_formula Σ e T))
+    with (FAtom (lqual_msubst_store σ (expr_basic_typing_lqual Σ e T))) in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, expr_basic_typing_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  destruct Hden as [Hlc [Hsub Hbasic]].
+  apply expr_basic_typing_formula_models_iff.
+  split.
+  - rewrite lty_env_msubst_store_dom.
+    rewrite <- dom_lstore_lift_free.
+    exact Hlc.
+  - split.
+    + rewrite lty_env_msubst_store_dom.
+      rewrite <- dom_lstore_lift_free. exact Hsub.
+    + apply basic_tm_has_ltype_msubst_store; assumption.
+Qed.
 
 Lemma expr_total_formula_msubst_store_models
     σ Σ e (m : WfWorldT) :
@@ -160,6 +180,25 @@ Lemma expr_total_formula_msubst_store_models
   res_models m (formula_msubst_store σ (expr_total_formula e)) ->
   res_models m (expr_total_formula
     (lstore_instantiate_tm (lstore_lift_free σ) e)).
-Admitted.
+Proof.
+  intros Hσtyped Hm.
+  change (formula_msubst_store σ (expr_total_formula e))
+    with (FAtom (lqual_msubst_store σ (expr_total_lqual e))) in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, expr_total_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  destruct Hden as [Hlc [Hsub Htotal]].
+  pose proof (atom_store_has_ltype_closed _ _ Hσtyped) as Hclosed.
+  pose proof (expr_total_on_msubst_store_from_back σ e
+    (lworld_on_lift (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))
+      m Hlc Hsub) Hclosed Htotal) as Htotal'.
+  apply res_models_atom_intro.
+  unfold expr_total_lqual, logic_qualifier_denote.
+  rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+  exists Hlc, Hsub. exact Htotal'.
+Qed.
 
 End MsubstTransport.

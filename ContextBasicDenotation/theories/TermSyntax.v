@@ -1086,6 +1086,14 @@ Definition lstore_instantiate_tm_at
 Definition lstore_instantiate_tm (σ : LStoreT) (e : tm) : tm :=
   lstore_instantiate_tm_at 0 σ e.
 
+Lemma tm_lvars_lstore_instantiate_lift_free_closed
+    (σ : StoreT) e :
+  store_closed σ ->
+  tm_lvars (lstore_instantiate_tm (lstore_lift_free σ : LStoreT) e) =
+  tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT).
+Proof.
+Admitted.
+
 Lemma lstore_instantiate_restrict_lvars_at_mutual :
   (forall v d (σ : LStoreT) X,
       value_lvars_at d v ⊆ X ->

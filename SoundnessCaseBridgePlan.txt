@@ -999,10 +999,61 @@ Implementation order
           driven by `basic_tm_has_ltype_msubst_store`; variable cases split
           on whether the free variable is fixed by `σ`.
 
-       `expr_total_formula_msubst_store`:
+     `expr_total_formula_msubst_store`:
           driven by `expr_eval_in_store` and `lstore_instantiate_tm`; it should
           need only `store_closed σ`, which follows from
           `atom_store_has_ltype Σ σ`.
+
+     Current proof decomposition for the two remaining atom transports:
+
+     1. Term evaluation transport, placed at the TermEval/TermSyntax level:
+
+          `expr_eval_in_store_msubst_back :
+             store_closed σ ->
+             expr_eval_in_store
+               (lworld_on_mlsubst_back-style store τ plus σ restricted to
+                tm_lvars e) e v ->
+             expr_eval_in_store τ
+               (lstore_instantiate_tm (lstore_lift_free σ) e) v`.
+
+        The real content is a compositionality fact for
+        `lstore_instantiate_tm`: instantiating first by the fixed free-store
+        and then by the residual lstore is observationally the same as
+        instantiating once by their compatible union.  This is the semantic
+        reason that the `formula_msubst_store` atom can be transported.
+
+     2. Basic typing transport, placed at BasicTypingFormula:
+
+          `basic_tm_has_ltype_msubst_store :
+             atom_store_has_ltype Σ σ ->
+             basic_tm_has_ltype Σ e T ->
+             basic_tm_has_ltype (lty_env_msubst_store σ Σ)
+               (lstore_instantiate_tm (lstore_lift_free σ) e) T`.
+
+        Its proof should split free-variable cases on membership in `dom σ`.
+        Fixed variables are discharged using `atom_store_has_ltype`; residual
+        variables are typed by the restricted environment.  Bound variables are
+        still handled by the cofinite/open-env part of `basic_tm_has_ltype`.
+
+     3. Formula-level atom transports in `MsubstTransport.v` should then only
+        unpack `lqual_msubst_store`, apply the two semantic/syntax transports
+        above, and repack the corresponding `res_models` iff.
+
+        Current implementation status:
+
+        - `expr_basic_typing_formula_msubst_store_models` is proved from the
+          named BasicTyping helper `basic_tm_has_ltype_msubst_store`.
+        - `expr_total_formula_msubst_store_models` is proved from the named
+          TermEval helper `expr_total_on_msubst_store_from_back` plus the
+          lvar-support lemma
+          `tm_lvars_lstore_instantiate_lift_free_closed`.
+        - The remaining lower obligations are therefore precise:
+          (a) prove `basic_tm_has_ltype_msubst_store`, whose nontrivial step is
+          choosing/opening environments after fixed fvars have been deleted;
+          (b) prove `expr_total_on_msubst_store_from_back`, whose nontrivial
+          step is the operational composition of `lstore_instantiate_tm`; and
+          (c) prove the support equality
+          `tm_lvars_lstore_instantiate_lift_free_closed`.
 
    - Then prove the main transport for type denotation:
 

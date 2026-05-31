@@ -362,6 +362,23 @@ Definition expr_total_on (e : tm) (m : LWorldT) : Prop :=
     worldA_stores m σ ->
     exists v, expr_eval_in_store σ e v.
 
+Lemma expr_total_on_msubst_store_from_back
+    σ e
+    (w : LWorldOn (V := value)
+      (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))) :
+  store_closed σ ->
+  expr_total_on e
+    (@lw value _ (lworld_on_mlsubst_back (tm_lvars e)
+      (lstore_lift_free σ) w) : LWorldT) ->
+  expr_total_on (lstore_instantiate_tm (lstore_lift_free σ) e)
+    (@lw value _ w : LWorldT).
+Proof.
+  (* Operational content: stores in the back-world are exactly a residual
+     lstore from [w] combined with the fixed free store restricted to
+     [tm_lvars e].  Evaluating [e] in that combined store agrees with
+     evaluating the already-instantiated term in the residual store. *)
+Admitted.
+
 (** Atom worlds use the same lstore semantics through the free-lvar lift. *)
 Definition expr_total_on_atom_world (e : tm) (m : WfWorldT) : Prop :=
   expr_total_on e (res_lift_free m : LWorldT).
