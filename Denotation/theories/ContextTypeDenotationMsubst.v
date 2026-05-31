@@ -80,6 +80,28 @@ Proof.
           [exact Hσty|exact Htotal].
 Qed.
 
+Lemma denot_ty_lvar_gas_zero_msubst_store_models_relevant
+    σ Σ τ e (m : WfWorldT) :
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
+  atom_store_has_ltype Σ σ ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas 0 Σ τ e)) ->
+  res_models m (denot_ty_lvar_gas 0
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e)).
+Proof.
+  intros Hσrel Hσty Hm.
+  cbn [denot_ty_lvar_gas] in Hm |- *.
+  cbn [formula_msubst_store formula_mlsubst] in Hm.
+  rewrite res_models_and_iff in Hm.
+  destruct Hm as [Hguard _].
+  rewrite res_models_and_iff.
+  split.
+  - apply denot_guard_msubst_store_models; assumption.
+  - unfold res_models. cbn [formula_measure res_models_fuel].
+    split; [apply formula_scoped_true_iff; trivial|trivial].
+Qed.
+
 Lemma denot_ty_lvar_gas_msubst_store_models_relevant
     gas σ Σ τ e (m : WfWorldT) :
   subseteq (denot_relevant_lvars τ e) (dom Σ) ->
