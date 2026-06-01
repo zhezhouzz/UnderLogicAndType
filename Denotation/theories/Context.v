@@ -4,7 +4,8 @@
     context-type denotation. *)
 
 From Denotation Require Export Notation.
-From Denotation Require Import ContextTypeDenotationSaturate.
+From Denotation Require Import ContextTypeDenotationMsubst
+  ContextTypeDenotationSaturate.
 
 Section ContextDenotation.
 
@@ -113,6 +114,32 @@ Proof.
   pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hden)
     as [_ Hfib].
   apply Hfib. rewrite ctx_base_vars_fv. exact Hproj.
+Qed.
+
+Lemma denot_ctx_under_projection_store_has_type
+    (Σ : gmap atom ty) Γ (m mfib : WfWorldT) (σΣ : StoreT) :
+  m ⊨ denot_ctx_under Σ Γ ->
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  storeA_has_type Σ σΣ.
+Admitted.
+
+Lemma denot_ty_in_ctx_under_fiber_elim_projection_instantiated
+    (Σ : gmap atom ty) Γ τ e (m mfib : WfWorldT) (σΣ : StoreT) :
+  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ ->
+  storeA_has_type Σ σΣ ->
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
+  mfib ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
+    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
+Proof.
+  intros Hwf Hty Hproj Hden.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden.
+  eapply denot_ty_lvar_gas_msubst_store_from_typing_wf.
+  - exact Hwf.
+  - exact Hty.
+  - eapply base_store_projection_from_fiber. exact Hproj.
+  - eapply denot_ty_in_ctx_under_fiber_elim_projection; eauto.
 Qed.
 
 Definition denot_ty_total_in_ctx_under

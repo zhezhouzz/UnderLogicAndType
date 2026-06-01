@@ -263,10 +263,12 @@ Lemma context_typing_wf_from_erased_basic Σ Γ e τ m :
   context_typing_wf Σ Γ e τ.
 Proof.
   intros Hctx Hτ Hm Herase.
-  constructor.
+  split.
   - split; [exact Hctx|]. exists m. exact Hm.
-  - exact Hτ.
-  - exact Herase.
+  - repeat split.
+    + apply wf_erased_ctx_under_erase_ctx_under.
+    + exact Hτ.
+    + exact Herase.
 Qed.
 
 Lemma denot_ty_total_model_context_typing_wf Σ Γ e τ m :

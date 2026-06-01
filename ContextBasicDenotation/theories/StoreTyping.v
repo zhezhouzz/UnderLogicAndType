@@ -22,6 +22,13 @@ Definition atom_store_has_ltype (Σ : lty_env) (σ : StoreT) : Prop :=
       Σ !! LVFree x = Some T /\
       ∅ ⊢ᵥ v ⋮ T.
 
+Lemma storeA_has_type_atom_store_has_ltype
+    (Σ : gmap atom ty) (σ : StoreT) :
+  dom (σ : StoreT) = dom Σ ->
+  storeA_has_type Σ σ ->
+  atom_store_has_ltype (atom_env_to_lty_env Σ) σ.
+Admitted.
+
 Definition worldA_has_type
     {K : Type} `{Countable K}
     (Σ : gmap K ty) (m : @WorldA K _ _ value) : Prop :=

@@ -246,75 +246,53 @@ Definition context_typing_regular
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
   wf_context_ty_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
 
-Fixpoint context_ty_wf_for_ctx
+Definition context_ty_wf_for_ctx
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) : Prop :=
-  match τ with
-  | CTOver _ _ | CTUnder _ _ =>
-      basic_context_ty (dom Σ ∪ ctx_dom Γ) τ
-  | CTInter τ1 τ2 | CTUnion τ1 τ2 | CTSum τ1 τ2 =>
-      context_ty_wf_for_ctx Σ Γ τ1 /\
-      context_ty_wf_for_ctx Σ Γ τ2 /\
-      erase_ty τ1 = erase_ty τ2
-  | CTArrow τx τr =>
-      basic_context_ty (dom Σ ∪ ctx_dom Γ) τx /\
-      wf_context_ty_at 1 (dom Σ ∪ ctx_dom Γ) τr
-  | CTWand τx τr =>
-      basic_context_ty (dom Σ) τx /\
-      wf_context_ty_at 1 (dom Σ ∪ ctx_dom Γ) τr
-  end.
+  context_ty_wf_for_erased Σ (erase_ctx_under Σ Γ) τ.
 
-Inductive context_typing_wf
+Definition context_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
-| ContextTypingWf :
-    wf_ctx_under Σ Γ ->
-    context_ty_wf_for_ctx Σ Γ τ ->
-    erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ ->
-    context_typing_wf Σ Γ e τ.
+  wf_ctx_under Σ Γ /\
+  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ.
+
+Lemma wf_erased_ctx_under_erase_ctx_under Σ Γ :
+  wf_erased_ctx_under Σ (erase_ctx_under Σ Γ).
+Proof.
+  unfold wf_erased_ctx_under, erase_ctx_under.
+  intros x T HΣ.
+  change ((Σ ∪ erase_ctx Γ) !! x = Some T).
+  transitivity (Σ !! x); [|exact HΣ].
+  apply lookup_union_l'. eexists. exact HΣ.
+Qed.
 
 Lemma context_ty_wf_for_ctx_regular Σ Γ τ :
+  wf_ctx_under Σ Γ ->
   context_ty_wf_for_ctx Σ Γ τ ->
   basic_context_ty (dom Σ ∪ ctx_dom Γ) τ.
 Proof.
-  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
-                 |τ1 IH1 τ2 IH2|τx IHx τr IHr|τx IHx τr IHr];
-    cbn [context_ty_wf_for_ctx]; intros Hwf; try exact Hwf.
-  - destruct Hwf as [H1 [H2 Herase]].
-    apply basic_context_ty_inter; [apply IH1|apply IH2|]; assumption.
-  - destruct Hwf as [H1 [H2 Herase]].
-    apply basic_context_ty_iff_wf_context_ty_at.
-    cbn [wf_context_ty_at]. repeat split.
-    + apply basic_context_ty_iff_wf_context_ty_at. apply IH1. exact H1.
-    + apply basic_context_ty_iff_wf_context_ty_at. apply IH2. exact H2.
-    + exact Herase.
-  - destruct Hwf as [H1 [H2 Herase]].
-    apply basic_context_ty_iff_wf_context_ty_at.
-    cbn [wf_context_ty_at]. repeat split.
-    + apply basic_context_ty_iff_wf_context_ty_at. apply IH1. exact H1.
-    + apply basic_context_ty_iff_wf_context_ty_at. apply IH2. exact H2.
-    + exact Herase.
-  - destruct Hwf as [Harg Hbody].
-    apply basic_context_ty_iff_wf_context_ty_at.
-    cbn [wf_context_ty_at]. split.
-    + apply basic_context_ty_iff_wf_context_ty_at. exact Harg.
-    + exact Hbody.
-  - destruct Hwf as [Harg Hbody].
-    apply basic_context_ty_iff_wf_context_ty_at.
-    cbn [wf_context_ty_at]. split.
-    + apply basic_context_ty_iff_wf_context_ty_at.
-      eapply basic_context_ty_mono; [|exact Harg].
-      set_solver.
-    + exact Hbody.
+  intros Hctx Hwf.
+  unfold context_ty_wf_for_ctx in Hwf.
+  pose proof (context_ty_wf_for_erased_regular
+    Σ (erase_ctx_under Σ Γ) τ
+    (wf_erased_ctx_under_erase_ctx_under Σ Γ) Hwf) as Hbasic.
+  assert (Hdom : dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
+  {
+    pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic_ctx.
+    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic_ctx) as HdomΓ.
+    unfold erase_ctx_under. better_set_solver.
+  }
+  rewrite <- Hdom. exact Hbasic.
 Qed.
 
 Lemma context_typing_wf_regular Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
   context_typing_regular Σ Γ e τ.
 Proof.
-  intros [Hctx Hτ Hbasic].
+  intros [Hctx [Henv [Hτ Hbasic]]].
   split; [|exact Hbasic].
   split.
   - exact Hctx.
-  - apply context_ty_wf_for_ctx_regular. exact Hτ.
+  - eapply context_ty_wf_for_ctx_regular; eauto.
 Qed.
 
 Lemma context_typing_wf_basic_typing Σ Γ e τ :
@@ -401,9 +379,8 @@ Lemma context_typing_wf_wand_arg_global Σ Γ e τx τr :
   context_typing_wf Σ Γ e (CTWand τx τr) ->
   basic_context_ty (dom Σ) τx.
 Proof.
-  intros [_ Hty _].
-  cbn [context_ty_wf_for_ctx] in Hty.
-  exact (proj1 Hty).
+  intros [_ Hwf].
+  eapply context_typing_wf_erased_wand_arg_global. exact Hwf.
 Qed.
 
 Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=

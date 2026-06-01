@@ -113,6 +113,21 @@ Proof.
   exact (proj2 (proj2 (proj2 Hguard))).
 Qed.
 
+Lemma denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf
+    (Σ : gmap atom ty) Γ τ e (m mfib : WfWorldT) (σΣ : StoreT) :
+  context_typing_wf Σ Γ e τ ->
+  m ⊨ denot_ctx_under Σ Γ ->
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
+  mfib ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
+    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
+Proof.
+  intros [_ Hwf_erased] Hctx Hproj Hden.
+  eapply denot_ty_in_ctx_under_fiber_elim_projection_instantiated; eauto.
+  eapply denot_ctx_under_projection_store_has_type; eauto.
+Qed.
+
 (** ** Direct case bridges *)
 
 Lemma context_typing_wf_denot_static_guard

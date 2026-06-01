@@ -14,6 +14,106 @@ Section MsubstTransport.
 
 Local Notation LWorldOnT := (LWorldOn (V := value)) (only parsing).
 
+Definition wf_erased_ctx_under
+    (Σbase Δ : gmap atom ty) : Prop :=
+  forall x T, Σbase !! x = Some T -> Δ !! x = Some T.
+
+Fixpoint context_ty_wf_for_erased
+    (Σbase Δ : gmap atom ty) (τ : context_ty) : Prop :=
+  match τ with
+  | CTOver _ _ | CTUnder _ _ =>
+      basic_context_ty (dom Δ) τ
+  | CTInter τ1 τ2 | CTUnion τ1 τ2 | CTSum τ1 τ2 =>
+      context_ty_wf_for_erased Σbase Δ τ1 /\
+      context_ty_wf_for_erased Σbase Δ τ2 /\
+      erase_ty τ1 = erase_ty τ2
+  | CTArrow τx τr =>
+      basic_context_ty (dom Δ) τx /\
+      wf_context_ty_at 1 (dom Δ) τr
+  | CTWand τx τr =>
+      basic_context_ty (dom Σbase) τx /\
+      wf_context_ty_at 1 (dom Δ) τr
+  end.
+
+Definition context_typing_wf_erased
+    (Σbase Δ : gmap atom ty) (e : tm) (τ : context_ty) : Prop :=
+  wf_erased_ctx_under Σbase Δ /\
+  context_ty_wf_for_erased Σbase Δ τ /\
+  Δ ⊢ₑ e ⋮ erase_ty τ.
+
+Lemma wf_erased_ctx_under_dom_subset Σbase Δ :
+  wf_erased_ctx_under Σbase Δ ->
+  dom Σbase ⊆ dom Δ.
+Proof.
+  intros Hwf x Hx.
+  apply elem_of_dom in Hx as [T HΣ].
+  apply elem_of_dom. exists T. eapply Hwf. exact HΣ.
+Qed.
+
+Lemma context_ty_wf_for_erased_regular Σbase Δ τ :
+  wf_erased_ctx_under Σbase Δ ->
+  context_ty_wf_for_erased Σbase Δ τ ->
+  basic_context_ty (dom Δ) τ.
+Proof.
+  intros Henv.
+  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
+                 |τ1 IH1 τ2 IH2|τx IHx τr IHr|τx IHx τr IHr];
+    cbn [context_ty_wf_for_erased]; intros Hwf; try exact Hwf.
+  - destruct Hwf as [H1 [H2 Herase]].
+    apply basic_context_ty_inter; [apply IH1|apply IH2|]; assumption.
+  - destruct Hwf as [H1 [H2 Herase]].
+    apply basic_context_ty_iff_wf_context_ty_at.
+    cbn [wf_context_ty_at]. repeat split.
+    + apply basic_context_ty_iff_wf_context_ty_at. apply IH1. exact H1.
+    + apply basic_context_ty_iff_wf_context_ty_at. apply IH2. exact H2.
+    + exact Herase.
+  - destruct Hwf as [H1 [H2 Herase]].
+    apply basic_context_ty_iff_wf_context_ty_at.
+    cbn [wf_context_ty_at]. repeat split.
+    + apply basic_context_ty_iff_wf_context_ty_at. apply IH1. exact H1.
+    + apply basic_context_ty_iff_wf_context_ty_at. apply IH2. exact H2.
+    + exact Herase.
+  - destruct Hwf as [Harg Hbody].
+    apply basic_context_ty_iff_wf_context_ty_at.
+    cbn [wf_context_ty_at]. split.
+    + apply basic_context_ty_iff_wf_context_ty_at. exact Harg.
+    + exact Hbody.
+  - destruct Hwf as [Harg Hbody].
+    apply basic_context_ty_iff_wf_context_ty_at.
+    cbn [wf_context_ty_at]. split.
+    + apply basic_context_ty_iff_wf_context_ty_at.
+      eapply basic_context_ty_mono; [|exact Harg].
+      apply wf_erased_ctx_under_dom_subset. exact Henv.
+    + exact Hbody.
+Qed.
+
+Lemma context_typing_wf_erased_regular Σbase Δ e τ :
+  context_typing_wf_erased Σbase Δ e τ ->
+  basic_context_ty (dom Δ) τ /\ Δ ⊢ₑ e ⋮ erase_ty τ.
+Proof.
+  intros [Henv [Hτ Hbasic]]. split; [|exact Hbasic].
+  eapply context_ty_wf_for_erased_regular; eauto.
+Qed.
+
+Lemma context_typing_wf_erased_basic_typing Σbase Δ e τ :
+  context_typing_wf_erased Σbase Δ e τ ->
+  Δ ⊢ₑ e ⋮ erase_ty τ.
+Proof. intros Hwf. exact (proj2 (context_typing_wf_erased_regular _ _ _ _ Hwf)). Qed.
+
+Lemma context_typing_wf_erased_context_ty_wf Σbase Δ e τ :
+  context_typing_wf_erased Σbase Δ e τ ->
+  basic_context_ty (dom Δ) τ.
+Proof. intros Hwf. exact (proj1 (context_typing_wf_erased_regular _ _ _ _ Hwf)). Qed.
+
+Lemma context_typing_wf_erased_wand_arg_global Σbase Δ e τx τr :
+  context_typing_wf_erased Σbase Δ e (CTWand τx τr) ->
+  basic_context_ty (dom Σbase) τx.
+Proof.
+  intros [_ [Hτ _]].
+  cbn [context_ty_wf_for_erased] in Hτ.
+  exact (proj1 Hτ).
+Qed.
+
 Lemma lworld_has_type_msubst_store_from_back
     σ Σ (w : LWorldOnT (dom Σ ∖ dom (lstore_lift_free σ : LStoreT))) :
   atom_store_has_ltype Σ σ ->
@@ -107,6 +207,29 @@ Proof.
       exact Hbasic.
 Qed.
 
+Lemma context_ty_wf_formula_msubst_store_models_back
+    σ Σ τ (m : WfWorldT) :
+  context_ty_lvars τ ⊆ dom Σ ->
+  res_models m (context_ty_wf_formula
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)) ->
+  res_models m (formula_msubst_store σ (context_ty_wf_formula Σ τ)).
+Proof.
+  intros HτΣ Hm.
+  apply context_ty_wf_formula_models_iff in Hm as [Hlc [Hsub Hbasic]].
+  destruct Hbasic as [_ Hshape].
+  apply res_models_atom_intro.
+  unfold context_ty_wf_formula, context_ty_wf_lqual,
+    lqual_msubst_store, lqual_mlsubst, logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop].
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  rewrite dom_lstore_lift_free.
+  rewrite lty_env_msubst_store_dom in Hlc, Hsub.
+  exists Hlc, Hsub.
+  split; [exact HτΣ|].
+  apply (proj1 (context_ty_shape_ok_msubst_store σ τ)). exact Hshape.
+Qed.
+
 Lemma basic_world_formula_msubst_store_models
     σ Σ (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->
@@ -145,6 +268,138 @@ Proof.
   exact Htyped.
 Qed.
 
+Lemma lworld_has_type_msubst_store_to_back
+    σ Σ (w : LWorldOnT (dom Σ ∖ dom (lstore_lift_free σ : LStoreT))) :
+  atom_store_has_ltype Σ σ ->
+  lworld_has_type
+    (storeA_restrict Σ (dom Σ ∖ dom (lstore_lift_free σ : LStoreT)))
+    (@lw value _ w : LWorldT) ->
+  lworld_has_type Σ
+    (@lw value _ (lworld_on_mlsubst_back (dom Σ) (lstore_lift_free σ) w)
+      : LWorldT).
+Proof.
+  intros Hσtyped [Hdom_res Hstores_res]. split.
+  - intros v Hv.
+    change (v ∈ lworld_dom
+      (@lw value _ (lworld_on_mlsubst_back (dom Σ)
+        (lstore_lift_free σ) w) : LWorldT)).
+    rewrite (@lw_dom value _ (lworld_on_mlsubst_back (dom Σ)
+      (lstore_lift_free σ) w)).
+    exact Hv.
+  - intros τ Hτ v T u HΣv Hτv.
+    unfold lworld_on_mlsubst_back in Hτ.
+    cbn [lw resA_product rawA_product singleton_worldA worldA_stores] in Hτ.
+    destruct Hτ as [τw [ρD [Hτw [HρD [Hcompat Hτeq]]]]].
+    change (ρD = storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ)) in HρD.
+    subst ρD.
+    subst τ.
+    change ((((τw : gmap logic_var value) ∪
+      storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ))
+      : gmap logic_var value) !! v = Some u) in Hτv.
+    apply (proj1 (map_lookup_union_Some_raw
+      (τw : gmap logic_var value)
+      (storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ)) v u)) in Hτv.
+    destruct Hτv as [Hτw_v | [Hτw_none HρD_v]].
+    + eapply Hstores_res.
+      * exact Hτw.
+      * apply storeA_restrict_lookup_some_2; [exact HΣv|].
+        pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld)
+          τw Hτw) as Hdomτw.
+        change (dom (τw : LStoreT) =
+          lworld_dom (@lw value _ w : LWorldT)) in Hdomτw.
+        apply elem_of_dom_2 in Hτw_v.
+        change (v ∈ dom (τw : LStoreT)) in Hτw_v.
+        rewrite Hdomτw in Hτw_v.
+        rewrite (@lw_dom value _ w) in Hτw_v.
+        exact Hτw_v.
+      * exact Hτw_v.
+    + apply storeA_restrict_lookup_some in HρD_v as [HvΣ Hρv].
+      destruct v as [k|x].
+      * rewrite lstore_lift_free_lookup_bound in Hρv. discriminate.
+      * rewrite lstore_lift_free_lookup_free in Hρv.
+        destruct (Hσtyped x u Hρv) as [U [HΣU Hu]].
+        change (Σ !! LVFree x = Some T) in HΣv.
+        rewrite HΣv in HΣU. inversion HΣU. subst U.
+        exact Hu.
+Qed.
+
+Lemma lworld_has_type_lift_from_res_lift_free_same_dom
+    (Σ : lty_env) (D : lvset) (m : WfWorldT)
+    (Hlc : lc_lvars D) (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)) :
+  dom Σ = D ->
+  lworld_has_type Σ (res_lift_free m : LWorldT) ->
+  lworld_has_type Σ
+    (@lw value _ (lworld_on_lift D m Hlc Hsub) : LWorldT).
+Proof.
+  intros Hdom_eq [Hdom Hstores]. split.
+  - intros v Hv.
+    change (v ∈ lworld_dom
+      (@lw value _ (lworld_on_lift D m Hlc Hsub) : LWorldT)).
+    rewrite (@lw_dom value _ (lworld_on_lift D m Hlc Hsub)).
+    rewrite <- Hdom_eq. exact Hv.
+  - intros τ Hτ v T u HΣv Hτv.
+    unfold lworld_on_lift in Hτ.
+    cbn [lw lraw_world raw_worldA worldA_stores] in Hτ.
+    destruct Hτ as [τ0 [Hτ0 Hrestrict]]. subst τ.
+    unfold res_lift_free in Hτ0.
+    cbn [worldA_stores] in Hτ0.
+    destruct Hτ0 as [σr [Hσr ->]].
+    unfold res_restrict, resA_restrict, rawA_restrict in Hσr.
+    cbn [worldA_stores] in Hσr.
+    destruct Hσr as [σ0 [Hσ0 Hσr]]. subst σr.
+    apply storeA_restrict_lookup_some in Hτv as [HvD Hτv].
+    destruct v as [k|x].
+    + exfalso.
+      exact (Hlc (LVBound k) ltac:(
+        rewrite <- Hdom_eq; eapply elem_of_dom_2; exact HΣv)).
+    + rewrite lstore_lift_free_lookup_free in Hτv.
+      apply storeA_restrict_lookup_some in Hτv as [_ Hσ0x].
+      eapply Hstores.
+      * exists σ0. split; [exact Hσ0|reflexivity].
+      * exact HΣv.
+      * rewrite lstore_lift_free_lookup_free. exact Hσ0x.
+Qed.
+
+Lemma basic_world_formula_msubst_store_models_back
+    σ Σ (m : WfWorldT) :
+  atom_store_has_ltype Σ σ ->
+  res_models m (basic_world_formula (lty_env_msubst_store σ Σ)) ->
+  res_models m (formula_msubst_store σ (basic_world_formula Σ)).
+Proof.
+  intros Hσtyped Hm.
+  apply basic_world_formula_models_iff in Hm as [Hlc [Hsub Htyped]].
+  apply res_models_atom_intro.
+  unfold basic_world_lqual, lqual_msubst_store, lqual_mlsubst,
+    logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop].
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  assert (HdomD : dom (lty_env_msubst_store σ Σ) =
+    dom Σ ∖ dom (lstore_lift_free σ : LStoreT)).
+  {
+    rewrite lty_env_msubst_store_dom, dom_lstore_lift_free.
+    reflexivity.
+  }
+  rewrite HdomD in Hlc, Hsub.
+  exists Hlc, Hsub.
+  change (lworld_has_type Σ
+    (@lw value _
+      (lworld_on_mlsubst_back (dom Σ) (lstore_lift_free σ)
+        (lworld_on_lift (dom Σ ∖ dom (lstore_lift_free σ : LStoreT))
+          m Hlc Hsub)) : LWorldT)).
+  eapply lworld_has_type_msubst_store_to_back; [exact Hσtyped|].
+  assert (Henv :
+    lty_env_msubst_store σ Σ =
+    storeA_restrict Σ (dom Σ ∖ dom (lstore_lift_free σ : LStoreT))).
+  {
+    unfold lty_env_msubst_store.
+    rewrite dom_lstore_lift_free.
+    reflexivity.
+  }
+  rewrite <- Henv.
+  eapply lworld_has_type_lift_from_res_lift_free_same_dom;
+    [exact HdomD|exact Htyped].
+Qed.
+
 Lemma expr_basic_typing_formula_msubst_store_models
     σ Σ e T (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->
@@ -174,6 +429,32 @@ Proof.
     + apply basic_tm_has_ltype_msubst_store; assumption.
 Qed.
 
+Lemma expr_basic_typing_formula_msubst_store_models_back
+    σ Σ e T (m : WfWorldT) :
+  atom_store_has_ltype Σ σ ->
+  res_models m (expr_basic_typing_formula
+    (lty_env_msubst_store σ Σ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e) T) ->
+  res_models m (formula_msubst_store σ (expr_basic_typing_formula Σ e T)).
+Proof.
+  intros Hσtyped Hm.
+  apply expr_basic_typing_formula_models_iff in Hm as [Hlc [Hsub Hbasic]].
+  apply res_models_atom_intro.
+  unfold expr_basic_typing_lqual, lqual_msubst_store, lqual_mlsubst,
+    logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop].
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  assert (HdomD : dom (lty_env_msubst_store σ Σ) =
+    dom Σ ∖ dom (lstore_lift_free σ : LStoreT)).
+  {
+    rewrite lty_env_msubst_store_dom, dom_lstore_lift_free.
+    reflexivity.
+  }
+  rewrite HdomD in Hlc, Hsub.
+  exists Hlc, Hsub.
+  eapply basic_tm_has_ltype_msubst_store_back; eauto.
+Qed.
+
 Lemma expr_total_formula_msubst_store_models
     σ Σ e (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->
@@ -199,6 +480,36 @@ Proof.
   unfold expr_total_lqual, logic_qualifier_denote.
   rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
   exists Hlc, Hsub. exact Htotal'.
+Qed.
+
+Lemma expr_total_formula_msubst_store_models_back
+    σ Σ e (m : WfWorldT) :
+  atom_store_has_ltype Σ σ ->
+  res_models m (expr_total_formula
+    (lstore_instantiate_tm (lstore_lift_free σ) e)) ->
+  res_models m (formula_msubst_store σ (expr_total_formula e)).
+Proof.
+  intros Hσtyped Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold expr_total_lqual, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  pose proof (atom_store_has_ltype_closed _ _ Hσtyped) as Hclosed.
+  destruct Hden as [Hlc [Hsub Htotal]].
+  apply res_models_atom_intro.
+  unfold expr_total_lqual, lqual_msubst_store, lqual_mlsubst,
+    logic_qualifier_denote.
+  cbn [lqual_dom lqual_prop].
+  change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+  assert (HDeq :
+    tm_lvars (lstore_instantiate_tm (lstore_lift_free σ) e) =
+    tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT)).
+  { apply tm_lvars_lstore_instantiate_lift_free_closed. exact Hclosed. }
+  symmetry in HDeq.
+  destruct HDeq.
+  exists Hlc, Hsub.
+  eapply expr_total_on_msubst_store_to_back; eauto.
 Qed.
 
 Lemma type_qualifier_formula_msubst_store_models

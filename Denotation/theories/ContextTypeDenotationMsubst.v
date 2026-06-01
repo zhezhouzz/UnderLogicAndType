@@ -14,6 +14,50 @@ Definition denot_msubst_relevant_store
     (σ : StoreT) (τ : context_ty) (e : tm) : StoreT :=
   store_restrict σ (lvars_fv (denot_relevant_lvars τ e)).
 
+Definition base_store_projection
+    (Σbase : gmap atom ty) (σ : StoreT) (m : WfWorldT) : Prop :=
+  dom (σ : StoreT) = dom Σbase /\
+  (res_restrict m (dom Σbase) : WorldT) = singleton_world σ.
+
+Lemma res_fiber_from_projection_store_dom
+    (m mfib : WfWorldT) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  dom (σ : StoreT) = X.
+Admitted.
+
+Lemma base_store_projection_from_fiber
+    (Σbase : gmap atom ty) (m mfib : WfWorldT) (σ : StoreT) :
+  res_fiber_from_projection m (dom Σbase) σ mfib ->
+  base_store_projection Σbase σ mfib.
+Proof.
+  intros Hfib.
+  split.
+  - eapply res_fiber_from_projection_store_dom. exact Hfib.
+  - eapply res_restrict_fiber_from_projection_eq_singleton.
+    + exact Hfib.
+    + eapply res_fiber_from_projection_store_dom. exact Hfib.
+Qed.
+
+Lemma base_store_projection_restrict
+    (Σbase : gmap atom ty) (σ : StoreT) (m : WfWorldT) X :
+  X ⊆ dom Σbase ->
+  base_store_projection Σbase σ m ->
+  (res_restrict m X : WorldT) = singleton_world (store_restrict σ X).
+Proof.
+  intros HX [_ Hsingle].
+  eapply res_restrict_singleton_subset; eauto.
+Qed.
+
+Lemma base_store_projection_atom_store_has_ltype
+    (Σbase : gmap atom ty) (σ : StoreT) (m : WfWorldT) :
+  storeA_has_type Σbase σ ->
+  base_store_projection Σbase σ m ->
+  atom_store_has_ltype (atom_env_to_lty_env Σbase) σ.
+Proof.
+  intros Hty [Hdom _].
+  eapply storeA_has_type_atom_store_has_ltype; eauto.
+Qed.
+
 Definition denot_msubst_induction_hyp (gas : nat) : Prop :=
   forall σ0 Σ0 τ0 e0 (m0 : WfWorldT),
     denot_relevant_lvars τ0 e0 ⊆ dom Σ0 ->
@@ -443,6 +487,7 @@ Lemma expr_basic_typing_formula_msubst_store_singleton_iff
     σ Σ τ e T (m : WfWorldT) :
   basic_context_ty_lvars (dom Σ) τ ->
   tm_lvars e ⊆ dom Σ ->
+  lc_tm e ->
   atom_store_has_ltype Σ σ ->
   (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
     singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
@@ -458,6 +503,7 @@ Lemma denot_guard_msubst_store_singleton_iff
     σ Σ τ e (m : WfWorldT) :
   basic_context_ty_lvars (dom Σ) τ ->
   tm_lvars e ⊆ dom Σ ->
+  lc_tm e ->
   atom_store_has_ltype Σ σ ->
   (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
     singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
@@ -485,7 +531,7 @@ Lemma denot_guard_msubst_store_singleton_iff
           (expr_total_formula
             (lstore_instantiate_tm (lstore_lift_free σ) e))))).
 Proof.
-  intros Hwf He Hσty Hsingleton.
+  intros Hwf He Hlc Hσty Hsingleton.
   formula_msubst_syntax_norm.
   rewrite !res_models_and_iff.
   split.
@@ -511,6 +557,7 @@ Lemma denot_ty_lvar_gas_zero_msubst_store_singleton_iff
     σ Σ τ e (m : WfWorldT) :
   basic_context_ty_lvars (dom Σ) τ ->
   tm_lvars e ⊆ dom Σ ->
+  lc_tm e ->
   atom_store_has_ltype Σ σ ->
   (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
     singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
@@ -518,12 +565,12 @@ Lemma denot_ty_lvar_gas_zero_msubst_store_singleton_iff
   res_models m (denot_ty_lvar_gas 0 Σ τ
     (lstore_instantiate_tm (lstore_lift_free σ) e)).
 Proof.
-  intros Hwf He Hσty Hsingleton.
+  intros Hwf He Hlc Hσty Hsingleton.
   cbn [denot_ty_lvar_gas].
   formula_msubst_syntax_norm.
   rewrite !res_models_and_iff.
   pose proof (denot_guard_msubst_store_singleton_iff σ Σ τ e m
-    Hwf He Hσty Hsingleton) as Hguard.
+    Hwf He Hlc Hσty Hsingleton) as Hguard.
   split.
   - intros [Hguard_src Htrue].
     assert (Hguard_src0 :
@@ -1671,6 +1718,48 @@ Proof.
       * unfold denot_relevant_lvars.
         rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
         set_solver.
+Qed.
+
+Lemma denot_ty_lvar_gas_msubst_store_from_typing_wf_iff
+    gas Σbase Δ σ τ e (m : WfWorldT) :
+  context_typing_wf_erased Σbase Δ e τ ->
+  storeA_has_type Σbase σ ->
+  base_store_projection Σbase σ m ->
+  m ⊨ formula_msubst_store σ
+        (denot_ty_lvar_gas gas (atom_env_to_lty_env Δ) τ e) <->
+  m ⊨ denot_ty_lvar_gas gas
+        (atom_env_to_lty_env Δ) τ
+        (lstore_instantiate_tm (lstore_lift_free σ) e).
+Admitted.
+
+Lemma denot_ty_lvar_gas_msubst_store_from_typing_wf
+    gas Σbase Δ σ τ e (m : WfWorldT) :
+  context_typing_wf_erased Σbase Δ e τ ->
+  storeA_has_type Σbase σ ->
+  base_store_projection Σbase σ m ->
+  m ⊨ formula_msubst_store σ
+        (denot_ty_lvar_gas gas (atom_env_to_lty_env Δ) τ e) ->
+  m ⊨ denot_ty_lvar_gas gas
+        (atom_env_to_lty_env Δ) τ
+        (lstore_instantiate_tm (lstore_lift_free σ) e).
+Proof.
+  intros Hwf Hty Hproj Hmodels.
+  eapply denot_ty_lvar_gas_msubst_store_from_typing_wf_iff; eauto.
+Qed.
+
+Lemma denot_ty_lvar_gas_msubst_store_to_typing_wf
+    gas Σbase Δ σ τ e (m : WfWorldT) :
+  context_typing_wf_erased Σbase Δ e τ ->
+  storeA_has_type Σbase σ ->
+  base_store_projection Σbase σ m ->
+  m ⊨ denot_ty_lvar_gas gas
+        (atom_env_to_lty_env Δ) τ
+        (lstore_instantiate_tm (lstore_lift_free σ) e) ->
+  m ⊨ formula_msubst_store σ
+        (denot_ty_lvar_gas gas (atom_env_to_lty_env Δ) τ e).
+Proof.
+  intros Hwf Hty Hproj Hmodels.
+  eapply denot_ty_lvar_gas_msubst_store_from_typing_wf_iff; eauto.
 Qed.
 
 End ContextTypeDenotationMsubst.
