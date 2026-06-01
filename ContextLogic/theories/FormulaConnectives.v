@@ -505,6 +505,125 @@ Proof.
       * eapply res_fiber_from_projection_empty_store_dom; exact Hproj.
 Qed.
 
+Lemma res_models_msubst_store_fibvars_singleton_exact_iff
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σD : StoreT) :
+  lc_lvars D ->
+  dom (σD : StoreT) = lvars_fv D ->
+  (res_restrict m (lvars_fv D) : WorldT) = singleton_world σD ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σD (FFibVars D φ) <->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hlc HdomσD Hsingleton Hscope.
+  rewrite formula_msubst_store_fibvars.
+  assert (HDempty : D ∖ lvars_of_atoms (dom (σD : StoreT)) = ∅).
+  {
+    apply set_eq. intros v.
+    rewrite elem_of_empty, elem_of_difference.
+    split; [|tauto].
+    intros [HvD Hvnot].
+    exfalso. apply Hvnot.
+    rewrite HdomσD.
+    apply lvars_bv_empty_subset_of_atoms_fv.
+    - apply lc_lvars_no_bv. exact Hlc.
+    - exact HvD.
+  }
+  rewrite HDempty.
+  rewrite res_models_FFibVars_empty_iff.
+  split.
+  - intros Hmodel.
+    eapply res_models_FFibVars_singleton_intro; eauto.
+  - intros Hmodel.
+    eapply res_models_FFibVars_singleton_elim; eauto.
+Qed.
+
+Lemma formula_msubst_store_fibvars_restrict_to_domain
+    (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  dom (σ : StoreT) ∩ formula_fv φ ⊆ lvars_fv D ->
+  formula_msubst_store σ (FFibVars D φ) =
+  formula_msubst_store (store_restrict σ (lvars_fv D)) (FFibVars D φ).
+Proof.
+  intros HσD.
+  apply formula_msubst_store_agree_fv.
+  apply storeA_map_eq. intros x.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (x ∈ formula_fv (FFibVars D φ))) as [Hxfv|Hxfv];
+    [|reflexivity].
+  destruct (decide (x ∈ lvars_fv D)) as [HxD|HxD]; [reflexivity|].
+  rewrite formula_fv_fibvars in Hxfv.
+  assert (Hxφ : x ∈ formula_fv φ) by set_solver.
+  assert (Hnone : (σ : StoreT) !! x = None).
+  {
+    assert (Hxnotdom : x ∉ dom (σ : StoreT)).
+    {
+      intros Hxdom.
+      pose proof (HσD x ltac:(set_solver)) as Hbad.
+      exact (HxD Hbad).
+    }
+    change ((σ : gmap atom V) !! x = None).
+    change (x ∉ dom (σ : gmap atom V)) in Hxnotdom.
+    apply not_elem_of_dom_1. exact Hxnotdom.
+  }
+  exact Hnone.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_singleton_iff
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  lc_lvars D ->
+  (res_restrict m (lvars_fv D) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv D)) ->
+  dom (σ : StoreT) ∩ formula_fv φ ⊆ lvars_fv D ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ) <->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hlc Hsingleton HσD Hscope.
+  rewrite (formula_msubst_store_fibvars_restrict_to_domain σ D φ HσD).
+  eapply res_models_msubst_store_fibvars_singleton_exact_iff.
+  - exact Hlc.
+  - pose proof (f_equal world_dom Hsingleton) as Hdom.
+    apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope.
+    destruct Hscope as [HD _].
+    change (world_dom (m : WorldT) ∩ lvars_fv D =
+      dom (store_restrict σ (lvars_fv D) : StoreT)) in Hdom.
+    change (world_dom (m : WorldT) ∩ lvars_fv D =
+      dom (store_restrict σ (lvars_fv D) : gmap atom V)) in Hdom.
+    rewrite storeA_restrict_dom in Hdom.
+    change (dom (store_restrict σ (lvars_fv D) : gmap atom V) = lvars_fv D).
+    rewrite storeA_restrict_dom.
+    set_solver.
+  - exact Hsingleton.
+  - exact Hscope.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_from_projection_iff
+    (m mfib : WfWorldT) (X : aset) (σ : StoreT)
+    (D : lvset) (φ : FormulaT) :
+  res_fiber_from_projection m X σ mfib ->
+  lc_lvars D ->
+  lvars_fv D ⊆ X ->
+  dom (σ : StoreT) ∩ formula_fv φ ⊆ lvars_fv D ->
+  formula_scoped_in_world mfib (FFibVars D φ) ->
+  mfib ⊨ formula_msubst_store σ (FFibVars D φ) <->
+  mfib ⊨ FFibVars D φ.
+Proof.
+  intros Hproj Hlc HDX HσD Hscope.
+  eapply res_models_msubst_store_fibvars_singleton_iff; eauto.
+  eapply (res_restrict_singleton_subset mfib (dom (σ : StoreT))
+    (lvars_fv D) σ).
+  - pose proof (wfworld_store_dom (res_restrict m X) σ (proj1 Hproj))
+      as Hdomσ.
+    change (dom (σ : StoreT) = world_dom (res_restrict m X : WorldT))
+      in Hdomσ.
+    simpl in Hdomσ.
+    pose proof (res_fiber_from_projection_world_dom m mfib X σ Hproj)
+      as Hdom_mfib.
+    apply (proj1 (formula_scoped_fibvars_iff mfib D φ)) in Hscope.
+    destruct Hscope as [HscopeD _].
+    set_solver.
+  - eapply res_restrict_fiber_from_projection_dom_singleton. exact Hproj.
+Qed.
+
 Lemma res_models_FFibVars_and_l
     (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
   m ⊨ FFibVars D (FAnd φ ψ) ->

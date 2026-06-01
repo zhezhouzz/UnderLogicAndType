@@ -421,6 +421,51 @@ Lemma res_restrict_eq_subset
   res_restrict m Y = res_restrict n Y.
 Proof. apply resA_restrict_eq_subset. Qed.
 
+Lemma res_restrict_singleton_subset
+    (m : WfWorld) (X Y : aset) (σ : StoreT) :
+  Y ⊆ X ->
+  (res_restrict m X : World) = singleton_world σ ->
+  (res_restrict m Y : World) = singleton_world (store_restrict σ Y).
+Proof.
+  intros Hsub Hsingle.
+  set (mσ := exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld).
+  assert (HeqX : res_restrict m X = res_restrict mσ X).
+  {
+    apply wfworld_ext.
+    rewrite Hsingle.
+    pose proof (f_equal world_dom Hsingle) as HdomX.
+    cbn [res_restrict resA_restrict rawA_restrict worldA_dom
+      singleton_world singleton_worldA] in HdomX.
+    apply world_ext.
+    - cbn [res_restrict resA_restrict rawA_restrict singleton_world
+        singleton_worldA worldA_dom].
+      set_solver.
+    - intros τ. cbn [res_restrict resA_restrict rawA_restrict singleton_world
+        singleton_worldA worldA_stores].
+      split.
+      + intros ->.
+        exists σ. split; [reflexivity |].
+        apply storeA_restrict_idemp. set_solver.
+      + intros [τ0 [-> Hτ]].
+        rewrite <- Hτ. apply storeA_restrict_idemp. set_solver.
+  }
+  pose proof (res_restrict_eq_subset m mσ X Y Hsub HeqX) as HeqY.
+  rewrite HeqY.
+  apply world_ext.
+  - cbn [res_restrict resA_restrict rawA_restrict singleton_world
+      singleton_worldA worldA_dom].
+    change (dom (σ : gmap atom V) ∩ Y =
+      dom (store_restrict σ Y : gmap atom V)).
+    rewrite storeA_restrict_dom. reflexivity.
+  - intros τ. cbn [res_restrict resA_restrict rawA_restrict singleton_world
+      singleton_worldA worldA_stores].
+    split.
+    + intros [τ0 [-> Hτ]].
+      cbn [singleton_world singleton_worldA worldA_stores].
+      symmetry. exact Hτ.
+    + intros ->. exists σ. split; [reflexivity | reflexivity].
+Qed.
+
 Lemma res_fiber_member_projection_transport_on
     (m n nfib : WfWorld) (D X : aset) :
   D ⊆ X →

@@ -1433,6 +1433,43 @@ Implementation order
 
         with the necessary scope premise supplied separately if Rocq needs it.
 
+15. Current BasicTyping reverse-msubst status.
+
+   Completed:
+
+   - `basic_has_ltype_unique_mutual` is now proved.  The proof is by mutual
+     induction on `basic_value_has_ltype` / `basic_tm_has_ltype`; the cofinite
+     Lam/Fix/Let branches compare opened bodies at a common fresh atom.
+
+   Remaining named obligation:
+
+   - `basic_has_ltype_msubst_store_back_at_mutual`
+
+     The naive syntax-induction proof is not strong enough.  In the Lam/Fix/Let
+     cases, after inverting the transformed typing derivation we get a typing
+     derivation for an opened transformed body:
+
+     ```
+     basic_tm_has_ltype
+       (lty_env_msubst_store σ (<[LVFree y := T]> Σ))
+       (lstore_instantiate_tm_at (S d) (lstore_lift_free σ)
+          (open_tm 0 (vfvar y) e))
+       U
+     ```
+
+     To reconstruct the source typing, we need the reverse-msubst theorem for
+     `open_tm 0 (vfvar y) e`, not merely for `e`.  A plain syntax induction on
+     `e` only gives the latter.  The correct proof route is therefore one of:
+
+     - prove a cofinite strengthened reverse theorem whose induction hypothesis
+       is available for opened bodies, or
+     - prove the theorem by induction over the transformed typing derivation,
+       carrying a relation between the source term and its instantiated target.
+
+     The second route is likely cleaner for this inductive `basic_*_has_ltype`
+     relation: each Lam/Fix/Let body premise is already a smaller typing
+     derivation, so the recursive call lines up with the cofinite body proof.
+
       - Reuse existing `res_models_forall_map_same_fv` and
         `res_models_impl2_map`; do not introduce denotation-specific forall
         mappers.
@@ -1504,6 +1541,81 @@ Implementation order
       - The reverse direction is isolated as the named obligation
         `denot_ty_lvar_gas_msubst_store_models_relevant_back`; this is the
         next proof target.
+      - DONE: the BasicDenotation back direction now has formula-level
+        bridges for:
+        `context_ty_wf_formula_msubst_store_models_back`,
+        `basic_world_formula_msubst_store_models_back`,
+        `expr_basic_typing_formula_msubst_store_models_back`, and
+        `expr_total_formula_msubst_store_models_back`.
+      - DONE: the denotation guard reverse bridge is now exposed as
+        `denot_guard_msubst_store_models_back_relevant`, and the gas-zero
+        reverse bridge is
+        `denot_ty_lvar_gas_zero_msubst_store_models_relevant_back`.
+      - DONE: `lworld_has_type_lift_from_res_lift_free_same_dom` is proved.
+        It is the resource/lift restriction fact needed by
+        `basic_world_formula_msubst_store_models_back`.
+      - Remaining named BasicDenotation sub-obligation introduced by this
+        reverse route: `basic_tm_has_ltype_msubst_store_back`.  This is the
+        real inductive reverse-substitution theorem for basic typing.
+        Proof plan:
+        1. Add lookup uniqueness support:
+           `atom_store_has_ltype_lookup_from_basic_ltype`.  If `σ !! x = Some vx`
+           and the substituted value `vx` has basic ltype `T` in the residual
+           environment, then `Σ !! LVFree x = Some T`.  The proof uses
+           `atom_store_has_ltype` to obtain some original type `U`, converts the
+           residual basic-ltype fact for the closed value into CoreLang typing,
+           and applies `basic_typing_unique_value`.
+        2. Prove the arbitrary-depth mutual theorem
+           `basic_has_ltype_msubst_store_back_at_mutual`.  The fvar-hit case
+           uses the lookup uniqueness support; fvar-miss and bvar cases invert
+           the residual lookup and use `lty_env_msubst_store_lookup_some`.
+           Lam/Fix/Let use fresh `y ∉ L ∪ dom σ ∪ fv`, commute
+           `lstore_instantiate_*_open0_fresh_lift_free`, then apply the IH
+           under `atom_store_has_ltype_insert_fresh` and
+           `lty_env_msubst_store_insert_fresh`.
+        3. Derive `basic_tm_has_ltype_msubst_store_back` as the `d = 0`
+           wrapper.
+        Updated route chosen for the current proof:
+        - Do not prove the reverse theorem by source syntax induction.  The
+          body cases need the induction hypothesis for opened bodies, and the
+          source syntax IH is not strong enough.
+        - Prove
+          `basic_has_ltype_msubst_store_back_by_derivation` by induction over
+          the transformed `basic_value_has_ltype` / `basic_tm_has_ltype`
+          derivation.  Carry equalities saying the transformed value/term is
+          exactly `lstore_instantiate_*_at d (lstore_lift_free σ)` of some
+          source value/term.
+        - In Lam/Fix/Let, choose fresh `y ∉ L ∪ dom σ ∪ fv(body)`, insert
+          `y` into both the source typing environment and the typed atom store,
+          commute open with closed-store instantiation, and apply the body IH
+          to the smaller transformed body derivation.
+        - Keep `basic_has_ltype_msubst_store_back_at_mutual` only as a thin
+          wrapper around this derivation-induction theorem, and derive
+          `basic_tm_has_ltype_msubst_store_back` from the `d = 0` instance.
+        - Small normalization helpers used by this route:
+          `atom_store_has_ltype_lookup_from_basic_ltype`,
+          `basic_value_has_ltype_msubst_store_back_fvar`, and the closed-store
+          bvar fact
+          `lstore_instantiate_value_at_lift_free_bvar`.
+        Current status:
+        - DONE: `basic_has_ltype_msubst_store_back_by_derivation` is proved
+          and `ContextBasicDenotation/theories/BasicTypingFormula.vo`
+          compiles.
+        - DONE: `basic_has_ltype_msubst_store_back_at_mutual` and
+          `basic_tm_has_ltype_msubst_store_back` are now thin wrappers over the
+          derivation-induction theorem.
+        - DONE: `ContextBasicDenotation/theories/MsubstTransport.vo` and
+          `Denotation/theories/ContextTypeDenotationMsubst.vo` compile with
+          the remaining Denotation-level named obligations isolated.
+        - Remaining proof work in this msubst block is now genuinely at the
+          Denotation Arrow/Wand level: the body transports must combine
+          `formula_open_msubst_store_fresh`, the denotation open transport, and
+          the iff-shaped induction hypothesis in negative/positive positions.
+          This likely needs small syntax-normalization helpers for the Arrow
+          and Wand forall bodies, analogous to
+          `formula_fv_over_msubst_store_body` and
+          `formula_fv_under_msubst_store_body`, plus the already available
+          `res_models_impl2_map` / `res_models_impl_wand_map` spine.
    3. Prove Arrow body transport by the same `FForall`/`FImpl` mapper spine.
       The first implication premise uses the reverse projection of the
       strengthened induction hypothesis; the result premise uses the forward
@@ -1511,8 +1623,363 @@ Implementation order
       - `context_ty_msubst_store` through `cty_shift 0`;
       - `lty_env_msubst_store` through `typed_lty_env_bind`;
       - `lstore_instantiate_tm` through `tm_shift 0` and `tapp_tm`.
+      Concrete proof spine:
+      - define `src` and `dst` forall bodies, prove
+        `formula_fv (formula_msubst_store σ src) = formula_fv dst`;
+      - apply `res_models_forall_map_same_fv`;
+      - after opening the fresh forall atom, normalize
+        `formula_open`/`formula_msubst_store`;
+      - apply `res_models_impl2_map`;
+      - world premise is transported by the same freshness argument used by
+        Over/Under;
+      - argument premise is contravariant, so use the backward half of
+        `denot_msubst_induction_hyp gas`;
+      - result premise is covariant, so use the forward half of the same IH.
+      Progress:
+      - DONE: added and compiled
+        `context_ty_msubst_store_open_fresh`; this removes one recurring
+        fresh-open normalization gap after the forall witness is chosen.
+      - DONE: added and compiled
+        `formula_open_denot_ty_lvar_gas_singleton`; this packages the common
+        singleton-open exact rewrite for recursive denotation atoms, so the
+        Arrow/Wand proof can normalize each premise before applying the IH.
+      - DONE: added and compiled Store-level
+        `lvar_store_shift_from_atom_store`; this is the bottom fact needed to
+        prove that atom-store msubst commutes with context-type shifting.
+      - DONE: added and compiled Base-level
+        `lvars_shift_from_difference_of_atoms`; this normalizes the domain
+        side of `qual_shift_from` commuting with atom-store msubst.
+      Next proof steps:
+      1. Store layer: prove the atom-store specialization of shift commuting
+         with `lstore_on_mlsubst_back`.  The intended statement should avoid
+         dependent casts by proving equality of the underlying stores:
+         `lso_store (lstore_on_shift_from k (lstore_on_mlsubst_back D ρ s)) =
+          lso_store (lstore_on_mlsubst_back (lvars_shift_from k D) ρ s')`,
+         where `ρ = atom_store_to_lvar_store σ` and `s'` is the shifted input
+         store coerced through
+         `lvars_shift_from_difference_of_atoms`.
+         DONE: `lstore_on_shift_from_mlsubst_back_atom_store` is proved in
+         `ContextStore/StoreInterface.v`.
+         DONE: the inverse/reconstruction directions needed by
+         `qual_shift_from_msubst_store` are proved by first proving raw
+         `gmap` statements and then wrapping them back through `LStoreOn`:
+           `lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw`
+           `lstore_mlsubst_back_restrict_of_shift_atom_store_raw`
+           `lstore_on_shift_from_restrict_of_mlsubst_back_atom_store`
+           `lstore_on_mlsubst_back_restrict_of_shift_atom_store`
+         The key lesson is that the proof should avoid dependent record paths
+         until the final wrapper.  The raw lemmas use lookup extensionality over
+         `logic_var`, with `lookup_kmap`, `storeA_restrict_lookup`,
+         `atom_store_to_lvar_store_lookup_bound_none`, and
+         `atom_store_to_lvar_store_dom`.
+      2. Qualifier layer: prove exact
+         `qual_shift_from k (qual_msubst_store σ q) =
+          qual_msubst_store σ (qual_shift_from k q)` using `qual_ext`.
+         DONE: proved in `ContextTypeLanguage/theories/Qualifier.v`; it now
+         depends only on the two named Store reconstruction obligations above.
+      3. Type layer: prove exact
+         `cty_shift k (context_ty_msubst_store σ τ) =
+          context_ty_msubst_store σ (cty_shift k τ)` by induction on `τ`.
+         DONE: proved as `context_ty_msubst_store_shift` in
+         `ContextTypeLanguage/theories/Syntax.v`.
+      4. Denotation layer: use this shift/msubst rewrite in the Arrow/Wand
+         body transports before applying the iff-shaped recursive IH.
+         CURRENT: `Denotation/theories/ContextTypeDenotationMsubst.vo`
+         compiles after these lower transports.  The remaining named
+         Denotation obligations are:
+           `denot_ty_lvar_gas_msubst_store_arrow_body`
+           `denot_ty_lvar_gas_msubst_store_wand_body`
+           `denot_ty_lvar_gas_msubst_store_models_relevant_back`
+         Updated concrete move:
+         - Strengthen Arrow/Wand body transport to iff-shaped helpers (or prove
+           explicit `_back` siblings first and keep the existing forward names
+           as projections).  This is necessary because
+           `denot_ty_lvar_gas_msubst_store_models_relevant_back` is an
+           induction that must cross Arrow/Wand in the reverse direction.
+         - Prove Arrow with the same `res_models_forall_map_same_fv` +
+           `res_models_impl2_map` spine used by Over/Under.  Normalize the
+           opened source with `formula_open_msubst_store_fresh`,
+           `formula_open_denot_ty_lvar_gas_singleton`,
+           `context_ty_msubst_store_shift`, and the term-open/shift lemmas for
+           `tapp_tm`.  In the forward direction, use the backward half of
+           `denot_msubst_induction_hyp` on the argument premise and the forward
+           half on the result premise.  In the backward direction, swap those
+           uses.
+         - Prove Wand analogously with `res_models_impl_wand_map`; its
+           antecedent is contravariant and its consequent is covariant under
+           `res_product`.
+         - Then prove `denot_ty_lvar_gas_msubst_store_models_relevant_back` by
+           induction on gas/types, using the new Arrow/Wand back projections.
+         Immediate execution checklist:
+         1. Add/prove Arrow/Wand forall-body FV normalization lemmas, analogous
+            to `formula_fv_over_msubst_store_body` and
+            `formula_fv_under_msubst_store_body`.  These should be syntactic
+            lemmas only; they justify `res_models_forall_map_same_fv`.
+            Support added while preparing this step:
+            - DONE: `lty_env_msubst_store_open_one_fresh`, commuting a fresh
+              singleton open with atom-store msubst on type environments.
+            - DONE: `lty_env_msubst_store_shift`, commuting type-environment
+              shift with atom-store msubst.
+            - DONE: `lty_env_msubst_store_insert_bound0_shift` and
+              `lty_env_msubst_store_typed_bind`, so the Arrow/Wand bound
+              parameter environment can be normalized without expanding
+              `typed_lty_env_bind`.
+         2. Prove forward Arrow/Wand body transports by mapping the forall body.
+            After `formula_open_msubst_store_fresh` and
+            `formula_open_denot_ty_lvar_gas_singleton`, use the IH backward on
+            the argument premise and IH forward on the result premise.
+         3. Add/prove reverse Arrow/Wand body transports with the same proof
+            skeleton but opposite IH directions.
+         4. Re-run the gas/type induction for
+            `denot_ty_lvar_gas_msubst_store_models_relevant_back`; all
+            non-Arrow/Wand cases should mirror the existing forward proof with
+            the iff-shaped IH.
+            Progress:
+            - DONE: the public back theorem now first restricts the input store
+              to `denot_relevant_lvars τ e` and then calls the restricted
+              theorem.  This proves the non-inductive "arbitrary σ" wrapper and
+              leaves only the relevant-store induction:
+              `denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted`.
+              This matches the relevant-store discipline used by the forward
+              theorem and avoids carrying irrelevant atom substitutions through
+              every recursive case.
+            - Next BasicDenotation helper:
+              `type_qualifier_formula_msubst_store_assoc_models_back`.
+              Proof shape: unfold the two nested `formula_msubst_store`s and
+              choose the witness
+              `lstore_on_mlsubst_back (D ∖ dom ρ1) ρ2 s` for the intermediate
+              qualifier.  Then `lstore_in_lworld_on_mlsubst_back` converts the
+              world-membership side.  No union-composition lemma is needed for
+              this back direction because we keep the two back substitutions
+              nested instead of merging them.
    4. Prove Wand body transport analogously, replacing the inner implication
       mapper with the existing wand connective mapper or adding the Logic-level
       `res_models_wand_map` if it is not already present.
+      Concrete proof spine:
+      - same forall and first-impl normalization as Arrow;
+      - apply `res_models_impl_wand_map`;
+      - wand antecedent is contravariant and uses the backward IH;
+      - wand consequent is covariant under the product world and uses the
+        forward IH.
    5. Rerun `make Denotation/theories/ContextTypeDenotationMsubst.vo`, then
       full `make`, then commit.
+
+14. Revised singleton-projection route for `denot_ty_lvar_gas_msubst_store`.
+
+   The previous route tried to prove a global transport between
+
+     `formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)`
+
+   and
+
+     `denot_ty_lvar_gas gas
+        (lty_env_msubst_store σ Σ)
+        (context_ty_msubst_store σ τ)
+        (lstore_instantiate_tm (lstore_lift_free σ) e)`.
+
+   This is not the right semantic theorem for the actual use site.  It forces
+   Arrow/Wand negative positions to use a reverse transport for type
+   qualifiers, which would require
+
+     `type_qualifier_formula (qual_msubst_store σ φ) ->
+      formula_msubst_store σ (type_qualifier_formula φ)`.
+
+   That implication is false for ordinary dependent exact-world qualifiers.
+   Example shape: `φ` says `ν > x`, `σ` fixes `x = 5`; the normalized
+   qualifier only checks `ν > 5`, while the raw substituted exact-world atom
+   also rejects full stores that satisfy `ν > x` with a different `x`.
+
+   The actual Soundness/Context use site never supplies an arbitrary `σ`.
+   It obtains `σ` from the outer `FFibVars (ctx_base_vars Σ)` projection:
+
+     `res_fiber_from_projection m (dom Σ) σ mfib`.
+
+   Hence the chosen fiber world `mfib` has a singleton projection on `dom σ`,
+   exposed by
+
+     `res_restrict_fiber_from_projection_dom_singleton`.
+
+   The new live theorem should therefore be singleton-aware and should not
+   rewrite the context type itself:
+
+     `m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e) <->
+      m ⊨ denot_ty_lvar_gas gas
+            (lty_env_msubst_store σ Σ)
+            τ
+            (lstore_instantiate_tm (lstore_lift_free σ) e)`.
+
+   It carries a premise saying that `m` has singleton projection `σ` on the
+   relevant fixed variables.  A convenient first statement is:
+
+     `res_restrict m (dom σ) = singleton_world σ`.
+
+   Later wrappers can derive this premise from `res_fiber_from_projection`.
+
+   Immediate proof checklist:
+
+   1. Logic layer: prove the exact-domain commuting lemma for fiber formulas:
+
+        `res_models_msubst_store_fibvars_singleton_exact_iff`
+
+      Statement:
+
+        `lc_lvars K ->
+         dom σK = lvars_fv K ->
+         (res_restrict m (lvars_fv K) : WorldT) = singleton_world σK ->
+         formula_scoped_in_world m (FFibVars K p) ->
+         m ⊨ formula_msubst_store σK (FFibVars K p) <->
+         m ⊨ FFibVars K p`.
+
+      Proof plan:
+      - Normalize `formula_msubst_store σK (FFibVars K p)` to
+        `FFibVars (K ∖ lvars_of_atoms (dom σK))
+          (formula_msubst_store σK p)`.
+      - Use `lc_lvars K` and `dom σK = lvars_fv K` to prove the residual
+        lvar set is empty.
+      - Reduce the left side with `res_models_FFibVars_empty_iff`.
+      - Reduce the right side with the existing singleton eliminator/intro:
+        `res_models_FFibVars_singleton_elim` and
+        `res_models_FFibVars_singleton_intro`.
+
+   2. Logic layer: prove a wrapper for bigger stores:
+
+        `res_models_msubst_store_fibvars_singleton_iff`
+
+      Statement:
+
+        `lc_lvars K ->
+         (res_restrict m (lvars_fv K) : WorldT) =
+           singleton_world (store_restrict σ (lvars_fv K)) ->
+         dom σ ∩ formula_fv p ⊆ lvars_fv K ->
+         formula_scoped_in_world m (FFibVars K p) ->
+         m ⊨ formula_msubst_store σ (FFibVars K p) <->
+         m ⊨ FFibVars K p`.
+
+      Proof plan:
+      - Use `formula_msubst_store_restrict_subset`/agree-on-fv to replace
+        `σ` by `store_restrict σ (lvars_fv K)` for the whole `FFibVars K p`.
+      - Derive the exact-domain side condition for the restricted store.
+      - Call the exact-domain lemma.
+
+   3. Algebra/Logic wrapper: expose the projection form used by Context:
+
+        `res_models_msubst_store_fibvars_from_projection_iff`
+
+      Statement shape:
+
+        `res_fiber_from_projection m X σ mfib ->
+         lvars_fv K ⊆ X ->
+         dom σ ∩ formula_fv p ⊆ lvars_fv K ->
+         formula_scoped_in_world mfib (FFibVars K p) ->
+         mfib ⊨ formula_msubst_store σ (FFibVars K p) <->
+         mfib ⊨ FFibVars K p`.
+
+      Proof plan:
+      - From `res_fiber_from_projection` get
+        `res_restrict mfib (dom σ) = singleton_world σ`.
+      - Restrict that singleton equality down to `lvars_fv K` using
+        `lvars_fv K ⊆ dom σ` or a derived projection-domain equality.
+      - Apply the wrapper from step 2.
+
+   4. Denotation layer: replace the old msubst transport targets.
+
+      Stop proving/using:
+
+        `denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted`
+        with target `(context_ty_msubst_store σ τ)`.
+
+      Add the singleton-aware theorem:
+
+        `denot_ty_lvar_gas_msubst_store_singleton_iff`.
+
+      Updated statement shape after the wf discussion:
+
+        `basic_context_ty_lvars (dom Σ) τ ->
+         tm_lvars e ⊆ dom Σ ->
+         atom_store_has_ltype Σ σ ->
+         (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+           singleton_world (store_restrict σ
+             (lvars_fv (denot_relevant_lvars τ e))) ->
+         m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e) <->
+         m ⊨ denot_ty_lvar_gas gas
+              Σ
+              τ
+              (lstore_instantiate_tm (lstore_lift_free σ) e)`.
+
+      Important correction: the target must keep both `Σ` and `τ` unchanged.
+      Only the term is instantiated.  The earlier target
+      `(lty_env_msubst_store σ Σ, τ)` is too weak for
+      `context_ty_wf_formula`, because deleting `dom σ` from `Σ` while
+      leaving `τ` unchanged can make the guard false.  The even earlier target
+      `(lty_env_msubst_store σ Σ, context_ty_msubst_store σ τ)` is also wrong
+      for Arrow/Wand negative positions.
+
+      The wf premises are not cosmetic.  The proof needs them to know that all
+      type variables read by `τ` are covered by the singleton projection, and
+      that recursive Arrow/Wand subtypes remain well-scoped when the induction
+      hypothesis is applied.  `basic_context_ty_lvars (dom Σ) τ` is preferred
+      over ad-hoc FV/lc premises because it packages both lc/no-bvar shape and
+      free-variable inclusion.
+
+      If the proof is cleaner, first state it with
+      `(res_restrict m (dom σ) : WorldT) = singleton_world σ` and
+      `lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e`; then add an
+      arbitrary-store wrapper using `store_restrict`.
+
+   5. Over/Under denotation cases.
+
+      In the opened forall body, instantiate the Logic lemma with:
+
+        `K := qual_vars (φ ^q^ y) ∖ {[LVFree y]}`
+        `p := FOver/FUnder (type_qualifier_formula (φ ^q^ y))`.
+
+      Freshness `y ∉ dom σ` ensures the result variable is not fixed by the
+      singleton store.  The set side condition should reduce to:
+
+        `dom σ ∩ qual_dom (φ ^q^ y) ⊆ lvars_fv K`.
+
+      This is a set/fv normalization obligation, not a semantic qualifier
+      transport.
+
+   6. Arrow/Wand denotation cases.
+
+      Because the target type remains `τ` rather than
+      `context_ty_msubst_store σ τ`, the recursive IH is now an iff over the
+      same source context type.  The argument premise can use the backward half
+      without ever needing a false type-qualifier back lemma; the result premise
+      uses the forward half.
+
+      Wand is not a counterexample.  Although the wand antecedent is checked in
+      an arbitrary compatible frame `n`, the parameter type may only refer to
+      the base `Σ` variables, not captured `Γ` variables.  If
+      `res_product n m Hc ⊑ M` and `M` has singleton projection on the relevant
+      `Σ` variables, then `n` inherits the same singleton projection on
+      `FV(τx)`.  Use the existing singleton-product inheritance lemmas, e.g.
+      `res_product_le_singleton_restrict_inv` or a thin wrapper specialized to
+      the world appearing in the wand proof.
+
+   7. Context/Soundness call sites.
+
+      The current elimination lemma
+
+        `denot_ty_in_ctx_under_fiber_elim_projection`
+
+      already exposes
+
+        `res_fiber_from_projection m (dom Σ) σΣ mfib`
+        and
+        `mfib ⊨ formula_msubst_store σΣ (...)`.
+
+      Use the new projection wrapper to obtain the singleton-aware denotation
+      transport at exactly this boundary.
+
+   8. Compile order:
+
+      - `make ContextLogic/theories/FormulaConnectives.vo`
+      - `make Denotation/theories/ContextTypeDenotationMsubst.vo`
+      - `make Denotation/theories/Context.vo`
+      - `make ContextTyping/theories/Soundness.vo`
+
+   Any old named obligation that only existed to prove the false global back
+   transport should be deleted or marked obsolete in comments before final
+   cleanup.
