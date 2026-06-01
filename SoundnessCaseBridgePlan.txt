@@ -1817,7 +1817,8 @@ Implementation order
 
    Immediate proof checklist:
 
-   1. Logic layer: prove the exact-domain commuting lemma for fiber formulas:
+   1. DONE: Logic layer: prove the exact-domain commuting lemma for fiber
+      formulas:
 
         `res_models_msubst_store_fibvars_singleton_exact_iff`
 
@@ -1841,7 +1842,7 @@ Implementation order
         `res_models_FFibVars_singleton_elim` and
         `res_models_FFibVars_singleton_intro`.
 
-   2. Logic layer: prove a wrapper for bigger stores:
+   2. DONE: Logic layer: prove a wrapper for bigger stores:
 
         `res_models_msubst_store_fibvars_singleton_iff`
 
@@ -1861,7 +1862,7 @@ Implementation order
       - Derive the exact-domain side condition for the restricted store.
       - Call the exact-domain lemma.
 
-   3. Algebra/Logic wrapper: expose the projection form used by Context:
+   3. DONE: Algebra/Logic wrapper: expose the projection form used by Context:
 
         `res_models_msubst_store_fibvars_from_projection_iff`
 
@@ -1925,6 +1926,31 @@ Implementation order
       `(res_restrict m (dom σ) : WorldT) = singleton_world σ` and
       `lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e`; then add an
       arbitrary-store wrapper using `store_restrict`.
+
+      Immediate decomposition before touching the recursive induction:
+
+      - Add a singleton-aware guard theorem for gas-zero:
+
+          `denot_guard_msubst_store_singleton_iff`.
+
+        It should keep `Σ` and `τ` unchanged and only instantiate the term.
+        The proof should not try to prove a global qualifier back transport.
+        Instead:
+        * `context_ty_wf_formula` comes from the explicit
+          `basic_context_ty_lvars (dom Σ) τ` premise plus the scopedness
+          supplied by the source/target guard;
+        * `basic_world_formula` uses the source residual world plus the
+          singleton typed store to reconstruct the fixed atoms, then weakens
+          to the target `denot_relevant_env`;
+        * `expr_basic_typing_formula` uses the existing residual msubst typing
+          theorem plus weakening/reconstruction from the singleton typed store;
+        * `expr_total_formula` uses the already proved total msubst transport.
+
+      - Then prove:
+
+          `denot_ty_lvar_gas_zero_msubst_store_singleton_iff`.
+
+      - Only after gas-zero is clean, define the singleton-shaped recursive IH.
 
    5. Over/Under denotation cases.
 
