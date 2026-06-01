@@ -79,10 +79,15 @@ ContextBasicDenotation/theories/MsubstTransport.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
-Denotation/theories/ContextTypeDenotationMsubst.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationOpenModels.v
+Denotation/theories/ContextTypeDenotationMsubstCore.v
+Denotation/theories/ContextTypeDenotationMsubstGuard.v
+Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v
+Denotation/theories/ContextTypeDenotationMsubstCompat.v
+Denotation/theories/ContextTypeDenotationMsubstScoped.v
+Denotation/theories/ContextTypeDenotationMsubst.v
 Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturate.v
 Denotation/theories/Context.v
