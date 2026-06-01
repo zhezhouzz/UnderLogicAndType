@@ -24,6 +24,43 @@ Definition denot_msubst_induction_hyp (gas : nat) : Prop :=
       (context_ty_msubst_store σ0 τ0)
       (lstore_instantiate_tm (lstore_lift_free σ0) e0).
 
+Lemma formula_open_denot_ty_lvar_gas_singleton
+    k y gas Σ τ e :
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ fv_tm e ->
+  y ∉ fv_cty τ ->
+  formula_open k y (denot_ty_lvar_gas gas Σ τ e) =
+  denot_ty_lvar_gas gas
+    (lty_env_open_one k y Σ)
+    (cty_open k y τ)
+    (open_tm k (vfvar y) e).
+Proof.
+  intros HΣ He Hτ.
+  assert (HΣfree : LVFree y ∉ dom Σ).
+  {
+    intros Hbad. apply HΣ.
+    apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hfresh :
+    open_env_fresh_for_lvars (<[k := y]> ∅)
+      (dom Σ ∪ denot_relevant_lvars τ e)).
+  {
+    apply open_env_fresh_for_lvars_singleton.
+    rewrite lvars_fv_union.
+    unfold denot_relevant_lvars.
+    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
+    set_solver.
+  }
+  pose proof (formula_open_env_denot_ty_lvar_gas
+    (<[k := y]> ∅) gas Σ τ e Hfresh
+    (open_env_values_inj_singleton k y)) as Heq.
+  rewrite formula_open_env_singleton in Heq.
+  rewrite lty_env_open_lvars_singleton in Heq by exact HΣfree.
+  rewrite open_cty_env_singleton in Heq.
+  rewrite open_tm_env_singleton in Heq.
+  exact Heq.
+Qed.
+
 Lemma atom_store_has_ltype_denot_relevant_env Σ σ τ e :
   lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
   atom_store_has_ltype Σ σ ->
@@ -32,6 +69,504 @@ Proof.
   intros Hrel Hty.
   unfold denot_relevant_env, lty_env_restrict_lvars.
   apply atom_store_has_ltype_restrict_lvars; assumption.
+Qed.
+
+Lemma expr_total_formula_msubst_store_singleton_iff
+    σ Σ e (m : WfWorldT) :
+  atom_store_has_ltype Σ σ ->
+  m ⊨ formula_msubst_store σ (expr_total_formula e) <->
+  m ⊨ expr_total_formula
+    (lstore_instantiate_tm (lstore_lift_free σ) e).
+Proof.
+  intros Hσty. split.
+  - apply expr_total_formula_msubst_store_models with (Σ := Σ).
+    exact Hσty.
+  - apply expr_total_formula_msubst_store_models_back with (Σ := Σ).
+    exact Hσty.
+Qed.
+
+Lemma context_ty_wf_formula_msubst_store_singleton_iff
+    σ Σ τ e (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  tm_lvars e ⊆ dom Σ ->
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
+  m ⊨ formula_msubst_store σ
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ) <->
+  m ⊨ context_ty_wf_formula
+    (denot_relevant_env Σ τ
+      (lstore_instantiate_tm (lstore_lift_free σ) e)) τ.
+Proof.
+  intros Hwf He Hσty Hsingleton.
+  pose proof (atom_store_has_ltype_closed _ _ Hσty) as Hclosed.
+  set (R := denot_relevant_lvars τ e).
+  set (e' := lstore_instantiate_tm (lstore_lift_free σ) e).
+  set (Σg := denot_relevant_env Σ τ e).
+  set (Σg' := denot_relevant_env Σ τ e').
+  assert (HdomΣg : dom (Σg : lty_env) = dom (Σ : lty_env) ∩ R).
+  {
+    subst Σg. unfold denot_relevant_env, lty_env_restrict_lvars.
+    rewrite storeA_restrict_dom. reflexivity.
+  }
+  assert (HR' : denot_relevant_lvars τ e' =
+      context_ty_lvars τ ∪ (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))).
+  {
+    subst e'. unfold denot_relevant_lvars.
+    rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+    reflexivity.
+  }
+  assert (HdomΣg' : dom (Σg' : lty_env) =
+      dom (Σ : lty_env) ∩ denot_relevant_lvars τ e').
+  {
+    subst Σg'. unfold denot_relevant_env, lty_env_restrict_lvars.
+    rewrite storeA_restrict_dom. reflexivity.
+  }
+  assert (Hscope_fixed :
+    dom (σ : StoreT) ∩ lvars_fv R ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (f_equal world_dom Hsingleton) as Hdom.
+    simpl in Hdom.
+    rewrite storeA_restrict_dom in Hdom.
+    set_solver.
+  }
+  split.
+  - intros Hsrc.
+    change (formula_msubst_store σ (context_ty_wf_formula Σg τ))
+      with (FAtom (lqual_msubst_store σ (context_ty_wf_lqual Σg τ))) in Hsrc.
+    unfold res_models in Hsrc.
+    cbn [formula_measure res_models_fuel] in Hsrc.
+    destruct Hsrc as [_ Hden].
+    unfold lqual_msubst_store, context_ty_wf_lqual,
+      lqual_mlsubst, logic_qualifier_denote in Hden.
+    cbn [lqual_dom lqual_prop] in Hden.
+    destruct Hden as [Hlc_res [Hsub_res _]].
+    rewrite dom_lstore_lift_free in Hlc_res, Hsub_res.
+    apply context_ty_wf_formula_models_iff.
+    split.
+    + intros v Hv.
+      destruct v as [k|x]; [|exact I].
+      apply Hlc_res.
+      rewrite HdomΣg', HR' in Hv.
+      rewrite HdomΣg.
+      change (LVBound k ∈ dom (Σ : lty_env) ∩ R ∖
+        lvars_of_atoms (dom (σ : StoreT))).
+      apply elem_of_intersection in Hv as [HvΣ Hvrel_res].
+      apply elem_of_difference. split.
+      * apply elem_of_intersection. split; [exact HvΣ|].
+        subst R. unfold denot_relevant_lvars.
+        apply elem_of_union in Hvrel_res as [Hvτ|Hve].
+        -- apply elem_of_union_l. exact Hvτ.
+        -- apply elem_of_union_r.
+           apply elem_of_difference in Hve as [Hve _].
+           exact Hve.
+      * unfold lvars_of_atoms. rewrite elem_of_map.
+        intros (a & Heq & _). inversion Heq.
+    + split.
+      * intros x Hx.
+        apply lvars_fv_elem in Hx as Hv.
+        rewrite HdomΣg', HR' in Hv.
+        apply elem_of_intersection in Hv as [HvΣ Hvrel_res].
+        assert (Hvrel : LVFree x ∈ context_ty_lvars τ ∪ tm_lvars e).
+        {
+          apply elem_of_union in Hvrel_res as [Hvτ|Hve].
+          - apply elem_of_union_l. exact Hvτ.
+          - apply elem_of_union_r.
+            apply elem_of_difference in Hve as [Hve _].
+            exact Hve.
+        }
+        destruct (decide (x ∈ dom (σ : StoreT))) as [Hxσ|Hxσ].
+        -- apply Hscope_fixed.
+           apply elem_of_intersection. split; [exact Hxσ|].
+           subst R. unfold denot_relevant_lvars.
+           apply lvars_fv_elem. exact Hvrel.
+        -- apply Hsub_res.
+           rewrite HdomΣg.
+           apply lvars_fv_elem.
+           change (LVFree x ∈ dom (Σ : lty_env) ∩ R ∖
+             lvars_of_atoms (dom (σ : StoreT))).
+           apply elem_of_difference. split.
+           ++ apply elem_of_intersection. split.
+              ** exact HvΣ.
+              ** subst R. unfold denot_relevant_lvars.
+                 exact Hvrel.
+           ++ unfold lvars_of_atoms. rewrite elem_of_map.
+              intros (a & Heq & Ha). inversion Heq; subst. exact (Hxσ Ha).
+      * subst Σg'. apply basic_context_ty_lvars_denot_relevant_env.
+        exact Hwf.
+  - intros Htgt.
+    apply context_ty_wf_formula_models_iff in Htgt as
+      [Hlc_tgt [Hsub_tgt Hbasic_tgt]].
+    apply res_models_atom_intro.
+    unfold context_ty_wf_formula, context_ty_wf_lqual,
+      lqual_msubst_store, lqual_mlsubst, logic_qualifier_denote.
+    cbn [lqual_dom lqual_prop].
+    change (atom_store_to_lvar_store σ) with (lstore_lift_free σ).
+    rewrite dom_lstore_lift_free.
+    assert (Hlc_res : lc_lvars (dom Σg ∖ lvars_of_atoms (dom (σ : StoreT)))).
+    {
+      intros v Hv.
+      destruct v as [k|x]; [|exact I].
+      apply Hlc_tgt.
+      rewrite HdomΣg', HR'.
+      rewrite HdomΣg in Hv.
+      change (LVBound k ∈ dom (Σ : lty_env) ∩ R ∖
+        lvars_of_atoms (dom (σ : StoreT))) in Hv.
+      apply elem_of_difference in Hv as [Hvdom _].
+      apply elem_of_intersection in Hvdom as [HvΣ Hvrel].
+      apply elem_of_intersection. split; [exact HvΣ|].
+      subst R. unfold denot_relevant_lvars in Hvrel.
+      apply elem_of_union in Hvrel as [Hvτ|Hve].
+      * apply elem_of_union_l. exact Hvτ.
+      * apply elem_of_union_r.
+        apply elem_of_difference. split; [exact Hve|].
+        rewrite dom_lstore_lift_free.
+        unfold lvars_of_atoms. rewrite elem_of_map.
+        intros (a & Heq & _). inversion Heq.
+    }
+    assert (Hsub_res :
+      lvars_fv (dom Σg ∖ lvars_of_atoms (dom (σ : StoreT))) ⊆
+      world_dom (m : WorldT)).
+    {
+      intros x Hx.
+      apply Hsub_tgt.
+      apply lvars_fv_elem.
+      apply lvars_fv_elem in Hx as Hv.
+      rewrite HdomΣg', HR'.
+      rewrite HdomΣg in Hv.
+      change (LVFree x ∈ dom (Σ : lty_env) ∩ R ∖
+        lvars_of_atoms (dom (σ : StoreT))) in Hv.
+      apply elem_of_difference in Hv as [Hvdom Hnotσ].
+      apply elem_of_intersection in Hvdom as [HvΣ Hvrel].
+      apply elem_of_intersection. split; [exact HvΣ|].
+      subst R. unfold denot_relevant_lvars in Hvrel.
+      apply elem_of_union in Hvrel as [Hvτ|Hve].
+      * apply elem_of_union_l. exact Hvτ.
+      * apply elem_of_union_r.
+        apply elem_of_difference. split; [exact Hve|].
+        rewrite dom_lstore_lift_free.
+        unfold lvars_of_atoms. rewrite elem_of_map.
+        intros (a & Heq & Ha). inversion Heq; subst.
+        apply Hnotσ.
+        unfold lvars_of_atoms. rewrite elem_of_map.
+        eexists. split; [reflexivity|exact Ha].
+    }
+    exists Hlc_res, Hsub_res.
+    subst Σg. apply basic_context_ty_lvars_denot_relevant_env.
+    exact Hwf.
+Qed.
+
+Lemma basic_world_formula_msubst_store_singleton_iff
+    σ Σ τ e (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  tm_lvars e ⊆ dom Σ ->
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
+  m ⊨ formula_msubst_store σ
+    (basic_world_formula (denot_relevant_env Σ τ e)) <->
+  m ⊨ basic_world_formula
+    (denot_relevant_env Σ τ
+      (lstore_instantiate_tm (lstore_lift_free σ) e)).
+Proof.
+  intros Hwf He Hσty Hsingleton.
+  pose proof (atom_store_has_ltype_closed _ _ Hσty) as Hclosed.
+  set (R := denot_relevant_lvars τ e).
+  set (e' := lstore_instantiate_tm (lstore_lift_free σ) e).
+  set (Σg := denot_relevant_env Σ τ e).
+  set (Σg' := denot_relevant_env Σ τ e').
+  set (σR := store_restrict σ (lvars_fv R)).
+  assert (HR' : denot_relevant_lvars τ e' =
+      context_ty_lvars τ ∪ (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))).
+  {
+    subst e'. unfold denot_relevant_lvars.
+    rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
+    reflexivity.
+  }
+  assert (HσRty : atom_store_has_ltype Σg σR).
+  {
+    subst σR Σg R.
+    apply atom_store_has_ltype_denot_relevant_env.
+    - intros v Hv.
+      unfold denot_relevant_lvars.
+      unfold lvars_of_atoms in Hv.
+      apply elem_of_map in Hv as [x [-> Hx]].
+      apply elem_of_dom in Hx as [vx Hx].
+      apply storeA_restrict_lookup_some in Hx as [HxR _].
+      apply lvars_fv_elem in HxR. exact HxR.
+    - intros x v Hlook.
+      apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+      exact (Hσty x v Hlook).
+  }
+  assert (Hfv_src : formula_fv (basic_world_formula Σg) ⊆ lvars_fv R).
+  {
+    subst Σg. rewrite formula_fv_basic_world_formula.
+    apply lty_env_restrict_lvars_fv_subset.
+  }
+  assert (Hres_sub_tgt :
+    forall v T,
+      lty_env_msubst_store σR Σg !! v = Some T ->
+      Σg' !! v = Some T).
+  {
+    intros v T Hlook.
+    subst σR Σg Σg' R e'.
+    apply lty_env_msubst_store_lookup_some in Hlook as [Hlook Hfresh].
+    unfold denot_relevant_env, lty_env_restrict_lvars in *.
+    apply storeA_restrict_lookup_some in Hlook as [HvR HΣv].
+    apply storeA_restrict_lookup_some_2; [exact HΣv|].
+    rewrite HR'. unfold denot_relevant_lvars in HvR.
+    apply elem_of_union in HvR as [Hvτ|Hve].
+    - apply elem_of_union_l. exact Hvτ.
+    - apply elem_of_union_r.
+      apply elem_of_difference. split; [exact Hve|].
+      intros Hvfixed. apply Hfresh.
+      rewrite dom_lstore_lift_free in Hvfixed.
+      unfold lvars_of_atoms in Hvfixed.
+      apply elem_of_map in Hvfixed as [x [-> Hx]].
+      apply elem_of_dom in Hx as [vx Hx].
+      unfold lvars_of_atoms. apply elem_of_map.
+      exists x. split; [reflexivity|].
+      apply elem_of_dom.
+      exists vx.
+      apply storeA_restrict_lookup_some_2; [exact Hx|].
+      apply lvars_fv_elem. unfold denot_relevant_lvars.
+      apply elem_of_union_r. exact Hve.
+  }
+  assert (Htgt_sub_big :
+    forall v T,
+      Σg' !! v = Some T ->
+      (((lty_env_msubst_store σR Σg : lty_env) ∪
+        storeA_restrict Σ (R ∩ lvars_of_atoms (dom (σ : StoreT)))) : lty_env)
+        !! v = Some T).
+  {
+    intros v T Hlook.
+    subst Σg'.
+    unfold denot_relevant_env, lty_env_restrict_lvars in Hlook.
+    apply storeA_restrict_lookup_some in Hlook as [HvR' HΣv].
+    destruct v as [k|x].
+    - apply map_lookup_union_Some_raw. left.
+      subst σR Σg.
+      apply lty_env_msubst_store_lookup_some_2.
+      + unfold denot_relevant_env, lty_env_restrict_lvars.
+        apply storeA_restrict_lookup_some_2; [exact HΣv|].
+        subst R. unfold denot_relevant_lvars.
+        rewrite HR' in HvR'.
+        apply elem_of_union in HvR' as [Hvτ|Hve].
+        * apply elem_of_union_l. exact Hvτ.
+        * apply elem_of_union_r.
+          apply elem_of_difference in Hve as [Hve _]. exact Hve.
+      + unfold lvars_of_atoms. rewrite elem_of_map.
+        intros (a & Heq & _). discriminate.
+    - destruct (decide (x ∈ dom (σ : StoreT))) as [Hxσ|Hxσ].
+      + apply map_lookup_union_Some_raw. right. split.
+        * subst σR Σg.
+          apply not_elem_of_dom_1.
+          rewrite lty_env_msubst_store_dom.
+          intros Hin.
+          apply elem_of_difference in Hin as [_ Hfresh].
+          apply Hfresh.
+          unfold lvars_of_atoms. apply elem_of_map.
+          exists x. split; [reflexivity|].
+          destruct (σ !! x) as [vx|] eqn:Hxσlook.
+          2: {
+            exfalso.
+            assert (Hxσ' : x ∈ dom (σ : gmap atom value)) by exact Hxσ.
+            apply elem_of_dom in Hxσ' as [vx Hlook].
+            change (((σ : gmap atom value) !! x) = None) in Hxσlook.
+            rewrite Hxσlook in Hlook. discriminate.
+          }
+          eapply elem_of_dom_2.
+          apply storeA_restrict_lookup_some_2; [exact Hxσlook|].
+          apply lvars_fv_elem. subst R. unfold denot_relevant_lvars.
+          rewrite HR' in HvR'.
+          apply elem_of_union in HvR' as [Hvτ|Hve].
+          -- apply elem_of_union_l. exact Hvτ.
+          -- apply elem_of_union_r.
+             apply elem_of_difference in Hve as [Hve _]. exact Hve.
+        * apply storeA_restrict_lookup_some_2; [exact HΣv|].
+          apply elem_of_intersection. split.
+          -- subst R. unfold denot_relevant_lvars.
+             rewrite HR' in HvR'.
+             apply elem_of_union in HvR' as [Hvτ|Hve].
+             ++ apply elem_of_union_l. exact Hvτ.
+             ++ apply elem_of_union_r.
+                apply elem_of_difference in Hve as [Hve _]. exact Hve.
+          -- unfold lvars_of_atoms. apply elem_of_map.
+             exists x. split; [reflexivity|exact Hxσ].
+      + apply map_lookup_union_Some_raw. left.
+        subst σR Σg.
+        apply lty_env_msubst_store_lookup_some_2.
+        * unfold denot_relevant_env, lty_env_restrict_lvars.
+          apply storeA_restrict_lookup_some_2; [exact HΣv|].
+          subst R. unfold denot_relevant_lvars.
+          rewrite HR' in HvR'.
+          apply elem_of_union in HvR' as [Hvτ|Hve].
+          -- apply elem_of_union_l. exact Hvτ.
+          -- apply elem_of_union_r.
+             apply elem_of_difference in Hve as [Hve _]. exact Hve.
+        * unfold lvars_of_atoms. rewrite elem_of_map.
+          intros (a & Heq & Ha). inversion Heq; subst.
+          apply Hxσ.
+          rewrite storeA_restrict_dom in Ha.
+          apply elem_of_intersection in Ha as [Ha _].
+          exact Ha.
+  }
+  split.
+  - intros Hsrc.
+    rewrite (formula_msubst_store_restrict_fv_subset σ
+      (basic_world_formula Σg) (lvars_fv R) Hfv_src) in Hsrc.
+    fold σR in Hsrc.
+    pose proof (basic_world_formula_msubst_store_models σR Σg m
+      HσRty Hsrc) as Hres.
+    pose proof (basic_world_formula_fixed_from_singleton Σ σ R m
+      Hσty Hsingleton) as Hfixed.
+    pose proof (basic_world_formula_union
+      (lty_env_msubst_store σR Σg)
+      (storeA_restrict Σ (R ∩ lvars_of_atoms (dom (σ : StoreT))))
+      m Hres Hfixed) as Hbig.
+    eapply basic_world_formula_subenv; [exact Htgt_sub_big|exact Hbig].
+  - intros Htgt.
+    assert (Hres :
+      m ⊨ basic_world_formula (lty_env_msubst_store σR Σg)).
+    {
+      eapply basic_world_formula_subenv; [exact Hres_sub_tgt|exact Htgt].
+    }
+    pose proof (basic_world_formula_msubst_store_models_back σR Σg m
+      HσRty Hres) as HsrcR.
+    rewrite (formula_msubst_store_restrict_fv_subset σ
+      (basic_world_formula Σg) (lvars_fv R) Hfv_src).
+    fold σR. exact HsrcR.
+  Unshelve.
+Qed.
+
+Lemma expr_basic_typing_formula_msubst_store_singleton_iff
+    σ Σ τ e T (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  tm_lvars e ⊆ dom Σ ->
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
+  m ⊨ formula_msubst_store σ
+    (expr_basic_typing_formula (denot_relevant_env Σ τ e) e T) <->
+  m ⊨ expr_basic_typing_formula
+    (denot_relevant_env Σ τ
+      (lstore_instantiate_tm (lstore_lift_free σ) e))
+    (lstore_instantiate_tm (lstore_lift_free σ) e) T.
+Admitted.
+
+Lemma denot_guard_msubst_store_singleton_iff
+    σ Σ τ e (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  tm_lvars e ⊆ dom Σ ->
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
+  res_models m
+    (formula_msubst_store σ
+      (FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+        (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
+          (FAnd
+            (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+              (erase_ty τ))
+            (expr_total_formula e))))) <->
+  res_models m
+    (FAnd (context_ty_wf_formula
+        (denot_relevant_env Σ τ
+          (lstore_instantiate_tm (lstore_lift_free σ) e)) τ)
+      (FAnd (basic_world_formula
+          (denot_relevant_env Σ τ
+            (lstore_instantiate_tm (lstore_lift_free σ) e)))
+        (FAnd
+          (expr_basic_typing_formula
+            (denot_relevant_env Σ τ
+              (lstore_instantiate_tm (lstore_lift_free σ) e))
+            (lstore_instantiate_tm (lstore_lift_free σ) e)
+            (erase_ty τ))
+          (expr_total_formula
+            (lstore_instantiate_tm (lstore_lift_free σ) e))))).
+Proof.
+  intros Hwf He Hσty Hsingleton.
+  formula_msubst_syntax_norm.
+  rewrite !res_models_and_iff.
+  split.
+  - intros [Hwf_src [Hworld_src [Hbasic_src Htotal_src]]].
+    split.
+    + eapply context_ty_wf_formula_msubst_store_singleton_iff; eauto.
+    + split.
+      * eapply basic_world_formula_msubst_store_singleton_iff; eauto.
+      * split.
+        -- eapply expr_basic_typing_formula_msubst_store_singleton_iff; eauto.
+        -- eapply expr_total_formula_msubst_store_singleton_iff; eauto.
+  - intros [Hwf_tgt [Hworld_tgt [Hbasic_tgt Htotal_tgt]]].
+    split.
+    + eapply context_ty_wf_formula_msubst_store_singleton_iff; eauto.
+    + split.
+      * eapply basic_world_formula_msubst_store_singleton_iff; eauto.
+      * split.
+        -- eapply expr_basic_typing_formula_msubst_store_singleton_iff; eauto.
+        -- eapply expr_total_formula_msubst_store_singleton_iff; eauto.
+Qed.
+
+Lemma denot_ty_lvar_gas_zero_msubst_store_singleton_iff
+    σ Σ τ e (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  tm_lvars e ⊆ dom Σ ->
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+    singleton_world (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas 0 Σ τ e)) <->
+  res_models m (denot_ty_lvar_gas 0 Σ τ
+    (lstore_instantiate_tm (lstore_lift_free σ) e)).
+Proof.
+  intros Hwf He Hσty Hsingleton.
+  cbn [denot_ty_lvar_gas].
+  formula_msubst_syntax_norm.
+  rewrite !res_models_and_iff.
+  pose proof (denot_guard_msubst_store_singleton_iff σ Σ τ e m
+    Hwf He Hσty Hsingleton) as Hguard.
+  split.
+  - intros [Hguard_src Htrue].
+    assert (Hguard_src0 :
+      m ⊨ formula_msubst_store σ
+        (FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+          (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
+            (FAnd
+              (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+                (erase_ty τ))
+              (expr_total_formula e))))).
+    {
+      formula_msubst_syntax_norm.
+      repeat rewrite res_models_and_iff.
+      exact Hguard_src.
+    }
+    pose proof (proj1 Hguard Hguard_src0) as Hguard_tgt.
+    repeat rewrite res_models_and_iff in Hguard_tgt.
+    split; [exact Hguard_tgt|exact Htrue].
+  - intros [Hguard_tgt Htrue].
+    assert (Hguard_tgt0 :
+      m ⊨
+        (FAnd (context_ty_wf_formula
+            (denot_relevant_env Σ τ
+              (lstore_instantiate_tm (lstore_lift_free σ) e)) τ)
+          (FAnd (basic_world_formula
+              (denot_relevant_env Σ τ
+                (lstore_instantiate_tm (lstore_lift_free σ) e)))
+            (FAnd
+              (expr_basic_typing_formula
+                (denot_relevant_env Σ τ
+                  (lstore_instantiate_tm (lstore_lift_free σ) e))
+                (lstore_instantiate_tm (lstore_lift_free σ) e)
+                (erase_ty τ))
+              (expr_total_formula
+                (lstore_instantiate_tm (lstore_lift_free σ) e)))))).
+    {
+      repeat rewrite res_models_and_iff.
+      exact Hguard_tgt.
+    }
+    pose proof (proj2 Hguard Hguard_tgt0) as Hguard_src.
+    formula_msubst_syntax_norm_in Hguard_src.
+    repeat rewrite res_models_and_iff in Hguard_src.
+    split; [exact Hguard_src|exact Htrue].
 Qed.
 
 Lemma denot_guard_msubst_store_models
@@ -90,6 +625,72 @@ Proof.
           [exact Hσty|exact Htotal].
 Qed.
 
+Lemma denot_guard_msubst_store_models_back_relevant
+    σ Σ τ e (m : WfWorldT) :
+  denot_relevant_lvars τ e ⊆ dom Σ ->
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
+  atom_store_has_ltype Σ σ ->
+  res_models m
+    (FAnd
+      (context_ty_wf_formula
+        (denot_relevant_env (lty_env_msubst_store σ Σ)
+          (context_ty_msubst_store σ τ)
+          (lstore_instantiate_tm (lstore_lift_free σ) e))
+        (context_ty_msubst_store σ τ))
+      (FAnd
+        (basic_world_formula
+          (denot_relevant_env (lty_env_msubst_store σ Σ)
+            (context_ty_msubst_store σ τ)
+            (lstore_instantiate_tm (lstore_lift_free σ) e)))
+        (FAnd
+          (expr_basic_typing_formula
+            (denot_relevant_env (lty_env_msubst_store σ Σ)
+              (context_ty_msubst_store σ τ)
+              (lstore_instantiate_tm (lstore_lift_free σ) e))
+            (lstore_instantiate_tm (lstore_lift_free σ) e)
+            (erase_ty (context_ty_msubst_store σ τ)))
+          (expr_total_formula
+            (lstore_instantiate_tm (lstore_lift_free σ) e))))) ->
+  res_models m
+    (formula_msubst_store σ
+      (FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+        (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
+          (FAnd
+            (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+              (erase_ty τ))
+            (expr_total_formula e))))).
+Proof.
+  intros Hscope Hσrel Hσty Hm.
+  pose proof (atom_store_has_ltype_denot_relevant_env Σ σ τ e
+    Hσrel Hσty) as Hσty_g.
+  pose proof (atom_store_has_ltype_closed _ _ Hσty) as Hclosed.
+  rewrite <- (denot_relevant_env_msubst_store σ Σ τ e Hclosed) in Hm.
+  rewrite erase_ty_context_ty_msubst_store in Hm.
+  repeat rewrite res_models_and_iff in Hm.
+  destruct Hm as [Hwf [Hworld [Hbasic Htotal]]].
+  cbn [formula_msubst_store formula_mlsubst].
+  repeat rewrite res_models_and_iff.
+  split.
+  - eapply context_ty_wf_formula_msubst_store_models_back.
+    + intros v Hv.
+      unfold denot_relevant_env, lty_env_restrict_lvars.
+      apply elem_of_dom.
+      assert (HvΣ : v ∈ dom Σ).
+      {
+        apply Hscope.
+        unfold denot_relevant_lvars. set_solver.
+      }
+      apply elem_of_dom in HvΣ as [T HT].
+      exists T. apply storeA_restrict_lookup_some_2; [exact HT|].
+      unfold denot_relevant_lvars. set_solver.
+    + exact Hwf.
+  - split.
+    + eapply basic_world_formula_msubst_store_models_back; eauto.
+    + split.
+      * eapply expr_basic_typing_formula_msubst_store_models_back; eauto.
+      * eapply expr_total_formula_msubst_store_models_back; eauto.
+Qed.
+
 Lemma denot_ty_lvar_gas_zero_msubst_store_models_relevant
     σ Σ τ e (m : WfWorldT) :
   lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
@@ -108,6 +709,29 @@ Proof.
   rewrite res_models_and_iff.
   split.
   - apply denot_guard_msubst_store_models; assumption.
+  - unfold res_models. cbn [formula_measure res_models_fuel].
+    split; [apply formula_scoped_true_iff; trivial|trivial].
+Qed.
+
+Lemma denot_ty_lvar_gas_zero_msubst_store_models_relevant_back
+    σ Σ τ e (m : WfWorldT) :
+  denot_relevant_lvars τ e ⊆ dom Σ ->
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
+  atom_store_has_ltype Σ σ ->
+  res_models m (denot_ty_lvar_gas 0
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e)) ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas 0 Σ τ e)).
+Proof.
+  intros Hscope Hσrel Hσty Hm.
+  cbn [denot_ty_lvar_gas] in Hm |- *.
+  rewrite res_models_and_iff in Hm.
+  destruct Hm as [Hguard _].
+  cbn [formula_msubst_store formula_mlsubst].
+  rewrite res_models_and_iff.
+  split.
+  - eapply denot_guard_msubst_store_models_back_relevant; eauto.
   - unfold res_models. cbn [formula_measure res_models_fuel].
     split; [apply formula_scoped_true_iff; trivial|trivial].
 Qed.
@@ -699,6 +1323,18 @@ Lemma denot_ty_lvar_gas_msubst_store_wand_body
             (tapp_tm (tm_shift 0 e') (vbvar 0)))))).
 Admitted.
 
+Lemma denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted
+    gas σ Σ τ e (m : WfWorldT) :
+  subseteq (denot_relevant_lvars τ e) (dom Σ) ->
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ denot_relevant_lvars τ e ->
+  atom_store_has_ltype Σ σ ->
+  res_models m (denot_ty_lvar_gas gas
+    (lty_env_msubst_store σ Σ)
+    (context_ty_msubst_store σ τ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e)) ->
+  res_models m (formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)).
+Admitted.
+
 Lemma denot_ty_lvar_gas_msubst_store_models_relevant_back
     gas σ Σ τ e (m : WfWorldT) :
   subseteq (denot_relevant_lvars τ e) (dom Σ) ->
@@ -708,7 +1344,42 @@ Lemma denot_ty_lvar_gas_msubst_store_models_relevant_back
     (context_ty_msubst_store σ τ)
     (lstore_instantiate_tm (lstore_lift_free σ) e)) ->
   res_models m (formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)).
-Admitted.
+Proof.
+  intros Hscope Hty Hmodels.
+  pose proof (atom_store_has_ltype_closed _ _ Hty) as Hclosed.
+  set (σr := denot_msubst_relevant_store σ τ e).
+  rewrite (formula_msubst_store_restrict_fv_subset σ
+    (denot_ty_lvar_gas gas Σ τ e)
+    (lvars_fv (denot_relevant_lvars τ e))).
+  2:{
+    transitivity (fv_tm e ∪ fv_cty τ).
+    - apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
+    - unfold denot_relevant_lvars.
+      rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
+      set_solver.
+  }
+  change (store_restrict σ (lvars_fv (denot_relevant_lvars τ e))) with σr.
+  eapply denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted.
+  - exact Hscope.
+  - unfold σr, denot_msubst_relevant_store.
+    intros v Hv.
+    unfold lvars_of_atoms in Hv.
+    apply elem_of_map in Hv as [x [-> Hx]].
+    apply storeA_restrict_dom_subset in Hx.
+    rewrite lvars_fv_elem in Hx. exact Hx.
+  - unfold σr, denot_msubst_relevant_store.
+    intros x v Hxv.
+    apply storeA_restrict_lookup_some in Hxv as [_ Hxv].
+    exact (Hty x v Hxv).
+  - eapply denot_ty_lvar_gas_msubst_store_agree_relevant
+      with (σ1 := σ).
+    + unfold σr, denot_msubst_relevant_store.
+      rewrite storeA_restrict_twice_same. reflexivity.
+    + exact Hclosed.
+    + unfold σr, denot_msubst_relevant_store.
+      apply store_closed_restrict. exact Hclosed.
+    + exact Hmodels.
+Qed.
 
 Lemma denot_ty_lvar_gas_msubst_store_models_relevant
     gas σ Σ τ e (m : WfWorldT) :

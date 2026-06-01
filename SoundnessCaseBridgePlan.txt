@@ -1952,6 +1952,30 @@ Implementation order
 
       - Only after gas-zero is clean, define the singleton-shaped recursive IH.
 
+      Atom-level proof decomposition for
+      `denot_guard_msubst_store_singleton_iff`:
+
+      - DONE `context_ty_wf_formula`: prove directly from
+        `basic_context_ty_lvars (dom Σ) τ`; the atom is world-independent
+        except for lc/scope of the domain, and the target relevant env domain is
+        a restriction of `Σ`.  The proof is now explicit about
+        `lvars_fv`/`lvars_of_atoms` membership instead of relying on slow
+        `set_solver` calls.
+      - DONE `basic_world_formula`: add a BasicDenotation reconstruction lemma.
+        From `m ⊨ formula_msubst_store σ (basic_world_formula Σg)`,
+        `atom_store_has_ltype Σ σ`, and the singleton projection of `m` on
+        relevant variables, reconstruct
+        `m ⊨ basic_world_formula Σg'`.  The proof splits lookups into residual
+        variables handled by the msubst atom and fixed variables handled by
+        `atom_store_has_ltype` plus the singleton equality.  The reusable
+        lower-level lemma is
+        `basic_world_formula_fixed_from_singleton`.
+      - `expr_basic_typing_formula`: add an environment-agree transport for
+        `basic_tm_has_ltype` over the fvars of the term, then combine the
+        existing residual msubst typing lemma with the same-Σ target env.
+      - `expr_total_formula`: reuse the existing total msubst transport; it is
+        independent of the typing environment.
+
    5. Over/Under denotation cases.
 
       In the opened forall body, instantiate the Logic lemma with:

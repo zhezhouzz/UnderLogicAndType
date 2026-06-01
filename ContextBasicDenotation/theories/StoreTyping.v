@@ -584,6 +584,95 @@ Proof.
     + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
 Qed.
 
+Lemma basic_world_formula_fixed_from_singleton
+    (Σ : lty_env) (σ : StoreT) (R : lvset) (m : WfWorld) :
+  atom_store_has_ltype Σ σ ->
+  (res_restrict m (lvars_fv R) : World) =
+    singleton_world (store_restrict σ (lvars_fv R)) ->
+  res_models m
+    (basic_world_formula
+      (storeA_restrict Σ (R ∩ lvars_of_atoms (dom (σ : StoreT))))).
+Proof.
+  intros Hσty Hsingle.
+  assert (Hscope_fixed :
+    dom (σ : StoreT) ∩ lvars_fv R ⊆ world_dom (m : World)).
+  {
+    pose proof (f_equal world_dom Hsingle) as Hdom.
+    simpl in Hdom.
+    rewrite storeA_restrict_dom in Hdom.
+    set_solver.
+  }
+  apply basic_world_formula_models_iff.
+  split.
+  - intros v Hv.
+    rewrite storeA_restrict_dom in Hv.
+    apply elem_of_intersection in Hv as [_ HvR_atoms].
+    apply elem_of_intersection in HvR_atoms as [_ Hv_atoms].
+    destruct v as [k|x]; [|exact I].
+    unfold lvars_of_atoms in Hv_atoms.
+    apply elem_of_map in Hv_atoms as [a [Heq _]].
+    discriminate.
+  - split.
+    + intros x Hx.
+      apply Hscope_fixed.
+      apply lvars_fv_elem in Hx as Hv.
+      rewrite storeA_restrict_dom in Hv.
+      apply elem_of_intersection in Hv as [_ HvR_atoms].
+      apply elem_of_intersection in HvR_atoms as [HvR Hv_atoms].
+      unfold lvars_of_atoms in Hv_atoms.
+      apply elem_of_map in Hv_atoms as [a [Heq Ha]].
+      inversion Heq; subst a.
+      apply elem_of_intersection. split; [exact Ha|].
+      apply lvars_fv_elem. exact HvR.
+    + unfold lworld_has_type, worldA_has_type.
+      split.
+      * intros v Hv.
+        rewrite res_lift_free_dom.
+        rewrite storeA_restrict_dom in Hv.
+        apply elem_of_intersection in Hv as [_ HvR_atoms].
+        apply elem_of_intersection in HvR_atoms as [HvR Hv_atoms].
+        destruct v as [k|x].
+        -- unfold lvars_of_atoms in Hv_atoms.
+           apply elem_of_map in Hv_atoms as [a [Heq _]].
+           discriminate.
+        -- unfold lvars_of_atoms. apply elem_of_map.
+           exists x. split; [reflexivity|].
+           apply Hscope_fixed.
+           unfold lvars_of_atoms in Hv_atoms.
+           apply elem_of_map in Hv_atoms as [a [Heq Ha]].
+           inversion Heq; subst a.
+           apply elem_of_intersection. split; [exact Ha|].
+           apply lvars_fv_elem. exact HvR.
+      * intros τ Hτ v T u HΣv Hτv.
+        apply storeA_restrict_lookup_some in HΣv as [HvRσ HΣv].
+        destruct v as [k|x].
+        -- apply elem_of_intersection in HvRσ as [_ Hv_atoms].
+           unfold lvars_of_atoms in Hv_atoms.
+           apply elem_of_map in Hv_atoms as [a [Heq _]].
+           discriminate.
+        -- destruct Hτ as [σm [Hσm ->]].
+           rewrite lstore_lift_free_lookup_free in Hτv.
+           apply elem_of_intersection in HvRσ as [HvR Hv_atoms].
+           assert (HxR : x ∈ lvars_fv R).
+           { apply lvars_fv_elem. exact HvR. }
+           assert (Hproj :
+             (res_restrict m (lvars_fv R) : World)
+               (store_restrict σm (lvars_fv R))).
+           { simpl. exists σm. split; [exact Hσm|reflexivity]. }
+           rewrite Hsingle in Hproj.
+           simpl in Hproj.
+           assert (HσmR :
+             (storeA_restrict σm (lvars_fv R) : StoreT) !! x = Some u).
+           { apply storeA_restrict_lookup_some_2; [exact Hτv|exact HxR]. }
+           rewrite Hproj in HσmR.
+           apply storeA_restrict_lookup_some in HσmR as [_ Hlook].
+           destruct (Hσty x u Hlook) as [Tσ [HΣσ Hu]].
+           change (((Σ : gmap logic_var ty) !! LVFree x) = Some T) in HΣv.
+           change (((Σ : gmap logic_var ty) !! LVFree x) = Some Tσ) in HΣσ.
+           rewrite HΣv in HΣσ. inversion HΣσ. subst Tσ.
+           exact Hu.
+Qed.
+
 Lemma basic_world_formula_fibvars_elim
     (D : lvset) (Σ : lty_env) (m : WfWorld) :
   res_models m (FFibVars D (basic_world_formula Σ)) ->
