@@ -529,13 +529,53 @@ Proof.
   exact Hden.
 Qed.
 
+Lemma erase_ctx_under_comma_assoc Σ Γ1 Γ2 :
+  erase_ctx_under Σ (CtxComma Γ1 Γ2) =
+  erase_ctx_under (Σ ∪ erase_ctx Γ1) Γ2.
+Proof.
+  unfold erase_ctx_under. cbn [erase_ctx].
+  apply map_eq. intros x.
+  unfold store_union.
+  rewrite !lookup_union.
+  destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
+    destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
+    destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
+    reflexivity.
+Qed.
+
 Lemma denot_ctx_under_comma_intro
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
   m ⊨ denot_ctx_under Σ Γ1 ->
   m ⊨ denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2 ->
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2).
 Proof.
-Admitted.
+  intros HΓ1 HΓ2.
+  pose proof (denot_ctx_under_basic_world (Σ ∪ erase_ctx Γ1) Γ2 m HΓ2)
+    as HworldΓ2.
+  rewrite denot_ctx_under_unfold_body in HΓ1.
+  rewrite denot_ctx_under_unfold_body in HΓ2.
+  cbn [denot_ctx_under].
+  eapply res_models_FFibVars_and_intro.
+  - rewrite erase_ctx_under_comma_assoc.
+    apply basic_world_formula_fibvars_intro.
+    + apply ctx_base_vars_lc.
+    + rewrite ctx_base_vars_fv.
+      rewrite atom_store_to_lvar_store_dom.
+      rewrite lvars_fv_of_atoms.
+      unfold erase_ctx_under. set_solver.
+    + exact HworldΓ2.
+  - eapply res_models_FFibVars_and_intro.
+    + rewrite denot_ctx_under_unfold_body.
+      eapply res_models_FFibVars_outer_intro_subset.
+      * apply ctx_base_vars_lc.
+      * unfold ctx_base_vars. rewrite !lvars_fv_of_atoms. set_solver.
+      * exact HΓ1.
+    + rewrite denot_ctx_under_unfold_body.
+      eapply res_models_FFibVars_outer_intro_subset.
+      * apply ctx_base_vars_lc.
+      * unfold ctx_base_vars. rewrite !lvars_fv_of_atoms. set_solver.
+      * exact HΓ2.
+Qed.
 
 Lemma denot_ctx_under_comma_bind_from_fibered_arg_denotation
     (Σ : gmap atom ty) (Γ : ctx) (τx : context_ty) y

@@ -361,6 +361,31 @@ Proof.
   exact Hdom.
 Qed.
 
+Lemma res_fiber_from_projection_subset_source
+    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  res_subset mfib m.
+Proof.
+  intros Hproj.
+  split.
+  - eapply res_fiber_from_projection_world_dom. exact Hproj.
+  - intros τ Hτ.
+    eapply res_fiber_from_projection_store_source; eauto.
+Qed.
+
+Lemma res_fiber_from_projection_store_dom_of_subset
+    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
+  X ⊆ world_dom (m : World) ->
+  res_fiber_from_projection m X σ mfib ->
+  dom (σ : StoreT) = X.
+Proof.
+  intros HX [Hproj _].
+  pose proof (wfworld_store_dom (res_restrict m X) σ Hproj) as Hdom.
+  change (dom (σ : StoreT) = world_dom (res_restrict m X : World)) in Hdom.
+  cbn [res_restrict resA_restrict rawA_restrict worldA_dom] in Hdom.
+  set_solver.
+Qed.
+
 Lemma res_restrict_fiber_from_projection_dom_singleton
     (w wfib : WfWorld) (X : aset) (σ : StoreT) :
   res_fiber_from_projection w X σ wfib →

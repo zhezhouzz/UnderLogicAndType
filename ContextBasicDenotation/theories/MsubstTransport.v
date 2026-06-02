@@ -400,6 +400,15 @@ Proof.
     [exact HdomD|exact Htyped].
 Qed.
 
+Lemma basic_world_formula_fibvars_intro
+    (D : lvset) (Σ : lty_env) (m : WfWorld) :
+  lc_lvars D ->
+  lvars_fv D ⊆ lvars_fv (dom Σ) ->
+  res_models m (basic_world_formula Σ) ->
+  res_models m (FFibVars D (basic_world_formula Σ)).
+Proof.
+Admitted.
+
 Lemma expr_basic_typing_formula_msubst_store_models
     σ Σ e T (m : WfWorldT) :
   atom_store_has_ltype Σ σ ->

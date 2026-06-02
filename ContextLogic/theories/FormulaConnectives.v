@@ -717,6 +717,36 @@ Proof.
     rewrite res_models_and_iff in Hfib. tauto.
 Qed.
 
+Lemma res_models_FFibVars_and_intro
+    (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
+  m ⊨ FFibVars D φ ->
+  m ⊨ FFibVars D ψ ->
+  m ⊨ FFibVars D (FAnd φ ψ).
+Proof.
+  intros Hφ Hψ.
+  pose proof (res_models_scoped _ _ Hφ) as Hscopeφ.
+  pose proof (res_models_scoped _ _ Hψ) as Hscopeψ.
+  pose proof (proj1 (res_models_FFibVars_iff m D φ Hscopeφ) Hφ)
+    as [Hlc Hfibφ].
+  pose proof (proj1 (res_models_FFibVars_iff m D ψ Hscopeψ) Hψ)
+    as [_ Hfibψ].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D (FAnd φ ψ))).
+    apply (proj1 (formula_scoped_fibvars_iff m D φ))
+      in Hscopeφ as [HD Hscopeφ'].
+    apply (proj1 (formula_scoped_fibvars_iff m D ψ))
+      in Hscopeψ as [_ Hscopeψ'].
+    split; [exact HD |].
+    apply (proj2 (formula_scoped_and_iff m φ ψ)).
+    split; assumption.
+  - exact Hlc.
+  - intros σ mfib Hproj.
+    specialize (Hfibφ σ mfib Hproj).
+    specialize (Hfibψ σ mfib Hproj).
+    cbn [formula_msubst_store formula_mlsubst].
+    rewrite res_models_and_iff. tauto.
+Qed.
+
 Lemma res_models_FFibVars_same_fv
     (m : WfWorldT) (D1 D2 : lvset) (φ : FormulaT) :
   lc_lvars D2 ->
@@ -1220,6 +1250,15 @@ Proof.
   - intros v Hv. apply HlcU. set_solver.
   - rewrite lvars_fv_union. set_solver.
 Qed.
+
+Lemma res_models_FFibVars_outer_intro_subset
+    (m : WfWorldT) (Dsmall Dbig : lvset) (φ : FormulaT) :
+  lc_lvars Dsmall ->
+  lvars_fv Dsmall ⊆ lvars_fv Dbig ->
+  m ⊨ FFibVars Dbig φ ->
+  m ⊨ FFibVars Dsmall (FFibVars Dbig φ).
+Proof.
+Admitted.
 
 Lemma res_models_FFibVars_idemp_elim
     (m : WfWorldT) (D : lvset) (φ : FormulaT) :
