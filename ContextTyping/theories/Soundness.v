@@ -9,12 +9,13 @@
     can unfold directly to [denot_ty_lvar_gas] instead of rebuilding the old
     helper stack. *)
 
-From CoreLang Require Import BasicTyping SmallStep StrongNormalization.
+From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
+  SmallStep StrongNormalization.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturate
-  ContextTypeDenotationCases TLet.
+  ContextTypeDenotationMsubst ContextTypeDenotationCases TLet.
 From ContextTyping Require Export TLet.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
@@ -173,6 +174,44 @@ Proof.
       * apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
       rewrite lvar_store_to_atom_store_atom_store.
       exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
+Qed.
+
+Lemma msubst_basic_typing_tm_weaken_same_env Γ σ e T :
+  store_closed σ ->
+  env_has_type Γ σ ->
+  Γ ⊢ₑ e ⋮ T ->
+  Γ ⊢ₑ lstore_instantiate_tm (lstore_lift_free σ) e ⋮ T.
+Proof.
+  intros Hclosed Htyped Hty.
+  rewrite lstore_instantiate_tm_no_bvars.
+  2:{ apply lc_lstore_lift_free. }
+  2:{ change (lstore_to_store (lstore_lift_free σ)) with
+        (lstore_free_part (lstore_lift_free σ));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed). }
+  change (lstore_to_store (lstore_lift_free σ)) with
+    (lstore_free_part (lstore_lift_free σ)).
+  rewrite lstore_free_part_lift_free.
+  pose proof (msubst_basic_typing_tm Γ σ e T
+    (proj1 Hclosed) Htyped Hty) as Hsubst.
+  eapply basic_typing_weaken_tm; [exact Hsubst|].
+  apply map_subseteq_spec.
+  intros x U Hlookup.
+  destruct (env_delete_lookup_some σ Γ x U Hlookup) as [HΓ _].
+  exact HΓ.
+Qed.
+
+Lemma lstore_instantiate_tm_at_lift_free_depth_irrel d1 d2 σ e :
+  store_closed σ ->
+  lstore_instantiate_tm_at d1 (lstore_lift_free σ : LStoreT) e =
+  lstore_instantiate_tm_at d2 (lstore_lift_free σ : LStoreT) e.
+Proof.
+  intros Hclosed.
+  rewrite !lstore_instantiate_tm_at_lc_lstore.
+  - reflexivity.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
 Lemma appop_context_typing_arg_lookup
@@ -336,38 +375,167 @@ Qed.
 Lemma sub_type_under_msubst_transport
     (Σ : gmap atom ty) Γ e τ1 τ2
     (m mfib : WfWorldT) (σΣ : StoreT) :
+  context_typing_wf Σ Γ e τ1 ->
+  context_typing_wf Σ Γ e τ2 ->
   sub_type_under Σ Γ τ1 τ2 ->
   m ⊨ denot_ctx_under Σ Γ ->
   res_fiber_from_projection m (dom Σ) σΣ mfib ->
   mfib ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ τ1 e) ->
   mfib ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ τ2 e).
 Proof.
-Admitted.
+  intros Hwf1 Hwf2 Hsub Hctx Hproj Hsrc.
+  destruct Hsub as [_ [_ [Herase Himpl]]].
+  assert (Hstore_ty : storeA_has_type Σ σΣ).
+  { eapply denot_ctx_under_projection_store_has_type; eauto. }
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (res_models_scoped _ _ Hctx) as Hscope.
+    rewrite denot_ctx_under_unfold_body in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope. exact Hscope.
+  }
+  assert (Hbase : base_store_projection Σ σΣ mfib).
+  { eapply base_store_projection_from_fiber; eauto. }
+  pose proof (denot_ty_lvar_gas_msubst_store_from_typing_wf
+    (cty_depth τ1) Σ (erase_ctx_under Σ Γ) σΣ τ1 e mfib
+    (proj2 Hwf1) Hstore_ty Hbase) as Hto_src.
+  unfold denot_ty_in_ctx_under, denot_ty in Hsrc.
+  pose proof (Hto_src Hsrc) as Hsrc_inst.
+  set (eσ := lstore_instantiate_tm (lstore_lift_free σΣ) e).
+  assert (Hfv_eσ : fv_tm eσ ⊆ dom Σ ∪ ctx_dom Γ).
+  {
+    unfold eσ.
+    assert (Hclosed : store_closed σΣ).
+    {
+      eapply atom_store_has_ltype_closed.
+      eapply storeA_has_type_atom_store_has_ltype.
+      - exact (proj1 Hbase).
+      - exact Hstore_ty.
+    }
+    pose proof (fv_tm_lstore_instantiate_lift_free_closed_subset
+      σΣ e Hclosed) as Hfv_sub.
+    pose proof (context_typing_wf_fv_tm_subset Σ Γ e τ2 Hwf2) as Hfv.
+    set_solver.
+  }
+  pose proof (denot_ctx_under_fiber_from_projection
+    Σ Γ m mfib σΣ Hproj Hctx) as Hctx_fib.
+  pose proof (Himpl eσ Hfv_eσ mfib Hctx_fib) as Himpl_inst.
+  unfold denot_ty_in_ctx_under, denot_ty in Himpl_inst.
+  pose proof (res_models_impl_elim _ _ _ Himpl_inst Hsrc_inst)
+    as Htgt_inst.
+  pose proof (denot_ty_lvar_gas_msubst_store_to_typing_wf
+    (cty_depth τ2) Σ (erase_ctx_under Σ Γ) σΣ τ2 e mfib
+    (proj2 Hwf2) Hstore_ty Hbase Htgt_inst) as Htgt.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  exact Htgt.
+Qed.
 
 Lemma ctx_sub_under_msubst_transport
     (Σ : gmap atom ty) Γ1 Γ2 e τ
     (m mfib : WfWorldT) (σΣ : StoreT) :
+  context_typing_wf Σ Γ1 e τ ->
+  context_typing_wf Σ Γ2 e τ ->
   ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 ->
   (denot_ctx_under Σ Γ2 ⊫ denot_ty_in_ctx_under_fiber Σ Γ2 τ e) ->
   m ⊨ denot_ctx_under Σ Γ1 ->
   res_fiber_from_projection m (dom Σ) σΣ mfib ->
   mfib ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ1 τ e).
 Proof.
-Admitted.
+  intros Hwf1 Hwf2 Hsub IH Hctx Hproj.
+  set (X := fv_tm e ∪ fv_cty τ).
+  destruct Hsub as [_ [_ [Hagree Hctx_sub]]].
+  assert (Hstore_ty : storeA_has_type Σ σΣ).
+  { eapply denot_ctx_under_projection_store_has_type; eauto. }
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (res_models_scoped _ _ Hctx) as Hscope.
+    rewrite denot_ctx_under_unfold_body in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope. exact Hscope.
+  }
+  assert (Hbase : base_store_projection Σ σΣ mfib).
+  { eapply base_store_projection_from_fiber; eauto. }
+  pose proof (denot_ctx_under_fiber_from_projection
+    Σ Γ1 m mfib σΣ Hproj Hctx) as Hctx_fib1.
+  pose proof (Hctx_sub mfib Hctx_fib1) as Hctx2_small.
+  pose proof (res_models_kripke
+    (res_restrict mfib X) mfib (denot_ctx_under Σ Γ2)
+    (res_restrict_le mfib X) Hctx2_small) as Hctx_fib2.
+  pose proof (IH mfib Hctx_fib2) as Hden2_fib.
+  assert (Hden2_msubst :
+    mfib ⊨ formula_msubst_store σΣ
+      (denot_ty_in_ctx_under Σ Γ2 τ e)).
+  {
+    unfold denot_ty_in_ctx_under_fiber in Hden2_fib.
+    eapply res_models_FFibVars_singleton_elim; [| |exact Hden2_fib].
+    - rewrite ctx_base_vars_fv. exact (proj1 Hbase).
+    - rewrite ctx_base_vars_fv. exact (proj2 Hbase).
+  }
+  pose proof (denot_ty_lvar_gas_msubst_store_from_typing_wf
+    (cty_depth τ) Σ (erase_ctx_under Σ Γ2) σΣ τ e mfib
+    (proj2 Hwf2) Hstore_ty Hbase) as Hto2.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden2_msubst.
+  pose proof (Hto2 Hden2_msubst) as Hden2_inst.
+  set (eσ := lstore_instantiate_tm (lstore_lift_free σΣ) e).
+  assert (Hclosed : store_closed σΣ).
+  {
+    eapply atom_store_has_ltype_closed.
+    eapply storeA_has_type_atom_store_has_ltype.
+    - exact (proj1 Hbase).
+    - exact Hstore_ty.
+  }
+  assert (Hfv_eσ : fv_tm eσ ⊆ fv_tm e).
+  {
+    unfold eσ.
+    apply fv_tm_lstore_instantiate_lift_free_closed_subset.
+    exact Hclosed.
+  }
+  assert (Hrel : lvars_fv (denot_relevant_lvars τ eσ) ⊆ X).
+  {
+    unfold X, eσ, denot_relevant_lvars.
+    rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
+    set_solver.
+  }
+  assert (Hden2_small :
+    res_restrict mfib X ⊨ denot_ty_in_ctx_under Σ Γ2 τ eσ).
+  {
+    unfold denot_ty_in_ctx_under, denot_ty in Hden2_inst |- *.
+    pose proof (res_models_minimal_on X mfib
+      (denot_ty_lvar_gas (cty_depth τ)
+        (atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ eσ)
+      ltac:(transitivity (fv_tm eσ ∪ fv_cty τ);
+        [apply formula_fv_denot_ty_lvar_gas_subset_relevant|];
+        unfold denot_relevant_lvars in Hrel;
+        rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv in Hrel;
+        set_solver)) as Hmin.
+    apply (proj1 Hmin). exact Hden2_inst.
+  }
+  pose proof (denot_ty_in_ctx_under_restrict_agree_transport
+    Σ Γ1 Γ2 X τ eσ mfib Hrel Hagree Hden2_small)
+    as Hden1_inst.
+  pose proof (denot_ty_lvar_gas_msubst_store_to_typing_wf
+    (cty_depth τ) Σ (erase_ctx_under Σ Γ1) σΣ τ e mfib
+    (proj2 Hwf1) Hstore_ty Hbase) as Hback1.
+  unfold denot_ty_in_ctx_under, denot_ty in Hden1_inst |- *.
+  exact (Hback1 Hden1_inst).
+Qed.
 
 Lemma fundamental_sub_case_fiber
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (e : tm) (τ1 τ2 : context_ty) :
+  context_typing_wf Σ Γ e τ1 ->
   context_typing_wf Σ Γ e τ2 ->
   sub_type_under Σ Γ τ1 τ2 ->
   (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ1 e) ->
   denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ2 e.
 Proof.
-  intros Hwf Hsub IH m Hctx.
+  intros Hwf1 Hwf2 Hsub IH m Hctx.
   eapply denot_ty_in_ctx_under_fiber_intro.
   - eapply denot_ty_in_ctx_under_fiber_scoped_from_context_typing; eauto.
   - intros σΣ mfib Hproj.
-    eapply sub_type_under_msubst_transport; eauto.
+    eapply (sub_type_under_msubst_transport
+      Σ Γ e τ1 τ2 m mfib σΣ);
+      [exact Hwf1|exact Hwf2|exact Hsub|exact Hctx|exact Hproj|].
     eapply denot_ty_in_ctx_under_fiber_elim_projection; eauto.
 Qed.
 
@@ -375,21 +543,27 @@ Lemma fundamental_ctx_sub_case_fiber
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
     (e : tm) (τ : context_ty) :
   context_typing_wf Σ Γ1 e τ ->
+  context_typing_wf Σ Γ2 e τ ->
   ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 ->
   (denot_ctx_under Σ Γ2 ⊫ denot_ty_in_ctx_under_fiber Σ Γ2 τ e) ->
   denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under_fiber Σ Γ1 τ e.
 Proof.
-  intros Hwf Hsub IH m Hctx.
+  intros Hwf1 Hwf2 Hsub IH m Hctx.
   eapply denot_ty_in_ctx_under_fiber_intro.
   - eapply denot_ty_in_ctx_under_fiber_scoped_from_context_typing; eauto.
   - intros σΣ mfib Hproj.
-    eapply ctx_sub_under_msubst_transport; eauto.
+    eapply (ctx_sub_under_msubst_transport
+      Σ Γ1 Γ2 e τ m mfib σΣ);
+      [exact Hwf1|exact Hwf2|exact Hsub|exact IH|exact Hctx|exact Hproj].
 Qed.
 
 Lemma fundamental_let_case_fiber
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
+  context_typing_wf Σ Γ e1 τ1 ->
   context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
+  (forall x, x ∉ L ->
+    context_typing_wf Σ (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2) ->
   (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ1 e1) ->
   (forall x, x ∉ L ->
     denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) ⊫
@@ -397,7 +571,212 @@ Lemma fundamental_let_case_fiber
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under_fiber Σ Γ τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf1 Hwflet Hwfbody IH1 IH2 m Hctx.
+  eapply denot_ty_in_ctx_under_fiber_intro.
+  - eapply denot_ty_in_ctx_under_fiber_scoped_from_context_typing; eauto.
+  - intros σΣ mfib Hproj.
+    assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+    {
+      pose proof (res_models_scoped _ _ Hctx) as Hscope.
+      rewrite denot_ctx_under_unfold_body in Hscope.
+      apply formula_scoped_fibvars_l in Hscope.
+      rewrite ctx_base_vars_fv in Hscope. exact Hscope.
+    }
+    assert (Hstore_ty : storeA_has_type Σ σΣ).
+    { eapply denot_ctx_under_projection_store_has_type; eauto. }
+    assert (Hbase : base_store_projection Σ σΣ mfib).
+    { eapply base_store_projection_from_fiber; eauto. }
+    pose proof (denot_ctx_under_fiber_from_projection
+      Σ Γ m mfib σΣ Hproj Hctx) as Hctx_fib.
+    pose proof (IH1 m Hctx) as Hden1_fiber.
+    pose proof (denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf
+      Σ Γ τ1 e1 m mfib σΣ Hwf1 Hctx Hproj Hden1_fiber)
+      as Hden1_inst.
+    set (e1σ := lstore_instantiate_tm (lstore_lift_free σΣ) e1).
+    pose proof (denot_ty_lvar_gas_guard (cty_depth τ1)
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ1 e1σ mfib
+      Hden1_inst) as Hguard1.
+    repeat rewrite res_models_and_iff in Hguard1.
+    destruct Hguard1 as [_ [_ [Hbasic1_inst Htotal1_inst]]].
+    set (x := fresh_for
+      (L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (mfib : WorldT) ∪
+       fv_tm e1σ ∪ fv_tm e2 ∪ fv_cty τ2 ∪ dom (σΣ : StoreT))).
+    pose proof (fresh_for_not_in
+      (L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (mfib : WorldT) ∪
+       fv_tm e1σ ∪ fv_tm e2 ∪ fv_cty τ2 ∪ dom (σΣ : StoreT))) as Hfresh.
+    change (x ∉
+      L ∪ dom (erase_ctx_under Σ Γ) ∪ world_dom (mfib : WorldT) ∪
+      fv_tm e1σ ∪ fv_tm e2 ∪ fv_cty τ2 ∪ dom (σΣ : StoreT)) in Hfresh.
+    assert (HxL : x ∉ L) by set_solver.
+    assert (Hxctx : x ∉ dom (erase_ctx_under Σ Γ)) by set_solver.
+    assert (Hxworld : x ∉ world_dom (mfib : WorldT)) by set_solver.
+    assert (Hxe1σ : x ∉ fv_tm e1σ) by set_solver.
+    assert (Hxσ : x ∉ dom (σΣ : StoreT)) by set_solver.
+    assert (Hxτ2 : x ∉ fv_cty τ2) by set_solver.
+    destruct (expr_result_extension_witness_exists e1σ x Hxe1σ)
+      as [Fx HFx].
+    assert (Happ : extension_applicable Fx mfib).
+    {
+      constructor.
+      - destruct HFx as [_ [Hin _] _].
+        unfold ext_in in Hin. rewrite Hin.
+        pose proof (res_models_scoped mfib (expr_total_formula e1σ)
+          Htotal1_inst) as Hscope_total.
+        unfold formula_scoped_in_world in Hscope_total.
+        rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_total.
+        exact Hscope_total.
+      - destruct HFx as [_ [_ Hout] _].
+        unfold ext_out in Hout. rewrite Hout. set_solver.
+    }
+    destruct (res_extend_by_exists mfib Fx Happ) as [mx Hext].
+    assert (Hbase_mx : base_store_projection Σ σΣ mx).
+    {
+      split; [exact (proj1 Hbase)|].
+      pose proof (base_store_projection_to_store_singleton_projection
+        Σ σΣ mfib Hbase) as Hbase_single.
+      pose proof (store_singleton_projection_extend_base σΣ mfib mx Fx
+        Hext Hbase_single) as Hsingle_mx.
+      unfold store_singleton_projection in Hsingle_mx.
+      rewrite <- (proj1 Hbase). exact Hsingle_mx.
+    }
+    assert (Harg_ctx :
+      mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1))).
+    {
+      eapply denot_ctx_under_comma_bind_from_result_denotation; eauto.
+    }
+    pose proof (IH2 x HxL mx Harg_ctx) as Hbody_fiber.
+    assert (Hbody_msubst :
+      mx ⊨ formula_msubst_store σΣ
+        (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
+          τ2 (e2 ^^ x))).
+    {
+      unfold denot_ty_in_ctx_under_fiber in Hbody_fiber.
+      eapply res_models_FFibVars_singleton_elim; [| |exact Hbody_fiber].
+      - rewrite ctx_base_vars_fv. exact (proj1 Hbase_mx).
+      - rewrite ctx_base_vars_fv. exact (proj2 Hbase_mx).
+    }
+    pose proof (denot_ty_lvar_gas_msubst_store_from_typing_wf
+      (cty_depth τ2) Σ
+      (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) σΣ τ2
+      (e2 ^^ x) mx
+      (proj2 (Hwfbody x HxL)) Hstore_ty Hbase_mx) as Hbody_to_inst.
+    unfold denot_ty_in_ctx_under, denot_ty in Hbody_msubst.
+    pose proof (Hbody_to_inst Hbody_msubst) as Hbody_inst_raw.
+    assert (Hbody_inst :
+      mx ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2
+        (lstore_instantiate_tm (lstore_lift_free σΣ) (e2 ^^ x))).
+    {
+      unfold denot_ty_in_ctx_under, denot_ty.
+      exact Hbody_inst_raw.
+    }
+    assert (Hσ_ltype :
+      atom_store_has_ltype (atom_env_to_lty_env (erase_ctx_under Σ Γ)) σΣ).
+    {
+      eapply base_store_projection_atom_store_has_ltype_under; eauto.
+      exact (proj1 (proj2 Hwf1)).
+    }
+    assert (Hσclosed : store_closed σΣ).
+    { eapply atom_store_has_ltype_closed. exact Hσ_ltype. }
+    assert (Hσ_env : env_has_type (erase_ctx_under Σ Γ) σΣ).
+    {
+      intros z T v Hlookup Hσz.
+      unfold erase_ctx_under in Hlookup.
+      apply map_lookup_union_Some_raw in Hlookup
+        as [HΣz | [HΣnone HΓz]].
+      - eapply Hstore_ty; eauto.
+      - exfalso.
+        assert (HzΣ : z ∈ dom Σ).
+        {
+          rewrite <- (proj1 Hbase).
+          change (z ∈ dom (σΣ : gmap atom value)).
+          rewrite elem_of_dom. eauto.
+        }
+        apply not_elem_of_dom in HΣnone.
+        exact (HΣnone HzΣ).
+    }
+    assert (He1_basic :
+      erase_ctx_under Σ Γ ⊢ₑ e1σ ⋮ erase_ty τ1).
+    {
+      subst e1σ.
+      eapply msubst_basic_typing_tm_weaken_same_env; eauto.
+      exact (context_typing_wf_basic_typing Σ Γ e1 τ1 Hwf1).
+    }
+    set (e2σ := lstore_instantiate_tm_at 1 (lstore_lift_free σΣ) e2).
+    assert (Hbody_term :
+      lstore_instantiate_tm (lstore_lift_free σΣ) (e2 ^^ x) =
+      e2σ ^^ x).
+    {
+      subst e2σ.
+      change (e2 ^^ x) with (open_tm 0 (vfvar x) e2).
+      change (open_one 0 x
+        (lstore_instantiate_tm_at 1 (lstore_lift_free σΣ) e2))
+        with (open_tm 0 (vfvar x)
+          (lstore_instantiate_tm_at 1 (lstore_lift_free σΣ) e2)).
+      rewrite lstore_instantiate_tm_open_fresh_lift_free.
+      2:{ exact Hσclosed. }
+      2:{ set_solver. }
+      change (lstore_instantiate_tm (lstore_lift_free σΣ) e2)
+        with (lstore_instantiate_tm_at 0 (lstore_lift_free σΣ) e2).
+      rewrite (lstore_instantiate_tm_at_lift_free_depth_irrel
+        0 1 σΣ e2 Hσclosed).
+      reflexivity.
+    }
+    assert (Hlet_term :
+      lstore_instantiate_tm (lstore_lift_free σΣ) (tlete e1 e2) =
+      tlete e1σ e2σ).
+    {
+      subst e1σ e2σ.
+      reflexivity.
+    }
+    assert (Hlet_basic :
+      erase_ctx_under Σ Γ ⊢ₑ tlete e1σ e2σ ⋮ erase_ty τ2).
+    {
+      pose proof (msubst_basic_typing_tm_weaken_same_env
+        (erase_ctx_under Σ Γ) σΣ (tlete e1 e2) (erase_ty τ2)
+        Hσclosed Hσ_env
+        (context_typing_wf_basic_typing Σ Γ
+          (tlete e1 e2) τ2 Hwflet)) as Hbasic_msubst.
+      rewrite Hlet_term in Hbasic_msubst.
+      exact Hbasic_msubst.
+    }
+    assert (Hworld_inst :
+      mfib ⊨ basic_world_formula
+        (denot_relevant_env
+          (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ2
+          (tlete e1σ e2σ))).
+    {
+      eapply denot_ctx_under_relevant_basic_world. exact Hctx_fib.
+    }
+    assert (Hbody_direct :
+      mx ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
+        τ2 (e2σ ^^ x)).
+    {
+      rewrite <- Hbody_term.
+      exact Hbody_inst.
+    }
+    assert (Hdirect :
+      mfib ⊨ denot_ty_in_ctx_under Σ Γ τ2 (tlete e1σ e2σ)).
+    {
+      eapply denot_tlet_direct_in_ctx with
+        (τ1 := τ1) (Fx := Fx) (x := x) (mx := mx); eauto.
+      - intros Hbad.
+        apply elem_of_union in Hbad as [Hbad|Hbad].
+        + apply Hxctx.
+          apply lvars_fv_elem in Hbad.
+          rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hbad.
+          exact Hbad.
+        + apply Hxτ2.
+          rewrite <- context_ty_lvars_fv.
+          apply lvars_fv_elem. exact Hbad.
+    }
+    pose proof (denot_ty_lvar_gas_msubst_store_to_typing_wf
+      (cty_depth τ2) Σ (erase_ctx_under Σ Γ) σΣ τ2
+      (tlete e1 e2) mfib
+      (proj2 Hwflet) Hstore_ty Hbase) as Hback.
+    unfold denot_ty_in_ctx_under, denot_ty in Hdirect |- *.
+    rewrite <- Hlet_term in Hdirect.
+    exact (Hback Hdirect).
+Qed.
 
 Lemma fundamental_letd_case_fiber
     (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
@@ -409,7 +788,12 @@ Lemma fundamental_letd_case_fiber
   denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf IH1 IH2.
+  eapply letd_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IH1.
+  - exact IH2.
+Qed.
 
 Lemma fundamental_lam_case_fiber
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -422,7 +806,11 @@ Lemma fundamental_lam_case_fiber
     denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH.
+  eapply lam_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IH.
+Qed.
 
 Lemma fundamental_lamd_case_fiber
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -435,7 +823,11 @@ Lemma fundamental_lamd_case_fiber
     denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-Admitted.
+  intros Hwf IH.
+  eapply lamd_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IH.
+Qed.
 
 Lemma fundamental_app_case_fiber
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
@@ -447,7 +839,12 @@ Lemma fundamental_app_case_fiber
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under_fiber Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg.
+  eapply app_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IHfun.
+  - exact IHarg.
+Qed.
 
 Lemma fundamental_appd_case_fiber
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
@@ -460,7 +857,12 @@ Lemma fundamental_appd_case_fiber
     denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf IHfun IHarg.
+  eapply appd_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IHfun.
+  - exact IHarg.
+Qed.
 
 Lemma fundamental_fix_case_fiber
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
@@ -478,7 +880,13 @@ Lemma fundamental_fix_case_fiber
     denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-Admitted.
+  intros Hτx Hτ Hwf IH.
+  eapply fix_soundness_bridge.
+  - exact Hτx.
+  - exact Hτ.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IH.
+Qed.
 
 Lemma fundamental_fixd_case_fiber
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
@@ -496,7 +904,13 @@ Lemma fundamental_fixd_case_fiber
     denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-Admitted.
+  intros Hτx Hτ Hwf IH.
+  eapply fixd_soundness_bridge.
+  - exact Hτx.
+  - exact Hτ.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact IH.
+Qed.
 
 Lemma fundamental_appop_case_fiber
     (Φ : primop_ctx) Σ Γ op x :
@@ -546,7 +960,14 @@ Lemma fundamental_match_both_case_fiber
     denot_ty_in_ctx_under_fiber Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf Hvt Hvf IHt IHf.
+  eapply match_both_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact Hvt.
+  - exact Hvf.
+  - exact IHt.
+  - exact IHf.
+Qed.
 
 Lemma fundamental_match_true_case_fiber
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -559,7 +980,13 @@ Lemma fundamental_match_true_case_fiber
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf Hv Hunreach IH Het.
+  eapply match_true_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact Hv.
+  - exact IH.
+  - exact Het.
+Qed.
 
 Lemma fundamental_match_false_case_fiber
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -572,7 +999,13 @@ Lemma fundamental_match_false_case_fiber
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
 Proof.
-Admitted.
+  intros Hwf Hv Hunreach Het IH.
+  eapply match_false_soundness_bridge.
+  - unfold context_typing_wf in Hwf. exact (proj2 Hwf).
+  - exact Hv.
+  - exact Het.
+  - exact IH.
+Qed.
 
 (** ** Fundamental theorem *)
 
@@ -586,9 +1019,31 @@ Proof.
   induction Hty.
   - eapply fundamental_var_case_fiber; eauto.
   - eapply fundamental_const_case_fiber; eauto.
-  - eapply fundamental_sub_case_fiber; eauto.
-  - eapply fundamental_ctx_sub_case_fiber; eauto.
-  - eapply fundamental_let_case_fiber; eauto.
+  - eapply (fundamental_sub_case_fiber Φ Σ Γ e τ1 τ2).
+    + exact (typing_wf_under Φ Σ Γ e τ1 Hty).
+    + exact H.
+    + exact H0.
+    + exact IHHty.
+  - eapply (fundamental_ctx_sub_case_fiber Φ Σ Γ1 Γ2 e τ).
+    + exact H.
+    + exact (typing_wf_under Φ Σ Γ2 e τ Hty).
+    + exact H0.
+    + exact IHHty.
+  - eapply (fundamental_let_case_fiber Φ Σ Γ τ1 τ2 e1 e2 L).
+    + exact (typing_wf_under Φ Σ Γ e1 τ1 Hty).
+    + eassumption.
+    + intros x Hx.
+      exact (typing_wf_under Φ Σ
+        (CtxComma Γ (CtxBind x τ1)) (e2 ^^ x) τ2 (H0 x Hx)).
+    + eassumption.
+    + intros x Hx.
+      match goal with
+      | IH : forall y, y ∉ _ ->
+          denot_ctx_under _ (CtxComma _ (CtxBind y _)) ⊫
+            denot_ty_in_ctx_under_fiber _ (CtxComma _ (CtxBind y _)) _ (_ ^^ y)
+        |- _ =>
+          exact (IH x Hx)
+      end.
   - eapply fundamental_letd_case_fiber; eauto.
   - eapply fundamental_lam_case_fiber; eauto.
   - eapply fundamental_lamd_case_fiber; eauto.
