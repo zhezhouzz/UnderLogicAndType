@@ -87,6 +87,108 @@ Proof.
     + exact Hbody.
 Qed.
 
+Lemma context_ty_wf_for_erased_base_mono Σbase1 Σbase2 Δ τ :
+  dom Σbase1 ⊆ dom Σbase2 ->
+  context_ty_wf_for_erased Σbase1 Δ τ ->
+  context_ty_wf_for_erased Σbase2 Δ τ.
+Proof.
+  intros Hsub.
+  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
+                 |τ1 IH1 τ2 IH2|τx IHx τr IHr|τx IHx τr IHr];
+    cbn [context_ty_wf_for_erased]; intros Hwf.
+  - exact Hwf.
+  - exact Hwf.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [Harg Hbody]. split; [exact Harg|exact Hbody].
+  - destruct Hwf as [Harg Hbody]. split; [|exact Hbody].
+    eapply basic_context_ty_mono; [exact Hsub|exact Harg].
+Qed.
+
+Lemma context_ty_wf_for_erased_delta_mono Σbase Δ1 Δ2 τ :
+  dom Δ1 ⊆ dom Δ2 ->
+  context_ty_wf_for_erased Σbase Δ1 τ ->
+  context_ty_wf_for_erased Σbase Δ2 τ.
+Proof.
+  intros Hsub.
+  induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
+                 |τ1 IH1 τ2 IH2|τx IHx τr IHr|τx IHx τr IHr];
+    cbn [context_ty_wf_for_erased]; intros Hwf.
+  - eapply basic_context_ty_mono; [exact Hsub|exact Hwf].
+  - eapply basic_context_ty_mono; [exact Hsub|exact Hwf].
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
+  - destruct Hwf as [Harg Hbody]. split.
+    + eapply basic_context_ty_mono; [exact Hsub|exact Harg].
+    + eapply wf_context_ty_at_mono; [exact Hsub|exact Hbody].
+  - destruct Hwf as [Harg Hbody]. split.
+    + exact Harg.
+    + eapply wf_context_ty_at_mono; [exact Hsub|exact Hbody].
+Qed.
+
+Lemma context_typing_wf_erased_self_base Σbase Δ e τ :
+  context_typing_wf_erased Σbase Δ e τ ->
+  context_typing_wf_erased Δ Δ e τ.
+Proof.
+  intros [Henv [Hτ Hbasic]].
+  repeat split.
+  - intros x T Hx. exact Hx.
+  - eapply context_ty_wf_for_erased_base_mono; [|exact Hτ].
+    apply wf_erased_ctx_under_dom_subset. exact Henv.
+  - exact Hbasic.
+Qed.
+
+Lemma context_typing_wf_erased_bind_ret_fvar
+    Σbase Δ e τ x :
+  context_typing_wf_erased Σbase Δ e τ ->
+  x ∉ dom Δ ->
+  context_typing_wf_erased Δ (<[x := erase_ty τ]> Δ)
+    (tret (vfvar x)) τ.
+Proof.
+  intros Hwf Hfresh.
+  pose proof (context_typing_wf_erased_self_base _ _ _ _ Hwf)
+    as Hself.
+  destruct Hself as [_ [Hτ _]].
+  repeat split.
+  - intros y T Hy.
+    destruct (decide (y = x)) as [->|Hyx].
+    + exfalso. apply Hfresh. apply elem_of_dom. exists T. exact Hy.
+    + change ((<[x := erase_ty τ]> (Δ : gmap atom ty)) !! y = Some T).
+      transitivity (Δ !! y); [|exact Hy].
+      apply lookup_insert_ne. intros Hxy. apply Hyx. symmetry. exact Hxy.
+  - eapply context_ty_wf_for_erased_delta_mono; [|exact Hτ].
+    intros y Hy.
+    apply elem_of_dom in Hy as [T Hy].
+    apply elem_of_dom.
+    destruct (decide (y = x)) as [->|Hyx].
+    + exfalso. apply Hfresh. apply elem_of_dom. exists T. exact Hy.
+    + exists T.
+      change ((<[x := erase_ty τ]> (Δ : gmap atom ty)) !! y = Some T).
+      transitivity (Δ !! y); [|exact Hy].
+      apply lookup_insert_ne. intros Hxy. apply Hyx. symmetry. exact Hxy.
+  - change ((<[x := erase_ty τ]> (Δ : gmap atom ty))
+      ⊢ₑ tret (vfvar x) ⋮ erase_ty τ).
+    eapply (basic_tm_has_ltype_to_atom_env_typing
+      (<[x := erase_ty τ]> (Δ : gmap atom ty))).
+    replace (atom_env_to_lty_env
+        (<[x := erase_ty τ]> (Δ : gmap atom ty)))
+      with (<[LVFree x := erase_ty τ]> (atom_env_to_lty_env Δ)).
+    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+    apply BTT_Ret. apply BVT_FVar.
+    change ((<[LVFree x := erase_ty τ]>
+      (atom_env_to_lty_env Δ : gmap logic_var ty)) !! LVFree x =
+      Some (erase_ty τ)).
+    apply map_lookup_insert.
+Qed.
+
 Lemma context_typing_wf_erased_regular Σbase Δ e τ :
   context_typing_wf_erased Σbase Δ e τ ->
   basic_context_ty (dom Δ) τ /\ Δ ⊢ₑ e ⋮ erase_ty τ.

@@ -639,36 +639,6 @@ Proof.
       unfold store_singleton_projection in Hsingle_mx.
       rewrite <- (proj1 Hbase). exact Hsingle_mx.
     }
-    assert (Harg_ctx :
-      mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1))).
-    {
-      eapply denot_ctx_under_comma_bind_from_result_denotation; eauto.
-    }
-    pose proof (IH2 x HxL mx Harg_ctx) as Hbody_fiber.
-    assert (Hbody_msubst :
-      mx ⊨ formula_msubst_store σΣ
-        (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
-          τ2 (e2 ^^ x))).
-    {
-      unfold denot_ty_in_ctx_under_fiber in Hbody_fiber.
-      eapply res_models_FFibVars_singleton_elim; [| |exact Hbody_fiber].
-      - rewrite ctx_base_vars_fv. exact (proj1 Hbase_mx).
-      - rewrite ctx_base_vars_fv. exact (proj2 Hbase_mx).
-    }
-    pose proof (denot_ty_lvar_gas_msubst_store_from_typing_wf
-      (cty_depth τ2) Σ
-      (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) σΣ τ2
-      (e2 ^^ x) mx
-      (proj2 (Hwfbody x HxL)) Hstore_ty Hbase_mx) as Hbody_to_inst.
-    unfold denot_ty_in_ctx_under, denot_ty in Hbody_msubst.
-    pose proof (Hbody_to_inst Hbody_msubst) as Hbody_inst_raw.
-    assert (Hbody_inst :
-      mx ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2
-        (lstore_instantiate_tm (lstore_lift_free σΣ) (e2 ^^ x))).
-    {
-      unfold denot_ty_in_ctx_under, denot_ty.
-      exact Hbody_inst_raw.
-    }
     assert (Hσ_ltype :
       atom_store_has_ltype (atom_env_to_lty_env (erase_ctx_under Σ Γ)) σΣ).
     {
@@ -700,6 +670,48 @@ Proof.
       subst e1σ.
       eapply msubst_basic_typing_tm_weaken_same_env; eauto.
       exact (context_typing_wf_basic_typing Σ Γ e1 τ1 Hwf1).
+    }
+    assert (Hwf1_inst :
+      context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e1σ τ1).
+    {
+      destruct Hwf1 as [_ [Henv [Hτ _]]].
+      repeat split; eauto.
+    }
+    assert (Harg_ctx :
+      mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1))).
+    {
+      eapply denot_ctx_under_comma_bind_from_result_denotation
+        with (e1 := e1σ) (m := mfib) (Fx := Fx); eauto.
+      intros σΔ msrc HprojΔ.
+      eapply denot_ty_in_ctx_under_fiber_elim_erased_source_projection_instantiated_from_wf
+        with (m := m) (mfib := mfib) (σΣ := σΣ) (σΔ := σΔ);
+        eauto.
+      exact (proj2 Hwf1).
+    }
+    pose proof (IH2 x HxL mx Harg_ctx) as Hbody_fiber.
+    assert (Hbody_msubst :
+      mx ⊨ formula_msubst_store σΣ
+        (denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1))
+          τ2 (e2 ^^ x))).
+    {
+      unfold denot_ty_in_ctx_under_fiber in Hbody_fiber.
+      eapply res_models_FFibVars_singleton_elim; [| |exact Hbody_fiber].
+      - rewrite ctx_base_vars_fv. exact (proj1 Hbase_mx).
+      - rewrite ctx_base_vars_fv. exact (proj2 Hbase_mx).
+    }
+    pose proof (denot_ty_lvar_gas_msubst_store_from_typing_wf
+      (cty_depth τ2) Σ
+      (erase_ctx_under Σ (CtxComma Γ (CtxBind x τ1))) σΣ τ2
+      (e2 ^^ x) mx
+      (proj2 (Hwfbody x HxL)) Hstore_ty Hbase_mx) as Hbody_to_inst.
+    unfold denot_ty_in_ctx_under, denot_ty in Hbody_msubst.
+    pose proof (Hbody_to_inst Hbody_msubst) as Hbody_inst_raw.
+    assert (Hbody_inst :
+      mx ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind x τ1)) τ2
+        (lstore_instantiate_tm (lstore_lift_free σΣ) (e2 ^^ x))).
+    {
+      unfold denot_ty_in_ctx_under, denot_ty.
+      exact Hbody_inst_raw.
     }
     set (e2σ := lstore_instantiate_tm_at 1 (lstore_lift_free σΣ) e2).
     assert (Hbody_term :

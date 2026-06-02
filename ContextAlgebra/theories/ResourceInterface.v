@@ -872,6 +872,18 @@ Lemma res_extend_by_projection_eq
   res_restrict ny (extA_in F ∪ extA_out F).
 Proof. apply resA_extend_by_projection_eq. Qed.
 
+Lemma res_extend_by_fiber_from_projection
+    (m mx mfib : WfWorld) F X σ :
+  extA_in F ⊆ X ->
+  extA_out F ## X ->
+  X ⊆ world_dom (m : World) ->
+  m #> F ~~> mx ->
+  res_fiber_from_projection mx X σ mfib ->
+  exists msrc,
+    res_fiber_from_projection m X σ msrc /\
+    msrc #> F ~~> mfib.
+Proof. apply resA_extend_by_fiber_from_projection. Qed.
+
 Lemma extension_applicable_product_r_fresh
     (n m : WfWorld) (F : fiber_extension)
     (Hc_m : world_compat n m) :

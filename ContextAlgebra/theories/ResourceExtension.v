@@ -409,6 +409,103 @@ Proof.
         -- pose proof (extA_app_out _ _ Happ). set_solver.
 Qed.
 
+Lemma resA_extend_by_fiber_from_projection
+    (m mx mfib : WfWorldAT) F X σ :
+  extA_in F ⊆ X ->
+  extA_out F ## X ->
+  X ⊆ worldA_dom (m : WorldAT) ->
+  m #> F ~~A> mx ->
+  resA_fiber_from_projection mx X σ mfib ->
+  exists msrc,
+    resA_fiber_from_projection m X σ msrc /\
+    msrc #> F ~~A> mfib.
+Proof.
+  intros HinX HoutX HXm Hext Hfib.
+  destruct Hfib as [Hσ_mx Hmfib_raw].
+  assert (Hbase_eq :
+      resA_restrict mx X = resA_restrict m X).
+  {
+    eapply resA_restrict_eq_subset with
+      (X := worldA_dom (m : WorldAT)).
+    - exact HXm.
+    - rewrite (resA_extend_by_restrict_base m F mx Hext).
+      rewrite resA_restrict_self. reflexivity.
+  }
+  assert (Hσ_m : (resA_restrict m X : WorldAT) σ).
+  { rewrite <- Hbase_eq. exact Hσ_mx. }
+  assert (Hdomσ : dom (σ : StoreAT) = X).
+  {
+    pose proof (wfworldA_store_dom (resA_restrict m X) σ Hσ_m)
+      as Hdom.
+    cbn [resA_restrict rawA_restrict worldA_dom] in Hdom.
+    set_solver.
+  }
+  destruct Hσ_m as [σ0 [Hσ0 Hσ0X]].
+  assert (Hne : exists σm, (m : WorldAT) σm /\
+      storeA_restrict σm (dom (σ : StoreAT)) = σ).
+  {
+    exists σ0. split; [exact Hσ0|].
+    rewrite Hdomσ. exact Hσ0X.
+  }
+  set (msrc := resA_fiber m σ Hne).
+  exists msrc. split.
+  - subst msrc. split.
+    + exists σ0. split; [exact Hσ0|exact Hσ0X].
+    + reflexivity.
+  - split.
+    + constructor.
+      * subst msrc. cbn [raw_worldA rawA_fiber worldA_dom].
+        exact (extA_app_in F m (resA_extend_by_applicable m F mx Hext)).
+      * subst msrc. cbn [raw_worldA rawA_fiber worldA_dom].
+        exact (extA_app_out F m (resA_extend_by_applicable m F mx Hext)).
+    + split.
+      * change (worldA_dom (mfib : WorldAT) =
+          worldA_dom (msrc : WorldAT) ∪ extA_out F).
+        rewrite Hmfib_raw. subst msrc.
+        cbn [raw_worldA rawA_fiber worldA_dom].
+        change (worldA_dom (mx : WorldAT) =
+          worldA_dom (m : WorldAT) ∪ extA_out F).
+        apply resA_extend_by_dom. exact Hext.
+      * intros τ. split.
+        -- intros Hτfib.
+           rewrite Hmfib_raw in Hτfib.
+           cbn [rawA_fiber worldA_stores] in Hτfib.
+           destruct Hτfib as [Hτmx Hτproj].
+           apply (proj1 (resA_extend_by_store_iff m F mx τ Hext))
+             in Hτmx.
+           destruct Hτmx as
+             [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+           exists σm, we, σe. split.
+           ++ subst msrc. cbn [raw_worldA rawA_fiber worldA_stores].
+              split; [exact Hσm|].
+              rewrite Hdomσ.
+              transitivity (storeA_restrict (σm ∪ σe) X).
+              ** symmetry. apply storeA_restrict_union_ignore_r.
+                 pose proof (extA_output_store_dom_from_base m F σm we σe
+                   (resA_extend_by_applicable m F mx Hext) Hσm HF Hσe)
+                   as Hdomσe.
+                 rewrite Hdomσe. exact HoutX.
+              ** rewrite <- Hdomσ. exact Hτproj.
+           ++ split; [exact HF|].
+              split; [exact Hσe|reflexivity].
+        -- intros [σm [we [σe [Hσmsrc [HF [Hσe ->]]]]]].
+           subst msrc.
+           cbn [raw_worldA rawA_fiber worldA_stores] in Hσmsrc.
+           destruct Hσmsrc as [Hσm Hσmproj].
+           rewrite Hmfib_raw.
+           cbn [rawA_fiber worldA_stores].
+           split.
+           ++ apply (proj2 (resA_extend_by_store_iff m F mx _ Hext)).
+              exists σm, we, σe. repeat split; eauto.
+           ++ rewrite Hdomσ.
+              rewrite storeA_restrict_union_ignore_r.
+              ** rewrite <- Hdomσ. exact Hσmproj.
+              ** pose proof (extA_output_store_dom_from_base m F σm we σe
+                   (resA_extend_by_applicable m F mx Hext) Hσm HF Hσe)
+                   as Hdomσe.
+                 rewrite Hdomσe. exact HoutX.
+Qed.
+
 Lemma resA_extend_by_le m F n :
   m #> F ~~A> n →
   m ⊑ n.

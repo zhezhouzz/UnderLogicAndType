@@ -590,31 +590,555 @@ Proof.
   unfold erase_ctx_under in Harg. exact Harg.
 Qed.
 
-Lemma denot_ctx_under_bind_from_result_denotation
-    (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
+Lemma denot_ctx_under_bind_projection_intro
+    (Σ : gmap atom ty) x τ (m : WfWorldT) :
+  formula_scoped_in_world m (denot_ctx_under Σ (CtxBind x τ)) ->
+  (forall σΣ mfib,
+    res_fiber_from_projection m (dom Σ) σΣ mfib ->
+    mfib ⊨ formula_msubst_store σΣ
+      (FAnd
+        (basic_world_formula
+          (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ))))
+        (denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))))) ->
+  m ⊨ denot_ctx_under Σ (CtxBind x τ).
+Proof.
+  intros Hscope Hfib.
+  cbn [denot_ctx_under].
+  eapply res_models_FFibVars_intro.
+  - exact Hscope.
+  - apply ctx_base_vars_lc.
+  - intros σΣ mfib Hproj.
+    apply Hfib.
+    rewrite ctx_base_vars_fv in Hproj.
+    exact Hproj.
+Qed.
+
+Lemma denot_ctx_under_bind_scope_from_result_denotation
+    (Σ : gmap atom ty) (τ1 : context_ty) e1
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
-  m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
+  x ∉ dom Σ ->
   expr_result_extension_witness e1 x Fx ->
-  x ∉ dom (erase_ctx_under Σ Γ) ->
   res_extend_by m Fx mx ->
-  mx ⊨ denot_ctx_under (erase_ctx_under Σ Γ) (CtxBind x τ1).
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  basic_context_ty (dom Σ) τ1 ->
+  formula_scoped_in_world mx (denot_ctx_under Σ (CtxBind x τ1)).
+Proof.
+  intros Hfresh HFx Hext Hworld Hτbasic.
+  pose proof (proj1 (basic_world_formula_models_iff
+    (atom_env_to_lty_env Σ) m) Hworld) as [_ [HΣm_lvar _]].
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    intros a Ha.
+    apply HΣm_lvar.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Ha.
+  }
+  pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hm_mx.
+  assert (HΣmx : dom Σ ⊆ world_dom (mx : WorldT)) by set_solver.
+  destruct HFx as [_ [_ Hout] _].
+  pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
+  assert (Hxmx : x ∈ world_dom (mx : WorldT)).
+  {
+    apply Hout_mx.
+    change (x ∈ ext_out Fx).
+    rewrite Hout. set_solver.
+  }
+  assert (HτΣ : fv_cty τ1 ⊆ dom Σ).
+  {
+    destruct Hτbasic as [Hτvars _].
+    rewrite <- context_ty_lvars_fv.
+    intros a Ha.
+    apply lvars_fv_elem in Ha.
+    apply Hτvars in Ha.
+    unfold lvars_of_atoms in Ha.
+    apply elem_of_map in Ha as [b [Heq Hb]].
+    inversion Heq. subst b. exact Hb.
+  }
+  rewrite denot_ctx_under_unfold_body.
+  apply (proj2 (formula_scoped_fibvars_iff mx
+    (ctx_base_vars Σ) (denot_ctx_under_body Σ (CtxBind x τ1)))).
+  split.
+  - rewrite ctx_base_vars_fv. exact HΣmx.
+  - unfold denot_ctx_under_body.
+    cbn [erase_ctx].
+    apply (proj2 (formula_scoped_and_iff _ _ _)).
+    split.
+    + unfold formula_scoped_in_world.
+      rewrite formula_fv_basic_world_formula.
+      intros a Ha.
+      rewrite atom_store_to_lvar_store_dom in Ha.
+      apply lvars_fv_elem in Ha.
+      unfold lvars_of_atoms in Ha.
+      apply elem_of_map in Ha as [a' [Heq Ha]].
+      inversion Heq. subst a'.
+      unfold erase_ctx_under in Ha.
+      cbn [erase_ctx] in Ha.
+      apply elem_of_dom in Ha as [T Hlook].
+      change ((Σ ∪ ({[x := erase_ty τ1]} : gmap atom ty)) !! a = Some T)
+        in Hlook.
+      apply map_lookup_union_Some_raw in Hlook as [HΣa|[_ Hxa]].
+      * apply HΣmx. apply elem_of_dom. exists T. exact HΣa.
+      * destruct (decide (a = x)) as [->|Hneq]; [exact Hxmx|].
+        change ((({[x := erase_ty τ1]} : gmap atom ty) !! a) = Some T) in Hxa.
+        pose proof (lookup_singleton_Some
+          (M := gmap atom) x a (erase_ty τ1) T) as Hsingle.
+        apply Hsingle in Hxa as [Hxa _].
+        symmetry in Hxa. contradiction.
+    + unfold denot_ty, formula_scoped_in_world.
+      transitivity (fv_tm (tret (vfvar x)) ∪ fv_cty τ1).
+      * apply formula_fv_denot_ty_lvar_gas_subset_relevant.
+      * cbn [fv_tm fv_value]. set_solver.
+Qed.
+
+Lemma denot_ctx_under_bind_projected_body_basic_world
+    (Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx mfib : WfWorldT) (Fx : FiberExtensionT)
+    (x : atom) (σΣ : StoreT) :
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 ->
+  res_fiber_from_projection mx (dom Σ) σΣ mfib ->
+  mfib ⊨ formula_msubst_store σΣ
+    (basic_world_formula
+      (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))).
+Proof.
+  intros Hfresh HFx Hext Hworld Hden Hproj.
+  pose proof (denot_ty_lvar_gas_guard (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 m Hden) as Hguard.
+  assert (HFx_ltype :
+      extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
+        (res_restrict m (ext_in Fx)) Fx).
+  {
+    eapply expr_result_extension_has_ltype_from_source_guard.
+    - apply atom_store_to_lvar_store_closed.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact HFx.
+    - exact Hext.
+    - exact Hguard.
+  }
+  assert (Hmx_world :
+      mx ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ))).
+  {
+    eapply basic_world_formula_insert_typed_extension.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact Hworld.
+    - exact HFx_ltype.
+    - exact Hext.
+  }
+  assert (Hmx_fib :
+      mx ⊨ FFibVars (ctx_base_vars Σ)
+        (basic_world_formula
+          (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1))))).
+  {
+    replace (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))
+      with (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ)).
+    2:{
+      rewrite <- atom_store_to_lvar_store_insert.
+      f_equal.
+      unfold erase_ctx_under, store_union, store_singleton, store_insert.
+      cbn [erase_ctx].
+      symmetry.
+      apply storeA_union_singleton_insert_fresh. exact Hfresh.
+    }
+    eapply basic_world_formula_fibvars_intro.
+    - apply ctx_base_vars_lc.
+    - rewrite ctx_base_vars_fv.
+      rewrite dom_insert_L, atom_store_to_lvar_store_dom.
+      rewrite lvars_fv_union, lvars_fv_singleton_free, lvars_fv_of_atoms.
+      set_solver.
+    - exact Hmx_world.
+  }
+  pose proof (res_models_scoped _ _ Hmx_fib) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hmx_fib)
+    as [_ Hfib].
+  apply Hfib.
+  rewrite ctx_base_vars_fv. exact Hproj.
+Qed.
+
+Lemma basic_world_formula_projection_store_has_type
+    (Σ : gmap atom ty) (m mfib : WfWorldT) (σΣ : StoreT) :
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  storeA_has_type Σ σΣ.
+Proof.
+  intros Hworld Hproj a T v HΣa Hσa.
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (proj1 (basic_world_formula_models_iff
+      (atom_env_to_lty_env Σ) m) Hworld) as [_ [Hscope _]].
+    intros x Hx.
+    apply Hscope.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Hx.
+  }
+  assert (Hdomσ : dom (σΣ : StoreT) = dom Σ).
+  { eapply res_fiber_from_projection_store_dom; eauto. }
+  assert (Hfib_world :
+      mfib ⊨ formula_msubst_store σΣ
+        (basic_world_formula (atom_env_to_lty_env Σ))).
+  {
+    assert (Hfib :
+        m ⊨ FFibVars (ctx_base_vars Σ)
+          (basic_world_formula (atom_env_to_lty_env Σ))).
+    {
+      eapply basic_world_formula_fibvars_intro.
+      - apply ctx_base_vars_lc.
+      - rewrite ctx_base_vars_fv.
+        rewrite atom_store_to_lvar_store_dom.
+        rewrite lvars_fv_of_atoms. set_solver.
+      - exact Hworld.
+    }
+    pose proof (res_models_scoped _ _ Hfib) as Hscope.
+    pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hfib)
+      as [_ Hfib_elim].
+    apply Hfib_elim. rewrite ctx_base_vars_fv. exact Hproj.
+  }
+  pose proof (basic_world_formula_msubst_store_extract_atom_store_has_ltype
+    σΣ (atom_env_to_lty_env Σ) mfib) as Hextract.
+  assert (HσΣ :
+      lvars_of_atoms (dom (σΣ : gmap atom value)) ⊆
+      dom (atom_env_to_lty_env Σ)).
+  {
+    change (lvars_of_atoms (dom (σΣ : StoreT)) ⊆
+      dom (atom_env_to_lty_env Σ)).
+    rewrite Hdomσ.
+    rewrite atom_store_to_lvar_store_dom.
+    unfold lvars_of_atoms.
+    intros lv Hlv.
+    apply elem_of_map in Hlv as [x [-> Hx]].
+    apply elem_of_map. exists x. split; [reflexivity|exact Hx].
+  }
+  destruct (Hextract HσΣ Hfib_world a v Hσa) as [T' [Hlookup Hv]].
+  rewrite atom_store_to_lvar_store_lookup_free in Hlookup.
+  rewrite HΣa in Hlookup. inversion Hlookup. subst T'. exact Hv.
+Qed.
+
+Lemma storeA_has_type_from_basic_world_extension_projection
+    (Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx mfib : WfWorldT) (Fx : FiberExtensionT)
+    (x : atom) (σΣ : StoreT) :
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 ->
+  res_fiber_from_projection mx (dom Σ) σΣ mfib ->
+  storeA_has_type Σ σΣ.
+Proof.
+  intros Hfresh HFx Hext Hworld Hden Hproj.
+  pose proof (denot_ty_lvar_gas_guard (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 m Hden) as Hguard.
+  assert (HFx_ltype :
+      extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
+        (res_restrict m (ext_in Fx)) Fx).
+  {
+    eapply expr_result_extension_has_ltype_from_source_guard.
+    - apply atom_store_to_lvar_store_closed.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact HFx.
+    - exact Hext.
+    - exact Hguard.
+  }
+  assert (Hmx_world :
+      mx ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ))).
+  {
+    eapply basic_world_formula_insert_typed_extension.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact Hworld.
+    - exact HFx_ltype.
+    - exact Hext.
+  }
+  assert (HΣmx : dom Σ ⊆ world_dom (mx : WorldT)).
+  {
+    pose proof (proj1 (basic_world_formula_models_iff
+      (atom_env_to_lty_env Σ) m) Hworld) as [_ [HΣm_lvar _]].
+    pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hm_mx.
+    intros a Ha.
+    apply Hm_mx. apply HΣm_lvar.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Ha.
+  }
+  assert (Hdomσ : dom (σΣ : StoreT) = dom Σ).
+  {
+    eapply res_fiber_from_projection_store_dom; eauto.
+  }
+  assert (Hmx_fib :
+      mx ⊨ FFibVars (ctx_base_vars Σ)
+        (basic_world_formula
+          (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ)))).
+  {
+    eapply basic_world_formula_fibvars_intro.
+    - apply ctx_base_vars_lc.
+    - rewrite ctx_base_vars_fv.
+      rewrite dom_insert_L, atom_store_to_lvar_store_dom.
+      rewrite lvars_fv_union, lvars_fv_singleton_free, lvars_fv_of_atoms.
+      set_solver.
+    - exact Hmx_world.
+  }
+  pose proof (res_models_scoped _ _ Hmx_fib) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hmx_fib)
+    as [_ Hfib].
+  specialize (Hfib σΣ mfib ltac:(rewrite ctx_base_vars_fv; exact Hproj)).
+  assert (Hσ_ltype :
+      atom_store_has_ltype
+        (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ)) σΣ).
+  {
+    eapply basic_world_formula_msubst_store_extract_atom_store_has_ltype.
+    - change (lvars_of_atoms (dom (σΣ : StoreT)) ⊆
+        dom (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ))).
+      rewrite Hdomσ.
+      intros v Hv.
+      unfold lvars_of_atoms in Hv.
+      apply elem_of_map in Hv as [a [-> Ha]].
+      apply elem_of_dom in Ha as [T HΣa].
+      apply elem_of_dom. exists T.
+      rewrite lookup_insert_ne.
+      + rewrite atom_store_to_lvar_store_lookup_free. exact HΣa.
+      + intros Heq. inversion Heq. subst a.
+        apply Hfresh. apply elem_of_dom. eauto.
+    - exact Hfib.
+  }
+  intros a T v HΣa Hσa.
+  destruct (Hσ_ltype a v Hσa) as [T' [Hlookup Hv]].
+  rewrite lookup_insert_ne in Hlookup.
+  2:{
+    intros Heq. inversion Heq. subst a.
+    apply Hfresh. apply elem_of_dom. eauto.
+  }
+  rewrite atom_store_to_lvar_store_lookup_free in Hlookup.
+  rewrite HΣa in Hlookup. inversion Hlookup. subst T'. exact Hv.
+Qed.
+
+Lemma denot_ctx_under_bind_projected_body_arg_instantiated_from_source
+    (Σ : gmap atom ty) (τ1 : context_ty) e1
+    (msrc mfib : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by msrc Fx mfib ->
+  msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 ->
+  mfib ⊨ denot_ty_lvar_gas (cty_depth τ1)
+    (atom_env_to_lty_env (<[x := erase_ty τ1]> Σ)) τ1
+    (tret (vfvar x)).
+Proof.
+  intros Hfresh HFx Hext Hden.
+  replace (atom_env_to_lty_env (<[x := erase_ty τ1]> Σ))
+    with (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ)).
+  2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+  eapply denot_ty_lvar_gas_result_extension_to_var; eauto.
+  - apply atom_store_to_lvar_store_closed.
+  - rewrite atom_store_to_lvar_store_dom.
+    intros Hbad.
+    apply lvars_fv_elem in Hbad.
+    rewrite lvars_fv_of_atoms in Hbad.
+    exact (Hfresh Hbad).
+Qed.
+
+Lemma denot_ctx_under_bind_projected_body_arg_denotation
+    (Σbase Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx mfib : WfWorldT) (Fx : FiberExtensionT)
+    (x : atom) (σΣ : StoreT) :
+  context_typing_wf_erased Σbase Σ e1 τ1 ->
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  (forall σsrc msrc,
+    res_fiber_from_projection m (dom Σ) σsrc msrc ->
+    msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+      (atom_env_to_lty_env Σ) τ1 e1) ->
+  res_fiber_from_projection mx (dom Σ) σΣ mfib ->
+  mfib ⊨ formula_msubst_store σΣ
+    (denot_ty (<[x := erase_ty τ1]> Σ) τ1 (tret (vfvar x))).
+Proof.
+  intros Hwf Hfresh HFx Hext Hworld Hsource Hproj.
+  assert (HΣmx : dom Σ ⊆ world_dom (mx : WorldT)).
+  {
+    pose proof (proj1 (basic_world_formula_models_iff
+      (atom_env_to_lty_env Σ) m) Hworld) as [_ [HΣm_lvar _]].
+    pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hm_mx.
+    intros a Ha.
+    apply Hm_mx. apply HΣm_lvar.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Ha.
+  }
+  pose proof (base_store_projection_from_fiber Σ mx mfib σΣ
+    HΣmx Hproj) as Hbase.
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (proj1 (basic_world_formula_models_iff
+      (atom_env_to_lty_env Σ) m) Hworld) as [_ [HΣm_lvar _]].
+    intros a Ha.
+    apply HΣm_lvar.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Ha.
+  }
+  assert (Hin : ext_in Fx ⊆ dom Σ).
+  {
+    destruct HFx as [_ [Hin _] _].
+    unfold ext_in in *.
+    rewrite Hin.
+    pose proof (context_typing_wf_erased_basic_typing
+      Σbase Σ e1 τ1 Hwf) as Hbasic.
+    exact (basic_typing_contains_fv_tm _ _ _ Hbasic).
+  }
+  assert (Hout : ext_out Fx ## dom Σ).
+  {
+    destruct HFx as [_ [_ Hout] _].
+    unfold ext_out in *.
+    rewrite Hout. set_solver.
+  }
+  destruct (res_extend_by_fiber_from_projection
+    m mx mfib Fx (dom Σ) σΣ
+    Hin Hout HΣm Hext Hproj) as [msrc [Hsrc_proj Hsrc_ext]].
+  pose proof (basic_world_formula_projection_store_has_type
+    Σ m msrc σΣ Hworld Hsrc_proj) as Hσty.
+  pose proof (context_typing_wf_erased_bind_ret_fvar
+    Σbase Σ e1 τ1 x Hwf Hfresh) as Hwf_ret.
+  pose proof (Hsource σΣ msrc Hsrc_proj) as Hsource_den.
+  pose proof (denot_ctx_under_bind_projected_body_arg_instantiated_from_source
+    Σ τ1 e1 msrc mfib Fx x
+    Hfresh HFx Hsrc_ext Hsource_den) as Htarget_raw.
+  assert (Hxσ : x ∉ dom (σΣ : StoreT)).
+  {
+    rewrite (proj1 Hbase). exact Hfresh.
+  }
+  rewrite <- (lstore_instantiate_tm_lift_free_tret_fvar_fresh σΣ x Hxσ)
+    in Htarget_raw.
+  unfold denot_ty.
+  eapply denot_ty_lvar_gas_msubst_store_to_typing_wf; eauto.
+Qed.
+
+Lemma denot_ctx_under_bind_projected_body_basic_world_source_fiber
+    (Σbase Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx mfib : WfWorldT) (Fx : FiberExtensionT)
+    (x : atom) (σΣ : StoreT) :
+  context_typing_wf_erased Σbase Σ e1 τ1 ->
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  (forall σsrc msrc,
+    res_fiber_from_projection m (dom Σ) σsrc msrc ->
+    msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+      (atom_env_to_lty_env Σ) τ1 e1) ->
+  res_fiber_from_projection mx (dom Σ) σΣ mfib ->
+  mfib ⊨ formula_msubst_store σΣ
+    (basic_world_formula
+      (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))).
+Proof.
+Admitted.
+
+Lemma denot_ctx_under_bind_projected_body_from_result_denotation
+    (Σbase Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx mfib : WfWorldT) (Fx : FiberExtensionT)
+    (x : atom) (σΣ : StoreT) :
+  context_typing_wf_erased Σbase Σ e1 τ1 ->
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  (forall σsrc msrc,
+    res_fiber_from_projection m (dom Σ) σsrc msrc ->
+    msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+      (atom_env_to_lty_env Σ) τ1 e1) ->
+  res_fiber_from_projection mx (dom Σ) σΣ mfib ->
+  mfib ⊨ formula_msubst_store σΣ
+    (FAnd
+      (basic_world_formula
+          (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1))))
+      (denot_ty (<[x := erase_ty τ1]> Σ) τ1 (tret (vfvar x)))).
+Proof.
+  intros Hwf Hfresh HFx Hext Hworld Hsource Hproj.
+  change (mfib ⊨
+    FAnd
+      (formula_msubst_store σΣ
+        (basic_world_formula
+          (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))))
+      (formula_msubst_store σΣ
+        (denot_ty (<[x := erase_ty τ1]> Σ) τ1 (tret (vfvar x))))).
+  rewrite res_models_and_iff. split.
+  - eapply denot_ctx_under_bind_projected_body_basic_world_source_fiber; eauto.
+  - eapply denot_ctx_under_bind_projected_body_arg_denotation; eauto.
+Qed.
+
+Lemma denot_ctx_under_bind_from_result_denotation
+    (Σbase Σ : gmap atom ty) (τ1 : context_ty) e1
+    (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
+  context_typing_wf_erased Σbase Σ e1 τ1 ->
+  x ∉ dom Σ ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env Σ) ->
+  (forall σsrc msrc,
+    res_fiber_from_projection m (dom Σ) σsrc msrc ->
+    msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+      (atom_env_to_lty_env Σ) τ1 e1) ->
+  mx ⊨ denot_ctx_under Σ (CtxBind x τ1).
+Proof.
+  intros Hwf Hfresh HFx Hext Hworld Hsource.
+  eapply denot_ctx_under_bind_projection_intro.
+  - eapply denot_ctx_under_bind_scope_from_result_denotation; eauto.
+    eapply context_typing_wf_erased_context_ty_wf. exact Hwf.
+  - intros σΣ mfib Hproj.
+    eapply denot_ctx_under_bind_projected_body_from_result_denotation; eauto.
+Qed.
+
+Lemma denot_ty_in_ctx_under_fiber_elim_erased_source_projection_instantiated_from_wf
+    (Σ : gmap atom ty) Γ τ e
+    (m mfib msrc : WfWorldT) (σΣ σΔ : StoreT) :
+  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ ->
+  m ⊨ denot_ctx_under Σ Γ ->
+  res_fiber_from_projection m (dom Σ) σΣ mfib ->
+  res_fiber_from_projection mfib (dom (erase_ctx_under Σ Γ)) σΔ msrc ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
+  msrc ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
+    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
 Proof.
 Admitted.
 
 Lemma denot_ctx_under_comma_bind_from_result_denotation
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
+  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e1 τ1 ->
   m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ1 e1 ->
+  (forall σΔ msrc,
+    res_fiber_from_projection m (dom (erase_ctx_under Σ Γ)) σΔ msrc ->
+    msrc ⊨ denot_ty_lvar_gas (cty_depth τ1)
+      (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ1 e1) ->
   expr_result_extension_witness e1 x Fx ->
   x ∉ dom (erase_ctx_under Σ Γ) ->
   res_extend_by m Fx mx ->
   mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1)).
 Proof.
-  intros Hctx Hden HFx Hfresh Hext.
+  intros Hwf Hctx Hsource HFx Hfresh Hext.
   pose proof (denot_ctx_under_bind_from_result_denotation
-    Σ Γ τ1 e1 m mx Fx x Hctx Hden HFx Hfresh Hext) as Hbind.
+    Σ (erase_ctx_under Σ Γ) τ1 e1 m mx Fx x Hwf Hfresh HFx Hext
+    (denot_ctx_under_basic_world Σ Γ m Hctx) Hsource)
+    as Hbind.
   eapply denot_ctx_under_comma_bind_from_fibered_arg_denotation; eauto.
   eapply res_models_extend_mono; [exact Hext | exact Hctx].
 Qed.

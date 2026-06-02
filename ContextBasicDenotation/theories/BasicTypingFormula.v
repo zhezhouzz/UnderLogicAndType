@@ -419,6 +419,85 @@ Lemma basic_tm_has_ltype_of_atom_env_typing Δ e T :
   basic_tm_has_ltype (atom_env_to_lty_env Δ) e T.
 Proof. exact (proj2 basic_has_ltype_of_atom_typing_mutual Δ e T). Qed.
 
+Lemma basic_has_ltype_to_atom_typing_mutual :
+  (forall Σ v T,
+    basic_value_has_ltype Σ v T ->
+    forall Δ,
+      Σ = atom_env_to_lty_env Δ ->
+      Δ ⊢ᵥ v ⋮ T) /\
+  (forall Σ e T,
+    basic_tm_has_ltype Σ e T ->
+    forall Δ,
+      Σ = atom_env_to_lty_env Δ ->
+      Δ ⊢ₑ e ⋮ T).
+Proof.
+  apply basic_has_ltype_mutind; intros; subst.
+  - constructor.
+  - constructor.
+    match goal with
+    | Hlook : (atom_env_to_lty_env Δ : gmap logic_var ty) !! LVFree x =
+        Some T |- _ =>
+        rewrite atom_store_to_lvar_store_lookup_free in Hlook;
+        exact Hlook
+    end.
+  - match goal with
+    | Hlook : (atom_env_to_lty_env Δ : gmap logic_var ty) !! LVBound k =
+        Some T |- _ =>
+        rewrite atom_store_to_lvar_store_lookup_bound_none in Hlook;
+        discriminate
+    end.
+  - eapply VT_Lam with (L := L).
+    intros x Hx.
+    specialize (H x Hx (<[x := s]> Δ)).
+    exact (H (eq_sym (atom_store_to_lvar_store_insert x s Δ))).
+  - eapply VT_Fix with (L := L).
+    intros x Hx.
+    specialize (H x Hx (<[x := sx]> Δ)).
+    exact (H (eq_sym (atom_store_to_lvar_store_insert x sx Δ))).
+  - eapply TT_Ret. eauto.
+  - eapply TT_Let with (L := L).
+    + eauto.
+    + intros x Hx.
+      specialize (H0 x Hx (<[x := T1]> Δ)).
+      exact (H0 (eq_sym (atom_store_to_lvar_store_insert x T1 Δ))).
+  - eapply TT_Op; eauto.
+  - eapply TT_App; eauto.
+  - eapply TT_Match; eauto.
+Qed.
+
+Lemma basic_value_has_ltype_to_atom_env_typing Δ v T :
+  basic_value_has_ltype (atom_env_to_lty_env Δ) v T ->
+  Δ ⊢ᵥ v ⋮ T.
+Proof.
+  intros Hty.
+  exact (proj1 basic_has_ltype_to_atom_typing_mutual
+    (atom_env_to_lty_env Δ) v T Hty Δ eq_refl).
+Qed.
+
+Lemma basic_tm_has_ltype_to_atom_env_typing Δ e T :
+  basic_tm_has_ltype (atom_env_to_lty_env Δ) e T ->
+  Δ ⊢ₑ e ⋮ T.
+Proof.
+  intros Hty.
+  exact (proj2 basic_has_ltype_to_atom_typing_mutual
+    (atom_env_to_lty_env Δ) e T Hty Δ eq_refl).
+Qed.
+
+Lemma atom_store_has_ltype_env_has_type Σ σ :
+  atom_store_has_ltype Σ σ ->
+  env_has_type (lty_env_to_atom_env Σ) σ.
+Proof.
+  intros Hσ x T v HΣx Hσx.
+  destruct (Hσ x v Hσx) as [U [HΣU Hv]].
+  change ((lvar_store_to_atom_store Σ : gmap atom ty) !! x = Some T)
+    in HΣx.
+  apply lvar_store_to_atom_store_lookup_some in HΣx as HΣT.
+  change (((Σ : gmap logic_var ty) !! LVFree x) = Some U) in HΣU.
+  change (((Σ : gmap logic_var ty) !! LVFree x) = Some T) in HΣT.
+  rewrite HΣU in HΣT.
+  inversion HΣT. subst U. exact Hv.
+Qed.
+
 Lemma basic_value_has_ltype_of_empty_atom_typing Σ v T :
   ∅ ⊢ᵥ v ⋮ T ->
   basic_value_has_ltype Σ v T.
@@ -1357,6 +1436,47 @@ Proof.
     (lty_env_to_atom_env Σ) e T Hty) as Hbasic.
   rewrite atom_env_lty_env_roundtrip_closed in Hbasic by exact Hclosed.
   exact Hbasic.
+Qed.
+
+Lemma basic_tm_has_ltype_eval_in_atom_store_value_type
+    Σ σ e T v :
+  lty_env_closed Σ ->
+  atom_store_has_ltype Σ σ ->
+  basic_tm_has_ltype Σ e T ->
+  expr_eval_in_atom_store σ e v ->
+  fv_tm e ⊆ dom (σ : StoreT) ->
+  ∅ ⊢ᵥ v ⋮ T.
+Proof.
+  intros HΣclosed Hσtyped Hty Heval Hfvcover.
+  pose proof (atom_store_has_ltype_closed _ _ Hσtyped) as Hσclosed.
+  destruct Hσclosed as [Hclosed Hlcenv].
+  pose proof (basic_tm_has_ltype_to_atom_env_typing
+    (lty_env_to_atom_env Σ) e T) as Hto_atom.
+  rewrite atom_env_lty_env_roundtrip_closed in Hto_atom by exact HΣclosed.
+  specialize (Hto_atom Hty) as Hty_atom.
+  pose proof (atom_store_has_ltype_env_has_type Σ σ Hσtyped) as Henvty.
+  pose proof (msubst_basic_typing_tm
+    (lty_env_to_atom_env Σ) σ e T Hclosed Henvty Hty_atom)
+    as Hsubst_ty.
+  assert (Hsubst_ty_empty : ∅ ⊢ₑ m{σ} e ⋮ T).
+  {
+    eapply basic_typing_env_agree_tm; [exact Hsubst_ty|].
+    intros y Hy.
+    exfalso.
+    pose proof (msubst_fv_delete_tm σ e Hclosed) as Hfv.
+    set_solver.
+  }
+  unfold expr_eval_in_atom_store, expr_eval_in_store in Heval.
+  rewrite lstore_instantiate_tm_no_bvars in Heval.
+  - rewrite lstore_free_part_lift_free in Heval.
+    pose proof (basic_steps_preservation ∅ (m{σ} e) (tret v) T
+      Hsubst_ty_empty Heval) as Hret.
+    inversion Hret; subst.
+    match goal with
+    | H : ∅ ⊢ᵥ v ⋮ _ |- _ => exact H
+    end.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact Hclosed.
 Qed.
 
 Lemma basic_tm_has_ltype_open_one_cofinite_iff k Σ e T :
