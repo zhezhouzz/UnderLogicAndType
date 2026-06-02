@@ -407,7 +407,89 @@ Lemma basic_world_formula_fibvars_intro
   res_models m (basic_world_formula Σ) ->
   res_models m (FFibVars D (basic_world_formula Σ)).
 Proof.
-Admitted.
+  intros HDlc HDsub Hworld.
+  pose proof (res_models_scoped _ _ Hworld) as Hworld_scope.
+  apply basic_world_formula_models_iff in Hworld as
+    [HΣlc [HΣscope HΣtyped]].
+  destruct HΣtyped as [HΣdom HΣstores].
+  eapply res_models_FFibVars_intro.
+  - apply (proj2 (formula_scoped_fibvars_iff m D (basic_world_formula Σ))).
+    split.
+    + intros x Hx. apply HΣscope. exact (HDsub x Hx).
+    + exact Hworld_scope.
+  - exact HDlc.
+  - intros σD mfib Hproj.
+    assert (HDscope : lvars_fv D ⊆ world_dom (m : World)).
+    {
+      intros x Hx. apply HΣscope. exact (HDsub x Hx).
+    }
+    assert (HdomσD : dom (σD : StoreT) = lvars_fv D).
+    {
+      eapply res_fiber_from_projection_store_dom_of_subset; eauto.
+    }
+    assert (HσDtyped : atom_store_has_ltype Σ σD).
+    {
+      intros x v HσDx.
+      assert (HxD : x ∈ lvars_fv D).
+      {
+        rewrite <- HdomσD.
+        change (x ∈ dom (σD : gmap atom value)).
+        rewrite elem_of_dom. eauto.
+      }
+      assert (HxΣfv : x ∈ lvars_fv (dom Σ)).
+      { exact (HDsub x HxD). }
+      assert (HxΣ : LVFree x ∈ dom Σ).
+      { apply lvars_fv_elem. exact HxΣfv. }
+      apply elem_of_dom in HxΣ as [T HΣx].
+      exists T. split; [exact HΣx|].
+      destruct Hproj as [Hproj_store _].
+      destruct Hproj_store as [σm [Hσm Hrestrict]].
+      assert (Hσmx : σm !! x = Some v).
+      {
+        assert ((storeA_restrict σm (lvars_fv D) : StoreT) !! x = Some v).
+        { rewrite Hrestrict. exact HσDx. }
+        apply storeA_restrict_lookup_some in H as [_ Hlookup].
+        exact Hlookup.
+      }
+      eapply HΣstores.
+      - unfold res_lift_free. exists σm. split; [exact Hσm|reflexivity].
+      - exact HΣx.
+      - rewrite lstore_lift_free_lookup_free. exact Hσmx.
+    }
+    assert (Hmfib_world : res_models mfib (basic_world_formula Σ)).
+    {
+      apply basic_world_formula_models_iff.
+      split; [exact HΣlc|].
+      split.
+      - rewrite (res_fiber_from_projection_world_dom m mfib (lvars_fv D) σD Hproj).
+        exact HΣscope.
+      - split.
+        + intros v Hv.
+          pose proof (HΣdom v Hv) as Hvm.
+          change (v ∈ lvars_of_atoms (world_dom (mfib : World))).
+          change (v ∈ lvars_of_atoms (world_dom (m : World))) in Hvm.
+          rewrite (res_fiber_from_projection_world_dom m mfib (lvars_fv D) σD Hproj).
+          exact Hvm.
+        + intros τ Hτ v T u HΣv Hτv.
+          unfold res_lift_free in Hτ.
+          cbn [worldA_stores] in Hτ.
+          destruct Hτ as [σm [Hσmfib ->]].
+          eapply HΣstores.
+          * unfold res_lift_free. exists σm. split; [|reflexivity].
+            eapply res_fiber_from_projection_store_source; eauto.
+          * exact HΣv.
+          * exact Hτv.
+    }
+    assert (Hres_world :
+      res_models mfib (basic_world_formula (lty_env_msubst_store σD Σ))).
+    {
+      eapply basic_world_formula_subenv; [|exact Hmfib_world].
+      intros v T Hlook.
+      apply lty_env_msubst_store_lookup_some in Hlook as [HΣv _].
+      exact HΣv.
+    }
+    eapply basic_world_formula_msubst_store_models_back; eauto.
+Qed.
 
 Lemma expr_basic_typing_formula_msubst_store_models
     σ Σ e T (m : WfWorldT) :

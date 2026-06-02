@@ -1258,7 +1258,17 @@ Lemma res_models_FFibVars_outer_intro_subset
   m ⊨ FFibVars Dbig φ ->
   m ⊨ FFibVars Dsmall (FFibVars Dbig φ).
 Proof.
-Admitted.
+  intros Hlc_small Hsub Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff m Dbig φ Hscope) Hmodel)
+    as [Hlc_big _].
+  apply (proj2 (res_models_FFibVars_nested_union_iff m Dsmall Dbig φ)).
+  eapply res_models_FFibVars_same_fv; [| | exact Hmodel].
+  - intros v Hv.
+    rewrite elem_of_union in Hv.
+    destruct Hv as [Hv|Hv]; [apply Hlc_small | apply Hlc_big]; exact Hv.
+  - rewrite lvars_fv_union. set_solver.
+Qed.
 
 Lemma res_models_FFibVars_idemp_elim
     (m : WfWorldT) (D : lvset) (φ : FormulaT) :
