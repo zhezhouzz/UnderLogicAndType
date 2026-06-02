@@ -230,6 +230,354 @@ Proof.
   - exact H2.
 Qed.
 
+Lemma store_singleton_projection_compat_restrict_of_scope
+    (σ : StoreT) (m n : WfWorldT) (φ : FormulaT) :
+  world_compat n m ->
+  store_singleton_projection σ m ->
+  formula_scoped_in_world n φ ->
+  store_singleton_projection (store_restrict σ (formula_fv φ)) n.
+Proof.
+  intros Hc Hproj Hscope.
+  unfold store_singleton_projection.
+  change (dom (store_restrict σ (formula_fv φ) : StoreT)) with
+    (dom (store_restrict σ (formula_fv φ) : gmap atom value)).
+  rewrite storeA_restrict_dom.
+  eapply res_restrict_to_singleton_if_projection_constant.
+  intros σn Hσn.
+  pose proof (wfworld_store_dom n σn Hσn) as Hdomn.
+  pose proof (store_singleton_projection_dom_subset_world σ m Hproj)
+    as Hdomσm.
+  destruct (world_wf m) as [[σm Hσm] _].
+  pose proof (wfworld_store_dom m σm Hσm) as Hdomm.
+  assert (Hoverlap_sub :
+    dom (σ : StoreT) ∩ formula_fv φ ⊆
+    dom (σn : StoreT) ∩ dom (σm : StoreT)).
+  {
+    intros z Hz.
+    apply elem_of_intersection in Hz as [Hzσ Hzφ].
+    apply elem_of_intersection. split.
+    - assert (HzN : z ∈ world_dom (n : WorldT)).
+      { unfold formula_scoped_in_world in Hscope. set_solver. }
+      rewrite <- Hdomn in HzN. exact HzN.
+    - assert (HzM : z ∈ world_dom (m : WorldT)).
+      { set_solver. }
+      rewrite <- Hdomm in HzM. exact HzM.
+  }
+  pose proof (Hc σn σm Hσn Hσm) as Hcompat.
+  pose proof (proj1 (storeA_compat_spec σn σm) Hcompat) as Hoverlap.
+  pose proof (storeA_restrict_eq_mono σn σm
+    (dom (σ : StoreT) ∩ formula_fv φ)
+    (dom (σn : StoreT) ∩ dom (σm : StoreT))
+    Hoverlap_sub Hoverlap) as Hnm.
+  pose proof (store_singleton_projection_restrict σ m
+    (dom (σ : StoreT) ∩ formula_fv φ) ltac:(set_solver) Hproj)
+    as HmX.
+  assert (HσmX : storeA_restrict σm (dom (σ : StoreT) ∩ formula_fv φ) =
+                 storeA_restrict σ (dom (σ : StoreT) ∩ formula_fv φ)).
+  {
+    assert (Hraw :
+      (res_restrict m (dom (σ : StoreT) ∩ formula_fv φ) : WorldT)
+        (storeA_restrict σm (dom (σ : StoreT) ∩ formula_fv φ))).
+    { exists σm. split; [exact Hσm|reflexivity]. }
+    rewrite HmX in Hraw. simpl in Hraw. exact Hraw.
+  }
+  transitivity (storeA_restrict σm (dom (σ : StoreT) ∩ formula_fv φ)).
+  - exact Hnm.
+  - rewrite HσmX.
+    apply storeA_map_eq. intros z.
+    rewrite !storeA_restrict_lookup.
+    destruct (decide (z ∈ formula_fv φ)) as [Hzφ|Hzφ].
+    + destruct ((σ : StoreT) !! z) as [v|] eqn:Hzσ.
+      * assert (Hzdom : z ∈ dom (σ : gmap atom value)).
+        { apply elem_of_dom. exists v. exact Hzσ. }
+        rewrite !decide_True by set_solver. reflexivity.
+      * assert (Hzσnone : (σ : gmap atom value) !! z = None) by exact Hzσ.
+        rewrite decide_False by
+          (intros Hz; apply elem_of_intersection in Hz as [Hzdom _];
+           change (z ∈ dom (σ : gmap atom value)) in Hzdom;
+           apply elem_of_dom in Hzdom as [v Hv]; rewrite Hzσnone in Hv; discriminate).
+        change (None = (σ : gmap atom value) !! z).
+        symmetry. exact Hzσnone.
+    + rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
+Lemma world_compat_singleton_restrict_from_projection
+    (σ : StoreT) (m n : WfWorldT) X :
+  world_compat n m ->
+  store_singleton_projection σ m ->
+  world_compat n (singleton_world (store_restrict σ X)).
+Proof.
+  intros Hc Hproj σn σfix Hσn Hσfix.
+  change (σfix = store_restrict σ X) in Hσfix.
+  subst σfix.
+  apply (proj2 (storeA_compat_spec σn (store_restrict σ X))).
+  destruct (world_wf m) as [[σm Hσm] _].
+  pose proof (wfworld_store_dom n σn Hσn) as Hdomn.
+  pose proof (wfworld_store_dom m σm Hσm) as Hdomm.
+  pose proof (store_singleton_projection_dom_subset_world σ m Hproj)
+    as Hdomσm.
+  pose proof (Hc σn σm Hσn Hσm) as Hcompat.
+  pose proof (proj1 (storeA_compat_spec σn σm) Hcompat) as Hoverlap.
+  set (O := dom (σn : StoreT) ∩ dom (store_restrict σ X : StoreT)).
+  assert (HOsub : O ⊆ dom (σn : StoreT) ∩ dom (σm : StoreT)).
+  {
+    subst O.
+    change (dom (store_restrict σ X : StoreT)) with
+      (dom (store_restrict σ X : gmap atom value)).
+    rewrite storeA_restrict_dom.
+    set_solver.
+  }
+  pose proof (storeA_restrict_eq_mono σn σm O
+    (dom (σn : StoreT) ∩ dom (σm : StoreT))
+    HOsub Hoverlap) as Hnm.
+  pose proof (store_singleton_projection_restrict σ m
+    (dom (σ : StoreT) ∩ X) ltac:(set_solver) Hproj) as HmX.
+  assert (HσmX : storeA_restrict σm (dom (σ : StoreT) ∩ X) =
+                 storeA_restrict σ (dom (σ : StoreT) ∩ X)).
+  {
+    assert (Hraw :
+      (res_restrict m (dom (σ : StoreT) ∩ X) : WorldT)
+        (storeA_restrict σm (dom (σ : StoreT) ∩ X))).
+    { exists σm. split; [exact Hσm|reflexivity]. }
+    rewrite HmX in Hraw. simpl in Hraw. exact Hraw.
+  }
+  transitivity (storeA_restrict σm O).
+  - exact Hnm.
+  - subst O.
+    change (dom (store_restrict σ X : StoreT)) with
+      (dom (store_restrict σ X : gmap atom value)).
+    rewrite storeA_restrict_dom.
+    pose proof (storeA_restrict_eq_mono σm σ
+      (dom (σn : StoreT) ∩ (dom (σ : StoreT) ∩ X))
+      (dom (σ : StoreT) ∩ X)
+      ltac:(set_solver) HσmX) as HmO.
+    transitivity (storeA_restrict σ
+      (dom (σn : StoreT) ∩ (dom (σ : StoreT) ∩ X))).
+    + exact HmO.
+    + rewrite storeA_restrict_restrict.
+      replace (X ∩ (dom (σn : StoreT) ∩ (dom (σ : StoreT) ∩ X)))
+        with (dom (σn : StoreT) ∩ (dom (σ : StoreT) ∩ X)) by set_solver.
+      reflexivity.
+Qed.
+
+Lemma world_compat_product_singleton_restrict_from_projection
+    (σ : StoreT) (m n : WfWorldT) X
+    (Hcfix : world_compat n (singleton_world (store_restrict σ X))) :
+  world_compat n m ->
+  store_singleton_projection σ m ->
+  world_compat
+    (res_product n
+      (exist _ (singleton_world (store_restrict σ X))
+        (wf_singleton_world (store_restrict σ X))) Hcfix) m.
+Proof.
+  intros Hc Hproj σp σm Hσp Hσm.
+  cbn [res_product raw_product raw_world world_stores] in Hσp.
+  destruct Hσp as [σn [σfix [Hσn [Hσfix [Hnfix ->]]]]].
+  change (σfix = store_restrict σ X) in Hσfix.
+  subst σfix.
+  apply storeA_compat_union_intro_l.
+  - exact (Hc σn σm Hσn Hσm).
+  - apply (proj2 (storeA_compat_spec (store_restrict σ X) σm)).
+    pose proof (wfworld_store_dom m σm Hσm) as Hdomm.
+    pose proof (store_singleton_projection_dom_subset_world σ m Hproj)
+      as Hdomσm.
+    set (O := dom (store_restrict σ X : StoreT) ∩ dom (σm : StoreT)).
+    pose proof (store_singleton_projection_restrict σ m
+      (dom (σ : StoreT) ∩ X) ltac:(set_solver) Hproj) as HmX.
+    assert (HσmX : storeA_restrict σm (dom (σ : StoreT) ∩ X) =
+                   storeA_restrict σ (dom (σ : StoreT) ∩ X)).
+    {
+      assert (Hraw :
+        (res_restrict m (dom (σ : StoreT) ∩ X) : WorldT)
+          (storeA_restrict σm (dom (σ : StoreT) ∩ X))).
+      { exists σm. split; [exact Hσm|reflexivity]. }
+      rewrite HmX in Hraw. simpl in Hraw. exact Hraw.
+    }
+    subst O.
+    change (dom (store_restrict σ X : StoreT)) with
+      (dom (store_restrict σ X : gmap atom value)).
+    rewrite storeA_restrict_dom.
+    pose proof (storeA_restrict_eq_mono σ σm
+      (dom (σ : StoreT) ∩ X ∩ dom (σm : StoreT))
+      (dom (σ : StoreT) ∩ X)
+      ltac:(set_solver) (eq_sym HσmX)) as HσO.
+    transitivity (storeA_restrict σ
+      (dom (σ : StoreT) ∩ X ∩ dom (σm : StoreT))).
+    + rewrite storeA_restrict_restrict.
+      replace (X ∩ (dom (σ : StoreT) ∩ X ∩ dom (σm : StoreT)))
+        with (dom (σ : StoreT) ∩ X ∩ dom (σm : StoreT)) by set_solver.
+      reflexivity.
+    + exact HσO.
+Qed.
+
+Lemma store_singleton_projection_product_singleton_frame
+    (σ : StoreT) (n : WfWorldT) X Y
+    (Hcfix : world_compat n (singleton_world (store_restrict σ X))) :
+  Y ⊆ X ->
+  store_singleton_projection (store_restrict σ Y)
+    (res_product n
+      (exist _ (singleton_world (store_restrict σ X))
+        (wf_singleton_world (store_restrict σ X))) Hcfix).
+Proof.
+  intros HYX.
+  unfold store_singleton_projection.
+  change (dom (store_restrict σ Y : StoreT)) with
+    (dom (store_restrict σ Y : gmap atom value)).
+  rewrite storeA_restrict_dom.
+  eapply res_restrict_to_singleton_if_projection_constant.
+  intros σp Hσp.
+  cbn [res_product raw_product raw_world world_stores] in Hσp.
+  destruct Hσp as [σn [σfix [Hσn [Hσfix [Hcompat ->]]]]].
+  change (σfix = store_restrict σ X) in Hσfix.
+  subst σfix.
+  rewrite (storeA_restrict_union_absorb_r σn (store_restrict σ X)
+    (dom (σ : StoreT) ∩ Y)).
+  - apply storeA_map_eq. intros z.
+    rewrite !storeA_restrict_lookup.
+    destruct (decide (z ∈ Y)) as [HzY|HzY].
+    + destruct ((σ : StoreT) !! z) as [v|] eqn:Hzσ.
+      * assert (Hzdom : z ∈ dom (σ : gmap atom value)).
+        { apply elem_of_dom. exists v. exact Hzσ. }
+        rewrite !decide_True by set_solver. reflexivity.
+      * assert (Hzσnone : (σ : gmap atom value) !! z = None) by exact Hzσ.
+        rewrite decide_False by
+          (intros Hz; apply elem_of_intersection in Hz as [Hzdom _];
+           change (z ∈ dom (σ : gmap atom value)) in Hzdom;
+           apply elem_of_dom in Hzdom as [v Hv]; rewrite Hzσnone in Hv; discriminate).
+        change (None = (σ : gmap atom value) !! z).
+        symmetry. exact Hzσnone.
+    + rewrite !decide_False by set_solver. reflexivity.
+  - exact Hcompat.
+  - change (dom (store_restrict σ X : StoreT)) with
+      (dom (store_restrict σ X : gmap atom value)).
+    rewrite storeA_restrict_dom. set_solver.
+Qed.
+
+Lemma store_singleton_projection_product_restrict_of_scope
+    (σ : StoreT) (m n : WfWorldT) (Hc : world_compat n m) (φ : FormulaT) :
+  store_singleton_projection σ m ->
+  formula_scoped_in_world (res_product n m Hc) φ ->
+  store_singleton_projection
+    (store_restrict σ (formula_fv φ)) (res_product n m Hc).
+Proof.
+  intros Hproj Hscope.
+  unfold store_singleton_projection.
+  change (dom (store_restrict σ (formula_fv φ) : StoreT)) with
+    (dom (store_restrict σ (formula_fv φ) : gmap atom value)).
+  rewrite storeA_restrict_dom.
+  eapply res_restrict_to_singleton_if_projection_constant.
+  intros σp Hσp.
+  cbn [res_product raw_world world_stores world_dom] in Hσp.
+  destruct Hσp as [σn [σm [Hσn [Hσm [Hcompat ->]]]]].
+  pose proof (wfworld_store_dom m σm Hσm) as Hdomm.
+  pose proof (store_singleton_projection_dom_subset_world σ m Hproj)
+    as Hdomσm.
+  assert (Hsub_m :
+    dom (σ : StoreT) ∩ formula_fv φ ⊆ dom (σm : StoreT)).
+  {
+    intros z Hz.
+    apply elem_of_intersection in Hz as [Hzσ _].
+    assert (HzM : z ∈ world_dom (m : WorldT)) by set_solver.
+    rewrite <- Hdomm in HzM. exact HzM.
+  }
+  assert (HσmX : storeA_restrict σm (dom (σ : StoreT) ∩ formula_fv φ) =
+                 storeA_restrict σ (dom (σ : StoreT) ∩ formula_fv φ)).
+  {
+    pose proof (store_singleton_projection_restrict σ m
+      (dom (σ : StoreT) ∩ formula_fv φ) ltac:(set_solver) Hproj)
+      as HmX.
+    assert (Hraw :
+      (res_restrict m (dom (σ : StoreT) ∩ formula_fv φ) : WorldT)
+        (storeA_restrict σm (dom (σ : StoreT) ∩ formula_fv φ))).
+    { exists σm. split; [exact Hσm|reflexivity]. }
+    rewrite HmX in Hraw. simpl in Hraw. exact Hraw.
+  }
+  rewrite (storeA_restrict_union_absorb_r σn σm
+    (dom (σ : StoreT) ∩ formula_fv φ)); [|exact Hcompat|exact Hsub_m].
+  rewrite HσmX.
+  apply storeA_map_eq. intros z.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ formula_fv φ)) as [Hzφ|Hzφ].
+  - destruct ((σ : StoreT) !! z) as [v|] eqn:Hzσ.
+    + assert (Hzdom : z ∈ dom (σ : gmap atom value)).
+      { apply elem_of_dom. exists v. exact Hzσ. }
+      rewrite !decide_True by set_solver. reflexivity.
+    + assert (Hzσnone : (σ : gmap atom value) !! z = None) by exact Hzσ.
+      rewrite decide_False by
+        (intros Hz; apply elem_of_intersection in Hz as [Hzdom _];
+         change (z ∈ dom (σ : gmap atom value)) in Hzdom;
+         apply elem_of_dom in Hzdom as [v Hv]; rewrite Hzσnone in Hv; discriminate).
+      change (None = (σ : gmap atom value) !! z).
+      symmetry. exact Hzσnone.
+	  - rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
+Lemma store_singleton_projection_forall_restrict_of_scope
+    (σ : StoreT) (m my : WfWorldT) y (φ : FormulaT) :
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  y ∉ dom (σ : StoreT) ->
+  store_singleton_projection σ m ->
+  formula_scoped_in_world my φ ->
+  store_singleton_projection (store_restrict σ (formula_fv φ)) my.
+Proof.
+  intros Hdom Hrestrict Hy Hproj Hscope.
+  unfold store_singleton_projection.
+  change (dom (store_restrict σ (formula_fv φ) : StoreT)) with
+    (dom (store_restrict σ (formula_fv φ) : gmap atom value)).
+  rewrite storeA_restrict_dom.
+  eapply res_restrict_to_singleton_if_projection_constant.
+  intros σmy Hσmy.
+  set (X := dom (σ : StoreT) ∩ formula_fv φ).
+  assert (HXm : X ⊆ world_dom (m : WorldT)).
+  {
+    subst X.
+    pose proof (store_singleton_projection_dom_subset_world σ m Hproj)
+      as Hσm.
+    set_solver.
+  }
+  assert (Hmy_to_m :
+    (m : WorldT) (store_restrict σmy (world_dom (m : WorldT)))).
+  {
+    assert (Hraw :
+      (res_restrict my (world_dom (m : WorldT)) : WorldT)
+        (store_restrict σmy (world_dom (m : WorldT)))).
+    { exists σmy. split; [exact Hσmy|reflexivity]. }
+    rewrite Hrestrict in Hraw. exact Hraw.
+  }
+  pose proof (store_singleton_projection_restrict σ m X ltac:(set_solver) Hproj)
+    as HmX.
+  assert (HrawX :
+    (res_restrict m X : WorldT) (store_restrict σmy X)).
+  {
+    exists (store_restrict σmy (world_dom (m : WorldT))).
+    split; [exact Hmy_to_m|].
+    unfold X.
+    rewrite storeA_restrict_restrict.
+    replace (world_dom (m : WorldT) ∩ (dom (σ : StoreT) ∩ formula_fv φ))
+      with (dom (σ : StoreT) ∩ formula_fv φ) by set_solver.
+    reflexivity.
+  }
+  rewrite HmX in HrawX. simpl in HrawX.
+  transitivity (store_restrict σ X).
+  - exact HrawX.
+  - subst X. apply storeA_map_eq. intros z.
+    rewrite !storeA_restrict_lookup.
+    destruct (decide (z ∈ formula_fv φ)) as [Hzφ|Hzφ].
+    + destruct ((σ : StoreT) !! z) as [v|] eqn:Hzσ.
+      * assert (Hzdom : z ∈ dom (σ : gmap atom value)).
+        { apply elem_of_dom. exists v. exact Hzσ. }
+        rewrite !decide_True by set_solver. reflexivity.
+      * assert (Hzσnone : (σ : gmap atom value) !! z = None) by exact Hzσ.
+        rewrite decide_False by
+          (intros Hz; apply elem_of_intersection in Hz as [Hzdom _];
+           change (z ∈ dom (σ : gmap atom value)) in Hzdom;
+           apply elem_of_dom in Hzdom as [v Hv]; rewrite Hzσnone in Hv; discriminate).
+        change (None = (σ : gmap atom value) !! z).
+        symmetry. exact Hzσnone.
+    + rewrite !decide_False by set_solver. reflexivity.
+Qed.
+
 Lemma store_singleton_projection_sum_le_l
     (σ : StoreT) (m m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2) X :
   res_sum m1 m2 Hdef ⊑ m ->

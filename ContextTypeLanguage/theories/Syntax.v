@@ -224,6 +224,28 @@ Proof.
   induction τ; cbn [context_ty_msubst_store erase_ty]; congruence.
 Qed.
 
+Lemma context_ty_msubst_store_open_fresh k y σ τ :
+  y ∉ dom (σ : gmap atom value) ->
+  cty_open k y (context_ty_msubst_store σ τ) =
+  context_ty_msubst_store σ (cty_open k y τ).
+Proof.
+  induction τ in k |- *; intros Hy;
+    cbn [cty_open context_ty_msubst_store];
+    rewrite ?qual_open_msubst_store_fresh by exact Hy;
+    rewrite ?IHτ1, ?IHτ2 by exact Hy;
+    reflexivity.
+Qed.
+
+Lemma context_ty_msubst_store_shift k σ τ :
+  cty_shift k (context_ty_msubst_store σ τ) =
+  context_ty_msubst_store σ (cty_shift k τ).
+Proof.
+  induction τ in k |- *; cbn [cty_shift context_ty_msubst_store];
+    rewrite ?qual_shift_from_msubst_store;
+    rewrite ?IHτ1, ?IHτ2;
+    reflexivity.
+Qed.
+
 
 Lemma context_ty_lvars_at_open d k x τ :
   context_ty_lvars_at d ({d + k ~> x} τ) =

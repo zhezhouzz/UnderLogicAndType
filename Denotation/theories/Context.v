@@ -121,7 +121,69 @@ Lemma denot_ctx_under_projection_store_has_type
   m ⊨ denot_ctx_under Σ Γ ->
   res_fiber_from_projection m (dom Σ) σΣ mfib ->
   storeA_has_type Σ σΣ.
-Admitted.
+Proof.
+  intros Hctx Hproj x T v HΣx Hσx.
+  pose proof (res_models_scoped _ _ Hctx) as Hscope.
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    unfold denot_ctx_under in Hscope.
+    rewrite denot_ctx_under_unfold_body in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope. exact Hscope.
+  }
+  assert (Hdomσ : dom (σΣ : StoreT) = dom Σ).
+  {
+    eapply res_fiber_from_projection_store_dom; eauto.
+  }
+  unfold denot_ctx_under in Hctx.
+  rewrite denot_ctx_under_unfold_body in Hctx.
+  pose proof (res_models_scoped _ _ Hctx) as Hscope_ctx.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope_ctx) Hctx)
+    as [_ Hfib].
+  specialize (Hfib σΣ mfib ltac:(rewrite ctx_base_vars_fv; exact Hproj)).
+  change (mfib ⊨ formula_msubst_store σΣ
+    (FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+      (match Γ with
+      | CtxEmpty => FTrue
+      | CtxBind x τ => denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+      | CtxComma Γ1 Γ2 =>
+          FAnd (denot_ctx_under Σ Γ1)
+            (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
+      | CtxStar Γ1 Γ2 =>
+          FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+      | CtxSum Γ1 Γ2 =>
+          FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+      end))) in Hfib.
+  formula_msubst_syntax_norm_in Hfib.
+  rewrite res_models_and_iff in Hfib.
+  destruct Hfib as [Hworld _].
+  assert (Hσ_full :
+    atom_store_has_ltype (atom_env_to_lty_env (erase_ctx_under Σ Γ)) σΣ).
+  {
+    eapply basic_world_formula_msubst_store_extract_atom_store_has_ltype.
+    - change (lvars_of_atoms (dom (σΣ : StoreT)) ⊆
+        dom (atom_env_to_lty_env (erase_ctx_under Σ Γ))).
+      rewrite Hdomσ.
+      unfold erase_ctx_under.
+      rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      intros v' Hv'.
+      apply elem_of_map in Hv' as [a [-> Ha]].
+      apply elem_of_map. exists a. split; [reflexivity|].
+      change (a ∈ dom (Σ ∪ erase_ctx Γ : gmap atom ty)).
+      rewrite elem_of_dom.
+      apply elem_of_dom in Ha as [Ta HΣa].
+      exists Ta. apply map_lookup_union_Some_raw. left. exact HΣa.
+    - exact Hworld.
+  }
+  destruct (Hσ_full x v Hσx) as [T' [HΔx Hv]].
+  rewrite atom_store_to_lvar_store_lookup_free in HΔx.
+  unfold erase_ctx_under in HΔx.
+  change ((Σ ∪ erase_ctx Γ : gmap atom ty) !! x = Some T') in HΔx.
+  apply map_lookup_union_Some_raw in HΔx as [HΔx | [Hnone _]].
+  - rewrite HΣx in HΔx. inversion HΔx. subst T'. exact Hv.
+  - rewrite HΣx in Hnone. discriminate.
+Qed.
 
 Lemma denot_ty_in_ctx_under_fiber_elim_projection_instantiated
     (Σ : gmap atom ty) Γ τ e (m mfib : WfWorldT) (σΣ : StoreT) :
@@ -135,10 +197,17 @@ Lemma denot_ty_in_ctx_under_fiber_elim_projection_instantiated
 Proof.
   intros Hwf Hty Hproj Hden.
   unfold denot_ty_in_ctx_under, denot_ty in Hden.
+  pose proof (res_models_scoped _ _ Hden) as Hscope.
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    unfold denot_ty_in_ctx_under_fiber in Hscope.
+    apply formula_scoped_fibvars_l in Hscope.
+    rewrite ctx_base_vars_fv in Hscope. exact Hscope.
+  }
   eapply denot_ty_lvar_gas_msubst_store_from_typing_wf.
   - exact Hwf.
   - exact Hty.
-  - eapply base_store_projection_from_fiber. exact Hproj.
+  - eapply base_store_projection_from_fiber; eauto.
   - eapply denot_ty_in_ctx_under_fiber_elim_projection; eauto.
 Qed.
 

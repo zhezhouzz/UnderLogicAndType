@@ -25,6 +25,41 @@ Definition denot_relevant_env (Σ : lty_env) (τ : context_ty) (e : tm)
     : lty_env :=
   lty_env_restrict_lvars Σ (denot_relevant_lvars τ e).
 
+Lemma lty_env_restrict_lvars_twice_same (Σ : lty_env) D :
+  lty_env_restrict_lvars (lty_env_restrict_lvars Σ D) D =
+  lty_env_restrict_lvars Σ D.
+Proof.
+  unfold lty_env_restrict_lvars.
+  apply storeA_restrict_twice_same.
+Qed.
+
+Lemma lty_env_restrict_lvars_twice_subset (Σ : lty_env) X Y :
+  Y ⊆ X ->
+  lty_env_restrict_lvars (lty_env_restrict_lvars Σ X) Y =
+  lty_env_restrict_lvars Σ Y.
+Proof.
+  intros HYX.
+  unfold lty_env_restrict_lvars.
+  apply storeA_restrict_twice_subset. exact HYX.
+Qed.
+
+Lemma denot_relevant_env_idemp (Σ : lty_env) τ e :
+  denot_relevant_env (denot_relevant_env Σ τ e) τ e =
+  denot_relevant_env Σ τ e.
+Proof.
+  unfold denot_relevant_env.
+  apply lty_env_restrict_lvars_twice_same.
+Qed.
+
+Lemma denot_relevant_env_restrict_subset (Σ : lty_env) τ e X :
+  X ⊆ denot_relevant_lvars τ e ->
+  lty_env_restrict_lvars (denot_relevant_env Σ τ e) X =
+  lty_env_restrict_lvars Σ X.
+Proof.
+  unfold denot_relevant_env.
+  apply lty_env_restrict_lvars_twice_subset.
+Qed.
+
 Lemma denot_relevant_env_dom_subset_direct (Σ : lty_env) τ e :
   dom (denot_relevant_env Σ τ e : lty_env) ⊆
   dom (Σ : gmap logic_var ty).
@@ -628,6 +663,81 @@ Proof.
       (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr)).
     exact Hbasic.
   - exact He.
+Qed.
+
+Lemma arrow_arg_relevant_env_agree
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (denot_relevant_env Σsrc (CTArrow τx τr) e_src))
+    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y))).
+Proof.
+  intros Hlc.
+  set (X := denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+    (tret (vfvar y))).
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  change ((storeA_restrict
+    (<[LVFree y := Ty]>
+      (denot_relevant_env Σsrc (CTArrow τx τr) e_src)) X) !! v =
+    (storeA_restrict (<[LVFree y := Ty]> (Σsrc : gmap logic_var ty)) X)
+      !! v).
+  rewrite (storeA_restrict_lookup
+    (<[LVFree y := Ty]>
+      (denot_relevant_env Σsrc (CTArrow τx τr) e_src)) X v).
+  rewrite (storeA_restrict_lookup
+    (<[LVFree y := Ty]> (Σsrc : gmap logic_var ty)) X v).
+  destruct (decide (v ∈ X)) as [HvX|HvX]; [|reflexivity].
+  destruct v as [k|z].
+  - rewrite !lookup_insert_ne by discriminate.
+    unfold denot_relevant_env, lty_env_restrict_lvars.
+    rewrite storeA_restrict_lookup.
+    assert (Hbd : LVBound k ∉ dom (Σsrc : gmap logic_var ty)).
+    { intros Hdom. exact (Hlc (LVBound k) Hdom). }
+    apply not_elem_of_dom in Hbd.
+    destruct (decide (LVBound k ∈ denot_relevant_lvars
+      (CTArrow τx τr) e_src)); [reflexivity|symmetry; exact Hbd].
+  - destruct (decide (z = y)) as [->|Hzy].
+    + rewrite !lookup_insert_eq. reflexivity.
+    + rewrite !lookup_insert_ne by congruence.
+      unfold denot_relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide (LVFree z ∈ denot_relevant_lvars
+        (CTArrow τx τr) e_src)) as [Hzrel|Hzrel]; [reflexivity|].
+      exfalso. apply Hzrel.
+      unfold denot_relevant_lvars in *.
+      cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+        value_lvars_at] in *.
+      apply elem_of_union in HvX as [Hzopen|Hztm].
+      * destruct (decide (LVFree z ∈ context_ty_lvars τx)) as [Hzτ|Hzτ].
+        { set_solver. }
+        exfalso.
+        eapply context_ty_lvars_open_shift_fresh in Hzτ; [|exact Hzy].
+        exact (Hzτ Hzopen).
+      * set_solver.
+Qed.
+
+Lemma wand_arg_relevant_env_agree
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (denot_relevant_env Σsrc (CTWand τx τr) e_src))
+    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y))).
+Proof.
+  intros Hlc.
+  change (denot_relevant_env Σsrc (CTWand τx τr) e_src)
+    with (denot_relevant_env Σsrc (CTArrow τx τr) e_src).
+  apply arrow_arg_relevant_env_agree. exact Hlc.
 Qed.
 
 Lemma basic_world_formula_arrow_body_from_source_and_arg

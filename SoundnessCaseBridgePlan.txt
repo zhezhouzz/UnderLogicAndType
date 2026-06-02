@@ -1970,9 +1970,39 @@ Implementation order
         `atom_store_has_ltype` plus the singleton equality.  The reusable
         lower-level lemma is
         `basic_world_formula_fixed_from_singleton`.
-      - `expr_basic_typing_formula`: add an environment-agree transport for
-        `basic_tm_has_ltype` over the fvars of the term, then combine the
-        existing residual msubst typing lemma with the same-Σ target env.
+      - IN PROGRESS `expr_basic_typing_formula`: the standalone iff is false
+        without local-closure/wf information.  Counterexample shape:
+        a lambda body can mention a dangling `vbvar 1`; the lambda's
+        `tm_lvars` records this as `LVBound 0`, while the opened body typing
+        can consume `LVBound 1` if the target relevant environment picked it up
+        from `τ`.  Therefore the singleton atom lemma now carries `lc_tm e`;
+        if the final denotation proof needs the backward direction for types
+        with bound vars, also add `lc_context_ty τ` or replace
+        `basic_context_ty_lvars` with the stronger wf predicate at this
+        boundary.
+
+        New lower helpers already added/proved:
+
+        * `value_lvars_lc_eq_atoms`
+        * `tm_lvars_open_body_subset_lc`
+        * `value_lvars_open_body_subset_lc`
+        * `lstore_instantiate_tm_lift_free_lc`
+        * `basic_*_has_ltype_restrict_lvars_lc`
+
+        Remaining proof steps for the atom:
+
+        * Forward direction: use
+          `expr_basic_typing_formula_msubst_store_models` on the restricted
+          store, rewrite the instantiated term from
+          `lstore_lift_free (store_restrict σ (lvars_fv R))` to
+          `lstore_lift_free σ` with
+          `lstore_instantiate_tm_lift_free_agree_subset`, then weaken the
+          residual environment into the same-`Σ` target relevant environment.
+        * Backward direction: destruct target formula models, restrict the
+          lc target typing derivation to `tm_lvars e'` using
+          `basic_tm_has_ltype_restrict_lvars_lc`, weaken that restricted env
+          into the residual msubst env, then call
+          `expr_basic_typing_formula_msubst_store_models_back`.
       - `expr_total_formula`: reuse the existing total msubst transport; it is
         independent of the typing environment.
 
@@ -2033,3 +2063,38 @@ Implementation order
    Any old named obligation that only existed to prove the false global back
    transport should be deleted or marked obsolete in comments before final
    cleanup.
+
+   9. Refinement after implementing the first guard helpers.
+
+      The Soundness-facing boundary still uses `base_store_projection`, but the
+      recursive induction hypothesis should not require a full base projection
+      on every intermediate world.  In `FPlus`, `FStar`, and `FWand` branches
+      the recursive call may run on a subresource/product component whose world
+      need not contain unused base variables.  Requiring
+
+        `base_store_projection Σbase σ m'`
+
+      for those intermediate worlds is therefore too strong.  The stable
+      internal premise should be the local projection on the actually
+      substituted store:
+
+        `(res_restrict m' (dom σ) : WorldT) = singleton_world σ`.
+
+      The public theorem can derive this local premise from
+      `base_store_projection Σbase σ m`, while recursive branches can derive it
+      by restricting `σ` to the formula/relevant variables they actually use
+      and applying the existing singleton inheritance lemmas:
+
+      - `res_subset_singleton_restrict`
+      - `res_product_le_singleton_restrict_inv`
+      - `res_product_le_singleton_pullback`
+      - `res_sum_le_singleton_restrict_inv`
+
+      The already-proved guard helpers are compatible with this direction:
+      `context_ty_wf_formula_msubst_store_fixed_scope_iff` only needs fixed
+      variables in scope, and
+      `basic_world_formula_msubst_store_fixed_singleton_iff` only needs the
+      fixed overlap to be singleton.  The next proof step should therefore add
+      a small local-projection predicate/lemma family and use it as the
+      internal IH, keeping `base_store_projection` as only the external
+      Soundness bridge.

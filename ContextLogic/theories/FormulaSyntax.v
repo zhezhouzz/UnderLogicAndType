@@ -133,6 +133,9 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
 Definition formula_msubst_store (σ : Store (V := V)) (φ : Formula) : Formula :=
   formula_mlsubst (lstore_lift_free σ) φ.
 
+Definition store_without_lvars (σ : Store (V := V)) (D : lvset) : Store (V := V) :=
+  store_restrict σ (dom (σ : Store (V := V)) ∖ lvars_fv D).
+
 Lemma formula_mlsubst_union
     (ρ1 ρ2 : LStoreT) (φ : Formula) :
   storeA_compat ρ1 ρ2 ->
@@ -288,6 +291,47 @@ Proof.
       eapply Hcompat; eauto.
 Qed.
 
+Lemma formula_msubst_store_fibvars_keep_domain_syntax σ D φ :
+  formula_msubst_store σ (FFibVars D φ) =
+  formula_msubst_store (store_restrict σ (lvars_fv D))
+    (FFibVars D (formula_msubst_store (store_without_lvars σ D) φ)).
+Proof.
+  rewrite formula_msubst_store_fibvars.
+  rewrite formula_msubst_store_fibvars.
+  f_equal.
+  - apply set_eq. intros v.
+    rewrite !elem_of_difference.
+    split; intros [HvD Hvnot].
+    + split; [exact HvD|].
+      intros Hbad. apply Hvnot.
+      unfold lvars_of_atoms in Hbad |- *.
+      apply elem_of_map in Hbad as [x [-> Hx]].
+      change (x ∈ dom (storeA_restrict σ (lvars_fv D) : gmap atom V)) in Hx.
+      rewrite storeA_restrict_dom in Hx.
+      apply elem_of_map. exists x. split; [reflexivity|set_solver].
+    + split; [exact HvD|].
+      intros Hbad. apply Hvnot.
+      unfold lvars_of_atoms in Hbad |- *.
+      apply elem_of_map in Hbad as [x [-> Hx]].
+      apply elem_of_map. exists x. split; [reflexivity|].
+      change (x ∈ dom (storeA_restrict σ (lvars_fv D) : gmap atom V)).
+      rewrite storeA_restrict_dom.
+      rewrite elem_of_intersection. split; [exact Hx|].
+      rewrite lvars_fv_elem. exact HvD.
+  - rewrite formula_msubst_store_union.
+    + f_equal.
+      unfold store_without_lvars.
+      symmetry.
+      eapply (@storeA_restrict_union_partition V atom _ _
+        (σ : gmap atom V) (dom (σ : gmap atom V) ∖ lvars_fv D)
+        (lvars_fv D)).
+      * intros x Hx. destruct (decide (x ∈ lvars_fv D)); set_solver.
+      * apply set_eq. intros x.
+        rewrite elem_of_empty, elem_of_intersection, elem_of_difference.
+        tauto.
+    + apply storeA_compat_restricts_same.
+Qed.
+
 
 Lemma formula_msubst_store_empty (σ : Store (V := V)) (φ : Formula) :
   dom (σ : gmap atom V) = ∅ ->
@@ -416,6 +460,28 @@ Qed.
 Lemma formula_msubst_store_fv_subset σ φ :
   formula_fv (formula_msubst_store σ φ) ⊆ formula_fv φ.
 Proof. apply formula_mlsubst_fv_subset. Qed.
+
+Lemma formula_msubst_store_fv_disjoint_dom σ φ :
+  formula_fv (formula_msubst_store σ φ) ## dom (σ : Store (V := V)).
+Proof.
+  induction φ; unfold formula_fv in *;
+    cbn [formula_msubst_store formula_mlsubst formula_lvars].
+  - rewrite lvars_fv_empty. set_solver.
+  - rewrite lvars_fv_empty. set_solver.
+  - apply lqual_msubst_store_fv_disjoint_dom.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - rewrite !lvars_fv_union. set_solver.
+  - exact IHφ.
+  - exact IHφ.
+  - exact IHφ.
+  - rewrite lvars_fv_union, dom_lstore_lift_free,
+      lvars_fv_difference_of_atoms.
+    set_solver.
+Qed.
 
 Lemma formula_mlsubst_lvars_restore ρ φ :
   formula_lvars φ ⊆ formula_lvars (formula_mlsubst ρ φ) ∪ dom ρ.

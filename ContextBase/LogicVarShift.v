@@ -336,6 +336,40 @@ Proof.
   unfold lvars_shift_from. apply set_map_union_L.
 Qed.
 
+Lemma lvars_shift_from_difference_of_atoms k (D : lvset) (X : aset) :
+  lvars_shift_from k (D ∖ lvars_of_atoms X) =
+  lvars_shift_from k D ∖ lvars_of_atoms X.
+Proof.
+  apply set_eq. intros v.
+  split.
+  - intros Hv.
+    unfold lvars_shift_from in Hv |- *.
+    apply elem_of_map in Hv as [u [-> Hu]].
+    apply elem_of_difference in Hu as [HuD HuX].
+    apply elem_of_difference. split.
+    + apply elem_of_map. exists u. split; [reflexivity|exact HuD].
+    + intros Hbad. apply HuX.
+      unfold lvars_of_atoms in Hbad |- *.
+      apply elem_of_map in Hbad as [a [Ha HaX]].
+      destruct u as [n|x]; cbn [logic_var_shift_from] in Ha.
+      * destruct (decide (k <= n)); discriminate.
+      * inversion Ha. subst x.
+        apply elem_of_map. exists a. split; [reflexivity|exact HaX].
+  - intros Hv.
+    unfold lvars_shift_from in Hv |- *.
+    apply elem_of_difference in Hv as [HvD HvX].
+    apply elem_of_map in HvD as [u [-> HuD]].
+    apply elem_of_map. exists u. split; [reflexivity|].
+    apply elem_of_difference. split; [exact HuD|].
+    intros Hbad. apply HvX.
+    unfold lvars_of_atoms in Hbad |- *.
+    apply elem_of_map in Hbad as [a [Ha HaX]].
+    destruct u as [n|x]; cbn [logic_var_shift_from] in Ha.
+    + discriminate.
+    + inversion Ha. subst x.
+      apply elem_of_map. exists a. split; [reflexivity|exact HaX].
+Qed.
+
 Lemma lvars_at_depth_elem d D u :
   u ∈ lvars_at_depth d D <->
   exists v, v ∈ D /\ logic_var_at_depth d v = Some u.

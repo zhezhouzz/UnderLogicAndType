@@ -225,6 +225,21 @@ Proof.
   set_solver.
 Qed.
 
+Lemma formula_scoped_open_from_forall_world_dom
+    (m my : WfWorldT) (φ : FormulaT) y :
+  formula_scoped_in_world m (FForall φ) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  formula_scoped_in_world my (formula_open 0 y φ).
+Proof.
+  intros Hscope Hdom.
+  eapply formula_scoped_open_from_fv.
+  unfold formula_scoped_in_world in Hscope.
+  rewrite formula_fv_forall in Hscope.
+  rewrite Hdom.
+  pose proof (formula_open_fv_subset 0 y φ).
+  set_solver.
+Qed.
+
 Lemma formula_scoped_open
     (m : WfWorldT) k x φ :
   formula_scoped_in_world m φ →

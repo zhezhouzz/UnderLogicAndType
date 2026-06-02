@@ -413,6 +413,36 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma lvar_store_shift_from_atom_store k (s : AtomStore) :
+  lvar_store_shift_from k (atom_store_to_lvar_store s) =
+  atom_store_to_lvar_store s.
+Proof.
+  apply storeA_map_eq. intros v.
+  destruct v as [n|x].
+  - transitivity (@None V).
+    + apply not_elem_of_dom.
+      unfold lvar_store_shift_from.
+      change (LVBound n ∉
+        dom (storeA_rekey (logic_var_shift_from k) (atom_store_to_lvar_store s)
+          : gmap logic_var V)).
+      rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+      intros Hin. apply elem_of_map in Hin as [u [Hu HuD]].
+      destruct u as [m|y]; cbn [logic_var_shift_from] in Hu.
+      * destruct (decide (k <= m)); inversion Hu; subst.
+        all: apply elem_of_dom in HuD as [A HA];
+          rewrite atom_store_to_lvar_store_lookup_bound_none in HA;
+          discriminate.
+      * discriminate.
+    + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
+  - unfold lvar_store_shift_from.
+    change ((storeA_rekey (logic_var_shift_from k)
+        (atom_store_to_lvar_store s) : gmap logic_var V) !! LVFree x =
+      atom_store_to_lvar_store s !! LVFree x).
+    change (LVFree x) with (logic_var_shift_from k (LVFree x)) at 1.
+    rewrite storeA_rekey_lookup by apply logic_var_shift_from_inj.
+    reflexivity.
+Qed.
+
 Lemma logic_var_swap_match x y v :
   match v with
   | LVFree z => LVFree (swap x y z)

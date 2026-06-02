@@ -235,6 +235,150 @@ Proof.
   exact (proj2 basic_has_ltype_weaken_mutual Σ e T Hty Σ' Hsub).
 Qed.
 
+Lemma basic_has_ltype_restrict_lvars_lc_mutual :
+  (forall Σ v T,
+    basic_value_has_ltype Σ v T ->
+    lc_value v ->
+    forall D,
+      value_lvars v ⊆ D ->
+      basic_value_has_ltype (storeA_restrict Σ D) v T) /\
+  (forall Σ e T,
+    basic_tm_has_ltype Σ e T ->
+    lc_tm e ->
+    forall D,
+      tm_lvars e ⊆ D ->
+      basic_tm_has_ltype (storeA_restrict Σ D) e T).
+Proof.
+  apply basic_has_ltype_mutind; intros; eauto.
+  - constructor.
+    match goal with
+    | Hlook : ?Σ !! LVFree ?x = Some ?T |- _ =>
+        apply storeA_restrict_lookup_some_2; [exact Hlook|]
+    end.
+    match goal with
+    | Hsub : value_lvars (vfvar _) ⊆ _ |- _ =>
+        cbn [value_lvars value_lvars_at] in Hsub; set_solver
+    end.
+  - exfalso. eapply lc_bvar_absurd; eassumption.
+  - apply lc_lam_iff_body in H0 as Hbody_lc.
+    eapply BVT_Lam with
+      (L := L ∪ lvars_fv D ∪ lvars_fv (dom Σ) ∪ fv_tm e).
+    intros x Hx.
+    pose proof (H x ltac:(set_solver)) as IHbody.
+    specialize (IHbody (body_open_tm _ _ Hbody_lc (LC_fvar x))
+      (D ∪ {[LVFree x]})).
+    rewrite storeA_restrict_insert_fresh_union in IHbody.
+    + apply IHbody.
+      eapply tm_lvars_open_body_subset_lc; [exact Hbody_lc|].
+      cbn [value_lvars value_lvars_at] in H1. exact H1.
+    + apply not_elem_of_dom. intros Hdom.
+      apply Hx. apply elem_of_union_l. apply elem_of_union_r.
+      apply lvars_fv_elem. exact Hdom.
+    + intros Hbad. apply Hx.
+      apply lvars_fv_elem in Hbad. set_solver.
+  - apply lc_fix_iff_body in H0 as Hbody_lc.
+    eapply BVT_Fix with
+      (L := L ∪ lvars_fv D ∪ lvars_fv (dom Σ) ∪ fv_value vf).
+    intros x Hx.
+    pose proof (H x ltac:(set_solver)) as IHbody.
+    specialize (IHbody (body_open_value _ _ Hbody_lc (LC_fvar x))
+      (D ∪ {[LVFree x]})).
+    rewrite storeA_restrict_insert_fresh_union in IHbody.
+    + apply IHbody.
+      eapply value_lvars_open_body_subset_lc; [exact Hbody_lc|].
+      cbn [value_lvars value_lvars_at] in H1. exact H1.
+    + apply not_elem_of_dom. intros Hdom.
+      apply Hx. apply elem_of_union_l. apply elem_of_union_r.
+      apply lvars_fv_elem. exact Hdom.
+    + intros Hbad. apply Hx.
+      apply lvars_fv_elem in Hbad. set_solver.
+  - apply lc_ret_iff_value in H0.
+    constructor. eapply H; eauto.
+  - apply lc_lete_iff_body in H1 as [Hlc1 Hbody2].
+    eapply BTT_Let with
+      (L := L ∪ lvars_fv D ∪ lvars_fv (dom Σ) ∪ fv_tm e2).
+    + eapply H; eauto. cbn [tm_lvars tm_lvars_at] in H2. set_solver.
+    + intros x Hx.
+      pose proof (H0 x ltac:(set_solver)) as IHbody.
+      specialize (IHbody (body_open_tm _ _ Hbody2 (LC_fvar x))
+        (D ∪ {[LVFree x]})).
+      rewrite storeA_restrict_insert_fresh_union in IHbody.
+      * apply IHbody.
+        eapply tm_lvars_open_body_subset_lc; [exact Hbody2|].
+        cbn [tm_lvars tm_lvars_at] in H2. set_solver.
+      * apply not_elem_of_dom. intros Hdom.
+        apply Hx. apply elem_of_union_l. apply elem_of_union_r.
+        apply lvars_fv_elem. exact Hdom.
+      * intros Hbad. apply Hx.
+        apply lvars_fv_elem in Hbad. set_solver.
+  - match goal with
+    | Hlc : lc_tm (tprim _ _) |- _ => apply lc_prim_iff_value in Hlc
+    end.
+    eapply BTT_Op.
+    + match goal with
+      | Hop : prim_op_type _ = _ |- _ => exact Hop
+      end.
+    +
+    eapply H; eauto.
+  - match goal with
+    | Hlc : lc_tm (tapp _ _) |- _ =>
+        apply lc_app_iff_values in Hlc as [Hlc1 Hlc2]
+    end.
+    eapply BTT_App.
+    + eapply H; eauto.
+      match goal with
+      | Hsub : tm_lvars (tapp _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H0; eauto.
+      match goal with
+      | Hsub : tm_lvars (tapp _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+  - match goal with
+    | Hlc : lc_tm (tmatch _ _ _) |- _ =>
+        apply lc_match_iff_parts in Hlc as [Hlcv [Hlcet Hlcef]]
+    end.
+    eapply BTT_Match.
+    + eapply H; eauto.
+      match goal with
+      | Hsub : tm_lvars (tmatch _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H0; eauto.
+      match goal with
+      | Hsub : tm_lvars (tmatch _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H1; eauto.
+      match goal with
+      | Hsub : tm_lvars (tmatch _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+Qed.
+
+Lemma basic_value_has_ltype_restrict_lvars_lc Σ v T D :
+  basic_value_has_ltype Σ v T ->
+  lc_value v ->
+  value_lvars v ⊆ D ->
+  basic_value_has_ltype (storeA_restrict Σ D) v T.
+Proof.
+  intros Hty Hlc Hsub.
+  exact (proj1 basic_has_ltype_restrict_lvars_lc_mutual
+    Σ v T Hty Hlc D Hsub).
+Qed.
+
+Lemma basic_tm_has_ltype_restrict_lvars_lc Σ e T D :
+  basic_tm_has_ltype Σ e T ->
+  lc_tm e ->
+  tm_lvars e ⊆ D ->
+  basic_tm_has_ltype (storeA_restrict Σ D) e T.
+Proof.
+  intros Hty Hlc Hsub.
+  exact (proj2 basic_has_ltype_restrict_lvars_lc_mutual
+    Σ e T Hty Hlc D Hsub).
+Qed.
+
 Lemma basic_tm_has_ltype_to_open_env Σ e T :
   basic_tm_has_ltype Σ e T ->
   basic_tm_has_ltype_by_open_env Σ e T.
@@ -516,6 +660,527 @@ Lemma basic_tm_has_ltype_msubst_store
 Proof.
   intros Hσ Hty.
   exact (basic_tm_has_ltype_msubst_store_at 0 σ Σ e T Hσ Hty).
+Qed.
+
+Lemma basic_has_ltype_unique_mutual :
+  (forall Σ v T1,
+    basic_value_has_ltype Σ v T1 ->
+    forall T2, basic_value_has_ltype Σ v T2 -> T1 = T2) /\
+  (forall Σ e T1,
+    basic_tm_has_ltype Σ e T1 ->
+    forall T2, basic_tm_has_ltype Σ e T2 -> T1 = T2).
+Proof.
+  apply basic_has_ltype_mutind; intros;
+    match goal with
+    | |- _ = ?T2 =>
+        match goal with
+        | H : basic_value_has_ltype _ _ T2 |- _ => inversion H; subst
+        | H : basic_tm_has_ltype _ _ T2 |- _ => inversion H; subst
+        end
+    end.
+  - reflexivity.
+  - match goal with
+    | H1 : ?Σ !! LVFree ?x = Some ?T1,
+      H2 : ?Σ !! LVFree ?x = Some ?T2 |- _ =>
+        rewrite H1 in H2; inversion H2; reflexivity
+    end.
+  - match goal with
+    | H1 : ?Σ !! LVBound ?k = Some ?T1,
+      H2 : ?Σ !! LVBound ?k = Some ?T2 |- _ =>
+        rewrite H1 in H2; inversion H2; reflexivity
+    end.
+  -
+    match goal with
+    | IH : forall x, x ∉ ?L1 -> forall T2,
+        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
+      Hbody : forall x, x ∉ ?L2 ->
+        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+        set (y := fresh_for (L1 ∪ L2));
+        assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
+        pose proof (IH y ltac:(set_solver) _ (Hbody y ltac:(set_solver))) as Heq
+    end.
+    subst. reflexivity.
+  -
+    match goal with
+    | IH : forall x, x ∉ ?L1 -> forall T2,
+        basic_value_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
+      Hbody : forall x, x ∉ ?L2 ->
+        basic_value_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+        set (y := fresh_for (L1 ∪ L2));
+        assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
+        pose proof (IH y ltac:(set_solver) _ (Hbody y ltac:(set_solver))) as Heq
+    end.
+    inversion Heq. reflexivity.
+  - eauto.
+  - match goal with
+    | IH1 : forall T2, basic_tm_has_ltype _ _ T2 -> ?T1 = T2,
+      Hty1 : basic_tm_has_ltype _ _ ?T1' |- _ =>
+        pose proof (IH1 _ Hty1) as Heq1
+    end.
+    subst.
+    match goal with
+    | IH2 : forall x, x ∉ ?L1 -> forall T2,
+        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
+      Hbody : forall x, x ∉ ?L2 ->
+        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+        set (y := fresh_for (L1 ∪ L2));
+        assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
+        exact (IH2 y ltac:(set_solver) _ (Hbody y ltac:(set_solver)))
+    end.
+  - match goal with
+    | Hop1 : prim_op_type ?op = (?a1, ?r1),
+      Hop2 : prim_op_type ?op = (?a2, ?r2) |- _ =>
+        rewrite Hop1 in Hop2; inversion Hop2; reflexivity
+    end.
+  - match goal with
+    | IH : forall T2, basic_value_has_ltype _ _ T2 -> _,
+      Hfun : basic_value_has_ltype _ _ (_ →ₜ _) |- _ =>
+        pose proof (IH _ Hfun) as Heq
+    end.
+    inversion Heq. reflexivity.
+  - match goal with
+    | IH : forall T2, basic_tm_has_ltype _ _ T2 -> _,
+      Hthen : basic_tm_has_ltype _ _ _ |- _ =>
+        exact (IH _ Hthen)
+    end.
+Qed.
+
+Lemma basic_value_has_ltype_unique Σ v T1 T2 :
+  basic_value_has_ltype Σ v T1 ->
+  basic_value_has_ltype Σ v T2 ->
+  T1 = T2.
+Proof.
+  intros H1 H2.
+  exact (proj1 basic_has_ltype_unique_mutual Σ v T1 H1 T2 H2).
+Qed.
+
+Lemma basic_tm_has_ltype_unique Σ e T1 T2 :
+  basic_tm_has_ltype Σ e T1 ->
+  basic_tm_has_ltype Σ e T2 ->
+  T1 = T2.
+Proof.
+  intros H1 H2.
+  exact (proj2 basic_has_ltype_unique_mutual Σ e T1 H1 T2 H2).
+Qed.
+
+Lemma atom_store_has_ltype_lookup_from_basic_ltype Σ σ x vx T :
+  atom_store_has_ltype Σ σ ->
+  σ !! x = Some vx ->
+  basic_value_has_ltype (lty_env_msubst_store σ Σ) vx T ->
+  Σ !! LVFree x = Some T.
+Proof.
+  intros Hσtyped Hσx HvxT.
+  destruct (Hσtyped x vx Hσx) as [U [HΣU HvxU]].
+  assert (HvxU_basic :
+    basic_value_has_ltype (lty_env_msubst_store σ Σ) vx U).
+  { apply basic_value_has_ltype_of_empty_atom_typing. exact HvxU. }
+  pose proof (basic_value_has_ltype_unique _ _ _ _ HvxU_basic HvxT)
+    as ->.
+  exact HΣU.
+Qed.
+
+Lemma basic_value_has_ltype_msubst_store_back_fvar
+    Σ σ x vx T :
+  atom_store_has_ltype Σ σ ->
+  σ !! x = Some vx ->
+  basic_value_has_ltype (lty_env_msubst_store σ Σ) vx T ->
+  basic_value_has_ltype Σ (vfvar x) T.
+Proof.
+  intros Hσ Hlook Hty.
+  constructor.
+  eapply atom_store_has_ltype_lookup_from_basic_ltype; eauto.
+Qed.
+
+Lemma lstore_instantiate_value_at_lift_free_bvar d σ n :
+  lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n) = vbvar n.
+Proof.
+  cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at].
+  destruct (decide (d <= n)); [|reflexivity].
+  rewrite StoreInterface.lstore_bound_part_lookup.
+  rewrite lstore_lift_free_lookup_bound.
+  reflexivity.
+Qed.
+
+Lemma basic_has_ltype_msubst_store_back_by_derivation :
+  (forall Σt vt T,
+    basic_value_has_ltype Σt vt T ->
+    forall Σ d σ v,
+      Σt = lty_env_msubst_store σ Σ ->
+      vt = lstore_instantiate_value_at d (lstore_lift_free σ) v ->
+      atom_store_has_ltype Σ σ ->
+      basic_value_has_ltype Σ v T) /\
+  (forall Σt et T,
+    basic_tm_has_ltype Σt et T ->
+    forall Σ d σ e,
+      Σt = lty_env_msubst_store σ Σ ->
+      et = lstore_instantiate_tm_at d (lstore_lift_free σ) e ->
+      atom_store_has_ltype Σ σ ->
+      basic_tm_has_ltype Σ e T).
+Proof.
+  apply basic_has_ltype_mutind; intros.
+  - destruct v as [c'|x|n|s e|Tf vf];
+      cbn [lstore_instantiate_value_at
+        lstore_instantiate_value_split_at] in H0; try discriminate.
+    + inversion H0; subst. constructor.
+    + try rewrite lstore_free_part_lift_free in H0.
+      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with vx in H0 by (rewrite Hσx; reflexivity).
+        inversion H0; subst vx.
+        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) in H0 by (rewrite Hσx; reflexivity).
+        discriminate.
+    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
+        with
+          ((match decide (d <= n) with
+            | left _ =>
+                match StoreInterface.lstore_bound_part (V:=value)
+                        (lstore_lift_free σ : LStoreT) !! (n - d) with
+                | Some u => u | None => vbvar n end
+            | right _ => vbvar n
+            end) : value) in H0 by reflexivity.
+      destruct (decide (d <= n)).
+      * replace (StoreInterface.lstore_bound_part (V:=value)
+            (lstore_lift_free σ : LStoreT) !! (n - d))
+          with (@None value) in H0.
+        -- discriminate.
+        -- rewrite StoreInterface.lstore_bound_part_lookup.
+           symmetry. apply lstore_lift_free_lookup_bound.
+      * discriminate.
+  - destruct v as [c|z|n|s body|Tf vf];
+      cbn [lstore_instantiate_value_at
+        lstore_instantiate_value_split_at] in H1; try discriminate.
+    + match goal with
+      | Heq : vfvar _ = _ |- _ =>
+          try rewrite lstore_free_part_lift_free in Heq
+      end.
+      cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H0.
+      rewrite lstore_free_part_lift_free in H0.
+      destruct ((σ : gmap atom value) !! z) as [vz|] eqn:Hσz.
+      * replace (match (σ : gmap atom value) !! z with
+                 | Some u => u
+                 | None => vfvar z
+                 end) with vz in H0 by (rewrite Hσz; reflexivity).
+        destruct vz; inversion H0; subst.
+        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
+      * replace (match (σ : gmap atom value) !! z with
+                 | Some u => u
+                 | None => vfvar z
+                 end) with (vfvar z) in H0 by (rewrite Hσz; reflexivity).
+        inversion H0; subst.
+        constructor.
+        subst.
+        apply lty_env_msubst_store_lookup_some in e as [Hlook _].
+        exact Hlook.
+    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
+        with
+          ((match decide (d <= n) with
+            | left _ =>
+                match StoreInterface.lstore_bound_part (V:=value)
+                        (lstore_lift_free σ : LStoreT) !! (n - d) with
+                | Some u => u | None => vbvar n end
+            | right _ => vbvar n
+            end) : value) in H0 by reflexivity.
+      destruct (decide (d <= n)).
+      * replace (StoreInterface.lstore_bound_part (V:=value)
+            (lstore_lift_free σ : LStoreT) !! (n - d))
+          with (@None value) in H0.
+        -- discriminate.
+        -- rewrite StoreInterface.lstore_bound_part_lookup.
+           symmetry. apply lstore_lift_free_lookup_bound.
+      * discriminate.
+  - destruct v as [c|x|n'|s body|Tf vf];
+      cbn [lstore_instantiate_value_at
+        lstore_instantiate_value_split_at] in H1; try discriminate.
+    + cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H0.
+      replace (lstore_free_part (lstore_lift_free σ) !! x)
+        with ((σ : gmap atom value) !! x) in H0
+        by (rewrite lstore_free_part_lift_free; reflexivity).
+      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with vx in H0 by (rewrite Hσx; reflexivity).
+        destruct vx; inversion H0; subst.
+        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) in H0 by (rewrite Hσx; reflexivity).
+        discriminate.
+    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n'))
+        with
+          ((match decide (d <= n') with
+            | left _ =>
+                match StoreInterface.lstore_bound_part (V:=value)
+                        (lstore_lift_free σ : LStoreT) !! (n' - d) with
+                | Some u => u | None => vbvar n' end
+            | right _ => vbvar n'
+            end) : value) in H0 by reflexivity.
+      destruct (decide (d <= n')).
+      * replace (StoreInterface.lstore_bound_part (V:=value)
+            (lstore_lift_free σ : LStoreT) !! (n' - d))
+          with (@None value) in H0.
+        -- inversion H0; subst.
+           constructor.
+           subst.
+           apply lty_env_msubst_store_lookup_some in e as [Hlook _].
+           exact Hlook.
+        -- rewrite StoreInterface.lstore_bound_part_lookup.
+           symmetry. apply lstore_lift_free_lookup_bound.
+      * inversion H0; subst.
+        constructor.
+        subst.
+        apply lty_env_msubst_store_lookup_some in e as [Hlook _].
+        exact Hlook.
+  - destruct v as [c|x|n|s' e'|Tf vf];
+      cbn [lstore_instantiate_value_at
+        lstore_instantiate_value_split_at] in H1; try discriminate.
+    + cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H1.
+      replace (lstore_free_part (lstore_lift_free σ) !! x)
+        with ((σ : gmap atom value) !! x) in H1
+        by (rewrite lstore_free_part_lift_free; reflexivity).
+      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with vx in H1 by (rewrite Hσx; reflexivity).
+        destruct vx; inversion H1; subst.
+        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) in H1 by (rewrite Hσx; reflexivity).
+        discriminate.
+    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
+        with
+          ((match decide (d <= n) with
+            | left _ =>
+                match StoreInterface.lstore_bound_part (V:=value)
+                        (lstore_lift_free σ : LStoreT) !! (n - d) with
+                | Some u => u | None => vbvar n end
+            | right _ => vbvar n
+            end) : value) in H1 by reflexivity.
+      destruct (decide (d <= n)).
+      * replace (StoreInterface.lstore_bound_part (V:=value)
+            (lstore_lift_free σ : LStoreT) !! (n - d))
+          with (@None value) in H1.
+        -- discriminate.
+        -- rewrite StoreInterface.lstore_bound_part_lookup.
+           symmetry. apply lstore_lift_free_lookup_bound.
+      * discriminate.
+    + inversion H1; subst.
+      eapply BVT_Lam with
+        (L := L ∪ dom (σ : gmap atom value) ∪ fv_tm e').
+      intros y Hy.
+      pose proof (atom_store_has_ltype_insert_fresh _ σ y s'
+        ltac:(clear -Hy; set_solver) H2) as Hσy.
+      assert (HyL : y ∉ L).
+      { intro Hin. apply Hy. apply elem_of_union_l.
+        apply elem_of_union_l. exact Hin. }
+      specialize (H y HyL).
+      eapply (H (<[LVFree y := s']> Σ0) (S d) σ (e' ^^ y)).
+      * subst. rewrite lty_env_msubst_store_insert_fresh.
+        2: { intro Hin. apply Hy. apply elem_of_union_l.
+             apply elem_of_union_r. exact Hin. }
+        reflexivity.
+      * change (open_tm 0 (vfvar y)
+            (lstore_instantiate_tm_at (S d)
+              (lstore_lift_free σ : LStoreT) e') =
+          lstore_instantiate_tm_at (S d)
+            (lstore_lift_free σ : LStoreT) (open_tm 0 (vfvar y) e')).
+        symmetry.
+        apply lstore_instantiate_tm_at_open0_fresh_lift_free.
+        -- eapply atom_store_has_ltype_closed; exact H2.
+        -- intro Hin. apply elem_of_union in Hin as [Hin|Hin].
+           ++ apply Hy. apply elem_of_union_l.
+              apply elem_of_union_r. exact Hin.
+           ++ apply Hy. apply elem_of_union_r. exact Hin.
+      * exact Hσy.
+  - destruct v as [c|x|n|s body|Tf' vf'];
+      cbn [lstore_instantiate_value_at
+        lstore_instantiate_value_split_at] in H1; try discriminate.
+    + try rewrite lstore_free_part_lift_free in H1.
+      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with vx in H1 by (rewrite Hσx; reflexivity).
+        inversion H1; subst vx.
+        eapply basic_value_has_ltype_msubst_store_back_fvar;
+          [exact H2|exact Hσx|].
+        subst Σ.
+        eapply BVT_Fix with (L := L). exact b.
+      * replace (match (σ : gmap atom value) !! x with
+                 | Some u => u
+                 | None => vfvar x
+                 end) with (vfvar x) in H1 by (rewrite Hσx; reflexivity).
+        discriminate.
+    + change ((fix: sx →ₜ T, vf) =
+        lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n)) in H1.
+      rewrite lstore_instantiate_value_at_lift_free_bvar in H1.
+      discriminate.
+    + inversion H1; subst.
+      eapply BVT_Fix with
+        (L := L ∪ dom (σ : gmap atom value) ∪ fv_value vf').
+      intros y Hy.
+      pose proof (atom_store_has_ltype_insert_fresh _ σ y sx
+        ltac:(clear -Hy; set_solver) H2) as Hσy.
+      assert (HyL : y ∉ L).
+      { intro Hin. apply Hy. apply elem_of_union_l.
+        apply elem_of_union_l. exact Hin. }
+      specialize (H y HyL).
+      eapply (H (<[LVFree y := sx]> Σ0) (S d) σ (vf' ^^ y)).
+      * subst. rewrite lty_env_msubst_store_insert_fresh.
+        2: { intro Hin. apply Hy. apply elem_of_union_l.
+             apply elem_of_union_r. exact Hin. }
+        reflexivity.
+      * change (open_value 0 (vfvar y)
+            (lstore_instantiate_value_at (S d)
+              (lstore_lift_free σ : LStoreT) vf') =
+          lstore_instantiate_value_at (S d)
+            (lstore_lift_free σ : LStoreT) (open_value 0 (vfvar y) vf')).
+        symmetry.
+        apply lstore_instantiate_value_at_open0_fresh_lift_free.
+        -- eapply atom_store_has_ltype_closed; exact H2.
+        -- intro Hin. apply elem_of_union in Hin as [Hin|Hin].
+           ++ apply Hy. apply elem_of_union_l.
+              apply elem_of_union_r. exact Hin.
+           ++ apply Hy. apply elem_of_union_r. exact Hin.
+      * exact Hσy.
+  - destruct e as [vsrc|e1 e2|op' vop|v1 v2|vm et ef];
+      cbn [lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at] in *; try discriminate.
+    match goal with
+    | Heq : ret _ = lstore_instantiate_tm_at _ _ (ret _) |- _ =>
+        unfold lstore_instantiate_tm_at in Heq;
+        cbn [lstore_instantiate_tm_split_at] in Heq;
+        inversion Heq; subst
+    | Heq : ret _ = ret _ |- _ =>
+        inversion Heq; subst
+    end.
+    constructor.
+    eapply H; eauto; reflexivity.
+  - destruct e as [vsrc|e1' e2'|op vop|v1 v2|vm et ef];
+      cbn [lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at] in *; try discriminate.
+    match goal with
+    | Heq : (let: _ in _) =
+        lstore_instantiate_tm_at _ _ (let: _ in _) |- _ =>
+        unfold lstore_instantiate_tm_at in Heq;
+        cbn [lstore_instantiate_tm_split_at] in Heq;
+        inversion Heq; subst
+    | Heq : (let: _ in _) = (let: _ in _) |- _ =>
+        inversion Heq; subst
+    end.
+    eapply BTT_Let with
+      (L := L ∪ dom (σ : gmap atom value) ∪ fv_tm e2').
+    + eapply H; eauto; reflexivity.
+    + intros y Hy.
+      pose proof (atom_store_has_ltype_insert_fresh _ σ y T1
+        ltac:(clear -Hy; set_solver) H3) as Hσy.
+      assert (HyL : y ∉ L).
+      { intro Hin. apply Hy. apply elem_of_union_l.
+        apply elem_of_union_l. exact Hin. }
+      specialize (H0 y HyL).
+      eapply (H0 (<[LVFree y := T1]> Σ0) (S d) σ (e2' ^^ y)).
+      * subst. rewrite lty_env_msubst_store_insert_fresh.
+        2: { intro Hin. apply Hy. apply elem_of_union_l.
+             apply elem_of_union_r. exact Hin. }
+        reflexivity.
+      * change (open_tm 0 (vfvar y)
+            (lstore_instantiate_tm_at (S d)
+              (lstore_lift_free σ : LStoreT) e2') =
+          lstore_instantiate_tm_at (S d)
+            (lstore_lift_free σ : LStoreT) (open_tm 0 (vfvar y) e2')).
+        symmetry.
+        apply lstore_instantiate_tm_at_open0_fresh_lift_free.
+        -- eapply atom_store_has_ltype_closed; exact H3.
+        -- intro Hin. apply elem_of_union in Hin as [Hin|Hin].
+           ++ apply Hy. apply elem_of_union_l.
+              apply elem_of_union_r. exact Hin.
+           ++ apply Hy. apply elem_of_union_r. exact Hin.
+      * exact Hσy.
+  - destruct e0 as [vsrc|e1 e2|op' vop|v1 v2|vm et ef];
+      cbn [lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at] in *; try discriminate.
+    match goal with
+    | Heq : tprim _ _ =
+        lstore_instantiate_tm_at _ _ (tprim _ _) |- _ =>
+        unfold lstore_instantiate_tm_at in Heq;
+        cbn [lstore_instantiate_tm_split_at] in Heq;
+        inversion Heq; subst
+    | Heq : tprim _ _ = tprim _ _ |- _ =>
+        inversion Heq; subst
+    end.
+    eapply BTT_Op; [exact e|].
+    eapply H; eauto; reflexivity.
+  - destruct e as [vsrc|e1 e2|op vop|v1' v2'|vm et ef];
+      cbn [lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at] in *; try discriminate.
+    match goal with
+    | Heq : tapp _ _ =
+        lstore_instantiate_tm_at _ _ (tapp _ _) |- _ =>
+        unfold lstore_instantiate_tm_at in Heq;
+        cbn [lstore_instantiate_tm_split_at] in Heq;
+        inversion Heq; subst
+    | Heq : tapp _ _ = tapp _ _ |- _ =>
+        inversion Heq; subst
+    end.
+    eapply BTT_App; eauto; try reflexivity.
+  - destruct e as [vsrc|e1 e2|op vop|v1 v2|vm et' ef'];
+      cbn [lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at] in *; try discriminate.
+    match goal with
+    | Heq : tmatch _ _ _ =
+        lstore_instantiate_tm_at _ _ (tmatch _ _ _) |- _ =>
+        unfold lstore_instantiate_tm_at in Heq;
+        cbn [lstore_instantiate_tm_split_at] in Heq;
+        inversion Heq; subst
+    | Heq : tmatch _ _ _ = tmatch _ _ _ |- _ =>
+        inversion Heq; subst
+    end.
+    eapply BTT_Match; eauto; try reflexivity.
+Qed.
+
+Lemma basic_has_ltype_msubst_store_back_at_mutual :
+  (forall v,
+    forall Σ T d σ,
+      atom_store_has_ltype Σ σ ->
+      basic_value_has_ltype (lty_env_msubst_store σ Σ)
+        (lstore_instantiate_value_at d (lstore_lift_free σ) v) T ->
+      basic_value_has_ltype Σ v T) *
+  (forall e,
+    forall Σ T d σ,
+      atom_store_has_ltype Σ σ ->
+      basic_tm_has_ltype (lty_env_msubst_store σ Σ)
+        (lstore_instantiate_tm_at d (lstore_lift_free σ) e) T ->
+      basic_tm_has_ltype Σ e T).
+Proof.
+  split.
+  - intros v Σ T d σ Hσ Hty.
+    eapply (proj1 basic_has_ltype_msubst_store_back_by_derivation);
+      [exact Hty|reflexivity|reflexivity|exact Hσ].
+  - intros e Σ T d σ Hσ Hty.
+    eapply (proj2 basic_has_ltype_msubst_store_back_by_derivation);
+      [exact Hty|reflexivity|reflexivity|exact Hσ].
+Qed.
+
+Lemma basic_tm_has_ltype_msubst_store_back
+    σ Σ e T :
+  atom_store_has_ltype Σ σ ->
+  basic_tm_has_ltype (lty_env_msubst_store σ Σ)
+    (lstore_instantiate_tm (lstore_lift_free σ) e) T ->
+  basic_tm_has_ltype Σ e T.
+Proof.
+  intros Hσ Hty.
+  exact (snd basic_has_ltype_msubst_store_back_at_mutual
+    e Σ T 0 σ Hσ Hty).
 Qed.
 
 Lemma basic_tm_has_ltype_tapp_tm_tlete_assoc

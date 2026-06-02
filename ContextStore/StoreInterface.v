@@ -299,6 +299,299 @@ Proof.
   - reflexivity.
 Qed.
 
+Lemma lstore_on_shift_from_mlsubst_back_atom_store
+    k D (σ : Store) (s1 : LStoreOn (D ∖ dom (atom_store_to_lvar_store σ : LStore)))
+    (s2 : LStoreOn (lvars_shift_from k D ∖
+      dom (atom_store_to_lvar_store σ : LStore))) :
+  lso_store s2 = lso_store (lstore_on_shift_from k s1) ->
+  lso_store (lstore_on_shift_from k
+    (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ) s1)) =
+  lso_store (lstore_on_mlsubst_back (lvars_shift_from k D)
+    (atom_store_to_lvar_store σ) s2).
+Proof.
+  intros Hs.
+  unfold lstore_on_shift_from, lstore_on_rekey, storeA_on_rekey,
+    lstore_on_mlsubst_back.
+  cbn [lso_store storeAO_store].
+  change (storeA_rekey (logic_var_shift_from k)
+      (lso_store s1 ∪ storeA_restrict (atom_store_to_lvar_store σ) D) =
+    lso_store s2 ∪
+      storeA_restrict (atom_store_to_lvar_store σ) (lvars_shift_from k D)).
+  rewrite (storeA_map_key_union (V:=V) (logic_var_shift_from k)
+    (logic_var_shift_from_inj k) (lso_store s1)
+    (storeA_restrict (atom_store_to_lvar_store σ) D)).
+  rewrite Hs.
+  f_equal.
+  - unfold lstore_on_shift_from, lstore_on_rekey, storeA_on_rekey.
+    destruct s1. reflexivity.
+  - 
+  replace (atom_store_to_lvar_store σ)
+    with (lvar_store_shift_from k (atom_store_to_lvar_store σ)) at 2
+    by apply lvar_store_shift_from_atom_store.
+  unfold lvar_store_shift_from.
+  rewrite <- storeA_restrict_rekey by apply logic_var_shift_from_inj.
+  reflexivity.
+Qed.
+
+Lemma lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw
+    k D (σ : Store) (sD s2 : LStore) :
+  dom (sD : gmap logic_var V) = D ->
+  dom (s2 : gmap logic_var V) =
+    lvars_shift_from k D ∖ dom (atom_store_to_lvar_store σ : LStore) ->
+  lstore_shift_from k sD =
+    s2 ∪ storeA_restrict (atom_store_to_lvar_store σ : LStore)
+      (lvars_shift_from k D) ->
+  lstore_shift_from k
+    (storeA_restrict sD
+      (D ∖ dom (atom_store_to_lvar_store σ : LStore))) =
+  s2.
+Proof.
+  intros HdomD Hdom2 Hshift.
+  set (ρ := atom_store_to_lvar_store σ : LStore).
+  apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ dom (s2 : gmap logic_var V))) as [Hz|Hz].
+  - assert (HzD : z ∈ lvars_shift_from k D ∖ dom (ρ : gmap logic_var V)).
+    { rewrite Hdom2 in Hz. subst ρ. exact Hz. }
+    assert (Hzmap : z ∈ lvars_shift_from k
+        (D ∖ dom (ρ : gmap logic_var V))).
+    {
+      subst ρ. rewrite atom_store_to_lvar_store_dom in *.
+      rewrite lvars_shift_from_difference_of_atoms. exact HzD.
+    }
+    unfold lvars_shift_from in Hzmap.
+    apply elem_of_map in Hzmap as [u [-> Hu]].
+    unfold lstore_shift_from, lstore_rekey.
+    change ((storeA_rekey (logic_var_shift_from k)
+        (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) : LStore) !!
+        logic_var_shift_from k u =
+      (s2 : LStore) !! logic_var_shift_from k u).
+    replace ((storeA_rekey (logic_var_shift_from k)
+        (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) : LStore) !!
+        logic_var_shift_from k u)
+      with ((storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) !! u).
+    2:{
+      symmetry.
+      exact (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+        (Inj0:=logic_var_shift_from_inj k)
+        (logic_var_shift_from k)
+        (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) u).
+    }
+    rewrite (storeA_restrict_lookup (V:=V) sD
+      (D ∖ dom (ρ : gmap logic_var V)) u).
+    destruct (decide (u ∈ D ∖ dom (ρ : gmap logic_var V))) as [_|Hbad];
+      [|contradiction].
+    pose proof (f_equal
+      (fun s : LStore => s !! logic_var_shift_from k u) Hshift) as HuLookup.
+    unfold lstore_shift_from, lstore_rekey in HuLookup.
+    change ((storeA_rekey (logic_var_shift_from k) sD : LStore) !!
+        logic_var_shift_from k u =
+      (s2 ∪ storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+        logic_var_shift_from k u) in HuLookup.
+    replace ((storeA_rekey (logic_var_shift_from k) sD : LStore) !!
+        logic_var_shift_from k u) with (sD !! u) in HuLookup.
+    2:{
+      symmetry.
+      exact (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+        (Inj0:=logic_var_shift_from_inj k)
+        (logic_var_shift_from k) sD u).
+    }
+    replace ((s2 ∪ storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+        logic_var_shift_from k u)
+      with ((s2 : LStore) !! logic_var_shift_from k u) in HuLookup.
+    { exact HuLookup. }
+    symmetry.
+    assert (Hright :
+      (storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+        logic_var_shift_from k u = None).
+    {
+      apply storeA_restrict_lookup_none_l.
+      subst ρ.
+      destruct u as [n|x]; cbn [logic_var_shift_from].
+      - destruct (decide (k <= n)); apply atom_store_to_lvar_store_lookup_bound_none.
+      - apply not_elem_of_dom_1.
+        rewrite atom_store_to_lvar_store_dom in Hu.
+        set_solver.
+    }
+    destruct (s2 !! logic_var_shift_from k u) as [v|] eqn:Hs2u.
+    + apply map_lookup_union_Some_raw. left. exact Hs2u.
+    + apply map_lookup_union_None. split; assumption.
+  - transitivity (@None V).
+    + apply not_elem_of_dom_1.
+      unfold lstore_shift_from, lstore_rekey.
+      change (z ∉ dom (storeA_rekey (logic_var_shift_from k)
+        (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) : LStore)).
+      replace (dom (storeA_rekey (logic_var_shift_from k)
+          (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V))) : LStore))
+        with (set_map (logic_var_shift_from k)
+          (dom (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) : LStore))
+          : lvset).
+      2:{ symmetry. apply storeA_rekey_dom, logic_var_shift_from_inj. }
+      replace (dom (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) : LStore))
+        with (dom (sD : LStore) ∩ (D ∖ dom (ρ : gmap logic_var V))).
+      2:{ symmetry. apply storeA_restrict_dom. }
+      replace (dom (sD : LStore)) with D by (symmetry; exact HdomD).
+      subst ρ.
+      rewrite atom_store_to_lvar_store_dom.
+      replace (D ∩ (D ∖ lvars_of_atoms (dom (σ : gmap atom V))))
+        with (D ∖ lvars_of_atoms (dom (σ : gmap atom V))) by set_solver.
+      change (z ∉ lvars_shift_from k
+        (D ∖ lvars_of_atoms (dom (σ : gmap atom V)))).
+      rewrite lvars_shift_from_difference_of_atoms.
+      rewrite <- (atom_store_to_lvar_store_dom σ).
+      replace (lvars_shift_from k D ∖ dom (atom_store_to_lvar_store σ : LStore))
+        with (dom (s2 : gmap logic_var V)) by (rewrite Hdom2; reflexivity).
+      exact Hz.
+    + symmetry. apply not_elem_of_dom_1. exact Hz.
+Qed.
+
+Lemma lstore_mlsubst_back_restrict_of_shift_atom_store_raw
+    k D (σ : Store) (sD s2 : LStore) :
+  dom (sD : gmap logic_var V) = D ->
+  dom (s2 : gmap logic_var V) =
+    lvars_shift_from k D ∖ dom (atom_store_to_lvar_store σ : LStore) ->
+  lstore_shift_from k sD =
+    s2 ∪ storeA_restrict (atom_store_to_lvar_store σ : LStore)
+      (lvars_shift_from k D) ->
+  storeA_restrict sD
+      (D ∖ dom (atom_store_to_lvar_store σ : LStore)) ∪
+    storeA_restrict (atom_store_to_lvar_store σ : LStore) D =
+  sD.
+Proof.
+  intros HdomD Hdom2 Hshift.
+  set (ρ := atom_store_to_lvar_store σ : LStore).
+  apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ dom (ρ : gmap logic_var V))) as [Hzρ|Hzρ].
+  - destruct (decide (z ∈ D)) as [HzD|HzD].
+    + destruct z as [n|x].
+      * subst ρ. rewrite atom_store_to_lvar_store_dom in Hzρ.
+        unfold lvars_of_atoms in Hzρ.
+        apply elem_of_map in Hzρ as [a [Hbad _]].
+        discriminate.
+      * assert (Hs2none : (s2 : LStore) !! LVFree x = None).
+        {
+          destruct ((s2 : gmap logic_var V) !! LVFree x) as [v|] eqn:Hlook;
+            [|exact Hlook].
+          exfalso.
+          assert (Hdomx : LVFree x ∈ dom (s2 : gmap logic_var V)).
+          { apply elem_of_dom. exists v. exact Hlook. }
+          clear Hlook.
+          rewrite Hdom2 in Hdomx.
+          subst ρ.
+          apply elem_of_difference in Hdomx as [_ Hnot].
+          exact (Hnot Hzρ).
+        }
+        pose proof (f_equal (fun s : LStore => s !! LVFree x) Hshift) as Hx.
+        unfold lstore_shift_from, lstore_rekey in Hx.
+        change ((storeA_rekey (logic_var_shift_from k) sD : LStore) !!
+            LVFree x =
+          (s2 ∪ storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+            LVFree x) in Hx.
+        change (LVFree x) with (logic_var_shift_from k (LVFree x)) in Hx.
+        replace ((storeA_rekey (logic_var_shift_from k) sD : LStore) !!
+            logic_var_shift_from k (LVFree x)) with (sD !! LVFree x) in Hx.
+        2:{
+          symmetry.
+          exact (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+            (Inj0:=logic_var_shift_from_inj k)
+            (logic_var_shift_from k) sD (LVFree x)).
+        }
+        replace ((s2 ∪ storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+            logic_var_shift_from k (LVFree x))
+          with ((storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+            logic_var_shift_from k (LVFree x)) in Hx.
+        2:{
+          cbn [logic_var_shift_from].
+          destruct ((storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+              LVFree x) as [v|] eqn:Hr.
+          - symmetry. apply map_lookup_union_Some_raw. right. split; assumption.
+          - symmetry. apply map_lookup_union_None. split; assumption.
+        }
+        assert (Hρx :
+          (storeA_restrict ρ (lvars_shift_from k D) : LStore) !!
+            logic_var_shift_from k (LVFree x) =
+          (ρ : LStore) !! LVFree x).
+        {
+          cbn [logic_var_shift_from].
+          destruct ((ρ : LStore) !! LVFree x) as [v|] eqn:Hlook.
+          - apply storeA_restrict_lookup_some_2; [exact Hlook|].
+            apply elem_of_map. exists (LVFree x). split; [reflexivity|exact HzD].
+          - apply storeA_restrict_lookup_none_l. exact Hlook.
+        }
+        rewrite Hρx in Hx.
+        replace ((storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) ∪
+            storeA_restrict ρ D : LStore) !! LVFree x)
+          with ((ρ : LStore) !! LVFree x).
+        -- symmetry. exact Hx.
+        -- assert (Hleft :
+             (storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) : LStore) !!
+               LVFree x = None).
+           { apply storeA_restrict_lookup_none_r. set_solver. }
+           destruct ((ρ : LStore) !! LVFree x) as [v|] eqn:Hlook.
+           ++ symmetry. apply map_lookup_union_Some_raw. right. split; [exact Hleft|].
+              apply storeA_restrict_lookup_some_2; [exact Hlook|exact HzD].
+           ++ symmetry. apply map_lookup_union_None. split; [exact Hleft|].
+              apply storeA_restrict_lookup_none_l. exact Hlook.
+    + rewrite lookup_union_r.
+      * rewrite storeA_restrict_lookup.
+        destruct (decide (z ∈ D)) as [Hbad|_]; [contradiction|].
+        symmetry. apply not_elem_of_dom_1. rewrite HdomD. exact HzD.
+      * apply storeA_restrict_lookup_none_r. set_solver.
+	  - replace ((storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) ∪
+          storeA_restrict ρ D : LStore) !! z)
+        with ((storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) : LStore) !! z).
+	    + rewrite (storeA_restrict_lookup (V:=V) sD
+          (D ∖ dom (ρ : gmap logic_var V)) z).
+	      destruct (decide (z ∈ D)) as [HzD|HzD].
+		      * rewrite decide_True by set_solver. reflexivity.
+		      * rewrite decide_False by set_solver.
+		        symmetry. apply not_elem_of_dom_1. rewrite HdomD. exact HzD.
+	    + assert (Hright : (storeA_restrict ρ D : LStore) !! z = None).
+        { apply storeA_restrict_lookup_none_l.
+          apply not_elem_of_dom_1. exact Hzρ. }
+        destruct ((storeA_restrict sD (D ∖ dom (ρ : gmap logic_var V)) : LStore) !! z)
+          as [v|] eqn:Hleft.
+        * symmetry. apply map_lookup_union_Some_raw. left. exact Hleft.
+        * symmetry. apply map_lookup_union_None. split; assumption.
+Qed.
+
+Lemma lstore_on_shift_from_restrict_of_mlsubst_back_atom_store
+    k D (σ : Store) (sD : LStoreOn D)
+    (s2 : LStoreOn (lvars_shift_from k D ∖
+      dom (atom_store_to_lvar_store σ : LStore))) :
+  lso_store (lstore_on_shift_from k sD) =
+    lso_store (lstore_on_mlsubst_back (lvars_shift_from k D)
+      (atom_store_to_lvar_store σ) s2) ->
+  lso_store (lstore_on_shift_from k
+    (lstore_on_restrict (D ∖ dom (atom_store_to_lvar_store σ : LStore))
+      sD ltac:(set_solver))) =
+  lso_store s2.
+Proof.
+  destruct sD as [sD HdomD], s2 as [s2 Hdom2].
+  cbn [lso_store storeAO_store].
+  intros Hshift.
+  apply lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw; assumption.
+Qed.
+
+Lemma lstore_on_mlsubst_back_restrict_of_shift_atom_store
+    k D (σ : Store) (sD : LStoreOn D)
+    (s2 : LStoreOn (lvars_shift_from k D ∖
+      dom (atom_store_to_lvar_store σ : LStore))) :
+  lso_store (lstore_on_shift_from k sD) =
+    lso_store (lstore_on_mlsubst_back (lvars_shift_from k D)
+      (atom_store_to_lvar_store σ) s2) ->
+  lso_store (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ)
+    (lstore_on_restrict (D ∖ dom (atom_store_to_lvar_store σ : LStore))
+      sD ltac:(set_solver))) =
+  lso_store sD.
+Proof.
+  destruct sD as [sD HdomD], s2 as [s2 Hdom2].
+  unfold lstore_on_mlsubst_back.
+  cbn [lso_store storeAO_store].
+  intros Hshift.
+  exact (lstore_mlsubst_back_restrict_of_shift_atom_store_raw
+    k D σ sD s2 HdomD Hdom2 Hshift).
+Qed.
+
 Lemma lstore_shift_from_open_swap j k x (s : LStore) :
   j <= k ->
   lstore_shift_from j (lstore_swap (LVBound k) (LVFree x) s) =

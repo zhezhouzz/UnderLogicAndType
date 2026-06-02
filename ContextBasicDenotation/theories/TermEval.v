@@ -407,6 +407,65 @@ Proof.
     exact Heval.
 Qed.
 
+Lemma expr_total_on_msubst_store_to_back
+    σ e
+    (w : LWorldOn (V := value)
+      (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))) :
+  store_closed σ ->
+  expr_total_on (lstore_instantiate_tm (lstore_lift_free σ) e)
+    (@lw value _ w : LWorldT) ->
+  expr_total_on e
+    (@lw value _ (lworld_on_mlsubst_back (tm_lvars e)
+      (lstore_lift_free σ) w) : LWorldT).
+Proof.
+  intros Hclosed [Hdom Htotal].
+  split.
+  - pose proof (@lw_dom value _ (lworld_on_mlsubst_back (tm_lvars e)
+        (lstore_lift_free σ) w)) as Hdom_back.
+    change (worldA_dom
+      (@lw value _ (lworld_on_mlsubst_back (tm_lvars e)
+        (lstore_lift_free σ) w) : LWorldT) = tm_lvars e) in Hdom_back.
+    rewrite Hdom_back. reflexivity.
+  - intros τ Hτ.
+    unfold lworld_on_mlsubst_back in Hτ.
+    cbn [lw resA_product rawA_product singleton_worldA worldA_stores
+      proj1_sig] in Hτ.
+    destruct Hτ as (τ0 & ρD & Hτ0 & -> & _ & ->).
+    destruct (Htotal τ0 Hτ0) as [v Heval].
+    exists v.
+    unfold expr_eval_in_store in *.
+    set (D := tm_lvars e).
+    assert (HsubD :
+      D ∖ dom (lstore_lift_free σ : LStoreT) ⊆ dom (τ0 : LStoreT)).
+    {
+      subst D.
+      pose proof (lworld_on_store_dom_eq
+        (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))
+        w τ0 Hτ0) as Hτdom.
+      rewrite <- Hτdom. reflexivity.
+    }
+    assert (Hdisjτ :
+      dom (τ0 : LStoreT) ## dom (lstore_lift_free σ : LStoreT)).
+    {
+      subst D.
+      pose proof (lworld_on_store_dom_eq
+        (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT))
+        w τ0 Hτ0) as Hτdom.
+      apply elem_of_disjoint. intros z Hzτ Hzρ.
+      replace (dom (τ0 : LStoreT))
+        with (tm_lvars e ∖ dom (lstore_lift_free σ : LStoreT)) in Hzτ
+        by (symmetry; exact Hτdom).
+      set_solver.
+    }
+    pose proof (snd lstore_instantiate_lift_free_then_residual_at_mutual
+      e 0 σ τ0 D Hclosed ltac:(subst D; reflexivity)
+      HsubD Hdisjτ) as Hinst.
+    change (lstore_instantiate_tm_at 0
+      ((τ0 : gmap logic_var value) ∪
+        storeA_restrict (lstore_lift_free σ : LStoreT) D) e →* tret v).
+    rewrite <- Hinst. exact Heval.
+Qed.
+
 (** Atom worlds use the same lstore semantics through the free-lvar lift. *)
 Definition expr_total_on_atom_world (e : tm) (m : WfWorldT) : Prop :=
   expr_total_on e (res_lift_free m : LWorldT).

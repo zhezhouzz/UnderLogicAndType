@@ -495,6 +495,13 @@ Lemma res_fiber_from_projection_store_compat
   storeA_compat σX σY.
 Proof. apply resA_fiber_from_projection_store_compat. Qed.
 
+Lemma res_fiber_from_projection_store_restrict
+    (m mfib : WfWorld) (X : aset) (σX σ : StoreT) :
+  res_fiber_from_projection m X σX mfib →
+  (mfib : World) σ →
+  storeA_restrict σ X = σX.
+Proof. apply resA_fiber_from_projection_store_restrict. Qed.
+
 Lemma res_fiber_from_projection_exists
     (m : WfWorld) (X : aset) :
   X ⊆ world_dom (m : World) →
@@ -662,6 +669,22 @@ Lemma res_subset_singleton_restrict
   (res_restrict p X : World) = singleton_world σX.
 Proof. apply resA_subset_singleton_restrict. Qed.
 
+Lemma res_restrict_to_singleton_if_projection_constant
+    (w : WfWorld) (X : aset) (σX : StoreT) :
+  (∀ σ, (w : World) σ →
+    storeA_restrict σ X = σX) →
+  (res_restrict w X : World) = singleton_world σX.
+Proof. apply rawA_restrict_to_singleton_if_projection_constant. Qed.
+
+Lemma world_compat_store_restrict_overlap
+    (w1 w2 : WfWorld) (X : aset) (σ1 σ2 : StoreT) :
+  X = world_dom (w1 : World) ∩ world_dom (w2 : World) →
+  world_compat w1 w2 →
+  (w1 : World) σ1 →
+  (w2 : World) σ2 →
+  storeA_restrict σ1 X = storeA_restrict σ2 X.
+Proof. apply worldA_compat_store_restrict_overlap. Qed.
+
 Lemma res_restrict_union_singleton
     (m : WfWorld) (X Y : aset) (σX σY : StoreT) :
   (res_restrict m X : World) = singleton_world σX →
@@ -710,6 +733,10 @@ Proof. apply resA_product_comm_eq. Qed.
 Lemma res_product_le_r (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w2 ⊑ res_product w1 w2 Hc.
 Proof. apply resA_le_product_r. Qed.
+
+Lemma res_product_le_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  w1 ⊑ res_product w1 w2 Hc.
+Proof. apply resA_le_product_l. Qed.
 
 Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   ∃ Hdef' : raw_sum_defined w2 w1,

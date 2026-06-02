@@ -218,6 +218,33 @@ Proof.
   apply lvars_open_subseteq_iff. exact HDE.
 Qed.
 
+Lemma lvars_open_subset_insert_fresh k x D :
+  x ∉ lvars_fv D ->
+  lvars_open k x D ⊆ D ∪ {[LVFree x]}.
+Proof.
+  intros Hfresh v Hv.
+  apply set_swap_elem in Hv.
+  destruct v as [n|y].
+  - unfold swap in Hv.
+    destruct (decide (LVBound k = LVBound n)) as [Heq|Hne].
+    + inversion Heq; subst n.
+      rewrite decide_True in Hv by reflexivity.
+      exfalso. apply Hfresh. apply lvars_fv_elem. exact Hv.
+    + destruct (decide (LVFree x = LVBound n)) as [Hbad|_]; [discriminate|].
+      rewrite decide_False in Hv by congruence.
+      rewrite decide_False in Hv by congruence.
+      apply elem_of_union_l. exact Hv.
+  - destruct (decide (x = y)) as [->|Hy].
+    + apply elem_of_union_r. rewrite elem_of_singleton. reflexivity.
+    + unfold swap in Hv.
+      destruct (decide (LVBound k = LVFree y)) as [Hbad|_]; [discriminate|].
+      destruct (decide (LVFree x = LVFree y)) as [Heq|_].
+      * inversion Heq. subst y. contradiction.
+      * rewrite decide_False in Hv by congruence.
+        rewrite decide_False in Hv by congruence.
+        apply elem_of_union_l. exact Hv.
+Qed.
+
 Lemma lvars_open_union k x D E :
   lvars_open k x (D ∪ E) = lvars_open k x D ∪ lvars_open k x E.
 Proof.
@@ -501,6 +528,28 @@ Proof.
   rewrite !lvars_fv_elem.
   rewrite elem_of_union.
   tauto.
+Qed.
+
+Lemma lvars_fv_intersection_of_atoms (D : lvset) (X : aset) :
+  lvars_fv (D ∩ lvars_of_atoms X) = lvars_fv D ∩ X.
+Proof.
+  apply set_eq. intros x.
+  split.
+  - intros Hx.
+    apply lvars_fv_elem in Hx.
+    apply elem_of_intersection in Hx as [HxD HxA].
+    apply elem_of_intersection. split.
+    + apply lvars_fv_elem. exact HxD.
+    + unfold lvars_of_atoms in HxA.
+      apply elem_of_map in HxA as [y [Heq Hy]].
+      inversion Heq. subst. exact Hy.
+  - intros Hx.
+    apply elem_of_intersection in Hx as [HxD HxX].
+    apply lvars_fv_elem.
+    apply elem_of_intersection. split.
+    + apply lvars_fv_elem in HxD. exact HxD.
+    + unfold lvars_of_atoms. apply elem_of_map.
+      exists x. split; [reflexivity | exact HxX].
 Qed.
 
 Lemma lvars_fv_mono (D E : lvset) :

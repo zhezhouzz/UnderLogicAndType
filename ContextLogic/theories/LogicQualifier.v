@@ -483,6 +483,17 @@ Proof.
   symmetry. apply storeA_restrict_twice_subset. exact Hsub.
 Qed.
 
+Lemma lqual_msubst_store_fv_disjoint_dom
+    (σ : Store (V := V)) (q : logic_qualifier) :
+  lqual_fv (lqual_msubst_store σ q) ## dom (σ : Store (V := V)).
+Proof.
+  destruct q as [D P].
+  unfold lqual_msubst_store, lqual_fv.
+  cbn [lqual_mlsubst lqual_dom].
+  rewrite dom_lstore_lift_free, lvars_fv_difference_of_atoms.
+  set_solver.
+Qed.
+
 
 Lemma lqual_mlsubst_union
     (ρ1 ρ2 : LStoreT) (q : logic_qualifier) :

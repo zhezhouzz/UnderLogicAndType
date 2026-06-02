@@ -485,6 +485,53 @@ Proof.
   apply lvars_shift_from_fv.
 Qed.
 
+Lemma qual_shift_from_msubst_store k σ q :
+  qual_shift_from k (qual_msubst_store σ q) =
+  qual_msubst_store σ (qual_shift_from k q).
+Proof.
+  destruct q as [D P].
+  cbn [qual_shift_from qual_rename qual_msubst_store qual_mlsubst].
+  apply qual_ext.
+  - change (lvars_shift_from k
+        (D ∖ dom (atom_store_to_lvar_store σ : LStoreT)) =
+      lvars_shift_from k D
+        ∖ dom (atom_store_to_lvar_store σ : LStoreT)).
+    rewrite atom_store_to_lvar_store_dom.
+    apply lvars_shift_from_difference_of_atoms.
+  - intros s1 s2 Hs.
+    cbn [qual_prop].
+    split.
+    + intros [s [Hs1 HP]].
+      exists (lstore_on_mlsubst_back D (atom_store_to_lvar_store σ) s).
+      split; [|exact HP].
+      apply lstore_on_ext.
+      eapply lstore_on_shift_from_mlsubst_back_atom_store.
+      transitivity (lso_store s1).
+      * symmetry. exact Hs.
+      * rewrite <- Hs1. reflexivity.
+    + intros [sD [HsD HP]].
+      set (ρ := atom_store_to_lvar_store σ : LStoreT).
+      set (s := lstore_on_restrict (D ∖ dom (ρ : gmap logic_var value)) sD
+        ltac:(set_solver)).
+      exists s.
+      split.
+      * apply lstore_on_ext.
+        subst s ρ.
+        transitivity (lso_store s2).
+        -- exact (lstore_on_shift_from_restrict_of_mlsubst_back_atom_store
+             k D σ sD s2 (f_equal lso_store HsD)).
+        -- symmetry. exact Hs.
+      * assert (Hback :
+          lstore_on_mlsubst_back D (atom_store_to_lvar_store σ) s = sD).
+        {
+          apply lstore_on_ext.
+          subst s ρ.
+          exact (lstore_on_mlsubst_back_restrict_of_shift_atom_store
+            k D σ sD s2 (f_equal lso_store HsD)).
+        }
+        subst ρ. rewrite Hback. exact HP.
+Qed.
+
 Lemma qual_shift_from_lc k q :
   lc_qualifier q ->
   lc_qualifier (qual_shift_from k q).

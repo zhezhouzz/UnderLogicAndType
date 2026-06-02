@@ -443,6 +443,65 @@ Proof.
     rewrite tm_lvars_fv. exact Hx.
 Qed.
 
+Lemma value_lvars_lc_eq_atoms v :
+  lc_value v ->
+  value_lvars v = lvars_of_atoms (fv_value v).
+Proof.
+  intros Hlc.
+  apply set_eq. intros u. split.
+  - intros Hu.
+    pose proof (proj1 (lc_lvars_no_bv (value_lvars v))
+      (value_lvars_lc v Hlc)) as Hbv.
+    pose proof (lvars_bv_empty_subset_of_atoms_fv (value_lvars v) Hbv u Hu)
+      as Hin.
+    unfold value_lvars in Hin.
+    rewrite value_lvars_at_fv in Hin. exact Hin.
+  - intros Hu.
+    unfold lvars_of_atoms in Hu.
+    apply elem_of_map in Hu as [x [-> Hx]].
+    apply lvars_fv_elem.
+    unfold value_lvars.
+    rewrite value_lvars_at_fv. exact Hx.
+Qed.
+
+Lemma tm_lvars_open_body_subset_lc e x D :
+  body_tm e ->
+  tm_lvars_at 1 e ⊆ D ->
+  tm_lvars (e ^^ x) ⊆ D ∪ {[LVFree x]}.
+Proof.
+  intros Hbody Hsub u Hu.
+  rewrite (tm_lvars_lc_eq_atoms (e ^^ x)) in Hu.
+  2:{ apply body_open_tm; [exact Hbody|constructor]. }
+  unfold lvars_of_atoms in Hu.
+  apply elem_of_map in Hu as [a [-> Ha]].
+  apply open_fv_tm in Ha.
+  cbn [fv_value] in Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - rewrite elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. rewrite elem_of_singleton. reflexivity.
+  - apply elem_of_union_l. apply Hsub.
+    apply lvars_fv_elem. rewrite tm_lvars_at_fv. exact Ha.
+Qed.
+
+Lemma value_lvars_open_body_subset_lc v x D :
+  body_val v ->
+  value_lvars_at 1 v ⊆ D ->
+  value_lvars (v ^^ x) ⊆ D ∪ {[LVFree x]}.
+Proof.
+  intros Hbody Hsub u Hu.
+  rewrite (value_lvars_lc_eq_atoms (v ^^ x)) in Hu.
+  2:{ apply body_open_value; [exact Hbody|constructor]. }
+  unfold lvars_of_atoms in Hu.
+  apply elem_of_map in Hu as [a [-> Ha]].
+  apply open_fv_value in Ha.
+  cbn [fv_value] in Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - rewrite elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. rewrite elem_of_singleton. reflexivity.
+  - apply elem_of_union_l. apply Hsub.
+    apply lvars_fv_elem. rewrite value_lvars_at_fv. exact Ha.
+Qed.
+
 Lemma tm_lvars_tlete_open_body_subset e1 e2 x :
   lc_tm (tlete e1 e2) ->
   x ∉ fv_tm e2 ->
@@ -1841,6 +1900,20 @@ Proof.
   unfold lstore_instantiate_tm_at.
   rewrite lstore_bound_part_empty_of_lc by exact Hlc.
   apply lstore_instantiate_tm_split_empty_bound. exact Hclosed.
+Qed.
+
+Lemma lstore_instantiate_tm_lift_free_lc σ e :
+  store_closed σ ->
+  lc_tm e ->
+  lc_tm (lstore_instantiate_tm (lstore_lift_free σ) e).
+Proof.
+  intros Hclosed Hlc.
+  unfold lstore_instantiate_tm.
+  rewrite lstore_instantiate_tm_at_lc_lstore.
+  - rewrite lstore_free_part_lift_free.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlc].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
 Lemma open_tret_bvar0_under k y :

@@ -95,6 +95,80 @@ Proof.
   - apply elem_of_difference. split; [by apply elem_of_dom_2 in Hlook|exact Hfresh].
 Qed.
 
+Lemma lty_env_msubst_store_shift σ (Σ : lty_env) :
+  lty_env_msubst_store σ (lty_env_shift Σ) =
+  lty_env_shift (lty_env_msubst_store σ Σ).
+Proof.
+  unfold lty_env_msubst_store, lty_env_shift, lvar_store_shift,
+    lvar_store_shift_from.
+  rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+  change (set_map (logic_var_shift_from 0) (dom Σ))
+    with (lvars_shift_from 0 (dom Σ)).
+  rewrite <- lvars_shift_from_difference_of_atoms.
+  unfold lvars_shift_from.
+  apply storeA_restrict_rekey.
+  apply logic_var_shift_from_inj.
+Qed.
+
+Lemma lty_env_msubst_store_insert_bound0_shift σ (Σ : lty_env) T :
+  lty_env_msubst_store σ (<[LVBound 0 := T]> (lty_env_shift Σ)) =
+  <[LVBound 0 := T]> (lty_env_msubst_store σ (lty_env_shift Σ)).
+Proof.
+  unfold lty_env_msubst_store.
+  rewrite dom_insert_L.
+  rewrite storeA_restrict_insert_in.
+  - f_equal. apply storeA_map_eq. intros z.
+    rewrite !storeA_restrict_lookup.
+    destruct (decide (z ∈ ({[LVBound 0]} ∪ dom (lty_env_shift Σ))
+      ∖ lvars_of_atoms (dom (σ : gmap atom value)))) as [Hzbig|Hzbig];
+      destruct (decide (z ∈ dom (lty_env_shift Σ)
+      ∖ lvars_of_atoms (dom (σ : gmap atom value)))) as [Hz|Hz];
+      try reflexivity.
+    + apply elem_of_difference in Hzbig as [Hzdom Hzfresh].
+      apply elem_of_union in Hzdom as [Hz0|Hzdom].
+      * rewrite elem_of_singleton in Hz0. subst.
+        rewrite lvar_store_shift_lookup_bound0_none. reflexivity.
+      * exfalso. apply Hz. apply elem_of_difference. split; assumption.
+    + exfalso. apply Hzbig.
+      apply elem_of_difference in Hz as [Hzdom Hzfresh].
+      apply elem_of_difference. split; [set_solver|exact Hzfresh].
+  - apply elem_of_difference. split; [set_solver|].
+    unfold lvars_of_atoms. rewrite elem_of_map.
+    intros (a & Ha & _). discriminate.
+Qed.
+
+Lemma lty_env_msubst_store_typed_bind σ (Σ : lty_env) T :
+  lty_env_msubst_store σ (typed_lty_env_bind Σ T) =
+  typed_lty_env_bind (lty_env_msubst_store σ Σ) T.
+Proof.
+  unfold typed_lty_env_bind, lvar_store_bind.
+  rewrite lty_env_msubst_store_insert_bound0_shift.
+  rewrite lty_env_msubst_store_shift.
+  reflexivity.
+Qed.
+
+Lemma lty_env_msubst_store_open_one_fresh k y σ (Σ : lty_env) :
+  y ∉ dom (σ : gmap atom value) ->
+  lty_env_msubst_store σ (lty_env_open_one k y Σ) =
+  lty_env_open_one k y (lty_env_msubst_store σ Σ).
+Proof.
+  intros Hy.
+  unfold lty_env_msubst_store.
+  rewrite lvar_store_open_one_dom.
+  unfold lty_env_open_one, lvar_store_open_one.
+  change (lvars_open k y (dom Σ) ∖ lvars_of_atoms (dom (σ : gmap atom value)))
+    with (set_swap (LVBound k) (LVFree y) (dom Σ)
+      ∖ lvars_of_atoms (dom (σ : gmap atom value))).
+  rewrite <- set_swap_difference_fresh.
+  - unfold set_swap.
+    rewrite storeA_restrict_rekey by apply swap_inj.
+    reflexivity.
+  - unfold lvars_of_atoms. rewrite elem_of_map.
+    intros (a & Ha & _). discriminate.
+  - unfold lvars_of_atoms. rewrite elem_of_map.
+    intros (a & Ha & Haσ). inversion Ha. subst. exact (Hy Haσ).
+Qed.
+
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).
 Proof. apply lvar_store_open_one_dom. Qed.

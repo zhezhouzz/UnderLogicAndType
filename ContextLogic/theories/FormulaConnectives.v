@@ -68,6 +68,32 @@ Proof.
   - intros [Hφ Hψ]. eapply res_models_and_intro_from_models; eauto.
 Qed.
 
+Lemma res_models_and_map_iff
+    (m : WfWorldT) (φ1 φ2 ψ1 ψ2 : FormulaT) :
+  (m ⊨ φ1 ↔ m ⊨ φ2) ->
+  (m ⊨ ψ1 ↔ m ⊨ ψ2) ->
+  (m ⊨ FAnd φ1 ψ1 ↔ m ⊨ FAnd φ2 ψ2).
+Proof.
+  intros Hφ Hψ.
+  rewrite !res_models_and_iff.
+  tauto.
+Qed.
+
+Lemma res_models_or_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FOr φ ψ) ->
+  m ⊨ FOr φ ψ ↔ m ⊨ φ ∨ m ⊨ ψ.
+Proof.
+  intros Hscope.
+  split.
+  - unfold res_models. simpl.
+    intros [_ [Hφ|Hψ]].
+    + left. eapply res_models_fuel_irrel; [| | exact Hφ]; lia.
+    + right. eapply res_models_fuel_irrel; [| | exact Hψ]; lia.
+  - intros [Hφ|Hψ].
+    + eapply res_models_or_intro_l; [exact Hscope | exact Hφ].
+    + eapply res_models_or_intro_r; [exact Hscope | exact Hψ].
+Qed.
+
 Lemma res_models_or_intro_l_from_model (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ φ →
   formula_fv ψ ⊆ world_dom (m : WorldT) →
@@ -624,6 +650,29 @@ Proof.
   - eapply res_restrict_fiber_from_projection_dom_singleton. exact Hproj.
 Qed.
 
+Lemma fiber_projection_agree_with_singleton_on_overlap
+    (m mfib : WfWorldT) (σ σD : StoreT) (D : lvset) (X : aset) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  res_fiber_from_projection m (lvars_fv D) σD mfib ->
+  X ⊆ dom (σ : StoreT) ->
+  X ⊆ lvars_fv D ->
+  store_restrict σD X = store_restrict σ X.
+Proof.
+  intros Hsingle [Hproj _] HXσ HXD.
+  destruct Hproj as [τ [Hτ HτD]].
+  assert (Hτsingleton :
+    (res_restrict m (dom (σ : StoreT)) : WorldT)
+      (store_restrict τ (dom (σ : StoreT)))).
+  {
+    exists τ. split; [exact Hτ | reflexivity].
+  }
+  rewrite Hsingle in Hτsingleton.
+  simpl in Hτsingleton.
+  rewrite <- HτD, <- Hτsingleton.
+  rewrite !storeA_restrict_twice_subset by assumption.
+  reflexivity.
+Qed.
+
 Lemma res_models_FFibVars_and_l
     (m : WfWorldT) (D : lvset) (φ ψ : FormulaT) :
   m ⊨ FFibVars D (FAnd φ ψ) ->
@@ -876,6 +925,284 @@ Proof.
   split.
   - apply res_models_FFibVars_nested_union_l.
   - apply res_models_FFibVars_nested_union_r.
+Qed.
+
+Lemma res_models_FFibVars_split_fixed_residual
+    (m : WfWorldT) (D : lvset) (φ : FormulaT) (σ : StoreT) :
+  lc_lvars D ->
+  dom (σ : StoreT) ∩ formula_fv φ ⊆ lvars_fv D ->
+  m ⊨ FFibVars D φ <->
+  m ⊨ FFibVars
+    (D ∩ lvars_of_atoms (dom (σ : StoreT)))
+    (FFibVars (D ∖ lvars_of_atoms (dom (σ : StoreT))) φ).
+Proof.
+  intros Hlc _.
+  set (A := lvars_of_atoms (dom (σ : StoreT))).
+  set (Df := D ∩ A).
+  set (Dr := D ∖ A).
+  assert (HlcU : lc_lvars (Df ∪ Dr)).
+  { subst Df Dr A. unfold lc_lvars in *. set_solver. }
+  assert (HfvU : lvars_fv (Df ∪ Dr) = lvars_fv D).
+  {
+    subst Df Dr A.
+    rewrite lvars_fv_union, lvars_fv_intersection_of_atoms,
+      lvars_fv_difference_of_atoms.
+    apply set_eq. intros x.
+    rewrite elem_of_union, elem_of_intersection, elem_of_difference.
+    tauto.
+  }
+  split.
+  - intros Hmodel.
+    apply (proj2 (res_models_FFibVars_nested_union_iff m Df Dr φ)).
+    eapply res_models_FFibVars_same_fv; [exact HlcU | | exact Hmodel].
+    symmetry. exact HfvU.
+  - intros Hmodel.
+    apply (proj1 (res_models_FFibVars_nested_union_iff m Df Dr φ))
+      in Hmodel.
+    eapply res_models_FFibVars_same_fv; [exact Hlc | | exact Hmodel].
+    exact HfvU.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_local_singleton_iff
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  lc_lvars D ->
+  dom (σ : StoreT) ∩ formula_fv φ ⊆ lvars_fv D ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ) <->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hsingle Hlc Hcover Hscope.
+  set (A := lvars_of_atoms (dom (σ : StoreT))).
+  set (Df := D ∩ A).
+  set (Dr := D ∖ A).
+  assert (HlcDf : lc_lvars Df)
+    by (subst Df A; unfold lc_lvars in *; set_solver).
+  assert (Hscope_parts :
+      lvars_fv D ⊆ world_dom (m : WorldT) /\
+      formula_scoped_in_world m φ).
+  {
+    apply (proj1 (formula_scoped_fibvars_iff m D φ)).
+    exact Hscope.
+  }
+  destruct Hscope_parts as [HscopeD Hscopeφ].
+  assert (Hscope_nested :
+      formula_scoped_in_world m (FFibVars Df (FFibVars Dr φ))).
+  {
+    apply (proj2 (formula_scoped_fibvars_iff m Df (FFibVars Dr φ))).
+    split.
+    - subst Df A.
+      rewrite lvars_fv_intersection_of_atoms.
+      set_solver.
+    - apply (proj2 (formula_scoped_fibvars_iff m Dr φ)).
+      split.
+      + subst Dr A.
+        rewrite lvars_fv_difference_of_atoms.
+        set_solver.
+      + exact Hscopeφ.
+  }
+  assert (HsingleDf :
+      (res_restrict m (lvars_fv Df) : WorldT) =
+        singleton_world (store_restrict σ (lvars_fv Df))).
+  {
+    eapply res_restrict_singleton_subset; [| exact Hsingle].
+    subst Df A.
+    rewrite lvars_fv_intersection_of_atoms.
+    set_solver.
+  }
+  assert (HcoverDf :
+      dom (σ : StoreT) ∩ formula_fv (FFibVars Dr φ) ⊆ lvars_fv Df).
+  {
+    subst Df Dr A.
+    rewrite formula_fv_fibvars, lvars_fv_difference_of_atoms,
+      lvars_fv_intersection_of_atoms.
+    set_solver.
+  }
+  pose proof (res_models_msubst_store_fibvars_singleton_iff
+    m σ Df (FFibVars Dr φ) HlcDf HsingleDf HcoverDf Hscope_nested)
+    as Hfixed.
+  assert (Hnested_msubst :
+      formula_msubst_store σ (FFibVars Df (FFibVars Dr φ)) =
+      FFibVars ∅ (FFibVars Dr (formula_msubst_store σ φ))).
+  {
+    subst Df Dr A.
+    rewrite !formula_msubst_store_fibvars.
+    replace ((D ∩ lvars_of_atoms (dom (σ : StoreT))) ∖
+        lvars_of_atoms (dom (σ : StoreT))) with (∅ : lvset).
+    2:{ apply set_eq. intros v.
+        rewrite elem_of_empty, elem_of_difference, elem_of_intersection.
+        tauto. }
+    replace ((D ∖ lvars_of_atoms (dom (σ : StoreT))) ∖
+        lvars_of_atoms (dom (σ : StoreT)))
+      with (D ∖ lvars_of_atoms (dom (σ : StoreT))).
+    2:{ apply set_eq. intros v.
+        rewrite !elem_of_difference. tauto. }
+    reflexivity.
+  }
+  assert (Hsource_msubst :
+      formula_msubst_store σ (FFibVars D φ) =
+      FFibVars Dr (formula_msubst_store σ φ)).
+  {
+    subst Dr A.
+    apply formula_msubst_store_fibvars.
+  }
+  rewrite Hsource_msubst.
+  rewrite (res_models_FFibVars_split_fixed_residual m D φ σ
+    Hlc Hcover).
+  fold A Df Dr.
+  rewrite <- Hfixed.
+  rewrite Hnested_msubst.
+  rewrite res_models_FFibVars_empty_iff.
+  reflexivity.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_keep_domain_iff
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  lc_lvars D ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ) <->
+  m ⊨ FFibVars D (formula_msubst_store (store_without_lvars σ D) φ).
+Proof.
+  intros Hsingle Hlc Hscope.
+  set (σD := store_restrict σ (lvars_fv D) : StoreT).
+  assert (HsingleD :
+      (res_restrict m (dom (σD : StoreT)) : WorldT) =
+        singleton_world σD).
+  {
+    assert (Htmp :
+      (res_restrict m (dom (σD : StoreT)) : WorldT) =
+        singleton_world (store_restrict σ (dom (σD : StoreT)))).
+    {
+      eapply res_restrict_singleton_subset; [| exact Hsingle].
+      unfold σD.
+      change (dom (storeA_restrict σ (lvars_fv D) : gmap atom V) ⊆
+        dom (σ : StoreT)).
+      rewrite storeA_restrict_dom. set_solver.
+    }
+    rewrite Htmp. f_equal.
+    unfold σD.
+    apply storeA_restrict_projection_dom with (X := lvars_fv D).
+    reflexivity.
+  }
+  assert (Hscope_keep :
+      formula_scoped_in_world m
+        (FFibVars D (formula_msubst_store (store_without_lvars σ D) φ))).
+  {
+    apply (proj2 (formula_scoped_fibvars_iff m D
+      (formula_msubst_store (store_without_lvars σ D) φ))).
+    apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope
+      as [HD Hφ].
+    split; [exact HD|].
+    eapply formula_scoped_in_world_from_formula_fv.
+    transitivity (formula_fv φ).
+    - apply formula_msubst_store_fv_subset.
+    - exact Hφ.
+  }
+  rewrite formula_msubst_store_fibvars_keep_domain_syntax.
+  fold σD.
+  eapply res_models_msubst_store_fibvars_local_singleton_iff.
+  - exact HsingleD.
+  - exact Hlc.
+  - change (dom (storeA_restrict σ (lvars_fv D) : gmap atom V) ∩
+      formula_fv (formula_msubst_store (store_without_lvars σ D) φ)
+      ⊆ lvars_fv D).
+    rewrite storeA_restrict_dom.
+    set_solver.
+  - exact Hscope_keep.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_keep_domain_elim
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  lc_lvars D ->
+  dom (store_without_lvars σ D : StoreT) ## formula_fv φ ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ) ->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hsingle Hlc Hfresh Hscope Hmodel.
+  pose proof (proj1 (res_models_msubst_store_fibvars_keep_domain_iff
+    m σ D φ Hsingle Hlc Hscope) Hmodel) as Hkeep.
+  rewrite formula_msubst_store_fresh in Hkeep by exact Hfresh.
+  exact Hkeep.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_keep_domain_intro
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  lc_lvars D ->
+  dom (store_without_lvars σ D : StoreT) ## formula_fv φ ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ FFibVars D φ ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ).
+Proof.
+  intros Hsingle Hlc Hfresh Hscope Hmodel.
+  apply (proj2 (res_models_msubst_store_fibvars_keep_domain_iff
+    m σ D φ Hsingle Hlc Hscope)).
+  change (m ⊨ FFibVars D
+    (formula_msubst_store (store_without_lvars σ D) φ)).
+  rewrite formula_msubst_store_fresh by exact Hfresh.
+  exact Hmodel.
+Qed.
+
+Lemma lc_lvars_of_msubst_fibvars_model
+    (m : WfWorldT) σ D φ :
+  m ⊨ formula_msubst_store σ (FFibVars D φ) ->
+  lc_lvars D.
+Proof.
+  intros Hmodel v Hv.
+  destruct v as [k|a]; [|exact I].
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  formula_msubst_syntax_norm_in Hmodel.
+  formula_msubst_syntax_norm_in Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hmodel)
+    as [Hlc _].
+  unfold lc_lvars in Hlc.
+	  eapply (Hlc (LVBound k)).
+	  apply elem_of_difference. split; [exact Hv |].
+	  unfold lvars_of_atoms.
+	  rewrite elem_of_map.
+	  intros [x [Hbad _]].
+	  discriminate Hbad.
+Qed.
+
+Lemma lc_lvars_of_fibvars_model
+    (m : WfWorldT) D φ :
+  m ⊨ FFibVars D φ ->
+  lc_lvars D.
+Proof.
+  intros Hmodel.
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (proj1 (res_models_FFibVars_iff _ _ _ Hscope) Hmodel)
+    as [Hlc _].
+  exact Hlc.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_keep_domain_elim_from_model
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  dom (store_without_lvars σ D : StoreT) ## formula_fv φ ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ) ->
+  m ⊨ FFibVars D φ.
+Proof.
+  intros Hsingle Hfresh Hscope Hmodel.
+  eapply res_models_msubst_store_fibvars_keep_domain_elim; eauto.
+  eapply lc_lvars_of_msubst_fibvars_model. exact Hmodel.
+Qed.
+
+Lemma res_models_msubst_store_fibvars_keep_domain_intro_from_model
+    (m : WfWorldT) (σ : StoreT) (D : lvset) (φ : FormulaT) :
+  (res_restrict m (dom (σ : StoreT)) : WorldT) = singleton_world σ ->
+  dom (store_without_lvars σ D : StoreT) ## formula_fv φ ->
+  formula_scoped_in_world m (FFibVars D φ) ->
+  m ⊨ FFibVars D φ ->
+  m ⊨ formula_msubst_store σ (FFibVars D φ).
+Proof.
+  intros Hsingle Hfresh Hscope Hmodel.
+  eapply res_models_msubst_store_fibvars_keep_domain_intro; eauto.
+  eapply lc_lvars_of_fibvars_model. exact Hmodel.
 Qed.
 
 Lemma res_models_FFibVars_nested_elim
@@ -1871,6 +2198,133 @@ Proof.
   exists (Lmap ∪ Lφ). intros y Hy my Hdom Hrestrict.
   eapply Hmap; [set_solver | exact Hdom | exact Hrestrict |].
   eapply Hφfull; [set_solver | exact Hdom | exact Hrestrict].
+Qed.
+
+Lemma res_models_forall_full_world_impl2_map
+    (m : WfWorldT)
+    (A1 A2 B1 B2 C1 C2 : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A2 (FImpl B2 C2))) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
+        (my ⊨ formula_open 0 y B2 -> my ⊨ formula_open 0 y B1) /\
+        (my ⊨ formula_open 0 y C1 -> my ⊨ formula_open 0 y C2)) ->
+  m ⊨ FForall (FImpl A1 (FImpl B1 C1)) ->
+  m ⊨ FForall (FImpl A2 (FImpl B2 C2)).
+Proof.
+  intros Hscope [L Hmap] Hsrc.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
+  exists L. intros y Hy my Hdom Hrestrict Hopen.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y (FImpl A2 (FImpl B2 C2)))).
+  {
+    eapply formula_scoped_open_from_fv.
+    unfold formula_scoped_in_world in Hscope |- *.
+    rewrite Hdom.
+    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FImpl B2 C2))).
+    rewrite formula_fv_forall in Hscope.
+    set_solver.
+  }
+  formula_open_syntax_norm_in Hopen.
+  formula_open_syntax_norm_in Hopened_scope.
+  formula_open_syntax_norm.
+  eapply res_models_impl2_map; eauto.
+Qed.
+
+Lemma res_models_forall_full_world_impl_wand_map
+    (m : WfWorldT)
+    (A1 A2 B1 B2 C1 C2 : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A2 (FWand B2 C2))) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
+        (forall (n : WfWorldT) (Hc : world_compat n my),
+          n ⊨ formula_open 0 y B2 ->
+          n ⊨ formula_open 0 y B1) /\
+        (forall (n : WfWorldT) (Hc : world_compat n my),
+          res_product n my Hc ⊨ formula_open 0 y C1 ->
+          res_product n my Hc ⊨ formula_open 0 y C2)) ->
+  m ⊨ FForall (FImpl A1 (FWand B1 C1)) ->
+  m ⊨ FForall (FImpl A2 (FWand B2 C2)).
+Proof.
+  intros Hscope [L Hmap] Hsrc.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
+  exists L. intros y Hy my Hdom Hrestrict Hopen.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y (FImpl A2 (FWand B2 C2)))).
+  {
+    eapply formula_scoped_open_from_fv.
+    unfold formula_scoped_in_world in Hscope |- *.
+    rewrite Hdom.
+    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FWand B2 C2))).
+    rewrite formula_fv_forall in Hscope.
+    set_solver.
+  }
+  formula_open_syntax_norm_in Hopen.
+  formula_open_syntax_norm_in Hopened_scope.
+  formula_open_syntax_norm.
+  eapply res_models_impl_wand_map; eauto.
+Qed.
+
+Lemma formula_scoped_forall_impl_wand_opened
+    (m my : WfWorldT) y (A B C : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A (FWand B C))) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  formula_scoped_in_world my (formula_open 0 y A) /\
+  formula_scoped_in_world my (formula_open 0 y B) /\
+  forall (n : WfWorldT) (Hc : world_compat n my),
+    formula_scoped_in_world (res_product n my Hc) (formula_open 0 y C).
+Proof.
+  intros Hscope Hdom.
+  pose proof (formula_scoped_open_from_forall_world_dom
+    m my (FImpl A (FWand B C)) y Hscope Hdom) as Hopen.
+  formula_open_syntax_norm_in Hopen.
+  split.
+  - eapply formula_scoped_impl_l. exact Hopen.
+  - split.
+    + eapply formula_scoped_wand_l.
+      eapply formula_scoped_impl_r. exact Hopen.
+    + intros n Hc.
+      eapply formula_scoped_in_world_from_formula_fv.
+      pose proof (formula_scoped_wand_r my (formula_open 0 y B)
+        (formula_open 0 y C)
+        (formula_scoped_impl_r my (formula_open 0 y A)
+          (FWand (formula_open 0 y B) (formula_open 0 y C)) Hopen))
+        as HCscope.
+      unfold formula_scoped_in_world in HCscope |- *.
+      cbn [res_product raw_world world_dom].
+      set_solver.
+Qed.
+
+Lemma formula_scoped_forall_impl2_opened
+    (m my : WfWorldT) y (A B C : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A (FImpl B C))) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  formula_scoped_in_world my (formula_open 0 y A) /\
+  formula_scoped_in_world my (formula_open 0 y B) /\
+  formula_scoped_in_world my (formula_open 0 y C).
+Proof.
+  intros Hscope Hdom.
+  pose proof (formula_scoped_open_from_forall_world_dom
+    m my (FImpl A (FImpl B C)) y Hscope Hdom) as Hopen.
+  formula_open_syntax_norm_in Hopen.
+  split.
+  - eapply formula_scoped_impl_l. exact Hopen.
+  - split.
+    + eapply formula_scoped_impl_l.
+      eapply formula_scoped_impl_r. exact Hopen.
+    + eapply formula_scoped_impl_r.
+      eapply formula_scoped_impl_r. exact Hopen.
 Qed.
 
 Lemma res_models_forall_ext_transport_by_extension

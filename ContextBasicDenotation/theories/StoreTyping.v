@@ -4,6 +4,7 @@
 
 From ContextBasicDenotation Require Import Notation.
 From ContextLogic Require Import FormulaConnectives.
+From ContextAlgebra Require Import ResourceAlgebra.
 
 Section StoreTyping.
 
@@ -27,7 +28,19 @@ Lemma storeA_has_type_atom_store_has_ltype
   dom (σ : StoreT) = dom Σ ->
   storeA_has_type Σ σ ->
   atom_store_has_ltype (atom_env_to_lty_env Σ) σ.
-Admitted.
+Proof.
+  intros Hdom Hty x v Hσ.
+  assert (HxΣ : x ∈ dom Σ).
+  {
+    rewrite <- Hdom.
+    change (x ∈ dom (σ : gmap atom value)).
+    rewrite elem_of_dom. eauto.
+  }
+  apply elem_of_dom in HxΣ as [T HΣ].
+  exists T. split.
+  - rewrite atom_store_to_lvar_store_lookup_free. exact HΣ.
+  - exact (Hty x T v HΣ Hσ).
+Qed.
 
 Definition worldA_has_type
     {K : Type} `{Countable K}
@@ -52,6 +65,95 @@ Definition basic_world_lqual (Σ : lty_env) : logic_qualifier :=
 
 Definition basic_world_formula (Σ : lty_env) : Formula :=
   FAtom (basic_world_lqual Σ).
+
+Lemma basic_world_formula_msubst_store_extract_atom_store_has_ltype
+    σ Σ (m : WfWorldT) :
+  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ dom Σ ->
+  res_models m (formula_msubst_store σ (basic_world_formula Σ)) ->
+  atom_store_has_ltype Σ σ.
+Proof.
+  intros HσΣ Hm x v Hσx.
+  assert (Hxfv : LVFree x ∈ dom Σ).
+  {
+    apply HσΣ.
+    unfold lvars_of_atoms.
+    apply elem_of_map. exists x. split; [reflexivity|].
+    change (x ∈ dom (σ : gmap atom value)).
+    rewrite elem_of_dom. eauto.
+  }
+  apply elem_of_dom in Hxfv as [T HΣx].
+  exists T. split; [exact HΣx|].
+  change (formula_msubst_store σ (basic_world_formula Σ))
+    with (FAtom (lqual_msubst_store σ (basic_world_lqual Σ))) in Hm.
+  unfold res_models in Hm.
+  cbn [formula_measure res_models_fuel] in Hm.
+  destruct Hm as [_ Hden].
+  unfold lqual_msubst_store, basic_world_lqual,
+    lqual_mlsubst, logic_qualifier_denote in Hden.
+  cbn [lqual_dom lqual_prop] in Hden.
+  destruct Hden as [Hlc [Hsub Htyped]].
+  destruct Htyped as [_ Hstores].
+  set (D := dom Σ ∖ dom (lstore_lift_free σ : LStoreT)).
+  set (w := lworld_on_lift D m Hlc Hsub).
+  destruct (worldA_wf (@lw value _ w : LWfWorld)) as [[τw Hτw] _].
+  assert (Hτ :
+    (@lw value _ (lworld_on_mlsubst_back (dom Σ)
+      (lstore_lift_free σ) w) : LWorldT)
+      (τw ∪ storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ))).
+  {
+    unfold lworld_on_mlsubst_back.
+    cbn [lw resA_product rawA_product singleton_worldA worldA_stores].
+    exists τw, (storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ)).
+    split; [exact Hτw|].
+    split; [reflexivity|].
+    split.
+    - unfold storeA_compat, map_compat.
+      intros z u1 u2 Hzτ Hzρ.
+      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) τw Hτw)
+        as Hdomτw.
+      change (dom (τw : LStoreT) = lworld_dom (@lw value _ w : LWorldT))
+        in Hdomτw.
+      apply elem_of_dom_2 in Hzτ.
+      apply elem_of_dom_2 in Hzρ.
+      change (z ∈ dom (τw : LStoreT)) in Hzτ.
+      change (z ∈ dom (storeA_restrict
+        (lstore_lift_free σ : LStoreT) (dom Σ) : LStoreT)) in Hzρ.
+      rewrite Hdomτw, (@lw_dom value _ w) in Hzτ.
+      pose proof (storeA_restrict_dom
+        (lstore_lift_free σ : LStoreT) (dom Σ)) as Hdomρ.
+      change (dom (storeA_restrict (lstore_lift_free σ : LStoreT)
+        (dom Σ) : LStoreT) =
+        dom (lstore_lift_free σ : LStoreT) ∩ dom Σ) in Hdomρ.
+      rewrite Hdomρ in Hzρ.
+      set_solver.
+    - reflexivity.
+  }
+  eapply Hstores.
+  - exact Hτ.
+  - exact HΣx.
+  - apply map_lookup_union_Some_raw. right. split.
+    + apply not_elem_of_dom.
+      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) τw Hτw)
+        as Hdomτw.
+      change (dom (τw : LStoreT) = lworld_dom (@lw value _ w : LWorldT))
+        in Hdomτw.
+      change (LVFree x ∉ dom (τw : LStoreT)).
+      rewrite Hdomτw.
+      rewrite (@lw_dom value _ w).
+      unfold D.
+      intros Hbad.
+      apply elem_of_difference in Hbad as [_ Hnot].
+      apply Hnot.
+      rewrite dom_lstore_lift_free.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists x. split; [reflexivity|].
+      change (x ∈ dom (σ : gmap atom value)).
+      rewrite elem_of_dom. eauto.
+    + apply storeA_restrict_lookup_some_2.
+      * rewrite lstore_lift_free_lookup_free. exact Hσx.
+      * change (LVFree x ∈ dom Σ).
+        rewrite elem_of_dom. eauto.
+Qed.
 
 Lemma atom_store_has_ltype_dom_subset Σ σ :
   atom_store_has_ltype Σ σ ->
