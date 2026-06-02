@@ -1,0 +1,242 @@
+Proof Optimization Audit
+========================
+
+Scope
+-----
+
+This report covers the recently added proof code in:
+
+- Denotation
+- ContextTyping
+- ContextBasicDenotation
+
+The current branch is `codex/prove-comma-bind-context`.  The Phase-1 bridge
+shape was merged into `main`; this branch has already proved:
+
+- `ContextLogic/theories/FormulaConnectives.v`
+  `res_models_FFibVars_outer_intro_subset`
+- `ContextBasicDenotation/theories/MsubstTransport.v`
+  `basic_world_formula_fibvars_intro`
+
+The repo currently builds with `make`.
+
+
+Current Remaining Admits
+------------------------
+
+Core Soundness/Context bridge:
+
+- `Denotation/theories/Context.v:603`
+  `denot_ctx_under_bind_from_result_denotation`.
+  This is the main remaining obligation for the comma-bind context branch.
+  It needs a result-extension/fiber commuting argument, then the existing
+  msubst transport and `denot_ty_lvar_gas_result_extension_to_var`.
+
+Existing lower-level/saturation obligations:
+
+- `ContextBasicDenotation/theories/StoreTyping.v:790`
+  `basic_world_formula_fibvars_elim`.
+  This is the elimination dual of the intro lemma now proved in
+  `MsubstTransport.v`.  It should be provable by taking a fiber projection
+  from a model, using the projected store typing, and transporting the
+  msubsted basic-world atom back to the original world.
+
+- `Denotation/theories/ContextTypeDenotationSaturate.v:294`
+  `denot_ty_lvar_gas_result_extension_to_var`.
+  This is directly relevant to `denot_ctx_under_bind_from_result_denotation`.
+  It should stay as a named semantic obligation until the result-extension
+  proof is completed.
+
+Direct case obligations:
+
+- `Denotation/theories/ContextTypeDenotationCases.v`
+  has 21 admitted direct Denotation-level case lemmas.  These are the right
+  boundary for future Lam/App/Fix/Match/LetD work; `Soundness.v` should bridge
+  to these lemmas rather than hide case-specific semantic work.
+
+Compatibility/old route:
+
+- `Denotation/theories/ContextTypeDenotationMsubstCompat.v`
+  has 3 old-route compatibility obligations.  These should not drive the new
+  Soundness-facing proof.
+
+Basic typing/open obligations:
+
+- `ContextBasicDenotation/theories/BasicTypingFormula.v`
+  has 9 admitted obligations, mostly around open/close and basic typing
+  transport.  These are likely lower risk but should be cleaned before serious
+  proof-size optimization.
+
+Soundness corollaries:
+
+- `ContextTyping/theories/Soundness.v`
+  has 5 admitted corollaries after `Fundamental`.  These are not case-level
+  bridge obligations.
+
+
+Line Count Hotspots
+-------------------
+
+Largest files:
+
+- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`: 5168 lines
+- `Denotation/theories/TLetSupport.v`: 2306 lines
+- `ContextBasicDenotation/theories/TermSyntax.v`: 1937 lines
+- `ContextBasicDenotation/theories/BasicTypingFormula.v`: 1865 lines
+- `Denotation/theories/ContextTypeDenotationMsubstGuard.v`: 1435 lines
+- `Denotation/theories/ContextTypeDenotationCases.v`: 1376 lines
+- `ContextBasicDenotation/theories/TermTLet.v`: 1239 lines
+- `ContextBasicDenotation/theories/StoreTyping.v`: 1231 lines
+- `ContextTyping/theories/Soundness.v`: 1103 lines
+- `Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v`: 1031 lines
+
+Total lines in the audited directories: about 29.4k.
+
+
+Proof-Script Pattern Counts
+---------------------------
+
+Counts of `assert`, `change`, and `unfold` occurrences:
+
+- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`: 376
+- `ContextBasicDenotation/theories/StoreTyping.v`: 163
+- `Denotation/theories/TLetSupport.v`: 129
+- `ContextBasicDenotation/theories/TermTLet.v`: 117
+- `ContextBasicDenotation/theories/MsubstTransport.v`: 115
+- `Denotation/theories/ContextTypeDenotationMsubstGuard.v`: 113
+- `ContextBasicDenotation/theories/TermSyntax.v`: 112
+- `ContextTyping/theories/Soundness.v`: 87
+- `ContextBasicDenotation/theories/RelevantEnv.v`: 87
+- `Denotation/theories/ContextTypeDenotationCases.v`: 85
+
+The largest ergonomic problems are in `MsubstScoped.v`, `TLetSupport.v`,
+`StoreTyping.v`, and the direct case file.
+
+
+Highest-Value Cleanup Targets
+-----------------------------
+
+1. Finish the remaining comma-bind context bridge.
+
+   Target:
+
+   - `denot_ctx_under_bind_from_result_denotation`
+
+   Needed proof structure:
+
+   - Take a fiber of `mx` over `erase_ctx_under Σ Γ`.
+   - Commute that fiber with `m #> Fx ~~> mx`, producing the corresponding
+     base fiber of `m`.
+   - Use `denot_ty_in_ctx_under_fiber_elim_projection_instantiated` or the
+     msubst theorem to move from the source denotation of `e1` to an
+     instantiated source denotation.
+   - Use `denot_ty_lvar_gas_result_extension_to_var` to obtain the denotation
+     of `tret (vfvar x)` in the extended context.
+   - Package the result as `denot_ctx_under (erase_ctx_under Σ Γ)
+     (CtxBind x τ1)`.
+
+   Risk:
+
+   - The extension/fiber commuting lemma may need to be added in Algebra or
+     Logic.  It should be general: extension output fresh from the fiber
+     domain, projection over a base domain, and `res_extend_by`.
+
+2. Prove `basic_world_formula_fibvars_elim`.
+
+   This should be the dual of the newly proved intro lemma.  It likely belongs
+   in `StoreTyping.v`, but the proof should reuse the same msubst/basic-world
+   transport facts from `MsubstTransport.v` to avoid unfolding the lqual atom
+   twice.
+
+3. Reduce `ContextTypeDenotationMsubstScoped.v`.
+
+   Keep the current semantic split (`Core`, `Guard`, `KeepDomain`, `Scoped`,
+   `Compat`) but move repeated local packets into small helpers:
+
+   - store-singleton projection restricted to formula FV under frame/product
+   - opened argument/result scope packets
+   - repeated atom-store typing after `store_restrict`
+   - repeated `formula_open_msubst_store_fresh` + opened denotation
+     normalization
+
+   Avoid creating huge helpers whose premises are just the whole local context.
+   If a helper statement is more than a few lines, first look for a lower-level
+   Logic/Algebra lemma.
+
+4. Clean `TLetSupport.v` by syntax shape, not by TLet-specific shape.
+
+   The repeated patterns are:
+
+   - nested `FAnd` / `FImpl` destruct-intro steps
+   - formula FV/open normalization
+   - `formula_scoped_in_world` extraction from guard facts
+   - resource agreement on formula FV
+
+   These should be moved toward Logic syntax/semantics tactics where possible.
+   TLet-specific lemmas should only mention TLet when the operational term
+   fact is genuinely about `tlete`.
+
+5. Keep `ContextTypeDenotationCases.v` as the semantic boundary.
+
+   Soundness should call direct case lemmas from this file.  Future cleanup
+   should group direct obligations by shape:
+
+   - const/appop finished or near-finished cases
+   - Lam/App/Fix/Match direct case obligations
+   - disjoint variants (`letd`, `lamd`, `appd`, `fixd`)
+
+   The proof support for each group should be separated from the admitted
+   semantic theorem statements.
+
+6. Improve solver coverage for Store/Base casts.
+
+   Many `change` occurrences come from `StoreA`, `World`, `LWorld`, and
+   `res_lift_free` casts.  The next solver improvements should target:
+
+   - `dom (store_restrict ...)`
+   - `storeA_restrict_lookup_some`
+   - `lvars_fv_elem` / `lvars_fv_of_atoms`
+   - `res_lift_free_dom`
+   - `res_fiber_from_projection_world_dom`
+
+   This would shorten `StoreTyping.v`, `MsubstTransport.v`, and msubst scoped
+   proofs without changing statement shapes.
+
+
+Suggested Batch Order
+---------------------
+
+Batch A: finish proof repair.
+
+- Prove the extension/fiber commuting helper.
+- Prove `denot_ctx_under_bind_from_result_denotation`.
+- Prove or intentionally defer `denot_ty_lvar_gas_result_extension_to_var`.
+- Run `make` and commit.
+
+Batch B: close the basic-world fiber pair.
+
+- Prove `basic_world_formula_fibvars_elim`.
+- Move shared proof fragments between intro/elim into a small helper if the
+  two proofs duplicate more than a few lines.
+- Run `make` and commit.
+
+Batch C: msubst scoped cleanup.
+
+- Do not change public msubst theorem statements.
+- Replace repeated local assertion packets with short helpers.
+- Keep compatibility admits isolated.
+- Run `make` and commit.
+
+Batch D: TLetSupport and Cases cleanup.
+
+- Move formula syntax normalization to ContextLogic if it is not Denotation
+  specific.
+- Keep operational TLet lemmas in BasicDenotation/TermTLet.
+- Keep Denotation-level direct case lemmas in Cases.
+- Run `make` and commit.
+
+Batch E: Soundness corollaries.
+
+- Once case bridges are clean, restore the corollary proofs or leave them as
+  the only Soundness-level named obligations.
+
