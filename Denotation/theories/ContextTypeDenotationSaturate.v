@@ -1187,9 +1187,72 @@ Proof.
   set_solver.
 Qed.
 
+Lemma typed_total_tm_result_equiv_on_term_lc_lvars
+    Σ τ m e1 e2 :
+  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+  lc_lvars (tm_lvars e1) /\ lc_lvars (tm_lvars e2).
+Proof.
+  intros [_ [Hzero1 Hzero2]].
+  pose proof (denot_ty_lvar_gas_guard_of_zero Σ τ e1 m Hzero1)
+    as Hguard1.
+  pose proof (denot_ty_lvar_gas_guard_of_zero Σ τ e2 m Hzero2)
+    as Hguard2.
+  repeat rewrite res_models_and_iff in Hguard1.
+  repeat rewrite res_models_and_iff in Hguard2.
+  destruct Hguard1 as [_ [_ [_ Htotal1]]].
+  destruct Hguard2 as [_ [_ [_ Htotal2]]].
+  apply expr_total_formula_models_iff in Htotal1
+    as [Hlc1 _].
+  apply expr_total_formula_models_iff in Htotal2
+    as [Hlc2 _].
+  split; assumption.
+Qed.
+
+Lemma tm_result_equiv_on_full_world_extend_fresh
+    (m my : WfWorldT) y e1 e2 :
+  tm_result_equiv_on m e1 e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT) ->
+  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  tm_result_equiv_on my e1 e2.
+Proof.
+  intros Heq Hfv _ _ Hrestrict σ v Hσ.
+  assert (Hσm :
+      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
+  {
+    assert (Hσr :
+        (res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict σ (world_dom (m : WorldT)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hrestrict in Hσr. exact Hσr.
+  }
+  specialize (Heq (store_restrict σ (world_dom (m : WorldT))) v Hσm)
+    as [Heq12 Heq21].
+  assert (Hfv1 : fv_tm e1 ⊆ world_dom (m : WorldT)) by set_solver.
+  assert (Hfv2 : fv_tm e2 ⊆ world_dom (m : WorldT)) by set_solver.
+  split.
+  - intros Heval1.
+    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+      σ e2 v (world_dom (m : WorldT)) Hfv2)).
+    apply Heq12.
+    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+      σ e1 v (world_dom (m : WorldT)) Hfv1)).
+    exact Heval1.
+  - intros Heval2.
+    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+      σ e1 v (world_dom (m : WorldT)) Hfv1)).
+    apply Heq21.
+    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+      σ e2 v (world_dom (m : WorldT)) Hfv2)).
+    exact Heval2.
+Qed.
+
 Lemma expr_result_formula_shift0_transport_of_tm_result_equiv_open
     (m my : WfWorldT) y e1 e2 :
   tm_result_equiv_on m e1 e2 ->
+  lc_lvars (tm_lvars e1) ->
+  lc_lvars (tm_lvars e2) ->
   fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT) ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -1198,7 +1261,43 @@ Lemma expr_result_formula_shift0_transport_of_tm_result_equiv_open
     (expr_result_formula (tm_shift 0 e2) (LVBound 0)) ->
   my ⊨ formula_open 0 y
     (expr_result_formula (tm_shift 0 e1) (LVBound 0)).
-Admitted.
+Proof.
+  intros Heq Hlc1 Hlc2 Hfv Hy Hdom Hrestrict Hmodel.
+  rewrite formula_open_expr_result_formula_shift0_lvars_lc in Hmodel
+    by (exact Hlc2 || set_solver).
+  rewrite formula_open_expr_result_formula_shift0_lvars_lc
+    by (exact Hlc1 || set_solver).
+  eapply expr_result_formula_transport_of_tm_result_equiv.
+  - eapply tm_result_equiv_on_full_world_extend_fresh; eauto.
+  - intros Hbad. apply Hy. apply elem_of_union_l.
+    apply lvars_fv_elem in Hbad.
+    rewrite tm_lvars_fv in Hbad. exact Hbad.
+  - rewrite res_lift_free_dom.
+    assert (Htm1_atoms :
+        tm_lvars e1 ⊆ lvars_of_atoms (fv_tm e1)).
+    {
+      intros v Hv.
+      pose proof (proj1 (lc_lvars_no_bv (tm_lvars e1)) Hlc1)
+        as Hbv.
+      pose proof (lvars_bv_empty_subset_of_atoms_fv
+        (tm_lvars e1) Hbv v Hv) as Hin.
+      rewrite tm_lvars_fv in Hin. exact Hin.
+    }
+    intros v Hv.
+    apply elem_of_union in Hv as [Hv|Hv].
+    + specialize (Htm1_atoms _ Hv).
+      unfold lvars_of_atoms in *.
+      apply elem_of_map in Htm1_atoms as [a [-> Ha]].
+      apply elem_of_map. exists a. split; [reflexivity|].
+      change (a ∈ world_dom (my : WorldT)).
+      rewrite Hdom. apply elem_of_union_l. apply Hfv. set_solver.
+    + rewrite elem_of_singleton in Hv. subst v.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists y. split; [reflexivity|].
+      change (y ∈ world_dom (my : WorldT)).
+      rewrite Hdom. set_solver.
+  - exact Hmodel.
+Qed.
 
 Lemma denot_ty_lvar_gas_tm_result_equiv_over_body
     (gas : nat) (Σ : lty_env) b φ e1 e2 (m : WfWorldT) :
@@ -1219,6 +1318,8 @@ Lemma denot_ty_lvar_gas_tm_result_equiv_over_body
             (FOver (type_qualifier_formula φ))))).
 Proof.
   intros Hequiv Hsrc.
+  pose proof (typed_total_tm_result_equiv_on_term_lc_lvars
+    Σ (CTOver b φ) m e1 e2 Hequiv) as [Hlc_e1 Hlc_e2].
   pose proof (typed_total_tm_result_equiv_on_target_zero
     Σ (CTOver b φ) m e1 e2 Hequiv) as Hzero_tgt.
   pose proof (denot_ty_lvar_gas_guard_of_zero
@@ -1242,7 +1343,13 @@ Proof.
   - split.
     + intros Hresult.
       eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
-        [exact (proj1 Hequiv)| |set_solver|exact Hdom|exact Hrestrict|exact Hresult].
+        [ exact (proj1 Hequiv)
+        | exact Hlc_e1
+        | exact Hlc_e2
+        | | set_solver
+        | exact Hdom
+        | exact Hrestrict
+        | exact Hresult ].
       eapply typed_total_tm_result_equiv_on_term_scope. exact Hequiv.
     + intros Hfib. exact Hfib.
 Qed.
@@ -1266,6 +1373,8 @@ Lemma denot_ty_lvar_gas_tm_result_equiv_under_body
             (FUnder (type_qualifier_formula φ))))).
 Proof.
   intros Hequiv Hsrc.
+  pose proof (typed_total_tm_result_equiv_on_term_lc_lvars
+    Σ (CTUnder b φ) m e1 e2 Hequiv) as [Hlc_e1 Hlc_e2].
   pose proof (typed_total_tm_result_equiv_on_target_zero
     Σ (CTUnder b φ) m e1 e2 Hequiv) as Hzero_tgt.
   pose proof (denot_ty_lvar_gas_guard_of_zero
@@ -1289,7 +1398,13 @@ Proof.
   - split.
     + intros Hresult.
       eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
-        [exact (proj1 Hequiv)| |set_solver|exact Hdom|exact Hrestrict|exact Hresult].
+        [ exact (proj1 Hequiv)
+        | exact Hlc_e1
+        | exact Hlc_e2
+        | | set_solver
+        | exact Hdom
+        | exact Hrestrict
+        | exact Hresult ].
       eapply typed_total_tm_result_equiv_on_term_scope. exact Hequiv.
     + intros Hfib. exact Hfib.
 Qed.

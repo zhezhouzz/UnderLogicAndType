@@ -614,6 +614,62 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma value_tm_open_shift_no_bv_mutual :
+  (forall v d x,
+      lvars_bv (value_lvars_at d v) = ∅ ->
+      open_value d (vfvar x) (value_shift d v) = v) *
+  (forall e d x,
+      lvars_bv (tm_lvars_at d e) = ∅ ->
+      open_tm d (vfvar x) (tm_shift d e) = e).
+Proof.
+  apply value_tm_mutind; cbn [value_lvars_at tm_lvars_at
+    open_value open_tm value_shift tm_shift]; intros.
+  - reflexivity.
+  - reflexivity.
+  - unfold bvar_lvars_at in H.
+    destruct (decide (d <= n)) as [Hdn|Hdn].
+    + exfalso.
+      assert (n - d ∈ lvars_bv ({[LVBound (n - d)]} : lvset)).
+      { rewrite lvars_bv_elem. set_solver. }
+      rewrite H in H0. set_solver.
+    + rewrite bool_decide_eq_false_2 by exact Hdn.
+      cbn [open_value].
+      destruct (decide (d = n)); [lia|reflexivity].
+  - f_equal. apply H. exact H0.
+  - f_equal. apply H. exact H0.
+  - f_equal. apply H. exact H0.
+  - f_equal.
+    + apply H. rewrite lvars_bv_union in H1. set_solver.
+    + apply H0. rewrite lvars_bv_union in H1. set_solver.
+  - f_equal. apply H. exact H0.
+  - f_equal.
+    + apply H. rewrite lvars_bv_union in H1. set_solver.
+    + apply H0. rewrite lvars_bv_union in H1. set_solver.
+  - f_equal.
+    + apply H. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H0. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H1. rewrite !lvars_bv_union in H2. set_solver.
+Qed.
+
+Lemma open_value_shift_no_bv d x v :
+  lvars_bv (value_lvars_at d v) = ∅ ->
+  open_value d (vfvar x) (value_shift d v) = v.
+Proof. exact (fst value_tm_open_shift_no_bv_mutual v d x). Qed.
+
+Lemma open_tm_shift_no_bv d x e :
+  lvars_bv (tm_lvars_at d e) = ∅ ->
+  open_tm d (vfvar x) (tm_shift d e) = e.
+Proof. exact (snd value_tm_open_shift_no_bv_mutual e d x). Qed.
+
+Lemma open_tm_shift0_lvars_lc y e :
+  lc_lvars (tm_lvars e) ->
+  open_tm 0 (vfvar y) (tm_shift 0 e) = e.
+Proof.
+  intros Hlc.
+  apply open_tm_shift_no_bv.
+  apply lc_lvars_no_bv. exact Hlc.
+Qed.
+
 Lemma tm_lvars_tapp_tm_fvar e y :
   tm_lvars (tapp_tm e (vfvar y)) = tm_lvars e ∪ {[LVFree y]}.
 Proof.
