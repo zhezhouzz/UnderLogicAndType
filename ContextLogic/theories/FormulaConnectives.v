@@ -1679,6 +1679,25 @@ Proof.
   - apply Hψ. exact Hψ2.
 Qed.
 
+Lemma res_models_impl2_map_dep
+    (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 χ1 χ2 : FormulaT) :
+  formula_scoped_in_world m (FImpl φ2 (FImpl ψ2 χ2)) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (m ⊨ ψ2 → m ⊨ ψ1) →
+  (m ⊨ φ2 → m ⊨ ψ2 → m ⊨ χ1 → m ⊨ χ2) →
+  m ⊨ FImpl φ1 (FImpl ψ1 χ1) →
+  m ⊨ FImpl φ2 (FImpl ψ2 χ2).
+Proof.
+  intros Hscope Hφ Hψ Hχ Himpl.
+  eapply res_models_impl2_intro; [exact Hscope |].
+  intros Hφ2 Hψ2.
+  eapply Hχ; [exact Hφ2 | exact Hψ2 |].
+  eapply res_models_impl2_elim; [exact Himpl | |].
+  - apply Hφ. exact Hφ2.
+  - apply Hψ. exact Hψ2.
+Qed.
+
 Lemma res_models_impl_iff (m : WfWorldT) (φ ψ : FormulaT) :
   formula_scoped_in_world m (FImpl φ ψ) →
   (m ⊨ FImpl φ ψ ↔
@@ -1921,6 +1940,33 @@ Proof.
   - exact Hψ.
   - exact Hχ.
   - eapply res_models_impl_elim; [exact Himpl |].
+    apply Hφ. exact Hφ2.
+Qed.
+
+Lemma res_models_impl_wand_map_dep
+    (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 χ1 χ2 : FormulaT) :
+  formula_scoped_in_world m (FImpl φ2 (FWand ψ2 χ2)) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (∀ (n : WfWorldT) (Hc : world_compat n m),
+    n ⊨ ψ2 → n ⊨ ψ1) →
+  (m ⊨ φ2 →
+    ∀ (n : WfWorldT) (Hc : world_compat n m),
+      n ⊨ ψ2 →
+      res_product n m Hc ⊨ χ1 →
+      res_product n m Hc ⊨ χ2) →
+  m ⊨ FImpl φ1 (FWand ψ1 χ1) →
+  m ⊨ FImpl φ2 (FWand ψ2 χ2).
+Proof.
+  intros Hscope Hφ Hψ Hχ Himpl.
+  eapply res_models_impl_intro; [exact Hscope |].
+  intros Hφ2.
+  eapply res_models_wand_intro.
+  - eapply formula_scoped_impl_r. exact Hscope.
+  - intros n Hc Hψ2.
+    eapply Hχ; [exact Hφ2 | exact Hψ2 |].
+    eapply res_models_wand_elim; [| eapply Hψ; eauto].
+    eapply res_models_impl_elim; [exact Himpl |].
     apply Hφ. exact Hφ2.
 Qed.
 
@@ -2285,6 +2331,45 @@ Proof.
   eapply res_models_impl2_map; eauto.
 Qed.
 
+Lemma res_models_forall_full_world_impl2_map_dep
+    (m : WfWorldT)
+    (A1 A2 B1 B2 C1 C2 : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A2 (FImpl B2 C2))) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
+        (my ⊨ formula_open 0 y B2 -> my ⊨ formula_open 0 y B1) /\
+        (my ⊨ formula_open 0 y A2 ->
+         my ⊨ formula_open 0 y B2 ->
+         my ⊨ formula_open 0 y C1 ->
+         my ⊨ formula_open 0 y C2)) ->
+  m ⊨ FForall (FImpl A1 (FImpl B1 C1)) ->
+  m ⊨ FForall (FImpl A2 (FImpl B2 C2)).
+Proof.
+  intros Hscope [L Hmap] Hsrc.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
+  exists L. intros y Hy my Hdom Hrestrict Hopen.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y (FImpl A2 (FImpl B2 C2)))).
+  {
+    eapply formula_scoped_open_from_fv.
+    unfold formula_scoped_in_world in Hscope |- *.
+    rewrite Hdom.
+    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FImpl B2 C2))).
+    rewrite formula_fv_forall in Hscope.
+    set_solver.
+  }
+  formula_open_syntax_norm_in Hopen.
+  formula_open_syntax_norm_in Hopened_scope.
+  formula_open_syntax_norm.
+  eapply res_models_impl2_map_dep; eauto.
+Qed.
+
 Lemma res_models_forall_full_world_impl_wand_map
     (m : WfWorldT)
     (A1 A2 B1 B2 C1 C2 : FormulaT) :
@@ -2323,6 +2408,48 @@ Proof.
   formula_open_syntax_norm_in Hopened_scope.
   formula_open_syntax_norm.
   eapply res_models_impl_wand_map; eauto.
+Qed.
+
+Lemma res_models_forall_full_world_impl_wand_map_dep
+    (m : WfWorldT)
+    (A1 A2 B1 B2 C1 C2 : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A2 (FWand B2 C2))) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
+        (forall (n : WfWorldT) (Hc : world_compat n my),
+          n ⊨ formula_open 0 y B2 ->
+          n ⊨ formula_open 0 y B1) /\
+        (my ⊨ formula_open 0 y A2 ->
+          forall (n : WfWorldT) (Hc : world_compat n my),
+          n ⊨ formula_open 0 y B2 ->
+          res_product n my Hc ⊨ formula_open 0 y C1 ->
+          res_product n my Hc ⊨ formula_open 0 y C2)) ->
+  m ⊨ FForall (FImpl A1 (FWand B1 C1)) ->
+  m ⊨ FForall (FImpl A2 (FWand B2 C2)).
+Proof.
+  intros Hscope [L Hmap] Hsrc.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
+  exists L. intros y Hy my Hdom Hrestrict Hopen.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y (FImpl A2 (FWand B2 C2)))).
+  {
+    eapply formula_scoped_open_from_fv.
+    unfold formula_scoped_in_world in Hscope |- *.
+    rewrite Hdom.
+    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FWand B2 C2))).
+    rewrite formula_fv_forall in Hscope.
+    set_solver.
+  }
+  formula_open_syntax_norm_in Hopen.
+  formula_open_syntax_norm_in Hopened_scope.
+  formula_open_syntax_norm.
+  eapply res_models_impl_wand_map_dep; eauto.
 Qed.
 
 Lemma formula_scoped_forall_impl_wand_opened

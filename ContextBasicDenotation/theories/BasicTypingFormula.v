@@ -235,6 +235,75 @@ Proof.
   exact (proj2 basic_has_ltype_weaken_mutual Σ e T Hty Σ' Hsub).
 Qed.
 
+Lemma basic_has_ltype_lc_mutual :
+  (forall Σ v T,
+    lc_lvars (dom Σ) ->
+    basic_value_has_ltype Σ v T ->
+    lc_value v) /\
+  (forall Σ e T,
+    lc_lvars (dom Σ) ->
+    basic_tm_has_ltype Σ e T ->
+    lc_tm e).
+Proof.
+  enough (
+    (forall Σ v T (Hty : basic_value_has_ltype Σ v T),
+      lc_lvars (dom Σ) -> lc_value v) /\
+    (forall Σ e T (Hty : basic_tm_has_ltype Σ e T),
+      lc_lvars (dom Σ) -> lc_tm e)) as Hreg.
+  {
+    split; intros; eapply Hreg; eauto.
+  }
+  apply basic_has_ltype_mutind
+    with (P := fun Σ v T _ => lc_lvars (dom Σ) -> lc_value v)
+         (P0 := fun Σ e T _ => lc_lvars (dom Σ) -> lc_tm e);
+    intros; eauto.
+  - exfalso.
+    match goal with
+    | Hlc : lc_lvars (dom ?Σ),
+      Hlook : ?Σ !! LVBound ?k = Some ?T |- _ =>
+        apply (Hlc (LVBound k));
+        eapply elem_of_dom_2; exact Hlook
+    end.
+  - eapply LC_lam with (L := L). intros x Hx.
+    eapply H; [exact Hx|].
+    + intros v Hv.
+      rewrite dom_insert in Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      * rewrite elem_of_singleton in Hv. subst v. exact I.
+      * exact (H0 v Hv).
+  - eapply LC_fix with (L := L). intros x Hx.
+    eapply H; [exact Hx|].
+    + intros v Hv.
+      rewrite dom_insert in Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      * rewrite elem_of_singleton in Hv. subst v. exact I.
+      * exact (H0 v Hv).
+  - eapply LC_lete with (L := L).
+    + eauto.
+    + intros x Hx. eapply H0; [exact Hx|].
+      * intros v Hv.
+        rewrite dom_insert in Hv.
+        apply elem_of_union in Hv as [Hv|Hv].
+        -- rewrite elem_of_singleton in Hv. subst v. exact I.
+        -- exact (H1 v Hv).
+Qed.
+
+Lemma basic_value_has_ltype_lc Σ v T :
+  lc_lvars (dom Σ) ->
+  basic_value_has_ltype Σ v T ->
+  lc_value v.
+Proof.
+  exact (proj1 basic_has_ltype_lc_mutual Σ v T).
+Qed.
+
+Lemma basic_tm_has_ltype_lc Σ e T :
+  lc_lvars (dom Σ) ->
+  basic_tm_has_ltype Σ e T ->
+  lc_tm e.
+Proof.
+  exact (proj2 basic_has_ltype_lc_mutual Σ e T).
+Qed.
+
 Lemma basic_has_ltype_restrict_lvars_lc_mutual :
   (forall Σ v T,
     basic_value_has_ltype Σ v T ->
