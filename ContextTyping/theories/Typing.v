@@ -32,11 +32,8 @@ Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
 Definition wf_ctx (Γ : ctx) : Prop :=
   wf_ctx_under ∅ Γ.
 
-Definition wf_context_ty_under (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) : Prop :=
-  wf_ctx_under Σ Γ ∧ basic_context_ty (dom Σ ∪ ctx_dom Γ) τ.
-
 Definition wf_context_ty (Γ : ctx) (τ : context_ty) : Prop :=
-  wf_context_ty_under ∅ Γ τ.
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ.
 
 (** ** Regularity skeletons *)
 
@@ -50,29 +47,10 @@ Lemma wf_ctx_under_basic Σ Γ :
   basic_ctx (dom Σ) Γ.
 Proof. intros [Hbasic _]. exact Hbasic. Qed.
 
-Lemma wf_context_ty_ctx Γ τ :
-  wf_context_ty Γ τ →
-  wf_ctx Γ.
-Proof. intros [Hwf _]. exact Hwf. Qed.
-
-Lemma wf_context_ty_under_ctx Σ Γ τ :
-  wf_context_ty_under Σ Γ τ →
-  wf_ctx_under Σ Γ.
-Proof. intros [Hwf _]. exact Hwf. Qed.
-
 Lemma wf_context_ty_basic Γ τ :
   wf_context_ty Γ τ →
-  basic_context_ty (ctx_dom Γ) τ.
-Proof.
-  intros [_ Hbasic].
-  replace (ctx_dom Γ) with (dom (∅ : gmap atom ty) ∪ ctx_dom Γ) by set_solver.
-  exact Hbasic.
-Qed.
-
-Lemma wf_context_ty_under_basic Σ Γ τ :
-  wf_context_ty_under Σ Γ τ →
-  basic_context_ty (dom Σ ∪ ctx_dom Γ) τ.
-Proof. intros [_ Hbasic]. exact Hbasic. Qed.
+  basic_context_ty (dom (erase_ctx Γ)) τ.
+Proof. intros Hwf. exact Hwf. Qed.
 
 Lemma wf_ctx_fv_subset Γ :
   wf_ctx Γ →
@@ -94,20 +72,11 @@ Qed.
 
 Lemma wf_context_ty_fv_subset Γ τ :
   wf_context_ty Γ τ →
-  fv_cty τ ⊆ ctx_dom Γ.
+  fv_cty τ ⊆ dom (erase_ctx Γ).
 Proof.
   intros Hwf.
   eapply basic_context_ty_fv_subset.
   exact (wf_context_ty_basic Γ τ Hwf).
-Qed.
-
-Lemma wf_context_ty_under_fv_subset Σ Γ τ :
-  wf_context_ty_under Σ Γ τ →
-  fv_cty τ ⊆ dom Σ ∪ ctx_dom Γ.
-Proof.
-  intros Hwf.
-  eapply basic_context_ty_fv_subset.
-  exact (wf_context_ty_under_basic Σ Γ τ Hwf).
 Qed.
 
 (** * ContextTyping.Auxiliary
@@ -118,21 +87,24 @@ Qed.
 (** ** Semantic subtyping *)
 
 Definition sub_type_under (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) : Prop :=
-  wf_context_ty_under Σ Γ τ1 ∧
-  wf_context_ty_under Σ Γ τ2 ∧
+  wf_ctx_under Σ Γ ∧
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ1 ∧
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ2 ∧
   erase_ty τ1 = erase_ty τ2 ∧
-  ∀ e, fv_tm e ⊆ dom Σ ∪ ctx_dom Γ →
+  ∀ e, erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ1 →
     denot_ctx_under Σ Γ ⊫
-      FImpl (denot_ty_in_ctx_under Σ Γ τ1 e)
-            (denot_ty_in_ctx_under Σ Γ τ2 e).
+      FImpl (denot_ty (erase_ctx Γ) τ1 e)
+            (denot_ty (erase_ctx Γ) τ2 e).
 
 Definition ctx_sub_under
     (Σ : gmap atom ty) (X : aset) (Γ1 Γ2 : ctx) : Prop :=
   wf_ctx_under Σ Γ1 ∧
   wf_ctx_under Σ Γ2 ∧
-  ty_env_agree_on X (erase_ctx_under Σ Γ1) (erase_ctx_under Σ Γ2) ∧
+  ty_env_agree_on X (erase_ctx Γ1) (erase_ctx Γ2) ∧
   ∀ r, r ⊨ denot_ctx_under Σ Γ1 →
-       res_restrict r X ⊨ denot_ctx_under Σ Γ2.
+       exists r',
+         res_restrict r X ⊑ r' /\
+         r' ⊨ denot_ctx_under Σ Γ2.
 
 (** * ContextTyping.PrimOpContext
 
@@ -244,143 +216,93 @@ Qed.
 
 Definition context_typing_regular
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
-  wf_context_ty_under Σ Γ τ ∧ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
-
-Definition context_ty_wf_for_ctx
-    (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) : Prop :=
-  context_ty_wf_for_erased Σ (erase_ctx_under Σ Γ) τ.
+  wf_ctx_under Σ Γ /\
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
+  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 
 Definition context_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
   wf_ctx_under Σ Γ /\
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ.
-
-Lemma wf_erased_ctx_under_erase_ctx_under Σ Γ :
-  wf_erased_ctx_under Σ (erase_ctx_under Σ Γ).
-Proof.
-  unfold wf_erased_ctx_under, erase_ctx_under.
-  intros x T HΣ.
-  change ((Σ ∪ erase_ctx Γ) !! x = Some T).
-  transitivity (Σ !! x); [|exact HΣ].
-  apply lookup_union_l'. eexists. exact HΣ.
-Qed.
-
-Lemma context_ty_wf_for_ctx_regular Σ Γ τ :
-  wf_ctx_under Σ Γ ->
-  context_ty_wf_for_ctx Σ Γ τ ->
-  basic_context_ty (dom Σ ∪ ctx_dom Γ) τ.
-Proof.
-  intros Hctx Hwf.
-  unfold context_ty_wf_for_ctx in Hwf.
-  pose proof (context_ty_wf_for_erased_regular
-    Σ (erase_ctx_under Σ Γ) τ
-    (wf_erased_ctx_under_erase_ctx_under Σ Γ) Hwf) as Hbasic.
-  assert (Hdom : dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
-  {
-    pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic_ctx.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic_ctx) as HdomΓ.
-    unfold erase_ctx_under. better_set_solver.
-  }
-  rewrite <- Hdom. exact Hbasic.
-Qed.
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
+  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 
 Lemma context_typing_wf_regular Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
   context_typing_regular Σ Γ e τ.
 Proof.
-  intros [Hctx [Henv [Hτ Hbasic]]].
-  split; [|exact Hbasic].
-  split.
-  - exact Hctx.
-  - eapply context_ty_wf_for_ctx_regular; eauto.
+  intros Hwf. exact Hwf.
 Qed.
 
 Lemma context_typing_wf_basic_typing Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
-  erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ.
-Proof.
-  intros Hwf. exact (proj2 (context_typing_wf_regular Σ Γ e τ Hwf)).
-Qed.
+  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
+Proof. intros [_ [_ Hbasic]]. exact Hbasic. Qed.
 
-Lemma context_typing_wf_wf_context_ty_under Σ Γ e τ :
+Lemma context_typing_wf_ctx Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
-  wf_context_ty_under Σ Γ τ.
-Proof.
-  intros Hwf. exact (proj1 (context_typing_wf_regular Σ Γ e τ Hwf)).
-Qed.
+  wf_ctx_under Σ Γ.
+Proof. intros [Hctx _]. exact Hctx. Qed.
+
+Lemma context_typing_wf_context_ty Σ Γ e τ :
+  context_typing_wf Σ Γ e τ ->
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ.
+Proof. intros [_ [Hτ _]]. exact Hτ. Qed.
 
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
   denot_ctx_under Σ Γ ⊫
-    FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty b) (tret v)) FFalse.
+    FImpl (denot_ty (erase_ctx Γ) (bool_precise_ty b) (tret v)) FFalse.
 
 Lemma context_typing_wf_fv_tm_subset Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  fv_tm e ⊆ dom Σ ∪ ctx_dom Γ.
+  fv_tm e ⊆ dom (erase_ctx Γ).
 Proof.
   intros Hct.
-  pose proof (context_typing_wf_regular Σ Γ e τ Hct) as [Hwf Hty].
-  pose proof (basic_typing_contains_fv_tm _ _ _ Hty) as Hfv.
-  pose proof (wf_context_ty_under_ctx Σ Γ τ Hwf) as Hctx.
-  pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
-  assert (Hdom : dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ).
-  { pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    unfold erase_ctx_under.
-    better_set_solver. }
-  rewrite Hdom in Hfv.
-  exact Hfv.
+  apply basic_typing_contains_fv_tm with (T := erase_ty τ).
+  exact (context_typing_wf_basic_typing Σ Γ e τ Hct).
 Qed.
 
 Lemma context_typing_wf_erase_dom Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  dom (erase_ctx_under Σ Γ) = dom Σ ∪ ctx_dom Γ.
+  dom (erase_ctx Γ) = ctx_dom Γ.
 Proof.
   intros Hct.
-  pose proof (context_typing_wf_wf_context_ty_under Σ Γ e τ Hct) as Hwf.
-  pose proof (wf_context_ty_under_ctx Σ Γ τ Hwf) as Hctx.
+  pose proof (context_typing_wf_ctx Σ Γ e τ Hct) as Hctx.
   pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-  unfold erase_ctx_under.
-  better_set_solver.
+  apply (basic_ctx_erase_dom (dom Σ)). exact Hbasic.
 Qed.
 
 Lemma context_typing_wf_basic_context_ty_erased Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  basic_context_ty (dom (erase_ctx_under Σ Γ)) τ.
+  basic_context_ty (dom (erase_ctx Γ)) τ.
 Proof.
-  intros Hct.
-  pose proof Hct as Hct0.
-  pose proof (context_typing_wf_wf_context_ty_under Σ Γ e τ Hct) as Hwf.
-  pose proof (wf_context_ty_under_basic Σ Γ τ Hwf) as Hbasic.
-  rewrite (context_typing_wf_erase_dom Σ Γ e τ Hct0).
-  exact Hbasic.
+  apply context_typing_wf_context_ty.
 Qed.
 
 Lemma context_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  fv_tm e ⊆ dom (erase_ctx_under Σ Γ).
+  fv_tm e ⊆ dom (erase_ctx Γ).
 Proof.
-  intros Hwf.
-  rewrite (context_typing_wf_erase_dom Σ Γ e τ Hwf).
-  exact (context_typing_wf_fv_tm_subset Σ Γ e τ Hwf).
+  apply context_typing_wf_fv_tm_subset.
 Qed.
 
 Lemma context_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
-  fv_cty τ ⊆ dom (erase_ctx_under Σ Γ).
+  fv_cty τ ⊆ dom (erase_ctx Γ).
 Proof.
   intros Hct.
-  pose proof Hct as Hct0.
-  pose proof (context_typing_wf_wf_context_ty_under Σ Γ e τ Hct) as Hwf.
-  rewrite (context_typing_wf_erase_dom Σ Γ e τ Hct0).
-  eapply wf_context_ty_under_fv_subset. exact Hwf.
+  eapply wf_context_ty_at_fv_subset.
+  exact (context_typing_wf_context_ty Σ Γ e τ Hct).
 Qed.
 
 Lemma context_typing_wf_wand_arg_global Σ Γ e τx τr :
   context_typing_wf Σ Γ e (CTWand τx τr) ->
-  basic_context_ty (dom Σ) τx.
+  basic_context_ty ∅ τx.
 Proof.
-  intros [_ Hwf].
-  eapply context_typing_wf_erased_wand_arg_global. exact Hwf.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e (CTWand τx τr) Hwf)
+    as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (proj1 Hτ).
 Qed.
 
 Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=
@@ -538,7 +460,7 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
       has_context_type Φ Σ Γ (tret v) (bool_precise_ty true) →
       branch_unreachable Σ Γ v false →
       has_context_type Φ Σ Γ et τ →
-      erase_ctx_under Σ Γ ⊢ₑ ef ⋮ erase_ty τ →
+      erase_ctx Γ ⊢ₑ ef ⋮ erase_ty τ →
       has_context_type Φ Σ Γ (tmatch v et ef) τ
 
   (** T-MatchFalseOnly. *)
@@ -546,7 +468,7 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
       context_typing_wf Σ Γ (tmatch v et ef) τ →
       has_context_type Φ Σ Γ (tret v) (bool_precise_ty false) →
       branch_unreachable Σ Γ v true →
-      erase_ctx_under Σ Γ ⊢ₑ et ⋮ erase_ty τ →
+      erase_ctx Γ ⊢ₑ et ⋮ erase_ty τ →
       has_context_type Φ Σ Γ ef τ →
       has_context_type Φ Σ Γ (tmatch v et ef) τ.
 
@@ -573,16 +495,14 @@ Lemma typing_regular Φ Γ e τ :
 Proof.
   intros Hty.
   pose proof (context_typing_wf_regular ∅ Γ e τ
-    (typing_wf Φ Γ e τ Hty)) as [Hwf _].
-  split.
-  - exact (wf_context_ty_under_ctx ∅ Γ τ Hwf).
-  - exact Hwf.
+    (typing_wf Φ Γ e τ Hty)) as [Hctx [Hτ _]].
+  split; assumption.
 Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
 Lemma typing_erase Φ Γ e τ :
   has_context_type Φ ∅ Γ e τ →
-  erase_ctx_under ∅ Γ ⊢ₑ e ⋮ erase_ty τ.
+  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros Hty.
   exact (context_typing_wf_basic_typing ∅ Γ e τ

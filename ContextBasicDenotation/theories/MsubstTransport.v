@@ -31,7 +31,7 @@ Fixpoint context_ty_wf_for_erased
       basic_context_ty (dom Δ) τx /\
       wf_context_ty_at 1 (dom Δ) τr
   | CTWand τx τr =>
-      basic_context_ty (dom Σbase) τx /\
+      basic_context_ty ∅ τx /\
       wf_context_ty_at 1 (dom Δ) τr
   end.
 
@@ -58,7 +58,9 @@ Proof.
   intros Henv.
   induction τ as [b φ|b φ|τ1 IH1 τ2 IH2|τ1 IH1 τ2 IH2
                  |τ1 IH1 τ2 IH2|τx IHx τr IHr|τx IHx τr IHr];
-    cbn [context_ty_wf_for_erased]; intros Hwf; try exact Hwf.
+    cbn [context_ty_wf_for_erased]; intros Hwf.
+  - exact Hwf.
+  - exact Hwf.
   - destruct Hwf as [H1 [H2 Herase]].
     apply basic_context_ty_inter; [apply IH1|apply IH2|]; assumption.
   - destruct Hwf as [H1 [H2 Herase]].
@@ -83,7 +85,7 @@ Proof.
     cbn [wf_context_ty_at]. split.
     + apply basic_context_ty_iff_wf_context_ty_at.
       eapply basic_context_ty_mono; [|exact Harg].
-      apply wf_erased_ctx_under_dom_subset. exact Henv.
+      set_solver.
     + exact Hbody.
 Qed.
 
@@ -106,7 +108,7 @@ Proof.
     repeat split; [apply IH1|apply IH2|exact Herase]; assumption.
   - destruct Hwf as [Harg Hbody]. split; [exact Harg|exact Hbody].
   - destruct Hwf as [Harg Hbody]. split; [|exact Hbody].
-    eapply basic_context_ty_mono; [exact Hsub|exact Harg].
+    exact Harg.
 Qed.
 
 Lemma context_ty_wf_for_erased_delta_mono Σbase Δ1 Δ2 τ :
@@ -209,7 +211,7 @@ Proof. intros Hwf. exact (proj1 (context_typing_wf_erased_regular _ _ _ _ Hwf)).
 
 Lemma context_typing_wf_erased_wand_arg_global Σbase Δ e τx τr :
   context_typing_wf_erased Σbase Δ e (CTWand τx τr) ->
-  basic_context_ty (dom Σbase) τx.
+  basic_context_ty ∅ τx.
 Proof.
   intros [_ [Hτ _]].
   cbn [context_ty_wf_for_erased] in Hτ.

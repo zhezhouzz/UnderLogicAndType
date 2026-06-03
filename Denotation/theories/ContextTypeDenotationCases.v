@@ -973,8 +973,7 @@ Lemma denot_relevant_lvars_basic_ret_fvar_subset x τ :
   denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
 Proof.
   intros Hbasic v Hv.
-  unfold basic_context_ty, basic_context_ty_lvars in Hbasic.
-  destruct Hbasic as [Hτ _].
+  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
   rewrite lvars_of_atoms_empty in Hτ.
   unfold denot_relevant_lvars in Hv.
   cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
@@ -986,8 +985,7 @@ Lemma denot_relevant_lvars_basic_open_tprim_fvar_subset op x τ :
   denot_relevant_lvars ({0 ~> x} τ) (tprim op (vfvar x)) ⊆ {[LVFree x]}.
 Proof.
   intros Hbasic v Hv.
-  unfold basic_context_ty, basic_context_ty_lvars in Hbasic.
-  destruct Hbasic as [Hτ _].
+  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
   rewrite lvars_of_atoms_empty in Hτ.
   assert (Hempty : context_ty_lvars τ = (∅ : lvset)) by set_solver.
   unfold denot_relevant_lvars in Hv.
@@ -1050,7 +1048,6 @@ Proof.
     Harg) as Harg_single.
   unfold denot_ctx.
   cbn [denot_ctx_under ctx_base_vars].
-  apply (proj2 (res_models_FFibVars_empty_iff m _)).
   rewrite res_models_and_iff. split.
   - replace (erase_ctx_under ∅ (CtxBind x τ))
       with (<[x := erase_ty τ]> (∅ : gmap atom ty)).

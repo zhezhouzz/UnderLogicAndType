@@ -111,14 +111,16 @@ Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
       wf_context_ty_at d D τ1 /\
       wf_context_ty_at d D τ2 /\
       erase_ty τ1 = erase_ty τ2
-  | CTArrow τx τ
-  | CTWand τx τ =>
+  | CTArrow τx τ =>
       wf_context_ty_at d D τx /\
+      wf_context_ty_at (S d) D τ
+  | CTWand τx τ =>
+      wf_context_ty_at 0 ∅ τx /\
       wf_context_ty_at (S d) D τ
   end.
 
 Definition basic_context_ty (D : aset) (τ : context_ty) : Prop :=
-  basic_context_ty_lvars (lvars_of_atoms D) τ.
+  wf_context_ty_at 0 D τ.
 
 #[global] Instance lc_cty_inst : Lc context_ty := lc_context_ty.
 Arguments lc_cty_inst /.
@@ -143,7 +145,7 @@ Lemma wf_context_ty_at_shift d D τ k :
 Proof.
   induction τ as [b φ|b φ|τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2
                  |τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2]
-    in d, k |- *; cbn [wf_context_ty_at cty_shift]; intros Hdk Hwf.
+    in d, D, k |- *; cbn [wf_context_ty_at cty_shift]; intros Hdk Hwf.
   - rewrite qual_shift_from_vars.
     eapply (lvars_wf_at_shift (S d) D (qual_vars φ) (S k));
       [lia|exact Hwf].
@@ -226,51 +228,10 @@ Proof.
     exact (Hwf (LVFree x) Hv).
 Qed.
 
-Lemma wf_context_ty_at_iff_lvars_shape d D τ :
-  wf_context_ty_at d D τ <->
-  context_ty_lvars_at d τ ⊆ lvars_of_atoms D /\ context_ty_shape_ok τ.
-Proof.
-  induction τ in d |- *; cbn [wf_context_ty_at context_ty_lvars_at context_ty_shape_ok].
-  - split.
-    + intros Hwf. split; [apply lvars_wf_at_subset_of_atoms_depth|exact I].
-      exact Hwf.
-    + intros [Hsub _]. apply lvars_at_depth_subset_of_atoms_wf. exact Hsub.
-  - split.
-    + intros Hwf. split; [apply lvars_wf_at_subset_of_atoms_depth|exact I].
-      exact Hwf.
-    + intros [Hsub _]. apply lvars_at_depth_subset_of_atoms_wf. exact Hsub.
-  - rewrite IHτ1, IHτ2. split.
-    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
-      split; [set_solver|repeat split; assumption].
-    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
-      repeat split; try assumption; set_solver.
-  - rewrite IHτ1, IHτ2. split.
-    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
-      split; [set_solver|repeat split; assumption].
-    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
-      repeat split; try assumption; set_solver.
-  - rewrite IHτ1, IHτ2. split.
-    + intros [[Hsub1 Hshape1] [[Hsub2 Hshape2] Herase]].
-      split; [set_solver|repeat split; assumption].
-    + intros [Hsub [Hshape1 [Hshape2 Herase]]].
-      repeat split; try assumption; set_solver.
-  - rewrite IHτ1, IHτ2. split.
-    + intros [[Hsub1 Hshape1] [Hsub2 Hshape2]].
-      split; [set_solver|split; assumption].
-    + intros [Hsub [Hshape1 Hshape2]].
-      split; [split|split]; try assumption; set_solver.
-  - rewrite IHτ1, IHτ2. split.
-    + intros [[Hsub1 Hshape1] [Hsub2 Hshape2]].
-      split; [set_solver|split; assumption].
-    + intros [Hsub [Hshape1 Hshape2]].
-      split; [split|split]; try assumption; set_solver.
-Qed.
-
 Lemma basic_context_ty_iff_wf_context_ty_at D τ :
   basic_context_ty D τ <-> wf_context_ty_at 0 D τ.
 Proof.
-  unfold basic_context_ty, basic_context_ty_lvars, context_ty_lvars.
-  symmetry. apply wf_context_ty_at_iff_lvars_shape.
+  reflexivity.
 Qed.
 
 Lemma basic_context_ty_mono D E τ :
@@ -278,14 +239,7 @@ Lemma basic_context_ty_mono D E τ :
   basic_context_ty D τ ->
   basic_context_ty E τ.
 Proof.
-  unfold basic_context_ty, basic_context_ty_lvars.
-  intros HDE [Hvars Hshape]. split; [|exact Hshape].
-  intros v Hv.
-  specialize (Hvars v Hv).
-  unfold lvars_of_atoms in *.
-  apply elem_of_map in Hvars as [x [-> Hx]].
-  apply elem_of_map. exists x. split; [reflexivity|].
-  apply HDE. exact Hx.
+  apply wf_context_ty_at_mono.
 Qed.
 
 Lemma context_ty_shape_ok_open k x τ :
@@ -312,16 +266,39 @@ Proof.
   - apply context_ty_shape_ok_open. exact Hshape.
 Qed.
 
+Lemma cty_lc_at_mono_depth d d' τ :
+  d <= d' ->
+  cty_lc_at d τ ->
+  cty_lc_at d' τ.
+Proof.
+  induction τ in d, d' |- *; cbn [cty_lc_at]; intros Hdd Hlc.
+  - intros k Hk. specialize (Hlc k Hk). lia.
+  - intros k Hk. specialize (Hlc k Hk). lia.
+  - destruct Hlc as [H1 H2]. split; eauto.
+  - destruct Hlc as [H1 H2]. split; eauto.
+  - destruct Hlc as [H1 H2]. split; eauto.
+  - destruct Hlc as [H1 H2]. split.
+    + eapply IHτ1; [exact Hdd|exact H1].
+    + eapply (IHτ2 (S d) (S d')); [lia|exact H2].
+  - destruct Hlc as [H1 H2]. split.
+    + eapply IHτ1; [exact Hdd|exact H1].
+    + eapply (IHτ2 (S d) (S d')); [lia|exact H2].
+Qed.
+
 Lemma wf_context_ty_at_lc d D τ :
   wf_context_ty_at d D τ ->
   cty_lc_at d τ.
 Proof.
-  induction τ in d |- *; cbn [wf_context_ty_at cty_lc_at]; intros Hwf;
+  induction τ in d, D |- *; cbn [wf_context_ty_at cty_lc_at]; intros Hwf;
     try solve [apply lvars_wf_at_lc with (D := D); exact Hwf].
-  all: repeat match goal with
-  | H : _ /\ _ |- _ => destruct H
-  | H : _ /\ _ /\ _ |- _ => destruct H as [? [? ?]]
-  end; repeat split; eauto.
+  - destruct Hwf as [H1 [H2 _]]. repeat split; eauto.
+  - destruct Hwf as [H1 [H2 _]]. repeat split; eauto.
+  - destruct Hwf as [H1 [H2 _]]. repeat split; eauto.
+  - destruct Hwf as [H1 H2]. repeat split; eauto.
+  - destruct Hwf as [H1 H2]. split.
+    + eapply (cty_lc_at_mono_depth 0 d); [lia|].
+      eapply IHτ1. exact H1.
+    + eapply IHτ2. exact H2.
 Qed.
 
 Lemma basic_context_ty_lc D τ :
@@ -389,7 +366,7 @@ Lemma wf_context_ty_at_fv_subset d D τ :
 Proof.
   intros Hwf.
   rewrite <- (context_ty_lvars_fv_at d τ).
-  induction τ in d, Hwf |- *; cbn [context_ty_lvars_at wf_context_ty_at] in *.
+  induction τ in d, D, Hwf |- *; cbn [context_ty_lvars_at wf_context_ty_at] in *.
   - rewrite lvars_fv_lvars_at_depth.
     eapply lvars_wf_at_fv_subset. exact Hwf.
   - rewrite lvars_fv_lvars_at_depth.
@@ -401,22 +378,58 @@ Proof.
   - destruct Hwf as [H1 [H2 _]].
     rewrite lvars_fv_union. set_solver.
   - destruct Hwf as [H1 H2].
-    rewrite lvars_fv_union. set_solver.
+    rewrite lvars_fv_union.
+    pose proof (IHτ1 d D H1).
+    pose proof (IHτ2 (S d) D H2).
+    set_solver.
   - destruct Hwf as [H1 H2].
-    rewrite lvars_fv_union. set_solver.
+    rewrite lvars_fv_union.
+    pose proof (IHτ1 0 ∅ H1).
+    pose proof (IHτ2 (S d) D H2).
+    rewrite !context_ty_lvars_fv_at in *.
+    set_solver.
 Qed.
 
 Lemma basic_context_ty_fv_subset D τ :
   basic_context_ty D τ ->
   fv_cty τ ⊆ D.
 Proof.
-  unfold basic_context_ty, basic_context_ty_lvars, fv_cty.
-  intros [Hvars _] x Hx.
-  apply lvars_fv_elem in Hx.
-  specialize (Hvars (LVFree x) Hx).
-  unfold lvars_of_atoms in Hvars.
-  apply elem_of_map in Hvars as [y [Heq Hy]].
-  inversion Heq. subst. exact Hy.
+  apply wf_context_ty_at_fv_subset.
+Qed.
+
+Lemma wf_context_ty_at_to_lvars_shape d D τ :
+  wf_context_ty_at d D τ ->
+  context_ty_lvars_at d τ ⊆ lvars_of_atoms D /\ context_ty_shape_ok τ.
+Proof.
+  intros Hwf. split.
+  - intros [k|x] Hv.
+    + exfalso.
+      pose proof (cty_lc_at_lvars_bv_empty d τ
+        (wf_context_ty_at_lc d D τ Hwf)) as Hbv.
+      assert (k ∈ lvars_bv (context_ty_lvars_at d τ)) as Hk
+        by (apply lvars_bv_elem; exact Hv).
+      rewrite Hbv in Hk. set_solver.
+    + unfold lvars_of_atoms. apply elem_of_map.
+      exists x. split; [reflexivity|].
+      pose proof (wf_context_ty_at_fv_subset d D τ Hwf) as Hfv.
+      apply Hfv.
+      rewrite <- (context_ty_lvars_fv_at d τ).
+      apply lvars_fv_elem. exact Hv.
+  - induction τ in d, D, Hwf |- *; cbn [wf_context_ty_at context_ty_shape_ok] in *;
+      try tauto.
+    all: repeat match goal with
+    | H : _ /\ _ |- _ => destruct H
+    | H : _ /\ _ /\ _ |- _ => destruct H as [? [? ?]]
+    end; repeat split; eauto.
+Qed.
+
+Lemma basic_context_ty_to_lvars D τ :
+  basic_context_ty D τ ->
+  basic_context_ty_lvars (lvars_of_atoms D) τ.
+Proof.
+  intros Hwf.
+  unfold basic_context_ty_lvars, context_ty_lvars.
+  apply wf_context_ty_at_to_lvars_shape. exact Hwf.
 Qed.
 
 Lemma basic_context_ty_lvar_cty_vars_equiv D τ1 τ2 :
@@ -437,7 +450,7 @@ Proof.
   }
   clear D τ1.
   intros d D τ1.
-  induction τ1 in d |- *; intros τ2 Heq Hwf;
+  induction τ1 in d, D |- *; intros τ2 Heq Hwf;
     destruct τ2; cbn [cty_vars_equiv wf_context_ty_at] in *;
     try contradiction.
   - destruct Heq as [_ Hvars]. rewrite <- Hvars. exact Hwf.
@@ -527,10 +540,7 @@ Proof.
       cbn [context_ty_lvars_at] in *. rewrite lvars_fv_union.
       apply elem_of_union_r. rewrite context_ty_lvars_fv_at. exact Hbad.
   - destruct Hwf as [H1 H2]. split.
-    + eapply IHτ1; [|exact H1].
-      intros Hbad. apply Hfresh. unfold fv_cty, context_ty_lvars in *.
-      cbn [context_ty_lvars_at] in *. rewrite lvars_fv_union.
-      apply elem_of_union_l. rewrite context_ty_lvars_fv_at. exact Hbad.
+    + exact H1.
     + eapply IHτ2; [|exact H2].
       intros Hbad. apply Hfresh. unfold fv_cty, context_ty_lvars in *.
       cbn [context_ty_lvars_at] in *. rewrite lvars_fv_union.
@@ -542,16 +552,7 @@ Lemma basic_context_ty_drop_fresh D x τ :
   basic_context_ty (D ∪ {[x]}) τ ->
   basic_context_ty D τ.
 Proof.
-  unfold basic_context_ty, basic_context_ty_lvars, fv_cty.
-  intros Hfresh [Hvars Hshape]. split; [|exact Hshape].
-  intros v Hv.
-  specialize (Hvars v Hv).
-  unfold lvars_of_atoms in *.
-  apply elem_of_map in Hvars as [y [-> Hy]].
-  apply elem_of_union in Hy as [Hy|Hy].
-  - apply elem_of_map. exists y. split; [reflexivity|exact Hy].
-  - rewrite elem_of_singleton in Hy. subst y.
-    exfalso. apply Hfresh. apply lvars_fv_elem. exact Hv.
+  apply wf_context_ty_at_drop_fresh.
 Qed.
 
 Lemma basic_context_ty_drop_insert_fresh
@@ -701,7 +702,11 @@ Proof.
   - change ({d ~> x} CTWand τ1 τ2) with (cty_open d x (CTWand τ1 τ2)).
     cbn [cty_open wf_context_ty_at] in *.
     destruct Hwf as [H1 H2]. split.
-    + apply IHτ1; assumption.
+    + replace (cty_open d x τ1) with τ1.
+      * exact H1.
+      * symmetry. apply lc_context_ty_open_fresh.
+        -- eapply wf_context_ty_at_lc. exact H1.
+        -- pose proof (wf_context_ty_at_fv_subset 0 ∅ τ1 H1). set_solver.
     + apply IHτ2; assumption.
 Qed.
 
@@ -741,7 +746,7 @@ Qed.
 
 Lemma basic_context_ty_wand_inv D τx τ :
   basic_context_ty D (CTWand τx τ) ->
-  basic_context_ty D τx /\ wf_context_ty_at 1 D τ.
+  basic_context_ty ∅ τx /\ wf_context_ty_at 1 D τ.
 Proof.
   rewrite basic_context_ty_iff_wf_context_ty_at.
   cbn [wf_context_ty_at].

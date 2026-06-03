@@ -5121,8 +5121,8 @@ Proof.
   pose proof (basic_typing_regular_tm _ _ _ He) as Hlc.
   pose proof (basic_typing_contains_fv_tm _ _ _ He) as Hfv.
   eapply denot_ty_lvar_gas_msubst_store_local_iff.
-  - unfold basic_context_ty in Hbasicτ.
-    rewrite atom_store_to_lvar_store_dom.
+  - rewrite atom_store_to_lvar_store_dom.
+    apply basic_context_ty_to_lvars.
     exact Hbasicτ.
   - rewrite (tm_lvars_lc_eq_atoms e Hlc).
     rewrite atom_store_to_lvar_store_dom.
