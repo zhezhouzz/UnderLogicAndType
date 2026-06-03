@@ -266,7 +266,58 @@ Lemma denot_var_direct_in_ctx Σ x τ :
   denot_ctx_under Σ (CtxBind x τ) ⊫
     denot_ty_in_ctx_under Σ (CtxBind x τ) τ (tret (vfvar x)).
 Proof.
-Admitted.
+  intros Hwf m Hctx.
+  pose proof (denot_ctx_under_bind_inv Σ x τ m Hctx) as Hbind.
+  unfold denot_ty_in_ctx_under, denot_ty in Hbind |- *.
+  eapply res_models_denot_ty_lvar_gas_env_agree_on
+    with (X := denot_relevant_lvars τ (tret (vfvar x)));
+    [reflexivity | | exact Hbind].
+  apply atom_env_to_lty_env_restrict_lvars_agree_on with (X := {[x]}).
+  - intros y Hy.
+    apply elem_of_singleton in Hy. subst y.
+    cbn [erase_ctx].
+    change ((<[x := erase_ty τ]> Σ : gmap atom ty) !! x =
+      ({[x := erase_ty τ]} : gmap atom ty) !! x).
+    transitivity (Some (erase_ty τ)).
+    + apply map_lookup_insert.
+    + symmetry. apply map_lookup_singleton.
+  - assert (Hbasic : basic_context_ty {[x]} τ).
+    {
+      pose proof (context_typing_wf_context_ty
+        Σ (CtxBind x τ) (tret (vfvar x)) τ Hwf) as Hτ.
+      replace (dom (erase_ctx (CtxBind x τ))) with ({[x]} : aset) in Hτ.
+      2:{
+        cbn [erase_ctx].
+        symmetry.
+        apply set_eq. intros z. split.
+        - intros Hz.
+          apply elem_of_dom in Hz as [T Hz].
+          apply (proj1 (lookup_singleton_Some x z (erase_ty τ) T)) in Hz
+            as [Hzx _].
+          subst z. set_solver.
+        - intros Hz.
+          apply elem_of_singleton in Hz. subst z.
+          apply elem_of_dom. exists (erase_ty τ).
+          apply map_lookup_singleton.
+      }
+      exact Hτ.
+    }
+    pose proof (basic_context_ty_to_lvars {[x]} τ Hbasic) as [Hτvars _].
+    assert (Hrel :
+        denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
+    {
+      assert (Hatoms :
+          lvars_of_atoms ({[x]} : aset) = ({[LVFree x]} : lvset)).
+      { unfold lvars_of_atoms. set_solver. }
+      rewrite Hatoms in Hτvars.
+      unfold denot_relevant_lvars.
+      cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+      set_solver.
+    }
+    pose proof (lvars_fv_mono _ _ Hrel) as Hfv.
+    rewrite lvars_fv_singleton_free in Hfv.
+    exact Hfv.
+Qed.
 
 Lemma fundamental_var_case Σ x τ :
   context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ ->
