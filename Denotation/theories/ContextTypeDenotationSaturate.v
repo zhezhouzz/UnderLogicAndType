@@ -7,6 +7,125 @@ From Denotation Require Export ContextTypeDenotationTactics.
 
 Section ContextTypeDenotation.
 
+Lemma formula_fv_denot_ty_lvar_gas_components_lower
+    gas Σ τ e :
+  basic_context_ty_lvars (dom Σ) τ ->
+  fv_tm e ∪ fv_cty τ ⊆ formula_fv (denot_ty_lvar_gas gas Σ τ e).
+Proof.
+  intros Hwf.
+  transitivity (lvars_fv (tm_lvars e ∪ context_ty_lvars τ)).
+  - rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
+    reflexivity.
+  - apply lvars_fv_mono.
+    pose proof (basic_context_ty_lvars_denot_relevant_env Σ τ e Hwf)
+      as [Hτ _].
+    destruct gas as [|gas]; destruct τ;
+      cbn [denot_ty_lvar_gas formula_lvars context_ty_wf_formula
+        context_ty_wf_lqual basic_world_formula basic_world_lqual
+        expr_basic_typing_formula expr_basic_typing_lqual expr_total_formula
+        expr_total_lqual lqual_lvars lqual_fv lqual_dom];
+      better_set_solver.
+Qed.
+
+Lemma denot_ty_lvar_gas_result_alias_scope_ret_from_source
+    gas Σ τ e x (m : WfWorldT) :
+  basic_context_ty_lvars (dom Σ) τ ->
+  formula_scoped_in_world m (denot_ty_lvar_gas gas Σ τ e) ->
+  m ⊨ expr_result_formula e (LVFree x) ->
+  formula_scoped_in_world m
+    (denot_ty_lvar_gas gas Σ τ (tret (vfvar x))).
+Proof.
+  intros Hwf Hscope Hres.
+  pose proof (res_models_scoped _ _ Hres) as Hscope_res.
+  pose proof (formula_fv_denot_ty_lvar_gas_components_lower
+    gas Σ τ e Hwf) as Hlower.
+  unfold formula_scoped_in_world in *.
+  transitivity (fv_tm (tret (vfvar x)) ∪ fv_cty τ).
+  - apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
+  - rewrite formula_fv_expr_result_formula in Hscope_res.
+    cbn [fv_tm fv_value tm_lvars tm_lvars_at value_lvars value_lvars_at].
+    assert (Hx_scope : {[x]} ⊆ world_dom (m : WorldT)).
+    {
+      intros z Hz.
+      apply elem_of_singleton in Hz. subst z.
+      apply Hscope_res.
+      rewrite lvars_fv_union, lvars_fv_singleton_free.
+      set_solver.
+    }
+    assert (Hτ_scope : fv_cty τ ⊆ world_dom (m : WorldT)).
+    {
+      transitivity (fv_tm e ∪ fv_cty τ).
+      - set_solver.
+      - transitivity (formula_fv (denot_ty_lvar_gas gas Σ τ e));
+          [exact Hlower | exact Hscope].
+    }
+    intros z Hz.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + exact (Hx_scope z Hz).
+    + exact (Hτ_scope z Hz).
+Qed.
+
+Lemma logic_qualifier_denote_of_res_subset
+    (q : LogicQualifierT) (m0 m : WfWorldT) :
+  m0 ⊑ m ->
+  lqual_fv q ⊆ world_dom (m0 : WorldT) ->
+  logic_qualifier_denote q m ->
+  logic_qualifier_denote q m0.
+Proof.
+  destruct q as [D P]. simpl.
+  intros Hle Hfv [Hlc [Hsub HP]].
+  exists Hlc.
+  assert (Hsub0 : lvars_fv D ⊆ world_dom (m0 : WorldT)) by exact Hfv.
+  exists Hsub0.
+  enough (lworld_on_lift D m0 Hlc Hsub0 =
+          lworld_on_lift D m Hlc Hsub) as Heq.
+  { rewrite Heq. exact HP. }
+  apply lworld_on_ext. unfold lworld_on_lift. simpl.
+  rewrite (res_restrict_le_eq m0 m (lvars_fv D) Hle Hsub0).
+  reflexivity.
+Qed.
+
+Lemma expr_result_formula_of_res_subset
+    e x (m0 m : WfWorldT) :
+  m0 ⊑ m ->
+  formula_fv (expr_result_formula e (LVFree x)) ⊆ world_dom (m0 : WorldT) ->
+  m ⊨ expr_result_formula e (LVFree x) ->
+  m0 ⊨ expr_result_formula e (LVFree x).
+Proof.
+  intros Hle Hfv Hm.
+  apply expr_result_formula_models_iff in Hm.
+  apply expr_result_formula_models_iff.
+  eapply logic_qualifier_denote_of_res_subset; eauto.
+Qed.
+
+Lemma expr_result_formula_of_res_store_subset
+    e z (m0 m : WfWorldT) :
+  res_subset m0 m ->
+  m ⊨ expr_result_formula e z ->
+  m0 ⊨ expr_result_formula e z.
+Proof.
+  intros [Hdom Hstores_sub] Hm.
+  apply expr_result_formula_to_atom_world in Hm.
+  apply expr_result_atom_world_to_formula.
+  destruct Hm as [Hz [Hdom_e Hstores]].
+  split; [exact Hz|].
+  split.
+  - rewrite res_lift_free_dom in Hdom_e |- *.
+    change (tm_lvars e ∪ {[z]} ⊆ lvars_of_atoms (worldA_dom (m : WorldT)))
+      in Hdom_e.
+    intros v Hv.
+    specialize (Hdom_e v Hv).
+    change (v ∈ lvars_of_atoms (worldA_dom (m0 : WorldT))).
+    replace (lvars_of_atoms (worldA_dom (m0 : WorldT)))
+      with (lvars_of_atoms (worldA_dom (m : WorldT))).
+    + exact Hdom_e.
+    + apply f_equal. symmetry. exact Hdom.
+  - intros τ Hτ.
+    destruct Hτ as [σ [Hσ ->]].
+    apply Hstores.
+    exists σ. split; [apply Hstores_sub; exact Hσ | reflexivity].
+Qed.
+
 Lemma denot_ty_lvar_gas_saturate gas Σ τ e :
   cty_depth τ <= gas ->
   denot_ty_lvar_gas gas Σ τ e =
@@ -758,6 +877,293 @@ Proof.
     exact Hz_lookup.
 Qed.
 
+Definition tm_result_equiv_on
+    (m : WfWorldT) (e1 e2 : tm) : Prop :=
+  forall σ v,
+    worldA_stores (m : WorldT) σ ->
+    expr_eval_in_atom_store σ e1 v <->
+    expr_eval_in_atom_store σ e2 v.
+
+Definition typed_total_tm_result_equiv_on
+    (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
+    (e1 e2 : tm) : Prop :=
+  tm_result_equiv_on m e1 e2 /\
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e1 /\
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e2.
+
+Lemma typed_total_tm_result_equiv_on_source_zero
+    Σ τ m e1 e2 :
+  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e1.
+Proof. intros [_ [Hzero _]]. exact Hzero. Qed.
+
+Lemma typed_total_tm_result_equiv_on_target_zero
+    Σ τ m e1 e2 :
+  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e2.
+Proof. intros [_ [_ Hzero]]. exact Hzero. Qed.
+
+Lemma tm_result_equiv_on_sym m e1 e2 :
+  tm_result_equiv_on m e1 e2 ->
+  tm_result_equiv_on m e2 e1.
+Proof.
+  intros Heq σ v Hσ. symmetry. apply Heq. exact Hσ.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_sym Σ τ m e1 e2 :
+  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+  typed_total_tm_result_equiv_on Σ τ m e2 e1.
+Proof.
+  intros [Heq [Hz1 Hz2]].
+  split; [apply tm_result_equiv_on_sym; exact Heq|].
+  split; assumption.
+Qed.
+
+Lemma tm_result_equiv_on_res_subset
+    (m0 m : WfWorldT) e1 e2 :
+  m0 ⊑ m ->
+  lc_tm e1 ->
+  lc_tm e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m0 : WorldT) ->
+  tm_result_equiv_on m e1 e2 ->
+  tm_result_equiv_on m0 e1 e2.
+Proof.
+  intros Hle _ _ Hfv Heq σ v Hσ.
+  pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
+  assert (Hσ_restrict :
+      (res_restrict m (world_dom (m0 : WorldT)) : WorldT) σ).
+  { rewrite Hrestrict. exact Hσ. }
+  destruct Hσ_restrict as [σm [Hσm Hσm_restrict]].
+  assert (Hfv1 : fv_tm e1 ⊆ world_dom (m0 : WorldT)) by set_solver.
+  assert (Hfv2 : fv_tm e2 ⊆ world_dom (m0 : WorldT)) by set_solver.
+  specialize (Heq σm v Hσm) as [Heq12 Heq21].
+  split.
+  - intros Heval1.
+    rewrite <- Hσm_restrict.
+    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+      σm e2 v (world_dom (m0 : WorldT)) Hfv2)).
+    apply Heq12.
+    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+      σm e1 v (world_dom (m0 : WorldT)) Hfv1)).
+    rewrite Hσm_restrict. exact Heval1.
+  - intros Heval2.
+    rewrite <- Hσm_restrict.
+    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+      σm e1 v (world_dom (m0 : WorldT)) Hfv1)).
+    apply Heq21.
+	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	      σm e2 v (world_dom (m0 : WorldT)) Hfv2)).
+	    rewrite Hσm_restrict. exact Heval2.
+Qed.
+
+Lemma tm_result_equiv_on_res_store_subset
+    (m0 m : WfWorldT) e1 e2 :
+  res_subset m0 m ->
+  tm_result_equiv_on m e1 e2 ->
+  tm_result_equiv_on m0 e1 e2.
+Proof.
+  intros [_ Hstores] Heq σ v Hσ.
+  apply Heq. exact (Hstores σ Hσ).
+Qed.
+
+Lemma tm_result_equiv_on_total
+    m e1 e2 :
+  tm_result_equiv_on m e1 e2 ->
+  lc_tm e2 ->
+  fv_tm e2 ⊆ world_dom (m : WorldT) ->
+  m ⊨ expr_total_formula e1 ->
+  m ⊨ expr_total_formula e2.
+Proof.
+  intros Heq Hlc2 Hfv2 Htotal.
+  apply expr_total_formula_to_atom_world in Htotal.
+  apply expr_total_atom_world_to_formula.
+  unfold expr_total_on_atom_world, expr_total_on in *.
+  destruct Htotal as [_ Hstores].
+  split.
+  - rewrite res_lift_free_dom.
+    rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
+    unfold lvars_of_atoms.
+    intros v Hv.
+    apply elem_of_map in Hv as [a [Hv_eq Ha]].
+    subst v.
+    apply elem_of_map. exists a. split; [reflexivity|].
+    apply Hfv2. exact Ha.
+  - intros τ Hτ.
+    destruct Hτ as [σ [Hσ ->]].
+    destruct (Hstores (lstore_lift_free σ)) as [v Heval1].
+    { exists σ. split; [exact Hσ | reflexivity]. }
+    exists v.
+    apply (proj1 (Heq σ v Hσ)). exact Heval1.
+Qed.
+
+Lemma tm_result_equiv_on_tapp_fvar
+    (m : WfWorldT) e1 e2 y :
+  wfworld_closed_on
+    (fv_tm (tapp_tm e1 (vfvar y)) ∪ fv_tm (tapp_tm e2 (vfvar y))) m ->
+  lc_tm e1 ->
+  lc_tm e2 ->
+  tm_result_equiv_on m e1 e2 ->
+  tm_result_equiv_on m
+    (tapp_tm e1 (vfvar y))
+    (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hclosed Hlc1 Hlc2 Heq σ v Hσ.
+  set (X := fv_tm (tapp_tm e1 (vfvar y)) ∪
+            fv_tm (tapp_tm e2 (vfvar y))).
+  assert (HσX_closed : store_closed (store_restrict σ X)).
+  { subst X. apply Hclosed. exact Hσ. }
+  assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X) by (subst X; set_solver).
+  assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X) by (subst X; set_solver).
+  assert (Hfv_e1 : fv_tm e1 ⊆ X).
+  {
+    subst X. cbn [fv_tm fv_value].
+    unfold tapp_tm. cbn [fv_tm fv_value].
+    set_solver.
+  }
+	  assert (Hfv_e2 : fv_tm e2 ⊆ X).
+	  {
+	    subst X. cbn [fv_tm fv_value].
+	    unfold tapp_tm. cbn [fv_tm fv_value].
+	    set_solver.
+	  }
+	  assert (Hfun_equiv : forall vf,
+	      expr_eval_in_atom_store (store_restrict σ X) e1 vf <->
+	      expr_eval_in_atom_store (store_restrict σ X) e2 vf).
+	  {
+	    intros vf. split; intros Heval_fun.
+	    - apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ e2 vf X Hfv_e2)).
+	      apply (proj1 (Heq σ vf Hσ)).
+	      apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ e1 vf X Hfv_e1)).
+	      exact Heval_fun.
+	    - apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ e1 vf X Hfv_e1)).
+	      apply (proj2 (Heq σ vf Hσ)).
+	      apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ e2 vf X Hfv_e2)).
+	      exact Heval_fun.
+	  }
+	  pose proof (expr_eval_in_atom_store_tapp_tm_fun_equiv
+	    (store_restrict σ X) e1 e2 y v HσX_closed Hlc1 Hlc2
+	    Hfun_equiv) as [Happ12 Happ21].
+	  split.
+	  - intros Heval.
+	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	      σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
+	    apply Happ12.
+	    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ (tapp_tm e1 (vfvar y)) v X Hfv_app1)).
+	    exact Heval.
+	  - intros Heval.
+	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	      σ (tapp_tm e1 (vfvar y)) v X Hfv_app1)).
+	    apply Happ21.
+	    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	        σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
+	    exact Heval.
+	Qed.
+
+Lemma expr_result_formula_transport_of_tm_result_equiv
+    m e1 e2 z :
+  tm_result_equiv_on m e1 e2 ->
+  z ∉ tm_lvars e1 ->
+  tm_lvars e1 ∪ {[z]} ⊆ worldA_dom (res_lift_free m : LWorldT) ->
+  m ⊨ expr_result_formula e2 z ->
+  m ⊨ expr_result_formula e1 z.
+Proof.
+  intros Heq Hz Hdom1 Hres.
+  apply expr_result_formula_to_atom_world in Hres.
+  apply expr_result_atom_world_to_formula.
+  destruct Hres as [_ [Hdom2 Hstores2]].
+  split; [|split].
+  - exact Hz.
+  - exact Hdom1.
+  - intros τ Hτ.
+    destruct Hτ as [σ [Hσ ->]].
+    specialize (Hstores2 (lstore_lift_free σ)
+      ltac:(exists σ; split; [exact Hσ | reflexivity])).
+    destruct Hstores2 as [_ [v [Hz_lookup Heval2]]].
+    split; [exact Hz|].
+    exists v. split; [exact Hz_lookup|].
+    apply (proj2 (Heq σ v Hσ)). exact Heval2.
+Qed.
+
+Lemma tm_result_equiv_on_result_alias
+    e x (m : WfWorldT) :
+  m ⊨ expr_result_formula e (LVFree x) ->
+  m ⊨ expr_total_formula (tret (vfvar x)) ->
+  tm_result_equiv_on m e (tret (vfvar x)).
+Proof.
+  intros Hres Htotal_ret σ v Hσ.
+  pose proof (expr_result_formula_to_atom_world e (LVFree x) m Hres)
+    as Hres_world.
+  pose proof (expr_total_formula_to_atom_world (tret (vfvar x)) m Htotal_ret)
+    as Htotal_world.
+  destruct Hres_world as [_ [_ Hres_stores]].
+  destruct Htotal_world as [_ Htotal_stores].
+  specialize (Hres_stores (lstore_lift_free σ)).
+  assert (Hlift :
+      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  specialize (Hres_stores Hlift).
+  specialize (Htotal_stores (lstore_lift_free σ) Hlift).
+  destruct Hres_stores as [_ [vx [Hx_lookup Heval_e_vx]]].
+  destruct Htotal_stores as [vt Heval_ret_vt].
+  unfold expr_eval_in_atom_store, expr_eval_in_store.
+  unfold expr_eval_in_atom_store, expr_eval_in_store in Heval_e_vx.
+  unfold expr_eval_in_store in Heval_ret_vt.
+  cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+    lstore_instantiate_tm_split_at] in Heval_ret_vt.
+  change (tret (lstore_instantiate_value_at 0
+    (lstore_lift_free σ) (vfvar x)) →* tret vt) in Heval_ret_vt.
+  rewrite lstore_instantiate_value_at_fvar in Heval_ret_vt.
+  assert (Hx_lookup_atom : σ !! x = Some vx).
+  {
+    change (((lstore_lift_free σ : LStoreT) : gmap logic_var value) !!
+      LVFree x = Some vx) in Hx_lookup.
+    rewrite lstore_lift_free_lookup_free in Hx_lookup. exact Hx_lookup.
+  }
+  rewrite lstore_free_part_lift_free in Heval_ret_vt.
+  destruct (σ !! x) as [vx'|] eqn:Hσx in Heval_ret_vt.
+  2:{ rewrite Hx_lookup_atom in Hσx. discriminate. }
+  assert (Hvxx : vx' = vx) by congruence. subst vx'.
+  replace (match σ !! x with Some u => u | None => vfvar x end)
+    with vx in Heval_ret_vt by (rewrite Hσx; reflexivity).
+  assert (Hvt : vt = vx).
+  {
+    symmetry.
+    pose proof (value_steps_self vx (tret vt) Heval_ret_vt) as Heq.
+    inversion Heq. reflexivity.
+  }
+  subst vt.
+  split.
+  - intros Heval_e_v.
+    assert (Hv : v = vx).
+    { eapply steps_result_unique; [exact Heval_e_v | exact Heval_e_vx]. }
+    subst v.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at].
+    change (tret (lstore_instantiate_value_at 0
+      (lstore_lift_free σ) (vfvar x)) →* tret vx).
+    rewrite lstore_instantiate_value_at_fvar.
+    rewrite lstore_free_part_lift_free.
+    replace (match σ !! x with Some u => u | None => vfvar x end)
+      with vx by (rewrite Hσx; reflexivity).
+    exact Heval_ret_vt.
+  - intros Heval_ret_v.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at] in Heval_ret_v.
+    change (tret (lstore_instantiate_value_at 0
+      (lstore_lift_free σ) (vfvar x)) →* tret v) in Heval_ret_v.
+    rewrite lstore_instantiate_value_at_fvar in Heval_ret_v.
+    rewrite lstore_free_part_lift_free in Heval_ret_v.
+    replace (match σ !! x with Some u => u | None => vfvar x end)
+      with vx in Heval_ret_v by (rewrite Hσx; reflexivity).
+    pose proof (value_steps_self vx (tret v) Heval_ret_v) as Heq.
+    inversion Heq. subst v. exact Heval_e_vx.
+Qed.
+
 Lemma denot_ty_lvar_gas_result_alias_over_body
     (gas : nat) (Σ : lty_env) b φ e x (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -804,8 +1210,16 @@ Admitted.
 
 Lemma denot_ty_lvar_gas_result_alias_union_body
     gas (Σ : lty_env) τ1 τ2 e x (m : WfWorldT) :
+  (forall (Σ : lty_env) τ e x (m : WfWorldT),
+    lty_env_closed Σ ->
+    Σ !! LVFree x = Some (erase_ty τ) ->
+    m ⊨ expr_result_formula e (LVFree x) ->
+    m ⊨ denot_ty_lvar_gas gas Σ τ e ->
+    m ⊨ denot_ty_lvar_gas gas Σ τ (tret (vfvar x))) ->
   lty_env_closed Σ ->
   Σ !! LVFree x = Some (erase_ty (CTUnion τ1 τ2)) ->
+  basic_context_ty_lvars (dom Σ) (CTUnion τ1 τ2) ->
+  erase_ty τ1 = erase_ty τ2 ->
   m ⊨ expr_result_formula e (LVFree x) ->
   m ⊨
     FOr
@@ -816,12 +1230,54 @@ Lemma denot_ty_lvar_gas_result_alias_union_body
       (denot_ty_lvar_gas gas Σ τ1 (tret (vfvar x)))
       (denot_ty_lvar_gas gas Σ τ2 (tret (vfvar x))).
 Proof.
-Admitted.
+  intros IH HΣclosed HΣx Hwf Herase Hres Hbody.
+  assert (Hwf1 : basic_context_ty_lvars (dom Σ) τ1).
+  {
+    destruct Hwf as [Hvars Hshape].
+    split.
+    - change (context_ty_lvars τ1 ∪ context_ty_lvars τ2 ⊆ dom Σ) in Hvars.
+      intros z Hz. apply Hvars. rewrite elem_of_union. left. exact Hz.
+    - cbn [context_ty_shape_ok] in Hshape. tauto.
+  }
+  assert (Hwf2 : basic_context_ty_lvars (dom Σ) τ2).
+  {
+    destruct Hwf as [Hvars Hshape].
+    split.
+    - change (context_ty_lvars τ1 ∪ context_ty_lvars τ2 ⊆ dom Σ) in Hvars.
+      intros z Hz. apply Hvars. rewrite elem_of_union. right. exact Hz.
+    - cbn [context_ty_shape_ok] in Hshape. tauto.
+  }
+  pose proof (res_models_scoped _ _ Hbody) as Hscope_body.
+  pose proof Hscope_body as Hscope_or.
+  apply formula_scoped_or_iff in Hscope_body as [Hscope1 Hscope2].
+  pose proof (proj1 (res_models_or_iff m
+    (denot_ty_lvar_gas gas Σ τ1 e)
+    (denot_ty_lvar_gas gas Σ τ2 e) Hscope_or) Hbody)
+    as [Hτ1|Hτ2].
+  - eapply res_models_or_intro_l_from_model.
+    + assert (HΣx1 : Σ !! LVFree x = Some (erase_ty τ1)).
+      { cbn [erase_ty] in HΣx. exact HΣx. }
+      exact (IH Σ τ1 e x m HΣclosed HΣx1 Hres Hτ1).
+    + eapply denot_ty_lvar_gas_result_alias_scope_ret_from_source; eauto.
+  - eapply res_models_or_intro_r_from_model.
+    + eapply denot_ty_lvar_gas_result_alias_scope_ret_from_source; eauto.
+    + assert (HΣx2 : Σ !! LVFree x = Some (erase_ty τ2)).
+      { cbn [erase_ty] in HΣx. rewrite <- Herase. exact HΣx. }
+      exact (IH Σ τ2 e x m HΣclosed HΣx2 Hres Hτ2).
+Qed.
 
 Lemma denot_ty_lvar_gas_result_alias_sum_body
     gas (Σ : lty_env) τ1 τ2 e x (m : WfWorldT) :
+  (forall (Σ : lty_env) τ e x (m : WfWorldT),
+    lty_env_closed Σ ->
+    Σ !! LVFree x = Some (erase_ty τ) ->
+    m ⊨ expr_result_formula e (LVFree x) ->
+    m ⊨ denot_ty_lvar_gas gas Σ τ e ->
+    m ⊨ denot_ty_lvar_gas gas Σ τ (tret (vfvar x))) ->
   lty_env_closed Σ ->
   Σ !! LVFree x = Some (erase_ty (CTSum τ1 τ2)) ->
+  basic_context_ty_lvars (dom Σ) (CTSum τ1 τ2) ->
+  erase_ty τ1 = erase_ty τ2 ->
   m ⊨ expr_result_formula e (LVFree x) ->
   m ⊨
     FPlus
@@ -832,7 +1288,62 @@ Lemma denot_ty_lvar_gas_result_alias_sum_body
       (denot_ty_lvar_gas gas Σ τ1 (tret (vfvar x)))
       (denot_ty_lvar_gas gas Σ τ2 (tret (vfvar x))).
 Proof.
-Admitted.
+  intros IH HΣclosed HΣx Hwf Herase Hres Hbody.
+  assert (Hwf1 : basic_context_ty_lvars (dom Σ) τ1).
+  {
+    destruct Hwf as [Hvars Hshape].
+    split.
+    - change (context_ty_lvars τ1 ∪ context_ty_lvars τ2 ⊆ dom Σ) in Hvars.
+      intros z Hz. apply Hvars. rewrite elem_of_union. left. exact Hz.
+    - cbn [context_ty_shape_ok] in Hshape. tauto.
+  }
+  assert (Hwf2 : basic_context_ty_lvars (dom Σ) τ2).
+  {
+    destruct Hwf as [Hvars Hshape].
+    split.
+    - change (context_ty_lvars τ1 ∪ context_ty_lvars τ2 ⊆ dom Σ) in Hvars.
+      intros z Hz. apply Hvars. rewrite elem_of_union. right. exact Hz.
+    - cbn [context_ty_shape_ok] in Hshape. tauto.
+  }
+  pose proof (res_models_scoped _ _ Hres) as Hscope_res.
+  apply res_models_plus_iff in Hbody as
+    [n1 [n2 [Hdef [Hle [Hτ1 Hτ2]]]]].
+  destruct (res_sum_pullback_subset_projection_full m n1 n2 Hdef Hle)
+    as [Hsub1 [Hsub2 [Hdef_full Hle_full]]].
+  set (m1 := res_pullback_subset_projection m n1 Hsub1).
+  set (m2 := res_pullback_subset_projection m n2 Hsub2).
+  assert (Hτ1_full : m1 ⊨ denot_ty_lvar_gas gas Σ τ1 e).
+  {
+    subst m1.
+    eapply res_models_pullback_subset_projection. exact Hτ1.
+  }
+  assert (Hτ2_full : m2 ⊨ denot_ty_lvar_gas gas Σ τ2 e).
+  {
+    subst m2.
+    eapply res_models_pullback_subset_projection. exact Hτ2.
+  }
+  assert (Hres1 : m1 ⊨ expr_result_formula e (LVFree x)).
+  {
+    subst m1.
+    eapply expr_result_formula_of_res_store_subset.
+    - apply res_pullback_subset_projection_subset.
+    - exact Hres.
+  }
+  assert (Hres2 : m2 ⊨ expr_result_formula e (LVFree x)).
+  {
+    subst m2.
+    eapply expr_result_formula_of_res_store_subset.
+    - apply res_pullback_subset_projection_subset.
+    - exact Hres.
+  }
+  eapply res_models_plus_intro; [exact Hle_full| |].
+  - assert (HΣx1 : Σ !! LVFree x = Some (erase_ty τ1)).
+    { cbn [erase_ty] in HΣx. exact HΣx. }
+    exact (IH Σ τ1 e x m1 HΣclosed HΣx1 Hres1 Hτ1_full).
+  - assert (HΣx2 : Σ !! LVFree x = Some (erase_ty τ2)).
+    { cbn [erase_ty] in HΣx. rewrite <- Herase. exact HΣx. }
+    exact (IH Σ τ2 e x m2 HΣclosed HΣx2 Hres2 Hτ2_full).
+Qed.
 
 Lemma denot_ty_lvar_gas_result_alias_arrow_body
     gas (Σ : lty_env) τx τr e x (m : WfWorldT) :
@@ -906,6 +1417,434 @@ Lemma denot_ty_lvar_gas_result_alias_wand_body
 Proof.
 Admitted.
 
+Lemma denot_ty_lvar_gas_tm_result_equiv_over_body
+    (gas : nat) (Σ : lty_env) b φ e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTOver b φ) m e1 e2 ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e1) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FOver (type_qualifier_formula φ))))) ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e2) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FOver (type_qualifier_formula φ))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_under_body
+    (gas : nat) (Σ : lty_env) b φ e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTUnder b φ) m e1 e2 ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e1) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FUnder (type_qualifier_formula φ))))) ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
+        (FImpl
+          (expr_result_formula (tm_shift 0 e2) (LVBound 0))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+            (FUnder (type_qualifier_formula φ))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_zero_inter_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTInter τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ1 e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_zero_inter_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTInter τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ2 e.
+Proof.
+Admitted.
+
+Lemma typed_total_tm_result_equiv_on_inter_l
+    (Σ : lty_env) τ1 τ2 m e1 e2 :
+  typed_total_tm_result_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
+  typed_total_tm_result_equiv_on Σ τ1 m e1 e2.
+Proof.
+  intros [Heq [Hzero_src Hzero_tgt]].
+  split; [exact Heq|].
+  split.
+  - eapply denot_ty_lvar_gas_zero_inter_l; exact Hzero_src.
+  - eapply denot_ty_lvar_gas_zero_inter_l; exact Hzero_tgt.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_inter_r
+    (Σ : lty_env) τ1 τ2 m e1 e2 :
+  typed_total_tm_result_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
+  typed_total_tm_result_equiv_on Σ τ2 m e1 e2.
+Proof.
+  intros [Heq [Hzero_src Hzero_tgt]].
+  split; [exact Heq|].
+  split.
+  - eapply denot_ty_lvar_gas_zero_inter_r; exact Hzero_src.
+  - eapply denot_ty_lvar_gas_zero_inter_r; exact Hzero_tgt.
+Qed.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_inter_body
+    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
+      typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e2)
+    (Σ : lty_env) τ1 τ2 e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ1 e1 /\
+  m ⊨ denot_ty_lvar_gas gas Σ τ2 e1 ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ1 e2 /\
+  m ⊨ denot_ty_lvar_gas gas Σ τ2 e2.
+Proof.
+  intros Hequiv [H1 H2].
+  split.
+  - eapply IH; [|exact H1].
+    eapply typed_total_tm_result_equiv_on_inter_l; exact Hequiv.
+  - eapply IH; [|exact H2].
+    eapply typed_total_tm_result_equiv_on_inter_r; exact Hequiv.
+Qed.
+
+Lemma denot_ty_lvar_gas_zero_union_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTUnion τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ1 e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_zero_union_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTUnion τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ2 e.
+Proof.
+Admitted.
+
+Lemma typed_total_tm_result_equiv_on_union_l
+    (Σ : lty_env) τ1 τ2 m e1 e2 :
+  typed_total_tm_result_equiv_on Σ (CTUnion τ1 τ2) m e1 e2 ->
+  typed_total_tm_result_equiv_on Σ τ1 m e1 e2.
+Proof.
+  intros [Heq [Hzero_src Hzero_tgt]].
+  split; [exact Heq|].
+  split.
+  - eapply denot_ty_lvar_gas_zero_union_l; exact Hzero_src.
+  - eapply denot_ty_lvar_gas_zero_union_l; exact Hzero_tgt.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_union_r
+    (Σ : lty_env) τ1 τ2 m e1 e2 :
+  typed_total_tm_result_equiv_on Σ (CTUnion τ1 τ2) m e1 e2 ->
+  typed_total_tm_result_equiv_on Σ τ2 m e1 e2.
+Proof.
+  intros [Heq [Hzero_src Hzero_tgt]].
+  split; [exact Heq|].
+  split.
+  - eapply denot_ty_lvar_gas_zero_union_r; exact Hzero_src.
+  - eapply denot_ty_lvar_gas_zero_union_r; exact Hzero_tgt.
+Qed.
+
+Lemma denot_ty_lvar_gas_scope_from_zero_any
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
+  formula_scoped_in_world m (denot_ty_lvar_gas gas Σ τ e).
+Proof.
+  intros Hzero.
+  eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open.
+  - reflexivity.
+  - apply denot_ty_lvar_gas_guard_of_zero. exact Hzero.
+Qed.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_union_body
+    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
+      typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e2)
+    (Σ : lty_env) τ1 τ2 e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTUnion τ1 τ2) m e1 e2 ->
+  m ⊨
+    FOr
+      (denot_ty_lvar_gas gas Σ τ1 e1)
+      (denot_ty_lvar_gas gas Σ τ2 e1) ->
+  m ⊨
+    FOr
+	      (denot_ty_lvar_gas gas Σ τ1 e2)
+	      (denot_ty_lvar_gas gas Σ τ2 e2).
+Proof.
+  intros Hequiv Hbody.
+  pose proof (typed_total_tm_result_equiv_on_union_l
+    Σ τ1 τ2 m e1 e2 Hequiv) as Hequiv1.
+  pose proof (typed_total_tm_result_equiv_on_union_r
+    Σ τ1 τ2 m e1 e2 Hequiv) as Hequiv2.
+  pose proof (res_models_scoped _ _ Hbody) as Hscope_body.
+  apply (proj1 (res_models_or_iff m _ _ Hscope_body)) in Hbody.
+  destruct Hbody as [H1|H2].
+  - eapply res_models_or_intro_l_from_model.
+    + eapply IH; [exact Hequiv1|exact H1].
+    + eapply denot_ty_lvar_gas_scope_from_zero_any.
+      exact (typed_total_tm_result_equiv_on_target_zero
+        Σ τ2 m e1 e2 Hequiv2).
+  - eapply res_models_or_intro_r_from_model.
+    + eapply denot_ty_lvar_gas_scope_from_zero_any.
+      exact (typed_total_tm_result_equiv_on_target_zero
+        Σ τ1 m e1 e2 Hequiv1).
+    + eapply IH; [exact Hequiv2|exact H2].
+Qed.
+
+Lemma denot_ty_lvar_gas_zero_res_subset
+    (Σ : lty_env) τ e (m n : WfWorldT) :
+  res_subset n m ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
+  n ⊨ denot_ty_lvar_gas 0 Σ τ e.
+Proof.
+  intros Hsub Hzero.
+  apply denot_ty_lvar_gas_zero_of_guard.
+  apply denot_ty_lvar_gas_guard_of_zero in Hzero.
+  repeat rewrite res_models_and_iff in Hzero |- *.
+  destruct Hzero as [Hwf [Hworld [Hbasic Htotal]]].
+  pose proof Hsub as [Hdom _].
+  split.
+  - apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hscope Hbasic_ty]].
+    apply context_ty_wf_formula_models_iff.
+    split; [exact Hlc|]. split; [set_solver|exact Hbasic_ty].
+  - split.
+    + eapply basic_world_formula_res_subset; eauto.
+    + split.
+      * apply expr_basic_typing_formula_models_iff in Hbasic
+          as [Hlc [Hscope Hty]].
+        apply expr_basic_typing_formula_models_iff.
+        split; [exact Hlc|]. split; [set_solver|exact Hty].
+      * eapply expr_total_formula_res_subset; eauto.
+Qed.
+
+Lemma denot_ty_lvar_gas_zero_sum_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTSum τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ1 e.
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_zero_sum_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTSum τ1 τ2) e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ2 e.
+Proof.
+Admitted.
+
+Lemma typed_total_tm_result_equiv_on_sum_l_target_zero
+    (Σ : lty_env) τ1 τ2 (e1 e2 : tm) (m m1 : WfWorldT) :
+  res_subset m1 m ->
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTSum τ1 τ2) e2 ->
+  m1 ⊨ denot_ty_lvar_gas 0 Σ τ1 e2.
+Proof.
+  intros Hsub Hzero.
+  apply denot_ty_lvar_gas_zero_sum_l with (τ2 := τ2).
+  eapply denot_ty_lvar_gas_zero_res_subset; eauto.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_sum_r_target_zero
+    (Σ : lty_env) τ1 τ2 (e1 e2 : tm) (m m2 : WfWorldT) :
+  res_subset m2 m ->
+  m ⊨ denot_ty_lvar_gas 0 Σ (CTSum τ1 τ2) e2 ->
+  m2 ⊨ denot_ty_lvar_gas 0 Σ τ2 e2.
+Proof.
+  intros Hsub Hzero.
+  apply denot_ty_lvar_gas_zero_sum_r with (τ1 := τ1).
+  eapply denot_ty_lvar_gas_zero_res_subset; eauto.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_sum_l_pullback
+    gas (Σ : lty_env) τ1 τ2 e1 e2 (m m1 : WfWorldT) :
+  res_subset m1 m ->
+  typed_total_tm_result_equiv_on Σ (CTSum τ1 τ2) m e1 e2 ->
+  m1 ⊨ denot_ty_lvar_gas gas Σ τ1 e1 ->
+  typed_total_tm_result_equiv_on Σ τ1 m1 e1 e2.
+Proof.
+  intros Hsub [Heq [_ Hzero_tgt]] Hsrc.
+  split.
+  - eapply tm_result_equiv_on_res_store_subset; eauto.
+  - split.
+    + apply denot_ty_lvar_gas_zero_of_guard.
+      eapply denot_ty_lvar_gas_guard. exact Hsrc.
+    + eapply typed_total_tm_result_equiv_on_sum_l_target_zero;
+        eauto.
+Qed.
+
+Lemma typed_total_tm_result_equiv_on_sum_r_pullback
+    gas (Σ : lty_env) τ1 τ2 e1 e2 (m m2 : WfWorldT) :
+  res_subset m2 m ->
+  typed_total_tm_result_equiv_on Σ (CTSum τ1 τ2) m e1 e2 ->
+  m2 ⊨ denot_ty_lvar_gas gas Σ τ2 e1 ->
+  typed_total_tm_result_equiv_on Σ τ2 m2 e1 e2.
+Proof.
+  intros Hsub [Heq [_ Hzero_tgt]] Hsrc.
+  split.
+  - eapply tm_result_equiv_on_res_store_subset; eauto.
+  - split.
+    + apply denot_ty_lvar_gas_zero_of_guard.
+      eapply denot_ty_lvar_gas_guard. exact Hsrc.
+    + eapply typed_total_tm_result_equiv_on_sum_r_target_zero;
+        eauto.
+Qed.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_sum_body
+    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
+      typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e2)
+    (Σ : lty_env) τ1 τ2 e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTSum τ1 τ2) m e1 e2 ->
+  m ⊨
+    FPlus
+      (denot_ty_lvar_gas gas Σ τ1 e1)
+      (denot_ty_lvar_gas gas Σ τ2 e1) ->
+  m ⊨
+    FPlus
+	      (denot_ty_lvar_gas gas Σ τ1 e2)
+	      (denot_ty_lvar_gas gas Σ τ2 e2).
+Proof.
+  intros Hequiv Hbody.
+  apply res_models_plus_iff in Hbody as
+    [n1 [n2 [Hdef [Hle [Hτ1 Hτ2]]]]].
+  destruct (res_sum_pullback_subset_projection_full m n1 n2 Hdef Hle)
+    as [Hsub1 [Hsub2 [Hdef_full Hle_full]]].
+  set (m1 := res_pullback_subset_projection m n1 Hsub1).
+  set (m2 := res_pullback_subset_projection m n2 Hsub2).
+  assert (Hτ1_full : m1 ⊨ denot_ty_lvar_gas gas Σ τ1 e1).
+  {
+    subst m1.
+    eapply res_models_pullback_subset_projection. exact Hτ1.
+  }
+  assert (Hτ2_full : m2 ⊨ denot_ty_lvar_gas gas Σ τ2 e1).
+  {
+    subst m2.
+    eapply res_models_pullback_subset_projection. exact Hτ2.
+  }
+	  eapply res_models_plus_intro; [exact Hle_full| |].
+	  - eapply IH; [|exact Hτ1_full].
+	    refine (typed_total_tm_result_equiv_on_sum_l_pullback
+	      gas Σ τ1 τ2 e1 e2 m m1 _ Hequiv Hτ1_full).
+	    subst m1. apply res_pullback_subset_projection_subset.
+	  - eapply IH; [|exact Hτ2_full].
+	    refine (typed_total_tm_result_equiv_on_sum_r_pullback
+	      gas Σ τ1 τ2 e1 e2 m m2 _ Hequiv Hτ2_full).
+	    subst m2. apply res_pullback_subset_projection_subset.
+	Qed.
+
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_arrow_body
+    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
+      typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e2)
+    (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅))
+        (FImpl
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTArrow τx τr) e1)
+              (erase_ty τx))
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTArrow τx τr) e1)
+              (erase_ty τx))
+            τr (tapp_tm (tm_shift 0 e1) (vbvar 0))))) ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅))
+        (FImpl
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTArrow τx τr) e2)
+              (erase_ty τx))
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTArrow τx τr) e2)
+              (erase_ty τx))
+            τr (tapp_tm (tm_shift 0 e2) (vbvar 0))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv_wand_body
+    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
+      typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+      m ⊨ denot_ty_lvar_gas gas Σ τ e2)
+    (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅))
+        (FWand
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTWand τx τr) e1)
+              (erase_ty τx))
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTWand τx τr) e1)
+              (erase_ty τx))
+            τr (tapp_tm (tm_shift 0 e1) (vbvar 0))))) ->
+  m ⊨
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅))
+        (FWand
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTWand τx τr) e2)
+              (erase_ty τx))
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (denot_ty_lvar_gas gas
+            (typed_lty_env_bind
+              (denot_relevant_env Σ (CTWand τx τr) e2)
+              (erase_ty τx))
+            τr (tapp_tm (tm_shift 0 e2) (vbvar 0))))).
+Proof.
+Admitted.
+
+Lemma denot_ty_lvar_gas_tm_result_equiv
+    gas Σ τ e1 e2 (m : WfWorldT) :
+  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ e1 ->
+  m ⊨ denot_ty_lvar_gas gas Σ τ e2.
+Proof.
+  revert Σ τ e1 e2 m.
+  induction gas as [|gas IH]; intros Σ τ e1 e2 m Hequiv Hm.
+  - exact (typed_total_tm_result_equiv_on_target_zero _ _ _ _ _ Hequiv).
+  - pose proof (typed_total_tm_result_equiv_on_target_zero
+      Σ τ m e1 e2 Hequiv) as Hzero_tgt.
+    pose proof (denot_ty_lvar_gas_guard_of_zero
+      Σ τ e2 m Hzero_tgt) as Hguard_tgt.
+    repeat rewrite res_models_and_iff in Hguard_tgt.
+	    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+	      cbn [denot_ty_lvar_gas] in Hm |- *;
+	      repeat rewrite res_models_and_iff in Hm |- *;
+	      destruct Hm as [_ Hbody]; split.
+	    all: try exact Hguard_tgt.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_over_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_under_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_inter_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_union_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_sum_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_arrow_body; eauto.
+	    + eapply denot_ty_lvar_gas_tm_result_equiv_wand_body; eauto.
+	Qed.
+
 Lemma denot_ty_lvar_gas_result_alias_to_var
     gas (Σ : lty_env) τ e x (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -914,55 +1853,22 @@ Lemma denot_ty_lvar_gas_result_alias_to_var
   m ⊨ denot_ty_lvar_gas gas Σ τ e ->
   m ⊨ denot_ty_lvar_gas gas Σ τ (tret (vfvar x)).
 Proof.
-  revert Σ τ e x m.
-  induction gas as [|gas IH]; intros Σ τ e x m HΣclosed HΣx Hres Hm.
-  - apply denot_ty_lvar_gas_zero_of_guard.
-    eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-    eapply denot_ty_lvar_gas_guard_of_zero. exact Hm.
-  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
-      cbn [denot_ty_lvar_gas] in Hm |- *;
-      repeat rewrite res_models_and_iff in Hm |- *;
-      destruct Hm as [Hguard Hbody];
-      split.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_over_body; eauto.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_under_body; eauto.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + destruct Hbody as [H1 H2].
-      split.
-      * eapply IH; eauto.
-      * assert (Herase : erase_ty τ1 = erase_ty τ2).
-        {
-          pose proof (proj1 Hguard) as Hwf_guard.
-          apply context_ty_wf_formula_models_iff in Hwf_guard as [_ [_ Hbasic]].
-          destruct Hbasic as [_ Hshape].
-          cbn [context_ty_shape_ok] in Hshape. tauto.
-        }
-        eapply IH; eauto.
-        rewrite <- Herase. exact HΣx.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_union_body; eauto.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_sum_body; eauto.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_arrow_body; eauto.
-    + repeat rewrite <- res_models_and_iff.
-      eapply denot_ty_lvar_gas_result_alias_guard; eauto.
-      repeat rewrite res_models_and_iff. exact Hguard.
-    + eapply denot_ty_lvar_gas_result_alias_wand_body; eauto.
+  intros HΣclosed HΣx Hres Hm.
+  pose proof (denot_ty_lvar_gas_guard gas Σ τ e m Hm) as Hguard_src.
+  pose proof (denot_ty_lvar_gas_result_alias_guard
+    Σ τ e x m HΣclosed HΣx Hres Hguard_src) as Hguard_tgt.
+  pose proof (denot_ty_lvar_gas_zero_of_guard Σ τ e m Hguard_src)
+    as Hzero_src.
+  pose proof (denot_ty_lvar_gas_zero_of_guard
+    Σ τ (tret (vfvar x)) m Hguard_tgt) as Hzero_tgt.
+  pose proof Hguard_tgt as Hguard_tgt_parts.
+  repeat rewrite res_models_and_iff in Hguard_tgt_parts.
+  destruct Hguard_tgt_parts as [_ [_ [_ Htotal_tgt]]].
+  eapply denot_ty_lvar_gas_tm_result_equiv.
+  - split.
+    + eapply tm_result_equiv_on_result_alias; eauto.
+    + split; [exact Hzero_src | exact Hzero_tgt].
+  - exact Hm.
 Qed.
 
 Lemma denot_ty_lvar_gas_result_extension_to_var

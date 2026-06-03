@@ -681,12 +681,35 @@ Proof.
       mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1))).
     {
       eapply denot_ctx_under_comma_bind_from_result_denotation
-        with (e1 := e1σ) (m := mfib) (Fx := Fx); eauto.
-      intros σΔ msrc HprojΔ.
-      eapply denot_ty_in_ctx_under_fiber_elim_erased_source_projection_instantiated_from_wf
-        with (m := m) (mfib := mfib) (σΣ := σΣ) (σΔ := σΔ);
-        eauto.
-      exact (proj2 Hwf1).
+        with (e1 := e1σ) (m := mfib) (Fx := Fx).
+      - exact Hwf1_inst.
+      - exact Hctx_fib.
+      - intros σΔ msrc HprojΔ.
+        assert (Hctx_src :
+            msrc ⊨ denot_ctx_under Σ Γ).
+        {
+          eapply denot_ctx_under_erased_fiber_from_basic_ctx.
+          + exact (wf_ctx_under_basic Σ Γ (proj1 Hwf1)).
+          + exact Hctx_fib.
+          + exact HprojΔ.
+        }
+        pose proof (IH1 msrc Hctx_src) as Hden_src_fiber.
+        assert (Hbase_src : base_store_projection Σ σΣ msrc).
+        {
+          eapply (base_store_projection_from_superset_fiber
+            Σ σΣ σΔ mfib msrc (dom (erase_ctx_under Σ Γ))).
+          + exact Hbase.
+          + unfold erase_ctx_under. set_solver.
+          + exact HprojΔ.
+        }
+        eapply denot_ty_in_ctx_under_fiber_elim_singleton_instantiated.
+        + exact (proj2 Hwf1).
+        + exact Hstore_ty.
+        + exact Hbase_src.
+        + exact Hden_src_fiber.
+      - exact HFx.
+      - exact Hxctx.
+      - exact Hext.
     }
     pose proof (IH2 x HxL mx Harg_ctx) as Hbody_fiber.
     assert (Hbody_msubst :

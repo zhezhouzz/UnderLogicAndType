@@ -211,6 +211,54 @@ Proof.
   - eapply denot_ty_in_ctx_under_fiber_elim_projection; eauto.
 Qed.
 
+Lemma denot_ty_in_ctx_under_fiber_elim_singleton_instantiated
+    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) (σΣ : StoreT) :
+  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ ->
+  storeA_has_type Σ σΣ ->
+  base_store_projection Σ σΣ m ->
+  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
+  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
+    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
+Proof.
+  intros Hwf Hty Hbase Hden.
+  assert (Hmsubst :
+      m ⊨ formula_msubst_store σΣ (denot_ty_in_ctx_under Σ Γ τ e)).
+  {
+    unfold denot_ty_in_ctx_under_fiber in Hden.
+    eapply res_models_FFibVars_singleton_elim; [| |exact Hden].
+    - rewrite ctx_base_vars_fv. exact (proj1 Hbase).
+    - rewrite ctx_base_vars_fv. exact (proj2 Hbase).
+  }
+  unfold denot_ty_in_ctx_under, denot_ty in Hmsubst.
+  eapply denot_ty_lvar_gas_msubst_store_from_typing_wf; eauto.
+Qed.
+
+Lemma base_store_projection_from_superset_fiber
+    (Σ : gmap atom ty) (σΣ σX : StoreT)
+    (m mfib : WfWorldT) X :
+  base_store_projection Σ σΣ m ->
+  dom Σ ⊆ X ->
+  res_fiber_from_projection m X σX mfib ->
+  base_store_projection Σ σΣ mfib.
+Proof.
+  intros [Hdomσ Hsingle] HΣX Hfib.
+  split; [exact Hdomσ|].
+  pose proof (res_fiber_from_projection_subset_source
+    m mfib X σX Hfib) as Hsub.
+  assert (HΣmfib : dom Σ ⊆ world_dom (mfib : WorldT)).
+  {
+    rewrite (res_fiber_from_projection_world_dom m mfib X σX Hfib).
+    pose proof (f_equal world_dom Hsingle) as Hdom_single.
+    cbn [res_restrict resA_restrict rawA_restrict worldA_dom
+      singleton_world] in Hdom_single.
+    change (dom (σΣ : StoreT)) with (dom (σΣ : gmap atom value))
+      in Hdom_single.
+    set_solver.
+  }
+  eapply res_subset_singleton_restrict; eauto.
+Qed.
+
 Definition denot_ty_total_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm)
     (m : WfWorldT) : Prop :=
@@ -1049,7 +1097,114 @@ Lemma denot_ctx_under_bind_projected_body_basic_world_source_fiber
     (basic_world_formula
       (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))).
 Proof.
-Admitted.
+  intros Hwf Hfresh HFx Hext Hworld Hsource Hproj.
+  assert (HΣm : dom Σ ⊆ world_dom (m : WorldT)).
+  {
+    pose proof (proj1 (basic_world_formula_models_iff
+      (atom_env_to_lty_env Σ) m) Hworld) as [_ [HΣm_lvar _]].
+    intros a Ha.
+    apply HΣm_lvar.
+    rewrite atom_store_to_lvar_store_dom.
+    rewrite lvars_fv_of_atoms. exact Ha.
+  }
+  assert (HΣmx : dom Σ ⊆ world_dom (mx : WorldT)).
+  {
+    pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hm_mx.
+    set_solver.
+  }
+  assert (Hin : ext_in Fx ⊆ dom Σ).
+  {
+    destruct HFx as [_ [Hin _] _].
+    unfold ext_in in *.
+    rewrite Hin.
+    pose proof (context_typing_wf_erased_basic_typing
+      Σbase Σ e1 τ1 Hwf) as Hbasic.
+    exact (basic_typing_contains_fv_tm _ _ _ Hbasic).
+  }
+  assert (Hout : ext_out Fx ## dom Σ).
+  {
+    destruct HFx as [_ [_ Hout] _].
+    unfold ext_out in *.
+    rewrite Hout. set_solver.
+  }
+  destruct (res_extend_by_fiber_from_projection
+    m mx mfib Fx (dom Σ) σΣ
+    Hin Hout HΣm Hext Hproj) as [msrc [Hsrc_proj Hsrc_ext]].
+  pose proof (Hsource σΣ msrc Hsrc_proj) as Hsource_den.
+  assert (Hsource_world :
+      msrc ⊨ basic_world_formula (atom_env_to_lty_env Σ)).
+  {
+    eapply basic_world_formula_res_subset.
+    - eapply res_fiber_from_projection_subset_source. exact Hsrc_proj.
+    - exact Hworld.
+  }
+  pose proof (denot_ty_lvar_gas_guard (cty_depth τ1)
+    (atom_env_to_lty_env Σ) τ1 e1 msrc Hsource_den) as Hguard.
+  assert (HFx_ltype :
+      extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
+        (res_restrict msrc (ext_in Fx)) Fx).
+  {
+    eapply expr_result_extension_has_ltype_from_source_guard.
+    - apply atom_store_to_lvar_store_closed.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact HFx.
+    - exact Hsrc_ext.
+    - exact Hguard.
+  }
+  assert (Hmfib_world :
+      mfib ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ))).
+  {
+    eapply basic_world_formula_insert_typed_extension.
+    - rewrite atom_store_to_lvar_store_dom.
+      intros Hbad.
+      apply Hfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite lvars_fv_of_atoms in Hbad. exact Hbad.
+    - exact Hsource_world.
+    - exact HFx_ltype.
+    - exact Hsrc_ext.
+  }
+  assert (Hmfib_fib :
+      mfib ⊨ FFibVars (ctx_base_vars Σ)
+        (basic_world_formula
+          (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1))))).
+  {
+    replace (atom_env_to_lty_env (erase_ctx_under Σ (CtxBind x τ1)))
+      with (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env Σ)).
+    2:{
+      rewrite <- atom_store_to_lvar_store_insert.
+      f_equal.
+      unfold erase_ctx_under, store_union, store_singleton, store_insert.
+      cbn [erase_ctx].
+      symmetry.
+      apply storeA_union_singleton_insert_fresh. exact Hfresh.
+    }
+    eapply basic_world_formula_fibvars_intro.
+    - apply ctx_base_vars_lc.
+    - rewrite ctx_base_vars_fv.
+      rewrite dom_insert_L, atom_store_to_lvar_store_dom.
+      rewrite lvars_fv_union, lvars_fv_singleton_free, lvars_fv_of_atoms.
+      set_solver.
+    - exact Hmfib_world.
+  }
+  assert (Hdomσ : dom (σΣ : StoreT) = dom Σ).
+  {
+    eapply res_fiber_from_projection_store_dom_of_subset; eauto.
+  }
+  assert (Hsingleton :
+      (res_restrict mfib (dom Σ) : WorldT) = singleton_world σΣ).
+  {
+    eapply res_restrict_fiber_from_projection_eq_singleton; eauto.
+  }
+  eapply res_models_FFibVars_singleton_elim; [| |exact Hmfib_fib].
+  - rewrite ctx_base_vars_fv. exact Hdomσ.
+  - rewrite ctx_base_vars_fv. exact Hsingleton.
+Qed.
 
 Lemma denot_ctx_under_bind_projected_body_from_result_denotation
     (Σbase Σ : gmap atom ty) (τ1 : context_ty) e1
@@ -1106,17 +1261,13 @@ Proof.
     eapply denot_ctx_under_bind_projected_body_from_result_denotation; eauto.
 Qed.
 
-Lemma denot_ty_in_ctx_under_fiber_elim_erased_source_projection_instantiated_from_wf
-    (Σ : gmap atom ty) Γ τ e
-    (m mfib msrc : WfWorldT) (σΣ σΔ : StoreT) :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) e τ ->
+Lemma denot_ctx_under_erased_fiber_from_basic_ctx
+    (Σ : gmap atom ty) Γ
+    (m mfib : WfWorldT) (σΔ : StoreT) :
+  basic_ctx (dom Σ) Γ ->
   m ⊨ denot_ctx_under Σ Γ ->
-  res_fiber_from_projection m (dom Σ) σΣ mfib ->
-  res_fiber_from_projection mfib (dom (erase_ctx_under Σ Γ)) σΔ msrc ->
-  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
-  msrc ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
-    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
+  res_fiber_from_projection m (dom (erase_ctx_under Σ Γ)) σΔ mfib ->
+  mfib ⊨ denot_ctx_under Σ Γ.
 Proof.
 Admitted.
 

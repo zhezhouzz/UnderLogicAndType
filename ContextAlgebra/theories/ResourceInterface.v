@@ -284,6 +284,16 @@ Lemma res_subset_trans (w1 w2 w3 : WfWorld) :
   res_subset w1 w2 → res_subset w2 w3 → res_subset w1 w3.
 Proof. apply resA_subset_trans. Qed.
 
+Lemma res_sum_subset_l (w1 w2 : WfWorld)
+    (Hdef : raw_sum_defined (w1 : World) (w2 : World)) :
+  res_subset w1 (res_sum w1 w2 Hdef).
+Proof. apply resA_sum_subset_l. Qed.
+
+Lemma res_sum_subset_r (w1 w2 : WfWorld)
+    (Hdef : raw_sum_defined (w1 : World) (w2 : World)) :
+  res_subset w2 (res_sum w1 w2 Hdef).
+Proof. apply resA_sum_subset_r. Qed.
+
 Lemma raw_compat_unit_r (m : World) : world_compat m raw_unit.
 Proof. apply rawA_compat_unit_r. Qed.
 
@@ -593,6 +603,10 @@ Lemma res_pullback_subset_projection_dom (n p : WfWorld) Hsub :
   world_dom (res_pullback_subset_projection n p Hsub : World) =
   world_dom (n : World).
 Proof. apply resA_pullback_subset_projection_dom. Qed.
+
+Lemma res_pullback_subset_projection_subset (n p : WfWorld) Hsub :
+  res_subset (res_pullback_subset_projection n p Hsub) n.
+Proof. apply resA_pullback_subset_projection_subset. Qed.
 
 Lemma res_sum_pullback_subset_projection_full
     (n n1 n2 : WfWorld) (Hdef : raw_sum_defined n1 n2) :
