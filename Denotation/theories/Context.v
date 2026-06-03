@@ -215,6 +215,17 @@ Proof.
     rewrite res_models_and_iff in Hctx; exact (proj1 Hctx).
 Qed.
 
+Lemma denot_ctx_under_bind_inv
+    (Σ : gmap atom ty) x τ (m : WfWorldT) :
+  m ⊨ denot_ctx_under Σ (CtxBind x τ) ->
+  m ⊨ denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+Proof.
+  intros Hctx.
+  cbn [denot_ctx_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  exact (proj2 Hctx).
+Qed.
+
 Lemma denot_ctx_under_comma_inv
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
   m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ->

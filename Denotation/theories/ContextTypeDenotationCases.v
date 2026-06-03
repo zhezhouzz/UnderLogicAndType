@@ -13,6 +13,15 @@ Section ContextTypeDenotationCases.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
+Definition denot_static_guard_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) : FormulaT :=
+  FAnd
+    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (FAnd
+      (basic_world_formula (denot_relevant_env Σ τ e))
+      (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (erase_ty τ))).
+
 Lemma basic_world_formula_empty (m : WfWorldT) :
   m ⊨ basic_world_formula (∅ : lty_env).
 Proof.
@@ -1234,63 +1243,84 @@ Admitted.
 
 Lemma letd_soundness_bridge
     Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
-  context_typing_wf_erased Σ (erase_ctx_under Σ (CtxStar Γ1 Γ2)) (tlete e1 e2) τ2 ->
-  (denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under_fiber Σ Γ1 τ1 e1) ->
+  erase_ctx (CtxStar Γ1 Γ2) ⊢ₑ tlete e1 e2 ⋮ erase_ty τ2 ->
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2)))
+      τ2 (tlete e1 e2) ->
+  (denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ1 e1) ->
   (forall x, x ∉ L ->
     denot_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) ⊫
-      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
+      denot_ty_in_ctx_under Σ (CtxStar Γ2 (CtxBind x τ1)) τ2 (e2 ^^ x)) ->
   denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
-    denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
+    denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
 Admitted.
 
 Lemma lam_soundness_bridge
     Σ Γ τx τ e (L : aset) :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
+  erase_ctx Γ ⊢ₑ tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTArrow τx τ) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ))
+      (CTArrow τx τ) (tret (vlam (erase_ty τx) e)) ->
   (forall y, y ∉ L ->
     denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under_fiber Σ (CtxComma Γ (CtxBind y τx))
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
         ({0 ~> y} τ) (e ^^ y)) ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
+    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
 Admitted.
 
 Lemma lamd_soundness_bridge
     Σ Γ τx τ e (L : aset) :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
+  erase_ctx Γ ⊢ₑ tret (vlam (erase_ty τx) e) ⋮ erase_ty (CTWand τx τ) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ))
+      (CTWand τx τ) (tret (vlam (erase_ty τx) e)) ->
   (forall y, y ∉ L ->
     denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ (CtxBind y τx))
+      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
         ({0 ~> y} τ) (e ^^ y)) ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
+    denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
 Admitted.
 
 Lemma app_soundness_bridge
     Σ Γ τx τ v1 x :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ) (tret v1)) ->
-  (denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ τx (tret (vfvar x))) ->
+  erase_ctx Γ ⊢ₑ tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ))
+      ({0 ~> x} τ) (tapp v1 (vfvar x)) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ) (tret v1)) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ τx (tret (vfvar x))) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
 Admitted.
 
 Lemma appd_soundness_bridge
     Σ Γ1 Γ2 τx τ v1 x :
-  context_typing_wf_erased Σ (erase_ctx_under Σ (CtxStar Γ1 Γ2)) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (denot_ctx_under Σ Γ1 ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ1 (CTWand τx τ) (tret v1)) ->
-  (denot_ctx_under Σ Γ2 ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ2 τx (tret (vfvar x))) ->
+  erase_ctx (CtxStar Γ1 Γ2) ⊢ₑ
+    tapp v1 (vfvar x) ⋮ erase_ty ({0 ~> x} τ) ->
   denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
-    denot_ty_in_ctx_under_fiber Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2)))
+      ({0 ~> x} τ) (tapp v1 (vfvar x)) ->
+  (denot_ctx_under Σ Γ1 ⊫
+    denot_ty_in_ctx_under Σ Γ1 (CTWand τx τ) (tret v1)) ->
+  (denot_ctx_under Σ Γ2 ⊫
+    denot_ty_in_ctx_under Σ Γ2 τx (tret (vfvar x))) ->
+  denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
+    denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
 Admitted.
@@ -1299,16 +1329,19 @@ Lemma fix_soundness_bridge
     Σ Γ τx τ vf b t (L : aset) :
   erase_ty τx = TBase b ->
   erase_ty τ = t ->
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ)
-    (tret (vfix (TBase b →ₜ t) vf))
-    (CTArrow τx τ) ->
+  erase_ctx Γ ⊢ₑ
+    tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTArrow τx τ) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ))
+      (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)) ->
   (forall y, y ∉ L ->
     denot_ctx_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under_fiber Σ (CtxComma Γ (CtxBind y τx))
+      denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx))
         (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (CTArrow τx τ)
+    denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
 Admitted.
@@ -1317,56 +1350,76 @@ Lemma fixd_soundness_bridge
     Σ Γ τx τ vf b t (L : aset) :
   erase_ty τx = TBase b ->
   erase_ty τ = t ->
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ)
-    (tret (vfix (TBase b →ₜ t) vf))
-    (CTWand τx τ) ->
+  erase_ctx Γ ⊢ₑ
+    tret (vfix (TBase b →ₜ t) vf) ⋮ erase_ty (CTWand τx τ) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ))
+      (CTWand τx τ) (tret (vfix (TBase b →ₜ t) vf)) ->
   (forall y, y ∉ L ->
     denot_ctx_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
-      denot_ty_in_ctx_under_fiber Σ (CtxStar Γ (CtxBind y τx))
+      denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx))
         (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (CTWand τx τ)
+    denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
 Admitted.
 
 Lemma match_both_soundness_bridge
     Σ Γt Γf v τt τf et ef :
-  context_typing_wf_erased Σ (erase_ctx_under Σ (CtxSum Γt Γf)) (tmatch v et ef) (CTSum τt τf) ->
-  (denot_ctx_under Σ Γt ⊫
-    denot_ty_in_ctx_under_fiber Σ Γt (bool_precise_ty true) (tret v)) ->
-  (denot_ctx_under Σ Γf ⊫
-    denot_ty_in_ctx_under_fiber Σ Γf (bool_precise_ty false) (tret v)) ->
-  (denot_ctx_under Σ Γt ⊫ denot_ty_in_ctx_under_fiber Σ Γt τt et) ->
-  (denot_ctx_under Σ Γf ⊫ denot_ty_in_ctx_under_fiber Σ Γf τf ef) ->
+  erase_ctx (CtxSum Γt Γf) ⊢ₑ
+    tmatch v et ef ⋮ erase_ty (CTSum τt τf) ->
   denot_ctx_under Σ (CtxSum Γt Γf) ⊫
-    denot_ty_in_ctx_under_fiber Σ (CtxSum Γt Γf) (CTSum τt τf)
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx (CtxSum Γt Γf)))
+      (CTSum τt τf) (tmatch v et ef) ->
+  (denot_ctx_under Σ Γt ⊫
+    denot_ty_in_ctx_under Σ Γt (bool_precise_ty true) (tret v)) ->
+  (denot_ctx_under Σ Γf ⊫
+    denot_ty_in_ctx_under Σ Γf (bool_precise_ty false) (tret v)) ->
+  (denot_ctx_under Σ Γt ⊫ denot_ty_in_ctx_under Σ Γt τt et) ->
+  (denot_ctx_under Σ Γf ⊫ denot_ty_in_ctx_under Σ Γf τf ef) ->
+  denot_ctx_under Σ (CtxSum Γt Γf) ⊫
+    denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
 Admitted.
 
 Lemma match_true_soundness_bridge
     Σ Γ v τ et ef :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) (tmatch v et ef) τ ->
-  (denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (bool_precise_ty true) (tret v)) ->
-  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ et) ->
-  erase_ctx_under Σ Γ ⊢ₑ ef ⋮ erase_ty τ ->
+  erase_ctx Γ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ)) τ (tmatch v et ef) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (bool_precise_ty true) (tret v)) ->
+  denot_ctx_under Σ Γ ⊫
+    FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty false) (tret v))
+      FFalse ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ et) ->
+  erase_ctx Γ ⊢ₑ ef ⋮ erase_ty τ ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
 Admitted.
 
 Lemma match_false_soundness_bridge
     Σ Γ v τ et ef :
-  context_typing_wf_erased Σ (erase_ctx_under Σ Γ) (tmatch v et ef) τ ->
-  (denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ (bool_precise_ty false) (tret v)) ->
-  erase_ctx_under Σ Γ ⊢ₑ et ⋮ erase_ty τ ->
-  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ ef) ->
+  erase_ctx Γ ⊢ₑ tmatch v et ef ⋮ erase_ty τ ->
   denot_ctx_under Σ Γ ⊫
-    denot_ty_in_ctx_under_fiber Σ Γ τ (tmatch v et ef).
+    denot_static_guard_formula
+      (atom_env_to_lty_env (erase_ctx Γ)) τ (tmatch v et ef) ->
+  (denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ (bool_precise_ty false) (tret v)) ->
+  denot_ctx_under Σ Γ ⊫
+    FImpl (denot_ty_in_ctx_under Σ Γ (bool_precise_ty true) (tret v))
+      FFalse ->
+  erase_ctx Γ ⊢ₑ et ⋮ erase_ty τ ->
+  (denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ ef) ->
+  denot_ctx_under Σ Γ ⊫
+    denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
 Admitted.
 
