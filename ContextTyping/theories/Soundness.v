@@ -4,10 +4,11 @@
 
     This file restores the proof-facing goal shape from the old ChoiceTyping
     development while keeping the new direct denotation route.  The TLet branch
-    is routed through [denot_tlet_direct_in_ctx]; the remaining higher-order and
-    branching cases stop at explicit direct bridge lemmas so their future proofs
-    can unfold directly to [denot_ty_lvar_gas] instead of rebuilding the old
-    helper stack. *)
+    chooses the result-extension witness locally and calls
+    [Denotation.TLet.tlet_intro_denotation] directly; the remaining
+    higher-order and branching cases stop at explicit direct bridge lemmas so
+    their future proofs can unfold directly to [denot_ty_lvar_gas] instead of
+    rebuilding the old helper stack. *)
 
 From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
   SmallStep StrongNormalization.
@@ -402,7 +403,70 @@ Lemma fundamental_let_case
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ2 (tlete e1 e2).
 Proof.
-Admitted.
+  intros Hwf1 Hwflet Hbody_wf IH1 IH2 m Hctx.
+  pose proof (IH1 m Hctx) as Hden1.
+  pose proof (denot_ty_in_ctx_under_total Σ Γ τ1 e1 m Hden1)
+    as Htotal.
+  set (x := fresh_for
+    (L ∪ dom (erase_ctx Γ) ∪ world_dom (m : WorldT) ∪
+     fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)).
+  pose proof (fresh_for_not_in
+    (L ∪ dom (erase_ctx Γ) ∪ world_dom (m : WorldT) ∪
+     fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2)) as Hfresh.
+  change (x ∉
+    L ∪ dom (erase_ctx Γ) ∪ world_dom (m : WorldT) ∪
+    fv_tm e1 ∪ fv_tm e2 ∪ fv_cty τ2) in Hfresh.
+  assert (HxL : x ∉ L) by set_solver.
+  assert (Hxctx : x ∉ dom (erase_ctx Γ)) by set_solver.
+  assert (Hxworld : x ∉ world_dom (m : WorldT)) by set_solver.
+  assert (Hxe1 : x ∉ fv_tm e1) by set_solver.
+  destruct (expr_result_extension_witness_exists e1 x Hxe1)
+    as [Fx HFx].
+  assert (Happ : extension_applicable Fx m).
+  {
+    constructor.
+    - destruct HFx as [_ [Hin _] _].
+      unfold ext_in in Hin.
+      rewrite Hin.
+      pose proof (res_models_scoped m (expr_total_formula e1) Htotal)
+        as Hscope_total.
+      unfold formula_scoped_in_world in Hscope_total.
+      rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_total.
+      exact Hscope_total.
+    - destruct HFx as [_ [_ Hout] _].
+      unfold ext_out in Hout.
+      rewrite Hout. set_solver.
+  }
+  destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
+  assert (Hctx_body :
+      mx ⊨ denot_ctx_under Σ (CtxComma Γ (CtxBind x τ1))).
+  {
+    eapply denot_ctx_under_comma_bind_from_result_extension; eauto.
+  }
+  pose proof (IH2 x HxL mx Hctx_body) as Hbody.
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply tlet_intro_denotation with
+    (T1 := erase_ty τ1) (Fx := Fx) (x := x) (mx := mx); eauto.
+  - apply atom_store_to_lvar_store_closed.
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ e1 τ1 Hwf1).
+  - rewrite lvar_store_to_atom_store_atom_store.
+    exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
+  - pose proof (context_typing_wf_denot_static_guard
+      Σ Γ τ2 (tlete e1 e2) m Hwflet Hctx) as Hstatic.
+    rewrite res_models_and_iff in Hstatic.
+    rewrite res_models_and_iff in Hstatic.
+    exact (proj1 (proj2 Hstatic)).
+  - intros Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    + apply lvars_fv_elem in Hbad.
+      rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hbad.
+      set_solver.
+    + apply lvars_fv_elem in Hbad.
+      rewrite context_ty_lvars_fv in Hbad.
+      set_solver.
+  - eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert; eauto.
+Qed.
 
 Lemma fundamental_letd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
