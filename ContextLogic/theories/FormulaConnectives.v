@@ -47,6 +47,25 @@ Proof.
   exact Hmodel.
 Qed.
 
+Lemma res_models_from_restrict_extension_on_fv
+    (m n : WfWorldT) (X : aset) (φ : FormulaT) :
+  formula_fv φ ⊆ X ->
+  formula_fv φ ⊆ world_dom (m : WorldT) ->
+  res_restrict m X ⊑ n ->
+  n ⊨ φ ->
+  m ⊨ φ.
+Proof.
+  intros HfvX Hfvm Hle Hn.
+  eapply res_models_fuel_projection with (m := n); [| exact Hn].
+  transitivity (res_restrict (res_restrict m X) (formula_fv φ)).
+  - symmetry. eapply res_restrict_le_eq.
+    + exact Hle.
+    + set_solver.
+  - rewrite res_restrict_restrict_eq.
+    replace (X ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+    reflexivity.
+Qed.
+
 Lemma res_models_and_intro_from_models (m : WfWorldT) (φ ψ : FormulaT) :
   m ⊨ φ →
   m ⊨ ψ →

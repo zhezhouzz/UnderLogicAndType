@@ -330,7 +330,41 @@ Lemma fundamental_ctx_sub_case
   (denot_ctx_under Σ Γ2 ⊫ denot_ty_in_ctx_under Σ Γ2 τ e) ->
   denot_ctx_under Σ Γ1 ⊫ denot_ty_in_ctx_under Σ Γ1 τ e.
 Proof.
-Admitted.
+  intros Hwf Hsub IH m HΓ1.
+  destruct Hsub as [_ [_ [Hagree Hctxsub]]].
+  destruct (Hctxsub m HΓ1) as [m' [Hle HΓ2]].
+  pose proof (IH m' HΓ2) as Hden2.
+  assert (Hden1_m' : m' ⊨ denot_ty_in_ctx_under Σ Γ1 τ e).
+  {
+    unfold denot_ty_in_ctx_under, denot_ty in Hden2 |- *.
+    eapply res_models_denot_ty_lvar_gas_env_agree_on
+      with (X := denot_relevant_lvars τ e); [reflexivity | | exact Hden2].
+    apply atom_env_to_lty_env_restrict_lvars_agree_on
+      with (X := fv_tm e ∪ fv_cty τ).
+    - intros x Hx. symmetry. apply Hagree. exact Hx.
+    - unfold denot_relevant_lvars. rewrite lvars_fv_union.
+      rewrite tm_lvars_fv, context_ty_lvars_fv.
+      set_solver.
+  }
+  eapply res_models_from_restrict_extension_on_fv
+    with (X := fv_tm e ∪ fv_cty τ) (n := m').
+  - unfold denot_ty_in_ctx_under, denot_ty.
+    apply formula_fv_denot_ty_lvar_gas_subset_relevant.
+  - unfold denot_ty_in_ctx_under, denot_ty.
+    pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant
+      (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ1)) τ e) as Hfvden.
+    pose proof (context_typing_wf_fv_tm_subset_erase_dom Σ Γ1 e τ Hwf)
+      as Htm.
+    pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ1 e τ Hwf)
+      as Hτ.
+    pose proof (denot_ctx_under_basic_world Σ Γ1 m HΓ1) as Hworld.
+    apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
+    rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
+    unfold erase_ctx_under in Hdom.
+    set_solver.
+  - exact Hle.
+  - exact Hden1_m'.
+Qed.
 
 Lemma denot_ctx_under_comma_bind_from_result_extension
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
