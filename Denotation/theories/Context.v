@@ -11,21 +11,6 @@ Section ContextDenotation.
 Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
   Σ ∪ erase_ctx Γ.
 
-Definition ctx_base_vars (Σ : gmap atom ty) : lvset :=
-  lvars_of_atoms (dom Σ).
-
-Lemma ctx_base_vars_fv (Σ : gmap atom ty) :
-  lvars_fv (ctx_base_vars Σ) = dom Σ.
-Proof. unfold ctx_base_vars. apply lvars_fv_of_atoms. Qed.
-
-Lemma ctx_base_vars_lc (Σ : gmap atom ty) :
-  lc_lvars (ctx_base_vars Σ).
-Proof.
-  intros [k|x] Hx; cbn [lc_logic_var_key]; [|exact I].
-  unfold ctx_base_vars, lvars_of_atoms in Hx.
-  apply elem_of_map in Hx as [a [Hbad _]]. discriminate.
-Qed.
-
 Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
   FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
     (match Γ with
@@ -43,33 +28,8 @@ Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
         FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
     end).
 
-Definition denot_ctx_under_body (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
-  FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
-    (match Γ with
-    | CtxEmpty =>
-        FTrue
-    | CtxBind x τ =>
-        denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
-    | CtxComma Γ1 Γ2 =>
-        FAnd
-          (denot_ctx_under Σ Γ1)
-          (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
-    | CtxStar Γ1 Γ2 =>
-        FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
-    | CtxSum Γ1 Γ2 =>
-        FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
-    end).
-
-Lemma denot_ctx_under_unfold_body Σ Γ :
-  denot_ctx_under Σ Γ = denot_ctx_under_body Σ Γ.
-Proof. destruct Γ; reflexivity. Qed.
-
 Definition denot_ctx (Γ : ctx) : FormulaT :=
   denot_ctx_under ∅ Γ.
-
-Definition denot_ty_under
-    (Σ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
-  denot_ty Σ τ e.
 
 Definition denot_ty_in_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty (erase_ctx Γ) τ e.
@@ -77,15 +37,6 @@ Definition denot_ty_in_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
 Definition denot_ty_in_ctx_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty (erase_ctx Γ) τ e.
-
-Definition denot_ty_total_in_ctx_under
-    (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm)
-    (m : WfWorldT) : Prop :=
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ∧
-  m ⊨ expr_total_formula e.
-
-Definition entails_total (φ : FormulaT) (P : WfWorldT -> Prop) : Prop :=
-  forall m, m ⊨ φ -> P m.
 
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
@@ -135,34 +86,6 @@ Proof.
   exact (proj2 Hctx).
 Qed.
 
-Lemma denot_ctx_under_comma_inv
-    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2) ->
-  m ⊨ denot_ctx_under Σ Γ1 /\
-  m ⊨ denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2.
-Proof.
-  intros Hctx.
-  cbn [denot_ctx_under] in Hctx.
-  rewrite res_models_and_iff in Hctx.
-  rewrite res_models_and_iff in Hctx.
-  exact (proj2 Hctx).
-Qed.
-
-Lemma denot_ctx_under_relevant_basic_world
-    (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ basic_world_formula
-    (denot_relevant_env (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ e).
-Proof.
-  intros Hctx.
-  pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
-  eapply basic_world_formula_subenv.
-  - intros v T Hv.
-    eapply storeA_restrict_lookup_some in Hv as [_ Hv].
-    exact Hv.
-  - exact Hworld.
-Qed.
-
 Lemma denot_ty_in_ctx_under_restrict_agree_transport
     (Σ : gmap atom ty) Γsrc Γdst X τ e (m : WfWorldT) :
   lvars_fv (denot_relevant_lvars τ e) ⊆ X ->
@@ -181,32 +104,6 @@ Proof.
     + exact Hfv.
   - exact Hden.
 Qed.
-
-Ltac destruct_basic_world_formula_hyps :=
-  repeat match goal with
-  | H : res_models _ (FAnd _ _) |- _ =>
-      rewrite res_models_and_iff in H; destruct H
-  | H : _ /\ _ |- _ =>
-      destruct H
-  end.
-
-Ltac solve_basic_world_formula :=
-  destruct_basic_world_formula_hyps;
-  first
-    [ assumption
-    | eassumption
-    | match goal with
-      | Hctx : ?m ⊨ denot_ctx_under ?Σ ?Γ
-        |- ?m ⊨ basic_world_formula
-             (atom_env_to_lty_env (erase_ctx_under ?Σ ?Γ)) =>
-          exact (denot_ctx_under_basic_world Σ Γ m Hctx)
-      | Hctx : ?m ⊨ denot_ctx_under ?Σ ?Γ
-        |- ?m ⊨ basic_world_formula
-             (denot_relevant_env
-                (atom_env_to_lty_env (erase_ctx_under ?Σ ?Γ)) ?τ ?e) =>
-          exact (denot_ctx_under_relevant_basic_world Σ Γ τ e m Hctx)
-      end
-    | eauto ].
 
 Lemma basic_world_formula_insert_from_arg_denotation
     (Σ : lty_env) (τ : context_ty) y T gas (m : WfWorldT) :
@@ -259,38 +156,6 @@ Qed.
 Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
   x ∉ dom (erase_ctx_under Σ Γ) →
   erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
-  <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
-Proof.
-  intros Hfresh.
-  unfold erase_ctx_under in *.
-  cbn [erase_ctx] in *.
-  assert (HxΣ : x ∉ dom Σ) by better_set_solver.
-  assert (HxΓ : x ∉ dom (erase_ctx Γ)) by better_set_solver.
-  change (Σ ∪ ((erase_ctx Γ : gmap atom ty) ∪
-      ({[x := erase_ty τ]} : gmap atom ty)) =
-    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
-  replace ((erase_ctx Γ : gmap atom ty) ∪
-      ({[x := erase_ty τ]} : gmap atom ty))
-    with (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty)).
-  2:{
-    symmetry.
-    apply (storeA_union_singleton_insert_fresh
-      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
-      x (erase_ty τ)).
-    exact HxΓ.
-  }
-  change (Σ ∪ (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty) :
-      gmap atom ty) =
-    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
-  apply (storeA_insert_union_r_fresh (V := ty) (K := atom)
-    (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
-    x (erase_ty τ)).
-  exact HxΣ.
-Qed.
-
-Lemma erase_ctx_under_star_bind_env_fresh Σ Γ x τ :
-  x ∉ dom (erase_ctx_under Σ Γ) →
-  erase_ctx_under Σ (CtxStar Γ (CtxBind x τ)) =
   <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
 Proof.
   intros Hfresh.
@@ -377,176 +242,6 @@ Proof.
   rewrite res_models_and_iff. split.
   - rewrite erase_ctx_under_comma_assoc. exact HworldΓ2.
   - rewrite res_models_and_iff. split; assumption.
-Qed.
-
-Lemma denot_ty_in_ctx_under_star_bind_to_lvar_insert
-    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
-  y ∉ dom (erase_ctx Γ) ->
-  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ (CtxBind y τx)) τ e ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx Γ)))
-    τ e.
-Proof.
-  intros Hy Hden.
-  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
-  assert (Henv :
-      erase_ctx (CtxStar Γ (CtxBind y τx)) =
-      <[y := erase_ty τx]> (erase_ctx Γ)).
-  {
-    cbn [erase_ctx].
-    apply (storeA_union_singleton_insert_fresh
-      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
-      y (erase_ty τx)).
-    exact Hy.
-  }
-  rewrite Henv in Hden.
-  replace (<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx Γ)))
-    with (atom_env_to_lty_env
-      (<[y := erase_ty τx]> (erase_ctx Γ))).
-  2:{ apply atom_store_to_lvar_store_insert. }
-  exact Hden.
-Qed.
-
-Lemma denot_ctx_under_star_elim_singleton
-    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) (σΣ : StoreT) :
-  dom σΣ = dom Σ ->
-  (res_restrict m (dom Σ) : WorldT) = singleton_world σΣ ->
-  m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
-  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
-    res_product m1 m2 Hc ⊑ m /\
-    m1 ⊨ denot_ctx_under Σ Γ1 /\
-    m2 ⊨ denot_ctx_under Σ Γ2.
-Proof.
-  intros _ _ Hctx.
-  cbn [denot_ctx_under] in Hctx.
-  rewrite res_models_and_iff in Hctx.
-  apply res_models_star_iff.
-  exact (proj2 Hctx).
-Qed.
-
-Lemma denot_ctx_under_sum_elim_singleton
-    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) (σΣ : StoreT) :
-  dom σΣ = dom Σ ->
-  (res_restrict m (dom Σ) : WorldT) = singleton_world σΣ ->
-  m ⊨ denot_ctx_under Σ (CtxSum Γ1 Γ2) ->
-  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef ⊑ m /\
-    m1 ⊨ denot_ctx_under Σ Γ1 /\
-    m2 ⊨ denot_ctx_under Σ Γ2.
-Proof.
-  intros _ _ Hctx.
-  cbn [denot_ctx_under] in Hctx.
-  rewrite res_models_and_iff in Hctx.
-  apply res_models_plus_iff.
-  exact (proj2 Hctx).
-Qed.
-
-Lemma denot_ty_lvar_gas_star_union_to_ctx
-    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx Γ1) ∪
-     atom_env_to_lty_env (erase_ctx Γ2)) τ e ->
-  m ⊨ denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ e.
-Proof.
-  intros Hden.
-  unfold denot_ty_in_ctx_under, denot_ty in *.
-  cbn [erase_ctx].
-  rewrite <- atom_store_to_lvar_store_union in Hden.
-  exact Hden.
-Qed.
-
-Lemma atom_env_to_lty_env_erase_ctx_under_star
-    (Σ : gmap atom ty) Γ1 Γ2 :
-  atom_env_to_lty_env (erase_ctx_under Σ (CtxStar Γ1 Γ2)) =
-  atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
-  atom_env_to_lty_env (erase_ctx_under Σ Γ2).
-Proof.
-  unfold erase_ctx_under.
-  cbn [erase_ctx].
-  rewrite <- atom_store_to_lvar_store_union.
-  f_equal.
-  apply map_eq. intros x.
-  unfold store_union.
-  rewrite !lookup_union.
-  destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
-    destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
-    destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
-    reflexivity.
-Qed.
-
-Lemma denot_ty_lvar_gas_sum_left_to_ctx
-    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ1)) τ e ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
-Proof.
-  unfold erase_ctx_under. cbn [erase_ctx]. auto.
-Qed.
-
-Lemma denot_ty_lvar_gas_sum_right_to_ctx
-    (Σ : gmap atom ty) Γ1 Γ2 τ e (m : WfWorldT) :
-  erase_ctx Γ1 = erase_ctx Γ2 ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ2)) τ e ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ (CtxSum Γ1 Γ2))) τ e.
-Proof.
-  intros Herase Hden.
-  unfold erase_ctx_under. cbn [erase_ctx].
-  rewrite Herase.
-  exact Hden.
-Qed.
-
-Lemma basic_typing_star_union_lty_env
-    (Σ : gmap atom ty) Γ1 Γ2 e T :
-  erase_ctx_under Σ (CtxStar Γ1 Γ2) ⊢ₑ e ⋮ T ->
-  lty_env_to_atom_env
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ1) ∪
-     atom_env_to_lty_env (erase_ctx_under Σ Γ2)) ⊢ₑ e ⋮ T.
-Proof.
-  intros Hbasic.
-  unfold erase_ctx_under in *.
-  cbn [erase_ctx] in *.
-  rewrite <- atom_store_to_lvar_store_union.
-  rewrite lvar_store_to_atom_store_atom_store.
-  replace ((Σ ∪ erase_ctx Γ1) ∪ (Σ ∪ erase_ctx Γ2) : gmap atom ty)
-    with (Σ ∪ (erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty).
-  - exact Hbasic.
-  - apply map_eq. intros x.
-    unfold store_union.
-    rewrite !lookup_union.
-    destruct ((Σ : gmap atom ty) !! x) as [TΣ|] eqn:HΣ;
-      destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:H1;
-      destruct ((erase_ctx Γ2 : gmap atom ty) !! x) as [T2|] eqn:H2;
-      reflexivity.
-Qed.
-
-Lemma letd_body_world_compat
-    e1 x (m1 m2 mx1 : WfWorldT) (Hc : world_compat m1 m2)
-    (Fx : FiberExtensionT) :
-  expr_result_extension_witness e1 x Fx ->
-  x ∉ world_dom (m2 : WorldT) ->
-  res_extend_by m1 Fx mx1 ->
-  world_compat m2 mx1.
-Proof.
-  intros HFx Hx Hext.
-  assert (Hout : ext_out Fx ## world_dom (m2 : WorldT)).
-  {
-    destruct HFx as [_ [_ Hout] _].
-    unfold ext_out in *. rewrite Hout. set_solver.
-  }
-  assert (Hc_sym : world_compat m2 m1).
-  {
-    intros σ2 σ1 Hσ2 Hσ1.
-    apply storeA_compat_sym. exact (Hc σ1 σ2 Hσ1 Hσ2).
-  }
-  pose proof (world_compat_restrict_l_extend_by_fresh
-    m2 m1 mx1 Fx (world_dom (m2 : WorldT)) Hout Hext Hc_sym) as Hcompat.
-  rewrite (res_restrict_eq_of_le m2 m2 ltac:(reflexivity)) in Hcompat.
-  exact Hcompat.
 Qed.
 
 End ContextDenotation.

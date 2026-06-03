@@ -97,5 +97,4 @@ Denotation/theories/TLet.v
 -R ContextTyping/theories ContextTyping
 
 ContextTyping/theories/Typing.v
-ContextTyping/theories/TLet.v
 ContextTyping/theories/Soundness.v

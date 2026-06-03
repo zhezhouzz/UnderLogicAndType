@@ -891,7 +891,7 @@ Proof.
       Σ x (erase_ty τ) Hlookup)
     Harg) as Harg_single.
   unfold denot_ctx.
-  cbn [denot_ctx_under ctx_base_vars].
+  cbn [denot_ctx_under].
   rewrite res_models_and_iff. split.
   - replace (erase_ctx_under ∅ (CtxBind x τ))
       with (<[x := erase_ty τ]> (∅ : gmap atom ty)).

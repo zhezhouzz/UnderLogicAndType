@@ -17,7 +17,7 @@ From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturate
   ContextTypeDenotationCases TLet.
-From ContextTyping Require Export TLet.
+From ContextTyping Require Export Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
