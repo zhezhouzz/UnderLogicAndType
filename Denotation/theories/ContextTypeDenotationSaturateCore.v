@@ -891,6 +891,23 @@ Definition typed_total_tm_result_equiv_on
   m ⊨ denot_ty_lvar_gas 0 Σ τ e1 /\
   m ⊨ denot_ty_lvar_gas 0 Σ τ e2.
 
+Lemma tm_result_equiv_on_tlete_body_extension
+    e1 e2 x Fx m mx :
+  lc_tm (tlete e1 e2) ->
+  mx ⊨ expr_total_formula (tlete e1 e2) ->
+  expr_result_extension_witness e1 x Fx ->
+  res_extend_by m Fx mx ->
+  tm_result_equiv_on mx (e2 ^^ x) (tlete e1 e2).
+Proof.
+  (* This is the only operational fact needed by the new TLet denotation
+     route: once [Fx] extends [m] with the result of [e1] at fresh [x],
+     evaluating the opened body and evaluating the whole let have the same
+     result in the extended world.  The totality premise is necessary because
+     [expr_result_output_world] uses an arbitrary inhabitant when [e1] has no
+     result.  The proof should be a wrapper around the tlet evaluation lemmas
+     in [TermTLet]. *)
+Admitted.
+
 Lemma store_closed_restrict_union_from_parts
     (σ : StoreT) X Y :
   store_closed (store_restrict σ X) ->

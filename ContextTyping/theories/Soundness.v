@@ -597,28 +597,148 @@ Proof.
     eapply denot_ctx_under_comma_bind_from_result_extension; eauto.
   }
   pose proof (IH2 x HxL mx Hctx_body) as Hbody.
-  unfold denot_ty_in_ctx_under, denot_ty.
-  eapply tlet_intro_denotation with
-    (T1 := erase_ty τ1) (Fx := Fx) (x := x) (mx := mx); eauto.
-  - apply atom_store_to_lvar_store_closed.
-  - rewrite lvar_store_to_atom_store_atom_store.
-    exact (context_typing_wf_basic_typing Σ Γ e1 τ1 Hwf1).
-  - rewrite lvar_store_to_atom_store_atom_store.
-    exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
-  - pose proof (context_typing_wf_denot_static_guard
+  pose proof (denot_ty_in_ctx_under_comma_bind_to_lvar_insert
+    Σ Γ τ1 τ2 (e2 ^^ x) x mx Hxctx Hbody) as Hbody_insert.
+  pose proof (denot_ty_lvar_gas_guard
+    (cty_depth τ2)
+    (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
+    τ2 (e2 ^^ x) mx Hbody_insert) as Hbody_guard.
+  pose proof (denot_ty_lvar_gas_zero_of_guard
+    (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
+    τ2 (e2 ^^ x) mx Hbody_guard) as Hbody_zero.
+  assert (Hctx_basic_world :
+      m ⊨ basic_world_formula (atom_env_to_lty_env (erase_ctx Γ))).
+  {
+    pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
+    eapply basic_world_formula_subenv; [|exact Hworld].
+    intros v T Hv.
+    destruct v as [k|y].
+    - rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
+      discriminate.
+    - rewrite atom_store_to_lvar_store_lookup_free in Hv.
+      unfold erase_ctx_under.
+      rewrite atom_store_to_lvar_store_lookup_free.
+      apply map_lookup_union_Some_raw. right.
+      split; [|exact Hv].
+      apply not_elem_of_dom.
+      pose proof (context_typing_wf_ctx Σ Γ (tlete e1 e2) τ2 Hwflet)
+        as Hwfctx.
+      pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
+      pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasicctx) as HdomΓ.
+      pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasicctx) as HfreshΓ.
+      apply elem_of_dom_2 in Hv.
+      rewrite HdomΓ in Hv.
+      set_solver.
+  }
+  pose proof (Hbody_guard) as Hbody_guard_parts.
+  repeat rewrite res_models_and_iff in Hbody_guard_parts.
+  destruct Hbody_guard_parts as [_ [_ [_ Hbody_total]]].
+  assert (Htotal_tlet_m : m ⊨ expr_total_formula (tlete e1 e2)).
+  {
+    eapply expr_total_formula_tlete_intro_from_result_extension
+      with (Σ := atom_env_to_lty_env (erase_ctx Γ))
+        (T := erase_ty τ2) (x := x) (mx := mx) (Fx := Fx);
+      eauto.
+    - rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      intros Hbad.
+      apply elem_of_map in Hbad as [a [Heq Ha]].
+      inversion Heq. subst a. exact (Hxctx Ha).
+    - rewrite lvar_store_to_atom_store_atom_store.
+      exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
+  }
+  pose proof (context_typing_wf_denot_static_guard
       Σ Γ τ2 (tlete e1 e2) m Hwflet Hctx) as Hstatic.
-    rewrite res_models_and_iff in Hstatic.
-    rewrite res_models_and_iff in Hstatic.
-    exact (proj1 (proj2 Hstatic)).
-  - intros Hbad.
-    apply elem_of_union in Hbad as [Hbad|Hbad].
-    + apply lvars_fv_elem in Hbad.
-      rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hbad.
-      set_solver.
-    + apply lvars_fv_elem in Hbad.
-      rewrite context_ty_lvars_fv in Hbad.
-      set_solver.
-  - eapply denot_ty_in_ctx_under_comma_bind_to_lvar_insert; eauto.
+  assert (Hm_zero :
+      m ⊨ denot_ty_lvar_gas 0
+        (atom_env_to_lty_env (erase_ctx Γ)) τ2 (tlete e1 e2)).
+  {
+    apply denot_ty_lvar_gas_zero_of_guard.
+    repeat rewrite res_models_and_iff in Hstatic.
+    destruct Hstatic as [Hwf_static [Hworld_static Hbasic_static]].
+    eapply res_models_and_intro_from_models; [exact Hwf_static|].
+    eapply res_models_and_intro_from_models; [exact Hworld_static|].
+    eapply res_models_and_intro_from_models; [exact Hbasic_static|].
+    exact Htotal_tlet_m.
+  }
+  assert (HFx_ltype :
+      extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
+        (res_restrict m (ext_in Fx)) Fx).
+  {
+    eapply expr_result_extension_has_ltype_from_source_guard
+      with (Σ := atom_env_to_lty_env (erase_ctx Γ))
+        (τ := τ1) (e := e1) (x := x) (m := m) (mx := mx);
+      eauto.
+    - apply atom_store_to_lvar_store_closed.
+    - rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      intros Hbad.
+      apply elem_of_map in Hbad as [a [Heq Ha]].
+      inversion Heq. subst a. exact (Hxctx Ha).
+    - unfold denot_ty_in_ctx_under, denot_ty in Hden1.
+      exact (denot_ty_lvar_gas_guard _ _ _ _ _ Hden1).
+  }
+  assert (Hxτ2 : LVFree x ∉ context_ty_lvars τ2).
+  {
+    intros Hbad.
+    apply lvars_fv_elem in Hbad.
+    rewrite context_ty_lvars_fv in Hbad.
+    set_solver.
+  }
+  assert (Hxtlet : x ∉ fv_tm (tlete e1 e2)).
+  { cbn [fv_tm]. set_solver. }
+  assert (Hmx_zero_tlet :
+      mx ⊨ denot_ty_lvar_gas 0
+        (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
+        τ2 (tlete e1 e2)).
+  {
+    eapply denot_ty_lvar_gas_extend_typed_extension_zero; eauto.
+    - rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      intros Hbad.
+      apply elem_of_map in Hbad as [a [Heq Ha]].
+      inversion Heq. subst a. exact (Hxctx Ha).
+  }
+  pose proof (tlet_intro_denotation
+    (cty_depth τ2)
+    (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
+    τ2 e1 e2 x Fx m mx
+    HFx Hext Hbody_zero Hmx_zero_tlet Hbody_insert) as Hlet_mx_insert.
+  rewrite (denot_ty_lvar_gas_insert_fresh_lty_env_eq
+    (cty_depth τ2) (atom_env_to_lty_env (erase_ctx Γ)) τ2
+    (tlete e1 e2) x (erase_ty τ1)) in Hlet_mx_insert.
+  2:{
+    rewrite atom_store_to_lvar_store_dom.
+    unfold lvars_of_atoms.
+    intros Hbad.
+    apply elem_of_map in Hbad as [a [Heq Ha]].
+    inversion Heq. subst a. exact (Hxctx Ha).
+  }
+  2:{ exact Hxτ2. }
+  2:{ exact Hxtlet. }
+  unfold denot_ty_in_ctx_under, denot_ty.
+  eapply res_models_from_restrict_extension_on_fv
+    with (X := fv_tm (tlete e1 e2) ∪ fv_cty τ2) (n := mx).
+  - eapply formula_fv_denot_ty_lvar_gas_subset_relevant.
+  - pose proof (context_typing_wf_fv_tm_subset_erase_dom
+      Σ Γ (tlete e1 e2) τ2 Hwflet) as Htm.
+    pose proof (context_typing_wf_fv_cty_subset_erase_dom
+      Σ Γ (tlete e1 e2) τ2 Hwflet) as Hτ.
+    pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
+    apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
+    rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
+    transitivity (fv_tm (tlete e1 e2) ∪ fv_cty τ2).
+    {
+      exact (formula_fv_denot_ty_lvar_gas_subset_relevant
+        (cty_depth τ2) (atom_env_to_lty_env (erase_ctx Γ))
+        τ2 (tlete e1 e2)).
+    }
+    unfold erase_ctx_under in Hdom.
+    set_solver.
+  - transitivity m.
+    + apply res_restrict_le.
+    + eapply res_extend_by_le; eauto.
+  - exact Hlet_mx_insert.
 Qed.
 
 Lemma fundamental_letd_case

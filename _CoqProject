@@ -91,7 +91,6 @@ Denotation/theories/ContextTypeDenotationSaturateMain.v
 Denotation/theories/ContextTypeDenotationSaturate.v
 Denotation/theories/Context.v
 Denotation/theories/ContextTypeDenotationCases.v
-Denotation/theories/TLetSupport.v
 Denotation/theories/TLet.v
 
 -R ContextTyping/theories ContextTyping
