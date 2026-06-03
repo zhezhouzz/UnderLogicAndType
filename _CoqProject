@@ -89,6 +89,11 @@ Denotation/theories/ContextTypeDenotationMsubstCompat.v
 Denotation/theories/ContextTypeDenotationMsubstScoped.v
 Denotation/theories/ContextTypeDenotationMsubst.v
 Denotation/theories/ContextTypeDenotationTactics.v
+Denotation/theories/ContextTypeDenotationSaturateCore.v
+Denotation/theories/ContextTypeDenotationSaturateBody.v
+Denotation/theories/ContextTypeDenotationSaturateArrow.v
+Denotation/theories/ContextTypeDenotationSaturateWand.v
+Denotation/theories/ContextTypeDenotationSaturateMain.v
 Denotation/theories/ContextTypeDenotationSaturate.v
 Denotation/theories/Context.v
 Denotation/theories/ContextTypeDenotationCases.v
