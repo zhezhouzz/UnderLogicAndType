@@ -82,12 +82,6 @@ Denotation/theories/ContextTypeDenotationDefinition.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationOpenModels.v
-Denotation/theories/ContextTypeDenotationMsubstCore.v
-Denotation/theories/ContextTypeDenotationMsubstGuard.v
-Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v
-Denotation/theories/ContextTypeDenotationMsubstCompat.v
-Denotation/theories/ContextTypeDenotationMsubstScoped.v
-Denotation/theories/ContextTypeDenotationMsubst.v
 Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturateCore.v
 Denotation/theories/ContextTypeDenotationSaturateBody.v

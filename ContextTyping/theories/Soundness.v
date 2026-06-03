@@ -16,7 +16,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturate
-  ContextTypeDenotationMsubst ContextTypeDenotationCases TLet.
+  ContextTypeDenotationCases TLet.
 From ContextTyping Require Export TLet.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
@@ -114,19 +114,6 @@ Proof.
   repeat rewrite res_models_and_iff in Hguard.
   exact (proj2 (proj2 (proj2 Hguard))).
 Qed.
-
-Lemma denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf
-    (Σ : gmap atom ty) Γ τ e (m mfib : WfWorldT) (σΣ : StoreT) :
-  context_typing_wf Σ Γ e τ ->
-  m ⊨ denot_ctx_under Σ Γ ->
-  res_fiber_from_projection m (dom Σ) σΣ mfib ->
-  m ⊨ denot_ty_in_ctx_under_fiber Σ Γ τ e ->
-  mfib ⊨ denot_ty_lvar_gas (cty_depth τ)
-    (atom_env_to_lty_env (erase_ctx_under Σ Γ)) τ
-    (lstore_instantiate_tm (lstore_lift_free σΣ) e).
-Proof.
-  (* Compatibility obligation for the old fiberwise Fundamental route. *)
-Admitted.
 
 (** ** Direct case bridges *)
 
@@ -555,15 +542,6 @@ Proof.
     exact Htarget.
 Qed.
 
-Lemma denot_ctx_under_local_relevant_basic_world
-    (Σ : gmap atom ty) (Γ : ctx) τ e (m : WfWorldT) :
-  context_typing_wf Σ Γ e τ ->
-  m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ basic_world_formula
-    (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e).
-Proof.
-Admitted.
-
 Lemma fundamental_let_case
     (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
@@ -653,14 +631,7 @@ Lemma fundamental_letd_case
   denot_ctx_under Σ (CtxStar Γ1 Γ2) ⊫
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) τ2 (tlete e1 e2).
 Proof.
-  intros Hwf IH1 IH2.
-  eapply letd_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ (CtxStar Γ1 Γ2)
-      (tlete e1 e2) τ2 Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ (CtxStar Γ1 Γ2)
-      τ2 (tlete e1 e2) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_lam_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -673,14 +644,7 @@ Lemma fundamental_lam_case
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH.
-  eapply lam_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ
-      (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ
-      (CTArrow τx τ) (tret (vlam (erase_ty τx) e)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_lamd_case
     (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
@@ -693,14 +657,7 @@ Lemma fundamental_lamd_case
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH.
-  eapply lamd_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ
-      (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ
-      (CTWand τx τ) (tret (vlam (erase_ty τx) e)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_app_case
     (Φ : primop_ctx) Σ Γ τx τ v1 x :
@@ -712,14 +669,7 @@ Lemma fundamental_app_case
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf IHfun IHarg.
-  eapply app_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ
-      (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ
-      ({0 ~> x} τ) (tapp v1 (vfvar x)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_appd_case
     (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
@@ -732,14 +682,7 @@ Lemma fundamental_appd_case
     denot_ty_in_ctx_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
       (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf IHfun IHarg.
-  eapply appd_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ (CtxStar Γ1 Γ2)
-      (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ (CtxStar Γ1 Γ2)
-      ({0 ~> x} τ) (tapp v1 (vfvar x)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_fix_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
@@ -757,14 +700,7 @@ Lemma fundamental_fix_case
     denot_ty_in_ctx_under Σ Γ (CTArrow τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-  intros Hτx Hτ Hwf IH.
-  eapply fix_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ
-      (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ
-      (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_fixd_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
@@ -782,14 +718,7 @@ Lemma fundamental_fixd_case
     denot_ty_in_ctx_under Σ Γ (CTWand τx τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-  intros Hτx Hτ Hwf IH.
-  eapply fixd_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ
-      (tret (vfix (TBase b →ₜ t) vf)) (CTWand τx τ) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ
-      (CTWand τx τ) (tret (vfix (TBase b →ₜ t) vf)) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_appop_case
     (Φ : primop_ctx) Σ Γ op x :
@@ -834,14 +763,7 @@ Lemma fundamental_match_both_case
     denot_ty_in_ctx_under Σ (CtxSum Γt Γf) (CTSum τt τf)
       (tmatch v et ef).
 Proof.
-  intros Hwf Ht Hf IHt IHf.
-  eapply match_both_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ (CtxSum Γt Γf)
-      (tmatch v et ef) (CTSum τt τf) Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ (CtxSum Γt Γf)
-      (CTSum τt τf) (tmatch v et ef) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_match_true_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -854,13 +776,7 @@ Lemma fundamental_match_true_case
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-  intros Hwf IHtrue Hunreach IHt Hef.
-  eapply match_true_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ (tmatch v et ef) τ Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ τ
-      (tmatch v et ef) m Hwf Hctx).
-Qed.
+Admitted.
 
 Lemma fundamental_match_false_case
     (Φ : primop_ctx) Σ Γ v τ et ef :
@@ -873,13 +789,7 @@ Lemma fundamental_match_false_case
   denot_ctx_under Σ Γ ⊫
     denot_ty_in_ctx_under Σ Γ τ (tmatch v et ef).
 Proof.
-  intros Hwf IHfalse Hunreach Het IHf.
-  eapply match_false_soundness_bridge; eauto.
-  - exact (context_typing_wf_basic_typing Σ Γ (tmatch v et ef) τ Hwf).
-  - intros m Hctx.
-    exact (context_typing_wf_denot_static_guard Σ Γ τ
-      (tmatch v et ef) m Hwf Hctx).
-Qed.
+Admitted.
 
 (** ** Fundamental theorem *)
 

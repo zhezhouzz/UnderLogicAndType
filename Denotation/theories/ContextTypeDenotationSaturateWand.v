@@ -2,7 +2,7 @@
 
     Split out from [ContextTypeDenotationSaturate.v] to keep individual proof files small. *)
 
-From Denotation Require Import Notation ContextTypeDenotationMsubstCore.
+From Denotation Require Import Notation ContextTypeDenotationOpen.
 From Denotation Require Export ContextTypeDenotationTactics.
 From Denotation Require Import
   ContextTypeDenotationSaturateCore
