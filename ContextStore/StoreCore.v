@@ -134,6 +134,9 @@ End StoreCoreDefs.
 Arguments storeAO_store {_ _ _ _ _} _.
 Arguments storeAO_dom {_ _ _ _ _} _.
 
+(** [storeA_map_key] is the cross-key view of [kmap].  [storeA_rekey] is the
+    same operation specialized to same-key transformations; the separate name
+    keeps swap, shift, and open lemmas readable. *)
 Notation "'storeA_map_key' f s" := (kmap (M2:=gmap _) f s)
   (at level 10, f at next level, s at next level, only parsing).
 Notation "'storeA_rekey' f s" := (kmap (M2:=gmap _) f s)

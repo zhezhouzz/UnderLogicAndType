@@ -78,8 +78,6 @@ Arguments open_qual_atom_inst /.
 Arguments lc_qual_inst /.
 
 Notation "q '^q^' x" := (qual_open_atom 0 x q) (at level 20).
-Notation "q1 '&q' q2" := (qual_and q1 q2) (at level 40).
-Notation "⊤q" := qual_top.
 
 Lemma qual_ext (q1 q2 : type_qualifier) :
   qual_lvars q1 = qual_lvars q2 ->
@@ -443,9 +441,7 @@ Proof.
   intros v Hv. set_solver.
 Qed.
 
-(** * ContextTypeLanguage.Qualifier
-
-    Qualifier transport for type qualifiers.
+(** ** Qualifier Renaming
 
     Opening remains the primitive operation in [Qualifier.v], because it is the
     same involutive swap used by logic qualifiers.  Context-type denotation also needs

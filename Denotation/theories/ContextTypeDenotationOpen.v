@@ -1,31 +1,9 @@
-(** * Denotation.ContextTypeDenotationOpen
-
-    Split out from [ContextTypeDenotation.v] to keep individual proof files small. *)
+(** * Denotation.ContextTypeDenotationOpen *)
 
 From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationDefinition.
+From Denotation Require Export ContextTypeDenotationTactics.
 
 Section ContextTypeDenotation.
-
-Ltac denot_open_fresh :=
-  apply open_env_fresh_for_lvars_singleton;
-  rewrite ?lvars_fv_union, ?denot_relevant_lvars_fv;
-  set_solver.
-
-Ltac denot_open_lvars :=
-  unfold fv_cty, context_ty_lvars in *;
-  cbn [cty_open context_ty_lvars_at] in *;
-  rewrite ?lvars_fv_union, ?lvars_fv_lvars_at_depth in *;
-  set_solver.
-
-Ltac denot_relevant_env_open_lvars :=
-  unfold denot_relevant_env;
-  match goal with
-  | |- context [lvars_fv (dom (lty_env_restrict_lvars ?Σ ?D))] =>
-      pose proof (lty_env_restrict_lvars_fv_subset Σ D)
-  end;
-  rewrite ?lvars_fv_union, ?denot_relevant_lvars_fv in *;
-  set_solver.
 
 Definition denot_ty
     (Δ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
@@ -51,7 +29,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars τ e)).
-  { denot_open_fresh. }
+  { denot_open_set. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) gas Σ τ e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.
@@ -275,7 +253,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars (CTArrow τx τr) e)).
-  { denot_open_fresh. }
+  { denot_open_set. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) (S gas) Σ (CTArrow τx τr) e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.
@@ -363,7 +341,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars (CTWand τx τr) e)).
-  { denot_open_fresh. }
+  { denot_open_set. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) (S gas) Σ (CTWand τx τr) e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.

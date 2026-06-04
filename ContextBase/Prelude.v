@@ -101,8 +101,6 @@ Qed.
 
 (** ** Polymorphic finite-map compatibility and restriction *)
 
-(** ** Polymorphic finite-map compatibility and restriction *)
-
 Section dom_gmap_filter.
   Context `{Countable K} `{EqDecision A}.
 

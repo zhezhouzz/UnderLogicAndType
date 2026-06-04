@@ -2606,7 +2606,6 @@ Context {V : Type} `{ValueSig V}.
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 
-Notation sat m φ := (res_models m φ).
 Notation "φ ⊫ ψ" := (entails φ ψ)
   (at level 85, ψ at level 84, no associativity).
 
@@ -2652,7 +2651,7 @@ Proof.
 Qed.
 
 Definition ext (φ : FormulaT) : WfWorldT → Prop :=
-  λ m, sat m φ.
+  λ m, res_models m φ.
 
 Definition over_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m m'.
@@ -2663,7 +2662,7 @@ Definition under_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
 Lemma over_ext_eq (p : FormulaT) :
   ∀ m, ext (FOver p) m ↔ under_closure (ext p) m.
 Proof.
-  intros m. unfold ext, sat, under_closure, res_models.
+  intros m. unfold ext, under_closure, res_models.
   split.
   - simpl. intros [_ [m' [Hsub Hp]]].
     exists m'. split; [| exact Hsub].
@@ -2680,7 +2679,7 @@ Qed.
 Lemma under_ext_eq (p : FormulaT) :
   ∀ m, ext (FUnder p) m ↔ over_closure (ext p) m.
 Proof.
-  intros m. unfold ext, sat, over_closure, res_models.
+  intros m. unfold ext, over_closure, res_models.
   split.
   - simpl. intros [_ [m' [Hsub Hp]]].
     exists m'. split; [| exact Hsub].

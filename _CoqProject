@@ -78,6 +78,7 @@ ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
+Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationOpen.v
 Denotation/theories/ContextTypeDenotationSaturateCore.v
 Denotation/theories/ContextTypeDenotationSaturateBody.v

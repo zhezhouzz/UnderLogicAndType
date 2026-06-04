@@ -6,9 +6,7 @@ From LocallyNameless Require Import Classes.
 From ContextTypeLanguage Require Export LtyEnv.
 From ContextBase Require Import BaseTactics.
 
-(** * ContextTypeLanguage.WF
-
-    Formation/scoping predicates for context types. *)
+(** ** Context-Type Formation *)
 
 
 Fixpoint cty_lc_at (d : nat) (τ : context_ty) : Prop :=
@@ -809,9 +807,7 @@ Proof.
   eapply wf_context_ty_at_shift; [lia|exact H].
 Qed.
 
-(** * ContextTypeLanguage.WF
-
-    Formation/scoping predicates for type contexts. *)
+(** ** Context Formation *)
 
 
 Fixpoint basic_ctx (D : aset) (Γ : ctx) : Prop :=
@@ -983,10 +979,7 @@ Proof.
   set_solver.
 Qed.
 
-(** * ContextTypeLanguage.Notation
-
-    Public surface for the type-language layer.  Other layers should import
-    this file instead of reaching into the implementation files directly. *)
+(** ** Basic Qualifier Formation *)
 
 
 Definition basic_qualifier (D : aset) (q : type_qualifier) : Prop :=

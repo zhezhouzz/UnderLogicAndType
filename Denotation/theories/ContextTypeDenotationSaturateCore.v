@@ -1,6 +1,6 @@
 (** * Denotation.ContextTypeDenotationSaturateCore
 
-    Split out from [ContextTypeDenotation.v] to keep individual proof files small. *)
+    Core support for result-equivalence and result-extension transport. *)
 
 From Denotation Require Import Notation ContextTypeDenotationOpen.
 
