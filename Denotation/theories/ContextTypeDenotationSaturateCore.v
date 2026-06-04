@@ -213,38 +213,6 @@ Proof.
   intros Hgas. apply Hsat. exact Hgas.
 Qed.
 
-Lemma context_ty_wf_formula_insert_fresh_same_world
-    (Σ : lty_env) τ (m : WfWorldT) x T :
-  LVFree x ∉ dom Σ ->
-  m ⊨ basic_world_formula (<[LVFree x := T]> Σ) ->
-  m ⊨ context_ty_wf_formula Σ τ ->
-  m ⊨ context_ty_wf_formula (<[LVFree x := T]> Σ) τ.
-Proof.
-  intros HxΣ Hworld Hwf.
-  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasic]].
-  apply basic_world_formula_models_iff in Hworld as [Hlc [Hsub _]].
-  apply context_ty_wf_formula_models_iff.
-  split; [exact Hlc|].
-  split; [exact Hsub|].
-  apply basic_context_ty_lvars_insert_fresh. exact Hbasic.
-Qed.
-
-Lemma expr_basic_typing_formula_insert_fresh_same_world
-    (Σ : lty_env) e U (m : WfWorldT) x T :
-  LVFree x ∉ dom Σ ->
-  m ⊨ basic_world_formula (<[LVFree x := T]> Σ) ->
-  m ⊨ expr_basic_typing_formula Σ e U ->
-  m ⊨ expr_basic_typing_formula (<[LVFree x := T]> Σ) e U.
-Proof.
-  intros HxΣ Hworld Hbasic.
-  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-  apply basic_world_formula_models_iff in Hworld as [Hlc [Hsub _]].
-  apply expr_basic_typing_formula_models_iff.
-  split; [exact Hlc|].
-  split; [exact Hsub|].
-  apply basic_tm_has_ltype_insert_fresh_lvar; assumption.
-Qed.
-
 Lemma denot_ty_lvar_gas_insert_fresh_lty_env_eq
     gas (Σ : lty_env) τ e x T :
   LVFree x ∉ dom Σ ->
