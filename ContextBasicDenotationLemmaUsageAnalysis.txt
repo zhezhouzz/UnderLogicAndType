@@ -498,10 +498,10 @@ File: ContextBasicDenotation/theories/TermOpen.v
 - Lemma `formula_open_expr_result_formula_shift0_lvars_lc` @ line 465
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_open_expr_result_formula_shift0_under_core` @ line 481
+- Lemma `open_expr_result_shift0_under_core` @ line 481
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `formula_open_env_lift_expr_result_formula_shift0_core` @ line 495
+- Lemma `open_env_lift_expr_result_shift0_core` @ line 495
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 File: ContextBasicDenotation/theories/TermSyntax.v

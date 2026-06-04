@@ -1663,10 +1663,10 @@ Implementation order
          DONE: the inverse/reconstruction directions needed by
          `qual_shift_from_msubst_store` are proved by first proving raw
          `gmap` statements and then wrapping them back through `LStoreOn`:
-           `lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw`
-           `lstore_mlsubst_back_restrict_of_shift_atom_store_raw`
-           `lstore_on_shift_from_restrict_of_mlsubst_back_atom_store`
-           `lstore_on_mlsubst_back_restrict_of_shift_atom_store`
+           `lstore_shift_restrict_mlsubst_back_raw`
+           `lstore_mlsubst_back_restrict_shift_raw`
+           `lstore_on_shift_restrict_mlsubst_back`
+           `lstore_on_mlsubst_back_restrict_shift`
          The key lesson is that the proof should avoid dependent record paths
          until the final wrapper.  The raw lemmas use lookup extensionality over
          `logic_var`, with `lookup_kmap`, `storeA_restrict_lookup`,

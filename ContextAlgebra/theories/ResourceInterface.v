@@ -491,7 +491,7 @@ Lemma res_fiber_from_projection_nested_union_l
   res_fiber_from_projection m (X ∪ Y) (σX ∪ σY) mfibXY.
 Proof. apply resA_fiber_from_projection_nested_union_l. Qed.
 
-Lemma res_fiber_from_projection_nested_union_residual_r
+Lemma res_fiber_proj_union_residual_r
     (m mfibXY : WfWorld) (X Y : aset) (σXY : StoreT) :
   res_fiber_from_projection m (X ∪ Y) σXY mfibXY ->
   exists σX mfibX σY,
@@ -500,7 +500,7 @@ Lemma res_fiber_from_projection_nested_union_residual_r
     σX ∪ σY = σXY /\
     res_fiber_from_projection m X σX mfibX /\
     res_fiber_from_projection mfibX (Y ∖ X) σY mfibXY.
-Proof. apply resA_fiber_from_projection_nested_union_residual_r. Qed.
+Proof. apply resA_fiber_proj_union_residual_r. Qed.
 
 Lemma world_compat_le_r (w m n : WfWorld) :
   m ⊑ n →
@@ -696,13 +696,13 @@ Lemma res_extend_by_dom_output_subset (m : WfWorld) (F : fiber_extension) (n : W
   extA_out F ⊆ world_dom (n : World).
 Proof. apply resA_extend_by_dom_output_subset. Qed.
 
-Lemma extension_applicable_after_parallel_extension_right
+Lemma ext_applicable_parallel_r
     (m mx my : WfWorld) (F G : fiber_extension) :
   m #> F ~~> mx →
   m #> G ~~> my →
   extA_out G ## world_dom (mx : World) →
   extension_applicable F my.
-Proof. apply extension_applicableA_after_parallel_extension_right. Qed.
+Proof. apply ext_applicableA_parallel_r. Qed.
 
 Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →

@@ -209,11 +209,11 @@ File: ContextAlgebra/theories/ResourceAlgebra.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextAlgebra/theories/ResourceInterface.v:492: Proof. apply resA_fiber_from_projection_nested_union_l. Qed.
-- Lemma `resA_fiber_from_projection_nested_union_residual_r` @ line 815
+- Lemma `resA_fiber_proj_union_residual_r` @ line 815
   uses: 1 total; ltac/hint uses: 0; proof lines: 77; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextAlgebra/theories/ResourceInterface.v:503: Proof. apply resA_fiber_from_projection_nested_union_residual_r. Qed.
+    - ContextAlgebra/theories/ResourceInterface.v:503: Proof. apply resA_fiber_proj_union_residual_r. Qed.
 - Lemma `rawA_pullback_projection_wf` @ line 905
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
@@ -420,11 +420,11 @@ File: ContextAlgebra/theories/ResourceCompat.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextAlgebra/theories/ResourceCompat.v:266: eapply one_point_projected_extension_projection_eq; eauto.
-- Lemma `one_point_projected_extension_extend_by_projection` @ line 242
+- Lemma `one_point_ext_by_projection` @ line 242
   uses: 1 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextAlgebra/theories/ResourceCompat.v:283: destruct (one_point_projected_extension_extend_by_projection
+    - ContextAlgebra/theories/ResourceCompat.v:283: destruct (one_point_ext_by_projection
 - Lemma `forall_extension_from_world_dom_projection` @ line 269
   uses: 1 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
@@ -572,11 +572,11 @@ File: ContextAlgebra/theories/ResourceExtension.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextAlgebra/theories/ResourceInterface.v:697: Proof. apply resA_extend_by_dom_output_subset. Qed.
-- Lemma `extension_applicableA_after_parallel_extension_right` @ line 124
+- Lemma `ext_applicableA_parallel_r` @ line 124
   uses: 1 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextAlgebra/theories/ResourceInterface.v:705: Proof. apply extension_applicableA_after_parallel_extension_right. Qed.
+    - ContextAlgebra/theories/ResourceInterface.v:705: Proof. apply ext_applicableA_parallel_r. Qed.
 - Lemma `resA_extend_by_store_iff` @ line 145
   uses: 23 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: ordinary helper; review by use sites
@@ -989,11 +989,11 @@ File: ContextAlgebra/theories/ResourceInterface.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
     - ContextLogic/theories/FormulaConnectives.v:956: pose proof (res_fiber_from_projection_nested_union_l
-- Lemma `res_fiber_from_projection_nested_union_residual_r` @ line 494
+- Lemma `res_fiber_proj_union_residual_r` @ line 494
   uses: 1 total; ltac/hint uses: 0; proof lines: 230; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - ContextLogic/theories/FormulaConnectives.v:851: destruct (res_fiber_from_projection_nested_union_residual_r
+    - ContextLogic/theories/FormulaConnectives.v:851: destruct (res_fiber_proj_union_residual_r
 - Lemma `world_compat_le_r` @ line 505
   uses: 1 total; ltac/hint uses: 0; proof lines: 219; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup
@@ -1141,11 +1141,11 @@ File: ContextAlgebra/theories/ResourceInterface.v
     - ContextBasicDenotation/theories/StoreTyping.v:1008: pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
     - ContextBasicDenotation/theories/BasicTypingFormula.v:1699: pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
     - ContextBasicDenotation/theories/BasicTypingFormula.v:1920: pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_dom.
-- Lemma `extension_applicable_after_parallel_extension_right` @ line 699
+- Lemma `ext_applicable_parallel_r` @ line 699
   uses: 1 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - ContextAlgebra/theories/ResourceCompat.v:530: pose proof (extension_applicable_after_parallel_extension_right
+    - ContextAlgebra/theories/ResourceCompat.v:530: pose proof (ext_applicable_parallel_r
 - Lemma `res_extend_by_le` @ line 707
   uses: 4 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup

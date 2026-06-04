@@ -83,11 +83,11 @@ File: ContextStore/LVarStore.v
   uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
   sample uses: none
-- Lemma `lvar_store_to_atom_store_open_lvars_insert_delete_swap_back` @ line 283
+- Lemma `lvar_to_atom_open_insert_delete_swap` @ line 283
   uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextBasicDenotation/theories/BasicTypingFormula.v:46: rewrite lvar_store_to_atom_store_open_lvars_insert_delete_swap_back in Hswap
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:46: rewrite lvar_to_atom_open_insert_delete_swap in Hswap
 - Lemma `logic_var_bv_elem_singleton` @ line 301
   uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
@@ -245,7 +245,7 @@ File: ContextStore/LVarStore.v
   uses: 0 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_to_atom_store_open_lvars_insert_free_subset` @ line 735
+- Lemma `lvar_to_atom_open_insert_free_subset` @ line 735
   uses: 0 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
@@ -963,26 +963,26 @@ File: ContextStore/StoreInterface.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextTypeLanguage/theories/Qualifier.v:504: eapply lstore_on_shift_from_mlsubst_back_atom_store.
-- Lemma `lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw` @ line 336
+- Lemma `lstore_shift_restrict_mlsubst_back_raw` @ line 336
   uses: 1 total; ltac/hint uses: 0; proof lines: 96; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreInterface.v:572: apply lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw; assumption.
-- Lemma `lstore_mlsubst_back_restrict_of_shift_atom_store_raw` @ line 447
+    - ContextStore/StoreInterface.v:572: apply lstore_shift_restrict_mlsubst_back_raw; assumption.
+- Lemma `lstore_mlsubst_back_restrict_shift_raw` @ line 447
   uses: 1 total; ltac/hint uses: 0; proof lines: 95; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreInterface.v:591: exact (lstore_mlsubst_back_restrict_of_shift_atom_store_raw
-- Lemma `lstore_on_shift_from_restrict_of_mlsubst_back_atom_store` @ line 557
+    - ContextStore/StoreInterface.v:591: exact (lstore_mlsubst_back_restrict_shift_raw
+- Lemma `lstore_on_shift_restrict_mlsubst_back` @ line 557
   uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextTypeLanguage/theories/Qualifier.v:517: -- exact (lstore_on_shift_from_restrict_of_mlsubst_back_atom_store
-- Lemma `lstore_on_mlsubst_back_restrict_of_shift_atom_store` @ line 575
+    - ContextTypeLanguage/theories/Qualifier.v:517: -- exact (lstore_on_shift_restrict_mlsubst_back
+- Lemma `lstore_on_mlsubst_back_restrict_shift` @ line 575
   uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextTypeLanguage/theories/Qualifier.v:525: exact (lstore_on_mlsubst_back_restrict_of_shift_atom_store
+    - ContextTypeLanguage/theories/Qualifier.v:525: exact (lstore_on_mlsubst_back_restrict_shift
 - Lemma `lstore_shift_from_open_swap` @ line 595
   uses: 2 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: ordinary helper; review by use sites
@@ -1558,7 +1558,7 @@ Zero-use lemmas:
 - ContextStore/LVarStore.v:565: `lvar_store_lvars_fv_dom_insert_free` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/LVarStore.v:575: `lvar_store_lvars_fv_subset_insert_free_drop` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/LVarStore.v:710: `lvar_store_to_atom_store_open_lvars_closed` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/LVarStore.v:735: `lvar_store_to_atom_store_open_lvars_insert_free_subset` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
+- ContextStore/LVarStore.v:735: `lvar_to_atom_open_insert_free_subset` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/StoreCore.v:71: `storeA_agree_on_insert_same` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreCore.v:83: `storeA_agree_on_insert_same_keep` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreCore.v:443: `storeA_rekey_delete` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
@@ -1593,7 +1593,7 @@ Single-use lemmas:
 - ContextStore/LVarStore.v:154: `lvar_store_open_lvars_insert_fresh` -> ContextTypeLanguage/theories/LtyEnv.v:217 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:229: `lvar_store_open_lvars_open_one` -> ContextTypeLanguage/theories/LtyEnv.v:284 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:245: `lvar_store_open_lvars_atom_swap` -> ContextStore/LVarStore.v:279 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/LVarStore.v:283: `lvar_store_to_atom_store_open_lvars_insert_delete_swap_back` -> ContextBasicDenotation/theories/BasicTypingFormula.v:46 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/LVarStore.v:283: `lvar_to_atom_open_insert_delete_swap` -> ContextBasicDenotation/theories/BasicTypingFormula.v:46 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:328: `lvar_store_open_one_involutive` -> ContextTypeLanguage/theories/LtyEnv.v:294 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:352: `lvar_store_open_one_insert_fresh` -> ContextTypeLanguage/theories/LtyEnv.v:305 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/LVarStore.v:360: `lvar_store_open_one_shift_under` -> ContextTypeLanguage/theories/LtyEnv.v:317 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
@@ -1653,10 +1653,10 @@ Single-use lemmas:
 - ContextStore/StoreInterface.v:227: `lstore_on_open_front_back` -> ContextTypeLanguage/theories/Qualifier.v:591 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:241: `lstore_on_open_mlsubst_back_fresh` -> ContextTypeLanguage/theories/Qualifier.v:242 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:302: `lstore_on_shift_from_mlsubst_back_atom_store` -> ContextTypeLanguage/theories/Qualifier.v:504 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreInterface.v:336: `lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw` -> ContextStore/StoreInterface.v:572 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreInterface.v:447: `lstore_mlsubst_back_restrict_of_shift_atom_store_raw` -> ContextStore/StoreInterface.v:591 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreInterface.v:557: `lstore_on_shift_from_restrict_of_mlsubst_back_atom_store` -> ContextTypeLanguage/theories/Qualifier.v:517 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreInterface.v:575: `lstore_on_mlsubst_back_restrict_of_shift_atom_store` -> ContextTypeLanguage/theories/Qualifier.v:525 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreInterface.v:336: `lstore_shift_restrict_mlsubst_back_raw` -> ContextStore/StoreInterface.v:572 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreInterface.v:447: `lstore_mlsubst_back_restrict_shift_raw` -> ContextStore/StoreInterface.v:591 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreInterface.v:557: `lstore_on_shift_restrict_mlsubst_back` -> ContextTypeLanguage/theories/Qualifier.v:517 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreInterface.v:575: `lstore_on_mlsubst_back_restrict_shift` -> ContextTypeLanguage/theories/Qualifier.v:525 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:609: `lstore_on_shift_from_open_front` -> ContextTypeLanguage/theories/Qualifier.v:586 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:622: `lstore_on_shift_from_open_back` -> ContextTypeLanguage/theories/Qualifier.v:599 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreRestrict.v:250: `storeA_restrict_empty_union_elements` -> ContextStore/StoreRestrict.v:363 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof

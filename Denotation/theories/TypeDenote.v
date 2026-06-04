@@ -186,7 +186,7 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
       [|apply open_env_lift_fresh_for_bound0_bind_dom
        |apply open_env_values_inj_lift; exact Hinj];
       rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj;
-      rewrite formula_open_env_lift_expr_result_formula_shift0_core
+      rewrite open_env_lift_expr_result_shift0_core
         by (exact Hfreshe || exact Hinj);
       rewrite formula_open_env_fibvars;
       [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];

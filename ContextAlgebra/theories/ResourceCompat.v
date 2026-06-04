@@ -239,7 +239,7 @@ Proof.
         reflexivity.
 Qed.
 
-Lemma one_point_projected_extension_extend_by_projection
+Lemma one_point_ext_by_projection
     (m my : WfWorldT) (X : aset) (y : atom)
     (Hy : y ∉ world_dom (m : WorldT))
     (Hdisj : X ## {[y]})
@@ -280,7 +280,7 @@ Lemma forall_extension_from_world_dom_projection
 Proof.
   intros HXm Hy Hdom_my Hrestrict.
   assert (Hdisj : X ## {[y]}) by set_solver.
-  destruct (one_point_projected_extension_extend_by_projection
+  destruct (one_point_ext_by_projection
     m my X y Hy Hdisj Hdom_my Hrestrict HXm) as [n [Hext Hproj]].
   exists (one_point_projected_extension m my X y Hy Hdisj Hdom_my), n.
   split; [reflexivity |].
@@ -527,7 +527,7 @@ Lemma res_extend_by_commute_exists_right
     res_extend_by mx Fy myx.
 Proof.
   intros HmF HmFy HinFy HoutFy.
-  pose proof (extension_applicable_after_parallel_extension_right
+  pose proof (ext_applicable_parallel_r
     m mx my F Fy HmF HmFy HoutFy) as HappF_my.
   destruct (res_extend_by_exists my F HappF_my) as [myx HmyF].
   exists myx. split; [exact HmyF |].

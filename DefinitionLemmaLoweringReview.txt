@@ -760,8 +760,8 @@ How to modify:
 Lemmas at lines 632-818:
 
 - open_tm_env_lift_shift0
-- formula_open_expr_result_formula_shift0_under_core
-- formula_open_env_lift_expr_result_formula_shift0_core
+- open_expr_result_shift0_under_core
+- open_env_lift_expr_result_shift0_core
 - open_tm_env_lift_tapp_shift_bvar0
 - open_tm_env_lift_tret_bound0
 - bvar_lvars_at_shift_under

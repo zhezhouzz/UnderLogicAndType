@@ -479,7 +479,7 @@ Proof.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
-Lemma formula_open_expr_result_formula_shift0_under_core k y e :
+Lemma open_expr_result_shift0_under_core k y e :
   y ∉ fv_tm e ->
   formula_open (S k) y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
   expr_result_formula (tm_shift 0 (open_tm k (vfvar y) e)) (LVBound 0).
@@ -493,7 +493,7 @@ Proof.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
-Lemma formula_open_env_lift_expr_result_formula_shift0_core η e :
+Lemma open_env_lift_expr_result_shift0_core η e :
   open_env_fresh_for_lvars η (tm_lvars e) ->
   open_env_values_inj η ->
   formula_open_env ((kmap S η))
@@ -516,7 +516,7 @@ Proof.
     2:{ better_base_solver. }
     2:{ apply open_env_values_inj_lift. exact Hinjη. }
     rewrite IH by (exact Hfreshη || exact Hinjη).
-    rewrite formula_open_expr_result_formula_shift0_under_core.
+    rewrite open_expr_result_shift0_under_core.
     2:{
       pose proof (open_env_fresh_for_lvars_insert_head η k x
         (tm_lvars e) Hnone Hfresh) as Hhead.

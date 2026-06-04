@@ -121,7 +121,7 @@ Proof.
   intros Hext. exact (proj2 (resA_extend_by_dom_subsets m F n Hext)).
 Qed.
 
-Lemma extension_applicableA_after_parallel_extension_right
+Lemma ext_applicableA_parallel_r
     (m mx my : WfWorldAT) (F G : fiber_extensionA) :
   m #> F ~~A> mx →
   m #> G ~~A> my →

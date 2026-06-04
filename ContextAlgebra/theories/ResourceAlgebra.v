@@ -812,7 +812,7 @@ Proof.
     apply rawA_fiber_nested_union. exact HcompatXY.
 Qed.
 
-Lemma resA_fiber_from_projection_nested_union_residual_r
+Lemma resA_fiber_proj_union_residual_r
     (m mfibXY : WfWorldAT) (X Y : gset K) (σXY : StoreAT) :
   resA_fiber_from_projection m (X ∪ Y) σXY mfibXY →
   ∃ σX mfibX σY,

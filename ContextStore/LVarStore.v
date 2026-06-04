@@ -280,7 +280,7 @@ Proof.
   apply lvar_store_to_atom_store_swap.
 Qed.
 
-Lemma lvar_store_to_atom_store_open_lvars_insert_delete_swap_back
+Lemma lvar_to_atom_open_insert_delete_swap
     η k y z (s : LVarStore) :
   η !! k = Some z ->
   y ∉ lvars_fv (dom s) ->
@@ -732,7 +732,7 @@ Proof.
   - exact Hid.
 Qed.
 
-Lemma lvar_store_to_atom_store_open_lvars_insert_free_subset
+Lemma lvar_to_atom_open_insert_free_subset
     η (s : LVarStore) x A :
   LVFree x ∉ dom s ->
   open_env_fresh_for_lvars η (dom (<[LVFree x := A]> s)) ->
