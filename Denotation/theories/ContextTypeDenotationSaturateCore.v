@@ -1065,43 +1065,6 @@ Proof.
   split; assumption.
 Qed.
 
-Lemma tm_result_equiv_on_res_subset
-    (m0 m : WfWorldT) e1 e2 :
-  m0 ⊑ m ->
-  lc_tm e1 ->
-  lc_tm e2 ->
-  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m0 : WorldT) ->
-  tm_result_equiv_on m e1 e2 ->
-  tm_result_equiv_on m0 e1 e2.
-Proof.
-  intros Hle _ _ Hfv Heq σ v Hσ.
-  pose proof (res_restrict_eq_of_le m0 m Hle) as Hrestrict.
-  assert (Hσ_restrict :
-      (res_restrict m (world_dom (m0 : WorldT)) : WorldT) σ).
-  { rewrite Hrestrict. exact Hσ. }
-  destruct Hσ_restrict as [σm [Hσm Hσm_restrict]].
-  assert (Hfv1 : fv_tm e1 ⊆ world_dom (m0 : WorldT)) by set_solver.
-  assert (Hfv2 : fv_tm e2 ⊆ world_dom (m0 : WorldT)) by set_solver.
-  specialize (Heq σm v Hσm) as [Heq12 Heq21].
-  split.
-  - intros Heval1.
-    rewrite <- Hσm_restrict.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
-      σm e2 v (world_dom (m0 : WorldT)) Hfv2)).
-    apply Heq12.
-    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
-      σm e1 v (world_dom (m0 : WorldT)) Hfv1)).
-    rewrite Hσm_restrict. exact Heval1.
-  - intros Heval2.
-    rewrite <- Hσm_restrict.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
-      σm e1 v (world_dom (m0 : WorldT)) Hfv1)).
-    apply Heq21.
-	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
-	      σm e2 v (world_dom (m0 : WorldT)) Hfv2)).
-	    rewrite Hσm_restrict. exact Heval2.
-Qed.
-
 Lemma tm_result_equiv_on_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
   res_subset m0 m ->
