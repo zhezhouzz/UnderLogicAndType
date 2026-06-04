@@ -595,36 +595,6 @@ Proof.
       set_solver.
 Qed.
 
-Lemma formula_fv_open_denot_ty_lvar_gas_subset_relevant
-    gas k y Σ τ e :
-  y ∉ fv_tm e ->
-  y ∉ fv_cty τ ->
-  formula_fv (formula_open k y (denot_ty_lvar_gas gas Σ τ e)) ⊆
-  fv_tm (open_tm k (vfvar y) e) ∪ fv_cty (cty_open k y τ).
-Proof.
-  intros Hy Hτ.
-  rewrite <- (formula_lvars_at_fv 0
-    (formula_open k y (denot_ty_lvar_gas gas Σ τ e))).
-  change k with (0 + k) at 1.
-  rewrite formula_lvars_at_open.
-  rewrite <- (tm_lvars_at_fv (open_tm k (vfvar y) e) 0).
-  rewrite <- (context_ty_lvars_fv_at 0 (cty_open k y τ)).
-  replace (open_tm k (vfvar y) e) with
-    (open_tm (0 + k) (vfvar y) e) by
-      (replace (0 + k) with k by lia; reflexivity).
-  replace (cty_open k y τ) with (cty_open (0 + k) y τ) by
-    (replace (0 + k) with k by lia; reflexivity).
-  rewrite (tm_lvars_at_open e 0 k y) by
-    (rewrite tm_lvars_at_fv; exact Hy).
-  change (cty_open (0 + k) y τ) with ({0 + k ~> y} τ).
-  rewrite (context_ty_lvars_at_open 0 k y τ).
-  rewrite <- lvars_fv_union.
-  apply lvars_fv_mono.
-  rewrite <- lvars_open_union.
-  apply lvars_open_mono.
-  apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
-Qed.
-
 Lemma formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open gas Σ τ e :
   formula_fv (denot_ty_lvar_gas gas Σ τ e) ⊆
   fv_tm e ∪ fv_cty τ.
@@ -672,31 +642,6 @@ Proof.
       apply lvars_fv_mono. exact Hτ.
     }
     set_solver.
-Qed.
-
-Lemma denot_guard_term_type_fv_scope
-    Σ τ e (m : WfWorldT) :
-  m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
-    (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
-      (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
-          (erase_ty τ))
-        (expr_total_formula e))) ->
-  fv_tm e ∪ fv_cty τ ⊆ world_dom (m : WorldT).
-Proof.
-  intros Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [Hworld [_ Htotal]]].
-  pose proof (res_models_fuel_scoped _ _ _ Htotal) as He.
-  unfold formula_scoped_in_world in He.
-  rewrite formula_fv_expr_total_formula, tm_lvars_fv in He.
-  pose proof (context_ty_wf_formula_fv_cty_subset
-    (denot_relevant_env Σ τ e) τ m Hwf) as Hτ.
-  pose proof (proj1 (basic_world_formula_models_iff
-    (denot_relevant_env Σ τ e) m) Hworld)
-    as [_ [Hworld_dom _]].
-  set_solver.
 Qed.
 
 End ContextTypeDenotationSupport.

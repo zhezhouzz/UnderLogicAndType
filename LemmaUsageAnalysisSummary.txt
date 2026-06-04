@@ -31,7 +31,7 @@ Global counts
 - ContextTypeLanguage: 105 lemmas, 0 zero-use, 39 single-use, 0 admitted, 48 thin
 - ContextLogic: 100 lemmas, 0 zero-use, 45 single-use, 0 admitted, 14 thin
 - ContextBasicDenotation: 244 lemmas, 0 zero-use, 116 single-use, 2 admitted, 54 thin
-- Denotation: 138 lemmas, 6 zero-use, 69 single-use, 0 admitted.
+- Denotation: 129 lemmas, 0 zero-use, 67 single-use, 0 admitted, 5 thin
 - ContextTyping: 46 lemmas, 11 zero-use, 27 single-use, 15 admitted.
 
 Main observations
