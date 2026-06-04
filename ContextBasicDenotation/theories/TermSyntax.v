@@ -425,17 +425,24 @@ Proof.
   intros Hlc. apply lc_lvars_no_bv. apply tm_lvars_no_bv_of_lc. exact Hlc.
 Qed.
 
+Lemma tm_lvars_lc_subset_atoms_fv e :
+  lc_lvars (tm_lvars e) ->
+  tm_lvars e ⊆ lvars_of_atoms (fv_tm e).
+Proof.
+  intros Hlc v Hv.
+  pose proof (proj1 (lc_lvars_no_bv (tm_lvars e)) Hlc) as Hbv.
+  pose proof (lvars_bv_empty_subset_of_atoms_fv
+    (tm_lvars e) Hbv v Hv) as Hin.
+  rewrite tm_lvars_fv in Hin. exact Hin.
+Qed.
+
 Lemma tm_lvars_lc_eq_atoms e :
   lc_tm e ->
   tm_lvars e = lvars_of_atoms (fv_tm e).
 Proof.
   intros Hlc.
   apply set_eq. intros v. split.
-  - intros Hv.
-    pose proof (proj1 (lc_lvars_no_bv (tm_lvars e))
-      (tm_lvars_lc e Hlc)) as Hbv.
-    pose proof (lvars_bv_empty_subset_of_atoms_fv (tm_lvars e) Hbv v Hv) as Hin.
-    rewrite tm_lvars_fv in Hin. exact Hin.
+  - apply tm_lvars_lc_subset_atoms_fv. apply tm_lvars_lc. exact Hlc.
   - intros Hv.
     unfold lvars_of_atoms in Hv.
     apply elem_of_map in Hv as [x [-> Hx]].

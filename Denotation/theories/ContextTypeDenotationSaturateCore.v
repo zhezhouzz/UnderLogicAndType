@@ -1634,14 +1634,7 @@ Proof.
   - rewrite res_lift_free_dom.
     assert (Htm1_atoms :
         tm_lvars e1 ⊆ lvars_of_atoms (fv_tm e1)).
-    {
-      intros v Hv.
-      pose proof (proj1 (lc_lvars_no_bv (tm_lvars e1)) Hlc1)
-        as Hbv.
-      pose proof (lvars_bv_empty_subset_of_atoms_fv
-        (tm_lvars e1) Hbv v Hv) as Hin.
-      rewrite tm_lvars_fv in Hin. exact Hin.
-    }
+    { apply tm_lvars_lc_subset_atoms_fv. exact Hlc1. }
     intros v Hv.
     apply elem_of_union in Hv as [Hv|Hv].
     + specialize (Htm1_atoms _ Hv).
