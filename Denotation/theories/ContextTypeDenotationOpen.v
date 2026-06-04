@@ -7,6 +7,27 @@ From Denotation Require Export ContextTypeDenotationLvars.
 
 Section ContextTypeDenotation.
 
+Ltac denot_open_fresh :=
+  apply open_env_fresh_for_lvars_singleton;
+  unfold denot_relevant_lvars;
+  rewrite ?lvars_fv_union, ?context_ty_lvars_fv, ?tm_lvars_fv;
+  set_solver.
+
+Ltac denot_open_lvars :=
+  unfold fv_cty, context_ty_lvars in *;
+  cbn [cty_open context_ty_lvars_at] in *;
+  rewrite ?lvars_fv_union, ?lvars_fv_lvars_at_depth in *;
+  set_solver.
+
+Ltac denot_relevant_env_open_lvars :=
+  unfold denot_relevant_env, denot_relevant_lvars;
+  match goal with
+  | |- context [lvars_fv (dom (lty_env_restrict_lvars ?Σ ?D))] =>
+      pose proof (lty_env_restrict_lvars_fv_subset Σ D)
+  end;
+  rewrite ?lvars_fv_union, ?context_ty_lvars_fv, ?tm_lvars_fv in *;
+  set_solver.
+
 Definition denot_ty
     (Δ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
   denot_ty_lvar_gas (cty_depth τ) (atom_env_to_lty_env Δ) τ e.
@@ -31,13 +52,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars τ e)).
-  {
-    apply open_env_fresh_for_lvars_singleton.
-    rewrite lvars_fv_union.
-    unfold denot_relevant_lvars.
-    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
-    set_solver.
-  }
+  { denot_open_fresh. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) gas Σ τ e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.
@@ -279,13 +294,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars (CTArrow τx τr) e)).
-  {
-    apply open_env_fresh_for_lvars_singleton.
-    rewrite lvars_fv_union.
-    unfold denot_relevant_lvars.
-    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
-    set_solver.
-  }
+  { denot_open_fresh. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) (S gas) Σ (CTArrow τx τr) e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.
@@ -373,13 +382,7 @@ Proof.
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
       (dom Σ ∪ denot_relevant_lvars (CTWand τx τr) e)).
-  {
-    apply open_env_fresh_for_lvars_singleton.
-    rewrite lvars_fv_union.
-    unfold denot_relevant_lvars.
-    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
-    set_solver.
-  }
+  { denot_open_fresh. }
   pose proof (formula_open_env_denot_ty_lvar_gas
     (<[k := y]> ∅) (S gas) Σ (CTWand τx τr) e Hfresh
     (open_env_values_inj_singleton k y)) as Heq.
@@ -432,11 +435,7 @@ Proof.
       rewrite formula_open_true.
       repeat rewrite res_models_and_iff.
       reflexivity.
-    + unfold denot_relevant_env, denot_relevant_lvars.
-      pose proof (lty_env_restrict_lvars_fv_subset
-        Σ (context_ty_lvars τ ∪ tm_lvars e)) as Hsubfv.
-      rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-      set_solver.
+    + denot_relevant_env_open_lvars.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
       cbn [denot_ty_lvar_gas].
     + rewrite formula_open_and.
@@ -450,20 +449,12 @@ Proof.
         -- rewrite formula_open_over_body in Hbody.
            exact Hbody.
            ++ exact Hy.
-           ++ unfold fv_cty, context_ty_lvars in Hτ.
-              cbn [context_ty_lvars_at] in Hτ.
-              rewrite lvars_fv_lvars_at_depth in Hτ. exact Hτ.
+           ++ denot_open_lvars.
         -- rewrite formula_open_over_body.
            exact Hbody.
            ++ exact Hy.
-           ++ unfold fv_cty, context_ty_lvars in Hτ.
-              cbn [context_ty_lvars_at] in Hτ.
-              rewrite lvars_fv_lvars_at_depth in Hτ. exact Hτ.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTOver b φ) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+           ++ denot_open_lvars.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -475,20 +466,12 @@ Proof.
         -- rewrite formula_open_under_body in Hbody.
            exact Hbody.
            ++ exact Hy.
-           ++ unfold fv_cty, context_ty_lvars in Hτ.
-              cbn [context_ty_lvars_at] in Hτ.
-              rewrite lvars_fv_lvars_at_depth in Hτ. exact Hτ.
+           ++ denot_open_lvars.
         -- rewrite formula_open_under_body.
            exact Hbody.
            ++ exact Hy.
-           ++ unfold fv_cty, context_ty_lvars in Hτ.
-              cbn [context_ty_lvars_at] in Hτ.
-              rewrite lvars_fv_lvars_at_depth in Hτ. exact Hτ.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTUnder b φ) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+           ++ denot_open_lvars.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -501,29 +484,17 @@ Proof.
            apply res_models_and_iff in Hbody as [Hbody1 Hbody2].
            apply res_models_and_iff. split.
            ++ apply (proj1 (IH k Σ τ1 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hbody1.
+                ltac:(denot_open_lvars))). exact Hbody1.
            ++ apply (proj1 (IH k Σ τ2 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hbody2.
+                ltac:(denot_open_lvars))). exact Hbody2.
         -- apply res_models_and_iff in Hbody as [Hbody1 Hbody2].
            rewrite formula_open_and.
            apply res_models_and_iff. split.
            ++ apply (proj2 (IH k Σ τ1 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hbody1.
+                ltac:(denot_open_lvars))). exact Hbody1.
            ++ apply (proj2 (IH k Σ τ2 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hbody2.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTInter τ1 τ2) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+                ltac:(denot_open_lvars))). exact Hbody2.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -564,14 +535,10 @@ Proof.
               unfold context_ty_lvars. cbn [context_ty_lvars_at]. set_solver.
            ++ intros Hτ1.
               apply (proj1 (IH k Σ τ1 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ1.
+                ltac:(denot_open_lvars))). exact Hτ1.
            ++ intros Hτ2.
               apply (proj1 (IH k Σ τ2 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ2.
+                ltac:(denot_open_lvars))). exact Hτ2.
         -- assert (HguardF :
              m ⊨ FAnd
                (context_ty_wf_formula
@@ -600,54 +567,30 @@ Proof.
                  fv_cty (cty_open k y τ1)).
               ** apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
                  --- exact Hy.
-                 --- unfold fv_cty, context_ty_lvars in Hτ |- *.
-                     cbn [context_ty_lvars_at] in Hτ.
-                     rewrite lvars_fv_union in Hτ. set_solver.
+                 --- denot_open_lvars.
               ** pose proof (denot_guard_term_type_fv_scope
                    (lty_env_open_one k y Σ)
                    (cty_open k y (CTUnion τ1 τ2))
                    (open_tm k (vfvar y) e) m HguardF) as Hscope.
-                 intros a Ha. apply Hscope.
-                 apply elem_of_union in Ha as [Ha|Ha].
-                 --- apply elem_of_union_l. exact Ha.
-                 --- apply elem_of_union_r.
-                     unfold fv_cty, context_ty_lvars in Ha |- *.
-                     cbn [cty_open context_ty_lvars_at].
-                     rewrite lvars_fv_union. apply elem_of_union_l. exact Ha.
+                 intros a Ha. apply Hscope. denot_open_lvars.
            ++ transitivity
                 (fv_tm (open_tm k (vfvar y) e) ∪
                  fv_cty (cty_open k y τ2)).
               ** apply formula_fv_open_denot_ty_lvar_gas_subset_relevant.
                  --- exact Hy.
-                 --- unfold fv_cty, context_ty_lvars in Hτ |- *.
-                     cbn [context_ty_lvars_at] in Hτ.
-                     rewrite lvars_fv_union in Hτ. set_solver.
+                 --- denot_open_lvars.
               ** pose proof (denot_guard_term_type_fv_scope
                    (lty_env_open_one k y Σ)
                    (cty_open k y (CTUnion τ1 τ2))
                    (open_tm k (vfvar y) e) m HguardF) as Hscope.
-                 intros a Ha. apply Hscope.
-                 apply elem_of_union in Ha as [Ha|Ha].
-                 --- apply elem_of_union_l. exact Ha.
-                 --- apply elem_of_union_r.
-                     unfold fv_cty, context_ty_lvars in Ha |- *.
-                     cbn [cty_open context_ty_lvars_at].
-                     rewrite lvars_fv_union. apply elem_of_union_r. exact Ha.
+                 intros a Ha. apply Hscope. denot_open_lvars.
            ++ intros Hτ1.
               apply (proj2 (IH k Σ τ1 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ1.
+                ltac:(denot_open_lvars))). exact Hτ1.
            ++ intros Hτ2.
               apply (proj2 (IH k Σ τ2 e m HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ2.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTUnion τ1 τ2) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+                ltac:(denot_open_lvars))). exact Hτ2.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -681,14 +624,10 @@ Proof.
            eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj1 (IH k Σ τ1 e m' HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ1.
+                ltac:(denot_open_lvars))). exact Hτ1.
            ++ intros m' Hτ2.
               apply (proj1 (IH k Σ τ2 e m' HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ2.
+                ltac:(denot_open_lvars))). exact Hτ2.
         -- assert (HguardF :
              m ⊨ FAnd
                (context_ty_wf_formula
@@ -713,19 +652,11 @@ Proof.
            eapply res_models_plus_map; [| | exact Hbody].
            ++ intros m' Hτ1.
               apply (proj2 (IH k Σ τ1 e m' HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ1.
+                ltac:(denot_open_lvars))). exact Hτ1.
            ++ intros m' Hτ2.
               apply (proj2 (IH k Σ τ2 e m' HΣ Hy
-                ltac:(unfold fv_cty, context_ty_lvars in Hτ;
-                  cbn [context_ty_lvars_at] in Hτ;
-                  rewrite lvars_fv_union in Hτ; set_solver))). exact Hτ2.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTSum τ1 τ2) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+                ltac:(denot_open_lvars))). exact Hτ2.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -742,11 +673,7 @@ Proof.
 	         pose proof (res_models_open_arrow_body_iff
 	          k y gas Σ τx τr e m IH HΣ Hy Hτ) as Hiff.
 	         apply (proj2 Hiff). exact Hbody.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+      * denot_relevant_env_open_lvars.
     + rewrite formula_open_and.
       repeat rewrite res_models_and_iff.
       rewrite (res_models_open_denot_ty_lvar_guard_iff
@@ -763,11 +690,7 @@ Proof.
 	         pose proof (res_models_open_wand_body_iff
 	          k y gas Σ τx τr e m IH HΣ Hy Hτ) as Hiff.
 	         apply (proj2 Hiff). exact Hbody.
-      * unfold denot_relevant_env, denot_relevant_lvars.
-        pose proof (lty_env_restrict_lvars_fv_subset
-          Σ (context_ty_lvars (CTWand τx τr) ∪ tm_lvars e)) as Hsubfv.
-        rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hsubfv.
-        set_solver.
+      * denot_relevant_env_open_lvars.
 Qed.
 
 End ContextTypeDenotation.

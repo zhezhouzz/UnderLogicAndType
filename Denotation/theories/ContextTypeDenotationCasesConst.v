@@ -99,7 +99,7 @@ Lemma denot_relevant_env_const_precise_atom_env_empty Σ c :
   denot_relevant_env (atom_env_to_lty_env Σ)
     (CTInter
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
+    (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
   apply map_eq. intros v.

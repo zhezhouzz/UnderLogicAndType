@@ -97,33 +97,35 @@ Proof.
   rewrite formula_open_env_context_ty_wf_formula.
   2:{
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-    - apply elem_of_union_l.
-      apply (denot_relevant_env_dom_subset_direct Σ τ e). exact Hv.
-    - apply elem_of_union_r. unfold denot_relevant_lvars. set_solver.
+    intros v Hv.
+    pose proof (denot_relevant_env_dom_subset_direct Σ τ e).
+    unfold denot_relevant_lvars in *.
+    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_basic_world_formula.
   2:{
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv. apply elem_of_union_l.
-    apply (denot_relevant_env_dom_subset_direct Σ τ e). exact Hv.
+    intros v Hv.
+    pose proof (denot_relevant_env_dom_subset_direct Σ τ e).
+    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_expr_basic_typing_formula.
   2:{
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-    - apply elem_of_union_l.
-      apply (denot_relevant_env_dom_subset_direct Σ τ e). exact Hv.
-    - apply elem_of_union_r. unfold denot_relevant_lvars. set_solver.
+    intros v Hv.
+    pose proof (denot_relevant_env_dom_subset_direct Σ τ e).
+    unfold denot_relevant_lvars in *.
+    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_expr_total_formula.
   2:{
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv. apply elem_of_union_r.
-    unfold denot_relevant_lvars. set_solver.
+    intros v Hv.
+    unfold denot_relevant_lvars in *.
+    set_solver.
   }
   2: exact Hinj.
   rewrite denot_relevant_env_open_env by exact Hfresh || exact Hinj.
@@ -269,20 +271,16 @@ Proof.
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       rewrite (IH Σ τ2 e η).
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       reflexivity.
@@ -296,20 +294,16 @@ Proof.
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       rewrite (IH Σ τ2 e η).
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       reflexivity.
@@ -323,20 +317,16 @@ Proof.
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       rewrite (IH Σ τ2 e η).
       2:{
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
         unfold denot_relevant_lvars.
-        intros v Hv. apply elem_of_union in Hv as [Hv|Hv].
-        * apply elem_of_union_l. exact Hv.
-        * apply elem_of_union_r. cbn [context_ty_lvars context_ty_lvars_at].
-          set_solver.
+        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
+        set_solver.
       }
       2: exact Hinj.
       reflexivity.
@@ -345,9 +335,9 @@ Proof.
           (dom (denot_relevant_env Σ (CTArrow τx τr) e))).
       {
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        intros v Hv. apply elem_of_union_l.
-        apply (denot_relevant_env_dom_subset_direct Σ (CTArrow τx τr) e).
-        exact Hv.
+        intros v Hv.
+        pose proof (denot_relevant_env_dom_subset_direct Σ (CTArrow τx τr) e).
+        set_solver.
       }
       assert (Hfresh_arg :
         open_env_fresh_for_lvars ((kmap S η))
@@ -414,9 +404,9 @@ Proof.
           (dom (denot_relevant_env Σ (CTWand τx τr) e))).
       {
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        intros v Hv. apply elem_of_union_l.
-        apply (denot_relevant_env_dom_subset_direct Σ (CTWand τx τr) e).
-        exact Hv.
+        intros v Hv.
+        pose proof (denot_relevant_env_dom_subset_direct Σ (CTWand τx τr) e).
+        set_solver.
       }
       assert (Hfresh_arg :
         open_env_fresh_for_lvars ((kmap S η))

@@ -263,6 +263,42 @@ Proof.
   exact Hclosed.
 Qed.
 
+Lemma store_closed_restrict_union_from_parts
+    (σ : StoreT) X Y :
+  store_closed (store_restrict σ X) ->
+  store_closed (store_restrict σ Y) ->
+  store_closed (store_restrict σ (X ∪ Y)).
+Proof.
+  intros [HXclosed HXlc] [HYclosed HYlc].
+  split.
+  - unfold closed_env.
+    apply map_Forall_lookup_2. intros x v Hlookup.
+    apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
+    apply elem_of_union in Hxy as [Hx|Hy].
+    + eapply closed_env_lookup; [exact HXclosed|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    + eapply closed_env_lookup; [exact HYclosed|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+  - unfold lc_env.
+    apply map_Forall_lookup_2. intros x v Hlookup.
+    apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
+    apply elem_of_union in Hxy as [Hx|Hy].
+    + eapply lc_env_lookup; [exact HXlc|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    + eapply lc_env_lookup; [exact HYlc|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+Qed.
+
+Lemma wfworld_closed_on_union X Y (m : WfWorld) :
+  wfworld_closed_on X m ->
+  wfworld_closed_on Y m ->
+  wfworld_closed_on (X ∪ Y) m.
+Proof.
+  intros HX HY σ Hσ.
+  apply store_closed_restrict_union_from_parts; [apply HX | apply HY];
+    exact Hσ.
+Qed.
+
 Lemma storeA_has_type_swap
     {K : Type} `{Countable K} 
     (x y : K) (Σ : gmap K ty) (σ : gmap K value) :
