@@ -3,7 +3,7 @@
     Shared syntax and free-variable normalizers for type-denotation proofs. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationDefinition.
+From Denotation Require Import ContextTypeDenotationDefinition.
 From ContextLogic Require Import FormulaSyntax.
 
 (** ** Denotation formula normalization tactics *)

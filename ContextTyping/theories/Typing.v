@@ -7,8 +7,8 @@ From CoreLang Require Import BasicTyping BasicTypingProps Sugar.
 From ContextLogic Require Import FormulaSemantics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
-From ContextTypeLanguage Require Export Notation.
-From Denotation Require Export Context.
+From ContextTypeLanguage Require Import Notation.
+From Denotation Require Import Context.
 
 (** * ContextTyping.WellFormed
 

@@ -6,7 +6,7 @@
     they only restrict an lvar-keyed type environment to the lvars mentioned by
     a context type and a term. *)
 
-From ContextBasicDenotation Require Import Notation StoreTyping TermOpen
+From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermOpen
   BasicTypingFormula.
 From ContextBase Require Import BaseTactics.
 

@@ -1,7 +1,8 @@
 (** * Denotation.ContextTypeDenotationOpen *)
 
 From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationTactics.
+From Denotation Require Import ContextTypeDenotationTactics.
+From Denotation Require Export ContextTypeDenotationDefinition.
 
 Section ContextTypeDenotation.
 

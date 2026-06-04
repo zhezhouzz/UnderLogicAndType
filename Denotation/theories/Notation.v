@@ -8,8 +8,8 @@ From CoreLang Require Export Syntax Sugar BasicTypingProps.
 From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceExtension.
 From ContextTypeLanguage Require Export Notation.
 From ContextBasicDenotation Require Export Notation.
-From ContextBasicDenotation Require Export StoreTyping TermTLet Qualifier
-  BasicTypingFormula RelevantEnv.
+From ContextBasicDenotation Require Export StoreTyping TermSyntax TermEval TermOpen
+  TermExtension TermTLet Qualifier BasicTypingFormula RelevantEnv.
 From ContextLogic Require Export FormulaSemantics FormulaConnectives FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).

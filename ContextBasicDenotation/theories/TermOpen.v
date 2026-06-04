@@ -3,7 +3,7 @@
     Split out from [Term.v] to keep individual proof files small. *)
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
-From ContextBasicDenotation Require Export TermEval.
+From ContextBasicDenotation Require Import TermSyntax TermEval.
 From ContextBase Require Import BaseTactics.
 
 Section TermDenotation.
@@ -364,9 +364,10 @@ Proof.
       * change (tm_lvars e ∪ {[z]} ⊆
           worldA_dom
             (@lw value _ (lworld_on_open_back k y (tm_lvars e ∪ {[z]}) w) : LWorldT)).
-      unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_dom].
-      rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
-      better_base_solver.
+        unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_dom].
+        rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
+        rewrite set_swap_involutive.
+        reflexivity.
       * intros σ Hσ.
         apply lworld_on_open_back_store_swap_inv in Hσ as [σ0 [Hσ0 ->]].
         assert (Hσ0dom :

@@ -3,7 +3,7 @@
     Split out from [Term.v] to keep individual proof files small. *)
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
-From ContextBasicDenotation Require Export TermOpen.
+From ContextBasicDenotation Require Import TermEval TermOpen.
 
 Section TermDenotation.
 

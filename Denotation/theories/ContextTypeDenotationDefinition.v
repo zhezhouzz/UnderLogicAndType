@@ -513,7 +513,7 @@ Proof.
         (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
         ltac:(set_solver)).
       cbn [context_ty_lvars_at].
-      try solve [set_solver].
+      set_solver.
     + normalize_denot_formula_lvars.
       pose proof (lvars_at_depth_denot_relevant_env_subset_relevant d Σ (CTUnder b φ) e).
       pose proof (lvars_at_depth_mono (S d)

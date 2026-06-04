@@ -5,7 +5,8 @@
     wrapper sugar is intentionally avoided on the new route. *)
 
 From CoreLang Require Import LocallyNamelessExtra.
-From ContextBasicDenotation Require Import Notation StoreTyping TermTLet.
+From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval
+  TermOpen TermTLet.
 From ContextBase Require Import BaseTactics.
 
 Section BasicTypingFormula.
