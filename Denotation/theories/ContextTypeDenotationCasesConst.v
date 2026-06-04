@@ -160,6 +160,14 @@ Proof.
   set_solver.
 Qed.
 
+Lemma const_qual_dom_bound_fresh c y :
+  y ∉ qual_dom (mk_q_eq (vbvar 0) (vconst c)).
+Proof.
+  unfold qual_dom.
+  rewrite const_qual_vars_bound, lvars_fv_singleton_bound.
+  set_solver.
+Qed.
+
 Lemma expr_result_formula_ret_const_lookup c y (m : WfWorldT) σ :
   m ⊨ expr_result_formula (tret (vconst c)) (LVFree y) ->
   (m : WorldT) σ ->
@@ -508,10 +516,7 @@ Proof.
       2:{ cbn [fv_tm fv_value]. set_solver. }
       rewrite formula_open_fibvars, formula_open_over.
       rewrite type_qualifier_formula_open
-        by (unfold mk_q_eq, qual_dom, qual_vars;
-            cbn [qual_lvars lvar_value_keys];
-            rewrite lvars_fv_union, lvars_fv_singleton_bound,
-              lvars_fv_empty; set_solver).
+        by apply const_qual_dom_bound_fresh.
       eapply res_models_impl_intro_scoped.
       * solve_const_forall_open_scope.
       * solve_const_forall_open_scope.
@@ -563,10 +568,7 @@ Proof.
       2:{ cbn [fv_tm fv_value]. set_solver. }
       rewrite formula_open_fibvars, formula_open_under.
       rewrite type_qualifier_formula_open
-        by (unfold mk_q_eq, qual_dom, qual_vars;
-            cbn [qual_lvars lvar_value_keys];
-            rewrite lvars_fv_union, lvars_fv_singleton_bound,
-              lvars_fv_empty; set_solver).
+        by apply const_qual_dom_bound_fresh.
       eapply res_models_impl_intro_scoped.
       * solve_const_forall_open_scope.
       * solve_const_forall_open_scope.
