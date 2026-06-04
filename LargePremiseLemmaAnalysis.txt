@@ -126,7 +126,7 @@ Denotation/theories/TypeDenote.v
 Large candidates:
 
   - [formula_open_env_denot_guard]
-  - [formula_fv_ty_denote_gas_scope_from_guard_pre_open]
+  - [ty_denote_gas_scope_of_guard]
   - [denot_guard_term_type_fv_scope]
 
 Assessment:

@@ -268,10 +268,10 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_env_fv_subset` @ line 558
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq` @ line 569
+- Lemma `relevant_world_typing_closed_on_term_of_lvars_eq` @ line 569
   uses: 1 total; ltac/hint uses: 0; proof lines: 38; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_basic_world_typing_wfworld_closed_on_term` @ line 608
+- Lemma `relevant_world_typing_closed_on_term` @ line 608
   uses: 5 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `relevant_lvars_insert_fresh` @ line 619
@@ -730,7 +730,7 @@ File: ContextBasicDenotation/theories/TermTLet.v
 - Lemma `expr_total_formula_res_subset` @ line 511
   uses: 1 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `expr_total_formula_tlete_intro_from_result_extension` @ line 530
+- Lemma `tlete_total_of_result_ext` @ line 530
   uses: 1 total; ltac/hint uses: 0; proof lines: 144; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `expr_result_formula_models_iff` @ line 675

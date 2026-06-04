@@ -117,7 +117,7 @@ Main denotation theorem
        - basic_world_formula_models_iff
        - expr_basic_typing_formula_tlete_intro
        - basic_typing_lty_env_to_atom_env_relevant
-       - expr_total_formula_tlete_intro_from_result_extension
+       - tlete_total_of_result_ext
        - storeA_restrict_dom
        - dom_insert_L
        - formula_scoped_true_iff
@@ -437,7 +437,7 @@ Basic denotation layer
        theorem.
 
    expr_basic_typing_formula_tlete_intro
-   expr_total_formula_tlete_intro_from_result_extension
+   tlete_total_of_result_ext
      depend on:
        - basic_tm_has_ltype let rule
        - expr_result_extension_witness

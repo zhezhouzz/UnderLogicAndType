@@ -37,7 +37,7 @@ Proof.
         (ty_denote_gas (S gas) Σ (CTOver b φ) e2)).
   {
     unfold formula_scoped_in_world.
-    eapply formula_fv_ty_denote_gas_scope_from_guard_pre_open;
+    eapply ty_denote_gas_scope_of_guard;
       [reflexivity|exact Hguard_tgt].
   }
   cbn [ty_denote_gas] in Hscope_tgt.
@@ -50,7 +50,7 @@ Proof.
   - intros Hworld. exact Hworld.
   - split.
     + intros Hresult.
-      eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
+      eapply expr_result_shift0_of_tm_equiv_open;
         [ exact (proj1 Hequiv)
         | exact Hlc_e1
         | exact Hlc_e2
@@ -92,7 +92,7 @@ Proof.
         (ty_denote_gas (S gas) Σ (CTUnder b φ) e2)).
   {
     unfold formula_scoped_in_world.
-    eapply formula_fv_ty_denote_gas_scope_from_guard_pre_open;
+    eapply ty_denote_gas_scope_of_guard;
       [reflexivity|exact Hguard_tgt].
   }
   cbn [ty_denote_gas] in Hscope_tgt.
@@ -105,7 +105,7 @@ Proof.
   - intros Hworld. exact Hworld.
   - split.
     + intros Hresult.
-      eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
+      eapply expr_result_shift0_of_tm_equiv_open;
         [ exact (proj1 Hequiv)
         | exact Hlc_e1
         | exact Hlc_e2
@@ -338,7 +338,7 @@ Lemma ty_denote_gas_scope_from_zero_any
   formula_scoped_in_world m (ty_denote_gas gas Σ τ e).
 Proof.
   intros Hzero.
-  eapply formula_fv_ty_denote_gas_scope_from_guard_pre_open.
+  eapply ty_denote_gas_scope_of_guard.
   - reflexivity.
   - apply ty_denote_gas_guard_of_zero. exact Hzero.
 Qed.

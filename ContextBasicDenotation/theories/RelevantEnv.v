@@ -566,7 +566,7 @@ Proof.
     set_solver.
 Qed.
 
-Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq
+Lemma relevant_world_typing_closed_on_term_of_lvars_eq
     (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
   tm_lvars e_tgt = tm_lvars e_src ->
   m ⊨ basic_world_formula (relevant_env Σ τ e_src) ->
@@ -605,14 +605,14 @@ Proof.
     apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
 Qed.
 
-Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term
+Lemma relevant_world_typing_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ basic_world_formula (relevant_env Σ τ e) ->
   m ⊨ expr_basic_typing_formula
     (relevant_env Σ τ e) e (erase_ty τ) ->
   wfworld_closed_on (fv_tm e) m.
 Proof.
-  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq.
+  eapply relevant_world_typing_closed_on_term_of_lvars_eq.
   reflexivity.
 Qed.
 

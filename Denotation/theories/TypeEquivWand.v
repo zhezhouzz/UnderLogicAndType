@@ -187,7 +187,7 @@ Proof.
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply denot_relevant_basic_world_typing_wfworld_closed_on_term;
+    - eapply relevant_world_typing_closed_on_term;
         eauto.
   }
   assert (Hclosed2 : wfworld_closed_on (fv_tm e2) my).
@@ -195,7 +195,7 @@ Proof.
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply denot_relevant_basic_world_typing_wfworld_closed_on_term;
+    - eapply relevant_world_typing_closed_on_term;
         eauto.
   }
   assert (Hworld_y :
@@ -782,7 +782,7 @@ Proof.
         (ty_denote_gas (S gas) Σ (CTWand τx τr) e2)).
   {
     unfold formula_scoped_in_world.
-    eapply formula_fv_ty_denote_gas_scope_from_guard_pre_open;
+    eapply ty_denote_gas_scope_of_guard;
       [reflexivity|exact Hguard_tgt].
   }
   cbn [ty_denote_gas] in Hscope_tgt.

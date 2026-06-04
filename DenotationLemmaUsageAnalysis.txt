@@ -115,7 +115,7 @@ File: Denotation/theories/TypeDenote.v
 - Lemma `formula_fv_ty_denote_gas_subset_relevant_pre_open` @ line 598
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `formula_fv_ty_denote_gas_scope_from_guard_pre_open` @ line 614
+- Lemma `ty_denote_gas_scope_of_guard` @ line 614
   uses: 5 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: ordinary helper; review by use sites
 File: Denotation/theories/TypeDenoteOpen.v
@@ -267,7 +267,7 @@ File: Denotation/theories/TypeEquivCore.v
 - Lemma `ty_denote_gas_extend_typed_extension` @ line 208
   uses: 2 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `atom_store_has_ltype_restrict_fv_from_source_guard` @ line 228
+- Lemma `store_typed_restrict_fv_of_guard` @ line 228
   uses: 2 total; ltac/hint uses: 0; proof lines: 28; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `expr_result_extension_has_ltype_from_source_guard` @ line 257
@@ -342,7 +342,7 @@ File: Denotation/theories/TypeEquivCore.v
 - Lemma `tm_equiv_full_world_extend_fresh` @ line 1317
   uses: 5 total; ltac/hint uses: 0; proof lines: 39; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_result_formula_shift0_transport_of_tm_result_equiv_open` @ line 1357
+- Lemma `expr_result_shift0_of_tm_equiv_open` @ line 1357
   uses: 2 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
   classification: ordinary helper; review by use sites
 File: Denotation/theories/TypeEquiv.v

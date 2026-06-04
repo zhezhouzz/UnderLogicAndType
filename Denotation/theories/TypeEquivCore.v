@@ -225,7 +225,7 @@ Proof.
   eapply ty_denote_gas_insert_fresh_lty_env; eauto.
 Qed.
 
-Lemma atom_store_has_ltype_restrict_fv_from_source_guard
+Lemma store_typed_restrict_fv_of_guard
     (Σ : lty_env) τ e (m : WfWorldT) σ :
   m ⊨ basic_world_formula (relevant_env Σ τ e) ->
   m ⊨ expr_basic_typing_formula (relevant_env Σ τ e) e
@@ -321,7 +321,7 @@ Proof.
           replace (store_restrict σm (ext_in Fx))
             with (store_restrict σm (fv_tm e))
             by (rewrite Hin; reflexivity).
-          eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+          eapply store_typed_restrict_fv_of_guard;
             [exact Hworld_model|exact Hbasic_model|exact Hσm].
         }
         destruct Htotal_m as [_ Htotal_eval].
@@ -554,7 +554,7 @@ Proof.
                atom_store_has_ltype (relevant_env Σ τ e)
                  (store_restrict σ (fv_tm e))).
            {
-             eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+             eapply store_typed_restrict_fv_of_guard;
                [exact Hworld_src_model|exact Hbasic_src_model|exact Hσ].
            }
            assert (Hfv_e : fv_tm e ⊆ dom (σ : StoreT)).
@@ -1354,7 +1354,7 @@ Proof.
     exact Heval2.
 Qed.
 
-Lemma expr_result_formula_shift0_transport_of_tm_result_equiv_open
+Lemma expr_result_shift0_of_tm_equiv_open
     (m my : WfWorldT) y e1 e2 :
   tm_equiv_on m e1 e2 ->
   lc_lvars (tm_lvars e1) ->

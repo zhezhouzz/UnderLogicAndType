@@ -527,7 +527,7 @@ Proof.
     exists σ. split; [apply Hstores; exact Hσ | reflexivity].
 Qed.
 
-Lemma expr_total_formula_tlete_intro_from_result_extension
+Lemma tlete_total_of_result_ext
     (Σ : lty_env) T e1 e2 x (m mx : WfWorldT) Fx :
   LVFree x ∉ dom Σ ->
   lty_env_to_atom_env Σ ⊢ₑ tlete e1 e2 ⋮ T ->

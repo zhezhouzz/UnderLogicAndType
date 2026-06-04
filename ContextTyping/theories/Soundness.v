@@ -448,7 +448,7 @@ Proof.
   destruct Hbody_guard_parts as [_ [_ [_ Hbody_total]]].
   assert (Htotal_tlet_m : m ⊨ expr_total_formula (tlete e1 e2)).
   {
-    eapply expr_total_formula_tlete_intro_from_result_extension
+    eapply tlete_total_of_result_ext
       with (Σ := atom_env_to_lty_env (erase_ctx Γ))
         (T := erase_ty τ2) (x := x) (mx := mx) (Fx := Fx);
       eauto.

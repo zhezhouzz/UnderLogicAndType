@@ -611,7 +611,7 @@ Proof.
   - rewrite relevant_lvars_fv. set_solver.
 Qed.
 
-Lemma formula_fv_ty_denote_gas_scope_from_guard_pre_open
+Lemma ty_denote_gas_scope_of_guard
     gas Σ τsmall τbig e (m : WfWorldT) :
   context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   m ⊨ FAnd

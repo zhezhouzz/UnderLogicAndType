@@ -898,7 +898,7 @@ Lemmas at lines 156-361:
 - formula_lvars_at_ty_denote_gas_subset_relevant
 - formula_lvars_at_ty_denote_gas_subset
 - formula_fv_open_ty_denote_gas_subset_relevant
-- formula_fv_ty_denote_gas_scope_from_guard_pre_open
+- ty_denote_gas_scope_of_guard
 - denot_guard_term_type_fv_scope
 
 Analysis:

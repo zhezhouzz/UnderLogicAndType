@@ -148,7 +148,7 @@ Proof.
   unfold ty_guard_formula in Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [_ [Hworld [Hbasic _]]].
-  eapply denot_relevant_basic_world_typing_wfworld_closed_on_term; eauto.
+  eapply relevant_world_typing_closed_on_term; eauto.
 Qed.
 
 Lemma tlet_intro_denotation

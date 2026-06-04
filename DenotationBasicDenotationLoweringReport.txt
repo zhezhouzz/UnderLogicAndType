@@ -72,7 +72,7 @@ the reusable transport theorem for the syntactic associativity
 
 - `TLetSupport.v:394` `formula_fv_ty_denote_gas_scope_from_guard`
   - Lower target: `TypeEquiv.v`.
-  - Change: use the existing `formula_fv_ty_denote_gas_scope_from_guard_pre_open`
+  - Change: use the existing `ty_denote_gas_scope_of_guard`
     and `ty_denote_gas_scope_from_relevant_guard` family; keep at most a
     compatibility wrapper here.
   - Reason: this is denotation-FV scope, but not TLet-specific.
@@ -226,8 +226,8 @@ the reusable transport theorem for the syntactic associativity
     typing.  Splitting makes both parts reusable.
 
 - `TLetSupport.v:1654` `relevant_env_eq_of_tm_lvars_eq`
-- `TLetSupport.v:1664` `denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq`
-- `TLetSupport.v:1704` `denot_relevant_basic_world_typing_wfworld_closed_on_term`
+- `TLetSupport.v:1664` `relevant_world_typing_closed_on_term_of_lvars_eq`
+- `TLetSupport.v:1704` `relevant_world_typing_closed_on_term`
 - `TLetSupport.v:1715` `denot_ty_lvar_guard_wfworld_closed_on_term`
 - `TLetSupport.v:1731` `denot_ty_lvar_guard_wfworld_closed_on_term_le`
   - Lower target: `Denotation/TypeDenote.v` or
