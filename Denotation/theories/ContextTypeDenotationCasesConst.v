@@ -252,10 +252,16 @@ Proof.
       * apply map_eq. intros z.
         destruct (decide (z = LVFree y)) as [->|Hz].
         -- transitivity (Some (vconst c)).
-           ++ apply storeA_restrict_lookup_some_2.
-              ** rewrite lstore_lift_free_lookup_free.
-                 apply Hlookup. exact Hσ.
-              ** rewrite const_qual_open_vars. set_solver.
+           ++ assert (Hlook_y :
+                  (lstore_lift_free σ : LStoreT) !! LVFree y =
+                  Some (vconst c)).
+              { rewrite lstore_lift_free_lookup_free. apply Hlookup. exact Hσ. }
+              assert (Hin_y :
+                  LVFree y ∈
+                  qual_vars (qual_open_atom 0 y
+                    (mk_q_eq (vbvar 0) (vconst c)))).
+              { rewrite const_qual_open_vars. set_solver. }
+              better_store_solver.
            ++ symmetry. exact Hprop.
         -- transitivity (@None value).
            ++ apply storeA_restrict_lookup_none_r.
@@ -273,10 +279,16 @@ Proof.
     rewrite (lstore_lift_free_restrict_fv_lvars_eq σm
       (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))) in Hs.
     rewrite <- Hs.
-    apply storeA_restrict_lookup_some_2.
-    + rewrite lstore_lift_free_lookup_free.
-      apply Hlookup. exact Hσm.
-    + rewrite const_qual_open_vars. set_solver.
+    assert (Hlook_y :
+        (lstore_lift_free σm : LStoreT) !! LVFree y =
+        Some (vconst c)).
+    { rewrite lstore_lift_free_lookup_free. apply Hlookup. exact Hσm. }
+    assert (Hin_y :
+        LVFree y ∈
+        qual_vars (qual_open_atom 0 y
+          (mk_q_eq (vbvar 0) (vconst c)))).
+    { rewrite const_qual_open_vars. set_solver. }
+    better_store_solver.
 Qed.
 
 Lemma const_fib_over_from_expr c y (m : WfWorldT) :
