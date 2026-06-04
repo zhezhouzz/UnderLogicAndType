@@ -3,12 +3,11 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceAlgebra ResourceExtension ResourceInterface.
 From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon Logic.ProofIrrelevance.
 
-(** * Compatibility wrappers for resource extensions
+(** * Resource extension compatibility helpers
 
     The core extension interface is relation-shaped: a fiber extension relates
-    an input projection to one or more extension worlds.  This file keeps the
-    old proof-facing names available while routing all semantics through that
-    relation-shaped core. *)
+    an input projection to one or more extension worlds.  This file packages
+    the common compatibility/projection facts used by higher layers. *)
 
 
 Section ResourceCompat.
