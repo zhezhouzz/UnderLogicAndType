@@ -23,25 +23,6 @@ Definition atom_store_has_ltype (Σ : lty_env) (σ : StoreT) : Prop :=
       Σ !! LVFree x = Some T /\
       ∅ ⊢ᵥ v ⋮ T.
 
-Lemma storeA_has_type_atom_store_has_ltype
-    (Σ : gmap atom ty) (σ : StoreT) :
-  dom (σ : StoreT) = dom Σ ->
-  storeA_has_type Σ σ ->
-  atom_store_has_ltype (atom_env_to_lty_env Σ) σ.
-Proof.
-  intros Hdom Hty x v Hσ.
-  assert (HxΣ : x ∈ dom Σ).
-  {
-    rewrite <- Hdom.
-    change (x ∈ dom (σ : gmap atom value)).
-    rewrite elem_of_dom. eauto.
-  }
-  apply elem_of_dom in HxΣ as [T HΣ].
-  exists T. split.
-  - rewrite atom_store_to_lvar_store_lookup_free. exact HΣ.
-  - exact (Hty x T v HΣ Hσ).
-Qed.
-
 Definition worldA_has_type
     {K : Type} `{Countable K}
     (Σ : gmap K ty) (m : @WorldA K _ _ value) : Prop :=
@@ -66,108 +47,6 @@ Definition basic_world_lqual (Σ : lty_env) : logic_qualifier :=
 Definition basic_world_formula (Σ : lty_env) : Formula :=
   FAtom (basic_world_lqual Σ).
 
-Lemma basic_world_formula_msubst_store_extract_atom_store_has_ltype
-    σ Σ (m : WfWorldT) :
-  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ dom Σ ->
-  res_models m (formula_msubst_store σ (basic_world_formula Σ)) ->
-  atom_store_has_ltype Σ σ.
-Proof.
-  intros HσΣ Hm x v Hσx.
-  assert (Hxfv : LVFree x ∈ dom Σ).
-  {
-    apply HσΣ.
-    unfold lvars_of_atoms.
-    apply elem_of_map. exists x. split; [reflexivity|].
-    change (x ∈ dom (σ : gmap atom value)).
-    rewrite elem_of_dom. eauto.
-  }
-  apply elem_of_dom in Hxfv as [T HΣx].
-  exists T. split; [exact HΣx|].
-  change (formula_msubst_store σ (basic_world_formula Σ))
-    with (FAtom (lqual_msubst_store σ (basic_world_lqual Σ))) in Hm.
-  unfold res_models in Hm.
-  cbn [formula_measure res_models_fuel] in Hm.
-  destruct Hm as [_ Hden].
-  unfold lqual_msubst_store, basic_world_lqual,
-    lqual_mlsubst, logic_qualifier_denote in Hden.
-  cbn [lqual_dom lqual_prop] in Hden.
-  destruct Hden as [Hlc [Hsub Htyped]].
-  destruct Htyped as [_ Hstores].
-  set (D := dom Σ ∖ dom (lstore_lift_free σ : LStoreT)).
-  set (w := lworld_on_lift D m Hlc Hsub).
-  destruct (worldA_wf (@lw value _ w : LWfWorld)) as [[τw Hτw] _].
-  assert (Hτ :
-    (@lw value _ (lworld_on_mlsubst_back (dom Σ)
-      (lstore_lift_free σ) w) : LWorldT)
-      (τw ∪ storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ))).
-  {
-    unfold lworld_on_mlsubst_back.
-    cbn [lw resA_product rawA_product singleton_worldA worldA_stores].
-    exists τw, (storeA_restrict (lstore_lift_free σ : LStoreT) (dom Σ)).
-    split; [exact Hτw|].
-    split; [reflexivity|].
-    split.
-    - unfold storeA_compat, map_compat.
-      intros z u1 u2 Hzτ Hzρ.
-      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) τw Hτw)
-        as Hdomτw.
-      change (dom (τw : LStoreT) = lworld_dom (@lw value _ w : LWorldT))
-        in Hdomτw.
-      apply elem_of_dom_2 in Hzτ.
-      apply elem_of_dom_2 in Hzρ.
-      change (z ∈ dom (τw : LStoreT)) in Hzτ.
-      change (z ∈ dom (storeA_restrict
-        (lstore_lift_free σ : LStoreT) (dom Σ) : LStoreT)) in Hzρ.
-      rewrite Hdomτw, (@lw_dom value _ w) in Hzτ.
-      pose proof (storeA_restrict_dom
-        (lstore_lift_free σ : LStoreT) (dom Σ)) as Hdomρ.
-      change (dom (storeA_restrict (lstore_lift_free σ : LStoreT)
-        (dom Σ) : LStoreT) =
-        dom (lstore_lift_free σ : LStoreT) ∩ dom Σ) in Hdomρ.
-      rewrite Hdomρ in Hzρ.
-      set_solver.
-    - reflexivity.
-  }
-  eapply Hstores.
-  - exact Hτ.
-  - exact HΣx.
-  - apply map_lookup_union_Some_raw. right. split.
-    + apply not_elem_of_dom.
-      pose proof (wfworldA_store_dom (@lw value _ w : LWfWorld) τw Hτw)
-        as Hdomτw.
-      change (dom (τw : LStoreT) = lworld_dom (@lw value _ w : LWorldT))
-        in Hdomτw.
-      change (LVFree x ∉ dom (τw : LStoreT)).
-      rewrite Hdomτw.
-      rewrite (@lw_dom value _ w).
-      unfold D.
-      intros Hbad.
-      apply elem_of_difference in Hbad as [_ Hnot].
-      apply Hnot.
-      rewrite dom_lstore_lift_free.
-      unfold lvars_of_atoms.
-      apply elem_of_map. exists x. split; [reflexivity|].
-      change (x ∈ dom (σ : gmap atom value)).
-      rewrite elem_of_dom. eauto.
-    + apply storeA_restrict_lookup_some_2.
-      * rewrite lstore_lift_free_lookup_free. exact Hσx.
-      * change (LVFree x ∈ dom Σ).
-        rewrite elem_of_dom. eauto.
-Qed.
-
-Lemma atom_store_has_ltype_dom_subset Σ σ :
-  atom_store_has_ltype Σ σ ->
-  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ dom Σ.
-Proof.
-  intros Hty v Hv.
-  unfold lvars_of_atoms in Hv.
-  apply elem_of_map in Hv as [x [Hv Hx]].
-  subst v.
-  apply elem_of_dom in Hx as [v Hv].
-  destruct (Hty x v Hv) as [T [HΣ _]].
-  apply elem_of_dom_2 in HΣ. exact HΣ.
-Qed.
-
 Lemma atom_store_has_ltype_closed Σ σ :
   atom_store_has_ltype Σ σ ->
   store_closed σ.
@@ -184,42 +63,9 @@ Proof.
     exact (typing_value_lc _ _ _ Hv).
 Qed.
 
-Lemma atom_store_has_ltype_restrict_lvars Σ σ D :
-  lvars_of_atoms (dom (σ : gmap atom value)) ⊆ D ->
-  atom_store_has_ltype Σ σ ->
-  atom_store_has_ltype (storeA_restrict Σ D) σ.
-Proof.
-  intros Hdom Hty x v Hlook.
-  destruct (Hty x v Hlook) as [T [HΣ Hv]].
-  exists T. split; [|exact Hv].
-  apply storeA_restrict_lookup_some_2; [exact HΣ|].
-  apply Hdom.
-  unfold lvars_of_atoms.
-  apply elem_of_map. exists x. split; [reflexivity|].
-  eapply elem_of_dom_2. exact Hlook.
-Qed.
-
-Lemma atom_store_has_ltype_typed_lty_env_bind Σ σ T :
-  atom_store_has_ltype Σ σ ->
-  atom_store_has_ltype (typed_lty_env_bind Σ T) σ.
-Proof.
-  intros Hty x v Hlook.
-  destruct (Hty x v Hlook) as [Tx [HΣ Hv]].
-  exists Tx. split; [|exact Hv].
-  rewrite typed_lty_env_bind_lookup_free. exact HΣ.
-Qed.
-
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.
-
-Lemma formula_lvars_fv_basic_world_formula Σ :
-  lvars_fv (formula_lvars (basic_world_formula Σ)) = lvars_fv (dom Σ).
-Proof.
-  change (lvars_fv (formula_lvars (basic_world_formula Σ)))
-    with (formula_fv (basic_world_formula Σ)).
-  apply formula_fv_basic_world_formula.
-Qed.
 
 Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
   X ⊆ Y ->
@@ -261,6 +107,42 @@ Proof.
   specialize (Hclosed _ Hmσ).
   rewrite storeA_restrict_twice_subset in Hclosed by exact HXm.
   exact Hclosed.
+Qed.
+
+Lemma store_closed_restrict_union_from_parts
+    (σ : StoreT) X Y :
+  store_closed (store_restrict σ X) ->
+  store_closed (store_restrict σ Y) ->
+  store_closed (store_restrict σ (X ∪ Y)).
+Proof.
+  intros [HXclosed HXlc] [HYclosed HYlc].
+  split.
+  - unfold closed_env.
+    apply map_Forall_lookup_2. intros x v Hlookup.
+    apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
+    apply elem_of_union in Hxy as [Hx|Hy].
+    + eapply closed_env_lookup; [exact HXclosed|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    + eapply closed_env_lookup; [exact HYclosed|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+  - unfold lc_env.
+    apply map_Forall_lookup_2. intros x v Hlookup.
+    apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
+    apply elem_of_union in Hxy as [Hx|Hy].
+    + eapply lc_env_lookup; [exact HXlc|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    + eapply lc_env_lookup; [exact HYlc|].
+      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+Qed.
+
+Lemma wfworld_closed_on_union X Y (m : WfWorld) :
+  wfworld_closed_on X m ->
+  wfworld_closed_on Y m ->
+  wfworld_closed_on (X ∪ Y) m.
+Proof.
+  intros HX HY σ Hσ.
+  apply store_closed_restrict_union_from_parts; [apply HX | apply HY];
+    exact Hσ.
 Qed.
 
 Lemma storeA_has_type_swap
@@ -386,84 +268,6 @@ Definition extension_has_ltype
     ext_rel F σ my ->
     lworld_has_type Σout (res_lift_free my : LWorld).
 
-Lemma extension_has_type_to_ltype
-    (Σout : gmap atom ty) (min : WfWorld) F :
-  extension_has_type Σout min F ->
-  extension_has_ltype (atom_env_to_lty_env Σout) min F.
-Proof.
-  intros [Hin [Hout Hstores]].
-  unfold extension_has_ltype.
-  split.
-  - exact Hin.
-  - split.
-    + change (lc_lvars (dom ((@atom_store_to_lvar_store ty) Σout
-          : gmap logic_var ty))).
-      rewrite atom_store_to_lvar_store_dom.
-      intros [k|x] Hv; cbn [lc_logic_var_key]; [|exact I].
-      unfold lvars_of_atoms in Hv.
-      apply elem_of_map in Hv as [? [Hbad _]]. discriminate.
-    + split.
-      * change (lvars_fv (dom ((@atom_store_to_lvar_store ty) Σout
-            : gmap logic_var ty)) = ext_out F).
-        rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms. exact Hout.
-      * intros σin mout Hσin HF.
-        specialize (Hstores σin mout Hσin HF) as Htyped.
-        unfold lworld_has_type, worldA_has_type.
-        split.
-        -- change (dom ((@atom_store_to_lvar_store ty) Σout
-              : gmap logic_var ty) ⊆ lworld_dom (res_lift_free mout : LWorld)).
-           rewrite atom_store_to_lvar_store_dom, res_lift_free_dom.
-           unfold world_has_type, worldA_has_type in Htyped.
-           destruct Htyped as [Hdom _].
-           intros v Hv.
-           unfold lvars_of_atoms in *.
-           apply elem_of_map in Hv as [x [-> Hx]].
-           apply elem_of_map. exists x. split; [reflexivity|].
-           apply Hdom. exact Hx.
-        -- intros τ Hτ.
-           unfold res_lift_free in Hτ. cbn [worldA_stores] in Hτ.
-           destruct Hτ as [σ0 [Hσ0 ->]].
-           intros v T u HΣ Hu.
-           destruct v as [k|x].
-           ++ change (((@atom_store_to_lvar_store ty) Σout
-                 : gmap logic_var ty) !! LVBound k = Some T) in HΣ.
-              rewrite atom_store_to_lvar_store_lookup_bound_none in HΣ. discriminate.
-           ++ change (((@atom_store_to_lvar_store ty) Σout
-                 : gmap logic_var ty) !! LVFree x = Some T) in HΣ.
-              rewrite atom_store_to_lvar_store_lookup_free in HΣ.
-              change (((lstore_lift_free σ0 : LStore (V := value)) : gmap logic_var value) !!
-                LVFree x = Some u) in Hu.
-              rewrite lstore_lift_free_lookup_free in Hu.
-              unfold world_has_type, worldA_has_type in Htyped.
-              destruct Htyped as [_ Htyped].
-              eapply Htyped; eauto.
-Qed.
-
-Lemma extension_has_type_input_resource_eq
-    (Σout : gmap atom ty) (min1 min2 : WfWorld) F :
-  min1 = min2 ->
-  extension_has_type Σout min1 F ->
-  extension_has_type Σout min2 F.
-Proof. intros -> Htyped. exact Htyped. Qed.
-
-Lemma extension_has_ltype_input_resource_eq
-    (Σout : lty_env) (min1 min2 : WfWorld) F :
-  min1 = min2 ->
-  extension_has_ltype Σout min1 F ->
-  extension_has_ltype Σout min2 F.
-Proof. intros -> Htyped. exact Htyped. Qed.
-
-Lemma storeA_has_type_restrict
-    {K : Type} `{Countable K}
-    (Σ : gmap K ty) (σ : gmap K value) X :
-  storeA_has_type Σ σ ->
-  storeA_has_type (storeA_restrict Σ X) σ.
-Proof.
-  intros Htyped x T v HΣ Hσ.
-  apply storeA_restrict_lookup_some in HΣ as [_ HΣ].
-    eapply Htyped; eauto.
-Qed.
-
 Lemma storeA_has_type_restrict_store
     {K : Type} `{Countable K}
     (Σ : gmap K ty) (σ : gmap K value) X :
@@ -511,100 +315,6 @@ Lemma storeA_has_type_lift_free_restrict_fv
       apply storeA_restrict_lookup_some in Hu as [_ Hu].
       change (((lstore_lift_free σ : LStore (V := value)) : gmap logic_var value) !! LVFree x = Some u).
       rewrite lstore_lift_free_lookup_free. exact Hu.
-Qed.
-
-Lemma worldA_has_type_restrict_env
-    {K : Type} `{Countable K}
-    (Σ : gmap K ty) (m : @WorldA K _ _ value) X :
-  worldA_has_type Σ m ->
-  worldA_has_type (storeA_restrict Σ X) m.
-	Proof.
-	  intros [Hdom Hstores]. split.
-	  - intros x Hx.
-	    apply elem_of_dom in Hx as [T HT].
-	    apply storeA_restrict_lookup_some in HT as [_ HT].
-	    apply Hdom.
-	    eapply elem_of_dom_2; exact HT.
-  - intros σ Hσ.
-    apply storeA_has_type_restrict.
-    exact (Hstores σ Hσ).
-Qed.
-
-Lemma world_has_type_restrict_world
-    (Σ : gmap atom ty) (m : WfWorld) X :
-  dom Σ ⊆ X ->
-  world_has_type Σ (m : World) ->
-  world_has_type Σ (res_restrict m X : World).
-Proof.
-  intros HΣX [Hdom Hstores]. split.
-  - simpl. set_solver.
-  - intros σ Hσ.
-    destruct Hσ as [σ0 [Hσ0 Hrestrict]].
-    intros x T v HΣ Hσx.
-    rewrite <- Hrestrict in Hσx.
-    apply storeA_restrict_lookup_some in Hσx as [_ Hσ0x].
-    eapply Hstores; eauto.
-Qed.
-
-Lemma world_has_type_extend_by
-    (Σbase Σout : gmap atom ty) (m my : WfWorld) F :
-  world_has_type Σbase (m : World) ->
-  extension_has_type Σout (res_restrict m (ext_in F)) F ->
-  dom Σbase ## dom Σout ->
-  res_extend_by m F my ->
-  world_has_type (Σbase ∪ Σout) (my : World).
-Proof.
-  intros [Hbase_dom Hbase_stores] [_ [Hout_dom Hout_stores]] Hdisj Hext.
-  change (dom (Σbase : gmap atom ty) ⊆ world_dom (m : World)) in Hbase_dom.
-  change (dom (Σout : gmap atom ty) = ext_out F) in Hout_dom.
-  change (dom (Σbase : gmap atom ty) ## dom (Σout : gmap atom ty)) in Hdisj.
-  destruct Hext as [Happ [Hmy_dom Hmy_stores]].
-  split.
-  - intros x Hx.
-    apply elem_of_dom in Hx as [T Hlookup].
-    rewrite map_lookup_union_Some_raw in Hlookup.
-    replace (worldA_dom (raw_world my))
-      with (worldA_dom (raw_world m) ∪ extA_out F) by (symmetry; exact Hmy_dom).
-    destruct Hlookup as [Hbase | [_ Hout]].
-    + apply elem_of_dom_2 in Hbase.
-      apply Hbase_dom in Hbase. set_solver.
-    + apply elem_of_dom_2 in Hout.
-      rewrite Hout_dom in Hout. set_solver.
-  - intros σ Hσ.
-    apply (proj1 (Hmy_stores σ)) in Hσ.
-    destruct Hσ as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
-    intros x T v HΣ Hσ.
-    change (((Σbase : gmap atom ty) ∪ (Σout : gmap atom ty)) !! x = Some T) in HΣ.
-    change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! x = Some v) in Hσ.
-    rewrite map_lookup_union_Some_raw in HΣ.
-    destruct HΣ as [HΣbase | [HΣbase_none HΣout]].
-    + rewrite map_lookup_union_Some_raw in Hσ.
-      destruct Hσ as [Hσm_lookup | [Hσm_none Hσe_lookup]].
-      * eapply Hbase_stores; eauto.
-      * exfalso.
-        apply elem_of_dom_2 in HΣbase.
-        apply Hbase_dom in HΣbase.
-        pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-        change (dom (σm : gmap atom value) = world_dom (m : World)) in Hdomσm.
-        rewrite <- Hdomσm in HΣbase.
-        rewrite elem_of_dom in HΣbase.
-        destruct HΣbase as [? Hsome].
-        change ((σm : gmap atom value) !! x = None) in Hσm_none.
-        congruence.
-    + rewrite map_lookup_union_Some_raw in Hσ.
-      destruct Hσ as [Hσm_lookup | [_ Hσe_lookup]].
-      * exfalso.
-        apply elem_of_dom_2 in HΣout.
-        rewrite Hout_dom in HΣout.
-        pose proof (extA_app_out _ _ Happ) as Hout_disj.
-        pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-        change (dom (σm : gmap atom value) = world_dom (m : World)) in Hdomσm.
-        change ((σm : gmap atom value) !! x = Some v) in Hσm_lookup.
-        apply elem_of_dom_2 in Hσm_lookup.
-        rewrite Hdomσm in Hσm_lookup.
-        set_solver.
-	      * eapply Hout_stores; eauto.
-	        simpl. exists σm. split; [exact Hσm | reflexivity].
 Qed.
 
 Lemma basic_world_lqual_denote_spec (Σ : lty_env) (m : WfWorld) :
@@ -692,102 +402,6 @@ Proof.
     + destruct Hden as [_ [Hsub _]]. exact Hsub.
     + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
 Qed.
-
-Lemma basic_world_formula_fixed_from_singleton
-    (Σ : lty_env) (σ : StoreT) (R : lvset) (m : WfWorld) :
-  atom_store_has_ltype Σ σ ->
-  (res_restrict m (lvars_fv R) : World) =
-    singleton_world (store_restrict σ (lvars_fv R)) ->
-  res_models m
-    (basic_world_formula
-      (storeA_restrict Σ (R ∩ lvars_of_atoms (dom (σ : StoreT))))).
-Proof.
-  intros Hσty Hsingle.
-  assert (Hscope_fixed :
-    dom (σ : StoreT) ∩ lvars_fv R ⊆ world_dom (m : World)).
-  {
-    pose proof (f_equal world_dom Hsingle) as Hdom.
-    simpl in Hdom.
-    rewrite storeA_restrict_dom in Hdom.
-    set_solver.
-  }
-  apply basic_world_formula_models_iff.
-  split.
-  - intros v Hv.
-    rewrite storeA_restrict_dom in Hv.
-    apply elem_of_intersection in Hv as [_ HvR_atoms].
-    apply elem_of_intersection in HvR_atoms as [_ Hv_atoms].
-    destruct v as [k|x]; [|exact I].
-    unfold lvars_of_atoms in Hv_atoms.
-    apply elem_of_map in Hv_atoms as [a [Heq _]].
-    discriminate.
-  - split.
-    + intros x Hx.
-      apply Hscope_fixed.
-      apply lvars_fv_elem in Hx as Hv.
-      rewrite storeA_restrict_dom in Hv.
-      apply elem_of_intersection in Hv as [_ HvR_atoms].
-      apply elem_of_intersection in HvR_atoms as [HvR Hv_atoms].
-      unfold lvars_of_atoms in Hv_atoms.
-      apply elem_of_map in Hv_atoms as [a [Heq Ha]].
-      inversion Heq; subst a.
-      apply elem_of_intersection. split; [exact Ha|].
-      apply lvars_fv_elem. exact HvR.
-    + unfold lworld_has_type, worldA_has_type.
-      split.
-      * intros v Hv.
-        rewrite res_lift_free_dom.
-        rewrite storeA_restrict_dom in Hv.
-        apply elem_of_intersection in Hv as [_ HvR_atoms].
-        apply elem_of_intersection in HvR_atoms as [HvR Hv_atoms].
-        destruct v as [k|x].
-        -- unfold lvars_of_atoms in Hv_atoms.
-           apply elem_of_map in Hv_atoms as [a [Heq _]].
-           discriminate.
-        -- unfold lvars_of_atoms. apply elem_of_map.
-           exists x. split; [reflexivity|].
-           apply Hscope_fixed.
-           unfold lvars_of_atoms in Hv_atoms.
-           apply elem_of_map in Hv_atoms as [a [Heq Ha]].
-           inversion Heq; subst a.
-           apply elem_of_intersection. split; [exact Ha|].
-           apply lvars_fv_elem. exact HvR.
-      * intros τ Hτ v T u HΣv Hτv.
-        apply storeA_restrict_lookup_some in HΣv as [HvRσ HΣv].
-        destruct v as [k|x].
-        -- apply elem_of_intersection in HvRσ as [_ Hv_atoms].
-           unfold lvars_of_atoms in Hv_atoms.
-           apply elem_of_map in Hv_atoms as [a [Heq _]].
-           discriminate.
-        -- destruct Hτ as [σm [Hσm ->]].
-           rewrite lstore_lift_free_lookup_free in Hτv.
-           apply elem_of_intersection in HvRσ as [HvR Hv_atoms].
-           assert (HxR : x ∈ lvars_fv R).
-           { apply lvars_fv_elem. exact HvR. }
-           assert (Hproj :
-             (res_restrict m (lvars_fv R) : World)
-               (store_restrict σm (lvars_fv R))).
-           { simpl. exists σm. split; [exact Hσm|reflexivity]. }
-           rewrite Hsingle in Hproj.
-           simpl in Hproj.
-           assert (HσmR :
-             (storeA_restrict σm (lvars_fv R) : StoreT) !! x = Some u).
-           { apply storeA_restrict_lookup_some_2; [exact Hτv|exact HxR]. }
-           rewrite Hproj in HσmR.
-           apply storeA_restrict_lookup_some in HσmR as [_ Hlook].
-           destruct (Hσty x u Hlook) as [Tσ [HΣσ Hu]].
-           change (((Σ : gmap logic_var ty) !! LVFree x) = Some T) in HΣv.
-           change (((Σ : gmap logic_var ty) !! LVFree x) = Some Tσ) in HΣσ.
-           rewrite HΣv in HΣσ. inversion HΣσ. subst Tσ.
-           exact Hu.
-Qed.
-
-Lemma basic_world_formula_fibvars_elim
-    (D : lvset) (Σ : lty_env) (m : WfWorld) :
-  res_models m (FFibVars D (basic_world_formula Σ)) ->
-  res_models m (basic_world_formula Σ).
-Proof.
-Admitted.
 
 Lemma basic_world_formula_subenv
     (Σsmall Σbig : lty_env) (m : WfWorld) :
@@ -941,291 +555,6 @@ Proof.
     unfold lvars_of_atoms. apply elem_of_map.
     exists x. split; [reflexivity | exact Hx].
   - apply basic_world_formula_wfworld_closed_on_dom. exact Hmodels.
-Qed.
-
-Lemma basic_world_formula_extend_by_typed_extension
-    (Σbase Σout : lty_env) (m mx : WfWorld) (Fx : fiber_extension) :
-  dom Σbase ## dom Σout ->
-  res_models m (basic_world_formula Σbase) ->
-  extension_has_ltype Σout (res_restrict m (ext_in Fx)) Fx ->
-  res_extend_by m Fx mx ->
-  res_models mx (basic_world_formula
-    ((@union (gmap logic_var ty) _ Σbase Σout) : lty_env)).
-Proof.
-  intros Hdisj Hbase Hout Hext.
-  apply basic_world_formula_models_iff in Hbase as [Hlc_base [Hsub_base Htyped_base]].
-  destruct Hout as [_ [Hlc_out [Hout_dom Hout_typed]]].
-  apply basic_world_formula_models_iff.
-  split.
-  - intros v Hv.
-    change (v ∈ dom ((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty))) in Hv.
-    rewrite dom_union_L in Hv.
-    apply elem_of_union in Hv.
-    destruct Hv as [Hv|Hv]; [apply Hlc_base | apply Hlc_out]; exact Hv.
-  - split.
-    + intros a Ha.
-      pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_mx.
-      pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
-      change (a ∈ lvars_fv
-        (dom ((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty)))) in Ha.
-      rewrite dom_union_L, lvars_fv_union in Ha.
-      apply elem_of_union in Ha.
-      destruct Ha as [Ha|Ha].
-      * set_solver.
-      * rewrite Hout_dom in Ha. set_solver.
-    + unfold lworld_has_type, worldA_has_type. split.
-      * intros v Hv.
-        rewrite res_lift_free_dom.
-        pose proof (res_extend_by_dom_base_subset m Fx mx Hext) as Hbase_mx.
-        pose proof (res_extend_by_dom_output_subset m Fx mx Hext) as Hout_mx.
-        change (v ∈ dom ((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty))) in Hv.
-        rewrite dom_union_L in Hv.
-        apply elem_of_union in Hv.
-        destruct v as [k|a].
-        -- destruct Hv as [Hv|Hv].
-           ++ exfalso. exact (Hlc_base (LVBound k) Hv).
-           ++ exfalso. exact (Hlc_out (LVBound k) Hv).
-        -- unfold lvars_of_atoms. apply elem_of_map.
-           exists a. split; [reflexivity|].
-           change (a ∈ world_dom (mx : World)).
-           destruct Hv as [Hv|Hv].
-           ++ pose proof (Hsub_base a ltac:(apply lvars_fv_elem; exact Hv)).
-              set_solver.
-           ++ apply Hout_mx.
-              change (a ∈ ext_out Fx).
-              rewrite <- Hout_dom. apply lvars_fv_elem. exact Hv.
-      * intros τ Hτ.
-        destruct Hτ as [σ [Hσ ->]].
-        apply (proj1 (resA_extend_by_store_iff m Fx mx σ Hext)) in Hσ.
-        destruct Hσ as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
-        intros v U u HΣ Hu.
-        change (((Σbase : gmap logic_var ty) ∪ (Σout : gmap logic_var ty)) !! v = Some U) in HΣ.
-        rewrite map_lookup_union_Some_raw in HΣ.
-        destruct HΣ as [HΣbase | [HΣbase_none HΣout]].
-        -- destruct Htyped_base as [_ Hbase_stores].
-           specialize (Hbase_stores (lstore_lift_free σm)).
-           assert (Hlift_base :
-             worldA_stores (res_lift_free m : LWorld) (lstore_lift_free σm)).
-           { exists σm. split; [exact Hσm|reflexivity]. }
-           specialize (Hbase_stores Hlift_base).
-           eapply Hbase_stores; [exact HΣbase|].
-           destruct v as [k|a].
-           ++ exfalso.
-              apply (Hlc_base (LVBound k)).
-              apply elem_of_dom_2 in HΣbase. exact HΣbase.
-           ++ change (((lstore_lift_free σm : LStore (V := value))
-                : gmap logic_var value) !! LVFree a = Some u).
-              rewrite lstore_lift_free_lookup_free.
-              change (((lstore_lift_free (σm ∪ σe) : LStore (V := value))
-                : gmap logic_var value) !! LVFree a = Some u) in Hu.
-              rewrite lstore_lift_free_lookup_free in Hu.
-              change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u) in Hu.
-              rewrite map_lookup_union_Some_raw in Hu.
-              destruct Hu as [Hu|[Hnone _]]; [exact Hu|].
-              exfalso.
-              pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-              change (dom (σm : gmap atom value) = world_dom (m : World)) in Hdomσm.
-              change (((σm : gmap atom value) !! a) = None) in Hnone.
-              apply not_elem_of_dom in Hnone.
-              apply Hnone.
-              rewrite Hdomσm.
-              apply Hsub_base. apply lvars_fv_elem.
-              apply elem_of_dom_2 in HΣbase. exact HΣbase.
-        -- specialize (Hout_typed (store_restrict σm (ext_in Fx)) we).
-           assert (Hσproj : (res_restrict m (ext_in Fx) : World) (store_restrict σm (ext_in Fx))).
-           { simpl. exists σm. split; [exact Hσm|reflexivity]. }
-           specialize (Hout_typed Hσproj HF).
-           destruct Hout_typed as [_ Hout_stores].
-           specialize (Hout_stores (lstore_lift_free σe)).
-           assert (Hlift_out :
-             worldA_stores (res_lift_free we : LWorld) (lstore_lift_free σe)).
-           { exists σe. split; [exact Hσe|reflexivity]. }
-           specialize (Hout_stores Hlift_out).
-           eapply Hout_stores; [exact HΣout|].
-           destruct v as [k|a].
-           ++ exfalso.
-              apply (Hlc_out (LVBound k)).
-              apply elem_of_dom_2 in HΣout. exact HΣout.
-           ++ change (((lstore_lift_free σe : LStore (V := value))
-                : gmap logic_var value) !! LVFree a = Some u).
-              rewrite lstore_lift_free_lookup_free.
-              change (((lstore_lift_free (σm ∪ σe) : LStore (V := value))
-                : gmap logic_var value) !! LVFree a = Some u) in Hu.
-              rewrite lstore_lift_free_lookup_free in Hu.
-              change (((σm : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u) in Hu.
-              rewrite map_lookup_union_Some_raw in Hu.
-              destruct Hu as [Hσm_a|[_ Hσe_a]]; [|exact Hσe_a].
-              exfalso.
-              change ((Σout : gmap logic_var ty) !! LVFree a = Some U) in HΣout.
-              apply elem_of_dom_2 in HΣout.
-              apply lvars_fv_elem in HΣout.
-              change (a ∈ lvars_fv (dom Σout)) in HΣout.
-              rewrite Hout_dom in HΣout.
-              pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hfresh.
-              change (ext_out Fx ## world_dom (m : World)) in Hfresh.
-              pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-              change (dom (σm : gmap atom value) = world_dom (m : World)) in Hdomσm.
-              change (((σm : gmap atom value) !! a) = Some u) in Hσm_a.
-              apply elem_of_dom_2 in Hσm_a. rewrite Hdomσm in Hσm_a.
-              set_solver.
-Qed.
-
-Lemma basic_world_formula_insert_typed_extension
-    (Σ : lty_env) (m mx : WfWorld) x T (Fx : fiber_extension) :
-  LVFree x ∉ dom Σ ->
-  res_models m (basic_world_formula Σ) ->
-  extension_has_ltype (<[LVFree x := T]> ∅)
-    (res_restrict m (ext_in Fx)) Fx ->
-  res_extend_by m Fx mx ->
-  res_models mx (basic_world_formula (<[LVFree x := T]> Σ)).
-Proof.
-  intros HxΣ Hworld HFx Hext.
-  assert (Hdisj :
-    dom Σ ## dom (<[LVFree x := T]> (∅ : gmap logic_var ty) : lty_env)).
-  {
-    change (dom (Σ : gmap logic_var ty) ##
-      dom ((<[LVFree x := T]> (∅ : gmap logic_var ty))
-        : gmap logic_var ty)).
-    rewrite dom_insert_L, dom_empty_L.
-    change (LVFree x ∉ dom (Σ : gmap logic_var ty)) in HxΣ.
-    set_solver.
-  }
-  pose proof (basic_world_formula_extend_by_typed_extension
-    Σ (<[LVFree x := T]> (∅ : gmap logic_var ty) : lty_env)
-    m mx Fx Hdisj Hworld HFx Hext) as Hmodels.
-  change (res_models mx (basic_world_formula
-    ((Σ : gmap logic_var ty) ∪
-      (<[LVFree x := T]> (∅ : gmap logic_var ty)))) : Prop) in Hmodels.
-  change (<[LVFree x := T]> (∅ : gmap logic_var ty))
-    with ({[LVFree x := T]} : gmap logic_var ty) in Hmodels.
-  rewrite storeA_union_singleton_insert_fresh in Hmodels.
-  - exact Hmodels.
-  - change (LVFree x ∉ dom (Σ : gmap logic_var ty)). exact HxΣ.
-Qed.
-
-Lemma basic_world_formula_drop_result_extension
-    (Σ : lty_env) (m mx : WfWorld) x T Fx :
-  LVFree x ∉ dom Σ ->
-  ext_out Fx = {[x]} ->
-  res_extend_by m Fx mx ->
-  res_models mx (basic_world_formula (<[LVFree x := T]> Σ)) ->
-  res_models m (basic_world_formula Σ).
-Proof.
-  intros HxΣ Hout Hext Hmx.
-  apply basic_world_formula_models_iff in Hmx as [Hlc_ins [Hsub_ins Htyped_ins]].
-  apply basic_world_formula_models_iff.
-  assert (HlcΣ : lc_lvars (dom Σ)).
-  {
-    intros v Hv. apply Hlc_ins.
-    change (v ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty))).
-    rewrite dom_insert_L. set_solver.
-  }
-  split; [exact HlcΣ|]. split.
-  - intros a Ha.
-    assert (Ha_ins : a ∈ lvars_fv (dom (<[LVFree x := T]> (Σ : gmap logic_var ty)))).
-    {
-      apply lvars_fv_elem in Ha.
-      apply lvars_fv_elem.
-      change (LVFree a ∈ dom (Σ : gmap logic_var ty)) in Ha.
-      apply elem_of_dom in Ha as [Ta HTa].
-      change (LVFree a ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty) :
-        gmap logic_var ty)).
-      apply elem_of_dom. exists Ta.
-      destruct (decide (a = x)) as [->|Hax].
-      - exfalso. apply HxΣ. apply elem_of_dom_2 in HTa. exact HTa.
-      - rewrite lookup_insert_ne by congruence. exact HTa.
-    }
-    specialize (Hsub_ins a Ha_ins).
-    pose proof (res_extend_by_dom m Fx mx Hext) as Hdom_mx.
-    change (world_dom (mx : World) = world_dom (m : World) ∪ ext_out Fx) in Hdom_mx.
-    rewrite Hdom_mx, Hout in Hsub_ins.
-    assert (a <> x).
-    {
-      intros ->. apply HxΣ.
-      apply lvars_fv_elem. exact Ha.
-    }
-    set_solver.
-  - unfold lworld_has_type, worldA_has_type. split.
-    + intros v Hv.
-      rewrite res_lift_free_dom.
-      destruct v as [k|a].
-      * exfalso. exact (HlcΣ (LVBound k) Hv).
-      * unfold lvars_of_atoms. apply elem_of_map.
-        exists a. split; [reflexivity|].
-        assert (Ha_ins : a ∈ lvars_fv (dom (<[LVFree x := T]> (Σ : gmap logic_var ty)))).
-        {
-          apply lvars_fv_elem.
-          change (LVFree a ∈ dom (Σ : gmap logic_var ty)) in Hv.
-          apply elem_of_dom in Hv as [Ta HTa].
-          change (LVFree a ∈ dom (<[LVFree x := T]> (Σ : gmap logic_var ty) :
-            gmap logic_var ty)).
-          apply elem_of_dom. exists Ta.
-          destruct (decide (a = x)) as [->|Hax].
-          - exfalso. apply HxΣ. apply elem_of_dom_2 in HTa. exact HTa.
-          - rewrite lookup_insert_ne by congruence. exact HTa.
-        }
-        specialize (Hsub_ins a Ha_ins).
-        pose proof (res_extend_by_dom m Fx mx Hext) as Hdom_mx.
-        change (world_dom (mx : World) = world_dom (m : World) ∪ ext_out Fx) in Hdom_mx.
-        rewrite Hdom_mx, Hout in Hsub_ins.
-        assert (a <> x) by (intros ->; exact (HxΣ Hv)).
-        set_solver.
-    + intros τ Hτ.
-      destruct Hτ as [σ [Hσ ->]].
-      intros v U u HΣ Hu.
-      assert (HΣins : <[LVFree x := T]> Σ !! v = Some U).
-      {
-        destruct v as [k|a].
-        - change ((<[LVFree x := T]> (Σ : gmap logic_var ty) :
-            gmap logic_var ty) !! LVBound k = Some U).
-          rewrite lookup_insert_ne by discriminate.
-          exact HΣ.
-        - change ((<[LVFree x := T]> (Σ : gmap logic_var ty) :
-            gmap logic_var ty) !! LVFree a = Some U).
-          destruct (decide (a = x)) as [->|Hax].
-          + exfalso. apply HxΣ.
-            change ((Σ : gmap logic_var ty) !! LVFree x = Some U) in HΣ.
-            apply elem_of_dom_2 in HΣ. exact HΣ.
-          + rewrite lookup_insert_ne by congruence.
-            exact HΣ.
-      }
-      pose proof (wfworldA_store_dom m σ Hσ) as Hdomσ.
-      change (dom (σ : gmap atom value) = world_dom (m : World)) in Hdomσ.
-      assert (Hproj_dom : dom (store_restrict σ (ext_in Fx) : gmap atom value) = ext_in Fx).
-      {
-        rewrite storeA_restrict_dom.
-        pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin.
-        unfold ext_in in Hin. rewrite Hdomσ. set_solver.
-      }
-      destruct (extA_rel_nonempty Fx (store_restrict σ (ext_in Fx)) Hproj_dom)
-        as [we [σe [HF Hσe]]].
-      assert (Hmx_store : (mx : World) (σ ∪ σe)).
-      {
-        apply (proj2 (resA_extend_by_store_iff m Fx mx (σ ∪ σe) Hext)).
-        exists σ, we, σe. repeat split; try assumption.
-      }
-      destruct Htyped_ins as [_ Hstores_ins].
-      specialize (Hstores_ins (lstore_lift_free (σ ∪ σe))).
-      assert (Hlift_mx :
-        worldA_stores (res_lift_free mx : LWorld)
-          (lstore_lift_free (σ ∪ σe))).
-      { exists (σ ∪ σe). split; [exact Hmx_store|reflexivity]. }
-      specialize (Hstores_ins Hlift_mx).
-      eapply Hstores_ins; [exact HΣins|].
-      destruct v as [k|a].
-      * exfalso.
-        apply (HlcΣ (LVBound k)).
-        change ((Σ : gmap logic_var ty) !! LVBound k = Some U) in HΣ.
-        apply elem_of_dom_2 in HΣ. exact HΣ.
-      * change (((lstore_lift_free (σ ∪ σe) : LStore (V := value))
-           : gmap logic_var value) !! LVFree a = Some u).
-        rewrite lstore_lift_free_lookup_free.
-        change (((lstore_lift_free σ : LStore (V := value))
-          : gmap logic_var value) !! LVFree a = Some u) in Hu.
-        rewrite lstore_lift_free_lookup_free in Hu.
-        change (((σ : gmap atom value) ∪ (σe : gmap atom value)) !! a = Some u).
-        rewrite map_lookup_union_Some_raw.
-        left. exact Hu.
 Qed.
 
 End StoreTyping.

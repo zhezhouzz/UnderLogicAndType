@@ -1,6 +1,6 @@
 # Recent LN Denotation Failure Patterns
 
-This note records concrete mistakes from the recent ContextTypeDenotation/tlet proof
+This note records concrete mistakes from the recent TypeDenote/tlet proof
 work.  Read it before continuing LN helper proofs, especially in
 `Denotation/theories/*` and `ContextBasicDenotation/theories/*`.
 
@@ -31,7 +31,7 @@ or nearly present, such as:
 - `lty_env_open_one_dom`
 - `logic_var_shift_inj`
 - `lookup_kmap`, `lookup_kmap_Some`, `lookup_insert_is_Some'`
-- `formula_fv_denot_ty_lvar_gas_subset_relevant`
+- `formula_fv_ty_denote_gas_subset_relevant`
 - `res_models_forall_ext_transport`
 
 If the closest lemma is too specialized, generalize it cleanly rather than
@@ -51,7 +51,7 @@ For each stuck goal, classify it before trying tactics:
 - Denotation recursion: gas-indexed induction and typed binder cases.
 
 Do not solve a lower-layer problem by unfolding a higher-layer denotation.
-For example, if `formula_open_denot_ty_lvar_gas` is blocked by
+For example, if `formula_open_ty_denote_gas` is blocked by
 `open_cty_env_open_cty`, prove or redesign the `open_cty_env`/qualifier helper
 first; do not expand the whole denotation body and patch around it locally.
 
@@ -148,8 +148,8 @@ the recursive cases introduce `typed_lty_env_bind` or shifted types.
 Good shape:
 
 ```coq
-Lemma denot_ty_lvar_gas_fv_subset gas Σ τ e :
-  formula_fv (denot_ty_lvar_gas gas Σ τ e) ⊆
+Lemma ty_denote_gas_fv_subset gas Σ τ e :
+  formula_fv (ty_denote_gas gas Σ τ e) ⊆
     lvars_fv (dom Σ) ∪ fv_cty τ.
 ```
 
@@ -215,7 +215,7 @@ Compile bottom-up after each helper group:
 
 ```sh
 make ContextBasicDenotation/theories/Term.vo
-make Denotation/theories/ContextTypeDenotation.vo
+make Denotation/theories/TypeDenote.vo
 make Denotation/theories/TLet.vo
 ```
 

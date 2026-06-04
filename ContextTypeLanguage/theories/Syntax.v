@@ -183,6 +183,22 @@ Fixpoint erase_ctx (Γ : ctx) : gmap atom ty :=
   | CtxSum Γ1 _ => erase_ctx Γ1
   end.
 
+Lemma erase_ctx_bind_dom x τ :
+  dom (erase_ctx (CtxBind x τ)) = ({[x]} : aset).
+Proof.
+  cbn [erase_ctx].
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_dom in Hz as [T Hz].
+    apply (proj1 (lookup_singleton_Some x z (erase_ty τ) T)) in Hz
+      as [Hzx _].
+    subst z. set_solver.
+  - intros Hz.
+    apply elem_of_singleton in Hz. subst z.
+    apply elem_of_dom. exists (erase_ty τ).
+    apply map_lookup_singleton.
+Qed.
+
 Definition lift_ctx (Γ : gmap atom ty) : ctx :=
   map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
 
@@ -194,58 +210,6 @@ Coercion lift_ty : ty >-> context_ty.
 (** * ContextTypeLanguage.Syntax
 
     Lvar support computations for context syntax. *)
-
-Lemma context_ty_lvars_at_msubst_store d σ τ :
-  context_ty_lvars_at d (context_ty_msubst_store σ τ) =
-  context_ty_lvars_at d τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
-Proof.
-  induction τ in d |- *; cbn [context_ty_msubst_store context_ty_lvars_at].
-  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
-    reflexivity.
-  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
-    reflexivity.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-Qed.
-
-Lemma context_ty_lvars_msubst_store σ τ :
-  context_ty_lvars (context_ty_msubst_store σ τ) =
-  context_ty_lvars τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
-Proof.
-  apply context_ty_lvars_at_msubst_store.
-Qed.
-
-Lemma erase_ty_context_ty_msubst_store σ τ :
-  erase_ty (context_ty_msubst_store σ τ) = erase_ty τ.
-Proof.
-  induction τ; cbn [context_ty_msubst_store erase_ty]; congruence.
-Qed.
-
-Lemma context_ty_msubst_store_open_fresh k y σ τ :
-  y ∉ dom (σ : gmap atom value) ->
-  cty_open k y (context_ty_msubst_store σ τ) =
-  context_ty_msubst_store σ (cty_open k y τ).
-Proof.
-  induction τ in k |- *; intros Hy;
-    cbn [cty_open context_ty_msubst_store];
-    rewrite ?qual_open_msubst_store_fresh by exact Hy;
-    rewrite ?IHτ1, ?IHτ2 by exact Hy;
-    reflexivity.
-Qed.
-
-Lemma context_ty_msubst_store_shift k σ τ :
-  cty_shift k (context_ty_msubst_store σ τ) =
-  context_ty_msubst_store σ (cty_shift k τ).
-Proof.
-  induction τ in k |- *; cbn [cty_shift context_ty_msubst_store];
-    rewrite ?qual_shift_from_msubst_store;
-    rewrite ?IHτ1, ?IHτ2;
-    reflexivity.
-Qed.
-
 
 Lemma context_ty_lvars_at_open d k x τ :
   context_ty_lvars_at d ({d + k ~> x} τ) =
@@ -323,7 +287,7 @@ Proof.
   rewrite context_ty_lvars_at_depth. reflexivity.
 Qed.
 
-Lemma context_ty_lvars_open_body_without_fresh_closed
+Lemma cty_lvars_open_body_closed_no_fresh
     (D : lvset) τ y :
   lc_lvars D ->
   LVFree y ∉ D ->
@@ -361,46 +325,6 @@ Proof.
   apply context_ty_lvars_fv_at.
 Qed.
 
-Lemma context_ty_msubst_store_restrict_subset σ τ X :
-  fv_cty τ ⊆ X ->
-  context_ty_msubst_store σ τ =
-  context_ty_msubst_store (store_restrict σ X) τ.
-Proof.
-  induction τ in X |- *; intros Hsub;
-    cbn [context_ty_msubst_store].
-  - f_equal. apply qual_msubst_store_restrict_subset.
-    intros a Ha. apply Hsub.
-    unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-    rewrite lvars_fv_lvars_at_depth. exact Ha.
-  - f_equal. apply qual_msubst_store_restrict_subset.
-    intros a Ha. apply Hsub.
-    unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-    rewrite lvars_fv_lvars_at_depth. exact Ha.
-  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
-      rewrite lvars_fv_union; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
-      rewrite lvars_fv_union; set_solver.
-  - f_equal; [apply IHτ1 | apply IHτ2]; intros a Ha; apply Hsub;
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at];
-      rewrite lvars_fv_union; set_solver.
-  - f_equal.
-    + apply IHτ1. intros a Ha. apply Hsub.
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
-      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
-    + apply IHτ2. intros a Ha. apply Hsub.
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
-      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
-  - f_equal.
-    + apply IHτ1. intros a Ha. apply Hsub.
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
-      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
-    + apply IHτ2. intros a Ha. apply Hsub.
-      unfold fv_cty, context_ty_lvars; cbn [context_ty_lvars_at].
-      rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
-Qed.
-
 Lemma context_ty_lvars_over_fv b q :
   lvars_fv (context_ty_lvars (CTOver b q)) = qual_dom q.
 Proof.
@@ -413,28 +337,6 @@ Lemma context_ty_lvars_under_fv b q :
 Proof.
   cbn [context_ty_lvars context_ty_lvars_at].
   rewrite lvars_fv_lvars_at_depth. reflexivity.
-Qed.
-
-Lemma context_ty_over_fresh_open_qual_dom x y b q :
-  LVFree x ∉ context_ty_lvars (CTOver b q) ->
-  x <> y ->
-  x ∉ qual_dom (q ^q^ y).
-Proof.
-  intros Hx Hxy.
-  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
-  intros Hbad. apply Hx. apply lvars_fv_elem.
-  rewrite context_ty_lvars_over_fv. exact Hbad.
-Qed.
-
-Lemma context_ty_under_fresh_open_qual_dom x y b q :
-  LVFree x ∉ context_ty_lvars (CTUnder b q) ->
-  x <> y ->
-  x ∉ qual_dom (q ^q^ y).
-Proof.
-  intros Hx Hxy.
-  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
-  intros Hbad. apply Hx. apply lvars_fv_elem.
-  rewrite context_ty_lvars_under_fv. exact Hbad.
 Qed.
 
 Lemma context_ty_lvars_at_shift_under d k τ :
@@ -454,30 +356,6 @@ Proof.
     rewrite IHτ2 by lia. reflexivity.
   - rewrite IHτ1 by exact Hkd.
     rewrite IHτ2 by lia. reflexivity.
-Qed.
-
-Lemma context_ty_lvars_at_succ_body d τ :
-  context_ty_lvars_at d τ ⊆
-  lvars_shift_from 0 (context_ty_lvars_at (S d) τ) ∪ {[LVBound 0]}.
-Proof.
-  induction τ in d |- *; cbn [context_ty_lvars_at].
-  - apply lvars_at_depth_succ_body.
-  - apply lvars_at_depth_succ_body.
-  - eapply lvars_shift_from_succ_body_union; [apply IHτ1 | apply IHτ2].
-  - eapply lvars_shift_from_succ_body_union; [apply IHτ1 | apply IHτ2].
-  - eapply lvars_shift_from_succ_body_union; [apply IHτ1 | apply IHτ2].
-  - eapply lvars_shift_from_succ_body_union; [apply IHτ1 | apply IHτ2].
-  - eapply lvars_shift_from_succ_body_union; [apply IHτ1 | apply IHτ2].
-Qed.
-
-Lemma context_ty_lvars_body_subset D τ :
-  context_ty_lvars_at 1 τ ⊆ lvars_of_atoms D ->
-  context_ty_lvars τ ⊆ lvars_shift_from 0 (lvars_of_atoms D) ∪ {[LVBound 0]}.
-Proof.
-  intros Hsub.
-  transitivity (lvars_shift_from 0 (context_ty_lvars_at 1 τ) ∪ {[LVBound 0]}).
-  - apply context_ty_lvars_at_succ_body.
-  - set_solver.
 Qed.
 
 Lemma context_ty_lvars_at_shift d k τ :
@@ -535,31 +413,6 @@ Proof.
   apply lvars_shift_from_fv.
 Qed.
 
-Lemma context_ty_lvars_shift_free_notin k x τ :
-  LVFree x ∉ context_ty_lvars τ ->
-  LVFree x ∉ context_ty_lvars (cty_shift k τ).
-Proof.
-  intros Hfresh Hin.
-  apply Hfresh. apply lvars_fv_elem.
-  apply lvars_fv_elem in Hin.
-  change (x ∈ fv_cty (cty_shift k τ)) in Hin.
-  rewrite cty_shift_fv in Hin. exact Hin.
-Qed.
-
-Lemma context_ty_lvars_open_shift_fresh x y τ :
-  x <> y ->
-  LVFree x ∉ context_ty_lvars τ ->
-  LVFree x ∉ context_ty_lvars (cty_open 0 y (cty_shift 0 τ)).
-Proof.
-  intros Hxy Hfresh Hin.
-  apply lvars_fv_elem in Hin.
-  pose proof (cty_open_fv_subset 0 y (cty_shift 0 τ) x Hin) as Hsub.
-  rewrite cty_shift_fv in Hsub.
-  apply elem_of_union in Hsub as [Hinτ|Hy].
-  - apply Hfresh. apply lvars_fv_elem. exact Hinτ.
-  - rewrite elem_of_singleton in Hy. congruence.
-Qed.
-
 (** * ContextTypeLanguage.Syntax
 
     Open/shift structural laws for context syntax. *)
@@ -599,96 +452,6 @@ Proof.
     try rewrite ?IHτ1, ?IHτ2 by lia; try reflexivity.
   - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
   - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
-Qed.
-
-Lemma cty_open_shift_under j k x τ :
-  j <= k ->
-  {S (S k) ~> x} (cty_shift (S j) τ) =
-  cty_shift (S j) ({S k ~> x} τ).
-Proof.
-  intros Hjk. apply cty_open_shift_under_gen. lia.
-Qed.
-
-Lemma cty_shift_open_commute k x τ :
-  {S (S k) ~> x} (cty_shift (S k) τ) =
-  cty_shift (S k) ({S k ~> x} τ).
-Proof.
-  apply cty_open_shift_under_gen. lia.
-Qed.
-
-Lemma cty_open_same_index_absorb k x y τ :
-  x <> y ->
-  x ∉ fv_cty τ ->
-  y ∉ fv_cty τ ->
-  {k ~> y} ({k ~> x} τ) = {k ~> x} τ.
-Proof.
-  induction τ as [b φ|b φ|τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2
-                 |τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2|τ1 IHτ1 τ2 IHτ2]
-    in k |- *; cbn [cty_open open_one open_cty_atom_inst];
-    intros Hxy Hx Hy.
-  - rewrite qual_open_same_index_absorb; try exact Hxy.
-    + reflexivity.
-    + unfold qual_dom. intros Hbad. apply Hx.
-      unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-      rewrite lvars_fv_lvars_at_depth. exact Hbad.
-    + unfold qual_dom. intros Hbad. apply Hy.
-      unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-      rewrite lvars_fv_lvars_at_depth. exact Hbad.
-  - rewrite qual_open_same_index_absorb; try exact Hxy.
-    + reflexivity.
-    + unfold qual_dom. intros Hbad. apply Hx.
-      unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-      rewrite lvars_fv_lvars_at_depth. exact Hbad.
-    + unfold qual_dom. intros Hbad. apply Hy.
-      unfold fv_cty, context_ty_lvars. cbn [context_ty_lvars_at].
-      rewrite lvars_fv_lvars_at_depth. exact Hbad.
-  - rewrite IHτ1, IHτ2 by (try exact Hxy; unfold fv_cty in *;
-      cbn [context_ty_lvars context_ty_lvars_at] in *; rewrite lvars_fv_union in *; set_solver).
-    reflexivity.
-  - rewrite IHτ1, IHτ2 by (try exact Hxy; unfold fv_cty in *;
-      cbn [context_ty_lvars context_ty_lvars_at] in *; rewrite lvars_fv_union in *; set_solver).
-    reflexivity.
-  - rewrite IHτ1, IHτ2 by (try exact Hxy; unfold fv_cty in *;
-      cbn [context_ty_lvars context_ty_lvars_at] in *; rewrite lvars_fv_union in *; set_solver).
-    reflexivity.
-  - assert (Hx1 : x ∉ fv_cty τ1).
-    { intros Hbad. apply Hx. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. left. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hy1 : y ∉ fv_cty τ1).
-    { intros Hbad. apply Hy. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. left. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hx2 : x ∉ fv_cty τ2).
-    { intros Hbad. apply Hx. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. right. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hy2 : y ∉ fv_cty τ2).
-    { intros Hbad. apply Hy. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. right. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    f_equal.
-    + apply IHτ1; assumption.
-    + apply IHτ2; assumption.
-  - assert (Hx1 : x ∉ fv_cty τ1).
-    { intros Hbad. apply Hx. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. left. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hy1 : y ∉ fv_cty τ1).
-    { intros Hbad. apply Hy. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. left. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hx2 : x ∉ fv_cty τ2).
-    { intros Hbad. apply Hx. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. right. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    assert (Hy2 : y ∉ fv_cty τ2).
-    { intros Hbad. apply Hy. unfold fv_cty, context_ty_lvars.
-      cbn [context_ty_lvars_at]. rewrite lvars_fv_union.
-      apply elem_of_union. right. rewrite context_ty_lvars_fv_at. exact Hbad. }
-    f_equal.
-    + apply IHτ1; assumption.
-    + apply IHτ2; assumption.
 Qed.
 
 Lemma cty_open_commute_fvar i j x y τ :
@@ -788,24 +551,6 @@ Proof.
     try (apply IHτ1_2; exact H2).
 Qed.
 
-Lemma cty_vars_equiv_shift_from k τ1 τ2 :
-  τ1 ≡τv τ2 ->
-  cty_shift k τ1 ≡τv cty_shift k τ2.
-Proof.
-  induction τ1 in k, τ2 |- *; destruct τ2;
-    cbn [cty_vars_equiv cty_shift]; try tauto; intros H;
-    destruct H as [H1 H2].
-  - split; [congruence |].
-    rewrite !qual_shift_from_vars, H2. reflexivity.
-  - split; [congruence |].
-    rewrite !qual_shift_from_vars, H2. reflexivity.
-  - split; [apply IHτ1_1 | apply IHτ1_2]; assumption.
-  - split; [apply IHτ1_1 | apply IHτ1_2]; assumption.
-  - split; [apply IHτ1_1 | apply IHτ1_2]; assumption.
-  - split; [apply IHτ1_1 | apply IHτ1_2]; assumption.
-  - split; [apply IHτ1_1 | apply IHτ1_2]; assumption.
-Qed.
-
 Lemma ctx_stale_eq_fv_dom Γ :
   ctx_stale Γ = ctx_fv Γ ∪ ctx_dom Γ.
 Proof.
@@ -830,34 +575,6 @@ Proof.
       * right. right. exact Hzdom2.
   - rewrite IHΓ1, IHΓ2. set_solver.
   - rewrite IHΓ1, IHΓ2. set_solver.
-Qed.
-
-Lemma erase_ctx_dom_subset Γ :
-  dom (erase_ctx Γ) ⊆ ctx_dom Γ.
-Proof.
-  induction Γ as [|x τ|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2|Γ1 IH1 Γ2 IH2]; simpl.
-  - rewrite dom_empty_L. set_solver.
-  - intros y Hy.
-    apply elem_of_dom in Hy as [v Hy].
-    apply elem_of_singleton.
-    pose proof (lookup_singleton_Some (M:=gmap atom) x y (erase_ty τ) v) as Hsingle.
-    apply Hsingle in Hy as [Hxy _].
-    symmetry. exact Hxy.
-  - intros y Hy. set_unfold.
-    destruct Hy as [Hy | Hy].
-    + pose proof (IH1 y Hy). set_solver.
-    + pose proof (IH2 y Hy). set_solver.
-  - intros y Hy. set_unfold.
-    destruct Hy as [Hy | Hy].
-    + pose proof (IH1 y Hy). set_solver.
-    + pose proof (IH2 y Hy). set_solver.
-  - intros y Hy. pose proof (IH1 y Hy). set_solver.
-Qed.
-
-Lemma ctx_dom_subset_stale Γ :
-  ctx_dom Γ ⊆ ctx_stale Γ.
-Proof.
-  induction Γ; simpl; set_solver.
 Qed.
 
 (** * ContextTypeLanguage.Syntax

@@ -131,16 +131,6 @@ Proof.
   rewrite lvars_fv_elem. tauto.
 Qed.
 
-Lemma lvars_fv_subset_notin_free y (D : lvset) (X : aset) :
-  lvars_fv D ⊆ X ->
-  y ∉ X ->
-  LVFree y ∉ D.
-Proof.
-  intros Hsub Hy.
-  rewrite <- atom_notin_lvars_fv_iff_free_notin.
-  better_set_solver.
-Qed.
-
 Lemma lvars_bv_elem D k :
   k ∈ lvars_bv D ↔ LVBound k ∈ D.
 Proof.
@@ -351,12 +341,6 @@ Proof.
   apply swap_sym.
 Qed.
 
-Lemma lvars_open_sym k x D :
-  lvars_open k x D = set_swap (LVFree x) (LVBound k) D.
-Proof.
-  apply set_swap_sym.
-Qed.
-
 Lemma logic_var_open_onesided_swap_fresh k x v :
   x ∉ logic_var_fv v →
   logic_var_open_onesided k x v = logic_var_open k x v.
@@ -402,18 +386,6 @@ Qed.
   key_shift := logic_var_shift_by;
   key_shift_inj := logic_var_shift_by_inj
 }.
-
-Lemma logic_var_swap_sym x y v :
-  logic_var_swap x y v = logic_var_swap y x v.
-Proof.
-  apply swap_sym.
-Qed.
-
-Lemma lvars_swap_sym x y D :
-  lvars_swap x y D = lvars_swap y x D.
-Proof.
-  apply set_swap_sym.
-Qed.
 
 Lemma logic_var_free_swap x y z :
   swap (LVFree x) (LVFree y) (LVFree z) = LVFree (swap x y z).

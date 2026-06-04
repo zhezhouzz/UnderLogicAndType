@@ -271,7 +271,7 @@ Defined.
 估计、body helper 可以放进单独的 `LocallyNamelessExtra.v`。这样 BasicTyping 和
 Denotation 可以只 import 额外文件，而 syntax 层不会重新累积 theorem stubs。
 
-新建 `.v` 文件后记得更新 `_CoqProject` 并重新生成 `Makefile.coq`。如果新文件里
+新建 `.v` 文件后记得更新 `_CoqProject` 并重新生成 `Makefile`。如果新文件里
 Unicode token 报 lexer 错，先把 proof statement 里的 `→` / `≠` 改成 ASCII
 `->` / `<>`，尤其是在刚拆出的文件中最省时间。
 

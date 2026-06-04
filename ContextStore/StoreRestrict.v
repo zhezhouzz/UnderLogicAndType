@@ -669,7 +669,7 @@ Proof.
       * symmetry. apply storeA_restrict_lookup_none_r. exact HzX.
 Qed.
 
-Lemma storeA_restrict_insert_fresh_union_lookup_none {K : Type} `{Countable K}
+Lemma storeA_restrict_insert_union_none {K : Type} `{Countable K}
     (σ : gmap K V) (X : gset K) (x : K) (v : V) :
   (σ : gmap K V) !! x = None →
   x ∉ X →

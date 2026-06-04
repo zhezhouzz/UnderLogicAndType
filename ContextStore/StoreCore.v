@@ -58,30 +58,6 @@ Proof.
   intros Hlook. apply (map_eq (M:=gmap K)). exact Hlook.
 Qed.
 
-Lemma storeA_agree_on_mono {K : Type} `{Countable K}
-    D E (s1 s2 : gmap K V) :
-  D ⊆ E ->
-  storeA_agree_on E s1 s2 ->
-  storeA_agree_on D s1 s2.
-Proof.
-  intros Hsub Hag x Hx. apply Hag, Hsub, Hx.
-Qed.
-
-Lemma storeA_agree_on_refl {K : Type} `{Countable K}
-    D (s : gmap K V) :
-  storeA_agree_on D s s.
-Proof.
-  intros x Hx. reflexivity.
-Qed.
-
-Lemma storeA_agree_on_sym {K : Type} `{Countable K}
-    D (s1 s2 : gmap K V) :
-  storeA_agree_on D s1 s2 ->
-  storeA_agree_on D s2 s1.
-Proof.
-  intros Hag x Hx. symmetry. apply Hag, Hx.
-Qed.
-
 Lemma storeA_agree_on_union {K : Type} `{Countable K}
     D1 D2 (s1 s2 : gmap K V) :
   storeA_agree_on D1 s1 s2 ->
@@ -120,20 +96,14 @@ Proof.
     better_map_solver.
 Qed.
 
-Lemma storeA_bind_dom {K : Type} `{Countable K}
-    (s1 s2 s : gmap K V) :
-  storeA_bind s1 s2 s →
-  dom s = dom s1 ∪ dom s2.
-Proof.
-  intros [_ ->].
-  better_set_solver.
-Qed.
-
 End StoreCoreDefs.
 
 Arguments storeAO_store {_ _ _ _ _} _.
 Arguments storeAO_dom {_ _ _ _ _} _.
 
+(** [storeA_map_key] is the cross-key view of [kmap].  [storeA_rekey] is the
+    same operation specialized to same-key transformations; the separate name
+    keeps swap, shift, and open lemmas readable. *)
 Notation "'storeA_map_key' f s" := (kmap (M2:=gmap _) f s)
   (at level 10, f at next level, s at next level, only parsing).
 Notation "'storeA_rekey' f s" := (kmap (M2:=gmap _) f s)
@@ -790,24 +760,6 @@ Lemma storeA_shift_empty {K : Type} `{Countable K} `{!ShiftKey K} k :
 Proof.
   unfold storeA_shift.
   apply storeA_rekey_empty.
-Qed.
-
-Lemma storeA_shift_insert {K : Type} `{Countable K} `{!ShiftKey K}
-    k z v (s : gmap K V) :
-  storeA_shift k (<[z := v]> s) =
-  <[key_shift k z := v]> (storeA_shift k s : gmap K V).
-Proof.
-  unfold storeA_shift.
-  apply storeA_rekey_insert, key_shift_inj.
-Qed.
-
-Lemma storeA_shift_union {K : Type} `{Countable K} `{!ShiftKey K}
-    k (s1 s2 : gmap K V) :
-  storeA_shift k (@union (gmap K V) _ (s1 : gmap K V) (s2 : gmap K V)) =
-  (storeA_shift k s1 : gmap K V) ∪ (storeA_shift k s2 : gmap K V).
-Proof.
-  unfold storeA_shift.
-  apply storeA_rekey_union, key_shift_inj.
 Qed.
 
 End StoreShift.

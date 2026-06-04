@@ -21,10 +21,6 @@ Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   | op_minus1 => (TNat, TNat)
   end.
 
-Lemma prim_op_type_wf :
-  prim_op_type op_eq0 = (TNat, TBool).
-Proof. reflexivity. Qed.
-
 (** ** Typing judgments *)
 
 (** We define two mutually-inductive relations and expose them via

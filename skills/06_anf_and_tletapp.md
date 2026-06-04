@@ -39,8 +39,8 @@ tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))
 ```coq
 | CTArrow x τx τ =>
     FImpl
-      (denot_ty τx (tret (vfvar x)))
-      (denot_ty τ (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
+      (ty_denote τx (tret (vfvar x)))
+      (ty_denote τ (tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))))
       (*              ↑ let-bind e first, then apply bvar 0 to x *)
 ```
 

@@ -1,12 +1,12 @@
-(** * Denotation.ContextTypeDenotationCasesConst
+(** * Denotation.ConstDenote
 
     Constant and primitive-operation direct denotation support for
     Fundamental. *)
 
-From Denotation Require Import Context ContextTypeDenotationSaturateCore
-  ContextTypeDenotationSaturateMain ContextTypeDenotationCasesContext.
+From Denotation Require Import Context TypeEquivCore
+  TypeEquiv.
 
-Section ContextTypeDenotationCasesConst.
+Section ConstDenote.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -95,105 +95,51 @@ Proof.
     apply Steps_refl. constructor. constructor.
 Qed.
 
-Lemma denot_relevant_env_const_precise_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_precise_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTInter
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
-      (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
+    (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply relevant_env_empty.
+  unfold relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
-Lemma formula_fv_const_precise_denot_ty_lvar_gas_empty gas Σ c :
-  formula_fv (denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
-    (const_precise_ty c) (tret (vconst c))) = ∅.
-Proof.
-  apply set_eq. intros x. split; [|set_solver].
-  intros Hx.
-  pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant gas
-    (atom_env_to_lty_env Σ) (const_precise_ty c) (tret (vconst c)) x Hx)
-    as Hsub.
-  unfold const_precise_ty, precise_ty, over_ty, under_ty, mk_q_eq in Hsub.
-  unfold fv_cty, qual_vars in Hsub.
-  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at qual_lvars
-    qual_vars lvar_value_keys] in Hsub.
-  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0_succ,
-    ?lvars_at_depth_empty in Hsub.
-  rewrite ?lvars_fv_union, ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hsub.
-  destruct c; cbn [base_ty_of_const] in Hsub;
-    rewrite ?union_empty_l_L, ?union_empty_r_L in Hsub;
-    exfalso; exact (not_elem_of_empty x Hsub).
-Qed.
-
-Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_over_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply relevant_env_empty.
+  unfold relevant_lvars, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
-Lemma denot_relevant_env_const_under_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_under_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply relevant_env_empty.
+  unfold relevant_lvars, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
 Lemma const_qual_open_vars c y :
@@ -214,13 +160,12 @@ Proof.
   set_solver.
 Qed.
 
-Lemma const_qual_open_fv c y :
-  qual_dom (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) =
-  {[y]}.
+Lemma const_qual_dom_bound_fresh c y :
+  y ∉ qual_dom (mk_q_eq (vbvar 0) (vconst c)).
 Proof.
   unfold qual_dom.
-  rewrite const_qual_open_vars.
-  apply lvars_fv_singleton_free.
+  rewrite const_qual_vars_bound, lvars_fv_singleton_bound.
+  set_solver.
 Qed.
 
 Lemma expr_result_formula_ret_const_lookup c y (m : WfWorldT) σ :
@@ -315,10 +260,16 @@ Proof.
       * apply map_eq. intros z.
         destruct (decide (z = LVFree y)) as [->|Hz].
         -- transitivity (Some (vconst c)).
-           ++ apply storeA_restrict_lookup_some_2.
-              ** rewrite lstore_lift_free_lookup_free.
-                 apply Hlookup. exact Hσ.
-              ** rewrite const_qual_open_vars. set_solver.
+           ++ assert (Hlook_y :
+                  (lstore_lift_free σ : LStoreT) !! LVFree y =
+                  Some (vconst c)).
+              { rewrite lstore_lift_free_lookup_free. apply Hlookup. exact Hσ. }
+              assert (Hin_y :
+                  LVFree y ∈
+                  qual_vars (qual_open_atom 0 y
+                    (mk_q_eq (vbvar 0) (vconst c)))).
+              { rewrite const_qual_open_vars. set_solver. }
+              better_store_solver.
            ++ symmetry. exact Hprop.
         -- transitivity (@None value).
            ++ apply storeA_restrict_lookup_none_r.
@@ -336,10 +287,16 @@ Proof.
     rewrite (lstore_lift_free_restrict_fv_lvars_eq σm
       (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))) in Hs.
     rewrite <- Hs.
-    apply storeA_restrict_lookup_some_2.
-    + rewrite lstore_lift_free_lookup_free.
-      apply Hlookup. exact Hσm.
-    + rewrite const_qual_open_vars. set_solver.
+    assert (Hlook_y :
+        (lstore_lift_free σm : LStoreT) !! LVFree y =
+        Some (vconst c)).
+    { rewrite lstore_lift_free_lookup_free. apply Hlookup. exact Hσm. }
+    assert (Hin_y :
+        LVFree y ∈
+        qual_vars (qual_open_atom 0 y
+          (mk_q_eq (vbvar 0) (vconst c)))).
+    { rewrite const_qual_open_vars. set_solver. }
+    better_store_solver.
 Qed.
 
 Lemma const_fib_over_from_expr c y (m : WfWorldT) :
@@ -467,33 +424,8 @@ Local Ltac solve_const_under_guard :=
   [apply expr_basic_typing_formula_ret_const_empty|];
   apply expr_total_formula_ret_const.
 
-Lemma res_models_true (m : WfWorldT) :
-  m ⊨ FTrue.
-Proof.
-  unfold res_models. cbn.
-  split.
-  - unfold formula_scoped_in_world, formula_fv. cbn [formula_lvars].
-    rewrite lvars_fv_empty. set_solver.
-  - trivial.
-Qed.
-
-Local Lemma lvset_singleton_difference_self (v : logic_var) :
-  ({[v]} ∖ {[v]} : lvset) = ∅.
-Proof.
-  apply set_eq. intros z.
-  rewrite elem_of_difference, !elem_of_singleton, elem_of_empty.
-  split; [intros [-> Hneq]; contradiction|tauto].
-Qed.
-
 Local Ltac const_scope_set :=
-  intros z Hz;
-  repeat rewrite elem_of_union in Hz;
-  repeat rewrite elem_of_empty in Hz;
-  repeat rewrite elem_of_singleton in Hz;
-  repeat rewrite elem_of_union;
-  repeat rewrite elem_of_empty;
-  repeat rewrite elem_of_singleton;
-  intuition subst; eauto.
+  intros z Hz; set_solver.
 
 Local Ltac const_forall_scope_norm :=
   unfold formula_scoped_in_world;
@@ -507,7 +439,12 @@ Local Ltac const_forall_scope_norm :=
   rewrite ?const_qual_open_vars;
   rewrite ?const_qual_vars_bound;
   rewrite ?set_swap_empty;
-  rewrite ?lvset_singleton_difference_self;
+  repeat match goal with
+  | |- context[({[?v]} ∖ {[?v]} : lvset)] =>
+      replace ({[v]} ∖ {[v]} : lvset) with (∅ : lvset) by set_solver
+  | H : context[({[?v]} ∖ {[?v]} : lvset)] |- _ =>
+      replace ({[v]} ∖ {[v]} : lvset) with (∅ : lvset) in H by set_solver
+  end;
   rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_bound,
     ?lvars_fv_singleton_free.
 
@@ -557,15 +494,15 @@ Local Ltac solve_const_forall_open_scope :=
   end.
 
 Lemma const_over_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas gas (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)).
 Proof.
-  induction gas as [|gas IH]; cbn [denot_ty_lvar_gas].
-  - rewrite denot_relevant_env_const_over_atom_env_empty.
+  induction gas as [|gas IH]; cbn [ty_denote_gas].
+  - rewrite relevant_env_const_over_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_over_guard | apply res_models_true].
-  - rewrite denot_relevant_env_const_over_atom_env_empty.
+  - rewrite relevant_env_const_over_atom_env_empty.
     eapply res_models_and_intro_from_models; [solve_const_over_guard|].
     eapply res_models_forall_intro.
     + solve_const_forall_closed_scope.
@@ -579,10 +516,7 @@ Proof.
       2:{ cbn [fv_tm fv_value]. set_solver. }
       rewrite formula_open_fibvars, formula_open_over.
       rewrite type_qualifier_formula_open
-        by (unfold mk_q_eq, qual_dom, qual_vars;
-            cbn [qual_lvars lvar_value_keys];
-            rewrite lvars_fv_union, lvars_fv_singleton_bound,
-              lvars_fv_empty; set_solver).
+        by apply const_qual_dom_bound_fresh.
       eapply res_models_impl_intro_scoped.
       * solve_const_forall_open_scope.
       * solve_const_forall_open_scope.
@@ -601,10 +535,10 @@ Proof.
              rewrite const_qual_vars_bound, const_qual_open_vars.
              replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              rewrite set_swap_empty.
              reflexivity.
            }
@@ -612,15 +546,15 @@ Proof.
 Qed.
 
 Lemma const_under_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas gas (atom_env_to_lty_env Σ)
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)).
 Proof.
-  induction gas as [|gas IH]; cbn [denot_ty_lvar_gas].
-  - rewrite denot_relevant_env_const_under_atom_env_empty.
+  induction gas as [|gas IH]; cbn [ty_denote_gas].
+  - rewrite relevant_env_const_under_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_under_guard | apply res_models_true].
-  - rewrite denot_relevant_env_const_under_atom_env_empty.
+  - rewrite relevant_env_const_under_atom_env_empty.
     eapply res_models_and_intro_from_models; [solve_const_under_guard|].
     eapply res_models_forall_intro.
     + solve_const_forall_closed_scope.
@@ -634,10 +568,7 @@ Proof.
       2:{ cbn [fv_tm fv_value]. set_solver. }
       rewrite formula_open_fibvars, formula_open_under.
       rewrite type_qualifier_formula_open
-        by (unfold mk_q_eq, qual_dom, qual_vars;
-            cbn [qual_lvars lvar_value_keys];
-            rewrite lvars_fv_union, lvars_fv_singleton_bound,
-              lvars_fv_empty; set_solver).
+        by apply const_qual_dom_bound_fresh.
       eapply res_models_impl_intro_scoped.
       * solve_const_forall_open_scope.
       * solve_const_forall_open_scope.
@@ -656,10 +587,10 @@ Proof.
              rewrite const_qual_vars_bound, const_qual_open_vars.
              replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              rewrite set_swap_empty.
              reflexivity.
            }
@@ -668,17 +599,17 @@ Qed.
 
 Lemma const_direct_denotation_gas_in_ctx
     gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ CtxEmpty ->
-  erase_ctx_under Σ CtxEmpty ⊢ₑ
+  m ⊨ ctx_denote_under Σ CtxEmpty ->
+  ctx_erasure_under Σ CtxEmpty ⊢ₑ
     tret (vconst c) ⋮ erase_ty (const_precise_ty c) ->
-  m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ CtxEmpty))
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (ctx_erasure_under Σ CtxEmpty))
     (const_precise_ty c) (tret (vconst c)).
 Proof.
   intros _ _.
   unfold const_precise_ty, precise_ty, over_ty, under_ty.
   destruct gas as [|gas'].
-  - unfold erase_ctx_under. cbn [erase_ctx].
+  - unfold ctx_erasure_under. cbn [erase_ctx].
     replace (Σ ∪ erase_ctx CtxEmpty) with Σ
       by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
           symmetry; apply map_union_empty).
@@ -686,7 +617,7 @@ Proof.
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -695,14 +626,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (denot_relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env Σ)
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -710,7 +641,7 @@ Proof.
                 (tret (vconst c)) (TBase (base_ty_of_const c)))
               (expr_total_formula (tret (vconst c))))))
         FTrue).
-    rewrite denot_relevant_env_const_precise_atom_env_empty.
+    rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
         [ exact (context_ty_wf_formula_const_precise_empty c m)
@@ -720,7 +651,7 @@ Proof.
             [ exact (expr_basic_typing_formula_ret_const_empty c m)
             | exact (expr_total_formula_ret_const c m) ] ] ]
       | exact (res_models_true m) ].
-  - unfold erase_ctx_under. cbn [erase_ctx].
+  - unfold ctx_erasure_under. cbn [erase_ctx].
     replace (Σ ∪ erase_ctx CtxEmpty) with Σ
       by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
           symmetry; apply map_union_empty).
@@ -728,7 +659,7 @@ Proof.
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -737,14 +668,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (denot_relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env Σ)
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -752,13 +683,13 @@ Proof.
                 (tret (vconst c)) (TBase (base_ty_of_const c)))
               (expr_total_formula (tret (vconst c))))))
         (FAnd
-          (denot_ty_lvar_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
             (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c)))
-          (denot_ty_lvar_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
             (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c))))).
-    rewrite denot_relevant_env_const_precise_atom_env_empty.
+    rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
         [ exact (context_ty_wf_formula_const_precise_empty c m)
@@ -780,42 +711,42 @@ Lemma appop_intro_denotation
   Σ !! x = Some (erase_ty τarg) ->
   Σ ⊢ₑ
     tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
-  (denot_ctx (CtxBind x τarg) ⊫
-    denot_ty_in_ctx (CtxBind x τarg) ({0 ~> x} τres)
+  (ctx_denote (CtxBind x τarg) ⊫
+    ty_denote (erase_ctx (CtxBind x τarg)) ({0 ~> x} τres)
       (tprim op (vfvar x))) ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
     τarg (tret (vfvar x)) ->
-  m ⊨ denot_ty_lvar_gas gas
+  m ⊨ ty_denote_gas gas
     (atom_env_to_lty_env Σ) ({0 ~> x} τres) (tprim op (vfvar x)).
 Proof.
   intros Hgas Hbasic_arg Hbasic_res Hlookup _ Hop Harg.
-  rewrite denot_ty_lvar_gas_saturate by exact Hgas.
-  pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+  rewrite ty_denote_gas_saturate by exact Hgas.
+  pose proof (res_models_ty_denote_gas_env_agree_on
     (cty_depth τarg)
     (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
     τarg (tret (vfvar x)) ({[LVFree x]}) m
-    (denot_relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
-    (atom_env_to_lty_env_restrict_singleton_lookup
+    (relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
+    (atom_env_restrict_singleton_lookup
       Σ x (erase_ty τarg) Hlookup)
     Harg) as Harg_single.
-  assert (Harg_bind : m ⊨ denot_ctx (CtxBind x τarg)).
+  assert (Harg_bind : m ⊨ ctx_denote (CtxBind x τarg)).
   {
-    eapply denot_ctx_bind_from_arg_denotation; eauto.
+    eapply ctx_denote_bind_from_arg_denotation; eauto.
   }
   pose proof (Hop m Harg_bind) as Hres_single.
-  unfold denot_ty_in_ctx, denot_ty in Hres_single.
+  unfold ty_denote in Hres_single.
   change (erase_ctx (CtxBind x τarg))
     with (<[x := erase_ty τarg]> (∅ : gmap atom ty)) in Hres_single.
-  eapply res_models_denot_ty_lvar_gas_env_agree_on
+  eapply res_models_ty_denote_gas_env_agree_on
     with (Σ1 := atom_env_to_lty_env
         (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
       (X := {[LVFree x]});
-    [ apply denot_relevant_lvars_basic_open_tprim_fvar_subset;
+    [ apply relevant_lvars_basic_open_tprim_fvar_subset;
       exact Hbasic_res
     | symmetry;
-      apply atom_env_to_lty_env_restrict_singleton_lookup;
+      apply atom_env_restrict_singleton_lookup;
       exact Hlookup
     | exact Hres_single ].
 Qed.
-End ContextTypeDenotationCasesConst.
+End ConstDenote.

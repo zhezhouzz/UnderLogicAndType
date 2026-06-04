@@ -333,7 +333,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw
+Lemma lstore_shift_restrict_mlsubst_back_raw
     k D (σ : Store) (sD s2 : LStore) :
   dom (sD : gmap logic_var V) = D ->
   dom (s2 : gmap logic_var V) =
@@ -444,7 +444,7 @@ Proof.
     + symmetry. apply not_elem_of_dom_1. exact Hz.
 Qed.
 
-Lemma lstore_mlsubst_back_restrict_of_shift_atom_store_raw
+Lemma lstore_mlsubst_back_restrict_shift_raw
     k D (σ : Store) (sD s2 : LStore) :
   dom (sD : gmap logic_var V) = D ->
   dom (s2 : gmap logic_var V) =
@@ -554,7 +554,7 @@ Proof.
         * symmetry. apply map_lookup_union_None. split; assumption.
 Qed.
 
-Lemma lstore_on_shift_from_restrict_of_mlsubst_back_atom_store
+Lemma lstore_on_shift_restrict_mlsubst_back
     k D (σ : Store) (sD : LStoreOn D)
     (s2 : LStoreOn (lvars_shift_from k D ∖
       dom (atom_store_to_lvar_store σ : LStore))) :
@@ -569,10 +569,10 @@ Proof.
   destruct sD as [sD HdomD], s2 as [s2 Hdom2].
   cbn [lso_store storeAO_store].
   intros Hshift.
-  apply lstore_shift_from_restrict_of_mlsubst_back_atom_store_raw; assumption.
+  apply lstore_shift_restrict_mlsubst_back_raw; assumption.
 Qed.
 
-Lemma lstore_on_mlsubst_back_restrict_of_shift_atom_store
+Lemma lstore_on_mlsubst_back_restrict_shift
     k D (σ : Store) (sD : LStoreOn D)
     (s2 : LStoreOn (lvars_shift_from k D ∖
       dom (atom_store_to_lvar_store σ : LStore))) :
@@ -588,7 +588,7 @@ Proof.
   unfold lstore_on_mlsubst_back.
   cbn [lso_store storeAO_store].
   intros Hshift.
-  exact (lstore_mlsubst_back_restrict_of_shift_atom_store_raw
+  exact (lstore_mlsubst_back_restrict_shift_raw
     k D σ sD s2 HdomD Hdom2 Hshift).
 Qed.
 

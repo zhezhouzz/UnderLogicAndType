@@ -136,22 +136,6 @@ Definition formula_msubst_store (σ : Store (V := V)) (φ : Formula) : Formula :
 Definition store_without_lvars (σ : Store (V := V)) (D : lvset) : Store (V := V) :=
   store_restrict σ (dom (σ : Store (V := V)) ∖ lvars_fv D).
 
-Lemma formula_mlsubst_union
-    (ρ1 ρ2 : LStoreT) (φ : Formula) :
-  storeA_compat ρ1 ρ2 ->
-  formula_mlsubst ρ2 (formula_mlsubst ρ1 φ) =
-  formula_mlsubst (ρ1 ∪ ρ2) φ.
-Proof.
-  intros Hcompat.
-  induction φ; cbn [formula_mlsubst];
-    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; eauto using storeA_compat_restrict_r; reflexivity).
-  - f_equal. apply lqual_mlsubst_union. exact Hcompat.
-  - rewrite IHφ by exact Hcompat.
-    f_equal.
-    rewrite dom_union_L.
-    set_solver.
-Qed.
-
 Lemma formula_msubst_store_fibvars σ D φ :
   formula_msubst_store σ (FFibVars D φ) =
   FFibVars (D ∖ lvars_of_atoms (dom (σ : Store (V := V))))
@@ -160,178 +144,6 @@ Proof.
   unfold formula_msubst_store. cbn [formula_mlsubst].
   rewrite dom_lstore_lift_free. reflexivity.
 Qed.
-
-Lemma formula_msubst_store_restrict_fv_subset
-    (σ : Store (V := V)) (φ : Formula) (X : aset) :
-  formula_fv φ ⊆ X ->
-  formula_msubst_store σ φ =
-  formula_msubst_store (store_restrict σ X) φ.
-Proof.
-  revert X.
-  induction φ; intros X Hsub;
-    unfold formula_msubst_store; cbn [formula_mlsubst];
-    try reflexivity.
-  - change (FAtom (lqual_msubst_store σ a) =
-      FAtom (lqual_msubst_store (store_restrict σ X) a)).
-    f_equal. apply lqual_msubst_store_restrict_subset.
-    rewrite formula_fv_atom in Hsub. exact Hsub.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_and in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_or in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_impl in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_star in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_wand in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    fold (formula_msubst_store (store_restrict σ X) φ1).
-    fold (formula_msubst_store (store_restrict σ X) φ2).
-    rewrite (IHφ1 X), (IHφ2 X); [reflexivity| |];
-      rewrite formula_fv_plus in Hsub; set_solver.
-  - fold (formula_msubst_store σ φ).
-    fold (formula_msubst_store (store_restrict σ X) φ).
-    rewrite (IHφ X); [reflexivity|].
-    rewrite formula_fv_forall in Hsub. exact Hsub.
-  - fold (formula_msubst_store σ φ).
-    fold (formula_msubst_store (store_restrict σ X) φ).
-    rewrite (IHφ X); [reflexivity|].
-    rewrite formula_fv_over in Hsub. exact Hsub.
-  - fold (formula_msubst_store σ φ).
-    fold (formula_msubst_store (store_restrict σ X) φ).
-    rewrite (IHφ X); [reflexivity|].
-    rewrite formula_fv_under in Hsub. exact Hsub.
-  - fold (formula_msubst_store σ φ).
-    fold (formula_msubst_store (store_restrict σ X) φ).
-    rewrite (IHφ X).
-    2:{ rewrite formula_fv_fibvars in Hsub. set_solver. }
-    f_equal.
-    change (D ∖ dom (lstore_lift_free σ : LStoreT) =
-      D ∖ dom (lstore_lift_free (store_restrict σ X) : LStoreT)).
-    assert (HρD :
-      storeA_restrict
-        (lstore_lift_free (store_restrict σ X) : LStoreT) D =
-      storeA_restrict (lstore_lift_free σ : LStoreT) D).
-    {
-      apply lstore_lift_free_restrict_lvars_subset_eq.
-      rewrite formula_fv_fibvars in Hsub. set_solver.
-    }
-    pose proof (f_equal (fun s : gmap logic_var V => dom s) HρD)
-      as Hdom_restrict.
-    rewrite !storeA_restrict_dom in Hdom_restrict.
-    apply set_eq. intros v.
-    rewrite !elem_of_difference.
-    set_solver.
-Qed.
-
-Lemma formula_msubst_store_restrict_fv
-    (σ : Store (V := V)) (φ : Formula) :
-  formula_msubst_store σ φ =
-  formula_msubst_store (store_restrict σ (formula_fv φ)) φ.
-Proof.
-  apply formula_msubst_store_restrict_fv_subset. reflexivity.
-Qed.
-
-Lemma formula_msubst_store_agree_fv
-    (σ1 σ2 : Store (V := V)) (φ : Formula) :
-  store_restrict σ1 (formula_fv φ) =
-  store_restrict σ2 (formula_fv φ) ->
-  formula_msubst_store σ1 φ = formula_msubst_store σ2 φ.
-Proof.
-  intros Hagree.
-  rewrite (formula_msubst_store_restrict_fv σ1 φ).
-  rewrite (formula_msubst_store_restrict_fv σ2 φ).
-  rewrite Hagree. reflexivity.
-Qed.
-
-Lemma formula_msubst_store_union
-    (σ1 σ2 : Store (V := V)) (φ : Formula) :
-  storeA_compat σ1 σ2 ->
-  formula_msubst_store σ2 (formula_msubst_store σ1 φ) =
-  formula_msubst_store (σ1 ∪ σ2) φ.
-Proof.
-  intros Hcompat.
-  unfold formula_msubst_store.
-  rewrite formula_mlsubst_union.
-  - f_equal.
-    unfold lstore_lift_free.
-    symmetry.
-    change (storeA_map_key LVFree (σ1 ∪ σ2) =
-      (storeA_map_key LVFree σ1 : gmap logic_var V) ∪
-      storeA_map_key LVFree σ2).
-    apply storeA_map_key_union.
-    intros a b Hab. inversion Hab. reflexivity.
-  - unfold storeA_compat, map_compat in *.
-    intros v a b Hv1 Hv2.
-    destruct v as [k | x].
-    + rewrite lstore_lift_free_lookup_bound in Hv1. discriminate.
-    + rewrite !lstore_lift_free_lookup_free in Hv1, Hv2.
-      eapply Hcompat; eauto.
-Qed.
-
-Lemma formula_msubst_store_fibvars_keep_domain_syntax σ D φ :
-  formula_msubst_store σ (FFibVars D φ) =
-  formula_msubst_store (store_restrict σ (lvars_fv D))
-    (FFibVars D (formula_msubst_store (store_without_lvars σ D) φ)).
-Proof.
-  rewrite formula_msubst_store_fibvars.
-  rewrite formula_msubst_store_fibvars.
-  f_equal.
-  - apply set_eq. intros v.
-    rewrite !elem_of_difference.
-    split; intros [HvD Hvnot].
-    + split; [exact HvD|].
-      intros Hbad. apply Hvnot.
-      unfold lvars_of_atoms in Hbad |- *.
-      apply elem_of_map in Hbad as [x [-> Hx]].
-      change (x ∈ dom (storeA_restrict σ (lvars_fv D) : gmap atom V)) in Hx.
-      rewrite storeA_restrict_dom in Hx.
-      apply elem_of_map. exists x. split; [reflexivity|set_solver].
-    + split; [exact HvD|].
-      intros Hbad. apply Hvnot.
-      unfold lvars_of_atoms in Hbad |- *.
-      apply elem_of_map in Hbad as [x [-> Hx]].
-      apply elem_of_map. exists x. split; [reflexivity|].
-      change (x ∈ dom (storeA_restrict σ (lvars_fv D) : gmap atom V)).
-      rewrite storeA_restrict_dom.
-      rewrite elem_of_intersection. split; [exact Hx|].
-      rewrite lvars_fv_elem. exact HvD.
-  - rewrite formula_msubst_store_union.
-    + f_equal.
-      unfold store_without_lvars.
-      symmetry.
-      eapply (@storeA_restrict_union_partition V atom _ _
-        (σ : gmap atom V) (dom (σ : gmap atom V) ∖ lvars_fv D)
-        (lvars_fv D)).
-      * intros x Hx. destruct (decide (x ∈ lvars_fv D)); set_solver.
-      * apply set_eq. intros x.
-        rewrite elem_of_empty, elem_of_intersection, elem_of_difference.
-        tauto.
-    + apply storeA_compat_restricts_same.
-Qed.
-
 
 Lemma formula_msubst_store_empty (σ : Store (V := V)) (φ : Formula) :
   dom (σ : gmap atom V) = ∅ ->
@@ -351,81 +163,6 @@ Proof.
     try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
   - rewrite lqual_mlsubst_empty. reflexivity.
   - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
-Qed.
-
-Lemma formula_msubst_store_fresh (σ : Store (V := V)) (φ : Formula) :
-  dom (σ : gmap atom V) ## formula_fv φ ->
-  formula_msubst_store σ φ = φ.
-Proof.
-  induction φ; intros Hfresh;
-    unfold formula_msubst_store; cbn [formula_mlsubst];
-    try reflexivity.
-  - change (FAtom (lqual_msubst_store σ a) = FAtom a).
-    f_equal. apply lqual_msubst_store_fresh.
-    rewrite formula_fv_atom in Hfresh. exact Hfresh.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_and in Hfresh. set_solver.
-    + rewrite formula_fv_and in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_or in Hfresh. set_solver.
-    + rewrite formula_fv_or in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_impl in Hfresh. set_solver.
-    + rewrite formula_fv_impl in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_star in Hfresh. set_solver.
-    + rewrite formula_fv_star in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_wand in Hfresh. set_solver.
-    + rewrite formula_fv_wand in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ1).
-    fold (formula_msubst_store σ φ2).
-    rewrite IHφ1, IHφ2; [reflexivity| |].
-    + rewrite formula_fv_plus in Hfresh. set_solver.
-    + rewrite formula_fv_plus in Hfresh. set_solver.
-  - fold (formula_msubst_store σ φ).
-    rewrite IHφ; [reflexivity|].
-    rewrite formula_fv_forall in Hfresh. exact Hfresh.
-  - fold (formula_msubst_store σ φ).
-    rewrite IHφ; [reflexivity|].
-    rewrite formula_fv_over in Hfresh. exact Hfresh.
-  - fold (formula_msubst_store σ φ).
-    rewrite IHφ; [reflexivity|].
-    rewrite formula_fv_under in Hfresh. exact Hfresh.
-  - fold (formula_msubst_store σ φ).
-    rewrite IHφ.
-    + f_equal.
-      apply set_eq. intros v.
-      rewrite elem_of_difference.
-      split.
-      * intros [Hv _]. exact Hv.
-      * intros HvD. split; [exact HvD|].
-        destruct v as [k|x].
-        -- intros Hbad.
-           rewrite dom_lstore_lift_free in Hbad.
-           unfold lvars_of_atoms in Hbad.
-           apply elem_of_map in Hbad as [a [Hbad _]].
-           discriminate.
-        -- intros Hbad.
-           rewrite dom_lstore_lift_free in Hbad.
-           unfold lvars_of_atoms in Hbad.
-           apply elem_of_map in Hbad as [a [Hax Ha]].
-           inversion Hax; subst.
-           rewrite formula_fv_fibvars in Hfresh.
-           apply elem_of_disjoint in Hfresh.
-           apply (Hfresh a Ha).
-           apply elem_of_union_l. apply lvars_fv_elem. exact HvD.
-    + rewrite formula_fv_fibvars in Hfresh. set_solver.
 Qed.
 
 Lemma formula_mlsubst_preserves_measure ρ φ :
@@ -460,83 +197,6 @@ Qed.
 Lemma formula_msubst_store_fv_subset σ φ :
   formula_fv (formula_msubst_store σ φ) ⊆ formula_fv φ.
 Proof. apply formula_mlsubst_fv_subset. Qed.
-
-Lemma formula_msubst_store_fv_disjoint_dom σ φ :
-  formula_fv (formula_msubst_store σ φ) ## dom (σ : Store (V := V)).
-Proof.
-  induction φ; unfold formula_fv in *;
-    cbn [formula_msubst_store formula_mlsubst formula_lvars].
-  - rewrite lvars_fv_empty. set_solver.
-  - rewrite lvars_fv_empty. set_solver.
-  - apply lqual_msubst_store_fv_disjoint_dom.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - exact IHφ.
-  - exact IHφ.
-  - exact IHφ.
-  - rewrite lvars_fv_union, dom_lstore_lift_free,
-      lvars_fv_difference_of_atoms.
-    set_solver.
-Qed.
-
-Lemma formula_mlsubst_lvars_restore ρ φ :
-  formula_lvars φ ⊆ formula_lvars (formula_mlsubst ρ φ) ∪ dom ρ.
-Proof.
-  induction φ; cbn [formula_lvars formula_mlsubst].
-  - set_solver.
-  - set_solver.
-  - destruct a as [D P]. cbn [lqual_mlsubst].
-    change (D ⊆ (D ∖ dom (ρ : gmap logic_var V)) ∪ dom ρ).
-    intros v Hv.
-    destruct (decide (v ∈ dom (ρ : gmap logic_var V))); set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + pose proof (IHφ1 v Hv). set_solver.
-    + pose proof (IHφ2 v Hv). set_solver.
-  - exact IHφ.
-  - exact IHφ.
-  - exact IHφ.
-  - intros v Hv. apply elem_of_union in Hv as [Hv | Hv].
-    + destruct (decide (v ∈ dom (ρ : gmap logic_var V))); set_solver.
-    + pose proof (IHφ v Hv). set_solver.
-Qed.
-
-Lemma formula_mlsubst_fv_restore ρ φ :
-  formula_fv φ ⊆ formula_fv (formula_mlsubst ρ φ) ∪ lvars_fv (dom ρ).
-Proof.
-  unfold formula_fv.
-  pose proof (lvars_fv_mono (formula_lvars φ)
-    (formula_lvars (formula_mlsubst ρ φ) ∪ dom ρ)
-    (formula_mlsubst_lvars_restore ρ φ)) as Hfv.
-  rewrite lvars_fv_union in Hfv. exact Hfv.
-Qed.
-
-Lemma formula_msubst_store_fv_restore σ φ :
-  formula_fv φ ⊆ formula_fv (formula_msubst_store σ φ) ∪ dom (σ : Store (V := V)).
-Proof.
-  unfold formula_msubst_store.
-  pose proof (formula_mlsubst_fv_restore (lstore_lift_free σ) φ) as Hrestore.
-  rewrite dom_lstore_lift_free, lvars_fv_of_atoms in Hrestore.
-  exact Hrestore.
-Qed.
 
 Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   match φ with
@@ -643,56 +303,6 @@ Proof.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite lvars_open_commute_fresh by assumption.
     rewrite IHφ by assumption. reflexivity.
-Qed.
-
-Lemma formula_open_msubst_store_fresh k y
-    (σ : Store (V := V)) (φ : Formula) :
-  y ∉ dom (σ : gmap atom V) ->
-  formula_open k y (formula_msubst_store σ φ) =
-  formula_msubst_store σ (formula_open k y φ).
-Proof.
-  intros Hy.
-  induction φ in k |- *; cbn [formula_open formula_msubst_store formula_mlsubst];
-    repeat match goal with
-    | |- context[formula_mlsubst (lstore_lift_free ?σ0) ?p] =>
-        change (formula_mlsubst (lstore_lift_free σ0) p)
-          with (formula_msubst_store σ0 p)
-    end;
-    try reflexivity.
-  - change (FAtom (lqual_open k y (lqual_msubst_store σ a)) =
-      FAtom (lqual_msubst_store σ (lqual_open k y a))).
-    rewrite lqual_open_msubst_store_fresh by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ1 by exact Hy. rewrite IHφ2 by exact Hy. reflexivity.
-  - rewrite IHφ by exact Hy. reflexivity.
-  - rewrite IHφ by exact Hy. reflexivity.
-  - rewrite IHφ by exact Hy. reflexivity.
-  - rewrite IHφ by exact Hy.
-    f_equal.
-    apply set_eq. intros z.
-    rewrite elem_of_difference, !set_swap_elem, elem_of_difference.
-    assert (Hbound : LVBound k ∉ dom (lstore_lift_free σ : LStoreT)).
-    {
-      rewrite dom_lstore_lift_free.
-      intros Hbad.
-      unfold lvars_of_atoms in Hbad.
-      apply elem_of_map in Hbad as [a [Hbad _]].
-      discriminate.
-    }
-    assert (Hfree : LVFree y ∉ dom (lstore_lift_free σ : LStoreT)).
-    {
-      rewrite dom_lstore_lift_free.
-      intros Hbad.
-      unfold lvars_of_atoms in Hbad.
-      apply elem_of_map in Hbad as [a [Hyx Ha]].
-      inversion Hyx; subst. exact (Hy Ha).
-    }
-    unfold swap.
-    repeat destruct decide; subst; better_set_solver.
 Qed.
 
 Definition formula_open_env (η : gmap nat atom) (φ : Formula) : Formula :=
@@ -942,39 +552,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma formula_lvars_at_open d k y (φ : Formula) :
-  formula_lvars_at d (formula_open (d + k) y φ) =
-  lvars_open k y (formula_lvars_at d φ).
-Proof.
-  induction φ in d, k |- *; cbn [formula_open formula_lvars_at].
-  - set_solver.
-  - set_solver.
-  - match goal with
-    | |- context [lqual_open _ _ ?q] => destruct q as [D P]
-    end.
-    cbn [lqual_open lqual_lvars lqual_dom].
-    apply lvars_at_depth_open.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - replace (S (d + k)) with (S d + k) by lia.
-    apply IHφ.
-  - apply IHφ.
-  - apply IHφ.
-  - rewrite lvars_at_depth_open.
-    rewrite IHφ.
-    symmetry. rewrite lvars_open_union. reflexivity.
-Qed.
-
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.
@@ -1005,15 +582,6 @@ Proof.
     specialize (IHφ k). set_solver.
 Qed.
 
-Lemma formula_open_fv_subset_env k x φ X :
-  formula_fv φ ⊆ X →
-  formula_fv (formula_open k x φ) ⊆ X ∪ {[x]}.
-Proof.
-  intros Hfv.
-  pose proof (formula_open_fv_subset k x φ) as Hopen.
-  set_solver.
-Qed.
-
 Lemma formula_measure_pos (φ : Formula) :
   0 < formula_measure φ.
 Proof. induction φ; simpl; lia. Qed.
@@ -1024,26 +592,6 @@ Definition FPure (P : Prop) : Formula :=
 Definition FResourceAtom {A : Type} `{IntoLVars A}
     (D : A) (P : LWorldOn (V := V) (into_lvars D) → Prop) : Formula :=
   FAtom (lqual (into_lvars D) P).
-
-Lemma formula_fv_FResourceAtom_lvars D P :
-  formula_fv (FResourceAtom D P) = lvars_fv D.
-Proof. reflexivity. Qed.
-
-Lemma formula_open_FResourceAtom_lvars k x (D : lvset) P :
-  formula_open k x (FResourceAtom D P) =
-  FResourceAtom (lvars_open k x D)
-    (λ w, P (lworld_on_open_back k x D w)).
-Proof. reflexivity. Qed.
-
-Lemma FResourceAtom_ext (D : lvset) P1 P2 :
-  (∀ m, P1 m ↔ P2 m) →
-  FResourceAtom D P1 = FResourceAtom D P2.
-Proof.
-  intros HP. unfold FResourceAtom. simpl.
-  f_equal. f_equal.
-  apply functional_extensionality. intros m.
-  apply propositional_extensionality. apply HP.
-Qed.
 
 End Formula.
 

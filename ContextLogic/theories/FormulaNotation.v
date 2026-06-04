@@ -80,29 +80,3 @@ Notation "φ → ψ" := (FImpl φ ψ)
 
 Notation "'∀.' φ" := (FForall φ)
   (in custom form at level 90, φ custom form at level 90, only parsing).
-
-Module FormulaNotationSmoke.
-  Section Smoke.
-    Context {V : Type} `{ValueSig V}.
-    Variables P Q : Formula (V := V).
-    Variable D : lvset.
-
-    Example true_notation :
-      (<{ ⊤ }> : Formula (V := V)) = FTrue := eq_refl.
-
-    Example pure_notation :
-      (<{ @pure True }> : Formula (V := V)) = FPure True := eq_refl.
-
-    Example forall_fiber_notation :
-      <{ ∀. fib D |> P → Q }> =
-      FForall (FImpl (FFibVars D P) Q) := eq_refl.
-
-    Example wand_star_notation :
-      <{ (P ∗ Q) -∗ over P }> =
-      FWand (FStar P Q) (FOver P) := eq_refl.
-
-    Example formula_scope_notation :
-      (∀. fib D |> P → Q)%formula =
-      FForall (FImpl (FFibVars D P) Q) := eq_refl.
-  End Smoke.
-End FormulaNotationSmoke.

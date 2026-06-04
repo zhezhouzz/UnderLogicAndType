@@ -21,32 +21,6 @@ Definition formula_scoped_in_world
     (m : WfWorldT) (φ : FormulaT) : Prop :=
   formula_fv φ ⊆ world_dom (m : WorldT).
 
-Lemma formula_scoped_res_subset
-    (m m' : WfWorldT) (φ : FormulaT) :
-  formula_scoped_in_world m φ →
-  res_subset m m' →
-  formula_scoped_in_world m' φ.
-Proof.
-  unfold formula_scoped_in_world.
-  intros Hscope [Hdom _].
-  unfold world_dom in *.
-  change (formula_fv φ ⊆ ResourceCore.worldA_dom (m : WorldT)) in Hscope.
-  change (formula_fv φ ⊆ ResourceCore.worldA_dom (m' : WorldT)).
-  change (ResourceCore.worldA_dom (m : WorldT) =
-          ResourceCore.worldA_dom (m' : WorldT)) in Hdom.
-  rewrite Hdom in Hscope. exact Hscope.
-Qed.
-
-Lemma formula_scoped_world_dom_eq
-    (m m' : WfWorldT) (φ : FormulaT) :
-  world_dom (m : WorldT) = world_dom (m' : WorldT) →
-  formula_scoped_in_world m φ →
-  formula_scoped_in_world m' φ.
-Proof.
-  unfold formula_scoped_in_world. intros Hdom Hscope. rewrite <- Hdom.
-  exact Hscope.
-Qed.
-
 Lemma formula_scoped_true_iff (m : WfWorldT) :
   formula_scoped_in_world m FTrue ↔ True.
 Proof.
@@ -204,11 +178,6 @@ Proof.
   unfold formula_scoped_in_world. formula_fv_syntax_norm. set_solver.
 Qed.
 
-Lemma formula_scoped_fibvars_l (m : WfWorldT) D φ :
-  formula_scoped_in_world m (FFibVars D φ) ->
-  lvars_fv D ⊆ world_dom (m : WorldT).
-Proof. intros Hscope. apply (proj1 (formula_scoped_fibvars_iff m D φ)) in Hscope. tauto. Qed.
-
 Lemma formula_scoped_fibvars_r (m : WfWorldT) D φ :
   formula_scoped_in_world m (FFibVars D φ) ->
   formula_scoped_in_world m φ.
@@ -223,42 +192,6 @@ Proof.
   intros Hscope.
   pose proof (formula_open_fv_subset k x φ) as Hopen.
   set_solver.
-Qed.
-
-Lemma formula_scoped_open_from_forall_world_dom
-    (m my : WfWorldT) (φ : FormulaT) y :
-  formula_scoped_in_world m (FForall φ) ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  formula_scoped_in_world my (formula_open 0 y φ).
-Proof.
-  intros Hscope Hdom.
-  eapply formula_scoped_open_from_fv.
-  unfold formula_scoped_in_world in Hscope.
-  rewrite formula_fv_forall in Hscope.
-  rewrite Hdom.
-  pose proof (formula_open_fv_subset 0 y φ).
-  set_solver.
-Qed.
-
-Lemma formula_scoped_open
-    (m : WfWorldT) k x φ :
-  formula_scoped_in_world m φ →
-  x ∈ world_dom (m : WorldT) →
-  formula_scoped_in_world m (formula_open k x φ).
-Proof.
-  unfold formula_scoped_in_world.
-  intros Hscope Hx.
-  pose proof (formula_open_fv_subset k x φ) as Hopen.
-  set_solver.
-Qed.
-
-Lemma formula_scoped_from_fv_subset
-    (m : WfWorldT) (φ : FormulaT) (S : aset) :
-  S ⊆ world_dom (m : WorldT) →
-  formula_fv φ ⊆ S →
-  formula_scoped_in_world m φ.
-Proof.
-  unfold formula_scoped_in_world. set_solver.
 Qed.
 
 Lemma formula_scoped_open_res_le
@@ -508,6 +441,15 @@ Proof.
     exact Hext_proj.
 Qed.
 
+(* Keep this helper intentionally narrow.  A more generic restrict-equality
+   solver in the resource cases made this file proof-check much slower; the
+   repeated product/sum/wand projections below stay explicit for compile time. *)
+Local Ltac project_formula_child IH Hproj :=
+  eapply IH;
+    [ eapply res_restrict_eq_subset; [| exact Hproj];
+      formula_fv_syntax_norm; set_solver
+    | eassumption ].
+
 Lemma res_models_fuel_projection
     (gas : nat) (m n : WfWorldT) (φ : FormulaT) :
   res_restrict m (formula_fv φ) = res_restrict n (formula_fv φ) →
@@ -535,16 +477,12 @@ Proof.
     exact Hmodel.
   - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp Hq]. split.
-    + eapply IH; [| exact Hp].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-    + eapply IH; [| exact Hq].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
+    + project_formula_child IH Hproj.
+    + project_formula_child IH Hproj.
   - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp | Hq].
-    + left. eapply IH; [| exact Hp].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-    + right. eapply IH; [| exact Hq].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
+    + left. project_formula_child IH Hproj.
+    + right. project_formula_child IH Hproj.
   - formula_fv_syntax_norm_in Hproj.
     intros n' Hle_n Hpn'.
     assert (Hscope_n : formula_scoped_in_world n (FImpl p q)).
@@ -764,6 +702,16 @@ Qed.
 Definition res_models (m : WfWorldT) (φ : FormulaT) : Prop :=
   res_models_fuel (formula_measure φ) m φ.
 
+Lemma res_models_true (m : WfWorldT) :
+  res_models m FTrue.
+Proof.
+  unfold res_models. cbn.
+  split.
+  - unfold formula_scoped_in_world, formula_fv. cbn [formula_lvars].
+    rewrite lvars_fv_empty. set_solver.
+  - trivial.
+Qed.
+
 Lemma res_models_scoped (m : WfWorldT) (φ : FormulaT) :
   res_models m φ ->
   formula_scoped_in_world m φ.
@@ -801,33 +749,6 @@ Proof.
     + apply res_models_restrict_fv. exact Hm.
   - intros Hm.
     eapply res_models_kripke; [apply res_restrict_le | exact Hm].
-Qed.
-
-Lemma res_models_restrict_fv_iff (m : WfWorldT) (φ : FormulaT) :
-  res_models m φ ↔ res_models (res_restrict m (formula_fv φ)) φ.
-Proof.
-  apply res_models_minimal_on. set_solver.
-Qed.
-
-Lemma res_models_formula_msubst_store_agree_fv
-    (σ1 σ2 : Store (V := V)) (φ : FormulaT) (m : WfWorldT) :
-  store_restrict σ1 (formula_fv φ) =
-  store_restrict σ2 (formula_fv φ) ->
-  res_models m (formula_msubst_store σ1 φ) ->
-  res_models m (formula_msubst_store σ2 φ).
-Proof.
-  intros Hagree Hmodels.
-  rewrite <- (formula_msubst_store_agree_fv σ1 σ2 φ Hagree).
-  exact Hmodels.
-Qed.
-
-Lemma res_models_impl_refl (m : WfWorldT) (φ : FormulaT) :
-  formula_scoped_in_world m φ →
-  res_models m (FImpl φ φ).
-Proof.
-  unfold res_models. simpl. intros Hscope. split.
-  - apply (proj2 (formula_scoped_impl_iff m φ φ)). split; exact Hscope.
-  - intros m' _ Hφ. eapply res_models_fuel_irrel; [| | exact Hφ]; lia.
 Qed.
 
 Lemma res_models_and_elim_l (m : WfWorldT) (φ ψ : FormulaT) :

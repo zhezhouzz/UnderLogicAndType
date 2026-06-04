@@ -1,7 +1,7 @@
 # Denotation Extensional Equality And Setoid Normalization
 
 This note records the current proof-engineering policy for the LN
-ContextTypeDenotation route.  It should be read before proving or refactoring
+TypeDenote route.  It should be read before proving or refactoring
 `Denotation/theories/*`, tlet denotation helpers, or formula normalization
 lemmas that mention qualifiers, logic atoms, fibers, forall, or expression
 result atoms.
@@ -44,7 +44,7 @@ predicate field cleanly, prove equality using `functional_extensionality` and
 `propositional_extensionality`.
 
 Do not write large one-off proofs that repeatedly unfold `qual_open_atom`,
-`store_restrict`, and `map_restrict` inside ContextTypeDenotation theorems.  Extract
+`store_restrict`, and `map_restrict` inside TypeDenote theorems.  Extract
 the qualifier normalization as a named lemma first.
 
 ## Formula and atom wrappers
@@ -99,7 +99,7 @@ res_models m (expr_basic_typing_formula Σ e U)
 
 ```coq
 formula_open k x (expr_result_formula e z) = ...
-formula_fv (denot_ty_lvar_gas gas Σ τ e) ⊆ ...
+formula_fv (ty_denote_gas gas Σ τ e) ⊆ ...
 ```
 
 When a forall introduces a bound value, the guard is an ordinary implication
@@ -109,7 +109,7 @@ the whole recursive denotation.
 
 ## Bottom-up proof order
 
-For tlet and ContextTypeDenotation proofs, prove from the smallest reusable layer
+For tlet and TypeDenote proofs, prove from the smallest reusable layer
 upward:
 
 1. Pure LN syntax: open/shift/fv/lc for variables, terms, qualifiers, choice

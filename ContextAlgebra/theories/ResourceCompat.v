@@ -3,12 +3,11 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceCore ResourceAlgebra ResourceExtension ResourceInterface.
 From Stdlib Require Import Logic.Classical Logic.ClassicalEpsilon Logic.ProofIrrelevance.
 
-(** * Compatibility wrappers for resource extensions
+(** * Resource extension compatibility helpers
 
     The core extension interface is relation-shaped: a fiber extension relates
-    an input projection to one or more extension worlds.  This file keeps the
-    old proof-facing names available while routing all semantics through that
-    relation-shaped core. *)
+    an input projection to one or more extension worlds.  This file packages
+    the common compatibility/projection facts used by higher layers. *)
 
 
 Section ResourceCompat.
@@ -60,41 +59,6 @@ Definition mk_forall_extension
 
 Definition forall_extension_shape (X : aset) (y : atom) (F : FiberExtensionT) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
-
-Lemma fiber_extension_singleton_out_notin_input
-    (F : FiberExtensionT) y :
-  ext_out F = {[y]} ->
-  y ∉ ext_in F.
-Proof.
-  intros Hout.
-  pose proof (extA_disjoint F) as Hdisj.
-  unfold ext_out, ext_in in *.
-  rewrite Hout in Hdisj. set_solver.
-Qed.
-
-Lemma fiber_extension_singleton_output_fresh_in_eq
-    (F : FiberExtensionT) y X :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  y ∉ X.
-Proof.
-  intros HFin HFout.
-  rewrite <- HFin.
-  eapply fiber_extension_singleton_out_notin_input; eauto.
-Qed.
-
-Lemma fiber_extension_singleton_output_fresh_subset
-    (F : FiberExtensionT) y X Y :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  Y ⊆ X ->
-  y ∉ Y.
-Proof.
-  intros HFin HFout Hsub.
-  pose proof (fiber_extension_singleton_output_fresh_in_eq
-    F y X HFin HFout).
-  better_set_solver.
-Qed.
 
 Definition one_point_projected_output_raw
     (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
@@ -274,7 +238,7 @@ Proof.
         reflexivity.
 Qed.
 
-Lemma one_point_projected_extension_extend_by_projection
+Lemma one_point_ext_by_projection
     (m my : WfWorldT) (X : aset) (y : atom)
     (Hy : y ∉ world_dom (m : WorldT))
     (Hdisj : X ## {[y]})
@@ -315,7 +279,7 @@ Lemma forall_extension_from_world_dom_projection
 Proof.
   intros HXm Hy Hdom_my Hrestrict.
   assert (Hdisj : X ## {[y]}) by set_solver.
-  destruct (one_point_projected_extension_extend_by_projection
+  destruct (one_point_ext_by_projection
     m my X y Hy Hdisj Hdom_my Hrestrict HXm) as [n [Hext Hproj]].
   exists (one_point_projected_extension m my X y Hy Hdisj Hdom_my), n.
   split; [reflexivity |].
@@ -339,39 +303,6 @@ Proof.
       (ext_rel_exists F σ Hdom))).
   - exact res_unit.
 Defined.
-
-Lemma ext_fun_rel F σ :
-  dom σ = ext_in F ->
-  ext_rel F σ (ext_fun F σ).
-Proof.
-  intros Hdom. unfold ext_fun.
-  destruct (decide (dom σ = ext_in F)) as [Hdom'|Hbad].
-  - destruct (constructive_indefinite_description _
-      (ext_rel_exists F σ Hdom')) as [w Hrel].
-    exact Hrel.
-  - contradiction.
-Qed.
-
-Lemma ext_fun_dom F σ :
-  dom σ = ext_in F ->
-  world_dom (ext_fun F σ : WorldT) = ext_out F.
-Proof.
-  intros Hdom.
-  unfold ext_in, ext_out in *.
-  eapply extA_rel_dom; [exact Hdom | apply ext_fun_rel; exact Hdom].
-Qed.
-
-Lemma ext_fun_nonempty F σ :
-  dom σ = ext_in F ->
-  exists σe, (ext_fun F σ : WorldT) σe.
-Proof.
-  intros Hdom.
-  destruct (extA_rel_nonempty F σ Hdom) as [w [σe [Hrel Hσe]]].
-  exists σe.
-  apply (proj1 (extA_rel_extensional F σ w (ext_fun F σ) σe Hdom
-    Hrel (ext_fun_rel F σ Hdom))).
-  exact Hσe.
-Qed.
 
 Definition fiber_extension_input_widen
     (F : FiberExtensionT) (X' : aset)
@@ -404,68 +335,9 @@ Record fiber_extension_input_widen_to
        ext_rel F (store_restrict σ (ext_in F)) w);
 }.
 
-Notation "F '~>i' F'" := (fiber_extension_input_widen_to F F')
-  (at level 70).
-
-Lemma fiber_extension_input_widen_to_shape F F' :
-  F ~>i F' ->
-  ext_in F ⊆ ext_in F' /\ ext_out F' = ext_out F.
-Proof.
-  intros Hwid. split.
-  - exact (input_widen_in _ _ Hwid).
-  - exact (input_widen_out _ _ Hwid).
-Qed.
-
-Lemma fiber_extension_input_widen_to_refl F :
-  F ~>i F.
-Proof.
-  constructor; [reflexivity | reflexivity |].
-  intros σ w Hσ. rewrite storeA_restrict_idemp_eq by exact Hσ.
-  reflexivity.
-Qed.
-
-Lemma fiber_extension_input_widen_to_construct F X' Hin Hdisj :
-  F ~>i fiber_extension_input_widen F X' Hin Hdisj.
-Proof.
-  constructor; [exact Hin | reflexivity |].
-  intros σ w _. reflexivity.
-Qed.
-
-Lemma fiber_extension_input_widen_to_unique F F1 F2 :
-  F ~>i F1 ->
-  F ~>i F2 ->
-  ext_in F1 = ext_in F2 ->
-  ext_out F1 = ext_out F2 /\
-  forall σ w,
-    dom σ = ext_in F1 ->
-    (ext_rel F1 σ w <-> ext_rel F2 σ w).
-Proof.
-  intros H1 H2 Hin. split.
-  - rewrite (input_widen_out _ _ H1), (input_widen_out _ _ H2).
-    reflexivity.
-  - intros σ w Hσ.
-    rewrite (input_widen_rel _ _ H1 σ w Hσ).
-    rewrite (input_widen_rel _ _ H2 σ w ltac:(rewrite <- Hin; exact Hσ)).
-    reflexivity.
-Qed.
-
-Lemma extension_applicable_input_widen_to (m : WfWorldT) F F' :
-  F ~>i F' ->
-  extension_applicable F' m ->
-  extension_applicable F m.
-Proof.
-  intros Hwid Happ.
-  constructor.
-  - pose proof (input_widen_in _ _ Hwid). pose proof (extA_app_in _ _ Happ).
-    set_solver.
-  - pose proof (input_widen_out _ _ Hwid).
-    pose proof (extA_app_out _ _ Happ).
-    unfold ext_out in *. set_solver.
-Qed.
-
 Local Lemma input_widen_projection_eq
     (m : WfWorldT) F F' σ :
-  F ~>i F' ->
+  fiber_extension_input_widen_to F F' ->
   ext_in F' ⊆ world_dom (m : WorldT) ->
   (m : WorldT) σ ->
   store_restrict (store_restrict σ (ext_in F')) (ext_in F) =
@@ -474,162 +346,6 @@ Proof.
   intros Hwid Hin' Hσ.
   rewrite storeA_restrict_twice_subset; [reflexivity |].
   exact (input_widen_in _ _ Hwid).
-Qed.
-
-Lemma res_extend_by_input_widen_to_iff (m : WfWorldT) F F' (n : WfWorldT) :
-  F ~>i F' ->
-  ext_in F' ⊆ world_dom (m : WorldT) ->
-  (res_extend_by m F n <-> res_extend_by m F' n).
-Proof.
-  intros Hwid Hin'. split.
-  - intros [Happ [Hdom Hstores]].
-    split.
-    + constructor; [exact Hin' |].
-      pose proof (input_widen_out _ _ Hwid) as Hout.
-      pose proof (extA_app_out _ _ Happ) as Hfresh.
-      unfold ext_out in *. set_solver.
-    + split.
-      * pose proof (input_widen_out _ _ Hwid) as Hout.
-        unfold ext_out in Hout. rewrite Hdom, Hout. reflexivity.
-      * intros σ. rewrite Hstores. split.
-        -- intros [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
-           exists σm, we, σe. repeat split; eauto.
-           assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
-           { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite storeA_restrict_dom.
-             pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
-             change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
-             rewrite Hdomσm. set_solver. }
-           apply (proj2 (input_widen_rel _ _ Hwid
-             (store_restrict σm (ext_in F')) we Hproj)).
-           rewrite (input_widen_projection_eq m F F' σm Hwid Hin' Hσm).
-           exact Hrel.
-        -- intros [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
-           exists σm, we, σe. repeat split; eauto.
-           assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
-           { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite storeA_restrict_dom.
-             pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
-             change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
-             rewrite Hdomσm. set_solver. }
-           apply (proj1 (input_widen_rel _ _ Hwid
-             (store_restrict σm (ext_in F')) we Hproj)) in Hrel.
-           rewrite (input_widen_projection_eq m F F' σm Hwid Hin' Hσm) in Hrel.
-           exact Hrel.
-  - intros [Happ' [Hdom Hstores]].
-    split.
-    + exact (extension_applicable_input_widen_to m F F' Hwid Happ').
-    + split.
-      * pose proof (input_widen_out _ _ Hwid) as Hout.
-        unfold ext_out in Hout. rewrite Hdom, Hout. reflexivity.
-      * intros σ. rewrite Hstores. split.
-        -- intros [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
-           exists σm, we, σe. repeat split; eauto.
-           assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
-           { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite storeA_restrict_dom.
-             pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
-             change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
-             rewrite Hdomσm. set_solver. }
-           apply (proj1 (input_widen_rel _ _ Hwid
-             (store_restrict σm (ext_in F')) we Hproj)) in Hrel.
-           rewrite (input_widen_projection_eq m F F' σm Hwid Hin' Hσm) in Hrel.
-           exact Hrel.
-        -- intros [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
-           exists σm, we, σe. repeat split; eauto.
-           assert (Hproj : dom (store_restrict σm (ext_in F')) = ext_in F').
-           { change (dom (store_restrict σm (ext_in F') : gmap atom V) = ext_in F').
-             rewrite storeA_restrict_dom.
-             pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
-             change (dom (σm : gmap atom V) = world_dom (m : WorldT)) in Hdomσm.
-             rewrite Hdomσm. set_solver. }
-           apply (proj2 (input_widen_rel _ _ Hwid
-             (store_restrict σm (ext_in F')) we Hproj)).
-           rewrite (input_widen_projection_eq m F F' σm Hwid Hin' Hσm).
-           exact Hrel.
-Qed.
-
-Lemma res_extend_by_commute_input_widen
-    (m n : WfWorldT) (Fx F F' : FiberExtensionT) (my ny : WfWorldT) :
-  res_extend_by m Fx n ->
-  res_extend_by m F my ->
-  F ~>i F' ->
-  ext_in F' ⊆ world_dom (n : WorldT) ->
-  (res_extend_by n F' ny <-> res_extend_by my Fx ny).
-Proof.
-  intros Hmx Hmy Hwid Hin'. split.
-  - intros HnyF'.
-    assert (HnyF : res_extend_by n F ny).
-    {
-      apply (proj2 (res_extend_by_input_widen_to_iff n F F' ny Hwid Hin')).
-      exact HnyF'.
-    }
-    assert (Happ : extension_applicable Fx my).
-    {
-      constructor.
-      - pose proof (resA_extend_by_applicable _ _ _ Hmx) as Happx.
-        pose proof (resA_extend_by_dom _ _ _ Hmy) as Hdom_my.
-        simpl in Hdom_my. rewrite Hdom_my.
-        pose proof (extA_app_in _ _ Happx). set_solver.
-      - pose proof (resA_extend_by_applicable _ _ _ Hmx) as Happx.
-	        pose proof (resA_extend_by_applicable _ _ _ HnyF') as HappF'.
-	        pose proof (resA_extend_by_dom _ _ _ Hmy) as Hdom_my.
-	        pose proof (input_widen_out _ _ Hwid) as Hout.
-	        unfold ext_out in Hout.
-	        simpl in Hdom_my. rewrite Hdom_my.
-	        rewrite <- Hout.
-	        pose proof (extA_app_out _ _ Happx) as Hfreshx.
-	        pose proof (extA_app_out _ _ HappF') as HfreshF'.
-	        pose proof (resA_extend_by_dom _ _ _ Hmx) as Hdom_n.
-	        simpl in Hdom_n. rewrite Hdom_n in HfreshF'. set_solver.
-    }
-    destruct (res_extend_by_exists my Fx Happ) as [ny' Hny'].
-    pose proof (res_extend_by_commute m Fx F n my ny ny' Hmx Hmy HnyF Hny') as Heq.
-    subst ny'. exact Hny'.
-  - intros HnyFx.
-    assert (Happ : extension_applicable F n).
-	    {
-	      constructor.
-	      - pose proof (resA_extend_by_applicable _ _ _ Hmy) as HappF.
-	        pose proof (resA_extend_by_dom _ _ _ Hmx) as Hdom_n.
-	        simpl in Hdom_n. rewrite Hdom_n.
-	        pose proof (extA_app_in _ _ HappF) as HinF.
-	        set_solver.
-	      - pose proof (resA_extend_by_applicable _ _ _ Hmy) as HappF.
-	        pose proof (resA_extend_by_applicable _ _ _ HnyFx) as HappFx.
-	        pose proof (resA_extend_by_dom _ _ _ Hmx) as Hdom_n.
-	        pose proof (resA_extend_by_dom _ _ _ Hmy) as Hdom_my.
-	        simpl in Hdom_n, Hdom_my. rewrite Hdom_n.
-	        pose proof (extA_app_out _ _ HappF) as HfreshF.
-	        pose proof (extA_app_out _ _ HappFx) as Hfreshx.
-	        rewrite Hdom_my in Hfreshx. set_solver.
-    }
-    destruct (res_extend_by_exists n F Happ) as [ny' Hny'].
-    pose proof (res_extend_by_commute m Fx F n my ny' ny Hmx Hmy Hny' HnyFx) as Heq.
-    subst ny'.
-    apply (proj1 (res_extend_by_input_widen_to_iff n F F' ny Hwid Hin')).
-    exact Hny'.
-Qed.
-
-Lemma res_extend_by_commute_exists_right
-    (m mx my : WfWorldT) (F Fy : FiberExtensionT) :
-  res_extend_by m F mx ->
-  res_extend_by m Fy my ->
-  ext_in Fy ⊆ world_dom (mx : WorldT) ->
-  ext_out Fy ## world_dom (mx : WorldT) ->
-  ∃ myx,
-    res_extend_by my F myx ∧
-    res_extend_by mx Fy myx.
-Proof.
-  intros HmF HmFy HinFy HoutFy.
-  pose proof (extension_applicable_after_parallel_extension_right
-    m mx my F Fy HmF HmFy HoutFy) as HappF_my.
-  destruct (res_extend_by_exists my F HappF_my) as [myx HmyF].
-  exists myx. split; [exact HmyF |].
-  apply (proj2 (res_extend_by_commute_input_widen
-    m mx F Fy Fy my myx HmF HmFy
-    (fiber_extension_input_widen_to_refl Fy) HinFy)).
-  exact HmyF.
 Qed.
 
 End ResourceCompat.

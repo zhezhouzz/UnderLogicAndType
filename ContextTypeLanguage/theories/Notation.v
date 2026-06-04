@@ -39,46 +39,7 @@ Notation "'$ₗ' x" := (LVFree x)
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
   (at level 20, format "↑ₗ Σ") : context_scope.
 
-Module TypeLanguageNotationSmoke.
-  Section Smoke.
-    Variable τ : context_ty.
-    Variable Γ : ctx.
-    Variable T : ty.
-    Variable Δ : gmap atom ty.
-    Variable η : gmap nat atom.
-    Variable e : tm.
-    Variable Σ : lty_env.
-    Variable x : atom.
-
-    Example erase_ty_notation :
-      ⌊τ⌋ = erase_ty τ := eq_refl.
-
-    Example erase_ctx_notation :
-      ⌊Γ⌋ = erase_ctx Γ := eq_refl.
-
-    Example lift_ty_notation :
-      (⌈T⌉)%ctx = lift_ty T := eq_refl.
-
-    Example lift_ctx_notation :
-      (⌈Δ⌉)%ctx = lift_ctx Δ := eq_refl.
-
-    Example mopen_ty_notation :
-      (η ⊙ τ)%ctx = open_cty_env η τ := eq_refl.
-
-    Example mopen_lty_env_notation :
-      (η ⊙ Σ)%ctx = lty_env_open η Σ := eq_refl.
-
-    Example lvar_notation :
-      (#ₗ 0, $ₗ x)%ctx = (LVBound 0, LVFree x) := eq_refl.
-
-    Example atom_env_notation :
-      (↑ₗ Δ)%ctx = atom_env_to_lty_env Δ := eq_refl.
-  End Smoke.
-End TypeLanguageNotationSmoke.
-
-(** * ContextTypeLanguage.Notation
-
-    Lightweight normalization helpers for the syntax/type-language layer. *)
+(** Lightweight normalization helpers for the syntax/type-language layer. *)
 
 
 Ltac mopen_norm :=
@@ -109,9 +70,7 @@ Ltac type_env_norm :=
   type_open_env_syntax_norm;
   rewrite ?lvar_store_atom_dom_shift in *.
 
-(** * ContextTypeLanguage.Notation
-
-    Small context-type abbreviations used by the paper-facing typing layer. *)
+(** Small context-type abbreviations used by the paper-facing typing layer. *)
 
 Fixpoint lvar_value_keys (v : value) : lvset :=
   match v with
@@ -154,12 +113,6 @@ Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=
 
 Notation " c1 '≺[' b ']' c2 " :=
   (constant_lt_for_base b c1 c2) (at level 20, b at next level).
-
-Lemma constant_lt_for_base_well_founded b :
-  well_founded (constant_lt_for_base b).
-Proof.
-  unfold constant_lt_for_base. apply well_founded_ltof.
-Qed.
 
 Definition mk_q_lt_base (b : base_ty) (v1 v2 : value) : type_qualifier :=
   tqual (lvar_value_keys v1 ∪ lvar_value_keys v2)

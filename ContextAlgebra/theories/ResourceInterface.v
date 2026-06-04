@@ -280,29 +280,11 @@ Proof. apply rawA_le_dom. Qed.
 Lemma res_subset_refl (w : WfWorld) : res_subset w w.
 Proof. apply resA_subset_refl. Qed.
 
-Lemma res_subset_trans (w1 w2 w3 : WfWorld) :
-  res_subset w1 w2 → res_subset w2 w3 → res_subset w1 w3.
-Proof. apply resA_subset_trans. Qed.
-
-Lemma res_sum_subset_l (w1 w2 : WfWorld)
-    (Hdef : raw_sum_defined (w1 : World) (w2 : World)) :
-  res_subset w1 (res_sum w1 w2 Hdef).
-Proof. apply resA_sum_subset_l. Qed.
-
-Lemma res_sum_subset_r (w1 w2 : WfWorld)
-    (Hdef : raw_sum_defined (w1 : World) (w2 : World)) :
-  res_subset w2 (res_sum w1 w2 Hdef).
-Proof. apply resA_sum_subset_r. Qed.
-
 Lemma raw_compat_unit_r (m : World) : world_compat m raw_unit.
 Proof. apply rawA_compat_unit_r. Qed.
 
 Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof. apply wf_singleton_worldA. Qed.
-
-Lemma raw_fiber_empty (m : World) :
-  raw_fiber m (∅ : StoreT) = m.
-Proof. apply rawA_fiber_empty. Qed.
 
 Lemma res_fiber_from_projection_empty_store_dom
     (m mfib : WfWorld) (σ : StoreT) :
@@ -313,37 +295,6 @@ Proof.
   pose proof (wfworld_store_dom (res_restrict m ∅) σ Hproj) as Hdom.
   change (dom (σ : StoreT) = world_dom (res_restrict m ∅ : World)) in Hdom.
   simpl in Hdom. set_solver.
-Qed.
-
-Lemma res_fiber_from_projection_empty_eq
-    (m mfib : WfWorld) (σ : StoreT) :
-  res_fiber_from_projection m ∅ σ mfib ->
-  mfib = m.
-Proof.
-  intros Hfib.
-  pose proof (res_fiber_from_projection_empty_store_dom m mfib σ Hfib)
-    as Hdomσ.
-  assert (Hσ : σ = (∅ : StoreT)).
-  {
-    apply map_eq. intros x.
-    apply not_elem_of_dom. rewrite Hdomσ. set_solver.
-  }
-  destruct Hfib as [_ Heq].
-  apply wfworld_ext.
-  transitivity (raw_fiber (m : World) σ).
-  - exact Heq.
-  - rewrite Hσ. apply raw_fiber_empty.
-Qed.
-
-Lemma res_fiber_from_projection_empty_self (m : WfWorld) :
-  res_fiber_from_projection m ∅ (∅ : StoreT) m.
-Proof.
-  split.
-  - destruct (world_wf m) as [[σ Hσ] _].
-    pose proof (resA_restrict_project_store m ∅ σ Hσ) as Hproj.
-    rewrite storeA_restrict_empty_set in Hproj.
-    exact Hproj.
-  - symmetry. apply raw_fiber_empty.
 Qed.
 
 Lemma res_fiber_from_projection_store_source
@@ -360,62 +311,6 @@ Proof.
   rewrite Hfib in Hτ.
   exact (proj1 Hτ).
 Qed.
-
-Lemma res_fiber_from_projection_world_dom
-    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
-  res_fiber_from_projection m X σ mfib ->
-  world_dom (mfib : World) = world_dom (m : World).
-Proof.
-  intros [_ Hfib].
-  pose proof (f_equal world_dom Hfib) as Hdom.
-  exact Hdom.
-Qed.
-
-Lemma res_fiber_from_projection_subset_source
-    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
-  res_fiber_from_projection m X σ mfib ->
-  res_subset mfib m.
-Proof.
-  intros Hproj.
-  split.
-  - eapply res_fiber_from_projection_world_dom. exact Hproj.
-  - intros τ Hτ.
-    eapply res_fiber_from_projection_store_source; eauto.
-Qed.
-
-Lemma res_fiber_from_projection_store_dom_of_subset
-    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
-  X ⊆ world_dom (m : World) ->
-  res_fiber_from_projection m X σ mfib ->
-  dom (σ : StoreT) = X.
-Proof.
-  intros HX [Hproj _].
-  pose proof (wfworld_store_dom (res_restrict m X) σ Hproj) as Hdom.
-  change (dom (σ : StoreT) = world_dom (res_restrict m X : World)) in Hdom.
-  cbn [res_restrict resA_restrict rawA_restrict worldA_dom] in Hdom.
-  set_solver.
-Qed.
-
-Lemma res_restrict_fiber_from_projection_dom_singleton
-    (w wfib : WfWorld) (X : aset) (σ : StoreT) :
-  res_fiber_from_projection w X σ wfib →
-  (res_restrict wfib (dom σ) : World) = singleton_world σ.
-Proof. apply resA_restrict_fiber_from_projection_dom_singleton. Qed.
-
-Lemma res_restrict_fiber_from_projection_eq_singleton
-    (w wfib : WfWorld) (X : aset) (σ : StoreT) :
-  res_fiber_from_projection w X σ wfib →
-  dom σ = X →
-  (res_restrict wfib X : World) = singleton_world σ.
-Proof. apply resA_restrict_fiber_from_projection_eq_singleton. Qed.
-
-Lemma res_fiber_singleton_projection_inv
-    (w wfib : WfWorld) (X : aset) (σ σX : StoreT) :
-  dom σX = X →
-  (res_restrict w X : World) = singleton_world σX →
-  res_fiber_from_projection w X σ wfib →
-  σ = σX ∧ wfib = w.
-Proof. apply resA_fiber_singleton_projection_inv. Qed.
 
 
 
@@ -456,62 +351,6 @@ Lemma res_restrict_eq_subset
   res_restrict m Y = res_restrict n Y.
 Proof. apply resA_restrict_eq_subset. Qed.
 
-Lemma res_restrict_singleton_subset
-    (m : WfWorld) (X Y : aset) (σ : StoreT) :
-  Y ⊆ X ->
-  (res_restrict m X : World) = singleton_world σ ->
-  (res_restrict m Y : World) = singleton_world (store_restrict σ Y).
-Proof.
-  intros Hsub Hsingle.
-  set (mσ := exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld).
-  assert (HeqX : res_restrict m X = res_restrict mσ X).
-  {
-    apply wfworld_ext.
-    rewrite Hsingle.
-    pose proof (f_equal world_dom Hsingle) as HdomX.
-    cbn [res_restrict resA_restrict rawA_restrict worldA_dom
-      singleton_world singleton_worldA] in HdomX.
-    apply world_ext.
-    - cbn [res_restrict resA_restrict rawA_restrict singleton_world
-        singleton_worldA worldA_dom].
-      set_solver.
-    - intros τ. cbn [res_restrict resA_restrict rawA_restrict singleton_world
-        singleton_worldA worldA_stores].
-      split.
-      + intros ->.
-        exists σ. split; [reflexivity |].
-        apply storeA_restrict_idemp. set_solver.
-      + intros [τ0 [-> Hτ]].
-        rewrite <- Hτ. apply storeA_restrict_idemp. set_solver.
-  }
-  pose proof (res_restrict_eq_subset m mσ X Y Hsub HeqX) as HeqY.
-  rewrite HeqY.
-  apply world_ext.
-  - cbn [res_restrict resA_restrict rawA_restrict singleton_world
-      singleton_worldA worldA_dom].
-    change (dom (σ : gmap atom V) ∩ Y =
-      dom (store_restrict σ Y : gmap atom V)).
-    rewrite storeA_restrict_dom. reflexivity.
-  - intros τ. cbn [res_restrict resA_restrict rawA_restrict singleton_world
-      singleton_worldA worldA_stores].
-    split.
-    + intros [τ0 [-> Hτ]].
-      cbn [singleton_world singleton_worldA worldA_stores].
-      symmetry. exact Hτ.
-    + intros ->. exists σ. split; [reflexivity | reflexivity].
-Qed.
-
-Lemma res_fiber_member_projection_transport_on
-    (m n nfib : WfWorld) (D X : aset) :
-  D ⊆ X →
-  D ⊆ world_dom (m : World) →
-  res_restrict m X = res_restrict n X →
-  res_fiber_member n D nfib →
-  ∃ mfib,
-    res_fiber_member m D mfib ∧
-    res_restrict mfib X = res_restrict nfib X.
-Proof. apply resA_fiber_member_projection_transport_on. Qed.
-
 Lemma res_fiber_from_projection_transport_on
     (m n nfib : WfWorld) (σ : StoreT) (D X : aset) :
   D ⊆ X →
@@ -523,66 +362,11 @@ Lemma res_fiber_from_projection_transport_on
     res_restrict mfib X = res_restrict nfib X.
 Proof. apply resA_fiber_from_projection_transport_on. Qed.
 
-Lemma res_fiber_from_projection_store_compat
-    (m mfibX mfibY : WfWorld) (X Y : aset) (σX σY : StoreT) :
-  res_fiber_from_projection m X σX mfibX →
-  res_fiber_from_projection mfibX Y σY mfibY →
-  storeA_compat σX σY.
-Proof. apply resA_fiber_from_projection_store_compat. Qed.
-
-Lemma res_fiber_from_projection_store_restrict
-    (m mfib : WfWorld) (X : aset) (σX σ : StoreT) :
-  res_fiber_from_projection m X σX mfib →
-  (mfib : World) σ →
-  storeA_restrict σ X = σX.
-Proof. apply resA_fiber_from_projection_store_restrict. Qed.
-
-Lemma res_fiber_from_projection_exists
-    (m : WfWorld) (X : aset) :
-  X ⊆ world_dom (m : World) →
-  ∃ σ mfib, res_fiber_from_projection m X σ mfib.
-Proof. apply resA_fiber_from_projection_exists. Qed.
-
-Lemma res_fiber_from_projection_nested_union_l
-    (m mfibX mfibXY : WfWorld) (X Y : aset) (σX σY : StoreT) :
-  res_fiber_from_projection m X σX mfibX ->
-  res_fiber_from_projection mfibX Y σY mfibXY ->
-  storeA_compat σX σY ->
-  res_fiber_from_projection m (X ∪ Y) (σX ∪ σY) mfibXY.
-Proof. apply resA_fiber_from_projection_nested_union_l. Qed.
-
-Lemma res_fiber_from_projection_nested_union_r
-    (m mfibXY : WfWorld) (X Y : aset) (σXY : StoreT) :
-  res_fiber_from_projection m (X ∪ Y) σXY mfibXY ->
-  exists σX mfibX σY,
-    σX = storeA_restrict σXY X /\
-    σY = storeA_restrict σXY Y /\
-    res_fiber_from_projection m X σX mfibX /\
-    res_fiber_from_projection mfibX Y σY mfibXY.
-Proof. apply resA_fiber_from_projection_nested_union_r. Qed.
-
-Lemma res_fiber_from_projection_nested_union_residual_r
-    (m mfibXY : WfWorld) (X Y : aset) (σXY : StoreT) :
-  res_fiber_from_projection m (X ∪ Y) σXY mfibXY ->
-  exists σX mfibX σY,
-    σX = storeA_restrict σXY X /\
-    σY = storeA_restrict σXY (Y ∖ X) /\
-    σX ∪ σY = σXY /\
-    res_fiber_from_projection m X σX mfibX /\
-    res_fiber_from_projection mfibX (Y ∖ X) σY mfibXY.
-Proof. apply resA_fiber_from_projection_nested_union_residual_r. Qed.
-
 Lemma world_compat_le_r (w m n : WfWorld) :
   m ⊑ n →
   world_compat w n →
   world_compat w m.
 Proof. apply worldA_compat_le_r. Qed.
-
-Lemma world_compat_le_l (w m n : WfWorld) :
-  m ⊑ n →
-  world_compat n w →
-  world_compat m w.
-Proof. apply worldA_compat_le_l. Qed.
 
 Lemma world_compat_restrict_l_full_r (n m : WfWorld) (S X : aset) :
   X ⊆ S →
@@ -598,11 +382,6 @@ Lemma res_pullback_subset_projection_restrict (n p : WfWorld) Hsub :
   res_restrict (res_pullback_subset_projection n p Hsub)
     (world_dom (p : World)) = p.
 Proof. apply resA_pullback_subset_projection_restrict. Qed.
-
-Lemma res_pullback_subset_projection_dom (n p : WfWorld) Hsub :
-  world_dom (res_pullback_subset_projection n p Hsub : World) =
-  world_dom (n : World).
-Proof. apply resA_pullback_subset_projection_dom. Qed.
 
 Lemma res_pullback_subset_projection_subset (n p : WfWorld) Hsub :
   res_subset (res_pullback_subset_projection n p Hsub) n.
@@ -678,88 +457,6 @@ Lemma res_sum_restrict_same_le
       ⊑ res_restrict m X.
 Proof. apply resA_sum_restrict_same_le. Qed.
 
-Lemma res_product_le_singleton_restrict_inv
-    (m m1 m2 : WfWorld) (Hc : world_compat m1 m2)
-    (X : aset) (σX : StoreT) :
-  res_product m1 m2 Hc ⊑ m →
-  X ⊆ world_dom (m1 : World) →
-  X ⊆ world_dom (m2 : World) →
-  (res_restrict m X : World) = singleton_world σX →
-  (res_restrict m1 X : World) = singleton_world σX ∧
-  (res_restrict m2 X : World) = singleton_world σX.
-Proof. apply resA_product_le_singleton_restrict_inv. Qed.
-
-Lemma res_sum_le_singleton_restrict_inv
-    (m m1 m2 : WfWorld) (Hdef : raw_sum_defined m1 m2)
-    (X : aset) (σX : StoreT) :
-  res_sum m1 m2 Hdef ⊑ m →
-  X ⊆ world_dom (m1 : World) →
-  X ⊆ world_dom (m2 : World) →
-  (res_restrict m X : World) = singleton_world σX →
-  (res_restrict m1 X : World) = singleton_world σX ∧
-  (res_restrict m2 X : World) = singleton_world σX.
-Proof. apply resA_sum_le_singleton_restrict_inv. Qed.
-
-Lemma res_subset_singleton_restrict
-    (p m : WfWorld) (X : aset) (σX : StoreT) :
-  res_subset p m →
-  X ⊆ world_dom (p : World) →
-  (res_restrict m X : World) = singleton_world σX →
-  (res_restrict p X : World) = singleton_world σX.
-Proof. apply resA_subset_singleton_restrict. Qed.
-
-Lemma res_restrict_to_singleton_if_projection_constant
-    (w : WfWorld) (X : aset) (σX : StoreT) :
-  (∀ σ, (w : World) σ →
-    storeA_restrict σ X = σX) →
-  (res_restrict w X : World) = singleton_world σX.
-Proof. apply rawA_restrict_to_singleton_if_projection_constant. Qed.
-
-Lemma world_compat_store_restrict_overlap
-    (w1 w2 : WfWorld) (X : aset) (σ1 σ2 : StoreT) :
-  X = world_dom (w1 : World) ∩ world_dom (w2 : World) →
-  world_compat w1 w2 →
-  (w1 : World) σ1 →
-  (w2 : World) σ2 →
-  storeA_restrict σ1 X = storeA_restrict σ2 X.
-Proof. apply worldA_compat_store_restrict_overlap. Qed.
-
-Lemma res_restrict_union_singleton
-    (m : WfWorld) (X Y : aset) (σX σY : StoreT) :
-  (res_restrict m X : World) = singleton_world σX →
-  (res_restrict m Y : World) = singleton_world σY →
-  ∃ σXY : StoreT,
-    (res_restrict m (X ∪ Y) : World) = singleton_world σXY.
-Proof. apply resA_restrict_union_singleton. Qed.
-
-Lemma res_product_le_singleton_pullback
-    (m n1 n2 : WfWorld) (Hc : world_compat n1 n2)
-    (X : aset) (σX : StoreT) :
-  res_product n1 n2 Hc ⊑ m →
-  dom σX = X →
-  (res_restrict m X : World) = singleton_world σX →
-  ∃ (m1 m2 : WfWorld) (Hc' : world_compat m1 m2),
-    res_product m1 m2 Hc' ⊑ m ∧
-    (res_restrict m1 X : World) = singleton_world σX ∧
-    (res_restrict m2 X : World) = singleton_world σX ∧
-    res_restrict m1 (world_dom (n1 : World)) = n1 ∧
-    res_restrict m2 (world_dom (n2 : World)) = n2.
-Proof. apply resA_product_le_singleton_pullback. Qed.
-
-Lemma res_sum_le_singleton_pullback
-    (m n1 n2 : WfWorld) (Hdef : raw_sum_defined n1 n2)
-    (X : aset) (σX : StoreT) :
-  res_sum n1 n2 Hdef ⊑ m →
-  dom σX = X →
-  (res_restrict m X : World) = singleton_world σX →
-  ∃ (m1 m2 : WfWorld) (Hdef' : raw_sum_defined m1 m2),
-    res_sum m1 m2 Hdef' ⊑ m ∧
-    (res_restrict m1 X : World) = singleton_world σX ∧
-    (res_restrict m2 X : World) = singleton_world σX ∧
-    res_restrict m1 (world_dom (n1 : World)) = n1 ∧
-    res_restrict m2 (world_dom (n2 : World)) = n2.
-Proof. apply resA_sum_le_singleton_pullback. Qed.
-
 Lemma res_product_unit_r_eq_any (w : WfWorld) (Hc : world_compat w res_unit) :
   res_product w res_unit Hc = w.
 Proof. apply resA_product_unit_r_eq_any. Qed.
@@ -772,10 +469,6 @@ Proof. apply resA_product_comm_eq. Qed.
 Lemma res_product_le_r (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w2 ⊑ res_product w1 w2 Hc.
 Proof. apply resA_le_product_r. Qed.
-
-Lemma res_product_le_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
-  w1 ⊑ res_product w1 w2 Hc.
-Proof. apply resA_le_product_l. Qed.
 
 Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   ∃ Hdef' : raw_sum_defined w2 w1,
@@ -820,30 +513,6 @@ Lemma res_extend_by_dom (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   world_dom (n : World) = world_dom (m : World) ∪ extA_out F.
 Proof. apply resA_extend_by_dom. Qed.
 
-Lemma res_extend_by_dom_subsets (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
-  m #> F ~~> n →
-  world_dom (m : World) ⊆ world_dom (n : World) ∧
-  extA_out F ⊆ world_dom (n : World).
-Proof. apply resA_extend_by_dom_subsets. Qed.
-
-Lemma res_extend_by_dom_base_subset (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
-  m #> F ~~> n →
-  world_dom (m : World) ⊆ world_dom (n : World).
-Proof. apply resA_extend_by_dom_base_subset. Qed.
-
-Lemma res_extend_by_dom_output_subset (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
-  m #> F ~~> n →
-  extA_out F ⊆ world_dom (n : World).
-Proof. apply resA_extend_by_dom_output_subset. Qed.
-
-Lemma extension_applicable_after_parallel_extension_right
-    (m mx my : WfWorld) (F G : fiber_extension) :
-  m #> F ~~> mx →
-  m #> G ~~> my →
-  extA_out G ## world_dom (mx : World) →
-  extension_applicable F my.
-Proof. apply extension_applicableA_after_parallel_extension_right. Qed.
-
 Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   m ⊑ n.
@@ -885,131 +554,5 @@ Lemma res_extend_by_projection_eq
   res_restrict my (extA_in F ∪ extA_out F) =
   res_restrict ny (extA_in F ∪ extA_out F).
 Proof. apply resA_extend_by_projection_eq. Qed.
-
-Lemma res_extend_by_fiber_from_projection
-    (m mx mfib : WfWorld) F X σ :
-  extA_in F ⊆ X ->
-  extA_out F ## X ->
-  X ⊆ world_dom (m : World) ->
-  m #> F ~~> mx ->
-  res_fiber_from_projection mx X σ mfib ->
-  exists msrc,
-    res_fiber_from_projection m X σ msrc /\
-    msrc #> F ~~> mfib.
-Proof. apply resA_extend_by_fiber_from_projection. Qed.
-
-Lemma extension_applicable_product_r_fresh
-    (n m : WfWorld) (F : fiber_extension)
-    (Hc_m : world_compat n m) :
-  extA_out F ## world_dom (n : World) ->
-  extension_applicable F m ->
-  extension_applicable F (res_product n m Hc_m).
-Proof. apply extension_applicableA_product_r_fresh. Qed.
-
-Lemma world_compat_restrict_l_extend_by_fresh
-    (n m mx : WfWorld) (F : fiber_extension) (X : aset) :
-  extA_out F ## X ->
-  m #> F ~~> mx ->
-  world_compat n m ->
-  world_compat (res_restrict n X) mx.
-Proof.
-  intros HoutX [Happ [_ Hstores]] Hc σnX σmx HσnX Hσmx.
-  simpl in HσnX.
-  destruct HσnX as [σn [Hσn Hrestrict]]. subst σnX.
-  apply Hstores in Hσmx as
-    (σm & we & σe & Hσm & HF & Hσe & ->).
-  apply storeA_compat_union_intro_r.
-  - apply storeA_compat_sym.
-    apply storeA_compat_restrict_r.
-    apply storeA_compat_sym.
-    exact (Hc σn σm Hσn Hσm).
-  - apply storeA_disj_dom_compat.
-    pose proof (extA_output_store_dom_from_base m F σm we σe
-      Happ Hσm HF Hσe) as Hdomσe.
-    change (dom (storeA_restrict σn X : gmap atom V) ∩
-      dom (σe : gmap atom V) = ∅).
-    pose proof (storeA_restrict_dom σn X) as HdomσnX.
-    change (dom (storeA_restrict σn X : gmap atom V) =
-      dom (σn : gmap atom V) ∩ X) in HdomσnX.
-    rewrite HdomσnX, Hdomσe.
-    set_solver.
-Qed.
-
-Lemma res_extend_by_product_r_store_forward
-    (n m mx : WfWorld) (F : fiber_extension)
-    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
-  extA_out F ## world_dom (n : World) ->
-  m #> F ~~> mx ->
-  (res_product n mx Hc_mx : World) σ ->
-  ∃ σbase we σe,
-    (res_product n m Hc_m : World) σbase ∧
-    extA_rel F (storeA_restrict σbase (extA_in F)) we ∧
-    (we : World) σe ∧
-    σ = σbase ∪ σe.
-Proof. apply resA_extend_by_product_r_store_forward. Qed.
-
-Lemma res_extend_by_product_r_store_backward
-    (n m mx : WfWorld) (F : fiber_extension)
-    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) σ :
-  extA_out F ## world_dom (n : World) ->
-  m #> F ~~> mx ->
-  (∃ σbase we σe,
-    (res_product n m Hc_m : World) σbase ∧
-    extA_rel F (storeA_restrict σbase (extA_in F)) we ∧
-    (we : World) σe ∧
-    σ = σbase ∪ σe) ->
-  (res_product n mx Hc_mx : World) σ.
-Proof. apply resA_extend_by_product_r_store_backward. Qed.
-
-Lemma res_extend_by_product_r_fresh
-    (n m mx : WfWorld) (F : fiber_extension)
-    (Hc_m : world_compat n m) (Hc_mx : world_compat n mx) :
-  extA_out F ## world_dom (n : World) ->
-  m #> F ~~> mx ->
-  res_product n m Hc_m #> F ~~> res_product n mx Hc_mx.
-Proof. apply resA_extend_by_product_r_fresh. Qed.
-
-Lemma res_extend_by_commute
-    (m : WfWorld) (F G : fiber_extension)
-    (mF mG mFG mGF : WfWorld) :
-  m #> F ~~> mF →
-  m #> G ~~> mG →
-  mF #> G ~~> mFG →
-  mG #> F ~~> mGF →
-  mFG = mGF.
-Proof. apply resA_extend_by_commute. Qed.
-
-Lemma res_extend_by_sum_pullback
-    (m : WfWorld) F (n n1 n2 : WfWorld)
-    (Hdef : raw_sum_defined (n1 : World) (n2 : World)) :
-  m #> F ~~> n →
-  fiber_extension_functional_on m F →
-  world_dom (m : World) ⊆ world_dom (n1 : World) →
-  world_dom (m : World) ⊆ world_dom (n2 : World) →
-  res_sum n1 n2 Hdef ⊑ n →
-  ∃ (m1 m2 : WfWorld) (Hdefm : raw_sum_defined m1 m2)
-    (n1' n2' : WfWorld),
-    world_dom (m1 : World) = world_dom (m : World) ∧
-    world_dom (m2 : World) = world_dom (m : World) ∧
-    res_subset m1 m ∧
-    res_subset m2 m ∧
-    res_sum m1 m2 Hdefm ⊑ m ∧
-    m1 #> F ~~> n1' ∧
-    n1 ⊑ n1' ∧
-    m2 #> F ~~> n2' ∧
-    n2 ⊑ n2'.
-Proof. apply resA_extend_by_sum_pullback. Qed.
-
-Lemma res_one_point_extension_pushout
-    (m n my : WfWorld) (y : atom) :
-  m ⊑ n →
-  y ∉ world_dom (n : World) →
-  world_dom (my : World) = world_dom (m : World) ∪ {[y]} →
-  res_restrict my (world_dom (m : World)) = m →
-  ∃ ny : WfWorld,
-    world_dom (ny : World) = world_dom (n : World) ∪ {[y]} ∧
-    res_restrict ny (world_dom (n : World)) = n ∧
-    my ⊑ ny.
-Proof. apply resA_one_point_extension_pushout. Qed.
 
 End ResourceInterface.

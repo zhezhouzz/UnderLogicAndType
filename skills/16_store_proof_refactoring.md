@@ -248,9 +248,9 @@ basic_world_formula_store_restrict_lc_env
 ```
 
 In `ContextTyping.Soundness`, use the wrappers
-`denot_ctx_in_env_world_has_type_on`,
-`denot_ctx_in_env_store_restrict_closed`, and
-`denot_ctx_in_env_store_restrict_lc` instead of unfolding the context
+`ctx_denote_in_env_world_has_type_on`,
+`ctx_denote_in_env_store_restrict_closed`, and
+`ctx_denote_in_env_store_restrict_lc` instead of unfolding the context
 denotation's `FAnd` manually.
 
 主证明应该优先调用这个 lemma，而不是反复直接调用 tactic。
