@@ -13,10 +13,10 @@ Lemma formula_fv_denot_ty_lvar_gas_components_lower
   fv_tm e ∪ fv_cty τ ⊆ formula_fv (denot_ty_lvar_gas gas Σ τ e).
 Proof.
   intros Hwf.
-  transitivity (lvars_fv (tm_lvars e ∪ context_ty_lvars τ)).
-  - rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
-    reflexivity.
+  transitivity (lvars_fv (denot_relevant_lvars τ e)).
+  - rewrite denot_relevant_lvars_fv. set_solver.
   - apply lvars_fv_mono.
+    unfold denot_relevant_lvars.
     pose proof (basic_context_ty_lvars_denot_relevant_env Σ τ e Hwf)
       as [Hτ _].
     destruct gas as [|gas]; destruct τ;
@@ -25,6 +25,21 @@ Proof.
         expr_basic_typing_formula expr_basic_typing_lqual expr_total_formula
         expr_total_lqual lqual_lvars lqual_fv lqual_dom];
       better_set_solver.
+Qed.
+
+Lemma expr_result_formula_free_in_world
+    e x (m : WfWorldT) :
+  m ⊨ expr_result_formula e (LVFree x) ->
+  x ∈ world_dom (m : WorldT).
+Proof.
+  intros Hres.
+  pose proof (res_models_scoped _ _ Hres) as Hscope.
+  unfold formula_scoped_in_world in Hscope.
+  apply Hscope.
+  rewrite formula_fv_expr_result_formula.
+  cbn [lqual_fv lqual_lvars lvar_value_keys].
+  rewrite lvars_fv_union, lvars_fv_singleton_free.
+  set_solver.
 Qed.
 
 Lemma denot_ty_lvar_gas_result_alias_scope_ret_from_source
@@ -36,21 +51,17 @@ Lemma denot_ty_lvar_gas_result_alias_scope_ret_from_source
     (denot_ty_lvar_gas gas Σ τ (tret (vfvar x))).
 Proof.
   intros Hwf Hscope Hres.
-  pose proof (res_models_scoped _ _ Hres) as Hscope_res.
   pose proof (formula_fv_denot_ty_lvar_gas_components_lower
     gas Σ τ e Hwf) as Hlower.
   unfold formula_scoped_in_world in *.
   transitivity (fv_tm (tret (vfvar x)) ∪ fv_cty τ).
   - apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
-  - rewrite formula_fv_expr_result_formula in Hscope_res.
-    cbn [fv_tm fv_value tm_lvars tm_lvars_at value_lvars value_lvars_at].
+  - cbn [fv_tm fv_value tm_lvars tm_lvars_at value_lvars value_lvars_at].
     assert (Hx_scope : {[x]} ⊆ world_dom (m : WorldT)).
     {
       intros z Hz.
       apply elem_of_singleton in Hz. subst z.
-      apply Hscope_res.
-      rewrite lvars_fv_union, lvars_fv_singleton_free.
-      set_solver.
+      eapply expr_result_formula_free_in_world. exact Hres.
     }
     assert (Hτ_scope : fv_cty τ ⊆ world_dom (m : WorldT)).
     {
