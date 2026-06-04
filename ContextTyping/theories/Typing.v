@@ -120,11 +120,6 @@ Record primop_sig := mk_primop_sig {
   prim_ret_qual : type_qualifier;
 }.
 
-Definition primop_sig_ty (sig : primop_sig) : context_ty :=
-  primop_ty
-    sig.(prim_arg_base) sig.(prim_arg_qual)
-    sig.(prim_ret_base) sig.(prim_ret_qual).
-
 Definition primop_result_ty (sig : primop_sig) : context_ty :=
   precise_ty sig.(prim_ret_base) sig.(prim_ret_qual).
 
@@ -174,33 +169,6 @@ Definition default_primop_ctx : primop_ctx :=
     match prim_op_type op with
     | (arg_b, ret_b) => mk_primop_sig arg_b qual_top ret_b qual_top
     end.
-
-Lemma default_primop_ctx_erasure_ok op :
-  primop_erasure_ok op (default_primop_ctx op).
-Proof.
-  unfold primop_erasure_ok, default_primop_ctx.
-  destruct (prim_op_type op) as [arg_b ret_b]. reflexivity.
-Qed.
-
-Lemma default_primop_ctx_arg_basic op :
-  basic_context_ty ∅ (primop_arg_ty (default_primop_ctx op)).
-Proof.
-  unfold default_primop_ctx, primop_arg_ty, over_ty.
-  destruct (prim_op_type op) as [arg_b ret_b].
-  apply basic_context_ty_over.
-  apply basic_qualifier_body_top.
-Qed.
-
-Lemma default_primop_ctx_result_basic op :
-  basic_context_ty ∅ (primop_result_ty (default_primop_ctx op)).
-Proof.
-  unfold default_primop_ctx, primop_result_ty, precise_ty, over_ty, under_ty.
-  destruct (prim_op_type op) as [arg_b ret_b].
-  apply basic_context_ty_inter.
-  - apply basic_context_ty_over. apply basic_qualifier_body_top.
-  - apply basic_context_ty_under. apply basic_qualifier_body_top.
-  - reflexivity.
-Qed.
 
 (** * ContextTyping.Typing
 
@@ -484,16 +452,6 @@ Lemma typing_wf_under Φ Σ Γ e τ :
   has_context_type Φ Σ Γ e τ →
   context_typing_wf Σ Γ e τ.
 Proof. induction 1; assumption. Qed.
-
-Lemma typing_regular Φ Γ e τ :
-  has_context_type Φ ∅ Γ e τ →
-  wf_ctx Γ ∧ wf_context_ty Γ τ.
-Proof.
-  intros Hty.
-  pose proof (context_typing_wf_regular ∅ Γ e τ
-    (typing_wf Φ Γ e τ Hty)) as [Hctx [Hτ _]].
-  split; assumption.
-Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
 Lemma typing_erase Φ Γ e τ :

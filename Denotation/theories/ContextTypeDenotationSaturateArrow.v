@@ -411,82 +411,6 @@ Proof.
   eapply basic_world_formula_arrow_open_result_subenv; eauto.
 Qed.
 
-Lemma basic_tm_has_ltype_arrow_open_result_target_fun
-    (Σ : lty_env) τx τr e1 e2
-    (m : WfWorldT) y :
-  typed_total_tm_result_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  basic_tm_has_ltype
-    (denot_relevant_env
-      (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
-    e2 (erase_ty τx →ₜ erase_ty τr).
-Proof.
-  intros Hequiv Hye.
-  pose proof (typed_total_tm_result_equiv_on_target_zero
-    Σ (CTArrow τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
-  pose proof (denot_ty_lvar_gas_guard_of_zero
-    Σ (CTArrow τx τr) e2 m Hzero_top_tgt) as Hguard_top_tgt.
-  repeat rewrite res_models_and_iff in Hguard_top_tgt.
-  destruct Hguard_top_tgt as [_ [_ [Hbasic_top_tgt _]]].
-  pose proof (typed_total_tm_result_equiv_on_term_lc
-    Σ (CTArrow τx τr) m e1 e2 Hequiv) as [_ Hlc2].
-  apply expr_basic_typing_formula_models_iff in Hbasic_top_tgt
-    as [_ [_ Hty_fun_top]].
-  eapply basic_tm_has_ltype_weaken.
-  - eapply basic_tm_has_ltype_restrict_lvars_lc.
-    + exact Hty_fun_top.
-    + exact Hlc2.
-    + rewrite (tm_lvars_lc_eq_atoms e2 Hlc2). set_solver.
-  - apply map_subseteq_spec. intros v U Hlook.
-    apply storeA_restrict_lookup_some in Hlook as [Hvfv Htop].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Htop.
-    apply storeA_restrict_lookup_some in Htop as [_ HΣv].
-    destruct v as [k|z].
-    + unfold lvars_of_atoms in Hvfv.
-      apply elem_of_map in Hvfv as [a [Hbad _]]. discriminate.
-    + assert (Hzy : z <> y).
-      {
-        intros ->. apply Hye.
-        apply elem_of_union_r.
-        unfold lvars_of_atoms in Hvfv.
-        apply elem_of_map in Hvfv as [a [Heq Ha]].
-        inversion Heq. subst a. exact Ha.
-      }
-      unfold denot_relevant_env, lty_env_restrict_lvars.
-      apply storeA_restrict_lookup_some_2.
-      * rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzy.
-        exact HΣv.
-      * unfold denot_relevant_lvars.
-        apply elem_of_union_r.
-        rewrite tm_lvars_tapp_tm_fvar.
-        unfold lvars_of_atoms in Hvfv.
-        apply elem_of_map in Hvfv as [a [Heq Ha]].
-        inversion Heq. subst a.
-        apply elem_of_union_l.
-        rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
-        unfold lvars_of_atoms.
-        apply elem_of_map. exists z. split; [reflexivity|exact Ha].
-Qed.
-
-Lemma basic_value_has_ltype_arrow_open_result_target_arg
-    (Σ : lty_env) τx τr e2 y :
-  basic_value_has_ltype
-    (denot_relevant_env
-      (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
-    (vfvar y) (erase_ty τx).
-Proof.
-  constructor.
-  unfold denot_relevant_env, lty_env_restrict_lvars.
-  apply storeA_restrict_lookup_some_2.
-  - apply lty_env_open_one_typed_bind_lookup_current.
-  - unfold denot_relevant_lvars.
-    apply elem_of_union_r.
-    rewrite tm_lvars_tapp_tm_fvar.
-    set_solver.
-Qed.
-
 Lemma expr_basic_typing_formula_arrow_open_result_target
     gas (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :
@@ -525,8 +449,9 @@ Proof.
   rewrite cty_open_preserves_erasure.
   eapply basic_tm_has_ltype_tapp_tm_lvar.
   - exact Hlc_tgt.
-  - eapply basic_tm_has_ltype_arrow_open_result_target_fun; eauto.
-  - apply basic_value_has_ltype_arrow_open_result_target_arg.
+  - eapply (basic_tm_has_ltype_open_result_target_fun
+      Σ (CTArrow τx τr) τx τr e1 e2 m y); eauto.
+  - apply basic_value_has_ltype_open_result_target_arg.
 Qed.
 
 Lemma denot_ty_lvar_gas_zero_arrow_open_result_target
