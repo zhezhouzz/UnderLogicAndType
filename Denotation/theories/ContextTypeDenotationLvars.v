@@ -119,12 +119,7 @@ Proof.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
       cbn [context_ty_lvars_at].
       cbn [context_ty_lvars_at] in Hrel.
-      intros v Hv.
-      repeat (apply elem_of_union in Hv as [Hv|Hv]).
-      all: try solve [apply Hrel in Hv; fast_set_solver].
-      all: try solve [apply Harg in Hv; fast_set_solver].
-      all: try solve [apply Hres in Hv; fast_set_solver].
-      all: fast_set_solver.
+      set_solver.
     + unfold_formula_lvars_atoms.
       repeat rewrite ?lvars_at_depth_union.
       rewrite_tm_support.
@@ -148,12 +143,7 @@ Proof.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
       cbn [context_ty_lvars_at].
       cbn [context_ty_lvars_at] in Hrel.
-      intros v Hv.
-      repeat (apply elem_of_union in Hv as [Hv|Hv]).
-      all: try solve [apply Hrel in Hv; fast_set_solver].
-      all: try solve [apply Harg in Hv; fast_set_solver].
-      all: try solve [apply Hres in Hv; fast_set_solver].
-      all: fast_set_solver.
+      set_solver.
 Qed.
 
 Lemma formula_lvars_at_denot_ty_lvar_gas_subset gas d Σ τ e :

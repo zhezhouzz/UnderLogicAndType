@@ -301,12 +301,7 @@ Proof.
     pose proof (context_ty_wf_formula_fv_cty_subset Σ τ m Hwf) as Hτ.
     unfold formula_scoped_in_world in He.
     normalize_denotation_formula_fv_in He.
-    intros a Ha.
-    apply elem_of_union in Ha as [Ha | Ha].
-    + apply elem_of_union in Ha as [Ha | Ha].
-      * exact (HΣ a Ha).
-      * exact (He a Ha).
-    + apply HΣ. exact (Hτ a Ha).
+    set_solver.
 Qed.
 
 Lemma denot_ty_lvar_gas_scope_from_relevant_guard
@@ -347,14 +342,7 @@ Proof.
   intros HΣx He Hτ.
   transitivity (lvars_fv (dom Σ) ∪ fv_tm e ∪ fv_cty τ ∪ {[x]}).
   - apply formula_fv_denot_ty_lvar_gas_insert_fresh_upper.
-  - intros a Ha.
-    apply elem_of_union in Ha as [Ha | Ha].
-    + apply elem_of_union in Ha as [Ha | Ha].
-      * apply elem_of_union in Ha as [Ha | Ha].
-        -- apply HΣx. apply elem_of_union_l. exact Ha.
-        -- exact (He a Ha).
-      * apply HΣx. apply elem_of_union_l. exact (Hτ a Ha).
-    + apply HΣx. apply elem_of_union_r. exact Ha.
+  - set_solver.
 Qed.
 
 
