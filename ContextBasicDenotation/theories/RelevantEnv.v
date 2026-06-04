@@ -208,6 +208,31 @@ Proof.
   eapply atom_env_to_lty_env_erase_ctx_union_subenv; eauto.
 Qed.
 
+Lemma lty_env_singleton_subenv_denot_relevant_env_ret_fvar
+    (Σ : lty_env) τ y T v U :
+  (<[LVFree y := T]> (∅ : lty_env)) !! v = Some U ->
+  denot_relevant_env (<[LVFree y := T]> Σ) τ (tret (vfvar y)) !! v = Some U.
+Proof.
+  intros Hv.
+  change (((<[LVFree y := T]> (∅ : gmap logic_var ty))
+    : gmap logic_var ty) !! v = Some U) in Hv.
+  destruct v as [k|z].
+  - rewrite lookup_insert_ne in Hv by discriminate.
+    rewrite lookup_empty in Hv. discriminate.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + change ((<[LVFree y := T]> (∅ : gmap logic_var ty) : gmap logic_var ty)
+          !! LVFree y = Some U) in Hv.
+      rewrite lookup_insert_eq in Hv. inversion Hv. subst U.
+      unfold denot_relevant_env, lty_env_restrict_lvars.
+      apply storeA_restrict_lookup_some_2.
+      * apply map_lookup_insert.
+      * unfold denot_relevant_lvars.
+        cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
+        set_solver.
+    + rewrite lookup_insert_ne in Hv by congruence.
+      rewrite lookup_empty in Hv. discriminate.
+Qed.
+
 Lemma lty_env_restrict_lvars_twice_same (Σ : lty_env) D :
   lty_env_restrict_lvars (lty_env_restrict_lvars Σ D) D =
   lty_env_restrict_lvars Σ D.
