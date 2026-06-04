@@ -223,29 +223,6 @@ Lemma map_elem_of_dom_lookup_some {K A : Type} `{Countable K}
   i ∈ dom m.
 Proof. intros Hlook. by apply elem_of_dom_2 in Hlook. Qed.
 
-Lemma map_lookup_none_of_not_elem_dom {K A : Type} `{Countable K}
-    (m : gmap K A) i :
-  i ∉ dom m →
-  m !! i = None.
-Proof. intros Hnot. by apply not_elem_of_dom. Qed.
-
-Lemma map_not_elem_dom_of_lookup_none {K A : Type} `{Countable K}
-    (m : gmap K A) i :
-  m !! i = None →
-  i ∉ dom m.
-Proof. intros Hnone. by apply not_elem_of_dom in Hnone. Qed.
-
-Lemma map_lookup_delete_eq {K A : Type} `{Countable K}
-    (m : gmap K A) i :
-  delete i m !! i = None.
-Proof. apply lookup_delete_eq. Qed.
-
-Lemma map_lookup_delete_ne {K A : Type} `{Countable K}
-    (m : gmap K A) i j :
-  j ≠ i →
-  delete i m !! j = m !! j.
-Proof. intros Hji. apply lookup_delete_ne. congruence. Qed.
-
 Ltac map_normalize_step :=
   match goal with
   | H : context[∅ ∪ ?m] |- _ => rewrite map_empty_union in H
