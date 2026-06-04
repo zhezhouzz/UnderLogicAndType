@@ -4,15 +4,19 @@ From Denotation Require Import Notation.
 
 Section ContextTypeDenotation.
 
+Definition denot_guard_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) : FormulaT :=
+  FAnd (context_ty_wf_formula Σ τ)
+    (FAnd (basic_world_formula Σ)
+      (FAnd (expr_basic_typing_formula Σ e (erase_ty τ))
+            (expr_total_formula e))).
+
 Fixpoint denot_ty_lvar_gas
     (gas : nat) (Σ : lty_env) (τ : context_ty) (e : tm)
     {struct gas} : FormulaT :=
   let Σg := denot_relevant_env Σ τ e in
   FAnd
-    (FAnd (context_ty_wf_formula Σg τ)
-      (FAnd (basic_world_formula Σg)
-        (FAnd (expr_basic_typing_formula Σg e (erase_ty τ))
-              (expr_total_formula e))))
+    (denot_guard_formula Σg τ e)
     (match gas with
     | 0 => FTrue
     | S gas' =>
@@ -79,29 +83,15 @@ Lemma formula_open_env_denot_guard η Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ denot_relevant_lvars τ e) ->
   open_env_values_inj η ->
   formula_open_env η
-    (FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
-      (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
-        (FAnd
-          (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
-            (erase_ty τ))
-          (expr_total_formula e)))) =
-  FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env (lty_env_open_lvars η Σ)
-        (open_cty_env η τ) (open_tm_env η e))
-      (open_cty_env η τ))
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env (lty_env_open_lvars η Σ)
-          (open_cty_env η τ) (open_tm_env η e)))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env (lty_env_open_lvars η Σ)
-            (open_cty_env η τ) (open_tm_env η e))
-          (open_tm_env η e) (erase_ty (open_cty_env η τ)))
-        (expr_total_formula (open_tm_env η e)))).
+    (denot_guard_formula (denot_relevant_env Σ τ e) τ e) =
+  denot_guard_formula
+    (denot_relevant_env (lty_env_open_lvars η Σ)
+      (open_cty_env η τ) (open_tm_env η e))
+    (open_cty_env η τ)
+    (open_tm_env η e).
 Proof.
   intros Hfresh Hinj.
+  unfold denot_guard_formula.
   rewrite !formula_open_env_and.
   rewrite formula_open_env_context_ty_wf_formula.
   2:{
@@ -468,6 +458,7 @@ Ltac rewrite_tm_support :=
   end.
 
 Ltac unfold_formula_lvars_atoms :=
+  unfold denot_guard_formula;
   cbn [formula_lvars_at context_ty_wf_formula basic_world_formula
     expr_basic_typing_formula expr_total_formula expr_result_formula
     type_qualifier_formula];

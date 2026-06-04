@@ -26,10 +26,11 @@ Proof.
       Σ τ e2 m Hzero_tgt) as Hguard_tgt.
     repeat rewrite res_models_and_iff in Hguard_tgt.
 	    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
-	      cbn [denot_ty_lvar_gas] in Hm |- *;
+	      cbn [denot_ty_lvar_gas denot_guard_formula] in Hm |- *;
+	      unfold denot_guard_formula in Hm |- *;
 	      repeat rewrite res_models_and_iff in Hm |- *;
 	      destruct Hm as [_ Hbody]; split.
-	    all: try exact Hguard_tgt.
+		    all: try exact Hguard_tgt.
 	    + eapply denot_ty_lvar_gas_tm_result_equiv_over_body; eauto.
 	    + eapply denot_ty_lvar_gas_tm_result_equiv_under_body; eauto.
 	    + eapply denot_ty_lvar_gas_tm_result_equiv_inter_body; eauto.
