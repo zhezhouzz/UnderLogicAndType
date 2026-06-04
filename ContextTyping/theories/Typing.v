@@ -504,11 +504,3 @@ Proof.
   exact (context_typing_wf_basic_typing ∅ Γ e τ
     (typing_wf Φ Γ e τ Hty)).
 Qed.
-
-Lemma typing_lc Φ Γ e τ :
-  has_context_type Φ ∅ Γ e τ →
-  lc_tm e.
-Proof.
-  intros Hty.
-  eapply typing_tm_lc. exact (typing_erase Φ Γ e τ Hty).
-Qed.
