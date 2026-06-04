@@ -751,10 +751,14 @@ Proof.
       Some (erase_ty τ)).
   {
     unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply storeA_restrict_lookup_some_2; [exact HΣx|].
-    unfold denot_relevant_lvars.
-    cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
-    set_solver.
+    assert (Hin :
+        LVFree x ∈ denot_relevant_lvars τ (tret (vfvar x))).
+    {
+      unfold denot_relevant_lvars.
+      cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
+      set_solver.
+    }
+    better_store_solver.
   }
   repeat rewrite res_models_and_iff.
   split.
