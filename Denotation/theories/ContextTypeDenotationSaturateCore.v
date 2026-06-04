@@ -68,10 +68,7 @@ Proof.
       - transitivity (formula_fv (denot_ty_lvar_gas gas Σ τ e));
           [exact Hlower | exact Hscope].
     }
-    intros z Hz.
-    apply elem_of_union in Hz as [Hz|Hz].
-    + exact (Hx_scope z Hz).
-    + exact (Hτ_scope z Hz).
+    set_solver.
 Qed.
 
 Lemma logic_qualifier_denote_of_res_subset
@@ -794,10 +791,8 @@ Proof.
   destruct Hret_world as [_ [Hret_dom Hret_stores]].
   split; [exact Hz_e|].
   split.
-  - intros v Hv.
-    apply elem_of_union in Hv as [Hv|Hv].
-    + exact (Hsrc_dom v ltac:(set_solver)).
-    + exact (Hret_dom v ltac:(cbn [tm_lvars tm_lvars_at value_lvars_at]; set_solver)).
+  - cbn [tm_lvars tm_lvars_at value_lvars_at] in Hret_dom.
+    set_solver.
   - intros σ Hσ.
     specialize (Hsrc_stores σ Hσ) as [_ [vx [Hx_lookup Heval_e]]].
     specialize (Hret_stores σ Hσ) as [_ [vz [Hz_lookup Heval_ret]]].
