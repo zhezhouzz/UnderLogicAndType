@@ -9,8 +9,7 @@ Section ContextTypeDenotation.
 
 Ltac denot_open_fresh :=
   apply open_env_fresh_for_lvars_singleton;
-  unfold denot_relevant_lvars;
-  rewrite ?lvars_fv_union, ?context_ty_lvars_fv, ?tm_lvars_fv;
+  rewrite ?lvars_fv_union, ?denot_relevant_lvars_fv;
   set_solver.
 
 Ltac denot_open_lvars :=
@@ -20,12 +19,12 @@ Ltac denot_open_lvars :=
   set_solver.
 
 Ltac denot_relevant_env_open_lvars :=
-  unfold denot_relevant_env, denot_relevant_lvars;
+  unfold denot_relevant_env;
   match goal with
   | |- context [lvars_fv (dom (lty_env_restrict_lvars ?Σ ?D))] =>
       pose proof (lty_env_restrict_lvars_fv_subset Σ D)
   end;
-  rewrite ?lvars_fv_union, ?context_ty_lvars_fv, ?tm_lvars_fv in *;
+  rewrite ?lvars_fv_union, ?denot_relevant_lvars_fv in *;
   set_solver.
 
 Definition denot_ty
