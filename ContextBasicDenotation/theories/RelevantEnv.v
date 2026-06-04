@@ -146,6 +146,17 @@ Proof.
   exact (Hx Hy).
 Qed.
 
+Lemma basic_world_formula_atom_env_dom_subset
+    (Δ : gmap atom ty) (m : WfWorldT) :
+  m ⊨ basic_world_formula (atom_env_to_lty_env Δ) ->
+  dom Δ ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hworld.
+  apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
+  rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
+  exact Hdom.
+Qed.
+
 Lemma atom_env_to_lty_env_erase_ctx_union_subenv
     (Σ : gmap atom ty) Γ v T :
   basic_ctx (dom Σ) Γ ->

@@ -277,8 +277,8 @@ Proof.
     pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ1 e τ Hwf)
       as Hτ.
     pose proof (denot_ctx_under_basic_world Σ Γ1 m HΓ1) as Hworld.
-    apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
-    rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
+    pose proof (basic_world_formula_atom_env_dom_subset
+      (erase_ctx_under Σ Γ1) m Hworld) as Hdom.
     unfold erase_ctx_under in Hdom.
     set_solver.
   - exact Hle.
@@ -304,9 +304,8 @@ Proof.
   assert (HΔworld : dom (erase_ctx_under Σ Γ) ⊆ world_dom (m : WorldT)).
   {
     pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
-    apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
-    rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
-    exact Hdom.
+    exact (basic_world_formula_atom_env_dom_subset
+      (erase_ctx_under Σ Γ) m Hworld).
   }
   assert (HxΔ : x ∉ dom (erase_ctx_under Σ Γ)).
   {
@@ -557,8 +556,8 @@ Proof.
     pose proof (context_typing_wf_fv_cty_subset_erase_dom
       Σ Γ (tlete e1 e2) τ2 Hwflet) as Hτ.
     pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
-    apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
-    rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
+    pose proof (basic_world_formula_atom_env_dom_subset
+      (erase_ctx_under Σ Γ) m Hworld) as Hdom.
     transitivity (fv_tm (tlete e1 e2) ∪ fv_cty τ2).
     {
       exact (formula_fv_denot_ty_lvar_gas_subset_relevant
