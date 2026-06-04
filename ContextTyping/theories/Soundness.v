@@ -263,9 +263,7 @@ Proof.
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e ∪ fv_cty τ).
     - intros x Hx. symmetry. apply Hagree. exact Hx.
-    - unfold denot_relevant_lvars. rewrite lvars_fv_union.
-      rewrite tm_lvars_fv, context_ty_lvars_fv.
-      set_solver.
+    - rewrite denot_relevant_lvars_fv. set_solver.
   }
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm e ∪ fv_cty τ) (n := m').
@@ -341,21 +339,8 @@ Proof.
         - eapply context_typing_wf_fv_cty_subset_erase_dom; eauto.
       }
       unfold erase_ctx_under.
-      change ((erase_ctx Γ : gmap atom ty) !! y =
-        (Σ ∪ erase_ctx Γ : gmap atom ty) !! y).
-      assert (HyΣnone : (Σ : gmap atom ty) !! y = None).
-      {
-        apply not_elem_of_dom. intros HyΣ.
-        exfalso.
-        rewrite <- HdomΓ in HfreshΓ.
-        set_solver.
-      }
-      symmetry.
-      apply (lookup_union_r (M := gmap atom) (A := ty)
-        (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty) y HyΣnone).
-    - unfold denot_relevant_lvars.
-      rewrite lvars_fv_union, tm_lvars_fv, context_ty_lvars_fv.
-      set_solver.
+      apply erase_ctx_union_lookup_local_of_basic_ctx; assumption.
+    - rewrite denot_relevant_lvars_fv. set_solver.
   }
   assert (Htarget :
       mx ⊨ denot_ty_lvar_gas (cty_depth τ1)

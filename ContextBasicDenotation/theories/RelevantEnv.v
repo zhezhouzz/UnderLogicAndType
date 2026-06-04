@@ -25,6 +25,14 @@ Definition denot_relevant_env (Σ : lty_env) (τ : context_ty) (e : tm)
     : lty_env :=
   lty_env_restrict_lvars Σ (denot_relevant_lvars τ e).
 
+Lemma denot_relevant_lvars_fv τ e :
+  lvars_fv (denot_relevant_lvars τ e) = fv_cty τ ∪ fv_tm e.
+Proof.
+  unfold denot_relevant_lvars.
+  rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
+  set_solver.
+Qed.
+
 Lemma denot_relevant_env_empty (Σ : lty_env) τ e :
   denot_relevant_lvars τ e = (∅ : lvset) ->
   denot_relevant_env Σ τ e = (∅ : lty_env).
@@ -158,6 +166,23 @@ Proof.
     apply elem_of_dom_2 in Hlook.
     rewrite HdomΓ in Hlook.
     better_set_solver.
+Qed.
+
+Lemma erase_ctx_union_lookup_local_of_basic_ctx
+    (Σ : gmap atom ty) Γ x :
+  basic_ctx (dom Σ) Γ ->
+  x ∈ dom (erase_ctx Γ) ->
+  (erase_ctx Γ : gmap atom ty) !! x =
+  (Σ ∪ erase_ctx Γ : gmap atom ty) !! x.
+Proof.
+  intros Hbasic HxΓ.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+  symmetry.
+  apply lookup_union_r.
+  apply not_elem_of_dom. intros HxΣ.
+  rewrite HdomΓ in HxΓ.
+  better_set_solver.
 Qed.
 
 Lemma denot_relevant_env_erase_ctx_union_subenv
