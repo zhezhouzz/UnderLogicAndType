@@ -10,6 +10,7 @@ From ContextLogic Require Import FormulaSyntax.
 
 Ltac normalize_denotation_formula_fv :=
   unfold denot_guard_formula;
+  unfold denot_static_guard_formula;
   repeat first
     [ rewrite formula_fv_true | rewrite formula_fv_false
     | rewrite formula_fv_and | rewrite formula_fv_or
@@ -36,6 +37,7 @@ Ltac normalize_denotation_formula_fv :=
 
 Ltac normalize_denotation_formula_fv_in H :=
   unfold denot_guard_formula in H;
+  unfold denot_static_guard_formula in H;
   repeat first
     [ rewrite formula_fv_true in H | rewrite formula_fv_false in H
     | rewrite formula_fv_and in H | rewrite formula_fv_or in H

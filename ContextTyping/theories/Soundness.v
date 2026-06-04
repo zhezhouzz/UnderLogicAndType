@@ -27,23 +27,13 @@ Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 Lemma denot_ty_in_ctx_under_guard
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
-	m ⊨ FAnd
-    (context_ty_wf_formula
+	m ⊨ denot_guard_formula
       (denot_relevant_env
-        (atom_env_to_lty_env (erase_ctx Γ)) τ e) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env
-          (atom_env_to_lty_env (erase_ctx Γ)) τ e))
-      (FAnd
-        (expr_basic_typing_formula
-          (denot_relevant_env
-            (atom_env_to_lty_env (erase_ctx Γ)) τ e)
-          e (erase_ty τ))
-        (expr_total_formula e))).
+        (atom_env_to_lty_env (erase_ctx Γ)) τ e)
+      τ e.
 Proof.
   unfold denot_ty_in_ctx_under, denot_ty.
-  apply denot_ty_lvar_gas_guard.
+  apply denot_ty_lvar_gas_guard_formula.
 Qed.
 
 (** Totality extraction is intentionally a named review point.  The denotation
@@ -57,6 +47,7 @@ Lemma denot_ty_in_ctx_under_total
 Proof.
   intros Hden.
   pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
+  unfold denot_guard_formula in Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   exact (proj2 (proj2 (proj2 Hguard))).
 Qed.
@@ -67,18 +58,10 @@ Lemma context_typing_wf_denot_static_guard
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   context_typing_wf Σ Γ e τ ->
   m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ FAnd
-    (context_ty_wf_formula
-      (denot_relevant_env
-        (atom_env_to_lty_env (erase_ctx Γ)) τ e) τ)
-    (FAnd
-      (basic_world_formula
-        (denot_relevant_env
-          (atom_env_to_lty_env (erase_ctx Γ)) τ e))
-      (expr_basic_typing_formula
-        (denot_relevant_env
-          (atom_env_to_lty_env (erase_ctx Γ)) τ e)
-        e (erase_ty τ))).
+  m ⊨ denot_static_guard_formula
+    (denot_relevant_env
+      (atom_env_to_lty_env (erase_ctx Γ)) τ e)
+    τ e.
 Proof.
   intros Hwf Hctx.
   pose proof (context_typing_wf_ctx Σ Γ e τ Hwf) as Hwfctx.
@@ -95,6 +78,7 @@ Proof.
   }
   apply basic_world_formula_models_iff in Hworld
     as [Hlc [Hscope Htyped_world]].
+  unfold denot_static_guard_formula.
   rewrite res_models_and_iff. split.
   - apply context_ty_wf_formula_models_iff.
     split; [exact Hlc|]. split; [exact Hscope|].
@@ -475,9 +459,10 @@ Proof.
   assert (Hm_zero :
       m ⊨ denot_ty_lvar_gas 0
         (atom_env_to_lty_env (erase_ctx Γ)) τ2 (tlete e1 e2)).
-  {
-    apply denot_ty_lvar_gas_zero_of_guard.
-    repeat rewrite res_models_and_iff in Hstatic.
+	  {
+	    apply denot_ty_lvar_gas_zero_of_guard.
+	    unfold denot_static_guard_formula in Hstatic.
+	    repeat rewrite res_models_and_iff in Hstatic.
     destruct Hstatic as [Hwf_static [Hworld_static Hbasic_static]].
     eapply res_models_and_intro_from_models; [exact Hwf_static|].
     eapply res_models_and_intro_from_models; [exact Hworld_static|].

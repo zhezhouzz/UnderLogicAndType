@@ -11,6 +11,12 @@ Definition denot_guard_formula
       (FAnd (expr_basic_typing_formula Σ e (erase_ty τ))
             (expr_total_formula e))).
 
+Definition denot_static_guard_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) : FormulaT :=
+  FAnd (context_ty_wf_formula Σ τ)
+    (FAnd (basic_world_formula Σ)
+      (expr_basic_typing_formula Σ e (erase_ty τ))).
+
 Fixpoint denot_ty_lvar_gas
     (gas : nat) (Σ : lty_env) (τ : context_ty) (e : tm)
     {struct gas} : FormulaT :=

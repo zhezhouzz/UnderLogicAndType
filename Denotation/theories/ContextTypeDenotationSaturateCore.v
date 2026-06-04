@@ -234,6 +234,38 @@ Proof.
     apply denot_relevant_lvars_insert_fresh; assumption.
 Qed.
 
+Lemma denot_ty_lvar_gas_zero_of_guard_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_guard_formula (denot_relevant_env Σ τ e) τ e ->
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e.
+Proof.
+  intros Hguard.
+  cbn [denot_ty_lvar_gas].
+  rewrite res_models_and_iff. split.
+  - exact Hguard.
+  - cbn [res_models res_models_fuel formula_measure].
+    split; [apply formula_scoped_true_iff; exact I | exact I].
+Qed.
+
+Lemma denot_ty_lvar_gas_guard_formula
+    gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas gas Σ τ e ->
+  m ⊨ denot_guard_formula (denot_relevant_env Σ τ e) τ e.
+Proof.
+  destruct gas; cbn [denot_ty_lvar_gas]; rewrite res_models_and_iff; tauto.
+Qed.
+
+Lemma denot_ty_lvar_gas_guard_of_zero_formula
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
+  m ⊨ denot_guard_formula (denot_relevant_env Σ τ e) τ e.
+Proof.
+  intros Hzero.
+  cbn [denot_ty_lvar_gas] in Hzero.
+  rewrite res_models_and_iff in Hzero.
+  exact (proj1 Hzero).
+Qed.
+
 Lemma denot_ty_lvar_gas_zero_of_guard
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ FAnd
@@ -247,11 +279,8 @@ Lemma denot_ty_lvar_gas_zero_of_guard
   m ⊨ denot_ty_lvar_gas 0 Σ τ e.
 Proof.
   intros Hguard.
-  cbn [denot_ty_lvar_gas].
-  rewrite res_models_and_iff. split.
-  - exact Hguard.
-  - cbn [res_models res_models_fuel formula_measure].
-    split; [apply formula_scoped_true_iff; exact I | exact I].
+  apply denot_ty_lvar_gas_zero_of_guard_formula.
+  unfold denot_guard_formula. exact Hguard.
 Qed.
 
 Lemma denot_ty_lvar_gas_guard
@@ -266,7 +295,9 @@ Lemma denot_ty_lvar_gas_guard
           (erase_ty τ))
         (expr_total_formula e))).
 Proof.
-  destruct gas; cbn [denot_ty_lvar_gas]; rewrite res_models_and_iff; tauto.
+  intros Hden.
+  pose proof (denot_ty_lvar_gas_guard_formula gas Σ τ e m Hden) as Hguard.
+  unfold denot_guard_formula in Hguard. exact Hguard.
 Qed.
 
 Lemma denot_ty_lvar_gas_guard_of_zero
@@ -282,9 +313,8 @@ Lemma denot_ty_lvar_gas_guard_of_zero
         (expr_total_formula e))).
 Proof.
   intros Hzero.
-  cbn [denot_ty_lvar_gas] in Hzero.
-  rewrite res_models_and_iff in Hzero.
-  exact (proj1 Hzero).
+  pose proof (denot_ty_lvar_gas_guard_of_zero_formula Σ τ e m Hzero) as Hguard.
+  unfold denot_guard_formula in Hguard. exact Hguard.
 Qed.
 
 Lemma denot_ty_lvar_gas_insert_fresh_lty_env
