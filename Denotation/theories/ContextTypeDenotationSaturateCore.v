@@ -213,18 +213,6 @@ Proof.
   intros Hgas. apply Hsat. exact Hgas.
 Qed.
 
-Lemma denot_ty_lvar_gas_saturate_ge gas1 gas2 Σ τ e :
-  cty_depth τ <= gas1 ->
-  cty_depth τ <= gas2 ->
-  denot_ty_lvar_gas gas1 Σ τ e =
-  denot_ty_lvar_gas gas2 Σ τ e.
-Proof.
-  intros Hgas1 Hgas2.
-  rewrite (denot_ty_lvar_gas_saturate gas1 Σ τ e Hgas1).
-  rewrite (denot_ty_lvar_gas_saturate gas2 Σ τ e Hgas2).
-  reflexivity.
-Qed.
-
 Lemma context_ty_wf_formula_insert_fresh_same_world
     (Σ : lty_env) τ (m : WfWorldT) x T :
   LVFree x ∉ dom Σ ->
