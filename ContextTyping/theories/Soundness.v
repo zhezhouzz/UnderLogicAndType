@@ -5,7 +5,7 @@
     This file restores the proof-facing goal shape from the old ChoiceTyping
     development while keeping the new direct denotation route.  The TLet branch
     chooses the result-extension witness locally and calls
-    [Denotation.TLet.tlet_intro_denotation] directly; the remaining
+    [tlet_intro_denotation] directly; the remaining
     higher-order and branching cases stop at explicit direct bridge lemmas so
     their future proofs can unfold directly to [denot_ty_lvar_gas] instead of
     rebuilding the old helper stack. *)
@@ -17,8 +17,7 @@ From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturateCore
   ContextTypeDenotationSaturateMain
-  ContextTypeDenotationCasesConst
-  TLet.
+  ContextTypeDenotationCasesConst.
 From ContextTyping Require Export Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).

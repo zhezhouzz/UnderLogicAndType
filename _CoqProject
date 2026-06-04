@@ -78,9 +78,7 @@ ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
-Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
-Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturateCore.v
 Denotation/theories/ContextTypeDenotationSaturateBody.v
 Denotation/theories/ContextTypeDenotationSaturateArrow.v
@@ -88,7 +86,6 @@ Denotation/theories/ContextTypeDenotationSaturateWand.v
 Denotation/theories/ContextTypeDenotationSaturateMain.v
 Denotation/theories/Context.v
 Denotation/theories/ContextTypeDenotationCasesConst.v
-Denotation/theories/TLet.v
 
 -R ContextTyping/theories ContextTyping
 

@@ -3,7 +3,6 @@
     Body cases for term-result-equivalence transport. *)
 
 From Denotation Require Import Notation ContextTypeDenotationOpen.
-From Denotation Require Export ContextTypeDenotationTactics.
 From Denotation Require Import ContextTypeDenotationSaturateCore.
 
 Section ContextTypeDenotation.
