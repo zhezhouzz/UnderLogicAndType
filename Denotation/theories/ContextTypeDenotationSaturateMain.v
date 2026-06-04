@@ -141,15 +141,11 @@ Qed.
 
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
-  m ⊨ FAnd (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
-    (FAnd (basic_world_formula (denot_relevant_env Σ τ e))
-      (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
-          (erase_ty τ))
-        (expr_total_formula e))) ->
+  m ⊨ denot_guard_formula (denot_relevant_env Σ τ e) τ e ->
   wfworld_closed_on (fv_tm e) m.
 Proof.
   intros Hguard.
+  unfold denot_guard_formula in Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [_ [Hworld [Hbasic _]]].
   eapply denot_relevant_basic_world_typing_wfworld_closed_on_term; eauto.
