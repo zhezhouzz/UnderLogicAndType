@@ -1378,12 +1378,19 @@ Lemma basic_value_has_ltype_open_result_target_arg
 Proof.
   constructor.
   unfold denot_relevant_env, lty_env_restrict_lvars.
-  apply storeA_restrict_lookup_some_2.
-  - apply lty_env_open_one_typed_bind_lookup_current.
-  - unfold denot_relevant_lvars.
-    apply elem_of_union_r.
+  assert (Hlook :
+      lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx))
+        !! LVFree y = Some (erase_ty τx)).
+  { apply lty_env_open_one_typed_bind_lookup_current. }
+  assert (Hin :
+      LVFree y ∈ denot_relevant_lvars (cty_open 0 y τr)
+        (tapp_tm e (vfvar y))).
+  {
+    unfold denot_relevant_lvars.
     rewrite tm_lvars_tapp_tm_fvar.
     set_solver.
+  }
+  better_store_solver.
 Qed.
 
 Lemma expr_result_formula_transport_of_tm_result_equiv
