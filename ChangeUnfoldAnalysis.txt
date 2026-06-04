@@ -72,7 +72,7 @@ Files are listed as `file: change / unfold -- dominant pattern`.
   `worldA_has_type`, `lstore_lift_free`, atom/lvar store casts, and map lookup
   shapes.  This is the best target for Store/Algebra normalization.
 - ContextBasicDenotation/theories/TermEval.v: 19 / 23 -- term evaluation uses
-  `expr_eval_in_store`, `expr_eval_in_atom_store`, `store_restrict`, singleton
+  `expr_eval_in_store`, `tm_eval_in_store`, `store_restrict`, singleton
   stores, and lstore free-part projections.  Needs a term-eval/store
   normalizer.
 - ContextBasicDenotation/theories/TermExtension.v: 18 / 13 -- extension
@@ -88,7 +88,7 @@ Files are listed as `file: change / unfold -- dominant pattern`.
   (tm_lvars _)` suggests a syntax-normalization tactic.
 - ContextBasicDenotation/theories/TermTLet.v: 24 / 53 -- operational tlet
   proofs repeatedly unfold `expr_total_on`, `expr_result`, `ext_in/out`,
-  `expr_eval_in_atom_store`, and lstore/lworld lift definitions.  A high-value
+  `tm_eval_in_store`, and lstore/lworld lift definitions.  A high-value
   target after Store/Algebra normalizers exist.
 
 - ContextLogic/theories/ContextLogicProps.v: 4 / 10 -- direct semantics proofs

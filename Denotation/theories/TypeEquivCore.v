@@ -325,7 +325,7 @@ Proof.
             [exact Hworld_model|exact Hbasic_model|exact Hσm].
         }
         destruct Htotal_m as [_ Htotal_eval].
-        assert (Hexists_eval : exists v, expr_eval_in_atom_store σin e v).
+        assert (Hexists_eval : exists v, tm_eval_in_store σin e v).
         {
           simpl in Hσin.
           destruct Hσin as [σm [Hσm Hrestrict]].
@@ -333,7 +333,7 @@ Proof.
           destruct (Htotal_eval (lstore_lift_free σm)) as [v Heval].
           { exists σm. split; [exact Hσm|reflexivity]. }
           exists v.
-          pose proof (expr_eval_in_atom_store_restrict_fv_subset
+          pose proof (tm_eval_in_store_restrict_fv_subset
             σm e v (ext_in Fx) ltac:(rewrite Hin; set_solver)) as Hequiv.
           apply (proj2 Hequiv). exact Heval.
         }
@@ -447,7 +447,7 @@ Proof.
     change (((lstore_lift_free σ : LStoreT) : gmap logic_var value)
       !! LVFree x = Some v) in Hx_lookup.
     rewrite lstore_lift_free_lookup_free in Hx_lookup.
-    unfold expr_eval_in_atom_store, expr_eval_in_store.
+    unfold tm_eval_in_store, expr_eval_in_store.
     cbn [lstore_instantiate_tm lstore_instantiate_tm_at
       lstore_instantiate_tm_split_at
       lstore_instantiate_value_split_at lstore_free_part].
@@ -576,11 +576,11 @@ Proof.
              !! LVFree x = Some vx) in Hx_lookup.
            rewrite lstore_lift_free_lookup_free in Hx_lookup.
            rewrite Hσl_z in Hx_lookup. inversion Hx_lookup. subst vx.
-           change (expr_eval_in_atom_store σ e v) in Heval.
+           change (tm_eval_in_store σ e v) in Heval.
            assert (Heval_restrict :
-               expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e v).
+               tm_eval_in_store (store_restrict σ (fv_tm e)) e v).
            {
-             apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+             apply (proj2 (tm_eval_in_store_restrict_fv_subset
                σ e v (fv_tm e) ltac:(set_solver))).
              exact Heval.
            }
@@ -666,8 +666,8 @@ Definition tm_equiv_on
     (m : WfWorldT) (e1 e2 : tm) : Prop :=
   forall σ v,
     worldA_stores (m : WorldT) σ ->
-    expr_eval_in_atom_store σ e1 v <->
-    expr_eval_in_atom_store σ e2 v.
+    tm_eval_in_store σ e1 v <->
+    tm_eval_in_store σ e2 v.
 
 Definition typed_total_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
@@ -716,7 +716,7 @@ Proof.
   }
   assert (Hstore_result :
       forall vx,
-        expr_eval_in_atom_store (store_restrict σ (fv_tm e1)) e1 vx ->
+        tm_eval_in_store (store_restrict σ (fv_tm e1)) e1 vx ->
         σ !! x = Some vx).
   {
     intros vx He1σ.
@@ -766,15 +766,15 @@ Proof.
     assert (Hylet : y ∉ fv_tm (tlete e1 e2)) by set_solver.
     destruct (Htotal_stores (lstore_lift_free σ)) as [v0 Htlet0].
     { exists σ. split; [exact Hσmx|reflexivity]. }
-    destruct (expr_eval_in_atom_store_tlete_elim_closed_on
+    destruct (tm_eval_in_store_tlete_elim_closed_on
       e1 e2 y σ v0 (Hclosed σ Hσmx) Hylet Hye2 Htlet0)
       as [vx [He1σ _]].
     pose proof (Hstore_result vx He1σ) as Hx_lookup.
-    eapply expr_eval_in_atom_store_tlete_intro_closed_on with (x := y) (vx := vx).
+    eapply tm_eval_in_store_tlete_intro_closed_on with (x := y) (vx := vx).
     + exact (Hclosed σ Hσmx).
     + exact Hlc.
     + set_solver.
-    + apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+    + apply (proj1 (tm_eval_in_store_agree_on_fv
         (store_restrict σ (fv_tm e1))
         (store_restrict σ (fv_tm (tlete e1 e2))) e1 vx
         ltac:(
@@ -782,11 +782,11 @@ Proof.
           rewrite storeA_restrict_twice_subset by (cbn [fv_tm]; set_solver);
           reflexivity))).
       exact He1σ.
-    + apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+    + apply (proj1 (tm_eval_in_store_agree_on_fv
         (<[y := vx]> σ)
         (<[y := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
         (e2 ^^ y) v (Hinsert_restrict_y y vx Hyσ Hylet))).
-      apply (proj1 (expr_eval_in_atom_store_open_alias
+      apply (proj1 (tm_eval_in_store_open_alias
           e2 σ x y vx v Hx_lookup Hyσ Hx_e2 Hye2 Hscope_body)).
       exact Hbody.
   - intros Hlet.
@@ -798,13 +798,13 @@ Proof.
     assert (Hyσ : y ∉ dom (σ : StoreT)) by set_solver.
     assert (Hye2 : y ∉ fv_tm e2) by set_solver.
     assert (Hylet : y ∉ fv_tm (tlete e1 e2)) by set_solver.
-    destruct (expr_eval_in_atom_store_tlete_elim_closed_on
+    destruct (tm_eval_in_store_tlete_elim_closed_on
       e1 e2 y σ v (Hclosed σ Hσmx) Hylet Hye2 Hlet)
       as [vx [He1σ Hbody_y]].
     pose proof (Hstore_result vx He1σ) as Hx_lookup.
-    apply (proj2 (expr_eval_in_atom_store_open_alias
+    apply (proj2 (tm_eval_in_store_open_alias
       e2 σ x y vx v Hx_lookup Hyσ Hx_e2 Hye2 Hscope_body)).
-    apply (proj2 (expr_eval_in_atom_store_agree_on_fv
+    apply (proj2 (tm_eval_in_store_agree_on_fv
         (<[y := vx]> σ)
         (<[y := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
         (e2 ^^ y) v (Hinsert_restrict_y y vx Hyσ Hylet))).
@@ -858,17 +858,17 @@ Proof.
   assert (Hfv2 : fv_tm e2 ⊆ world_dom (my : WorldT)) by set_solver.
   split.
   - intros Heval1.
-    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ e2 v (world_dom (my : WorldT)) Hfv2)).
     apply Heq12.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
       σ e1 v (world_dom (my : WorldT)) Hfv1)).
     exact Heval1.
   - intros Heval2.
-    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ e1 v (world_dom (my : WorldT)) Hfv1)).
     apply Heq21.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
       σ e2 v (world_dom (my : WorldT)) Hfv2)).
     exact Heval2.
 Qed.
@@ -929,39 +929,39 @@ Proof.
 	    set_solver.
 	  }
 	  assert (Hfun_equiv : forall vf,
-	      expr_eval_in_atom_store (store_restrict σ X) e1 vf <->
-	      expr_eval_in_atom_store (store_restrict σ X) e2 vf).
+	      tm_eval_in_store (store_restrict σ X) e1 vf <->
+	      tm_eval_in_store (store_restrict σ X) e2 vf).
 	  {
 	    intros vf. split; intros Heval_fun.
-	    - apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	    - apply (proj2 (tm_eval_in_store_restrict_fv_subset
 	        σ e2 vf X Hfv_e2)).
 	      apply (proj1 (Heq σ vf Hσ)).
-	      apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	      apply (proj1 (tm_eval_in_store_restrict_fv_subset
 	        σ e1 vf X Hfv_e1)).
 	      exact Heval_fun.
-	    - apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	    - apply (proj2 (tm_eval_in_store_restrict_fv_subset
 	        σ e1 vf X Hfv_e1)).
 	      apply (proj2 (Heq σ vf Hσ)).
-	      apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	      apply (proj1 (tm_eval_in_store_restrict_fv_subset
 	        σ e2 vf X Hfv_e2)).
 	      exact Heval_fun.
 	  }
-	  pose proof (expr_eval_in_atom_store_tapp_tm_fun_equiv
+	  pose proof (tm_eval_in_store_tapp_tm_fun_equiv
 	    (store_restrict σ X) e1 e2 y v HσX_closed Hlc1 Hlc2
 	    Hfun_equiv) as [Happ12 Happ21].
 	  split.
 	  - intros Heval.
-	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	    apply (proj1 (tm_eval_in_store_restrict_fv_subset
 	      σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
 	    apply Happ12.
-	    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	    apply (proj2 (tm_eval_in_store_restrict_fv_subset
 	        σ (tapp_tm e1 (vfvar y)) v X Hfv_app1)).
 	    exact Heval.
 	  - intros Heval.
-	    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+	    apply (proj1 (tm_eval_in_store_restrict_fv_subset
 	      σ (tapp_tm e1 (vfvar y)) v X Hfv_app1)).
 	    apply Happ21.
-	    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+	    apply (proj2 (tm_eval_in_store_restrict_fv_subset
 	        σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
       exact Heval.
 Qed.
@@ -1193,8 +1193,8 @@ Proof.
   specialize (Htotal_stores (lstore_lift_free σ) Hlift).
   destruct Hres_stores as [_ [vx [Hx_lookup Heval_e_vx]]].
   destruct Htotal_stores as [vt Heval_ret_vt].
-  unfold expr_eval_in_atom_store, expr_eval_in_store.
-  unfold expr_eval_in_atom_store, expr_eval_in_store in Heval_e_vx.
+  unfold tm_eval_in_store, expr_eval_in_store.
+  unfold tm_eval_in_store, expr_eval_in_store in Heval_e_vx.
   unfold expr_eval_in_store in Heval_ret_vt.
   cbn [lstore_instantiate_tm lstore_instantiate_tm_at
     lstore_instantiate_tm_split_at] in Heval_ret_vt.
@@ -1339,17 +1339,17 @@ Proof.
   assert (Hfv2 : fv_tm e2 ⊆ world_dom (m : WorldT)) by set_solver.
   split.
   - intros Heval1.
-    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ e2 v (world_dom (m : WorldT)) Hfv2)).
     apply Heq12.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
       σ e1 v (world_dom (m : WorldT)) Hfv1)).
     exact Heval1.
   - intros Heval2.
-    apply (proj1 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ e1 v (world_dom (m : WorldT)) Hfv1)).
     apply Heq21.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
       σ e2 v (world_dom (m : WorldT)) Hfv2)).
     exact Heval2.
 Qed.

@@ -403,18 +403,18 @@ Repeated patterns:
   - choose fresh `y`;
   - eliminate/evaluate `tlete`;
   - recover `vx`;
-  - use `expr_eval_in_atom_store_open_alias`;
-  - use `expr_eval_in_atom_store_agree_on_fv`.
+  - use `tm_eval_in_store_open_alias`;
+  - use `tm_eval_in_store_agree_on_fv`.
 
 Existing helpers already useful:
 
 - `expr_result_extension_apply_total_iff`.
 - `resA_extend_by_store_iff`.
-- `expr_eval_in_atom_store_tlete_elim_closed_on`.
-- `expr_eval_in_atom_store_tlete_intro_closed_on`.
-- `expr_eval_in_atom_store_open_alias`.
+- `tm_eval_in_store_tlete_elim_closed_on`.
+- `tm_eval_in_store_tlete_intro_closed_on`.
+- `tm_eval_in_store_open_alias`.
 - `store_insert_restrict_agree_on_open_fv`.
-- `expr_eval_in_atom_store_agree_on_fv`.
+- `tm_eval_in_store_agree_on_fv`.
 
 Recommended extraction:
 
@@ -426,7 +426,7 @@ Recommended extraction:
      expr_result_extension_witness e x Fx ->
      res_extend_by m Fx mx ->
      worldA_stores (mx : WorldT) σ ->
-     expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e vx ->
+     tm_eval_in_store (store_restrict σ (fv_tm e)) e vx ->
      σ !! x = Some vx.
    ```
 
@@ -455,11 +455,11 @@ Recommended extraction:
      x ∉ fv_tm e2 ->
      y ∉ fv_tm e2 ->
      tm_lvars (e2 ^^ x) ⊆ lvars_of_atoms (dom σ) ->
-     expr_eval_in_atom_store σ (e2 ^^ x) v <->
-     expr_eval_in_atom_store (<[y := vx]> σ) (e2 ^^ y) v.
+     tm_eval_in_store σ (e2 ^^ x) v <->
+     tm_eval_in_store (<[y := vx]> σ) (e2 ^^ y) v.
    ```
 
-   This is just `expr_eval_in_atom_store_open_alias`, but a version whose
+   This is just `tm_eval_in_store_open_alias`, but a version whose
    statement is exactly the TLet use would avoid repeating the same packet.
 
 4. Keep the final theorem itself as the semantic boundary.  It is now used by

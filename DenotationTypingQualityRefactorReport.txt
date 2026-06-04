@@ -778,7 +778,7 @@ Recommended helper location:
 
 Potential new helper:
 
-  expr_eval_in_atom_store_tlete_body_extension
+  tm_eval_in_store_tlete_body_extension
 
   Then tm_equiv_tlete_body_extension can be a small wrapper in
   SaturateCore.
@@ -954,7 +954,7 @@ Batch 4: semantic helper extraction
     result_extension_fresh_packet
     result_extension_store_has_type_from_source_guard
     atom_store_has_ltype_open_result_restrict
-    expr_eval_in_atom_store_tlete_body_extension
+    tm_eval_in_store_tlete_body_extension
     basic_world_formula_result_alias_target_store_typed
 
   Avoid helpers with huge premise lists. If a helper statement becomes longer

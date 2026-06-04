@@ -11,7 +11,7 @@ Section TermDenotation.
 Definition expr_eval_in_store (σ : LStoreT) (e : tm) (v : value) : Prop :=
   lstore_instantiate_tm σ e →* tret v.
 
-Definition expr_eval_in_atom_store (σ : StoreT) (e : tm) (v : value) : Prop :=
+Definition tm_eval_in_store (σ : StoreT) (e : tm) (v : value) : Prop :=
   expr_eval_in_store (lstore_lift_free σ) e v.
 
 Lemma steps_tapp_tm_fun_equiv e e' vx v :
@@ -83,18 +83,18 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma expr_eval_in_atom_store_tapp_tm_fun_equiv σ e e' x v :
+Lemma tm_eval_in_store_tapp_tm_fun_equiv σ e e' x v :
   store_closed σ ->
   lc_tm e ->
   lc_tm e' ->
   (forall vf,
-    expr_eval_in_atom_store σ e vf <->
-    expr_eval_in_atom_store σ e' vf) ->
-  expr_eval_in_atom_store σ (tapp_tm e (vfvar x)) v <->
-  expr_eval_in_atom_store σ (tapp_tm e' (vfvar x)) v.
+    tm_eval_in_store σ e vf <->
+    tm_eval_in_store σ e' vf) ->
+  tm_eval_in_store σ (tapp_tm e (vfvar x)) v <->
+  tm_eval_in_store σ (tapp_tm e' (vfvar x)) v.
 Proof.
   intros Hclosed Hlc Hlc' Hequiv.
-  unfold expr_eval_in_atom_store.
+  unfold tm_eval_in_store.
   rewrite !expr_eval_in_store_no_bvars_iff.
   - rewrite !lstore_free_part_lift_free.
     rewrite !subst_map_tm_eq_msubst.
@@ -105,7 +105,7 @@ Proof.
     + apply msubst_lc; [exact (proj2 Hclosed) | constructor].
     + intros vf.
       specialize (Hequiv vf).
-      unfold expr_eval_in_atom_store in Hequiv.
+      unfold tm_eval_in_store in Hequiv.
       rewrite !expr_eval_in_store_no_bvars_iff in Hequiv.
       * rewrite !lstore_free_part_lift_free in Hequiv.
         rewrite !subst_map_tm_eq_msubst in Hequiv.
@@ -120,13 +120,13 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
-Lemma expr_eval_in_atom_store_restrict_fv_subset σ e v X :
+Lemma tm_eval_in_store_restrict_fv_subset σ e v X :
   fv_tm e ⊆ X ->
-  expr_eval_in_atom_store (store_restrict σ X) e v <->
-  expr_eval_in_atom_store σ e v.
+  tm_eval_in_store (store_restrict σ X) e v <->
+  tm_eval_in_store σ e v.
 Proof.
   intros Hfv.
-  unfold expr_eval_in_atom_store, expr_eval_in_store,
+  unfold tm_eval_in_store, expr_eval_in_store,
     lstore_instantiate_tm, lstore_instantiate_tm_at.
   rewrite !lstore_free_part_lift_free.
   rewrite !lstore_bound_part_empty_of_lc by apply lc_lstore_lift_free.
@@ -134,30 +134,30 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma expr_eval_in_atom_store_restrict_fv_closed_on σ e v :
+Lemma tm_eval_in_store_restrict_fv_closed_on σ e v :
   closed_env (store_restrict σ (fv_tm e)) ->
-  expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e v <->
-  expr_eval_in_atom_store σ e v.
+  tm_eval_in_store (store_restrict σ (fv_tm e)) e v <->
+  tm_eval_in_store σ e v.
 Proof.
   intros _.
-  apply expr_eval_in_atom_store_restrict_fv_subset. set_solver.
+  apply tm_eval_in_store_restrict_fv_subset. set_solver.
 Qed.
 
-Lemma expr_eval_in_atom_store_restrict_fv_exact σ e v :
-  expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e v <->
-  expr_eval_in_atom_store σ e v.
+Lemma tm_eval_in_store_restrict_fv_exact σ e v :
+  tm_eval_in_store (store_restrict σ (fv_tm e)) e v <->
+  tm_eval_in_store σ e v.
 Proof.
-  apply expr_eval_in_atom_store_restrict_fv_subset. set_solver.
+  apply tm_eval_in_store_restrict_fv_subset. set_solver.
 Qed.
 
-Lemma expr_eval_in_atom_store_agree_on_fv σ1 σ2 e v :
+Lemma tm_eval_in_store_agree_on_fv σ1 σ2 e v :
   store_restrict σ1 (fv_tm e) = store_restrict σ2 (fv_tm e) ->
-  expr_eval_in_atom_store σ1 e v <->
-  expr_eval_in_atom_store σ2 e v.
+  tm_eval_in_store σ1 e v <->
+  tm_eval_in_store σ2 e v.
 Proof.
   intros Hagree.
-  rewrite <- (expr_eval_in_atom_store_restrict_fv_exact σ1 e v).
-  rewrite <- (expr_eval_in_atom_store_restrict_fv_exact σ2 e v).
+  rewrite <- (tm_eval_in_store_restrict_fv_exact σ1 e v).
+  rewrite <- (tm_eval_in_store_restrict_fv_exact σ2 e v).
   rewrite Hagree. reflexivity.
 Qed.
 
@@ -372,7 +372,7 @@ Qed.
 
 Definition expr_result_output_world (e : tm) (x : atom) (σ : StoreT) : WfWorldT.
 Proof.
-  destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
+  destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
     as [Hex | _].
   - destruct (constructive_indefinite_description _ Hex) as [v _].
     exact (exist _ (singleton_world ({[x := v]} : StoreT))
@@ -388,7 +388,7 @@ Proof.
     (fun σ => expr_result_output_world e x σ) _ _ _).
   - set_solver.
   - intros σ Hσ. unfold expr_result_output_world.
-    destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
+    destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
 	    + destruct (constructive_indefinite_description _ Hex) as [v _].
 	      unfold world_dom, singleton_world. simpl.
@@ -396,7 +396,7 @@ Proof.
 	    + unfold world_dom, singleton_world. simpl.
 	      apply dom_singleton_L.
   - intros σ Hσ. unfold expr_result_output_world.
-    destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
+    destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
     + destruct (constructive_indefinite_description _ Hex) as [v _].
       exists ({[x := v]} : StoreT). simpl. reflexivity.

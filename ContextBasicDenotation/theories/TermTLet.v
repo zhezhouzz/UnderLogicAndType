@@ -7,16 +7,16 @@ From ContextBasicDenotation Require Import TermSyntax TermEval TermOpen TermExte
 
 Section TermDenotation.
 
-Lemma expr_eval_in_atom_store_tlete_elim_core e1 e2 x σ v :
+Lemma tm_eval_in_store_tlete_elim_core e1 e2 x σ v :
   store_closed σ ->
   x ∉ dom σ ∪ fv_tm e2 ->
-  expr_eval_in_atom_store σ (tlete e1 e2) v ->
+  tm_eval_in_store σ (tlete e1 e2) v ->
   exists vx,
-    expr_eval_in_atom_store σ e1 vx /\
-    expr_eval_in_atom_store (<[x := vx]> σ) (open_tm 0 (vfvar x) e2) v.
+    tm_eval_in_store σ e1 vx /\
+    tm_eval_in_store (<[x := vx]> σ) (open_tm 0 (vfvar x) e2) v.
 Proof.
   intros Hclosed Hfresh Heval.
-  unfold expr_eval_in_atom_store, expr_eval_in_store in *.
+  unfold tm_eval_in_store, expr_eval_in_store in *.
   rewrite lstore_instantiate_tm_no_bvars in Heval.
   2:{ apply lc_lstore_lift_free. }
   2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
@@ -39,16 +39,16 @@ Proof.
     + rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
-Lemma expr_eval_in_atom_store_tlete_intro_core e1 e2 x σ vx v :
+Lemma tm_eval_in_store_tlete_intro_core e1 e2 x σ vx v :
   store_closed σ ->
   x ∉ dom σ ∪ fv_tm e2 ->
   body_tm (lstore_instantiate_tm_at 1 (lstore_lift_free σ : LStoreT) e2) ->
-  expr_eval_in_atom_store σ e1 vx ->
-  expr_eval_in_atom_store (<[x := vx]> σ) (open_tm 0 (vfvar x) e2) v ->
-  expr_eval_in_atom_store σ (tlete e1 e2) v.
+  tm_eval_in_store σ e1 vx ->
+  tm_eval_in_store (<[x := vx]> σ) (open_tm 0 (vfvar x) e2) v ->
+  tm_eval_in_store σ (tlete e1 e2) v.
 Proof.
   intros Hclosed Hfresh Hbody He1 He2.
-  unfold expr_eval_in_atom_store, expr_eval_in_store in *.
+  unfold tm_eval_in_store, expr_eval_in_store in *.
   rewrite lstore_instantiate_tm_no_bvars in He1.
   2:{ apply lc_lstore_lift_free. }
   2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
@@ -73,20 +73,20 @@ Proof.
   eapply reduction_lete_intro; eauto.
 Qed.
 
-Lemma expr_eval_in_atom_store_tlete_intro_closed_on e1 e2 x σ vx v :
+Lemma tm_eval_in_store_tlete_intro_closed_on e1 e2 x σ vx v :
   store_closed (store_restrict σ (fv_tm (tlete e1 e2))) ->
   lc_tm (tlete e1 e2) ->
   x ∉ dom σ ∪ fv_tm e2 ->
-  expr_eval_in_atom_store (store_restrict σ (fv_tm (tlete e1 e2))) e1 vx ->
-  expr_eval_in_atom_store
+  tm_eval_in_store (store_restrict σ (fv_tm (tlete e1 e2))) e1 vx ->
+  tm_eval_in_store
     (<[x := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
     (open_tm 0 (vfvar x) e2) v ->
-  expr_eval_in_atom_store σ (tlete e1 e2) v.
+  tm_eval_in_store σ (tlete e1 e2) v.
 Proof.
   intros Hclosed Hlc Hfresh He1 He2.
-  apply (proj1 (expr_eval_in_atom_store_restrict_fv_closed_on
+  apply (proj1 (tm_eval_in_store_restrict_fv_closed_on
     σ (tlete e1 e2) v (proj1 Hclosed))).
-  eapply expr_eval_in_atom_store_tlete_intro_core.
+  eapply tm_eval_in_store_tlete_intro_core.
   - exact Hclosed.
   - intros Hbad. apply Hfresh.
     apply elem_of_union in Hbad as [Hbad|Hbad].
@@ -108,23 +108,23 @@ Proof.
   - exact He2.
 Qed.
 
-Lemma expr_eval_in_atom_store_tlete_elim_closed_on e1 e2 x σ v :
+Lemma tm_eval_in_store_tlete_elim_closed_on e1 e2 x σ v :
   store_closed (store_restrict σ (fv_tm (tlete e1 e2))) ->
   x ∉ fv_tm (tlete e1 e2) ->
   x ∉ fv_tm e2 ->
-  expr_eval_in_atom_store σ (tlete e1 e2) v ->
+  tm_eval_in_store σ (tlete e1 e2) v ->
   exists vx,
-    expr_eval_in_atom_store (store_restrict σ (fv_tm e1)) e1 vx /\
-    expr_eval_in_atom_store
+    tm_eval_in_store (store_restrict σ (fv_tm e1)) e1 vx /\
+    tm_eval_in_store
       (<[x := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
       (e2 ^^ x) v.
 Proof.
   intros Hclosed Hxlet Hxe2 Heval.
   set (σT := store_restrict σ (fv_tm (tlete e1 e2))).
-  assert (HevalT : expr_eval_in_atom_store σT (tlete e1 e2) v).
+  assert (HevalT : tm_eval_in_store σT (tlete e1 e2) v).
   {
     subst σT.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_closed_on
+    apply (proj2 (tm_eval_in_store_restrict_fv_closed_on
       σ (tlete e1 e2) v (proj1 Hclosed))).
     exact Heval.
   }
@@ -135,7 +135,7 @@ Proof.
     - rewrite storeA_restrict_dom in Hbad. set_solver.
     - exact (Hxe2 Hbad).
   }
-  destruct (expr_eval_in_atom_store_tlete_elim_core e1 e2 x σT v
+  destruct (tm_eval_in_store_tlete_elim_core e1 e2 x σT v
     Hclosed HfreshT HevalT) as [vx [He1T He2]].
   exists vx. split; [|exact He2].
   assert (Hagree :
@@ -147,7 +147,7 @@ Proof.
     - rewrite storeA_restrict_twice_same. reflexivity.
     - cbn [fv_tm]. set_solver.
   }
-  apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+  apply (proj1 (tm_eval_in_store_agree_on_fv
     σT (store_restrict σ (fv_tm e1)) e1 vx Hagree)).
   exact He1T.
 Qed.
@@ -156,7 +156,7 @@ Lemma result_extension_store_lookup_output e x Fx m mx σ vx :
   expr_result_extension_witness e x Fx ->
   res_extend_by m Fx mx ->
   worldA_stores (mx : WorldT) σ ->
-  expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e vx ->
+  tm_eval_in_store (store_restrict σ (fv_tm e)) e vx ->
   σ !! x = Some vx.
 Proof.
   intros HFx Hext Hσmx Heσ.
@@ -184,11 +184,11 @@ Proof.
       (unfold ext_in; unfold ext_in in Hin; rewrite Hin; reflexivity).
     exact HFrel.
   }
-  assert (HeσX : expr_eval_in_atom_store σX e vx).
+  assert (HeσX : tm_eval_in_store σX e vx).
   {
     subst σX.
-    apply (proj2 (expr_eval_in_atom_store_restrict_fv_exact σm e vx)).
-    pose proof (expr_eval_in_atom_store_agree_on_fv
+    apply (proj2 (tm_eval_in_store_restrict_fv_exact σm e vx)).
+    pose proof (tm_eval_in_store_agree_on_fv
       (σm ∪ σe) σm e vx) as Hagree_eval.
     apply Hagree_eval.
     + apply storeA_map_eq. intros a.
@@ -208,7 +208,7 @@ Proof.
       change (a ∈ dom (σm : gmap atom value)) in H.
       apply elem_of_dom in H as [u Hu].
       apply lookup_union_l'. exists u. exact Hu.
-    + apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+    + apply (proj1 (tm_eval_in_store_agree_on_fv
         (store_restrict (σm ∪ σe) (fv_tm e)) (σm ∪ σe) e vx
         ltac:(apply storeA_restrict_twice_same))).
       exact Heσ.
@@ -222,7 +222,7 @@ Proof.
   apply Hσe_iff in Hσe as [u [He_u ->]].
   assert (u = vx).
   {
-    unfold expr_eval_in_atom_store, expr_eval_in_store in He_u, HeσX.
+    unfold tm_eval_in_store, expr_eval_in_store in He_u, HeσX.
     eapply steps_result_unique; eauto.
   }
   subst u.
@@ -294,18 +294,18 @@ Proof.
     { symmetry. apply map_lookup_insert_ne. congruence. }
 Qed.
 
-Lemma expr_eval_in_atom_store_open_alias
+Lemma tm_eval_in_store_open_alias
     e σ x y vx v :
   σ !! x = Some vx ->
   y ∉ dom (σ : gmap atom value) ->
   x ∉ fv_tm e ->
   y ∉ fv_tm e ->
   tm_lvars (e ^^ x) ⊆ lvars_of_atoms (dom (σ : gmap atom value)) ->
-  expr_eval_in_atom_store σ (e ^^ x) v <->
-  expr_eval_in_atom_store (<[y := vx]> σ) (e ^^ y) v.
+  tm_eval_in_store σ (e ^^ x) v <->
+  tm_eval_in_store (<[y := vx]> σ) (e ^^ y) v.
 Proof.
   intros Hx Hyσ Hxe Hye Hscope.
-  unfold expr_eval_in_atom_store.
+  unfold tm_eval_in_store.
   change (tm_lvars (e ^^ x)) with
     (tm_lvars (open_tm 0 (vfvar x) e)) in Hscope.
   change (e ^^ x) with (open_tm 0 (vfvar x) e).
@@ -597,10 +597,10 @@ Proof.
     }
     assert (HFrel : ext_rel Fx σX (expr_result_output_world e1 x σX)).
     { subst σX. apply Hrel. exact HσX_dom. }
-    assert (He1X : expr_eval_in_atom_store σX e1 vx).
+    assert (He1X : tm_eval_in_store σX e1 vx).
     {
       subst σX.
-      apply (proj2 (expr_eval_in_atom_store_restrict_fv_exact σ e1 vx)).
+      apply (proj2 (tm_eval_in_store_restrict_fv_exact σ e1 vx)).
       exact He1.
     }
     pose proof (expr_result_extension_apply_total_iff
@@ -631,7 +631,7 @@ Proof.
       as [v He2_union].
     { exists (σ ∪ ({[x := vx]} : StoreT)). split; [exact Hmx_store|reflexivity]. }
     assert (He2_insert :
-      expr_eval_in_atom_store
+      tm_eval_in_store
         (<[x := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
         (e2 ^^ x) v).
     {
@@ -645,14 +645,14 @@ Proof.
         - exact Hx_let.
         - exact Hx_dom.
       }
-      apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+      apply (proj1 (tm_eval_in_store_agree_on_fv
         (σ ∪ ({[x := vx]} : StoreT))
         (<[x := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
         (e2 ^^ x) v Hagree)).
       exact He2_union.
     }
     exists v.
-    eapply expr_eval_in_atom_store_tlete_intro_closed_on.
+    eapply tm_eval_in_store_tlete_intro_closed_on.
     + assert (Hsub_atoms :
         lvars_of_atoms (fv_tm (tlete e1 e2)) ⊆ dom Σ).
       {
@@ -666,7 +666,7 @@ Proof.
     + intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
       * exact (Hx_dom Hbad).
       * exact (Hx_e2 Hbad).
-    + apply (proj2 (expr_eval_in_atom_store_restrict_fv_subset
+    + apply (proj2 (tm_eval_in_store_restrict_fv_subset
         σ e1 vx (fv_tm (tlete e1 e2)) ltac:(cbn [fv_tm]; set_solver))).
       exact He1.
     + exact He2_insert.
@@ -815,9 +815,9 @@ Proof.
         closed_env (store_restrict σm (fv_tm e))).
       { exact (proj1 (Hclosed σm Hσm)). }
       assert (Heval_restrict :
-        expr_eval_in_atom_store (store_restrict σm (fv_tm e)) e v).
+        tm_eval_in_store (store_restrict σm (fv_tm e)) e v).
       {
-        apply (proj2 (expr_eval_in_atom_store_restrict_fv_closed_on
+        apply (proj2 (tm_eval_in_store_restrict_fv_closed_on
           σm e v Hclosed_restrict)).
         exact Heval_m.
       }
@@ -877,7 +877,7 @@ Proof.
         assert (Hclosed_union :
           closed_env (store_restrict (σm ∪ ({[x := u]} : StoreT)) (fv_tm e))).
         { rewrite Hrestrict_union. exact Hclosed_restrict. }
-        apply (proj1 (expr_eval_in_atom_store_restrict_fv_closed_on
+        apply (proj1 (tm_eval_in_store_restrict_fv_closed_on
           (σm ∪ ({[x := u]} : StoreT)) e u Hclosed_union)).
         rewrite Hrestrict_union. exact Heval_u.
 Qed.

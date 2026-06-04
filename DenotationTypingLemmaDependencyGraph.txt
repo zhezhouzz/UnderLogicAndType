@@ -211,7 +211,7 @@ TLet support layer
    ty_denote_gas_tapp_tlete_assoc
      status: Admitted.
      intended dependencies:
-       - expr_eval_in_atom_store_tapp_tm_tlete_assoc, or an equivalent
+       - tm_eval_in_store_tapp_tm_tlete_assoc, or an equivalent
          operational equivalence for derived application and let.
        - expr_result_formula transport through operational equivalence.
        - expr_total_formula and expr_basic_typing_formula congruence for this
@@ -409,7 +409,7 @@ Basic denotation layer
      depend on:
        - basic_context_ty / basic_tm_has_ltype
        - store/lstore/world/lworld has-type definitions
-       - expr_eval_in_store / expr_eval_in_atom_store
+       - expr_eval_in_store / tm_eval_in_store
        - resource/world lifting and restriction facts
      role:
        Encode basic typing, totality, result, and qualifier facts as Context
@@ -423,8 +423,8 @@ Basic denotation layer
    expr_result_extension_apply_total_iff
    expr_result_formula_tlete_to_body_ext
      depend on:
-       - expr_eval_in_atom_store_agree_on_fv
-       - expr_eval_in_atom_store restrictions to fv_tm
+       - tm_eval_in_store_agree_on_fv
+       - tm_eval_in_store restrictions to fv_tm
        - res_extend_by and extension_has_ltype facts
        - small-step determinism/uniqueness
      role:

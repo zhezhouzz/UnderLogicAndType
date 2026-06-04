@@ -159,8 +159,8 @@ the reusable transport theorem for the syntactic associativity
     `expr_basic_typing_formula_tapp_tm_tlete_assoc`.
   - Reason: these are BasicDenotation transport lemmas, not Denotation lemmas.
 
-- `TLetSupport.v:709` `expr_eval_in_atom_store_tapp_tlete_assoc_spine`
-- `TLetSupport.v:730` `expr_eval_in_atom_store_tapp_tlete_assoc_spine_closed_on`
+- `TLetSupport.v:709` `tm_eval_in_store_tapp_tlete_assoc_spine`
+- `TLetSupport.v:730` `tm_eval_in_store_tapp_tlete_assoc_spine_closed_on`
 - `TLetSupport.v:748` `expr_total_on_atom_world_tapp_tlete_assoc_spine`
 - `TLetSupport.v:774` `expr_total_formula_tapp_tlete_assoc_spine`
 - `TLetSupport.v:791` `expr_result_at_world_tapp_tlete_assoc_spine`
@@ -471,8 +471,8 @@ the reusable transport theorem for the syntactic associativity
 - `TermEval.v:80-116` substitution/lstore no-bvar simplification
   - Keep in BasicDenotation.
 
-- `TermEval.v:128` `expr_eval_in_atom_store_tapp_tm_tlete_assoc`
-- `TermEval.v:162` `expr_eval_in_atom_store_tapp_tm_fun_equiv`
+- `TermEval.v:128` `tm_eval_in_store_tapp_tm_tlete_assoc`
+- `TermEval.v:162` `tm_eval_in_store_tapp_tm_fun_equiv`
 - `TermEval.v:199` `fv_tm_tapp_tm_tlete_assoc`
 - `TermEval.v:209` `tm_lvars_tapp_tm_tlete_assoc_fvar`
   - Lower target: `TermTLet.v` or `TermSyntax.v` depending on whether the lemma

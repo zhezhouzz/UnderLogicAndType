@@ -404,19 +404,19 @@ File: ContextBasicDenotation/theories/TermEval.v
 - Lemma `expr_eval_in_store_no_bvars_iff` @ line 74
   uses: 2 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_eval_in_atom_store_tapp_tm_fun_equiv` @ line 86
+- Lemma `tm_eval_in_store_tapp_tm_fun_equiv` @ line 86
   uses: 1 total; ltac/hint uses: 0; proof lines: 36; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `expr_eval_in_atom_store_restrict_fv_subset` @ line 123
+- Lemma `tm_eval_in_store_restrict_fv_subset` @ line 123
   uses: 21 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_eval_in_atom_store_restrict_fv_closed_on` @ line 137
+- Lemma `tm_eval_in_store_restrict_fv_closed_on` @ line 137
   uses: 4 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `expr_eval_in_atom_store_restrict_fv_exact` @ line 146
+- Lemma `tm_eval_in_store_restrict_fv_exact` @ line 146
   uses: 4 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `expr_eval_in_atom_store_agree_on_fv` @ line 153
+- Lemma `tm_eval_in_store_agree_on_fv` @ line 153
   uses: 7 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `store_insert_restrict_agree_on_open_fv` @ line 164
@@ -697,16 +697,16 @@ File: ContextBasicDenotation/theories/TermSyntax.v
   classification: ordinary helper; review by use sites
 File: ContextBasicDenotation/theories/TermTLet.v
 ------------------------------------------------
-- Lemma `expr_eval_in_atom_store_tlete_elim_core` @ line 10
+- Lemma `tm_eval_in_store_tlete_elim_core` @ line 10
   uses: 1 total; ltac/hint uses: 0; proof lines: 31; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `expr_eval_in_atom_store_tlete_intro_core` @ line 42
+- Lemma `tm_eval_in_store_tlete_intro_core` @ line 42
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `expr_eval_in_atom_store_tlete_intro_closed_on` @ line 76
+- Lemma `tm_eval_in_store_tlete_intro_closed_on` @ line 76
   uses: 2 total; ltac/hint uses: 0; proof lines: 34; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_eval_in_atom_store_tlete_elim_closed_on` @ line 111
+- Lemma `tm_eval_in_store_tlete_elim_closed_on` @ line 111
   uses: 2 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `result_extension_store_lookup_output` @ line 155
@@ -715,7 +715,7 @@ File: ContextBasicDenotation/theories/TermTLet.v
 - Lemma `lstore_open_alias_restrict` @ line 247
   uses: 1 total; ltac/hint uses: 0; proof lines: 49; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `expr_eval_in_atom_store_open_alias` @ line 297
+- Lemma `tm_eval_in_store_open_alias` @ line 297
   uses: 2 total; ltac/hint uses: 0; proof lines: 97; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `expr_total_formula_models_iff` @ line 395

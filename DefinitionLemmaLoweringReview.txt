@@ -605,8 +605,8 @@ Potential moves:
 
 Keep:
 
-- expr_eval_in_store, expr_eval_in_atom_store
-- expr_eval_in_atom_store_restrict_fv/agreement_on_fv
+- expr_eval_in_store, tm_eval_in_store
+- tm_eval_in_store_restrict_fv/agreement_on_fv
 - expr_total_on and result formulas
 
 

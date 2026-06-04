@@ -796,7 +796,7 @@ Lemma basic_tm_has_ltype_eval_in_atom_store_value_type
   lty_env_closed Σ ->
   atom_store_has_ltype Σ σ ->
   basic_tm_has_ltype Σ e T ->
-  expr_eval_in_atom_store σ e v ->
+  tm_eval_in_store σ e v ->
   fv_tm e ⊆ dom (σ : StoreT) ->
   ∅ ⊢ᵥ v ⋮ T.
 Proof.
@@ -819,7 +819,7 @@ Proof.
     pose proof (msubst_fv_delete_tm σ e Hclosed) as Hfv.
     set_solver.
   }
-  unfold expr_eval_in_atom_store, expr_eval_in_store in Heval.
+  unfold tm_eval_in_store, expr_eval_in_store in Heval.
   rewrite lstore_instantiate_tm_no_bvars in Heval.
   - rewrite lstore_free_part_lift_free in Heval.
     pose proof (basic_steps_preservation ∅ (m{σ} e) (tret v) T

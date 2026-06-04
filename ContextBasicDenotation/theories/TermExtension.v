@@ -45,7 +45,7 @@ Lemma expr_result_extension_apply_total_store e x F σ w v :
   expr_result_extension_witness e x F ->
   dom σ = fv_tm e ->
   ext_rel F σ w ->
-  expr_eval_in_atom_store σ e v ->
+  tm_eval_in_store σ e v ->
   (w : WorldT) ({[x := v]} : StoreT).
 Proof.
   intros Hwitness Hdom Hrel Heval.
@@ -58,12 +58,12 @@ Proof.
     HdomF Hrel Hcanonical)) as Hto.
   apply Hto.
   unfold expr_result_output_world.
-  destruct (excluded_middle_informative (exists v0, expr_eval_in_atom_store σ e v0))
+  destruct (excluded_middle_informative (exists v0, tm_eval_in_store σ e v0))
     as [Hex | Hnone].
   - destruct (constructive_indefinite_description _ Hex) as [v0 Heval0].
     assert (v0 = v).
     {
-      unfold expr_eval_in_atom_store, expr_eval_in_store in *.
+      unfold tm_eval_in_store, expr_eval_in_store in *.
       eapply steps_result_unique; eauto.
     }
     subst v0. simpl. reflexivity.
@@ -74,10 +74,10 @@ Lemma expr_result_extension_apply_total_iff e x F σ w :
   expr_result_extension_witness e x F ->
   dom σ = fv_tm e ->
   ext_rel F σ w ->
-  (exists v, expr_eval_in_atom_store σ e v) ->
+  (exists v, tm_eval_in_store σ e v) ->
   forall σout,
     (w : WorldT) σout <->
-    exists v, expr_eval_in_atom_store σ e v /\ σout = ({[x := v]} : StoreT).
+    exists v, tm_eval_in_store σ e v /\ σout = ({[x := v]} : StoreT).
 Proof.
   intros Hwitness Hdom Hrel Htotal σout.
   destruct Hwitness as [Hfresh [Hin Hout] Hwrel].
@@ -90,7 +90,7 @@ Proof.
   - intros Hw.
     apply Hext in Hw.
     unfold expr_result_output_world in Hw.
-    destruct (excluded_middle_informative (exists v, expr_eval_in_atom_store σ e v))
+    destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | Hnone].
     + destruct (constructive_indefinite_description _ Hex) as [v Hv].
       exists v. split; [exact Hv|].
