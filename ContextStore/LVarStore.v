@@ -173,7 +173,7 @@ Proof.
   intros ->. apply Hhead. apply lvars_fv_open_env_free. exact Hv.
 Qed.
 
-Lemma lvar_store_open_lvars_insert_delete_swap_back
+Lemma lvar_open_insert_delete_swap
     η k y z (s : LVarStore) :
   η !! k = Some z ->
   y ∉ lvars_fv (dom s) ->
@@ -198,7 +198,7 @@ Proof.
     open_env_fresh_for_lvars (delete k η)
       (lvars_open k y ({[LVBound k]} ∪ dom s))).
   {
-    apply open_env_fresh_for_lvars_delete_open_fresh_atom; assumption.
+    apply open_env_fresh_delete_open_atom; assumption.
   }
   assert (Hfresh_insert :
     open_env_fresh_for_lvars (<[k := y]> (delete k η))
@@ -220,7 +220,7 @@ Proof.
   }
   rewrite storeA_rekey_compose_inj_on.
   - apply storeA_rekey_ext_on_dom. intros v Hv.
-    apply logic_var_open_env_insert_delete_swap_back_on with
+    apply open_env_insert_delete_swap_back_on with
       (D := (dom s : lvset)); assumption.
   - apply open_env_fresh_for_lvars_inj_on. exact Hfresh_insert_dom.
   - intros a b _ _ Hab. eapply swap_inj. exact Hab.
@@ -268,7 +268,7 @@ Proof.
   apply logic_var_open_env_atom_swap.
 Qed.
 
-Lemma lvar_store_to_atom_store_open_lvars_atom_swap x y η (s : LVarStore) :
+Lemma lvar_to_atom_open_atom_swap x y η (s : LVarStore) :
   open_env_fresh_for_lvars η (dom (lvar_store_swap x y s)) ->
   lvar_store_to_atom_store (lvar_store_open_lvars η (lvar_store_swap x y s)) =
   (@storeA_swap V atom _ _ x y
@@ -295,7 +295,7 @@ Proof.
   intros Hηk HyΣ HzΣ Havoid Hfresh.
   rewrite <- lvar_store_to_atom_store_swap.
   f_equal.
-  apply lvar_store_open_lvars_insert_delete_swap_back; assumption.
+  apply lvar_open_insert_delete_swap; assumption.
 Qed.
 
 Lemma logic_var_bv_elem_singleton v k :
@@ -463,7 +463,7 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma lvar_store_bvar_scope_open_one_shift_under_result k x (s : LVarStore) :
+Lemma lvar_bvar_scope_open_one_shift_result k x (s : LVarStore) :
   LVBound (S k) ∉ lvar_store_bvar_scope (lvar_store_shift s) ->
   LVFree x ∉ dom (lvar_store_shift s) ->
   lvar_store_bvar_scope (lvar_store_open_one (S k) x (lvar_store_shift s)) =
@@ -822,7 +822,7 @@ Proof.
   symmetry in Hv. exact (logic_var_shift0_ne_bound0 v Hv).
 Qed.
 
-Lemma logic_var_open_env_shift0_lvar_store_bind_inj_on η (s : LVarStore) A :
+Lemma open_env_shift0_lvar_bind_inj_on η (s : LVarStore) A :
   open_env_fresh_for_lvars η (dom s) ->
   logic_var_open_env_inj_on (open_env_shift_from 0 η)
     (dom (<[LVBound 0 := A]> (lvar_store_shift s))).
@@ -932,7 +932,7 @@ Proof.
     rewrite (lvar_store_open_lvars_shift_from (V:=V) 0 η s) by exact Hfresh.
     reflexivity.
   - apply lvar_store_shift_lookup_bound0_none.
-  - apply logic_var_open_env_shift0_lvar_store_bind_inj_on. exact Hfresh.
+  - apply open_env_shift0_lvar_bind_inj_on. exact Hfresh.
 Qed.
 
 Lemma lvar_store_bind_open_env_lift η (s : LVarStore) A :

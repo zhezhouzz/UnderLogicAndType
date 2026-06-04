@@ -137,7 +137,7 @@ Implementation order
    - Fiber projection singleton:
      `res_fiber_from_projection ... -> res_restrict mfib X = singleton_world σ`.
      Current concrete wrappers:
-       `res_restrict_fiber_from_projection_dom_singleton`,
+       `res_restrict_fiber_proj_singleton`,
        `res_restrict_fiber_from_projection_eq_singleton`.
      The empty special case is also available:
        `res_fiber_from_projection_empty_self`,
@@ -1308,7 +1308,7 @@ Implementation order
           This says that `formula_msubst_store σ φ` only depends on `σ`
           restricted to `formula_fv φ`.  Then instantiate it with the existing
           bound
-          `formula_fv_ty_denote_gas_subset_relevant_pre_open`, i.e. the
+          `ty_denote_gas_fv_subset`, i.e. the
           denotation formula only sees `e` and `τ`.
 
         - Treat double msubst as Logic syntax infrastructure, not as a
@@ -1797,7 +1797,7 @@ Implementation order
    Hence the chosen fiber world `mfib` has a singleton projection on `dom σ`,
    exposed by
 
-     `res_restrict_fiber_from_projection_dom_singleton`.
+     `res_restrict_fiber_proj_singleton`.
 
    The new live theorem should therefore be singleton-aware and should not
    rewrite the context type itself:

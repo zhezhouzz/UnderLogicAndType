@@ -158,7 +158,7 @@ Proof.
       * apply basic_context_ty_lvars_relevant_env.
         exact HbasicΣ_small.
   - split.
-    + eapply basic_world_formula_denot_relevant_mono_context; eauto.
+    + eapply basic_world_relevant_mono_context; eauto.
     + split.
       * apply expr_basic_typing_formula_models_iff in Hbasic
           as [Hlc_big [Hscope_big Hty_big]].

@@ -311,7 +311,7 @@ Proof.
   rewrite context_ty_lvars_at_depth. reflexivity.
 Qed.
 
-Lemma context_ty_lvars_open_body_without_fresh_closed
+Lemma cty_lvars_open_body_closed_no_fresh
     (D : lvset) τ y :
   lc_lvars D ->
   LVFree y ∉ D ->

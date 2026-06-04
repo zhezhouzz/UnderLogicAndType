@@ -12,7 +12,7 @@ File: Denotation/theories/Context.v
 - Lemma `ctx_denote_under_bind_inv` @ line 78
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_world_formula_insert_from_arg_denotation` @ line 89
+- Lemma `basic_world_insert_of_arg` @ line 89
   uses: 2 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `ctx_denote_bind_from_arg_denotation` @ line 122
@@ -109,10 +109,10 @@ File: Denotation/theories/TypeDenote.v
 - Lemma `res_models_ty_denote_gas_env_agree_on` @ line 440
   uses: 6 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_lvars_at_ty_denote_gas_subset_relevant` @ line 490
+- Lemma `ty_denote_gas_lvars_subset` @ line 490
   uses: 2 total; ltac/hint uses: 0; proof lines: 107; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_fv_ty_denote_gas_subset_relevant_pre_open` @ line 598
+- Lemma `ty_denote_gas_fv_subset` @ line 598
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `ty_denote_gas_scope_of_guard` @ line 614
@@ -270,10 +270,10 @@ File: Denotation/theories/TypeEquivCore.v
 - Lemma `store_typed_restrict_fv_of_guard` @ line 228
   uses: 2 total; ltac/hint uses: 0; proof lines: 28; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_result_extension_has_ltype_from_source_guard` @ line 257
+- Lemma `result_ext_typed_of_guard` @ line 257
   uses: 2 total; ltac/hint uses: 0; proof lines: 150; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_basic_typing_formula_ret_fvar_from_lookup` @ line 408
+- Lemma `ret_fvar_typing_of_lookup` @ line 408
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `expr_total_formula_ret_fvar_from_result` @ line 422
@@ -324,7 +324,7 @@ File: Denotation/theories/TypeEquivCore.v
 - Lemma `basic_value_has_ltype_open_result_target_arg` @ line 1125
   uses: 2 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_result_formula_transport_of_tm_result_equiv` @ line 1150
+- Lemma `expr_result_of_tm_equiv` @ line 1150
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `tm_equiv_result_alias` @ line 1175

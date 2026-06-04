@@ -112,7 +112,7 @@ File: ContextTypeLanguage/theories/Syntax.v
 - Lemma `context_ty_lvars_depth` @ line 307
   uses: 11 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `context_ty_lvars_open_body_without_fresh_closed` @ line 314
+- Lemma `cty_lvars_open_body_closed_no_fresh` @ line 314
   uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `context_ty_lvars_fv_at` @ line 332
@@ -231,7 +231,7 @@ File: ContextTypeLanguage/theories/TypeOpen.v
 - Lemma `context_ty_lvars_open_cty_env` @ line 323
   uses: 3 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `lvars_open_env_lift_qual_vars_difference_bound0` @ line 349
+- Lemma `open_env_lift_qual_diff_bound0` @ line 349
   uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `lvars_fv_open_env_lift_subset_at_depth1` @ line 385

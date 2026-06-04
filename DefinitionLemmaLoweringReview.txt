@@ -737,7 +737,7 @@ How to modify:
 
 Lemmas at lines 450-584:
 
-- lvars_open_env_lift_qual_vars_difference_bound0
+- open_env_lift_qual_diff_bound0
 - lvars_fv_open_env_lift_subset_at_depth1
 - open_env_lift_fresh_for_lvars_at_depth1
 - open_env_lift_fresh_for_bound0_singleton
@@ -787,7 +787,7 @@ Definitions/lemmas at lines 823-1210:
 - relevant_lvars/open/open_env
 - lty_env_restrict_lvars_closed
 - lty_env_to_atom_env_restrict_lvars_lookup
-- basic_typing_lty_env_to_atom_env_restrict_lvars
+- basic_typing_restrict_lvars_to_atom_env
 - lty_env_restrict_lvars_fv/dom/insert facts
 - relevant_env_fv_subset/insert/restrict equality facts
 
@@ -895,7 +895,7 @@ Analysis:
 
 Lemmas at lines 156-361:
 
-- formula_lvars_at_ty_denote_gas_subset_relevant
+- ty_denote_gas_lvars_subset
 - formula_lvars_at_ty_denote_gas_subset
 - formula_fv_open_ty_denote_gas_subset_relevant
 - ty_denote_gas_scope_of_guard

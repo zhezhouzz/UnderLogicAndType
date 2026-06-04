@@ -86,7 +86,7 @@ Proof.
   exact (proj2 Hctx).
 Qed.
 
-Lemma basic_world_formula_insert_from_arg_denotation
+Lemma basic_world_insert_of_arg
     (Σ : lty_env) (τ : context_ty) y T gas (m : WfWorldT) :
   LVFree y ∉ dom Σ ->
   m ⊨ basic_world_formula Σ ->
@@ -103,7 +103,7 @@ Proof.
   {
     eapply basic_world_formula_subenv; [|exact Hrel_world].
     intros v U Hv.
-    eapply lty_env_singleton_subenv_relevant_env_ret_fvar.
+    eapply lty_singleton_subenv_relevant_ret.
     exact Hv.
   }
   pose proof (basic_world_formula_union Σ
@@ -134,7 +134,7 @@ Proof.
     (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
     τ (tret (vfvar x)) ({[LVFree x]}) m
     (relevant_lvars_basic_ret_fvar_subset x τ Hbasic)
-    (atom_env_to_lty_env_restrict_singleton_lookup
+    (atom_env_restrict_singleton_lookup
       Σ x (erase_ty τ) Hlookup)
     Harg) as Harg_single.
   unfold ctx_denote.
@@ -156,7 +156,7 @@ Proof.
       rewrite kmap_empty.
       reflexivity.
     }
-    eapply basic_world_formula_insert_from_arg_denotation
+    eapply basic_world_insert_of_arg
       with (τ := τ) (gas := cty_depth τ)
         (y := x) (T := erase_ty τ) (Σ := ∅).
     + rewrite dom_empty_L. set_solver.

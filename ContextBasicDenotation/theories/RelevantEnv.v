@@ -132,7 +132,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma atom_env_to_lty_env_restrict_singleton_lookup
+Lemma atom_env_restrict_singleton_lookup
     (Δ : gmap atom ty) x T :
   Δ !! x = Some T ->
   lty_env_restrict_lvars (atom_env_to_lty_env Δ) ({[LVFree x]}) =
@@ -154,14 +154,14 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma atom_env_to_lty_env_insert_restrict_singleton
+Lemma atom_env_insert_restrict_singleton
     (Δ : gmap atom ty) x T :
   lty_env_restrict_lvars (atom_env_to_lty_env (<[x := T]> Δ))
     ({[LVFree x]}) =
   lty_env_restrict_lvars
     (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty))) ({[LVFree x]}).
 Proof.
-  apply atom_env_to_lty_env_restrict_singleton_lookup.
+  apply atom_env_restrict_singleton_lookup.
   apply map_lookup_insert.
 Qed.
 
@@ -252,7 +252,7 @@ Proof.
   eapply atom_env_to_lty_env_erase_ctx_union_subenv; eauto.
 Qed.
 
-Lemma lty_env_singleton_subenv_relevant_env_ret_fvar
+Lemma lty_singleton_subenv_relevant_ret
     (Σ : lty_env) τ y T v U :
   (<[LVFree y := T]> (∅ : lty_env)) !! v = Some U ->
   relevant_env (<[LVFree y := T]> Σ) τ (tret (vfvar y)) !! v = Some U.
@@ -348,7 +348,7 @@ Proof.
   eapply relevant_env_lookup_mono_context; eauto.
 Qed.
 
-Lemma basic_world_formula_denot_relevant_mono_context
+Lemma basic_world_relevant_mono_context
     (Σ : lty_env) τsmall τbig e (m : WfWorldT) :
   context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   m ⊨ basic_world_formula (relevant_env Σ τbig e) ->
@@ -490,7 +490,7 @@ Proof.
   - apply storeA_restrict_lookup_none_l. exact HΣ.
 Qed.
 
-Lemma basic_typing_lty_env_to_atom_env_restrict_lvars Σ D e T :
+Lemma basic_typing_restrict_lvars_to_atom_env Σ D e T :
   tm_lvars e ⊆ D ->
   lty_env_to_atom_env Σ ⊢ₑ e ⋮ T ->
   lty_env_to_atom_env (lty_env_restrict_lvars Σ D) ⊢ₑ e ⋮ T.
@@ -510,7 +510,7 @@ Lemma basic_typing_lty_env_to_atom_env_relevant Σ τ e T :
 Proof.
   intros Hty.
   unfold relevant_env, relevant_lvars.
-  eapply basic_typing_lty_env_to_atom_env_restrict_lvars; [|exact Hty].
+  eapply basic_typing_restrict_lvars_to_atom_env; [|exact Hty].
   set_solver.
 Qed.
 
@@ -566,7 +566,7 @@ Proof.
     set_solver.
 Qed.
 
-Lemma relevant_world_typing_closed_on_term_of_lvars_eq
+Lemma relevant_world_closed_on_term_lvars_eq
     (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
   tm_lvars e_tgt = tm_lvars e_src ->
   m ⊨ basic_world_formula (relevant_env Σ τ e_src) ->
@@ -612,7 +612,7 @@ Lemma relevant_world_typing_closed_on_term
     (relevant_env Σ τ e) e (erase_ty τ) ->
   wfworld_closed_on (fv_tm e) m.
 Proof.
-  eapply relevant_world_typing_closed_on_term_of_lvars_eq.
+  eapply relevant_world_closed_on_term_lvars_eq.
   reflexivity.
 Qed.
 
@@ -627,7 +627,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma lty_env_restrict_lvars_insert_relevant_env_eq
+Lemma lty_restrict_insert_relevant_eq
     Σ τ e X y T :
   X ∖ {[LVFree y]} ⊆ relevant_lvars τ e ->
   lty_env_restrict_lvars
@@ -687,7 +687,7 @@ Lemma arrow_body_relevant_env_agree
     (relevant_lvars (cty_open 0 y τr) e_body).
 Proof.
   intros Hτ He.
-  apply lty_env_restrict_lvars_insert_relevant_env_eq.
+  apply lty_restrict_insert_relevant_eq.
   eapply arrow_body_relevant_lvars_subset; eauto.
 Qed.
 
@@ -707,7 +707,7 @@ Lemma arrow_body_env_agree
 Proof.
   intros Hlc HyΣ Hbasic He.
   apply arrow_body_relevant_env_agree; [|exact He].
-  apply context_ty_lvars_open_body_without_fresh_closed
+  apply cty_lvars_open_body_closed_no_fresh
     with (D := (dom (Σsrc : gmap logic_var ty) : gset logic_var)).
   - exact Hlc.
   - exact HyΣ.
@@ -1034,7 +1034,7 @@ Proof.
   set_solver.
 Qed.
 
-Lemma lvars_at_depth_arrow_body_lift_support_subset Σ τx τr e :
+Lemma arrow_body_lvars_lift_support_subset Σ τx τr e :
   lvars_at_depth 1
     (dom (typed_lty_env_bind
       (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)) ∪

@@ -97,7 +97,7 @@ Proof.
       extension_has_ltype (<[LVFree x := erase_ty τ]> ∅)
         (res_restrict m (ext_in Fx)) Fx).
   {
-    eapply expr_result_extension_has_ltype_from_source_guard;
+    eapply result_ext_typed_of_guard;
       [exact HΣclosed|exact HxΣ|exact HFx|exact Hext|].
     exact Hguard_full.
   }
@@ -129,7 +129,7 @@ Proof.
   rewrite <- (formula_lvars_at_fv 0).
   transitivity (lvars_fv (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ)).
   - apply lvars_fv_mono.
-    apply formula_lvars_at_ty_denote_gas_subset_relevant.
+    apply ty_denote_gas_lvars_subset.
   - change (tm_lvars_at 0 e) with (tm_lvars e).
     change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
     replace (tm_lvars e ∪ context_ty_lvars τ)

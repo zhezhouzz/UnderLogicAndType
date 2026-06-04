@@ -727,7 +727,7 @@ Proof.
     (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
     τarg (tret (vfvar x)) ({[LVFree x]}) m
     (relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
-    (atom_env_to_lty_env_restrict_singleton_lookup
+    (atom_env_restrict_singleton_lookup
       Σ x (erase_ty τarg) Hlookup)
     Harg) as Harg_single.
   assert (Harg_bind : m ⊨ ctx_denote (CtxBind x τarg)).
@@ -745,7 +745,7 @@ Proof.
     [ apply relevant_lvars_basic_open_tprim_fvar_subset;
       exact Hbasic_res
     | symmetry;
-      apply atom_env_to_lty_env_restrict_singleton_lookup;
+      apply atom_env_restrict_singleton_lookup;
       exact Hlookup
     | exact Hres_single ].
 Qed.

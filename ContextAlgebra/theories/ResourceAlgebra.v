@@ -288,7 +288,7 @@ Definition singleton_worldA (σ : StoreAT) : WorldAT := {|
   worldA_stores := λ σ0, σ0 = σ;
 |}.
 
-Lemma rawA_restrict_to_singleton_if_projection_constant
+Lemma rawA_restrict_singleton_of_const_proj
     (w : WfWorldAT) (X : gset K) (σX : StoreAT) :
   (∀ σ, (w : WorldAT) σ →
     storeA_restrict σ X = σX) →
@@ -350,7 +350,7 @@ Proof.
   - intros σ0 ->. reflexivity.
 Qed.
 
-Lemma resA_restrict_fiber_from_projection_dom_singleton
+Lemma resA_restrict_fiber_proj_singleton
     (w wfib : WfWorldAT) (X : gset K) (σ : StoreAT) :
   resA_fiber_from_projection w X σ wfib →
   (resA_restrict wfib (dom σ) : WorldAT) = singleton_worldA σ.
@@ -1687,14 +1687,14 @@ Proof.
     destruct (wfA_ne _ (worldA_wf w1)) as [σ1 Hσ1].
     destruct (wfA_ne _ (worldA_wf w2)) as [σ2 Hσ2].
     exists (storeA_restrict σ1 X). split.
-    + apply rawA_restrict_to_singleton_if_projection_constant.
+    + apply rawA_restrict_singleton_of_const_proj.
       intros σ Hσ.
       pose proof (worldA_compat_store_restrict_overlap
         w1 w2 X σ σ2 eq_refl Hcompat Hσ Hσ2) as Hσ_2.
       pose proof (worldA_compat_store_restrict_overlap
         w1 w2 X σ1 σ2 eq_refl Hcompat Hσ1 Hσ2) as Hσ12.
       etrans; [exact Hσ_2 | symmetry; exact Hσ12].
-    + apply rawA_restrict_to_singleton_if_projection_constant.
+    + apply rawA_restrict_singleton_of_const_proj.
       intros σ Hσ.
       pose proof (worldA_compat_store_restrict_overlap
         w1 w2 X σ1 σ eq_refl Hcompat Hσ1 Hσ) as Hσ1_.
@@ -1714,7 +1714,7 @@ Lemma resA_subset_singleton_restrict
   (resA_restrict p X : WorldAT) = singleton_worldA σX.
 Proof.
   intros [_ Hin] HX Hsingleton.
-  apply rawA_restrict_to_singleton_if_projection_constant.
+  apply rawA_restrict_singleton_of_const_proj.
   intros σ Hσ.
   assert ((resA_restrict m X : WorldAT) (storeA_restrict σ X)) as Hraw.
   { exists σ. split; [exact (Hin σ Hσ) | reflexivity]. }
@@ -1731,7 +1731,7 @@ Proof.
   intros HsingletonX HsingletonY.
   destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
   exists (storeA_restrict σ0 (X ∪ Y)).
-  apply rawA_restrict_to_singleton_if_projection_constant.
+  apply rawA_restrict_singleton_of_const_proj.
   intros σ Hσ.
   assert (HXσ : storeA_restrict σ X = σX).
   {
@@ -1873,7 +1873,7 @@ Proof.
     + exact Hs1z.
 Qed.
 
-Lemma storeA_restrict_product_with_shared_projection
+Lemma storeA_restrict_product_shared_proj
     (τ τ1 τ2 σX : StoreAT) (D1 D2 X : gset K) :
   D1 ⊆ dom (τ1 : gmap K V) →
   D2 ⊆ dom (τ2 : gmap K V) →
@@ -2043,7 +2043,7 @@ Proof.
         worldA_dom (m : WorldAT) ∩ (worldA_dom (n2 : WorldAT) ∪ X))
         with ((worldA_dom (n1 : WorldAT) ∪ X) ∪
           (worldA_dom (n2 : WorldAT) ∪ X)) by set_solver.
-      eapply storeA_restrict_product_with_shared_projection; eauto.
+      eapply storeA_restrict_product_shared_proj; eauto.
       * rewrite (wfworldA_store_dom m τ1 Hτ1). set_solver.
       * rewrite (wfworldA_store_dom m τ2 Hτ2). set_solver.
     + intros [τ [Hτ Hrestrict]].

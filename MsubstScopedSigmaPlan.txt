@@ -72,7 +72,7 @@ Execution order
    - store_singleton_projection_restrict
    - atom_store_has_ltype_restrict_lvars
    - lstore_instantiate_tm_lift_free_agree_subset
-   - formula_fv_ty_denote_gas_subset_relevant_pre_open
+   - ty_denote_gas_fv_subset
 
 5. Compile split files independently.  If any file exceeds 80 seconds, use
    rocq c -time on that file and split or factor the slow proof before
@@ -211,7 +211,7 @@ Existing lemmas likely reusable:
   - wand_body_env_agree
   - lstore_instantiate_tm_lift_free_agree_subset
   - tm_lvars_lstore_instantiate_lift_free_closed_subset
-  - formula_fv_ty_denote_gas_subset_relevant_pre_open
+  - ty_denote_gas_fv_subset
 
 Implementation order adjustment
 -------------------------------

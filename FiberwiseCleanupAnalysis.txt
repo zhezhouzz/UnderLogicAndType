@@ -19,7 +19,7 @@ Top-level `Fundamental` in `ContextTyping/theories/Soundness.v` is direct and
 
 The ordinary `Let` case now calls `tlet_intro_denotation` directly and no
 longer depends on the old result-extension context admit.  The helper
-`ctx_denote_under_comma_bind_from_result_extension` is proved.
+`ctx_comma_bind_of_result_ext` is proved.
 
 The remaining `Soundness.v` admits are not part of this restored core route:
 
@@ -187,7 +187,7 @@ Keep the `TypeEquiv*` family, especially:
 
 This is the useful theorem you identified: equivalent term results transport
 through context-type denotation.  It is now used by
-`ctx_denote_under_comma_bind_from_result_extension` in `Soundness.v` through
+`ctx_comma_bind_of_result_ext` in `Soundness.v` through
 `ty_denote_gas_result_extension_to_var`.
 
 ### 6.2 Formula-level msubst and FFibVars infrastructure

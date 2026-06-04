@@ -160,7 +160,7 @@ TLet support layer
        formula_lvars_at_fv plus the atom-specific formula_fv lemmas, but keeping
        them makes the TLet normalizer smaller.
 
-   basic_world_formula_denot_relevant_mono_context
+   basic_world_relevant_mono_context
      depends on:
        - relevant_env_lookup_mono_context
        - relevant_env_dom_mono_context
@@ -334,7 +334,7 @@ Recursive denotation infrastructure
 9. Denotation/theories/TypeDenoteLvars.v
    Denotation/theories/TypeEquiv.v
 
-   formula_lvars_at_ty_denote_gas_subset_relevant
+   ty_denote_gas_lvars_subset
      depends on:
        - formula_lvars_at for FormulaT
        - relevant_lvars
@@ -347,7 +347,7 @@ Recursive denotation infrastructure
 
    formula_fv_ty_denote_gas_subset_relevant
      depends on:
-       - formula_lvars_at_ty_denote_gas_subset_relevant
+       - ty_denote_gas_lvars_subset
        - formula_lvars_at_fv
      role:
        FV upper bound used by formula_scoped_in_world automation.

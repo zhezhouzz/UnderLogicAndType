@@ -55,11 +55,11 @@ File: ContextTyping/theories/Soundness.v
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
   sample uses:
     - ContextTyping/theories/Soundness.v:724: - eapply fundamental_ctx_sub_case; eauto.
-- Lemma `ctx_denote_under_comma_bind_from_result_extension` @ line 251
+- Lemma `ctx_comma_bind_of_result_ext` @ line 251
   uses: 1 total; ltac/hint uses: 0; proof lines: 104; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
   sample uses:
-    - ContextTyping/theories/Soundness.v:420: eapply ctx_denote_under_comma_bind_from_result_extension; eauto.
+    - ContextTyping/theories/Soundness.v:420: eapply ctx_comma_bind_of_result_ext; eauto.
 - Lemma `fundamental_let_case` @ line 368
   uses: 1 total; ltac/hint uses: 0; proof lines: 157; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
@@ -287,7 +287,7 @@ Single-use lemmas:
 - ContextTyping/theories/Soundness.v:184: `fundamental_const_case` -> ContextTyping/theories/Soundness.v:722 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
 - ContextTyping/theories/Soundness.v:192: `fundamental_sub_case` -> ContextTyping/theories/Soundness.v:723 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
 - ContextTyping/theories/Soundness.v:209: `fundamental_ctx_sub_case` -> ContextTyping/theories/Soundness.v:724 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
-- ContextTyping/theories/Soundness.v:251: `ctx_denote_under_comma_bind_from_result_extension` -> ContextTyping/theories/Soundness.v:420 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:251: `ctx_comma_bind_of_result_ext` -> ContextTyping/theories/Soundness.v:420 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
 - ContextTyping/theories/Soundness.v:368: `fundamental_let_case` -> ContextTyping/theories/Soundness.v:725 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
 - ContextTyping/theories/Soundness.v:541: `fundamental_letd_case` -> ContextTyping/theories/Soundness.v:726 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
 - ContextTyping/theories/Soundness.v:553: `fundamental_lam_case` -> ContextTyping/theories/Soundness.v:727 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary

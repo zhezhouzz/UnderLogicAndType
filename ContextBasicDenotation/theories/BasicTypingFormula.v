@@ -791,7 +791,7 @@ Proof.
   exact Hbasic.
 Qed.
 
-Lemma basic_tm_has_ltype_eval_in_atom_store_value_type
+Lemma basic_tm_eval_value_type
     Σ σ e T v :
   lty_env_closed Σ ->
   atom_store_has_ltype Σ σ ->

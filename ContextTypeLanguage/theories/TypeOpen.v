@@ -346,7 +346,7 @@ Proof.
     + eapply open_env_fresh_for_lvars_insert_head; eassumption.
 Qed.
 
-Lemma lvars_open_env_lift_qual_vars_difference_bound0 η q :
+Lemma open_env_lift_qual_diff_bound0 η q :
   open_env_fresh_for_lvars ((kmap S η)) (qual_vars q) ->
   lvars_open_env ((kmap S η)) (qual_vars q ∖ {[LVBound 0]}) =
   qual_vars (qual_open_env ((kmap S η)) q) ∖ {[LVBound 0]}.

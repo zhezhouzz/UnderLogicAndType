@@ -463,7 +463,7 @@ Proof.
   - rewrite tm_shift_fv. exact Hy.
 Qed.
 
-Lemma formula_open_expr_result_formula_shift0_lvars_lc y e :
+Lemma open_expr_result_shift0_lvars_lc y e :
   lc_lvars (tm_lvars e) ->
   y ∉ fv_tm e ->
   formula_open 0 y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =

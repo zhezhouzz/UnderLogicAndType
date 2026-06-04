@@ -105,7 +105,7 @@ Proof.
         intros ->. rewrite Hfi in Hfk0. discriminate.
 Qed.
 
-Lemma storeA_filter_map_key_lookup_none_no_preimage
+Lemma filter_map_key_lookup_none_no_preimage
     {K K' : Type} `{Countable K} `{Countable K'}
     (f : K -> option K') (s : gmap K V) k' :
   (forall k v, s !! k = Some v -> f k <> Some k') ->
@@ -854,7 +854,7 @@ Proof.
   destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hlookup.
   - apply lvar_store_to_atom_store_lookup_free_some. exact Hlookup.
   - unfold lvar_store_to_atom_store, lvar_store_open.
-    apply storeA_filter_map_key_lookup_none_no_preimage.
+    apply filter_map_key_lookup_none_no_preimage.
     intros [k|y] A Hsrc Hmap.
     + cbn [lvar_to_atom logic_var_to_atom] in Hmap.
       rewrite lookup_empty in Hmap. discriminate.
@@ -887,7 +887,7 @@ Proof.
       apply map_lookup_insert_ne. congruence.
 Qed.
 
-Lemma lvar_store_to_atom_store_insert_free_lookup_ne
+Lemma lvar_to_atom_insert_free_lookup_ne
     (s : LVarStore) x v a :
   a <> x ->
   lvar_store_to_atom_store (<[LVFree x := v]> s) !! a =

@@ -18,7 +18,7 @@ ContextLogic lemma usage analysis
 - res_models_under_intro_same_from_model (line 189): used 1 time(s); terminator: Qed; proof lines: 9
 - res_models_FFibVars_intro (line 199): used 2 time(s); terminator: Qed; proof lines: 15
 - res_models_impl_future_iff_local (line 259): used 1 time(s); terminator: Qed; proof lines: 24
-- res_models_impl_future_iff_local_from_impl_scope (line 284): used 1 time(s); terminator: Qed; proof lines: 13
+- models_impl_future_iff_of_scope (line 284): used 1 time(s); terminator: Qed; proof lines: 13
 - res_models_impl_intro_future (line 298): used 1 time(s); terminator: Qed; proof lines: 15
 - res_models_impl_intro (line 314): used 4 time(s); terminator: Qed; proof lines: 11
 - res_models_impl_intro_scoped (line 326): used 4 time(s); terminator: Qed; proof lines: 12
@@ -38,7 +38,7 @@ ContextLogic lemma usage analysis
 - res_models_forall_full_world_map (line 638): used 3 time(s); terminator: Qed; proof lines: 29
 - res_models_forall_full_world_impl2_map (line 668): used 2 time(s); terminator: Qed; proof lines: 35
 - res_models_forall_full_world_impl2_map_dep (line 704): used 1 time(s); terminator: Qed; proof lines: 38
-- res_models_forall_full_world_impl_wand_map_dep (line 743): used 1 time(s); terminator: Qed; proof lines: 41
+- models_forall_impl_wand_map_dep (line 743): used 1 time(s); terminator: Qed; proof lines: 41
 ## ContextLogic/theories/FormulaSemantics.v
 
 - formula_scoped_true_iff (line 24): used 3 time(s); terminator: Qed; proof lines: 6

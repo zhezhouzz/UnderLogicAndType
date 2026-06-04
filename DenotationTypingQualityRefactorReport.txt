@@ -183,7 +183,7 @@ Major naked lemma patterns:
     - lvars_of_atoms
     - lvars_fv_singleton_free
 
-  ctx_denote_under_comma_bind_from_result_extension:
+  ctx_comma_bind_of_result_ext:
     - many assert facts about freshness, insert, atom_env_to_lty_env_insert,
       lvars_fv_of_atoms, atom_store_to_lvar_store_insert, union-singleton insert.
 
@@ -214,7 +214,7 @@ Recommended solver/helper additions:
 
      result_extension_fresh_packet
      result_extension_insert_env_packet
-     ctx_denote_under_comma_bind_from_result_extension_packet
+     ctx_comma_bind_of_result_ext_packet
 
      Purpose:
        Compress the Let case. This should be semantic, not just set facts.
@@ -300,8 +300,8 @@ Definitions/lemmas to move:
   lvars_of_atoms_empty
     Move to Base/LogicVar or remove if better_set_solver can solve all uses.
 
-  atom_env_to_lty_env_restrict_singleton_lookup_eq
-  atom_env_to_lty_env_restrict_singleton_lookup
+  atom_env_restrict_singleton_lookup_eq
+  atom_env_restrict_singleton_lookup
     Move to Store/RelevantEnv. These are generic atom/lvar env lookup facts.
     The first is likely inlineable into the second if it is only used there.
 
@@ -551,7 +551,7 @@ Major naked lemma patterns:
 
 High-value helper extraction:
 
-  1. For expr_result_extension_has_ltype_from_source_guard:
+  1. For result_ext_typed_of_guard:
 
      Add a store/basic helper:
 
@@ -825,8 +825,8 @@ Definition-like helper lemmas to move down
 
   DenotationCasesContext.v:
     lvars_of_atoms_empty
-    atom_env_to_lty_env_restrict_singleton_lookup_eq
-    atom_env_to_lty_env_restrict_singleton_lookup
+    atom_env_restrict_singleton_lookup_eq
+    atom_env_restrict_singleton_lookup
     relevant_lvars_basic_ret_fvar_subset
     relevant_lvars_basic_open_tprim_fvar_subset
 

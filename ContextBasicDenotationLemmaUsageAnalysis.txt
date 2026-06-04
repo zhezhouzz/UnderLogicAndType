@@ -90,7 +90,7 @@ File: ContextBasicDenotation/theories/BasicTypingFormula.v
 - Lemma `basic_tm_has_ltype_of_atom_typing` @ line 781
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_tm_has_ltype_eval_in_atom_store_value_type` @ line 793
+- Lemma `basic_tm_eval_value_type` @ line 793
   uses: 2 total; ltac/hint uses: 0; proof lines: 40; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `basic_tm_has_ltype_close_one_fresh` @ line 834
@@ -178,10 +178,10 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_lvars_basic_open_tprim_fvar_subset` @ line 119
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `atom_env_to_lty_env_restrict_singleton_lookup` @ line 135
+- Lemma `atom_env_restrict_singleton_lookup` @ line 135
   uses: 4 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `atom_env_to_lty_env_insert_restrict_singleton` @ line 157
+- Lemma `atom_env_insert_restrict_singleton` @ line 157
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `atom_env_to_lty_env_dom_free_notin` @ line 168
@@ -202,7 +202,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_env_erase_ctx_union_subenv` @ line 243
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `lty_env_singleton_subenv_relevant_env_ret_fvar` @ line 255
+- Lemma `lty_singleton_subenv_relevant_ret` @ line 255
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `lty_env_restrict_lvars_twice_same` @ line 280
@@ -226,7 +226,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_env_dom_mono_context` @ line 339
   uses: 2 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `basic_world_formula_denot_relevant_mono_context` @ line 351
+- Lemma `basic_world_relevant_mono_context` @ line 351
   uses: 1 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `relevant_lvars_open` @ line 379
@@ -247,7 +247,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `lty_env_to_atom_env_restrict_lvars_lookup` @ line 480
   uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_typing_lty_env_to_atom_env_restrict_lvars` @ line 493
+- Lemma `basic_typing_restrict_lvars_to_atom_env` @ line 493
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `basic_typing_lty_env_to_atom_env_relevant` @ line 507
@@ -268,7 +268,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_env_fv_subset` @ line 558
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `relevant_world_typing_closed_on_term_of_lvars_eq` @ line 569
+- Lemma `relevant_world_closed_on_term_lvars_eq` @ line 569
   uses: 1 total; ltac/hint uses: 0; proof lines: 38; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `relevant_world_typing_closed_on_term` @ line 608
@@ -277,7 +277,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `relevant_lvars_insert_fresh` @ line 619
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `lty_env_restrict_lvars_insert_relevant_env_eq` @ line 630
+- Lemma `lty_restrict_insert_relevant_eq` @ line 630
   uses: 1 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `arrow_body_relevant_lvars_subset` @ line 663
@@ -307,7 +307,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `lvars_at_depth_arrow_arg_lift_support_subset` @ line 1018
   uses: 1 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `lvars_at_depth_arrow_body_lift_support_subset` @ line 1037
+- Lemma `arrow_body_lvars_lift_support_subset` @ line 1037
   uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `lvars_at_depth_wand_arg_lift_support_subset` @ line 1055
@@ -495,7 +495,7 @@ File: ContextBasicDenotation/theories/TermOpen.v
 - Lemma `formula_open_expr_result_formula_shift0` @ line 449
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_open_expr_result_formula_shift0_lvars_lc` @ line 465
+- Lemma `open_expr_result_shift0_lvars_lc` @ line 465
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `open_expr_result_shift0_under_core` @ line 481

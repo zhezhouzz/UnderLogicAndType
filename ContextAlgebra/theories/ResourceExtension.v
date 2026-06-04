@@ -630,7 +630,7 @@ Proof.
            apply storeA_union_swap_right. exact Hcompat_extra.
 Qed.
 
-Lemma resA_extend_subworld_component_restrict_subset
+Lemma resA_extend_component_restrict_subset
     (m : WfWorldAT) F (n nsum ni : WfWorldAT) :
   resA_extend_by m F n →
   nsum ⊑ n →
@@ -727,7 +727,7 @@ Proof.
   assert (Hsub_m1_m : resA_subset m1 m).
   {
     subst m1 X.
-    eapply resA_extend_subworld_component_restrict_subset
+    eapply resA_extend_component_restrict_subset
       with (F := F) (n := n) (nsum := resA_sum n1 n2 Hdef).
     - exact Hext.
     - exact Hsum_le.
@@ -738,7 +738,7 @@ Proof.
   assert (Hsub_m2_m : resA_subset m2 m).
   {
     subst m2 X.
-    eapply resA_extend_subworld_component_restrict_subset
+    eapply resA_extend_component_restrict_subset
       with (F := F) (n := n) (nsum := resA_sum n1 n2 Hdef).
     - exact Hext.
     - exact Hsum_le.

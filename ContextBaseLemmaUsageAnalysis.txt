@@ -629,11 +629,11 @@ File: ContextBase/LogicVarOpenEnv.v
   uses: 0 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
   sample uses: none
-- Lemma `open_env_fresh_for_lvars_delete_open_fresh_atom` @ line 776
+- Lemma `open_env_fresh_delete_open_atom` @ line 776
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/LVarStore.v:201: apply open_env_fresh_for_lvars_delete_open_fresh_atom; assumption.
+    - ContextStore/LVarStore.v:201: apply open_env_fresh_delete_open_atom; assumption.
 - Lemma `lvars_fv_open_env_lookup` @ line 818
   uses: 3 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -649,11 +649,11 @@ File: ContextBase/LogicVarOpenEnv.v
     - ContextBase/LogicVarOpenEnv.v:905: apply lvars_fv_open_env_free. exact Hv1.
     - ContextBase/BaseTactics.v:106: lvars_fv_open_env_free
     - ContextStore/LVarStore.v:173: intros ->. apply Hhead. apply lvars_fv_open_env_free. exact Hv.
-- Lemma `logic_var_open_env_insert_delete_swap_back_on` @ line 842
+- Lemma `open_env_insert_delete_swap_back_on` @ line 842
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/LVarStore.v:223: apply logic_var_open_env_insert_delete_swap_back_on with
+    - ContextStore/LVarStore.v:223: apply open_env_insert_delete_swap_back_on with
 - Lemma `open_env_fresh_for_lvars_inj_on` @ line 880
   uses: 14 total; ltac/hint uses: 0; proof lines: 23; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -1446,8 +1446,8 @@ Single-use lemmas:
 - ContextBase/LogicVarOpenEnv.v:637: `lvars_open_env_open_one_fresh` -> ContextBase/LogicVarOpenEnv.v:752 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:665: `open_env_fresh_for_lvars_empty` -> ContextBase/BaseTactics.v:101 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:721: `open_env_fresh_for_lvars_insert_open_back` -> ContextStore/LVarStore.v:207 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextBase/LogicVarOpenEnv.v:776: `open_env_fresh_for_lvars_delete_open_fresh_atom` -> ContextStore/LVarStore.v:201 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextBase/LogicVarOpenEnv.v:842: `logic_var_open_env_insert_delete_swap_back_on` -> ContextStore/LVarStore.v:223 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextBase/LogicVarOpenEnv.v:776: `open_env_fresh_delete_open_atom` -> ContextStore/LVarStore.v:201 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextBase/LogicVarOpenEnv.v:842: `open_env_insert_delete_swap_back_on` -> ContextStore/LVarStore.v:223 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:909: `lvar_to_atom_inj_on_fresh` -> ContextStore/StoreFilterMapKey.v:809 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextBase/LogicVarShift.v:90: `open_env_shift_key_from_zero` -> ContextBase/LogicVarShift.v:102 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarShift.v:161: `lvars_wf_at_mono` -> ContextTypeLanguage/theories/WF.v:179 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof

@@ -787,7 +787,7 @@ Proof.
   }
   cbn [ty_denote_gas] in Hscope_tgt.
   pose proof (formula_scoped_and_r _ _ _ Hscope_tgt) as Hbody_scope.
-  eapply res_models_forall_full_world_impl_wand_map_dep;
+  eapply models_forall_impl_wand_map_dep;
     [exact Hbody_scope| |exact Hsrc].
   exists (fv_cty τx ∪
     fv_cty τr ∪ fv_tm e1 ∪ fv_tm e2 ∪

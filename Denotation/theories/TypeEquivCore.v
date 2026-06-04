@@ -254,7 +254,7 @@ Proof.
   rewrite lstore_lift_free_lookup_free. exact Hσy.
 Qed.
 
-Lemma expr_result_extension_has_ltype_from_source_guard
+Lemma result_ext_typed_of_guard
     (Σ : lty_env) τ e x
     (m mx : WfWorldT) (Fx : FiberExtensionT) :
   lty_env_closed Σ ->
@@ -397,7 +397,7 @@ Proof.
 	                   apply map_lookup_insert.
 	                 }
 	                 rewrite Hlookup_v in Hu. inversion Hu. subst u.
-	                 eapply basic_tm_has_ltype_eval_in_atom_store_value_type;
+	                 eapply basic_tm_eval_value_type;
 	                   [|exact Hσin_typed|exact Hty_e|exact Heval_v|].
 	                 --- exact Hrel_closed.
                  --- rewrite Hσin_dom. set_solver.
@@ -405,7 +405,7 @@ Proof.
                  rewrite lookup_empty in HΣout. discriminate.
 Qed.
 
-Lemma expr_basic_typing_formula_ret_fvar_from_lookup
+Lemma ret_fvar_typing_of_lookup
     (Σ : lty_env) x T (m : WfWorldT) :
   lc_lvars (dom Σ) ->
   lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) ->
@@ -584,7 +584,7 @@ Proof.
                σ e v (fv_tm e) ltac:(set_solver))).
              exact Heval.
            }
-           eapply basic_tm_has_ltype_eval_in_atom_store_value_type;
+           eapply basic_tm_eval_value_type;
              [exact Hrel_closed|exact Hσtyped|exact Hty_e|exact Heval_restrict|].
            intros y Hy.
            pose proof (Hfv_e y Hy) as Hyσ.
@@ -658,7 +658,7 @@ Proof.
       split; [exact Hlc_target|].
       split; [exact Hscope_target|exact Htyped_target].
     + split.
-      * eapply expr_basic_typing_formula_ret_fvar_from_lookup; eauto.
+      * eapply ret_fvar_typing_of_lookup; eauto.
       * eapply expr_total_formula_ret_fvar_from_result. exact Hres.
 Qed.
 
@@ -1147,7 +1147,7 @@ Proof.
   better_store_solver.
 Qed.
 
-Lemma expr_result_formula_transport_of_tm_result_equiv
+Lemma expr_result_of_tm_equiv
     m e1 e2 z :
   tm_equiv_on m e1 e2 ->
   z ∉ tm_lvars e1 ->
@@ -1369,11 +1369,11 @@ Lemma expr_result_shift0_of_tm_equiv_open
     (expr_result_formula (tm_shift 0 e1) (LVBound 0)).
 Proof.
   intros Heq Hlc1 Hlc2 Hfv Hy Hdom Hrestrict Hmodel.
-  rewrite formula_open_expr_result_formula_shift0_lvars_lc in Hmodel
+  rewrite open_expr_result_shift0_lvars_lc in Hmodel
     by (exact Hlc2 || set_solver).
-  rewrite formula_open_expr_result_formula_shift0_lvars_lc
+  rewrite open_expr_result_shift0_lvars_lc
     by (exact Hlc1 || set_solver).
-  eapply expr_result_formula_transport_of_tm_result_equiv.
+  eapply expr_result_of_tm_equiv.
   - eapply tm_equiv_full_world_extend_fresh; eauto.
   - intros Hbad. apply Hy. apply elem_of_union_l.
     apply lvars_fv_elem in Hbad.

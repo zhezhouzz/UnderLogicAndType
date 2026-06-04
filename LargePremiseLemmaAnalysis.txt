@@ -152,7 +152,7 @@ Denotation/theories/TypeEquivCore.v
 Large candidates:
 
   - [ty_denote_gas_result_alias_guard]
-  - [expr_result_extension_has_ltype_from_source_guard]
+  - [result_ext_typed_of_guard]
   - [ty_denote_gas_extend_typed_extension]
 
 Assessment:
@@ -194,7 +194,7 @@ Large candidates:
 
   - [ty_denote_under_guard]
   - [context_typing_wf_denot_static_guard]
-  - [ctx_denote_under_comma_bind_from_result_extension]
+  - [ctx_comma_bind_of_result_ext]
   - [fundamental_let_case]
   - admitted higher-order case statements
 

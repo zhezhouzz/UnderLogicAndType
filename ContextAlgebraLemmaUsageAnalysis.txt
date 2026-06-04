@@ -71,14 +71,14 @@ File: ContextAlgebra/theories/ResourceAlgebra.v
     - ContextAlgebra/theories/ResourceInterface.v:288: Proof. apply rawA_compat_unit_r. Qed.
     - ContextLogic/theories/LogicQualifier.v:554: ++ exact (ResourceAlgebra.rawA_compat_unit_r
     - ContextLogic/theories/LogicQualifier.v:637: ++ exact (ResourceAlgebra.rawA_compat_unit_r
-- Lemma `rawA_restrict_to_singleton_if_projection_constant` @ line 291
+- Lemma `rawA_restrict_singleton_of_const_proj` @ line 291
   uses: 4 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextAlgebra/theories/ResourceAlgebra.v:1690: + apply rawA_restrict_to_singleton_if_projection_constant.
-    - ContextAlgebra/theories/ResourceAlgebra.v:1697: + apply rawA_restrict_to_singleton_if_projection_constant.
-    - ContextAlgebra/theories/ResourceAlgebra.v:1717: apply rawA_restrict_to_singleton_if_projection_constant.
-    - ContextAlgebra/theories/ResourceAlgebra.v:1734: apply rawA_restrict_to_singleton_if_projection_constant.
+    - ContextAlgebra/theories/ResourceAlgebra.v:1690: + apply rawA_restrict_singleton_of_const_proj.
+    - ContextAlgebra/theories/ResourceAlgebra.v:1697: + apply rawA_restrict_singleton_of_const_proj.
+    - ContextAlgebra/theories/ResourceAlgebra.v:1717: apply rawA_restrict_singleton_of_const_proj.
+    - ContextAlgebra/theories/ResourceAlgebra.v:1734: apply rawA_restrict_singleton_of_const_proj.
 - Lemma `worldA_compat_of_common_overlap_singleton` @ line 317
   uses: 2 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
   classification: ordinary helper; review by use sites
@@ -91,11 +91,11 @@ File: ContextAlgebra/theories/ResourceAlgebra.v
   sample uses:
     - ContextAlgebra/theories/ResourceInterface.v:291: Proof. apply wf_singleton_worldA. Qed.
     - ContextLogic/theories/LogicQualifier.v:66: set (wρ := (exist _ (singleton_worldA ρD) (wf_singleton_worldA ρD)
-- Lemma `resA_restrict_fiber_from_projection_dom_singleton` @ line 353
+- Lemma `resA_restrict_fiber_proj_singleton` @ line 353
   uses: 1 total; ltac/hint uses: 0; proof lines: 40; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextAlgebra/theories/ResourceInterface.v:368: Proof. apply resA_restrict_fiber_from_projection_dom_singleton. Qed.
+    - ContextAlgebra/theories/ResourceInterface.v:368: Proof. apply resA_restrict_fiber_proj_singleton. Qed.
 - Lemma `resA_fiber_singleton_projection_inv` @ line 395
   uses: 1 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
@@ -392,11 +392,11 @@ File: ContextAlgebra/theories/ResourceAlgebra.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextAlgebra/theories/ResourceAlgebra.v:1936: eapply storeA_restrict_union_same_projection.
-- Lemma `storeA_restrict_product_with_shared_projection` @ line 1876
+- Lemma `storeA_restrict_product_shared_proj` @ line 1876
   uses: 1 total; ltac/hint uses: 0; proof lines: 75; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextAlgebra/theories/ResourceAlgebra.v:2046: eapply storeA_restrict_product_with_shared_projection; eauto.
+    - ContextAlgebra/theories/ResourceAlgebra.v:2046: eapply storeA_restrict_product_shared_proj; eauto.
 - Lemma `resA_product_le_singleton_pullback_le` @ line 1953
   uses: 1 total; ltac/hint uses: 0; proof lines: 109; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
@@ -683,12 +683,12 @@ File: ContextAlgebra/theories/ResourceExtension.v
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextAlgebra/theories/ResourceInterface.v:757: Proof. apply resA_extend_by_commute. Qed.
-- Lemma `resA_extend_subworld_component_restrict_subset` @ line 633
+- Lemma `resA_extend_component_restrict_subset` @ line 633
   uses: 2 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextAlgebra/theories/ResourceExtension.v:730: eapply resA_extend_subworld_component_restrict_subset
-    - ContextAlgebra/theories/ResourceExtension.v:741: eapply resA_extend_subworld_component_restrict_subset
+    - ContextAlgebra/theories/ResourceExtension.v:730: eapply resA_extend_component_restrict_subset
+    - ContextAlgebra/theories/ResourceExtension.v:741: eapply resA_extend_component_restrict_subset
 - Lemma `resA_extend_by_functional_store_eq_from_base` @ line 661
   uses: 2 total; ltac/hint uses: 0; proof lines: 36; terminator: Qed.
   classification: ordinary helper; review by use sites
@@ -896,11 +896,11 @@ File: ContextAlgebra/theories/ResourceInterface.v
     - ContextLogic/theories/FormulaConnectives.v:919: * pose proof (res_fiber_from_projection_world_dom m mfib1
     - ContextLogic/theories/FormulaConnectives.v:927: pose proof (res_fiber_from_projection_world_dom m mfib1
     - ContextLogic/theories/FormulaConnectives.v:1647: pose proof (res_fiber_from_projection_world_dom m mfib
-- Lemma `res_restrict_fiber_from_projection_dom_singleton` @ line 364
+- Lemma `res_restrict_fiber_proj_singleton` @ line 364
   uses: 1 total; ltac/hint uses: 0; proof lines: 96; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - ContextLogic/theories/FormulaConnectives.v:669: - eapply res_restrict_fiber_from_projection_dom_singleton. exact Hproj.
+    - ContextLogic/theories/FormulaConnectives.v:669: - eapply res_restrict_fiber_proj_singleton. exact Hproj.
 - Lemma `res_fiber_singleton_projection_inv` @ line 370
   uses: 2 total; ltac/hint uses: 0; proof lines: 90; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup

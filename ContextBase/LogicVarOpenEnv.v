@@ -773,7 +773,7 @@ Proof.
     exists x. rewrite lookup_delete_ne by congruence. exact Hηn.
 Qed.
 
-Lemma open_env_fresh_for_lvars_delete_open_fresh_atom
+Lemma open_env_fresh_delete_open_atom
     (η : gmap nat atom) k y D :
   y ∉ lvars_fv D ->
   open_env_avoids_atom y (delete k η) ->
@@ -839,7 +839,7 @@ Proof.
   exists (LVFree x). split; [reflexivity|exact Hx].
 Qed.
 
-Lemma logic_var_open_env_insert_delete_swap_back_on
+Lemma open_env_insert_delete_swap_back_on
     (η : gmap nat atom) k y z D v :
   η !! k = Some z ->
   y ∉ lvars_fv D ->

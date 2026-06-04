@@ -190,7 +190,7 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
         by (exact Hfreshe || exact Hinj);
       rewrite formula_open_env_fibvars;
       [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];
-      rewrite lvars_open_env_lift_qual_vars_difference_bound0
+      rewrite open_env_lift_qual_diff_bound0
         by exact Hfreshφ;
       first [rewrite formula_open_env_over
             |rewrite formula_open_env_under];
@@ -264,7 +264,7 @@ Proof.
       {
         apply open_env_lift_fresh_for_lvars_at_depth1.
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        apply lvars_at_depth_arrow_body_lift_support_subset.
+        apply arrow_body_lvars_lift_support_subset.
       }
       cbn [ty_denote_gas].
       rewrite formula_open_env_and.
@@ -487,7 +487,7 @@ Ltac normalize_denot_formula_lvars :=
   rewrite ?lvars_at_depth_empty;
   cbn [context_ty_lvars_at tm_lvars_at value_lvars_at].
 
-Lemma formula_lvars_at_ty_denote_gas_subset_relevant gas d Σ τ e :
+Lemma ty_denote_gas_lvars_subset gas d Σ τ e :
   formula_lvars_at d (ty_denote_gas gas Σ τ e) ⊆
   tm_lvars_at d e ∪ context_ty_lvars_at d τ.
 Proof.
@@ -595,7 +595,7 @@ Proof.
       set_solver.
 Qed.
 
-Lemma formula_fv_ty_denote_gas_subset_relevant_pre_open gas Σ τ e :
+Lemma ty_denote_gas_fv_subset gas Σ τ e :
   formula_fv (ty_denote_gas gas Σ τ e) ⊆
   fv_tm e ∪ fv_cty τ.
 Proof.
@@ -604,7 +604,7 @@ Proof.
   - apply lvars_fv_mono.
     unfold relevant_lvars.
     transitivity (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ).
-    + apply formula_lvars_at_ty_denote_gas_subset_relevant.
+    + apply ty_denote_gas_lvars_subset.
     + change (tm_lvars_at 0 e) with (tm_lvars e).
       change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
       set_solver.
@@ -627,7 +627,7 @@ Proof.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [Hwf [Hworld [_ Htotal_e]]].
   transitivity (fv_tm e ∪ fv_cty τsmall).
-  - apply formula_fv_ty_denote_gas_subset_relevant_pre_open.
+  - apply ty_denote_gas_fv_subset.
   - pose proof (res_models_fuel_scoped _ _ _ Htotal_e) as Hscope_e.
     unfold formula_scoped_in_world in Hscope_e.
     rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_e.

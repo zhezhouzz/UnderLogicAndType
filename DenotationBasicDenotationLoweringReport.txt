@@ -112,7 +112,7 @@ the reusable transport theorem for the syntactic associativity
     `lvars_open k y L ∖ {[LVFree y]} ⊆ lvars_at_depth (S k) L`.
   - Reason: pure lvar-set opening/depth lemma; TLet just uses the `k=0` case.
 
-- `TLetSupport.v:1107` `context_ty_lvars_open_body_without_fresh_closed`
+- `TLetSupport.v:1107` `cty_lvars_open_body_closed_no_fresh`
   - Lower target: `ContextTypeLanguage`.
   - Change: prove from the generalized lvar-set lemma above; rename to
     `context_ty_lvars_open_without_fresh_at_depth`.
@@ -183,7 +183,7 @@ the reusable transport theorem for the syntactic associativity
 
 - `TLetSupport.v:333` `relevant_env_lookup_mono_context`
 - `TLetSupport.v:350` `relevant_env_dom_mono_context`
-- `TLetSupport.v:366` `basic_world_formula_denot_relevant_mono_context`
+- `TLetSupport.v:366` `basic_world_relevant_mono_context`
   - Lower target: `Denotation/TypeDenote.v`.
   - Change: keep these in Denotation, but out of TLetSupport.  They are about
     `relevant_env`, not TLet.
@@ -226,7 +226,7 @@ the reusable transport theorem for the syntactic associativity
     typing.  Splitting makes both parts reusable.
 
 - `TLetSupport.v:1654` `relevant_env_eq_of_tm_lvars_eq`
-- `TLetSupport.v:1664` `relevant_world_typing_closed_on_term_of_lvars_eq`
+- `TLetSupport.v:1664` `relevant_world_closed_on_term_lvars_eq`
 - `TLetSupport.v:1704` `relevant_world_typing_closed_on_term`
 - `TLetSupport.v:1715` `denot_ty_lvar_guard_wfworld_closed_on_term`
 - `TLetSupport.v:1731` `denot_ty_lvar_guard_wfworld_closed_on_term_le`
@@ -298,7 +298,7 @@ the reusable transport theorem for the syntactic associativity
   - Lower target: `ContextBase` for pure lvar/open-env facts;
     `ContextTypeLanguage` for lty-env facts.
   - Examples:
-    - `lvars_open_env_lift_qual_vars_difference_bound0`
+    - `open_env_lift_qual_diff_bound0`
     - `lvars_fv_open_env_lift_subset_at_depth1`
     - `open_env_lift_fresh_for_lvars_at_depth1`
     - `open_env_lift_fresh_for_bound0_singleton`

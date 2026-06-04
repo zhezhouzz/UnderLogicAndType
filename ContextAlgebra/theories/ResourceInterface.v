@@ -361,11 +361,11 @@ Proof.
   exact Hdom.
 Qed.
 
-Lemma res_restrict_fiber_from_projection_dom_singleton
+Lemma res_restrict_fiber_proj_singleton
     (w wfib : WfWorld) (X : aset) (σ : StoreT) :
   res_fiber_from_projection w X σ wfib →
   (res_restrict wfib (dom σ) : World) = singleton_world σ.
-Proof. apply resA_restrict_fiber_from_projection_dom_singleton. Qed.
+Proof. apply resA_restrict_fiber_proj_singleton. Qed.
 
 Lemma res_fiber_singleton_projection_inv
     (w wfib : WfWorld) (X : aset) (σ σX : StoreT) :

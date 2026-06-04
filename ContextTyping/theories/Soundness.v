@@ -146,7 +146,7 @@ Proof.
   rewrite <- (lty_env_restrict_lvars_twice_subset
     (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
     ({[LVFree x]}) (relevant_lvars τ (tret (vfvar x))) Hrel).
-  rewrite atom_env_to_lty_env_insert_restrict_singleton.
+  rewrite atom_env_insert_restrict_singleton.
   rewrite (lty_env_restrict_lvars_twice_subset
     (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
     ({[LVFree x]}) (relevant_lvars τ (tret (vfvar x))) Hrel).
@@ -250,7 +250,7 @@ Proof.
   - exact Hden1_m'.
 Qed.
 
-Lemma ctx_denote_under_comma_bind_from_result_extension
+Lemma ctx_comma_bind_of_result_ext
     (Σ : gmap atom ty) (Γ : ctx) (τ1 : context_ty) e1
     (m mx : WfWorldT) (Fx : FiberExtensionT) (x : atom) :
   context_typing_wf Σ Γ e1 τ1 ->
@@ -329,7 +329,7 @@ Proof.
       with (<[LVFree x := erase_ty τ1]>
         (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
     2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply basic_world_formula_insert_from_arg_denotation.
+    eapply basic_world_insert_of_arg.
     - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
     - eapply res_models_extend_mono; eauto.
       eapply ctx_denote_under_basic_world; eauto.
@@ -419,7 +419,7 @@ Proof.
   assert (Hctx_body :
       mx ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind x τ1))).
   {
-    eapply ctx_denote_under_comma_bind_from_result_extension; eauto.
+    eapply ctx_comma_bind_of_result_ext; eauto.
   }
   pose proof (IH2 x HxL mx Hctx_body) as Hbody.
   pose proof (ty_denote_under_comma_bind_to_lvar_insert
@@ -475,7 +475,7 @@ Proof.
       extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
         (res_restrict m (ext_in Fx)) Fx).
   {
-    eapply expr_result_extension_has_ltype_from_source_guard
+    eapply result_ext_typed_of_guard
       with (Σ := atom_env_to_lty_env (erase_ctx Γ))
         (τ := τ1) (e := e1) (x := x) (m := m) (mx := mx);
       eauto.
