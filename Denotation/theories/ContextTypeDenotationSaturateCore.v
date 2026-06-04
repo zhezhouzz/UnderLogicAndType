@@ -742,8 +742,7 @@ Proof.
   assert (Hbasicτ_Σ : basic_context_ty_lvars (dom Σ) τ).
   {
     eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_src].
-    unfold denot_relevant_env, lty_env_restrict_lvars.
-    rewrite storeA_restrict_dom. set_solver.
+    apply denot_relevant_env_dom_subset_direct.
   }
   assert (Hlookup_target :
       denot_relevant_env Σ τ (tret (vfvar x)) !! LVFree x =
