@@ -10,7 +10,7 @@ From ContextLogic Require Export FormulaSemantics.
 From ContextTypeLanguage Require Export Notation.
 From ContextBasicDenotation Require Export Notation.
 From ContextBasicDenotation Require Export StoreTyping TermTLet Qualifier
-  BasicTypingFormula RelevantEnv MsubstTransport.
+  BasicTypingFormula RelevantEnv.
 From ContextLogic Require Export FormulaSemantics FormulaConnectives FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).

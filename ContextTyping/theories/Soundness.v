@@ -184,30 +184,6 @@ Proof.
       exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
 Qed.
 
-Lemma msubst_basic_typing_tm_weaken_same_env Γ σ e T :
-  store_closed σ ->
-  env_has_type Γ σ ->
-  Γ ⊢ₑ e ⋮ T ->
-  Γ ⊢ₑ lstore_instantiate_tm (lstore_lift_free σ) e ⋮ T.
-Proof.
-  intros Hclosed Htyped Hty.
-  rewrite lstore_instantiate_tm_no_bvars.
-  2:{ apply lc_lstore_lift_free. }
-  2:{ change (lstore_to_store (lstore_lift_free σ)) with
-        (lstore_free_part (lstore_lift_free σ));
-      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed). }
-  change (lstore_to_store (lstore_lift_free σ)) with
-    (lstore_free_part (lstore_lift_free σ)).
-  rewrite lstore_free_part_lift_free.
-  pose proof (msubst_basic_typing_tm Γ σ e T
-    (proj1 Hclosed) Htyped Hty) as Hsubst.
-  eapply basic_typing_weaken_tm; [exact Hsubst|].
-  apply map_subseteq_spec.
-  intros x U Hlookup.
-  destruct (env_delete_lookup_some σ Γ x U Hlookup) as [HΓ _].
-  exact HΓ.
-Qed.
-
 Lemma lstore_instantiate_tm_at_lift_free_depth_irrel d1 d2 σ e :
   store_closed σ ->
   lstore_instantiate_tm_at d1 (lstore_lift_free σ : LStoreT) e =

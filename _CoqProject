@@ -75,7 +75,6 @@ ContextBasicDenotation/theories/TermTLet.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
 ContextBasicDenotation/theories/RelevantEnv.v
-ContextBasicDenotation/theories/MsubstTransport.v
 
 Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
@@ -90,6 +89,9 @@ Denotation/theories/ContextTypeDenotationSaturateWand.v
 Denotation/theories/ContextTypeDenotationSaturateMain.v
 Denotation/theories/ContextTypeDenotationSaturate.v
 Denotation/theories/Context.v
+Denotation/theories/ContextTypeDenotationCasesContext.v
+Denotation/theories/ContextTypeDenotationCasesConst.v
+Denotation/theories/ContextTypeDenotationCasesPrimop.v
 Denotation/theories/ContextTypeDenotationCases.v
 Denotation/theories/TLet.v
 
