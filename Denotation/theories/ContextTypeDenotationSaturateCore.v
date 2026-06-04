@@ -664,8 +664,7 @@ Proof.
              {
                pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_e) as Hfv.
                apply Hfv.
-               unfold lvars_of_atoms. apply elem_of_map.
-               exists y. split; [reflexivity|exact Hyfv].
+               unfold lvars_of_atoms. set_solver.
              }
              apply elem_of_dom in Hy_dom as [Uy HΣy].
              exists Uy. split; [exact HΣy|].
@@ -681,8 +680,7 @@ Proof.
              apply Hscope_src.
              apply lvars_fv_elem.
              apply Hfv.
-             unfold lvars_of_atoms. apply elem_of_map.
-             exists y. split; [reflexivity|exact Hy].
+             unfold lvars_of_atoms. set_solver.
            }
            specialize (Hres_stores (lstore_lift_free σ)
              ltac:(exists σ; split; [exact Hσ|reflexivity])).
@@ -708,7 +706,7 @@ Proof.
            destruct Hyσ as [u Hu].
            change (y ∈ dom (store_restrict σ (fv_tm e) : gmap atom value)).
            rewrite elem_of_dom. exists u.
-           apply storeA_restrict_lookup_some_2; assumption.
+           better_store_solver.
 Qed.
 
 Lemma denot_ty_lvar_gas_result_alias_guard
@@ -1135,12 +1133,7 @@ Proof.
   split.
   - rewrite res_lift_free_dom.
     rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
-    unfold lvars_of_atoms.
-    intros v Hv.
-    apply elem_of_map in Hv as [a [Hv_eq Ha]].
-    subst v.
-    apply elem_of_map. exists a. split; [reflexivity|].
-    apply Hfv2. exact Ha.
+    unfold lvars_of_atoms. set_solver.
   - intros τ Hτ.
     destruct Hτ as [σ [Hσ ->]].
     destruct (Hstores (lstore_lift_free σ)) as [v Heval1].
