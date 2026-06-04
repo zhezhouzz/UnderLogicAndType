@@ -437,16 +437,6 @@ Local Ltac solve_const_under_guard :=
   [apply expr_basic_typing_formula_ret_const_empty|];
   apply expr_total_formula_ret_const.
 
-Lemma res_models_true (m : WfWorldT) :
-  m ⊨ FTrue.
-Proof.
-  unfold res_models. cbn.
-  split.
-  - unfold formula_scoped_in_world, formula_fv. cbn [formula_lvars].
-    rewrite lvars_fv_empty. set_solver.
-  - trivial.
-Qed.
-
 Local Lemma lvset_singleton_difference_self (v : logic_var) :
   ({[v]} ∖ {[v]} : lvset) = ∅.
 Proof.
