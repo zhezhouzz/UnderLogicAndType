@@ -405,14 +405,7 @@ Local Ltac solve_const_under_guard :=
   apply expr_total_formula_ret_const.
 
 Local Ltac const_scope_set :=
-  intros z Hz;
-  repeat rewrite elem_of_union in Hz;
-  repeat rewrite elem_of_empty in Hz;
-  repeat rewrite elem_of_singleton in Hz;
-  repeat rewrite elem_of_union;
-  repeat rewrite elem_of_empty;
-  repeat rewrite elem_of_singleton;
-  intuition subst; eauto.
+  intros z Hz; set_solver.
 
 Local Ltac const_forall_scope_norm :=
   unfold formula_scoped_in_world;
