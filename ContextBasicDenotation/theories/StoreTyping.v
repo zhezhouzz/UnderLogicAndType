@@ -213,14 +213,6 @@ Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
 Proof. reflexivity. Qed.
 
-Lemma formula_lvars_fv_basic_world_formula Σ :
-  lvars_fv (formula_lvars (basic_world_formula Σ)) = lvars_fv (dom Σ).
-Proof.
-  change (lvars_fv (formula_lvars (basic_world_formula Σ)))
-    with (formula_fv (basic_world_formula Σ)).
-  apply formula_fv_basic_world_formula.
-Qed.
-
 Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
   X ⊆ Y ->
   wfworld_closed_on Y m ->
