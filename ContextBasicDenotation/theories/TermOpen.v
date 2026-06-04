@@ -20,15 +20,6 @@ Lemma formula_fv_expr_result_formula e x :
   lvars_fv (tm_lvars e ∪ {[x]}).
 Proof. reflexivity. Qed.
 
-Lemma formula_lvars_fv_expr_result_formula e x :
-  lvars_fv (formula_lvars (expr_result_formula e x)) =
-  lvars_fv (tm_lvars e ∪ {[x]}).
-Proof.
-  change (lvars_fv (formula_lvars (expr_result_formula e x)))
-    with (formula_fv (expr_result_formula e x)).
-  apply formula_fv_expr_result_formula.
-Qed.
-
 Lemma lstore_swap_lookup_inv_value a b (σ : LStoreT) z :
   ((lstore_swap a b σ : gmap logic_var value) !! z) =
   ((σ : gmap logic_var value) !! swap a b z).
