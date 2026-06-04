@@ -146,15 +146,6 @@ Proof.
       set_solver.
 Qed.
 
-Lemma formula_lvars_at_denot_ty_lvar_gas_subset gas d Σ τ e :
-  formula_lvars_at d (denot_ty_lvar_gas gas Σ τ e) ⊆
-  lvars_at_depth d (dom Σ) ∪ tm_lvars_at d e ∪ context_ty_lvars_at d τ.
-Proof.
-  intros v Hv.
-  apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant in Hv.
-  set_solver.
-Qed.
-
 Lemma formula_fv_open_denot_ty_lvar_gas_subset_relevant
     gas k y Σ τ e :
   y ∉ fv_tm e ->

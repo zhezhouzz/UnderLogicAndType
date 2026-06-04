@@ -143,16 +143,6 @@ Proof.
   apply formula_open_expr_result_formula_shift0_under_core.
 Qed.
 
-Lemma formula_open_env_lift_expr_result_formula_shift0 η e :
-  open_env_fresh_for_lvars η (tm_lvars e) ->
-  open_env_values_inj η ->
-  formula_open_env ((kmap S η))
-    (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
-  expr_result_formula (tm_shift 0 (open_tm_env η e)) (LVBound 0).
-Proof.
-  apply formula_open_env_lift_expr_result_formula_shift0_core.
-Qed.
-
 Lemma formula_open_over_body k y b φ e :
   y ∉ fv_tm e ->
   y ∉ qual_dom φ ->
