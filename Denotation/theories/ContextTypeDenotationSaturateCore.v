@@ -337,6 +337,35 @@ Proof.
   eapply denot_ty_lvar_gas_extend_typed_extension; eauto.
 Qed.
 
+Lemma atom_store_has_ltype_restrict_fv_from_source_guard
+    (Σ : lty_env) τ e (m : WfWorldT) σ :
+  m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
+  m ⊨ expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+    (erase_ty τ) ->
+  worldA_stores (m : WorldT) σ ->
+  atom_store_has_ltype (denot_relevant_env Σ τ e)
+    (store_restrict σ (fv_tm e)).
+Proof.
+  intros Hworld Hbasic Hσ y u Hlookup.
+  apply storeA_restrict_lookup_some in Hlookup as [Hyfv Hσy].
+  apply basic_world_formula_models_iff in Hworld as [_ [_ Htyped]].
+  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+  destruct Htyped as [_ Hstores].
+  specialize (Hstores (lstore_lift_free σ)
+    ltac:(exists σ; split; [exact Hσ|reflexivity])).
+  assert (Hy_dom : LVFree y ∈ dom (denot_relevant_env Σ τ e)).
+  {
+    pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
+    apply Hfv. unfold lvars_of_atoms. set_solver.
+  }
+  apply elem_of_dom in Hy_dom as [Uy HΣy].
+  exists Uy. split; [exact HΣy|].
+  eapply Hstores; [exact HΣy|].
+  change (((lstore_lift_free σ : LStoreT) : gmap logic_var value)
+    !! LVFree y = Some u).
+  rewrite lstore_lift_free_lookup_free. exact Hσy.
+Qed.
+
 Lemma expr_result_extension_has_ltype_from_source_guard
     (Σ : lty_env) τ e x
     (m mx : WfWorldT) (Fx : FiberExtensionT) :
@@ -360,6 +389,8 @@ Proof.
   pose proof Hguard as Hparts.
   repeat rewrite res_models_and_iff in Hparts.
   destruct Hparts as [_ [Hworld [Hbasic Htotal]]].
+  pose proof Hworld as Hworld_model.
+  pose proof Hbasic as Hbasic_model.
   apply basic_world_formula_models_iff in Hworld as [_ [_ Hworld_typed]].
   apply expr_basic_typing_formula_models_iff in Hbasic
     as [Hrel_closed [_ Hty_e]].
@@ -399,28 +430,11 @@ Proof.
           simpl in Hσin.
           destruct Hσin as [σm [Hσm Hrestrict]].
           subst σin.
-          destruct Hworld_typed as [_ Hstores].
-          specialize (Hstores (lstore_lift_free σm)).
-          assert (Hlift :
-            worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σm)).
-          { exists σm. split; [exact Hσm|reflexivity]. }
-          specialize (Hstores Hlift).
-          intros a v Hlook.
-          apply storeA_restrict_lookup_some in Hlook as [Ha_fv Hσm_a].
-          assert (Ha_dom :
-              LVFree a ∈ dom (denot_relevant_env Σ τ e)).
-          {
-            apply Hfv_e.
-            unfold lvars_of_atoms. apply elem_of_map.
-            exists a. split; [reflexivity|].
-            rewrite <- Hin. exact Ha_fv.
-          }
-          apply elem_of_dom in Ha_dom as [Ta HΣa].
-          exists Ta. split; [exact HΣa|].
-          eapply Hstores; [exact HΣa|].
-          change (((lstore_lift_free σm : LStoreT)
-            : gmap logic_var value) !! LVFree a = Some v).
-          rewrite lstore_lift_free_lookup_free. exact Hσm_a.
+          replace (store_restrict σm (ext_in Fx))
+            with (store_restrict σm (fv_tm e))
+            by (rewrite Hin; reflexivity).
+          eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+            [exact Hworld_model|exact Hbasic_model|exact Hσm].
         }
         destruct Htotal_m as [_ Htotal_eval].
         assert (Hexists_eval : exists v, expr_eval_in_atom_store σin e v).
@@ -572,6 +586,8 @@ Lemma basic_world_formula_result_alias_target
   m ⊨ basic_world_formula (denot_relevant_env Σ τ (tret (vfvar x))).
 Proof.
   intros HΣclosed HΣx Hres Hworld_src Hbasic_src.
+  pose proof Hworld_src as Hworld_src_model.
+  pose proof Hbasic_src as Hbasic_src_model.
   apply basic_world_formula_models_iff in Hworld_src
     as [Hlc_src [Hscope_src Htyped_src]].
   apply expr_basic_typing_formula_models_iff in Hbasic_src
@@ -650,25 +666,8 @@ Proof.
                atom_store_has_ltype (denot_relevant_env Σ τ e)
                  (store_restrict σ (fv_tm e))).
            {
-             intros y u Hσy.
-             apply storeA_restrict_lookup_some in Hσy as [Hyfv Hσy].
-             assert (Hσl_y :
-               ((lstore_lift_free σ : LStoreT) : gmap logic_var value)
-                 !! LVFree y = Some u).
-             { rewrite lstore_lift_free_lookup_free. exact Hσy. }
-             pose proof Htyped_src as [_ Hstores_src].
-             specialize (Hstores_src (lstore_lift_free σ)
-               ltac:(exists σ; split; [exact Hσ|reflexivity])).
-             assert (Hy_dom :
-                 LVFree y ∈ dom (denot_relevant_env Σ τ e)).
-             {
-               pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_e) as Hfv.
-               apply Hfv.
-               unfold lvars_of_atoms. set_solver.
-             }
-             apply elem_of_dom in Hy_dom as [Uy HΣy].
-             exists Uy. split; [exact HΣy|].
-             eapply Hstores_src; [exact HΣy|exact Hσl_y].
+             eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+               [exact Hworld_src_model|exact Hbasic_src_model|exact Hσ].
            }
            assert (Hfv_e : fv_tm e ⊆ dom (σ : StoreT)).
            {
