@@ -3,7 +3,7 @@
     Small context-introduction and relevant-environment helpers used by
     direct Fundamental cases. *)
 
-From Denotation Require Import Context ContextTypeDenotationSaturate.
+From Denotation Require Import Context ContextTypeDenotationSaturateCore.
 
 Section ContextTypeDenotationCasesContext.
 

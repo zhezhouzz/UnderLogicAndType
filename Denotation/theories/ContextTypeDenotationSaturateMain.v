@@ -1,6 +1,6 @@
 (** * Denotation.ContextTypeDenotationSaturateMain
 
-    Split out from [ContextTypeDenotationSaturate.v] to keep individual proof files small. *)
+    Main term-result-equivalence transport theorem. *)
 
 From Denotation Require Import Notation ContextTypeDenotationOpen.
 From Denotation Require Export ContextTypeDenotationTactics.

@@ -15,8 +15,10 @@ From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
-From Denotation Require Import ContextTypeDenotationSaturate
-  ContextTypeDenotationCases TLet.
+From Denotation Require Import ContextTypeDenotationSaturateCore
+  ContextTypeDenotationSaturateMain
+  ContextTypeDenotationCasesConst ContextTypeDenotationCasesContext
+  TLet.
 From ContextTyping Require Export Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).

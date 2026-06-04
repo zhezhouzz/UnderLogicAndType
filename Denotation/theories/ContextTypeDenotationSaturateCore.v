@@ -1,4 +1,4 @@
-(** * Denotation.ContextTypeDenotationSaturate
+(** * Denotation.ContextTypeDenotationSaturateCore
 
     Split out from [ContextTypeDenotation.v] to keep individual proof files small. *)
 

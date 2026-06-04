@@ -1,6 +1,6 @@
 (** * Denotation.ContextTypeDenotationSaturateArrow
 
-    Split out from [ContextTypeDenotationSaturate.v] to keep individual proof files small. *)
+    Arrow case for term-result-equivalence transport. *)
 
 From Denotation Require Import Notation ContextTypeDenotationOpen.
 From Denotation Require Export ContextTypeDenotationTactics.

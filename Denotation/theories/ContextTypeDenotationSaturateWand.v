@@ -1,6 +1,6 @@
 (** * Denotation.ContextTypeDenotationSaturateWand
 
-    Split out from [ContextTypeDenotationSaturate.v] to keep individual proof files small. *)
+    Wand case for term-result-equivalence transport. *)
 
 From Denotation Require Import Notation ContextTypeDenotationOpen.
 From Denotation Require Export ContextTypeDenotationTactics.

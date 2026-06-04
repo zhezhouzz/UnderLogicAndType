@@ -2,7 +2,8 @@
 
     TLet introduction via term-result equivalence. *)
 
-From Denotation Require Import Notation ContextTypeDenotationSaturate.
+From Denotation Require Import Notation ContextTypeDenotationSaturateCore
+  ContextTypeDenotationSaturateMain.
 
 Section TLetDenotation.
 
