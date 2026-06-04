@@ -36,9 +36,7 @@ Proof.
   pose proof (res_models_scoped _ _ Hres) as Hscope.
   unfold formula_scoped_in_world in Hscope.
   apply Hscope.
-  rewrite formula_fv_expr_result_formula.
-  cbn [lqual_fv lqual_lvars lvar_value_keys].
-  rewrite lvars_fv_union, lvars_fv_singleton_free.
+  normalize_denotation_formula_fv.
   set_solver.
 Qed.
 
