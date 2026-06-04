@@ -4,7 +4,7 @@
     Fundamental. *)
 
 From Denotation Require Import Context ContextTypeDenotationSaturateCore
-  ContextTypeDenotationSaturateMain ContextTypeDenotationCasesContext.
+  ContextTypeDenotationSaturateMain.
 
 Section ContextTypeDenotationCasesConst.
 

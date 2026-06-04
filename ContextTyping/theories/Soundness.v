@@ -17,7 +17,7 @@ From ContextBasicDenotation Require Import StoreTyping TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import ContextTypeDenotationSaturateCore
   ContextTypeDenotationSaturateMain
-  ContextTypeDenotationCasesConst ContextTypeDenotationCasesContext
+  ContextTypeDenotationCasesConst
   TLet.
 From ContextTyping Require Export Typing.
 

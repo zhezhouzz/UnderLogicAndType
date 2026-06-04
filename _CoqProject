@@ -87,7 +87,6 @@ Denotation/theories/ContextTypeDenotationSaturateArrow.v
 Denotation/theories/ContextTypeDenotationSaturateWand.v
 Denotation/theories/ContextTypeDenotationSaturateMain.v
 Denotation/theories/Context.v
-Denotation/theories/ContextTypeDenotationCasesContext.v
 Denotation/theories/ContextTypeDenotationCasesConst.v
 Denotation/theories/TLet.v
 
