@@ -703,6 +703,7 @@ Proof.
     (cty_depth τ2)
     (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
     τ2 e1 e2 x Fx m mx
+    ltac:(cbn [fv_tm] in Hxtlet; set_solver)
     HFx Hext Hbody_zero Hmx_zero_tlet Hbody_insert) as Hlet_mx_insert.
   rewrite (denot_ty_lvar_gas_insert_fresh_lty_env_eq
     (cty_depth τ2) (atom_env_to_lty_env (erase_ctx Γ)) τ2

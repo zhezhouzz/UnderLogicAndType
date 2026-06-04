@@ -196,6 +196,154 @@ Proof.
   apply expr_eval_in_atom_store_tlete_intro_core.
 Qed.
 
+Lemma lstore_open_alias_restrict
+    (e : tm) (σ : StoreT) x y vx :
+  σ !! x = Some vx ->
+  y ∉ dom (σ : gmap atom value) ->
+  x ∉ fv_tm e ->
+  y ∉ fv_tm e ->
+  storeA_restrict
+    (lstore_swap (LVBound 0) (LVFree x) (lstore_lift_free σ) : LStoreT)
+    (tm_lvars e) =
+  storeA_restrict
+    (lstore_swap (LVBound 0) (LVFree y)
+      (lstore_lift_free (<[y := vx]> σ)))
+    (tm_lvars e).
+Proof.
+  intros Hx Hyσ Hxe Hye.
+  apply storeA_map_eq. intros z.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ tm_lvars e)) as [Hz|Hz]; [|reflexivity].
+  rewrite !lstore_swap_lookup_inv_value.
+  destruct z as [k|a].
+  - destruct k as [|k].
+    + base_swap_normalize.
+      rewrite !lstore_lift_free_lookup_free.
+      change (σ !! x =
+        ((<[y := vx]> (σ : gmap atom value) : gmap atom value) !! y)).
+      transitivity (Some vx).
+      * exact Hx.
+      * symmetry. apply map_lookup_insert.
+    + base_swap_normalize.
+      rewrite !lstore_lift_free_lookup_bound. reflexivity.
+  - cbn [swap].
+    destruct (decide (a = x)) as [->|Hax].
+    {
+      exfalso. apply Hxe.
+      rewrite <- tm_lvars_fv.
+      apply lvars_fv_elem. exact Hz.
+    }
+    destruct (decide (a = y)) as [->|Hay].
+    {
+      exfalso. apply Hye.
+      rewrite <- tm_lvars_fv.
+      apply lvars_fv_elem. exact Hz.
+    }
+    base_swap_normalize.
+    rewrite !lstore_lift_free_lookup_free.
+    transitivity (σ !! a).
+    { reflexivity. }
+    { symmetry. apply map_lookup_insert_ne. congruence. }
+Qed.
+
+Lemma expr_eval_in_atom_store_open_alias
+    e σ x y vx v :
+  σ !! x = Some vx ->
+  y ∉ dom (σ : gmap atom value) ->
+  x ∉ fv_tm e ->
+  y ∉ fv_tm e ->
+  tm_lvars (e ^^ x) ⊆ lvars_of_atoms (dom (σ : gmap atom value)) ->
+  expr_eval_in_atom_store σ (e ^^ x) v <->
+  expr_eval_in_atom_store (<[y := vx]> σ) (e ^^ y) v.
+Proof.
+  intros Hx Hyσ Hxe Hye Hscope.
+  unfold expr_eval_in_atom_store.
+  change (tm_lvars (e ^^ x)) with
+    (tm_lvars (open_tm 0 (vfvar x) e)) in Hscope.
+  change (e ^^ x) with (open_tm 0 (vfvar x) e).
+  change (e ^^ y) with (open_tm 0 (vfvar y) e).
+  assert (Hdomx :
+      lvars_open 0 x (tm_lvars e) ⊆
+      dom (lstore_lift_free σ : LStoreT)).
+  {
+    rewrite <- (tm_lvars_open 0 x e Hxe).
+    rewrite dom_lstore_lift_free. exact Hscope.
+  }
+  assert (Hdomy :
+      lvars_open 0 y (tm_lvars e) ⊆
+      dom (lstore_lift_free (<[y := vx]> σ) : LStoreT)).
+  {
+    rewrite <- (tm_lvars_open 0 y e Hye).
+    rewrite dom_lstore_lift_free.
+    intros z Hz.
+    rewrite (tm_lvars_open 0 y e Hye) in Hz.
+    rewrite (tm_lvars_open 0 x e Hxe) in Hscope.
+    assert (Hzx_or : z ∈ lvars_open 0 x (tm_lvars e) ∪ {[LVFree y]}).
+    {
+      clear -Hz Hxe Hye.
+      assert (HxLV : LVFree x ∉ tm_lvars e).
+      { apply tm_lvars_free_notin_of_fv. exact Hxe. }
+      assert (HyLV : LVFree y ∉ tm_lvars e).
+      { apply tm_lvars_free_notin_of_fv. exact Hye. }
+      clear Hxe Hye.
+      rewrite set_swap_elem in Hz.
+      apply elem_of_union.
+      destruct z as [k|a].
+      - destruct k as [|k].
+        + rewrite swap_l in Hz.
+          exfalso. exact (HyLV Hz).
+        + left. apply set_swap_elem.
+          rewrite swap_fresh in Hz by discriminate.
+          rewrite swap_fresh by discriminate.
+          exact Hz.
+      - destruct (decide (a = y)) as [->|Hay].
+        + right. apply elem_of_singleton. reflexivity.
+        + destruct (decide (a = x)) as [->|Hax].
+          * rewrite swap_fresh in Hz by (try discriminate; congruence).
+            exfalso. exact (HxLV Hz).
+          * left. apply set_swap_elem.
+            rewrite swap_fresh in Hz by (try discriminate; congruence).
+            rewrite swap_fresh by (try discriminate; congruence).
+            exact Hz.
+    }
+    apply elem_of_union in Hzx_or as [Hzx|Hzy].
+    - specialize (Hscope _ Hzx).
+      unfold lvars_of_atoms in *.
+      apply elem_of_map in Hscope as [a [-> Ha]].
+      apply elem_of_map. exists a. split; [reflexivity|].
+      apply elem_of_dom in Ha as [u Hu].
+      apply elem_of_dom.
+      destruct (decide (a = y)) as [->|Hay].
+      + exists vx. apply map_lookup_insert.
+      + exists u.
+        change (((<[y := vx]> (σ : gmap atom value) : gmap atom value) !! a) =
+          Some u).
+        transitivity (σ !! a).
+        * apply lookup_insert_ne. congruence.
+        * exact Hu.
+    - apply elem_of_singleton in Hzy. subst z.
+      unfold lvars_of_atoms. apply elem_of_map.
+      exists y. split; [reflexivity|].
+      apply elem_of_dom. exists vx.
+      change (((<[y := vx]> (σ : gmap atom value) : gmap atom value) !! y) =
+        Some vx).
+      apply map_lookup_insert.
+  }
+  rewrite <- (expr_eval_in_store_open_back_iff 0 x e v
+    (lstore_lift_free σ)) by (exact Hxe || exact Hdomx).
+  rewrite <- (expr_eval_in_store_open_back_iff 0 y e v
+    (lstore_lift_free (<[y := vx]> σ))) by (exact Hye || exact Hdomy).
+  unfold expr_eval_in_store.
+  rewrite <- (expr_eval_in_store_restrict_lvars e
+    (lstore_swap (LVBound 0) (LVFree x) (lstore_lift_free σ)) (tm_lvars e) v
+    ltac:(set_solver)).
+  rewrite <- (expr_eval_in_store_restrict_lvars e
+    (lstore_swap (LVBound 0) (LVFree y) (lstore_lift_free (<[y := vx]> σ)))
+    (tm_lvars e) v ltac:(set_solver)).
+  rewrite (lstore_open_alias_restrict e σ x y vx Hx Hyσ Hxe Hye).
+  reflexivity.
+Qed.
+
 Lemma expr_total_formula_models_iff e (m : WfWorldT) :
   res_models m (expr_total_formula e) <->
   logic_qualifier_denote (expr_total_lqual e) m.
