@@ -25,6 +25,16 @@ Definition denot_relevant_env (Σ : lty_env) (τ : context_ty) (e : tm)
     : lty_env :=
   lty_env_restrict_lvars Σ (denot_relevant_lvars τ e).
 
+Lemma denot_relevant_env_empty (Σ : lty_env) τ e :
+  denot_relevant_lvars τ e = (∅ : lvset) ->
+  denot_relevant_env Σ τ e = (∅ : lty_env).
+Proof.
+  intros Hempty.
+  unfold denot_relevant_env, lty_env_restrict_lvars.
+  rewrite Hempty.
+  apply storeA_restrict_empty_set.
+Qed.
+
 Lemma lvars_of_atoms_empty :
   lvars_of_atoms (∅ : aset) = (∅ : lvset).
 Proof.

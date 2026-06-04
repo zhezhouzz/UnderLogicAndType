@@ -102,25 +102,14 @@ Lemma denot_relevant_env_const_precise_atom_env_empty Σ c :
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply denot_relevant_env_empty.
+  unfold denot_relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
 Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
@@ -128,25 +117,14 @@ Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply denot_relevant_env_empty.
+  unfold denot_relevant_lvars, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
 Lemma denot_relevant_env_const_under_atom_env_empty Σ c :
@@ -154,25 +132,14 @@ Lemma denot_relevant_env_const_under_atom_env_empty Σ c :
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply map_eq. intros v.
-  destruct v as [k|x].
-  - unfold denot_relevant_env, lty_env_restrict_lvars.
-    apply eq_None_not_Some. intros [T Hlookup].
-    apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-    rewrite atom_store_to_lvar_store_lookup_bound_none in Hlookup.
-    discriminate.
-  - apply eq_None_not_Some. intros [T Hlookup].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Hlookup.
-    apply storeA_restrict_lookup_some in Hlookup as [Hin _].
-    apply lvars_fv_elem in Hin.
-    unfold denot_relevant_lvars, mk_q_eq in Hin.
-    cty_lvars_syntax_norm_in Hin.
-    unfold qual_vars in Hin.
-    cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at
-      lvar_value_keys] in Hin.
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hin.
-    set_solver.
+  apply denot_relevant_env_empty.
+  unfold denot_relevant_lvars, mk_q_eq.
+  cty_lvars_syntax_norm.
+  unfold qual_vars.
+  cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0,
+    ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+  set_solver.
 Qed.
 
 Lemma const_qual_open_vars c y :
