@@ -963,6 +963,74 @@ Proof.
   reflexivity.
 Qed.
 
+Ltac rewrite_lift_free_bvar_in H :=
+  match type of H with
+  | context [match decide (?d <= ?n) with
+             | left _ =>
+                 match StoreInterface.lstore_bound_part (V:=value)
+                         (lstore_lift_free ?σ : LStoreT) !! (?n - ?d) with
+                 | Some u => u | None => vbvar ?n end
+             | right _ => vbvar ?n
+             end] =>
+      change (match decide (d <= n) with
+              | left _ =>
+                  match StoreInterface.lstore_bound_part (V:=value)
+                          (lstore_lift_free σ : LStoreT) !! (n - d) with
+                  | Some u => u | None => vbvar n end
+              | right _ => vbvar n
+              end) with
+        (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n)) in H;
+	      rewrite lstore_instantiate_value_at_lift_free_bvar in H
+  end.
+
+Ltac invert_instantiated_tm_shape :=
+  cbn [lstore_instantiate_tm_at lstore_instantiate_tm_split_at] in *;
+  try discriminate;
+  match goal with
+  | Heq : _ = lstore_instantiate_tm_at _ _ _ |- _ =>
+      unfold lstore_instantiate_tm_at in Heq;
+      cbn [lstore_instantiate_tm_split_at] in Heq;
+      inversion Heq; subst
+  | Heq : ret _ = ret _ |- _ =>
+      inversion Heq; subst
+  | Heq : (let: _ in _) = (let: _ in _) |- _ =>
+      inversion Heq; subst
+  | Heq : tprim _ _ = tprim _ _ |- _ =>
+      inversion Heq; subst
+  | Heq : tapp _ _ = tapp _ _ |- _ =>
+      inversion Heq; subst
+  | Heq : tmatch _ _ _ = tmatch _ _ _ |- _ =>
+      inversion Heq; subst
+  end.
+
+Ltac solve_instantiated_fvar_case Heq :=
+  cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in Heq;
+  rewrite ?lstore_free_part_lift_free in Heq;
+  match type of Heq with
+  | context [match (?σ : gmap atom value) !! ?x with
+             | Some u => u
+             | None => vfvar ?x
+             end] =>
+      let Hlookup := fresh "Hlookup" in
+      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hlookup;
+      [ replace (match (σ : gmap atom value) !! x with
+                 | Some u => u | None => vfvar x end) with vx in Heq
+          by (rewrite Hlookup; reflexivity);
+        destruct vx; inversion Heq; subst;
+        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto
+      | replace (match (σ : gmap atom value) !! x with
+                 | Some u => u | None => vfvar x end) with (vfvar x) in Heq
+          by (rewrite Hlookup; reflexivity);
+        first
+          [ discriminate
+          | inversion Heq; subst; constructor; subst;
+            match goal with
+            | Hlook : lty_env_msubst_store _ _ !! _ = Some _ |- _ =>
+                apply lty_env_msubst_store_lookup_some in Hlook as [Hlook' _];
+                exact Hlook'
+            end ] ]
+  end.
+
 Lemma basic_has_ltype_msubst_store_back_by_derivation :
   (forall Σt vt T,
     basic_value_has_ltype Σt vt T ->
@@ -984,61 +1052,14 @@ Proof.
       cbn [lstore_instantiate_value_at
         lstore_instantiate_value_split_at] in H0; try discriminate.
     + inversion H0; subst. constructor.
-    + try rewrite lstore_free_part_lift_free in H0.
-      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with vx in H0 by (rewrite Hσx; reflexivity).
-        inversion H0; subst vx.
-        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with (vfvar x) in H0 by (rewrite Hσx; reflexivity).
-        discriminate.
-    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
-        with
-          ((match decide (d <= n) with
-            | left _ =>
-                match StoreInterface.lstore_bound_part (V:=value)
-                        (lstore_lift_free σ : LStoreT) !! (n - d) with
-                | Some u => u | None => vbvar n end
-            | right _ => vbvar n
-            end) : value) in H0 by reflexivity.
-      destruct (decide (d <= n)).
-      * replace (StoreInterface.lstore_bound_part (V:=value)
-            (lstore_lift_free σ : LStoreT) !! (n - d))
-          with (@None value) in H0.
-        -- discriminate.
-        -- rewrite StoreInterface.lstore_bound_part_lookup.
-           symmetry. apply lstore_lift_free_lookup_bound.
-      * discriminate.
+	    + try rewrite lstore_free_part_lift_free in H0.
+	      solve_instantiated_fvar_case H0.
+    + rewrite_lift_free_bvar_in H0.
+      discriminate.
   - destruct v as [c|z|n|s body|Tf vf];
       cbn [lstore_instantiate_value_at
         lstore_instantiate_value_split_at] in H1; try discriminate.
-    + match goal with
-      | Heq : vfvar _ = _ |- _ =>
-          try rewrite lstore_free_part_lift_free in Heq
-      end.
-      cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H0.
-      rewrite lstore_free_part_lift_free in H0.
-      destruct ((σ : gmap atom value) !! z) as [vz|] eqn:Hσz.
-      * replace (match (σ : gmap atom value) !! z with
-                 | Some u => u
-                 | None => vfvar z
-                 end) with vz in H0 by (rewrite Hσz; reflexivity).
-        destruct vz; inversion H0; subst.
-        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
-      * replace (match (σ : gmap atom value) !! z with
-                 | Some u => u
-                 | None => vfvar z
-                 end) with (vfvar z) in H0 by (rewrite Hσz; reflexivity).
-        inversion H0; subst.
-        constructor.
-        subst.
-        apply lty_env_msubst_store_lookup_some in e as [Hlook _].
-        exact Hlook.
+	    + solve_instantiated_fvar_case H0.
     + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
         with
           ((match decide (d <= n) with
@@ -1059,22 +1080,7 @@ Proof.
   - destruct v as [c|x|n'|s body|Tf vf];
       cbn [lstore_instantiate_value_at
         lstore_instantiate_value_split_at] in H1; try discriminate.
-    + cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H0.
-      replace (lstore_free_part (lstore_lift_free σ) !! x)
-        with ((σ : gmap atom value) !! x) in H0
-        by (rewrite lstore_free_part_lift_free; reflexivity).
-      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with vx in H0 by (rewrite Hσx; reflexivity).
-        destruct vx; inversion H0; subst.
-        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with (vfvar x) in H0 by (rewrite Hσx; reflexivity).
-        discriminate.
+	    + solve_instantiated_fvar_case H0.
     + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n'))
         with
           ((match decide (d <= n') with
@@ -1103,39 +1109,9 @@ Proof.
   - destruct v as [c|x|n|s' e'|Tf vf];
       cbn [lstore_instantiate_value_at
         lstore_instantiate_value_split_at] in H1; try discriminate.
-    + cbn [lstore_instantiate_value_at lstore_instantiate_value_split_at] in H1.
-      replace (lstore_free_part (lstore_lift_free σ) !! x)
-        with ((σ : gmap atom value) !! x) in H1
-        by (rewrite lstore_free_part_lift_free; reflexivity).
-      destruct ((σ : gmap atom value) !! x) as [vx|] eqn:Hσx.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with vx in H1 by (rewrite Hσx; reflexivity).
-        destruct vx; inversion H1; subst.
-        eapply basic_value_has_ltype_msubst_store_back_fvar; eauto.
-      * replace (match (σ : gmap atom value) !! x with
-                 | Some u => u
-                 | None => vfvar x
-                 end) with (vfvar x) in H1 by (rewrite Hσx; reflexivity).
-        discriminate.
-    + replace (lstore_instantiate_value_at d (lstore_lift_free σ) (vbvar n))
-        with
-          ((match decide (d <= n) with
-            | left _ =>
-                match StoreInterface.lstore_bound_part (V:=value)
-                        (lstore_lift_free σ : LStoreT) !! (n - d) with
-                | Some u => u | None => vbvar n end
-            | right _ => vbvar n
-            end) : value) in H1 by reflexivity.
-      destruct (decide (d <= n)).
-      * replace (StoreInterface.lstore_bound_part (V:=value)
-            (lstore_lift_free σ : LStoreT) !! (n - d))
-          with (@None value) in H1.
-        -- discriminate.
-        -- rewrite StoreInterface.lstore_bound_part_lookup.
-           symmetry. apply lstore_lift_free_lookup_bound.
-      * discriminate.
+	    + solve_instantiated_fvar_case H1.
+    + rewrite_lift_free_bvar_in H1.
+      discriminate.
     + inversion H1; subst.
       eapply BVT_Lam with
         (L := L ∪ dom (σ : gmap atom value) ∪ fv_tm e').
@@ -1216,30 +1192,11 @@ Proof.
            ++ apply Hy. apply elem_of_union_r. exact Hin.
       * exact Hσy.
   - destruct e as [vsrc|e1 e2|op' vop|v1 v2|vm et ef];
-      cbn [lstore_instantiate_tm_at
-        lstore_instantiate_tm_split_at] in *; try discriminate.
-    match goal with
-    | Heq : ret _ = lstore_instantiate_tm_at _ _ (ret _) |- _ =>
-        unfold lstore_instantiate_tm_at in Heq;
-        cbn [lstore_instantiate_tm_split_at] in Heq;
-        inversion Heq; subst
-    | Heq : ret _ = ret _ |- _ =>
-        inversion Heq; subst
-    end.
+      invert_instantiated_tm_shape.
     constructor.
     eapply H; eauto; reflexivity.
   - destruct e as [vsrc|e1' e2'|op vop|v1 v2|vm et ef];
-      cbn [lstore_instantiate_tm_at
-        lstore_instantiate_tm_split_at] in *; try discriminate.
-    match goal with
-    | Heq : (let: _ in _) =
-        lstore_instantiate_tm_at _ _ (let: _ in _) |- _ =>
-        unfold lstore_instantiate_tm_at in Heq;
-        cbn [lstore_instantiate_tm_split_at] in Heq;
-        inversion Heq; subst
-    | Heq : (let: _ in _) = (let: _ in _) |- _ =>
-        inversion Heq; subst
-    end.
+      invert_instantiated_tm_shape.
     eapply BTT_Let with
       (L := L ∪ dom (σ : gmap atom value) ∪ fv_tm e2').
     + eapply H; eauto; reflexivity.
@@ -1269,44 +1226,14 @@ Proof.
            ++ apply Hy. apply elem_of_union_r. exact Hin.
       * exact Hσy.
   - destruct e0 as [vsrc|e1 e2|op' vop|v1 v2|vm et ef];
-      cbn [lstore_instantiate_tm_at
-        lstore_instantiate_tm_split_at] in *; try discriminate.
-    match goal with
-    | Heq : tprim _ _ =
-        lstore_instantiate_tm_at _ _ (tprim _ _) |- _ =>
-        unfold lstore_instantiate_tm_at in Heq;
-        cbn [lstore_instantiate_tm_split_at] in Heq;
-        inversion Heq; subst
-    | Heq : tprim _ _ = tprim _ _ |- _ =>
-        inversion Heq; subst
-    end.
+      invert_instantiated_tm_shape.
     eapply BTT_Op; [exact e|].
     eapply H; eauto; reflexivity.
   - destruct e as [vsrc|e1 e2|op vop|v1' v2'|vm et ef];
-      cbn [lstore_instantiate_tm_at
-        lstore_instantiate_tm_split_at] in *; try discriminate.
-    match goal with
-    | Heq : tapp _ _ =
-        lstore_instantiate_tm_at _ _ (tapp _ _) |- _ =>
-        unfold lstore_instantiate_tm_at in Heq;
-        cbn [lstore_instantiate_tm_split_at] in Heq;
-        inversion Heq; subst
-    | Heq : tapp _ _ = tapp _ _ |- _ =>
-        inversion Heq; subst
-    end.
+      invert_instantiated_tm_shape.
     eapply BTT_App; eauto; try reflexivity.
   - destruct e as [vsrc|e1 e2|op vop|v1 v2|vm et' ef'];
-      cbn [lstore_instantiate_tm_at
-        lstore_instantiate_tm_split_at] in *; try discriminate.
-    match goal with
-    | Heq : tmatch _ _ _ =
-        lstore_instantiate_tm_at _ _ (tmatch _ _ _) |- _ =>
-        unfold lstore_instantiate_tm_at in Heq;
-        cbn [lstore_instantiate_tm_split_at] in Heq;
-        inversion Heq; subst
-    | Heq : tmatch _ _ _ = tmatch _ _ _ |- _ =>
-        inversion Heq; subst
-    end.
+      invert_instantiated_tm_shape.
     eapply BTT_Match; eauto; try reflexivity.
 Qed.
 

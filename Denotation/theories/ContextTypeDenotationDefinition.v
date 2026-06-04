@@ -161,6 +161,66 @@ Proof.
   reflexivity.
 Qed.
 
+Ltac denot_open_env_child_fresh Hfresh :=
+  eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+  unfold denot_relevant_lvars;
+  intros v Hv; cbn [context_ty_lvars context_ty_lvars_at] in *;
+  set_solver.
+
+Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
+  let Hfreshφ := fresh "Hfreshφ" in
+  let Hfreshe := fresh "Hfreshe" in
+  assert (Hfreshφ :
+      open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ));
+  [ apply open_env_lift_fresh_for_lvars_at_depth1;
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+    unfold denot_relevant_lvars;
+    cbn [context_ty_lvars context_ty_lvars_at];
+    set_solver
+  | assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e));
+    [ eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+      unfold denot_relevant_lvars; set_solver
+    | cbn [denot_ty_lvar_gas];
+      rewrite formula_open_env_and;
+      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
+      first [rewrite open_cty_env_over by exact Hinj
+            |rewrite open_cty_env_under by exact Hinj];
+      cbn [denot_ty_lvar_gas];
+      rewrite formula_open_env_forall by exact Hinj;
+      rewrite !formula_open_env_impl;
+      rewrite formula_open_env_basic_world_formula;
+      [|apply open_env_lift_fresh_for_bound0_bind_dom
+       |apply open_env_values_inj_lift; exact Hinj];
+      rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj;
+      rewrite formula_open_env_lift_expr_result_formula_shift0_core
+        by (exact Hfreshe || exact Hinj);
+      rewrite formula_open_env_fibvars;
+      [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];
+      rewrite lvars_open_env_lift_qual_vars_difference_bound0
+        by exact Hfreshφ;
+      first [rewrite formula_open_env_over
+            |rewrite formula_open_env_under];
+      rewrite type_qualifier_formula_open_env;
+      [reflexivity
+      |exact Hfreshφ
+      |apply open_env_values_inj_lift; exact Hinj] ] ].
+
+Ltac denot_open_env_binary_case IH Hfresh Hinj :=
+  cbn [denot_ty_lvar_gas];
+  rewrite formula_open_env_and;
+  rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
+  first [rewrite open_cty_env_inter
+        |rewrite open_cty_env_union
+        |rewrite open_cty_env_sum];
+  cbn [denot_ty_lvar_gas];
+  first [rewrite formula_open_env_and
+        |rewrite formula_open_env_or
+        |rewrite formula_open_env_plus];
+  rewrite (IH _ _ _ _);
+  [|denot_open_env_child_fresh Hfresh|exact Hinj];
+  rewrite (IH _ _ _ _);
+  [reflexivity|denot_open_env_child_fresh Hfresh|exact Hinj].
+
 Lemma formula_open_env_denot_ty_lvar_gas η gas Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ denot_relevant_lvars τ e) ->
   open_env_values_inj η ->
@@ -178,157 +238,11 @@ Proof.
   induction gas as [|gas IH]; intros Σ τ e η Hfresh Hinj.
   - apply formula_open_env_denot_ty_lvar_gas_zero; assumption.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr].
-    + assert (Hfreshφ :
-        open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ)).
-      {
-        apply open_env_lift_fresh_for_lvars_at_depth1.
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        cbn [context_ty_lvars context_ty_lvars_at].
-        set_solver.
-      }
-      assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
-      {
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars. set_solver.
-      }
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
-      rewrite open_cty_env_over by exact Hinj.
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_forall by exact Hinj.
-      rewrite !formula_open_env_impl.
-      rewrite formula_open_env_basic_world_formula.
-      2:{
-        apply open_env_lift_fresh_for_bound0_bind_dom.
-      }
-      2: apply open_env_values_inj_lift; exact Hinj.
-      rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
-      rewrite formula_open_env_lift_expr_result_formula_shift0_core
-        by (exact Hfreshe || exact Hinj).
-      rewrite formula_open_env_fibvars.
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ].
-        set_solver.
-      }
-      rewrite lvars_open_env_lift_qual_vars_difference_bound0
-        by exact Hfreshφ.
-      rewrite formula_open_env_over.
-      rewrite type_qualifier_formula_open_env.
-      2: exact Hfreshφ.
-      2:{ apply open_env_values_inj_lift. exact Hinj. }
-      reflexivity.
-    + assert (Hfreshφ :
-        open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ)).
-      {
-        apply open_env_lift_fresh_for_lvars_at_depth1.
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        cbn [context_ty_lvars context_ty_lvars_at].
-        set_solver.
-      }
-      assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
-      {
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars. set_solver.
-      }
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
-      rewrite open_cty_env_under by exact Hinj.
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_forall by exact Hinj.
-      rewrite !formula_open_env_impl.
-      rewrite formula_open_env_basic_world_formula.
-      2:{
-        apply open_env_lift_fresh_for_bound0_bind_dom.
-      }
-      2: apply open_env_values_inj_lift; exact Hinj.
-      rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
-      rewrite formula_open_env_lift_expr_result_formula_shift0_core
-        by (exact Hfreshe || exact Hinj).
-      rewrite formula_open_env_fibvars.
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ].
-        set_solver.
-      }
-      rewrite lvars_open_env_lift_qual_vars_difference_bound0
-        by exact Hfreshφ.
-      rewrite formula_open_env_under.
-      rewrite type_qualifier_formula_open_env.
-      2: exact Hfreshφ.
-      2:{ apply open_env_values_inj_lift. exact Hinj. }
-      reflexivity.
-    + cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
-      rewrite open_cty_env_inter.
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite (IH Σ τ1 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      rewrite (IH Σ τ2 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      reflexivity.
-    + cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
-      rewrite open_cty_env_union.
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_or.
-      rewrite (IH Σ τ1 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      rewrite (IH Σ τ2 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      reflexivity.
-    + cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_and.
-      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
-      rewrite open_cty_env_sum.
-      cbn [denot_ty_lvar_gas].
-      rewrite formula_open_env_plus.
-      rewrite (IH Σ τ1 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      rewrite (IH Σ τ2 e η).
-      2:{
-        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold denot_relevant_lvars.
-        intros v Hv. cbn [context_ty_lvars context_ty_lvars_at] in *.
-        set_solver.
-      }
-      2: exact Hinj.
-      reflexivity.
+    + denot_open_env_qual_case η Hfresh Hinj φ e.
+    + denot_open_env_qual_case η Hfresh Hinj φ e.
+    + denot_open_env_binary_case IH Hfresh Hinj.
+    + denot_open_env_binary_case IH Hfresh Hinj.
+    + denot_open_env_binary_case IH Hfresh Hinj.
     + assert (HfreshΣg :
         open_env_fresh_for_lvars η
           (dom (denot_relevant_env Σ (CTArrow τx τr) e))).

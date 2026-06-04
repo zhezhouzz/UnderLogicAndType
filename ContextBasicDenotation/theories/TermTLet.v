@@ -152,6 +152,98 @@ Proof.
   exact He1T.
 Qed.
 
+Lemma result_extension_store_lookup_output e x Fx m mx σ vx :
+  expr_result_extension_witness e x Fx ->
+  res_extend_by m Fx mx ->
+  worldA_stores (mx : WorldT) σ ->
+  expr_eval_in_atom_store (store_restrict σ (fv_tm e)) e vx ->
+  σ !! x = Some vx.
+Proof.
+  intros HFx Hext Hσmx Heσ.
+  destruct HFx as [Hx_fv [Hin Hout] Hrel].
+  apply (proj1 (resA_extend_by_store_iff m Fx mx σ Hext)) in Hσmx.
+  destruct Hσmx as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
+  set (σX := store_restrict σm (fv_tm e)).
+  assert (HσX_dom : dom (σX : StoreT) = fv_tm e).
+  {
+    subst σX.
+    change (dom (storeA_restrict σm (fv_tm e) : gmap atom value) =
+      fv_tm e).
+    rewrite storeA_restrict_dom.
+    pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+    change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
+    pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
+    unfold ext_in in Hin. rewrite Hin in Hin_sub.
+    set_solver.
+  }
+  assert (HFσX : ext_rel Fx σX we).
+  {
+    subst σX.
+    replace (store_restrict σm (fv_tm e))
+      with (store_restrict σm (ext_in Fx)) by
+      (unfold ext_in; unfold ext_in in Hin; rewrite Hin; reflexivity).
+    exact HFrel.
+  }
+  assert (HeσX : expr_eval_in_atom_store σX e vx).
+  {
+    subst σX.
+    apply (proj2 (expr_eval_in_atom_store_restrict_fv_exact σm e vx)).
+    pose proof (expr_eval_in_atom_store_agree_on_fv
+      (σm ∪ σe) σm e vx) as Hagree_eval.
+    apply Hagree_eval.
+    + apply storeA_map_eq. intros a.
+      rewrite !storeA_restrict_lookup.
+      destruct (decide (a ∈ fv_tm e)) as [Ha|Ha]; [|reflexivity].
+      pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hfresh_out.
+      change (ext_out Fx ## world_dom (m : WorldT)) in Hfresh_out.
+      rewrite Hout in Hfresh_out.
+      pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+      change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
+      assert (a ∈ dom (σm : StoreT)).
+      {
+        pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
+        unfold ext_in in Hin. rewrite Hin in Hin_sub.
+        rewrite Hdomσm. set_solver.
+      }
+      change (a ∈ dom (σm : gmap atom value)) in H.
+      apply elem_of_dom in H as [u Hu].
+      apply lookup_union_l'. exists u. exact Hu.
+    + apply (proj1 (expr_eval_in_atom_store_agree_on_fv
+        (store_restrict (σm ∪ σe) (fv_tm e)) (σm ∪ σe) e vx
+        ltac:(apply storeA_restrict_twice_same))).
+      exact Heσ.
+  }
+  pose proof (expr_result_extension_apply_total_iff
+    e x Fx σX we
+    {| expr_result_extension_witness_fresh := Hx_fv;
+       expr_result_extension_witness_shape := conj Hin Hout;
+       expr_result_extension_witness_rel := Hrel |}
+    HσX_dom HFσX (ex_intro _ vx HeσX) σe) as Hσe_iff.
+  apply Hσe_iff in Hσe as [u [He_u ->]].
+  assert (u = vx).
+  {
+    unfold expr_eval_in_atom_store, expr_eval_in_store in He_u, HeσX.
+    eapply steps_result_unique; eauto.
+  }
+  subst u.
+  assert (Hxσm : x ∉ dom (σm : gmap atom value)).
+  {
+    pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hfresh_out.
+    change (ext_out Fx ## world_dom (m : WorldT)) in Hfresh_out.
+    rewrite Hout in Hfresh_out.
+    pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
+    change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
+    rewrite <- Hdomσm in Hfresh_out. set_solver.
+  }
+  change (((σm : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! x =
+    Some vx).
+  transitivity (({[x := vx]} : gmap atom value) !! x).
+  - apply (lookup_union_r (M:=gmap atom) (A:=value)
+      (σm : gmap atom value) ({[x := vx]} : gmap atom value) x).
+    apply not_elem_of_dom. exact Hxσm.
+  - apply map_lookup_singleton.
+Qed.
+
 Lemma expr_total_on_tlete_elim_e1 e1 e2 (m : WfWorldT) :
   (forall σ, (m : WorldT) σ -> store_closed σ) ->
   expr_total_on_atom_world (tlete e1 e2) m ->
