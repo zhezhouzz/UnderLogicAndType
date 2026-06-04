@@ -25,24 +25,6 @@ Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
 (** ** Guard facts exposed by type denotation *)
 
-Lemma denot_ty_lvar_gas_guard
-    gas (Σ : lty_env) τ e (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas gas Σ τ e ->
-  m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
-    (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
-      (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
-          (erase_ty τ))
-        (expr_total_formula e))).
-Proof.
-  intros Hden.
-  destruct gas as [|gas']; cbn [denot_ty_lvar_gas] in Hden;
-    rewrite res_models_and_iff in Hden;
-    exact (proj1 Hden).
-Qed.
-
 Lemma denot_ty_in_ctx_under_guard
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
@@ -117,7 +99,7 @@ Proof.
   rewrite res_models_and_iff. split.
   - apply context_ty_wf_formula_models_iff.
     split; [exact Hlc|]. split; [exact Hscope|].
-    pose proof (context_typing_wf_basic_context_ty_erased Σ Γ e τ Hwf)
+    pose proof (context_typing_wf_context_ty Σ Γ e τ Hwf)
       as Hτ.
     apply basic_context_ty_atom_env_denot_relevant_env.
     exact Hτ.
@@ -270,7 +252,7 @@ Proof.
   - unfold denot_ty_in_ctx_under, denot_ty.
     pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant
       (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ1)) τ e) as Hfvden.
-    pose proof (context_typing_wf_fv_tm_subset_erase_dom Σ Γ1 e τ Hwf)
+    pose proof (context_typing_wf_fv_tm_subset Σ Γ1 e τ Hwf)
       as Htm.
     pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ1 e τ Hwf)
       as Hτ.
@@ -331,7 +313,7 @@ Proof.
     - intros y Hy.
       assert (HyΓ : y ∈ dom (erase_ctx Γ)).
       {
-        pose proof (context_typing_wf_fv_tm_subset_erase_dom
+        pose proof (context_typing_wf_fv_tm_subset
           Σ Γ e1 τ1 Hwf) as Htm.
         pose proof (context_typing_wf_fv_cty_subset_erase_dom
           Σ Γ e1 τ1 Hwf) as Hτ.
@@ -551,7 +533,7 @@ Proof.
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm (tlete e1 e2) ∪ fv_cty τ2) (n := mx).
   - eapply formula_fv_denot_ty_lvar_gas_subset_relevant.
-  - pose proof (context_typing_wf_fv_tm_subset_erase_dom
+  - pose proof (context_typing_wf_fv_tm_subset
       Σ Γ (tlete e1 e2) τ2 Hwflet) as Htm.
     pose proof (context_typing_wf_fv_cty_subset_erase_dom
       Σ Γ (tlete e1 e2) τ2 Hwflet) as Hτ.

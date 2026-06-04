@@ -237,20 +237,6 @@ Proof.
   apply (basic_ctx_erase_dom (dom Σ)). exact Hbasic.
 Qed.
 
-Lemma context_typing_wf_basic_context_ty_erased Σ Γ e τ :
-  context_typing_wf Σ Γ e τ →
-  basic_context_ty (dom (erase_ctx Γ)) τ.
-Proof.
-  apply context_typing_wf_context_ty.
-Qed.
-
-Lemma context_typing_wf_fv_tm_subset_erase_dom Σ Γ e τ :
-  context_typing_wf Σ Γ e τ →
-  fv_tm e ⊆ dom (erase_ctx Γ).
-Proof.
-  apply context_typing_wf_fv_tm_subset.
-Qed.
-
 Lemma context_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ :
   context_typing_wf Σ Γ e τ →
   fv_cty τ ⊆ dom (erase_ctx Γ).
