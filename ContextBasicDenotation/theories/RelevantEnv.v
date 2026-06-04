@@ -480,6 +480,18 @@ Proof.
   apply elem_of_intersection. split; [apply Hvars; exact Hv|set_solver].
 Qed.
 
+Lemma basic_context_ty_atom_env_denot_relevant_env
+    (Δ : gmap atom ty) τ e :
+  basic_context_ty (dom Δ) τ ->
+  basic_context_ty_lvars
+    (dom (denot_relevant_env (atom_env_to_lty_env Δ) τ e)) τ.
+Proof.
+  intros Hτ.
+  apply basic_context_ty_lvars_denot_relevant_env.
+  rewrite atom_store_to_lvar_store_dom.
+  apply basic_context_ty_to_lvars. exact Hτ.
+Qed.
+
 Lemma lty_env_restrict_lvars_fv_subset Σ D :
   lvars_fv (dom (lty_env_restrict_lvars Σ D)) ⊆ lvars_fv D.
 Proof.

@@ -117,11 +117,9 @@ Proof.
   rewrite res_models_and_iff. split.
   - apply context_ty_wf_formula_models_iff.
     split; [exact Hlc|]. split; [exact Hscope|].
-    apply basic_context_ty_lvars_denot_relevant_env.
     pose proof (context_typing_wf_basic_context_ty_erased Σ Γ e τ Hwf)
       as Hτ.
-    rewrite atom_store_to_lvar_store_dom.
-    apply basic_context_ty_to_lvars.
+    apply basic_context_ty_atom_env_denot_relevant_env.
     exact Hτ.
   - rewrite res_models_and_iff. split.
     + apply basic_world_formula_models_iff.
@@ -333,9 +331,11 @@ Proof.
     - intros y Hy.
       assert (HyΓ : y ∈ dom (erase_ctx Γ)).
       {
-        apply elem_of_union in Hy as [Hy|Hy].
-        - eapply context_typing_wf_fv_tm_subset_erase_dom; eauto.
-        - eapply context_typing_wf_fv_cty_subset_erase_dom; eauto.
+        pose proof (context_typing_wf_fv_tm_subset_erase_dom
+          Σ Γ e1 τ1 Hwf) as Htm.
+        pose proof (context_typing_wf_fv_cty_subset_erase_dom
+          Σ Γ e1 τ1 Hwf) as Hτ.
+        set_solver.
       }
       unfold erase_ctx_under.
       apply erase_ctx_union_lookup_local_of_basic_ctx; assumption.
