@@ -209,11 +209,7 @@ Proof.
     - intros v Hv. set_solver.
   }
   assert (Hclosed_y : wfworld_closed_on ({[y]} : aset) my).
-  {
-    eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld_y].
-    rewrite dom_insert, dom_empty_L.
-    unfold lvars_of_atoms. set_solver.
-  }
+  { eapply basic_world_formula_singleton_free_closed_on. exact Hworld_y. }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) my).
   - rewrite !fv_tapp_tm. cbn [fv_value]. set_solver.

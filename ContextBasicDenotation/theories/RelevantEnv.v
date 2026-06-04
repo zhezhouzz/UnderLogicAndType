@@ -199,6 +199,18 @@ Proof.
   exact Hdom.
 Qed.
 
+Lemma basic_world_formula_singleton_free_closed_on
+    y T (m : WfWorldT) :
+  m ⊨ basic_world_formula
+    ((<[LVFree y := T]> (∅ : gmap logic_var ty)) : lty_env) ->
+  wfworld_closed_on ({[y]} : aset) m.
+Proof.
+  intros Hworld.
+  eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
+  rewrite dom_insert, dom_empty_L.
+  unfold lvars_of_atoms. set_solver.
+Qed.
+
 Lemma atom_env_to_lty_env_erase_ctx_union_subenv
     (Σ : gmap atom ty) Γ v T :
   basic_ctx (dom Σ) Γ ->
