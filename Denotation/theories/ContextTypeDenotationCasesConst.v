@@ -437,14 +437,6 @@ Local Ltac solve_const_under_guard :=
   [apply expr_basic_typing_formula_ret_const_empty|];
   apply expr_total_formula_ret_const.
 
-Local Lemma lvset_singleton_difference_self (v : logic_var) :
-  ({[v]} ∖ {[v]} : lvset) = ∅.
-Proof.
-  apply set_eq. intros z.
-  rewrite elem_of_difference, !elem_of_singleton, elem_of_empty.
-  split; [intros [-> Hneq]; contradiction|tauto].
-Qed.
-
 Local Ltac const_scope_set :=
   intros z Hz;
   repeat rewrite elem_of_union in Hz;
@@ -467,7 +459,12 @@ Local Ltac const_forall_scope_norm :=
   rewrite ?const_qual_open_vars;
   rewrite ?const_qual_vars_bound;
   rewrite ?set_swap_empty;
-  rewrite ?lvset_singleton_difference_self;
+  repeat match goal with
+  | |- context[({[?v]} ∖ {[?v]} : lvset)] =>
+      replace ({[v]} ∖ {[v]} : lvset) with (∅ : lvset) by set_solver
+  | H : context[({[?v]} ∖ {[?v]} : lvset)] |- _ =>
+      replace ({[v]} ∖ {[v]} : lvset) with (∅ : lvset) in H by set_solver
+  end;
   rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_bound,
     ?lvars_fv_singleton_free.
 
@@ -561,10 +558,10 @@ Proof.
              rewrite const_qual_vars_bound, const_qual_open_vars.
              replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              rewrite set_swap_empty.
              reflexivity.
            }
@@ -616,10 +613,10 @@ Proof.
              rewrite const_qual_vars_bound, const_qual_open_vars.
              replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              replace ({[LVFree y]} ∖ {[LVFree y]} : lvset)
                with (∅ : lvset)
-               by (symmetry; apply lvset_singleton_difference_self).
+               by set_solver.
              rewrite set_swap_empty.
              reflexivity.
            }
