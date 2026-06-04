@@ -65,43 +65,6 @@ Proof.
   apply denot_ty_lvar_gas_guard.
 Qed.
 
-Lemma denot_ty_in_ctx_under_context_ty_wf
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
-  m ⊨ context_ty_wf_formula
-    (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e) τ.
-Proof.
-  intros Hden.
-  pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  exact (proj1 Hguard).
-Qed.
-
-Lemma denot_ty_in_ctx_under_basic_world
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
-  m ⊨ basic_world_formula
-    (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e).
-Proof.
-  intros Hden.
-  pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  exact (proj1 (proj2 Hguard)).
-Qed.
-
-Lemma denot_ty_in_ctx_under_basic_typing
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ denot_ty_in_ctx_under Σ Γ τ e ->
-  m ⊨ expr_basic_typing_formula
-    (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e)
-    e (erase_ty τ).
-Proof.
-  intros Hden.
-  pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  exact (proj1 (proj2 (proj2 Hguard))).
-Qed.
-
 (** Totality extraction is intentionally a named review point.  The denotation
     guard contains [expr_total_formula], but future proofs around recursive
     functions should decide whether this extraction is direct or goes through
@@ -139,28 +102,14 @@ Proof.
   intros Hwf Hctx.
   pose proof (context_typing_wf_ctx Σ Γ e τ Hwf) as Hwfctx.
   pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasicctx) as HdomΓ.
-  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasicctx) as HfreshΓ.
   assert (Hworld :
       m ⊨ basic_world_formula
         (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e)).
   {
     eapply basic_world_formula_subenv.
     - intros v T Hv.
-      unfold denot_relevant_env, lty_env_restrict_lvars in Hv.
-      apply storeA_restrict_lookup_some in Hv as [_ Hv].
-      destruct v as [k|x].
-      + rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
-        discriminate.
-      + rewrite atom_store_to_lvar_store_lookup_free in Hv.
-        unfold erase_ctx_under.
-        rewrite atom_store_to_lvar_store_lookup_free.
-        apply map_lookup_union_Some_raw. right.
-        split; [|exact Hv].
-        apply not_elem_of_dom.
-        apply elem_of_dom_2 in Hv.
-        rewrite HdomΓ in Hv.
-        better_set_solver.
+      unfold erase_ctx_under.
+      eapply denot_relevant_env_erase_ctx_union_subenv; eauto.
     - exact (denot_ctx_under_basic_world Σ Γ m Hctx).
   }
   apply basic_world_formula_models_iff in Hworld
@@ -184,20 +133,6 @@ Proof.
       * apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
       rewrite lvar_store_to_atom_store_atom_store.
       exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
-Qed.
-
-Lemma lstore_instantiate_tm_at_lift_free_depth_irrel d1 d2 σ e :
-  store_closed σ ->
-  lstore_instantiate_tm_at d1 (lstore_lift_free σ : LStoreT) e =
-  lstore_instantiate_tm_at d2 (lstore_lift_free σ : LStoreT) e.
-Proof.
-  intros Hclosed.
-  rewrite !lstore_instantiate_tm_at_lc_lstore.
-  - reflexivity.
-  - apply lc_lstore_lift_free.
-  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
-  - apply lc_lstore_lift_free.
-  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
 Lemma appop_context_typing_arg_lookup
@@ -267,18 +202,9 @@ Proof.
       }
       exact Hτ.
     }
-    pose proof (basic_context_ty_to_lvars {[x]} τ Hbasic) as [Hτvars _].
     assert (Hrel :
         denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
-    {
-      assert (Hatoms :
-          lvars_of_atoms ({[x]} : aset) = ({[LVFree x]} : lvset)).
-      { unfold lvars_of_atoms. set_solver. }
-      rewrite Hatoms in Hτvars.
-      unfold denot_relevant_lvars.
-      cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-      set_solver.
-    }
+    { apply denot_relevant_lvars_ret_fvar_subset_singleton. exact Hbasic. }
     pose proof (lvars_fv_mono _ _ Hrel) as Hfv.
     rewrite lvars_fv_singleton_free in Hfv.
     exact Hfv.

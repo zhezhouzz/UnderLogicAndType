@@ -123,27 +123,6 @@ Proof.
     set_solver.
 Qed.
 
-Lemma formula_fv_const_precise_denot_ty_lvar_gas_empty gas Σ c :
-  formula_fv (denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
-    (const_precise_ty c) (tret (vconst c))) = ∅.
-Proof.
-  apply set_eq. intros x. split; [|set_solver].
-  intros Hx.
-  pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant gas
-    (atom_env_to_lty_env Σ) (const_precise_ty c) (tret (vconst c)) x Hx)
-    as Hsub.
-  unfold const_precise_ty, precise_ty, over_ty, under_ty, mk_q_eq in Hsub.
-  unfold fv_cty, qual_vars in Hsub.
-  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at qual_lvars
-    qual_vars lvar_value_keys] in Hsub.
-  rewrite ?lvars_at_depth_union, ?lvars_at_depth_singleton_bound0_succ,
-    ?lvars_at_depth_empty in Hsub.
-  rewrite ?lvars_fv_union, ?lvars_fv_singleton_bound, ?lvars_fv_empty in Hsub.
-  destruct c; cbn [base_ty_of_const] in Hsub;
-    rewrite ?union_empty_l_L, ?union_empty_r_L in Hsub;
-    exfalso; exact (not_elem_of_empty x Hsub).
-Qed.
-
 Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
   denot_relevant_env (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
@@ -212,15 +191,6 @@ Proof.
   unfold mk_q_eq, qual_vars.
   cbn [qual_lvars lvar_value_keys].
   set_solver.
-Qed.
-
-Lemma const_qual_open_fv c y :
-  qual_dom (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) =
-  {[y]}.
-Proof.
-  unfold qual_dom.
-  rewrite const_qual_open_vars.
-  apply lvars_fv_singleton_free.
 Qed.
 
 Lemma expr_result_formula_ret_const_lookup c y (m : WfWorldT) σ :

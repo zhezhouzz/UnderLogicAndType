@@ -25,6 +25,109 @@ Definition denot_relevant_env (Σ : lty_env) (τ : context_ty) (e : tm)
     : lty_env :=
   lty_env_restrict_lvars Σ (denot_relevant_lvars τ e).
 
+Lemma lvars_of_atoms_empty :
+  lvars_of_atoms (∅ : aset) = (∅ : lvset).
+Proof.
+  unfold lvars_of_atoms.
+  rewrite set_map_empty. reflexivity.
+Qed.
+
+Lemma denot_relevant_lvars_basic_ret_fvar_subset x τ :
+  basic_context_ty ∅ τ ->
+  denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hbasic v Hv.
+  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+  rewrite lvars_of_atoms_empty in Hτ.
+  unfold denot_relevant_lvars in Hv.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+  set_solver.
+Qed.
+
+Lemma denot_relevant_lvars_ret_fvar_subset_singleton x τ :
+  basic_context_ty {[x]} τ ->
+  denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hbasic v Hv.
+  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+  unfold denot_relevant_lvars in Hv.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+  unfold lvars_of_atoms in Hτ.
+  set_solver.
+Qed.
+
+Lemma denot_relevant_lvars_basic_open_tprim_fvar_subset op x τ :
+  basic_context_ty ∅ τ ->
+  denot_relevant_lvars ({0 ~> x} τ) (tprim op (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hbasic v Hv.
+  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+  rewrite lvars_of_atoms_empty in Hτ.
+  assert (Hempty : context_ty_lvars τ = (∅ : lvset)) by set_solver.
+  unfold denot_relevant_lvars in Hv.
+  rewrite cty_open_vars in Hv.
+  unfold context_ty_open_lvars in Hv.
+  rewrite Hempty, set_swap_empty in Hv.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+  set_solver.
+Qed.
+
+Lemma atom_env_to_lty_env_restrict_singleton_lookup_eq
+    (Δ1 Δ2 : gmap atom ty) x T :
+  Δ1 !! x = Some T ->
+  Δ2 !! x = Some T ->
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ1) ({[LVFree x]}) =
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ2) ({[LVFree x]}).
+Proof.
+  intros Hlookup1 Hlookup2.
+  unfold lty_env_restrict_lvars.
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env Δ1 : gmap logic_var ty) (LVFree x) T).
+  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup1. }
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env Δ2 : gmap logic_var ty) (LVFree x) T).
+  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup2. }
+  reflexivity.
+Qed.
+
+Lemma atom_env_to_lty_env_restrict_singleton_lookup
+    (Δ : gmap atom ty) x T :
+  Δ !! x = Some T ->
+  lty_env_restrict_lvars (atom_env_to_lty_env Δ) ({[LVFree x]}) =
+  lty_env_restrict_lvars
+    (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty))) ({[LVFree x]}).
+Proof.
+  intros Hlookup.
+  eapply (atom_env_to_lty_env_restrict_singleton_lookup_eq
+    Δ (<[x := T]> (∅ : gmap atom ty)) x T);
+    [exact Hlookup|].
+  exact (map_lookup_insert (∅ : gmap atom ty) x T).
+Qed.
+
+Lemma denot_relevant_env_erase_ctx_union_subenv
+    (Σ : gmap atom ty) Γ τ e v T :
+  basic_ctx (dom Σ) Γ ->
+  denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e !! v = Some T ->
+  atom_env_to_lty_env (Σ ∪ erase_ctx Γ) !! v = Some T.
+Proof.
+  intros Hbasic Hlook.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+  unfold denot_relevant_env, lty_env_restrict_lvars in Hlook.
+  apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+  destruct v as [k|x].
+  - rewrite atom_store_to_lvar_store_lookup_bound_none in Hlook.
+    discriminate.
+  - rewrite atom_store_to_lvar_store_lookup_free in Hlook.
+    rewrite atom_store_to_lvar_store_lookup_free.
+    apply map_lookup_union_Some_raw. right.
+    split; [|exact Hlook].
+    apply not_elem_of_dom.
+    apply elem_of_dom_2 in Hlook.
+    rewrite HdomΓ in Hlook.
+    better_set_solver.
+Qed.
+
 Lemma lty_env_restrict_lvars_twice_same (Σ : lty_env) D :
   lty_env_restrict_lvars (lty_env_restrict_lvars Σ D) D =
   lty_env_restrict_lvars Σ D.

@@ -10,6 +10,20 @@ From ContextBase Require Import BaseTactics.
 
 Section BasicTypingFormula.
 
+Lemma basic_world_formula_empty (m : WfWorldT) :
+  res_models m (basic_world_formula (∅ : lty_env)).
+Proof.
+  apply basic_world_formula_models_iff.
+  split.
+  - rewrite dom_empty_L. unfold lc_lvars. set_solver.
+  - split.
+    + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    + unfold lworld_has_type, worldA_has_type, storeA_has_type.
+      split; [rewrite dom_empty_L; set_solver|].
+      intros σ _ v T val Hlookup _.
+      rewrite lookup_empty in Hlookup. discriminate.
+Qed.
+
 Lemma basic_typing_open_env_swap_back
     (η : gmap nat atom) k y z Σ e T :
   η !! k = Some z ->

@@ -2,8 +2,7 @@
 
     Shared proof-normalization tactics for context-type denotation formulas. *)
 
-From Denotation Require Import Notation.
-From Denotation Require Export ContextTypeDenotationOpenModels.
+From Denotation Require Import Notation ContextTypeDenotationDefinition.
 
 Ltac normalize_denotation_formula_fv :=
   repeat first
@@ -54,6 +53,37 @@ Ltac normalize_denotation_formula_fv_in H :=
     ?lvars_fv_difference_singleton_free in H;
   rewrite ?formula_fv_true, ?formula_fv_false, ?tm_lvars_fv,
     ?context_ty_lvars_fv in H.
+
+Ltac denot_lvars_norm :=
+  store_normalize;
+  type_syntax_norm;
+  cbn [denot_relevant_lvars formula_fv formula_lvars fv_tm fv_value
+    tm_lvars tm_lvars_at value_lvars value_lvars_at context_ty_lvars
+    context_ty_lvars_at];
+  rewrite ?typed_lty_env_bind_lvars_fv_dom;
+  rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
+  rewrite ?tm_lvars_fv, ?context_ty_lvars_fv;
+  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
+    ?lvars_fv_singleton_bound, ?lvars_fv_singleton_free,
+    ?lvars_fv_empty, ?lvars_fv_difference_singleton_free;
+  rewrite ?dom_empty_L, ?dom_singleton_L, ?dom_insert_L, ?dom_union_L.
+
+Ltac denot_lvars_norm_in H :=
+  store_normalize;
+  type_syntax_norm_in H;
+  cbn [denot_relevant_lvars formula_fv formula_lvars fv_tm fv_value
+    tm_lvars tm_lvars_at value_lvars value_lvars_at context_ty_lvars
+    context_ty_lvars_at] in H;
+  rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
+  rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
+  rewrite ?tm_lvars_fv, ?context_ty_lvars_fv in H;
+  rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
+    ?lvars_fv_singleton_bound, ?lvars_fv_singleton_free,
+    ?lvars_fv_empty, ?lvars_fv_difference_singleton_free in H;
+  rewrite ?dom_empty_L, ?dom_singleton_L, ?dom_insert_L, ?dom_union_L in H.
+
+Ltac denot_lvars_set :=
+  denot_lvars_norm; better_set_solver.
 
 Ltac denot_ty_fv_norm :=
   cbn [denot_ty_lvar_gas denot_relevant_env lty_env_restrict_lvars

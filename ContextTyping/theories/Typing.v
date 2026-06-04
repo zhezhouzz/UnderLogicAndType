@@ -214,12 +214,6 @@ Qed.
 
 (** ** The typing judgment *)
 
-Definition context_typing_regular
-    (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
-  wf_ctx_under Σ Γ /\
-  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
-  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
-
 Definition context_typing_wf
     (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) : Prop :=
   wf_ctx_under Σ Γ /\
@@ -228,7 +222,9 @@ Definition context_typing_wf
 
 Lemma context_typing_wf_regular Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
-  context_typing_regular Σ Γ e τ.
+  wf_ctx_under Σ Γ /\
+  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
+  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros Hwf. exact Hwf.
 Qed.

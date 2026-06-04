@@ -86,25 +86,6 @@ Proof.
   exact (proj2 Hctx).
 Qed.
 
-Lemma denot_ty_in_ctx_under_restrict_agree_transport
-    (Σ : gmap atom ty) Γsrc Γdst X τ e (m : WfWorldT) :
-  lvars_fv (denot_relevant_lvars τ e) ⊆ X ->
-  ty_env_agree_on X (erase_ctx Γsrc) (erase_ctx Γdst) ->
-  res_restrict m X ⊨ denot_ty_in_ctx_under Σ Γdst τ e ->
-  m ⊨ denot_ty_in_ctx_under Σ Γsrc τ e.
-Proof.
-  intros Hfv Hagree Hden.
-  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
-  eapply res_models_kripke; [apply res_restrict_le |].
-  eapply res_models_denot_ty_lvar_gas_env_agree_on
-    with (X := denot_relevant_lvars τ e).
-  - reflexivity.
-  - apply atom_env_to_lty_env_restrict_lvars_agree_on with (X := X).
-    + intros x Hx. symmetry. apply Hagree. exact Hx.
-    + exact Hfv.
-  - exact Hden.
-Qed.
-
 Lemma basic_world_formula_insert_from_arg_denotation
     (Σ : lty_env) (τ : context_ty) y T gas (m : WfWorldT) :
   LVFree y ∉ dom Σ ->
@@ -151,38 +132,6 @@ Proof.
   rewrite storeA_union_singleton_insert_fresh in Hunion.
   - exact Hunion.
   - exact HyΣ.
-Qed.
-
-Lemma erase_ctx_under_comma_bind_env_fresh Σ Γ x τ :
-  x ∉ dom (erase_ctx_under Σ Γ) →
-  erase_ctx_under Σ (CtxComma Γ (CtxBind x τ)) =
-  <[x := erase_ty τ]> (erase_ctx_under Σ Γ).
-Proof.
-  intros Hfresh.
-  unfold erase_ctx_under in *.
-  cbn [erase_ctx] in *.
-  assert (HxΣ : x ∉ dom Σ) by better_set_solver.
-  assert (HxΓ : x ∉ dom (erase_ctx Γ)) by better_set_solver.
-  change (Σ ∪ ((erase_ctx Γ : gmap atom ty) ∪
-      ({[x := erase_ty τ]} : gmap atom ty)) =
-    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
-  replace ((erase_ctx Γ : gmap atom ty) ∪
-      ({[x := erase_ty τ]} : gmap atom ty))
-    with (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty)).
-  2:{
-    symmetry.
-    apply (storeA_union_singleton_insert_fresh
-      (V := ty) (K := atom) (erase_ctx Γ : gmap atom ty)
-      x (erase_ty τ)).
-    exact HxΓ.
-  }
-  change (Σ ∪ (<[x := erase_ty τ]> (erase_ctx Γ : gmap atom ty) :
-      gmap atom ty) =
-    <[x := erase_ty τ]> (Σ ∪ erase_ctx Γ)).
-  apply (storeA_insert_union_r_fresh (V := ty) (K := atom)
-    (Σ : gmap atom ty) (erase_ctx Γ : gmap atom ty)
-    x (erase_ty τ)).
-  exact HxΣ.
 Qed.
 
 Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert

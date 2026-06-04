@@ -80,7 +80,6 @@ Denotation/theories/Notation.v
 Denotation/theories/ContextTypeDenotationDefinition.v
 Denotation/theories/ContextTypeDenotationLvars.v
 Denotation/theories/ContextTypeDenotationOpen.v
-Denotation/theories/ContextTypeDenotationOpenModels.v
 Denotation/theories/ContextTypeDenotationTactics.v
 Denotation/theories/ContextTypeDenotationSaturateCore.v
 Denotation/theories/ContextTypeDenotationSaturateBody.v

@@ -130,8 +130,26 @@ Ltac store_finish :=
     | solve [better_set_solver]
     | solve [eauto 8] ].
 
+Ltac store_restrict_lookup_split :=
+  repeat match goal with
+  | H : (storeA_restrict ?σ ?X : gmap _ _) !! ?x = Some ?v |- _ =>
+      apply storeA_restrict_lookup_some in H as [? ?]
+  | Hlook : (?σ : gmap _ _) !! ?x = Some ?v,
+    Hx : ?x ∈ ?X
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = Some ?v =>
+      exact (storeA_restrict_lookup_some_2 σ X x v Hlook Hx)
+  | Hlook : (?σ : gmap _ _) !! ?x = None
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = None =>
+      exact (storeA_restrict_lookup_none_l σ X x Hlook)
+  | Hx : ?x ∉ ?X
+    |- (storeA_restrict ?σ ?X : gmap _ _) !! ?x = None =>
+      exact (storeA_restrict_lookup_none_r σ X x Hx)
+  end.
+
 Ltac better_store_solver :=
+  store_restrict_lookup_split;
   store_normalize;
+  store_restrict_lookup_split;
   repeat match goal with
   | H : (storeA_restrict ?σ ?X : gmap _ _) !! ?x = Some ?v |- _ =>
       apply storeA_restrict_lookup_some in H as [? ?]
