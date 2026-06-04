@@ -401,30 +401,6 @@ Proof.
   symmetry. apply storeA_restrict_swap.
 Qed.
 
-Lemma denot_relevant_lvars_open_env η τ e :
-  open_env_fresh_for_lvars η (denot_relevant_lvars τ e) ->
-  denot_relevant_lvars (open_cty_env η τ) (open_tm_env η e) =
-  lvars_open_env η (denot_relevant_lvars τ e).
-Proof.
-  intros Hfresh.
-  unfold denot_relevant_lvars.
-  rewrite context_ty_lvars_open_cty_env.
-  2:{
-    apply (open_env_fresh_for_lvars_mono η
-      (context_ty_lvars τ) (denot_relevant_lvars τ e)).
-    - unfold denot_relevant_lvars. set_solver.
-    - exact Hfresh.
-  }
-  rewrite tm_lvars_open_tm_env.
-  2:{
-    apply (open_env_fresh_for_lvars_mono η
-      (tm_lvars e) (denot_relevant_lvars τ e)).
-    - unfold denot_relevant_lvars. set_solver.
-    - exact Hfresh.
-  }
-  better_base_solver.
-Qed.
-
 Lemma denot_relevant_env_open_env η Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ denot_relevant_lvars τ e) ->
   open_env_values_inj η ->
@@ -569,82 +545,6 @@ Proof.
   apply lvars_fv_mono. set_solver.
 Qed.
 
-Lemma lty_env_restrict_lvars_fv_dom_subset Σ D :
-  lvars_fv (dom (lty_env_restrict_lvars Σ D)) ⊆ lvars_fv (dom Σ).
-Proof.
-  unfold lty_env_restrict_lvars.
-  rewrite storeA_restrict_dom.
-  apply lvars_fv_mono. set_solver.
-Qed.
-
-Lemma lty_env_restrict_lvars_msubst_store_agree
-    Σ σ1 σ2 R R' :
-  R' ⊆ R ->
-  storeA_restrict σ1 (lvars_fv R) =
-  storeA_restrict σ2 (lvars_fv R) ->
-  lty_env_restrict_lvars (lty_env_msubst_store σ1 Σ) R' =
-  lty_env_restrict_lvars (lty_env_msubst_store σ2 Σ) R'.
-Proof.
-  intros HR Hagree.
-  apply storeA_map_eq. intros v.
-  unfold lty_env_restrict_lvars, lty_env_msubst_store.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ R')) as [HvR'|HvR']; [|reflexivity].
-  assert (HvR : v ∈ R) by set_solver.
-  destruct ((Σ : gmap logic_var ty) !! v) as [T|] eqn:HΣv.
-  2:{ repeat destruct decide; reflexivity. }
-  destruct v as [k|x].
-  - assert (Hb1 : LVBound k ∉ lvars_of_atoms (dom (σ1 : gmap atom value))).
-    {
-      intros Hbad. unfold lvars_of_atoms in Hbad.
-      apply elem_of_map in Hbad as [a [Hbad _]]. discriminate.
-    }
-    assert (Hb2 : LVBound k ∉ lvars_of_atoms (dom (σ2 : gmap atom value))).
-    {
-      intros Hbad. unfold lvars_of_atoms in Hbad.
-      apply elem_of_map in Hbad as [a [Hbad _]]. discriminate.
-    }
-    destruct decide; destruct decide; set_solver.
-  - assert (HxR : x ∈ lvars_fv R).
-    { apply lvars_fv_elem. exact HvR. }
-    destruct ((σ1 : gmap atom value) !! x) as [v1|] eqn:Hσ1;
-      destruct ((σ2 : gmap atom value) !! x) as [v2|] eqn:Hσ2.
-    + assert (Hσ1dom : LVFree x ∈ lvars_of_atoms (dom (σ1 : gmap atom value))).
-      { unfold lvars_of_atoms. apply elem_of_map. exists x.
-        split; [reflexivity|apply elem_of_dom; eauto]. }
-      assert (Hσ2dom : LVFree x ∈ lvars_of_atoms (dom (σ2 : gmap atom value))).
-      { unfold lvars_of_atoms. apply elem_of_map. exists x.
-        split; [reflexivity|apply elem_of_dom; eauto]. }
-      destruct decide; destruct decide; set_solver.
-    + exfalso.
-      pose proof (storeA_restrict_lookup_transport σ1 σ2
-        (lvars_fv R) x v1 HxR Hagree Hσ1) as Hσ2'.
-      replace ((σ2 : gmap atom value) !! x) with (@None value) in Hσ2'
-        by (symmetry; exact Hσ2).
-      discriminate Hσ2'.
-    + exfalso.
-      pose proof (storeA_restrict_lookup_transport σ2 σ1
-        (lvars_fv R) x v2 HxR (eq_sym Hagree) Hσ2) as Hσ1'.
-      replace ((σ1 : gmap atom value) !! x) with (@None value) in Hσ1'
-        by (symmetry; exact Hσ1).
-      discriminate Hσ1'.
-    + assert (Hσ1dom : LVFree x ∉ lvars_of_atoms (dom (σ1 : gmap atom value))).
-      {
-        intros Hbad. unfold lvars_of_atoms in Hbad.
-        apply elem_of_map in Hbad as [a [Ha Hdom]].
-        inversion Ha; subst.
-        apply not_elem_of_dom in Hσ1. exact (Hσ1 Hdom).
-      }
-      assert (Hσ2dom : LVFree x ∉ lvars_of_atoms (dom (σ2 : gmap atom value))).
-      {
-        intros Hbad. unfold lvars_of_atoms in Hbad.
-        apply elem_of_map in Hbad as [a [Ha Hdom]].
-        inversion Ha; subst.
-        apply not_elem_of_dom in Hσ2. exact (Hσ2 Hdom).
-      }
-      destruct decide; destruct decide; set_solver.
-Qed.
-
 Lemma lty_env_restrict_lvars_insert_fresh Σ D x T :
   LVFree x ∉ D ->
   lty_env_restrict_lvars (<[LVFree x := T]> Σ) D =
@@ -664,81 +564,6 @@ Proof.
   - apply lty_env_restrict_lvars_fv_subset.
   - rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
     set_solver.
-Qed.
-
-Lemma denot_relevant_env_eq_of_tm_lvars_eq
-    (Σ : lty_env) τ e e' :
-  tm_lvars e = tm_lvars e' ->
-  denot_relevant_env Σ τ e = denot_relevant_env Σ τ e'.
-Proof.
-  intros Heq.
-  unfold denot_relevant_env, denot_relevant_lvars, lty_env_restrict_lvars.
-  rewrite Heq. reflexivity.
-Qed.
-
-Lemma denot_relevant_lvars_msubst_store σ τ e :
-  store_closed σ ->
-  denot_relevant_lvars (context_ty_msubst_store σ τ)
-    (lstore_instantiate_tm (lstore_lift_free σ) e) =
-  denot_relevant_lvars τ e ∖ dom (lstore_lift_free σ : LStoreT).
-Proof.
-  intros Hclosed.
-  unfold denot_relevant_lvars.
-  rewrite context_ty_lvars_msubst_store.
-  rewrite (tm_lvars_lstore_instantiate_lift_free_closed σ e Hclosed).
-  rewrite dom_lstore_lift_free. set_solver.
-Qed.
-
-Lemma denot_relevant_env_msubst_store σ Σ τ e :
-  store_closed σ ->
-  lty_env_msubst_store σ (denot_relevant_env Σ τ e) =
-  denot_relevant_env (lty_env_msubst_store σ Σ)
-    (context_ty_msubst_store σ τ)
-    (lstore_instantiate_tm (lstore_lift_free σ) e).
-Proof.
-  intros Hclosed.
-  unfold denot_relevant_env, lty_env_restrict_lvars, lty_env_msubst_store.
-  rewrite denot_relevant_lvars_msubst_store by exact Hclosed.
-  rewrite dom_lstore_lift_free.
-  apply storeA_map_eq. intros v.
-  destruct ((Σ : gmap logic_var ty) !! v) as [T|] eqn:HΣv.
-  - destruct (decide (v ∈ denot_relevant_lvars τ e)) as [HvR|HvR];
-      destruct (decide (v ∈ lvars_of_atoms (dom (σ : gmap atom value)))) as [HvF|HvF].
-    + transitivity (@None ty).
-      * apply storeA_restrict_lookup_none_r.
-        rewrite storeA_restrict_dom. set_solver.
-      * symmetry. apply storeA_restrict_lookup_none_l.
-        apply storeA_restrict_lookup_none_r. set_solver.
-    + transitivity (Some T).
-      * assert (Hinner :
-            storeA_restrict Σ (denot_relevant_lvars τ e) !! v = Some T).
-        { apply storeA_restrict_lookup_some_2; [exact HΣv|exact HvR]. }
-        apply storeA_restrict_lookup_some_2; [exact Hinner|].
-        apply elem_of_difference. split.
-        -- eapply elem_of_dom_2. exact Hinner.
-        -- exact HvF.
-      * assert (Hinner :
-            storeA_restrict Σ
-              (dom (Σ : gmap logic_var ty)
-                ∖ lvars_of_atoms (dom (σ : gmap atom value))) !! v = Some T).
-        {
-          apply storeA_restrict_lookup_some_2; [exact HΣv|].
-          apply elem_of_difference. split; [eapply elem_of_dom_2; exact HΣv|exact HvF].
-        }
-        symmetry. apply storeA_restrict_lookup_some_2; [exact Hinner|set_solver].
-    + transitivity (@None ty).
-      * apply storeA_restrict_lookup_none_l.
-        apply storeA_restrict_lookup_none_r. exact HvR.
-      * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
-    + transitivity (@None ty).
-      * apply storeA_restrict_lookup_none_l.
-        apply storeA_restrict_lookup_none_r. exact HvR.
-      * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
-  - transitivity (@None ty).
-    + apply storeA_restrict_lookup_none_l.
-      apply storeA_restrict_lookup_none_l. exact HΣv.
-    + symmetry. apply storeA_restrict_lookup_none_l.
-      apply storeA_restrict_lookup_none_l. exact HΣv.
 Qed.
 
 Lemma denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq
@@ -800,18 +625,6 @@ Proof.
   unfold denot_relevant_lvars.
   pose proof (tm_lvars_free_notin_of_fv x e Hxe).
   set_solver.
-Qed.
-
-Lemma denot_relevant_env_insert_fresh Σ τ e x T :
-  LVFree x ∉ context_ty_lvars τ ->
-  x ∉ fv_tm e ->
-  denot_relevant_env (<[LVFree x := T]> Σ) τ e =
-  denot_relevant_env Σ τ e.
-Proof.
-  intros Hxτ Hxe.
-  unfold denot_relevant_env, lty_env_restrict_lvars.
-  apply storeA_restrict_insert_notin.
-  apply denot_relevant_lvars_insert_fresh; assumption.
 Qed.
 
 Lemma lty_env_restrict_lvars_insert_denot_relevant_env_eq
@@ -903,107 +716,6 @@ Proof.
     set_solver.
 Qed.
 
-Lemma wand_body_relevant_env_agree_from_basic_context_ty
-    (Σsrc : lty_env) Ty y τx τr e_src e_body :
-  lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  basic_context_ty_lvars
-    (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTWand τx τr) ->
-  tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
-  lty_env_restrict_lvars
-    (<[LVFree y := Ty]>
-      (denot_relevant_env Σsrc (CTWand τx τr) e_src))
-    (denot_relevant_lvars (cty_open 0 y τr) e_body) =
-  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
-    (denot_relevant_lvars (cty_open 0 y τr) e_body).
-Proof.
-  intros Hlc HyΣ Hbasic He.
-  change (denot_relevant_env Σsrc (CTWand τx τr) e_src)
-    with (denot_relevant_env Σsrc (CTArrow τx τr) e_src).
-  apply arrow_body_relevant_env_agree_from_basic_context_ty.
-  - exact Hlc.
-  - exact HyΣ.
-  - change (basic_context_ty_lvars
-      (dom (Σsrc : gmap logic_var ty) : gset logic_var) (CTArrow τx τr)).
-    exact Hbasic.
-  - exact He.
-Qed.
-
-Lemma arrow_arg_relevant_env_agree
-    (Σsrc : lty_env) Ty y τx τr e_src :
-  lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  lty_env_restrict_lvars
-    (<[LVFree y := Ty]>
-      (denot_relevant_env Σsrc (CTArrow τx τr) e_src))
-    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y))) =
-  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
-    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y))).
-Proof.
-  intros Hlc.
-  set (X := denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-    (tret (vfvar y))).
-  apply storeA_map_eq. intros v.
-  unfold lty_env_restrict_lvars.
-  change ((storeA_restrict
-    (<[LVFree y := Ty]>
-      (denot_relevant_env Σsrc (CTArrow τx τr) e_src)) X) !! v =
-    (storeA_restrict (<[LVFree y := Ty]> (Σsrc : gmap logic_var ty)) X)
-      !! v).
-  rewrite (storeA_restrict_lookup
-    (<[LVFree y := Ty]>
-      (denot_relevant_env Σsrc (CTArrow τx τr) e_src)) X v).
-  rewrite (storeA_restrict_lookup
-    (<[LVFree y := Ty]> (Σsrc : gmap logic_var ty)) X v).
-  destruct (decide (v ∈ X)) as [HvX|HvX]; [|reflexivity].
-  destruct v as [k|z].
-  - rewrite !lookup_insert_ne by discriminate.
-    unfold denot_relevant_env, lty_env_restrict_lvars.
-    rewrite storeA_restrict_lookup.
-    assert (Hbd : LVBound k ∉ dom (Σsrc : gmap logic_var ty)).
-    { intros Hdom. exact (Hlc (LVBound k) Hdom). }
-    apply not_elem_of_dom in Hbd.
-    destruct (decide (LVBound k ∈ denot_relevant_lvars
-      (CTArrow τx τr) e_src)); [reflexivity|symmetry; exact Hbd].
-  - destruct (decide (z = y)) as [->|Hzy].
-    + rewrite !lookup_insert_eq. reflexivity.
-    + rewrite !lookup_insert_ne by congruence.
-      unfold denot_relevant_env, lty_env_restrict_lvars.
-      rewrite storeA_restrict_lookup.
-      destruct (decide (LVFree z ∈ denot_relevant_lvars
-        (CTArrow τx τr) e_src)) as [Hzrel|Hzrel]; [reflexivity|].
-      exfalso. apply Hzrel.
-      unfold denot_relevant_lvars in *.
-      cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-        value_lvars_at] in *.
-      apply elem_of_union in HvX as [Hzopen|Hztm].
-      * destruct (decide (LVFree z ∈ context_ty_lvars τx)) as [Hzτ|Hzτ].
-        { set_solver. }
-        exfalso.
-        eapply context_ty_lvars_open_shift_fresh in Hzτ; [|exact Hzy].
-        exact (Hzτ Hzopen).
-      * set_solver.
-Qed.
-
-Lemma wand_arg_relevant_env_agree
-    (Σsrc : lty_env) Ty y τx τr e_src :
-  lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
-  lty_env_restrict_lvars
-    (<[LVFree y := Ty]>
-      (denot_relevant_env Σsrc (CTWand τx τr) e_src))
-    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y))) =
-  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
-    (denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y))).
-Proof.
-  intros Hlc.
-  change (denot_relevant_env Σsrc (CTWand τx τr) e_src)
-    with (denot_relevant_env Σsrc (CTArrow τx τr) e_src).
-  apply arrow_arg_relevant_env_agree. exact Hlc.
-Qed.
-
 Lemma basic_world_formula_arrow_body_from_source_and_arg
     (Σsrc : lty_env) Ty y τx τr e_src e_body (m : WfWorldT) :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
@@ -1080,17 +792,6 @@ Proof.
   change (denot_relevant_env Σsrc (CTWand τx τr) e_src)
     with (denot_relevant_env Σsrc (CTArrow τx τr) e_src) in Hsrc.
   eapply basic_world_formula_arrow_body_from_source_and_arg; eauto.
-Qed.
-
-Lemma tm_lvars_opened_tapp_shift_bvar0_without_y e y :
-  lc_tm e ->
-  tm_lvars (open_tm 0 (vfvar y)
-    (tapp_tm (tm_shift 0 e) (vbvar 0))) ∖ {[LVFree y]} ⊆
-  tm_lvars e.
-Proof.
-  intros Hlc.
-  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc.
-  apply tm_lvars_tapp_tm_fvar_without_arg.
 Qed.
 
 Lemma wand_body_relevant_env_agree_open_one_core
@@ -1298,29 +999,6 @@ Proof.
   apply wand_body_relevant_env_agree_open_one_core; assumption.
 Qed.
 
-Lemma lvars_at_depth_denot_relevant_env_subset d Σ τ e :
-  lvars_at_depth d (dom (denot_relevant_env Σ τ e)) ⊆
-  lvars_at_depth d (dom Σ) ∪ context_ty_lvars_at d τ ∪ tm_lvars_at d e.
-Proof.
-  unfold denot_relevant_env, lty_env_restrict_lvars, denot_relevant_lvars.
-  change (lvars_at_depth d
-    (dom (storeA_restrict (Σ : gmap logic_var ty)
-      (context_ty_lvars τ ∪ tm_lvars e))) ⊆
-    lvars_at_depth d (dom Σ) ∪ context_ty_lvars_at d τ ∪ tm_lvars_at d e).
-  rewrite storeA_restrict_dom.
-  transitivity (lvars_at_depth d (dom Σ ∩ (context_ty_lvars τ ∪ tm_lvars e))).
-  { reflexivity. }
-  transitivity (lvars_at_depth d (dom Σ) ∩
-    lvars_at_depth d (context_ty_lvars τ ∪ tm_lvars e)).
-  - intros v Hv.
-    apply lvars_at_depth_elem in Hv as [u [Hu Huv]].
-    apply elem_of_intersection in Hu as [HuΣ HuD].
-    apply elem_of_intersection. split; apply lvars_at_depth_elem;
-      exists u; split; assumption.
-  - rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
-    set_solver.
-Qed.
-
 Lemma lvars_at_depth_denot_relevant_env_subset_relevant d Σ τ e :
   lvars_at_depth d (dom (denot_relevant_env Σ τ e)) ⊆
   context_ty_lvars_at d τ ∪ tm_lvars_at d e.
@@ -1335,24 +1013,6 @@ Proof.
   - apply lvars_at_depth_mono. set_solver.
   - rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
     set_solver.
-Qed.
-
-Lemma lvars_at_depth_denot_relevant_typed_bind_subset d Σ T τ e :
-  lvars_at_depth (S d)
-    (dom (denot_relevant_env (typed_lty_env_bind Σ T) τ e)) ⊆
-  lvars_at_depth d (dom Σ).
-Proof.
-  unfold denot_relevant_env, lty_env_restrict_lvars.
-  change (lvars_at_depth (S d)
-    (dom (storeA_restrict
-      (typed_lty_env_bind Σ T : gmap logic_var ty)
-      (denot_relevant_lvars τ e))) ⊆
-    lvars_at_depth d (dom Σ)).
-  rewrite storeA_restrict_dom.
-  transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. intros v Hv.
-    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
-  - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
 Qed.
 
 Lemma lvars_at_depth_arrow_arg_lift_support_subset Σ τx τr e :
@@ -1429,49 +1089,12 @@ Proof.
   set_solver.
 Qed.
 
-Lemma lvars_at_depth_restrict_typed_bind_subset d Σ T D :
-  lvars_at_depth (S d)
-    (dom (lty_env_restrict_lvars (typed_lty_env_bind Σ T) D)) ⊆
-  lvars_at_depth d (dom Σ).
-Proof.
-  unfold lty_env_restrict_lvars.
-  change (lvars_at_depth (S d)
-    (dom (storeA_restrict
-      (typed_lty_env_bind Σ T : gmap logic_var ty) D)) ⊆
-    lvars_at_depth d (dom Σ)).
-  rewrite storeA_restrict_dom.
-  transitivity (lvars_at_depth (S d) (dom (typed_lty_env_bind Σ T))).
-  - apply lvars_at_depth_mono. intros v Hv.
-    apply elem_of_intersection in Hv as [Hv _]. exact Hv.
-  - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
-Qed.
-
 Lemma lvars_at_depth_dom_singleton_bound0_succ d T :
   lvars_at_depth (S d) (dom (<[LVBound 0 := T]> (∅ : lty_env))) = ∅.
 Proof.
   rewrite dom_insert_L, dom_empty_L, lvars_at_depth_union.
   rewrite lvars_at_depth_singleton_bound0_succ, lvars_at_depth_empty.
   set_solver.
-Qed.
-
-Lemma lty_env_open_one_denot_relevant_bind_under k y Σ τ e T :
-  y ∉ lvars_fv (dom Σ) ->
-  y ∉ fv_tm e ->
-  lty_env_open_one (S k) y
-    (typed_lty_env_bind (denot_relevant_env Σ τ e) T) =
-  typed_lty_env_bind
-    (denot_relevant_env (lty_env_open_one k y Σ)
-      (cty_open k y τ) (open_tm k (vfvar y) e))
-    T.
-Proof.
-  intros HΣ Hy.
-  rewrite typed_lty_env_bind_open_under.
-  - rewrite denot_relevant_env_open_one by exact Hy.
-    reflexivity.
-  - intros Hbad.
-    apply HΣ.
-    eapply lty_env_restrict_lvars_fv_dom_subset.
-    apply lvars_fv_elem. exact Hbad.
 Qed.
 
 Lemma wand_arg_relevant_env_agree_open_one_core
