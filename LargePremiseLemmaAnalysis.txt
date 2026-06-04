@@ -1,0 +1,242 @@
+Large-premise lemma analysis
+============================
+
+Scope
+-----
+
+This report scans the current direct-Soundness branch for lemmas whose
+statements carry large, shape-specific premise bundles.  The goal is not to
+delete useful semantic boundaries.  The goal is to identify helpers that are
+too specialized to a concrete Denotation shape, are used only once, or encode a
+generic Logic connective pattern directly in a Denotation statement.
+
+Search method
+-------------
+
+Candidates were selected by statement size and premise count:
+
+  - statement length >= 8 lines;
+  - or many [forall]/[->] premises;
+  - or many concrete Logic constructors such as [FAnd], [FImpl],
+    [FForall], [FWand], [FPlus], [FStar].
+
+Each candidate was then checked with full-repo [rg] to distinguish real reuse
+from definition-only artifacts.
+
+Per-file findings
+=================
+
+Denotation/theories/ContextTypeDenotationOpen.v
+------------------------------------------------
+
+Large candidates:
+
+  - [res_models_open_arrow_body_iff]
+  - [res_models_open_wand_body_iff]
+  - [res_models_open_denot_ty_lvar_guard_to_open]
+  - [res_models_open_denot_ty_lvar_guard_iff]
+  - [res_models_open_denot_ty_lvar_gas_iff]
+  - [formula_open_over_body]
+  - [formula_open_under_body]
+
+Assessment:
+
+  These are the cleanest immediate cleanup target.  They are all definition-only
+  artifacts in the current repo.  The Arrow/Wand lemmas also have the exact bad
+  shape we want to avoid: a large Denotation-specific statement spelling out a
+  [FForall] body with nested [FImpl]/[FWand], plus a recursive-open hypothesis.
+  Current callers use the simpler equality
+  [formula_open_denot_ty_lvar_gas_singleton] directly.
+
+Action:
+
+  Delete the unused lemmas and the old proof-plan comment above them.  Keep
+  only:
+
+    - [denot_ty]
+    - [formula_open_denot_ty_lvar_gas_singleton]
+
+  If an opened-body transport is needed again, rebuild it as a Logic-level
+  connective lemma, e.g. a generic [FForall + FImpl/FWand] map, and keep the
+  Denotation side as a short normalization wrapper.
+
+Denotation/theories/ContextTypeDenotationSaturateArrow.v
+---------------------------------------------------------
+
+Large candidates:
+
+  - [denot_ty_lvar_gas_tm_result_equiv_arrow_open_result]
+  - [denot_ty_lvar_gas_tm_result_equiv_arrow_body]
+  - [basic_world_formula_arrow_open_result_target]
+  - [expr_basic_typing_formula_arrow_open_result_target]
+  - [typed_total_tm_result_equiv_on_arrow_open_result_mid]
+  - [basic_world_formula_arrow_open_result_big]
+  - [basic_world_formula_arrow_open_result_subenv]
+  - [denot_ty_lvar_gas_tm_result_equiv_arrow_open_arg]
+
+Assessment:
+
+  These helpers are used by the result-equivalence proof.  Most are used once,
+  but inlining them would make the Arrow proof less readable and would move the
+  large proof obligations back into the main induction.  The real common
+  pattern is not an inline candidate; it is the package:
+
+    opened body source/mid/target env-agree
+    + target zero guard
+    + recursive result-equivalence package
+
+  This should eventually become a smaller opened-result package lemma shared
+  with Wand.  That is a semantic proof refactor, not a safe first cleanup.
+
+Action:
+
+  Keep for now.  Do not inline.  Future cleanup should introduce a shared
+  Arrow/Wand opened-result package with short premises, after the higher-order
+  soundness route is revisited.
+
+Denotation/theories/ContextTypeDenotationSaturateWand.v
+--------------------------------------------------------
+
+Large candidates mirror Arrow:
+
+  - [denot_ty_lvar_gas_tm_result_equiv_wand_open_result]
+  - [denot_ty_lvar_gas_tm_result_equiv_wand_body]
+  - [basic_world_formula_wand_open_result_target]
+  - [expr_basic_typing_formula_wand_open_result_target]
+  - [typed_total_tm_result_equiv_on_wand_open_result_mid]
+  - [basic_world_formula_wand_open_result_big]
+  - [basic_world_formula_wand_open_result_subenv]
+  - [denot_ty_lvar_gas_tm_result_equiv_wand_open_arg]
+
+Assessment:
+
+  Same as Arrow, with extra resource/product-world obligations.  These are
+  large but currently isolate proof complexity.  Inlining would be a regression.
+  The promising abstraction is again a shared opened-result package, plus a
+  resource-specific product-world transport helper.
+
+Action:
+
+  Keep for now.  Future cleanup should share the package with Arrow where the
+  statements can remain short.
+
+Denotation/theories/ContextTypeDenotationDefinition.v
+------------------------------------------------------
+
+Large candidates:
+
+  - [formula_open_env_denot_guard]
+  - [formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open]
+  - [denot_guard_term_type_fv_scope]
+
+Assessment:
+
+  [formula_open_env_denot_guard] is reused several times inside the structural
+  open proof and is a legitimate boundary.  Its long statement comes from the
+  guard being spelled out as nested [FAnd].  The right cleanup is a definition:
+
+    denot_guard_formula Σ τ e
+
+  followed by tiny syntax lemmas for opening/fv/models.  That change touches
+  the core definition of [denot_ty_lvar_gas] and many proofs, so it should be a
+  separate semantic-neutral refactor.
+
+Action:
+
+  No code change in this pass.  Recommended future pass: introduce
+  [denot_guard_formula] and replace repeated nested [FAnd] statements.
+
+Denotation/theories/ContextTypeDenotationSaturateCore.v
+--------------------------------------------------------
+
+Large candidates:
+
+  - [denot_ty_lvar_gas_result_alias_guard]
+  - [expr_result_extension_has_ltype_from_source_guard]
+  - [denot_ty_lvar_gas_extend_typed_extension]
+
+Assessment:
+
+  These are reused by TLet/result-extension and are meaningful semantic
+  boundaries.  They are large because they consume the current nested guard
+  shape.  They should become shorter if [denot_guard_formula] is introduced.
+
+Action:
+
+  Keep for now.
+
+Denotation/theories/ContextTypeDenotationSaturateBody.v
+--------------------------------------------------------
+
+Large candidates:
+
+  - [denot_ty_lvar_gas_tm_result_equiv_over_body]
+  - [denot_ty_lvar_gas_tm_result_equiv_under_body]
+  - [denot_ty_lvar_gas_tm_result_equiv_sum_body]
+  - [denot_ty_lvar_gas_tm_result_equiv_union_body]
+
+Assessment:
+
+  The Over/Under statements still spell out concrete [FForall + FImpl + FImpl]
+  bodies.  They already use Logic-level map lemmas in the proofs, which is the
+  right direction.  They are not definition-only, and inlining would push the
+  same large syntax shape into the main result-equivalence induction.
+
+Action:
+
+  Keep for now.  Future cleanup: if [denot_guard_formula] and generic body
+  transport packages are introduced, revisit Over/Under.
+
+ContextTyping/theories/Soundness.v
+-----------------------------------
+
+Large candidates:
+
+  - [denot_ty_in_ctx_under_guard]
+  - [context_typing_wf_denot_static_guard]
+  - [denot_ctx_under_comma_bind_from_result_extension]
+  - [fundamental_let_case]
+  - admitted higher-order case statements
+
+Assessment:
+
+  The guard lemmas are small proof utilities with long nested [FAnd] statements.
+  They should shrink after [denot_guard_formula].  [fundamental_let_case] is a
+  real proof, not an inline candidate.  The admitted higher-order cases are
+  intentionally direct obligations and should not be hidden behind giant bridge
+  lemmas again.
+
+Action:
+
+  No code change in this pass.
+
+ContextBasicDenotation/theories/BasicTypingFormula.v
+-----------------------------------------------------
+
+Large candidates:
+
+  The scanner flags many mutual-induction statements and local tactics around
+  msubst/back typing.
+
+Assessment:
+
+  These are not Denotation-shape helper lemmas.  They are standard structural
+  induction interfaces over terms/values.  The local tactic
+  [solve_instantiated_fvar_case] remains local and proof-shape-specific; trying
+  to extract it would require a large premise helper and would not improve the
+  surrounding proof.
+
+Action:
+
+  Keep for now.
+
+Implementation plan for this pass
+=================================
+
+1. Delete the unused large opened-body/open-guard lemmas from
+   [ContextTypeDenotationOpen.v].
+2. Compile [ContextTypeDenotationOpen.vo], [ContextTypeDenotationSaturate*.vo],
+   [Soundness.vo], and then full [make].
+3. Leave the Arrow/Wand/SaturateCore guard-package refactors as explicit future
+   work; they need a deliberate [denot_guard_formula] pass rather than local
+   statement shaving.
