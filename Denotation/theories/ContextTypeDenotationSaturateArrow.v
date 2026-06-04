@@ -266,7 +266,7 @@ Lemma denot_relevant_env_arrow_open_result_fresh
 Proof.
   intros Hyτx Hyτr Hye.
   unfold denot_relevant_env, lty_env_restrict_lvars.
-  rewrite storeA_restrict_dom.
+  store_normalize.
   intros Hyrel.
   apply elem_of_intersection in Hyrel as [_ Hyrel].
   unfold denot_relevant_lvars in Hyrel.
@@ -568,7 +568,7 @@ Proof.
     apply basic_context_ty_lvars_denot_relevant_env.
     eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
     unfold denot_relevant_env, lty_env_restrict_lvars.
-    rewrite storeA_restrict_dom. set_solver.
+    store_normalize. set_solver.
   }
   assert (Hbasic_tgt :
       my ⊨ expr_basic_typing_formula

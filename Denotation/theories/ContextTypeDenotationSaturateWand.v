@@ -566,7 +566,7 @@ Proof.
     apply basic_context_ty_lvars_denot_relevant_env.
     eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
     unfold denot_relevant_env, lty_env_restrict_lvars.
-    rewrite storeA_restrict_dom. set_solver.
+    store_normalize. set_solver.
   }
   assert (Hbasic_tgt :
       res_product n my Hc ⊨ expr_basic_typing_formula
