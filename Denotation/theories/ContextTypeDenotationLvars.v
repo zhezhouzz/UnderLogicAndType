@@ -181,14 +181,15 @@ Lemma formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open gas Σ τ e :
   fv_tm e ∪ fv_cty τ.
 Proof.
   rewrite <- (formula_lvars_at_fv 0).
-  transitivity (lvars_fv (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ)).
+  transitivity (lvars_fv (denot_relevant_lvars τ e)).
   - apply lvars_fv_mono.
-    apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
-  - rewrite lvars_fv_union.
-    change (tm_lvars_at 0 e) with (tm_lvars e).
-    change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
-    rewrite tm_lvars_fv, context_ty_lvars_fv.
-    reflexivity.
+    unfold denot_relevant_lvars.
+    transitivity (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ).
+    + apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
+    + change (tm_lvars_at 0 e) with (tm_lvars e).
+      change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
+      set_solver.
+  - rewrite denot_relevant_lvars_fv. set_solver.
 Qed.
 
 Lemma formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open
