@@ -645,7 +645,7 @@ File: ContextStore/StoreFilterMapKey.v
   uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextTyping/theories/Soundness.v:95: * apply denot_relevant_env_closed. apply atom_store_to_lvar_store_closed.
+    - ContextTyping/theories/Soundness.v:95: * apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
     - ContextTyping/theories/Soundness.v:319: - apply atom_store_to_lvar_store_closed.
     - ContextTyping/theories/Soundness.v:480: - apply atom_store_to_lvar_store_closed.
 - Lemma `atom_store_to_lvar_store_lookup_bound_none` @ line 208

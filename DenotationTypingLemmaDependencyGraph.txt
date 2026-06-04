@@ -116,7 +116,7 @@ Main denotation theorem
        - context_ty_wf_formula_models_iff
        - basic_world_formula_models_iff
        - expr_basic_typing_formula_tlete_intro
-       - basic_typing_lty_env_to_atom_env_denot_relevant_env
+       - basic_typing_lty_env_to_atom_env_relevant
        - expr_total_formula_tlete_intro_from_result_extension
        - storeA_restrict_dom
        - dom_insert_L
@@ -162,8 +162,8 @@ TLet support layer
 
    basic_world_formula_denot_relevant_mono_context
      depends on:
-       - denot_relevant_env_lookup_mono_context
-       - denot_relevant_env_dom_mono_context
+       - relevant_env_lookup_mono_context
+       - relevant_env_dom_mono_context
        - basic_world_formula_subenv-style reasoning
      role:
        Transfers basic_world_formula from a larger relevant environment to a
@@ -187,7 +187,7 @@ TLet support layer
    arrow_body_relevant_env_agree
    arrow_body_relevant_env_agree_from_basic_context_ty
      depend on:
-       - denot_relevant_env
+       - relevant_env
        - typed_lty_env_bind
        - basic_context_ty facts
      role:
@@ -263,7 +263,7 @@ Recursive denotation infrastructure
        - expr_result_formula
        - type_qualifier_formula
        - FForall/FImpl/FFibVars/FOver/FUnder/FStar/FWand/FPlus
-       - denot_relevant_env
+       - relevant_env
        - typed_lty_env_bind
        - cty_shift and tm_shift
      role:
@@ -287,7 +287,7 @@ Recursive denotation infrastructure
    res_models_ty_denote_gas_env_agree_on
      depend on:
        - formula_open_env_ty_denote_gas
-       - denot_relevant_env / lty_env agreement
+       - relevant_env / lty_env agreement
      role:
        Transport denotation across equivalent relevant environments.
      similarity/replacement:
@@ -337,7 +337,7 @@ Recursive denotation infrastructure
    formula_lvars_at_ty_denote_gas_subset_relevant
      depends on:
        - formula_lvars_at for FormulaT
-       - denot_relevant_lvars
+       - relevant_lvars
        - context_ty_lvars/tm_lvars shape lemmas
      role:
        Lvar-level upper bound for the recursive denotation formula.

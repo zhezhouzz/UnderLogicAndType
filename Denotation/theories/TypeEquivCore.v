@@ -47,45 +47,45 @@ Proof.
       reflexivity.
 	    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1)) (tret (vbvar 0))
 	        ltac:(rewrite cty_shift_preserves_depth; lia)).
 	      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
 	        (cty_shift 0 τ0_1)
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1)) (tret (vbvar 0))
 	        ltac:(rewrite cty_shift_preserves_depth; lia)).
 	      rewrite (IH gas' ltac:(lia) τ0_2
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1))
 	        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
 	      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
 	        τ0_2 (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1))
 	        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
 	      reflexivity.
 	    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1)) (tret (vbvar 0))
 	        ltac:(rewrite cty_shift_preserves_depth; lia)).
 	      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
 	        (cty_shift 0 τ0_1)
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1)) (tret (vbvar 0))
 	        ltac:(rewrite cty_shift_preserves_depth; lia)).
 	      rewrite (IH gas' ltac:(lia) τ0_2
 	        (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1))
 	        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
 	      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
 	        τ0_2 (typed_lty_env_bind
-	          (denot_relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+	          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
 	          (erase_ty τ0_1))
 	        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
       reflexivity.
@@ -103,15 +103,15 @@ Lemma ty_denote_gas_insert_fresh_lty_env_eq
 Proof.
   intros _ Hxτ Hxe.
   eapply ty_denote_gas_env_agree_on
-    with (X := denot_relevant_lvars τ e).
+    with (X := relevant_lvars τ e).
   - reflexivity.
   - apply lty_env_restrict_lvars_insert_fresh.
-    apply denot_relevant_lvars_insert_fresh; assumption.
+    apply relevant_lvars_insert_fresh; assumption.
 Qed.
 
 Lemma ty_denote_gas_zero_of_guard_formula
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
-  m ⊨ ty_guard_formula (denot_relevant_env Σ τ e) τ e ->
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e ->
   m ⊨ ty_denote_gas 0 Σ τ e.
 Proof.
   intros Hguard.
@@ -125,7 +125,7 @@ Qed.
 Lemma ty_denote_gas_guard_formula
     gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
-  m ⊨ ty_guard_formula (denot_relevant_env Σ τ e) τ e.
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
 Proof.
   destruct gas; cbn [ty_denote_gas]; rewrite res_models_and_iff; tauto.
 Qed.
@@ -133,7 +133,7 @@ Qed.
 Lemma ty_denote_gas_guard_of_zero_formula
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas 0 Σ τ e ->
-  m ⊨ ty_guard_formula (denot_relevant_env Σ τ e) τ e.
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
 Proof.
   intros Hzero.
   cbn [ty_denote_gas] in Hzero.
@@ -144,11 +144,11 @@ Qed.
 Lemma ty_denote_gas_zero_of_guard
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))) ->
   m ⊨ ty_denote_gas 0 Σ τ e.
@@ -162,11 +162,11 @@ Lemma ty_denote_gas_guard
     gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))).
 Proof.
@@ -179,11 +179,11 @@ Lemma ty_denote_gas_guard_of_zero
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas 0 Σ τ e ->
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))).
 Proof.
@@ -227,11 +227,11 @@ Qed.
 
 Lemma atom_store_has_ltype_restrict_fv_from_source_guard
     (Σ : lty_env) τ e (m : WfWorldT) σ :
-  m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
-  m ⊨ expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+  m ⊨ basic_world_formula (relevant_env Σ τ e) ->
+  m ⊨ expr_basic_typing_formula (relevant_env Σ τ e) e
     (erase_ty τ) ->
   worldA_stores (m : WorldT) σ ->
-  atom_store_has_ltype (denot_relevant_env Σ τ e)
+  atom_store_has_ltype (relevant_env Σ τ e)
     (store_restrict σ (fv_tm e)).
 Proof.
   intros Hworld Hbasic Hσ y u Hlookup.
@@ -241,7 +241,7 @@ Proof.
   destruct Htyped as [_ Hstores].
   specialize (Hstores (lstore_lift_free σ)
     ltac:(exists σ; split; [exact Hσ|reflexivity])).
-  assert (Hy_dom : LVFree y ∈ dom (denot_relevant_env Σ τ e)).
+  assert (Hy_dom : LVFree y ∈ dom (relevant_env Σ τ e)).
   {
     pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
     apply Hfv. unfold lvars_of_atoms. set_solver.
@@ -262,11 +262,11 @@ Lemma expr_result_extension_has_ltype_from_source_guard
   expr_result_extension_witness e x Fx ->
   res_extend_by m Fx mx ->
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))) ->
   extension_has_ltype (<[LVFree x := erase_ty τ]> ∅)
@@ -313,7 +313,7 @@ Proof.
           set_solver.
         }
         assert (Hσin_typed :
-            atom_store_has_ltype (denot_relevant_env Σ τ e) σin).
+            atom_store_has_ltype (relevant_env Σ τ e) σin).
         {
           simpl in Hσin.
           destruct Hσin as [σm [Hσm Hrestrict]].
@@ -468,10 +468,10 @@ Lemma basic_world_formula_result_alias_target
   lty_env_closed Σ ->
   Σ !! LVFree x = Some (erase_ty τ) ->
   m ⊨ expr_result_formula e (LVFree x) ->
-  m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
-  m ⊨ expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+  m ⊨ basic_world_formula (relevant_env Σ τ e) ->
+  m ⊨ expr_basic_typing_formula (relevant_env Σ τ e) e
     (erase_ty τ) ->
-  m ⊨ basic_world_formula (denot_relevant_env Σ τ (tret (vfvar x))).
+  m ⊨ basic_world_formula (relevant_env Σ τ (tret (vfvar x))).
 Proof.
   intros HΣclosed HΣx Hres Hworld_src Hbasic_src.
   pose proof Hworld_src as Hworld_src_model.
@@ -485,22 +485,22 @@ Proof.
   destruct Hres_world as [Hx_fresh [Hres_dom Hres_stores]].
   apply basic_world_formula_models_iff.
   split.
-  - apply denot_relevant_env_closed. exact HΣclosed.
+  - apply relevant_env_closed. exact HΣclosed.
   - split.
     + intros a Ha.
       apply lvars_fv_elem in Ha.
-      unfold denot_relevant_env, lty_env_restrict_lvars in Ha.
+      unfold relevant_env, lty_env_restrict_lvars in Ha.
       rewrite storeA_restrict_dom in Ha.
       apply elem_of_intersection in Ha as [HaΣ Ha_rel].
-      unfold denot_relevant_lvars in Ha_rel.
+      unfold relevant_lvars in Ha_rel.
       cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Ha_rel.
       apply elem_of_union in Ha_rel as [Haτ|Hax].
       * apply Hscope_src. apply lvars_fv_elem.
-        unfold denot_relevant_env, lty_env_restrict_lvars.
+        unfold relevant_env, lty_env_restrict_lvars.
         rewrite storeA_restrict_dom.
         apply elem_of_intersection. split.
         -- exact HaΣ.
-        -- unfold denot_relevant_lvars. set_solver.
+        -- unfold relevant_lvars. set_solver.
       * apply elem_of_singleton in Hax. inversion Hax. subst a.
         specialize (Hres_dom (LVFree x) ltac:(set_solver)).
         rewrite res_lift_free_dom in Hres_dom.
@@ -510,25 +510,25 @@ Proof.
     + unfold lworld_has_type, worldA_has_type in Htyped_src |- *.
       split.
       * intros z Hz.
-        unfold denot_relevant_env, lty_env_restrict_lvars in Hz.
+        unfold relevant_env, lty_env_restrict_lvars in Hz.
         rewrite storeA_restrict_dom in Hz.
         apply elem_of_intersection in Hz as [HzΣ Hz_rel].
-        unfold denot_relevant_lvars in Hz_rel.
+        unfold relevant_lvars in Hz_rel.
         cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hz_rel.
         apply elem_of_union in Hz_rel as [Hzτ|Hzx].
         -- destruct Htyped_src as [Hdom_src _].
            apply Hdom_src.
-           unfold denot_relevant_env, lty_env_restrict_lvars.
+           unfold relevant_env, lty_env_restrict_lvars.
            rewrite storeA_restrict_dom.
            apply elem_of_intersection. split; [exact HzΣ|].
-           unfold denot_relevant_lvars. set_solver.
+           unfold relevant_lvars. set_solver.
         -- apply elem_of_singleton in Hzx. subst z.
            apply Hres_dom. set_solver.
       * intros σl Hσl z T v Htarget_z Hσl_z.
-        unfold denot_relevant_env, lty_env_restrict_lvars in Htarget_z.
+        unfold relevant_env, lty_env_restrict_lvars in Htarget_z.
         apply storeA_restrict_lookup_some in Htarget_z
           as [Hz_target HΣ_z].
-        destruct (decide (z ∈ denot_relevant_lvars τ e)) as [Hz_source|Hz_not_source].
+        destruct (decide (z ∈ relevant_lvars τ e)) as [Hz_source|Hz_not_source].
         -- destruct Htyped_src as [_ Hstores_src].
            specialize (Hstores_src σl Hσl).
            eapply Hstores_src.
@@ -536,7 +536,7 @@ Proof.
            ++ exact Hσl_z.
         -- assert (Hz_x : z = LVFree x).
            {
-             unfold denot_relevant_lvars in Hz_target, Hz_not_source.
+             unfold relevant_lvars in Hz_target, Hz_not_source.
              cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at]
                in Hz_target.
              set_solver.
@@ -551,7 +551,7 @@ Proof.
              !! LVFree x = Some v) in Hσl_z.
            rewrite lstore_lift_free_lookup_free in Hσl_z.
            assert (Hσtyped :
-               atom_store_has_ltype (denot_relevant_env Σ τ e)
+               atom_store_has_ltype (relevant_env Σ τ e)
                  (store_restrict σ (fv_tm e))).
            {
              eapply atom_store_has_ltype_restrict_fv_from_source_guard;
@@ -602,19 +602,19 @@ Lemma ty_denote_gas_result_alias_guard
   Σ !! LVFree x = Some (erase_ty τ) ->
   m ⊨ expr_result_formula e (LVFree x) ->
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ e) τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ e))
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ e) e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))) ->
   m ⊨ FAnd
-    (context_ty_wf_formula (denot_relevant_env Σ τ (tret (vfvar x))) τ)
+    (context_ty_wf_formula (relevant_env Σ τ (tret (vfvar x))) τ)
     (FAnd
-      (basic_world_formula (denot_relevant_env Σ τ (tret (vfvar x))))
+      (basic_world_formula (relevant_env Σ τ (tret (vfvar x))))
       (FAnd
-        (expr_basic_typing_formula (denot_relevant_env Σ τ (tret (vfvar x)))
+        (expr_basic_typing_formula (relevant_env Σ τ (tret (vfvar x)))
           (tret (vfvar x)) (erase_ty τ))
         (expr_total_formula (tret (vfvar x))))).
 Proof.
@@ -630,17 +630,17 @@ Proof.
   assert (Hbasicτ_Σ : basic_context_ty_lvars (dom Σ) τ).
   {
     eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_src].
-    apply denot_relevant_env_dom_subset_direct.
+    apply relevant_env_dom_subset_direct.
   }
   assert (Hlookup_target :
-      denot_relevant_env Σ τ (tret (vfvar x)) !! LVFree x =
+      relevant_env Σ τ (tret (vfvar x)) !! LVFree x =
       Some (erase_ty τ)).
   {
-    unfold denot_relevant_env, lty_env_restrict_lvars.
+    unfold relevant_env, lty_env_restrict_lvars.
     assert (Hin :
-        LVFree x ∈ denot_relevant_lvars τ (tret (vfvar x))).
+        LVFree x ∈ relevant_lvars τ (tret (vfvar x))).
     {
-      unfold denot_relevant_lvars.
+      unfold relevant_lvars.
       cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at].
       set_solver.
     }
@@ -651,7 +651,7 @@ Proof.
   - apply context_ty_wf_formula_models_iff.
     split; [exact Hlc_target|].
     split; [exact Hscope_target|].
-    apply basic_context_ty_lvars_denot_relevant_env.
+    apply basic_context_ty_lvars_relevant_env.
     exact Hbasicτ_Σ.
   - split.
     + apply basic_world_formula_models_iff.
@@ -1072,7 +1072,7 @@ Lemma basic_tm_has_ltype_open_result_target_fun
   typed_total_equiv_on Σ τtop m e1 e2 ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   basic_tm_has_ltype
-    (denot_relevant_env
+    (relevant_env
       (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     e2 (erase_ty τx →ₜ erase_ty τr).
@@ -1095,7 +1095,7 @@ Proof.
     + rewrite (tm_lvars_lc_eq_atoms e2 Hlc2). set_solver.
   - apply map_subseteq_spec. intros v U Hlook.
     apply storeA_restrict_lookup_some in Hlook as [Hvfv Htop].
-    unfold denot_relevant_env, lty_env_restrict_lvars in Htop.
+    unfold relevant_env, lty_env_restrict_lvars in Htop.
     apply storeA_restrict_lookup_some in Htop as [_ HΣv].
     destruct v as [k|z].
     + unfold lvars_of_atoms in Hvfv. set_solver.
@@ -1104,17 +1104,17 @@ Proof.
         intros ->. apply Hye.
         unfold lvars_of_atoms in Hvfv. set_solver.
       }
-      unfold denot_relevant_env, lty_env_restrict_lvars.
+      unfold relevant_env, lty_env_restrict_lvars.
       assert (Hlook_open :
           lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx))
             !! LVFree z = Some U).
       { rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzy.
         exact HΣv. }
       assert (Hin :
-          LVFree z ∈ denot_relevant_lvars (cty_open 0 y τr)
+          LVFree z ∈ relevant_lvars (cty_open 0 y τr)
             (tapp_tm e2 (vfvar y))).
       {
-        unfold denot_relevant_lvars.
+        unfold relevant_lvars.
         rewrite tm_lvars_tapp_tm_fvar.
         rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
         unfold lvars_of_atoms in *. set_solver.
@@ -1125,22 +1125,22 @@ Qed.
 Lemma basic_value_has_ltype_open_result_target_arg
     (Σ : lty_env) τx τr e y :
   basic_value_has_ltype
-    (denot_relevant_env
+    (relevant_env
       (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
       (cty_open 0 y τr) (tapp_tm e (vfvar y)))
     (vfvar y) (erase_ty τx).
 Proof.
   constructor.
-  unfold denot_relevant_env, lty_env_restrict_lvars.
+  unfold relevant_env, lty_env_restrict_lvars.
   assert (Hlook :
       lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx))
         !! LVFree y = Some (erase_ty τx)).
   { apply lty_env_open_one_typed_bind_lookup_current. }
   assert (Hin :
-      LVFree y ∈ denot_relevant_lvars (cty_open 0 y τr)
+      LVFree y ∈ relevant_lvars (cty_open 0 y τr)
         (tapp_tm e (vfvar y))).
   {
-    unfold denot_relevant_lvars.
+    unfold relevant_lvars.
     rewrite tm_lvars_tapp_tm_fvar.
     set_solver.
   }

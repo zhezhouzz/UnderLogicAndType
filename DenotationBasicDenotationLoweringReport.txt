@@ -181,12 +181,12 @@ the reusable transport theorem for the syntactic associativity
 
 ### B. Denotation relevant-env facts
 
-- `TLetSupport.v:333` `denot_relevant_env_lookup_mono_context`
-- `TLetSupport.v:350` `denot_relevant_env_dom_mono_context`
+- `TLetSupport.v:333` `relevant_env_lookup_mono_context`
+- `TLetSupport.v:350` `relevant_env_dom_mono_context`
 - `TLetSupport.v:366` `basic_world_formula_denot_relevant_mono_context`
   - Lower target: `Denotation/TypeDenote.v`.
   - Change: keep these in Denotation, but out of TLetSupport.  They are about
-    `denot_relevant_env`, not TLet.
+    `relevant_env`, not TLet.
   - Reason: depend on denotation-level relevant environments.
 
 - `TLetSupport.v:907` `tlet_arrow_arg_relevant_env_agree`
@@ -209,7 +209,7 @@ the reusable transport theorem for the syntactic associativity
   - Reason: no TLet-specific premise is needed after parameterizing the source
     term and body term.
 
-- `TLetSupport.v:1229` duplicate `denot_relevant_env_dom_subset_direct`
+- `TLetSupport.v:1229` duplicate `relevant_env_dom_subset_direct`
   - Lower target: already exists at `TypeDenote.v:841`.
   - Change: delete duplicate from TLetSupport and import/use the core lemma.
   - Reason: exact duplicate by name/content.
@@ -218,21 +218,21 @@ the reusable transport theorem for the syntactic associativity
 - `TLetSupport.v:1318` `basic_world_formula_wand_body_from_source_and_arg`
   - Lower target: `Denotation/TypeDenote.v` or
     `ContextBasicDenotation/StoreTyping.v` if restated without
-    `denot_relevant_env`.
+    `relevant_env`.
   - Change: split into two lemmas:
     1. an env inclusion/equality lemma for the relevant env;
     2. a `basic_world_formula_subenv` application.
   - Reason: the current statements combine relevant-env algebra and basic-world
     typing.  Splitting makes both parts reusable.
 
-- `TLetSupport.v:1654` `denot_relevant_env_eq_of_tm_lvars_eq`
+- `TLetSupport.v:1654` `relevant_env_eq_of_tm_lvars_eq`
 - `TLetSupport.v:1664` `denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq`
 - `TLetSupport.v:1704` `denot_relevant_basic_world_typing_wfworld_closed_on_term`
 - `TLetSupport.v:1715` `denot_ty_lvar_guard_wfworld_closed_on_term`
 - `TLetSupport.v:1731` `denot_ty_lvar_guard_wfworld_closed_on_term_le`
   - Lower target: `Denotation/TypeDenote.v` or
     `TypeEquiv.v`.
-  - Change: keep `denot_relevant_env_eq_of_tm_lvars_eq` in Core.  Put the
+  - Change: keep `relevant_env_eq_of_tm_lvars_eq` in Core.  Put the
     guard-to-closed facts near the denotation guard/FV lemmas.
   - Reason: these are general denotation guard facts; TLet is just one user.
 
@@ -329,7 +329,7 @@ the reusable transport theorem for the syntactic associativity
   - Lower target: stay in Denotation, but this is the right file for many
     relevant-env lemmas currently in TLetSupport.
   - Change: consolidate duplicates here, especially
-    `denot_relevant_env_dom_subset_direct`.
+    `relevant_env_dom_subset_direct`.
 
 ## Denotation/theories/TypeDenoteLvars.v
 
@@ -613,9 +613,9 @@ the reusable transport theorem for the syntactic associativity
    `ContextBasicDenotation/TermSyntax.v`.
 3. Move spine basic-typing/eval/total/result lemmas to
    `BasicTypingFormula.v` and `TermTLet.v`.
-4. Consolidate `denot_relevant_env_*` lemmas in
+4. Consolidate `relevant_env_*` lemmas in
    `Denotation/TypeDenote.v`; delete the duplicate
-   `denot_relevant_env_dom_subset_direct` in TLetSupport.
+   `relevant_env_dom_subset_direct` in TLetSupport.
 5. Create a Denotation associativity file for the `ty_denote_gas`
    `tapp/tlete` transport family.
 6. Re-run the scan and remove remaining one-off wrappers from TLetSupport.

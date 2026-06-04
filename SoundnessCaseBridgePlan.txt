@@ -942,7 +942,7 @@ Implementation order
 
    Refined transport statement:
 
-   - `denot_relevant_env Σ τ e` is only the denotation guard's syntactic
+   - `relevant_env Σ τ e` is only the denotation guard's syntactic
      restriction:
 
        `storeA_restrict Σ (context_ty_lvars τ ∪ tm_lvars e)`.
@@ -951,7 +951,7 @@ Implementation order
      The general transport should instead assume the ordinary well-scoped
      invariant:
 
-       `denot_relevant_lvars τ e ⊆ dom Σ`
+       `relevant_lvars τ e ⊆ dom Σ`
 
      and the fixed store is inside the original ambient environment:
 
@@ -996,8 +996,8 @@ Implementation order
    - The main theorem should therefore be proved first in the relevant-store
      form:
 
-       `denot_relevant_lvars τ e ⊆ dom Σ ->
-        lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e ->
+       `relevant_lvars τ e ⊆ dom Σ ->
+        lvars_of_atoms (dom σ) ⊆ relevant_lvars τ e ->
         atom_store_has_ltype Σ σ ->
         m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e)
         m ⊨ ty_denote_gas gas
@@ -1011,7 +1011,7 @@ Implementation order
 
    - Public/full-fiber uses should first replace `σ` by
 
-       `store_restrict σ (lvars_fv (denot_relevant_lvars τ e))`
+       `store_restrict σ (lvars_fv (relevant_lvars τ e))`
 
      using `formula_msubst_store_restrict_fv_subset` together with
      `formula_fv_ty_denote_gas_subset_relevant`, then call the relevant
@@ -1333,7 +1333,7 @@ Implementation order
              Without closed stores, a value stored at a relevant atom can
              introduce fresh lvars into the instantiated term; then the
              transformed denotation may observe lty-env entries outside the
-             original `denot_relevant_lvars τ e`.
+             original `relevant_lvars τ e`.
              Current status: proved.  The proof uses the lower support lemmas
              `context_ty_msubst_store_restrict_subset`,
              `lstore_instantiate_tm_lift_free_agree_subset`, and
@@ -1736,7 +1736,7 @@ Implementation order
             the iff-shaped IH.
             Progress:
             - DONE: the public back theorem now first restricts the input store
-              to `denot_relevant_lvars τ e` and then calls the restricted
+              to `relevant_lvars τ e` and then calls the restricted
               theorem.  This proves the non-inductive "arbitrary σ" wrapper and
               leaves only the relevant-store induction:
               `ty_denote_gas_msubst_store_models_relevant_back_restricted`.
@@ -1898,9 +1898,9 @@ Implementation order
         `basic_context_ty_lvars (dom Σ) τ ->
          tm_lvars e ⊆ dom Σ ->
          atom_store_has_ltype Σ σ ->
-         (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
+         (res_restrict m (lvars_fv (relevant_lvars τ e)) : WorldT) =
            singleton_world (store_restrict σ
-             (lvars_fv (denot_relevant_lvars τ e))) ->
+             (lvars_fv (relevant_lvars τ e))) ->
          m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e) <->
          m ⊨ ty_denote_gas gas
               Σ
@@ -1924,7 +1924,7 @@ Implementation order
 
       If the proof is cleaner, first state it with
       `(res_restrict m (dom σ) : WorldT) = singleton_world σ` and
-      `lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e`; then add an
+      `lvars_of_atoms (dom σ) ⊆ relevant_lvars τ e`; then add an
       arbitrary-store wrapper using `store_restrict`.
 
       Immediate decomposition before touching the recursive induction:
@@ -1941,7 +1941,7 @@ Implementation order
           supplied by the source/target guard;
         * `basic_world_formula` uses the source residual world plus the
           singleton typed store to reconstruct the fixed atoms, then weakens
-          to the target `denot_relevant_env`;
+          to the target `relevant_env`;
         * `expr_basic_typing_formula` uses the existing residual msubst typing
           theorem plus weakening/reconstruction from the singleton typed store;
         * `expr_total_formula` uses the already proved total msubst transport.

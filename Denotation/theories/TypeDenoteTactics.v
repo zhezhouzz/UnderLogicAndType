@@ -65,7 +65,7 @@ Ltac normalize_denotation_formula_fv_in H :=
 Ltac denot_lvars_norm :=
   store_normalize;
   type_syntax_norm;
-  cbn [denot_relevant_lvars formula_fv formula_lvars fv_tm fv_value
+  cbn [relevant_lvars formula_fv formula_lvars fv_tm fv_value
     tm_lvars tm_lvars_at value_lvars value_lvars_at context_ty_lvars
     context_ty_lvars_at];
   rewrite ?typed_lty_env_bind_lvars_fv_dom;
@@ -79,7 +79,7 @@ Ltac denot_lvars_norm :=
 Ltac denot_lvars_norm_in H :=
   store_normalize;
   type_syntax_norm_in H;
-  cbn [denot_relevant_lvars formula_fv formula_lvars fv_tm fv_value
+  cbn [relevant_lvars formula_fv formula_lvars fv_tm fv_value
     tm_lvars tm_lvars_at value_lvars value_lvars_at context_ty_lvars
     context_ty_lvars_at] in H;
   rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
@@ -94,21 +94,21 @@ Ltac denot_lvars_set :=
   denot_lvars_norm; better_set_solver.
 
 Ltac denot_ty_fv_norm :=
-  cbn [ty_denote_gas denot_relevant_env lty_env_restrict_lvars
-    denot_relevant_lvars];
+  cbn [ty_denote_gas relevant_env lty_env_restrict_lvars
+    relevant_lvars];
   normalize_denotation_formula_fv.
 
 Ltac denot_ty_fv_norm_in H :=
-  cbn [ty_denote_gas denot_relevant_env lty_env_restrict_lvars
-    denot_relevant_lvars] in H;
+  cbn [ty_denote_gas relevant_env lty_env_restrict_lvars
+    relevant_lvars] in H;
   normalize_denotation_formula_fv_in H.
 
 Ltac denot_ty_fv_set :=
   denot_ty_fv_norm;
   match goal with
-  | |- context [lvars_fv (dom (denot_relevant_env ?Σ ?τ ?e))] =>
+  | |- context [lvars_fv (dom (relevant_env ?Σ ?τ ?e))] =>
       let Hrel := fresh "Hrel" in
-      pose proof (denot_relevant_env_fv_subset Σ τ e) as Hrel
+      pose proof (relevant_env_fv_subset Σ τ e) as Hrel
   | _ => idtac
   end;
   set_solver.
@@ -117,7 +117,7 @@ Ltac denot_open_set :=
   match goal with
   | |- open_env_fresh_for_lvars (<[?k := ?y]> ∅) ?D =>
       apply open_env_fresh_for_lvars_singleton;
-      rewrite ?lvars_fv_union, ?denot_relevant_lvars_fv;
+      rewrite ?lvars_fv_union, ?relevant_lvars_fv;
       set_solver
   | _ =>
       denot_lvars_norm; formula_syntax_norm; type_syntax_norm;

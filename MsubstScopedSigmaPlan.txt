@@ -157,7 +157,7 @@ of the form:
   formula_msubst_store σ
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e)
+        (relevant_env Σ (CTWand τx τr) e)
         (erase_ty τx))
       ...)
 
@@ -165,7 +165,7 @@ while the target body has recursive children of the form:
 
   ty_denote_gas gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr)
+      (relevant_env Σ (CTWand τx τr)
         (lstore_instantiate_tm (lstore_lift_free σ) e))
       (erase_ty τx))
     ...
@@ -183,25 +183,25 @@ prove a general agreement lemma:
 
   lty_env_restrict_lvars
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e)
+      (relevant_env Σ (CTWand τx τr) e)
       (erase_ty τx))
-    (denot_relevant_lvars τc ec)
+    (relevant_lvars τc ec)
   =
   lty_env_restrict_lvars
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr)
+      (relevant_env Σ (CTWand τx τr)
         (lstore_instantiate_tm (lstore_lift_free σ) e))
       (erase_ty τx))
-    (denot_relevant_lvars τc ec)
+    (relevant_lvars τc ec)
 
 under premises saying:
 
-  denot_relevant_lvars τc ec
+  relevant_lvars τc ec
     ⊆ {[LVBound 0]} ∪ context_ty_lvars τx ∪ context_ty_lvars τr ∪
        tm_lvars (lstore_instantiate_tm (lstore_lift_free σ) e)
 
 and the corresponding source-side coverage after msubst/restrict.  A cleaner
-variant may state this as agreement-on [denot_relevant_lvars τc ec] rather than
+variant may state this as agreement-on [relevant_lvars τc ec] rather than
 literal equality, then use res_models_ty_denote_gas_env_agree_on.
 
 Existing lemmas likely reusable:
@@ -240,8 +240,8 @@ Inter/Union/Sum/Over/Under proofs.  Arrow/Wand only need to provide the two
 environment equalities at the opened argument/result children.  The new
 RelevantEnv helpers are:
 
-  - denot_relevant_env_idemp
-  - denot_relevant_env_restrict_subset
+  - relevant_env_idemp
+  - relevant_env_restrict_subset
   - arrow_arg_relevant_env_agree
   - wand_arg_relevant_env_agree
 

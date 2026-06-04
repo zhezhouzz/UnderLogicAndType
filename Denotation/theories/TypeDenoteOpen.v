@@ -29,7 +29,7 @@ Proof.
   }
   assert (Hfresh :
     open_env_fresh_for_lvars (<[k := y]> ∅)
-      (dom Σ ∪ denot_relevant_lvars τ e)).
+      (dom Σ ∪ relevant_lvars τ e)).
   { denot_open_set. }
   pose proof (formula_open_env_ty_denote_gas
     (<[k := y]> ∅) gas Σ τ e Hfresh

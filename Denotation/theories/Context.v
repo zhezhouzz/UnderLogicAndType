@@ -103,7 +103,7 @@ Proof.
   {
     eapply basic_world_formula_subenv; [|exact Hrel_world].
     intros v U Hv.
-    eapply lty_env_singleton_subenv_denot_relevant_env_ret_fvar.
+    eapply lty_env_singleton_subenv_relevant_env_ret_fvar.
     exact Hv.
   }
   pose proof (basic_world_formula_union Σ
@@ -133,7 +133,7 @@ Proof.
     (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
     τ (tret (vfvar x)) ({[LVFree x]}) m
-    (denot_relevant_lvars_basic_ret_fvar_subset x τ Hbasic)
+    (relevant_lvars_basic_ret_fvar_subset x τ Hbasic)
     (atom_env_to_lty_env_restrict_singleton_lookup
       Σ x (erase_ty τ) Hlookup)
     Harg) as Harg_single.

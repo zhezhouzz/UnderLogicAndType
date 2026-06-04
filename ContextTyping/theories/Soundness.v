@@ -30,7 +30,7 @@ Lemma ty_denote_under_guard
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   m ⊨ ty_denote_under Σ Γ τ e ->
 	m ⊨ ty_guard_formula
-      (denot_relevant_env
+      (relevant_env
         (atom_env_to_lty_env (erase_ctx Γ)) τ e)
       τ e.
 Proof.
@@ -61,7 +61,7 @@ Lemma context_typing_wf_denot_static_guard
   context_typing_wf Σ Γ e τ ->
   m ⊨ ctx_denote_under Σ Γ ->
   m ⊨ ty_static_guard_formula
-    (denot_relevant_env
+    (relevant_env
       (atom_env_to_lty_env (erase_ctx Γ)) τ e)
     τ e.
 Proof.
@@ -70,12 +70,12 @@ Proof.
   pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
   assert (Hworld :
       m ⊨ basic_world_formula
-        (denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e)).
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e)).
   {
     eapply basic_world_formula_subenv.
     - intros v T Hv.
       unfold ctx_erasure_under.
-      eapply denot_relevant_env_erase_ctx_union_subenv; eauto.
+      eapply relevant_env_erase_ctx_union_subenv; eauto.
     - exact (ctx_denote_under_basic_world Σ Γ m Hctx).
   }
   apply basic_world_formula_models_iff in Hworld
@@ -86,7 +86,7 @@ Proof.
     split; [exact Hlc|]. split; [exact Hscope|].
     pose proof (context_typing_wf_context_ty Σ Γ e τ Hwf)
       as Hτ.
-    apply basic_context_ty_atom_env_denot_relevant_env.
+    apply basic_context_ty_atom_env_relevant_env.
     exact Hτ.
   - rewrite res_models_and_iff. split.
     + apply basic_world_formula_models_iff.
@@ -94,8 +94,8 @@ Proof.
     + apply expr_basic_typing_formula_models_iff.
       split; [exact Hlc|]. split; [exact Hscope|].
       apply basic_tm_has_ltype_of_atom_typing.
-      * apply denot_relevant_env_closed. apply atom_store_to_lvar_store_closed.
-      * apply basic_typing_lty_env_to_atom_env_denot_relevant_env.
+      * apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+      * apply basic_typing_lty_env_to_atom_env_relevant.
       rewrite lvar_store_to_atom_store_atom_store.
       exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
 Qed.
@@ -135,21 +135,21 @@ Proof.
   pose proof (ctx_denote_under_bind_inv Σ x τ m Hctx) as Hbind.
   unfold ty_denote_under, ty_denote in Hbind |- *.
   eapply res_models_ty_denote_gas_env_agree_on
-    with (X := denot_relevant_lvars τ (tret (vfvar x)));
+    with (X := relevant_lvars τ (tret (vfvar x)));
     [reflexivity | | exact Hbind].
   assert (Hrel :
-      denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
+      relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
   {
-    apply denot_relevant_lvars_ret_fvar_subset_singleton.
+    apply relevant_lvars_ret_fvar_subset_singleton.
     eapply context_typing_wf_bind_context_ty; eauto.
   }
   rewrite <- (lty_env_restrict_lvars_twice_subset
     (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
-    ({[LVFree x]}) (denot_relevant_lvars τ (tret (vfvar x))) Hrel).
+    ({[LVFree x]}) (relevant_lvars τ (tret (vfvar x))) Hrel).
   rewrite atom_env_to_lty_env_insert_restrict_singleton.
   rewrite (lty_env_restrict_lvars_twice_subset
     (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
-    ({[LVFree x]}) (denot_relevant_lvars τ (tret (vfvar x))) Hrel).
+    ({[LVFree x]}) (relevant_lvars τ (tret (vfvar x))) Hrel).
   reflexivity.
 Qed.
 
@@ -224,11 +224,11 @@ Proof.
   {
     unfold ty_denote_under, ty_denote in Hden2 |- *.
     eapply res_models_ty_denote_gas_env_agree_on
-      with (X := denot_relevant_lvars τ e); [reflexivity | | exact Hden2].
+      with (X := relevant_lvars τ e); [reflexivity | | exact Hden2].
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e ∪ fv_cty τ).
     - intros x Hx. symmetry. apply Hagree. exact Hx.
-    - rewrite denot_relevant_lvars_fv. set_solver.
+    - rewrite relevant_lvars_fv. set_solver.
   }
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm e ∪ fv_cty τ) (n := m').
@@ -292,7 +292,7 @@ Proof.
   {
     unfold ty_denote_under, ty_denote in Hden.
     eapply res_models_ty_denote_gas_env_agree_on
-      with (X := denot_relevant_lvars τ1 e1); [reflexivity| |exact Hden].
+      with (X := relevant_lvars τ1 e1); [reflexivity| |exact Hden].
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e1 ∪ fv_cty τ1).
     - intros y Hy.
@@ -306,7 +306,7 @@ Proof.
       }
       unfold ctx_erasure_under.
       apply erase_ctx_union_lookup_local_of_basic_ctx; assumption.
-    - rewrite denot_relevant_lvars_fv. set_solver.
+    - rewrite relevant_lvars_fv. set_solver.
   }
   assert (Htarget :
       mx ⊨ ty_denote_gas (cty_depth τ1)

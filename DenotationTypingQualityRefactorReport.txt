@@ -205,7 +205,7 @@ Recommended solver/helper additions:
 
   2. In Denotation relevant-lvars support:
 
-     denot_relevant_lvars_basic_ret_fvar_subset
+     relevant_lvars_basic_ret_fvar_subset
 
      This already exists in case-support style. Move it to a relevant-lvars
      support file so Var can use it without local singleton FV reasoning.
@@ -305,8 +305,8 @@ Definitions/lemmas to move:
     Move to Store/RelevantEnv. These are generic atom/lvar env lookup facts.
     The first is likely inlineable into the second if it is only used there.
 
-  denot_relevant_lvars_basic_ret_fvar_subset
-  denot_relevant_lvars_basic_open_tprim_fvar_subset
+  relevant_lvars_basic_ret_fvar_subset
+  relevant_lvars_basic_open_tprim_fvar_subset
     Move to TypeDenoteLvars / RelevantEnv support. They are about
     relevant-lvar computation, not cases.
 
@@ -399,7 +399,7 @@ Recommended solver/tactic work:
 
      It should normalize:
 
-       denot_relevant_lvars
+       relevant_lvars
        context_ty_lvars_fv
        tm_lvars_fv
        lvars_fv_union
@@ -625,7 +625,7 @@ Naked lemma patterns:
 
 Recommended change:
 
-  Most set work here concerns denot_relevant_lvars and child formula FV. Use the
+  Most set work here concerns relevant_lvars and child formula FV. Use the
   proposed denot_lvars_norm + better_set_solver.
 
   Keep the theorem itself. It is specifically requested to preserve and is now
@@ -827,8 +827,8 @@ Definition-like helper lemmas to move down
     lvars_of_atoms_empty
     atom_env_to_lty_env_restrict_singleton_lookup_eq
     atom_env_to_lty_env_restrict_singleton_lookup
-    denot_relevant_lvars_basic_ret_fvar_subset
-    denot_relevant_lvars_basic_open_tprim_fvar_subset
+    relevant_lvars_basic_ret_fvar_subset
+    relevant_lvars_basic_open_tprim_fvar_subset
 
   ConstDenote.v:
     res_models_true
@@ -1011,7 +1011,7 @@ Because:
 Suggested first edits:
 
   1. Remove unused guard projection lemmas if confirmed unused.
-  2. Move denot_relevant_lvars_basic_ret_fvar_subset down and use it in Var.
+  2. Move relevant_lvars_basic_ret_fvar_subset down and use it in Var.
   3. Add a static-guard subenv helper to remove manual atom_store_to_lvar_store
      lookup proof from context_typing_wf_denot_static_guard.
   4. Compile Soundness.vo.

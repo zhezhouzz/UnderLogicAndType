@@ -19,20 +19,20 @@ Lemma ty_denote_gas_tm_equiv_wand_open_arg
   y ∉ fv_cty τx ->
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
+      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
+      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
   n ⊨ formula_open 0 y
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx))
       (cty_shift 0 τx) (tret (vbvar 0))) ->
   n ⊨ formula_open 0 y
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1)
+        (relevant_env Σ (CTWand τx τr) e1)
         (erase_ty τx))
       (cty_shift 0 τx) (tret (vbvar 0))).
 Proof.
@@ -43,12 +43,12 @@ Proof.
   { cbn [fv_tm fv_value]. set_solver. }
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
+      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
     (cty_shift 0 τx) (tret (vbvar 0))) in Htgt
     by (exact HyΣ2 || exact Hea_fresh || exact Hτa_fresh).
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
+      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
     (cty_shift 0 τx) (tret (vbvar 0)))
     by (exact HyΣ1 || exact Hea_fresh || exact Hτa_fresh).
   replace (open_tm 0 (vfvar y) (tret (vbvar 0))) with
@@ -60,18 +60,18 @@ Proof.
   pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx)))
+        (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (denot_relevant_lvars τa ea)
+    τa ea (relevant_lvars τa ea)
     ltac:(set_solver)
     (wand_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e1 Hyτx)) as Hsrc_mid.
   pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))
+        (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (denot_relevant_lvars τa ea)
+    τa ea (relevant_lvars τa ea)
     ltac:(set_solver)
     (wand_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e2 Hyτx)) as Htgt_mid.
@@ -88,7 +88,7 @@ Lemma ty_denote_gas_tm_equiv_wand_open_result_source_mid
   m ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1)
+        (relevant_env Σ (CTWand τx τr) e1)
         (erase_ty τx)))
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
   m ⊨ ty_denote_gas gas
@@ -99,11 +99,11 @@ Proof.
   pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1)
+        (relevant_env Σ (CTWand τx τr) e1)
         (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y))
-    (denot_relevant_lvars (cty_open 0 y τr)
+    (relevant_lvars (cty_open 0 y τr)
       (tapp_tm e1 (vfvar y)))
     ltac:(set_solver)
     (wand_body_relevant_env_agree_open_one_core
@@ -125,7 +125,7 @@ Lemma ty_denote_gas_tm_equiv_wand_open_result_target_mid_to_goal
   m ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
@@ -133,11 +133,11 @@ Proof.
   pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y))
-    (denot_relevant_lvars (cty_open 0 y τr)
+    (relevant_lvars (cty_open 0 y τr)
       (tapp_tm e2 (vfvar y)))
     ltac:(set_solver)
     (wand_body_relevant_env_agree_open_one_core
@@ -235,7 +235,7 @@ Lemma basic_world_formula_wand_open_result_source_world
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) :
   typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
   res_restrict my (world_dom (m : WorldT)) = m ->
-  my ⊨ basic_world_formula (denot_relevant_env Σ (CTWand τx τr) e2).
+  my ⊨ basic_world_formula (relevant_env Σ (CTWand τx τr) e2).
 Proof.
   intros Hequiv Hrestrict.
   pose proof (typed_total_equiv_target_zero
@@ -255,13 +255,13 @@ Lemma basic_world_formula_wand_open_result_big
   y ∉ fv_cty τx ->
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  my ⊨ basic_world_formula (denot_relevant_env Σ (CTWand τx τr) e2) ->
+  my ⊨ basic_world_formula (relevant_env Σ (CTWand τx τr) e2) ->
   my ⊨ basic_world_formula
     ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env) ->
   my ⊨ basic_world_formula
-    (denot_relevant_env
+    (relevant_env
       (<[LVFree y := erase_ty τx]>
-        (denot_relevant_env Σ (CTWand τx τr) e2))
+        (relevant_env Σ (CTWand τx τr) e2))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
 Proof.
   intros Hequiv Hyτx Hyτr Hye Hworld_src Hworld_y.
@@ -277,13 +277,13 @@ Proof.
     as [_ [_ Hbasic_wand]].
   eapply basic_world_formula_wand_body_from_source_and_arg.
   - exact Hlc_rel.
-  - eapply denot_relevant_env_wand_fresh_free.
+  - eapply relevant_env_wand_fresh_free.
     + exact Hyτx.
     + exact Hyτr.
     + set_solver.
   - exact Hbasic_wand.
   - apply tm_lvars_tapp_tm_fvar_without_arg.
-  - rewrite denot_relevant_env_idemp. exact Hworld_src.
+  - rewrite relevant_env_idemp. exact Hworld_src.
   - exact Hworld_y.
 Qed.
 
@@ -294,12 +294,12 @@ Lemma basic_world_formula_wand_open_result_subenv
   y ∉ fv_cty τr ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   forall v T,
-    denot_relevant_env
+    relevant_env
       (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) !! v = Some T ->
-    denot_relevant_env
+    relevant_env
       (<[LVFree y := erase_ty τx]>
-        (denot_relevant_env Σ (CTWand τx τr) e2))
+        (relevant_env Σ (CTWand τx τr) e2))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) !! v = Some T.
 Proof.
   intros Hequiv Hyτx Hyτr Hye v T Hlook.
@@ -314,9 +314,9 @@ Proof.
   apply context_ty_wf_formula_models_iff in Hwf_top_tgt
     as [Hlc_rel _].
   assert (Hy_rel :
-      LVFree y ∉ dom (denot_relevant_env Σ (CTWand τx τr) e2 : lty_env)).
+      LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e2 : lty_env)).
   {
-    eapply denot_relevant_env_wand_fresh_free.
+    eapply relevant_env_wand_fresh_free.
     - exact Hyτx.
     - exact Hyτr.
     - set_solver.
@@ -326,15 +326,15 @@ Proof.
     Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc2)) as Hagree.
   change ((lty_env_restrict_lvars
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    (denot_relevant_lvars (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
+    (relevant_lvars (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     : lty_env) !! v = Some T) in Hlook.
   rewrite <- Hagree in Hlook.
   rewrite typed_lty_env_bind_open_current in Hlook by
     (exact Hy_rel || exact Hlc_rel).
   change ((lty_env_restrict_lvars
     (<[LVFree y := erase_ty τx]>
-      (denot_relevant_env Σ (CTWand τx τr) e2))
-    (denot_relevant_lvars (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
+      (relevant_env Σ (CTWand τx τr) e2))
+    (relevant_lvars (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     : lty_env) !! v = Some T).
   exact Hlook.
 Qed.
@@ -356,11 +356,11 @@ Lemma basic_world_formula_wand_open_result_target
   n ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   res_product n my Hc ⊨ basic_world_formula
-    (denot_relevant_env
+    (relevant_env
       (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
 Proof.
@@ -369,7 +369,7 @@ Proof.
     Σ τx τr e1 e2 m my Hequiv Hrestrict) as Hworld_src_my.
   assert (Hworld_src_prod :
       res_product n my Hc ⊨
-        basic_world_formula (denot_relevant_env Σ (CTWand τx τr) e2)).
+        basic_world_formula (relevant_env Σ (CTWand τx τr) e2)).
   { eapply res_models_kripke; [apply res_product_le_r|exact Hworld_src_my]. }
   pose proof (basic_world_formula_opened_arg_world (erase_ty τx) my y Hworld)
     as Hworld_y_my.
@@ -401,11 +401,11 @@ Lemma expr_basic_typing_formula_wand_open_result_target
   n ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   res_product n my Hc ⊨ expr_basic_typing_formula
-    (denot_relevant_env
+    (relevant_env
       (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
     (tapp_tm e2 (vfvar y)) (erase_ty (cty_open 0 y τr)).
@@ -444,7 +444,7 @@ Lemma ty_denote_gas_zero_wand_open_result_target
   n ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   res_product n my Hc ⊨ ty_denote_gas 0
@@ -459,7 +459,7 @@ Proof.
   pose proof (ty_denote_gas_guard gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) n Harg)
     as Hguard_arg.
@@ -526,7 +526,7 @@ Proof.
   }
   assert (Hworld_tgt :
       res_product n my Hc ⊨ basic_world_formula
-        (denot_relevant_env
+        (relevant_env
           (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))).
   {
@@ -534,7 +534,7 @@ Proof.
   }
   assert (Hwf_tgt :
       res_product n my Hc ⊨ context_ty_wf_formula
-        (denot_relevant_env
+        (relevant_env
           (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (cty_open 0 y τr)).
@@ -546,14 +546,14 @@ Proof.
     apply context_ty_wf_formula_models_iff.
     split; [exact Hlc_tgt|].
     split; [exact Hscope_tgt|].
-    apply basic_context_ty_lvars_denot_relevant_env.
+    apply basic_context_ty_lvars_relevant_env.
     eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
-    unfold denot_relevant_env, lty_env_restrict_lvars.
+    unfold relevant_env, lty_env_restrict_lvars.
     store_normalize. set_solver.
   }
   assert (Hbasic_tgt :
       res_product n my Hc ⊨ expr_basic_typing_formula
-        (denot_relevant_env
+        (relevant_env
           (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (tapp_tm e2 (vfvar y)) (erase_ty (cty_open 0 y τr))).
@@ -588,7 +588,7 @@ Lemma typed_total_equiv_wand_open_result_mid
   n ⊨ ty_denote_gas gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx)))
     (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   typed_total_equiv_on
@@ -637,28 +637,28 @@ Lemma ty_denote_gas_tm_equiv_wand_open_result
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
+      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
+      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
   my ⊨ formula_open 0 y
     (basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅)) ->
   n ⊨ formula_open 0 y
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx))
       (cty_shift 0 τx) (tret (vbvar 0))) ->
   res_product n my Hc ⊨ formula_open 0 y
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1)
+        (relevant_env Σ (CTWand τx τr) e1)
         (erase_ty τx))
       τr (tapp_tm (tm_shift 0 e1) (vbvar 0))) ->
   res_product n my Hc ⊨ formula_open 0 y
     (ty_denote_gas gas
       (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2)
+        (relevant_env Σ (CTWand τx τr) e2)
         (erase_ty τx))
       τr (tapp_tm (tm_shift 0 e2) (vbvar 0))).
 Proof.
@@ -683,19 +683,19 @@ Proof.
   }
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
+      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
     τr (tapp_tm (tm_shift 0 e1) (vbvar 0))) in Hres
     by (exact HyΣ1 || exact Hsrc_tm_fresh || exact Hyτr).
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
+      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
     τr (tapp_tm (tm_shift 0 e2) (vbvar 0)))
     by (exact HyΣ2 || exact Htgt_tm_fresh || exact Hyτr).
   rewrite open_tapp_tm_shift_bvar0_lc in Hres by exact Hlc1.
   rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc2.
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
-      (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
+      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
     (cty_shift 0 τx) (tret (vbvar 0))) in Harg
     by (exact HyΣ2 || exact Harg_tm_fresh || exact Hτa_fresh).
   replace (open_tm 0 (vfvar y) (tret (vbvar 0))) with
@@ -721,7 +721,7 @@ Proof.
       res_product n my Hc ⊨ ty_denote_gas gas
         (lty_env_open_one 0 y
           (typed_lty_env_bind
-            (denot_relevant_env Σ (CTWand τx τr) e2)
+            (relevant_env Σ (CTWand τx τr) e2)
             (erase_ty τx)))
         τres etgt).
   {
@@ -749,12 +749,12 @@ Lemma ty_denote_gas_tm_equiv_wand_body
         (FWand
           (ty_denote_gas gas
             (typed_lty_env_bind
-              (denot_relevant_env Σ (CTWand τx τr) e1)
+              (relevant_env Σ (CTWand τx τr) e1)
               (erase_ty τx))
             (cty_shift 0 τx) (tret (vbvar 0)))
           (ty_denote_gas gas
             (typed_lty_env_bind
-              (denot_relevant_env Σ (CTWand τx τr) e1)
+              (relevant_env Σ (CTWand τx τr) e1)
               (erase_ty τx))
             τr (tapp_tm (tm_shift 0 e1) (vbvar 0))))) ->
   m ⊨
@@ -763,12 +763,12 @@ Lemma ty_denote_gas_tm_equiv_wand_body
         (FWand
           (ty_denote_gas gas
             (typed_lty_env_bind
-              (denot_relevant_env Σ (CTWand τx τr) e2)
+              (relevant_env Σ (CTWand τx τr) e2)
               (erase_ty τx))
             (cty_shift 0 τx) (tret (vbvar 0)))
           (ty_denote_gas gas
             (typed_lty_env_bind
-              (denot_relevant_env Σ (CTWand τx τr) e2)
+              (relevant_env Σ (CTWand τx τr) e2)
               (erase_ty τx))
             τr (tapp_tm (tm_shift 0 e2) (vbvar 0))))).
 Proof.
@@ -793,10 +793,10 @@ Proof.
     fv_cty τr ∪ fv_tm e1 ∪ fv_tm e2 ∪
     lvars_fv
       (dom (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ∪
+        (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ∪
     lvars_fv
       (dom (typed_lty_env_bind
-        (denot_relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))).
+        (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))).
   intros y Hy my Hdom Hrestrict.
   split; [intros Hworld; exact Hworld|].
   split.

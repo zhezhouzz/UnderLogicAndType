@@ -44,13 +44,13 @@ File: Denotation/theories/ConstDenote.v
 - Lemma `expr_total_formula_ret_const` @ line 82
   uses: 5 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_const_precise_atom_env_empty` @ line 98
+- Lemma `relevant_env_const_precise_atom_env_empty` @ line 98
   uses: 2 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_const_over_atom_env_empty` @ line 115
+- Lemma `relevant_env_const_over_atom_env_empty` @ line 115
   uses: 2 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_const_under_atom_env_empty` @ line 130
+- Lemma `relevant_env_const_under_atom_env_empty` @ line 130
   uses: 2 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `const_qual_open_vars` @ line 145

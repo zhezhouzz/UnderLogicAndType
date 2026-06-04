@@ -70,7 +70,7 @@ Analysis:
 
     formula_fv_*
     formula_lvars_*
-    denot_relevant_lvars
+    relevant_lvars
     context_ty_lvars_fv
     tm_lvars_fv
     lvars_fv_union
@@ -104,20 +104,20 @@ Current Ltac:
 
   denot_open_fresh
   denot_open_lvars
-  denot_relevant_env_open_lvars
+  relevant_env_open_lvars
 
 Use count:
 
   denot_open_fresh: 3 uses
   denot_open_lvars: currently definition only after the large proof compression
-  denot_relevant_env_open_lvars: currently definition only after compression
+  relevant_env_open_lvars: currently definition only after compression
 
 Analysis:
 
   These are pure FV/freshness solvers.  They call the same facts as
   denot_lvars_norm, type_syntax_norm, formula_syntax_norm, and better_set_solver.
   After res_models_open_ty_denote_gas_iff was reduced to a direct rewrite,
-  denot_open_lvars and denot_relevant_env_open_lvars appear dead or nearly dead.
+  denot_open_lvars and relevant_env_open_lvars appear dead or nearly dead.
 
 Recommended change:
 
@@ -133,7 +133,7 @@ Recommended change:
   Then:
 
     - delete denot_open_lvars if rg confirms no real use;
-    - delete denot_relevant_env_open_lvars if rg confirms no real use;
+    - delete relevant_env_open_lvars if rg confirms no real use;
     - replace denot_open_fresh calls by denot_open_set.
 
 3. BasicTypingFormula local tactics should be split into syntax-level and

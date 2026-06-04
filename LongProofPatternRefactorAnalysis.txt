@@ -224,7 +224,7 @@ Existing helpers already useful:
 - `lvars_at_depth_arrow_body_lift_support_subset`.
 - `lvars_at_depth_wand_arg_lift_support_subset`.
 - `lvars_at_depth_wand_body_lift_support_subset`.
-- `denot_relevant_env_open_env`.
+- `relevant_env_open_env`.
 - `typed_lty_env_bind_open_env_lift`.
 
 Recommended extraction:
@@ -308,7 +308,7 @@ Repeated patterns:
   - rewrite `formula_open_and`;
   - split guard/body using `res_models_and_iff`;
   - apply `res_models_open_denot_ty_lvar_guard_iff`;
-  - rewrite `denot_relevant_env_open_one`;
+  - rewrite `relevant_env_open_one`;
   - transport the body.
 
 - `CTUnion` and `CTSum` duplicate guard scope extraction:
@@ -502,7 +502,7 @@ Recommended lower-level lemmas:
 ```coq
 Lemma logic_var_open_one_inv_bound_succ ...
 Lemma logic_var_open_one_inv_free ...
-Lemma denot_relevant_lvars_open_body_back
+Lemma relevant_lvars_open_body_back
 ```
 
 The key missing abstraction is not map lookup; it is the support back-transport:
@@ -512,8 +512,8 @@ Lemma opened_body_relevant_lvars_without_y_subset_source
     y τr e_body e_src :
   y ∉ fv_cty τr ->
   tm_lvars e_body ∖ {[LVFree y]} ⊆ lvars_shift_from 0 (tm_lvars e_src) ->
-  denot_relevant_lvars (cty_open 0 y τr) e_body ∖ {[LVFree y]} ⊆
-  lvars_shift_from 0 (denot_relevant_lvars τr e_src).
+  relevant_lvars (cty_open 0 y τr) e_body ∖ {[LVFree y]} ⊆
+  lvars_shift_from 0 (relevant_lvars τr e_src).
 ```
 
 If this support lemma exists, the map equality proof becomes a short
@@ -532,9 +532,9 @@ Recommended helper:
 Lemma opened_arg_relevant_lvars_subset_source
     y τx τr e_src :
   y ∉ fv_cty τx ->
-  denot_relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+  relevant_lvars (cty_open 0 y (cty_shift 0 τx))
     (tret (vfvar y)) ∖ {[LVFree y]} ⊆
-  lvars_shift_from 0 (denot_relevant_lvars (CTWand τx τr) e_src).
+  lvars_shift_from 0 (relevant_lvars (CTWand τx τr) e_src).
 ```
 
 Then both `wand_arg_*` and `arrow_arg_*` should become short wrappers.
@@ -665,13 +665,13 @@ Pattern:
 Recommended extraction:
 
 ```coq
-Lemma denot_relevant_env_ret_fvar_lookup_split
+Lemma relevant_env_ret_fvar_lookup_split
 Lemma basic_world_formula_ret_fvar_alias_from_source
 ```
 
 The first should be a pure RelevantEnv/Store lemma that says every lookup in
-`denot_relevant_env Σ τ (tret (vfvar x))` either belongs to
-`denot_relevant_env Σ τ e` or is exactly `LVFree x`.
+`relevant_env Σ τ (tret (vfvar x))` either belongs to
+`relevant_env Σ τ e` or is exactly `LVFree x`.
 
 This would remove most of the manual set/store splitting in the proof.
 
@@ -688,7 +688,7 @@ Suggested tactic:
 
 ```coq
 Ltac denot_relevant_support_solver :=
-  unfold denot_relevant_lvars in *;
+  unfold relevant_lvars in *;
   cbn [context_ty_lvars context_ty_lvars_at
        tm_lvars tm_lvars_at value_lvars_at] in *;
   rewrite ?tm_lvars_at_tret_bound0_under in *;

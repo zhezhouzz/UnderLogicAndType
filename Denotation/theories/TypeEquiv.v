@@ -88,7 +88,7 @@ Proof.
     apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
     destruct Hbasicτ as [Hτdom _].
     apply HxΣ.
-    eapply denot_relevant_env_dom_subset_direct.
+    eapply relevant_env_dom_subset_direct.
     eapply Hτdom. exact Hbad.
   }
   assert (Hxe : x ∉ fv_tm e).
@@ -105,7 +105,7 @@ Proof.
     gas Σ τ e x (erase_ty τ) m mx Fx
     HxΣ Hxτ Hxe HFx_ltype Hext Hm) as Hmx_source.
   assert (Hfv_e :
-      lvars_of_atoms (fv_tm e) ⊆ dom (denot_relevant_env Σ τ e)).
+      lvars_of_atoms (fv_tm e) ⊆ dom (relevant_env Σ τ e)).
   {
     apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
     eapply basic_tm_has_ltype_lvars. exact Hty.
@@ -115,7 +115,7 @@ Proof.
   assert (Hres : mx ⊨ expr_result_formula e (LVFree x)).
   {
     eapply expr_result_formula_of_result_extends
-      with (Σ := denot_relevant_env Σ τ e); eauto.
+      with (Σ := relevant_env Σ τ e); eauto.
   }
   eapply ty_denote_gas_result_alias; eauto.
   - apply lty_env_closed_insert_free; eauto.
@@ -133,15 +133,15 @@ Proof.
   - change (tm_lvars_at 0 e) with (tm_lvars e).
     change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
     replace (tm_lvars e ∪ context_ty_lvars τ)
-      with (denot_relevant_lvars τ e)
-      by (unfold denot_relevant_lvars; set_solver).
-    rewrite denot_relevant_lvars_fv.
+      with (relevant_lvars τ e)
+      by (unfold relevant_lvars; set_solver).
+    rewrite relevant_lvars_fv.
     set_solver.
 Qed.
 
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
-  m ⊨ ty_guard_formula (denot_relevant_env Σ τ e) τ e ->
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e ->
   wfworld_closed_on (fv_tm e) m.
 Proof.
   intros Hguard.

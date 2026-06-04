@@ -780,22 +780,22 @@ How to modify:
 Definitions/lemmas at lines 823-1210:
 
 - lty_env_restrict_lvars
-- denot_relevant_lvars
-- denot_relevant_env
-- denot_relevant_env_dom_subset_direct
+- relevant_lvars
+- relevant_env
+- relevant_env_dom_subset_direct
 - lookup/dom/context mono
-- denot_relevant_lvars/open/open_env
+- relevant_lvars/open/open_env
 - lty_env_restrict_lvars_closed
 - lty_env_to_atom_env_restrict_lvars_lookup
 - basic_typing_lty_env_to_atom_env_restrict_lvars
 - lty_env_restrict_lvars_fv/dom/insert facts
-- denot_relevant_env_fv_subset/insert/restrict equality facts
+- relevant_env_fv_subset/insert/restrict equality facts
 
 Analysis:
 
 - `lty_env_restrict_lvars` is just store restriction on lvar keys and should be
   notation over generic store restrict.
-- `denot_relevant_lvars/env` is not recursive denotation, but it is specific to
+- `relevant_lvars/env` is not recursive denotation, but it is specific to
   "the part of Σ relevant to a type and term".  It can be lowered out of
   Denotation if we want TypeLanguage/BasicDenotation to own relevance.
 
@@ -803,7 +803,7 @@ How to modify:
 
 - Move lty_env_restrict_lvars and its generic store/projection lemmas to
   ContextTypeLanguage/LtyEnv or ContextStore.
-- Move denot_relevant_lvars/env to ContextBasicDenotation or
+- Move relevant_lvars/env to ContextBasicDenotation or
   ContextTypeLanguage.  Preferred target: ContextBasicDenotation, because it
   combines context_ty syntax with CoreLang term lvars and is used to build
   denotation guards.
@@ -829,7 +829,7 @@ Analysis:
 
 How to modify:
 
-- First move denot_relevant_lvars/env lower.
+- First move relevant_lvars/env lower.
 - Then restate these as generic "function-like context type support" lemmas, or
   as two small lemmas parameterized by a body type and binder kind.
 - Keep them in Denotation only if the lower layer should not mention the
@@ -976,11 +976,11 @@ Lowering opportunities:
 - The "goal is an And/Impl spine, destruct hypotheses and solve the matching
   atom" proof pattern should be a ContextLogic connective tactic/lemma family.
 - Basic world/basic typing/total component lemmas should be split and moved to
-  BasicDenotation when they can be phrased without denot_relevant_env.
+  BasicDenotation when they can be phrased without relevant_env.
 - tapp/tlete operational association facts that only mention evaluation belong
   in CoreLang or BasicDenotation TermEval.
 - support/FV facts that only mention tm_lvars/context_ty_lvars should move to
-  TypeLanguage/CoreLang or DenotationCore after denot_relevant_env is lowered.
+  TypeLanguage/CoreLang or DenotationCore after relevant_env is lowered.
 
 Keep in Denotation/TLetSupport:
 
@@ -1138,7 +1138,7 @@ Open questions for review
    CoreLang, or should CoreLang stay minimal and BasicDenotation remain the
    first owner of "term support" lemmas?
 
-2. Should denot_relevant_lvars/env live in ContextBasicDenotation or
+2. Should relevant_lvars/env live in ContextBasicDenotation or
    ContextTypeLanguage?  It is syntactic, but it combines context type lvars and
    term lvars specifically for denotation guards.
 

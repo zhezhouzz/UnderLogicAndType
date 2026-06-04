@@ -95,15 +95,15 @@ Proof.
     apply Steps_refl. constructor. constructor.
 Qed.
 
-Lemma denot_relevant_env_const_precise_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_precise_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTInter
       (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply denot_relevant_env_empty.
-  unfold denot_relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq.
+  apply relevant_env_empty.
+  unfold relevant_lvars, precise_ty, over_ty, under_ty, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -112,13 +112,13 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_relevant_env_const_over_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_over_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply denot_relevant_env_empty.
-  unfold denot_relevant_lvars, mk_q_eq.
+  apply relevant_env_empty.
+  unfold relevant_lvars, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -127,13 +127,13 @@ Proof.
   set_solver.
 Qed.
 
-Lemma denot_relevant_env_const_under_atom_env_empty Σ c :
-  denot_relevant_env (atom_env_to_lty_env Σ)
+Lemma relevant_env_const_under_atom_env_empty Σ c :
+  relevant_env (atom_env_to_lty_env Σ)
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)) = (∅ : lty_env).
 Proof.
-  apply denot_relevant_env_empty.
-  unfold denot_relevant_lvars, mk_q_eq.
+  apply relevant_env_empty.
+  unfold relevant_lvars, mk_q_eq.
   cty_lvars_syntax_norm.
   unfold qual_vars.
   cbn [qual_lvars tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -499,10 +499,10 @@ Lemma const_over_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
     (tret (vconst c)).
 Proof.
   induction gas as [|gas IH]; cbn [ty_denote_gas].
-  - rewrite denot_relevant_env_const_over_atom_env_empty.
+  - rewrite relevant_env_const_over_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_over_guard | apply res_models_true].
-  - rewrite denot_relevant_env_const_over_atom_env_empty.
+  - rewrite relevant_env_const_over_atom_env_empty.
     eapply res_models_and_intro_from_models; [solve_const_over_guard|].
     eapply res_models_forall_intro.
     + solve_const_forall_closed_scope.
@@ -551,10 +551,10 @@ Lemma const_under_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
     (tret (vconst c)).
 Proof.
   induction gas as [|gas IH]; cbn [ty_denote_gas].
-  - rewrite denot_relevant_env_const_under_atom_env_empty.
+  - rewrite relevant_env_const_under_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_under_guard | apply res_models_true].
-  - rewrite denot_relevant_env_const_under_atom_env_empty.
+  - rewrite relevant_env_const_under_atom_env_empty.
     eapply res_models_and_intro_from_models; [solve_const_under_guard|].
     eapply res_models_forall_intro.
     + solve_const_forall_closed_scope.
@@ -617,7 +617,7 @@ Proof.
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -626,14 +626,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (denot_relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env Σ)
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -641,7 +641,7 @@ Proof.
                 (tret (vconst c)) (TBase (base_ty_of_const c)))
               (expr_total_formula (tret (vconst c))))))
         FTrue).
-    rewrite denot_relevant_env_const_precise_atom_env_empty.
+    rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
         [ exact (context_ty_wf_formula_const_precise_empty c m)
@@ -659,7 +659,7 @@ Proof.
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -668,14 +668,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (denot_relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env Σ)
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (denot_relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env Σ)
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -689,7 +689,7 @@ Proof.
           (ty_denote_gas gas' (atom_env_to_lty_env Σ)
             (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c))))).
-    rewrite denot_relevant_env_const_precise_atom_env_empty.
+    rewrite relevant_env_const_precise_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [ eapply res_models_and_intro_from_models;
         [ exact (context_ty_wf_formula_const_precise_empty c m)
@@ -726,7 +726,7 @@ Proof.
     (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
     τarg (tret (vfvar x)) ({[LVFree x]}) m
-    (denot_relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
+    (relevant_lvars_basic_ret_fvar_subset x τarg Hbasic_arg)
     (atom_env_to_lty_env_restrict_singleton_lookup
       Σ x (erase_ty τarg) Hlookup)
     Harg) as Harg_single.
@@ -742,7 +742,7 @@ Proof.
     with (Σ1 := atom_env_to_lty_env
         (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
       (X := {[LVFree x]});
-    [ apply denot_relevant_lvars_basic_open_tprim_fvar_subset;
+    [ apply relevant_lvars_basic_open_tprim_fvar_subset;
       exact Hbasic_res
     | symmetry;
       apply atom_env_to_lty_env_restrict_singleton_lookup;

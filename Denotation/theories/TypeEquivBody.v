@@ -130,11 +130,11 @@ Proof.
   apply ty_denote_gas_guard_of_zero in Hzero.
   repeat rewrite res_models_and_iff in Hzero |- *.
   destruct Hzero as [Hwf [Hworld [Hbasic Htotal]]].
-  pose proof (denot_relevant_env_dom_mono_context
+  pose proof (relevant_env_dom_mono_context
     Σ τsmall τbig e Hτ) as Hdom_small_big.
   assert (Hrel_small_big :
-      denot_relevant_lvars τsmall e ⊆ denot_relevant_lvars τbig e).
-  { unfold denot_relevant_lvars. set_solver. }
+      relevant_lvars τsmall e ⊆ relevant_lvars τbig e).
+  { unfold relevant_lvars. set_solver. }
   split.
   - apply context_ty_wf_formula_models_iff in Hwf
       as [Hlc_big [Hscope_big Hbasic_big]].
@@ -145,7 +145,7 @@ Proof.
       destruct Hbasic_big as [Hvars_big _].
       split; [|exact Hshape_small].
       intros v Hv.
-      eapply denot_relevant_env_dom_subset_direct.
+      eapply relevant_env_dom_subset_direct.
       apply Hvars_big. exact (Hτ _ Hv).
     }
     split.
@@ -155,7 +155,7 @@ Proof.
         apply Hscope_big.
         apply lvars_fv_elem in Ha.
         apply lvars_fv_elem. exact (Hdom_small_big _ Ha).
-      * apply basic_context_ty_lvars_denot_relevant_env.
+      * apply basic_context_ty_lvars_relevant_env.
         exact HbasicΣ_small.
   - split.
     + eapply basic_world_formula_denot_relevant_mono_context; eauto.
@@ -171,20 +171,20 @@ Proof.
               apply lvars_fv_elem in Ha.
               apply lvars_fv_elem. exact (Hdom_small_big _ Ha).
            ++ rewrite Herase.
-              replace (denot_relevant_env Σ τsmall e) with
+              replace (relevant_env Σ τsmall e) with
                 (storeA_restrict
-                  (denot_relevant_env Σ τbig e)
-                  (denot_relevant_lvars τsmall e)).
+                  (relevant_env Σ τbig e)
+                  (relevant_lvars τsmall e)).
               2:{
-                unfold denot_relevant_env.
-                rewrite <- (denot_relevant_env_restrict_subset
-                  Σ τbig e (denot_relevant_lvars τsmall e) Hrel_small_big).
+                unfold relevant_env.
+                rewrite <- (relevant_env_restrict_subset
+                  Σ τbig e (relevant_lvars τsmall e) Hrel_small_big).
                 reflexivity.
               }
               eapply basic_tm_has_ltype_restrict_lvars_lc.
               ** exact Hty_big.
               ** eapply basic_tm_has_ltype_lc; eauto.
-              ** unfold denot_relevant_lvars. set_solver.
+              ** unfold relevant_lvars. set_solver.
       * exact Htotal.
 Qed.
 

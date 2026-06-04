@@ -179,12 +179,12 @@ Files are listed as `file: change / unfold -- dominant pattern`.
   probably handled by a CoreLang sugar normalizer.
 
 - Denotation/theories/TypeDenote.v: 34 / 72 -- very high
-  concentration around `formula_open_env`, `denot_relevant_env`,
-  `denot_relevant_lvars`, `lty_env_restrict_lvars`, and `lworld_has_type`.
+  concentration around `formula_open_env`, `relevant_env`,
+  `relevant_lvars`, `lty_env_restrict_lvars`, and `lworld_has_type`.
   This should not be solved by one broad unfold; it needs denotation-specific
   normalization and short lemmas for relevant-env equality/agreement.
 - Denotation/theories/TypeDenote.v: 4 / 27 -- repeated
-  unfolding of `denot_relevant_lvars/env` in the main denotation induction.
+  unfolding of `relevant_lvars/env` in the main denotation induction.
   Should use denotation FV/relevant-env tactics.
 - Denotation/theories/TypeDenoteLvars.v: 7 / 3 -- lower priority;
   mostly lvars/fv syntactic transport.
@@ -364,8 +364,8 @@ names express the semantic layer they normalize.
 
    Add:
 
-   - `denot_relevant_norm`: normalize `denot_relevant_env`,
-     `denot_relevant_lvars`, and `lty_env_restrict_lvars` through short
+   - `denot_relevant_norm`: normalize `relevant_env`,
+     `relevant_lvars`, and `lty_env_restrict_lvars` through short
      equalities/agreement lemmas.
    - `denot_open_norm`: use models-level open transport instead of formula
      equality whenever qualifier/domain paths are intensional.

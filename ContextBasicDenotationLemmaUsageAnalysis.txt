@@ -151,31 +151,31 @@ File: ContextBasicDenotation/theories/Qualifier.v
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 File: ContextBasicDenotation/theories/RelevantEnv.v
 ---------------------------------------------------
-- Lemma `denot_relevant_lvars_fv` @ line 28
+- Lemma `relevant_lvars_fv` @ line 28
   uses: 7 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `denot_relevant_env_empty` @ line 36
+- Lemma `relevant_env_empty` @ line 36
   uses: 3 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_fresh_free` @ line 46
+- Lemma `relevant_env_fresh_free` @ line 46
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_arrow_fresh_free` @ line 60
+- Lemma `relevant_env_arrow_fresh_free` @ line 60
   uses: 3 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_wand_fresh_free` @ line 75
+- Lemma `relevant_env_wand_fresh_free` @ line 75
   uses: 2 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `lvars_of_atoms_empty` @ line 88
   uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `denot_relevant_lvars_basic_ret_fvar_subset` @ line 95
+- Lemma `relevant_lvars_basic_ret_fvar_subset` @ line 95
   uses: 2 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_lvars_ret_fvar_subset_singleton` @ line 107
+- Lemma `relevant_lvars_ret_fvar_subset_singleton` @ line 107
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_lvars_basic_open_tprim_fvar_subset` @ line 119
+- Lemma `relevant_lvars_basic_open_tprim_fvar_subset` @ line 119
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `atom_env_to_lty_env_restrict_singleton_lookup` @ line 135
@@ -199,10 +199,10 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `erase_ctx_union_lookup_local_of_basic_ctx` @ line 226
   uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_erase_ctx_union_subenv` @ line 243
+- Lemma `relevant_env_erase_ctx_union_subenv` @ line 243
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `lty_env_singleton_subenv_denot_relevant_env_ret_fvar` @ line 255
+- Lemma `lty_env_singleton_subenv_relevant_env_ret_fvar` @ line 255
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `lty_env_restrict_lvars_twice_same` @ line 280
@@ -211,37 +211,37 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `lty_env_restrict_lvars_twice_subset` @ line 288
   uses: 3 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_idemp` @ line 298
+- Lemma `relevant_env_idemp` @ line 298
   uses: 2 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `denot_relevant_env_restrict_subset` @ line 306
+- Lemma `relevant_env_restrict_subset` @ line 306
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
-- Lemma `denot_relevant_env_dom_subset_direct` @ line 315
+- Lemma `relevant_env_dom_subset_direct` @ line 315
   uses: 8 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_lookup_mono_context` @ line 326
+- Lemma `relevant_env_lookup_mono_context` @ line 326
   uses: 2 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_env_dom_mono_context` @ line 339
+- Lemma `relevant_env_dom_mono_context` @ line 339
   uses: 2 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `basic_world_formula_denot_relevant_mono_context` @ line 351
   uses: 1 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_lvars_open` @ line 379
+- Lemma `relevant_lvars_open` @ line 379
   uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_open_one` @ line 392
+- Lemma `relevant_env_open_one` @ line 392
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_open_env` @ line 404
+- Lemma `relevant_env_open_env` @ line 404
   uses: 3 total; ltac/hint uses: 0; proof lines: 54; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `lty_env_restrict_lvars_closed` @ line 459
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_closed` @ line 473
+- Lemma `relevant_env_closed` @ line 473
   uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
 - Lemma `lty_env_to_atom_env_restrict_lvars_lookup` @ line 480
@@ -250,13 +250,13 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `basic_typing_lty_env_to_atom_env_restrict_lvars` @ line 493
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_typing_lty_env_to_atom_env_denot_relevant_env` @ line 507
+- Lemma `basic_typing_lty_env_to_atom_env_relevant` @ line 507
   uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_context_ty_lvars_denot_relevant_env` @ line 517
+- Lemma `basic_context_ty_lvars_relevant_env` @ line 517
   uses: 6 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `basic_context_ty_atom_env_denot_relevant_env` @ line 528
+- Lemma `basic_context_ty_atom_env_relevant_env` @ line 528
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `lty_env_restrict_lvars_fv_subset` @ line 540
@@ -265,7 +265,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `lty_env_restrict_lvars_insert_fresh` @ line 548
   uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_relevant_env_fv_subset` @ line 558
+- Lemma `relevant_env_fv_subset` @ line 558
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `denot_relevant_basic_world_typing_wfworld_closed_on_term_of_lvars_eq` @ line 569
@@ -274,10 +274,10 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `denot_relevant_basic_world_typing_wfworld_closed_on_term` @ line 608
   uses: 5 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_relevant_lvars_insert_fresh` @ line 619
+- Lemma `relevant_lvars_insert_fresh` @ line 619
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `lty_env_restrict_lvars_insert_denot_relevant_env_eq` @ line 630
+- Lemma `lty_env_restrict_lvars_insert_relevant_env_eq` @ line 630
   uses: 1 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `arrow_body_relevant_lvars_subset` @ line 663
@@ -301,7 +301,7 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `arrow_body_relevant_env_agree_open_one_core` @ line 983
   uses: 3 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `lvars_at_depth_denot_relevant_env_subset_relevant` @ line 1002
+- Lemma `lvars_at_depth_relevant_env_subset_relevant` @ line 1002
   uses: 12 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `lvars_at_depth_arrow_arg_lift_support_subset` @ line 1018
