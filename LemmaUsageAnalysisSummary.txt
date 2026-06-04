@@ -25,8 +25,8 @@ Global counts
 -------------
 
 - CoreLang: 277 lemmas, 74 zero-use, 78 single-use, 0 admitted.
-- ContextBase: 206 lemmas, 36 zero-use, 50 single-use, 0 admitted.
-- ContextStore: 250 lemmas, 46 zero-use, 82 single-use, 0 admitted.
+- ContextBase: 198 lemmas, 32 zero-use, 50 single-use, 0 admitted.
+- ContextStore: 241 lemmas, 37 zero-use, 81 single-use, 0 admitted.
 - ContextAlgebra: 286 lemmas, 67 zero-use, 103 single-use, 0 admitted.
 - ContextTypeLanguage: 226 lemmas, 89 zero-use, 59 single-use, 0 admitted.
 - ContextLogic: 275 lemmas, 64 zero-use, 78 single-use, 0 admitted.
@@ -126,4 +126,3 @@ Do not mechanically delete
 - ResourceInterface aliases without a deliberate interface-shrink pass.
 - Public regularity lemmas if they are useful for future proof scripts or paper
   names, even when current .v usage is zero.
-

@@ -1,5 +1,5 @@
 ContextStore lemma usage analysis
-=================================
+==================================
 
 Method: scanned all .v files for Lemma/Theorem/Corollary/Fact/Proposition names, counted whole-token references excluding the definition line, and marked Ltac/Hint references. Counts do not include .txt reports.
 
@@ -321,212 +321,193 @@ File: ContextStore/StoreCore.v
   sample uses:
     - ContextStore/StoreInterface.v:351: apply storeA_map_eq. intros z.
     - ContextStore/StoreInterface.v:462: apply storeA_map_eq. intros z.
-    - ContextStore/StoreFilterMapKey.v:386: apply storeA_map_eq. intros v.
-    - ContextStore/StoreFilterMapKey.v:420: apply storeA_map_eq. intros v.
-    - ContextStore/StoreFilterMapKey.v:561: apply storeA_map_eq. intros v.
+    - ContextStore/StoreFilterMapKey.v:368: apply storeA_map_eq. intros v.
+    - ContextStore/StoreFilterMapKey.v:402: apply storeA_map_eq. intros v.
+    - ContextStore/StoreFilterMapKey.v:543: apply storeA_map_eq. intros v.
     - ... 62 more
-- Lemma `storeA_agree_on_mono` @ line 61
-  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
-- Lemma `storeA_agree_on_refl` @ line 70
-  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
-- Lemma `storeA_agree_on_sym` @ line 77
-  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
-- Lemma `storeA_agree_on_union` @ line 85
+- Lemma `storeA_agree_on_union` @ line 61
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:113: apply storeA_agree_on_union.
-- Lemma `storeA_agree_on_insert_same` @ line 95
+    - ContextStore/StoreCore.v:89: apply storeA_agree_on_union.
+- Lemma `storeA_agree_on_insert_same` @ line 71
   uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
   sample uses: none
-- Lemma `storeA_agree_on_insert_same_keep` @ line 107
+- Lemma `storeA_agree_on_insert_same_keep` @ line 83
   uses: 0 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
   sample uses: none
-- Lemma `storeA_bind_dom` @ line 123
-  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
-- Lemma `storeA_rekey_lookup` @ line 151
+- Lemma `storeA_rekey_lookup` @ line 118
   uses: 13 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:442: rewrite storeA_rekey_lookup by apply logic_var_shift_from_inj.
-    - ContextStore/StoreCore.v:571: rewrite storeA_rekey_lookup by exact Hf. exact Hz.
-    - ContextStore/StoreCore.v:779: apply storeA_rekey_lookup, key_shift_inj.
+    - ContextStore/StoreFilterMapKey.v:424: rewrite storeA_rekey_lookup by apply logic_var_shift_from_inj.
+    - ContextStore/StoreCore.v:538: rewrite storeA_rekey_lookup by exact Hf. exact Hz.
+    - ContextStore/StoreCore.v:746: apply storeA_rekey_lookup, key_shift_inj.
     - ContextStore/LVarStore.v:48: apply storeA_rekey_lookup.
     - ContextStore/LVarStore.v:724: exact (storeA_rekey_lookup (V:=V) (fun v : logic_var => v)
     - ... 8 more
-- Lemma `storeA_rekey_dom` @ line 163
+- Lemma `storeA_rekey_dom` @ line 130
   uses: 22 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:192: rewrite storeA_rekey_dom by apply swap_inj.
     - ContextStore/StoreInterface.v:208: rewrite storeA_rekey_dom by apply swap_inj.
     - ContextStore/StoreInterface.v:428: 2:{ symmetry. apply storeA_rekey_dom, logic_var_shift_from_inj. }
-    - ContextStore/StoreFilterMapKey.v:276: rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
-    - ContextStore/StoreFilterMapKey.v:318: rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+    - ContextStore/StoreFilterMapKey.v:258: rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
+    - ContextStore/StoreFilterMapKey.v:300: rewrite storeA_rekey_dom by apply logic_var_shift_from_inj.
     - ... 17 more
-- Lemma `storeA_rekey_inj_on_dom_insert_inv` @ line 183
+- Lemma `storeA_rekey_inj_on_dom_insert_inv` @ line 150
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:362: (storeA_rekey_inj_on_dom_insert_inv f z v s Hinj))
-- Lemma `storeA_rekey_mapped_fst_nodup` @ line 192
+    - ContextStore/StoreCore.v:329: (storeA_rekey_inj_on_dom_insert_inv f z v s Hinj))
+- Lemma `storeA_rekey_mapped_fst_nodup` @ line 159
   uses: 1 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:242: - apply storeA_rekey_mapped_fst_nodup. exact Hinj.
-- Lemma `storeA_rekey_lookup_Some_inj_on` @ line 225
+    - ContextStore/StoreCore.v:209: - apply storeA_rekey_mapped_fst_nodup. exact Hinj.
+- Lemma `storeA_rekey_lookup_Some_inj_on` @ line 192
   uses: 13 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:258: apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].
-    - ContextStore/StoreCore.v:262: apply storeA_rekey_lookup_Some_inj_on in Hv as [x [Hz Hx]];
-    - ContextStore/StoreCore.v:277: apply storeA_rekey_lookup_Some_inj_on in Hv as [x [Hz Hx]];
-    - ContextStore/StoreCore.v:284: apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].
-    - ContextStore/StoreCore.v:336: apply storeA_rekey_lookup_Some_inj_on.
+    - ContextStore/StoreCore.v:225: apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].
+    - ContextStore/StoreCore.v:229: apply storeA_rekey_lookup_Some_inj_on in Hv as [x [Hz Hx]];
+    - ContextStore/StoreCore.v:244: apply storeA_rekey_lookup_Some_inj_on in Hv as [x [Hz Hx]];
+    - ContextStore/StoreCore.v:251: apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].
+    - ContextStore/StoreCore.v:303: apply storeA_rekey_lookup_Some_inj_on.
     - ... 8 more
-- Lemma `storeA_rekey_lookup_None_inj_on` @ line 245
+- Lemma `storeA_rekey_lookup_None_inj_on` @ line 212
   uses: 2 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:355: + apply storeA_rekey_lookup_None_inj_on.
-    - ContextStore/StoreCore.v:361: pose proof (storeA_rekey_lookup_None_inj_on f s y
-- Lemma `storeA_rekey_dom_inj_on` @ line 267
+    - ContextStore/StoreCore.v:322: + apply storeA_rekey_lookup_None_inj_on.
+    - ContextStore/StoreCore.v:328: pose proof (storeA_rekey_lookup_None_inj_on f s y
+- Lemma `storeA_rekey_dom_inj_on` @ line 234
   uses: 3 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:297: - rewrite storeA_rekey_dom_inj_on by exact Hg.
-    - ContextStore/StoreCore.v:299: - rewrite storeA_rekey_dom_inj_on by exact Hg.
+    - ContextStore/StoreCore.v:264: - rewrite storeA_rekey_dom_inj_on by exact Hg.
+    - ContextStore/StoreCore.v:266: - rewrite storeA_rekey_dom_inj_on by exact Hg.
     - ContextStore/LVarStore.v:115: apply storeA_rekey_dom_inj_on.
-- Lemma `storeA_rekey_inj_on_dom_compose` @ line 288
+- Lemma `storeA_rekey_inj_on_dom_compose` @ line 255
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:399: pose proof (storeA_rekey_inj_on_dom_compose f g s Hg Hf) as Hcomp.
-- Lemma `storeA_rekey_lookup_none_inj_on` @ line 304
+    - ContextStore/StoreCore.v:366: pose proof (storeA_rekey_inj_on_dom_compose f g s Hg Hf) as Hcomp.
+- Lemma `storeA_rekey_lookup_none_inj_on` @ line 271
   uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/LVarStore.v:128: apply storeA_rekey_lookup_none_inj_on.
-- Lemma `storeA_rekey_insert_inj_on` @ line 323
+- Lemma `storeA_rekey_insert_inj_on` @ line 290
   uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/LVarStore.v:151: apply storeA_rekey_insert_inj_on; exact Hnone || exact Hinj.
-- Lemma `storeA_rekey_ext_on_dom` @ line 367
+- Lemma `storeA_rekey_ext_on_dom` @ line 334
   uses: 10 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:605: apply storeA_rekey_ext_on_dom. intros v _.
-    - ContextStore/StoreFilterMapKey.v:355: apply storeA_rekey_ext_on_dom. intros v _.
-    - ContextStore/StoreFilterMapKey.v:370: apply storeA_rekey_ext_on_dom. intros v _.
+    - ContextStore/StoreFilterMapKey.v:337: apply storeA_rekey_ext_on_dom. intros v _.
+    - ContextStore/StoreFilterMapKey.v:352: apply storeA_rekey_ext_on_dom. intros v _.
     - ContextStore/LVarStore.v:59: apply storeA_rekey_ext_on_dom. intros v Hv.
     - ContextStore/LVarStore.v:170: apply storeA_rekey_ext_on_dom. intros v Hv.
     - ... 5 more
-- Lemma `storeA_rekey_compose_inj_on` @ line 391
+- Lemma `storeA_rekey_compose_inj_on` @ line 358
   uses: 8 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:345: rewrite (storeA_rekey_compose_inj_on
-    - ContextStore/StoreFilterMapKey.v:350: rewrite (storeA_rekey_compose_inj_on
-    - ContextStore/StoreCore.v:436: apply storeA_rekey_compose_inj_on.
+    - ContextStore/StoreFilterMapKey.v:327: rewrite (storeA_rekey_compose_inj_on
+    - ContextStore/StoreFilterMapKey.v:332: rewrite (storeA_rekey_compose_inj_on
+    - ContextStore/StoreCore.v:403: apply storeA_rekey_compose_inj_on.
     - ContextStore/LVarStore.v:167: rewrite storeA_rekey_compose_inj_on.
     - ContextStore/LVarStore.v:221: rewrite storeA_rekey_compose_inj_on.
     - ... 3 more
-- Lemma `storeA_rekey_compose` @ line 430
+- Lemma `storeA_rekey_compose` @ line 397
   uses: 5 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:602: rewrite !storeA_rekey_compose;
-    - ContextStore/StoreFilterMapKey.v:366: rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
-    - ContextStore/StoreFilterMapKey.v:368: rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
+    - ContextStore/StoreFilterMapKey.v:348: rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
+    - ContextStore/StoreFilterMapKey.v:350: rewrite storeA_rekey_compose; try apply logic_var_shift_from_inj;
     - ContextStore/LVarStore.v:342: rewrite (storeA_rekey_compose (logic_var_swap x y) (logic_var_open k x)).
     - ContextStore/LVarStore.v:345: rewrite (storeA_rekey_compose (logic_var_open k y) (logic_var_swap x y)).
-- Lemma `storeA_rekey_empty` @ line 453
+- Lemma `storeA_rekey_empty` @ line 420
   uses: 6 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:795: apply storeA_rekey_empty.
+    - ContextStore/StoreCore.v:762: apply storeA_rekey_empty.
     - ContextStore/Store.v:103: rewrite (storeA_rekey_empty (swap x y)) in H
     - ContextStore/Store.v:105: rewrite (storeA_rekey_empty (swap x y))
     - ContextStore/LVarStore.v:85: apply (storeA_rekey_empty (V := V) (K := logic_var)
     - ContextStore/LVarStore.v:101: apply (storeA_rekey_empty (V := V) (K := logic_var)
     - ... 1 more
-- Lemma `storeA_rekey_insert` @ line 463
-  uses: 4 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+- Lemma `storeA_rekey_insert` @ line 430
+  uses: 3 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:295: apply storeA_rekey_insert, logic_var_shift_from_inj.
-    - ContextStore/StoreFilterMapKey.v:379: apply storeA_rekey_insert.
-    - ContextStore/StoreFilterMapKey.v:516: apply storeA_rekey_insert, swap_inj.
-    - ContextStore/StoreCore.v:804: apply storeA_rekey_insert, key_shift_inj.
-- Lemma `storeA_rekey_delete` @ line 476
+    - ContextStore/StoreFilterMapKey.v:277: apply storeA_rekey_insert, logic_var_shift_from_inj.
+    - ContextStore/StoreFilterMapKey.v:361: apply storeA_rekey_insert.
+    - ContextStore/StoreFilterMapKey.v:498: apply storeA_rekey_insert, swap_inj.
+- Lemma `storeA_rekey_delete` @ line 443
   uses: 0 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
   sample uses: none
-- Lemma `storeA_rekey_union` @ line 489
-  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
-  classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses:
-    - ContextStore/StoreCore.v:813: apply storeA_rekey_union, key_shift_inj.
-- Lemma `storeA_map_key_lookup` @ line 505
+- Lemma `storeA_rekey_union` @ line 456
+  uses: 0 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
+  sample uses: none
+- Lemma `storeA_map_key_lookup` @ line 472
   uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:255: apply storeA_map_key_lookup.
-- Lemma `storeA_map_key_dom` @ line 517
+    - ContextStore/StoreFilterMapKey.v:237: apply storeA_map_key_lookup.
+- Lemma `storeA_map_key_dom` @ line 484
   uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreFilterMapKey.v:186: apply storeA_map_key_dom.
-- Lemma `storeA_map_key_insert` @ line 529
+- Lemma `storeA_map_key_insert` @ line 496
   uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreFilterMapKey.v:195: apply storeA_map_key_insert.
     - ContextBasicDenotation/theories/TermSyntax.v:1757: apply storeA_map_key_insert.
-- Lemma `storeA_map_key_union` @ line 542
-  uses: 3 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+- Lemma `storeA_map_key_union` @ line 509
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:320: rewrite (storeA_map_key_union (V:=V) (logic_var_shift_from k)
-    - ContextStore/StoreFilterMapKey.v:204: apply storeA_map_key_union.
     - ContextLogic/theories/FormulaSyntax.v:284: apply storeA_map_key_union.
-- Lemma `storeA_on_rekey_id_on_dom` @ line 558
+- Lemma `storeA_on_rekey_id_on_dom` @ line 525
   uses: 1 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:181: apply storeA_on_rekey_id_on_dom.
-- Lemma `storeA_swap_lookup` @ line 592
+- Lemma `storeA_swap_lookup` @ line 559
   uses: 6 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:611: apply storeA_swap_lookup.
+    - ContextStore/StoreCore.v:578: apply storeA_swap_lookup.
     - ContextStore/StoreRestrict.v:1062: rewrite !storeA_swap_lookup in Hc'.
     - ContextBasicDenotation/theories/StoreTyping.v:302: + rewrite storeA_swap_lookup. exact HΣ.
     - ContextBasicDenotation/theories/StoreTyping.v:307: + rewrite storeA_swap_lookup. exact Hσ.
     - CoreLang/theories/BasicTypingProps.v:265: + econstructor. rewrite storeA_swap_lookup. exact e.
     - ... 1 more
-- Lemma `storeA_swap_lookup_inv` @ line 605
+- Lemma `storeA_swap_lookup_inv` @ line 572
   uses: 19 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:937: - symmetry. apply storeA_swap_lookup_inv.
-    - ContextStore/StoreCore.v:682: rewrite storeA_swap_lookup_inv, storeA_swap_lookup_inv.
-    - ContextStore/StoreCore.v:693: rewrite !storeA_swap_lookup_inv.
-    - ContextStore/StoreCore.v:708: rewrite storeA_swap_lookup_inv.
-    - ContextStore/StoreCore.v:731: rewrite !storeA_swap_lookup_inv.
+    - ContextStore/StoreFilterMapKey.v:910: - symmetry. apply storeA_swap_lookup_inv.
+    - ContextStore/StoreCore.v:649: rewrite storeA_swap_lookup_inv, storeA_swap_lookup_inv.
+    - ContextStore/StoreCore.v:660: rewrite !storeA_swap_lookup_inv.
+    - ContextStore/StoreCore.v:675: rewrite storeA_swap_lookup_inv.
+    - ContextStore/StoreCore.v:698: rewrite !storeA_swap_lookup_inv.
     - ... 14 more
-- Lemma `storeA_swap_dom` @ line 614
+- Lemma `storeA_swap_dom` @ line 581
   uses: 7 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
@@ -536,16 +517,16 @@ File: ContextStore/StoreCore.v
     - ContextAlgebra/theories/ResourceCore.v:538: rewrite storeA_swap_dom, storeA_restrict_swap in Hrestr.
     - ContextAlgebra/theories/ResourceCore.v:565: rewrite (storeA_swap_dom x y σ), storeA_restrict_swap. f_equal.
     - ... 2 more
-- Lemma `storeA_swap_delete` @ line 628
+- Lemma `storeA_swap_delete` @ line 595
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - CoreLang/theories/InstantiationProps.v:1137: rewrite <- Hatom at 1. symmetry. apply storeA_swap_delete.
-- Lemma `storeA_swap_insert` @ line 643
+- Lemma `storeA_swap_insert` @ line 610
   uses: 0 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
   sample uses: none
-- Lemma `storeA_swap_union` @ line 658
+- Lemma `storeA_swap_union` @ line 625
   uses: 5 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
@@ -554,7 +535,7 @@ File: ContextStore/StoreCore.v
     - ContextAlgebra/theories/ResourceAlgebra.v:773: rewrite storeA_swap_union. reflexivity.
     - ContextLogic/theories/LogicQualifier.v:407: rewrite storeA_swap_union.
     - ContextLogic/theories/LogicQualifier.v:435: rewrite <- storeA_swap_union.
-- Lemma `storeA_swap_involutive` @ line 674
+- Lemma `storeA_swap_involutive` @ line 641
   uses: 18 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
@@ -564,66 +545,58 @@ File: ContextStore/StoreCore.v
     - ContextStore/Store.v:101: rewrite (storeA_swap_involutive x y σ)
     - ContextStore/LVarStore.v:334: apply storeA_swap_involutive.
     - ... 13 more
-- Lemma `storeA_swap_sym` @ line 686
+- Lemma `storeA_swap_sym` @ line 653
   uses: 2 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextAlgebra/theories/ResourceCore.v:127: rewrite <- storeA_swap_sym. exact Hswap.
     - ContextAlgebra/theories/ResourceCore.v:131: rewrite storeA_swap_sym. exact Hswap.
-- Lemma `storeA_swap_fresh` @ line 697
+- Lemma `storeA_swap_fresh` @ line 664
   uses: 8 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:275: apply storeA_swap_fresh; assumption.
-    - ContextStore/StoreFilterMapKey.v:629: apply storeA_swap_fresh.
+    - ContextStore/StoreFilterMapKey.v:611: apply storeA_swap_fresh.
     - ContextStore/LVarStore.v:325: apply storeA_swap_fresh; assumption.
     - ContextLogic/theories/LogicQualifier.v:339: apply storeA_swap_fresh.
     - ContextTypeLanguage/theories/Qualifier.v:332: * unfold lstore_swap, lstore_rekey. apply storeA_swap_fresh; assumption.
     - ... 3 more
-- Lemma `storeA_swap_conjugate` @ line 720
+- Lemma `storeA_swap_conjugate` @ line 687
   uses: 3 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreCore.v:745: rewrite storeA_swap_conjugate.
+    - ContextStore/StoreCore.v:712: rewrite storeA_swap_conjugate.
     - ContextAlgebra/theories/ResourceCore.v:144: * symmetry. apply storeA_swap_conjugate.
     - ContextAlgebra/theories/ResourceCore.v:148: * apply storeA_swap_conjugate.
-- Lemma `storeA_swap_commute_fresh` @ line 735
+- Lemma `storeA_swap_commute_fresh` @ line 702
   uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
   sample uses:
     - ContextTypeLanguage/theories/Qualifier.v:432: apply storeA_swap_commute_fresh; congruence.
-- Lemma `storeA_swap_conjugate_inv` @ line 751
+- Lemma `storeA_swap_conjugate_inv` @ line 718
   uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextAlgebra/theories/ResourceCore.v:162: * symmetry. apply storeA_swap_conjugate_inv.
     - ContextAlgebra/theories/ResourceCore.v:166: * apply storeA_swap_conjugate_inv.
-- Lemma `storeA_shift_lookup` @ line 773
+- Lemma `storeA_shift_lookup` @ line 740
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreRestrict.v:321: rewrite !storeA_shift_lookup.
-- Lemma `storeA_shift_dom` @ line 782
+- Lemma `storeA_shift_dom` @ line 749
   uses: 3 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/Store.v:111: rewrite (storeA_shift_dom k σ) in H
     - ContextStore/Store.v:113: rewrite (storeA_shift_dom k σ)
     - ContextStore/StoreRestrict.v:330: pose proof (storeA_shift_dom (V:=V) (K:=K) k
-- Lemma `storeA_shift_empty` @ line 791
+- Lemma `storeA_shift_empty` @ line 758
   uses: 2 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/Store.v:107: rewrite (storeA_shift_empty k) in H
     - ContextStore/Store.v:109: rewrite (storeA_shift_empty k)
-- Lemma `storeA_shift_insert` @ line 798
-  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
-- Lemma `storeA_shift_union` @ line 807
-  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-  sample uses: none
 
 File: ContextStore/StoreFilterMapKey.v
 --------------------------------------
@@ -636,20 +609,20 @@ File: ContextStore/StoreFilterMapKey.v
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:56: - apply storeA_filter_map_key_lookup_some_inv in Htarget
-    - ContextStore/StoreFilterMapKey.v:848: apply storeA_filter_map_key_lookup_some_inv in Hlookup as [[k|y] [Hsrc Hmap]].
+    - ContextStore/StoreFilterMapKey.v:830: apply storeA_filter_map_key_lookup_some_inv in Hlookup as [[k|y] [Hsrc Hmap]].
 - Lemma `storeA_filter_map_key_lookup_some_unique` @ line 62
   uses: 2 total; ltac/hint uses: 0; proof lines: 36; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextStore/StoreInterface.v:62: pose proof (storeA_filter_map_key_lookup_some_unique
-    - ContextStore/StoreFilterMapKey.v:861: eapply storeA_filter_map_key_lookup_some_unique; [exact Hlookup|reflexivity|].
+    - ContextStore/StoreFilterMapKey.v:843: eapply storeA_filter_map_key_lookup_some_unique; [exact Hlookup|reflexivity|].
 - Lemma `storeA_filter_map_key_lookup_none_no_preimage` @ line 108
   uses: 1 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:875: apply storeA_filter_map_key_lookup_none_no_preimage.
+    - ContextStore/StoreFilterMapKey.v:857: apply storeA_filter_map_key_lookup_none_no_preimage.
 - Lemma `atom_store_to_lvar_store_dom` @ line 181
-  uses: 21 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  uses: 20 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
     - ContextStore/StoreInterface.v:358: subst ρ. rewrite atom_store_to_lvar_store_dom in *.
@@ -657,51 +630,43 @@ File: ContextStore/StoreFilterMapKey.v
     - ContextStore/StoreInterface.v:434: rewrite atom_store_to_lvar_store_dom.
     - ContextStore/StoreInterface.v:440: rewrite <- (atom_store_to_lvar_store_dom σ).
     - ContextStore/StoreInterface.v:466: * subst ρ. rewrite atom_store_to_lvar_store_dom in Hzρ.
-    - ... 16 more
+    - ... 15 more
 - Lemma `atom_store_to_lvar_store_insert` @ line 190
   uses: 16 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:612: rewrite atom_store_to_lvar_store_insert.
-    - ContextStore/StoreFilterMapKey.v:660: rewrite atom_store_to_lvar_store_insert.
+    - ContextStore/StoreFilterMapKey.v:594: rewrite atom_store_to_lvar_store_insert.
+    - ContextStore/StoreFilterMapKey.v:642: rewrite atom_store_to_lvar_store_insert.
     - ContextStore/LVarStore.v:535: 2:{ symmetry. apply atom_store_to_lvar_store_insert. }
     - ContextStore/LVarStore.v:917: rewrite <- atom_store_to_lvar_store_insert.
     - ContextBasicDenotation/theories/BasicTypingFormula.v:482: rewrite atom_store_to_lvar_store_insert in Hbody.
     - ... 11 more
-- Lemma `atom_store_to_lvar_store_union` @ line 199
-  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-  sample uses: none
-- Lemma `atom_store_to_lvar_store_closed` @ line 208
+- Lemma `atom_store_to_lvar_store_closed` @ line 199
   uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
     - ContextTyping/theories/Soundness.v:95: * apply denot_relevant_env_closed. apply atom_store_to_lvar_store_closed.
     - ContextTyping/theories/Soundness.v:319: - apply atom_store_to_lvar_store_closed.
     - ContextTyping/theories/Soundness.v:480: - apply atom_store_to_lvar_store_closed.
-- Lemma `atom_store_to_lvar_store_atom_dom` @ line 217
-  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-  sample uses: none
-- Lemma `atom_store_to_lvar_store_lookup_bound_none` @ line 226
+- Lemma `atom_store_to_lvar_store_lookup_bound_none` @ line 208
   uses: 17 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
     - ContextStore/StoreInterface.v:410: - destruct (decide (k <= n)); apply atom_store_to_lvar_store_lookup_bound_none.
-    - ContextStore/StoreFilterMapKey.v:401: rewrite atom_store_to_lvar_store_lookup_bound_none in HA. discriminate.
-    - ContextStore/StoreFilterMapKey.v:403: + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
-    - ContextStore/StoreFilterMapKey.v:433: rewrite atom_store_to_lvar_store_lookup_bound_none in HA;
-    - ContextStore/StoreFilterMapKey.v:436: + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
+    - ContextStore/StoreFilterMapKey.v:383: rewrite atom_store_to_lvar_store_lookup_bound_none in HA. discriminate.
+    - ContextStore/StoreFilterMapKey.v:385: + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
+    - ContextStore/StoreFilterMapKey.v:415: rewrite atom_store_to_lvar_store_lookup_bound_none in HA;
+    - ContextStore/StoreFilterMapKey.v:418: + symmetry. apply atom_store_to_lvar_store_lookup_bound_none.
     - ... 12 more
-- Lemma `atom_store_to_lvar_store_lookup_free_none` @ line 236
+- Lemma `atom_store_to_lvar_store_lookup_free_none` @ line 218
   uses: 4 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:595: rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
-    - ContextStore/StoreFilterMapKey.v:599: rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
-    - ContextStore/StoreFilterMapKey.v:633: apply atom_store_to_lvar_store_lookup_free_none. exact Hx.
-    - ContextStore/StoreFilterMapKey.v:689: + apply atom_store_to_lvar_store_lookup_free_none.
-- Lemma `atom_store_to_lvar_store_lookup_free` @ line 248
+    - ContextStore/StoreFilterMapKey.v:577: rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
+    - ContextStore/StoreFilterMapKey.v:581: rewrite !atom_store_to_lvar_store_lookup_free_none by assumption.
+    - ContextStore/StoreFilterMapKey.v:615: apply atom_store_to_lvar_store_lookup_free_none. exact Hx.
+    - ContextStore/StoreFilterMapKey.v:671: + apply atom_store_to_lvar_store_lookup_free_none.
+- Lemma `atom_store_to_lvar_store_lookup_free` @ line 230
   uses: 14 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
@@ -711,52 +676,52 @@ File: ContextStore/StoreFilterMapKey.v
     - ContextBasicDenotation/theories/RelevantEnv.v:217: rewrite atom_store_to_lvar_store_lookup_free.
     - ContextBasicDenotation/theories/StoreTyping.v:41: - rewrite atom_store_to_lvar_store_lookup_free. exact HΣ.
     - ... 9 more
-- Lemma `lvar_store_atom_dom_insert_bound` @ line 259
+- Lemma `lvar_store_atom_dom_insert_bound` @ line 241
   uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_shift_free_notin_from` @ line 269
+- Lemma `lvar_store_shift_free_notin_from` @ line 251
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:287: apply lvar_store_shift_free_notin_from.
-- Lemma `lvar_store_shift_free_notin` @ line 283
+    - ContextStore/StoreFilterMapKey.v:269: apply lvar_store_shift_free_notin_from.
+- Lemma `lvar_store_shift_free_notin` @ line 265
   uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
   sample uses: none
-- Lemma `lvar_store_shift_insert_from` @ line 290
+- Lemma `lvar_store_shift_insert_from` @ line 272
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:302: apply lvar_store_shift_insert_from.
-- Lemma `lvar_store_shift_insert` @ line 298
+    - ContextStore/StoreFilterMapKey.v:284: apply lvar_store_shift_insert_from.
+- Lemma `lvar_store_shift_insert` @ line 280
   uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:309: apply lvar_store_shift_insert.
+    - ContextStore/StoreFilterMapKey.v:291: apply lvar_store_shift_insert.
     - ContextStore/LVarStore.v:388: rewrite lvar_store_shift_insert.
-- Lemma `lvar_store_shift_insert_free` @ line 305
+- Lemma `lvar_store_shift_insert_free` @ line 287
   uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
     - ContextStore/LVarStore.v:402: rewrite lvar_store_shift_insert_free.
     - ContextStore/LVarStore.v:620: rewrite lvar_store_shift_insert_free.
-- Lemma `lvar_store_atom_dom_shift_from` @ line 312
+- Lemma `lvar_store_atom_dom_shift_from` @ line 294
   uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:325: apply lvar_store_atom_dom_shift_from.
-- Lemma `lvar_store_atom_dom_shift` @ line 322
+    - ContextStore/StoreFilterMapKey.v:307: apply lvar_store_atom_dom_shift_from.
+- Lemma `lvar_store_atom_dom_shift` @ line 304
   uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
   sample uses:
     - ContextTypeLanguage/theories/Notation.v:110: rewrite ?lvar_store_atom_dom_shift in *.
-- Lemma `lvar_store_open_lvars_shift_from` @ line 328
+- Lemma `lvar_store_open_lvars_shift_from` @ line 310
   uses: 1 total; ltac/hint uses: 0; proof lines: 23; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextStore/LVarStore.v:932: rewrite (lvar_store_open_lvars_shift_from (V:=V) 0 η s) by exact Hfresh.
-- Lemma `lvar_store_open_one_shift_under_gen` @ line 359
+- Lemma `lvar_store_open_one_shift_under_gen` @ line 341
   uses: 4 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
@@ -764,169 +729,164 @@ File: ContextStore/StoreFilterMapKey.v
     - ContextStore/LVarStore.v:404: rewrite lvar_store_open_one_shift_under_gen by lia.
     - ContextStore/LVarStore.v:881: rewrite lvar_store_open_one_shift_under_gen by lia.
     - ContextTypeLanguage/theories/LtyEnv.v:311: Proof. apply lvar_store_open_one_shift_under_gen. Qed.
-- Lemma `lvar_store_open_one_insert` @ line 374
+- Lemma `lvar_store_open_one_insert` @ line 356
   uses: 10 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:644: rewrite lvar_store_open_one_insert.
+    - ContextStore/StoreFilterMapKey.v:626: rewrite lvar_store_open_one_insert.
     - ContextStore/LVarStore.v:79: rewrite lvar_store_open_one_insert.
     - ContextStore/LVarStore.v:95: rewrite lvar_store_open_one_insert.
     - ContextStore/LVarStore.v:357: intros _. apply lvar_store_open_one_insert.
     - ContextStore/LVarStore.v:389: rewrite lvar_store_open_one_insert.
     - ... 5 more
-- Lemma `lvar_store_shift_atom_store` @ line 383
+- Lemma `lvar_store_shift_atom_store` @ line 365
   uses: 1 total; ltac/hint uses: 0; proof lines: 28; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:643: rewrite lvar_store_shift_atom_store.
-- Lemma `lvar_store_shift_from_atom_store` @ line 416
+    - ContextStore/StoreFilterMapKey.v:625: rewrite lvar_store_shift_atom_store.
+- Lemma `lvar_store_shift_from_atom_store` @ line 398
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextStore/StoreInterface.v:330: by apply lvar_store_shift_from_atom_store.
-- Lemma `logic_var_swap_match` @ line 446
+- Lemma `logic_var_swap_match` @ line 428
   uses: 4 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
+    - ContextStore/StoreFilterMapKey.v:447: rewrite logic_var_swap_match.
     - ContextStore/StoreFilterMapKey.v:465: rewrite logic_var_swap_match.
-    - ContextStore/StoreFilterMapKey.v:483: rewrite logic_var_swap_match.
-    - ContextStore/StoreFilterMapKey.v:485: rewrite <- logic_var_swap_match.
-    - ContextStore/StoreFilterMapKey.v:514: rewrite logic_var_swap_match.
-- Lemma `lvar_store_swap_lookup` @ line 458
+    - ContextStore/StoreFilterMapKey.v:467: rewrite <- logic_var_swap_match.
+    - ContextStore/StoreFilterMapKey.v:496: rewrite logic_var_swap_match.
+- Lemma `lvar_store_swap_lookup` @ line 440
   uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:486: apply lvar_store_swap_lookup.
-- Lemma `lvar_store_swap_lookup_inv` @ line 476
+    - ContextStore/StoreFilterMapKey.v:468: apply lvar_store_swap_lookup.
+- Lemma `lvar_store_swap_lookup_inv` @ line 458
   uses: 5 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:531: rewrite lvar_store_swap_lookup_inv in Hz.
-    - ContextStore/StoreFilterMapKey.v:540: rewrite lvar_store_swap_lookup_inv.
-    - ContextStore/StoreFilterMapKey.v:562: rewrite lvar_store_swap_lookup_inv.
-    - ContextStore/StoreFilterMapKey.v:590: rewrite lvar_store_swap_lookup_inv.
-    - ContextStore/StoreFilterMapKey.v:935: - rewrite lvar_store_swap_lookup_inv.
-- Lemma `lvar_store_swap_dom` @ line 489
+    - ContextStore/StoreFilterMapKey.v:513: rewrite lvar_store_swap_lookup_inv in Hz.
+    - ContextStore/StoreFilterMapKey.v:522: rewrite lvar_store_swap_lookup_inv.
+    - ContextStore/StoreFilterMapKey.v:544: rewrite lvar_store_swap_lookup_inv.
+    - ContextStore/StoreFilterMapKey.v:572: rewrite lvar_store_swap_lookup_inv.
+    - ContextStore/StoreFilterMapKey.v:908: - rewrite lvar_store_swap_lookup_inv.
+- Lemma `lvar_store_swap_dom` @ line 471
   uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextStore/LVarStore.v:256: rewrite <- lvar_store_swap_dom. exact Hfresh.
-- Lemma `lvar_store_swap_insert` @ line 507
+- Lemma `lvar_store_swap_insert` @ line 489
   uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:613: rewrite lvar_store_swap_insert.
-- Lemma `lvar_store_swap_atom_dom` @ line 519
+    - ContextStore/StoreFilterMapKey.v:595: rewrite lvar_store_swap_insert.
+- Lemma `lvar_store_swap_atom_dom` @ line 501
   uses: 0 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_atom_dom_lookup_free` @ line 544
+- Lemma `lvar_store_atom_dom_lookup_free` @ line 526
   uses: 4 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:568: * exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
-    - ContextStore/StoreFilterMapKey.v:570: -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
-    - ContextStore/StoreFilterMapKey.v:575: -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
-    - ContextStore/StoreFilterMapKey.v:577: ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
-- Lemma `lvar_store_swap_fresh` @ line 555
+    - ContextStore/StoreFilterMapKey.v:550: * exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
+    - ContextStore/StoreFilterMapKey.v:552: -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
+    - ContextStore/StoreFilterMapKey.v:557: -- exfalso. apply Hx. eapply lvar_store_atom_dom_lookup_free. exact Hlookx.
+    - ContextStore/StoreFilterMapKey.v:559: ++ exfalso. apply Hy. eapply lvar_store_atom_dom_lookup_free. exact Hlooky.
+- Lemma `lvar_store_swap_fresh` @ line 537
   uses: 0 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_swap_atom_store_fresh` @ line 582
+- Lemma `lvar_store_swap_atom_store_fresh` @ line 564
   uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:616: rewrite lvar_store_swap_atom_store_fresh by assumption.
-- Lemma `lvar_store_swap_atom_store_insert_fresh` @ line 604
+    - ContextStore/StoreFilterMapKey.v:598: rewrite lvar_store_swap_atom_store_fresh by assumption.
+- Lemma `lvar_store_swap_atom_store_insert_fresh` @ line 586
   uses: 0 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_open_one_atom_store` @ line 620
+- Lemma `lvar_store_open_one_atom_store` @ line 602
   uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:646: rewrite lvar_store_open_one_atom_store by exact Hx.
-- Lemma `lvar_store_open_one_bind_atom_store` @ line 636
+    - ContextStore/StoreFilterMapKey.v:628: rewrite lvar_store_open_one_atom_store by exact Hx.
+- Lemma `lvar_store_open_one_bind_atom_store` @ line 618
   uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
     - ContextStore/LVarStore.v:916: rewrite lvar_store_open_one_bind_atom_store by exact Hx.
-- Lemma `lvar_store_open_atom_store` @ line 651
+- Lemma `lvar_store_open_atom_store` @ line 633
   uses: 1 total; ltac/hint uses: 0; proof lines: 37; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:839: apply lvar_store_open_atom_store.
-- Lemma `lvar_store_open_env_insert_fresh` @ line 693
+    - ContextStore/StoreFilterMapKey.v:821: apply lvar_store_open_atom_store.
+- Lemma `lvar_store_open_env_insert_fresh` @ line 675
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:809: rewrite lvar_store_open_env_insert_fresh by assumption.
-- Lemma `lvar_store_open_insert_bound_commute` @ line 710
+    - ContextStore/StoreFilterMapKey.v:791: rewrite lvar_store_open_env_insert_fresh by assumption.
+- Lemma `lvar_store_open_insert_bound_commute` @ line 692
   uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:816: eapply (lvar_store_open_insert_bound_commute k x A η s j2 U2 acc);
-    - ContextStore/StoreFilterMapKey.v:823: eapply (lvar_store_open_insert_bound_commute k x A η s j1 U1 acc);
-- Lemma `lvar_store_open_step_commute` @ line 740
+    - ContextStore/StoreFilterMapKey.v:798: eapply (lvar_store_open_insert_bound_commute k x A η s j2 U2 acc);
+    - ContextStore/StoreFilterMapKey.v:805: eapply (lvar_store_open_insert_bound_commute k x A η s j1 U1 acc);
+- Lemma `lvar_store_open_step_commute` @ line 722
   uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:825: * eapply lvar_store_open_step_commute; [exact Hne|].
-- Lemma `lvar_store_open_insert_bound_atom_store` @ line 781
+    - ContextStore/StoreFilterMapKey.v:807: * eapply lvar_store_open_step_commute; [exact Hne|].
+- Lemma `lvar_store_open_insert_bound_atom_store` @ line 763
   uses: 0 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
   sample uses: none
-- Lemma `lvar_store_to_atom_store_atom_store` @ line 835
+- Lemma `lvar_store_to_atom_store_atom_store` @ line 817
   uses: 2 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma
   sample uses:
     - ContextTyping/theories/Soundness.v:97: rewrite lvar_store_to_atom_store_atom_store.
     - ContextTyping/theories/Soundness.v:454: - rewrite lvar_store_to_atom_store_atom_store.
-- Lemma `lvar_store_to_atom_store_lookup_some` @ line 842
+- Lemma `lvar_store_to_atom_store_lookup_some` @ line 824
   uses: 3 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:946: apply lvar_store_to_atom_store_lookup_some in Hv.
+    - ContextStore/StoreFilterMapKey.v:919: apply lvar_store_to_atom_store_lookup_some in Hv.
     - ContextStore/LVarStore.v:744: apply lvar_store_to_atom_store_lookup_some in Ha as Ha_lv.
     - ContextBasicDenotation/theories/BasicTypingFormula.v:577: apply lvar_store_to_atom_store_lookup_some in HΣx as HΣT.
-- Lemma `lvar_store_to_atom_store_lookup_free_some` @ line 855
+- Lemma `lvar_store_to_atom_store_lookup_free_some` @ line 837
   uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:873: - apply lvar_store_to_atom_store_lookup_free_some. exact Hlookup.
+    - ContextStore/StoreFilterMapKey.v:855: - apply lvar_store_to_atom_store_lookup_free_some. exact Hlookup.
     - ContextStore/LVarStore.v:746: - apply lvar_store_to_atom_store_lookup_free_some.
-- Lemma `lvar_store_to_atom_store_lookup` @ line 869
+- Lemma `lvar_store_to_atom_store_lookup` @ line 851
   uses: 7 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
     - ContextStore/StoreInterface.v:45: apply lvar_store_to_atom_store_lookup.
-    - ContextStore/StoreFilterMapKey.v:888: rewrite lvar_store_to_atom_store_lookup.
-    - ContextStore/StoreFilterMapKey.v:903: + symmetry. apply lvar_store_to_atom_store_lookup.
-    - ContextStore/StoreFilterMapKey.v:933: rewrite lvar_store_to_atom_store_lookup.
-    - ContextStore/StoreFilterMapKey.v:936: symmetry. apply lvar_store_to_atom_store_lookup.
+    - ContextStore/StoreFilterMapKey.v:870: rewrite lvar_store_to_atom_store_lookup.
+    - ContextStore/StoreFilterMapKey.v:885: + symmetry. apply lvar_store_to_atom_store_lookup.
+    - ContextStore/StoreFilterMapKey.v:906: rewrite lvar_store_to_atom_store_lookup.
+    - ContextStore/StoreFilterMapKey.v:909: symmetry. apply lvar_store_to_atom_store_lookup.
     - ... 2 more
-- Lemma `lvar_store_to_atom_store_insert_free` @ line 883
-  uses: 2 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
-  classification: ordinary helper; review by use sites
+- Lemma `lvar_store_to_atom_store_insert_free` @ line 865
+  uses: 1 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
+  classification: SINGLE-V-USAGE: consider inline if not semantic boundary
   sample uses:
-    - ContextStore/StoreFilterMapKey.v:915: rewrite lvar_store_to_atom_store_insert_free.
-    - ContextStore/StoreFilterMapKey.v:923: rewrite lvar_store_to_atom_store_insert_free.
-- Lemma `lvar_store_to_atom_store_insert_free_lookup_ne` @ line 908
+    - ContextStore/StoreFilterMapKey.v:897: rewrite lvar_store_to_atom_store_insert_free.
+- Lemma `lvar_store_to_atom_store_insert_free_lookup_ne` @ line 890
   uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
   sample uses:
     - ContextBasicDenotation/theories/BasicTypingFormula.v:1608: apply lvar_store_to_atom_store_insert_free_lookup_ne.
-- Lemma `lvar_store_to_atom_store_insert_free_lookup_eq` @ line 919
-  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
-  classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-  sample uses: none
-- Lemma `lvar_store_to_atom_store_swap` @ line 928
+- Lemma `lvar_store_to_atom_store_swap` @ line 901
   uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
     - ContextStore/LVarStore.v:280: apply lvar_store_to_atom_store_swap.
     - ContextStore/LVarStore.v:296: rewrite <- lvar_store_to_atom_store_swap.
-- Lemma `lvar_store_to_atom_store_dom_subset` @ line 940
+- Lemma `lvar_store_to_atom_store_dom_subset` @ line 913
   uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
@@ -1575,14 +1535,15 @@ File: ContextStore/StoreRestrict.v
     - ContextAlgebra/theories/ResourceAlgebra.v:40: pose proof (proj1 (storeA_compat_spec σ1 σ2)
     - ContextAlgebra/theories/ResourceAlgebra.v:390: apply (proj2 (storeA_compat_spec σ1 σ2)).
 
+
 Summary
 -------
-total lemmas: 250
-zero .v uses: 46
+total lemmas: 241
+zero .v uses: 38
 single .v use: 82
 used by Ltac/Hint: 0
 admitted: 0
-thin-proof candidates: 68
+thin-proof candidates: 59
 
 Highest-priority review lists
 -----------------------------
@@ -1598,26 +1559,18 @@ Zero-use lemmas:
 - ContextStore/LVarStore.v:575: `lvar_store_lvars_fv_subset_insert_free_drop` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/LVarStore.v:710: `lvar_store_to_atom_store_open_lvars_closed` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/LVarStore.v:735: `lvar_store_to_atom_store_open_lvars_insert_free_subset` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreCore.v:61: `storeA_agree_on_mono` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:70: `storeA_agree_on_refl` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:77: `storeA_agree_on_sym` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:95: `storeA_agree_on_insert_same` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:107: `storeA_agree_on_insert_same_keep` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:123: `storeA_bind_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:476: `storeA_rekey_delete` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:643: `storeA_swap_insert` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:798: `storeA_shift_insert` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:807: `storeA_shift_union` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:71: `storeA_agree_on_insert_same` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:83: `storeA_agree_on_insert_same_keep` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:443: `storeA_rekey_delete` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:456: `storeA_rekey_union` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:610: `storeA_swap_insert` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreFilterMapKey.v:21: `storeA_filter_map_key_empty` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreFilterMapKey.v:199: `atom_store_to_lvar_store_union` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:217: `atom_store_to_lvar_store_atom_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:259: `lvar_store_atom_dom_insert_bound` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreFilterMapKey.v:283: `lvar_store_shift_free_notin` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:519: `lvar_store_swap_atom_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreFilterMapKey.v:555: `lvar_store_swap_fresh` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreFilterMapKey.v:604: `lvar_store_swap_atom_store_insert_fresh` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreFilterMapKey.v:781: `lvar_store_open_insert_bound_atom_store` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
-- ContextStore/StoreFilterMapKey.v:919: `lvar_store_to_atom_store_insert_free_lookup_eq` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:241: `lvar_store_atom_dom_insert_bound` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
+- ContextStore/StoreFilterMapKey.v:265: `lvar_store_shift_free_notin` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:501: `lvar_store_swap_atom_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
+- ContextStore/StoreFilterMapKey.v:537: `lvar_store_swap_fresh` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
+- ContextStore/StoreFilterMapKey.v:586: `lvar_store_swap_atom_store_insert_fresh` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
+- ContextStore/StoreFilterMapKey.v:763: `lvar_store_open_insert_bound_atom_store` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name
 - ContextStore/StoreRestrict.v:167: `storeA_restrict_comm` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreRestrict.v:223: `storeA_restrict_swap_fresh` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreRestrict.v:309: `storeA_restrict_shift` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
@@ -1662,37 +1615,37 @@ Single-use lemmas:
 - ContextStore/LVarStore.v:886: `lvar_store_bind_open_current` -> ContextTypeLanguage/theories/LtyEnv.v:479 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:908: `lvar_store_open_bind_atom_store` -> ContextTypeLanguage/theories/LtyEnv.v:493 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/LVarStore.v:938: `lvar_store_bind_open_env_lift` -> ContextTypeLanguage/theories/LtyEnv.v:505 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreCore.v:85: `storeA_agree_on_union` -> ContextStore/StoreCore.v:113 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:183: `storeA_rekey_inj_on_dom_insert_inv` -> ContextStore/StoreCore.v:362 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:192: `storeA_rekey_mapped_fst_nodup` -> ContextStore/StoreCore.v:242 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:288: `storeA_rekey_inj_on_dom_compose` -> ContextStore/StoreCore.v:399 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:304: `storeA_rekey_lookup_none_inj_on` -> ContextStore/LVarStore.v:128 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:323: `storeA_rekey_insert_inj_on` -> ContextStore/LVarStore.v:151 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:489: `storeA_rekey_union` -> ContextStore/StoreCore.v:813 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:505: `storeA_map_key_lookup` -> ContextStore/StoreFilterMapKey.v:255 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:517: `storeA_map_key_dom` -> ContextStore/StoreFilterMapKey.v:186 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:558: `storeA_on_rekey_id_on_dom` -> ContextStore/StoreInterface.v:181 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:628: `storeA_swap_delete` -> CoreLang/theories/InstantiationProps.v:1137 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:735: `storeA_swap_commute_fresh` -> ContextTypeLanguage/theories/Qualifier.v:432 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
-- ContextStore/StoreCore.v:773: `storeA_shift_lookup` -> ContextStore/StoreRestrict.v:321 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreFilterMapKey.v:108: `storeA_filter_map_key_lookup_none_no_preimage` -> ContextStore/StoreFilterMapKey.v:875 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreFilterMapKey.v:269: `lvar_store_shift_free_notin_from` -> ContextStore/StoreFilterMapKey.v:287 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:290: `lvar_store_shift_insert_from` -> ContextStore/StoreFilterMapKey.v:302 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:312: `lvar_store_atom_dom_shift_from` -> ContextStore/StoreFilterMapKey.v:325 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:322: `lvar_store_atom_dom_shift` -> ContextTypeLanguage/theories/Notation.v:110 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:328: `lvar_store_open_lvars_shift_from` -> ContextStore/LVarStore.v:932 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:383: `lvar_store_shift_atom_store` -> ContextStore/StoreFilterMapKey.v:643 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:416: `lvar_store_shift_from_atom_store` -> ContextStore/StoreInterface.v:330 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:458: `lvar_store_swap_lookup` -> ContextStore/StoreFilterMapKey.v:486 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:489: `lvar_store_swap_dom` -> ContextStore/LVarStore.v:256 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:507: `lvar_store_swap_insert` -> ContextStore/StoreFilterMapKey.v:613 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:582: `lvar_store_swap_atom_store_fresh` -> ContextStore/StoreFilterMapKey.v:616 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:620: `lvar_store_open_one_atom_store` -> ContextStore/StoreFilterMapKey.v:646 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:636: `lvar_store_open_one_bind_atom_store` -> ContextStore/LVarStore.v:916 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:651: `lvar_store_open_atom_store` -> ContextStore/StoreFilterMapKey.v:839 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:693: `lvar_store_open_env_insert_fresh` -> ContextStore/StoreFilterMapKey.v:809 -- SINGLE-V-USAGE: consider inline if not semantic boundary
-- ContextStore/StoreFilterMapKey.v:740: `lvar_store_open_step_commute` -> ContextStore/StoreFilterMapKey.v:825 -- SINGLE-V-USAGE: consider inline if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
-- ContextStore/StoreFilterMapKey.v:908: `lvar_store_to_atom_store_insert_free_lookup_ne` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1608 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreCore.v:61: `storeA_agree_on_union` -> ContextStore/StoreCore.v:89 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:150: `storeA_rekey_inj_on_dom_insert_inv` -> ContextStore/StoreCore.v:329 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:159: `storeA_rekey_mapped_fst_nodup` -> ContextStore/StoreCore.v:209 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:255: `storeA_rekey_inj_on_dom_compose` -> ContextStore/StoreCore.v:366 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:271: `storeA_rekey_lookup_none_inj_on` -> ContextStore/LVarStore.v:128 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:290: `storeA_rekey_insert_inj_on` -> ContextStore/LVarStore.v:151 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:472: `storeA_map_key_lookup` -> ContextStore/StoreFilterMapKey.v:237 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:484: `storeA_map_key_dom` -> ContextStore/StoreFilterMapKey.v:186 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:525: `storeA_on_rekey_id_on_dom` -> ContextStore/StoreInterface.v:181 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:595: `storeA_swap_delete` -> CoreLang/theories/InstantiationProps.v:1137 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:702: `storeA_swap_commute_fresh` -> ContextTypeLanguage/theories/Qualifier.v:432 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
+- ContextStore/StoreCore.v:740: `storeA_shift_lookup` -> ContextStore/StoreRestrict.v:321 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreFilterMapKey.v:108: `storeA_filter_map_key_lookup_none_no_preimage` -> ContextStore/StoreFilterMapKey.v:857 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreFilterMapKey.v:251: `lvar_store_shift_free_notin_from` -> ContextStore/StoreFilterMapKey.v:269 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:272: `lvar_store_shift_insert_from` -> ContextStore/StoreFilterMapKey.v:284 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:294: `lvar_store_atom_dom_shift_from` -> ContextStore/StoreFilterMapKey.v:307 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:304: `lvar_store_atom_dom_shift` -> ContextTypeLanguage/theories/Notation.v:110 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:310: `lvar_store_open_lvars_shift_from` -> ContextStore/LVarStore.v:932 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:365: `lvar_store_shift_atom_store` -> ContextStore/StoreFilterMapKey.v:625 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:398: `lvar_store_shift_from_atom_store` -> ContextStore/StoreInterface.v:330 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:440: `lvar_store_swap_lookup` -> ContextStore/StoreFilterMapKey.v:468 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:471: `lvar_store_swap_dom` -> ContextStore/LVarStore.v:256 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:489: `lvar_store_swap_insert` -> ContextStore/StoreFilterMapKey.v:595 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:564: `lvar_store_swap_atom_store_fresh` -> ContextStore/StoreFilterMapKey.v:598 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:602: `lvar_store_open_one_atom_store` -> ContextStore/StoreFilterMapKey.v:628 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:618: `lvar_store_open_one_bind_atom_store` -> ContextStore/LVarStore.v:916 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:633: `lvar_store_open_atom_store` -> ContextStore/StoreFilterMapKey.v:821 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:675: `lvar_store_open_env_insert_fresh` -> ContextStore/StoreFilterMapKey.v:791 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:722: `lvar_store_open_step_commute` -> ContextStore/StoreFilterMapKey.v:807 -- SINGLE-V-USAGE: consider inline if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
+- ContextStore/StoreFilterMapKey.v:865: `lvar_store_to_atom_store_insert_free` -> ContextStore/StoreFilterMapKey.v:897 -- SINGLE-V-USAGE: consider inline if not semantic boundary
+- ContextStore/StoreFilterMapKey.v:890: `lvar_store_to_atom_store_insert_free_lookup_ne` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1608 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreInterface.v:78: `lstore_to_store_restrict_lookup` -> ContextBasicDenotation/theories/TermSyntax.v:1491 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:90: `lstore_bound_part_restrict_lookup` -> ContextBasicDenotation/theories/TermSyntax.v:1501 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextStore/StoreInterface.v:153: `lstore_on_mlsubst_back_restrict_eq` -> ContextTypeLanguage/theories/Qualifier.v:192 -- SINGLE-V-USAGE: consider inline if not semantic boundary
@@ -1736,34 +1689,25 @@ Thin wrapper/solver candidates:
 - ContextStore/LVarStore.v:807: `logic_var_open_env_shift0_bound0` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/LVarStore.v:938: `lvar_store_bind_open_env_lift` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreCore.v:54: `storeA_map_eq` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:61: `storeA_agree_on_mono` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:70: `storeA_agree_on_refl` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:77: `storeA_agree_on_sym` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:85: `storeA_agree_on_union` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:123: `storeA_bind_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:183: `storeA_rekey_inj_on_dom_insert_inv` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:430: `storeA_rekey_compose` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:605: `storeA_swap_lookup_inv` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:773: `storeA_shift_lookup` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:782: `storeA_shift_dom` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:791: `storeA_shift_empty` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:798: `storeA_shift_insert` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextStore/StoreCore.v:807: `storeA_shift_union` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:61: `storeA_agree_on_union` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:150: `storeA_rekey_inj_on_dom_insert_inv` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:397: `storeA_rekey_compose` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:572: `storeA_swap_lookup_inv` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:740: `storeA_shift_lookup` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:749: `storeA_shift_dom` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextStore/StoreCore.v:758: `storeA_shift_empty` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreFilterMapKey.v:21: `storeA_filter_map_key_empty` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextStore/StoreFilterMapKey.v:181: `atom_store_to_lvar_store_dom` -- THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreFilterMapKey.v:190: `atom_store_to_lvar_store_insert` -- THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:199: `atom_store_to_lvar_store_union` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:217: `atom_store_to_lvar_store_atom_dom` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:283: `lvar_store_shift_free_notin` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:290: `lvar_store_shift_insert_from` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:298: `lvar_store_shift_insert` -- THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:305: `lvar_store_shift_insert_free` -- THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:322: `lvar_store_atom_dom_shift` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:374: `lvar_store_open_one_insert` -- THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:507: `lvar_store_swap_insert` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:835: `lvar_store_to_atom_store_atom_store` -- THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:908: `lvar_store_to_atom_store_insert_free_lookup_ne` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
-- ContextStore/StoreFilterMapKey.v:919: `lvar_store_to_atom_store_insert_free_lookup_eq` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:265: `lvar_store_shift_free_notin` -- ZERO-V-USAGE: candidate for deletion unless public API/paper name; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:272: `lvar_store_shift_insert_from` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:280: `lvar_store_shift_insert` -- THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:287: `lvar_store_shift_insert_free` -- THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:304: `lvar_store_atom_dom_shift` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:356: `lvar_store_open_one_insert` -- THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:489: `lvar_store_swap_insert` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:817: `lvar_store_to_atom_store_atom_store` -- THIN-PROOF: likely wrapper/solver lemma
+- ContextStore/StoreFilterMapKey.v:890: `lvar_store_to_atom_store_insert_free_lookup_ne` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreInterface.v:39: `lstore_to_store_lookup` -- THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreInterface.v:175: `lstore_on_rekey_id_on_dom` -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma
 - ContextStore/StoreRestrict.v:10: `storeA_restrict_dom` -- THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
