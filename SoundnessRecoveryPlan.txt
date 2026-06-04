@@ -21,18 +21,18 @@ Execution order
      fundamental_let_case.
 
 2. Finish the guard extraction lemmas.
-   - denot_ty_in_ctx_under_context_ty_wf: already proved.
-   - denot_ty_in_ctx_under_basic_world: already proved.
-   - denot_ty_in_ctx_under_basic_typing: already proved.
-   - denot_ty_in_ctx_under_total: should be proved by the same guard split,
+   - ty_denote_under_context_ty_wf: already proved.
+   - ty_denote_under_basic_world: already proved.
+   - ty_denote_under_basic_typing: already proved.
+   - ty_denote_under_total: should be proved by the same guard split,
      not left as a review-point admit.
 
 3. Restore the variable case as a real proof.
    - Prove denot_var_direct_in_ctx, or inline it into fundamental_var_case.
    - Proof shape:
-     * pull the CtxBind component out of denot_ctx_under;
+     * pull the CtxBind component out of ctx_denote_under;
      * use basic_ctx freshness from context_typing_wf to rewrite
-       erase_ctx_under Σ (CtxBind x τ) into <[x := erase_ty τ]> Σ;
+       ctx_erasure_under Σ (CtxBind x τ) into <[x := erase_ty τ]> Σ;
      * the goal is then exactly the singleton context denotation.
    - This mirrors the old ChoiceTyping proof, adjusted to the current
      Context names.
@@ -68,7 +68,7 @@ Execution order
 Immediate target for this round
 -------------------------------
 
-- Prove denot_ty_in_ctx_under_total.
+- Prove ty_denote_under_total.
 - Prove denot_var_direct_in_ctx/fundamental_var_case.
 - Audit denot_const_direct_in_ctx against the old branch and either prove the
   now-easy part or document that it is the same remaining constant bridge as in

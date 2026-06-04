@@ -19,20 +19,20 @@ Top-level `Fundamental` in `ContextTyping/theories/Soundness.v` is direct and
 
 The ordinary `Let` case now calls `tlet_intro_denotation` directly and no
 longer depends on the old result-extension context admit.  The helper
-`denot_ctx_under_comma_bind_from_result_extension` is proved.
+`ctx_denote_under_comma_bind_from_result_extension` is proved.
 
 The remaining `Soundness.v` admits are not part of this restored core route:
 
-- `denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf`
+- `ty_denote_under_fiber_elim_projection_instantiated_from_wf`
   Old fiberwise compatibility obligation.
-- `denot_ctx_under_local_relevant_basic_world`
+- `ctx_denote_under_local_relevant_basic_world`
   Looks obsolete after the current direct static-guard proof.  It should be
   checked for uses and then deleted if unused.
 - corollaries: `safety`, `coverage`, `refinement`, `incorrectness`,
   `exact_result`.
 
 Higher-order and branching cases still dispatch through placeholder bridge
-lemmas in `Denotation/theories/ContextTypeDenotationCases.v`:
+lemmas in `Denotation/theories/DenotationCases.v`:
 
 - `letd_soundness_bridge`
 - `lam_soundness_bridge`, `lamd_soundness_bridge`
@@ -64,7 +64,7 @@ The history strongly suggests the cleanup boundary:
   Started the large `context_typing_wf_erased` / base projection msubst route.
 - `8c81073 Split msubst denotation transport`
   Split the giant msubst proof into
-  `ContextTypeDenotationMsubst{Core,Guard,KeepDomain,Compat,Scoped}`.
+  `TypeDenoteMsubst{Core,Guard,KeepDomain,Compat,Scoped}`.
 - `0bb6e85 Prove scoped msubst transport helpers`
   Added most of the large support proof mass.
 - `6ccd47e Refactor context typing definitions`
@@ -76,10 +76,10 @@ Compared with `55ea4d5`, the current branch adds about 25k lines across
 Denotation/Typing/BasicDenotation/Logic/Algebra.  The largest new cleanup
 candidates are:
 
-- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`: 5168 lines.
-- `Denotation/theories/ContextTypeDenotationMsubstGuard.v`: 1435 lines.
-- `Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v`: 1031 lines.
-- `Denotation/theories/ContextTypeDenotationMsubstCompat.v`: 715 lines.
+- `Denotation/theories/TypeDenoteMsubstScoped.v`: 5168 lines.
+- `Denotation/theories/TypeDenoteMsubstGuard.v`: 1435 lines.
+- `Denotation/theories/TypeDenoteMsubstKeepDomain.v`: 1031 lines.
+- `Denotation/theories/TypeDenoteMsubstCompat.v`: 715 lines.
 - `ContextBasicDenotation/theories/MsubstTransport.v`: 1040 lines.
 
 ## 3. Delete candidates: old fiberwise context route
@@ -89,23 +89,23 @@ should be deleted once current users are removed.
 
 In `Denotation/theories/Context.v`:
 
-- `denot_ty_in_ctx_under_fiber`
-- `denot_ty_in_ctx_under_fiber_intro`
-- `denot_ty_in_ctx_under_fiber_elim_projection`
-- `denot_ctx_under_projection_store_has_type`
-- `denot_ty_in_ctx_under_fiber_elim_projection_instantiated`
-- `denot_ty_in_ctx_under_fiber_elim_singleton_instantiated`
+- `ty_denote_under_fiber`
+- `ty_denote_under_fiber_intro`
+- `ty_denote_under_fiber_elim_projection`
+- `ctx_denote_under_projection_store_has_type`
+- `ty_denote_under_fiber_elim_projection_instantiated`
+- `ty_denote_under_fiber_elim_singleton_instantiated`
 - `base_store_projection_from_superset_fiber`
-- `denot_ctx_under_projected_body`
-- `denot_ctx_under_fiber_from_projection`
-- `denot_ctx_under_bind_projection_intro`
-- `denot_ctx_under_erased_fiber_from_basic_ctx`
-- `denot_ctx_under_star_elim_in_fiber`
-- `denot_ctx_under_sum_elim_in_fiber`
+- `ctx_denote_under_projected_body`
+- `ctx_denote_under_fiber_from_projection`
+- `ctx_denote_under_bind_projection_intro`
+- `ctx_denote_under_erased_fiber_from_basic_ctx`
+- `ctx_denote_under_star_elim_in_fiber`
+- `ctx_denote_under_sum_elim_in_fiber`
 
 In `ContextTyping/theories/Soundness.v`:
 
-- `denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf`
+- `ty_denote_under_fiber_elim_projection_instantiated_from_wf`
 
 Expected effect:
 
@@ -146,12 +146,12 @@ obligation.
 
 The public theorem that should be retired is:
 
-- `denot_ty_lvar_gas_msubst_store_from_typing_wf_iff`
+- `ty_denote_gas_msubst_store_from_typing_wf_iff`
 - plus wrappers:
-  `denot_ty_lvar_gas_msubst_store_from_typing_wf`,
-  `denot_ty_lvar_gas_msubst_store_to_typing_wf`
+  `ty_denote_gas_msubst_store_from_typing_wf`,
+  `ty_denote_gas_msubst_store_to_typing_wf`
 
-These live in `Denotation/theories/ContextTypeDenotationMsubstScoped.v` and
+These live in `Denotation/theories/TypeDenoteMsubstScoped.v` and
 depend on the artificial erased typing package:
 
 - `context_typing_wf_erased`
@@ -164,10 +164,10 @@ bridge and is the source of most of the large proof mass.
 
 Files likely removable after dependencies are severed:
 
-- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`
-- `Denotation/theories/ContextTypeDenotationMsubstCompat.v`
-- most or all of `Denotation/theories/ContextTypeDenotationMsubstGuard.v`
-- most or all of `Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v`
+- `Denotation/theories/TypeDenoteMsubstScoped.v`
+- `Denotation/theories/TypeDenoteMsubstCompat.v`
+- most or all of `Denotation/theories/TypeDenoteMsubstGuard.v`
+- most or all of `Denotation/theories/TypeDenoteMsubstKeepDomain.v`
 - most of `ContextBasicDenotation/theories/MsubstTransport.v`
 
 Do not delete the formula-level `formula_msubst_store` operation itself.  It is
@@ -177,18 +177,18 @@ now part of `FFibVars` semantics and remains meaningful at the Logic layer.
 
 ### 6.1 Term-result equivalence transport
 
-Keep the `ContextTypeDenotationSaturate*` family, especially:
+Keep the `TypeEquiv*` family, especially:
 
-- `tm_result_equiv_on`
-- `typed_total_tm_result_equiv_on`
-- `denot_ty_lvar_gas_tm_result_equiv`
-- `denot_ty_lvar_gas_result_alias_to_var`
-- `denot_ty_lvar_gas_result_extension_to_var`
+- `tm_equiv_on`
+- `typed_total_equiv_on`
+- `ty_denote_gas_tm_result_equiv`
+- `ty_denote_gas_result_alias_to_var`
+- `ty_denote_gas_result_extension_to_var`
 
 This is the useful theorem you identified: equivalent term results transport
 through context-type denotation.  It is now used by
-`denot_ctx_under_comma_bind_from_result_extension` in `Soundness.v` through
-`denot_ty_lvar_gas_result_extension_to_var`.
+`ctx_denote_under_comma_bind_from_result_extension` in `Soundness.v` through
+`ty_denote_gas_result_extension_to_var`.
 
 ### 6.2 Formula-level msubst and FFibVars infrastructure
 
@@ -210,7 +210,7 @@ current `FFibVars` definition.
 
 The commits around `0bb6e85` added many bottom-layer lemmas.  Do not bulk
 delete these.  Keep helpers that are general and not tied to
-`denot_ty_lvar_gas_msubst_store_*`, for example:
+`ty_denote_gas_msubst_store_*`, for example:
 
 - product/sum/pullback/resource projection facts;
 - formula FV/open/scope normalization facts;
@@ -221,30 +221,30 @@ These are useful independent of the abandoned msubst theorem.
 
 ### 6.4 One open-denotation lemma used by Saturate
 
-`ContextTypeDenotationSaturateArrow.v` and `...Wand.v` currently import
-`ContextTypeDenotationMsubstCore` only for:
+`TypeEquivArrow.v` and `...Wand.v` currently import
+`TypeDenoteMsubstCore` only for:
 
-- `formula_open_denot_ty_lvar_gas_singleton`
+- `formula_open_ty_denote_gas_singleton`
 
 Move this lemma out of `MsubstCore` into a neutral file such as
-`ContextTypeDenotationOpen.v` or `ContextTypeDenotationSaturateCore.v` before
+`TypeDenoteOpen.v` or `TypeEquivCore.v` before
 deleting the msubst files.
 
 ## 7. Dependency notes
 
 Current imports:
 
-- `Denotation/theories/Context.v` imports `ContextTypeDenotationMsubst` and
-  `ContextTypeDenotationSaturate`.
-- `Soundness.v` imports `ContextTypeDenotationMsubst` only through the current
+- `Denotation/theories/Context.v` imports `TypeDenoteMsubst` and
+  `TypeEquiv`.
+- `Soundness.v` imports `TypeDenoteMsubst` only through the current
   direct import list and through `Context.v`.
-- `Saturate*.v` imports `ContextTypeDenotationMsubstCore` only for the
+- `Saturate*.v` imports `TypeDenoteMsubstCore` only for the
   singleton open lemma noted above.
 
 Therefore a safe cleanup should:
 
-1. Move `formula_open_denot_ty_lvar_gas_singleton` to a non-msubst file.
-2. Remove `ContextTypeDenotationMsubst` from `Context.v` and `Soundness.v`
+1. Move `formula_open_ty_denote_gas_singleton` to a non-msubst file.
+2. Remove `TypeDenoteMsubst` from `Context.v` and `Soundness.v`
    imports.
 3. Delete or comment out all old fiberwise wrappers in `Context.v`.
 4. Delete the msubst file family from `_CoqProject`.
@@ -262,9 +262,9 @@ Target files:
 
 Actions:
 
-- Delete `denot_ty_in_ctx_under_fiber` and all `_fiber` helpers.
+- Delete `ty_denote_under_fiber` and all `_fiber` helpers.
 - Delete old projection/body/fiber context helpers listed in section 3.
-- Delete `denot_ty_in_ctx_under_fiber_elim_projection_instantiated_from_wf`.
+- Delete `ty_denote_under_fiber_elim_projection_instantiated_from_wf`.
 - Compile `Denotation/theories/Context.vo` and `ContextTyping/theories/Soundness.vo`.
 
 Risk:
@@ -277,10 +277,10 @@ Risk:
 
 Actions:
 
-- Move `formula_open_denot_ty_lvar_gas_singleton` out of
-  `ContextTypeDenotationMsubstCore.v`.
+- Move `formula_open_ty_denote_gas_singleton` out of
+  `TypeDenoteMsubstCore.v`.
 - Update `SaturateArrow/Wand` imports.
-- Remove `ContextTypeDenotationMsubst` imports from `Context.v` and
+- Remove `TypeDenoteMsubst` imports from `Context.v` and
   `Soundness.v`.
 
 Risk:
@@ -293,12 +293,12 @@ Risk:
 Actions:
 
 - Remove from `_CoqProject`:
-  - `ContextTypeDenotationMsubstCore.v`
-  - `ContextTypeDenotationMsubstGuard.v`
-  - `ContextTypeDenotationMsubstKeepDomain.v`
-  - `ContextTypeDenotationMsubstCompat.v`
-  - `ContextTypeDenotationMsubstScoped.v`
-  - `ContextTypeDenotationMsubst.v`
+  - `TypeDenoteMsubstCore.v`
+  - `TypeDenoteMsubstGuard.v`
+  - `TypeDenoteMsubstKeepDomain.v`
+  - `TypeDenoteMsubstCompat.v`
+  - `TypeDenoteMsubstScoped.v`
+  - `TypeDenoteMsubst.v`
 - Delete the files.
 - Compile.
 
@@ -331,7 +331,7 @@ Risk:
 
 Actions:
 
-- In `ContextTypeDenotationCases.v`, delete the current placeholder bridge layer
+- In `DenotationCases.v`, delete the current placeholder bridge layer
   or replace it with the new method's statements.
 - Keep only proved direct case lemmas (`const_direct_denotation_gas_in_ctx`,
   `appop_intro_denotation`, etc.) and future theorem names that match the new

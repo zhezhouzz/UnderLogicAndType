@@ -7,10 +7,10 @@ Principle
 The Fundamental proof should look like the proven TLet branch:
 
 1. The Soundness case consumes context denotation and induction hypotheses.
-2. It derives concrete `denot_ty_lvar_gas` premises for the current world.
+2. It derives concrete `ty_denote_gas` premises for the current world.
 3. It calls a Denotation-level helper such as `lam_intro_denotation`.
 
-Denotation-level helpers should not mention `denot_ctx_under`, `Γ`, or typing
+Denotation-level helpers should not mention `ctx_denote_under`, `Γ`, or typing
 induction hypotheses.  They may still mention basic typing and operational
 premises when those are genuinely part of the semantic case.
 
@@ -29,16 +29,16 @@ Case-by-case plan
   - pick/receive the fresh parameter from the Arrow forall proof obligation;
   - build the context denotation for `CtxComma Γ (CtxBind y τx)`;
   - call the body IH to get
-    `denot_ty_lvar_gas ... (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)`;
+    `ty_denote_gas ... (<[LVFree y := erase_ty τx]> Σ) ({0 ~> y} τ) (e ^^ y)`;
   - call `lam_intro_denotation`.
 - Needed bridge lemma:
-  `denot_ctx_under_comma_bind_from_arg_denotation`.
+  `ctx_denote_under_comma_bind_from_arg_denotation`.
 
 3. LamD
 
 - Same as Lam, but the body context is `CtxStar Γ (CtxBind y τx)`.
 - Need a separating bridge:
-  `denot_ctx_under_star_bind_from_arg_denotation`.
+  `ctx_denote_under_star_bind_from_arg_denotation`.
 - This will use existing `FStar`/resource product lemmas.
 
 4. App
@@ -97,7 +97,7 @@ Case-by-case plan
 - The Soundness bridge turns typing-level `branch_unreachable` into a current
   world formula:
 
-    `m ⊨ FImpl (denot_ty_lvar_gas (cty_depth (bool_precise_ty b)) Σ
+    `m ⊨ FImpl (ty_denote_gas (cty_depth (bool_precise_ty b)) Σ
           (bool_precise_ty b) (tret v)) FFalse`
 
 - Then it calls `match_true_intro_denotation` or
@@ -109,26 +109,26 @@ Implementation order
 0. Redesign context denotation so every recursive call first fixes the ambient
    erased context as a fiber:
 
-   `denot_ctx_under Σ Γ :=
+   `ctx_denote_under Σ Γ :=
       FFibVars (lvars_of_atoms (dom Σ))
-        (FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+        (FAnd (basic_world_formula (atom_env_to_lty_env (ctx_erasure_under Σ Γ)))
           (match Γ with ... end))`.
 
    This keeps the denotation entirely inside Context Logic while making the
    intended invariant explicit: every `dom Σ` fiber of a world satisfying
-   `denot_ctx_under Σ Γ` must satisfy the context body after substituting that
+   `ctx_denote_under Σ Γ` must satisfy the context body after substituting that
    fiber projection.  It does *not* imply that the ambient world itself has a
    singleton projection on `dom Σ`.  The recursive call for
    `CtxComma Γ1 Γ2` is simply
 
-     `denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2`
+     `ctx_denote_under (Σ ∪ erase_ctx Γ1) Γ2`
 
    because that call itself adds the fiber for the enlarged ambient context.
    No extra local `FFibVars (dom Γ1)` wrapper is needed.
 
    The plain context denotation should become:
 
-     `denot_ctx Γ := denot_ctx_under ∅ Γ`.
+     `ctx_denote Γ := ctx_denote_under ∅ Γ`.
 
 0a. Add/restore the Logic/Algebra support needed by the new outer fiber.
 
@@ -395,38 +395,38 @@ Implementation order
      The plus proof is the same with `res_models_plus_iff` and sum inheritance.
 
      Denotation should not call an unconditional
-     `denot_ctx_under_star_elim`.  Replace it by a singleton-aware eliminator:
+     `ctx_denote_under_star_elim`.  Replace it by a singleton-aware eliminator:
 
-       `denot_ctx_under_star_elim_singleton`:
+       `ctx_denote_under_star_elim_singleton`:
          `dom σΣ = dom Σ ->
           res_restrict m (dom Σ) = singleton_world σΣ ->
-          m ⊨ denot_ctx_under Σ (CtxStar Γ1 Γ2) ->
+          m ⊨ ctx_denote_under Σ (CtxStar Γ1 Γ2) ->
           exists m1 m2 Hc,
             res_product m1 m2 Hc ⊑ m /\
-            m1 ⊨ denot_ctx_under Σ Γ1 /\
-            m2 ⊨ denot_ctx_under Σ Γ2`.
+            m1 ⊨ ctx_denote_under Σ Γ1 /\
+            m2 ⊨ ctx_denote_under Σ Γ2`.
 
-     The analogous `denot_ctx_under_sum_elim_singleton` handles `CtxSum`.
+     The analogous `ctx_denote_under_sum_elim_singleton` handles `CtxSum`.
      Upper proofs obtain the singleton premise only after choosing a concrete
-     outer `FFibVars (ctx_base_vars Σ)` fiber of `denot_ctx_under`; it is not a
-     consequence of an arbitrary ambient `m ⊨ denot_ctx_under Σ Γ`.
+     outer `FFibVars (ctx_base_vars Σ)` fiber of `ctx_denote_under`; it is not a
+     consequence of an arbitrary ambient `m ⊨ ctx_denote_under Σ Γ`.
 
      Current proved Denotation helpers:
 
-       `denot_ctx_under_body` and `denot_ctx_under_unfold_body`:
+       `ctx_denote_under_body` and `ctx_denote_under_unfold_body`:
          name the body under the outer `FFibVars (ctx_base_vars Σ)` wrapper.
 
-       `denot_ctx_under_projected_body`:
+       `ctx_denote_under_projected_body`:
          `res_fiber_from_projection m (dom Σ) σΣ mfib ->
-          m ⊨ denot_ctx_under Σ Γ ->
-          mfib ⊨ formula_msubst_store σΣ (denot_ctx_under_body Σ Γ)`.
+          m ⊨ ctx_denote_under Σ Γ ->
+          mfib ⊨ formula_msubst_store σΣ (ctx_denote_under_body Σ Γ)`.
 
-       `denot_ctx_under_fiber_from_projection`:
+       `ctx_denote_under_fiber_from_projection`:
          `res_fiber_from_projection m (dom Σ) σΣ mfib ->
-          m ⊨ denot_ctx_under Σ Γ ->
-          mfib ⊨ denot_ctx_under Σ Γ`.
+          m ⊨ ctx_denote_under Σ Γ ->
+          mfib ⊨ ctx_denote_under Σ Γ`.
 
-       `denot_ctx_under_star_elim_in_fiber` / `...sum...`:
+       `ctx_denote_under_star_elim_in_fiber` / `...sum...`:
          split a chosen `dom Σ` fiber `mfib`, not the original ambient world.
 
      Do not try to prove either of the following false routes:
@@ -439,7 +439,7 @@ Implementation order
      has the same domain as its source, it would imply `mfib = m`.  The second
      is false because substituting the projection store changes the formula's
      interpretation.  Star/sum/appd/letd soundness must therefore be proved by
-     a fiberwise bridge: choose each base fiber from `denot_ctx_under`, prove
+     a fiberwise bridge: choose each base fiber from `ctx_denote_under`, prove
      the corresponding denotation inside that fiber, and rebuild the required
      top-level denotation using a Denotation-specific fiberwise introduction
      lemma, not by transporting arbitrary formulas through `mlsubst`.
@@ -464,26 +464,26 @@ Implementation order
    admitted obligations only if needed to wire the new denotation through the
    context bridges.
 
-   During migration, delete the old compatibility alias `denot_ctx_in_env`
+   During migration, delete the old compatibility alias `ctx_denote_in_env`
    entirely if it still exists.  The live context denotation should be just
-   `denot_ctx_under`.
+   `ctx_denote_under`.
 
 0b. Change the Fundamental theorem to the fiberwise statement.
 
    The old direct ambient conclusion
 
-     `denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under Σ Γ τ e`
+     `ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e`
 
-   is not aligned with the new context denotation.  `denot_ctx_under Σ Γ`
+   is not aligned with the new context denotation.  `ctx_denote_under Σ Γ`
    only gives the context body after choosing a `dom Σ` fiber and applying the
    corresponding `formula_msubst_store`.  Therefore the live theorem should be:
 
-     `denot_ctx_under Σ Γ ⊫
-        FFibVars (ctx_base_vars Σ) (denot_ty_in_ctx_under Σ Γ τ e)`.
+     `ctx_denote_under Σ Γ ⊫
+        FFibVars (ctx_base_vars Σ) (ty_denote_under Σ Γ τ e)`.
 
    Equivalently, use the named wrapper:
 
-     `denot_ty_in_ctx_under_fiber Σ Γ τ e`.
+     `ty_denote_under_fiber Σ Γ τ e`.
 
      The induction proof should unfold the goal's outer `FFibVars`, choose the
      same base projection as the context premise, and prove each case inside that
@@ -496,20 +496,20 @@ Implementation order
    Current proved support:
 
      `ctx_base_vars_lc`
-     `denot_ty_in_ctx_under_fiber_intro`
-     `denot_ty_in_ctx_under_fiber_elim_projection`
+     `ty_denote_under_fiber_intro`
+     `ty_denote_under_fiber_elim_projection`
 
    The proof-facing `Fundamental` theorem now uses only the fiberwise case
    lemmas.  The next proof layer is to prove those case lemmas by applying
-   `denot_ty_in_ctx_under_fiber_intro`, then using
-   `denot_ctx_under_projected_body` to obtain the substituted context body in
+   `ty_denote_under_fiber_intro`, then using
+   `ctx_denote_under_projected_body` to obtain the substituted context body in
    the selected fiber.
 
 1. Keep the current `ctx_sub_under` meaning: it restricts the current world to
    the judgment support `X` and then satisfies the target context.  Prove the
    Fundamental case through one Denotation-level transport lemma:
 
-   `denot_ty_in_ctx_under_ctx_sub_transport`.
+   `ty_denote_under_ctx_sub_transport`.
 
    This helper packages the two facts that otherwise make the case noisy:
    denotation only observes `fv_tm e ∪ fv_cty τ`, and erased environments that
@@ -519,13 +519,13 @@ Implementation order
    into the Denotation layer.  Soundness should only instantiate IHs and call
    these bridges.  The bridge family is:
 
-   - `denot_ctx_under_comma_bind_from_arg_denotation`
-   - `denot_ctx_under_star_bind_from_arg_denotation`
-   - `denot_ctx_under_star_elim_singleton`
-   - `denot_ctx_under_sum_elim_singleton`
-   - `denot_ty_in_ctx_under_comma_bind_to_lvar_insert`
-   - `denot_ty_in_ctx_under_star_bind_to_lvar_insert`
-   - `denot_ty_lvar_gas_star_union_to_ctx`
+   - `ctx_denote_under_comma_bind_from_arg_denotation`
+   - `ctx_denote_under_star_bind_from_arg_denotation`
+   - `ctx_denote_under_star_elim_singleton`
+   - `ctx_denote_under_sum_elim_singleton`
+   - `ty_denote_under_comma_bind_to_lvar_insert`
+   - `ty_denote_under_star_bind_to_lvar_insert`
+   - `ty_denote_gas_star_union_to_ctx`
    - `basic_typing_star_union_lty_env`
    - `letd_body_world_compat`
 
@@ -538,7 +538,7 @@ Implementation order
 
    The old `context_typing_wf` was only a packed regularity definition:
 
-     `wf_context_ty_under Σ Γ τ /\ erase_ctx_under Σ Γ ⊢ₑ e ⋮ erase_ty τ`.
+     `wf_context_ty_under Σ Γ τ /\ ctx_erasure_under Σ Γ ⊢ₑ e ⋮ erase_ty τ`.
 
    Keep that shape as `context_typing_regular`, but replace
    `context_typing_wf` by an inductive predicate whose type side condition is
@@ -559,10 +559,10 @@ Implementation order
    `context_typing_wf` as the old pair.
 
 3. Prove easy erased-environment transport bridges immediately.  These are
-   mostly `erase_ctx_under` equality/agreement plus
+   mostly `ctx_erasure_under` equality/agreement plus
    `atom_env_to_lty_env_insert_free`.
 
-4. Prove `star_elim` and `sum_elim` by unfolding `denot_ctx_under`, applying
+4. Prove `star_elim` and `sum_elim` by unfolding `ctx_denote_under`, applying
    `res_models_star_iff` / `res_models_plus_iff`, and pushing the outer
    `basic_world_formula` assumptions down with `basic_world_formula_subenv`.
 
@@ -572,7 +572,7 @@ Implementation order
    supplied argument denotation.
 
 6. Leave genuinely semantic case lemmas in
-   `Denotation/theories/ContextTypeDenotationCases.v` as named obligations until
+   `Denotation/theories/DenotationCases.v` as named obligations until
    their individual case proof is tackled.  Do not replace them with old
    wrapper stacks.
 
@@ -585,7 +585,7 @@ Implementation order
 
        `context_ty_wf ∧ basic_world ∧ expr_basic_typing`
 
-     from `context_typing_wf` and `denot_ctx_under`.
+     from `context_typing_wf` and `ctx_denote_under`.
    - Each Denotation-level helper proves the genuinely semantic/operational
      part, especially `expr_total_formula`, for its own case.
 
@@ -600,25 +600,25 @@ Implementation order
 
    The live theorem concludes
 
-     `denot_ctx_under Σ Γ ⊫ denot_ty_in_ctx_under_fiber Σ Γ τ e`.
+     `ctx_denote_under Σ Γ ⊫ ty_denote_under_fiber Σ Γ τ e`.
 
    For each case, the proof shape is:
 
    - introduce the ambient world `m` and `Hctx`;
-   - apply `denot_ty_in_ctx_under_fiber_intro`;
+   - apply `ty_denote_under_fiber_intro`;
    - fix an arbitrary base projection
 
        `res_fiber_from_projection m (dom Σ) σΣ mfib`;
 
-   - use `denot_ctx_under_projected_body` to get the context body in that
+   - use `ctx_denote_under_projected_body` to get the context body in that
      selected fiber:
 
-       `mfib ⊨ formula_msubst_store σΣ (denot_ctx_under_body Σ Γ)`;
+       `mfib ⊨ formula_msubst_store σΣ (ctx_denote_under_body Σ Γ)`;
 
    - prove the case goal inside that same fiber:
 
        `mfib ⊨ formula_msubst_store σΣ
-          (denot_ty_in_ctx_under Σ Γ τ e)`.
+          (ty_denote_under Σ Γ τ e)`.
 
    This is the only sound route currently.  Do not prove or use either of the
    following false ambient shortcuts:
@@ -650,13 +650,13 @@ Implementation order
    Current progress:
 
    - `lqual_msubst_store_fresh`, `formula_msubst_store_fresh`, and
-     `formula_fv_const_precise_denot_ty_lvar_gas_empty` are proved.
+     `formula_fv_const_precise_ty_denote_gas_empty` are proved.
    - `fundamental_const_case_fiber` is proved.
    - `fundamental_var_case_fiber` is proved directly from
-     `denot_ctx_under_projected_body`; it does not use the obsolete ambient
-     `denot_ctx_under_bind_inv` route.
+     `ctx_denote_under_projected_body`; it does not use the obsolete ambient
+     `ctx_denote_under_bind_inv` route.
    - The reusable scoped side-condition helper
-     `denot_ty_in_ctx_under_fiber_scoped_from_context_typing` is proved in
+     `ty_denote_under_fiber_scoped_from_context_typing` is proved in
      `Soundness.v`.
    - `fundamental_sub_case_fiber` and `fundamental_ctx_sub_case_fiber` now use
      the fiberwise spine, with the remaining nontrivial msubst transports named
@@ -676,14 +676,14 @@ Implementation order
    The new key observation is that most case proofs should not be re-proved as
    bespoke `formula_msubst_store` transports.  The common shape
 
-     `FFibVars (ctx_base_vars Σ) (denot_ctx_under_body Σ Γ)
+     `FFibVars (ctx_base_vars Σ) (ctx_denote_under_body Σ Γ)
       ⊫
       FFibVars (ctx_base_vars Σ) p`
 
    should instead be handled through the Logic connective:
 
      `FFibVars (ctx_base_vars Σ)
-        (FImpl (denot_ctx_under_body Σ Γ) p)`.
+        (FImpl (ctx_denote_under_body Σ Γ) p)`.
 
    In words: after fixing the base `dom Σ` fiber, the body of the proof is the
    old ambient implication from the context body to the target formula.  The new
@@ -718,13 +718,13 @@ Implementation order
    1. Prove or obtain
 
         `m ⊨ FFibVars (ctx_base_vars Σ)
-              (FImpl (denot_ctx_under_body Σ Γ)
-                     (denot_ty_in_ctx_under Σ Γ τ e))`.
+              (FImpl (ctx_denote_under_body Σ Γ)
+                     (ty_denote_under Σ Γ τ e))`.
 
-   2. Rewrite `Hctx : m ⊨ denot_ctx_under Σ Γ` using
-      `denot_ctx_under_unfold_body`, so it has the matching
+   2. Rewrite `Hctx : m ⊨ ctx_denote_under Σ Γ` using
+      `ctx_denote_under_unfold_body`, so it has the matching
 
-        `m ⊨ FFibVars (ctx_base_vars Σ) (denot_ctx_under_body Σ Γ)`.
+        `m ⊨ FFibVars (ctx_base_vars Σ) (ctx_denote_under_body Σ Γ)`.
 
    3. Apply `res_models_FFibVars_impl_elim`.
 
@@ -745,19 +745,19 @@ Implementation order
    - It may stay as a direct proof; no need to force it through implication.
 
    Var:
-   - Already proved directly from `denot_ctx_under_projected_body`.
+   - Already proved directly from `ctx_denote_under_projected_body`.
    - It may stay direct, since this is exactly the context-body projection.
 
    Sub:
    - Prove the fibered implication:
 
        `FFibVars D
-          (FImpl (denot_ctx_under_body Σ Γ)
-                 (denot_ty_in_ctx_under Σ Γ τ2 e))`.
+          (FImpl (ctx_denote_under_body Σ Γ)
+                 (ty_denote_under Σ Γ τ2 e))`.
 
    - Inside the selected fiber, use the old `sub_type_under` implication on the
      substituted context body.  If direct use of `sub_type_under` still expects
-     `denot_ctx_under Σ Γ`, prove a small bridge from selected-fiber context
+     `ctx_denote_under Σ Γ`, prove a small bridge from selected-fiber context
      body to the old implication premise, not a general false ambient
      substitution theorem.
 
@@ -765,11 +765,11 @@ Implementation order
    - Same outer route as Sub.
    - The old `ctx_sub_under` support/restrict part should be used inside the
      selected fiber, with agreement transport for
-     `denot_ty_in_ctx_under`.  Keep the proof as a context/body implication;
+     `ty_denote_under`.  Keep the proof as a context/body implication;
      do not expose a case-specific msubst lemma.
 
    TLet:
-   - Prove the fibered implication from `denot_ctx_under_body Σ Γ` to the
+   - Prove the fibered implication from `ctx_denote_under_body Σ Γ` to the
      `tlete` denotation.
    - Inside the selected fiber, derive totality for `e1` from the fibered IH,
      construct the result extension, use the body IH, and call
@@ -778,7 +778,7 @@ Implementation order
 
    LetD:
    - Same route, but inside the selected fiber use
-     `denot_ctx_under_star_elim_in_fiber`.
+     `ctx_denote_under_star_elim_in_fiber`.
    - Feed the split branch worlds to the two IHs and call
      `letd_intro_denotation`.
 
@@ -801,7 +801,7 @@ Implementation order
 
    AppD:
    - Inside the selected base fiber, split the `CtxStar Γ1 Γ2` body with
-     `denot_ctx_under_star_elim_in_fiber`.
+     `ctx_denote_under_star_elim_in_fiber`.
    - Apply the two IHs to the split worlds, then call
      `appd_elim_denotation`.
 
@@ -821,7 +821,7 @@ Implementation order
 
    MatchBoth:
    - Inside the selected base fiber, split `CtxSum Γt Γf` with
-     `denot_ctx_under_sum_elim_in_fiber`.
+     `ctx_denote_under_sum_elim_in_fiber`.
    - Apply the four IHs on the branch worlds and call
      `match_both_intro_denotation`.
 
@@ -999,8 +999,8 @@ Implementation order
        `denot_relevant_lvars τ e ⊆ dom Σ ->
         lvars_of_atoms (dom σ) ⊆ denot_relevant_lvars τ e ->
         atom_store_has_ltype Σ σ ->
-        m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)
-        m ⊨ denot_ty_lvar_gas gas
+        m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e)
+        m ⊨ ty_denote_gas gas
               (lty_env_msubst_store σ Σ)
               (context_ty_msubst_store σ τ)
               (lstore_instantiate_tm (lstore_lift_free σ) e)`.
@@ -1014,7 +1014,7 @@ Implementation order
        `store_restrict σ (lvars_fv (denot_relevant_lvars τ e))`
 
      using `formula_msubst_store_restrict_fv_subset` together with
-     `formula_fv_denot_ty_lvar_gas_subset_relevant`, then call the relevant
+     `formula_fv_ty_denote_gas_subset_relevant`, then call the relevant
      theorem above.  This keeps extra selected-fiber variables from deleting
      irrelevant keys from the right-hand environment.
 
@@ -1227,13 +1227,13 @@ Implementation order
 
    - Then prove the main transport for type denotation:
 
-       `denot_ty_lvar_gas_msubst_store_models`
+       `ty_denote_gas_msubst_store_models`
 
      Shape, up to the final names:
 
-       `m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)
+       `m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e)
         <->
-        m ⊨ denot_ty_lvar_gas gas Σ' τ' e'`
+        m ⊨ ty_denote_gas gas Σ' τ' e'`
 
      where `Σ'`, `τ'`, and `e'` are the appropriate instantiated
      environment/type/term views.  If type/context instantiation is not yet
@@ -1265,7 +1265,7 @@ Implementation order
           `expr_basic_typing_formula_msubst_store_models`
           `expr_total_formula_msubst_store_models`
 
-     3. Prove `denot_ty_lvar_gas_msubst_store_models` by induction on gas.
+     3. Prove `ty_denote_gas_msubst_store_models` by induction on gas.
         The structural cases use `res_models_and_iff`, `res_models_or`/
         `res_models_plus` maps, and the IH.  The Over/Under/Arrow/Wand cases
         should use the formula-level msubst normalization from step 1 plus
@@ -1273,20 +1273,20 @@ Implementation order
 
         Current status:
 
-        - The gas-zero case is proved by `denot_ty_lvar_gas_zero_msubst_store_models_relevant`.
+        - The gas-zero case is proved by `ty_denote_gas_zero_msubst_store_models_relevant`.
         - The structural Inter/Union/Sum branches are wired through the IH.
           Inter exposes the reusable obligation
-          `denot_ty_lvar_gas_msubst_store_agree_relevant`, which records that
+          `ty_denote_gas_msubst_store_agree_relevant`, which records that
           the transformed denotation only observes the relevant part of the
           frozen atom store.
         - The Over/Under branches no longer contain anonymous admits in the
           induction proof.  They reduce to named formula-transport obligations:
-          `denot_ty_lvar_gas_msubst_store_over_body` and
-          `denot_ty_lvar_gas_msubst_store_under_body`.
+          `ty_denote_gas_msubst_store_over_body` and
+          `ty_denote_gas_msubst_store_under_body`.
         - The Arrow/Wand branches are also reduced to named body obligations,
           parameterized by the structural induction hypothesis:
-          `denot_ty_lvar_gas_msubst_store_arrow_body` and
-          `denot_ty_lvar_gas_msubst_store_wand_body`.
+          `ty_denote_gas_msubst_store_arrow_body` and
+          `ty_denote_gas_msubst_store_wand_body`.
         - The main induction proof now has no anonymous admits and is closed
           with `Qed`, depending only on the named obligations above.
         - The first lower syntax lemma needed by the forall branches is now
@@ -1299,7 +1299,7 @@ Implementation order
 
         Revised route after review:
 
-        - Do not prove `denot_ty_lvar_gas_msubst_store_agree_relevant` as a
+        - Do not prove `ty_denote_gas_msubst_store_agree_relevant` as a
           special denotation lemma first.  Generalize the idea to arbitrary
           logic formulas:
 
@@ -1308,7 +1308,7 @@ Implementation order
           This says that `formula_msubst_store σ φ` only depends on `σ`
           restricted to `formula_fv φ`.  Then instantiate it with the existing
           bound
-          `formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open`, i.e. the
+          `formula_fv_ty_denote_gas_subset_relevant_pre_open`, i.e. the
           denotation formula only sees `e` and `τ`.
 
         - Treat double msubst as Logic syntax infrastructure, not as a
@@ -1328,7 +1328,7 @@ Implementation order
              formula-level open/msubst lemmas should remain the interface used
              above it.
           4. Use these Logic-level tools to prove
-             `denot_ty_lvar_gas_msubst_store_agree_relevant`.
+             `ty_denote_gas_msubst_store_agree_relevant`.
              The statement must carry `store_closed σ1` and `store_closed σ2`.
              Without closed stores, a value stored at a relevant atom can
              introduce fresh lvars into the instantiated term; then the
@@ -1385,7 +1385,7 @@ Implementation order
 
 14. Logic-syntax mapper route for the remaining denotation msubst body admits.
 
-   The remaining admits in `ContextTypeDenotationMsubst.v` should not be proved
+   The remaining admits in `TypeDenoteMsubst.v` should not be proved
    by unfolding Over/Under/Arrow/Wand-specific denotation shapes.  The missing
    proof principle is a Logic-level mapper for formulas built from
    `FForall`, `FImpl`, `FFibVars`, `FOver`, and `FUnder`, combined with
@@ -1503,7 +1503,7 @@ Implementation order
      transport:
      `type_qualifier_formula_msubst_store2_models` and
      `type_qualifier_formula_msubst_store_assoc_models`.
-   - The Over/Under body transports in `ContextTypeDenotationMsubst.v` are
+   - The Over/Under body transports in `TypeDenoteMsubst.v` are
      proved and compile.  Their last payload step uses the Logic-syntax mapper
      route plus the sequential qualifier msubst transport, not a
      denotation-shape-specific unfold.
@@ -1535,11 +1535,11 @@ Implementation order
       Current code status:
       - `denot_msubst_induction_hyp` is now an `iff`.
       - The old one-way theorem is still present as
-        `denot_ty_lvar_gas_msubst_store_models_relevant`.
+        `ty_denote_gas_msubst_store_models_relevant`.
       - The public iff wrapper is now
-        `denot_ty_lvar_gas_msubst_store_models_relevant_iff`.
+        `ty_denote_gas_msubst_store_models_relevant_iff`.
       - The reverse direction is isolated as the named obligation
-        `denot_ty_lvar_gas_msubst_store_models_relevant_back`; this is the
+        `ty_denote_gas_msubst_store_models_relevant_back`; this is the
         next proof target.
       - DONE: the BasicDenotation back direction now has formula-level
         bridges for:
@@ -1550,7 +1550,7 @@ Implementation order
       - DONE: the denotation guard reverse bridge is now exposed as
         `denot_guard_msubst_store_models_back_relevant`, and the gas-zero
         reverse bridge is
-        `denot_ty_lvar_gas_zero_msubst_store_models_relevant_back`.
+        `ty_denote_gas_zero_msubst_store_models_relevant_back`.
       - DONE: `lworld_has_type_lift_from_res_lift_free_same_dom` is proved.
         It is the resource/lift restriction fact needed by
         `basic_world_formula_msubst_store_models_back`.
@@ -1605,7 +1605,7 @@ Implementation order
           `basic_tm_has_ltype_msubst_store_back` are now thin wrappers over the
           derivation-induction theorem.
         - DONE: `ContextBasicDenotation/theories/MsubstTransport.vo` and
-          `Denotation/theories/ContextTypeDenotationMsubst.vo` compile with
+          `Denotation/theories/TypeDenoteMsubst.vo` compile with
           the remaining Denotation-level named obligations isolated.
         - Remaining proof work in this msubst block is now genuinely at the
           Denotation Arrow/Wand level: the body transports must combine
@@ -1640,7 +1640,7 @@ Implementation order
         `context_ty_msubst_store_open_fresh`; this removes one recurring
         fresh-open normalization gap after the forall witness is chosen.
       - DONE: added and compiled
-        `formula_open_denot_ty_lvar_gas_singleton`; this packages the common
+        `formula_open_ty_denote_gas_singleton`; this packages the common
         singleton-open exact rewrite for recursive denotation atoms, so the
         Arrow/Wand proof can normalize each premise before applying the IH.
       - DONE: added and compiled Store-level
@@ -1684,22 +1684,22 @@ Implementation order
          `ContextTypeLanguage/theories/Syntax.v`.
       4. Denotation layer: use this shift/msubst rewrite in the Arrow/Wand
          body transports before applying the iff-shaped recursive IH.
-         CURRENT: `Denotation/theories/ContextTypeDenotationMsubst.vo`
+         CURRENT: `Denotation/theories/TypeDenoteMsubst.vo`
          compiles after these lower transports.  The remaining named
          Denotation obligations are:
-           `denot_ty_lvar_gas_msubst_store_arrow_body`
-           `denot_ty_lvar_gas_msubst_store_wand_body`
-           `denot_ty_lvar_gas_msubst_store_models_relevant_back`
+           `ty_denote_gas_msubst_store_arrow_body`
+           `ty_denote_gas_msubst_store_wand_body`
+           `ty_denote_gas_msubst_store_models_relevant_back`
          Updated concrete move:
          - Strengthen Arrow/Wand body transport to iff-shaped helpers (or prove
            explicit `_back` siblings first and keep the existing forward names
            as projections).  This is necessary because
-           `denot_ty_lvar_gas_msubst_store_models_relevant_back` is an
+           `ty_denote_gas_msubst_store_models_relevant_back` is an
            induction that must cross Arrow/Wand in the reverse direction.
          - Prove Arrow with the same `res_models_forall_map_same_fv` +
            `res_models_impl2_map` spine used by Over/Under.  Normalize the
            opened source with `formula_open_msubst_store_fresh`,
-           `formula_open_denot_ty_lvar_gas_singleton`,
+           `formula_open_ty_denote_gas_singleton`,
            `context_ty_msubst_store_shift`, and the term-open/shift lemmas for
            `tapp_tm`.  In the forward direction, use the backward half of
            `denot_msubst_induction_hyp` on the argument premise and the forward
@@ -1708,7 +1708,7 @@ Implementation order
          - Prove Wand analogously with `res_models_impl_wand_map`; its
            antecedent is contravariant and its consequent is covariant under
            `res_product`.
-         - Then prove `denot_ty_lvar_gas_msubst_store_models_relevant_back` by
+         - Then prove `ty_denote_gas_msubst_store_models_relevant_back` by
            induction on gas/types, using the new Arrow/Wand back projections.
          Immediate execution checklist:
          1. Add/prove Arrow/Wand forall-body FV normalization lemmas, analogous
@@ -1726,12 +1726,12 @@ Implementation order
               `typed_lty_env_bind`.
          2. Prove forward Arrow/Wand body transports by mapping the forall body.
             After `formula_open_msubst_store_fresh` and
-            `formula_open_denot_ty_lvar_gas_singleton`, use the IH backward on
+            `formula_open_ty_denote_gas_singleton`, use the IH backward on
             the argument premise and IH forward on the result premise.
          3. Add/prove reverse Arrow/Wand body transports with the same proof
             skeleton but opposite IH directions.
          4. Re-run the gas/type induction for
-            `denot_ty_lvar_gas_msubst_store_models_relevant_back`; all
+            `ty_denote_gas_msubst_store_models_relevant_back`; all
             non-Arrow/Wand cases should mirror the existing forward proof with
             the iff-shaped IH.
             Progress:
@@ -1739,7 +1739,7 @@ Implementation order
               to `denot_relevant_lvars τ e` and then calls the restricted
               theorem.  This proves the non-inductive "arbitrary σ" wrapper and
               leaves only the relevant-store induction:
-              `denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted`.
+              `ty_denote_gas_msubst_store_models_relevant_back_restricted`.
               This matches the relevant-store discipline used by the forward
               theorem and avoids carrying irrelevant atom substitutions through
               every recursive case.
@@ -1761,18 +1761,18 @@ Implementation order
       - wand antecedent is contravariant and uses the backward IH;
       - wand consequent is covariant under the product world and uses the
         forward IH.
-   5. Rerun `make Denotation/theories/ContextTypeDenotationMsubst.vo`, then
+   5. Rerun `make Denotation/theories/TypeDenoteMsubst.vo`, then
       full `make`, then commit.
 
-14. Revised singleton-projection route for `denot_ty_lvar_gas_msubst_store`.
+14. Revised singleton-projection route for `ty_denote_gas_msubst_store`.
 
    The previous route tried to prove a global transport between
 
-     `formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e)`
+     `formula_msubst_store σ (ty_denote_gas gas Σ τ e)`
 
    and
 
-     `denot_ty_lvar_gas gas
+     `ty_denote_gas gas
         (lty_env_msubst_store σ Σ)
         (context_ty_msubst_store σ τ)
         (lstore_instantiate_tm (lstore_lift_free σ) e)`.
@@ -1802,8 +1802,8 @@ Implementation order
    The new live theorem should therefore be singleton-aware and should not
    rewrite the context type itself:
 
-     `m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e) <->
-      m ⊨ denot_ty_lvar_gas gas
+     `m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e) <->
+      m ⊨ ty_denote_gas gas
             (lty_env_msubst_store σ Σ)
             τ
             (lstore_instantiate_tm (lstore_lift_free σ) e)`.
@@ -1886,12 +1886,12 @@ Implementation order
 
       Stop proving/using:
 
-        `denot_ty_lvar_gas_msubst_store_models_relevant_back_restricted`
+        `ty_denote_gas_msubst_store_models_relevant_back_restricted`
         with target `(context_ty_msubst_store σ τ)`.
 
       Add the singleton-aware theorem:
 
-        `denot_ty_lvar_gas_msubst_store_singleton_iff`.
+        `ty_denote_gas_msubst_store_singleton_iff`.
 
       Updated statement shape after the wf discussion:
 
@@ -1901,8 +1901,8 @@ Implementation order
          (res_restrict m (lvars_fv (denot_relevant_lvars τ e)) : WorldT) =
            singleton_world (store_restrict σ
              (lvars_fv (denot_relevant_lvars τ e))) ->
-         m ⊨ formula_msubst_store σ (denot_ty_lvar_gas gas Σ τ e) <->
-         m ⊨ denot_ty_lvar_gas gas
+         m ⊨ formula_msubst_store σ (ty_denote_gas gas Σ τ e) <->
+         m ⊨ ty_denote_gas gas
               Σ
               τ
               (lstore_instantiate_tm (lstore_lift_free σ) e)`.
@@ -1948,7 +1948,7 @@ Implementation order
 
       - Then prove:
 
-          `denot_ty_lvar_gas_zero_msubst_store_singleton_iff`.
+          `ty_denote_gas_zero_msubst_store_singleton_iff`.
 
       - Only after gas-zero is clean, define the singleton-shaped recursive IH.
 
@@ -2042,7 +2042,7 @@ Implementation order
 
       The current elimination lemma
 
-        `denot_ty_in_ctx_under_fiber_elim_projection`
+        `ty_denote_under_fiber_elim_projection`
 
       already exposes
 
@@ -2056,7 +2056,7 @@ Implementation order
    8. Compile order:
 
       - `make ContextLogic/theories/FormulaConnectives.vo`
-      - `make Denotation/theories/ContextTypeDenotationMsubst.vo`
+      - `make Denotation/theories/TypeDenoteMsubst.vo`
       - `make Denotation/theories/Context.vo`
       - `make ContextTyping/theories/Soundness.vo`
 

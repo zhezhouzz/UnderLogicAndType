@@ -59,21 +59,21 @@ the reusable transport theorem for the syntactic associativity
     `ContextBasicDenotation` if the atom is type/term-specific.
   - Change: prefer existing `formula_fv_*` lemmas where possible.  If
     `formula_lvars_at` remains Denotation-only, move these to
-    `ContextTypeDenotationLvars.v`, not `TLetSupport.v`.
+    `TypeDenoteLvars.v`, not `TLetSupport.v`.
   - Reason: they are support/FV facts for formulas, not TLet facts.
 
 - `TLetSupport.v:288` `tlet_over_fib_formula_fresh_x`
 - `TLetSupport.v:301` `tlet_under_fib_formula_fresh_x`
   - Lower target: `ContextBasicDenotation/Qualifier.v` or
-    `ContextTypeDenotationLvars.v`.
+    `TypeDenoteLvars.v`.
   - Change: generalize from Over/Under names to a formula-FV lemma for
     `FFibVars (qual_vars (q ^q^ y) ∖ {[LVFree y]}) (FOver/FUnder ...)`.
   - Reason: the statement is syntax/FV interaction for qualifier opening.
 
-- `TLetSupport.v:394` `formula_fv_denot_ty_lvar_gas_scope_from_guard`
-  - Lower target: `ContextTypeDenotationSaturate.v`.
-  - Change: use the existing `formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open`
-    and `denot_ty_lvar_gas_scope_from_relevant_guard` family; keep at most a
+- `TLetSupport.v:394` `formula_fv_ty_denote_gas_scope_from_guard`
+  - Lower target: `TypeEquiv.v`.
+  - Change: use the existing `formula_fv_ty_denote_gas_scope_from_guard_pre_open`
+    and `ty_denote_gas_scope_from_relevant_guard` family; keep at most a
     compatibility wrapper here.
   - Reason: this is denotation-FV scope, but not TLet-specific.
 
@@ -184,14 +184,14 @@ the reusable transport theorem for the syntactic associativity
 - `TLetSupport.v:333` `denot_relevant_env_lookup_mono_context`
 - `TLetSupport.v:350` `denot_relevant_env_dom_mono_context`
 - `TLetSupport.v:366` `basic_world_formula_denot_relevant_mono_context`
-  - Lower target: `Denotation/ContextTypeDenotationCore.v`.
+  - Lower target: `Denotation/TypeDenote.v`.
   - Change: keep these in Denotation, but out of TLetSupport.  They are about
     `denot_relevant_env`, not TLet.
   - Reason: depend on denotation-level relevant environments.
 
 - `TLetSupport.v:907` `tlet_arrow_arg_relevant_env_agree`
 - `TLetSupport.v:1033` `tlet_wand_arg_relevant_env_agree`
-  - Lower target: `Denotation/ContextTypeDenotationCore.v` after generalization.
+  - Lower target: `Denotation/TypeDenote.v` after generalization.
   - Change: generalize from the specific source terms
     `(CTArrow/CTWand τx τr, e2 ^^ x, tlete e1 e2)` to:
     "if `x` is fresh for the opened argument support, then the relevant envs
@@ -203,20 +203,20 @@ the reusable transport theorem for the syntactic associativity
 - `TLetSupport.v:1161` `arrow_body_relevant_env_agree`
 - `TLetSupport.v:1178` `arrow_body_relevant_env_agree_from_basic_context_ty`
 - `TLetSupport.v:1203` `wand_body_relevant_env_agree_from_basic_context_ty`
-  - Lower target: `Denotation/ContextTypeDenotationCore.v`.
+  - Lower target: `Denotation/TypeDenote.v`.
   - Change: keep the generic `arrow_body_relevant_lvars_subset` and
     `arrow_body_relevant_env_agree`; define Wand as a one-line reuse of Arrow.
   - Reason: no TLet-specific premise is needed after parameterizing the source
     term and body term.
 
 - `TLetSupport.v:1229` duplicate `denot_relevant_env_dom_subset_direct`
-  - Lower target: already exists at `ContextTypeDenotationCore.v:841`.
+  - Lower target: already exists at `TypeDenote.v:841`.
   - Change: delete duplicate from TLetSupport and import/use the core lemma.
   - Reason: exact duplicate by name/content.
 
 - `TLetSupport.v:1260` `basic_world_formula_arrow_body_from_source_and_arg`
 - `TLetSupport.v:1318` `basic_world_formula_wand_body_from_source_and_arg`
-  - Lower target: `Denotation/ContextTypeDenotationCore.v` or
+  - Lower target: `Denotation/TypeDenote.v` or
     `ContextBasicDenotation/StoreTyping.v` if restated without
     `denot_relevant_env`.
   - Change: split into two lemmas:
@@ -230,8 +230,8 @@ the reusable transport theorem for the syntactic associativity
 - `TLetSupport.v:1704` `denot_relevant_basic_world_typing_wfworld_closed_on_term`
 - `TLetSupport.v:1715` `denot_ty_lvar_guard_wfworld_closed_on_term`
 - `TLetSupport.v:1731` `denot_ty_lvar_guard_wfworld_closed_on_term_le`
-  - Lower target: `Denotation/ContextTypeDenotationCore.v` or
-    `ContextTypeDenotationSaturate.v`.
+  - Lower target: `Denotation/TypeDenote.v` or
+    `TypeEquiv.v`.
   - Change: keep `denot_relevant_env_eq_of_tm_lvars_eq` in Core.  Put the
     guard-to-closed facts near the denotation guard/FV lemmas.
   - Reason: these are general denotation guard facts; TLet is just one user.
@@ -247,20 +247,20 @@ the reusable transport theorem for the syntactic associativity
     4. total tlet intro.
   - Reason: the lemma is still shaped around the TLet main theorem.
 
-- `TLetSupport.v:1580` `denot_ty_lvar_gas_zero_of_guard`
-- `TLetSupport.v:1600` `denot_ty_lvar_gas_guard_of_zero`
-  - Lower target: `Denotation/ContextTypeDenotationSaturate.v`.
-  - Change: name as `denot_ty_lvar_gas_zero_guard_iff` plus projection lemmas.
-  - Reason: general fact about `denot_ty_lvar_gas 0`.
+- `TLetSupport.v:1580` `ty_denote_gas_zero_of_guard`
+- `TLetSupport.v:1600` `ty_denote_gas_guard_of_zero`
+  - Lower target: `Denotation/TypeEquiv.v`.
+  - Change: name as `ty_denote_gas_zero_guard_iff` plus projection lemmas.
+  - Reason: general fact about `ty_denote_gas 0`.
 
 - `TLetSupport.v:1755` `denot_ty_lvar_guard_tapp_tlete_assoc`
 - `TLetSupport.v:1807` `denot_ty_lvar_guard_tapp_tlete_assoc_rev`
 - `TLetSupport.v:1976` `denot_ty_lvar_guard_tapp_tlete_assoc_spine`
-- `TLetSupport.v:2042` `denot_ty_lvar_gas_tapp_tlete_assoc_spine`
-- `TLetSupport.v:2510` `denot_ty_lvar_gas_tapp_tlete_assoc_under_tapp`
-- `TLetSupport.v:2527` `denot_ty_lvar_gas_tapp_tlete_assoc`
+- `TLetSupport.v:2042` `ty_denote_gas_tapp_tlete_assoc_spine`
+- `TLetSupport.v:2510` `ty_denote_gas_tapp_tlete_assoc_under_tapp`
+- `TLetSupport.v:2527` `ty_denote_gas_tapp_tlete_assoc`
   - Lower target: a new Denotation file such as
-    `ContextTypeDenotationTLetAssoc.v`.
+    `TypeDenoteTLetAssoc.v`.
   - Change: group the whole family with the BasicDenotation spine lemmas moved
     below.  Keep one public lemma for forward assoc and one for reverse/under
     variants as needed by TLet.
@@ -280,20 +280,20 @@ the reusable transport theorem for the syntactic associativity
   - Reason: this is a major branch of the TLet theorem, not a lowering target.
 
 - `TLetSupport.v:3403` `tlet_arrow_arg_extend_obligation`
-  - Lower target candidate: `ContextTypeDenotationSaturate.v`.
+  - Lower target candidate: `TypeEquiv.v`.
   - Current recommendation: keep until the lower typed-extension weakening
     interface stabilizes.
 
-## Denotation/theories/ContextTypeDenotationCore.v
+## Denotation/theories/TypeDenote.v
 
-- `ContextTypeDenotationCore.v:23-421` `formula_open_env_*`
+- `TypeDenote.v:23-421` `formula_open_env_*`
   - Classification: B.
   - Lower target: probably stay in Denotation unless `formula_open_env` is
     promoted to ContextLogic.
   - Change: if `formula_open_env` becomes a generic Logic operation, move the
     structural lemmas to `ContextLogic`.  Otherwise keep here.
 
-- `ContextTypeDenotationCore.v:450-584` open-env/lvar helper lemmas
+- `TypeDenote.v:450-584` open-env/lvar helper lemmas
   - Classification: A/B.
   - Lower target: `ContextBase` for pure lvar/open-env facts;
     `ContextTypeLanguage` for lty-env facts.
@@ -308,7 +308,7 @@ the reusable transport theorem for the syntactic associativity
   - Change: separate pure `logic_var/lvset` lemmas from `lty_env` lemmas.
   - Reason: they are not about type denotation.
 
-- `ContextTypeDenotationCore.v:632-823` term shift/open support
+- `TypeDenote.v:632-823` term shift/open support
   - Classification: A.
   - Lower target: `ContextBasicDenotation/TermSyntax.v` or CoreLang syntax
     support.
@@ -324,52 +324,52 @@ the reusable transport theorem for the syntactic associativity
   - Change: move all term-only facts to TermSyntax; Denotation should import
     them.
 
-- `ContextTypeDenotationCore.v:832-1345` `denot_relevant_*`
+- `TypeDenote.v:832-1345` `denot_relevant_*`
   - Classification: B/C.
   - Lower target: stay in Denotation, but this is the right file for many
     relevant-env lemmas currently in TLetSupport.
   - Change: consolidate duplicates here, especially
     `denot_relevant_env_dom_subset_direct`.
 
-## Denotation/theories/ContextTypeDenotationLvars.v
+## Denotation/theories/TypeDenoteLvars.v
 
-- `ContextTypeDenotationLvars.v:10-37` formula lvars/open structural facts
+- `TypeDenoteLvars.v:10-37` formula lvars/open structural facts
   - Classification: B.
   - Lower target: `ContextLogic` if `formula_lvars_at` is promoted; otherwise
     keep here.
   - Change: many TLetSupport `formula_lvars_fv_*` lemmas should be added here.
 
-- `ContextTypeDenotationLvars.v:101-306` denotation FV/lvars subset lemmas
+- `TypeDenoteLvars.v:101-306` denotation FV/lvars subset lemmas
   - Classification: C.
   - Keep here.  These are exactly the general lemmas that TLet should use.
   - Change: make TLetSupport depend on these rather than proving local
     specialized scope lemmas.
 
-## Denotation/theories/ContextTypeDenotationOpen.v / OpenModels.v
+## Denotation/theories/TypeDenoteOpen.v / OpenModels.v
 
-- `ContextTypeDenotationOpen.v:14-238` formula-open syntax lemmas
+- `TypeDenoteOpen.v:14-238` formula-open syntax lemmas
   - Classification: A/B.
   - Lower target: term-only parts to `ContextBasicDenotation/TermOpen.v`;
     denotation-open parts stay here.
   - Change: `formula_open_expr_result_formula_shift0` is a BasicDenotation
     result-formula fact; `res_models_open_*` remains Denotation.
 
-- `ContextTypeDenotationOpen.v:281` `res_models_open_arrow_body_iff`
-- `ContextTypeDenotationOpen.v:375` `res_models_open_wand_body_iff`
-- `ContextTypeDenotationOpen.v:470` `res_models_open_denot_ty_lvar_gas_iff`
+- `TypeDenoteOpen.v:281` `res_models_open_arrow_body_iff`
+- `TypeDenoteOpen.v:375` `res_models_open_wand_body_iff`
+- `TypeDenoteOpen.v:470` `res_models_open_ty_denote_gas_iff`
   - Classification: C.
   - Keep here; these are the models-level transport interfaces TLet should use.
 
-## Denotation/theories/ContextTypeDenotationSaturate.v
+## Denotation/theories/TypeEquiv.v
 
-- `ContextTypeDenotationSaturate.v:109-230` fresh insert / typed extension
+- `TypeEquiv.v:109-230` fresh insert / typed extension
   lemmas
   - Classification: C.
   - Keep here.  They are already generalized relative to TLet.
   - Change: TLetSupport local obligations should reuse these instead of
     spelling extension/basic-world details inline.
 
-- `ContextTypeDenotationSaturate.v:271-372` FV/scope lemmas
+- `TypeEquiv.v:271-372` FV/scope lemmas
   - Classification: C.
   - Keep here.  TLetSupport should delete redundant FV/scope helpers after
     migrating uses.
@@ -614,9 +614,9 @@ the reusable transport theorem for the syntactic associativity
 3. Move spine basic-typing/eval/total/result lemmas to
    `BasicTypingFormula.v` and `TermTLet.v`.
 4. Consolidate `denot_relevant_env_*` lemmas in
-   `Denotation/ContextTypeDenotationCore.v`; delete the duplicate
+   `Denotation/TypeDenote.v`; delete the duplicate
    `denot_relevant_env_dom_subset_direct` in TLetSupport.
-5. Create a Denotation associativity file for the `denot_ty_lvar_gas`
+5. Create a Denotation associativity file for the `ty_denote_gas`
    `tapp/tlete` transport family.
 6. Re-run the scan and remove remaining one-off wrappers from TLetSupport.
 

@@ -46,7 +46,7 @@ Scan summary
    - `ContextTypeLanguage/theories/Notation.v` has lightweight
      `mopen_norm`, `type_lvars_norm`, and `type_env_norm`, but they are placed
      in a public notation file and are too small to cover syntax proof shapes.
-   - `Denotation/theories/ContextTypeDenotationTactics.v` has denotation-level
+   - `Denotation/theories/TypeDenoteTactics.v` has denotation-level
    FV normalization.  The pure pieces (context type fv/open/shift/erase and
      context dom/fv/stale) are now available from TypeLanguage first; the
      denotation FV tactic now calls the TypeLanguage normalizer before its
@@ -89,7 +89,7 @@ Additional completed cleanup
    `Qualifier.v` into `ContextStore/StoreInterface.v`.
 2. Moved the pure `lvars_wf_at`/`lvars_lc_at` family from `WF.v` into
    `ContextBase/LogicVarShift.v`.
-3. Updated `Denotation/theories/ContextTypeDenotationTactics.v` so its FV
+3. Updated `Denotation/theories/TypeDenoteTactics.v` so its FV
    normalizer reuses the TypeLanguage syntax normalizer instead of duplicating
    context-type fv/shift/open rewrites.
 

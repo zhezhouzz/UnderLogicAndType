@@ -24,7 +24,7 @@ From Denotation Require Import Context.
 (** ** Context and type well-formedness *)
 
 Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
-  ∃ r : WfWorldT, r ⊨ denot_ctx_under Σ Γ.
+  ∃ r : WfWorldT, r ⊨ ctx_denote_under Σ Γ.
 
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
   basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
@@ -92,19 +92,19 @@ Definition sub_type_under (Σ : gmap atom ty) (Γ : ctx) (τ1 τ2 : context_ty) 
   wf_context_ty_at 0 (dom (erase_ctx Γ)) τ2 ∧
   erase_ty τ1 = erase_ty τ2 ∧
   ∀ e, erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ1 →
-    denot_ctx_under Σ Γ ⊫
-      FImpl (denot_ty (erase_ctx Γ) τ1 e)
-            (denot_ty (erase_ctx Γ) τ2 e).
+    ctx_denote_under Σ Γ ⊫
+      FImpl (ty_denote (erase_ctx Γ) τ1 e)
+            (ty_denote (erase_ctx Γ) τ2 e).
 
 Definition ctx_sub_under
     (Σ : gmap atom ty) (X : aset) (Γ1 Γ2 : ctx) : Prop :=
   wf_ctx_under Σ Γ1 ∧
   wf_ctx_under Σ Γ2 ∧
   ty_env_agree_on X (erase_ctx Γ1) (erase_ctx Γ2) ∧
-  ∀ r, r ⊨ denot_ctx_under Σ Γ1 →
+  ∀ r, r ⊨ ctx_denote_under Σ Γ1 →
        exists r',
          res_restrict r X ⊑ r' /\
-         r' ⊨ denot_ctx_under Σ Γ2.
+         r' ⊨ ctx_denote_under Σ Γ2.
 
 (** * ContextTyping.PrimOpContext
 
@@ -147,8 +147,8 @@ Definition primop_semantic_ok (op : prim_op) (sig : primop_sig) : Prop :=
   ∀ x : atom,
     let Γx := CtxBind x (primop_arg_ty sig) in
     (⟦CtxBind x (primop_arg_ty sig)⟧ ⊫
-      denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x))) ∧
-    (denot_ty_in_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x)) ⊫
+      ty_denote_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x))) ∧
+    (ty_denote_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x)) ⊫
       ⟦CtxBind x (primop_arg_ty sig)⟧).
 
 Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
@@ -215,8 +215,8 @@ Proof.
 Qed.
 
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
-  denot_ctx_under Σ Γ ⊫
-    FImpl (denot_ty (erase_ctx Γ) (bool_precise_ty b) (tret v)) FFalse.
+  ctx_denote_under Σ Γ ⊫
+    FImpl (ty_denote (erase_ctx Γ) (bool_precise_ty b) (tret v)) FFalse.
 
 Lemma context_typing_wf_fv_tm_subset Σ Γ e τ :
   context_typing_wf Σ Γ e τ →

@@ -178,21 +178,21 @@ Files are listed as `file: change / unfold -- dominant pattern`.
 - CoreLang/theories/Sugar.v: 7 / 6 -- syntax sugar for `tapp_tm` and typing;
   probably handled by a CoreLang sugar normalizer.
 
-- Denotation/theories/ContextTypeDenotationCore.v: 34 / 72 -- very high
+- Denotation/theories/TypeDenote.v: 34 / 72 -- very high
   concentration around `formula_open_env`, `denot_relevant_env`,
   `denot_relevant_lvars`, `lty_env_restrict_lvars`, and `lworld_has_type`.
   This should not be solved by one broad unfold; it needs denotation-specific
   normalization and short lemmas for relevant-env equality/agreement.
-- Denotation/theories/ContextTypeDenotationDefinition.v: 4 / 27 -- repeated
+- Denotation/theories/TypeDenote.v: 4 / 27 -- repeated
   unfolding of `denot_relevant_lvars/env` in the main denotation induction.
   Should use denotation FV/relevant-env tactics.
-- Denotation/theories/ContextTypeDenotationLvars.v: 7 / 3 -- lower priority;
+- Denotation/theories/TypeDenoteLvars.v: 7 / 3 -- lower priority;
   mostly lvars/fv syntactic transport.
-- Denotation/theories/ContextTypeDenotationOpen.v: 0 / 44 -- open/env
+- Denotation/theories/TypeDenoteOpen.v: 0 / 44 -- open/env
   denotation transport; needs a robust open-env/denotation normalizer, not
   manual unfolding.
-- Denotation/theories/ContextTypeDenotationOpenModels.v: 1 / 0 -- low priority.
-- Denotation/theories/ContextTypeDenotationSaturate.v: 5 / 5 -- low priority.
+- Denotation/theories/TypeDenoteOpenModels.v: 1 / 0 -- low priority.
+- Denotation/theories/TypeEquiv.v: 5 / 5 -- low priority.
 - Denotation/theories/TLet.v: 16 / 7 -- proof-level casts and denot-relevant
   env exposure; should benefit from Denotation/TLet support tactics after lower
   normalizers exist.
@@ -373,7 +373,7 @@ names express the semantic layer they normalize.
      not for extracting giant denotation-shaped lemmas.
 
    Important guardrail: do not extract long lemmas specialized to
-   `denot_ty_lvar_gas` unless the statement is genuinely a semantic API.  Many
+   `ty_denote_gas` unless the statement is genuinely a semantic API.  Many
    TLetSupport changes should become small Core syntax lemmas, Formula syntax
    lemmas, or relevant-env normalizers instead.
 
@@ -408,10 +408,10 @@ High-value cleanup order
 
 3. Add `cty_lvars_norm` and `cty_open_norm` in ContextTypeLanguage.
    Target files: WFContextTy.v, TypeOpen.v, SyntaxLvars.v,
-   ContextTypeDenotationOpen.v.
+   TypeDenoteOpen.v.
 
 4. Add `denot_relevant_norm` in Denotation.
-   Target files: ContextTypeDenotationCore.v, ContextTypeDenotationDefinition.v,
+   Target files: TypeDenote.v, TypeDenote.v,
    TLet.v, TLetSupport.v.
 
 5. Add CoreLang `msubst_norm`.

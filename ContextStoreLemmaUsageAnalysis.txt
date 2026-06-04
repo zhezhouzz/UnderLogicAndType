@@ -34,8 +34,8 @@ File: ContextStore/LVarStore.v
   uses: 2 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:513: rewrite lvar_store_open_one_bound0_singleton.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:565: rewrite lvar_store_open_one_bound0_singleton.
+    - Denotation/theories/ConstDenote.v:513: rewrite lvar_store_open_one_bound0_singleton.
+    - Denotation/theories/ConstDenote.v:565: rewrite lvar_store_open_one_bound0_singleton.
 - Lemma `lvar_store_open_one_succ_bound0_singleton` @ line 90
   uses: 0 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name
@@ -1123,7 +1123,7 @@ File: ContextStore/StoreRestrict.v
     - ContextBasicDenotation/theories/RelevantEnv.v:285: apply storeA_restrict_twice_same.
     - ContextBasicDenotation/theories/TermTLet.v:147: - rewrite storeA_restrict_twice_same. reflexivity.
     - ContextBasicDenotation/theories/TermTLet.v:213: ltac:(apply storeA_restrict_twice_same))).
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:945: rewrite storeA_restrict_twice_same;
+    - Denotation/theories/TypeEquivCore.v:945: rewrite storeA_restrict_twice_same;
 - Lemma `storeA_restrict_twice_subset` @ line 155
   uses: 15 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -1167,11 +1167,11 @@ File: ContextStore/StoreRestrict.v
   uses: 10 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - Denotation/theories/ContextTypeDenotationDefinition.v:377: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
-    - Denotation/theories/ContextTypeDenotationDefinition.v:382: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
-    - Denotation/theories/ContextTypeDenotationDefinition.v:385: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
-    - Denotation/theories/ContextTypeDenotationDefinition.v:400: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
-    - Denotation/theories/ContextTypeDenotationDefinition.v:415: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    - Denotation/theories/TypeDenote.v:377: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    - Denotation/theories/TypeDenote.v:382: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    - Denotation/theories/TypeDenote.v:385: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    - Denotation/theories/TypeDenote.v:400: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    - Denotation/theories/TypeDenote.v:415: erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
     - ... 5 more
 - Lemma `storeA_restrict_swap_fresh` @ line 223
   uses: 0 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.

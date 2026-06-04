@@ -217,12 +217,12 @@ embed CoreLang basic typing and type-qualifier semantics into `ContextLogic`.
 
 ### `Denotation/` — Recursive context-type denotation
 
-The gas-indexed denotation `denot_ty_lvar_gas`, the atom-context wrapper
-`denot_ty`, context denotation, and the current direct TLet proof.
+The gas-indexed denotation `ty_denote_gas`, the atom-context wrapper
+`ty_denote`, context denotation, and the current direct TLet proof.
 
 | File family | Contents |
 |-------------|----------|
-| `ContextTypeDenotation*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
+| `TypeDenote*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
 | `Context.v` | Context denotation and denotation instances |
 | `TLetSupport.v` / `TLet.v` | Shared TLet support tactics and the TLet introduction theorem |
 | `Notation.v` | Denotation-level notation (`m ⊨ φ`, `φ ⊫ ψ`, value-specialized aliases) |

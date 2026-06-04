@@ -6,28 +6,28 @@ File: Denotation/theories/Context.v
 - Lemma `atom_env_to_lty_env_restrict_lvars_agree_on` @ line 44
   uses: 2 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ctx_under_basic_world` @ line 68
+- Lemma `ctx_denote_under_basic_world` @ line 68
   uses: 7 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ctx_under_bind_inv` @ line 78
+- Lemma `ctx_denote_under_bind_inv` @ line 78
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `basic_world_formula_insert_from_arg_denotation` @ line 89
   uses: 2 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ctx_bind_from_arg_denotation` @ line 122
+- Lemma `ctx_denote_bind_from_arg_denotation` @ line 122
   uses: 1 total; ltac/hint uses: 0; proof lines: 54; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_in_ctx_under_comma_bind_to_lvar_insert` @ line 177
+- Lemma `ty_denote_under_comma_bind_to_lvar_insert` @ line 177
   uses: 1 total; ltac/hint uses: 0; proof lines: 29; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `erase_ctx_under_comma_assoc` @ line 207
+- Lemma `ctx_erasure_under_comma_assoc` @ line 207
   uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ctx_under_comma_intro` @ line 221
+- Lemma `ctx_denote_under_comma_intro` @ line 221
   uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-File: Denotation/theories/ContextTypeDenotationCasesConst.v
+File: Denotation/theories/ConstDenote.v
 -----------------------------------------------------------
 - Lemma `context_ty_wf_formula_const_precise_empty` @ line 13
   uses: 3 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
@@ -89,7 +89,7 @@ File: Denotation/theories/ContextTypeDenotationCasesConst.v
 - Lemma `appop_intro_denotation` @ line 706
   uses: 1 total; ltac/hint uses: 0; proof lines: 46; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-File: Denotation/theories/ContextTypeDenotationDefinition.v
+File: Denotation/theories/TypeDenote.v
 -----------------------------------------------------------
 - Lemma `open_env_lift_fresh_for_bound0_bind_dom` @ line 77
   uses: 3 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
@@ -97,41 +97,41 @@ File: Denotation/theories/ContextTypeDenotationDefinition.v
 - Lemma `formula_open_env_denot_guard` @ line 88
   uses: 5 total; ltac/hint uses: 0; proof lines: 52; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_open_env_denot_ty_lvar_gas_zero` @ line 141
+- Lemma `formula_open_env_ty_denote_gas_zero` @ line 141
   uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `formula_open_env_denot_ty_lvar_gas` @ line 218
+- Lemma `formula_open_env_ty_denote_gas` @ line 218
   uses: 1 total; ltac/hint uses: 0; proof lines: 149; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_env_agree_on` @ line 368
+- Lemma `ty_denote_gas_env_agree_on` @ line 368
   uses: 10 total; ltac/hint uses: 0; proof lines: 71; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `res_models_denot_ty_lvar_gas_env_agree_on` @ line 440
+- Lemma `res_models_ty_denote_gas_env_agree_on` @ line 440
   uses: 6 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_lvars_at_denot_ty_lvar_gas_subset_relevant` @ line 490
+- Lemma `formula_lvars_at_ty_denote_gas_subset_relevant` @ line 490
   uses: 2 total; ltac/hint uses: 0; proof lines: 107; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open` @ line 598
+- Lemma `formula_fv_ty_denote_gas_subset_relevant_pre_open` @ line 598
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open` @ line 614
+- Lemma `formula_fv_ty_denote_gas_scope_from_guard_pre_open` @ line 614
   uses: 5 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
   classification: ordinary helper; review by use sites
-File: Denotation/theories/ContextTypeDenotationOpen.v
+File: Denotation/theories/TypeDenoteOpen.v
 -----------------------------------------------------
-- Lemma `formula_open_denot_ty_lvar_gas_singleton` @ line 12
+- Lemma `formula_open_ty_denote_gas_singleton` @ line 12
   uses: 10 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
   classification: ordinary helper; review by use sites
-File: Denotation/theories/ContextTypeDenotationSaturateArrow.v
+File: Denotation/theories/TypeEquivArrow.v
 --------------------------------------------------------------
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_arg` @ line 12
+- Lemma `ty_denote_gas_tm_result_equiv_arrow_open_arg` @ line 12
   uses: 1 total; ltac/hint uses: 0; proof lines: 69; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_source_mid` @ line 82
+- Lemma `ty_denote_gas_tm_result_equiv_arrow_open_result_source_mid` @ line 82
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_target_mid_to_goal` @ line 116
+- Lemma `ty_denote_gas_tm_result_equiv_arrow_open_result_target_mid_to_goal` @ line 116
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `wfworld_closed_on_arrow_open_result_apps` @ line 150
@@ -155,116 +155,116 @@ File: Denotation/theories/ContextTypeDenotationSaturateArrow.v
 - Lemma `expr_basic_typing_formula_arrow_open_result_target` @ line 385
   uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_arrow_open_result_target` @ line 428
+- Lemma `ty_denote_gas_zero_arrow_open_result_target` @ line 428
   uses: 1 total; ltac/hint uses: 0; proof lines: 135; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_arrow_open_result_mid` @ line 564
+- Lemma `typed_total_equiv_arrow_open_result_mid` @ line 564
   uses: 1 total; ltac/hint uses: 0; proof lines: 47; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result` @ line 612
+- Lemma `ty_denote_gas_tm_result_equiv_arrow_open_result` @ line 612
   uses: 1 total; ltac/hint uses: 0; proof lines: 113; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_body` @ line 727
+- Lemma `ty_denote_gas_tm_result_equiv_arrow_body` @ line 727
   uses: 1 total; ltac/hint uses: 0; proof lines: 71; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-File: Denotation/theories/ContextTypeDenotationSaturateBody.v
+File: Denotation/theories/TypeEquivBody.v
 -------------------------------------------------------------
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_over_body` @ line 10
+- Lemma `ty_denote_gas_tm_result_equiv_over_body` @ line 10
   uses: 1 total; ltac/hint uses: 0; proof lines: 54; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_under_body` @ line 65
+- Lemma `ty_denote_gas_tm_result_equiv_under_body` @ line 65
   uses: 1 total; ltac/hint uses: 0; proof lines: 54; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_project_context` @ line 120
+- Lemma `ty_denote_gas_zero_project_context` @ line 120
   uses: 6 total; ltac/hint uses: 0; proof lines: 70; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_zero_inter_l` @ line 191
+- Lemma `ty_denote_gas_zero_inter_l` @ line 191
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_zero_inter_r` @ line 207
+- Lemma `ty_denote_gas_zero_inter_r` @ line 207
   uses: 2 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `typed_total_tm_result_equiv_on_inter_l` @ line 229
+- Lemma `typed_total_equiv_inter_l` @ line 229
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_inter_r` @ line 241
+- Lemma `typed_total_equiv_inter_r` @ line 241
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_inter_body` @ line 253
+- Lemma `ty_denote_gas_tm_result_equiv_inter_body` @ line 253
   uses: 1 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_union_l` @ line 273
+- Lemma `ty_denote_gas_zero_union_l` @ line 273
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_zero_union_r` @ line 289
+- Lemma `ty_denote_gas_zero_union_r` @ line 289
   uses: 2 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `typed_total_tm_result_equiv_on_union_l` @ line 311
+- Lemma `typed_total_equiv_union_l` @ line 311
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_union_r` @ line 323
+- Lemma `typed_total_equiv_union_r` @ line 323
   uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_scope_from_zero_any` @ line 335
+- Lemma `ty_denote_gas_scope_from_zero_any` @ line 335
   uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_union_body` @ line 346
+- Lemma `ty_denote_gas_tm_result_equiv_union_body` @ line 346
   uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_res_subset` @ line 382
+- Lemma `ty_denote_gas_zero_res_subset` @ line 382
   uses: 2 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_zero_sum_l` @ line 408
+- Lemma `ty_denote_gas_zero_sum_l` @ line 408
   uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_sum_r` @ line 424
+- Lemma `ty_denote_gas_zero_sum_r` @ line 424
   uses: 1 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_sum_l_target_zero` @ line 446
+- Lemma `typed_total_equiv_sum_l_target_zero` @ line 446
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_sum_r_target_zero` @ line 457
+- Lemma `typed_total_equiv_sum_r_target_zero` @ line 457
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_sum_l_pullback` @ line 468
+- Lemma `typed_total_equiv_sum_l_pullback` @ line 468
   uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_sum_r_pullback` @ line 485
+- Lemma `typed_total_equiv_sum_r_pullback` @ line 485
   uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_sum_body` @ line 502
+- Lemma `ty_denote_gas_tm_result_equiv_sum_body` @ line 502
   uses: 1 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-File: Denotation/theories/ContextTypeDenotationSaturateCore.v
+File: Denotation/theories/TypeEquivCore.v
 -------------------------------------------------------------
-- Lemma `denot_ty_lvar_gas_saturate` @ line 9
+- Lemma `ty_denote_gas_saturate` @ line 9
   uses: 1 total; ltac/hint uses: 0; proof lines: 86; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_insert_fresh_lty_env_eq` @ line 96
+- Lemma `ty_denote_gas_insert_fresh_lty_env_eq` @ line 96
   uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_zero_of_guard_formula` @ line 112
+- Lemma `ty_denote_gas_zero_of_guard_formula` @ line 112
   uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_guard_formula` @ line 125
+- Lemma `ty_denote_gas_guard_formula` @ line 125
   uses: 2 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `denot_ty_lvar_gas_guard_of_zero_formula` @ line 133
+- Lemma `ty_denote_gas_guard_of_zero_formula` @ line 133
   uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_of_guard` @ line 144
+- Lemma `ty_denote_gas_zero_of_guard` @ line 144
   uses: 12 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_guard` @ line 161
+- Lemma `ty_denote_gas_guard` @ line 161
   uses: 13 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_guard_of_zero` @ line 178
+- Lemma `ty_denote_gas_guard_of_zero` @ line 178
   uses: 34 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_insert_fresh_lty_env` @ line 195
+- Lemma `ty_denote_gas_insert_fresh_lty_env` @ line 195
   uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_extend_typed_extension` @ line 208
+- Lemma `ty_denote_gas_extend_typed_extension` @ line 208
   uses: 2 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `atom_store_has_ltype_restrict_fv_from_source_guard` @ line 228
@@ -282,28 +282,28 @@ File: Denotation/theories/ContextTypeDenotationSaturateCore.v
 - Lemma `basic_world_formula_result_alias_target` @ line 466
   uses: 1 total; ltac/hint uses: 0; proof lines: 132; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_result_alias_guard` @ line 599
+- Lemma `ty_denote_gas_result_alias_guard` @ line 599
   uses: 1 total; ltac/hint uses: 0; proof lines: 65; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `tm_result_equiv_on_tlete_body_extension` @ line 679
+- Lemma `tm_equiv_tlete_body_extension` @ line 679
   uses: 1 total; ltac/hint uses: 0; proof lines: 134; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_source_zero` @ line 814
+- Lemma `typed_total_equiv_source_zero` @ line 814
   uses: 2 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `typed_total_tm_result_equiv_on_target_zero` @ line 820
+- Lemma `typed_total_equiv_target_zero` @ line 820
   uses: 19 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
   classification: THIN-PROOF: wrapper/solver candidate
-- Lemma `tm_result_equiv_on_res_store_subset` @ line 826
+- Lemma `tm_equiv_res_store_subset` @ line 826
   uses: 2 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `tm_result_equiv_on_res_product_right` @ line 836
+- Lemma `tm_equiv_res_product_right` @ line 836
   uses: 2 total; ltac/hint uses: 0; proof lines: 39; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `tm_result_equiv_on_total` @ line 876
+- Lemma `tm_equiv_total` @ line 876
   uses: 2 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `tm_result_equiv_on_tapp_fvar` @ line 901
+- Lemma `tm_equiv_tapp_fvar` @ line 901
   uses: 4 total; ltac/hint uses: 0; proof lines: 67; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `tm_lvars_tapp_tm_fvar_without_arg_shift_lc` @ line 969
@@ -327,36 +327,36 @@ File: Denotation/theories/ContextTypeDenotationSaturateCore.v
 - Lemma `expr_result_formula_transport_of_tm_result_equiv` @ line 1150
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `tm_result_equiv_on_result_alias` @ line 1175
+- Lemma `tm_equiv_result_alias` @ line 1175
   uses: 1 total; ltac/hint uses: 0; proof lines: 74; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_term_scope` @ line 1250
+- Lemma `typed_total_equiv_term_scope` @ line 1250
   uses: 12 total; ltac/hint uses: 0; proof lines: 22; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `typed_total_tm_result_equiv_on_term_lc_lvars` @ line 1273
+- Lemma `typed_total_equiv_term_lc_lvars` @ line 1273
   uses: 2 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `typed_total_tm_result_equiv_on_term_lc` @ line 1294
+- Lemma `typed_total_equiv_term_lc` @ line 1294
   uses: 10 total; ltac/hint uses: 0; proof lines: 22; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `tm_result_equiv_on_full_world_extend_fresh` @ line 1317
+- Lemma `tm_equiv_full_world_extend_fresh` @ line 1317
   uses: 5 total; ltac/hint uses: 0; proof lines: 39; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `expr_result_formula_shift0_transport_of_tm_result_equiv_open` @ line 1357
   uses: 2 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
   classification: ordinary helper; review by use sites
-File: Denotation/theories/ContextTypeDenotationSaturateMain.v
+File: Denotation/theories/TypeEquiv.v
 -------------------------------------------------------------
-- Lemma `denot_ty_lvar_gas_tm_result_equiv` @ line 14
+- Lemma `ty_denote_gas_tm_result_equiv` @ line 14
   uses: 2 total; ltac/hint uses: 0; proof lines: 28; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `denot_ty_lvar_gas_result_alias_to_var` @ line 43
+- Lemma `ty_denote_gas_result_alias_to_var` @ line 43
   uses: 1 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_result_extension_to_var` @ line 69
+- Lemma `ty_denote_gas_result_extension_to_var` @ line 69
   uses: 1 total; ltac/hint uses: 0; proof lines: 55; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `formula_fv_denot_ty_lvar_gas_subset_relevant` @ line 125
+- Lemma `formula_fv_ty_denote_gas_subset_relevant` @ line 125
   uses: 4 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ordinary helper; review by use sites
 - Lemma `denot_ty_lvar_guard_wfworld_closed_on_term` @ line 142
@@ -365,15 +365,15 @@ File: Denotation/theories/ContextTypeDenotationSaturateMain.v
 - Lemma `tlet_intro_denotation` @ line 154
   uses: 2 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
   classification: ordinary helper; review by use sites
-File: Denotation/theories/ContextTypeDenotationSaturateWand.v
+File: Denotation/theories/TypeEquivWand.v
 -------------------------------------------------------------
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_arg` @ line 13
+- Lemma `ty_denote_gas_tm_result_equiv_wand_open_arg` @ line 13
   uses: 1 total; ltac/hint uses: 0; proof lines: 69; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_source_mid` @ line 83
+- Lemma `ty_denote_gas_tm_result_equiv_wand_open_result_source_mid` @ line 83
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_target_mid_to_goal` @ line 117
+- Lemma `ty_denote_gas_tm_result_equiv_wand_open_result_target_mid_to_goal` @ line 117
   uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `wfworld_closed_on_wand_open_result_apps` @ line 151
@@ -394,16 +394,16 @@ File: Denotation/theories/ContextTypeDenotationSaturateWand.v
 - Lemma `expr_basic_typing_formula_wand_open_result_target` @ line 387
   uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_zero_wand_open_result_target` @ line 430
+- Lemma `ty_denote_gas_zero_wand_open_result_target` @ line 430
   uses: 1 total; ltac/hint uses: 0; proof lines: 143; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `typed_total_tm_result_equiv_on_wand_open_result_mid` @ line 574
+- Lemma `typed_total_equiv_wand_open_result_mid` @ line 574
   uses: 1 total; ltac/hint uses: 0; proof lines: 50; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result` @ line 625
+- Lemma `ty_denote_gas_tm_result_equiv_wand_open_result` @ line 625
   uses: 1 total; ltac/hint uses: 0; proof lines: 113; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_body` @ line 739
+- Lemma `ty_denote_gas_tm_result_equiv_wand_body` @ line 739
   uses: 1 total; ltac/hint uses: 0; proof lines: 71; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 

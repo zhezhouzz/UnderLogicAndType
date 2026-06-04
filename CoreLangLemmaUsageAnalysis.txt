@@ -941,7 +941,7 @@ File: CoreLang/theories/LocallyNamelessProps.v
   sample uses:
     - ContextBasicDenotation/theories/TermOpen.v:231: + rewrite open_rec_lc_value.
     - ContextBasicDenotation/theories/TermSyntax.v:1903: symmetry. apply open_rec_lc_value.
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1217: rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar z)).
+    - Denotation/theories/TypeEquivCore.v:1217: rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar z)).
     - CoreLang/theories/LocallyNamelessProps.v:254: + symmetry. by apply open_rec_lc_value.
     - CoreLang/theories/LocallyNamelessProps.v:273: + symmetry. by apply open_rec_lc_value.
     - ... 10 more
@@ -1098,7 +1098,7 @@ File: CoreLang/theories/OperationalProps.v
   sample uses:
     - ContextBasicDenotation/theories/TermTLet.v:31: - pose proof (steps_regular2 _ _ He1) as Hret.
     - ContextBasicDenotation/theories/TermTLet.v:56: pose proof (steps_regular2 _ _ He1) as Hret.
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:587: pose proof (steps_regular2 _ _ Heval) as Hret_lc.
+    - Denotation/theories/TypeEquivCore.v:587: pose proof (steps_regular2 _ _ Heval) as Hret_lc.
     - CoreLang/theories/OperationalProps.v:152: - pose proof (steps_regular2 _ _ Hsteps) as Hret.
 - Lemma `head_step_fv_subset` @ line 110
   uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
@@ -1127,9 +1127,9 @@ File: CoreLang/theories/OperationalProps.v
   uses: 3 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: ordinary helper; review by use sites
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:824: pose proof (value_steps_self vx (tret vz) Heval_ret) as Heq.
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1383: pose proof (value_steps_self vx (tret vt) Heval_ret_vt) as Heq.
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1410: pose proof (value_steps_self vx (tret v) Heval_ret_v) as Heq.
+    - Denotation/theories/TypeEquivCore.v:824: pose proof (value_steps_self vx (tret vz) Heval_ret) as Heq.
+    - Denotation/theories/TypeEquivCore.v:1383: pose proof (value_steps_self vx (tret vt) Heval_ret_vt) as Heq.
+    - Denotation/theories/TypeEquivCore.v:1410: pose proof (value_steps_self vx (tret v) Heval_ret_v) as Heq.
 - Lemma `value_reduction_any_ctx` @ line 173
   uses: 0 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: ZERO-V-USAGE: deletion candidate unless public API
@@ -1351,8 +1351,8 @@ File: CoreLang/theories/SmallStep.v
     - ContextBasicDenotation/theories/TermTLet.v:226: eapply steps_result_unique; eauto.
     - ContextBasicDenotation/theories/TermTLet.v:1419: eapply steps_result_unique; eauto.
     - ContextBasicDenotation/theories/TermExtension.v:67: eapply steps_result_unique; eauto.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:193: eapply steps_result_unique; [| exact Heval].
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1390: { eapply steps_result_unique; [exact Heval_e_v | exact Heval_e_vx]. }
+    - Denotation/theories/ConstDenote.v:193: eapply steps_result_unique; [| exact Heval].
+    - Denotation/theories/TypeEquivCore.v:1390: { eapply steps_result_unique; [exact Heval_e_v | exact Heval_e_vx]. }
 - Lemma `prim_step_preserves_type` @ line 201
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
@@ -1536,8 +1536,8 @@ File: CoreLang/theories/Sugar.v
     - ContextBasicDenotation/theories/TermSyntax.v:694: rewrite !fv_tapp_tm.
     - ContextBasicDenotation/theories/TermSyntax.v:696: cbn [fv_tm]. rewrite !fv_tapp_tm. rewrite !elem_of_union.
     - ContextBasicDenotation/theories/TermSyntax.v:721: - rewrite fv_tapp_tm, IH. cbn [fv_value].
-    - Denotation/theories/ContextTypeDenotationTactics.v:30: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
-    - Denotation/theories/ContextTypeDenotationTactics.v:57: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
+    - Denotation/theories/TypeDenoteTactics.v:30: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
+    - Denotation/theories/TypeDenoteTactics.v:57: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
     - ... 11 more
 - Lemma `tm_swap_atom_tapp_tm` @ line 242
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.

@@ -3,40 +3,40 @@
     Denotation of type contexts, expressed directly with the new recursive
     context-type denotation. *)
 
-From Denotation Require Export Notation ContextTypeDenotationOpen.
-From Denotation Require Import ContextTypeDenotationSaturateCore.
+From Denotation Require Export Notation TypeDenoteOpen.
+From Denotation Require Import TypeEquivCore.
 
 Section ContextDenotation.
 
-Definition erase_ctx_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
+Definition ctx_erasure_under (Σ : gmap atom ty) (Γ : ctx) : gmap atom ty :=
   Σ ∪ erase_ctx Γ.
 
-Fixpoint denot_ctx_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
-  FAnd (basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)))
+Fixpoint ctx_denote_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
+  FAnd (basic_world_formula (atom_env_to_lty_env (ctx_erasure_under Σ Γ)))
     (match Γ with
     | CtxEmpty =>
         FTrue
     | CtxBind x τ =>
-        denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
+        ty_denote (<[x := erase_ty τ]> Σ) τ (tret (vfvar x))
     | CtxComma Γ1 Γ2 =>
         FAnd
-          (denot_ctx_under Σ Γ1)
-          (denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2)
+          (ctx_denote_under Σ Γ1)
+          (ctx_denote_under (Σ ∪ erase_ctx Γ1) Γ2)
     | CtxStar Γ1 Γ2 =>
-        FStar (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+        FStar (ctx_denote_under Σ Γ1) (ctx_denote_under Σ Γ2)
     | CtxSum Γ1 Γ2 =>
-        FPlus (denot_ctx_under Σ Γ1) (denot_ctx_under Σ Γ2)
+        FPlus (ctx_denote_under Σ Γ1) (ctx_denote_under Σ Γ2)
     end).
 
-Definition denot_ctx (Γ : ctx) : FormulaT :=
-  denot_ctx_under ∅ Γ.
+Definition ctx_denote (Γ : ctx) : FormulaT :=
+  ctx_denote_under ∅ Γ.
 
-Definition denot_ty_in_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
-  denot_ty (erase_ctx Γ) τ e.
+Definition ty_denote_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
+  ty_denote (erase_ctx Γ) τ e.
 
-Definition denot_ty_in_ctx_under
+Definition ty_denote_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
-  denot_ty (erase_ctx Γ) τ e.
+  ty_denote (erase_ctx Γ) τ e.
 
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
@@ -65,23 +65,23 @@ Qed.
     [ContextTyping] so the Fundamental proof only instantiates induction
     hypotheses and calls the appropriate bridge. *)
 
-Lemma denot_ctx_under_basic_world
+Lemma ctx_denote_under_basic_world
     (Σ : gmap atom ty) (Γ : ctx) (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ Γ ->
-  m ⊨ basic_world_formula (atom_env_to_lty_env (erase_ctx_under Σ Γ)).
+  m ⊨ ctx_denote_under Σ Γ ->
+  m ⊨ basic_world_formula (atom_env_to_lty_env (ctx_erasure_under Σ Γ)).
 Proof.
   intros Hctx.
-  destruct Γ; cbn [denot_ctx_under] in Hctx |- *;
+  destruct Γ; cbn [ctx_denote_under] in Hctx |- *;
     rewrite res_models_and_iff in Hctx; exact (proj1 Hctx).
 Qed.
 
-Lemma denot_ctx_under_bind_inv
+Lemma ctx_denote_under_bind_inv
     (Σ : gmap atom ty) x τ (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ (CtxBind x τ) ->
-  m ⊨ denot_ty (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
+  m ⊨ ctx_denote_under Σ (CtxBind x τ) ->
+  m ⊨ ty_denote (<[x := erase_ty τ]> Σ) τ (tret (vfvar x)).
 Proof.
   intros Hctx.
-  cbn [denot_ctx_under] in Hctx.
+  cbn [ctx_denote_under] in Hctx.
   rewrite res_models_and_iff in Hctx.
   exact (proj2 Hctx).
 Qed.
@@ -90,11 +90,11 @@ Lemma basic_world_formula_insert_from_arg_denotation
     (Σ : lty_env) (τ : context_ty) y T gas (m : WfWorldT) :
   LVFree y ∉ dom Σ ->
   m ⊨ basic_world_formula Σ ->
-  m ⊨ denot_ty_lvar_gas gas (<[LVFree y := T]> Σ) τ (tret (vfvar y)) ->
+  m ⊨ ty_denote_gas gas (<[LVFree y := T]> Σ) τ (tret (vfvar y)) ->
   m ⊨ basic_world_formula (<[LVFree y := T]> Σ).
 Proof.
   intros HyΣ Hworld Harg.
-  pose proof (denot_ty_lvar_gas_guard gas
+  pose proof (ty_denote_gas_guard gas
     (<[LVFree y := T]> Σ) τ (tret (vfvar y)) m Harg) as Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [_ [Hrel_world _]].
@@ -119,16 +119,16 @@ Proof.
   - exact HyΣ.
 Qed.
 
-Lemma denot_ctx_bind_from_arg_denotation
+Lemma ctx_denote_bind_from_arg_denotation
     (Σ : gmap atom ty) x τ (m : WfWorldT) :
   basic_context_ty ∅ τ ->
   Σ !! x = Some (erase_ty τ) ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ) (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas (cty_depth τ) (atom_env_to_lty_env Σ)
     τ (tret (vfvar x)) ->
-  m ⊨ denot_ctx (CtxBind x τ).
+  m ⊨ ctx_denote (CtxBind x τ).
 Proof.
   intros Hbasic Hlookup Harg.
-  pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+  pose proof (res_models_ty_denote_gas_env_agree_on
     (cty_depth τ)
     (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
@@ -137,13 +137,13 @@ Proof.
     (atom_env_to_lty_env_restrict_singleton_lookup
       Σ x (erase_ty τ) Hlookup)
     Harg) as Harg_single.
-  unfold denot_ctx.
-  cbn [denot_ctx_under].
+  unfold ctx_denote.
+  cbn [ctx_denote_under].
   rewrite res_models_and_iff. split.
-  - replace (erase_ctx_under ∅ (CtxBind x τ))
+  - replace (ctx_erasure_under ∅ (CtxBind x τ))
       with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
     2:{
-      unfold erase_ctx_under. cbn [erase_ctx].
+      unfold ctx_erasure_under. cbn [erase_ctx].
       unfold store_union, store_singleton, store_empty.
       rewrite map_empty_union. reflexivity.
     }
@@ -170,21 +170,21 @@ Proof.
         unfold atom_store_to_lvar_store.
         rewrite kmap_empty.
         reflexivity.
-  - unfold denot_ty.
+  - unfold ty_denote.
     exact Harg_single.
 Qed.
 
-Lemma denot_ty_in_ctx_under_comma_bind_to_lvar_insert
+Lemma ty_denote_under_comma_bind_to_lvar_insert
     (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
   y ∉ dom (erase_ctx Γ) ->
-  m ⊨ denot_ty_in_ctx_under Σ (CtxComma Γ (CtxBind y τx)) τ e ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τ)
+  m ⊨ ty_denote_under Σ (CtxComma Γ (CtxBind y τx)) τ e ->
+  m ⊨ ty_denote_gas (cty_depth τ)
     (<[LVFree y := erase_ty τx]>
       (atom_env_to_lty_env (erase_ctx Γ)))
     τ e.
 Proof.
   intros Hy Hden.
-  unfold denot_ty_in_ctx_under, denot_ty in Hden |- *.
+  unfold ty_denote_under, ty_denote in Hden |- *.
   assert (Henv :
       erase_ctx (CtxComma Γ (CtxBind y τx)) =
       <[y := erase_ty τx]> (erase_ctx Γ)).
@@ -204,11 +204,11 @@ Proof.
   exact Hden.
 Qed.
 
-Lemma erase_ctx_under_comma_assoc Σ Γ1 Γ2 :
-  erase_ctx_under Σ (CtxComma Γ1 Γ2) =
-  erase_ctx_under (Σ ∪ erase_ctx Γ1) Γ2.
+Lemma ctx_erasure_under_comma_assoc Σ Γ1 Γ2 :
+  ctx_erasure_under Σ (CtxComma Γ1 Γ2) =
+  ctx_erasure_under (Σ ∪ erase_ctx Γ1) Γ2.
 Proof.
-  unfold erase_ctx_under. cbn [erase_ctx].
+  unfold ctx_erasure_under. cbn [erase_ctx].
   apply map_eq. intros x.
   unfold store_union.
   rewrite !lookup_union.
@@ -218,18 +218,18 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma denot_ctx_under_comma_intro
+Lemma ctx_denote_under_comma_intro
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ Γ1 ->
-  m ⊨ denot_ctx_under (Σ ∪ erase_ctx Γ1) Γ2 ->
-  m ⊨ denot_ctx_under Σ (CtxComma Γ1 Γ2).
+  m ⊨ ctx_denote_under Σ Γ1 ->
+  m ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ1) Γ2 ->
+  m ⊨ ctx_denote_under Σ (CtxComma Γ1 Γ2).
 Proof.
   intros HΓ1 HΓ2.
-  pose proof (denot_ctx_under_basic_world (Σ ∪ erase_ctx Γ1) Γ2 m HΓ2)
+  pose proof (ctx_denote_under_basic_world (Σ ∪ erase_ctx Γ1) Γ2 m HΓ2)
     as HworldΓ2.
-  cbn [denot_ctx_under].
+  cbn [ctx_denote_under].
   rewrite res_models_and_iff. split.
-  - rewrite erase_ctx_under_comma_assoc. exact HworldΓ2.
+  - rewrite ctx_erasure_under_comma_assoc. exact HworldΓ2.
   - rewrite res_models_and_iff. split; assumption.
 Qed.
 
@@ -237,8 +237,8 @@ End ContextDenotation.
 
 #[global] Instance denot_cty_inst :
     Denotation context_ty (tm -> Formula (V := value)) :=
-  fun τ e => denot_ty ∅ τ e.
-#[global] Instance denot_ctx_inst :
-    Denotation ctx (Formula (V := value)) := denot_ctx.
+  fun τ e => ty_denote ∅ τ e.
+#[global] Instance ctx_denote_inst :
+    Denotation ctx (Formula (V := value)) := ctx_denote.
 Arguments denot_cty_inst /.
-Arguments denot_ctx_inst /.
+Arguments ctx_denote_inst /.

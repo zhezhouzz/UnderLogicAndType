@@ -1,12 +1,12 @@
-(** * Denotation.ContextTypeDenotationCasesConst
+(** * Denotation.ConstDenote
 
     Constant and primitive-operation direct denotation support for
     Fundamental. *)
 
-From Denotation Require Import Context ContextTypeDenotationSaturateCore
-  ContextTypeDenotationSaturateMain.
+From Denotation Require Import Context TypeEquivCore
+  TypeEquiv.
 
-Section ContextTypeDenotationCasesConst.
+Section ConstDenote.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -494,11 +494,11 @@ Local Ltac solve_const_forall_open_scope :=
   end.
 
 Lemma const_over_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas gas (atom_env_to_lty_env Σ)
     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)).
 Proof.
-  induction gas as [|gas IH]; cbn [denot_ty_lvar_gas].
+  induction gas as [|gas IH]; cbn [ty_denote_gas].
   - rewrite denot_relevant_env_const_over_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_over_guard | apply res_models_true].
@@ -546,11 +546,11 @@ Proof.
 Qed.
 
 Lemma const_under_denotation_gas gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ty_lvar_gas gas (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas gas (atom_env_to_lty_env Σ)
     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
     (tret (vconst c)).
 Proof.
-  induction gas as [|gas IH]; cbn [denot_ty_lvar_gas].
+  induction gas as [|gas IH]; cbn [ty_denote_gas].
   - rewrite denot_relevant_env_const_under_atom_env_empty.
     eapply res_models_and_intro_from_models;
       [solve_const_under_guard | apply res_models_true].
@@ -599,17 +599,17 @@ Qed.
 
 Lemma const_direct_denotation_gas_in_ctx
     gas (Σ : gmap atom ty) c (m : WfWorldT) :
-  m ⊨ denot_ctx_under Σ CtxEmpty ->
-  erase_ctx_under Σ CtxEmpty ⊢ₑ
+  m ⊨ ctx_denote_under Σ CtxEmpty ->
+  ctx_erasure_under Σ CtxEmpty ⊢ₑ
     tret (vconst c) ⋮ erase_ty (const_precise_ty c) ->
-  m ⊨ denot_ty_lvar_gas gas
-    (atom_env_to_lty_env (erase_ctx_under Σ CtxEmpty))
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (ctx_erasure_under Σ CtxEmpty))
     (const_precise_ty c) (tret (vconst c)).
 Proof.
   intros _ _.
   unfold const_precise_ty, precise_ty, over_ty, under_ty.
   destruct gas as [|gas'].
-  - unfold erase_ctx_under. cbn [erase_ctx].
+  - unfold ctx_erasure_under. cbn [erase_ctx].
     replace (Σ ∪ erase_ctx CtxEmpty) with Σ
       by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
           symmetry; apply map_union_empty).
@@ -651,7 +651,7 @@ Proof.
             [ exact (expr_basic_typing_formula_ret_const_empty c m)
             | exact (expr_total_formula_ret_const c m) ] ] ]
       | exact (res_models_true m) ].
-  - unfold erase_ctx_under. cbn [erase_ctx].
+  - unfold ctx_erasure_under. cbn [erase_ctx].
     replace (Σ ∪ erase_ctx CtxEmpty) with Σ
       by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
           symmetry; apply map_union_empty).
@@ -683,10 +683,10 @@ Proof.
                 (tret (vconst c)) (TBase (base_ty_of_const c)))
               (expr_total_formula (tret (vconst c))))))
         (FAnd
-          (denot_ty_lvar_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
             (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c)))
-          (denot_ty_lvar_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
             (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c))))).
     rewrite denot_relevant_env_const_precise_atom_env_empty.
@@ -711,17 +711,17 @@ Lemma appop_intro_denotation
   Σ !! x = Some (erase_ty τarg) ->
   Σ ⊢ₑ
     tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
-  (denot_ctx (CtxBind x τarg) ⊫
-    denot_ty_in_ctx (CtxBind x τarg) ({0 ~> x} τres)
+  (ctx_denote (CtxBind x τarg) ⊫
+    ty_denote_ctx (CtxBind x τarg) ({0 ~> x} τres)
       (tprim op (vfvar x))) ->
-  m ⊨ denot_ty_lvar_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
+  m ⊨ ty_denote_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
     τarg (tret (vfvar x)) ->
-  m ⊨ denot_ty_lvar_gas gas
+  m ⊨ ty_denote_gas gas
     (atom_env_to_lty_env Σ) ({0 ~> x} τres) (tprim op (vfvar x)).
 Proof.
   intros Hgas Hbasic_arg Hbasic_res Hlookup _ Hop Harg.
-  rewrite denot_ty_lvar_gas_saturate by exact Hgas.
-  pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+  rewrite ty_denote_gas_saturate by exact Hgas.
+  pose proof (res_models_ty_denote_gas_env_agree_on
     (cty_depth τarg)
     (atom_env_to_lty_env Σ)
     (atom_env_to_lty_env (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
@@ -730,15 +730,15 @@ Proof.
     (atom_env_to_lty_env_restrict_singleton_lookup
       Σ x (erase_ty τarg) Hlookup)
     Harg) as Harg_single.
-  assert (Harg_bind : m ⊨ denot_ctx (CtxBind x τarg)).
+  assert (Harg_bind : m ⊨ ctx_denote (CtxBind x τarg)).
   {
-    eapply denot_ctx_bind_from_arg_denotation; eauto.
+    eapply ctx_denote_bind_from_arg_denotation; eauto.
   }
   pose proof (Hop m Harg_bind) as Hres_single.
-  unfold denot_ty_in_ctx, denot_ty in Hres_single.
+  unfold ty_denote_ctx, ty_denote in Hres_single.
   change (erase_ctx (CtxBind x τarg))
     with (<[x := erase_ty τarg]> (∅ : gmap atom ty)) in Hres_single.
-  eapply res_models_denot_ty_lvar_gas_env_agree_on
+  eapply res_models_ty_denote_gas_env_agree_on
     with (Σ1 := atom_env_to_lty_env
         (<[x := erase_ty τarg]> (∅ : gmap atom ty)))
       (X := {[LVFree x]});
@@ -749,4 +749,4 @@ Proof.
       exact Hlookup
     | exact Hres_single ].
 Qed.
-End ContextTypeDenotationCasesConst.
+End ConstDenote.

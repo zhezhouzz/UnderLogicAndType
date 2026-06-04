@@ -27,10 +27,10 @@ Current Remaining Admits
 Core Soundness/Context bridge:
 
 - `Denotation/theories/Context.v:603`
-  `denot_ctx_under_bind_from_result_denotation`.
+  `ctx_denote_under_bind_from_result_denotation`.
   This is the main remaining obligation for the comma-bind context branch.
   It needs a result-extension/fiber commuting argument, then the existing
-  msubst transport and `denot_ty_lvar_gas_result_extension_to_var`.
+  msubst transport and `ty_denote_gas_result_extension_to_var`.
 
 Existing lower-level/saturation obligations:
 
@@ -41,22 +41,22 @@ Existing lower-level/saturation obligations:
   from a model, using the projected store typing, and transporting the
   msubsted basic-world atom back to the original world.
 
-- `Denotation/theories/ContextTypeDenotationSaturate.v:294`
-  `denot_ty_lvar_gas_result_extension_to_var`.
-  This is directly relevant to `denot_ctx_under_bind_from_result_denotation`.
+- `Denotation/theories/TypeEquiv.v:294`
+  `ty_denote_gas_result_extension_to_var`.
+  This is directly relevant to `ctx_denote_under_bind_from_result_denotation`.
   It should stay as a named semantic obligation until the result-extension
   proof is completed.
 
 Direct case obligations:
 
-- `Denotation/theories/ContextTypeDenotationCases.v`
+- `Denotation/theories/DenotationCases.v`
   has 21 admitted direct Denotation-level case lemmas.  These are the right
   boundary for future Lam/App/Fix/Match/LetD work; `Soundness.v` should bridge
   to these lemmas rather than hide case-specific semantic work.
 
 Compatibility/old route:
 
-- `Denotation/theories/ContextTypeDenotationMsubstCompat.v`
+- `Denotation/theories/TypeDenoteMsubstCompat.v`
   has 3 old-route compatibility obligations.  These should not drive the new
   Soundness-facing proof.
 
@@ -79,16 +79,16 @@ Line Count Hotspots
 
 Largest files:
 
-- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`: 5168 lines
+- `Denotation/theories/TypeDenoteMsubstScoped.v`: 5168 lines
 - `Denotation/theories/TLetSupport.v`: 2306 lines
 - `ContextBasicDenotation/theories/TermSyntax.v`: 1937 lines
 - `ContextBasicDenotation/theories/BasicTypingFormula.v`: 1865 lines
-- `Denotation/theories/ContextTypeDenotationMsubstGuard.v`: 1435 lines
-- `Denotation/theories/ContextTypeDenotationCases.v`: 1376 lines
+- `Denotation/theories/TypeDenoteMsubstGuard.v`: 1435 lines
+- `Denotation/theories/DenotationCases.v`: 1376 lines
 - `ContextBasicDenotation/theories/TermTLet.v`: 1239 lines
 - `ContextBasicDenotation/theories/StoreTyping.v`: 1231 lines
 - `ContextTyping/theories/Soundness.v`: 1103 lines
-- `Denotation/theories/ContextTypeDenotationMsubstKeepDomain.v`: 1031 lines
+- `Denotation/theories/TypeDenoteMsubstKeepDomain.v`: 1031 lines
 
 Total lines in the audited directories: about 29.4k.
 
@@ -98,16 +98,16 @@ Proof-Script Pattern Counts
 
 Counts of `assert`, `change`, and `unfold` occurrences:
 
-- `Denotation/theories/ContextTypeDenotationMsubstScoped.v`: 376
+- `Denotation/theories/TypeDenoteMsubstScoped.v`: 376
 - `ContextBasicDenotation/theories/StoreTyping.v`: 163
 - `Denotation/theories/TLetSupport.v`: 129
 - `ContextBasicDenotation/theories/TermTLet.v`: 117
 - `ContextBasicDenotation/theories/MsubstTransport.v`: 115
-- `Denotation/theories/ContextTypeDenotationMsubstGuard.v`: 113
+- `Denotation/theories/TypeDenoteMsubstGuard.v`: 113
 - `ContextBasicDenotation/theories/TermSyntax.v`: 112
 - `ContextTyping/theories/Soundness.v`: 87
 - `ContextBasicDenotation/theories/RelevantEnv.v`: 87
-- `Denotation/theories/ContextTypeDenotationCases.v`: 85
+- `Denotation/theories/DenotationCases.v`: 85
 
 The largest ergonomic problems are in `MsubstScoped.v`, `TLetSupport.v`,
 `StoreTyping.v`, and the direct case file.
@@ -120,19 +120,19 @@ Highest-Value Cleanup Targets
 
    Target:
 
-   - `denot_ctx_under_bind_from_result_denotation`
+   - `ctx_denote_under_bind_from_result_denotation`
 
    Needed proof structure:
 
-   - Take a fiber of `mx` over `erase_ctx_under Σ Γ`.
+   - Take a fiber of `mx` over `ctx_erasure_under Σ Γ`.
    - Commute that fiber with `m #> Fx ~~> mx`, producing the corresponding
      base fiber of `m`.
-   - Use `denot_ty_in_ctx_under_fiber_elim_projection_instantiated` or the
+   - Use `ty_denote_under_fiber_elim_projection_instantiated` or the
      msubst theorem to move from the source denotation of `e1` to an
      instantiated source denotation.
-   - Use `denot_ty_lvar_gas_result_extension_to_var` to obtain the denotation
+   - Use `ty_denote_gas_result_extension_to_var` to obtain the denotation
      of `tret (vfvar x)` in the extended context.
-   - Package the result as `denot_ctx_under (erase_ctx_under Σ Γ)
+   - Package the result as `ctx_denote_under (ctx_erasure_under Σ Γ)
      (CtxBind x τ1)`.
 
    Risk:
@@ -148,7 +148,7 @@ Highest-Value Cleanup Targets
    transport facts from `MsubstTransport.v` to avoid unfolding the lqual atom
    twice.
 
-3. Reduce `ContextTypeDenotationMsubstScoped.v`.
+3. Reduce `TypeDenoteMsubstScoped.v`.
 
    Keep the current semantic split (`Core`, `Guard`, `KeepDomain`, `Scoped`,
    `Compat`) but move repeated local packets into small helpers:
@@ -176,7 +176,7 @@ Highest-Value Cleanup Targets
    TLet-specific lemmas should only mention TLet when the operational term
    fact is genuinely about `tlete`.
 
-5. Keep `ContextTypeDenotationCases.v` as the semantic boundary.
+5. Keep `DenotationCases.v` as the semantic boundary.
 
    Soundness should call direct case lemmas from this file.  Future cleanup
    should group direct obligations by shape:
@@ -209,8 +209,8 @@ Suggested Batch Order
 Batch A: finish proof repair.
 
 - Prove the extension/fiber commuting helper.
-- Prove `denot_ctx_under_bind_from_result_denotation`.
-- Prove or intentionally defer `denot_ty_lvar_gas_result_extension_to_var`.
+- Prove `ctx_denote_under_bind_from_result_denotation`.
+- Prove or intentionally defer `ty_denote_gas_result_extension_to_var`.
 - Run `make` and commit.
 
 Batch B: close the basic-world fiber pair.

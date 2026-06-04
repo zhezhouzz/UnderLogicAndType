@@ -57,7 +57,7 @@ The current top-level TLet route is intentionally thin:
 
    denot_tlet_direct_in_ctx
      depends on:
-       - erase_ctx_under_comma_bind_env_fresh
+       - ctx_erasure_under_comma_bind_env_fresh
        - atom_env_to_lty_env_insert
        - atom_env_to_lty_env_closed
        - lty_env_to_atom_env_atom_env
@@ -92,13 +92,13 @@ Main denotation theorem
        - tlet_intro_denotation_gas_zero
        - normalize_models_ands / normalize_models_ands_in / normalize_models_ands_goal
        - tlet_support_solver / solve_tlet_sidecond / solve_tlet_guard
-       - denot_ty_lvar_gas_scope_from_relevant_guard
+       - ty_denote_gas_scope_from_relevant_guard
        - res_models_forall_ext_transport
        - res_models_impl_intro / res_models_impl_elim
        - expr_result_formula_tlete_to_body_ext
-       - res_models_open_denot_ty_lvar_gas_to_open
-       - res_models_open_denot_ty_lvar_gas_from_open
-       - denot_ty_lvar_gas_tapp_tlete_assoc
+       - res_models_open_ty_denote_gas_to_open
+       - res_models_open_ty_denote_gas_from_open
+       - ty_denote_gas_tapp_tlete_assoc
        - tlet_intro_denotation_wand_case
      role:
        The main gas induction proving that the opened body denotation in the
@@ -173,9 +173,9 @@ TLet support layer
        world typing.  It is used several times in TLet, so it is worth keeping
        unless a general "basic_world_formula_mono_lty_env" is exposed.
 
-   denot_ty_lvar_gas_scope_from_guard
+   ty_denote_gas_scope_from_guard
      depends on:
-       - formula_fv_denot_ty_lvar_gas_subset_relevant
+       - formula_fv_ty_denote_gas_subset_relevant
        - formula_fv scope of the guard formula
      role:
        Builds formula_scoped_in_world for the denotation formula from the
@@ -208,7 +208,7 @@ TLet support layer
        relevant-env agreement".  It could be replaced by a more general
        BasicDenotation lemma about lty_env agreement.
 
-   denot_ty_lvar_gas_tapp_tlete_assoc
+   ty_denote_gas_tapp_tlete_assoc
      status: Admitted.
      intended dependencies:
        - expr_eval_in_atom_store_tapp_tm_tlete_assoc, or an equivalent
@@ -216,7 +216,7 @@ TLet support layer
        - expr_result_formula transport through operational equivalence.
        - expr_total_formula and expr_basic_typing_formula congruence for this
          derived term associativity.
-       - gas induction over denot_ty_lvar_gas.
+       - gas induction over ty_denote_gas.
      role:
        Converts denotation of tlete e1 (tapp_tm e2 y) into denotation of
        tapp_tm (tlete e1 e2) y at the end of the Arrow/Wand result branch.
@@ -230,7 +230,7 @@ TLet support layer
        - the same forall extension transport used by Arrow
        - separating implication/resource-product transport
        - recursive IH
-       - denot_ty_lvar_gas_tapp_tlete_assoc for the result term shape
+       - ty_denote_gas_tapp_tlete_assoc for the result term shape
      role:
        Wand-specific branch of tlet_intro_denotation.
      similarity/replacement:
@@ -252,9 +252,9 @@ TLet support layer
 Recursive denotation infrastructure
 -----------------------------------
 
-7. Denotation/theories/ContextTypeDenotationDefinition.v
+7. Denotation/theories/TypeDenote.v
 
-   denot_ty_lvar_gas
+   ty_denote_gas
      depends on:
        - context_ty_wf_formula
        - basic_world_formula
@@ -271,7 +271,7 @@ Recursive denotation infrastructure
      similarity/replacement:
        This is the source definition.  All wrappers should point here.
 
-   formula_open_env_denot_ty_lvar_gas
+   formula_open_env_ty_denote_gas
      depends on:
        - formula_open_env_* syntax lemmas
        - open_cty_env_lift_shift0_exact
@@ -280,13 +280,13 @@ Recursive denotation infrastructure
        Environment-open transport for the recursive denotation.
      similarity/replacement:
        General exact transport.  Models-level lemmas in
-       ContextTypeDenotationOpen are preferred by top proofs because dependent
+       TypeDenoteOpen are preferred by top proofs because dependent
        qualifiers make exact equality brittle.
 
-   denot_ty_lvar_gas_env_agree_on
-   res_models_denot_ty_lvar_gas_env_agree_on
+   ty_denote_gas_env_agree_on
+   res_models_ty_denote_gas_env_agree_on
      depend on:
-       - formula_open_env_denot_ty_lvar_gas
+       - formula_open_env_ty_denote_gas
        - denot_relevant_env / lty_env agreement
      role:
        Transport denotation across equivalent relevant environments.
@@ -295,12 +295,12 @@ Recursive denotation infrastructure
        equality is useful for rewriting but should not be the top-level proof
        interface.
 
-8. Denotation/theories/ContextTypeDenotationOpen.v
-   Denotation/theories/ContextTypeDenotationOpenModels.v
+8. Denotation/theories/TypeDenoteOpen.v
+   Denotation/theories/TypeDenoteOpenModels.v
 
-   denot_ty
+   ty_denote
      depends on:
-       - denot_ty_lvar_gas
+       - ty_denote_gas
        - cty_depth
      role:
        Atom-context public wrapper with enough gas.
@@ -309,9 +309,9 @@ Recursive denotation infrastructure
 
    formula_open_over_body, formula_open_under_body,
    res_models_open_arrow_body_iff, res_models_open_wand_body_iff,
-   res_models_open_denot_ty_lvar_gas_iff
+   res_models_open_ty_denote_gas_iff
      depend on:
-       - formula_open_env_denot_ty_lvar_gas
+       - formula_open_env_ty_denote_gas
        - formula_open syntax lemmas
        - typed_lty_env_bind/open facts
        - cty_shift/open and tm_shift/open facts
@@ -321,20 +321,20 @@ Recursive denotation infrastructure
        The iff lemma is the general API.  The to_open/from_open wrappers below
        are proof-facing projections.
 
-   res_models_open_denot_ty_lvar_gas_to_open
-   res_models_open_denot_ty_lvar_gas_from_open
+   res_models_open_ty_denote_gas_to_open
+   res_models_open_ty_denote_gas_from_open
      depend on:
-       - res_models_open_denot_ty_lvar_gas_iff
+       - res_models_open_ty_denote_gas_iff
      role:
        Directional projections used heavily by TLet.
      similarity/replacement:
        Replaceable by proj1/proj2 of the iff lemma.  Keep while TLet is proof
        script heavy; remove later if wrapper cleanup is prioritized.
 
-9. Denotation/theories/ContextTypeDenotationLvars.v
-   Denotation/theories/ContextTypeDenotationSaturate.v
+9. Denotation/theories/TypeDenoteLvars.v
+   Denotation/theories/TypeEquiv.v
 
-   formula_lvars_at_denot_ty_lvar_gas_subset_relevant
+   formula_lvars_at_ty_denote_gas_subset_relevant
      depends on:
        - formula_lvars_at for FormulaT
        - denot_relevant_lvars
@@ -345,26 +345,26 @@ Recursive denotation infrastructure
        This is the more general/lower lemma.  formula_fv lemmas should be
        derived from it.
 
-   formula_fv_denot_ty_lvar_gas_subset_relevant
+   formula_fv_ty_denote_gas_subset_relevant
      depends on:
-       - formula_lvars_at_denot_ty_lvar_gas_subset_relevant
+       - formula_lvars_at_ty_denote_gas_subset_relevant
        - formula_lvars_at_fv
      role:
        FV upper bound used by formula_scoped_in_world automation.
      similarity/replacement:
        Derivative but useful.  Keep as solver-facing API.
 
-   denot_ty_lvar_gas_scope_from_relevant_guard
+   ty_denote_gas_scope_from_relevant_guard
      depends on:
-       - formula_fv_denot_ty_lvar_gas_subset_relevant
+       - formula_fv_ty_denote_gas_subset_relevant
        - basic_world_formula guard facts
      role:
        Turns the restricted guard into a scope proof for the whole denotation.
      similarity/replacement:
        Preferred replacement for local formula_fv subset proofs.
 
-   denot_ty_lvar_gas_saturate
-   denot_ty_lvar_gas_saturate_ge
+   ty_denote_gas_saturate
+   ty_denote_gas_saturate_ge
      depend on:
        - cty_depth
        - cty_shift_preserves_depth
@@ -372,15 +372,15 @@ Recursive denotation infrastructure
        Gas saturation.
      similarity/replacement:
        Static scan suggests these are not used by the current TLet route.  Keep
-       if denot_ty wrappers need depth-insensitive rewriting; otherwise they
+       if ty_denote wrappers need depth-insensitive rewriting; otherwise they
        can be moved out of the hot import path.
 
-   denot_ty_lvar_gas_insert_fresh_lty_env_eq
-   denot_ty_lvar_gas_insert_fresh_lty_env
-   denot_ty_lvar_gas_extend_typed_extension
+   ty_denote_gas_insert_fresh_lty_env_eq
+   ty_denote_gas_insert_fresh_lty_env
+   ty_denote_gas_extend_typed_extension
    denot_ty_lvar_guard_extend_typed_extension
      depend on:
-       - denot_ty_lvar_gas_env_agree_on
+       - ty_denote_gas_env_agree_on
        - res_models_extend_mono
        - extension_has_ltype
        - basic_world_formula typed-extension lemmas
@@ -526,7 +526,7 @@ Context type language layer
        - type_qualifier extensionality
        - cty/open/shift locally nameless lemmas
      role:
-       Exact equality needed by formula_open_env_denot_ty_lvar_gas in
+       Exact equality needed by formula_open_env_ty_denote_gas in
        Arrow/Wand cases.
      similarity/replacement:
        This is a low-level LN/type-language fact.  It replaced a named admit.
@@ -622,14 +622,14 @@ ContextTyping:
 
 Denotation:
 
-- denot_ty_lvar_gas_saturate
-- denot_ty_lvar_gas_saturate_ge
+- ty_denote_gas_saturate
+- ty_denote_gas_saturate_ge
   Currently not used by the TLet route.  They are general gas facts and may be
-  useful for the public denot_ty wrapper; consider moving them away from hot
+  useful for the public ty_denote wrapper; consider moving them away from hot
   imports if compile time matters.
 
-- denot_ty_lvar_gas_extend_typed_extension
-- denot_ty_lvar_gas_extend_typed_extension_zero
+- ty_denote_gas_extend_typed_extension
+- ty_denote_gas_extend_typed_extension_zero
 - denot_ty_lvar_guard_extend_typed_extension
   Useful typed-extension weakening facts, but static scan shows they are not
   directly used by current TLet.  Review after Wand is closed.

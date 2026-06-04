@@ -20,9 +20,9 @@ High-level summary
 ==================
 
 1. The largest immediate lowering opportunity is in
-   Denotation/theories/ContextTypeDenotationCore.v.  Its first half defines
+   Denotation/theories/TypeDenote.v.  Its first half defines
    and proves generic formula/term multi-open facts.  Most of those facts do
-   not depend on denot_ty_lvar_gas and should move down:
+   not depend on ty_denote_gas and should move down:
 
    - generic formula_open_env and constructor distribution lemmas -> ContextLogic
    - open_env facts for basic_world/expr_total/expr_result/basic_typing atoms
@@ -115,7 +115,7 @@ Analysis:
 
 - Correct layer.
 - This file should also own the generic formula multi-open operation that is
-  currently in Denotation/theories/ContextTypeDenotationCore.v:
+  currently in Denotation/theories/TypeDenote.v:
 
   - formula_open_env at line 23
   - formula_open_env_empty at line 26
@@ -702,7 +702,7 @@ Analysis:
 Denotation
 ==========
 
-Denotation/theories/ContextTypeDenotationCore.v
+Denotation/theories/TypeDenote.v
 -----------------------------------------------
 
 Definitions/lemmas at lines 23-212:
@@ -748,7 +748,7 @@ Lemmas at lines 450-584:
 Analysis:
 
 - These are open-env/lvars/lty_env facts.  They do not depend on
-  denot_ty_lvar_gas.
+  ty_denote_gas.
 
 How to modify:
 
@@ -807,7 +807,7 @@ How to modify:
   ContextTypeLanguage.  Preferred target: ContextBasicDenotation, because it
   combines context_ty syntax with CoreLang term lvars and is used to build
   denotation guards.
-- Keep only denot_ty_lvar_gas-specific uses in Denotation.
+- Keep only ty_denote_gas-specific uses in Denotation.
 
 Lemmas at lines 1242-1558:
 
@@ -820,7 +820,7 @@ Lemmas at lines 1242-1558:
 
 Analysis:
 
-- These are not recursive denot_ty lemmas, but they are closely tied to the
+- These are not recursive ty_denote lemmas, but they are closely tied to the
   denotation guard/relevant-env design.
 - Some can be generalized:
   - arrow_body_relevant_env_agree and wand_body_relevant_env_agree have the same
@@ -836,12 +836,12 @@ How to modify:
   denotation guard convention.
 
 
-Denotation/theories/ContextTypeDenotationDefinition.v
+Denotation/theories/TypeDenote.v
 -----------------------------------------------------
 
 Definition at line 10:
 
-- denot_ty_lvar_gas
+- ty_denote_gas
 
 Analysis:
 
@@ -850,19 +850,19 @@ Analysis:
 Lemmas at lines 70-584:
 
 - formula_open_env_denot_guard
-- formula_open_env_denot_ty_lvar_gas_zero/gas
-- res_models_open_env_denot_ty_lvar_gas_iff
-- denot_ty_lvar_gas_env_agree_on
-- res_models_denot_ty_lvar_gas_env_agree_on
+- formula_open_env_ty_denote_gas_zero/gas
+- res_models_open_env_ty_denote_gas_iff
+- ty_denote_gas_env_agree_on
+- res_models_ty_denote_gas_env_agree_on
 
 Analysis:
 
-- Keep in Denotation because they recurse over denot_ty_lvar_gas.
+- Keep in Denotation because they recurse over ty_denote_gas.
 - They should become shorter after formula_open_env and atom-open facts move
   down.
 
 
-Denotation/theories/ContextTypeDenotationLvars.v
+Denotation/theories/TypeDenoteLvars.v
 ------------------------------------------------
 
 Definition at line 10:
@@ -891,34 +891,34 @@ Analysis:
 - The basic_world/expr_result/type_qualifier formula lvar facts belong to
   BasicDenotation.
 - The generic Ltac should move with formula_lvars_at, then Denotation can extend
-  it with denot_ty-specific normalizers.
+  it with ty_denote-specific normalizers.
 
 Lemmas at lines 156-361:
 
-- formula_lvars_at_denot_ty_lvar_gas_subset_relevant
-- formula_lvars_at_denot_ty_lvar_gas_subset
-- formula_fv_open_denot_ty_lvar_gas_subset_relevant
-- formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open
+- formula_lvars_at_ty_denote_gas_subset_relevant
+- formula_lvars_at_ty_denote_gas_subset
+- formula_fv_open_ty_denote_gas_subset_relevant
+- formula_fv_ty_denote_gas_scope_from_guard_pre_open
 - denot_guard_term_type_fv_scope
 
 Analysis:
 
-- Keep in Denotation because they mention denot_ty_lvar_gas or denot guard.
+- Keep in Denotation because they mention ty_denote_gas or denot guard.
 
 
-Denotation/theories/ContextTypeDenotationOpen.v
+Denotation/theories/TypeDenoteOpen.v
 -----------------------------------------------
 
 Lemmas at lines 14-470:
 
-- denot_ty_lvar_gas open/model transport lemmas
-- formula_open_denot_ty_lvar_gas_typed_bind_current
-- res_models_open_denot_ty_lvar_gas_to_open
+- ty_denote_gas open/model transport lemmas
+- formula_open_ty_denote_gas_typed_bind_current
+- res_models_open_ty_denote_gas_to_open
 - related open helper lemmas
 
 Analysis:
 
-- Most stay in Denotation because they recurse over denot_ty_lvar_gas.
+- Most stay in Denotation because they recurse over ty_denote_gas.
 - Any helper whose statement only mentions expr_total_formula,
   expr_result_formula, basic_world_formula, basic_tm_has_ltype, or lty_env
   bind/open should move to BasicDenotation or TypeLanguage.
@@ -930,20 +930,20 @@ How to modify:
 - Avoid exact formula equality wrappers when a models-level transport is enough.
 
 
-Denotation/theories/ContextTypeDenotationSaturate.v
+Denotation/theories/TypeEquiv.v
 ---------------------------------------------------
 
 Lemmas at lines 10-482:
 
-- denot_ty_lvar_gas_saturate and monotonicity
+- ty_denote_gas_saturate and monotonicity
 - context_ty_wf_formula_insert_fresh_same_world
 - expr_basic_typing_formula_insert_fresh_same_world
 - denot guard insert/extend typed extension
-- denot_ty_lvar_gas FV/scope lemmas
+- ty_denote_gas FV/scope lemmas
 
 Analysis:
 
-- Saturation and denot_ty_lvar_gas insert/extend facts stay in Denotation.
+- Saturation and ty_denote_gas insert/extend facts stay in Denotation.
 - The two formula insert-fresh lemmas at lines 109 and 125 should move down:
   - context_ty_wf_formula_insert_fresh_same_world -> ContextBasicDenotation
     near BasicTypingFormula/Qualifier.
@@ -984,10 +984,10 @@ Lowering opportunities:
 
 Keep in Denotation/TLetSupport:
 
-- denot_ty_lvar_gas_tapp_tlete_assoc and its genuinely recursive denotation
+- ty_denote_gas_tapp_tlete_assoc and its genuinely recursive denotation
   transport.
 - tlet_intro_denotation_wand_case and other proof-orchestration lemmas that
-  directly invoke denot_ty_lvar_gas induction hypotheses.
+  directly invoke ty_denote_gas induction hypotheses.
 
 Concrete first pass:
 
@@ -1020,10 +1020,10 @@ Phase 1: no semantic redesign, low risk
 ---------------------------------------
 
 1. Move formula_open_env and generic constructor lemmas from
-   Denotation/ContextTypeDenotationCore.v to ContextLogic/FormulaSyntax.v.
+   Denotation/TypeDenote.v to ContextLogic/FormulaSyntax.v.
 
 2. Move formula_lvars_at and generic formula_lvars_at_open/fv facts from
-   Denotation/ContextTypeDenotationLvars.v to ContextLogic/FormulaSyntax.v.
+   Denotation/TypeDenoteLvars.v to ContextLogic/FormulaSyntax.v.
 
 3. Move atom/formula open-env corollaries out of DenotationCore:
 
@@ -1086,15 +1086,15 @@ Do-not-move list
 
 These should remain in Denotation unless their statements are rewritten:
 
-- denot_ty_lvar_gas
-- formula_open_env_denot_ty_lvar_gas and models-level denot open transports
-- denot_ty_lvar_gas_env_agree_on
-- denot_ty_lvar_gas_saturate and gas monotonicity
-- denot_ty_lvar_gas_insert/extend typed-extension lemmas
-- formula_fv/lvars lemmas whose statement mentions denot_ty_lvar_gas
+- ty_denote_gas
+- formula_open_env_ty_denote_gas and models-level denot open transports
+- ty_denote_gas_env_agree_on
+- ty_denote_gas_saturate and gas monotonicity
+- ty_denote_gas_insert/extend typed-extension lemmas
+- formula_fv/lvars lemmas whose statement mentions ty_denote_gas
 - tlet_intro_denotation_gas_zero
 - tlet_intro_denotation
-- denot_ty_lvar_gas_tapp_tlete_assoc and recursive TLet/Wand/Arrow assembly
+- ty_denote_gas_tapp_tlete_assoc and recursive TLet/Wand/Arrow assembly
 
 These can have shorter proofs after lower-layer facts are moved, but their
 statements are denotation-level.

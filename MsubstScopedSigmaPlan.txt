@@ -14,12 +14,12 @@ Public boundary
 
 The public theorem keeps the existing shape:
 
-  denot_ty_lvar_gas_msubst_store_from_typing_wf_iff
+  ty_denote_gas_msubst_store_from_typing_wf_iff
 
 It accepts context_typing_wf_erased, storeA_has_type for the base store, and
 base_store_projection.  Before calling the internal theorem, it defines:
 
-  p := denot_ty_lvar_gas gas Σ τ e
+  p := ty_denote_gas gas Σ τ e
   σp := store_restrict σ (formula_fv p)
 
 Then it rewrites formula_msubst_store σ p to formula_msubst_store σp p and
@@ -30,13 +30,13 @@ Internal invariant
 
 The internal scoped IH explicitly requires the store to be formula-relevant:
 
-  let p := denot_ty_lvar_gas gas Σ τ e in
+  let p := ty_denote_gas gas Σ τ e in
   dom (σ : StoreT) ⊆ formula_fv p ->
   ...
 
 Every recursive call must pass a restricted store:
 
-  p_child := denot_ty_lvar_gas gas Σchild τchild echild
+  p_child := ty_denote_gas gas Σchild τchild echild
   σ_child := store_restrict σ (formula_fv p_child)
 
 This keeps atom_store_has_ltype and store_singleton_projection local to the
@@ -46,19 +46,19 @@ base variables.
 Execution order
 ---------------
 
-1. Split ContextTypeDenotationMsubst.v into:
-   - ContextTypeDenotationMsubstCore.v
-   - ContextTypeDenotationMsubstGuard.v
-   - ContextTypeDenotationMsubstKeepDomain.v
-   - ContextTypeDenotationMsubstCompat.v
-   - ContextTypeDenotationMsubstScoped.v
-   with ContextTypeDenotationMsubst.v as an export aggregator.
+1. Split TypeDenoteMsubst.v into:
+   - TypeDenoteMsubstCore.v
+   - TypeDenoteMsubstGuard.v
+   - TypeDenoteMsubstKeepDomain.v
+   - TypeDenoteMsubstCompat.v
+   - TypeDenoteMsubstScoped.v
+   with TypeDenoteMsubst.v as an export aggregator.
 
 2. Update the scoped IH statement and thread the dom-subset premise through:
-   - denot_ty_lvar_gas_msubst_store_local_scoped_succ
-   - denot_ty_lvar_gas_msubst_store_local_scoped_iff
-   - denot_ty_lvar_gas_msubst_store_local_iff
-   - denot_ty_lvar_gas_msubst_store_from_typing_wf_iff
+   - ty_denote_gas_msubst_store_local_scoped_succ
+   - ty_denote_gas_msubst_store_local_scoped_iff
+   - ty_denote_gas_msubst_store_local_iff
+   - ty_denote_gas_msubst_store_from_typing_wf_iff
 
 3. Update structural recursive cases:
    - Inter, Union, Sum use σ1/σ2 restricted to each branch formula_fv.
@@ -72,7 +72,7 @@ Execution order
    - store_singleton_projection_restrict
    - atom_store_has_ltype_restrict_lvars
    - lstore_instantiate_tm_lift_free_agree_subset
-   - formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open
+   - formula_fv_ty_denote_gas_subset_relevant_pre_open
 
 5. Compile split files independently.  If any file exceeds 80 seconds, use
    rocq c -time on that file and split or factor the slow proof before
@@ -81,7 +81,7 @@ Execution order
 Completion criteria
 -------------------
 
-- ContextTypeDenotationMsubst.v is a thin aggregator.
+- TypeDenoteMsubst.v is a thin aggregator.
 - The scoped IH carries dom σ ⊆ formula_fv p.
 - The public theorem does not expose this internal premise.
 - The new split files compile incrementally.
@@ -94,7 +94,7 @@ Wand-first route
 Priority
 --------
 
-Prove denot_ty_lvar_gas_msubst_store_wand_local_scoped_succ before Arrow.
+Prove ty_denote_gas_msubst_store_wand_local_scoped_succ before Arrow.
 Wand is the higher-risk case because recursive calls happen under a frame
 world and a product world; both must use σ restricted to the child formula FV.
 
@@ -134,7 +134,7 @@ Wand proof shape
    with σ_arg := store_restrict σ (formula_fv p_arg).
 4. For the opened Wand consequent, call denot_msubst_local_scoped_IH_forward
    with σ_res := store_restrict σ (formula_fv p_res).
-5. Reuse formula_open_denot_ty_lvar_gas_singleton, formula_open_msubst_store_fresh,
+5. Reuse formula_open_ty_denote_gas_singleton, formula_open_msubst_store_fresh,
    lstore_instantiate_tm_shift_lift_free, and expr_result_formula_msubst_store_open_shift_models_back.
 
 Counterexample note
@@ -155,7 +155,7 @@ After normalizing the Wand body, the forward source body has recursive children
 of the form:
 
   formula_msubst_store σ
-    (denot_ty_lvar_gas gas
+    (ty_denote_gas gas
       (typed_lty_env_bind
         (denot_relevant_env Σ (CTWand τx τr) e)
         (erase_ty τx))
@@ -163,7 +163,7 @@ of the form:
 
 while the target body has recursive children of the form:
 
-  denot_ty_lvar_gas gas
+  ty_denote_gas gas
     (typed_lty_env_bind
       (denot_relevant_env Σ (CTWand τx τr)
         (lstore_instantiate_tm (lstore_lift_free σ) e))
@@ -202,16 +202,16 @@ under premises saying:
 
 and the corresponding source-side coverage after msubst/restrict.  A cleaner
 variant may state this as agreement-on [denot_relevant_lvars τc ec] rather than
-literal equality, then use res_models_denot_ty_lvar_gas_env_agree_on.
+literal equality, then use res_models_ty_denote_gas_env_agree_on.
 
 Existing lemmas likely reusable:
 
-  - res_models_denot_ty_lvar_gas_env_agree_on
+  - res_models_ty_denote_gas_env_agree_on
   - arrow_body_relevant_env_agree_from_basic_context_ty
   - wand_body_relevant_env_agree_from_basic_context_ty
   - lstore_instantiate_tm_lift_free_agree_subset
   - tm_lvars_lstore_instantiate_lift_free_closed_subset
-  - formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open
+  - formula_fv_ty_denote_gas_subset_relevant_pre_open
 
 Implementation order adjustment
 -------------------------------
@@ -233,7 +233,7 @@ principle and add two thin wrappers at the recursive-call boundary:
 Each wrapper rewrites the source denotation environment to a middle environment
 and rewrites the target denotation environment from the middle environment to
 the desired target environment, using the formula-level equality
-denot_ty_lvar_gas_env_agree_on.  Then it calls the existing scoped IH wrapper.
+ty_denote_gas_env_agree_on.  Then it calls the existing scoped IH wrapper.
 
 This implements the relevant-env aligned route while preserving the existing
 Inter/Union/Sum/Over/Under proofs.  Arrow/Wand only need to provide the two
@@ -246,15 +246,15 @@ RelevantEnv helpers are:
   - wand_arg_relevant_env_agree
 
 Next proof step: use these wrappers inside
-denot_ty_lvar_gas_msubst_store_wand_local_scoped_succ first, then Arrow.
+ty_denote_gas_msubst_store_wand_local_scoped_succ first, then Arrow.
 
 Specialized body-helper implementation update
 =============================================
 
 The top-level Arrow/Wand succ cases are now split successfully:
 
-  - denot_ty_lvar_gas_msubst_store_arrow_local_scoped_succ
-  - denot_ty_lvar_gas_msubst_store_wand_local_scoped_succ
+  - ty_denote_gas_msubst_store_arrow_local_scoped_succ
+  - ty_denote_gas_msubst_store_wand_local_scoped_succ
 
 They only split guard/body, use denot_guard_msubst_store_local_singleton_iff
 for the guard, and delegate body transport to specialized body helpers.
@@ -262,8 +262,8 @@ This keeps the main recursive cases small and compiled.
 
 The remaining active obligations are now:
 
-  - denot_ty_lvar_gas_msubst_store_wand_body_scoped
-  - denot_ty_lvar_gas_msubst_store_arrow_body_scoped
+  - ty_denote_gas_msubst_store_wand_body_scoped
+  - ty_denote_gas_msubst_store_arrow_body_scoped
 
 The next implementation should prove Wand body first by introducing smaller
 opened-child helpers rather than expanding everything in the body proof.
@@ -288,12 +288,12 @@ Minimal Wand opened-child helper shape:
    The proof should:
 
    - normalize formula_open and formula_msubst_store;
-   - use res_models_open_denot_ty_lvar_gas_to_open;
+   - use res_models_open_ty_denote_gas_to_open;
    - align source/middle/target relevant envs with wand_arg_relevant_env_agree
      and denot_msubst_local_scoped_IH_backward_env_agree;
    - use store_singleton_projection_compat_restrict_of_scope for the restricted
      σ needed by the frame world;
-   - return with res_models_open_denot_ty_lvar_gas_from_open when necessary.
+   - return with res_models_open_ty_denote_gas_from_open when necessary.
 
 3. Opened Wand result transport:
 
@@ -320,7 +320,7 @@ Risk note:
 
 The hard part is not the FForall/FImpl/FWand structure anymore.  The remaining
 risk is exact alignment of opened formula shapes after formula_open,
-formula_msubst_store, and denot_ty_lvar_gas open transport.  If this remains
+formula_msubst_store, and ty_denote_gas open transport.  If this remains
 too brittle, the next fallback should be to make the opened-child helpers'
 statements match the exact formula_open goals produced by
 res_models_forall_full_world_impl_wand_map, rather than trying to normalize

@@ -72,9 +72,9 @@ Recommended cleanup order
 
    First review and likely delete:
 
-   - formula_fv_open_denot_ty_lvar_gas_subset_relevant
+   - formula_fv_open_ty_denote_gas_subset_relevant
    - denot_guard_term_type_fv_scope
-   - denot_ty_lvar_gas_result_alias_scope_ret_from_source
+   - ty_denote_gas_result_alias_scope_ret_from_source
    - expr_result_formula_of_res_subset
    - expr_result_formula_of_res_store_subset
    - expr_result_formula_alias_to_var

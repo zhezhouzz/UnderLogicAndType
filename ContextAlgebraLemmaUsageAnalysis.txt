@@ -794,7 +794,7 @@ File: ContextAlgebra/theories/ResourceInterface.v
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
     - ContextBasicDenotation/theories/Qualifier.v:179: assert (Hw12 : w1 = w2) by (apply lworld_on_ext; exact Hlw).
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:88: apply lworld_on_ext. unfold lworld_on_lift. simpl.
+    - Denotation/theories/TypeEquivCore.v:88: apply lworld_on_ext. unfold lworld_on_lift. simpl.
     - ContextLogic/theories/LogicQualifier.v:199: apply lworld_on_ext.
     - ContextLogic/theories/LogicQualifier.v:299: apply lworld_on_ext.
     - ContextLogic/theories/LogicQualifier.v:367: apply lworld_on_ext.
@@ -819,15 +819,15 @@ File: ContextAlgebra/theories/ResourceInterface.v
   sample uses:
     - ContextBasicDenotation/theories/StoreTyping.v:242: pose proof (wfworld_store_dom n σ Hσ) as Hdomσ.
     - ContextBasicDenotation/theories/TermExtension.v:125: { eapply wfworld_store_dom. exact Hσ. }
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:430: pose proof (wfworld_store_dom (res_restrict m (ext_in Fx))
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:688: pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
+    - Denotation/theories/TypeEquivCore.v:430: pose proof (wfworld_store_dom (res_restrict m (ext_in Fx))
+    - Denotation/theories/TypeEquivCore.v:688: pose proof (wfworld_store_dom m σ Hσ) as Hdomσ.
     - ContextAlgebra/theories/ResourceCompat.v:97: pose proof (wfworld_store_dom my σmy Hmy) as Hσmy_dom.
     - ... 15 more
 - Lemma `raw_le_dom` @ line 275
   uses: 5 total; ltac/hint uses: 0; proof lines: 31; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:521: pose proof (raw_le_dom (my : WorldT)
+    - Denotation/theories/TypeEquivWand.v:521: pose proof (raw_le_dom (my : WorldT)
     - ContextLogic/theories/FormulaSemantics.v:273: pose proof (raw_le_dom _ _ Hle) as Hdom.
     - ContextLogic/theories/FormulaConnectives.v:172: pose proof (raw_le_dom (res_product m1 m2 Hc : WorldT) (m : WorldT) Hle)
     - ContextLogic/theories/FormulaConnectives.v:222: pose proof (raw_le_dom (res_sum m1 m2 Hdef : WorldT) (m : WorldT) Hle)
@@ -868,8 +868,8 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 4 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:345: + eapply res_fiber_from_projection_empty_store_dom.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:392: + eapply res_fiber_from_projection_empty_store_dom.
+    - Denotation/theories/ConstDenote.v:345: + eapply res_fiber_from_projection_empty_store_dom.
+    - Denotation/theories/ConstDenote.v:392: + eapply res_fiber_from_projection_empty_store_dom.
     - ContextAlgebra/theories/ResourceInterface.v:314: pose proof (res_fiber_from_projection_empty_store_dom m mfib σ Hfib)
     - ContextLogic/theories/FormulaConnectives.v:550: * eapply res_fiber_from_projection_empty_store_dom; exact Hproj.
 - Lemma `res_fiber_from_projection_empty_eq` @ line 308
@@ -886,8 +886,8 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 2 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:344: eapply res_fiber_from_projection_store_source; eauto.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:391: eapply res_fiber_from_projection_store_source; eauto.
+    - Denotation/theories/ConstDenote.v:344: eapply res_fiber_from_projection_store_source; eauto.
+    - Denotation/theories/ConstDenote.v:391: eapply res_fiber_from_projection_store_source; eauto.
 - Lemma `res_fiber_from_projection_world_dom` @ line 354
   uses: 4 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
@@ -921,10 +921,10 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 11 total; ltac/hint uses: 0; proof lines: 70; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:181: apply res_restrict_le.
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:248: { rewrite <- Hrestrict. apply res_restrict_le. }
-    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:179: apply res_restrict_le.
-    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:235: { rewrite <- Hrestrict. apply res_restrict_le. }
+    - Denotation/theories/TypeEquivWand.v:181: apply res_restrict_le.
+    - Denotation/theories/TypeEquivWand.v:248: { rewrite <- Hrestrict. apply res_restrict_le. }
+    - Denotation/theories/TypeEquivArrow.v:179: apply res_restrict_le.
+    - Denotation/theories/TypeEquivArrow.v:235: { rewrite <- Hrestrict. apply res_restrict_le. }
     - ContextTyping/theories/Soundness.v:536: + apply res_restrict_le.
     - ... 6 more
 - Lemma `res_restrict_mono` @ line 394
@@ -936,7 +936,7 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 4 total; ltac/hint uses: 0; proof lines: 61; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1007: pose proof (res_restrict_eq_of_le my (res_product n my Hc)
+    - Denotation/theories/TypeEquivCore.v:1007: pose proof (res_restrict_eq_of_le my (res_product n my Hc)
     - ContextAlgebra/theories/ResourceSurface.v:87: rewrite (res_restrict_eq_of_le m n Hle) in H
     - ContextAlgebra/theories/ResourceSurface.v:89: rewrite (res_restrict_eq_of_le m n Hle)
     - ContextLogic/theories/FormulaConnectives.v:1493: rewrite (res_restrict_eq_of_le m m' Hle) in Hminimal.
@@ -944,7 +944,7 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 10 total; ltac/hint uses: 0; proof lines: 56; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:89: rewrite (res_restrict_le_eq m0 m (lvars_fv D) Hle Hsub0).
+    - Denotation/theories/TypeEquivCore.v:89: rewrite (res_restrict_le_eq m0 m (lvars_fv D) Hle Hsub0).
     - ContextLogic/theories/FormulaSemantics.v:561: - symmetry. apply res_restrict_le_eq; [exact Hle_n | exact Hp_scope_n].
     - ContextLogic/theories/FormulaSemantics.v:569: + apply res_restrict_le_eq; [exact Hle_n | exact Hq_scope_n].
     - ContextLogic/theories/FormulaSemantics.v:641: + apply res_restrict_le_eq.
@@ -1019,13 +1019,13 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 2 total; ltac/hint uses: 0; proof lines: 193; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateBody.v:539: subst m1. apply res_pullback_subset_projection_subset.
-    - Denotation/theories/ContextTypeDenotationSaturateBody.v:543: subst m2. apply res_pullback_subset_projection_subset.
+    - Denotation/theories/TypeEquivBody.v:539: subst m1. apply res_pullback_subset_projection_subset.
+    - Denotation/theories/TypeEquivBody.v:543: subst m2. apply res_pullback_subset_projection_subset.
 - Lemma `res_sum_pullback_subset_projection_full` @ line 535
   uses: 2 total; ltac/hint uses: 0; proof lines: 189; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateBody.v:521: destruct (res_sum_pullback_subset_projection_full m n1 n2 Hdef Hle)
+    - Denotation/theories/TypeEquivBody.v:521: destruct (res_sum_pullback_subset_projection_full m n1 n2 Hdef Hle)
     - ContextLogic/theories/FormulaWorldExtension.v:213: destruct (res_sum_pullback_subset_projection_full n n1 n2 Hdef Hsum_le)
 - Lemma `res_product_le_mono` @ line 549
   uses: 2 total; ltac/hint uses: 0; proof lines: 175; terminator: Qed.
@@ -1087,11 +1087,11 @@ File: ContextAlgebra/theories/ResourceInterface.v
   uses: 5 total; ltac/hint uses: 0; proof lines: 82; terminator: Qed.
   classification: INTERFACE-FILE: not external surface; prioritize cleanup
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1008: (res_product_le_r n my Hc)) as Hrestrict.
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:230: - apply res_product_le_r.
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:373: { eapply res_models_kripke; [apply res_product_le_r|exact Hworld_src_my]. }
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:379: { eapply res_models_kripke; [apply res_product_le_r|exact Hworld_y_my]. }
-    - Denotation/theories/ContextTypeDenotationSaturateWand.v:523: (res_product_le_r n my Hc)) as Hdom_le.
+    - Denotation/theories/TypeEquivCore.v:1008: (res_product_le_r n my Hc)) as Hrestrict.
+    - Denotation/theories/TypeEquivWand.v:230: - apply res_product_le_r.
+    - Denotation/theories/TypeEquivWand.v:373: { eapply res_models_kripke; [apply res_product_le_r|exact Hworld_src_my]. }
+    - Denotation/theories/TypeEquivWand.v:379: { eapply res_models_kripke; [apply res_product_le_r|exact Hworld_y_my]. }
+    - Denotation/theories/TypeEquivWand.v:523: (res_product_le_r n my Hc)) as Hdom_le.
 - Lemma `res_sum_comm_eq` @ line 646
   uses: 1 total; ltac/hint uses: 0; proof lines: 78; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; INTERFACE-FILE: not external surface; prioritize cleanup

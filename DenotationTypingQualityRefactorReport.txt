@@ -183,7 +183,7 @@ Major naked lemma patterns:
     - lvars_of_atoms
     - lvars_fv_singleton_free
 
-  denot_ctx_under_comma_bind_from_result_extension:
+  ctx_denote_under_comma_bind_from_result_extension:
     - many assert facts about freshness, insert, atom_env_to_lty_env_insert,
       lvars_fv_of_atoms, atom_store_to_lvar_store_insert, union-singleton insert.
 
@@ -196,8 +196,8 @@ Recommended solver/helper additions:
 
   1. In Store / RelevantEnv:
 
-     atom_env_to_lty_env_erase_ctx_under_lookup_or_none
-     atom_env_to_lty_env_erase_ctx_under_subenv
+     atom_env_to_lty_env_ctx_erasure_under_lookup_or_none
+     atom_env_to_lty_env_ctx_erasure_under_subenv
      atom_store_to_lvar_store_lookup_solver
 
      Purpose:
@@ -214,23 +214,23 @@ Recommended solver/helper additions:
 
      result_extension_fresh_packet
      result_extension_insert_env_packet
-     denot_ctx_under_comma_bind_from_result_extension_packet
+     ctx_denote_under_comma_bind_from_result_extension_packet
 
      Purpose:
        Compress the Let case. This should be semantic, not just set facts.
 
 Definitions/wrappers:
 
-  denot_ty_in_ctx_under is still a wrapper around local denot_ty after the direct
+  ty_denote_under is still a wrapper around local ty_denote after the direct
   route cleanup. It is heavily used in Soundness, so deleting it now would cause
   churn. Suggested next step: keep it during this refactor; later turn it into
   notation or replace it after higher-order cases are proved.
 
 Single-use/zero-use candidates in Soundness:
 
-  denot_ty_in_ctx_under_context_ty_wf
-  denot_ty_in_ctx_under_basic_world
-  denot_ty_in_ctx_under_basic_typing
+  ty_denote_under_context_ty_wf
+  ty_denote_under_basic_world
+  ty_denote_under_basic_typing
   lstore_instantiate_tm_at_lift_free_depth_irrel
 
 Recommended action:
@@ -238,9 +238,9 @@ Recommended action:
   If full-repo rg confirms no use outside Soundness, delete. The surviving
   guard projections should be:
 
-    denot_ty_lvar_gas_guard
-    denot_ty_in_ctx_under_guard
-    denot_ty_in_ctx_under_total
+    ty_denote_gas_guard
+    ty_denote_under_guard
+    ty_denote_under_total
 
   because total is used by Let.
 
@@ -250,39 +250,39 @@ Denotation/theories/Context.v
 
 Definitions:
 
-  erase_ctx_under:
+  ctx_erasure_under:
     Keep. This is a real semantic operation and appears throughout context
     denotation and Soundness.
 
-  denot_ctx:
+  ctx_denote:
     Thin wrapper for closed context denotation. Keep for now as paper/API name.
     It can become notation if definitions are being aggressively thinned.
 
-  denot_ty_in_ctx:
-    Thin wrapper for denot_ty over erase_ctx Γ. Keep for now; used in primop
+  ty_denote_ctx:
+    Thin wrapper for ty_denote over erase_ctx Γ. Keep for now; used in primop
     semantic OK and appop.
 
-  denot_ty_in_ctx_under:
+  ty_denote_under:
     Currently ignores Σ in the target and is conceptually a compatibility name.
     Because Soundness still uses it heavily, keep temporarily. Longer-term:
-    replace theorem statements with denot_ty (erase_ctx Γ) τ e and remove it.
+    replace theorem statements with ty_denote (erase_ctx Γ) τ e and remove it.
 
   ty_env_agree_on:
     Keep. It is the right abstraction for CtxSub direct transport.
 
 Lemmas:
 
-  denot_ty_in_ctx_under_restrict_agree_transport:
+  ty_denote_under_restrict_agree_transport:
     Candidate dead lemma if rg shows no use. If used only by CtxSub, keep.
 
-  erase_ctx_under_comma_bind_env_fresh:
+  ctx_erasure_under_comma_bind_env_fresh:
     Candidate delete if unused. It looks like a short wrapper around map/set
     freshness, and better_map_solver/better_set_solver should handle most
     direct uses.
 
 Recommended helper move/add:
 
-  denot_ctx_bind_from_arg_denotation should live here if it is not already here,
+  ctx_denote_bind_from_arg_denotation should live here if it is not already here,
   because it is context-introduction semantics, not a case-specific lemma.
 
   Context comma/star/sum intro/elims should be centralized here. If Soundness or
@@ -290,7 +290,7 @@ Recommended helper move/add:
   than proving by unfold in Soundness.
 
 
-Denotation/theories/ContextTypeDenotationCasesContext.v
+Denotation/theories/DenotationCasesContext.v
 -------------------------------------------------------
 
 This file contains useful helper lemmas, but many are not really "Cases".
@@ -307,7 +307,7 @@ Definitions/lemmas to move:
 
   denot_relevant_lvars_basic_ret_fvar_subset
   denot_relevant_lvars_basic_open_tprim_fvar_subset
-    Move to ContextTypeDenotationLvars / RelevantEnv support. They are about
+    Move to TypeDenoteLvars / RelevantEnv support. They are about
     relevant-lvar computation, not cases.
 
 Recommended action:
@@ -316,7 +316,7 @@ Recommended action:
   only re-exports moved lemmas, delete the wrapper file/import.
 
 
-Denotation/theories/ContextTypeDenotationCasesConst.v
+Denotation/theories/ConstDenote.v
 -----------------------------------------------------
 
 Current role:
@@ -377,12 +377,12 @@ Definition issue:
   Generic helpers should be moved down; const-specific proofs remain here.
 
 
-Denotation/theories/ContextTypeDenotationDefinition.v
+Denotation/theories/TypeDenote.v
 -----------------------------------------------------
 
 Current role:
 
-  Core definition/open/relevant-lvars lemmas for denot_ty_lvar_gas.
+  Core definition/open/relevant-lvars lemmas for ty_denote_gas.
 
 Naked lemma patterns:
 
@@ -408,7 +408,7 @@ Recommended solver/tactic work:
 
   2. Add a denotation-open normalizer for:
 
-       formula_open_env_denot_ty_lvar_gas
+       formula_open_env_ty_denote_gas
        formula_open_env_denot_guard
 
      This should reduce repeated exact H... branches and set side conditions.
@@ -424,7 +424,7 @@ Potential proof cleanup:
   normalization is robust.
 
 
-Denotation/theories/ContextTypeDenotationOpen.v
+Denotation/theories/TypeDenoteOpen.v
 -----------------------------------------------
 
 Naked lemma patterns:
@@ -456,7 +456,7 @@ Single-use issue:
   inline long open-model transport lemmas unless they are truly dead.
 
 
-Denotation/theories/ContextTypeDenotationOpenModels.v
+Denotation/theories/TypeDenoteOpenModels.v
 -----------------------------------------------------
 
 Current concern:
@@ -469,17 +469,17 @@ Current concern:
 Likely dead candidates:
 
   res_models_open_denot_ty_bind0_iff
-  res_models_open_denot_ty_lvar_gas_to_open_at
-  res_models_open_denot_ty_lvar_gas_from_open_at
-  res_models_open_denot_ty_lvar_gas_to_open
-  res_models_open_denot_ty_lvar_gas_from_open
-  denot_ty_lvar_gas_insert_commute_tapp_open
+  res_models_open_ty_denote_gas_to_open_at
+  res_models_open_ty_denote_gas_from_open_at
+  res_models_open_ty_denote_gas_to_open
+  res_models_open_ty_denote_gas_from_open
+  ty_denote_gas_insert_commute_tapp_open
 
 Recommended action:
 
   Run full-repo rg for each lemma excluding the defining file. If no source
   usage remains, delete this file and remove its Require Export from
-  ContextTypeDenotationTactics.v / _CoqProject.
+  TypeDenoteTactics.v / _CoqProject.
 
 Risk:
 
@@ -488,7 +488,7 @@ Risk:
   is acceptable only if we are confident these are old-route artifacts.
 
 
-Denotation/theories/ContextTypeDenotationTactics.v
+Denotation/theories/TypeDenoteTactics.v
 --------------------------------------------------
 
 Current role:
@@ -523,7 +523,7 @@ Wrapper issue:
   it is still useful. If it exports dead OpenModels, remove that export.
 
 
-Denotation/theories/ContextTypeDenotationSaturateCore.v
+Denotation/theories/TypeEquivCore.v
 -------------------------------------------------------
 
 Current role:
@@ -573,13 +573,13 @@ High-value helper extraction:
 
      The middle helper should be mostly store solver.
 
-  3. For tm_result_equiv_on_tlete_body_extension:
+  3. For tm_equiv_tlete_body_extension:
 
      Add TermTLet/store helpers:
 
        store_restrict_tlet_extension_agree
        res_extend_by_store_result_lookup
-       tm_result_equiv_on_tlete_body_extension_store_packet
+       tm_equiv_tlete_body_extension_store_packet
 
      This proof currently does too much map/store algebra inline.
 
@@ -595,25 +595,25 @@ Solver improvements:
 
 Definition issue:
 
-  tm_result_equiv_on and typed_total_tm_result_equiv_on are real concepts; keep.
+  tm_equiv_on and typed_total_equiv_on are real concepts; keep.
 
 Single-use but meaningful:
 
-  denot_ty_lvar_gas_result_alias_to_var
-  denot_ty_lvar_gas_result_extension_to_var
-  tm_result_equiv_on_tlete_body_extension
+  ty_denote_gas_result_alias_to_var
+  ty_denote_gas_result_extension_to_var
+  tm_equiv_tlete_body_extension
 
 Recommendation:
 
   Keep these even if single-use. They are semantic boundaries.
 
 
-Denotation/theories/ContextTypeDenotationSaturateMain.v
+Denotation/theories/TypeEquiv.v
 -------------------------------------------------------
 
 Current role:
 
-  Main term-result-equivalence transport theorem over denot_ty_lvar_gas.
+  Main term-result-equivalence transport theorem over ty_denote_gas.
 
 Naked lemma patterns:
 
@@ -633,13 +633,13 @@ Recommended change:
 
 Possible helper:
 
-  typed_total_tm_result_equiv_on_child_packet
+  typed_total_equiv_child_packet
 
   But only add this if the same packet appears in Arrow and Wand again. Avoid a
   huge helper statement.
 
 
-Denotation/theories/ContextTypeDenotationSaturateArrow.v
+Denotation/theories/TypeEquivArrow.v
 --------------------------------------------------------
 
 Current role:
@@ -686,7 +686,7 @@ Definition issue:
   because it keeps Arrow proof out of SaturateCore/Main.
 
 
-Denotation/theories/ContextTypeDenotationSaturateWand.v
+Denotation/theories/TypeEquivWand.v
 -------------------------------------------------------
 
 Current role:
@@ -716,12 +716,12 @@ Definition issue:
   No obvious wrapper definitions to delete.
 
 
-Denotation/theories/ContextTypeDenotationSaturateBody.v
+Denotation/theories/TypeEquivBody.v
 -------------------------------------------------------
 
 Current role:
 
-  Body/support lemmas for denot_ty_lvar_gas transport.
+  Body/support lemmas for ty_denote_gas transport.
 
 Naked lemma patterns:
 
@@ -780,7 +780,7 @@ Potential new helper:
 
   expr_eval_in_atom_store_tlete_body_extension
 
-  Then tm_result_equiv_on_tlete_body_extension can be a small wrapper in
+  Then tm_equiv_tlete_body_extension can be a small wrapper in
   SaturateCore.
 
 
@@ -808,14 +808,14 @@ Likely wrapper definitions to delete or turn into notations
     context_typing_regular
 
   Denotation/theories/Context.v:
-    denot_ty_in_ctx_under
+    ty_denote_under
 
     Do not delete immediately because Soundness uses it heavily. Future cleanup
-    can replace it with denot_ty (erase_ctx Γ) τ e once remaining case proofs
+    can replace it with ty_denote (erase_ctx Γ) τ e once remaining case proofs
     are stable.
 
   Denotation/theories/Context.v:
-    denot_ctx / denot_ty_in_ctx
+    ctx_denote / ty_denote_ctx
 
     These are thin but useful paper-facing names. Keep unless we decide on an
     aggressive notation-only cleanup.
@@ -823,54 +823,54 @@ Likely wrapper definitions to delete or turn into notations
 Definition-like helper lemmas to move down
 ------------------------------------------
 
-  ContextTypeDenotationCasesContext.v:
+  DenotationCasesContext.v:
     lvars_of_atoms_empty
     atom_env_to_lty_env_restrict_singleton_lookup_eq
     atom_env_to_lty_env_restrict_singleton_lookup
     denot_relevant_lvars_basic_ret_fvar_subset
     denot_relevant_lvars_basic_open_tprim_fvar_subset
 
-  ContextTypeDenotationCasesConst.v:
+  ConstDenote.v:
     res_models_true
 
 Zero-use or likely-dead lemmas to verify and delete
 --------------------------------------------------
 
   Soundness.v:
-    denot_ty_in_ctx_under_context_ty_wf
-    denot_ty_in_ctx_under_basic_world
-    denot_ty_in_ctx_under_basic_typing
+    ty_denote_under_context_ty_wf
+    ty_denote_under_basic_world
+    ty_denote_under_basic_typing
     lstore_instantiate_tm_at_lift_free_depth_irrel
 
   Context.v:
-    denot_ty_in_ctx_under_restrict_agree_transport
-    erase_ctx_under_comma_bind_env_fresh
+    ty_denote_under_restrict_agree_transport
+    ctx_erasure_under_comma_bind_env_fresh
 
-  ContextTypeDenotationCasesConst.v:
-    formula_fv_const_precise_denot_ty_lvar_gas_empty
+  ConstDenote.v:
+    formula_fv_const_precise_ty_denote_gas_empty
     const_qual_open_fv
 
-  ContextTypeDenotationOpenModels.v:
+  TypeDenoteOpenModels.v:
     most or all open-model transport lemmas, subject to full rg verification.
 
-  ContextTypeDenotationDefinition/Saturate support:
-    formula_lvars_at_denot_ty_lvar_gas_subset
+  TypeDenote/Saturate support:
+    formula_lvars_at_ty_denote_gas_subset
     formula_open_env_lift_expr_result_formula_shift0
     denot_ty_lvar_guard_extend_typed_extension
-    formula_fv_denot_ty_lvar_gas_guard_subset
-    formula_fv_denot_ty_lvar_gas_scope_from_guard
+    formula_fv_ty_denote_gas_guard_subset
+    formula_fv_ty_denote_gas_scope_from_guard
     denot_ty_lvar_guard_wfworld_closed_on_term_le
-    denot_ty_lvar_gas_scope_from_guard
-    denot_ty_lvar_gas_scope_from_relevant_guard
-    denot_ty_lvar_gas_insert_scope_from_parts
+    ty_denote_gas_scope_from_guard
+    ty_denote_gas_scope_from_relevant_guard
+    ty_denote_gas_insert_scope_from_parts
 
 Do not inline/delete despite single use
 ---------------------------------------
 
-  denot_ty_lvar_gas_tm_result_equiv
-  denot_ty_lvar_gas_result_alias_to_var
-  denot_ty_lvar_gas_result_extension_to_var
-  tm_result_equiv_on_tlete_body_extension
+  ty_denote_gas_tm_result_equiv
+  ty_denote_gas_result_alias_to_var
+  ty_denote_gas_result_extension_to_var
+  tm_equiv_tlete_body_extension
   tlet_intro_denotation
   const_fib_over_from_expr
   const_fib_under_from_expr
@@ -897,7 +897,7 @@ Batch 1: low-risk dead wrapper cleanup
 Compile:
 
   make Denotation/theories/Context.vo
-  make Denotation/theories/ContextTypeDenotationCasesContext.vo
+  make Denotation/theories/DenotationCasesContext.vo
   make ContextTyping/theories/Soundness.vo
 
 Batch 2: solver enhancements
@@ -931,12 +931,12 @@ Batch 3: replace naked concrete lemma chains
   Priority files:
 
     ContextTyping/theories/Soundness.v
-    Denotation/theories/ContextTypeDenotationSaturateCore.v
-    Denotation/theories/ContextTypeDenotationSaturateArrow.v
-    Denotation/theories/ContextTypeDenotationSaturateWand.v
-    Denotation/theories/ContextTypeDenotationCasesConst.v
-    Denotation/theories/ContextTypeDenotationOpen.v
-    Denotation/theories/ContextTypeDenotationDefinition.v
+    Denotation/theories/TypeEquivCore.v
+    Denotation/theories/TypeEquivArrow.v
+    Denotation/theories/TypeEquivWand.v
+    Denotation/theories/ConstDenote.v
+    Denotation/theories/TypeDenoteOpen.v
+    Denotation/theories/TypeDenote.v
 
   For each file:
 
@@ -966,7 +966,7 @@ Batch 5: definition thinning
   After proofs compile:
 
     - Remove context_typing_regular if no longer used.
-    - Decide whether denot_ty_in_ctx_under should become notation or be replaced.
+    - Decide whether ty_denote_under should become notation or be replaced.
     - Delete wrapper files that only re-export moved lemmas.
 
 
@@ -983,12 +983,12 @@ Medium risk:
 
   - Replacing proof scripts in SaturateCore. Proof terms there are large; change
     in small batches and compile after each.
-  - Removing ContextTypeDenotationOpenModels.v if future admitted Arrow/Wand
+  - Removing TypeDenoteOpenModels.v if future admitted Arrow/Wand
     proofs might want it. Verify actual current source usage first.
 
 High risk:
 
-  - Replacing denot_ty_in_ctx_under across Soundness before remaining cases are
+  - Replacing ty_denote_under across Soundness before remaining cases are
     stable. Defer this.
   - Abstracting huge helper lemmas with many premises. This could make proofs
     harder instead of easier.

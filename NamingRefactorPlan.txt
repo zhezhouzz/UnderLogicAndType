@@ -1,0 +1,43 @@
+Naming refactor notes
+=====================
+
+Goal
+----
+Use names that match the paper concepts and remain searchable after the
+fiberwise/msubst route cleanup.  This pass is syntax-only: definitions and
+proofs should not change except for import/notation/tactic fallout caused by
+renaming.
+
+Conventions
+-----------
+- Keep foundational nouns that already match the paper: Store, Resource,
+  fiber, projection, refinement, product, sum.
+- Drop redundant "Context" and route-specific words when the file/module
+  already supplies the scope.
+- Prefer short semantic stems:
+  - `tm_equiv_on` for same term results on one capability.
+  - `typed_total_equiv_on` for the typed/total proof package used by term
+    equivalence transport.
+  - `ty_denote_gas_*` for fuel-indexed type denotation lemmas.
+- Use suffixes for proof roles: `_fv`, `_open`, `_scope`, `_agree`,
+  `_target_zero`, `_source_zero`, `_product_r`, `_pullback`.
+
+First batch
+-----------
+Rename the result-equivalence transport family, because it is the new direct
+TLet/Saturate route we want to keep and its current names still expose old
+implementation details:
+
+- `tm_equiv_on` -> `tm_equiv_on`
+- `typed_total_equiv_on` -> `typed_total_equiv_on`
+- `ty_denote_gas_tm_equiv*` -> `ty_denote_gas_tm_equiv*`
+- `ty_denote_gas_result_alias` -> `ty_denote_gas_result_alias`
+- `ty_denote_gas_result_ext` -> `ty_denote_gas_result_ext`
+
+Later batches
+-------------
+- Rename overly long open/FV helpers around `ty_denote_gas`.
+- Rename or merge redundant `TypeDenote*` files after the current
+  identifier batch compiles.
+- Revisit Resource/Logic long lemma names only after low-level dependency
+  order is stable.

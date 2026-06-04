@@ -1,16 +1,16 @@
-(** * Denotation.ContextTypeDenotationTactics
+(** * Denotation.TypeDenoteTactics
 
     Shared syntax and free-variable normalizers for type-denotation proofs. *)
 
 From Denotation Require Import Notation.
-From Denotation Require Import ContextTypeDenotationDefinition.
+From Denotation Require Import TypeDenote.
 From ContextLogic Require Import FormulaSyntax.
 
 (** ** Denotation formula normalization tactics *)
 
 Ltac normalize_denotation_formula_fv :=
-  unfold denot_guard_formula;
-  unfold denot_static_guard_formula;
+  unfold ty_guard_formula;
+  unfold ty_static_guard_formula;
   repeat first
     [ rewrite formula_fv_true | rewrite formula_fv_false
     | rewrite formula_fv_and | rewrite formula_fv_or
@@ -36,8 +36,8 @@ Ltac normalize_denotation_formula_fv :=
     ?context_ty_lvars_fv.
 
 Ltac normalize_denotation_formula_fv_in H :=
-  unfold denot_guard_formula in H;
-  unfold denot_static_guard_formula in H;
+  unfold ty_guard_formula in H;
+  unfold ty_static_guard_formula in H;
   repeat first
     [ rewrite formula_fv_true in H | rewrite formula_fv_false in H
     | rewrite formula_fv_and in H | rewrite formula_fv_or in H
@@ -94,12 +94,12 @@ Ltac denot_lvars_set :=
   denot_lvars_norm; better_set_solver.
 
 Ltac denot_ty_fv_norm :=
-  cbn [denot_ty_lvar_gas denot_relevant_env lty_env_restrict_lvars
+  cbn [ty_denote_gas denot_relevant_env lty_env_restrict_lvars
     denot_relevant_lvars];
   normalize_denotation_formula_fv.
 
 Ltac denot_ty_fv_norm_in H :=
-  cbn [denot_ty_lvar_gas denot_relevant_env lty_env_restrict_lvars
+  cbn [ty_denote_gas denot_relevant_env lty_env_restrict_lvars
     denot_relevant_lvars] in H;
   normalize_denotation_formula_fv_in H.
 

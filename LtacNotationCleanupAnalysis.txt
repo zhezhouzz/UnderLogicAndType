@@ -46,7 +46,7 @@ High-priority cleanup
 
 Current location:
 
-  Denotation/theories/ContextTypeDenotationDefinition.v
+  Denotation/theories/TypeDenote.v
 
 Current Ltac:
 
@@ -76,7 +76,7 @@ Analysis:
     lvars_fv_union
     lvars_fv_of_atoms
 
-  Keeping them in ContextTypeDenotationDefinition.v makes that file a mixed
+  Keeping them in TypeDenote.v makes that file a mixed
   definition+tactic hub and forces unrelated denotation files to import core
   definitions just to get normalizers.
 
@@ -84,11 +84,11 @@ Recommended change:
 
   Create or reuse:
 
-    Denotation/theories/ContextTypeDenotationTactics.v
+    Denotation/theories/TypeDenoteTactics.v
 
   Move the tactics above there, then have Definition/Open/Saturate files import
-  it.  Keep the actual denot_ty_lvar_gas definition and semantic lemmas in
-  ContextTypeDenotationDefinition.v.
+  it.  Keep the actual ty_denote_gas definition and semantic lemmas in
+  TypeDenote.v.
 
   If the file already existed in an older route, recreate it as a small real
   tactic file, not as a wrapper export file.
@@ -98,7 +98,7 @@ Recommended change:
 
 Current location:
 
-  Denotation/theories/ContextTypeDenotationOpen.v
+  Denotation/theories/TypeDenoteOpen.v
 
 Current Ltac:
 
@@ -116,7 +116,7 @@ Analysis:
 
   These are pure FV/freshness solvers.  They call the same facts as
   denot_lvars_norm, type_syntax_norm, formula_syntax_norm, and better_set_solver.
-  After res_models_open_denot_ty_lvar_gas_iff was reduced to a direct rewrite,
+  After res_models_open_ty_denote_gas_iff was reduced to a direct rewrite,
   denot_open_lvars and denot_relevant_env_open_lvars appear dead or nearly dead.
 
 Recommended change:
@@ -125,7 +125,7 @@ Recommended change:
 
     denot_open_set
 
-  in ContextTypeDenotationTactics.v:
+  in TypeDenoteTactics.v:
 
     Ltac denot_open_set :=
       denot_lvars_norm; formula_syntax_norm; type_syntax_norm; better_set_solver.
@@ -191,7 +191,7 @@ Recommended change:
 
 Current location:
 
-  Denotation/theories/ContextTypeDenotationCasesConst.v
+  Denotation/theories/ConstDenote.v
 
 Current Ltac:
 
@@ -273,11 +273,11 @@ Comment cleanup candidates
 Obvious stale or noisy comments
 -------------------------------
 
-1. Denotation/theories/ContextTypeDenotationOpen.v
+1. Denotation/theories/TypeDenoteOpen.v
 
   Current header:
 
-    "Split out from [ContextTypeDenotation.v] to keep individual proof files
+    "Split out from [TypeDenote.v] to keep individual proof files
     small."
 
   This is old file-structure commentary.  It is no longer useful after several
@@ -285,9 +285,9 @@ Obvious stale or noisy comments
 
     "Opening lemmas for type denotation formulas."
 
-2. Denotation/theories/ContextTypeDenotationDefinition.v
+2. Denotation/theories/TypeDenote.v
 
-  The comment before formula_open_env_denot_ty_lvar_gas says:
+  The comment before formula_open_env_ty_denote_gas says:
 
     "Main mopen theorem. The intended proof is by induction on [gas]..."
 
@@ -422,17 +422,17 @@ Notations worth adding or using more consistently
 
 1. Denotation target notation
 
-  denot_ty_in_ctx_under is conceptually a compatibility wrapper around:
+  ty_denote_under is conceptually a compatibility wrapper around:
 
-    denot_ty (erase_ctx Γ) τ e
+    ty_denote (erase_ctx Γ) τ e
 
   It is used heavily in Soundness.  Do not delete until higher-order cases are
   stable.  But once those cases are proved, consider replacing it with a
-  notation-only name or using denot_ty directly in theorem statements.
+  notation-only name or using ty_denote directly in theorem statements.
 
 2. Result-equivalence package
 
-  typed_total_tm_result_equiv_on is semantically important but verbose.  If it
+  typed_total_equiv_on is semantically important but verbose.  If it
   keeps appearing in future proofs, add a notation such as:
 
     e1 ≃[Σ,τ,m] e2
@@ -459,7 +459,7 @@ Risk: very low.
 Batch 2: Denotation tactic file
 -------------------------------
 
-  - Add ContextTypeDenotationTactics.v or revive it as a real tactic file.
+  - Add TypeDenoteTactics.v or revive it as a real tactic file.
   - Move denot_lvars/FV/open-set tactics from Definition/Open into it.
   - Keep definition-specific proof orchestration tactics local if they mention
     a specific induction hypothesis.
@@ -504,9 +504,9 @@ After comment-only cleanup:
 
 After Denotation tactic movement:
 
-  make Denotation/theories/ContextTypeDenotationDefinition.vo
-  make Denotation/theories/ContextTypeDenotationOpen.vo
-  make Denotation/theories/ContextTypeDenotationSaturateCore.vo
+  make Denotation/theories/TypeDenote.vo
+  make Denotation/theories/TypeDenoteOpen.vo
+  make Denotation/theories/TypeEquivCore.vo
   make ContextTyping/theories/Soundness.vo
 
 After BasicTypingFormula helper changes:
@@ -531,7 +531,7 @@ Do these first:
 
 Do these later, after higher-order Soundness cases are stable:
 
-  1. Replace or notation-thin denot_ty_in_ctx_under.
+  1. Replace or notation-thin ty_denote_under.
   2. Delete qualifier notations that are only useful for paper examples.
   3. Further simplify BasicTypingFormula local tactic proof scripts.
 

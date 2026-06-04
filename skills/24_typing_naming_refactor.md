@@ -10,12 +10,12 @@ Useful patterns from this refactor:
   repeatedly destructing `fresh_for_not_in`.  Keep projection lemmas for common
   side conditions such as `x ∉ X`, `x ∉ fv_tm e`, and `x ∉ fv_cty τ`.
 - Normalize erased context binders through helpers:
-  `erase_ctx_under_comma_bind_dom_nf` and
-  `erase_ctx_under_comma_bind_env_fresh`.
-- Use `erase_ctx_under_dom_basic` whenever a proof manually unfolds
-  `erase_ctx_under` and rewrites `basic_ctx_erase_dom`.
-- Use `denot_ctx_in_env_world_covers_erased` and
-  `denot_ctx_in_env_store_restrict_env_delete_empty` instead of rebuilding the
+  `ctx_erasure_under_comma_bind_dom_nf` and
+  `ctx_erasure_under_comma_bind_env_fresh`.
+- Use `ctx_erasure_under_dom_basic` whenever a proof manually unfolds
+  `ctx_erasure_under` and rewrites `basic_ctx_erase_dom`.
+- Use `ctx_denote_in_env_world_covers_erased` and
+  `ctx_denote_in_env_store_restrict_env_delete_empty` instead of rebuilding the
   same formula-scoping/world-domain/store-restrict argument.
 - For body opening after recording an evaluated result, use
   `msubst_open_body_result` and the two directional step bridges:

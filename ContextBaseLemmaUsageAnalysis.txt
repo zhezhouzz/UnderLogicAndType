@@ -82,7 +82,7 @@ File: ContextBase/LogicVar.v
   uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - Denotation/theories/ContextTypeDenotationDefinition.v:624: apply lvars_open_mono.
+    - Denotation/theories/TypeDenote.v:624: apply lvars_open_mono.
 - Lemma `lvars_open_subset_insert_fresh` @ line 211
   uses: 0 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
   classification: ZERO-V-USAGE: candidate for deletion unless public API/paper name; LOW-LEVEL-API: may be useful despite thin proof
@@ -92,7 +92,7 @@ File: ContextBase/LogicVar.v
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextBasicDenotation/theories/RelevantEnv.v:386: rewrite lvars_open_union.
-    - Denotation/theories/ContextTypeDenotationDefinition.v:623: rewrite <- lvars_open_union.
+    - Denotation/theories/TypeDenote.v:623: rewrite <- lvars_open_union.
     - ContextLogic/theories/FormulaSyntax.v:958: symmetry. rewrite lvars_open_union. reflexivity.
     - ContextLogic/theories/FormulaSyntax.v:960: symmetry. rewrite lvars_open_union. reflexivity.
     - ContextLogic/theories/FormulaSyntax.v:962: symmetry. rewrite lvars_open_union. reflexivity.
@@ -138,8 +138,8 @@ File: ContextBase/LogicVar.v
   uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1172: - rewrite logic_var_open_sym.
-    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1194: - rewrite logic_var_open_sym.
+    - Denotation/theories/TypeEquivCore.v:1172: - rewrite logic_var_open_sym.
+    - Denotation/theories/TypeEquivCore.v:1194: - rewrite logic_var_open_sym.
 - Lemma `logic_var_open_onesided_swap_fresh` @ line 344
   uses: 2 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -178,8 +178,8 @@ File: ContextBase/LogicVar.v
     - ContextBase/LogicVar.v:459: rewrite <- (lvars_fv_of_atoms ({[x]} : aset)).
     - ContextBasicDenotation/theories/RelevantEnv.v:188: rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms in Hdom.
     - ContextBasicDenotation/theories/StoreTyping.v:436: rewrite atom_store_to_lvar_store_dom, lvars_fv_of_atoms. exact Hout.
-    - Denotation/theories/ContextTypeDenotationTactics.v:32: rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
-    - Denotation/theories/ContextTypeDenotationTactics.v:59: rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
+    - Denotation/theories/TypeDenoteTactics.v:32: rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
+    - Denotation/theories/TypeDenoteTactics.v:59: rewrite ?lvars_fv_union, ?lvars_fv_of_atoms,
     - ... 5 more
 - Lemma `lvars_bv_of_atoms` @ line 424
   uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
@@ -203,7 +203,7 @@ File: ContextBase/LogicVar.v
     - ContextStore/StoreFilterMapKey.v:247: rewrite lvars_fv_union, lvars_fv_singleton_bound.
     - ContextStore/LVarStore.v:561: rewrite lvars_fv_union, lvars_shift_from_fv, lvars_fv_singleton_bound.
     - ContextBasicDenotation/theories/TermSyntax.v:17: rewrite ?lvars_fv_singleton_bound; reflexivity.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:167: rewrite const_qual_vars_bound, lvars_fv_singleton_bound.
+    - Denotation/theories/ConstDenote.v:167: rewrite const_qual_vars_bound, lvars_fv_singleton_bound.
     - ... 12 more
 - Lemma `lvars_fv_singleton_free` @ line 456
   uses: 23 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
@@ -220,10 +220,10 @@ File: ContextBase/LogicVar.v
   classification: THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextBasicDenotation/theories/BasicTypingFormula.v:20: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:23: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:42: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:60: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:78: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    - Denotation/theories/ConstDenote.v:23: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    - Denotation/theories/ConstDenote.v:42: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    - Denotation/theories/ConstDenote.v:60: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
+    - Denotation/theories/ConstDenote.v:78: + rewrite dom_empty_L, lvars_fv_empty. set_solver.
     - ... 18 more
 - Lemma `lvars_fv_open` @ line 471
   uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
@@ -268,10 +268,10 @@ File: ContextBase/LogicVar.v
   uses: 5 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
   sample uses:
-    - Denotation/theories/ContextTypeDenotationTactics.v:34: ?lvars_fv_difference_singleton_free;
-    - Denotation/theories/ContextTypeDenotationTactics.v:61: ?lvars_fv_difference_singleton_free in H;
-    - Denotation/theories/ContextTypeDenotationTactics.v:76: ?lvars_fv_empty, ?lvars_fv_difference_singleton_free;
-    - Denotation/theories/ContextTypeDenotationTactics.v:90: ?lvars_fv_empty, ?lvars_fv_difference_singleton_free in H;
+    - Denotation/theories/TypeDenoteTactics.v:34: ?lvars_fv_difference_singleton_free;
+    - Denotation/theories/TypeDenoteTactics.v:61: ?lvars_fv_difference_singleton_free in H;
+    - Denotation/theories/TypeDenoteTactics.v:76: ?lvars_fv_empty, ?lvars_fv_difference_singleton_free;
+    - Denotation/theories/TypeDenoteTactics.v:90: ?lvars_fv_empty, ?lvars_fv_difference_singleton_free in H;
     - ContextTypeLanguage/theories/Qualifier.v:262: rewrite lvars_fv_difference_singleton_free.
 - Lemma `lvars_fv_difference_singleton_bound` @ line 563
   uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
@@ -454,10 +454,10 @@ File: ContextBase/LogicVarOpenEnv.v
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextBasicDenotation/theories/TermOpen.v:774: 2:{ apply open_env_values_inj_lift. exact Hinjη. }
-    - Denotation/theories/ContextTypeDenotationDefinition.v:187: |apply open_env_values_inj_lift; exact Hinj];
-    - Denotation/theories/ContextTypeDenotationDefinition.v:200: |apply open_env_values_inj_lift; exact Hinj] ] ].
-    - Denotation/theories/ContextTypeDenotationDefinition.v:280: 2: apply open_env_values_inj_lift; exact Hinj.
-    - Denotation/theories/ContextTypeDenotationDefinition.v:287: 2:{ apply open_env_values_inj_lift. exact Hinj. }
+    - Denotation/theories/TypeDenote.v:187: |apply open_env_values_inj_lift; exact Hinj];
+    - Denotation/theories/TypeDenote.v:200: |apply open_env_values_inj_lift; exact Hinj] ] ].
+    - Denotation/theories/TypeDenote.v:280: 2: apply open_env_values_inj_lift; exact Hinj.
+    - Denotation/theories/TypeDenote.v:287: 2:{ apply open_env_values_inj_lift. exact Hinj. }
     - ... 11 more
 - Lemma `open_env_values_inj_insert_inv` @ line 326
   uses: 16 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
@@ -473,7 +473,7 @@ File: ContextBase/LogicVarOpenEnv.v
   uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - Denotation/theories/ContextTypeDenotationOpen.v:35: (open_env_values_inj_singleton k y)) as Heq.
+    - Denotation/theories/TypeDenoteOpen.v:35: (open_env_values_inj_singleton k y)) as Heq.
 - Lemma `logic_var_open_env_atom_swap` @ line 357
   uses: 3 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -550,7 +550,7 @@ File: ContextBase/LogicVarOpenEnv.v
   uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
   classification: SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
-    - Denotation/theories/ContextTypeDenotationTactics.v:119: apply open_env_fresh_for_lvars_singleton;
+    - Denotation/theories/TypeDenoteTactics.v:119: apply open_env_fresh_for_lvars_singleton;
 - Lemma `lvars_open_env_union` @ line 564
   uses: 5 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
   classification: LOW-LEVEL-API: may be useful despite thin proof
@@ -840,9 +840,9 @@ File: ContextBase/LogicVarShift.v
   sample uses:
     - ContextBasicDenotation/theories/RelevantEnv.v:1453: rewrite lvars_at_depth_singleton_bound0_succ, lvars_at_depth_empty.
     - ContextBasicDenotation/theories/TermSyntax.v:155: try solve [rewrite lvars_at_depth_empty; reflexivity].
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:29: !lvars_at_depth_empty.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:47: !lvars_at_depth_empty.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:65: !lvars_at_depth_empty.
+    - Denotation/theories/ConstDenote.v:29: !lvars_at_depth_empty.
+    - Denotation/theories/ConstDenote.v:47: !lvars_at_depth_empty.
+    - Denotation/theories/ConstDenote.v:65: !lvars_at_depth_empty.
     - ... 6 more
 - Lemma `lvars_at_depth_union` @ line 438
   uses: 28 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
@@ -864,10 +864,10 @@ File: ContextBase/LogicVarShift.v
   classification: LOW-LEVEL-API: may be useful despite thin proof
   sample uses:
     - ContextBasicDenotation/theories/RelevantEnv.v:1453: rewrite lvars_at_depth_singleton_bound0_succ, lvars_at_depth_empty.
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:28: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:46: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:64: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
-    - Denotation/theories/ContextTypeDenotationCasesConst.v:111: ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
+    - Denotation/theories/ConstDenote.v:28: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
+    - Denotation/theories/ConstDenote.v:46: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
+    - Denotation/theories/ConstDenote.v:64: rewrite !lvars_at_depth_union, !lvars_at_depth_singleton_bound0_succ,
+    - Denotation/theories/ConstDenote.v:111: ?lvars_at_depth_singleton_bound0_succ, ?lvars_at_depth_empty.
     - ... 6 more
 - Lemma `lvars_open0_difference_subset_depth1` @ line 481
   uses: 1 total; ltac/hint uses: 0; proof lines: 38; terminator: Qed.
@@ -882,7 +882,7 @@ File: ContextBase/LogicVarShift.v
     - ContextBasicDenotation/theories/RelevantEnv.v:1335: - apply lvars_at_depth_mono. set_solver.
     - ContextBasicDenotation/theories/RelevantEnv.v:1353: - apply lvars_at_depth_mono. intros v Hv.
     - ContextBasicDenotation/theories/RelevantEnv.v:1444: - apply lvars_at_depth_mono. intros v Hv.
-    - Denotation/theories/ContextTypeDenotationDefinition.v:512: pose proof (lvars_at_depth_mono (S d)
+    - Denotation/theories/TypeDenote.v:512: pose proof (lvars_at_depth_mono (S d)
     - ... 1 more
 - Lemma `lvars_at_depth_difference_subset` @ line 538
   uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
@@ -1423,7 +1423,7 @@ Zero-use lemmas:
 
 Single-use lemmas:
 - ContextBase/LogicVar.v:168: `logic_var_swap_open_one` -> ContextStore/LVarStore.v:349 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextBase/LogicVar.v:203: `lvars_open_mono` -> Denotation/theories/ContextTypeDenotationDefinition.v:624 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
+- ContextBase/LogicVar.v:203: `lvars_open_mono` -> Denotation/theories/TypeDenote.v:624 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVar.v:244: `logic_var_open_commute_fresh` -> ContextBase/LogicVar.v:276 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
 - ContextBase/LogicVar.v:290: `lvars_open_difference_bound` -> ContextTypeLanguage/theories/Qualifier.v:271 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless unused/wrapper
 - ContextBase/LogicVar.v:316: `lvars_fv_open_prime_except` -> ContextBase/LogicVar.v:333 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
@@ -1436,12 +1436,12 @@ Single-use lemmas:
 - ContextBase/LogicVarOpenEnv.v:189: `open_env_avoids_atom_lift` -> ContextBase/BaseTactics.v:99 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:216: `open_env_atom_swap_involutive` -> ContextBase/LogicVarOpenEnv.v:455 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:240: `open_env_atom_swap_insert` -> ContextBasicDenotation/theories/TermSyntax.v:870 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
-- ContextBase/LogicVarOpenEnv.v:344: `open_env_values_inj_singleton` -> Denotation/theories/ContextTypeDenotationOpen.v:35 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextBase/LogicVarOpenEnv.v:344: `open_env_values_inj_singleton` -> Denotation/theories/TypeDenoteOpen.v:35 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:426: `open_env_fresh_for_lvars_atom_swap` -> ContextStore/LVarStore.v:255 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:462: `lvar_to_atom_insert_open_env_fresh` -> ContextStore/StoreFilterMapKey.v:685 -- SINGLE-V-USAGE: consider inline if not semantic boundary
 - ContextBase/LogicVarOpenEnv.v:507: `open_env_atoms_lookup` -> ContextBase/LogicVarOpenEnv.v:530 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:525: `open_env_avoids_atom_of_notin_atoms` -> ContextBase/BaseTactics.v:100 -- SINGLE-V-USAGE: consider inline if not semantic boundary; THIN-PROOF: likely wrapper/solver lemma; LOW-LEVEL-API: may be useful despite thin proof
-- ContextBase/LogicVarOpenEnv.v:544: `open_env_fresh_for_lvars_singleton` -> Denotation/theories/ContextTypeDenotationTactics.v:119 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
+- ContextBase/LogicVarOpenEnv.v:544: `open_env_fresh_for_lvars_singleton` -> Denotation/theories/TypeDenoteTactics.v:119 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:593: `lvars_fv_open_env_env_mono` -> ContextBase/LogicVarOpenEnv.v:709 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:637: `lvars_open_env_open_one_fresh` -> ContextBase/LogicVarOpenEnv.v:752 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
 - ContextBase/LogicVarOpenEnv.v:665: `open_env_fresh_for_lvars_empty` -> ContextBase/BaseTactics.v:101 -- SINGLE-V-USAGE: consider inline if not semantic boundary; LOW-LEVEL-API: may be useful despite thin proof
