@@ -286,13 +286,13 @@ File: ContextBasicDenotation/theories/RelevantEnv.v
 - Lemma `arrow_body_relevant_env_agree` @ line 677
   uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `arrow_body_relevant_env_agree_from_basic_context_ty` @ line 694
+- Lemma `arrow_body_env_agree` @ line 694
   uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
-- Lemma `basic_world_formula_arrow_body_from_source_and_arg` @ line 719
+- Lemma `arrow_body_world_from_source_arg` @ line 719
   uses: 2 total; ltac/hint uses: 0; proof lines: 57; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `basic_world_formula_wand_body_from_source_and_arg` @ line 777
+- Lemma `wand_body_world_from_source_arg` @ line 777
   uses: 1 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `wand_body_relevant_env_agree_open_one_core` @ line 797

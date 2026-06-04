@@ -691,7 +691,7 @@ Proof.
   eapply arrow_body_relevant_lvars_subset; eauto.
 Qed.
 
-Lemma arrow_body_relevant_env_agree_from_basic_context_ty
+Lemma arrow_body_env_agree
     (Σsrc : lty_env) Ty y τx τr e_src e_body :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
   LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
@@ -716,7 +716,7 @@ Proof.
     set_solver.
 Qed.
 
-Lemma basic_world_formula_arrow_body_from_source_and_arg
+Lemma arrow_body_world_from_source_arg
     (Σsrc : lty_env) Ty y τx τr e_src e_body (m : WfWorldT) :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
   LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
@@ -737,7 +737,7 @@ Proof.
     m Hsrc Hy) as Hunion.
   eapply basic_world_formula_subenv; [|exact Hunion].
   intros v Tv Hlook.
-  pose proof (arrow_body_relevant_env_agree_from_basic_context_ty
+  pose proof (arrow_body_env_agree
     Σsrc Ty y τx τr e_src e_body Hlc HyΣ Hbasic He) as Hagree.
   change ((lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
     (relevant_lvars (cty_open 0 y τr) e_body) : lty_env) !!
@@ -774,7 +774,7 @@ Proof.
   exact Hlook.
 Qed.
 
-Lemma basic_world_formula_wand_body_from_source_and_arg
+Lemma wand_body_world_from_source_arg
     (Σsrc : lty_env) Ty y τx τr e_src e_body (m : WfWorldT) :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
   LVFree y ∉ (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->
@@ -791,7 +791,7 @@ Proof.
   intros Hlc HyΣ Hbasic He Hsrc Hy.
   change (relevant_env Σsrc (CTWand τx τr) e_src)
     with (relevant_env Σsrc (CTArrow τx τr) e_src) in Hsrc.
-  eapply basic_world_formula_arrow_body_from_source_and_arg; eauto.
+  eapply arrow_body_world_from_source_arg; eauto.
 Qed.
 
 Lemma wand_body_relevant_env_agree_open_one_core

@@ -137,7 +137,7 @@ File: Denotation/theories/TypeEquivArrow.v
 - Lemma `wfworld_closed_on_arrow_open_result_apps` @ line 150
   uses: 2 total; ltac/hint uses: 0; proof lines: 70; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `basic_world_formula_arrow_open_result_source_world` @ line 221
+- Lemma `arrow_result_source_world` @ line 221
   uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `basic_world_formula_opened_arg_world` @ line 239
@@ -152,7 +152,7 @@ File: Denotation/theories/TypeEquivArrow.v
 - Lemma `basic_world_formula_arrow_open_result_target` @ line 348
   uses: 2 total; ltac/hint uses: 0; proof lines: 36; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_basic_typing_formula_arrow_open_result_target` @ line 385
+- Lemma `arrow_result_target_typing` @ line 385
   uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `ty_denote_gas_zero_arrow_open_result_target` @ line 428
@@ -379,7 +379,7 @@ File: Denotation/theories/TypeEquivWand.v
 - Lemma `wfworld_closed_on_wand_open_result_apps` @ line 151
   uses: 2 total; ltac/hint uses: 0; proof lines: 82; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `basic_world_formula_wand_open_result_source_world` @ line 234
+- Lemma `wand_result_source_world` @ line 234
   uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `basic_world_formula_wand_open_result_big` @ line 252
@@ -391,7 +391,7 @@ File: Denotation/theories/TypeEquivWand.v
 - Lemma `basic_world_formula_wand_open_result_target` @ line 342
   uses: 2 total; ltac/hint uses: 0; proof lines: 44; terminator: Qed.
   classification: ordinary helper; review by use sites
-- Lemma `expr_basic_typing_formula_wand_open_result_target` @ line 387
+- Lemma `wand_result_target_typing` @ line 387
   uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
   classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
 - Lemma `ty_denote_gas_zero_wand_open_result_target` @ line 430

@@ -201,8 +201,8 @@ the reusable transport theorem for the syntactic associativity
 
 - `TLetSupport.v:1147` `arrow_body_relevant_lvars_subset`
 - `TLetSupport.v:1161` `arrow_body_relevant_env_agree`
-- `TLetSupport.v:1178` `arrow_body_relevant_env_agree_from_basic_context_ty`
-- `TLetSupport.v:1203` `wand_body_relevant_env_agree_from_basic_context_ty`
+- `TLetSupport.v:1178` `arrow_body_env_agree`
+- `TLetSupport.v:1203` `wand_body_env_agree`
   - Lower target: `Denotation/TypeDenote.v`.
   - Change: keep the generic `arrow_body_relevant_lvars_subset` and
     `arrow_body_relevant_env_agree`; define Wand as a one-line reuse of Arrow.
@@ -214,8 +214,8 @@ the reusable transport theorem for the syntactic associativity
   - Change: delete duplicate from TLetSupport and import/use the core lemma.
   - Reason: exact duplicate by name/content.
 
-- `TLetSupport.v:1260` `basic_world_formula_arrow_body_from_source_and_arg`
-- `TLetSupport.v:1318` `basic_world_formula_wand_body_from_source_and_arg`
+- `TLetSupport.v:1260` `arrow_body_world_from_source_arg`
+- `TLetSupport.v:1318` `wand_body_world_from_source_arg`
   - Lower target: `Denotation/TypeDenote.v` or
     `ContextBasicDenotation/StoreTyping.v` if restated without
     `relevant_env`.

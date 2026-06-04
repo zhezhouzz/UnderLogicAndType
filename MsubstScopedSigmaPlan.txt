@@ -207,8 +207,8 @@ literal equality, then use res_models_ty_denote_gas_env_agree_on.
 Existing lemmas likely reusable:
 
   - res_models_ty_denote_gas_env_agree_on
-  - arrow_body_relevant_env_agree_from_basic_context_ty
-  - wand_body_relevant_env_agree_from_basic_context_ty
+  - arrow_body_env_agree
+  - wand_body_env_agree
   - lstore_instantiate_tm_lift_free_agree_subset
   - tm_lvars_lstore_instantiate_lift_free_closed_subset
   - formula_fv_ty_denote_gas_subset_relevant_pre_open
@@ -303,7 +303,7 @@ Minimal Wand opened-child helper shape:
    - normalize the opened tapp body with open_tapp_tm_shift_bvar0_lc or the
      existing tapp/open lemma;
    - align relevant envs with
-     wand_body_relevant_env_agree_from_basic_context_ty;
+     wand_body_env_agree;
    - use denot_msubst_local_scoped_IH_forward_env_agree;
    - use store_singleton_projection_product_restrict_of_scope for the
      restricted σ in the product world.

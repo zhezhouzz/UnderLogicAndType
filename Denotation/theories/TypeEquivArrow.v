@@ -79,7 +79,7 @@ Proof.
   exact Htgt.
 Qed.
 
-Lemma ty_denote_gas_tm_equiv_arrow_open_result_source_mid
+Lemma ty_equiv_arrow_result_src_mid
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
   lc_tm e1 ->
@@ -113,7 +113,7 @@ Proof.
   exact Hsrc.
 Qed.
 
-Lemma ty_denote_gas_tm_equiv_arrow_open_result_target_mid_to_goal
+Lemma ty_equiv_arrow_result_tgt_goal
     gas (Σ : lty_env) τx τr e2
     (my : WfWorldT) y :
   lc_tm e2 ->
@@ -218,7 +218,7 @@ Proof.
       + exact Hclosed_y.
 Qed.
 
-Lemma basic_world_formula_arrow_open_result_source_world
+Lemma arrow_result_source_world
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) :
   typed_total_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
   res_restrict my (world_dom (m : WorldT)) = m ->
@@ -278,7 +278,7 @@ Proof.
   destruct Hguard_top_tgt as [Hwf_top_tgt _].
   apply context_ty_wf_formula_models_iff in Hwf_top_tgt
     as [_ [_ Hbasic_arrow]].
-  eapply basic_world_formula_arrow_body_from_source_and_arg.
+  eapply arrow_body_world_from_source_arg.
   - exact Hlc_rel.
   - eapply relevant_env_arrow_fresh_free.
     + exact Hyτx.
@@ -371,7 +371,7 @@ Lemma basic_world_formula_arrow_open_result_target
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
 Proof.
   intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hworld Hres_mid Harg.
-  pose proof (basic_world_formula_arrow_open_result_source_world
+  pose proof (arrow_result_source_world
     Σ τx τr e1 e2 m my Hequiv Hrestrict) as Hworld_src_my.
   pose proof (basic_world_formula_opened_arg_world (erase_ty τx) my y Hworld)
     as Hworld_y.
@@ -382,7 +382,7 @@ Proof.
   eapply basic_world_formula_arrow_open_result_subenv; eauto.
 Qed.
 
-Lemma expr_basic_typing_formula_arrow_open_result_target
+Lemma arrow_result_target_typing
     gas (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :
   typed_total_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
@@ -548,7 +548,7 @@ Proof.
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (tapp_tm e2 (vfvar y)) (erase_ty (cty_open 0 y τr))).
   {
-    eapply expr_basic_typing_formula_arrow_open_result_target; eauto.
+    eapply arrow_result_target_typing; eauto.
   }
   apply ty_denote_gas_zero_of_guard.
   repeat rewrite res_models_and_iff.
@@ -698,7 +698,7 @@ Proof.
         τres esrc).
   {
     unfold τres, esrc.
-    eapply ty_denote_gas_tm_equiv_arrow_open_result_source_mid;
+    eapply ty_equiv_arrow_result_src_mid;
       eauto.
   }
   assert (Htgt_mid_to_goal :
@@ -713,7 +713,7 @@ Proof.
         τres etgt).
   {
     unfold τres, etgt.
-    eapply ty_denote_gas_tm_equiv_arrow_open_result_target_mid_to_goal;
+    eapply ty_equiv_arrow_result_tgt_goal;
       eauto.
   }
   apply Htgt_mid_to_goal.
