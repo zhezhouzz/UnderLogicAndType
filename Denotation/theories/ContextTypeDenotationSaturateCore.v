@@ -245,30 +245,6 @@ Proof.
   apply basic_tm_has_ltype_insert_fresh_lvar; assumption.
 Qed.
 
-Lemma denot_ty_lvar_guard_insert_fresh_lty_env
-    (Σ : lty_env) τ e x T (m : WfWorldT) :
-  LVFree x ∉ dom Σ ->
-  m ⊨ basic_world_formula (<[LVFree x := T]> Σ) ->
-  m ⊨ FAnd (context_ty_wf_formula Σ τ)
-    (FAnd (basic_world_formula Σ)
-      (FAnd (expr_basic_typing_formula Σ e (erase_ty τ))
-            (expr_total_formula e))) ->
-  m ⊨ FAnd (context_ty_wf_formula (<[LVFree x := T]> Σ) τ)
-    (FAnd (basic_world_formula (<[LVFree x := T]> Σ))
-      (FAnd
-        (expr_basic_typing_formula (<[LVFree x := T]> Σ) e (erase_ty τ))
-        (expr_total_formula e))).
-Proof.
-  intros HxΣ Hworldx Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [_ [Hbasic Htotal]]].
-  eapply res_models_and_intro_from_models.
-  - eapply context_ty_wf_formula_insert_fresh_same_world; eauto.
-  - eapply res_models_and_intro_from_models; [exact Hworldx|].
-    eapply res_models_and_intro_from_models; [|exact Htotal].
-    eapply expr_basic_typing_formula_insert_fresh_same_world; eauto.
-Qed.
-
 Lemma denot_ty_lvar_gas_insert_fresh_lty_env_eq
     gas (Σ : lty_env) τ e x T :
   LVFree x ∉ dom Σ ->
