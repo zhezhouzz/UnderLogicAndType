@@ -155,12 +155,6 @@ Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=
 Notation " c1 '≺[' b ']' c2 " :=
   (constant_lt_for_base b c1 c2) (at level 20, b at next level).
 
-Lemma constant_lt_for_base_well_founded b :
-  well_founded (constant_lt_for_base b).
-Proof.
-  unfold constant_lt_for_base. apply well_founded_ltof.
-Qed.
-
 Definition mk_q_lt_base (b : base_ty) (v1 v2 : value) : type_qualifier :=
   tqual (lvar_value_keys v1 ∪ lvar_value_keys v2)
     (fun σ =>

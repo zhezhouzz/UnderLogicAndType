@@ -28,7 +28,7 @@ Global counts
 - ContextBase: 198 lemmas, 32 zero-use, 50 single-use, 0 admitted.
 - ContextStore: 241 lemmas, 37 zero-use, 81 single-use, 0 admitted.
 - ContextAlgebra: 188 lemmas, 0 zero-use, 95 single-use, 0 admitted.
-- ContextTypeLanguage: 226 lemmas, 89 zero-use, 59 single-use, 0 admitted.
+- ContextTypeLanguage: 105 lemmas, 0 zero-use, 39 single-use, 0 admitted, 48 thin
 - ContextLogic: 100 lemmas, 0 zero-use, 45 single-use, 0 admitted, 14 thin
 - ContextBasicDenotation: 411 lemmas, 101 zero-use, 133 single-use, 1 admitted.
 - Denotation: 138 lemmas, 6 zero-use, 69 single-use, 0 admitted.
