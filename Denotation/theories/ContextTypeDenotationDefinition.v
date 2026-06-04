@@ -63,8 +63,19 @@ Fixpoint denot_ty_lvar_gas
                   (cty_shift 0 τx) (tret (vbvar 0)))
                 (denot_ty_lvar_gas gas' Σx τr
                   (tapp_tm (tm_shift 0 e) (vbvar 0)))))
-      end
+    end
     end).
+
+Lemma open_env_lift_fresh_for_bound0_bind_dom η T :
+  open_env_fresh_for_lvars
+    (kmap S η)
+    (dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty))).
+Proof.
+  replace (dom (<[LVBound 0 := T]> (∅ : gmap logic_var ty)))
+    with ({[LVBound 0]} : lvset)
+    by (rewrite dom_insert_L, dom_empty_L; set_solver).
+  apply open_env_lift_fresh_for_bound0_singleton.
+Qed.
 
 Lemma formula_open_env_denot_guard η Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ denot_relevant_lvars τ e) ->
@@ -190,13 +201,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
-          (dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty)))
-          ({[LVBound 0]} : lvset)).
-        - intros v Hv.
-          change (v ∈ dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty))) in Hv.
-          rewrite dom_insert_L, dom_empty_L in Hv. set_solver.
-        - apply open_env_lift_fresh_for_bound0_singleton.
+        apply open_env_lift_fresh_for_bound0_bind_dom.
       }
       2: apply open_env_values_inj_lift; exact Hinj.
       rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
@@ -237,13 +242,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
-          (dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty)))
-          ({[LVBound 0]} : lvset)).
-        - intros v Hv.
-          change (v ∈ dom (<[LVBound 0 := TBase b]> (∅ : gmap logic_var ty))) in Hv.
-          rewrite dom_insert_L, dom_empty_L in Hv. set_solver.
-        - apply open_env_lift_fresh_for_bound0_singleton.
+        apply open_env_lift_fresh_for_bound0_bind_dom.
       }
       2: apply open_env_values_inj_lift; exact Hinj.
       rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
@@ -369,13 +368,7 @@ Proof.
       rewrite !formula_open_env_impl.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
-          (dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty)))
-          ({[LVBound 0]} : lvset)).
-        - intros v Hv.
-          change (v ∈ dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty))) in Hv.
-          rewrite dom_insert_L, dom_empty_L in Hv. set_solver.
-        - apply open_env_lift_fresh_for_bound0_singleton.
+        apply open_env_lift_fresh_for_bound0_bind_dom.
       }
       2: apply open_env_values_inj_lift; exact Hinj.
       rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
@@ -439,13 +432,7 @@ Proof.
       rewrite formula_open_env_wand.
       rewrite formula_open_env_basic_world_formula.
       2:{
-        eapply (open_env_fresh_for_lvars_mono ((kmap S η))
-          (dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty)))
-          ({[LVBound 0]} : lvset)).
-        - intros v Hv.
-          change (v ∈ dom (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty))) in Hv.
-          rewrite dom_insert_L, dom_empty_L in Hv. set_solver.
-        - apply open_env_lift_fresh_for_bound0_singleton.
+        apply open_env_lift_fresh_for_bound0_bind_dom.
       }
       2: apply open_env_values_inj_lift; exact Hinj.
       rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.

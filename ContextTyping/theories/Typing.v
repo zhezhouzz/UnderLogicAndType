@@ -188,15 +188,6 @@ Definition context_typing_wf
   wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 
-Lemma context_typing_wf_regular Σ Γ e τ :
-  context_typing_wf Σ Γ e τ ->
-  wf_ctx_under Σ Γ /\
-  wf_context_ty_at 0 (dom (erase_ctx Γ)) τ /\
-  erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
-Proof.
-  intros Hwf. exact Hwf.
-Qed.
-
 Lemma context_typing_wf_basic_typing Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
