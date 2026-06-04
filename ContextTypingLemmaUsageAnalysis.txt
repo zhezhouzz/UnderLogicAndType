@@ -1,0 +1,335 @@
+ContextTyping lemma usage analysis
+===================================
+
+Method: scanned all .v files for Lemma/Theorem/Corollary/Fact/Proposition names, counted whole-token .v references excluding the definition line, and marked Ltac/Hint references. Counts do not include .txt reports.
+
+File: ContextTyping/theories/Soundness.v
+----------------------------------------
+- Lemma `denot_ty_in_ctx_under_guard` @ line 27
+  uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:49: pose proof (denot_ty_in_ctx_under_guard Σ Γ τ e m Hden) as Hguard.
+- Lemma `denot_ty_in_ctx_under_total` @ line 43
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:384: pose proof (denot_ty_in_ctx_under_total Σ Γ τ1 e1 m Hden1)
+- Lemma `context_typing_wf_denot_static_guard` @ line 57
+  uses: 1 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:457: pose proof (context_typing_wf_denot_static_guard
+- Lemma `appop_context_typing_arg_lookup` @ line 101
+  uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:654: pose proof (appop_context_typing_arg_lookup Φ Σ Γ op x Hsig Hwf)
+- Lemma `denot_var_direct_in_ctx` @ line 127
+  uses: 1 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:159: apply denot_var_direct_in_ctx.
+- Lemma `fundamental_var_case` @ line 154
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTyping/theories/Soundness.v:721: - eapply fundamental_var_case; eauto.
+- Lemma `denot_const_direct_in_ctx` @ line 162
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:189: apply denot_const_direct_in_ctx.
+- Lemma `fundamental_const_case` @ line 184
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTyping/theories/Soundness.v:722: - eapply fundamental_const_case; eauto.
+- Lemma `fundamental_sub_case` @ line 192
+  uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:723: - eapply fundamental_sub_case; eauto.
+- Lemma `fundamental_ctx_sub_case` @ line 209
+  uses: 1 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:724: - eapply fundamental_ctx_sub_case; eauto.
+- Lemma `denot_ctx_under_comma_bind_from_result_extension` @ line 251
+  uses: 1 total; ltac/hint uses: 0; proof lines: 104; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:420: eapply denot_ctx_under_comma_bind_from_result_extension; eauto.
+- Lemma `fundamental_let_case` @ line 368
+  uses: 1 total; ltac/hint uses: 0; proof lines: 157; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:725: - eapply fundamental_let_case; eauto using typing_wf_under.
+- Lemma `fundamental_letd_case` @ line 541
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:726: - eapply fundamental_letd_case; eauto.
+- Lemma `fundamental_lam_case` @ line 553
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:727: - eapply fundamental_lam_case; eauto.
+- Lemma `fundamental_lamd_case` @ line 566
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:728: - eapply fundamental_lamd_case; eauto.
+- Lemma `fundamental_app_case` @ line 579
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:729: - eapply fundamental_app_case; eauto.
+- Lemma `fundamental_appd_case` @ line 591
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:730: - eapply fundamental_appd_case; eauto.
+- Lemma `fundamental_fix_case` @ line 604
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:731: - eapply fundamental_fix_case; eauto.
+- Lemma `fundamental_fixd_case` @ line 622
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:732: - eapply fundamental_fixd_case; eauto.
+- Lemma `fundamental_appop_case` @ line 640
+  uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:733: - eapply fundamental_appop_case; eauto.
+- Lemma `fundamental_match_both_case` @ line 670
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:734: - eapply fundamental_match_both_case; eauto.
+- Lemma `fundamental_match_true_case` @ line 685
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:735: - eapply fundamental_match_true_case; eauto.
+- Lemma `fundamental_match_false_case` @ line 698
+  uses: 1 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Soundness.v:736: - eapply fundamental_match_false_case; eauto.
+- Theorem `Fundamental` @ line 713
+  uses: 5 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:4: Fundamental. *)
+    - Denotation/theories/Context.v:62: (** ** Context bridge lemmas for the Fundamental proof
+    - Denotation/theories/Context.v:65: [ContextTyping] so the Fundamental proof only instantiates induction
+    - ContextTyping/theories/Soundness.v:3: Fundamental theorem entry point for the current context-type denotation.
+    - ContextTyping/theories/Soundness.v:711: (** ** Fundamental theorem *)
+- Corollary `safety` @ line 741
+  uses: 0 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Corollary `coverage` @ line 748
+  uses: 0 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Corollary `refinement` @ line 755
+  uses: 0 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Corollary `incorrectness` @ line 766
+  uses: 0 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Corollary `exact_result` @ line 777
+  uses: 0 total; ltac/hint uses: 0; proof lines: 0; terminator: Admitted.
+  classification: ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+
+File: ContextTyping/theories/Typing.v
+-------------------------------------
+- Lemma `wf_ctx_basic` @ line 40
+  uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Typing.v:60: pose proof (wf_ctx_basic Γ Hwf) as Hbasic.
+- Lemma `wf_ctx_under_basic` @ line 45
+  uses: 4 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:68: pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
+    - ContextTyping/theories/Soundness.v:264: pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
+    - ContextTyping/theories/Soundness.v:442: exact (wf_ctx_under_basic Σ Γ Hwfctx).
+    - ContextTyping/theories/Typing.v:236: pose proof (wf_ctx_under_basic Σ Γ Hctx) as Hbasic.
+- Lemma `wf_context_ty_basic` @ line 50
+  uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Typing.v:70: exact (wf_context_ty_basic Γ τ Hwf).
+    - ContextTyping/theories/Typing.v:79: exact (wf_context_ty_basic Γ τ Hwf).
+- Lemma `wf_ctx_fv_subset` @ line 55
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `wf_context_ty_lc` @ line 64
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `wf_context_ty_fv_subset` @ line 73
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `context_typing_wf_basic_typing` @ line 191
+  uses: 8 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:98: exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
+    - ContextTyping/theories/Soundness.v:110: pose proof (context_typing_wf_basic_typing Σ Γ
+    - ContextTyping/theories/Soundness.v:180: - exact (context_typing_wf_basic_typing Σ CtxEmpty
+    - ContextTyping/theories/Soundness.v:202: pose proof (context_typing_wf_basic_typing Σ Γ e τ2 Hwf) as Hbasic.
+    - ContextTyping/theories/Soundness.v:455: exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
+    - ... 3 more
+- Lemma `context_typing_wf_ctx` @ line 196
+  uses: 4 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:67: pose proof (context_typing_wf_ctx Σ Γ e τ Hwf) as Hwfctx.
+    - ContextTyping/theories/Soundness.v:263: pose proof (context_typing_wf_ctx Σ Γ e1 τ1 Hwf) as Hwfctx.
+    - ContextTyping/theories/Soundness.v:440: pose proof (context_typing_wf_ctx Σ Γ (tlete e1 e2) τ2 Hwflet)
+    - ContextTyping/theories/Typing.v:235: pose proof (context_typing_wf_ctx Σ Γ e τ Hct) as Hctx.
+- Lemma `context_typing_wf_context_ty` @ line 201
+  uses: 4 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:85: pose proof (context_typing_wf_context_ty Σ Γ e τ Hwf)
+    - ContextTyping/theories/Typing.v:211: pose proof (context_typing_wf_context_ty Σ (CtxBind x τ) e τ Hwf)
+    - ContextTyping/theories/Typing.v:246: exact (context_typing_wf_context_ty Σ Γ e τ Hct).
+    - ContextTyping/theories/Typing.v:254: pose proof (context_typing_wf_context_ty Σ Γ e (CTWand τx τr) Hwf)
+- Lemma `context_typing_wf_bind_context_ty` @ line 206
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:142: eapply context_typing_wf_bind_context_ty; eauto.
+- Lemma `context_typing_wf_fv_tm_subset` @ line 221
+  uses: 3 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:238: pose proof (context_typing_wf_fv_tm_subset Σ Γ1 e τ Hwf)
+    - ContextTyping/theories/Soundness.v:299: pose proof (context_typing_wf_fv_tm_subset
+    - ContextTyping/theories/Soundness.v:520: - pose proof (context_typing_wf_fv_tm_subset
+- Lemma `context_typing_wf_erase_dom` @ line 230
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `context_typing_wf_fv_cty_subset_erase_dom` @ line 240
+  uses: 3 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:240: pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ1 e τ Hwf)
+    - ContextTyping/theories/Soundness.v:301: pose proof (context_typing_wf_fv_cty_subset_erase_dom
+    - ContextTyping/theories/Soundness.v:522: pose proof (context_typing_wf_fv_cty_subset_erase_dom
+- Lemma `context_typing_wf_wand_arg_global` @ line 249
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typing_wf` @ line 434
+  uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Typing.v:451: (typing_wf Φ Γ e τ Hty)).
+- Lemma `typing_wf_under` @ line 439
+  uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:725: - eapply fundamental_let_case; eauto using typing_wf_under.
+- Lemma `typing_erase` @ line 445
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+
+
+Summary
+-------
+total lemmas: 46
+zero .v uses: 11
+single .v use: 27
+used by Ltac/Hint: 0
+admitted: 15
+thin-proof candidates: 10
+
+Highest-priority review lists
+-----------------------------
+Zero-use lemmas:
+- ContextTyping/theories/Soundness.v:741: `safety` -- ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+- ContextTyping/theories/Soundness.v:748: `coverage` -- ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+- ContextTyping/theories/Soundness.v:755: `refinement` -- ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+- ContextTyping/theories/Soundness.v:766: `incorrectness` -- ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API
+- ContextTyping/theories/Soundness.v:777: `exact_result` -- ADMITTED: explicit proof obligation or stale route; ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:55: `wf_ctx_fv_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:64: `wf_context_ty_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:73: `wf_context_ty_fv_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:230: `context_typing_wf_erase_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:249: `context_typing_wf_wand_arg_global` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:445: `typing_erase` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+
+Single-use lemmas:
+- ContextTyping/theories/Soundness.v:27: `denot_ty_in_ctx_under_guard` -> ContextTyping/theories/Soundness.v:49 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:43: `denot_ty_in_ctx_under_total` -> ContextTyping/theories/Soundness.v:384 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:57: `context_typing_wf_denot_static_guard` -> ContextTyping/theories/Soundness.v:457 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:101: `appop_context_typing_arg_lookup` -> ContextTyping/theories/Soundness.v:654 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:127: `denot_var_direct_in_ctx` -> ContextTyping/theories/Soundness.v:159 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:154: `fundamental_var_case` -> ContextTyping/theories/Soundness.v:721 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTyping/theories/Soundness.v:162: `denot_const_direct_in_ctx` -> ContextTyping/theories/Soundness.v:189 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:184: `fundamental_const_case` -> ContextTyping/theories/Soundness.v:722 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTyping/theories/Soundness.v:192: `fundamental_sub_case` -> ContextTyping/theories/Soundness.v:723 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:209: `fundamental_ctx_sub_case` -> ContextTyping/theories/Soundness.v:724 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:251: `denot_ctx_under_comma_bind_from_result_extension` -> ContextTyping/theories/Soundness.v:420 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:368: `fundamental_let_case` -> ContextTyping/theories/Soundness.v:725 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:541: `fundamental_letd_case` -> ContextTyping/theories/Soundness.v:726 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:553: `fundamental_lam_case` -> ContextTyping/theories/Soundness.v:727 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:566: `fundamental_lamd_case` -> ContextTyping/theories/Soundness.v:728 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:579: `fundamental_app_case` -> ContextTyping/theories/Soundness.v:729 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:591: `fundamental_appd_case` -> ContextTyping/theories/Soundness.v:730 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:604: `fundamental_fix_case` -> ContextTyping/theories/Soundness.v:731 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:622: `fundamental_fixd_case` -> ContextTyping/theories/Soundness.v:732 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:640: `fundamental_appop_case` -> ContextTyping/theories/Soundness.v:733 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:670: `fundamental_match_both_case` -> ContextTyping/theories/Soundness.v:734 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:685: `fundamental_match_true_case` -> ContextTyping/theories/Soundness.v:735 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Soundness.v:698: `fundamental_match_false_case` -> ContextTyping/theories/Soundness.v:736 -- ADMITTED: explicit proof obligation or stale route; SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTyping/theories/Typing.v:40: `wf_ctx_basic` -> ContextTyping/theories/Typing.v:60 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:206: `context_typing_wf_bind_context_ty` -> ContextTyping/theories/Soundness.v:142 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:434: `typing_wf` -> ContextTyping/theories/Typing.v:451 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:439: `typing_wf_under` -> ContextTyping/theories/Soundness.v:725 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+
+Admitted lemmas:
+- ContextTyping/theories/Soundness.v:541: `fundamental_letd_case`
+- ContextTyping/theories/Soundness.v:553: `fundamental_lam_case`
+- ContextTyping/theories/Soundness.v:566: `fundamental_lamd_case`
+- ContextTyping/theories/Soundness.v:579: `fundamental_app_case`
+- ContextTyping/theories/Soundness.v:591: `fundamental_appd_case`
+- ContextTyping/theories/Soundness.v:604: `fundamental_fix_case`
+- ContextTyping/theories/Soundness.v:622: `fundamental_fixd_case`
+- ContextTyping/theories/Soundness.v:670: `fundamental_match_both_case`
+- ContextTyping/theories/Soundness.v:685: `fundamental_match_true_case`
+- ContextTyping/theories/Soundness.v:698: `fundamental_match_false_case`
+- ContextTyping/theories/Soundness.v:741: `safety`
+- ContextTyping/theories/Soundness.v:748: `coverage`
+- ContextTyping/theories/Soundness.v:755: `refinement`
+- ContextTyping/theories/Soundness.v:766: `incorrectness`
+- ContextTyping/theories/Soundness.v:777: `exact_result`
+
+Thin wrapper/solver candidates:
+- ContextTyping/theories/Soundness.v:27: `denot_ty_in_ctx_under_guard` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Soundness.v:154: `fundamental_var_case` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTyping/theories/Soundness.v:184: `fundamental_const_case` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTyping/theories/Typing.v:55: `wf_ctx_fv_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:64: `wf_context_ty_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:73: `wf_context_ty_fv_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:221: `context_typing_wf_fv_tm_subset` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:230: `context_typing_wf_erase_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:240: `context_typing_wf_fv_cty_subset_erase_dom` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTyping/theories/Typing.v:445: `typing_erase` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper

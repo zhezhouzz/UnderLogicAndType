@@ -1,0 +1,24 @@
+LocallyNameless lemma usage analysis
+=====================================
+
+Method: scanned all .v files for Lemma/Theorem/Corollary/Fact/Proposition names, counted whole-token .v references excluding the definition line, and marked Ltac/Hint references. Counts do not include .txt reports.
+
+
+Summary
+-------
+total lemmas: 0
+zero .v uses: 0
+single .v use: 0
+used by Ltac/Hint: 0
+admitted: 0
+thin-proof candidates: 0
+
+Highest-priority review lists
+-----------------------------
+Zero-use lemmas:
+
+Single-use lemmas:
+
+Admitted lemmas:
+
+Thin wrapper/solver candidates:

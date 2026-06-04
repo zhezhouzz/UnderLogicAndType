@@ -1,0 +1,966 @@
+Denotation lemma usage analysis
+================================
+
+Method: scanned all .v files for Lemma/Theorem/Corollary/Fact/Proposition names, counted whole-token .v references excluding the definition line, and marked Ltac/Hint references. Counts do not include .txt reports.
+
+File: Denotation/theories/Context.v
+-----------------------------------
+- Lemma `atom_env_to_lty_env_restrict_lvars_agree_on` @ line 44
+  uses: 2 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTyping/theories/Soundness.v:226: apply atom_env_to_lty_env_restrict_lvars_agree_on
+    - ContextTyping/theories/Soundness.v:294: apply atom_env_to_lty_env_restrict_lvars_agree_on
+- Lemma `denot_ctx_under_basic_world` @ line 68
+  uses: 7 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/Context.v:228: pose proof (denot_ctx_under_basic_world (Σ ∪ erase_ctx Γ1) Γ2 m HΓ2)
+    - ContextTyping/theories/Soundness.v:77: - exact (denot_ctx_under_basic_world Σ Γ m Hctx).
+    - ContextTyping/theories/Soundness.v:242: pose proof (denot_ctx_under_basic_world Σ Γ1 m HΓ1) as Hworld.
+    - ContextTyping/theories/Soundness.v:269: pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
+    - ContextTyping/theories/Soundness.v:333: eapply denot_ctx_under_basic_world; eauto.
+    - ... 2 more
+- Lemma `denot_ctx_under_bind_inv` @ line 78
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:133: pose proof (denot_ctx_under_bind_inv Σ x τ m Hctx) as Hbind.
+- Lemma `basic_world_formula_insert_from_arg_denotation` @ line 89
+  uses: 2 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/Context.v:159: eapply basic_world_formula_insert_from_arg_denotation
+    - ContextTyping/theories/Soundness.v:330: eapply basic_world_formula_insert_from_arg_denotation.
+- Lemma `denot_ctx_bind_from_arg_denotation` @ line 122
+  uses: 1 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:735: eapply denot_ctx_bind_from_arg_denotation; eauto.
+- Lemma `denot_ty_in_ctx_under_comma_bind_to_lvar_insert` @ line 177
+  uses: 1 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:423: pose proof (denot_ty_in_ctx_under_comma_bind_to_lvar_insert
+- Lemma `erase_ctx_under_comma_assoc` @ line 207
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/Context.v:232: - rewrite erase_ctx_under_comma_assoc. exact HworldΓ2.
+- Lemma `denot_ctx_under_comma_intro` @ line 221
+  uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:341: eapply denot_ctx_under_comma_intro; [exact Hctx_mx|].
+
+File: Denotation/theories/ContextTypeDenotationCasesConst.v
+-----------------------------------------------------------
+- Lemma `context_ty_wf_formula_const_precise_empty` @ line 13
+  uses: 3 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:401: try apply context_ty_wf_formula_const_precise_empty;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:647: [ exact (context_ty_wf_formula_const_precise_empty c m)
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:695: [ exact (context_ty_wf_formula_const_precise_empty c m)
+- Lemma `context_ty_wf_formula_const_over_empty` @ line 34
+  uses: 2 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:399: try apply context_ty_wf_formula_const_over_empty;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:410: [apply context_ty_wf_formula_const_over_empty|];
+- Lemma `context_ty_wf_formula_const_under_empty` @ line 52
+  uses: 2 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:400: try apply context_ty_wf_formula_const_under_empty;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:420: [apply context_ty_wf_formula_const_under_empty|];
+- Lemma `expr_basic_typing_formula_ret_const_empty` @ line 70
+  uses: 5 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:403: try apply expr_basic_typing_formula_ret_const_empty;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:414: [apply expr_basic_typing_formula_ret_const_empty|];
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:424: [apply expr_basic_typing_formula_ret_const_empty|];
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:651: [ exact (expr_basic_typing_formula_ret_const_empty c m)
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:699: [ exact (expr_basic_typing_formula_ret_const_empty c m)
+- Lemma `expr_total_formula_ret_const` @ line 82
+  uses: 5 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:404: try apply expr_total_formula_ret_const;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:415: apply expr_total_formula_ret_const.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:425: apply expr_total_formula_ret_const.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:652: | exact (expr_total_formula_ret_const c m) ] ] ]
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:700: | exact (expr_total_formula_ret_const c m) ] ] ]
+- Lemma `denot_relevant_env_const_precise_atom_env_empty` @ line 98
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:644: rewrite denot_relevant_env_const_precise_atom_env_empty.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:692: rewrite denot_relevant_env_const_precise_atom_env_empty.
+- Lemma `denot_relevant_env_const_over_atom_env_empty` @ line 115
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:502: - rewrite denot_relevant_env_const_over_atom_env_empty.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:505: - rewrite denot_relevant_env_const_over_atom_env_empty.
+- Lemma `denot_relevant_env_const_under_atom_env_empty` @ line 130
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:554: - rewrite denot_relevant_env_const_under_atom_env_empty.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:557: - rewrite denot_relevant_env_const_under_atom_env_empty.
+- Lemma `const_qual_open_vars` @ line 145
+  uses: 15 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:225: { rewrite const_qual_open_vars. unfold lc_lvars. set_solver. }
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:231: rewrite const_qual_open_vars, lvars_fv_singleton_free;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:271: { rewrite const_qual_open_vars. set_solver. }
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:276: rewrite const_qual_open_vars. set_solver.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:278: rewrite lso_dom, const_qual_open_vars. set_solver.
+    - ... 10 more
+- Lemma `const_qual_vars_bound` @ line 155
+  uses: 4 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:167: rewrite const_qual_vars_bound, lvars_fv_singleton_bound.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:440: rewrite ?const_qual_vars_bound;
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:535: rewrite const_qual_vars_bound, const_qual_open_vars.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:587: rewrite const_qual_vars_bound, const_qual_open_vars.
+- Lemma `const_qual_dom_bound_fresh` @ line 163
+  uses: 2 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:519: by apply const_qual_dom_bound_fresh.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:571: by apply const_qual_dom_bound_fresh.
+- Lemma `expr_result_formula_ret_const_lookup` @ line 171
+  uses: 2 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:343: eapply expr_result_formula_ret_const_lookup; [exact Hexpr|].
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:390: eapply expr_result_formula_ret_const_lookup; [exact Hexpr|].
+- Lemma `const_qual_open_prop_iff` @ line 197
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:242: apply const_qual_open_prop_iff in Hprop.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:280: apply const_qual_open_prop_iff.
+- Lemma `const_type_qualifier_open_from_lookup` @ line 213
+  uses: 2 total; ltac/hint uses: 0; proof lines: 82; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:341: apply const_type_qualifier_open_from_lookup.
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:388: apply const_type_qualifier_open_from_lookup.
+- Lemma `const_fib_over_from_expr` @ line 302
+  uses: 1 total; ltac/hint uses: 0; proof lines: 37; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:545: exact (const_fib_over_from_expr c y my Hexpr).
+- Lemma `const_fib_under_from_expr` @ line 349
+  uses: 1 total; ltac/hint uses: 0; proof lines: 37; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:597: exact (const_fib_under_from_expr c y my Hexpr).
+- Lemma `const_over_denotation_gas` @ line 496
+  uses: 1 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:702: [ exact (const_over_denotation_gas gas' Σ c m)
+- Lemma `const_under_denotation_gas` @ line 548
+  uses: 1 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:703: | exact (const_under_denotation_gas gas' Σ c m) ] ].
+- Lemma `const_direct_denotation_gas_in_ctx` @ line 600
+  uses: 1 total; ltac/hint uses: 0; proof lines: 95; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:174: eapply const_direct_denotation_gas_in_ctx with (Σ := ∅).
+- Lemma `appop_intro_denotation` @ line 706
+  uses: 1 total; ltac/hint uses: 0; proof lines: 29; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:658: eapply appop_intro_denotation.
+
+File: Denotation/theories/ContextTypeDenotationDefinition.v
+-----------------------------------------------------------
+- Lemma `open_env_lift_fresh_for_bound0_bind_dom` @ line 77
+  uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:186: [|apply open_env_lift_fresh_for_bound0_bind_dom
+    - Denotation/theories/ContextTypeDenotationDefinition.v:278: apply open_env_lift_fresh_for_bound0_bind_dom.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:342: apply open_env_lift_fresh_for_bound0_bind_dom.
+- Lemma `formula_open_env_denot_guard` @ line 88
+  uses: 5 total; ltac/hint uses: 0; proof lines: 40; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:153: rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+    - Denotation/theories/ContextTypeDenotationDefinition.v:179: rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
+    - Denotation/theories/ContextTypeDenotationDefinition.v:205: rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
+    - Denotation/theories/ContextTypeDenotationDefinition.v:271: rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+    - Denotation/theories/ContextTypeDenotationDefinition.v:334: rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+- Lemma `formula_open_env_denot_ty_lvar_gas_zero` @ line 141
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:232: - apply formula_open_env_denot_ty_lvar_gas_zero; assumption.
+- Lemma `formula_open_env_denot_ty_lvar_gas` @ line 218
+  uses: 1 total; ltac/hint uses: 0; proof lines: 139; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationOpen.v:33: pose proof (formula_open_env_denot_ty_lvar_gas
+- Lemma `denot_ty_lvar_gas_env_agree_on` @ line 368
+  uses: 10 total; ltac/hint uses: 0; proof lines: 64; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:230: eapply denot_ty_lvar_gas_env_agree_on
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:60: pose proof (denot_ty_lvar_gas_env_agree_on gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:69: pose proof (denot_ty_lvar_gas_env_agree_on gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:99: pose proof (denot_ty_lvar_gas_env_agree_on gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:133: pose proof (denot_ty_lvar_gas_env_agree_on gas
+    - ... 5 more
+- Lemma `res_models_denot_ty_lvar_gas_env_agree_on` @ line 440
+  uses: 6 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:724: pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:741: eapply res_models_denot_ty_lvar_gas_env_agree_on
+    - Denotation/theories/Context.v:131: pose proof (res_models_denot_ty_lvar_gas_env_agree_on
+    - ContextTyping/theories/Soundness.v:135: eapply res_models_denot_ty_lvar_gas_env_agree_on
+    - ContextTyping/theories/Soundness.v:224: eapply res_models_denot_ty_lvar_gas_env_agree_on
+    - ... 1 more
+- Lemma `formula_lvars_at_denot_ty_lvar_gas_subset_relevant` @ line 490
+  uses: 3 total; ltac/hint uses: 0; proof lines: 102; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:132: apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:625: apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:637: + apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
+- Lemma `formula_fv_open_denot_ty_lvar_gas_subset_relevant` @ line 598
+  uses: 0 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open` @ line 628
+  uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:55: - apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:660: - apply formula_fv_denot_ty_lvar_gas_subset_relevant_pre_open.
+- Lemma `formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open` @ line 644
+  uses: 5 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:40: eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:95: eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:341: eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:785: eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:773: eapply formula_fv_denot_ty_lvar_gas_scope_from_guard_pre_open;
+- Lemma `denot_guard_term_type_fv_scope` @ line 677
+  uses: 0 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+
+File: Denotation/theories/ContextTypeDenotationOpen.v
+-----------------------------------------------------
+- Lemma `formula_open_denot_ty_lvar_gas_singleton` @ line 12
+  uses: 10 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:44: rewrite (formula_open_denot_ty_lvar_gas_singleton 0 y gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:49: rewrite (formula_open_denot_ty_lvar_gas_singleton 0 y gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:684: rewrite (formula_open_denot_ty_lvar_gas_singleton 0 y gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:689: rewrite (formula_open_denot_ty_lvar_gas_singleton 0 y gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:696: rewrite (formula_open_denot_ty_lvar_gas_singleton 0 y gas
+    - ... 5 more
+
+File: Denotation/theories/ContextTypeDenotationSaturateArrow.v
+--------------------------------------------------------------
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_arg` @ line 12
+  uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:792: eapply denot_ty_lvar_gas_tm_result_equiv_arrow_open_arg; eauto;
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_source_mid` @ line 82
+  uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:701: eapply denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_source_mid;
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_target_mid_to_goal` @ line 116
+  uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:716: eapply denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_target_mid_to_goal;
+- Lemma `wfworld_closed_on_arrow_open_result_apps` @ line 150
+  uses: 2 total; ltac/hint uses: 0; proof lines: 57; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:481: eapply wfworld_closed_on_arrow_open_result_apps; eauto.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:594: + eapply (wfworld_closed_on_arrow_open_result_apps
+- Lemma `basic_world_formula_arrow_open_result_source_world` @ line 221
+  uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:374: pose proof (basic_world_formula_arrow_open_result_source_world
+- Lemma `basic_world_formula_opened_arg_world` @ line 239
+  uses: 2 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:374: pose proof (basic_world_formula_opened_arg_world (erase_ty τx) my y Hworld)
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:376: pose proof (basic_world_formula_opened_arg_world (erase_ty τx) my y Hworld)
+- Lemma `basic_world_formula_arrow_open_result_big` @ line 255
+  uses: 1 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:378: pose proof (basic_world_formula_arrow_open_result_big
+- Lemma `basic_world_formula_arrow_open_result_subenv` @ line 293
+  uses: 1 total; ltac/hint uses: 0; proof lines: 38; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:382: eapply basic_world_formula_arrow_open_result_subenv; eauto.
+- Lemma `basic_world_formula_arrow_open_result_target` @ line 348
+  uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:412: pose proof (basic_world_formula_arrow_open_result_target
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:523: eapply basic_world_formula_arrow_open_result_target; eauto.
+- Lemma `expr_basic_typing_formula_arrow_open_result_target` @ line 385
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:551: eapply expr_basic_typing_formula_arrow_open_result_target; eauto.
+- Lemma `denot_ty_lvar_gas_zero_arrow_open_result_target` @ line 428
+  uses: 1 total; ltac/hint uses: 0; proof lines: 110; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:607: + eapply (denot_ty_lvar_gas_zero_arrow_open_result_target
+- Lemma `typed_total_tm_result_equiv_on_arrow_open_result_mid` @ line 564
+  uses: 1 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:722: eapply typed_total_tm_result_equiv_on_arrow_open_result_mid; eauto.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result` @ line 612
+  uses: 1 total; ltac/hint uses: 0; proof lines: 72; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:795: eapply denot_ty_lvar_gas_tm_result_equiv_arrow_open_result; eauto.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_arrow_body` @ line 727
+  uses: 1 total; ltac/hint uses: 0; proof lines: 34; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:39: + eapply denot_ty_lvar_gas_tm_result_equiv_arrow_body; eauto.
+
+File: Denotation/theories/ContextTypeDenotationSaturateBody.v
+-------------------------------------------------------------
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_over_body` @ line 10
+  uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:34: + eapply denot_ty_lvar_gas_tm_result_equiv_over_body; eauto.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_under_body` @ line 65
+  uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:35: + eapply denot_ty_lvar_gas_tm_result_equiv_under_body; eauto.
+- Lemma `denot_ty_lvar_gas_zero_project_context` @ line 120
+  uses: 6 total; ltac/hint uses: 0; proof lines: 61; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:197: eapply (denot_ty_lvar_gas_zero_project_context
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:223: eapply (denot_ty_lvar_gas_zero_project_context
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:279: eapply (denot_ty_lvar_gas_zero_project_context
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:305: eapply (denot_ty_lvar_gas_zero_project_context
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:414: eapply (denot_ty_lvar_gas_zero_project_context
+    - ... 1 more
+- Lemma `denot_ty_lvar_gas_zero_inter_l` @ line 191
+  uses: 2 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:237: - eapply denot_ty_lvar_gas_zero_inter_l; exact Hzero_src.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:238: - eapply denot_ty_lvar_gas_zero_inter_l; exact Hzero_tgt.
+- Lemma `denot_ty_lvar_gas_zero_inter_r` @ line 207
+  uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:249: - eapply denot_ty_lvar_gas_zero_inter_r; exact Hzero_src.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:250: - eapply denot_ty_lvar_gas_zero_inter_r; exact Hzero_tgt.
+- Lemma `typed_total_tm_result_equiv_on_inter_l` @ line 229
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:268: eapply typed_total_tm_result_equiv_on_inter_l; exact Hequiv.
+- Lemma `typed_total_tm_result_equiv_on_inter_r` @ line 241
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:270: eapply typed_total_tm_result_equiv_on_inter_r; exact Hequiv.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_inter_body` @ line 253
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:36: + eapply denot_ty_lvar_gas_tm_result_equiv_inter_body; eauto.
+- Lemma `denot_ty_lvar_gas_zero_union_l` @ line 273
+  uses: 2 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:319: - eapply denot_ty_lvar_gas_zero_union_l; exact Hzero_src.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:320: - eapply denot_ty_lvar_gas_zero_union_l; exact Hzero_tgt.
+- Lemma `denot_ty_lvar_gas_zero_union_r` @ line 289
+  uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:331: - eapply denot_ty_lvar_gas_zero_union_r; exact Hzero_src.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:332: - eapply denot_ty_lvar_gas_zero_union_r; exact Hzero_tgt.
+- Lemma `typed_total_tm_result_equiv_on_union_l` @ line 311
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:363: pose proof (typed_total_tm_result_equiv_on_union_l
+- Lemma `typed_total_tm_result_equiv_on_union_r` @ line 323
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:365: pose proof (typed_total_tm_result_equiv_on_union_r
+- Lemma `denot_ty_lvar_gas_scope_from_zero_any` @ line 335
+  uses: 2 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:372: + eapply denot_ty_lvar_gas_scope_from_zero_any.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:376: + eapply denot_ty_lvar_gas_scope_from_zero_any.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_union_body` @ line 346
+  uses: 1 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:37: + eapply denot_ty_lvar_gas_tm_result_equiv_union_body; eauto.
+- Lemma `denot_ty_lvar_gas_zero_res_subset` @ line 382
+  uses: 2 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:454: eapply denot_ty_lvar_gas_zero_res_subset; eauto.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:465: eapply denot_ty_lvar_gas_zero_res_subset; eauto.
+- Lemma `denot_ty_lvar_gas_zero_sum_l` @ line 408
+  uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:453: apply denot_ty_lvar_gas_zero_sum_l with (τ2 := τ2).
+- Lemma `denot_ty_lvar_gas_zero_sum_r` @ line 424
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:464: apply denot_ty_lvar_gas_zero_sum_r with (τ1 := τ1).
+- Lemma `typed_total_tm_result_equiv_on_sum_l_target_zero` @ line 446
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:481: + eapply typed_total_tm_result_equiv_on_sum_l_target_zero;
+- Lemma `typed_total_tm_result_equiv_on_sum_r_target_zero` @ line 457
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:498: + eapply typed_total_tm_result_equiv_on_sum_r_target_zero;
+- Lemma `typed_total_tm_result_equiv_on_sum_l_pullback` @ line 468
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:537: refine (typed_total_tm_result_equiv_on_sum_l_pullback
+- Lemma `typed_total_tm_result_equiv_on_sum_r_pullback` @ line 485
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:541: refine (typed_total_tm_result_equiv_on_sum_r_pullback
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_sum_body` @ line 502
+  uses: 1 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:38: + eapply denot_ty_lvar_gas_tm_result_equiv_sum_body; eauto.
+
+File: Denotation/theories/ContextTypeDenotationSaturateCore.v
+-------------------------------------------------------------
+- Lemma `formula_fv_denot_ty_lvar_gas_components_lower` @ line 9
+  uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:51: pose proof (formula_fv_denot_ty_lvar_gas_components_lower
+- Lemma `expr_result_formula_free_in_world` @ line 29
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:61: eapply expr_result_formula_free_in_world. exact Hres.
+- Lemma `denot_ty_lvar_gas_result_alias_scope_ret_from_source` @ line 42
+  uses: 0 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `logic_qualifier_denote_of_res_subset` @ line 73
+  uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:103: eapply logic_qualifier_denote_of_res_subset; eauto.
+- Lemma `expr_result_formula_of_res_subset` @ line 93
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `expr_result_formula_of_res_store_subset` @ line 106
+  uses: 0 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `denot_ty_lvar_gas_saturate` @ line 134
+  uses: 1 total; ltac/hint uses: 0; proof lines: 80; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationCasesConst.v:723: rewrite denot_ty_lvar_gas_saturate by exact Hgas.
+- Lemma `denot_ty_lvar_gas_insert_fresh_lty_env_eq` @ line 221
+  uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:329: rewrite (denot_ty_lvar_gas_insert_fresh_lty_env_eq gas Σ τ e x T);
+    - ContextTyping/theories/Soundness.v:508: rewrite (denot_ty_lvar_gas_insert_fresh_lty_env_eq
+- Lemma `denot_ty_lvar_gas_zero_of_guard_formula` @ line 237
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:282: apply denot_ty_lvar_gas_zero_of_guard_formula.
+- Lemma `denot_ty_lvar_gas_guard_formula` @ line 250
+  uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:299: pose proof (denot_ty_lvar_gas_guard_formula gas Σ τ e m Hden) as Hguard.
+    - ContextTyping/theories/Soundness.v:36: apply denot_ty_lvar_gas_guard_formula.
+- Lemma `denot_ty_lvar_gas_guard_of_zero_formula` @ line 258
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:316: pose proof (denot_ty_lvar_gas_guard_of_zero_formula Σ τ e m Hzero) as Hguard.
+- Lemma `denot_ty_lvar_gas_zero_of_guard` @ line 269
+  uses: 12 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:129: apply denot_ty_lvar_gas_zero_of_guard.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:389: apply denot_ty_lvar_gas_zero_of_guard.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:479: + apply denot_ty_lvar_gas_zero_of_guard.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:496: + apply denot_ty_lvar_gas_zero_of_guard.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:563: apply denot_ty_lvar_gas_zero_of_guard.
+    - ... 7 more
+- Lemma `denot_ty_lvar_gas_guard` @ line 286
+  uses: 13 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:480: eapply denot_ty_lvar_gas_guard. exact Hsrc.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:497: eapply denot_ty_lvar_gas_guard. exact Hsrc.
+    - Denotation/theories/Context.v:97: pose proof (denot_ty_lvar_gas_guard gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:455: pose proof (denot_ty_lvar_gas_guard gas
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:459: pose proof (denot_ty_lvar_gas_guard gas
+    - ... 8 more
+- Lemma `denot_ty_lvar_gas_guard_of_zero` @ line 303
+  uses: 34 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:33: pose proof (denot_ty_lvar_gas_guard_of_zero
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:88: pose proof (denot_ty_lvar_gas_guard_of_zero
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:130: apply denot_ty_lvar_gas_guard_of_zero in Hzero.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:200: - apply denot_ty_lvar_gas_guard_of_zero in Hzero.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:215: apply denot_ty_lvar_gas_guard_of_zero in Hzero as Hguard.
+    - ... 29 more
+- Lemma `denot_ty_lvar_gas_insert_fresh_lty_env` @ line 320
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:350: eapply denot_ty_lvar_gas_insert_fresh_lty_env; eauto.
+- Lemma `denot_ty_lvar_gas_extend_typed_extension` @ line 333
+  uses: 2 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:104: pose proof (denot_ty_lvar_gas_extend_typed_extension
+    - ContextTyping/theories/Soundness.v:499: eapply denot_ty_lvar_gas_extend_typed_extension; eauto.
+- Lemma `atom_store_has_ltype_restrict_fv_from_source_guard` @ line 353
+  uses: 2 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:449: eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:682: eapply atom_store_has_ltype_restrict_fv_from_source_guard;
+- Lemma `expr_result_extension_has_ltype_from_source_guard` @ line 382
+  uses: 2 total; ltac/hint uses: 0; proof lines: 131; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:100: eapply expr_result_extension_has_ltype_from_source_guard;
+    - ContextTyping/theories/Soundness.v:476: eapply expr_result_extension_has_ltype_from_source_guard
+- Lemma `expr_basic_typing_formula_ret_fvar_from_lookup` @ line 533
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:786: * eapply expr_basic_typing_formula_ret_fvar_from_lookup; eauto.
+- Lemma `expr_total_formula_ret_fvar_from_result` @ line 547
+  uses: 1 total; ltac/hint uses: 0; proof lines: 37; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:787: * eapply expr_total_formula_ret_fvar_from_result. exact Hres.
+- Lemma `basic_world_formula_result_alias_target` @ line 591
+  uses: 1 total; ltac/hint uses: 0; proof lines: 121; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:749: pose proof (basic_world_formula_result_alias_target
+- Lemma `denot_ty_lvar_gas_result_alias_guard` @ line 724
+  uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:53: pose proof (denot_ty_lvar_gas_result_alias_guard
+- Lemma `expr_result_formula_alias_to_var` @ line 790
+  uses: 0 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `tm_result_equiv_on_tlete_body_extension` @ line 843
+  uses: 1 total; ltac/hint uses: 0; proof lines: 123; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:177: + eapply tm_result_equiv_on_tlete_body_extension; eauto.
+- Lemma `typed_total_tm_result_equiv_on_source_zero` @ line 978
+  uses: 2 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:165: pose proof (typed_total_tm_result_equiv_on_source_zero
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:163: pose proof (typed_total_tm_result_equiv_on_source_zero
+- Lemma `typed_total_tm_result_equiv_on_target_zero` @ line 984
+  uses: 19 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:31: pose proof (typed_total_tm_result_equiv_on_target_zero
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:86: pose proof (typed_total_tm_result_equiv_on_target_zero
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:373: exact (typed_total_tm_result_equiv_on_target_zero
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:377: exact (typed_total_tm_result_equiv_on_target_zero
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1245: pose proof (typed_total_tm_result_equiv_on_target_zero
+    - ... 14 more
+- Lemma `tm_result_equiv_on_res_store_subset` @ line 990
+  uses: 2 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:477: - eapply tm_result_equiv_on_res_store_subset; eauto.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:494: - eapply tm_result_equiv_on_res_store_subset; eauto.
+- Lemma `tm_result_equiv_on_res_product_right` @ line 1000
+  uses: 2 total; ltac/hint uses: 0; proof lines: 32; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:496: - eapply tm_result_equiv_on_res_product_right.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:608: + eapply tm_result_equiv_on_res_product_right.
+- Lemma `tm_result_equiv_on_total` @ line 1040
+  uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:517: eapply tm_result_equiv_on_total.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:510: eapply tm_result_equiv_on_total.
+- Lemma `tm_result_equiv_on_tapp_fvar` @ line 1065
+  uses: 4 total; ltac/hint uses: 0; proof lines: 55; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:492: eapply tm_result_equiv_on_tapp_fvar.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:603: - eapply tm_result_equiv_on_tapp_fvar.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:489: eapply tm_result_equiv_on_tapp_fvar.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:593: - eapply tm_result_equiv_on_tapp_fvar.
+- Lemma `tm_lvars_tapp_tm_fvar_without_arg_shift_lc` @ line 1133
+  uses: 6 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:111: Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e1 y Hlc)))
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:145: Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc)))
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:326: Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc2)) as Hagree.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:110: Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e1 y Hlc)))
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:144: Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc)))
+    - ... 1 more
+- Lemma `lty_env_open_one_typed_bind_lookup_free_ne` @ line 1155
+  uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1275: { rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzy.
+- Lemma `lty_env_open_one_typed_bind_lookup_current` @ line 1177
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1302: { apply lty_env_open_one_typed_bind_lookup_current. }
+- Lemma `basic_tm_has_ltype_tapp_tm_lvar` @ line 1199
+  uses: 2 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:423: eapply basic_tm_has_ltype_tapp_tm_lvar.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:421: eapply basic_tm_has_ltype_tapp_tm_lvar.
+- Lemma `basic_tm_has_ltype_open_result_target_fun` @ line 1232
+  uses: 2 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:425: - eapply (basic_tm_has_ltype_open_result_target_fun
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:423: - eapply (basic_tm_has_ltype_open_result_target_fun
+- Lemma `basic_value_has_ltype_open_result_target_arg` @ line 1289
+  uses: 2 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:427: - apply basic_value_has_ltype_open_result_target_arg.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:425: - apply basic_value_has_ltype_open_result_target_arg.
+- Lemma `expr_result_formula_transport_of_tm_result_equiv` @ line 1314
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1540: eapply expr_result_formula_transport_of_tm_result_equiv.
+- Lemma `tm_result_equiv_on_result_alias` @ line 1339
+  uses: 1 total; ltac/hint uses: 0; proof lines: 67; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:64: + eapply tm_result_equiv_on_result_alias; eauto.
+- Lemma `typed_total_tm_result_equiv_on_term_scope` @ line 1414
+  uses: 12 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:61: eapply typed_total_tm_result_equiv_on_term_scope. exact Hequiv.
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:116: eapply typed_total_tm_result_equiv_on_term_scope. exact Hequiv.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:183: pose proof (typed_total_tm_result_equiv_on_term_scope
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:497: + pose proof (typed_total_tm_result_equiv_on_term_scope
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:506: + pose proof (typed_total_tm_result_equiv_on_term_scope
+    - ... 7 more
+- Lemma `typed_total_tm_result_equiv_on_term_lc_lvars` @ line 1437
+  uses: 2 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:29: pose proof (typed_total_tm_result_equiv_on_term_lc_lvars
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:84: pose proof (typed_total_tm_result_equiv_on_term_lc_lvars
+- Lemma `typed_total_tm_result_equiv_on_term_lc` @ line 1458
+  uses: 10 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:306: pose proof (typed_total_tm_result_equiv_on_term_lc
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:490: pose proof (typed_total_tm_result_equiv_on_term_lc
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:513: pose proof (typed_total_tm_result_equiv_on_term_lc
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:600: pose proof (typed_total_tm_result_equiv_on_term_lc
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:666: pose proof (typed_total_tm_result_equiv_on_term_lc
+    - ... 5 more
+- Lemma `tm_result_equiv_on_full_world_extend_fresh` @ line 1481
+  uses: 5 total; ltac/hint uses: 0; proof lines: 29; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1541: - eapply tm_result_equiv_on_full_world_extend_fresh; eauto.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:500: eapply tm_result_equiv_on_full_world_extend_fresh.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:609: * eapply tm_result_equiv_on_full_world_extend_fresh.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:496: eapply tm_result_equiv_on_full_world_extend_fresh.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:598: + eapply tm_result_equiv_on_full_world_extend_fresh.
+- Lemma `expr_result_formula_shift0_transport_of_tm_result_equiv_open` @ line 1521
+  uses: 2 total; ltac/hint uses: 0; proof lines: 28; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:53: eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
+    - Denotation/theories/ContextTypeDenotationSaturateBody.v:108: eapply expr_result_formula_shift0_transport_of_tm_result_equiv_open;
+
+File: Denotation/theories/ContextTypeDenotationSaturateMain.v
+-------------------------------------------------------------
+- Lemma `denot_ty_lvar_gas_tm_result_equiv` @ line 14
+  uses: 2 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:62: eapply denot_ty_lvar_gas_tm_result_equiv.
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:175: eapply denot_ty_lvar_gas_tm_result_equiv.
+- Lemma `denot_ty_lvar_gas_result_alias_to_var` @ line 43
+  uses: 1 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:120: eapply denot_ty_lvar_gas_result_alias_to_var; eauto.
+- Lemma `denot_ty_lvar_gas_result_extension_to_var` @ line 69
+  uses: 1 total; ltac/hint uses: 0; proof lines: 43; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:318: eapply denot_ty_lvar_gas_result_extension_to_var; eauto.
+- Lemma `formula_fv_denot_ty_lvar_gas_subset_relevant` @ line 125
+  uses: 4 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:234: apply formula_fv_denot_ty_lvar_gas_subset_relevant.
+    - ContextTyping/theories/Soundness.v:236: pose proof (formula_fv_denot_ty_lvar_gas_subset_relevant
+    - ContextTyping/theories/Soundness.v:519: - eapply formula_fv_denot_ty_lvar_gas_subset_relevant.
+    - ContextTyping/theories/Soundness.v:529: exact (formula_fv_denot_ty_lvar_gas_subset_relevant
+- Lemma `denot_ty_lvar_guard_wfworld_closed_on_term` @ line 142
+  uses: 1 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:173: pose proof (denot_ty_lvar_guard_wfworld_closed_on_term
+- Lemma `tlet_intro_denotation` @ line 154
+  uses: 2 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Soundness.v:8: [tlet_intro_denotation] directly; the remaining
+    - ContextTyping/theories/Soundness.v:502: pose proof (tlet_intro_denotation
+
+File: Denotation/theories/ContextTypeDenotationSaturateWand.v
+-------------------------------------------------------------
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_arg` @ line 13
+  uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:804: eapply denot_ty_lvar_gas_tm_result_equiv_wand_open_arg; eauto;
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_source_mid` @ line 83
+  uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:714: eapply denot_ty_lvar_gas_tm_result_equiv_wand_open_result_source_mid;
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_target_mid_to_goal` @ line 117
+  uses: 1 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:729: eapply denot_ty_lvar_gas_tm_result_equiv_wand_open_result_target_mid_to_goal;
+- Lemma `wfworld_closed_on_wand_open_result_apps` @ line 151
+  uses: 2 total; ltac/hint uses: 0; proof lines: 68; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:484: eapply wfworld_closed_on_wand_open_result_apps; eauto.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:604: + eapply (wfworld_closed_on_wand_open_result_apps
+- Lemma `basic_world_formula_wand_open_result_source_world` @ line 234
+  uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:368: pose proof (basic_world_formula_wand_open_result_source_world
+- Lemma `basic_world_formula_wand_open_result_big` @ line 252
+  uses: 1 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:380: pose proof (basic_world_formula_wand_open_result_big
+- Lemma `basic_world_formula_wand_open_result_subenv` @ line 290
+  uses: 1 total; ltac/hint uses: 0; proof lines: 35; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:384: eapply basic_world_formula_wand_open_result_subenv; eauto.
+- Lemma `basic_world_formula_wand_open_result_target` @ line 342
+  uses: 2 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:414: pose proof (basic_world_formula_wand_open_result_target
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:533: eapply basic_world_formula_wand_open_result_target; eauto.
+- Lemma `expr_basic_typing_formula_wand_open_result_target` @ line 387
+  uses: 1 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:561: eapply expr_basic_typing_formula_wand_open_result_target; eauto.
+- Lemma `denot_ty_lvar_gas_zero_wand_open_result_target` @ line 430
+  uses: 1 total; ltac/hint uses: 0; proof lines: 118; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:621: + eapply (denot_ty_lvar_gas_zero_wand_open_result_target
+- Lemma `typed_total_tm_result_equiv_on_wand_open_result_mid` @ line 574
+  uses: 1 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:735: eapply typed_total_tm_result_equiv_on_wand_open_result_mid; eauto.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_open_result` @ line 625
+  uses: 1 total; ltac/hint uses: 0; proof lines: 72; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:807: eapply denot_ty_lvar_gas_tm_result_equiv_wand_open_result; eauto.
+- Lemma `denot_ty_lvar_gas_tm_result_equiv_wand_body` @ line 739
+  uses: 1 total; ltac/hint uses: 0; proof lines: 34; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:40: + eapply denot_ty_lvar_gas_tm_result_equiv_wand_body; eauto.
+
+
+Summary
+-------
+total lemmas: 138
+zero .v uses: 6
+single .v use: 69
+used by Ltac/Hint: 0
+admitted: 0
+thin-proof candidates: 17
+
+Highest-priority review lists
+-----------------------------
+Zero-use lemmas:
+- Denotation/theories/ContextTypeDenotationDefinition.v:598: `formula_fv_open_denot_ty_lvar_gas_subset_relevant` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationDefinition.v:677: `denot_guard_term_type_fv_scope` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:42: `denot_ty_lvar_gas_result_alias_scope_ret_from_source` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:93: `expr_result_formula_of_res_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:106: `expr_result_formula_of_res_store_subset` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:790: `expr_result_formula_alias_to_var` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+
+Single-use lemmas:
+- Denotation/theories/Context.v:78: `denot_ctx_under_bind_inv` -> ContextTyping/theories/Soundness.v:133 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/Context.v:122: `denot_ctx_bind_from_arg_denotation` -> Denotation/theories/ContextTypeDenotationCasesConst.v:735 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/Context.v:177: `denot_ty_in_ctx_under_comma_bind_to_lvar_insert` -> ContextTyping/theories/Soundness.v:423 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/Context.v:207: `erase_ctx_under_comma_assoc` -> Denotation/theories/Context.v:232 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/Context.v:221: `denot_ctx_under_comma_intro` -> ContextTyping/theories/Soundness.v:341 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:302: `const_fib_over_from_expr` -> Denotation/theories/ContextTypeDenotationCasesConst.v:545 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- Denotation/theories/ContextTypeDenotationCasesConst.v:349: `const_fib_under_from_expr` -> Denotation/theories/ContextTypeDenotationCasesConst.v:597 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- Denotation/theories/ContextTypeDenotationCasesConst.v:496: `const_over_denotation_gas` -> Denotation/theories/ContextTypeDenotationCasesConst.v:702 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:548: `const_under_denotation_gas` -> Denotation/theories/ContextTypeDenotationCasesConst.v:703 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:600: `const_direct_denotation_gas_in_ctx` -> ContextTyping/theories/Soundness.v:174 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:706: `appop_intro_denotation` -> ContextTyping/theories/Soundness.v:658 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationDefinition.v:141: `formula_open_env_denot_ty_lvar_gas_zero` -> Denotation/theories/ContextTypeDenotationDefinition.v:232 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationDefinition.v:218: `formula_open_env_denot_ty_lvar_gas` -> Denotation/theories/ContextTypeDenotationOpen.v:33 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:12: `denot_ty_lvar_gas_tm_result_equiv_arrow_open_arg` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:792 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:82: `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_source_mid` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:701 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:116: `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result_target_mid_to_goal` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:716 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:221: `basic_world_formula_arrow_open_result_source_world` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:374 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:255: `basic_world_formula_arrow_open_result_big` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:378 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:293: `basic_world_formula_arrow_open_result_subenv` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:382 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:385: `expr_basic_typing_formula_arrow_open_result_target` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:551 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:428: `denot_ty_lvar_gas_zero_arrow_open_result_target` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:607 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:564: `typed_total_tm_result_equiv_on_arrow_open_result_mid` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:722 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:612: `denot_ty_lvar_gas_tm_result_equiv_arrow_open_result` -> Denotation/theories/ContextTypeDenotationSaturateArrow.v:795 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateArrow.v:727: `denot_ty_lvar_gas_tm_result_equiv_arrow_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:39 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:10: `denot_ty_lvar_gas_tm_result_equiv_over_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:34 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:65: `denot_ty_lvar_gas_tm_result_equiv_under_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:35 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:229: `typed_total_tm_result_equiv_on_inter_l` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:268 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:241: `typed_total_tm_result_equiv_on_inter_r` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:270 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:253: `denot_ty_lvar_gas_tm_result_equiv_inter_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:36 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:311: `typed_total_tm_result_equiv_on_union_l` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:363 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:323: `typed_total_tm_result_equiv_on_union_r` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:365 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:346: `denot_ty_lvar_gas_tm_result_equiv_union_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:37 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:408: `denot_ty_lvar_gas_zero_sum_l` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:453 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:424: `denot_ty_lvar_gas_zero_sum_r` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:464 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:446: `typed_total_tm_result_equiv_on_sum_l_target_zero` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:481 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:457: `typed_total_tm_result_equiv_on_sum_r_target_zero` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:498 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:468: `typed_total_tm_result_equiv_on_sum_l_pullback` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:537 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:485: `typed_total_tm_result_equiv_on_sum_r_pullback` -> Denotation/theories/ContextTypeDenotationSaturateBody.v:541 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:502: `denot_ty_lvar_gas_tm_result_equiv_sum_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:38 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:9: `formula_fv_denot_ty_lvar_gas_components_lower` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:51 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:29: `expr_result_formula_free_in_world` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:61 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:73: `logic_qualifier_denote_of_res_subset` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:103 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:134: `denot_ty_lvar_gas_saturate` -> Denotation/theories/ContextTypeDenotationCasesConst.v:723 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:237: `denot_ty_lvar_gas_zero_of_guard_formula` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:282 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:258: `denot_ty_lvar_gas_guard_of_zero_formula` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:316 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:320: `denot_ty_lvar_gas_insert_fresh_lty_env` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:350 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:533: `expr_basic_typing_formula_ret_fvar_from_lookup` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:786 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:547: `expr_total_formula_ret_fvar_from_result` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:787 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:591: `basic_world_formula_result_alias_target` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:749 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:724: `denot_ty_lvar_gas_result_alias_guard` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:53 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:843: `tm_result_equiv_on_tlete_body_extension` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:177 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:1155: `lty_env_open_one_typed_bind_lookup_free_ne` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:1275 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:1177: `lty_env_open_one_typed_bind_lookup_current` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:1302 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:1314: `expr_result_formula_transport_of_tm_result_equiv` -> Denotation/theories/ContextTypeDenotationSaturateCore.v:1540 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:1339: `tm_result_equiv_on_result_alias` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:64 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateMain.v:43: `denot_ty_lvar_gas_result_alias_to_var` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:120 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateMain.v:69: `denot_ty_lvar_gas_result_extension_to_var` -> ContextTyping/theories/Soundness.v:318 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateMain.v:142: `denot_ty_lvar_guard_wfworld_closed_on_term` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:173 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:13: `denot_ty_lvar_gas_tm_result_equiv_wand_open_arg` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:804 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:83: `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_source_mid` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:714 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:117: `denot_ty_lvar_gas_tm_result_equiv_wand_open_result_target_mid_to_goal` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:729 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:234: `basic_world_formula_wand_open_result_source_world` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:368 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:252: `basic_world_formula_wand_open_result_big` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:380 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:290: `basic_world_formula_wand_open_result_subenv` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:384 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:387: `expr_basic_typing_formula_wand_open_result_target` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:561 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:430: `denot_ty_lvar_gas_zero_wand_open_result_target` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:621 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:574: `typed_total_tm_result_equiv_on_wand_open_result_mid` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:735 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:625: `denot_ty_lvar_gas_tm_result_equiv_wand_open_result` -> Denotation/theories/ContextTypeDenotationSaturateWand.v:807 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateWand.v:739: `denot_ty_lvar_gas_tm_result_equiv_wand_body` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:40 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+
+Admitted lemmas:
+
+Thin wrapper/solver candidates:
+- Denotation/theories/Context.v:68: `denot_ctx_under_basic_world` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/Context.v:78: `denot_ctx_under_bind_inv` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:145: `const_qual_open_vars` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationCasesConst.v:155: `const_qual_vars_bound` -- THIN-PROOF: wrapper/solver candidate
+- Denotation/theories/ContextTypeDenotationCasesConst.v:163: `const_qual_dom_bound_fresh` -- THIN-PROOF: wrapper/solver candidate
+- Denotation/theories/ContextTypeDenotationDefinition.v:77: `open_env_lift_fresh_for_bound0_bind_dom` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationDefinition.v:440: `res_models_denot_ty_lvar_gas_env_agree_on` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:335: `denot_ty_lvar_gas_scope_from_zero_any` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:446: `typed_total_tm_result_equiv_on_sum_l_target_zero` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateBody.v:457: `typed_total_tm_result_equiv_on_sum_r_target_zero` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:93: `expr_result_formula_of_res_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:258: `denot_ty_lvar_gas_guard_of_zero_formula` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:269: `denot_ty_lvar_gas_zero_of_guard` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:286: `denot_ty_lvar_gas_guard` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:303: `denot_ty_lvar_gas_guard_of_zero` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:320: `denot_ty_lvar_gas_insert_fresh_lty_env` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- Denotation/theories/ContextTypeDenotationSaturateCore.v:990: `tm_result_equiv_on_res_store_subset` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper

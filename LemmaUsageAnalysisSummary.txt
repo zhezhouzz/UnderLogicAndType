@@ -1,0 +1,129 @@
+Lemma usage analysis summary
+============================
+
+Generated reports
+-----------------
+
+Per-folder reports were generated for:
+
+- LocallyNamelessLemmaUsageAnalysis.txt
+- CoreLangLemmaUsageAnalysis.txt
+- ContextBaseLemmaUsageAnalysis.txt
+- ContextStoreLemmaUsageAnalysis.txt
+- ContextAlgebraLemmaUsageAnalysis.txt
+- ContextTypeLanguageLemmaUsageAnalysis.txt
+- ContextLogicLemmaUsageAnalysis.txt
+- ContextBasicDenotationLemmaUsageAnalysis.txt
+- DenotationLemmaUsageAnalysis.txt
+- ContextTypingLemmaUsageAnalysis.txt
+
+The scanner counts whole-token references in .v files only.  It intentionally
+does not count old .txt plans/reports as usage, so it is useful for finding
+lemmas made stale by route changes.
+
+Global counts
+-------------
+
+- CoreLang: 277 lemmas, 74 zero-use, 78 single-use, 0 admitted.
+- ContextBase: 206 lemmas, 36 zero-use, 50 single-use, 0 admitted.
+- ContextStore: 250 lemmas, 46 zero-use, 82 single-use, 0 admitted.
+- ContextAlgebra: 286 lemmas, 67 zero-use, 103 single-use, 0 admitted.
+- ContextTypeLanguage: 226 lemmas, 89 zero-use, 59 single-use, 0 admitted.
+- ContextLogic: 275 lemmas, 64 zero-use, 78 single-use, 0 admitted.
+- ContextBasicDenotation: 411 lemmas, 101 zero-use, 133 single-use, 1 admitted.
+- Denotation: 138 lemmas, 6 zero-use, 69 single-use, 0 admitted.
+- ContextTyping: 46 lemmas, 11 zero-use, 27 single-use, 15 admitted.
+
+Main observations
+-----------------
+
+1. The old Denotation route cleanup worked.
+
+   Denotation has only six zero-use lemmas left.  Most single-use lemmas there
+   are intentional proof boundaries for result equivalence, TLet, constants, or
+   Arrow/Wand opened-result packages.  They should not be mechanically inlined.
+
+2. Base/Store/Algebra have many apparent zero-use lemmas, but many are public
+   low-level API facts or ResourceInterface aliases.
+
+   These should be reviewed conservatively.  A zero-use concrete lemma in
+   ResourceInterface may be a deliberate exported surface lemma even if no
+   current proof calls it.  A zero-use private lemma in ResourceCore or
+   StoreRestrict is a stronger deletion candidate.
+
+3. ContextTypeLanguage and ContextBasicDenotation are the highest-yield cleanup
+   zones after Denotation.
+
+   They contain many syntax/open/fv helper lemmas left behind by repeated route
+   changes.  Their zero-use lists are more likely to contain removable proof
+   scaffolding than the Algebra interface files.
+
+4. ContextTyping currently has expected admitted direct obligations.
+
+   The admitted lemmas are the still-unproved higher-order/match/d cases and
+   final corollaries.  They are not stale fiberwise bridge wrappers anymore.
+   Zero-use regularity lemmas in Typing.v are possible cleanup targets if we no
+   longer want public API names for them.
+
+Recommended cleanup order
+-------------------------
+
+1. Denotation zero-use lemmas.
+
+   First review and likely delete:
+
+   - formula_fv_open_denot_ty_lvar_gas_subset_relevant
+   - denot_guard_term_type_fv_scope
+   - denot_ty_lvar_gas_result_alias_scope_ret_from_source
+   - expr_result_formula_of_res_subset
+   - expr_result_formula_of_res_store_subset
+   - expr_result_formula_alias_to_var
+
+   These are few and local, so they are good first deletions.
+
+2. ContextTyping zero-use regularity wrappers.
+
+   Candidates:
+
+   - wf_ctx_fv_subset
+   - wf_context_ty_lc
+   - wf_context_ty_fv_subset
+   - context_typing_wf_erase_dom
+   - context_typing_wf_wand_arg_global
+   - typing_erase
+
+   Delete only if we agree they are not intended public API.
+
+3. ContextTypeLanguage syntax helpers.
+
+   Use ContextTypeLanguageLemmaUsageAnalysis.txt to delete zero-use open/fv
+   helper lemmas that are not paper-facing.  This is likely a high-yield layer.
+
+4. ContextBasicDenotation scaffolding.
+
+   Review the one admitted lemma first, then zero-use syntax/typing transport
+   helpers.  Be careful around mutual induction support: some zero-use-looking
+   lemmas may be preserved as proof architecture.
+
+5. Store/Base private zero-use wrappers.
+
+   Prefer deleting private zero-use wrappers from StoreCore/StoreRestrict only
+   after confirming they are not used through tactics.  Do not delete low-level
+   names solely because current proofs do not call them.
+
+6. Algebra interface aliases.
+
+   Treat ResourceInterface zero-use lemmas as public API until we decide the
+   exported surface should shrink.  Private ResourceCore zero-use lemmas are
+   safer candidates.
+
+Do not mechanically delete
+--------------------------
+
+- Lemmas used only once but isolating a long proof block.
+- Arrow/Wand opened-result package lemmas in Denotation.
+- Result-equivalence and result-extension lemmas.
+- ResourceInterface aliases without a deliberate interface-shrink pass.
+- Public regularity lemmas if they are useful for future proof scripts or paper
+  names, even when current .v usage is zero.
+

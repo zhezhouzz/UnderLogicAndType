@@ -1,0 +1,1564 @@
+ContextTypeLanguage lemma usage analysis
+=========================================
+
+Method: scanned all .v files for Lemma/Theorem/Corollary/Fact/Proposition names, counted whole-token .v references excluding the definition line, and marked Ltac/Hint references. Counts do not include .txt reports.
+
+File: ContextTypeLanguage/theories/LtyEnv.v
+-------------------------------------------
+- Lemma `lty_env_msubst_store_dom` @ line 68
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_msubst_store_lookup_some` @ line 77
+  uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1029: apply lty_env_msubst_store_lookup_some in Hlook as [Hlook' _];
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1100: apply lty_env_msubst_store_lookup_some in e as [Hlook _].
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1107: apply lty_env_msubst_store_lookup_some in e as [Hlook _].
+- Lemma `lty_env_msubst_store_lookup_some_2` @ line 87
+  uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:680: constructor. apply lty_env_msubst_store_lookup_some_2.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:690: + constructor. apply lty_env_msubst_store_lookup_some_2.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:696: + constructor. apply lty_env_msubst_store_lookup_some_2.
+- Lemma `lty_env_msubst_store_shift` @ line 98
+  uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/LtyEnv.v:146: rewrite lty_env_msubst_store_shift.
+- Lemma `lty_env_msubst_store_insert_bound0_shift` @ line 113
+  uses: 1 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/LtyEnv.v:145: rewrite lty_env_msubst_store_insert_bound0_shift.
+- Lemma `lty_env_msubst_store_typed_bind` @ line 140
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_msubst_store_open_one_fresh` @ line 150
+  uses: 0 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_dom` @ line 172
+  uses: 11 total; ltac/hint uses: 0; proof lines: 74; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/StoreTyping.v:316: - rewrite lty_env_open_one_dom in Hdom.
+    - ContextBasicDenotation/theories/StoreTyping.v:331: rewrite lty_env_open_one_dom.
+    - ContextBasicDenotation/theories/StoreTyping.v:351: - rewrite lty_env_open_one_dom. reflexivity.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1362: - rewrite lty_env_open_one_dom. reflexivity.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1364: rewrite lty_env_open_one_dom.
+    - ... 6 more
+- Lemma `lty_env_open_lvars_empty` @ line 176
+  uses: 6 total; ltac/hint uses: 0; proof lines: 72; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:438: rewrite lty_env_open_lvars_empty, open_cty_env_empty.
+    - ContextBasicDenotation/theories/RelevantEnv.v:439: rewrite (lty_env_open_lvars_empty Σ).
+    - ContextBasicDenotation/theories/StoreTyping.v:385: rewrite formula_open_env_empty, lty_env_open_lvars_empty. reflexivity.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1378: rewrite formula_open_env_empty, lty_env_open_lvars_empty,
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1558: rewrite formula_open_env_empty, lty_env_open_lvars_empty.
+    - ... 1 more
+- Lemma `lty_env_open_lvars_singleton` @ line 180
+  uses: 1 total; ltac/hint uses: 0; proof lines: 68; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationOpen.v:37: rewrite lty_env_open_lvars_singleton in Heq by exact HΣfree.
+- Lemma `lty_env_open_lvars_open_one_empty` @ line 186
+  uses: 0 total; ltac/hint uses: 0; proof lines: 64; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_lvars_dom` @ line 192
+  uses: 1 total; ltac/hint uses: 0; proof lines: 60; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1579: rewrite lty_env_open_lvars_dom.
+- Lemma `lty_env_open_lvars_lookup_fresh` @ line 198
+  uses: 0 total; ltac/hint uses: 0; proof lines: 56; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_lvars_insert_entry` @ line 204
+  uses: 0 total; ltac/hint uses: 0; proof lines: 51; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_lvars_insert_fresh` @ line 211
+  uses: 6 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:447: rewrite lty_env_open_lvars_insert_fresh.
+    - ContextBasicDenotation/theories/RelevantEnv.v:462: rewrite lty_env_open_lvars_insert_fresh.
+    - ContextBasicDenotation/theories/StoreTyping.v:394: rewrite lty_env_open_lvars_insert_fresh by assumption.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1388: rewrite lty_env_open_lvars_insert_fresh.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1591: rewrite lty_env_open_lvars_insert_fresh.
+    - ... 1 more
+- Lemma `lty_env_open_lvars_lift_bound0_singleton` @ line 219
+  uses: 3 total; ltac/hint uses: 0; proof lines: 40; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:188: rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj;
+    - Denotation/theories/ContextTypeDenotationDefinition.v:281: rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:345: rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj.
+- Lemma `lty_env_open_lvars_insert_delete_swap_back` @ line 267
+  uses: 0 total; ltac/hint uses: 0; proof lines: 71; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_lvars_open_one` @ line 279
+  uses: 0 total; ltac/hint uses: 0; proof lines: 66; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_fresh_noop` @ line 286
+  uses: 0 total; ltac/hint uses: 0; proof lines: 62; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_involutive` @ line 292
+  uses: 0 total; ltac/hint uses: 0; proof lines: 60; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_insert` @ line 296
+  uses: 0 total; ltac/hint uses: 0; proof lines: 57; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_insert_fresh` @ line 301
+  uses: 0 total; ltac/hint uses: 0; proof lines: 53; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_shift_under_gen` @ line 307
+  uses: 0 total; ltac/hint uses: 0; proof lines: 49; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_shift_under` @ line 313
+  uses: 0 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lvars_open_shift_dom_gen` @ line 319
+  uses: 0 total; ltac/hint uses: 0; proof lines: 41; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lvars_open_shift_dom` @ line 325
+  uses: 0 total; ltac/hint uses: 0; proof lines: 37; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_one_shift_insert_bound` @ line 331
+  uses: 0 total; ltac/hint uses: 0; proof lines: 34; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_bvar_scope_shift_open_noop` @ line 336
+  uses: 0 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_bvar_scope_shift_open_one_noop` @ line 342
+  uses: 0 total; ltac/hint uses: 0; proof lines: 25; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_bvar_scope_open_one_shift_under_result` @ line 349
+  uses: 0 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lvars_open_shift_dom_union_bound0` @ line 356
+  uses: 0 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_atom_dom_open_one` @ line 361
+  uses: 0 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typed_lty_env_bind_dom` @ line 370
+  uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/LtyEnv.v:405: rewrite typed_lty_env_bind_dom, lvars_at_depth_union.
+- Lemma `typed_lty_env_bind_lookup_free` @ line 375
+  uses: 2 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/StoreTyping.v:209: rewrite typed_lty_env_bind_lookup_free. exact HΣ.
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:1171: apply typed_lty_env_bind_lookup_free.
+- Lemma `typed_lty_env_bind_atom_env_insert_dom` @ line 389
+  uses: 0 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `typed_lty_env_bind_lvars_fv_dom` @ line 397
+  uses: 6 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1846: - rewrite typed_lty_env_bind_lvars_fv_dom.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1895: - rewrite typed_lty_env_bind_lvars_fv_dom.
+    - Denotation/theories/ContextTypeDenotationTactics.v:29: rewrite ?typed_lty_env_bind_lvars_fv_dom;
+    - Denotation/theories/ContextTypeDenotationTactics.v:56: rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
+    - Denotation/theories/ContextTypeDenotationTactics.v:71: rewrite ?typed_lty_env_bind_lvars_fv_dom;
+    - ... 1 more
+- Lemma `lvars_at_depth_typed_lty_env_bind` @ line 401
+  uses: 6 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:1355: - rewrite lvars_at_depth_typed_lty_env_bind. reflexivity.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1366: rewrite lvars_at_depth_typed_lty_env_bind.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1385: rewrite lvars_at_depth_typed_lty_env_bind.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1403: rewrite lvars_at_depth_typed_lty_env_bind.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1422: rewrite lvars_at_depth_typed_lty_env_bind.
+    - ... 1 more
+- Lemma `typed_lty_env_bind_atom_dom` @ line 411
+  uses: 0 total; ltac/hint uses: 0; proof lines: 62; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `lty_env_insert_free_commute` @ line 415
+  uses: 0 total; ltac/hint uses: 0; proof lines: 57; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typed_lty_env_bind_insert_free` @ line 422
+  uses: 0 total; ltac/hint uses: 0; proof lines: 53; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `lty_env_union_insert_free_singleton` @ line 428
+  uses: 0 total; ltac/hint uses: 0; proof lines: 45; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `lty_env_closed_insert_free` @ line 438
+  uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: UNKNOWN
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateMain.v:121: - apply lty_env_closed_insert_free; eauto.
+- Lemma `lty_env_closed_lookup_bound_none` @ line 443
+  uses: 1 total; ltac/hint uses: 0; proof lines: 39; terminator: UNKNOWN
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1434: symmetry. apply lty_env_closed_lookup_bound_none. exact Hclosed.
+- Lemma `lty_env_shift_closed` @ line 448
+  uses: 0 total; ltac/hint uses: 0; proof lines: 36; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `typed_lty_env_bind_free_notin` @ line 453
+  uses: 0 total; ltac/hint uses: 0; proof lines: 33; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `lty_env_shift_lookup_bound0_none` @ line 458
+  uses: 0 total; ltac/hint uses: 0; proof lines: 31; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `logic_var_open_env_shift0_typed_bind_inj_on` @ line 462
+  uses: 0 total; ltac/hint uses: 0; proof lines: 27; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typed_lty_env_bind_open_under` @ line 468
+  uses: 1 total; ltac/hint uses: 0; proof lines: 23; terminator: UNKNOWN
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:1468: rewrite typed_lty_env_bind_open_under.
+- Lemma `typed_lty_env_bind_open_current` @ line 474
+  uses: 6 total; ltac/hint uses: 0; proof lines: 18; terminator: UNKNOWN
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/StoreTyping.v:372: rewrite typed_lty_env_bind_open_current by assumption.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1844: - rewrite typed_lty_env_bind_open_current in Hmodels by assumption.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1893: - rewrite typed_lty_env_bind_open_current by assumption.
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:332: rewrite typed_lty_env_bind_open_current in Hlook by
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:338: rewrite typed_lty_env_bind_open_current in Hlook by
+    - ... 1 more
+- Lemma `typed_lty_env_bind_open_current_base` @ line 481
+  uses: 0 total; ltac/hint uses: 0; proof lines: 13; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lty_env_open_typed_bind_atom_env` @ line 488
+  uses: 0 total; ltac/hint uses: 0; proof lines: 8; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typed_lty_env_bind_open_env_shift0` @ line 495
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: UNKNOWN
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `typed_lty_env_bind_open_env_lift` @ line 501
+  uses: 2 total; ltac/hint uses: 0; proof lines: 0; terminator: UNKNOWN
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:294: rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:358: rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
+
+File: ContextTypeLanguage/theories/Notation.v
+---------------------------------------------
+- Lemma `constant_lt_for_base_well_founded` @ line 158
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+
+File: ContextTypeLanguage/theories/Qualifier.v
+----------------------------------------------
+- Lemma `qual_ext` @ line 82
+  uses: 8 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:178: apply qual_ext.
+    - ContextTypeLanguage/theories/Qualifier.v:203: apply qual_ext.
+    - ContextTypeLanguage/theories/Qualifier.v:312: apply qual_ext; cbn [qual_lvars qual_prop qual_open_atom qual_dom] in *.
+    - ContextTypeLanguage/theories/Qualifier.v:349: apply qual_ext; cbn [qual_lvars qual_prop qual_open_atom qual_dom qual_bvars] in *.
+    - ContextTypeLanguage/theories/Qualifier.v:404: apply qual_ext.
+    - ... 3 more
+- Lemma `qual_open_atom_vars` @ line 97
+  uses: 9 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:274: rewrite qual_open_atom_vars.
+    - ContextTypeLanguage/theories/Syntax.v:279: rewrite qual_open_atom_vars.
+    - ContextTypeLanguage/theories/Syntax.v:802: try (rewrite !qual_open_atom_vars, H2; reflexivity);
+    - ContextTypeLanguage/theories/WF.v:671: rewrite qual_open_atom_vars.
+    - ContextTypeLanguage/theories/WF.v:675: rewrite qual_open_atom_vars.
+    - ... 4 more
+- Lemma `qual_mlsubst_vars` @ line 103
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:115: rewrite qual_mlsubst_vars, atom_store_to_lvar_store_dom.
+- Lemma `qual_msubst_store_vars` @ line 110
+  uses: 3 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:219: - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
+    - ContextTypeLanguage/theories/Syntax.v:221: - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
+    - ContextTypeLanguage/theories/Qualifier.v:123: rewrite qual_msubst_store_vars.
+- Lemma `qual_dom_msubst_store_subset` @ line 119
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `atom_store_to_lvar_store_restrict_lvars_subset_eq` @ line 128
+  uses: 1 total; ltac/hint uses: 0; proof lines: 29; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:177: { apply atom_store_to_lvar_store_restrict_lvars_subset_eq. exact Hsub. }
+- Lemma `qual_msubst_store_restrict_subset` @ line 165
+  uses: 2 total; ltac/hint uses: 0; proof lines: 22; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:387: - f_equal. apply qual_msubst_store_restrict_subset.
+    - ContextTypeLanguage/theories/Syntax.v:391: - f_equal. apply qual_msubst_store_restrict_subset.
+- Lemma `qual_open_msubst_store_fresh` @ line 195
+  uses: 1 total; ltac/hint uses: 0; proof lines: 53; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:250: rewrite ?qual_open_msubst_store_fresh by exact Hy;
+- Lemma `lvars_fv_qual_vars` @ line 255
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:263: rewrite lvars_fv_qual_vars. reflexivity.
+- Lemma `lvars_fv_qual_vars_difference_free` @ line 259
+  uses: 2 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:257: lvars_fv_qual_vars_difference_free.
+    - ContextBasicDenotation/theories/Qualifier.v:272: lvars_fv_qual_vars_difference_free.
+- Lemma `lvars_open_qual_vars_difference_bound` @ line 266
+  uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:278: apply lvars_open_qual_vars_difference_bound.
+- Lemma `lvars_open_qual_vars_difference_bound0` @ line 274
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `qual_open_atom_dom_subset` @ line 281
+  uses: 3 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1102: pose proof (qual_open_atom_dom_subset k x q y Hy) as Hy'.
+    - ContextTypeLanguage/theories/Qualifier.v:294: pose proof (qual_open_atom_dom_subset k y q x Hbad).
+    - ContextTypeLanguage/theories/Qualifier.v:390: pose proof (qual_open_atom_dom_subset k x q y Hyopen) as Hycases.
+- Lemma `qual_open_atom_dom_fresh_ne` @ line 288
+  uses: 2 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:440: apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
+    - ContextTypeLanguage/theories/Syntax.v:451: apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
+- Lemma `qual_open_atom_bvars` @ line 298
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Qualifier.v:384: - rewrite qual_open_atom_bvars, lvars_bv_elem.
+- Lemma `qual_open_atom_lc_fresh` @ line 305
+  uses: 0 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `qual_open_atom_fresh_index` @ line 342
+  uses: 3 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:581: rewrite qual_open_atom_fresh_index.
+    - ContextTypeLanguage/theories/WF.v:591: rewrite qual_open_atom_fresh_index.
+    - ContextTypeLanguage/theories/Qualifier.v:383: apply qual_open_atom_fresh_index.
+- Lemma `qual_open_same_index_absorb` @ line 375
+  uses: 2 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:645: - rewrite qual_open_same_index_absorb; try exact Hxy.
+    - ContextTypeLanguage/theories/Syntax.v:653: - rewrite qual_open_same_index_absorb; try exact Hxy.
+- Lemma `qual_open_commute_fvar` @ line 396
+  uses: 3 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:717: - rewrite qual_open_commute_fvar by (try lia; exact Hxy). reflexivity.
+    - ContextTypeLanguage/theories/Syntax.v:718: - rewrite qual_open_commute_fvar by (try lia; exact Hxy). reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:75: apply qual_open_commute_fvar; assumption.
+- Lemma `qual_top_lc` @ line 437
+  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `qual_shift_from_vars` @ line 470
+  uses: 8 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:462: - rewrite qual_shift_from_vars.
+    - ContextTypeLanguage/theories/Syntax.v:464: - rewrite qual_shift_from_vars.
+    - ContextTypeLanguage/theories/Syntax.v:505: rewrite qual_shift_from_vars.
+    - ContextTypeLanguage/theories/Syntax.v:508: rewrite qual_shift_from_vars.
+    - ContextTypeLanguage/theories/Syntax.v:815: rewrite !qual_shift_from_vars, H2. reflexivity.
+    - ... 3 more
+- Lemma `qual_shift_from_dom` @ line 476
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `qual_shift_from_msubst_store` @ line 484
+  uses: 1 total; ltac/hint uses: 0; proof lines: 41; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:260: rewrite ?qual_shift_from_msubst_store;
+- Lemma `qual_shift_from_lc` @ line 531
+  uses: 0 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `qual_shift_from_below_id` @ line 544
+  uses: 0 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `qual_open_shift_from_under_gen` @ line 568
+  uses: 4 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:616: - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
+    - ContextTypeLanguage/theories/Syntax.v:617: - rewrite (qual_open_shift_from_under_gen (S j) (S k)) by lia. reflexivity.
+    - ContextTypeLanguage/theories/Qualifier.v:613: intros Hjk. apply qual_open_shift_from_under_gen. lia.
+    - ContextTypeLanguage/theories/Qualifier.v:620: apply qual_open_shift_from_under_gen. lia.
+- Lemma `qual_open_shift_from_under` @ line 608
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `qual_shift_open_commute` @ line 616
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lvars_open_qual_vars_difference_bound0_under` @ line 623
+  uses: 0 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+
+File: ContextTypeLanguage/theories/Syntax.v
+-------------------------------------------
+- Lemma `erase_ctx_bind_dom` @ line 186
+  uses: 1 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTyping/theories/Typing.v:213: rewrite erase_ctx_bind_dom in Hτ.
+- Lemma `context_ty_lvars_at_msubst_store` @ line 214
+  uses: 1 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:234: apply context_ty_lvars_at_msubst_store.
+- Lemma `context_ty_lvars_msubst_store` @ line 230
+  uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:687: rewrite context_ty_lvars_msubst_store.
+    - ContextTypeLanguage/theories/WF.v:57: - rewrite context_ty_lvars_msubst_store. set_solver.
+- Lemma `erase_ty_context_ty_msubst_store` @ line 237
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:47: try rewrite ?IHτ1, ?IHτ2, ?erase_ty_context_ty_msubst_store; tauto.
+- Lemma `context_ty_msubst_store_open_fresh` @ line 243
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `context_ty_msubst_store_shift` @ line 255
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `context_ty_lvars_at_open` @ line 266
+  uses: 2 total; ltac/hint uses: 0; proof lines: 40; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:620: rewrite (context_ty_lvars_at_open 0 k y τ).
+    - ContextTypeLanguage/theories/Syntax.v:317: apply context_ty_lvars_at_open.
+- Lemma `cty_open_vars` @ line 312
+  uses: 15 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:128: rewrite cty_open_vars in Hv.
+    - ContextBasicDenotation/theories/RelevantEnv.v:387: rewrite cty_open_vars.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1157: - rewrite cty_open_vars in Hτopen.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1208: rewrite cty_open_vars in Hτopen.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1255: - rewrite cty_open_vars in Hτopen.
+    - ... 10 more
+- Lemma `context_ty_lvars_at_depth` @ line 320
+  uses: 1 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:339: rewrite context_ty_lvars_at_depth. reflexivity.
+- Lemma `context_ty_lvars_depth` @ line 335
+  uses: 11 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:1154: rewrite <- (context_ty_lvars_depth τr 1).
+    - ContextBasicDenotation/theories/RelevantEnv.v:1252: rewrite <- (context_ty_lvars_depth τr 1).
+    - ContextBasicDenotation/theories/RelevantEnv.v:1320: - rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1336: - rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1370: rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
+    - ... 6 more
+- Lemma `context_ty_lvars_open_body_without_fresh_closed` @ line 342
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:897: apply context_ty_lvars_open_body_without_fresh_closed
+- Lemma `context_ty_lvars_fv_at` @ line 360
+  uses: 33 total; ltac/hint uses: 0; proof lines: 9; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:71: rewrite lvars_fv_union, !context_ty_lvars_fv_at.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:611: rewrite <- (context_ty_lvars_fv_at 0 (cty_open k y τ)).
+    - ContextTypeLanguage/theories/Syntax.v:377: apply context_ty_lvars_fv_at.
+    - ContextTypeLanguage/theories/Syntax.v:407: rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+    - ContextTypeLanguage/theories/Syntax.v:410: rewrite lvars_fv_union, !context_ty_lvars_fv_at. set_solver.
+    - ... 28 more
+- Lemma `context_ty_lvars_fv` @ line 374
+  uses: 13 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:32: rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
+    - ContextBasicDenotation/theories/RelevantEnv.v:665: - rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1206: rewrite context_ty_lvars_fv.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1676: rewrite <- context_ty_lvars_fv.
+    - Denotation/theories/ContextTypeDenotationTactics.v:36: ?context_ty_lvars_fv.
+    - ... 8 more
+- Lemma `context_ty_msubst_store_restrict_subset` @ line 380
+  uses: 0 total; ltac/hint uses: 0; proof lines: 33; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `context_ty_lvars_over_fv` @ line 420
+  uses: 3 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:442: rewrite context_ty_lvars_over_fv. exact Hbad.
+    - ContextTypeLanguage/theories/Syntax.v:890: rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
+    - ContextTypeLanguage/theories/Syntax.v:902: rewrite ?context_ty_lvars_over_fv in H;
+- Lemma `context_ty_lvars_under_fv` @ line 427
+  uses: 3 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:453: rewrite context_ty_lvars_under_fv. exact Hbad.
+    - ContextTypeLanguage/theories/Syntax.v:890: rewrite ?context_ty_lvars_over_fv, ?context_ty_lvars_under_fv;
+    - ContextTypeLanguage/theories/Syntax.v:903: rewrite ?context_ty_lvars_under_fv in H;
+- Lemma `context_ty_over_fresh_open_qual_dom` @ line 434
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:258: pose proof (context_ty_over_fresh_open_qual_dom x y b φ Hfresh Hxy).
+- Lemma `context_ty_under_fresh_open_qual_dom` @ line 445
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:273: pose proof (context_ty_under_fresh_open_qual_dom x y b φ Hfresh Hxy).
+- Lemma `context_ty_lvars_at_shift_under` @ line 456
+  uses: 7 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:1371: rewrite context_ty_lvars_at_shift_under by lia.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1408: rewrite context_ty_lvars_at_shift_under by lia.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:482: rewrite ?context_ty_lvars_at_shift_under by lia;
+    - Denotation/theories/ContextTypeDenotationDefinition.v:555: rewrite ?context_ty_lvars_at_shift_under by lia.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:563: rewrite context_ty_lvars_at_shift_under in Harg by lia.
+    - ... 2 more
+- Lemma `context_ty_lvars_at_succ_body` @ line 475
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:495: - apply context_ty_lvars_at_succ_body.
+- Lemma `context_ty_lvars_body_subset` @ line 489
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `context_ty_lvars_at_shift` @ line 499
+  uses: 2 total; ltac/hint uses: 0; proof lines: 18; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:528: apply context_ty_lvars_at_shift.
+    - ContextTypeLanguage/theories/Syntax.v:550: rewrite context_ty_lvars_at_shift.
+- Lemma `cty_shift0_vars` @ line 523
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:534: apply cty_shift0_vars.
+- Lemma `cty_shift_vars` @ line 531
+  uses: 7 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:1537: rewrite cty_shift_vars in HvX.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1573: rewrite cty_shift_vars in HvX.
+    - ContextBasicDenotation/theories/RelevantEnv.v:1612: rewrite cty_shift_vars in HvX.
+    - ContextTypeLanguage/theories/Syntax.v:888: rewrite ?cty_open_vars, ?cty_shift_vars;
+    - ContextTypeLanguage/theories/Syntax.v:899: rewrite ?cty_shift_vars in H;
+    - ... 2 more
+- Lemma `cty_open_fv_subset` @ line 537
+  uses: 2 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:572: pose proof (cty_open_fv_subset 0 y (cty_shift 0 τ) x Hin) as Hsub.
+    - ContextTypeLanguage/theories/WF.v:1113: pose proof (cty_open_fv_subset k x τ y Hy) as Hy'.
+- Lemma `cty_shift_fv` @ line 545
+  uses: 12 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationTactics.v:30: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
+    - Denotation/theories/ContextTypeDenotationTactics.v:57: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
+    - Denotation/theories/ContextTypeDenotationTactics.v:72: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm;
+    - Denotation/theories/ContextTypeDenotationTactics.v:86: rewrite ?tm_shift_fv, ?cty_shift_fv, ?fv_tapp_tm in H;
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:41: { rewrite cty_shift_fv. exact Hyτx. }
+    - ... 7 more
+- Lemma `context_ty_lvars_shift_free_notin` @ line 554
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `context_ty_lvars_open_shift_fresh` @ line 565
+  uses: 1 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:984: eapply context_ty_lvars_open_shift_fresh in Hzτ; [|exact Hzy].
+- Lemma `cty_open_preserves_erasure` @ line 584
+  uses: 11 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:422: rewrite cty_open_preserves_erasure.
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:420: rewrite cty_open_preserves_erasure.
+    - ContextTypeLanguage/theories/Syntax.v:920: rewrite ?cty_open_preserves_erasure, ?cty_open_preserves_depth.
+    - ContextTypeLanguage/theories/Syntax.v:924: rewrite ?cty_open_preserves_erasure in H;
+    - ContextTypeLanguage/theories/Syntax.v:941: rewrite ?cty_open_preserves_erasure, ?cty_shift_preserves_erasure;
+    - ... 6 more
+- Lemma `cty_shift_preserves_erasure` @ line 590
+  uses: 7 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:929: rewrite ?cty_shift_preserves_erasure, ?cty_shift_preserves_depth;
+    - ContextTypeLanguage/theories/Syntax.v:934: rewrite ?cty_shift_preserves_erasure in H;
+    - ContextTypeLanguage/theories/Syntax.v:941: rewrite ?cty_open_preserves_erasure, ?cty_shift_preserves_erasure;
+    - ContextTypeLanguage/theories/Syntax.v:947: rewrite ?cty_shift_preserves_erasure in H.
+    - ContextTypeLanguage/theories/WF.v:156: + rewrite !cty_shift_preserves_erasure. exact Herase.
+    - ... 2 more
+- Lemma `cty_open_preserves_depth` @ line 596
+  uses: 2 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:920: rewrite ?cty_open_preserves_erasure, ?cty_open_preserves_depth.
+    - ContextTypeLanguage/theories/Syntax.v:925: rewrite ?cty_open_preserves_depth in H.
+- Lemma `cty_shift_preserves_depth` @ line 602
+  uses: 6 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:177: ltac:(rewrite cty_shift_preserves_depth; lia)).
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:183: ltac:(rewrite cty_shift_preserves_depth; lia)).
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:199: ltac:(rewrite cty_shift_preserves_depth; lia)).
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:205: ltac:(rewrite cty_shift_preserves_depth; lia)).
+    - ContextTypeLanguage/theories/Syntax.v:929: rewrite ?cty_shift_preserves_erasure, ?cty_shift_preserves_depth;
+    - ... 1 more
+- Lemma `cty_open_shift_under_gen` @ line 608
+  uses: 4 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:625: intros Hjk. apply cty_open_shift_under_gen. lia.
+    - ContextTypeLanguage/theories/Syntax.v:632: apply cty_open_shift_under_gen. lia.
+    - ContextTypeLanguage/theories/TypeOpen.v:770: { rewrite cty_open_shift_under_gen by lia. reflexivity. }
+    - ContextTypeLanguage/theories/TypeOpen.v:805: rewrite cty_open_shift_under_gen by lia.
+- Lemma `cty_open_shift_under` @ line 620
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `cty_shift_open_commute` @ line 628
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `cty_open_same_index_absorb` @ line 635
+  uses: 0 total; ltac/hint uses: 0; proof lines: 67; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `cty_open_commute_fvar` @ line 710
+  uses: 4 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:49: rewrite cty_open_commute_fvar by assumption. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:56: apply cty_open_commute_fvar; assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:257: + rewrite cty_open_commute_fvar by assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:334: rewrite cty_open_commute_fvar by assumption.
+- Lemma `cty_vars_equiv_erase` @ line 786
+  uses: 7 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:942: rewrite ?cty_vars_equiv_erase.
+    - ContextTypeLanguage/theories/WF.v:460: + rewrite <- (cty_vars_equiv_erase _ _ Heq1).
+    - ContextTypeLanguage/theories/WF.v:461: rewrite <- (cty_vars_equiv_erase _ _ Heq2).
+    - ContextTypeLanguage/theories/WF.v:467: + rewrite <- (cty_vars_equiv_erase _ _ Heq1).
+    - ContextTypeLanguage/theories/WF.v:468: rewrite <- (cty_vars_equiv_erase _ _ Heq2).
+    - ... 2 more
+- Lemma `cty_vars_equiv_open` @ line 795
+  uses: 4 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:42: apply cty_vars_equiv_open. exact Hτ.
+    - ContextTypeLanguage/theories/TypeOpen.v:204: apply cty_vars_equiv_open. apply IH. exact Hτ.
+    - ContextTypeLanguage/theories/TypeOpen.v:255: + apply cty_vars_equiv_open.
+    - ContextTypeLanguage/theories/TypeOpen.v:765: { apply cty_vars_equiv_open. apply IH. exact Hinjη. }
+- Lemma `cty_vars_equiv_shift_from` @ line 807
+  uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:771: apply cty_vars_equiv_shift_from.
+- Lemma `ctx_stale_eq_fv_dom` @ line 825
+  uses: 2 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/Syntax.v:951: rewrite ?ctx_stale_eq_fv_dom;
+    - ContextTypeLanguage/theories/Syntax.v:957: rewrite ?ctx_stale_eq_fv_dom in H;
+- Lemma `erase_ctx_dom_subset` @ line 851
+  uses: 0 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `ctx_dom_subset_stale` @ line 873
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+
+File: ContextTypeLanguage/theories/TypeOpen.v
+---------------------------------------------
+- Lemma `open_map_fold_insert_fresh_eq` @ line 87
+  uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:173: apply (open_map_fold_insert_fresh_eq cty_open); assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:191: apply (open_map_fold_insert_fresh_eq qual_open_atom); assumption.
+- Lemma `open_map_fold_insert_fresh_rel` @ line 109
+  uses: 1 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:270: apply (open_map_fold_insert_fresh_rel cty_vars_equiv cty_open);
+- Lemma `open_cty_env_empty` @ line 149
+  uses: 9 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:438: rewrite lty_env_open_lvars_empty, open_cty_env_empty.
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1379: open_cty_env_empty. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:390: - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
+    - ContextTypeLanguage/theories/TypeOpen.v:413: - intros τx τ _. rewrite kmap_empty, !open_cty_env_empty.
+    - ContextTypeLanguage/theories/TypeOpen.v:436: - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
+    - ... 4 more
+- Lemma `open_cty_env_singleton` @ line 155
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationOpen.v:38: rewrite open_cty_env_singleton in Heq.
+- Lemma `open_cty_env_insert_fresh` @ line 164
+  uses: 13 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:460: rewrite open_cty_env_insert_fresh by (exact Hnone || exact Havoid || exact Hinjη).
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1393: rewrite open_cty_env_insert_fresh by assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:347: symmetry. apply open_cty_env_insert_fresh; assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:395: rewrite open_cty_env_insert_fresh by assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:398: rewrite open_cty_env_insert_fresh by assumption.
+    - ... 8 more
+- Lemma `qual_open_env_empty` @ line 176
+  uses: 6 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:223: rewrite formula_open_env_empty, qual_open_env_empty. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:436: - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
+    - ContextTypeLanguage/theories/TypeOpen.v:458: - intros q _. rewrite kmap_empty, open_cty_env_empty, qual_open_env_empty.
+    - ContextTypeLanguage/theories/TypeOpen.v:489: - intros q _. rewrite qual_open_env_empty. better_base_solver.
+    - ContextTypeLanguage/theories/TypeOpen.v:817: rewrite ?qual_open_env_empty;
+    - ... 1 more
+- Lemma `qual_open_env_insert_fresh` @ line 182
+  uses: 5 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:239: rewrite qual_open_env_insert_fresh by assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:445: rewrite qual_open_env_insert_fresh
+    - ContextTypeLanguage/theories/TypeOpen.v:467: rewrite qual_open_env_insert_fresh
+    - ContextTypeLanguage/theories/TypeOpen.v:818: try rewrite ?qual_open_env_insert_fresh by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:823: try rewrite ?qual_open_env_insert_fresh in H by eauto;
+- Lemma `open_cty_env_cty_vars_equiv` @ line 194
+  uses: 0 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_open_fresh_vars_equiv` @ line 207
+  uses: 1 total; ltac/hint uses: 0; proof lines: 45; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:283: - apply open_cty_env_open_fresh_vars_equiv; assumption.
+- Lemma `open_cty_env_insert_fresh_vars_equiv` @ line 261
+  uses: 3 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:284: - symmetry. apply open_cty_env_insert_fresh_vars_equiv; assumption.
+    - ContextTypeLanguage/theories/TypeOpen.v:754: { apply open_cty_env_insert_fresh_vars_equiv.
+    - ContextTypeLanguage/theories/TypeOpen.v:772: symmetry. apply open_cty_env_insert_fresh_vars_equiv; assumption.
+- Lemma `open_cty_env_open_one_vars_equiv` @ line 274
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_open_fresh` @ line 287
+  uses: 1 total; ltac/hint uses: 0; proof lines: 42; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:346: rewrite open_cty_env_open_fresh by assumption.
+- Lemma `open_cty_env_open_one` @ line 338
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_inter` @ line 350
+  uses: 4 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:206: first [rewrite open_cty_env_inter
+    - ContextTypeLanguage/theories/TypeOpen.v:670: rewrite open_cty_env_inter. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:829: rewrite ?open_cty_env_inter, ?open_cty_env_union, ?open_cty_env_sum;
+    - ContextTypeLanguage/theories/TypeOpen.v:840: rewrite ?open_cty_env_inter in H;
+- Lemma `open_cty_env_union` @ line 361
+  uses: 4 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:207: |rewrite open_cty_env_union
+    - ContextTypeLanguage/theories/TypeOpen.v:677: rewrite open_cty_env_union. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:829: rewrite ?open_cty_env_inter, ?open_cty_env_union, ?open_cty_env_sum;
+    - ContextTypeLanguage/theories/TypeOpen.v:841: rewrite ?open_cty_env_union in H;
+- Lemma `open_cty_env_sum` @ line 372
+  uses: 4 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:208: |rewrite open_cty_env_sum];
+    - ContextTypeLanguage/theories/TypeOpen.v:684: rewrite open_cty_env_sum. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:829: rewrite ?open_cty_env_inter, ?open_cty_env_union, ?open_cty_env_sum;
+    - ContextTypeLanguage/theories/TypeOpen.v:842: rewrite ?open_cty_env_sum in H;
+- Lemma `open_cty_env_arrow` @ line 383
+  uses: 5 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:272: rewrite open_cty_env_arrow by exact Hinj.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:296: rewrite open_cty_env_arrow by exact Hinj.
+    - ContextTypeLanguage/theories/TypeOpen.v:692: intros Hinj. rewrite open_cty_env_arrow by exact Hinj. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:830: try rewrite ?open_cty_env_arrow by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:843: try rewrite ?open_cty_env_arrow in H by eauto;
+- Lemma `open_cty_env_wand` @ line 406
+  uses: 5 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:335: rewrite open_cty_env_wand by exact Hinj.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:360: rewrite open_cty_env_wand by exact Hinj.
+    - ContextTypeLanguage/theories/TypeOpen.v:700: intros Hinj. rewrite open_cty_env_wand by exact Hinj. reflexivity.
+    - ContextTypeLanguage/theories/TypeOpen.v:831: try rewrite ?open_cty_env_wand by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:844: try rewrite ?open_cty_env_wand in H by eauto;
+- Lemma `open_cty_env_over` @ line 429
+  uses: 4 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:180: first [rewrite open_cty_env_over by exact Hinj
+    - ContextTypeLanguage/theories/TypeOpen.v:710: rewrite open_cty_env_over by exact Hinj.
+    - ContextTypeLanguage/theories/TypeOpen.v:832: try rewrite ?open_cty_env_over by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:845: try rewrite ?open_cty_env_over in H by eauto;
+- Lemma `open_cty_env_under` @ line 451
+  uses: 4 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:181: |rewrite open_cty_env_under by exact Hinj];
+    - ContextTypeLanguage/theories/TypeOpen.v:723: rewrite open_cty_env_under by exact Hinj.
+    - ContextTypeLanguage/theories/TypeOpen.v:833: try rewrite ?open_cty_env_under by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:846: try rewrite ?open_cty_env_under in H by eauto;
+- Lemma `open_cty_env_preserves_erasure` @ line 473
+  uses: 5 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:137: rewrite open_cty_env_preserves_erasure.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:297: rewrite open_cty_env_preserves_erasure.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:361: rewrite open_cty_env_preserves_erasure.
+    - ContextTypeLanguage/theories/TypeOpen.v:828: rewrite ?open_cty_env_preserves_erasure;
+    - ContextTypeLanguage/theories/TypeOpen.v:839: rewrite ?open_cty_env_preserves_erasure in H;
+- Lemma `qual_open_env_vars` @ line 483
+  uses: 6 total; ltac/hint uses: 0; proof lines: 17; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/Qualifier.v:236: rewrite qual_open_env_vars by exact Hfreshη.
+    - ContextTypeLanguage/theories/TypeOpen.v:538: rewrite qual_open_env_vars by exact Hfresh.
+    - ContextTypeLanguage/theories/TypeOpen.v:713: apply qual_open_env_vars. exact Hfresh.
+    - ContextTypeLanguage/theories/TypeOpen.v:726: apply qual_open_env_vars. exact Hfresh.
+    - ContextTypeLanguage/theories/TypeOpen.v:819: try rewrite ?qual_open_env_vars by eauto.
+    - ... 1 more
+- Lemma `context_ty_lvars_open_cty_env` @ line 506
+  uses: 3 total; ltac/hint uses: 0; proof lines: 19; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:411: rewrite context_ty_lvars_open_cty_env.
+    - ContextTypeLanguage/theories/TypeOpen.v:834: try rewrite ?context_ty_lvars_open_cty_env by eauto;
+    - ContextTypeLanguage/theories/TypeOpen.v:847: try rewrite ?context_ty_lvars_open_cty_env in H by eauto;
+- Lemma `lvars_open_env_lift_qual_vars_difference_bound0` @ line 532
+  uses: 1 total; ltac/hint uses: 0; proof lines: 29; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:193: rewrite lvars_open_env_lift_qual_vars_difference_bound0
+- Lemma `lvars_fv_open_env_lift_subset_at_depth1` @ line 568
+  uses: 1 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/TypeOpen.v:618: eapply lvars_fv_open_env_lift_subset_at_depth1. exact Hbad.
+- Lemma `open_env_lift_fresh_for_lvars_at_depth1` @ line 600
+  uses: 5 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:169: [ apply open_env_lift_fresh_for_lvars_at_depth1;
+    - Denotation/theories/ContextTypeDenotationDefinition.v:254: apply open_env_lift_fresh_for_lvars_at_depth1.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:265: apply open_env_lift_fresh_for_lvars_at_depth1.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:317: apply open_env_lift_fresh_for_lvars_at_depth1.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:328: apply open_env_lift_fresh_for_lvars_at_depth1.
+- Lemma `open_env_lift_fresh_for_bound0_singleton` @ line 621
+  uses: 1 total; ltac/hint uses: 0; proof lines: 14; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:85: apply open_env_lift_fresh_for_bound0_singleton.
+- Lemma `logic_var_open_env_lift_bound0` @ line 640
+  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_env_fresh_for_bound0_singleton_nozero` @ line 647
+  uses: 0 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_inter_vars_equiv` @ line 666
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_union_vars_equiv` @ line 673
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_sum_vars_equiv` @ line 680
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_arrow_vars_equiv` @ line 687
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_wand_vars_equiv` @ line 695
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_over_vars_equiv` @ line 703
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_under_vars_equiv` @ line 716
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_lift_shift0_vars_equiv` @ line 729
+  uses: 0 total; ltac/hint uses: 0; proof lines: 39; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `open_cty_env_lift_shift0_exact` @ line 775
+  uses: 4 total; ltac/hint uses: 0; proof lines: 30; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationDefinition.v:298: rewrite open_cty_env_lift_shift0_exact by exact Hinj.
+    - Denotation/theories/ContextTypeDenotationDefinition.v:362: rewrite open_cty_env_lift_shift0_exact by exact Hinj.
+    - ContextTypeLanguage/theories/TypeOpen.v:835: try rewrite ?open_cty_env_lift_shift0_exact by eauto.
+    - ContextTypeLanguage/theories/TypeOpen.v:848: try rewrite ?open_cty_env_lift_shift0_exact in H by eauto.
+
+File: ContextTypeLanguage/theories/WF.v
+---------------------------------------
+- Lemma `context_ty_shape_ok_msubst_store` @ line 42
+  uses: 1 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:58: - apply context_ty_shape_ok_msubst_store. exact Hshape.
+- Lemma `basic_context_ty_lvars_msubst_store` @ line 50
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `basic_context_ty_lvars_mono` @ line 61
+  uses: 5 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - Denotation/theories/ContextTypeDenotationSaturateCore.v:757: eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_src].
+    - Denotation/theories/ContextTypeDenotationSaturateWand.v:550: eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
+    - Denotation/theories/ContextTypeDenotationSaturateArrow.v:540: eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
+    - ContextTypeLanguage/theories/WF.v:73: apply basic_context_ty_lvars_mono. set_solver.
+    - ContextTypeLanguage/theories/WF.v:82: eapply basic_context_ty_lvars_mono; [|exact Hbasic].
+- Lemma `basic_context_ty_lvars_insert` @ line 69
+  uses: 0 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_context_ty_lvars_insert_fresh` @ line 76
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1711: apply basic_context_ty_lvars_insert_fresh. exact Hbasic.
+- Lemma `basic_context_ty_lvars_insert_free_fv_drop` @ line 87
+  uses: 0 total; ltac/hint uses: 0; proof lines: 7; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `scoped_context_ty_iff` @ line 135
+  uses: 0 total; ltac/hint uses: 0; proof lines: 31; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `wf_context_ty_at_shift` @ line 139
+  uses: 1 total; ltac/hint uses: 0; proof lines: 27; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:807: eapply wf_context_ty_at_shift; [lia|exact H].
+- Lemma `wf_context_ty_at_mono` @ line 173
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:240: apply wf_context_ty_at_mono.
+- Lemma `lvars_at_depth_subset_of_atoms_wf` @ line 186
+  uses: 0 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `lvars_wf_at_subset_of_atoms_depth` @ line 212
+  uses: 0 total; ltac/hint uses: 0; proof lines: 11; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `basic_context_ty_iff_wf_context_ty_at` @ line 229
+  uses: 13 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:306: rewrite basic_context_ty_iff_wf_context_ty_at.
+    - ContextTypeLanguage/theories/WF.v:445: apply basic_context_ty_iff_wf_context_ty_at.
+    - ContextTypeLanguage/theories/WF.v:447: apply basic_context_ty_iff_wf_context_ty_at. exact Hwf.
+    - ContextTypeLanguage/theories/WF.v:717: apply basic_context_ty_iff_wf_context_ty_at.
+    - ContextTypeLanguage/theories/WF.v:739: rewrite basic_context_ty_iff_wf_context_ty_at.
+    - ... 8 more
+- Lemma `basic_context_ty_mono` @ line 235
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:852: + eapply basic_context_ty_mono; [exact HDE|exact Hτ].
+- Lemma `context_ty_shape_ok_open` @ line 243
+  uses: 2 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:261: - apply context_ty_shape_ok_open in Hshape. exact Hshape.
+    - ContextTypeLanguage/theories/WF.v:264: - apply context_ty_shape_ok_open. exact Hshape.
+- Lemma `basic_context_ty_lvars_open` @ line 253
+  uses: 1 total; ltac/hint uses: 0; proof lines: 8; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextBasicDenotation/theories/BasicTypingFormula.v:1365: rewrite basic_context_ty_lvars_open.
+- Lemma `cty_lc_at_mono_depth` @ line 267
+  uses: 1 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:297: + eapply (cty_lc_at_mono_depth 0 d); [lia|].
+- Lemma `wf_context_ty_at_lc` @ line 286
+  uses: 3 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:307: apply wf_context_ty_at_lc.
+    - ContextTypeLanguage/theories/WF.v:406: (wf_context_ty_at_lc d D τ Hwf)) as Hbv.
+    - ContextTypeLanguage/theories/WF.v:706: -- eapply wf_context_ty_at_lc. exact H1.
+- Lemma `basic_context_ty_lc` @ line 302
+  uses: 3 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTyping/theories/Typing.v:69: eapply basic_context_ty_lc.
+    - ContextTypeLanguage/theories/WF.v:936: intros [_ Hτ]. apply (basic_context_ty_lc D). exact Hτ.
+    - ContextTypeLanguage/theories/WF.v:1120: basic_context_ty_lc
+- Lemma `lvars_lc_at_depth_bv_empty` @ line 310
+  uses: 2 total; ltac/hint uses: 0; proof lines: 10; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:331: - apply lvars_lc_at_depth_bv_empty. exact Hlc.
+    - ContextTypeLanguage/theories/WF.v:332: - apply lvars_lc_at_depth_bv_empty. exact Hlc.
+- Lemma `cty_lc_at_lvars_bv_empty` @ line 326
+  uses: 2 total; ltac/hint uses: 0; proof lines: 13; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:349: apply cty_lc_at_lvars_bv_empty.
+    - ContextTypeLanguage/theories/WF.v:405: pose proof (cty_lc_at_lvars_bv_empty d τ
+- Lemma `lc_context_ty_lvars_bv_empty` @ line 345
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:358: apply lc_context_ty_lvars_bv_empty. exact Hlc.
+- Lemma `lc_context_ty_lvars_subset_atoms` @ line 352
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `wf_context_ty_at_fv_subset` @ line 361
+  uses: 4 total; ltac/hint uses: 0; proof lines: 24; terminator: Qed.
+  classification: SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTyping/theories/Typing.v:245: eapply wf_context_ty_at_fv_subset.
+    - ContextTypeLanguage/theories/WF.v:395: apply wf_context_ty_at_fv_subset.
+    - ContextTypeLanguage/theories/WF.v:412: pose proof (wf_context_ty_at_fv_subset d D τ Hwf) as Hfv.
+    - ContextTypeLanguage/theories/WF.v:707: -- pose proof (wf_context_ty_at_fv_subset 0 ∅ τ1 H1). set_solver.
+- Lemma `basic_context_ty_fv_subset` @ line 391
+  uses: 3 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTyping/theories/Typing.v:78: eapply basic_context_ty_fv_subset.
+    - ContextTypeLanguage/theories/WF.v:878: apply basic_context_ty_fv_subset. exact Hτ.
+    - ContextTypeLanguage/theories/WF.v:1121: basic_context_ty_fv_subset
+- Lemma `wf_context_ty_at_to_lvars_shape` @ line 398
+  uses: 1 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:430: apply wf_context_ty_at_to_lvars_shape. exact Hwf.
+- Lemma `basic_context_ty_to_lvars` @ line 424
+  uses: 4 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:100: pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+    - ContextBasicDenotation/theories/RelevantEnv.v:112: pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+    - ContextBasicDenotation/theories/RelevantEnv.v:124: pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+    - ContextBasicDenotation/theories/RelevantEnv.v:561: apply basic_context_ty_to_lvars. exact Hτ.
+- Lemma `basic_context_ty_lvar_cty_vars_equiv` @ line 433
+  uses: 0 total; ltac/hint uses: 0; proof lines: 47; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `wf_context_ty_at_drop_fresh` @ line 487
+  uses: 1 total; ltac/hint uses: 0; proof lines: 54; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:553: apply wf_context_ty_at_drop_fresh.
+- Lemma `basic_context_ty_drop_fresh` @ line 548
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:564: apply (basic_context_ty_drop_fresh (dom Σ) x τ); [exact Hfresh|].
+- Lemma `basic_context_ty_drop_insert_fresh` @ line 556
+  uses: 0 total; ltac/hint uses: 0; proof lines: 5; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `cty_lc_at_open_fresh_at` @ line 571
+  uses: 1 total; ltac/hint uses: 0; proof lines: 75; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:660: apply cty_lc_at_open_fresh_at; assumption.
+- Lemma `lc_context_ty_open_fresh` @ line 653
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:705: * symmetry. apply lc_context_ty_open_fresh.
+- Lemma `wf_context_ty_at_open_at` @ line 663
+  uses: 1 total; ltac/hint uses: 0; proof lines: 41; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:718: apply wf_context_ty_at_open_at; assumption.
+- Lemma `basic_context_ty_open_body` @ line 711
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:732: apply basic_context_ty_open_body; [set_solver|exact Hwf].
+- Lemma `basic_context_ty_open_body_cofinite` @ line 721
+  uses: 2 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:766: destruct (basic_context_ty_open_body_cofinite (dom Δ) τ L0 Hbody)
+    - ContextTypeLanguage/theories/WF.v:789: destruct (basic_context_ty_open_body_cofinite (dom Δ) τ L0 Hbody)
+- Lemma `basic_context_ty_arrow_inv` @ line 735
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:765: destruct (basic_context_ty_arrow_inv _ _ _ Hbasic) as [_ Hbody].
+- Lemma `basic_context_ty_wand_inv` @ line 745
+  uses: 1 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:788: destruct (basic_context_ty_wand_inv _ _ _ Hbasic) as [_ Hbody].
+- Lemma `basic_context_ty_open_arrow_body_cofinite` @ line 755
+  uses: 0 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `basic_context_ty_open_wand_body_cofinite` @ line 778
+  uses: 0 total; ltac/hint uses: 0; proof lines: 12; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `basic_context_ty_shift` @ line 801
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `scoped_ctx_iff` @ line 838
+  uses: 0 total; ltac/hint uses: 0; proof lines: 26; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+  sample uses: none
+- Lemma `basic_ctx_weaken_fresh` @ line 842
+  uses: 0 total; ltac/hint uses: 0; proof lines: 21; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API
+  sample uses: none
+- Lemma `basic_ctx_fv_subset` @ line 871
+  uses: 3 total; ltac/hint uses: 0; proof lines: 16; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:898: pose proof (basic_ctx_fv_subset D Γ Hbasic). set_solver.
+    - ContextTypeLanguage/theories/WF.v:928: pose proof (basic_ctx_fv_subset D Γ Hbasic).
+    - ContextTypeLanguage/theories/WF.v:978: pose proof (basic_ctx_fv_subset ∅ Γ Hbasic).
+- Lemma `basic_ctx_fv_subset_weak` @ line 893
+  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_ctx_dom_fresh` @ line 901
+  uses: 5 total; ltac/hint uses: 0; proof lines: 15; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:212: pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+    - ContextBasicDenotation/theories/RelevantEnv.v:235: pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+    - ContextTyping/theories/Soundness.v:266: pose proof (basic_ctx_dom_fresh (dom Σ) Γ HbasicΓ) as HfreshΓ.
+    - ContextTypeLanguage/theories/WF.v:927: pose proof (basic_ctx_dom_fresh D Γ Hbasic).
+    - ContextTypeLanguage/theories/WF.v:1126: basic_ctx_dom_fresh
+- Lemma `basic_ctx_dom_fv_disjoint` @ line 922
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_ctx_bind_lc` @ line 932
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:944: apply (basic_ctx_bind_lc D x τ). exact Hbasic.
+- Lemma `basic_ctx_lc` @ line 939
+  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_ctx_erase_dom` @ line 947
+  uses: 4 total; ltac/hint uses: 0; proof lines: 20; terminator: Qed.
+  classification: ordinary helper; review by use sites
+  sample uses:
+    - ContextBasicDenotation/theories/RelevantEnv.v:211: pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+    - ContextBasicDenotation/theories/RelevantEnv.v:234: pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+    - ContextTyping/theories/Soundness.v:265: pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
+    - ContextTyping/theories/Typing.v:237: apply (basic_ctx_erase_dom (dom Σ)). exact Hbasic.
+- Lemma `basic_ctx_empty_fv` @ line 973
+  uses: 1 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTyping/theories/Typing.v:61: apply basic_ctx_empty_fv. exact Hbasic.
+- Lemma `basic_qualifier_lc` @ line 991
+  uses: 2 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1007: apply basic_qualifier_lc with (D := D ∪ {[x]}).
+    - ContextTypeLanguage/theories/WF.v:1122: basic_qualifier_lc
+- Lemma `basic_qualifier_body_lc` @ line 1001
+  uses: 1 total; ltac/hint uses: 0; proof lines: 6; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1123: basic_qualifier_body_lc
+- Lemma `basic_qualifier_fv_subset` @ line 1013
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1124: basic_qualifier_fv_subset
+- Lemma `basic_qualifier_body_fv_subset` @ line 1020
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1125: basic_qualifier_body_fv_subset
+- Lemma `basic_qualifier_body_top` @ line 1027
+  uses: 0 total; ltac/hint uses: 0; proof lines: 2; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_context_ty_over` @ line 1034
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_context_ty_under` @ line 1043
+  uses: 0 total; ltac/hint uses: 0; proof lines: 3; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_context_ty_inter` @ line 1052
+  uses: 0 total; ltac/hint uses: 0; proof lines: 4; terminator: Qed.
+  classification: ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+  sample uses: none
+- Lemma `basic_ctx_empty` @ line 1064
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1127: basic_ctx_empty
+- Lemma `basic_ctx_bind` @ line 1070
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1128: basic_ctx_bind
+- Lemma `basic_ctx_star` @ line 1078
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1129: basic_ctx_star
+- Lemma `basic_ctx_sum` @ line 1087
+  uses: 1 total; ltac/hint uses: 0; proof lines: 1; terminator: Qed.
+  classification: SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+  sample uses:
+    - ContextTypeLanguage/theories/WF.v:1130: basic_ctx_sum
+
+
+Summary
+-------
+total lemmas: 226
+zero .v uses: 89
+single .v use: 59
+used by Ltac/Hint: 0
+admitted: 0
+thin-proof candidates: 93
+
+Highest-priority review lists
+-----------------------------
+Zero-use lemmas:
+- ContextTypeLanguage/theories/LtyEnv.v:68: `lty_env_msubst_store_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:140: `lty_env_msubst_store_typed_bind` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:150: `lty_env_msubst_store_open_one_fresh` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:186: `lty_env_open_lvars_open_one_empty` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:198: `lty_env_open_lvars_lookup_fresh` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:204: `lty_env_open_lvars_insert_entry` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:267: `lty_env_open_lvars_insert_delete_swap_back` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:279: `lty_env_open_lvars_open_one` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:286: `lty_env_open_one_fresh_noop` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:292: `lty_env_open_one_involutive` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:296: `lty_env_open_one_insert` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:301: `lty_env_open_one_insert_fresh` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:307: `lty_env_open_one_shift_under_gen` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:313: `lty_env_open_one_shift_under` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:319: `lvars_open_shift_dom_gen` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:325: `lvars_open_shift_dom` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:331: `lty_env_open_one_shift_insert_bound` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:336: `lty_env_bvar_scope_shift_open_noop` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:342: `lty_env_bvar_scope_shift_open_one_noop` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:349: `lty_env_bvar_scope_open_one_shift_under_result` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:356: `lvars_open_shift_dom_union_bound0` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:361: `lty_env_atom_dom_open_one` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:389: `typed_lty_env_bind_atom_env_insert_dom` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:411: `typed_lty_env_bind_atom_dom` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:415: `lty_env_insert_free_commute` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:422: `typed_lty_env_bind_insert_free` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:428: `lty_env_union_insert_free_singleton` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:448: `lty_env_shift_closed` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:453: `typed_lty_env_bind_free_notin` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:458: `lty_env_shift_lookup_bound0_none` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/LtyEnv.v:462: `logic_var_open_env_shift0_typed_bind_inj_on` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:481: `typed_lty_env_bind_open_current_base` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:488: `lty_env_open_typed_bind_atom_env` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:495: `typed_lty_env_bind_open_env_shift0` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Notation.v:158: `constant_lt_for_base_well_founded` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:119: `qual_dom_msubst_store_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:274: `lvars_open_qual_vars_difference_bound0` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:305: `qual_open_atom_lc_fresh` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:437: `qual_top_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:476: `qual_shift_from_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:531: `qual_shift_from_lc` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/Qualifier.v:544: `qual_shift_from_below_id` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/Qualifier.v:608: `qual_open_shift_from_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:616: `qual_shift_open_commute` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:623: `lvars_open_qual_vars_difference_bound0_under` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:243: `context_ty_msubst_store_open_fresh` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:255: `context_ty_msubst_store_shift` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:380: `context_ty_msubst_store_restrict_subset` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:489: `context_ty_lvars_body_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:554: `context_ty_lvars_shift_free_notin` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/Syntax.v:620: `cty_open_shift_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:628: `cty_shift_open_commute` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:635: `cty_open_same_index_absorb` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:851: `erase_ctx_dom_subset` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/Syntax.v:873: `ctx_dom_subset_stale` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/TypeOpen.v:194: `open_cty_env_cty_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:274: `open_cty_env_open_one_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:338: `open_cty_env_open_one` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:640: `logic_var_open_env_lift_bound0` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:647: `open_env_fresh_for_bound0_singleton_nozero` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:666: `open_cty_env_inter_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:673: `open_cty_env_union_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:680: `open_cty_env_sum_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:687: `open_cty_env_arrow_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:695: `open_cty_env_wand_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:703: `open_cty_env_over_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:716: `open_cty_env_under_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:729: `open_cty_env_lift_shift0_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:50: `basic_context_ty_lvars_msubst_store` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:69: `basic_context_ty_lvars_insert` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:87: `basic_context_ty_lvars_insert_free_fv_drop` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/WF.v:135: `scoped_context_ty_iff` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:186: `lvars_at_depth_subset_of_atoms_wf` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:212: `lvars_wf_at_subset_of_atoms_depth` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:352: `lc_context_ty_lvars_subset_atoms` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:433: `basic_context_ty_lvar_cty_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/WF.v:556: `basic_context_ty_drop_insert_fresh` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/WF.v:755: `basic_context_ty_open_arrow_body_cofinite` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:778: `basic_context_ty_open_wand_body_cofinite` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:801: `basic_context_ty_shift` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:838: `scoped_ctx_iff` -- ZERO-V-USAGE: deletion candidate unless public API; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:842: `basic_ctx_weaken_fresh` -- ZERO-V-USAGE: deletion candidate unless public API
+- ContextTypeLanguage/theories/WF.v:893: `basic_ctx_fv_subset_weak` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:922: `basic_ctx_dom_fv_disjoint` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:939: `basic_ctx_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1027: `basic_qualifier_body_top` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1034: `basic_context_ty_over` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1043: `basic_context_ty_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1052: `basic_context_ty_inter` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+
+Single-use lemmas:
+- ContextTypeLanguage/theories/LtyEnv.v:98: `lty_env_msubst_store_shift` -> ContextTypeLanguage/theories/LtyEnv.v:146 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:113: `lty_env_msubst_store_insert_bound0_shift` -> ContextTypeLanguage/theories/LtyEnv.v:145 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:180: `lty_env_open_lvars_singleton` -> Denotation/theories/ContextTypeDenotationOpen.v:37 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:192: `lty_env_open_lvars_dom` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1579 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:370: `typed_lty_env_bind_dom` -> ContextTypeLanguage/theories/LtyEnv.v:405 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/LtyEnv.v:438: `lty_env_closed_insert_free` -> Denotation/theories/ContextTypeDenotationSaturateMain.v:121 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/LtyEnv.v:443: `lty_env_closed_lookup_bound_none` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1434 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/LtyEnv.v:468: `typed_lty_env_bind_open_under` -> ContextBasicDenotation/theories/RelevantEnv.v:1468 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:103: `qual_mlsubst_vars` -> ContextTypeLanguage/theories/Qualifier.v:115 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:128: `atom_store_to_lvar_store_restrict_lvars_subset_eq` -> ContextTypeLanguage/theories/Qualifier.v:177 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/Qualifier.v:195: `qual_open_msubst_store_fresh` -> ContextTypeLanguage/theories/Syntax.v:250 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:255: `lvars_fv_qual_vars` -> ContextTypeLanguage/theories/Qualifier.v:263 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:266: `lvars_open_qual_vars_difference_bound` -> ContextTypeLanguage/theories/Qualifier.v:278 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:298: `qual_open_atom_bvars` -> ContextTypeLanguage/theories/Qualifier.v:384 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:484: `qual_shift_from_msubst_store` -> ContextTypeLanguage/theories/Syntax.v:260 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:186: `erase_ctx_bind_dom` -> ContextTyping/theories/Typing.v:213 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/Syntax.v:214: `context_ty_lvars_at_msubst_store` -> ContextTypeLanguage/theories/Syntax.v:234 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:237: `erase_ty_context_ty_msubst_store` -> ContextTypeLanguage/theories/WF.v:47 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:320: `context_ty_lvars_at_depth` -> ContextTypeLanguage/theories/Syntax.v:339 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/Syntax.v:342: `context_ty_lvars_open_body_without_fresh_closed` -> ContextBasicDenotation/theories/RelevantEnv.v:897 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:434: `context_ty_over_fresh_open_qual_dom` -> ContextBasicDenotation/theories/Qualifier.v:258 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:445: `context_ty_under_fresh_open_qual_dom` -> ContextBasicDenotation/theories/Qualifier.v:273 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:475: `context_ty_lvars_at_succ_body` -> ContextTypeLanguage/theories/Syntax.v:495 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/Syntax.v:523: `cty_shift0_vars` -> ContextTypeLanguage/theories/Syntax.v:534 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:565: `context_ty_lvars_open_shift_fresh` -> ContextBasicDenotation/theories/RelevantEnv.v:984 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:807: `cty_vars_equiv_shift_from` -> ContextTypeLanguage/theories/TypeOpen.v:771 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/TypeOpen.v:109: `open_map_fold_insert_fresh_rel` -> ContextTypeLanguage/theories/TypeOpen.v:270 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:155: `open_cty_env_singleton` -> Denotation/theories/ContextTypeDenotationOpen.v:38 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:207: `open_cty_env_open_fresh_vars_equiv` -> ContextTypeLanguage/theories/TypeOpen.v:283 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:287: `open_cty_env_open_fresh` -> ContextTypeLanguage/theories/TypeOpen.v:346 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:532: `lvars_open_env_lift_qual_vars_difference_bound0` -> Denotation/theories/ContextTypeDenotationDefinition.v:193 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:568: `lvars_fv_open_env_lift_subset_at_depth1` -> ContextTypeLanguage/theories/TypeOpen.v:618 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:621: `open_env_lift_fresh_for_bound0_singleton` -> Denotation/theories/ContextTypeDenotationDefinition.v:85 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:42: `context_ty_shape_ok_msubst_store` -> ContextTypeLanguage/theories/WF.v:58 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:76: `basic_context_ty_lvars_insert_fresh` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1711 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:139: `wf_context_ty_at_shift` -> ContextTypeLanguage/theories/WF.v:807 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:173: `wf_context_ty_at_mono` -> ContextTypeLanguage/theories/WF.v:240 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:235: `basic_context_ty_mono` -> ContextTypeLanguage/theories/WF.v:852 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:253: `basic_context_ty_lvars_open` -> ContextBasicDenotation/theories/BasicTypingFormula.v:1365 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:267: `cty_lc_at_mono_depth` -> ContextTypeLanguage/theories/WF.v:297 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/WF.v:345: `lc_context_ty_lvars_bv_empty` -> ContextTypeLanguage/theories/WF.v:358 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:398: `wf_context_ty_at_to_lvars_shape` -> ContextTypeLanguage/theories/WF.v:430 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:487: `wf_context_ty_at_drop_fresh` -> ContextTypeLanguage/theories/WF.v:553 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:548: `basic_context_ty_drop_fresh` -> ContextTypeLanguage/theories/WF.v:564 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:571: `cty_lc_at_open_fresh_at` -> ContextTypeLanguage/theories/WF.v:660 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:653: `lc_context_ty_open_fresh` -> ContextTypeLanguage/theories/WF.v:705 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:663: `wf_context_ty_at_open_at` -> ContextTypeLanguage/theories/WF.v:718 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:711: `basic_context_ty_open_body` -> ContextTypeLanguage/theories/WF.v:732 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:735: `basic_context_ty_arrow_inv` -> ContextTypeLanguage/theories/WF.v:765 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:745: `basic_context_ty_wand_inv` -> ContextTypeLanguage/theories/WF.v:788 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:932: `basic_ctx_bind_lc` -> ContextTypeLanguage/theories/WF.v:944 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:973: `basic_ctx_empty_fv` -> ContextTyping/theories/Typing.v:61 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1001: `basic_qualifier_body_lc` -> ContextTypeLanguage/theories/WF.v:1123 -- SINGLE-V-USAGE: inline candidate if not semantic boundary
+- ContextTypeLanguage/theories/WF.v:1013: `basic_qualifier_fv_subset` -> ContextTypeLanguage/theories/WF.v:1124 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1020: `basic_qualifier_body_fv_subset` -> ContextTypeLanguage/theories/WF.v:1125 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1064: `basic_ctx_empty` -> ContextTypeLanguage/theories/WF.v:1127 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1070: `basic_ctx_bind` -> ContextTypeLanguage/theories/WF.v:1128 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1078: `basic_ctx_star` -> ContextTypeLanguage/theories/WF.v:1129 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1087: `basic_ctx_sum` -> ContextTypeLanguage/theories/WF.v:1130 -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+
+Admitted lemmas:
+
+Thin wrapper/solver candidates:
+- ContextTypeLanguage/theories/LtyEnv.v:68: `lty_env_msubst_store_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:77: `lty_env_msubst_store_lookup_some` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:87: `lty_env_msubst_store_lookup_some_2` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:140: `lty_env_msubst_store_typed_bind` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/LtyEnv.v:401: `lvars_at_depth_typed_lty_env_bind` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Notation.v:158: `constant_lt_for_base_well_founded` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:97: `qual_open_atom_vars` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:103: `qual_mlsubst_vars` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:110: `qual_msubst_store_vars` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:119: `qual_dom_msubst_store_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:255: `lvars_fv_qual_vars` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:259: `lvars_fv_qual_vars_difference_free` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:266: `lvars_open_qual_vars_difference_bound` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:274: `lvars_open_qual_vars_difference_bound0` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:281: `qual_open_atom_dom_subset` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:288: `qual_open_atom_dom_fresh_ne` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:298: `qual_open_atom_bvars` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:437: `qual_top_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:470: `qual_shift_from_vars` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:476: `qual_shift_from_dom` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Qualifier.v:608: `qual_open_shift_from_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Qualifier.v:616: `qual_shift_open_commute` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:230: `context_ty_lvars_msubst_store` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:255: `context_ty_msubst_store_shift` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:312: `cty_open_vars` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:335: `context_ty_lvars_depth` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:374: `context_ty_lvars_fv` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:420: `context_ty_lvars_over_fv` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:427: `context_ty_lvars_under_fv` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:434: `context_ty_over_fresh_open_qual_dom` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:445: `context_ty_under_fresh_open_qual_dom` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:489: `context_ty_lvars_body_subset` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:523: `cty_shift0_vars` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:531: `cty_shift_vars` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:537: `cty_open_fv_subset` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:545: `cty_shift_fv` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:584: `cty_open_preserves_erasure` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:590: `cty_shift_preserves_erasure` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:596: `cty_open_preserves_depth` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:602: `cty_shift_preserves_depth` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:620: `cty_open_shift_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:628: `cty_shift_open_commute` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:710: `cty_open_commute_fvar` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/Syntax.v:786: `cty_vars_equiv_erase` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/Syntax.v:873: `ctx_dom_subset_stale` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/TypeOpen.v:149: `open_cty_env_empty` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:155: `open_cty_env_singleton` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:164: `open_cty_env_insert_fresh` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:176: `qual_open_env_empty` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:182: `qual_open_env_insert_fresh` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:261: `open_cty_env_insert_fresh_vars_equiv` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:274: `open_cty_env_open_one_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:338: `open_cty_env_open_one` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:640: `logic_var_open_env_lift_bound0` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:666: `open_cty_env_inter_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:673: `open_cty_env_union_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:680: `open_cty_env_sum_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:687: `open_cty_env_arrow_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/TypeOpen.v:695: `open_cty_env_wand_vars_equiv` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:50: `basic_context_ty_lvars_msubst_store` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:61: `basic_context_ty_lvars_mono` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:69: `basic_context_ty_lvars_insert` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:76: `basic_context_ty_lvars_insert_fresh` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:229: `basic_context_ty_iff_wf_context_ty_at` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:235: `basic_context_ty_mono` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:302: `basic_context_ty_lc` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:345: `lc_context_ty_lvars_bv_empty` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:352: `lc_context_ty_lvars_subset_atoms` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:391: `basic_context_ty_fv_subset` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:424: `basic_context_ty_to_lvars` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:548: `basic_context_ty_drop_fresh` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:653: `lc_context_ty_open_fresh` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:711: `basic_context_ty_open_body` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:721: `basic_context_ty_open_body_cofinite` -- THIN-PROOF: wrapper/solver candidate; SEMANTIC/STRUCTURAL BOUNDARY: prefer keep unless stale/wrapper
+- ContextTypeLanguage/theories/WF.v:735: `basic_context_ty_arrow_inv` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:745: `basic_context_ty_wand_inv` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:801: `basic_context_ty_shift` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:893: `basic_ctx_fv_subset_weak` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:922: `basic_ctx_dom_fv_disjoint` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:932: `basic_ctx_bind_lc` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:939: `basic_ctx_lc` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:973: `basic_ctx_empty_fv` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:991: `basic_qualifier_lc` -- THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1013: `basic_qualifier_fv_subset` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1020: `basic_qualifier_body_fv_subset` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1027: `basic_qualifier_body_top` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1034: `basic_context_ty_over` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1043: `basic_context_ty_under` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1052: `basic_context_ty_inter` -- ZERO-V-USAGE: deletion candidate unless public API; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1064: `basic_ctx_empty` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1070: `basic_ctx_bind` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1078: `basic_ctx_star` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
+- ContextTypeLanguage/theories/WF.v:1087: `basic_ctx_sum` -- SINGLE-V-USAGE: inline candidate if not semantic boundary; THIN-PROOF: wrapper/solver candidate
