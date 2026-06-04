@@ -147,8 +147,10 @@ Definition primop_semantic_ok (op : prim_op) (sig : primop_sig) : Prop :=
   ∀ x : atom,
     let Γx := CtxBind x (primop_arg_ty sig) in
     (⟦CtxBind x (primop_arg_ty sig)⟧ ⊫
-      ty_denote_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x))) ∧
-    (ty_denote_ctx Γx ({0 ~> x} (primop_result_ty sig)) (tprim op (vfvar x)) ⊫
+      ty_denote (erase_ctx Γx) ({0 ~> x} (primop_result_ty sig))
+        (tprim op (vfvar x))) ∧
+    (ty_denote (erase_ctx Γx) ({0 ~> x} (primop_result_ty sig))
+        (tprim op (vfvar x)) ⊫
       ⟦CtxBind x (primop_arg_ty sig)⟧).
 
 Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {

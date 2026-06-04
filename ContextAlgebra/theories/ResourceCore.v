@@ -169,37 +169,10 @@ Proof.
     rewrite (Hdom σ0 Hσ0). reflexivity.
 Defined.
 
-Lemma resA_restrict_project_store
-    (w : WfWorldAT) (X : gset K) (σ : StoreAT) :
-  (w : WorldAT) σ →
-  (resA_restrict w X : WorldAT) (storeA_restrict σ X).
-Proof.
-  intros Hσ. exists σ. split; [exact Hσ | reflexivity].
-Qed.
-
-Lemma resA_restrict_eq_project_store
-    (w wX : WfWorldAT) (X : gset K) (σ : StoreAT) :
-  resA_restrict w X = wX →
-  (w : WorldAT) σ →
-  (wX : WorldAT) (storeA_restrict σ X).
-Proof.
-  intros <- Hσ. apply resA_restrict_project_store. exact Hσ.
-Qed.
-
 Definition rawA_fiber (m : WorldAT) (σ : StoreAT) : WorldAT := {|
   worldA_dom    := worldA_dom m;
   worldA_stores := λ σ0, m σ0 ∧ storeA_restrict σ0 (dom σ) = σ;
 |}.
-
-Lemma rawA_fiber_empty (m : WorldAT) :
-  rawA_fiber m (∅ : StoreAT) = m.
-Proof.
-  apply worldA_ext; [reflexivity |].
-  intros σ. simpl. split.
-  - tauto.
-  - intros Hσ. split; [exact Hσ |].
-    apply storeA_restrict_empty_set.
-Qed.
 
 Definition resA_fiber (w : WfWorldAT) (σ : StoreAT)
     (Hne : ∃ σ0, (w : WorldAT) σ0 ∧ storeA_restrict σ0 (dom σ) = σ)

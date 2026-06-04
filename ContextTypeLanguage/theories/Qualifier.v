@@ -100,48 +100,11 @@ Proof.
   destruct q. reflexivity.
 Qed.
 
-Lemma qual_mlsubst_vars ρ q :
-  qual_vars (qual_mlsubst ρ q) =
-  qual_vars q ∖ dom (ρ : gmap logic_var value).
-Proof.
-  destruct q. reflexivity.
-Qed.
-
-Lemma qual_msubst_store_vars σ q :
-  qual_vars (qual_msubst_store σ q) =
-  qual_vars q ∖ lvars_of_atoms (dom (σ : gmap atom value)).
-Proof.
-  unfold qual_msubst_store.
-  rewrite qual_mlsubst_vars, atom_store_to_lvar_store_dom.
-  reflexivity.
-Qed.
-
-Lemma lvars_fv_qual_vars q :
-  lvars_fv (qual_vars q) = qual_dom q.
-Proof. reflexivity. Qed.
-
-Lemma lvars_fv_qual_vars_difference_free q x :
-  lvars_fv (qual_vars q ∖ {[LVFree x]}) = qual_dom q ∖ {[x]}.
-Proof.
-  rewrite lvars_fv_difference_singleton_free.
-  rewrite lvars_fv_qual_vars. reflexivity.
-Qed.
-
 Lemma qual_open_atom_dom_subset k x q :
   qual_dom (qual_open_atom k x q) ⊆ qual_dom q ∪ {[x]}.
 Proof.
   destruct q as [D P]. cbn [qual_dom qual_open_atom qual_lvars].
   apply lvars_fv_open_subset.
-Qed.
-
-Lemma qual_open_atom_dom_fresh_ne k x y q :
-  x ∉ qual_dom q ->
-  x <> y ->
-  x ∉ qual_dom (qual_open_atom k y q).
-Proof.
-  intros Hx Hy Hbad.
-  pose proof (qual_open_atom_dom_subset k y q x Hbad).
-  set_solver.
 Qed.
 
 Lemma qual_open_commute_fvar i j x y q :
@@ -256,4 +219,3 @@ Proof.
         -- unfold lstore_on_open_back. cbn [lso_store]. reflexivity.
       * exact HP.
 Qed.
-

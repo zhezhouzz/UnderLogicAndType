@@ -47,17 +47,6 @@ Proof.
   intros HDE [Hvars Hshape]. split; [set_solver|exact Hshape].
 Qed.
 
-Lemma basic_context_ty_lvars_insert_fresh
-    (Σ : gmap logic_var ty) x T τ :
-  basic_context_ty_lvars (dom Σ) τ ->
-  basic_context_ty_lvars (dom (<[LVFree x := T]> Σ)) τ.
-Proof.
-  intros Hbasic.
-  eapply basic_context_ty_lvars_mono; [|exact Hbasic].
-  rewrite (dom_insert_L (M := gmap logic_var) (D := gset logic_var)).
-  set_solver.
-Qed.
-
 Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
   match τ with
   | CTOver _ φ | CTUnder _ φ =>

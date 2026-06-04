@@ -712,7 +712,7 @@ Lemma appop_intro_denotation
   Σ ⊢ₑ
     tprim op (vfvar x) ⋮ erase_ty ({0 ~> x} τres) ->
   (ctx_denote (CtxBind x τarg) ⊫
-    ty_denote_ctx (CtxBind x τarg) ({0 ~> x} τres)
+    ty_denote (erase_ctx (CtxBind x τarg)) ({0 ~> x} τres)
       (tprim op (vfvar x))) ->
   m ⊨ ty_denote_gas (cty_depth τarg) (atom_env_to_lty_env Σ)
     τarg (tret (vfvar x)) ->
@@ -735,7 +735,7 @@ Proof.
     eapply ctx_denote_bind_from_arg_denotation; eauto.
   }
   pose proof (Hop m Harg_bind) as Hres_single.
-  unfold ty_denote_ctx, ty_denote in Hres_single.
+  unfold ty_denote in Hres_single.
   change (erase_ctx (CtxBind x τarg))
     with (<[x := erase_ty τarg]> (∅ : gmap atom ty)) in Hres_single.
   eapply res_models_ty_denote_gas_env_agree_on

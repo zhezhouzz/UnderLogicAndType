@@ -31,9 +31,6 @@ Fixpoint ctx_denote_under (Σ : gmap atom ty) (Γ : ctx) : FormulaT :=
 Definition ctx_denote (Γ : ctx) : FormulaT :=
   ctx_denote_under ∅ Γ.
 
-Definition ty_denote_ctx (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
-  ty_denote (erase_ctx Γ) τ e.
-
 Definition ty_denote_under
     (Σ : gmap atom ty) (Γ : ctx) (τ : context_ty) (e : tm) : FormulaT :=
   ty_denote (erase_ctx Γ) τ e.

@@ -75,17 +75,6 @@ Proof.
   split; assumption.
 Qed.
 
-Lemma lty_env_msubst_store_lookup_some_2 σ (Σ : lty_env) v T :
-  Σ !! v = Some T ->
-  v ∉ lvars_of_atoms (dom (σ : gmap atom value)) ->
-  lty_env_msubst_store σ Σ !! v = Some T.
-Proof.
-  intros Hlook Hfresh.
-  apply storeA_restrict_lookup_some_2.
-  - exact Hlook.
-  - apply elem_of_difference. split; [by apply elem_of_dom_2 in Hlook|exact Hfresh].
-Qed.
-
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).
 Proof. apply lvar_store_open_one_dom. Qed.
@@ -209,12 +198,6 @@ Lemma lty_env_closed_lookup_bound_none (Σ : lty_env) k :
   lty_env_closed Σ ->
   Σ !! LVBound k = None.
 Proof. apply lvar_store_closed_lookup_bound_none. Qed.
-
-Lemma typed_lty_env_bind_open_under k x (Σ : lty_env) T :
-  LVFree x ∉ dom Σ ->
-  lty_env_open_one (S k) x (typed_lty_env_bind Σ T) =
-  typed_lty_env_bind (lty_env_open_one k x Σ) T.
-Proof. apply lvar_store_bind_open_under. Qed.
 
 Lemma typed_lty_env_bind_open_current y (Σ : lty_env) T :
   LVFree y ∉ dom Σ ->

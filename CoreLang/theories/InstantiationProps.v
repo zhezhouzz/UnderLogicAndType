@@ -505,10 +505,6 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
-Lemma subst_map_value_eq_msubst σ (v : value) :
-  subst_map σ v = m{σ} v.
-Proof. reflexivity. Qed.
-
 Lemma subst_map_tm_eq_msubst σ (e : tm) :
   subst_map σ e = m{σ} e.
 Proof. reflexivity. Qed.

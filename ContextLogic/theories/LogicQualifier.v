@@ -143,44 +143,6 @@ Proof.
         rewrite lstore_lift_free_lookup_free. exact Hσx.
 Qed.
 
-Lemma lstore_lift_free_restrict_lvars_subset_eq
-    (σ : Store (V := V)) (D : lvset) (X : aset) :
-  lvars_fv D ⊆ X ->
-  storeA_restrict
-    (lstore_lift_free (store_restrict σ X) : LStoreT) D =
-  storeA_restrict (lstore_lift_free σ : LStoreT) D.
-Proof.
-  intros HDX.
-  apply storeA_map_eq. intros z.
-  destruct (decide (z ∈ D)) as [HzD|HzD].
-  2:{
-    transitivity (@None V).
-    - apply storeA_restrict_lookup_none_r. exact HzD.
-    - symmetry. apply storeA_restrict_lookup_none_r. exact HzD.
-  }
-  destruct z as [k|x].
-  - transitivity (@None V).
-    + apply storeA_restrict_lookup_none_l.
-      rewrite lstore_lift_free_lookup_bound. reflexivity.
-    + symmetry. apply storeA_restrict_lookup_none_l.
-      rewrite lstore_lift_free_lookup_bound. reflexivity.
-  - assert (HxX : x ∈ X).
-    { apply HDX. apply lvars_fv_elem. exact HzD. }
-    destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hσx.
-    + transitivity (Some v).
-      * apply storeA_restrict_lookup_some_2; [|exact HzD].
-        rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxX].
-      * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
-        rewrite lstore_lift_free_lookup_free. exact Hσx.
-    + transitivity (@None V).
-      * apply storeA_restrict_lookup_none_l.
-        rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_none_l. exact Hσx.
-      * symmetry. apply storeA_restrict_lookup_none_l.
-        rewrite lstore_lift_free_lookup_free. exact Hσx.
-Qed.
-
 Lemma logic_qualifier_ext (q1 q2 : logic_qualifier) :
   lqual_dom q1 = lqual_dom q2 ->
   (forall (w1 : LWorldOnT (lqual_dom q1))

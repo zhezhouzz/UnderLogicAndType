@@ -29,7 +29,6 @@ ContextAlgebra/theories/ResourceAlgebra.v
 ContextAlgebra/theories/ResourceExtension.v
 ContextAlgebra/theories/ResourceInterface.v
 ContextAlgebra/theories/ResourceCompat.v
-ContextAlgebra/theories/ResourceSurface.v
 ContextAlgebra/theories/ContextAlgebra.v
 
 ContextLogic/theories/LogicQualifier.v

@@ -175,10 +175,6 @@ Lemma value_reduction_any_ctx v :
   tret v →* tret v.
 Proof. intros Hlc. apply Steps_refl. by constructor. Qed.
 
-Lemma value_no_step v e :
-  ¬ step (tret v) e.
-Proof. intro Hstep. eapply val_no_step; eauto. Qed.
-
 Lemma basic_step_preservation Γ e e' T :
   Γ ⊢ₑ e ⋮ T → step e e' → Γ ⊢ₑ e' ⋮ T.
 Proof. apply step_preserves_type. Qed.

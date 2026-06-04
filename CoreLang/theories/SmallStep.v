@@ -119,9 +119,6 @@ Notation "e '→*' e'" := (steps e e') (at level 40).
 
 Definition is_val (e : tm) : Prop := ∃ v, e = tret v.
 
-Lemma is_val_tret v : is_val (tret v).
-Proof. exists v; reflexivity. Qed.
-
 (** Values do not step. *)
 Lemma val_no_step v e : step (tret v) e → False.
 Proof. inversion 1; subst. inversion H0. Qed.

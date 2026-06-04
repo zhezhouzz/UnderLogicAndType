@@ -443,28 +443,6 @@ Proof.
   - cbn [erase_ty]. symmetry. exact Herase.
 Qed.
 
-Lemma typed_total_equiv_sum_l_target_zero
-    (Σ : lty_env) τ1 τ2 (e1 e2 : tm) (m m1 : WfWorldT) :
-  res_subset m1 m ->
-  m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e2 ->
-  m1 ⊨ ty_denote_gas 0 Σ τ1 e2.
-Proof.
-  intros Hsub Hzero.
-  apply ty_denote_gas_zero_sum_l with (τ2 := τ2).
-  eapply ty_denote_gas_zero_res_subset; eauto.
-Qed.
-
-Lemma typed_total_equiv_sum_r_target_zero
-    (Σ : lty_env) τ1 τ2 (e1 e2 : tm) (m m2 : WfWorldT) :
-  res_subset m2 m ->
-  m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e2 ->
-  m2 ⊨ ty_denote_gas 0 Σ τ2 e2.
-Proof.
-  intros Hsub Hzero.
-  apply ty_denote_gas_zero_sum_r with (τ1 := τ1).
-  eapply ty_denote_gas_zero_res_subset; eauto.
-Qed.
-
 Lemma typed_total_equiv_sum_l_pullback
     gas (Σ : lty_env) τ1 τ2 e1 e2 (m m1 : WfWorldT) :
   res_subset m1 m ->
@@ -478,8 +456,8 @@ Proof.
   - split.
     + apply ty_denote_gas_zero_of_guard.
       eapply ty_denote_gas_guard. exact Hsrc.
-    + eapply typed_total_equiv_sum_l_target_zero;
-        eauto.
+    + apply ty_denote_gas_zero_sum_l with (τ2 := τ2).
+      eapply ty_denote_gas_zero_res_subset; eauto.
 Qed.
 
 Lemma typed_total_equiv_sum_r_pullback
@@ -495,8 +473,8 @@ Proof.
   - split.
     + apply ty_denote_gas_zero_of_guard.
       eapply ty_denote_gas_guard. exact Hsrc.
-    + eapply typed_total_equiv_sum_r_target_zero;
-        eauto.
+    + apply ty_denote_gas_zero_sum_r with (τ1 := τ1).
+      eapply ty_denote_gas_zero_res_subset; eauto.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_sum_body

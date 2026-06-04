@@ -552,39 +552,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma formula_lvars_at_open d k y (φ : Formula) :
-  formula_lvars_at d (formula_open (d + k) y φ) =
-  lvars_open k y (formula_lvars_at d φ).
-Proof.
-  induction φ in d, k |- *; cbn [formula_open formula_lvars_at].
-  - set_solver.
-  - set_solver.
-  - match goal with
-    | |- context [lqual_open _ _ ?q] => destruct q as [D P]
-    end.
-    cbn [lqual_open lqual_lvars lqual_dom].
-    apply lvars_at_depth_open.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - rewrite IHφ1, IHφ2.
-    symmetry. rewrite lvars_open_union. reflexivity.
-  - replace (S (d + k)) with (S d + k) by lia.
-    apply IHφ.
-  - apply IHφ.
-  - apply IHφ.
-  - rewrite lvars_at_depth_open.
-    rewrite IHφ.
-    symmetry. rewrite lvars_open_union. reflexivity.
-Qed.
-
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.

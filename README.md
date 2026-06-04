@@ -32,7 +32,7 @@ opam install rocq-core.9.1.0 rocq-stdpp.dev.2026-01-23 coq-hammer.1.3.2+9.1
 
 ```bash
 # Generate the Makefile (only needed once, or after editing _CoqProject)
-rocq makefile -f _CoqProject -o Makefile.coq
+rocq makefile -f _CoqProject -o Makefile
 
 # Build all files
 make
@@ -88,12 +88,17 @@ atom/lvar store specializations.  Neither layer contains program syntax.
 ### `ContextAlgebra/` — The algebraic layer
 
 Resources and the abstract context algebra.  Store operations live in
-`ContextStore/Store.v`, so this layer no longer carries a store wrapper.
+`ContextStore/Store.v`, so this layer no longer carries a separate store
+surface wrapper.
 
 | File | Contents |
 |------|----------|
-| `Resource*.v` | `WorldA`/`WfWorldA`, resource restriction, algebraic order, sum/product, fiber extensions, and atom-specialized interfaces |
-| `ResourceNotation.v` / `ResourceTactics.v` | Proof-facing notation and focused resource tactics |
+| `ResourceCore.v` | Polymorphic worlds/resources, well-formed worlds, restriction, fibers, singleton worlds, and resource order |
+| `ResourceAlgebra.v` | Product/sum resources, compatibility, pullback/projection lemmas, and algebraic laws |
+| `ResourceExtension.v` | Fiber/result extensions and typed extension combinators |
+| `ResourceInterface.v` | Atom- and lvar-specialized names for the polymorphic resource layer |
+| `ResourceCompat.v` | Compatibility-oriented extension helpers and notation used by the denotation proofs |
+| `ContextAlgebra.v` | Aggregating export for the algebra layer |
 
 ### `ContextLogic/` — The logic layer
 
@@ -106,7 +111,8 @@ qualifier atoms.
 |------|----------|
 | `LogicQualifier.v` | Dependent-domain logic qualifier atoms over lvar-keyed worlds |
 | `Formula*.v` | Formula syntax (`FAtom`, `FForall`, `FFibVars`, over/under, separating connectives), opening, scope, and `res_models` |
-| `FormulaTactics.v` | Small formula-normalization tactics |
+| `FormulaNotation.v` | Optional formula notation/custom-entry syntax |
+| `LogicInterface.v` | Aggregating export for the logic layer |
 
 ### `LocallyNameless/` — Proof support
 
@@ -171,15 +177,16 @@ match.
 | File | Contents |
 |------|----------|
 | `Prelude.v` | LN infrastructure: `Open`, `Close`, `SubstV`, `Stale`, `Lc` typeclasses |
-| `Syntax.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc` |
+| `Syntax.v` / `SyntaxNotation.v` | Syntax of values and terms; `open`, `close`, `subst`, `lc`, and printing-oriented notation |
 | `BasicTyping.v` | Simple type system (`⊢ᵥ`, `⊢ₑ`) |
 | `SmallStep.v` | Deterministic small-step operational semantics (`→*`) |
 | `Sugar.v` | Small deterministic derived forms used by examples |
-| `Properties.v` | Basic metatheory entry points |
 | `LocallyNamelessProps.v` | Locally-nameless lemmas for values and terms |
 | `LocallyNamelessExtra.v` | Additional LN lemmas imported from earlier developments |
 | `BasicTypingProps.v` | Basic typing lemmas |
-| `OperationalProps.v` | Operational semantics lemmas |
+| `Instantiation*.v` | Store/environment instantiation and substitution lemmas |
+| `OperationalProps.v` / `OperationalResults.v` | Operational semantics and result-shape lemmas |
+| `StrongNormalization.v` | Strong-normalization support for the deterministic core |
 
 ### `ContextTypeLanguage/` — Context type syntax and LN metatheory
 
@@ -197,10 +204,11 @@ with store-based lookup while preserving expressiveness through let-binding.
 | File | Contents |
 |------|----------|
 | `Qualifier.v` | Dependent-domain type qualifiers over lvar-keyed stores |
-| `Syntax*.v` | Context type and context syntax, erasure, lifting, lvar/fv/open facts |
-| `LtyEnv*.v` / `Env.v` | Lvar-keyed type environments, atom projection, typed binder insertion |
-| `WellFormed.v` / `Interface.v` | Basic qualifier/type/context well-scopedness API |
-| `Notation.v` / `Sugar.v` | Public syntax notation and small derived type forms |
+| `Syntax.v` | Context type and context syntax, erasure, lifting, lvar/fv facts, and variable-equivalence helpers |
+| `TypeOpen.v` | Generic multi-open support for context types and lvar environments |
+| `LtyEnv.v` | Lvar-keyed type environments, atom projection, typed binder insertion, and environment normalization |
+| `WF.v` | Qualifier/type/context well-scopedness API |
+| `Notation.v` | Public syntax notation and type-language normalization tactics |
 
 ### `ContextBasicDenotation/` — Basic semantic atoms
 
@@ -213,25 +221,29 @@ embed CoreLang basic typing and type-qualifier semantics into `ContextLogic`.
 | `Term*.v` | Expression evaluation, totality, result extensions, and tlet operational bridges |
 | `Qualifier.v` | Interpreting type qualifiers as logic qualifiers over lworlds |
 | `BasicTypingFormula.v` | Logic atoms for context-type well-formedness and CoreLang basic typing |
-| `Notation.v` / `Interface.v` | Value-specialized aliases and public re-export |
+| `RelevantEnv.v` | Relevant-environment projection and agreement lemmas for type denotation |
+| `Notation.v` | Value-specialized aliases and public re-export |
 
 ### `Denotation/` — Recursive context-type denotation
 
 The gas-indexed denotation `ty_denote_gas`, the atom-context wrapper
-`ty_denote`, context denotation, and the current direct TLet proof.
+`ty_denote`, context denotation, and term-result-equivalence transport used by
+the current direct TLet proof.
 
 | File family | Contents |
 |-------------|----------|
-| `TypeDenote*.v` | Recursive denotation plus lvar/fv/open/saturation lemmas |
+| `TypeDenote.v` / `TypeDenoteOpen.v` | Recursive denotation plus lvar/fv/open lemmas |
+| `TypeDenoteTactics.v` | Denotation-specific normalization tactics |
+| `TypeEquiv*.v` | Saturation, result-alias/result-extension transport, term-result equivalence, and the compact `tlet_intro_denotation` |
 | `Context.v` | Context denotation and denotation instances |
-| `TLetSupport.v` / `TLet.v` | Shared TLet support tactics and the TLet introduction theorem |
+| `ConstDenote.v` | Constant and primitive-operation denotation support |
 | `Notation.v` | Denotation-level notation (`m ⊨ φ`, `φ ⊫ ψ`, value-specialized aliases) |
 
 ### `ContextTyping/` — Paper-level typing layer
 
 The paper-level typing infrastructure sits above the syntax and denotation
-layers.  It imports `Denotation` directly instead of going through the old
-Context-type denotation stack.
+layers.  It imports `Denotation` directly; the older fiberwise/msubst bridge
+route has been removed.
 
 The current declarative rules follow the paper's bunched presentation more
 closely:
@@ -254,9 +266,5 @@ closely:
 
 | File | Contents |
 |------|----------|
-| `WellFormed.v` | Well-formedness and nonemptiness judgments |
-| `Auxiliary.v` | Context-level helper relations such as subtype context lifting |
-| `PrimOpContext.v` | Unary primitive-operation signatures and well-formedness |
-| `Typing.v` | Single typing judgment `Γ ⊢ e ⋮ τ` |
-| `TLetDirect.v` / `TLetDenotation.v` | Direct bridge from the typing TLet case to `Denotation.TLet` |
-| `SoundnessDirect.v` / `Soundness.v` | Current soundness entry points on the new denotation route |
+| `Typing.v` | Well-formedness, semantic subtyping/context-subtyping, primitive-operation signatures, and the single typing judgment |
+| `Soundness.v` | Direct Fundamental theorem entry point. Var/Const/Sub/CtxSub/Let/AppOp are proved on the direct route; higher-order, match, d-version cases, and corollaries remain explicit named obligations |

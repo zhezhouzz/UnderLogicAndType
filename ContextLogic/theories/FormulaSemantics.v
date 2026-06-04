@@ -441,6 +441,15 @@ Proof.
     exact Hext_proj.
 Qed.
 
+(* Keep this helper intentionally narrow.  A more generic restrict-equality
+   solver in the resource cases made this file proof-check much slower; the
+   repeated product/sum/wand projections below stay explicit for compile time. *)
+Local Ltac project_formula_child IH Hproj :=
+  eapply IH;
+    [ eapply res_restrict_eq_subset; [| exact Hproj];
+      formula_fv_syntax_norm; set_solver
+    | eassumption ].
+
 Lemma res_models_fuel_projection
     (gas : nat) (m n : WfWorldT) (φ : FormulaT) :
   res_restrict m (formula_fv φ) = res_restrict n (formula_fv φ) →
@@ -468,16 +477,12 @@ Proof.
     exact Hmodel.
   - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp Hq]. split.
-    + eapply IH; [| exact Hp].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-    + eapply IH; [| exact Hq].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
+    + project_formula_child IH Hproj.
+    + project_formula_child IH Hproj.
   - formula_fv_syntax_norm_in Hproj.
     destruct Hmodel as [Hp | Hq].
-    + left. eapply IH; [| exact Hp].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
-    + right. eapply IH; [| exact Hq].
-      eapply res_restrict_eq_subset; [| exact Hproj]. set_solver.
+    + left. project_formula_child IH Hproj.
+    + right. project_formula_child IH Hproj.
   - formula_fv_syntax_norm_in Hproj.
     intros n' Hle_n Hpn'.
     assert (Hscope_n : formula_scoped_in_world n (FImpl p q)).

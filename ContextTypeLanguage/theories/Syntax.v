@@ -211,30 +211,6 @@ Coercion lift_ty : ty >-> context_ty.
 
     Lvar support computations for context syntax. *)
 
-Lemma context_ty_lvars_at_msubst_store d σ τ :
-  context_ty_lvars_at d (context_ty_msubst_store σ τ) =
-  context_ty_lvars_at d τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
-Proof.
-  induction τ in d |- *; cbn [context_ty_msubst_store context_ty_lvars_at].
-  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
-    reflexivity.
-  - rewrite qual_msubst_store_vars, lvars_at_depth_difference_of_atoms.
-    reflexivity.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-  - rewrite IHτ1, IHτ2. set_solver.
-Qed.
-
-Lemma context_ty_lvars_msubst_store σ τ :
-  context_ty_lvars (context_ty_msubst_store σ τ) =
-  context_ty_lvars τ ∖ lvars_of_atoms (dom (σ : gmap atom value)).
-Proof.
-  apply context_ty_lvars_at_msubst_store.
-Qed.
-
-
 Lemma context_ty_lvars_at_open d k x τ :
   context_ty_lvars_at d ({d + k ~> x} τ) =
   lvars_open k x (context_ty_lvars_at d τ).
@@ -363,28 +339,6 @@ Proof.
   rewrite lvars_fv_lvars_at_depth. reflexivity.
 Qed.
 
-Lemma context_ty_over_fresh_open_qual_dom x y b q :
-  LVFree x ∉ context_ty_lvars (CTOver b q) ->
-  x <> y ->
-  x ∉ qual_dom (q ^q^ y).
-Proof.
-  intros Hx Hxy.
-  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
-  intros Hbad. apply Hx. apply lvars_fv_elem.
-  rewrite context_ty_lvars_over_fv. exact Hbad.
-Qed.
-
-Lemma context_ty_under_fresh_open_qual_dom x y b q :
-  LVFree x ∉ context_ty_lvars (CTUnder b q) ->
-  x <> y ->
-  x ∉ qual_dom (q ^q^ y).
-Proof.
-  intros Hx Hxy.
-  apply qual_open_atom_dom_fresh_ne; [|exact Hxy].
-  intros Hbad. apply Hx. apply lvars_fv_elem.
-  rewrite context_ty_lvars_under_fv. exact Hbad.
-Qed.
-
 Lemma context_ty_lvars_at_shift_under d k τ :
   k <= d ->
   context_ty_lvars_at (S d) (cty_shift k τ) =
@@ -457,20 +411,6 @@ Proof.
   rewrite <- (Nat.add_0_l k) at 1.
   rewrite context_ty_lvars_at_shift.
   apply lvars_shift_from_fv.
-Qed.
-
-Lemma context_ty_lvars_open_shift_fresh x y τ :
-  x <> y ->
-  LVFree x ∉ context_ty_lvars τ ->
-  LVFree x ∉ context_ty_lvars (cty_open 0 y (cty_shift 0 τ)).
-Proof.
-  intros Hxy Hfresh Hin.
-  apply lvars_fv_elem in Hin.
-  pose proof (cty_open_fv_subset 0 y (cty_shift 0 τ) x Hin) as Hsub.
-  rewrite cty_shift_fv in Hsub.
-  apply elem_of_union in Hsub as [Hinτ|Hy].
-  - apply Hfresh. apply lvars_fv_elem. exact Hinτ.
-  - rewrite elem_of_singleton in Hy. congruence.
 Qed.
 
 (** * ContextTypeLanguage.Syntax
