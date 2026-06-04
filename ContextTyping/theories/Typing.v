@@ -212,6 +212,17 @@ Lemma context_typing_wf_context_ty Σ Γ e τ :
   wf_context_ty_at 0 (dom (erase_ctx Γ)) τ.
 Proof. intros [_ [Hτ _]]. exact Hτ. Qed.
 
+Lemma context_typing_wf_bind_context_ty Σ x τ e :
+  context_typing_wf Σ (CtxBind x τ) e τ ->
+  basic_context_ty {[x]} τ.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ (CtxBind x τ) e τ Hwf)
+    as Hτ.
+  rewrite erase_ctx_bind_dom in Hτ.
+  exact Hτ.
+Qed.
+
 Definition branch_unreachable (Σ : gmap atom ty) (Γ : ctx) (v : value) (b : bool) : Prop :=
   denot_ctx_under Σ Γ ⊫
     FImpl (denot_ty (erase_ctx Γ) (bool_precise_ty b) (tret v)) FFalse.

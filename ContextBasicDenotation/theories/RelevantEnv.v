@@ -114,6 +114,17 @@ Proof.
   exact (map_lookup_insert (∅ : gmap atom ty) x T).
 Qed.
 
+Lemma atom_env_to_lty_env_insert_restrict_singleton
+    (Δ : gmap atom ty) x T :
+  lty_env_restrict_lvars (atom_env_to_lty_env (<[x := T]> Δ))
+    ({[LVFree x]}) =
+  lty_env_restrict_lvars
+    (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty))) ({[LVFree x]}).
+Proof.
+  apply atom_env_to_lty_env_restrict_singleton_lookup.
+  apply map_lookup_insert.
+Qed.
+
 Lemma atom_env_to_lty_env_dom_free_notin
     (Δ : gmap atom ty) x :
   x ∉ dom Δ ->

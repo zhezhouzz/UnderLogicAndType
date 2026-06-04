@@ -183,6 +183,22 @@ Fixpoint erase_ctx (Γ : ctx) : gmap atom ty :=
   | CtxSum Γ1 _ => erase_ctx Γ1
   end.
 
+Lemma erase_ctx_bind_dom x τ :
+  dom (erase_ctx (CtxBind x τ)) = ({[x]} : aset).
+Proof.
+  cbn [erase_ctx].
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_dom in Hz as [T Hz].
+    apply (proj1 (lookup_singleton_Some x z (erase_ty τ) T)) in Hz
+      as [Hzx _].
+    subst z. set_solver.
+  - intros Hz.
+    apply elem_of_singleton in Hz. subst z.
+    apply elem_of_dom. exists (erase_ty τ).
+    apply map_lookup_singleton.
+Qed.
+
 Definition lift_ctx (Γ : gmap atom ty) : ctx :=
   map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
 

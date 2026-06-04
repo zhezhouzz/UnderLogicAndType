@@ -172,42 +172,20 @@ Proof.
   eapply res_models_denot_ty_lvar_gas_env_agree_on
     with (X := denot_relevant_lvars τ (tret (vfvar x)));
     [reflexivity | | exact Hbind].
-  apply atom_env_to_lty_env_restrict_lvars_agree_on with (X := {[x]}).
-  - intros y Hy.
-    apply elem_of_singleton in Hy. subst y.
-    cbn [erase_ctx].
-    change ((<[x := erase_ty τ]> Σ : gmap atom ty) !! x =
-      ({[x := erase_ty τ]} : gmap atom ty) !! x).
-    transitivity (Some (erase_ty τ)).
-    + apply map_lookup_insert.
-    + symmetry. apply map_lookup_singleton.
-  - assert (Hbasic : basic_context_ty {[x]} τ).
-    {
-      pose proof (context_typing_wf_context_ty
-        Σ (CtxBind x τ) (tret (vfvar x)) τ Hwf) as Hτ.
-      replace (dom (erase_ctx (CtxBind x τ))) with ({[x]} : aset) in Hτ.
-      2:{
-        cbn [erase_ctx].
-        symmetry.
-        apply set_eq. intros z. split.
-        - intros Hz.
-          apply elem_of_dom in Hz as [T Hz].
-          apply (proj1 (lookup_singleton_Some x z (erase_ty τ) T)) in Hz
-            as [Hzx _].
-          subst z. set_solver.
-        - intros Hz.
-          apply elem_of_singleton in Hz. subst z.
-          apply elem_of_dom. exists (erase_ty τ).
-          apply map_lookup_singleton.
-      }
-      exact Hτ.
-    }
-    assert (Hrel :
-        denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
-    { apply denot_relevant_lvars_ret_fvar_subset_singleton. exact Hbasic. }
-    pose proof (lvars_fv_mono _ _ Hrel) as Hfv.
-    rewrite lvars_fv_singleton_free in Hfv.
-    exact Hfv.
+  assert (Hrel :
+      denot_relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}).
+  {
+    apply denot_relevant_lvars_ret_fvar_subset_singleton.
+    eapply context_typing_wf_bind_context_ty; eauto.
+  }
+  rewrite <- (lty_env_restrict_lvars_twice_subset
+    (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
+    ({[LVFree x]}) (denot_relevant_lvars τ (tret (vfvar x))) Hrel).
+  rewrite atom_env_to_lty_env_insert_restrict_singleton.
+  rewrite (lty_env_restrict_lvars_twice_subset
+    (atom_env_to_lty_env (<[x := erase_ty τ]> (∅ : gmap atom ty)))
+    ({[LVFree x]}) (denot_relevant_lvars τ (tret (vfvar x))) Hrel).
+  reflexivity.
 Qed.
 
 Lemma fundamental_var_case Σ x τ :
