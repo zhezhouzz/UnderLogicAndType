@@ -43,6 +43,48 @@ Proof.
   apply storeA_restrict_empty_set.
 Qed.
 
+Lemma denot_relevant_env_fresh_free (Σ : lty_env) τ e x :
+  x ∉ fv_cty τ ->
+  x ∉ fv_tm e ->
+  LVFree x ∉ dom (denot_relevant_env Σ τ e : lty_env).
+Proof.
+  intros Hxτ Hxe Hbad.
+  unfold denot_relevant_env, lty_env_restrict_lvars in Hbad.
+  rewrite storeA_restrict_dom in Hbad.
+  apply elem_of_intersection in Hbad as [_ Hrel].
+  apply lvars_fv_elem in Hrel.
+  rewrite denot_relevant_lvars_fv in Hrel.
+  set_solver.
+Qed.
+
+Lemma denot_relevant_env_arrow_fresh_free
+    (Σ : lty_env) τx τr e x :
+  x ∉ fv_cty τx ->
+  x ∉ fv_cty τr ->
+  x ∉ fv_tm e ->
+  LVFree x ∉ dom (denot_relevant_env Σ (CTArrow τx τr) e : lty_env).
+Proof.
+  intros Hxτx Hxτr Hxe.
+  apply denot_relevant_env_fresh_free; [|exact Hxe].
+  unfold fv_cty, context_ty_lvars.
+  cbn [context_ty_lvars_at].
+  rewrite lvars_fv_union, !context_ty_lvars_fv_at.
+  set_solver.
+Qed.
+
+Lemma denot_relevant_env_wand_fresh_free
+    (Σ : lty_env) τx τr e x :
+  x ∉ fv_cty τx ->
+  x ∉ fv_cty τr ->
+  x ∉ fv_tm e ->
+  LVFree x ∉ dom (denot_relevant_env Σ (CTWand τx τr) e : lty_env).
+Proof.
+  intros Hxτx Hxτr Hxe.
+  change (denot_relevant_env Σ (CTWand τx τr) e)
+    with (denot_relevant_env Σ (CTArrow τx τr) e).
+  eapply denot_relevant_env_arrow_fresh_free; eauto.
+Qed.
+
 Lemma lvars_of_atoms_empty :
   lvars_of_atoms (∅ : aset) = (∅ : lvset).
 Proof.

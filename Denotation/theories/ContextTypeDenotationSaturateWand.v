@@ -261,9 +261,7 @@ Lemma denot_relevant_env_wand_open_result_fresh
   y ∉ fv_tm e ->
   LVFree y ∉ dom (denot_relevant_env Σ (CTWand τx τr) e : lty_env).
 Proof.
-  change (denot_relevant_env Σ (CTWand τx τr) e)
-    with (denot_relevant_env Σ (CTArrow τx τr) e).
-  apply denot_relevant_env_arrow_open_result_fresh.
+  apply denot_relevant_env_wand_fresh_free.
 Qed.
 
 Lemma basic_world_formula_wand_open_result_big

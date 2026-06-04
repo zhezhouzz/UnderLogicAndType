@@ -265,20 +265,7 @@ Lemma denot_relevant_env_arrow_open_result_fresh
   LVFree y ∉ dom (denot_relevant_env Σ (CTArrow τx τr) e : lty_env).
 Proof.
   intros Hyτx Hyτr Hye.
-  unfold denot_relevant_env, lty_env_restrict_lvars.
-  store_normalize.
-  intros Hyrel.
-  apply elem_of_intersection in Hyrel as [_ Hyrel].
-  unfold denot_relevant_lvars in Hyrel.
-  apply elem_of_union in Hyrel as [Hyτ|Hytm].
-  - apply lvars_fv_elem in Hyτ.
-    unfold fv_cty, context_ty_lvars in Hyτ.
-    cbn [context_ty_lvars_at] in Hyτ.
-    rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hyτ.
-    apply elem_of_union in Hyτ as [Hyτ|Hyτ]; [exact (Hyτx Hyτ)|exact (Hyτr Hyτ)].
-  - apply Hye.
-    apply lvars_fv_elem in Hytm.
-    rewrite tm_lvars_fv in Hytm. exact Hytm.
+  eapply denot_relevant_env_arrow_fresh_free; eauto.
 Qed.
 
 Lemma basic_world_formula_arrow_open_result_big
