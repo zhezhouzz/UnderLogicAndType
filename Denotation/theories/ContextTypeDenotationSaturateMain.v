@@ -130,11 +130,13 @@ Proof.
   transitivity (lvars_fv (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ)).
   - apply lvars_fv_mono.
     apply formula_lvars_at_denot_ty_lvar_gas_subset_relevant.
-  - rewrite lvars_fv_union.
-    change (tm_lvars_at 0 e) with (tm_lvars e).
+  - change (tm_lvars_at 0 e) with (tm_lvars e).
     change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
-    rewrite tm_lvars_fv, context_ty_lvars_fv.
-    reflexivity.
+    replace (tm_lvars e ∪ context_ty_lvars τ)
+      with (denot_relevant_lvars τ e)
+      by (unfold denot_relevant_lvars; set_solver).
+    rewrite denot_relevant_lvars_fv.
+    set_solver.
 Qed.
 
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
