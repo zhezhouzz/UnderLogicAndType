@@ -508,23 +508,11 @@ Proof.
     pose proof (denot_ctx_under_basic_world Σ Γ m Hctx) as Hworld.
     eapply basic_world_formula_subenv; [|exact Hworld].
     intros v T Hv.
-    destruct v as [k|y].
-    - rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
-      discriminate.
-    - rewrite atom_store_to_lvar_store_lookup_free in Hv.
-      unfold erase_ctx_under.
-      rewrite atom_store_to_lvar_store_lookup_free.
-      apply map_lookup_union_Some_raw. right.
-      split; [|exact Hv].
-      apply not_elem_of_dom.
-      pose proof (context_typing_wf_ctx Σ Γ (tlete e1 e2) τ2 Hwflet)
-        as Hwfctx.
-      pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
-      pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasicctx) as HdomΓ.
-      pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasicctx) as HfreshΓ.
-      apply elem_of_dom_2 in Hv.
-      rewrite HdomΓ in Hv.
-      set_solver.
+    unfold erase_ctx_under.
+    eapply atom_env_to_lty_env_erase_ctx_union_subenv; [|exact Hv].
+    pose proof (context_typing_wf_ctx Σ Γ (tlete e1 e2) τ2 Hwflet)
+      as Hwfctx.
+    exact (wf_ctx_under_basic Σ Γ Hwfctx).
   }
   pose proof (Hbody_guard) as Hbody_guard_parts.
   repeat rewrite res_models_and_iff in Hbody_guard_parts.

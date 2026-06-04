@@ -117,17 +117,15 @@ Proof.
   exact (Hx Hy).
 Qed.
 
-Lemma denot_relevant_env_erase_ctx_union_subenv
-    (Σ : gmap atom ty) Γ τ e v T :
+Lemma atom_env_to_lty_env_erase_ctx_union_subenv
+    (Σ : gmap atom ty) Γ v T :
   basic_ctx (dom Σ) Γ ->
-  denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e !! v = Some T ->
+  atom_env_to_lty_env (erase_ctx Γ) !! v = Some T ->
   atom_env_to_lty_env (Σ ∪ erase_ctx Γ) !! v = Some T.
 Proof.
   intros Hbasic Hlook.
   pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
   pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
-  unfold denot_relevant_env, lty_env_restrict_lvars in Hlook.
-  apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
   destruct v as [k|x].
   - rewrite atom_store_to_lvar_store_lookup_bound_none in Hlook.
     discriminate.
@@ -139,6 +137,18 @@ Proof.
     apply elem_of_dom_2 in Hlook.
     rewrite HdomΓ in Hlook.
     better_set_solver.
+Qed.
+
+Lemma denot_relevant_env_erase_ctx_union_subenv
+    (Σ : gmap atom ty) Γ τ e v T :
+  basic_ctx (dom Σ) Γ ->
+  denot_relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e !! v = Some T ->
+  atom_env_to_lty_env (Σ ∪ erase_ctx Γ) !! v = Some T.
+Proof.
+  intros Hbasic Hlook.
+  unfold denot_relevant_env, lty_env_restrict_lvars in Hlook.
+  apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+  eapply atom_env_to_lty_env_erase_ctx_union_subenv; eauto.
 Qed.
 
 Lemma lty_env_restrict_lvars_twice_same (Σ : lty_env) D :
