@@ -390,11 +390,7 @@ Proof.
     2:{ symmetry. apply atom_store_to_lvar_store_insert. }
     eapply denot_ty_lvar_gas_result_extension_to_var; eauto.
     - apply atom_store_to_lvar_store_closed.
-    - rewrite atom_store_to_lvar_store_dom.
-      intros Hbad.
-      apply lvars_fv_elem in Hbad.
-      rewrite lvars_fv_of_atoms in Hbad.
-      exact (HxΔ Hbad).
+    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
   }
   assert (Hworld_mx :
       mx ⊨ basic_world_formula
@@ -405,11 +401,7 @@ Proof.
         (atom_env_to_lty_env (erase_ctx_under Σ Γ))).
     2:{ symmetry. apply atom_store_to_lvar_store_insert. }
     eapply basic_world_formula_insert_from_arg_denotation.
-    - rewrite atom_store_to_lvar_store_dom.
-      intros Hbad.
-      apply lvars_fv_elem in Hbad.
-      rewrite lvars_fv_of_atoms in Hbad.
-      exact (HxΔ Hbad).
+    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
     - eapply res_models_extend_mono; eauto.
       eapply denot_ctx_under_basic_world; eauto.
     - replace (atom_env_to_lty_env
@@ -543,11 +535,7 @@ Proof.
       with (Σ := atom_env_to_lty_env (erase_ctx Γ))
         (T := erase_ty τ2) (x := x) (mx := mx) (Fx := Fx);
       eauto.
-    - rewrite atom_store_to_lvar_store_dom.
-      unfold lvars_of_atoms.
-      intros Hbad.
-      apply elem_of_map in Hbad as [a [Heq Ha]].
-      inversion Heq. subst a. exact (Hxctx Ha).
+    - apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
     - rewrite lvar_store_to_atom_store_atom_store.
       exact (context_typing_wf_basic_typing Σ Γ (tlete e1 e2) τ2 Hwflet).
   }
@@ -574,11 +562,7 @@ Proof.
         (τ := τ1) (e := e1) (x := x) (m := m) (mx := mx);
       eauto.
     - apply atom_store_to_lvar_store_closed.
-    - rewrite atom_store_to_lvar_store_dom.
-      unfold lvars_of_atoms.
-      intros Hbad.
-      apply elem_of_map in Hbad as [a [Heq Ha]].
-      inversion Heq. subst a. exact (Hxctx Ha).
+    - apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
     - unfold denot_ty_in_ctx_under, denot_ty in Hden1.
       exact (denot_ty_lvar_gas_guard _ _ _ _ _ Hden1).
   }
@@ -597,11 +581,7 @@ Proof.
         τ2 (tlete e1 e2)).
   {
     eapply denot_ty_lvar_gas_extend_typed_extension_zero; eauto.
-    - rewrite atom_store_to_lvar_store_dom.
-      unfold lvars_of_atoms.
-      intros Hbad.
-      apply elem_of_map in Hbad as [a [Heq Ha]].
-      inversion Heq. subst a. exact (Hxctx Ha).
+    - apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
   }
   pose proof (tlet_intro_denotation
     (cty_depth τ2)
@@ -613,11 +593,7 @@ Proof.
     (cty_depth τ2) (atom_env_to_lty_env (erase_ctx Γ)) τ2
     (tlete e1 e2) x (erase_ty τ1)) in Hlet_mx_insert.
   2:{
-    rewrite atom_store_to_lvar_store_dom.
-    unfold lvars_of_atoms.
-    intros Hbad.
-    apply elem_of_map in Hbad as [a [Heq Ha]].
-    inversion Heq. subst a. exact (Hxctx Ha).
+    apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
   }
   2:{ exact Hxτ2. }
   2:{ exact Hxtlet. }

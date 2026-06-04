@@ -104,6 +104,19 @@ Proof.
   exact (map_lookup_insert (∅ : gmap atom ty) x T).
 Qed.
 
+Lemma atom_env_to_lty_env_dom_free_notin
+    (Δ : gmap atom ty) x :
+  x ∉ dom Δ ->
+  LVFree x ∉ dom (atom_env_to_lty_env Δ).
+Proof.
+  intros Hx Hbad.
+  rewrite atom_store_to_lvar_store_dom in Hbad.
+  unfold lvars_of_atoms in Hbad.
+  apply elem_of_map in Hbad as [y [Heq Hy]].
+  inversion Heq. subst y.
+  exact (Hx Hy).
+Qed.
+
 Lemma denot_relevant_env_erase_ctx_union_subenv
     (Σ : gmap atom ty) Γ τ e v T :
   basic_ctx (dom Σ) Γ ->
