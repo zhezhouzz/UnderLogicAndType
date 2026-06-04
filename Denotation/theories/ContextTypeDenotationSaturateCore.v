@@ -1346,30 +1346,28 @@ Proof.
     unfold denot_relevant_env, lty_env_restrict_lvars in Htop.
     apply storeA_restrict_lookup_some in Htop as [_ HΣv].
     destruct v as [k|z].
-    + unfold lvars_of_atoms in Hvfv.
-      apply elem_of_map in Hvfv as [a [Hbad _]]. discriminate.
+    + unfold lvars_of_atoms in Hvfv. set_solver.
     + assert (Hzy : z <> y).
       {
         intros ->. apply Hye.
-        apply elem_of_union_r.
-        unfold lvars_of_atoms in Hvfv.
-        apply elem_of_map in Hvfv as [a [Heq Ha]].
-        inversion Heq. subst a. exact Ha.
+        unfold lvars_of_atoms in Hvfv. set_solver.
       }
       unfold denot_relevant_env, lty_env_restrict_lvars.
-      apply storeA_restrict_lookup_some_2.
-      * rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzy.
-        exact HΣv.
-      * unfold denot_relevant_lvars.
-        apply elem_of_union_r.
+      assert (Hlook_open :
+          lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx))
+            !! LVFree z = Some U).
+      { rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzy.
+        exact HΣv. }
+      assert (Hin :
+          LVFree z ∈ denot_relevant_lvars (cty_open 0 y τr)
+            (tapp_tm e2 (vfvar y))).
+      {
+        unfold denot_relevant_lvars.
         rewrite tm_lvars_tapp_tm_fvar.
-        unfold lvars_of_atoms in Hvfv.
-        apply elem_of_map in Hvfv as [a [Heq Ha]].
-        inversion Heq. subst a.
-        apply elem_of_union_l.
         rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
-        unfold lvars_of_atoms.
-        apply elem_of_map. exists z. split; [reflexivity|exact Ha].
+        unfold lvars_of_atoms in *. set_solver.
+      }
+      better_store_solver.
 Qed.
 
 Lemma basic_value_has_ltype_open_result_target_arg
