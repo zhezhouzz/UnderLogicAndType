@@ -241,49 +241,6 @@ Proof.
   split; [congruence | intros σ Hσ; exact (Hin23 σ (Hin12 σ Hσ))].
 Qed.
 
-Lemma resA_subset_antisym (w1 w2 : WfWorldAT) :
-  resA_subset w1 w2 → resA_subset w2 w1 → w1 = w2.
-Proof.
-  intros [Hdom12 Hin12] [Hdom21 Hin21].
-  destruct w1 as [m1 Hwf1], w2 as [m2 Hwf2]. simpl in *.
-  assert (Heq : m1 = m2).
-  { apply worldA_ext; [exact Hdom12 |].
-    intros σ. split; [apply Hin12 | apply Hin21]. }
-  subst. f_equal. apply proof_irrelevance.
-Qed.
-
-Lemma resA_subset_swap (x y : K) (w1 w2 : WfWorldAT) :
-  resA_subset (resA_swap x y w1) (resA_swap x y w2) ↔ resA_subset w1 w2.
-Proof.
-  split.
-  - intros [Hdom Hin]. split.
-    + simpl in Hdom.
-      change (set_swap x y (worldA_dom (w1 : WorldAT)) =
-        set_swap x y (worldA_dom (w2 : WorldAT))) in Hdom.
-      rewrite <- (set_swap_involutive x y (worldA_dom (w1 : WorldAT))).
-      rewrite <- (set_swap_involutive x y (worldA_dom (w2 : WorldAT))).
-      by rewrite Hdom.
-    + intros σ Hσ.
-      pose proof (Hin (storeA_swap x y σ)) as Hin'.
-      simpl in Hin'.
-      assert (Hs1 : rawA_swap x y w1 (storeA_swap x y σ)).
-      { exists σ. split; [exact Hσ | reflexivity]. }
-      destruct (Hin' Hs1) as [σ2 [Hσ2 Hswap]].
-      assert (σ2 = σ).
-      {
-        rewrite <- (storeA_swap_involutive x y σ2).
-        change (storeA_swap x y σ2 =
-          storeA_swap x y σ) in Hswap.
-        rewrite Hswap. apply storeA_swap_involutive.
-      }
-      subst. exact Hσ2.
-  - intros [Hdom Hin]. split.
-    + simpl. by rewrite Hdom.
-    + intros σ Hσ.
-      simpl in Hσ. destruct Hσ as [σ0 [Hσ0 Hswap]]. subst.
-      exists σ0. split; [apply Hin; exact Hσ0 | reflexivity].
-Qed.
-
 Lemma resA_subset_restrict_mono (w1 w2 : WfWorldAT) (X : gset K) :
   resA_subset w1 w2 →
   resA_subset (resA_restrict w1 X) (resA_restrict w2 X).
@@ -292,21 +249,6 @@ Proof.
   - simpl. rewrite Hdom. reflexivity.
   - intros σ [σ0 [Hσ0 Hrestrict]].
     exists σ0. split; [apply Hin; exact Hσ0 | exact Hrestrict].
-Qed.
-
-Lemma resA_sum_subset_l (w1 w2 : WfWorldAT) (Hdef : rawA_sum_defined w1 w2) :
-  resA_subset w1 (resA_sum w1 w2 Hdef).
-Proof.
-  split; [reflexivity |].
-  intros σ Hσ. simpl. left. exact Hσ.
-Qed.
-
-Lemma resA_sum_subset_r (w1 w2 : WfWorldAT) (Hdef : rawA_sum_defined w1 w2) :
-  resA_subset w2 (resA_sum w1 w2 Hdef).
-Proof.
-  split.
-  - simpl. unfold rawA_sum_defined in Hdef. symmetry. exact Hdef.
-  - intros σ Hσ. simpl. right. exact Hσ.
 Qed.
 
 Lemma rawA_sum_le_mono (m1 m2 m1' m2' : WorldAT) :
@@ -332,13 +274,6 @@ Proof.
       * left. rewrite Hle1. simpl. exists σ'. split; [exact Hσ' | exact Hrestrict].
       * right. rewrite Hle2. simpl. exists σ'. split; [exact Hσ' |].
         rewrite <- Hdef. exact Hrestrict.
-Qed.
-
-Lemma rawA_compat_unit (m : WorldAT) : worldA_compat rawA_unit m.
-Proof.
-  intros σ1 σ2 Hσ1 Hσ2. simpl in Hσ1. subst.
-  unfold storeA_compat, map_compat. intros z v1 v2 H1 _.
-  better_map_solver.
 Qed.
 
 Lemma rawA_compat_unit_r (m : WorldAT) : worldA_compat m rawA_unit.
@@ -415,25 +350,6 @@ Proof.
   - intros σ0 ->. reflexivity.
 Qed.
 
-Lemma resA_swap_singleton_world (x y : K) (σ : StoreAT) :
-  (resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) : WorldAT) =
-  singleton_worldA (storeA_swap x y σ).
-Proof.
-  apply worldA_ext.
-  - simpl. symmetry. apply storeA_swap_dom.
-  - intros τ. simpl. split.
-    + intros [σ0 [-> Hswap]]. symmetry. exact Hswap.
-    + intros ->. exists σ. split; reflexivity.
-Qed.
-
-Lemma resA_swap_singleton_wfworld (x y : K) (σ : StoreAT) :
-  resA_swap x y (exist _ (singleton_worldA σ) (wf_singleton_worldA σ)) =
-  exist _ (singleton_worldA (storeA_swap x y σ))
-    (wf_singleton_worldA (storeA_swap x y σ)).
-Proof.
-  apply wfworldA_ext. apply resA_swap_singleton_world.
-Qed.
-
 Lemma resA_restrict_fiber_from_projection_dom_singleton
     (w wfib : WfWorldAT) (X : gset K) (σ : StoreAT) :
   resA_fiber_from_projection w X σ wfib →
@@ -476,18 +392,6 @@ Proof.
         -- rewrite Hrestr. apply storeA_restrict_idemp; better_store_solver.
 Qed.
 
-Lemma resA_restrict_fiber_from_projection_eq_singleton
-    (w wfib : WfWorldAT) (X : gset K) (σ : StoreAT) :
-  resA_fiber_from_projection w X σ wfib →
-  dom σ = X →
-  (resA_restrict wfib X : WorldAT) = singleton_worldA σ.
-Proof.
-  intros Hfiber Hdomσ.
-  rewrite <- Hdomσ.
-  apply resA_restrict_fiber_from_projection_dom_singleton with (w := w) (X := X).
-  exact Hfiber.
-Qed.
-
 Lemma resA_fiber_singleton_projection_inv
     (w wfib : WfWorldAT) (X : gset K) (σ σX : StoreAT) :
   dom σX = X →
@@ -508,31 +412,6 @@ Proof.
       { exists τ. split; [exact Hτ | reflexivity]. }
       rewrite Hsingleton in HτX. simpl in HτX.
       rewrite HdomσX. exact HτX.
-Qed.
-
-Lemma rawA_restrict_fiber_from_projection_eq_singleton
-    (w : WfWorldAT) (X : gset K) (σ : StoreAT) :
-  (resA_restrict w X : WorldAT) σ →
-  dom σ = X →
-  rawA_restrict (rawA_fiber w σ) X = singleton_worldA σ.
-Proof.
-  intros Hproj Hdomσ.
-  simpl in Hproj.
-  destruct Hproj as [σw [Hσw Hrestr]].
-  apply worldA_ext.
-  - simpl.
-    pose proof (wfworldA_store_dom w σw Hσw) as Hdomw.
-    rewrite <- Hdomw.
-    rewrite <- Hrestr, storeA_restrict_dom. reflexivity.
-  - intros τ. simpl. split.
-    + intros [τ0 [[Hτ0 Hτ0σ] Hτ]].
-      rewrite Hdomσ in Hτ0σ.
-      congruence.
-    + intros ->.
-      exists σw. split.
-      * split; [exact Hσw |].
-        rewrite Hdomσ. exact Hrestr.
-      * exact Hrestr.
 Qed.
 
 Definition rawA_slice_restrict (n : WfWorldAT) (X : gset K) (p : WfWorldAT) : WorldAT := {|
@@ -562,111 +441,7 @@ Definition resA_slice_restrict
   exist _ (rawA_slice_restrict n X p)
     (rawA_slice_restrict_wf n X p Hsub).
 
-Lemma resA_slice_restrict_subset
-    (n : WfWorldAT) (X : gset K) (p : WfWorldAT) Hsub :
-  resA_subset (resA_slice_restrict n X p Hsub) n.
-Proof.
-  split; [reflexivity |].
-  intros σ Hσ. exact (proj1 Hσ).
-Qed.
-
-Lemma resA_slice_restrict_restrict
-    (n : WfWorldAT) (X : gset K) (p : WfWorldAT) Hsub :
-  resA_restrict (resA_slice_restrict n X p Hsub) X = p.
-Proof.
-  destruct Hsub as [Hdom Hin].
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl in Hdom |- *. set_solver.
-  - intros σ. simpl. split.
-    + intros [σn [[Hσn Hp] Hrestrict]].
-      rewrite <- Hrestrict. exact Hp.
-    + intros Hp.
-      pose proof (Hin σ Hp) as Hproj.
-      simpl in Hproj.
-      destruct Hproj as [σn [Hσn Hrestrict]].
-      exists σn. split; [split; [exact Hσn | rewrite Hrestrict; exact Hp] |].
-      exact Hrestrict.
-Qed.
-
-
-
 (** * Order and fiber transport lemmas for abstract resource algebra *)
-
-Lemma resA_le_same_dom_eq (w1 w2 : WfWorldAT) :
-  w1 ⊑ w2 →
-  worldA_dom (w1 : WorldAT) = worldA_dom (w2 : WorldAT) →
-  w1 = w2.
-Proof.
-  intros Hle Hdom.
-  apply (anti_symm (⊑)); [exact Hle |].
-  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
-  apply worldA_ext.
-  - simpl. set_solver.
-  - intros σ. simpl. split.
-    + intros Hσ.
-      assert (Hw1σ : (w1 : WorldAT) σ).
-      {
-        unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-        rewrite Hle. simpl.
-        exists σ. split; [exact Hσ |].
-        apply storeA_restrict_idemp.
-        pose proof (wfworldA_store_dom w2 σ Hσ) as Hσdom.
-        set_solver.
-      }
-      exists σ. split; [exact Hw1σ |].
-      apply storeA_restrict_idemp.
-      pose proof (wfworldA_store_dom w2 σ Hσ) as Hσdom.
-      set_solver.
-    + intros [σ' [Hσ' Hrestrict]].
-      unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-      rewrite Hle in Hσ'. simpl in Hσ'.
-      destruct Hσ' as [σ2 [Hσ2 Hrestrict2]].
-      pose proof (wfworldA_store_dom w2 σ2 Hσ2) as Hσ2dom.
-      rewrite storeA_restrict_idemp in Hrestrict2 by better_store_solver.
-      subst σ'.
-      rewrite storeA_restrict_idemp in Hrestrict by better_store_solver.
-      subst. exact Hσ2.
-Qed.
-
-Lemma resA_subset_of_le_same_domain (n m : WfWorldAT) :
-  n ⊑ m →
-  worldA_dom (n : WorldAT) = worldA_dom (m : WorldAT) →
-  resA_subset n m.
-Proof.
-  intros Hle Hdom.
-  assert (Heq : n = m) by (eapply resA_le_same_dom_eq; eauto).
-  subst. apply resA_subset_refl.
-Qed.
-
-Lemma resA_subset_via_sum_left (n1 n2 m : WfWorldAT)
-    (Hdef : rawA_sum_defined n1 n2) :
-  resA_sum n1 n2 Hdef ⊑ m →
-  worldA_dom (n1 : WorldAT) = worldA_dom (m : WorldAT) →
-  resA_subset n1 m.
-Proof.
-  intros Hle Hdom.
-  eapply resA_subset_trans.
-  - apply resA_sum_subset_l.
-  - eapply resA_subset_of_le_same_domain.
-    + exact Hle.
-    + simpl. exact Hdom.
-Qed.
-
-Lemma resA_subset_via_sum_right (n1 n2 m : WfWorldAT)
-    (Hdef : rawA_sum_defined n1 n2) :
-  resA_sum n1 n2 Hdef ⊑ m →
-  worldA_dom (n2 : WorldAT) = worldA_dom (m : WorldAT) →
-  resA_subset n2 m.
-Proof.
-  intros Hle Hdom.
-  eapply resA_subset_trans.
-  - apply resA_sum_subset_r.
-  - eapply resA_subset_of_le_same_domain.
-    + exact Hle.
-    + simpl. unfold rawA_sum_defined in Hdef.
-      change (worldA_dom (n1 : WorldAT) = worldA_dom (n2 : WorldAT)) in Hdef.
-      rewrite Hdef. exact Hdom.
-Qed.
 
 Lemma worldA_compat_le_r (w m n : WfWorldAT) :
   m ⊑ n →
@@ -711,118 +486,6 @@ Proof.
   - apply storeA_compat_sym.
     apply storeA_compat_restrict_r.
     apply storeA_compat_sym. exact Hstore.
-Qed.
-
-Lemma worldA_compat_swap (x y : K) (w1 w2 : WfWorldAT) :
-  worldA_compat (resA_swap x y w1) (resA_swap x y w2) ↔
-  worldA_compat w1 w2.
-Proof.
-  split.
-  - intros Hc σ1 σ2 Hσ1 Hσ2.
-    pose proof (Hc (storeA_swap x y σ1)
-      (storeA_swap x y σ2)) as Hc'.
-    simpl in Hc'.
-    assert (Hs1 : rawA_swap x y w1 (storeA_swap x y σ1)).
-    { exists σ1. split; [exact Hσ1 | reflexivity]. }
-    assert (Hs2 : rawA_swap x y w2 (storeA_swap x y σ2)).
-    { exists σ2. split; [exact Hσ2 | reflexivity]. }
-    pose proof (Hc' Hs1 Hs2) as Hcompat.
-    exact (proj1 (storeA_compat_swap x y σ1 σ2) Hcompat).
-  - intros Hc σ1 σ2 Hσ1 Hσ2.
-    simpl in Hσ1, Hσ2.
-    destruct Hσ1 as [τ1 [Hτ1 Hswap1]].
-    destruct Hσ2 as [τ2 [Hτ2 Hswap2]].
-    rewrite <- Hswap1, <- Hswap2.
-    apply (proj2 (storeA_compat_swap x y τ1 τ2)).
-    exact (Hc τ1 τ2 Hτ1 Hτ2).
-Qed.
-
-Lemma resA_product_swap (x y : K) (w1 w2 : WfWorldAT)
-    (Hc : worldA_compat w1 w2) :
-  resA_swap x y (resA_product w1 w2 Hc) =
-  resA_product (resA_swap x y w1) (resA_swap x y w2)
-    (proj2 (worldA_compat_swap x y w1 w2) Hc).
-Proof.
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl.
-    change (set_swap x y (worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)) =
-      set_swap x y (worldA_dom (w1 : WorldAT)) ∪
-      set_swap x y (worldA_dom (w2 : WorldAT))).
-    better_base_solver.
-  - intros σ. simpl. split.
-    + intros [σ0 [Hprod Hswap]].
-      rewrite <- Hswap.
-      destruct Hprod as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-      exists (storeA_swap x y σ1), (storeA_swap x y σ2).
-      repeat split.
-      * exists σ1. split; [exact Hσ1 | reflexivity].
-      * exists σ2. split; [exact Hσ2 | reflexivity].
-      * exact (proj2 (storeA_compat_swap x y σ1 σ2) Hcompat).
-      * rewrite <- storeA_swap_union. reflexivity.
-    + intros [σ1' [σ2' [Hσ1' [Hσ2' [Hcompat' ->]]]]].
-      destruct Hσ1' as [σ1 [Hσ1 Hswap1]].
-      destruct Hσ2' as [σ2 [Hσ2 Hswap2]].
-      rewrite <- Hswap1, <- Hswap2.
-      exists (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)). split.
-      * exists σ1, σ2. repeat split; eauto.
-      * change (storeA_swap x y
-          (@union (gmap K V) _ (σ1 : gmap K V) (σ2 : gmap K V)) =
-          @union (gmap K V) _
-            (storeA_swap x y σ1 : gmap K V)
-            (storeA_swap x y σ2 : gmap K V)).
-        rewrite storeA_swap_union. reflexivity.
-Qed.
-
-Lemma resA_sum_swap (x y : K) (w1 w2 : WfWorldAT)
-    (Hdef : rawA_sum_defined w1 w2)
-    (Hdef' : rawA_sum_defined (resA_swap x y w1) (resA_swap x y w2)) :
-  resA_swap x y (resA_sum w1 w2 Hdef) =
-  resA_sum (resA_swap x y w1) (resA_swap x y w2) Hdef'.
-Proof.
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl. reflexivity.
-  - intros σ. simpl. split.
-    + intros [σ0 [[Hσ0 | Hσ0] Hswap]].
-      * rewrite <- Hswap. left. exists σ0. split; [exact Hσ0 | reflexivity].
-      * rewrite <- Hswap. right. exists σ0. split; [exact Hσ0 | reflexivity].
-    + intros [[σ0 [Hσ0 Hswap]] | [σ0 [Hσ0 Hswap]]].
-      * rewrite <- Hswap. exists σ0. split; [left; exact Hσ0 | reflexivity].
-      * rewrite <- Hswap. exists σ0. split; [right; exact Hσ0 | reflexivity].
-Qed.
-
-Lemma resA_product_double_swap_l (x y : K) (w1 w2 : WfWorldAT)
-    (Hc : worldA_compat w1 w2)
-    (Hc' : worldA_compat (resA_swap x y (resA_swap x y w1)) w2) :
-  resA_product (resA_swap x y (resA_swap x y w1)) w2 Hc' =
-  resA_product w1 w2 Hc.
-Proof.
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl.
-    change (set_swap x y (set_swap x y (worldA_dom (w1 : WorldAT))) ∪
-      worldA_dom (w2 : WorldAT) =
-      worldA_dom (w1 : WorldAT) ∪ worldA_dom (w2 : WorldAT)).
-    better_base_solver.
-  - intros σ. simpl. split.
-    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-      destruct Hσ1 as [τ1 [[τ0 [Hτ0 Hswap0]] Hswap1]].
-      rewrite <- Hswap1, <- Hswap0 in Hcompat |- *.
-      change (storeA_compat
-        (storeA_swap x y (storeA_swap x y τ0)) σ2) in Hcompat.
-      rewrite storeA_swap_involutive in Hcompat.
-      replace (storeA_map_key (swap x y)
-        (storeA_map_key (swap x y) τ0)) with (τ0 : StoreAT).
-      2:{
-        symmetry. exact (storeA_swap_involutive x y τ0).
-      }
-      exists τ0, σ2. repeat split; eauto.
-    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat ->]]]]].
-      exists σ1, σ2. split.
-      * exists (storeA_swap x y σ1). split.
-        -- exists σ1. split; [exact Hσ1 | reflexivity].
-        -- change (storeA_swap x y
-             (storeA_swap x y σ1) = σ1).
-           apply storeA_swap_involutive.
-      * split; [exact Hσ2 |]. split; [exact Hcompat | reflexivity].
 Qed.
 
 Lemma resA_restrict_le (w : WfWorldAT) (X : gset K) :
@@ -890,29 +553,6 @@ Proof.
   - simpl. set_solver.
 Qed.
 
-Lemma resA_swap_le (x y : K) (w1 w2 : WfWorldAT) :
-  w1 ⊑ w2 →
-  resA_swap x y w1 ⊑ resA_swap x y w2.
-Proof.
-  intros Hle.
-  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
-  change ((resA_swap x y w1 : WorldAT) =
-    (resA_restrict (resA_swap x y w2)
-      (set_swap x y (worldA_dom (w1 : WorldAT))) : WorldAT)).
-  rewrite (resA_restrict_swap x y w2 (worldA_dom (w1 : WorldAT))).
-  rewrite (resA_restrict_eq_of_le w1 w2 Hle). reflexivity.
-Qed.
-
-Lemma resA_swap_le_iff (x y : K) (w1 w2 : WfWorldAT) :
-  resA_swap x y w1 ⊑ resA_swap x y w2 ↔ w1 ⊑ w2.
-Proof.
-  split.
-  - intros Hle.
-    pose proof (resA_swap_le x y _ _ Hle) as Hswap.
-    rewrite !resA_swap_involutive in Hswap. exact Hswap.
-  - apply resA_swap_le.
-Qed.
-
 Lemma resA_restrict_le_eq (m n : WfWorldAT) (X : gset K) :
   m ⊑ n →
   X ⊆ worldA_dom (m : WorldAT) →
@@ -923,21 +563,6 @@ Proof.
   rewrite resA_restrict_restrict_eq.
   replace (worldA_dom (m : WorldAT) ∩ X) with X by set_solver.
   reflexivity.
-Qed.
-
-Lemma resA_restrict_le_eq_from_base
-    (m n : WfWorldAT) (S X : gset K) :
-  resA_restrict m S ⊑ n →
-  X ⊆ S →
-  X ⊆ worldA_dom (m : WorldAT) →
-  resA_restrict n X = resA_restrict m X.
-Proof.
-  intros Hle HXS HXm.
-  rewrite <- (resA_restrict_le_eq (resA_restrict m S) n X Hle).
-  - rewrite resA_restrict_restrict_eq.
-    replace (S ∩ X) with X by set_solver.
-    reflexivity.
-  - simpl. set_solver.
 Qed.
 
 Lemma resA_restrict_eq_subset
@@ -955,57 +580,6 @@ Proof.
     rewrite resA_restrict_restrict_eq.
     replace (X ∩ Y) with Y by set_solver.
     reflexivity.
-Qed.
-
-Lemma resA_fiber_from_projection_le
-    (m n wfib_m wfib_n : WfWorldAT) (X : gset K) (σ : StoreAT) :
-  resA_fiber_from_projection m X σ wfib_m →
-  resA_fiber_from_projection n X σ wfib_n →
-  m ⊑ n →
-  X ⊆ worldA_dom (m : WorldAT) →
-  wfib_m ⊑ wfib_n.
-Proof.
-  intros [Hproj_m Heq_m] [Hproj_n Heq_n] Hle HX.
-  assert (Hdomσ : dom (σ : gmap K V) ⊆ X).
-  {
-    simpl in Hproj_n.
-    destruct Hproj_n as [σn [Hσn Hrestr]].
-    pose proof (f_equal (fun s : gmap K V => dom s) Hrestr) as Hdomrestr.
-    change (dom (storeA_restrict σn X : gmap K V) =
-      dom (σ : gmap K V)) in Hdomrestr.
-    rewrite <- Hdomrestr.
-    pose proof (storeA_restrict_dom σn X) as Hdomr.
-    change (dom (storeA_restrict σn X : gmap K V) =
-      dom (σn : gmap K V) ∩ X) in Hdomr.
-    rewrite Hdomr. set_solver.
-  }
-  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
-  apply worldA_ext.
-  - rewrite Heq_m, Heq_n. simpl. pose proof (rawA_le_dom m n Hle). set_solver.
-  - intros τ. rewrite Heq_m, Heq_n. simpl. split.
-    + intros [Hmτ Hτ].
-      unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-      rewrite Hle in Hmτ. simpl in Hmτ.
-      destruct Hmτ as [τn [Hnτ Hrestrict]].
-      exists τn. split.
-      * split; [exact Hnτ |].
-        transitivity (storeA_restrict τ (dom σ)); [| exact Hτ].
-        rewrite <- Hrestrict.
-        rewrite storeA_restrict_restrict.
-        replace (worldA_dom (m : WorldAT) ∩ dom (σ : gmap K V))
-          with (dom (σ : gmap K V)) by set_solver.
-        reflexivity.
-      * exact Hrestrict.
-    + intros [τn [[Hnτ Hτn] Hrestrict]].
-      split.
-      * unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-        rewrite Hle. simpl. exists τn. split; [exact Hnτ | exact Hrestrict].
-      * transitivity (storeA_restrict τn (dom σ)); [| exact Hτn].
-        rewrite <- Hrestrict.
-        rewrite storeA_restrict_restrict.
-        replace (worldA_dom (m : WorldAT) ∩ dom (σ : gmap K V))
-          with (dom (σ : gmap K V)) by set_solver.
-        reflexivity.
 Qed.
 
 Lemma resA_fiber_from_projection_eq_on
@@ -1054,50 +628,6 @@ Proof.
         -- eapply storeA_restrict_eq_mono; [exact HdomσX | exact HτmX].
         -- exact HτD.
       * rewrite HτmX. exact HτX.
-Qed.
-
-Lemma resA_fiber_member_projection_transport_on
-    (m n nfib : WfWorldAT) (D X : gset K) :
-  D ⊆ X →
-  D ⊆ worldA_dom (m : WorldAT) →
-  resA_restrict m X = resA_restrict n X →
-  resA_fiber_member n D nfib →
-  ∃ mfib,
-    resA_fiber_member m D mfib ∧
-    resA_restrict mfib X = resA_restrict nfib X.
-Proof.
-  intros HDX HDm Hproj [σ Hfiber_n].
-  pose proof (resA_restrict_eq_subset m n X D HDX Hproj) as HprojD.
-  destruct Hfiber_n as [Hσproj_n Heq_n].
-  assert ((resA_restrict m D : WorldAT) σ) as Hσproj_m.
-  { rewrite HprojD. exact Hσproj_n. }
-  destruct Hσproj_m as [σm [Hσm Hrestrict_m]].
-	  assert (Hdomσ : dom (σ : gmap K V) = D).
-	  {
-	    rewrite <- Hrestrict_m.
-	    pose proof (storeA_restrict_dom σm D) as Hdomr.
-	    rewrite Hdomr.
-    pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-    rewrite Hdomσm. set_solver.
-  }
-  assert (Hnonempty_m :
-      ∃ σm0, (m : WorldAT) σm0 ∧
-        storeA_restrict σm0 (dom (σ : gmap K V)) = σ).
-  {
-    exists σm. split; [exact Hσm |].
-    rewrite Hdomσ. exact Hrestrict_m.
-  }
-  set (mfib := resA_fiber m σ Hnonempty_m).
-  assert (Hfiber_m : resA_fiber_from_projection m D σ mfib).
-  {
-    split.
-    - exists σm. split; [exact Hσm | exact Hrestrict_m].
-    - subst mfib. unfold resA_fiber. simpl. reflexivity.
-  }
-  exists mfib. split.
-  - exists σ. exact Hfiber_m.
-  - eapply resA_fiber_from_projection_eq_on; eauto.
-    split; [exact Hσproj_n | exact Heq_n].
 Qed.
 
 Lemma resA_fiber_from_projection_transport_on
@@ -1282,70 +812,6 @@ Proof.
     apply rawA_fiber_nested_union. exact HcompatXY.
 Qed.
 
-Lemma resA_fiber_from_projection_nested_union_r
-    (m mfibXY : WfWorldAT) (X Y : gset K) (σXY : StoreAT) :
-  resA_fiber_from_projection m (X ∪ Y) σXY mfibXY →
-  ∃ σX mfibX σY,
-    σX = storeA_restrict σXY X ∧
-    σY = storeA_restrict σXY Y ∧
-    resA_fiber_from_projection m X σX mfibX ∧
-    resA_fiber_from_projection mfibX Y σY mfibXY.
-Proof.
-  intros [HprojXY HeqXY].
-  destruct HprojXY as [σm [Hσm HrestrictXY]].
-  set (σX := storeA_restrict σXY X).
-  set (σY := storeA_restrict σXY Y).
-  assert (HσX_from_m : storeA_restrict σm X = σX).
-  {
-    subst σX.
-    rewrite <- HrestrictXY.
-    rewrite storeA_restrict_restrict.
-    replace ((X ∪ Y) ∩ X) with X by set_solver.
-    reflexivity.
-  }
-  assert (HσY_from_m : storeA_restrict σm Y = σY).
-  {
-    subst σY.
-    rewrite <- HrestrictXY.
-    rewrite storeA_restrict_restrict.
-    replace ((X ∪ Y) ∩ Y) with Y by set_solver.
-    reflexivity.
-  }
-  assert (HσX_dom : storeA_restrict σm (dom (σX : gmap K V)) = σX).
-  { eapply storeA_restrict_projection_dom. exact HσX_from_m. }
-  assert (HneX :
-    ∃ σ0, (m : WorldAT) σ0 ∧
-      storeA_restrict σ0 (dom (σX : gmap K V)) = σX).
-  { exists σm. split; [exact Hσm | exact HσX_dom]. }
-  set (mfibX := resA_fiber m σX HneX).
-  exists σX, mfibX, σY.
-  split; [reflexivity |].
-  split; [reflexivity |].
-  assert (HfibX : resA_fiber_from_projection m X σX mfibX).
-  {
-    split.
-    - exists σm. split; [exact Hσm | exact HσX_from_m].
-    - subst mfibX. unfold resA_fiber. simpl. reflexivity.
-  }
-  split; [exact HfibX |].
-  split.
-  - exists σm. split.
-    + subst mfibX. unfold resA_fiber. simpl.
-      split; [exact Hσm | exact HσX_dom].
-    + exact HσY_from_m.
-  - rewrite HeqXY.
-    subst mfibX.
-    unfold resA_fiber. simpl.
-    rewrite (rawA_fiber_nested_union (m : WorldAT) σX σY).
-    + f_equal.
-      subst σX σY.
-      rewrite <- storeA_restrict_union_same.
-      symmetry. apply storeA_restrict_idemp.
-      rewrite <- HrestrictXY, storeA_restrict_dom. set_solver.
-    + subst σX σY.
-      apply storeA_compat_restricts_same.
-Qed.
-
 Lemma resA_fiber_from_projection_nested_union_residual_r
     (m mfibXY : WfWorldAT) (X Y : gset K) (σXY : StoreAT) :
   resA_fiber_from_projection m (X ∪ Y) σXY mfibXY →
@@ -1511,34 +977,6 @@ Proof.
       specialize (Hstores σ Hpσ).
       simpl in Hstores.
       destruct Hstores as [σn [Hσn Hproj]].
-      exists σn. split; [split; [exact Hσn | rewrite Hproj; exact Hpσ] |].
-      exact Hproj.
-Qed.
-
-Lemma resA_pullback_projection_subset (n p : WfWorldAT) Hle :
-  resA_subset (resA_pullback_projection n p Hle) n.
-Proof.
-  split; [reflexivity |].
-  intros σ [Hσ _]. exact Hσ.
-Qed.
-
-Lemma resA_pullback_projection_restrict (n p : WfWorldAT) Hle :
-  resA_restrict (resA_pullback_projection n p Hle)
-    (worldA_dom (p : WorldAT)) = p.
-Proof.
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl.
-    pose proof (rawA_le_dom p n Hle). set_solver.
-  - intros σ. simpl. split.
-    + intros [σn [[Hσn Hpσ] Hrestrict]].
-      subst σ. exact Hpσ.
-    + intros Hpσ.
-      pose proof (resA_restrict_eq_of_le p n Hle) as Hrestrict.
-      change (resA_restrict n (worldA_dom (p : WorldAT)) = p) in Hrestrict.
-      assert ((resA_restrict n (worldA_dom (p : WorldAT)) : WorldAT) σ) as Hσ.
-      { rewrite Hrestrict. exact Hpσ. }
-      simpl in Hσ.
-      destruct Hσ as [σn [Hσn Hproj]].
       exists σn. split; [split; [exact Hσn | rewrite Hproj; exact Hpσ] |].
       exact Hproj.
 Qed.
@@ -1764,48 +1202,6 @@ Proof.
            set_solver.
       * pose proof (wfworldA_store_dom w1 σ1 Hσ1) as Hdomσ1.
         set_solver.
-Qed.
-
-Lemma resA_one_point_extension_exists (w : WfWorldAT) (y : K) :
-  y ∉ worldA_dom (w : WorldAT) →
-  ∃ wy : WfWorldAT,
-    worldA_dom (wy : WorldAT) = worldA_dom (w : WorldAT) ∪ {[y]} ∧
-    resA_restrict wy (worldA_dom (w : WorldAT)) = w.
-Proof.
-  intros Hy.
-  set (σy := <[y := inhabitant]> (∅ : StoreAT)).
-  set (one_y := (exist _ (singleton_worldA σy) (wf_singleton_worldA σy) : WfWorldAT)).
-  assert (Hdom_one_y : worldA_dom (one_y : WorldAT) = {[y]}).
-  {
-    subst one_y σy. simpl.
-    apply set_eq. intros z.
-    destruct (decide (z = y)) as [->|Hzy].
-    - split; intros _.
-      + apply elem_of_singleton. reflexivity.
-      + change (y ∈ dom (<[y := inhabitant]> (∅ : gmap K V) : gmap K V)).
-        eapply elem_of_dom_2.
-        rewrite lookup_insert. destruct (decide (y = y)); [reflexivity | congruence].
-    - split.
-      + intros Hz.
-        change (z ∈ dom (<[y := inhabitant]> (∅ : gmap K V) : gmap K V)) in Hz.
-        apply elem_of_dom in Hz as [vz Hz].
-        change ((<[y := inhabitant]> (∅ : gmap K V)) !! z = Some vz) in Hz.
-        rewrite lookup_insert_ne in Hz by congruence.
-        rewrite (lookup_empty (M:=gmap K) (A:=V)) in Hz. discriminate.
-      + intros Hz. set_solver.
-  }
-  assert (Hc : worldA_compat w one_y).
-  {
-    apply disj_dom_worldA_compat. rewrite Hdom_one_y. set_solver.
-  }
-  exists (resA_product w one_y Hc). split.
-  - change (worldA_dom (w : WorldAT) ∪ worldA_dom (one_y : WorldAT) =
-      worldA_dom (w : WorldAT) ∪ {[y]}).
-    rewrite Hdom_one_y. reflexivity.
-  - rewrite <- (resA_restrict_le_eq w (resA_product w one_y Hc)
-      (worldA_dom (w : WorldAT)) (resA_le_product_l w one_y Hc)).
-    + apply resA_restrict_eq_of_le. reflexivity.
-    + set_solver.
 Qed.
 
 Lemma resA_product_complement_lift_subset
@@ -2119,101 +1515,6 @@ Proof.
   - simpl. set_solver.
 Qed.
 
-Lemma resA_slice_sum_le_base
-    (m n1 n2 : WfWorldAT) (X : gset K)
-    (Hdef : rawA_sum_defined n1 n2)
-    (Hsum_eq : resA_sum n1 n2 Hdef = resA_restrict m X)
-    (Hsub1 : resA_subset n1 (resA_restrict m X))
-    (Hsub2 : resA_subset n2 (resA_restrict m X))
-    (Hdef' : rawA_sum_defined
-      (resA_slice_restrict m X n1 Hsub1)
-      (resA_slice_restrict m X n2 Hsub2)) :
-  resA_sum
-    (resA_slice_restrict m X n1 Hsub1)
-    (resA_slice_restrict m X n2 Hsub2)
-    Hdef' ⊑ m.
-Proof.
-  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
-  apply worldA_ext.
-  - simpl. set_solver.
-  - intros σ. simpl. split.
-    + intros [[Hσm _] | [Hσm _]].
-      * exists σ. split; [exact Hσm |].
-        apply storeA_restrict_idemp.
-        pose proof (wfworldA_store_dom m σ Hσm) as Hdomσ.
-        rewrite Hdomσ. set_solver.
-      * exists σ. split; [exact Hσm |].
-        apply storeA_restrict_idemp.
-        pose proof (wfworldA_store_dom m σ Hσm) as Hdomσ.
-        rewrite Hdomσ. set_solver.
-    + intros [σm [Hσm Hrestrict]].
-      pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-      rewrite storeA_restrict_idemp in Hrestrict by (rewrite Hdomσm; set_solver).
-      subst σ.
-      assert (Hproj : (resA_restrict m X : WorldAT) (storeA_restrict σm X)).
-      { exists σm. split; [exact Hσm | reflexivity]. }
-      rewrite <- Hsum_eq in Hproj.
-      simpl in Hproj.
-      destruct Hproj as [Hn1 | Hn2].
-      * left. split; [exact Hσm | exact Hn1].
-      * right. split; [exact Hσm | exact Hn2].
-Qed.
-
-Lemma resA_sum_lift_along_restrict
-    (m n1 n2 : WfWorldAT) (X : gset K) (Hdef : rawA_sum_defined n1 n2) :
-  worldA_dom (n1 : WorldAT) = worldA_dom (resA_restrict m X : WorldAT) →
-  resA_sum n1 n2 Hdef ⊑ resA_restrict m X →
-  ∃ (m1 m2 : WfWorldAT) (Hdef' : rawA_sum_defined m1 m2),
-    worldA_dom (m1 : WorldAT) = worldA_dom (m : WorldAT) ∧
-    worldA_dom (m2 : WorldAT) = worldA_dom (m : WorldAT) ∧
-    resA_subset m1 m ∧
-    resA_subset m2 m ∧
-    resA_restrict m1 X = n1 ∧
-    resA_restrict m2 X = n2 ∧
-    resA_sum m1 m2 Hdef' ⊑ m.
-Proof.
-  intros Hdom1 Hle.
-  assert (Hdom_sum :
-      worldA_dom (resA_sum n1 n2 Hdef : WorldAT) =
-      worldA_dom (resA_restrict m X : WorldAT)).
-  { simpl. exact Hdom1. }
-  assert (Hsum_eq : resA_sum n1 n2 Hdef = resA_restrict m X).
-  {
-    pose proof (resA_restrict_eq_of_le
-      (resA_sum n1 n2 Hdef) (resA_restrict m X) Hle) as Hrestrict.
-    change (resA_restrict (resA_restrict m X)
-      (worldA_dom (resA_sum n1 n2 Hdef : WorldAT)) =
-      resA_sum n1 n2 Hdef) in Hrestrict.
-    rewrite Hdom_sum in Hrestrict.
-    rewrite resA_restrict_self in Hrestrict.
-    symmetry. exact Hrestrict.
-  }
-  assert (Hsub1 : resA_subset n1 (resA_restrict m X)).
-  { rewrite <- Hsum_eq. apply resA_sum_subset_l. }
-  assert (Hsub2 : resA_subset n2 (resA_restrict m X)).
-  { rewrite <- Hsum_eq. apply resA_sum_subset_r. }
-  set (m1 := resA_slice_restrict m X n1 Hsub1).
-  set (m2 := resA_slice_restrict m X n2 Hsub2).
-  assert (Hdef' : rawA_sum_defined m1 m2).
-  { unfold rawA_sum_defined. subst m1 m2. reflexivity. }
-  exists m1, m2, Hdef'. split.
-  - unfold m1. reflexivity.
-  - split.
-    + unfold m2. reflexivity.
-    + split.
-      * unfold m1. apply resA_slice_restrict_subset.
-      * split.
-        -- unfold m2. apply resA_slice_restrict_subset.
-        -- split.
-           ++ unfold m1. apply resA_slice_restrict_restrict.
-           ++ split.
-              ** unfold m2. apply resA_slice_restrict_restrict.
-              ** unfold m1, m2.
-                 apply (resA_slice_sum_le_base m n1 n2 X Hdef Hsum_eq Hsub1 Hsub2).
-Qed.
-
-
-
 (** * Algebraic laws for abstract resources *)
 
 Lemma resA_product_comm (w1 w2 : WfWorldAT) (Hc : worldA_compat w1 w2)
@@ -2246,18 +1547,6 @@ Proof.
     + symmetry. apply (map_eq (M:=gmap K)). intros i.
       apply (lookup_union_l (M:=gmap K) (A:=V)).
       apply (lookup_empty (M:=gmap K) (A:=V)).
-Qed.
-
-Lemma resA_product_unit_r (w : WfWorldAT) :
-  ∀ σ, resA_product w resA_unit (rawA_compat_unit_r w) σ ↔ (w : WorldAT) σ.
-Proof. apply resA_product_unit_r_any. Qed.
-
-Lemma resA_product_unit_r_eq (w : WfWorldAT) :
-  resA_product w resA_unit (rawA_compat_unit_r w) = w.
-Proof.
-  apply wfworldA_ext. apply worldA_ext.
-  - simpl. set_solver.
-  - apply resA_product_unit_r.
 Qed.
 
 Lemma resA_product_unit_r_eq_any (w : WfWorldAT) (Hc : worldA_compat w resA_unit) :
@@ -2415,143 +1704,6 @@ Proof.
     + exact eq_refl.
     + exact Hw1.
     + exact Hw2.
-Qed.
-
-Lemma resA_product_le_singleton_restrict_inv
-    (m m1 m2 : WfWorldAT) (Hc : worldA_compat m1 m2)
-    (X : gset K) (σX : StoreAT) :
-  resA_product m1 m2 Hc ⊑ m →
-  X ⊆ worldA_dom (m1 : WorldAT) →
-  X ⊆ worldA_dom (m2 : WorldAT) →
-  (resA_restrict m X : WorldAT) = singleton_worldA σX →
-  (resA_restrict m1 X : WorldAT) = singleton_worldA σX ∧
-  (resA_restrict m2 X : WorldAT) = singleton_worldA σX.
-Proof.
-  intros Hle HX1 HX2 Hsingleton. split.
-  - apply rawA_restrict_to_singleton_if_projection_constant.
-    intros σ1 Hσ1.
-    destruct (wfA_ne _ (worldA_wf m2)) as [σ2 Hσ2].
-    pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdom1.
-    pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdom2.
-    pose proof (Hc σ1 σ2 Hσ1 Hσ2) as Hcompat.
-    assert (Hprod :
-        (resA_product m1 m2 Hc : WorldAT)
-          (@union (gmap K V) _ (σ1 : gmap K V) σ2)).
-    { simpl. exists σ1, σ2. repeat split; eauto. }
-    unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-    rewrite Hle in Hprod. simpl in Hprod.
-    destruct Hprod as [σm [Hσm Hrestrict]].
-    assert (HσmX : storeA_restrict σm X = σX).
-    {
-      assert ((resA_restrict m X : WorldAT) (storeA_restrict σm X)) as Hraw.
-      { exists σm. split; [exact Hσm | reflexivity]. }
-      rewrite Hsingleton in Hraw. simpl in Hraw. exact Hraw.
-    }
-    assert (HunionX :
-        storeA_restrict (@union (gmap K V) _ (σ1 : gmap K V) σ2) X =
-        storeA_restrict σm X).
-    {
-      rewrite <- Hrestrict.
-      rewrite storeA_restrict_restrict.
-      replace (worldA_dom (resA_product m1 m2 Hc : WorldAT) ∩ X) with X
-        by (simpl; set_solver).
-      reflexivity.
-    }
-    assert (Hpiece :
-        storeA_restrict (@union (gmap K V) _ (σ1 : gmap K V) σ2) X =
-        storeA_restrict σ1 X).
-    {
-      rewrite (storeA_union_comm σ1 σ2 Hcompat).
-      apply storeA_restrict_union_absorb_r.
-      - apply storeA_compat_sym. exact Hcompat.
-      - rewrite Hdom1. exact HX1.
-    }
-    rewrite <- Hpiece. rewrite HunionX. exact HσmX.
-  - apply rawA_restrict_to_singleton_if_projection_constant.
-    intros σ2 Hσ2.
-    destruct (wfA_ne _ (worldA_wf m1)) as [σ1 Hσ1].
-    pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdom1.
-    pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdom2.
-    pose proof (Hc σ1 σ2 Hσ1 Hσ2) as Hcompat.
-    assert (Hprod :
-        (resA_product m1 m2 Hc : WorldAT)
-          (@union (gmap K V) _ (σ1 : gmap K V) σ2)).
-    { simpl. exists σ1, σ2. repeat split; eauto. }
-    unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-    rewrite Hle in Hprod. simpl in Hprod.
-    destruct Hprod as [σm [Hσm Hrestrict]].
-    assert (HσmX : storeA_restrict σm X = σX).
-    {
-      assert ((resA_restrict m X : WorldAT) (storeA_restrict σm X)) as Hraw.
-      { exists σm. split; [exact Hσm | reflexivity]. }
-      rewrite Hsingleton in Hraw. simpl in Hraw. exact Hraw.
-    }
-    assert (HunionX :
-        storeA_restrict (@union (gmap K V) _ (σ1 : gmap K V) σ2) X =
-        storeA_restrict σm X).
-    {
-      rewrite <- Hrestrict.
-      rewrite storeA_restrict_restrict.
-      replace (worldA_dom (resA_product m1 m2 Hc : WorldAT) ∩ X) with X
-        by (simpl; set_solver).
-      reflexivity.
-    }
-    assert (Hpiece :
-        storeA_restrict (@union (gmap K V) _ (σ1 : gmap K V) σ2) X =
-        storeA_restrict σ2 X).
-    {
-      apply storeA_restrict_union_absorb_r.
-      - exact Hcompat.
-      - rewrite Hdom2. exact HX2.
-    }
-    rewrite <- Hpiece. rewrite HunionX. exact HσmX.
-Qed.
-
-Lemma resA_sum_le_singleton_restrict_inv
-    (m m1 m2 : WfWorldAT) (Hdef : rawA_sum_defined m1 m2)
-    (X : gset K) (σX : StoreAT) :
-  resA_sum m1 m2 Hdef ⊑ m →
-  X ⊆ worldA_dom (m1 : WorldAT) →
-  X ⊆ worldA_dom (m2 : WorldAT) →
-  (resA_restrict m X : WorldAT) = singleton_worldA σX →
-  (resA_restrict m1 X : WorldAT) = singleton_worldA σX ∧
-  (resA_restrict m2 X : WorldAT) = singleton_worldA σX.
-Proof.
-  intros Hle HX1 HX2 Hsingleton. split.
-  - apply rawA_restrict_to_singleton_if_projection_constant.
-    intros σ1 Hσ1.
-    assert (Hsum : (resA_sum m1 m2 Hdef : WorldAT) σ1) by (left; exact Hσ1).
-    unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-    rewrite Hle in Hsum. simpl in Hsum.
-    destruct Hsum as [σm [Hσm Hrestrict]].
-    assert (HσmX : storeA_restrict σm X = σX).
-    {
-      assert ((resA_restrict m X : WorldAT) (storeA_restrict σm X)) as Hraw.
-      { exists σm. split; [exact Hσm | reflexivity]. }
-      rewrite Hsingleton in Hraw. simpl in Hraw. exact Hraw.
-    }
-    rewrite <- Hrestrict.
-    rewrite storeA_restrict_restrict.
-    replace (worldA_dom (resA_sum m1 m2 Hdef : WorldAT) ∩ X) with X
-      by (simpl; set_solver).
-    exact HσmX.
-  - apply rawA_restrict_to_singleton_if_projection_constant.
-    intros σ2 Hσ2.
-    assert (Hsum : (resA_sum m1 m2 Hdef : WorldAT) σ2) by (right; exact Hσ2).
-    unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le in Hle.
-    rewrite Hle in Hsum. simpl in Hsum.
-    destruct Hsum as [σm [Hσm Hrestrict]].
-    assert (HσmX : storeA_restrict σm X = σX).
-    {
-      assert ((resA_restrict m X : WorldAT) (storeA_restrict σm X)) as Hraw.
-      { exists σm. split; [exact Hσm | reflexivity]. }
-      rewrite Hsingleton in Hraw. simpl in Hraw. exact Hraw.
-    }
-    rewrite <- Hrestrict.
-    rewrite storeA_restrict_restrict.
-    replace (worldA_dom (resA_sum m1 m2 Hdef : WorldAT) ∩ X) with X
-      by (simpl; set_solver).
-    exact HσmX.
 Qed.
 
 Lemma resA_subset_singleton_restrict

@@ -61,41 +61,6 @@ Definition mk_forall_extension
 Definition forall_extension_shape (X : aset) (y : atom) (F : FiberExtensionT) : Prop :=
   ext_in F = X /\ ext_out F = {[y]}.
 
-Lemma fiber_extension_singleton_out_notin_input
-    (F : FiberExtensionT) y :
-  ext_out F = {[y]} ->
-  y ∉ ext_in F.
-Proof.
-  intros Hout.
-  pose proof (extA_disjoint F) as Hdisj.
-  unfold ext_out, ext_in in *.
-  rewrite Hout in Hdisj. set_solver.
-Qed.
-
-Lemma fiber_extension_singleton_output_fresh_in_eq
-    (F : FiberExtensionT) y X :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  y ∉ X.
-Proof.
-  intros HFin HFout.
-  rewrite <- HFin.
-  eapply fiber_extension_singleton_out_notin_input; eauto.
-Qed.
-
-Lemma fiber_extension_singleton_output_fresh_subset
-    (F : FiberExtensionT) y X Y :
-  ext_in F = X ->
-  ext_out F = {[y]} ->
-  Y ⊆ X ->
-  y ∉ Y.
-Proof.
-  intros HFin HFout Hsub.
-  pose proof (fiber_extension_singleton_output_fresh_in_eq
-    F y X HFin HFout).
-  better_set_solver.
-Qed.
-
 Definition one_point_projected_output_raw
     (my : WfWorldT) (X : aset) (y : atom) (σX : StoreT) : WorldT :=
   @mk_worldA atom _ _ V {[y]}
@@ -340,39 +305,6 @@ Proof.
   - exact res_unit.
 Defined.
 
-Lemma ext_fun_rel F σ :
-  dom σ = ext_in F ->
-  ext_rel F σ (ext_fun F σ).
-Proof.
-  intros Hdom. unfold ext_fun.
-  destruct (decide (dom σ = ext_in F)) as [Hdom'|Hbad].
-  - destruct (constructive_indefinite_description _
-      (ext_rel_exists F σ Hdom')) as [w Hrel].
-    exact Hrel.
-  - contradiction.
-Qed.
-
-Lemma ext_fun_dom F σ :
-  dom σ = ext_in F ->
-  world_dom (ext_fun F σ : WorldT) = ext_out F.
-Proof.
-  intros Hdom.
-  unfold ext_in, ext_out in *.
-  eapply extA_rel_dom; [exact Hdom | apply ext_fun_rel; exact Hdom].
-Qed.
-
-Lemma ext_fun_nonempty F σ :
-  dom σ = ext_in F ->
-  exists σe, (ext_fun F σ : WorldT) σe.
-Proof.
-  intros Hdom.
-  destruct (extA_rel_nonempty F σ Hdom) as [w [σe [Hrel Hσe]]].
-  exists σe.
-  apply (proj1 (extA_rel_extensional F σ w (ext_fun F σ) σe Hdom
-    Hrel (ext_fun_rel F σ Hdom))).
-  exact Hσe.
-Qed.
-
 Definition fiber_extension_input_widen
     (F : FiberExtensionT) (X' : aset)
     (Hin : ext_in F ⊆ X')
@@ -407,15 +339,6 @@ Record fiber_extension_input_widen_to
 Notation "F '~>i' F'" := (fiber_extension_input_widen_to F F')
   (at level 70).
 
-Lemma fiber_extension_input_widen_to_shape F F' :
-  F ~>i F' ->
-  ext_in F ⊆ ext_in F' /\ ext_out F' = ext_out F.
-Proof.
-  intros Hwid. split.
-  - exact (input_widen_in _ _ Hwid).
-  - exact (input_widen_out _ _ Hwid).
-Qed.
-
 Lemma fiber_extension_input_widen_to_refl F :
   F ~>i F.
 Proof.
@@ -429,24 +352,6 @@ Lemma fiber_extension_input_widen_to_construct F X' Hin Hdisj :
 Proof.
   constructor; [exact Hin | reflexivity |].
   intros σ w _. reflexivity.
-Qed.
-
-Lemma fiber_extension_input_widen_to_unique F F1 F2 :
-  F ~>i F1 ->
-  F ~>i F2 ->
-  ext_in F1 = ext_in F2 ->
-  ext_out F1 = ext_out F2 /\
-  forall σ w,
-    dom σ = ext_in F1 ->
-    (ext_rel F1 σ w <-> ext_rel F2 σ w).
-Proof.
-  intros H1 H2 Hin. split.
-  - rewrite (input_widen_out _ _ H1), (input_widen_out _ _ H2).
-    reflexivity.
-  - intros σ w Hσ.
-    rewrite (input_widen_rel _ _ H1 σ w Hσ).
-    rewrite (input_widen_rel _ _ H2 σ w ltac:(rewrite <- Hin; exact Hσ)).
-    reflexivity.
 Qed.
 
 Lemma extension_applicable_input_widen_to (m : WfWorldT) F F' :

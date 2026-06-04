@@ -27,7 +27,7 @@ Global counts
 - CoreLang: 277 lemmas, 74 zero-use, 78 single-use, 0 admitted.
 - ContextBase: 198 lemmas, 32 zero-use, 50 single-use, 0 admitted.
 - ContextStore: 241 lemmas, 37 zero-use, 81 single-use, 0 admitted.
-- ContextAlgebra: 286 lemmas, 67 zero-use, 103 single-use, 0 admitted.
+- ContextAlgebra: 188 lemmas, 0 zero-use, 95 single-use, 0 admitted.
 - ContextTypeLanguage: 226 lemmas, 89 zero-use, 59 single-use, 0 admitted.
 - ContextLogic: 275 lemmas, 64 zero-use, 78 single-use, 0 admitted.
 - ContextBasicDenotation: 411 lemmas, 101 zero-use, 133 single-use, 1 admitted.
@@ -113,9 +113,9 @@ Recommended cleanup order
 
 6. Algebra interface aliases.
 
-   Treat ResourceInterface zero-use lemmas as public API until we decide the
-   exported surface should shrink.  Private ResourceCore zero-use lemmas are
-   safer candidates.
+   ResourceInterface is not an external surface.  Treat zero-use Interface
+   wrappers as priority cleanup candidates, then keep only names that actually
+   serve active downstream proofs or a documented semantic boundary.
 
 Do not mechanically delete
 --------------------------
@@ -123,6 +123,5 @@ Do not mechanically delete
 - Lemmas used only once but isolating a long proof block.
 - Arrow/Wand opened-result package lemmas in Denotation.
 - Result-equivalence and result-extension lemmas.
-- ResourceInterface aliases without a deliberate interface-shrink pass.
 - Public regularity lemmas if they are useful for future proof scripts or paper
   names, even when current .v usage is zero.
