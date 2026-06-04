@@ -321,22 +321,6 @@ Proof.
   eapply denot_ty_lvar_gas_insert_fresh_lty_env; eauto.
 Qed.
 
-Lemma denot_ty_lvar_gas_extend_typed_extension_zero
-    (Σ : lty_env) τ e x T
-    (m mx : WfWorldT) (Fx : FiberExtensionT) :
-  LVFree x ∉ dom Σ ->
-  LVFree x ∉ context_ty_lvars τ ->
-  x ∉ fv_tm e ->
-  extension_has_ltype (<[LVFree x := T]> ∅)
-    (res_restrict m (ext_in Fx)) Fx ->
-  res_extend_by m Fx mx ->
-  m ⊨ denot_ty_lvar_gas 0 Σ τ e ->
-  mx ⊨ denot_ty_lvar_gas 0 (<[LVFree x := T]> Σ) τ e.
-Proof.
-  intros HxΣ Hxτ Hxe HFx Hext Hm.
-  eapply denot_ty_lvar_gas_extend_typed_extension; eauto.
-Qed.
-
 Lemma atom_store_has_ltype_restrict_fv_from_source_guard
     (Σ : lty_env) τ e (m : WfWorldT) σ :
   m ⊨ basic_world_formula (denot_relevant_env Σ τ e) ->
@@ -1052,22 +1036,6 @@ Lemma typed_total_tm_result_equiv_on_target_zero
   typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
   m ⊨ denot_ty_lvar_gas 0 Σ τ e2.
 Proof. intros [_ [_ Hzero]]. exact Hzero. Qed.
-
-Lemma tm_result_equiv_on_sym m e1 e2 :
-  tm_result_equiv_on m e1 e2 ->
-  tm_result_equiv_on m e2 e1.
-Proof.
-  intros Heq σ v Hσ. symmetry. apply Heq. exact Hσ.
-Qed.
-
-Lemma typed_total_tm_result_equiv_on_sym Σ τ m e1 e2 :
-  typed_total_tm_result_equiv_on Σ τ m e1 e2 ->
-  typed_total_tm_result_equiv_on Σ τ m e2 e1.
-Proof.
-  intros [Heq [Hz1 Hz2]].
-  split; [apply tm_result_equiv_on_sym; exact Heq|].
-  split; assumption.
-Qed.
 
 Lemma tm_result_equiv_on_res_store_subset
     (m0 m : WfWorldT) e1 e2 :

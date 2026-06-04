@@ -250,16 +250,6 @@ Proof.
   eapply res_models_kripke; [exact Hle|exact Hworld_top_tgt].
 Qed.
 
-Lemma denot_relevant_env_wand_open_result_fresh
-    (Σ : lty_env) τx τr e y :
-  y ∉ fv_cty τx ->
-  y ∉ fv_cty τr ->
-  y ∉ fv_tm e ->
-  LVFree y ∉ dom (denot_relevant_env Σ (CTWand τx τr) e : lty_env).
-Proof.
-  apply denot_relevant_env_wand_fresh_free.
-Qed.
-
 Lemma basic_world_formula_wand_open_result_big
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
   typed_total_tm_result_equiv_on Σ (CTWand τx τr) m e1 e2 ->
@@ -288,7 +278,7 @@ Proof.
     as [_ [_ Hbasic_wand]].
   eapply basic_world_formula_wand_body_from_source_and_arg.
   - exact Hlc_rel.
-  - eapply denot_relevant_env_wand_open_result_fresh.
+  - eapply denot_relevant_env_wand_fresh_free.
     + exact Hyτx.
     + exact Hyτr.
     + set_solver.
@@ -327,7 +317,7 @@ Proof.
   assert (Hy_rel :
       LVFree y ∉ dom (denot_relevant_env Σ (CTWand τx τr) e2 : lty_env)).
   {
-    eapply denot_relevant_env_wand_open_result_fresh.
+    eapply denot_relevant_env_wand_fresh_free.
     - exact Hyτx.
     - exact Hyτr.
     - set_solver.

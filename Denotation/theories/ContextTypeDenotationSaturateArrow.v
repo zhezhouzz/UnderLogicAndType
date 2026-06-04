@@ -253,17 +253,6 @@ Proof.
   - intros v Hv. set_solver.
 Qed.
 
-Lemma denot_relevant_env_arrow_open_result_fresh
-    (Σ : lty_env) τx τr e y :
-  y ∉ fv_cty τx ->
-  y ∉ fv_cty τr ->
-  y ∉ fv_tm e ->
-  LVFree y ∉ dom (denot_relevant_env Σ (CTArrow τx τr) e : lty_env).
-Proof.
-  intros Hyτx Hyτr Hye.
-  eapply denot_relevant_env_arrow_fresh_free; eauto.
-Qed.
-
 Lemma basic_world_formula_arrow_open_result_big
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
   typed_total_tm_result_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
@@ -292,7 +281,7 @@ Proof.
     as [_ [_ Hbasic_arrow]].
   eapply basic_world_formula_arrow_body_from_source_and_arg.
   - exact Hlc_rel.
-  - eapply denot_relevant_env_arrow_open_result_fresh.
+  - eapply denot_relevant_env_arrow_fresh_free.
     + exact Hyτx.
     + exact Hyτr.
     + set_solver.
@@ -334,7 +323,7 @@ Proof.
   assert (Hy_rel :
       LVFree y ∉ dom (denot_relevant_env Σ (CTArrow τx τr) e2 : lty_env)).
   {
-    eapply denot_relevant_env_arrow_open_result_fresh.
+    eapply denot_relevant_env_arrow_fresh_free.
     - exact Hyτx.
     - exact Hyτr.
     - set_solver.

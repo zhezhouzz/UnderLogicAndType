@@ -132,24 +132,6 @@ Proof.
   set_solver.
 Qed.
 
-Lemma atom_env_to_lty_env_restrict_singleton_lookup_eq
-    (Δ1 Δ2 : gmap atom ty) x T :
-  Δ1 !! x = Some T ->
-  Δ2 !! x = Some T ->
-  lty_env_restrict_lvars (atom_env_to_lty_env Δ1) ({[LVFree x]}) =
-  lty_env_restrict_lvars (atom_env_to_lty_env Δ2) ({[LVFree x]}).
-Proof.
-  intros Hlookup1 Hlookup2.
-  unfold lty_env_restrict_lvars.
-  rewrite (storeA_restrict_singleton_lookup
-    (atom_env_to_lty_env Δ1 : gmap logic_var ty) (LVFree x) T).
-  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup1. }
-  rewrite (storeA_restrict_singleton_lookup
-    (atom_env_to_lty_env Δ2 : gmap logic_var ty) (LVFree x) T).
-  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup2. }
-  reflexivity.
-Qed.
-
 Lemma atom_env_to_lty_env_restrict_singleton_lookup
     (Δ : gmap atom ty) x T :
   Δ !! x = Some T ->
@@ -158,10 +140,18 @@ Lemma atom_env_to_lty_env_restrict_singleton_lookup
     (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty))) ({[LVFree x]}).
 Proof.
   intros Hlookup.
-  eapply (atom_env_to_lty_env_restrict_singleton_lookup_eq
-    Δ (<[x := T]> (∅ : gmap atom ty)) x T);
-    [exact Hlookup|].
-  exact (map_lookup_insert (∅ : gmap atom ty) x T).
+  unfold lty_env_restrict_lvars.
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env Δ : gmap logic_var ty) (LVFree x) T).
+  2:{ rewrite atom_store_to_lvar_store_lookup_free. exact Hlookup. }
+  rewrite (storeA_restrict_singleton_lookup
+    (atom_env_to_lty_env (<[x := T]> (∅ : gmap atom ty)) : gmap logic_var ty)
+    (LVFree x) T).
+  2:{
+    rewrite atom_store_to_lvar_store_lookup_free.
+    exact (map_lookup_insert (∅ : gmap atom ty) x T).
+  }
+  reflexivity.
 Qed.
 
 Lemma atom_env_to_lty_env_insert_restrict_singleton

@@ -512,7 +512,7 @@ Proof.
         (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
         τ2 (tlete e1 e2)).
   {
-    eapply denot_ty_lvar_gas_extend_typed_extension_zero; eauto.
+    eapply denot_ty_lvar_gas_extend_typed_extension; eauto.
     - apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
   }
   pose proof (tlet_intro_denotation

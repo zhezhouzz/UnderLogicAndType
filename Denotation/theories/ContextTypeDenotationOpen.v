@@ -134,14 +134,6 @@ Proof.
            exact Htotal.
 Qed.
 
-Lemma formula_open_expr_result_formula_shift0_under k y e :
-  y ∉ fv_tm e ->
-  formula_open (S k) y (expr_result_formula (tm_shift 0 e) (LVBound 0)) =
-  expr_result_formula (tm_shift 0 (open_tm k (vfvar y) e)) (LVBound 0).
-Proof.
-  apply formula_open_expr_result_formula_shift0_under_core.
-Qed.
-
 Lemma formula_open_over_body k y b φ e :
   y ∉ fv_tm e ->
   y ∉ qual_dom φ ->
@@ -164,7 +156,7 @@ Proof.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
   rewrite lvar_store_open_one_succ_bound0_singleton.
-  rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
+  rewrite formula_open_expr_result_formula_shift0_under_core by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
   rewrite formula_open_over.
@@ -194,7 +186,7 @@ Proof.
   rewrite !formula_open_impl.
   rewrite formula_open_basic_world_formula.
   rewrite lvar_store_open_one_succ_bound0_singleton.
-  rewrite formula_open_expr_result_formula_shift0_under by exact Hy.
+  rewrite formula_open_expr_result_formula_shift0_under_core by exact Hy.
   rewrite formula_open_fibvars.
   rewrite lvars_open_qual_vars_difference_bound0_under.
   rewrite formula_open_under.

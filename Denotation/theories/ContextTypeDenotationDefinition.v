@@ -458,21 +458,6 @@ Proof.
       reflexivity.
 Qed.
 
-Lemma res_models_open_env_denot_ty_lvar_gas_iff
-    η gas Σ τ e (m : WfWorldT) :
-  open_env_fresh_for_lvars η (dom Σ ∪ denot_relevant_lvars τ e) ->
-  open_env_values_inj η ->
-  m ⊨ formula_open_env η (denot_ty_lvar_gas gas Σ τ e) <->
-  m ⊨ denot_ty_lvar_gas gas
-    (lty_env_open_lvars η Σ)
-    (open_cty_env η τ)
-    (open_tm_env η e).
-Proof.
-  intros Hfresh Hinj.
-  rewrite (formula_open_env_denot_ty_lvar_gas η gas Σ τ e Hfresh Hinj).
-  reflexivity.
-Qed.
-
 Lemma denot_ty_lvar_gas_env_agree_on gas Σ1 Σ2 τ e X :
   denot_relevant_lvars τ e ⊆ X ->
   lty_env_restrict_lvars Σ1 X = lty_env_restrict_lvars Σ2 X ->

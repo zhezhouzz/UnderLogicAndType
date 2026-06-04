@@ -244,14 +244,6 @@ Lemma formula_fv_type_qualifier_formula q :
   formula_fv (type_qualifier_formula q) = qual_dom q.
 Proof. reflexivity. Qed.
 
-Lemma formula_lvars_fv_type_qualifier_formula φ :
-  lvars_fv (formula_lvars (type_qualifier_formula φ)) = qual_dom φ.
-Proof.
-  change (lvars_fv (formula_lvars (type_qualifier_formula φ)))
-    with (formula_fv (type_qualifier_formula φ)).
-  apply formula_fv_type_qualifier_formula.
-Qed.
-
 Lemma formula_fv_over_fib_type_qualifier_open_fresh x y b φ :
   LVFree x ∉ context_ty_lvars (CTOver b φ) ->
   x <> y ->
