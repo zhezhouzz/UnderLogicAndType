@@ -867,8 +867,51 @@ Proof.
   - rewrite (lookup_union_r (M:=gmap K) (A:=V)
       (s1 : gmap K V) (s2 : gmap K V) z) by exact Hs1.
     assert ((s2 : gmap K V) !! z = None) as Hs2.
-    { apply not_elem_of_dom. intros Hz2. better_set_solver. }
+      { apply not_elem_of_dom. intros Hz2. better_set_solver. }
     rewrite Hs2. reflexivity.
+Qed.
+
+Lemma storeA_restrict_union_absorb_l_on {K : Type} `{Countable K}
+    (s1 s2 : gmap K V) (X : gset K) :
+  storeA_compat s1 s2 →
+  X ⊆ dom (s1 : gmap K V) →
+  (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
+  storeA_restrict s1 X.
+Proof.
+  intros Hcompat Hsub.
+  apply storeA_map_eq. intros z.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
+  destruct ((s1 : gmap K V) !! z) as [v1|] eqn:H1.
+  - rewrite (lookup_union_l' (s1 : gmap K V) (s2 : gmap K V) z) by eauto.
+    rewrite H1. reflexivity.
+  - exfalso.
+    apply not_elem_of_dom in H1.
+    apply H1. set_solver.
+Qed.
+
+Lemma storeA_restrict_union_absorb_r_on {K : Type} `{Countable K}
+    (s1 s2 : gmap K V) (X : gset K) :
+  storeA_compat s1 s2 →
+  X ⊆ dom (s2 : gmap K V) →
+  (storeA_restrict (@union (gmap K V) _ s1 s2) X : gmap K V) =
+  storeA_restrict s2 X.
+Proof.
+  intros Hcompat Hsub.
+  apply storeA_map_eq. intros z.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ X)) as [HzX | HzX]; [| reflexivity].
+  destruct ((s2 : gmap K V) !! z) as [v2|] eqn:H2.
+  - destruct ((s1 : gmap K V) !! z) as [v1|] eqn:H1.
+    + assert (v1 = v2) by (eapply Hcompat; eauto). subst.
+      rewrite (lookup_union_l' (s1 : gmap K V) (s2 : gmap K V) z) by eauto.
+      rewrite H1. reflexivity.
+    + rewrite (lookup_union_r (M:=gmap K) (A:=V)
+        (s1 : gmap K V) (s2 : gmap K V) z) by exact H1.
+      rewrite H2. reflexivity.
+  - exfalso.
+    apply not_elem_of_dom in H2.
+    apply H2. set_solver.
 Qed.
 
 Lemma storeA_restrict_union_ignore_l {K : Type} `{Countable K}
@@ -1192,6 +1235,18 @@ Proof.
   intros Hcompat.
   rewrite <- !map_union_assoc.
   rewrite (storeA_union_comm s2 s3 Hcompat).
+  reflexivity.
+Qed.
+
+Lemma storeA_union_extend_frame_r {K : Type} `{Countable K}
+    (s1 s2 se : gmap K V) :
+  se ≈A s2 →
+  @union (gmap K V) _ (@union (gmap K V) _ s1 se) s2 =
+  @union (gmap K V) _ (@union (gmap K V) _ s1 s2) se.
+Proof.
+  intros Hcompat.
+  rewrite <- !map_union_assoc.
+  rewrite (storeA_union_comm se s2 Hcompat).
   reflexivity.
 Qed.
 

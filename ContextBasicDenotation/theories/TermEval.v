@@ -120,6 +120,99 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_eval_in_store_tapp_tm_lam_body
+    σ T e y vy v :
+  store_closed σ ->
+  body_tm e ->
+  y ∉ fv_tm e ->
+  σ !! y = Some vy ->
+  tm_eval_in_store σ
+    (tapp_tm (tret (vlam T e)) (vfvar y)) v <->
+  tm_eval_in_store σ (e ^^ y) v.
+Proof.
+  intros Hclosed Hbody Hy Hσy.
+  unfold tm_eval_in_store.
+  rewrite !expr_eval_in_store_no_bvars_iff.
+  - rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    rewrite msubst_tapp_tm_lc_arg by (constructor || exact (proj2 Hclosed)).
+    rewrite msubst_ret.
+    rewrite msubst_vlam.
+    rewrite (msubst_fvar_lookup_closed σ y vy)
+      by (exact (proj1 Hclosed) || exact Hσy).
+    change (m{σ} (e ^^ y)) with
+      (m{σ} (open_tm 0 (vfvar y) e)).
+    rewrite (msubst_open_lookup_tm σ e 0 y vy)
+      by (try exact (proj1 Hclosed);
+          try exact (proj2 Hclosed);
+          try exact Hσy;
+          try exact Hy).
+    replace (m{delete y σ} e) with (m{σ} e).
+    2:{
+      symmetry.
+      apply (msubst_agree tm (delete y σ) σ (fv_tm e) e).
+      - apply closed_env_delete. exact (proj1 Hclosed).
+      - exact (proj1 Hclosed).
+      - reflexivity.
+      - intros z Hz.
+        assert (z <> y) by set_solver.
+        assert (Hdel : delete y σ !! z = σ !! z).
+        { apply lookup_delete_ne. congruence. }
+        exact Hdel.
+    }
+    assert (Hbodyσ : body_tm (m{σ} e)).
+    {
+      exists (fv_tm e ∪ dom σ). intros z Hz.
+      change (lc_tm (open_tm 0 (vfvar z) (m{σ} e))).
+      assert (Hfreshz : m{σ} (vfvar z) = vfvar z).
+      { apply msubst_fvar_lookup_none_closed.
+        - exact (proj1 Hclosed).
+        - apply not_elem_of_dom. set_solver. }
+      rewrite <- Hfreshz.
+      change (lc_tm ({0 ~> m{σ} (vfvar z)} (m{σ} e))).
+      rewrite <- (msubst_open e 0 (vfvar z) σ)
+        by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+      apply msubst_lc; [exact (proj2 Hclosed)|].
+      apply body_open_tm; [exact Hbody|constructor].
+    }
+    unfold tapp_tm.
+    split.
+    + intros Hsteps.
+      apply reduction_lete in Hsteps as [vf [Hfun Happ]].
+      pose proof (value_steps_self
+        (vlam T (m{σ} e)) (tret vf) Hfun) as Heq.
+      inversion Heq. subst vf.
+      eapply reduction_beta; [exact (lc_env_lookup _ _ _ (proj2 Hclosed) Hσy)|].
+      rewrite value_shift_lc_id in Happ
+        by (eapply lc_env_lookup; [exact (proj2 Hclosed)|exact Hσy]).
+      cbn in Happ.
+      rewrite (open_rec_lc_value vy
+        (lc_env_lookup _ _ _ (proj2 Hclosed) Hσy) 0
+        (vlam T (m{σ} e))) in Happ.
+      exact Happ.
+    + intros Hbody_steps.
+      eapply reduction_lete_intro.
+      * apply body_tapp_tm_body.
+        pose proof (lc_env_lookup _ _ _ (proj2 Hclosed) Hσy) as Hvy_lc.
+        rewrite value_shift_lc_id by exact Hvy_lc. exact Hvy_lc.
+      * apply Steps_refl.
+        apply LC_ret.
+        destruct Hbodyσ as [Lσ Hbodyσ].
+        exact (LC_lam T (m{σ} e) Lσ Hbodyσ).
+      * cbn.
+        pose proof (lc_env_lookup _ _ _ (proj2 Hclosed) Hσy) as Hvy_lc.
+        rewrite value_shift_lc_id by exact Hvy_lc.
+        rewrite (open_rec_lc_value vy Hvy_lc 0 (vlam T (m{σ} e))).
+        eapply reduction_beta_intro.
+        -- exact Hbodyσ.
+        -- eapply lc_env_lookup; eauto. exact (proj2 Hclosed).
+        -- exact Hbody_steps.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
 Lemma tm_eval_in_store_restrict_fv_subset σ e v X :
   fv_tm e ⊆ X ->
   tm_eval_in_store (store_restrict σ X) e v <->

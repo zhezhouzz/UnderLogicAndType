@@ -587,6 +587,28 @@ Proof.
       rewrite (closed_env_lookup σ' x v Hclosed' Hlookup). set_solver.
 Qed.
 
+Lemma msubst_fvar_lookup_none_closed σ x :
+  closed_env σ →
+  σ !! x = None →
+  m{σ} (vfvar x) = vfvar x.
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ => closed_env σ →
+      σ !! x = None →
+      map_fold (fun y vy acc => {y := vy} acc) (vfvar x) σ = vfvar x) _ _ σ).
+  - intros _ _. reflexivity.
+  - intros y vy σ' Hfresh Hfold IH Hclosed Hlookup.
+    destruct (closed_env_insert σ' y vy Hfresh Hclosed) as [_ Hclosed'].
+    rewrite Hfold.
+    rewrite lookup_insert_None in Hlookup.
+    destruct Hlookup as [Hlookup Hyx].
+    replace (map_fold (fun y vy acc => {y := vy} acc) (vfvar x) σ')
+      with (vfvar x) by (symmetry; exact (IH Hclosed' Hlookup)).
+    change (value_subst y vy (vfvar x) = vfvar x).
+    simpl. rewrite decide_False by congruence. reflexivity.
+Qed.
+
 Lemma subst_map_value_fresh σ (v : value) :
   dom σ ∩ stale v = ∅ ->
   subst_map σ v = v.

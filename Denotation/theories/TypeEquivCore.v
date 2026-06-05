@@ -463,6 +463,70 @@ Proof.
     inversion Hret_lc; subst. assumption.
 Qed.
 
+Lemma expr_total_formula_tret_of_basic
+    Σ v T (m : WfWorldT) :
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ expr_basic_typing_formula Σ (tret v) T ->
+  m ⊨ expr_total_formula (tret v).
+Proof.
+  intros Hworld Hbasic.
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lvars Σ (tret v) T Hty) as HfvΣ.
+  assert (HfvΣ_value : lvars_of_atoms (fv_value v) ⊆ dom Σ).
+  { cbn [fv_tm] in HfvΣ. exact HfvΣ. }
+  pose proof (basic_tm_has_ltype_lc Σ (tret v) T HlcΣ Hty) as Hlc_tm.
+  assert (Hlc : lc_value v).
+  { inversion Hlc_tm; subst; assumption. }
+  pose proof (basic_world_formula_models_iff Σ m) as Hworld_iff.
+  destruct (proj1 Hworld_iff Hworld) as [_ [Hworld_dom _]].
+  apply expr_total_atom_world_to_formula.
+  unfold expr_total_on_atom_world, expr_total_on.
+  split.
+  - rewrite (tm_lvars_lc_eq_atoms (tret v)) by exact Hlc_tm.
+    rewrite res_lift_free_dom.
+    intros z Hz.
+    apply elem_of_map in Hz as [a [-> Ha]].
+    apply elem_of_map.
+    exists a. split; [reflexivity|].
+    apply Hworld_dom.
+    apply lvars_fv_elem.
+    apply HfvΣ.
+    apply elem_of_map.
+    exists a. split; [reflexivity|exact Ha].
+  - intros τ Hτ.
+    destruct Hτ as [σ [Hσ ->]].
+    set (X := fv_value v).
+    exists (subst_map (store_restrict σ X) v).
+    change (tm_eval_in_store σ (tret v)
+      (subst_map (store_restrict σ X) v)).
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ (tret v) (subst_map (store_restrict σ X) v) X
+      ltac:(subst X; cbn [fv_tm]; set_solver))).
+    unfold tm_eval_in_store, expr_eval_in_store.
+    rewrite lstore_instantiate_tm_no_bvars.
+    2:{ apply lc_lstore_lift_free. }
+    2:{
+      rewrite lstore_free_part_lift_free.
+      subst X.
+      pose proof (basic_world_formula_wfworld_closed_on_atoms
+        Σ (fv_value v) m HfvΣ_value Hworld σ Hσ) as Hclosed.
+      exact (proj1 Hclosed).
+    }
+    rewrite lstore_free_part_lift_free.
+    replace (subst_map (store_restrict σ X) (tret v))
+      with (tret (subst_map (store_restrict σ X) v))
+      by (symmetry; apply msubst_ret).
+    apply Steps_refl.
+    constructor.
+    apply msubst_lc.
+    + subst X.
+      pose proof (basic_world_formula_wfworld_closed_on_atoms
+        Σ (fv_value v) m HfvΣ_value Hworld σ Hσ) as Hclosed.
+      exact (proj2 Hclosed).
+    + exact Hlc.
+Qed.
+
 Lemma basic_world_formula_result_alias_target
     (Σ : lty_env) τ e x (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -809,6 +873,55 @@ Proof.
         (<[y := vx]> (store_restrict σ (fv_tm (tlete e1 e2))))
         (e2 ^^ y) v (Hinsert_restrict_y y vx Hyσ Hylet))).
     exact Hbody_y.
+Qed.
+
+Lemma tm_equiv_lam_app_body
+    T e y (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ∪ fv_tm (e ^^ y)) m ->
+  body_tm e ->
+  y ∉ fv_tm e ->
+  y ∈ world_dom (m : WorldT) ->
+  tm_equiv_on m
+    (tapp_tm (tret (vlam T e)) (vfvar y))
+    (e ^^ y).
+Proof.
+  intros Hclosed Hbody Hy_fresh Hy_dom σ v Hσ.
+  set (X := fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ∪ fv_tm (e ^^ y)).
+  assert (HσX_closed : store_closed (store_restrict σ X)).
+  { subst X. apply Hclosed. exact Hσ. }
+  assert (Hfv_app : fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ⊆ X)
+    by (subst X; set_solver).
+  assert (Hfv_body : fv_tm (e ^^ y) ⊆ X)
+    by (subst X; set_solver).
+  pose proof (wfworld_store_dom m σ Hσ) as Hσdom.
+  assert (Hyσ : y ∈ dom (σ : StoreT)).
+  { rewrite <- Hσdom in Hy_dom. exact Hy_dom. }
+  destruct (σ !! y) as [vy|] eqn:Hσy.
+  2:{ apply not_elem_of_dom in Hσy. set_solver. }
+  assert (HyX : y ∈ X).
+  {
+    subst X. unfold tapp_tm. cbn [fv_tm fv_value].
+    set_solver.
+  }
+  assert (HσXy : store_restrict σ X !! y = Some vy).
+  { apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }
+  split.
+  - intros Happ.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset σ (e ^^ y) v X Hfv_body)).
+    apply (proj1 (tm_eval_in_store_tapp_tm_lam_body
+      (store_restrict σ X) T e y vy v HσX_closed Hbody Hy_fresh HσXy)).
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp_tm (tret (vlam T e)) (vfvar y)) v X Hfv_app)).
+    exact Happ.
+  - intros Hbody_eval.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp_tm (tret (vlam T e)) (vfvar y)) v X Hfv_app)).
+    apply (proj2 (tm_eval_in_store_tapp_tm_lam_body
+      (store_restrict σ X) T e y vy v HσX_closed Hbody Hy_fresh HσXy)).
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ (e ^^ y) v X Hfv_body)).
+    exact Hbody_eval.
 Qed.
 
 Lemma typed_total_equiv_source_zero

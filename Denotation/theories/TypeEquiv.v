@@ -139,6 +139,31 @@ Proof.
     set_solver.
 Qed.
 
+Lemma ty_denote_gas_drop_fresh_ext
+    gas (Σ : lty_env) τ e x T (m mx : WfWorldT) Fx :
+  fv_tm e ∪ fv_cty τ ⊆ world_dom (m : WorldT) ->
+  LVFree x ∉ dom Σ ->
+  LVFree x ∉ context_ty_lvars τ ->
+  x ∉ fv_tm e ->
+  res_extend_by m Fx mx ->
+  mx ⊨ ty_denote_gas gas (<[LVFree x := T]> Σ) τ e ->
+  m ⊨ ty_denote_gas gas Σ τ e.
+Proof.
+  intros Hfv_world HxΣ Hxτ Hxe Hext Hmx.
+  rewrite (ty_denote_gas_insert_fresh_lty_env_eq
+    gas Σ τ e x T HxΣ Hxτ Hxe) in Hmx.
+  eapply res_models_from_restrict_extension_on_fv
+    with (X := fv_tm e ∪ fv_cty τ) (n := mx).
+  - apply formula_fv_ty_denote_gas_subset_relevant.
+  - transitivity (fv_tm e ∪ fv_cty τ).
+    + apply formula_fv_ty_denote_gas_subset_relevant.
+    + exact Hfv_world.
+  - transitivity m.
+    + apply res_restrict_le.
+    + eapply res_extend_by_le; eauto.
+  - exact Hmx.
+Qed.
+
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e ->
@@ -177,6 +202,31 @@ Proof.
     + eapply tm_equiv_tlete_body_extension; eauto.
     + split; [exact Hzero_body|exact Hzero_tlet].
   - exact Hbody.
+Qed.
+
+Lemma lam_intro_denotation
+    gas (Σ : lty_env) τ T e y (m : WfWorldT) :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ∪ fv_tm (e ^^ y)) m ->
+  body_tm e ->
+  y ∉ fv_tm e ->
+  y ∈ world_dom (m : WorldT) ->
+  m ⊨ ty_denote_gas 0 Σ τ (e ^^ y) ->
+  m ⊨ ty_denote_gas 0 Σ τ
+    (tapp_tm (tret (vlam T e)) (vfvar y)) ->
+  m ⊨ ty_denote_gas gas Σ τ (e ^^ y) ->
+  m ⊨ ty_denote_gas gas Σ τ
+    (tapp_tm (tret (vlam T e)) (vfvar y)).
+Proof.
+  intros Hclosed Hbody Hy_fresh Hy_dom Hzero_body Hzero_app Hbody_den.
+  eapply ty_denote_gas_tm_equiv.
+  - split.
+    + intros σ v Hσ.
+      pose proof (tm_equiv_lam_app_body T e y m
+        Hclosed Hbody Hy_fresh Hy_dom σ v Hσ) as [Happ_body Hbody_app].
+      split; [exact Hbody_app|exact Happ_body].
+    + split; [exact Hzero_body|exact Hzero_app].
+  - exact Hbody_den.
 Qed.
 
 

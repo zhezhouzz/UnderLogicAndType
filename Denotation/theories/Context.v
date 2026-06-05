@@ -230,6 +230,70 @@ Proof.
   - rewrite res_models_and_iff. split; assumption.
 Qed.
 
+Lemma ctx_denote_under_star_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ ctx_denote_under Σ (CtxStar Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+    res_product m1 m2 Hc ⊑ m /\
+    m1 ⊨ ctx_denote_under Σ Γ1 /\
+    m2 ⊨ ctx_denote_under Σ Γ2.
+Proof.
+  intros Hctx.
+  cbn [ctx_denote_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ Hstar].
+  rewrite res_models_star_iff in Hstar.
+  exact Hstar.
+Qed.
+
+Lemma ctx_denote_under_star_intro_product
+    (Σ : gmap atom ty) Γ1 Γ2 (m1 m2 : WfWorldT)
+    (Hc : world_compat m1 m2) :
+  m1 ⊨ ctx_denote_under Σ Γ1 ->
+  m2 ⊨ ctx_denote_under Σ Γ2 ->
+  res_product m1 m2 Hc ⊨ ctx_denote_under Σ (CtxStar Γ1 Γ2).
+Proof.
+  intros HΓ1 HΓ2.
+  pose proof (ctx_denote_under_basic_world Σ Γ1 m1 HΓ1) as Hworld1.
+  pose proof (ctx_denote_under_basic_world Σ Γ2 m2 HΓ2) as Hworld2.
+  pose proof (res_models_kripke
+    m1 (res_product m1 m2 Hc)
+    (basic_world_formula (atom_env_to_lty_env (ctx_erasure_under Σ Γ1)))
+    (res_product_le_l m1 m2 Hc) Hworld1) as Hworld1_prod.
+  pose proof (res_models_kripke
+    m2 (res_product m1 m2 Hc)
+    (basic_world_formula (atom_env_to_lty_env (ctx_erasure_under Σ Γ2)))
+    (res_product_le_r m1 m2 Hc) Hworld2) as Hworld2_prod.
+  pose proof (basic_world_formula_union
+    (atom_env_to_lty_env (ctx_erasure_under Σ Γ1))
+    (atom_env_to_lty_env (ctx_erasure_under Σ Γ2))
+    (res_product m1 m2 Hc) Hworld1_prod Hworld2_prod) as Hworld_union.
+  cbn [ctx_denote_under].
+  rewrite res_models_and_iff. split.
+  - eapply basic_world_formula_subenv; [|exact Hworld_union].
+    intros v T Hv.
+    destruct v as [k|x].
+    + rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
+      discriminate.
+    + rewrite atom_store_to_lvar_store_lookup_free in Hv.
+      unfold ctx_erasure_under in Hv |- *.
+      cbn [erase_ctx] in Hv.
+      apply map_lookup_union_Some_raw in Hv as [HΣ | [HΣnone HΓ12]].
+      * apply map_lookup_union_Some_raw. left.
+        rewrite atom_store_to_lvar_store_lookup_free.
+        apply map_lookup_union_Some_raw. left. exact HΣ.
+      * apply map_lookup_union_Some_raw in HΓ12 as [HΓ1look | [HΓ1none HΓ2look]].
+        -- apply map_lookup_union_Some_raw. left.
+           rewrite atom_store_to_lvar_store_lookup_free.
+           apply map_lookup_union_Some_raw. right. split; assumption.
+        -- apply map_lookup_union_Some_raw. right. split.
+           ++ rewrite atom_store_to_lvar_store_lookup_free.
+              apply map_lookup_union_None. split; assumption.
+           ++ rewrite atom_store_to_lvar_store_lookup_free.
+              apply map_lookup_union_Some_raw. right. split; assumption.
+  - eapply res_models_star_intro; [apply raw_le_refl|exact HΓ1|exact HΓ2].
+Qed.
+
 End ContextDenotation.
 
 #[global] Instance denot_cty_inst :

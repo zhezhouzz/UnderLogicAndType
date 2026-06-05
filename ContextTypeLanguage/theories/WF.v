@@ -68,6 +68,21 @@ Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
 Definition basic_context_ty (D : aset) (τ : context_ty) : Prop :=
   wf_context_ty_at 0 D τ.
 
+Lemma wf_context_ty_at_mono_env d D E τ :
+  D ⊆ E ->
+  wf_context_ty_at d D τ ->
+  wf_context_ty_at d E τ.
+Proof.
+  induction τ in d, D, E |- *; cbn [wf_context_ty_at]; intros HDE Hwf.
+  - eapply lvars_wf_at_mono; eauto.
+  - eapply lvars_wf_at_mono; eauto.
+  - destruct Hwf as [H1 [H2 Herase]]. repeat split; eauto.
+  - destruct Hwf as [H1 [H2 Herase]]. repeat split; eauto.
+  - destruct Hwf as [H1 [H2 Herase]]. repeat split; eauto.
+  - destruct Hwf as [H1 H2]. split; eauto.
+  - destruct Hwf as [H1 H2]. split; eauto.
+Qed.
+
 #[global] Instance lc_cty_inst : Lc context_ty := lc_context_ty.
 Arguments lc_cty_inst /.
 
@@ -127,6 +142,142 @@ Proof.
   - destruct Hlc as [H1 H2]. split.
     + eapply IHτ1; [exact Hdd|exact H1].
     + eapply (IHτ2 (S d) (S d')); [lia|exact H2].
+Qed.
+
+Lemma cty_open_above_lc_fresh d k x τ :
+  d <= k ->
+  cty_lc_at d τ ->
+  x ∉ fv_cty τ ->
+  cty_open k x τ = τ.
+Proof.
+  induction τ in d, k |- *;
+    cbn [cty_lc_at cty_open open_one open_cty_atom_inst];
+    intros Hdk Hlc Hx.
+  - f_equal. apply qual_open_atom_fresh_lc_at.
+    + intros n Hn. specialize (Hlc n Hn). lia.
+    + unfold fv_cty, context_ty_lvars, qual_dom in Hx.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
+  - f_equal. apply qual_open_atom_fresh_lc_at.
+    + intros n Hn. specialize (Hlc n Hn). lia.
+    + unfold fv_cty, context_ty_lvars, qual_dom in Hx.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
+  - destruct Hlc as [Hlc1 Hlc2]. f_equal.
+    + eapply IHτ1; [exact Hdk|exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+    + eapply IHτ2; [exact Hdk|exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - destruct Hlc as [Hlc1 Hlc2]. f_equal.
+    + eapply IHτ1; [exact Hdk|exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+    + eapply IHτ2; [exact Hdk|exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - destruct Hlc as [Hlc1 Hlc2]. f_equal.
+    + eapply IHτ1; [exact Hdk|exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+    + eapply IHτ2; [exact Hdk|exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - destruct Hlc as [Hlc1 Hlc2]. f_equal.
+    + eapply IHτ1; [exact Hdk|exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+    + eapply (IHτ2 (S d) (S k)); [lia|exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - destruct Hlc as [Hlc1 Hlc2]. f_equal.
+    + eapply IHτ1; [exact Hdk|exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+    + eapply (IHτ2 (S d) (S k)); [lia|exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx.
+      rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+Qed.
+
+Lemma cty_open_shift_from_lc_fresh d x τ :
+  cty_lc_at d τ ->
+  x ∉ fv_cty τ ->
+  cty_open d x (cty_shift d τ) = τ.
+Proof.
+  induction τ in d |- *;
+    cbn [cty_lc_at cty_open cty_shift open_one open_cty_atom_inst];
+    intros Hlc Hx.
+  - f_equal.
+    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    unfold fv_cty, context_ty_lvars, qual_dom in Hx.
+    cbn [context_ty_lvars_at] in Hx.
+    rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
+  - f_equal.
+    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    unfold fv_cty, context_ty_lvars, qual_dom in Hx.
+    cbn [context_ty_lvars_at] in Hx.
+    rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
+  - destruct Hlc as [Hlc1 Hlc2].
+    f_equal.
+    + apply IHτ1; [exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+    + apply IHτ2; [exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+  - destruct Hlc as [Hlc1 Hlc2].
+    f_equal.
+    + apply IHτ1; [exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+    + apply IHτ2; [exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+  - destruct Hlc as [Hlc1 Hlc2].
+    f_equal.
+    + apply IHτ1; [exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+    + apply IHτ2; [exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+  - destruct Hlc as [Hlc1 Hlc2].
+    f_equal.
+    + apply IHτ1; [exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+    + apply IHτ2; [exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+  - destruct Hlc as [Hlc1 Hlc2].
+    f_equal.
+    + apply IHτ1; [exact Hlc1|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
+    + apply IHτ2; [exact Hlc2|].
+      unfold fv_cty, context_ty_lvars in Hx |- *.
+      cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
+      set_solver.
 Qed.
 
 Lemma wf_context_ty_at_lc d D τ :
@@ -216,6 +367,45 @@ Proof.
     pose proof (IHτ2 (S d) D H2).
     rewrite !context_ty_lvars_fv_at in *.
     set_solver.
+Qed.
+
+Lemma wf_context_ty_at_open_at d D τ x :
+  x ∉ D ->
+  wf_context_ty_at (S d) D τ ->
+  wf_context_ty_at d (D ∪ {[x]}) (cty_open d x τ).
+Proof.
+  induction τ in d, D |- *; cbn [wf_context_ty_at cty_open];
+    intros Hx Hwf.
+  - rewrite qual_open_atom_vars.
+    apply lvars_wf_at_open_at; exact Hx || exact Hwf.
+  - rewrite qual_open_atom_vars.
+    apply lvars_wf_at_open_at; exact Hx || exact Hwf.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split.
+    + apply IHτ1; assumption.
+    + apply IHτ2; assumption.
+    + rewrite !cty_open_preserves_erasure. exact Herase.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split.
+    + apply IHτ1; assumption.
+    + apply IHτ2; assumption.
+    + rewrite !cty_open_preserves_erasure. exact Herase.
+  - destruct Hwf as [H1 [H2 Herase]].
+    repeat split.
+    + apply IHτ1; assumption.
+    + apply IHτ2; assumption.
+    + rewrite !cty_open_preserves_erasure. exact Herase.
+  - destruct Hwf as [H1 H2]. split.
+    + apply IHτ1; assumption.
+    + apply (IHτ2 (S d)); assumption.
+  - destruct Hwf as [H1 H2]. split.
+    + rewrite (cty_open_above_lc_fresh 0 d x τ1).
+      * exact H1.
+      * lia.
+      * eapply wf_context_ty_at_lc. exact H1.
+      * pose proof (wf_context_ty_at_fv_subset 0 ∅ τ1 H1) as Hfv.
+        set_solver.
+    + apply (IHτ2 (S d)); assumption.
 Qed.
 
 Lemma basic_context_ty_fv_subset D τ :

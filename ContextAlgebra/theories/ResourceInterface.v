@@ -277,6 +277,10 @@ Lemma raw_le_dom (m1 m2 : World) :
   world_dom m1 ⊆ world_dom m2.
 Proof. apply rawA_le_dom. Qed.
 
+Lemma raw_le_refl (w : WfWorld) :
+  raw_le w w.
+Proof. apply rawA_le_refl. exact (world_wf w). Qed.
+
 Lemma res_subset_refl (w : WfWorld) : res_subset w w.
 Proof. apply resA_subset_refl. Qed.
 
@@ -466,6 +470,10 @@ Lemma res_product_comm_eq (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
     res_product w1 w2 Hc = res_product w2 w1 Hc'.
 Proof. apply resA_product_comm_eq. Qed.
 
+Lemma res_product_le_l (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
+  w1 ⊑ res_product w1 w2 Hc.
+Proof. apply resA_le_product_l. Qed.
+
 Lemma res_product_le_r (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w2 ⊑ res_product w1 w2 Hc.
 Proof. apply resA_le_product_r. Qed.
@@ -554,5 +562,25 @@ Lemma res_extend_by_projection_eq
   res_restrict my (extA_in F ∪ extA_out F) =
   res_restrict ny (extA_in F ∪ extA_out F).
 Proof. apply resA_extend_by_projection_eq. Qed.
+
+Lemma res_extend_by_product_frame_r
+    (m1 m1x m2 : WfWorld) (F : fiber_extension)
+    (Hc : world_compat m1 m2) :
+  m1 #> F ~~> m1x ->
+  extA_out F ## world_dom (m2 : World) ->
+  exists Hcx : world_compat m1x m2,
+    res_product m1 m2 Hc #> F ~~>
+      res_product m1x m2 Hcx.
+Proof. apply resA_extend_by_product_frame_r. Qed.
+
+Lemma res_extend_by_product_frame_l
+    (m1 m1x m2 : WfWorld) (F : fiber_extension)
+    (Hc : world_compat m2 m1) :
+  m1 #> F ~~> m1x ->
+  extA_out F ## world_dom (m2 : World) ->
+  exists Hcx : world_compat m2 m1x,
+    res_product m2 m1 Hc #> F ~~>
+      res_product m2 m1x Hcx.
+Proof. apply resA_extend_by_product_frame_l. Qed.
 
 End ResourceInterface.

@@ -932,6 +932,26 @@ Proof.
     + reflexivity.
 Qed.
 
+Lemma lvars_shift_from_lc_at_id k D :
+  lvars_lc_at k D ->
+  lvars_shift_from k D = D.
+Proof.
+  intros Hlc.
+  apply lvars_shift_from_below_id. exact Hlc.
+Qed.
+
+Lemma lvars_open_shift_from_lc_at_fresh k x D :
+  lvars_lc_at k D ->
+  x ∉ lvars_fv D ->
+  lvars_open k x (lvars_shift_from k D) = D.
+Proof.
+  intros Hlc Hx.
+  rewrite lvars_shift_from_lc_at_id by exact Hlc.
+  apply lvars_open_fresh_index.
+  - intros Hk. specialize (Hlc k Hk). lia.
+  - exact Hx.
+Qed.
+
 Lemma lvars_open_env_shift_from k η D :
   lvars_open_env (open_env_shift_from k η) (lvars_shift_from k D) =
   lvars_shift_from k (lvars_open_env η D).

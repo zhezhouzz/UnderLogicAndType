@@ -219,3 +219,138 @@ Proof.
         -- unfold lstore_on_open_back. cbn [lso_store]. reflexivity.
       * exact HP.
 Qed.
+
+Lemma qual_open_shift_from_lc_fresh k x q :
+  lvars_lc_at k (qual_vars q) ->
+  x ∉ qual_dom q ->
+  qual_open_atom k x (qual_shift_from k q) = q.
+Proof.
+  intros Hlc Hx.
+  destruct q as [D P].
+  apply qual_ext; cbn [qual_vars qual_dom qual_lvars qual_prop
+    qual_open_atom qual_shift_from qual_rename].
+  - apply lvars_open_shift_from_lc_at_fresh; assumption.
+  - intros s1 s2 Hs.
+    assert (Hshift_id : forall (s : LStoreOnT D),
+      lso_store (lstore_on_shift_from k s) = lso_store s).
+    {
+      intros s.
+      apply lstore_shift_from_below_id. exact Hlc.
+    }
+    assert (Hopen_id :
+      lso_store
+        (lstore_on_open_back k x (lvars_shift_from k D) s1) =
+      lso_store s1).
+    {
+      apply storeA_swap_fresh.
+      - intros Hbad.
+        pose proof Hbad as HbadD.
+        pose proof (lso_dom s1) as Hdoms1.
+        change (LVBound k ∈ dom (lso_store s1 : LStoreT)) in HbadD.
+        rewrite Hdoms1 in HbadD.
+        apply elem_of_set_swap in HbadD.
+        unfold swap in HbadD.
+        rewrite decide_True in HbadD by reflexivity.
+        destruct (decide (LVFree x = LVBound k)) as [Hbad_eq|_];
+          [discriminate|].
+        apply elem_of_map in HbadD as [v [Hv HvD]].
+        destruct v as [n|a]; cbn [logic_var_shift_from] in Hv.
+        + repeat case_decide; inversion Hv.
+        + inversion Hv. subst a.
+          apply Hx. apply lvars_fv_elem. exact HvD.
+      - intros Hbad.
+        pose proof Hbad as HbadD.
+        pose proof (lso_dom s1) as Hdoms1.
+        change (LVFree x ∈ dom (lso_store s1 : LStoreT)) in HbadD.
+        rewrite Hdoms1 in HbadD.
+        apply elem_of_set_swap in HbadD.
+        unfold swap in HbadD.
+        destruct (decide (LVBound k = LVFree x)) as [Hbad_eq|Hneq];
+          [discriminate|].
+        rewrite decide_False in HbadD by (intros Heq; apply Hneq; symmetry; exact Heq).
+        rewrite decide_True in HbadD by reflexivity.
+        apply elem_of_map in HbadD as [v [Hv HvD]].
+        destruct v as [n|a]; cbn [logic_var_shift_from] in Hv.
+        + destruct (decide (k <= n)) as [Hkn|Hkn].
+          * inversion Hv. lia.
+          * inversion Hv. subst n.
+            specialize (Hlc k ltac:(apply lvars_bv_elem; exact HvD)).
+            lia.
+        + discriminate.
+    }
+    split.
+    + intros [s [Hshift HP]].
+      pose proof (f_equal (@lso_store value _) Hshift) as Hshift_store.
+      assert (Hs_eq : s = s2).
+      {
+        apply lstore_on_ext.
+        transitivity (lso_store (lstore_on_shift_from k s)).
+        - symmetry. apply Hshift_id.
+        - transitivity
+            (lso_store (lstore_on_open_back k x (lvars_shift_from k D) s1)).
+          + exact Hshift_store.
+          + rewrite Hopen_id. exact Hs.
+      }
+      subst s. exact HP.
+    + intros HP.
+      exists s2. split; [|exact HP].
+      apply lstore_on_ext.
+      transitivity (lso_store s2).
+      { apply Hshift_id. }
+      transitivity (lso_store s1).
+      { symmetry. exact Hs. }
+      symmetry. exact Hopen_id.
+Qed.
+
+Lemma qual_open_atom_fresh_lc_at k x q :
+  (forall n, n ∈ lvars_bv (qual_vars q) -> n < k) ->
+  x ∉ qual_dom q ->
+  qual_open_atom k x q = q.
+Proof.
+  intros Hbelow Hx.
+  destruct q as [D P].
+  apply qual_ext; cbn [qual_vars qual_dom qual_lvars qual_prop
+    qual_open_atom].
+  - apply lvars_open_fresh_index.
+    + intros Hk. specialize (Hbelow k Hk). lia.
+    + exact Hx.
+  - intros s1 s2 Hs.
+    assert (Hopen_id :
+      lso_store (lstore_on_open_back k x D s1) = lso_store s1).
+    {
+      apply storeA_swap_fresh.
+      - intros Hbad.
+        pose proof Hbad as HbadD.
+        change (LVBound k ∈ dom (lso_store s1 : LStoreT)) in HbadD.
+        rewrite (lso_dom s1) in HbadD.
+        apply elem_of_set_swap in HbadD.
+        unfold swap in HbadD.
+        rewrite decide_True in HbadD by reflexivity.
+        destruct (decide (LVFree x = LVBound k)) as [Hbad_eq|_];
+          [discriminate|].
+        apply Hx. apply lvars_fv_elem. exact HbadD.
+      - intros Hbad.
+        pose proof Hbad as HbadD.
+        change (LVFree x ∈ dom (lso_store s1 : LStoreT)) in HbadD.
+        rewrite (lso_dom s1) in HbadD.
+        apply elem_of_set_swap in HbadD.
+        unfold swap in HbadD.
+        destruct (decide (LVBound k = LVFree x)) as [Hbad_eq|Hneq];
+          [discriminate|].
+        rewrite decide_False in HbadD by
+          (intros Heq; apply Hneq; symmetry; exact Heq).
+        rewrite decide_True in HbadD by reflexivity.
+        specialize (Hbelow k ltac:(apply lvars_bv_elem; exact HbadD)).
+        lia.
+    }
+    assert (Hback_eq : lstore_on_open_back k x D s1 = s2).
+    {
+      apply lstore_on_ext.
+      rewrite Hopen_id. exact Hs.
+    }
+    split.
+    + intros HP.
+      rewrite Hback_eq in HP. exact HP.
+    + intros HP.
+      rewrite Hback_eq. exact HP.
+Qed.

@@ -359,6 +359,176 @@ Proof.
     (eq_sym (resA_extend_by_restrict_base m F n Hext))).
 Qed.
 
+Lemma resA_extend_by_product_frame_r
+    (m1 m1x m2 : WfWorldAT) (F : fiber_extensionA)
+    (Hc : worldA_compat m1 m2) :
+  m1 #> F ~~A> m1x →
+  extA_out F ## worldA_dom (m2 : WorldAT) →
+  ∃ Hcx : worldA_compat m1x m2,
+    resA_product m1 m2 Hc #> F ~~A>
+      resA_product m1x m2 Hcx.
+Proof.
+  intros Hext Hout_frame.
+  pose proof (resA_extend_by_applicable _ _ _ Hext) as Happ.
+  assert (Hcx : worldA_compat m1x m2).
+  {
+    intros σ1x σ2 Hσ1x Hσ2.
+    apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσ1x.
+    destruct Hσ1x as [σ1 [we [σe [Hσ1 [HF [Hσe ->]]]]]].
+    apply storeA_compat_union_intro_l.
+    - exact (Hc σ1 σ2 Hσ1 Hσ2).
+    - apply storeA_disj_dom_compat.
+      pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+        Happ Hσ1 HF Hσe) as Hdomσe.
+      pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+      rewrite Hdomσe, Hdomσ2. set_solver.
+  }
+  exists Hcx.
+  split.
+  - constructor.
+    + cbn. pose proof (extA_app_in _ _ Happ) as Hin. set_solver.
+    + cbn. pose proof (extA_app_out _ _ Happ) as Hout. set_solver.
+  - split.
+    + cbn. rewrite (resA_extend_by_dom _ _ _ Hext). set_solver.
+    + intros σ. split.
+    * intros [σ1x [σ2 [Hσ1x [Hσ2 [Hcompat_x2 ->]]]]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσ1x.
+      destruct Hσ1x as [σ1 [we [σe [Hσ1 [HF [Hσe ->]]]]]].
+      exists (@union (gmap K V) _ σ1 σ2), we, σe.
+      repeat split.
+      -- cbn. exists σ1, σ2. repeat split; eauto.
+      -- assert (Hproj :
+            (storeA_restrict (@union (gmap K V) _ σ1 σ2) (extA_in F) : gmap K V) =
+            storeA_restrict σ1 (extA_in F)).
+        {
+          apply storeA_restrict_union_absorb_l_on.
+          - exact (Hc σ1 σ2 Hσ1 Hσ2).
+          - pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdomσ1.
+            pose proof (extA_app_in _ _ Happ) as Hin.
+            rewrite Hdomσ1. exact Hin.
+        }
+        rewrite Hproj. exact HF.
+      -- exact Hσe.
+      -- apply storeA_union_extend_frame_r.
+        apply storeA_disj_dom_compat.
+        pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+          Happ Hσ1 HF Hσe) as Hdomσe.
+        pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+        rewrite Hdomσe, Hdomσ2. set_solver.
+    * intros [σ12 [we [σe [Hσ12 [HF [Hσe ->]]]]]].
+      cbn in Hσ12.
+      destruct Hσ12 as [σ1 [σ2 [Hσ1 [Hσ2 [Hcompat12 ->]]]]].
+      assert (Hproj :
+          (storeA_restrict (@union (gmap K V) _ σ1 σ2) (extA_in F) : gmap K V) =
+          storeA_restrict σ1 (extA_in F)).
+      {
+        apply storeA_restrict_union_absorb_l_on.
+        - exact Hcompat12.
+        - pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdomσ1.
+          pose proof (extA_app_in _ _ Happ) as Hin.
+          rewrite Hdomσ1. exact Hin.
+      }
+      rewrite Hproj in HF.
+      exists (@union (gmap K V) _ σ1 σe), σ2.
+      repeat split.
+      -- apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext)).
+        exists σ1, we, σe. repeat split; eauto.
+      -- exact Hσ2.
+      -- apply storeA_compat_union_intro_l.
+        ++ exact Hcompat12.
+        ++ apply storeA_disj_dom_compat.
+           pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+             Happ Hσ1 HF Hσe) as Hdomσe.
+           pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+           rewrite Hdomσe, Hdomσ2. set_solver.
+      -- symmetry. apply storeA_union_extend_frame_r.
+        apply storeA_disj_dom_compat.
+        pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+          Happ Hσ1 HF Hσe) as Hdomσe.
+        pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+        rewrite Hdomσe, Hdomσ2. set_solver.
+Qed.
+
+Lemma resA_extend_by_product_frame_l
+    (m1 m1x m2 : WfWorldAT) (F : fiber_extensionA)
+    (Hc : worldA_compat m2 m1) :
+  m1 #> F ~~A> m1x →
+  extA_out F ## worldA_dom (m2 : WorldAT) →
+  ∃ Hcx : worldA_compat m2 m1x,
+    resA_product m2 m1 Hc #> F ~~A>
+      resA_product m2 m1x Hcx.
+Proof.
+  intros Hext Hout_frame.
+  pose proof (resA_extend_by_applicable _ _ _ Hext) as Happ.
+  assert (Hcx : worldA_compat m2 m1x).
+  {
+    intros σ2 σ1x Hσ2 Hσ1x.
+    apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσ1x.
+    destruct Hσ1x as [σ1 [we [σe [Hσ1 [HF [Hσe ->]]]]]].
+    apply storeA_compat_union_intro_r.
+    - exact (Hc σ2 σ1 Hσ2 Hσ1).
+    - apply storeA_disj_dom_compat.
+      pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+      pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+        Happ Hσ1 HF Hσe) as Hdomσe.
+      rewrite Hdomσ2, Hdomσe. set_solver.
+  }
+  exists Hcx.
+  split.
+  - constructor.
+    + cbn. pose proof (extA_app_in _ _ Happ) as Hin. set_solver.
+    + cbn. pose proof (extA_app_out _ _ Happ) as Hout. set_solver.
+  - split.
+    + cbn. rewrite (resA_extend_by_dom _ _ _ Hext). set_solver.
+    + intros σ. split.
+    * intros [σ2 [σ1x [Hσ2 [Hσ1x [Hcompat_2x ->]]]]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσ1x.
+      destruct Hσ1x as [σ1 [we [σe [Hσ1 [HF [Hσe ->]]]]]].
+      exists (@union (gmap K V) _ σ2 σ1), we, σe.
+      repeat split.
+      -- cbn. exists σ2, σ1. repeat split; eauto.
+      -- assert (Hproj :
+            (storeA_restrict (@union (gmap K V) _ σ2 σ1) (extA_in F) : gmap K V) =
+            storeA_restrict σ1 (extA_in F)).
+        {
+          apply storeA_restrict_union_absorb_r_on.
+          - exact (Hc σ2 σ1 Hσ2 Hσ1).
+          - pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdomσ1.
+            pose proof (extA_app_in _ _ Happ) as Hin.
+            rewrite Hdomσ1. exact Hin.
+        }
+        rewrite Hproj. exact HF.
+      -- exact Hσe.
+      -- rewrite map_union_assoc. reflexivity.
+    * intros [σ21 [we [σe [Hσ21 [HF [Hσe ->]]]]]].
+      cbn in Hσ21.
+      destruct Hσ21 as [σ2 [σ1 [Hσ2 [Hσ1 [Hcompat21 ->]]]]].
+      assert (Hproj :
+          (storeA_restrict (@union (gmap K V) _ σ2 σ1) (extA_in F) : gmap K V) =
+          storeA_restrict σ1 (extA_in F)).
+      {
+        apply storeA_restrict_union_absorb_r_on.
+        - exact Hcompat21.
+        - pose proof (wfworldA_store_dom m1 σ1 Hσ1) as Hdomσ1.
+          pose proof (extA_app_in _ _ Happ) as Hin.
+          rewrite Hdomσ1. exact Hin.
+      }
+      rewrite Hproj in HF.
+      exists σ2, (@union (gmap K V) _ σ1 σe).
+      repeat split.
+      -- exact Hσ2.
+      -- apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext)).
+        exists σ1, we, σe. repeat split; eauto.
+      -- apply storeA_compat_union_intro_r.
+        ++ exact Hcompat21.
+        ++ apply storeA_disj_dom_compat.
+           pose proof (wfworldA_store_dom m2 σ2 Hσ2) as Hdomσ2.
+           pose proof (extA_output_store_dom_from_base m1 F σ1 we σe
+             Happ Hσ1 HF Hσe) as Hdomσe.
+           rewrite Hdomσ2, Hdomσe. set_solver.
+      -- rewrite map_union_assoc. reflexivity.
+Qed.
+
 (** * Fiber extension equivalence and commuting lemmas *)
 
 

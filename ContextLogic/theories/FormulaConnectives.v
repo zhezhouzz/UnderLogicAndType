@@ -102,6 +102,62 @@ Proof.
   split; [exact Hφscope | eapply res_models_fuel_scoped; eauto].
 Qed.
 
+Lemma formula_scoped_star_from_models
+    (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
+    (Hc : world_compat m1 m2) :
+  res_product m1 m2 Hc ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  formula_scoped_in_world m (FStar φ ψ).
+Proof.
+  intros Hle Hφ Hψ.
+  pose proof (res_models_scoped m1 φ Hφ) as Hscopeφ.
+  pose proof (res_models_scoped m2 ψ Hψ) as Hscopeψ.
+  unfold formula_scoped_in_world in *.
+  formula_fv_syntax_norm.
+  pose proof (raw_le_dom (res_product m1 m2 Hc : WorldT) (m : WorldT) Hle)
+    as Hdom.
+  intros z Hz. apply elem_of_union in Hz as [Hz | Hz].
+  - apply Hdom.
+    change (world_dom (res_product m1 m2 Hc : WorldT))
+      with (world_dom (m1 : WorldT) ∪ world_dom (m2 : WorldT)).
+    set_solver.
+  - apply Hdom.
+    change (world_dom (res_product m1 m2 Hc : WorldT))
+      with (world_dom (m1 : WorldT) ∪ world_dom (m2 : WorldT)).
+    set_solver.
+Qed.
+
+Lemma res_models_star_intro
+    (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
+    (Hc : world_compat m1 m2) :
+  res_product m1 m2 Hc ⊑ m →
+  m1 ⊨ φ →
+  m2 ⊨ ψ →
+  m ⊨ FStar φ ψ.
+Proof.
+  intros Hle Hφ Hψ. unfold res_models. simpl.
+  split; [eapply formula_scoped_star_from_models; eauto |].
+  exists m1, m2, Hc. split; [exact Hle |]. split.
+  - models_fuel_irrel Hφ.
+  - models_fuel_irrel Hψ.
+Qed.
+
+Lemma res_models_star_iff (m : WfWorldT) (φ ψ : FormulaT) :
+  (m ⊨ FStar φ ψ ↔
+    ∃ (m1 m2 : WfWorldT) (Hc : world_compat m1 m2),
+      res_product m1 m2 Hc ⊑ m ∧
+      m1 ⊨ φ ∧ m2 ⊨ ψ).
+Proof.
+  split.
+  - unfold res_models. simpl.
+    intros [_ [m1 [m2 [Hc [Hle [Hφ Hψ]]]]]].
+    exists m1, m2, Hc. repeat split; eauto;
+      unfold res_models; models_fuel_irrel_auto.
+  - intros [m1 [m2 [Hc [Hle [Hφ Hψ]]]]].
+    eapply res_models_star_intro; eauto.
+Qed.
+
 Lemma formula_scoped_plus_from_models
     (m m1 m2 : WfWorldT) (φ ψ : FormulaT)
     (Hdef : raw_sum_defined m1 m2) :
