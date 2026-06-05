@@ -233,7 +233,6 @@ the current direct TLet proof.
 | File family | Contents |
 |-------------|----------|
 | `TypeDenote.v` | Recursive denotation plus lvar/fv/open lemmas |
-| `TypeDenoteTactics.v` | Denotation-specific normalization tactics |
 | `TypeEquiv*.v` | Saturation, result-alias/result-extension transport, term-result equivalence, and the compact `tlet_intro_denotation` |
 | `Context.v` | Context denotation and denotation instances |
 | `ConstDenote.v` | Constant and primitive-operation denotation support |

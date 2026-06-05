@@ -1,0 +1,271 @@
+# Ltac Integration Report
+
+Generated during the `codex/fbwand-quality-refactor` cleanup pass.
+
+## Scope
+
+This report covers Rocq tactics from `ContextBasicDenotation` upward, while
+also recording the lower-level shared solvers they depend on.  The inventory was
+collected with `rg` over `Ltac` and `Tactic Notation` definitions.
+
+Total tactic definitions found before this pass: 156.
+
+## Shared Solver Families
+
+### `ContextBase/Tactics.v`
+
+Main tactics:
+
+- `better_set_solver`
+- `fast_set_solver`
+- `set_normalize`
+- `better_map_solver`
+- `map_normalize`
+
+Common lemma/normalization families:
+
+- stdpp set rewrites: union/intersection/difference/singleton/empty
+- `elem_of_*`, `dom_*`, `not_elem_of_dom`
+- map lookup normalization: `lookup_insert`, `lookup_delete`,
+  `lookup_union`, `map_lookup_filter_*`
+
+Status:
+
+- Keep as the base layer for set/map proof automation.
+- No merge needed; all higher solvers should call this rather than raw
+  `set_solver` where repo-specific normalization is needed.
+
+### `ContextBase/BaseTactics.v`
+
+Main tactics:
+
+- `better_base_solver`
+- `base_swap_normalize`
+- `base_open_env_normalize`
+
+Common lemma/normalization families:
+
+- swap/open-env facts: `swap_fresh`, `set_swap_*`, `open_env_*`
+- delegates to `better_map_solver` and `better_set_solver`
+
+Status:
+
+- Keep.  It is the correct shared layer for atom/lvar swap and open-env goals.
+
+### `ContextStore/Store.v`
+
+Main tactics:
+
+- `better_store_solver`
+- `store_normalize`
+- `store_restrict_lookup_split`
+
+Common lemma/normalization families:
+
+- `storeA_restrict_*`
+- `storeA_insert_*`
+- `storeA_restrict_lookup_some(_2)`
+- `storeA_restrict_lookup_none_r`
+- `storeA_restrict_dom`
+- store key/filter-map-key normalization
+
+Status:
+
+- Keep.  It is the shared store algebra solver.
+- `store_norm`/`store_solver` are thin aliases; currently harmless, but future
+  cleanup may inline them if they remain unused outside notation-like contexts.
+
+## Syntax Normalizer Families
+
+### `ContextTypeLanguage/theories/Syntax.v` and `TypeOpen.v`
+
+Main tactics:
+
+- `cty_lvars_syntax_norm`, `cty_fv_syntax_norm`
+- `cty_open_syntax_norm`, `cty_shift_syntax_norm`
+- `ctx_syntax_norm`, `type_syntax_norm`
+- `qual_open_env_syntax_norm`, `cty_open_env_syntax_norm`,
+  `type_open_env_syntax_norm`
+
+Common lemma/normalization families:
+
+- `context_ty_lvars_*`, `context_ty_lvars_at_*`
+- `fv_cty`, `cty_open`, `cty_shift`
+- `qual_open_env_*`, `open_cty_env_*`
+
+Status:
+
+- Keep grouped with type syntax.  These are source-level syntax normalizers,
+  not denotation tactics.
+
+### `ContextLogic/theories/FormulaSyntax.v` and `FormulaSemantics.v`
+
+Main tactics:
+
+- `formula_fv_syntax_norm`
+- `formula_open_syntax_norm`
+- `formula_open_env_syntax_norm`
+- `formula_msubst_syntax_norm`
+- `formula_scope_syntax_norm`
+- `formula_scope_solve`
+
+Common lemma/normalization families:
+
+- `formula_fv_*`
+- `formula_open_*`
+- `formula_open_env_*`
+- `formula_msubst_*`
+- `formula_scoped_*`
+
+Status:
+
+- Keep.  These tactics are intentionally close to formula syntax/semantics
+  because they depend on constructors such as `FForall`, `FFibVars`, and
+  `FBWand`.
+
+## Denotation-Level Tactics
+
+### Removed: `Denotation/theories/TypeDenoteTactics.v`
+
+Tactics removed:
+
+- `normalize_denotation_formula_fv`
+- `normalize_denotation_formula_fv_in`
+- `denot_lvars_norm`
+- `denot_lvars_norm_in`
+- `denot_lvars_set`
+- `denot_ty_fv_norm`
+- `denot_ty_fv_norm_in`
+- `denot_ty_fv_set`
+- `denot_open_set`
+
+Reason:
+
+- Full-repo search showed no real source calls.  The file was a wrapper tactic
+  layer left from earlier cleanup work and had become misleading.
+- The live denotation proof in `TypeDenote.v` still needs local lvar-at-depth
+  normalizers; those remain in `TypeDenote.v` because importing a post-denote
+  tactic file into `TypeDenote.v` would create a circular dependency.
+
+### `Denotation/theories/TypeDenote.v`
+
+Main local tactics:
+
+- `denot_open_env_child_fresh`
+- `denot_open_env_qual_case`
+- `denot_open_env_binary_case`
+- `rewrite_tm_support`
+- `unfold_formula_lvars_atoms`
+- `normalize_denot_formula_lvars`
+
+Common lemma/normalization families:
+
+- `open_env_fresh_for_lvars_*`
+- `formula_open_env_*`
+- `lvars_at_depth_*`
+- `tm_lvars_at_shift_under`
+- `context_ty_lvars_at_shift_under`
+- `tm_lvars_at_tapp_shift0_bound0`
+
+Status:
+
+- Keep local.  These tactics are tied to the structural induction proofs inside
+  `TypeDenote.v`; moving them would either create an import cycle or split an
+  induction-local proof pattern too far away from its use.
+
+### `Denotation/theories/ConstDenote.v`
+
+Main local tactics:
+
+- `solve_const_over_guard`
+- `solve_const_under_guard`
+- `const_scope_set`
+- `const_forall_scope_norm`
+- `solve_const_forall_closed_scope`
+- `solve_const_forall_open_scope`
+
+Common lemma/normalization families:
+
+- const guard lemmas:
+  `context_ty_wf_formula_const_*_empty`,
+  `basic_world_formula_empty`,
+  `expr_basic_typing_formula_ret_const_empty`,
+  `expr_total_formula_ret_const`
+- const qualifier syntax:
+  `const_qual_open_vars`,
+  `const_qual_vars_bound`
+- formula/lvar syntax:
+  `formula_fv_*`,
+  `lvars_at_depth_*`,
+  `lvars_fv_*`
+
+Status:
+
+- Removed unused `solve_const_guard`.
+- Remaining tactics are local and used multiple times in the two const
+  denotation proofs.  They are not worth pushing into a global solver because
+  their lemma set is const-specific.
+
+## Basic Denotation Local Tactics
+
+### `ContextBasicDenotation/theories/BasicTypingFormula.v`
+
+Removed tactics:
+
+- `rewrite_lift_free_bvar_in`
+- `invert_instantiated_tm_shape`
+- `solve_instantiated_fvar_case`
+
+Removed supporting lemma:
+
+- `lstore_instantiate_value_at_lift_free_bvar`
+
+Reason:
+
+- Full-repo search showed no real source calls.  These were remnants of an old
+  msubst/instantiated-term route.
+
+### `ContextBasicDenotation/theories/TermSyntax.v`
+
+Main tactic:
+
+- `fold_lstore_instantiate_at`
+
+Status:
+
+- Single-purpose tactic local to syntax proofs.  Keep for now; it folds a
+  recurring expression inside the same file.
+
+## Model/Connective Tactics
+
+### `ContextLogic/theories/FormulaConnectives.v`
+
+Main local tactics:
+
+- `normalize_models_ands_in`
+- `normalize_models_ands_goal`
+- `destruct_models_formula_hyps`
+- `split_models_formula_goal`
+- `use_models_impl`
+
+Status:
+
+- Some are currently only used locally or rarely.  They remain useful as
+  connective-proof structure rather than lemma wrappers.
+- Future cleanup could inline the zero-use ones if this file is edited again,
+  but no cross-file consolidation is needed.
+
+## Integration Conclusions
+
+1. The useful shared solvers are already concentrated in:
+   `ContextBase/Tactics.v`, `ContextBase/BaseTactics.v`, and
+   `ContextStore/Store.v`.
+2. Denotation tactic consolidation should not create another wrapper file unless
+   there are real callers.  The previous `TypeDenoteTactics.v` had no callers
+   and was deleted.
+3. Const proof tactics should stay local because their lemma set is
+   const-specific.
+4. Old msubst/instantiation Ltac residue in `BasicTypingFormula.v` was removed.
+5. Future optimization target: if `FormulaConnectives.v` is refactored again,
+   revisit the local model-normalization tactics with zero current external
+   use.

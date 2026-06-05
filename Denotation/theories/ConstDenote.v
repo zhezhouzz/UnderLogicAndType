@@ -393,17 +393,6 @@ Proof.
       rewrite <- HD. exact Hproj.
 Qed.
 
-Local Ltac solve_const_guard :=
-  repeat rewrite res_models_and_iff;
-  repeat split;
-  try apply context_ty_wf_formula_const_over_empty;
-  try apply context_ty_wf_formula_const_under_empty;
-  try apply context_ty_wf_formula_const_precise_empty;
-  try apply basic_world_formula_empty;
-  try apply expr_basic_typing_formula_ret_const_empty;
-  try apply expr_total_formula_ret_const;
-  try (unfold res_models; cbn; tauto).
-
 Local Ltac solve_const_over_guard :=
   cbn [erase_ty];
   eapply res_models_and_intro_from_models;
