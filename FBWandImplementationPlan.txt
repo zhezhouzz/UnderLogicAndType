@@ -43,15 +43,14 @@ proved. Several BasicDenotation atom FV/scope wrappers were repaired after
 ## Phase 4: Fundamental repair
 
 - [x] Simplify Lam helper statements by removing separate argument basic-world premises.
-- [ ] Rework LamD helper statements around `FBWand 1` elimination.
+- [x] Rework LamD helper statements around `FBWand 1` elimination.
 - [x] Preserve already proved direct cases: Var, Const, Sub, CtxSub, Let, LetD,
       Lam, and AppOp.
 - [x] Compile `ContextTyping/theories/Soundness.vo`.
 
 Status 2026-06-05: `Soundness.vo` compiles after migrating the Lam
-proof to the single-implication Arrow body. LamD remains an explicit
-future case obligation; this phase did not attempt the new `FBWand 1`
-proof.
+proof to the single-implication Arrow body and proving the LamD case
+against the new `FBWand 1` product-domain semantics.
 
 ## Final checks
 
@@ -81,5 +80,5 @@ admitted body transports.
 - Removed the obsolete projected-compat proof-search block from
   `TypeEquivWand.v`.
 - Remaining proof-critical obligations are outside this refactor's completed
-  direct cases: LamD/App/AppD/Fix/FixD/Match cases and corollaries in
+  direct cases: App/AppD/Fix/FixD/Match cases and corollaries in
   `Soundness.v`.

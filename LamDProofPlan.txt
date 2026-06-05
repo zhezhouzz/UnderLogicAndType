@@ -12,14 +12,17 @@ opened body/result.
 
 - [x] Add/prove a `CtxStar` commutativity theorem.
 - [x] Reuse or prove `CTWand` argument closed regularity.
-- [ ] Add/prove the closed-argument-to-bind-context bridge.
-- [ ] Add/prove the LamD body/result transport helper.
-- [ ] Prove `fundamental_lamd_case`.
-- [ ] Compile `ContextTyping/theories/Soundness.vo` with 50s timeout.
+- [x] Add/prove the closed-argument-to-bind-context bridge.
+- [x] Add/prove the LamD body/result transport helper.
+- [x] Prove `fundamental_lamd_case`.
+- [x] Compile `ContextTyping/theories/Soundness.vo` with 50s timeout.
 
-## Current Blocker
+## Historical Blocker
 
-The `FBWand` skeleton for `fundamental_lamd_case` compiles, but the helper
+This was the blocker before the `ctx_denote_under` entry-cropping repair.
+It is kept as historical context, not as a current proof obligation.
+
+The `FBWand` skeleton for `fundamental_lamd_case` compiled, but the helper
 
 ```coq
 lamd_open_arg_to_star_ctx

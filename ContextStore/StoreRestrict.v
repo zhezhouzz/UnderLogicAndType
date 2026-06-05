@@ -1398,30 +1398,6 @@ Proof.
       * reflexivity.
 Qed.
 
-Lemma storeA_union_absorb_restrict_inside_r {K : Type} `{Countable K}
-    (s t : gmap K V) (X : gset K) :
-  @union (gmap K V) _ s
-    (@union (gmap K V) _ (storeA_restrict s X : gmap K V) t) =
-  @union (gmap K V) _ s t.
-Proof.
-  rewrite map_union_assoc.
-  rewrite storeA_union_absorb_restrict_r.
-  reflexivity.
-Qed.
-
-Lemma storeA_union_absorb_prefix_inside_r {K : Type} `{Countable K}
-    (s t u : gmap K V) :
-  @union (gmap K V) _
-    (@union (gmap K V) _ s t)
-    (@union (gmap K V) _ s u) =
-  @union (gmap K V) _
-    (@union (gmap K V) _ s t) u.
-Proof.
-  rewrite map_union_assoc.
-  rewrite storeA_union_absorb_prefix_r.
-  reflexivity.
-Qed.
-
 Lemma storeA_compat_insert_l_fresh {K : Type} `{Countable K}
     (s1 s2 : gmap K V) (x : K) (v : V) :
   s1 ≈A s2 →
