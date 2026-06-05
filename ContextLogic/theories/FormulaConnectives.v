@@ -4,6 +4,7 @@
 
 From ContextLogic Require Import LogicQualifier FormulaSemantics.
 From ContextAlgebra Require Import ResourceInterface ResourceCompat.
+From ContextBase Require Import LogicVarOpenEnv.
 From Stdlib Require Import Lia.
 
 (** * ContextLogic.FormulaConnectives
@@ -114,7 +115,7 @@ Proof.
   pose proof (res_models_scoped m1 φ Hφ) as Hscopeφ.
   pose proof (res_models_scoped m2 ψ Hψ) as Hscopeψ.
   unfold formula_scoped_in_world in *.
-  formula_fv_syntax_norm.
+  rewrite formula_fv_star.
   pose proof (raw_le_dom (res_product m1 m2 Hc : WorldT) (m : WorldT) Hle)
     as Hdom.
   intros z Hz. apply elem_of_union in Hz as [Hz | Hz].
@@ -170,7 +171,7 @@ Proof.
   pose proof (res_models_scoped m1 φ Hφ) as Hscopeφ.
   pose proof (res_models_scoped m2 ψ Hψ) as Hscopeψ.
   unfold formula_scoped_in_world in *.
-  formula_fv_syntax_norm.
+  rewrite formula_fv_plus.
   pose proof (raw_le_dom (res_sum m1 m2 Hdef : WorldT) (m : WorldT) Hle)
     as Hdom.
   change (world_dom (m1 : WorldT) = world_dom (m2 : WorldT)) in Hdef.
@@ -497,7 +498,7 @@ Ltac use_models_impl H Hout :=
 
 (** * ContextLogic.FormulaConnectives
 
-    Derived proof principles for wand formulas. *)
+    Derived proof principles for binder-aware wand formulas. *)
 
 
 Section FormulaConnectives.
@@ -511,62 +512,139 @@ Local Notation FormulaT := (Formula (V := V)) (only parsing).
 Local Notation "m ⊨ φ" := (res_models m φ)
   (at level 70, format "m  ⊨  φ").
 
-Lemma res_models_wand_intro (m : WfWorldT) (φ ψ : FormulaT) :
-  formula_scoped_in_world m (FWand φ ψ) →
-  (∀ m' Hc,
-     m' ⊨ φ →
-     res_product m' m Hc ⊨ ψ) →
-  m ⊨ FWand φ ψ.
+Lemma res_models_fbwand_intro (m : WfWorldT) d (φ ψ : FormulaT) :
+  formula_scoped_in_world m (FBWand d φ ψ) →
+  (exists L : aset,
+    ∀ η (m' : WfWorldT)
+      (Hc : world_compat m' m),
+      open_env_binds d η →
+      open_env_atoms η ## L →
+      world_dom (res_product m' m Hc : WorldT) =
+        world_dom (m : WorldT) ∪ open_env_atoms η →
+      m' ⊨ formula_open_env η φ →
+      res_product m' m Hc ⊨ formula_open_env η ψ) →
+  m ⊨ FBWand d φ ψ.
 Proof.
   unfold res_models.
-  simpl. intros Hscope Hwand. split; [exact Hscope |].
-  intros m' Hc Hφ.
-  assert (Hφ_model : m' ⊨ φ).
+  simpl. intros Hscope [L Hwand]. split; [exact Hscope |].
+  exists L.
+  intros η m' Hc Hbind Hfresh Hdom Hφ.
+  assert (Hφ_model : m' ⊨ formula_open_env η φ).
   { unfold res_models. models_fuel_irrel Hφ. }
-  pose proof (Hwand m' Hc Hφ_model) as Hψ.
+  pose proof (Hwand η m' Hc Hbind Hfresh Hdom Hφ_model) as Hψ.
   models_fuel_irrel Hψ.
 Qed.
 
-Lemma res_models_wand_elim
-    (m1 m2 : WfWorldT) (Hc : world_compat m1 m2) (φ ψ : FormulaT) :
-  m2 ⊨ FWand φ ψ →
-  m1 ⊨ φ →
-  res_product m1 m2 Hc ⊨ ψ.
+Lemma res_models_fbwand_rev
+    (m : WfWorldT) d
+    (φ ψ : FormulaT) :
+  m ⊨ FBWand d φ ψ ->
+  exists L : aset,
+    forall (η : gmap nat atom) (m' : WfWorldT)
+      (Hc : world_compat m' m),
+      open_env_binds d η ->
+      open_env_atoms η ## L ->
+      world_dom (res_product m' m Hc : WorldT) =
+        world_dom (m : WorldT) ∪ open_env_atoms η ->
+      m' ⊨ formula_open_env η φ ->
+      res_product m' m Hc ⊨ formula_open_env η ψ.
 Proof.
-  unfold res_models.
-  simpl. intros [_ Hwand] Hφ.
+  unfold res_models. simpl. intros [_ [L Hwand]].
+  exists L.
+  intros η m' Hc Hbind Hfresh Hdom Hφ.
   assert (Hφ_fuel :
-      res_models_fuel (formula_measure φ + formula_measure ψ) m1 φ).
+      res_models_fuel (formula_measure φ + formula_measure ψ) m'
+        (formula_open_env η φ)).
   { models_fuel_irrel Hφ. }
-  pose proof (Hwand m1 Hc Hφ_fuel) as Hψ.
+  pose proof (Hwand η m' Hc Hbind Hfresh Hdom Hφ_fuel) as Hψ.
   models_fuel_irrel Hψ.
 Qed.
 
-Lemma res_models_impl_wand_map_dep
-    (m : WfWorldT)
-    (φ1 φ2 ψ1 ψ2 χ1 χ2 : FormulaT) :
-  formula_scoped_in_world m (FImpl φ2 (FWand ψ2 χ2)) →
-  (m ⊨ φ2 → m ⊨ φ1) →
-  (∀ (n : WfWorldT) (Hc : world_compat n m),
-    n ⊨ ψ2 → n ⊨ ψ1) →
-  (m ⊨ φ2 →
-    ∀ (n : WfWorldT) (Hc : world_compat n m),
-      n ⊨ ψ2 →
-      res_product n m Hc ⊨ χ1 →
-      res_product n m Hc ⊨ χ2) →
-  m ⊨ FImpl φ1 (FWand ψ1 χ1) →
-  m ⊨ FImpl φ2 (FWand ψ2 χ2).
+(** Reviewer-facing sanity theorem.
+
+    [FBWand] has product-domain semantics: the semantic clause only invokes the
+    body when the product of the argument resource and closure resource
+    introduces exactly the atoms opened for the binder block.  Reviewers may
+    reasonably ask how this relates to the ordinary BI wand rule.  The theorem
+    below records that a well-formed [FBWand] supports the usual BI-style use:
+    any compatible argument resource that provides the opened binder atoms and
+    satisfies the opened antecedent entails the opened consequent on the product
+    world.
+
+    This theorem is intentionally not used by type denotation, minimality, or
+    Fundamental.  It is metatheory explaining the binder-aware connective, so do
+    not delete it as an apparently unused wrapper during cleanup. *)
+Theorem res_models_fbwand_bi_of_wf
+    (m : WfWorldT) d (φ ψ : FormulaT) :
+  formula_wf (FBWand d φ ψ) ->
+  m ⊨ FBWand d φ ψ ->
+  exists L : aset,
+    forall (η : gmap nat atom) (n : WfWorldT)
+      (Hc : world_compat n m),
+      open_env_binds d η ->
+      open_env_atoms η ## L ->
+      open_env_atoms η ⊆ world_dom (n : WorldT) ->
+      n ⊨ formula_open_env η φ ->
+      res_product n m Hc ⊨ formula_open_env η ψ.
 Proof.
-  intros Hscope Hφ Hψ Hχ Himpl.
-  eapply res_models_impl_intro; [exact Hscope |].
-  intros Hφ2.
-  eapply res_models_wand_intro.
-  - eapply formula_scoped_impl_r. exact Hscope.
-  - intros n Hc Hψ2.
-    eapply Hχ; [exact Hφ2 | exact Hψ2 |].
-    eapply res_models_wand_elim; [| eapply Hψ; eauto].
-    eapply res_models_impl_elim; [exact Himpl |].
-    apply Hφ. exact Hφ2.
+  intros Hwf Hmodel.
+  destruct Hwf as [_ [_ _]].
+  pose proof (res_models_scoped _ _ Hmodel) as Hscope.
+  pose proof (res_models_fbwand_rev _ _ _ _ Hmodel) as [L Hwand].
+  exists (L ∪ world_dom (m : WorldT)).
+  intros η n Hc Hbind Hfresh Hηn Hφ.
+  set (A := open_env_atoms η).
+  set (X := world_dom (m : WorldT) ∪ A).
+  assert (Hfresh_L : A ## L) by (subst A; set_solver).
+  assert (HφX : formula_fv (formula_open_env η φ) ⊆ X).
+  {
+    subst X A.
+    pose proof (formula_open_env_fv_subset η φ) as Hopen.
+    assert (Hφm : formula_fv φ ⊆ world_dom (m : WorldT)).
+    {
+      intros z Hz. apply Hscope.
+      rewrite formula_fv_fbwand.
+      rewrite (formula_lvars_at_fv d φ), (formula_lvars_at_fv d ψ).
+      set_solver.
+    }
+    set_solver.
+  }
+  assert (Hc_small : world_compat (res_restrict n X) m).
+  {
+    assert (Hc_full : world_compat n (res_restrict m (world_dom (m : WorldT)))).
+    {
+      rewrite (res_restrict_eq_of_le m m (raw_le_refl m)).
+      exact Hc.
+    }
+    pose proof (world_compat_restrict_overlap n m X (world_dom (m : WorldT))
+      (world_dom (m : WorldT)) ltac:(set_solver) Hc_full) as Htmp.
+    rewrite (res_restrict_eq_of_le m m (raw_le_refl m)) in Htmp.
+    exact Htmp.
+  }
+  assert (Hdom_small :
+      world_dom (res_product (res_restrict n X) m Hc_small : WorldT) =
+        world_dom (m : WorldT) ∪ A).
+  {
+    apply set_eq. intros z.
+    change (z ∈ world_dom (res_restrict n X : WorldT) ∪
+      world_dom (m : WorldT) ↔
+      z ∈ world_dom (m : WorldT) ∪ A).
+    rewrite res_restrict_dom.
+    subst X A. set_solver.
+  }
+  assert (Hφ_small :
+      res_restrict n X ⊨ formula_open_env η φ).
+  {
+    apply (proj1 (res_models_minimal_on X n
+      (formula_open_env η φ) HφX)).
+    exact Hφ.
+  }
+  pose proof (Hwand η (res_restrict n X) Hc_small
+    Hbind Hfresh_L Hdom_small Hφ_small) as Hψ_small.
+  eapply res_models_kripke; [| exact Hψ_small].
+  eapply res_product_le_mono.
+  - apply res_restrict_le.
+  - apply raw_le_refl.
 Qed.
 
 End FormulaConnectives.
@@ -654,7 +732,7 @@ Proof.
   assert (HyL : y ∉ L) by set_solver.
   assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
   assert (Hfv : formula_fv φ ⊆ world_dom (m : WorldT)).
-  { exact Hscope. }
+  { eapply formula_scoped_forall_body. exact Hscope. }
   destruct (forall_extension_from_world_dom_projection
     m my (formula_fv φ) y Hfv Hym Hdom Hrestrict)
     as [F [n [HFin [HFout [Hext Hproj]]]]].
@@ -713,12 +791,19 @@ Lemma res_models_forall_full_world_map
   m ⊨ FForall φ ->
   m ⊨ FForall ψ.
 Proof.
-  intros Hψscope [Lmap Hmap] Hφ.
-  pose proof (res_models_forall_rev m φ Hφ) as [Lφ Hφfull].
-  eapply res_models_forall_rev_intro; [exact Hψscope |].
-  exists (Lmap ∪ Lφ). intros y Hy my Hdom Hrestrict.
-  eapply Hmap; [set_solver | exact Hdom | exact Hrestrict |].
-  eapply Hφfull; [set_solver | exact Hdom | exact Hrestrict].
+  intros Hscope [Lmap Hmap] Hforall.
+  destruct (res_models_forall_rev m φ Hforall) as [Lsrc Hsrc].
+  eapply res_models_forall_rev_intro; [exact Hscope |].
+  exists (Lmap ∪ Lsrc).
+  intros y Hy my Hdom Hrestrict.
+  eapply Hmap.
+  - set_solver.
+  - exact Hdom.
+  - exact Hrestrict.
+  - eapply Hsrc.
+    + set_solver.
+    + exact Hdom.
+    + exact Hrestrict.
 Qed.
 
 Lemma res_models_forall_full_world_impl2_map
@@ -736,25 +821,24 @@ Lemma res_models_forall_full_world_impl2_map
   m ⊨ FForall (FImpl A1 (FImpl B1 C1)) ->
   m ⊨ FForall (FImpl A2 (FImpl B2 C2)).
 Proof.
-  intros Hscope [L Hmap] Hsrc.
-  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
-  exists L. intros y Hy my Hdom Hrestrict Hopen.
-  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
-  assert (Hopened_scope :
+  intros Hscope [L Hmap] Hforall.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].
+  exists L.
+  intros y Hy my Hdom Hrestrict Hopened.
+  assert (Htarget_scope :
       formula_scoped_in_world my
         (formula_open 0 y (FImpl A2 (FImpl B2 C2)))).
   {
-    eapply formula_scoped_open_from_fv.
-    unfold formula_scoped_in_world in Hscope |- *.
-    rewrite Hdom.
-    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FImpl B2 C2))).
-    rewrite formula_fv_forall in Hscope.
-    set_solver.
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. set_solver.
   }
-  formula_open_syntax_norm_in Hopen.
-  formula_open_syntax_norm_in Hopened_scope.
-  formula_open_syntax_norm.
-  eapply res_models_impl2_map; eauto.
+  rewrite !formula_open_impl in Hopened |- *.
+  rewrite !formula_open_impl in Htarget_scope.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
+  eapply res_models_impl2_map; [| exact HA | exact HB | exact HC | exact Hopened].
+  exact Htarget_scope.
 Qed.
 
 Lemma res_models_forall_full_world_impl2_map_dep
@@ -775,67 +859,24 @@ Lemma res_models_forall_full_world_impl2_map_dep
   m ⊨ FForall (FImpl A1 (FImpl B1 C1)) ->
   m ⊨ FForall (FImpl A2 (FImpl B2 C2)).
 Proof.
-  intros Hscope [L Hmap] Hsrc.
-  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
-  exists L. intros y Hy my Hdom Hrestrict Hopen.
-  destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
-  assert (Hopened_scope :
+  intros Hscope [L Hmap] Hforall.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].
+  exists L.
+  intros y Hy my Hdom Hrestrict Hopened.
+  assert (Htarget_scope :
       formula_scoped_in_world my
         (formula_open 0 y (FImpl A2 (FImpl B2 C2)))).
   {
-    eapply formula_scoped_open_from_fv.
-    unfold formula_scoped_in_world in Hscope |- *.
-    rewrite Hdom.
-    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FImpl B2 C2))).
-    rewrite formula_fv_forall in Hscope.
-    set_solver.
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. set_solver.
   }
-  formula_open_syntax_norm_in Hopen.
-  formula_open_syntax_norm_in Hopened_scope.
-  formula_open_syntax_norm.
-  eapply res_models_impl2_map_dep; eauto.
-Qed.
-
-Lemma models_forall_impl_wand_map_dep
-    (m : WfWorldT)
-    (A1 A2 B1 B2 C1 C2 : FormulaT) :
-  formula_scoped_in_world m (FForall (FImpl A2 (FWand B2 C2))) ->
-  (∃ L : aset,
-    forall y : atom, y ∉ L ->
-      forall my : WfWorldT,
-        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-        res_restrict my (world_dom (m : WorldT)) = m ->
-        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
-        (forall (n : WfWorldT) (Hc : world_compat n my),
-          n ⊨ formula_open 0 y B2 ->
-          n ⊨ formula_open 0 y B1) /\
-        (my ⊨ formula_open 0 y A2 ->
-          forall (n : WfWorldT) (Hc : world_compat n my),
-          n ⊨ formula_open 0 y B2 ->
-          res_product n my Hc ⊨ formula_open 0 y C1 ->
-          res_product n my Hc ⊨ formula_open 0 y C2)) ->
-  m ⊨ FForall (FImpl A1 (FWand B1 C1)) ->
-  m ⊨ FForall (FImpl A2 (FWand B2 C2)).
-Proof.
-  intros Hscope [L Hmap] Hsrc.
-  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hsrc].
-  exists L. intros y Hy my Hdom Hrestrict Hopen.
+  rewrite !formula_open_impl in Hopened |- *.
+  rewrite !formula_open_impl in Htarget_scope.
   destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
-  assert (Hopened_scope :
-      formula_scoped_in_world my
-        (formula_open 0 y (FImpl A2 (FWand B2 C2)))).
-  {
-    eapply formula_scoped_open_from_fv.
-    unfold formula_scoped_in_world in Hscope |- *.
-    rewrite Hdom.
-    pose proof (formula_open_fv_subset 0 y (FImpl A2 (FWand B2 C2))).
-    rewrite formula_fv_forall in Hscope.
-    set_solver.
-  }
-  formula_open_syntax_norm_in Hopen.
-  formula_open_syntax_norm_in Hopened_scope.
-  formula_open_syntax_norm.
-  eapply res_models_impl_wand_map_dep; eauto.
+  eapply res_models_impl2_map_dep; [| exact HA | exact HB | exact HC | exact Hopened].
+  exact Htarget_scope.
 Qed.
 
 End FormulaConnectives.

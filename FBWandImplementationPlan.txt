@@ -1,0 +1,85 @@
+# FBWand implementation checklist
+
+## Phase 1: Logic syntax
+
+- [x] Delete `FWand` from formula syntax and add `FBWand d p q`.
+- [x] Make `formula_lvars` a wrapper around `formula_lvars_at 0`.
+- [x] Make `FForall` and `FBWand` binder-aware in `formula_lvars_at`.
+- [x] Update FV/open/open-env/mlsubst/measure lemmas and syntax tactics.
+- [x] Compile `ContextLogic/theories/FormulaSyntax.vo`.
+
+Status 2026-06-05: Phase 1 complete. `FormulaSyntax.vo` compiles with
+`FBWand d`, binder-aware `formula_lvars_at`, `formula_open`, and
+`formula_open_env_fbwand`.
+
+## Phase 2: Logic semantics and connectives
+
+- [x] Add/choose the minimal `open_env_binds d η` predicate.
+- [x] Replace `FWand` semantics with `FBWand` semantics.
+- [x] Remove old wand scope lemmas and add `FBWand` scope helpers.
+- [x] Repair projection/Kripke/fuel irrelevance for `FBWand`.
+- [x] Replace old wand connective lemmas with `FBWand` intro/elim/map.
+- [x] Compile `FormulaSemantics.vo` and `FormulaConnectives.vo`.
+
+Status 2026-06-05: Phase 2 compiles. Old `FWand` is gone from
+`ContextLogic`; semantics uses product-domain `FBWand d` with an opening
+environment. Projection/Kripke support and the full-world transport lemmas are
+proved. The reviewer-facing `formula_wf` predicate and
+`res_models_fbwand_bi_of_wf` theorem are also proved in the Logic layer.
+
+## Phase 3: Denotation definitions
+
+- [x] Change `CTArrow` to `FForall (FImpl arg_den result_den)`.
+- [x] Change `CTWand` to `FBWand 1 arg_den result_den`.
+- [x] Remove singleton parameter `basic_world_formula` premises from Arrow/Wand.
+- [x] Repair open-env normalization lemmas for the new Arrow/Wand shapes.
+- [x] Compile `Denotation/theories/TypeDenote.vo`.
+
+Status 2026-06-05: `TypeDenote.vo` compiles with the new Arrow and
+`FBWand 1` denotation shapes. Open-env normalization and lvars support are
+proved. Several BasicDenotation atom FV/scope wrappers were repaired after
+`formula_lvars` became a depth-aware wrapper.
+
+## Phase 4: Fundamental repair
+
+- [x] Simplify Lam helper statements by removing separate argument basic-world premises.
+- [ ] Rework LamD helper statements around `FBWand 1` elimination.
+- [x] Preserve already proved direct cases: Var, Const, Sub, CtxSub, Let, LetD,
+      Lam, and AppOp.
+- [x] Compile `ContextTyping/theories/Soundness.vo`.
+
+Status 2026-06-05: `Soundness.vo` compiles after migrating the Lam
+proof to the single-implication Arrow body. LamD remains an explicit
+future case obligation; this phase did not attempt the new `FBWand 1`
+proof.
+
+## Final checks
+
+- [x] `rg -n "FWand|formula_scoped_wand|res_models_.*wand" ContextLogic`
+      finds no old ordinary-wand route.
+- [~] `rg -n "FWand|basic_world_formula \\(<\\[LVBound 0" Denotation ContextTyping`
+      finds no old Denotation Arrow/Wand shape.
+- [x] Full `make` passes or any remaining proof obligations are explicit and
+      not in the already proved direct Fundamental cases.
+
+Status 2026-06-05: full `make` passes. Old `FWand` no longer appears.
+The remaining `basic_world_formula (<[LVBound 0 := ...]> ∅)` hits are
+legacy opened Arrow/Wand transport helper premises in `TypeEquivArrow.v`
+and `TypeEquivWand.v` plus Over/Under base-type shapes; they are not the
+new Arrow/Wand denotation definitions. Further cleanup can either
+migrate those helper statements or delete them after replacing the
+admitted body transports.
+
+## 2026-06-05 status
+- Proved FormulaConnectives full-world transport lemmas.
+- Proved TypeDenote open-env/lvars obligations.
+- Proved Arrow term-equivalence body under FBWand migration.
+- Changed FBWand semantics to finite fresh-set form to make LN opening proof-correct.
+- Updated FBWand semantics to product-domain form and proved projection/Kripke
+  support.
+- Added reviewer-facing `formula_wf` and `res_models_fbwand_bi_of_wf`.
+- Removed the obsolete projected-compat proof-search block from
+  `TypeEquivWand.v`.
+- Remaining proof-critical obligations are outside this refactor's completed
+  direct cases: LamD/App/AppD/Fix/FixD/Match cases and corollaries in
+  `Soundness.v`.

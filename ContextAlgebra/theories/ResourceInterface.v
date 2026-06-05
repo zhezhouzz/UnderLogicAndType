@@ -230,6 +230,26 @@ Definition res_sum (w1 w2 : WfWorld) (Hdef : raw_sum_defined (w1 : World) (w2 : 
   resA_sum w1 w2 Hdef.
 Definition res_subset (w1 w2 : WfWorld) : Prop := resA_subset w1 w2.
 
+Lemma res_product_r_eq
+    (w1 w2 w2' : WfWorld)
+    (Hc : world_compat (w1 : World) (w2 : World))
+    (Hc' : world_compat (w1 : World) (w2' : World)) :
+  w2 = w2' ->
+  res_product w1 w2 Hc = res_product w1 w2' Hc'.
+Proof.
+  intros ->. unfold res_product. f_equal. apply proof_irrelevance.
+Qed.
+
+Lemma res_product_l_eq
+    (w1 w1' w2 : WfWorld)
+    (Hc : world_compat (w1 : World) (w2 : World))
+    (Hc' : world_compat (w1' : World) (w2 : World)) :
+  w1 = w1' ->
+  res_product w1 w2 Hc = res_product w1' w2 Hc'.
+Proof.
+  intros ->. unfold res_product. f_equal. apply proof_irrelevance.
+Qed.
+
 Definition singleton_world (σ : StoreT) : World := singleton_worldA σ.
 
 Definition fiber_extension : Type := @fiber_extensionA atom _ _ V.
@@ -328,6 +348,10 @@ Lemma res_restrict_restrict_eq (w : WfWorld) (X Y : aset) :
   res_restrict w (X ∩ Y).
 Proof. apply resA_restrict_restrict_eq. Qed.
 
+Lemma res_restrict_dom (w : WfWorld) (X : aset) :
+  world_dom (res_restrict w X : World) = world_dom (w : World) ∩ X.
+Proof. reflexivity. Qed.
+
 Lemma res_restrict_le (w : WfWorld) (X : aset) :
   res_restrict w X ⊑ w.
 Proof. apply resA_restrict_le. Qed.
@@ -377,6 +401,22 @@ Lemma world_compat_restrict_l_full_r (n m : WfWorld) (S X : aset) :
   world_compat n (res_restrict m S) →
   world_compat (res_restrict n X) m.
 Proof. apply worldA_compat_restrict_l_full_r. Qed.
+
+Lemma world_compat_of_disjoint_dom (m n : WfWorld) :
+  world_dom (m : World) ## world_dom (n : World) →
+  world_compat m n.
+Proof.
+  intros Hdisj.
+  apply disj_dom_worldA_compat.
+  set_solver.
+Qed.
+
+Lemma world_compat_restrict_overlap
+    (n m : WfWorld) (X Y S : aset) :
+  X ∩ Y ⊆ S ->
+  world_compat n (res_restrict m S) ->
+  world_compat (res_restrict n X) (res_restrict m Y).
+Proof. apply worldA_compat_restrict_overlap. Qed.
 
 Definition res_pullback_subset_projection (n p : WfWorld)
     (Hsub : res_subset p (res_restrict n (world_dom (p : World)))) : WfWorld :=
@@ -436,6 +476,66 @@ Lemma res_product_restrict_wand_le
   res_restrict (res_product (res_restrict n X) m Hc_small) Y ⊑
   res_product n (res_restrict m S) Hc.
 Proof. apply resA_product_restrict_wand_le. Qed.
+
+Lemma res_product_restrict_frame_common_eq
+    (n m : WfWorld) (X S C Y : aset)
+    (Hc_common : world_compat (res_restrict n X) (res_restrict m C))
+    (Hc_tgt : world_compat n (res_restrict m S)) :
+  S ⊆ C ->
+  Y ⊆ (X ∩ world_dom (n : World)) ∪
+        (S ∩ world_dom (m : World)) ->
+  res_restrict
+    (res_product (res_restrict n X) (res_restrict m C) Hc_common)
+    Y =
+    res_restrict (res_product n (res_restrict m S) Hc_tgt) Y.
+Proof. apply resA_product_restrict_frame_common_eq. Qed.
+
+Lemma res_product_restrict_frame_r_eq
+    (n m : WfWorld) (S Y : aset)
+    (Hc : world_compat n m)
+    (HcS : world_compat n (res_restrict m S)) :
+  S ⊆ world_dom (m : World) ->
+  Y ⊆ world_dom (n : World) ∪ S ->
+  res_restrict (res_product n (res_restrict m S) HcS) Y =
+  res_restrict (res_product n m Hc) Y.
+Proof.
+  intros HSm HY.
+  set (X := world_dom (n : World)).
+  set (C := world_dom (m : World)).
+  assert (Hn_full : res_restrict n X = n).
+  { subst X. apply res_restrict_eq_of_le. apply raw_le_refl. }
+  assert (Hm_full : res_restrict m C = m).
+  { subst C. apply res_restrict_eq_of_le. apply raw_le_refl. }
+  assert (Hc_common :
+      world_compat (res_restrict n X) (res_restrict m C)).
+  { rewrite Hn_full, Hm_full. exact Hc. }
+  pose proof (res_product_restrict_frame_common_eq
+    n m X S C Y Hc_common HcS ltac:(subst C; exact HSm))
+    as Heq.
+  assert (HY' : Y ⊆ (X ∩ world_dom (n : World)) ∪
+                  (S ∩ world_dom (m : World))).
+  {
+    subst X. intros z Hz.
+	    pose proof (HY z Hz) as HzNS.
+	    apply elem_of_union in HzNS as [HzN|HzS].
+	    - apply elem_of_union_l. set_solver.
+	    - apply elem_of_union_r. apply elem_of_intersection.
+	      split; [exact HzS|apply HSm; exact HzS].
+	  }
+	  specialize (Heq HY').
+	  assert (Hcommon_full :
+	      res_product (res_restrict n X) (res_restrict m C) Hc_common =
+	      res_product n m Hc).
+	  {
+	    assert (Hc_nC : world_compat n (res_restrict m C)).
+	    { eapply world_compat_le_r; [apply res_restrict_le|exact Hc]. }
+	    transitivity (res_product n (res_restrict m C) Hc_nC).
+	    - eapply res_product_l_eq. exact Hn_full.
+	    - eapply res_product_r_eq. exact Hm_full.
+	  }
+  rewrite Hcommon_full in Heq.
+  symmetry. exact Heq.
+Qed.
 
 Lemma res_product_restrict_same_le
     (m m1 m2 : WfWorld) (X : aset)
@@ -500,6 +600,195 @@ Lemma res_sum_assoc_eq (w1 w2 w3 : WfWorld)
     res_sum (res_sum w1 w2 H12) w3 H123 =
     res_sum w1 (res_sum w2 w3 H23) H1_23.
 Proof. apply resA_sum_assoc_eq. Qed.
+
+Lemma res_product_restrict_binder_arg_compat_dom
+    (m n marg : WfWorld) (C X A : aset)
+    (Hc_tgt : world_compat marg n) :
+  res_restrict m C = res_restrict n C ->
+  C ⊆ world_dom (m : World) ->
+  A ## world_dom (m : World) ->
+  A ## world_dom (n : World) ->
+  world_dom (res_product marg n Hc_tgt : World) =
+    world_dom (n : World) ∪ A ->
+  X ⊆ C ∪ A ->
+  A ⊆ X ->
+  exists Hc_src : world_compat (res_restrict marg X) m,
+    world_dom (res_product (res_restrict marg X) m Hc_src : World) =
+      world_dom (m : World) ∪ A.
+Proof.
+  intros Hmn HCm HAm HAn Hdom_tgt HXC HAX.
+  assert (HA_marg : A ⊆ world_dom (marg : World)).
+  {
+    intros a Ha.
+    assert (Ha_prod : a ∈ world_dom (res_product marg n Hc_tgt : World)).
+    { rewrite Hdom_tgt. set_solver. }
+    change (a ∈ world_dom (marg : World) ∪ world_dom (n : World))
+      in Ha_prod.
+    set_solver.
+  }
+  assert (Hc_marg_nC : world_compat marg (res_restrict n C)).
+  { eapply world_compat_le_r; [apply res_restrict_le|exact Hc_tgt]. }
+  assert (Hc_marg_mC : world_compat marg (res_restrict m C)).
+  { rewrite <- (eq_sym Hmn). exact Hc_marg_nC. }
+  assert (Hc_src : world_compat (res_restrict marg X) m).
+  {
+    assert (Hc_tmp :
+        world_compat (res_restrict marg X)
+          (res_restrict m (world_dom (m : World)))).
+    {
+      eapply world_compat_restrict_overlap
+        with (S := C) (n := marg) (m := m).
+      - intros z Hz.
+        apply elem_of_intersection in Hz as [HzX Hzm].
+        assert (HzCA : z ∈ C ∪ A) by set_solver.
+        apply elem_of_union in HzCA as [HzC|HzA]; [exact HzC|].
+        exfalso.
+        eapply elem_of_disjoint; [exact HAm|exact HzA|exact Hzm].
+      - exact Hc_marg_mC.
+    }
+    rewrite (res_restrict_eq_of_le m m (raw_le_refl m)) in Hc_tmp.
+    exact Hc_tmp.
+  }
+  exists Hc_src.
+  apply set_eq. intros z. split; intros Hz.
+  - change (z ∈ world_dom (res_restrict marg X : World) ∪
+      world_dom (m : World)) in Hz.
+    apply elem_of_union in Hz as [Hz|Hz]; [|set_solver].
+    change (z ∈ world_dom (marg : World) ∩ X) in Hz.
+    apply elem_of_intersection in Hz as [_ HzX].
+	    assert (HzCA : z ∈ C ∪ A) by set_solver.
+	    apply elem_of_union in HzCA as [HzC|HzA].
+	    + apply elem_of_union_l. apply HCm. exact HzC.
+	    + apply elem_of_union_r. exact HzA.
+  - change (z ∈ world_dom (res_restrict marg X : World) ∪
+      world_dom (m : World)).
+	    apply elem_of_union in Hz as [Hzm|HzA].
+	    + apply elem_of_union_r. exact Hzm.
+	    + apply elem_of_union_l. change (z ∈ world_dom (marg : World) ∩ X).
+      apply elem_of_intersection. split.
+      * apply HA_marg. exact HzA.
+      * apply HAX. exact HzA.
+Qed.
+
+Lemma res_product_restrict_binder_arg_projection
+    (m n marg : WfWorld) (C X A Y : aset)
+    (Hc_tgt : world_compat marg n) :
+  res_restrict m C = res_restrict n C ->
+  C ⊆ world_dom (m : World) ->
+  A ## world_dom (m : World) ->
+  A ## world_dom (n : World) ->
+  world_dom (res_product marg n Hc_tgt : World) =
+    world_dom (n : World) ∪ A ->
+  X ⊆ C ∪ A ->
+  A ⊆ X ->
+  Y ⊆ C ∪ A ->
+  exists Hc_src : world_compat (res_restrict marg X) m,
+    world_dom (res_product (res_restrict marg X) m Hc_src : World) =
+      world_dom (m : World) ∪ A /\
+    res_restrict (res_product (res_restrict marg X) m Hc_src) Y =
+    res_restrict (res_product marg n Hc_tgt) Y.
+Proof.
+  intros Hmn HCm HAm HAn Hdom_tgt HXC HAX HYC.
+  destruct (res_product_restrict_binder_arg_compat_dom
+    m n marg C X A Hc_tgt Hmn HCm HAm HAn Hdom_tgt HXC HAX)
+    as [Hc_src Hdom_src].
+  exists Hc_src. split; [exact Hdom_src|].
+  assert (HA_marg : A ⊆ world_dom (marg : World)).
+  {
+    intros a Ha.
+    assert (Ha_prod : a ∈ world_dom (res_product marg n Hc_tgt : World)).
+    { rewrite Hdom_tgt. set_solver. }
+    change (a ∈ world_dom (marg : World) ∪ world_dom (n : World))
+      in Ha_prod.
+    set_solver.
+  }
+  assert (HCn : C ⊆ world_dom (n : World)).
+  {
+    pose proof (f_equal (fun w : WfWorld => world_dom (w : World)) Hmn)
+      as HdomC.
+    cbn [world_dom raw_world raw_worldA res_restrict] in HdomC.
+    set_solver.
+  }
+  assert (Hc_marg_nC : world_compat marg (res_restrict n C)).
+  { eapply world_compat_le_r; [apply res_restrict_le|exact Hc_tgt]. }
+  assert (Hc_marg_mC : world_compat marg (res_restrict m C)).
+  { rewrite Hmn. exact Hc_marg_nC. }
+  assert (Hc_common_m :
+      world_compat (res_restrict marg X) (res_restrict m C)).
+  {
+    eapply world_compat_restrict_overlap
+      with (S := C) (n := marg) (m := m).
+    - set_solver.
+    - exact Hc_marg_mC.
+  }
+	  assert (Hsrc_to_common :
+	      res_restrict (res_product (res_restrict marg X) m Hc_src) Y =
+	      res_restrict
+	        (res_product (res_restrict marg X) (res_restrict m C)
+	          Hc_common_m) Y).
+	  {
+    symmetry.
+	    eapply res_product_restrict_frame_r_eq.
+    - exact HCm.
+    - intros z HzY.
+      assert (HzCA : z ∈ C ∪ A) by set_solver.
+      apply elem_of_union in HzCA as [HzC|HzA].
+      + apply elem_of_union_r. exact HzC.
+      + apply elem_of_union_l.
+        change (z ∈ world_dom (marg : World) ∩ X).
+        apply elem_of_intersection. split.
+        * apply HA_marg. exact HzA.
+        * apply HAX. exact HzA.
+  }
+	  assert (Hcommon_eq :
+	      res_restrict
+	        (res_product (res_restrict marg X) (res_restrict m C)
+	          Hc_common_m) Y =
+	      res_restrict (res_product marg (res_restrict n C) Hc_marg_nC) Y).
+	  {
+    assert (Hc_common_n :
+        world_compat (res_restrict marg X) (res_restrict n C)).
+    {
+      eapply world_compat_restrict_overlap
+        with (S := C) (n := marg) (m := n).
+      - set_solver.
+      - exact Hc_marg_nC.
+    }
+    assert (Hmn_prod :
+        res_product (res_restrict marg X) (res_restrict m C)
+          Hc_common_m =
+        res_product (res_restrict marg X) (res_restrict n C)
+          Hc_common_n).
+    { eapply res_product_r_eq. exact Hmn. }
+    rewrite Hmn_prod.
+    eapply res_product_restrict_frame_common_eq
+      with (S := C) (C := C).
+    - set_solver.
+    - intros z HzY.
+      assert (HzCA : z ∈ C ∪ A) by set_solver.
+      apply elem_of_union in HzCA as [HzC|HzA].
+      + apply elem_of_union_r. apply elem_of_intersection.
+        split; [exact HzC|apply HCn; exact HzC].
+	      + apply elem_of_union_l. apply elem_of_intersection.
+	        split.
+	        * apply HAX. exact HzA.
+	        * apply HA_marg. exact HzA.
+	  }
+  assert (Htgt_common_to_full :
+      res_restrict (res_product marg (res_restrict n C) Hc_marg_nC) Y =
+      res_restrict (res_product marg n Hc_tgt) Y).
+  {
+    eapply res_product_restrict_frame_r_eq.
+    - exact HCn.
+    - intros z HzY.
+      assert (HzCA : z ∈ C ∪ A) by set_solver.
+      apply elem_of_union in HzCA as [HzC|HzA].
+      + apply elem_of_union_r. exact HzC.
+      + apply elem_of_union_l. apply HA_marg. exact HzA.
+  }
+  rewrite Hsrc_to_common, Hcommon_eq, Htgt_common_to_full.
+  reflexivity.
+Qed.
 
 
 

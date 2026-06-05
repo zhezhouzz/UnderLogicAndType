@@ -15,7 +15,7 @@ Ltac normalize_denotation_formula_fv :=
     [ rewrite formula_fv_true | rewrite formula_fv_false
     | rewrite formula_fv_and | rewrite formula_fv_or
     | rewrite formula_fv_impl | rewrite formula_fv_star
-    | rewrite formula_fv_wand | rewrite formula_fv_plus
+    | rewrite formula_fv_fbwand | rewrite formula_fv_plus
     | rewrite formula_fv_forall | rewrite formula_fv_over
     | rewrite formula_fv_under | rewrite formula_fv_fibvars ];
   rewrite ?formula_fv_context_ty_wf_formula;
@@ -42,7 +42,7 @@ Ltac normalize_denotation_formula_fv_in H :=
     [ rewrite formula_fv_true in H | rewrite formula_fv_false in H
     | rewrite formula_fv_and in H | rewrite formula_fv_or in H
     | rewrite formula_fv_impl in H | rewrite formula_fv_star in H
-    | rewrite formula_fv_wand in H | rewrite formula_fv_plus in H
+    | rewrite formula_fv_fbwand in H | rewrite formula_fv_plus in H
     | rewrite formula_fv_forall in H | rewrite formula_fv_over in H
     | rewrite formula_fv_under in H | rewrite formula_fv_fibvars in H ];
   rewrite ?formula_fv_context_ty_wf_formula in H;

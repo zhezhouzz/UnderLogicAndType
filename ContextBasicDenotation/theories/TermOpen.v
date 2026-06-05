@@ -18,7 +18,10 @@ Definition expr_result_formula (e : tm) (x : logic_var) : Formula :=
 Lemma formula_fv_expr_result_formula e x :
   formula_fv (expr_result_formula e x) =
   lvars_fv (tm_lvars e ∪ {[x]}).
-Proof. reflexivity. Qed.
+Proof.
+  unfold expr_result_formula, expr_result_lqual.
+  rewrite formula_fv_atom. reflexivity.
+Qed.
 
 Lemma lstore_swap_lookup_inv_value a b (σ : LStoreT) z :
   ((lstore_swap a b σ : gmap logic_var value) !! z) =

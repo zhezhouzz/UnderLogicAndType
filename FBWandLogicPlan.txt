@@ -1,0 +1,317 @@
+# Logic-only FBWand binder plan
+
+## Summary
+
+This plan changes only the ContextLogic layer.  The goal is to replace the
+ordinary BI wand connective with a binder-aware wand:
+
+```coq
+FBWand d p q
+```
+
+Intuitively, `FBWand d p q` is `d : p --* q`: the left/input resource
+introduces `d` bound variables, and both `p` and `q` are interpreted after
+opening those bound variables.  These names belong to the argument/frame
+resource, not to the current closure resource.  The old `FWand` should be
+deleted entirely, not kept as a compatibility alias.
+
+The syntax-level behavior of `FBWand d` should match a block of `d` binders,
+similar to a large `FForall`.  It should not get a special FV-subtraction rule.
+
+## Existing open-env support to reuse
+
+Do not introduce a new `formula_open_many` interface.  The repo already has
+simultaneous opening support:
+
+```coq
+formula_open_env : gmap nat atom -> Formula -> Formula
+```
+
+and the low-level open-env support:
+
+```coq
+open_env_atoms       : gmap nat atom -> aset
+open_env_avoids_atom : atom -> gmap nat atom -> Prop
+open_env_values_inj  : gmap nat atom -> Prop
+```
+
+Useful existing lemmas include:
+
+```coq
+open_env_atoms_empty
+open_env_atoms_insert
+open_env_atoms_lookup
+open_env_avoids_atom_of_notin_atoms
+open_env_values_inj_empty
+open_env_values_inj_insert
+open_env_values_inj_lift
+```
+
+Thus any freshness condition should use `open_env_atoms η ## L` or the existing
+`open_env_avoids_atom` predicate, not a new `open_env_values_fresh`.
+
+## Syntax changes
+
+In `ContextLogic/theories/FormulaSyntax.v`, replace:
+
+```coq
+| FWand (p q : Formula)
+```
+
+with:
+
+```coq
+| FBWand (d : nat) (p q : Formula)
+```
+
+Remove all `FWand` branches and lemmas.
+
+## LVars and FV
+
+`formula_lvars` should become a wrapper around `formula_lvars_at`:
+
+```coq
+Definition formula_lvars (φ : Formula) : lvset :=
+  formula_lvars_at 0 φ.
+```
+
+`formula_lvars_at` should be the main recursive definition:
+
+```coq
+Fixpoint formula_lvars_at d φ :=
+  match φ with
+  | FTrue | FFalse => ∅
+  | FAtom q => lvars_at_depth d (lqual_lvars q)
+  | FAnd p q | FOr p q | FImpl p q | FStar p q | FPlus p q =>
+      formula_lvars_at d p ∪ formula_lvars_at d q
+  | FForall p =>
+      formula_lvars_at (S d) p
+  | FBWand n p q =>
+      formula_lvars_at (d + n) p ∪ formula_lvars_at (d + n) q
+  | FOver p | FUnder p =>
+      formula_lvars_at d p
+  | FFibVars D p =>
+      lvars_at_depth d D ∪ formula_lvars_at d p
+  end.
+```
+
+Then keep:
+
+```coq
+Definition formula_fv φ := lvars_fv (formula_lvars φ).
+```
+
+The new FV lemma should not subtract anything manually.  It should expose the
+block-binder behavior:
+
+```coq
+formula_fv (FBWand d p q)
+= lvars_fv (formula_lvars_at d p ∪ formula_lvars_at d q)
+```
+
+## Open
+
+Single-variable opening should pass through `FBWand` by increasing binder
+depth:
+
+```coq
+formula_open k x (FBWand d p q)
+= FBWand d
+    (formula_open (k + d) x p)
+    (formula_open (k + d) x q).
+```
+
+The simultaneous-open lemma should use `formula_open_env`, analogous to
+`formula_open_env_forall`, but lifting by `d` instead of by one:
+
+```coq
+formula_open_env η (FBWand d p q)
+= FBWand d
+    (formula_open_env (open_env_lift_by d η) p)
+    (formula_open_env (open_env_lift_by d η) q).
+```
+
+If `open_env_lift_by` does not already exist, define it as the natural
+generalization of `kmap S η`; do not define a formula-specific multi-open.
+
+## Substitution
+
+`formula_mlsubst` should treat `FBWand` like a binder block:
+
+```coq
+formula_mlsubst ρ (FBWand d p q)
+= FBWand d (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+```
+
+This is correct for the intended store substitutions because they substitute
+free logic variables and do not touch bound variables.  If a future proof
+exposes a path where `ρ` contains bound variables, add a low-level shielding
+lemma; do not special-case FV subtraction in `FBWand`.
+
+## Semantics
+
+Replace the old ordinary wand semantics:
+
+```coq
+FWand p q
+```
+
+with binder-aware semantics:
+
+```coq
+FBWand d p q
+```
+
+Sketch:
+
+```coq
+| FBWand d p q =>
+    exists L : aset,
+      forall η,
+        open_env_binds d η ->
+        open_env_atoms η ## L ->
+        forall (m_arg : WfWorldT) (Hc : world_compat m_arg m),
+          open_env_atoms η ⊆ world_dom (m_arg : WorldT) ->
+          res_models_fuel gas' m_arg (formula_open_env η p) ->
+          res_models_fuel gas' (res_product m_arg m Hc)
+            (formula_open_env η q)
+```
+
+`open_env_binds d η` should be a small Logic/Base predicate stating that `η`
+binds exactly the levels `0, ..., d - 1` and has injective values.  Prefer
+existing support wherever possible:
+
+```coq
+open_env_values_inj η
+open_env_atoms η
+```
+
+The important semantic side condition is:
+
+```coq
+open_env_atoms η ⊆ world_dom (m_arg : WorldT)
+```
+
+because the opened names are provided by the argument/frame resource.
+
+## Scope lemmas
+
+Keep:
+
+```coq
+formula_scoped_in_world m φ := formula_fv φ ⊆ world_dom (m : WorldT)
+```
+
+Delete old wand scope lemmas:
+
+```coq
+formula_scoped_wand_iff
+formula_scoped_wand_l
+formula_scoped_wand_r
+```
+
+They are no longer meaningful for `FBWand`, since the argument formula is
+scoped in the argument resource after opening, not in the current world.
+
+Add opened-form scope helpers instead, for example:
+
+```coq
+formula_scoped_fbwand_open_result :
+  formula_scoped_in_world m (FBWand d p q) ->
+  open_env_binds d η ->
+  open_env_atoms η ⊆ world_dom (m_arg : WorldT) ->
+  world_compat m_arg m ->
+  formula_scoped_in_world
+    (res_product m_arg m Hc)
+    (formula_open_env η q).
+```
+
+For the antecedent, prefer requiring the opened antecedent's actual scope:
+
+```coq
+formula_scoped_in_world m_arg (formula_open_env η p)
+```
+
+rather than trying to derive it from closure-world scope alone.
+
+## Projection and Kripke risks
+
+The highest-risk proof is still:
+
+```coq
+res_models_fuel_projection
+```
+
+The statement should remain true:
+
+```coq
+res_restrict m (formula_fv φ) =
+res_restrict n (formula_fv φ) ->
+res_models_fuel gas m φ ->
+res_models_fuel gas n φ
+```
+
+For the `FBWand` case, the proof must use:
+
+- the same argument resource `m_arg`;
+- agreement between closure worlds `m` and `n` on `formula_fv (FBWand d p q)`;
+- agreement of product worlds on `formula_fv (formula_open_env η q)`;
+- the fact that opened names in `open_env_atoms η` come from `m_arg`, not from
+  the closure worlds.
+
+No semantic counterexample is expected if `formula_lvars_at` handles `FBWand`
+as a binder block.
+
+## FormulaConnectives changes
+
+Delete ordinary `FWand` derived lemmas and replace them with `FBWand` versions:
+
+```coq
+res_models_fbwand_intro
+res_models_fbwand_elim
+res_models_fbwand_map
+```
+
+The map lemma should quantify over the opening environment:
+
+```coq
+res_models_fbwand_map :
+  m ⊨ FBWand d A1 B1 ->
+  (forall η m_arg,
+     open_env_binds d η ->
+     open_env_atoms η ⊆ world_dom (m_arg : WorldT) ->
+     m_arg ⊨ formula_open_env η A2 ->
+     m_arg ⊨ formula_open_env η A1) ->
+  (forall η m_arg Hc,
+     open_env_binds d η ->
+     open_env_atoms η ⊆ world_dom (m_arg : WorldT) ->
+     res_product m_arg m Hc ⊨ formula_open_env η B1 ->
+     res_product m_arg m Hc ⊨ formula_open_env η B2) ->
+  m ⊨ FBWand d A2 B2.
+```
+
+## Notation
+
+In `FormulaNotation.v`, add a notation for the binder-aware wand.  Avoid
+reusing the old ordinary wand notation unless it is explicitly tied to
+`FBWand 0`.
+
+Possible notation:
+
+```coq
+p --*{ d } q
+```
+
+or keep notation minimal until Denotation is updated.
+
+## Compile order
+
+First make the Logic layer compile:
+
+```sh
+timeout 80s make ContextLogic/theories/FormulaSyntax.vo
+timeout 80s make ContextLogic/theories/FormulaSemantics.vo
+timeout 80s make ContextLogic/theories/FormulaConnectives.vo
+```
+
+Only after this should Denotation and Typing be updated.

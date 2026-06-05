@@ -238,6 +238,34 @@ Proof.
   intros a b Heq. inversion Heq. reflexivity.
 Qed.
 
+Lemma atom_store_to_lvar_store_union (s1 s2 : AtomStore) :
+  atom_store_to_lvar_store (s1 ∪ s2) =
+  atom_store_to_lvar_store s1 ∪ atom_store_to_lvar_store s2.
+Proof.
+  apply storeA_map_eq. intros v.
+  destruct v as [k|x].
+  - rewrite atom_store_to_lvar_store_lookup_bound_none.
+    symmetry. apply map_lookup_union_None. split;
+      rewrite atom_store_to_lvar_store_lookup_bound_none; reflexivity.
+  - rewrite atom_store_to_lvar_store_lookup_free.
+    destruct ((s1 : gmap atom V) !! x) as [v1|] eqn:H1.
+    + rewrite (lookup_union_l' (M:=gmap atom) (A:=V)
+        (s1 : gmap atom V) (s2 : gmap atom V) x) by eauto.
+      symmetry. rewrite (lookup_union_l' (M:=gmap logic_var) (A:=V)
+        (atom_store_to_lvar_store s1 : gmap logic_var V)
+        (atom_store_to_lvar_store s2 : gmap logic_var V)
+        (LVFree x)) by (rewrite atom_store_to_lvar_store_lookup_free; eauto).
+      rewrite atom_store_to_lvar_store_lookup_free. reflexivity.
+    + rewrite (lookup_union_r (M:=gmap atom) (A:=V)
+        (s1 : gmap atom V) (s2 : gmap atom V) x H1).
+      symmetry. rewrite (lookup_union_r (M:=gmap logic_var) (A:=V)
+        (atom_store_to_lvar_store s1 : gmap logic_var V)
+        (atom_store_to_lvar_store s2 : gmap logic_var V)
+        (LVFree x)).
+      * rewrite atom_store_to_lvar_store_lookup_free. reflexivity.
+      * rewrite atom_store_to_lvar_store_lookup_free. exact H1.
+Qed.
+
 Lemma lvar_store_atom_dom_insert_bound (s : LVarStore) k v :
   lvar_store_atom_dom (<[LVBound k := v]> s) = lvar_store_atom_dom s.
 Proof.

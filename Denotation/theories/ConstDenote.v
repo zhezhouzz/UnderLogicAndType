@@ -429,11 +429,19 @@ Local Ltac const_scope_set :=
 
 Local Ltac const_forall_scope_norm :=
   unfold formula_scoped_in_world;
-  rewrite ?formula_fv_forall, ?formula_fv_impl, ?formula_fv_fibvars,
+  rewrite ?formula_fv_atom, ?formula_fv_forall, ?formula_fv_impl, ?formula_fv_fibvars,
     ?formula_fv_over, ?formula_fv_under, ?formula_fv_expr_result_formula,
     ?formula_fv_type_qualifier_formula, ?formula_fv_basic_world_formula;
-  unfold qual_dom;
-  cbn [tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at lvar_value_keys];
+  unfold basic_world_formula, expr_result_formula, type_qualifier_formula;
+  unfold basic_world_lqual, expr_result_lqual, type_qualifier_lqual,
+    lqual_lvars, qual_dom;
+  cbn [formula_lvars formula_lvars_at
+    tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at lvar_value_keys];
+  unfold lqual_lvars;
+  cbn [lqual_dom];
+  repeat rewrite ?lvars_at_depth_union;
+  rewrite ?lvars_at_depth_empty;
+  rewrite ?lvars_at_depth_singleton_bound0_succ;
   rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_bound,
     ?lvars_fv_singleton_free, ?dom_insert_L, ?dom_empty_L;
   rewrite ?const_qual_open_vars;
@@ -458,10 +466,9 @@ Local Ltac solve_const_forall_closed_scope :=
   try replace (lvars_fv ({[(#ₗ0)%ctx]} : lvset)) with (∅ : aset)
     by apply lvars_fv_singleton_bound;
   try rewrite (lvars_fv_singleton_bound 0);
-  match goal with
-  | |- _ ⊆ world_dom (?m : WorldT) =>
-      const_scope_set
-  end.
+  try unfold formula_scoped_in_world;
+  try const_forall_scope_norm;
+  first [const_scope_set | set_solver].
 
 Local Ltac solve_const_forall_open_scope :=
   const_forall_scope_norm;
@@ -609,15 +616,15 @@ Proof.
   intros _ _.
   unfold const_precise_ty, precise_ty, over_ty, under_ty.
   destruct gas as [|gas'].
-  - unfold ctx_erasure_under. cbn [erase_ctx].
-    replace (Σ ∪ erase_ctx CtxEmpty) with Σ
-      by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
-          symmetry; apply map_union_empty).
+  - unfold ctx_erasure_under. cbn [ctx_fv erase_ctx].
+    replace (store_restrict Σ (∅ : aset) ∪ (∅ : gmap atom ty))
+      with (∅ : gmap atom ty)
+      by (rewrite storeA_restrict_empty_set; symmetry; apply map_union_empty).
     change (m ⊨
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -626,14 +633,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -651,15 +658,15 @@ Proof.
             [ exact (expr_basic_typing_formula_ret_const_empty c m)
             | exact (expr_total_formula_ret_const c m) ] ] ]
       | exact (res_models_true m) ].
-  - unfold ctx_erasure_under. cbn [erase_ctx].
-    replace (Σ ∪ erase_ctx CtxEmpty) with Σ
-      by (change (erase_ctx CtxEmpty) with (∅ : gmap atom ty);
-          symmetry; apply map_union_empty).
+  - unfold ctx_erasure_under. cbn [ctx_fv erase_ctx].
+    replace (store_restrict Σ (∅ : aset) ∪ (∅ : gmap atom ty))
+      with (∅ : gmap atom ty)
+      by (rewrite storeA_restrict_empty_set; symmetry; apply map_union_empty).
     change (m ⊨
       FAnd
         (FAnd
           (context_ty_wf_formula
-            (relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -668,14 +675,14 @@ Proof.
               (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
               (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))))
           (FAnd (basic_world_formula
-            (relevant_env (atom_env_to_lty_env Σ)
+            (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
               (CTInter
                 (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                 (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
               (tret (vconst c))))
             (FAnd
               (expr_basic_typing_formula
-                (relevant_env (atom_env_to_lty_env Σ)
+                (relevant_env (atom_env_to_lty_env (∅ : gmap atom ty))
                   (CTInter
                     (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
                     (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c))))
@@ -683,10 +690,10 @@ Proof.
                 (tret (vconst c)) (TBase (base_ty_of_const c)))
               (expr_total_formula (tret (vconst c))))))
         (FAnd
-          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env (∅ : gmap atom ty))
             (CTOver (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c)))
-          (ty_denote_gas gas' (atom_env_to_lty_env Σ)
+          (ty_denote_gas gas' (atom_env_to_lty_env (∅ : gmap atom ty))
             (CTUnder (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)))
             (tret (vconst c))))).
     rewrite relevant_env_const_precise_atom_env_empty.
@@ -699,8 +706,8 @@ Proof.
             [ exact (expr_basic_typing_formula_ret_const_empty c m)
             | exact (expr_total_formula_ret_const c m) ] ] ]
       | eapply res_models_and_intro_from_models;
-        [ exact (const_over_denotation_gas gas' Σ c m)
-        | exact (const_under_denotation_gas gas' Σ c m) ] ].
+        [ exact (const_over_denotation_gas gas' ∅ c m)
+        | exact (const_under_denotation_gas gas' ∅ c m) ] ].
 Qed.
 
 Lemma appop_intro_denotation

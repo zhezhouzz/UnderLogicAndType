@@ -27,8 +27,8 @@ Notation "'fib' D '|>' φ" := (FFibVars D φ)
   (at level 30, D at level 9, φ at level 30) : formula_scope.
 Notation "φ ∗ ψ" := (FStar φ ψ)
   (at level 40, left associativity) : formula_scope.
-Notation "φ '-∗' ψ" := (FWand φ ψ)
-  (at level 55, right associativity) : formula_scope.
+Notation "φ '-∗[' d ']' ψ" := (FBWand d φ ψ)
+  (at level 55, d at level 9, right associativity) : formula_scope.
 Notation "φ ∧ ψ" := (FAnd φ ψ)
   (at level 80, right associativity) : formula_scope.
 Notation "φ ∨ ψ" := (FOr φ ψ)
@@ -67,8 +67,9 @@ Notation "'fib' D '|>' φ" := (FFibVars D φ)
 
 Notation "φ ∗ ψ" := (FStar φ ψ)
   (in custom form at level 40, left associativity, only parsing).
-Notation "φ '-∗' ψ" := (FWand φ ψ)
-  (in custom form at level 55, right associativity, only parsing).
+Notation "φ '-∗[' d ']' ψ" := (FBWand d φ ψ)
+  (in custom form at level 55, d constr at level 9,
+   right associativity, only parsing).
 Notation "φ ∧ ψ" := (FAnd φ ψ)
   (in custom form at level 60, right associativity, only parsing).
 Notation "φ ∨ ψ" := (FOr φ ψ)

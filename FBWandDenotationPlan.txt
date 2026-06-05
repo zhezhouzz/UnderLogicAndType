@@ -1,0 +1,344 @@
+# Denotation changes for FBWand
+
+## Summary
+
+This plan covers the Denotation-layer changes after the Logic layer replaces
+ordinary `FWand` with binder-aware `FBWand`.
+
+The intended function type denotations become:
+
+```text
+Arrow = FForall + FImpl
+Wand  = FBWand 1
+```
+
+Both Arrow and Wand should stop adding a separate singleton
+`basic_world_formula` premise for the parameter variable.  The argument
+denotation already contains the necessary basic-world and basic-typing guard
+because `ty_denote_gas` always begins with `ty_guard_formula`.
+
+## Current definitions to change
+
+The current `CTArrow` case is:
+
+```coq
+| CTArrow τx τr =>
+    let Σx := typed_lty_env_bind Σg (erase_ty τx) in
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := (erase_ty τx)]> ∅))
+        (FImpl
+          (ty_denote_gas gas' Σx
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (ty_denote_gas gas' Σx τr
+            (tapp_tm (tm_shift 0 e) (vbvar 0)))))
+```
+
+The current `CTWand` case is:
+
+```coq
+| CTWand τx τr =>
+    let Σx := typed_lty_env_bind Σg (erase_ty τx) in
+    FForall
+      (FImpl (basic_world_formula (<[LVBound 0 := (erase_ty τx)]> ∅))
+        (FWand
+          (ty_denote_gas gas' Σx
+            (cty_shift 0 τx) (tret (vbvar 0)))
+          (ty_denote_gas gas' Σx τr
+            (tapp_tm (tm_shift 0 e) (vbvar 0)))))
+```
+
+Both should be replaced.
+
+## New `ty_denote_gas` cases
+
+The new `CTArrow` case should be:
+
+```coq
+| CTArrow τx τr =>
+    let Σx := typed_lty_env_bind Σg (erase_ty τx) in
+    FForall
+      (FImpl
+        (ty_denote_gas gas' Σx
+          (cty_shift 0 τx) (tret (vbvar 0)))
+        (ty_denote_gas gas' Σx τr
+          (tapp_tm (tm_shift 0 e) (vbvar 0))))
+```
+
+The new `CTWand` case should be:
+
+```coq
+| CTWand τx τr =>
+    let Σx := typed_lty_env_bind Σg (erase_ty τx) in
+    FBWand 1
+      (ty_denote_gas gas' Σx
+        (cty_shift 0 τx) (tret (vbvar 0)))
+      (ty_denote_gas gas' Σx τr
+        (tapp_tm (tm_shift 0 e) (vbvar 0)))
+```
+
+Key points:
+
+- `CTArrow` keeps `FForall`, because dependent function application extends the
+  current world with the argument variable.
+- `CTArrow` has only one implication: argument denotation implies result
+  denotation.
+- `CTArrow` no longer has a separate singleton `basic_world_formula`.
+- `CTWand` has no outer `FForall`.
+- `CTWand` uses `FBWand 1`.
+- `CTWand` no longer has a separate singleton `basic_world_formula`.
+- In both cases, the argument denotation itself guarantees the parameter
+  variable's basic world and basic typing.
+
+## Why the singleton basic-world premise is redundant
+
+The argument formula is:
+
+```coq
+ty_denote_gas gas' Σx
+  (cty_shift 0 τx) (tret (vbvar 0))
+```
+
+where:
+
+```coq
+Σx := typed_lty_env_bind Σg (erase_ty τx)
+```
+
+Every `ty_denote_gas` begins with:
+
+```coq
+ty_guard_formula (relevant_env Σx (cty_shift 0 τx) (tret (vbvar 0)))
+  (cty_shift 0 τx)
+  (tret (vbvar 0))
+```
+
+That guard includes:
+
+```coq
+basic_world_formula ...
+expr_basic_typing_formula ... (tret (vbvar 0)) ...
+```
+
+Since the term is `tret (vbvar 0)`, the relevant environment keeps the bound
+parameter binding, and `Σx` already binds `LVBound 0` to `erase_ty τx`.
+Therefore the separate:
+
+```coq
+basic_world_formula (<[LVBound 0 := erase_ty τx]> ∅)
+```
+
+is unnecessary in both Arrow and Wand.
+
+## Lemma families expected to break
+
+### Open-env lemmas
+
+Definitions and proofs around `formula_open_env_ty_denote_gas` will break in
+the Arrow/Wand cases.
+
+Expected changes:
+
+- Arrow case no longer opens/reconstructs the singleton `basic_world_formula`.
+- Wand case should use the new `formula_open_env_fbwand` lemma from Logic.
+- Wand case must lift the open environment through `FBWand 1`, not through
+  `FForall`.
+
+Likely impacted files:
+
+```text
+Denotation/theories/TypeDenote.v
+Denotation/theories/TypeEquivArrow.v
+Denotation/theories/TypeEquivWand.v
+Denotation/theories/TypeEquivCore.v
+Denotation/theories/TypeEquivBody.v
+ContextTyping/theories/Soundness.v
+```
+
+### Arrow denotation lemmas
+
+Any lemma that currently expects an opened Arrow body shape like:
+
+```coq
+formula_open 0 y
+  (FImpl (basic_world_formula ...)
+    (FImpl arg result))
+```
+
+must be updated to:
+
+```coq
+formula_open 0 y
+  (FImpl arg result)
+```
+
+This removes one premise from `fundamental_lam_case` support:
+
+- no separate `Hbasic` argument world premise;
+- the body proof consumes only the opened argument denotation.
+
+Affected helper names likely include:
+
+```text
+lam_arrow_open_arg_to_bind_ctx
+lam_arrow_result_mid_app_guard
+lam_arrow_result_mid_app_zero
+lam_arrow_result_mid_app_denotation
+lam_arrow_result_mid_to_opened_goal
+lam_body_to_opened_arrow_result
+lam_opened_arrow_result
+```
+
+These should simplify rather than get harder.
+
+### Wand denotation lemmas
+
+Old Wand helpers expecting:
+
+```coq
+FForall (FImpl basic (FWand arg result))
+```
+
+must be replaced by `FBWand 1 arg result`.
+
+The new proof shape for `lamD` should be:
+
+1. Start with `m ⊨ CTWand τx τr` body.
+2. Use `FBWand 1` elimination with an opening environment mapping `0` to the
+   argument atom `y`.
+3. The argument resource `m_arg` must satisfy:
+
+   ```coq
+   m_arg ⊨ opened_arg_denotation
+   ```
+
+4. The product resource `res_product m_arg m` then satisfies:
+
+   ```coq
+   opened_result_denotation
+   ```
+
+No outer `FForall` world extension is involved.
+
+Affected helper names likely include future/provisional `lamd` support and any
+old `wand_*` transport lemmas.
+
+### Scope lemmas
+
+Any proof that extracted:
+
+```coq
+formula_scoped_wand_l
+formula_scoped_wand_r
+```
+
+must be rewritten against opened `FBWand` scope helpers from Logic.
+
+For Arrow, the old `formula_scoped_forall_open_res_le` still applies, but the
+opened body is now one `FImpl`, not nested `FImpl`.
+
+For Wand, there is no `FForall`; scope comes from `FBWand` elimination and the
+open-env side condition:
+
+```coq
+open_env_atoms η ⊆ world_dom (m_arg : WorldT)
+```
+
+### Transport/map lemmas
+
+Old Logic/Denotation helper shapes involving `FWand` should be deleted or
+renamed:
+
+```text
+res_models_impl_wand_map
+res_models_forall_full_world_impl_wand_map
+```
+
+New `FBWand` map helpers should be used instead:
+
+```text
+res_models_fbwand_map
+```
+
+Denotation transport should quantify over the opening environment `η` instead
+of a fresh `y` introduced by outer `FForall`.
+
+## Expected proof simplifications
+
+### `fundamental_lam_case`
+
+The Arrow case should simplify because the extra basic-world premise disappears.
+The body structure becomes:
+
+```coq
+FForall (FImpl arg_den result_den)
+```
+
+After opening, the proof only needs:
+
+```coq
+my ⊨ opened_arg_denotation ->
+my ⊨ opened_result_denotation
+```
+
+The previous separate `Hbasic` premise is no longer needed.
+
+### `fundamental_lamd_case`
+
+The Wand case becomes semantically possible:
+
+```coq
+FBWand 1 arg_den result_den
+```
+
+The argument variable is opened in the argument resource, so the proof no
+longer tries to place the same variable into both the closure world and the
+argument frame.
+
+The proof should mirror `lam`:
+
+- use body IH under `CtxStar Γ (CtxBind y τx)`;
+- use `FBWand 1` elimination with `η = <[0 := y]> ∅`;
+- argument premise is the argument denotation;
+- result is transported from `(e ^^ y)` to `((lam e) y)` using the same
+  `lam_intro_denotation` / term-equivalence route as Arrow.
+
+## Implementation order
+
+1. Complete Logic-layer `FBWand` changes first:
+
+   ```sh
+   timeout 80s make ContextLogic/theories/FormulaSyntax.vo
+   timeout 80s make ContextLogic/theories/FormulaSemantics.vo
+   timeout 80s make ContextLogic/theories/FormulaConnectives.vo
+   ```
+
+2. Modify `Denotation/theories/TypeDenote.v`:
+   - update `CTArrow`;
+   - update `CTWand`;
+   - update open-env normalization lemmas.
+
+3. Compile:
+
+   ```sh
+   timeout 80s make Denotation/theories/TypeDenote.vo
+   ```
+
+4. Repair Arrow-related helper statements in `Soundness.v`.
+
+5. Repair Wand/LamD using the new `FBWand` eliminator.
+
+6. Compile:
+
+   ```sh
+   timeout 180s make ContextTyping/theories/Soundness.vo
+   ```
+
+## Success criteria
+
+- No `FWand` remains in Logic or Denotation.
+- `CTArrow` is `FForall (FImpl arg result)`.
+- `CTWand` is `FBWand 1 arg result`.
+- No singleton `basic_world_formula (<[LVBound 0 := ...]> ∅)` remains in the
+  Arrow/Wand denotation cases.
+- `fundamental_lam_case` remains proved.
+- `fundamental_lamd_case` becomes aligned with the intended resource semantics.

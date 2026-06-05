@@ -45,11 +45,15 @@ Inductive basic_value_has_ltype : lty_env -> value -> ty -> Prop :=
       basic_value_has_ltype Σ (vbvar k) T
   | BVT_Lam Σ s T e (L : aset) :
       (forall x, x ∉ L ->
-        basic_tm_has_ltype (<[LVFree x := s]> Σ) (e ^^ x) T) ->
+        basic_tm_has_ltype
+          (lty_env_open_one 0 x (typed_lty_env_bind Σ s))
+          (e ^^ x) T) ->
       basic_value_has_ltype Σ (vlam s e) (s →ₜ T)
   | BVT_Fix Σ sx T vf (L : aset) :
       (forall x, x ∉ L ->
-        basic_value_has_ltype (<[LVFree x := sx]> Σ) (vf ^^ x)
+        basic_value_has_ltype
+          (lty_env_open_one 0 x (typed_lty_env_bind Σ sx))
+          (vf ^^ x)
           ((sx →ₜ T) →ₜ T)) ->
       basic_value_has_ltype Σ (vfix (sx →ₜ T) vf) (sx →ₜ T)
 
@@ -60,7 +64,9 @@ with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
   | BTT_Let Σ T1 T2 e1 e2 (L : aset) :
       basic_tm_has_ltype Σ e1 T1 ->
       (forall x, x ∉ L ->
-        basic_tm_has_ltype (<[LVFree x := T1]> Σ) (e2 ^^ x) T2) ->
+        basic_tm_has_ltype
+          (lty_env_open_one 0 x (typed_lty_env_bind Σ T1))
+          (e2 ^^ x) T2) ->
       basic_tm_has_ltype Σ (tlete e1 e2) T2
   | BTT_Op Σ op v arg_b ret_b :
       prim_op_type op = (arg_b, ret_b) ->
@@ -100,36 +106,132 @@ Proof.
     match goal with
     | Hopen_typed : forall z, z ∉ _ ->
         lvars_of_atoms (fv_tm _) ⊆ _ |- _ =>
-        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened;
-        rewrite dom_insert in Hopened
+        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened
     end.
     pose proof (open_fv_tm' e (vfvar y) 0) as Hopen.
     cbn [fv_value] in Hopen.
-    set_solver.
+    rewrite lty_env_open_one_dom in Hopened.
+    apply lvars_fv_mono in Hopened.
+    rewrite lvars_fv_open in Hopened.
+    rewrite lvar_store_bind_lvars_fv_dom in Hopened.
+    intros v Hv.
+    unfold lvars_of_atoms in Hv.
+    apply elem_of_map in Hv as [a [-> Ha]].
+    apply lvars_fv_elem.
+    assert (HaOpen :
+      a ∈ lvars_fv (lvars_of_atoms (fv_tm (open_tm 0 (vfvar y) e)))).
+    { rewrite lvars_fv_of_atoms. apply Hopen. exact Ha. }
+    pose proof (Hopened a HaOpen) as HaΣ.
+    apply elem_of_union in HaΣ as [HaΣ|HaΣ].
+    + apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
+    + destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ s))));
+        set_solver.
   - set (y := fresh_for (L ∪ fv_value vf ∪ lvars_fv (dom Σ))).
     assert (Hy : y ∉ L ∪ fv_value vf ∪ lvars_fv (dom Σ)).
     { subst y. apply fresh_for_not_in. }
     match goal with
     | Hopen_typed : forall z, z ∉ _ ->
         lvars_of_atoms (fv_value _) ⊆ _ |- _ =>
-        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened;
-        rewrite dom_insert in Hopened
+        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened
     end.
     pose proof (open_fv_value' vf (vfvar y) 0) as Hopen.
     cbn [fv_value] in Hopen.
-    set_solver.
+    rewrite lty_env_open_one_dom in Hopened.
+    apply lvars_fv_mono in Hopened.
+    rewrite lvars_fv_open in Hopened.
+    rewrite lvar_store_bind_lvars_fv_dom in Hopened.
+    intros v Hv.
+    unfold lvars_of_atoms in Hv.
+    apply elem_of_map in Hv as [a [-> Ha]].
+    apply lvars_fv_elem.
+    assert (HaOpen :
+      a ∈ lvars_fv (lvars_of_atoms (fv_value (open_value 0 (vfvar y) vf)))).
+    { rewrite lvars_fv_of_atoms. apply Hopen. exact Ha. }
+    pose proof (Hopened a HaOpen) as HaΣ.
+    apply elem_of_union in HaΣ as [HaΣ|HaΣ].
+    + apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
+    + destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ sx))));
+        set_solver.
   - set (y := fresh_for (L ∪ fv_tm e2 ∪ lvars_fv (dom Σ))).
     assert (Hy : y ∉ L ∪ fv_tm e2 ∪ lvars_fv (dom Σ)).
     { subst y. apply fresh_for_not_in. }
     match goal with
     | Hopen_typed : forall z, z ∉ _ ->
         lvars_of_atoms (fv_tm _) ⊆ _ |- _ =>
-        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened;
-        rewrite dom_insert in Hopened
+        pose proof (Hopen_typed y ltac:(set_solver)) as Hopened
     end.
     pose proof (open_fv_tm' e2 (vfvar y) 0) as Hopen.
     cbn [fv_value] in Hopen.
-    set_solver.
+    rewrite lty_env_open_one_dom in Hopened.
+    apply lvars_fv_mono in Hopened.
+    rewrite lvars_fv_open in Hopened.
+    rewrite lvar_store_bind_lvars_fv_dom in Hopened.
+    intros v Hv.
+    unfold lvars_of_atoms in Hv.
+    apply elem_of_map in Hv as [a [-> Ha]].
+    apply elem_of_union in Ha as [Ha|Ha].
+    + apply IHbasic_tm_has_ltype.
+      unfold lvars_of_atoms. apply elem_of_map.
+      exists a. split; [reflexivity|exact Ha].
+    + apply lvars_fv_elem.
+      assert (HaOpen :
+        a ∈ lvars_fv (lvars_of_atoms (fv_tm (open_tm 0 (vfvar y) e2)))).
+      { rewrite lvars_fv_of_atoms. apply Hopen. exact Ha. }
+      pose proof (Hopened a HaOpen) as HaΣ.
+      apply elem_of_union in HaΣ as [HaΣ|HaΣ].
+      * apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
+      * destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ T1))));
+          set_solver.
+Qed.
+
+Lemma lty_env_open_one_mono k x (Σ Σ' : lty_env) :
+  Σ ⊆ Σ' ->
+  lty_env_open_one k x Σ ⊆ lty_env_open_one k x Σ'.
+Proof.
+  intros Hsub.
+  apply map_subseteq_spec. intros v T Hlook.
+  unfold lty_env_open_one, lvar_store_open_one in *.
+  apply storeA_rekey_lookup_Some_inj_on in Hlook as [u [-> Hu]].
+  - apply storeA_rekey_lookup_Some_inj_on.
+    + intros a b _ _ Hab. eapply swap_inj. exact Hab.
+    + exists u. split; [reflexivity|].
+      eapply lookup_weaken; eassumption.
+  - intros a b _ _ Hab. eapply swap_inj. exact Hab.
+Qed.
+
+Lemma lty_env_shift_mono (Σ Σ' : lty_env) :
+  Σ ⊆ Σ' ->
+  lty_env_shift Σ ⊆ lty_env_shift Σ'.
+Proof.
+  intros Hsub.
+  apply map_subseteq_spec. intros v T Hlook.
+  unfold lty_env_shift, lvar_store_shift, lvar_store_shift_from in *.
+  apply storeA_rekey_lookup_Some_inj_on in Hlook as [u [-> Hu]].
+  - apply storeA_rekey_lookup_Some_inj_on.
+    + intros a b _ _ Hab. eapply logic_var_shift_from_inj. exact Hab.
+    + exists u. split; [reflexivity|].
+      eapply lookup_weaken; eassumption.
+  - intros a b _ _ Hab. eapply logic_var_shift_from_inj. exact Hab.
+Qed.
+
+Lemma typed_lty_env_bind_mono (Σ Σ' : lty_env) T :
+  Σ ⊆ Σ' ->
+  typed_lty_env_bind Σ T ⊆ typed_lty_env_bind Σ' T.
+Proof.
+  intros Hsub.
+  unfold typed_lty_env_bind, lvar_store_bind.
+  apply insert_mono.
+  apply lty_env_shift_mono. exact Hsub.
+Qed.
+
+Lemma lty_env_open_one_typed_bind_mono k x (Σ Σ' : lty_env) T :
+  Σ ⊆ Σ' ->
+  lty_env_open_one k x (typed_lty_env_bind Σ T) ⊆
+  lty_env_open_one k x (typed_lty_env_bind Σ' T).
+Proof.
+  intros Hsub.
+  apply lty_env_open_one_mono.
+  apply typed_lty_env_bind_mono. exact Hsub.
 Qed.
 
 Lemma basic_has_ltype_weaken_mutual :
@@ -149,14 +251,14 @@ Proof.
   - econstructor. eapply lookup_weaken; eassumption.
   - eapply BVT_Lam with (L := L). intros x Hx.
     eapply H; [exact Hx|].
-    apply insert_mono. exact H0.
+    apply lty_env_open_one_typed_bind_mono. exact H0.
   - eapply BVT_Fix with (L := L). intros x Hx.
     eapply H; [exact Hx|].
-    apply insert_mono. exact H0.
+    apply lty_env_open_one_typed_bind_mono. exact H0.
   - eapply BTT_Let with (L := L).
     + eapply H; exact H1.
     + intros x Hx. eapply H0; [exact Hx|].
-      apply insert_mono. exact H1.
+      apply lty_env_open_one_typed_bind_mono. exact H1.
 Qed.
 
 Lemma basic_value_has_ltype_weaken Σ Σ' v T :
@@ -206,24 +308,39 @@ Proof.
         apply (Hlc (LVBound k));
         eapply elem_of_dom_2; exact Hlook
     end.
-  - eapply LC_lam with (L := L). intros x Hx.
-    eapply H; [exact Hx|].
+  - eapply LC_lam with (L := L ∪ lvars_fv (dom Σ)). intros x Hx.
+    eapply H; [set_solver|].
     + intros v Hv.
+      assert (Hfreshx : LVFree x ∉ dom Σ).
+      { intros Hdom.
+        apply Hx. apply elem_of_union_r. apply lvars_fv_elem. exact Hdom. }
+      pose proof (typed_lty_env_bind_open_current x Σ s Hfreshx H0) as Henv.
+      rewrite Henv in Hv.
       rewrite dom_insert in Hv.
       apply elem_of_union in Hv as [Hv|Hv].
       * rewrite elem_of_singleton in Hv. subst v. exact I.
       * exact (H0 v Hv).
-  - eapply LC_fix with (L := L). intros x Hx.
-    eapply H; [exact Hx|].
+  - eapply LC_fix with (L := L ∪ lvars_fv (dom Σ)). intros x Hx.
+    eapply H; [set_solver|].
     + intros v Hv.
+      assert (Hfreshx : LVFree x ∉ dom Σ).
+      { intros Hdom.
+        apply Hx. apply elem_of_union_r. apply lvars_fv_elem. exact Hdom. }
+      pose proof (typed_lty_env_bind_open_current x Σ sx Hfreshx H0) as Henv.
+      rewrite Henv in Hv.
       rewrite dom_insert in Hv.
       apply elem_of_union in Hv as [Hv|Hv].
       * rewrite elem_of_singleton in Hv. subst v. exact I.
       * exact (H0 v Hv).
-  - eapply LC_lete with (L := L).
+  - eapply LC_lete with (L := L ∪ lvars_fv (dom Σ)).
     + eauto.
-    + intros x Hx. eapply H0; [exact Hx|].
+    + intros x Hx. eapply H0; [set_solver|].
       * intros v Hv.
+        assert (Hfreshx : LVFree x ∉ dom Σ).
+        { intros Hdom.
+          apply Hx. apply elem_of_union_r. apply lvars_fv_elem. exact Hdom. }
+        pose proof (typed_lty_env_bind_open_current x Σ T1 Hfreshx H1) as Henv.
+        rewrite Henv in Hv.
         rewrite dom_insert in Hv.
         apply elem_of_union in Hv as [Hv|Hv].
         -- rewrite elem_of_singleton in Hv. subst v. exact I.
@@ -244,6 +361,83 @@ Lemma basic_tm_has_ltype_lc Σ e T :
   lc_tm e.
 Proof.
   exact (proj2 basic_has_ltype_lc_mutual Σ e T).
+Qed.
+
+Lemma lty_env_open_one_typed_bind_lookup_free_ne
+    (Σ : lty_env) T y z :
+  z <> y ->
+  lty_env_open_one 0 y (typed_lty_env_bind Σ T) !! LVFree z =
+  Σ !! LVFree z.
+Proof.
+  intros Hzy.
+  unfold lty_env_open_one, lvar_store_open_one.
+  change ((kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+    (logic_var_open 0 y) (typed_lty_env_bind Σ T) : gmap logic_var ty) !!
+    LVFree z =
+    Σ !! LVFree z).
+  replace (LVFree z) with (logic_var_open 0 y (LVFree z)) at 1.
+  - rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+      (Inj0:=swap_inj (LVBound 0) (LVFree y))
+      (logic_var_open 0 y) (typed_lty_env_bind Σ T) (LVFree z)).
+    apply typed_lty_env_bind_lookup_free.
+  - rewrite logic_var_open_sym.
+    unfold swap.
+    repeat case_decide; congruence.
+Qed.
+
+Lemma lty_env_open_one_typed_bind_lookup_current
+    (Σ : lty_env) T y :
+  lty_env_open_one 0 y (typed_lty_env_bind Σ T) !! LVFree y =
+  Some T.
+Proof.
+  unfold lty_env_open_one, lvar_store_open_one.
+  change ((kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+    (logic_var_open 0 y) (typed_lty_env_bind Σ T) : gmap logic_var ty) !!
+    LVFree y =
+    Some T).
+  replace (LVFree y) with (logic_var_open 0 y (LVBound 0)) at 1.
+  - rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
+      (Inj0:=swap_inj (LVBound 0) (LVFree y))
+      (logic_var_open 0 y) (typed_lty_env_bind Σ T) (LVBound 0)).
+    unfold typed_lty_env_bind, lvar_store_bind.
+    rewrite lookup_insert.
+    destruct (decide (LVBound 0 = LVBound 0)); [reflexivity|congruence].
+  - rewrite logic_var_open_sym.
+    unfold swap.
+    repeat case_decide; try congruence.
+Qed.
+
+Lemma lty_env_restrict_open_bind_body_subset
+    (Σ : lty_env) T x Dbody D :
+  LVFree x ∉ dom Σ ->
+  x ∉ lvars_fv D ->
+  lvars_bv Dbody = ∅ ->
+  Dbody ⊆ D ∪ {[LVFree x]} ->
+  storeA_restrict (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) Dbody ⊆
+  lty_env_open_one 0 x (typed_lty_env_bind (storeA_restrict Σ D) T).
+Proof.
+  intros HxΣ HxD Hbv Hsub.
+  apply map_subseteq_spec. intros v U Hlook.
+  apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
+  destruct v as [k|z].
+  - exfalso.
+    assert (k ∈ lvars_bv Dbody) by (apply lvars_bv_elem; exact HvD).
+    rewrite Hbv in H. set_solver.
+  - destruct (decide (z = x)) as [->|Hzx].
+    + rewrite lty_env_open_one_typed_bind_lookup_current.
+      rewrite lty_env_open_one_typed_bind_lookup_current in Hlook.
+      inversion Hlook. reflexivity.
+    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzx.
+      rewrite lty_env_open_one_typed_bind_lookup_free_ne in Hlook by exact Hzx.
+      apply storeA_restrict_lookup_some_2; [exact Hlook|].
+      assert (HzD : LVFree z ∈ D).
+      {
+        specialize (Hsub _ HvD).
+        apply elem_of_union in Hsub as [HzD|HzxD]; [exact HzD|].
+        rewrite elem_of_singleton in HzxD. inversion HzxD. subst z.
+        contradiction.
+      }
+      exact HzD.
 Qed.
 
 Lemma basic_has_ltype_restrict_lvars_lc_mutual :
@@ -277,32 +471,40 @@ Proof.
     intros x Hx.
     pose proof (H x ltac:(set_solver)) as IHbody.
     specialize (IHbody (body_open_tm _ _ Hbody_lc (LC_fvar x))
-      (D ∪ {[LVFree x]})).
-    rewrite storeA_restrict_insert_fresh_union in IHbody.
-    + apply IHbody.
-      eapply tm_lvars_open_body_subset_lc; [exact Hbody_lc|].
-      cbn [value_lvars value_lvars_at] in H1. exact H1.
-    + apply not_elem_of_dom. intros Hdom.
-      apply Hx. apply elem_of_union_l. apply elem_of_union_r.
-      apply lvars_fv_elem. exact Hdom.
-    + intros Hbad. apply Hx.
-      apply lvars_fv_elem in Hbad. set_solver.
+      (tm_lvars (e ^^ x))).
+    eapply basic_tm_has_ltype_weaken.
+    + apply IHbody. reflexivity.
+    + eapply lty_env_restrict_open_bind_body_subset.
+      * intros Hdom. apply Hx.
+        apply elem_of_union_l. apply elem_of_union_r.
+        apply lvars_fv_elem. exact Hdom.
+      * intros Hbad. apply Hx.
+        apply elem_of_union_l. apply elem_of_union_l.
+        apply elem_of_union_r. exact Hbad.
+      * apply tm_lvars_no_bv_of_lc.
+        apply body_open_tm; [exact Hbody_lc|constructor].
+      * eapply tm_lvars_open_body_subset_lc; [exact Hbody_lc|].
+        cbn [value_lvars value_lvars_at] in H1. exact H1.
   - apply lc_fix_iff_body in H0 as Hbody_lc.
     eapply BVT_Fix with
       (L := L ∪ lvars_fv D ∪ lvars_fv (dom Σ) ∪ fv_value vf).
     intros x Hx.
     pose proof (H x ltac:(set_solver)) as IHbody.
     specialize (IHbody (body_open_value _ _ Hbody_lc (LC_fvar x))
-      (D ∪ {[LVFree x]})).
-    rewrite storeA_restrict_insert_fresh_union in IHbody.
-    + apply IHbody.
-      eapply value_lvars_open_body_subset_lc; [exact Hbody_lc|].
-      cbn [value_lvars value_lvars_at] in H1. exact H1.
-    + apply not_elem_of_dom. intros Hdom.
-      apply Hx. apply elem_of_union_l. apply elem_of_union_r.
-      apply lvars_fv_elem. exact Hdom.
-    + intros Hbad. apply Hx.
-      apply lvars_fv_elem in Hbad. set_solver.
+      (value_lvars (vf ^^ x))).
+    eapply basic_value_has_ltype_weaken.
+    + apply IHbody. reflexivity.
+    + eapply lty_env_restrict_open_bind_body_subset.
+      * intros Hdom. apply Hx.
+        apply elem_of_union_l. apply elem_of_union_r.
+        apply lvars_fv_elem. exact Hdom.
+      * intros Hbad. apply Hx.
+        apply elem_of_union_l. apply elem_of_union_l.
+        apply elem_of_union_r. exact Hbad.
+      * apply value_lvars_no_bv_of_lc.
+        apply body_open_value; [exact Hbody_lc|constructor].
+      * eapply value_lvars_open_body_subset_lc; [exact Hbody_lc|].
+        cbn [value_lvars value_lvars_at] in H1. exact H1.
   - apply lc_ret_iff_value in H0.
     constructor. eapply H; eauto.
   - apply lc_lete_iff_body in H1 as [Hlc1 Hbody2].
@@ -312,16 +514,20 @@ Proof.
     + intros x Hx.
       pose proof (H0 x ltac:(set_solver)) as IHbody.
       specialize (IHbody (body_open_tm _ _ Hbody2 (LC_fvar x))
-        (D ∪ {[LVFree x]})).
-      rewrite storeA_restrict_insert_fresh_union in IHbody.
-      * apply IHbody.
-        eapply tm_lvars_open_body_subset_lc; [exact Hbody2|].
-        cbn [tm_lvars tm_lvars_at] in H2. set_solver.
-      * apply not_elem_of_dom. intros Hdom.
-        apply Hx. apply elem_of_union_l. apply elem_of_union_r.
-        apply lvars_fv_elem. exact Hdom.
-      * intros Hbad. apply Hx.
-        apply lvars_fv_elem in Hbad. set_solver.
+        (tm_lvars (e2 ^^ x))).
+      eapply basic_tm_has_ltype_weaken.
+      * apply IHbody. reflexivity.
+      * eapply lty_env_restrict_open_bind_body_subset.
+        -- intros Hdom. apply Hx.
+           apply elem_of_union_l. apply elem_of_union_r.
+           apply lvars_fv_elem. exact Hdom.
+        -- intros Hbad. apply Hx.
+           apply elem_of_union_l. apply elem_of_union_l.
+           apply elem_of_union_r. exact Hbad.
+        -- apply tm_lvars_no_bv_of_lc.
+           apply body_open_tm; [exact Hbody2|constructor].
+        -- eapply tm_lvars_open_body_subset_lc; [exact Hbody2|].
+           cbn [tm_lvars tm_lvars_at] in H2. set_solver.
   - match goal with
     | Hlc : lc_tm (tprim _ _) |- _ => apply lc_prim_iff_value in Hlc
     end.
@@ -389,18 +595,29 @@ Lemma basic_has_ltype_of_atom_typing_mutual :
 Proof.
   apply has_type_mutind; intros; eauto.
   - econstructor. rewrite atom_store_to_lvar_store_lookup_free. exact e.
-  - eapply BVT_Lam with (L := L). intros x Hx.
-    pose proof (H x Hx) as Hbody.
-    rewrite atom_store_to_lvar_store_insert in Hbody.
-    exact Hbody.
-  - eapply BVT_Fix with (L := L). intros x Hx.
-    pose proof (H x Hx) as Hbody.
-    rewrite atom_store_to_lvar_store_insert in Hbody.
-    exact Hbody.
-  - eapply BTT_Let with (L := L); eauto.
+  - match goal with
+    | |- basic_value_has_ltype (atom_env_to_lty_env ?Γ) _ _ =>
+        eapply BVT_Lam with (L := L ∪ dom Γ)
+    end.
     intros x Hx.
-    pose proof (H0 x Hx) as Hbody.
-    rewrite atom_store_to_lvar_store_insert in Hbody.
+    pose proof (H x ltac:(set_solver)) as Hbody.
+    rewrite lvar_store_open_bind_atom_store by set_solver.
+    exact Hbody.
+  - match goal with
+    | |- basic_value_has_ltype (atom_env_to_lty_env ?Γ) _ _ =>
+        eapply BVT_Fix with (L := L ∪ dom Γ)
+    end.
+    intros x Hx.
+    pose proof (H x ltac:(set_solver)) as Hbody.
+    rewrite lvar_store_open_bind_atom_store by set_solver.
+    exact Hbody.
+  - match goal with
+    | |- basic_tm_has_ltype (atom_env_to_lty_env ?Γ) _ _ =>
+        eapply BTT_Let with (L := L ∪ dom Γ)
+    end; eauto.
+    intros x Hx.
+    pose proof (H0 x ltac:(set_solver)) as Hbody.
+    rewrite lvar_store_open_bind_atom_store by set_solver.
     exact Hbody.
 Qed.
 
@@ -441,20 +658,20 @@ Proof.
         rewrite atom_store_to_lvar_store_lookup_bound_none in Hlook;
         discriminate
     end.
-  - eapply VT_Lam with (L := L).
+  - eapply VT_Lam with (L := L ∪ dom Δ).
     intros x Hx.
-    specialize (H x Hx (<[x := s]> Δ)).
-    exact (H (eq_sym (atom_store_to_lvar_store_insert x s Δ))).
-  - eapply VT_Fix with (L := L).
+    specialize (H x ltac:(set_solver) (<[x := s]> Δ)).
+    exact (H (lvar_store_open_bind_atom_store Δ s x ltac:(set_solver))).
+  - eapply VT_Fix with (L := L ∪ dom Δ).
     intros x Hx.
-    specialize (H x Hx (<[x := sx]> Δ)).
-    exact (H (eq_sym (atom_store_to_lvar_store_insert x sx Δ))).
+    specialize (H x ltac:(set_solver) (<[x := sx]> Δ)).
+    exact (H (lvar_store_open_bind_atom_store Δ sx x ltac:(set_solver))).
   - eapply TT_Ret. eauto.
-  - eapply TT_Let with (L := L).
+  - eapply TT_Let with (L := L ∪ dom Δ).
     + eauto.
     + intros x Hx.
-      specialize (H0 x Hx (<[x := T1]> Δ)).
-      exact (H0 (eq_sym (atom_store_to_lvar_store_insert x T1 Δ))).
+      specialize (H0 x ltac:(set_solver) (<[x := T1]> Δ)).
+      exact (H0 (lvar_store_open_bind_atom_store Δ T1 x ltac:(set_solver))).
   - eapply TT_Op; eauto.
   - eapply TT_App; eauto.
   - eapply TT_Match; eauto.
@@ -522,22 +739,30 @@ Proof.
         rewrite H1 in H2; inversion H2; reflexivity
     end.
   -
-    match goal with
-    | IH : forall x, x ∉ ?L1 -> forall T2,
-        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
-      Hbody : forall x, x ∉ ?L2 ->
-        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+	    match goal with
+	    | IH : forall x, x ∉ ?L1 -> forall T2,
+	        basic_tm_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) T2 -> _,
+	      Hbody : forall x, x ∉ ?L2 ->
+	        basic_tm_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) _ |- _ =>
         set (y := fresh_for (L1 ∪ L2));
         assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
         pose proof (IH y ltac:(set_solver) _ (Hbody y ltac:(set_solver))) as Heq
     end.
     subst. reflexivity.
   -
-    match goal with
-    | IH : forall x, x ∉ ?L1 -> forall T2,
-        basic_value_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
-      Hbody : forall x, x ∉ ?L2 ->
-        basic_value_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+	    match goal with
+	    | IH : forall x, x ∉ ?L1 -> forall T2,
+	        basic_value_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) T2 -> _,
+	      Hbody : forall x, x ∉ ?L2 ->
+	        basic_value_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) _ |- _ =>
         set (y := fresh_for (L1 ∪ L2));
         assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
         pose proof (IH y ltac:(set_solver) _ (Hbody y ltac:(set_solver))) as Heq
@@ -550,11 +775,15 @@ Proof.
         pose proof (IH1 _ Hty1) as Heq1
     end.
     subst.
-    match goal with
-    | IH2 : forall x, x ∉ ?L1 -> forall T2,
-        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) T2 -> _,
-      Hbody : forall x, x ∉ ?L2 ->
-        basic_tm_has_ltype (<[LVFree x := _]> _) (_ ^^ x) _ |- _ =>
+	    match goal with
+	    | IH2 : forall x, x ∉ ?L1 -> forall T2,
+	        basic_tm_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) T2 -> _,
+	      Hbody : forall x, x ∉ ?L2 ->
+	        basic_tm_has_ltype
+	          (lty_env_open_one 0 x (typed_lty_env_bind _ _))
+	          (_ ^^ x) _ |- _ =>
         set (y := fresh_for (L1 ∪ L2));
         assert (Hy : y ∉ L1 ∪ L2) by (subst y; apply fresh_for_not_in);
         exact (IH2 y ltac:(set_solver) _ (Hbody y ltac:(set_solver)))
@@ -706,7 +935,10 @@ Definition context_ty_wf_formula
   FAtom (context_ty_wf_lqual Σ τ).
 Lemma formula_fv_context_ty_wf_formula Σ τ :
   formula_fv (context_ty_wf_formula Σ τ) = lvars_fv (dom Σ).
-Proof. reflexivity. Qed.
+Proof.
+  unfold context_ty_wf_formula, context_ty_wf_lqual.
+  rewrite formula_fv_atom. reflexivity.
+Qed.
 Definition expr_basic_typing_lqual
     (Σ : lty_env) (e : tm) (T : ty) : LogicQualifierT :=
   lqual (dom Σ)
@@ -716,7 +948,10 @@ Definition expr_basic_typing_formula
   FAtom (expr_basic_typing_lqual Σ e T).
 Lemma formula_fv_expr_basic_typing_formula Σ e T :
   formula_fv (expr_basic_typing_formula Σ e T) = lvars_fv (dom Σ).
-Proof. reflexivity. Qed.
+Proof.
+  unfold expr_basic_typing_formula, expr_basic_typing_lqual.
+  rewrite formula_fv_atom. reflexivity.
+Qed.
 Lemma formula_open_context_ty_wf_formula k y Σ τ :
   formula_open k y (context_ty_wf_formula Σ τ) =
   context_ty_wf_formula (lty_env_open_one k y Σ) (cty_open k y τ).
@@ -760,12 +995,341 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma open_value_commute_fresh_mutual :
+  (forall v i j x y,
+    i <> j ->
+    x <> y ->
+    open_value i (vfvar x) (open_value j (vfvar y) v) =
+    open_value j (vfvar y) (open_value i (vfvar x) v)) *
+  (forall e i j x y,
+    i <> j ->
+    x <> y ->
+    open_tm i (vfvar x) (open_tm j (vfvar y) e) =
+    open_tm j (vfvar y) (open_tm i (vfvar x) e)).
+Proof.
+  apply value_tm_mutind;
+    cbn [open_value open_tm]; intros; try reflexivity;
+    try solve [f_equal; eauto; lia].
+  - destruct (decide (j = n)) as [->|Hjn];
+      destruct (decide (i = n)) as [->|Hin];
+      try contradiction; cbn [open_value];
+      repeat case_decide; try congruence; reflexivity.
+Qed.
+
+Lemma open_value_commute_fresh v i j x y :
+  i <> j ->
+  x <> y ->
+  open_value i (vfvar x) (open_value j (vfvar y) v) =
+  open_value j (vfvar y) (open_value i (vfvar x) v).
+Proof. exact (fst open_value_commute_fresh_mutual v i j x y). Qed.
+
+Lemma open_tm_commute_fresh e i j x y :
+  i <> j ->
+  x <> y ->
+  open_tm i (vfvar x) (open_tm j (vfvar y) e) =
+  open_tm j (vfvar y) (open_tm i (vfvar x) e).
+Proof. exact (snd open_value_commute_fresh_mutual e i j x y). Qed.
+
+Lemma open_fv_fresh_inv_mutual :
+  (forall v k x y,
+    y <> x ->
+    y ∈ fv_value (open_value k (vfvar x) v) ->
+    y ∈ fv_value v) *
+  (forall e k x y,
+    y <> x ->
+    y ∈ fv_tm (open_tm k (vfvar x) e) ->
+    y ∈ fv_tm e).
+Proof.
+  apply value_tm_mutind;
+    cbn [open_value open_tm fv_value fv_tm]; intros; try set_solver.
+  destruct (decide (k = n)); cbn [fv_value] in H0; set_solver.
+Qed.
+
+Lemma open_value_fv_fresh_inv v k x y :
+  y <> x ->
+  y ∈ fv_value (open_value k (vfvar x) v) ->
+  y ∈ fv_value v.
+Proof. exact (fst open_fv_fresh_inv_mutual v k x y). Qed.
+
+Lemma open_tm_fv_fresh_inv e k x y :
+  y <> x ->
+  y ∈ fv_tm (open_tm k (vfvar x) e) ->
+  y ∈ fv_tm e.
+Proof. exact (snd open_fv_fresh_inv_mutual e k x y). Qed.
+
+Lemma close_open_commute_fresh_mutual :
+  (forall v i j x y,
+    i <> j ->
+    x <> y ->
+    close_value y j (open_value i (vfvar x) v) =
+    open_value i (vfvar x) (close_value y j v)) *
+  (forall e i j x y,
+    i <> j ->
+    x <> y ->
+    close_tm y j (open_tm i (vfvar x) e) =
+    open_tm i (vfvar x) (close_tm y j e)).
+Proof.
+  apply value_tm_mutind;
+    cbn [close_value close_tm open_value open_tm]; intros;
+    try reflexivity; try solve [f_equal; eauto; lia].
+  - unfold subst_one.
+    repeat case_decide; subst; cbn [open_value close_value];
+      repeat case_decide; try congruence; try lia; reflexivity.
+  - destruct (decide (i = n)); cbn [close_value];
+      repeat case_decide; try congruence; try lia; reflexivity.
+Qed.
+
+Lemma close_value_open_commute_fresh v i j x y :
+  i <> j ->
+  x <> y ->
+  close_value y j (open_value i (vfvar x) v) =
+  open_value i (vfvar x) (close_value y j v).
+Proof. exact (fst close_open_commute_fresh_mutual v i j x y). Qed.
+
+Lemma close_tm_open_commute_fresh e i j x y :
+  i <> j ->
+  x <> y ->
+  close_tm y j (open_tm i (vfvar x) e) =
+  open_tm i (vfvar x) (close_tm y j e).
+Proof. exact (snd close_open_commute_fresh_mutual e i j x y). Qed.
+
+Lemma lty_env_open_one_commute_fresh i j x y (Σ : lty_env) :
+  i <> j ->
+  x <> y ->
+  lty_env_open_one i x (lty_env_open_one j y Σ) =
+  lty_env_open_one j y (lty_env_open_one i x Σ).
+Proof.
+  intros Hij Hxy.
+  unfold lty_env_open_one, lvar_store_open_one.
+  rewrite (storeA_rekey_compose (logic_var_open i x) (logic_var_open j y)).
+  2:{ apply swap_inj. }
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  rewrite (storeA_rekey_compose (logic_var_open j y) (logic_var_open i x)).
+  2:{ apply swap_inj. }
+  2:{ intros a b Hab. eapply swap_inj. exact Hab. }
+  apply storeA_rekey_ext_on_dom. intros v _.
+  apply logic_var_open_commute_fresh; assumption.
+Qed.
+
+Lemma lty_env_open_one_typed_bind_under_commute k x y (Σ : lty_env) T :
+  x <> y ->
+  LVFree y ∉ dom (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) ->
+  lty_env_open_one (S k) y
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) =
+  lty_env_open_one 0 x
+    (typed_lty_env_bind (lty_env_open_one k y Σ) T).
+Proof.
+  intros Hxy Hyfresh.
+  rewrite lty_env_open_one_commute_fresh by (lia || congruence).
+  rewrite lvar_store_bind_open_under.
+  - reflexivity.
+  - intros Hbad. apply Hyfresh.
+    rewrite lty_env_open_one_dom.
+    replace (LVFree y) with (logic_var_open 0 x (LVFree y)).
+    2:{
+      rewrite logic_var_open_sym.
+      unfold swap. repeat case_decide; congruence.
+    }
+    apply lvars_open_elem_open.
+    rewrite lvar_store_bind_dom.
+    apply elem_of_union_l.
+    unfold lvars_shift_from.
+    apply elem_of_map.
+    exists (LVFree y). split; [reflexivity|exact Hbad].
+Qed.
+
+Lemma lty_env_open_one_lookup_open k y (Σ : lty_env) v T :
+  Σ !! v = Some T ->
+  lty_env_open_one k y Σ !! logic_var_open k y v = Some T.
+Proof.
+  intros Hlook.
+  unfold lty_env_open_one, lvar_store_open_one.
+  change ((storeA_swap (LVBound k) (LVFree y) Σ : gmap logic_var ty) !!
+    swap (LVBound k) (LVFree y) v = Some T).
+  unfold storeA_swap.
+  rewrite (storeA_rekey_lookup (swap (LVBound k) (LVFree y))
+    (swap_inj (LVBound k) (LVFree y)) Σ v).
+  exact Hlook.
+Qed.
+
+Lemma lty_env_open_one_lookup_open_inv k y (Σ : lty_env) v T :
+  lty_env_open_one k y Σ !! logic_var_open k y v = Some T ->
+  Σ !! v = Some T.
+Proof.
+  intros Hlook.
+  unfold lty_env_open_one, lvar_store_open_one in Hlook.
+  change ((storeA_swap (LVBound k) (LVFree y) Σ : gmap logic_var ty) !!
+    swap (LVBound k) (LVFree y) v = Some T) in Hlook.
+  unfold storeA_swap in Hlook.
+  rewrite (storeA_rekey_lookup (swap (LVBound k) (LVFree y))
+    (swap_inj (LVBound k) (LVFree y)) Σ v) in Hlook.
+  exact Hlook.
+Qed.
+
+Lemma lty_env_open_one_typed_bind_fresh_other x y (Σ : lty_env) T :
+  x <> y ->
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ lvars_fv (dom (lty_env_open_one 0 x (typed_lty_env_bind Σ T))).
+Proof.
+  intros Hxy Hy.
+  rewrite lvar_store_open_one_dom.
+  intros Hbad.
+  apply lvars_fv_open_subset in Hbad.
+  rewrite typed_lty_env_bind_dom, lvars_fv_union,
+    lvars_shift_from_fv, lvars_fv_singleton_bound in Hbad.
+  better_set_solver.
+Qed.
+
+Lemma basic_has_ltype_open_one_fresh_mutual :
+  (forall Σ v T,
+    basic_value_has_ltype Σ v T ->
+    forall k y,
+	      y ∉ lvars_fv (dom Σ) ∪ fv_value v ->
+	      basic_value_has_ltype (lty_env_open_one k y Σ)
+	        (open_value k (vfvar y) v) T) /\
+	  (forall Σ e T,
+	    basic_tm_has_ltype Σ e T ->
+    forall k y,
+      y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
+      basic_tm_has_ltype (lty_env_open_one k y Σ)
+        (open_tm k (vfvar y) e) T).
+Proof.
+	  apply basic_has_ltype_mutind; intros; cbn [open_value open_tm].
+	  - constructor.
+	  - constructor.
+	    replace (LVFree x) with (logic_var_open k y (LVFree x)).
+	    + apply lty_env_open_one_lookup_open. exact e.
+	    + change (swap (LVBound k) (LVFree y) (LVFree x) = LVFree x).
+	      unfold swap. repeat case_decide; try congruence.
+	      exfalso. apply H. cbn [fv_value]. set_solver.
+	  - destruct (decide (k = k0)) as [->|Hneq].
+	    + destruct (decide (k0 = k0)) as [_|Hfalse]; [|contradiction].
+	      eapply BVT_FVar.
+	      replace (LVFree y) with (logic_var_open k0 y (LVBound k0)).
+	      * apply lty_env_open_one_lookup_open. exact e.
+	      * better_base_solver.
+	    + destruct (decide (k0 = k)) as [Heq|_]; [symmetry in Heq; contradiction|].
+	      eapply BVT_BVar.
+	      replace (LVBound k) with (logic_var_open k0 y (LVBound k)).
+	      * apply lty_env_open_one_lookup_open. exact e.
+	      * better_base_solver.
+	  - eapply BVT_Lam with
+	      (L := L ∪ {[y]} ∪ fv_tm e ∪ lvars_fv (dom Σ)).
+	    intros x Hx.
+	    cbn [open_one open_tm_atom_inst].
+	    rewrite <- lty_env_open_one_typed_bind_under_commute.
+	    + change (open_tm (S k) y e ^^ x) with
+	        (open_tm 0 (vfvar x) (open_tm (S k) (vfvar y) e)).
+	      rewrite open_tm_commute_fresh by (lia || set_solver).
+	      eapply H; [set_solver|].
+      intros Hbad.
+      apply elem_of_union in Hbad as [Hbad|Hbad].
+	      * apply H0.
+	        rewrite lty_env_open_one_dom in Hbad.
+	        apply lvars_fv_open_subset in Hbad.
+	        rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	        set_solver.
+	      * pose proof (open_fv_tm' e (vfvar x) 0) as Hfv.
+	        cbn [fv_value] in Hfv.
+		        apply H0. cbn [fv_value].
+		        apply elem_of_union_r.
+		        apply (open_tm_fv_fresh_inv e 0 x y).
+		        { intros ->. apply Hx. set_solver. }
+		        { exact Hbad. }
+    + set_solver.
+	    + intros Hbad. apply H0.
+	      rewrite lty_env_open_one_dom in Hbad.
+	      apply lvars_fv_elem in Hbad.
+	      apply lvars_fv_open_subset in Hbad.
+	      rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	      set_solver.
+	  - eapply BVT_Fix with
+	      (L := L ∪ {[y]} ∪ fv_value vf ∪ lvars_fv (dom Σ)).
+	    intros x Hx.
+	    cbn [open_one open_value_atom_inst].
+	    rewrite <- lty_env_open_one_typed_bind_under_commute.
+	    + change (open_value (S k) y vf ^^ x) with
+	        (open_value 0 (vfvar x) (open_value (S k) (vfvar y) vf)).
+	      rewrite open_value_commute_fresh by (lia || set_solver).
+	      eapply H; [set_solver|].
+      intros Hbad.
+      apply elem_of_union in Hbad as [Hbad|Hbad].
+	      * apply H0.
+	        rewrite lty_env_open_one_dom in Hbad.
+	        apply lvars_fv_open_subset in Hbad.
+	        rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	        set_solver.
+	      * pose proof (open_fv_value' vf (vfvar x) 0) as Hfv.
+	        cbn [fv_value] in Hfv.
+		        apply H0. cbn [fv_value].
+		        apply elem_of_union_r.
+		        apply (open_value_fv_fresh_inv vf 0 x y).
+		        { intros ->. apply Hx. set_solver. }
+		        { exact Hbad. }
+    + set_solver.
+	    + intros Hbad. apply H0.
+	      rewrite lty_env_open_one_dom in Hbad.
+	      apply lvars_fv_elem in Hbad.
+	      apply lvars_fv_open_subset in Hbad.
+	      rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	      set_solver.
+	  - constructor. eapply H; set_solver.
+	  - eapply BTT_Let with
+	      (L := L ∪ {[y]} ∪ fv_tm e2 ∪ lvars_fv (dom Σ)).
+	    + eapply H; set_solver.
+	    + intros x Hx.
+	      cbn [open_one open_tm_atom_inst].
+	      rewrite <- lty_env_open_one_typed_bind_under_commute.
+	      * change (open_tm (S k) y e2 ^^ x) with
+	          (open_tm 0 (vfvar x) (open_tm (S k) (vfvar y) e2)).
+	        rewrite open_tm_commute_fresh by (lia || set_solver).
+	        eapply H0; [set_solver|].
+        intros Hbad.
+        apply elem_of_union in Hbad as [Hbad|Hbad].
+	        -- apply H1.
+	           rewrite lty_env_open_one_dom in Hbad.
+	           apply lvars_fv_open_subset in Hbad.
+	           rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	           set_solver.
+	        -- pose proof (open_fv_tm' e2 (vfvar x) 0) as Hfv.
+	           cbn [fv_value] in Hfv.
+		           apply H1. cbn [fv_value].
+		           apply elem_of_union_r.
+		           cbn [fv_tm]. apply elem_of_union_r.
+		           change (fv_tm (e2 ^^ x)) with
+		             (fv_tm (open_tm 0 (vfvar x) e2)) in Hbad.
+		           apply (open_tm_fv_fresh_inv e2 0 x y).
+		           { intros ->. apply Hx. set_solver. }
+		           { exact Hbad. }
+      * set_solver.
+	      * intros Hbad. apply H1.
+	        rewrite lty_env_open_one_dom in Hbad.
+	        apply lvars_fv_elem in Hbad.
+	        apply lvars_fv_open_subset in Hbad.
+	        rewrite lvar_store_bind_lvars_fv_dom in Hbad.
+	        set_solver.
+	  - eapply BTT_Op.
+	    + exact e.
+	    + eapply H; set_solver.
+	  - eapply BTT_App.
+	    + eapply H; set_solver.
+	    + eapply H0; set_solver.
+	  - eapply BTT_Match.
+	    + eapply H; set_solver.
+	    + eapply H0; set_solver.
+	    + eapply H1; set_solver.
+Qed.
+
 Lemma basic_tm_has_ltype_open_one_fresh k y Σ e T :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
   basic_tm_has_ltype Σ e T ->
   basic_tm_has_ltype (lty_env_open_one k y Σ)
     (open_tm k (vfvar y) e) T.
-Admitted.
+Proof.
+  intros Hy Hty.
+  exact (proj2 basic_has_ltype_open_one_fresh_mutual
+    Σ e T Hty k y Hy).
+Qed.
 
 Lemma atom_env_lty_env_roundtrip_closed (Σ : lty_env) :
   lty_env_closed Σ ->
@@ -837,7 +1401,149 @@ Lemma basic_tm_has_ltype_close_one_fresh k y Σ e T :
   basic_tm_has_ltype (lty_env_open_one k y Σ)
     (open_tm k (vfvar y) e) T ->
   basic_tm_has_ltype Σ e T.
-Admitted.
+Proof.
+  intros Hy Hty.
+  assert (Hclosed :
+    basic_tm_has_ltype Σ
+      (close_tm y k (open_tm k (vfvar y) e)) T).
+  {
+    revert k y Σ e T Hy Hty.
+    enough (Hclose :
+	      (forall Σ v T,
+	        basic_value_has_ltype Σ v T ->
+	        forall k y Σ0,
+	          y ∉ lvars_fv (dom Σ0) ->
+	          Σ = lty_env_open_one k y Σ0 ->
+	          basic_value_has_ltype Σ0 (close_value y k v) T) /\
+	      (forall Σ e T,
+	        basic_tm_has_ltype Σ e T ->
+	        forall k y Σ0,
+	          y ∉ lvars_fv (dom Σ0) ->
+	          Σ = lty_env_open_one k y Σ0 ->
+	          basic_tm_has_ltype Σ0 (close_tm y k e) T)).
+	    {
+	      intros k y Σ e T Hy Hty.
+	      eapply (proj2 Hclose); [exact Hty|set_solver|reflexivity].
+	    }
+	    apply basic_has_ltype_mutind; intros; subst.
+    - constructor.
+    - destruct (decide (x = y)) as [->|Hxy].
+      + cbn [close_value].
+        destruct (decide (y = y)) as [_|Hneq]; [|contradiction].
+        eapply BVT_BVar.
+        replace (LVFree y) with (logic_var_open k y (LVBound k)) in e
+          by better_base_solver.
+        eapply lty_env_open_one_lookup_open_inv. exact e.
+      + cbn [close_value].
+        destruct (decide (y = x)) as [Heq|_]; [symmetry in Heq; contradiction|].
+        eapply BVT_FVar.
+        replace (LVFree x) with (logic_var_open k y (LVFree x)) in e.
+        * eapply lty_env_open_one_lookup_open_inv. exact e.
+        * better_base_solver.
+    - eapply BVT_BVar.
+      destruct (decide (k0 = k)) as [->|Hneq].
+      + exfalso.
+        assert (Σ0 !! LVFree y = Some T) as Hlook.
+        {
+          eapply lty_env_open_one_lookup_open_inv.
+          replace (logic_var_open k y (LVFree y)) with (LVBound k)
+            by better_base_solver.
+          exact e.
+        }
+        apply elem_of_dom_2 in Hlook.
+        rewrite <- lvars_fv_elem in Hlook.
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact (Hfresh Hlook)
+        end.
+      + replace (LVBound k) with (logic_var_open k0 y (LVBound k)) in e.
+        * eapply lty_env_open_one_lookup_open_inv. exact e.
+        * better_base_solver.
+    - eapply BVT_Lam with (L := L ∪ {[y]}).
+      intros x Hx.
+      pose proof (H x ltac:(set_solver) (S k) y
+        (lty_env_open_one 0 x (typed_lty_env_bind Σ0 s))
+        ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
+        ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
+          (set_solver ||
+            (rewrite <- lvars_fv_elem;
+             eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
+          reflexivity))
+        as Hbody.
+	      + cbn [open_one open_tm_atom_inst].
+	        change (e ^^ x) with (open_tm 0 (vfvar x) e) in Hbody.
+	        rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
+	        exact Hbody.
+    - eapply BVT_Fix with (L := L ∪ {[y]}).
+      intros x Hx.
+      pose proof (H x ltac:(set_solver) (S k) y
+        (lty_env_open_one 0 x (typed_lty_env_bind Σ0 sx))
+        ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
+        ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
+          (set_solver ||
+            (rewrite <- lvars_fv_elem;
+             eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
+          reflexivity))
+        as Hbody.
+	      + cbn [open_one open_value_atom_inst].
+	        change (vf ^^ x) with (open_value 0 (vfvar x) vf) in Hbody.
+	        rewrite close_value_open_commute_fresh in Hbody by (lia || set_solver).
+	        exact Hbody.
+    - constructor.
+      eapply H; [|reflexivity].
+      match goal with
+      | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+      end.
+    - eapply BTT_Let with (L := L ∪ {[y]}).
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + intros x Hx.
+        pose proof (H0 x ltac:(set_solver) (S k) y
+          (lty_env_open_one 0 x (typed_lty_env_bind Σ0 T1))
+          ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
+          ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
+            (set_solver ||
+              (rewrite <- lvars_fv_elem;
+               eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
+            reflexivity))
+          as Hbody.
+	        * cbn [open_one open_tm_atom_inst].
+	          change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hbody.
+	          rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
+	          exact Hbody.
+    - eapply BTT_Op.
+      + exact e.
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+    - eapply BTT_App.
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H0; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+    - eapply BTT_Match.
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H0; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H1; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+  }
+  rewrite close_open_var_tm in Hclosed by set_solver.
+  exact Hclosed.
+Qed.
 
 Lemma basic_tm_has_ltype_open_one_fresh_iff k y Σ e T :
   y ∉ lvars_fv (dom Σ) ∪ fv_tm e ->
@@ -942,7 +1648,9 @@ Proof.
   - intros [_ Hden].
     apply context_ty_wf_lqual_denote_iff. exact Hden.
   - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]]. exact Hsub.
+    + destruct Hden as [_ [Hsub _]].
+      unfold formula_scoped_in_world.
+      rewrite formula_fv_atom. exact Hsub.
     + apply context_ty_wf_lqual_denote_iff. exact Hden.
 Qed.
 
@@ -990,7 +1698,9 @@ Proof.
   - intros [_ Hden].
     apply expr_basic_typing_lqual_denote_iff. exact Hden.
   - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]]. exact Hsub.
+    + destruct Hden as [_ [Hsub _]].
+      unfold formula_scoped_in_world.
+      rewrite formula_fv_atom. exact Hsub.
     + apply expr_basic_typing_lqual_denote_iff. exact Hden.
 Qed.
 

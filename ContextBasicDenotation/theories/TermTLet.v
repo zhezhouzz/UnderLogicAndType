@@ -401,7 +401,8 @@ Proof.
   split; [tauto |].
   intros Hden. split; [| exact Hden].
   destruct Hden as [_ [Hsub _]].
-  exact Hsub.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_atom. exact Hsub.
 Qed.
 
 Lemma expr_total_formula_to_atom_world e (m : WfWorldT) :
@@ -681,7 +682,8 @@ Proof.
   split; [tauto |].
   intros Hden. split; [| exact Hden].
   destruct Hden as [_ [Hsub _]].
-  exact Hsub.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_atom. exact Hsub.
 Qed.
 
 Lemma expr_result_formula_to_atom_world e x (m : WfWorldT) :

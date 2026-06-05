@@ -24,27 +24,47 @@ Inductive Formula : Type :=
   | FOr      (p q : Formula)
   | FImpl    (p q : Formula)
   | FStar    (p q : Formula)
-  | FWand    (p q : Formula)
+  | FBWand   (d : nat) (p q : Formula)
   | FPlus    (p q : Formula)
   | FForall  (p : Formula)
   | FOver    (p : Formula)
   | FUnder   (p : Formula)
   | FFibVars (D : lvset) (p : Formula).
 
-Fixpoint formula_lvars (φ : Formula) : lvset :=
+Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
   match φ with
   | FTrue | FFalse => ∅
-  | FAtom q => lqual_lvars q
+  | FAtom q => lvars_at_depth d (lqual_lvars q)
   | FAnd p q | FOr p q | FImpl p q
-  | FStar p q | FWand p q | FPlus p q =>
-      formula_lvars p ∪ formula_lvars q
-  | FForall p => formula_lvars p
-  | FOver p | FUnder p => formula_lvars p
-  | FFibVars D p => D ∪ formula_lvars p
+  | FStar p q | FPlus p q =>
+      formula_lvars_at d p ∪ formula_lvars_at d q
+  | FBWand n p q =>
+      formula_lvars_at (d + n) p ∪ formula_lvars_at (d + n) q
+  | FForall p => formula_lvars_at (S d) p
+  | FOver p | FUnder p => formula_lvars_at d p
+  | FFibVars D p => lvars_at_depth d D ∪ formula_lvars_at d p
   end.
+
+Definition formula_lvars (φ : Formula) : lvset :=
+  formula_lvars_at 0 φ.
 
 Definition formula_fv (φ : Formula) : aset :=
   lvars_fv (formula_lvars φ).
+
+Fixpoint formula_wf (φ : Formula) : Prop :=
+  match φ with
+  | FTrue | FFalse | FAtom _ => True
+  | FAnd p q | FOr p q | FImpl p q
+  | FStar p q | FPlus p q =>
+      formula_wf p ∧ formula_wf q
+  | FBWand d p q =>
+      formula_wf p ∧
+      formula_wf q ∧
+      lvars_fv (formula_lvars_at d p) ⊆
+        lvars_fv (formula_lvars_at 0 q)
+  | FForall p | FOver p | FUnder p => formula_wf p
+  | FFibVars _ p => formula_wf p
+  end.
 
 Definition formula_stale : Formula → aset := formula_fv.
 
@@ -61,34 +81,35 @@ Proof. reflexivity. Qed.
 
 Lemma formula_fv_atom q :
   formula_fv (FAtom q) = lvars_fv (lqual_lvars q).
-Proof. reflexivity. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]. apply lvars_fv_lvars_at_depth. Qed.
 
 Lemma formula_fv_and p q :
   formula_fv (FAnd p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
 Lemma formula_fv_or p q :
   formula_fv (FOr p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
 Lemma formula_fv_impl p q :
   formula_fv (FImpl p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
 Lemma formula_fv_star p q :
   formula_fv (FStar p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
-Lemma formula_fv_wand p q :
-  formula_fv (FWand p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Lemma formula_fv_fbwand d p q :
+  formula_fv (FBWand d p q) =
+  lvars_fv (formula_lvars_at d p) ∪ lvars_fv (formula_lvars_at d q).
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
 Lemma formula_fv_plus p q :
   formula_fv (FPlus p q) = formula_fv p ∪ formula_fv q.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]; apply lvars_fv_union. Qed.
 
 Lemma formula_fv_forall p :
-  formula_fv (FForall p) = formula_fv p.
+  formula_fv (FForall p) = lvars_fv (formula_lvars_at 1 p).
 Proof. reflexivity. Qed.
 
 Lemma formula_fv_over p :
@@ -101,12 +122,43 @@ Proof. reflexivity. Qed.
 
 Lemma formula_fv_fibvars D p :
   formula_fv (FFibVars D p) = lvars_fv D ∪ formula_fv p.
-Proof. unfold formula_fv; cbn [formula_lvars]; apply lvars_fv_union. Qed.
+Proof.
+  unfold formula_fv, formula_lvars; cbn [formula_lvars_at].
+  rewrite lvars_fv_union, lvars_fv_lvars_at_depth. reflexivity.
+Qed.
+
+Lemma formula_lvars_at_fv d (φ : Formula) :
+  lvars_fv (formula_lvars_at d φ) = formula_fv φ.
+Proof.
+  induction φ in d |- *; cbn [formula_lvars_at].
+  - rewrite formula_fv_true. reflexivity.
+  - rewrite formula_fv_false. reflexivity.
+  - rewrite lvars_fv_lvars_at_depth, formula_fv_atom. reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 d), (IHφ2 d), formula_fv_and.
+    reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 d), (IHφ2 d), formula_fv_or.
+    reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 d), (IHφ2 d), formula_fv_impl.
+    reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 d), (IHφ2 d), formula_fv_star.
+    reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 (d + d0)), (IHφ2 (d + d0)).
+    rewrite formula_fv_fbwand, (IHφ1 d0), (IHφ2 d0). reflexivity.
+  - rewrite lvars_fv_union, (IHφ1 d), (IHφ2 d), formula_fv_plus.
+    reflexivity.
+  - rewrite (IHφ (S d)), formula_fv_forall, (IHφ 1). reflexivity.
+  - rewrite (IHφ d), formula_fv_over. reflexivity.
+  - rewrite (IHφ d), formula_fv_under. reflexivity.
+  - rewrite lvars_fv_union, lvars_fv_lvars_at_depth, (IHφ d),
+      formula_fv_fibvars.
+    reflexivity.
+Qed.
 
 Fixpoint formula_measure (φ : Formula) : nat :=
   match φ with
   | FTrue | FFalse | FAtom _ => 1
-  | FAnd p q | FOr p q | FImpl p q | FStar p q | FWand p q | FPlus p q =>
+  | FAnd p q | FOr p q | FImpl p q | FStar p q | FPlus p q
+  | FBWand _ p q =>
       1 + formula_measure p + formula_measure q
   | FForall p | FOver p | FUnder p | FFibVars _ p =>
       1 + formula_measure p
@@ -121,7 +173,7 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
   | FOr p q => FOr (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FImpl p q => FImpl (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FStar p q => FStar (formula_mlsubst ρ p) (formula_mlsubst ρ q)
-  | FWand p q => FWand (formula_mlsubst ρ p) (formula_mlsubst ρ q)
+  | FBWand d p q => FBWand d (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FPlus p q => FPlus (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FForall p => FForall (formula_mlsubst ρ p)
   | FOver p => FOver (formula_mlsubst ρ p)
@@ -178,20 +230,40 @@ Proof. apply formula_mlsubst_preserves_measure. Qed.
 Lemma formula_mlsubst_fv_subset ρ φ :
   formula_fv (formula_mlsubst ρ φ) ⊆ formula_fv φ.
 Proof.
-  induction φ;
-    unfold formula_fv in *; cbn [formula_mlsubst formula_lvars];
-    try set_solver.
-  - destruct a as [D P]. cbn [lqual_mlsubst lqual_lvars] in *.
-    eapply lvars_fv_mono. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union. set_solver.
-  - rewrite !lvars_fv_union.
-    pose proof (lvars_fv_mono (D ∖ dom (ρ : gmap logic_var V)) D ltac:(set_solver)).
-    set_solver.
+  assert (Hsubset : forall depth,
+      formula_lvars_at depth (formula_mlsubst ρ φ) ⊆
+      formula_lvars_at depth φ).
+  {
+    induction φ; intros depth;
+      cbn [formula_mlsubst formula_lvars_at];
+      try solve [
+        set_solver
+      | destruct a as [D P]; cbn [lqual_mlsubst lqual_lvars];
+        apply lvars_at_depth_mono; set_solver
+      | match goal with
+        | H1 : forall depth, formula_lvars_at depth (formula_mlsubst ρ ?p) ⊆ formula_lvars_at depth ?p,
+          H2 : forall depth, formula_lvars_at depth (formula_mlsubst ρ ?q) ⊆ formula_lvars_at depth ?q
+          |- formula_lvars_at ?δ (formula_mlsubst ρ ?p) ∪
+               formula_lvars_at ?δ (formula_mlsubst ρ ?q) ⊆ _ =>
+            specialize (H1 δ); specialize (H2 δ); set_solver
+        end
+      | match goal with
+        | H : forall depth, formula_lvars_at depth (formula_mlsubst ρ ?p) ⊆ formula_lvars_at depth ?p
+          |- formula_lvars_at ?δ (formula_mlsubst ρ ?p) ⊆ _ =>
+            specialize (H δ); set_solver
+        end
+      | match goal with
+        | H : forall depth, formula_lvars_at depth (formula_mlsubst ρ ?p) ⊆ formula_lvars_at depth ?p
+          |- lvars_at_depth ?δ (?D ∖ dom (ρ : gmap logic_var V)) ∪
+               formula_lvars_at ?δ (formula_mlsubst ρ ?p) ⊆ _ =>
+            pose proof (lvars_at_depth_mono δ
+              (D ∖ dom (ρ : gmap logic_var V)) D ltac:(set_solver));
+            specialize (H δ); set_solver
+        end
+      ].
+  }
+  unfold formula_fv, formula_lvars.
+  apply lvars_fv_mono. apply Hsubset.
 Qed.
 
 Lemma formula_msubst_store_fv_subset σ φ :
@@ -207,7 +279,7 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FOr p q => FOr (formula_open k x p) (formula_open k x q)
   | FImpl p q => FImpl (formula_open k x p) (formula_open k x q)
   | FStar p q => FStar (formula_open k x p) (formula_open k x q)
-  | FWand p q => FWand (formula_open k x p) (formula_open k x q)
+  | FBWand d p q => FBWand d (formula_open (k + d) x p) (formula_open (k + d) x q)
   | FPlus p q => FPlus (formula_open k x p) (formula_open k x q)
   | FForall p => FForall (formula_open (S k) x p)
   | FOver p => FOver (formula_open k x p)
@@ -247,9 +319,9 @@ Lemma formula_open_star k x p q :
   FStar (formula_open k x p) (formula_open k x q).
 Proof. reflexivity. Qed.
 
-Lemma formula_open_wand k x p q :
-  formula_open k x (FWand p q) =
-  FWand (formula_open k x p) (formula_open k x q).
+Lemma formula_open_fbwand k x d p q :
+  formula_open k x (FBWand d p q) =
+  FBWand d (formula_open (k + d) x p) (formula_open (k + d) x q).
 Proof. reflexivity. Qed.
 
 Lemma formula_open_plus k x p q :
@@ -296,9 +368,10 @@ Proof.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
+  - rewrite IHφ1 by (try lia; exact Hxy).
+    rewrite IHφ2 by (try lia; exact Hxy). reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
-  - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
-  - rewrite IHφ by lia. reflexivity.
+  - rewrite IHφ by (try lia; exact Hxy). reflexivity.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite lvars_open_commute_fresh by assumption.
@@ -307,6 +380,15 @@ Qed.
 
 Definition formula_open_env (η : gmap nat atom) (φ : Formula) : Formula :=
   map_fold (fun k x acc => formula_open k x acc) φ η.
+
+Lemma formula_open_env_preserves_measure η φ :
+  formula_measure (formula_open_env η φ) = formula_measure φ.
+Proof.
+  unfold formula_open_env.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite map_fold_empty. reflexivity.
+  - rewrite Hfold, formula_open_preserves_measure. exact IH.
+Qed.
 
 Lemma formula_open_env_empty φ :
   formula_open_env ∅ φ = φ.
@@ -424,19 +506,40 @@ Proof.
     rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
 Qed.
 
-Lemma formula_open_env_wand η φ ψ :
-  formula_open_env η (FWand φ ψ) =
-  FWand (formula_open_env η φ) (formula_open_env η ψ).
+Lemma formula_open_env_fbwand η d φ ψ :
+  open_env_values_inj η ->
+  formula_open_env η (FBWand d φ ψ) =
+  FBWand d
+    (formula_open_env (open_env_lift_by d η) φ)
+    (formula_open_env (open_env_lift_by d η) ψ).
 Proof.
-  unfold formula_open_env.
-  refine (fin_maps.map_fold_ind
-    (fun η => map_fold (fun k x acc => formula_open k x acc) (FWand φ ψ) η =
-      FWand
-        (map_fold (fun k x acc => formula_open k x acc) φ η)
-        (map_fold (fun k x acc => formula_open k x acc) ψ η)) _ _ η).
-  - rewrite !map_fold_empty. reflexivity.
-  - intros k x η' Hfresh Hfold IH.
-    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros _. rewrite formula_open_env_empty, open_env_lift_by_empty,
+      !formula_open_env_empty.
+    reflexivity.
+  - intros Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite formula_open_env_insert_fresh by assumption.
+    rewrite IH by exact Hinjη.
+    cbn [formula_open].
+    rewrite open_env_lift_by_insert.
+    assert (Hlift_fresh :
+      open_env_lift_by d η !! (k + d) = None).
+    { apply open_env_lift_by_lookup_none. exact Hfresh. }
+    assert (Hlift_avoid :
+      open_env_avoids_atom x (open_env_lift_by d η)).
+    { apply open_env_avoids_atom_lift_by. exact Havoid. }
+    assert (Hlift_inj :
+      open_env_values_inj (open_env_lift_by d η)).
+    { apply open_env_values_inj_lift_by. exact Hinjη. }
+    rewrite (formula_open_env_insert_fresh
+      (open_env_lift_by d η) (k + d) x φ
+      Hlift_fresh Hlift_avoid Hlift_inj).
+    rewrite (formula_open_env_insert_fresh
+      (open_env_lift_by d η) (k + d) x ψ
+      Hlift_fresh Hlift_avoid Hlift_inj).
+    reflexivity.
 Qed.
 
 Lemma formula_open_env_plus η φ ψ :
@@ -525,42 +628,16 @@ Proof.
     reflexivity.
 Qed.
 
-Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
-  match φ with
-  | FTrue | FFalse => ∅
-  | FAtom q => lvars_at_depth d (lqual_lvars q)
-  | FAnd p q | FOr p q | FImpl p q
-  | FStar p q | FWand p q | FPlus p q =>
-      formula_lvars_at d p ∪ formula_lvars_at d q
-  | FForall p => formula_lvars_at (S d) p
-  | FOver p | FUnder p => formula_lvars_at d p
-  | FFibVars D p => lvars_at_depth d D ∪ formula_lvars_at d p
-  end.
-
-Lemma formula_lvars_at_fv d (φ : Formula) :
-  lvars_fv (formula_lvars_at d φ) = formula_fv φ.
-Proof.
-  induction φ in d |- *; cbn [formula_lvars_at];
-    rewrite ?lvars_fv_lvars_at_depth, ?lvars_fv_union,
-      ?IHφ1, ?IHφ2, ?IHφ;
-    rewrite ?formula_fv_true, ?formula_fv_false, ?formula_fv_atom,
-      ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl,
-      ?formula_fv_star, ?formula_fv_wand, ?formula_fv_plus,
-      ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under,
-      ?formula_fv_fibvars;
-    rewrite ?lvars_fv_lvars_at_depth;
-    reflexivity.
-Qed.
-
 Lemma formula_open_fv_subset k x φ :
   formula_fv (formula_open k x φ) ⊆ formula_fv φ ∪ {[x]}.
 Proof.
   revert k. induction φ; intros k;
-    unfold formula_fv in *;
-    cbn [formula_lvars formula_open].
+    unfold formula_fv, formula_lvars in *;
+    cbn [formula_lvars_at formula_open].
   - set_solver.
   - set_solver.
   - destruct a as [D P]. cbn [lqual_fv lqual_dom lqual_open].
+    rewrite !lvars_fv_lvars_at_depth.
     apply lvars_fv_open_subset.
   - rewrite !lvars_fv_union. specialize (IHφ1 k). specialize (IHφ2 k).
     set_solver.
@@ -570,16 +647,51 @@ Proof.
     set_solver.
   - rewrite !lvars_fv_union. specialize (IHφ1 k). specialize (IHφ2 k).
     set_solver.
-  - rewrite !lvars_fv_union. specialize (IHφ1 k). specialize (IHφ2 k).
+  - rewrite !lvars_fv_union.
+    rewrite !(formula_lvars_at_fv _ (formula_open _ _ _)).
+    rewrite !(formula_lvars_at_fv _ φ1), !(formula_lvars_at_fv _ φ2).
+    specialize (IHφ1 (k + d)). specialize (IHφ2 (k + d)).
     set_solver.
   - rewrite !lvars_fv_union. specialize (IHφ1 k). specialize (IHφ2 k).
     set_solver.
-  - apply IHφ.
+  - rewrite (formula_lvars_at_fv _ (formula_open _ _ φ)).
+    rewrite (formula_lvars_at_fv _ φ).
+    apply IHφ.
   - apply IHφ.
   - apply IHφ.
   - rewrite !lvars_fv_union.
+    rewrite !lvars_fv_lvars_at_depth.
     pose proof (lvars_fv_open_subset k x D) as HD.
     specialize (IHφ k). set_solver.
+Qed.
+
+Lemma formula_open_env_fv_subset η φ :
+  formula_fv (formula_open_env η φ) ⊆
+    formula_fv φ ∪ open_env_atoms η.
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η =>
+      formula_fv (map_fold (fun k x acc => formula_open k x acc) φ η) ⊆
+        formula_fv φ ∪ open_env_atoms η)
+    _ _ η).
+  - rewrite map_fold_empty, open_env_atoms_empty. set_solver.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite Hfold.
+    pose proof (formula_open_fv_subset k x
+      (map_fold (fun k x acc => formula_open k x acc) φ η')) as Hopen.
+    rewrite open_env_atoms_insert by exact Hfresh.
+    set_solver.
+Qed.
+
+Lemma formula_open_fv_ne k x φ z :
+  z ∈ formula_fv (formula_open k x φ) ->
+  z <> x ->
+  z ∈ formula_fv φ.
+Proof.
+  intros Hz Hne.
+  pose proof (formula_open_fv_subset k x φ z Hz).
+  set_solver.
 Qed.
 
 Lemma formula_measure_pos (φ : Formula) :
@@ -607,7 +719,7 @@ Ltac formula_fv_syntax_norm :=
   cbn [formula_lvars];
   rewrite ?formula_fv_true, ?formula_fv_false, ?formula_fv_atom;
   rewrite ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl;
-  rewrite ?formula_fv_star, ?formula_fv_wand, ?formula_fv_plus;
+  rewrite ?formula_fv_star, ?formula_fv_fbwand, ?formula_fv_plus;
   rewrite ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under;
   rewrite ?formula_fv_fibvars;
   rewrite ?lvars_fv_union.
@@ -622,7 +734,7 @@ Ltac formula_fv_syntax_norm_in H :=
   rewrite ?formula_fv_or in H;
   rewrite ?formula_fv_impl in H;
   rewrite ?formula_fv_star in H;
-  rewrite ?formula_fv_wand in H;
+  rewrite ?formula_fv_fbwand in H;
   rewrite ?formula_fv_plus in H;
   rewrite ?formula_fv_forall in H;
   rewrite ?formula_fv_over in H;
@@ -633,7 +745,7 @@ Ltac formula_fv_syntax_norm_in H :=
 Ltac formula_open_syntax_norm :=
   rewrite ?formula_open_true, ?formula_open_false, ?formula_open_atom;
   rewrite ?formula_open_and, ?formula_open_or, ?formula_open_impl;
-  rewrite ?formula_open_star, ?formula_open_wand, ?formula_open_plus;
+  rewrite ?formula_open_star, ?formula_open_fbwand, ?formula_open_plus;
   rewrite ?formula_open_forall;
   rewrite ?formula_open_over, ?formula_open_under, ?formula_open_fibvars.
 
@@ -645,7 +757,7 @@ Ltac formula_open_syntax_norm_in H :=
   rewrite ?formula_open_or in H;
   rewrite ?formula_open_impl in H;
   rewrite ?formula_open_star in H;
-  rewrite ?formula_open_wand in H;
+  rewrite ?formula_open_fbwand in H;
   rewrite ?formula_open_plus in H;
   rewrite ?formula_open_forall in H;
   rewrite ?formula_open_over in H;
@@ -655,10 +767,11 @@ Ltac formula_open_syntax_norm_in H :=
 Ltac formula_open_env_syntax_norm :=
   rewrite ?formula_open_env_true, ?formula_open_env_false;
   rewrite ?formula_open_env_and, ?formula_open_env_or, ?formula_open_env_impl;
-  rewrite ?formula_open_env_star, ?formula_open_env_wand, ?formula_open_env_plus;
+  rewrite ?formula_open_env_star, ?formula_open_env_plus;
   rewrite ?formula_open_env_over, ?formula_open_env_under;
   try rewrite ?formula_open_env_fibvars by eauto;
-  try rewrite ?formula_open_env_forall by eauto.
+  try rewrite ?formula_open_env_forall by eauto;
+  try rewrite ?formula_open_env_fbwand by eauto.
 
 Ltac formula_open_env_syntax_norm_in H :=
   rewrite ?formula_open_env_true in H;
@@ -667,7 +780,7 @@ Ltac formula_open_env_syntax_norm_in H :=
   rewrite ?formula_open_env_or in H;
   rewrite ?formula_open_env_impl in H;
   rewrite ?formula_open_env_star in H;
-  rewrite ?formula_open_env_wand in H;
+  rewrite ?formula_open_env_fbwand in H by eauto;
   rewrite ?formula_open_env_plus in H;
   rewrite ?formula_open_env_over in H;
   rewrite ?formula_open_env_under in H;
@@ -695,9 +808,9 @@ Ltac formula_msubst_syntax_norm_once :=
   | |- context[formula_msubst_store ?σ (FStar ?p ?q)] =>
       change (formula_msubst_store σ (FStar p q))
         with (FStar (formula_msubst_store σ p) (formula_msubst_store σ q))
-  | |- context[formula_msubst_store ?σ (FWand ?p ?q)] =>
-      change (formula_msubst_store σ (FWand p q))
-        with (FWand (formula_msubst_store σ p) (formula_msubst_store σ q))
+  | |- context[formula_msubst_store ?σ (FBWand ?d ?p ?q)] =>
+      change (formula_msubst_store σ (FBWand d p q))
+        with (FBWand d (formula_msubst_store σ p) (formula_msubst_store σ q))
   | |- context[formula_msubst_store ?σ (FPlus ?p ?q)] =>
       change (formula_msubst_store σ (FPlus p q))
         with (FPlus (formula_msubst_store σ p) (formula_msubst_store σ q))
@@ -735,9 +848,9 @@ Ltac formula_msubst_syntax_norm_once_in H :=
   | context[formula_msubst_store ?σ (FStar ?p ?q)] =>
       change (formula_msubst_store σ (FStar p q))
         with (FStar (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
-  | context[formula_msubst_store ?σ (FWand ?p ?q)] =>
-      change (formula_msubst_store σ (FWand p q))
-        with (FWand (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
+  | context[formula_msubst_store ?σ (FBWand ?d ?p ?q)] =>
+      change (formula_msubst_store σ (FBWand d p q))
+        with (FBWand d (formula_msubst_store σ p) (formula_msubst_store σ q)) in H
   | context[formula_msubst_store ?σ (FPlus ?p ?q)] =>
       change (formula_msubst_store σ (FPlus p q))
         with (FPlus (formula_msubst_store σ p) (formula_msubst_store σ q)) in H

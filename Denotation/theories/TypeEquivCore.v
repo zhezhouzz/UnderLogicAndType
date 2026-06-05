@@ -1158,24 +1158,26 @@ Proof.
   eapply BTT_Let with (L := lvars_fv (dom (Σ : gmap logic_var ty)) ∪ fv_value vx).
   - exact Hef.
   - intros z Hz.
-    change (basic_tm_has_ltype (<[LVFree z := Tx →ₜ T]> Σ)
-      (tapp (vfvar z)
-        (open_value 0 (vfvar z) (value_shift 0 vx))) T).
+    cbn [open_one open_tm_atom_inst open_tm].
     assert (Hshift_lc : lc_value (value_shift 0 vx)).
     { rewrite value_shift_lc_id by exact Hlc_vx. exact Hlc_vx. }
     rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar z)).
     rewrite value_shift_lc_id by exact Hlc_vx.
     eapply BTT_App.
-    + constructor.
-      rewrite lookup_insert.
-      destruct (decide (LVFree z = LVFree z)); [reflexivity|congruence].
+    + eapply BVT_FVar.
+      apply lty_env_open_one_typed_bind_lookup_current.
     + eapply basic_value_has_ltype_weaken; [exact Hvx|].
       apply map_subseteq_spec. intros v U Hlook.
-      rewrite lookup_insert_ne.
-      * exact Hlook.
-      * intros Hvz. subst v.
-        apply Hz. apply elem_of_union_l.
-        apply lvars_fv_elem. eapply elem_of_dom_2. exact Hlook.
+      destruct v as [n|a].
+      * exfalso.
+        assert (LVBound n ∈ dom Σ) as Hdom.
+        { eapply elem_of_dom_2. exact Hlook. }
+        exact (HlcΣ (LVBound n) Hdom).
+      * rewrite lty_env_open_one_typed_bind_lookup_free_ne.
+        -- exact Hlook.
+        -- intros Haz. subst a.
+           apply Hz. apply elem_of_union_l.
+           apply lvars_fv_elem. eapply elem_of_dom_2. exact Hlook.
 Qed.
 
 Lemma basic_tm_has_ltype_open_result_target_fun

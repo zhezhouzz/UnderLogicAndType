@@ -65,7 +65,7 @@ Qed.
 
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
-Proof. reflexivity. Qed.
+Proof. apply formula_fv_atom. Qed.
 
 Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
   X ⊆ Y ->
@@ -106,6 +106,19 @@ Proof.
   }
   specialize (Hclosed _ Hmσ).
   rewrite storeA_restrict_twice_subset in Hclosed by exact HXm.
+  exact Hclosed.
+Qed.
+
+Lemma wfworld_closed_on_restrict X Y (m : WfWorld) :
+  X ⊆ Y ->
+  wfworld_closed_on X m ->
+  wfworld_closed_on X (res_restrict m Y).
+Proof.
+  intros HXY Hclosed σ Hσ.
+  destruct Hσ as [τ [Hτ Hσ]].
+  subst σ.
+  specialize (Hclosed τ Hτ).
+  rewrite (storeA_restrict_twice_subset τ Y X HXY).
   exact Hclosed.
 Qed.
 
@@ -399,7 +412,9 @@ Proof.
   - intros [_ Hden].
     apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
   - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]]. exact Hsub.
+    + destruct Hden as [_ [Hsub _]].
+      unfold formula_scoped_in_world.
+      rewrite formula_fv_atom. exact Hsub.
     + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
 Qed.
 

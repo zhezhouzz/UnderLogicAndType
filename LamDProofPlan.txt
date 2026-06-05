@@ -1,0 +1,136 @@
+# LamD Fundamental Proof Plan
+
+## Summary
+
+Prove `fundamental_lamd_case` by reusing the existing direct `fundamental_lam_case`
+structure, but replacing Arrow's outer `FForall/FImpl` route with the new
+`FBWand 1` product-domain semantics.  The argument world provides the opened
+parameter, the closure world provides `Γ`, and the product world proves the
+opened body/result.
+
+## Checklist
+
+- [x] Add/prove a `CtxStar` commutativity theorem.
+- [x] Reuse or prove `CTWand` argument closed regularity.
+- [ ] Add/prove the closed-argument-to-bind-context bridge.
+- [ ] Add/prove the LamD body/result transport helper.
+- [ ] Prove `fundamental_lamd_case`.
+- [ ] Compile `ContextTyping/theories/Soundness.vo` with 50s timeout.
+
+## Current Blocker
+
+The `FBWand` skeleton for `fundamental_lamd_case` compiles, but the helper
+
+```coq
+lamd_open_arg_to_star_ctx
+```
+
+cannot be proved from the current premises as stated.  The issue is semantic:
+`ctx_denote_under Σ (CtxBind y τx)` requires the argument component itself to
+model `basic_world_formula (atom_env_to_lty_env (<[y := erase_ty τx]> Σ))`.
+However, the `FBWand` argument premise only provides the opened `τx`
+denotation.  Since `τx` is closed, that premise intentionally does not require
+the ambient `Σ`.
+
+Consequently, to build
+
+```coq
+res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))
+```
+
+the current `CtxStar` semantics asks for two star components that both carry
+the ambient `Σ`: one for `Γ`, one for `CtxBind y τx`.  If `m` has multiple
+well-typed stores over a variable in `Σ`, duplicating that `Σ` capability across
+both star components can fail compatibility.  This is not solved by `τx` being
+closed; it is caused by `ctx_denote_under` duplicating ambient `Σ` inside
+`CtxStar`.
+
+Likely repair directions:
+
+- factor ambient `Σ` outside `CtxStar` denotation instead of requiring both
+  branches to own it;
+- or strengthen `FBWand`/CTWand argument semantics to supply the ambient `Σ`
+  resource explicitly, if that is the intended logic;
+- or change the LamD body context rule so the wand argument bind is interpreted
+  without duplicating ambient `Σ`.
+
+## Key Lemmas
+
+```coq
+Theorem ctx_denote_under_star_comm_iff Σ Γ1 Γ2 m :
+  m ⊨ ctx_denote_under Σ (CtxStar Γ1 Γ2) <->
+  m ⊨ ctx_denote_under Σ (CtxStar Γ2 Γ1).
+```
+
+```coq
+context_typing_wf_wand_arg_closed :
+  context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
+  wf_context_ty_at 0 ∅ τx.
+```
+
+```coq
+ctx_denote_under_bind_from_closed_arg_denotation :
+  wf_context_ty_at 0 ∅ τx ->
+  y ∉ dom Σ ->
+  n ⊨ ty_denote_gas (cty_depth τx)
+        (<[LVFree y := erase_ty τx]> atom_env_to_lty_env Σ)
+        τx (tret (vfvar y)) ->
+  n ⊨ ctx_denote_under Σ (CtxBind y τx).
+```
+
+```coq
+lamd_body_to_opened_wand_result :
+  res_product n m Hc
+    ⊨ ty_denote_under Σ (CtxStar Γ (CtxBind y τx))
+        ({0 ~> y} τ) (e ^^ y) ->
+  res_product n m Hc
+    ⊨ formula_open_env η wand_result_formula.
+```
+
+## Proof Shape
+
+1. Unfold the `CTWand` target in `fundamental_lamd_case` and introduce
+   `FBWand 1`.
+2. For arbitrary `η n Hc`, use `open_env_binds 1 η` to recover the opened atom
+   `y`, and normalize `formula_open_env η` to one-step open at `y`.
+3. Convert the FBWand argument premise into
+   `n ⊨ ctx_denote_under Σ (CtxBind y τx)` using the closed-argument bridge.
+4. Combine `m ⊨ ctx_denote_under Σ Γ` and the argument bind context with
+   `CtxStar` intro/commutativity to obtain the body IH context on
+   `res_product n m Hc`.
+5. Apply the body IH and transport the opened body result to the FBWand
+   consequent using Lam-style result equivalence.
+6. Close the `FBWand 1` proof.  Keep already proved direct cases
+   `Var/Const/Sub/CtxSub/Let/LetD/Lam/AppOp` as `Qed`.
+
+## Test Plan
+
+Use 50s single-file timeouts:
+
+```sh
+timeout 50s make Denotation/theories/Context.vo
+timeout 50s make ContextTyping/theories/Soundness.vo
+rg -n "fundamental_lamd_case|Admitted\\.|admit\\." ContextTyping/theories/Soundness.v
+```
+
+Success means `fundamental_lamd_case` is `Qed`, and remaining Soundness admits
+are only App/AppD/Fix/FixD/Match/corollary obligations.
+
+## Status
+
+Completed.
+
+- `ctx_denote_under` now crops ambient `Σ` at each entry by `ctx_fv Γ`.
+- The context intro lemmas were repaired to use the minimal well-formedness they
+  actually need:
+  - comma intro/basic-world uses the left context `basic_ctx`;
+  - star intro/basic-world uses the left context `basic_ctx`;
+  - star commutativity takes both branch `basic_ctx` premises.
+- The ordinary `Let`, `LetD`, `Lam`, and new `LamD` Soundness paths compile
+  against these repaired context lemmas.
+- `lamd_open_arg_to_star_ctx`, `lamd_body_to_opened_wand_result`, and
+  `fundamental_lamd_case` are `Qed`.
+- `Denotation/theories/Context.v` has no remaining `Admitted`.
+
+Remaining Soundness admits are the later App/AppD/Fix/FixD/Match/corollary
+obligations, not LamD or context-intro obligations.

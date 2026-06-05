@@ -152,7 +152,10 @@ Qed.
 
 Lemma formula_fv_type_qualifier_formula q :
   formula_fv (type_qualifier_formula q) = qual_dom q.
-Proof. reflexivity. Qed.
+Proof.
+  unfold type_qualifier_formula, type_qualifier_lqual.
+  rewrite formula_fv_atom. reflexivity.
+Qed.
 
 Lemma type_qualifier_formula_models_iff q (m : WfWorldT) :
   res_models m (type_qualifier_formula q) <->
@@ -163,7 +166,8 @@ Proof.
   split; [tauto |].
   intros Hden. split; [| exact Hden].
   destruct Hden as [_ [Hsub _]].
-  exact Hsub.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_atom. exact Hsub.
 Qed.
 
 End QualifierDenotation.

@@ -506,9 +506,8 @@ Definition expr_total_formula (e : tm) : Formula :=
 Lemma formula_fv_expr_total_formula e :
   formula_fv (expr_total_formula e) = lvars_fv (tm_lvars e).
 Proof.
-  cbn [expr_total_formula expr_total_lqual formula_fv formula_lvars
-    lqual_lvars lqual_fv lqual_dom].
-  reflexivity.
+  unfold expr_total_formula, expr_total_lqual.
+  rewrite formula_fv_atom. reflexivity.
 Qed.
 
 End TermDenotation.

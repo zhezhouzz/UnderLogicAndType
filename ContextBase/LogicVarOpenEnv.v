@@ -169,6 +169,59 @@ Proof.
   - intros ? ? ?. lia.
 Qed.
 
+Definition open_env_lift_by (d : nat) (η : gmap nat atom) : gmap nat atom :=
+  kmap (fun k => k + d) η.
+
+Lemma open_env_lift_by_empty d :
+  open_env_lift_by d ∅ = ∅.
+Proof.
+  unfold open_env_lift_by. apply kmap_empty.
+Qed.
+
+Lemma open_env_lift_by_insert d k x η :
+  open_env_lift_by d (<[k := x]> η) =
+  <[k + d := x]> (open_env_lift_by d η).
+Proof.
+  unfold open_env_lift_by.
+  rewrite (kmap_insert (M1:=gmap nat) (M2:=gmap nat)
+    (fun k => k + d) (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k x).
+  reflexivity.
+Qed.
+
+Lemma open_env_lift_by_one η :
+  open_env_lift_by 1 η = (kmap S η : gmap nat atom).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite open_env_lift_by_empty, kmap_empty. reflexivity.
+  - rewrite open_env_lift_by_insert.
+    rewrite (kmap_insert (M1:=gmap nat) (M2:=gmap nat)
+      S (Inj0:=ltac:(intros ? ? ?; lia)) (A:=atom) η k x).
+    replace (k + 1) with (S k) by lia.
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma open_env_lift_by_lookup_none d η k :
+  η !! k = None ->
+  open_env_lift_by d η !! (k + d) = None.
+Proof.
+  intros Hnone.
+  unfold open_env_lift_by.
+  rewrite lookup_kmap_None.
+  - intros j Hj. replace j with k by lia. exact Hnone.
+  - intros ? ? ?. lia.
+Qed.
+
+Lemma open_env_avoids_atom_lift_by d x η :
+  open_env_avoids_atom x η ->
+  open_env_avoids_atom x (open_env_lift_by d η).
+Proof.
+  intros Havoid k Hlookup.
+  unfold open_env_lift_by in Hlookup.
+  apply lookup_kmap_Some in Hlookup
+    as [j [_ Hη]]; [|intros ? ? ?; lia].
+  eapply Havoid. exact Hη.
+Qed.
+
 Lemma open_env_avoids_atom_empty x :
   open_env_avoids_atom x ∅.
 Proof.
@@ -321,6 +374,20 @@ Proof.
         exact Hj.
       }
       f_equal. eapply Hinj; eassumption.
+Qed.
+
+Lemma open_env_values_inj_lift_by d η :
+  open_env_values_inj η ->
+  open_env_values_inj (open_env_lift_by d η).
+Proof.
+  intros Hinj i j x Hi Hj.
+  unfold open_env_lift_by in *.
+  apply lookup_kmap_Some in Hi
+    as [i0 [-> Hi0]]; [|intros ? ? ?; lia].
+  apply lookup_kmap_Some in Hj
+    as [j0 [Hj_eq Hj0]]; [|intros ? ? ?; lia].
+  subst j.
+  f_equal. eapply Hinj; eassumption.
 Qed.
 
 Lemma open_env_values_inj_insert_inv (η : gmap nat atom) (k : nat) (x : atom) :

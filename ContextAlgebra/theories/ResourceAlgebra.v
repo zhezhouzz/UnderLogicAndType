@@ -342,8 +342,25 @@ Proof.
       dom (τn : gmap K V) ∩ X) in Hdomr.
     rewrite Hdomr. set_solver.
   - apply storeA_compat_sym.
-    apply storeA_compat_restrict_r.
-    apply storeA_compat_sym. exact Hstore.
+	    apply storeA_compat_restrict_r.
+	    apply storeA_compat_sym. exact Hstore.
+Qed.
+
+Lemma worldA_compat_restrict_overlap
+    (n m : WfWorldAT) (X Y S : gset K) :
+  X ∩ Y ⊆ S ->
+  worldA_compat n (resA_restrict m S) ->
+  worldA_compat (resA_restrict n X) (resA_restrict m Y).
+Proof.
+  intros Hoverlap Hcompat σn σm Hσn Hσm.
+  simpl in Hσn, Hσm.
+  destruct Hσn as [τn [Hτn Hrestrict_n]].
+  destruct Hσm as [τm [Hτm Hrestrict_m]].
+  subst σn σm.
+  assert (Hrτm : (resA_restrict m S : WorldAT) (storeA_restrict τm S)).
+  { simpl. exists τm. split; [exact Hτm | reflexivity]. }
+  pose proof (Hcompat τn (storeA_restrict τm S) Hτn Hrτm) as Hstore.
+  eapply storeA_compat_restrict_overlap; eauto.
 Qed.
 
 Lemma resA_restrict_le (w : WfWorldAT) (X : gset K) :
@@ -1059,6 +1076,82 @@ Proof.
         }
         exact (storeA_restrict_wand_product τn σm S X Y
           Hsmall_compat Hcompat HYS HYσm).
+Qed.
+
+Lemma resA_product_restrict_frame_common_eq
+    (n m : WfWorldAT) (X S C Y : gset K)
+    (Hc_common : worldA_compat (resA_restrict n X) (resA_restrict m C))
+    (Hc_tgt : worldA_compat n (resA_restrict m S)) :
+  S ⊆ C ->
+  Y ⊆ (X ∩ worldA_dom (n : WorldAT)) ∪
+        (S ∩ worldA_dom (m : WorldAT)) ->
+  resA_restrict
+    (resA_product (resA_restrict n X) (resA_restrict m C) Hc_common)
+    Y =
+  resA_restrict (resA_product n (resA_restrict m S) Hc_tgt) Y.
+Proof.
+  intros HSC HY.
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl. set_solver.
+  - intros σ. simpl. split.
+    + intros [τ [Hτ Hrestrict]].
+      destruct Hτ as [τn [τm [Hτn [Hτm [Hcompat ->]]]]].
+      simpl in Hτn. destruct Hτn as [σn [Hσn HnX]]. subst τn.
+      simpl in Hτm. destruct Hτm as [σm [Hσm HmC]]. subst τm.
+      assert (Htarget_compat :
+          storeA_compat σn (storeA_restrict σm S)).
+      {
+        apply (Hc_tgt σn (storeA_restrict σm S)).
+        - exact Hσn.
+        - simpl. exists σm. split; [exact Hσm | reflexivity].
+      }
+      exists (@union (gmap K V) _ (σn : gmap K V)
+        (storeA_restrict σm S : gmap K V)).
+      split.
+      * simpl. exists σn, (storeA_restrict σm S).
+        split; [exact Hσn|].
+        split.
+        -- simpl. exists σm. split; [exact Hσm | reflexivity].
+        -- split; [exact Htarget_compat|reflexivity].
+      * pose proof (wfworldA_store_dom n σn Hσn) as Hdomn.
+        pose proof (wfworldA_store_dom m σm Hσm) as Hdomm.
+        assert (HYstores :
+            Y ⊆ (X ∩ dom (σn : gmap K V)) ∪
+                  (S ∩ dom (σm : gmap K V))).
+        { rewrite Hdomn, Hdomm. exact HY. }
+        pose proof (storeA_restrict_product_frame_common
+          σn σm X S C Y HSC HYstores Htarget_compat) as Hstore.
+        rewrite <- Hstore. exact Hrestrict.
+    + intros [τ [Hτ Hrestrict]].
+      destruct Hτ as [σn [τm [Hσn [Hτm [Hcompat ->]]]]].
+      simpl in Hτm. destruct Hτm as [σm [Hσm HmS]]. subst τm.
+      assert (Hcommon_compat :
+          storeA_compat (storeA_restrict σn X) (storeA_restrict σm C)).
+      {
+        apply (Hc_common (storeA_restrict σn X)
+          (storeA_restrict σm C)).
+        - simpl. exists σn. split; [exact Hσn | reflexivity].
+        - simpl. exists σm. split; [exact Hσm | reflexivity].
+      }
+      exists (@union (gmap K V) _ (storeA_restrict σn X : gmap K V)
+        (storeA_restrict σm C : gmap K V)).
+      split.
+      * simpl.
+        exists (storeA_restrict σn X), (storeA_restrict σm C).
+        split.
+        -- simpl. exists σn. split; [exact Hσn | reflexivity].
+        -- split.
+           ++ simpl. exists σm. split; [exact Hσm | reflexivity].
+           ++ split; [exact Hcommon_compat|reflexivity].
+      * pose proof (wfworldA_store_dom n σn Hσn) as Hdomn.
+        pose proof (wfworldA_store_dom m σm Hσm) as Hdomm.
+        assert (HYstores :
+            Y ⊆ (X ∩ dom (σn : gmap K V)) ∪
+                  (S ∩ dom (σm : gmap K V))).
+        { rewrite Hdomn, Hdomm. exact HY. }
+        pose proof (storeA_restrict_product_frame_common
+          σn σm X S C Y HSC HYstores Hcompat) as Hstore.
+        rewrite Hstore. exact Hrestrict.
 Qed.
 
 Lemma resA_product_restrict_same_le
