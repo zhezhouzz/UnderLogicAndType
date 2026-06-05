@@ -1,0 +1,142 @@
+# Notation Cleanup Report
+
+Generated during the `codex/fbwand-quality-refactor` cleanup pass.
+
+## Goal
+
+Clean notation-only noise without weakening the proof-facing surface.  The pass
+prioritizes removing aliases that are neither used by source proofs nor useful
+as stable paper-facing syntax.
+
+## Kept Notation
+
+### Core / Denotation value-specialized aliases
+
+Files:
+
+- `ContextBasicDenotation/theories/Notation.v`
+- `Denotation/theories/Notation.v`
+
+Kept:
+
+- `StoreT`, `LStoreT`, `WorldT`, `LWorldT`, `WfWorldT`,
+  `FiberExtensionT`, `LogicQualifierT`
+- `FormulaT` in the Denotation layer
+- `m ⊨ φ`
+- `φ ⊫ ψ`
+- `open_tm_env`
+
+Reason:
+
+- These aliases are used throughout BasicDenotation, Denotation, and Soundness.
+- They keep value-specialized proof statements readable.
+
+### Formula object-language notation
+
+File:
+
+- `ContextLogic/theories/FormulaNotation.v`
+
+Kept:
+
+- Custom-entry notation such as `<{ ... }>`
+- `⊤`, `⊥`, `@atom`, `@pure`, `@res`, `fib`, `over`, `under`
+- `∗`, `-∗[d]`, `∧`, `∨`, `⊕`, `→`, `∀.`
+
+Reason:
+
+- This file is the intended object-language surface.
+- Even if some forms are not heavily used in current proofs, they document the
+  syntax and are exported through `LogicInterface`.
+
+### Type-language notation with source use
+
+Kept:
+
+- `q ^q^ x` in `ContextTypeLanguage/theories/Qualifier.v`
+- `b0:c= c` in `ContextTypeLanguage/theories/Notation.v`
+- `τ1 ≡τv τ2` in `ContextTypeLanguage/theories/Syntax.v`
+
+Reason:
+
+- `q ^q^ x` is used by the Soundness corollary boundaries.
+- `b0:c= c` is used by the constant corollaries in `Soundness.v`.
+- `τ1 ≡τv τ2` is used in syntax lemmas.
+
+### Resource and store notation with source use
+
+Kept:
+
+- `m #> F ~~A> n`
+- `m #> F ~~> n`
+- `F ~>i F'`
+- `storeA_map_key`, `storeA_rekey`
+
+Reason:
+
+- These appear in algebra/resource proofs.
+- `storeA_rekey` is intentionally the same-key map-key view used in lvar-store
+  proofs; it is not a throwaway alias.
+
+## Removed Notation
+
+### Removed from `ContextTypeLanguage/theories/TypeOpen.v`
+
+- `η ⊙ x`
+
+Reason:
+
+- Full-repo source search showed no uses outside its own definition.
+- Direct `mopen η x` is clearer in the rare places where this operation is
+  needed.
+
+### Removed from `ContextStore/Store.v`
+
+- `σ |ₛ X`
+
+Reason:
+
+- Full-repo source search showed no uses outside its own definition.
+- `store_restrict σ X` remains as the readable parsing alias.
+
+### Removed from `ContextTypeLanguage/theories/WF.v`
+
+- `D ⊢s x`
+- `D ⊢sτ τ`
+- `D ⊢sΓ Γ`
+
+Reason:
+
+- Full-repo source search showed no uses outside definitions.
+- They were mostly old paper-facing shorthand and now obscure which predicate is
+  actually being used (`scoped_in`, `basic_context_ty`, `basic_ctx`).
+
+### Removed from `ContextTypeLanguage/theories/Syntax.v`
+
+- `τ1 →, τ2`
+- `x ≈v y`
+
+Reason:
+
+- Full-repo source search showed no uses outside definitions.
+- Constructors and relations are now clearer by name in proof scripts.
+
+### Removed from `ContextTypeLanguage/theories/Notation.v`
+
+- `b0:v= v`
+- `b0:x= x`
+- `b0:x≺[b] x`
+- printing-only `prt b φ`
+
+Reason:
+
+- Full-repo source search showed no uses.
+- `b0:c= c` remains because current Soundness corollaries use it.
+
+## Notes
+
+- This pass did not remove custom formula notation even where current proof
+  files use constructors directly; that notation is a deliberate object-language
+  surface.
+- This pass did not remove value-specialized type aliases, because they are
+  heavily used in statements and casts.

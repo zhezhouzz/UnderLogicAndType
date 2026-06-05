@@ -151,13 +151,5 @@ Definition bool_precise_ty (b : bool) : context_ty :=
 Definition const_precise_ty (c : constant) : context_ty :=
   precise_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)).
 
-Notation "'b0:v=' v" := (mk_q_eq (vbvar 0) v)
-  (at level 5, format "b0:v= v").
-Notation "'b0:x=' x" := (mk_q_eq (vbvar 0) (vfvar x))
-  (at level 5, format "b0:x= x").
 Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
   (at level 5, format "b0:c= c").
-Notation "'b0:x≺[' b ']' x" := (mk_q_lt_base b (vbvar 0) (vfvar x))
-  (at level 5, b at next level, x constr, format "b0:x≺[ b ] x").
-Notation "'prt' b φ" := (precise_ty b φ)
-  (at level 20, b at next level, φ at next level, only printing).

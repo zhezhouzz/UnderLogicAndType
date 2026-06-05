@@ -202,9 +202,6 @@ Qed.
 Definition lift_ctx (Γ : gmap atom ty) : ctx :=
   map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
 
-Notation "τ1 '→,' τ2" := (CTArrow τ1 τ2)
-  (at level 30, right associativity).
-
 Coercion lift_ty : ty >-> context_ty.
 
 (** * ContextTypeLanguage.Syntax
@@ -489,9 +486,6 @@ Notation "τ1 ≡τv τ2" := (cty_vars_equiv τ1 τ2)
   (at level 70, no associativity).
 
 Class VarsEquiv (A : Type) := vars_equiv : relation A.
-
-Notation "x ≈v y" := (vars_equiv x y)
-  (at level 70, no associativity).
 
 #[global] Instance vars_equiv_context_ty : VarsEquiv context_ty :=
   cty_vars_equiv.

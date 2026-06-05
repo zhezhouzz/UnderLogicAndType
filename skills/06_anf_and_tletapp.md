@@ -34,7 +34,7 @@ tlete e (tletapp (vbvar 0) (vfvar x) (tret (vbvar 0)))
 
 ## 在 Denotation 里的体现
 
-类型 `x:τx →, τ` 的 denotation 中，对 `e` 应用 `x`：
+类型 `CTArrow τx τ` 的 denotation 中，对 `e` 应用 `x`：
 
 ```coq
 | CTArrow x τx τ =>

@@ -17,9 +17,6 @@ From ContextBase Require Import BaseTactics.
 Class MOpen Env A B := mopen : Env -> A -> B.
 Arguments mopen {_ _ _ _} _ _.
 
-Notation "η ⊙ x" := (mopen η x)
-  (at level 30, right associativity, format "η  ⊙  x").
-
 Class OpenCommute (A : Type) (openA : nat -> atom -> A -> A)
     (R : relation A) := {
   open_commute :

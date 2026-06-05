@@ -9,9 +9,6 @@ From ContextStore Require Export StoreInterface.
 
 Notation store_restrict := storeA_restrict (only parsing).
 
-Notation "σ '|ₛ' X" := (storeA_restrict σ X)
-  (at level 30, format "σ  |ₛ  X").
-
 (** ** Store-side proof automation
 
     [store_normalize] exposes the finite-map/set normal forms that recur around

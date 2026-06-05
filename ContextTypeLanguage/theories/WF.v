@@ -90,11 +90,6 @@ Class ScopedIn A := scoped_in : aset -> A -> Prop.
 
 #[global] Instance scoped_context_ty : ScopedIn context_ty := basic_context_ty.
 
-Notation "D '⊢s' x" := (scoped_in D x)
-  (at level 40, x at level 40).
-Notation "D '⊢sτ' τ" := (basic_context_ty D τ)
-  (at level 40, τ at level 40, only printing).
-
 Lemma basic_context_ty_iff_wf_context_ty_at D τ :
   basic_context_ty D τ <-> wf_context_ty_at 0 D τ.
 Proof.
@@ -475,9 +470,6 @@ Fixpoint basic_ctx (D : aset) (Γ : ctx) : Prop :=
   end.
 
 #[global] Instance scoped_ctx : ScopedIn ctx := basic_ctx.
-
-Notation "D '⊢sΓ' Γ" := (basic_ctx D Γ)
-  (at level 40, Γ at level 40, only printing).
 
 Lemma basic_ctx_fv_subset D Γ :
   basic_ctx D Γ ->
