@@ -271,6 +271,164 @@ Proof.
   exact Hden.
 Qed.
 
+Lemma ty_denote_under_star_bind_to_lvar_insert_direct
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx Γ) ->
+  m ⊨ ty_denote_under Σ (CtxStar Γ (CtxBind y τx)) τ e ->
+  m ⊨ ty_denote_gas (cty_depth τ)
+    (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ)))
+    τ e.
+Proof.
+  intros Hy Hden.
+  unfold ty_denote_under, ty_denote in Hden |- *.
+  assert (Henv :
+      erase_ctx (CtxStar Γ (CtxBind y τx)) =
+      <[y := erase_ty τx]> (erase_ctx Γ)).
+  {
+    cbn [erase_ctx].
+    apply storeA_union_singleton_insert_fresh.
+    exact Hy.
+  }
+  rewrite Henv in Hden.
+  replace (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ)))
+    with (atom_env_to_lty_env
+      (<[y := erase_ty τx]> (erase_ctx Γ))).
+  2:{ apply atom_store_to_lvar_store_insert. }
+  exact Hden.
+Qed.
+
+Lemma ctx_bind_from_base_denotation
+    (Σ : gmap atom ty) x τ (m : WfWorldT) :
+  basic_context_ty (dom Σ) τ ->
+  x ∉ dom Σ ->
+  m ⊨ ty_denote_gas (cty_depth τ)
+    (atom_env_to_lty_env (<[x := erase_ty τ]> Σ))
+    τ (tret (vfvar x)) ->
+  m ⊨ ctx_denote_under Σ (CtxBind x τ).
+Proof.
+  intros Hτ HxΣ Harg.
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Harg) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hrel_world _]].
+  assert (Hworld_bind :
+      m ⊨ basic_world_formula
+        (atom_env_to_lty_env (ctx_erasure_under Σ (CtxBind x τ)))).
+  {
+    eapply basic_world_formula_subenv; [|exact Hrel_world].
+    intros v T Hv.
+    destruct v as [k|y].
+    - rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
+      discriminate.
+    - rewrite atom_store_to_lvar_store_lookup_free in Hv.
+      unfold ctx_erasure_under in Hv.
+      cbn [ctx_fv erase_ctx] in Hv.
+      apply map_lookup_union_Some_raw in Hv as [HΣ | [_ Hx]].
+      + apply storeA_restrict_lookup_some in HΣ as [Hyτ HΣ].
+        unfold relevant_env, lty_env_restrict_lvars.
+        apply storeA_restrict_lookup_some_2.
+        * rewrite atom_store_to_lvar_store_lookup_free.
+          change ((<[x := erase_ty τ]> (Σ : gmap atom ty)) !! y = Some T).
+          unfold store_insert.
+          rewrite (lookup_insert_ne (Σ : gmap atom ty) x y (erase_ty τ)).
+          -- exact HΣ.
+          -- intros ->. apply HxΣ.
+             apply elem_of_dom_2 in HΣ. exact HΣ.
+        * unfold relevant_lvars.
+          apply elem_of_union_l.
+          apply (proj1 (lvars_fv_elem (context_ty_lvars τ) y)).
+          rewrite context_ty_lvars_fv. exact Hyτ.
+      + apply (proj1 (lookup_singleton_Some x y (erase_ty τ) T)) in Hx
+          as [-> ->].
+        unfold relevant_env, lty_env_restrict_lvars.
+        apply storeA_restrict_lookup_some_2.
+        * rewrite atom_store_to_lvar_store_lookup_free.
+          apply map_lookup_insert.
+        * unfold relevant_lvars.
+          apply elem_of_union_r.
+          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+          set_solver.
+  }
+  assert (Harg_bind :
+      m ⊨ ty_denote_gas (cty_depth τ)
+        (atom_env_to_lty_env (ctx_erasure_under Σ (CtxBind x τ)))
+        τ (tret (vfvar x))).
+  {
+    eapply res_models_ty_denote_gas_env_agree_on
+      with (X := relevant_lvars τ (tret (vfvar x)));
+      [reflexivity| |exact Harg].
+    apply storeA_map_eq. intros v.
+    unfold lty_env_restrict_lvars.
+    rewrite !storeA_restrict_lookup.
+    destruct (decide (v ∈ relevant_lvars τ (tret (vfvar x))))
+      as [Hv|Hv]; [|reflexivity].
+    destruct v as [k|y].
+    - rewrite !atom_store_to_lvar_store_lookup_bound_none. reflexivity.
+    - rewrite !atom_store_to_lvar_store_lookup_free.
+      unfold ctx_erasure_under. cbn [ctx_fv erase_ctx].
+      destruct (decide (y = x)) as [->|Hyx].
+      + assert (HL :
+            (store_restrict Σ (fv_cty τ) ∪ {[x := erase_ty τ]})
+              !! x = Some (erase_ty τ)).
+        {
+          apply map_lookup_union_Some_raw. right.
+          split.
+          - apply storeA_restrict_lookup_none_r.
+            intros Hxτ.
+            pose proof (basic_context_ty_fv_subset (dom Σ) τ Hτ) as Hτfv.
+            apply HxΣ. apply Hτfv. exact Hxτ.
+          - apply map_lookup_singleton.
+        }
+        assert (HR :
+            (<[x := erase_ty τ]> Σ) !! x = Some (erase_ty τ))
+          by apply map_lookup_insert.
+        transitivity (Some (erase_ty τ)).
+        * exact HR.
+        * symmetry. exact HL.
+      + unfold relevant_lvars in Hv.
+        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
+        assert (Hyτ : y ∈ fv_cty τ).
+        {
+          rewrite <- context_ty_lvars_fv.
+          apply lvars_fv_elem.
+          better_set_solver.
+        }
+        pose proof (basic_context_ty_fv_subset (dom Σ) τ Hτ) as Hτfv.
+        apply Hτfv in Hyτ.
+        apply elem_of_dom in Hyτ as [T HT].
+        assert (Hinsert :
+            (<[x := erase_ty τ]> Σ) !! y = Σ !! y).
+        { apply map_lookup_insert_ne. congruence. }
+        transitivity (Some T).
+        * exact (eq_trans Hinsert HT).
+        * symmetry.
+          apply map_lookup_union_Some_raw. left.
+          apply storeA_restrict_lookup_some_2; [exact HT|].
+          rewrite <- context_ty_lvars_fv.
+          apply lvars_fv_elem. better_set_solver.
+  }
+  cbn [ctx_denote_under].
+  rewrite res_models_and_iff.
+  split; [exact Hworld_bind|].
+  unfold ty_denote.
+  replace (<[x := erase_ty τ]> (store_restrict Σ (ctx_fv (CtxBind x τ))))
+    with (ctx_erasure_under Σ (CtxBind x τ)).
+  2:{
+    unfold ctx_erasure_under. cbn [ctx_fv erase_ctx].
+    assert (Hfresh : x ∉ dom (store_restrict Σ (fv_cty τ) : gmap atom ty)).
+    {
+      intros Hxdom.
+      apply elem_of_dom in Hxdom as [T HT].
+      apply storeA_restrict_lookup_some in HT as [_ HT].
+      apply HxΣ. apply elem_of_dom_2 in HT. exact HT.
+    }
+    exact (storeA_union_singleton_insert_fresh
+      (store_restrict Σ (fv_cty τ)) x (erase_ty τ) Hfresh).
+  }
+  exact Harg_bind.
+Qed.
+
 Lemma ctx_denote_under_comma_right_minimal
     (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
   basic_ctx (dom Σ) Γ1 ->

@@ -73,6 +73,7 @@ ContextBasicDenotation/theories/TermExtension.v
 ContextBasicDenotation/theories/TermTLet.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
+ContextBasicDenotation/theories/BasicTypingOpen.v
 ContextBasicDenotation/theories/RelevantEnv.v
 
 Denotation/theories/Notation.v
@@ -90,4 +91,5 @@ Denotation/theories/ConstDenote.v
 -R ContextTyping/theories ContextTyping
 
 ContextTyping/theories/Typing.v
+ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/Soundness.v
