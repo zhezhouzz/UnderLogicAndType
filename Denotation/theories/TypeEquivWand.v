@@ -2,7 +2,7 @@
 
     Wand case for term-result-equivalence transport. *)
 
-From Denotation Require Import Notation TypeDenoteOpen.
+From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivBody

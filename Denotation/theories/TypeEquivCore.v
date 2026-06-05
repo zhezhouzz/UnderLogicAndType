@@ -2,7 +2,7 @@
 
     Core support for result-equivalence and result-extension transport. *)
 
-From Denotation Require Import Notation TypeDenoteOpen.
+From Denotation Require Import Notation TypeDenote.
 
 Section TypeDenote.
 

@@ -3,7 +3,7 @@
     Denotation of type contexts, expressed directly with the new recursive
     context-type denotation. *)
 
-From Denotation Require Export Notation TypeDenoteOpen.
+From Denotation Require Export Notation TypeDenote.
 From Denotation Require Import TypeEquivCore.
 
 Section ContextDenotation.

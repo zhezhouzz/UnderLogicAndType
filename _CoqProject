@@ -79,7 +79,6 @@ ContextBasicDenotation/theories/RelevantEnv.v
 Denotation/theories/Notation.v
 Denotation/theories/TypeDenote.v
 Denotation/theories/TypeDenoteTactics.v
-Denotation/theories/TypeDenoteOpen.v
 Denotation/theories/TypeEquivCore.v
 Denotation/theories/TypeEquivBody.v
 Denotation/theories/TypeEquivArrow.v
