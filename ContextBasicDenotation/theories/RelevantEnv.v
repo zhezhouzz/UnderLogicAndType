@@ -472,14 +472,6 @@ Proof.
       rewrite lookup_empty in Hv. discriminate.
 Qed.
 
-Lemma lty_env_restrict_lvars_twice_same (Σ : lty_env) D :
-  lty_env_restrict_lvars (lty_env_restrict_lvars Σ D) D =
-  lty_env_restrict_lvars Σ D.
-Proof.
-  unfold lty_env_restrict_lvars.
-  apply storeA_restrict_twice_same.
-Qed.
-
 Lemma lty_env_restrict_lvars_twice_subset (Σ : lty_env) X Y :
   Y ⊆ X ->
   lty_env_restrict_lvars (lty_env_restrict_lvars Σ X) Y =
@@ -492,10 +484,11 @@ Qed.
 
 Lemma relevant_env_idemp (Σ : lty_env) τ e :
   relevant_env (relevant_env Σ τ e) τ e =
-  relevant_env Σ τ e.
+	  relevant_env Σ τ e.
 Proof.
   unfold relevant_env.
-  apply lty_env_restrict_lvars_twice_same.
+  unfold lty_env_restrict_lvars.
+  apply storeA_restrict_twice_same.
 Qed.
 
 Lemma relevant_env_restrict_subset (Σ : lty_env) τ e X :
