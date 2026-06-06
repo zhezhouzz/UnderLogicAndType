@@ -271,21 +271,12 @@ Proof.
         ltac:(apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor])) as Hlc_tm.
       exact (Hlc_tm u Hue).
   }
-  apply storeA_map_eq. intros u.
-  unfold lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (u ∈ relevant_lvars (cty_open 0 x τ)
-    (tapp_tm (tret v1) (vfvar x)))) as [Hu|Hu]; [|reflexivity].
-  destruct u as [k|y].
-  - exfalso. specialize (Hrel_lc (LVBound k) Hu).
-    cbn [lc_logic_var_key] in Hrel_lc. exact Hrel_lc.
-  - destruct (decide (y = x)) as [->|Hyx].
-    + rewrite !lty_env_open_one_typed_bind_lookup_current.
-      reflexivity.
-    + rewrite !lty_env_open_one_typed_bind_lookup_free_ne by congruence.
-      rewrite !atom_store_to_lvar_store_lookup_free.
-      destruct (decide (y ∈ fv_value v1 ∪ fv_cty τ)) as [Hyrel|Hyrel].
-      * assert (HyΓ1 : y ∈ dom (erase_ctx Γ1)).
+  eapply lty_env_restrict_open_one_bind_agree_on.
+  - exact Hrel_lc.
+  - intros y HyD Hyx.
+    rewrite !atom_store_to_lvar_store_lookup_free.
+    destruct (decide (y ∈ fv_value v1 ∪ fv_cty τ)) as [Hyrel|Hyrel].
+    + assert (HyΓ1 : y ∈ dom (erase_ctx Γ1)).
         {
           pose proof (context_typing_wf_basic_typing Σ Γ1
             (tret v1) (CTWand τx τ) Hwf_fun) as Hbasic_fun.
@@ -315,7 +306,7 @@ Proof.
             exact Hy_lvar.
           - apply Hτfv. exact Hyτ.
         }
-        assert (HyΓ2none : (erase_ctx Γ2 : gmap atom ty) !! y = None).
+      assert (HyΓ2none : (erase_ctx Γ2 : gmap atom ty) !! y = None).
         {
           pose proof (context_typing_wf_ctx Σ (CtxStar Γ1 Γ2)
             (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hwfctx.
@@ -329,16 +320,16 @@ Proof.
           rewrite Hdom2 in HyΓ2.
           better_set_solver.
         }
-        apply elem_of_dom in HyΓ1 as [T HT].
-        change ((erase_ctx Γ1 : gmap atom ty) !! y =
-          (erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! y)
-          with ((erase_ctx Γ1 : gmap atom ty) !! y =
-            ((erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty) !! y).
-        rewrite <- (lookup_union_l' (M:=gmap atom) (A:=ty)
-          (erase_ctx Γ1) (erase_ctx Γ2) y ltac:(eexists; exact HT)).
-        reflexivity.
-      * assert (Hy_not_R : LVFree y ∉ relevant_lvars (cty_open 0 x τ)
-            (tapp_tm (tret v1) (vfvar x))).
+      apply elem_of_dom in HyΓ1 as [T HT].
+      change ((erase_ctx Γ1 : gmap atom ty) !! y =
+        (erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! y)
+        with ((erase_ctx Γ1 : gmap atom ty) !! y =
+          ((erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty) !! y).
+      rewrite <- (lookup_union_l' (M:=gmap atom) (A:=ty)
+        (erase_ctx Γ1) (erase_ctx Γ2) y ltac:(eexists; exact HT)).
+      reflexivity.
+    + assert (Hy_not_R : LVFree y ∉ relevant_lvars (cty_open 0 x τ)
+          (tapp_tm (tret v1) (vfvar x))).
         {
           intros HyR.
           apply lvars_fv_elem in HyR.
@@ -348,7 +339,7 @@ Proof.
           pose proof (cty_open_fv_subset 0 x τ) as Hτopen.
           better_set_solver.
         }
-        contradiction.
+      contradiction.
 Qed.
 
 Lemma appd_wand_result_to_arrow_open_result

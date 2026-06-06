@@ -206,6 +206,33 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma lty_env_restrict_open_one_bind_agree_on
+    (Σ1 Σ2 : lty_env) (D : lvset) x T :
+  lc_lvars D ->
+  (forall y,
+    LVFree y ∈ D ->
+    y <> x ->
+    Σ1 !! LVFree y = Σ2 !! LVFree y) ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ1 T)) D =
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ2 T)) D.
+Proof.
+  intros Hlc Hagree.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D)) as [Hv|Hv]; [|reflexivity].
+  destruct v as [k|y].
+  - exfalso. specialize (Hlc (LVBound k) Hv).
+    cbn [lc_logic_var_key] in Hlc. exact Hlc.
+  - destruct (decide (y = x)) as [->|Hyx].
+    + rewrite !lty_env_open_one_typed_bind_lookup_current.
+      reflexivity.
+    + rewrite !lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      exact (Hagree y Hv Hyx).
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
