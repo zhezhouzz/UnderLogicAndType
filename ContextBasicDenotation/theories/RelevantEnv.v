@@ -183,6 +183,29 @@ Proof.
   - reflexivity.
 Qed.
 
+Lemma lty_env_restrict_open_one_bind_current_eq
+    (Σ : lty_env) (D : lvset) x T :
+  Σ !! LVFree x = Some T ->
+  lc_lvars D ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) D =
+  lty_env_restrict_lvars Σ D.
+Proof.
+  intros HΣx Hlc.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D)) as [Hv|Hv]; [|reflexivity].
+  destruct v as [k|y].
+  - exfalso. specialize (Hlc (LVBound k) Hv).
+    cbn [lc_logic_var_key] in Hlc. exact Hlc.
+  - destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lty_env_open_one_typed_bind_lookup_current.
+      symmetry. exact HΣx.
+    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      reflexivity.
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.

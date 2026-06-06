@@ -181,32 +181,6 @@ Proof.
   exact (proj2 Hfresh).
 Qed.
 
-Lemma app_open_result_env_agree Δ τx τ v1 x :
-  Δ !! LVFree x = Some (erase_ty τx) ->
-  lc_lvars (relevant_lvars (cty_open 0 x τ)
-    (tapp v1 (vfvar x))) ->
-  lty_env_restrict_lvars
-    (lty_env_open_one 0 x (typed_lty_env_bind Δ (erase_ty τx)))
-    (relevant_lvars (cty_open 0 x τ) (tapp v1 (vfvar x))) =
-  lty_env_restrict_lvars Δ
-    (relevant_lvars (cty_open 0 x τ) (tapp v1 (vfvar x))).
-Proof.
-  intros HΔx Hrel_lc.
-  apply storeA_map_eq. intros v.
-  unfold lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ relevant_lvars (cty_open 0 x τ)
-    (tapp v1 (vfvar x)))) as [Hv|Hv]; [|reflexivity].
-  destruct v as [k|y].
-  - exfalso. specialize (Hrel_lc (LVBound k) Hv).
-    cbn [lc_logic_var_key] in Hrel_lc. exact Hrel_lc.
-  - destruct (decide (y = x)) as [->|Hyx].
-    + rewrite lty_env_open_one_typed_bind_lookup_current.
-      symmetry. exact HΔx.
-    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
-      reflexivity.
-Qed.
-
 Lemma app_arrow_result_to_target
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
@@ -478,7 +452,9 @@ Proof.
   }
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
-  - exact (app_open_result_env_agree Δ τx τ v1 x HΔx Htarget_rel_lc).
+  - exact (lty_env_restrict_open_one_bind_current_eq
+      Δ (relevant_lvars (cty_open 0 x τ) (tapp v1 (vfvar x)))
+      x (erase_ty τx) HΔx Htarget_rel_lc).
   - exact Htarget_insert.
 Qed.
 
