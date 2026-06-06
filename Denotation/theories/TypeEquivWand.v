@@ -607,17 +607,9 @@ Proof.
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (cty_open 0 y τr)).
   {
-    apply basic_world_formula_models_iff in Hworld_tgt
-      as [Hlc_tgt [Hscope_tgt _]].
-    apply context_ty_wf_formula_models_iff in Hwf_res_src
-      as [_ [_ Hbasicτ_res_src]].
-    apply context_ty_wf_formula_models_iff.
-    split; [exact Hlc_tgt|].
-    split; [exact Hscope_tgt|].
-    apply basic_context_ty_lvars_relevant_env.
-    eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
-    unfold relevant_env, lty_env_restrict_lvars.
-    store_normalize. set_solver.
+    eapply context_ty_wf_formula_relevant_env_change_term.
+    - exact Hworld_tgt.
+    - exact Hwf_res_src.
   }
   assert (Hbasic_tgt :
       res_product n my Hc ⊨ expr_basic_typing_formula
@@ -1049,17 +1041,9 @@ Proof.
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (cty_open 0 y τr)).
   {
-    apply basic_world_formula_models_iff in Hworld_tgt
-      as [Hlc_tgt [Hscope_tgt _]].
-    apply context_ty_wf_formula_models_iff in Hwf_res_src
-      as [_ [_ Hbasicτ_res_src]].
-    apply context_ty_wf_formula_models_iff.
-    split; [exact Hlc_tgt|].
-    split; [exact Hscope_tgt|].
-    apply basic_context_ty_lvars_relevant_env.
-    eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
-    unfold relevant_env, lty_env_restrict_lvars.
-    store_normalize. set_solver.
+    eapply context_ty_wf_formula_relevant_env_change_term.
+    - exact Hworld_tgt.
+    - exact Hwf_res_src.
   }
   assert (Hbasic_tgt :
       res_product n m Hc ⊨ expr_basic_typing_formula

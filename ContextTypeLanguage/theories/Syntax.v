@@ -199,6 +199,88 @@ Proof.
     apply map_lookup_singleton.
 Qed.
 
+Lemma erase_ctx_comma_bind_dom Γ y τ :
+  dom (erase_ctx (CtxComma Γ (CtxBind y τ))) =
+  dom (erase_ctx Γ) ∪ ({[y]} : aset).
+Proof.
+  cbn [erase_ctx].
+  change (dom ((erase_ctx Γ : gmap atom ty) ∪
+      ({[y := erase_ty τ]} : gmap atom ty)) =
+    dom (erase_ctx Γ) ∪ ({[y]} : aset)).
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_dom in Hz as [T Hlook].
+    apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
+    + apply elem_of_union. left. apply elem_of_dom. eauto.
+    + apply elem_of_union. right.
+      apply (proj1 (lookup_singleton_Some y z (erase_ty τ) T)) in Hlook
+        as [-> _].
+      set_solver.
+  - intros Hz.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + apply elem_of_dom in Hz as [T Hlook].
+      apply elem_of_dom. exists T.
+      apply map_lookup_union_Some_raw. left. exact Hlook.
+    + apply elem_of_singleton in Hz. subst z.
+      destruct ((erase_ctx Γ : gmap atom ty) !! y) as [T|] eqn:HΓ.
+      * apply elem_of_dom. exists T.
+        apply map_lookup_union_Some_raw. left. exact HΓ.
+      * apply elem_of_dom. exists (erase_ty τ).
+        apply map_lookup_union_Some_raw. right.
+        split; [exact HΓ|apply map_lookup_singleton].
+Qed.
+
+Lemma erase_ctx_star_bind_dom Γ y τ :
+  dom (erase_ctx (CtxStar Γ (CtxBind y τ))) =
+  dom (erase_ctx Γ) ∪ ({[y]} : aset).
+Proof.
+  cbn [erase_ctx].
+  change (dom ((erase_ctx Γ : gmap atom ty) ∪
+      ({[y := erase_ty τ]} : gmap atom ty)) =
+    dom (erase_ctx Γ) ∪ ({[y]} : aset)).
+  apply set_eq. intros z. split.
+  - intros Hz.
+    apply elem_of_dom in Hz as [T Hlook].
+    apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
+    + apply elem_of_union. left. apply elem_of_dom. eauto.
+    + apply elem_of_union. right.
+      apply (proj1 (lookup_singleton_Some y z (erase_ty τ) T)) in Hlook
+        as [-> _].
+      set_solver.
+  - intros Hz.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + apply elem_of_dom in Hz as [T Hlook].
+      apply elem_of_dom. exists T.
+      apply map_lookup_union_Some_raw. left. exact Hlook.
+    + apply elem_of_singleton in Hz. subst z.
+      destruct ((erase_ctx Γ : gmap atom ty) !! y) as [T|] eqn:HΓ.
+      * apply elem_of_dom. exists T.
+        apply map_lookup_union_Some_raw. left. exact HΓ.
+      * apply elem_of_dom. exists (erase_ty τ).
+        apply map_lookup_union_Some_raw. right.
+        split; [exact HΓ|apply map_lookup_singleton].
+Qed.
+
+Lemma erase_ctx_comma_bind_fresh Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  erase_ctx (CtxComma Γ (CtxBind y τ)) =
+  <[y := erase_ty τ]> (erase_ctx Γ).
+Proof.
+  intros Hy.
+  cbn [erase_ctx].
+  apply storeA_union_singleton_insert_fresh. exact Hy.
+Qed.
+
+Lemma erase_ctx_star_bind_fresh Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  erase_ctx (CtxStar Γ (CtxBind y τ)) =
+  <[y := erase_ty τ]> (erase_ctx Γ).
+Proof.
+  intros Hy.
+  cbn [erase_ctx].
+  apply storeA_union_singleton_insert_fresh. exact Hy.
+Qed.
+
 Definition lift_ctx (Γ : gmap atom ty) : ctx :=
   map_fold (fun x s acc => CtxComma (CtxBind x (lift_ty s)) acc) CtxEmpty Γ.
 
@@ -639,13 +721,16 @@ Ltac cty_erase_syntax_norm :=
 Ltac cty_erase_syntax_norm_in H :=
   cbn [erase_ty erase_ctx lift_ty lift_ctx] in H;
   rewrite ?cty_open_preserves_erasure in H;
-  rewrite ?cty_shift_preserves_erasure in H.
+  rewrite ?cty_shift_preserves_erasure in H;
+  rewrite ?cty_vars_equiv_erase in H.
 
 Ltac ctx_syntax_norm :=
   cbn [ctx_dom ctx_fv ctx_stale erase_ctx plug_ctx];
   rewrite ?ctx_stale_eq_fv_dom;
   store_normalize;
-  rewrite ?dom_empty_L, ?dom_singleton_L, ?dom_union_L.
+  rewrite ?dom_empty_L, ?dom_singleton_L, ?dom_union_L;
+  rewrite ?erase_ctx_bind_dom, ?erase_ctx_comma_bind_dom,
+    ?erase_ctx_star_bind_dom.
 
 Ltac ctx_syntax_norm_in H :=
   cbn [ctx_dom ctx_fv ctx_stale erase_ctx plug_ctx] in H;
@@ -653,7 +738,10 @@ Ltac ctx_syntax_norm_in H :=
   store_normalize;
   rewrite ?dom_empty_L in H;
   rewrite ?dom_singleton_L in H;
-  rewrite ?dom_union_L in H.
+  rewrite ?dom_union_L in H;
+  rewrite ?erase_ctx_bind_dom in H;
+  rewrite ?erase_ctx_comma_bind_dom in H;
+  rewrite ?erase_ctx_star_bind_dom in H.
 
 Ltac type_syntax_norm :=
   cty_fv_syntax_norm;

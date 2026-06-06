@@ -98,11 +98,11 @@ Proof.
   rewrite !formula_open_env_and.
   rewrite formula_open_env_context_ty_wf_formula.
   2:{
-    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv.
-    pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars in *.
-    set_solver.
+	    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	    intros v Hv.
+	    pose proof (relevant_env_dom_subset_direct Σ τ e).
+	    unfold relevant_lvars in *.
+	    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_basic_world_formula.
@@ -115,20 +115,19 @@ Proof.
   2: exact Hinj.
   rewrite formula_open_env_expr_basic_typing_formula.
   2:{
-    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv.
-    pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars in *.
-    set_solver.
+	    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	    intros v Hv.
+	    pose proof (relevant_env_dom_subset_direct Σ τ e).
+	    unfold relevant_lvars in *.
+	    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_expr_total_formula.
-  2:{
-    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv.
-    unfold relevant_lvars in *.
-    set_solver.
-  }
+	  2:{
+	    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	    intros v Hv.
+	    relevant_lvars_norm. better_set_solver.
+	  }
   2: exact Hinj.
   rewrite relevant_env_open_env by exact Hfresh || exact Hinj.
   rewrite open_cty_env_preserves_erasure.
@@ -372,8 +371,7 @@ Proof.
       (dom Σ ∪ relevant_lvars τ e)).
   {
     apply open_env_fresh_for_lvars_singleton.
-    rewrite lvars_fv_union, relevant_lvars_fv.
-    better_set_solver.
+    relevant_lvars_norm. better_set_solver.
   }
   pose proof (formula_open_env_ty_denote_gas
     (<[k := y]> ∅) gas Σ τ e Hfresh
@@ -470,6 +468,45 @@ Proof.
 Qed.
 
 End TypeDenote.
+
+Ltac ty_denote_open_one_side :=
+  first
+    [ assumption
+    | relevant_lvars_norm; better_set_solver
+    | type_open_env_syntax_norm;
+      cbn [fv_tm fv_value value_lvars value_lvars_at];
+      rewrite ?fv_tapp_tm, ?tm_shift_fv, ?cty_shift_fv;
+      better_set_solver ].
+
+Ltac ty_denote_open_one_norm :=
+  repeat match goal with
+  | |- context [formula_open 0 ?y
+      (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
+      rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e)
+        by ty_denote_open_one_side
+  end;
+  repeat match goal with
+  | |- context [open_tm 0 (vfvar ?y) (tret (vbvar 0))] =>
+      change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+        with (tret (vfvar y))
+  end;
+  try rewrite ?open_tapp_tm_shift_bvar0_lc by assumption;
+  type_open_env_syntax_norm.
+
+Ltac ty_denote_open_one_norm_in H :=
+  repeat match type of H with
+  | context [formula_open 0 ?y
+      (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
+      rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e) in H
+        by ty_denote_open_one_side
+  end;
+  repeat match type of H with
+  | context [open_tm 0 (vfvar ?y) (tret (vbvar 0))] =>
+      change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+        with (tret (vfvar y)) in H
+  end;
+  try rewrite ?open_tapp_tm_shift_bvar0_lc in H by assumption;
+  type_open_env_syntax_norm_in H.
 
 (** ** Free-variable support for denotation formulas *)
 
@@ -634,13 +671,12 @@ Proof.
   rewrite <- (formula_lvars_at_fv 0).
   transitivity (lvars_fv (relevant_lvars τ e)).
   - apply lvars_fv_mono.
-    unfold relevant_lvars.
     transitivity (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ).
     + apply ty_denote_gas_lvars_subset.
     + change (tm_lvars_at 0 e) with (tm_lvars e).
       change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
-      set_solver.
-  - rewrite relevant_lvars_fv. set_solver.
+      relevant_lvars_norm. better_set_solver.
+  - relevant_lvars_norm. better_set_solver.
 Qed.
 
 Lemma fv_tm_ty_denote_gas_subset_formula gas Σ τ e :

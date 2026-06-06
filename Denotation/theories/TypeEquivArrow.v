@@ -22,37 +22,20 @@ Lemma ty_denote_gas_tm_equiv_arrow_open_arg
   y ∉ lvars_fv
     (dom (typed_lty_env_bind
       (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx))) ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas gas
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
       (typed_lty_env_bind
         (relevant_env Σ (CTArrow τx τr) e2)
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas gas
+        (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
       (typed_lty_env_bind
         (relevant_env Σ (CTArrow τx τr) e1)
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))).
+        (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
 Proof.
   intros _ _ _ Hyτx HyΣ1 HyΣ2 Htgt.
-  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
-  { rewrite cty_shift_fv. exact Hyτx. }
-  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
-  { cbn [fv_tm fv_value]. set_solver. }
-  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
-    (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0))) in Htgt
-    by (exact HyΣ2 || exact Hea_fresh || exact Hτa_fresh).
-  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
-    (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e1) (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0)))
-    by (exact HyΣ1 || exact Hea_fresh || exact Hτa_fresh).
-  replace (open_tm 0 (vfvar y) (tret (vbvar 0))) with
-      (tret (vfvar y)) in *
-    by (cbn [open_tm open_value]; rewrite decide_True by lia; reflexivity).
   set (τa := cty_open 0 y (cty_shift 0 τx)).
   set (ea := tret (vfvar y)).
   fold τa ea in Htgt |- *.
@@ -584,17 +567,9 @@ Proof.
           (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
         (cty_open 0 y τr)).
   {
-    apply basic_world_formula_models_iff in Hworld_tgt
-      as [Hlc_tgt [Hscope_tgt _]].
-    apply context_ty_wf_formula_models_iff in Hwf_res_src
-      as [_ [_ Hbasicτ_res_src]].
-    apply context_ty_wf_formula_models_iff.
-    split; [exact Hlc_tgt|].
-    split; [exact Hscope_tgt|].
-    apply basic_context_ty_lvars_relevant_env.
-    eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_res_src].
-    unfold relevant_env, lty_env_restrict_lvars.
-    store_normalize. set_solver.
+    eapply context_ty_wf_formula_relevant_env_change_term.
+    - exact Hworld_tgt.
+    - exact Hwf_res_src.
   }
   assert (Hbasic_tgt :
       my ⊨ expr_basic_typing_formula
@@ -876,13 +851,39 @@ Proof.
   assert (HyΣ1 : y ∉ lvars_fv
     (dom (typed_lty_env_bind
       (relevant_env Σ (CTArrow τx τr) e1) (erase_ty τx)))) by set_solver.
-  assert (HyΣ2 : y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx)))) by set_solver.
+	  assert (HyΣ2 : y ∉ lvars_fv
+	    (dom (typed_lty_env_bind
+	      (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx)))) by set_solver.
+	  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+	  { rewrite cty_shift_fv. exact Hyτx. }
+	  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
+	  { cbn [fv_tm fv_value]. set_solver. }
+	  assert (Harg_tgt_open :
+	      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e2)
+            (erase_ty τx)))
+	        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
+	  {
+	    ty_denote_open_one_norm_in Harg_tgt.
+	    exact Harg_tgt.
+	  }
   pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
     gas Σ τx τr e1 e2 m my y Hequiv Hdom Hrestrict
-    Hyτx HyΣ1 HyΣ2 Harg_tgt) as Harg_src.
-  pose proof (res_models_impl_elim my _ _ Hopened Harg_src) as Hres_src.
+    Hyτx HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
+  assert (Harg_src_formula :
+      my ⊨ formula_open 0 y
+        (ty_denote_gas gas
+          (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e1)
+            (erase_ty τx))
+	          (cty_shift 0 τx) (tret (vbvar 0)))).
+	  {
+	    ty_denote_open_one_norm.
+	    exact Harg_src.
+	  }
+  pose proof (res_models_impl_elim my _ _ Hopened Harg_src_formula) as Hres_src.
   pose proof (basic_world_formula_opened_arg_from_denotation
     gas
     (typed_lty_env_bind

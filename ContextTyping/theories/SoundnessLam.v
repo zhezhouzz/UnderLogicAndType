@@ -21,13 +21,83 @@ From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Lemma context_typing_wf_denot_static_guard
+Lemma ty_static_guard_relevant_of_full
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ ty_static_guard_formula (relevant_env Σ τ e) τ e.
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic |- *.
+  repeat rewrite res_models_and_iff in Hstatic.
+  destruct Hstatic as [Hwf [Hworld Hbasic]].
+  repeat rewrite res_models_and_iff.
+  assert (Hworld_rel :
+      m ⊨ basic_world_formula (relevant_env Σ τ e)).
+  {
+    eapply basic_world_formula_subenv; [|exact Hworld].
+    intros v T Hv.
+    unfold relevant_env, lty_env_restrict_lvars in Hv.
+    apply storeA_restrict_lookup_some in Hv as [_ Hv].
+    exact Hv.
+  }
+  pose proof Hworld as Hworld_full.
+  apply basic_world_formula_models_iff in Hworld_full
+    as [Hlc_full _].
+  assert (Hlc_rel : lc_lvars (dom (relevant_env Σ τ e))).
+  {
+    intros v Hv.
+    apply Hlc_full.
+    unfold relevant_env, lty_env_restrict_lvars in Hv.
+    rewrite storeA_restrict_dom in Hv.
+    better_set_solver.
+  }
+  split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf
+      as [Hlc [Hscope Hτ]].
+    apply basic_world_formula_models_iff in Hworld_rel
+      as [_ [Hscope_rel _]].
+    split; [exact Hlc_rel|]. split; [exact Hscope_rel|].
+    apply basic_context_ty_lvars_relevant_env. exact Hτ.
+  - split; [exact Hworld_rel|].
+    apply expr_basic_typing_formula_models_iff.
+    apply expr_basic_typing_formula_models_iff in Hbasic
+      as [Hlc [_ Hty]].
+    apply basic_world_formula_models_iff in Hworld_rel
+      as [_ [Hscope_rel _]].
+    split; [exact Hlc_rel|]. split; [exact Hscope_rel|].
+    unfold relevant_env.
+    eapply basic_tm_has_ltype_restrict_lvars_lc.
+    + exact Hty.
+    + exact (basic_tm_has_ltype_lc _ _ _ Hlc Hty).
+    + unfold relevant_lvars. set_solver.
+Qed.
+
+Lemma ty_guard_relevant_of_static_full_total
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ expr_total_formula e ->
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
+Proof.
+  intros Hstatic Htotal.
+  pose proof (ty_static_guard_relevant_of_full Σ τ e m Hstatic)
+    as Hstatic_rel.
+  unfold ty_static_guard_formula in Hstatic_rel.
+  unfold ty_guard_formula.
+  repeat rewrite res_models_and_iff in Hstatic_rel.
+  destruct Hstatic_rel as [Hwf [Hworld Hbasic]].
+  repeat rewrite res_models_and_iff.
+  split; [exact Hwf|].
+  split; [exact Hworld|].
+  split; [exact Hbasic|exact Htotal].
+Qed.
+
+Lemma context_typing_wf_denot_static_guard_full
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   context_typing_wf Σ Γ e τ ->
   m ⊨ ctx_denote_under Σ Γ ->
   m ⊨ ty_static_guard_formula
-    (relevant_env
-      (atom_env_to_lty_env (erase_ctx Γ)) τ e)
+    (atom_env_to_lty_env (erase_ctx Γ))
     τ e.
 Proof.
   intros Hwf Hctx.
@@ -35,11 +105,19 @@ Proof.
   pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as Hbasicctx.
   assert (Hworld :
       m ⊨ basic_world_formula
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ)) τ e)).
+        (atom_env_to_lty_env (erase_ctx Γ))).
   {
     eapply basic_world_formula_subenv.
     - intros v T Hv.
-      eapply relevant_env_ctx_erasure_under_subenv; eauto.
+      destruct v as [k|x].
+      + rewrite atom_store_to_lvar_store_lookup_bound_none in Hv.
+        discriminate.
+      + rewrite atom_store_to_lvar_store_lookup_free in Hv |- *.
+        assert (HxΓ : x ∈ dom (erase_ctx Γ)).
+        { apply elem_of_dom. eauto. }
+        exact (eq_trans
+          (eq_sym (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
+            Σ Γ x Hbasicctx HxΓ)) Hv).
     - exact (ctx_denote_under_basic_world Σ Γ m Hctx).
   }
   apply basic_world_formula_models_iff in Hworld
@@ -50,18 +128,17 @@ Proof.
     split; [exact Hlc|]. split; [exact Hscope|].
     pose proof (context_typing_wf_context_ty Σ Γ e τ Hwf)
       as Hτ.
-    apply basic_context_ty_atom_env_relevant_env.
-    exact Hτ.
+    rewrite atom_store_to_lvar_store_dom.
+    apply basic_context_ty_to_lvars. exact Hτ.
   - rewrite res_models_and_iff. split.
     + apply basic_world_formula_models_iff.
       split; [exact Hlc|]. split; [exact Hscope|exact Htyped_world].
     + apply expr_basic_typing_formula_models_iff.
-      split; [exact Hlc|]. split; [exact Hscope|].
-      apply basic_tm_has_ltype_of_atom_typing.
-      * apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-      * apply basic_typing_lty_env_to_atom_env_relevant.
-      rewrite lvar_store_to_atom_store_atom_store.
-      exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
+	      split; [exact Hlc|]. split; [exact Hscope|].
+	      apply basic_tm_has_ltype_of_atom_typing.
+	      * apply atom_store_to_lvar_store_closed.
+	      * rewrite lvar_store_to_atom_store_atom_store.
+	        exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
 Qed.
 
 Lemma ctx_bind_from_inserted_erasure_denotation
@@ -261,7 +338,7 @@ Proof.
   destruct Hτ as [Hτx _].
   apply cty_open_shift_from_lc_fresh.
   - eapply wf_context_ty_at_lc. exact Hτx.
-  - unfold ctx_erasure_under in Hy. set_solver.
+  - ctx_erasure_under_norm_in Hy. better_set_solver.
 Qed.
 
 Lemma lam_wand_arg_type_open_shift_eq
@@ -276,72 +353,10 @@ Proof.
     (tret (vlam (erase_ty τx) e)) τx τ Hwf) as Hτx.
   apply cty_open_shift_from_lc_fresh.
   - eapply wf_context_ty_at_lc. exact Hτx.
-  - unfold ctx_erasure_under in Hy. better_set_solver.
+  - ctx_erasure_under_norm_in Hy. better_set_solver.
 Qed.
 
-Lemma erase_ctx_comma_bind_dom Γ y τ :
-  dom (erase_ctx (CtxComma Γ (CtxBind y τ))) =
-  dom (erase_ctx Γ) ∪ ({[y]} : aset).
-Proof.
-  cbn [erase_ctx].
-  change (dom ((erase_ctx Γ : gmap atom ty) ∪
-      ({[y := erase_ty τ]} : gmap atom ty)) =
-    dom (erase_ctx Γ) ∪ ({[y]} : aset)).
-  apply set_eq. intros z. split.
-  - intros Hz.
-    apply elem_of_dom in Hz as [T Hlook].
-    apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-    + apply elem_of_union. left. apply elem_of_dom. eauto.
-    + apply elem_of_union. right.
-      apply (proj1 (lookup_singleton_Some y z (erase_ty τ) T)) in Hlook
-        as [-> _].
-      set_solver.
-	  - intros Hz.
-	    apply elem_of_union in Hz as [Hz|Hz].
-    + apply elem_of_dom in Hz as [T Hlook].
-      apply elem_of_dom. exists T.
-      apply map_lookup_union_Some_raw. left. exact Hlook.
-    + apply elem_of_singleton in Hz. subst z.
-      destruct ((erase_ctx Γ : gmap atom ty) !! y) as [T|] eqn:HΓ.
-      * apply elem_of_dom. exists T.
-        apply map_lookup_union_Some_raw. left. exact HΓ.
-      * apply elem_of_dom. exists (erase_ty τ).
-	        apply map_lookup_union_Some_raw. right.
-	        split; [exact HΓ|apply map_lookup_singleton].
-Qed.
-
-Lemma erase_ctx_star_bind_dom Γ y τ :
-  dom (erase_ctx (CtxStar Γ (CtxBind y τ))) =
-  dom (erase_ctx Γ) ∪ ({[y]} : aset).
-Proof.
-  cbn [erase_ctx].
-  change (dom ((erase_ctx Γ : gmap atom ty) ∪
-      ({[y := erase_ty τ]} : gmap atom ty)) =
-    dom (erase_ctx Γ) ∪ ({[y]} : aset)).
-  apply set_eq. intros z. split.
-  - intros Hz.
-    apply elem_of_dom in Hz as [T Hlook].
-    apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-    + apply elem_of_union. left. apply elem_of_dom. eauto.
-    + apply elem_of_union. right.
-      apply (proj1 (lookup_singleton_Some y z (erase_ty τ) T)) in Hlook
-        as [-> _].
-      set_solver.
-  - intros Hz.
-    apply elem_of_union in Hz as [Hz|Hz].
-    + apply elem_of_dom in Hz as [T Hlook].
-      apply elem_of_dom. exists T.
-      apply map_lookup_union_Some_raw. left. exact Hlook.
-    + apply elem_of_singleton in Hz. subst z.
-      destruct ((erase_ctx Γ : gmap atom ty) !! y) as [T|] eqn:HΓ.
-      * apply elem_of_dom. exists T.
-        apply map_lookup_union_Some_raw. left. exact HΓ.
-      * apply elem_of_dom. exists (erase_ty τ).
-        apply map_lookup_union_Some_raw. right.
-        split; [exact HΓ|apply map_lookup_singleton].
-Qed.
-
-Lemma lam_arrow_opened_app_static_guard
+Lemma lam_arrow_opened_app_static_guard_full
     (Σ : tyctx) Γ τx τ e
     (my : WfWorldT) y :
   context_typing_wf Σ Γ
@@ -349,12 +364,8 @@ Lemma lam_arrow_opened_app_static_guard
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
   my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)) ->
   my ⊨ ty_static_guard_formula
-    (relevant_env
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-      (cty_open 0 y τ)
-      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
@@ -377,13 +388,13 @@ Proof.
     + split.
       * cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
         -- apply basic_ctx_bind.
-           ++ unfold ctx_erasure_under in Hy. rewrite <- HdomΓ. set_solver.
+           ++ ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ. better_set_solver.
            ++ eapply (wf_context_ty_at_mono_env
                 0 (dom (erase_ctx Γ)) (dom Σ ∪ ctx_dom Γ)).
               ** rewrite HdomΓ. set_solver.
               ** exact Hτx.
-        -- cbn [ctx_dom]. unfold ctx_erasure_under in Hy. rewrite <- HdomΓ.
-           set_solver.
+        -- cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
+           better_set_solver.
       * exists my. exact Hctx_comma.
     + split.
       * eapply (wf_context_ty_at_mono_env
@@ -391,46 +402,36 @@ Proof.
           (dom (erase_ctx (CtxComma Γ (CtxBind y τx))))).
         -- rewrite erase_ctx_comma_bind_dom. reflexivity.
         -- apply wf_context_ty_at_open_at.
-           ++ unfold ctx_erasure_under in Hy. set_solver.
+           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
            ++ exact Hτ.
       * rewrite cty_open_preserves_erasure.
         replace (erase_ctx (CtxComma Γ (CtxBind y τx)))
           with (<[y := erase_ty τx]> (erase_ctx Γ)).
         -- apply basic_typing_tapp_tm_fvar_insert.
-           ++ unfold ctx_erasure_under in Hy. set_solver.
+           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
            ++ exact (context_typing_wf_basic_typing Σ Γ
                 (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
-        -- cbn [erase_ctx].
-           symmetry. apply storeA_union_singleton_insert_fresh.
-           unfold ctx_erasure_under in Hy. set_solver.
+        -- symmetry. apply erase_ctx_comma_bind_fresh.
+           ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  pose proof (context_typing_wf_denot_static_guard
+  pose proof (context_typing_wf_denot_static_guard_full
     Σ (CtxComma Γ (CtxBind y τx)) (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))
     my Hwf_app Hctx_comma) as Hstatic.
   assert (Henv :
       atom_env_to_lty_env (erase_ctx (CtxComma Γ (CtxBind y τx))) =
-      lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx))).
+      (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ)))).
   {
-    rewrite typed_lty_env_bind_open_current.
-    - rewrite <- atom_store_to_lvar_store_insert.
-      replace (erase_ctx (CtxComma Γ (CtxBind y τx)))
-        with (<[y := erase_ty τx]> (erase_ctx Γ)).
-      + reflexivity.
-      + cbn [erase_ctx].
-        symmetry. apply storeA_union_singleton_insert_fresh.
-        unfold ctx_erasure_under in Hy. set_solver.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      unfold ctx_erasure_under in Hy. set_solver.
-    - apply atom_store_to_lvar_store_closed.
+    rewrite erase_ctx_comma_bind_fresh.
+    - apply atom_store_to_lvar_store_insert.
+    - ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   rewrite Henv in Hstatic.
   exact Hstatic.
 Qed.
 
-Lemma lam_wand_opened_app_static_guard
+Lemma lam_wand_opened_app_static_guard_full
     (Σ : tyctx) Γ τx τ e
     (my : WfWorldT) y :
   context_typing_wf Σ Γ
@@ -438,12 +439,8 @@ Lemma lam_wand_opened_app_static_guard
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
   my ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx)) ->
   my ⊨ ty_static_guard_formula
-    (relevant_env
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-      (cty_open 0 y τ)
-      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
@@ -466,12 +463,12 @@ Proof.
     + split.
       * cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
         -- apply basic_ctx_bind.
-           ++ unfold ctx_erasure_under in Hy. better_set_solver.
+           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
            ++ eapply (wf_context_ty_at_mono_env
                 0 ∅ (dom Σ)).
               ** better_set_solver.
               ** exact Hτx.
-        -- cbn [ctx_dom]. unfold ctx_erasure_under in Hy. rewrite <- HdomΓ.
+        -- cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
            better_set_solver.
       * exists my. exact Hctx_star.
     + split.
@@ -480,40 +477,30 @@ Proof.
           (dom (erase_ctx (CtxStar Γ (CtxBind y τx))))).
         -- rewrite erase_ctx_star_bind_dom. reflexivity.
         -- apply wf_context_ty_at_open_at.
-           ++ unfold ctx_erasure_under in Hy. better_set_solver.
+           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
            ++ exact Hτ.
       * rewrite cty_open_preserves_erasure.
         replace (erase_ctx (CtxStar Γ (CtxBind y τx)))
           with (<[y := erase_ty τx]> (erase_ctx Γ)).
         -- apply basic_typing_tapp_tm_fvar_insert.
-           ++ unfold ctx_erasure_under in Hy. better_set_solver.
+           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
            ++ exact (context_typing_wf_basic_typing Σ Γ
                 (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-        -- cbn [erase_ctx].
-           symmetry. apply storeA_union_singleton_insert_fresh.
-           unfold ctx_erasure_under in Hy. better_set_solver.
+        -- symmetry. apply erase_ctx_star_bind_fresh.
+           ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  pose proof (context_typing_wf_denot_static_guard
+  pose proof (context_typing_wf_denot_static_guard_full
     Σ (CtxStar Γ (CtxBind y τx)) (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))
     my Hwf_app Hctx_star) as Hstatic.
   assert (Henv :
       atom_env_to_lty_env (erase_ctx (CtxStar Γ (CtxBind y τx))) =
-      lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx))).
+      (<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ)))).
   {
-    rewrite typed_lty_env_bind_open_current.
-    - rewrite <- atom_store_to_lvar_store_insert.
-      replace (erase_ctx (CtxStar Γ (CtxBind y τx)))
-        with (<[y := erase_ty τx]> (erase_ctx Γ)).
-      + reflexivity.
-      + cbn [erase_ctx].
-        symmetry. apply storeA_union_singleton_insert_fresh.
-        unfold ctx_erasure_under in Hy. better_set_solver.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      unfold ctx_erasure_under in Hy. better_set_solver.
-    - apply atom_store_to_lvar_store_closed.
+    rewrite erase_ctx_star_bind_fresh.
+    - apply atom_store_to_lvar_store_insert.
+    - ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   rewrite Henv in Hstatic.
   exact Hstatic.
@@ -526,9 +513,8 @@ Lemma lam_arrow_open_arg_mid_to_bind_denotation
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
   my ⊨ ty_denote_gas (cty_depth τx)
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     τx (tret (vfvar y)) ->
   my ⊨ ty_denote_gas (cty_depth τx)
     (atom_env_to_lty_env (<[y:=erase_ty τx]> (ctx_erasure_under Σ Γ)))
@@ -546,12 +532,6 @@ Proof.
     destruct Hτ as [Hτx _].
     eapply wf_context_ty_at_fv_subset. exact Hτx.
   }
-  rewrite typed_lty_env_bind_open_current in Hmid.
-  2:{
-    apply atom_env_to_lty_env_dom_free_notin.
-    unfold ctx_erasure_under in Hy. set_solver.
-  }
-  2:{ apply atom_store_to_lvar_store_closed. }
   rewrite <- atom_store_to_lvar_store_insert in Hmid.
   eapply res_models_ty_denote_gas_env_agree_on with
     (X := relevant_lvars τx (tret (vfvar y))); [| | exact Hmid].
@@ -567,17 +547,12 @@ Proof.
 	        assert (HzΓ : z ∈ dom (erase_ctx Γ)).
 	        { set_solver. }
 		        apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    + rewrite relevant_lvars_fv.
-      cbn [fv_tm fv_value]. set_solver.
+    + relevant_lvars_norm. better_set_solver.
 Qed.
 
-Lemma lam_arrow_open_arg_to_bind_denotation
+Lemma lam_arrow_open_arg_normalize
     (Σ : tyctx) Γ τx τ e
-    (m my : WfWorldT) y :
-  context_typing_wf Σ Γ
-    (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  res_restrict my (world_dom (m : WorldT)) = m ->
+    (my : WfWorldT) y :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
   my ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
@@ -586,12 +561,13 @@ Lemma lam_arrow_open_arg_to_bind_denotation
           (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
         (erase_ty τx))
       (cty_shift 0 τx) (tret (vbvar 0))) ->
-  my ⊨ ty_denote_gas (cty_depth τx)
-    (atom_env_to_lty_env (<[y:=erase_ty τx]> (ctx_erasure_under Σ Γ)))
-    τx (tret (vfvar y)).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
 Proof.
-  intros Hwf Hdom Hrestrict Hy Harg.
-  assert (HΣfresh :
+  intros Hy Harg.
+  assert (HΣarg_fresh :
       y ∉ lvars_fv
         (dom (typed_lty_env_bind
           (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
@@ -608,12 +584,19 @@ Proof.
     rewrite atom_store_to_lvar_store_dom in Hatom.
     rewrite <- lvars_fv_elem in Hatom.
     rewrite lvars_fv_of_atoms in Hatom.
-    unfold ctx_erasure_under in Hy. set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  assert (Hτfresh : y ∉ fv_cty (cty_shift 0 τx)).
-  { rewrite cty_shift_fv. unfold ctx_erasure_under in Hy. set_solver. }
-  assert (Htmfresh : y ∉ fv_tm (tret (vbvar 0))).
-  { cbn [fv_tm fv_value]. set_solver. }
+  assert (Hτarg_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+  { rewrite cty_shift_fv. ctx_erasure_under_norm_in Hy. better_set_solver. }
+  assert (Hearg_fresh : y ∉ fv_tm (tret (vbvar 0))).
+  { cbn [fv_tm fv_value]. better_set_solver. }
+  change (my ⊨ formula_open 0 y
+    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      (typed_lty_env_bind
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0)))) in Harg.
   rewrite (formula_open_ty_denote_gas_singleton 0 y
     (Nat.max (cty_depth τx) (cty_depth τ))
     (typed_lty_env_bind
@@ -621,39 +604,61 @@ Proof.
         (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
       (erase_ty τx))
     (cty_shift 0 τx) (tret (vbvar 0))) in Harg
-    by (exact HΣfresh || exact Htmfresh || exact Hτfresh).
-  replace (open_tm 0 (vfvar y) (tret (vbvar 0)))
-    with (tret (vfvar y)) in Harg
-    by (cbn [open_tm open_value]; rewrite decide_True by lia; reflexivity).
+    by (exact HΣarg_fresh || exact Hτarg_fresh || exact Hearg_fresh).
+  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+    with (tret (vfvar y)) in Harg.
+  pose proof (ty_denote_gas_env_agree_on
+    (Nat.max (cty_depth τx) (cty_depth τ))
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
+        (erase_ty τx)))
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+        (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y)))
+    ltac:(better_set_solver)
+    (arrow_arg_relevant_env_agree_open_one_core
+      (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)
+      y τx τ (tret (vlam (erase_ty τx) e))
+      ltac:(ctx_erasure_under_norm_in Hy; better_set_solver))) as Hagree.
+  rewrite Hagree in Harg.
+  rewrite typed_lty_env_bind_open_current in Harg.
+  2:{
+    apply atom_env_to_lty_env_dom_free_notin.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
+  }
+  2:{ apply atom_store_to_lvar_store_closed. }
+  exact Harg.
+Qed.
+
+Lemma lam_arrow_open_arg_to_bind_denotation
+    (Σ : tyctx) Γ τx τ e
+    (my : WfWorldT) y :
+  context_typing_wf Σ Γ
+    (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      ((<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx Γ))))
+      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+  my ⊨ ty_denote_gas (cty_depth τx)
+    (atom_env_to_lty_env (<[y:=erase_ty τx]> (ctx_erasure_under Σ Γ)))
+    τx (tret (vfvar y)).
+Proof.
+  intros Hwf Hy Harg.
   assert (Hmid :
       my ⊨ ty_denote_gas (cty_depth τx)
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         τx (tret (vfvar y))).
   {
     rewrite ty_denote_gas_saturate in Harg by
       (rewrite cty_open_preserves_depth, cty_shift_preserves_depth; lia).
     rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
-    pose proof (ty_denote_gas_env_agree_on
-      (cty_depth τx)
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-          (erase_ty τx)))
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
-      (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-        (tret (vfvar y)))
-      ltac:(set_solver)
-      (arrow_arg_relevant_env_agree_open_one_core
-        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)
-        y τx τ (tret (vlam (erase_ty τx) e))
-        ltac:(unfold ctx_erasure_under in Hy; set_solver))) as Hagree.
-    rewrite Hagree in Harg.
     assert (Hτnorm :
         cty_open 0 y (cty_shift 0 τx) = τx).
     { eapply lam_arrow_arg_type_open_shift_eq; eauto. }
@@ -673,18 +678,15 @@ Lemma lam_arrow_open_arg_to_bind_ctx
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      ((<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx Γ))))
+      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   my ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind y τx).
 Proof.
   intros Hwf Hctx_my Hdom Hrestrict Hy Harg.
   pose proof (lam_arrow_open_arg_to_bind_denotation
-    Σ Γ τx τ e m my y Hwf Hdom Hrestrict Hy Harg)
+    Σ Γ τx τ e my y Hwf Hy Harg)
     as Hbind_den.
   assert (Hworld_bind :
       my ⊨ basic_world_formula
@@ -698,13 +700,13 @@ Proof.
       (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx y
       (erase_ty τx) (cty_depth τx)); eauto.
     - apply atom_env_to_lty_env_dom_free_notin.
-      unfold ctx_erasure_under in Hy. set_solver.
+      ctx_erasure_under_norm_in Hy. better_set_solver.
     - exact (ctx_denote_under_basic_world Σ Γ my Hctx_my).
     - rewrite <- atom_store_to_lvar_store_insert.
       exact Hbind_den.
   }
   eapply ctx_bind_from_inserted_erasure_denotation.
-  - unfold ctx_erasure_under in Hy. better_set_solver.
+  - ctx_erasure_under_norm_in Hy. better_set_solver.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hwfctx.
     pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
@@ -742,13 +744,10 @@ Lemma lam_arrow_open_arg_to_comma_ctx
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      ((<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx Γ))))
+      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)).
 Proof.
   intros Hwf Hctx Hdom Hrestrict Hy Harg.
@@ -772,23 +771,16 @@ Lemma lam_body_to_arrow_result_mid
   my ⊨ ty_denote_under Σ (CtxComma Γ (CtxBind y τx))
     ({0 ~> y} τ) (e ^^ y) ->
   my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ) (e ^^ y).
 Proof.
   intros _ Hy Hbody.
   pose proof (ty_denote_under_comma_bind_to_lvar_insert
     Σ Γ τx (cty_open 0 y τ) (e ^^ y) y my
-    ltac:(unfold ctx_erasure_under in Hy; set_solver) Hbody) as Hinsert.
+    ltac:(ctx_erasure_under_norm_in Hy; better_set_solver) Hbody) as Hinsert.
   rewrite ty_denote_gas_saturate
     by (rewrite cty_open_preserves_depth; lia).
-  rewrite typed_lty_env_bind_open_current.
-  2:{
-    apply atom_env_to_lty_env_dom_free_notin.
-    unfold ctx_erasure_under in Hy. set_solver.
-  }
-  2:{ apply atom_store_to_lvar_store_closed. }
   rewrite cty_open_preserves_depth.
   rewrite cty_open_preserves_depth in Hinsert.
   exact Hinsert.
@@ -800,42 +792,31 @@ Lemma lam_arrow_result_mid_app_guard
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_gas 0
-	    (lty_env_open_one 0 y
-	      (typed_lty_env_bind
-	        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ) (e ^^ y) ->
 	  my ⊨ ty_static_guard_formula
-	    (relevant_env
-	      (lty_env_open_one 0 y
-	        (typed_lty_env_bind
-	          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-	      (cty_open 0 y τ)
-	      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
 	  my ⊨ ty_guard_formula
     (relevant_env
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+      ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
       (cty_open 0 y τ)
       (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 		Proof.
-		  intros Hwf Hy Harg Hzero_body Hstatic.
+		  intros Hwf Hy Hzero_body Hstatic.
+	  pose proof (ty_static_guard_relevant_of_full _ _ _ _ Hstatic)
+	    as Hstatic_rel.
 	  unfold ty_guard_formula.
-	  unfold ty_static_guard_formula in Hstatic.
-	  repeat rewrite res_models_and_iff in Hstatic.
-	  destruct Hstatic as [Hwf_app [Hworld_app Hbasic_app]].
+	  unfold ty_static_guard_formula in Hstatic_rel.
+	  repeat rewrite res_models_and_iff in Hstatic_rel.
+	  destruct Hstatic_rel as [Hwf_app [Hworld_app Hbasic_app]].
 	  repeat rewrite res_models_and_iff.
 	  split; [exact Hwf_app|].
 	  split; [exact Hworld_app|].
@@ -902,7 +883,7 @@ Lemma lam_arrow_result_mid_app_guard
 	  {
 	    intros σ v Hσ.
 	    pose proof (tm_equiv_lam_app_body (erase_ty τx) e y my
-	      Hclosed Hbody ltac:(unfold ctx_erasure_under in Hy; set_solver)
+	      Hclosed Hbody ltac:(ctx_erasure_under_norm_in Hy; better_set_solver)
 	      Hy_dom σ v Hσ) as [Happ_body Hbody_app].
 	    split; [exact Hbody_app|exact Happ_body].
 	  }
@@ -915,35 +896,22 @@ Lemma lam_arrow_result_mid_app_zero
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_gas 0
-	    (lty_env_open_one 0 y
-	      (typed_lty_env_bind
-	        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ) (e ^^ y) ->
 	  my ⊨ ty_static_guard_formula
-	    (relevant_env
-	      (lty_env_open_one 0 y
-	        (typed_lty_env_bind
-	          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-	      (cty_open 0 y τ)
-	      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
 	  my ⊨ ty_denote_gas 0
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
-		  intros Hwf Hy Harg Hzero_body Hstatic.
+		  intros Hwf Hy Hzero_body Hstatic.
 	  apply ty_denote_gas_zero_of_guard.
 	  eapply lam_arrow_result_mid_app_guard; eauto.
 Qed.
@@ -954,40 +922,26 @@ Lemma lam_arrow_result_mid_app_denotation
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-	    (lty_env_open_one 0 y
-	      (typed_lty_env_bind
-	        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ) (e ^^ y) ->
 	  my ⊨ ty_static_guard_formula
-	    (relevant_env
-	      (lty_env_open_one 0 y
-	        (typed_lty_env_bind
-	          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-	      (cty_open 0 y τ)
-	      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
 	  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
-		  intros Hwf Hy Harg Hmid Hstatic.
+		  intros Hwf Hy Hmid Hstatic.
   assert (Hzero_body :
       my ⊨ ty_denote_gas 0
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ) (e ^^ y)).
   {
     apply ty_denote_gas_zero_of_guard.
@@ -995,9 +949,8 @@ Proof.
   }
   assert (Hzero_app :
       my ⊨ ty_denote_gas 0
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ)
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
 	  { eapply lam_arrow_result_mid_app_zero; eauto. }
@@ -1047,7 +1000,7 @@ Proof.
 	    set_solver.
 	  }
   eapply lam_intro_denotation; eauto.
-  unfold ctx_erasure_under in Hy. set_solver.
+  ctx_erasure_under_norm_in Hy. better_set_solver.
 Qed.
 
 Lemma lam_arrow_result_mid_to_opened_goal
@@ -1056,25 +1009,13 @@ Lemma lam_arrow_result_mid_to_opened_goal
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-	    (lty_env_open_one 0 y
-	      (typed_lty_env_bind
-	        (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ) (e ^^ y) ->
 	  my ⊨ ty_static_guard_formula
-	    (relevant_env
-	      (lty_env_open_one 0 y
-	        (typed_lty_env_bind
-	          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-	      (cty_open 0 y τ)
-	      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
 	  my ⊨ formula_open 0 y
@@ -1086,10 +1027,10 @@ Lemma lam_arrow_result_mid_to_opened_goal
       τ
 	      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
 Proof.
-		  intros Hwf Hy Harg Hmid Hstatic.
+		  intros Hwf Hy Hmid Hstatic.
   set (elam := tret (vlam (erase_ty τx) e)).
 		  pose proof (lam_arrow_result_mid_app_denotation
-		    Σ Γ τx τ e my y Hwf Hy Harg Hmid Hstatic) as Happ_mid.
+		    Σ Γ τx τ e my y Hwf Hy Hmid Hstatic) as Happ_mid.
   assert (Hlc_elam : lc_tm elam).
   {
     subst elam.
@@ -1115,7 +1056,7 @@ Proof.
     rewrite atom_store_to_lvar_store_dom in Hatom.
     rewrite <- lvars_fv_elem in Hatom.
     rewrite lvars_fv_of_atoms in Hatom.
-    unfold ctx_erasure_under in Hy. set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   assert (Htmfresh :
       y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
@@ -1134,8 +1075,24 @@ Proof.
     by (exact HΣfresh || exact Htmfresh || set_solver).
   rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
   subst elam.
-  eapply ty_equiv_arrow_result_tgt_goal; eauto.
-  set_solver.
+  assert (Happ_mid_open :
+      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+            (erase_ty τx)))
+        (cty_open 0 y τ)
+        (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current.
+    - exact Happ_mid.
+    - apply atom_env_to_lty_env_dom_free_notin.
+      ctx_erasure_under_norm_in Hy. better_set_solver.
+    - apply atom_store_to_lvar_store_closed.
+  }
+  eapply ty_equiv_arrow_result_tgt_goal.
+  - exact Hlc_elam.
+  - set_solver.
+  - exact Happ_mid_open.
 Qed.
 
 Lemma lam_body_to_opened_arrow_result
@@ -1144,22 +1101,11 @@ Lemma lam_body_to_opened_arrow_result
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_under Σ (CtxComma Γ (CtxBind y τx))
 	    ({0 ~> y} τ) (e ^^ y) ->
 	  my ⊨ ty_static_guard_formula
-	    (relevant_env
-	      (lty_env_open_one 0 y
-	        (typed_lty_env_bind
-	          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-	      (cty_open 0 y τ)
-	      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+	    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
 	    (cty_open 0 y τ)
 	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
 	  my ⊨ formula_open 0 y
@@ -1171,7 +1117,7 @@ Lemma lam_body_to_opened_arrow_result
       τ
       (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
 Proof.
-		  intros Hwf Hy Harg Hbody Hstatic.
+		  intros Hwf Hy Hbody Hstatic.
 		  pose proof (lam_body_to_arrow_result_mid
 		    Σ Γ τx τ e my y Hwf Hy Hbody) as Hmid.
 		  eapply lam_arrow_result_mid_to_opened_goal; eauto.
@@ -1190,13 +1136,10 @@ Lemma lam_opened_arrow_result
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
   y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-		  my ⊨ formula_open 0 y
-		    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-		      (typed_lty_env_bind
-	        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-	        (erase_ty τx))
-	      (cty_shift 0 τx) (tret (vbvar 0))) ->
+		  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+		      ((<[LVFree y := erase_ty τx]>
+            (atom_env_to_lty_env (erase_ctx Γ))))
+	      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
 	  my ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       (typed_lty_env_bind
@@ -1216,8 +1159,8 @@ Proof.
   }
   assert (HyL : y ∉ L) by set_solver.
 	  pose proof (IH y HyL my Hctx_comma) as Hbody.
-	  pose proof (lam_arrow_opened_app_static_guard
-	    Σ Γ τx τ e my y Hwf ltac:(set_solver) Hctx_comma) as Hstatic_app.
+	  pose proof (lam_arrow_opened_app_static_guard_full
+		    Σ Γ τx τ e my y Hwf ltac:(set_solver) Hctx_comma) as Hstatic_app.
 	  eapply (lam_body_to_opened_arrow_result Σ Γ τx τ e my y);
 	    eauto.
   set_solver.
@@ -1229,13 +1172,10 @@ Lemma lamd_wand_open_arg_to_bind_denotation
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  n ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      ((<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx Γ))))
+      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   n ⊨ ty_denote_gas (cty_depth τx)
     (atom_env_to_lty_env
       (<[y := erase_ty τx]> (store_restrict Σ (fv_cty τx))))
@@ -1244,7 +1184,49 @@ Proof.
   intros Hwf Hy Harg.
   pose proof (context_typing_wf_wand_arg_global Σ Γ
     (tret (vlam (erase_ty τx) e)) τx τ Hwf) as Hτx_global.
-  assert (HΣfresh :
+  rewrite ty_denote_gas_saturate in Harg by
+    (rewrite cty_open_preserves_depth, cty_shift_preserves_depth; lia).
+  rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
+  assert (Hτnorm :
+      cty_open 0 y (cty_shift 0 τx) = τx).
+  { eapply lam_wand_arg_type_open_shift_eq; eauto. }
+  rewrite Hτnorm in Harg.
+  rewrite <- atom_store_to_lvar_store_insert in Harg.
+  eapply res_models_ty_denote_gas_env_agree_on
+    with (X := relevant_lvars τx (tret (vfvar y)));
+    [reflexivity| |exact Harg].
+  apply atom_env_to_lty_env_restrict_lvars_agree_on
+    with (X := fv_cty τx ∪ {[y]}).
+  - unfold ty_env_agree_on. intros z Hz.
+    destruct (decide (z = y)) as [->|Hzy].
+    + setoid_rewrite lookup_insert.
+      repeat case_decide; congruence.
+    + rewrite lookup_insert_ne by congruence.
+      setoid_rewrite lookup_insert_ne; [|congruence].
+      pose proof (basic_context_ty_fv_subset ∅ τx Hτx_global) as Hτxfv.
+      assert (Hzτx : z ∈ fv_cty τx) by better_set_solver.
+      exfalso. pose proof (Hτxfv z Hzτx). better_set_solver.
+  - relevant_lvars_norm. better_set_solver.
+Qed.
+
+Lemma lamd_wand_open_arg_normalize
+    (Σ : tyctx) Γ τx τ e
+    (n : WfWorldT) y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  n ⊨ formula_open 0 y
+    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      (typed_lty_env_bind
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+Proof.
+  intros Hy Harg.
+  assert (HΣarg_fresh :
       y ∉ lvars_fv
         (dom (typed_lty_env_bind
           (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
@@ -1261,12 +1243,19 @@ Proof.
     rewrite atom_store_to_lvar_store_dom in Hatom.
     rewrite <- lvars_fv_elem in Hatom.
     rewrite lvars_fv_of_atoms in Hatom.
-    unfold ctx_erasure_under in Hy. better_set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  assert (Hτfresh : y ∉ fv_cty (cty_shift 0 τx)).
-  { rewrite cty_shift_fv. unfold ctx_erasure_under in Hy. better_set_solver. }
-  assert (Htmfresh : y ∉ fv_tm (tret (vbvar 0))).
+  assert (Hτarg_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+  { rewrite cty_shift_fv. ctx_erasure_under_norm_in Hy. better_set_solver. }
+  assert (Hearg_fresh : y ∉ fv_tm (tret (vbvar 0))).
   { cbn [fv_tm fv_value]. better_set_solver. }
+  change (n ⊨ formula_open 0 y
+    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      (typed_lty_env_bind
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0)))) in Harg.
   rewrite (formula_open_ty_denote_gas_singleton 0 y
     (Nat.max (cty_depth τx) (cty_depth τ))
     (typed_lty_env_bind
@@ -1274,15 +1263,11 @@ Proof.
         (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
       (erase_ty τx))
     (cty_shift 0 τx) (tret (vbvar 0))) in Harg
-    by (exact HΣfresh || exact Htmfresh || exact Hτfresh).
-  replace (open_tm 0 (vfvar y) (tret (vbvar 0)))
-    with (tret (vfvar y)) in Harg
-    by (cbn [open_tm open_value]; rewrite decide_True by lia; reflexivity).
-  rewrite ty_denote_gas_saturate in Harg by
-    (rewrite cty_open_preserves_depth, cty_shift_preserves_depth; lia).
-  rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
+    by (exact HΣarg_fresh || exact Hτarg_fresh || exact Hearg_fresh).
+  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+    with (tret (vfvar y)) in Harg.
   pose proof (ty_denote_gas_env_agree_on
-    (cty_depth τx)
+    (Nat.max (cty_depth τx) (cty_depth τ))
     (lty_env_open_one 0 y
       (typed_lty_env_bind
         (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
@@ -1298,35 +1283,15 @@ Proof.
     (wand_arg_relevant_env_agree_open_one_core
       (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)
       y τx τ (tret (vlam (erase_ty τx) e))
-      ltac:(unfold ctx_erasure_under in Hy; better_set_solver))) as Hagree.
+      ltac:(ctx_erasure_under_norm_in Hy; better_set_solver))) as Hagree.
   rewrite Hagree in Harg.
-  assert (Hτnorm :
-      cty_open 0 y (cty_shift 0 τx) = τx).
-  { eapply lam_wand_arg_type_open_shift_eq; eauto. }
-  rewrite Hτnorm in Harg.
   rewrite typed_lty_env_bind_open_current in Harg.
   2:{
     apply atom_env_to_lty_env_dom_free_notin.
-    unfold ctx_erasure_under in Hy. better_set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   2:{ apply atom_store_to_lvar_store_closed. }
-  rewrite <- atom_store_to_lvar_store_insert in Harg.
-  eapply res_models_ty_denote_gas_env_agree_on
-    with (X := relevant_lvars τx (tret (vfvar y)));
-    [reflexivity| |exact Harg].
-  apply atom_env_to_lty_env_restrict_lvars_agree_on
-    with (X := fv_cty τx ∪ {[y]}).
-  - unfold ty_env_agree_on. intros z Hz.
-    destruct (decide (z = y)) as [->|Hzy].
-    + setoid_rewrite lookup_insert.
-      repeat case_decide; congruence.
-    + rewrite lookup_insert_ne by congruence.
-      setoid_rewrite lookup_insert_ne; [|congruence].
-      pose proof (basic_context_ty_fv_subset ∅ τx Hτx_global) as Hτxfv.
-      assert (Hzτx : z ∈ fv_cty τx) by better_set_solver.
-      exfalso. pose proof (Hτxfv z Hzτx). better_set_solver.
-  - rewrite relevant_lvars_fv.
-    cbn [fv_tm fv_value]. better_set_solver.
+  exact Harg.
 Qed.
 
 Lemma lamd_open_arg_to_star_ctx
@@ -1338,13 +1303,10 @@ Lemma lamd_open_arg_to_star_ctx
   world_dom (res_product n m Hc : WorldT) =
     world_dom (m : WorldT) ∪ ({[y]} : aset) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-	  n ⊨ formula_open 0 y
-	    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-	      (typed_lty_env_bind
-	        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-	        (erase_ty τx))
-	      (cty_shift 0 τx) (tret (vbvar 0))) ->
+	  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+	      ((<[LVFree y := erase_ty τx]>
+          (atom_env_to_lty_env (erase_ctx Γ))))
+	      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
 	  res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx)).
 	Proof.
   intros Hwf Hctx Hdom Hy Harg.
@@ -1380,63 +1342,42 @@ Lemma lamd_open_arg_to_star_ctx
   eapply ctx_denote_under_star_intro_product; eauto.
 Qed.
 
-Lemma lamd_body_to_opened_wand_result
+Lemma lamd_body_to_wand_result_mid
     (Σ : tyctx) Γ τx τ e
     (my : WfWorldT) y :
   context_typing_wf Σ Γ
     (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
 	  my ⊨ ty_denote_under Σ (CtxStar Γ (CtxBind y τx))
 	    ({0 ~> y} τ) (e ^^ y) ->
   my ⊨ ty_static_guard_formula
-    (relevant_env
-      (lty_env_open_one 0 y
-        (typed_lty_env_bind
-          (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
-      (cty_open 0 y τ)
-      (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
     (cty_open 0 y τ)
     (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
-	  my ⊨ formula_open 0 y
-	    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-	      τ
-	      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
 Proof.
-  intros Hwf Hy Harg Hbody Hstatic.
+  intros Hwf Hy Hbody Hstatic.
   set (elam := tret (vlam (erase_ty τx) e)).
   assert (HyΓ : y ∉ dom (erase_ctx Γ)).
-  { unfold ctx_erasure_under in Hy. better_set_solver. }
+  { ctx_erasure_under_norm_in Hy. better_set_solver. }
   pose proof (ty_denote_under_star_bind_to_lvar_insert_direct
     Σ Γ τx ({0 ~> y} τ) (e ^^ y) y my HyΓ Hbody) as Hbody_insert.
   assert (Hmid_body :
       my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ) (e ^^ y)).
   {
-    replace (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+    replace ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
       with (<[LVFree y := erase_ty τx]>
         (atom_env_to_lty_env (erase_ctx Γ))).
-    2:{
-      rewrite typed_lty_env_bind_open_current.
-      - reflexivity.
-      - apply atom_env_to_lty_env_dom_free_notin. exact HyΓ.
-      - apply atom_store_to_lvar_store_closed.
-    }
+	    2:{ lty_env_open_bind_norm. reflexivity. }
     change (cty_open 0 y τ) with ({0 ~> y} τ).
     rewrite ty_denote_gas_saturate by
       (rewrite cty_open_preserves_depth; lia).
@@ -1444,9 +1385,8 @@ Proof.
   }
   assert (Hzero_body :
       my ⊨ ty_denote_gas 0
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ) (e ^^ y)).
   {
     apply ty_denote_gas_zero_of_guard.
@@ -1455,18 +1395,19 @@ Proof.
   assert (Hfull_guard :
       my ⊨ ty_guard_formula
         (relevant_env
-          (lty_env_open_one 0 y
-            (typed_lty_env_bind
-              (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+          ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
           (cty_open 0 y τ)
           (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)))
         (cty_open 0 y τ)
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
-  {
-    unfold ty_guard_formula.
-    unfold ty_static_guard_formula in Hstatic.
-    repeat rewrite res_models_and_iff in Hstatic.
-    destruct Hstatic as [Hwf_app [Hworld_app Hbasic_app]].
+	  {
+	    unfold ty_guard_formula.
+	    pose proof (ty_static_guard_relevant_of_full _ _ _ _ Hstatic)
+	      as Hstatic_rel.
+	    unfold ty_static_guard_formula in Hstatic_rel.
+	    repeat rewrite res_models_and_iff in Hstatic_rel.
+	    destruct Hstatic_rel as [Hwf_app [Hworld_app Hbasic_app]].
     repeat rewrite res_models_and_iff.
     split; [exact Hwf_app|].
     split; [exact Hworld_app|].
@@ -1529,15 +1470,14 @@ Proof.
     eapply tm_equiv_total; eauto.
     intros σ v Hσ.
     pose proof (tm_equiv_lam_app_body (erase_ty τx) e y my
-      Hclosed Hbody_lc ltac:(unfold ctx_erasure_under in Hy; better_set_solver)
+      Hclosed Hbody_lc ltac:(ctx_erasure_under_norm_in Hy; better_set_solver)
       Hy_dom σ v Hσ) as [Happ_body Hbody_app].
     split; [exact Hbody_app|exact Happ_body].
   }
   assert (Hzero_app :
       my ⊨ ty_denote_gas 0
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ)
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
   { apply ty_denote_gas_zero_of_guard. exact Hfull_guard. }
@@ -1587,15 +1527,39 @@ Proof.
   }
   assert (Happ_mid :
       my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)))
+        ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ)
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
   {
     eapply lam_intro_denotation; eauto.
-    unfold ctx_erasure_under in Hy. better_set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
+  exact Happ_mid.
+Qed.
+
+Lemma lamd_wand_result_mid_to_opened_goal
+    (Σ : tyctx) Γ τx τ e
+    (my : WfWorldT) y :
+  context_typing_wf Σ Γ
+    (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    ((<[LVFree y := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ))))
+    (cty_open 0 y τ)
+    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
+  my ⊨ formula_open 0 y
+    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      (typed_lty_env_bind
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
+        (erase_ty τx))
+      τ
+      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
+Proof.
+  intros Hwf Hy Happ_mid.
+  set (elam := tret (vlam (erase_ty τx) e)).
   assert (Hlc_elam : lc_tm elam).
   {
     subst elam.
@@ -1621,7 +1585,7 @@ Proof.
     rewrite atom_store_to_lvar_store_dom in Hatom.
     rewrite <- lvars_fv_elem in Hatom.
     rewrite lvars_fv_of_atoms in Hatom.
-    unfold ctx_erasure_under in Hy. better_set_solver.
+    ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   assert (Htmfresh :
       y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
@@ -1640,8 +1604,24 @@ Proof.
     by (exact HΣfresh || exact Htmfresh || better_set_solver).
   rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
   subst elam.
-  eapply ty_equiv_wand_result_tgt_goal; eauto.
-  better_set_solver.
+  assert (Happ_mid_open :
+      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+            (erase_ty τx)))
+        (cty_open 0 y τ)
+        (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current.
+    - exact Happ_mid.
+    - apply atom_env_to_lty_env_dom_free_notin.
+      ctx_erasure_under_norm_in Hy. better_set_solver.
+    - apply atom_store_to_lvar_store_closed.
+  }
+  eapply ty_equiv_wand_result_tgt_goal.
+  - exact Hlc_elam.
+  - better_set_solver.
+  - exact Happ_mid_open.
 Qed.
 
 Lemma lamd_opened_wand_result
@@ -1656,14 +1636,11 @@ Lemma lamd_opened_wand_result
   m ⊨ ctx_denote_under Σ Γ ->
   world_dom (res_product n m Hc : WorldT) =
     world_dom (m : WorldT) ∪ ({[y]} : aset) ->
-  y ∉ L ∪ dom Σ ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  n ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+      ((<[LVFree y := erase_ty τx]>
+        (atom_env_to_lty_env (erase_ctx Γ))))
+      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
   res_product n m Hc ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       (typed_lty_env_bind
@@ -1683,25 +1660,12 @@ Proof.
   }
   assert (HyL : y ∉ L) by set_solver.
   pose proof (IH y HyL (res_product n m Hc) Hctx_star) as Hbody.
-  assert (Harg_prod :
-      res_product n m Hc ⊨ formula_open 0 y
-        (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-          (typed_lty_env_bind
-            (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-              (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))).
-	  {
-	    eapply res_models_kripke; [apply res_product_le_l|exact Harg].
-	  }
-  pose proof (lam_wand_opened_app_static_guard
+	  pose proof (lam_wand_opened_app_static_guard_full
+	    Σ Γ τx τ e (res_product n m Hc) y
+	    Hwf ltac:(set_solver) Hctx_star) as Hstatic_app.
+  pose proof (lamd_body_to_wand_result_mid
     Σ Γ τx τ e (res_product n m Hc) y
-    Hwf ltac:(set_solver) Hctx_star) as Hstatic_app.
-	  eapply (lamd_body_to_opened_wand_result Σ Γ τx τ e
-	    (res_product n m Hc) y).
-	  - exact Hwf.
-	  - set_solver.
-	  - exact Harg_prod.
-	  - exact Hbody.
-  - exact Hstatic_app.
+    Hwf ltac:(set_solver) Hbody Hstatic_app) as Happ_mid.
+  eapply lamd_wand_result_mid_to_opened_goal; eauto.
+  set_solver.
 Qed.

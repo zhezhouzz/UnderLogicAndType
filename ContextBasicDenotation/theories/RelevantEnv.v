@@ -178,6 +178,38 @@ Proof.
   exact (Hx Hy).
 Qed.
 
+Lemma atom_env_to_lty_env_erase_ctx_comma_bind_open_one
+    Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  atom_env_to_lty_env (erase_ctx (CtxComma Γ (CtxBind y τ))) =
+  lty_env_open_one 0 y
+    (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τ)).
+Proof.
+  intros Hy.
+  rewrite typed_lty_env_bind_open_current.
+  - rewrite <- atom_store_to_lvar_store_insert.
+    rewrite erase_ctx_comma_bind_fresh by exact Hy.
+    reflexivity.
+  - apply atom_env_to_lty_env_dom_free_notin. exact Hy.
+  - apply atom_store_to_lvar_store_closed.
+Qed.
+
+Lemma atom_env_to_lty_env_erase_ctx_star_bind_open_one
+    Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  atom_env_to_lty_env (erase_ctx (CtxStar Γ (CtxBind y τ))) =
+  lty_env_open_one 0 y
+    (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τ)).
+Proof.
+  intros Hy.
+  rewrite typed_lty_env_bind_open_current.
+  - rewrite <- atom_store_to_lvar_store_insert.
+    rewrite erase_ctx_star_bind_fresh by exact Hy.
+    reflexivity.
+  - apply atom_env_to_lty_env_dom_free_notin. exact Hy.
+  - apply atom_store_to_lvar_store_closed.
+Qed.
+
 Lemma basic_world_formula_atom_env_dom_subset
     (Δ : gmap atom ty) (m : WfWorldT) :
   m ⊨ basic_world_formula (atom_env_to_lty_env Δ) ->
@@ -523,6 +555,43 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
   rewrite storeA_restrict_dom.
   apply elem_of_intersection. split; [apply Hvars; exact Hv|set_solver].
+Qed.
+
+Lemma context_ty_wf_formula_relevant_env
+    Σ τ e (m : WfWorldT) :
+  m ⊨ basic_world_formula (relevant_env Σ τ e) ->
+  m ⊨ context_ty_wf_formula Σ τ ->
+  m ⊨ context_ty_wf_formula (relevant_env Σ τ e) τ.
+Proof.
+  intros Hworld Hwf.
+  apply basic_world_formula_models_iff in Hworld
+    as [Hlc [Hscope _]].
+  apply context_ty_wf_formula_models_iff in Hwf
+    as [_ [_ Hbasicτ]].
+  apply context_ty_wf_formula_models_iff.
+  split; [exact Hlc|]. split; [exact Hscope|].
+  apply basic_context_ty_lvars_relevant_env.
+  exact Hbasicτ.
+Qed.
+
+Lemma context_ty_wf_formula_relevant_env_change_term
+    Σ τ e1 e2 (m : WfWorldT) :
+  m ⊨ basic_world_formula (relevant_env Σ τ e2) ->
+  m ⊨ context_ty_wf_formula (relevant_env Σ τ e1) τ ->
+  m ⊨ context_ty_wf_formula (relevant_env Σ τ e2) τ.
+Proof.
+  intros Hworld Hwf.
+  apply basic_world_formula_models_iff in Hworld
+    as [Hlc [Hscope _]].
+  apply context_ty_wf_formula_models_iff in Hwf
+    as [_ [_ Hbasicτ]].
+  apply context_ty_wf_formula_models_iff.
+  split; [exact Hlc|]. split; [exact Hscope|].
+  apply basic_context_ty_lvars_relevant_env.
+  eapply basic_context_ty_lvars_mono; [|exact Hbasicτ].
+  unfold relevant_env, lty_env_restrict_lvars.
+  rewrite storeA_restrict_dom.
+  set_solver.
 Qed.
 
 Lemma basic_context_ty_atom_env_relevant_env
@@ -1268,3 +1337,91 @@ Proof.
 Qed.
 
 End RelevantEnv.
+
+Ltac relevant_lvars_norm :=
+  unfold relevant_lvars;
+  type_open_env_syntax_norm;
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+    value_lvars_at lvar_value_keys fv_tm fv_value];
+  rewrite ?fv_tapp_tm, ?tm_shift_fv, ?cty_shift_fv;
+  rewrite ?relevant_lvars_fv, ?lvars_fv_union,
+    ?context_ty_lvars_fv, ?tm_lvars_fv;
+  rewrite ?lvars_at_depth_union, ?lvars_at_depth_empty;
+  rewrite ?lvars_fv_empty, ?lvars_fv_singleton_bound,
+    ?lvars_fv_singleton_free, ?lvars_fv_of_atoms;
+  rewrite ?typed_lty_env_bind_lvars_fv_dom,
+    ?lvar_store_bind_lvars_fv_dom;
+  rewrite ?dom_insert_L, ?dom_empty_L, ?dom_union_L;
+  rewrite ?context_ty_lvars_depth, ?tm_lvars_depth;
+  try rewrite ?context_ty_lvars_at_shift_under by lia;
+  try rewrite ?tm_lvars_at_shift_under by lia;
+  rewrite ?tm_lvars_at_tret_bound0_under.
+
+Ltac relevant_lvars_norm_in H :=
+  unfold relevant_lvars in H;
+  type_open_env_syntax_norm_in H;
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+    value_lvars_at lvar_value_keys fv_tm fv_value] in H;
+  rewrite ?fv_tapp_tm in H;
+  rewrite ?tm_shift_fv in H;
+  rewrite ?cty_shift_fv in H;
+  rewrite ?relevant_lvars_fv in H;
+  rewrite ?lvars_fv_union in H;
+  rewrite ?context_ty_lvars_fv in H;
+  rewrite ?tm_lvars_fv in H;
+  rewrite ?lvars_at_depth_union in H;
+  rewrite ?lvars_at_depth_empty in H;
+  rewrite ?lvars_fv_empty in H;
+  rewrite ?lvars_fv_singleton_bound in H;
+  rewrite ?lvars_fv_singleton_free in H;
+  rewrite ?lvars_fv_of_atoms in H;
+  rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
+  rewrite ?lvar_store_bind_lvars_fv_dom in H;
+  rewrite ?dom_insert_L in H;
+  rewrite ?dom_empty_L in H;
+  rewrite ?dom_union_L in H;
+  rewrite ?context_ty_lvars_depth in H;
+  rewrite ?tm_lvars_depth in H;
+  try rewrite ?context_ty_lvars_at_shift_under in H by lia;
+  try rewrite ?tm_lvars_at_shift_under in H by lia;
+  rewrite ?tm_lvars_at_tret_bound0_under in H.
+
+Ltac lty_env_open_bind_norm :=
+  rewrite ?atom_env_to_lty_env_erase_ctx_comma_bind_open_one
+    by (eauto; better_set_solver);
+  rewrite ?atom_env_to_lty_env_erase_ctx_star_bind_open_one
+    by (eauto; better_set_solver);
+  rewrite ?typed_lty_env_bind_open_current
+    by (eauto using atom_env_to_lty_env_dom_free_notin,
+        atom_store_to_lvar_store_closed; try better_set_solver);
+  rewrite ?atom_store_to_lvar_store_insert;
+  rewrite ?typed_lty_env_bind_lvars_fv_dom, ?lty_env_open_one_dom.
+
+Ltac lty_env_open_bind_norm_in H :=
+  rewrite ?atom_env_to_lty_env_erase_ctx_comma_bind_open_one in H
+    by (eauto; better_set_solver);
+  rewrite ?atom_env_to_lty_env_erase_ctx_star_bind_open_one in H
+    by (eauto; better_set_solver);
+  rewrite ?typed_lty_env_bind_open_current in H
+    by (eauto using atom_env_to_lty_env_dom_free_notin,
+        atom_store_to_lvar_store_closed; try better_set_solver);
+  rewrite ?atom_store_to_lvar_store_insert in H;
+  rewrite ?typed_lty_env_bind_lvars_fv_dom in H;
+  rewrite ?lty_env_open_one_dom in H.
+
+Ltac relevant_env_norm :=
+  unfold relevant_env, lty_env_restrict_lvars;
+  relevant_lvars_norm;
+  lty_env_open_bind_norm;
+  store_normalize;
+  rewrite ?storeA_restrict_dom.
+
+Ltac relevant_env_norm_in H :=
+  unfold relevant_env, lty_env_restrict_lvars in H;
+  relevant_lvars_norm_in H;
+  lty_env_open_bind_norm_in H;
+  store_normalize;
+  rewrite ?storeA_restrict_dom in H.
+
+Ltac relevant_env_set :=
+  relevant_env_norm; better_set_solver.

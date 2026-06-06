@@ -131,7 +131,7 @@ Proof.
   unfold ty_denote_under, ty_denote.
   replace (erase_ctx CtxEmpty) with (ctx_erasure_under ∅ CtxEmpty).
   2:{
-    unfold ctx_erasure_under. cbn [erase_ctx].
+    ctx_erasure_under_norm.
     reflexivity.
   }
   eapply const_direct_denotation_gas_in_ctx with (Σ := ∅).
@@ -189,7 +189,7 @@ Proof.
     apply atom_env_to_lty_env_restrict_lvars_agree_on
       with (X := fv_tm e ∪ fv_cty τ).
     - intros x Hx. symmetry. apply Hagree. exact Hx.
-    - rewrite relevant_lvars_fv. set_solver.
+    - relevant_lvars_norm. better_set_solver.
   }
   eapply res_models_from_restrict_extension_on_fv
     with (X := fv_tm e ∪ fv_cty τ) (n := m').
@@ -205,8 +205,7 @@ Proof.
     pose proof (ctx_denote_under_basic_world Σ Γ1 m HΓ1) as Hworld.
     pose proof (basic_world_formula_atom_env_dom_subset
       (ctx_erasure_under Σ Γ1) m Hworld) as Hdom.
-    unfold ctx_erasure_under in Hdom.
-    set_solver.
+    ctx_erasure_under_norm_in Hdom. better_set_solver.
   - exact Hle.
   - exact Hden1_m'.
 Qed.
@@ -244,7 +243,7 @@ Proof.
         set_solver.
       }
       apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    - rewrite relevant_lvars_fv. set_solver.
+    - relevant_lvars_norm. better_set_solver.
   }
   assert (Htarget :
       mx ⊨ ty_denote_gas (cty_depth τ1)
@@ -340,7 +339,7 @@ Proof.
         set_solver.
       }
       apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    - rewrite relevant_lvars_fv. set_solver.
+    - relevant_lvars_norm. better_set_solver.
   }
   assert (Htarget :
       mx ⊨ ty_denote_gas (cty_depth τ1)
@@ -444,20 +443,14 @@ Proof.
       exact (context_typing_wf_basic_typing
         Σ Γlet (tlete e1 e2) τ2 Hwflet).
   }
-  pose proof (context_typing_wf_denot_static_guard
+  pose proof (context_typing_wf_denot_static_guard_full
     Σ Γlet τ2 (tlete e1 e2) mbase Hwflet Hctx) as Hstatic.
   assert (Hbase_zero :
       mbase ⊨ ty_denote_gas 0
         (atom_env_to_lty_env (erase_ctx Γlet)) τ2 (tlete e1 e2)).
   {
     apply ty_denote_gas_zero_of_guard.
-    unfold ty_static_guard_formula in Hstatic.
-    repeat rewrite res_models_and_iff in Hstatic.
-    destruct Hstatic as [Hwf_static [Hworld_static Hbasic_static]].
-    eapply res_models_and_intro_from_models; [exact Hwf_static|].
-    eapply res_models_and_intro_from_models; [exact Hworld_static|].
-    eapply res_models_and_intro_from_models; [exact Hbasic_static|].
-    exact Htotal_tlet_base.
+    eapply ty_guard_relevant_of_static_full_total; eauto.
   }
   assert (HFx_ltype :
       extension_has_ltype (<[LVFree x := erase_ty τ1]> ∅)
@@ -571,8 +564,7 @@ Proof.
     pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
     pose proof (basic_world_formula_atom_env_dom_subset
       (ctx_erasure_under Σ Γ) m Hworld) as Hdom.
-    unfold ctx_erasure_under in Hdom.
-    set_solver.
+    ctx_erasure_under_norm_in Hdom. better_set_solver.
   - apply atom_env_to_lty_env_dom_free_notin. exact Hxctx.
 Qed.
 
@@ -776,7 +768,7 @@ Proof.
         }
         exact Htarget.
       }
-  - rewrite relevant_lvars_fv. set_solver.
+  - relevant_lvars_norm. better_set_solver.
 Qed.
 
 Lemma ty_denote_gas_zero_tletd_ext
@@ -961,8 +953,7 @@ Proof.
     pose proof (basic_world_formula_atom_env_dom_subset
       (ctx_erasure_under Σ (CtxStar Γ1 Γ2))
       (res_product m1 m2 Hc12) Hworld) as Hdom.
-    unfold ctx_erasure_under in Hdom.
-    set_solver.
+    ctx_erasure_under_norm_in Hdom. better_set_solver.
   }
   unfold ty_denote_under, ty_denote.
   eapply res_models_kripke; [exact Hle21|].
@@ -985,23 +976,22 @@ Proof.
   intros Hwf IH m Hctx.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
   set (elam := tret (vlam (erase_ty τx) e)).
-  pose proof (context_typing_wf_denot_static_guard
+  pose proof (context_typing_wf_denot_static_guard_full
     Σ Γ (CTArrow τx τ) elam m Hwf Hctx) as Hguard.
   assert (Hfull_guard :
       m ⊨ ty_guard_formula
         (relevant_env Δ (CTArrow τx τ) elam)
         (CTArrow τx τ) elam).
   {
-    unfold ty_static_guard_formula in Hguard.
-    unfold ty_guard_formula.
-    rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf_guard Hguard].
-    rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hworld_guard Hbasic_guard].
-    rewrite res_models_and_iff. split; [exact Hwf_guard|].
-    rewrite res_models_and_iff. split; [exact Hworld_guard|].
-    rewrite res_models_and_iff. split; [exact Hbasic_guard|].
-    eapply expr_total_formula_tret_of_basic; eauto.
+    assert (Htotal_elam : m ⊨ expr_total_formula elam).
+    {
+      pose proof Hguard as Hguard_parts.
+      unfold ty_static_guard_formula in Hguard_parts.
+      repeat rewrite res_models_and_iff in Hguard_parts.
+      destruct Hguard_parts as [_ [Hworld_guard Hbasic_guard]].
+      eapply expr_total_formula_tret_of_basic; eauto.
+    }
+    eapply ty_guard_relevant_of_static_full_total; eauto.
   }
   assert (Hzero : m ⊨ ty_denote_gas 0 Δ (CTArrow τx τ) elam).
   { apply ty_denote_gas_zero_of_guard. exact Hfull_guard. }
@@ -1017,7 +1007,8 @@ Proof.
     cbn [ty_denote_gas] in Hscope_full.
     pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
     eapply res_models_forall_rev_intro; [exact Hscope_body|].
-    exists (L ∪ dom Σ ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    exists (L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+      fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
     intros y Hy my Hdom Hrestrict.
     assert (Hle : m ⊑ my).
     { rewrite <- Hrestrict. apply res_restrict_le. }
@@ -1027,6 +1018,8 @@ Proof.
       m my y _ Hscope_body Hle Hy_my) as Hopen_scope.
     eapply res_models_impl_intro; [exact Hopen_scope|].
     intros Harg.
+    pose proof (lam_arrow_open_arg_normalize
+      Σ Γ τx τ e my y ltac:(set_solver) Harg) as Harg_norm.
     eapply lam_opened_arrow_result; eauto.
     all: try set_solver.
 Qed.
@@ -1045,23 +1038,22 @@ Proof.
   intros Hwf IH m Hctx.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
   set (elam := tret (vlam (erase_ty τx) e)).
-  pose proof (context_typing_wf_denot_static_guard
+  pose proof (context_typing_wf_denot_static_guard_full
     Σ Γ (CTWand τx τ) elam m Hwf Hctx) as Hguard.
   assert (Hfull_guard :
       m ⊨ ty_guard_formula
         (relevant_env Δ (CTWand τx τ) elam)
         (CTWand τx τ) elam).
   {
-    unfold ty_static_guard_formula in Hguard.
-    unfold ty_guard_formula.
-    rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf_guard Hguard].
-    rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hworld_guard Hbasic_guard].
-    rewrite res_models_and_iff. split; [exact Hwf_guard|].
-    rewrite res_models_and_iff. split; [exact Hworld_guard|].
-    rewrite res_models_and_iff. split; [exact Hbasic_guard|].
-    eapply expr_total_formula_tret_of_basic; eauto.
+    assert (Htotal_elam : m ⊨ expr_total_formula elam).
+    {
+      pose proof Hguard as Hguard_parts.
+      unfold ty_static_guard_formula in Hguard_parts.
+      repeat rewrite res_models_and_iff in Hguard_parts.
+      destruct Hguard_parts as [_ [Hworld_guard Hbasic_guard]].
+      eapply expr_total_formula_tret_of_basic; eauto.
+    }
+    eapply ty_guard_relevant_of_static_full_total; eauto.
   }
   assert (Hzero : m ⊨ ty_denote_gas 0 Δ (CTWand τx τ) elam).
   { apply ty_denote_gas_zero_of_guard. exact Hfull_guard. }
@@ -1092,6 +1084,8 @@ Proof.
     rewrite open_env_atoms_empty in Hfresh.
     rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
     rewrite open_env_atoms_empty in Hdom.
+    pose proof (lamd_wand_open_arg_normalize
+      Σ Γ τx τ e n y ltac:(set_solver) Harg) as Harg_norm.
     eapply (lamd_opened_wand_result Σ Γ τx τ e L m n y Hc);
       eauto.
     + set_solver.

@@ -48,6 +48,46 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma ctx_erasure_under_bind Σ x τ :
+  ctx_erasure_under Σ (CtxBind x τ) =
+  store_restrict Σ (fv_cty τ) ∪ {[x := erase_ty τ]}.
+Proof.
+  unfold ctx_erasure_under.
+  cbn [ctx_fv erase_ctx].
+  reflexivity.
+Qed.
+
+Lemma ctx_erasure_under_bind_closed Σ x τ :
+  fv_cty τ = ∅ ->
+  ctx_erasure_under Σ (CtxBind x τ) = {[x := erase_ty τ]}.
+Proof.
+  intros Hclosed.
+  rewrite ctx_erasure_under_bind, Hclosed.
+  rewrite storeA_restrict_empty_set.
+  rewrite (left_id ∅ (∪) ({[x := erase_ty τ]} : gmap atom ty)).
+  reflexivity.
+Qed.
+
+Lemma ctx_erasure_under_comma Σ Γ1 Γ2 :
+  ctx_erasure_under Σ (CtxComma Γ1 Γ2) =
+  store_restrict Σ (ctx_fv Γ1 ∪ (ctx_fv Γ2 ∖ ctx_dom Γ1)) ∪
+    (erase_ctx Γ1 ∪ erase_ctx Γ2).
+Proof.
+  unfold ctx_erasure_under.
+  cbn [ctx_fv erase_ctx].
+  reflexivity.
+Qed.
+
+Lemma ctx_erasure_under_star Σ Γ1 Γ2 :
+  ctx_erasure_under Σ (CtxStar Γ1 Γ2) =
+  store_restrict Σ (ctx_fv Γ1 ∪ ctx_fv Γ2) ∪
+    (erase_ctx Γ1 ∪ erase_ctx Γ2).
+Proof.
+  unfold ctx_erasure_under.
+  cbn [ctx_fv erase_ctx].
+  reflexivity.
+Qed.
+
 Lemma ctx_denote_under_minimal Σ Γ :
   ctx_denote_under Σ Γ =
   ctx_denote_under (store_restrict Σ (ctx_fv Γ)) Γ.
@@ -880,6 +920,37 @@ Proof.
 Qed.
 
 End ContextDenotation.
+
+Ltac ctx_erasure_under_norm :=
+  unfold ctx_erasure_under;
+  cbn [ctx_fv erase_ctx ctx_dom];
+  type_open_env_syntax_norm;
+  store_normalize;
+  rewrite ?ctx_erasure_under_minimal, ?ctx_erasure_under_bind,
+    ?ctx_erasure_under_comma, ?ctx_erasure_under_star;
+  rewrite ?storeA_restrict_dom, ?dom_empty_L, ?dom_singleton_L,
+    ?dom_union_L, ?erase_ctx_bind_dom, ?erase_ctx_comma_bind_dom,
+    ?erase_ctx_star_bind_dom.
+
+Ltac ctx_erasure_under_norm_in H :=
+  unfold ctx_erasure_under in H;
+  cbn [ctx_fv erase_ctx ctx_dom] in H;
+  type_open_env_syntax_norm_in H;
+  store_normalize;
+  rewrite ?ctx_erasure_under_minimal in H;
+  rewrite ?ctx_erasure_under_bind in H;
+  rewrite ?ctx_erasure_under_comma in H;
+  rewrite ?ctx_erasure_under_star in H;
+  rewrite ?storeA_restrict_dom in H;
+  rewrite ?dom_empty_L in H;
+  rewrite ?dom_singleton_L in H;
+  rewrite ?dom_union_L in H;
+  rewrite ?erase_ctx_bind_dom in H;
+  rewrite ?erase_ctx_comma_bind_dom in H;
+  rewrite ?erase_ctx_star_bind_dom in H.
+
+Ltac ctx_erasure_set :=
+  ctx_erasure_under_norm; better_set_solver.
 
 #[global] Instance denot_cty_inst :
     Denotation context_ty (tm -> Formula (V := value)) :=

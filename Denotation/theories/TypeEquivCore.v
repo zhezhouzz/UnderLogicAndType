@@ -687,15 +687,11 @@ Proof.
   destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
   pose proof (basic_world_formula_result_alias_target
     Σ τ e x m HΣclosed HΣx Hres Hworld Hbasic) as Hworld_target.
-  apply basic_world_formula_models_iff in Hworld_target
+  pose proof Hworld_target as Hworld_target_parts.
+  apply basic_world_formula_models_iff in Hworld_target_parts
     as [Hlc_target [Hscope_target Htyped_target]].
-  apply context_ty_wf_formula_models_iff in Hwf
-    as [_ [_ Hbasicτ_src]].
-  assert (Hbasicτ_Σ : basic_context_ty_lvars (dom Σ) τ).
-  {
-    eapply basic_context_ty_lvars_mono; [|exact Hbasicτ_src].
-    apply relevant_env_dom_subset_direct.
-  }
+  pose proof (context_ty_wf_formula_relevant_env_change_term
+    Σ τ e (tret (vfvar x)) m Hworld_target Hwf) as Hwf_target.
   assert (Hlookup_target :
       relevant_env Σ τ (tret (vfvar x)) !! LVFree x =
       Some (erase_ty τ)).
@@ -712,11 +708,7 @@ Proof.
   }
   repeat rewrite res_models_and_iff.
   split.
-  - apply context_ty_wf_formula_models_iff.
-    split; [exact Hlc_target|].
-    split; [exact Hscope_target|].
-    apply basic_context_ty_lvars_relevant_env.
-    exact Hbasicτ_Σ.
+  - exact Hwf_target.
   - split.
     + apply basic_world_formula_models_iff.
       split; [exact Hlc_target|].
