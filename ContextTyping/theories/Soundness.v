@@ -624,10 +624,6 @@ Proof.
     Σ (CtxStar Γ1 Γ2) etop τtop Hwf_top) as Hwfctx_top.
   pose proof (wf_ctx_under_basic
     Σ (CtxStar Γ1 Γ2) Hwfctx_top) as Hbasic_top.
-  cbn [basic_ctx] in Hbasic_top.
-  destruct Hbasic_top as [Hbasic1 [Hbasic2 Hdisj12]].
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ1 Hbasic1) as Hdom1.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ2 Hbasic2) as Hdom2.
   pose proof (context_typing_wf_fv_tm_subset
     Σ (CtxStar Γ2 (CtxBind x τx)) e τ Hwf_body) as Htm.
   pose proof (context_typing_wf_fv_cty_subset_erase_dom
@@ -642,62 +638,8 @@ Proof.
     with (X := relevant_lvars τ e); [reflexivity| |exact Hden].
   apply atom_env_to_lty_env_restrict_lvars_agree_on
     with (X := fv_tm e ∪ fv_cty τ).
-  - intros y Hy.
-    destruct (decide (y = x)) as [->|Hyx].
-    + cbn [erase_ctx].
-      transitivity (Some (erase_ty τx)).
-      {
-        apply map_lookup_union_Some_raw. right. split.
-        - apply not_elem_of_dom. intros HxΓ2.
-          apply Hxctx. cbn [erase_ctx].
-          apply elem_of_dom in HxΓ2 as [Tx HTx].
-          apply elem_of_dom.
-          destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:HT1.
-          + exists T1. apply map_lookup_union_Some_raw. left. exact HT1.
-          + exists Tx. apply map_lookup_union_Some_raw. right. split; assumption.
-        - apply map_lookup_singleton.
-      }
-      {
-        symmetry. apply map_lookup_insert.
-      }
-    + assert (HyΓ2 : y ∈ dom (erase_ctx Γ2)).
-      {
-        assert (HySrc : y ∈ dom (erase_ctx (CtxStar Γ2 (CtxBind x τx)))).
-        { set_solver. }
-        cbn [erase_ctx] in HySrc.
-        apply elem_of_dom in HySrc as [Ty HTy].
-        apply map_lookup_union_Some_raw in HTy as [HTy|[_ HTy]].
-        - apply elem_of_dom. eauto.
-        - change (({[x := erase_ty τx]} : gmap atom ty) !! y = Some Ty) in HTy.
-          apply (proj1 (lookup_singleton_Some x y (erase_ty τx) Ty)) in HTy
-            as [Hy_eq _].
-          congruence.
-      }
-      pose proof HyΓ2 as HyΓ2_dom.
-      apply elem_of_dom in HyΓ2 as [T HT].
-      transitivity (Some T).
-      {
-        cbn [erase_ctx].
-        apply map_lookup_union_Some_raw. left. exact HT.
-      }
-      {
-        symmetry.
-        assert (Htarget :
-            (<[x := erase_ty τx]>
-              (erase_ctx (CtxStar Γ1 Γ2)) : gmap atom ty) !! y = Some T).
-        {
-          transitivity ((erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! y).
-          - apply map_lookup_insert_ne. congruence.
-          - cbn [erase_ctx].
-            apply map_lookup_union_Some_raw. right. split.
-            + apply not_elem_of_dom. intros HyΓ1.
-              rewrite Hdom1 in HyΓ1.
-              rewrite Hdom2 in HyΓ2_dom.
-              set_solver.
-            + exact HT.
-        }
-        exact Htarget.
-      }
+  - eapply erase_ctx_star_bind_insert_agree_on; [exact Hbasic_top| |exact Hxctx].
+    better_set_solver.
   - relevant_lvars_norm. better_set_solver.
 Qed.
 

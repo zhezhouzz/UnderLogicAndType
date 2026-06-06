@@ -39,6 +39,63 @@ Definition ty_denote_under
 Definition ty_env_agree_on (X : aset) (Σ1 Σ2 : gmap atom ty) : Prop :=
   forall x, x ∈ X -> Σ1 !! x = Σ2 !! x.
 
+Lemma erase_ctx_star_bind_insert_agree_on
+    (Σ : gmap atom ty) Γ1 Γ2 τx x X :
+  basic_ctx (dom Σ) (CtxStar Γ1 Γ2) ->
+  X ⊆ dom (erase_ctx (CtxStar Γ2 (CtxBind x τx))) ->
+  x ∉ dom (erase_ctx (CtxStar Γ1 Γ2)) ->
+  ty_env_agree_on X
+    (erase_ctx (CtxStar Γ2 (CtxBind x τx)))
+    (<[x := erase_ty τx]> (erase_ctx (CtxStar Γ1 Γ2))).
+Proof.
+  intros Hbasic_top HX Hxctx y Hy.
+  cbn [basic_ctx] in Hbasic_top.
+  destruct Hbasic_top as [Hbasic1 [Hbasic2 Hdisj12]].
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ1 Hbasic1) as Hdom1.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ2 Hbasic2) as Hdom2.
+  destruct (decide (y = x)) as [->|Hyx].
+  - cbn [erase_ctx].
+    transitivity (Some (erase_ty τx)).
+    + apply map_lookup_union_Some_raw. right. split.
+      * apply not_elem_of_dom. intros HxΓ2.
+        apply Hxctx. cbn [erase_ctx].
+        apply elem_of_dom in HxΓ2 as [Tx HTx].
+        apply elem_of_dom.
+        destruct ((erase_ctx Γ1 : gmap atom ty) !! x) as [T1|] eqn:HT1.
+        -- exists T1. apply map_lookup_union_Some_raw. left. exact HT1.
+        -- exists Tx. apply map_lookup_union_Some_raw. right. split; assumption.
+      * apply map_lookup_singleton.
+    + symmetry. apply map_lookup_insert.
+  - assert (HyΓ2 : y ∈ dom (erase_ctx Γ2)).
+    {
+      assert (HySrc : y ∈ dom (erase_ctx (CtxStar Γ2 (CtxBind x τx)))).
+      { apply HX. exact Hy. }
+      cbn [erase_ctx] in HySrc.
+      apply elem_of_dom in HySrc as [Ty HTy].
+      apply map_lookup_union_Some_raw in HTy as [HTy|[_ HTy]].
+      - apply elem_of_dom. eauto.
+      - change (({[x := erase_ty τx]} : gmap atom ty) !! y = Some Ty) in HTy.
+        apply (proj1 (lookup_singleton_Some x y (erase_ty τx) Ty)) in HTy
+          as [Hy_eq _].
+        congruence.
+    }
+    pose proof HyΓ2 as HyΓ2_dom.
+    apply elem_of_dom in HyΓ2 as [T HT].
+    transitivity (Some T).
+    + cbn [erase_ctx].
+      apply map_lookup_union_Some_raw. left. exact HT.
+    + symmetry.
+      transitivity ((erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! y).
+      * apply map_lookup_insert_ne. congruence.
+      * cbn [erase_ctx].
+        apply map_lookup_union_Some_raw. right. split.
+        -- apply not_elem_of_dom. intros HyΓ1.
+           rewrite Hdom1 in HyΓ1.
+           rewrite Hdom2 in HyΓ2_dom.
+           better_set_solver.
+        -- exact HT.
+Qed.
+
 Lemma ctx_erasure_under_minimal Σ Γ :
   ctx_erasure_under Σ Γ =
   ctx_erasure_under (store_restrict Σ (ctx_fv Γ)) Γ.
@@ -219,6 +276,59 @@ Proof.
   pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
   rewrite HdomΓ in HxΓ.
   set_solver.
+Qed.
+
+Lemma ty_denote_gas_ret_fvar_insert_ctx_erasure_under
+    gas (Σ : gmap atom ty) Γ τ y (m : WfWorldT) :
+  basic_ctx (dom Σ) Γ ->
+  fv_cty τ ⊆ dom (erase_ctx Γ) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τ]> (atom_env_to_lty_env (erase_ctx Γ)))
+    τ (tret (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (<[y:=erase_ty τ]> (ctx_erasure_under Σ Γ)))
+    τ (tret (vfvar y)).
+Proof.
+  intros Hbasic Hτfv Hden.
+  rewrite <- atom_store_to_lvar_store_insert in Hden.
+  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
+    gas (erase_ctx Γ) (ctx_erasure_under Σ Γ) τ y m);
+    [|exact Hden].
+  unfold ty_env_agree_on. intros z Hz.
+  destruct (decide (z = y)) as [->|Hzy].
+  - setoid_rewrite lookup_insert.
+    repeat case_decide; congruence.
+  - assert (HzΓ : z ∈ dom (erase_ctx Γ)).
+    { better_set_solver. }
+    transitivity ((erase_ctx Γ : gmap atom ty) !! z).
+    + apply map_lookup_insert_ne. congruence.
+    + transitivity ((ctx_erasure_under Σ Γ : gmap atom ty) !! z).
+      * apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
+      * symmetry. apply map_lookup_insert_ne. congruence.
+Qed.
+
+Lemma ty_denote_gas_ret_fvar_insert_closed_atom_env
+    gas (Δ1 Δ2 : gmap atom ty) τ y (m : WfWorldT) :
+  basic_context_ty ∅ τ ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τ]> (atom_env_to_lty_env Δ1))
+    τ (tret (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (<[y:=erase_ty τ]> Δ2))
+    τ (tret (vfvar y)).
+Proof.
+  intros Hτ Hden.
+  rewrite <- atom_store_to_lvar_store_insert in Hden.
+  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
+    gas Δ1 Δ2 τ y m); [|exact Hden].
+  unfold ty_env_agree_on. intros z Hz.
+  destruct (decide (z = y)) as [->|Hzy].
+  - setoid_rewrite lookup_insert.
+    repeat case_decide; congruence.
+  - exfalso.
+    pose proof (basic_context_ty_fv_subset ∅ τ Hτ) as Hτfv.
+    assert (Hzτ : z ∈ fv_cty τ) by better_set_solver.
+    pose proof (Hτfv z Hzτ). better_set_solver.
 Qed.
 
 Lemma basic_world_insert_of_arg
@@ -826,63 +936,11 @@ Proof.
   change ((store_restrict A (ctx_fv Γ1) ∪ E1) ∪
     (store_restrict (A ∪ E1) (ctx_fv Γ2) ∪ E2) =
     A ∪ (E1 ∪ E2)).
-  apply storeA_map_eq. intros x.
-  destruct ((A : gmap atom ty) !! x) as [TA|] eqn:HA.
-  - assert (HxC : x ∈ ctx_fv Γ1 ∪ ctx_fv Γ2 ∖ ctx_dom Γ1).
-    { unfold A in HA. apply storeA_restrict_lookup_some in HA as [HxC _]. exact HxC. }
-    destruct (decide (x ∈ ctx_fv Γ1)) as [HxF1|HxF1].
-    + transitivity (Some TA).
-      * apply map_lookup_union_Some_raw. left.
-        apply map_lookup_union_Some_raw. left.
-        apply storeA_restrict_lookup_some_2; [exact HA|exact HxF1].
-      * symmetry. apply map_lookup_union_Some_raw. left. exact HA.
-    + assert (HxF2 : x ∈ ctx_fv Γ2) by better_set_solver.
-      assert (HxD1 : x ∉ ctx_dom Γ1) by better_set_solver.
-      assert (HE1 : (E1 : gmap atom ty) !! x = None).
-      {
-        unfold E1.
-        apply not_elem_of_dom. rewrite Hdom1. exact HxD1.
-      }
-      transitivity (Some TA).
-      * apply map_lookup_union_Some_raw. right. split.
-        -- apply map_lookup_union_None. split.
-           ++ apply storeA_restrict_lookup_none_r. exact HxF1.
-           ++ exact HE1.
-        -- apply map_lookup_union_Some_raw. left.
-           apply storeA_restrict_lookup_some_2; [|exact HxF2].
-           apply map_lookup_union_Some_raw. left. exact HA.
-      * symmetry. apply map_lookup_union_Some_raw. left. exact HA.
-  - destruct ((E1 : gmap atom ty) !! x) as [T1|] eqn:HE1.
-    + transitivity (Some T1).
-      * apply map_lookup_union_Some_raw. left.
-        apply map_lookup_union_Some_raw. right. split.
-        -- apply storeA_restrict_lookup_none_l. exact HA.
-        -- exact HE1.
-      * symmetry. apply map_lookup_union_Some_raw. right. split; [exact HA|].
-        apply map_lookup_union_Some_raw. left. exact HE1.
-    + destruct ((E2 : gmap atom ty) !! x) as [T2|] eqn:HE2.
-      * transitivity (Some T2).
-        -- apply map_lookup_union_Some_raw. right. split.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE1.
-           ++ apply map_lookup_union_Some_raw. right. split.
-              ** apply storeA_restrict_lookup_none_l.
-                 apply map_lookup_union_None. split; assumption.
-              ** exact HE2.
-        -- symmetry. apply map_lookup_union_Some_raw. right. split; [exact HA|].
-           apply map_lookup_union_Some_raw. right. split; [exact HE1|exact HE2].
-      * transitivity (@None ty).
-        -- apply map_lookup_union_None. split.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE1.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l.
-                 apply map_lookup_union_None. split; assumption.
-              ** exact HE2.
-        -- symmetry. apply map_lookup_union_None. split; [exact HA|].
-           apply map_lookup_union_None. split; assumption.
+  apply (storeA_restrict_union_frame_comma A E1 E2
+    (ctx_fv Γ1) (ctx_fv Γ2) (ctx_dom Γ1)).
+  - unfold A. rewrite storeA_restrict_dom. better_set_solver.
+  - unfold E1. exact Hdom1.
+  - unfold A. rewrite storeA_restrict_dom. better_set_solver.
 Qed.
 
 Lemma ctx_erasure_under_comma_basic_world
@@ -943,66 +1001,9 @@ Proof.
   change ((store_restrict A (ctx_fv Γ1) ∪ E1) ∪
     (store_restrict A (ctx_fv Γ2) ∪ E2) =
     A ∪ (E1 ∪ E2)).
-  apply storeA_map_eq. intros x.
-  destruct ((A : gmap atom ty) !! x) as [TA|] eqn:HA.
-  - assert (HxC : x ∈ ctx_fv Γ1 ∪ ctx_fv Γ2).
-    { unfold A in HA. apply storeA_restrict_lookup_some in HA as [HxC _]. exact HxC. }
-    destruct (decide (x ∈ ctx_fv Γ1)) as [HxF1|HxF1].
-    + transitivity (Some TA).
-      * apply map_lookup_union_Some_raw. left.
-        apply map_lookup_union_Some_raw. left.
-        apply storeA_restrict_lookup_some_2; [exact HA|exact HxF1].
-      * symmetry. apply map_lookup_union_Some_raw. left. exact HA.
-    + assert (HxF2 : x ∈ ctx_fv Γ2) by better_set_solver.
-      assert (HxΣ : x ∈ dom Σ).
-      {
-        unfold A in HA.
-        apply storeA_restrict_lookup_some in HA as [_ HΣx].
-        by apply elem_of_dom_2 in HΣx.
-      }
-      assert (HE1 : (E1 : gmap atom ty) !! x = None).
-      {
-        unfold E1.
-        apply not_elem_of_dom. rewrite Hdom1.
-        intros HxD1. better_set_solver.
-      }
-      transitivity (Some TA).
-      * apply map_lookup_union_Some_raw. right. split.
-        -- apply map_lookup_union_None. split.
-           ++ apply storeA_restrict_lookup_none_r. exact HxF1.
-           ++ exact HE1.
-        -- apply map_lookup_union_Some_raw. left.
-           apply storeA_restrict_lookup_some_2; [exact HA|exact HxF2].
-      * symmetry. apply map_lookup_union_Some_raw. left. exact HA.
-  - destruct ((E1 : gmap atom ty) !! x) as [T1|] eqn:HE1.
-    + transitivity (Some T1).
-      * apply map_lookup_union_Some_raw. left.
-        apply map_lookup_union_Some_raw. right. split.
-        -- apply storeA_restrict_lookup_none_l. exact HA.
-        -- exact HE1.
-      * symmetry. apply map_lookup_union_Some_raw. right. split; [exact HA|].
-        apply map_lookup_union_Some_raw. left. exact HE1.
-    + destruct ((E2 : gmap atom ty) !! x) as [T2|] eqn:HE2.
-      * transitivity (Some T2).
-        -- apply map_lookup_union_Some_raw. right. split.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE1.
-           ++ apply map_lookup_union_Some_raw. right. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE2.
-        -- symmetry. apply map_lookup_union_Some_raw. right. split; [exact HA|].
-           apply map_lookup_union_Some_raw. right. split; [exact HE1|exact HE2].
-      * transitivity (@None ty).
-        -- apply map_lookup_union_None. split.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE1.
-           ++ apply map_lookup_union_None. split.
-              ** apply storeA_restrict_lookup_none_l. exact HA.
-              ** exact HE2.
-        -- symmetry. apply map_lookup_union_None. split; [exact HA|].
-           apply map_lookup_union_None. split; assumption.
+  apply storeA_restrict_union_frame_star.
+  - unfold A. rewrite storeA_restrict_dom. better_set_solver.
+  - unfold A, E1. rewrite storeA_restrict_dom, Hdom1. better_set_solver.
 Qed.
 
 Lemma ctx_erasure_under_star_basic_world

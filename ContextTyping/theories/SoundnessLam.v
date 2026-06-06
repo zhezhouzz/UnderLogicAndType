@@ -272,21 +272,7 @@ Proof.
     destruct Hτ as [Hτx _].
     eapply wf_context_ty_at_fv_subset. exact Hτx.
   }
-  rewrite <- atom_store_to_lvar_store_insert in Hmid.
-  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
-    (cty_depth τx) (erase_ctx Γ) (ctx_erasure_under Σ Γ) τx y my);
-    [|exact Hmid].
-  unfold ty_env_agree_on. intros z Hz.
-  destruct (decide (z = y)) as [->|Hzy].
-  - setoid_rewrite lookup_insert.
-    repeat case_decide; congruence.
-  - assert (HzΓ : z ∈ dom (erase_ctx Γ)).
-    { set_solver. }
-    transitivity ((erase_ctx Γ : gmap atom ty) !! z).
-    + apply map_lookup_insert_ne. congruence.
-    + transitivity ((ctx_erasure_under Σ Γ : gmap atom ty) !! z).
-      * apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-      * symmetry. apply map_lookup_insert_ne. congruence.
+  eapply ty_denote_gas_ret_fvar_insert_ctx_erasure_under; eauto.
 Qed.
 
 Lemma lam_arrow_open_arg_normalize
@@ -325,53 +311,11 @@ Proof.
     rewrite lvars_fv_of_atoms in Hatom.
     ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  assert (Hτarg_fresh : y ∉ fv_cty (cty_shift 0 τx)).
-  { rewrite cty_shift_fv. ctx_erasure_under_norm_in Hy. better_set_solver. }
-  assert (Hearg_fresh : y ∉ fv_tm (tret (vbvar 0))).
-  { cbn [fv_tm fv_value]. better_set_solver. }
-  change (my ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0)))) in Harg.
-  rewrite (formula_open_ty_denote_gas_singleton 0 y
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (typed_lty_env_bind
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-      (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0))) in Harg
-    by (exact HΣarg_fresh || exact Hτarg_fresh || exact Hearg_fresh).
-  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
-    with (tret (vfvar y)) in Harg.
-  pose proof (ty_denote_gas_env_agree_on
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx)))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
-    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y)))
-    ltac:(better_set_solver)
-    (arrow_arg_relevant_env_agree_open_one_core
-      (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)
-      y τx τ (tret (vlam (erase_ty τx) e))
-      ltac:(ctx_erasure_under_norm_in Hy; better_set_solver))) as Hagree.
-  rewrite Hagree in Harg.
-  rewrite typed_lty_env_bind_open_current in Harg.
-  2:{
-    apply atom_env_to_lty_env_dom_free_notin.
+  eapply arrow_open_arg_to_inserted_env; eauto.
+  - apply atom_store_to_lvar_store_closed.
+  - apply atom_env_to_lty_env_dom_free_notin.
     ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
-  2:{ apply atom_store_to_lvar_store_closed. }
-  exact Harg.
+  - ctx_erasure_under_norm_in Hy. better_set_solver.
 Qed.
 
 Lemma lam_arrow_open_arg_to_bind_denotation
@@ -942,18 +886,7 @@ Proof.
     - ctx_erasure_under_norm_in Hy. better_set_solver.
   }
   rewrite Hτnorm in Harg.
-  rewrite <- atom_store_to_lvar_store_insert in Harg.
-  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
-    (cty_depth τx) (erase_ctx Γ) (store_restrict Σ (fv_cty τx)) τx y n);
-    [|exact Harg].
-  unfold ty_env_agree_on. intros z Hz.
-  destruct (decide (z = y)) as [->|Hzy].
-  - setoid_rewrite lookup_insert.
-    repeat case_decide; congruence.
-  - exfalso.
-    pose proof (basic_context_ty_fv_subset ∅ τx Hτx_global) as Hτxfv.
-    assert (Hzτx : z ∈ fv_cty τx) by better_set_solver.
-    pose proof (Hτxfv z Hzτx). better_set_solver.
+  eapply ty_denote_gas_ret_fvar_insert_closed_atom_env; eauto.
 Qed.
 
 Lemma lamd_wand_open_arg_normalize
@@ -992,53 +925,11 @@ Proof.
     rewrite lvars_fv_of_atoms in Hatom.
     ctx_erasure_under_norm_in Hy. better_set_solver.
   }
-  assert (Hτarg_fresh : y ∉ fv_cty (cty_shift 0 τx)).
-  { rewrite cty_shift_fv. ctx_erasure_under_norm_in Hy. better_set_solver. }
-  assert (Hearg_fresh : y ∉ fv_tm (tret (vbvar 0))).
-  { cbn [fv_tm fv_value]. better_set_solver. }
-  change (n ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0)))) in Harg.
-  rewrite (formula_open_ty_denote_gas_singleton 0 y
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (typed_lty_env_bind
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-      (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0))) in Harg
-    by (exact HΣarg_fresh || exact Hτarg_fresh || exact Hearg_fresh).
-  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
-    with (tret (vfvar y)) in Harg.
-  pose proof (ty_denote_gas_env_agree_on
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx)))
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
-    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
-      (tret (vfvar y)))
-    ltac:(better_set_solver)
-    (wand_arg_relevant_env_agree_open_one_core
-      (atom_env_to_lty_env (erase_ctx Γ)) (erase_ty τx)
-      y τx τ (tret (vlam (erase_ty τx) e))
-      ltac:(ctx_erasure_under_norm_in Hy; better_set_solver))) as Hagree.
-  rewrite Hagree in Harg.
-  rewrite typed_lty_env_bind_open_current in Harg.
-  2:{
-    apply atom_env_to_lty_env_dom_free_notin.
+  eapply wand_open_arg_to_inserted_env; eauto.
+  - apply atom_store_to_lvar_store_closed.
+  - apply atom_env_to_lty_env_dom_free_notin.
     ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
-  2:{ apply atom_store_to_lvar_store_closed. }
-  exact Harg.
+  - ctx_erasure_under_norm_in Hy. better_set_solver.
 Qed.
 
 Lemma lamd_open_arg_to_star_ctx
@@ -1070,9 +961,7 @@ Lemma lamd_open_arg_to_star_ctx
       better_set_solver.
     - intros HyΣ.
       apply Hy.
-      apply elem_of_dom in HyΣ as [T HyΣ].
-      apply storeA_restrict_lookup_some in HyΣ as [_ HyΣ].
-      apply elem_of_dom_2 in HyΣ.
+      rewrite storeA_restrict_dom in HyΣ.
       better_set_solver.
     - exact Harg_den.
   }

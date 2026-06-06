@@ -239,11 +239,66 @@ Execution plan for this pass
 
    Status: completed.
 
+1c. Arrow/Wand opened argument normalization:
+
+   - Added arrow_open_arg_to_inserted_env to Denotation/TypeEquivArrow.v.
+   - Added wand_open_arg_to_inserted_env to Denotation/TypeEquivWand.v.
+   - Replaced the repeated formula_open / relevant_env / typed_lty_env_bind
+     normalization blocks in SoundnessLam.v with calls to these Denotation
+     helpers.
+
+   Status: completed.  TypeEquivArrow.vo, TypeEquivWand.vo, SoundnessLam.vo,
+   and Soundness.vo compile under the 50s single-file timeout.
+
 2. Medium-risk follow-up:
 
    - Refactor Context.v comma/star erasure union proofs into local raw store
      partition helpers.
    - Compile Context.vo and Soundness.vo.
+
+   Status: completed with Store-level raw lemmas:
+
+   - storeA_restrict_union_frame_comma in ContextStore/StoreRestrict.v.
+   - storeA_restrict_union_frame_star in ContextStore/StoreRestrict.v.
+   - atom_env_to_lty_env_ctx_erasure_under_comma_union and
+     atom_env_to_lty_env_ctx_erasure_under_star_union in Denotation/Context.v
+     now only instantiate these Store lemmas with ctx_fv/basic_ctx facts.
+   - Context.vo and Soundness.vo compile.
+
+2b. LetD star-bind erasure agreement:
+
+   - Added erase_ctx_star_bind_insert_agree_on to Denotation/Context.v.
+   - Replaced the manual erase_ctx/map_lookup proof in
+     ContextTyping/Soundness.v's ty_denote_under_star_bind_to_lvar_insert.
+   - Context.vo and Soundness.vo compile.
+
+2c. Lam/LamD bind-denotation env agreement:
+
+   - Added ty_denote_gas_ret_fvar_insert_ctx_erasure_under to
+     Denotation/Context.v.
+   - Added ty_denote_gas_ret_fvar_insert_closed_atom_env to
+     Denotation/Context.v.
+   - Replaced the remaining manual inserted-env agree_on proofs in
+     SoundnessLam.v's lam_arrow_open_arg_mid_to_bind_denotation and
+     lamd_wand_open_arg_to_bind_denotation.
+   - Context.vo, SoundnessLam.vo, and Soundness.vo compile.
+
+2d. Final SoundnessLam Store cleanup:
+
+   - Replaced the last restricted-store lookup extraction in
+     lamd_open_arg_to_star_ctx with storeA_restrict_dom plus
+     better_set_solver.
+   - SoundnessLam.vo and Soundness.vo compile.
+
+Remaining reviewed candidates:
+
+- SoundnessAppD.v: appd_open_result_env_agree still destructs membership in
+  fv_value v1 ∪ fv_cty τ.  This branch is not a Store/Algebra fact: it uses
+  context_typing_wf for both the function and application, value lvar typing,
+  result type well-formedness, and CtxStar disjointness to show all relevant
+  result variables come from Γ1.  Lowering it would create a long
+  ContextTyping-specific statement rather than a reusable lower-layer lemma.
+  Keep it local unless more AppD-like rules reuse the same argument.
 
 3. Stop criteria:
 

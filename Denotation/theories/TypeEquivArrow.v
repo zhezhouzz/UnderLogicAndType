@@ -9,6 +9,54 @@ From Denotation Require Import
 
 Section TypeDenote.
 
+Lemma arrow_open_arg_to_inserted_env
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+Proof.
+  intros HΣclosed HfreshΣ Hyτx Hfresh_arg Harg.
+  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+  { rewrite cty_shift_fv. exact Hyτx. }
+  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
+  { cbn [fv_tm fv_value]. better_set_solver. }
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
+    (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))) in Harg
+    by (exact Hfresh_arg || exact Hea_fresh || exact Hτa_fresh).
+  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+    with (tret (vfvar y)) in Harg.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y)))
+    ltac:(better_set_solver)
+    (arrow_arg_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e Hyτx)) as Hagree.
+  rewrite Hagree in Harg.
+  rewrite typed_lty_env_bind_open_current in Harg
+    by (exact HfreshΣ || exact HΣclosed).
+  exact Harg.
+Qed.
+
 Lemma ty_denote_gas_tm_equiv_arrow_open_arg
     gas (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :
