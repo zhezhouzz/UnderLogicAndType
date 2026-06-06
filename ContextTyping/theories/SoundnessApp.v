@@ -67,14 +67,8 @@ Lemma app_arrow_arg_to_opened_antecedent
 Proof.
   intros Hwf_fun Hfresh Harg.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
-  pose proof (ty_denote_gas_ret_fvar_relevant_lookup
-    (cty_depth τx) Δ τx x m Harg) as Hxlookup_rel.
   assert (Hxlookup : Δ !! LVFree x = Some (erase_ty τx)).
-  {
-    unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-    apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup_rel].
-    exact Hxlookup_rel.
-  }
+  { exact (ty_denote_gas_ret_fvar_lookup (cty_depth τx) Δ τx x m Harg). }
   assert (Hopen_env_fresh :
       x ∉ lvars_fv
         (dom (typed_lty_env_bind
@@ -222,13 +216,7 @@ Proof.
     exact Hmid.
   }
   assert (HΔx : Δ !! LVFree x = Some (erase_ty τx)).
-  {
-    pose proof (ty_denote_gas_ret_fvar_relevant_lookup
-      (cty_depth τx) Δ τx x m Harg) as Hxlookup_rel.
-    unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-    apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup].
-    exact Hxlookup.
-  }
+  { exact (ty_denote_gas_ret_fvar_lookup (cty_depth τx) Δ τx x m Harg). }
   assert (Hzero_src :
       m ⊨ ty_denote_gas 0
         (lty_env_open_one 0 x (typed_lty_env_bind Δ (erase_ty τx)))

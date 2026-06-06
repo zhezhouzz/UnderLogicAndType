@@ -192,6 +192,19 @@ Proof.
   exact Hty.
 Qed.
 
+Lemma ty_denote_gas_ret_fvar_lookup
+    gas Σ τ x (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
+  Σ !! LVFree x = Some (erase_ty τ).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_ret_fvar_relevant_lookup
+    gas Σ τ x m Hden) as Hlookup.
+  unfold relevant_env, lty_env_restrict_lvars in Hlookup.
+  apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
+  exact Hlookup.
+Qed.
+
 Lemma ty_denote_gas_ret_fvar_world_dom
     gas Σ τ x (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
