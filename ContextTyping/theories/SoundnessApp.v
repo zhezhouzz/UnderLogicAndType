@@ -216,34 +216,7 @@ Proof.
       cbn [fv_tm fv_value].
       better_set_solver.
     }
-    intros σ v Hσ.
-    set (X := fv_tm (tapp_tm (tret v1) (vfvar x)) ∪
-              fv_tm (tapp v1 (vfvar x))).
-    assert (HσX_closed : store_closed (store_restrict σ X)).
-    { subst X. exact (Hclosed_apps σ Hσ). }
-    assert (Hfv_src : fv_tm (tapp_tm (tret v1) (vfvar x)) ⊆ X)
-      by (subst X; better_set_solver).
-    assert (Hfv_tgt : fv_tm (tapp v1 (vfvar x)) ⊆ X)
-      by (subst X; better_set_solver).
-    split.
-    - intros Heval_src.
-      apply (proj1 (tm_eval_in_store_restrict_fv_subset
-        σ (tapp v1 (vfvar x)) v X Hfv_tgt)).
-      apply (proj1 (tm_eval_in_store_tapp_tm_ret_equiv
-        (store_restrict σ X) v1 (vfvar x) v
-        HσX_closed Hlc_v1 ltac:(constructor))).
-      apply (proj2 (tm_eval_in_store_restrict_fv_subset
-        σ (tapp_tm (tret v1) (vfvar x)) v X Hfv_src)).
-      exact Heval_src.
-    - intros Heval_tgt.
-      apply (proj1 (tm_eval_in_store_restrict_fv_subset
-        σ (tapp_tm (tret v1) (vfvar x)) v X Hfv_src)).
-      apply (proj2 (tm_eval_in_store_tapp_tm_ret_equiv
-        (store_restrict σ X) v1 (vfvar x) v
-        HσX_closed Hlc_v1 ltac:(constructor))).
-      apply (proj2 (tm_eval_in_store_restrict_fv_subset
-        σ (tapp v1 (vfvar x)) v X Hfv_tgt)).
-      exact Heval_tgt.
+    exact (tm_eval_in_world_tapp_tm_ret_equiv m v1 x Hlc_v1 Hclosed_apps).
   }
   assert (Hzero_tgt :
       m ⊨ ty_denote_gas 0

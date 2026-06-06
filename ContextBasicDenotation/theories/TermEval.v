@@ -281,6 +281,47 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma tm_eval_in_world_tapp_tm_ret_equiv
+    (m : WfWorldT) vf x :
+  lc_value vf ->
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret vf) (vfvar x)) ∪
+     fv_tm (tapp vf (vfvar x))) m ->
+  forall σ v,
+    worldA_stores (m : WorldT) σ ->
+    tm_eval_in_store σ (tapp_tm (tret vf) (vfvar x)) v <->
+    tm_eval_in_store σ (tapp vf (vfvar x)) v.
+Proof.
+  intros Hlc_vf Hclosed σ v Hσ.
+  set (X := fv_tm (tapp_tm (tret vf) (vfvar x)) ∪
+            fv_tm (tapp vf (vfvar x))).
+  assert (HσX_closed : store_closed (store_restrict σ X)).
+  { exact (Hclosed σ Hσ). }
+  assert (Hfv_src : fv_tm (tapp_tm (tret vf) (vfvar x)) ⊆ X)
+    by (subst X; better_set_solver).
+  assert (Hfv_tgt : fv_tm (tapp vf (vfvar x)) ⊆ X)
+    by (subst X; better_set_solver).
+  split.
+  - intros Heval_src.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp vf (vfvar x)) v X Hfv_tgt)).
+    apply (proj1 (tm_eval_in_store_tapp_tm_ret_equiv
+      (store_restrict σ X) vf (vfvar x) v
+      HσX_closed Hlc_vf ltac:(constructor))).
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp_tm (tret vf) (vfvar x)) v X Hfv_src)).
+    exact Heval_src.
+  - intros Heval_tgt.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp_tm (tret vf) (vfvar x)) v X Hfv_src)).
+    apply (proj2 (tm_eval_in_store_tapp_tm_ret_equiv
+      (store_restrict σ X) vf (vfvar x) v
+      HσX_closed Hlc_vf ltac:(constructor))).
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ (tapp vf (vfvar x)) v X Hfv_tgt)).
+    exact Heval_tgt.
+Qed.
+
 Lemma tm_eval_in_store_restrict_fv_closed_on σ e v :
   closed_env (store_restrict σ (fv_tm e)) ->
   tm_eval_in_store (store_restrict σ (fv_tm e)) e v <->
