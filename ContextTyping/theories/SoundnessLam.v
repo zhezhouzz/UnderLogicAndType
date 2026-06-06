@@ -96,38 +96,6 @@ Proof.
   - exact Herase.
 Qed.
 
-Lemma lam_arrow_arg_type_open_shift_eq
-    (Σ : tyctx) Γ τx τ e y :
-  context_typing_wf Σ Γ
-    (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  cty_open 0 y (cty_shift 0 τx) = τx.
-Proof.
-  intros Hwf Hy.
-  pose proof (context_typing_wf_context_ty Σ Γ
-    (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτ.
-  cbn [wf_context_ty_at] in Hτ.
-  destruct Hτ as [Hτx _].
-  apply cty_open_shift_from_lc_fresh.
-  - eapply wf_context_ty_at_lc. exact Hτx.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
-Qed.
-
-Lemma lam_wand_arg_type_open_shift_eq
-    (Σ : tyctx) Γ τx τ e y :
-  context_typing_wf Σ Γ
-    (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  cty_open 0 y (cty_shift 0 τx) = τx.
-Proof.
-  intros Hwf Hy.
-  pose proof (context_typing_wf_wand_arg_global Σ Γ
-    (tret (vlam (erase_ty τx) e)) τx τ Hwf) as Hτx.
-  apply cty_open_shift_from_lc_fresh.
-  - eapply wf_context_ty_at_lc. exact Hτx.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
-Qed.
-
 Lemma lam_arrow_opened_app_static_guard_full
     (Σ : tyctx) Γ τx τ e
     (my : WfWorldT) y :
@@ -432,7 +400,15 @@ Proof.
     rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
     assert (Hτnorm :
         cty_open 0 y (cty_shift 0 τx) = τx).
-    { eapply lam_arrow_arg_type_open_shift_eq; eauto. }
+    {
+      pose proof (context_typing_wf_context_ty Σ Γ
+        (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτ.
+      cbn [wf_context_ty_at] in Hτ.
+      destruct Hτ as [Hτx _].
+      apply cty_open_shift_from_lc_fresh.
+      - eapply wf_context_ty_at_lc. exact Hτx.
+      - ctx_erasure_under_norm_in Hy. better_set_solver.
+    }
     rewrite Hτnorm in Harg.
     exact Harg.
   }
@@ -960,7 +936,11 @@ Proof.
   rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
   assert (Hτnorm :
       cty_open 0 y (cty_shift 0 τx) = τx).
-  { eapply lam_wand_arg_type_open_shift_eq; eauto. }
+  {
+    apply cty_open_shift_from_lc_fresh.
+    - eapply wf_context_ty_at_lc. exact Hτx_global.
+    - ctx_erasure_under_norm_in Hy. better_set_solver.
+  }
   rewrite Hτnorm in Harg.
   rewrite <- atom_store_to_lvar_store_insert in Harg.
   eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on

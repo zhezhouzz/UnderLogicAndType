@@ -23,33 +23,6 @@ From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Lemma res_models_forall_open_world_fresh
-    (m my : WfWorldT) x φ :
-  m ⊨ FForall φ ->
-  x ∉ world_dom (m : WorldT) ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[x]} ->
-  res_restrict my (world_dom (m : WorldT)) = m ->
-  my ⊨ formula_open 0 x φ.
-Proof.
-  eapply res_models_forall_open_named_fresh.
-Qed.
-
-Lemma app_arrow_arg_type_open_shift_eq
-    Σ Γ τx τ v1 x :
-  context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
-  x ∉ fv_cty τx ->
-  cty_open 0 x (cty_shift 0 τx) = τx.
-Proof.
-  intros Hwf Hfresh.
-  pose proof (context_typing_wf_context_ty Σ Γ
-    (tret v1) (CTArrow τx τ) Hwf) as Hτ.
-  cbn [wf_context_ty_at] in Hτ.
-  destruct Hτ as [Hτx _].
-  apply cty_open_shift_from_lc_fresh.
-  - eapply wf_context_ty_at_lc. exact Hτx.
-  - exact Hfresh.
-Qed.
-
 Lemma app_arrow_arg_to_opened_antecedent
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
@@ -97,8 +70,17 @@ Proof.
     (cty_shift 0 τx) (tret (vbvar 0))
     Hopen_env_fresh Hopen_tm_fresh Hopen_ty_fresh).
   change (open_tm 0 (vfvar x) (tret (vbvar 0))) with (tret (vfvar x)).
-  rewrite (app_arrow_arg_type_open_shift_eq Σ Γ τx τ v1 x Hwf_fun
-    ltac:(better_set_solver)).
+  assert (Hτx_norm : cty_open 0 x (cty_shift 0 τx) = τx).
+  {
+    pose proof (context_typing_wf_context_ty Σ Γ
+      (tret v1) (CTArrow τx τ) Hwf_fun) as Hτ.
+    cbn [wf_context_ty_at] in Hτ.
+    destruct Hτ as [Hτx _].
+    apply cty_open_shift_from_lc_fresh.
+    - eapply wf_context_ty_at_lc. exact Hτx.
+    - better_set_solver.
+  }
+  rewrite Hτx_norm.
   assert (Hrel_env_fresh :
       LVFree x ∉ dom (relevant_env Δ (CTArrow τx τ) (tret v1) : lty_env)).
   {
@@ -127,25 +109,6 @@ Proof.
   - reflexivity.
   - apply lty_env_restrict_relevant_arrow_arg_insert_eq; assumption.
   - exact Harg_big.
-Qed.
-
-Lemma app_arrow_open_result_env_fresh Δ τx τ v1 x :
-  x ∉ fv_value v1 ->
-  x ∉ fv_cty τx ->
-  x ∉ fv_cty τ ->
-  x ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Δ (CTArrow τx τ) (tret v1))
-      (erase_ty τx))).
-Proof.
-  intros Hfresh_v1 Hfresh_τx Hfresh_τ.
-  rewrite typed_lty_env_bind_lvars_fv_dom.
-  intros Hxfv.
-  apply lvars_fv_elem in Hxfv.
-  assert (Hfresh_ret : x ∉ fv_tm (tret v1)).
-  { cbn [fv_tm fv_value]. exact Hfresh_v1. }
-  exact (relevant_env_arrow_fresh_free
-    Δ τx τ (tret v1) x Hfresh_τx Hfresh_τ Hfresh_ret Hxfv).
 Qed.
 
 Lemma app_arrow_result_to_target
@@ -181,10 +144,16 @@ Proof.
         (dom (typed_lty_env_bind
           (relevant_env Δ (CTArrow τx τ) (tret v1))
           (erase_ty τx)))).
-  { exact (app_arrow_open_result_env_fresh Δ τx τ v1 x
-      ltac:(better_set_solver)
-      ltac:(better_set_solver)
-      ltac:(better_set_solver)). }
+  {
+    rewrite typed_lty_env_bind_lvars_fv_dom.
+    intros Hxfv.
+    apply lvars_fv_elem in Hxfv.
+    assert (Hxv1 : x ∉ fv_tm (tret v1)).
+    { cbn [fv_tm fv_value]. better_set_solver. }
+    exact (relevant_env_arrow_fresh_free
+      Δ τx τ (tret v1) x
+      ltac:(better_set_solver) ltac:(better_set_solver) Hxv1 Hxfv).
+  }
   assert (Htmfresh :
       x ∉ fv_tm (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
   {
@@ -439,7 +408,7 @@ Proof.
   {
     subst mdel. apply res_restrict_self_dom.
   }
-  pose proof (res_models_forall_open_world_fresh
+  pose proof (res_models_forall_open_named_fresh
     mdel m x _ Hforall Hx_mdel Hdom_mdel Hrestrict_mdel) as Hopened.
   rewrite formula_open_impl in Hopened.
   pose proof (app_arrow_arg_to_opened_antecedent
