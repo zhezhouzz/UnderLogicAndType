@@ -32,43 +32,6 @@ Proof.
   exact (proj1 Hτ).
 Qed.
 
-Lemma appd_wand_denotation_drop_arg_var
-    Σ τx τ v1 x (m : WfWorldT) :
-  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  m ⊨ ty_denote_gas (cty_depth (CTWand τx τ)) Σ
-        (CTWand τx τ) (tret v1) ->
-  res_restrict m (world_dom (m : WorldT) ∖ {[x]})
-    ⊨ ty_denote_gas (cty_depth (CTWand τx τ)) Σ
-        (CTWand τx τ) (tret v1).
-Proof.
-  intros Hfresh Hden.
-  assert (Hfv_drop :
-      formula_fv
-        (ty_denote_gas (cty_depth (CTWand τx τ)) Σ
-          (CTWand τx τ) (tret v1)) ⊆
-        world_dom (m : WorldT) ∖ {[x]}).
-  {
-    pose proof (res_models_scoped _ _ Hden) as Hscope.
-    pose proof (formula_fv_ty_denote_gas_subset_relevant
-      (cty_depth (CTWand τx τ)) Σ (CTWand τx τ) (tret v1))
-      as Hfv.
-    intros z Hz.
-    pose proof (Hscope z Hz) as Hzm.
-    pose proof (Hfv z Hz) as Hzrel.
-    cbn [fv_tm fv_value] in Hzrel.
-    unfold fv_cty in Hzrel.
-    cbn [context_ty_lvars context_ty_lvars_at] in Hzrel.
-    rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hzrel.
-    apply elem_of_difference. split; [exact Hzm|].
-    intros Hzx. apply elem_of_singleton in Hzx. subst z.
-    apply Hfresh. set_solver.
-  }
-  exact (proj1 (res_models_minimal_on
-    (world_dom (m : WorldT) ∖ {[x]}) m
-    (ty_denote_gas (cty_depth (CTWand τx τ)) Σ
-      (CTWand τx τ) (tret v1)) Hfv_drop) Hden).
-Qed.
-
 Lemma appd_arg_restrict_to_singleton
     Σ Γ1 Γ2 τx τ v1 x (m2 : WfWorldT) :
   context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
@@ -197,58 +160,13 @@ Proof.
     (relevant_lvars τx (tret (vfvar x)))
     (res_restrict m2 ({[x]} : aset))).
   - reflexivity.
-  - apply storeA_map_eq. intros v.
-    unfold lty_env_restrict_lvars.
-    rewrite !storeA_restrict_lookup.
-    destruct (decide (v ∈ relevant_lvars τx (tret (vfvar x)))) as [Hv|Hv];
-      [|reflexivity].
-    destruct v as [k|y].
-    + assert (Hlc_rel : lc_lvars (relevant_lvars τx (tret (vfvar x)))).
-      {
-        unfold relevant_lvars. intros u Hu.
-        apply elem_of_union in Hu as [Huτ|Hue].
-        - pose proof (wf_context_ty_at_lc 0 ∅ τx Hτx_closed) as Hlcτ.
-          pose proof (cty_lc_at_lvars_bv_empty 0 τx Hlcτ) as Hbv.
-          destruct u as [j|a]; [|exact I].
-          exfalso.
-          assert (j ∈ lvars_bv (context_ty_lvars τx))
-            by (apply lvars_bv_elem; exact Huτ).
-          change (context_ty_lvars τx) with (context_ty_lvars_at 0 τx) in H.
-          rewrite Hbv in H. set_solver.
-        - pose proof (tm_lvars_lc (tret (vfvar x))
-            ltac:(constructor; constructor)) as Hlc_tm.
-          exact (Hlc_tm u Hue).
-      }
-      exfalso. specialize (Hlc_rel (LVBound k) Hv).
-      cbn [lc_logic_var_key] in Hlc_rel. exact Hlc_rel.
-    + destruct (decide (y = x)) as [->|Hyx].
-      * rewrite lookup_insert.
-        unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-        apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup].
-        rewrite decide_True by reflexivity.
-        exact Hxlookup.
-      * rewrite lookup_insert_ne by congruence.
-        unfold relevant_lvars in Hv.
-        pose proof (wf_context_ty_at_fv_subset 0 ∅ τx Hτx_closed) as Hτfv.
-        cbn [fv_tm fv_value] in Hv.
-        assert (LVFree y ∉ context_ty_lvars τx).
-        {
-          intros Hyτ.
-          specialize (Hτfv y).
-          assert (Hyfv : y ∈ fv_cty τx).
-          {
-            apply lvars_fv_elem in Hyτ.
-            rewrite context_ty_lvars_fv in Hyτ.
-            exact Hyτ.
-          }
-          pose proof (Hτfv Hyfv) as Hyempty.
-          set_solver.
-        }
-        apply elem_of_union in Hv as [Hyτ|Hyterm].
-        -- exfalso. exact (H Hyτ).
-        -- cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hyterm.
-           apply elem_of_singleton in Hyterm.
-           inversion Hyterm. congruence.
+  - eapply lty_env_restrict_relevant_ret_fvar_closed_eq.
+    + exact Hτx_closed.
+    + unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
+      apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup].
+      exact Hxlookup.
+    + rewrite lookup_insert.
+      destruct (decide (LVFree x = LVFree x)); [reflexivity|congruence].
   - exact Harg_big.
 Qed.
 
@@ -286,82 +204,22 @@ Proof.
     (relevant_lvars τx (tret (vfvar x)))
     (res_product (res_restrict m2 ({[x]} : aset)) m1 Hc)).
   - reflexivity.
-  - apply storeA_map_eq. intros v.
-    unfold lty_env_restrict_lvars.
-    rewrite !storeA_restrict_lookup.
-    destruct (decide (v ∈ relevant_lvars τx (tret (vfvar x)))) as [Hv|Hv];
-      [|reflexivity].
-    destruct v as [k|y].
-    + assert (Hlc_rel : lc_lvars (relevant_lvars τx (tret (vfvar x)))).
-      {
-        unfold relevant_lvars. intros u Hu.
-        apply elem_of_union in Hu as [Huτ|Hue].
-        - pose proof (wf_context_ty_at_lc 0 ∅ τx Hτx_closed) as Hlcτ.
-          pose proof (cty_lc_at_lvars_bv_empty 0 τx Hlcτ) as Hbv.
-          destruct u as [j|a]; [|exact I].
-          exfalso.
-          assert (j ∈ lvars_bv (context_ty_lvars τx))
-            by (apply lvars_bv_elem; exact Huτ).
-          change (context_ty_lvars τx) with (context_ty_lvars_at 0 τx) in H.
-          rewrite Hbv in H. set_solver.
-        - pose proof (tm_lvars_lc (tret (vfvar x))
-            ltac:(constructor; constructor)) as Hlc_tm.
-          exact (Hlc_tm u Hue).
-      }
-      exfalso. specialize (Hlc_rel (LVBound k) Hv).
-      cbn [lc_logic_var_key] in Hlc_rel. exact Hlc_rel.
-    + destruct (decide (y = x)) as [->|Hyx].
-      * pose proof (ty_denote_gas_ret_fvar_relevant_lookup
-          (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
-          τx x m2 Harg) as Hxlookup_rel.
-        unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-        apply storeA_restrict_lookup_some in Hxlookup_rel as [_ HxΓ2].
-        rewrite HxΓ2.
-        pose proof (context_typing_wf_ctx Σ (CtxStar Γ1 Γ2)
-          (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hwfctx.
-        pose proof (wf_ctx_under_basic Σ (CtxStar Γ1 Γ2) Hwfctx) as Hbasic.
-        cbn [basic_ctx] in Hbasic.
-        destruct Hbasic as [Hbasic1 [Hbasic2 Hdisj]].
-        assert (HxΓ2dom : x ∈ dom (erase_ctx Γ2)).
-        {
-          apply elem_of_dom.
-          rewrite atom_store_to_lvar_store_lookup_free in HxΓ2.
-          eexists. exact HxΓ2.
-        }
-        assert (HxΓ1none : (erase_ctx Γ1 : gmap atom ty) !! x = None).
-        {
-          apply not_elem_of_dom. intros HxΓ1dom.
-          pose proof (basic_ctx_erase_dom (dom Σ) Γ1 Hbasic1) as Hdom1.
-          pose proof (basic_ctx_erase_dom (dom Σ) Γ2 Hbasic2) as Hdom2.
-          rewrite Hdom1 in HxΓ1dom.
-          rewrite Hdom2 in HxΓ2dom.
-          better_set_solver.
-        }
-        rewrite atom_store_to_lvar_store_lookup_free.
-        change ((erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! x =
-          Some (erase_ty τx))
-          with (((erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty) !! x =
-            Some (erase_ty τx)).
-        rewrite atom_store_to_lvar_store_lookup_free in HxΓ2.
-        symmetry.
-        apply map_lookup_union_Some_raw. right.
-        split; [exact HxΓ1none|exact HxΓ2].
-      * unfold relevant_lvars in Hv.
-        pose proof (wf_context_ty_at_fv_subset 0 ∅ τx Hτx_closed) as Hτfv.
-        cbn [fv_tm fv_value] in Hv.
-        assert (LVFree y ∉ context_ty_lvars τx).
-        {
-          intros Hyτ.
-          apply lvars_fv_elem in Hyτ.
-          rewrite context_ty_lvars_fv in Hyτ.
-          pose proof (Hτfv y Hyτ) as Hyempty.
-          set_solver.
-        }
-        apply elem_of_union in Hv as [Hyτ|Hyterm].
-        -- exfalso. exact (H Hyτ).
-        -- cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hyterm.
-           apply elem_of_singleton in Hyterm.
-           inversion Hyterm. congruence.
+  - pose proof (ty_denote_gas_ret_fvar_relevant_lookup
+      (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
+      τx x m2 Harg) as Hxlookup_rel.
+    unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
+    apply storeA_restrict_lookup_some in Hxlookup_rel as [_ HxΓ2].
+    eapply lty_env_restrict_relevant_ret_fvar_closed_eq.
+    + exact Hτx_closed.
+    + exact HxΓ2.
+    + rewrite atom_store_to_lvar_store_lookup_free.
+      pose proof (context_typing_wf_ctx Σ (CtxStar Γ1 Γ2)
+        (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hwfctx.
+      pose proof (wf_ctx_under_basic Σ (CtxStar Γ1 Γ2) Hwfctx) as Hbasic.
+      cbn [basic_ctx] in Hbasic.
+      destruct Hbasic as [Hbasic1 [Hbasic2 Hdisj]].
+      rewrite atom_store_to_lvar_store_lookup_free in HxΓ2.
+      eapply erase_ctx_star_lookup_r_of_basic; eauto.
   - exact Hargx_prod.
 Qed.
 
@@ -639,8 +497,11 @@ Proof.
   set (Δstar := atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))).
   set (m1del := res_restrict m1 (world_dom (m1 : WorldT) ∖ {[x]})).
   set (nx := res_restrict m2 ({[x]} : aset)).
-  pose proof (appd_wand_denotation_drop_arg_var
-    Δ1 τx τ v1 x m1 Hfresh Hfun) as Hfun_del.
+  pose proof (ty_denote_gas_restrict_delete_fresh
+    (cty_depth (CTWand τx τ)) Δ1 (CTWand τx τ) (tret v1)
+    x m1 ltac:(unfold fv_cty; cbn [fv_tm fv_value context_ty_lvars
+      context_ty_lvars_at]; rewrite lvars_fv_union,
+      !context_ty_lvars_fv_at; better_set_solver) Hfun) as Hfun_del.
   cbn [cty_depth ty_denote_gas] in Hfun_del.
   rewrite res_models_and_iff in Hfun_del.
   destruct Hfun_del as [_ Hwand].

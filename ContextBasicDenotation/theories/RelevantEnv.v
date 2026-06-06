@@ -104,6 +104,33 @@ Proof.
   set_solver.
 Qed.
 
+Lemma relevant_lvars_wf_empty_ret_fvar_subset x τ :
+  wf_context_ty_at 0 ∅ τ ->
+  relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
+Proof.
+  intros Hτ.
+  apply relevant_lvars_basic_ret_fvar_subset.
+  rewrite basic_context_ty_iff_wf_context_ty_at.
+  exact Hτ.
+Qed.
+
+Lemma lty_env_restrict_relevant_ret_fvar_closed_eq
+    (Σ1 Σ2 : lty_env) τ x T :
+  wf_context_ty_at 0 ∅ τ ->
+  Σ1 !! LVFree x = Some T ->
+  Σ2 !! LVFree x = Some T ->
+  lty_env_restrict_lvars Σ1 (relevant_lvars τ (tret (vfvar x))) =
+  lty_env_restrict_lvars Σ2 (relevant_lvars τ (tret (vfvar x))).
+Proof.
+  intros Hτ HΣ1x HΣ2x.
+  unfold lty_env_restrict_lvars.
+  eapply storeA_restrict_eq_mono.
+  - apply relevant_lvars_wf_empty_ret_fvar_subset. exact Hτ.
+  - rewrite (storeA_restrict_singleton_lookup Σ1 (LVFree x) T HΣ1x).
+    rewrite (storeA_restrict_singleton_lookup Σ2 (LVFree x) T HΣ2x).
+    reflexivity.
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.

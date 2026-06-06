@@ -88,6 +88,28 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma erase_ctx_star_lookup_r_of_basic (Σ : gmap atom ty) Γ1 Γ2 x T :
+  basic_ctx (dom Σ) Γ1 ->
+  basic_ctx (dom Σ) Γ2 ->
+  ctx_dom Γ1 ## ctx_dom Γ2 ->
+  (erase_ctx Γ2 : gmap atom ty) !! x = Some T ->
+  (erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! x = Some T.
+Proof.
+  intros Hbasic1 Hbasic2 Hdisj Hx2.
+  change ((erase_ctx (CtxStar Γ1 Γ2) : gmap atom ty) !! x)
+    with (((erase_ctx Γ1 ∪ erase_ctx Γ2) : gmap atom ty) !! x).
+  apply map_lookup_union_Some_raw. right.
+  split; [|exact Hx2].
+  apply not_elem_of_dom. intros Hx1dom.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ1 Hbasic1) as Hdom1.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ2 Hbasic2) as Hdom2.
+  assert (Hx2dom : x ∈ dom (erase_ctx Γ2 : gmap atom ty)).
+  { apply elem_of_dom. eexists. exact Hx2. }
+  rewrite Hdom1 in Hx1dom.
+  rewrite Hdom2 in Hx2dom.
+  better_set_solver.
+Qed.
+
 Lemma ctx_denote_under_minimal Σ Γ :
   ctx_denote_under Σ Γ =
   ctx_denote_under (store_restrict Σ (ctx_fv Γ)) Γ.

@@ -23,44 +23,6 @@ From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Lemma app_arrow_denotation_drop_arg_var
-    Σ τx τ v1 x (m : WfWorldT) :
-  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  m ⊨ ty_denote_gas (cty_depth (CTArrow τx τ)) Σ
-        (CTArrow τx τ) (tret v1) ->
-  res_restrict m (world_dom (m : WorldT) ∖ {[x]})
-    ⊨ ty_denote_gas (cty_depth (CTArrow τx τ)) Σ
-        (CTArrow τx τ) (tret v1).
-Proof.
-  intros Hfresh Hden.
-  assert (Hfv_drop :
-      formula_fv
-        (ty_denote_gas (cty_depth (CTArrow τx τ)) Σ
-          (CTArrow τx τ) (tret v1)) ⊆
-        world_dom (m : WorldT) ∖ {[x]}).
-  {
-    pose proof (res_models_scoped _ _ Hden) as Hscope.
-    pose proof (formula_fv_ty_denote_gas_subset_relevant
-      (cty_depth (CTArrow τx τ)) Σ (CTArrow τx τ) (tret v1))
-      as Hfv.
-    intros z Hz.
-    pose proof (Hscope z Hz) as Hzm.
-    pose proof (Hfv z Hz) as Hzrel.
-    cbn [fv_tm fv_value] in Hzrel.
-    unfold fv_cty in Hzrel.
-    cbn [context_ty_lvars context_ty_lvars_at] in Hzrel.
-    rewrite lvars_fv_union in Hzrel.
-    rewrite !context_ty_lvars_fv_at in Hzrel.
-    apply elem_of_difference. split; [exact Hzm|].
-    intros Hzx. apply elem_of_singleton in Hzx. subst z.
-    apply Hfresh. set_solver.
-  }
-  exact (proj1 (res_models_minimal_on
-    (world_dom (m : WorldT) ∖ {[x]}) m
-    (ty_denote_gas (cty_depth (CTArrow τx τ)) Σ
-      (CTArrow τx τ) (tret v1)) Hfv_drop) Hden).
-Qed.
-
 Lemma res_models_forall_open_world_fresh
     (m my : WfWorldT) x φ :
   m ⊨ FForall φ ->
@@ -70,78 +32,6 @@ Lemma res_models_forall_open_world_fresh
   my ⊨ formula_open 0 x φ.
 Proof.
   eapply res_models_forall_open_named_fresh.
-Qed.
-
-Lemma ty_denote_gas_ret_fvar_world_dom
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  x ∈ world_dom (m : WorldT).
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [Hworld [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hty_lvars.
-  apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
-  apply Hdom.
-  apply lvars_fv_elem.
-  apply Hty_lvars.
-  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-  set_solver.
-Qed.
-
-Lemma basic_tm_has_ltype_ret_fvar_lookup
-    (Σ : lty_env) x T :
-  basic_tm_has_ltype Σ (tret (vfvar x)) T ->
-  Σ !! LVFree x = Some T.
-Proof.
-  intros Hty.
-  inversion Hty as [Γ v U Hval| | | |]; subst; clear Hty.
-  inversion Hval; subst; eauto.
-Qed.
-
-Lemma ty_denote_gas_ret_fvar_relevant_lookup
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  relevant_env Σ τ (tret (vfvar x)) !! LVFree x = Some (erase_ty τ).
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [_ [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-  apply basic_tm_has_ltype_ret_fvar_lookup in Hty.
-  exact Hty.
-Qed.
-
-Lemma lty_env_insert_existing_relevant_ret_fvar
-    (Σ : lty_env) τ x T :
-  relevant_env Σ τ (tret (vfvar x)) !! LVFree x = Some T ->
-  lty_env_restrict_lvars (<[LVFree x := T]> Σ)
-    (relevant_lvars τ (tret (vfvar x))) =
-  lty_env_restrict_lvars Σ
-    (relevant_lvars τ (tret (vfvar x))).
-Proof.
-  intros Hlookup.
-  apply storeA_map_eq. intros v.
-  unfold lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ relevant_lvars τ (tret (vfvar x)))) as [Hv|Hv].
-  - destruct v as [k|y].
-    + rewrite lookup_insert_ne by congruence. reflexivity.
-    + destruct (decide (y = x)) as [->|Hyx].
-      * rewrite lookup_insert.
-        unfold relevant_env, lty_env_restrict_lvars in Hlookup.
-        apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-        rewrite decide_True by reflexivity.
-        symmetry. exact Hlookup.
-      * rewrite lookup_insert_ne by congruence. reflexivity.
-  - reflexivity.
 Qed.
 
 Lemma app_arrow_arg_type_open_shift_eq
@@ -648,8 +538,11 @@ Proof.
   intros Hwf_fun Hwf Hfresh Hfun Harg.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
   set (mdel := res_restrict m (world_dom (m : WorldT) ∖ {[x]})).
-  pose proof (app_arrow_denotation_drop_arg_var
-    Δ τx τ v1 x m Hfresh Hfun) as Hfun_del.
+  pose proof (ty_denote_gas_restrict_delete_fresh
+    (cty_depth (CTArrow τx τ)) Δ (CTArrow τx τ) (tret v1)
+    x m ltac:(unfold fv_cty; cbn [fv_tm fv_value context_ty_lvars
+      context_ty_lvars_at]; rewrite lvars_fv_union,
+      !context_ty_lvars_fv_at; better_set_solver) Hfun) as Hfun_del.
   cbn [cty_depth ty_denote_gas] in Hfun_del.
   rewrite res_models_and_iff in Hfun_del.
   destruct Hfun_del as [_ Hforall].

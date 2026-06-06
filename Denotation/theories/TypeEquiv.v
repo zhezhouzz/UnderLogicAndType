@@ -139,6 +139,80 @@ Proof.
     set_solver.
 Qed.
 
+Lemma ty_denote_gas_restrict_delete_fresh
+    gas (Σ : lty_env) τ e x (m : WfWorldT) :
+  x ∉ fv_tm e ∪ fv_cty τ ->
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  res_restrict m (world_dom (m : WorldT) ∖ {[x]}) ⊨
+    ty_denote_gas gas Σ τ e.
+Proof.
+  intros Hfresh Hden.
+  assert (Hfv_drop :
+      formula_fv (ty_denote_gas gas Σ τ e) ⊆
+      world_dom (m : WorldT) ∖ {[x]}).
+  {
+    pose proof (res_models_scoped _ _ Hden) as Hscope.
+    pose proof (formula_fv_ty_denote_gas_subset_relevant gas Σ τ e) as Hfv.
+    intros z Hz.
+    pose proof (Hscope z Hz) as Hzdom.
+    pose proof (Hfv z Hz) as Hzrel.
+    apply elem_of_difference. split; [exact Hzdom|].
+    intros Hzx.
+    apply elem_of_singleton in Hzx. subst z.
+    exact (Hfresh Hzrel).
+  }
+  exact (proj1 (res_models_minimal_on
+    (world_dom (m : WorldT) ∖ {[x]}) m
+    (ty_denote_gas gas Σ τ e) Hfv_drop) Hden).
+Qed.
+
+Lemma basic_tm_has_ltype_ret_fvar_lookup
+    (Σ : lty_env) x T :
+  basic_tm_has_ltype Σ (tret (vfvar x)) T ->
+  Σ !! LVFree x = Some T.
+Proof.
+  intros Hty.
+  inversion Hty as [Γ v U Hval| | | |]; subst; clear Hty.
+  inversion Hval; subst; eauto.
+Qed.
+
+Lemma ty_denote_gas_ret_fvar_relevant_lookup
+    gas Σ τ x (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
+  relevant_env Σ τ (tret (vfvar x)) !! LVFree x = Some (erase_ty τ).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard_formula
+    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [_ [Hbasic _]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+  apply basic_tm_has_ltype_ret_fvar_lookup in Hty.
+  exact Hty.
+Qed.
+
+Lemma ty_denote_gas_ret_fvar_world_dom
+    gas Σ τ x (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
+  x ∈ world_dom (m : WorldT).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard_formula
+    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic _]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hty_lvars.
+  apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
+  apply Hdom.
+  apply lvars_fv_elem.
+  apply Hty_lvars.
+  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+  set_solver.
+Qed.
+
 Lemma ty_denote_gas_drop_fresh_ext
     gas (Σ : lty_env) τ e x T (m mx : WfWorldT) Fx :
   fv_tm e ∪ fv_cty τ ⊆ world_dom (m : WorldT) ->
