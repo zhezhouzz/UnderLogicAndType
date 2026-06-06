@@ -32,37 +32,6 @@ Proof.
   exact (proj1 Hτ).
 Qed.
 
-Lemma appd_arg_restrict_to_singleton
-    Σ Γ1 Γ2 τx τ v1 x (m2 : WfWorldT) :
-  context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
-  m2 ⊨ ty_denote_gas (cty_depth τx)
-        (atom_env_to_lty_env (erase_ctx Γ2))
-        τx (tret (vfvar x)) ->
-  res_restrict m2 ({[x]} : aset) ⊨
-    ty_denote_gas (cty_depth τx)
-      (atom_env_to_lty_env (erase_ctx Γ2))
-      τx (tret (vfvar x)).
-Proof.
-  intros Hwf_fun Harg.
-  assert (Hfv :
-      formula_fv (ty_denote_gas (cty_depth τx)
-        (atom_env_to_lty_env (erase_ctx Γ2)) τx (tret (vfvar x))) ⊆ {[x]}).
-  {
-    pose proof (formula_fv_ty_denote_gas_subset_relevant
-      (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
-      τx (tret (vfvar x))) as Hrel.
-    pose proof (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun) as Hτx_closed.
-    intros y Hy.
-    pose proof (Hrel y Hy) as Hyrel.
-    pose proof (wf_context_ty_at_fv_subset 0 ∅ τx Hτx_closed) as Hτx_fv.
-    relevant_lvars_norm_in Hyrel.
-    better_set_solver.
-  }
-  exact (proj1 (res_models_minimal_on ({[x]} : aset) m2
-    (ty_denote_gas (cty_depth τx)
-      (atom_env_to_lty_env (erase_ctx Γ2)) τx (tret (vfvar x))) Hfv) Harg).
-Qed.
-
 Lemma appd_arg_singleton_env_to_wand_arg
     Σ Γ1 Γ2 τx τ v1 x (m2 : WfWorldT) :
   context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
@@ -79,12 +48,12 @@ Lemma appd_arg_singleton_env_to_wand_arg
         (cty_shift 0 τx) (tret (vbvar 0))).
 Proof.
   intros Hwf_fun Hfresh Harg.
-  pose proof (appd_arg_restrict_to_singleton
-    Σ Γ1 Γ2 τx τ v1 x m2 Hwf_fun Harg) as Hargx.
   set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)) in *.
   set (Δ2 := atom_env_to_lty_env (erase_ctx Γ2)) in *.
   assert (Hτx_closed : wf_context_ty_at 0 ∅ τx).
   { exact (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun). }
+  pose proof (ty_denote_gas_restrict_ret_fvar_closed
+    (cty_depth τx) Δ2 τx x m2 Hτx_closed Harg) as Hargx.
   assert (Hxlookup : Δ2 !! LVFree x = Some (erase_ty τx)).
   { exact (ty_denote_gas_ret_fvar_lookup
       (cty_depth τx) Δ2 τx x (res_restrict m2 ({[x]} : aset)) Hargx). }
@@ -179,8 +148,9 @@ Lemma appd_arg_product_to_star_env
 Proof.
   intros Hwf_fun Hwf_app Harg.
   pose proof (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun) as Hτx_closed.
-  pose proof (appd_arg_restrict_to_singleton
-    Σ Γ1 Γ2 τx τ v1 x m2 Hwf_fun Harg) as Hargx.
+  pose proof (ty_denote_gas_restrict_ret_fvar_closed
+    (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
+    τx x m2 Hτx_closed Harg) as Hargx.
   assert (Hargx_prod :
       res_product (res_restrict m2 ({[x]} : aset)) m1 Hc ⊨
         ty_denote_gas (cty_depth τx)

@@ -210,6 +210,29 @@ Proof.
     set_solver.
 Qed.
 
+Lemma ty_denote_gas_restrict_ret_fvar_closed
+    gas (Σ : lty_env) τ x (m : WfWorldT) :
+  wf_context_ty_at 0 ∅ τ ->
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
+  res_restrict m ({[x]} : aset) ⊨
+    ty_denote_gas gas Σ τ (tret (vfvar x)).
+Proof.
+  intros Hτ_closed Hden.
+  assert (Hfv :
+      formula_fv (ty_denote_gas gas Σ τ (tret (vfvar x))) ⊆ {[x]}).
+  {
+    pose proof (formula_fv_ty_denote_gas_subset_relevant
+      gas Σ τ (tret (vfvar x))) as Hrel.
+    pose proof (wf_context_ty_at_fv_subset 0 ∅ τ Hτ_closed) as Hτ_fv.
+    intros y Hy.
+    pose proof (Hrel y Hy) as Hyrel.
+    relevant_lvars_norm_in Hyrel.
+    better_set_solver.
+  }
+  exact (proj1 (res_models_minimal_on ({[x]} : aset) m
+    (ty_denote_gas gas Σ τ (tret (vfvar x))) Hfv) Hden).
+Qed.
+
 Lemma ty_denote_gas_restrict_delete_fresh
     gas (Σ : lty_env) τ e x (m : WfWorldT) :
   x ∉ fv_tm e ∪ fv_cty τ ->

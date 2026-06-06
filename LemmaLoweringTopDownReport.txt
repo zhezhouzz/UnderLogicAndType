@@ -70,9 +70,13 @@ Findings:
      a closed wand argument denotation restricted to {[x]} can be converted to
      the opened FBWand argument formula.
 
-   This is not a Store lemma; it depends on CTWand and formula_open
-   normalization.  Keep it in SoundnessAppD for now unless a second caller
-   appears.  The low-level part already uses ty_denote_gas_ret_fvar_lookup.
+   The pure singleton-restriction subpart does not depend on AppD.  It has been
+   lowered to Denotation/theories/TypeEquiv.v as:
+
+     ty_denote_gas_restrict_ret_fvar_closed
+
+   AppD still owns the formula_open/FBWand argument normalization because that
+   part is case-specific.
 
 3. Soundness.v, ordinary Let/LetD support
 
@@ -187,6 +191,18 @@ Execution plan for this pass
    - Replace the explicit equivalence block in
      ContextTyping/theories/SoundnessApp.v.
    - Compile TermEval.vo and Soundness.vo, then full make.
+
+   Status: completed as tm_eval_in_world_tapp_tm_ret_equiv.  The lower lemma is
+   stated as a world-level eval equivalence because tm_equiv_on is defined in
+   Denotation/TypeEquivCore and cannot be imported by TermEval without a cycle.
+
+1b. Low-risk Denotation lowering:
+
+   - Add ty_denote_gas_restrict_ret_fvar_closed to Denotation/TypeEquiv.v.
+   - Delete appd_arg_restrict_to_singleton from SoundnessAppD.v.
+   - Compile TypeEquiv.vo, SoundnessAppD.vo, Soundness.vo, and full make.
+
+   Status: completed.
 
 2. Medium-risk follow-up:
 
