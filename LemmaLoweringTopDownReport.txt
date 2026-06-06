@@ -78,6 +78,13 @@ Findings:
    AppD still owns the formula_open/FBWand argument normalization because that
    part is case-specific.
 
+   Also found and removed a duplicate AppD-only wrapper:
+
+     appd_wand_arg_closed
+
+   It was just an instance of Typing.v's
+   context_typing_wf_wand_arg_global.
+
 3. Soundness.v, ordinary Let/LetD support
 
    The remaining helper lemmas here are case-level semantic adapters:

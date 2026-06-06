@@ -20,18 +20,6 @@ From ContextTyping Require Import Typing SoundnessApp.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Lemma appd_wand_arg_closed
-    Σ Γ1 τx τ v1 :
-  context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
-  wf_context_ty_at 0 ∅ τx.
-Proof.
-  intros Hwf.
-  pose proof (context_typing_wf_context_ty Σ Γ1
-    (tret v1) (CTWand τx τ) Hwf) as Hτ.
-  cbn [wf_context_ty_at] in Hτ.
-  exact (proj1 Hτ).
-Qed.
-
 Lemma appd_arg_singleton_env_to_wand_arg
     Σ Γ1 Γ2 τx τ v1 x (m2 : WfWorldT) :
   context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
@@ -51,7 +39,8 @@ Proof.
   set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)) in *.
   set (Δ2 := atom_env_to_lty_env (erase_ctx Γ2)) in *.
   assert (Hτx_closed : wf_context_ty_at 0 ∅ τx).
-  { exact (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun). }
+  { exact (context_typing_wf_wand_arg_global
+      Σ Γ1 (tret v1) τx τ Hwf_fun). }
   pose proof (ty_denote_gas_restrict_ret_fvar_closed
     (cty_depth τx) Δ2 τx x m2 Hτx_closed Harg) as Hargx.
   assert (Hxlookup : Δ2 !! LVFree x = Some (erase_ty τx)).
@@ -147,7 +136,8 @@ Lemma appd_arg_product_to_star_env
       τx (tret (vfvar x)).
 Proof.
   intros Hwf_fun Hwf_app Harg.
-  pose proof (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun) as Hτx_closed.
+  pose proof (context_typing_wf_wand_arg_global
+    Σ Γ1 (tret v1) τx τ Hwf_fun) as Hτx_closed.
   pose proof (ty_denote_gas_restrict_ret_fvar_closed
     (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
     τx x m2 Hτx_closed Harg) as Hargx.
