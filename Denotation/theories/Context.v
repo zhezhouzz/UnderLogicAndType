@@ -57,17 +57,6 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma ctx_erasure_under_bind_closed Σ x τ :
-  fv_cty τ = ∅ ->
-  ctx_erasure_under Σ (CtxBind x τ) = {[x := erase_ty τ]}.
-Proof.
-  intros Hclosed.
-  rewrite ctx_erasure_under_bind, Hclosed.
-  rewrite storeA_restrict_empty_set.
-  rewrite (left_id ∅ (∪) ({[x := erase_ty τ]} : gmap atom ty)).
-  reflexivity.
-Qed.
-
 Lemma ctx_erasure_under_comma Σ Γ1 Γ2 :
   ctx_erasure_under Σ (CtxComma Γ1 Γ2) =
   store_restrict Σ (ctx_fv Γ1 ∪ (ctx_fv Γ2 ∖ ctx_dom Γ1)) ∪
