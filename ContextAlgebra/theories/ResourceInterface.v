@@ -701,6 +701,43 @@ Lemma res_restrict_eq_of_le (m n : WfWorld) :
   res_restrict n (world_dom (m : World)) = m.
 Proof. apply resA_restrict_eq_of_le. Qed.
 
+Lemma res_restrict_self_dom (m : WfWorld) (X : aset) :
+  res_restrict m (world_dom (res_restrict m X : World)) =
+  res_restrict m X.
+Proof.
+  apply res_restrict_eq_of_le. apply res_restrict_le.
+Qed.
+
+Lemma res_restrict_delete_notin (m : WfWorld) x :
+  x ∉ world_dom
+    (res_restrict m (world_dom (m : World) ∖ {[x]}) : World).
+Proof.
+  rewrite res_restrict_dom. better_set_solver.
+Qed.
+
+Lemma res_restrict_delete_insert_dom (m : WfWorld) x :
+  x ∈ world_dom (m : World) ->
+  world_dom (m : World) =
+    world_dom
+      (res_restrict m (world_dom (m : World) ∖ {[x]}) : World) ∪ {[x]}.
+Proof.
+  intros Hx.
+  rewrite res_restrict_dom.
+  replace (world_dom (m : World) ∩
+    (world_dom (m : World) ∖ {[x]}))
+    with (world_dom (m : World) ∖ {[x]}) by better_set_solver.
+  apply set_eq. intros z. split.
+  - intros Hz.
+    destruct (decide (z = x)) as [->|Hzx].
+    + apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+    + apply elem_of_union_l. apply elem_of_difference. split; [exact Hz|].
+      intros Hzsingle. apply elem_of_singleton in Hzsingle. congruence.
+  - intros Hz.
+    apply elem_of_union in Hz as [Hz|Hz].
+    + apply elem_of_difference in Hz as [Hz _]. exact Hz.
+    + apply elem_of_singleton in Hz. subst z. exact Hx.
+Qed.
+
 Lemma res_restrict_le_eq (m n : WfWorld) (X : aset) :
   m ⊑ n →
   X ⊆ world_dom (m : World) →
@@ -785,6 +822,43 @@ Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)
   w1 ⊑ w1' → w2 ⊑ w2' →
   res_product w1 w2 Hc ⊑ res_product w1' w2' Hc'.
 Proof. apply resA_product_le_mono. Qed.
+
+Lemma res_product_restrict_singleton_delete_dom
+    (marg mframe : WfWorld) x
+    (Hc : world_compat (res_restrict marg ({[x]} : aset))
+      (res_restrict mframe (world_dom (mframe : World) ∖ {[x]}))) :
+  x ∈ world_dom (marg : World) ->
+  world_dom
+    (res_product (res_restrict marg ({[x]} : aset))
+      (res_restrict mframe (world_dom (mframe : World) ∖ {[x]})) Hc
+      : World) =
+    world_dom
+      (res_restrict mframe (world_dom (mframe : World) ∖ {[x]}) : World) ∪
+      {[x]}.
+Proof.
+  intros Hx.
+  rewrite !res_restrict_dom.
+  change ((world_dom (marg : World) ∩ {[x]}) ∪
+    (world_dom (mframe : World) ∩ (world_dom (mframe : World) ∖ {[x]})) =
+    (world_dom (mframe : World) ∩ (world_dom (mframe : World) ∖ {[x]})) ∪
+      {[x]}).
+  assert (Hsingle :
+      world_dom (marg : World) ∩ ({[x]} : aset) = ({[x]} : aset)).
+  {
+    apply set_eq. intros z. split.
+    - intros Hz. apply elem_of_intersection in Hz as [_ Hz]. exact Hz.
+    - intros Hz. apply elem_of_intersection. split; [|exact Hz].
+      apply elem_of_singleton in Hz. subst z. exact Hx.
+  }
+  rewrite Hsingle.
+  apply set_eq. intros z. split.
+  - intros Hz. apply elem_of_union in Hz as [Hz|Hz].
+    + apply elem_of_union_r. exact Hz.
+    + apply elem_of_union_l. exact Hz.
+  - intros Hz. apply elem_of_union in Hz as [Hz|Hz].
+    + apply elem_of_union_r. exact Hz.
+    + apply elem_of_union_l. exact Hz.
+Qed.
 
 Lemma res_subset_lift_under_projection_on
     (m n mu : WfWorld) (X : aset) :

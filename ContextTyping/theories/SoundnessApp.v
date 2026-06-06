@@ -131,45 +131,7 @@ Proof.
     τx (tret (vfvar x))
     (relevant_lvars τx (tret (vfvar x))) m).
   - reflexivity.
-  - apply storeA_map_eq. intros v.
-    unfold lty_env_restrict_lvars.
-    rewrite !storeA_restrict_lookup.
-    destruct (decide (v ∈ relevant_lvars τx (tret (vfvar x)))) as [Hv|Hv].
-    + destruct v as [k|y].
-      * rewrite lookup_insert_ne by congruence.
-        unfold relevant_env, lty_env_restrict_lvars.
-        rewrite storeA_restrict_lookup.
-        destruct (decide
-          (LVBound k ∈ relevant_lvars (CTArrow τx τ) (tret v1))).
-        -- change (Δ !! LVBound k)
-             with (atom_env_to_lty_env (erase_ctx Γ) !! LVBound k).
-           rewrite atom_store_to_lvar_store_lookup_bound_none.
-           reflexivity.
-        -- change (Δ !! LVBound k)
-             with (atom_env_to_lty_env (erase_ctx Γ) !! LVBound k).
-           rewrite atom_store_to_lvar_store_lookup_bound_none.
-           reflexivity.
-      * destruct (decide (y = x)) as [->|Hyx].
-        -- rewrite lookup_insert.
-           rewrite decide_True by reflexivity.
-           exact Hxlookup.
-        -- rewrite lookup_insert_ne by congruence.
-           unfold relevant_env, lty_env_restrict_lvars.
-           rewrite storeA_restrict_lookup.
-           destruct (decide
-             (LVFree y ∈ relevant_lvars (CTArrow τx τ) (tret v1)))
-             as [_|Hbad].
-           ++ reflexivity.
-           ++ exfalso. apply Hbad.
-              unfold relevant_lvars in Hv |- *.
-              cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
-                lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hv |- *.
-              apply elem_of_union_l.
-              apply elem_of_union_l.
-              apply elem_of_union in Hv as [Hyτx|Hyx_eq].
-              ** exact Hyτx.
-              ** apply elem_of_singleton in Hyx_eq. inversion Hyx_eq. congruence.
-    + reflexivity.
+  - apply lty_env_restrict_relevant_arrow_arg_insert_eq; assumption.
   - exact Harg_big.
 Qed.
 
@@ -548,34 +510,19 @@ Proof.
   destruct Hfun_del as [_ Hforall].
   assert (Hx_mdel : x ∉ world_dom (mdel : WorldT)).
   {
-    subst mdel. rewrite res_restrict_dom. set_solver.
+    subst mdel. apply res_restrict_delete_notin.
   }
   assert (Hdom_mdel :
       world_dom (m : WorldT) = world_dom (mdel : WorldT) ∪ {[x]}).
   {
-    subst mdel. rewrite res_restrict_dom.
     pose proof (ty_denote_gas_ret_fvar_world_dom
       (cty_depth τx) Δ τx x m Harg) as Hxm.
-    apply set_eq. intros z. split.
-    - intros Hz.
-      destruct (decide (z = x)) as [->|Hzx].
-      + apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-      + apply elem_of_union_l. apply elem_of_intersection. split; [exact Hz|].
-        apply elem_of_difference. split; [exact Hz|].
-        intros Hzsingle. apply elem_of_singleton in Hzsingle. congruence.
-    - intros Hz.
-      apply elem_of_union in Hz as [Hz|Hz].
-      + apply elem_of_intersection in Hz as [Hz _]. exact Hz.
-      + apply elem_of_singleton in Hz. subst z. exact Hxm.
+    subst mdel. exact (res_restrict_delete_insert_dom m x Hxm).
   }
   assert (Hrestrict_mdel :
       res_restrict m (world_dom (mdel : WorldT)) = mdel).
   {
-    subst mdel. rewrite res_restrict_dom.
-    replace (world_dom (m : WorldT) ∩ (world_dom (m : WorldT) ∖ {[x]}))
-      with (world_dom (m : WorldT) ∖ {[x]}).
-    - reflexivity.
-    - better_set_solver.
+    subst mdel. apply res_restrict_self_dom.
   }
   pose proof (res_models_forall_open_world_fresh
     mdel m x _ Hforall Hx_mdel Hdom_mdel Hrestrict_mdel) as Hopened.

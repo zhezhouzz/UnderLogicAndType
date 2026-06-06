@@ -165,8 +165,7 @@ Proof.
     + unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
       apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup].
       exact Hxlookup.
-    + rewrite lookup_insert.
-      destruct (decide (LVFree x = LVFree x)); [reflexivity|congruence].
+    + apply map_lookup_insert.
   - exact Harg_big.
 Qed.
 
@@ -518,7 +517,7 @@ Proof.
   }
   assert (Hx_m1del : x ∉ world_dom (m1del : WorldT)).
   {
-    subst m1del. rewrite res_restrict_dom. set_solver.
+    subst m1del. apply res_restrict_delete_notin.
   }
   assert (Hxm2 : x ∈ world_dom (m2 : WorldT)).
   {
@@ -529,13 +528,7 @@ Proof.
         world_dom (m1del : WorldT) ∪ ({[x]} : aset)).
   {
     subst nx m1del.
-    rewrite res_restrict_dom.
-    apply set_eq. intros z.
-    change (z ∈ (world_dom (m2 : WorldT) ∩ {[x]}) ∪
-      (world_dom (m1 : WorldT) ∩ (world_dom (m1 : WorldT) ∖ {[x]})) <->
-      z ∈ (world_dom (m1 : WorldT) ∩ (world_dom (m1 : WorldT) ∖ {[x]})) ∪
-        {[x]}).
-    better_set_solver.
+    exact (res_product_restrict_singleton_delete_dom m2 m1 x Hcxdel Hxm2).
   }
   pose proof (appd_arg_singleton_env_to_wand_arg
     Σ Γ1 Γ2 τx τ v1 x m2 Hwf_fun Hfresh Harg) as Harg_wand.

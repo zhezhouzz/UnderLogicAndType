@@ -131,6 +131,58 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma lty_env_restrict_relevant_arrow_arg_insert_eq
+    (Σ : lty_env) τx τ v x :
+  Σ !! LVFree x = Some (erase_ty τx) ->
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  lty_env_restrict_lvars Σ (relevant_lvars τx (tret (vfvar x))) =
+  lty_env_restrict_lvars
+    (<[LVFree x := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τ) (tret v)))
+    (relevant_lvars τx (tret (vfvar x))).
+Proof.
+  intros HΣx Hfresh.
+  apply storeA_map_eq. intros u.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (u ∈ relevant_lvars τx (tret (vfvar x)))) as [Hu|Hu].
+  - destruct u as [k|y].
+    + rewrite lookup_insert_ne by congruence.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide
+        (LVBound k ∈ relevant_lvars (CTArrow τx τ) (tret v)))
+        as [_|Hbad].
+      * reflexivity.
+      * exfalso. apply Hbad.
+        unfold relevant_lvars in Hu |- *.
+        cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
+          lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
+        better_set_solver.
+    + destruct (decide (y = x)) as [->|Hyx].
+      * rewrite lookup_insert.
+        rewrite decide_True by reflexivity.
+        exact HΣx.
+      * rewrite lookup_insert_ne by congruence.
+        unfold relevant_env, lty_env_restrict_lvars.
+        rewrite storeA_restrict_lookup.
+        destruct (decide
+          (LVFree y ∈ relevant_lvars (CTArrow τx τ) (tret v)))
+          as [_|Hbad].
+        -- reflexivity.
+        -- exfalso. apply Hbad.
+           unfold relevant_lvars in Hu |- *.
+           cbn [relevant_lvars tm_lvars tm_lvars_at value_lvars_at
+             lvar_value_keys context_ty_lvars context_ty_lvars_at] in Hu |- *.
+           apply elem_of_union_l.
+           apply elem_of_union_l.
+           apply elem_of_union in Hu as [Hyτx|Hyx_eq].
+           ++ exact Hyτx.
+           ++ apply elem_of_singleton in Hyx_eq.
+              inversion Hyx_eq. congruence.
+  - reflexivity.
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.
