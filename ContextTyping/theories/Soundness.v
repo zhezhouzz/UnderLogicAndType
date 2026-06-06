@@ -27,20 +27,6 @@ From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-(** ** Guard facts exposed by type denotation *)
-
-Lemma ty_denote_under_guard
-    (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
-  m ⊨ ty_denote_under Σ Γ τ e ->
-	m ⊨ ty_guard_formula
-      (relevant_env
-        (atom_env_to_lty_env (erase_ctx Γ)) τ e)
-      τ e.
-Proof.
-  unfold ty_denote_under, ty_denote.
-  apply ty_denote_gas_guard_formula.
-Qed.
-
 (** Totality extraction is intentionally a named review point.  The denotation
     guard contains [expr_total_formula], but future proofs around recursive
     functions should decide whether this extraction is direct or goes through
@@ -48,10 +34,12 @@ Qed.
 Lemma ty_denote_under_total
     (Σ : gmap atom ty) Γ τ e (m : WfWorldT) :
   m ⊨ ty_denote_under Σ Γ τ e ->
-  m ⊨ expr_total_formula e.
+	  m ⊨ expr_total_formula e.
 Proof.
   intros Hden.
-  pose proof (ty_denote_under_guard Σ Γ τ e m Hden) as Hguard.
+  pose proof (ty_denote_gas_guard_formula
+    (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ)) τ e m Hden)
+    as Hguard.
   unfold ty_guard_formula in Hguard.
   repeat rewrite res_models_and_iff in Hguard.
   exact (proj2 (proj2 (proj2 Hguard))).
