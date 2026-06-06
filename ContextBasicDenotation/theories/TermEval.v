@@ -42,6 +42,37 @@ Proof.
     + exact Happ.
 Qed.
 
+Lemma steps_tapp_tm_ret_equiv vf vx v :
+  lc_value vf ->
+  lc_value vx ->
+  (tapp_tm (tret vf) vx →* tret v) <->
+  (tapp vf vx →* tret v).
+Proof.
+  intros Hvf Hvx.
+  unfold tapp_tm.
+  rewrite reduction_lete_iff.
+  - split.
+    + intros [vf' [Hret Happ]].
+      pose proof (value_steps_self vf (tret vf') Hret) as Heq.
+      inversion Heq. subst vf'.
+      rewrite value_shift_lc_id in Happ by exact Hvx.
+      cbn [open_tm open_value] in Happ.
+      rewrite open_rec_lc_value in Happ by exact Hvx.
+      rewrite decide_True in Happ by lia.
+      exact Happ.
+    + intros Happ.
+      exists vf. split.
+      * apply value_reduction_any_ctx. exact Hvf.
+      * rewrite value_shift_lc_id by exact Hvx.
+        cbn [open_tm open_value].
+        rewrite open_rec_lc_value by exact Hvx.
+        rewrite decide_True by lia.
+        exact Happ.
+  - apply body_tapp_tm_body.
+    rewrite value_shift_lc_id by exact Hvx.
+    exact Hvx.
+Qed.
+
 Lemma msubst_tapp_tm_lc_arg σ e vx :
   lc_value vx ->
   lc_env σ ->
@@ -118,6 +149,29 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_eval_in_store_tapp_tm_ret_equiv σ vf vx v :
+  store_closed σ ->
+  lc_value vf ->
+  lc_value vx ->
+  tm_eval_in_store σ (tapp_tm (tret vf) vx) v <->
+  tm_eval_in_store σ (tapp vf vx) v.
+Proof.
+  intros Hclosed Hvf Hvx.
+  unfold tm_eval_in_store, expr_eval_in_store.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (try apply lc_lstore_lift_free;
+     rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite msubst_tapp_tm_lc_arg by (exact Hvx || exact (proj2 Hclosed)).
+  rewrite msubst_ret, msubst_tapp.
+  apply steps_tapp_tm_ret_equiv.
+  - change (lc_value (m{σ} vf)).
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hvf].
+  - change (lc_value (m{σ} vx)).
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hvx].
 Qed.
 
 Lemma tm_eval_in_store_tapp_tm_lam_body

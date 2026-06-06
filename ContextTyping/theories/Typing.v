@@ -342,6 +342,7 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   (** T-AppFun *)
   | CT_AppFun Γ τx τ v1 x :
       context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) →
+      x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ →
       has_context_type Φ Σ Γ (tret v1) (CTArrow τx τ) →
       has_context_type Φ Σ Γ (tret (vfvar x)) τx →
       has_context_type Φ Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ)
@@ -349,6 +350,7 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   (** T-AppFunD *)
   | CT_AppFunD Γ1 Γ2 τx τ v1 x :
       context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) →
+      x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ →
       has_context_type Φ Σ Γ1 (tret v1) (CTWand τx τ) →
       has_context_type Φ Σ Γ2 (tret (vfvar x)) τx →
       has_context_type Φ Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)

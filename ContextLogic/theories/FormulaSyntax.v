@@ -287,6 +287,23 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FFibVars D p => FFibVars (lvars_open k x D) (formula_open k x p)
   end.
 
+Fixpoint formula_atom_swap (x y : atom) (φ : Formula) : Formula :=
+  match φ with
+  | FTrue => FTrue
+  | FFalse => FFalse
+  | FAtom q => FAtom (lqual_atom_swap x y q)
+  | FAnd p q => FAnd (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FOr p q => FOr (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FImpl p q => FImpl (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FStar p q => FStar (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FBWand d p q => FBWand d (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FPlus p q => FPlus (formula_atom_swap x y p) (formula_atom_swap x y q)
+  | FForall p => FForall (formula_atom_swap x y p)
+  | FOver p => FOver (formula_atom_swap x y p)
+  | FUnder p => FUnder (formula_atom_swap x y p)
+  | FFibVars D p => FFibVars (lvars_swap x y D) (formula_atom_swap x y p)
+  end.
+
 Lemma formula_open_true k x :
   formula_open k x FTrue = FTrue.
 Proof. reflexivity. Qed.
@@ -353,6 +370,143 @@ Lemma formula_open_preserves_measure k x φ :
   formula_measure (formula_open k x φ) = formula_measure φ.
 Proof.
   revert k. induction φ; intros k; simpl; eauto; lia.
+Qed.
+
+Lemma formula_atom_swap_preserves_measure x y φ :
+  formula_measure (formula_atom_swap x y φ) = formula_measure φ.
+Proof.
+  induction φ; simpl; eauto; lia.
+Qed.
+
+Lemma formula_fv_atom_swap x y φ :
+  formula_fv (formula_atom_swap x y φ) =
+  set_swap x y (formula_fv φ).
+Proof.
+  induction φ; cbn [formula_atom_swap].
+  - rewrite formula_fv_true, set_swap_empty. reflexivity.
+  - rewrite formula_fv_false, set_swap_empty. reflexivity.
+  - rewrite !formula_fv_atom.
+    destruct a as [D P]. cbn [lqual_atom_swap lqual_lvars].
+    apply lvars_fv_swap.
+  - rewrite formula_fv_and, IHφ1, IHφ2, formula_fv_and, set_swap_union.
+    reflexivity.
+  - rewrite formula_fv_or, IHφ1, IHφ2, formula_fv_or, set_swap_union.
+    reflexivity.
+  - rewrite formula_fv_impl, IHφ1, IHφ2, formula_fv_impl, set_swap_union.
+    reflexivity.
+  - rewrite formula_fv_star, IHφ1, IHφ2, formula_fv_star, set_swap_union.
+    reflexivity.
+  - rewrite !formula_fv_fbwand.
+    rewrite !formula_lvars_at_fv.
+    rewrite IHφ1, IHφ2.
+    rewrite set_swap_union. reflexivity.
+  - rewrite formula_fv_plus, IHφ1, IHφ2, formula_fv_plus, set_swap_union.
+    reflexivity.
+  - rewrite !formula_fv_forall.
+    rewrite !formula_lvars_at_fv. exact IHφ.
+  - rewrite formula_fv_over, IHφ, formula_fv_over. reflexivity.
+  - rewrite formula_fv_under, IHφ, formula_fv_under. reflexivity.
+  - rewrite !formula_fv_fibvars.
+    rewrite lvars_fv_swap, IHφ, set_swap_union. reflexivity.
+Qed.
+
+Lemma formula_atom_swap_involutive x y φ :
+  formula_atom_swap x y (formula_atom_swap x y φ) = φ.
+Proof.
+  induction φ; cbn [formula_atom_swap]; try reflexivity;
+    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
+  - f_equal. apply lqual_atom_swap_involutive.
+  - rewrite set_swap_involutive, IHφ. reflexivity.
+Qed.
+
+Lemma formula_atom_swap_fresh_id x y φ :
+  x ∉ formula_fv φ ->
+  y ∉ formula_fv φ ->
+  formula_atom_swap x y φ = φ.
+Proof.
+  induction φ; intros Hx Hy; cbn [formula_atom_swap]; try reflexivity.
+  - rewrite formula_fv_atom in Hx, Hy.
+    f_equal. apply lqual_atom_swap_fresh_id; assumption.
+  - rewrite formula_fv_and in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_or in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_impl in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_star in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_fbwand in Hx, Hy.
+    rewrite !formula_lvars_at_fv in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_plus in Hx, Hy.
+    rewrite IHφ1, IHφ2; set_solver.
+  - rewrite formula_fv_forall in Hx, Hy.
+    rewrite formula_lvars_at_fv in Hx, Hy.
+    rewrite (IHφ Hx Hy). reflexivity.
+  - rewrite formula_fv_over in Hx, Hy.
+    rewrite (IHφ Hx Hy). reflexivity.
+  - rewrite formula_fv_under in Hx, Hy.
+    rewrite (IHφ Hx Hy). reflexivity.
+  - rewrite formula_fv_fibvars in Hx, Hy.
+    rewrite lvars_swap_fresh, IHφ; set_solver.
+Qed.
+
+Lemma formula_atom_swap_open_conjugate k x y z φ :
+  formula_atom_swap x y (formula_open k (swap x y z) φ) =
+  formula_open k z (formula_atom_swap x y φ).
+Proof.
+  induction φ in k |- *; cbn [formula_atom_swap formula_open]; try reflexivity.
+  - f_equal. apply lqual_atom_swap_open_conjugate.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ. reflexivity.
+  - rewrite IHφ. reflexivity.
+  - rewrite IHφ. reflexivity.
+  - rewrite lvars_swap_open_conjugate, IHφ. reflexivity.
+Qed.
+
+Lemma formula_atom_swap_open_fresh x y φ :
+  x ∉ formula_fv φ ->
+  y ∉ formula_fv φ ->
+  formula_atom_swap x y (formula_open 0 x φ) = formula_open 0 y φ.
+Proof.
+  intros Hx Hy.
+  pose proof (formula_atom_swap_open_conjugate 0 x y y φ) as Hopen.
+  rewrite swap_r in Hopen.
+  rewrite Hopen.
+  rewrite formula_atom_swap_fresh_id by assumption.
+  reflexivity.
+Qed.
+
+Lemma formula_atom_swap_mlsubst x y (ρ : LStoreT) φ :
+  formula_atom_swap x y (formula_mlsubst ρ φ) =
+  formula_mlsubst (lvar_store_swap x y ρ) (formula_atom_swap x y φ).
+Proof.
+  induction φ; cbn [formula_atom_swap formula_mlsubst]; try reflexivity;
+    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
+  - f_equal. apply lqual_atom_swap_mlsubst.
+  - f_equal.
+    + transitivity (set_swap (LVFree x) (LVFree y) D ∖
+        set_swap (LVFree x) (LVFree y) (dom (ρ : LStoreT))).
+      * apply set_swap_difference.
+      * apply (f_equal (fun R =>
+          set_swap (LVFree x) (LVFree y) D ∖ R)).
+        symmetry. apply lvar_store_swap_dom.
+    + exact IHφ.
+Qed.
+
+Lemma formula_atom_swap_msubst_store x y (σ : Store (V := V)) φ :
+  formula_atom_swap x y (formula_msubst_store σ φ) =
+  formula_msubst_store (storeA_swap x y σ) (formula_atom_swap x y φ).
+Proof.
+  unfold formula_msubst_store.
+  rewrite formula_atom_swap_mlsubst.
+  rewrite lstore_lift_free_swap.
+  reflexivity.
 Qed.
 
 Lemma formula_open_commute_fresh i j x y φ :
@@ -422,6 +576,32 @@ Proof.
       as Hinj'.
     apply Hij. eapply Hinj'; eassumption.
   - exact Hfresh.
+Qed.
+
+Lemma formula_atom_swap_open_env_fresh x y η φ :
+  open_env_atoms η ## ({[x]} ∪ {[y]}) ->
+  open_env_values_inj η ->
+  formula_atom_swap x y (formula_open_env η φ) =
+  formula_open_env η (formula_atom_swap x y φ).
+Proof.
+  induction η as [|k a η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - intros _ _. rewrite formula_open_env_empty, formula_open_env_empty.
+    reflexivity.
+  - intros Hatoms Hinj.
+    pose proof (open_env_values_inj_insert_inv η k a Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite open_env_atoms_insert in Hatoms by exact Hfresh.
+    assert (Ha_xy : swap x y a = a).
+    {
+      apply swap_fresh; intros ->; set_solver.
+    }
+    assert (Hatomsη : open_env_atoms η ## ({[x]} ∪ {[y]})) by set_solver.
+    rewrite (formula_open_env_insert_fresh η k a φ Hfresh Havoid Hinjη).
+    rewrite (formula_open_env_insert_fresh η k a (formula_atom_swap x y φ)
+      Hfresh Havoid Hinjη).
+    rewrite <- Ha_xy at 1.
+    rewrite formula_atom_swap_open_conjugate.
+    rewrite IH; [reflexivity | exact Hatomsη | exact Hinjη].
 Qed.
 
 Lemma formula_open_env_true η :

@@ -102,6 +102,14 @@ Proof.
   rewrite elem_of_intersection, !set_swap_elem, elem_of_intersection. reflexivity.
 Qed.
 
+Lemma set_swap_difference {A : Type} `{Countable A} (x y : A) (X Y : gset A) :
+  set_swap x y (X ∖ Y) = set_swap x y X ∖ set_swap x y Y.
+Proof.
+  apply set_eq. intros z.
+  rewrite elem_of_difference, !set_swap_elem, elem_of_difference.
+  reflexivity.
+Qed.
+
 Lemma set_swap_difference_l {A : Type} `{Countable A} (x y : A) (D : gset A) :
   set_swap x y (D ∖ {[x]}) = set_swap x y D ∖ {[y]}.
 Proof.

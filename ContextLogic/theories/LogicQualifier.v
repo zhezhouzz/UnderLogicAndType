@@ -58,6 +58,68 @@ Definition lqual_open
 		        (λ w, P (lworld_on_open_back k x D w))
 		  end.
 
+Definition lqual_atom_swap
+    (x y : atom) (q : logic_qualifier) : logic_qualifier :=
+  match q with
+  | lqual D P =>
+      lqual (lvars_swap x y D)
+        (λ w, P (lworld_on_atom_swap_back x y D w))
+  end.
+
+Lemma logic_qualifier_denote_atom_swap
+    (x y : atom) (q : logic_qualifier) (m : WfWorldT) :
+  logic_qualifier_denote (lqual_atom_swap x y q) (res_atom_swap x y m) <->
+  logic_qualifier_denote q m.
+Proof.
+  destruct q as [D P]. cbn [lqual_atom_swap logic_qualifier_denote].
+  split.
+  - intros [Hlc_sw [Hsub_sw HP]].
+    assert (Hlc : lc_lvars D).
+    {
+      apply lc_lvars_no_bv.
+      pose proof (proj1 (lc_lvars_no_bv _) Hlc_sw) as Hbv_sw.
+      rewrite lvars_bv_swap in Hbv_sw. exact Hbv_sw.
+    }
+    assert (Hsub : lvars_fv D ⊆ world_dom (m : WorldT)).
+    {
+      pose proof Hsub_sw as Hsub_sw_proj.
+      rewrite lvars_fv_swap in Hsub_sw_proj.
+      rewrite world_dom_res_atom_swap in Hsub_sw_proj.
+      intros z Hz.
+      assert (Hzsw :
+          swap x y z ∈ set_swap x y (world_dom (m : WorldT))).
+      {
+        apply Hsub_sw_proj.
+        rewrite set_swap_elem, swap_involutive. exact Hz.
+      }
+      rewrite set_swap_elem, swap_involutive in Hzsw. exact Hzsw.
+    }
+    exists Hlc, Hsub.
+    rewrite <- (lworld_on_lift_atom_swap_back
+      x y D m Hlc_sw Hsub_sw Hlc Hsub).
+    exact HP.
+  - intros [Hlc [Hsub HP]].
+    assert (Hlc_sw : lc_lvars (lvars_swap x y D)).
+    {
+      apply lc_lvars_no_bv.
+      rewrite lvars_bv_swap.
+      exact (proj1 (lc_lvars_no_bv _) Hlc).
+    }
+    assert (Hsub_sw : lvars_fv (lvars_swap x y D) ⊆
+      world_dom (res_atom_swap x y m : WorldT)).
+    {
+      rewrite lvars_fv_swap.
+      rewrite world_dom_res_atom_swap.
+      intros z Hz.
+      rewrite set_swap_elem in Hz |- *.
+      apply Hsub. exact Hz.
+    }
+    exists Hlc_sw, Hsub_sw.
+    rewrite (lworld_on_lift_atom_swap_back
+      x y D m Hlc_sw Hsub_sw Hlc Hsub).
+    exact HP.
+Qed.
+
 Definition lworld_on_mlsubst_back
     (D : lvset) (ρ : LStoreT)
     (w : LWorldOnT (D ∖ dom (ρ : gmap logic_var V))) : LWorldOnT D.
@@ -157,6 +219,205 @@ Proof.
   apply functional_extensionality. intros w.
   apply propositional_extensionality.
   apply HP. reflexivity.
+Qed.
+
+Lemma lqual_atom_swap_involutive x y (q : logic_qualifier) :
+  lqual_atom_swap x y (lqual_atom_swap x y q) = q.
+Proof.
+  destruct q as [D P]. cbn [lqual_atom_swap].
+  apply logic_qualifier_ext.
+  - apply set_swap_involutive.
+  - intros w1 w2 Hlw. cbn [lqual_prop lqual_dom].
+    enough (lworld_on_atom_swap_back x y D
+      (lworld_on_atom_swap_back x y (lvars_swap x y D) w1) = w2) as ->.
+    { reflexivity. }
+    apply lworld_on_ext.
+    cbn [lworld_on_atom_swap_back].
+    change (lres_swap (LVFree x) (LVFree y)
+      (lres_swap (LVFree x) (LVFree y) (@lw V _ w1)) =
+      @lw V _ w2).
+    rewrite Hlw.
+    apply lres_swap_involutive.
+Qed.
+
+Lemma lqual_atom_swap_fresh_id x y (q : logic_qualifier) :
+  x ∉ lqual_fv q ->
+  y ∉ lqual_fv q ->
+  lqual_atom_swap x y q = q.
+Proof.
+  destruct q as [D P]. cbn [lqual_atom_swap lqual_fv lqual_dom].
+  intros Hx Hy.
+  apply logic_qualifier_ext.
+  - apply lvars_swap_fresh; assumption.
+  - intros w1 w2 Hlw. cbn [lqual_prop].
+    enough (lworld_on_atom_swap_back x y D w1 = w2) as -> by reflexivity.
+    apply lworld_on_ext.
+    cbn [lworld_on_atom_swap_back lw].
+    change (lres_swap (LVFree x) (LVFree y) (@lw V _ w1) =
+      @lw V _ w2).
+    rewrite Hlw.
+    apply lres_swap_fresh.
+    + rewrite (@lw_dom V (lqual_dom {| lqual_dom := D; lqual_prop := P |}) w2).
+      cbn [lqual_dom].
+      intros Hbad. apply Hx. apply lvars_fv_elem. exact Hbad.
+    + rewrite (@lw_dom V (lqual_dom {| lqual_dom := D; lqual_prop := P |}) w2).
+      cbn [lqual_dom].
+      intros Hbad. apply Hy. apply lvars_fv_elem. exact Hbad.
+Qed.
+
+Lemma lqual_atom_swap_open_conjugate k x y z q :
+  lqual_atom_swap x y (lqual_open k (swap x y z) q) =
+  lqual_open k z (lqual_atom_swap x y q).
+Proof.
+  destruct q as [D P]. cbn [lqual_atom_swap lqual_open].
+  apply logic_qualifier_ext.
+  - apply lvars_swap_open_conjugate.
+  - intros w1 w2 Hlw. cbn [lqual_prop lqual_dom].
+    enough
+      (lworld_on_open_back k (swap x y z) D
+        (lworld_on_atom_swap_back x y (lvars_open k (swap x y z) D) w1) =
+       lworld_on_atom_swap_back x y D
+        (lworld_on_open_back k z (lvars_swap x y D) w2)) as ->.
+    { reflexivity. }
+    apply lworld_on_ext.
+    cbn [lworld_on_open_back lworld_on_atom_swap_back].
+    change (lres_swap (LVBound k) (LVFree (swap x y z))
+      (lres_swap (LVFree x) (LVFree y) (@lw V _ w1)) =
+      lres_swap (LVFree x) (LVFree y)
+        (lres_swap (LVBound k) (LVFree z) (@lw V _ w2))).
+    rewrite Hlw.
+    unfold lres_swap.
+    rewrite (resA_swap_conjugate
+      (LVFree x) (LVFree y) (LVBound k) (LVFree z)).
+    replace (swap (LVFree x) (LVFree y) (LVBound k)) with (LVBound k)
+      by (unfold swap; repeat destruct decide; congruence).
+    replace (swap (LVFree x) (LVFree y) (LVFree z))
+      with (LVFree (swap x y z))
+      by (unfold swap; repeat destruct decide; congruence).
+    reflexivity.
+Qed.
+
+Lemma lqual_atom_swap_mlsubst x y (ρ : LStoreT) q :
+  lqual_atom_swap x y (lqual_mlsubst ρ q) =
+  lqual_mlsubst (lvar_store_swap x y ρ) (lqual_atom_swap x y q).
+Proof.
+  destruct q as [D P]. cbn [lqual_atom_swap lqual_mlsubst].
+  apply logic_qualifier_ext.
+  - transitivity (set_swap (LVFree x) (LVFree y) D ∖
+      set_swap (LVFree x) (LVFree y) (dom (ρ : LStoreT))).
+    + apply set_swap_difference.
+    + apply (f_equal (fun R =>
+        set_swap (LVFree x) (LVFree y) D ∖ R)).
+      symmetry. apply lvar_store_swap_dom.
+  - intros w1 w2 Hlw. cbn [lqual_prop lqual_dom].
+    enough (lworld_on_mlsubst_back D ρ
+      (lworld_on_atom_swap_back x y (D ∖ dom (ρ : LStoreT)) w1) =
+      lworld_on_atom_swap_back x y D
+        (lworld_on_mlsubst_back (lvars_swap x y D)
+          (lvar_store_swap x y ρ) w2)) as ->.
+    { reflexivity. }
+    apply lworld_on_ext.
+    apply wfworldA_ext. apply worldA_ext.
+    + change (lworld_dom
+        (@lw V D (lworld_on_mlsubst_back D ρ
+          (lworld_on_atom_swap_back x y (D ∖ dom (ρ : LStoreT)) w1))
+          : LWorld) =
+        lworld_dom
+        (@lw V D (lworld_on_atom_swap_back x y D
+          (lworld_on_mlsubst_back (lvars_swap x y D)
+            (lvar_store_swap x y ρ) w2)) : LWorld)).
+      rewrite !lw_dom. reflexivity.
+    + intros τ.
+      cbn [lworld_on_mlsubst_back lworld_on_atom_swap_back lw].
+      unfold lres_swap.
+      split.
+      * intros Hτ.
+        destruct Hτ as [τ1 [τ2 [Hτ1 [Hτ2 [Hcompat Hτeq]]]]].
+        destruct Hτ1 as [τ1₀ [Hτ1₀ Hτ1eq]].
+        subst τ1 τ.
+        set (s := storeA_restrict ρ D : LStoreT) in *.
+        set (ssw := storeA_restrict (lvar_store_swap x y ρ)
+          (lvars_swap x y D) : LStoreT).
+        assert (Hssw : ssw = lvar_store_swap x y s).
+        {
+          subst s ssw.
+          change (storeA_restrict (lvar_store_swap x y ρ)
+            (lvars_swap x y D) =
+            lvar_store_swap x y (storeA_restrict ρ D)).
+          apply storeA_restrict_swap.
+        }
+        subst ssw.
+        assert (Hτ2eq : τ2 = s).
+        {
+          change ((singleton_worldA s : LWorld) τ2) in Hτ2.
+          unfold singleton_worldA in Hτ2.
+          cbn [worldA_stores] in Hτ2.
+          exact Hτ2.
+        }
+        subst τ2.
+        exists (τ1₀ ∪ lvar_store_swap x y s). split.
+        -- exists τ1₀, (lvar_store_swap x y s). repeat split.
+           ++ exact (eq_rect _ (fun w : LWfWorld => (w : LWorld) τ1₀)
+                Hτ1₀ _ Hlw).
+           ++ symmetry. exact Hssw.
+           ++ apply (proj1 (storeA_compat_swap (LVFree x) (LVFree y) τ1₀
+                (lvar_store_swap x y s))).
+              change (storeA_compat (storeA_swap (LVFree x) (LVFree y) τ1₀)
+                (storeA_swap (LVFree x) (LVFree y)
+                  (storeA_swap (LVFree x) (LVFree y) s))).
+              rewrite storeA_swap_involutive.
+              exact Hcompat.
+        -- change (storeA_swap (LVFree x) (LVFree y)
+             (τ1₀ ∪ storeA_swap (LVFree x) (LVFree y) s) =
+             storeA_swap (LVFree x) (LVFree y) τ1₀ ∪ s).
+           rewrite storeA_swap_union.
+           rewrite storeA_swap_involutive.
+           reflexivity.
+      * intros Hτ.
+        destruct Hτ as [τ0 [Hprod Hτeq]].
+        destruct Hprod as [α [β [Hα [Hβ [Hcompat Hτ0eq]]]]].
+        subst τ0 τ.
+        set (s := storeA_restrict ρ D : LStoreT) in *.
+        set (ssw := storeA_restrict (lvar_store_swap x y ρ)
+          (lvars_swap x y D) : LStoreT).
+        assert (Hssw : ssw = lvar_store_swap x y s).
+        {
+          subst s ssw.
+          change (storeA_restrict (lvar_store_swap x y ρ)
+            (lvars_swap x y D) =
+            lvar_store_swap x y (storeA_restrict ρ D)).
+          apply storeA_restrict_swap.
+        }
+        subst ssw.
+        assert (Hβeq : β = lvar_store_swap x y s).
+        {
+          change ((singleton_worldA
+            (storeA_restrict (lvar_store_swap x y ρ)
+              (lvars_swap x y D)) : LWorld) β) in Hβ.
+          unfold singleton_worldA in Hβ.
+          cbn [worldA_stores] in Hβ.
+          rewrite Hβ. exact Hssw.
+        }
+        subst β.
+        exists (storeA_swap (LVFree x) (LVFree y) α), s.
+        split.
+        -- exists α. split.
+           ++ exact (eq_rect _ (fun w : LWfWorld => (w : LWorld) α)
+                Hα _ (eq_sym Hlw)).
+           ++ reflexivity.
+        -- split.
+           ++ unfold singleton_worldA. cbn [worldA_stores]. reflexivity.
+           ++ split.
+              ** rewrite <- (storeA_swap_involutive (LVFree x) (LVFree y) s).
+                 apply (proj2 (storeA_compat_swap (LVFree x) (LVFree y) α
+                   (lvar_store_swap x y s))).
+                 exact Hcompat.
+              ** change (storeA_swap (LVFree x) (LVFree y)
+                   (α ∪ storeA_swap (LVFree x) (LVFree y) s) =
+                   storeA_swap (LVFree x) (LVFree y) α ∪ s).
+                 rewrite storeA_swap_union.
+                 rewrite storeA_swap_involutive.
+                 reflexivity.
 Qed.
 
 Lemma lqual_mlsubst_empty (q : logic_qualifier) :

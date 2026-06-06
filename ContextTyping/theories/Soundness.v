@@ -23,7 +23,7 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -1092,31 +1092,6 @@ Proof.
     + set_solver.
 Qed.
 
-Lemma fundamental_app_case
-    (Φ : primop_ctx) Σ Γ τx τ v1 x :
-  context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (CTArrow τx τ) (tret v1)) ->
-  (ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ τx (tret (vfvar x))) ->
-  ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ ({0 ~> x} τ) (tapp v1 (vfvar x)).
-Proof.
-Admitted.
-
-Lemma fundamental_appd_case
-    (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
-  context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
-  (ctx_denote_under Σ Γ1 ⊫
-    ty_denote_under Σ Γ1 (CTWand τx τ) (tret v1)) ->
-  (ctx_denote_under Σ Γ2 ⊫
-    ty_denote_under Σ Γ2 τx (tret (vfvar x))) ->
-  ctx_denote_under Σ (CtxStar Γ1 Γ2) ⊫
-    ty_denote_under Σ (CtxStar Γ1 Γ2) ({0 ~> x} τ)
-      (tapp v1 (vfvar x)).
-Proof.
-Admitted.
-
 Lemma fundamental_fix_case
     (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
   erase_ty τx = TBase b ->
@@ -1242,8 +1217,8 @@ Proof.
   - eapply fundamental_letd_case; eauto using typing_wf_under.
   - eapply fundamental_lam_case; eauto.
   - eapply fundamental_lamd_case; eauto.
-  - eapply fundamental_app_case; eauto.
-  - eapply fundamental_appd_case; eauto.
+  - eapply fundamental_app_case; eauto using typing_wf_under.
+  - eapply fundamental_appd_case; eauto using typing_wf_under.
   - eapply fundamental_fix_case; eauto.
   - eapply fundamental_fixd_case; eauto.
   - eapply fundamental_appop_case; eauto.

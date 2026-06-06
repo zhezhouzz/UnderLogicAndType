@@ -447,6 +447,31 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma resA_restrict_swap (x y : K) (w : WfWorldAT) (X : gset K) :
+  resA_restrict (resA_swap x y w) (set_swap x y X) =
+  resA_swap x y (resA_restrict w X).
+Proof.
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl. apply set_eq. intros z.
+    change (z ∈ set_swap x y (worldA_dom (w : WorldAT)) ∩
+              set_swap x y X <->
+            z ∈ set_swap x y (worldA_dom (w : WorldAT) ∩ X)).
+    rewrite elem_of_intersection.
+    rewrite (set_swap_elem x y z (worldA_dom (w : WorldAT))).
+    rewrite (set_swap_elem x y z X).
+    rewrite (set_swap_elem x y z (worldA_dom (w : WorldAT) ∩ X)).
+    rewrite elem_of_intersection. tauto.
+  - intros σ. simpl. split.
+    + intros [σsw [[σ0 [Hσ0 Hswap]] Hrestrict]]. subst σsw σ.
+      exists (storeA_restrict σ0 X). split.
+      * exists σ0. split; [exact Hσ0 | reflexivity].
+      * symmetry. apply storeA_restrict_swap.
+    + intros [σ0 [[σw [Hσw Hrestrict]] Hswap]]. subst σ0 σ.
+      exists (storeA_swap x y σw). split.
+      * exists σw. split; [exact Hσw | reflexivity].
+      * rewrite storeA_restrict_swap. reflexivity.
+Qed.
+
 Lemma resA_fiber_from_projection_eq_on
     (m n wfib_m wfib_n : WfWorldAT) (D X : gset K) (σ : StoreAT) :
   D ⊆ X →

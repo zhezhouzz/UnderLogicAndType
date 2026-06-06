@@ -574,6 +574,17 @@ Proof.
       end.
 Qed.
 
+Lemma basic_value_has_ltype_restrict_lvars_lc Σ v T D :
+  basic_value_has_ltype Σ v T ->
+  lc_value v ->
+  value_lvars v ⊆ D ->
+  basic_value_has_ltype (storeA_restrict Σ D) v T.
+Proof.
+  intros Hty Hlc Hsub.
+  exact (proj1 basic_has_ltype_restrict_lvars_lc_mutual
+    Σ v T Hty Hlc D Hsub).
+Qed.
+
 Lemma basic_tm_has_ltype_restrict_lvars_lc Σ e T D :
   basic_tm_has_ltype Σ e T ->
   lc_tm e ->
@@ -583,6 +594,42 @@ Proof.
   intros Hty Hlc Hsub.
   exact (proj2 basic_has_ltype_restrict_lvars_lc_mutual
     Σ e T Hty Hlc D Hsub).
+Qed.
+
+Lemma basic_value_has_ltype_env_agree_lc Σ1 Σ2 v T :
+  basic_value_has_ltype Σ1 v T ->
+  lc_value v ->
+  storeA_restrict Σ1 (value_lvars v) =
+    storeA_restrict Σ2 (value_lvars v) ->
+  basic_value_has_ltype Σ2 v T.
+Proof.
+  intros Hty Hlc Hagree.
+  eapply (basic_value_has_ltype_weaken
+    (storeA_restrict Σ2 (value_lvars v)) Σ2).
+  - rewrite <- Hagree.
+    eapply basic_value_has_ltype_restrict_lvars_lc;
+      [exact Hty|exact Hlc|reflexivity].
+  - apply map_subseteq_spec. intros v0 T0 Hlook.
+    apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+    exact Hlook.
+Qed.
+
+Lemma basic_tm_has_ltype_env_agree_lc Σ1 Σ2 e T :
+  basic_tm_has_ltype Σ1 e T ->
+  lc_tm e ->
+  storeA_restrict Σ1 (tm_lvars e) =
+    storeA_restrict Σ2 (tm_lvars e) ->
+  basic_tm_has_ltype Σ2 e T.
+Proof.
+  intros Hty Hlc Hagree.
+  eapply (basic_tm_has_ltype_weaken
+    (storeA_restrict Σ2 (tm_lvars e)) Σ2).
+  - rewrite <- Hagree.
+    eapply basic_tm_has_ltype_restrict_lvars_lc;
+      [exact Hty|exact Hlc|reflexivity].
+  - apply map_subseteq_spec. intros v0 T0 Hlook.
+    apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+    exact Hlook.
 Qed.
 
 Lemma basic_has_ltype_of_atom_typing_mutual :

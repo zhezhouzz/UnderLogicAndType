@@ -114,6 +114,23 @@ Proof.
       * apply storeA_swap_conjugate.
 Qed.
 
+Lemma resA_swap_involutive x y (w : WfWorldAT) :
+  resA_swap x y (resA_swap x y w) = w.
+Proof.
+  apply wfworldA_ext. apply worldA_ext.
+  - simpl. better_base_solver.
+  - intros σ. simpl. split.
+    + intros [σ0 [[σ1 [Hσ1 Hswap1]] Hswap0]].
+      rewrite <- Hswap0, <- Hswap1.
+      change (w (storeA_swap x y (storeA_swap x y σ1))).
+      rewrite storeA_swap_involutive. exact Hσ1.
+    + intros Hσ.
+      exists (storeA_swap x y σ). split.
+      * exists σ. split; [exact Hσ | reflexivity].
+      * change (storeA_swap x y (storeA_swap x y σ) = σ).
+        rewrite storeA_swap_involutive. reflexivity.
+Qed.
+
 Context `{!ShiftKey K}.
 
 Definition rawA_shift (k : nat) (m : WorldAT) : WorldAT :=

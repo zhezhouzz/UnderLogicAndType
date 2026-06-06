@@ -49,6 +49,174 @@ Definition mk_fiber_extension
       exists (f σ), σe; split; [reflexivity | exact Hσe])
     ltac:(intros σ w1 w2 σe _ -> ->; reflexivity).
 
+Definition fiber_extension_atom_swap
+    (x y : atom) (F : FiberExtensionT) : FiberExtensionT.
+Proof.
+  refine (mk_fiber_extension_rel
+    (set_swap x y (ext_in F))
+    (set_swap x y (ext_out F))
+    (fun σ w =>
+      exists σ0 w0,
+        ext_rel F σ0 w0 /\
+        σ = storeA_swap x y σ0 /\
+        w = res_atom_swap x y w0)
+    _ _ _ _).
+  - pose proof (extA_disjoint F) as Hdisj.
+    intros z HzIn HzOut.
+    rewrite set_swap_elem in HzIn.
+    rewrite set_swap_elem in HzOut.
+    exact (Hdisj _ HzIn HzOut).
+  - intros σ w Hσdom [σ0 [w0 [HF [-> ->]]]].
+    change (world_dom (res_atom_swap x y w0 : WorldT) =
+      set_swap x y (ext_out F)).
+    rewrite world_dom_res_atom_swap.
+    change (set_swap x y (world_dom (w0 : WorldT)) =
+      set_swap x y (ext_out F)).
+    assert (Hσ0dom : dom (σ0 : StoreT) = ext_in F).
+    {
+      rewrite storeA_swap_dom in Hσdom.
+      rewrite <- (set_swap_involutive x y (dom (σ0 : StoreT))).
+      rewrite Hσdom.
+      rewrite set_swap_involutive.
+      reflexivity.
+    }
+    pose proof (extA_rel_dom F σ0 w0) as Hdom_w0.
+    change (dom σ0 = ext_in F ->
+      ext_rel F σ0 w0 ->
+      world_dom (w0 : WorldT) = ext_out F) in Hdom_w0.
+    rewrite (Hdom_w0 Hσ0dom HF). reflexivity.
+  - intros σ Hσdom.
+    set (σ0 := storeA_swap x y σ).
+    assert (Hσ0dom : dom (σ0 : StoreT) = ext_in F).
+    {
+      unfold σ0.
+      rewrite storeA_swap_dom.
+      rewrite Hσdom.
+      rewrite set_swap_involutive.
+      reflexivity.
+    }
+    destruct (extA_rel_nonempty F σ0 Hσ0dom) as [w0 [σe [HF Hσe]]].
+    exists (res_atom_swap x y w0), (storeA_swap x y σe).
+    split.
+    + exists σ0, w0. repeat split; eauto.
+      unfold σ0. symmetry. apply storeA_swap_involutive.
+    + exists σe. split; [exact Hσe | reflexivity].
+  - intros σ w1 w2 σe Hσdom
+      [σ1 [w01 [HF1 [Hσ1eq ->]]]]
+      [σ2 [w02 [HF2 [Hσ2eq ->]]]].
+    assert (Hσ1dom : dom (σ1 : StoreT) = ext_in F).
+    {
+      rewrite Hσ1eq in Hσdom.
+      rewrite storeA_swap_dom in Hσdom.
+      rewrite <- (set_swap_involutive x y (dom (σ1 : StoreT))).
+      rewrite Hσdom.
+      rewrite set_swap_involutive.
+      reflexivity.
+    }
+    assert (Hσ12 : σ1 = σ2).
+    {
+      assert (Hsw : storeA_swap x y σ1 = storeA_swap x y σ2)
+        by congruence.
+      rewrite <- (storeA_swap_involutive x y σ1).
+      rewrite Hsw.
+      apply storeA_swap_involutive.
+    }
+    subst σ2.
+    split.
+    + intros [τ [Hτ Hτeq]].
+      pose proof (proj1 (extA_rel_extensional F σ1 w01 w02 τ
+        Hσ1dom HF1 HF2) Hτ) as Hτ2.
+      exists τ. split; [exact Hτ2 | exact Hτeq].
+    + intros [τ [Hτ Hτeq]].
+      pose proof (proj2 (extA_rel_extensional F σ1 w01 w02 τ
+        Hσ1dom HF1 HF2) Hτ) as Hτ1.
+      exists τ. split; [exact Hτ1 | exact Hτeq].
+Defined.
+
+Lemma res_extend_by_atom_swap
+    (x y : atom) (m n : WfWorldT) (F : FiberExtensionT) :
+  res_extend_by m F n ->
+  res_extend_by (res_atom_swap x y m) (fiber_extension_atom_swap x y F)
+    (res_atom_swap x y n).
+Proof.
+  intros Hext.
+  pose proof (resA_extend_by_applicable _ _ _ Hext) as Happ.
+  split.
+  - constructor.
+    + cbn [fiber_extension_atom_swap mk_fiber_extension_rel extA_in].
+      rewrite world_dom_res_atom_swap.
+      pose proof (extA_app_in _ _ Happ) as Hin.
+      intros z Hz.
+      change (z ∈ set_swap x y (ext_in F)) in Hz.
+      change (z ∈ set_swap x y (world_dom (m : WorldT))).
+      rewrite set_swap_elem in Hz |- *.
+      apply Hin. exact Hz.
+    + cbn [fiber_extension_atom_swap mk_fiber_extension_rel extA_out].
+      rewrite world_dom_res_atom_swap.
+      pose proof (extA_app_out _ _ Happ) as Hout.
+      intros z HzOut HzDom.
+      change (z ∈ set_swap x y (ext_out F)) in HzOut.
+      change (z ∈ set_swap x y (world_dom (m : WorldT))) in HzDom.
+      rewrite set_swap_elem in HzOut.
+      rewrite set_swap_elem in HzDom.
+      exact (Hout _ HzOut HzDom).
+  - split.
+    + cbn [fiber_extension_atom_swap mk_fiber_extension_rel extA_out].
+      rewrite !world_dom_res_atom_swap.
+      pose proof (resA_extend_by_dom _ _ _ Hext) as Hdom_n.
+      change (world_dom (n : WorldT) =
+        world_dom (m : WorldT) ∪ ext_out F) in Hdom_n.
+      change (set_swap x y (world_dom (n : WorldT)) =
+        set_swap x y (world_dom (m : WorldT)) ∪
+        set_swap x y (ext_out F)).
+      rewrite Hdom_n.
+      rewrite set_swap_union. reflexivity.
+    + intros σ. split.
+      * intros [σn [Hσn Hσeq]]. subst σ.
+        apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext)) in Hσn.
+        destruct Hσn as [σm [we [σe [Hσm [HF [Hσe Hunion]]]]]].
+        subst σn.
+        exists (storeA_swap x y σm),
+          (res_atom_swap x y we),
+          (storeA_swap x y σe).
+        repeat split.
+        -- exists σm. split; [exact Hσm | reflexivity].
+        -- exists (storeA_restrict σm (ext_in F)), we.
+           repeat split.
+           ++ exact HF.
+           ++ change (storeA_restrict (storeA_swap x y σm)
+                (set_swap x y (ext_in F)) =
+                storeA_swap x y (storeA_restrict σm (ext_in F))).
+              apply storeA_restrict_swap.
+        -- exists σe. split; [exact Hσe | reflexivity].
+        -- apply storeA_swap_union.
+      * intros Hsw.
+        destruct Hsw as [σm_sw [we_sw [σe_sw
+          [Hσm_sw [HF_sw [Hσe_sw Hunion]]]]]].
+        destruct Hσm_sw as [σm [Hσm Hσm_sw]].
+        destruct HF_sw as [σin [we [HF [Hσin_sw Hwe_sw]]]].
+        subst we_sw.
+        destruct Hσe_sw as [σe [Hσe Hσe_sw]].
+        subst σm_sw σe_sw.
+        assert (Hσin_eq : σin = storeA_restrict σm (ext_in F)).
+        {
+          rewrite <- (storeA_swap_involutive x y σin).
+          rewrite <- Hσin_sw.
+          change (storeA_swap x y
+            (storeA_restrict (storeA_swap x y σm)
+              (set_swap x y (ext_in F))) =
+            storeA_restrict σm (ext_in F)).
+          rewrite storeA_restrict_swap.
+          apply storeA_swap_involutive.
+        }
+        subst σin.
+        exists (@union (gmap atom V) _ σm σe). split.
+        -- apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext)).
+           exists σm, we, σe. repeat split; eauto.
+        -- subst σ.
+           apply storeA_swap_union.
+Qed.
+
 Definition mk_forall_extension
     (X : aset) (y : atom) (f : StoreT -> WfWorldT)
     (Hfresh : y ∉ X)
