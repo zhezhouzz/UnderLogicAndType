@@ -297,12 +297,16 @@ Proof.
   exact (proj1 Hτ).
 Qed.
 
-Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=
+Section HasContextType.
+
+Context (Φ : primop_ctx).
+
+Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=
 
   (** T-Var *)
   | CT_Var x τ :
       context_typing_wf Σ (CtxBind x τ) (tret (vfvar x)) τ →
-      has_context_type Φ
+      has_context_type
         Σ
         (CtxBind x τ)
         (tret (vfvar x))
@@ -311,7 +315,7 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   (** T-Const.  Constants are precise: over and under at the same qualifier. *)
   | CT_Const c :
       context_typing_wf Σ CtxEmpty (tret (vconst c)) (const_precise_ty c) →
-      has_context_type Φ
+      has_context_type
         Σ
         CtxEmpty
         (tret (vconst c))
@@ -320,48 +324,48 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   (** T-Sub *)
   | CT_Sub Γ e τ1 τ2 :
       context_typing_wf Σ Γ e τ2 →
-      has_context_type Φ Σ Γ e τ1 →
+      has_context_type Σ Γ e τ1 →
       sub_type_under Σ Γ τ1 τ2 →
-      has_context_type Φ Σ Γ e τ2
+      has_context_type Σ Γ e τ2
 
   (** T-CtxSub *)
   | CT_CtxSub Γ1 Γ2 e τ :
       context_typing_wf Σ Γ1 e τ →
-      has_context_type Φ Σ Γ2 e τ →
+      has_context_type Σ Γ2 e τ →
       ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
-      has_context_type Φ Σ Γ1 e τ
+      has_context_type Σ Γ1 e τ
 
   (** T-Let.  Standard additive/bunched let. *)
   | CT_Let Γ τ1 τ2 e1 e2 (L : aset) :
       context_typing_wf Σ Γ (tlete e1 e2) τ2 →
-      has_context_type Φ Σ Γ e1 τ1 →
+      has_context_type Σ Γ e1 τ1 →
       (∀ x, x ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxComma Γ (CtxBind x τ1))
           (e2 ^^ x)
           τ2) →
-      has_context_type Φ Σ Γ (tlete e1 e2) τ2
+      has_context_type Σ Γ (tlete e1 e2) τ2
 
   (** T-LetD.  Standard separating/bunched let. *)
   | CT_LetD Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
       context_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 →
-      has_context_type Φ Σ Γ1 e1 τ1 →
+      has_context_type Σ Γ1 e1 τ1 →
       (∀ x, x ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxStar Γ2 (CtxBind x τ1))
           (e2 ^^ x)
           τ2) →
-      has_context_type Φ Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2
+      has_context_type Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2
 
   (** T-Lam *)
   | CT_Lam Γ τx τ e (L : aset) :
       context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) →
       (∀ y, y ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxComma Γ (CtxBind y τx))
           (e ^^ y)
           ({0 ~> y} τ)) →
-      has_context_type Φ Σ Γ
+      has_context_type Σ Γ
         (tret (vlam (erase_ty τx) e))
         (CTArrow τx τ)
 
@@ -369,11 +373,11 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   | CT_LamD Γ τx τ e (L : aset) :
       context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) →
       (∀ y, y ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxStar Γ (CtxBind y τx))
           (e ^^ y)
           ({0 ~> y} τ)) →
-      has_context_type Φ Σ Γ
+      has_context_type Σ Γ
         (tret (vlam (erase_ty τx) e))
         (CTWand τx τ)
 
@@ -381,17 +385,17 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
   | CT_AppFun Γ τx τ v1 x :
       context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) →
       x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ →
-      has_context_type Φ Σ Γ (tret v1) (CTArrow τx τ) →
-      has_context_type Φ Σ Γ (tret (vfvar x)) τx →
-      has_context_type Φ Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ)
+      has_context_type Σ Γ (tret v1) (CTArrow τx τ) →
+      has_context_type Σ Γ (tret (vfvar x)) τx →
+      has_context_type Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-AppFunD *)
   | CT_AppFunD Γ1 Γ2 τx τ v1 x :
       context_typing_wf Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ) →
       x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ →
-      has_context_type Φ Σ Γ1 (tret v1) (CTWand τx τ) →
-      has_context_type Φ Σ Γ2 (tret (vfvar x)) τx →
-      has_context_type Φ Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
+      has_context_type Σ Γ1 (tret v1) (CTWand τx τ) →
+      has_context_type Σ Γ2 (tret (vfvar x)) τx →
+      has_context_type Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-Fix *)
   | CT_Fix Γ τx τ vf b t (L : aset) :
@@ -401,12 +405,12 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
         (tret (vfix (TBase b →ₜ t) vf))
         (CTArrow τx τ) →
       (∀ y, y ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxComma Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
           (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))) →
-      has_context_type Φ Σ Γ
+      has_context_type Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
         (CTArrow τx τ)
 
@@ -418,12 +422,12 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
         (tret (vfix (TBase b →ₜ t) vf))
         (CTWand τx τ) →
       (∀ y, y ∉ L →
-        has_context_type Φ Σ
+        has_context_type Σ
           (CtxStar Γ
             (CtxBind y τx))
           (tret ({0 ~> vfvar y} vf))
           (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))) →
-      has_context_type Φ Σ Γ
+      has_context_type Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
         (CTWand τx τ)
 
@@ -434,33 +438,35 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
       context_typing_wf Σ Γ
         (tprim op (vfvar x))
         ({0 ~> x} (primop_result_ty (Φ op))) →
-      has_context_type Φ Σ Γ (tret (vfvar x)) (primop_arg_ty (Φ op)) →
-      has_context_type Φ Σ Γ (tprim op (vfvar x)) ({0 ~> x} (primop_result_ty (Φ op)))
+      has_context_type Σ Γ (tret (vfvar x)) (primop_arg_ty (Φ op)) →
+      has_context_type Σ Γ (tprim op (vfvar x)) ({0 ~> x} (primop_result_ty (Φ op)))
 
   (** T-MatchBoth.  Both boolean branches are reachable and contribute a
       context/type sum. *)
   | CT_MatchBoth Γt Γf x τt τf et ef :
       context_typing_wf Σ (CtxSum Γt Γf) (tmatch (vfvar x) et ef) (CTSum τt τf) →
-      has_context_type Φ Σ Γt (tret (vfvar x)) (bool_precise_ty true) →
-      has_context_type Φ Σ Γf (tret (vfvar x)) (bool_precise_ty false) →
-      has_context_type Φ Σ Γt et τt →
-      has_context_type Φ Σ Γf ef τf →
-      has_context_type Φ Σ (CtxSum Γt Γf) (tmatch (vfvar x) et ef) (CTSum τt τf)
+      has_context_type Σ Γt (tret (vfvar x)) (bool_precise_ty true) →
+      has_context_type Σ Γf (tret (vfvar x)) (bool_precise_ty false) →
+      has_context_type Σ Γt et τt →
+      has_context_type Σ Γf ef τf →
+      has_context_type Σ (CtxSum Γt Γf) (tmatch (vfvar x) et ef) (CTSum τt τf)
 
   (** T-MatchTrueOnly.  The false branch is unreachable but must remain
       well typed after erasure because it is still present in Core syntax. *)
   | CT_MatchTrueOnly Γ x τ et ef :
       context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ →
-      has_context_type Φ Σ Γ (tret (vfvar x)) (bool_precise_ty true) →
-      has_context_type Φ Σ Γ et τ →
-      has_context_type Φ Σ Γ (tmatch (vfvar x) et ef) τ
+      has_context_type Σ Γ (tret (vfvar x)) (bool_precise_ty true) →
+      has_context_type Σ Γ et τ →
+      has_context_type Σ Γ (tmatch (vfvar x) et ef) τ
 
   (** T-MatchFalseOnly. *)
   | CT_MatchFalseOnly Γ x τ et ef :
       context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ →
-      has_context_type Φ Σ Γ (tret (vfvar x)) (bool_precise_ty false) →
-      has_context_type Φ Σ Γ ef τ →
-      has_context_type Φ Σ Γ (tmatch (vfvar x) et ef) τ.
+      has_context_type Σ Γ (tret (vfvar x)) (bool_precise_ty false) →
+      has_context_type Σ Γ ef τ →
+      has_context_type Σ Γ (tmatch (vfvar x) et ef) τ.
+
+End HasContextType.
 
 #[global] Hint Constructors has_context_type : core.
 #[global] Instance typing_context_inst : Typing ctx tm context_ty :=
@@ -469,22 +475,28 @@ Arguments typing_context_inst /.
 
 (** ** Small admissible helpers kept only where they name core definitions. *)
 
-Lemma typing_wf Φ Γ e τ :
+Section TypingRegularity.
+
+Context (Φ : primop_ctx).
+
+Lemma typing_wf Γ e τ :
   has_context_type Φ ∅ Γ e τ →
   context_typing_wf ∅ Γ e τ.
 Proof. induction 1; assumption. Qed.
 
-Lemma typing_wf_under Φ Σ Γ e τ :
+Lemma typing_wf_under Σ Γ e τ :
   has_context_type Φ Σ Γ e τ →
   context_typing_wf Σ Γ e τ.
 Proof. induction 1; assumption. Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
-Lemma typing_erase Φ Γ e τ :
+Lemma typing_erase Γ e τ :
   has_context_type Φ ∅ Γ e τ →
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros Hty.
   exact (context_typing_wf_basic_typing ∅ Γ e τ
-    (typing_wf Φ Γ e τ Hty)).
+    (typing_wf Γ e τ Hty)).
 Qed.
+
+End TypingRegularity.
