@@ -136,6 +136,28 @@ Proof.
     apply Hagree. apply Hfv. apply lvars_fv_elem. exact Hv.
 Qed.
 
+Lemma ty_denote_gas_ret_fvar_insert_atom_env_agree_on
+    gas (Δ1 Δ2 : gmap atom ty) τ y (m : WfWorldT) :
+  ty_env_agree_on (fv_cty τ ∪ {[y]})
+    (<[y := erase_ty τ]> Δ1)
+    (<[y := erase_ty τ]> Δ2) ->
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (<[y := erase_ty τ]> Δ1))
+    τ (tret (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (atom_env_to_lty_env (<[y := erase_ty τ]> Δ2))
+    τ (tret (vfvar y)).
+Proof.
+  intros Hagree Hden.
+  eapply res_models_ty_denote_gas_env_agree_on
+    with (X := relevant_lvars τ (tret (vfvar y)));
+    [reflexivity| |exact Hden].
+  apply atom_env_to_lty_env_restrict_lvars_agree_on
+    with (X := fv_cty τ ∪ {[y]}).
+  - exact Hagree.
+  - relevant_lvars_norm. better_set_solver.
+Qed.
+
 (** ** Context bridge lemmas for the Fundamental proof
 
     These statements are semantic context-denotation facts.  They live below

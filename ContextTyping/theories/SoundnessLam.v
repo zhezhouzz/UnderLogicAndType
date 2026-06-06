@@ -533,21 +533,20 @@ Proof.
     eapply wf_context_ty_at_fv_subset. exact Hτx.
   }
   rewrite <- atom_store_to_lvar_store_insert in Hmid.
-  eapply res_models_ty_denote_gas_env_agree_on with
-    (X := relevant_lvars τx (tret (vfvar y))); [| | exact Hmid].
-  - reflexivity.
-  - apply atom_env_to_lty_env_restrict_lvars_agree_on with
-      (X := fv_cty τx ∪ {[y]}).
-    + unfold ty_env_agree_on. intros z Hz.
-	      destruct (decide (z = y)) as [->|Hzy].
-	      * setoid_rewrite lookup_insert.
-	        repeat case_decide; congruence.
-	      * rewrite lookup_insert_ne by congruence.
-	        setoid_rewrite lookup_insert_ne; [|congruence].
-	        assert (HzΓ : z ∈ dom (erase_ctx Γ)).
-	        { set_solver. }
-		        apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    + relevant_lvars_norm. better_set_solver.
+  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
+    (cty_depth τx) (erase_ctx Γ) (ctx_erasure_under Σ Γ) τx y my);
+    [|exact Hmid].
+  unfold ty_env_agree_on. intros z Hz.
+  destruct (decide (z = y)) as [->|Hzy].
+  - setoid_rewrite lookup_insert.
+    repeat case_decide; congruence.
+  - assert (HzΓ : z ∈ dom (erase_ctx Γ)).
+    { set_solver. }
+    transitivity ((erase_ctx Γ : gmap atom ty) !! z).
+    + apply map_lookup_insert_ne. congruence.
+    + transitivity ((ctx_erasure_under Σ Γ : gmap atom ty) !! z).
+      * apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
+      * symmetry. apply map_lookup_insert_ne. congruence.
 Qed.
 
 Lemma lam_arrow_open_arg_normalize
@@ -1192,21 +1191,17 @@ Proof.
   { eapply lam_wand_arg_type_open_shift_eq; eauto. }
   rewrite Hτnorm in Harg.
   rewrite <- atom_store_to_lvar_store_insert in Harg.
-  eapply res_models_ty_denote_gas_env_agree_on
-    with (X := relevant_lvars τx (tret (vfvar y)));
-    [reflexivity| |exact Harg].
-  apply atom_env_to_lty_env_restrict_lvars_agree_on
-    with (X := fv_cty τx ∪ {[y]}).
-  - unfold ty_env_agree_on. intros z Hz.
-    destruct (decide (z = y)) as [->|Hzy].
-    + setoid_rewrite lookup_insert.
-      repeat case_decide; congruence.
-    + rewrite lookup_insert_ne by congruence.
-      setoid_rewrite lookup_insert_ne; [|congruence].
-      pose proof (basic_context_ty_fv_subset ∅ τx Hτx_global) as Hτxfv.
-      assert (Hzτx : z ∈ fv_cty τx) by better_set_solver.
-      exfalso. pose proof (Hτxfv z Hzτx). better_set_solver.
-  - relevant_lvars_norm. better_set_solver.
+  eapply (ty_denote_gas_ret_fvar_insert_atom_env_agree_on
+    (cty_depth τx) (erase_ctx Γ) (store_restrict Σ (fv_cty τx)) τx y n);
+    [|exact Harg].
+  unfold ty_env_agree_on. intros z Hz.
+  destruct (decide (z = y)) as [->|Hzy].
+  - setoid_rewrite lookup_insert.
+    repeat case_decide; congruence.
+  - exfalso.
+    pose proof (basic_context_ty_fv_subset ∅ τx Hτx_global) as Hτxfv.
+    assert (Hzτx : z ∈ fv_cty τx) by better_set_solver.
+    pose proof (Hτxfv z Hzτx). better_set_solver.
 Qed.
 
 Lemma lamd_wand_open_arg_normalize
