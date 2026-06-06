@@ -171,6 +171,22 @@ Findings:
    Most short lemmas are syntax/API facts used by normalizers or later
    denotation proofs.  Do not inline them during lowering.
 
+3. TermTLet.v and TermEval.v
+
+   These files contain many raw store-restrict arguments, but their statements
+   are already operational/term-evaluation facts.  Moving them to ContextStore
+   would be wrong because the side conditions mention tm_lvars, fv_tm,
+   open_tm, tlete, or expr_result_extension_witness.  The reusable Store facts
+   they need already exist in ContextStore/StoreRestrict.v, such as
+   storeA_restrict_union_ignore_r and storeA_restrict_twice_subset.
+
+4. BasicTypingFormula.v / BasicTypingOpen.v
+
+   Large proofs are mutual induction projections for basic typing.  They are
+   not wrappers and should stay near the basic typing formula layer.  Some
+   proof scripts still expose lookup/restrict details, but the statement level
+   is already the right abstraction boundary.
+
 Lower folders
 -------------
 
@@ -180,6 +196,18 @@ No immediate changes from the first top-down scan.  The Denotation/Context.v
 store equality candidates may eventually produce Store-level helper statements,
 but their current context-specific side conditions suggest keeping the first
 refactor local to Denotation/Context.v.
+
+Second scan notes:
+
+- ContextStore/StoreRestrict.v already has a rich set of restrict/union
+  partition and absorption lemmas.  The long Context.v erasure-union proofs do
+  not obviously lack a Store theorem; rather, they combine ctx_fv, ctx_dom,
+  erase_ctx, and basic_ctx side conditions before using Store-level facts.
+- ContextAlgebra Resource files already expose the product/restrict/extension
+  commuting facts consumed by SoundnessAppD and TLetD.  No upper proof in this
+  pass was rebuilding those algebra facts manually.
+- ContextLogic FBWand/FForall support is currently semantic rather than wrapper
+  code.  No lowering action in this pass.
 
 Execution plan for this pass
 ----------------------------
