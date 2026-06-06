@@ -11,6 +11,77 @@ From Denotation Require Import
 
 Section TypeDenote.
 
+Lemma ty_static_guard_relevant_of_full
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ ty_static_guard_formula (relevant_env Σ τ e) τ e.
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic |- *.
+  repeat rewrite res_models_and_iff in Hstatic.
+  destruct Hstatic as [Hwf [Hworld Hbasic]].
+  repeat rewrite res_models_and_iff.
+  assert (Hworld_rel :
+      m ⊨ basic_world_formula (relevant_env Σ τ e)).
+  {
+    eapply basic_world_formula_subenv; [|exact Hworld].
+    intros v T Hv.
+    unfold relevant_env, lty_env_restrict_lvars in Hv.
+    apply storeA_restrict_lookup_some in Hv as [_ Hv].
+    exact Hv.
+  }
+  pose proof Hworld as Hworld_full.
+  apply basic_world_formula_models_iff in Hworld_full
+    as [Hlc_full _].
+  assert (Hlc_rel : lc_lvars (dom (relevant_env Σ τ e))).
+  {
+    intros v Hv.
+    apply Hlc_full.
+    unfold relevant_env, lty_env_restrict_lvars in Hv.
+    rewrite storeA_restrict_dom in Hv.
+    better_set_solver.
+  }
+  split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf
+      as [Hlc [Hscope Hτ]].
+    apply basic_world_formula_models_iff in Hworld_rel
+      as [_ [Hscope_rel _]].
+    split; [exact Hlc_rel|]. split; [exact Hscope_rel|].
+    apply basic_context_ty_lvars_relevant_env. exact Hτ.
+  - split; [exact Hworld_rel|].
+    apply expr_basic_typing_formula_models_iff.
+    apply expr_basic_typing_formula_models_iff in Hbasic
+      as [Hlc [_ Hty]].
+    apply basic_world_formula_models_iff in Hworld_rel
+      as [_ [Hscope_rel _]].
+    split; [exact Hlc_rel|]. split; [exact Hscope_rel|].
+    unfold relevant_env.
+    eapply basic_tm_has_ltype_restrict_lvars_lc.
+    + exact Hty.
+    + exact (basic_tm_has_ltype_lc _ _ _ Hlc Hty).
+    + unfold relevant_lvars. set_solver.
+Qed.
+
+Lemma ty_guard_relevant_of_static_full_total
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ expr_total_formula e ->
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
+Proof.
+  intros Hstatic Htotal.
+  pose proof (ty_static_guard_relevant_of_full Σ τ e m Hstatic)
+    as Hstatic_rel.
+  unfold ty_static_guard_formula in Hstatic_rel.
+  unfold ty_guard_formula.
+  repeat rewrite res_models_and_iff in Hstatic_rel.
+  destruct Hstatic_rel as [Hwf [Hworld Hbasic]].
+  repeat rewrite res_models_and_iff.
+  split; [exact Hwf|].
+  split; [exact Hworld|].
+  split; [exact Hbasic|exact Htotal].
+Qed.
+
 Lemma ty_denote_gas_tm_equiv
     gas Σ τ e1 e2 (m : WfWorldT) :
   typed_total_equiv_on Σ τ m e1 e2 ->
