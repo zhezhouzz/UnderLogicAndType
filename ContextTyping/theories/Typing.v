@@ -195,6 +195,44 @@ Lemma context_typing_wf_basic_typing Σ Γ e τ :
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof. intros [_ [_ Hbasic]]. exact Hbasic. Qed.
 
+Lemma context_typing_wf_lc_tm Σ Γ e τ :
+  context_typing_wf Σ Γ e τ ->
+  lc_tm e.
+Proof.
+  intros Hwf.
+  eapply typing_tm_lc.
+  exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
+Qed.
+
+Lemma context_typing_wf_ret_lc_value Σ Γ v τ :
+  context_typing_wf Σ Γ (tret v) τ ->
+  lc_value v.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_lc_tm Σ Γ (tret v) τ Hwf) as Hlc.
+  inversion Hlc; subst.
+  assumption.
+Qed.
+
+Lemma context_typing_wf_app_fun_lc_value Σ Γ v1 v2 τ :
+  context_typing_wf Σ Γ (tapp v1 v2) τ ->
+  lc_value v1.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_lc_tm Σ Γ (tapp v1 v2) τ Hwf) as Hlc.
+  inversion Hlc; subst.
+  assumption.
+Qed.
+
+Lemma context_typing_wf_lam_body Σ Γ T e τ :
+  context_typing_wf Σ Γ (tret (vlam T e)) τ ->
+  body_tm e.
+Proof.
+  intros Hwf.
+  apply (proj1 (lc_lam_iff_body T e)).
+  exact (context_typing_wf_ret_lc_value Σ Γ (vlam T e) τ Hwf).
+Qed.
+
 Lemma context_typing_wf_ctx Σ Γ e τ :
   context_typing_wf Σ Γ e τ ->
   wf_ctx_under Σ Γ.

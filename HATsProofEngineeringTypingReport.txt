@@ -1,0 +1,190 @@
+# HATs Proof Engineering Lessons for Typing Proofs
+
+## Scope
+
+This report compares the HATs artifact formalization with the current
+UnderLogicAndType `ContextTyping` layer, focusing on proof engineering rather
+than semantic design.  The main files read on the HATs side were:
+
+- `formalization/Tactics.v`
+- `formalization/NamelessTactics.v`
+- `formalization/ListCtx.v`
+- `formalization/BasicTypingProp.v`
+- `formalization/Typing.v`
+
+The comparison target in this repo is mostly:
+
+- `ContextTyping/theories/Typing.v`
+- `ContextTyping/theories/Soundness.v`
+- `ContextTyping/theories/SoundnessApp.v`
+- `ContextTyping/theories/SoundnessAppD.v`
+- `ContextTyping/theories/SoundnessLam.v`
+
+## HATs Patterns Worth Copying
+
+### 1. Put proof search boundaries into tactics, not local `assert` chains
+
+HATs uses small Ltac combinators for common proof boundaries:
+
+- hypothesis folding and selection: `get_hyps`, `do_hyps`, `select!`, `fold_hyps`
+- cofinite fresh-name handling: `collect_stales`, `auto_exists_L`, `specialize_with`
+- forward application: `auto_apply`, `auto_eapply`, `auto_apply_eq`, `auto_eapply_eq`
+- impossible cases and `decide` cleanup: `auto_exfalso`, `var_dec_solver`
+
+The important design point is not the exact names.  HATs makes recurring proof
+intent visible as tactics: choose a fresh name, specialize a cofinite premise,
+prune irrelevant set facts, or invert a typing derivation.  Our Typing/Soundness
+proofs still often spell these out as 5-20 line `assert` blocks.
+
+### 2. Set solving is pruned before it is invoked
+
+`Tactics.v` defines `set_prune_hyps_safe`, `set_prune_hyps`, and variants such
+as `set_solver!` / `set_solver!!`.  The comments explicitly note that removing
+irrelevant hypotheses can be dramatically faster.  This matches our own
+experience with `better_set_solver`: it should be the terminal side-condition
+solver, but the surrounding tactic should normalize/prune first when goals are
+large.
+
+For this repo, the actionable direction is:
+
+- keep using `better_set_solver` as the repo-specific side-condition solver;
+- add small wrappers only when they first normalize the local syntax, such as
+  relevant-env, erasure, or context-erasure syntax;
+- avoid carrying huge unrelated proof contexts into raw set solving.
+
+### 3. Locally nameless proof steps are centralized
+
+HATs centralizes LN patterns in `NamelessTactics.v`:
+
+- collect all stale/fresh sets from the context;
+- instantiate cofinite binders from that collection;
+- specialize `forall x, x \notin L -> ...` hypotheses with one command;
+- rewrite open/substitution facts immediately after choosing the fresh atom.
+
+Our current Soundness proofs have improved normalization, but still repeat
+locally-closed extraction from basic typing, especially in App/AppD/Lam helper
+lemmas.  This should be regularity support in `Typing.v`, not repeated local
+inversion.
+
+### 4. Regularity facts are short and reused
+
+In HATs `Typing.v`, regularity lemmas are tiny:
+
+- typing implies well-formedness by `destruct 1; eauto`;
+- typing implies basic typing by one mutual induction;
+- weakening/substitution proofs use mutual recursors once, then automation.
+
+The lesson for this repo: `context_typing_wf` should export direct regularity
+facts used by Soundness, such as:
+
+- `context_typing_wf_lc_tm`
+- `context_typing_wf_ret_lc_value`
+- `context_typing_wf_app_fun_lc_value`
+- `context_typing_wf_lam_body`
+
+This avoids repeatedly unpacking `context_typing_wf_basic_typing`, inverting the
+erased basic typing derivation, and calling `typing_tm_lc` / `typing_value_lc`.
+
+### 5. General lemma extraction follows semantic boundaries
+
+HATs does not make every proof step a lemma.  It extracts facts that name a
+stable proof boundary:
+
+- list-context lookup/weakening/ok properties go in `ListCtx.v`;
+- LN opening/freshness utilities go in `NamelessTactics.v`;
+- basic typing weakening/substitution/regularity go in `BasicTypingProp.v`;
+- semantic typing proofs consume these facts rather than re-proving them.
+
+For our repo, this suggests the following layering rule:
+
+- pure syntax/erasure/open normalization belongs in `ContextTypeLanguage` or
+  `ContextBasicDenotation`;
+- resource algebra facts belong in `ContextAlgebra` / `ContextStore`;
+- context denotation intro/elims belong in `Denotation/Context.v`;
+- `ContextTyping/Typing.v` should expose typing regularity and cofinite helper
+  tactics, while `Soundness*.v` should mostly compose semantic lemmas.
+
+## Current Redundancy in Our Typing Layer
+
+### SoundnessApp / SoundnessAppD
+
+Repeated pattern:
+
+```coq
+pose proof (context_typing_wf_basic_typing ...) as Hbasic.
+inversion Hbasic; subst.
+exact (typing_value_lc _ _ _ Hfun).
+```
+
+This appears in both App and AppD support.  It is a typing regularity fact:
+from a well-formed application `tapp v1 (vfvar x)`, the function value `v1` is
+locally closed.
+
+### SoundnessLam
+
+Repeated pattern:
+
+```coq
+pose proof (typing_tm_lc _ _ _
+  (context_typing_wf_basic_typing ... (tret (vlam ... e)) ...)) as Hlc_lam.
+inversion Hlc_lam; subst.
+apply lc_lam_iff_body in ...
+```
+
+This should be exposed as `context_typing_wf_lam_body`.
+
+### Fresh/cofinite handling
+
+The HATs `specialize_with` pattern would help our `forall y, y \notin L -> ...`
+proofs.  A lightweight version should eventually live in `ContextTyping`, but
+this report recommends adding it only after the current semantic cases are not
+actively changing.  The immediate low-risk improvement is regularity extraction.
+
+## Implemented Optimization Target
+
+The first implementation pass should add regularity lemmas to
+`ContextTyping/theories/Typing.v` and replace repeated local inversions in:
+
+- `SoundnessApp.v`
+- `SoundnessAppD.v`
+- the largest repeated body-extraction blocks in `SoundnessLam.v`
+
+These changes are syntax/proof-engineering only.  They must not alter semantic
+statements or weaken completed Fundamental cases.
+
+## Implementation Status
+
+Implemented in this pass:
+
+- `context_typing_wf_lc_tm`
+- `context_typing_wf_ret_lc_value`
+- `context_typing_wf_app_fun_lc_value`
+- `context_typing_wf_lam_body`
+
+The App/AppD support files now consume these regularity lemmas instead of
+locally inverting erased basic typing merely to recover `lc_value v1`.
+The Lam/LamD support file now consumes `context_typing_wf_lam_body` instead of
+repeating the `typing_tm_lc` + `lc_lam_iff_body` pattern.
+
+The remaining uses of `context_typing_wf_basic_typing` in `Soundness*.v` are
+mostly semantic guard construction or environment-agreement proofs that really
+need the erased typing derivation.  They are not the same wrapper pattern and
+should be handled only by future, semantically named helper lemmas.
+
+## Longer-Term Suggestions
+
+1. Add a small `ContextTyping` tactic section inspired by HATs:
+   - `specialize_fresh_with x`
+   - `typing_regular` / `typing_lc` wrappers
+   - a pruned `typing_set_solver := ...; better_set_solver`
+
+2. Keep normalizers equality-preserving and run them at proof boundaries:
+   relevant-env, erasure, context-erasure, and LN open/shift normalization
+   should happen before helper lemmas are called.
+
+3. Do not turn every short proof into a lemma.  Extract only boundaries that
+   either occur more than once, name a semantic/typing fact, or protect compile
+   time from expensive repeated inversion/search.
+
+4. Periodically scan for local blocks that invert `context_typing_wf_basic_typing`.
+   Most such blocks are candidates for a `Typing.v` regularity lemma.

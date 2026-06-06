@@ -131,14 +131,8 @@ Lemma app_arrow_result_to_target
 Proof.
   intros Hwf Hfresh Harg Hopened.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
-  assert (Hlc_v1 : lc_value v1).
-  {
-    pose proof (context_typing_wf_basic_typing Σ Γ
-      (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf) as Hbasic.
-    inversion Hbasic as [| | |Γapp vf vx Targ Tret Hfun Harg_basic|];
-      subst; clear Hbasic.
-    exact (typing_value_lc _ _ _ Hfun).
-  }
+  pose proof (context_typing_wf_app_fun_lc_value
+    Σ Γ v1 (vfvar x) ({0 ~> x} τ) Hwf) as Hlc_v1.
   assert (HΣfresh :
       x ∉ lvars_fv
         (dom (typed_lty_env_bind

@@ -193,13 +193,8 @@ Lemma appd_open_result_env_agree
       (tapp_tm (tret v1) (vfvar x))).
 Proof.
   intros Hwf_fun Hwf_app.
-  assert (Hlc_v1 : lc_value v1).
-  {
-    pose proof (context_typing_wf_basic_typing Σ Γ1
-      (tret v1) (CTWand τx τ) Hwf_fun) as Hbasic.
-    inversion Hbasic as [Γ v U Hval| | | |]; subst.
-    exact (typing_value_lc _ _ _ Hval).
-  }
+  pose proof (context_typing_wf_ret_lc_value
+    Σ Γ1 v1 (CTWand τx τ) Hwf_fun) as Hlc_v1.
   assert (Hrel_lc :
       lc_lvars (relevant_lvars (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x)))).
@@ -320,13 +315,8 @@ Proof.
   intros Hwf_fun Hwf_app Hfresh Hsrc.
   set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)) in *.
   set (Δstar := atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))) in *.
-  assert (Hlc_v1 : lc_value v1).
-  {
-    pose proof (context_typing_wf_basic_typing Σ Γ1
-      (tret v1) (CTWand τx τ) Hwf_fun) as Hbasic.
-    inversion Hbasic as [Γ v U Hval| | | |]; subst.
-    exact (typing_value_lc _ _ _ Hval).
-  }
+  pose proof (context_typing_wf_ret_lc_value
+    Σ Γ1 v1 (CTWand τx τ) Hwf_fun) as Hlc_v1.
   assert (Htmfresh :
       x ∉ fv_tm (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
   {

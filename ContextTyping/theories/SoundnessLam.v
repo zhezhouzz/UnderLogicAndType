@@ -536,15 +536,8 @@ Lemma lam_arrow_result_mid_app_guard
 	    unfold lvars_of_atoms.
 	    apply elem_of_map. exists x. split; [reflexivity|exact Hx].
 	  }
-	  assert (Hbody : body_tm e).
-	  {
-	    pose proof (typing_tm_lc _ _ _
-	      (context_typing_wf_basic_typing
-	        Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf))
-	      as Hlc_lam.
-	    inversion Hlc_lam; subst.
-	    apply lc_lam_iff_body in H0. exact H0.
-	  }
+	  pose proof (context_typing_wf_lam_body
+	    Σ Γ (erase_ty τx) e (CTArrow τx τ) Hwf) as Hbody.
 		  assert (Hy_dom : y ∈ world_dom (my : WorldT)).
 		  {
 		    apply Hfv_app.
@@ -662,15 +655,8 @@ Proof.
         (fv_tm (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ∪
          fv_tm (e ^^ y)) my).
   { apply wfworld_closed_on_union; assumption. }
-  assert (Hbody : body_tm e).
-  {
-    pose proof (typing_tm_lc _ _ _
-      (context_typing_wf_basic_typing
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf))
-      as Hlc_lam.
-    inversion Hlc_lam; subst.
-    apply lc_lam_iff_body in H0. exact H0.
-  }
+  pose proof (context_typing_wf_lam_body
+    Σ Γ (erase_ty τx) e (CTArrow τx τ) Hwf) as Hbody.
 	  assert (Hy_dom : y ∈ world_dom (my : WorldT)).
 	  {
 	    pose proof Hstatic as Hstatic_app.
@@ -725,8 +711,7 @@ Proof.
   assert (Hlc_elam : lc_tm elam).
   {
     subst elam.
-    eapply typing_tm_lc.
-    exact (context_typing_wf_basic_typing
+    exact (context_typing_wf_lc_tm
       Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
   }
   assert (HΣfresh :
@@ -1072,15 +1057,8 @@ Proof.
       unfold lvars_of_atoms.
       apply elem_of_map. exists x. split; [reflexivity|exact Hx].
     }
-    assert (Hbody_lc : body_tm e).
-    {
-      pose proof (typing_tm_lc _ _ _
-        (context_typing_wf_basic_typing
-          Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf))
-        as Hlc_lam.
-      inversion Hlc_lam; subst.
-      apply lc_lam_iff_body in H0. exact H0.
-    }
+    pose proof (context_typing_wf_lam_body
+      Σ Γ (erase_ty τx) e (CTWand τx τ) Hwf) as Hbody_lc.
     assert (Hy_dom : y ∈ world_dom (my : WorldT)).
     {
       apply Hfv_app.
@@ -1134,15 +1112,8 @@ Proof.
         (fv_tm (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ∪
          fv_tm (e ^^ y)) my).
   { apply wfworld_closed_on_union; assumption. }
-  assert (Hbody_lc : body_tm e).
-  {
-    pose proof (typing_tm_lc _ _ _
-      (context_typing_wf_basic_typing
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf))
-      as Hlc_lam.
-    inversion Hlc_lam; subst.
-    apply lc_lam_iff_body in H0. exact H0.
-  }
+  pose proof (context_typing_wf_lam_body
+    Σ Γ (erase_ty τx) e (CTWand τx τ) Hwf) as Hbody_lc.
   assert (Hy_dom : y ∈ world_dom (my : WorldT)).
   {
     pose proof Hfull_guard as Hguard_app.
@@ -1199,8 +1170,7 @@ Proof.
   assert (Hlc_elam : lc_tm elam).
   {
     subst elam.
-    eapply typing_tm_lc.
-    exact (context_typing_wf_basic_typing
+    exact (context_typing_wf_lc_tm
       Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
   }
   assert (HΣfresh :
