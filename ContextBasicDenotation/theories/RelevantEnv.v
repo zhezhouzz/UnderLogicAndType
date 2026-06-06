@@ -233,6 +233,40 @@ Proof.
       exact (Hagree y Hv Hyx).
 Qed.
 
+Lemma lty_env_restrict_open_one_bind_relevant_tapp_eq
+    (Σ : lty_env) τ τx v1 x :
+  Σ !! LVFree x = Some (erase_ty τx) ->
+  lc_value v1 ->
+  lty_env_restrict_lvars Σ (tm_lvars (tapp v1 (vfvar x))) =
+  lty_env_restrict_lvars
+    (relevant_env
+      (lty_env_open_one 0 x (typed_lty_env_bind Σ (erase_ty τx)))
+      (cty_open 0 x τ) (tapp v1 (vfvar x)))
+    (tm_lvars (tapp v1 (vfvar x))).
+Proof.
+  intros HΣx Hlc_v1.
+  apply storeA_map_eq. intros u.
+  unfold relevant_env, lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (u ∈ tm_lvars (tapp v1 (vfvar x))))
+    as [Hu|Hu]; [|reflexivity].
+  destruct u as [k|y].
+  - pose proof (tm_lvars_lc (tapp v1 (vfvar x))
+      ltac:(constructor; [exact Hlc_v1|constructor])) as Hlc_tm.
+    specialize (Hlc_tm (LVBound k) Hu).
+    cbn [lc_logic_var_key] in Hlc_tm. contradiction.
+  - assert (Hyrel :
+        LVFree y ∈ relevant_lvars (cty_open 0 x τ)
+          (tapp v1 (vfvar x))).
+    { unfold relevant_lvars. better_set_solver. }
+    rewrite decide_True by exact Hyrel.
+    destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lty_env_open_one_typed_bind_lookup_current.
+      exact HΣx.
+    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      reflexivity.
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.

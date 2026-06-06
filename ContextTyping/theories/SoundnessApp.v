@@ -341,31 +341,9 @@ Proof.
           eapply basic_tm_has_ltype_env_agree_lc.
           -- exact Hbasic_lΔ.
           -- constructor; [exact Hlc_v1|constructor].
-          -- apply storeA_map_eq. intros u.
-             rewrite !storeA_restrict_lookup.
-             destruct (decide (u ∈ tm_lvars (tapp v1 (vfvar x))))
-               as [Hu|Hu]; [|reflexivity].
-             destruct u as [k|y].
-             ++ pose proof (tm_lvars_lc (tapp v1 (vfvar x))
-                  ltac:(constructor; [exact Hlc_v1|constructor]))
-                  as Hlc_tm.
-                specialize (Hlc_tm (LVBound k) Hu).
-                cbn [lc_logic_var_key] in Hlc_tm. contradiction.
-             ++ unfold relevant_env, lty_env_restrict_lvars.
-                rewrite storeA_restrict_lookup.
-                assert (Hyrel :
-                    LVFree y ∈ relevant_lvars (cty_open 0 x τ)
-                      (tapp v1 (vfvar x))).
-                { unfold relevant_lvars. better_set_solver. }
-                rewrite decide_True by exact Hyrel.
-                destruct (decide (y = x)) as [->|Hyx].
-                ** unfold Σopen.
-                   rewrite lty_env_open_one_typed_bind_lookup_current.
-                   exact HΔx.
-                ** unfold Σopen.
-                   rewrite lty_env_open_one_typed_bind_lookup_free_ne
-                     by congruence.
-                   reflexivity.
+          -- unfold Σopen.
+             apply lty_env_restrict_open_one_bind_relevant_tapp_eq;
+               assumption.
         * eapply tm_equiv_total.
           -- exact Hequiv.
           -- constructor; [exact Hlc_v1|constructor].
