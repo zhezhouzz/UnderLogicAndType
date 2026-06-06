@@ -1093,50 +1093,6 @@ Proof.
     exfalso. apply Hvy. set_solver.
 Qed.
 
-Lemma lty_env_open_one_typed_bind_lookup_free_ne
-    (Σ : lty_env) T y z :
-  z <> y ->
-  lty_env_open_one 0 y (typed_lty_env_bind Σ T) !! LVFree z =
-  Σ !! LVFree z.
-Proof.
-  intros Hzy.
-  unfold lty_env_open_one, lvar_store_open_one.
-  change ((kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-    (logic_var_open 0 y) (typed_lty_env_bind Σ T) : gmap logic_var ty) !!
-    LVFree z =
-    Σ !! LVFree z).
-  replace (LVFree z) with (logic_var_open 0 y (LVFree z)) at 1.
-  - rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=swap_inj (LVBound 0) (LVFree y))
-      (logic_var_open 0 y) (typed_lty_env_bind Σ T) (LVFree z)).
-    apply typed_lty_env_bind_lookup_free.
-  - rewrite logic_var_open_sym.
-    unfold swap.
-    repeat case_decide; congruence.
-Qed.
-
-Lemma lty_env_open_one_typed_bind_lookup_current
-    (Σ : lty_env) T y :
-  lty_env_open_one 0 y (typed_lty_env_bind Σ T) !! LVFree y =
-  Some T.
-Proof.
-  unfold lty_env_open_one, lvar_store_open_one.
-  change ((kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-    (logic_var_open 0 y) (typed_lty_env_bind Σ T) : gmap logic_var ty) !!
-    LVFree y =
-    Some T).
-  replace (LVFree y) with (logic_var_open 0 y (LVBound 0)) at 1.
-    - rewrite (lookup_kmap (M1:=gmap logic_var) (M2:=gmap logic_var)
-      (Inj0:=swap_inj (LVBound 0) (LVFree y))
-      (logic_var_open 0 y) (typed_lty_env_bind Σ T) (LVBound 0)).
-    unfold typed_lty_env_bind, lvar_store_bind.
-    rewrite lookup_insert.
-    destruct (decide (LVBound 0 = LVBound 0)); [reflexivity|congruence].
-  - rewrite logic_var_open_sym.
-    unfold swap.
-    repeat case_decide; try congruence.
-Qed.
-
 Lemma basic_tm_has_ltype_tapp_tm_lvar
     (Σ : lty_env) ef vx Tx T :
   lc_lvars (dom (Σ : gmap logic_var ty)) ->
