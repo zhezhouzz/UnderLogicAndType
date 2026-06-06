@@ -469,6 +469,47 @@ Qed.
 
 End TypeDenote.
 
+Notation "'⟦ty' τ '⟧[' Σ ',' gas ']'" :=
+  (ty_denote_gas gas Σ τ)
+  (at level 20, τ at level 200, Σ at level 200, gas at level 9,
+   format "⟦ty  τ  ⟧[ Σ ,  gas ]").
+
+Notation "'⟦ty' τ '⟧[' Σ ',' gas ']' e" :=
+  (ty_denote_gas gas Σ τ e)
+  (at level 20, τ at level 200, Σ at level 200,
+   gas at level 9, e at level 20,
+   format "⟦ty  τ  ⟧[ Σ ,  gas ]  e").
+
+Notation "'⟦ty' τ '⟧[' Δ ']'" :=
+  (ty_denote Δ τ)
+  (at level 20, τ at level 200, Δ at level 200,
+   format "⟦ty  τ  ⟧[ Δ ]").
+
+Notation "'⟦ty' τ '⟧[' Δ ']' e" :=
+  (ty_denote Δ τ e)
+  (at level 20, τ at level 200, Δ at level 200, e at level 20,
+   format "⟦ty  τ  ⟧[ Δ ]  e").
+
+Notation "'guard[' Σ ']' τ" :=
+  (ty_guard_formula Σ τ)
+  (at level 20, Σ at level 200, τ at level 200,
+   format "guard[ Σ ]  τ").
+
+Notation "'guard[' Σ ']' τ e" :=
+  (ty_guard_formula Σ τ e)
+  (at level 20, Σ at level 200, τ at level 200, e at level 20,
+   format "guard[ Σ ]  τ  e").
+
+Notation "'static_guard[' Σ ']' τ" :=
+  (ty_static_guard_formula Σ τ)
+  (at level 20, Σ at level 200, τ at level 200,
+   format "static_guard[ Σ ]  τ").
+
+Notation "'static_guard[' Σ ']' τ e" :=
+  (ty_static_guard_formula Σ τ e)
+  (at level 20, Σ at level 200, τ at level 200, e at level 20,
+   format "static_guard[ Σ ]  τ  e").
+
 Ltac ty_denote_open_one_side :=
   first
     [ assumption

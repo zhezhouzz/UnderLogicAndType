@@ -27,6 +27,38 @@ From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
+Local Lemma soundness_notin_cty_lvars_of_fv x τ :
+  x ∉ fv_cty τ ->
+  LVFree x ∉ context_ty_lvars τ.
+Proof.
+  intros Hx Hbad.
+  apply lvars_fv_elem in Hbad.
+  rewrite context_ty_lvars_fv in Hbad.
+  exact (Hx Hbad).
+Qed.
+
+Local Lemma soundness_notin_fv_tlete x e1 e2 :
+  x ∉ fv_tm e1 ->
+  x ∉ fv_tm e2 ->
+  x ∉ fv_tm (tlete e1 e2).
+Proof.
+  intros Hx1 Hx2 Hx.
+  cbn [fv_tm] in Hx.
+  apply elem_of_union in Hx as [Hx | Hx]; auto.
+Qed.
+
+Local Lemma soundness_singleton_union_empty_elem y :
+  y ∈ ({[y]} ∪ ∅ : aset).
+Proof.
+  set_solver.
+Qed.
+
+Local Lemma soundness_union_singleton_empty_r (X : aset) y :
+  X ∪ ({[y]} ∪ ∅ : aset) = X ∪ ({[y]} : aset).
+Proof.
+  set_solver.
+Qed.
+
 (** Totality extraction is intentionally a named review point.  The denotation
     guard contains [expr_total_formula], but future proofs around recursive
     functions should decide whether this extraction is direct or goes through
@@ -488,6 +520,8 @@ Proof.
   assert (Hxctx : x ∉ dom (erase_ctx Γ)) by set_solver.
   assert (Hxworld : x ∉ world_dom (m : WorldT)) by set_solver.
   assert (Hxe1 : x ∉ fv_tm e1) by set_solver.
+  assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  assert (Hxτ2_fv : x ∉ fv_cty τ2) by set_solver.
   destruct (expr_result_extension_witness_exists e1 x Hxe1)
     as [Fx HFx].
   assert (Happ : extension_applicable Fx m).
@@ -522,14 +556,9 @@ Proof.
     (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
     τ2 (e2 ^^ x) mx Hbody_guard) as Hbody_zero.
   assert (Hxτ2 : LVFree x ∉ context_ty_lvars τ2).
-  {
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    rewrite context_ty_lvars_fv in Hbad.
-    set_solver.
-  }
+  { apply soundness_notin_cty_lvars_of_fv. exact Hxτ2_fv. }
   assert (Hxtlet : x ∉ fv_tm (tlete e1 e2)).
-  { cbn [fv_tm]. set_solver. }
+  { apply soundness_notin_fv_tlete; assumption. }
   assert (Hmx_zero_tlet :
       mx ⊨ ty_denote_gas 0
         (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
@@ -541,7 +570,7 @@ Proof.
     (cty_depth τ2)
     (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
     τ2 e1 e2 x Fx m mx
-    ltac:(cbn [fv_tm] in Hxtlet; set_solver)
+    Hxe2
     HFx Hext Hbody_zero Hmx_zero_tlet Hbody_insert) as Hlet_mx_insert.
   unfold ty_denote_under, ty_denote.
   eapply ty_denote_gas_drop_fresh_ext; eauto.
@@ -713,6 +742,7 @@ Proof.
   assert (Hxm2 : x ∉ world_dom (m2 : WorldT)) by set_solver.
   assert (Hxe1 : x ∉ fv_tm e1) by set_solver.
   assert (Hxe2 : x ∉ fv_tm e2) by set_solver.
+  assert (Hxτ2_fv : x ∉ fv_cty τ2) by set_solver.
   destruct (expr_result_extension_witness_exists e1 x Hxe1)
     as [Fx HFx].
   assert (Happ : extension_applicable Fx m1).
@@ -781,14 +811,9 @@ Proof.
     exact Hden1.
   }
   assert (Hxτ2 : LVFree x ∉ context_ty_lvars τ2).
-  {
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    rewrite context_ty_lvars_fv in Hbad.
-    set_solver.
-  }
+  { apply soundness_notin_cty_lvars_of_fv. exact Hxτ2_fv. }
   assert (Hxtlet : x ∉ fv_tm (tlete e1 e2)).
-  { cbn [fv_tm]. set_solver. }
+  { apply soundness_notin_fv_tlete; assumption. }
   assert (Hmx_zero_tlet :
       res_product m2 m1x Hc2x ⊨ ty_denote_gas 0
         (<[LVFree x := erase_ty τ1]>
@@ -956,12 +981,35 @@ Proof.
     rewrite open_env_atoms_empty in Hfresh.
     rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
     rewrite open_env_atoms_empty in Hdom.
+    assert (Hy_all :
+      y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
+        fv_cty τx ∪ fv_cty τ ∪
+        lvars_fv
+          (dom (typed_lty_env_bind
+            (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+              (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
+            (erase_ty τx)))).
+    {
+      intros Hyin.
+      apply elem_of_disjoint in Hfresh.
+      exact (Hfresh y (soundness_singleton_union_empty_elem y) Hyin).
+    }
+    assert (Hy_arg :
+      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
+        fv_cty τx ∪ fv_cty τ)
+      by (clear -Hy_all; better_set_solver).
+    assert (Hy_body :
+      y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
+        fv_cty τx ∪ fv_cty τ)
+      by (clear -Hy_all; better_set_solver).
+    assert (Hdom_one :
+      world_dom (res_product n m Hc : WorldT) =
+        world_dom (m : WorldT) ∪ ({[y]} : aset)).
+    { rewrite Hdom. apply soundness_union_singleton_empty_r. }
     pose proof (lamd_wand_open_arg_normalize
-      Σ Γ τx τ e n y ltac:(set_solver) Harg) as Harg_norm.
+      Σ Γ τx τ e n y Hy_arg Harg) as Harg_norm.
     eapply (lamd_opened_wand_result Σ Γ τx τ e L m n y Hc);
       eauto.
-    + set_solver.
-    + set_solver.
 Qed.
 
 Lemma fundamental_fix_case

@@ -39,6 +39,9 @@ Notation "'$ₗ' x" := (LVFree x)
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
   (at level 20, format "↑ₗ Σ") : context_scope.
 
+Notation "'Emp'" := CtxEmpty
+  (at level 0, format "Emp") : context_scope.
+
 (** Lightweight normalization helpers for the syntax/type-language layer. *)
 
 

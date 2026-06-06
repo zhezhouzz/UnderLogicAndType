@@ -282,9 +282,12 @@ Proof.
              apply lvars_fv_elem.
              apply Hsrc_lvars.
              cbn [fv_tm fv_value] in Hz.
-             unfold tapp_tm.
-             cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-             better_set_solver.
+             unfold lvars_of_atoms.
+             apply elem_of_map.
+             exists z. split; [reflexivity|].
+             rewrite fv_tapp_tm.
+             cbn [fv_tm fv_value].
+             exact Hz.
           -- exact Htotal_src.
   }
   assert (Htarget_insert :

@@ -1170,6 +1170,32 @@ Qed.
 
 End ContextDenotation.
 
+Notation "'⌊ctx' Γ '⌋[' Σ ']'" :=
+  (ctx_erasure_under Σ Γ)
+  (at level 20, Γ at level 200, Σ at level 200,
+   format "⌊ctx  Γ  ⌋[ Σ ]").
+
+Notation "'⟦ctx' Γ '⟧[' Σ ']'" :=
+  (ctx_denote_under Σ Γ)
+  (at level 20, Γ at level 200, Σ at level 200,
+   format "⟦ctx  Γ  ⟧[ Σ ]").
+
+Notation "'⟦ctx' Γ '⟧'" :=
+  (ctx_denote Γ)
+  (at level 20, Γ at level 200,
+   format "⟦ctx  Γ  ⟧").
+
+Notation "'⟦ty' τ '⟧[' Σ ';' Γ ']'" :=
+  (ty_denote_under Σ Γ τ)
+  (at level 20, τ at level 200, Σ at level 200, Γ at level 200,
+   format "⟦ty  τ  ⟧[ Σ ;  Γ ]").
+
+Notation "'⟦ty' τ '⟧[' Σ ';' Γ ']' e" :=
+  (ty_denote_under Σ Γ τ e)
+  (at level 20, τ at level 200, Σ at level 200,
+   Γ at level 200, e at level 20,
+   format "⟦ty  τ  ⟧[ Σ ;  Γ ]  e").
+
 Ltac ctx_erasure_under_norm :=
   unfold ctx_erasure_under;
   cbn [ctx_fv erase_ctx ctx_dom];

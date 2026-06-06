@@ -578,15 +578,27 @@ Proof.
   assert (HX : X ⊆ C ∪ A).
   {
     subst X A.
-    pose proof (formula_open_env_fv_subset η p).
-    set_solver.
+    pose proof (formula_open_env_fv_subset η p) as Hopen.
+    intros z Hz.
+    apply elem_of_union in Hz as [Hzp|HzA].
+    - pose proof (Hopen z Hzp) as Hzopen.
+      apply elem_of_union in Hzopen as [Hzp0|HzA].
+      + apply elem_of_union_l.
+        apply HpC. exact Hzp0.
+      + apply elem_of_union_r. exact HzA.
+    - apply elem_of_union_r. exact HzA.
   }
   assert (HAX : A ⊆ X) by (subst X; set_solver).
   assert (HY : Y ⊆ C ∪ A).
   {
     subst Y A.
-    pose proof (formula_open_env_fv_subset η q).
-    set_solver.
+    pose proof (formula_open_env_fv_subset η q) as Hopen.
+    intros z Hz.
+    pose proof (Hopen z Hz) as Hzopen.
+    apply elem_of_union in Hzopen as [Hzq|HzA].
+    - apply elem_of_union_l.
+      apply HqC. exact Hzq.
+    - apply elem_of_union_r. exact HzA.
   }
   destruct (res_product_restrict_binder_arg_projection
     m n narg C X A Y Hc_tgt Hproj HCm HAm HAn Hdom_tgt

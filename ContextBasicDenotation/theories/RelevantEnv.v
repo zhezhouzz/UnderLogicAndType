@@ -1494,6 +1494,26 @@ Qed.
 
 End RelevantEnv.
 
+Notation "'rlv[' τ ']'" :=
+  (relevant_lvars τ)
+  (at level 20, τ at level 200,
+   format "rlv[ τ ]").
+
+Notation "'rlv[' τ ']' e" :=
+  (relevant_lvars τ e)
+  (at level 20, τ at level 200, e at level 20,
+   format "rlv[ τ ]  e").
+
+Notation "'rel[' Σ '|' τ ']'" :=
+  (relevant_env Σ τ)
+  (at level 20, Σ at level 200, τ at level 200,
+   format "rel[ Σ  |  τ ]").
+
+Notation "'rel[' Σ '|' τ ']' e" :=
+  (relevant_env Σ τ e)
+  (at level 20, Σ at level 200, τ at level 200, e at level 20,
+   format "rel[ Σ  |  τ ]  e").
+
 Ltac relevant_lvars_norm :=
   unfold relevant_lvars;
   type_open_env_syntax_norm;
