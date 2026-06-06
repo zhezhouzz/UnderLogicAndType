@@ -85,13 +85,9 @@ Proof.
   set (Δ2 := atom_env_to_lty_env (erase_ctx Γ2)) in *.
   assert (Hτx_closed : wf_context_ty_at 0 ∅ τx).
   { exact (appd_wand_arg_closed Σ Γ1 τx τ v1 Hwf_fun). }
-  assert (Hxlookup_rel :
-      relevant_env Δ2 τx (tret (vfvar x)) !! LVFree x =
-      Some (erase_ty τx)).
-  {
-    eapply ty_denote_gas_ret_fvar_relevant_lookup.
-    exact Hargx.
-  }
+  assert (Hxlookup : Δ2 !! LVFree x = Some (erase_ty τx)).
+  { exact (ty_denote_gas_ret_fvar_lookup
+      (cty_depth τx) Δ2 τx x (res_restrict m2 ({[x]} : aset)) Hargx). }
   assert (Hopen_env_fresh :
       x ∉ lvars_fv
         (dom (typed_lty_env_bind
@@ -162,9 +158,7 @@ Proof.
   - reflexivity.
   - eapply lty_env_restrict_relevant_ret_fvar_closed_eq.
     + exact Hτx_closed.
-    + unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-      apply storeA_restrict_lookup_some in Hxlookup_rel as [_ Hxlookup].
-      exact Hxlookup.
+    + exact Hxlookup.
     + apply map_lookup_insert.
   - exact Harg_big.
 Qed.
@@ -203,11 +197,9 @@ Proof.
     (relevant_lvars τx (tret (vfvar x)))
     (res_product (res_restrict m2 ({[x]} : aset)) m1 Hc)).
   - reflexivity.
-  - pose proof (ty_denote_gas_ret_fvar_relevant_lookup
+  - pose proof (ty_denote_gas_ret_fvar_lookup
       (cty_depth τx) (atom_env_to_lty_env (erase_ctx Γ2))
-      τx x m2 Harg) as Hxlookup_rel.
-    unfold relevant_env, lty_env_restrict_lvars in Hxlookup_rel.
-    apply storeA_restrict_lookup_some in Hxlookup_rel as [_ HxΓ2].
+      τx x m2 Harg) as HxΓ2.
     eapply lty_env_restrict_relevant_ret_fvar_closed_eq.
     + exact Hτx_closed.
     + exact HxΓ2.
