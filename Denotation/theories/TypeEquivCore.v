@@ -130,17 +130,6 @@ Proof.
   destruct gas; cbn [ty_denote_gas]; rewrite res_models_and_iff; tauto.
 Qed.
 
-Lemma ty_denote_gas_guard_of_zero_formula
-    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
-  m ⊨ ty_denote_gas 0 Σ τ e ->
-  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
-Proof.
-  intros Hzero.
-  cbn [ty_denote_gas] in Hzero.
-  rewrite res_models_and_iff in Hzero.
-  exact (proj1 Hzero).
-Qed.
-
 Lemma ty_denote_gas_zero_of_guard
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ FAnd
@@ -188,7 +177,7 @@ Lemma ty_denote_gas_guard_of_zero
         (expr_total_formula e))).
 Proof.
   intros Hzero.
-  pose proof (ty_denote_gas_guard_of_zero_formula Σ τ e m Hzero) as Hguard.
+  pose proof (ty_denote_gas_guard_formula 0 Σ τ e m Hzero) as Hguard.
   unfold ty_guard_formula in Hguard. exact Hguard.
 Qed.
 
