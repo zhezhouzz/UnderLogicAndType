@@ -154,33 +154,6 @@ Proof.
     Δ τx τ (tret v1) x Hfresh_τx Hfresh_τ Hfresh_ret Hxfv).
 Qed.
 
-Lemma app_fresh_value_of_arrow_app_fresh v1 τx τ x :
-  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  x ∉ fv_value v1.
-Proof.
-  intros Hfresh.
-  rewrite !not_elem_of_union in Hfresh.
-  exact (proj1 (proj1 Hfresh)).
-Qed.
-
-Lemma app_fresh_arg_ty_of_arrow_app_fresh v1 τx τ x :
-  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  x ∉ fv_cty τx.
-Proof.
-  intros Hfresh.
-  rewrite !not_elem_of_union in Hfresh.
-  exact (proj2 (proj1 Hfresh)).
-Qed.
-
-Lemma app_fresh_result_ty_of_arrow_app_fresh v1 τx τ x :
-  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  x ∉ fv_cty τ.
-Proof.
-  intros Hfresh.
-  rewrite !not_elem_of_union in Hfresh.
-  exact (proj2 Hfresh).
-Qed.
-
 Lemma app_arrow_result_to_target
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
@@ -215,9 +188,9 @@ Proof.
           (relevant_env Δ (CTArrow τx τ) (tret v1))
           (erase_ty τx)))).
   { exact (app_arrow_open_result_env_fresh Δ τx τ v1 x
-      (app_fresh_value_of_arrow_app_fresh v1 τx τ x Hfresh)
-      (app_fresh_arg_ty_of_arrow_app_fresh v1 τx τ x Hfresh)
-      (app_fresh_result_ty_of_arrow_app_fresh v1 τx τ x Hfresh)). }
+      ltac:(better_set_solver)
+      ltac:(better_set_solver)
+      ltac:(better_set_solver)). }
   assert (Htmfresh :
       x ∉ fv_tm (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
   {
