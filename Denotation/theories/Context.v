@@ -1090,6 +1090,34 @@ Proof.
     exact HΓ2.
 Qed.
 
+Lemma ctx_denote_under_sum_elim
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ ctx_denote_under Σ (CtxSum Γ1 Γ2) ->
+  exists (m1 m2 : WfWorldT) (Hdef : raw_sum_defined m1 m2),
+    res_sum m1 m2 Hdef ⊑ m /\
+    m1 ⊨ ctx_denote_under Σ Γ1 /\
+    m2 ⊨ ctx_denote_under Σ Γ2.
+Proof.
+  intros Hctx.
+  cbn [ctx_denote_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ Hplus].
+  rewrite res_models_plus_iff in Hplus.
+  destruct Hplus as (m1 & m2 & Hdef & Hle & HΓ1 & HΓ2).
+  exists m1, m2, Hdef. split; [exact Hle|].
+  split.
+  - rewrite ctx_denote_under_minimal.
+    rewrite ctx_denote_under_minimal in HΓ1.
+    rewrite storeA_restrict_twice_subset in HΓ1
+      by (cbn [ctx_fv]; set_solver).
+    exact HΓ1.
+  - rewrite ctx_denote_under_minimal.
+    rewrite ctx_denote_under_minimal in HΓ2.
+    rewrite storeA_restrict_twice_subset in HΓ2
+      by (cbn [ctx_fv]; set_solver).
+    exact HΓ2.
+Qed.
+
 Lemma ctx_denote_under_star_intro_product
     (Σ : gmap atom ty) Γ1 Γ2 (m1 m2 : WfWorldT)
     (Hc : world_compat m1 m2) :

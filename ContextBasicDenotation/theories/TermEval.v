@@ -114,6 +114,24 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma tm_eval_in_store_ret_fvar_lookup σ x v :
+  store_closed σ ->
+  σ !! x = Some v ->
+  tm_eval_in_store σ (tret (vfvar x)) v.
+Proof.
+  intros Hclosed Hlookup.
+  unfold tm_eval_in_store.
+  rewrite expr_eval_in_store_no_bvars_iff.
+  - rewrite lstore_free_part_lift_free.
+    rewrite subst_map_tm_eq_msubst.
+    rewrite (msubst_ret_fvar_lookup_closed σ x v)
+      by (exact (proj1 Hclosed) || exact Hlookup).
+    apply value_reduction_any_ctx.
+    eapply (proj2 Hclosed); eauto.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
 Lemma tm_eval_in_store_tapp_tm_fun_equiv σ e e' x v :
   store_closed σ ->
   lc_tm e ->
@@ -261,6 +279,60 @@ Proof.
         -- exact Hbodyσ.
         -- eapply lc_env_lookup; eauto. exact (proj2 Hclosed).
         -- exact Hbody_steps.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_eval_in_store_match_true_fvar σ x et ef v :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool true)) ->
+  tm_eval_in_store σ (tmatch (vfvar x) et ef) v <->
+  tm_eval_in_store σ et v.
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  unfold tm_eval_in_store.
+  rewrite !expr_eval_in_store_no_bvars_iff.
+  - rewrite !lstore_free_part_lift_free.
+    rewrite subst_map_tmatch.
+    change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+    rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool true)))
+      by (exact (proj1 Hclosed) || exact Hx).
+    apply reduction_match_true_iff.
+    + rewrite subst_map_tm_eq_msubst.
+      apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+    + rewrite subst_map_tm_eq_msubst.
+      apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_eval_in_store_match_false_fvar σ x et ef v :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool false)) ->
+  tm_eval_in_store σ (tmatch (vfvar x) et ef) v <->
+  tm_eval_in_store σ ef v.
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  unfold tm_eval_in_store.
+  rewrite !expr_eval_in_store_no_bvars_iff.
+  - rewrite !lstore_free_part_lift_free.
+    rewrite subst_map_tmatch.
+    change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+    rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool false)))
+      by (exact (proj1 Hclosed) || exact Hx).
+    apply reduction_match_false_iff.
+    + rewrite subst_map_tm_eq_msubst.
+      apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+    + rewrite subst_map_tm_eq_msubst.
+      apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.

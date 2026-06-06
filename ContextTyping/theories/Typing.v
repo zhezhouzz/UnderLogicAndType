@@ -439,32 +439,28 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
 
   (** T-MatchBoth.  Both boolean branches are reachable and contribute a
       context/type sum. *)
-  | CT_MatchBoth Γt Γf v τt τf et ef :
-      context_typing_wf Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf) →
-      has_context_type Φ Σ Γt (tret v) (bool_precise_ty true) →
-      has_context_type Φ Σ Γf (tret v) (bool_precise_ty false) →
+  | CT_MatchBoth Γt Γf x τt τf et ef :
+      context_typing_wf Σ (CtxSum Γt Γf) (tmatch (vfvar x) et ef) (CTSum τt τf) →
+      has_context_type Φ Σ Γt (tret (vfvar x)) (bool_precise_ty true) →
+      has_context_type Φ Σ Γf (tret (vfvar x)) (bool_precise_ty false) →
       has_context_type Φ Σ Γt et τt →
       has_context_type Φ Σ Γf ef τf →
-      has_context_type Φ Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf)
+      has_context_type Φ Σ (CtxSum Γt Γf) (tmatch (vfvar x) et ef) (CTSum τt τf)
 
   (** T-MatchTrueOnly.  The false branch is unreachable but must remain
       well typed after erasure because it is still present in Core syntax. *)
-  | CT_MatchTrueOnly Γ v τ et ef :
-      context_typing_wf Σ Γ (tmatch v et ef) τ →
-      has_context_type Φ Σ Γ (tret v) (bool_precise_ty true) →
-      branch_unreachable Σ Γ v false →
+  | CT_MatchTrueOnly Γ x τ et ef :
+      context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ →
+      has_context_type Φ Σ Γ (tret (vfvar x)) (bool_precise_ty true) →
       has_context_type Φ Σ Γ et τ →
-      erase_ctx Γ ⊢ₑ ef ⋮ erase_ty τ →
-      has_context_type Φ Σ Γ (tmatch v et ef) τ
+      has_context_type Φ Σ Γ (tmatch (vfvar x) et ef) τ
 
   (** T-MatchFalseOnly. *)
-  | CT_MatchFalseOnly Γ v τ et ef :
-      context_typing_wf Σ Γ (tmatch v et ef) τ →
-      has_context_type Φ Σ Γ (tret v) (bool_precise_ty false) →
-      branch_unreachable Σ Γ v true →
-      erase_ctx Γ ⊢ₑ et ⋮ erase_ty τ →
+  | CT_MatchFalseOnly Γ x τ et ef :
+      context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ →
+      has_context_type Φ Σ Γ (tret (vfvar x)) (bool_precise_ty false) →
       has_context_type Φ Σ Γ ef τ →
-      has_context_type Φ Σ Γ (tmatch v et ef) τ.
+      has_context_type Φ Σ Γ (tmatch (vfvar x) et ef) τ.
 
 #[global] Hint Constructors has_context_type : core.
 #[global] Instance typing_context_inst : Typing ctx tm context_ty :=

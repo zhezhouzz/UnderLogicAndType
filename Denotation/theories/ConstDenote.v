@@ -210,6 +210,69 @@ Proof.
   tauto.
 Qed.
 
+Lemma const_type_qualifier_open_lookup c y (m : WfWorldT) σ :
+  m ⊨ type_qualifier_formula
+      (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ->
+  (m : WorldT) σ ->
+  σ !! y = Some (vconst c).
+Proof.
+  intros Hqual Hσ.
+  apply type_qualifier_formula_models_iff in Hqual.
+  unfold logic_qualifier_denote, type_qualifier_lqual in Hqual.
+  cbn [lqual_dom lqual_prop] in Hqual.
+  destruct Hqual as [Hlc [Hscope Hholds]].
+  set (q := qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))).
+  set (D := qual_vars q).
+  set (s_store := storeA_restrict (lstore_lift_free σ : LStoreT) D).
+  assert (Hs_dom : dom (s_store : gmap logic_var value) = D).
+  {
+    assert (Hscope_y : y ∈ dom (σ : StoreT)).
+    {
+      change (y ∈ dom (σ : gmap atom value)).
+      rewrite (wfworld_store_dom m σ Hσ).
+      apply Hscope.
+      subst D q. rewrite const_qual_open_vars, lvars_fv_singleton_free.
+      better_set_solver.
+    }
+    subst s_store D q.
+    rewrite storeA_restrict_dom, dom_lstore_lift_free.
+    rewrite const_qual_open_vars.
+    better_set_solver.
+  }
+  pose (s :=
+    ({| storeAO_store := s_store; storeAO_dom := Hs_dom |}
+      : StoreAOn (K := logic_var) (V := value) D)).
+  assert (Hmem : lstore_in_lworld_on s (lworld_on_lift D m Hlc Hscope)).
+  {
+    unfold s, lstore_in_lworld_on, lworld_on_lift.
+    cbn [lw lso_store lraw_world raw_worldA worldA_stores storeAO_store].
+    exists (lstore_lift_free (store_restrict σ (lvars_fv D))).
+    split.
+    - exists (store_restrict σ (lvars_fv D)).
+      split.
+      + exists σ. split; [exact Hσ|reflexivity].
+      + reflexivity.
+    - apply lstore_lift_free_restrict_fv_lvars_eq.
+  }
+  pose proof (proj2 (Hholds s) Hmem) as Hprop.
+  apply const_qual_open_prop_iff in Hprop.
+  change ((s_store : LStoreT) !! LVFree y = Some (vconst c)) in Hprop.
+  subst s_store.
+  change (((storeA_restrict (lstore_lift_free σ : LStoreT) D
+      : gmap logic_var value) !! LVFree y) =
+    Some (vconst c)) in Hprop.
+  unfold storeA_restrict, map_restrict in Hprop.
+  apply map_lookup_filter_Some in Hprop as [Hprop _].
+  rewrite lstore_lift_free_lookup_free in Hprop.
+  subst D q.
+  destruct (decide (LVFree y ∈
+      qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))
+    as [_|Hy].
+  - exact Hprop.
+  - rewrite const_qual_open_vars in Hy.
+    set_solver.
+Defined.
+
 Lemma const_type_qualifier_open_from_lookup c y (m : WfWorldT) :
   (forall σ, (m : WorldT) σ -> σ !! y = Some (vconst c)) ->
   m ⊨ type_qualifier_formula

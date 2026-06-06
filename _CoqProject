@@ -92,4 +92,5 @@ ContextTyping/theories/Typing.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessAppD.v
+ContextTyping/theories/SoundnessMatch.v
 ContextTyping/theories/Soundness.v

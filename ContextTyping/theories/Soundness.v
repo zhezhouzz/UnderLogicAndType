@@ -23,7 +23,8 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD.
+From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD
+  SoundnessMatch.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -1077,47 +1078,6 @@ Proof.
   - exact Hop.
   - exact Harg.
 Qed.
-
-Lemma fundamental_match_both_case
-    (Φ : primop_ctx) Σ Γt Γf v τt τf et ef :
-  context_typing_wf Σ (CtxSum Γt Γf) (tmatch v et ef) (CTSum τt τf) ->
-  (ctx_denote_under Σ Γt ⊫
-    ty_denote_under Σ Γt (bool_precise_ty true) (tret v)) ->
-  (ctx_denote_under Σ Γf ⊫
-    ty_denote_under Σ Γf (bool_precise_ty false) (tret v)) ->
-  (ctx_denote_under Σ Γt ⊫ ty_denote_under Σ Γt τt et) ->
-  (ctx_denote_under Σ Γf ⊫ ty_denote_under Σ Γf τf ef) ->
-  ctx_denote_under Σ (CtxSum Γt Γf) ⊫
-    ty_denote_under Σ (CtxSum Γt Γf) (CTSum τt τf)
-      (tmatch v et ef).
-Proof.
-Admitted.
-
-Lemma fundamental_match_true_case
-    (Φ : primop_ctx) Σ Γ v τ et ef :
-  context_typing_wf Σ Γ (tmatch v et ef) τ ->
-  (ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (bool_precise_ty true) (tret v)) ->
-  branch_unreachable Σ Γ v false ->
-  (ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ et) ->
-  erase_ctx Γ ⊢ₑ ef ⋮ erase_ty τ ->
-  ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ τ (tmatch v et ef).
-Proof.
-Admitted.
-
-Lemma fundamental_match_false_case
-    (Φ : primop_ctx) Σ Γ v τ et ef :
-  context_typing_wf Σ Γ (tmatch v et ef) τ ->
-  (ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (bool_precise_ty false) (tret v)) ->
-  branch_unreachable Σ Γ v true ->
-  erase_ctx Γ ⊢ₑ et ⋮ erase_ty τ ->
-  (ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ ef) ->
-  ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ τ (tmatch v et ef).
-Proof.
-Admitted.
 
 (** ** Fundamental theorem *)
 
