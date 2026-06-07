@@ -754,8 +754,7 @@ Proof.
     apply atom_store_to_lvar_store_closed.
 Qed.
 
-Lemma fix_self_rec_call_reducible_measure_step
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset) μ :
+Lemma fix_self_rec_call_reducible_measure_step Σ Γ φx τ vf b t (L : aset) μ :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
     (tret (vfix (TBase b →ₜ t) vf))
@@ -898,8 +897,7 @@ Proof.
 	    + exact Hunfolded_z.
 Qed.
 
-Lemma fix_self_rec_call_denotation_by_world_min_induction
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset) :
+Lemma fix_self_rec_call_denotation_by_world_min_induction Σ Γ φx τ vf b t (L : aset) :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
     (tret (vfix (TBase b →ₜ t) vf))
@@ -925,8 +923,7 @@ Proof.
   eapply fix_self_rec_call_reducible_measure_step; eauto.
 Qed.
 
-Lemma fix_self_rec_call_denotation
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset)
+Lemma fix_self_rec_call_denotation Σ Γ φx τ vf b t (L : aset)
     (my : WfWorldT) y :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
@@ -968,7 +965,7 @@ Proof.
     ltac:(reflexivity) Hτ Hwf (Hbody_wf y ltac:(fix_self_notin_union))
     ltac:(fix_self_notin_union) Hctx) as Hzero.
   pose proof (fix_self_rec_call_denotation_by_world_min_induction
-    Φ Σ Γ φx τ vf b t L Hτ Hwf Hbody_wf Hbody_IH μ)
+    Σ Γ φx τ vf b t L Hτ Hwf Hbody_wf Hbody_IH μ)
     as Hμ.
   unfold fix_self_rec_call_reducible_at_measure in Hμ.
   eapply Hμ; eauto.

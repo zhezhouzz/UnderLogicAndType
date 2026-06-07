@@ -532,6 +532,19 @@ Proof.
   exact Hden.
 Qed.
 
+Lemma ty_denote_under_star_bind_to_comma_bind_fresh
+    (Σ : gmap atom ty) Γ τx τ e y (m : WfWorldT) :
+  y ∉ dom (erase_ctx Γ) ->
+  m ⊨ ty_denote_under Σ (CtxStar Γ (CtxBind y τx)) τ e ->
+  m ⊨ ty_denote_under Σ (CtxComma Γ (CtxBind y τx)) τ e.
+Proof.
+  intros Hy Hden.
+  unfold ty_denote_under, ty_denote in Hden |- *.
+  rewrite erase_ctx_star_bind_fresh in Hden by exact Hy.
+  rewrite erase_ctx_comma_bind_fresh by exact Hy.
+  exact Hden.
+Qed.
+
 Lemma ctx_bind_from_base_denotation
     (Σ : gmap atom ty) x τ (m : WfWorldT) :
   basic_context_ty (dom Σ) τ ->
@@ -1262,6 +1275,92 @@ Proof.
     eapply res_models_kripke; [exact Hle|].
     rewrite Heq.
     eapply ctx_denote_under_star_intro_product; eauto.
+Qed.
+
+Lemma ctx_denote_under_star_bind_closed_to_comma
+    (Σ : gmap atom ty) Γ x τ (m : WfWorldT) :
+  basic_ctx (dom Σ) Γ ->
+  basic_context_ty ∅ τ ->
+  x ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ->
+  m ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind x τ)) ->
+  m ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind x τ)).
+Proof.
+  intros HbasicΓ Hτ_closed Hx Hstar.
+  pose proof (ctx_denote_under_star_elim Σ Γ (CtxBind x τ) m Hstar)
+    as (mΓ & mx & Hc & Hle & HΓ & Hxctx).
+  assert (HΓm : m ⊨ ctx_denote_under Σ Γ).
+  {
+    eapply res_models_kripke; [|exact HΓ].
+    etransitivity; [apply res_product_le_l|exact Hle].
+  }
+  pose proof (ctx_denote_under_bind_inv Σ x τ mx Hxctx) as Hxden.
+  assert (Hxden_m :
+      m ⊨ ty_denote_gas (cty_depth τ)
+        (atom_env_to_lty_env
+          (<[x := erase_ty τ]> (store_restrict Σ (ctx_fv (CtxBind x τ)))))
+        τ (tret (vfvar x))).
+  {
+    eapply res_models_kripke; [|exact Hxden].
+    etransitivity; [apply res_product_le_r|exact Hle].
+  }
+  assert (Hxnot : x ∉ dom (ctx_erasure_under Σ Γ)).
+  { clear -Hx. better_set_solver. }
+  assert (Hxden_comma :
+      m ⊨ ty_denote_gas (cty_depth τ)
+        (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+        τ (tret (vfvar x))).
+  {
+    eapply res_models_ty_denote_gas_env_agree_on
+      with (X := relevant_lvars τ (tret (vfvar x)));
+      [reflexivity| |exact Hxden_m].
+    eapply atom_env_to_lty_env_restrict_lvars_agree_on
+      with (X := fv_tm (tret (vfvar x)) ∪ fv_cty τ).
+    - unfold ty_env_agree_on. intros y Hy.
+      cbn [ctx_fv erase_ctx].
+      destruct (decide (y = x)) as [->|Hyx].
+      + transitivity (Some (erase_ty τ)).
+        * apply map_lookup_insert.
+        * symmetry. apply map_lookup_insert.
+      + exfalso.
+        assert (Hyτ : y ∈ fv_cty τ).
+        { clear -Hy Hyx. cbn [fv_tm fv_value] in Hy. better_set_solver. }
+        pose proof (basic_context_ty_fv_subset ∅ τ Hτ_closed y Hyτ).
+        set_solver.
+    - relevant_lvars_norm. better_set_solver.
+  }
+  assert (Hxden_lty :
+      m ⊨ ty_denote_gas (cty_depth τ)
+        (<[LVFree x := erase_ty τ]>
+          (atom_env_to_lty_env (ctx_erasure_under Σ Γ)))
+        τ (tret (vfvar x))).
+  {
+    replace (<[LVFree x := erase_ty τ]>
+          (atom_env_to_lty_env (ctx_erasure_under Σ Γ)))
+      with (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ))).
+    - exact Hxden_comma.
+    - apply atom_store_to_lvar_store_insert.
+  }
+  assert (Hworld :
+      m ⊨ basic_world_formula
+        (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))).
+  {
+    replace (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+      with (<[LVFree x := erase_ty τ]>
+        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
+    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+    eapply basic_world_insert_of_arg.
+    - apply atom_env_to_lty_env_dom_free_notin. exact Hxnot.
+    - exact (ctx_denote_under_basic_world Σ Γ m HΓm).
+    - exact Hxden_lty.
+  }
+  eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact HΓm|].
+  eapply ctx_bind_from_inserted_erasure_denotation.
+  - exact Hxnot.
+  - unfold ty_env_agree_on. intros y Hy.
+    pose proof (basic_context_ty_fv_subset ∅ τ Hτ_closed y Hy) as Hyempty.
+    set_solver.
+  - exact Hworld.
+  - exact Hxden_comma.
 Qed.
 
 End ContextDenotation.

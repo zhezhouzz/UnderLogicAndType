@@ -388,8 +388,7 @@ Proof.
   eapply app_arrow_result_to_target; eauto.
 Qed.
 
-Lemma fundamental_app_case
-    (Φ : primop_ctx) Σ Γ τx τ v1 x :
+Lemma fundamental_app_case Σ Γ τx τ v1 x :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
   x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->

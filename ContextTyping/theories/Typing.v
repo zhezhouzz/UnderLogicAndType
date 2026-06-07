@@ -163,6 +163,12 @@ Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
 Definition wf_primop_ctx (Φ : primop_ctx) : Prop :=
   ∀ op, wf_primop_sig op (Φ op).
 
+(** HATs-style global primitive-operation context.  The typing judgment is
+    parameterized by the ambient context and term only; primitive signatures are
+    fixed once for the development. *)
+Parameter Φ : primop_ctx.
+Axiom Φ_wf : wf_primop_ctx Φ.
+
 (** Default shallow signatures for the current unary CoreLang primitives.
     These are intentionally conservative: arguments and results are typed by
     top qualifiers except where examples can later refine them. *)
@@ -297,10 +303,6 @@ Proof.
   exact (proj1 Hτ).
 Qed.
 
-Section HasContextType.
-
-Context (Φ : primop_ctx).
-
 Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=
 
   (** T-Var *)
@@ -413,26 +415,9 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
         (tret (vfix (TBase b →ₜ t) vf))
         (CTArrow (over_ty b φx) τ)
 
-  (** T-FixD.  Separating recursive function. *)
-  | CT_FixD Γ φx τ vf b t (L : aset) :
-      erase_ty τ = t →
-      context_typing_wf Σ Γ
-        (tret (vfix (TBase b →ₜ t) vf))
-        (CTWand (over_ty b φx) τ) →
-      (∀ y, y ∉ L →
-        has_context_type Σ
-          (CtxStar Γ
-            (CtxBind y (over_ty b φx)))
-          (tret ({0 ~> vfvar y} vf))
-          (CTArrow (fix_rec_call_ty b y (over_ty b φx) τ) ({0 ~> y} τ))) →
-      has_context_type Σ Γ
-        (tret (vfix (TBase b →ₜ t) vf))
-        (CTWand (over_ty b φx) τ)
-
   (** T-AppOp.  Primitive operations are unary; the argument must be an atom.
       Arguments are over-approximate and results are precise. *)
   | CT_AppOp Γ op x :
-      wf_primop_sig op (Φ op) →
       context_typing_wf Σ Γ
         (tprim op (vfvar x))
         ({0 ~> x} (primop_result_ty (Φ op))) →
@@ -464,37 +449,29 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       has_context_type Σ Γ ef τ →
       has_context_type Σ Γ (tmatch (vfvar x) et ef) τ.
 
-End HasContextType.
-
 #[global] Hint Constructors has_context_type : core.
 #[global] Instance typing_context_inst : Typing ctx tm context_ty :=
-  has_context_type default_primop_ctx ∅.
+  has_context_type ∅.
 Arguments typing_context_inst /.
 
 (** ** Small admissible helpers kept only where they name core definitions. *)
 
-Section TypingRegularity.
-
-Context (Φ : primop_ctx).
-
 Lemma typing_wf Γ e τ :
-  has_context_type Φ ∅ Γ e τ →
+  has_context_type ∅ Γ e τ →
   context_typing_wf ∅ Γ e τ.
 Proof. induction 1; assumption. Qed.
 
 Lemma typing_wf_under Σ Γ e τ :
-  has_context_type Φ Σ Γ e τ →
+  has_context_type Σ Γ e τ →
   context_typing_wf Σ Γ e τ.
 Proof. induction 1; assumption. Qed.
 
 (** Typing implies basic typing (erasure correctness). *)
 Lemma typing_erase Γ e τ :
-  has_context_type Φ ∅ Γ e τ →
+  has_context_type ∅ Γ e τ →
   erase_ctx Γ ⊢ₑ e ⋮ erase_ty τ.
 Proof.
   intros Hty.
   exact (context_typing_wf_basic_typing ∅ Γ e τ
     (typing_wf Γ e τ Hty)).
 Qed.
-
-End TypingRegularity.

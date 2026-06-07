@@ -399,8 +399,7 @@ Proof.
   better_set_solver.
 Qed.
 
-Lemma fundamental_appd_case
-    (Φ : primop_ctx) Σ Γ1 Γ2 τx τ v1 x :
+Lemma fundamental_appd_case Σ Γ1 Γ2 τx τ v1 x :
   context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
   context_typing_wf Σ (CtxStar Γ1 Γ2)
     (tapp v1 (vfvar x)) ({0 ~> x} τ) ->

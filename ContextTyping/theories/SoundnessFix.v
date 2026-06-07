@@ -54,8 +54,7 @@ Local Ltac fix_union_side :=
       end;
       fix_build_union ].
 
-Lemma fix_opened_arrow_result
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset)
+Lemma fix_opened_arrow_result Σ Γ φx τ vf b t (L : aset)
     (m my : WfWorldT) y :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
@@ -121,7 +120,7 @@ Proof.
   assert (HyL : y ∉ L) by fix_union_side.
   pose proof (IH y HyL my Hctx_comma) as Hbody_arrow.
   pose proof (fix_self_rec_call_denotation
-    Φ Σ Γ φx τ vf b t L my y
+    Σ Γ φx τ vf b t L my y
     Hτ Hwf Hbody_wf IH ltac:(fix_union_side)
     Hctx_comma Harg_norm_full) as Hself.
   pose proof (fix_body_arrow_apply_self
@@ -134,8 +133,7 @@ Proof.
   fix_union_side.
 Qed.
 
-Lemma fundamental_fix_case
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset) :
+Lemma fundamental_fix_case Σ Γ φx τ vf b t (L : aset) :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
     (tret (vfix (TBase b →ₜ t) vf))

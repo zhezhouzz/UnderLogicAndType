@@ -26,6 +26,10 @@ From Denotation Require Import Context
 From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD
   SoundnessMatch SoundnessFix.
 
+Local Notation StoreT := (gmap atom value) (only parsing).
+Local Notation WorldT := (World (V := value)) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
+Local Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
 Local Lemma soundness_notin_cty_lvars_of_fv x τ :
@@ -80,21 +84,20 @@ Qed.
 
 (** ** Direct case bridges *)
 
-Lemma appop_context_typing_arg_lookup
-    (Φ : primop_ctx) Σ Γ op x :
-  wf_primop_sig op (Φ op) ->
+Lemma appop_context_typing_arg_lookup Σ Γ op x :
   context_typing_wf Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) ->
   erase_ctx Γ !! x = Some (erase_ty (primop_arg_ty (Φ op))).
 Proof.
-  intros Hsig Hwf.
+  intros Hwf.
   pose proof (context_typing_wf_basic_typing Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
   inversion Hbasic as
     [| |Γop op' v arg_b ret_b Hop_type Harg_basic| |]; subst; clear Hbasic.
   inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
+  pose proof (Φ_wf op) as Hsig.
   pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.
   unfold primop_erasure_ok in Herasure.
   rewrite Hop_type in Herasure.
@@ -173,8 +176,7 @@ Proof.
   apply denot_const_direct_in_ctx.
 Qed.
 
-Lemma fundamental_sub_case
-    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
+Lemma fundamental_sub_case (Σ : gmap atom ty) (Γ : ctx)
     (e : tm) (τ1 τ2 : context_ty) :
   context_typing_wf Σ Γ e τ2 ->
   sub_type_under Σ Γ τ1 τ2 ->
@@ -190,8 +192,7 @@ Proof.
   exact (IH m HΓ).
 Qed.
 
-Lemma fundamental_ctx_sub_case
-    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
+Lemma fundamental_ctx_sub_case (Σ : gmap atom ty) (Γ1 Γ2 : ctx)
     (e : tm) (τ : context_ty) :
   context_typing_wf Σ Γ1 e τ ->
   ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 ->
@@ -490,8 +491,7 @@ Proof.
   - apply atom_env_to_lty_env_dom_free_notin. exact Hxlet.
 Qed.
 
-Lemma fundamental_let_case
-    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx)
+Lemma fundamental_let_case (Σ : gmap atom ty) (Γ : ctx)
     (τ1 τ2 : context_ty) e1 e2 (L : aset) :
   context_typing_wf Σ Γ e1 τ1 ->
   context_typing_wf Σ Γ (tlete e1 e2) τ2 ->
@@ -700,8 +700,7 @@ Proof.
   cbn [erase_ctx] in Hxctx. set_solver.
 Qed.
 
-Lemma fundamental_letd_case
-    (Φ : primop_ctx) Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
+Lemma fundamental_letd_case Σ Γ1 Γ2 τ1 τ2 e1 e2 (L : aset) :
   context_typing_wf Σ Γ1 e1 τ1 ->
   context_typing_wf Σ (CtxStar Γ1 Γ2) (tlete e1 e2) τ2 ->
   (forall x, x ∉ L ->
@@ -860,8 +859,7 @@ Proof.
 	  exact Hxctx.
 	Qed.
 
-Lemma fundamental_lam_case
-    (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
+Lemma fundamental_lam_case Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
   (forall y, y ∉ L ->
   ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
@@ -922,8 +920,7 @@ Proof.
     all: try set_solver.
 Qed.
 
-Lemma fundamental_lamd_case
-    (Φ : primop_ctx) Σ Γ τx τ e (L : aset) :
+Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
   (forall y, y ∉ L ->
     ctx_denote_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
@@ -1013,26 +1010,7 @@ Proof.
       eauto.
 Qed.
 
-Lemma fundamental_fixd_case
-    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset) :
-  erase_ty τ = t ->
-  context_typing_wf Σ Γ
-    (tret (vfix (TBase b →ₜ t) vf))
-    (CTWand (over_ty b φx) τ) ->
-  (forall y, y ∉ L ->
-    ctx_denote_under Σ (CtxStar Γ (CtxBind y (over_ty b φx))) ⊫
-      ty_denote_under Σ (CtxStar Γ (CtxBind y (over_ty b φx)))
-        (CTArrow (fix_rec_call_ty b y (over_ty b φx) τ) ({0 ~> y} τ))
-        (tret ({0 ~> vfvar y} vf))) ->
-  ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (CTWand (over_ty b φx) τ)
-      (tret (vfix (TBase b →ₜ t) vf)).
-Proof.
-Admitted.
-
-Lemma fundamental_appop_case
-    (Φ : primop_ctx) Σ Γ op x :
-  wf_primop_sig op (Φ op) ->
+Lemma fundamental_appop_case Σ Γ op x :
   context_typing_wf Σ Γ
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) ->
@@ -1042,9 +1020,10 @@ Lemma fundamental_appop_case
     ty_denote_under Σ Γ ({0 ~> x} (primop_result_ty (Φ op)))
       (tprim op (vfvar x)).
 Proof.
-  intros Hsig Hwf IH m Hctx.
+  intros Hwf IH m Hctx.
+  pose proof (Φ_wf op) as Hsig.
   pose proof (proj1 (wf_primop_semantic op (Φ op) Hsig x)) as Hop.
-  pose proof (appop_context_typing_arg_lookup Φ Σ Γ op x Hsig Hwf)
+  pose proof (appop_context_typing_arg_lookup Σ Γ op x Hwf)
     as Hlookup.
   pose proof (IH m Hctx) as Harg.
   unfold ty_denote_under, ty_denote in Harg |- *.
@@ -1062,13 +1041,11 @@ Qed.
 
 (** ** Fundamental theorem *)
 
-Theorem Fundamental
-    (Φ : primop_ctx) (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ Σ Γ e τ ->
+Theorem Fundamental (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
+  has_context_type Σ Γ e τ ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
 Proof.
-  intros HΦ Hty.
+  intros Hty.
   induction Hty.
   - eapply fundamental_var_case; eauto.
   - eapply fundamental_const_case; eauto.
@@ -1081,54 +1058,168 @@ Proof.
   - eapply fundamental_app_case; eauto using typing_wf_under.
   - eapply fundamental_appd_case; eauto using typing_wf_under.
   - eapply fundamental_fix_case; eauto using typing_wf_under.
-  - eapply fundamental_fixd_case; eauto.
   - eapply fundamental_appop_case; eauto.
   - eapply fundamental_match_both_case; eauto.
   - eapply fundamental_match_true_case; eauto.
   - eapply fundamental_match_false_case; eauto.
 Qed.
 
-(** ** Corollary targets *)
+(** ** Denotational soundness *)
 
-Corollary safety (Φ : primop_ctx) (e : tm) (b : base_ty) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ ∅ CtxEmpty e (CTOver b qual_top) ->
-  forall e', e →* e' -> is_val e' \/ exists e'', step e' e''.
-Proof.
-Admitted.
+Definition closed_result_world_of (e : tm) (x : atom) (m : WfWorldT) : Prop :=
+  forall σ, (m : WorldT) σ <->
+    exists v, e →* tret v /\ σ = ({[x := v]} : StoreT).
 
-Corollary coverage (Φ : primop_ctx) (e : tm) (b : base_ty) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ ∅ CtxEmpty e (CTUnder b qual_top) ->
-  exists v, e →* tret v.
+Lemma tm_eval_in_store_empty_iff e v :
+  tm_eval_in_store (∅ : StoreT) e v <-> e →* tret v.
 Proof.
-Admitted.
+  unfold tm_eval_in_store.
+  rewrite expr_eval_in_store_no_bvars_iff.
+  - rewrite lstore_free_part_lift_free.
+    rewrite subst_map_tm_eq_msubst.
+    rewrite msubst_empty.
+    reflexivity.
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free.
+    apply map_Forall_lookup_2. intros y u Hlook.
+    rewrite lookup_empty in Hlook. discriminate.
+Qed.
 
-Corollary refinement
-    (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ ∅ CtxEmpty e (CTOver b φ) ->
-  forall v, e →* tret v ->
-    exists x (s : LStoreOnT (qual_vars (φ ^q^ x))),
-      lso_store s !! LVFree x = Some v /\
-      qual_prop (φ ^q^ x) s.
+Lemma closed_result_world_of_result_extension
+    e x F (mx : WfWorldT) :
+  fv_tm e = ∅ ->
+  expr_result_extension_witness e x F ->
+  res_extend_by res_unit F mx ->
+  (exists v, e →* tret v) ->
+  closed_result_world_of e x mx.
 Proof.
-Admitted.
+  intros Hfv HF Hext Htotal σout.
+  destruct HF as [Hx_fresh [Hin Hout] Hrel].
+  pose proof (resA_extend_by_store_iff res_unit F mx σout Hext) as Hmx_iff.
+  assert (Htotal_store : exists v, tm_eval_in_store (∅ : StoreT) e v).
+  {
+    destruct Htotal as [v Hv].
+    exists v. apply tm_eval_in_store_empty_iff. exact Hv.
+  }
+  split.
+  - intros Hσout.
+    apply Hmx_iff in Hσout.
+    destruct Hσout as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
+    pose proof (wfworldA_store_dom res_unit σm Hσm) as Hσm_dom.
+    change (dom (σm : StoreT) = world_dom (res_unit : WorldT)) in Hσm_dom.
+    assert (Hσm_empty : σm = (∅ : StoreT)).
+    {
+      apply map_empty.
+      intros k.
+      apply not_elem_of_dom.
+      rewrite Hσm_dom.
+      change (world_dom (res_unit : WorldT)) with (∅ : aset).
+      set_solver.
+    }
+    subst σm.
+    assert (Hproj_dom : dom (∅ : StoreT) = fv_tm e).
+    { rewrite Hfv. apply dom_empty_L. }
+    pose proof (expr_result_extension_apply_total_iff
+      e x F (∅ : StoreT) we
+      {| expr_result_extension_witness_fresh := Hx_fresh;
+         expr_result_extension_witness_shape := conj Hin Hout;
+         expr_result_extension_witness_rel := Hrel |}
+      Hproj_dom HFrel Htotal_store σe) as Hwe.
+    apply Hwe in Hσe as [v [Heval ->]].
+    exists v.
+    split; [apply tm_eval_in_store_empty_iff; exact Heval|].
+    change ((∅ : StoreT) ∪ ({[x := v]} : StoreT) =
+      ({[x := v]} : StoreT)).
+    apply map_eq. intros k.
+    apply lookup_union_r. apply lookup_empty.
+  - intros [v [Heval ->]].
+    apply Hmx_iff.
+    assert (Hproj_dom : dom (∅ : StoreT) = fv_tm e).
+    { rewrite Hfv. apply dom_empty_L. }
+    pose proof (Hrel (∅ : StoreT) Hproj_dom) as HFcanonical.
+    exists (∅ : StoreT), (expr_result_output_world e x (∅ : StoreT)),
+      ({[x := v]} : StoreT).
+    split; [reflexivity|].
+    split.
+    + exact HFcanonical.
+    + split.
+      * eapply expr_result_extension_apply_total_store.
+        -- exact {| expr_result_extension_witness_fresh := Hx_fresh;
+                   expr_result_extension_witness_shape := conj Hin Hout;
+                   expr_result_extension_witness_rel := Hrel |}.
+        -- exact Hproj_dom.
+        -- exact HFcanonical.
+        -- apply tm_eval_in_store_empty_iff. exact Heval.
+      * symmetry.
+        change ((∅ : StoreT) ∪ ({[x := v]} : StoreT) =
+          ({[x := v]} : StoreT)).
+        apply map_eq. intros k.
+        apply lookup_union_r. apply lookup_empty.
+Qed.
 
-Corollary incorrectness
-    (Φ : primop_ctx) (e : tm) (b : base_ty) (φ : type_qualifier) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ ∅ CtxEmpty e (CTUnder b φ) ->
-  exists v x (s : LStoreOnT (qual_vars (φ ^q^ x))),
-    e →* tret v /\
-    lso_store s !! LVFree x = Some v /\
-    qual_prop (φ ^q^ x) s.
+Theorem denotational_soundness e τ :
+  has_context_type ∅ CtxEmpty e τ ->
+  forall x,
+    exists mres : WfWorldT,
+      closed_result_world_of e x mres /\
+      mres ⊨ ty_denote ({[x := erase_ty τ]} : gmap atom ty) τ
+        (tret (vfvar x)).
 Proof.
-Admitted.
-
-Corollary exact_result (Φ : primop_ctx) (e : tm) (b : base_ty) (c : constant) :
-  wf_primop_ctx Φ ->
-  has_context_type Φ ∅ CtxEmpty e (CTUnder b (b0:c= c)) ->
-  e →* tret (vconst c).
-Proof.
-Admitted.
+  intros Hty x.
+  pose proof (typing_wf_under ∅ CtxEmpty e τ Hty) as Hwf.
+  pose proof (context_typing_wf_fv_tm_subset ∅ CtxEmpty e τ Hwf) as Hfv_sub.
+  assert (Hfv : fv_tm e = ∅).
+  { apply leibniz_equiv. set_solver. }
+  pose proof (Fundamental ∅ CtxEmpty e τ Hty) as Hfund.
+  assert (Hctx : res_unit ⊨ ctx_denote_under ∅ CtxEmpty).
+  {
+    cbn [ctx_denote_under store_restrict ctx_fv].
+    rewrite res_models_and_iff. split.
+    - apply basic_world_formula_empty.
+    - apply res_models_true.
+  }
+  pose proof (Hfund res_unit Hctx) as Hden_under.
+  destruct (expr_result_extension_witness_exists e x) as [F HF].
+  { rewrite Hfv. set_solver. }
+  assert (Happ : extension_applicable F res_unit).
+  {
+    destruct HF as [_ [Hin Hout] _].
+    constructor.
+    - unfold ext_in in Hin. rewrite Hin, Hfv.
+      change (world_dom (res_unit : WorldT)) with (∅ : aset).
+      set_solver.
+    - unfold ext_out in Hout. rewrite Hout.
+      change (world_dom (res_unit : WorldT)) with (∅ : aset).
+      set_solver.
+  }
+  destruct (res_extend_by_exists res_unit F Happ) as [mres Hext].
+  exists mres.
+  assert (Htotal : exists v, e →* tret v).
+  {
+    pose proof (ty_denote_under_total ∅ CtxEmpty τ e res_unit Hden_under)
+      as Htotal_formula.
+    apply expr_total_formula_to_atom_world in Htotal_formula.
+    destruct Htotal_formula as [_ Htotal_eval].
+    destruct (Htotal_eval (lstore_lift_free (∅ : StoreT))) as [v Hv].
+    { exists (∅ : StoreT). split; [reflexivity|reflexivity]. }
+    exists v. apply tm_eval_in_store_empty_iff. exact Hv.
+  }
+  split.
+  - eapply closed_result_world_of_result_extension; eauto.
+  - unfold ty_denote in Hden_under |- *.
+    replace (atom_env_to_lty_env ({[x := erase_ty τ]} : gmap atom ty))
+      with (<[LVFree x := erase_ty τ]> (∅ : lty_env)).
+    2:{
+      change ({[x := erase_ty τ]} : gmap atom ty)
+        with (<[x := erase_ty τ]> (∅ : gmap atom ty)).
+      unfold store_insert, store_empty.
+      rewrite atom_store_to_lvar_store_insert.
+      unfold atom_store_to_lvar_store.
+      rewrite kmap_empty.
+      reflexivity.
+    }
+    eapply ty_denote_gas_result_ext; eauto.
+    + unfold lty_env_closed, lvar_store_closed, lc_lvars.
+      intros v Hv. rewrite dom_empty_L in Hv. set_solver.
+    + rewrite dom_empty_L. set_solver.
+Qed.

@@ -569,8 +569,7 @@ Proof.
       exists σ. split; [exact Hσ2|reflexivity].
 Qed.
 
-Lemma fundamental_match_both_case
-    (Φ : primop_ctx) Σ Γt Γf x τt τf et ef :
+Lemma fundamental_match_both_case Σ Γt Γf x τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf)
     (tmatch (vfvar x) et ef) (CTSum τt τf) ->
   (ctx_denote_under Σ Γt ⊫
@@ -656,8 +655,7 @@ Proof.
   - eapply res_models_plus_intro; [exact Hle|exact Hmatch_t|exact Hmatch_f].
 Qed.
 
-Lemma fundamental_match_true_case
-    (Φ : primop_ctx) Σ Γ x τ et ef :
+Lemma fundamental_match_true_case Σ Γ x τ et ef :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->
   (ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ (bool_precise_ty true) (tret (vfvar x))) ->
@@ -675,8 +673,7 @@ Proof.
   eapply match_target_zero_from_branch; eauto.
 Qed.
 
-Lemma fundamental_match_false_case
-    (Φ : primop_ctx) Σ Γ x τ et ef :
+Lemma fundamental_match_false_case Σ Γ x τ et ef :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->
   (ctx_denote_under Σ Γ ⊫
     ty_denote_under Σ Γ (bool_precise_ty false) (tret (vfvar x))) ->
