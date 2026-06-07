@@ -1,65 +1,37 @@
-# Rocq Formalization Skills
+# UnderLogicAndType Workflow Notes
 
-本目录收录 UnderLogicAndType formalization 过程中积累的证明和定义经验。
-这些文件不是都具有同等优先级：当前主线正在围绕 LN logic、deterministic core、
-denotation/tlet proof 和局部 solver 做收敛，所以阅读顺序应按下面分类来走。
+This directory is intentionally small.  The old collection of numbered
+proof-history notes has been removed because most of it described obsolete
+routes.  Current proof-engineering guidance should stay concise and be updated
+when the workflow changes.
 
-## 使用原则
+## Current Discipline
 
-- **P0 常驻规则**：几乎每次证明/重构都要遵守，优先读。
-- **P1 当前主线**：和当前 LN、denotation、tlet、instantiation 证明直接相关。
-- **P2 局部坑位**：遇到对应报错或定义形态时再查。
-- **P3 历史/低优先级**：记录旧路线或较少用经验；不要把其中的旧设计当成当前目标。
+- Use a 50 second timeout for focused single-file checks.
+- Use `rocq compile -time` for repeated or unclear proof-time failures.
+- Stop after four timing/debugging loops and reassess the proof architecture.
+- Normalize early at theorem/case boundaries:
+  - erasure and context erasure;
+  - relevant environments and relevant lvars;
+  - locally nameless open/shift forms;
+  - `formula_open` over type denotation;
+  - `lty_env_open_one` over typed binder environments.
+- Keep normalization equality-preserving.  Use dedicated solvers or helper
+  lemmas for side conditions.
+- Prefer semantic helper statements over helpers that expose raw syntax noise.
+- Repeated set/store/freshness proof patterns should move downward into the
+  relevant Store, Algebra, TypeLanguage, BasicDenotation, or Denotation layer.
+- Avoid anonymous `admit`, and avoid long one-use `assert`/`pose` chains.
+- Reviewer-facing metatheory should live next to the Rocq definitions it
+  explains, not in temporary TXT reports.
 
-如果某个 P3 文件里的建议和当前代码冲突，以当前 Rocq definitions 和用户最近确认的设计为准。
+## Notifications
 
-## P0 常驻规则
+For long checklist-style work, use the zsh notification helpers:
 
-| 文件 | 主题 |
-|------|------|
-| [15_definition_sanity_check.md](15_definition_sanity_check.md) | Definition sanity check：先对齐论文、报告冲突、经确认后再修改 |
-| [25_proof_style_and_local_solvers.md](25_proof_style_and_local_solvers.md) | Proof style：`eauto 6`、分层 solver、normalization tactics、少用一次性 `assert` |
-| [26_denotation_extensional_equality.md](26_denotation_extensional_equality.md) | Denotation equality：qualifier/formula 用 extensional equality/setoid，TypeDenote 自底向上证明 |
-| [27_recent_ln_denotation_failure_patterns.md](27_recent_ln_denotation_failure_patterns.md) | Recent LN/denotation proof failure patterns：先搜 helper、识别层级、处理 notation/unfold/rewrite 冲突 |
-| [28_code_quality_refactor.md](28_code_quality_refactor.md) | Code quality refactor：清旧路线、lemma usage index、solver 下放、wrapper/notation/docs 清理 |
-| [18_tactic_migration.md](18_tactic_migration.md) | Tactic 使用：cofinite fresh、`my_set_solver`、`hauto` 的安全使用边界 |
-| [16_store_proof_refactoring.md](16_store_proof_refactoring.md) | Store/map proof：通用 lemma 上移、lookup extensionality、把 `change` 收敛成 norm |
-| [19_operational_reduction_helpers.md](19_operational_reduction_helpers.md) | Core operational proof：优先用 reduction intro/iff helper，不手搓 steps |
+```bash
+notify_checkpoint "..."
+notify_high "..."
+```
 
-## P1 当前主线
-
-| 文件 | 主题 |
-|------|------|
-| [17_core_ln_proof_patterns.md](17_core_ln_proof_patterns.md) | Core LN proof：拆 mutual lemma、combined helper、cofinite binder patterns |
-| [21_instantiation_migration.md](21_instantiation_migration.md) | Core instantiation/multi-substitution：`msubst` classes、closed/lc/env side conditions |
-| [24_typing_naming_refactor.md](24_typing_naming_refactor.md) | Typing naming：fresh record、erased-context domain、open/subst bridge；部分内容可能随 LN logic refactor 调整 |
-| [11_sigma_type_wfworld_pattern.md](11_sigma_type_wfworld_pattern.md) | WfWorld sigma type：raw/private helper 与 public wf interface 的分层 |
-| [12_partial_order_stdpp.md](12_partial_order_stdpp.md) | stdpp order instance：`SqSubsetEq`、`PreOrder`、`AntiSymm` 的拆分方式 |
-
-## P2 局部坑位
-
-| 文件 | 主题 |
-|------|------|
-| [01_mutual_recursion_and_typeclass.md](01_mutual_recursion_and_typeclass.md) | Mutual fixpoint 先定义后注册为 typeclass instance |
-| [02_strict_positivity.md](02_strict_positivity.md) | Inductive 严格正性；当前 boolean match 已规避旧 branch-list 问题 |
-| [03_elemof_aset_annotation.md](03_elemof_aset_annotation.md) | Cofinite quantification 里 `L` 必须标注 `: aset` |
-| [04_notation_clash.md](04_notation_clash.md) | `{[σ]}` / stdpp singleton / `Subst` 等 notation/name clash |
-| [05_section_variable_discharge.md](05_section_variable_discharge.md) | Section 只 discharge 实际用到的变量，不要猜参数数量 |
-| [09_fixpoint_vs_definition.md](09_fixpoint_vs_definition.md) | 自引用用 `Fixpoint`；非 structural recursion 用 `Definition` |
-| [10_inductive_let_pattern.md](10_inductive_let_pattern.md) | Constructor 里避免 `let '(a,b) := ...`，改用显式等式前提 |
-| [14_open_notation_typeclass.md](14_open_notation_typeclass.md) | Open typeclass notation：优先 generic `^^`，避免 category-specific notation |
-
-## P3 历史 / 低优先级
-
-这些文件保留为历史记录或局部参考。它们可能提到已经被替换的非-LN logic、
-旧 expression-result encoding、旧 branch 状态，不能直接作为当前设计依据。
-
-| 文件 | 状态 |
-|------|------|
-| [06_anf_and_tletapp.md](06_anf_and_tletapp.md) | 旧 ANF/tletapp 经验；当前已有 `tapp_tm`/deterministic core 调整，遇到 legacy derived form 再查 |
-| [07_open_notation_atom_vs_value.md](07_open_notation_atom_vs_value.md) | 旧 notation 区分经验；当前优先参考 generic open/typeclass 与实际代码 |
-| [08_eqdecision_mutual_inductive.md](08_eqdecision_mutual_inductive.md) | skeleton 阶段经验；不要把“先 admit EqDecision”作为长期策略 |
-| [13_formula_atoms_as_world_predicates.md](13_formula_atoms_as_world_predicates.md) | 旧 Formula atom/qualifier embedding 说明；当前 LN logic 与 atom sugar 已重构 |
-| [20_partial_algebra_remaining.md](20_partial_algebra_remaining.md) | 旧 partial algebra branch 的剩余工作记录；只作为历史背景 |
-| [22_context_instantiation_migration.md](22_context_instantiation_migration.md) | 旧 Context type instantiation 迁移记录；当前 split 后只作 LN/substitution 背景 |
-| [23_expression_result_semantics.md](23_expression_result_semantics.md) | 旧 expression-result semantic 记录；当前以 `expr_result_formula`/lworld 路线为准 |
+If the shell helpers are unavailable, fall back to `ntfy send`.
