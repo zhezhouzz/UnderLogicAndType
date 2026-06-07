@@ -795,3 +795,7 @@ Proof.
 Qed.
 
 End TermDenotation.
+
+Notation "'FTotal' '[' e ']'" := (expr_total_formula e)
+  (at level 10, e at level 9,
+   format "FTotal [ e ]") : formula_scope.

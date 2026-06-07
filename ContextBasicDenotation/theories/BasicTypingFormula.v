@@ -1031,3 +1031,11 @@ Proof.
 Qed.
 
 End BasicTypingFormula.
+
+Notation "'FWfTy' '[' Σ ';' τ ']'" := (context_ty_wf_formula Σ τ)
+  (at level 10, Σ at level 9, τ at level 9,
+   format "FWfTy [ Σ ;  τ ]") : formula_scope.
+
+Notation "'FHasType' '[' Σ '⊢' e '⋮' T ']'" := (expr_basic_typing_formula Σ e T)
+  (at level 10, Σ at level 9, e at level 9, T at level 9,
+   format "FHasType [ Σ  ⊢  e  ⋮  T ]") : formula_scope.

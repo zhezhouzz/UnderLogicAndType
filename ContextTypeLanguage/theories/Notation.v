@@ -6,41 +6,72 @@ From CoreLang Require Export SyntaxNotation.
 From ContextTypeLanguage Require Export WF.
 From Stdlib Require Import Arith.Wf_nat Lia.
 
-Declare Scope context_scope.
-Delimit Scope context_scope with ctx.
-Bind Scope context_scope with context_ty.
-Bind Scope context_scope with ctx.
-Bind Scope context_scope with logic_var.
-Bind Scope context_scope with lty_env.
+Declare Scope cty_scope.
+Declare Scope ctx_scope.
+Declare Scope lvar_scope.
+Delimit Scope cty_scope with cty.
+Delimit Scope ctx_scope with ctx.
+Delimit Scope lvar_scope with lvar.
+Bind Scope cty_scope with context_ty.
+Bind Scope ctx_scope with ctx.
+Bind Scope lvar_scope with logic_var.
+Bind Scope lvar_scope with lty_env.
 
-Class Erase A B := erase : A -> B.
-Class Lift A B := lift : A -> B.
-Arguments erase {_ _ _} _.
-Arguments lift {_ _ _} _.
+Notation "'⌊' τ '⌋'" := (erase_ty τ)
+  (at level 20, format "⌊ τ ⌋") : cty_scope.
 
-#[global] Instance erase_context_ty : Erase context_ty ty := erase_ty.
-#[global] Instance erase_ctx_inst : Erase ctx (gmap atom ty) := erase_ctx.
-
-#[global] Instance lift_ty_inst : Lift ty context_ty := lift_ty.
-#[global] Instance lift_ctx_inst : Lift (gmap atom ty) ctx := lift_ctx.
-
-Notation "⌊ x ⌋" := (erase x)
-  (at level 20, format "⌊ x ⌋").
-
-Notation "⌈ x ⌉" := (lift x)
-  (at level 20, format "⌈ x ⌉") : context_scope.
+Notation "'⌊' Γ '⌋'" := (erase_ctx Γ)
+  (at level 20, format "⌊ Γ ⌋") : ctx_scope.
 
 Notation "'#ₗ' k" := (LVBound k)
-  (at level 5, format "#ₗ k") : context_scope.
+  (at level 5, format "#ₗ k") : lvar_scope.
 
 Notation "'$ₗ' x" := (LVFree x)
-  (at level 5, format "$ₗ x") : context_scope.
+  (at level 5, format "$ₗ x") : lvar_scope.
 
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
-  (at level 20, format "↑ₗ Σ") : context_scope.
+  (at level 20, format "↑ₗ Σ") : lvar_scope.
+
+Notation "'#ₗ' k" := (LVBound k)
+  (at level 5, only parsing) : ctx_scope.
+
+Notation "'$ₗ' x" := (LVFree x)
+  (at level 5, only parsing) : ctx_scope.
+
+Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
+  (at level 20, only parsing) : ctx_scope.
 
 Notation "'Emp'" := CtxEmpty
-  (at level 0, format "Emp") : context_scope.
+  (at level 0, format "Emp") : ctx_scope.
+
+Notation "x '∷' τ" := (CtxBind x τ)
+  (at level 60, τ at level 200, no associativity,
+   format "x  ∷  τ") : ctx_scope.
+Notation "Γ1 ',,' Γ2" := (CtxComma Γ1 Γ2)
+  (at level 61, left associativity,
+   format "Γ1  ,,  Γ2") : ctx_scope.
+Notation "Γ1 '∗' Γ2" := (CtxStar Γ1 Γ2)
+  (at level 40, left associativity,
+   format "Γ1  ∗  Γ2") : ctx_scope.
+Notation "Γ1 '⊕' Γ2" := (CtxSum Γ1 Γ2)
+  (at level 70, right associativity,
+   format "Γ1  ⊕  Γ2") : ctx_scope.
+
+Notation "τ1 '⊓' τ2" := (CTInter τ1 τ2)
+  (at level 40, no associativity,
+   format "τ1  ⊓  τ2") : cty_scope.
+Notation "τ1 '⊔' τ2" := (CTUnion τ1 τ2)
+  (at level 50, no associativity,
+   format "τ1  ⊔  τ2") : cty_scope.
+Notation "τ1 '⊕' τ2" := (CTSum τ1 τ2)
+  (at level 70, right associativity,
+   format "τ1  ⊕  τ2") : cty_scope.
+Notation "τx '→' τ" := (CTArrow τx τ)
+  (at level 99, right associativity,
+   format "τx  →  τ") : cty_scope.
+Notation "τx '-∗' τ" := (CTWand τx τ)
+  (at level 60, right associativity,
+   format "τx  -∗  τ") : cty_scope.
 
 (** Lightweight normalization helpers for the syntax/type-language layer. *)
 
@@ -137,6 +168,13 @@ Definition over_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
 
 Definition under_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
   CTUnder b φ.
+
+Notation "'{:' b '|' φ '}'" := (over_ty b φ)
+  (at level 0, b at level 200, φ at level 200,
+   format "{: b  |  φ }") : cty_scope.
+Notation "'[:' b '|' φ ']'" := (under_ty b φ)
+  (at level 0, b at level 200, φ at level 200,
+   format "[: b  |  φ ]") : cty_scope.
 
 Definition precise_ty (b : base_ty) (φ : type_qualifier) : context_ty :=
   CTInter (over_ty b φ) (under_ty b φ).

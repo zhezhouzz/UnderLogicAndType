@@ -1,4 +1,5 @@
 From ContextLogic Require Export LogicQualifier.
+From CoreLang Require Import Prelude.
 From ContextBase Require Import BaseTactics LogicVarOpenEnv LogicVarShift.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
 
@@ -286,6 +287,9 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FUnder p => FUnder (formula_open k x p)
   | FFibVars D p => FFibVars (lvars_open k x D) (formula_open k x p)
   end.
+
+#[global] Instance formula_open_atom_inst : Open atom Formula := formula_open.
+Arguments formula_open_atom_inst /.
 
 Fixpoint formula_atom_swap (x y : atom) (φ : Formula) : Formula :=
   match φ with

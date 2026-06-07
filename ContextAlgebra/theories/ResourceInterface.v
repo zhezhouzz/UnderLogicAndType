@@ -5,6 +5,9 @@ From Stdlib Require Import Logic.ProofIrrelevance.
 
 (** * Atom-keyed resource interface *)
 
+Declare Scope resource_scope.
+Delimit Scope resource_scope with res.
+
 Section ResourceInterface.
 
 Context {V : Type} `{ValueSig V}.
@@ -15,6 +18,11 @@ Definition World : Type := @WorldA atom _ _ V.
 Definition WfWorld : Type := @WfWorldA atom _ _ V.
 Definition LWorld : Type := @WorldA logic_var _ _ V.
 Definition LWfWorld : Type := @WfWorldA logic_var _ _ V.
+
+Bind Scope resource_scope with World.
+Bind Scope resource_scope with WfWorld.
+Bind Scope resource_scope with LWorld.
+Bind Scope resource_scope with LWfWorld.
 
 Definition world_dom (m : World) : aset := worldA_dom m.
 Definition lworld_dom (m : LWorld) : lvset := worldA_dom m.
@@ -38,6 +46,15 @@ Definition res_restrict (w : WfWorld) (X : aset) : WfWorld := resA_restrict w X.
 Definition res_atom_swap (x y : atom) (w : WfWorld) : WfWorld := resA_swap x y w.
 Definition lres_swap (x y : logic_var) (w : LWfWorld) : LWfWorld := resA_swap x y w.
 
+Notation "'𝟙'" := res_unit : resource_scope.
+Notation "'Dom' r" := (world_dom r)
+  (at level 10, format "Dom  r") : resource_scope.
+Notation "r '↾' X" := (res_restrict r X)
+  (at level 20, no associativity,
+   format "r  ↾  X") : resource_scope.
+Notation "m1 '⊑ᵣ' m2" := (raw_le m1 m2)
+  (at level 70, no associativity,
+   format "m1  ⊑ᵣ  m2") : resource_scope.
 Lemma world_dom_res_atom_swap (x y : atom) (w : WfWorld) :
   world_dom (res_atom_swap x y w : World) =
   set_swap x y (world_dom (w : World)).
@@ -409,6 +426,15 @@ Definition res_sum (w1 w2 : WfWorld) (Hdef : raw_sum_defined (w1 : World) (w2 : 
   resA_sum w1 w2 Hdef.
 Definition res_subset (w1 w2 : WfWorld) : Prop := resA_subset w1 w2.
 
+Notation "m1 '##ᵣ' m2" := (world_compat m1 m2)
+  (at level 70, no associativity,
+   format "m1  ##ᵣ  m2") : resource_scope.
+Notation "m1 '×[' Hc ']' m2" := (res_product m1 m2 Hc)
+  (at level 40, Hc at level 200, left associativity,
+   format "m1  ×[ Hc ]  m2") : resource_scope.
+Notation "m1 '+[' Hdef ']' m2" := (res_sum m1 m2 Hdef)
+  (at level 50, Hdef at level 200, left associativity,
+   format "m1  +[ Hdef ]  m2") : resource_scope.
 Lemma res_atom_swap_involutive x y (w : WfWorld) :
   res_atom_swap x y (res_atom_swap x y w) = w.
 Proof. apply resA_swap_involutive. Qed.
@@ -1340,3 +1366,19 @@ Lemma res_extend_by_product_frame_l
 Proof. apply resA_extend_by_product_frame_l. Qed.
 
 End ResourceInterface.
+
+Notation "r '↾ᵣ' X" := (res_restrict r X)
+  (at level 20, no associativity,
+   format "r  ↾ᵣ  X", only printing).
+Notation "m1 '⊑ᵣ' m2" := (raw_le m1 m2)
+  (at level 70, no associativity,
+   format "m1  ⊑ᵣ  m2", only printing).
+Notation "m1 '##ᵣ' m2" := (world_compat m1 m2)
+  (at level 70, no associativity,
+   format "m1  ##ᵣ  m2", only printing).
+Notation "m1 '×ᵣ[' Hc ']' m2" := (res_product m1 m2 Hc)
+  (at level 40, Hc at level 200, left associativity,
+   format "m1  ×ᵣ[ Hc ]  m2", only printing).
+Notation "m1 '+ᵣ[' Hdef ']' m2" := (res_sum m1 m2 Hdef)
+  (at level 50, Hdef at level 200, left associativity,
+   format "m1  +ᵣ[ Hdef ]  m2", only printing).

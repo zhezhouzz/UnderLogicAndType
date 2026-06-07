@@ -486,3 +486,7 @@ Proof.
 Qed.
 
 End QualifierDenotation.
+
+Notation "'FQual' '[' q ']'" := (type_qualifier_formula q)
+  (at level 10, q at level 9,
+   format "FQual [ q ]") : formula_scope.

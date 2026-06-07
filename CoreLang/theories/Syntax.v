@@ -19,7 +19,8 @@ Inductive ty : Type :=
   | TArrow (s1 s2 : ty).
 
 Coercion TBase : base_ty >-> ty.
-Notation "s1 '→ₜ' s2" := (TArrow s1 s2) (at level 30, right associativity).
+Notation "s1 '→ₜ' s2" := (TArrow s1 s2)
+  (at level 30, right associativity, only parsing).
 
 #[global] Instance base_ty_eqdec : EqDecision base_ty. Proof. solve_decision. Defined.
 #[global] Instance ty_eqdec      : EqDecision ty.      Proof. solve_decision. Defined.

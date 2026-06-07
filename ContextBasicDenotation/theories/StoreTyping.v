@@ -573,3 +573,7 @@ Proof.
 Qed.
 
 End StoreTyping.
+
+Notation "'FWorld' '[' Σ ']'" := (basic_world_formula Σ)
+  (at level 10, Σ at level 9,
+   format "FWorld [ Σ ]") : formula_scope.

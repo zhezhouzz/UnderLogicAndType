@@ -21,8 +21,10 @@ Notation tyctx := (gmap atom ty).
 
 Notation "'𝔹'" := TBool : core_scope.
 Notation "'ℕ'" := TNat : core_scope.
+Notation "T1 '→' T2" := (TArrow T1 T2)
+  (at level 99, right associativity) : core_scope.
 Notation "T1 ⇒ T2" := (TArrow T1 T2)
-  (at level 60, right associativity) : core_scope.
+  (at level 60, right associativity, only parsing) : core_scope.
 
 Notation "'true'" := (cbool Datatypes.true) (only printing) : core_scope.
 Notation "'false'" := (cbool Datatypes.false) (only printing) : core_scope.

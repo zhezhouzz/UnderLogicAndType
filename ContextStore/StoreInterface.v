@@ -3,6 +3,9 @@
 From ContextBase Require Import Prelude LogicVar LogicVarShift BaseTactics.
 From ContextStore Require Import StoreCore StoreRestrict StoreFilterMapKey.
 
+Declare Scope store_scope.
+Delimit Scope store_scope with store.
+
 Section StoreInterface.
 
 Context {V : Type} `{ValueSig V}.
@@ -11,6 +14,9 @@ Definition Store : Type := gmap atom V.
 Definition LStore : Type := gmap logic_var V.
 
 Global Typeclasses Transparent Store LStore.
+
+Bind Scope store_scope with Store.
+Bind Scope store_scope with LStore.
 
 #[global] Instance store_empty : Empty Store := gmap_empty.
 #[global] Instance store_lookup : Lookup atom V Store := lookup.
@@ -22,7 +28,12 @@ Global Typeclasses Transparent Store LStore.
 #[global] Instance lstore_lookup : Lookup logic_var V LStore := lookup.
 
 Notation store_restrict := storeA_restrict (only parsing).
-
+Notation "σ '↾' X" := (storeA_restrict σ X)
+  (at level 20, no associativity,
+   format "σ  ↾  X") : store_scope.
+Notation "σ1 '##ₛ' σ2" := (storeA_compat σ1 σ2)
+  (at level 70, no associativity,
+   format "σ1  ##ₛ  σ2") : store_scope.
 Definition lstore_rekey (f : logic_var → logic_var) (s : LStore) : LStore :=
   storeA_rekey f s.
 
@@ -635,3 +646,10 @@ Proof.
 Qed.
 
 End StoreInterface.
+
+Notation "σ '↾ₛ' X" := (storeA_restrict σ X)
+  (at level 20, no associativity,
+   format "σ  ↾ₛ  X", only printing).
+Notation "σ1 '##ₛ' σ2" := (storeA_compat σ1 σ2)
+  (at level 70, no associativity,
+   format "σ1  ##ₛ  σ2", only printing).

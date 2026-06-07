@@ -3,6 +3,7 @@
     Custom-entry notation for Context Logic formulas.  The constructors stay
     available; this file provides a readable object-language surface. *)
 
+From CoreLang Require Export Prelude.
 From ContextLogic Require Export FormulaSyntax.
 
 Declare Scope formula_scope.
@@ -39,6 +40,15 @@ Notation "φ → ψ" := (FImpl φ ψ)
   (at level 99, right associativity) : formula_scope.
 Notation "'∀.' φ" := (FForall φ)
   (at level 100, φ at level 200) : formula_scope.
+Notation "'{' k '~>' x '}' φ" := (formula_open k x φ)
+  (at level 20, k constr,
+   format "{ k  ~>  x }  φ") : formula_scope.
+Notation "φ '^^' x" := (formula_open 0 x φ)
+  (at level 20, x constr,
+   format "φ  ^^  x") : formula_scope.
+Notation "'{η' η '}' φ" := (formula_open_env η φ)
+  (at level 20, η at level 200,
+   format "{η  η }  φ") : formula_scope.
 
 Notation "<{ φ }>" := φ (φ custom form at level 99).
 Notation "( φ )" := φ (in custom form, φ at level 99, only parsing).
@@ -81,3 +91,6 @@ Notation "φ → ψ" := (FImpl φ ψ)
 
 Notation "'∀.' φ" := (FForall φ)
   (in custom form at level 90, φ custom form at level 90, only parsing).
+Notation "'{η' η '}' φ" := (formula_open_env η φ)
+  (in custom form at level 20, η constr at level 200,
+   φ custom form at level 20, only parsing).
