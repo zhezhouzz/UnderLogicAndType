@@ -70,6 +70,30 @@ Proof.
 	        exact (context_typing_wf_basic_typing Σ Γ e τ Hwf).
 Qed.
 
+Lemma context_typing_wf_denot_static_guard_comma_bind_insert
+    (Σ : gmap atom ty) Γ y τx τ e (m : WfWorldT) :
+  y ∉ dom (erase_ctx Γ) ->
+  context_typing_wf Σ (CtxComma Γ (CtxBind y τx)) e τ ->
+  m ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)) ->
+  m ⊨ ty_static_guard_formula
+    (<[LVFree y := erase_ty τx]> (atom_env_to_lty_env (erase_ctx Γ)))
+    τ e.
+Proof.
+  intros Hy Hwf Hctx.
+  pose proof (context_typing_wf_denot_static_guard_full
+    Σ (CtxComma Γ (CtxBind y τx)) τ e m Hwf Hctx) as Hstatic.
+  assert (Henv :
+      atom_env_to_lty_env (erase_ctx (CtxComma Γ (CtxBind y τx))) =
+      (<[LVFree y := erase_ty τx]> (atom_env_to_lty_env (erase_ctx Γ)))).
+  {
+    rewrite erase_ctx_comma_bind_fresh.
+    - apply atom_store_to_lvar_store_insert.
+    - exact Hy.
+  }
+  rewrite Henv in Hstatic.
+  exact Hstatic.
+Qed.
+
 Lemma ctx_erasure_under_agree_union_on_ty
     (Σ : gmap atom ty) Γ e τ :
   context_typing_wf Σ Γ e τ ->

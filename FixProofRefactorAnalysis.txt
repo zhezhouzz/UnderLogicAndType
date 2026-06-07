@@ -1,0 +1,1102 @@
+# Fix Proof Refactor Analysis
+
+Scope: `ContextTyping/theories/SoundnessFix*.v`.
+
+Goal: inspect every Fix-related lemma for repeated proof patterns, short wrappers
+that should be inlined, lower-layer helper candidates, huge intermediate
+assertions, and naked set/store proof scripts. This report intentionally keeps
+semantic proof architecture intact: the current well-founded Fix proof is
+stable and should not be reshaped unless a helper boundary is clearly better.
+
+## Global Findings
+
+- `SoundnessFixSelf.v` contains the most recent proof work and therefore the
+  most proof-engineering residue. The semantic structure is now good:
+  world-minimum induction, smaller recursive argument extraction, child context
+  construction, body application, and unfold transport are separate. The cleanup
+  target is mostly side-condition plumbing, not proof architecture.
+- Several lemmas are one-use wrappers. Only the very short/wrapper-shaped ones
+  should be inlined now; longer one-use lemmas such as open-argument
+  normalization are useful semantic checkpoints and should remain named.
+- A few helpers are genuinely lower-layer:
+  `res_le_store_lift` is a generic resource/refinement fact and belongs in
+  `ContextAlgebra`, not in Fix soundness.
+  `res_fiber_from_projection_of_store` is also generic but touches the concrete
+  fiber constructor; it can be moved later to the resource-extension/fiber layer.
+- Naked `better_set_solver` appears frequently in Fix proofs. Most are small
+  freshness/domain side conditions. The right cleanup is to hide repeated
+  shapes behind local side-condition tactics and small domain lemmas, not to
+  let global set solvers run over large semantic contexts.
+- There are two plain `set_solver` calls left in Fix files. They should be
+  replaced immediately because they are both tiny contradictions.
+
+## `SoundnessFixBase.v`
+
+- `empty_basic_value_base_const`
+  - Use count: used once by `ty_denote_ret_fvar_base_const`.
+  - Role: canonical forms for base constants.
+  - Keep. It is short, semantic, and names a useful canonical-forms step.
+
+- `ty_denote_ret_fvar_base_const`
+  - Use count: used by `fix_self_rec_call_world_min_exists` and the less-than
+    extraction chain.
+  - Role: extracts a base constant from `[[τ]] (ret x)`.
+  - Keep. This is a clean semantic extractor.
+  - Cleanup: internal `x ∈ dom σ` proof is a repeated world/store-domain shape;
+    a lower-level lemma could eventually package `world_dom` plus store lookup.
+
+- `lt_qual_open_vars`
+  - Use count: used by `lt_qual_open_fibvars_set` and
+    `lt_type_qualifier_open_lookup`.
+  - Role: syntax normalization for the `<` qualifier.
+  - Keep local to FixBase unless more `<` qualifier proofs appear.
+
+- `lt_qual_open_fibvars_set`
+  - Use count: used by `ty_denote_lt_arg_fiber`.
+  - Role: bridges CTOver fiber set after opening.
+  - Keep. It hides nontrivial LN/set rewriting.
+
+- `lt_qual_open_prop_iff`
+  - Use count: used by `lt_type_qualifier_open_lookup`.
+  - Role: pure semantic meaning of opened `<`.
+  - Keep.
+
+- `lt_type_qualifier_open_lookup`
+  - Use count: used by `lt_type_qualifier_open_msubst_lookup`.
+  - Role: extracts concrete constants and strict decrease from qualifier
+    denotation.
+  - Keep. This proof is store-heavy; if reused outside Fix, move to a
+    qualifier-denotation support file.
+  - Cleanup candidate: repeated construction of restricted lifted lstore could
+    be generalized, but doing so safely requires raw-before-dependent store
+    helper work.
+
+- `res_fiber_from_projection_of_store`
+  - Use count: used once by `ty_denote_lt_arg_fiber`.
+  - Role: generic fiber construction for the fiber containing a known store.
+  - Lower-layer candidate: move to `ContextAlgebra`/resource-extension support
+    in a later pass. It is generic but depends on the concrete fiber
+    constructor, so moving it now has more dependency risk than benefit.
+
+- `lstore_in_lworld_on_mlsubst_back_self`
+  - Use count: used by `lt_type_qualifier_open_msubst_lookup`.
+  - Role: dependent store membership transport.
+  - Lower-layer candidate: belongs near lstore/mlsubst support if reused.
+    Keep for now because it is part of the specialized `<` extractor.
+
+- `lt_type_qualifier_open_msubst_lookup`
+  - Use count: used by `ty_denote_lt_arg_fiber`.
+  - Role: same extractor after CTOver fiber substitution.
+  - Keep. This is the key lemma hiding fiber mechanics from the Fix proof.
+  - Cleanup candidate: proof is long because it reconstructs restricted
+    lstore membership twice. Possible future lower-layer helper:
+    "restricted lifted store has lookup iff original atom store has lookup".
+
+- `ty_denote_lt_arg_fiber`
+  - Use count: used by `fix_rec_arg_decreases_min`.
+  - Role: main high-level extractor: `over_ty b (z < x)` implies every store
+    has `z < x`.
+  - Keep. It is exactly the semantic boundary requested by the proof plan.
+  - Cleanup: contains many local asserts that are actually result-extension and
+    fiber mechanics. They are acceptable because the lemma is the intended
+    hiding place for that complexity.
+
+## `SoundnessFixOpen.v`
+
+- `fix_arrow_opened_app_static_guard_full`
+  - Use count: used by `fix_unfolded_result_to_opened_goal` and
+    `fix_opened_arrow_result`.
+  - Role: static guard for `fix y`.
+  - Keep. It is repeated enough and prevents static-guard reconstruction at
+    callers.
+  - Cleanup: proof has repeated `ctx_erasure_under_norm_in ...; better_set_solver`.
+    Later introduce a local `fix_ctx_side` tactic.
+
+- `fix_arrow_open_arg_normalize`
+  - Use count: used by `fundamental_fix_case`.
+  - Role: normalize Arrow antecedent from raw opened formula to inserted lvar
+    denotation.
+  - Keep. This is not merely a wrapper; it enforces normalize-first at the
+    boundary.
+
+- `fix_arrow_open_arg_to_bind_denotation`
+  - Use count: only by `fix_arrow_open_arg_to_bind_ctx`.
+  - Role: argument denotation in erased comma-bind environment.
+  - Keep for now. Although one-use, it is not short and is a readable semantic
+    substep.
+
+- `fix_arrow_open_arg_to_bind_ctx`
+  - Use count: only by `fix_arrow_open_arg_to_comma_ctx`.
+  - Role: turns argument denotation into `CtxBind`.
+  - Keep for now. It packages a useful ctx-bind construction.
+
+- `fix_arrow_open_arg_to_comma_ctx`
+  - Use count: used by `fix_opened_arrow_result`.
+  - Role: closure context plus opened argument context.
+  - Keep. This is a clean high-level helper.
+
+- `fix_unfolded_result_to_opened_goal`
+  - Use count: used by `fix_opened_arrow_result` and
+    `fix_rec_unfolded_result_to_open_goal`.
+  - Role: term equivalence from unfolded application to the opened Fix goal.
+  - Keep. It is a major semantic transport and should remain named.
+
+- `erase_fix_rec_call_ty`
+  - Use count: used by `fix_self_rec_call_context_wf`.
+  - Role: erasure calculation for recursive-call type.
+  - Keep; possibly move to a type-syntax support file if recursive-call type
+    becomes a first-class API.
+
+- `fv_cty_fix_rec_call_ty_subset`
+  - Use count: used in `SoundnessFixApply.v` and `SoundnessFixSelf.v`.
+  - Role: FV side condition for recursive-call type.
+  - Keep. This is a useful normalized FV fact.
+
+- `fix_unfolded_app_static_guard_full`
+  - Use count: used by `fix_body_arrow_apply_self`.
+  - Role: static guard for the unfolded body applied to recursive self.
+  - Keep.
+
+## `SoundnessFixApply.v`
+
+- `fix_body_arrow_apply_self`
+  - Use count: used by `fix_self_rec_call_reducible_measure_step` and
+    `fix_opened_arrow_result`.
+  - Role: apply opened body Arrow to recursive self by result-extension alias.
+  - Keep. It is large but semantically central.
+  - Cleanup candidates:
+    - The construction of `Hzero_tgt` contains a long target guard rebuild with
+      many store/relevant-env lookup steps. Future extraction target:
+      "result-alias target zero guard under fresh extension".
+    - The `tm_equiv` construction and `ty_denote_gas_tm_equiv` block are a
+      reusable result-alias app pattern, but it is currently too tied to Fix's
+      body/self shapes to move safely.
+    - Replace naked `decide`/store restriction chains only after a small local
+      relevant-env lookup tactic exists.
+
+## `SoundnessFixSelf.v`
+
+- `fix_self_rec_call_context_wf`
+  - Use count: only by `fix_self_rec_call_zero`.
+  - Role: typing regularity package for recursive self.
+  - Inline candidate: yes. It is a one-use wrapper, and its proof is mostly
+    regularity plus one erasure weakening.
+
+- `fix_self_rec_call_zero`
+  - Use count: used by induction step and final theorem.
+  - Role: zero guard for recursive self.
+  - Keep. It is a meaningful semantic guard helper.
+
+- `store_arg_measure`
+  - Use count: unused.
+  - Delete.
+
+- `world_arg_min_at`
+  - Use count: central to the world-min induction.
+  - Keep. This is the correct measure abstraction.
+
+- `fix_self_rec_call_reducible_at_measure`
+  - Use count: induction predicate.
+  - Keep. It is not a wrapper.
+
+- `nat_pred_min_exists`
+  - Use count: only by `world_arg_min_exists_from_const`.
+  - Keep local for now. Generic, but not worth moving without another user.
+
+- `res_le_store_lift`
+  - Use count: used by `fix_rec_arg_decreases_min`.
+  - Lower-layer move: yes. This is generic resource/refinement machinery and
+    should be moved to `ContextAlgebra/theories/ResourceInterface.v`.
+
+- `world_arg_min_exists_from_const`
+  - Use count: used twice.
+  - Keep. It captures the min-measure construction.
+
+- `fix_self_rec_call_world_min_exists`
+  - Use count: used by final `fix_self_rec_call_denotation`.
+  - Keep. It packages base-constant extraction plus min existence.
+
+- `fv_cty_over_lt_bound_fvar`
+  - Use count: used by `fix_rec_open_arg_normalize`.
+  - Keep local unless `<` helper APIs move lower.
+
+- `fix_rec_open_arg_normalize`
+  - Use count: used by induction step.
+  - Role: normalize recursive-call antecedent into the `τx` and `<` branches.
+  - Keep. This is a large but correct normalize-first boundary.
+  - Cleanup: repeated side-condition proof should use a local Fix side tactic.
+
+- `fix_rec_arg_decreases_min`
+  - Use count: used by induction step.
+  - Role: proves the child world's argument min is strictly smaller.
+  - Keep. It is the HATs-style measure step in resource-world form.
+  - Lower-layer helper: after moving `res_le_store_lift`, this proof becomes
+    cleaner.
+
+- `fix_rec_child_ctx_from_arg`
+  - Use count: used by induction step.
+  - Role: child context construction for recursive call.
+  - Keep.
+  - Cleanup: one long `ty_env_agree_on` proof repeats basic-context disjointness
+    reasoning. Future lower-layer helper:
+    `ty_env_agree_ctx_erasure_under_of_basic_ctx`.
+
+- `fix_rec_unfolded_result_to_open_goal`
+  - Use count: used by induction step.
+  - Role: transport recursive proof result back into the raw opened Arrow
+    consequent.
+  - Keep. It is long but necessary.
+  - Cleanup: `Htarget_rel_lc` and `Hx_not_rel` are syntactic sublemmas; if reused,
+    extract to a local "opened target relevant vars" lemma. Currently one-use.
+
+- `fix_self_rec_call_reducible_measure_step`
+  - Use count: used by world-min induction theorem.
+  - Role: main induction step.
+  - Keep. It should read as the proof outline; local side-condition cleanup
+    should not hide the semantic sequence.
+
+- `fix_self_rec_call_denotation_by_world_min_induction`
+  - Use count: used by final recursive self denotation.
+  - Keep. This is the actual well-founded induction wrapper.
+
+- `fix_self_rec_call_denotation`
+  - Use count: used by `fix_opened_arrow_result`.
+  - Keep. This is the public self-denotation theorem.
+
+## Immediate Cleanup Plan
+
+1. Delete unused `store_arg_measure`.
+2. Move generic `res_le_store_lift` to `ContextAlgebra/theories/ResourceInterface.v`.
+3. Inline `fix_self_rec_call_context_wf` into `fix_self_rec_call_zero`.
+4. Replace the two plain `set_solver` calls in Fix files with direct
+   contradictions.
+5. Add small local side-condition tactics only where they are used repeatedly;
+   do not globally replace every `better_set_solver` in this pass.
+6. Compile:
+   - `timeout 50s make ContextAlgebra/theories/ResourceInterface.vo`
+   - `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+   - `timeout 50s make ContextTyping/theories/SoundnessFix.vo`
+   - `timeout 50s make ContextTyping/theories/Soundness.vo`
+
+## Completed Cleanup
+
+- Deleted unused `store_arg_measure`.
+- Moved generic `res_le_store_lift` to
+  `ContextAlgebra/theories/ResourceInterface.v`.
+- Inlined the one-use `fix_self_rec_call_context_wf` wrapper into
+  `fix_self_rec_call_zero`.
+- Added `ty_env_agree_ctx_erasure_under_of_basic_ctx` to
+  `Denotation/theories/Context.v` and used it in `SoundnessFixOpen.v` and
+  `SoundnessFixSelf.v`, removing duplicated `ty_env_agree_on` proof blocks.
+- Removed the remaining plain `set_solver` calls from the Fix files; the
+  remaining `better_set_solver` calls are mostly short freshness/domain side
+  conditions and are left for a later, lower-risk local-tactic pass.
+- Verified:
+  - `timeout 50s make ContextAlgebra/theories/ResourceInterface.vo`
+  - `timeout 50s make Denotation/theories/Context.vo`
+  - `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+  - `timeout 50s make ContextTyping/theories/SoundnessFix.vo ContextTyping/theories/Soundness.vo`
+
+## Ten-Round Refactor Log
+
+### Round 1: Re-index Fix Lemmas
+
+Current file sizes:
+
+| File | Lines | Hotspots |
+| --- | ---: | --- |
+| `SoundnessFix.v` | 178 | outer Arrow proof, small freshness side conditions |
+| `SoundnessFixOpen.v` | 648 | opened static guards, unfold transport, repeated ctx-erasure side proofs |
+| `SoundnessFixApply.v` | 625 | largest result-alias/zero-guard block, relevant-env/store lookup boilerplate |
+| `SoundnessFixBase.v` | 721 | fiber extraction and store/lstore restriction proofs |
+| `SoundnessFixSelf.v` | 1003 | induction step, recursive argument normalization, child-context construction |
+
+Current action table:
+
+| Lemma / Pattern | Action | Reason |
+| --- | --- | --- |
+| `res_fiber_from_projection_of_store` | lower | generic resource/fiber construction, not Fix-specific |
+| fresh/domain side conditions in `SoundnessFix.v`/`SoundnessFixOpen.v` | tactic/local lemma | repeated proof noise; should not call global set solvers directly in rewritten code |
+| static guard for opened app | generalize | does not fundamentally depend on `vfix` |
+| `Hzero_tgt` in `fix_body_arrow_apply_self` | generalize | large target-zero guard reconstruction with term shape noise |
+| app result-alias equivalence block | generalize | should only require alias/equiv/closedness facts |
+| `fix_rec_open_arg_normalize` | split | combines open-env normalization and CTInter extraction |
+| `fix_rec_child_ctx_from_arg` | simplify | still has context extraction and bind construction as nested asserts |
+| `fix_self_rec_call_reducible_measure_step` | readability | should expose the semantic sequence, not side-condition plumbing |
+
+Round 1 status: analysis-only, no code mutation beyond this report update.
+
+### Round 2: Local Deterministic Side Tactic for Outer Fix
+
+Implemented a local `fix_union_side` tactic in `SoundnessFix.v`.
+
+- It recursively destructs union-membership hypotheses and reconstructs the
+  needed membership path with `elem_of_union_l/r`.
+- It does not call `set_solver` or `better_set_solver`.
+- It replaced the easiest high-level freshness side conditions in
+  `fix_opened_arrow_result` and `fundamental_fix_case`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFix.vo`
+
+### Round 3: Lower Generic Fiber Construction
+
+Moved `res_fiber_from_projection_of_store` from `SoundnessFixBase.v` to
+`ContextAlgebra/theories/ResourceInterface.v`.
+
+- The helper is resource/fiber infrastructure, not Fix-specific.
+- The moved proof no longer uses `better_set_solver`; the domain equality is
+  proved by explicit `elem_of_intersection` reasoning.
+- `SoundnessFixBase.v` now imports this helper through the existing resource
+  interface dependency.
+
+Verified:
+
+- `timeout 50s make ContextAlgebra/theories/ResourceInterface.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixBase.vo`
+
+### Round 4: General Static-Guard Env Normalization
+
+Added `context_typing_wf_denot_static_guard_comma_bind_insert` in
+`SoundnessLam.v`.
+
+- The lemma is not Fix-specific: it packages the common pattern
+  `context_typing_wf_denot_static_guard_full` under
+  `CtxComma Γ (CtxBind y τx)` followed by the erasure-env equality
+  `erase_ctx (Γ, y:τx) = <[y := erase_ty τx]> erase_ctx Γ`.
+- `fix_arrow_opened_app_static_guard_full` and
+  `fix_unfolded_app_static_guard_full` now call this helper instead of each
+  rebuilding the final `Henv` assertion.
+- This round intentionally did not generalize the whole app-typing
+  construction yet; the remaining repeated side conditions are still visible
+  candidates for a later deterministic tactic or lower-level erasure lemma.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessLam.vo ContextTyping/theories/SoundnessFixOpen.vo`
+
+### Round 5: Relevant-Env Insert Freshness
+
+Added `relevant_env_insert_fresh` in `RelevantEnv.v`.
+
+- This is a small lower-layer equality:
+  inserting `LVFree x` into an environment has no effect after restricting to
+  `relevant_lvars τ e` when `LVFree x` is not relevant.
+- `fix_body_arrow_apply_self` now uses this equality to build the target
+  zero-guard from `Hstatic_target_mz`.
+- This removed the largest low-level lookup block in that proof: no manual
+  `basic_world_formula_subenv`, `basic_context_ty_lvars_mono`,
+  `basic_tm_has_ltype_env_agree_lc`, `storeA_restrict_lookup`, or local
+  `decide` chain is needed for the inserted target env.
+
+Verified:
+
+- `timeout 50s make ContextBasicDenotation/theories/RelevantEnv.vo ContextTyping/theories/SoundnessFixApply.vo`
+
+### Round 6: App Result-Alias Equivalence Wrapper
+
+Added `tm_equiv_tapp_value_arg_result_alias` in `TypeEquivCore.v`.
+
+- The existing `_on` lemma is still the precise low-level version, but callers
+  no longer need to manually choose the obvious FV union and prove the three
+  elementary subset/membership side conditions.
+- The new wrapper is generic over the function expression and argument value;
+  it does not mention Fix, `vfix`, or recursive-call types.
+- `fix_body_arrow_apply_self` now applies the wrapper directly, so the local
+  `Xeq` packet and FV side-condition proof are gone.
+
+Verified:
+
+- `timeout 50s make Denotation/theories/TypeEquivCore.vo ContextTyping/theories/SoundnessFixApply.vo`
+
+### Round 7: Split a Pure LC Fact from Open-Arg Normalization
+
+Added `lc_context_ty_over_lt_bound_fvar` in `SoundnessFixSelf.v`.
+
+- `fix_rec_open_arg_normalize` no longer proves from scratch that
+  `over_ty b (0 < x)` is locally closed.
+- The new proof is deterministic and uses explicit `lvars_bv_union` /
+  singleton reasoning, not `set_solver` or `better_set_solver`.
+- This is a small first split of the normalize lemma. The CTInter branch
+  extraction and relevant-env freshness proof remain inside the lemma for now.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Pass 2 / Round 5
+
+Full scan:
+
+- Rechecked all `SoundnessFix*.v` files for raw-open leakage, depth arithmetic,
+  and both `assert` and `pose proof` intermediate facts.  `pose proof` is now
+  treated the same as `assert` for cleanup purposes: it is useful only when it
+  marks a semantic checkpoint or avoids repeating an expensive derivation.
+- The remaining raw `cty_open 0 _ (cty_shift 0 _)` occurrences were in the two
+  opened-argument normalizers.  These were caused by
+  `arrow_open_arg_to_inserted_env` returning an unnormalized opened argument.
+- Several Fix proofs were still hand-destructing
+  `fv_cty (fix_rec_call_ty ...)`; this was a missing syntax-layer interaction
+  lemma for the Fix recursive-call type.
+- The large `lc_lvars (relevant_lvars ...)` proof in
+  `fix_rec_unfolded_result_to_open_goal` was a generic relevant-lvars LC fact,
+  not a Fix-specific proof.
+
+Optimization:
+
+- Added `cty_depth_norm`, `cty_depth_norm_in`, and `cty_depth_solve` in
+  `ContextTypeLanguage/theories/Notation.v`.
+- Added syntax facts for the recursive-call type:
+  `fv_cty_fix_rec_call_ty_fresh`,
+  `fv_cty_over_lt_bound_fvar_fresh`,
+  `lc_context_ty_fix_rec_call_ty`, and
+  `cty_open_shift_fix_rec_call_ty_fresh`.
+- Added `lc_lvars_relevant_lvars` and a conservative `closed_side_solve` in
+  `ContextBasicDenotation/theories/RelevantEnv.v`.
+- Added `arrow_open_arg_to_inserted_env_normalized` in
+  `Denotation/theories/TypeEquivArrow.v`.
+- Replaced the two obvious `fv_cty_fix_rec_call_ty_subset` hand proofs in
+  `SoundnessFixApply.v` and `SoundnessFixSelf.v`.
+- Replaced all Fix-file raw `cty_depth` arithmetic expansions with
+  `cty_depth_solve`.
+- Replaced the large hand-written `Htarget_rel_lc` proof with
+  `lc_lvars_relevant_lvars`.
+- Rewired `fix_arrow_open_arg_normalize` and `fix_rec_open_arg_normalize` to use
+  `arrow_open_arg_to_inserted_env_normalized`, removing their local
+  open-shift `replace`/normalization assertions.
+
+Deferred:
+
+- `fix_rec_unfolded_result_to_open_goal` still has intermediate facts whose
+  statements mention
+  `lty_env_open_one 0 z (typed_lty_env_bind ...)`.  These come from the current
+  Arrow result transport API (`ty_equiv_arrow_result_src_mid` /
+  `ty_equiv_arrow_result_tgt_goal`).  The next safe cleanup is to add inserted
+  environment variants of those Arrow result transport lemmas, then rewrite
+  this Fix proof around the inserted-env API.
+
+Verified:
+
+- `timeout 50s make ContextTypeLanguage/theories/Notation.vo`
+- `timeout 50s make ContextBasicDenotation/theories/RelevantEnv.vo`
+- `timeout 50s make Denotation/theories/TypeEquivArrow.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixOpen.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Pass 2 / Round 6
+
+Full scan:
+
+- Rechecked the raw leakage patterns after Round 5.  The only remaining
+  matches were in `fix_rec_unfolded_result_to_open_goal`, all caused by the
+  Arrow result transport API carrying
+  `lty_env_open_one 0 z (typed_lty_env_bind ...)`.
+- Rechecked `assert` and `pose proof` together.  The main target for this round
+  was not to eliminate all semantic checkpoints, but to remove the syntactic
+  open-env facts that were forcing later assertions to carry raw LN
+  environment shapes.
+
+Optimization:
+
+- Added inserted-environment Arrow result transport wrappers in
+  `Denotation/theories/TypeEquivArrow.v`:
+  `ty_equiv_arrow_result_src_mid_inserted` and
+  `ty_equiv_arrow_result_tgt_goal_inserted`.
+- Rewrote `fix_rec_unfolded_result_to_open_goal` so `Houter_rel`,
+  `Houter_mid`, `Hmid_big`, `Hmid_x`, and `Htarget_open` use inserted
+  environments instead of `lty_env_open_one ... typed_lty_env_bind ...`.
+- The final `formula_open` discharge now immediately rewrites
+  `typed_lty_env_bind_open_current` and closes with the inserted-env fact.
+
+Verified:
+
+- `timeout 50s make Denotation/theories/TypeEquivArrow.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+- Raw leakage scan:
+  `rg -n "formula_open 0 .*ty_denote_gas|lty_env_open_one 0 .*typed_lty_env_bind|cty_open 0 .*cty_shift 0|cbn \\[cty_depth\\]|unfold over_ty; cbn \\[cty_depth\\]" ContextTyping/theories/SoundnessFix*.v`
+  returned no matches.
+
+### Final Check For This Cleanup Batch
+
+Completed:
+
+- `SoundnessFix*.v` no longer leaks the raw normalization-heavy patterns:
+  `formula_open 0 ... ty_denote_gas`,
+  `lty_env_open_one 0 ... typed_lty_env_bind`,
+  `cty_open 0 ... cty_shift 0`, or hand-expanded `cty_depth` arithmetic.
+- `SoundnessFix*.v` has no `Admitted.` or anonymous `admit.`.
+- The newly introduced normalizers/lemmas are proved, not admitted.
+- `assert` and `pose proof` were rescanned together.  Remaining uses are
+  mostly semantic checkpoints (world extension facts, body-arrow applications,
+  zero guards, fiber/projection extraction, and induction-step milestones).
+  They are candidates for later semantic decomposition, but they no longer
+  carry the raw LN/open-env/depth noise targeted by this batch.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFix.vo`
+- `timeout 50s make ContextTyping/theories/Soundness.vo`
+- `timeout 180s make`
+- `rg -n "Admitted\\.|admit\\." ContextTyping/theories/SoundnessFix*.v`
+  returned no matches.
+- Raw leakage scan returned no matches.
+
+### Pass 3 / Full-Plan Correction
+
+Full scan:
+
+- Re-scanned every `SoundnessFix*.v` file for the concrete issues from the
+  full correction plan: raw opened arguments, `formula_open ... ty_denote_gas`
+  leakage, `typed_lty_env_bind/relevant_env` premises, repeated static-guard
+  destructs, `basic_tm_has_ltype_lvars` blocks, and Fix-specific syntax facts.
+- The remaining raw-open occurrences after this pass are only inside the two
+  intended normalizers:
+  `fix_arrow_open_arg_normalize` and `fix_rec_open_arg_normalize`.
+- `fix_unfolded_result_to_opened_goal` and `fix_body_arrow_apply_self` were the
+  two biggest transport blocks.  Their repeated zero-guard/static/equivalence
+  proof patterns were general enough to lower to Denotation support.
+- `SoundnessFixBase.v` still owns the high-level fiber extractor
+  `ty_denote_lt_arg_fiber`; qualifier-open, store/mlsubst lookup, and empty-env
+  canonical facts are no longer defined there.
+
+Lowered facts:
+
+- `ContextBasicDenotation/BasicTypingFormula.v`
+  - `empty_basic_value_base_inv`
+  - `expr_basic_typing_world_closed_on_term`
+- `ContextBasicDenotation/Qualifier.v`
+  - `lt_qual_open_vars`
+  - `lt_qual_open_fibvars_set`
+  - `lt_qual_open_prop_iff`
+  - `lt_type_qualifier_open_lookup`
+  - `lstore_in_lworld_on_mlsubst_back_self`
+  - `lt_type_qualifier_open_msubst_lookup`
+- `ContextTypeLanguage/Notation.v`
+  - `erase_fix_rec_call_ty`
+  - `fv_cty_fix_rec_call_ty_subset`
+  - `fv_cty_over_lt_bound_fvar`
+  - `lc_context_ty_over_lt_bound_fvar`
+- `Denotation/TypeEquiv.v`
+  - static/type-denotation guard extractors:
+    `ty_static_guard_fv_tm_subset`,
+    `ty_static_guard_fv_subset`,
+    `ty_static_guard_wfworld_closed_on_term`,
+    `ty_static_guard_basic_world`,
+    `ty_denote_gas_fv_tm_subset`
+  - transport helpers:
+    `ty_denote_gas_zero_transport_static_tm_equiv`,
+    `ty_denote_gas_zero_tret_of_static_guard`,
+    `ty_static_guard_insert_irrelevant`,
+    `expr_result_formula_of_result_extends_from_ty_guard`
+- `Denotation/TypeEquivArrow.v`
+  - `arrow_inserted_env_to_open_arg_normalized`
+
+Fix-file changes:
+
+- `SoundnessFix.v`
+  - `fix_opened_arrow_result` now takes the already-normalized argument
+    denotation; the raw Arrow argument is normalized at the caller by
+    `fix_arrow_open_arg_normalize`.
+  - The top-level fix zero guard now uses
+    `ty_denote_gas_zero_tret_of_static_guard` instead of destructing
+    `ty_static_guard_formula`.
+- `SoundnessFixOpen.v`
+  - `fix_arrow_open_arg_normalize` is the only outer-Arrow raw-open digestion
+    point and now outputs normalized `τx`.
+  - `fix_unfolded_result_to_opened_goal` uses
+    `ty_denote_gas_zero_transport_static_tm_equiv` for the target zero guard.
+  - Extracted `fix_tapp_unfold_tm_equiv_on` as the named Fix unfold/app
+    equivalence step.
+- `SoundnessFixApply.v`
+  - Removed the local raw opened `τself` argument fact by using
+    `arrow_inserted_env_to_open_arg_normalized`.
+  - Replaced the large target-zero block with:
+    irrelevant-lvar proof, inserted basic-world construction,
+    `ty_static_guard_insert_irrelevant`, and
+    `ty_denote_gas_zero_transport_static_tm_equiv`.
+  - Replaced result-alias and FV-domain blocks with lowered Denotation helpers.
+- `SoundnessFixBase.v`
+  - Removed local definitions now lowered to BasicDenotation/TypeLanguage.
+  - Replaced the result-extension and closed-on patterns with generic helpers.
+
+Verified in this pass:
+
+- `timeout 50s make Denotation/theories/TypeEquiv.vo`
+- `timeout 50s make Denotation/theories/TypeEquivArrow.vo`
+- `timeout 50s make ContextBasicDenotation/theories/BasicTypingFormula.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixBase.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixOpen.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFix.vo`
+
+Deferred:
+
+- Some `better_set_solver` calls remain inside Fix side-condition proofs.
+  They now occur in normalized side goals rather than in semantic transport
+  blocks.  A future tactic-only pass can consolidate them without changing the
+  semantic helper boundaries.
+
+### Pass 2 / Round 9
+
+Full scan:
+
+- Rechecked all Fix files for wrapper/inlining, lower-layer candidates,
+  repeated proof patterns, large asserts, concrete-shape helpers, local tactic
+  opportunities, and naked solver use.
+- The best immediate targets were still nonsemantic freshness side conditions:
+  `fix_rec_open_arg_normalize` had three `better_set_solver` calls inside the
+  same relevant-env freshness proof, and `fix_body_arrow_apply_self` had one
+  remaining opened-app term-freshness proof.
+- Wrapper/inline scan: no semantic wrapper was safe to inline this round.
+- Lowering scan: no new lower-layer lemma was needed; these were local
+  destructs of `fv`/relevant-env facts.
+
+Optimization:
+
+- Replaced the `Hzarg_env` solver calls in `fix_rec_open_arg_normalize` with
+  explicit `fix_rec_call_ty` FV subset splitting and `fix_self_notin_union`.
+- Replaced the opened target relevant-env proof in
+  `fix_rec_unfolded_result_to_open_goal` by reusing the already-derived
+  `Hzself`.
+- Replaced two app-term freshness proofs by explicit `fv_tapp_tm` union and
+  empty-set decomposition, one in Self and one in Apply.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Pass 2 / Round 10
+
+Full scan:
+
+- Rechecked every Fix file one more time for admits, wrappers, lower-layer
+  candidates, repeated proof patterns, large asserts, concrete-shape helpers,
+  local tactic opportunities, and naked store/set/decide proof blocks.
+- `SoundnessFixSelf.v` still had one especially small theorem-local
+  `better_set_solver` in `fv_cty_over_lt_bound_fvar`; this was a pure
+  singleton/empty-set equality and did not need a global solver.
+- Wrapper/inline scan: no remaining short wrapper was both single-use and safe
+  to inline without hiding a semantic boundary.
+- Lowering scan: the remaining solver calls are mostly in qualifier/fiber
+  extractor internals (`SoundnessFixBase.v`) and erasure/open guard proofs
+  (`SoundnessFixOpen.v`). They are stable but need a separate lower-layer
+  qualifier/store-domain cleanup to remove cleanly.
+
+Optimization:
+
+- Replaced the final pure set equality in `fv_cty_over_lt_bound_fvar` with
+  `set_unfold` plus propositional reasoning.
+
+Final verification:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+- `timeout 50s make ContextTyping/theories/Soundness.vo`
+- `timeout 180s make`
+
+Final scans:
+
+- `rg -n "Admitted\\.|admit\\." ContextTyping/theories/SoundnessFix*.v`
+  produced no matches.
+- Remaining explicit `better_set_solver` / `set_solver` / `decide` counts:
+  - `SoundnessFixBase.v`: 18
+  - `SoundnessFixOpen.v`: 19
+  - `SoundnessFixSelf.v`: 9
+  - `SoundnessFix.v` and `SoundnessFixApply.v`: 0
+
+Closure:
+
+- The second ten-round pass followed the corrected discipline: each round
+  rechecked all categories, then applied all safe optimizations found in that
+  scan.
+- No Fix proof regressed to an admitted helper.
+
+### Pass 2 / Round 5
+
+Full scan:
+
+- Rechecked all Fix files for fresh/fv side conditions after Rounds 3 and 4.
+- A recurring non-Fix-specific pattern is:
+  `wf_context_ty_at d D τ` plus `x ∉ D` implies `x ∉ fv_cty τ`.
+- Wrapper/inline scan: no Fix wrapper was removed this round.
+- Lowering scan: this pattern belongs in `ContextTypeLanguage/WF.v`, not in
+  Fix proof files.
+- Large-assert scan: this helper shortens open/shift side-condition proofs but
+  does not change semantic asserts.
+
+Optimization:
+
+- Added `wf_context_ty_at_notin_fv` in `ContextTypeLanguage/theories/WF.v`.
+- Used it in `fix_arrow_open_arg_to_bind_denotation` to replace the local
+  combination of `wf_context_ty_at_fv_subset` and erasure-domain freshness.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixOpen.vo`
+
+### Pass 2 / Round 6
+
+Full scan:
+
+- Rechecked all Fix files. After Rounds 1 and 5, `SoundnessFixApply.v` was down
+  to five old `better_set_solver` calls.
+- Remaining easy Apply cases were erasure-domain freshness from `Hy`,
+  `ext_out` disjointness for the fresh alias, one opened-result WF freshness
+  premise, and final drop-fresh term freshness.
+- Wrapper/inline scan: no Apply semantic assert was safe to inline this round.
+- Lowering scan: no new global helper was needed; a file-local erasure
+  freshness bridge is enough.
+
+Optimization:
+
+- Added local `fix_apply_fresh_erase_ctx_from_fix_union`.
+- Replaced Apply's `HyΓ` proof and the opened-result WF side condition.
+- Replaced the `extension_applicable` `ext_out` proof by explicit singleton
+  disjointness using `Hzmy`.
+- Replaced the final `fv_tapp` freshness solver by explicit union
+  decomposition using `Hzbody` and `Hzself`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo ContextTyping/theories/SoundnessFix.vo ContextTyping/theories/Soundness.vo`
+
+### Pass 2 / Round 7
+
+Full scan:
+
+- Rechecked all Fix files. `SoundnessFixApply.v` now has only one old
+  `better_set_solver`, inside a relevant-env freshness proof rather than a
+  trivial fresh-for projection.
+- In `SoundnessFixSelf.v`, `fix_rec_unfolded_result_to_open_goal` still had
+  three pure projections from its `Hzfresh` union:
+  `z ∉ fv_cty τ`, `z ∉ fv_cty τx`, and `z ∉ fv_tm self`.
+- Wrapper/inline scan: no wrapper was removed; this lemma remains a semantic
+  transport boundary.
+- Local tactic scan: existing `fix_self_notin_union` was exactly the right
+  deterministic tactic.
+
+Optimization:
+
+- Replaced those three `better_set_solver` uses with `fix_self_notin_union`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Pass 2 / Round 8
+
+Full scan:
+
+- Rechecked all Fix files again. The highest-signal remaining local pattern was
+  in `fix_rec_open_arg_normalize`: two proof blocks still used global set
+  solving to project freshness for the fresh recursive argument alias `z`.
+- Wrapper/inline scan: `fix_rec_open_arg_normalize` remains a useful boundary
+  because it hides the CTInter/opened-argument normalization.
+- Lowering scan: no new global lemma was needed. One proof is specific to the
+  local `CTInter τx (over_ty ...)` shape; the other is local inserted-env
+  domain bookkeeping.
+- Large-assert scan: the semantic CTInter split remains; only side-condition
+  asserts were optimized.
+
+Optimization:
+
+- Replaced `Hzτarg` with explicit lvar/fv rewriting and union decomposition.
+- Replaced `HzΣ` with explicit inserted-env/domain rewriting and local
+  freshness decomposition.
+- Kept the proof local rather than extracting a shape-heavy lemma.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Pass 2 / Round 5
+
+Full scan:
+
+- Rechecked all Fix files for fresh/fv side conditions after Round 3/4.
+- A recurring non-Fix-specific pattern is:
+  `wf_context_ty_at d D τ` plus `x ∉ D` implies `x ∉ fv_cty τ`.
+- Wrapper/inline scan: no Fix wrapper removed this round.
+- Lowering scan: the pattern belongs in `ContextTypeLanguage/WF.v`, not in
+  Fix proof files.
+- Large assert scan: this helper shortens side-condition proofs around
+  open/shift normalization, but does not change semantic asserts.
+
+Optimization:
+
+- Added `wf_context_ty_at_notin_fv` in `ContextTypeLanguage/theories/WF.v`.
+- Used it in `fix_arrow_open_arg_to_bind_denotation` to replace the local
+  combination of `wf_context_ty_at_fv_subset` and erasure-domain freshness.
+
+Verified:
+
+- `timeout 50s make ContextTypeLanguage/theories/WF.vo ContextTyping/theories/SoundnessFixOpen.vo`
+  exceeded 50s only because WF triggered a low-level rebuild.
+- Re-ran `timeout 50s make ContextTyping/theories/SoundnessFixOpen.vo` from
+  cache; it passed.
+
+### Pass 2 / Round 6
+
+Full scan:
+
+- Rechecked all Fix files. After Rounds 1 and 5, `SoundnessFixApply.v` was down
+  to five `better_set_solver` calls.
+- Remaining easy Apply cases were:
+  erasure-domain freshness from `Hy`, `ext_out` disjointness for the fresh alias,
+  one opened-result WF freshness premise, and final drop-fresh term freshness.
+- Wrapper/inline scan: no Apply semantic assert was safe to inline this round.
+- Lowering scan: no new global helper was needed; a file-local erasure freshness
+  bridge is enough.
+
+Optimization:
+
+- Added local `fix_apply_fresh_erase_ctx_from_fix_union`.
+- Replaced Apply's `HyΓ` proof and the opened-result WF side condition.
+- Replaced the `extension_applicable` `ext_out` proof by explicit singleton
+  disjointness using `Hzmy`.
+- Replaced the final `fv_tapp` freshness solver by explicit union
+  decomposition using `Hzbody` and `Hzself`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo ContextTyping/theories/SoundnessFix.vo ContextTyping/theories/Soundness.vo`
+
+### Pass 2 / Round 7
+
+Full scan:
+
+- Rechecked all Fix files. `SoundnessFixApply.v` now has only one old
+  `better_set_solver`, which is inside a relevant-env freshness proof and not a
+  trivial fresh-for projection.
+- In `SoundnessFixSelf.v`, `fix_rec_unfolded_result_to_open_goal` still had
+  three pure projections from its `Hzfresh` union:
+  `z ∉ fv_cty τ`, `z ∉ fv_cty τx`, and `z ∉ fv_tm self`.
+- Wrapper/inline scan: no wrapper was removed; this lemma remains a semantic
+  transport boundary.
+- Local tactic scan: existing `fix_self_notin_union` was already exactly the
+  right deterministic tactic.
+
+Optimization:
+
+- Replaced those three `better_set_solver` uses with `fix_self_notin_union`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Round 8: Lower Comma-Left Context Projection
+
+Added `ctx_denote_under_comma_left` in `Denotation/theories/Context.v`.
+
+- The lemma extracts the left context denotation from
+  `ctx_denote_under Σ (CtxComma Γ1 Γ2)` and normalizes the ambient support.
+- It is the general form of a proof block that was previously local to
+  `fix_rec_child_ctx_from_arg`.
+- `fix_rec_child_ctx_from_arg` now gets the parent `Γ` denotation by one call
+  to this Context-layer lemma, then uses Kripke monotonicity as before.
+
+Verified:
+
+- `timeout 50s make Denotation/theories/Context.vo ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Round 9: Deterministic Freshness Side Conditions in Induction Step
+
+Added local tactics in `SoundnessFixSelf.v`:
+
+- `fix_self_in_union` constructs membership in nested unions/singletons.
+- `fix_self_break_union` destructs a smaller union-membership hypothesis.
+- `fix_self_notin_union` uses the matching freshness hypothesis for the same
+  atom and discharges subset-style freshness goals.
+
+Updated `fix_self_rec_call_reducible_measure_step` to use these tactics for the
+obvious `x`/`z` freshness side conditions:
+
+- fresh child argument,
+- child body WF/IH freshness,
+- recursive self zero freshness,
+- smaller-measure IH freshness,
+- final unfolded-goal freshness.
+
+This round removed several direct `better_set_solver` calls from the main
+induction proof without changing the semantic sequence:
+fresh child -> normalize arg -> decrease min -> build child ctx -> IH ->
+body apply -> unfold transport.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`
+
+### Round 10: Final Scan and Closure
+
+Final pass actions:
+
+- Replaced the remaining simple outer-Fix `Hy_my` membership proof with an
+  explicit singleton-right proof.
+- Replaced the final public recursive-self freshness calls with
+  `fix_self_notin_union`.
+- Ran the requested Fix scans and full build.
+
+Scan results:
+
+- `rg -n "Admitted\\.|admit\\." ContextTyping/theories/SoundnessFix*.v`
+  produced no matches.
+- Remaining `better_set_solver` counts are old/deferred proof blocks:
+  - `SoundnessFixBase.v`: 25
+  - `SoundnessFixOpen.v`: 24
+  - `SoundnessFixApply.v`: 14
+  - `SoundnessFixSelf.v`: 24
+- No plain `set_solver` remains in the Fix files.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo ContextTyping/theories/SoundnessFix.vo`
+- `timeout 50s make ContextTyping/theories/SoundnessFix.vo ContextTyping/theories/Soundness.vo`
+- `timeout 180s make`
+
+## Deferred Cleanup
+
+- Remaining `better_set_solver` calls in `SoundnessFixBase.v` are mostly
+  syntax/fiber extractor side conditions. They are stable but can be reduced by
+  adding deterministic qualifier-lvar and store-domain helpers.
+- Remaining `better_set_solver` calls in `SoundnessFixOpen.v` are mostly
+  `ctx_erasure_under`/`erase_ctx` freshness side conditions. A future pass
+  should add a local `ctx_erasure` side-condition tactic or more erasure-domain
+  lemmas.
+- Remaining `better_set_solver` calls in `SoundnessFixApply.v` are mostly
+  fresh-name decomposition from the `fresh_for` packet. A small deterministic
+  tactic analogous to `fix_self_notin_union` would be appropriate there.
+- Remaining `better_set_solver` calls in `SoundnessFixSelf.v` outside the main
+  induction step are older helper proofs. The main measure step now uses
+  deterministic local tactics for the obvious freshness side conditions.
+
+## Comprehensive Pass 2: Full-Scan Rounds
+
+The first ten-round pass accidentally treated each round as a different theme.
+This pass follows the intended protocol: every round re-checks all Fix files for
+wrapper/inlining opportunities, lower-layer candidates, repeated proof patterns,
+large asserts, shape-specific helpers, local tactic opportunities, and naked
+set/store/decide proof blocks. Each round then applies all safe optimizations
+found in that scan and records what remains deferred.
+
+### Pass 2 / Round 1
+
+Full scan:
+
+- `SoundnessFixApply.v` remains the densest one-lemma file: 40 local asserts
+  and 14 old `better_set_solver` calls before this round.
+- The strongest repeated pattern was not semantic: several assertions project
+  freshness facts from the same `fresh_for` packet for the fresh self alias
+  `z`.
+- Wrapper/inline scan: no one-use semantic wrapper in Apply was safe to inline;
+  `fix_body_arrow_apply_self` is intentionally the semantic boundary.
+- Lowering scan: no new lower-layer theorem needed; this round only needs a
+  file-local deterministic tactic.
+- Large assert scan: the result-zero block is already shorter after
+  `relevant_env_insert_fresh`; no further safe split this round.
+
+Optimization:
+
+- Added local `fix_apply_build_union` and `fix_apply_notin_union`.
+- Replaced the first fresh-for projection group:
+  `HzL`, `Hzmy`, `HzΔ`, `Hzτself`, `Hzτres`, `Hzbody`, and `Hzself`.
+- For open-FV subset facts (`cty_open_fv_subset`, `open_fv_value`) the proof now
+  explicitly splits the `fv ∪ singleton` result instead of asking a global set
+  solver to discover it.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixApply.vo`
+
+### Pass 2 / Round 2
+
+Full scan:
+
+- Rechecked all `SoundnessFix*.v` files for wrapper/inlining, lower-layer
+  candidates, repeated proof patterns, large asserts, concrete-shape helpers,
+  and naked solver use.
+- `SoundnessFixBase.v` had the same pattern as Round 1: a fresh name `z` from a
+  single `fresh_for` packet, followed by several independent solver calls to
+  derive `z ∉ L`, `z ∉ world_dom`, `z ∉ dom Δ`, `z <> x`, `z <> y`, and
+  extension applicability.
+- Wrapper/inline scan: no semantic lemma in Base was a safe inline target this
+  round. The fiber extractor lemmas remain meaningful boundaries.
+- Lowering scan: no lower-layer theorem was needed; this is file-local
+  fresh-name bookkeeping.
+
+Optimization:
+
+- Added local deterministic union helpers plus two local pair-membership lemmas
+  `fix_base_pair_l` / `fix_base_pair_r` proved by `set_unfold`, not
+  `set_solver`.
+- Replaced the fresh-for projection group in `ty_denote_lt_arg_fiber`.
+- Replaced the `extension_applicable` proof for the result-extension witness by
+  explicit `ext_in`/`ext_out` reasoning using `Hxdom` and `Hzm`.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixBase.vo`
+
+### Pass 2 / Round 3
+
+Full scan:
+
+- Rechecked all Fix files. The largest repeated nonsemantic pattern this round
+  was in `SoundnessFixOpen.v`: many proofs derived freshness for
+  `erase_ctx Γ` from a larger freshness hypothesis containing
+  `dom (ctx_erasure_under Σ Γ)`.
+- Wrapper/inline scan: no one-use FixOpen lemma was safe to inline; the opened
+  argument/result helpers remain semantic checkpoints.
+- Lower-layer scan: the domain inclusion
+  `dom (erase_ctx Γ) ⊆ dom (ctx_erasure_under Σ Γ)` is generic and belongs in
+  `Denotation/Context.v`.
+- Large-assert scan: the first opened static guard proof still has a large
+  `Hwf_app` construction, but the repeated erasure-domain side conditions can
+  be removed independently.
+
+Optimization:
+
+- Added `ctx_erasure_under_erase_ctx_dom_subset` and
+  `ctx_erasure_under_notin_erase_ctx` in `Denotation/theories/Context.v`.
+  The subset proof uses raw lookup reasoning rather than a fragile domain
+  rewrite.
+- Added local FixOpen freshness bridge lemmas for the common five-part
+  freshness union.
+- Replaced several `ctx_erasure_under_norm_in Hy; better_set_solver` calls in
+  `fix_arrow_opened_app_static_guard_full` and
+  `fix_arrow_open_arg_to_bind_denotation`.
+- Corrected the one place where the target was `y ∉ fv_cty τx`, using
+  `wf_context_ty_at_fv_subset` plus the new erasure-domain freshness bridge.
+
+Verified:
+
+- `timeout 50s make Denotation/theories/Context.vo ContextTyping/theories/SoundnessFixOpen.vo`
+
+### Pass 2 / Round 4
+
+Full scan:
+
+- Rechecked all Fix files after the new Context erasure-domain helper.
+- `fix_self_rec_call_zero` still had the old pattern:
+  construct `context_typing_wf`, call `context_typing_wf_denot_static_guard_full`,
+  assert the comma-bind erasure env equality, then rewrite.
+- Wrapper/inline scan: this was not an inline target, but it was a direct call
+  site for the Round 4/previous-pass static-guard helper.
+- Lowering scan: no new lower-layer lemma was needed because
+  `context_typing_wf_denot_static_guard_comma_bind_insert` and
+  `ctx_erasure_under_notin_erase_ctx` already express the needed facts.
+- Solver scan: two old `ctx_erasure_under_norm_in Hy; better_set_solver`
+  occurrences in this lemma were removable.
+
+Optimization:
+
+- In `fix_self_rec_call_zero`, derived `HyΓ : y ∉ dom (erase_ctx Γ)` once using
+  `ctx_erasure_under_notin_erase_ctx`.
+- Reused `HyΓ` for basic typing weakening and for
+  `context_typing_wf_denot_static_guard_comma_bind_insert`.
+- Removed the local `Henv` assert and static-guard env rewrite block.
+
+Verified:
+
+- `timeout 50s make ContextTyping/theories/SoundnessFixSelf.vo`

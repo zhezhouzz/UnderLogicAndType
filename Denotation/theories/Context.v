@@ -278,6 +278,56 @@ Proof.
   set_solver.
 Qed.
 
+Lemma ty_env_agree_ctx_erasure_under_of_basic_ctx
+    (Σ : gmap atom ty) Γ X :
+  basic_ctx (dom Σ) Γ ->
+  X ⊆ dom (erase_ctx Γ) ->
+  ty_env_agree_on X (Σ ∪ erase_ctx Γ) (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hbasic HX x Hx.
+  assert (HxΓ : x ∈ dom (erase_ctx Γ)).
+  { exact (HX x Hx). }
+  pose proof (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
+    Σ Γ x Hbasic HxΓ) as Herase.
+  assert (HΣnone : Σ !! x = None).
+  {
+    apply not_elem_of_dom. intros HΣx.
+    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+    pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+    apply elem_of_disjoint in HfreshΓ.
+    eapply HfreshΓ; [|exact HΣx].
+    rewrite <- HdomΓ. exact HxΓ.
+  }
+  transitivity ((erase_ctx Γ : gmap atom ty) !! x).
+  - apply lookup_union_r. exact HΣnone.
+  - exact Herase.
+Qed.
+
+Lemma ctx_erasure_under_erase_ctx_dom_subset
+    (Σ : gmap atom ty) Γ :
+  dom (erase_ctx Γ) ⊆ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros x Hx.
+  unfold ctx_erasure_under.
+  apply elem_of_dom in Hx as [T HT].
+  apply elem_of_dom.
+  destruct ((store_restrict Σ (ctx_fv Γ) : gmap atom ty) !! x)
+    as [Tleft|] eqn:Hleft.
+  - exists Tleft. apply map_lookup_union_Some_raw. left. exact Hleft.
+  - exists T. apply map_lookup_union_Some_raw. right. split; assumption.
+Qed.
+
+Lemma ctx_erasure_under_notin_erase_ctx
+    (Σ : gmap atom ty) Γ x :
+  x ∉ dom (ctx_erasure_under Σ Γ) ->
+  x ∉ dom (erase_ctx Γ).
+Proof.
+  intros Hnot Hx.
+  apply Hnot.
+  eapply ctx_erasure_under_erase_ctx_dom_subset.
+  exact Hx.
+Qed.
+
 Lemma ty_denote_gas_ret_fvar_insert_ctx_erasure_under
     gas (Σ : gmap atom ty) Γ τ y (m : WfWorldT) :
   basic_ctx (dom Σ) Γ ->
@@ -907,6 +957,24 @@ Proof.
   rewrite storeA_restrict_twice_subset
     by (cbn [ctx_fv]; set_solver).
   exact Hctx.
+Qed.
+
+Lemma ctx_denote_under_comma_left
+    (Σ : gmap atom ty) Γ1 Γ2 (m : WfWorldT) :
+  m ⊨ ctx_denote_under Σ (CtxComma Γ1 Γ2) ->
+  m ⊨ ctx_denote_under Σ Γ1.
+Proof.
+  intros Hctx.
+  cbn [ctx_denote_under] in Hctx.
+  rewrite res_models_and_iff in Hctx.
+  destruct Hctx as [_ Hbody].
+  rewrite res_models_and_iff in Hbody.
+  destruct Hbody as [Hleft _].
+  rewrite ctx_denote_under_minimal.
+  rewrite ctx_denote_under_minimal in Hleft.
+  rewrite storeA_restrict_twice_subset in Hleft.
+  - exact Hleft.
+  - cbn [ctx_fv]. intros x Hx. apply elem_of_union_l. exact Hx.
 Qed.
 
 Lemma atom_env_to_lty_env_ctx_erasure_under_comma_union

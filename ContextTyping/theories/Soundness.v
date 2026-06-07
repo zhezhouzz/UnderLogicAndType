@@ -24,7 +24,7 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam SoundnessApp SoundnessAppD
-  SoundnessMatch.
+  SoundnessMatch SoundnessFix.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -1013,38 +1013,19 @@ Proof.
       eauto.
 Qed.
 
-Lemma fundamental_fix_case
-    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
-  erase_ty τx = TBase b ->
-  erase_ty τ = t ->
-  context_typing_wf Σ Γ
-    (tret (vfix (TBase b →ₜ t) vf))
-    (CTArrow τx τ) ->
-  (forall y, y ∉ L ->
-    ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)) ⊫
-      ty_denote_under Σ (CtxComma Γ (CtxBind y τx))
-        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
-        (tret ({0 ~> vfvar y} vf))) ->
-  ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (CTArrow τx τ)
-      (tret (vfix (TBase b →ₜ t) vf)).
-Proof.
-Admitted.
-
 Lemma fundamental_fixd_case
-    (Φ : primop_ctx) Σ Γ τx τ vf b t (L : aset) :
-  erase_ty τx = TBase b ->
+    (Φ : primop_ctx) Σ Γ φx τ vf b t (L : aset) :
   erase_ty τ = t ->
   context_typing_wf Σ Γ
     (tret (vfix (TBase b →ₜ t) vf))
-    (CTWand τx τ) ->
+    (CTWand (over_ty b φx) τ) ->
   (forall y, y ∉ L ->
-    ctx_denote_under Σ (CtxStar Γ (CtxBind y τx)) ⊫
-      ty_denote_under Σ (CtxStar Γ (CtxBind y τx))
-        (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
+    ctx_denote_under Σ (CtxStar Γ (CtxBind y (over_ty b φx))) ⊫
+      ty_denote_under Σ (CtxStar Γ (CtxBind y (over_ty b φx)))
+        (CTArrow (fix_rec_call_ty b y (over_ty b φx) τ) ({0 ~> y} τ))
         (tret ({0 ~> vfvar y} vf))) ->
   ctx_denote_under Σ Γ ⊫
-    ty_denote_under Σ Γ (CTWand τx τ)
+    ty_denote_under Σ Γ (CTWand (over_ty b φx) τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
 Admitted.
@@ -1099,7 +1080,7 @@ Proof.
   - eapply fundamental_lamd_case; eauto.
   - eapply fundamental_app_case; eauto using typing_wf_under.
   - eapply fundamental_appd_case; eauto using typing_wf_under.
-  - eapply fundamental_fix_case; eauto.
+  - eapply fundamental_fix_case; eauto using typing_wf_under.
   - eapply fundamental_fixd_case; eauto.
   - eapply fundamental_appop_case; eauto.
   - eapply fundamental_match_both_case; eauto.

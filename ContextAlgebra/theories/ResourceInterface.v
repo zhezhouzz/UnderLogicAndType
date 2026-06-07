@@ -626,6 +626,46 @@ Proof.
   exact (proj1 Hτ).
 Qed.
 
+Lemma res_fiber_from_projection_of_store
+    (m : WfWorld) (X : aset) (σ : StoreT) :
+  X ⊆ world_dom (m : World) ->
+  (m : World) σ ->
+  exists mfib,
+    res_fiber_from_projection m X (store_restrict σ X) mfib /\
+    (mfib : World) σ.
+Proof.
+  intros HX Hσ.
+  set (σX := store_restrict σ X).
+  assert (HdomσX : dom (σX : StoreT) = X).
+  {
+    subst σX.
+    change (dom (storeA_restrict σ X : gmap atom V) = X).
+    rewrite (storeA_restrict_dom σ X).
+    rewrite (wfworld_store_dom m σ Hσ).
+    apply set_eq. intros a. split.
+    - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+    - intros Ha. apply elem_of_intersection. split; [apply HX|]; exact Ha.
+  }
+  assert (Hne :
+      exists σ0,
+        (m : World) σ0 /\
+        storeA_restrict σ0 (dom (σX : StoreT)) = σX).
+  {
+    exists σ. split; [exact Hσ|].
+    rewrite HdomσX. reflexivity.
+  }
+  exists (resA_fiber m σX Hne).
+  split.
+  - split.
+    + exists σ. split; [exact Hσ|reflexivity].
+    + reflexivity.
+  - cbn [raw_world raw_worldA world_stores rawA_fiber].
+    split; [exact Hσ|].
+    change (storeA_restrict σ (dom (σX : StoreT)) = σX).
+    rewrite HdomσX.
+    subst σX. reflexivity.
+Qed.
+
 Lemma res_fiber_from_projection_atom_swap
     x y (m mfib : WfWorld) (X : aset) (σ : StoreT) :
   res_fiber_from_projection m X σ mfib ->
@@ -700,6 +740,24 @@ Lemma res_restrict_eq_of_le (m n : WfWorld) :
   m ⊑ n →
   res_restrict n (world_dom (m : World)) = m.
 Proof. apply resA_restrict_eq_of_le. Qed.
+
+Lemma res_le_store_lift
+    (m n : WfWorld) (σ : StoreT) :
+  m ⊑ n ->
+  (m : World) σ ->
+  exists σn,
+    (n : World) σn /\
+    store_restrict σn (world_dom (m : World)) = σ.
+Proof.
+  intros Hle Hσ.
+  pose proof (res_restrict_eq_of_le m n Hle) as Hrestrict.
+  assert (Hσrestrict :
+      (res_restrict n (world_dom (m : World)) : World) σ).
+  { rewrite Hrestrict. exact Hσ. }
+  cbn [res_restrict raw_world raw_worldA world_stores] in Hσrestrict.
+  destruct Hσrestrict as [σn [Hσn Hσn_restrict]].
+  exists σn. split; [exact Hσn|exact Hσn_restrict].
+Qed.
 
 Lemma res_restrict_self_dom (m : WfWorld) (X : aset) :
   res_restrict m (world_dom (res_restrict m X : World)) =

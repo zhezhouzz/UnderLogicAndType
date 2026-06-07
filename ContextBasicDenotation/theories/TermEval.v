@@ -132,6 +132,24 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_eval_in_store_ret_value_inv σ vx v :
+  store_closed σ ->
+  lc_value vx ->
+  tm_eval_in_store σ (tret vx) v ->
+  v = m{σ} vx.
+Proof.
+  intros Hclosed Hvx Heval.
+  unfold tm_eval_in_store in Heval.
+  rewrite expr_eval_in_store_no_bvars_iff in Heval
+    by (try apply lc_lstore_lift_free;
+        rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite lstore_free_part_lift_free in Heval.
+  rewrite subst_map_tm_eq_msubst in Heval.
+  rewrite msubst_ret in Heval.
+  pose proof (value_steps_self (m{σ} vx) (tret v) Heval) as Heq.
+  inversion Heq. reflexivity.
+Qed.
+
 Lemma tm_eval_in_store_tapp_tm_fun_equiv σ e e' x v :
   store_closed σ ->
   lc_tm e ->
@@ -190,6 +208,26 @@ Proof.
     apply msubst_lc; [exact (proj2 Hclosed)|exact Hvf].
   - change (lc_value (m{σ} vx)).
     apply msubst_lc; [exact (proj2 Hclosed)|exact Hvx].
+Qed.
+
+Lemma tm_eval_in_store_tapp_tm_arg_eq σ e vx1 vx2 v :
+  store_closed σ ->
+  lc_value vx1 ->
+  lc_value vx2 ->
+  m{σ} vx1 = m{σ} vx2 ->
+  tm_eval_in_store σ (tapp_tm e vx1) v <->
+  tm_eval_in_store σ (tapp_tm e vx2) v.
+Proof.
+  intros Hclosed Hvx1 Hvx2 Heq.
+  unfold tm_eval_in_store, expr_eval_in_store.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (try apply lc_lstore_lift_free;
+     rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite !msubst_tapp_tm_lc_arg by
+    (exact Hvx1 || exact Hvx2 || exact (proj2 Hclosed)).
+  rewrite Heq. reflexivity.
 Qed.
 
 Lemma tm_eval_in_store_tapp_tm_lam_body
@@ -333,6 +371,85 @@ Proof.
       apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
     + rewrite subst_map_tm_eq_msubst.
       apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_eval_in_store_tapp_tm_fix_unfold
+    σ Tf vf y vy v :
+  store_closed σ ->
+  body_val vf ->
+  σ !! y = Some vy ->
+  tm_eval_in_store σ
+    (tapp_tm (tret (vfix Tf vf)) (vfvar y)) v <->
+  tm_eval_in_store σ
+    (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf)) v.
+Proof.
+  intros Hclosed Hbody Hσy.
+  assert (Hvy_lc : lc_value vy).
+  { eapply lc_env_lookup; [exact (proj2 Hclosed)|exact Hσy]. }
+  assert (Hbodyσ : body_val (m{σ} vf)).
+  {
+    exists (fv_value vf ∪ dom (σ : StoreT)). intros z Hz.
+    change (lc_value (open_value 0 (vfvar z) (m{σ} vf))).
+    assert (Hz_none : σ !! z = None).
+    { apply not_elem_of_dom. set_solver. }
+    assert (Hz_subst : m{σ} (vfvar z) = vfvar z).
+    { apply msubst_fvar_lookup_none_closed; [exact (proj1 Hclosed)|exact Hz_none]. }
+    rewrite <- Hz_subst.
+    change (lc_value ({0 ~> m{σ} (vfvar z)} (m{σ} vf))).
+    rewrite <- (msubst_open vf 0 (vfvar z) σ)
+      by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    apply msubst_lc; [exact (proj2 Hclosed)|].
+    apply body_open_value; [exact Hbody|constructor].
+  }
+  assert (Hfix_lc : lc_value (vfix Tf (m{σ} vf))).
+  { apply lc_fix_iff_body. exact Hbodyσ. }
+  assert (Hfix_orig_lc : lc_value (vfix Tf vf)).
+  { apply lc_fix_iff_body. exact Hbody. }
+  assert (Hopened_lc : lc_value (open_value 0 vy (m{σ} vf))).
+  { apply body_open_value; [exact Hbodyσ|exact Hvy_lc]. }
+  unfold tm_eval_in_store.
+  rewrite !expr_eval_in_store_no_bvars_iff.
+  - rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    assert (Hsrc_msubst :
+        m{σ} (tapp_tm (tret (vfix Tf vf)) (vfvar y)) =
+        tapp_tm (tret (vfix Tf (m{σ} vf))) vy).
+    {
+      rewrite msubst_tapp_tm_lc_arg
+        by (constructor || exact (proj2 Hclosed)).
+      rewrite msubst_ret, msubst_vfix.
+      rewrite (msubst_fvar_lookup_closed σ y vy)
+        by (exact (proj1 Hclosed) || exact Hσy).
+      reflexivity.
+    }
+    assert (Htgt_msubst :
+        m{σ} (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf)) =
+        tapp_tm (tret (open_value 0 vy (m{σ} vf)))
+          (vfix Tf (m{σ} vf))).
+    {
+      rewrite msubst_tapp_tm_lc_arg
+        by (exact Hfix_orig_lc || exact (proj2 Hclosed)).
+      rewrite msubst_ret, msubst_vfix.
+      change (m{σ} (open_value 0 y vf))
+        with (m{σ} ({0 ~> vfvar y} vf)).
+      rewrite (@msubst_open value open_value_inst subst_value_inst
+        MsubstOpen_value vf 0 (vfvar y) σ) by
+        (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+      rewrite (msubst_fvar_lookup_closed σ y vy)
+        by (exact (proj1 Hclosed) || exact Hσy).
+      reflexivity.
+    }
+    rewrite Hsrc_msubst, Htgt_msubst.
+    rewrite (steps_tapp_tm_ret_equiv (vfix Tf (m{σ} vf)) vy v)
+      by (exact Hfix_lc || exact Hvy_lc).
+    rewrite (steps_tapp_tm_ret_equiv
+      (open_value 0 vy (m{σ} vf)) (vfix Tf (m{σ} vf)) v)
+      by (exact Hopened_lc || exact Hfix_lc).
+    apply reduction_fix_iff; [exact Hbodyσ|exact Hvy_lc].
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.

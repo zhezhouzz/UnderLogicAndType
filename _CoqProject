@@ -93,4 +93,9 @@ ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessAppD.v
 ContextTyping/theories/SoundnessMatch.v
+ContextTyping/theories/SoundnessFixBase.v
+ContextTyping/theories/SoundnessFixOpen.v
+ContextTyping/theories/SoundnessFixApply.v
+ContextTyping/theories/SoundnessFixSelf.v
+ContextTyping/theories/SoundnessFix.v
 ContextTyping/theories/Soundness.v

@@ -4,7 +4,7 @@
 
 From CoreLang Require Export SyntaxNotation.
 From ContextTypeLanguage Require Export WF.
-From Stdlib Require Import Arith.Wf_nat.
+From Stdlib Require Import Arith.Wf_nat Lia.
 
 Declare Scope context_scope.
 Delimit Scope context_scope with ctx.
@@ -114,6 +114,13 @@ Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=
   ltof _ (constant_measure_for_base b).
 
+Lemma constant_lt_for_base_wf b :
+  well_founded (constant_lt_for_base b).
+Proof.
+  unfold constant_lt_for_base.
+  apply well_founded_ltof.
+Qed.
+
 Notation " c1 '≺[' b ']' c2 " :=
   (constant_lt_for_base b c1 c2) (at level 20, b at next level).
 
@@ -144,6 +151,130 @@ Definition fix_rec_call_ty
   CTArrow
     (CTInter τx (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))))
     τ.
+
+Ltac cty_depth_norm :=
+  cbn [cty_depth over_ty under_ty precise_ty primop_ty fix_rec_call_ty];
+  rewrite ?cty_open_preserves_depth, ?cty_shift_preserves_depth.
+
+Ltac cty_depth_norm_in H :=
+  cbn [cty_depth over_ty under_ty precise_ty primop_ty fix_rec_call_ty] in H;
+  rewrite ?cty_open_preserves_depth in H;
+  rewrite ?cty_shift_preserves_depth in H.
+
+Ltac cty_depth_solve :=
+  cty_depth_norm; lia.
+
+Lemma erase_fix_rec_call_ty b x τx τ t :
+  erase_ty τx = TBase b ->
+  erase_ty τ = t ->
+  erase_ty (fix_rec_call_ty b x τx τ) = (TBase b →ₜ t).
+Proof.
+  intros Hτx Hτ.
+  unfold fix_rec_call_ty, over_ty.
+  cbn [erase_ty].
+  congruence.
+Qed.
+
+Lemma fv_cty_fix_rec_call_ty_subset b x τx τ :
+  fv_cty (fix_rec_call_ty b x τx τ) ⊆
+    fv_cty τx ∪ {[x]} ∪ fv_cty τ.
+Proof.
+  intros a Ha.
+  unfold fix_rec_call_ty, over_ty, mk_q_lt_base in Ha.
+  cty_fv_syntax_norm_in Ha.
+  cbn [qual_vars qual_lvars lvar_value_keys] in Ha.
+  rewrite !context_ty_lvars_fv_at in Ha.
+  rewrite !lvars_fv_lvars_at_depth in Ha.
+  repeat rewrite lvars_fv_union in Ha.
+  repeat rewrite lvars_fv_singleton_bound in Ha.
+  repeat rewrite lvars_fv_singleton_free in Ha.
+  apply elem_of_union in Ha as [Ha_left | Haτ].
+  - apply elem_of_union in Ha_left as [Haτx | Ha_mid].
+    + apply elem_of_union_l. apply elem_of_union_l. exact Haτx.
+    + apply elem_of_union in Ha_mid as [Ha_empty | Hay].
+      * rewrite elem_of_empty in Ha_empty. contradiction.
+      * apply elem_of_union_l. apply elem_of_union_r. exact Hay.
+  - apply elem_of_union_r. exact Haτ.
+Qed.
+
+Lemma fv_cty_fix_rec_call_ty_fresh b x τx τ z :
+  z <> x ->
+  z ∉ fv_cty τx ->
+  z ∉ fv_cty τ ->
+  z ∉ fv_cty (fix_rec_call_ty b x τx τ).
+Proof.
+  intros Hzx Hzτx Hzτ Hzbad.
+  pose proof (fv_cty_fix_rec_call_ty_subset b x τx τ z Hzbad)
+    as Hzsub.
+  better_set_solver.
+Qed.
+
+Lemma fv_cty_over_lt_bound_fvar b x :
+  fv_cty (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))) = {[x]}.
+Proof.
+  unfold over_ty, mk_q_lt_base, fv_cty, context_ty_lvars.
+  cbn [context_ty_lvars_at qual_vars qual_lvars lvar_value_keys].
+  rewrite lvars_at_depth_union.
+  rewrite lvars_at_depth_singleton_bound0_succ.
+  rewrite lvars_at_depth_singleton_free.
+  rewrite lvars_fv_union, lvars_fv_empty, lvars_fv_singleton_free.
+  apply set_eq. intros a. set_unfold. tauto.
+Qed.
+
+Lemma lc_context_ty_over_lt_bound_fvar b x :
+  lc_context_ty (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))).
+Proof.
+  unfold lc_context_ty, over_ty, mk_q_lt_base.
+  cbn [cty_lc_at qual_vars qual_lvars lvar_value_keys lvars_lc_at].
+  intros k Hk.
+  rewrite lvars_bv_union in Hk.
+  apply elem_of_union in Hk as [Hk | Hk].
+  - rewrite lvars_bv_elem in Hk.
+    apply elem_of_singleton in Hk.
+    inversion Hk. subst. lia.
+  - rewrite lvars_bv_elem in Hk.
+    apply elem_of_singleton in Hk.
+    discriminate.
+Qed.
+
+Lemma fv_cty_over_lt_bound_fvar_fresh b x z :
+  z <> x ->
+  z ∉ fv_cty (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))).
+Proof.
+  intros Hzx.
+  rewrite fv_cty_over_lt_bound_fvar.
+  intros Hz. apply elem_of_singleton in Hz. congruence.
+Qed.
+
+Lemma lc_context_ty_fix_rec_call_ty b x τx τ :
+  lc_context_ty τx ->
+  lc_context_ty τ ->
+  lc_context_ty (fix_rec_call_ty b x τx τ).
+Proof.
+  intros Hτx Hτ.
+  unfold lc_context_ty, fix_rec_call_ty.
+  cbn [cty_lc_at].
+  split.
+  - split.
+    + exact Hτx.
+    + apply lc_context_ty_over_lt_bound_fvar.
+  - eapply (cty_lc_at_mono_depth 0 1); [lia|exact Hτ].
+Qed.
+
+Lemma cty_open_shift_fix_rec_call_ty_fresh b x z τx τ :
+  z <> x ->
+  z ∉ fv_cty τx ->
+  z ∉ fv_cty τ ->
+  lc_context_ty τx ->
+  lc_context_ty τ ->
+  cty_open 0 z (cty_shift 0 (fix_rec_call_ty b x τx τ)) =
+    fix_rec_call_ty b x τx τ.
+Proof.
+  intros Hzx Hzτx Hzτ Hτx Hτ.
+  apply cty_open_shift_from_lc_fresh.
+  - apply lc_context_ty_fix_rec_call_ty; assumption.
+  - apply fv_cty_fix_rec_call_ty_fresh; assumption.
+Qed.
 
 Definition bool_qual (b : bool) : type_qualifier :=
   mk_q_eq (vbvar 0) (vconst (cbool b)).

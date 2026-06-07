@@ -57,6 +57,110 @@ Proof.
   exact Harg.
 Qed.
 
+Lemma arrow_open_arg_to_inserted_env_normalized
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  lc_context_ty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
+Proof.
+  intros HΣclosed HfreshΣ Hyτx Hlc Hfresh_arg Harg.
+  pose proof (arrow_open_arg_to_inserted_env
+    gas Σ τx τr e m y HΣclosed HfreshΣ Hyτx Hfresh_arg Harg)
+    as Harg_open.
+  rewrite cty_open_shift_from_lc_fresh in Harg_open
+    by (exact Hlc || exact Hyτx).
+  exact Harg_open.
+Qed.
+
+Lemma arrow_inserted_env_to_open_arg
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))).
+Proof.
+  intros HΣclosed HfreshΣ Hyτx Hfresh_arg Harg.
+  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+  { rewrite cty_shift_fv. exact Hyτx. }
+  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
+  { cbn [fv_tm fv_value]. better_set_solver. }
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
+    (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0)))
+    by (exact Hfresh_arg || exact Hea_fresh || exact Hτa_fresh).
+  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+    with (tret (vfvar y)).
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y)))
+    ltac:(better_set_solver)
+    (arrow_arg_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e Hyτx)) as Hagree.
+  rewrite Hagree.
+  rewrite typed_lty_env_bind_open_current
+    by (exact HfreshΣ || exact HΣclosed).
+  exact Harg.
+Qed.
+
+Lemma arrow_inserted_env_to_open_arg_normalized
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  lc_context_ty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))).
+Proof.
+  intros HΣclosed HfreshΣ Hyτx Hτx_lc Hfresh_arg Harg.
+  eapply arrow_inserted_env_to_open_arg; eauto.
+  replace (cty_open 0 y (cty_shift 0 τx)) with τx.
+  - exact Harg.
+  - symmetry. apply cty_open_shift_from_lc_fresh; assumption.
+Qed.
+
 Lemma ty_denote_gas_tm_equiv_arrow_open_arg
     gas (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :
@@ -144,6 +248,43 @@ Proof.
   exact Hsrc.
 Qed.
 
+Lemma ty_equiv_arrow_result_src_mid_inserted
+    gas (Σ : lty_env) τx τr e1
+    (my : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e1 : lty_env) ->
+  lc_tm e1 ->
+  y ∉ fv_cty τr ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e1))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
+Proof.
+  intros HΣclosed HyΣ Hyrel Hlc Hyτr Hsrc.
+  assert (Hsrc_open :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e1)
+            (erase_ty τx)))
+        (cty_open 0 y τr) (tapp_tm e1 (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current.
+    - exact Hsrc.
+    - exact Hyrel.
+    - apply relevant_env_closed. exact HΣclosed.
+  }
+  pose proof (ty_equiv_arrow_result_src_mid
+    gas Σ τx τr e1 my y Hlc Hyτr Hsrc_open) as Hmid.
+  rewrite typed_lty_env_bind_open_current in Hmid
+    by (exact HyΣ || exact HΣclosed).
+  exact Hmid.
+Qed.
+
 Lemma ty_equiv_arrow_result_tgt_goal
     gas (Σ : lty_env) τx τr e2
     (my : WfWorldT) y :
@@ -176,6 +317,42 @@ Proof.
     as Hagree.
   rewrite Hagree.
   exact Hmid.
+Qed.
+
+Lemma ty_equiv_arrow_result_tgt_goal_inserted
+    gas (Σ : lty_env) τx τr e2
+    (my : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e2 : lty_env) ->
+  lc_tm e2 ->
+  y ∉ fv_cty τr ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e2))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros HΣclosed HyΣ Hyrel Hlc Hyτr Hmid.
+  assert (Hmid_open :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind Σ (erase_ty τx)))
+        (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current.
+    - exact Hmid.
+    - exact HyΣ.
+    - exact HΣclosed.
+  }
+  pose proof (ty_equiv_arrow_result_tgt_goal
+    gas Σ τx τr e2 my y Hlc Hyτr Hmid_open) as Hgoal.
+  rewrite typed_lty_env_bind_open_current in Hgoal.
+  - exact Hgoal.
+  - exact Hyrel.
+  - apply relevant_env_closed. exact HΣclosed.
 Qed.
 
 Lemma wfworld_closed_on_arrow_open_result_apps

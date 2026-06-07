@@ -364,6 +364,16 @@ Proof.
     set_solver.
 Qed.
 
+Lemma wf_context_ty_at_notin_fv d D τ x :
+  wf_context_ty_at d D τ ->
+  x ∉ D ->
+  x ∉ fv_cty τ.
+Proof.
+  intros Hwf HxD Hxτ.
+  apply HxD.
+  eapply wf_context_ty_at_fv_subset; [exact Hwf|exact Hxτ].
+Qed.
+
 Lemma wf_context_ty_at_open_at d D τ x :
   x ∉ D ->
   wf_context_ty_at (S d) D τ ->

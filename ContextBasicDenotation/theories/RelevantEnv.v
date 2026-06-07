@@ -33,6 +33,25 @@ Proof.
   set_solver.
 Qed.
 
+Lemma lc_lvars_relevant_lvars τ e :
+  lc_context_ty τ ->
+  lc_tm e ->
+  lc_lvars (relevant_lvars τ e).
+Proof.
+  intros Hτ He u Hu.
+  unfold relevant_lvars in Hu.
+  apply elem_of_union in Hu as [Huτ | Hue].
+  - pose proof (cty_lc_at_lvars_bv_empty 0 τ Hτ) as Hbv.
+    destruct u as [k|a]; [|exact I].
+    exfalso.
+    assert (k ∈ lvars_bv (context_ty_lvars τ)).
+    { apply lvars_bv_elem. exact Huτ. }
+    change (context_ty_lvars τ) with (context_ty_lvars_at 0 τ) in H.
+    rewrite Hbv in H.
+    exact (not_elem_of_empty k H).
+  - exact (tm_lvars_lc e He u Hue).
+Qed.
+
 Lemma relevant_env_empty (Σ : lty_env) τ e :
   relevant_lvars τ e = (∅ : lvset) ->
   relevant_env Σ τ e = (∅ : lty_env).
@@ -231,6 +250,27 @@ Proof.
       reflexivity.
     + rewrite !lty_env_open_one_typed_bind_lookup_free_ne by congruence.
       exact (Hagree y Hv Hyx).
+Qed.
+
+Lemma lty_env_restrict_open_one_bind_insert_fresh
+    (Σ : lty_env) (D : lvset) x y T U :
+  lc_lvars D ->
+  LVFree x ∉ D ->
+  x <> y ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y (typed_lty_env_bind (<[LVFree x := U]> Σ) T)) D =
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ T)) D.
+Proof.
+  intros Hlc HxD Hxy.
+  eapply lty_env_restrict_open_one_bind_agree_on.
+  - exact Hlc.
+  - intros z HzD Hzy.
+    destruct (decide (z = x)) as [->|Hzx].
+    + exfalso. exact (HxD HzD).
+    + rewrite lookup_insert_ne by
+        (intros Heq; apply Hzx; inversion Heq; reflexivity).
+      reflexivity.
 Qed.
 
 Lemma lty_env_restrict_open_one_bind_relevant_tapp_eq
@@ -778,6 +818,17 @@ Proof.
   intros HxD.
   unfold lty_env_restrict_lvars.
   apply storeA_restrict_insert_notin. exact HxD.
+Qed.
+
+Lemma relevant_env_insert_fresh Σ τ e x T :
+  LVFree x ∉ relevant_lvars τ e ->
+  relevant_env (<[LVFree x := T]> Σ) τ e =
+  relevant_env Σ τ e.
+Proof.
+  intros Hx.
+  unfold relevant_env.
+  apply lty_env_restrict_lvars_insert_fresh.
+  exact Hx.
 Qed.
 
 Lemma relevant_env_fv_subset Σ τ e :
@@ -1601,3 +1652,8 @@ Ltac relevant_env_norm_in H :=
 
 Ltac relevant_env_set :=
   relevant_env_norm; better_set_solver.
+
+Ltac closed_side_solve :=
+  eauto using lc_lvars_relevant_lvars,
+    wf_context_ty_at_lc, basic_context_ty_lc,
+    lty_env_closed_insert_free, atom_store_to_lvar_store_closed.

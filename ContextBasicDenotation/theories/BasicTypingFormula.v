@@ -758,6 +758,15 @@ Proof.
   - apply map_empty_subseteq.
 Qed.
 
+Lemma empty_basic_value_base_inv v b :
+  ∅ ⊢ᵥ v ⋮ TBase b ->
+  exists c, v = vconst c /\ base_ty_of_const c = b.
+Proof.
+  intros Hty.
+  inversion Hty; subst; try discriminate.
+  exists c. split; [reflexivity|congruence].
+Qed.
+
 Lemma basic_has_ltype_unique_mutual :
   (forall Σ v T1,
     basic_value_has_ltype Σ v T1 ->
@@ -1008,6 +1017,17 @@ Proof.
   intros Hmodels.
   apply expr_basic_typing_formula_models_iff in Hmodels as [_ [_ Hbasic]].
   exact Hbasic.
+Qed.
+
+Lemma expr_basic_typing_world_closed_on_term Σ e T (m : WfWorldT) :
+  res_models m (basic_world_formula Σ) ->
+  res_models m (expr_basic_typing_formula Σ e T) ->
+  wfworld_closed_on (fv_tm e) m.
+Proof.
+  intros Hworld Hbasic.
+  eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld].
+  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+  exact (basic_tm_has_ltype_lvars _ _ _ Hty).
 Qed.
 
 End BasicTypingFormula.

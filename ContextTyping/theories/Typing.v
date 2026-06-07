@@ -398,38 +398,36 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       has_context_type Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
 
   (** T-Fix *)
-  | CT_Fix Γ τx τ vf b t (L : aset) :
-      erase_ty τx = TBase b →
+  | CT_Fix Γ φx τ vf b t (L : aset) :
       erase_ty τ = t →
       context_typing_wf Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
-        (CTArrow τx τ) →
+        (CTArrow (over_ty b φx) τ) →
       (∀ y, y ∉ L →
         has_context_type Σ
           (CtxComma Γ
-            (CtxBind y τx))
+            (CtxBind y (over_ty b φx)))
           (tret ({0 ~> vfvar y} vf))
-          (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))) →
+          (CTArrow (fix_rec_call_ty b y (over_ty b φx) τ) ({0 ~> y} τ))) →
       has_context_type Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
-        (CTArrow τx τ)
+        (CTArrow (over_ty b φx) τ)
 
   (** T-FixD.  Separating recursive function. *)
-  | CT_FixD Γ τx τ vf b t (L : aset) :
-      erase_ty τx = TBase b →
+  | CT_FixD Γ φx τ vf b t (L : aset) :
       erase_ty τ = t →
       context_typing_wf Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
-        (CTWand τx τ) →
+        (CTWand (over_ty b φx) τ) →
       (∀ y, y ∉ L →
         has_context_type Σ
           (CtxStar Γ
-            (CtxBind y τx))
+            (CtxBind y (over_ty b φx)))
           (tret ({0 ~> vfvar y} vf))
-          (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))) →
+          (CTArrow (fix_rec_call_ty b y (over_ty b φx) τ) ({0 ~> y} τ))) →
       has_context_type Σ Γ
         (tret (vfix (TBase b →ₜ t) vf))
-        (CTWand τx τ)
+        (CTWand (over_ty b φx) τ)
 
   (** T-AppOp.  Primitive operations are unary; the argument must be an atom.
       Arguments are over-approximate and results are precise. *)

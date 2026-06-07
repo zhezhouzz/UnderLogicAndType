@@ -1,0 +1,107 @@
+# Fundamental Fix Proof Plan
+
+## Summary
+
+Prove `fundamental_fix_case` by following the HATs fixed-point proof shape:
+after opening the Arrow denotation at an argument value, perform a
+well-founded induction on the concrete argument constant under
+`constant_lt_for_base b`.  The body typing premise already exposes the
+recursive self at type
+
+```coq
+CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ)
+```
+
+where `fix_rec_call_ty` restricts recursive calls to arguments smaller than
+the current argument `y`.  This is the local analogue of HATs'
+`{:Tx | b0 < x & φ} -> τ`.
+
+## HATs Reference
+
+HATs proves the fixed-point denotation in
+`formalization/Typing.v` as `denotation_application_fixed`.
+The key proof steps are:
+
+1. Open the function denotation at the current argument.
+2. Use the base typing/denotation guard to show the argument is a constant.
+3. Induct on that constant with `well_founded_induction constant_lt_well_founded`.
+4. Instantiate the body denotation with the recursive self.
+5. Use the induction hypothesis to prove the recursive-call function for
+   strictly smaller arguments.
+6. Use the operational `fix` unfolding equivalence to transport from the
+   opened body application back to applying the fixed point.
+
+## Local Proof Shape
+
+For `fundamental_fix_case`:
+
+1. Mirror `fundamental_lam_case` up to the opened Arrow branch.
+2. In the opened branch, normalize immediately:
+   - `ty_denote_under`
+   - `formula_open 0 y`
+   - `lty_env_open_one 0 y (typed_lty_env_bind ...)`
+   - `relevant_env`
+   - `ctx_erasure_under`
+3. From the argument denotation for `τx` and `erase_ty τx = TBase b`, derive
+   a concrete argument constant `c`.
+4. Prove a local helper:
+
+```coq
+Lemma constant_lt_for_base_wf b :
+  well_founded (constant_lt_for_base b).
+```
+
+5. Prove the main fixed-point opened-result helper by induction on `c`.
+   The induction hypothesis should provide the denotation of the recursive
+   self when applied to any smaller argument.
+6. Use the body IH premise at fresh `y` to get the denotation of
+   `{0 ~> vfvar y} vf`.
+7. Feed the recursive self denotation into the body Arrow denotation.
+8. Use `reduction_fix_iff`/term equivalence to transport:
+
+```coq
+tapp_tm (tret (vfix (TBase b -> t) vf)) (vfvar y)
+≃
+tapp_tm (tret ({0 ~> vfvar y} vf))
+        (vfix (TBase b -> t) vf)
+```
+
+under the opened world.
+
+## Expected Supporting Lemmas
+
+- `constant_lt_for_base_wf`
+- argument-denotation-to-constant classifier for `τx` when
+  `erase_ty τx = TBase b`
+- recursive-call denotation helper:
+
+```coq
+fix_rec_self_denotation_for_smaller_arg
+```
+
+This should turn the well-founded IH into a denotation for the self value at
+`fix_rec_call_ty b y τx τ`.
+
+- fix operational equivalence:
+
+```coq
+tm_equiv_fix_unfold
+```
+
+wrapping existing `reduction_fix_iff`.
+
+## FixD
+
+`fundamental_fixd_case` should follow after `fundamental_fix_case` using the
+same relationship as `LamD` to `Lam`:
+the argument world comes from `FBWand 1`, the closure world stays separate,
+and the product world proves the opened body.  The same well-founded induction
+and recursive-call helper should be reusable after framing over the product.
+
+## Discipline
+
+- Keep `Soundness.v` dispatch unchanged until the focused helper compiles.
+- If the proof grows large, split fix support into `SoundnessFix.v`.
+- No anonymous `admit`; hard steps become precise named obligations first.
+- Use 50s single-file checks and stop after four repeated timing attempts at
+  the same point to reassess.
