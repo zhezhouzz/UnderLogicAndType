@@ -37,6 +37,16 @@ Notation "'⌊' Γ '⌋'" := (erase_ctx Γ)
   (at level 20, only printing,
    format "⌊ Γ ⌋") : ctx_scope.
 
+Notation "'FV' '(' τ ')'" := (fv_cty τ)
+  (at level 10, only printing,
+   format "FV ( τ )") : cty_scope.
+Notation "'FV' '(' Γ ')'" := (ctx_fv Γ)
+  (at level 10, only printing,
+   format "FV ( Γ )") : ctx_scope.
+Notation "'FV' '(' D ')'" := (lvars_fv D)
+  (at level 10, only printing,
+   format "FV ( D )") : lvar_scope.
+
 Notation "'#ₗ' k" := (LVBound k)
   (at level 5, format "#ₗ k").
 

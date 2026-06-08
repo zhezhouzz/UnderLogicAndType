@@ -49,6 +49,9 @@ Notation "φ '^^' x" := (formula_open 0 x φ)
 Notation "'{η' η '}' φ" := (formula_open_env η φ)
   (at level 20, η at level 200,
    format "{η  η }  φ") : formula_scope.
+Notation "'FV' '(' φ ')'" := (formula_fv φ)
+  (at level 10, only printing,
+   format "FV ( φ )") : formula_scope.
 
 Notation "<{ φ }>" := φ (φ custom form at level 99).
 Notation "( φ )" := φ (in custom form, φ at level 99, only parsing).

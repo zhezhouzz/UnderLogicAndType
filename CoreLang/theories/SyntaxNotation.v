@@ -27,6 +27,13 @@ Notation "e '^^' x" := (open_value 0 (vfvar x) e)
 Notation "e '^^' x" := (open_tm 0 (vfvar x) e)
   (at level 20, only printing) : core_scope.
 
+Notation "'FV' '(' v ')'" := (fv_value v)
+  (at level 10, only printing,
+   format "FV ( v )") : core_scope.
+Notation "'FV' '(' e ')'" := (fv_tm e)
+  (at level 10, only printing,
+   format "FV ( e )") : core_scope.
+
 Notation store := (gmap atom value).
 Notation tyctx := (gmap atom ty).
 
