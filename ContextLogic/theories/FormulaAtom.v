@@ -20,6 +20,7 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation StoreT := (Store (V := V)) (only parsing).
 Local Notation LStoreT := (gmap logic_var V) (only parsing).
 Local Notation LWorldOnT := (LWorldOn (V := V)) (only parsing).
 
@@ -244,6 +245,143 @@ Proof.
     + exists σ. split; [exact Hσ | reflexivity].
     + reflexivity.
   - apply lstore_lift_free_restrict_fv_lvars_eq.
+Qed.
+
+Lemma res_fiber_from_projection_lookup
+    (m mfib : WfWorldT) (X : aset) (σx σ : StoreT) x :
+  res_fiber_from_projection m X σx mfib ->
+  (mfib : WorldT) σ ->
+  x ∈ X ->
+  σ !! x = σx !! x.
+Proof.
+  intros Hfiber Hσ Hx.
+  destruct Hfiber as [Hproj Hfib].
+  destruct mfib as [wmfib Hwfib].
+  cbn [raw_world raw_worldA world_stores] in Hσ, Hfib.
+  change (wmfib = rawA_fiber (m : WorldT) σx) in Hfib.
+  change (wmfib σ) in Hσ.
+  rewrite Hfib in Hσ.
+  destruct Hσ as [Hsource Hrestrict].
+  change (storeA_restrict σ (dom (σx : StoreT)) = σx) in Hrestrict.
+  pose proof (wfworld_store_dom (res_restrict m X) σx Hproj)
+    as Hdomσx.
+  change (dom (σx : StoreT) = world_dom (res_restrict m X : WorldT))
+    in Hdomσx.
+  cbn in Hdomσx.
+  destruct (decide (x ∈ dom (σx : StoreT))) as [Hxσx|Hxσx].
+  - change (x ∈ dom (σx : gmap atom V)) in Hxσx.
+    apply elem_of_dom in Hxσx as [vx Hσxx].
+    assert (Hlook :
+        ((storeA_restrict σ (dom (σx : StoreT)) : StoreT) !! x) =
+        Some vx).
+    { rewrite Hrestrict. exact Hσxx. }
+    apply storeA_restrict_lookup_some in Hlook as [_ Hσx].
+    change ((σ : gmap atom V) !! x =
+      (σx : gmap atom V) !! x).
+    exact (eq_trans Hσx (eq_sym Hσxx)).
+  - change (x ∉ dom (σx : gmap atom V)) in Hxσx.
+    rewrite not_elem_of_dom in Hxσx.
+    change ((σ : gmap atom V) !! x =
+      (σx : gmap atom V) !! x).
+    rewrite Hxσx.
+    apply not_elem_of_dom.
+    pose proof (wfworld_store_dom m σ Hsource) as Hdomσ.
+    rewrite Hdomσ.
+    intros Hxm.
+    assert (Hxσx_dom : x ∈ dom (σx : StoreT)).
+    {
+      rewrite Hdomσx.
+      cbn.
+      apply elem_of_intersection. split; assumption.
+    }
+    change (x ∈ dom (σx : gmap atom V)) in Hxσx_dom.
+    apply elem_of_dom in Hxσx_dom as [vx Hlook].
+    rewrite Hxσx in Hlook. discriminate.
+Qed.
+
+Lemma lstore_lift_restrict_singleton_free_eq
+    y D (s : LStoreOn (V := V) D) (σ : StoreT) v :
+  D = ({[LVFree y]} : lvset) ->
+  σ !! y = Some v ->
+  (lso_store s : LStoreT) !! LVFree y = Some v ->
+  storeA_restrict
+    (lstore_lift_free (store_restrict σ (lvars_fv D)) : LStoreT) D =
+  lso_store s.
+Proof.
+  intros HD Hσy Hsy.
+  subst D.
+  destruct s as [s Hsdom].
+  cbn [lso_store storeAO_store] in *.
+  apply storeA_map_eq. intros k.
+  rewrite storeA_restrict_lookup.
+  destruct (decide (k ∈ ({[LVFree y]} : lvset))) as [Hk|Hk].
+  - apply elem_of_singleton in Hk as ->.
+    rewrite lstore_lift_free_lookup_free.
+    replace ((store_restrict σ (lvars_fv ({[LVFree y]} : lvset)) : StoreT)
+        !! y)
+      with (Some v).
+    2:{
+      symmetry.
+      change ((storeA_restrict σ (lvars_fv ({[LVFree y]} : lvset))
+        : gmap atom V) !! y = Some v).
+      apply storeA_restrict_lookup_some_2; [exact Hσy|].
+      rewrite lvars_fv_singleton_free. apply elem_of_singleton.
+      reflexivity.
+    }
+    replace (s !! LVFree y) with (Some v).
+    { reflexivity. }
+  - symmetry. apply not_elem_of_dom_1.
+    rewrite Hsdom. exact Hk.
+Qed.
+
+Lemma lstore_in_lworld_on_singleton_free_lookup
+    y D (m : WfWorldT)
+    (Hlc : lc_lvars D)
+    (Hsub : lvars_fv D ⊆ world_dom (m : WorldT))
+    (s : LStoreOn (V := V) D) :
+  D = ({[LVFree y]} : lvset) ->
+  lstore_in_lworld_on s (lworld_on_lift D m Hlc Hsub) ->
+  exists σ,
+    (m : WorldT) σ /\
+    (lso_store s : LStoreT) !! LVFree y = σ !! y.
+Proof.
+  intros HD Hmem.
+  subst D.
+  unfold lstore_in_lworld_on, lworld_on_lift in Hmem.
+  cbn [lw lraw_world raw_worldA worldA_stores] in Hmem.
+  destruct Hmem as [σl [[τ [Hτres ->]] Hrestrict_l]].
+  destruct Hτres as [σ [Hσ Hrestrict_τ]].
+  exists σ. split; [exact Hσ|].
+  pose proof (f_equal (fun st => (st : LStoreT) !! LVFree y) Hrestrict_l)
+    as Hyl.
+  cbn [lso_store storeAO_store] in Hyl.
+  change ((storeA_restrict (lstore_lift_free τ : LStoreT)
+    ({[LVFree y]} : lvset) : LStoreT) !! LVFree y =
+    (lso_store s : LStoreT) !! LVFree y) in Hyl.
+  replace ((storeA_restrict (lstore_lift_free τ : LStoreT)
+      ({[LVFree y]} : lvset) : LStoreT) !! LVFree y)
+    with ((τ : gmap atom V) !! y) in Hyl.
+  2:{
+    symmetry.
+    rewrite (storeA_restrict_lookup
+      (K := logic_var) (V := V)
+      (lstore_lift_free τ : LStoreT) ({[LVFree y]} : lvset) (LVFree y)).
+    destruct (decide (LVFree y ∈ ({[LVFree y]} : lvset))) as [_|Hbad].
+    - rewrite lstore_lift_free_lookup_free. reflexivity.
+    - exfalso. apply Hbad. apply elem_of_singleton. reflexivity.
+  }
+  pose proof (f_equal (fun st => (st : StoreT) !! y) Hrestrict_τ)
+    as Hyτ.
+  change ((storeA_restrict σ (lvars_fv ({[LVFree y]} : lvset))
+    : StoreT) !! y = τ !! y) in Hyτ.
+  rewrite (storeA_restrict_lookup
+    (K := atom) (V := V)
+    (σ : gmap atom V) (lvars_fv ({[LVFree y]} : lvset)) y) in Hyτ.
+  destruct (decide (y ∈ lvars_fv ({[LVFree y]} : lvset))) as [_|Hbad].
+  2:{ exfalso. apply Hbad.
+      rewrite lvars_fv_singleton_free. apply elem_of_singleton.
+      reflexivity. }
+  rewrite <- Hyτ in Hyl. symmetry. exact Hyl.
 Qed.
 
 Lemma lvars_closed_difference_atom_store_to_lvar_store_empty

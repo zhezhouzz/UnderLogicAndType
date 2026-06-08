@@ -821,6 +821,36 @@ Proof.
     exact Hfib.
 Qed.
 
+Lemma res_fiber_from_projection_empty_self (m : WfWorldT) :
+  res_fiber_from_projection m ∅ (∅ : Store (V := V)) m.
+Proof.
+  split.
+  - destruct (world_wf m) as [[σ Hσ] _].
+    exists σ. split; [exact Hσ|].
+    apply storeA_restrict_empty_set.
+  - apply world_ext.
+    + reflexivity.
+    + intros σ. split.
+      * intros Hσ. split; [exact Hσ|].
+        apply storeA_restrict_empty_set.
+      * intros [Hσ _]. exact Hσ.
+Qed.
+
+Lemma res_models_fibvars_empty_elim
+    (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FFibVars ∅ φ ->
+  m ⊨ φ.
+Proof.
+  intros Hfib.
+  unfold res_models in Hfib |- *.
+  cbn [formula_measure res_models_fuel] in Hfib |- *.
+  destruct Hfib as [_ [_ Hfib]].
+  specialize (Hfib (∅ : Store (V := V)) m
+    (res_fiber_from_projection_empty_self m)).
+  rewrite formula_msubst_store_empty in Hfib by reflexivity.
+  models_fuel_irrel Hfib.
+Qed.
+
 Lemma res_fiber_from_projection_lookup_eq
     (m mfib : WfWorldT) (X : aset) (σproj τ : Store (V := V)) x :
   res_fiber_from_projection m X σproj mfib ->
