@@ -19,6 +19,10 @@ Class Stale A := stale : A → aset.
 
 #[global] Instance stale_aset : Stale aset := id.
 
+Notation "'FV' '(' x ')'" := (stale x)
+  (at level 10, x at level 9,
+   format "FV ( x )").
+
 Notation "x '#' s" := (x ∉ stale s) (at level 40).
 
 
