@@ -1,0 +1,74 @@
+# Logic Qualifier / Atom Wrapper Cleanup Plan
+
+## Goal
+
+Remove the old `logic_qualifier` / `lqual_*` route and the
+`type_qualifier_formula` wrapper.  After this cleanup, logic atoms use only the
+unified store-level `qualifier`:
+
+- `FAtom q` is the exact atom formula.
+- `FFiberAtom q` remains definitional sugar for
+  `FFibVars (qual_vars q) (FAtom q)`.
+- No `logic_qualifier`, `lqual_*`, `LogicQualifierT`,
+  `type_qualifier_formula`, or `FQual[ q ]` remains in source.
+
+## Rounds
+
+### Round 1: Record plan
+
+Status: completed.
+
+- Write this plan.
+- Commit this checkpoint.
+
+### Round 2: Move pure qualifier/world-store support
+
+Status: pending.
+
+- Move exact atom support that does not depend on `Formula` into the lower
+  qualifier/algebra-facing layer where possible.
+- Keep names focused on `qual_*`, `lstore_*`, and `qualifier_exact_*`.
+- Compile:
+  `timeout 50s make TIMED=1 ContextQualifier/theories/Qualifier.vo`
+
+### Round 3: Introduce FormulaAtom
+
+Status: pending.
+
+- Add `ContextLogic/theories/FormulaAtom.v` for exact atom denotation and
+  `FAtom` / `FFiberAtom` proof principles.
+- Update `_CoqProject` and imports.
+- Compile:
+  `timeout 50s make TIMED=1 ContextLogic/theories/FormulaAtom.vo`
+  `timeout 50s make TIMED=1 ContextLogic/theories/FormulaConnectives.vo`
+
+### Round 4: Remove old lqual route
+
+Status: pending.
+
+- Delete `logic_qualifier`, `lqual_*`, `logic_qualifier_denote_*`, and
+  `LogicQualifierT` aliases.
+- Remove `LogicQualifier.v` if it is empty after the split.
+- Scan:
+  `rg -n "logic_qualifier|lqual_|LogicQualifierT" ContextLogic ContextBasicDenotation Denotation ContextTyping`
+
+### Round 5: Remove type_qualifier_formula wrapper
+
+Status: pending.
+
+- Replace `type_qualifier_formula q` with `FAtom q`.
+- Replace wrapper lemmas with direct atom lemmas:
+  `formula_open_atom`, `formula_open_env_atom`, `formula_fv_atom`,
+  `res_models_atom_exact_iff`.
+- Delete `FQual[ q ]`.
+
+### Round 6: Final validation
+
+Status: pending.
+
+- Compile:
+  `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo`
+  `timeout 180s make TIMED=1`
+- Scan:
+  `rg -n "logic_qualifier|lqual_|LogicQualifierT|type_qualifier_formula|FQual" ContextLogic ContextBasicDenotation Denotation ContextTyping ContextQualifier _CoqProject`
+  `rg -n "Admitted\.|admit\.|Axiom Φ_wf|Parameter Φ" ContextLogic ContextBasicDenotation Denotation ContextTyping`
