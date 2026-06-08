@@ -10,6 +10,16 @@ Section ConstDenote.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
+Local Ltac const_fast_set_side :=
+  cbn [fv_tm fv_value] in *;
+  repeat match goal with
+  | H : ?a ∈ {[?b]} |- _ =>
+      apply elem_of_singleton in H; subst
+  end;
+  repeat match goal with
+  | |- ?a ∈ {[?a]} => apply elem_of_singleton; reflexivity
+  end.
+
 Lemma context_ty_wf_formula_const_precise_empty c (m : WfWorldT) :
   m ⊨ context_ty_wf_formula (∅ : lty_env)
     (CTInter
@@ -410,9 +420,18 @@ Proof.
     apply Hyfresh.
     better_set_solver.
   }
-  assert (Hyx : y <> x) by set_solver.
+  assert (Hyx : y <> x).
+  {
+    intros ->. apply Hyfresh.
+    apply elem_of_union_r. const_fast_set_side.
+  }
   assert (Hye : y ∉ fv_tm (tret (vfvar x))).
-  { cbn [fv_tm fv_value]. set_solver. }
+  {
+    intros Hyfv. apply Hyfresh.
+    cbn [fv_tm fv_value] in Hyfv.
+    apply elem_of_singleton in Hyfv as ->.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  }
   destruct (expr_result_extension_witness_exists (tret (vfvar x)) y Hye)
     as [Fx HFx].
   assert (Happ : extension_applicable Fx m).
@@ -420,9 +439,10 @@ Proof.
     constructor.
     - destruct HFx as [_ [Hin _] _].
       unfold ext_in in Hin. rewrite Hin.
-      cbn [fv_tm fv_value]. set_solver.
+      intros z Hz. const_fast_set_side. exact Hxdom.
     - destruct HFx as [_ [_ Hout] _].
-      unfold ext_out in Hout. rewrite Hout. set_solver.
+      unfold ext_out in Hout. rewrite Hout.
+      intros z Hz Hzm. const_fast_set_side. exact (Hym Hzm).
   }
   destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
   pose proof (res_extend_by_dom m Fx mx Hext) as Hmxdom.
@@ -442,8 +462,14 @@ Proof.
     unfold ext_out in Hout. rewrite Hout. reflexivity.
   }
   rewrite !formula_open_impl in Hopened.
-  rewrite formula_open_expr_result_formula_shift0 in Hopened
-    by (constructor || cbn [fv_tm fv_value]; set_solver).
+  rewrite formula_open_expr_result_formula_shift0 in Hopened.
+  2:{ apply lc_ret_iff_value; constructor. }
+  2:{
+    intros Hyfv. apply Hyfresh.
+    cbn [fv_tm fv_value] in Hyfv.
+    apply elem_of_singleton in Hyfv as ->.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  }
   rewrite formula_open_fibvars in Hopened.
   rewrite formula_open_over in Hopened.
   rewrite formula_open_atom in Hopened.
@@ -570,7 +596,7 @@ Proof.
     apply tm_eval_in_store_ret_fvar_lookup; [exact Hclosed_ret|].
     apply storeA_restrict_lookup_some_2.
     - exact Hσmx_x.
-    - cbn [fv_tm fv_value]. set_solver.
+    - const_fast_set_side.
   }
   pose proof (result_extension_store_lookup_output
     (tret (vfvar x)) y Fx m mx σmx vx HFx Hext Hσmx Heval_ret)
