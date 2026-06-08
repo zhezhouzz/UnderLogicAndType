@@ -10,6 +10,18 @@ From Denotation Require Import
 
 Section TypeDenote.
 
+Local Ltac wand_union_member :=
+  first
+    [ assumption
+    | apply elem_of_union_l; wand_union_member
+    | apply elem_of_union_r; wand_union_member ].
+
+Local Ltac wand_fresh_from_disjoint Hfresh :=
+  intros Hy;
+  eapply Hfresh;
+    [ apply elem_of_union_l; apply elem_of_singleton; reflexivity
+    | subst; wand_union_member ].
+
 Lemma wand_open_arg_to_inserted_env
     gas (Σ : lty_env) τx τr e
     (m : WfWorldT) y :
@@ -303,16 +315,18 @@ Proof.
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply relevant_world_typing_closed_on_term;
-        eauto.
+    - eapply relevant_world_typing_closed_on_term.
+      + exact Hworld1.
+      + exact Hbasic1.
   }
   assert (Hclosed2 : wfworld_closed_on (fv_tm e2) my).
   {
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply relevant_world_typing_closed_on_term;
-        eauto.
+    - eapply relevant_world_typing_closed_on_term.
+      + exact Hworld2.
+      + exact Hbasic2.
   }
   assert (Hworld_y :
       my ⊨ basic_world_formula
@@ -880,9 +894,17 @@ Proof.
   pose proof (typed_total_equiv_term_scope
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
   assert (Hclosed1 : wfworld_closed_on (fv_tm e1) m).
-  { eapply relevant_world_typing_closed_on_term; eauto. }
+  {
+    eapply relevant_world_typing_closed_on_term.
+    - exact Hworld1.
+    - exact Hbasic1.
+  }
   assert (Hclosed2 : wfworld_closed_on (fv_tm e2) m).
-  { eapply relevant_world_typing_closed_on_term; eauto. }
+  {
+    eapply relevant_world_typing_closed_on_term.
+    - exact Hworld2.
+    - exact Hbasic2.
+  }
   assert (Hclosed_fun :
       wfworld_closed_on (fv_tm e1 ∪ fv_tm e2) (res_product n m Hc)).
   {
@@ -1319,29 +1341,47 @@ Proof.
 	  subst η.
 	  rewrite !formula_open_env_singleton in Harg |- *.
 	  rewrite open_env_atoms_insert in Hfresh by apply lookup_empty.
-	  rewrite open_env_atoms_empty in Hfresh.
-	  rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
-	  rewrite open_env_atoms_empty in Hdom.
-	  assert (Hyτx : y ∉ fv_cty τx) by (subst Lall; set_solver).
-	  assert (Hyτr : y ∉ fv_cty τr) by (subst Lall; set_solver).
-	  assert (Hye : y ∉ fv_tm e1 ∪ fv_tm e2) by (subst Lall; set_solver).
-	  assert (HyΣ1 :
-	      y ∉ lvars_fv
-	        (dom (typed_lty_env_bind
-	          (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx)))) by
-	    (subst Lall; set_solver).
-	  assert (HyΣ2 :
-	      y ∉ lvars_fv
-	        (dom (typed_lty_env_bind
-	          (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))) by
-	    (subst Lall; set_solver).
-	  assert (Hfresh_src :
-	      open_env_atoms (<[0 := y]> (∅ : gmap nat atom)) ## Lsrc).
-	  {
-	    rewrite open_env_atoms_insert by apply lookup_empty.
-	    rewrite open_env_atoms_empty.
-	    subst Lall. set_solver.
-	  }
+		  rewrite open_env_atoms_empty in Hfresh.
+		  rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
+		  rewrite open_env_atoms_empty in Hdom.
+		  assert (Hyτx : y ∉ fv_cty τx) by
+		    (wand_fresh_from_disjoint Hfresh).
+		  assert (Hyτr : y ∉ fv_cty τr) by
+		    (wand_fresh_from_disjoint Hfresh).
+			  assert (Hye : y ∉ fv_tm e1 ∪ fv_tm e2).
+			  {
+			    intros Hy.
+			    apply elem_of_union in Hy as [Hy|Hy].
+			    - eapply Hfresh.
+			      + apply elem_of_union_l. apply elem_of_singleton. reflexivity.
+			      + subst Lall. wand_union_member.
+			    - eapply Hfresh.
+			      + apply elem_of_union_l. apply elem_of_singleton. reflexivity.
+			      + subst Lall. wand_union_member.
+			  }
+		  assert (HyΣ1 :
+		      y ∉ lvars_fv
+		        (dom (typed_lty_env_bind
+		          (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx)))) by
+		    (wand_fresh_from_disjoint Hfresh).
+		  assert (HyΣ2 :
+		      y ∉ lvars_fv
+		        (dom (typed_lty_env_bind
+		          (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))) by
+		    (wand_fresh_from_disjoint Hfresh).
+		  assert (Hfresh_src :
+		      open_env_atoms (<[0 := y]> (∅ : gmap nat atom)) ## Lsrc).
+		  {
+		    rewrite open_env_atoms_insert by apply lookup_empty.
+		    rewrite open_env_atoms_empty.
+		    intros a Ha Ha_src.
+		    apply elem_of_union in Ha as [Ha|Ha].
+		    2:{ exfalso. set_solver. }
+		    apply elem_of_singleton in Ha. subst a.
+		    eapply Hfresh.
+		    - apply elem_of_union_l. apply elem_of_singleton. reflexivity.
+		    - subst Lall. wand_union_member.
+		  }
 	  assert (Harg_src :
 	      n ⊨ formula_open 0 y
 	        (ty_denote_gas gas
@@ -1355,13 +1395,13 @@ Proof.
 	  pose proof (Hsrc_rev (<[0 := y]> (∅ : gmap nat atom))
 	    n Hc Hbind Hfresh_src Hdom Harg_src) as Hres_src.
 	  rewrite formula_open_env_singleton in Hres_src.
-	  assert (Hdom_y :
-	      world_dom (res_product n m Hc : WorldT) =
-	        world_dom (m : WorldT) ∪ ({[y]} : aset)).
-	  {
-	    rewrite Hdom.
-	    set_solver.
-	  }
+		  assert (Hdom_y :
+		      world_dom (res_product n m Hc : WorldT) =
+		        world_dom (m : WorldT) ∪ ({[y]} : aset)).
+		  {
+		    rewrite Hdom.
+		    rewrite union_empty_r_L. reflexivity.
+		  }
 	  eapply (ty_denote_gas_tm_equiv_wand_frame_step
 	    gas IH Σ τx τr e1 e2 m n Hc y); eauto.
 	Qed.

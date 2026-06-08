@@ -28,6 +28,16 @@ Local Ltac fix_base_build_union :=
     | apply elem_of_union_l; fix_base_build_union
     | apply elem_of_union_r; fix_base_build_union ].
 
+Local Ltac fix_base_singleton_side :=
+  cbn [fv_tm fv_value] in *;
+  repeat match goal with
+  | H : ?a ∈ {[?b]} |- _ =>
+      apply elem_of_singleton in H; subst
+  end;
+  repeat match goal with
+  | |- ?a ∈ {[?a]} => apply elem_of_singleton; reflexivity
+  end.
+
 Lemma ty_denote_lt_arg_fiber
     gas (Δ : lty_env) b x y (m : WfWorldT) :
   x <> y ->
@@ -154,7 +164,12 @@ Proof.
     as Hzlookup_rel.
 	  assert (Hexpr_z :
 	      mx ⊨ expr_result_formula (tret (vfvar x)) (LVFree z)).
-	  { eapply expr_result_formula_of_result_extends_from_ty_guard; eauto. }
+	  {
+	    eapply expr_result_formula_of_result_extends_from_ty_guard.
+	    - exact HFx.
+	    - exact Hext.
+	    - exact Hguard.
+	  }
 	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_z)
 	    as Hfib_over.
   assert (Hfib_y :
@@ -167,7 +182,7 @@ Proof.
         (qual_vars
           (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))) ∖
           {[LVFree z]})
-      by (rewrite lt_qual_open_vars by exact Hzy; better_set_solver).
+      by exact (lt_qual_open_vars_without_opened b z y Hzy).
     exact Hfib_over.
   }
   pose proof (res_models_scoped _ _ Hfib_y) as Hscope_fib.
@@ -178,14 +193,16 @@ Proof.
     rewrite formula_fv_fibvars.
     apply elem_of_union_l.
     rewrite lvars_fv_singleton_free.
-    better_set_solver.
+    fix_base_singleton_side.
   }
   assert (Hy_m_dom : y ∈ world_dom (m : WorldT)).
   {
     rewrite Hmxdom in Hy_mx_dom.
     destruct HFx as [_ [_ Hout] _].
     unfold ext_out in Hout. rewrite Hout in Hy_mx_dom.
-    better_set_solver.
+    apply elem_of_union in Hy_mx_dom as [Hy_m|Hy_z].
+    - exact Hy_m.
+    - apply elem_of_singleton in Hy_z. symmetry in Hy_z. contradiction.
   }
   assert (Hyσ_dom : y ∈ dom (σ : StoreT)).
   {
@@ -251,7 +268,10 @@ Proof.
       {[y]}).
     rewrite storeA_restrict_dom.
     rewrite (wfworld_store_dom mx σmx Hσmx).
-    better_set_solver.
+    apply set_eq. intros a. split.
+    - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+    - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+      apply elem_of_singleton in Ha. subst a. exact Hy_mx_dom.
   }
   pose proof (lt_type_qualifier_open_msubst_lookup b z y Hzy
     (store_restrict σmx {[y]}) mo σmx Hσy_proj_dom
@@ -291,7 +311,7 @@ Proof.
     apply tm_eval_in_store_ret_fvar_lookup; [exact Hclosed_ret|].
     apply storeA_restrict_lookup_some_2.
     - exact Hσmx_x.
-    - cbn [fv_tm fv_value]. better_set_solver.
+    - fix_base_singleton_side.
   }
   pose proof (result_extension_store_lookup_output
     (tret (vfvar x)) z Fx m mx σmx vx HFx Hext Hσmx Heval_ret)
@@ -299,7 +319,8 @@ Proof.
   assert (Hσproj_y' :
       (store_restrict σmx {[y]} : StoreT) !! y = Some vy).
   {
-    apply storeA_restrict_lookup_some_2; [exact Hσmx_y|better_set_solver].
+    apply storeA_restrict_lookup_some_2; [exact Hσmx_y|].
+    fix_base_singleton_side.
   }
   exists cz, cy.
   split; [|split].

@@ -125,6 +125,17 @@ Proof.
   better_set_solver.
 Qed.
 
+Lemma lt_qual_open_vars_without_opened b z y :
+  z <> y ->
+  qual_vars (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))) ∖
+    {[LVFree z]} =
+  ({[LVFree y]} : lvset).
+Proof.
+  intros Hzy.
+  rewrite lt_qual_open_vars by exact Hzy.
+  better_set_solver.
+Qed.
+
 Lemma lt_qual_open_prop_iff b x y
     (Hxy : x <> y)
     (s : LStoreOnT
