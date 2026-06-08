@@ -318,10 +318,10 @@ Proof.
   eexists. apply lookup_singleton_Some. split; reflexivity.
 Qed.
 
-Lemma type_qualifier_formula_top (m : WfWorldT) :
-	  m ⊨ type_qualifier_formula qual_top.
+Lemma res_models_atom_top (m : WfWorldT) :
+	  m ⊨ FAtom qual_top.
 	Proof.
-	  apply type_qualifier_formula_models_iff.
+	  apply res_models_atom_exact_iff.
 	  unfold qualifier_exact_denote, qual_top.
 	  cbn [qual_prop qual_vars qual_lvars].
   assert (Hlc : lc_lvars (∅ : lvset)) by (unfold lc_lvars; set_solver).
@@ -503,13 +503,9 @@ Proof.
 	        rewrite formula_open_expr_result_formula_shift0
 	          by (try (constructor; constructor);
 	              cbn [fv_tm fv_value]; set_solver).
-        rewrite formula_open_fibvars, formula_open_over.
-	        rewrite type_qualifier_formula_open.
-	        2:{
-	          unfold qual_dom, qual_top, qual_vars.
-	          cbn [qual_lvars]. rewrite lvars_fv_empty. set_solver.
-	        }
-	        eapply res_models_impl_intro_scoped.
+	        rewrite formula_open_fibvars, formula_open_over.
+		        rewrite formula_open_atom.
+		        eapply res_models_impl_intro_scoped.
 	        -- unfold formula_scoped_in_world.
 	           rewrite formula_fv_expr_result_formula.
 	           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -524,7 +520,7 @@ Proof.
 	              apply elem_of_union_r. apply elem_of_singleton. reflexivity.
 	        -- unfold formula_scoped_in_world.
 	           rewrite formula_fv_fibvars, formula_fv_over,
-	             formula_fv_type_qualifier_formula.
+	             formula_fv_atom.
 	           unfold qual_dom, qual_top, qual_vars.
 	           cbn [qual_open_atom qual_lvars].
 	           rewrite ?set_swap_empty, ?lvars_fv_empty.
@@ -547,7 +543,7 @@ Proof.
 	           eapply res_models_FFibVars_intro.
 	           ++ unfold formula_scoped_in_world.
 	              rewrite formula_fv_fibvars, formula_fv_over,
-	                formula_fv_type_qualifier_formula.
+	                formula_fv_atom.
 	              rewrite qual_top_open.
 	              unfold qual_dom, qual_top. cbn [qual_lvars].
 	              rewrite lvars_fv_empty.
@@ -558,7 +554,7 @@ Proof.
 	              rewrite formula_msubst_store_empty.
 	              ** rewrite qual_top_open.
 	                 eapply res_models_over_intro_same_from_model.
-	                 apply type_qualifier_formula_top.
+	                 apply res_models_atom_top.
 	              ** eapply res_fiber_from_projection_empty_store_dom.
 	                 exact Hproj.
 Qed.
@@ -842,13 +838,13 @@ Lemma primop_graph_type_qualifier_open_msubst_from_expr
   m ⊨ ctx_denote (CtxBind x (primop_arg_ty (Φ op))) ->
   m ⊨ expr_result_formula (tprim op (vfvar x)) (LVFree y) ->
   mfib ⊨ formula_msubst_store σx
-    (type_qualifier_formula
+    (FAtom
       (qual_open_atom 0 y
         (qual_open_atom 1 x (primop_graph_qual op)))).
 Proof.
   intros Hxy Hfiber Hctx Hexpr.
   formula_msubst_syntax_norm.
-  apply type_qualifier_formula_models_iff.
+  apply res_models_atom_exact_iff.
   cbn [qualifier_exact_denote qual_msubst_store qual_mlsubst].
   set (q := qual_open_atom 0 y
     (qual_open_atom 1 x (primop_graph_qual op))).
@@ -1004,7 +1000,7 @@ Lemma primop_graph_fib_over_from_expr
     (qual_vars
       (qual_open_atom 0 y
         (qual_open_atom 1 x (primop_graph_qual op))) ∖ {[LVFree y]})
-    (FOver (type_qualifier_formula
+    (FOver (FAtom
       (qual_open_atom 0 y
         (qual_open_atom 1 x (primop_graph_qual op))))).
 Proof.
@@ -1016,25 +1012,30 @@ Proof.
     apply Hscope.
     rewrite formula_fv_expr_result_formula.
     cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-    rewrite !lvars_fv_union, !lvars_fv_singleton_free.
-    rewrite formula_fv_fibvars, formula_fv_over,
-      formula_fv_type_qualifier_formula in Ha.
-    unfold qual_dom in Ha.
-    rewrite primop_graph_qual_open_vars in Ha by exact Hxy.
-    replace (qual_vars
-        (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))) ∖
-        {[LVFree y]}) with ({[LVFree x]} : lvset) in Ha
-      by (rewrite primop_graph_qual_open_vars by exact Hxy; better_set_solver).
-    change (qual_lvars (qual_open_atom 0 y
-        (qual_open_atom 1 x (primop_graph_qual op))))
-      with (qual_vars (qual_open_atom 0 y
-        (qual_open_atom 1 x (primop_graph_qual op)))) in Ha.
-    rewrite primop_graph_qual_open_vars in Ha by exact Hxy.
-    rewrite !lvars_fv_union, !lvars_fv_singleton_free in Ha.
-    replace (({[LVFree x; LVFree y]} ∖ {[LVFree y]}) : lvset)
-      with ({[LVFree x]} : lvset) in Ha by better_set_solver.
-    rewrite lvars_fv_singleton_free in Ha.
-    better_set_solver.
+	    rewrite !lvars_fv_union, !lvars_fv_singleton_free.
+	    rewrite formula_fv_fibvars, formula_fv_over,
+	      formula_fv_atom in Ha.
+	    unfold qual_dom in Ha.
+	    replace (lvars_fv
+	        (qual_vars
+	          (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))) ∖
+	          {[LVFree y]})) with ({[x]} : aset) in Ha.
+	    2:{
+	      rewrite primop_graph_qual_open_vars by exact Hxy.
+	      replace (({[LVFree x; LVFree y]} ∖ {[LVFree y]}) : lvset)
+	        with ({[LVFree x]} : lvset) by better_set_solver.
+	      symmetry. apply lvars_fv_singleton_free.
+	    }
+	    replace (lvars_fv
+	        (qual_vars
+	          (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))))
+	        ) with ({[x; y]} : aset) in Ha.
+	    2:{
+	      rewrite primop_graph_qual_open_vars by exact Hxy.
+	      rewrite lvars_fv_union, !lvars_fv_singleton_free.
+	      better_set_solver.
+	    }
+	    better_set_solver.
   - rewrite primop_graph_qual_open_vars by exact Hxy.
     unfold lc_lvars. set_solver.
   - intros σ mfib Hproj.
@@ -1064,7 +1065,7 @@ Lemma primop_graph_fib_under_from_expr
     (qual_vars
       (qual_open_atom 0 y
         (qual_open_atom 1 x (primop_graph_qual op))) ∖ {[LVFree y]})
-    (FUnder (type_qualifier_formula
+    (FUnder (FAtom
       (qual_open_atom 0 y
         (qual_open_atom 1 x (primop_graph_qual op))))).
 Proof.
@@ -1076,25 +1077,30 @@ Proof.
     apply Hscope.
     rewrite formula_fv_expr_result_formula.
     cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-    rewrite !lvars_fv_union, !lvars_fv_singleton_free.
-    rewrite formula_fv_fibvars, formula_fv_under,
-      formula_fv_type_qualifier_formula in Ha.
-    unfold qual_dom in Ha.
-    rewrite primop_graph_qual_open_vars in Ha by exact Hxy.
-    replace (qual_vars
-        (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))) ∖
-        {[LVFree y]}) with ({[LVFree x]} : lvset) in Ha
-      by (rewrite primop_graph_qual_open_vars by exact Hxy; better_set_solver).
-    change (qual_lvars (qual_open_atom 0 y
-        (qual_open_atom 1 x (primop_graph_qual op))))
-      with (qual_vars (qual_open_atom 0 y
-        (qual_open_atom 1 x (primop_graph_qual op)))) in Ha.
-    rewrite primop_graph_qual_open_vars in Ha by exact Hxy.
-    rewrite !lvars_fv_union, !lvars_fv_singleton_free in Ha.
-    replace (({[LVFree x; LVFree y]} ∖ {[LVFree y]}) : lvset)
-      with ({[LVFree x]} : lvset) in Ha by better_set_solver.
-    rewrite lvars_fv_singleton_free in Ha.
-    better_set_solver.
+	    rewrite !lvars_fv_union, !lvars_fv_singleton_free.
+	    rewrite formula_fv_fibvars, formula_fv_under,
+	      formula_fv_atom in Ha.
+	    unfold qual_dom in Ha.
+	    replace (lvars_fv
+	        (qual_vars
+	          (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))) ∖
+	          {[LVFree y]})) with ({[x]} : aset) in Ha.
+	    2:{
+	      rewrite primop_graph_qual_open_vars by exact Hxy.
+	      replace (({[LVFree x; LVFree y]} ∖ {[LVFree y]}) : lvset)
+	        with ({[LVFree x]} : lvset) by better_set_solver.
+	      symmetry. apply lvars_fv_singleton_free.
+	    }
+	    replace (lvars_fv
+	        (qual_vars
+	          (qual_open_atom 0 y (qual_open_atom 1 x (primop_graph_qual op))))
+	        ) with ({[x; y]} : aset) in Ha.
+	    2:{
+	      rewrite primop_graph_qual_open_vars by exact Hxy.
+	      rewrite lvars_fv_union, !lvars_fv_singleton_free.
+	      better_set_solver.
+	    }
+	    better_set_solver.
   - rewrite primop_graph_qual_open_vars by exact Hxy.
     unfold lc_lvars. set_solver.
   - intros σ mfib Hproj.
@@ -1202,7 +1208,7 @@ Definition primop_graph_over_formula (op : prim_op) (x : atom) : FormulaT :=
         (qual_vars (qual_open_atom 1 x (primop_graph_qual op)) ∖
           {[LVBound 0]})
         (FOver
-          (type_qualifier_formula
+          (FAtom
             (qual_open_atom 1 x (primop_graph_qual op)))))).
 
 Definition primop_graph_under_formula (op : prim_op) (x : atom) : FormulaT :=
@@ -1213,14 +1219,14 @@ Definition primop_graph_under_formula (op : prim_op) (x : atom) : FormulaT :=
         (qual_vars (qual_open_atom 1 x (primop_graph_qual op)) ∖
           {[LVBound 0]})
         (FUnder
-          (type_qualifier_formula
+          (FAtom
             (qual_open_atom 1 x (primop_graph_qual op)))))).
 
 Lemma formula_fv_primop_graph_over_formula op x :
   formula_fv (primop_graph_over_formula op x) = ({[x]} : aset).
 Proof.
   unfold primop_graph_over_formula, formula_fv, formula_lvars.
-  unfold expr_result_formula, type_qualifier_formula, FFiberAtom,
+  unfold expr_result_formula, FFiberAtom,
     expr_result_qual, qual_vars.
   cbn [formula_lvars_at qual_lvars tm_shift value_shift tm_lvars
     tm_lvars_at value_lvars_at lvar_value_keys primop_graph_qual].
@@ -1246,7 +1252,7 @@ Lemma formula_fv_primop_graph_under_formula op x :
   formula_fv (primop_graph_under_formula op x) = ({[x]} : aset).
 Proof.
   unfold primop_graph_under_formula, formula_fv, formula_lvars.
-  unfold expr_result_formula, type_qualifier_formula, FFiberAtom,
+  unfold expr_result_formula, FFiberAtom,
     expr_result_qual, qual_vars.
   cbn [formula_lvars_at qual_lvars tm_shift value_shift tm_lvars
     tm_lvars_at value_lvars_at lvar_value_keys primop_graph_qual].
@@ -1272,9 +1278,9 @@ Local Ltac primop_graph_scope_norm :=
   unfold formula_scoped_in_world;
 	  rewrite ?formula_fv_forall, ?formula_fv_impl, ?formula_fv_fibvars,
 	    ?formula_fv_over, ?formula_fv_under, ?formula_fv_basic_world_formula,
-	    ?formula_fv_expr_result_formula, ?formula_fv_type_qualifier_formula;
+	    ?formula_fv_expr_result_formula, ?formula_fv_atom;
 	  unfold qual_dom, basic_world_formula, expr_result_formula,
-	    type_qualifier_formula, FFiberAtom;
+	    FFiberAtom;
 	  cbn [tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at
 	    lvar_value_keys formula_lvars formula_lvars_at qual_vars
 	    qual_lvars primop_graph_qual];
@@ -1440,35 +1446,13 @@ Proof.
 	        rewrite formula_open_expr_result_formula_shift0 in Hopened_scope
 	          by (try (constructor; constructor);
 	              cbn [fv_tm fv_value]; set_solver).
-        rewrite formula_open_expr_result_formula_shift0
-          by (try (constructor; constructor);
-              cbn [fv_tm fv_value]; set_solver).
-        rewrite formula_open_fibvars, formula_open_over in Hopened_scope |- *.
-        rewrite type_qualifier_formula_open in Hopened_scope.
-        2:{
-          unfold qual_dom.
-          rewrite qual_open_atom_vars.
-          unfold primop_graph_qual, qual_vars.
-          cbn [qual_lvars].
-          rewrite set_swap_union, !set_swap_singleton.
-          base_swap_normalize.
-          rewrite lvars_fv_union, lvars_fv_singleton_bound,
-            lvars_fv_singleton_free.
-          set_solver.
-        }
-        rewrite type_qualifier_formula_open.
-        2:{
-          unfold qual_dom.
-          rewrite qual_open_atom_vars.
-          unfold primop_graph_qual, qual_vars.
-          cbn [qual_lvars].
-          rewrite set_swap_union, !set_swap_singleton.
-          base_swap_normalize.
-          rewrite lvars_fv_union, lvars_fv_singleton_bound,
-            lvars_fv_singleton_free.
-          set_solver.
-	        }
-	        eapply res_models_impl_intro.
+	        rewrite formula_open_expr_result_formula_shift0
+	          by (try (constructor; constructor);
+	              cbn [fv_tm fv_value]; set_solver).
+	        rewrite formula_open_fibvars, formula_open_over in Hopened_scope |- *.
+	        rewrite formula_open_atom in Hopened_scope.
+	        rewrite formula_open_atom.
+		        eapply res_models_impl_intro.
 	        -- exact Hopened_scope.
 	        -- intros Hexpr.
 	           replace
@@ -1539,35 +1523,13 @@ Proof.
 	        rewrite formula_open_expr_result_formula_shift0 in Hopened_scope
 	          by (try (constructor; constructor);
 	              cbn [fv_tm fv_value]; set_solver).
-        rewrite formula_open_expr_result_formula_shift0
-          by (try (constructor; constructor);
-              cbn [fv_tm fv_value]; set_solver).
-        rewrite formula_open_fibvars, formula_open_under in Hopened_scope |- *.
-        rewrite type_qualifier_formula_open in Hopened_scope.
-        2:{
-          unfold qual_dom.
-          rewrite qual_open_atom_vars.
-          unfold primop_graph_qual, qual_vars.
-          cbn [qual_lvars].
-          rewrite set_swap_union, !set_swap_singleton.
-          base_swap_normalize.
-          rewrite lvars_fv_union, lvars_fv_singleton_bound,
-            lvars_fv_singleton_free.
-          set_solver.
-        }
-        rewrite type_qualifier_formula_open.
-        2:{
-          unfold qual_dom.
-          rewrite qual_open_atom_vars.
-          unfold primop_graph_qual, qual_vars.
-          cbn [qual_lvars].
-          rewrite set_swap_union, !set_swap_singleton.
-          base_swap_normalize.
-          rewrite lvars_fv_union, lvars_fv_singleton_bound,
-            lvars_fv_singleton_free.
-          set_solver.
-	        }
-	        eapply res_models_impl_intro.
+	        rewrite formula_open_expr_result_formula_shift0
+	          by (try (constructor; constructor);
+	              cbn [fv_tm fv_value]; set_solver).
+	        rewrite formula_open_fibvars, formula_open_under in Hopened_scope |- *.
+	        rewrite formula_open_atom in Hopened_scope.
+	        rewrite formula_open_atom.
+		        eapply res_models_impl_intro.
 	        -- exact Hopened_scope.
 	        -- intros Hexpr.
 	           replace

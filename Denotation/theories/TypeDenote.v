@@ -32,13 +32,13 @@ Fixpoint ty_denote_gas
             (FImpl
               (expr_result_formula (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                (FOver (type_qualifier_formula φ))))
+                (FOver (FAtom φ))))
       | CTUnder b φ =>
           FForall
             (FImpl
               (expr_result_formula (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                (FUnder (type_qualifier_formula φ))))
+                (FUnder (FAtom φ))))
       | CTInter τ1 τ2 =>
           FAnd
             (ty_denote_gas gas' Σ τ1 e)
@@ -184,10 +184,8 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
         by exact Hfreshφ;
       first [rewrite formula_open_env_over
             |rewrite formula_open_env_under];
-      rewrite type_qualifier_formula_open_env;
-      [reflexivity
-      |exact Hfreshφ
-      |apply open_env_values_inj_lift; exact Hinj] ] ].
+      rewrite formula_open_env_atom;
+      reflexivity ] ].
 
 Ltac denot_open_env_binary_case IH Hfresh Hinj :=
   cbn [ty_denote_gas];
@@ -579,7 +577,7 @@ Ltac rewrite_tm_support :=
 Ltac unfold_formula_lvars_atoms :=
   unfold ty_guard_formula, context_ty_wf_formula, basic_world_formula,
     expr_basic_typing_formula, expr_total_formula, expr_result_formula,
-    type_qualifier_formula, FFiberAtom;
+    FFiberAtom;
   cbn [formula_lvars_at];
 	  unfold context_ty_wf_qual, basic_world_qual,
 	    expr_basic_typing_qual, expr_total_qual, expr_result_qual;

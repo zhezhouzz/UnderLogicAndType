@@ -121,7 +121,7 @@ Proof.
 	          (expr_result_formula (tm_shift 0 (tret (vfvar x))) (LVBound 0))
 	          (FFibVars
 	            (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})
-	            (FOver (type_qualifier_formula
+	            (FOver (FAtom
 	              (mk_q_eq (vbvar 0) (vconst c))))))).
   {
     eapply Hforall_open; [exact HyL| |exact Hmxrestrict].
@@ -134,7 +134,7 @@ Proof.
 	    by (constructor || cbn [fv_tm fv_value]; set_solver).
   rewrite formula_open_fibvars in Hopened.
   rewrite formula_open_over in Hopened.
-  rewrite type_qualifier_formula_open in Hopened
+  rewrite formula_open_atom in Hopened
     by apply const_qual_dom_bound_fresh.
   replace
     (set_swap (LVBound 0) (LVFree y)
@@ -182,7 +182,7 @@ Proof.
 	    as Hfib_over.
   assert (Hfib_empty :
       mx ⊨ FFibVars ∅
-        (FOver (type_qualifier_formula
+        (FOver (FAtom
           (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))))).
   {
     replace (∅ : lvset)
@@ -196,7 +196,7 @@ Proof.
   cbn [formula_measure res_models_fuel] in Hover.
   destruct Hover as [_ [mo [Hsub_mx_mo Hqual_mo]]].
   assert (Hqual_model :
-      mo ⊨ type_qualifier_formula
+      mo ⊨ FAtom
         (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c)))).
   {
     unfold res_models.

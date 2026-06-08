@@ -114,7 +114,7 @@ Proof.
 	          (expr_result_formula (tm_shift 0 (tret (vfvar x))) (LVBound 0))
 	          (FFibVars
 	            (qual_vars (mk_q_lt_base b (vbvar 0) (vfvar y)) ∖ {[LVBound 0]})
-	            (FOver (type_qualifier_formula
+	            (FOver (FAtom
 	              (mk_q_lt_base b (vbvar 0) (vfvar y))))))).
   {
     eapply Hforall_open; [exact HzL| |exact Hmxrestrict].
@@ -125,20 +125,10 @@ Proof.
 	  rewrite !formula_open_impl in Hopened.
 	  rewrite formula_open_expr_result_formula_shift0 in Hopened
 	    by ((apply LC_ret; apply LC_fvar) || exact Hze).
-  rewrite formula_open_fibvars in Hopened.
-  rewrite formula_open_over in Hopened.
-  rewrite type_qualifier_formula_open in Hopened.
-  2:{
-    unfold qual_dom, mk_q_lt_base, qual_vars.
-    cbn [qual_lvars lvar_value_keys].
-    rewrite lvars_fv_union, lvars_fv_singleton_bound,
-      lvars_fv_singleton_free.
-    intros Hzdom.
-    apply elem_of_union in Hzdom as [Hzempty|Hzyset].
-    - exact (not_elem_of_empty z Hzempty).
-    - apply elem_of_singleton in Hzyset. exact (Hzy Hzyset).
-  }
-  replace
+	  rewrite formula_open_fibvars in Hopened.
+	  rewrite formula_open_over in Hopened.
+	  rewrite formula_open_atom in Hopened.
+	  replace
     (set_swap (LVBound 0) (LVFree z)
       (qual_vars (mk_q_lt_base b (vbvar 0) (vfvar y)) ∖ {[LVBound 0]}))
     with
@@ -169,7 +159,7 @@ Proof.
 	    as Hfib_over.
   assert (Hfib_y :
       mx ⊨ FFibVars ({[LVFree y]} : lvset)
-        (FOver (type_qualifier_formula
+        (FOver (FAtom
           (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y)))))).
   {
     replace ({[LVFree y]} : lvset)
@@ -246,7 +236,7 @@ Proof.
   destruct Hfib_y_body as [_ [mo [Hsub_fib_mo Hqual_mo]]].
   assert (Hqual_model :
       mo ⊨ formula_msubst_store (store_restrict σmx {[y]})
-        (type_qualifier_formula
+        (FAtom
           (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))))).
   {
     unfold res_models. models_fuel_irrel Hqual_mo.

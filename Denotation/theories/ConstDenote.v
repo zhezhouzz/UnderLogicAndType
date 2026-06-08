@@ -211,13 +211,13 @@ Proof.
 Qed.
 
 Lemma const_type_qualifier_open_lookup c y (m : WfWorldT) σ :
-  m ⊨ type_qualifier_formula
+  m ⊨ FAtom
       (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ->
   (m : WorldT) σ ->
   σ !! y = Some (vconst c).
 Proof.
   intros Hqual Hσ.
-  apply type_qualifier_formula_models_iff in Hqual.
+  apply res_models_atom_exact_iff in Hqual.
   destruct Hqual as [Hlc [Hscope Hholds]].
   set (q := qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))).
   set (D := qual_vars q).
@@ -282,11 +282,11 @@ Defined.
 
 Lemma const_type_qualifier_open_from_lookup c y (m : WfWorldT) :
   (forall σ, (m : WorldT) σ -> σ !! y = Some (vconst c)) ->
-  m ⊨ type_qualifier_formula
+  m ⊨ FAtom
     (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))).
 Proof.
   intros Hlookup.
-  apply type_qualifier_formula_models_iff.
+  apply res_models_atom_exact_iff.
   assert (Hlc :
       lc_lvars
         (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))).
@@ -378,7 +378,7 @@ Lemma const_fib_over_from_expr c y (m : WfWorldT) :
   m ⊨ FFibVars
     (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ∖
       {[LVFree y]})
-    (FOver (type_qualifier_formula
+    (FOver (FAtom
       (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))).
 Proof.
   intros Hexpr.
@@ -387,7 +387,7 @@ Proof.
     pose proof (res_models_scoped _ _ Hexpr) as Hscope.
     unfold formula_scoped_in_world in Hscope.
     rewrite formula_fv_fibvars, formula_fv_over,
-      formula_fv_type_qualifier_formula.
+      formula_fv_atom.
     unfold qual_dom.
     rewrite !const_qual_open_vars.
     replace ({[LVFree y]} ∖ {[LVFree y]} : lvset) with (∅ : lvset)
@@ -425,7 +425,7 @@ Lemma const_fib_under_from_expr c y (m : WfWorldT) :
   m ⊨ FFibVars
     (qual_vars (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))) ∖
       {[LVFree y]})
-    (FUnder (type_qualifier_formula
+    (FUnder (FAtom
       (qual_open_atom 0 y (mk_q_eq (vbvar 0) (vconst c))))).
 Proof.
   intros Hexpr.
@@ -434,7 +434,7 @@ Proof.
     pose proof (res_models_scoped _ _ Hexpr) as Hscope.
     unfold formula_scoped_in_world in Hscope.
     rewrite formula_fv_fibvars, formula_fv_under,
-      formula_fv_type_qualifier_formula.
+      formula_fv_atom.
     unfold qual_dom.
     rewrite !const_qual_open_vars.
     replace ({[LVFree y]} ∖ {[LVFree y]} : lvset) with (∅ : lvset)
@@ -494,8 +494,8 @@ Local Ltac const_forall_scope_norm :=
   unfold formula_scoped_in_world;
 	  rewrite ?formula_fv_atom, ?formula_fv_forall, ?formula_fv_impl, ?formula_fv_fibvars,
 	    ?formula_fv_over, ?formula_fv_under, ?formula_fv_expr_result_formula,
-	    ?formula_fv_type_qualifier_formula, ?formula_fv_basic_world_formula;
-	  unfold basic_world_formula, expr_result_formula, type_qualifier_formula;
+	    ?formula_fv_atom, ?formula_fv_basic_world_formula;
+	  unfold basic_world_formula, expr_result_formula;
 	  unfold FFiberAtom, qual_dom, qual_vars;
 	  cbn [formula_lvars formula_lvars_at
 	    tm_shift value_shift tm_lvars tm_lvars_at value_lvars_at
@@ -580,11 +580,11 @@ Proof.
 	            (expr_result_formula (tm_shift 0 (tret (vconst c))) (LVBound 0))
 	            (FFibVars
 	              (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})
-	              (FOver (type_qualifier_formula
+	              (FOver (FAtom
 	                (mk_q_eq (vbvar 0) (vconst c)))))))) with (∅ : aset).
 	      * set_solver.
 	      * unfold formula_fv, formula_lvars.
-	        unfold expr_result_formula, type_qualifier_formula, FFiberAtom,
+	        unfold expr_result_formula, FFiberAtom,
 	          expr_result_qual, qual_vars.
 	        cbn [formula_lvars_at qual_lvars tm_shift value_shift
 	          tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -605,8 +605,7 @@ Proof.
 	      2:{ constructor. constructor. }
 	      2:{ cbn [fv_tm fv_value]. set_solver. }
 	      rewrite formula_open_fibvars, formula_open_over.
-	      rewrite type_qualifier_formula_open
-	        by apply const_qual_dom_bound_fresh.
+		      rewrite formula_open_atom.
 	      eapply res_models_impl_intro_scoped.
 	      * solve_const_forall_open_scope.
 	      * solve_const_forall_open_scope.
@@ -650,11 +649,11 @@ Proof.
 	            (expr_result_formula (tm_shift 0 (tret (vconst c))) (LVBound 0))
 	            (FFibVars
 	              (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})
-	              (FUnder (type_qualifier_formula
+	              (FUnder (FAtom
 	                (mk_q_eq (vbvar 0) (vconst c)))))))) with (∅ : aset).
 	      * set_solver.
 	      * unfold formula_fv, formula_lvars.
-	        unfold expr_result_formula, type_qualifier_formula, FFiberAtom,
+	        unfold expr_result_formula, FFiberAtom,
 	          expr_result_qual, qual_vars.
 	        cbn [formula_lvars_at qual_lvars tm_shift value_shift
 	          tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -675,8 +674,7 @@ Proof.
 	      2:{ constructor. constructor. }
 	      2:{ cbn [fv_tm fv_value]. set_solver. }
 	      rewrite formula_open_fibvars, formula_open_under.
-	      rewrite type_qualifier_formula_open
-	        by apply const_qual_dom_bound_fresh.
+		      rewrite formula_open_atom.
 	      eapply res_models_impl_intro_scoped.
 	      * solve_const_forall_open_scope.
 	      * solve_const_forall_open_scope.

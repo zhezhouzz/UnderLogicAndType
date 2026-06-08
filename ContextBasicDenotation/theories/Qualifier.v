@@ -18,9 +18,6 @@ Definition type_qualifier_holds_lworld
   forall s : LStoreOn (qual_vars q),
     qual_prop q s <-> lstore_in_lworld_on s w.
 
-Definition type_qualifier_formula (q : type_qualifier) : Formula :=
-  FAtom q.
-
 Lemma lstore_in_lworld_on_open_back k x D
     (s : LStoreOn (lvars_open k x D))
     (w : LWorldOn (lvars_open k x D)) :
@@ -74,58 +71,11 @@ Proof.
     apply storeA_swap_involutive.
 Qed.
 
-Lemma type_qualifier_formula_open k x q :
-  x ∉ qual_dom q ->
-  formula_open k x (type_qualifier_formula q) =
-  type_qualifier_formula (qual_open_atom k x q).
-Proof.
-  intros _.
-  unfold type_qualifier_formula.
-  rewrite formula_open_atom.
-  reflexivity.
-Qed.
-
-Lemma type_qualifier_formula_open_env η q :
-  open_env_fresh_for_lvars η (qual_vars q) ->
-  open_env_values_inj η ->
-  formula_open_env η (type_qualifier_formula q) =
-  type_qualifier_formula (qual_open_env η q).
-Proof.
-  revert q.
-  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
-  - intros q _ _.
-    rewrite formula_open_env_empty, qual_open_env_empty. reflexivity.
-  - intros q Hfresh Hinj.
-    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
-      as [Hinjη Havoid].
-    pose proof (open_env_fresh_for_lvars_insert_tail η k x
-      (qual_vars q) Hnone Hfresh) as Hfreshη.
-    rewrite formula_open_env_insert_fresh by assumption.
-    rewrite IH by (exact Hfreshη || exact Hinjη).
-    rewrite type_qualifier_formula_open.
-    2:{
-      pose proof (open_env_fresh_for_lvars_insert_head η k x
-        (qual_vars q) Hnone Hfresh) as Hhead.
-      unfold qual_dom.
-      rewrite qual_open_env_vars by exact Hfreshη.
-      exact Hhead.
-    }
-    rewrite qual_open_env_insert_fresh by assumption.
-    reflexivity.
-Qed.
-
-Lemma formula_fv_type_qualifier_formula q :
-  formula_fv (type_qualifier_formula q) = qual_dom q.
-Proof.
-  unfold type_qualifier_formula.
-  rewrite formula_fv_atom. reflexivity.
-Qed.
-
-Lemma type_qualifier_formula_models_iff q (m : WfWorldT) :
-  res_models m (type_qualifier_formula q) <->
+Lemma res_models_atom_exact_iff q (m : WfWorldT) :
+  res_models m (FAtom q) <->
   qualifier_exact_denote q m.
 Proof.
-  unfold res_models, type_qualifier_formula.
+  unfold res_models.
   cbn [formula_measure res_models_fuel].
   split.
   - intros [_ Hden]. exact Hden.
@@ -199,7 +149,7 @@ Qed.
 
 Lemma lt_type_qualifier_open_lookup b x y
     (Hxy : x <> y) (m : WfWorldT) σ :
-  res_models m (type_qualifier_formula
+  res_models m (FAtom
       (qual_open_atom 0 x (mk_q_lt_base b (vbvar 0) (vfvar y)))) ->
   (m : WorldT) σ ->
   exists cx cy,
@@ -208,7 +158,7 @@ Lemma lt_type_qualifier_open_lookup b x y
     constant_lt_for_base b cx cy.
 Proof.
   intros Hqual Hσ.
-  apply type_qualifier_formula_models_iff in Hqual.
+  apply res_models_atom_exact_iff in Hqual.
   destruct Hqual as [Hlc [Hscope Hholds]].
   set (q := qual_open_atom 0 x (mk_q_lt_base b (vbvar 0) (vfvar y))).
   set (D := qual_vars q).
@@ -325,7 +275,7 @@ Lemma lt_type_qualifier_open_msubst_lookup b z y
     (Hzy : z <> y) (σy : StoreT) (m : WfWorldT) σ :
   dom (σy : StoreT) = {[y]} ->
   res_models m (formula_msubst_store σy
-      (type_qualifier_formula
+      (FAtom
         (qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))))) ->
   (m : WorldT) σ ->
   exists cz cy,
@@ -444,7 +394,3 @@ Proof.
 Qed.
 
 End QualifierDenotation.
-
-Notation "'FQual' '[' q ']'" := (type_qualifier_formula q)
-  (at level 10, q at level 9,
-   format "FQual [ q ]") : formula_scope.

@@ -15,13 +15,13 @@ Lemma ty_denote_gas_tm_equiv_over_body
       (FImpl
         (expr_result_formula (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (type_qualifier_formula φ)))) ->
+          (FOver (FAtom φ)))) ->
   m ⊨
     FForall
       (FImpl
         (expr_result_formula (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FOver (type_qualifier_formula φ)))).
+          (FOver (FAtom φ)))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_total_equiv_term_lc_lvars
@@ -66,13 +66,13 @@ Lemma ty_denote_gas_tm_equiv_under_body
       (FImpl
         (expr_result_formula (tm_shift 0 e1) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (type_qualifier_formula φ)))) ->
+          (FUnder (FAtom φ)))) ->
   m ⊨
     FForall
       (FImpl
         (expr_result_formula (tm_shift 0 e2) (LVBound 0))
         (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-          (FUnder (type_qualifier_formula φ)))).
+          (FUnder (FAtom φ)))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_total_equiv_term_lc_lvars
