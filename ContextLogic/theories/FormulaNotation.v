@@ -18,8 +18,8 @@ Notation "'@atom' q" := (FAtom q)
   (at level 10, q at level 9) : formula_scope.
 Notation "'pure' P" := (FPure P)
   (at level 10, P at level 9) : formula_scope.
-Notation "'res' D '|' P" := (FResourceAtom D P)
-  (at level 10, D at level 9, P at level 9) : formula_scope.
+Notation "'fiber_atom' q" := (FFiberAtom q)
+  (at level 10, q at level 9) : formula_scope.
 Notation "'over' φ" := (FOver φ)
   (at level 30, φ at level 30) : formula_scope.
 Notation "'under' φ" := (FUnder φ)
@@ -66,9 +66,8 @@ Notation "'@atom' q" := (FAtom q)
   (in custom form at level 10, q constr at level 9, only parsing).
 Notation "'@pure' P" := (FPure P)
   (in custom form at level 10, P constr at level 9, only parsing).
-Notation "'@res' D '|' P" := (FResourceAtom D P)
-  (in custom form at level 10, D constr at level 9,
-   P constr at level 9, only parsing).
+Notation "'@fiber_atom' q" := (FFiberAtom q)
+  (in custom form at level 10, q constr at level 9, only parsing).
 
 Notation "'over' φ" := (FOver φ)
   (in custom form at level 30, φ custom form at level 30, only parsing).

@@ -5,6 +5,7 @@
 From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBasicDenotation Require Import TermSyntax.
 From ContextAlgebra Require Import ResourceAlgebra.
+From ContextQualifier Require Import Qualifier.
 
 Section TermDenotation.
 
@@ -780,18 +781,18 @@ Proof.
     + exists ({[x := inhabitant]} : StoreT). simpl. reflexivity.
 Defined.
 
-Definition expr_total_lqual (e : tm) : logic_qualifier :=
-  lqual (tm_lvars e)
-    (fun w => expr_total_on e (@lw value _ w : LWorldT)).
+Definition expr_total_qual (e : tm) : qualifier (V := value) :=
+  tqual (tm_lvars e)
+    (fun s => exists v, expr_eval_in_store (lso_store s) e v).
 
 Definition expr_total_formula (e : tm) : Formula :=
-  FAtom (expr_total_lqual e).
+  FFiberAtom (expr_total_qual e).
 
 Lemma formula_fv_expr_total_formula e :
   formula_fv (expr_total_formula e) = lvars_fv (tm_lvars e).
 Proof.
-  unfold expr_total_formula, expr_total_lqual.
-  rewrite formula_fv_atom. reflexivity.
+  unfold expr_total_formula, expr_total_qual.
+  rewrite formula_fv_fiber_atom. reflexivity.
 Qed.
 
 End TermDenotation.

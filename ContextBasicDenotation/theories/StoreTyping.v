@@ -5,6 +5,7 @@
 From ContextBasicDenotation Require Import Notation.
 From ContextLogic Require Import FormulaConnectives.
 From ContextAlgebra Require Import ResourceAlgebra.
+From ContextQualifier Require Import Qualifier.
 
 Section StoreTyping.
 
@@ -41,11 +42,11 @@ Definition wfworld_closed_on (X : aset) (m : WfWorld) : Prop :=
 Definition wfworld_closed (m : WfWorld) : Prop :=
   wfworld_closed_on (world_dom (m : World)) m.
 
-Definition basic_world_lqual (Σ : lty_env) : logic_qualifier :=
-  lqual (dom Σ) (fun w => lworld_has_type Σ (@lw value _ w : LWorld)).
+Definition basic_world_qual (Σ : lty_env) : qualifier (V := value) :=
+  tqual (dom Σ) (fun s => storeA_has_type Σ (lso_store s)).
 
 Definition basic_world_formula (Σ : lty_env) : Formula :=
-  FAtom (basic_world_lqual Σ).
+  FFiberAtom (basic_world_qual Σ).
 
 Lemma atom_store_has_ltype_closed Σ σ :
   atom_store_has_ltype Σ σ ->
@@ -65,7 +66,7 @@ Qed.
 
 Lemma formula_fv_basic_world_formula (Σ : lty_env) :
   formula_fv (basic_world_formula Σ) = lvars_fv (dom Σ).
-Proof. apply formula_fv_atom. Qed.
+Proof. apply formula_fv_fiber_atom. Qed.
 
 Lemma wfworld_closed_on_mono X Y (m : WfWorld) :
   X ⊆ Y ->
@@ -211,21 +212,27 @@ Lemma formula_open_basic_world_formula k y Σ :
   formula_open k y (basic_world_formula Σ) =
   basic_world_formula (lty_env_open_one k y Σ).
 Proof.
-  unfold basic_world_formula, basic_world_lqual.
-  cbn [formula_open lqual_open].
+  unfold basic_world_formula.
+  rewrite formula_open_fiber_atom.
   f_equal.
-  apply logic_qualifier_ext.
+  unfold basic_world_qual, qual_open_atom.
+  cbn [qual_vars qual_lvars].
+  apply qual_ext.
   - rewrite lty_env_open_one_dom. reflexivity.
-  - intros w1 w2 Hlw. cbn [lqual_prop].
+  - intros s1 s2 Hs. cbn [qual_prop].
     split; intros Htyped.
-    + apply (proj2 (lworld_has_type_swap k y Σ (@lw value _ w2))).
-      change (lworld_has_type Σ
-        (lres_swap (LVBound k) (LVFree y) (@lw value _ w1) : LWorld)) in Htyped.
-      rewrite Hlw in Htyped. exact Htyped.
-    + apply (proj1 (lworld_has_type_swap k y Σ (@lw value _ w2))) in Htyped.
-      change (lworld_has_type Σ
-        (lres_swap (LVBound k) (LVFree y) (@lw value _ w1) : LWorld)).
-      rewrite Hlw. exact Htyped.
+    + change (storeA_has_type Σ
+        (lstore_swap (LVBound k) (LVFree y) (lso_store s1))) in Htyped.
+      rewrite Hs in Htyped.
+      apply (proj2 (storeA_has_type_swap (LVBound k) (LVFree y) Σ
+        (lso_store s2))).
+      exact Htyped.
+    + change (storeA_has_type Σ
+        (lstore_swap (LVBound k) (LVFree y) (lso_store s1))).
+      rewrite Hs.
+      apply (proj1 (storeA_has_type_swap (LVBound k) (LVFree y) Σ
+        (lso_store s2))).
+      exact Htyped.
 Qed.
 
 Lemma formula_open_basic_world_bind0 y Σ T :
@@ -330,31 +337,52 @@ Lemma storeA_has_type_lift_free_restrict_fv
       rewrite lstore_lift_free_lookup_free. exact Hu.
 Qed.
 
-Lemma basic_world_lqual_denote_spec (Σ : lty_env) (m : WfWorld) :
-  logic_qualifier_denote (basic_world_lqual Σ) m <->
+Lemma basic_world_qual_holds_store_iff (Σ : lty_env) σ :
+  qualifier_holds_store (basic_world_qual Σ) σ <->
   exists (Hlc : lc_lvars (dom Σ))
-         (Hsub : lvars_fv (dom Σ) ⊆ world_dom (m : World)),
-    lworld_has_type Σ
-      (@lw value (dom Σ)
-        (lworld_on_lift (dom Σ) m Hlc Hsub) : LWorld).
+    (Hsub : lvars_fv (dom Σ) ⊆ dom (σ : StoreT)),
+    storeA_has_type Σ (lstore_lift_free σ).
 Proof.
-  unfold basic_world_lqual, logic_qualifier_denote. simpl.
-  split; intros [Hlc [Hsub Htyped]]; exists Hlc, Hsub; exact Htyped.
+  cbn [basic_world_qual qualifier_holds_store qual_lvars qual_prop].
+  split.
+  - intros [Hlc [Hsub Htyped]].
+    exists Hlc, Hsub.
+    apply (proj1 (storeA_has_type_restrict_store Σ
+      (lstore_lift_free σ) (dom Σ) ltac:(set_solver))).
+    exact Htyped.
+  - intros [Hlc [Hsub Htyped]].
+    exists Hlc, Hsub.
+    apply (proj2 (storeA_has_type_restrict_store Σ
+      (lstore_lift_free σ) (dom Σ) ltac:(set_solver))).
+    exact Htyped.
 Qed.
 
-Lemma basic_world_lqual_denote_iff_res_lift_free
-    (Σ : lty_env) (m : WfWorld) :
-  logic_qualifier_denote (basic_world_lqual Σ) m <->
+Lemma basic_world_formula_models_iff (Σ : lty_env) (m : WfWorld) :
+  res_models m (basic_world_formula Σ) <->
   lc_lvars (dom Σ) /\
   lvars_fv (dom Σ) ⊆ world_dom (m : World) /\
   lworld_has_type Σ (res_lift_free m : LWorld).
 Proof.
   split.
-  - intros Hden.
-    apply basic_world_lqual_denote_spec in Hden.
-    destruct Hden as [Hlc [Hsub Htyped_on]].
+  - intros Hmodels.
+    apply res_models_FFiberAtom_store_iff in Hmodels
+      as [Hscope Hstores].
+    assert (Hlc : lc_lvars (dom Σ)).
+    {
+      destruct (world_wf m) as [[σ Hσ] _].
+      pose proof (Hstores σ Hσ) as Hstore.
+      apply basic_world_qual_holds_store_iff in Hstore.
+      destruct Hstore as [Hlc _]. exact Hlc.
+    }
+    assert (Hsub : lvars_fv (dom Σ) ⊆ world_dom (m : World)).
+    {
+      unfold formula_scoped_in_world in Hscope.
+      unfold basic_world_formula in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope.
+      cbn [qual_dom qual_vars qual_lvars basic_world_qual] in Hscope.
+      exact Hscope.
+    }
     split; [exact Hlc|]. split; [exact Hsub|].
-    destruct Htyped_on as [_ Hstores_on].
     unfold lworld_has_type, worldA_has_type. split.
     + intros v Hv.
       rewrite res_lift_free_dom.
@@ -365,57 +393,30 @@ Proof.
         apply Hsub. apply lvars_fv_elem. exact Hv.
     + intros τ Hτ.
       destruct Hτ as [σ [Hσ ->]].
-      apply (proj1 (storeA_has_type_lift_free_restrict_fv Σ σ Hlc)).
-      apply (proj1 (storeA_has_type_restrict_store Σ
-        (lstore_lift_free (store_restrict σ (lvars_fv (dom Σ))))
-        (dom Σ) ltac:(set_solver))).
-      apply Hstores_on.
-      unfold lworld_on_lift. cbn [lw lraw_world raw_worldA worldA_stores].
-      exists (lstore_lift_free (store_restrict σ (lvars_fv (dom Σ)))).
-      split.
-      * exists (store_restrict σ (lvars_fv (dom Σ))). split; [|reflexivity].
-        simpl. exists σ. split; [exact Hσ | reflexivity].
-      * reflexivity.
-  - intros [Hlc [Hsub Htyped_free]].
-    apply basic_world_lqual_denote_spec.
-    exists Hlc, Hsub.
-    destruct Htyped_free as [_ Hstores_free].
-    unfold lworld_has_type, worldA_has_type. split.
-    + intros v Hv.
-      change (v ∈ lworld_dom
-        (@lw value (dom Σ) (lworld_on_lift (dom Σ) m Hlc Hsub))).
-      rewrite (@lw_dom value (dom Σ) (lworld_on_lift (dom Σ) m Hlc Hsub)).
-      exact Hv.
-    + intros τ Hτ.
-      unfold lworld_on_lift in Hτ.
-      cbn [lw lraw_world raw_worldA worldA_stores] in Hτ.
-      destruct Hτ as [τ0 [Hτ0 Hrestrict]]. subst τ.
-      destruct Hτ0 as [σr [Hσr ->]].
-      simpl in Hσr.
-      destruct Hσr as [σ [Hσ Hσr]]. subst σr.
-      apply (proj2 (storeA_has_type_restrict_store Σ
-        (lstore_lift_free (store_restrict σ (lvars_fv (dom Σ))))
-        (dom Σ) ltac:(set_solver))).
-      apply (proj2 (storeA_has_type_lift_free_restrict_fv Σ σ Hlc)).
-      apply Hstores_free. exists σ. split; [exact Hσ | reflexivity].
-Qed.
-
-Lemma basic_world_formula_models_iff (Σ : lty_env) (m : WfWorld) :
-  res_models m (basic_world_formula Σ) <->
-  lc_lvars (dom Σ) /\
-  lvars_fv (dom Σ) ⊆ world_dom (m : World) /\
-  lworld_has_type Σ (res_lift_free m : LWorld).
-Proof.
-  unfold res_models, basic_world_formula.
-  cbn [formula_measure res_models_fuel].
-  split.
-  - intros [_ Hden].
-    apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
-  - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]].
-      unfold formula_scoped_in_world.
-      rewrite formula_fv_atom. exact Hsub.
-    + apply basic_world_lqual_denote_iff_res_lift_free. exact Hden.
+      pose proof (Hstores σ Hσ) as Hstore.
+      apply basic_world_qual_holds_store_iff in Hstore.
+      destruct Hstore as [_ [_ Htyped]].
+      exact Htyped.
+  - intros [Hlc [Hsub Htyped]].
+    apply res_models_FFiberAtom_store_iff.
+    split.
+    + unfold formula_scoped_in_world.
+      unfold basic_world_formula.
+      rewrite formula_fv_fiber_atom.
+      cbn [qual_dom qual_vars qual_lvars basic_world_qual].
+      exact Hsub.
+    + intros σ Hσ.
+      apply basic_world_qual_holds_store_iff.
+      exists Hlc.
+      assert (Hsubσ : lvars_fv (dom Σ) ⊆ dom (σ : StoreT)).
+      {
+        intros x Hx.
+        change (x ∈ dom (σ : gmap atom value)).
+        rewrite (wfworld_store_dom m σ Hσ). exact (Hsub x Hx).
+      }
+      exists Hsubσ.
+      destruct Htyped as [_ Hstores].
+      apply Hstores. exists σ. split; [exact Hσ|reflexivity].
 Qed.
 
 Lemma basic_world_formula_subenv

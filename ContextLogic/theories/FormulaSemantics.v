@@ -37,9 +37,9 @@ Proof.
 Qed.
 
 Lemma formula_scoped_atom_iff (m : WfWorldT) q :
-  formula_scoped_in_world m (FAtom q) ↔ lqual_fv q ⊆ world_dom (m : WorldT).
+  formula_scoped_in_world m (FAtom q) ↔ qual_dom q ⊆ world_dom (m : WorldT).
 Proof.
-  unfold formula_scoped_in_world, lqual_fv.
+  unfold formula_scoped_in_world, qual_dom.
   rewrite formula_fv_atom. reflexivity.
 Qed.
 
@@ -273,7 +273,7 @@ Fixpoint res_models_fuel
       | FTrue => True
       | FFalse => False
       | FAtom a =>
-          logic_qualifier_denote a m
+          qualifier_exact_denote a m
       | FAnd p q =>
           res_models_fuel gas' m p ∧
           res_models_fuel gas' m q
@@ -641,13 +641,21 @@ Proof.
     simpl in *.
   - exact I.
   - exact Hmodel.
-  - apply (proj1 (logic_qualifier_denote_restrict a n (lqual_fv a) ltac:(set_solver))).
+  - apply (proj1 (qualifier_exact_denote_restrict a n (qual_dom a) ltac:(set_solver))).
     rewrite formula_fv_atom in Hproj.
-    unfold lqual_fv, lqual_lvars in Hproj.
-    pose proof (proj2 (logic_qualifier_denote_restrict a m (lqual_fv a)
+    pose proof (proj2 (qualifier_exact_denote_restrict a m (qual_dom a)
       ltac:(set_solver)) Hmodel) as Hm_restrict.
-    unfold lqual_fv, lqual_lvars in Hm_restrict.
-    rewrite Hproj in Hm_restrict.
+    change (qualifier_exact_denote a (res_restrict n (qual_dom a))).
+    assert (Hrn :
+      res_restrict n (qual_dom a) = res_restrict m (qual_dom a)).
+    {
+      unfold qual_dom, qual_vars.
+      change
+        (res_restrict m (lvars_fv (qual_lvars a)) =
+         res_restrict n (lvars_fv (qual_lvars a))) in Hproj.
+      symmetry. exact Hproj.
+    }
+    rewrite Hrn.
     exact Hm_restrict.
   - rewrite formula_fv_and in Hproj.
     destruct Hmodel as [Hp Hq]. split.

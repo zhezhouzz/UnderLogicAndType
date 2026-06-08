@@ -163,6 +163,25 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma storeA_restrict_dom_intersection {K : Type} `{Countable K}
+    (s : gmap K V) (X : gset K) :
+  storeA_restrict s X =
+  (storeA_restrict s (X ∩ dom (s : gmap K V)) : gmap K V).
+Proof.
+  apply storeA_map_eq. intros k.
+  rewrite (storeA_restrict_lookup s X k).
+  rewrite (storeA_restrict_lookup s (X ∩ dom (s : gmap K V)) k).
+  destruct (decide (k ∈ X)) as [HkX|HkX].
+  - destruct ((s : gmap K V) !! k) as [v|] eqn:Hk.
+    + rewrite decide_True by
+        (apply elem_of_intersection; split; [exact HkX|by apply elem_of_dom_2 in Hk]).
+      reflexivity.
+    + destruct (decide (k ∈ X ∩ dom (s : gmap K V))); reflexivity.
+  - destruct (decide (k ∈ X ∩ dom (s : gmap K V))) as [Hbad|_].
+    + apply elem_of_intersection in Hbad as [Hbad _]. contradiction.
+    + reflexivity.
+Qed.
+
 
 Lemma storeA_restrict_comm {K : Type} `{Countable K}
     (s : gmap K V) (X Y : gset K) :

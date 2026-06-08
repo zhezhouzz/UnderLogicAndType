@@ -8,6 +8,7 @@
 From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval
   TermOpen BasicTypingFormula.
 From ContextBase Require Import BaseTactics.
+From ContextQualifier Require Import Qualifier.
 
 Section BasicTypingOpen.
 
@@ -15,12 +16,12 @@ Lemma formula_open_context_ty_wf_formula k y Σ τ :
   formula_open k y (context_ty_wf_formula Σ τ) =
   context_ty_wf_formula (lty_env_open_one k y Σ) (cty_open k y τ).
 Proof.
-  unfold context_ty_wf_formula, context_ty_wf_lqual.
-  cbn [formula_open lqual_open].
-  f_equal.
-  apply logic_qualifier_ext.
+  unfold context_ty_wf_formula, context_ty_wf_qual.
+  rewrite formula_open_fiber_atom.
+  apply f_equal.
+  apply qual_ext.
   - rewrite lty_env_open_one_dom. reflexivity.
-  - intros w1 w2 _. cbn [lqual_prop].
+  - intros s1 s2 _. cbn [qual_prop].
     rewrite lty_env_open_one_dom.
     rewrite basic_context_ty_lvars_open.
     reflexivity.
@@ -622,12 +623,12 @@ Lemma formula_open_expr_basic_typing_formula k y Σ e T :
     (lty_env_open_one k y Σ) (open_tm k (vfvar y) e) T.
 Proof.
   intros Hy.
-  unfold expr_basic_typing_formula, expr_basic_typing_lqual.
-  cbn [formula_open lqual_open].
-  f_equal.
-  apply logic_qualifier_ext.
+  unfold expr_basic_typing_formula, expr_basic_typing_qual.
+  rewrite formula_open_fiber_atom.
+  apply f_equal.
+  apply qual_ext.
   - rewrite lty_env_open_one_dom. reflexivity.
-  - intros w1 w2 Hlw. cbn [lqual_prop].
+  - intros s1 s2 _. cbn [qual_prop].
     apply basic_tm_has_ltype_open_one_fresh_iff. exact Hy.
 Qed.
 

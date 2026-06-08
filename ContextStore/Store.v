@@ -20,7 +20,9 @@ Notation store_restrict := storeA_restrict (only parsing).
 Set Warnings "-cast-in-pattern".
 
 Ltac store_set_normalize :=
-  repeat progress (try map_normalize; try set_normalize).
+  repeat progress
+    (cbn [store_insert store_empty] in *;
+     try map_normalize; try set_normalize).
 
 Ltac store_restrict_normalize :=
   repeat match goal with
@@ -66,6 +68,16 @@ Ltac store_insert_normalize :=
       rewrite (storeA_restrict_insert_notin σ X x v) by better_set_solver
   end.
 
+Ltac store_lvar_map_normalize :=
+  repeat progress
+    (rewrite ?atom_store_to_lvar_store_store_insert in *;
+     rewrite ?atom_store_to_lvar_store_insert in *;
+     rewrite ?atom_store_to_lvar_store_store_empty in *;
+     rewrite ?atom_store_to_lvar_store_empty in *;
+     rewrite ?atom_store_to_lvar_store_dom in *;
+     rewrite ?atom_store_to_lvar_store_lookup_free in *;
+     rewrite ?atom_store_to_lvar_store_lookup_bound_none in *).
+
 Ltac store_lookup_normalize :=
   repeat match goal with
   | H : context[storeA_restrict ?σ ?X !! ?x] |- _ =>
@@ -88,6 +100,34 @@ Ltac store_lookup_normalize :=
 
 Ltac store_key_normalize :=
   repeat match goal with
+  | H : context[atom_store_to_lvar_store (∅ : Store)] |- _ =>
+      rewrite atom_store_to_lvar_store_store_empty in H
+  | |- context[atom_store_to_lvar_store (∅ : Store)] =>
+      rewrite atom_store_to_lvar_store_store_empty
+  | H : context[atom_store_to_lvar_store (∅ : gmap atom _)] |- _ =>
+      rewrite atom_store_to_lvar_store_empty in H
+  | |- context[atom_store_to_lvar_store (∅ : gmap atom _)] =>
+      rewrite atom_store_to_lvar_store_empty
+  | H : context[atom_store_to_lvar_store (<[?x := ?v]> (?σ : Store))] |- _ =>
+      rewrite (atom_store_to_lvar_store_store_insert x v σ) in H
+  | |- context[atom_store_to_lvar_store (<[?x := ?v]> (?σ : Store))] =>
+      rewrite (atom_store_to_lvar_store_store_insert x v σ)
+  | H : context[atom_store_to_lvar_store (<[?x := ?v]> ?σ)] |- _ =>
+      rewrite (atom_store_to_lvar_store_insert x v σ) in H
+  | |- context[atom_store_to_lvar_store (<[?x := ?v]> ?σ)] =>
+      rewrite (atom_store_to_lvar_store_insert x v σ)
+  | H : context[dom (atom_store_to_lvar_store ?σ : gmap logic_var _)] |- _ =>
+      rewrite (atom_store_to_lvar_store_dom σ) in H
+  | |- context[dom (atom_store_to_lvar_store ?σ : gmap logic_var _)] =>
+      rewrite (atom_store_to_lvar_store_dom σ)
+  | H : context[(atom_store_to_lvar_store ?σ : gmap logic_var _) !! LVFree ?x] |- _ =>
+      rewrite (atom_store_to_lvar_store_lookup_free σ x) in H
+  | |- context[(atom_store_to_lvar_store ?σ : gmap logic_var _) !! LVFree ?x] =>
+      rewrite (atom_store_to_lvar_store_lookup_free σ x)
+  | H : context[(atom_store_to_lvar_store ?σ : gmap logic_var _) !! LVBound ?k] |- _ =>
+      rewrite (atom_store_to_lvar_store_lookup_bound_none σ k) in H
+  | |- context[(atom_store_to_lvar_store ?σ : gmap logic_var _) !! LVBound ?k] =>
+      rewrite (atom_store_to_lvar_store_lookup_bound_none σ k)
   | H : context[dom (storeA_swap ?x ?y ?σ : gmap _ _)] |- _ =>
       rewrite (storeA_swap_dom x y σ) in H
   | |- context[dom (storeA_swap ?x ?y ?σ : gmap _ _)] =>
@@ -115,6 +155,7 @@ Ltac store_normalize :=
     (try store_set_normalize;
      try store_restrict_normalize;
      try store_insert_normalize;
+     try store_lvar_map_normalize;
      try store_lookup_normalize;
      try store_key_normalize).
 

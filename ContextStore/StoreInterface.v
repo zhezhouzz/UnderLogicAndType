@@ -27,6 +27,21 @@ Bind Scope store_scope with LStore.
 #[global] Instance store_singleton : SingletonM atom V Store := map_singleton.
 #[global] Instance lstore_lookup : Lookup logic_var V LStore := lookup.
 
+Lemma atom_store_to_lvar_store_store_insert x v (s : Store) :
+  atom_store_to_lvar_store (<[x := v]> s) =
+  <[LVFree x := v]> (atom_store_to_lvar_store s).
+Proof.
+  unfold store_insert.
+  apply atom_store_to_lvar_store_insert.
+Qed.
+
+Lemma atom_store_to_lvar_store_store_empty :
+  atom_store_to_lvar_store (∅ : Store) = (∅ : LStore).
+Proof.
+  unfold store_empty.
+  apply atom_store_to_lvar_store_empty.
+Qed.
+
 Notation store_restrict := storeA_restrict (only parsing).
 Notation "σ '↾' X" := (storeA_restrict σ X)
   (at level 20, no associativity,

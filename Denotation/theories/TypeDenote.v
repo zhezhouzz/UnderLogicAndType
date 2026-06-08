@@ -29,18 +29,16 @@ Fixpoint ty_denote_gas
       match τ with
       | CTOver b φ =>
           FForall
-            (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-              (FImpl
-                (expr_result_formula (tm_shift 0 e) (LVBound 0))
-                (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                  (FOver (type_qualifier_formula φ)))))
+            (FImpl
+              (expr_result_formula (tm_shift 0 e) (LVBound 0))
+              (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+                (FOver (type_qualifier_formula φ))))
       | CTUnder b φ =>
           FForall
-            (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-              (FImpl
-                (expr_result_formula (tm_shift 0 e) (LVBound 0))
-                (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-                  (FUnder (type_qualifier_formula φ)))))
+            (FImpl
+              (expr_result_formula (tm_shift 0 e) (LVBound 0))
+              (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+                (FUnder (type_qualifier_formula φ))))
       | CTInter τ1 τ2 =>
           FAnd
             (ty_denote_gas gas' Σ τ1 e)
@@ -175,15 +173,11 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
       rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
       first [rewrite open_cty_env_over by exact Hinj
             |rewrite open_cty_env_under by exact Hinj];
-      cbn [ty_denote_gas];
-      rewrite formula_open_env_forall by exact Hinj;
-      rewrite !formula_open_env_impl;
-      rewrite formula_open_env_basic_world_formula;
-      [|apply open_env_lift_fresh_for_bound0_bind_dom
-       |apply open_env_values_inj_lift; exact Hinj];
-      rewrite lty_env_open_lvars_lift_bound0_singleton by exact Hinj;
-      rewrite open_env_lift_expr_result_shift0_core
-        by (exact Hfreshe || exact Hinj);
+	      cbn [ty_denote_gas];
+	      rewrite formula_open_env_forall by exact Hinj;
+	      rewrite !formula_open_env_impl;
+	      rewrite open_env_lift_expr_result_shift0_core
+	        by (exact Hfreshe || exact Hinj);
       rewrite formula_open_env_fibvars;
       [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];
       rewrite open_env_lift_qual_diff_bound0
@@ -583,14 +577,13 @@ Ltac rewrite_tm_support :=
   end.
 
 Ltac unfold_formula_lvars_atoms :=
-  unfold ty_guard_formula;
-  cbn [formula_lvars_at context_ty_wf_formula basic_world_formula
-    expr_basic_typing_formula expr_total_formula expr_result_formula
-    type_qualifier_formula];
-  unfold lqual_lvars, context_ty_wf_lqual, basic_world_lqual,
-    expr_basic_typing_lqual, expr_total_lqual, expr_result_lqual,
-    type_qualifier_lqual;
-  cbn [lqual_dom].
+  unfold ty_guard_formula, context_ty_wf_formula, basic_world_formula,
+    expr_basic_typing_formula, expr_total_formula, expr_result_formula,
+    type_qualifier_formula, FFiberAtom;
+  cbn [formula_lvars_at];
+	  unfold context_ty_wf_qual, basic_world_qual,
+	    expr_basic_typing_qual, expr_total_qual, expr_result_qual;
+	  cbn [qual_dom qual_vars qual_lvars].
 
 Ltac normalize_denot_formula_lvars :=
   unfold_formula_lvars_atoms;
@@ -613,17 +606,22 @@ Proof.
   induction gas as [|gas IH] in d, Σ, τ, e |- *.
   - cbn [ty_denote_gas formula_lvars_at].
     normalize_denot_formula_lvars.
-    pose proof (lvars_at_depth_relevant_env_subset_relevant d Σ τ e).
+    pose proof (lvars_at_depth_relevant_env_subset_relevant d Σ τ e)
+      as Hrel.
+    assert (Hrel_sub :
+      lvars_at_depth d (dom (rel[Σ | τ] e)) ⊆
+        tm_lvars_at d e ∪ context_ty_lvars_at d τ).
+    {
+      intros v Hv. specialize (Hrel v Hv). better_set_solver.
+    }
     intros v Hv.
-    set_unfold in H.
     set_unfold in Hv.
     set_unfold.
-    destruct Hv as [[Hv|[Hv|[Hv|Hv]]]|Hv].
-    + specialize (H v Hv). tauto.
-    + specialize (H v Hv). tauto.
-    + specialize (H v Hv). tauto.
-    + tauto.
-    + tauto.
+    repeat match goal with
+    | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
+    end;
+      try solve [specialize (Hrel_sub v Hcase); better_set_solver
+        | better_set_solver].
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
       cbn [ty_denote_gas formula_lvars_at].
     + normalize_denot_formula_lvars.
@@ -680,20 +678,18 @@ Proof.
           (erase_ty τx))
         τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
-      cbn [context_ty_lvars_at] in Hrel |- *.
-      replace (d + 1) with (S d) by lia.
-      intros v Hv.
-      apply elem_of_union in Hv as [Hv|Hv].
-      * apply elem_of_union in Hv as [Hv|Hv].
-        -- pose proof (Hrel _ Hv) as H. set_solver.
-        -- apply elem_of_union in Hv as [Hv|Hv].
-           ++ pose proof (Hrel _ Hv) as H. set_solver.
-           ++ apply elem_of_union in Hv as [Hv|Hv].
-              ** pose proof (Hrel _ Hv) as H. set_solver.
-              ** set_solver.
-      * apply elem_of_union in Hv as [Hv|Hv].
-        -- pose proof (Harg _ Hv) as H. set_solver.
-        -- pose proof (Hres _ Hv) as H. set_solver.
+	      cbn [context_ty_lvars_at] in Hrel |- *.
+	      replace (d + 1) with (S d) by lia.
+	      intros v Hv.
+	      set_unfold in Hv.
+	      set_unfold.
+	      repeat match goal with
+	      | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
+	      end;
+	        try solve [pose proof (Hrel v Hcase) as H; set_solver
+	          | pose proof (Harg v Hcase) as H; set_solver
+	          | pose proof (Hres v Hcase) as H; set_solver
+	          | set_solver].
     + unfold_formula_lvars_atoms.
       repeat rewrite ?lvars_at_depth_union.
       rewrite_tm_support.
@@ -710,20 +706,18 @@ Proof.
           (erase_ty τx))
         τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
-      cbn [context_ty_lvars_at] in Hrel |- *.
-      replace (d + 1) with (S d) by lia.
-      intros v Hv.
-      apply elem_of_union in Hv as [Hv|Hv].
-      * apply elem_of_union in Hv as [Hv|Hv].
-        -- pose proof (Hrel _ Hv) as H. set_solver.
-        -- apply elem_of_union in Hv as [Hv|Hv].
-           ++ pose proof (Hrel _ Hv) as H. set_solver.
-           ++ apply elem_of_union in Hv as [Hv|Hv].
-              ** pose proof (Hrel _ Hv) as H. set_solver.
-              ** set_solver.
-      * apply elem_of_union in Hv as [Hv|Hv].
-        -- pose proof (Harg _ Hv) as H. set_solver.
-        -- pose proof (Hres _ Hv) as H. set_solver.
+	      cbn [context_ty_lvars_at] in Hrel |- *.
+	      replace (d + 1) with (S d) by lia.
+	      intros v Hv.
+	      set_unfold in Hv.
+	      set_unfold.
+	      repeat match goal with
+	      | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
+	      end;
+	        try solve [pose proof (Hrel v Hcase) as H; set_solver
+	          | pose proof (Harg v Hcase) as H; set_solver
+	          | pose proof (Hres v Hcase) as H; set_solver
+	          | set_solver].
 Qed.
 
 Lemma ty_denote_gas_fv_subset gas Σ τ e :

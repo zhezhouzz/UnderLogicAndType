@@ -1,5 +1,6 @@
 -R ContextBase ContextBase
 -R ContextStore ContextStore
+-R ContextQualifier/theories ContextQualifier
 -R ContextAlgebra/theories ContextAlgebra
 -R ContextLogic/theories ContextLogic
 -R ContextTypeLanguage/theories ContextTypeLanguage
@@ -23,6 +24,8 @@ ContextStore/StoreRestrict.v
 ContextStore/LVarStore.v
 ContextStore/StoreInterface.v
 ContextStore/Store.v
+
+ContextQualifier/theories/Qualifier.v
 
 ContextAlgebra/theories/ResourceCore.v
 ContextAlgebra/theories/ResourceAlgebra.v
@@ -88,6 +91,7 @@ Denotation/theories/ConstDenote.v
 
 -R ContextTyping/theories ContextTyping
 
+ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/Typing.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v

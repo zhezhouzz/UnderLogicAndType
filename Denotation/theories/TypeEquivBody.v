@@ -12,18 +12,16 @@ Lemma ty_denote_gas_tm_equiv_over_body
   typed_total_equiv_on Σ (CTOver b φ) m e1 e2 ->
   m ⊨
     FForall
-      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-        (FImpl
-          (expr_result_formula (tm_shift 0 e1) (LVBound 0))
-          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-            (FOver (type_qualifier_formula φ))))) ->
+      (FImpl
+        (expr_result_formula (tm_shift 0 e1) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FOver (type_qualifier_formula φ)))) ->
   m ⊨
     FForall
-      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-        (FImpl
-          (expr_result_formula (tm_shift 0 e2) (LVBound 0))
-          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-            (FOver (type_qualifier_formula φ))))).
+      (FImpl
+        (expr_result_formula (tm_shift 0 e2) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FOver (type_qualifier_formula φ)))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_total_equiv_term_lc_lvars
@@ -42,24 +40,22 @@ Proof.
   }
   cbn [ty_denote_gas] in Hscope_tgt.
   pose proof (formula_scoped_and_r _ _ _ Hscope_tgt) as Hbody_scope.
-  eapply res_models_forall_full_world_impl2_map;
+  eapply res_models_forall_full_world_impl_map;
     [exact Hbody_scope| |exact Hsrc].
   exists (fv_tm e1 ∪ fv_tm e2).
   intros y Hy my Hdom Hrestrict.
   split.
-  - intros Hworld. exact Hworld.
-  - split.
-    + intros Hresult.
-      eapply expr_result_shift0_of_tm_equiv_open;
-        [ exact (proj1 Hequiv)
-        | exact Hlc_e1
-        | exact Hlc_e2
-        | | set_solver
-        | exact Hdom
-        | exact Hrestrict
-        | exact Hresult ].
-      eapply typed_total_equiv_term_scope. exact Hequiv.
-    + intros Hfib. exact Hfib.
+  - intros Hresult.
+    eapply expr_result_shift0_of_tm_equiv_open;
+      [ exact (proj1 Hequiv)
+      | exact Hlc_e1
+      | exact Hlc_e2
+      | | set_solver
+      | exact Hdom
+      | exact Hrestrict
+      | exact Hresult ].
+    eapply typed_total_equiv_term_scope. exact Hequiv.
+  - intros Hfib. exact Hfib.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_under_body
@@ -67,18 +63,16 @@ Lemma ty_denote_gas_tm_equiv_under_body
   typed_total_equiv_on Σ (CTUnder b φ) m e1 e2 ->
   m ⊨
     FForall
-      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-        (FImpl
-          (expr_result_formula (tm_shift 0 e1) (LVBound 0))
-          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-            (FUnder (type_qualifier_formula φ))))) ->
+      (FImpl
+        (expr_result_formula (tm_shift 0 e1) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FUnder (type_qualifier_formula φ)))) ->
   m ⊨
     FForall
-      (FImpl (basic_world_formula (<[LVBound 0 := TBase b]> ∅))
-        (FImpl
-          (expr_result_formula (tm_shift 0 e2) (LVBound 0))
-          (FFibVars (qual_vars φ ∖ {[LVBound 0]})
-            (FUnder (type_qualifier_formula φ))))).
+      (FImpl
+        (expr_result_formula (tm_shift 0 e2) (LVBound 0))
+        (FFibVars (qual_vars φ ∖ {[LVBound 0]})
+          (FUnder (type_qualifier_formula φ)))).
 Proof.
   intros Hequiv Hsrc.
   pose proof (typed_total_equiv_term_lc_lvars
@@ -97,24 +91,22 @@ Proof.
   }
   cbn [ty_denote_gas] in Hscope_tgt.
   pose proof (formula_scoped_and_r _ _ _ Hscope_tgt) as Hbody_scope.
-  eapply res_models_forall_full_world_impl2_map;
+  eapply res_models_forall_full_world_impl_map;
     [exact Hbody_scope| |exact Hsrc].
   exists (fv_tm e1 ∪ fv_tm e2).
   intros y Hy my Hdom Hrestrict.
   split.
-  - intros Hworld. exact Hworld.
-  - split.
-    + intros Hresult.
-      eapply expr_result_shift0_of_tm_equiv_open;
-        [ exact (proj1 Hequiv)
-        | exact Hlc_e1
-        | exact Hlc_e2
-        | | set_solver
-        | exact Hdom
-        | exact Hrestrict
-        | exact Hresult ].
-      eapply typed_total_equiv_term_scope. exact Hequiv.
-    + intros Hfib. exact Hfib.
+  - intros Hresult.
+    eapply expr_result_shift0_of_tm_equiv_open;
+      [ exact (proj1 Hequiv)
+      | exact Hlc_e1
+      | exact Hlc_e2
+      | | set_solver
+      | exact Hdom
+      | exact Hrestrict
+      | exact Hresult ].
+    eapply typed_total_equiv_term_scope. exact Hequiv.
+  - intros Hfib. exact Hfib.
 Qed.
 
 Lemma ty_denote_gas_zero_project_context

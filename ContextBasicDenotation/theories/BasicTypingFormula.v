@@ -8,6 +8,8 @@ From CoreLang Require Import LocallyNamelessExtra.
 From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval
   TermOpen TermTLet.
 From ContextBase Require Import BaseTactics.
+From ContextLogic Require Import FormulaConnectives.
+From ContextQualifier Require Import Qualifier.
 
 Section BasicTypingFormula.
 
@@ -904,42 +906,31 @@ Qed.
     Unlike [basic_context_ty], this version is scoped by the lvar-domain of [Σ]
     directly, so bound lvars in a type body are preserved until the surrounding
     formula open swaps them to atoms. *)
-Definition context_ty_wf_lqual
-    (Σ : lty_env) (τ : context_ty) : LogicQualifierT :=
-  lqual (dom Σ)
+Definition context_ty_wf_qual
+    (Σ : lty_env) (τ : context_ty) : qualifier (V := value) :=
+  tqual (dom Σ)
     (fun _ => basic_context_ty_lvars (dom Σ) τ).
 Definition context_ty_wf_formula
     (Σ : lty_env) (τ : context_ty) : Formula :=
-  FAtom (context_ty_wf_lqual Σ τ).
+  FFiberAtom (context_ty_wf_qual Σ τ).
 Lemma formula_fv_context_ty_wf_formula Σ τ :
   formula_fv (context_ty_wf_formula Σ τ) = lvars_fv (dom Σ).
 Proof.
-  unfold context_ty_wf_formula, context_ty_wf_lqual.
-  rewrite formula_fv_atom. reflexivity.
+  unfold context_ty_wf_formula, context_ty_wf_qual.
+  rewrite formula_fv_fiber_atom. reflexivity.
 Qed.
-Definition expr_basic_typing_lqual
-    (Σ : lty_env) (e : tm) (T : ty) : LogicQualifierT :=
-  lqual (dom Σ)
+Definition expr_basic_typing_qual
+    (Σ : lty_env) (e : tm) (T : ty) : qualifier (V := value) :=
+  tqual (dom Σ)
     (fun _ => basic_tm_has_ltype Σ e T).
 Definition expr_basic_typing_formula
     (Σ : lty_env) (e : tm) (T : ty) : Formula :=
-  FAtom (expr_basic_typing_lqual Σ e T).
+  FFiberAtom (expr_basic_typing_qual Σ e T).
 Lemma formula_fv_expr_basic_typing_formula Σ e T :
   formula_fv (expr_basic_typing_formula Σ e T) = lvars_fv (dom Σ).
 Proof.
-  unfold expr_basic_typing_formula, expr_basic_typing_lqual.
-  rewrite formula_fv_atom. reflexivity.
-Qed.
-Lemma context_ty_wf_lqual_denote_iff Σ τ (m : WfWorldT) :
-  logic_qualifier_denote (context_ty_wf_lqual Σ τ) m <->
-  lc_lvars (dom Σ) /\
-  lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) /\
-  basic_context_ty_lvars (dom Σ) τ.
-Proof.
-  unfold context_ty_wf_lqual, logic_qualifier_denote.
-  split.
-  - intros [Hlc [Hsub Hbasic]]. tauto.
-  - intros [Hlc [Hsub Hbasic]]. exists Hlc, Hsub. exact Hbasic.
+  unfold expr_basic_typing_formula, expr_basic_typing_qual.
+  rewrite formula_fv_fiber_atom. reflexivity.
 Qed.
 
 Lemma context_ty_wf_formula_models_iff Σ τ (m : WfWorldT) :
@@ -948,16 +939,32 @@ Lemma context_ty_wf_formula_models_iff Σ τ (m : WfWorldT) :
   lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) /\
   basic_context_ty_lvars (dom Σ) τ.
 Proof.
-  unfold res_models, context_ty_wf_formula.
-  cbn [formula_measure res_models_fuel].
   split.
-  - intros [_ Hden].
-    apply context_ty_wf_lqual_denote_iff. exact Hden.
-  - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]].
-      unfold formula_scoped_in_world.
-      rewrite formula_fv_atom. exact Hsub.
-    + apply context_ty_wf_lqual_denote_iff. exact Hden.
+  - intros Hmodels.
+    apply res_models_FFiberAtom_store_iff in Hmodels as [Hscope Hstores].
+    destruct (world_wf m) as [[σ Hσ] _].
+    specialize (Hstores σ Hσ) as [Hlc [_ Hbasic]].
+    split; [exact Hlc|]. split.
+    + unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope. exact Hscope.
+    + exact Hbasic.
+  - intros [Hlc [Hsub Hbasic]].
+    apply res_models_FFiberAtom_store_iff.
+    split.
+    + unfold formula_scoped_in_world.
+      rewrite formula_fv_fiber_atom. exact Hsub.
+    + intros σ Hσ.
+      cbn [context_ty_wf_qual qualifier_holds_store qual_lvars qual_prop].
+      exists Hlc.
+      assert (Hsubσ : lvars_fv (dom Σ) ⊆ dom (σ : StoreT)).
+      {
+        intros x Hx.
+        change (x ∈ dom (σ : gmap atom value)).
+        replace (dom (σ : StoreT)) with (world_dom (m : WorldT))
+          by (symmetry; apply (wfworld_store_dom m σ Hσ)).
+        exact (Hsub x Hx).
+      }
+      exists Hsubσ. exact Hbasic.
 Qed.
 
 Lemma context_ty_wf_formula_basic_lvars Σ τ (m : WfWorldT) :
@@ -980,34 +987,38 @@ Proof.
   apply lvars_fv_mono. exact Hvars.
 Qed.
 
-Lemma expr_basic_typing_lqual_denote_iff Σ e T (m : WfWorldT) :
-  logic_qualifier_denote (expr_basic_typing_lqual Σ e T) m <->
-  lc_lvars (dom Σ) /\
-  lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) /\
-  basic_tm_has_ltype Σ e T.
-Proof.
-  unfold expr_basic_typing_lqual, logic_qualifier_denote.
-  split.
-  - intros [Hlc [Hsub Hbasic]]. tauto.
-  - intros [Hlc [Hsub Hbasic]]. exists Hlc, Hsub. exact Hbasic.
-Qed.
-
 Lemma expr_basic_typing_formula_models_iff Σ e T (m : WfWorldT) :
   res_models m (expr_basic_typing_formula Σ e T) <->
   lc_lvars (dom Σ) /\
   lvars_fv (dom Σ) ⊆ world_dom (m : WorldT) /\
   basic_tm_has_ltype Σ e T.
 Proof.
-  unfold res_models, expr_basic_typing_formula.
-  cbn [formula_measure res_models_fuel].
   split.
-  - intros [_ Hden].
-    apply expr_basic_typing_lqual_denote_iff. exact Hden.
-  - intros Hden. split.
-    + destruct Hden as [_ [Hsub _]].
-      unfold formula_scoped_in_world.
-      rewrite formula_fv_atom. exact Hsub.
-    + apply expr_basic_typing_lqual_denote_iff. exact Hden.
+  - intros Hmodels.
+    apply res_models_FFiberAtom_store_iff in Hmodels as [Hscope Hstores].
+    destruct (world_wf m) as [[σ Hσ] _].
+    specialize (Hstores σ Hσ) as [Hlc [_ Hbasic]].
+    split; [exact Hlc|]. split.
+    + unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope. exact Hscope.
+    + exact Hbasic.
+  - intros [Hlc [Hsub Hbasic]].
+    apply res_models_FFiberAtom_store_iff.
+    split.
+    + unfold formula_scoped_in_world.
+      rewrite formula_fv_fiber_atom. exact Hsub.
+    + intros σ Hσ.
+      cbn [expr_basic_typing_qual qualifier_holds_store qual_lvars qual_prop].
+      exists Hlc.
+      assert (Hsubσ : lvars_fv (dom Σ) ⊆ dom (σ : StoreT)).
+      {
+        intros x Hx.
+        change (x ∈ dom (σ : gmap atom value)).
+        replace (dom (σ : StoreT)) with (world_dom (m : WorldT))
+          by (symmetry; apply (wfworld_store_dom m σ Hσ)).
+        exact (Hsub x Hx).
+      }
+      exists Hsubσ. exact Hbasic.
 Qed.
 
 Lemma expr_basic_typing_formula_basic_ltype Σ e T (m : WfWorldT) :

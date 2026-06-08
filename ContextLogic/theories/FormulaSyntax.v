@@ -14,13 +14,13 @@ Section Formula.
 Context {V : Type} `{ValueSig V}.
 
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
+Local Notation QualifierT := (qualifier (V := V)) (only parsing).
 Local Notation LStoreT := (gmap logic_var V) (only parsing).
 
 Inductive Formula : Type :=
   | FTrue
   | FFalse
-  | FAtom    (a : LogicQualifierT)
+  | FAtom    (a : QualifierT)
   | FAnd     (p q : Formula)
   | FOr      (p q : Formula)
   | FImpl    (p q : Formula)
@@ -35,7 +35,7 @@ Inductive Formula : Type :=
 Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
   match φ with
   | FTrue | FFalse => ∅
-  | FAtom q => lvars_at_depth d (lqual_lvars q)
+  | FAtom q => lvars_at_depth d (qual_vars q)
   | FAnd p q | FOr p q | FImpl p q
   | FStar p q | FPlus p q =>
       formula_lvars_at d p ∪ formula_lvars_at d q
@@ -81,7 +81,7 @@ Lemma formula_fv_false :
 Proof. reflexivity. Qed.
 
 Lemma formula_fv_atom q :
-  formula_fv (FAtom q) = lvars_fv (lqual_lvars q).
+  formula_fv (FAtom q) = lvars_fv (qual_vars q).
 Proof. unfold formula_fv, formula_lvars; cbn [formula_lvars_at]. apply lvars_fv_lvars_at_depth. Qed.
 
 Lemma formula_fv_and p q :
@@ -169,7 +169,7 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
   match φ with
   | FTrue => FTrue
   | FFalse => FFalse
-  | FAtom q => FAtom (lqual_mlsubst ρ q)
+  | FAtom q => FAtom (qual_mlsubst ρ q)
   | FAnd p q => FAnd (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FOr p q => FOr (formula_mlsubst ρ p) (formula_mlsubst ρ q)
   | FImpl p q => FImpl (formula_mlsubst ρ p) (formula_mlsubst ρ q)
@@ -186,6 +186,9 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
 Definition formula_msubst_store (σ : Store (V := V)) (φ : Formula) : Formula :=
   formula_mlsubst (lstore_lift_free σ) φ.
 
+Definition FFiberAtom (q : qualifier (V := V)) : Formula :=
+  FFibVars (qual_vars q) (FAtom q).
+
 Definition store_without_lvars (σ : Store (V := V)) (D : lvset) : Store (V := V) :=
   store_restrict σ (dom (σ : Store (V := V)) ∖ lvars_fv D).
 
@@ -196,6 +199,27 @@ Lemma formula_msubst_store_fibvars σ D φ :
 Proof.
   unfold formula_msubst_store. cbn [formula_mlsubst].
   rewrite dom_lstore_lift_free. reflexivity.
+Qed.
+
+Lemma formula_mlsubst_fiber_atom ρ q :
+  formula_mlsubst ρ (FFiberAtom q) =
+  FFiberAtom (qual_mlsubst ρ q).
+Proof.
+  unfold FFiberAtom. cbn [formula_mlsubst].
+  destruct q. reflexivity.
+Qed.
+
+Lemma formula_msubst_store_fiber_atom σ q :
+  formula_msubst_store σ (FFiberAtom q) =
+  FFiberAtom (qual_msubst_store σ q).
+Proof. apply formula_mlsubst_fiber_atom. Qed.
+
+Lemma formula_fv_fiber_atom q :
+  formula_fv (FFiberAtom q) = qual_dom q.
+Proof.
+  unfold FFiberAtom.
+  rewrite formula_fv_fibvars, formula_fv_atom.
+  unfold qual_dom. set_solver.
 Qed.
 
 Lemma formula_msubst_store_empty (σ : Store (V := V)) (φ : Formula) :
@@ -214,7 +238,7 @@ Proof.
   rewrite kmap_empty.
   induction φ; cbn [formula_mlsubst];
     try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
-  - rewrite lqual_mlsubst_empty. reflexivity.
+  - rewrite qual_mlsubst_empty. reflexivity.
   - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
 Qed.
 
@@ -239,7 +263,7 @@ Proof.
       cbn [formula_mlsubst formula_lvars_at];
       try solve [
         set_solver
-      | destruct a as [D P]; cbn [lqual_mlsubst lqual_lvars];
+      | destruct a as [D P]; cbn [qual_mlsubst qual_vars];
         apply lvars_at_depth_mono; set_solver
       | match goal with
         | H1 : forall depth, formula_lvars_at depth (formula_mlsubst ρ ?p) ⊆ formula_lvars_at depth ?p,
@@ -275,7 +299,7 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   match φ with
   | FTrue => FTrue
   | FFalse => FFalse
-  | FAtom q => FAtom (lqual_open k x q)
+  | FAtom q => FAtom (qual_open_atom k x q)
   | FAnd p q => FAnd (formula_open k x p) (formula_open k x q)
   | FOr p q => FOr (formula_open k x p) (formula_open k x q)
   | FImpl p q => FImpl (formula_open k x p) (formula_open k x q)
@@ -295,7 +319,7 @@ Fixpoint formula_atom_swap (x y : atom) (φ : Formula) : Formula :=
   match φ with
   | FTrue => FTrue
   | FFalse => FFalse
-  | FAtom q => FAtom (lqual_atom_swap x y q)
+  | FAtom q => FAtom (qual_atom_swap x y q)
   | FAnd p q => FAnd (formula_atom_swap x y p) (formula_atom_swap x y q)
   | FOr p q => FOr (formula_atom_swap x y p) (formula_atom_swap x y q)
   | FImpl p q => FImpl (formula_atom_swap x y p) (formula_atom_swap x y q)
@@ -317,7 +341,7 @@ Lemma formula_open_false k x :
 Proof. reflexivity. Qed.
 
 Lemma formula_open_atom k x q :
-  formula_open k x (FAtom q) = FAtom (lqual_open k x q).
+  formula_open k x (FAtom q) = FAtom (qual_open_atom k x q).
 Proof. reflexivity. Qed.
 
 Lemma formula_open_and k x p q :
@@ -370,6 +394,14 @@ Lemma formula_open_fibvars k x D p :
   FFibVars (lvars_open k x D) (formula_open k x p).
 Proof. reflexivity. Qed.
 
+Lemma formula_open_fiber_atom k x q :
+  formula_open k x (FFiberAtom q) =
+  FFiberAtom (qual_open_atom k x q).
+Proof.
+  unfold FFiberAtom. cbn [formula_open].
+  rewrite qual_open_atom_vars. reflexivity.
+Qed.
+
 Lemma formula_open_preserves_measure k x φ :
   formula_measure (formula_open k x φ) = formula_measure φ.
 Proof.
@@ -390,7 +422,7 @@ Proof.
   - rewrite formula_fv_true, set_swap_empty. reflexivity.
   - rewrite formula_fv_false, set_swap_empty. reflexivity.
   - rewrite !formula_fv_atom.
-    destruct a as [D P]. cbn [lqual_atom_swap lqual_lvars].
+    destruct a as [D P]. cbn [qual_atom_swap qual_vars].
     apply lvars_fv_swap.
   - rewrite formula_fv_and, IHφ1, IHφ2, formula_fv_and, set_swap_union.
     reflexivity.
@@ -419,7 +451,7 @@ Lemma formula_atom_swap_involutive x y φ :
 Proof.
   induction φ; cbn [formula_atom_swap]; try reflexivity;
     try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
-  - f_equal. apply lqual_atom_swap_involutive.
+  - f_equal. apply qual_atom_swap_involutive.
   - rewrite set_swap_involutive, IHφ. reflexivity.
 Qed.
 
@@ -430,7 +462,7 @@ Lemma formula_atom_swap_fresh_id x y φ :
 Proof.
   induction φ; intros Hx Hy; cbn [formula_atom_swap]; try reflexivity.
   - rewrite formula_fv_atom in Hx, Hy.
-    f_equal. apply lqual_atom_swap_fresh_id; assumption.
+    f_equal. apply qual_atom_swap_fresh_id; assumption.
   - rewrite formula_fv_and in Hx, Hy.
     rewrite IHφ1, IHφ2; set_solver.
   - rewrite formula_fv_or in Hx, Hy.
@@ -460,7 +492,7 @@ Lemma formula_atom_swap_open_conjugate k x y z φ :
   formula_open k z (formula_atom_swap x y φ).
 Proof.
   induction φ in k |- *; cbn [formula_atom_swap formula_open]; try reflexivity.
-  - f_equal. apply lqual_atom_swap_open_conjugate.
+  - f_equal. apply qual_atom_swap_open_conjugate.
   - rewrite IHφ1, IHφ2. reflexivity.
   - rewrite IHφ1, IHφ2. reflexivity.
   - rewrite IHφ1, IHφ2. reflexivity.
@@ -492,7 +524,7 @@ Lemma formula_atom_swap_mlsubst x y (ρ : LStoreT) φ :
 Proof.
   induction φ; cbn [formula_atom_swap formula_mlsubst]; try reflexivity;
     try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
-  - f_equal. apply lqual_atom_swap_mlsubst.
+  - f_equal. apply qual_atom_swap_mlsubst.
   - f_equal.
     + transitivity (set_swap (LVFree x) (LVFree y) D ∖
         set_swap (LVFree x) (LVFree y) (dom (ρ : LStoreT))).
@@ -521,7 +553,7 @@ Lemma formula_open_commute_fresh i j x y φ :
 Proof.
   intros Hij Hxy.
   induction φ in i, j, Hij |- *; cbn [formula_open]; try reflexivity.
-  - rewrite lqual_open_commute_fresh by assumption. reflexivity.
+  - rewrite qual_open_atom_commute_fresh by assumption. reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
@@ -767,6 +799,15 @@ Proof.
     rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
 Qed.
 
+Lemma formula_open_env_atom η q :
+  formula_open_env η (FAtom q) = FAtom (qual_open_env η q).
+Proof.
+  unfold formula_open_env, qual_open_env.
+  induction η as [|k x η' Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite !map_fold_empty. reflexivity.
+  - rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
 Lemma formula_open_env_fibvars η D φ :
   open_env_fresh_for_lvars η D ->
   formula_open_env η (FFibVars D φ) =
@@ -788,6 +829,19 @@ Proof.
     cbn [formula_open].
     rewrite lvars_open_env_insert_fresh by (exact Hfresh || exact Hhead).
     reflexivity.
+Qed.
+
+Lemma formula_open_env_fiber_atom η q :
+  open_env_fresh_for_lvars η (qual_vars q) ->
+  formula_open_env η (FFiberAtom q) =
+  FFiberAtom (qual_open_env η q).
+Proof.
+  intros Hfresh.
+  unfold FFiberAtom.
+  rewrite formula_open_env_fibvars by exact Hfresh.
+  rewrite formula_open_env_atom.
+  rewrite qual_open_env_vars by exact Hfresh.
+  reflexivity.
 Qed.
 
 Lemma formula_open_env_forall η φ :
@@ -820,7 +874,7 @@ Proof.
     cbn [formula_lvars_at formula_open].
   - set_solver.
   - set_solver.
-  - destruct a as [D P]. cbn [lqual_fv lqual_dom lqual_open].
+  - destruct a as [D P]. cbn [qual_dom qual_lvars qual_open_atom].
     rewrite !lvars_fv_lvars_at_depth.
     apply lvars_fv_open_subset.
   - rewrite !lvars_fv_union. specialize (IHφ1 k). specialize (IHφ2 k).
@@ -883,11 +937,7 @@ Lemma formula_measure_pos (φ : Formula) :
 Proof. induction φ; simpl; lia. Qed.
 
 Definition FPure (P : Prop) : Formula :=
-  FAtom (lqual ∅ (λ _, P)).
-
-Definition FResourceAtom {A : Type} `{IntoLVars A}
-    (D : A) (P : LWorldOn (V := V) (into_lvars D) → Prop) : Formula :=
-  FAtom (lqual (into_lvars D) P).
+  FAtom (tqual ∅ (λ _, P)).
 
 End Formula.
 
@@ -979,7 +1029,7 @@ Ltac formula_msubst_syntax_norm_once :=
       change (formula_msubst_store σ FFalse) with FFalse
   | |- context[formula_msubst_store ?σ (FAtom ?q)] =>
       change (formula_msubst_store σ (FAtom q))
-        with (FAtom (lqual_msubst_store σ q))
+        with (FAtom (qual_msubst_store σ q))
   | |- context[formula_msubst_store ?σ (FAnd ?p ?q)] =>
       change (formula_msubst_store σ (FAnd p q))
         with (FAnd (formula_msubst_store σ p) (formula_msubst_store σ q))
@@ -1019,7 +1069,7 @@ Ltac formula_msubst_syntax_norm_once_in H :=
       change (formula_msubst_store σ FFalse) with FFalse in H
   | context[formula_msubst_store ?σ (FAtom ?q)] =>
       change (formula_msubst_store σ (FAtom q))
-        with (FAtom (lqual_msubst_store σ q)) in H
+        with (FAtom (qual_msubst_store σ q)) in H
   | context[formula_msubst_store ?σ (FAnd ?p ?q)] =>
       change (formula_msubst_store σ (FAnd p q))
         with (FAnd (formula_msubst_store σ p) (formula_msubst_store σ q)) in H

@@ -238,6 +238,18 @@ Proof.
   intros a b Heq. inversion Heq. reflexivity.
 Qed.
 
+Lemma atom_store_to_lvar_store_empty :
+  atom_store_to_lvar_store (∅ : gmap atom V) =
+  (∅ : gmap logic_var V).
+Proof.
+  apply map_eq. intros v.
+  destruct v as [k|x].
+  - rewrite atom_store_to_lvar_store_lookup_bound_none.
+    symmetry. apply lookup_empty.
+  - rewrite atom_store_to_lvar_store_lookup_free.
+    symmetry. apply lookup_empty.
+Qed.
+
 Lemma atom_store_to_lvar_store_union (s1 s2 : AtomStore) :
   atom_store_to_lvar_store (s1 ∪ s2) =
   atom_store_to_lvar_store s1 ∪ atom_store_to_lvar_store s2.

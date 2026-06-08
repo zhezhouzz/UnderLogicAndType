@@ -108,27 +108,23 @@ Proof.
   destruct (res_extend_by_exists m Fx Happ) as [mx Hext].
   pose proof (res_extend_by_dom m Fx mx Hext) as Hmxdom.
   pose proof (res_extend_by_restrict_base m Fx mx Hext) as Hmxrestrict.
-  assert (Hopened :
-      mx ⊨ formula_open 0 z
-        (FImpl (basic_world_formula
-                  (<[LVBound 0 := TBase b]> ∅))
-          (FImpl
-            (expr_result_formula (tm_shift 0 (tret (vfvar x))) (LVBound 0))
-            (FFibVars
-              (qual_vars (mk_q_lt_base b (vbvar 0) (vfvar y)) ∖ {[LVBound 0]})
-              (FOver (type_qualifier_formula
-                (mk_q_lt_base b (vbvar 0) (vfvar y)))))))).
+	  assert (Hopened :
+	      mx ⊨ formula_open 0 z
+	        (FImpl
+	          (expr_result_formula (tm_shift 0 (tret (vfvar x))) (LVBound 0))
+	          (FFibVars
+	            (qual_vars (mk_q_lt_base b (vbvar 0) (vfvar y)) ∖ {[LVBound 0]})
+	            (FOver (type_qualifier_formula
+	              (mk_q_lt_base b (vbvar 0) (vfvar y))))))).
   {
     eapply Hforall_open; [exact HzL| |exact Hmxrestrict].
     rewrite Hmxdom.
     destruct HFx as [_ [_ Hout] _].
     unfold ext_out in Hout. rewrite Hout. reflexivity.
-  }
-  rewrite !formula_open_impl in Hopened.
-  rewrite formula_open_basic_world_formula in Hopened.
-  rewrite lvar_store_open_one_bound0_singleton in Hopened.
-  rewrite formula_open_expr_result_formula_shift0 in Hopened
-    by ((apply LC_ret; apply LC_fvar) || exact Hze).
+	  }
+	  rewrite !formula_open_impl in Hopened.
+	  rewrite formula_open_expr_result_formula_shift0 in Hopened
+	    by ((apply LC_ret; apply LC_fvar) || exact Hze).
   rewrite formula_open_fibvars in Hopened.
   rewrite formula_open_over in Hopened.
   rewrite type_qualifier_formula_open in Hopened.
@@ -166,22 +162,11 @@ Proof.
   pose proof (ty_denote_gas_ret_fvar_relevant_lookup
     (S gas) (<[LVFree z := erase_ty τlt]> Δ) τlt z mx Hzden)
     as Hzlookup_rel.
-  assert (Hzworld_single :
-      mx ⊨ basic_world_formula (<[LVFree z := TBase b]> ∅)).
-  {
-    eapply basic_world_formula_subenv; [|exact Hzworld].
-    intros v T Hv.
-    change (({[LVFree z := TBase b]} : lty_env) !! v = Some T) in Hv.
-    apply lookup_singleton_Some in Hv as [Hv HT].
-    subst v T.
-    subst τlt. cbn [erase_ty] in Hzlookup_rel.
-    exact Hzlookup_rel.
-  }
-  assert (Hexpr_z :
-      mx ⊨ expr_result_formula (tret (vfvar x)) (LVFree z)).
-  { eapply expr_result_formula_of_result_extends_from_ty_guard; eauto. }
-  pose proof (res_models_impl2_elim mx _ _ _ Hopened Hzworld_single Hexpr_z)
-    as Hfib_over.
+	  assert (Hexpr_z :
+	      mx ⊨ expr_result_formula (tret (vfvar x)) (LVFree z)).
+	  { eapply expr_result_formula_of_result_extends_from_ty_guard; eauto. }
+	  pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_z)
+	    as Hfib_over.
   assert (Hfib_y :
       mx ⊨ FFibVars ({[LVFree y]} : lvset)
         (FOver (type_qualifier_formula

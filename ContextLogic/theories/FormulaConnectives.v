@@ -69,7 +69,7 @@ Proof.
       destruct ψ; cbn [formula_atom_swap] in Hbody.
       + exact I.
       + exact Hbody.
-      + apply (proj1 (logic_qualifier_denote_atom_swap x y a m0)).
+      + apply (proj1 (qualifier_exact_denote_atom_swap x y a m0)).
         exact Hbody.
       + destruct Hbody as [Hp Hq]. split.
         * exact (proj1 (IHn ψ1 gas' m0 ltac:(simpl in Hn; lia)) Hp).
@@ -274,7 +274,7 @@ Proof.
       destruct ψ; cbn [formula_atom_swap]; cbn [formula_atom_swap] in Hbody.
       + exact I.
       + exact Hbody.
-      + apply (proj2 (logic_qualifier_denote_atom_swap x y a m0)).
+      + apply (proj2 (qualifier_exact_denote_atom_swap x y a m0)).
         exact Hbody.
       + destruct Hbody as [Hp Hq]. split.
         * exact (proj2 (IHn ψ1 gas' m0 ltac:(simpl in Hn; lia)) Hp).
@@ -754,6 +754,289 @@ Proof.
 	  models_fuel_irrel Hfib.
 Qed.
 
+Lemma res_models_FFibVars_iff (m : WfWorldT) (D : lvset) (φ : FormulaT) :
+  m ⊨ FFibVars D φ <->
+  formula_scoped_in_world m (FFibVars D φ) /\
+  lc_lvars D /\
+  forall (σ : Store (V := V)) (mfib : WfWorldT),
+    res_fiber_from_projection m (lvars_fv D) σ mfib ->
+    mfib ⊨ formula_msubst_store σ φ.
+Proof.
+  unfold res_models. cbn [formula_measure res_models_fuel].
+  split.
+  - intros [Hscope [Hlc Hfib]].
+    split; [exact Hscope|].
+    split; [exact Hlc|].
+    intros σ mfib Hproj.
+    unfold res_models.
+    specialize (Hfib σ mfib Hproj).
+    models_fuel_irrel Hfib.
+  - intros [Hscope [Hlc Hfib]].
+    split; [exact Hscope|].
+    split; [exact Hlc|].
+    intros σ mfib Hproj.
+    specialize (Hfib σ mfib Hproj).
+    models_fuel_irrel Hfib.
+Qed.
+
+Lemma res_models_FAtom_store_holds (m : WfWorldT) q :
+  m ⊨ FAtom q ->
+  forall σ, (m : WorldT) σ -> qualifier_holds_store q σ.
+Proof.
+  destruct q as [D P].
+  intros Hatom σ Hσ.
+  unfold res_models in Hatom.
+  cbn [formula_measure res_models_fuel qualifier_exact_denote] in Hatom.
+  destruct Hatom as [_ [Hlc [Hsub Hiff]]].
+  unfold qualifier_holds_store.
+  cbn [qual_lvars qual_prop].
+  assert (Hsubσ : lvars_fv D ⊆ dom (σ : Store (V := V))).
+  {
+    intros x Hx.
+    change (x ∈ dom (σ : gmap atom V)).
+    rewrite (wfworld_store_dom m σ Hσ).
+    exact (Hsub x Hx).
+  }
+  exists Hlc, Hsubσ.
+  apply (proj2 (Hiff (lstore_on_lift_store D σ Hlc Hsubσ))).
+  apply lstore_in_lworld_on_lift_store_of_world. exact Hσ.
+Qed.
+
+Lemma res_models_FFiberAtom_fibers_iff (m : WfWorldT) q :
+  m ⊨ FFiberAtom q <->
+  formula_scoped_in_world m (FFiberAtom q) /\
+  lc_lvars (qual_vars q) /\
+  forall (σ : Store (V := V)) (mfib : WfWorldT),
+    res_fiber_from_projection m (qual_dom q) σ mfib ->
+    mfib ⊨ FAtom (qual_msubst_store σ q).
+Proof.
+  unfold FFiberAtom, res_models. cbn [formula_measure res_models_fuel].
+  split.
+  - intros [Hscope [Hlc Hfib]].
+    split; [exact Hscope|].
+    split; [exact Hlc|].
+    exact Hfib.
+  - intros [Hscope [Hlc Hfib]].
+    split; [exact Hscope|].
+    split; [exact Hlc|].
+    exact Hfib.
+Qed.
+
+Lemma res_fiber_from_projection_lookup_eq
+    (m mfib : WfWorldT) (X : aset) (σproj τ : Store (V := V)) x :
+  res_fiber_from_projection m X σproj mfib ->
+  (mfib : WorldT) τ ->
+  x ∈ dom (σproj : Store (V := V)) ->
+  (τ : gmap atom V) !! x = (σproj : gmap atom V) !! x.
+Proof.
+  intros Hproj Hτ Hx.
+  destruct Hproj as [_ Hfib_eq].
+  change ((mfib : WorldT) = raw_fiber (m : WorldT) σproj) in Hfib_eq.
+  rewrite Hfib_eq in Hτ.
+  destruct Hτ as [_ Hτproj].
+  pose proof (f_equal (fun st => (st : Store (V := V)) !! x) Hτproj)
+    as Hlook.
+  change (store_restrict τ (dom (σproj : Store (V := V))) !! x =
+    σproj !! x) in Hlook.
+  assert (Hrestrict :
+    store_restrict τ (dom (σproj : Store (V := V))) !! x =
+    (τ : gmap atom V) !! x).
+  {
+    change ((storeA_restrict τ (dom (σproj : Store (V := V))) : gmap atom V)
+      !! x = (τ : gmap atom V) !! x).
+    rewrite (storeA_restrict_lookup (K := atom)
+      (τ : gmap atom V) (dom (σproj : Store (V := V))) x).
+    destruct (decide (x ∈ dom (σproj : Store (V := V)))) as [_|Hnot].
+    - reflexivity.
+    - contradiction.
+  }
+  rewrite <- Hrestrict.
+  exact Hlook.
+Qed.
+
+Lemma res_models_FFiberAtom_store_iff (m : WfWorldT) q :
+  m ⊨ FFiberAtom q <->
+  formula_scoped_in_world m (FFiberAtom q) /\
+  forall σ, (m : WorldT) σ -> qualifier_holds_store q σ.
+Proof.
+  destruct q as [D P].
+  rewrite res_models_FFiberAtom_fibers_iff.
+  cbn [qual_vars qual_dom qualifier_holds_store qual_msubst_store
+    qual_mlsubst].
+  split.
+  - intros [Hscope [Hlc Hfib]].
+    split; [exact Hscope|].
+    intros σ Hσ.
+    assert (HDm : lvars_fv D ⊆ world_dom (m : WorldT)).
+    {
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope.
+      cbn [qual_dom qual_vars qual_lvars] in Hscope.
+      exact Hscope.
+    }
+    assert (HDσ : lvars_fv D ⊆ dom (σ : Store (V := V))).
+    {
+      intros x Hx.
+      change (x ∈ dom (σ : gmap atom V)).
+      rewrite (wfworld_store_dom m σ Hσ).
+      exact (HDm x Hx).
+    }
+    destruct (res_fiber_from_projection_of_store m (lvars_fv D) σ HDm Hσ)
+      as [mfib [Hproj Hσfib]].
+    pose proof (Hfib (store_restrict σ (lvars_fv D)) mfib Hproj)
+      as Hatom.
+    unfold res_models in Hatom.
+    cbn [formula_measure res_models_fuel qualifier_exact_denote
+      qual_msubst_store qual_mlsubst] in Hatom.
+    destruct Hatom as [_ Hatom].
+    set (ρ := atom_store_to_lvar_store (store_restrict σ (lvars_fv D))
+      : LStore (V := V)) in *.
+    assert (Hρdom : dom (ρ : gmap logic_var V) =
+      lvars_of_atoms (lvars_fv D)).
+    {
+      subst ρ.
+      rewrite atom_store_to_lvar_store_dom.
+      rewrite storeA_restrict_dom.
+      rewrite (wfworld_store_dom m σ Hσ).
+      replace (world_dom (m : WorldT) ∩ lvars_fv D) with (lvars_fv D)
+        by better_set_solver.
+      reflexivity.
+    }
+    assert (HDempty : D ∖ dom (ρ : gmap logic_var V) = ∅).
+    {
+      subst ρ.
+      apply lvars_closed_difference_atom_store_to_lvar_store_empty.
+      - exact Hlc.
+      - apply set_eq. intros x.
+        split.
+        + intros Hx.
+          eapply storeA_restrict_dom_subset; exact Hx.
+        + intros Hx.
+          change (x ∈ dom (store_restrict σ (lvars_fv D) : gmap atom V)).
+          rewrite elem_of_dom.
+          destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hv.
+          * exists v. apply storeA_restrict_lookup_some_2; assumption.
+          * exfalso.
+            apply not_elem_of_dom in Hv.
+            apply Hv.
+            change (x ∈ dom (σ : gmap atom V)).
+            rewrite (wfworld_store_dom m σ Hσ). exact (HDm x Hx).
+    }
+    destruct Hatom as [Hlc_empty [Hsub_empty Hholds]].
+    assert (Hempty_sub :
+      lvars_fv (D ∖ dom (ρ : gmap logic_var V)) ⊆ dom (σ : Store (V := V))).
+    { rewrite HDempty, lvars_fv_empty. intros x Hx. set_solver. }
+    set (sempty :=
+      lstore_on_lift_store (D ∖ dom (ρ : gmap logic_var V)) σ
+        Hlc_empty Hempty_sub).
+    assert (Hmem_empty :
+      lstore_in_lworld_on sempty
+        (lworld_on_lift (D ∖ dom (ρ : gmap logic_var V)) mfib
+          Hlc_empty Hsub_empty)).
+    { apply lstore_in_lworld_on_lift_store_of_world. exact Hσfib. }
+    pose proof (proj2 (Hholds sempty) Hmem_empty) as HPback.
+    exists Hlc, HDσ.
+    enough (lstore_on_mlsubst_back D ρ sempty =
+      lstore_on_lift_store D σ Hlc HDσ) as Heq.
+    { rewrite <- Heq. exact HPback. }
+    apply lstore_on_mlsubst_back_full_lift; [|exact HDempty].
+    subst ρ.
+    rewrite lstore_lift_free_restrict_fv_lvars_eq. reflexivity.
+  - intros [Hscope Hstores].
+    split; [exact Hscope|].
+    assert (HlcD : lc_lvars D).
+    {
+      destruct (world_wf m) as [[σ Hσ] _].
+      destruct (Hstores σ Hσ) as [HlcD _].
+      exact HlcD.
+    }
+    split; [exact HlcD|].
+    intros σproj mfib Hproj.
+    unfold res_models.
+    cbn [formula_measure res_models_fuel qualifier_exact_denote
+      qual_msubst_store qual_mlsubst].
+    set (ρ := atom_store_to_lvar_store σproj : LStore (V := V)).
+    assert (Hσproj_dom : dom (σproj : Store (V := V)) = lvars_fv D).
+    {
+      destruct Hproj as [Hproj_src _].
+      pose proof (wfworld_store_dom (res_restrict m (lvars_fv D))
+        σproj Hproj_src) as Hdom.
+      change (dom (σproj : Store (V := V)) = lvars_fv D).
+      transitivity (world_dom (res_restrict m (lvars_fv D) : WorldT)).
+      { exact Hdom. }
+      apply set_eq. intros x.
+      rewrite res_restrict_dom.
+      rewrite elem_of_intersection.
+      split; [tauto|].
+      intros Hx.
+      split; [|exact Hx].
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope.
+      cbn [qual_dom qual_vars qual_lvars] in Hscope.
+      exact (Hscope x Hx).
+    }
+    assert (HDempty : D ∖ dom (ρ : gmap logic_var V) = ∅).
+    {
+      subst ρ.
+      apply lvars_closed_difference_atom_store_to_lvar_store_empty;
+        assumption.
+    }
+    split.
+    {
+      unfold formula_scoped_in_world. rewrite formula_fv_atom.
+      cbn [qual_dom qual_vars qual_lvars].
+      rewrite HDempty, lvars_fv_empty.
+      intros x Hx. set_solver.
+    }
+    assert (Hlc_empty : lc_lvars (D ∖ dom (ρ : gmap logic_var V))).
+    { rewrite HDempty. intros v Hv. set_solver. }
+    assert (Hsub_empty :
+      lvars_fv (D ∖ dom (ρ : gmap logic_var V)) ⊆ world_dom (mfib : WorldT)).
+    { rewrite HDempty, lvars_fv_empty. intros x Hx. set_solver. }
+    exists Hlc_empty, Hsub_empty.
+    intros s.
+    split.
+    + intros _.
+      unfold lstore_in_lworld_on, lworld_on_lift.
+      cbn [lw lraw_world].
+      destruct (world_wf mfib) as [[τ Hτ] _].
+      exists (lstore_lift_free (store_restrict τ (lvars_fv (D ∖ dom (ρ : gmap logic_var V))))).
+      split.
+      * exists (store_restrict τ (lvars_fv (D ∖ dom (ρ : gmap logic_var V)))).
+        split.
+        -- exists τ. split; [exact Hτ|reflexivity].
+        -- reflexivity.
+      * apply storeA_map_eq. intros v.
+        transitivity (@None V).
+        -- apply storeA_restrict_lookup_none_r.
+           rewrite HDempty. set_solver.
+        -- symmetry. apply not_elem_of_dom.
+           change (v ∉ dom (lso_store s : LStore (V := V))).
+           rewrite (lso_dom s), HDempty. set_solver.
+    + intros _.
+      destruct (world_wf mfib) as [[τ Hτ] _].
+      pose proof (res_fiber_from_projection_store_source m mfib
+        (lvars_fv D) σproj τ Hproj Hτ) as Hτm.
+      specialize (Hstores τ Hτm) as [Hlcτ [Hsubτ HP]].
+      enough (lstore_on_mlsubst_back D ρ s =
+        lstore_on_lift_store D τ Hlcτ Hsubτ) as Heq.
+      { rewrite Heq. exact HP. }
+      apply lstore_on_mlsubst_back_full_lift; [|exact HDempty].
+      subst ρ.
+      apply storeA_map_eq. intros v.
+      rewrite !storeA_restrict_lookup.
+      destruct (decide (v ∈ D)) as [HvD|HvD]; [|reflexivity].
+      destruct v as [k|x].
+      * exfalso. exact (HlcD (LVBound k) HvD).
+      * rewrite atom_store_to_lvar_store_lookup_free.
+        rewrite lstore_lift_free_lookup_free.
+        symmetry.
+        apply res_fiber_from_projection_lookup_eq with
+          (m := m) (mfib := mfib) (X := lvars_fv D) (σproj := σproj);
+          [exact Hproj|exact Hτ|].
+        rewrite Hσproj_dom. apply lvars_fv_elem. exact HvD.
+Qed.
+
 End FormulaConnectives.
 
 Ltac normalize_models_ands_in H :=
@@ -927,6 +1210,23 @@ Proof.
   intros Himpl Hφ Hψ.
   eapply res_models_impl_elim; [| exact Hψ].
   eapply res_models_impl_elim; eauto.
+Qed.
+
+Lemma res_models_impl_map
+    (m : WfWorldT)
+    (φ1 φ2 ψ1 ψ2 : FormulaT) :
+  formula_scoped_in_world m (FImpl φ2 ψ2) →
+  (m ⊨ φ2 → m ⊨ φ1) →
+  (m ⊨ ψ1 → m ⊨ ψ2) →
+  m ⊨ FImpl φ1 ψ1 →
+  m ⊨ FImpl φ2 ψ2.
+Proof.
+  intros Hscope Hφ Hψ Himpl.
+  eapply res_models_impl_intro; [exact Hscope |].
+  intros Hφ2.
+  apply Hψ.
+  eapply res_models_impl_elim; [exact Himpl |].
+  apply Hφ. exact Hφ2.
 Qed.
 
 Lemma res_models_impl2_map
@@ -1459,6 +1759,40 @@ Proof.
   rewrite !formula_open_impl in Htarget_scope.
   destruct (Hmap y Hy my Hdom Hrestrict) as [HA [HB HC]].
   eapply res_models_impl2_map; [| exact HA | exact HB | exact HC | exact Hopened].
+  exact Htarget_scope.
+Qed.
+
+Lemma res_models_forall_full_world_impl_map
+    (m : WfWorldT)
+    (A1 A2 B1 B2 : FormulaT) :
+  formula_scoped_in_world m (FForall (FImpl A2 B2)) ->
+  (∃ L : aset,
+    forall y : atom, y ∉ L ->
+      forall my : WfWorldT,
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+        res_restrict my (world_dom (m : WorldT)) = m ->
+        (my ⊨ formula_open 0 y A2 -> my ⊨ formula_open 0 y A1) /\
+        (my ⊨ formula_open 0 y B1 -> my ⊨ formula_open 0 y B2)) ->
+  m ⊨ FForall (FImpl A1 B1) ->
+  m ⊨ FForall (FImpl A2 B2).
+Proof.
+  intros Hscope [L Hmap] Hforall.
+  eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].
+  exists L.
+  intros y Hy my Hdom Hrestrict Hopened.
+  assert (Htarget_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y (FImpl A2 B2))).
+  {
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. set_solver.
+  }
+  rewrite !formula_open_impl in Hopened |- *.
+  rewrite !formula_open_impl in Htarget_scope.
+  destruct (Hmap y Hy my Hdom Hrestrict) as [HA HB].
+  eapply res_models_impl_map; [| exact HA | exact HB | exact Hopened].
   exact Htarget_scope.
 Qed.
 

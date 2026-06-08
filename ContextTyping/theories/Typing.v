@@ -9,6 +9,7 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import Notation.
 From Denotation Require Import Context.
+From ContextTyping Require Import PrimOpContext.
 
 (** * ContextTyping.WellFormed
 
@@ -105,78 +106,6 @@ Definition ctx_sub_under
        exists r',
          res_restrict r X ⊑ r' /\
          r' ⊨ ctx_denote_under Σ Γ2.
-
-(** * ContextTyping.PrimOpContext
-
-    Paper-level primitive-operation signatures.  CoreLang keeps the erased
-    unary type [prim_op_type]; this layer refines it with over-approximate
-    argument qualifiers and precise result qualifiers. *)
-
-
-Record primop_sig := mk_primop_sig {
-  prim_arg_base : base_ty;
-  prim_arg_qual : type_qualifier;
-  prim_ret_base : base_ty;
-  prim_ret_qual : type_qualifier;
-}.
-
-Definition primop_result_ty (sig : primop_sig) : context_ty :=
-  precise_ty sig.(prim_ret_base) sig.(prim_ret_qual).
-
-Definition primop_arg_ty (sig : primop_sig) : context_ty :=
-  over_ty sig.(prim_arg_base) sig.(prim_arg_qual).
-
-Definition primop_ctx : Type := prim_op → primop_sig.
-
-Definition primop_erasure_ok (op : prim_op) (sig : primop_sig) : Prop :=
-  prim_op_type op = (sig.(prim_arg_base), sig.(prim_ret_base)).
-
-(** Paper-level semantic well-formedness for primitive operators.
-
-    In the paper this is written as
-
-      [Φ(op) = x : {b_x | φ_x} -> precise(b, φ)]
-      and [⊨ ⟦x : {b_x | φ_x}⟧ ⇔ ⟦precise(b, φ)⟧ (op x)].
-
-    Our CoreLang primitive operations are unary and the application rule only
-    accepts atom arguments, so the specification quantifies over the atom used
-    as the argument coordinate.  The two entailments record the paper's
-    equivalence: the primitive result denotation is exactly characterized by
-    its argument context. *)
-Definition primop_semantic_ok (op : prim_op) (sig : primop_sig) : Prop :=
-  ∀ x : atom,
-    let Γx := CtxBind x (primop_arg_ty sig) in
-    (⟦CtxBind x (primop_arg_ty sig)⟧ ⊫
-      ty_denote (erase_ctx Γx) ({0 ~> x} (primop_result_ty sig))
-        (tprim op (vfvar x))) ∧
-    (ty_denote (erase_ctx Γx) ({0 ~> x} (primop_result_ty sig))
-        (tprim op (vfvar x)) ⊫
-      ⟦CtxBind x (primop_arg_ty sig)⟧).
-
-Record wf_primop_sig (op : prim_op) (sig : primop_sig) : Prop := {
-  wf_primop_erasure : primop_erasure_ok op sig;
-  wf_primop_arg_basic : basic_context_ty ∅ (primop_arg_ty sig);
-  wf_primop_result_basic : basic_context_ty ∅ (primop_result_ty sig);
-  wf_primop_semantic : primop_semantic_ok op sig;
-}.
-
-Definition wf_primop_ctx (Φ : primop_ctx) : Prop :=
-  ∀ op, wf_primop_sig op (Φ op).
-
-(** HATs-style global primitive-operation context.  The typing judgment is
-    parameterized by the ambient context and term only; primitive signatures are
-    fixed once for the development. *)
-Parameter Φ : primop_ctx.
-Axiom Φ_wf : wf_primop_ctx Φ.
-
-(** Default shallow signatures for the current unary CoreLang primitives.
-    These are intentionally conservative: arguments and results are typed by
-    top qualifiers except where examples can later refine them. *)
-Definition default_primop_ctx : primop_ctx :=
-  λ op,
-    match prim_op_type op with
-    | (arg_b, ret_b) => mk_primop_sig arg_b qual_top ret_b qual_top
-    end.
 
 (** * ContextTyping.Typing
 

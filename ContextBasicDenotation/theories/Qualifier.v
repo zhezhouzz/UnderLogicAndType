@@ -18,11 +18,8 @@ Definition type_qualifier_holds_lworld
   forall s : LStoreOn (qual_vars q),
     qual_prop q s <-> lstore_in_lworld_on s w.
 
-Definition type_qualifier_lqual (q : type_qualifier) : logic_qualifier :=
-  lqual (qual_vars q) (fun w => type_qualifier_holds_lworld q w).
-
 Definition type_qualifier_formula (q : type_qualifier) : Formula :=
-  FAtom (type_qualifier_lqual q).
+  FAtom q.
 
 Lemma lstore_in_lworld_on_open_back k x D
     (s : LStoreOn (lvars_open k x D))
@@ -77,50 +74,15 @@ Proof.
     apply storeA_swap_involutive.
 Qed.
 
-Lemma type_qualifier_lqual_open k x q :
-  x ∉ qual_dom q ->
-  type_qualifier_lqual (qual_open_atom k x q) =
-  lqual_open k x (type_qualifier_lqual q).
-Proof.
-  intros _.
-  destruct q as [D P].
-  unfold type_qualifier_lqual, qual_open_atom.
-  cbn [qual_vars qual_lvars lqual_open].
-  apply logic_qualifier_ext; [reflexivity|].
-  intros w1 w2 Hlw.
-  assert (Hw12 : w1 = w2) by (apply lworld_on_ext; exact Hlw).
-  subst w1.
-  cbn [lqual_prop type_qualifier_holds_lworld qual_prop].
-  split; intros H s.
-  - specialize (H (lstore_on_open_front k x s)).
-    cbn [qual_prop] in H.
-    split; intros HP.
-    + apply (proj2 (lstore_in_lworld_on_open_front k x D s w2)).
-      apply H.
-      rewrite lstore_on_open_back_front. exact HP.
-    + rewrite <- (lstore_on_open_back_front k x D s).
-      apply H.
-      apply (proj1 (lstore_in_lworld_on_open_front k x D s w2)).
-      exact HP.
-  - specialize (H (lstore_on_open_back k x D s)).
-    split; intros HP.
-    + apply (proj1 (lstore_in_lworld_on_open_back k x D s w2)).
-      apply H. exact HP.
-    + apply H.
-      apply (proj2 (lstore_in_lworld_on_open_back k x D s w2)).
-      exact HP.
-Qed.
-
 Lemma type_qualifier_formula_open k x q :
   x ∉ qual_dom q ->
   formula_open k x (type_qualifier_formula q) =
   type_qualifier_formula (qual_open_atom k x q).
 Proof.
-  intros Hfresh.
+  intros _.
   unfold type_qualifier_formula.
   rewrite formula_open_atom.
-  f_equal. symmetry.
-  apply type_qualifier_lqual_open. exact Hfresh.
+  reflexivity.
 Qed.
 
 Lemma type_qualifier_formula_open_env η q :
@@ -155,21 +117,25 @@ Qed.
 Lemma formula_fv_type_qualifier_formula q :
   formula_fv (type_qualifier_formula q) = qual_dom q.
 Proof.
-  unfold type_qualifier_formula, type_qualifier_lqual.
+  unfold type_qualifier_formula.
   rewrite formula_fv_atom. reflexivity.
 Qed.
 
 Lemma type_qualifier_formula_models_iff q (m : WfWorldT) :
   res_models m (type_qualifier_formula q) <->
-  logic_qualifier_denote (type_qualifier_lqual q) m.
+  qualifier_exact_denote q m.
 Proof.
   unfold res_models, type_qualifier_formula.
   cbn [formula_measure res_models_fuel].
-  split; [tauto |].
-  intros Hden. split; [| exact Hden].
-  destruct Hden as [_ [Hsub _]].
-  unfold formula_scoped_in_world.
-  rewrite formula_fv_atom. exact Hsub.
+  split.
+  - intros [_ Hden]. exact Hden.
+  - intros Hden. split; [|exact Hden].
+    destruct q as [D P]. cbn [qualifier_exact_denote] in Hden.
+    destruct Hden as [_ [Hsub _]].
+    unfold formula_scoped_in_world.
+    rewrite formula_fv_atom.
+    cbn [qual_dom qual_vars qual_lvars].
+    exact Hsub.
 Qed.
 
 Lemma lt_qual_open_vars b x y :
@@ -243,8 +209,6 @@ Lemma lt_type_qualifier_open_lookup b x y
 Proof.
   intros Hqual Hσ.
   apply type_qualifier_formula_models_iff in Hqual.
-  unfold logic_qualifier_denote, type_qualifier_lqual in Hqual.
-  cbn [lqual_dom lqual_prop] in Hqual.
   destruct Hqual as [Hlc [Hscope Hholds]].
   set (q := qual_open_atom 0 x (mk_q_lt_base b (vbvar 0) (vfvar y))).
   set (D := qual_vars q).
@@ -253,19 +217,21 @@ Proof.
   {
     change (x ∈ dom (σ : gmap atom value)).
     rewrite (wfworld_store_dom m σ Hσ).
-    apply Hscope.
-    subst D q. rewrite lt_qual_open_vars by exact Hxy.
-    rewrite lvars_fv_union, !lvars_fv_singleton_free.
-    better_set_solver.
+    apply Hscope. subst D q.
+    change (x ∈ lvars_fv
+      (qual_vars (qual_open_atom 0 x (mk_q_lt_base b (vbvar 0) (vfvar y))))).
+    rewrite lt_qual_open_vars by exact Hxy.
+    rewrite lvars_fv_union, !lvars_fv_singleton_free. better_set_solver.
   }
   assert (Hy_dom : y ∈ dom (σ : StoreT)).
   {
     change (y ∈ dom (σ : gmap atom value)).
     rewrite (wfworld_store_dom m σ Hσ).
-    apply Hscope.
-    subst D q. rewrite lt_qual_open_vars by exact Hxy.
-    rewrite lvars_fv_union, !lvars_fv_singleton_free.
-    better_set_solver.
+    apply Hscope. subst D q.
+    change (y ∈ lvars_fv
+      (qual_vars (qual_open_atom 0 x (mk_q_lt_base b (vbvar 0) (vfvar y))))).
+    rewrite lt_qual_open_vars by exact Hxy.
+    rewrite lvars_fv_union, !lvars_fv_singleton_free. better_set_solver.
   }
   assert (Hs_dom : dom (s_store : gmap logic_var value) = D).
   {
@@ -372,9 +338,7 @@ Proof.
   unfold res_models in Hqual.
   cbn [formula_measure res_models_fuel] in Hqual.
   destruct Hqual as [_ Hqual].
-  unfold logic_qualifier_denote, lqual_msubst_store, lqual_mlsubst,
-    type_qualifier_lqual in Hqual.
-  cbn [lqual_dom lqual_prop] in Hqual.
+  cbn [qualifier_exact_denote qual_msubst_store qual_mlsubst] in Hqual.
   set (q := qual_open_atom 0 z (mk_q_lt_base b (vbvar 0) (vfvar y))).
   set (D := qual_vars q).
   set (ρ := lstore_lift_free σy : LStoreT).
@@ -431,16 +395,10 @@ Proof.
       + reflexivity.
     - apply lstore_lift_free_restrict_fv_lvars_eq.
   }
-  pose (s := lstore_on_mlsubst_back D ρ s').
-  assert (Hmem : lstore_in_lworld_on s
-      (lworld_on_mlsubst_back D ρ (lworld_on_lift D' m Hlc Hscope))).
-  {
-    subst s. apply lstore_in_lworld_on_mlsubst_back_self.
-    exact Hmem'.
-  }
-  specialize (Hholds s).
-  pose proof (proj2 Hholds Hmem) as Hprop.
-  subst s.
+  specialize (Hholds s').
+  pose proof (proj2 Hholds Hmem') as Hprop.
+  change (qual_prop q (lstore_on_mlsubst_back D ρ s')) in Hprop.
+  subst q.
   apply lt_qual_open_prop_iff in Hprop; [|exact Hzy].
   destruct Hprop as [cz [cy [Hz [Hy Hlt]]]].
   exists cz, cy.

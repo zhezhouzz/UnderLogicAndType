@@ -4,6 +4,7 @@
 
 From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBasicDenotation Require Import TermSyntax TermEval TermOpen TermExtension.
+From ContextLogic Require Import FormulaConnectives.
 
 Section TermDenotation.
 
@@ -394,15 +395,53 @@ Qed.
 
 Lemma expr_total_formula_models_iff e (m : WfWorldT) :
   res_models m (expr_total_formula e) <->
-  logic_qualifier_denote (expr_total_lqual e) m.
+  formula_scoped_in_world m (expr_total_formula e) /\
+  lc_lvars (tm_lvars e) /\
+  forall σ, (m : WorldT) σ -> exists v, tm_eval_in_store σ e v.
 Proof.
-  unfold res_models, expr_total_formula.
-  cbn [formula_measure res_models_fuel].
-  split; [tauto |].
-  intros Hden. split; [| exact Hden].
-  destruct Hden as [_ [Hsub _]].
-  unfold formula_scoped_in_world.
-  rewrite formula_fv_atom. exact Hsub.
+  unfold expr_total_formula.
+  rewrite res_models_FFiberAtom_store_iff.
+  split.
+  - intros [Hscope Hstores]. split; [exact Hscope|].
+    split.
+    {
+      unfold qualifier_holds_store, expr_total_qual in Hstores.
+      cbn [qual_lvars qual_prop] in Hstores.
+      destruct (wfA_ne _ (worldA_wf m)) as [σ Hσ].
+      destruct (Hstores σ Hσ) as [Hlc _].
+      exact Hlc.
+    }
+    intros σ Hσ.
+    specialize (Hstores σ Hσ).
+    unfold qualifier_holds_store, expr_total_qual in Hstores.
+    cbn [qual_lvars qual_prop] in Hstores.
+    destruct Hstores as [Hlc [Hsub [v Heval]]].
+    exists v.
+    unfold tm_eval_in_store.
+    apply (proj1 (expr_eval_in_store_restrict_lvars e
+      (lstore_lift_free σ : LStoreT) (tm_lvars e) v ltac:(set_solver))).
+    exact Heval.
+  - intros [Hscope [Hlc Hstores]]. split; [exact Hscope|].
+    intros σ Hσ.
+    unfold qualifier_holds_store, expr_total_qual.
+    cbn [qual_lvars qual_prop].
+    assert (Hsub : lvars_fv (tm_lvars e) ⊆ dom (σ : StoreT)).
+    {
+      intros a Ha.
+      change (a ∈ dom (σ : StoreT)).
+      replace (dom (σ : StoreT)) with (world_dom (m : WorldT))
+        by (symmetry; apply (wfworld_store_dom m σ Hσ)).
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope.
+      exact (Hscope a Ha).
+    }
+    exists Hlc, Hsub.
+    destruct (Hstores σ Hσ) as [v Heval].
+    exists v.
+    unfold tm_eval_in_store in Heval.
+    apply (proj2 (expr_eval_in_store_restrict_lvars e
+      (lstore_lift_free σ : LStoreT) (tm_lvars e) v ltac:(set_solver))).
+    exact Heval.
 Qed.
 
 Lemma expr_total_formula_to_atom_world e (m : WfWorldT) :
@@ -411,10 +450,8 @@ Lemma expr_total_formula_to_atom_world e (m : WfWorldT) :
 Proof.
   intros Hmodels.
   apply expr_total_formula_models_iff in Hmodels.
-  unfold expr_total_lqual, logic_qualifier_denote in Hmodels.
-  destruct Hmodels as [Hlc [Hsub Htotal]].
+  destruct Hmodels as [Hscope [Hlc Hstores]].
   unfold expr_total_on_atom_world, expr_total_on in *.
-  destruct Htotal as [_ Hstores].
   split.
   - rewrite res_lift_free_dom.
     intros v Hv.
@@ -422,29 +459,13 @@ Proof.
     + exfalso. exact (Hlc _ Hv).
     + unfold lvars_of_atoms. apply elem_of_map.
       exists a. split; [reflexivity|].
-      apply Hsub. apply lvars_fv_elem. exact Hv.
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_expr_total_formula in Hscope.
+      apply Hscope. apply lvars_fv_elem. exact Hv.
   - intros τ Hτ.
     destruct Hτ as [σ [Hσ ->]].
-    assert (HτD :
-        (@lw value _ (lworld_on_lift (tm_lvars e) m Hlc Hsub) : LWorldT)
-        (storeA_restrict (lstore_lift_free σ : LStoreT) (tm_lvars e))).
-    {
-      unfold lworld_on_lift.
-      cbn [lw lraw_world raw_worldA worldA_stores].
-      exists (lstore_lift_free (storeA_restrict σ (lvars_fv (tm_lvars e))) : LStoreT).
-      split.
-      - exists (storeA_restrict σ (lvars_fv (tm_lvars e))). split.
-        + change ((res_restrict m (lvars_fv (tm_lvars e)) : WorldT)
-            (storeA_restrict σ (lvars_fv (tm_lvars e)))).
-          exists σ. split; [exact Hσ|reflexivity].
-        + reflexivity.
-      - apply lstore_lift_free_restrict_fv_lvars_eq. exact Hlc.
-    }
-    destruct (Hstores _ HτD) as [v Heval].
-    exists v.
-    apply (proj1 (expr_eval_in_store_restrict_lvars e
-      (lstore_lift_free σ : LStoreT) (tm_lvars e) v ltac:(set_solver))).
-    exact Heval.
+    destruct (Hstores σ Hσ) as [v Heval].
+    exists v. exact Heval.
 Qed.
 
 Lemma expr_total_atom_world_to_formula e (m : WfWorldT) :
@@ -453,19 +474,10 @@ Lemma expr_total_atom_world_to_formula e (m : WfWorldT) :
 Proof.
   intros Htotal.
   apply expr_total_formula_models_iff.
-  unfold expr_total_lqual, logic_qualifier_denote.
   destruct Htotal as [Hdom Hstores].
-  assert (Hlc : lc_lvars (tm_lvars e)).
-  {
-    unfold lc_lvars. intros v Hv.
-    specialize (Hdom _ Hv).
-    rewrite res_lift_free_dom in Hdom.
-    unfold lvars_of_atoms in Hdom.
-    apply elem_of_map in Hdom as [a [Hbad _]].
-    destruct v as [k|b]; [discriminate|exact I].
-  }
-  assert (Hsub : lvars_fv (tm_lvars e) ⊆ world_dom (m : WorldT)).
-  {
+  split.
+  - unfold formula_scoped_in_world.
+    rewrite formula_fv_expr_total_formula.
     intros a Ha.
     assert (LVFree a ∈ tm_lvars e) as HaD.
     { apply lvars_fv_elem. exact Ha. }
@@ -474,39 +486,19 @@ Proof.
     unfold lvars_of_atoms in Hdom.
     apply elem_of_map in Hdom as [b [Heq Hb]].
     inversion Heq. subst b. exact Hb.
-  }
-  exists Hlc, Hsub.
-  unfold expr_total_on_atom_world, expr_total_on in Hstores.
-  split.
-  - unfold lworld_on_lift. cbn. intros v Hv.
-    apply elem_of_intersection. split; [|exact Hv].
-    destruct v as [k|a].
-    + exfalso. exact (Hlc _ Hv).
-    + unfold lvars_of_atoms. apply elem_of_map.
-      exists a. split; [reflexivity|].
-      apply elem_of_intersection. split.
-      * apply Hsub. apply lvars_fv_elem. exact Hv.
-      * apply lvars_fv_elem. exact Hv.
-  - intros τ Hτ.
-    unfold lworld_on_lift in Hτ.
-    cbn [lw lraw_world raw_worldA worldA_stores] in Hτ.
-    destruct Hτ as [τ0 [Hτ0 Hrestrict]]. subst τ.
-    destruct Hτ0 as [σr [Hσr ->]].
-    destruct Hσr as [σ [Hσ Hσr_eq]].
-    subst σr.
+  - split.
+    + unfold lc_lvars. intros v Hv.
+      specialize (Hdom _ Hv).
+      rewrite res_lift_free_dom in Hdom.
+      unfold lvars_of_atoms in Hdom.
+      apply elem_of_map in Hdom as [a [Hbad _]].
+      destruct v as [k|b]; [discriminate|exact I].
+    + intros σ Hσ.
     destruct (Hstores (lstore_lift_free σ)) as [v Heval].
-    { exists σ. split; [exact Hσ|reflexivity]. }
-    exists v.
-    replace (storeA_restrict
-        (lstore_lift_free (storeA_restrict σ (lvars_fv (tm_lvars e))) : LStoreT)
-        (tm_lvars e))
-      with (storeA_restrict (lstore_lift_free σ : LStoreT) (tm_lvars e)).
-    2:{
-      symmetry. apply lstore_lift_free_restrict_fv_lvars_eq. exact Hlc.
+    {
+      exists σ. split; [exact Hσ|reflexivity].
     }
-    apply (proj2 (expr_eval_in_store_restrict_lvars e
-      (lstore_lift_free σ : LStoreT) (tm_lvars e) v ltac:(set_solver))).
-    exact Heval.
+    exists v. exact Heval.
 Qed.
 
 Lemma expr_total_formula_res_subset e (m n : WfWorldT) :
@@ -675,15 +667,56 @@ Qed.
 
 Lemma expr_result_formula_models_iff e x (m : WfWorldT) :
   res_models m (expr_result_formula e x) <->
-  logic_qualifier_denote (expr_result_lqual e x) m.
+  formula_scoped_in_world m (expr_result_formula e x) /\
+  lc_lvars (tm_lvars e ∪ {[x]}) /\
+  forall σ, (m : WorldT) σ ->
+    expr_result_at_store e x (lstore_lift_free σ).
 Proof.
-  unfold res_models, expr_result_formula.
-  cbn [formula_measure res_models_fuel].
-  split; [tauto |].
-  intros Hden. split; [| exact Hden].
-  destruct Hden as [_ [Hsub _]].
-  unfold formula_scoped_in_world.
-  rewrite formula_fv_atom. exact Hsub.
+  unfold expr_result_formula.
+  rewrite res_models_FFiberAtom_store_iff.
+  split.
+  - intros [Hscope Hstores]. split; [exact Hscope|].
+    split.
+    {
+      unfold qualifier_holds_store, expr_result_qual in Hstores.
+      cbn [qual_lvars qual_prop] in Hstores.
+      destruct (wfA_ne _ (worldA_wf m)) as [σ Hσ].
+      destruct (Hstores σ Hσ) as [Hlc _].
+      exact Hlc.
+    }
+    intros σ Hσ.
+    specialize (Hstores σ Hσ).
+    unfold qualifier_holds_store, expr_result_qual in Hstores.
+    cbn [qual_lvars qual_prop] in Hstores.
+    destruct Hstores as [Hlc [Hsub Hres]].
+    unfold expr_result_at_store in *.
+    destruct Hres as [Hx [v [Hlookup Heval]]].
+    split; [exact Hx|].
+    exists v. split.
+    + apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
+      exact Hlookup.
+    + apply (proj1 (expr_eval_in_store_restrict_lvars e
+        (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[x]}) v
+        ltac:(set_solver))).
+      exact Heval.
+  - intros [Hscope [Hlc Hstores]]. split; [exact Hscope|].
+    intros σ Hσ.
+    unfold qualifier_holds_store, expr_result_qual.
+    cbn [qual_lvars qual_prop].
+    assert (Hsub : lvars_fv (tm_lvars e ∪ {[x]}) ⊆ dom (σ : StoreT)).
+    {
+      intros a Ha.
+      change (a ∈ dom (σ : StoreT)).
+      replace (dom (σ : StoreT)) with (world_dom (m : WorldT))
+        by (symmetry; apply (wfworld_store_dom m σ Hσ)).
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_fiber_atom in Hscope.
+      exact (Hscope a Ha).
+    }
+    exists Hlc, Hsub.
+    eapply expr_result_at_store_restrict_lvars.
+    + set_solver.
+    + exact (Hstores σ Hσ).
 Qed.
 
 Lemma expr_result_formula_to_atom_world e x (m : WfWorldT) :
@@ -692,9 +725,9 @@ Lemma expr_result_formula_to_atom_world e x (m : WfWorldT) :
 Proof.
   intros Hmodels.
   apply expr_result_formula_models_iff in Hmodels.
-  unfold expr_result_lqual, logic_qualifier_denote in Hmodels.
-  destruct Hmodels as [Hlc [Hsub Hresult]].
-  destruct Hresult as [Hx [Hdom Hstores]].
+  destruct Hmodels as [Hscope [Hlc Hstores]].
+  destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
+  destruct (Hstores σ0 Hσ0) as [Hx _].
   split; [exact Hx|]. split.
   - rewrite res_lift_free_dom.
     intros v Hv.
@@ -702,35 +735,12 @@ Proof.
     + exfalso. exact (Hlc _ Hv).
     + unfold lvars_of_atoms. apply elem_of_map.
       exists a. split; [reflexivity|].
-      apply Hsub. apply lvars_fv_elem. exact Hv.
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_expr_result_formula in Hscope.
+      apply Hscope. apply lvars_fv_elem. exact Hv.
   - intros τ Hτ.
     destruct Hτ as [σ [Hσ ->]].
-    assert (HτD :
-        (@lw value _ (lworld_on_lift (tm_lvars e ∪ {[x]}) m Hlc Hsub) : LWorldT)
-        (storeA_restrict (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[x]}))).
-    {
-      unfold lworld_on_lift.
-      cbn [lw lraw_world raw_worldA worldA_stores].
-      exists (lstore_lift_free
-        (storeA_restrict σ (lvars_fv (tm_lvars e ∪ {[x]}))) : LStoreT).
-      split.
-      - exists (storeA_restrict σ (lvars_fv (tm_lvars e ∪ {[x]}))). split.
-        + change ((res_restrict m (lvars_fv (tm_lvars e ∪ {[x]})) : WorldT)
-            (storeA_restrict σ (lvars_fv (tm_lvars e ∪ {[x]})))).
-          exists σ. split; [exact Hσ|reflexivity].
-        + reflexivity.
-      - apply lstore_lift_free_restrict_fv_lvars_eq. exact Hlc.
-    }
-    specialize (Hstores _ HτD).
-    destruct Hstores as [Hx' [v [Hlookup Heval]]].
-    split; [exact Hx'|].
-    exists v. split.
-    + apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-      exact Hlookup.
-    + apply (proj1 (expr_eval_in_store_restrict_lvars e
-        (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[x]}) v
-        ltac:(set_solver))).
-      exact Heval.
+    exact (Hstores σ Hσ).
 Qed.
 
 Lemma expr_result_atom_world_to_formula e x (m : WfWorldT) :
@@ -739,20 +749,10 @@ Lemma expr_result_atom_world_to_formula e x (m : WfWorldT) :
 Proof.
   intros Hres.
   apply expr_result_formula_models_iff.
-  unfold expr_result_lqual, logic_qualifier_denote.
   destruct Hres as [Hx [Hdom Hstores]].
-  assert (Hlc : lc_lvars (tm_lvars e ∪ {[x]})).
-  {
-    unfold lc_lvars. intros v Hv.
-    specialize (Hdom _ Hv).
-    rewrite res_lift_free_dom in Hdom.
-    unfold lvars_of_atoms in Hdom.
-    apply elem_of_map in Hdom as [a [Hbad _]].
-    destruct v as [k|b]; [discriminate|exact I].
-  }
-  assert (Hsub :
-      lvars_fv (tm_lvars e ∪ {[x]}) ⊆ world_dom (m : WorldT)).
-  {
+  split.
+  - unfold formula_scoped_in_world.
+    rewrite formula_fv_expr_result_formula.
     intros y Hy.
     assert (LVFree y ∈ tm_lvars e ∪ {[x]}) as HyD.
     { apply lvars_fv_elem. exact Hy. }
@@ -761,10 +761,16 @@ Proof.
     unfold lvars_of_atoms in Hdom.
     apply elem_of_map in Hdom as [a [Heq Ha]].
     inversion Heq. subst a. exact Ha.
-  }
-  exists Hlc, Hsub.
-  apply expr_result_at_world_lworld_on_lift.
-  exact (conj Hx (conj Hdom Hstores)).
+  - split.
+    + unfold lc_lvars. intros v Hv.
+      specialize (Hdom _ Hv).
+      rewrite res_lift_free_dom in Hdom.
+      unfold lvars_of_atoms in Hdom.
+      apply elem_of_map in Hdom as [a [Hbad _]].
+      destruct v as [k|b]; [discriminate|exact I].
+    + intros σ Hσ.
+    apply Hstores.
+    exists σ. split; [exact Hσ|reflexivity].
 Qed.
 
 Lemma expr_result_extension_world_models_closed
@@ -909,34 +915,7 @@ Proof.
   intros Hfv Hbasic HF Hext Htotal.
   pose proof (expr_result_extension_world_models
     Σ e x F m mx Hfv Hbasic HF Hext Htotal) as Hres.
-  apply expr_result_formula_models_iff.
-  unfold expr_result_lqual, logic_qualifier_denote.
-  destruct Hres as [Hx [Hdom Hstores]].
-  assert (Hlc : lc_lvars (tm_lvars e ∪ {[LVFree x]})).
-  {
-    unfold lc_lvars. intros v Hv.
-    destruct v as [k|y]; [|exact I].
-    exfalso.
-    specialize (Hdom (LVBound k) Hv).
-    rewrite res_lift_free_dom in Hdom.
-    unfold lvars_of_atoms in Hdom.
-    apply elem_of_map in Hdom as [a [Hbad _]]. discriminate.
-  }
-  assert (Hsub :
-      lvars_fv (tm_lvars e ∪ {[LVFree x]}) ⊆ world_dom (mx : WorldT)).
-  {
-    intros y Hy.
-    assert (LVFree y ∈ tm_lvars e ∪ {[LVFree x]}) as HyD.
-    { apply lvars_fv_elem. exact Hy. }
-    specialize (Hdom (LVFree y) HyD).
-    rewrite res_lift_free_dom in Hdom.
-    unfold lvars_of_atoms in Hdom.
-    apply elem_of_map in Hdom as [a [Heq Ha]].
-    inversion Heq. subst a. exact Ha.
-  }
-  exists Hlc, Hsub.
-  apply expr_result_at_world_lworld_on_lift.
-  exact (conj Hx (conj Hdom Hstores)).
+  apply expr_result_atom_world_to_formula. exact Hres.
 Qed.
 
 End TermDenotation.

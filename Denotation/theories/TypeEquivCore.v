@@ -1503,12 +1503,15 @@ Proof.
   destruct Hguard1 as [_ [_ [_ Htotal1]]].
   destruct Hguard2 as [_ [_ [_ Htotal2]]].
   apply expr_total_formula_models_iff in Htotal1
-    as [_ [Hscope1 _]].
+    as [Hscope1 [_ _]].
   apply expr_total_formula_models_iff in Htotal2
-    as [_ [Hscope2 _]].
+    as [Hscope2 [_ _]].
+  unfold formula_scoped_in_world in Hscope1, Hscope2.
+  rewrite formula_fv_expr_total_formula in Hscope1.
+  rewrite formula_fv_expr_total_formula in Hscope2.
   rewrite tm_lvars_fv in Hscope1.
   rewrite tm_lvars_fv in Hscope2.
-  set_solver.
+  better_set_solver.
 Qed.
 
 Lemma typed_total_equiv_term_lc_lvars
@@ -1526,9 +1529,9 @@ Proof.
   destruct Hguard1 as [_ [_ [_ Htotal1]]].
   destruct Hguard2 as [_ [_ [_ Htotal2]]].
   apply expr_total_formula_models_iff in Htotal1
-    as [Hlc1 _].
+    as [_ [Hlc1 _]].
   apply expr_total_formula_models_iff in Htotal2
-    as [Hlc2 _].
+    as [_ [Hlc2 _]].
   split; assumption.
 Qed.
 

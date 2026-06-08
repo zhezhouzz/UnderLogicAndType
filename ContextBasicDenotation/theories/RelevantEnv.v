@@ -320,19 +320,32 @@ Proof.
 Qed.
 
 Lemma relevant_lvars_basic_open_tprim_fvar_subset op x τ :
-  basic_context_ty ∅ τ ->
+  wf_context_ty_at 1 ∅ τ ->
   relevant_lvars ({0 ~> x} τ) (tprim op (vfvar x)) ⊆ {[LVFree x]}.
 Proof.
-  intros Hbasic v Hv.
-  pose proof (basic_context_ty_to_lvars _ _ Hbasic) as [Hτ _].
+  intros Hwf v Hv.
+  pose proof (wf_context_ty_at_to_lvars_shape 1 ∅ τ Hwf) as [Hτ _].
   rewrite lvars_of_atoms_empty in Hτ.
-  assert (Hempty : context_ty_lvars τ = (∅ : lvset)) by set_solver.
   unfold relevant_lvars in Hv.
-  rewrite cty_open_vars in Hv.
-  unfold context_ty_open_lvars in Hv.
-  rewrite Hempty, set_swap_empty in Hv.
   cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
-  set_solver.
+  set_unfold in Hv.
+  destruct Hv as [Hv|Hv].
+  - destruct (decide (v = LVFree x)) as [->|Hvx].
+    { set_solver. }
+    assert (Hsmall :
+        v ∈ context_ty_lvars (cty_open 0 x τ) ∖ {[LVFree x]}).
+    {
+      apply elem_of_difference. split; [exact Hv|].
+      intros Hin. apply elem_of_singleton in Hin. congruence.
+    }
+    assert (Hlc_empty : lc_lvars (∅ : lvset)).
+    { unfold lc_lvars. set_solver. }
+    assert (Hx_empty : LVFree x ∉ (∅ : lvset)).
+    { set_solver. }
+    pose proof (cty_lvars_open_body_closed_no_fresh
+      (∅ : lvset) τ x Hlc_empty Hx_empty Hτ v Hsmall) as Hcontra.
+    set_solver.
+  - better_set_solver.
 Qed.
 
 Lemma atom_env_restrict_singleton_lookup

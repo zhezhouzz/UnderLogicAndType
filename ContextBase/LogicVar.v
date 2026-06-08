@@ -570,6 +570,23 @@ Proof.
     apply lvars_fv_elem. exact Hv.
 Qed.
 
+Lemma lc_lvars_of_atoms_fv_eq (D : lvset) :
+  lc_lvars D ->
+  lvars_of_atoms (lvars_fv D) = D.
+Proof.
+  intros Hlc.
+  apply set_eq. intros v.
+  split.
+  - unfold lvars_of_atoms. intros Hv.
+    apply elem_of_map in Hv as [x [-> Hx]].
+    apply lvars_fv_elem. exact Hx.
+  - apply lvars_bv_empty_subset_of_atoms_fv.
+    apply set_eq. intros k.
+    rewrite elem_of_empty, lvars_bv_elem.
+    split; [|better_set_solver].
+    intros Hk. exfalso. exact (Hlc (LVBound k) Hk).
+Qed.
+
 Lemma lvars_fv_singleton_bound k :
   lvars_fv ({[LVBound k]} : lvset) = ∅.
 Proof.
