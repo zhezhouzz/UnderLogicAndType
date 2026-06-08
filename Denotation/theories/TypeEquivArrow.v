@@ -393,16 +393,18 @@ Proof.
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply relevant_world_typing_closed_on_term;
-        eauto.
+    - eapply relevant_world_typing_closed_on_term.
+      + exact Hworld1.
+      + exact Hbasic1.
   }
   assert (Hclosed2 : wfworld_closed_on (fv_tm e2) my).
   {
     eapply wfworld_closed_on_le.
     - intros a Ha. apply Hscope. set_solver.
     - exact Hle.
-    - eapply relevant_world_typing_closed_on_term;
-        eauto.
+    - eapply relevant_world_typing_closed_on_term.
+      + exact Hworld2.
+      + exact Hbasic2.
   }
   assert (Hworld_y :
       my ⊨ basic_world_formula

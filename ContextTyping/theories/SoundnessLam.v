@@ -850,20 +850,37 @@ Lemma lam_opened_arrow_result
 	      (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
 Proof.
   intros Hwf IH Hctx Hdom Hrestrict Hy Harg.
+  assert (Hy_rest :
+      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+  {
+    intros Hin.
+    clear -Hy Hin. better_set_solver.
+  }
+  assert (HyL : y ∉ L).
+  {
+    intros Hin.
+    clear -Hy Hin. better_set_solver.
+  }
   assert (Hctx_comma :
       my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx))).
   {
-    eapply (lam_arrow_open_arg_to_comma_ctx Σ Γ τx τ e m my y);
-      eauto.
-    set_solver.
+    eapply (lam_arrow_open_arg_to_comma_ctx Σ Γ τx τ e m my y).
+    - exact Hwf.
+    - exact Hctx.
+    - exact Hdom.
+    - exact Hrestrict.
+    - exact Hy_rest.
+    - exact Harg.
   }
-  assert (HyL : y ∉ L) by set_solver.
-	  pose proof (IH y HyL my Hctx_comma) as Hbody.
-	  pose proof (lam_arrow_opened_app_static_guard_full
-		    Σ Γ τx τ e my y Hwf ltac:(set_solver) Hctx_comma) as Hstatic_app.
-	  eapply (lam_body_to_opened_arrow_result Σ Γ τx τ e my y);
-	    eauto.
-  set_solver.
+		  pose proof (IH y HyL my Hctx_comma) as Hbody.
+		  pose proof (lam_arrow_opened_app_static_guard_full
+			    Σ Γ τx τ e my y Hwf Hy_rest Hctx_comma) as Hstatic_app.
+		  eapply (lam_body_to_opened_arrow_result Σ Γ τx τ e my y).
+  - exact Hwf.
+  - exact Hy_rest.
+  - exact Hbody.
+  - exact Hstatic_app.
 Qed.
 
 Lemma lamd_wand_open_arg_to_bind_denotation
@@ -1281,21 +1298,38 @@ Lemma lamd_opened_wand_result
       (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0))).
 Proof.
   intros Hwf IH Hctx Hdom Hy Harg.
+  assert (Hy_rest :
+      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+  {
+    intros Hin.
+    clear -Hy Hin. better_set_solver.
+  }
+  assert (HyL : y ∉ L).
+  {
+    intros Hin.
+    clear -Hy Hin. better_set_solver.
+  }
   assert (Hctx_star :
       res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
   {
-    eapply (lamd_open_arg_to_star_ctx Σ Γ τx τ e m n y Hc);
-      eauto.
-    set_solver.
+    eapply (lamd_open_arg_to_star_ctx Σ Γ τx τ e m n y Hc).
+    - exact Hwf.
+    - exact Hctx.
+    - exact Hdom.
+    - exact Hy_rest.
+    - exact Harg.
   }
-  assert (HyL : y ∉ L) by set_solver.
   pose proof (IH y HyL (res_product n m Hc) Hctx_star) as Hbody.
-	  pose proof (lam_wand_opened_app_static_guard_full
-	    Σ Γ τx τ e (res_product n m Hc) y
-	    Hwf ltac:(set_solver) Hctx_star) as Hstatic_app.
+		  pose proof (lam_wand_opened_app_static_guard_full
+		    Σ Γ τx τ e (res_product n m Hc) y
+		    Hwf Hy_rest Hctx_star) as Hstatic_app.
   pose proof (lamd_body_to_wand_result_mid
     Σ Γ τx τ e (res_product n m Hc) y
-    Hwf ltac:(set_solver) Hbody Hstatic_app) as Happ_mid.
-  eapply lamd_wand_result_mid_to_opened_goal; eauto.
-  set_solver.
+    Hwf Hy_rest Hbody Hstatic_app) as Happ_mid.
+  eapply (lamd_wand_result_mid_to_opened_goal
+    Σ Γ τx τ e (res_product n m Hc) y).
+  - exact Hwf.
+  - exact Hy_rest.
+  - exact Happ_mid.
 Qed.
