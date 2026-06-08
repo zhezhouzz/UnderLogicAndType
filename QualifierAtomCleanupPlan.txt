@@ -23,17 +23,19 @@ Status: completed.
 
 ### Round 2: Move pure qualifier/world-store support
 
-Status: pending.
+Status: completed.
 
-- Move exact atom support that does not depend on `Formula` into the lower
-  qualifier/algebra-facing layer where possible.
+- Pure store-level qualifier support already lives in
+  `ContextQualifier/theories/Qualifier.v`.
+- Exact atom support depends on `WfWorld` / resource restriction, so it cannot
+  move below `ContextAlgebra`; it was split into `FormulaAtom.v` instead.
 - Keep names focused on `qual_*`, `lstore_*`, and `qualifier_exact_*`.
 - Compile:
   `timeout 50s make TIMED=1 ContextQualifier/theories/Qualifier.vo`
 
 ### Round 3: Introduce FormulaAtom
 
-Status: pending.
+Status: completed.
 
 - Add `ContextLogic/theories/FormulaAtom.v` for exact atom denotation and
   `FAtom` / `FFiberAtom` proof principles.
@@ -44,7 +46,7 @@ Status: pending.
 
 ### Round 4: Remove old lqual route
 
-Status: pending.
+Status: completed.
 
 - Delete `logic_qualifier`, `lqual_*`, `logic_qualifier_denote_*`, and
   `LogicQualifierT` aliases.

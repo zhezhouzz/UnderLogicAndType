@@ -1,5 +1,5 @@
 From ContextLogic Require Export
-  LogicQualifier
+  FormulaAtom
   FormulaSyntax
   FormulaSemantics
   FormulaConnectives

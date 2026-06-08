@@ -20,7 +20,6 @@ Notation WorldT := (World (V := value)) (only parsing).
 Notation LWorldT := (LWorld (V := value)) (only parsing).
 Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
-Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
 
 Notation "m ⊨ φ" := (res_models m φ)
   (at level 70, format "m  ⊨  φ").

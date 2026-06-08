@@ -2,7 +2,7 @@
 
     Derived proof principles for Context Logic connectives. *)
 
-From ContextLogic Require Import LogicQualifier FormulaSemantics.
+From ContextLogic Require Import FormulaAtom FormulaSemantics.
 From ContextAlgebra Require Import ResourceInterface ResourceCompat.
 From ContextBase Require Import LogicVarOpenEnv.
 From Stdlib Require Import Lia Logic.ProofIrrelevance.
@@ -21,7 +21,6 @@ Context {V : Type} `{ValueSig V}.
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
 Local Notation StoreT := (Store (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 Local Notation "m ⊨ φ" := (res_models m φ)
   (at level 70, format "m  ⊨  φ").
@@ -1076,7 +1075,6 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 Local Notation "m ⊨ φ" := (res_models m φ)
   (at level 70, format "m  ⊨  φ").
@@ -1292,7 +1290,6 @@ Context {V : Type} `{ValueSig V}.
 
 Local Notation WorldT := (World (V := V)) (only parsing).
 Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
-Local Notation LogicQualifierT := (logic_qualifier (V := V)) (only parsing).
 Local Notation FormulaT := (Formula (V := V)) (only parsing).
 Local Notation "m ⊨ φ" := (res_models m φ)
   (at level 70, format "m  ⊨  φ").

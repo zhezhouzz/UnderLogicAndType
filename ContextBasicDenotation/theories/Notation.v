@@ -19,7 +19,6 @@ Notation WorldT := (World (V := value)) (only parsing).
 Notation LWorldT := (LWorld (V := value)) (only parsing).
 Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
-Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
 Notation lstore_bound_part := (@lstore_bound_part value) (only parsing).
 
 Notation "e '·ₜ' v" := (tapp_tm e v)

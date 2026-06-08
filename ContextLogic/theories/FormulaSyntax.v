@@ -1,4 +1,4 @@
-From ContextLogic Require Export LogicQualifier.
+From ContextLogic Require Export FormulaAtom.
 From CoreLang Require Import Prelude.
 From ContextBase Require Import BaseTactics LogicVarOpenEnv LogicVarShift.
 From Stdlib Require Import Logic.FunctionalExtensionality Logic.PropExtensionality.
