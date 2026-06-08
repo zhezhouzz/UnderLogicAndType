@@ -16,6 +16,17 @@ Bind Scope core_scope with prim_op.
 Bind Scope core_scope with value.
 Bind Scope core_scope with tm.
 
+Notation "'{' k '~>' v '}' e" := (open_value k v e)
+  (at level 20, k constr, only printing,
+   format "{ k ~> v } e") : core_scope.
+Notation "'{' k '~>' v '}' e" := (open_tm k v e)
+  (at level 20, k constr, only printing,
+   format "{ k ~> v } e") : core_scope.
+Notation "e '^^' x" := (open_value 0 (vfvar x) e)
+  (at level 20, only printing) : core_scope.
+Notation "e '^^' x" := (open_tm 0 (vfvar x) e)
+  (at level 20, only printing) : core_scope.
+
 Notation store := (gmap atom value).
 Notation tyctx := (gmap atom ty).
 

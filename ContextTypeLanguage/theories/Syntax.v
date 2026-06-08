@@ -184,6 +184,11 @@ Fixpoint erase_ctx (Γ : ctx) : gmap atom ty :=
   | CtxSum Γ1 _ => erase_ctx Γ1
   end.
 
+#[global] Instance erase_cty_inst : Erase context_ty ty := erase_ty.
+#[global] Instance erase_ctx_inst : Erase ctx (gmap atom ty) := erase_ctx.
+Arguments erase_cty_inst /.
+Arguments erase_ctx_inst /.
+
 Lemma erase_ctx_bind_dom x τ :
   dom (erase_ctx (CtxBind x τ)) = ({[x]} : aset).
 Proof.

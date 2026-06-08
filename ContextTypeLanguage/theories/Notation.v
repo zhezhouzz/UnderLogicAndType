@@ -17,20 +17,34 @@ Bind Scope ctx_scope with ctx.
 Bind Scope lvar_scope with logic_var.
 Bind Scope lvar_scope with lty_env.
 
+Notation "'{' k '~>' x '}' τ" := (cty_open k x τ)
+  (at level 20, k constr, only printing,
+   format "{ k ~> x } τ") : cty_scope.
+Notation "τ '^^' x" := (cty_open 0 x τ)
+  (at level 20, only printing) : cty_scope.
+Notation "'↑{' k '}' τ" := (cty_shift k τ)
+  (at level 20, k constr, only printing,
+   format "↑{ k }  τ") : cty_scope.
+Notation "τ '↑'" := (cty_shift 0 τ)
+  (at level 20, only printing,
+   format "τ  ↑") : cty_scope.
+
 Notation "'⌊' τ '⌋'" := (erase_ty τ)
-  (at level 20, format "⌊ τ ⌋") : cty_scope.
+  (at level 20, only printing,
+   format "⌊ τ ⌋") : cty_scope.
 
 Notation "'⌊' Γ '⌋'" := (erase_ctx Γ)
-  (at level 20, format "⌊ Γ ⌋") : ctx_scope.
+  (at level 20, only printing,
+   format "⌊ Γ ⌋") : ctx_scope.
 
 Notation "'#ₗ' k" := (LVBound k)
-  (at level 5, format "#ₗ k") : lvar_scope.
+  (at level 5, format "#ₗ k").
 
 Notation "'$ₗ' x" := (LVFree x)
-  (at level 5, format "$ₗ x") : lvar_scope.
+  (at level 5, format "$ₗ x").
 
 Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
-  (at level 20, format "↑ₗ Σ") : lvar_scope.
+  (at level 20, format "↑ₗ Σ").
 
 Notation "'#ₗ' k" := (LVBound k)
   (at level 5, only parsing) : ctx_scope.

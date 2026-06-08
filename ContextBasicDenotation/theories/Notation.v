@@ -26,6 +26,19 @@ Notation "e '·ₜ' v" := (tapp_tm e v)
   (at level 40, left associativity,
    format "e  ·ₜ  v").
 
+Notation "'↑{' k '}' v" := (value_shift k v)
+  (at level 20, k constr, only printing,
+   format "↑{ k }  v") : core_scope.
+Notation "'↑{' k '}' e" := (tm_shift k e)
+  (at level 20, k constr, only printing,
+   format "↑{ k }  e") : core_scope.
+Notation "v '↑'" := (value_shift 0 v)
+  (at level 20, only printing,
+   format "v  ↑") : core_scope.
+Notation "e '↑'" := (tm_shift 0 e)
+  (at level 20, only printing,
+   format "e  ↑") : core_scope.
+
 Global Notation open_tm_env :=
   (fun η e => map_fold (fun k x acc => open_tm k (vfvar x) acc) e η)
   (only parsing).

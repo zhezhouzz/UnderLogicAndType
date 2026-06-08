@@ -37,6 +37,12 @@ Notation "x '↑'" := (shift_from 0 x)
   (at level 20,
    format "x  ↑").
 
+(** Erasure/projection into a simpler syntax layer. *)
+Class Erase A B := erase : A → B.
+
+Notation "'⌊' x '⌋'" := (erase x)
+  (at level 20, format "⌊ x ⌋").
+
 
 (** ** Generic key shifts *)
 
