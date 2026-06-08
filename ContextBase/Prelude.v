@@ -25,6 +25,18 @@ Notation "'FV' '(' x ')'" := (stale x)
 
 Notation "x '#' s" := (x ∉ stale s) (at level 40).
 
+(** Binder-depth shift.  This is the shift-side analogue of the generic
+    [Open] interface used by locally-nameless syntax. *)
+Class Shift A := shift_from : nat → A → A.
+
+Notation "'↑{' k '}' x" := (shift_from k x)
+  (at level 20, k constr, x at level 20,
+   format "↑{ k }  x").
+
+Notation "x '↑'" := (shift_from 0 x)
+  (at level 20,
+   format "x  ↑").
+
 
 (** ** Generic key shifts *)
 

@@ -472,23 +472,44 @@ End TypeDenote.
 Notation "'⟦ty' τ '⟧[' Σ ',' gas ']'" :=
   (ty_denote_gas gas Σ τ)
   (at level 20, τ at level 200, Σ at level 200, gas at level 9,
-   format "⟦ty  τ  ⟧[ Σ ,  gas ]").
+   only parsing).
 
 Notation "'⟦ty' τ '⟧[' Σ ',' gas ']' e" :=
   (ty_denote_gas gas Σ τ e)
   (at level 20, τ at level 200, Σ at level 200,
    gas at level 9, e at level 20,
-   format "⟦ty  τ  ⟧[ Σ ,  gas ]  e").
+   only parsing).
 
 Notation "'⟦ty' τ '⟧[' Δ ']'" :=
   (ty_denote Δ τ)
   (at level 20, τ at level 200, Δ at level 200,
-   format "⟦ty  τ  ⟧[ Δ ]").
+   only parsing).
 
 Notation "'⟦ty' τ '⟧[' Δ ']' e" :=
   (ty_denote Δ τ e)
   (at level 20, τ at level 200, Δ at level 200, e at level 20,
-   format "⟦ty  τ  ⟧[ Δ ]  e").
+   only parsing).
+
+Notation "'⟦ty⟧[' Σ ',' gas ']' τ" :=
+  (ty_denote_gas gas Σ τ)
+  (at level 20, Σ at level 200, gas at level 9, τ at level 200,
+   format "⟦ty⟧[ Σ ,  gas ]  τ").
+
+Notation "'⟦ty⟧[' Σ ',' gas ']' τ e" :=
+  (ty_denote_gas gas Σ τ e)
+  (at level 20, Σ at level 200, gas at level 9,
+   τ at level 200, e at level 20,
+   format "⟦ty⟧[ Σ ,  gas ]  τ  e").
+
+Notation "'⟦ty⟧[' Δ ']' τ" :=
+  (ty_denote Δ τ)
+  (at level 20, Δ at level 200, τ at level 200,
+   format "⟦ty⟧[ Δ ]  τ").
+
+Notation "'⟦ty⟧[' Δ ']' τ e" :=
+  (ty_denote Δ τ e)
+  (at level 20, Δ at level 200, τ at level 200, e at level 20,
+   format "⟦ty⟧[ Δ ]  τ  e").
 
 Notation "'guard[' Σ ']' τ" :=
   (ty_guard_formula Σ τ)

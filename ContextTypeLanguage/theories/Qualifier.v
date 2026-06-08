@@ -173,6 +173,7 @@ Definition qual_shift_from (k : nat) (q : type_qualifier) : type_qualifier :=
 
 #[global] Instance shift_qual_inst : Shift type_qualifier :=
   qual_shift_from.
+Arguments shift_qual_inst /.
 
 Lemma qual_shift_from_vars k q :
   qual_vars (qual_shift_from k q) = lvars_shift_from k (qual_vars q).

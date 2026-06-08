@@ -1,11 +1,10 @@
 (** * Binder-depth shifts for logic variables and lvar sets *)
 
 From Stdlib Require Import Logic.FunctionalExtensionality.
-From ContextBase Require Export LogicVarOpenEnv.
+From ContextBase Require Export Prelude LogicVarOpenEnv.
 
-Class Shift A := shift_from : nat -> A -> A.
 Notation "'↑[' k ']'" := (shift_from k)
-  (at level 10, k constr, format "↑[ k ]").
+  (at level 10, k constr, only parsing).
 
 Definition logic_var_shift_from (k : nat) (v : logic_var) : logic_var :=
   match v with
@@ -274,6 +273,9 @@ Definition lvars_at_depth (d : nat) (D : lvset) : lvset :=
 
 #[global] Instance shift_lvars_inst : Shift lvset :=
   lvars_shift_from.
+
+Arguments shift_logic_var_inst /.
+Arguments shift_lvars_inst /.
 
 Lemma lvars_shift_from_fv k D :
   lvars_fv (lvars_shift_from k D) = lvars_fv D.

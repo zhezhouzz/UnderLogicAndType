@@ -36,6 +36,17 @@ Coercion world_stores : World >-> Funclass.
 Coercion raw_world : WfWorld >-> World.
 Coercion lraw_world : LWfWorld >-> LWorld.
 
+#[global] Instance dom_world_inst : Dom World aset := world_dom.
+#[global] Instance dom_wfworld_inst : Dom WfWorld aset :=
+  fun w => world_dom (w : World).
+#[global] Instance dom_lworld_inst : Dom LWorld lvset := lworld_dom.
+#[global] Instance dom_lwfworld_inst : Dom LWfWorld lvset :=
+  fun w => lworld_dom (w : LWorld).
+Arguments dom_world_inst /.
+Arguments dom_wfworld_inst /.
+Arguments dom_lworld_inst /.
+Arguments dom_lwfworld_inst /.
+
 Definition raw_unit : World := rawA_unit.
 Definition raw_restrict (m : World) (X : aset) : World := rawA_restrict m X.
 Definition raw_fiber (m : World) (σ : StoreT) : World := rawA_fiber m σ.

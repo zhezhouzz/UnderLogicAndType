@@ -1368,28 +1368,54 @@ End ContextDenotation.
 Notation "'⌊ctx' Γ '⌋[' Σ ']'" :=
   (ctx_erasure_under Σ Γ)
   (at level 20, Γ at level 200, Σ at level 200,
-   format "⌊ctx  Γ  ⌋[ Σ ]").
+   only parsing).
 
 Notation "'⟦ctx' Γ '⟧[' Σ ']'" :=
   (ctx_denote_under Σ Γ)
   (at level 20, Γ at level 200, Σ at level 200,
-   format "⟦ctx  Γ  ⟧[ Σ ]").
+   only parsing).
 
 Notation "'⟦ctx' Γ '⟧'" :=
   (ctx_denote Γ)
   (at level 20, Γ at level 200,
-   format "⟦ctx  Γ  ⟧").
+   only parsing).
 
 Notation "'⟦ty' τ '⟧[' Σ ';' Γ ']'" :=
   (ty_denote_under Σ Γ τ)
   (at level 20, τ at level 200, Σ at level 200, Γ at level 200,
-   format "⟦ty  τ  ⟧[ Σ ;  Γ ]").
+   only parsing).
 
 Notation "'⟦ty' τ '⟧[' Σ ';' Γ ']' e" :=
   (ty_denote_under Σ Γ τ e)
   (at level 20, τ at level 200, Σ at level 200,
    Γ at level 200, e at level 20,
-   format "⟦ty  τ  ⟧[ Σ ;  Γ ]  e").
+   only parsing).
+
+Notation "'⌊ctx⌋[' Σ ']' Γ" :=
+  (ctx_erasure_under Σ Γ)
+  (at level 20, Σ at level 200, Γ at level 200,
+   format "⌊ctx⌋[ Σ ]  Γ").
+
+Notation "'⟦ctx⟧[' Σ ']' Γ" :=
+  (ctx_denote_under Σ Γ)
+  (at level 20, Σ at level 200, Γ at level 200,
+   format "⟦ctx⟧[ Σ ]  Γ").
+
+Notation "'⟦ctx⟧' Γ" :=
+  (ctx_denote Γ)
+  (at level 20, Γ at level 200,
+   format "⟦ctx⟧  Γ").
+
+Notation "'⟦ty⟧[' Σ ';' Γ ']' τ" :=
+  (ty_denote_under Σ Γ τ)
+  (at level 20, Σ at level 200, Γ at level 200, τ at level 200,
+   format "⟦ty⟧[ Σ ;  Γ ]  τ").
+
+Notation "'⟦ty⟧[' Σ ';' Γ ']' τ e" :=
+  (ty_denote_under Σ Γ τ e)
+  (at level 20, Σ at level 200, Γ at level 200,
+   τ at level 200, e at level 20,
+   format "⟦ty⟧[ Σ ;  Γ ]  τ  e").
 
 Ltac ctx_erasure_under_norm :=
   unfold ctx_erasure_under;

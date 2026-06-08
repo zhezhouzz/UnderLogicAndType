@@ -6,6 +6,7 @@
 
 From CoreLang Require Export SmallStep OperationalProps LocallyNamelessProps.
 From CoreLang Require Import BasicTypingProps.
+From ContextBase Require Import Prelude.
 
 Definition vtrue : value := vconst (cbool true).
 Definition vfalse : value := vconst (cbool false).
@@ -32,6 +33,11 @@ with tm_shift (k : nat) (e : tm) : tm :=
   | tmatch v et ef =>
       tmatch (value_shift k v) (tm_shift k et) (tm_shift k ef)
   end.
+
+#[global] Instance shift_value_inst : Shift value := value_shift.
+#[global] Instance shift_tm_inst : Shift tm := tm_shift.
+Arguments shift_value_inst /.
+Arguments shift_tm_inst /.
 
 Definition tapp_tm (ef : tm) (vx : value) : tm :=
   tlete ef (tapp (vbvar 0) (value_shift 0 vx)).

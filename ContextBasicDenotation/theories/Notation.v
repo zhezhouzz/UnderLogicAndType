@@ -22,6 +22,10 @@ Notation FiberExtensionT := (fiber_extension (V := value)) (only parsing).
 Notation LogicQualifierT := (logic_qualifier (V := value)) (only parsing).
 Notation lstore_bound_part := (@lstore_bound_part value) (only parsing).
 
+Notation "e '·ₜ' v" := (tapp_tm e v)
+  (at level 40, left associativity,
+   format "e  ·ₜ  v").
+
 Global Notation open_tm_env :=
   (fun η e => map_fold (fun k x acc => open_tm k (vfvar x) acc) e η)
   (only parsing).

@@ -946,3 +946,7 @@ Proof.
 Qed.
 
 End LVarStore.
+
+Notation "Σ '▻' v" := (lvar_store_bind Σ v)
+  (at level 30, right associativity,
+   format "Σ  ▻  v").

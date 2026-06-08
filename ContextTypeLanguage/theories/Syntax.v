@@ -139,6 +139,7 @@ Fixpoint cty_shift (k : nat) (τ : context_ty) : context_ty :=
   end.
 
 #[global] Instance shift_cty_inst : Shift context_ty := cty_shift.
+Arguments shift_cty_inst /.
 
 Fixpoint context_ty_msubst_store
     (σ : gmap atom value) (τ : context_ty) : context_ty :=
