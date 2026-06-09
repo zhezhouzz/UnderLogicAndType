@@ -1090,7 +1090,7 @@ Lemma formula_fv_primop_graph_over_formula op x :
   formula_fv (primop_graph_over_formula op x) = ({[x]} : aset).
 Proof.
   unfold primop_graph_over_formula, formula_fv, formula_lvars.
-  unfold expr_result_formula, FFiberAtom,
+  unfold expr_result_formula,
     expr_result_qual, qual_vars.
   cbn [formula_lvars_at qual_lvars tm_shift value_shift tm_lvars
     tm_lvars_at value_lvars_at lvar_value_keys primop_graph_qual].
@@ -1116,7 +1116,7 @@ Lemma formula_fv_primop_graph_under_formula op x :
   formula_fv (primop_graph_under_formula op x) = ({[x]} : aset).
 Proof.
   unfold primop_graph_under_formula, formula_fv, formula_lvars.
-  unfold expr_result_formula, FFiberAtom,
+  unfold expr_result_formula,
     expr_result_qual, qual_vars.
   cbn [formula_lvars_at qual_lvars tm_shift value_shift tm_lvars
     tm_lvars_at value_lvars_at lvar_value_keys primop_graph_qual].

@@ -8,6 +8,179 @@ From ContextLogic Require Import FormulaConnectives.
 
 Section TermDenotation.
 
+Lemma expr_result_residual_singleton e y (σ : StoreT) :
+  lc_lvars (tm_lvars e) ->
+  LVFree y ∉ tm_lvars e ->
+  dom (σ : StoreT) = lvars_fv (tm_lvars e) ->
+  (tm_lvars e ∪ {[LVFree y]}) ∖
+    dom (atom_store_to_lvar_store σ : LStoreT) =
+  ({[LVFree y]} : lvset).
+Proof.
+  intros Hlc Hy Hdom.
+  apply set_eq. intros v.
+  rewrite elem_of_difference, elem_of_union, elem_of_singleton.
+  rewrite atom_store_to_lvar_store_dom.
+  split.
+  - intros [[HvD|Hv] Hvnot].
+    + exfalso. apply Hvnot.
+      unfold lvars_of_atoms.
+      pose proof (lvars_bv_empty_subset_of_atoms_fv (tm_lvars e)
+        (proj1 (lc_lvars_no_bv _) Hlc) v HvD) as Hvfv.
+      unfold lvars_of_atoms in Hvfv.
+      apply elem_of_map in Hvfv as [a [-> Ha]].
+      apply elem_of_map. exists a. split; [reflexivity|].
+      change (a ∈ dom (σ : StoreT)).
+      rewrite Hdom. exact Ha.
+    + subst v. reflexivity.
+  - intros ->. split.
+    + right. reflexivity.
+    + intros Hbad. apply Hy.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Heq Ha]].
+      inversion Heq. subst a.
+      apply lvars_fv_elem.
+      rewrite <- Hdom. exact Ha.
+Qed.
+
+Lemma expr_result_msubst_back_lift_store_eq e y
+    (σproj σ : StoreT)
+    (HlcQ : lc_lvars (tm_lvars e ∪ {[LVFree y]}))
+    (HsubQ : lvars_fv (tm_lvars e ∪ {[LVFree y]}) ⊆ dom (σ : StoreT))
+    (HlcR :
+      lc_lvars ((tm_lvars e ∪ {[LVFree y]}) ∖
+        dom (atom_store_to_lvar_store σproj : LStoreT)))
+    (HsubR :
+      lvars_fv ((tm_lvars e ∪ {[LVFree y]}) ∖
+        dom (atom_store_to_lvar_store σproj : LStoreT)) ⊆ dom (σ : StoreT)) :
+  dom (σproj : StoreT) = lvars_fv (tm_lvars e) ->
+  store_restrict σ (lvars_fv (tm_lvars e)) = σproj ->
+  lstore_on_mlsubst_back (tm_lvars e ∪ {[LVFree y]})
+    (atom_store_to_lvar_store σproj)
+    (lstore_on_lift_store
+      ((tm_lvars e ∪ {[LVFree y]}) ∖
+        dom (atom_store_to_lvar_store σproj : LStoreT))
+      σ HlcR HsubR) =
+  lstore_on_lift_store (tm_lvars e ∪ {[LVFree y]}) σ HlcQ HsubQ.
+Proof.
+  intros Hproj_dom Hproj_eq.
+  apply lstore_on_mlsubst_back_lift_store.
+  apply storeA_map_eq. intros v.
+  destruct (decide (v ∈ tm_lvars e ∪ {[LVFree y]})) as [HvQ|HvQ].
+  2:{
+    transitivity (@None value).
+    - apply storeA_restrict_lookup_none_r. exact HvQ.
+    - symmetry. apply storeA_restrict_lookup_none_r.
+      intros Hvbad. apply elem_of_intersection in Hvbad as [Hvbad _].
+      exact (HvQ Hvbad).
+  }
+  destruct (decide (v ∈ dom (atom_store_to_lvar_store σproj : LStoreT)))
+    as [Hvρ|Hvρ].
+  2:{
+    transitivity (@None value).
+    - apply storeA_restrict_lookup_none_l.
+      apply not_elem_of_dom. exact Hvρ.
+    - symmetry. apply storeA_restrict_lookup_none_r.
+      intros Hvbad. apply elem_of_intersection in Hvbad as [_ Hvbad].
+      exact (Hvρ Hvbad).
+  }
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ tm_lvars e ∪ {[LVFree y]})) as [_|Hbad];
+    [|contradiction].
+  destruct (decide (v ∈ (tm_lvars e ∪ {[LVFree y]}) ∩
+      dom (atom_store_to_lvar_store σproj : LStoreT))) as [_|Hbad].
+  2:{ exfalso. apply Hbad. apply elem_of_intersection. split; assumption. }
+  rewrite atom_store_to_lvar_store_dom in Hvρ.
+  unfold lvars_of_atoms in Hvρ.
+  apply elem_of_map in Hvρ as [a [-> Ha]].
+  rewrite atom_store_to_lvar_store_lookup_free.
+  rewrite lstore_lift_free_lookup_free.
+  pose proof (f_equal (fun m => (m : gmap atom value) !! a) Hproj_eq)
+    as Hlook.
+  cbn in Hlook.
+  case_decide as Hin_case.
+  2:{
+    exfalso. apply Hin_case. apply elem_of_intersection. split.
+    - exact HvQ.
+    - rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms. apply elem_of_map.
+      exists a. split; [reflexivity|exact Ha].
+  }
+  symmetry.
+  change (((σ : gmap atom value) !! a) =
+    ((σproj : gmap atom value) !! a)).
+  rewrite <- Hlook.
+  assert (HaD : a ∈ lvars_fv (tm_lvars e)).
+  { rewrite <- Hproj_dom. exact Ha. }
+  destruct ((σ : gmap atom value) !! a) as [va|] eqn:Hσa.
+  - symmetry. apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaD].
+  - symmetry. apply storeA_restrict_lookup_none_l. exact Hσa.
+Qed.
+
+Lemma expr_result_msubst_back_input_restrict e y
+    (σproj σ : StoreT)
+    (s : LStoreOn (V := value)
+      ((tm_lvars e ∪ {[LVFree y]}) ∖
+        dom (atom_store_to_lvar_store σproj : LStoreT))) :
+  lc_lvars (tm_lvars e) ->
+  lvars_fv (tm_lvars e) ⊆ dom (σ : StoreT) ->
+  store_restrict σ (lvars_fv (tm_lvars e)) = σproj ->
+  storeA_restrict
+    (lso_store (lstore_on_mlsubst_back
+      (tm_lvars e ∪ {[LVFree y]})
+      (atom_store_to_lvar_store σproj) s))
+    (tm_lvars e) =
+  storeA_restrict (lstore_lift_free σ : LStoreT) (tm_lvars e).
+Proof.
+  intros Hlc Hsubσ Hproj.
+  apply storeA_map_eq. intros z.
+  destruct (decide (z ∈ tm_lvars e)) as [Hz|Hz].
+  2:{
+    transitivity (@None value).
+    - apply storeA_restrict_lookup_none_r. exact Hz.
+    - symmetry. apply storeA_restrict_lookup_none_r. exact Hz.
+  }
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (z ∈ tm_lvars e)) as [_|Hbad]; [|contradiction].
+  destruct z as [k|a].
+  - exfalso. exact (Hlc (LVBound k) Hz).
+  - unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
+    assert (Ha_fv : a ∈ lvars_fv (tm_lvars e)).
+    { apply lvars_fv_elem. exact Hz. }
+    rewrite lookup_union_r.
+    2:{
+      apply not_elem_of_dom.
+      change (LVFree a ∉ dom (lso_store s : LStoreT)).
+      rewrite (lso_dom s).
+      intros Hrem.
+      apply elem_of_difference in Hrem as [_ Hnot].
+      apply Hnot.
+      rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists a. split; [reflexivity|].
+      change (a ∈ dom (σproj : StoreT)).
+      rewrite <- Hproj.
+      change (a ∈ dom (store_restrict σ (lvars_fv (tm_lvars e)) :
+        gmap atom value)).
+      rewrite storeA_restrict_dom.
+      apply elem_of_intersection. split; [apply Hsubσ|]; exact Ha_fv.
+    }
+    rewrite atom_store_to_lvar_store_lookup_free.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (LVFree a ∈ tm_lvars e)) as [_|Hnot_in];
+      [|contradiction].
+    rewrite lstore_lift_free_lookup_free.
+    destruct (decide (LVFree a ∈ tm_lvars e ∪ {[LVFree y]})) as [_|HbadQ].
+    2:{ exfalso. apply HbadQ. apply elem_of_union_l. exact Hz. }
+    pose proof (Hsubσ a Ha_fv) as Ha_dom.
+    change (a ∈ dom (σ : gmap atom value)) in Ha_dom.
+    apply elem_of_dom in Ha_dom as [va Hσa].
+    replace ((σ : StoreT) !! a) with (Some va) by (symmetry; exact Hσa).
+    rewrite <- Hproj.
+    change (((storeA_restrict σ (lvars_fv (tm_lvars e)) : gmap atom value)
+      !! a) = Some va).
+    apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].
+Qed.
+
 Lemma tm_eval_in_store_tlete_elim_core e1 e2 x σ v :
   store_closed σ ->
   x ∉ dom σ ∪ fv_tm e2 ->
@@ -665,58 +838,116 @@ Proof.
     + exact He2_insert.
 Qed.
 
-Lemma expr_result_formula_models_iff e x (m : WfWorldT) :
-  res_models m (expr_result_formula e x) <->
+Lemma expr_result_formula_models_elim e x (m : WfWorldT) :
+  res_models m (expr_result_formula e x) ->
   formula_scoped_in_world m (expr_result_formula e x) /\
   lc_lvars (tm_lvars e ∪ {[x]}) /\
   forall σ, (m : WorldT) σ ->
     expr_result_at_store e x (lstore_lift_free σ).
 Proof.
+  intros Hmodels.
   unfold expr_result_formula.
-  rewrite res_models_FFiberAtom_store_iff.
-  split.
-  - intros [Hscope Hstores]. split; [exact Hscope|].
-    split.
+  apply res_models_FFibVars_iff in Hmodels.
+  destruct Hmodels as [Hscope [HlcD Hfib]].
+  assert (HDm : lvars_fv (tm_lvars e) ⊆ world_dom (m : WorldT)).
+  {
+    apply (proj1 (formula_scoped_fibvars_iff m (tm_lvars e)
+      (FAtom (expr_result_qual e x)))) in Hscope as [HDm _].
+    exact HDm.
+  }
+  assert (Hstores : forall σ, (m : WorldT) σ ->
+    expr_result_at_store e x (lstore_lift_free σ)).
+  {
+    intros σ Hσ.
+    destruct (res_fiber_from_projection_of_store m
+      (lvars_fv (tm_lvars e)) σ HDm Hσ)
+      as [mfib [Hproj Hσfib]].
+    pose proof (Hfib (store_restrict σ (lvars_fv (tm_lvars e)))
+      mfib Hproj) as Hatom.
+    pose proof (res_models_FAtom_store_holds _ _ Hatom σ Hσfib)
+      as Hhold.
+    unfold qualifier_holds_store, expr_result_qual,
+      qual_msubst_store, qual_mlsubst in Hhold.
+    cbn [qual_lvars qual_prop] in Hhold.
+    destruct Hhold as [HlcR [HsubR Hres]].
+    assert (Hproj_dom :
+      dom (store_restrict σ (lvars_fv (tm_lvars e)) : StoreT) =
+      lvars_fv (tm_lvars e)).
     {
-      unfold qualifier_holds_store, expr_result_qual in Hstores.
-      cbn [qual_lvars qual_prop] in Hstores.
-      destruct (wfA_ne _ (worldA_wf m)) as [σ Hσ].
-      destruct (Hstores σ Hσ) as [Hlc _].
-      exact Hlc.
+      change (dom (store_restrict σ (lvars_fv (tm_lvars e)) :
+        gmap atom value) = lvars_fv (tm_lvars e)).
+      rewrite storeA_restrict_dom.
+      rewrite (wfworld_store_dom m σ Hσ).
+      set_solver.
     }
-    intros σ Hσ.
-    specialize (Hstores σ Hσ).
-    unfold qualifier_holds_store, expr_result_qual in Hstores.
-    cbn [qual_lvars qual_prop] in Hstores.
-    destruct Hstores as [Hlc [Hsub Hres]].
-    unfold expr_result_at_store in *.
-    destruct Hres as [Hx [v [Hlookup Heval]]].
-    split; [exact Hx|].
-    exists v. split.
-    + apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
-      exact Hlookup.
-    + apply (proj1 (expr_eval_in_store_restrict_lvars e
-        (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[x]}) v
-        ltac:(set_solver))).
-      exact Heval.
-  - intros [Hscope [Hlc Hstores]]. split; [exact Hscope|].
-    intros σ Hσ.
-    unfold qualifier_holds_store, expr_result_qual.
-    cbn [qual_lvars qual_prop].
-    assert (Hsub : lvars_fv (tm_lvars e ∪ {[x]}) ⊆ dom (σ : StoreT)).
+    assert (HlcQ : lc_lvars (tm_lvars e ∪ {[x]})).
+    {
+      intros v Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      - exact (HlcD v Hv).
+      - apply elem_of_singleton in Hv as ->.
+        destruct x as [k|a]; [|exact I].
+        apply (HlcR (LVBound k)).
+        apply elem_of_difference. split.
+        + apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+        + rewrite atom_store_to_lvar_store_dom.
+          unfold lvars_of_atoms. intros Hbad.
+          apply elem_of_map in Hbad as [b [Hbad _]]. discriminate.
+    }
+    assert (HsubQ :
+      lvars_fv (tm_lvars e ∪ {[x]}) ⊆ dom (σ : StoreT)).
     {
       intros a Ha.
-      change (a ∈ dom (σ : StoreT)).
-      replace (dom (σ : StoreT)) with (world_dom (m : WorldT))
-        by (symmetry; apply (wfworld_store_dom m σ Hσ)).
+      change (a ∈ dom (σ : gmap atom value)).
+      rewrite (wfworld_store_dom m σ Hσ).
       unfold formula_scoped_in_world in Hscope.
-      rewrite formula_fv_fiber_atom in Hscope.
-      exact (Hscope a Ha).
+      apply Hscope.
+      rewrite formula_fv_fibvars, formula_fv_atom.
+      unfold expr_result_qual, qual_dom, qual_vars.
+      set_solver.
     }
-    exists Hlc, Hsub.
-    eapply expr_result_at_store_restrict_lvars.
-    + set_solver.
-    + exact (Hstores σ Hσ).
+    destruct x as [k|y].
+    - exfalso.
+      specialize (HlcQ (LVBound k)).
+      apply HlcQ. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+    - pose proof (expr_result_msubst_back_lift_store_eq e y
+        (store_restrict σ (lvars_fv (tm_lvars e))) σ
+        HlcQ HsubQ HlcR HsubR Hproj_dom eq_refl) as Heq.
+      pose proof (f_equal lso_store Heq) as Heq_store.
+      cbn [lstore_on_lift_store storeAO_store] in Heq_store.
+      change (expr_result_at_store e (LVFree y)
+        (lso_store (lstore_on_mlsubst_back
+          (tm_lvars e ∪ {[LVFree y]})
+          (atom_store_to_lvar_store
+            (store_restrict σ (lvars_fv (tm_lvars e))))
+          (lstore_on_lift_store
+            ((tm_lvars e ∪ {[LVFree y]}) ∖
+              dom (atom_store_to_lvar_store
+                (store_restrict σ (lvars_fv (tm_lvars e)) : StoreT)
+                : LStoreT))
+            σ HlcR HsubR)))) in Hres.
+      rewrite Heq_store in Hres.
+      destruct Hres as [Hyfresh [v [Hlookup Heval]]].
+      split; [exact Hyfresh|].
+      exists v. split.
+      * apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
+        exact Hlookup.
+      * apply (proj1 (expr_eval_in_store_restrict_lvars e
+          (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
+          v ltac:(set_solver))).
+        exact Heval.
+  }
+  split; [exact Hscope|].
+  split.
+  - destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
+    destruct (Hstores σ0 Hσ0) as [_ [v [Hlookup _]]].
+    intros v0 Hv0.
+    apply elem_of_union in Hv0 as [Hv0|Hv0].
+    + exact (HlcD v0 Hv0).
+    + apply elem_of_singleton in Hv0 as ->.
+      destruct x as [k|a]; [|exact I].
+      rewrite lstore_lift_free_lookup_bound in Hlookup. discriminate.
+  - exact Hstores.
 Qed.
 
 Lemma expr_result_formula_to_atom_world e x (m : WfWorldT) :
@@ -724,7 +955,7 @@ Lemma expr_result_formula_to_atom_world e x (m : WfWorldT) :
   expr_result_at_world e x (res_lift_free m : LWorldT).
 Proof.
   intros Hmodels.
-  apply expr_result_formula_models_iff in Hmodels.
+  apply expr_result_formula_models_elim in Hmodels.
   destruct Hmodels as [Hscope [Hlc Hstores]].
   destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
   destruct (Hstores σ0 Hσ0) as [Hx _].
@@ -748,10 +979,10 @@ Lemma expr_result_atom_world_to_formula e x (m : WfWorldT) :
   res_models m (expr_result_formula e x).
 Proof.
   intros Hres.
-  apply expr_result_formula_models_iff.
   destruct Hres as [Hx [Hdom Hstores]].
-  split.
-  - unfold formula_scoped_in_world.
+  assert (Hscope : formula_scoped_in_world m (expr_result_formula e x)).
+  {
+    unfold formula_scoped_in_world.
     rewrite formula_fv_expr_result_formula.
     intros y Hy.
     assert (LVFree y ∈ tm_lvars e ∪ {[x]}) as HyD.
@@ -761,16 +992,337 @@ Proof.
     unfold lvars_of_atoms in Hdom.
     apply elem_of_map in Hdom as [a [Heq Ha]].
     inversion Heq. subst a. exact Ha.
-  - split.
-    + unfold lc_lvars. intros v Hv.
-      specialize (Hdom _ Hv).
-      rewrite res_lift_free_dom in Hdom.
-      unfold lvars_of_atoms in Hdom.
-      apply elem_of_map in Hdom as [a [Hbad _]].
-      destruct v as [k|b]; [discriminate|exact I].
-    + intros σ Hσ.
-    apply Hstores.
-    exists σ. split; [exact Hσ|reflexivity].
+  }
+  assert (HlcQ : lc_lvars (tm_lvars e ∪ {[x]})).
+  {
+    unfold lc_lvars. intros v Hv.
+    specialize (Hdom _ Hv).
+    rewrite res_lift_free_dom in Hdom.
+    unfold lvars_of_atoms in Hdom.
+    apply elem_of_map in Hdom as [a [Hbad _]].
+    destruct v as [k|b]; [discriminate|exact I].
+  }
+  unfold expr_result_formula.
+  apply res_models_FFibVars_intro.
+  - exact Hscope.
+  - intros v Hv. apply HlcQ. apply elem_of_union_l. exact Hv.
+  - intros σproj mfib Hproj.
+    destruct Hproj as [Hproj_src Hfib_eq].
+    destruct x as [k|y].
+    + exfalso.
+      apply (HlcQ (LVBound k)).
+      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+    + unfold formula_msubst_store. cbn [formula_mlsubst].
+      unfold res_models. cbn [formula_measure res_models_fuel].
+      split.
+      * unfold formula_scoped_in_world. rewrite formula_fv_atom.
+        unfold expr_result_qual, qual_dom, qual_vars, qual_msubst_store,
+          qual_mlsubst.
+        cbn [qual_lvars].
+        intros a Ha.
+        assert (Hdom_fib :
+          world_dom (mfib : WorldT) = world_dom (m : WorldT)).
+        {
+          change ((mfib : WorldT) = rawA_fiber (m : WorldT) σproj)
+            in Hfib_eq.
+          pose proof (f_equal world_dom Hfib_eq) as Hdom_eq.
+          cbn [raw_world raw_worldA world_dom rawA_fiber] in Hdom_eq.
+          exact Hdom_eq.
+        }
+        change (a ∈ world_dom (mfib : WorldT)).
+        replace (world_dom (mfib : WorldT)) with (world_dom (m : WorldT))
+          by (symmetry; exact Hdom_fib).
+        unfold formula_scoped_in_world in Hscope.
+        rewrite formula_fv_expr_result_formula in Hscope.
+        apply Hscope.
+        eapply lvars_fv_mono; [|exact Ha].
+        intros v Hv. apply elem_of_difference in Hv as [Hv _]. exact Hv.
+      * unfold qualifier_exact_denote, expr_result_qual,
+          qual_msubst_store, qual_mlsubst.
+        cbn [qual_lvars qual_prop].
+        assert (Hdom_fib :
+          world_dom (mfib : WorldT) = world_dom (m : WorldT)).
+        {
+          change ((mfib : WorldT) = rawA_fiber (m : WorldT) σproj)
+            in Hfib_eq.
+          pose proof (f_equal world_dom Hfib_eq) as Hdom_eq.
+          cbn [raw_world raw_worldA world_dom rawA_fiber] in Hdom_eq.
+          exact Hdom_eq.
+        }
+        assert (HlcD : lc_lvars (tm_lvars e)).
+        {
+          intros v Hv. apply HlcQ. apply elem_of_union_l. exact Hv.
+        }
+        assert (Hproj_dom :
+          dom (σproj : StoreT) = lvars_fv (tm_lvars e)).
+        {
+          pose proof (wfworld_store_dom
+            (res_restrict m (lvars_fv (tm_lvars e))) σproj Hproj_src)
+            as Hσproj_dom.
+          change (dom (σproj : StoreT) =
+            world_dom (res_restrict m (lvars_fv (tm_lvars e)) : WorldT))
+            in Hσproj_dom.
+          rewrite res_restrict_dom in Hσproj_dom.
+          rewrite Hσproj_dom.
+          apply set_eq. intros a. rewrite elem_of_intersection.
+          split.
+          - intros [_ Ha]. exact Ha.
+          - intros Ha. split; [|exact Ha].
+            unfold formula_scoped_in_world in Hscope.
+            rewrite formula_fv_expr_result_formula in Hscope.
+            apply Hscope.
+            rewrite lvars_fv_union.
+            apply elem_of_union_l. exact Ha.
+        }
+        pose proof (expr_result_residual_singleton e y σproj HlcD Hx
+          Hproj_dom) as HR_single.
+        assert (HlcR :
+          lc_lvars ((tm_lvars e ∪ {[LVFree y]}) ∖
+            dom (atom_store_to_lvar_store σproj : LStoreT))).
+        {
+          intros v Hv. apply elem_of_difference in Hv as [Hv _].
+          apply HlcQ. exact Hv.
+        }
+        assert (HsubR :
+          lvars_fv ((tm_lvars e ∪ {[LVFree y]}) ∖
+            dom (atom_store_to_lvar_store σproj : LStoreT)) ⊆
+          world_dom (mfib : WorldT)).
+        {
+          rewrite HR_single, lvars_fv_singleton_free.
+          intros a Ha.
+          apply elem_of_singleton in Ha as ->.
+          assert (Hy_scope : y ∈ world_dom (m : WorldT)).
+          {
+            unfold formula_scoped_in_world in Hscope.
+            rewrite formula_fv_expr_result_formula in Hscope.
+            apply Hscope.
+            rewrite lvars_fv_union, lvars_fv_singleton_free.
+            apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+          }
+          rewrite Hdom_fib. exact Hy_scope.
+        }
+        exists HlcR, HsubR. intros s.
+        assert (Hs_y_some :
+          exists vy, (lso_store s : LStoreT) !! LVFree y = Some vy).
+        {
+          assert (Hy_dom : LVFree y ∈ dom (lso_store s : LStoreT)).
+          {
+            rewrite (lso_dom s).
+            change (LVFree y ∈
+              (tm_lvars e ∪ {[LVFree y]}) ∖
+                dom (atom_store_to_lvar_store σproj : LStoreT)).
+            rewrite HR_single.
+            apply elem_of_singleton. reflexivity.
+          }
+          change (LVFree y ∈ dom (lso_store s : gmap logic_var value)) in Hy_dom.
+          apply elem_of_dom in Hy_dom as [vy Hvy].
+          exists vy. exact Hvy.
+        }
+        assert (Hml_y_lookup :
+          forall vy,
+            (lso_store s : LStoreT) !! LVFree y = Some vy ->
+            (lso_store (lstore_on_mlsubst_back
+              (tm_lvars e ∪ {[LVFree y]})
+              (atom_store_to_lvar_store σproj) s) : LStoreT)
+              !! LVFree y = Some vy).
+        {
+          intros vy Hsy.
+          assert (Hρ_y_none :
+            (storeA_restrict (atom_store_to_lvar_store σproj)
+              (tm_lvars e ∪ {[LVFree y]}) : gmap logic_var value)
+              !! LVFree y = None).
+          {
+            apply storeA_restrict_lookup_none_l.
+            rewrite atom_store_to_lvar_store_lookup_free.
+            apply not_elem_of_dom.
+            change (y ∉ dom (σproj : StoreT)).
+            rewrite Hproj_dom.
+            intros Hyfv. apply Hx. apply lvars_fv_elem. exact Hyfv.
+          }
+          unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
+          change (((lso_store s : gmap logic_var value) ∪
+            (storeA_restrict (atom_store_to_lvar_store σproj)
+              (tm_lvars e ∪ {[LVFree y]}) : gmap logic_var value))
+            !! LVFree y = Some vy).
+          rewrite lookup_union_l; [exact Hsy|].
+          exact Hρ_y_none.
+        }
+        assert (Hml_y_lookup_inv :
+          forall vy,
+            (lso_store (lstore_on_mlsubst_back
+              (tm_lvars e ∪ {[LVFree y]})
+              (atom_store_to_lvar_store σproj) s) : LStoreT)
+              !! LVFree y = Some vy ->
+            (lso_store s : LStoreT) !! LVFree y = Some vy).
+        {
+          intros vy Hml.
+          destruct Hs_y_some as [wy Hsy].
+          assert (Hρ_y_none :
+            (storeA_restrict (atom_store_to_lvar_store σproj)
+              (tm_lvars e ∪ {[LVFree y]}) : gmap logic_var value)
+              !! LVFree y = None).
+          {
+            apply storeA_restrict_lookup_none_l.
+            rewrite atom_store_to_lvar_store_lookup_free.
+            apply not_elem_of_dom.
+            change (y ∉ dom (σproj : StoreT)).
+            rewrite Hproj_dom.
+            intros Hyfv. apply Hx. apply lvars_fv_elem. exact Hyfv.
+          }
+          unfold lstore_on_mlsubst_back in Hml.
+          cbn [lso_store storeAO_store] in Hml.
+          change (((lso_store s : gmap logic_var value) ∪
+            (storeA_restrict (atom_store_to_lvar_store σproj)
+              (tm_lvars e ∪ {[LVFree y]}) : gmap logic_var value))
+            !! LVFree y = Some vy) in Hml.
+          rewrite lookup_union_l in Hml.
+          - exact Hml.
+          - exact Hρ_y_none.
+        }
+        split.
+        -- intros Hres_s.
+           destruct Hproj_src as [σ0 [Hσ0 Hσ0proj]].
+           assert (Hσ0fib : (mfib : WorldT) σ0).
+           {
+             change ((mfib : WorldT) = rawA_fiber (m : WorldT) σproj)
+               in Hfib_eq.
+             rewrite Hfib_eq. split; [exact Hσ0|].
+             change (store_restrict σ0 (dom (σproj : StoreT)) = σproj).
+             rewrite Hproj_dom. exact Hσ0proj.
+           }
+           pose proof (Hstores (lstore_lift_free σ0)) as Hσ0res.
+           assert (Hσ0lift : (res_lift_free m : LWorldT)
+             (lstore_lift_free σ0)).
+           { exists σ0. split; [exact Hσ0|reflexivity]. }
+           specialize (Hσ0res Hσ0lift).
+           destruct Hσ0res as [_ [u [Hσ0y Heval_σ0]]].
+           destruct Hres_s as [_ [v [Hml_y Heval_ml]]].
+           assert (Hsubσ0 : lvars_fv (tm_lvars e) ⊆ dom (σ0 : StoreT)).
+           {
+             intros a Ha.
+             change (a ∈ dom (σ0 : gmap atom value)).
+             rewrite (wfworld_store_dom m σ0 Hσ0).
+             unfold formula_scoped_in_world in Hscope.
+             rewrite formula_fv_expr_result_formula in Hscope.
+             apply Hscope.
+             rewrite lvars_fv_union.
+             apply elem_of_union_l. exact Ha.
+           }
+           pose proof (expr_result_msubst_back_input_restrict e y
+             σproj σ0 s HlcD Hsubσ0 Hσ0proj) as Hinput_eq.
+           assert (Heval_ml_σ0 :
+             expr_eval_in_store (lstore_lift_free σ0) e v).
+           {
+             apply (proj1 (expr_eval_in_store_restrict_lvars e
+               (lstore_lift_free σ0 : LStoreT) (tm_lvars e) v
+               ltac:(intros z Hz; exact Hz))).
+             rewrite <- Hinput_eq.
+             apply (proj2 (expr_eval_in_store_restrict_lvars e
+               (lso_store (lstore_on_mlsubst_back
+                 (tm_lvars e ∪ {[LVFree y]})
+                 (atom_store_to_lvar_store σproj) s))
+               (tm_lvars e) v ltac:(intros z Hz; exact Hz))).
+             exact Heval_ml.
+           }
+           assert (v = u) as ->.
+           {
+             unfold expr_eval_in_store in Heval_ml_σ0, Heval_σ0.
+             eapply steps_result_unique; eauto.
+           }
+           pose proof (Hml_y_lookup_inv u Hml_y) as Hsy.
+           assert (Hσ0y_store : σ0 !! y = Some u).
+           {
+             rewrite <- lstore_lift_free_lookup_free.
+             exact Hσ0y.
+           }
+           assert (Hsubσ0R :
+             lvars_fv ((tm_lvars e ∪ {[LVFree y]}) ∖
+               dom (atom_store_to_lvar_store σproj : LStoreT)) ⊆
+             dom (σ0 : StoreT)).
+           {
+             rewrite HR_single, lvars_fv_singleton_free.
+             intros a Ha. apply elem_of_singleton in Ha as ->.
+             change (y ∈ dom (σ0 : gmap atom value)).
+             apply elem_of_dom. exists u. exact Hσ0y_store.
+           }
+           assert (Hs_eq :
+             lstore_on_lift_store
+               ((tm_lvars e ∪ {[LVFree y]}) ∖
+                 dom (atom_store_to_lvar_store σproj : LStoreT))
+               σ0 HlcR Hsubσ0R = s).
+           {
+             apply lstore_on_ext.
+             cbn [lstore_on_lift_store storeAO_store].
+             change (storeA_restrict (lstore_lift_free σ0 : LStoreT)
+               ((tm_lvars e ∪ {[LVFree y]}) ∖
+                 dom (atom_store_to_lvar_store σproj : LStoreT)) =
+               lso_store s).
+             rewrite <- (lstore_lift_free_restrict_fv_lvars_eq σ0
+               ((tm_lvars e ∪ {[LVFree y]}) ∖
+                 dom (atom_store_to_lvar_store σproj : LStoreT)) HlcR).
+             eapply lstore_lift_restrict_singleton_free_eq.
+             - exact HR_single.
+             - exact Hσ0y_store.
+             - exact Hsy.
+           }
+           rewrite <- Hs_eq.
+           apply lstore_in_lworld_on_lift_store_of_world.
+           exact Hσ0fib.
+        -- intros Hmem.
+           pose proof (lstore_in_lworld_on_singleton_free_lookup y
+             ((tm_lvars e ∪ {[LVFree y]}) ∖
+               dom (atom_store_to_lvar_store σproj : LStoreT))
+             mfib HlcR HsubR s HR_single Hmem)
+             as [σ [Hσfib Hs_y_eq]].
+           change ((mfib : WorldT) = rawA_fiber (m : WorldT) σproj)
+             in Hfib_eq.
+           rewrite Hfib_eq in Hσfib.
+           destruct Hσfib as [Hσ Hσproj].
+           pose proof (Hstores (lstore_lift_free σ)) as Hσres.
+           assert (Hσlift : (res_lift_free m : LWorldT)
+             (lstore_lift_free σ)).
+           { exists σ. split; [exact Hσ|reflexivity]. }
+           specialize (Hσres Hσlift).
+           destruct Hσres as [Hyfresh [v [Hσy Hevalσ]]].
+           split; [exact Hyfresh|].
+           exists v. split.
+           ++ change ((lso_store (lstore_on_mlsubst_back
+                (tm_lvars e ∪ {[LVFree y]})
+                (atom_store_to_lvar_store σproj) s) : LStoreT) !!
+                LVFree y = Some v).
+              apply Hml_y_lookup.
+              assert (Hσy_store : σ !! y = Some v).
+              {
+                rewrite <- lstore_lift_free_lookup_free.
+                exact Hσy.
+              }
+              transitivity (σ !! y); [exact Hs_y_eq|exact Hσy_store].
+           ++ assert (Hsubσ : lvars_fv (tm_lvars e) ⊆ dom (σ : StoreT)).
+              {
+                intros a Ha.
+                change (a ∈ dom (σ : gmap atom value)).
+                rewrite (wfworld_store_dom m σ Hσ).
+                unfold formula_scoped_in_world in Hscope.
+                rewrite formula_fv_expr_result_formula in Hscope.
+                apply Hscope.
+                rewrite lvars_fv_union.
+                apply elem_of_union_l. exact Ha.
+              }
+              assert (Hσproj_fv :
+                store_restrict σ (lvars_fv (tm_lvars e)) = σproj).
+              { rewrite <- Hproj_dom. exact Hσproj. }
+              pose proof (expr_result_msubst_back_input_restrict e y
+                σproj σ s HlcD Hsubσ Hσproj_fv) as Hinput_eq.
+              apply (proj1 (expr_eval_in_store_restrict_lvars e
+                (lso_store (lstore_on_mlsubst_back
+                  (tm_lvars e ∪ {[LVFree y]})
+                  (atom_store_to_lvar_store σproj) s))
+                (tm_lvars e) v ltac:(intros z Hz; exact Hz))).
+              rewrite Hinput_eq.
+              apply (proj2 (expr_eval_in_store_restrict_lvars e
+                (lstore_lift_free σ : LStoreT) (tm_lvars e) v
+                ltac:(intros z Hz; exact Hz))).
+              exact Hevalσ.
 Qed.
 
 Lemma expr_result_extension_world_models_closed

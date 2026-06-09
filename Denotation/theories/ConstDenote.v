@@ -851,7 +851,7 @@ Proof.
 	                (mk_q_eq (vbvar 0) (vconst c)))))))) with (∅ : aset).
 	      * set_solver.
 	      * unfold formula_fv, formula_lvars.
-	        unfold expr_result_formula, FFiberAtom,
+	        unfold expr_result_formula,
 	          expr_result_qual, qual_vars.
 	        cbn [formula_lvars_at qual_lvars tm_shift value_shift
 	          tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
@@ -920,7 +920,7 @@ Proof.
 	                (mk_q_eq (vbvar 0) (vconst c)))))))) with (∅ : aset).
 	      * set_solver.
 	      * unfold formula_fv, formula_lvars.
-	        unfold expr_result_formula, FFiberAtom,
+	        unfold expr_result_formula,
 	          expr_result_qual, qual_vars.
 	        cbn [formula_lvars_at qual_lvars tm_shift value_shift
 	          tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].

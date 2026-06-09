@@ -14,15 +14,17 @@ Definition expr_result_qual (e : tm) (x : logic_var) : qualifier (V := value) :=
     (fun s => expr_result_at_store e x (lso_store s)).
 
 Definition expr_result_formula (e : tm) (x : logic_var) : Formula :=
-  FFiberAtom (expr_result_qual e x).
+  FFibVars (tm_lvars e) (FAtom (expr_result_qual e x)).
 
 Lemma formula_fv_expr_result_formula e x :
   formula_fv (expr_result_formula e x) =
   lvars_fv (tm_lvars e ∪ {[x]}).
 Proof.
   unfold expr_result_formula, expr_result_qual.
-  rewrite formula_fv_fiber_atom.
-  reflexivity.
+  rewrite formula_fv_fibvars, formula_fv_atom.
+  unfold qual_dom, qual_vars.
+  rewrite <- lvars_fv_union.
+  f_equal. set_solver.
 Qed.
 
 Lemma lstore_swap_lookup_inv_value a b (σ : LStoreT) z :
@@ -420,30 +422,33 @@ Lemma formula_open_expr_result_formula k y e z :
 Proof.
   intros Hy.
   unfold expr_result_formula, expr_result_qual.
-  rewrite formula_open_fiber_atom.
-  apply f_equal.
-  apply qual_ext.
-  - apply tm_lvars_open_result_domain. exact Hy.
-  - intros s1 s2 Hs. cbn [qual_prop qual_lvars].
-    split; intros Hres.
-    + apply expr_result_at_store_open_back_iff in Hres.
-      * change (expr_result_at_store
-          (open_tm k (vfvar y) e) (logic_var_open k y z)
-          (lso_store s2)).
-        rewrite <- Hs. exact Hres.
-      * exact Hy.
-      * change (lvars_open k y (tm_lvars e) ⊆
-          dom (lso_store s1 : LStoreT)).
-        rewrite (lso_dom s1). set_solver.
-    + apply expr_result_at_store_open_back_iff.
-      * exact Hy.
-      * change (lvars_open k y (tm_lvars e) ⊆
-          dom (lso_store s1 : LStoreT)).
-        rewrite (lso_dom s1). set_solver.
-      * change (expr_result_at_store
-          (open_tm k (vfvar y) e) (logic_var_open k y z)
-          (lso_store s1)).
-        rewrite Hs. exact Hres.
+  rewrite formula_open_fibvars, formula_open_atom.
+  apply f_equal2.
+  - pose proof (tm_lvars_open k y e Hy) as Hopen.
+    unfold set_swap in Hopen. symmetry. exact Hopen.
+  - apply f_equal.
+    apply qual_ext.
+    + apply tm_lvars_open_result_domain. exact Hy.
+    + intros s1 s2 Hs. cbn [qual_prop qual_lvars].
+      split; intros Hres.
+      * apply expr_result_at_store_open_back_iff in Hres.
+        -- change (expr_result_at_store
+             (open_tm k (vfvar y) e) (logic_var_open k y z)
+             (lso_store s2)).
+           rewrite <- Hs. exact Hres.
+        -- exact Hy.
+        -- change (lvars_open k y (tm_lvars e) ⊆
+             dom (lso_store s1 : LStoreT)).
+           rewrite (lso_dom s1). set_solver.
+      * apply expr_result_at_store_open_back_iff.
+        -- exact Hy.
+        -- change (lvars_open k y (tm_lvars e) ⊆
+             dom (lso_store s1 : LStoreT)).
+           rewrite (lso_dom s1). set_solver.
+        -- change (expr_result_at_store
+             (open_tm k (vfvar y) e) (logic_var_open k y z)
+             (lso_store s1)).
+           rewrite Hs. exact Hres.
 Qed.
 
 Lemma formula_open_env_expr_total_formula η e :
