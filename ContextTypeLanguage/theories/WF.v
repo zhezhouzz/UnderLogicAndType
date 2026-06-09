@@ -604,6 +604,52 @@ Proof.
   apply lvars_wf_at_fv_subset.
 Qed.
 
+Lemma lc_context_ty_over_lt_bound_fvar b x :
+  lc_context_ty (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))).
+Proof.
+  unfold lc_context_ty, over_ty, mk_q_lt_base.
+  cbn [cty_lc_at qual_vars qual_lvars lvar_value_keys lvars_lc_at].
+  intros k Hk.
+  rewrite lvars_bv_union in Hk.
+  apply elem_of_union in Hk as [Hk | Hk].
+  - rewrite lvars_bv_elem in Hk.
+    apply elem_of_singleton in Hk.
+    inversion Hk. subst. lia.
+  - rewrite lvars_bv_elem in Hk.
+    apply elem_of_singleton in Hk.
+    discriminate.
+Qed.
+
+Lemma lc_context_ty_fix_rec_call_ty b x τx τ :
+  lc_context_ty τx ->
+  lc_context_ty τ ->
+  lc_context_ty (fix_rec_call_ty b x τx τ).
+Proof.
+  intros Hτx Hτ.
+  unfold lc_context_ty, fix_rec_call_ty.
+  cbn [cty_lc_at].
+  split.
+  - split.
+    + exact Hτx.
+    + apply lc_context_ty_over_lt_bound_fvar.
+  - eapply (cty_lc_at_mono_depth 0 1); [lia|exact Hτ].
+Qed.
+
+Lemma cty_open_shift_fix_rec_call_ty_fresh b x z τx τ :
+  z <> x ->
+  z ∉ fv_cty τx ->
+  z ∉ fv_cty τ ->
+  lc_context_ty τx ->
+  lc_context_ty τ ->
+  cty_open 0 z (cty_shift 0 (fix_rec_call_ty b x τx τ)) =
+    fix_rec_call_ty b x τx τ.
+Proof.
+  intros Hzx Hzτx Hzτ Hτx Hτ.
+  apply cty_open_shift_from_lc_fresh.
+  - apply lc_context_ty_fix_rec_call_ty; assumption.
+  - apply fv_cty_fix_rec_call_ty_fresh; assumption.
+Qed.
+
 Lemma basic_ctx_empty D :
   basic_ctx D CtxEmpty.
 Proof.

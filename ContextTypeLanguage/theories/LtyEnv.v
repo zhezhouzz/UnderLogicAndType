@@ -16,6 +16,8 @@ From ContextTypeLanguage Require Export TypeOpen.
 Notation lty_env := (gmap logic_var ty) (only parsing).
 Local Notation StoreT := (Store (V := value)) (only parsing).
 
+Bind Scope lvar_scope with lty_env.
+
 Notation lty_env_shift_from :=
   (@lvar_store_shift_from ty) (only parsing).
 Notation lty_env_shift :=
@@ -41,6 +43,12 @@ Notation lty_env_swap :=
 
 Notation typed_lty_env_bind :=
   (@lvar_store_bind ty) (only parsing).
+
+Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
+  (at level 20, format "↑ₗ Σ").
+
+Notation "'↑ₗ' Σ" := (atom_env_to_lty_env Σ)
+  (at level 20, only parsing) : ctx_scope.
 
 Definition lty_env_msubst_store (σ : StoreT) (Σ : lty_env) : lty_env :=
   storeA_restrict Σ (dom Σ ∖ lvars_of_atoms (dom (σ : gmap atom value))).
@@ -77,6 +85,10 @@ Proof.
   apply elem_of_difference in Hin as [_ Hfresh].
   split; assumption.
 Qed.
+
+Ltac type_env_norm :=
+  type_open_env_syntax_norm;
+  rewrite ?lvar_store_atom_dom_shift in *.
 
 Lemma lty_env_open_one_dom k x (Σ : lty_env) :
   dom (lty_env_open_one k x Σ) = lvars_open k x (dom Σ).

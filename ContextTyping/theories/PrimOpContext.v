@@ -4,7 +4,7 @@
 
 From CoreLang Require Import BasicTyping SmallStep.
 From ContextLogic Require Import FormulaSemantics.
-From ContextTypeLanguage Require Import Notation.
+From ContextTypeLanguage Require Import WF.
 From Denotation Require Import Context ConstDenote TypeEquivCore TypeEquiv.
 
 (** Paper-level primitive-operation signatures.  CoreLang keeps the erased
