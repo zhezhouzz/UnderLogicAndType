@@ -149,17 +149,15 @@ Proof.
     cbn [wf_context_ty_at] in Hτ.
     destruct Hτ as [Hτx Hτ].
     split.
-    + split.
-      * cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
-        -- apply basic_ctx_bind.
-           ++ ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ. better_set_solver.
-           ++ eapply (wf_context_ty_at_mono_env
-                0 (dom (erase_ctx Γ)) (dom Σ ∪ ctx_dom Γ)).
-              ** rewrite HdomΓ. set_solver.
-              ** exact Hτx.
-        -- cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
-           better_set_solver.
-      * exists my. exact Hctx_comma.
+    + unfold wf_ctx_under. cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
+      * apply basic_ctx_bind.
+        -- ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ. better_set_solver.
+        -- eapply (wf_context_ty_at_mono_env
+             0 (dom (erase_ctx Γ)) (dom Σ ∪ ctx_dom Γ)).
+           ++ rewrite HdomΓ. set_solver.
+           ++ exact Hτx.
+      * cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
+        better_set_solver.
     + split.
       * eapply (wf_context_ty_at_mono_env
           0 (dom (erase_ctx Γ) ∪ {[y]})
@@ -224,17 +222,15 @@ Proof.
     cbn [wf_context_ty_at] in Hτ.
     destruct Hτ as [Hτx Hτ].
     split.
-    + split.
-      * cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
-        -- apply basic_ctx_bind.
-           ++ ctx_erasure_under_norm_in Hy. better_set_solver.
-           ++ eapply (wf_context_ty_at_mono_env
-                0 ∅ (dom Σ)).
-              ** better_set_solver.
-              ** exact Hτx.
-        -- cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
-           better_set_solver.
-      * exists my. exact Hctx_star.
+    + unfold wf_ctx_under. cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
+      * apply basic_ctx_bind.
+        -- ctx_erasure_under_norm_in Hy. better_set_solver.
+        -- eapply (wf_context_ty_at_mono_env
+             0 ∅ (dom Σ)).
+           ++ better_set_solver.
+           ++ exact Hτx.
+      * cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
+        better_set_solver.
     + split.
       * eapply (wf_context_ty_at_mono_env
           0 (dom (erase_ctx Γ) ∪ {[y]})

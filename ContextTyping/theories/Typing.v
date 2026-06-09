@@ -17,18 +17,15 @@ From ContextTyping Require Import PrimOpContext.
 
     [BasicTyping] checks the syntactic formation side: referenced atoms are in
     scope, locally-nameless binders are well scoped, and tree-shaped contexts
-    bind each atom at most once.  The paper's context well-formedness also
-    requires semantic nonemptiness, which depends on denotation and therefore
-    lives in this layer. *)
+    bind each atom at most once.  Semantic nonemptiness is not part of
+    well-formedness: unsatisfiable contexts make the denotational soundness
+    statement vacuous rather than unsound. *)
 
 
 (** ** Context and type well-formedness *)
 
-Definition ctx_nonempty_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
-  ∃ r : WfWorldT, r ⊨ ctx_denote_under Σ Γ.
-
 Definition wf_ctx_under (Σ : gmap atom ty) (Γ : ctx) : Prop :=
-  basic_ctx (dom Σ) Γ ∧ ctx_nonempty_under Σ Γ.
+  basic_ctx (dom Σ) Γ.
 
 Definition wf_ctx (Γ : ctx) : Prop :=
   wf_ctx_under ∅ Γ.
@@ -41,12 +38,12 @@ Definition wf_context_ty (Γ : ctx) (τ : context_ty) : Prop :=
 Lemma wf_ctx_basic Γ :
   wf_ctx Γ →
   basic_ctx ∅ Γ.
-Proof. intros [Hbasic _]. exact Hbasic. Qed.
+Proof. intros Hbasic. exact Hbasic. Qed.
 
 Lemma wf_ctx_under_basic Σ Γ :
   wf_ctx_under Σ Γ →
   basic_ctx (dom Σ) Γ.
-Proof. intros [Hbasic _]. exact Hbasic. Qed.
+Proof. intros Hbasic. exact Hbasic. Qed.
 
 Lemma wf_context_ty_basic Γ τ :
   wf_context_ty Γ τ →

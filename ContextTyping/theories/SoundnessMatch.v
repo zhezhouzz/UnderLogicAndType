@@ -204,40 +204,38 @@ Proof.
 Qed.
 
 Lemma context_typing_wf_match_sum_l
-    Σ Γt Γf x τt τf et ef (mt : WfWorldT) :
+    Σ Γt Γf x τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf)
     (tmatch (vfvar x) et ef) (CTSum τt τf) ->
-  mt ⊨ ctx_denote_under Σ Γt ->
   context_typing_wf Σ Γt (tmatch (vfvar x) et ef) τt.
 Proof.
-  intros Hwf HΓt.
-  destruct Hwf as [[Hbasic_sum _] [Hty_sum Htm]].
+  intros Hwf.
+  destruct Hwf as [Hbasic_sum [Hty_sum Htm]].
   cbn [basic_ctx] in Hbasic_sum.
   destruct Hbasic_sum as [Hbasic_t [_ [_ _]]].
   cbn [wf_context_ty_at] in Hty_sum.
   destruct Hty_sum as [Hty_t [_ _]].
   cbn [erase_ctx erase_ty] in Htm.
   split.
-  - split; [exact Hbasic_t|exists mt; exact HΓt].
+  - exact Hbasic_t.
   - split; [exact Hty_t|exact Htm].
 Qed.
 
 Lemma context_typing_wf_match_sum_r
-    Σ Γt Γf x τt τf et ef (mf : WfWorldT) :
+    Σ Γt Γf x τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf)
     (tmatch (vfvar x) et ef) (CTSum τt τf) ->
-  mf ⊨ ctx_denote_under Σ Γf ->
   context_typing_wf Σ Γf (tmatch (vfvar x) et ef) τf.
 Proof.
-  intros Hwf HΓf.
-  destruct Hwf as [[Hbasic_sum _] [Hty_sum Htm]].
+  intros Hwf.
+  destruct Hwf as [Hbasic_sum [Hty_sum Htm]].
   cbn [basic_ctx] in Hbasic_sum.
   destruct Hbasic_sum as [_ [Hbasic_f [_ Herase_ctx]]].
   cbn [wf_context_ty_at] in Hty_sum.
   destruct Hty_sum as [_ [Hty_f Herase_ty]].
   cbn [erase_ctx erase_ty] in Htm.
   split.
-  - split; [exact Hbasic_f|exists mf; exact HΓf].
+  - exact Hbasic_f.
   - split.
     + replace (dom (erase_ctx Γf)) with (dom (erase_ctx Γt)).
       * exact Hty_f.
@@ -290,7 +288,7 @@ Lemma fundamental_match_both_case Σ Γt Γf x τt τf et ef :
 Proof.
   intros Hwf Hbool_t Hbool_f HIHt HIHf m Hctx.
   pose proof Hwf as Hwf_for_eqs.
-  destruct Hwf_for_eqs as [[Hbasic_sum _] [Hty_sum _]].
+  destruct Hwf_for_eqs as [Hbasic_sum [Hty_sum _]].
   cbn [basic_ctx] in Hbasic_sum.
   destruct Hbasic_sum as [_ [_ [_ Herase_ctx]]].
   cbn [wf_context_ty_at] in Hty_sum.
@@ -302,9 +300,9 @@ Proof.
   pose proof (HIHt mt HΓt) as Het.
   pose proof (HIHf mf HΓf) as Hef.
   pose proof (context_typing_wf_match_sum_l
-    Σ Γt Γf x τt τf et ef mt Hwf HΓt) as Hwf_t.
+    Σ Γt Γf x τt τf et ef Hwf) as Hwf_t.
   pose proof (context_typing_wf_match_sum_r
-    Σ Γt Γf x τt τf et ef mf Hwf HΓf) as Hwf_f.
+    Σ Γt Γf x τt τf et ef Hwf) as Hwf_f.
   pose proof (bool_precise_true_ret_fvar_lookup Γt x mt) as Hlookup_t.
   pose proof (tm_equiv_match_true_var
     Σ Γt x et ef τt mt Hwf_t HΓt
