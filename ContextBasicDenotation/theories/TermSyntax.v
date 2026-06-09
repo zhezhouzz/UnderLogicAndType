@@ -8,6 +8,10 @@ From ContextBase Require Import BaseTactics.
 From Stdlib Require Import List.
 Import ListNotations.
 
+Global Notation open_tm_env :=
+  (fun η e => map_fold (fun k x acc => open_tm k (vfvar x) acc) e η)
+  (only parsing).
+
 Section TermDenotation.
 
 Lemma bvar_lvars_at_fv d n :
