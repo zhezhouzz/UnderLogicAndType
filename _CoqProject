@@ -40,7 +40,6 @@ ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/FormulaConnectives.v
 ContextLogic/theories/FormulaWorldExtension.v
 ContextLogic/theories/FormulaNotation.v
-ContextLogic/theories/LogicInterface.v
 
 LocallyNameless/Classes.v
 LocallyNameless/Tactics.v

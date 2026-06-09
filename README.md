@@ -9,8 +9,8 @@ theorem are fully proved for the current core system.
 
 ## Status
 
-- Primitive operations are governed by a single global context `Φ` with axiom
-  `Φ_wf`.
+- Primitive operations are governed by a single global context `Φ`; its
+  well-formedness theorem is `Φ_wf`.
 - The main typing judgment is `has_context_type Σ Γ e τ`.
 - The Fundamental theorem is:
 
@@ -31,8 +31,7 @@ theorem are fully proved for the current core system.
         mres ⊨ ty_denote ({[x := erase_ty τ]}) τ (tret (vfvar x)).
   ```
 
-- `ContextTyping/theories/SoundnessFixD.v` is an excluded historical stub.
-  FixD is not part of the compiled system.
+- FixD is not part of the compiled system.
 
 ## Dependencies
 
