@@ -161,6 +161,11 @@ Proof.
   apply (open_map_fold_insert_fresh_eq qual_open_atom); assumption.
 Qed.
 
+Local Ltac open_lift_insert_fresh_side :=
+  first [ apply open_env_lift_lookup_none; assumption
+        | apply open_env_avoids_atom_lift; assumption
+        | apply open_env_values_inj_lift; assumption ].
+
 Lemma open_cty_env_inter η τ1 τ2 :
   open_cty_env η (CTInter τ1 τ2) =
   CTInter (open_cty_env η τ1) (open_cty_env η τ2).
@@ -211,9 +216,7 @@ Proof.
     cbn [cty_open].
     rewrite open_cty_env_insert_fresh by assumption.
     rewrite open_env_lift_insert.
-    rewrite open_cty_env_insert_fresh
-      by (try better_base_solver;
-          try apply open_env_values_inj_lift; assumption).
+    rewrite open_cty_env_insert_fresh by open_lift_insert_fresh_side.
     reflexivity.
 Qed.
 
@@ -234,9 +237,7 @@ Proof.
     cbn [cty_open].
     rewrite open_cty_env_insert_fresh by assumption.
     rewrite open_env_lift_insert.
-    rewrite open_cty_env_insert_fresh
-      by (try better_base_solver;
-          try apply open_env_values_inj_lift; assumption).
+    rewrite open_cty_env_insert_fresh by open_lift_insert_fresh_side.
     reflexivity.
 Qed.
 
@@ -256,9 +257,7 @@ Proof.
     rewrite (IH q Hinjη).
     cbn [cty_open].
     rewrite open_env_lift_insert.
-    rewrite qual_open_env_insert_fresh
-      by (try better_base_solver;
-          try apply open_env_values_inj_lift; assumption).
+    rewrite qual_open_env_insert_fresh by open_lift_insert_fresh_side.
     reflexivity.
 Qed.
 
@@ -278,9 +277,7 @@ Proof.
     rewrite (IH q Hinjη).
     cbn [cty_open].
     rewrite open_env_lift_insert.
-    rewrite qual_open_env_insert_fresh
-      by (try better_base_solver;
-          try apply open_env_values_inj_lift; assumption).
+    rewrite qual_open_env_insert_fresh by open_lift_insert_fresh_side.
     reflexivity.
 Qed.
 

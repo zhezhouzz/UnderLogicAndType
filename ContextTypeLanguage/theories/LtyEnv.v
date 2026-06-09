@@ -70,7 +70,10 @@ Lemma lty_env_msubst_store_lookup_some σ (Σ : lty_env) v T :
   Σ !! v = Some T /\ v ∉ lvars_of_atoms (dom (σ : gmap atom value)).
 Proof.
   intros Hlook.
-  apply storeA_restrict_lookup_some in Hlook as [Hin HΣ].
+  unfold lty_env_msubst_store in Hlook.
+  pose proof (storeA_restrict_lookup_some
+    Σ (dom Σ ∖ lvars_of_atoms (dom (σ : gmap atom value))) v T Hlook)
+    as [Hin HΣ].
   apply elem_of_difference in Hin as [_ Hfresh].
   split; assumption.
 Qed.

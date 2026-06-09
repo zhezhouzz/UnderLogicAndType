@@ -12,6 +12,19 @@ From ContextQualifier Require Import Qualifier.
 
 Section BasicTypingOpen.
 
+Local Ltac child_fresh_from_extended_cofinite :=
+  match goal with
+  | H : ?x ∉ ?L ∪ ({[?y]} : aset) |- ?x ∉ ?L =>
+      intros HxL; apply H; apply elem_of_union_l; exact HxL
+  end.
+
+Local Ltac child_neq_from_extended_cofinite :=
+  match goal with
+  | H : ?x ∉ ?L ∪ ({[?y]} : aset) |- ?x <> ?y =>
+      intros ->; apply H; apply elem_of_union_r;
+      apply elem_of_singleton; reflexivity
+  end.
+
 Lemma formula_open_context_ty_wf_formula k y Σ τ :
   formula_open k y (context_ty_wf_formula Σ τ) =
   context_ty_wf_formula (lty_env_open_one k y Σ) (cty_open k y τ).
@@ -239,6 +252,20 @@ Proof.
     lvars_shift_from_fv, lvars_fv_singleton_bound in Hbad.
   better_set_solver.
 Qed.
+
+Local Ltac child_typed_bind_fresh_other :=
+  eapply lty_env_open_one_typed_bind_fresh_other;
+    [ child_neq_from_extended_cofinite
+    | match goal with
+      | Hfresh : ?y ∉ lvars_fv (dom ?Σ) |- ?y ∉ lvars_fv (dom ?Σ) =>
+          exact Hfresh
+      end ].
+
+Local Ltac child_typed_bind_under_commute :=
+  rewrite lty_env_open_one_typed_bind_under_commute by
+    first [ child_neq_from_extended_cofinite
+          | rewrite <- lvars_fv_elem; child_typed_bind_fresh_other ];
+  reflexivity.
 
 Lemma basic_has_ltype_open_one_fresh_mutual :
   (forall Σ v T,
@@ -520,34 +547,24 @@ Proof.
         * better_base_solver.
     - eapply BVT_Lam with (L := L ∪ {[y]}).
       intros x Hx.
-      pose proof (H x ltac:(set_solver) (S k) y
+      pose proof (H x ltac:(child_fresh_from_extended_cofinite) (S k) y
         (lty_env_open_one 0 x (typed_lty_env_bind Σ0 s))
-        ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
-        ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
-          (set_solver ||
-            (rewrite <- lvars_fv_elem;
-             eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
-          reflexivity))
-        as Hbody.
-	      + cbn [open_one open_tm_atom_inst].
-	        change (e ^^ x) with (open_tm 0 (vfvar x) e) in Hbody.
-	        rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
-	        exact Hbody.
+        ltac:(child_typed_bind_fresh_other)
+        ltac:(child_typed_bind_under_commute)) as Hbody.
+      + cbn [open_one open_tm_atom_inst].
+        change (e ^^ x) with (open_tm 0 (vfvar x) e) in Hbody.
+        rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
+        exact Hbody.
     - eapply BVT_Fix with (L := L ∪ {[y]}).
       intros x Hx.
-      pose proof (H x ltac:(set_solver) (S k) y
+      pose proof (H x ltac:(child_fresh_from_extended_cofinite) (S k) y
         (lty_env_open_one 0 x (typed_lty_env_bind Σ0 sx))
-        ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
-        ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
-          (set_solver ||
-            (rewrite <- lvars_fv_elem;
-             eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
-          reflexivity))
-        as Hbody.
-	      + cbn [open_one open_value_atom_inst].
-	        change (vf ^^ x) with (open_value 0 (vfvar x) vf) in Hbody.
-	        rewrite close_value_open_commute_fresh in Hbody by (lia || set_solver).
-	        exact Hbody.
+        ltac:(child_typed_bind_fresh_other)
+        ltac:(child_typed_bind_under_commute)) as Hbody.
+      + cbn [open_one open_value_atom_inst].
+        change (vf ^^ x) with (open_value 0 (vfvar x) vf) in Hbody.
+        rewrite close_value_open_commute_fresh in Hbody by (lia || set_solver).
+        exact Hbody.
     - constructor.
       eapply H; [|reflexivity].
       match goal with
@@ -559,19 +576,14 @@ Proof.
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.
       + intros x Hx.
-        pose proof (H0 x ltac:(set_solver) (S k) y
+        pose proof (H0 x ltac:(child_fresh_from_extended_cofinite) (S k) y
           (lty_env_open_one 0 x (typed_lty_env_bind Σ0 T1))
-          ltac:(eapply lty_env_open_one_typed_bind_fresh_other; set_solver)
-          ltac:(rewrite lty_env_open_one_typed_bind_under_commute by
-            (set_solver ||
-              (rewrite <- lvars_fv_elem;
-               eapply lty_env_open_one_typed_bind_fresh_other; set_solver));
-            reflexivity))
-          as Hbody.
-	        * cbn [open_one open_tm_atom_inst].
-	          change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hbody.
-	          rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
-	          exact Hbody.
+          ltac:(child_typed_bind_fresh_other)
+          ltac:(child_typed_bind_under_commute)) as Hbody.
+        * cbn [open_one open_tm_atom_inst].
+          change (e2 ^^ x) with (open_tm 0 (vfvar x) e2) in Hbody.
+          rewrite close_tm_open_commute_fresh in Hbody by (lia || set_solver).
+          exact Hbody.
     - eapply BTT_Op.
       + exact e.
       + eapply H; [|reflexivity].

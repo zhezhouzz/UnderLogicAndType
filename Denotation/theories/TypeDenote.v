@@ -676,18 +676,9 @@ Proof.
           (erase_ty τx))
         τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
-	      cbn [context_ty_lvars_at] in Hrel |- *.
-	      replace (d + 1) with (S d) by lia.
-	      intros v Hv.
-	      set_unfold in Hv.
-	      set_unfold.
-	      repeat match goal with
-	      | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
-	      end;
-	        try solve [pose proof (Hrel v Hcase) as H; set_solver
-	          | pose proof (Harg v Hcase) as H; set_solver
-	          | pose proof (Hres v Hcase) as H; set_solver
-	          | set_solver].
+      cbn [context_ty_lvars_at] in Hrel |- *.
+      replace (d + 1) with (S d) by lia.
+      set_solver.
     + unfold_formula_lvars_atoms.
       repeat rewrite ?lvars_at_depth_union.
       rewrite_tm_support.
@@ -704,18 +695,9 @@ Proof.
           (erase_ty τx))
         τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
       pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
-	      cbn [context_ty_lvars_at] in Hrel |- *.
-	      replace (d + 1) with (S d) by lia.
-	      intros v Hv.
-	      set_unfold in Hv.
-	      set_unfold.
-	      repeat match goal with
-	      | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
-	      end;
-	        try solve [pose proof (Hrel v Hcase) as H; set_solver
-	          | pose proof (Harg v Hcase) as H; set_solver
-	          | pose proof (Hres v Hcase) as H; set_solver
-	          | set_solver].
+      cbn [context_ty_lvars_at] in Hrel |- *.
+      replace (d + 1) with (S d) by lia.
+      set_solver.
 Qed.
 
 Lemma ty_denote_gas_fv_subset gas Σ τ e :

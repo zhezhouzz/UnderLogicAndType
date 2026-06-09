@@ -3,7 +3,7 @@
     Core context-type syntax and syntax-only structural lemmas. *)
 
 From Stdlib Require Import Classes.RelationClasses.
-From ContextTypeLanguage Require Export Qualifier.
+From ContextQualifier Require Export Qualifier.
 From ContextBase Require Import BaseTactics.
 
 (** * ContextTypeLanguage.Syntax

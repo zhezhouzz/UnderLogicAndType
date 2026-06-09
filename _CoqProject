@@ -60,7 +60,6 @@ CoreLang/theories/OperationalProps.v
 CoreLang/theories/StrongNormalization.v
 CoreLang/theories/Sugar.v
 
-ContextTypeLanguage/theories/Qualifier.v
 ContextTypeLanguage/theories/Syntax.v
 ContextTypeLanguage/theories/TypeOpen.v
 ContextTypeLanguage/theories/LtyEnv.v
