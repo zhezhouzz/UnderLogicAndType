@@ -82,6 +82,11 @@ Proof.
   exact (proj2 (proj2 (proj2 Hguard))).
 Qed.
 
+Section WithPrimopContext.
+
+Context (Φ : primop_ctx).
+Hypothesis Φ_wf : wf_primop_ctx Φ.
+
 (** ** Direct case bridges *)
 
 Lemma appop_context_typing_arg_lookup Σ Γ op x :
@@ -1042,7 +1047,7 @@ Qed.
 (** ** Fundamental theorem *)
 
 Theorem Fundamental (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
-  has_context_type Σ Γ e τ ->
+  has_context_type Φ Σ Γ e τ ->
   ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
 Proof.
   intros Hty.
@@ -1158,15 +1163,15 @@ Proof.
 Qed.
 
 Theorem denotational_soundness e τ :
-  has_context_type ∅ CtxEmpty e τ ->
+  has_context_type Φ ∅ CtxEmpty e τ ->
   forall x,
     exists mres : WfWorldT,
       closed_result_world_of e x mres /\
       mres ⊨ ty_denote ({[x := erase_ty τ]} : gmap atom ty) τ
         (tret (vfvar x)).
-Proof.
+  Proof.
   intros Hty x.
-  pose proof (typing_wf_under ∅ CtxEmpty e τ Hty) as Hwf.
+  pose proof (typing_wf_under Φ ∅ CtxEmpty e τ Hty) as Hwf.
   pose proof (context_typing_wf_fv_tm_subset ∅ CtxEmpty e τ Hwf) as Hfv_sub.
   assert (Hfv : fv_tm e = ∅).
   { apply leibniz_equiv. set_solver. }
@@ -1227,3 +1232,5 @@ Proof.
       intros v Hv. rewrite dom_empty_L in Hv. set_solver.
     + rewrite dom_empty_L. set_solver.
 Qed.
+
+End WithPrimopContext.

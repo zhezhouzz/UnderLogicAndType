@@ -9,27 +9,37 @@ theorem are fully proved for the current core system.
 
 ## Status
 
-- Primitive operations are governed by a single global context `Φ`; its
-  well-formedness theorem is `Φ_wf`.
-- The main typing judgment is `has_context_type Σ Γ e τ`.
+- Primitive operations are supplied by an explicit context `Φ : primop_ctx`.
+  The abstract soundness theorem assumes `wf_primop_ctx Φ`; the current
+  graph-based instance is `concrete_Φ` with theorem `concrete_Φ_wf`.
+- The main typing judgment is `has_context_type Φ Σ Γ e τ`.
 - The Fundamental theorem is:
 
   ```coq
-  Theorem Fundamental Σ Γ e τ :
-    has_context_type Σ Γ e τ ->
+  Theorem Fundamental Φ :
+    wf_primop_ctx Φ ->
+    forall Σ Γ e τ,
+      has_context_type Φ Σ Γ e τ ->
     ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
   ```
+
+  The concrete wrapper is `concrete_Fundamental` in
+  `ContextTyping/theories/SoundnessConcrete.v`.
 
 - The closed-program denotational soundness theorem is:
 
   ```coq
-  Theorem denotational_soundness e τ :
-    has_context_type ∅ CtxEmpty e τ ->
+  Theorem denotational_soundness Φ :
+    wf_primop_ctx Φ ->
+    forall e τ,
+      has_context_type Φ ∅ CtxEmpty e τ ->
     forall x,
       exists mres,
         closed_result_world_of e x mres /\
         mres ⊨ ty_denote ({[x := erase_ty τ]}) τ (tret (vfvar x)).
   ```
+
+  The concrete wrapper is `concrete_denotational_soundness`.
 
 - FixD is not part of the compiled system.
 
@@ -117,7 +127,9 @@ ContextBase -> ContextStore -> ContextAlgebra -> ContextLogic
 - `Denotation`: recursive context-type denotation, context denotation,
   result-equivalence transport, TLet support, constants, and primitive
   operation support.
-- `ContextTyping`: context typing rules and the direct Fundamental proof.
+- `ContextTyping`: primitive-operation signatures and instances, context
+  typing rules, the parameterized direct Fundamental proof, and concrete
+  soundness wrappers.
 
 ## Proof Engineering Conventions
 
