@@ -268,9 +268,21 @@ Proof.
           -- unfold Σopen.
              apply lty_env_restrict_open_one_bind_relevant_tapp_eq;
                assumption.
-        * eapply tm_equiv_total.
-          -- exact Hequiv.
-          -- constructor; [exact Hlc_v1|constructor].
+	        * eapply tm_equiv_total.
+	          -- eapply tm_total_equiv_tapp_tm_ret.
+	             ++ pose proof (denot_ty_lvar_guard_wfworld_closed_on_term
+	                  (lty_env_open_one 0 x
+	                    (typed_lty_env_bind Δ (erase_ty τx)))
+	                  (cty_open 0 x τ)
+	                  (tapp_tm (tret v1) (vfvar x)) m
+	                  (ty_denote_gas_guard_of_zero _ _ _ _ Hzero_src))
+	                  as Hclosed_src.
+	                eapply wfworld_closed_on_mono; [|exact Hclosed_src].
+	                rewrite fv_tapp_tm.
+	                cbn [fv_tm fv_value].
+	                better_set_solver.
+	             ++ exact Hlc_v1.
+	          -- constructor; [exact Hlc_v1|constructor].
           -- apply expr_basic_typing_formula_models_iff in Hbasic_src
                as [_ [_ Hbasic_src_lty]].
              apply basic_world_formula_models_iff in Hworld_src
@@ -294,11 +306,26 @@ Proof.
       m ⊨ ty_denote_gas (cty_depth (cty_open 0 x τ))
         (lty_env_open_one 0 x (typed_lty_env_bind Δ (erase_ty τx)))
         (cty_open 0 x τ) (tapp v1 (vfvar x))).
-  {
-    eapply ty_denote_gas_tm_equiv.
-    - split; [exact Hequiv|split; [exact Hzero_src|exact Hzero_tgt]].
-    - rewrite ty_denote_gas_saturate in Hsrc_mid by
-        (rewrite cty_open_preserves_depth; lia).
+	  {
+	    pose proof (ty_denote_gas_guard_of_zero
+	      (lty_env_open_one 0 x (typed_lty_env_bind Δ (erase_ty τx)))
+	      (cty_open 0 x τ)
+	      (tapp_tm (tret v1) (vfvar x)) m Hzero_src) as Hguard_src.
+	    pose proof (ty_denote_gas_guard_of_zero
+	      (lty_env_open_one 0 x (typed_lty_env_bind Δ (erase_ty τx)))
+	      (cty_open 0 x τ)
+	      (tapp v1 (vfvar x)) m Hzero_tgt) as Hguard_tgt.
+	    repeat rewrite res_models_and_iff in Hguard_src.
+	    repeat rewrite res_models_and_iff in Hguard_tgt.
+	    destruct Hguard_src as [_ [_ [_ Htotal_src']]].
+	    destruct Hguard_tgt as [_ [_ [_ Htotal_tgt']]].
+	    eapply ty_denote_gas_tm_equiv.
+	    - split; [exact Hequiv|].
+	      split.
+	      + eapply tm_total_equiv_of_total_formulas; eauto.
+	      + split; [exact Hzero_src|exact Hzero_tgt].
+	    - rewrite ty_denote_gas_saturate in Hsrc_mid by
+	        (rewrite cty_open_preserves_depth; lia).
       exact Hsrc_mid.
   }
   rewrite cty_open_preserves_depth in Htarget_insert.

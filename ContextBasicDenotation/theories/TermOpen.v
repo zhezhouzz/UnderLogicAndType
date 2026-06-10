@@ -6,6 +6,7 @@ From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBasicDenotation Require Import TermSyntax TermEval.
 From ContextBase Require Import BaseTactics.
 From ContextQualifier Require Import Qualifier.
+From CoreLang Require Import StrongNormalization.
 
 Section TermDenotation.
 
@@ -238,6 +239,19 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma expr_strong_total_open_back_iff k y e σ :
+  y ∉ fv_tm e ->
+  lvars_open k y (tm_lvars e) ⊆ dom (σ : gmap logic_var value) ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_swap (LVBound k) (LVFree y) σ) e) <->
+  must_terminating
+    (lstore_instantiate_tm σ (open_tm k (vfvar y) e)).
+Proof.
+  intros Hy Hdom.
+  rewrite lstore_instantiate_tm_open_back by (exact Hy || exact Hdom).
+  reflexivity.
+Qed.
+
 Lemma expr_total_on_open_back_iff k y e
     (w : LWorldOn (V:=value) (lvars_open k y (tm_lvars e))) :
   y ∉ fv_tm e ->
@@ -253,31 +267,30 @@ Proof.
     + change (worldA_dom (@lw value _ w : LWorldT)) with
         (lworld_dom (@lw value _ w)).
       rewrite (@lw_dom value _ w). set_solver.
-    + intros τ Hτ.
-      pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)
-        (lworld_on_open_back_store_swap_member k y (tm_lvars e) w τ Hτ))
-        as Hres.
-      destruct Hres as [v Heval]. exists v.
-      assert (Hτdom :
-        lvars_open k y (tm_lvars e) ⊆ dom (τ : gmap logic_var value)).
-      {
-        rewrite (lworld_on_store_dom_eq _ w τ Hτ). set_solver.
-      }
-      apply expr_eval_in_store_open_back_iff in Heval;
-        [exact Heval | exact Hy | exact Hτdom].
+	    + intros τ Hτ.
+	      pose proof (Hstores (lstore_swap (LVBound k) (LVFree y) τ)
+	        (lworld_on_open_back_store_swap_member k y (tm_lvars e) w τ Hτ))
+	        as Hres.
+	      assert (Hτdom :
+	        lvars_open k y (tm_lvars e) ⊆ dom (τ : gmap logic_var value)).
+	      {
+	        rewrite (lworld_on_store_dom_eq _ w τ Hτ). set_solver.
+	      }
+	      apply expr_strong_total_open_back_iff in Hres;
+	        [exact Hres | exact Hy | exact Hτdom].
   - split.
     + unfold lworld_on_open_back. cbn [lw lraw_world raw_worldA worldA_dom].
       rewrite lworld_dom_lres_swap, (@lw_dom value _ w).
       better_base_solver.
-    + intros σ Hσ.
-      apply lworld_on_open_back_store_swap_inv in Hσ as [σ0 [Hσ0 ->]].
-      destruct (Hstores σ0 Hσ0) as [v Heval]. exists v.
-      assert (Hσ0dom :
-        lvars_open k y (tm_lvars e) ⊆ dom (σ0 : gmap logic_var value)).
-      {
-        rewrite (lworld_on_store_dom_eq _ w σ0 Hσ0). set_solver.
-      }
-      apply expr_eval_in_store_open_back_iff; [exact Hy | exact Hσ0dom | exact Heval].
+	    + intros σ Hσ.
+	      apply lworld_on_open_back_store_swap_inv in Hσ as [σ0 [Hσ0 ->]].
+	      pose proof (Hstores σ0 Hσ0) as Hsn.
+	      assert (Hσ0dom :
+	        lvars_open k y (tm_lvars e) ⊆ dom (σ0 : gmap logic_var value)).
+	      {
+	        rewrite (lworld_on_store_dom_eq _ w σ0 Hσ0). set_solver.
+	      }
+	      apply expr_strong_total_open_back_iff; [exact Hy | exact Hσ0dom | exact Hsn].
 Qed.
 
 Lemma formula_open_expr_total_formula k y e :
@@ -292,23 +305,25 @@ Proof.
   apply qual_ext.
   - symmetry. apply tm_lvars_open. exact Hy.
   - intros s1 s2 Hs. cbn [qual_prop qual_lvars].
-    split; intros [v Heval]; exists v.
-    + apply expr_eval_in_store_open_back_iff in Heval.
-      * change (expr_eval_in_store (lso_store s2)
-          (open_tm k (vfvar y) e) v).
-        rewrite <- Hs. exact Heval.
+    split; intros Hsn.
+    + apply expr_strong_total_open_back_iff in Hsn.
+      * change (must_terminating
+          (lstore_instantiate_tm (lso_store s2)
+            (open_tm k (vfvar y) e))).
+        rewrite <- Hs. exact Hsn.
       * exact Hy.
       * change (lvars_open k y (tm_lvars e) ⊆
           dom (lso_store s1 : LStoreT)).
         rewrite (lso_dom s1). reflexivity.
-    + apply expr_eval_in_store_open_back_iff.
+    + apply expr_strong_total_open_back_iff.
       * exact Hy.
       * change (lvars_open k y (tm_lvars e) ⊆
           dom (lso_store s1 : LStoreT)).
         rewrite (lso_dom s1). reflexivity.
-      * change (expr_eval_in_store (lso_store s1)
-          (open_tm k (vfvar y) e) v).
-        rewrite Hs. exact Heval.
+      * change (must_terminating
+          (lstore_instantiate_tm (lso_store s1)
+            (open_tm k (vfvar y) e))).
+        rewrite Hs. exact Hsn.
 Qed.
 
 Lemma expr_result_at_store_open_back_iff k y e z σ :

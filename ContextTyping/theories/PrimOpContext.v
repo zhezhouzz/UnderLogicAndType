@@ -2,7 +2,7 @@
 
     Concrete primitive-operation signatures for the context typing rules. *)
 
-From CoreLang Require Import BasicTyping SmallStep.
+From CoreLang Require Import BasicTyping SmallStep StrongNormalization.
 From ContextLogic Require Import FormulaSemantics.
 From ContextTypeLanguage Require Import WF.
 From Denotation Require Import Context ConstDenote TypeEquivCore TypeEquiv.
@@ -593,11 +593,17 @@ Proof.
     pose proof (prim_step_total_for_base op c
       (prim_arg_base (Φ op)) (prim_ret_base (Φ op))
       Herasure Hbase) as [c' Hstep].
-    exists (vconst c').
-    apply (expr_eval_prim_fvar_const_intro
-      (lstore_lift_free σ) op x c c').
-    * rewrite lstore_lift_free_lookup_free. exact Hlookup.
-    * exact Hstep.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_value_at lstore_instantiate_tm_split_at
+      lstore_instantiate_value_split_at].
+    change (lstore_free_part (lstore_lift_free σ) !! x)
+      with ((lstore_to_store (lstore_lift_free σ) : gmap atom value) !! x).
+    rewrite (@lstore_to_store_lookup value (lstore_lift_free σ) x).
+    rewrite lstore_lift_free_lookup_free.
+    rewrite Hlookup.
+    apply must_terminating_tprim_const.
+    * constructor. constructor.
+    * exists c'. exact Hstep.
   all: try solve [better_set_solver | eauto].
 Unshelve.
   all: try exact inhabitant; eauto.

@@ -60,13 +60,7 @@ Proof.
   unfold expr_result_output_world.
   destruct (excluded_middle_informative (exists v0, tm_eval_in_store σ e v0))
     as [Hex | Hnone].
-  - destruct (constructive_indefinite_description _ Hex) as [v0 Heval0].
-    assert (v0 = v).
-    {
-      unfold tm_eval_in_store, expr_eval_in_store in *.
-      eapply steps_result_unique; eauto.
-    }
-    subst v0. simpl. reflexivity.
+  - exists v. split; [exact Heval|reflexivity].
   - exfalso. apply Hnone. exists v. exact Heval.
 Qed.
 
@@ -92,13 +86,15 @@ Proof.
     unfold expr_result_output_world in Hw.
     destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | Hnone].
-    + destruct (constructive_indefinite_description _ Hex) as [v Hv].
-      exists v. split; [exact Hv|].
-      simpl in Hw. subst σout. reflexivity.
+    + exact Hw.
     + exfalso. apply Hnone. exact Htotal.
   - intros [v [Heval ->]].
-    eapply expr_result_extension_apply_total_store; eauto.
-	    constructor; [exact Hfresh|split; assumption|exact Hwrel].
+    apply Hext.
+    unfold expr_result_output_world.
+    destruct (excluded_middle_informative (exists v0, tm_eval_in_store σ e v0))
+      as [Hex | Hnone].
+    + exists v. split; [exact Heval|reflexivity].
+    + exfalso. apply Hnone. exists v. exact Heval.
 Qed.
 
 End TermDenotation.

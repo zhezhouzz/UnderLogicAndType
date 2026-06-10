@@ -85,18 +85,19 @@ Qed.
 Lemma ty_denote_gas_zero_transport_static_tm_equiv
     (Σ : lty_env) τ e_src e_tgt (m : WfWorldT) :
   tm_equiv_on m e_src e_tgt ->
+  tm_total_equiv_on m e_src e_tgt ->
   m ⊨ ty_static_guard_formula Σ τ e_tgt ->
   lc_tm e_tgt ->
   fv_tm e_tgt ⊆ world_dom (m : WorldT) ->
   m ⊨ ty_denote_gas 0 Σ τ e_src ->
   m ⊨ ty_denote_gas 0 Σ τ e_tgt.
 Proof.
-  intros Heq Hstatic Hlc Hfv Hzero_src.
+  intros _ Htotal_equiv Hstatic Hlc Hfv Hzero_src.
   pose proof (ty_denote_gas_guard_of_zero
     Σ τ e_src m Hzero_src) as Hguard_src.
   repeat rewrite res_models_and_iff in Hguard_src.
   destruct Hguard_src as [_ [_ [_ Htotal_src]]].
-  pose proof (tm_equiv_total m e_src e_tgt Heq Hlc Hfv Htotal_src)
+  pose proof (tm_equiv_total m e_src e_tgt Htotal_equiv Hlc Hfv Htotal_src)
     as Htotal_tgt.
   apply ty_denote_gas_zero_of_guard.
   eapply ty_guard_relevant_of_static_full_total; eauto.
@@ -285,13 +286,18 @@ Proof.
     as Hzero_src.
   pose proof (ty_denote_gas_zero_of_guard
     Σ τ (tret (vfvar x)) m Hguard_tgt) as Hzero_tgt.
+  pose proof Hguard_src as Hguard_src_parts.
   pose proof Hguard_tgt as Hguard_tgt_parts.
+  repeat rewrite res_models_and_iff in Hguard_src_parts.
   repeat rewrite res_models_and_iff in Hguard_tgt_parts.
+  destruct Hguard_src_parts as [_ [_ [_ Htotal_src]]].
   destruct Hguard_tgt_parts as [_ [_ [_ Htotal_tgt]]].
   eapply ty_denote_gas_tm_equiv.
   - split.
     + eapply tm_equiv_result_alias; eauto.
-    + split; [exact Hzero_src | exact Hzero_tgt].
+    + split.
+      * eapply tm_total_equiv_of_total_formulas; eauto.
+      * split; [exact Hzero_src | exact Hzero_tgt].
   - exact Hm.
 Qed.
 
@@ -591,9 +597,14 @@ Proof.
   intros Hx_e2 HFx Hext Hzero_body Hzero_tlet Hbody.
   pose proof (ty_denote_gas_guard_of_zero
     Σ τ (tlete e1 e2) mx Hzero_tlet) as Hguard_tlet.
+  pose proof (ty_denote_gas_guard_of_zero
+    Σ τ (e2 ^^ x) mx Hzero_body) as Hguard_body.
   pose proof Hguard_tlet as Hguard_tlet_parts.
+  pose proof Hguard_body as Hguard_body_parts.
   repeat rewrite res_models_and_iff in Hguard_tlet_parts.
+  repeat rewrite res_models_and_iff in Hguard_body_parts.
   destruct Hguard_tlet_parts as [_ [_ [Hbasic_tlet Htotal_tlet]]].
+  destruct Hguard_body_parts as [_ [_ [_ Htotal_body]]].
   apply expr_basic_typing_formula_models_iff in Hbasic_tlet
     as [HlcΣ [_ Hty_tlet]].
   pose proof (basic_tm_has_ltype_lc _ _ _ HlcΣ Hty_tlet) as Hlc_tlet.
@@ -602,7 +613,11 @@ Proof.
   eapply ty_denote_gas_tm_equiv.
   - split.
     + eapply tm_equiv_tlete_body_extension; eauto.
-    + split; [exact Hzero_body|exact Hzero_tlet].
+    + split.
+      * eapply tm_total_equiv_of_total_formulas.
+        -- exact Htotal_body.
+        -- exact Htotal_tlet.
+      * split; [exact Hzero_body|exact Hzero_tlet].
   - exact Hbody.
 Qed.
 
@@ -621,13 +636,25 @@ Lemma lam_intro_denotation
     (tapp_tm (tret (vlam T e)) (vfvar y)).
 Proof.
   intros Hclosed Hbody Hy_fresh Hy_dom Hzero_body Hzero_app Hbody_den.
+  pose proof (ty_denote_gas_guard_of_zero
+    Σ τ (e ^^ y) m Hzero_body) as Hguard_body.
+  pose proof (ty_denote_gas_guard_of_zero
+    Σ τ (tapp_tm (tret (vlam T e)) (vfvar y)) m Hzero_app) as Hguard_app.
+  pose proof Hguard_body as Hguard_body_parts.
+  pose proof Hguard_app as Hguard_app_parts.
+  repeat rewrite res_models_and_iff in Hguard_body_parts.
+  repeat rewrite res_models_and_iff in Hguard_app_parts.
+  destruct Hguard_body_parts as [_ [_ [_ Htotal_body]]].
+  destruct Hguard_app_parts as [_ [_ [_ Htotal_app]]].
   eapply ty_denote_gas_tm_equiv.
   - split.
     + intros σ v Hσ.
       pose proof (tm_equiv_lam_app_body T e y m
         Hclosed Hbody Hy_fresh Hy_dom σ v Hσ) as [Happ_body Hbody_app].
       split; [exact Hbody_app|exact Happ_body].
-    + split; [exact Hzero_body|exact Hzero_app].
+    + split.
+      * eapply tm_total_equiv_of_total_formulas; eauto.
+      * split; [exact Hzero_body|exact Hzero_app].
   - exact Hbody_den.
 Qed.
 

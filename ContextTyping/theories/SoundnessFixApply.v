@@ -451,6 +451,9 @@ Proof.
     }
     eapply ty_denote_gas_zero_transport_static_tm_equiv.
     - exact Heq.
+    - eapply tm_total_equiv_of_tm_equiv_left_total.
+      + exact Heq.
+      + eapply ty_denote_gas_total_guard_of_zero. exact Hzero_src.
     - exact Hstatic_target_insert.
     - apply lc_tapp_tm; [constructor; exact Hlc_body|exact Hlc_self].
     - eapply ty_static_guard_fv_tm_subset. exact Hstatic_target_insert.
@@ -463,7 +466,11 @@ Proof.
 	        (tapp_tm (tret body) self)).
 	  {
 	    eapply ty_denote_gas_tm_equiv.
-	    - split; [exact Heq|split; [exact Hzero_src|exact Hzero_tgt]].
+	    - split; [exact Heq|split].
+	      + eapply tm_total_equiv_of_total_formulas.
+	        * eapply ty_denote_gas_total_guard_of_zero. exact Hzero_src.
+	        * eapply ty_denote_gas_total_guard_of_zero. exact Hzero_tgt.
+	      + split; [exact Hzero_src|exact Hzero_tgt].
 	    - exact Hres_insert.
 	  }
 	  assert (Htarget_insert_goalgas :

@@ -1200,8 +1200,12 @@ Proof.
       as Htotal_formula.
     apply expr_total_formula_to_atom_world in Htotal_formula.
     destruct Htotal_formula as [_ Htotal_eval].
-    destruct (Htotal_eval (lstore_lift_free (∅ : StoreT))) as [v Hv].
+    assert (Hlift_empty :
+        (res_lift_free res_unit : LWorldT)
+          (lstore_lift_free (∅ : StoreT))).
     { exists (∅ : StoreT). split; [reflexivity|reflexivity]. }
+    pose proof (Htotal_eval _ Hlift_empty) as Hmust.
+    destruct (must_terminating_reaches_result _ Hmust) as [v Hv].
     exists v. apply tm_eval_in_store_empty_iff. exact Hv.
   }
   split.

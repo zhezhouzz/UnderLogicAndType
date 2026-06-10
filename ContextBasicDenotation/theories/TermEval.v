@@ -6,6 +6,7 @@ From ContextBasicDenotation Require Import Notation StoreTyping.
 From ContextBasicDenotation Require Import TermSyntax.
 From ContextAlgebra Require Import ResourceAlgebra.
 From ContextQualifier Require Import Qualifier.
+From CoreLang Require Import StrongNormalization.
 
 Section TermDenotation.
 
@@ -625,7 +626,7 @@ Definition expr_total_on (e : tm) (m : LWorldT) : Prop :=
   tm_lvars e ⊆ worldA_dom m /\
   forall σ,
     worldA_stores m σ ->
-    exists v, expr_eval_in_store σ e v.
+    must_terminating (lstore_instantiate_tm σ e).
 
 (** Atom worlds use the same lstore semantics through the free-lvar lift. *)
 Definition expr_total_on_atom_world (e : tm) (m : WfWorldT) : Prop :=
@@ -657,6 +658,16 @@ Lemma expr_eval_in_store_restrict_lvars e (σ : LStoreT) X v :
 Proof.
   intros HX.
   unfold expr_eval_in_store.
+  rewrite lstore_instantiate_tm_restrict_lvars by exact HX.
+  reflexivity.
+Qed.
+
+Lemma expr_strong_total_restrict_lvars e (σ : LStoreT) X :
+  tm_lvars e ⊆ X ->
+  must_terminating (lstore_instantiate_tm (storeA_restrict σ X) e) <->
+  must_terminating (lstore_instantiate_tm σ e).
+Proof.
+  intros HX.
   rewrite lstore_instantiate_tm_restrict_lvars by exact HX.
   reflexivity.
 Qed.
@@ -708,7 +719,42 @@ Proof.
 	        rewrite lstore_lift_free_lookup_free.
 	        apply storeA_restrict_lookup_none_l. exact Hσy.
       * symmetry. apply storeA_restrict_lookup_none_l.
-        rewrite lstore_lift_free_lookup_free. exact Hσy.
+	        rewrite lstore_lift_free_lookup_free. exact Hσy.
+Qed.
+
+Lemma tm_must_terminating_agree_on_fv σ1 σ2 e :
+  lc_tm e ->
+  store_restrict σ1 (fv_tm e) = store_restrict σ2 (fv_tm e) ->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ1) e) <->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ2) e).
+Proof.
+  intros Hlc Hagree.
+  assert (Hsub : tm_lvars e ⊆ tm_lvars e) by (intros z Hz; exact Hz).
+  transitivity
+    (must_terminating
+      (lstore_instantiate_tm
+        (storeA_restrict (lstore_lift_free σ1 : LStoreT) (tm_lvars e)) e)).
+  - symmetry. apply expr_strong_total_restrict_lvars. exact Hsub.
+  - transitivity
+      (must_terminating
+        (lstore_instantiate_tm
+          (storeA_restrict (lstore_lift_free σ2 : LStoreT) (tm_lvars e)) e)).
+    + assert (Hrestrict :
+        storeA_restrict (lstore_lift_free σ1 : LStoreT) (tm_lvars e) =
+        storeA_restrict (lstore_lift_free σ2 : LStoreT) (tm_lvars e)).
+      {
+        transitivity
+          (storeA_restrict
+            (lstore_lift_free (store_restrict σ1 (lvars_fv (tm_lvars e))) : LStoreT)
+            (tm_lvars e)).
+        - symmetry. apply lstore_lift_free_restrict_fv_lvars_eq.
+          apply tm_lvars_lc. exact Hlc.
+        - rewrite tm_lvars_fv. rewrite Hagree. rewrite <- tm_lvars_fv.
+          apply lstore_lift_free_restrict_fv_lvars_eq.
+          apply tm_lvars_lc. exact Hlc.
+      }
+      rewrite Hrestrict. reflexivity.
+    + apply expr_strong_total_restrict_lvars. exact Hsub.
 Qed.
 
 Lemma expr_result_at_world_lworld_on_lift e x
@@ -752,9 +798,15 @@ Definition expr_result_output_world (e : tm) (x : atom) (σ : StoreT) : WfWorldT
 Proof.
   destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
     as [Hex | _].
-  - destruct (constructive_indefinite_description _ Hex) as [v _].
-    exact (exist _ (singleton_world ({[x := v]} : StoreT))
-      (wf_singleton_world ({[x := v]} : StoreT))).
+  - refine (exist _
+      {| worldA_dom := {[x]};
+         worldA_stores := fun σout =>
+           exists v, tm_eval_in_store σ e v /\
+             σout = ({[x := v]} : StoreT) |} _).
+    constructor.
+    + destruct (constructive_indefinite_description _ Hex) as [v Heval].
+      exists ({[x := v]} : StoreT). exists v. split; [exact Heval|reflexivity].
+    + intros σout [v [_ ->]]. apply dom_singleton_L.
   - exact (exist _ (singleton_world ({[x := inhabitant]} : StoreT))
       (wf_singleton_world ({[x := inhabitant]} : StoreT))).
 Defined.
@@ -768,22 +820,21 @@ Proof.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
-	    + destruct (constructive_indefinite_description _ Hex) as [v _].
-	      unfold world_dom, singleton_world. simpl.
-	      apply dom_singleton_L.
+	    + reflexivity.
 	    + unfold world_dom, singleton_world. simpl.
 	      apply dom_singleton_L.
   - intros σ Hσ. unfold expr_result_output_world.
     destruct (excluded_middle_informative (exists v, tm_eval_in_store σ e v))
       as [Hex | _].
-    + destruct (constructive_indefinite_description _ Hex) as [v _].
-      exists ({[x := v]} : StoreT). simpl. reflexivity.
+    + destruct Hex as [v Heval].
+      exists ({[x := v]} : StoreT).
+      exists v. split; [exact Heval|reflexivity].
     + exists ({[x := inhabitant]} : StoreT). simpl. reflexivity.
 Defined.
 
 Definition expr_total_qual (e : tm) : qualifier (V := value) :=
   tqual (tm_lvars e)
-    (fun s => exists v, expr_eval_in_store (lso_store s) e v).
+    (fun s => must_terminating (lstore_instantiate_tm (lso_store s) e)).
 
 Definition expr_total_formula (e : tm) : Formula :=
   FFiberAtom (expr_total_qual e).

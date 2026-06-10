@@ -155,11 +155,18 @@ Proof.
   intros Hwf Hctx Hequiv Hbranch.
   unfold ty_denote in Hbranch |- *.
   eapply ty_denote_gas_tm_equiv.
-  - split; [exact Hequiv|].
-    split.
-    + apply ty_denote_gas_zero_of_guard.
-      eapply ty_denote_gas_guard. exact Hbranch.
-    + assert (Hstatic :
+  - split; [exact Hequiv|split].
+    + assert (Htotal_branch : m ⊨ expr_total_formula ebranch).
+      {
+        pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch) as Hguard.
+        repeat rewrite res_models_and_iff in Hguard.
+        tauto.
+      }
+      eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
+    + split.
+      * apply ty_denote_gas_zero_of_guard.
+        eapply ty_denote_gas_guard. exact Hbranch.
+      * assert (Hstatic :
           m ⊨ ty_static_guard_formula
             (atom_env_to_lty_env (erase_ctx Γ))
             τ (tmatch (vfvar x) et ef)).
@@ -200,6 +207,7 @@ Proof.
       apply ty_denote_gas_zero_of_guard.
       eapply ty_guard_relevant_of_static_full_total; [exact Hstatic|].
       eapply tm_equiv_total; eauto.
+      eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
   - exact Hbranch.
 Qed.
 

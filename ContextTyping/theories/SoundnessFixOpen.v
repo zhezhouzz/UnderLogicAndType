@@ -437,21 +437,40 @@ Proof.
               (erase_ty τx)))
           (cty_open 0 y τ)
           (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y))).
-    {
-      rewrite typed_lty_env_bind_open_current.
-      - exact Hstatic.
+	    {
+	      rewrite typed_lty_env_bind_open_current.
+	      - exact Hstatic.
       - apply atom_env_to_lty_env_dom_free_notin.
-        ctx_erasure_under_norm_in Hy. better_set_solver.
-      - apply atom_store_to_lvar_store_closed.
-    }
-    eapply ty_denote_gas_zero_transport_static_tm_equiv.
-    - intros σ v Hσ.
-      specialize (Heq σ v Hσ) as [Hfix_unfold Hunfold_fix].
-      split; [exact Hunfold_fix|exact Hfix_unfold].
-    - exact Hstatic_open.
-    - apply lc_tapp_tm; [exact Hlc_efix|constructor].
-    - eapply ty_static_guard_fv_tm_subset. exact Hstatic_open.
-    - exact Hzero_unfolded.
+	        ctx_erasure_under_norm_in Hy. better_set_solver.
+	      - apply atom_store_to_lvar_store_closed.
+	    }
+	    pose proof (ty_denote_gas_guard_of_zero
+	      (lty_env_open_one 0 y
+	        (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+	          (erase_ty τx)))
+	      (cty_open 0 y τ)
+	      (tapp_tm (tret (open_value 0 (vfvar y) vf))
+	        (vfix (TBase b →ₜ t) vf)) my Hzero_unfolded)
+	      as Hguard_unfolded.
+	    repeat rewrite res_models_and_iff in Hguard_unfolded.
+	    destruct Hguard_unfolded as [_ [_ [_ Htotal_unfolded]]].
+	    assert (Heq_unfold_fix :
+	        tm_equiv_on my
+	          (tapp_tm (tret (open_value 0 (vfvar y) vf))
+	            (vfix (TBase b →ₜ t) vf))
+	          (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y))).
+	    {
+	      intros σ v Hσ.
+	      specialize (Heq σ v Hσ) as [Hfix_unfold Hunfold_fix].
+	      split; [exact Hunfold_fix|exact Hfix_unfold].
+	    }
+	    eapply ty_denote_gas_zero_transport_static_tm_equiv.
+	    - exact Heq_unfold_fix.
+	    - eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
+	    - exact Hstatic_open.
+	    - apply lc_tapp_tm; [exact Hlc_efix|constructor].
+	    - eapply ty_static_guard_fv_tm_subset. exact Hstatic_open.
+	    - exact Hzero_unfolded.
   }
   assert (Hfix_open :
       my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
@@ -460,14 +479,33 @@ Proof.
             (erase_ty τx)))
         (cty_open 0 y τ)
         (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y))).
-  {
-    eapply ty_denote_gas_tm_equiv.
-    - split; [|split].
-      + intros σ v Hσ. symmetry. exact (Heq σ v Hσ).
-      + exact Hzero_unfolded.
-      + exact Hzero_fix.
-    - exact Hunfolded_open.
-  }
+	  {
+	    pose proof (ty_denote_gas_guard_of_zero
+	      (lty_env_open_one 0 y
+	        (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+	          (erase_ty τx)))
+	      (cty_open 0 y τ)
+	      (tapp_tm (tret (open_value 0 (vfvar y) vf))
+	        (vfix (TBase b →ₜ t) vf)) my Hzero_unfolded)
+	      as Hguard_unfolded.
+	    pose proof (ty_denote_gas_guard_of_zero
+	      (lty_env_open_one 0 y
+	        (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
+	          (erase_ty τx)))
+	      (cty_open 0 y τ)
+	      (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y)) my
+	      Hzero_fix) as Hguard_fix.
+	    repeat rewrite res_models_and_iff in Hguard_unfolded.
+	    repeat rewrite res_models_and_iff in Hguard_fix.
+	    destruct Hguard_unfolded as [_ [_ [_ Htotal_unfolded]]].
+	    destruct Hguard_fix as [_ [_ [_ Htotal_fix]]].
+	    eapply ty_denote_gas_tm_equiv.
+	    - split; [|split].
+	      + intros σ v Hσ. symmetry. exact (Heq σ v Hσ).
+	      + eapply tm_total_equiv_of_total_formulas; eauto.
+	      + split; [exact Hzero_unfolded|exact Hzero_fix].
+	    - exact Hunfolded_open.
+	  }
   eapply ty_equiv_arrow_result_tgt_goal.
   - exact Hlc_efix.
   - ctx_erasure_under_norm_in Hy. better_set_solver.

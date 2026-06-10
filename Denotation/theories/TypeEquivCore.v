@@ -3,6 +3,7 @@
     Core support for result-equivalence and result-extension transport. *)
 
 From Denotation Require Import Notation TypeDenote.
+From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
@@ -181,6 +182,18 @@ Proof.
   unfold ty_guard_formula in Hguard. exact Hguard.
 Qed.
 
+Lemma ty_denote_gas_total_guard_of_zero
+    (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ τ e ->
+  m ⊨ expr_total_formula e.
+Proof.
+  intros Hzero.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e m Hzero) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [_ [_ Htotal]]].
+  exact Htotal.
+Qed.
+
 Lemma ty_denote_gas_insert_fresh_lty_env
     gas (Σ : lty_env) τ e x T (m : WfWorldT) :
   LVFree x ∉ dom Σ ->
@@ -319,8 +332,9 @@ Proof.
           simpl in Hσin.
           destruct Hσin as [σm [Hσm Hrestrict]].
           subst σin.
-          destruct (Htotal_eval (lstore_lift_free σm)) as [v Heval].
-          { exists σm. split; [exact Hσm|reflexivity]. }
+          pose proof (Htotal_eval (lstore_lift_free σm)
+            ltac:(exists σm; split; [exact Hσm|reflexivity])) as Hsn.
+          destruct (must_terminating_reaches_result _ Hsn) as [v Heval].
           exists v.
           pose proof (tm_eval_in_store_restrict_fv_subset
             σm e v (ext_in Fx) ltac:(rewrite Hin; set_solver)) as Hequiv.
@@ -430,26 +444,26 @@ Proof.
     assert (Hτ_res :
       (res_lift_free m : LWorldT) (lstore_lift_free σ)).
     { exists σ. split; [exact Hσ|reflexivity]. }
-    specialize (Hstores (lstore_lift_free σ) Hτ_res).
-    destruct Hstores as [_ [v [Hx_lookup Heval]]].
-    exists v.
-    change (((lstore_lift_free σ : LStoreT) : gmap logic_var value)
-      !! LVFree x = Some v) in Hx_lookup.
-    rewrite lstore_lift_free_lookup_free in Hx_lookup.
-    unfold tm_eval_in_store, expr_eval_in_store.
-    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
-      lstore_instantiate_tm_split_at
-      lstore_instantiate_value_split_at lstore_free_part].
-    rewrite lstore_free_part_lift_free.
-    change (tret
-      (match ((σ : StoreT) : gmap atom value) !! x with
-       | Some u => u
-       | None => vfvar x
-       end) →* tret v).
-    rewrite Hx_lookup.
-    constructor.
-    pose proof (steps_regular2 _ _ Heval) as Hret_lc.
-    inversion Hret_lc; subst. assumption.
+	    specialize (Hstores (lstore_lift_free σ) Hτ_res).
+	    destruct Hstores as [_ [v [Hx_lookup Heval]]].
+	    pose proof (steps_regular2 _ _ Heval) as Hret_lc.
+	    apply lc_ret_iff_value in Hret_lc as Hv_lc.
+	    change (((lstore_lift_free σ : LStoreT) : gmap logic_var value)
+	      !! LVFree x = Some v) in Hx_lookup.
+	    rewrite lstore_lift_free_lookup_free in Hx_lookup.
+	    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+	      lstore_instantiate_tm_split_at
+	      lstore_instantiate_value_at lstore_instantiate_value_split_at
+	      lstore_free_part].
+	    rewrite lstore_free_part_lift_free.
+	    change (must_terminating
+	      (tret
+	        (match ((σ : StoreT) : gmap atom value) !! x with
+	         | Some u => u
+	         | None => vfvar x
+	         end))).
+	    rewrite Hx_lookup.
+	    apply must_terminating_tret. exact Hv_lc.
 Qed.
 
 Lemma expr_total_formula_tret_of_basic
@@ -483,35 +497,36 @@ Proof.
     apply HfvΣ.
     apply elem_of_map.
     exists a. split; [reflexivity|exact Ha].
-  - intros τ Hτ.
-    destruct Hτ as [σ [Hσ ->]].
-    set (X := fv_value v).
-    exists (subst_map (store_restrict σ X) v).
-    change (tm_eval_in_store σ (tret v)
-      (subst_map (store_restrict σ X) v)).
-    apply (proj1 (tm_eval_in_store_restrict_fv_subset
-      σ (tret v) (subst_map (store_restrict σ X) v) X
-      ltac:(subst X; cbn [fv_tm]; set_solver))).
-    unfold tm_eval_in_store, expr_eval_in_store.
-    rewrite lstore_instantiate_tm_no_bvars.
-    2:{ apply lc_lstore_lift_free. }
-    2:{
-      rewrite lstore_free_part_lift_free.
-      subst X.
+	  - intros τ Hτ.
+	    destruct Hτ as [σ [Hσ ->]].
+	    set (X := fv_value v).
+	    assert (Hagree :
+	      store_restrict σ (fv_tm (tret v)) =
+	      store_restrict (store_restrict σ X) (fv_tm (tret v))).
+	    {
+	      subst X. cbn [fv_tm].
+	      symmetry. apply storeA_restrict_twice_same.
+	    }
+	    apply (proj2 (tm_must_terminating_agree_on_fv
+	      σ (store_restrict σ X) (tret v) Hlc_tm Hagree)).
+	    rewrite lstore_instantiate_tm_no_bvars.
+	    2:{ apply lc_lstore_lift_free. }
+	    2:{
+	      rewrite lstore_free_part_lift_free.
+	      subst X.
       pose proof (basic_world_formula_wfworld_closed_on_atoms
         Σ (fv_value v) m HfvΣ_value Hworld σ Hσ) as Hclosed.
       exact (proj1 Hclosed).
-    }
-    rewrite lstore_free_part_lift_free.
-    replace (subst_map (store_restrict σ X) (tret v))
-      with (tret (subst_map (store_restrict σ X) v))
-      by (symmetry; apply msubst_ret).
-    apply Steps_refl.
-    constructor.
-    apply msubst_lc.
-    + subst X.
-      pose proof (basic_world_formula_wfworld_closed_on_atoms
-        Σ (fv_value v) m HfvΣ_value Hworld σ Hσ) as Hclosed.
+	    }
+	    rewrite lstore_free_part_lift_free.
+	    replace (subst_map (store_restrict σ X) (tret v))
+	      with (tret (subst_map (store_restrict σ X) v))
+	      by (symmetry; apply msubst_ret).
+	    apply must_terminating_tret.
+	    apply msubst_lc.
+	    + subst X.
+	      pose proof (basic_world_formula_wfworld_closed_on_atoms
+	        Σ (fv_value v) m HfvΣ_value Hworld σ Hσ) as Hclosed.
       exact (proj2 Hclosed).
     + exact Hlc.
 Qed.
@@ -714,12 +729,62 @@ Definition tm_equiv_on
     tm_eval_in_store σ e1 v <->
     tm_eval_in_store σ e2 v.
 
+Definition tm_total_equiv_on
+    (m : WfWorldT) (e1 e2 : tm) : Prop :=
+  forall σ,
+    worldA_stores (m : WorldT) σ ->
+    must_terminating
+      (lstore_instantiate_tm (lstore_lift_free σ) e1) <->
+    must_terminating
+      (lstore_instantiate_tm (lstore_lift_free σ) e2).
+
 Definition typed_total_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
     (e1 e2 : tm) : Prop :=
   tm_equiv_on m e1 e2 /\
+  tm_total_equiv_on m e1 e2 /\
   m ⊨ ty_denote_gas 0 Σ τ e1 /\
   m ⊨ ty_denote_gas 0 Σ τ e2.
+
+Lemma tm_total_equiv_of_total_formulas
+    (m : WfWorldT) e1 e2 :
+  m ⊨ expr_total_formula e1 ->
+  m ⊨ expr_total_formula e2 ->
+  tm_total_equiv_on m e1 e2.
+Proof.
+  intros Htotal1 Htotal2 σ Hσ.
+  apply expr_total_formula_to_atom_world in Htotal1.
+  apply expr_total_formula_to_atom_world in Htotal2.
+  destruct Htotal1 as [_ Hstores1].
+  destruct Htotal2 as [_ Hstores2].
+  assert (Hlift :
+      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  split; intros _.
+  - exact (Hstores2 (lstore_lift_free σ) Hlift).
+  - exact (Hstores1 (lstore_lift_free σ) Hlift).
+Qed.
+
+Lemma tm_total_equiv_of_tm_equiv_left_total
+    (m : WfWorldT) e1 e2 :
+  tm_equiv_on m e1 e2 ->
+  m ⊨ expr_total_formula e1 ->
+  tm_total_equiv_on m e1 e2.
+Proof.
+  intros Heq Htotal1 σ Hσ.
+  apply expr_total_formula_to_atom_world in Htotal1.
+  destruct Htotal1 as [_ Hstores1].
+  assert (Hlift :
+      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  specialize (Hstores1 (lstore_lift_free σ) Hlift) as Htotal1σ.
+  split.
+  - intros _.
+    destruct (must_terminating_reaches_result _ Htotal1σ) as [v Heval1].
+    eapply must_terminating_of_steps_result.
+    apply (proj1 (Heq σ v Hσ)). exact Heval1.
+  - intros _. exact Htotal1σ.
+Qed.
 
 Lemma tm_equiv_tlete_body_extension
     e1 e2 x Fx m mx :
@@ -809,8 +874,9 @@ Proof.
     assert (Hyσ : y ∉ dom (σ : StoreT)) by set_solver.
     assert (Hye2 : y ∉ fv_tm e2) by set_solver.
     assert (Hylet : y ∉ fv_tm (tlete e1 e2)) by set_solver.
-    destruct (Htotal_stores (lstore_lift_free σ)) as [v0 Htlet0].
-    { exists σ. split; [exact Hσmx|reflexivity]. }
+	    pose proof (Htotal_stores (lstore_lift_free σ)
+	      ltac:(exists σ; split; [exact Hσmx|reflexivity])) as Hsn_tlet.
+	    destruct (must_terminating_reaches_result _ Hsn_tlet) as [v0 Htlet0].
     destruct (tm_eval_in_store_tlete_elim_closed_on
       e1 e2 y σ v0 (Hclosed σ Hσmx) Hylet Hye2 Htlet0)
       as [vx [He1σ _]].
@@ -966,13 +1032,25 @@ Lemma typed_total_equiv_source_zero
     Σ τ m e1 e2 :
   typed_total_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1.
-Proof. intros [_ [Hzero _]]. exact Hzero. Qed.
+Proof. intros [_ [_ [Hzero _]]]. exact Hzero. Qed.
 
 Lemma typed_total_equiv_target_zero
     Σ τ m e1 e2 :
   typed_total_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e2.
-Proof. intros [_ [_ Hzero]]. exact Hzero. Qed.
+Proof. intros [_ [_ [_ Hzero]]]. exact Hzero. Qed.
+
+Lemma typed_total_equiv_tm_equiv
+    Σ τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  tm_equiv_on m e1 e2.
+Proof. intros [Heq _]. exact Heq. Qed.
+
+Lemma typed_total_equiv_total_equiv
+    Σ τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  tm_total_equiv_on m e1 e2.
+Proof. intros [_ [Htotal _]]. exact Htotal. Qed.
 
 Lemma tm_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
@@ -982,6 +1060,16 @@ Lemma tm_equiv_res_store_subset
 Proof.
   intros [_ Hstores] Heq σ v Hσ.
   apply Heq. exact (Hstores σ Hσ).
+Qed.
+
+Lemma tm_total_equiv_res_store_subset
+    (m0 m : WfWorldT) e1 e2 :
+  res_subset m0 m ->
+  tm_total_equiv_on m e1 e2 ->
+  tm_total_equiv_on m0 e1 e2.
+Proof.
+  intros [_ Hstores] Htotal σ Hσ.
+  apply Htotal. exact (Hstores σ Hσ).
 Qed.
 
 Lemma tm_equiv_res_product_right
@@ -1024,15 +1112,111 @@ Proof.
     exact Heval2.
 Qed.
 
+Lemma tm_total_equiv_res_product_right
+    (n my : WfWorldT) (Hc : world_compat n my) e1 e2 :
+  tm_total_equiv_on my e1 e2 ->
+  lc_tm e1 ->
+  lc_tm e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (my : WorldT) ->
+  tm_total_equiv_on (res_product n my Hc) e1 e2.
+Proof.
+  intros Htotal Hlc1 Hlc2 Hfv σ Hσ.
+  pose proof (res_restrict_eq_of_le my (res_product n my Hc)
+    (res_product_le_r n my Hc)) as Hrestrict.
+  assert (Hσmy :
+      (my : WorldT) (store_restrict σ (world_dom (my : WorldT)))).
+  {
+    assert (Hσr :
+        (res_restrict (res_product n my Hc)
+          (world_dom (my : WorldT)) : WorldT)
+          (store_restrict σ (world_dom (my : WorldT)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hrestrict in Hσr. exact Hσr.
+  }
+  specialize (Htotal (store_restrict σ (world_dom (my : WorldT))) Hσmy)
+    as [Htotal12 Htotal21].
+  assert (Hfv1 : fv_tm e1 ⊆ world_dom (my : WorldT)) by set_solver.
+  assert (Hfv2 : fv_tm e2 ⊆ world_dom (my : WorldT)) by set_solver.
+  assert (Hagree1 :
+    store_restrict (store_restrict σ (world_dom (my : WorldT))) (fv_tm e1) =
+    store_restrict σ (fv_tm e1)).
+  { rewrite storeA_restrict_twice_subset by exact Hfv1. reflexivity. }
+  assert (Hagree2 :
+    store_restrict (store_restrict σ (world_dom (my : WorldT))) (fv_tm e2) =
+    store_restrict σ (fv_tm e2)).
+  { rewrite storeA_restrict_twice_subset by exact Hfv2. reflexivity. }
+  split; intros Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (my : WorldT))) σ e2 Hlc2 Hagree2)).
+    apply Htotal12.
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (my : WorldT))) σ e1 Hlc1 Hagree1)).
+    exact Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (my : WorldT))) σ e1 Hlc1 Hagree1)).
+    apply Htotal21.
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (my : WorldT))) σ e2 Hlc2 Hagree2)).
+    exact Hsn.
+Qed.
+
+Lemma tm_total_equiv_full_world_extend_fresh
+    (m my : WfWorldT) y e1 e2 :
+  tm_total_equiv_on m e1 e2 ->
+  lc_tm e1 ->
+  lc_tm e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT) ->
+  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  tm_total_equiv_on my e1 e2.
+Proof.
+  intros Htotal Hlc1 Hlc2 Hfv _ _ Hrestrict σ Hσ.
+  assert (Hσm :
+      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
+  {
+    assert (Hσr :
+        (res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict σ (world_dom (m : WorldT)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hrestrict in Hσr. exact Hσr.
+  }
+  specialize (Htotal (store_restrict σ (world_dom (m : WorldT))) Hσm)
+    as [Htotal12 Htotal21].
+  assert (Hfv1 : fv_tm e1 ⊆ world_dom (m : WorldT)) by set_solver.
+  assert (Hfv2 : fv_tm e2 ⊆ world_dom (m : WorldT)) by set_solver.
+  assert (Hagree1 :
+    store_restrict (store_restrict σ (world_dom (m : WorldT))) (fv_tm e1) =
+    store_restrict σ (fv_tm e1)).
+  { rewrite storeA_restrict_twice_subset by exact Hfv1. reflexivity. }
+  assert (Hagree2 :
+    store_restrict (store_restrict σ (world_dom (m : WorldT))) (fv_tm e2) =
+    store_restrict σ (fv_tm e2)).
+  { rewrite storeA_restrict_twice_subset by exact Hfv2. reflexivity. }
+  split; intros Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (m : WorldT))) σ e2 Hlc2 Hagree2)).
+    apply Htotal12.
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (m : WorldT))) σ e1 Hlc1 Hagree1)).
+    exact Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (m : WorldT))) σ e1 Hlc1 Hagree1)).
+    apply Htotal21.
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      (store_restrict σ (world_dom (m : WorldT))) σ e2 Hlc2 Hagree2)).
+    exact Hsn.
+Qed.
+
 Lemma tm_equiv_total
     m e1 e2 :
-  tm_equiv_on m e1 e2 ->
+  tm_total_equiv_on m e1 e2 ->
   lc_tm e2 ->
   fv_tm e2 ⊆ world_dom (m : WorldT) ->
   m ⊨ expr_total_formula e1 ->
   m ⊨ expr_total_formula e2.
 Proof.
-  intros Heq Hlc2 Hfv2 Htotal.
+  intros Htotal_equiv Hlc2 Hfv2 Htotal.
   apply expr_total_formula_to_atom_world in Htotal.
   apply expr_total_atom_world_to_formula.
   unfold expr_total_on_atom_world, expr_total_on in *.
@@ -1043,10 +1227,8 @@ Proof.
     unfold lvars_of_atoms. set_solver.
   - intros τ Hτ.
     destruct Hτ as [σ [Hσ ->]].
-    destruct (Hstores (lstore_lift_free σ)) as [v Heval1].
-    { exists σ. split; [exact Hσ | reflexivity]. }
-    exists v.
-    apply (proj1 (Heq σ v Hσ)). exact Heval1.
+    apply (proj1 (Htotal_equiv σ Hσ)).
+    apply Hstores. exists σ. split; [exact Hσ | reflexivity].
 Qed.
 
 Lemma tm_equiv_tapp_fvar
@@ -1115,6 +1297,214 @@ Proof.
 	    apply (proj2 (tm_eval_in_store_restrict_fv_subset
 	        σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
       exact Heval.
+Qed.
+
+Lemma tm_total_equiv_tapp_fvar
+    (m : WfWorldT) e1 e2 y :
+  wfworld_closed_on
+    (fv_tm (tapp_tm e1 (vfvar y)) ∪ fv_tm (tapp_tm e2 (vfvar y))) m ->
+  lc_tm e1 ->
+  lc_tm e2 ->
+  tm_equiv_on m e1 e2 ->
+  tm_total_equiv_on m e1 e2 ->
+  tm_total_equiv_on m
+    (tapp_tm e1 (vfvar y))
+    (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hclosed Hlc1 Hlc2 Heq Htotal σ Hσ.
+  set (X := fv_tm (tapp_tm e1 (vfvar y)) ∪
+            fv_tm (tapp_tm e2 (vfvar y))).
+  set (σX := store_restrict σ X : StoreT).
+  assert (HσX_closed : store_closed σX).
+  { subst σX X. apply Hclosed. exact Hσ. }
+  assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X)
+    by (subst X; set_solver).
+  assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X)
+    by (subst X; set_solver).
+  assert (Hfv_e1 : fv_tm e1 ⊆ X).
+  {
+    subst X. cbn [fv_tm fv_value].
+    unfold tapp_tm. cbn [fv_tm fv_value].
+    set_solver.
+  }
+  assert (Hfv_e2 : fv_tm e2 ⊆ X).
+  {
+    subst X. cbn [fv_tm fv_value].
+    unfold tapp_tm. cbn [fv_tm fv_value].
+    set_solver.
+  }
+  assert (Hfun_equiv : forall vf,
+      tm_eval_in_store σX e1 vf <->
+      tm_eval_in_store σX e2 vf).
+  {
+    intros vf. split; intros Heval_fun.
+    - apply (proj2 (tm_eval_in_store_restrict_fv_subset
+        σ e2 vf X Hfv_e2)).
+      apply (proj1 (Heq σ vf Hσ)).
+      apply (proj1 (tm_eval_in_store_restrict_fv_subset
+        σ e1 vf X Hfv_e1)).
+      subst σX. exact Heval_fun.
+    - apply (proj2 (tm_eval_in_store_restrict_fv_subset
+        σ e1 vf X Hfv_e1)).
+      apply (proj2 (Heq σ vf Hσ)).
+      apply (proj1 (tm_eval_in_store_restrict_fv_subset
+        σ e2 vf X Hfv_e2)).
+      subst σX. exact Heval_fun.
+  }
+  assert (Hfun_total :
+      must_terminating (lstore_instantiate_tm (lstore_lift_free σX) e1) <->
+      must_terminating (lstore_instantiate_tm (lstore_lift_free σX) e2)).
+  {
+    specialize (Htotal σ Hσ) as [Htotal12 Htotal21].
+    assert (Hagree1 : store_restrict σX (fv_tm e1) =
+      store_restrict σ (fv_tm e1)).
+    { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_e1.
+      reflexivity. }
+    assert (Hagree2 : store_restrict σX (fv_tm e2) =
+      store_restrict σ (fv_tm e2)).
+    { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_e2.
+      reflexivity. }
+    split; intros Hsn.
+    - apply (proj2 (tm_must_terminating_agree_on_fv
+        σX σ e2 Hlc2 Hagree2)).
+      apply Htotal12.
+      apply (proj1 (tm_must_terminating_agree_on_fv
+        σX σ e1 Hlc1 Hagree1)).
+      exact Hsn.
+    - apply (proj2 (tm_must_terminating_agree_on_fv
+        σX σ e1 Hlc1 Hagree1)).
+      apply Htotal21.
+      apply (proj1 (tm_must_terminating_agree_on_fv
+        σX σ e2 Hlc2 Hagree2)).
+      exact Hsn.
+  }
+  assert (HappsX :
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp_tm e1 (vfvar y))) <->
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp_tm e2 (vfvar y)))).
+  {
+    unfold tm_eval_in_store, expr_eval_in_store in Hfun_equiv.
+    rewrite !lstore_instantiate_tm_no_bvars in Hfun_equiv by
+      (try apply lc_lstore_lift_free;
+       rewrite ?lstore_free_part_lift_free; exact (proj1 HσX_closed)).
+    rewrite !lstore_free_part_lift_free in Hfun_equiv.
+    rewrite !lstore_instantiate_tm_no_bvars in Hfun_total by
+      (try apply lc_lstore_lift_free;
+       rewrite ?lstore_free_part_lift_free; exact (proj1 HσX_closed)).
+    rewrite !lstore_free_part_lift_free in Hfun_total.
+    rewrite !lstore_instantiate_tm_no_bvars by
+      (try apply lc_lstore_lift_free;
+       rewrite ?lstore_free_part_lift_free; exact (proj1 HσX_closed)).
+    rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    rewrite !msubst_tapp_tm_lc_arg by
+      (constructor || exact (proj2 HσX_closed)).
+    eapply must_terminating_tapp_tm_fun_equiv.
+    - change (lc_tm (m{σX} e1)).
+      apply msubst_lc; [exact (proj2 HσX_closed)|exact Hlc1].
+    - change (lc_tm (m{σX} e2)).
+      apply msubst_lc; [exact (proj2 HσX_closed)|exact Hlc2].
+    - change (lc_value (m{σX} (vfvar y))).
+      apply msubst_lc; [exact (proj2 HσX_closed)|constructor].
+    - exact Hfun_equiv.
+    - exact Hfun_total.
+  }
+  assert (Hagree_app1 : store_restrict σX (fv_tm (tapp_tm e1 (vfvar y))) =
+    store_restrict σ (fv_tm (tapp_tm e1 (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_app1.
+    reflexivity. }
+  assert (Hagree_app2 : store_restrict σX (fv_tm (tapp_tm e2 (vfvar y))) =
+    store_restrict σ (fv_tm (tapp_tm e2 (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_app2.
+    reflexivity. }
+  pose proof (lc_tapp_tm e1 (vfvar y) Hlc1 ltac:(constructor)) as Hlc_app1.
+  pose proof (lc_tapp_tm e2 (vfvar y) Hlc2 ltac:(constructor)) as Hlc_app2.
+  split; intros Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm e2 (vfvar y)) Hlc_app2 Hagree_app2)).
+    apply (proj1 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm e1 (vfvar y)) Hlc_app1 Hagree_app1)).
+    exact Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm e1 (vfvar y)) Hlc_app1 Hagree_app1)).
+    apply (proj2 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm e2 (vfvar y)) Hlc_app2 Hagree_app2)).
+    exact Hsn.
+Qed.
+
+Lemma tm_total_equiv_tapp_tm_ret
+    (m : WfWorldT) vf y :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret vf) (vfvar y)) ∪
+     fv_tm (tapp vf (vfvar y))) m ->
+  lc_value vf ->
+  tm_total_equiv_on m
+    (tapp_tm (tret vf) (vfvar y))
+    (tapp vf (vfvar y)).
+Proof.
+  intros Hclosed Hvf σ Hσ.
+  set (X := fv_tm (tapp_tm (tret vf) (vfvar y)) ∪
+            fv_tm (tapp vf (vfvar y))).
+  set (σX := store_restrict σ X : StoreT).
+  assert (HσX_closed : store_closed σX).
+  { subst σX X. apply Hclosed. exact Hσ. }
+  assert (Hfv_src : fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X)
+    by (subst X; set_solver).
+  assert (Hfv_tgt : fv_tm (tapp vf (vfvar y)) ⊆ X)
+    by (subst X; set_solver).
+  assert (HappsX :
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp_tm (tret vf) (vfvar y))) <->
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp vf (vfvar y)))).
+  {
+    rewrite !lstore_instantiate_tm_no_bvars by
+      (try apply lc_lstore_lift_free;
+       rewrite ?lstore_free_part_lift_free; exact (proj1 HσX_closed)).
+    rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    rewrite msubst_tapp_tm_lc_arg by
+      (constructor || exact (proj2 HσX_closed)).
+    rewrite msubst_tapp, msubst_ret.
+    eapply must_terminating_tapp_tm_ret_equiv.
+    - change (lc_value (m{σX} vf)).
+      apply msubst_lc; [exact (proj2 HσX_closed)|exact Hvf].
+    - change (lc_value (m{σX} (vfvar y))).
+      apply msubst_lc; [exact (proj2 HσX_closed)|constructor].
+  }
+  assert (Hagree_src : store_restrict σX
+      (fv_tm (tapp_tm (tret vf) (vfvar y))) =
+    store_restrict σ (fv_tm (tapp_tm (tret vf) (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_src.
+    reflexivity. }
+  assert (Hagree_tgt : store_restrict σX (fv_tm (tapp vf (vfvar y))) =
+    store_restrict σ (fv_tm (tapp vf (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_tgt.
+    reflexivity. }
+  pose proof (lc_tapp_tm (tret vf) (vfvar y)
+    ltac:(constructor; exact Hvf) ltac:(constructor)) as Hlc_src.
+  assert (Hlc_tgt : lc_tm (tapp vf (vfvar y))).
+  { constructor; [exact Hvf|constructor]. }
+  split; intros Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp vf (vfvar y)) Hlc_tgt Hagree_tgt)).
+    apply (proj1 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret vf) (vfvar y)) Hlc_src Hagree_src)).
+    exact Hsn.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret vf) (vfvar y)) Hlc_src Hagree_src)).
+    apply (proj2 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp vf (vfvar y)) Hlc_tgt Hagree_tgt)).
+    exact Hsn.
 Qed.
 
 Lemma tm_equiv_tapp_value_arg_eq_on
@@ -1433,7 +1823,8 @@ Proof.
   specialize (Hres_stores Hlift).
   specialize (Htotal_stores (lstore_lift_free σ) Hlift).
   destruct Hres_stores as [_ [vx [Hx_lookup Heval_e_vx]]].
-  destruct Htotal_stores as [vt Heval_ret_vt].
+  destruct (must_terminating_reaches_result _ Htotal_stores)
+    as [vt Heval_ret_vt].
   unfold tm_eval_in_store, expr_eval_in_store.
   unfold tm_eval_in_store, expr_eval_in_store in Heval_e_vx.
   unfold expr_eval_in_store in Heval_ret_vt.
@@ -1488,12 +1879,39 @@ Proof.
     inversion Heq. subst v. exact Heval_e_vx.
 Qed.
 
+Lemma tm_total_equiv_result_alias
+    e x (m : WfWorldT) :
+  m ⊨ expr_result_formula e (LVFree x) ->
+  m ⊨ expr_total_formula (tret (vfvar x)) ->
+  tm_total_equiv_on m e (tret (vfvar x)).
+Proof.
+  intros Hres Htotal_ret σ Hσ.
+  pose proof (expr_result_formula_to_atom_world e (LVFree x) m Hres)
+    as Hres_world.
+  pose proof (expr_total_formula_to_atom_world (tret (vfvar x)) m Htotal_ret)
+    as Htotal_world.
+  destruct Hres_world as [_ [_ Hres_stores]].
+  destruct Htotal_world as [_ Htotal_stores].
+  assert (Hlift :
+      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  specialize (Hres_stores (lstore_lift_free σ) Hlift)
+    as [_ [vx [_ Heval_e_vx]]].
+  specialize (Htotal_stores (lstore_lift_free σ) Hlift)
+    as Htotal_ret_store.
+  split.
+  - intros _. exact Htotal_ret_store.
+  - intros _.
+    unfold expr_eval_in_store in Heval_e_vx.
+    eapply must_terminating_of_steps_result. exact Heval_e_vx.
+Qed.
+
 Lemma typed_total_equiv_term_scope
     Σ τ m e1 e2 :
   typed_total_equiv_on Σ τ m e1 e2 ->
   fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT).
 Proof.
-  intros [_ [Hzero1 Hzero2]].
+  intros [_ [_ [Hzero1 Hzero2]]].
   pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
     as Hguard1.
   pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)
@@ -1519,7 +1937,7 @@ Lemma typed_total_equiv_term_lc_lvars
   typed_total_equiv_on Σ τ m e1 e2 ->
   lc_lvars (tm_lvars e1) /\ lc_lvars (tm_lvars e2).
 Proof.
-  intros [_ [Hzero1 Hzero2]].
+  intros [_ [_ [Hzero1 Hzero2]]].
   pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
     as Hguard1.
   pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)
@@ -1540,7 +1958,7 @@ Lemma typed_total_equiv_term_lc
   typed_total_equiv_on Σ τ m e1 e2 ->
   lc_tm e1 /\ lc_tm e2.
 Proof.
-  intros [_ [Hzero1 Hzero2]].
+  intros [_ [_ [Hzero1 Hzero2]]].
   pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
     as Hguard1.
   pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)

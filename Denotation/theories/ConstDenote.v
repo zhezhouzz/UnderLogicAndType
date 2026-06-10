@@ -5,6 +5,7 @@
 
 From Denotation Require Import Context TypeEquivCore
   TypeEquiv.
+From CoreLang Require Import StrongNormalization.
 
 Section ConstDenote.
 
@@ -97,12 +98,11 @@ Proof.
   split.
   - cbn [tm_lvars lvar_value_keys]. set_solver.
   - intros σ _.
-    exists (vconst c).
-    unfold expr_eval_in_store, lstore_instantiate_tm,
+    unfold lstore_instantiate_tm,
       lstore_instantiate_tm_at, lstore_instantiate_value_at.
     cbn [lstore_instantiate_tm_split_at
       lstore_instantiate_value_split_at].
-    apply Steps_refl. constructor. constructor.
+    apply must_terminating_tret. constructor.
 Qed.
 
 Lemma relevant_env_const_precise_atom_env_empty Σ c :

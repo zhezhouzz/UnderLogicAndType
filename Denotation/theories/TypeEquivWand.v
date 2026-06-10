@@ -635,6 +635,48 @@ Proof.
         * exact Hrestrict.
       + pose proof (typed_total_equiv_term_scope
           Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+	        rewrite Hdom. set_solver.
+	  }
+  assert (Htotal_apps :
+      tm_total_equiv_on (res_product n my Hc)
+        (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
+  {
+    pose proof (typed_total_equiv_term_lc
+      Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
+    eapply tm_total_equiv_tapp_fvar.
+    - exact Hclosed_apps.
+    - exact Hlc1.
+    - exact Hlc2.
+    - eapply tm_equiv_res_product_right.
+      + pose proof (typed_total_equiv_term_scope
+          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+        destruct Hequiv as [Heq_base _].
+        eapply tm_equiv_full_world_extend_fresh.
+        * exact Heq_base.
+        * exact Hscope.
+        * exact Hye.
+        * exact Hdom.
+        * exact Hrestrict.
+      + pose proof (typed_total_equiv_term_scope
+          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+        rewrite Hdom. set_solver.
+    - eapply tm_total_equiv_res_product_right.
+      + pose proof (typed_total_equiv_term_lc
+          Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1' Hlc2'].
+        pose proof (typed_total_equiv_term_scope
+          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+        eapply tm_total_equiv_full_world_extend_fresh.
+        * eapply typed_total_equiv_total_equiv. exact Hequiv.
+        * exact Hlc1'.
+        * exact Hlc2'.
+        * exact Hscope.
+        * exact Hye.
+        * exact Hdom.
+        * exact Hrestrict.
+      + exact Hlc1.
+      + exact Hlc2.
+      + pose proof (typed_total_equiv_term_scope
+          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
         rewrite Hdom. set_solver.
   }
   assert (Htotal_tgt :
@@ -642,12 +684,12 @@ Proof.
   {
     pose proof (typed_total_equiv_term_lc
       Σ (CTWand τx τr) m e1 e2 Hequiv) as [_ Hlc2].
-    pose proof (typed_total_equiv_term_scope
-      Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-    eapply tm_equiv_total.
-    - exact Heq_apps.
-    - apply lc_tapp_tm; [exact Hlc2|constructor].
-    - rewrite fv_tapp_tm. cbn [fv_value].
+	    pose proof (typed_total_equiv_term_scope
+	      Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+	    eapply tm_equiv_total.
+	    - exact Htotal_apps.
+	    - apply lc_tapp_tm; [exact Hlc2|constructor].
+	    - rewrite fv_tapp_tm. cbn [fv_value].
       pose proof (raw_le_dom (my : WorldT)
         (res_product n my Hc : WorldT)
         (res_product_le_r n my Hc)) as Hdom_le.
@@ -737,11 +779,41 @@ Proof.
       * pose proof (typed_total_equiv_term_scope
           Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
         set_solver.
-  - split.
-    + apply ty_denote_gas_zero_of_guard.
-      eapply ty_denote_gas_guard. exact Hres_mid.
-    + eapply (ty_denote_gas_zero_wand_open_result_target
-        gas Σ τx τr e1 e2 m my n y Hc); eauto.
+	  - split.
+	    + eapply tm_total_equiv_tapp_fvar.
+	      * eapply (wfworld_closed_on_wand_open_result_apps
+	          Σ τx τr e1 e2 m my n y Hc); eauto.
+	      * exact Hlc1.
+	      * exact Hlc2.
+	      * eapply tm_equiv_res_product_right.
+	        -- eapply tm_equiv_full_world_extend_fresh.
+	           ++ exact (proj1 Hequiv).
+	           ++ eapply typed_total_equiv_term_scope. exact Hequiv.
+	           ++ exact Hye.
+	           ++ exact Hdom.
+	           ++ exact Hrestrict.
+	        -- pose proof (typed_total_equiv_term_scope
+	            Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+	           set_solver.
+	      * eapply tm_total_equiv_res_product_right.
+	        -- eapply tm_total_equiv_full_world_extend_fresh.
+	           ++ eapply typed_total_equiv_total_equiv. exact Hequiv.
+	           ++ exact Hlc1.
+	           ++ exact Hlc2.
+	           ++ eapply typed_total_equiv_term_scope. exact Hequiv.
+	           ++ exact Hye.
+	           ++ exact Hdom.
+	           ++ exact Hrestrict.
+	        -- exact Hlc1.
+	        -- exact Hlc2.
+	        -- pose proof (typed_total_equiv_term_scope
+	            Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+	           set_solver.
+	    + split.
+	      * apply ty_denote_gas_zero_of_guard.
+	        eapply ty_denote_gas_guard. exact Hres_mid.
+	      * eapply (ty_denote_gas_zero_wand_open_result_target
+	          gas Σ τx τr e1 e2 m my n y Hc); eauto.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_wand_open_result
@@ -1057,16 +1129,33 @@ Proof.
     - exact Hclosed_apps.
     - exact Hlc1.
     - exact Hlc2.
+	    - eapply tm_equiv_res_product_right.
+	      + exact (proj1 Hequiv).
+	      + eapply typed_total_equiv_term_scope. exact Hequiv.
+	  }
+  assert (Htotal_apps :
+      tm_total_equiv_on (res_product n m Hc)
+        (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
+  {
+    eapply tm_total_equiv_tapp_fvar.
+    - exact Hclosed_apps.
+    - exact Hlc1.
+    - exact Hlc2.
     - eapply tm_equiv_res_product_right.
       + exact (proj1 Hequiv).
+      + eapply typed_total_equiv_term_scope. exact Hequiv.
+    - eapply tm_total_equiv_res_product_right.
+      + eapply typed_total_equiv_total_equiv. exact Hequiv.
+      + exact Hlc1.
+      + exact Hlc2.
       + eapply typed_total_equiv_term_scope. exact Hequiv.
   }
   assert (Htotal_tgt :
       res_product n m Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
-  {
-    eapply tm_equiv_total.
-    - exact Heq_apps.
-    - apply lc_tapp_tm; [exact Hlc2|constructor].
+	  {
+	    eapply tm_equiv_total.
+	    - exact Htotal_apps.
+	    - apply lc_tapp_tm; [exact Hlc2|constructor].
     - rewrite fv_tapp_tm. cbn [fv_value].
       pose proof (typed_total_equiv_term_scope
         Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
@@ -1180,10 +1269,23 @@ Proof.
     + eapply tm_equiv_res_product_right.
       * exact (proj1 Hequiv).
       * eapply typed_total_equiv_term_scope. exact Hequiv.
-  - split.
-    + apply ty_denote_gas_zero_of_guard.
-      eapply ty_denote_gas_guard. exact Hres_mid.
-    + eapply ty_denote_gas_zero_wand_open_result_target_product; eauto.
+	  - split.
+	    + eapply tm_total_equiv_tapp_fvar.
+	      * eapply wfworld_closed_on_wand_open_result_apps_product; eauto.
+	      * exact Hlc1.
+	      * exact Hlc2.
+	      * eapply tm_equiv_res_product_right.
+	        -- exact (proj1 Hequiv).
+	        -- eapply typed_total_equiv_term_scope. exact Hequiv.
+	      * eapply tm_total_equiv_res_product_right.
+	        -- eapply typed_total_equiv_total_equiv. exact Hequiv.
+	        -- exact Hlc1.
+	        -- exact Hlc2.
+	        -- eapply typed_total_equiv_term_scope. exact Hequiv.
+	    + split.
+	      * apply ty_denote_gas_zero_of_guard.
+	        eapply ty_denote_gas_guard. exact Hres_mid.
+	      * eapply ty_denote_gas_zero_wand_open_result_target_product; eauto.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_wand_frame_step

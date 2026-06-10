@@ -591,8 +591,9 @@ Lemma lam_arrow_result_mid_app_guard
 	      Hy_dom σ v Hσ) as [Happ_body Hbody_app].
 	    split; [exact Hbody_app|exact Happ_body].
 	  }
-	  eapply tm_equiv_total; eauto.
-	Qed.
+		  eapply tm_equiv_total; eauto.
+		  eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
+		Qed.
 
 Lemma lam_arrow_result_mid_app_zero
     (Σ : tyctx) Γ τx τ e
@@ -1113,18 +1114,27 @@ Proof.
       eapply basic_world_formula_wfworld_closed_on_atoms;
         [exact Hfv_lvars_app|exact Hworld_app].
     }
-    assert (Hclosed :
-        wfworld_closed_on
-          (fv_tm (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ∪
-           fv_tm (e ^^ y)) my).
-    { apply wfworld_closed_on_union; assumption. }
-    eapply tm_equiv_total; eauto.
-    intros σ v Hσ.
-    pose proof (tm_equiv_lam_app_body (erase_ty τx) e y my
-      Hclosed Hbody_lc ltac:(ctx_erasure_under_norm_in Hy; better_set_solver)
-      Hy_dom σ v Hσ) as [Happ_body Hbody_app].
-    split; [exact Hbody_app|exact Happ_body].
-  }
+	    assert (Hclosed :
+	        wfworld_closed_on
+	          (fv_tm (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ∪
+	           fv_tm (e ^^ y)) my).
+	    { apply wfworld_closed_on_union; assumption. }
+	    assert (Heq :
+	        tm_equiv_on my (e ^^ y)
+	          (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
+	    {
+	      intros σ v Hσ.
+	      pose proof (tm_equiv_lam_app_body (erase_ty τx) e y my
+	        Hclosed Hbody_lc ltac:(ctx_erasure_under_norm_in Hy; better_set_solver)
+	        Hy_dom σ v Hσ) as [Happ_body Hbody_app].
+	      split; [exact Hbody_app|exact Happ_body].
+	    }
+	    eapply tm_equiv_total.
+	    - eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
+	    - exact Hlc_app.
+	    - exact Hfv_app.
+	    - exact Htotal_body.
+	  }
   assert (Hzero_app :
       my ⊨ ty_denote_gas 0
         ((<[LVFree y := erase_ty τx]>

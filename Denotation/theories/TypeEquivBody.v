@@ -223,9 +223,9 @@ Lemma typed_total_equiv_inter_l
   typed_total_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
   typed_total_equiv_on Σ τ1 m e1 e2.
 Proof.
-  intros [Heq [Hzero_src Hzero_tgt]].
+  intros [Heq [Htotal [Hzero_src Hzero_tgt]]].
   split; [exact Heq|].
-  split.
+  split; [exact Htotal|]. split.
   - eapply ty_denote_gas_zero_inter_l; exact Hzero_src.
   - eapply ty_denote_gas_zero_inter_l; exact Hzero_tgt.
 Qed.
@@ -235,9 +235,9 @@ Lemma typed_total_equiv_inter_r
   typed_total_equiv_on Σ (CTInter τ1 τ2) m e1 e2 ->
   typed_total_equiv_on Σ τ2 m e1 e2.
 Proof.
-  intros [Heq [Hzero_src Hzero_tgt]].
+  intros [Heq [Htotal [Hzero_src Hzero_tgt]]].
   split; [exact Heq|].
-  split.
+  split; [exact Htotal|]. split.
   - eapply ty_denote_gas_zero_inter_r; exact Hzero_src.
   - eapply ty_denote_gas_zero_inter_r; exact Hzero_tgt.
 Qed.
@@ -305,9 +305,9 @@ Lemma typed_total_equiv_union_l
   typed_total_equiv_on Σ (CTUnion τ1 τ2) m e1 e2 ->
   typed_total_equiv_on Σ τ1 m e1 e2.
 Proof.
-  intros [Heq [Hzero_src Hzero_tgt]].
+  intros [Heq [Htotal [Hzero_src Hzero_tgt]]].
   split; [exact Heq|].
-  split.
+  split; [exact Htotal|]. split.
   - eapply ty_denote_gas_zero_union_l; exact Hzero_src.
   - eapply ty_denote_gas_zero_union_l; exact Hzero_tgt.
 Qed.
@@ -317,9 +317,9 @@ Lemma typed_total_equiv_union_r
   typed_total_equiv_on Σ (CTUnion τ1 τ2) m e1 e2 ->
   typed_total_equiv_on Σ τ2 m e1 e2.
 Proof.
-  intros [Heq [Hzero_src Hzero_tgt]].
+  intros [Heq [Htotal [Hzero_src Hzero_tgt]]].
   split; [exact Heq|].
-  split.
+  split; [exact Htotal|]. split.
   - eapply ty_denote_gas_zero_union_r; exact Hzero_src.
   - eapply ty_denote_gas_zero_union_r; exact Hzero_tgt.
 Qed.
@@ -442,14 +442,16 @@ Lemma typed_total_equiv_sum_l_pullback
   m1 ⊨ ty_denote_gas gas Σ τ1 e1 ->
   typed_total_equiv_on Σ τ1 m1 e1 e2.
 Proof.
-  intros Hsub [Heq [_ Hzero_tgt]] Hsrc.
+  intros Hsub [Heq [Htotal [_ Hzero_tgt]]] Hsrc.
   split.
   - eapply tm_equiv_res_store_subset; eauto.
   - split.
-    + apply ty_denote_gas_zero_of_guard.
-      eapply ty_denote_gas_guard. exact Hsrc.
-    + apply ty_denote_gas_zero_sum_l with (τ2 := τ2).
-      eapply ty_denote_gas_zero_res_subset; eauto.
+    + eapply tm_total_equiv_res_store_subset; eauto.
+    + split.
+      * apply ty_denote_gas_zero_of_guard.
+        eapply ty_denote_gas_guard. exact Hsrc.
+      * apply ty_denote_gas_zero_sum_l with (τ2 := τ2).
+        eapply ty_denote_gas_zero_res_subset; eauto.
 Qed.
 
 Lemma typed_total_equiv_sum_r_pullback
@@ -459,14 +461,16 @@ Lemma typed_total_equiv_sum_r_pullback
   m2 ⊨ ty_denote_gas gas Σ τ2 e1 ->
   typed_total_equiv_on Σ τ2 m2 e1 e2.
 Proof.
-  intros Hsub [Heq [_ Hzero_tgt]] Hsrc.
+  intros Hsub [Heq [Htotal [_ Hzero_tgt]]] Hsrc.
   split.
   - eapply tm_equiv_res_store_subset; eauto.
   - split.
-    + apply ty_denote_gas_zero_of_guard.
-      eapply ty_denote_gas_guard. exact Hsrc.
-    + apply ty_denote_gas_zero_sum_r with (τ1 := τ1).
-      eapply ty_denote_gas_zero_res_subset; eauto.
+    + eapply tm_total_equiv_res_store_subset; eauto.
+    + split.
+      * apply ty_denote_gas_zero_of_guard.
+        eapply ty_denote_gas_guard. exact Hsrc.
+      * apply ty_denote_gas_zero_sum_r with (τ1 := τ1).
+        eapply ty_denote_gas_zero_res_subset; eauto.
 Qed.
 
 Lemma ty_denote_gas_tm_equiv_sum_body
