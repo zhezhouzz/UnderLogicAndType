@@ -191,6 +191,44 @@ Proof.
   rewrite Hs, Hρ. reflexivity.
 Qed.
 
+Lemma lstore_on_mlsubst_back_merge
+    D (ρ_outer ρ_inner : LStore)
+    (s_nested : LStoreOn
+      ((D ∖ dom (ρ_outer : gmap logic_var V))
+        ∖ dom (ρ_inner : gmap logic_var V)))
+    (s_merged : LStoreOn
+      (D ∖ dom (ρ_outer ∪ ρ_inner : gmap logic_var V))) :
+  dom (ρ_outer : gmap logic_var V) ##
+    dom (ρ_inner : gmap logic_var V) ->
+  lso_store s_nested = lso_store s_merged ->
+  lstore_on_mlsubst_back D ρ_outer
+    (lstore_on_mlsubst_back
+      (D ∖ dom (ρ_outer : gmap logic_var V)) ρ_inner s_nested) =
+  lstore_on_mlsubst_back D (ρ_outer ∪ ρ_inner) s_merged.
+Proof.
+  intros Hdisj Hs.
+  apply lstore_on_ext.
+  unfold lstore_on_mlsubst_back. cbn [lso_store storeAO_store].
+  change (((lso_store s_nested ∪
+      storeA_restrict ρ_inner (D ∖ dom (ρ_outer : gmap logic_var V))) ∪
+      storeA_restrict ρ_outer D : gmap logic_var V) =
+    (lso_store s_merged ∪
+      storeA_restrict (ρ_outer ∪ ρ_inner) D : gmap logic_var V)).
+  rewrite Hs.
+  rewrite <- (assoc_L (∪)
+    (lso_store s_merged)
+    (storeA_restrict ρ_inner (D ∖ dom (ρ_outer : gmap logic_var V)))
+    (storeA_restrict ρ_outer D)).
+  f_equal.
+  apply storeA_restrict_union_residual_l.
+  unfold storeA_compat, map_compat.
+  intros z v1 v2 Houter Hinner.
+  exfalso.
+  apply elem_of_dom_2 in Houter.
+  apply elem_of_dom_2 in Hinner.
+  set_solver.
+Qed.
+
 Definition lstore_on_rekey
     (f : logic_var → logic_var) (Hf : Inj (=) (=) f)
     {D : lvset} (s : LStoreOn D) : LStoreOn (set_map f D).

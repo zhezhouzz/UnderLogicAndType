@@ -242,6 +242,36 @@ Proof.
   - rewrite dom_empty_L, difference_empty_L, IHφ. reflexivity.
 Qed.
 
+Lemma formula_mlsubst_merge ρ_outer ρ_inner φ :
+  dom (ρ_outer : gmap logic_var V) ##
+    dom (ρ_inner : gmap logic_var V) ->
+  formula_mlsubst ρ_inner (formula_mlsubst ρ_outer φ) =
+  formula_mlsubst (ρ_outer ∪ ρ_inner) φ.
+Proof.
+  intros Hdisj.
+  induction φ; cbn [formula_mlsubst];
+    try (rewrite ?IHφ1, ?IHφ2, ?IHφ; reflexivity).
+  - rewrite qual_mlsubst_merge; [reflexivity|exact Hdisj].
+  - f_equal.
+    + set_solver.
+    + exact IHφ.
+Qed.
+
+Lemma formula_msubst_store_merge σ_outer σ_inner φ :
+  dom (σ_outer : Store (V := V)) ##
+    dom (σ_inner : Store (V := V)) ->
+  formula_msubst_store σ_inner (formula_msubst_store σ_outer φ) =
+  formula_msubst_store (σ_outer ∪ σ_inner) φ.
+Proof.
+  intros Hdisj.
+  unfold formula_msubst_store.
+  rewrite lstore_lift_free_union.
+  apply formula_mlsubst_merge.
+  rewrite !dom_lstore_lift_free.
+  unfold lvars_of_atoms.
+  set_solver.
+Qed.
+
 Lemma formula_mlsubst_preserves_measure ρ φ :
   formula_measure (formula_mlsubst ρ φ) = formula_measure φ.
 Proof.
@@ -406,6 +436,43 @@ Lemma formula_open_preserves_measure k x φ :
   formula_measure (formula_open k x φ) = formula_measure φ.
 Proof.
   revert k. induction φ; intros k; simpl; eauto; lia.
+Qed.
+
+Lemma formula_mlsubst_open_fresh ρ k x φ :
+  (forall j, LVBound j ∉ dom (ρ : gmap logic_var V)) ->
+  LVFree x ∉ dom (ρ : gmap logic_var V) ->
+  formula_mlsubst ρ (formula_open k x φ) =
+  formula_open k x (formula_mlsubst ρ φ).
+Proof.
+  intros Hbound Hfree.
+  induction φ in k |- *; cbn [formula_open formula_mlsubst];
+    try solve [rewrite ?IHφ1, ?IHφ2, ?IHφ; eauto; reflexivity].
+  - rewrite qual_mlsubst_open_atom_fresh; [reflexivity|exact Hbound|exact Hfree].
+  - rewrite IHφ.
+    match goal with
+    | |- FFibVars ?A ?P = FFibVars ?B ?P =>
+        replace B with A; [reflexivity|]
+    end.
+    symmetry.
+    apply set_swap_difference_fresh; [apply Hbound|exact Hfree].
+Qed.
+
+Lemma formula_msubst_store_open_fresh σ k x φ :
+  x ∉ dom (σ : Store (V := V)) ->
+  formula_msubst_store σ (formula_open k x φ) =
+  formula_open k x (formula_msubst_store σ φ).
+Proof.
+  intros Hx.
+  unfold formula_msubst_store.
+  apply formula_mlsubst_open_fresh.
+  - intros j Hj.
+    rewrite dom_lstore_lift_free in Hj.
+    unfold lvars_of_atoms in Hj.
+    apply elem_of_map in Hj as [a [Hbad _]]. discriminate.
+  - rewrite dom_lstore_lift_free.
+    unfold lvars_of_atoms.
+    intros Hbad. apply elem_of_map in Hbad as [a [Heq Ha]].
+    inversion Heq. subst. exact (Hx Ha).
 Qed.
 
 Lemma formula_atom_swap_preserves_measure x y φ :

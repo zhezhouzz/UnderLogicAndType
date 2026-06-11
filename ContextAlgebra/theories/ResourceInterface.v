@@ -226,6 +226,14 @@ Proof.
   intros [x [Hbad _]]. discriminate.
 Qed.
 
+Lemma lstore_lift_free_union (σ1 σ2 : gmap atom V) :
+  lstore_lift_free (σ1 ∪ σ2) =
+  (lstore_lift_free σ1 ∪ lstore_lift_free σ2 : gmap logic_var V).
+Proof.
+  unfold lstore_lift_free.
+  apply atom_store_to_lvar_store_union.
+Qed.
+
 Lemma lstore_lift_free_swap (x y : atom) (σ : gmap atom V) :
   lstore_lift_free (storeA_swap x y σ) =
   lvar_store_swap x y (lstore_lift_free σ).
@@ -648,6 +656,18 @@ Proof.
   simpl in Hdom. set_solver.
 Qed.
 
+Lemma res_fiber_from_projection_store_dom_subset
+    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  dom (σ : StoreT) ⊆ X.
+Proof.
+  intros [Hproj _] a Ha.
+  pose proof (wfworld_store_dom (res_restrict m X) σ Hproj) as Hdom.
+  change (dom (σ : StoreT) = world_dom (res_restrict m X : World)) in Hdom.
+  rewrite Hdom in Ha. simpl in Ha.
+  set_solver.
+Qed.
+
 Lemma res_fiber_from_projection_store_source
     (m mfib : WfWorld) (X : aset) (σ τ : StoreT) :
   res_fiber_from_projection m X σ mfib ->
@@ -661,6 +681,169 @@ Proof.
   change (wmfib τ) in Hτ.
   rewrite Hfib in Hτ.
   exact (proj1 Hτ).
+Qed.
+
+Lemma res_fiber_from_projection_store_restrict
+    (m mfib : WfWorld) (X : aset) (σ τ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  (mfib : World) τ ->
+  store_restrict τ (dom (σ : StoreT)) = σ.
+Proof.
+  intros [Hproj Hfib] Hτ.
+  destruct mfib as [wmfib Hwfib].
+  cbn [raw_world raw_worldA world_stores] in Hτ, Hfib.
+  change (wmfib = rawA_fiber (m : World) σ) in Hfib.
+  change (wmfib τ) in Hτ.
+  rewrite Hfib in Hτ.
+  destruct Hτ as [_ Hτ].
+  exact Hτ.
+Qed.
+
+Lemma res_fiber_from_projection_drop_fixed_domain
+    (m mfib : WfWorld) (Y : aset) (σ σfix : StoreT) :
+  (forall τ, (m : World) τ ->
+    store_restrict τ (dom (σfix : StoreT)) = σfix) ->
+  res_fiber_from_projection m Y σ mfib ->
+  res_fiber_from_projection m
+    (Y ∖ dom (σfix : StoreT))
+    (store_restrict σ (Y ∖ dom (σfix : StoreT))) mfib.
+Proof.
+  intros Hfixed [Hproj Hfib].
+  destruct Hproj as [τ0 [Hτ0 Hτ0Y]].
+  split.
+  - exists τ0. split; [exact Hτ0|].
+    rewrite <- Hτ0Y.
+    rewrite storeA_restrict_restrict.
+    replace (Y ∩ (Y ∖ dom (σfix : StoreT)))
+      with (Y ∖ dom (σfix : StoreT)) by set_solver.
+    reflexivity.
+  - destruct mfib as [wmfib Hwfib].
+    cbn [proj1_sig] in Hfib |- *.
+    change (wmfib = rawA_fiber (m : World) σ) in Hfib.
+    change (wmfib =
+      rawA_fiber (m : World)
+        (store_restrict σ (Y ∖ dom (σfix : StoreT)))).
+    rewrite Hfib.
+    apply world_ext.
+    + reflexivity.
+    + intros τ. cbn [raw_fiber rawA_fiber raw_world raw_worldA world_stores].
+      split.
+      * intros [Hτ HτY]. split; [exact Hτ|].
+        apply storeA_map_eq. intros a.
+        rewrite !storeA_restrict_lookup.
+        destruct (decide
+          (a ∈ dom (storeA_restrict σ (Y ∖ dom (σfix : StoreT)) :
+            gmap atom V)))
+          as [Haσres|Haσres].
+        -- destruct (decide (a ∈ Y ∖ dom (σfix : StoreT))) as [HaYfix|Hbad].
+           2:{
+             exfalso. apply Hbad.
+             pose proof Haσres as Haσres_dom.
+             rewrite storeA_restrict_dom in Haσres_dom.
+             set_solver.
+           }
+           pose proof Haσres as Haσres_dom.
+           rewrite storeA_restrict_dom in Haσres_dom.
+           assert (Haσ : a ∈ dom (σ : StoreT)) by set_solver.
+           destruct (σ !! a) as [va|] eqn:Hσa.
+           2:{ apply not_elem_of_dom in Hσa. contradiction. }
+           assert (Hτa : τ !! a = Some va).
+           {
+             assert ((storeA_restrict τ (dom (σ : StoreT)) : StoreT) !! a =
+               Some va) as Hrt.
+             { rewrite HτY. exact Hσa. }
+             apply storeA_restrict_lookup_some in Hrt as [_ Hrt].
+             exact Hrt.
+           }
+           exact Hτa.
+        -- destruct (decide (a ∈ Y ∖ dom (σfix : StoreT))) as [HaYfix|_];
+             [|reflexivity].
+           assert (Haσnone : σ !! a = None).
+           {
+             apply not_elem_of_dom.
+             intros Haσ.
+             apply Haσres.
+             rewrite storeA_restrict_dom.
+             set_solver.
+           }
+           symmetry. exact Haσnone.
+      * intros [Hτ Hτres]. split; [exact Hτ|].
+        apply storeA_map_eq. intros a.
+        destruct (decide (a ∈ dom (σ : StoreT))) as [Haσ|Haσ].
+        2:{
+          rewrite storeA_restrict_lookup_none_r by exact Haσ.
+          apply not_elem_of_dom in Haσ. symmetry. exact Haσ.
+        }
+        rewrite storeA_restrict_lookup.
+        destruct (decide (a ∈ dom (σ : StoreT))) as [_|Hbad];
+          [|contradiction].
+        pose proof (wfworld_store_dom m τ0 Hτ0) as Hdomτ0.
+        change (dom (τ0 : StoreT) = world_dom (m : World)) in Hdomτ0.
+        assert (HaY : a ∈ Y).
+        {
+          rewrite <- Hτ0Y in Haσ.
+          rewrite storeA_restrict_dom, Hdomτ0 in Haσ.
+          set_solver.
+        }
+        destruct (decide (a ∈ dom (σfix : StoreT))) as [Hafix|Hafix].
+        -- assert (Hτfix : τ !! a = σfix !! a).
+           {
+             rewrite <- (Hfixed τ Hτ).
+             symmetry.
+             change ((storeA_restrict τ (dom (σfix : StoreT)) : StoreT) !! a =
+               τ !! a).
+             destruct (τ !! a) as [va|] eqn:Hτa.
+             - apply storeA_restrict_lookup_some_2; [exact Hτa|exact Hafix].
+             - apply storeA_restrict_lookup_none_l. exact Hτa.
+           }
+           assert (Hτ0fix : τ0 !! a = σfix !! a).
+           {
+             rewrite <- (Hfixed τ0 Hτ0).
+             symmetry.
+             change ((storeA_restrict τ0 (dom (σfix : StoreT)) : StoreT) !! a =
+               τ0 !! a).
+             destruct (τ0 !! a) as [va|] eqn:Hτ0a.
+             - apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact Hafix].
+             - apply storeA_restrict_lookup_none_l. exact Hτ0a.
+           }
+           transitivity (σfix !! a); [exact Hτfix|].
+           transitivity (τ0 !! a); [symmetry; exact Hτ0fix|].
+           rewrite <- Hτ0Y.
+           rewrite storeA_restrict_lookup.
+           destruct (decide (a ∈ Y)) as [_|Hbad]; [reflexivity|contradiction].
+        -- assert (HaYfix : a ∈ Y ∖ dom (σfix : StoreT)) by set_solver.
+           assert (Haσres :
+             a ∈ dom (storeA_restrict σ (Y ∖ dom (σfix : StoreT)) :
+               gmap atom V)).
+           { rewrite storeA_restrict_dom. set_solver. }
+           transitivity
+             ((storeA_restrict τ
+               (dom (storeA_restrict σ (Y ∖ dom (σfix : StoreT)) :
+                 gmap atom V)) : StoreT) !! a).
+           ++ symmetry.
+              destruct (τ !! a) as [va|] eqn:Hτa.
+              ** apply storeA_restrict_lookup_some_2; [exact Hτa|exact Haσres].
+              ** apply storeA_restrict_lookup_none_l. exact Hτa.
+           ++ rewrite Hτres.
+              destruct (σ !! a) as [va|] eqn:Hσa.
+              ** apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaYfix].
+              ** apply storeA_restrict_lookup_none_l. exact Hσa.
+Qed.
+
+Lemma res_subset_fiber_source
+    (m mfib : WfWorld) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  res_subset mfib m.
+Proof.
+  intros Hfib.
+  split.
+  - destruct Hfib as [_ Hfib_eq].
+    change ((mfib : World) = raw_fiber (m : World) σ) in Hfib_eq.
+    pose proof (f_equal world_dom Hfib_eq) as Hdom.
+    change (world_dom (mfib : World) = world_dom (m : World)) in Hdom.
+    exact Hdom.
+  - intros τ Hτ.
+    eapply res_fiber_from_projection_store_source; eauto.
 Qed.
 
 Lemma res_fiber_from_projection_of_store
@@ -1318,6 +1501,24 @@ Lemma res_extend_by_le (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
   m ⊑ n.
 Proof. apply resA_extend_by_le. Qed.
+
+Lemma res_extend_by_le_mono
+    (m n mx nx : WfWorld) (F : fiber_extension) :
+  m ⊑ n ->
+  m #> F ~~> mx ->
+  n #> F ~~> nx ->
+  mx ⊑ nx.
+Proof. apply resA_extend_by_le_mono. Qed.
+
+Lemma res_extend_by_sum
+    (m1 m2 m1x m2x : WfWorld) (F : fiber_extension)
+    (Hdef : raw_sum_defined (m1 : World) (m2 : World)) :
+  m1 #> F ~~> m1x ->
+  m2 #> F ~~> m2x ->
+  exists Hdefx : raw_sum_defined (m1x : World) (m2x : World),
+    res_sum m1 m2 Hdef #> F ~~>
+      res_sum m1x m2x Hdefx.
+Proof. apply resA_extend_by_sum. Qed.
 
 Lemma res_extend_by_applicable (m : WfWorld) (F : fiber_extension) (n : WfWorld) :
   m #> F ~~> n →
