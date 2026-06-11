@@ -27,11 +27,10 @@ when the workflow changes.
 
 ## Notifications
 
-For long checklist-style work, use the zsh notification helpers:
+For long checklist-style work, call `ntfy` directly. Do not use zsh
+notification helper functions.
 
 ```bash
-notify_checkpoint "..."
-notify_high "..."
+ntfy send --priority low zhe-codex "..."
+ntfy send --priority high zhe-codex "..."
 ```
-
-If the shell helpers are unavailable, fall back to `ntfy send`.
