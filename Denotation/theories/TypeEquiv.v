@@ -392,7 +392,36 @@ Lemma expr_result_formula_of_result_extends_from_ty_guard
   m ⊨ ty_guard_formula Σ τ e ->
   mx ⊨ expr_result_formula e (LVFree x).
 Proof.
-Admitted.
+  intros HF Hext Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic Htotal]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc Σ e (erase_ty τ) HlcΣ Hty) as Hlc_e.
+  pose proof (basic_tm_has_ltype_lvars Σ e (erase_ty τ) Hty) as He_lvars.
+  pose proof (basic_world_formula_models_iff Σ m) as Hworld_iff.
+  apply Hworld_iff in Hworld as [_ [HΣdom _]].
+  unfold expr_result_formula.
+  eapply expr_result_formula_at_of_result_extends_on.
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e). unfold lvars_of_atoms.
+    intros z Hz. apply elem_of_map in Hz as [a [-> _]]. exact I.
+  - reflexivity.
+  - intros Hx_lvars.
+    apply (expr_result_extension_witness_fresh _ _ _ HF).
+    rewrite <- tm_lvars_fv. apply lvars_fv_elem. exact Hx_lvars.
+  - rewrite tm_lvars_fv.
+    intros a Ha.
+    apply HΣdom.
+    apply lvars_fv_elem.
+    apply He_lvars.
+    unfold lvars_of_atoms. apply elem_of_map.
+    exists a. split; [reflexivity|exact Ha].
+  - rewrite tm_lvars_fv.
+    apply expr_result_extension_witness_to_on. exact HF.
+  - exact Hext.
+  - eapply expr_total_formula_to_atom_world. exact Htotal.
+Qed.
 
 Lemma denot_ty_lvar_guard_wfworld_closed_on_term
     (Σ : lty_env) τ e (m : WfWorldT) :
