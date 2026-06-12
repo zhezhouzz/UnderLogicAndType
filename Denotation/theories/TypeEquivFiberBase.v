@@ -302,7 +302,8 @@ Lemma typed_fiber_equiv_inter_l
   typed_fiber_equiv_on Σ τ1 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ1 (CTInter τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_inter_l.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_inter_l.
@@ -316,7 +317,8 @@ Lemma typed_fiber_equiv_inter_r
   typed_fiber_equiv_on Σ τ2 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ2 (CTInter τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_inter_r.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_inter_r.
@@ -330,7 +332,8 @@ Lemma typed_fiber_equiv_union_l
   typed_fiber_equiv_on Σ τ1 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ1 (CTUnion τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_union_l.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_union_l.
@@ -344,7 +347,8 @@ Lemma typed_fiber_equiv_union_r
   typed_fiber_equiv_on Σ τ2 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ2 (CTUnion τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_union_r.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_union_r.
@@ -358,7 +362,8 @@ Lemma typed_fiber_equiv_sum_l
   typed_fiber_equiv_on Σ τ1 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ1 (CTSum τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_sum_l.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_sum_l.
@@ -372,7 +377,8 @@ Lemma typed_fiber_equiv_sum_r
   typed_fiber_equiv_on Σ τ2 m e1 e2.
 Proof.
   intros Hequiv.
-  eapply typed_fiber_equiv_project.
+  eapply (typed_fiber_equiv_project Σ τ2 (CTSum τ1 τ2) m e1 e2).
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
   - eapply ty_denote_gas_zero_sum_r.
     eapply typed_fiber_equiv_zero_src. exact Hequiv.
   - eapply ty_denote_gas_zero_sum_r.

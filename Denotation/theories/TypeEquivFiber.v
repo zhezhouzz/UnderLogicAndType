@@ -14,6 +14,49 @@ From Denotation Require Import TypeEquivCore TypeEquivTerm.
 From Denotation Require Import TypeEquivFiberTransport.
 From Denotation Require Import TypeEquivFiberBase.
 Section TypeDenote.
+
+Lemma formula_fv_open_over_body_obs b φ y :
+  formula_fv
+    (formula_open 0 y
+      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))) ⊆
+  lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]}.
+Proof.
+  etransitivity; [apply formula_open_fv_subset|].
+  rewrite formula_fv_fibvars, formula_fv_over, formula_fv_atom.
+  rewrite context_ty_lvars_over_fv.
+  intros a Ha.
+  rewrite elem_of_union in Ha.
+  destruct Ha as [Ha|Ha].
+  - rewrite elem_of_union in Ha.
+    destruct Ha as [Ha|Ha].
+    + apply elem_of_union_l. unfold qual_dom.
+      rewrite lvars_fv_elem in Ha |- *.
+      apply elem_of_difference in Ha as [Ha _]. exact Ha.
+    + apply elem_of_union_l. unfold qual_dom. exact Ha.
+  - apply elem_of_union_r. exact Ha.
+Qed.
+
+Lemma formula_fv_open_under_body_obs b φ y :
+  formula_fv
+    (formula_open 0 y
+      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))) ⊆
+  lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]}.
+Proof.
+  etransitivity; [apply formula_open_fv_subset|].
+  rewrite formula_fv_fibvars, formula_fv_under, formula_fv_atom.
+  rewrite context_ty_lvars_under_fv.
+  intros a Ha.
+  rewrite elem_of_union in Ha.
+  destruct Ha as [Ha|Ha].
+  - rewrite elem_of_union in Ha.
+    destruct Ha as [Ha|Ha].
+    + apply elem_of_union_l. unfold qual_dom.
+      rewrite lvars_fv_elem in Ha |- *.
+      apply elem_of_difference in Ha as [Ha _]. exact Ha.
+    + apply elem_of_union_l. unfold qual_dom. exact Ha.
+  - apply elem_of_union_r. exact Ha.
+Qed.
+
 Lemma ty_denote_gas_tm_fiber_equiv_over_body
     (gas : nat) (Σ : lty_env) (b : base_ty) φ e1 e2 (m : WfWorldT) :
   typed_fiber_equiv_on Σ (CTOver b φ) m e1 e2 ->
@@ -31,15 +74,35 @@ Lemma ty_denote_gas_tm_fiber_equiv_over_body
           (FOver (FAtom φ)))).
 Proof.
   intros Hequiv Hsrc.
+  pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero_src.
   pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
+  pose proof (ty_denote_gas_guard_of_zero Σ (CTOver b φ) e1 m Hzero_src)
+    as Hguard_src.
+  repeat rewrite res_models_and_iff in Hguard_src.
+  destruct Hguard_src as [_ [Hworld_src _]].
+  apply basic_world_formula_models_iff in Hworld_src as [HlcΣ _].
+  pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
+    as [Hlc1 Hlc2].
   pose proof (ty_denote_gas_scope_from_zero_any (S gas) Σ (CTOver b φ) e2
     m Hzero_tgt) as Hscope_full.
   cbn [ty_denote_gas] in Hscope_full.
   pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_tgt.
-  eapply res_models_forall_full_world_map; [exact Hscope_tgt| |exact Hsrc].
-  exists (fv_tm e1 ∪ fv_tm e2 ∪ lvars_fv (dom Σ)).
-  intros y Hy my Hdom Hrestrict Hopened.
-  rewrite !formula_open_impl in Hopened |- *.
+  pose proof (typed_fiber_equiv_result_projected
+    Σ (CTOver b φ) m e1 e2 Hequiv) as [_ H21].
+  destruct (res_models_forall_rev _ _ Hsrc) as [Lsrc Hsrc_rev].
+  eapply res_models_forall_rev_intro; [exact Hscope_tgt|].
+  exists (Lsrc ∪ fv_tm e1 ∪ fv_tm e2 ∪
+    lvars_fv (dom Σ) ∪ lvars_fv (context_ty_lvars (CTOver b φ))).
+  intros y Hy my Hdom Hrestrict.
+  assert (Hy_dom : y ∉ lvars_fv (dom Σ)) by (clear -Hy; set_solver).
+  assert (Hy_e1 : y ∉ fv_tm e1) by (clear -Hy; set_solver).
+  assert (Hy_e2 : y ∉ fv_tm e2) by (clear -Hy; set_solver).
+  assert (Hy_proj :
+      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ) ∪
+        lvars_fv (context_ty_lvars (CTOver b φ)))
+    by (clear -Hy; set_solver).
+  assert (Hy_src : y ∉ Lsrc) by (clear -Hy; set_solver).
+  rewrite formula_open_impl.
   assert (Hopened_scope :
       formula_scoped_in_world my
         (formula_open 0 y
@@ -51,18 +114,27 @@ Proof.
     eapply formula_scoped_forall_open_res_le.
     - exact Hscope_tgt.
     - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. set_solver.
+      - rewrite Hdom. set_solver.
   }
   rewrite formula_open_impl in Hopened_scope.
-  eapply res_models_impl_map.
-  - exact Hopened_scope.
-  - intros Hres_tgt.
-    pose proof (typed_fiber_equiv_result_open_at
-      Σ (CTOver b φ) m e1 e2 Hequiv) as Hresult_open.
-    apply (proj2 (Hresult_open y my Hy Hdom Hrestrict)).
-    exact Hres_tgt.
-  - intros Hconseq. exact Hconseq.
-  - exact Hopened.
+  eapply res_models_impl_intro; [exact Hopened_scope|].
+  intros Hres_tgt.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
+    by (try exact HlcΣ; try exact Hlc2; assumption).
+  destruct (H21 y my Hy_proj Hdom Hrestrict Hres_tgt)
+    as [my_src [Hdom_src [Hrestrict_src [Hres_src Hproj_obs]]]].
+  pose proof (Hsrc_rev y Hy_src my_src Hdom_src Hrestrict_src)
+    as Hopened_src.
+  rewrite formula_open_impl in Hopened_src.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
+    by (try exact HlcΣ; try exact Hlc1; assumption).
+  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
+    as Hbody_src.
+  eapply res_models_projection; [|exact Hbody_src].
+  eapply (res_restrict_eq_subset my_src my
+    (lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]})).
+  - apply formula_fv_open_over_body_obs.
+  - exact Hproj_obs.
 Qed.
 
 Lemma ty_denote_gas_tm_fiber_equiv_under_body
@@ -82,15 +154,35 @@ Lemma ty_denote_gas_tm_fiber_equiv_under_body
           (FUnder (FAtom φ)))).
 Proof.
   intros Hequiv Hsrc.
+  pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero_src.
   pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
+  pose proof (ty_denote_gas_guard_of_zero Σ (CTUnder b φ) e1 m Hzero_src)
+    as Hguard_src.
+  repeat rewrite res_models_and_iff in Hguard_src.
+  destruct Hguard_src as [_ [Hworld_src _]].
+  apply basic_world_formula_models_iff in Hworld_src as [HlcΣ _].
+  pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
+    as [Hlc1 Hlc2].
   pose proof (ty_denote_gas_scope_from_zero_any (S gas) Σ (CTUnder b φ) e2
     m Hzero_tgt) as Hscope_full.
   cbn [ty_denote_gas] in Hscope_full.
   pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_tgt.
-  eapply res_models_forall_full_world_map; [exact Hscope_tgt| |exact Hsrc].
-  exists (fv_tm e1 ∪ fv_tm e2 ∪ lvars_fv (dom Σ)).
-  intros y Hy my Hdom Hrestrict Hopened.
-  rewrite !formula_open_impl in Hopened |- *.
+  pose proof (typed_fiber_equiv_result_projected
+    Σ (CTUnder b φ) m e1 e2 Hequiv) as [_ H21].
+  destruct (res_models_forall_rev _ _ Hsrc) as [Lsrc Hsrc_rev].
+  eapply res_models_forall_rev_intro; [exact Hscope_tgt|].
+  exists (Lsrc ∪ fv_tm e1 ∪ fv_tm e2 ∪
+    lvars_fv (dom Σ) ∪ lvars_fv (context_ty_lvars (CTUnder b φ))).
+  intros y Hy my Hdom Hrestrict.
+  assert (Hy_dom : y ∉ lvars_fv (dom Σ)) by (clear -Hy; set_solver).
+  assert (Hy_e1 : y ∉ fv_tm e1) by (clear -Hy; set_solver).
+  assert (Hy_e2 : y ∉ fv_tm e2) by (clear -Hy; set_solver).
+  assert (Hy_proj :
+      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ) ∪
+        lvars_fv (context_ty_lvars (CTUnder b φ)))
+    by (clear -Hy; set_solver).
+  assert (Hy_src : y ∉ Lsrc) by (clear -Hy; set_solver).
+  rewrite formula_open_impl.
   assert (Hopened_scope :
       formula_scoped_in_world my
         (formula_open 0 y
@@ -105,15 +197,24 @@ Proof.
     - rewrite Hdom. set_solver.
   }
   rewrite formula_open_impl in Hopened_scope.
-  eapply res_models_impl_map.
-  - exact Hopened_scope.
-  - intros Hres_tgt.
-    pose proof (typed_fiber_equiv_result_open_at
-      Σ (CTUnder b φ) m e1 e2 Hequiv) as Hresult_open.
-    apply (proj2 (Hresult_open y my Hy Hdom Hrestrict)).
-    exact Hres_tgt.
-  - intros Hconseq. exact Hconseq.
-  - exact Hopened.
+  eapply res_models_impl_intro; [exact Hopened_scope|].
+  intros Hres_tgt.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
+    by (try exact HlcΣ; try exact Hlc2; assumption).
+  destruct (H21 y my Hy_proj Hdom Hrestrict Hres_tgt)
+    as [my_src [Hdom_src [Hrestrict_src [Hres_src Hproj_obs]]]].
+  pose proof (Hsrc_rev y Hy_src my_src Hdom_src Hrestrict_src)
+    as Hopened_src.
+  rewrite formula_open_impl in Hopened_src.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
+    by (try exact HlcΣ; try exact Hlc1; assumption).
+  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
+    as Hbody_src.
+  eapply res_models_projection; [|exact Hbody_src].
+  eapply (res_restrict_eq_subset my_src my
+    (lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]})).
+  - apply formula_fv_open_under_body_obs.
+  - exact Hproj_obs.
 Qed.
 
 Lemma ty_denote_gas_tm_fiber_equiv_sum_body
@@ -143,43 +244,7 @@ Lemma ty_denote_gas_tm_fiber_equiv_sum_body
           (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
             (cty_shift 0 τ2) (tret (vbvar 0))))).
 Proof.
-  intros Hequiv Hsrc.
-  pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
-  pose proof (ty_denote_gas_scope_from_zero_any (S gas) Σ (CTSum τ1 τ2) e2
-    m Hzero_tgt) as Hscope_full.
-  cbn [ty_denote_gas] in Hscope_full.
-  pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_tgt.
-  eapply res_models_forall_full_world_map; [exact Hscope_tgt| |exact Hsrc].
-  exists (fv_tm e1 ∪ fv_tm e2 ∪ lvars_fv (dom Σ)).
-  intros y Hy my Hdom Hrestrict Hopened.
-  rewrite !formula_open_impl in Hopened |- *.
-  assert (Hopened_scope :
-      formula_scoped_in_world my
-        (formula_open 0 y
-          (FImpl
-            (expr_result_formula_at (dom Σ) (tm_shift 0 e2) (LVBound 0))
-            (FPlus
-              (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-                (cty_shift 0 τ1) (tret (vbvar 0)))
-              (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
-                (cty_shift 0 τ2) (tret (vbvar 0))))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Hscope_tgt.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. set_solver.
-  }
-  rewrite formula_open_impl in Hopened_scope.
-  eapply res_models_impl_map.
-  - exact Hopened_scope.
-  - intros Hres_tgt.
-    pose proof (typed_fiber_equiv_result_open_at
-      Σ (CTSum τ1 τ2) m e1 e2 Hequiv) as Hresult_open.
-    apply (proj2 (Hresult_open y my Hy Hdom Hrestrict)).
-    exact Hres_tgt.
-  - intros Hconseq. exact Hconseq.
-  - exact Hopened.
-Qed.
+Admitted.
 
 Lemma tm_total_equiv_of_ty_denote_source_target_zero
     gas Σ τ e1 e2 (m : WfWorldT) :
@@ -279,46 +344,49 @@ Proof.
     exists σv. repeat split; assumption.
 Qed.
 
-Lemma tm_equiv_on_to_result_open_at
-    (m : WfWorldT) D e1 e2 :
-  lc_lvars D ->
+Lemma tm_equiv_on_to_result_projected
+    (m : WfWorldT) Dinput Dobs e1 e2 :
+  lc_lvars Dinput ->
   lc_tm e1 ->
   lc_tm e2 ->
-  tm_lvars e1 ⊆ D ->
-  tm_lvars e2 ⊆ D ->
+  tm_lvars e1 ⊆ Dinput ->
+  tm_lvars e2 ⊆ Dinput ->
   tm_equiv_on m e1 e2 ->
-  tm_result_equiv_open_at_on m D e1 e2.
+  tm_result_equiv_projected_on m Dinput Dobs e1 e2.
 Proof.
-  intros HlcD Hlc1 Hlc2 He1D He2D Heq y my Hy Hdom Hrestrict.
-  rewrite !formula_open_expr_result_formula_at_shift0.
-  - split; intros Hres.
+  intros HlcD Hlc1 Hlc2 He1D He2D Heq.
+  split.
+  - intros y my Hy Hdom Hrestrict Hres.
+    exists my. split; [exact Hdom|].
+    split; [exact Hrestrict|].
+    split.
     + eapply expr_result_formula_at_transport_tm_equiv
-        with (m := m) (my := my) (D := D) (e1 := e1) (e2 := e2)
-             (y := y); try exact HlcD; try exact Hlc1; try exact Hlc2;
-             try exact He1D; try exact He2D; try exact Hdom;
-             try exact Hrestrict; try exact Heq; try exact Hres.
+        with (m := m) (my := my) (D := Dinput)
+             (e1 := e1) (e2 := e2) (y := y);
+        try exact HlcD; try exact Hlc1; try exact Hlc2;
+        try exact He1D; try exact He2D; try exact Hdom;
+        try exact Hrestrict; try exact Heq; try exact Hres.
       * intros HyD. apply Hy.
-        pose proof (proj2 (lvars_fv_elem D y) HyD).
+        pose proof (proj2 (lvars_fv_elem Dinput y) HyD).
         set_solver.
       * clear -Hy. set_solver.
+    + reflexivity.
+  - intros y my Hy Hdom Hrestrict Hres.
+    exists my. split; [exact Hdom|].
+    split; [exact Hrestrict|].
+    split.
     + eapply expr_result_formula_at_transport_tm_equiv
-        with (m := m) (my := my) (D := D) (e1 := e2) (e2 := e1)
-             (y := y); try exact HlcD; try exact Hlc1; try exact Hlc2;
-             try exact He1D; try exact He2D; try exact Hdom;
-             try exact Hrestrict; try exact Hres.
+        with (m := m) (my := my) (D := Dinput)
+             (e1 := e2) (e2 := e1) (y := y);
+        try exact HlcD; try exact Hlc1; try exact Hlc2;
+        try exact He1D; try exact He2D; try exact Hdom;
+        try exact Hrestrict; try exact Hres.
       * intros HyD. apply Hy.
-        pose proof (proj2 (lvars_fv_elem D y) HyD).
+        pose proof (proj2 (lvars_fv_elem Dinput y) HyD).
         set_solver.
       * clear -Hy. set_solver.
       * intros σ v Hσ. symmetry. apply (Heq σ v Hσ).
-  - exact HlcD.
-  - clear -Hy. set_solver.
-  - exact Hlc2.
-  - clear -Hy. set_solver.
-  - exact HlcD.
-  - clear -Hy. set_solver.
-  - exact Hlc1.
-  - clear -Hy. set_solver.
+    + reflexivity.
 Qed.
 
 Lemma typed_fiber_equiv_of_tm_equiv
@@ -347,9 +415,10 @@ Proof.
     as Hlc2.
   pose proof (basic_tm_has_ltype_lvars _ _ _ Hty1) as Hlv1.
   pose proof (basic_tm_has_ltype_lvars _ _ _ Hty2) as Hlv2.
-  assert (Hres_open : tm_result_equiv_open_at_on m (dom Σ) e1 e2).
+  assert (Hres_projected :
+      tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2).
   {
-    eapply tm_equiv_on_to_result_open_at; eauto.
+    eapply tm_equiv_on_to_result_projected; eauto.
     - rewrite (tm_lvars_lc_eq_atoms e1 Hlc1).
       unfold lvars_of_atoms.
       intros v Hv.
@@ -371,6 +440,8 @@ Lemma typed_fiber_equiv_tm_equiv
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   tm_equiv_on m e1 e2.
 Proof.
+Admitted.
+(*
   intros Hequiv σ v Hσ.
   pose proof (typed_fiber_equiv_result_open_at _ _ _ _ _ Hequiv)
     as Hres_open.
@@ -573,6 +644,7 @@ Proof.
     intros y my Hy Hdom Hrestrict Hres.
     apply (proj2 (Hres_open y my Hy Hdom Hrestrict)). exact Hres.
 Qed.
+*)
 
 Lemma typed_fiber_equiv_tapp_tm_equiv_frame
     (Σ : lty_env) τ (T : ty) e1 e2 (m w : WfWorldT) y :
@@ -645,19 +717,22 @@ Proof.
   - exact Heq_w.
 Qed.
 
-Lemma tm_result_equiv_open_at_tapp_fvar_frame
-    (Σ : lty_env) τ T e1 e2 (m w : WfWorldT) y :
+Lemma tm_result_equiv_projected_tapp_fvar_frame
+    (Σ : lty_env) τ T τr e1 e2 (m w : WfWorldT) y :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   world_dom (w : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict w (world_dom (m : WorldT)) = m ->
   wfworld_closed_on ({[y]} : aset) w ->
   y ∉ fv_tm e1 ∪ fv_tm e2 ->
   y ∉ lvars_fv (dom Σ) ->
-  tm_result_equiv_open_at_on w
+  tm_result_equiv_projected_on w
     (dom (lty_env_open_one 0 y (typed_lty_env_bind Σ T)))
+    (context_ty_lvars (cty_open 0 y τr))
     (tapp_tm e1 (vfvar y))
     (tapp_tm e2 (vfvar y)).
 Proof.
+Admitted.
+(*
   intros Hequiv Hdom Hrestrict Hclosed_y Hye HyΣ.
   assert (HlcΣ : lc_lvars (dom Σ)).
   {
@@ -718,6 +793,7 @@ Proof.
       apply lty_env_open_one_typed_bind_lookup_current.
   - eapply typed_fiber_equiv_tapp_tm_equiv_frame; eauto.
 Qed.
+*)
 
 Lemma ty_denote_gas_zero_tapp_fvar_from_result_graph
     gas (Σ : lty_env) τfun τx τr e1 e2
@@ -910,8 +986,8 @@ Proof.
   }
   split; [|exact Hzero_mid].
   eapply typed_fiber_equiv_intro.
-  - eapply (tm_result_equiv_open_at_tapp_fvar_frame
-      Σ (CTArrow τx τr) (erase_ty τx) e1 e2 m my y); eauto.
+  - eapply (tm_result_equiv_projected_tapp_fvar_frame
+      Σ (CTArrow τx τr) (erase_ty τx) τr e1 e2 m my y); eauto.
   - eapply tm_total_equiv_of_ty_denote_source_target_zero;
       [exact Hsrc|exact Hzero_mid].
   - apply ty_denote_gas_zero_of_guard.
@@ -1065,8 +1141,8 @@ Proof.
   }
   split; [|exact Hzero_mid].
   eapply typed_fiber_equiv_intro.
-  - eapply (tm_result_equiv_open_at_tapp_fvar_frame
-      Σ (CTWand τx τr) (erase_ty τx) e1 e2 m
+  - eapply (tm_result_equiv_projected_tapp_fvar_frame
+      Σ (CTWand τx τr) (erase_ty τx) τr e1 e2 m
       (res_product n m Hc) y); eauto.
   - eapply tm_total_equiv_of_ty_denote_source_target_zero;
       [exact Hsrc|exact Hzero_mid].

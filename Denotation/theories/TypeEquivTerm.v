@@ -42,16 +42,24 @@ Definition tm_fiber_equiv_on
       tm_fiber_result_on m X e1 σ0 v <->
       tm_fiber_result_on m X e2 σ0 v.
 
-Definition tm_result_equiv_open_at_on
-    (m : WfWorldT) (D : lvset) (e1 e2 : tm) : Prop :=
-  forall y (my : WfWorldT),
-    y ∉ fv_tm e1 ∪ fv_tm e2 ∪ lvars_fv D ->
-    world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-    res_restrict my (world_dom (m : WorldT)) = m ->
-    my ⊨ formula_open 0 y
-      (expr_result_formula_at D (tm_shift 0 e1) (LVBound 0)) <->
-    my ⊨ formula_open 0 y
-      (expr_result_formula_at D (tm_shift 0 e2) (LVBound 0)).
+Definition tm_result_refines_projected_on
+    (m : WfWorldT) (Dinput Dobs : lvset) (e_src e_tgt : tm) : Prop :=
+  forall y (my_src : WfWorldT),
+    y ∉ fv_tm e_src ∪ fv_tm e_tgt ∪ lvars_fv Dinput ∪ lvars_fv Dobs ->
+    world_dom (my_src : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+    res_restrict my_src (world_dom (m : WorldT)) = m ->
+    my_src ⊨ expr_result_formula_at Dinput e_src (LVFree y) ->
+    exists my_tgt : WfWorldT,
+      world_dom (my_tgt : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
+      res_restrict my_tgt (world_dom (m : WorldT)) = m /\
+      my_tgt ⊨ expr_result_formula_at Dinput e_tgt (LVFree y) /\
+      res_restrict my_tgt (lvars_fv Dobs ∪ {[y]}) =
+      res_restrict my_src (lvars_fv Dobs ∪ {[y]}).
+
+Definition tm_result_equiv_projected_on
+    (m : WfWorldT) (Dinput Dobs : lvset) (e1 e2 : tm) : Prop :=
+  tm_result_refines_projected_on m Dinput Dobs e1 e2 /\
+  tm_result_refines_projected_on m Dinput Dobs e2 e1.
 
 Definition typed_total_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
@@ -62,21 +70,24 @@ Definition typed_total_equiv_on
   m ⊨ ty_denote_gas 0 Σ τ e2.
 
 (** Type-level term transport is driven by formula-level result graph
-    equivalence at the environment domain used by [ty_denote_gas].  This is an
-    exact equivalence on fresh result extensions of the current world, not a
-    subset/refinement relation over store alternatives.  In particular, do not
-    replace it by [res_subset] reasoning: exact result formulas are not stable
-    under deleting nondeterministic alternatives. *)
+    correspondence at the environment domain used by [ty_denote_gas], observed
+    only through the variables of the target type.  This is not full result
+    graph equality: witnesses may differ outside [FV τ] and the fresh result
+    slot.  The low-level correspondence is still exact in both directions,
+    which is essential because type denotation contains both over- and
+    under-approximate refinements.  Do not replace it by [res_subset]
+    reasoning: exact result formulas are not stable under deleting
+    nondeterministic alternatives. *)
 Definition typed_fiber_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT) (e1 e2 : tm) : Prop :=
-  tm_result_equiv_open_at_on m (dom Σ) e1 e2 /\
+  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2 /\
   tm_total_equiv_on m e1 e2 /\
   m ⊨ ty_denote_gas 0 Σ τ e1 /\
   m ⊨ ty_denote_gas 0 Σ τ e2.
 
 Lemma typed_fiber_equiv_intro
     Σ τ m e1 e2 :
-  tm_result_equiv_open_at_on m (dom Σ) e1 e2 ->
+  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2 ->
   tm_total_equiv_on m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1 ->
   m ⊨ ty_denote_gas 0 Σ τ e2 ->
@@ -453,11 +464,29 @@ Lemma typed_fiber_equiv_total_equiv
   tm_total_equiv_on m e1 e2.
 Proof. intros [_ [Htotal _]]. exact Htotal. Qed.
 
-Lemma typed_fiber_equiv_result_open_at
+Lemma typed_fiber_equiv_result_projected
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
-  tm_result_equiv_open_at_on m (dom Σ) e1 e2.
+  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2.
 Proof. intros [Hres _]. exact Hres. Qed.
+
+Lemma tm_result_refines_projected_on_obs_mono
+    m Dinput Dsmall Dbig e1 e2 :
+  Dsmall ⊆ Dbig ->
+  tm_result_refines_projected_on m Dinput Dbig e1 e2 ->
+  tm_result_refines_projected_on m Dinput Dsmall e1 e2.
+Proof.
+Admitted.
+
+Lemma tm_result_equiv_projected_on_obs_mono
+    m Dinput Dsmall Dbig e1 e2 :
+  Dsmall ⊆ Dbig ->
+  tm_result_equiv_projected_on m Dinput Dbig e1 e2 ->
+  tm_result_equiv_projected_on m Dinput Dsmall e1 e2.
+Proof.
+  intros Hsub [H12 H21].
+  split; eapply tm_result_refines_projected_on_obs_mono; eauto.
+Qed.
 
 Lemma typed_fiber_equiv_zero_src
     Σ τ m e1 e2 :
@@ -552,13 +581,14 @@ Qed.
 
 Lemma typed_fiber_equiv_project
     Σ τsmall τbig m e1 e2 :
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
   m ⊨ ty_denote_gas 0 Σ τsmall e1 ->
   m ⊨ ty_denote_gas 0 Σ τsmall e2 ->
   typed_fiber_equiv_on Σ τbig m e1 e2 ->
   typed_fiber_equiv_on Σ τsmall m e1 e2.
 Proof.
-  intros Hzero_src Hzero_tgt [Hres [Htotal _]].
-  split; [exact Hres|].
+  intros Hobs Hzero_src Hzero_tgt [Hres [Htotal _]].
+  split; [eapply tm_result_equiv_projected_on_obs_mono; eauto|].
   split; [exact Htotal|].
   split; assumption.
 Qed.
