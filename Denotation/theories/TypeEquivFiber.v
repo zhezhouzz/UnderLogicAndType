@@ -131,8 +131,13 @@ Proof.
     as Hbody_src.
   eapply res_models_projection; [|exact Hbody_src].
   eapply (res_restrict_eq_subset my_src my
-    (lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]})).
-  - apply formula_fv_open_over_body_obs.
+    (lvars_fv (dom Σ) ∪
+      lvars_fv (context_ty_lvars (CTOver b φ)) ∪ {[y]})).
+  - etransitivity; [apply formula_fv_open_over_body_obs|].
+    intros a Ha.
+    apply elem_of_union in Ha as [Ha|Ha].
+    + apply elem_of_union_l. apply elem_of_union_r. exact Ha.
+    + apply elem_of_union_r. exact Ha.
   - exact Hproj_obs.
 Qed.
 
@@ -210,8 +215,13 @@ Proof.
     as Hbody_src.
   eapply res_models_projection; [|exact Hbody_src].
   eapply (res_restrict_eq_subset my_src my
-    (lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]})).
-  - apply formula_fv_open_under_body_obs.
+    (lvars_fv (dom Σ) ∪
+      lvars_fv (context_ty_lvars (CTUnder b φ)) ∪ {[y]})).
+  - etransitivity; [apply formula_fv_open_under_body_obs|].
+    intros a Ha.
+    apply elem_of_union in Ha as [Ha|Ha].
+    + apply elem_of_union_l. apply elem_of_union_r. exact Ha.
+    + apply elem_of_union_r. exact Ha.
   - exact Hproj_obs.
 Qed.
 

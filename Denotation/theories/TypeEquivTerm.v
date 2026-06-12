@@ -51,10 +51,12 @@ Definition tm_result_refines_projected_on
     my_src ⊨ expr_result_formula_at Dinput e_src (LVFree y) ->
     exists my_tgt : WfWorldT,
       world_dom (my_tgt : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
-      res_restrict my_tgt (world_dom (m : WorldT)) = m /\
-      my_tgt ⊨ expr_result_formula_at Dinput e_tgt (LVFree y) /\
-      res_restrict my_tgt (lvars_fv Dobs ∪ {[y]}) =
-      res_restrict my_src (lvars_fv Dobs ∪ {[y]}).
+        res_restrict my_tgt (world_dom (m : WorldT)) = m /\
+        my_tgt ⊨ expr_result_formula_at Dinput e_tgt (LVFree y) /\
+        res_restrict my_tgt
+          (lvars_fv Dinput ∪ lvars_fv Dobs ∪ {[y]}) =
+        res_restrict my_src
+          (lvars_fv Dinput ∪ lvars_fv Dobs ∪ {[y]}).
 
 Definition tm_result_equiv_projected_on
     (m : WfWorldT) (Dinput Dobs : lvset) (e1 e2 : tm) : Prop :=
@@ -484,12 +486,14 @@ Proof.
   split; [exact Hres_tgt|].
   eapply res_restrict_eq_subset; [|exact Hproj_big].
   intros a Ha.
-  apply elem_of_union in Ha as [Ha|Ha].
-  - apply elem_of_union_l.
+  repeat rewrite elem_of_union in Ha |- *.
+  destruct Ha as [[Ha|Ha]|Ha].
+  - left. left. exact Ha.
+  - left. right.
     apply lvars_fv_elem.
     apply Hsub.
     apply lvars_fv_elem. exact Ha.
-  - apply elem_of_union_r. exact Ha.
+  - right. exact Ha.
 Qed.
 
 Lemma tm_result_equiv_projected_on_obs_mono
@@ -1003,19 +1007,6 @@ Proof.
     + rewrite !tm_lvars_fv. exact Hfv.
 		    + rewrite tm_lvars_fv in Hproj2. exact Hproj2.
 Qed.
-
-Lemma expr_result_formula_msubst_transport_fiber_fv_subset
-    (w mfib : WfWorldT) X σ e1 e2 y :
-  res_fiber_from_projection w X σ mfib ->
-  lc_tm e1 ->
-  tm_equiv_on mfib e1 e2 ->
-  fv_tm e1 ⊆ fv_tm e2 ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  y ∉ dom (σ : StoreT) ->
-  mfib ⊨ formula_msubst_store σ (expr_result_formula e2 (LVFree y)) ->
-  mfib ⊨ formula_msubst_store σ (expr_result_formula e1 (LVFree y)).
-Proof.
-Admitted.
 
 Lemma expr_result_formula_alias_ret_fvar
     (m my : WfWorldT) e x y :
