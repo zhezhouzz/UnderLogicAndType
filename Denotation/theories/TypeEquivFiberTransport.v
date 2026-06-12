@@ -311,6 +311,54 @@ Proof.
     set_solver.
 Qed.
 
+Lemma basic_tm_has_ltype_open_result_target_fun
+    (Σ : lty_env) τtop τx τr e1 e2
+    (m : WfWorldT) y :
+  erase_ty τtop = erase_ty τx →ₜ erase_ty τr ->
+  typed_total_equiv_on Σ τtop m e1 e2 ->
+  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+  basic_tm_has_ltype
+    (relevant_env
+      (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
+    e2 (erase_ty τx →ₜ erase_ty τr).
+Proof.
+  intros Herase Hequiv Hfresh.
+  destruct Hequiv as [_ [_ [_ Hzero_tgt]]].
+  pose proof (ty_denote_gas_guard_of_zero Σ τtop e2 m Hzero_tgt)
+    as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic _]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  rewrite Herase in Hty.
+  pose proof (basic_tm_has_ltype_lc Σ e2
+    (erase_ty τx →ₜ erase_ty τr) HlcΣ Hty) as Hlc_e2.
+  eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].
+  apply storeA_map_eq. intros v.
+  unfold relevant_env, lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ tm_lvars e2)) as [Hv|Hv]; [|reflexivity].
+  assert (Hv_target :
+      v ∈ relevant_lvars (cty_open 0 y τr)
+        (tapp_tm e2 (vfvar y))).
+  {
+    unfold relevant_lvars, tapp_tm.
+    cbn [tm_lvars tm_lvars_at value_lvars_at].
+    set_solver.
+  }
+  rewrite decide_True by exact Hv_target.
+  destruct v as [k|a].
+  - exfalso. exact ((tm_lvars_lc e2 Hlc_e2) (LVBound k) Hv).
+  - assert (Hay : a <> y).
+    {
+      intros ->. apply Hfresh. apply elem_of_union_r.
+      rewrite <- tm_lvars_fv. apply lvars_fv_elem. exact Hv.
+    }
+    rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hay.
+    reflexivity.
+Qed.
+
 Lemma tm_equiv_full_world_extend_fresh
     (m my : WfWorldT) y e1 e2 :
   tm_equiv_on m e1 e2 ->

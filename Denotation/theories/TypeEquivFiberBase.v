@@ -1279,4 +1279,38 @@ all: try assumption.
 all: try typeclasses eauto.
 Qed.
 
+Lemma expr_result_formula_at_of_result_extends_on
+    D e x F (m mx : WfWorldT) :
+  lc_lvars D ->
+  tm_lvars e ⊆ D ->
+  LVFree x ∉ D ->
+  lvars_fv D ⊆ world_dom (m : WorldT) ->
+  expr_result_extension_witness_on (lvars_fv D) e x F ->
+  res_extend_by m F mx ->
+  expr_total_on_atom_world e m ->
+  mx ⊨ expr_result_formula_at D e (LVFree x).
+Proof.
+  (*
+    Proof scratch.
+
+    This is the [expr_result_formula_of_result_extends] theorem with the
+    fiber domain exposed as an arbitrary locally nameless set [D].  The proof
+    should be a direct use of [expr_result_formula_at_intro].
+
+    - Scope: [world_dom mx = world_dom m ∪ {[x]}] follows from
+      [res_extend_by_dom] and the witness shape, while
+      [lvars_fv D ⊆ world_dom m] and [x ∉ D] cover the two parts of
+      [formula_fv_expr_result_formula_at].
+    - Store soundness: decompose an arbitrary store in [mx] through
+      [resA_extend_by_store_iff].  The extension relation is extensional to
+      [expr_result_output_world e x (store_restrict σm (lvars_fv D))], and
+      totality gives a result value.  Since [tm_lvars e ⊆ D], evaluation
+      transports from the restricted input back to the full extended store.
+    - Completeness: given a result [e ⇓ v] in an extended store, rebuild the
+      same base store with output singleton {[x := v]} using
+      [expr_result_extension_apply_total_store_on]; this store stays in [mx],
+      has the same [D]-projection because [x ∉ D], and maps [x] to [v].
+   *)
+Admitted.
+
 End TypeDenote.
