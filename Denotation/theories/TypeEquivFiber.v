@@ -57,6 +57,35 @@ Proof.
   - apply elem_of_union_r. exact Ha.
 Qed.
 
+Lemma formula_fv_open_sum_body_obs gas Σ τ1 τ2 y :
+  formula_fv
+    (formula_open 0 y
+      (FPlus
+        (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
+          (cty_shift 0 τ1) (tret (vbvar 0)))
+        (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
+          (cty_shift 0 τ2) (tret (vbvar 0))))) ⊆
+  lvars_fv (dom Σ) ∪
+    lvars_fv (context_ty_lvars (CTSum τ1 τ2)) ∪ {[y]}.
+Proof.
+  etransitivity; [apply formula_open_fv_subset|].
+  rewrite formula_fv_plus.
+  intros a Ha.
+  apply elem_of_union in Ha as [Hab|Ha].
+  - apply elem_of_union in Hab as [Ha|Ha].
+    + pose proof (ty_denote_gas_fv_subset gas
+        (typed_lty_env_bind Σ (erase_ty τ1))
+        (cty_shift 0 τ1) (tret (vbvar 0)) a Ha) as HaΣ.
+      rewrite typed_lty_env_bind_lvars_fv_dom in HaΣ.
+      apply elem_of_union_l. apply elem_of_union_l. exact HaΣ.
+    + pose proof (ty_denote_gas_fv_subset gas
+        (typed_lty_env_bind Σ (erase_ty τ1))
+        (cty_shift 0 τ2) (tret (vbvar 0)) a Ha) as HaΣ.
+      rewrite typed_lty_env_bind_lvars_fv_dom in HaΣ.
+      apply elem_of_union_l. apply elem_of_union_l. exact HaΣ.
+  - apply elem_of_union_r. exact Ha.
+Qed.
+
 Lemma ty_denote_gas_tm_fiber_equiv_over_body
     (gas : nat) (Σ : lty_env) (b : base_ty) φ e1 e2 (m : WfWorldT) :
   typed_fiber_equiv_on Σ (CTOver b φ) m e1 e2 ->
@@ -252,7 +281,72 @@ Lemma ty_denote_gas_tm_fiber_equiv_sum_body
           (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
             (cty_shift 0 τ2) (tret (vbvar 0))))).
 Proof.
-Admitted.
+  intros Hequiv Hsrc.
+  pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero_src.
+  pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
+  pose proof (ty_denote_gas_guard_of_zero Σ (CTSum τ1 τ2) e1 m Hzero_src)
+    as Hguard_src.
+  repeat rewrite res_models_and_iff in Hguard_src.
+  destruct Hguard_src as [_ [Hworld_src _]].
+  apply basic_world_formula_models_iff in Hworld_src as [HlcΣ _].
+  pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
+    as [Hlc1 Hlc2].
+  pose proof (ty_denote_gas_scope_from_zero_any (S gas) Σ (CTSum τ1 τ2) e2
+    m Hzero_tgt) as Hscope_full.
+  cbn [ty_denote_gas] in Hscope_full.
+  pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_tgt.
+  pose proof (typed_fiber_equiv_result_projected
+    Σ (CTSum τ1 τ2) m e1 e2 Hequiv) as [_ H21].
+  destruct (res_models_forall_rev _ _ Hsrc) as [Lsrc Hsrc_rev].
+  eapply res_models_forall_rev_intro; [exact Hscope_tgt|].
+  exists (Lsrc ∪ fv_tm e1 ∪ fv_tm e2 ∪
+    lvars_fv (dom Σ) ∪ lvars_fv (context_ty_lvars (CTSum τ1 τ2))).
+  intros y Hy my Hdom Hrestrict.
+  assert (Hy_dom : y ∉ lvars_fv (dom Σ)) by (clear -Hy; set_solver).
+  assert (Hy_e1 : y ∉ fv_tm e1) by (clear -Hy; set_solver).
+  assert (Hy_e2 : y ∉ fv_tm e2) by (clear -Hy; set_solver).
+  assert (Hy_proj :
+      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ))
+    by (clear -Hy; set_solver).
+  assert (Hy_src : y ∉ Lsrc) by (clear -Hy; set_solver).
+  rewrite formula_open_impl.
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y
+          (FImpl
+            (expr_result_formula_at (dom Σ) (tm_shift 0 e2) (LVBound 0))
+            (FPlus
+              (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
+                (cty_shift 0 τ1) (tret (vbvar 0)))
+              (ty_denote_gas gas (typed_lty_env_bind Σ (erase_ty τ1))
+                (cty_shift 0 τ2) (tret (vbvar 0))))))).
+  {
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope_tgt.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. set_solver.
+  }
+  rewrite formula_open_impl in Hopened_scope.
+  eapply res_models_impl_intro; [exact Hopened_scope|].
+  intros Hres_tgt.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
+    by (try exact HlcΣ; try exact Hlc2; assumption).
+  destruct (H21 y my Hy_proj Hdom Hrestrict Hres_tgt)
+    as [my_src [Hdom_src [Hrestrict_src [Hres_src Hproj_obs]]]].
+  pose proof (Hsrc_rev y Hy_src my_src Hdom_src Hrestrict_src)
+    as Hopened_src.
+  rewrite formula_open_impl in Hopened_src.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
+    by (try exact HlcΣ; try exact Hlc1; assumption).
+  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
+    as Hbody_src.
+  eapply res_models_projection; [|exact Hbody_src].
+  eapply (res_restrict_eq_subset my_src my
+    (lvars_fv (dom Σ) ∪
+      lvars_fv (context_ty_lvars (CTSum τ1 τ2)) ∪ {[y]})).
+  - apply formula_fv_open_sum_body_obs.
+  - exact Hproj_obs.
+Qed.
 
 Lemma tm_total_equiv_of_ty_denote_source_target_zero
     gas Σ τ e1 e2 (m : WfWorldT) :
