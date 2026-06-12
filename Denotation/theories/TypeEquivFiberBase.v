@@ -23,7 +23,28 @@ Lemma ty_denote_gas_zero_project_context
   m ⊨ ty_denote_gas 0 Σ τbig e ->
   m ⊨ ty_denote_gas 0 Σ τsmall e.
 Proof.
-Admitted.
+  intros Hlv Herase Hshape Hzero.
+  apply ty_denote_gas_zero_of_guard.
+  pose proof (ty_denote_gas_guard_of_zero Σ τbig e m Hzero) as Hguard.
+  unfold ty_guard_formula in Hguard |- *.
+  repeat rewrite res_models_and_iff in Hguard |- *.
+  destruct Hguard as [Hwf_big [Hworld [Hbasic Htotal]]].
+  split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf_big
+      as [HlcΣ [HscopeΣ Hwf_big]].
+    split; [exact HlcΣ|]. split; [exact HscopeΣ|].
+    destruct Hwf_big as [Hlv_big _].
+    split; [|exact Hshape].
+    etransitivity; [exact Hlv|exact Hlv_big].
+  - split; [exact Hworld|].
+    split; [|exact Htotal].
+    apply expr_basic_typing_formula_models_iff.
+    apply expr_basic_typing_formula_models_iff in Hbasic
+      as [HlcΣ [HscopeΣ Hty]].
+    split; [exact HlcΣ|]. split; [exact HscopeΣ|].
+    rewrite Herase. exact Hty.
+Qed.
 
 Lemma ty_denote_gas_zero_inter_l
     (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
@@ -106,7 +127,15 @@ Lemma ty_denote_gas_scope_from_zero_any
   m ⊨ ty_denote_gas 0 Σ τ e ->
   formula_scoped_in_world m (ty_denote_gas gas Σ τ e).
 Proof.
-Admitted.
+  intros Hzero.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e m Hzero) as Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld _]].
+  apply basic_world_formula_models_iff in Hworld as [_ [HscopeΣ _]].
+  unfold formula_scoped_in_world.
+  etransitivity; [apply ty_denote_gas_fv_subset|exact HscopeΣ].
+Qed.
 
 Lemma ty_denote_gas_zero_sum_l
     (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
