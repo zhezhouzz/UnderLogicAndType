@@ -537,6 +537,256 @@ Proof.
   eapply typed_fiber_equiv_intro; eauto.
 Qed.
 
+Local Lemma res_restrict_eq_store_lift
+    (m n : WfWorldT) X σ :
+  res_restrict m X = res_restrict n X ->
+  (m : WorldT) σ ->
+  exists τ,
+    (n : WorldT) τ /\
+    store_restrict τ X = store_restrict σ X.
+Proof.
+  intros Hproj Hσ.
+  assert ((res_restrict m X : WorldT) (store_restrict σ X)).
+  { exists σ. split; [exact Hσ|reflexivity]. }
+  rewrite Hproj in H.
+  cbn [res_restrict raw_world raw_worldA world_stores] in H.
+  destruct H as [τ [Hτ HτX]].
+  exists τ. split; [exact Hτ|exact HτX].
+Qed.
+
+Lemma typed_fiber_equiv_tm_equiv
+    Σ τ m e1 e2 :
+  typed_fiber_equiv_on Σ τ m e1 e2 ->
+  tm_equiv_on m e1 e2.
+Proof.
+  intros Hequiv σ v Hσ.
+  pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hequiv)
+    as [H12 H21].
+  pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
+    as [Hlc1 Hlc2].
+  pose proof (typed_fiber_equiv_term_lvars_env _ _ _ _ _ Hequiv)
+    as Hlv_env.
+  pose proof (typed_fiber_equiv_term_scope_env _ _ _ _ _ Hequiv)
+    as Hfv_env.
+  pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero1.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1) as Hguard1.
+  repeat rewrite res_models_and_iff in Hguard1.
+  destruct Hguard1 as [_ [Hworld1 [_ Htotal1]]].
+  pose proof Hworld1 as Hworld_model.
+  apply basic_world_formula_models_iff in Hworld1 as [HlcΣ [HΣdom _]].
+  pose proof (expr_total_formula_to_atom_world e1 m Htotal1) as Htotal1_atom.
+  assert (HD_world : lvars_fv (dom Σ) ⊆ world_dom (m : WorldT)).
+  { exact HΣdom. }
+  assert (Hfv1 : fv_tm e1 ⊆ lvars_fv (dom Σ)).
+  { intros a Ha. apply Hfv_env. apply elem_of_union_l. exact Ha. }
+  assert (Hfv2 : fv_tm e2 ⊆ lvars_fv (dom Σ)).
+  { intros a Ha. apply Hfv_env. apply elem_of_union_r. exact Ha. }
+  assert (Hlv1 : tm_lvars e1 ⊆ dom Σ).
+  { intros z Hz. apply Hlv_env. apply elem_of_union_l. exact Hz. }
+  assert (Hlv2 : tm_lvars e2 ⊆ dom Σ).
+  { intros z Hz. apply Hlv_env. apply elem_of_union_r. exact Hz. }
+  assert (Hdir :
+      forall es et,
+        lc_tm es ->
+        lc_tm et ->
+        tm_lvars es ⊆ dom Σ ->
+        tm_lvars et ⊆ dom Σ ->
+        fv_tm es ⊆ lvars_fv (dom Σ) ->
+        fv_tm et ⊆ lvars_fv (dom Σ) ->
+        expr_total_on_atom_world es m ->
+        tm_result_refines_projected_on m (dom Σ) (context_ty_lvars τ) es et ->
+        forall σ0 v0,
+          (m : WorldT) σ0 ->
+          tm_eval_in_store σ0 es v0 ->
+          tm_eval_in_store σ0 et v0).
+  {
+    intros es et Hlc_s Hlc_t Hlv_s Hlv_t Hfv_s Hfv_t Htotal_s
+      Htransport σ0 v0 Hσ0 Heval_s.
+    set (r := fresh_for
+      (world_dom (m : WorldT) ∪ fv_tm e1 ∪ fv_tm e2 ∪
+       lvars_fv (dom Σ))).
+    assert (Hrfresh_all :
+        r ∉ world_dom (m : WorldT) ∪ fv_tm e1 ∪ fv_tm e2 ∪
+          lvars_fv (dom Σ)).
+    { subst r. apply fresh_for_not_in. }
+    assert (Hrfresh :
+        r ∉ fv_tm es ∪ fv_tm et ∪ lvars_fv (dom Σ)).
+    {
+      clear -Hrfresh_all Hfv_s Hfv_t.
+      set_solver.
+    }
+    assert (HrD : LVFree r ∉ dom Σ).
+    {
+      intros HrD.
+      assert (Hrfv : r ∈ lvars_fv (dom Σ)).
+      { apply lvars_fv_elem. exact HrD. }
+      clear -Hrfresh_all Hrfv. set_solver.
+    }
+    destruct (expr_result_extension_witness_on_exists
+      (lvars_fv (dom Σ)) es r Hfv_s ltac:(set_solver))
+      as [F HF].
+    assert (Happ : extension_applicable F m).
+    {
+      destruct HF as [_ _ [Hin Hout] _].
+      constructor.
+      - change (ext_in F ⊆ world_dom (m : WorldT)).
+        rewrite Hin. exact HD_world.
+      - change (ext_out F ## world_dom (m : WorldT)).
+        rewrite Hout. set_solver.
+    }
+    destruct (res_extend_by_exists m F Happ) as [my_src Hext].
+    assert (Hdom_src :
+        world_dom (my_src : WorldT) = world_dom (m : WorldT) ∪ {[r]}).
+    {
+      rewrite (res_extend_by_dom m F my_src Hext).
+      destruct HF as [_ _ [_ Hout] _].
+      change (world_dom (m : WorldT) ∪ ext_out F =
+        world_dom (m : WorldT) ∪ {[r]}).
+      rewrite Hout. reflexivity.
+    }
+    assert (Hrestrict_src :
+        res_restrict my_src (world_dom (m : WorldT)) = m).
+    { exact (res_extend_by_restrict_base m F my_src Hext). }
+    assert (Hres_s :
+        my_src ⊨ expr_result_formula_at (dom Σ) es (LVFree r)).
+    {
+      eapply (expr_result_formula_at_of_result_extends_on
+        (dom Σ) es r F m my_src); eauto.
+    }
+    destruct (Htransport r my_src Hrfresh Hdom_src Hrestrict_src Hres_s)
+      as [my_tgt [Hdom_tgt [Hrestrict_tgt [Hres_t Hproj_obs]]]].
+    set (σr := ((σ0 : StoreT) ∪ ({[r := v0]} : StoreT)) : StoreT).
+    assert (Hσr_src : (my_src : WorldT) σr).
+    {
+      apply (proj2 (resA_extend_by_store_iff m F my_src σr Hext)).
+      exists σ0.
+      set (we := expr_result_output_world es r
+        (store_restrict σ0 (lvars_fv (dom Σ)))).
+      exists we, ({[r := v0]} : StoreT).
+      split; [exact Hσ0|].
+      split.
+      { pose proof HF as [_ _ [Hin _] Hrel].
+        change (ext_rel F (store_restrict σ0 (ext_in F)) we).
+        subst we. rewrite Hin.
+        apply Hrel.
+        rewrite storeA_restrict_dom.
+        rewrite (wfworld_store_dom m σ0 Hσ0).
+        apply set_eq. intros a. rewrite elem_of_intersection.
+        split.
+        - intros [_ Ha]. exact Ha.
+        - intros Ha. split; [exact (HD_world a Ha)|exact Ha]. }
+      split.
+      { eapply expr_result_extension_apply_total_store_on.
+        - exact HF.
+        - rewrite storeA_restrict_dom.
+          rewrite (wfworld_store_dom m σ0 Hσ0).
+          apply set_eq. intros a. rewrite elem_of_intersection.
+          split.
+          + intros [_ Ha]. exact Ha.
+          + intros Ha. split; [exact (HD_world a Ha)|exact Ha].
+        - destruct HF as [_ _ [_ _] Hrel].
+          apply Hrel.
+          rewrite storeA_restrict_dom.
+          rewrite (wfworld_store_dom m σ0 Hσ0).
+          apply set_eq. intros a. rewrite elem_of_intersection.
+          split.
+          + intros [_ Ha]. exact Ha.
+          + intros Ha. split; [exact (HD_world a Ha)|exact Ha].
+        - apply (proj2 (tm_eval_in_store_restrict_fv_subset
+            σ0 es v0 (lvars_fv (dom Σ)) Hfv_s)).
+          exact Heval_s. }
+      { subst σr. reflexivity. }
+    }
+    assert (Hproj_small :
+        res_restrict my_tgt (lvars_fv (dom Σ) ∪ {[r]}) =
+        res_restrict my_src (lvars_fv (dom Σ) ∪ {[r]})).
+    {
+      eapply res_restrict_eq_subset; [|exact Hproj_obs].
+      set_solver.
+    }
+    destruct (res_restrict_eq_store_lift my_src my_tgt
+      (lvars_fv (dom Σ) ∪ {[r]}) σr ltac:(symmetry; exact Hproj_small) Hσr_src)
+      as [τr [Hτr_tgt Hτr_proj]].
+    pose proof (expr_result_formula_at_models_elim
+      (dom Σ) et r my_tgt Hlv_t HrD Hres_t τr Hτr_tgt)
+      as [_ [v' [Hr_lookup Heval_t_l]]].
+    assert (Hr_lookup_atom : (τr : StoreT) !! r = Some v').
+    {
+      change (((lstore_lift_free τr : LStoreT) : gmap logic_var value) !!
+        LVFree r = Some v') in Hr_lookup.
+      rewrite lstore_lift_free_lookup_free in Hr_lookup.
+      exact Hr_lookup.
+    }
+    assert (Hr_lookup_v0 : (τr : StoreT) !! r = Some v0).
+    {
+      assert (Hσr_lookup : (σr : StoreT) !! r = Some v0).
+      {
+        subst σr.
+        change ((((σ0 : StoreT) ∪ ({[r := v0]} : StoreT)) : gmap atom value)
+          !! r = Some v0).
+        transitivity (({[r := v0]} : gmap atom value) !! r).
+        - apply (lookup_union_r (M:=gmap atom) (A:=value)).
+          apply not_elem_of_dom.
+          rewrite (wfworld_store_dom m σ0 Hσ0). set_solver.
+        - apply map_lookup_singleton.
+      }
+      assert (Hr_in : r ∈ lvars_fv (dom Σ) ∪ {[r]}).
+      { set_solver. }
+      assert (Hτr_restrict_lookup :
+          (store_restrict τr (lvars_fv (dom Σ) ∪ {[r]}) : StoreT)
+            !! r = Some v0).
+      {
+        rewrite Hτr_proj.
+        apply storeA_restrict_lookup_some_2; [exact Hσr_lookup|exact Hr_in].
+      }
+      apply storeA_restrict_lookup_some in Hτr_restrict_lookup as [_ Hlook].
+      exact Hlook.
+    }
+    assert (Hv_eq : Some v0 = Some v').
+    { rewrite <- Hr_lookup_v0. exact Hr_lookup_atom. }
+    inversion Hv_eq. subst v'.
+    change (tm_eval_in_store τr et v0) in Heval_t_l.
+    assert (Hagree_et :
+        store_restrict τr (fv_tm et) = store_restrict σ0 (fv_tm et)).
+    {
+      transitivity (store_restrict σr (fv_tm et)).
+      - eapply storeA_restrict_eq_mono; [|exact Hτr_proj].
+        intros a Ha. apply elem_of_union_l.
+        apply Hfv_t. exact Ha.
+      - subst σr.
+        apply storeA_restrict_union_ignore_r.
+        change (dom ({[r := v0]} : gmap atom value) ## fv_tm et).
+        assert (Hr_et : r ∉ fv_tm et).
+        {
+          intros Hret.
+          assert (Hrfv : r ∈ lvars_fv (dom Σ)).
+          { apply Hfv_t. exact Hret. }
+          clear -Hrfresh_all Hrfv. set_solver.
+        }
+        intros a Ha_dom Ha_fv.
+        apply elem_of_dom in Ha_dom as [va Ha_lookup].
+        apply (proj1 (lookup_singleton_Some r a v0 va)) in Ha_lookup
+          as [-> _].
+        exact (Hr_et Ha_fv).
+    }
+    eapply tm_eval_in_store_agree_on_fv; [|exact Heval_t_l].
+    symmetry. exact Hagree_et.
+  }
+  split.
+  - exact (Hdir e1 e2 Hlc1 Hlc2 Hlv1 Hlv2 Hfv1 Hfv2
+      Htotal1_atom H12 σ v Hσ).
+  - assert (Htotal2_atom : expr_total_on_atom_world e2 m).
+    {
+      pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero2.
+      pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2) as Hguard2.
+      repeat rewrite res_models_and_iff in Hguard2.
+      destruct Hguard2 as [_ [_ [_ Htotal2]]].
+      apply expr_total_formula_to_atom_world. exact Htotal2.
+    }
+    exact (Hdir e2 e1 Hlc2 Hlc1 Hlv2 Hlv1 Hfv2 Hfv1
+      Htotal2_atom H21 σ v Hσ).
+Qed.
+
 Lemma tm_result_equiv_projected_tapp_fvar_frame
     (Σ : lty_env) τ T τr e1 e2 (m w : WfWorldT) y :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
@@ -551,8 +801,6 @@ Lemma tm_result_equiv_projected_tapp_fvar_frame
     (tapp_tm e1 (vfvar y))
     (tapp_tm e2 (vfvar y)).
 Proof.
-Admitted.
-(*
   intros Hequiv Hdom Hrestrict Hclosed_y Hye HyΣ.
   assert (HlcΣ : lc_lvars (dom Σ)).
   {
@@ -564,7 +812,56 @@ Admitted.
     exact HlcΣ.
   }
   pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv) as [Hlc1 Hlc2].
-  eapply tm_equiv_on_to_result_open_at.
+  pose proof (typed_fiber_equiv_tm_equiv _ _ _ _ _ Hequiv) as Heq_m.
+  pose proof (typed_fiber_equiv_term_lvars_env _ _ _ _ _ Hequiv) as Hlv_env.
+  pose proof (typed_fiber_equiv_term_scope_env _ _ _ _ _ Hequiv) as Hfv_env.
+  pose proof (typed_fiber_equiv_zero_src _ _ _ _ _ Hequiv) as Hzero.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [_ _]]].
+  pose proof Hworld as Hworld_model.
+  apply basic_world_formula_models_iff in Hworld as [_ [HΣdom _]].
+  assert (Hfv_m : fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT)).
+  {
+    intros x Hx.
+    apply HΣdom. apply Hfv_env. exact Hx.
+  }
+  assert (Heq_w : tm_equiv_on w e1 e2).
+  { eapply tm_equiv_full_world_extend_fresh; eauto. }
+  assert (Hle_mw : m ⊑ w).
+  {
+    change ((m : WorldT) =
+      raw_restrict (w : WorldT) (world_dom (m : WorldT))).
+    symmetry.
+    exact (f_equal (fun r : WfWorldT => (r : WorldT)) Hrestrict).
+  }
+  assert (Hclosed_env_w : wfworld_closed_on (lvars_fv (dom Σ)) w).
+  {
+    eapply wfworld_closed_on_le.
+    - exact HΣdom.
+    - exact Hle_mw.
+    - eapply basic_world_formula_wfworld_closed_on_dom.
+      exact Hworld_model.
+  }
+  assert (Happ_eq : tm_equiv_on w
+      (tapp_tm e1 (vfvar y))
+      (tapp_tm e2 (vfvar y))).
+  {
+    eapply tm_equiv_tapp_fvar.
+    - eapply (wfworld_closed_on_mono
+        (fv_tm (tapp_tm e1 (vfvar y)) ∪
+          fv_tm (tapp_tm e2 (vfvar y)))
+        (lvars_fv (dom Σ) ∪ ({[y]} : aset))).
+      + unfold tapp_tm. cbn [fv_tm fv_value].
+        clear -Hfv_env. better_set_solver.
+      + eapply (wfworld_closed_on_union
+          (lvars_fv (dom Σ)) ({[y]} : aset));
+          [exact Hclosed_env_w|exact Hclosed_y].
+    - exact Hlc1.
+    - exact Hlc2.
+    - exact Heq_w.
+  }
+  eapply tm_equiv_on_to_result_projected.
   - replace (lty_env_open_one 0 y (typed_lty_env_bind Σ T))
       with (<[LVFree y := T]> Σ).
     + rewrite dom_insert_L.
@@ -578,14 +875,13 @@ Admitted.
   - apply lc_tapp_tm; [exact Hlc1|constructor].
   - apply lc_tapp_tm; [exact Hlc2|constructor].
   - rewrite tm_lvars_tapp_tm_fvar.
-    pose proof (typed_fiber_equiv_term_lvars_env _ _ _ _ _ Hequiv) as Hfv.
     intros v Hv.
     apply elem_of_union in Hv as [Hv|Hv].
     + destruct v as [k|a].
       * exfalso. exact ((tm_lvars_lc e1 Hlc1) (LVBound k) Hv).
       * apply elem_of_dom.
         assert (HaΣ : LVFree a ∈ dom Σ).
-        { apply Hfv. apply elem_of_union_l. exact Hv. }
+        { apply Hlv_env. apply elem_of_union_l. exact Hv. }
         apply elem_of_dom in HaΣ as [U HU].
         exists U. rewrite lty_env_open_one_typed_bind_lookup_free_ne.
         -- exact HU.
@@ -595,14 +891,13 @@ Admitted.
       apply elem_of_dom. exists T.
       apply lty_env_open_one_typed_bind_lookup_current.
   - rewrite tm_lvars_tapp_tm_fvar.
-    pose proof (typed_fiber_equiv_term_lvars_env _ _ _ _ _ Hequiv) as Hfv.
     intros v Hv.
     apply elem_of_union in Hv as [Hv|Hv].
     + destruct v as [k|a].
       * exfalso. exact ((tm_lvars_lc e2 Hlc2) (LVBound k) Hv).
       * apply elem_of_dom.
         assert (HaΣ : LVFree a ∈ dom Σ).
-        { apply Hfv. apply elem_of_union_r. exact Hv. }
+        { apply Hlv_env. apply elem_of_union_r. exact Hv. }
         apply elem_of_dom in HaΣ as [U HU].
         exists U. rewrite lty_env_open_one_typed_bind_lookup_free_ne.
         -- exact HU.
@@ -611,9 +906,8 @@ Admitted.
     + apply elem_of_singleton in Hv as ->.
       apply elem_of_dom. exists T.
       apply lty_env_open_one_typed_bind_lookup_current.
-  - eapply typed_fiber_equiv_tapp_tm_equiv_frame; eauto.
+  - exact Happ_eq.
 Qed.
-*)
 
 Lemma ty_denote_gas_zero_tapp_fvar_from_result_graph
     gas (Σ : lty_env) τfun τx τr e1 e2
@@ -639,7 +933,164 @@ Lemma ty_denote_gas_zero_tapp_fvar_from_result_graph
 	    (cty_open 0 y τr)
 	    (tapp_tm e2 (vfvar y)).
 Proof.
-Admitted.
+  intros Hequiv Herase Hdom Hrestrict Hsrc Harg Hyτx Hyτr Hye HyΣ.
+  set (Σy := lty_env_open_one 0 y
+    (typed_lty_env_bind Σ (erase_ty τx))).
+  set (τres := cty_open 0 y τr).
+  set (app1 := tapp_tm e1 (vfvar y)).
+  set (app2 := tapp_tm e2 (vfvar y)).
+  pose proof (ty_denote_gas_guard gas Σy τres app1 w Hsrc) as Hguard_src.
+  repeat rewrite res_models_and_iff in Hguard_src.
+  destruct Hguard_src as [Hwf_res [Hworld_y [Hbasic_src Htotal_src]]].
+  pose proof Hworld_y as Hworld_y_model.
+  pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_fun_tgt.
+  pose proof (ty_denote_gas_guard_of_zero Σ τfun e2 m Hzero_fun_tgt)
+    as Hguard_fun_tgt.
+  repeat rewrite res_models_and_iff in Hguard_fun_tgt.
+  destruct Hguard_fun_tgt as [_ [Hworld_m [Hbasic_fun_tgt Htotal_fun_tgt]]].
+  apply basic_world_formula_models_iff in Hworld_y as [HlcΣy [HΣy_dom _]].
+  pose proof Hworld_m as Hworld_m_model.
+  apply basic_world_formula_models_iff in Hworld_m as [HlcΣ [HΣdom _]].
+  apply expr_basic_typing_formula_models_iff in Hbasic_fun_tgt
+    as [_ [_ Hty_fun_tgt]].
+  rewrite Herase in Hty_fun_tgt.
+  pose proof (basic_tm_has_ltype_lc Σ e2
+    (erase_ty τx →ₜ erase_ty τr) HlcΣ Hty_fun_tgt) as Hlc2.
+  pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv) as [Hlc1 _].
+  pose proof (typed_fiber_equiv_term_scope_env _ _ _ _ _ Hequiv)
+    as Hfv_env.
+  assert (Hfv_m : fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT)).
+  {
+    intros a Ha. apply HΣdom. apply Hfv_env. exact Ha.
+  }
+  pose proof (typed_fiber_equiv_tm_equiv _ _ _ _ _ Hequiv) as Heq_m.
+  assert (Heq_w : tm_equiv_on w e1 e2).
+  { eapply tm_equiv_full_world_extend_fresh; eauto. }
+  assert (Htotal_w : tm_total_equiv_on w e1 e2).
+  {
+    eapply tm_total_equiv_full_world_extend_fresh.
+    - eapply typed_fiber_equiv_total_equiv. exact Hequiv.
+    - exact Hlc1.
+    - exact Hlc2.
+    - exact Hfv_m.
+    - exact Hye.
+    - exact Hdom.
+    - exact Hrestrict.
+  }
+  assert (Hclosed_env_w : wfworld_closed_on (lvars_fv (dom Σ)) w).
+  {
+    assert (Hle_mw : m ⊑ w).
+    {
+      change ((m : WorldT) =
+        raw_restrict (w : WorldT) (world_dom (m : WorldT))).
+      symmetry.
+      exact (f_equal (fun r : WfWorldT => (r : WorldT)) Hrestrict).
+    }
+    eapply wfworld_closed_on_le.
+    - exact HΣdom.
+    - exact Hle_mw.
+    - eapply basic_world_formula_wfworld_closed_on_dom.
+      exact Hworld_m_model.
+  }
+  assert (Hclosed_app : wfworld_closed_on
+      (fv_tm app1 ∪ fv_tm app2) w).
+  {
+    subst app1 app2.
+    eapply (wfworld_closed_on_mono
+      (fv_tm (tapp_tm e1 (vfvar y)) ∪
+        fv_tm (tapp_tm e2 (vfvar y)))
+      (lvars_fv (dom Σ) ∪ ({[y]} : aset))).
+    - unfold tapp_tm. cbn [fv_tm fv_value].
+      clear -Hfv_env. better_set_solver.
+    - eapply wfworld_closed_on_union; [exact Hclosed_env_w|].
+      eapply basic_world_formula_wfworld_closed_on_atoms; [|exact Hworld_y_model].
+      subst Σy.
+      intros a Ha.
+      unfold lvars_of_atoms in Ha.
+      apply elem_of_map in Ha as [b [-> Hb]].
+      apply elem_of_singleton in Hb as ->.
+      rewrite lty_env_open_one_dom.
+      unfold set_swap. apply elem_of_map.
+      exists (LVBound 0). split; [rewrite swap_l; reflexivity|].
+      rewrite typed_lty_env_bind_dom.
+      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  }
+  assert (Happ_total : tm_total_equiv_on w app1 app2).
+  {
+    subst app1 app2.
+    eapply tm_total_equiv_tapp_fvar; eauto.
+  }
+  apply ty_denote_gas_zero_of_guard.
+  repeat rewrite res_models_and_iff.
+  split; [exact Hwf_res|].
+  split; [exact Hworld_y_model|].
+  split.
+  - apply expr_basic_typing_formula_models_iff.
+    split; [exact HlcΣy|]. split; [exact HΣy_dom|].
+    subst app2 τres Σy.
+    rewrite cty_open_preserves_erasure.
+    eapply basic_tm_has_ltype_tapp_tm_lvar.
+    + exact HlcΣy.
+    + eapply basic_tm_has_ltype_weaken.
+      * exact Hty_fun_tgt.
+      * apply map_subseteq_spec. intros v U Hlook.
+        destruct v as [k|a].
+        -- exfalso.
+           assert (LVBound k ∈ dom Σ) by (eapply elem_of_dom_2; exact Hlook).
+           exact (HlcΣ _ H).
+        -- rewrite lty_env_open_one_typed_bind_lookup_free_ne.
+           ++ exact Hlook.
+           ++ intros ->. apply HyΣ.
+              apply lvars_fv_elem. eapply elem_of_dom_2. exact Hlook.
+    + eapply BVT_FVar.
+      apply lty_env_open_one_typed_bind_lookup_current.
+  - apply expr_total_atom_world_to_formula.
+    apply expr_total_formula_to_atom_world in Htotal_src as Htotal_src_atom.
+    destruct Htotal_src_atom as [Hdom_total_src Hstores_src].
+    split.
+    + subst app2.
+      rewrite res_lift_free_dom.
+      rewrite tm_lvars_tapp_tm_fvar.
+      intros v Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      * destruct v as [k|a].
+        -- exfalso. exact ((tm_lvars_lc e2 Hlc2) (LVBound k) Hv).
+        -- unfold lvars_of_atoms. apply elem_of_map.
+           exists a. split; [reflexivity|].
+           assert (LVFree a ∈ dom Σ).
+           {
+             pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_fun_tgt) as Hlv.
+             apply Hlv.
+             unfold lvars_of_atoms. apply elem_of_map.
+             exists a. split; [reflexivity|].
+             rewrite <- tm_lvars_fv. apply lvars_fv_elem. exact Hv.
+           }
+           apply HΣy_dom.
+           apply lvars_fv_elem.
+           apply elem_of_dom in H as [U HU].
+           eapply elem_of_dom_2.
+           subst Σy.
+           rewrite lty_env_open_one_typed_bind_lookup_free_ne by
+             (intros ->; apply Hye; apply elem_of_union_r;
+              rewrite <- tm_lvars_fv; apply lvars_fv_elem; exact Hv).
+           exact HU.
+      * apply elem_of_singleton in Hv as ->.
+        unfold lvars_of_atoms. apply elem_of_map.
+        exists y. split; [reflexivity|].
+        apply HΣy_dom.
+        subst Σy.
+        rewrite lty_env_open_one_dom.
+        apply lvars_fv_elem.
+        unfold set_swap. apply elem_of_map.
+        exists (LVBound 0). split; [rewrite swap_l; reflexivity|].
+        rewrite typed_lty_env_bind_dom.
+        apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+    + intros τL HτL.
+      destruct HτL as [σ [Hσ ->]].
+      apply (proj1 (Happ_total σ Hσ)).
+      apply Hstores_src.
+      exists σ. split; [exact Hσ|reflexivity].
+Qed.
 
 Lemma typed_fiber_equiv_arrow_open_app_fvar_mid
     gas (Σ : lty_env) τx τr e1 e2
