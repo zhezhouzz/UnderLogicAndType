@@ -12,9 +12,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
-  TypeEquivBody
-  TypeEquivArrow
-  TypeEquivWand
+  TypeEquivFiberTransport
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase.

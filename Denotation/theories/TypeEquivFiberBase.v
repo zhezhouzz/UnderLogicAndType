@@ -10,9 +10,140 @@
     git history for the detailed script when reproving this theorem. *)
 
 From Denotation Require Import Notation TypeDenote.
-From Denotation Require Import TypeEquivCore TypeEquivTerm TypeEquivBody.
+From Denotation Require Import TypeEquivCore TypeEquivTerm.
 
 Section TypeDenote.
+
+Lemma ty_denote_gas_zero_project_context
+    (Σ : lty_env) τsmall τbig e (m : WfWorldT) :
+  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
+  erase_ty τsmall = erase_ty τbig ->
+  context_ty_shape_ok τsmall ->
+  m ⊨ ty_denote_gas 0 Σ τbig e ->
+  m ⊨ ty_denote_gas 0 Σ τsmall e.
+Proof.
+Admitted.
+
+Lemma ty_denote_gas_zero_inter_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTInter τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ1 e.
+Proof.
+  intros Hzero.
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ1 (CTInter τ1 τ2) e m); [|reflexivity| |exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - apply ty_denote_gas_guard_of_zero in Hzero.
+    repeat rewrite res_models_and_iff in Hzero.
+    destruct Hzero as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    cbn [context_ty_shape_ok] in Hshape. tauto.
+Qed.
+
+Lemma ty_denote_gas_zero_inter_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTInter τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ2 e.
+Proof.
+  intros Hzero.
+  assert (Hshape_big : context_ty_shape_ok (CTInter τ1 τ2)).
+  {
+    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
+    repeat rewrite res_models_and_iff in Hguard.
+    destruct Hguard as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    exact Hshape.
+  }
+  cbn [context_ty_shape_ok] in Hshape_big.
+  destruct Hshape_big as [_ [Hshape2 Herase]].
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ2 (CTInter τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - cbn [erase_ty]. symmetry. exact Herase.
+Qed.
+
+Lemma ty_denote_gas_zero_union_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTUnion τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ1 e.
+Proof.
+  intros Hzero.
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ1 (CTUnion τ1 τ2) e m); [|reflexivity| |exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - apply ty_denote_gas_guard_of_zero in Hzero.
+    repeat rewrite res_models_and_iff in Hzero.
+    destruct Hzero as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    cbn [context_ty_shape_ok] in Hshape. tauto.
+Qed.
+
+Lemma ty_denote_gas_zero_union_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTUnion τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ2 e.
+Proof.
+  intros Hzero.
+  assert (Hshape_big : context_ty_shape_ok (CTUnion τ1 τ2)).
+  {
+    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
+    repeat rewrite res_models_and_iff in Hguard.
+    destruct Hguard as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    exact Hshape.
+  }
+  cbn [context_ty_shape_ok] in Hshape_big.
+  destruct Hshape_big as [_ [Hshape2 Herase]].
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ2 (CTUnion τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - cbn [erase_ty]. symmetry. exact Herase.
+Qed.
+
+Lemma ty_denote_gas_scope_from_zero_any
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ τ e ->
+  formula_scoped_in_world m (ty_denote_gas gas Σ τ e).
+Proof.
+Admitted.
+
+Lemma ty_denote_gas_zero_sum_l
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ1 e.
+Proof.
+  intros Hzero.
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ1 (CTSum τ1 τ2) e m); [|reflexivity| |exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - apply ty_denote_gas_guard_of_zero in Hzero.
+    repeat rewrite res_models_and_iff in Hzero.
+    destruct Hzero as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    cbn [context_ty_shape_ok] in Hshape. tauto.
+Qed.
+
+Lemma ty_denote_gas_zero_sum_r
+    (Σ : lty_env) τ1 τ2 e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
+  m ⊨ ty_denote_gas 0 Σ τ2 e.
+Proof.
+  intros Hzero.
+  assert (Hshape_big : context_ty_shape_ok (CTSum τ1 τ2)).
+  {
+    apply ty_denote_gas_guard_of_zero in Hzero as Hguard.
+    repeat rewrite res_models_and_iff in Hguard.
+    destruct Hguard as [Hwf _].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ [_ Hshape]]].
+    exact Hshape.
+  }
+  cbn [context_ty_shape_ok] in Hshape_big.
+  destruct Hshape_big as [_ [Hshape2 Herase]].
+  eapply (ty_denote_gas_zero_project_context
+    Σ τ2 (CTSum τ1 τ2) e m); [| |exact Hshape2|exact Hzero].
+  - cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+  - cbn [erase_ty]. symmetry. exact Herase.
+Qed.
 
 Lemma res_fiber_stores_agree_on_sub
     (m mfib : WfWorldT) X σ X0 τ1 τ2 :

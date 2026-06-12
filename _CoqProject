@@ -82,9 +82,6 @@ Denotation/theories/TypeDenote.v
 Denotation/theories/TypeEquivCore.v
 Denotation/theories/TypeEquivTerm.v
 Denotation/theories/TypeEquivFiberTransport.v
-Denotation/theories/TypeEquivBody.v
-Denotation/theories/TypeEquivArrow.v
-Denotation/theories/TypeEquivWand.v
 Denotation/theories/TypeEquivFiberBase.v
 Denotation/theories/TypeEquivFiber.v
 Denotation/theories/TypeEquiv.v

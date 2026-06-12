@@ -13,9 +13,6 @@ From Denotation Require Import Context
   TypeEquivCore
   TypeEquivFiberTransport
   TypeEquivTerm
-  TypeEquivBody
-  TypeEquivArrow
-  TypeEquivWand
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase

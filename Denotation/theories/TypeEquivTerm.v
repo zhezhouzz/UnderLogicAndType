@@ -42,19 +42,6 @@ Definition tm_fiber_equiv_on
       tm_fiber_result_on m X e1 σ0 v <->
       tm_fiber_result_on m X e2 σ0 v.
 
-Definition tm_result_equiv_open_on
-    (m : WfWorldT) (e1 e2 : tm) : Prop :=
-  forall (m0 : WfWorldT),
-    res_subset m0 m ->
-  forall y (my : WfWorldT),
-    y ∉ fv_tm e1 ∪ fv_tm e2 ->
-    world_dom (my : WorldT) = world_dom (m0 : WorldT) ∪ {[y]} ->
-    res_restrict my (world_dom (m0 : WorldT)) = m0 ->
-    my ⊨ formula_open 0 y
-      (expr_result_formula (tm_shift 0 e2) (LVBound 0)) ->
-    my ⊨ formula_open 0 y
-      (expr_result_formula (tm_shift 0 e1) (LVBound 0)).
-
 Definition tm_result_equiv_open_at_on
     (m : WfWorldT) (D : lvset) (e1 e2 : tm) : Prop :=
   forall y (my : WfWorldT),
@@ -82,7 +69,6 @@ Definition typed_total_equiv_on
     under deleting nondeterministic alternatives. *)
 Definition typed_fiber_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT) (e1 e2 : tm) : Prop :=
-  tm_equiv_on m e1 e2 /\
   tm_result_equiv_open_at_on m (dom Σ) e1 e2 /\
   tm_total_equiv_on m e1 e2 /\
   m ⊨ ty_denote_gas 0 Σ τ e1 /\
@@ -90,16 +76,14 @@ Definition typed_fiber_equiv_on
 
 Lemma typed_fiber_equiv_intro
     Σ τ m e1 e2 :
-  tm_equiv_on m e1 e2 ->
   tm_result_equiv_open_at_on m (dom Σ) e1 e2 ->
   tm_total_equiv_on m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1 ->
   m ⊨ ty_denote_gas 0 Σ τ e2 ->
   typed_fiber_equiv_on Σ τ m e1 e2.
 Proof.
-  intros Heq Hres Htotal Hzero1 Hzero2.
+  intros Hres Htotal Hzero1 Hzero2.
   unfold typed_fiber_equiv_on.
-  split; [exact Heq|].
   split; [exact Hres|].
   split; [exact Htotal|].
   split; assumption.
@@ -467,31 +451,25 @@ Lemma typed_fiber_equiv_total_equiv
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   tm_total_equiv_on m e1 e2.
-Proof. intros [_ [_ [Htotal _]]]. exact Htotal. Qed.
+Proof. intros [_ [Htotal _]]. exact Htotal. Qed.
 
 Lemma typed_fiber_equiv_result_open_at
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   tm_result_equiv_open_at_on m (dom Σ) e1 e2.
-Proof. intros [_ [Hres _]]. exact Hres. Qed.
-
-Lemma typed_fiber_equiv_tm_equiv
-    Σ τ m e1 e2 :
-  typed_fiber_equiv_on Σ τ m e1 e2 ->
-  tm_equiv_on m e1 e2.
-Proof. intros [Heq _]. exact Heq. Qed.
+Proof. intros [Hres _]. exact Hres. Qed.
 
 Lemma typed_fiber_equiv_zero_src
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1.
-Proof. intros [_ [_ [_ [Hzero _]]]]. exact Hzero. Qed.
+Proof. intros [_ [_ [Hzero _]]]. exact Hzero. Qed.
 
 Lemma typed_fiber_equiv_zero_tgt
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e2.
-Proof. intros [_ [_ [_ [_ Hzero]]]]. exact Hzero. Qed.
+Proof. intros [_ [_ [_ Hzero]]]. exact Hzero. Qed.
 
 Lemma typed_fiber_equiv_term_lc
     Σ τ m e1 e2 :
@@ -579,8 +557,7 @@ Lemma typed_fiber_equiv_project
   typed_fiber_equiv_on Σ τbig m e1 e2 ->
   typed_fiber_equiv_on Σ τsmall m e1 e2.
 Proof.
-  intros Hzero_src Hzero_tgt [Heq [Hres [Htotal _]]].
-  split; [exact Heq|].
+  intros Hzero_src Hzero_tgt [Hres [Htotal _]].
   split; [exact Hres|].
   split; [exact Htotal|].
   split; assumption.

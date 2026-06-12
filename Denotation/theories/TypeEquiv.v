@@ -7,9 +7,7 @@ From Denotation Require Import
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberTransport
-  TypeEquivBody
-  TypeEquivArrow
-  TypeEquivWand
+  TypeEquivFiberBase
   TypeEquivFiber.
 
 Section TypeDenote.
@@ -235,37 +233,8 @@ Proof.
   pose proof (typed_total_equiv_target_zero _ _ _ _ _ Hequiv) as Hzero2.
   pose proof (typed_total_equiv_tm_equiv _ _ _ _ _ Hequiv) as Heq.
   pose proof (typed_total_equiv_total_equiv _ _ _ _ _ Hequiv) as Htotal.
-  pose proof (typed_total_equiv_term_lc _ _ _ _ _ Hequiv) as [Hlc1 Hlc2].
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1) as Hguard1.
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2) as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [Hworld1 [Hbasic1 _]]].
-  destruct Hguard2 as [_ [_ [Hbasic2 _]]].
-  apply basic_world_formula_models_iff in Hworld1 as [HlcΣ _].
-  apply expr_basic_typing_formula_models_iff in Hbasic1 as [_ [_ Hty1]].
-  apply expr_basic_typing_formula_models_iff in Hbasic2 as [_ [_ Hty2]].
-  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty1) as Hlv1.
-  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty2) as Hlv2.
-  assert (Hres_open :
-      tm_result_equiv_open_at_on m (dom Σ) e1 e2).
-  {
-    eapply tm_equiv_on_to_result_open_at; eauto.
-    - rewrite (tm_lvars_lc_eq_atoms e1 Hlc1).
-      unfold lvars_of_atoms.
-      intros v Hv.
-      apply elem_of_map in Hv as [a [-> Ha]].
-      apply Hlv1. unfold lvars_of_atoms.
-      apply elem_of_map. exists a. split; [reflexivity|exact Ha].
-    - rewrite (tm_lvars_lc_eq_atoms e2 Hlc2).
-      unfold lvars_of_atoms.
-      intros v Hv.
-      apply elem_of_map in Hv as [a [-> Ha]].
-      apply Hlv2. unfold lvars_of_atoms.
-      apply elem_of_map. exists a. split; [reflexivity|exact Ha].
-  }
   eapply ty_denote_gas_tm_fiber_equiv.
-  - eapply typed_fiber_equiv_intro; eauto.
+  - eapply typed_fiber_equiv_of_tm_equiv; eauto.
   - exact Hden.
 Qed.
 

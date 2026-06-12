@@ -11,9 +11,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   TypeEquivCore
-  TypeEquivBody
-  TypeEquivArrow
-  TypeEquivWand
+  TypeEquivFiberTransport
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessApp.

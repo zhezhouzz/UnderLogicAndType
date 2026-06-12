@@ -294,54 +294,6 @@ Proof.
            apply lvars_fv_elem. eapply elem_of_dom_2. exact Hlook.
 Qed.
 
-Lemma basic_tm_has_ltype_open_result_target_fun
-    (Σ : lty_env) τtop τx τr e1 e2
-    (m : WfWorldT) y :
-  erase_ty τtop = erase_ty τx →ₜ erase_ty τr ->
-  typed_total_equiv_on Σ τtop m e1 e2 ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  basic_tm_has_ltype
-    (relevant_env
-      (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
-    e2 (erase_ty τx →ₜ erase_ty τr).
-Proof.
-  intros Herase Hequiv Hfresh.
-  destruct Hequiv as [_ [_ [_ Hzero_tgt]]].
-  pose proof (ty_denote_gas_guard_of_zero Σ τtop e2 m Hzero_tgt)
-    as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [Hworld [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic
-    as [HlcΣ [_ Hty]].
-  rewrite Herase in Hty.
-  pose proof (basic_tm_has_ltype_lc Σ e2
-    (erase_ty τx →ₜ erase_ty τr) HlcΣ Hty) as Hlc_e2.
-  eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].
-  apply storeA_map_eq. intros v.
-  unfold relevant_env, lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ tm_lvars e2)) as [Hv|Hv]; [|reflexivity].
-  assert (Hv_target :
-      v ∈ relevant_lvars (cty_open 0 y τr)
-        (tapp_tm e2 (vfvar y))).
-  {
-    unfold relevant_lvars, tapp_tm.
-    cbn [tm_lvars tm_lvars_at value_lvars_at].
-    set_solver.
-  }
-  rewrite decide_True by exact Hv_target.
-  destruct v as [k|a].
-  - exfalso. exact ((tm_lvars_lc e2 Hlc_e2) (LVBound k) Hv).
-  - assert (Hay : a <> y).
-    {
-      intros ->. apply Hfresh. apply elem_of_union_r.
-      rewrite <- tm_lvars_fv. apply lvars_fv_elem. exact Hv.
-    }
-    rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hay.
-    reflexivity.
-Qed.
-
 Lemma basic_value_has_ltype_open_result_target_arg
     (Σ : lty_env) τx τr e y :
   basic_value_has_ltype
@@ -357,76 +309,6 @@ Proof.
   - unfold relevant_lvars, tapp_tm.
     cbn [context_ty_lvars tm_lvars tm_lvars_at value_lvars_at].
     set_solver.
-Qed.
-
-Lemma typed_total_equiv_term_scope
-    Σ τ m e1 e2 :
-  typed_total_equiv_on Σ τ m e1 e2 ->
-  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT).
-Proof.
-  intros [_ [_ [Hzero1 Hzero2]]].
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
-    as Hguard1.
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)
-    as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [_ [_ Htotal1]]].
-  destruct Hguard2 as [_ [_ [_ Htotal2]]].
-  apply expr_total_formula_models_iff in Htotal1
-    as [Hscope1 [_ _]].
-  apply expr_total_formula_models_iff in Htotal2
-    as [Hscope2 [_ _]].
-  unfold formula_scoped_in_world in Hscope1, Hscope2.
-  rewrite formula_fv_expr_total_formula in Hscope1.
-  rewrite formula_fv_expr_total_formula in Hscope2.
-  rewrite tm_lvars_fv in Hscope1.
-  rewrite tm_lvars_fv in Hscope2.
-  better_set_solver.
-Qed.
-
-Lemma typed_total_equiv_term_lc_lvars
-    Σ τ m e1 e2 :
-  typed_total_equiv_on Σ τ m e1 e2 ->
-  lc_lvars (tm_lvars e1) /\ lc_lvars (tm_lvars e2).
-Proof.
-  intros [_ [_ [Hzero1 Hzero2]]].
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
-    as Hguard1.
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)
-    as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [_ [_ Htotal1]]].
-  destruct Hguard2 as [_ [_ [_ Htotal2]]].
-  apply expr_total_formula_models_iff in Htotal1
-    as [_ [Hlc1 _]].
-  apply expr_total_formula_models_iff in Htotal2
-    as [_ [Hlc2 _]].
-  split; assumption.
-Qed.
-
-Lemma typed_total_equiv_term_lc
-    Σ τ m e1 e2 :
-  typed_total_equiv_on Σ τ m e1 e2 ->
-  lc_tm e1 /\ lc_tm e2.
-Proof.
-  intros [_ [_ [Hzero1 Hzero2]]].
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1)
-    as Hguard1.
-  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2)
-    as Hguard2.
-  repeat rewrite res_models_and_iff in Hguard1.
-  repeat rewrite res_models_and_iff in Hguard2.
-  destruct Hguard1 as [_ [_ [Hbasic1 _]]].
-  destruct Hguard2 as [_ [_ [Hbasic2 _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic1
-    as [HlcΣ1 [_ Hty1]].
-  apply expr_basic_typing_formula_models_iff in Hbasic2
-    as [HlcΣ2 [_ Hty2]].
-  split.
-  - eapply basic_tm_has_ltype_lc; [exact HlcΣ1|exact Hty1].
-  - eapply basic_tm_has_ltype_lc; [exact HlcΣ2|exact Hty2].
 Qed.
 
 Lemma tm_equiv_full_world_extend_fresh
@@ -469,28 +351,217 @@ Proof.
     exact Heval2.
 Qed.
 
-Lemma typed_total_equiv_result_open
-    Σ τ m e1 e2 :
-  typed_total_equiv_on Σ τ m e1 e2 ->
-  tm_result_equiv_open_on m e1 e2.
+Lemma arrow_open_arg_to_inserted_env
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
 Proof.
-Admitted.
+  intros HΣclosed HfreshΣ Hyτx Hfresh_arg Harg.
+  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
+  { rewrite cty_shift_fv. exact Hyτx. }
+  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
+  { cbn [fv_tm fv_value]. better_set_solver. }
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
+    (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))) in Harg
+    by (exact Hfresh_arg || exact Hea_fresh || exact Hτa_fresh).
+  change (open_tm 0 (vfvar y) (tret (vbvar 0)))
+    with (tret (vfvar y)) in Harg.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τx))
+      (tret (vfvar y)))
+    ltac:(better_set_solver)
+    (arrow_arg_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e Hyτx)) as Hagree.
+  rewrite Hagree in Harg.
+  rewrite typed_lty_env_bind_open_current in Harg
+    by (exact HfreshΣ || exact HΣclosed).
+  exact Harg.
+Qed.
 
-Lemma typed_total_equiv_open_fiber_tm_equiv
-    Σ τ m e1 e2 y (my mfib : WfWorldT) X σ :
-  typed_total_equiv_on Σ τ m e1 e2 ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  res_restrict my (world_dom (m : WorldT)) = m ->
-  res_fiber_from_projection my X σ mfib ->
-  tm_equiv_on mfib e1 e2.
+Lemma arrow_open_arg_to_inserted_env_normalized
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  lc_context_ty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
 Proof.
-  intros Hequiv Hy Hdom Hrestrict Hproj.
-  pose proof (typed_total_equiv_tm_equiv Σ τ m e1 e2 Hequiv) as Heq.
-  pose proof (typed_total_equiv_term_scope Σ τ m e1 e2 Hequiv) as Hscope.
-  eapply tm_equiv_res_store_subset.
-  - eapply res_subset_fiber_source. exact Hproj.
-  - eapply tm_equiv_full_world_extend_fresh; eauto.
+  intros HΣclosed HfreshΣ Hyτx Hlc Hfresh_arg Harg.
+  pose proof (arrow_open_arg_to_inserted_env
+    gas Σ τx τr e m y HΣclosed HfreshΣ Hyτx Hfresh_arg Harg)
+    as Harg_open.
+  rewrite cty_open_shift_from_lc_fresh in Harg_open
+    by (exact Hlc || exact Hyτx).
+  exact Harg_open.
+Qed.
+
+Lemma ty_equiv_arrow_result_src_mid
+    gas (Σ : lty_env) τx τr e1
+    (my : WfWorldT) y :
+  lc_tm e1 ->
+  y ∉ fv_cty τr ->
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e1)
+        (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hsrc.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e1)
+        (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y))
+    (relevant_lvars (cty_open 0 y τr)
+      (tapp_tm e1 (vfvar y)))
+    ltac:(set_solver)
+    (arrow_body_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e1 (tapp_tm e1 (vfvar y))
+      Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e1 y Hlc)))
+    as Hagree.
+  rewrite <- Hagree.
+  exact Hsrc.
+Qed.
+
+Lemma ty_equiv_arrow_result_tgt_goal
+    gas (Σ : lty_env) τx τr e2
+    (my : WfWorldT) y :
+  lc_tm e2 ->
+  y ∉ fv_cty τr ->
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e2)
+        (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hmid.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTArrow τx τr) e2)
+        (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y))
+    (relevant_lvars (cty_open 0 y τr)
+      (tapp_tm e2 (vfvar y)))
+    ltac:(set_solver)
+    (arrow_body_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e2 (tapp_tm e2 (vfvar y))
+      Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc)))
+    as Hagree.
+  rewrite Hagree.
+  exact Hmid.
+Qed.
+
+Lemma ty_equiv_wand_result_src_mid
+    gas (Σ : lty_env) τx τr e1
+    (m : WfWorldT) y :
+  lc_tm e1 ->
+  y ∉ fv_cty τr ->
+  m ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e1)
+        (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hsrc.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e1)
+        (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e1 (vfvar y))
+    (relevant_lvars (cty_open 0 y τr)
+      (tapp_tm e1 (vfvar y)))
+    ltac:(set_solver)
+    (wand_body_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e1 (tapp_tm e1 (vfvar y))
+      Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e1 y Hlc)))
+    as Hagree.
+  rewrite <- Hagree.
+  exact Hsrc.
+Qed.
+
+Lemma ty_equiv_wand_result_tgt_goal
+    gas (Σ : lty_env) τx τr e2
+    (m : WfWorldT) y :
+  lc_tm e2 ->
+  y ∉ fv_cty τr ->
+  m ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e2)
+        (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hmid.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e2)
+        (erase_ty τx)))
+    (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y))
+    (relevant_lvars (cty_open 0 y τr)
+      (tapp_tm e2 (vfvar y)))
+    ltac:(set_solver)
+    (wand_body_relevant_env_agree_open_one_core
+      Σ (erase_ty τx) y τx τr e2 (tapp_tm e2 (vfvar y))
+      Hyτr (tm_lvars_tapp_tm_fvar_without_arg_shift_lc e2 y Hlc)))
+    as Hagree.
+  rewrite Hagree.
+  exact Hmid.
 Qed.
 
 End TypeDenote.
