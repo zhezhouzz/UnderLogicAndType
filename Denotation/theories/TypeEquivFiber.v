@@ -98,8 +98,7 @@ Proof.
   assert (Hy_e1 : y ∉ fv_tm e1) by (clear -Hy; set_solver).
   assert (Hy_e2 : y ∉ fv_tm e2) by (clear -Hy; set_solver).
   assert (Hy_proj :
-      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ) ∪
-        lvars_fv (context_ty_lvars (CTOver b φ)))
+      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ))
     by (clear -Hy; set_solver).
   assert (Hy_src : y ∉ Lsrc) by (clear -Hy; set_solver).
   rewrite formula_open_impl.
@@ -178,8 +177,7 @@ Proof.
   assert (Hy_e1 : y ∉ fv_tm e1) by (clear -Hy; set_solver).
   assert (Hy_e2 : y ∉ fv_tm e2) by (clear -Hy; set_solver).
   assert (Hy_proj :
-      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ) ∪
-        lvars_fv (context_ty_lvars (CTUnder b φ)))
+      y ∉ fv_tm e2 ∪ fv_tm e1 ∪ lvars_fv (dom Σ))
     by (clear -Hy; set_solver).
   assert (Hy_src : y ∉ Lsrc) by (clear -Hy; set_solver).
   rewrite formula_open_impl.

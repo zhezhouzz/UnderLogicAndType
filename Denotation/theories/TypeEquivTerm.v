@@ -45,7 +45,7 @@ Definition tm_fiber_equiv_on
 Definition tm_result_refines_projected_on
     (m : WfWorldT) (Dinput Dobs : lvset) (e_src e_tgt : tm) : Prop :=
   forall y (my_src : WfWorldT),
-    y ∉ fv_tm e_src ∪ fv_tm e_tgt ∪ lvars_fv Dinput ∪ lvars_fv Dobs ->
+    y ∉ fv_tm e_src ∪ fv_tm e_tgt ∪ lvars_fv Dinput ->
     world_dom (my_src : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
     res_restrict my_src (world_dom (m : WorldT)) = m ->
     my_src ⊨ expr_result_formula_at Dinput e_src (LVFree y) ->
@@ -476,7 +476,21 @@ Lemma tm_result_refines_projected_on_obs_mono
   tm_result_refines_projected_on m Dinput Dbig e1 e2 ->
   tm_result_refines_projected_on m Dinput Dsmall e1 e2.
 Proof.
-Admitted.
+  intros Hsub Hbig y my Hy Hdom Hrestrict Hres.
+  destruct (Hbig y my Hy Hdom Hrestrict Hres)
+    as [my_tgt [Hdom_tgt [Hrestrict_tgt [Hres_tgt Hproj_big]]]].
+  exists my_tgt. split; [exact Hdom_tgt|].
+  split; [exact Hrestrict_tgt|].
+  split; [exact Hres_tgt|].
+  eapply res_restrict_eq_subset; [|exact Hproj_big].
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - apply elem_of_union_l.
+    apply lvars_fv_elem.
+    apply Hsub.
+    apply lvars_fv_elem. exact Ha.
+  - apply elem_of_union_r. exact Ha.
+Qed.
 
 Lemma tm_result_equiv_projected_on_obs_mono
     m Dinput Dsmall Dbig e1 e2 :
