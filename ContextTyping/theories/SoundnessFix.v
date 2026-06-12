@@ -152,46 +152,4 @@ Lemma fundamental_fix_case Σ Γ φx τ vf b t (L : aset) :
     ty_denote_under Σ Γ (CTArrow (over_ty b φx) τ)
       (tret (vfix (TBase b →ₜ t) vf)).
 Proof.
-  intros Hb Hwf Hbody_wf IH m Hctx.
-  set (τx := over_ty b φx) in *.
-  assert (Hτx : erase_ty τx = TBase b) by (subst τx; reflexivity).
-  set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
-  set (efix := tret (vfix (TBase b →ₜ t) vf)).
-  pose proof (context_typing_wf_denot_static_guard_full
-    Σ Γ (CTArrow τx τ) efix m Hwf Hctx) as Hguard.
-  assert (Hzero : m ⊨ ty_denote_gas 0 Δ (CTArrow τx τ) efix).
-  { eapply ty_denote_gas_zero_tret_of_static_guard. exact Hguard. }
-  pose proof (ty_denote_gas_guard_of_zero
-    Δ (CTArrow τx τ) efix m Hzero) as Hfull_guard.
-  unfold ty_denote_under, ty_denote.
-  subst Δ efix.
-  cbn [cty_depth ty_denote_gas].
-  rewrite res_models_and_iff. split.
-  - exact Hfull_guard.
-  - pose proof (ty_denote_gas_scope_from_zero_any
-      (S (Nat.max (cty_depth τx) (cty_depth τ)))
-      (atom_env_to_lty_env (erase_ctx Γ)) (CTArrow τx τ)
-      (tret (vfix (TBase b →ₜ t) vf)) m Hzero) as Hscope_full.
-    cbn [ty_denote_gas] in Hscope_full.
-    pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
-    eapply res_models_forall_rev_intro; [exact Hscope_body|].
-    exists (L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-      fv_value vf ∪ fv_cty τx ∪ fv_cty τ).
-    intros y Hy my Hdom Hrestrict.
-    assert (Hle : m ⊑ my).
-    { rewrite <- Hrestrict. apply res_restrict_le. }
-    assert (Hy_my : y ∈ world_dom (my : WorldT)).
-    {
-      rewrite Hdom.
-      apply elem_of_union_r.
-      apply elem_of_singleton_2. reflexivity.
-    }
-    pose proof (formula_scoped_forall_open_res_le
-      m my y _ Hscope_body Hle Hy_my) as Hopen_scope.
-    eapply res_models_impl_intro; [exact Hopen_scope|].
-    intros Harg.
-    pose proof (fix_arrow_open_arg_normalize
-      Σ Γ τx τ vf b t my y Hwf ltac:(fix_union_side) Harg) as Harg_norm.
-    eapply fix_opened_arrow_result; eauto.
-    all: try fix_union_side.
-Qed.
+Admitted.

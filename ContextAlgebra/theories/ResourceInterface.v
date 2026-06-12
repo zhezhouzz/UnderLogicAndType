@@ -699,6 +699,38 @@ Proof.
   exact Hτ.
 Qed.
 
+Lemma res_fiber_from_projection_store_restrict_substore
+    (m mfib : WfWorld) (X Y : aset) (σ τ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  (mfib : World) τ ->
+  store_restrict τ (dom (store_restrict σ Y : StoreT)) =
+    store_restrict σ Y.
+Proof.
+  intros Hproj Hτ.
+  pose proof (res_fiber_from_projection_store_restrict
+    m mfib X σ τ Hproj Hτ) as Hfixed.
+  apply storeA_map_eq. intros a.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (a ∈ dom (store_restrict σ Y : StoreT))) as [Ha|Ha].
+  - apply elem_of_dom in Ha as [v Hv].
+    apply storeA_restrict_lookup_some in Hv as [HaY Hσa].
+    assert (Hτa : τ !! a = Some v).
+    {
+      assert (Hτrestrict :
+        (store_restrict τ (dom (σ : StoreT)) : StoreT) !! a =
+        Some v).
+      { rewrite Hfixed. exact Hσa. }
+      apply storeA_restrict_lookup_some in Hτrestrict as [_ Hτa].
+      exact Hτa.
+    }
+    rewrite decide_True by exact HaY.
+    rewrite Hσa. exact Hτa.
+  - destruct (decide (a ∈ Y)) as [HaY|HaY]; [|reflexivity].
+    destruct (σ !! a) as [v|] eqn:Hσa; [|reflexivity].
+    exfalso. apply Ha. apply elem_of_dom. exists v.
+    apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaY].
+Qed.
+
 Lemma res_fiber_from_projection_drop_fixed_domain
     (m mfib : WfWorld) (Y : aset) (σ σfix : StoreT) :
   (forall τ, (m : World) τ ->
@@ -828,6 +860,198 @@ Proof.
               destruct (σ !! a) as [va|] eqn:Hσa.
               ** apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaYfix].
               ** apply storeA_restrict_lookup_none_l. exact Hσa.
+Qed.
+
+Lemma res_fiber_from_projection_add_fixed_domain
+    (m mfib : WfWorld) (Y : aset) (σres σfix : StoreT) :
+  (forall τ, (m : World) τ ->
+    store_restrict τ (dom (σfix : StoreT)) = σfix) ->
+  res_fiber_from_projection m
+    (Y ∖ dom (σfix : StoreT)) σres mfib ->
+  res_fiber_from_projection m Y
+    (store_restrict σfix Y ∪ σres) mfib.
+Proof.
+  intros Hfixed Hres.
+  pose proof (res_fiber_from_projection_store_dom_subset
+    m mfib (Y ∖ dom (σfix : StoreT)) σres Hres) as Hres_dom.
+  destruct Hres as [[τ0 [Hτ0 Hτ0res]] Hfib].
+  split.
+  - exists τ0. split; [exact Hτ0|].
+    apply storeA_map_eq. intros a.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (a ∈ Y)) as [HaY|HaY].
+    + destruct (decide (a ∈ dom (σfix : StoreT))) as [Hafix|Hafix].
+      * assert (Hτ0fix_a : τ0 !! a = σfix !! a).
+        {
+          apply elem_of_dom in Hafix as [va Hva].
+          assert (Hlook :
+              (store_restrict τ0 (dom (σfix : StoreT)) : StoreT) !! a =
+              Some va).
+          { rewrite Hfixed by exact Hτ0. exact Hva. }
+          apply storeA_restrict_lookup_some in Hlook as [_ Hτ0a].
+          change ((τ0 : gmap atom V) !! a =
+            (σfix : gmap atom V) !! a).
+          exact (eq_trans Hτ0a (eq_sym Hva)).
+        }
+        assert (Hafix_dom : a ∈ dom (σfix : StoreT)) by exact Hafix.
+        apply elem_of_dom in Hafix as [va Hva].
+        transitivity (Some va).
+        -- change ((τ0 : gmap atom V) !! a = Some va).
+           rewrite Hτ0fix_a. exact Hva.
+        -- symmetry.
+	           transitivity ((store_restrict σfix Y : StoreT) !! a).
+		           ++ apply lookup_union_l.
+		              apply not_elem_of_dom.
+		              intros Hares.
+		              pose proof (Hres_dom a Hares) as HaresYfix.
+		              apply elem_of_difference in HaresYfix as [_ Hanotfix].
+		              exact (Hanotfix Hafix_dom).
+	           ++ assert (HfixY :
+	                (store_restrict σfix Y : StoreT) !! a = Some va).
+	              { eapply storeA_restrict_lookup_some_2; [exact Hva|exact HaY]. }
+	              exact HfixY.
+      * assert (Hτ0res_a : τ0 !! a = σres !! a).
+        {
+          destruct (σres !! a) as [va|] eqn:Hresa.
+          - assert (Hlook :
+                (store_restrict τ0 (Y ∖ dom (σfix : StoreT)) : StoreT) !! a =
+                Some va).
+	            { rewrite Hτ0res. exact Hresa. }
+	            apply storeA_restrict_lookup_some in Hlook as [_ Hτ0a].
+	            exact Hτ0a.
+	          - assert (Hlook :
+	                (store_restrict τ0 (Y ∖ dom (σfix : StoreT)) : StoreT) !! a =
+	                None).
+	            { rewrite Hτ0res. exact Hresa. }
+	            destruct (τ0 !! a) as [va|] eqn:Hτ0a; [|reflexivity].
+	            exfalso.
+	            assert (Hsome :
+	                (store_restrict τ0 (Y ∖ dom (σfix : StoreT)) : StoreT)
+                  !! a = Some va).
+	            {
+	              eapply storeA_restrict_lookup_some_2;
+	                [exact Hτ0a|set_solver].
+	            }
+	            rewrite Hlook in Hsome. discriminate.
+        }
+	        transitivity (σres !! a); [exact Hτ0res_a|].
+	        symmetry.
+	        apply lookup_union_r.
+	        apply storeA_restrict_lookup_none_l.
+	        apply not_elem_of_dom. exact Hafix.
+    + symmetry.
+      apply map_lookup_union_None. split.
+      * apply storeA_restrict_lookup_none_r. exact HaY.
+      * apply not_elem_of_dom.
+        intros Hares. apply Hres_dom in Hares. set_solver.
+  - destruct mfib as [wmfib Hwfib].
+    cbn [proj1_sig] in Hfib |- *.
+    change (wmfib = rawA_fiber (m : World) σres) in Hfib.
+    change (wmfib =
+      rawA_fiber (m : World) (store_restrict σfix Y ∪ σres)).
+    rewrite Hfib.
+    apply world_ext.
+    + reflexivity.
+    + intros τ. cbn [raw_fiber rawA_fiber raw_world raw_worldA world_stores].
+      split.
+      * intros [Hτ Hτres]. split; [exact Hτ|].
+        apply storeA_map_eq. intros a.
+        destruct (decide
+          (a ∈ dom (store_restrict σfix Y ∪ σres : StoreT))) as [Hafull|Hafull].
+	        -- rewrite storeA_restrict_lookup.
+	           destruct (decide (a ∈ dom (store_restrict σfix Y ∪ σres : StoreT)))
+	             as [_|Hbad]; [|contradiction].
+	           destruct ((store_restrict σfix Y : StoreT) !! a) as [vfix|] eqn:Hfixlook.
+	           ++ pose proof Hfixlook as Hfixlook_some.
+	              apply storeA_restrict_lookup_some in Hfixlook_some
+	                as [HaYfix Hσfixa].
+	              assert (Hτfix_a : τ !! a = Some vfix).
+	              {
+	                assert (Hlook :
+	                    (store_restrict τ (dom (σfix : StoreT)) : StoreT) !! a =
+	                    Some vfix).
+	                { rewrite Hfixed by exact Hτ. exact Hσfixa. }
+	                apply storeA_restrict_lookup_some in Hlook as [_ Hτa].
+	                exact Hτa.
+	              }
+	              transitivity (Some vfix); [exact Hτfix_a|].
+	              symmetry.
+	              transitivity ((store_restrict σfix Y : StoreT) !! a).
+	              ** apply lookup_union_l.
+	                 apply not_elem_of_dom.
+	                 intros Hares.
+	                 pose proof (Hres_dom a Hares) as HaresYfix.
+	                 apply elem_of_difference in HaresYfix as [_ Hanotfix].
+	                 apply Hanotfix. eapply elem_of_dom_2. exact Hσfixa.
+	              ** exact Hfixlook.
+	           ++ pose proof Hafull as Hafull_dom.
+	              assert (Hares : a ∈ dom (σres : StoreT)).
+	              {
+	                destruct (σres !! a) as [vres|] eqn:Hreslook.
+	                - eapply elem_of_dom_2. exact Hreslook.
+	                - exfalso.
+	                  assert (Hunion_none :
+	                    (store_restrict σfix Y ∪ σres : StoreT) !! a = None).
+	                  {
+	                    apply map_lookup_union_None. split; assumption.
+	                  }
+	                  apply not_elem_of_dom in Hunion_none.
+	                  exact (Hunion_none Hafull_dom).
+	              }
+	              assert (Hτres_a : τ !! a = σres !! a).
+	              {
+	                destruct (σres !! a) as [vres|] eqn:Hreslook.
+	                - assert (Hlook :
+	                    (store_restrict τ (dom (σres : StoreT)) : StoreT) !! a =
+	                    Some vres).
+	                  { rewrite Hτres. exact Hreslook. }
+	                  apply storeA_restrict_lookup_some in Hlook as [_ Hτa].
+	                  exact Hτa.
+	                - exfalso. apply not_elem_of_dom in Hreslook.
+	                  contradiction.
+	              }
+	              transitivity (σres !! a); [exact Hτres_a|].
+	              symmetry.
+	              apply lookup_union_r.
+	              exact Hfixlook.
+        -- rewrite storeA_restrict_lookup_none_r by exact Hafull.
+           apply not_elem_of_dom in Hafull. symmetry. exact Hafull.
+      * intros [Hτ Hτfull]. split; [exact Hτ|].
+        apply storeA_map_eq. intros a.
+        destruct (decide (a ∈ dom (σres : StoreT))) as [Hares|Hares].
+        -- rewrite storeA_restrict_lookup.
+           destruct (decide (a ∈ dom (σres : StoreT))) as [_|Hbad];
+             [|contradiction].
+	           pose proof Hares as HaresY.
+	           apply Hres_dom in HaresY.
+	           assert (Hanotfix : a ∉ dom (σfix : StoreT)) by set_solver.
+	           apply elem_of_dom in Hares as [vres Hreslook].
+	           assert (Hleft_none : (store_restrict σfix Y : StoreT) !! a = None).
+	           {
+	             apply storeA_restrict_lookup_none_l.
+	             apply not_elem_of_dom. exact Hanotfix.
+	           }
+	           assert (Hfull_lookup :
+	             (store_restrict σfix Y ∪ σres : StoreT) !! a = Some vres).
+	           {
+	             transitivity (σres !! a).
+	             - apply lookup_union_r. exact Hleft_none.
+	             - exact Hreslook.
+	           }
+	           assert (Hτa : τ !! a = Some vres).
+	           {
+	             assert (Hrestrict :
+	               (store_restrict τ
+	                 (dom (store_restrict σfix Y ∪ σres : StoreT)) : StoreT)
+	               !! a = Some vres).
+	             { rewrite Hτfull. exact Hfull_lookup. }
+	             apply storeA_restrict_lookup_some in Hrestrict as [_ Hτa].
+	             exact Hτa.
+	           }
+	           change ((τ : gmap atom V) !! a = (σres : gmap atom V) !! a).
+	           rewrite Hτa, Hreslook. reflexivity.
+        -- rewrite storeA_restrict_lookup_none_r by exact Hares.
+           apply not_elem_of_dom in Hares. symmetry. exact Hares.
 Qed.
 
 Lemma res_subset_fiber_source

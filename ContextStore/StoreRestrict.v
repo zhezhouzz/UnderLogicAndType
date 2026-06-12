@@ -890,6 +890,31 @@ Proof.
     rewrite Hs2. reflexivity.
 Qed.
 
+Lemma storeA_restrict_union_singleton_ignore_r {K : Type} `{Countable K}
+    (s : gmap K V) x (v : V) (X : gset K) :
+  x ∉ X ->
+  (storeA_restrict (@union (gmap K V) _ s ({[x := v]} : gmap K V)) X
+    : gmap K V) =
+  storeA_restrict s X.
+Proof.
+  intros Hx.
+  apply storeA_restrict_union_ignore_r.
+  rewrite dom_singleton_L. set_solver.
+Qed.
+
+Lemma lookup_union_singleton_r_eq {K : Type} `{Countable K}
+    (s : gmap K V) x (u v : V) :
+  s !! x = None ->
+  (@union (gmap K V) _ s ({[x := u]} : gmap K V)) !! x = Some v ->
+  u = v.
+Proof.
+  intros Hnone Hlook.
+  rewrite (lookup_union_r (M:=gmap K) (A:=V)
+    s ({[x := u]} : gmap K V) x Hnone) in Hlook.
+  rewrite map_lookup_singleton in Hlook.
+  inversion Hlook. reflexivity.
+Qed.
+
 Lemma storeA_restrict_union_absorb_l_on {K : Type} `{Countable K}
     (s1 s2 : gmap K V) (X : gset K) :
   storeA_compat s1 s2 →

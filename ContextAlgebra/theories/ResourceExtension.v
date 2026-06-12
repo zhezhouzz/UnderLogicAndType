@@ -359,6 +359,149 @@ Proof.
     (eq_sym (resA_extend_by_restrict_base m F n Hext))).
 Qed.
 
+Lemma resA_extend_by_le_mono
+    (m n mx nx : WfWorldAT) (F : fiber_extensionA) :
+  m ⊑ n ->
+  m #> F ~~A> mx ->
+  n #> F ~~A> nx ->
+  mx ⊑ nx.
+Proof.
+  intros Hle Hmx Hnx.
+  pose proof (resA_extend_by_applicable _ _ _ Hmx) as Happ_m.
+  pose proof (resA_extend_by_applicable _ _ _ Hnx) as Happ_n.
+  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
+  apply worldA_ext.
+  - simpl.
+    rewrite (resA_extend_by_dom _ _ _ Hmx).
+    rewrite (resA_extend_by_dom _ _ _ Hnx).
+    pose proof (rawA_le_dom (m : WorldAT) (n : WorldAT) Hle) as Hdom.
+    set_solver.
+  - intros σ. split.
+    + intros Hσmx.
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hmx)) in Hσmx.
+      destruct Hσmx as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+      rewrite Hle in Hσm.
+      destruct Hσm as [σn [Hσn Hproj]].
+      exists (@union (gmap K V) _ σn σe). split.
+      * apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hnx)).
+        exists σn, we, σe. repeat split; eauto.
+        replace (storeA_restrict σn (extA_in F))
+          with (storeA_restrict σm (extA_in F)).
+        -- exact HF.
+        -- rewrite <- Hproj.
+           rewrite storeA_restrict_twice_subset; [reflexivity|].
+           exact (extA_app_in _ _ Happ_m).
+      * change (storeA_restrict (@union (gmap K V) _ σn σe)
+          (worldA_dom (mx : WorldAT)) = @union (gmap K V) _ σm σe).
+        assert (HFn : extA_rel F (storeA_restrict σn (extA_in F)) we).
+        {
+          replace (storeA_restrict σn (extA_in F))
+            with (storeA_restrict σm (extA_in F)); [exact HF|].
+          rewrite <- Hproj.
+          rewrite storeA_restrict_twice_subset; [reflexivity|].
+          exact (extA_app_in _ _ Happ_m).
+        }
+        rewrite (resA_extend_by_dom _ _ _ Hmx).
+        rewrite storeA_restrict_union_cover.
+        -- rewrite Hproj.
+           pose proof (extA_output_store_dom_from_base n F σn we σe
+             Happ_n Hσn HFn Hσe) as Hdomσe.
+           rewrite (storeA_restrict_idemp_eq σe (extA_out F) Hdomσe).
+           reflexivity.
+        -- eapply resA_extend_store_compat; eauto.
+        -- change (worldA_dom (m : WorldAT) ⊆ dom (σn : gmap K V)).
+           pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+           rewrite Hdomσn.
+           exact (rawA_le_dom (m : WorldAT) (n : WorldAT) Hle).
+        -- pose proof (extA_output_store_dom_from_base n F σn we σe
+             Happ_n Hσn HFn Hσe) as Hdomσe.
+           rewrite Hdomσe. set_solver.
+    + intros [σnx [Hσnx Hrestrict]].
+      apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hnx)) in Hσnx.
+      destruct Hσnx as [σn [we [σe [Hσn [HF [Hσe ->]]]]]].
+      assert (Hσm :
+          (m : WorldAT) (storeA_restrict σn (worldA_dom (m : WorldAT)))).
+      {
+        set (D := worldA_dom (m : WorldAT)).
+        change ((m : WorldAT) (storeA_restrict σn D)).
+        rewrite Hle. exists σn. split; [exact Hσn|reflexivity].
+      }
+      apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hmx)).
+      exists (storeA_restrict σn (worldA_dom (m : WorldAT))), we, σe.
+      repeat split.
+      * exact Hσm.
+      * rewrite storeA_restrict_twice_subset; [exact HF|].
+        exact (extA_app_in _ _ Happ_m).
+      * exact Hσe.
+      * rewrite <- Hrestrict.
+        change (storeA_restrict (@union (gmap K V) _ σn σe)
+          (worldA_dom (mx : WorldAT)) =
+          @union (gmap K V) _
+            (storeA_restrict σn (worldA_dom (m : WorldAT))) σe).
+        rewrite (resA_extend_by_dom _ _ _ Hmx).
+        rewrite storeA_restrict_union_cover.
+        -- pose proof (extA_output_store_dom_from_base n F σn we σe
+             Happ_n Hσn HF Hσe) as Hdomσe.
+           rewrite (storeA_restrict_idemp_eq σe (extA_out F) Hdomσe).
+           reflexivity.
+        -- eapply resA_extend_store_compat; eauto.
+        -- change (worldA_dom (m : WorldAT) ⊆ dom (σn : gmap K V)).
+           pose proof (wfworldA_store_dom n σn Hσn) as Hdomσn.
+           rewrite Hdomσn.
+           exact (rawA_le_dom (m : WorldAT) (n : WorldAT) Hle).
+        -- pose proof (extA_output_store_dom_from_base n F σn we σe
+             Happ_n Hσn HF Hσe) as Hdomσe.
+          rewrite Hdomσe. set_solver.
+Qed.
+
+Lemma resA_extend_by_sum
+    (m1 m2 m1x m2x : WfWorldAT) (F : fiber_extensionA)
+    (Hdef : rawA_sum_defined m1 m2) :
+  m1 #> F ~~A> m1x ->
+  m2 #> F ~~A> m2x ->
+  exists Hdefx : rawA_sum_defined m1x m2x,
+    resA_sum m1 m2 Hdef #> F ~~A>
+      resA_sum m1x m2x Hdefx.
+Proof.
+  intros Hext1 Hext2.
+  pose proof (resA_extend_by_applicable _ _ _ Hext1) as Happ1.
+  pose proof (resA_extend_by_applicable _ _ _ Hext2) as Happ2.
+  assert (Hdefx : rawA_sum_defined m1x m2x).
+  {
+    unfold rawA_sum_defined.
+    rewrite (resA_extend_by_dom _ _ _ Hext1).
+    rewrite (resA_extend_by_dom _ _ _ Hext2).
+    unfold rawA_sum_defined in Hdef.
+    rewrite Hdef. reflexivity.
+  }
+  exists Hdefx.
+  split.
+  - constructor.
+    + cbn. exact (extA_app_in _ _ Happ1).
+    + cbn. exact (extA_app_out _ _ Happ1).
+  - split.
+    + cbn.
+      rewrite (resA_extend_by_dom _ _ _ Hext1).
+      reflexivity.
+    + intros σ. split.
+      * intros [Hσ | Hσ].
+        -- apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext1)) in Hσ.
+           destruct Hσ as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+           exists σm, we, σe. repeat split; eauto.
+           left. exact Hσm.
+        -- apply (proj1 (resA_extend_by_store_iff _ _ _ _ Hext2)) in Hσ.
+           destruct Hσ as [σm [we [σe [Hσm [HF [Hσe ->]]]]]].
+           exists σm, we, σe. repeat split; eauto.
+           right. exact Hσm.
+      * intros [σm [we [σe [[Hσm | Hσm] [HF [Hσe ->]]]]]].
+        -- left.
+           apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext1)).
+           exists σm, we, σe. repeat split; eauto.
+        -- right.
+           apply (proj2 (resA_extend_by_store_iff _ _ _ _ Hext2)).
+           exists σm, we, σe. repeat split; eauto.
+Qed.
+
 Lemma resA_extend_by_product_frame_r
     (m1 m1x m2 : WfWorldAT) (F : fiber_extensionA)
     (Hc : worldA_compat m1 m2) :

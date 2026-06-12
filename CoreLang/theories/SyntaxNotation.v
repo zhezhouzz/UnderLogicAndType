@@ -90,3 +90,7 @@ Notation "'succ' v" := (tprim op_plus1 v)
   (at level 30, v at level 30, format "succ  v") : core_scope.
 Notation "'pred' v" := (tprim op_minus1 v)
   (at level 30, v at level 30, format "pred  v") : core_scope.
+Notation "'boolGen' v" := (tprim op_boolGen v)
+  (at level 30, v at level 30, format "boolGen  v") : core_scope.
+Notation "'natGen' v" := (tprim op_natGen v)
+  (at level 30, v at level 30, format "natGen  v") : core_scope.

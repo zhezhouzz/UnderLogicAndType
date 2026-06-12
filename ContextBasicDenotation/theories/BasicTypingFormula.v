@@ -365,6 +365,16 @@ Proof.
   exact (proj2 basic_has_ltype_lc_mutual Σ e T).
 Qed.
 
+Lemma basic_tm_has_ltype_ret_fvar_lookup
+    (Σ : lty_env) x T :
+  basic_tm_has_ltype Σ (tret (vfvar x)) T ->
+  Σ !! LVFree x = Some T.
+Proof.
+  intros Hty.
+  inversion Hty as [Γ v U Hval| | | |]; subst; clear Hty.
+  inversion Hval; subst; eauto.
+Qed.
+
 Lemma lty_env_open_one_typed_bind_lookup_free_ne
     (Σ : lty_env) T y z :
   z <> y ->

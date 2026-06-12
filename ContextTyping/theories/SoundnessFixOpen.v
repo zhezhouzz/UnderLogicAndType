@@ -11,6 +11,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   TypeEquivCore
+  TypeEquivTerm
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand
@@ -464,10 +465,13 @@ Proof.
 	      specialize (Heq σ v Hσ) as [Hfix_unfold Hunfold_fix].
 	      split; [exact Hunfold_fix|exact Hfix_unfold].
 	    }
-	    eapply ty_denote_gas_zero_transport_static_tm_equiv.
-	    - exact Heq_unfold_fix.
-	    - eapply tm_total_equiv_of_tm_equiv_left_total; eauto.
-	    - exact Hstatic_open.
+		    eapply ty_denote_gas_zero_transport_static_tm_equiv.
+		    - exact Heq_unfold_fix.
+		    - intros σ Hσ.
+		      pose proof (tm_total_equiv_fix_unfold (TBase b →ₜ t) vf y my
+		        Hclosed Hbody_vf Hy_dom σ Hσ) as Htotal_fix_unfold.
+		      split; [exact (proj2 Htotal_fix_unfold)|exact (proj1 Htotal_fix_unfold)].
+		    - exact Hstatic_open.
 	    - apply lc_tapp_tm; [exact Hlc_efix|constructor].
 	    - eapply ty_static_guard_fv_tm_subset. exact Hstatic_open.
 	    - exact Hzero_unfolded.
@@ -498,13 +502,14 @@ Proof.
 	    repeat rewrite res_models_and_iff in Hguard_unfolded.
 	    repeat rewrite res_models_and_iff in Hguard_fix.
 	    destruct Hguard_unfolded as [_ [_ [_ Htotal_unfolded]]].
-	    destruct Hguard_fix as [_ [_ [_ Htotal_fix]]].
-	    eapply ty_denote_gas_tm_equiv.
-	    - split; [|split].
-	      + intros σ v Hσ. symmetry. exact (Heq σ v Hσ).
-	      + eapply tm_total_equiv_of_total_formulas; eauto.
-	      + split; [exact Hzero_unfolded|exact Hzero_fix].
-	    - exact Hunfolded_open.
+		    destruct Hguard_fix as [_ [_ [_ Htotal_fix]]].
+				    eapply ty_denote_gas_tm_equiv.
+				    - refine (conj _ (conj _ (conj _ _))).
+					      + intros σ0 v0 Hσ0. symmetry. exact (Heq σ0 v0 Hσ0).
+					      + eapply tm_total_equiv_of_total_formulas; eauto.
+					      + exact Hzero_unfolded.
+				      + exact Hzero_fix.
+			    - exact Hunfolded_open.
 	  }
   eapply ty_equiv_arrow_result_tgt_goal.
   - exact Hlc_efix.

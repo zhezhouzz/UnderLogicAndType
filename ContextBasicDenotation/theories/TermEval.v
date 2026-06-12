@@ -152,6 +152,22 @@ Proof.
   inversion Heq. reflexivity.
 Qed.
 
+Lemma tm_eval_in_store_ret_fvar_inv σ x v :
+  store_closed σ ->
+  x ∈ dom σ ->
+  tm_eval_in_store σ (tret (vfvar x)) v ->
+  σ !! x = Some v.
+Proof.
+  intros Hclosed Hx Heval.
+  pose proof (tm_eval_in_store_ret_value_inv σ (vfvar x) v
+    Hclosed ltac:(constructor) Heval) as Heq.
+  destruct (σ !! x) as [u|] eqn:Hxlookup.
+  - rewrite (msubst_fvar_lookup_closed σ x u (proj1 Hclosed) Hxlookup)
+      in Heq.
+    inversion Heq. reflexivity.
+  - apply not_elem_of_dom in Hxlookup. contradiction.
+Qed.
+
 Lemma tm_eval_in_store_tapp_tm_fun_equiv σ e e' x v :
   store_closed σ ->
   lc_tm e ->
@@ -222,6 +238,25 @@ Lemma tm_eval_in_store_tapp_tm_arg_eq σ e vx1 vx2 v :
 Proof.
   intros Hclosed Hvx1 Hvx2 Heq.
   unfold tm_eval_in_store, expr_eval_in_store.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (try apply lc_lstore_lift_free;
+     rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite !msubst_tapp_tm_lc_arg by
+    (exact Hvx1 || exact Hvx2 || exact (proj2 Hclosed)).
+	  rewrite Heq. reflexivity.
+Qed.
+
+Lemma tm_must_terminating_tapp_tm_arg_eq σ e vx1 vx2 :
+  store_closed σ ->
+  lc_value vx1 ->
+  lc_value vx2 ->
+  m{σ} vx1 = m{σ} vx2 ->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ) (tapp_tm e vx1)) <->
+  must_terminating (lstore_instantiate_tm (lstore_lift_free σ) (tapp_tm e vx2)).
+Proof.
+  intros Hclosed Hvx1 Hvx2 Heq.
   rewrite !lstore_instantiate_tm_no_bvars by
     (try apply lc_lstore_lift_free;
      rewrite ?lstore_free_part_lift_free; exact (proj1 Hclosed)).
@@ -325,6 +360,92 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_must_terminating_tapp_tm_lam_body
+    σ T e y vy :
+  store_closed σ ->
+  body_tm e ->
+  y ∉ fv_tm e ->
+  σ !! y = Some vy ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (vlam T e)) (vfvar y))) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) (e ^^ y)).
+Proof.
+  intros Hclosed Hbody Hy Hσy.
+  rewrite !lstore_instantiate_tm_no_bvars.
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  rewrite !lstore_free_part_lift_free.
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite msubst_tapp_tm_lc_arg by (constructor || exact (proj2 Hclosed)).
+  rewrite msubst_ret.
+  rewrite msubst_vlam.
+  rewrite (msubst_fvar_lookup_closed σ y vy)
+    by (exact (proj1 Hclosed) || exact Hσy).
+  change (m{σ} (e ^^ y)) with
+    (m{σ} (open_tm 0 (vfvar y) e)).
+  rewrite (msubst_open_lookup_tm σ e 0 y vy)
+    by (try exact (proj1 Hclosed);
+        try exact (proj2 Hclosed);
+        try exact Hσy;
+        try exact Hy).
+  replace (m{delete y σ} e) with (m{σ} e).
+  2:{
+    symmetry.
+    apply (msubst_agree tm (delete y σ) σ (fv_tm e) e).
+    - apply closed_env_delete. exact (proj1 Hclosed).
+    - exact (proj1 Hclosed).
+    - reflexivity.
+    - intros z Hz.
+      assert (z <> y) by set_solver.
+      assert (Hdel : delete y σ !! z = σ !! z).
+      { apply lookup_delete_ne. congruence. }
+      exact Hdel.
+  }
+  assert (Hbodyσ : body_tm (m{σ} e)).
+  {
+    exists (fv_tm e ∪ dom σ). intros z Hz.
+    change (lc_tm (open_tm 0 (vfvar z) (m{σ} e))).
+    assert (Hfreshz : m{σ} (vfvar z) = vfvar z).
+    { apply msubst_fvar_lookup_none_closed.
+      - exact (proj1 Hclosed).
+      - apply not_elem_of_dom. set_solver. }
+    rewrite <- Hfreshz.
+    change (lc_tm ({0 ~> m{σ} (vfvar z)} (m{σ} e))).
+    rewrite <- (msubst_open e 0 (vfvar z) σ)
+      by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    apply msubst_lc; [exact (proj2 Hclosed)|].
+    apply body_open_tm; [exact Hbody|constructor].
+  }
+  rewrite must_terminating_tapp_tm_ret_equiv.
+  destruct (must_terminating_lam_app_equiv T (m{σ} e) vy) as [Happ_body Hbody_app].
+  {
+    apply LC_app; [|eapply lc_env_lookup; eauto; exact (proj2 Hclosed)].
+    destruct Hbodyσ as [Lσ Hbodyσ].
+    exact (LC_lam T (m{σ} e) Lσ Hbodyσ).
+  }
+  split; [exact Happ_body|exact Hbody_app].
+Unshelve.
+  all: try solve
+    [ assumption
+    | apply lc_lstore_lift_free
+    | change (closed_env (lstore_to_store (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | change (closed_env (lstore_free_part (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | eapply lc_env_lookup; eauto; exact (proj2 Hclosed)
+    | destruct Hbodyσ as [Lσ Hbodyσ];
+      exact (LC_lam T (m{σ} e) Lσ Hbodyσ)
+    | apply LC_app;
+      [ destruct Hbodyσ as [Lσ Hbodyσ];
+        exact (LC_lam T (m{σ} e) Lσ Hbodyσ)
+      | eapply lc_env_lookup; eauto; exact (proj2 Hclosed) ] ].
+Qed.
+
 Lemma tm_eval_in_store_match_true_fvar σ x et ef v :
   store_closed σ ->
   lc_tm et ->
@@ -377,6 +498,64 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_must_terminating_match_true_fvar σ x et ef :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool true)) ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tmatch (vfvar x) et ef)) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) et).
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (apply lc_lstore_lift_free ||
+     rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite subst_map_tmatch.
+  change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+  rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool true)))
+    by (exact (proj1 Hclosed) || exact Hx).
+  apply must_terminating_match_true_equiv.
+  apply LC_match.
+  - constructor.
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
+Qed.
+
+Lemma tm_must_terminating_match_false_fvar σ x et ef :
+  store_closed σ ->
+  lc_tm et ->
+  lc_tm ef ->
+  σ !! x = Some (vconst (cbool false)) ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tmatch (vfvar x) et ef)) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ) ef).
+Proof.
+  intros Hclosed Hlcet Hlcef Hx.
+  rewrite !lstore_instantiate_tm_no_bvars by
+    (apply lc_lstore_lift_free ||
+     rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)).
+  rewrite !lstore_free_part_lift_free.
+  rewrite subst_map_tmatch.
+  change (subst_map σ (vfvar x)) with (m{σ} (vfvar x)).
+  rewrite (msubst_fvar_lookup_closed σ x (vconst (cbool false)))
+    by (exact (proj1 Hclosed) || exact Hx).
+  apply must_terminating_match_false_equiv.
+  apply LC_match.
+  - constructor.
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcet].
+  - rewrite subst_map_tm_eq_msubst.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hlcef].
 Qed.
 
 Lemma tm_eval_in_store_tapp_tm_fix_unfold
@@ -456,6 +635,96 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
   - apply lc_lstore_lift_free.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
+Lemma tm_must_terminating_tapp_tm_fix_unfold
+    σ Tf vf y vy :
+  store_closed σ ->
+  body_val vf ->
+  σ !! y = Some vy ->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (vfix Tf vf)) (vfvar y))) <->
+  must_terminating
+    (lstore_instantiate_tm (lstore_lift_free σ)
+      (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf))).
+Proof.
+  intros Hclosed Hbody Hσy.
+  assert (Hvy_lc : lc_value vy).
+  { eapply lc_env_lookup; [exact (proj2 Hclosed)|exact Hσy]. }
+  assert (Hbodyσ : body_val (m{σ} vf)).
+  {
+    exists (fv_value vf ∪ dom (σ : StoreT)). intros z Hz.
+    change (lc_value (open_value 0 (vfvar z) (m{σ} vf))).
+    assert (Hz_none : σ !! z = None).
+    { apply not_elem_of_dom. set_solver. }
+    assert (Hz_subst : m{σ} (vfvar z) = vfvar z).
+    { apply msubst_fvar_lookup_none_closed; [exact (proj1 Hclosed)|exact Hz_none]. }
+    rewrite <- Hz_subst.
+    change (lc_value ({0 ~> m{σ} (vfvar z)} (m{σ} vf))).
+    rewrite <- (msubst_open vf 0 (vfvar z) σ)
+      by (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    apply msubst_lc; [exact (proj2 Hclosed)|].
+    apply body_open_value; [exact Hbody|constructor].
+  }
+  assert (Hfix_lc : lc_value (vfix Tf (m{σ} vf))).
+  { apply lc_fix_iff_body. exact Hbodyσ. }
+  assert (Hfix_orig_lc : lc_value (vfix Tf vf)).
+  { apply lc_fix_iff_body. exact Hbody. }
+  assert (Hopened_lc : lc_value (open_value 0 vy (m{σ} vf))).
+  { apply body_open_value; [exact Hbodyσ|exact Hvy_lc]. }
+  rewrite !lstore_instantiate_tm_no_bvars.
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  2:{ apply lc_lstore_lift_free. }
+  2:{ rewrite lstore_free_part_lift_free. exact (proj1 Hclosed). }
+  rewrite !lstore_free_part_lift_free.
+  assert (Hsrc_msubst :
+      m{σ} (tapp_tm (tret (vfix Tf vf)) (vfvar y)) =
+      tapp_tm (tret (vfix Tf (m{σ} vf))) vy).
+  {
+    rewrite msubst_tapp_tm_lc_arg
+      by (constructor || exact (proj2 Hclosed)).
+    rewrite msubst_ret, msubst_vfix.
+    rewrite (msubst_fvar_lookup_closed σ y vy)
+      by (exact (proj1 Hclosed) || exact Hσy).
+    reflexivity.
+  }
+  assert (Htgt_msubst :
+      m{σ} (tapp_tm (tret (open_value 0 (vfvar y) vf)) (vfix Tf vf)) =
+      tapp_tm (tret (open_value 0 vy (m{σ} vf)))
+        (vfix Tf (m{σ} vf))).
+  {
+    rewrite msubst_tapp_tm_lc_arg
+      by (exact Hfix_orig_lc || exact (proj2 Hclosed)).
+    rewrite msubst_ret, msubst_vfix.
+    change (m{σ} (open_value 0 y vf))
+      with (m{σ} ({0 ~> vfvar y} vf)).
+    rewrite (@msubst_open value open_value_inst subst_value_inst
+      MsubstOpen_value vf 0 (vfvar y) σ) by
+      (exact (proj1 Hclosed) || exact (proj2 Hclosed) || constructor).
+    rewrite (msubst_fvar_lookup_closed σ y vy)
+      by (exact (proj1 Hclosed) || exact Hσy).
+    reflexivity.
+  }
+  rewrite !subst_map_tm_eq_msubst.
+  rewrite Hsrc_msubst, Htgt_msubst.
+  rewrite !must_terminating_tapp_tm_ret_equiv.
+  apply must_terminating_fix_app_equiv.
+  apply LC_app; [exact Hfix_lc|exact Hvy_lc].
+Unshelve.
+  all: try solve
+    [ assumption
+    | exact Hfix_lc
+    | exact Hvy_lc
+    | exact Hopened_lc
+    | apply lc_lstore_lift_free
+    | change (closed_env (lstore_free_part (lstore_lift_free σ)));
+      rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | rewrite lstore_free_part_lift_free; exact (proj1 Hclosed)
+    | eapply lc_env_lookup; eauto; exact (proj2 Hclosed)
+    | apply LC_app; [exact Hfix_lc|exact Hvy_lc]
+    | apply LC_app; [exact Hopened_lc|exact Hfix_lc] ].
 Qed.
 
 Lemma tm_eval_in_store_restrict_fv_subset σ e v X :

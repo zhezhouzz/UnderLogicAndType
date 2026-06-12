@@ -201,6 +201,33 @@ Proof.
   rewrite dom_lstore_lift_free. reflexivity.
 Qed.
 
+Lemma lvars_fv_difference_atoms (D : lvset) (X : aset) :
+  lvars_fv (D ∖ lvars_of_atoms X) = lvars_fv D ∖ X.
+Proof.
+  apply set_eq. intros x.
+  rewrite elem_of_difference.
+  split.
+  - intros Hx.
+    split.
+    + apply lvars_fv_elem.
+      apply lvars_fv_elem in Hx.
+      set_solver.
+    + intros Hbad.
+      apply lvars_fv_elem in Hx.
+      apply elem_of_difference in Hx as [_ Hnot].
+      apply Hnot.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists x. split; [reflexivity|exact Hbad].
+  - intros [HxD HxX].
+    rewrite lvars_fv_elem.
+    apply elem_of_difference. split.
+    + apply lvars_fv_elem in HxD. exact HxD.
+    + intros Hbad. apply HxX.
+      unfold lvars_of_atoms in Hbad.
+      apply elem_of_map in Hbad as [a [Heq Ha]].
+      inversion Heq. subst a. exact Ha.
+Qed.
+
 Lemma formula_mlsubst_fiber_atom ρ q :
   formula_mlsubst ρ (FFiberAtom q) =
   FFiberAtom (qual_mlsubst ρ q).
@@ -281,6 +308,50 @@ Qed.
 Lemma formula_msubst_store_preserves_measure σ φ :
   formula_measure (formula_msubst_store σ φ) = formula_measure φ.
 Proof. apply formula_mlsubst_preserves_measure. Qed.
+
+Lemma formula_lvars_at_msubst_store σ φ depth :
+  formula_lvars_at depth (formula_msubst_store σ φ) =
+  formula_lvars_at depth φ ∖ lvars_of_atoms (dom (σ : Store (V := V))).
+Proof.
+  revert depth.
+  induction φ; intros depth;
+    unfold formula_msubst_store in *;
+    cbn [formula_mlsubst formula_lvars_at].
+  all: try reflexivity.
+  all: try match goal with
+  | |- context[qual_mlsubst (lstore_lift_free ?sigma) ?q] =>
+      destruct q as [D P]; cbn [qual_mlsubst qual_vars];
+      rewrite dom_lstore_lift_free; apply lvars_at_depth_difference_of_atoms
+  end.
+  all: try match goal with
+  | q : qualifier (V := V) |- _ =>
+      destruct q; cbn [qual_mlsubst qual_vars];
+      rewrite dom_lstore_lift_free;
+      apply lvars_at_depth_difference_of_atoms
+  end.
+  all: try (repeat match goal with
+    | H : forall depth, formula_lvars_at depth
+        (formula_mlsubst (lstore_lift_free ?σ) ?p) = _ |- _ =>
+        rewrite H
+    end).
+  all: better_set_solver.
+  destruct a as [D P]; cbn [qual_mlsubst qual_vars].
+  change (lvars_at_depth depth (D ∖ dom (lstore_lift_free σ)) =
+    lvars_at_depth depth D ∖ lvars_of_atoms (dom σ)).
+  rewrite dom_lstore_lift_free.
+  apply lvars_at_depth_difference_of_atoms.
+  all: rewrite ?dom_lstore_lift_free, ?lvars_at_depth_difference_of_atoms;
+    better_set_solver.
+Qed.
+
+Lemma formula_msubst_store_fv σ φ :
+  formula_fv (formula_msubst_store σ φ) =
+  formula_fv φ ∖ dom (σ : Store (V := V)).
+Proof.
+  unfold formula_fv, formula_lvars.
+  rewrite formula_lvars_at_msubst_store.
+  apply lvars_fv_difference_atoms.
+Qed.
 
 Lemma formula_mlsubst_fv_subset ρ φ :
   formula_fv (formula_mlsubst ρ φ) ⊆ formula_fv φ.

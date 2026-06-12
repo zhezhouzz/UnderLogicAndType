@@ -75,23 +75,6 @@ Proof.
     exists v. eapply Steps_step; eauto.
 Qed.
 
-Lemma must_terminating_of_steps_result e v :
-  e →* tret v ->
-  must_terminating e.
-Proof.
-  intros Hsteps.
-  remember (tret v) as r eqn:Hr.
-  induction Hsteps as [e Hlc | e1 e2 e3 Hstep Hsteps IH].
-  - subst e.
-    apply must_terminating_tret.
-    apply lc_ret_iff_value in Hlc. exact Hlc.
-  - apply Must_step.
-    + exists e2. exact Hstep.
-    + intros e' Hstep'.
-      assert (e' = e2) as -> by (eapply step_det; eauto).
-      apply IH. exact Hr.
-Qed.
-
 Lemma must_terminating_steps_inv e e' :
   must_terminating e ->
   e →* e' ->

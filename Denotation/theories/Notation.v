@@ -11,7 +11,7 @@ From ContextBasicDenotation Require Export Notation.
 From ContextBasicDenotation Require Export StoreTyping TermSyntax TermEval TermOpen
   TermExtension TermTLet Qualifier BasicTypingFormula BasicTypingOpen RelevantEnv.
 From ContextLogic Require Export FormulaNotation FormulaSemantics FormulaConnectives
-  FormulaWorldExtension.
+  FormulaConnectivesHigher FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).
 Notation StoreT := (Store (V := value)) (only parsing).
