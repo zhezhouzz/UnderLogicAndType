@@ -426,7 +426,19 @@ Proof.
         nat (gmap nat) _ _ _ _ _ _ _ _ _
         S (ltac:(intros ? ? ?; lia)) atom η i).
     }
-    eapply lvars_fv_open_env_lift_subset_at_depth1. exact Hbad.
+      eapply lvars_fv_open_env_lift_subset_at_depth1. exact Hbad.
+Qed.
+
+Lemma open_env_lift2_fresh_for_lvars_at_depth2 η D :
+  open_env_fresh_for_lvars η (lvars_at_depth 2 D) ->
+  open_env_fresh_for_lvars (kmap S (kmap S η)) D.
+Proof.
+  intros Hfresh.
+  apply open_env_lift_fresh_for_lvars_at_depth1.
+  apply open_env_lift_fresh_for_lvars_at_depth1.
+  rewrite lvars_at_depth_depth.
+  replace (1 + 1) with 2 by lia.
+  exact Hfresh.
 Qed.
 
 Lemma open_env_lift_fresh_for_bound0_singleton η :
@@ -485,6 +497,51 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma open_cty_env_lift2_shift1_exact η τ :
+  open_env_values_inj η ->
+  open_cty_env (open_env_lift_by 2 η) (cty_shift 1 τ) =
+  cty_shift 1 (open_cty_env (open_env_lift_by 1 η) τ).
+Proof.
+  unfold open_cty_env.
+  refine (fin_maps.map_fold_ind
+    (fun η =>
+      open_env_values_inj η ->
+      map_fold (fun k x acc => cty_open k x acc)
+        (cty_shift 1 τ) (open_env_lift_by 2 η) =
+      cty_shift 1
+        (map_fold (fun k x acc => cty_open k x acc) τ
+          (open_env_lift_by 1 η))) _ _ η).
+  - intros _. rewrite !open_env_lift_by_empty, !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH Hinj.
+    pose proof (open_env_values_inj_insert_inv η' k x Hfresh Hinj)
+      as [Hinjη Havoid].
+    rewrite !open_env_lift_by_insert.
+    change (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
+      (cty_shift 1 τ) (<[k + 2:=x]> (open_env_lift_by 2 η')))
+      with (open_cty_env (<[k + 2 := x]> (open_env_lift_by 2 η'))
+        (cty_shift 1 τ)).
+    rewrite open_cty_env_insert_fresh.
+    2:{ apply open_env_lift_by_lookup_none. exact Hfresh. }
+    2:{ apply open_env_avoids_atom_lift_by. exact Havoid. }
+    2:{ apply open_env_values_inj_lift_by. exact Hinjη. }
+    change (open_cty_env (open_env_lift_by 2 η') (cty_shift 1 τ))
+      with (map_fold (fun k0 x0 acc => cty_open k0 x0 acc)
+        (cty_shift 1 τ) (open_env_lift_by 2 η')).
+    rewrite IH by exact Hinjη.
+    replace (k + 2) with (S (k + 1)) by lia.
+    rewrite cty_open_shift_under_gen by lia.
+    change (cty_shift 1
+      (cty_open (k + 1) x
+        (open_cty_env (open_env_lift_by 1 η') τ)) =
+      cty_shift 1
+        (open_cty_env (<[k + 1 := x]> (open_env_lift_by 1 η')) τ)).
+    rewrite open_cty_env_insert_fresh.
+    2:{ apply open_env_lift_by_lookup_none. exact Hfresh. }
+    2:{ apply open_env_avoids_atom_lift_by. exact Havoid. }
+    2:{ apply open_env_values_inj_lift_by. exact Hinjη. }
+    reflexivity.
+Qed.
+
 (** * ContextTypeLanguage.TypeOpen
 
     Syntax-shape normalization tactics for finite-map opening. *)
@@ -508,7 +565,8 @@ Ltac cty_open_env_syntax_norm :=
   try rewrite ?open_cty_env_over by eauto;
   try rewrite ?open_cty_env_under by eauto;
   try rewrite ?context_ty_lvars_open_cty_env by eauto;
-  try rewrite ?open_cty_env_lift_shift0_exact by eauto.
+  try rewrite ?open_cty_env_lift_shift0_exact by eauto;
+  try rewrite ?open_cty_env_lift2_shift1_exact by eauto.
 
 Ltac cty_open_env_syntax_norm_in H :=
   rewrite ?open_cty_env_empty in H;
@@ -521,7 +579,8 @@ Ltac cty_open_env_syntax_norm_in H :=
   try rewrite ?open_cty_env_over in H by eauto;
   try rewrite ?open_cty_env_under in H by eauto;
   try rewrite ?context_ty_lvars_open_cty_env in H by eauto;
-  try rewrite ?open_cty_env_lift_shift0_exact in H by eauto.
+  try rewrite ?open_cty_env_lift_shift0_exact in H by eauto;
+  try rewrite ?open_cty_env_lift2_shift1_exact in H by eauto.
 
 Ltac type_open_env_syntax_norm :=
   qual_open_env_syntax_norm;

@@ -610,6 +610,36 @@ Proof.
     destruct decide as [Hbad|_]; [lia|reflexivity].
 Qed.
 
+Lemma open_tm_env_lift2_tapp_ret_bound1_bound0 η :
+  open_tm_env (kmap S (kmap S η))
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)) =
+  tapp_tm (tret (vbvar 1)) (vbvar 0).
+Proof.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite !kmap_empty, map_fold_empty. reflexivity.
+  - rewrite !open_env_lift_insert.
+    rewrite open_tm_env_insert_fresh_plain.
+    2:{
+      apply open_env_lift_lookup_none.
+      apply open_env_lift_lookup_none.
+      exact Hfresh.
+    }
+    rewrite IH.
+    unfold tapp_tm.
+    cbn [open_tm open_value].
+    repeat destruct decide; try lia; try congruence; reflexivity.
+Qed.
+
+Lemma tm_lvars_at_tapp_ret_bound1_bound0_under d :
+  tm_lvars_at (S (S d))
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)) = ∅.
+Proof.
+  cbn [tapp_tm tm_lvars_at value_lvars_at].
+  unfold bvar_lvars_at.
+  repeat (destruct decide; try lia).
+  set_solver.
+Qed.
+
 Lemma bvar_lvars_at_shift_under d k n :
   k <= d ->
   value_lvars_at (S d) (value_shift k (vbvar n)) =
