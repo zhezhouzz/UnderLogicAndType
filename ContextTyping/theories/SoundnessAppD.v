@@ -749,6 +749,167 @@ Proof.
   better_set_solver.
 Qed.
 
+Lemma appd_wand_basic_world_insert_env
+    Γ1 Δarg τx τ v1 x (m : WfWorldT) :
+  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
+  m ⊨ ty_denote_gas (cty_depth (CTWand τx τ))
+        (atom_env_to_lty_env (erase_ctx Γ1))
+        (CTWand τx τ) (tret v1) ->
+  m ⊨ ty_denote_gas (cty_depth τx)
+        Δarg τx (tret (vfvar x)) ->
+  m ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+            (CTWand τx τ) (tret v1))).
+Proof.
+  intros Hfresh Hfun Harg.
+  set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)) in *.
+  set (Σrel := relevant_env Δ1 (CTWand τx τ) (tret v1)).
+  pose proof (ty_denote_gas_guard
+    (cty_depth (CTWand τx τ)) Δ1 (CTWand τx τ)
+    (tret v1) m Hfun) as Hfun_guard.
+  repeat rewrite res_models_and_iff in Hfun_guard.
+  destruct Hfun_guard as [_ [Hworld_rel [_ _]]].
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    (cty_depth τx) Δarg τx x m Harg) as Hworld_x.
+  pose proof (basic_world_formula_union
+    (<[LVFree x := erase_ty τx]> (∅ : lty_env)) Σrel m
+    Hworld_x Hworld_rel) as Hunion.
+  eapply basic_world_formula_subenv; [|exact Hunion].
+  intros v T Hlook.
+  change ((<[LVFree x := erase_ty τx]> (Σrel : gmap logic_var ty))
+    !! v = Some T) in Hlook.
+  change (((<[LVFree x := erase_ty τx]> (∅ : lty_env)) ∪ Σrel
+    : gmap logic_var ty) !! v = Some T).
+  destruct (decide (v = LVFree x)) as [->|Hvx].
+  - apply map_lookup_union_Some_raw. left.
+    rewrite !lookup_insert in Hlook |- *.
+    destruct (decide (LVFree x = LVFree x)) as [_|Hneq] in Hlook |- *;
+      [exact Hlook|contradiction].
+  - apply map_lookup_union_Some_raw. right. split.
+    + rewrite lookup_insert_ne by (symmetry; exact Hvx).
+      apply lookup_empty.
+    + rewrite lookup_insert_ne in Hlook by (symmetry; exact Hvx).
+      exact Hlook.
+Qed.
+
+Lemma appd_wand_context_wf_insert_env
+    Σ Γ1 Γ2 τx τ v1 x (m : WfWorldT) :
+  context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
+  context_typing_wf Σ (CtxStar Γ1 Γ2)
+    (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
+  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
+  m ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+            (CTWand τx τ) (tret v1))) ->
+  m ⊨ context_ty_wf_formula
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+            (CTWand τx τ) (tret v1)))
+        (cty_open 0 x τ).
+Proof.
+  intros Hwf_fun Hwf_app Hfresh Hworld.
+  set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)).
+  set (Σins := <[LVFree x := erase_ty τx]>
+    (relevant_env Δ1 (CTWand τx τ) (tret v1))).
+  apply context_ty_wf_formula_models_iff.
+  apply basic_world_formula_models_iff in Hworld as [Hlc [Hscope _]].
+  split; [exact Hlc|]. split; [exact Hscope|].
+  pose proof (context_typing_wf_context_ty
+    Σ (CtxStar Γ1 Γ2) (tapp v1 (vfvar x)) ({0 ~> x} τ)
+    Hwf_app) as Hτopen_wf.
+  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf.
+  pose proof (wf_context_ty_at_to_lvars_shape
+    0 (dom (erase_ctx (CtxStar Γ1 Γ2))) (cty_open 0 x τ)
+    Hτopen_wf) as [_ Hshape].
+  split; [|exact Hshape].
+  intros v Hv.
+  destruct v as [k|y].
+  - exfalso.
+    pose proof (wf_context_ty_at_lc 0
+      (dom (erase_ctx (CtxStar Γ1 Γ2)))
+      (cty_open 0 x τ) Hτopen_wf) as Hlcτ.
+    pose proof (cty_lc_at_lvars_bv_empty 0
+      (cty_open 0 x τ) Hlcτ) as Hbv.
+    apply lvars_bv_elem in Hv.
+    change (context_ty_lvars (cty_open 0 x τ))
+      with (context_ty_lvars_at 0 (cty_open 0 x τ)) in Hv.
+    rewrite Hbv in Hv. set_solver.
+  - subst Σins Δ1.
+    rewrite dom_insert_L.
+    apply elem_of_union.
+    destruct (decide (y = x)) as [->|Hyx].
+    + left. set_solver.
+    + right.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_dom.
+      apply elem_of_intersection. split.
+      * pose proof (context_typing_wf_context_ty
+          Σ Γ1 (tret v1) (CTWand τx τ) Hwf_fun) as Hτfun_wf.
+        cbn [wf_context_ty_at] in Hτfun_wf.
+        destruct Hτfun_wf as [_ Hτ_body_wf].
+        pose proof (wf_context_ty_at_fv_subset
+          1 (dom (erase_ctx Γ1)) τ Hτ_body_wf) as Hτ_fv.
+        assert (Hy_fv_open : y ∈ fv_cty (cty_open 0 x τ)).
+        { apply lvars_fv_elem. exact Hv. }
+        pose proof (cty_open_fv_subset 0 x τ y Hy_fv_open)
+          as Hy_fv.
+        apply elem_of_union in Hy_fv as [Hyτ|Hyx_single].
+        -- rewrite atom_store_to_lvar_store_dom.
+           unfold lvars_of_atoms. apply elem_of_map.
+           exists y. split; [reflexivity|exact (Hτ_fv y Hyτ)].
+        -- exfalso. apply Hyx.
+           apply elem_of_singleton in Hyx_single. exact Hyx_single.
+      * unfold relevant_lvars.
+        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
+          context_ty_lvars context_ty_lvars_at].
+        assert (Hy_fv_open : y ∈ fv_cty (cty_open 0 x τ)).
+        { apply lvars_fv_elem. exact Hv. }
+        pose proof (cty_open_fv_subset 0 x τ y Hy_fv_open)
+          as Hy_fv.
+        apply elem_of_union in Hy_fv as [Hyτ|Hyx_single].
+        -- rewrite <- (context_ty_lvars_fv_at 1 τ) in Hyτ.
+           apply elem_of_union_l. apply elem_of_union_r.
+           apply lvars_fv_elem. exact Hyτ.
+        -- exfalso. apply Hyx.
+           apply elem_of_singleton in Hyx_single. exact Hyx_single.
+Qed.
+
+Lemma appd_wand_mid_static_guard
+    Σ Γ1 Γ2 τx τ v1 x Δarg (m : WfWorldT) :
+  context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
+  context_typing_wf Σ (CtxStar Γ1 Γ2)
+    (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
+  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
+  m ⊨ ty_denote_gas (cty_depth (CTWand τx τ))
+        (atom_env_to_lty_env (erase_ctx Γ1))
+        (CTWand τx τ) (tret v1) ->
+  m ⊨ ty_denote_gas (cty_depth τx)
+        Δarg τx (tret (vfvar x)) ->
+  m ⊨ ty_static_guard_formula
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+            (CTWand τx τ) (tret v1)))
+        (cty_open 0 x τ)
+        (tapp_tm (tret v1) (vfvar x)).
+Proof.
+  intros Hwf_fun Hwf_app Hfresh Hfun Harg.
+  pose proof (appd_wand_basic_world_insert_env
+    Γ1 Δarg τx τ v1 x m Hfresh Hfun Harg) as Hworld.
+  eapply (ty_static_guard_tapp_fun_result_base
+    (<[LVFree x := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+        (CTWand τx τ) (tret v1)))
+    (cty_open 0 x τ) v1 x (erase_ty τx) m).
+  - rewrite lookup_insert.
+    destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
+      [reflexivity|contradiction].
+  - eapply appd_wand_context_wf_insert_env; eauto.
+  - exact Hworld.
+  - eapply appd_wand_fun_basic_insert_env; eauto.
+Qed.
+
 Lemma fundamental_appd_case Σ Γ1 Γ2 τx τ v1 x :
   context_typing_wf Σ Γ1 (tret v1) (CTWand τx τ) ->
   context_typing_wf Σ (CtxStar Γ1 Γ2)
