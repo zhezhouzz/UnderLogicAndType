@@ -368,6 +368,51 @@ Proof.
   - exact Htarget_insert.
 Qed.
 
+Lemma app_arrow_basic_world_insert_env
+    Γ τx τ v1 x (m : WfWorldT) :
+  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
+  m ⊨ ty_denote_gas (cty_depth (CTArrow τx τ))
+        (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret v1) ->
+  m ⊨ ty_denote_gas (cty_depth τx)
+        (atom_env_to_lty_env (erase_ctx Γ))
+        τx (tret (vfvar x)) ->
+  m ⊨ basic_world_formula
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+            (CTArrow τx τ) (tret v1))).
+Proof.
+  intros Hfresh Hfun Harg.
+  set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
+  set (Σrel := relevant_env Δ (CTArrow τx τ) (tret v1)).
+  pose proof (ty_denote_gas_guard
+    (cty_depth (CTArrow τx τ)) Δ (CTArrow τx τ)
+    (tret v1) m Hfun) as Hfun_guard.
+  repeat rewrite res_models_and_iff in Hfun_guard.
+  destruct Hfun_guard as [_ [Hworld_rel [_ _]]].
+  pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+    (cty_depth τx) Δ τx x m Harg) as Hworld_x.
+  pose proof (basic_world_formula_union
+    (<[LVFree x := erase_ty τx]> (∅ : lty_env)) Σrel m
+    Hworld_x Hworld_rel) as Hunion.
+  eapply basic_world_formula_subenv; [|exact Hunion].
+  intros v T Hlook.
+  change ((<[LVFree x := erase_ty τx]> (Σrel : gmap logic_var ty))
+    !! v = Some T) in Hlook.
+  change (((<[LVFree x := erase_ty τx]> (∅ : lty_env)) ∪ Σrel
+    : gmap logic_var ty) !! v = Some T).
+  destruct (decide (v = LVFree x)) as [->|Hvx].
+  - apply map_lookup_union_Some_raw. left.
+    rewrite !lookup_insert in Hlook |- *.
+    destruct (decide (LVFree x = LVFree x)) as [_|Hneq] in Hlook |- *;
+      [exact Hlook|contradiction].
+  - apply map_lookup_union_Some_raw. right. split.
+    + rewrite lookup_insert_ne by (symmetry; exact Hvx).
+      apply lookup_empty.
+    + rewrite lookup_insert_ne in Hlook by (symmetry; exact Hvx).
+      exact Hlook.
+Qed.
+
 Lemma app_arrow_open_result_from_fresh_drop
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
