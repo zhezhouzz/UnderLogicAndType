@@ -25,6 +25,80 @@ From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
+Local Lemma app_lty_env_restrict_result_first_result_eq
+    (Δ : lty_env) τx τ vf x z :
+  lty_env_closed Δ ->
+  context_ty_lvars (cty_open 0 x τ) ∖ {[LVFree x]} ⊆
+    context_ty_lvars_at 1 τ ->
+  x <> z ->
+  x ∉ fv_cty τ ->
+  z ∉ fv_value vf ∪ fv_cty τx ∪ fv_cty τ ->
+  lty_env_restrict_lvars
+    (<[LVFree z := erase_ty τx →ₜ erase_ty (cty_open 0 x τ)]>
+      (<[LVFree x := erase_ty τx]> Δ))
+    (relevant_lvars (cty_open 0 x τ)
+      (tapp_tm (tret (vfvar z)) (vfvar x))) =
+  lty_env_restrict_lvars
+    (<[LVFree x := erase_ty τx]>
+      (<[LVFree z := erase_ty (CTArrow τx τ)]>
+        (relevant_env Δ (CTArrow τx τ) (tret vf))))
+    (relevant_lvars (cty_open 0 x τ)
+      (tapp_tm (tret (vfvar z)) (vfvar x))).
+Proof.
+  intros HΔclosed Hτopen Hxz Hxτ Hz.
+  rewrite cty_open_preserves_erasure.
+  apply storeA_map_eq. intros u.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (u ∈ relevant_lvars (cty_open 0 x τ)
+      (tapp_tm (tret (vfvar z)) (vfvar x)))) as [Hu|Hu];
+    [|reflexivity].
+  try rewrite !decide_True by exact Hu.
+  destruct u as [k|a].
+  - repeat rewrite lookup_insert_ne by congruence.
+    change ((Δ : gmap logic_var ty) !! LVBound k =
+      (relevant_env Δ (CTArrow τx τ) (tret vf) : gmap logic_var ty)
+        !! LVBound k).
+    pose proof (lty_env_closed_lookup_bound_none Δ k HΔclosed)
+      as HΔk.
+    rewrite HΔk.
+    pose proof (lty_env_closed_lookup_bound_none
+      (relevant_env Δ (CTArrow τx τ) (tret vf)) k
+      ltac:(apply relevant_env_closed; exact HΔclosed)) as Hrelk.
+    rewrite Hrelk. reflexivity.
+  - destruct (decide (a = x)) as [->|Hax].
+    + repeat rewrite lookup_insert.
+      destruct (decide (LVFree x = LVFree x)); [|congruence].
+      destruct (decide (LVFree z = LVFree x)); [congruence|reflexivity].
+    + destruct (decide (a = z)) as [->|Haz].
+      * repeat rewrite lookup_insert_ne by congruence.
+        repeat rewrite lookup_insert.
+        destruct (decide (LVFree z = LVFree z)); [|congruence].
+        destruct (decide (LVFree x = LVFree z)); [congruence|].
+        destruct (decide (LVFree z = LVFree z)); [reflexivity|congruence].
+      * repeat rewrite lookup_insert_ne by congruence.
+        unfold relevant_env, lty_env_restrict_lvars.
+        rewrite storeA_restrict_lookup.
+        destruct (decide
+          (LVFree a ∈ relevant_lvars (CTArrow τx τ) (tret vf)))
+          as [_|Hbad]; [reflexivity|].
+        exfalso. apply Hbad.
+        unfold relevant_lvars in Hu |- *.
+        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
+          context_ty_lvars context_ty_lvars_at] in Hu |- *.
+        apply elem_of_union in Hu as [Huτ|Hu_tm].
+        -- apply elem_of_union_l.
+           apply elem_of_union_r.
+           apply Hτopen.
+           apply elem_of_difference. split; [exact Huτ|].
+           intros Hxin. apply elem_of_singleton in Hxin.
+           inversion Hxin. congruence.
+        -- clear -Hu_tm Hax Haz.
+           rewrite tm_lvars_tapp_tm_fvar in Hu_tm.
+           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hu_tm.
+           set_solver.
+Qed.
+
 Lemma app_arrow_arg_to_opened_antecedent
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
