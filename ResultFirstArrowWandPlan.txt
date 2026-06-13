@@ -99,6 +99,26 @@ fix_body_arrow_apply_self
 fix_self_rec_call_reducible_measure_step
 ```
 
+Status update:
+
+- `app_arrow_open_result_from_fresh_drop` is now `Qed` in
+  `ContextTyping/theories/SoundnessApp.v`.
+- `fundamental_appd_case` is the next direct Soundness obligation.  The proof
+  should not try to use the old Wand body directly.  It should:
+  1. split `CtxStar Γ1 Γ2` into closure world `m1` and argument world `m2`;
+  2. restrict the closure side to `m1 \ {x}` before opening the result-first
+     function slot, exactly as ordinary App deletes `x` from the function
+     world;
+  3. use `res_restrict m2 {x}` as the `FBWand` argument world;
+  4. frame the fresh function-result extension through the product by
+     `res_extend_by_product_frame_l/r`;
+  5. apply `res_models_fbwand_open_one_named_fresh`;
+  6. use `ty_denote_gas_tapp_fun_result_alias_back_from_static` to replace
+     `ret z` by `ret v1`;
+  7. drop the fresh `z` world by minimality and reuse
+     `appd_wand_result_to_arrow_open_result` followed by
+     `app_arrow_result_to_target`.
+
 Still-existing non-result-first admits:
 
 ```coq
