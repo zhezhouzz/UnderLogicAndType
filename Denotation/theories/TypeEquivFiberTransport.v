@@ -283,6 +283,29 @@ Proof.
   - exact Hres.
 Qed.
 
+Lemma typed_total_equiv_ret_value_result_alias
+    (Σ : lty_env) τ (m : WfWorldT) vx z :
+  wfworld_closed_on (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) m ->
+  lc_value vx ->
+  m ⊨ expr_result_formula (tret vx) (LVFree z) ->
+  m ⊨ ty_denote_gas 0 Σ τ (tret vx) ->
+  m ⊨ ty_denote_gas 0 Σ τ (tret (vfvar z)) ->
+  typed_total_equiv_on Σ τ m (tret vx) (tret (vfvar z)).
+Proof.
+  intros Hclosed Hvx Hres Hzero_v Hzero_z.
+  split.
+  - intros σ v Hσ.
+    pose proof (tm_equiv_ret_value_result_alias
+      m vx z Hclosed Hvx Hres σ v Hσ) as [Hzv Hvz].
+    split; [exact Hvz|exact Hzv].
+  - split.
+    + intros σ Hσ.
+      pose proof (tm_total_equiv_ret_value_result_alias
+        m vx z Hclosed Hvx Hres σ Hσ) as [Hzv Hvz].
+      split; [exact Hvz|exact Hzv].
+    + split; assumption.
+Qed.
+
 Lemma tm_equiv_tapp_value_arg_result_alias_on
     (m : WfWorldT) X e vx z :
   fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
