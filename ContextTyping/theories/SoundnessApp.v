@@ -593,6 +593,7 @@ Lemma app_arrow_outer_value_open
     world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]} /\
     res_restrict mz (world_dom (m : WorldT)) = m /\
     res_restrict mz (world_dom (mz0 : WorldT)) = mz0 /\
+    mz ⊨ expr_result_formula (tret v1) (LVFree z) /\
     mz0 ⊨ formula_open 0 z
       (arrow_value_denote_gas
         (Nat.max (cty_depth τx) (cty_depth τ))
@@ -805,6 +806,42 @@ Proof.
   }
   pose proof (res_models_impl_elim _ _ _ Houter_open Hres_open)
     as Hvalue.
+  assert (Hres_expr_mz0 :
+      mz0 ⊨ expr_result_formula (tret v1) (LVFree z)).
+  {
+    unfold expr_result_formula.
+    eapply expr_result_formula_at_of_result_extends_on_coarsen
+      with (X := world_dom (m0 : WorldT)) (F := Fz) (m := m0).
+    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
+      + unfold lvars_of_atoms. intros v Hv.
+        apply elem_of_map in Hv as [a [Ha _]]. inversion Ha. exact I.
+      + constructor. eapply context_typing_wf_ret_lc_value.
+        exact Hwf_fun.
+    - reflexivity.
+    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
+      + unfold lvars_of_atoms. intros v Hv.
+        apply elem_of_map in Hv as [a [Ha HaIn]].
+        inversion Ha. subst v.
+        apply elem_of_map. exists a. split; [reflexivity|].
+        apply Hfv_v1_m0. exact HaIn.
+      + constructor. eapply context_typing_wf_ret_lc_value.
+        exact Hwf_fun.
+    - unfold lvars_of_atoms. intros HzD.
+      apply elem_of_map in HzD as [a [Ha HaD]].
+      inversion Ha. subst a.
+      subst z. better_set_solver.
+    - set_solver.
+    - exact HFz.
+    - exact Hext0.
+    - exact Htotal0.
+  }
+  assert (Hres_expr_mz :
+      mz ⊨ expr_result_formula (tret v1) (LVFree z)).
+  {
+    eapply res_models_kripke; [|exact Hres_expr_mz0].
+    rewrite <- Hmz_restrict_mz0.
+    apply res_restrict_le.
+  }
   exists z, mz0, mz.
   split; [exact Hzfresh|].
   split; [exact Hx_mz0|].
@@ -812,6 +849,7 @@ Proof.
   split; [exact Hmz_dom|].
   split; [exact Hmz_restrict_m|].
   split; [exact Hmz_restrict_mz0|].
+  split; [exact Hres_expr_mz|].
   exact Hvalue.
 Qed.
 
