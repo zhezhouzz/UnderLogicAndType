@@ -1228,6 +1228,37 @@ Proof.
   set_solver.
 Qed.
 
+Lemma ty_denote_gas_ret_fvar_basic_world_singleton
+    gas Σ τ x (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
+  m ⊨ basic_world_formula
+    (<[LVFree x := erase_ty τ]> (∅ : lty_env)).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard_formula
+    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [_ _]]].
+  pose proof (ty_denote_gas_ret_fvar_lookup gas Σ τ x m Hden)
+    as Hlookup.
+  eapply basic_world_formula_subenv; [|exact Hworld].
+  intros v T Hsmall.
+  destruct (decide (v = LVFree x)) as [->|Hvx].
+  - rewrite lookup_insert in Hsmall.
+    destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
+      [|contradiction].
+    inversion Hsmall; subst.
+    unfold relevant_env, lty_env_restrict_lvars.
+    apply storeA_restrict_lookup_some_2.
+    + exact Hlookup.
+    + unfold relevant_lvars.
+      cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+      set_solver.
+  - rewrite lookup_insert_ne in Hsmall by (symmetry; exact Hvx).
+    rewrite lookup_empty in Hsmall. discriminate.
+Qed.
+
 Lemma ty_denote_ret_fvar_base_const
     gas Σ τ b x (m : WfWorldT) :
   erase_ty τ = TBase b ->
