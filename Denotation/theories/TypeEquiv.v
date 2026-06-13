@@ -770,6 +770,150 @@ Proof.
   - exact Hsrc.
 Qed.
 
+Lemma ty_static_guard_tapp_fun_result_base
+    (Σ : lty_env) τ vf y s (m : WfWorldT) :
+  Σ !! LVFree y = Some s ->
+  m ⊨ context_ty_wf_formula Σ τ ->
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ expr_basic_typing_formula Σ (tret vf) (s →ₜ erase_ty τ) ->
+  m ⊨ ty_static_guard_formula Σ τ
+    (tapp_tm (tret vf) (vfvar y)).
+Proof.
+  intros Hy Hwf Hworld Hfun_basic.
+  unfold ty_static_guard_formula.
+  repeat rewrite res_models_and_iff.
+  split; [exact Hwf|].
+  split; [exact Hworld|].
+  apply expr_basic_typing_formula_models_iff.
+  apply basic_world_formula_models_iff in Hworld
+    as [HlcΣ [Hscope _]].
+  apply expr_basic_typing_formula_models_iff in Hfun_basic
+    as [_ [_ Hfun_ty]].
+  split; [exact HlcΣ|]. split; [exact Hscope|].
+  unfold tapp_tm.
+  eapply BTT_Let with (T1 := s →ₜ erase_ty τ)
+    (L := {[y]} ∪ lvars_fv (dom Σ)).
+  - exact Hfun_ty.
+  - intros f Hf.
+    cbn [open_tm open_value value_shift].
+    eapply BTT_App with (s1 := s) (s2 := erase_ty τ).
+    + constructor.
+      rewrite typed_lty_env_bind_open_current.
+      * apply map_lookup_insert.
+      * intros Hbad. apply Hf.
+        apply elem_of_union_r. apply lvars_fv_elem. exact Hbad.
+      * exact HlcΣ.
+    + constructor.
+      rewrite typed_lty_env_bind_open_current.
+      * rewrite lookup_insert_ne by set_solver. exact Hy.
+      * intros Hbad. apply Hf.
+        apply elem_of_union_r. apply lvars_fv_elem. exact Hbad.
+      * exact HlcΣ.
+Qed.
+
+Lemma ty_denote_gas_tapp_fun_result_alias_back
+    gas (Σ : lty_env) τ vf y z s (m : WfWorldT) :
+  LVFree z ∉ dom Σ ->
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty τ ->
+  Σ !! LVFree y = Some s ->
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+     fv_tm (tapp_tm (tret vf) (vfvar y))) m ->
+  lc_value vf ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ context_ty_wf_formula Σ τ ->
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ expr_basic_typing_formula Σ (tret vf) (s →ₜ erase_ty τ) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y)) ->
+  m ⊨ ty_denote_gas gas Σ τ
+    (tapp_tm (tret vf) (vfvar y)).
+Proof.
+  intros HzΣ Hzfresh Hy Hclosed Hvf Hres Hwf Hworld Hfun_basic Hsrc.
+  pose proof (tm_equiv_tapp_value_fun_result_alias
+    m vf y z Hclosed Hvf Hres) as Hequiv_src_tgt.
+  pose proof (tm_total_equiv_tapp_value_fun_result_alias
+    m vf y z Hclosed Hvf Hres) as Htotal_src_tgt.
+  pose proof (ty_denote_gas_guard gas
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y)) m Hsrc) as Hguard_src.
+  pose proof (ty_denote_gas_zero_of_guard
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y)) m Hguard_src)
+    as Hzero_src.
+  assert (Hstatic_tgt :
+      m ⊨ ty_static_guard_formula Σ τ
+        (tapp_tm (tret vf) (vfvar y))).
+  { eapply ty_static_guard_tapp_fun_result_base; eauto. }
+  assert (Htotal_tgt :
+      m ⊨ expr_total_formula (tapp_tm (tret vf) (vfvar y))).
+  {
+    repeat rewrite res_models_and_iff in Hguard_src.
+    destruct Hguard_src as [_ [_ [_ Htotal_src]]].
+    eapply tm_equiv_total.
+    - exact Htotal_src_tgt.
+    - apply lc_tapp_tm; [constructor; exact Hvf|constructor].
+    - intros a Ha.
+      pose proof Hstatic_tgt as Hstatic_parts.
+      unfold ty_static_guard_formula in Hstatic_parts.
+      repeat rewrite res_models_and_iff in Hstatic_parts.
+      destruct Hstatic_parts as [_ [Hworld_t Hbasic_t]].
+      apply expr_basic_typing_formula_models_iff in Hbasic_t
+        as [_ [_ Hty_t]].
+      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_t) as Hfv_t.
+      apply basic_world_formula_models_iff in Hworld_t as [_ [Hscope_t _]].
+      apply Hscope_t.
+      apply lvars_fv_elem.
+      apply Hfv_t.
+      unfold lvars_of_atoms. apply elem_of_map.
+      exists a. split; [reflexivity|exact Ha].
+    - exact Htotal_src.
+  }
+  assert (Hzero_tgt :
+      m ⊨ ty_denote_gas 0 Σ τ
+        (tapp_tm (tret vf) (vfvar y))).
+  {
+    apply ty_denote_gas_zero_of_guard_formula.
+    eapply ty_guard_relevant_of_static_full_total; eauto.
+  }
+  assert (Hzero_tgt_insert :
+      m ⊨ ty_denote_gas 0
+        (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+        (tapp_tm (tret vf) (vfvar y))).
+  {
+    eapply ty_denote_gas_insert_fresh_lty_env; eauto.
+    - intros Hbad. apply Hzfresh.
+      apply lvars_fv_elem in Hbad.
+      rewrite context_ty_lvars_fv in Hbad. set_solver.
+    - rewrite fv_tapp_tm. cbn [fv_tm fv_value]. set_solver.
+  }
+  assert (Htyped :
+      typed_total_equiv_on
+        (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ m
+        (tapp_tm (tret (vfvar z)) (vfvar y))
+        (tapp_tm (tret vf) (vfvar y))).
+  {
+    split; [exact Hequiv_src_tgt|].
+    split; [exact Htotal_src_tgt|].
+    split; [exact Hzero_src|exact Hzero_tgt_insert].
+  }
+  pose proof (ty_denote_gas_tm_equiv gas
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y))
+    (tapp_tm (tret vf) (vfvar y)) m Htyped Hsrc)
+    as Htgt_insert.
+  rewrite (ty_denote_gas_insert_fresh_lty_env_eq
+    gas Σ τ (tapp_tm (tret vf) (vfvar y)) z
+    (s →ₜ erase_ty τ)) in Htgt_insert.
+  - exact Htgt_insert.
+  - exact HzΣ.
+  - intros Hbad. apply Hzfresh.
+    apply lvars_fv_elem in Hbad.
+    rewrite context_ty_lvars_fv in Hbad. set_solver.
+  - rewrite fv_tapp_tm. cbn [fv_tm fv_value]. set_solver.
+Qed.
+
 Lemma ty_denote_gas_tapp_fun_result_alias_from_static
     gas (Σ : lty_env) τ vf y z s (m : WfWorldT) :
   LVFree z ∉ dom Σ ->
