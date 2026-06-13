@@ -131,6 +131,48 @@ Proof.
   apply elem_of_map. exists a. split; [reflexivity|exact Ha].
 Qed.
 
+Lemma ty_static_guard_ret_value_result_alias
+    (Σ : lty_env) τ (m : WfWorldT) vx z :
+  lty_env_closed Σ ->
+  Σ !! LVFree z = Some (erase_ty τ) ->
+  m ⊨ expr_result_formula (tret vx) (LVFree z) ->
+  m ⊨ ty_static_guard_formula Σ τ (tret vx) ->
+  m ⊨ ty_static_guard_formula Σ τ (tret (vfvar z)).
+Proof.
+  intros HΣclosed Hlookup Hres Hstatic.
+  assert (Htotal_vx : m ⊨ expr_total_formula (tret vx)).
+  {
+    unfold ty_static_guard_formula in Hstatic.
+    repeat rewrite res_models_and_iff in Hstatic.
+    destruct Hstatic as [_ [Hworld Hbasic]].
+    eapply expr_total_formula_tret_of_basic; eauto.
+  }
+  assert (Hguard_vx :
+      m ⊨ FAnd
+        (context_ty_wf_formula Σ τ)
+        (FAnd
+          (basic_world_formula Σ)
+          (FAnd
+            (expr_basic_typing_formula Σ (tret vx) (erase_ty τ))
+            (expr_total_formula (tret vx))))).
+  {
+    unfold ty_static_guard_formula in Hstatic.
+    repeat rewrite res_models_and_iff in Hstatic.
+    destruct Hstatic as [Hwf [Hworld Hbasic]].
+    apply res_models_and_iff. split; [exact Hwf|].
+    apply res_models_and_iff. split; [exact Hworld|].
+    apply res_models_and_iff. split; [exact Hbasic|exact Htotal_vx].
+  }
+  pose proof (ty_denote_gas_result_alias_guard
+    Σ τ (tret vx) z m HΣclosed Hlookup Hres Hguard_vx)
+    as Hguard_z.
+  unfold ty_static_guard_formula.
+  repeat rewrite res_models_and_iff in Hguard_z.
+  destruct Hguard_z as [Hwf [Hworld [Hbasic _]]].
+  apply res_models_and_iff. split; [exact Hwf|].
+  apply res_models_and_iff. split; [exact Hworld|exact Hbasic].
+Qed.
+
 Lemma typed_total_equiv_ret_value_result_alias_static
     (Σ : lty_env) τ (m : WfWorldT) vx z :
   wfworld_closed_on (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) m ->
