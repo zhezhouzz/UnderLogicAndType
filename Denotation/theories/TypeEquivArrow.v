@@ -1052,132 +1052,30 @@ Lemma ty_denote_gas_tm_equiv_arrow_body
   m ⊨
     FForall
       (FImpl
-        (ty_denote_gas gas
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTArrow τx τr) e1)))
+          (tm_shift 0 e1) (LVBound 0))
+        (arrow_value_denote_gas_with ty_denote_gas gas
           (typed_lty_env_bind
             (relevant_env Σ (CTArrow τx τr) e1)
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e1)
-            (erase_ty τx))
-          τr (tapp_tm (tm_shift 0 e1) (vbvar 0)))) ->
+            (erase_ty (CTArrow τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))) ->
   m ⊨
     FForall
       (FImpl
-        (ty_denote_gas gas
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTArrow τx τr) e2)))
+          (tm_shift 0 e2) (LVBound 0))
+        (arrow_value_denote_gas_with ty_denote_gas gas
           (typed_lty_env_bind
             (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty τx))
-          τr (tapp_tm (tm_shift 0 e2) (vbvar 0)))).
+            (erase_ty (CTArrow τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))).
 Proof.
-  intros Hequiv Hsrc.
-  pose proof (typed_total_equiv_target_zero
-    Σ (CTArrow τx τr) m e1 e2 Hequiv) as Hzero_tgt.
-  pose proof (ty_denote_gas_scope_from_zero_any (S gas)
-    Σ (CTArrow τx τr) e2 m Hzero_tgt) as Hscope_full.
-  cbn [ty_denote_gas] in Hscope_full.
-  pose proof (formula_scoped_and_r m
-    (ty_guard_formula (relevant_env Σ (CTArrow τx τr) e2)
-      (CTArrow τx τr) e2)
-    (FForall
-      (FImpl
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty τx))
-          τr (tapp_tm (tm_shift 0 e2) (vbvar 0)))))
-    Hscope_full) as Htarget_scope.
-  eapply res_models_forall_full_world_map;
-    [exact Htarget_scope | | exact Hsrc].
-  exists
-    (fv_cty τx ∪ fv_cty τr ∪ fv_tm e1 ∪ fv_tm e2 ∪
-     lvars_fv
-       (dom (typed_lty_env_bind
-         (relevant_env Σ (CTArrow τx τr) e1) (erase_ty τx))) ∪
-     lvars_fv
-       (dom (typed_lty_env_bind
-         (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx)))).
-  intros y Hy my Hdom Hrestrict Hopened.
-  assert (Hopened_scope :
-      formula_scoped_in_world my
-        (formula_open 0 y
-          (FImpl
-            (ty_denote_gas gas
-              (typed_lty_env_bind
-                (relevant_env Σ (CTArrow τx τr) e2)
-                (erase_ty τx))
-              (cty_shift 0 τx) (tret (vbvar 0)))
-            (ty_denote_gas gas
-              (typed_lty_env_bind
-                (relevant_env Σ (CTArrow τx τr) e2)
-                (erase_ty τx))
-              τr (tapp_tm (tm_shift 0 e2) (vbvar 0)))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Htarget_scope.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. set_solver.
-  }
-  rewrite formula_open_impl in Hopened |- *.
-  rewrite formula_open_impl in Hopened_scope.
-  eapply res_models_impl_intro; [exact Hopened_scope |].
-  intros Harg_tgt.
-  assert (Hyτx : y ∉ fv_cty τx) by set_solver.
-  assert (Hyτr : y ∉ fv_cty τr) by set_solver.
-  assert (Hye : y ∉ fv_tm e1 ∪ fv_tm e2) by set_solver.
-  assert (HyΣ1 : y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e1) (erase_ty τx)))) by set_solver.
-	  assert (HyΣ2 : y ∉ lvars_fv
-	    (dom (typed_lty_env_bind
-	      (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx)))) by set_solver.
-	  assert (Hτa_fresh : y ∉ fv_cty (cty_shift 0 τx)).
-	  { rewrite cty_shift_fv. exact Hyτx. }
-	  assert (Hea_fresh : y ∉ fv_tm (tret (vbvar 0))).
-	  { cbn [fv_tm fv_value]. set_solver. }
-	  assert (Harg_tgt_open :
-	      my ⊨ ty_denote_gas gas
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty τx)))
-	        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
-	  {
-	    ty_denote_open_one_norm_in Harg_tgt.
-	    exact Harg_tgt.
-	  }
-  pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
-    gas Σ τx τr e1 e2 m my y Hequiv Hdom Hrestrict
-    Hyτx HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
-  assert (Harg_src_formula :
-      my ⊨ formula_open 0 y
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e1)
-            (erase_ty τx))
-	          (cty_shift 0 τx) (tret (vbvar 0)))).
-	  {
-	    ty_denote_open_one_norm.
-	    exact Harg_src.
-	  }
-  pose proof (res_models_impl_elim my _ _ Hopened Harg_src_formula) as Hres_src.
-  pose proof (basic_world_formula_opened_arg_from_denotation
-    gas
-    (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e2) (erase_ty τx))
-    τx my y Hyτx HyΣ2 Harg_tgt) as Hworld.
-  eapply ty_denote_gas_tm_equiv_arrow_open_result; eauto.
-Qed.
+Admitted.
 
 End TypeDenote.

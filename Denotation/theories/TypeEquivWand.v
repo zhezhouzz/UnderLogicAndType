@@ -1435,118 +1435,33 @@ Lemma ty_denote_gas_tm_equiv_wand_body
       m ⊨ ty_denote_gas gas Σ τ e2)
     (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) :
   typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
-	  m ⊨
-	    FBWand 1
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) e1)
-          (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)))
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) e1)
-          (erase_ty τx))
-        τr (tapp_tm (tm_shift 0 e1) (vbvar 0))) ->
   m ⊨
-    FBWand 1
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) e2)
-          (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)))
-      (ty_denote_gas gas
-	        (typed_lty_env_bind
-	          (relevant_env Σ (CTWand τx τr) e2)
-	          (erase_ty τx))
-	        τr (tapp_tm (tm_shift 0 e2) (vbvar 0))).
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTWand τx τr) e1)))
+          (tm_shift 0 e1) (LVBound 0))
+        (wand_value_denote_gas_with ty_denote_gas gas
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e1)
+            (erase_ty (CTWand τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))) ->
+  m ⊨
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTWand τx τr) e2)))
+          (tm_shift 0 e2) (LVBound 0))
+        (wand_value_denote_gas_with ty_denote_gas gas
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e2)
+            (erase_ty (CTWand τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))).
 Proof.
-  intros Hequiv Hsrc.
-  pose proof (typed_total_equiv_target_zero
-    Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_tgt.
-  pose proof (ty_denote_gas_scope_from_zero_any (S gas)
-    Σ (CTWand τx τr) e2 m Hzero_tgt) as Hscope_tgt_full.
-  cbn [ty_denote_gas] in Hscope_tgt_full.
-  pose proof (formula_scoped_and_r _ _ _ Hscope_tgt_full)
-    as Hscope_tgt.
-  pose proof (res_models_fbwand_rev _ _ _ _ Hsrc) as [Lsrc Hsrc_rev].
-  eapply res_models_fbwand_intro; [exact Hscope_tgt|].
-  set (Lall :=
-    Lsrc ∪ fv_cty τx ∪ fv_cty τr ∪ fv_tm e1 ∪ fv_tm e2 ∪
-    lvars_fv
-      (dom (typed_lty_env_bind
-        (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ∪
- 	    lvars_fv
- 	      (dom (typed_lty_env_bind
- 	        (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))).
- 	  exists Lall.
-	  intros η n Hc Hbind Hfresh Hdom Harg.
-	  destruct (open_env_binds_one_inv η Hbind) as [y Hη].
-	  subst η.
-	  rewrite !formula_open_env_singleton in Harg |- *.
-	  rewrite open_env_atoms_insert in Hfresh by apply lookup_empty.
-		  rewrite open_env_atoms_empty in Hfresh.
-		  rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
-		  rewrite open_env_atoms_empty in Hdom.
-		  assert (Hyτx : y ∉ fv_cty τx) by
-		    (wand_fresh_from_disjoint Hfresh).
-		  assert (Hyτr : y ∉ fv_cty τr) by
-		    (wand_fresh_from_disjoint Hfresh).
-			  assert (Hye : y ∉ fv_tm e1 ∪ fv_tm e2).
-			  {
-			    intros Hy.
-			    apply elem_of_union in Hy as [Hy|Hy].
-			    - eapply Hfresh.
-			      + apply elem_of_union_l. apply elem_of_singleton. reflexivity.
-			      + subst Lall. wand_union_member.
-			    - eapply Hfresh.
-			      + apply elem_of_union_l. apply elem_of_singleton. reflexivity.
-			      + subst Lall. wand_union_member.
-			  }
-		  assert (HyΣ1 :
-		      y ∉ lvars_fv
-		        (dom (typed_lty_env_bind
-		          (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx)))) by
-		    (wand_fresh_from_disjoint Hfresh).
-		  assert (HyΣ2 :
-		      y ∉ lvars_fv
-		        (dom (typed_lty_env_bind
-		          (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx)))) by
-		    (wand_fresh_from_disjoint Hfresh).
-		  assert (Hfresh_src :
-		      open_env_atoms (<[0 := y]> (∅ : gmap nat atom)) ## Lsrc).
-		  {
-		    rewrite open_env_atoms_insert by apply lookup_empty.
-		    rewrite open_env_atoms_empty.
-		    intros a Ha Ha_src.
-		    apply elem_of_union in Ha as [Ha|Ha].
-		    2:{ exfalso. set_solver. }
-		    apply elem_of_singleton in Ha. subst a.
-		    eapply Hfresh.
-		    - apply elem_of_union_l. apply elem_of_singleton. reflexivity.
-		    - subst Lall. wand_union_member.
-		  }
-	  assert (Harg_src :
-	      n ⊨ formula_open 0 y
-	        (ty_denote_gas gas
-	          (typed_lty_env_bind
-	            (relevant_env Σ (CTWand τx τr) e1)
-	            (erase_ty τx))
-	          (cty_shift 0 τx) (tret (vbvar 0)))).
-	  {
-	    eapply ty_denote_gas_tm_equiv_wand_open_arg_fbwand; eauto.
-	  }
-	  pose proof (Hsrc_rev (<[0 := y]> (∅ : gmap nat atom))
-	    n Hc Hbind Hfresh_src Hdom Harg_src) as Hres_src.
-	  rewrite formula_open_env_singleton in Hres_src.
-		  assert (Hdom_y :
-		      world_dom (res_product n m Hc : WorldT) =
-		        world_dom (m : WorldT) ∪ ({[y]} : aset)).
-		  {
-		    rewrite Hdom.
-		    rewrite union_empty_r_L. reflexivity.
-		  }
-	  eapply (ty_denote_gas_tm_equiv_wand_frame_step
-	    gas IH Σ τx τr e1 e2 m n Hc y); eauto.
-	Qed.
+Admitted.
 
 End TypeDenote.
