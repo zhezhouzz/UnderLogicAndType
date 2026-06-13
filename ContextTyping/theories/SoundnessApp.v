@@ -383,17 +383,11 @@ Lemma app_arrow_open_result_from_fresh_drop
         (atom_env_to_lty_env (erase_ctx Γ))
         ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  (* Result-first Arrow denotation introduces two binders.  The outer binder
-     names the function value produced by [ret v1]; the inner binder names the
-     argument.  The old proof opened the only binder with [x], which is no
-     longer correct.  The intended proof is:
-       1. choose a fresh function slot [f] and use the result graph of
-          [ret v1] to obtain [ret f = ret v1];
-       2. open [arrow_value_denote_gas] at the existing argument [x] after
-          deleting [x] from the closure world, as in the old proof;
-       3. transport the result from [(ret f) x] to [v1 x] using the result
-          graph for [ret v1] and the existing result/equiv machinery. *)
+  (* Result-first Arrow denotation introduces two binders.  The proof below is
+     being rebuilt via smaller helper lemmas; keep this as a named obligation
+     instead of leaving a half-checked script in the compilation path. *)
 Admitted.
+
 
 Lemma fundamental_app_case Σ Γ τx τ v1 x :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
