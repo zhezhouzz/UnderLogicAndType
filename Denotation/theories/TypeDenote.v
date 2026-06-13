@@ -809,6 +809,173 @@ Proof.
   exact Heq.
 Qed.
 
+Lemma formula_open_result_first_fun_arg_two
+    gas (Σ : lty_env) τx Tf z y :
+  lty_env_closed Σ ->
+  LVFree z ∉ dom Σ ->
+  y <> z ->
+  LVFree y ∉ dom (<[LVFree z := Tf]> Σ) ->
+  lc_context_ty τx ->
+  z ∉ fv_cty τx ->
+  y ∉ fv_cty τx ->
+  formula_open 0 y
+    (formula_open 1 z
+      (ty_denote_gas gas
+        (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+          (erase_ty (cty_shift 0 τx)))
+        (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))) =
+  ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> (<[LVFree z := Tf]> Σ))
+    τx (tret (vfvar y)).
+Proof.
+  intros HΣclosed HzΣ Hyz HyΣ Hlcτx Hzτx Hyτx.
+  rewrite (formula_open_ty_denote_gas_singleton 1 z gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hzbad. apply HzΣ.
+    apply lvars_fv_elem. exact Hzbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  2:{ rewrite !cty_shift_fv. exact Hzτx. }
+  cbn [open_tm open_value].
+  destruct (decide (1 = 0)) as [Hbad|_]; [lia|].
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
+    (lty_env_open_one 1 z
+      (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+        (erase_ty (cty_shift 0 τx))))
+    (cty_open 1 z (cty_shift 0 (cty_shift 0 τx)))
+    (tret (vbvar 0))).
+  2:{
+    rewrite lty_env_open_one_dom.
+    intros Hybad.
+    apply lvars_fv_open_subset in Hybad.
+    rewrite !typed_lty_env_bind_lvars_fv_dom in Hybad.
+    apply HyΣ. apply lvars_fv_elem.
+    rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+    set_solver.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  2:{
+    intros Hybad.
+    pose proof (cty_open_fv_subset 1 z
+      (cty_shift 0 (cty_shift 0 τx)) y Hybad) as Hybad'.
+    rewrite !cty_shift_fv in Hybad'.
+    set_solver.
+  }
+  rewrite cty_open_shift_under_gen by lia.
+  change (@open_one atom context_ty open_cty_atom_inst 0 z
+    (cty_shift 0 τx)) with (cty_open 0 z (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 z τx Hlcτx Hzτx).
+  rewrite cty_open_shift_from_lc_fresh by (exact Hlcτx || exact Hyτx).
+  cbn [open_tm open_value].
+  rewrite lvar_store_bind_open_under.
+  2:{
+    rewrite typed_lty_env_bind_dom.
+    intros Hzbad.
+    apply elem_of_union in Hzbad as [Hzbad|Hzbad].
+    - apply HzΣ.
+      unfold lvars_shift_from in Hzbad.
+      apply elem_of_map in Hzbad as [v [Hv HvIn]].
+      destruct v; inversion Hv; subst.
+      exact HvIn.
+    - apply elem_of_singleton in Hzbad. discriminate.
+  }
+  rewrite (typed_lty_env_bind_open_current z Σ Tf HzΣ HΣclosed).
+  rewrite cty_shift_preserves_erasure.
+  rewrite typed_lty_env_bind_open_current.
+  - reflexivity.
+  - exact HyΣ.
+  - apply lty_env_closed_insert_free; assumption.
+Qed.
+
+Lemma formula_open_result_first_fun_result_two
+    gas (Σ : lty_env) τx τr Tf z y :
+  lty_env_closed Σ ->
+  LVFree z ∉ dom Σ ->
+  y <> z ->
+  LVFree y ∉ dom (<[LVFree z := Tf]> Σ) ->
+  cty_lc_at 1 τr ->
+  z ∉ fv_cty τx ∪ fv_cty τr ->
+  y ∉ fv_cty τx ∪ fv_cty τr ->
+  formula_open 0 y
+    (formula_open 1 z
+      (ty_denote_gas gas
+        (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+          (erase_ty (cty_shift 0 τx)))
+        (cty_shift 1 τr)
+        (tapp_tm (tret (vbvar 1)) (vbvar 0)))) =
+  ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> (<[LVFree z := Tf]> Σ))
+    (cty_open 0 y τr)
+    (tapp_tm (tret (vfvar z)) (vfvar y)).
+Proof.
+  intros HΣclosed HzΣ Hyz HyΣ Hlcτr Hzfresh Hyfresh.
+  rewrite (formula_open_ty_denote_gas_singleton 1 z gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr) (tapp_tm (tret (vbvar 1)) (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hzbad. apply HzΣ.
+    apply lvars_fv_elem. exact Hzbad.
+  }
+  2:{ rewrite fv_tapp_tm. cbn [fv_tm fv_value]. set_solver. }
+  2:{ rewrite cty_shift_fv. set_solver. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
+  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
+  change (open_tm 1 (vfvar z)
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
+    with (tapp_tm (tret (vfvar z)) (vbvar 0)).
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas
+    (lty_env_open_one 1 z
+      (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+        (erase_ty (cty_shift 0 τx))))
+    (cty_open 1 z (cty_shift 1 τr))
+    (tapp_tm (tret (vfvar z)) (vbvar 0))).
+  2:{
+    rewrite lty_env_open_one_dom.
+    intros Hybad.
+    apply lvars_fv_open_subset in Hybad.
+    rewrite !typed_lty_env_bind_lvars_fv_dom in Hybad.
+    apply HyΣ. apply lvars_fv_elem.
+    rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+    set_solver.
+  }
+  2:{ rewrite fv_tapp_tm. cbn [fv_tm fv_value]. set_solver. }
+  2:{
+    intros Hybad.
+    pose proof (cty_open_fv_subset 1 z (cty_shift 1 τr) y Hybad)
+      as Hybad'.
+    rewrite cty_shift_fv in Hybad'.
+    set_solver.
+  }
+  rewrite (cty_open_shift_from_lc_fresh 1 z τr Hlcτr ltac:(set_solver)).
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
+  rewrite lvar_store_bind_open_under.
+  2:{
+    rewrite typed_lty_env_bind_dom.
+    intros Hzbad.
+    apply elem_of_union in Hzbad as [Hzbad|Hzbad].
+    - apply HzΣ.
+      unfold lvars_shift_from in Hzbad.
+      apply elem_of_map in Hzbad as [v [Hv HvIn]].
+      destruct v; inversion Hv; subst.
+      exact HvIn.
+    - apply elem_of_singleton in Hzbad. discriminate.
+  }
+  rewrite (typed_lty_env_bind_open_current z Σ Tf HzΣ HΣclosed).
+  rewrite cty_shift_preserves_erasure.
+  rewrite typed_lty_env_bind_open_current.
+  - reflexivity.
+  - exact HyΣ.
+  - apply lty_env_closed_insert_free; assumption.
+Qed.
+
 Lemma ty_denote_gas_env_agree_on gas Σ1 Σ2 τ e X :
   relevant_lvars τ e ⊆ X ->
   lty_env_restrict_lvars Σ1 X = lty_env_restrict_lvars Σ2 X ->
