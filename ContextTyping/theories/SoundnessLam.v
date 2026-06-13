@@ -24,7 +24,7 @@ From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Local Lemma soundness_lam_lc_lvars_shift_from k D :
+Lemma soundness_lam_lc_lvars_shift_from k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
@@ -36,7 +36,7 @@ Proof.
   - exact I.
 Qed.
 
-Local Lemma soundness_lam_lvars_lc_at_zero_of_lc D :
+Lemma soundness_lam_lvars_lc_at_zero_of_lc D :
   lc_lvars D ->
   lvars_lc_at 0 D.
 Proof.
@@ -46,7 +46,7 @@ Proof.
   apply lvars_bv_elem. exact Hk.
 Qed.
 
-Local Lemma lty_env_insert_free_commute
+Lemma lty_env_insert_free_commute
     (Σ : lty_env) x y Tx Ty :
   x <> y ->
   <[LVFree x := Tx]> (<[LVFree y := Ty]> Σ) =
@@ -64,7 +64,7 @@ Proof.
     + rewrite !lookup_insert_ne by congruence. reflexivity.
 Qed.
 
-Local Lemma lam_lty_env_restrict_result_first_arg_eq
+Lemma lam_lty_env_restrict_result_first_arg_eq
     (Δ : lty_env) τx τ vf y :
   lc_context_ty τx ->
   y ∉ fv_value vf ∪ fv_cty τx ∪ fv_cty τ ->
@@ -156,7 +156,7 @@ Proof.
         inversion Hay_single. congruence.
 Qed.
 
-Local Lemma lam_lty_env_restrict_result_first_result_eq
+Lemma lam_lty_env_restrict_result_first_result_eq
     (Δ : lty_env) τx τ vf y z :
   lty_env_closed Δ ->
   context_ty_lvars (cty_open 0 y τ) ∖ {[LVFree y]} ⊆
