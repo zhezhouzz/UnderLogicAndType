@@ -128,7 +128,142 @@ Proof.
   apply lvars_fv_elem.
   apply Htm_lvars.
   unfold lvars_of_atoms.
-  apply elem_of_map. exists a. split; [reflexivity|exact Ha].
+    apply elem_of_map. exists a. split; [reflexivity|exact Ha].
+Qed.
+
+Lemma basic_world_insert_result_alias
+    (Σ : lty_env) T e z (m : WfWorldT) :
+  LVFree z ∉ dom Σ ->
+  m ⊨ expr_result_formula e (LVFree z) ->
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ expr_basic_typing_formula Σ e T ->
+  m ⊨ basic_world_formula (<[LVFree z := T]> Σ).
+Proof.
+  intros HzΣ Hres Hworld Hbasic.
+  pose proof Hworld as Hworld_formula.
+  pose proof Hbasic as Hbasic_formula.
+  apply basic_world_formula_models_iff in Hworld
+    as [HlcΣ [HscopeΣ HtypedΣ]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [_ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lvars Σ e T Hty) as HfvΣ.
+  pose proof (expr_result_formula_to_atom_world e (LVFree z) m Hres)
+    as Hres_world.
+  destruct Hres_world as [_ [Hres_dom _]].
+  assert (Hz_lworld : LVFree z ∈ lvars_of_atoms (world_dom (m : WorldT))).
+  {
+    rewrite <- res_lift_free_dom.
+    apply Hres_dom.
+    cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+    set_solver.
+  }
+  assert (Hz_world : z ∈ world_dom (m : WorldT)).
+  {
+    unfold lvars_of_atoms in Hz_lworld.
+    apply elem_of_map in Hz_lworld as [a [Haz Ha]].
+    inversion Haz. subst a. exact Ha.
+  }
+  apply basic_world_formula_models_iff.
+  split.
+  - apply lty_env_closed_insert_free. exact HlcΣ.
+  - split.
+    + rewrite dom_insert_L, lvars_fv_union, lvars_fv_singleton_free.
+      intros a Ha.
+      apply elem_of_union in Ha as [Ha|Ha].
+      * apply elem_of_singleton in Ha. subst a.
+        exact Hz_world.
+      * exact (HscopeΣ _ Ha).
+    + unfold lworld_has_type, worldA_has_type in HtypedΣ |- *.
+      destruct HtypedΣ as [HdomΣ HstoresΣ].
+      split.
+      * rewrite res_lift_free_dom.
+        rewrite dom_insert_L.
+        intros v Hv.
+        apply elem_of_union in Hv as [Hv|Hv].
+        -- apply elem_of_singleton in Hv. subst v.
+           exact Hz_lworld.
+        -- exact (HdomΣ _ Hv).
+      * intros ρ Hρ v U val HΣins Hρv.
+        destruct Hρ as [σ [Hσ ->]].
+        destruct v as [k|y].
+        -- rewrite lookup_insert_ne in HΣins by discriminate.
+           eapply HstoresΣ.
+           ++ exists σ. split; [exact Hσ|reflexivity].
+           ++ exact HΣins.
+           ++ exact Hρv.
+        -- destruct (decide (y = z)) as [->|Hyz].
+           ++ apply lookup_insert_Some in HΣins
+                as [[_ HU]|[Hneq _]]; [subst U|congruence].
+              change (((lstore_lift_free σ : LStoreT)
+                : gmap logic_var value) !! LVFree z = Some val) in Hρv.
+              rewrite lstore_lift_free_lookup_free in Hρv.
+              pose proof (expr_result_formula_to_atom_world
+                e (LVFree z) m Hres) as Hres_world'.
+              destruct Hres_world' as [_ [_ Hstores_res]].
+              assert (Hlift :
+                  (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+              { exists σ. split; [exact Hσ|reflexivity]. }
+              specialize (Hstores_res (lstore_lift_free σ) Hlift)
+                as [_ [vres [Hz_lookup Heval]]].
+              change (((lstore_lift_free σ : LStoreT)
+                : gmap logic_var value) !! LVFree z = Some vres)
+                in Hz_lookup.
+              rewrite lstore_lift_free_lookup_free in Hz_lookup.
+              rewrite Hρv in Hz_lookup. inversion Hz_lookup. subst vres.
+              set (σe := store_restrict σ (fv_tm e)).
+              assert (Hσe_typed : atom_store_has_ltype Σ σe).
+              {
+                subst σe.
+                intros a u Hlook.
+                apply storeA_restrict_lookup_some in Hlook as [Hafve Hσa].
+                assert (HaΣ : LVFree a ∈ dom Σ).
+                {
+                  apply HfvΣ.
+                  unfold lvars_of_atoms. set_solver.
+                }
+                apply elem_of_dom in HaΣ as [Ua HΣa].
+                exists Ua. split; [exact HΣa|].
+                eapply HstoresΣ.
+                - exists σ. split; [exact Hσ|reflexivity].
+                - exact HΣa.
+                - change (((lstore_lift_free σ : LStoreT)
+                    : gmap logic_var value) !! LVFree a = Some u).
+                  rewrite lstore_lift_free_lookup_free. exact Hσa.
+              }
+              assert (Heval_e :
+                  tm_eval_in_store σe e val).
+              {
+                subst σe.
+                apply (proj2 (tm_eval_in_store_restrict_fv_subset
+                  σ e val (fv_tm e) ltac:(set_solver))).
+                exact Heval.
+              }
+              assert (Hfv_dom : fv_tm e ⊆ dom (σe : StoreT)).
+              {
+                intros a Ha.
+                assert (Haσ : a ∈ dom (σ : StoreT)).
+                {
+                  pose proof (wfworld_store_dom m σ Hσ) as Hσdom.
+                  change (a ∈ dom (σ : gmap atom value)).
+                  rewrite Hσdom.
+                  apply HscopeΣ.
+                  apply lvars_fv_elem.
+                  apply HfvΣ.
+                  unfold lvars_of_atoms. set_solver.
+                }
+                change (a ∈ dom (σ : gmap atom value)) in Haσ.
+                apply elem_of_dom in Haσ as [u Hσa].
+                change (a ∈ dom (σe : gmap atom value)).
+                apply elem_of_dom. exists u.
+                subst σe.
+                apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha].
+              }
+              eapply basic_tm_eval_value_type; eauto.
+           ++ rewrite lookup_insert_ne in HΣins by congruence.
+              eapply HstoresΣ.
+              ** exists σ. split; [exact Hσ|reflexivity].
+              ** exact HΣins.
+              ** exact Hρv.
 Qed.
 
 Lemma ty_static_guard_ret_value_result_alias
