@@ -46,6 +46,86 @@ tapp_tm (tret (vbvar 1)) (vbvar 0)
    then recurse only on the value-level result body.
 4. Restore `tlet_intro_denotation` as an iff.
 
+## Current Status
+
+Completed:
+
+- `TypeDenote.v` compiles with result-first Arrow/Wand.
+- `TypeEquivCore.v` saturation handles `arrow_value_denote_gas_with` and
+  `wand_value_denote_gas_with`.
+- `TypeEquivTLet.v` forward transport is structural except for Arrow/Wand
+  value-body obligations.
+- `TypeEquivTLet.v` reverse transport is no longer one large admit: it is a
+  gas induction with only Arrow/Wand value-body reverse obligations remaining.
+- `Soundness.vo` and full `make TIMED=1` compile under the new definitions.
+- `TypeEquivFiberTransport.v` now has proved function-position result-alias
+  operational helpers:
+
+```coq
+tm_equiv_tapp_value_fun_result_alias
+tm_total_equiv_tapp_value_fun_result_alias
+```
+
+These are the low-level facts needed when an outer result graph says a fresh
+function slot `f` contains the same function value as `ret v`.
+
+Current result-first obligations:
+
+```coq
+ty_denote_gas_tm_equiv_arrow_body
+ty_denote_gas_tm_equiv_wand_body
+tlet_intro_denotation_arrow_body
+tlet_intro_denotation_wand_body
+tlet_intro_denotation_arrow_body_reverse
+tlet_intro_denotation_wand_body_reverse
+fundamental_lam_case
+fundamental_lamd_case
+app_arrow_open_result_from_fresh_drop
+fundamental_appd_case
+fundamental_fix_case
+fix_body_arrow_apply_self
+fix_self_rec_call_reducible_measure_step
+```
+
+Still-existing non-result-first admits:
+
+```coq
+ty_denote_gas_result_alias_at
+```
+
+and the separate concrete primitive-op-context implementation admits in
+`PrimOpConcreteContext.v`.
+
+## Next Lemmas
+
+The next useful shared lemma should express value-denotation transport between
+two worlds produced by an outer result correspondence:
+
+```coq
+arrow_value_denote_result_projection
+wand_value_denote_result_projection
+```
+
+Intended shape:
+
+- source and target worlds agree on the projection containing
+  `FV(τx -> τr)` plus the fresh function result slot;
+- source and target environments are both produced from the same ambient env
+  by `relevant_env` plus the same function-slot binding;
+- the function term is `ret f` on both sides;
+- then `arrow_value_denote_gas_with` / `wand_value_denote_gas_with` transports
+  by rebuilding the inner `FForall`/`FBWand`, using env-agree for the argument
+  and result denotations.
+
+For direct value cases (`Lam`, `App`, `Fix`) the operational bridge is:
+
+```coq
+expr_result_formula (tret v) f
+  -> tm_equiv_on/total_equiv_on (tapp_tm (tret f) y) (tapp_tm (tret v) y)
+```
+
+which is now proved in `TypeEquivFiberTransport.v`.
+
 ## Acceptance Checks
 
 ```sh
