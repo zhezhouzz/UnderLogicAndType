@@ -62,12 +62,24 @@ Completed:
   operational helpers:
 
 ```coq
+tm_equiv_ret_value_result_alias
+tm_total_equiv_ret_value_result_alias
+typed_total_equiv_ret_value_result_alias
 tm_equiv_tapp_value_fun_result_alias
 tm_total_equiv_tapp_value_fun_result_alias
 ```
 
+- `TypeEquiv.v` has the proved static/typed bridge:
+
+```coq
+ty_static_guard_ret_value_result_alias
+typed_total_equiv_ret_value_result_alias_static
+```
+
 These are the low-level facts needed when an outer result graph says a fresh
-function slot `f` contains the same function value as `ret v`.
+function slot `f` contains the same function value as `ret v`; they now cover
+both raw operational equality and the `typed_total_equiv_on` package needed by
+the old direct transport theorem.
 
 Current result-first obligations:
 
@@ -124,7 +136,10 @@ expr_result_formula (tret v) f
   -> tm_equiv_on/total_equiv_on (tapp_tm (tret f) y) (tapp_tm (tret v) y)
 ```
 
-which is now proved in `TypeEquivFiberTransport.v`.
+which is now proved in `TypeEquivFiberTransport.v`.  If the proof needs the
+function term itself rather than an application, use the corresponding
+`tm_equiv_ret_value_result_alias` / `typed_total_equiv_ret_value_result_alias`
+bridge.
 
 ## Acceptance Checks
 
