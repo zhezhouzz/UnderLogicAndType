@@ -134,6 +134,23 @@ Proof.
   - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
 Qed.
 
+Lemma tm_eval_in_store_ret_value σ vx :
+  store_closed σ ->
+  lc_value vx ->
+  tm_eval_in_store σ (tret vx) (m{σ} vx).
+Proof.
+  intros Hclosed Hvx.
+  unfold tm_eval_in_store.
+  rewrite expr_eval_in_store_no_bvars_iff.
+  - rewrite lstore_free_part_lift_free.
+    rewrite subst_map_tm_eq_msubst.
+    rewrite msubst_ret.
+    apply value_reduction_any_ctx.
+    apply msubst_lc; [exact (proj2 Hclosed)|exact Hvx].
+  - apply lc_lstore_lift_free.
+  - rewrite lstore_free_part_lift_free. exact (proj1 Hclosed).
+Qed.
+
 Lemma tm_eval_in_store_ret_value_inv σ vx v :
   store_closed σ ->
   lc_value vx ->
