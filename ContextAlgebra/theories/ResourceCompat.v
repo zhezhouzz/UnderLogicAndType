@@ -455,6 +455,57 @@ Proof.
   split; [exact Hext | exact Hproj].
 Qed.
 
+Lemma res_restrict_delete_extend_self (m : WfWorldT) x :
+  x ∈ world_dom (m : WorldT) ->
+  exists F : FiberExtensionT,
+    ext_in F = world_dom (m : WorldT) ∖ {[x]} /\
+    ext_out F = {[x]} /\
+    res_extend_by
+      (res_restrict m (world_dom (m : WorldT) ∖ {[x]})) F m.
+Proof.
+  intros Hx.
+  set (m0 := res_restrict m (world_dom (m : WorldT) ∖ {[x]})).
+  assert (Hx0 : x ∉ world_dom (m0 : WorldT)).
+  { subst m0. apply res_restrict_delete_notin. }
+  assert (Hdom_m : world_dom (m : WorldT) =
+      world_dom (m0 : WorldT) ∪ {[x]}).
+  { subst m0. apply res_restrict_delete_insert_dom. exact Hx. }
+  assert (Hrestrict_m : res_restrict m (world_dom (m0 : WorldT)) = m0).
+  { subst m0. apply res_restrict_self_dom. }
+  assert (Hdisj : world_dom (m0 : WorldT) ## {[x]}) by set_solver.
+  set (F := one_point_projected_extension
+    m0 m (world_dom (m0 : WorldT)) x Hx0 Hdisj Hdom_m).
+  assert (Happ : extension_applicable F m0).
+  {
+    constructor.
+    - subst F. simpl. set_solver.
+    - subst F. simpl. set_solver.
+  }
+  destruct (res_extend_by_exists m0 F Happ) as [n Hext].
+  pose proof (one_point_projected_extension_projection_eq
+    m0 m (world_dom (m0 : WorldT)) x Hx0 Hdisj Hdom_m
+    Hrestrict_m ltac:(set_solver) n Hext) as Hproj.
+  assert (Hn_dom : world_dom (n : WorldT) = world_dom (m : WorldT)).
+  {
+    pose proof (res_extend_by_dom m0 F n Hext) as Hdom_n.
+    subst F. simpl in Hdom_n.
+    rewrite Hdom_n. symmetry. exact Hdom_m.
+  }
+  assert (Hn_eq : n = m).
+  {
+    transitivity (res_restrict n (world_dom (m : WorldT))).
+    - symmetry. rewrite <- Hn_dom.
+      apply res_restrict_eq_of_le. apply raw_le_refl.
+    - rewrite <- Hdom_m in Hproj.
+      rewrite Hproj.
+      apply res_restrict_eq_of_le. apply raw_le_refl.
+  }
+  subst n.
+  exists F. split.
+  - subst F. simpl. set_solver.
+  - split; [subst F; reflexivity|exact Hext].
+Qed.
+
 Local Lemma ext_rel_exists (F : FiberExtensionT) σ :
   dom σ = ext_in F ->
   exists w, ext_rel F σ w.
