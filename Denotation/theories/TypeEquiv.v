@@ -15,6 +15,66 @@ From Denotation Require Import
 
 Section TypeDenote.
 
+Local Lemma type_equiv_lc_lvars_shift_from k D :
+  lc_lvars D ->
+  lc_lvars (lvars_shift_from k D).
+Proof.
+  intros Hlc v Hv.
+  unfold lvars_shift_from in Hv.
+  apply elem_of_map in Hv as [u [-> Hu]].
+  destruct u as [n|x]; cbn [logic_var_shift_from].
+  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
+  - exact I.
+Qed.
+
+Local Lemma type_equiv_lvars_lc_at_zero_of_lc D :
+  lc_lvars D ->
+  lvars_lc_at 0 D.
+Proof.
+  intros Hlc k Hk.
+  rewrite lvars_bv_elem in Hk.
+  exfalso. exact (Hlc (LVBound k) Hk).
+Qed.
+
+Lemma result_first_outer_result_ret_value_at
+    (Σ : lty_env) τ vf z (m : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_value vf ->
+  z ∉ fv_value vf ->
+  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
+  m ⊨ formula_open 0 z
+    (expr_result_formula_at
+      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
+      (tm_shift 0 (tret vf)) (LVBound 0)) ->
+  m ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
+Proof.
+  intros HΣclosed Hvf Hzvf Hzrel Hres.
+  assert (HlcD :
+      lc_lvars
+        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
+  {
+    apply type_equiv_lc_lvars_shift_from.
+    apply relevant_env_closed. exact HΣclosed.
+  }
+  assert (HzD :
+      z ∉ lvars_fv
+        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
+  {
+    rewrite lvars_shift_from_fv. exact Hzrel.
+  }
+  assert (Hlc_tm : lc_tm (tret vf)) by (constructor; exact Hvf).
+  assert (Hz_tm : z ∉ fv_tm (tret vf)).
+  { cbn [fv_tm fv_value]. exact Hzvf. }
+  rewrite formula_open_expr_result_formula_at_shift0 in Hres
+    by (exact HlcD || exact HzD || exact Hlc_tm || exact Hz_tm).
+  rewrite (lvars_shift_from_lc_at_id 0
+    (dom (relevant_env Σ τ (tret vf)))) in Hres.
+  - exact Hres.
+  - apply type_equiv_lvars_lc_at_zero_of_lc.
+    apply relevant_env_closed. exact HΣclosed.
+Qed.
+
 Lemma ty_static_guard_relevant_of_full
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
