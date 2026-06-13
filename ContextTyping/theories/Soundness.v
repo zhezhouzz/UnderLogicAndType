@@ -882,56 +882,12 @@ Lemma fundamental_lam_case Σ Γ τx τ e (L : aset) :
     ty_denote_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH m Hctx.
-  set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
-  set (elam := tret (vlam (erase_ty τx) e)).
-  pose proof (context_typing_wf_denot_static_guard_full
-    Σ Γ (CTArrow τx τ) elam m Hwf Hctx) as Hguard.
-  assert (Hfull_guard :
-      m ⊨ ty_guard_formula
-        (relevant_env Δ (CTArrow τx τ) elam)
-        (CTArrow τx τ) elam).
-  {
-    assert (Htotal_elam : m ⊨ expr_total_formula elam).
-    {
-      pose proof Hguard as Hguard_parts.
-      unfold ty_static_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [Hworld_guard Hbasic_guard]].
-      eapply expr_total_formula_tret_of_basic; eauto.
-    }
-    eapply ty_guard_relevant_of_static_full_total; eauto.
-  }
-  assert (Hzero : m ⊨ ty_denote_gas 0 Δ (CTArrow τx τ) elam).
-  { apply ty_denote_gas_zero_of_guard. exact Hfull_guard. }
-  unfold ty_denote_under, ty_denote.
-  subst Δ elam.
-  cbn [cty_depth ty_denote_gas].
-  rewrite res_models_and_iff. split.
-  - exact Hfull_guard.
-  - pose proof (ty_denote_gas_scope_from_zero_any
-      (S (Nat.max (cty_depth τx) (cty_depth τ)))
-      (atom_env_to_lty_env (erase_ctx Γ)) (CTArrow τx τ)
-      (tret (vlam (erase_ty τx) e)) m Hzero) as Hscope_full.
-    cbn [ty_denote_gas] in Hscope_full.
-    pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
-    eapply res_models_forall_rev_intro; [exact Hscope_body|].
-    exists (L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-      fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
-    intros y Hy my Hdom Hrestrict.
-    assert (Hle : m ⊑ my).
-    { rewrite <- Hrestrict. apply res_restrict_le. }
-    assert (Hy_my : y ∈ world_dom (my : WorldT)).
-    { rewrite Hdom. set_solver. }
-    pose proof (formula_scoped_forall_open_res_le
-      m my y _ Hscope_body Hle Hy_my) as Hopen_scope.
-    eapply res_models_impl_intro; [exact Hopen_scope|].
-    intros Harg.
-    pose proof (lam_arrow_open_arg_normalize
-      Σ Γ τx τ e my y ltac:(set_solver) Harg) as Harg_norm.
-    eapply lam_opened_arrow_result; eauto.
-    all: try set_solver.
-Qed.
+  (* Result-first Arrow denotation makes the outer binder name the function
+     value produced by [ret (λ...)]. The old proof used that binder as the
+     argument. The replacement proof should discharge the result graph for the
+     lambda value, then reuse [lam_opened_arrow_result] inside
+     [arrow_value_denote_gas]. *)
+Admitted.
 
 Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
@@ -943,85 +899,11 @@ Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
     ty_denote_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  intros Hwf IH m Hctx.
-  set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
-  set (elam := tret (vlam (erase_ty τx) e)).
-  pose proof (context_typing_wf_denot_static_guard_full
-    Σ Γ (CTWand τx τ) elam m Hwf Hctx) as Hguard.
-  assert (Hfull_guard :
-      m ⊨ ty_guard_formula
-        (relevant_env Δ (CTWand τx τ) elam)
-        (CTWand τx τ) elam).
-  {
-    assert (Htotal_elam : m ⊨ expr_total_formula elam).
-    {
-      pose proof Hguard as Hguard_parts.
-      unfold ty_static_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [Hworld_guard Hbasic_guard]].
-      eapply expr_total_formula_tret_of_basic; eauto.
-    }
-    eapply ty_guard_relevant_of_static_full_total; eauto.
-  }
-  assert (Hzero : m ⊨ ty_denote_gas 0 Δ (CTWand τx τ) elam).
-  { apply ty_denote_gas_zero_of_guard. exact Hfull_guard. }
-  unfold ty_denote_under, ty_denote.
-  subst Δ elam.
-  cbn [cty_depth ty_denote_gas].
-  rewrite res_models_and_iff. split.
-  - exact Hfull_guard.
-  - pose proof (ty_denote_gas_scope_from_zero_any
-      (S (Nat.max (cty_depth τx) (cty_depth τ)))
-      (atom_env_to_lty_env (erase_ctx Γ)) (CTWand τx τ)
-      (tret (vlam (erase_ty τx) e)) m Hzero) as Hscope_full.
-    cbn [ty_denote_gas] in Hscope_full.
-    pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
-    eapply res_models_fbwand_intro; [exact Hscope_body|].
-    exists (L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
-      fv_cty τx ∪ fv_cty τ ∪
-      lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-          (erase_ty τx)))).
-    intros η n Hc Hbind Hfresh Hdom Harg.
-    destruct (open_env_binds_one_inv η Hbind) as [y Hη].
-    subst η.
-    rewrite !formula_open_env_singleton in Harg |- *.
-    rewrite open_env_atoms_insert in Hfresh by apply lookup_empty.
-    rewrite open_env_atoms_empty in Hfresh.
-    rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
-    rewrite open_env_atoms_empty in Hdom.
-    assert (Hy_all :
-      y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
-        fv_cty τx ∪ fv_cty τ ∪
-        lvars_fv
-          (dom (typed_lty_env_bind
-            (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-              (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-            (erase_ty τx)))).
-    {
-      intros Hyin.
-      apply elem_of_disjoint in Hfresh.
-      exact (Hfresh y (soundness_singleton_union_empty_elem y) Hyin).
-    }
-    assert (Hy_arg :
-      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
-        fv_cty τx ∪ fv_cty τ)
-      by (clear -Hy_all; better_set_solver).
-    assert (Hy_body :
-      y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪
-        fv_cty τx ∪ fv_cty τ)
-      by (clear -Hy_all; better_set_solver).
-    assert (Hdom_one :
-      world_dom (res_product n m Hc : WorldT) =
-        world_dom (m : WorldT) ∪ ({[y]} : aset)).
-    { rewrite Hdom. apply soundness_union_singleton_empty_r. }
-    pose proof (lamd_wand_open_arg_normalize
-      Σ Γ τx τ e n y Hy_arg Harg) as Harg_norm.
-    eapply (lamd_opened_wand_result Σ Γ τx τ e L m n y Hc);
-      eauto.
-Qed.
+  (* Result-first Wand denotation also adds an outer function-result binder
+     before the [FBWand] argument resource. The replacement proof should first
+     bind the lambda value, then run the old LamD star/resource argument proof
+     inside [wand_value_denote_gas]. *)
+Admitted.
 
 Lemma fundamental_appop_case Σ Γ op x :
   context_typing_wf Σ Γ

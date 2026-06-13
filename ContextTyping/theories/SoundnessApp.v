@@ -383,42 +383,17 @@ Lemma app_arrow_open_result_from_fresh_drop
         (atom_env_to_lty_env (erase_ctx Γ))
         ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf_fun Hwf Hfresh Hfun Harg.
-  set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
-  set (mdel := res_restrict m (world_dom (m : WorldT) ∖ {[x]})).
-  pose proof (ty_denote_gas_restrict_delete_fresh
-    (cty_depth (CTArrow τx τ)) Δ (CTArrow τx τ) (tret v1)
-    x m ltac:(unfold fv_cty; cbn [fv_tm fv_value context_ty_lvars
-      context_ty_lvars_at]; rewrite lvars_fv_union,
-      !context_ty_lvars_fv_at; better_set_solver) Hfun) as Hfun_del.
-  cbn [cty_depth ty_denote_gas] in Hfun_del.
-  rewrite res_models_and_iff in Hfun_del.
-  destruct Hfun_del as [_ Hforall].
-  assert (Hx_mdel : x ∉ world_dom (mdel : WorldT)).
-  {
-    subst mdel. apply res_restrict_delete_notin.
-  }
-  assert (Hdom_mdel :
-      world_dom (m : WorldT) = world_dom (mdel : WorldT) ∪ {[x]}).
-  {
-    pose proof (ty_denote_gas_ret_fvar_world_dom
-      (cty_depth τx) Δ τx x m Harg) as Hxm.
-    subst mdel. exact (res_restrict_delete_insert_dom m x Hxm).
-  }
-  assert (Hrestrict_mdel :
-      res_restrict m (world_dom (mdel : WorldT)) = mdel).
-  {
-    subst mdel. apply res_restrict_self_dom.
-  }
-  pose proof (res_models_forall_open_named_fresh
-    mdel m x _ Hforall Hx_mdel Hdom_mdel Hrestrict_mdel) as Hopened.
-  rewrite formula_open_impl in Hopened.
-  pose proof (app_arrow_arg_to_opened_antecedent
-    Σ Γ τx τ v1 x m Hwf_fun Hfresh Harg) as Harg_open.
-  pose proof (res_models_impl_elim m _ _ Hopened Harg_open) as Hres_open.
-  subst Δ.
-  eapply app_arrow_result_to_target; eauto.
-Qed.
+  (* Result-first Arrow denotation introduces two binders.  The outer binder
+     names the function value produced by [ret v1]; the inner binder names the
+     argument.  The old proof opened the only binder with [x], which is no
+     longer correct.  The intended proof is:
+       1. choose a fresh function slot [f] and use the result graph of
+          [ret v1] to obtain [ret f = ret v1];
+       2. open [arrow_value_denote_gas] at the existing argument [x] after
+          deleting [x] from the closure world, as in the old proof;
+       3. transport the result from [(ret f) x] to [v1 x] using the result
+          graph for [ret v1] and the existing result/equiv machinery. *)
+Admitted.
 
 Lemma fundamental_app_case Σ Γ τx τ v1 x :
   context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->

@@ -774,128 +774,13 @@ Lemma fix_self_rec_call_reducible_measure_step Σ Γ φx τ vf b t (L : aset) μ
     fix_self_rec_call_reducible_at_measure Σ Γ φx τ vf b t L μ') ->
   fix_self_rec_call_reducible_at_measure Σ Γ φx τ vf b t L μ.
 Proof.
-  intros Hτ Hwf Hbody_wf Hbody_IH Hsmaller.
-  unfold fix_self_rec_call_reducible_at_measure.
-  intros parent x Hx Hmin Hctx Harg Hzero.
-  set (Δx := (<[LVFree x := TBase b]>
-    (atom_env_to_lty_env (erase_ctx Γ)))).
-  set (τarg := CTInter (over_ty b φx)
-    (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x)))).
-  set (τself := fix_rec_call_ty b x (over_ty b φx) τ).
-  set (self := tret (vfix (TBase b →ₜ t) vf)).
-  pose proof (ty_denote_gas_guard_of_zero
-    Δx τself self parent Hzero) as Hguard.
-  pose proof (ty_denote_gas_scope_from_zero_any
-    (cty_depth τself) Δx τself self parent Hzero) as Hscope_full.
-  subst τself τarg self Δx.
-  unfold fix_rec_call_ty in Hguard, Hscope_full |- *.
-  cbn [cty_depth ty_denote_gas] in Hguard, Hscope_full |- *.
-  rewrite res_models_and_iff. split.
-  - exact Hguard.
-  - pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
-    eapply res_models_forall_rev_intro; [exact Hscope_body|].
-    exists (L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-      fv_value vf ∪ fv_cty (over_ty b φx) ∪ fv_cty τ ∪
-      world_dom (parent : WorldT)).
-    intros z Hz mz Hdom Hrestrict.
-    assert (Hle : parent ⊑ mz).
-    { rewrite <- Hrestrict. apply res_restrict_le. }
-    assert (Hz_mz : z ∈ world_dom (mz : WorldT)).
-    { rewrite Hdom. fix_self_in_union. }
-	    pose proof (formula_scoped_forall_open_res_le
-	      parent mz z _ Hscope_body Hle Hz_mz) as Hopen_scope.
-	    eapply res_models_impl_intro; [exact Hopen_scope|].
-	    intros Hrec_arg.
-	    assert (Hτx_lc : lc_context_ty (over_ty b φx)).
-		    {
-		      pose proof (context_typing_wf_context_ty Σ Γ
-		        (tret (vfix (TBase b →ₜ t) vf))
-		        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
-		      cbn [wf_context_ty_at] in Hτ_arrow.
-		      eapply wf_context_ty_at_lc. exact (proj1 Hτ_arrow).
-		    }
-	    assert (Hx_parent_dom : x ∈ world_dom (parent : WorldT)).
-	    {
-	      destruct Hmin as [[σmin [cmin [Hσmin [Hxσmin _]]]] _].
-	      rewrite <- (wfworld_store_dom parent σmin Hσmin).
-	      change (x ∈ dom (σmin : gmap atom value)).
-	      eapply elem_of_dom_2. exact Hxσmin.
-	    }
-	    assert (Hz_not_parent : z ∉ world_dom (parent : WorldT)).
-	    { fix_self_notin_union. }
-	    assert (Hzx_neq : z <> x).
-	    {
-	      intros ->. exact (Hz_not_parent Hx_parent_dom).
-	    }
-		    pose proof (fix_rec_open_arg_normalize
-		      Γ φx τ vf b t x z mz Hτx_lc ltac:(fix_self_notin_union)
-		      Hzx_neq
-		      ltac:(ctx_erasure_under_norm_in Hz; better_set_solver)
-		      Hrec_arg)
-		      as [Harg_z Hlt_z].
-	    assert (Hlt_env_closed :
-	        lty_env_closed
-	          (<[LVFree z := TBase b]>
-	            (<[LVFree x := TBase b]>
-	            (atom_env_to_lty_env (erase_ctx Γ))))).
-	    {
-	      apply lty_env_closed_insert_free.
-	      apply lty_env_closed_insert_free.
-	      apply atom_store_to_lvar_store_closed.
-	    }
-    assert (Hlt_gas_pos :
-        0 <
-        Nat.max
-          (cty_depth (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))))
-          (cty_depth τ)).
-    { cty_depth_solve. }
-	    destruct (fix_rec_arg_decreases_min
-	      (Nat.max
-	        (cty_depth (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar x))))
-	        (cty_depth τ))
-	      ((<[LVFree z := TBase b]>
-	        (<[LVFree x := TBase b]>
-	        (atom_env_to_lty_env (erase_ctx Γ)))))
-	      b x z μ parent mz Hzx_neq Hlt_env_closed Hlt_gas_pos Hle Hmin Hlt_z)
-	      as [μ' [Hμ'lt Hmin_z]].
-	    pose proof (context_typing_wf_ctx Σ Γ
-	      (tret (vfix (TBase b →ₜ t) vf))
-	      (CTArrow (over_ty b φx) τ) Hwf) as HwfctxΓ.
-	    pose proof (wf_ctx_under_basic Σ Γ HwfctxΓ) as HbasicΓ.
-	    pose proof (context_typing_wf_context_ty Σ Γ
-	      (tret (vfix (TBase b →ₜ t) vf))
-	      (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
-	    cbn [wf_context_ty_at] in Hτ_arrow.
-	    pose proof (wf_context_ty_at_fv_subset 0 (dom (erase_ctx Γ))
-	      (over_ty b φx) (proj1 Hτ_arrow)) as Hτxfv.
-	    pose proof (fix_rec_child_ctx_from_arg
-	      Σ Γ φx τ b x z parent mz HbasicΓ Hτxfv Hle Hctx Harg_z
-	      ltac:(fix_self_notin_union)) as Hctx_z.
-    pose proof (Hsmaller μ' Hμ'lt) as Hrec_smaller.
-    pose proof (Hbody_wf z ltac:(fix_self_notin_union)) as Hbody_wf_z.
-    pose proof (Hbody_IH z ltac:(fix_self_notin_union) mz Hctx_z)
-      as Hbody_arrow_z.
-    pose proof (fix_self_rec_call_zero
-      Σ Γ (over_ty b φx) τ vf b t mz z
-      ltac:(reflexivity) Hτ Hwf Hbody_wf_z
-      ltac:(fix_self_notin_union) Hctx_z) as Hzero_z.
-    unfold fix_self_rec_call_reducible_at_measure in Hrec_smaller.
-    pose proof (Hrec_smaller mz z ltac:(fix_self_notin_union)
-      Hmin_z Hctx_z Harg_z Hzero_z) as Hself_z.
-	    pose proof (fix_body_arrow_apply_self
-	      Σ Γ (over_ty b φx) τ vf b t mz z
-	      ltac:(reflexivity) Hτ Hwf Hbody_wf_z
-	      ltac:(fix_self_notin_union) Hctx_z Hbody_arrow_z Hself_z)
-	      as Hunfolded_z.
-	    eapply fix_rec_unfolded_result_to_open_goal.
-	    + exact Hτ.
-	    + exact Hwf.
-	    + exact Hzx_neq.
-	    + fix_self_notin_union.
-	    + fix_self_notin_union.
-	    + exact Hctx_z.
-	    + exact Hunfolded_z.
-Qed.
+  (* Result-first Arrow denotation changes the recursive-call type from a
+     direct argument implication into an outer result graph for the fix value
+     followed by [arrow_value_denote_gas]. The old world-min induction step
+     normalized [Hrec_arg] as if it were already the argument denotation.
+     The replacement proof should first open the self-result binder, then run
+     the old decreasing-argument/fiber argument inside that value denotation. *)
+Admitted.
 
 Lemma fix_self_rec_call_denotation_by_world_min_induction Σ Γ φx τ vf b t (L : aset) :
   erase_ty τ = t ->
