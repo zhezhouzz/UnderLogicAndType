@@ -1346,6 +1346,12 @@ Lemma res_product_le_mono (w1 w2 w1' w2' : WfWorld)
   res_product w1 w2 Hc ⊑ res_product w1' w2' Hc'.
 Proof. apply resA_product_le_mono. Qed.
 
+Lemma res_product_dom (w1 w2 : WfWorld)
+    (Hc : world_compat w1 w2) :
+  world_dom (res_product w1 w2 Hc : World) =
+  world_dom (w1 : World) ∪ world_dom (w2 : World).
+Proof. reflexivity. Qed.
+
 Lemma res_product_restrict_singleton_delete_dom
     (marg mframe : WfWorld) x
     (Hc : world_compat (res_restrict marg ({[x]} : aset))
