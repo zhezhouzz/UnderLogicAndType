@@ -131,6 +131,48 @@ Proof.
   apply elem_of_map. exists a. split; [reflexivity|exact Ha].
 Qed.
 
+Lemma typed_total_equiv_ret_value_result_alias_static
+    (Σ : lty_env) τ (m : WfWorldT) vx z :
+  wfworld_closed_on (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) m ->
+  lc_value vx ->
+  m ⊨ expr_result_formula (tret vx) (LVFree z) ->
+  m ⊨ ty_static_guard_formula Σ τ (tret (vfvar z)) ->
+  m ⊨ ty_denote_gas 0 Σ τ (tret vx) ->
+  typed_total_equiv_on Σ τ m (tret vx) (tret (vfvar z)).
+Proof.
+  intros Hclosed Hvx Hres Hstatic_tgt Hzero_v.
+  pose proof (tm_equiv_ret_value_result_alias
+    m vx z Hclosed Hvx Hres) as Heq_zv.
+  pose proof (tm_total_equiv_ret_value_result_alias
+    m vx z Hclosed Hvx Hres) as Htotal_zv.
+  assert (Heq_vz : tm_equiv_on m (tret vx) (tret (vfvar z))).
+  {
+    intros σ v Hσ.
+    pose proof (Heq_zv σ v Hσ) as [Hzv Hvz].
+    split; [exact Hvz|exact Hzv].
+  }
+  assert (Htotal_vz : tm_total_equiv_on m (tret vx) (tret (vfvar z))).
+  {
+    intros σ Hσ.
+    pose proof (Htotal_zv σ Hσ) as [Hzv Hvz].
+    split; [exact Hvz|exact Hzv].
+  }
+  assert (Hzero_z :
+      m ⊨ ty_denote_gas 0 Σ τ (tret (vfvar z))).
+  {
+    eapply ty_denote_gas_zero_transport_static_tm_equiv.
+    - exact Heq_vz.
+    - exact Htotal_vz.
+    - exact Hstatic_tgt.
+    - constructor. constructor.
+    - eapply ty_static_guard_fv_tm_subset. exact Hstatic_tgt.
+    - exact Hzero_v.
+  }
+  split; [exact Heq_vz|].
+  split; [exact Htotal_vz|].
+  split; [exact Hzero_v|exact Hzero_z].
+Qed.
+
 Lemma ty_static_guard_fv_subset
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
