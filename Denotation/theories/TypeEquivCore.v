@@ -7,12 +7,119 @@ From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
+Lemma res_models_lift_projection_eq
+    (m my : WfWorldT) (φ : FormulaT) :
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  m ⊨ φ ->
+  my ⊨ φ.
+Proof.
+  intros Hproj Hm.
+  eapply res_models_kripke; [|exact Hm].
+  apply res_le_of_projection_eq. exact Hproj.
+Qed.
+
 Lemma ty_denote_gas_saturate gas Σ τ e :
   cty_depth τ <= gas ->
   ty_denote_gas gas Σ τ e =
   ty_denote_gas (cty_depth τ) Σ τ e.
 Proof.
-Admitted.
+  assert (Hsat :
+    forall gas τ Σ e,
+      cty_depth τ <= gas ->
+      ty_denote_gas gas Σ τ e =
+      ty_denote_gas (cty_depth τ) Σ τ e).
+  {
+    intros fuel.
+    induction fuel as [fuel IH] using lt_wf_ind.
+    intros τ0 Σ0 e0 Hgas.
+    destruct fuel as [|gas']; destruct τ0; cbn [cty_depth] in Hgas; try lia;
+      cbn [cty_depth ty_denote_gas].
+    - reflexivity.
+    - reflexivity.
+    - rewrite (IH gas' ltac:(lia) τ0_1 Σ0 e0 ltac:(lia)).
+      rewrite (IH gas' ltac:(lia) τ0_2 Σ0 e0 ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) τ0_1 Σ0 e0 ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) τ0_2 Σ0 e0 ltac:(lia)).
+      reflexivity.
+    - rewrite (IH gas' ltac:(lia) τ0_1 Σ0 e0 ltac:(lia)).
+      rewrite (IH gas' ltac:(lia) τ0_2 Σ0 e0 ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) τ0_1 Σ0 e0 ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) τ0_2 Σ0 e0 ltac:(lia)).
+      reflexivity.
+    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTSum τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTSum τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_2)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTSum τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2))
+        ltac:(lia) (cty_shift 0 τ0_2)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTSum τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      reflexivity.
+    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
+        (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH gas' ltac:(lia) τ0_2
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+          (erase_ty τ0_1))
+        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
+        τ0_2 (typed_lty_env_bind
+          (relevant_env Σ0 (CTArrow τ0_1 τ0_2) e0)
+          (erase_ty τ0_1))
+        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
+      reflexivity.
+    - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
+        (cty_shift 0 τ0_1)
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+          (erase_ty τ0_1)) (tret (vbvar 0))
+        ltac:(rewrite cty_shift_preserves_depth; lia)).
+      rewrite (IH gas' ltac:(lia) τ0_2
+        (typed_lty_env_bind
+          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+          (erase_ty τ0_1))
+        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
+      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
+        τ0_2 (typed_lty_env_bind
+          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+          (erase_ty τ0_1))
+        (tapp_tm (tm_shift 0 e0) (vbvar 0)) ltac:(lia)).
+      reflexivity.
+  }
+  intros Hgas. apply Hsat. exact Hgas.
+Qed.
 
 Lemma ty_denote_gas_insert_fresh_lty_env_eq
     gas (Σ : lty_env) τ e x T :
@@ -22,11 +129,17 @@ Lemma ty_denote_gas_insert_fresh_lty_env_eq
   ty_denote_gas gas (<[LVFree x := T]> Σ) τ e =
   ty_denote_gas gas Σ τ e.
 Proof.
-Admitted.
+  intros _ Hxτ Hxe.
+  eapply ty_denote_gas_env_agree_on
+    with (X := relevant_lvars τ e).
+  - reflexivity.
+  - apply lty_env_restrict_lvars_insert_fresh.
+    apply relevant_lvars_insert_fresh; assumption.
+Qed.
 
 Lemma ty_denote_gas_zero_of_guard_formula
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
-  m ⊨ ty_guard_formula Σ τ e ->
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e ->
   m ⊨ ty_denote_gas 0 Σ τ e.
 Proof.
   intros Hguard.
@@ -40,7 +153,7 @@ Qed.
 Lemma ty_denote_gas_guard_formula
     gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
-  m ⊨ ty_guard_formula Σ τ e.
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e.
 Proof.
   destruct gas; cbn [ty_denote_gas]; rewrite res_models_and_iff; tauto.
 Qed.
@@ -48,11 +161,11 @@ Qed.
 Lemma ty_denote_gas_zero_of_guard
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ FAnd
-    (context_ty_wf_formula Σ τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula Σ)
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula Σ e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))) ->
   m ⊨ ty_denote_gas 0 Σ τ e.
@@ -66,11 +179,11 @@ Lemma ty_denote_gas_guard
     gas (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->
   m ⊨ FAnd
-    (context_ty_wf_formula Σ τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula Σ)
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula Σ e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))).
 Proof.
@@ -83,11 +196,11 @@ Lemma ty_denote_gas_guard_of_zero
     (Σ : lty_env) (τ : context_ty) (e : tm) (m : WfWorldT) :
   m ⊨ ty_denote_gas 0 Σ τ e ->
   m ⊨ FAnd
-    (context_ty_wf_formula Σ τ)
+    (context_ty_wf_formula (relevant_env Σ τ e) τ)
     (FAnd
-      (basic_world_formula Σ)
+      (basic_world_formula (relevant_env Σ τ e))
       (FAnd
-        (expr_basic_typing_formula Σ e
+        (expr_basic_typing_formula (relevant_env Σ τ e) e
           (erase_ty τ))
         (expr_total_formula e))).
 Proof.
@@ -188,7 +301,139 @@ Lemma result_ext_typed_of_guard
   extension_has_ltype (<[LVFree x := erase_ty τ]> ∅)
     (res_restrict m (ext_in Fx)) Fx.
 Proof.
-Admitted.
+  intros HΣclosed HxΣ HFx Hext Hguard.
+  destruct HFx as [Hx_fv [Hin Hout] Hrel].
+  pose proof Hguard as Hparts.
+  repeat rewrite res_models_and_iff in Hparts.
+  destruct Hparts as [_ [Hworld [Hbasic Htotal]]].
+  pose proof Hworld as Hworld_model.
+  pose proof Hbasic as Hbasic_model.
+  apply basic_world_formula_models_iff in Hworld as [_ [_ Hworld_typed]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HΣ_closed [_ Hty_e]].
+  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_e) as Hfv_e.
+  pose proof (expr_total_formula_to_atom_world e m Htotal) as Htotal_m.
+  unfold extension_has_ltype.
+  split.
+  - change (world_dom (res_restrict m (ext_in Fx) : WorldT) = ext_in Fx).
+    cbn [res_restrict resA_restrict rawA_restrict worldA_dom].
+    pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
+    set_solver.
+  - split.
+    + intros [k|y] Hy; cbn [lc_logic_var_key]; [|exact I].
+      change (LVBound k ∈ dom ({[LVFree x := erase_ty τ]} : gmap logic_var ty))
+        in Hy.
+      rewrite dom_singleton_L in Hy. set_solver.
+    + split.
+      * change (lvars_fv (dom ({[LVFree x := erase_ty τ]} : gmap logic_var ty)) =
+          ext_out Fx).
+        rewrite dom_singleton_L, lvars_fv_singleton_free, Hout. set_solver.
+      * intros σin mout Hσin HFrel.
+        assert (Hσin_dom : dom (σin : StoreT) = fv_tm e).
+        {
+          pose proof (wfworld_store_dom (res_restrict m (ext_in Fx))
+            σin Hσin) as Hdom.
+          change (dom (σin : StoreT) =
+            world_dom (res_restrict m (ext_in Fx) : WorldT)) in Hdom.
+          rewrite Hdom.
+          cbn [res_restrict resA_restrict rawA_restrict worldA_dom].
+          rewrite Hin.
+          pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
+          set_solver.
+        }
+        assert (Hσin_typed :
+            atom_store_has_ltype Σ σin).
+        {
+          simpl in Hσin.
+          destruct Hσin as [σm [Hσm Hrestrict]].
+          subst σin.
+          replace (store_restrict σm (ext_in Fx))
+            with (store_restrict σm (fv_tm e))
+            by (rewrite Hin; reflexivity).
+          eapply store_typed_restrict_fv_of_guard;
+            [exact Hworld_model|exact Hbasic_model|exact Hσm].
+        }
+        destruct Htotal_m as [_ Htotal_eval].
+        assert (Hexists_eval : exists v, tm_eval_in_store σin e v).
+        {
+          simpl in Hσin.
+          destruct Hσin as [σm [Hσm Hrestrict]].
+          subst σin.
+          pose proof (Htotal_eval (lstore_lift_free σm)
+            ltac:(exists σm; split; [exact Hσm|reflexivity])) as Hsn.
+          destruct (must_terminating_reaches_result _ Hsn) as [v Heval].
+          exists v.
+          pose proof (tm_eval_in_store_restrict_fv_subset
+            σm e v (ext_in Fx) ltac:(rewrite Hin; set_solver)) as Hequiv.
+          apply (proj2 Hequiv). exact Heval.
+        }
+        unfold lworld_has_type, worldA_has_type.
+        split.
+        -- change (dom ({[LVFree x := erase_ty τ]} : gmap logic_var ty) ⊆
+             worldA_dom (res_lift_free mout : LWorldT)).
+           rewrite dom_singleton_L, res_lift_free_dom.
+           pose proof (extA_rel_dom Fx σin mout) as Hdom_mout.
+           assert (Hσdom_ext : dom (σin : StoreT) = ext_in Fx).
+           { rewrite Hσin_dom, Hin. reflexivity. }
+           specialize (Hdom_mout Hσdom_ext HFrel).
+           change (world_dom (mout : WorldT) = ext_out Fx) in Hdom_mout.
+           intros z Hz.
+           rewrite elem_of_singleton in Hz. subst z.
+           unfold lvars_of_atoms. apply elem_of_map.
+           exists x. split; [reflexivity|].
+           change (x ∈ world_dom (mout : WorldT)).
+           rewrite Hdom_mout, Hout. set_solver.
+        -- intros τout Hτout.
+           destruct Hτout as [σout [Hσout ->]].
+           pose proof (expr_result_extension_apply_total_iff
+             e x Fx σin mout
+             {| expr_result_extension_witness_fresh := Hx_fv;
+                expr_result_extension_witness_shape := conj Hin Hout;
+                expr_result_extension_witness_rel := Hrel |}
+             Hσin_dom HFrel Hexists_eval σout) as Hout_iff.
+           apply Hout_iff in Hσout as [v [Heval_v ->]].
+           intros z U u HΣout Hu.
+           change (((<[LVFree x := erase_ty τ]>
+             (∅ : gmap logic_var ty) : lty_env)
+              : gmap logic_var ty) !! z = Some U) in HΣout.
+           destruct z as [k|y].
+           ++ rewrite lookup_insert_ne in HΣout by discriminate.
+              rewrite lookup_empty in HΣout. discriminate.
+           ++ destruct (decide (y = x)) as [->|Hyx].
+              ** change (((<[LVFree x := erase_ty τ]>
+                    (∅ : gmap logic_var ty) : gmap logic_var ty) !! LVFree x) =
+                    Some U) in HΣout.
+                 assert (Hlookup_x :
+                    ((<[LVFree x := erase_ty τ]>
+                       (∅ : gmap logic_var ty) : gmap logic_var ty) !! LVFree x) =
+                    Some (erase_ty τ)).
+                 {
+                   rewrite lookup_insert.
+                   destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
+                     [reflexivity|congruence].
+                 }
+                 rewrite Hlookup_x in HΣout.
+                 injection HΣout as HU.
+                 subst U.
+                 change (((lstore_lift_free ({[x := v]} : StoreT) : LStoreT)
+                   : gmap logic_var value) !! LVFree x = Some u) in Hu.
+                 rewrite lstore_lift_free_lookup_free in Hu.
+                 change (((<[x := v]> (∅ : gmap atom value) : gmap atom value)
+                   !! x) = Some u) in Hu.
+                 assert (Hlookup_v :
+                   ((<[x := v]> (∅ : gmap atom value) : gmap atom value) !! x) =
+                   Some v).
+                 {
+                   apply map_lookup_insert.
+                 }
+                 rewrite Hlookup_v in Hu. inversion Hu. subst u.
+                 eapply basic_tm_eval_value_type;
+                   [|exact Hσin_typed|exact Hty_e|exact Heval_v|].
+                 --- exact HΣ_closed.
+                 --- rewrite Hσin_dom. set_solver.
+              ** rewrite lookup_insert_ne in HΣout by congruence.
+                 rewrite lookup_empty in HΣout. discriminate.
+Qed.
 
 Lemma ret_fvar_typing_of_lookup
     (Σ : lty_env) x T (m : WfWorldT) :
@@ -349,7 +594,21 @@ Lemma ty_denote_gas_result_alias_guard
           (tret (vfvar x)) (erase_ty τ))
         (expr_total_formula (tret (vfvar x))))).
 Proof.
-Admitted.
+  intros _ Hlookup _ Hguard.
+  repeat rewrite res_models_and_iff in Hguard |- *.
+  destruct Hguard as [Hwf [Hworld [_ _]]].
+  split; [exact Hwf|].
+  split; [exact Hworld|].
+  pose proof (proj1 (basic_world_formula_models_iff Σ m) Hworld)
+    as [HlcΣ [HsubΣ _]].
+  assert (Hbasic_ret :
+      m ⊨ expr_basic_typing_formula Σ (tret (vfvar x)) (erase_ty τ)).
+  {
+    eapply ret_fvar_typing_of_lookup; eauto.
+  }
+  split; [exact Hbasic_ret|].
+  eapply expr_total_formula_tret_of_basic; eauto.
+Qed.
 
 
 End TypeDenote.

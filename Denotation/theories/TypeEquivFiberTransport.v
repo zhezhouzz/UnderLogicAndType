@@ -332,21 +332,26 @@ Proof.
   apply expr_basic_typing_formula_models_iff in Hbasic
     as [HlcΣ [_ Hty]].
   rewrite Herase in Hty.
-  pose proof (basic_tm_has_ltype_lc Σ e2
+  pose proof (basic_tm_has_ltype_lc _ e2
     (erase_ty τx →ₜ erase_ty τr) HlcΣ Hty) as Hlc_e2.
   eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].
   apply storeA_map_eq. intros v.
   unfold relevant_env, lty_env_restrict_lvars.
   rewrite !storeA_restrict_lookup.
   destruct (decide (v ∈ tm_lvars e2)) as [Hv|Hv]; [|reflexivity].
+  assert (Hv_source : v ∈ relevant_lvars τtop e2).
+  {
+    unfold relevant_lvars. set_solver.
+  }
   assert (Hv_target :
       v ∈ relevant_lvars (cty_open 0 y τr)
         (tapp_tm e2 (vfvar y))).
   {
     unfold relevant_lvars, tapp_tm.
-    cbn [tm_lvars tm_lvars_at value_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars_at].
     set_solver.
   }
+  rewrite decide_True by exact Hv_source.
   rewrite decide_True by exact Hv_target.
   destruct v as [k|a].
   - exfalso. exact ((tm_lvars_lc e2 Hlc_e2) (LVBound k) Hv).

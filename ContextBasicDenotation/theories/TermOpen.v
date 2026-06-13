@@ -992,6 +992,57 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma open_env_lift_expr_result_at_shift0_core η D e :
+  open_env_fresh_for_lvars (kmap S η) D ->
+  open_env_fresh_for_lvars η (tm_lvars e) ->
+  open_env_values_inj η ->
+  formula_open_env ((kmap S η))
+    (expr_result_formula_at D (tm_shift 0 e) (LVBound 0)) =
+  expr_result_formula_at (lvars_open_env (kmap S η) D)
+    (tm_shift 0 (open_tm_env η e)) (LVBound 0).
+Proof.
+  revert D e.
+  induction η as [|k x η Hnone Hfold IH] using fin_maps.map_fold_ind.
+  - intros D e _ _ _.
+    rewrite kmap_empty, formula_open_env_empty.
+    rewrite map_fold_empty, lvars_open_env_empty. reflexivity.
+  - intros D e HfreshD Hfreshe Hinj.
+    pose proof (open_env_values_inj_insert_inv η k x Hnone Hinj)
+      as [Hinjη Havoid].
+    rewrite open_env_lift_insert in HfreshD.
+    pose proof (open_env_fresh_for_lvars_insert_tail (kmap S η) (S k) x
+      D ltac:(apply open_env_lift_lookup_none; exact Hnone)
+      HfreshD) as HfreshDη.
+    pose proof (open_env_fresh_for_lvars_insert_tail η k x
+      (tm_lvars e) Hnone Hfreshe) as Hfresheη.
+    rewrite open_env_lift_insert.
+    rewrite formula_open_env_insert_fresh.
+    2:{ better_base_solver. }
+    2:{ better_base_solver. }
+    2:{ apply open_env_values_inj_lift. exact Hinjη. }
+    rewrite IH by (exact HfreshDη || exact Hfresheη || exact Hinjη).
+    rewrite formula_open_expr_result_formula_at.
+    2:{
+      pose proof (open_env_fresh_for_lvars_insert_head η k x
+        (tm_lvars e) Hnone Hfreshe) as Hhead.
+      rewrite tm_shift_fv.
+      rewrite <- tm_lvars_fv.
+      rewrite tm_lvars_open_tm_env; [exact Hhead|exact Hfresheη].
+    }
+    rewrite tm_shift_open_tm_fvar by lia.
+    replace (logic_var_open (S k) x (LVBound 0)) with (LVBound 0).
+    2:{ unfold swap. repeat destruct decide; try lia; try congruence. }
+    rewrite lvars_open_env_insert_fresh.
+    2:{ apply open_env_lift_lookup_none. exact Hnone. }
+    2:{
+      eapply (open_env_fresh_for_lvars_insert_head (kmap S η) (S k) x D).
+      - apply open_env_lift_lookup_none. exact Hnone.
+      - exact HfreshD.
+    }
+    rewrite open_tm_env_insert_fresh_plain by exact Hnone.
+    reflexivity.
+Qed.
+
 Lemma open_env_lift_expr_result_atom_shift0_core η e :
   open_env_fresh_for_lvars η (tm_lvars e) ->
   open_env_values_inj η ->

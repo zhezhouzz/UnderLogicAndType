@@ -12,7 +12,9 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
+  TypeEquivFiberBase
   TypeEquiv
+  ConstDenoteBase
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam.
 
@@ -398,6 +400,249 @@ Proof.
       exists σ. split; [exact Hσ2|reflexivity].
 Qed.
 
+Lemma ty_denote_gas_sum_open_left_branch_from_pulled
+    gas Σ τ1 τ2 e (m1 my1 : WfWorldT) y :
+  y ∉ fv_tm e ∪
+    lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+    fv_cty τ1 ∪ fv_cty τ2 ->
+  res_restrict my1 (world_dom (m1 : WorldT)) = m1 ->
+  my1 ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) ->
+  m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
+  my1 ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+        (erase_ty τ1))
+      (cty_shift 0 τ1) (tret (vbvar 0))).
+Proof.
+  (* Branch-local alias obligation for the left summand.
+
+     Use the pulled projection [my1 ↾ m1 = m1] to lift the branch denotation to
+     [my1], coarsen the opened branch result graph as needed, then call
+     [ty_denote_gas_result_alias] and normalize the opened branch environment
+     using [sum_branch_relevant_env_agree_open_one_core]. *)
+Admitted.
+
+Lemma ty_denote_gas_sum_open_right_branch_from_pulled
+    gas Σ τ1 τ2 e (m2 my2 : WfWorldT) y :
+  y ∉ fv_tm e ∪
+    lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+    fv_cty τ1 ∪ fv_cty τ2 ->
+  res_restrict my2 (world_dom (m2 : WorldT)) = m2 ->
+  my2 ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) ->
+  m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
+  my2 ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+        (erase_ty τ1))
+      (cty_shift 0 τ2) (tret (vbvar 0))).
+Proof.
+  (* Branch-local alias obligation for the right summand.
+
+     This is analogous to the left branch, but also uses the CTSum shape/guard
+     information to align the result slot typed with [erase_ty τ1] against
+     [τ2]'s erased type. *)
+Admitted.
+
+Lemma ctsum_open_result_graph_pullback_branches
+    Σ τ1 τ2 e (my1 my2 my : WfWorldT) y
+    (Hdef : raw_sum_defined my1 my2) :
+  res_sum my1 my2 Hdef ⊑ my ->
+  my ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) ->
+  my1 ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) /\
+  my2 ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)).
+Proof.
+  (* Exact result graphs are not ordinary Kripke-downward facts.  This lemma is
+     the precise place where the global result witness must be pulled back to
+     the already-constructed branch result worlds.  Proving it should use the
+     fact that [my1] and [my2] are pullbacks of [my] along the branch base
+     worlds, not a generic formula restriction argument. *)
+Admitted.
+
+Lemma ty_denote_gas_sum_open_result_split_from_pulled_branches
+    gas Σ τ1 τ2 e (m1 m2 my1 my2 my : WfWorldT) y
+    (Hdef : raw_sum_defined my1 my2) :
+  y ∉ fv_tm e ∪
+    lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+    fv_cty τ1 ∪ fv_cty τ2 ->
+  res_sum my1 my2 Hdef ⊑ my ->
+  res_restrict my1 (world_dom (m1 : WorldT)) = m1 ->
+  res_restrict my2 (world_dom (m2 : WorldT)) = m2 ->
+  my ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) ->
+  m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
+  m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
+  my ⊨ formula_open 0 y
+    (FPlus
+      (ty_denote_gas gas
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ1) (tret (vbvar 0)))
+      (ty_denote_gas gas
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ2) (tret (vbvar 0)))).
+Proof.
+  intros Hy Hle Hrestrict1 Hrestrict2 Hres Hbranch1 Hbranch2.
+  destruct (ctsum_open_result_graph_pullback_branches
+    Σ τ1 τ2 e my1 my2 my y Hdef Hle Hres) as [Hres1 Hres2].
+  rewrite formula_open_plus.
+  eapply res_models_plus_intro with (m1 := my1) (m2 := my2) (Hdef := Hdef).
+  - exact Hle.
+  - eapply ty_denote_gas_sum_open_left_branch_from_pulled; eauto.
+  - eapply ty_denote_gas_sum_open_right_branch_from_pulled; eauto.
+Qed.
+
+Lemma ty_denote_gas_sum_open_result_split_from_branches
+    gas Σ τ1 τ2 e (m1 m2 m my : WfWorldT) y
+    (Hdef : raw_sum_defined m1 m2) :
+  y ∉ fv_tm e ∪
+    lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+    fv_cty τ1 ∪ fv_cty τ2 ->
+  res_sum m1 m2 Hdef ⊑ m ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  my ⊨ formula_open 0 y
+    (expr_result_formula_at
+      (lvars_shift_from 0
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+      (tm_shift 0 e) (LVBound 0)) ->
+  m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
+  m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
+  my ⊨ formula_open 0 y
+    (FPlus
+      (ty_denote_gas gas
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ1) (tret (vbvar 0)))
+      (ty_denote_gas gas
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ2) (tret (vbvar 0)))).
+Proof.
+  intros Hy Hle Hdom Hrestrict Hres Hbranch1 Hbranch2.
+  assert (Hsum_my : res_sum m1 m2 Hdef ⊑ my).
+  {
+    eapply res_le_of_restrict_eq; [exact Hle|exact Hrestrict].
+  }
+  destruct (res_sum_pullback_subset_projection_full my m1 m2 Hdef Hsum_my)
+    as [Hsub1 [Hsub2 [Hdef_full Hle_full]]].
+  eapply ty_denote_gas_sum_open_result_split_from_pulled_branches; eauto.
+  - apply res_pullback_subset_projection_restrict.
+  - apply res_pullback_subset_projection_restrict.
+Qed.
+
+Lemma ty_denote_gas_sum_result_body_from_branch_refinement
+    gas Σ τ1 τ2 e (m1 m2 m : WfWorldT)
+    (Hdef : raw_sum_defined m1 m2) :
+  res_sum m1 m2 Hdef ⊑ m ->
+  m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
+  m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
+  m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
+  m ⊨
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+          (tm_shift 0 e) (LVBound 0))
+        (FPlus
+          (ty_denote_gas gas
+            (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+              (erase_ty τ1))
+            (cty_shift 0 τ1) (tret (vbvar 0)))
+          (ty_denote_gas gas
+            (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+              (erase_ty τ1))
+            (cty_shift 0 τ2) (tret (vbvar 0))))).
+Proof.
+  intros Hle Hzero Hbranch1 Hbranch2.
+  pose proof (ty_denote_gas_scope_from_zero_any
+    (S gas) Σ (CTSum τ1 τ2) e m Hzero) as Hscope_full.
+  cbn [ty_denote_gas] in Hscope_full.
+  pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_body.
+  eapply res_models_forall_rev_intro; [exact Hscope_body|].
+  exists
+    (world_dom (m : WorldT) ∪ fv_tm e ∪
+      lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+      lvars_fv (context_ty_lvars (CTSum τ1 τ2))).
+  intros y Hy my Hdom Hrestrict.
+  rewrite formula_open_impl.
+  assert (Hopened_scope :
+      formula_scoped_in_world my
+        (formula_open 0 y
+          (FImpl
+            (expr_result_formula_at
+              (lvars_shift_from 0
+                (dom (relevant_env Σ (CTSum τ1 τ2) e)))
+              (tm_shift 0 e) (LVBound 0))
+            (FPlus
+              (ty_denote_gas gas
+                (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+                  (erase_ty τ1))
+                (cty_shift 0 τ1) (tret (vbvar 0)))
+              (ty_denote_gas gas
+                (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+                  (erase_ty τ1))
+                (cty_shift 0 τ2) (tret (vbvar 0))))))).
+  {
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope_body.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. set_solver.
+  }
+  rewrite formula_open_impl in Hopened_scope.
+  eapply res_models_impl_intro; [exact Hopened_scope|].
+  intros Hres.
+  assert (Hfresh_split :
+      y ∉ fv_tm e ∪
+        lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+        fv_cty τ1 ∪ fv_cty τ2).
+  {
+    intros Hbad. apply Hy.
+    repeat rewrite elem_of_union in Hbad.
+    destruct Hbad as [[[He | Hrel] | Hτ1] | Hτ2].
+    - apply elem_of_union_l. apply elem_of_union_l.
+      apply elem_of_union_r. exact He.
+    - apply elem_of_union_l. apply elem_of_union_r. exact Hrel.
+    - apply elem_of_union_r.
+      apply lvars_fv_elem.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      apply elem_of_union_l.
+      apply lvars_fv_elem. exact Hτ1.
+    - apply elem_of_union_r.
+      apply lvars_fv_elem.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      apply elem_of_union_r.
+      apply lvars_fv_elem. exact Hτ2.
+  }
+  apply (ty_denote_gas_sum_open_result_split_from_branches
+    gas Σ τ1 τ2 e m1 m2 m my y Hdef Hfresh_split Hle Hdom Hrestrict Hres
+    Hbranch1 Hbranch2).
+Qed.
+
 Lemma ty_denote_gas_sum_intro_from_branch_refinement
     gas Σ τ1 τ2 e (m1 m2 m : WfWorldT)
     (Hdef : raw_sum_defined m1 m2) :
@@ -408,7 +653,26 @@ Lemma ty_denote_gas_sum_intro_from_branch_refinement
   m2 ⊨ ty_denote_gas gas Σ τ2 e ->
   m ⊨ ty_denote_gas gas Σ (CTSum τ1 τ2) e.
 Proof.
-Admitted.
+  intros Hle Hstatic Htotal Hbranch1 Hbranch2.
+  destruct gas as [|gas].
+  - apply ty_denote_gas_zero_of_guard.
+    eapply ty_guard_relevant_of_static_full_total; eauto.
+  - assert (Hzero_m : m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e).
+    {
+      apply ty_denote_gas_zero_of_guard.
+      eapply ty_guard_relevant_of_static_full_total; eauto.
+    }
+    pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch1) as Hguard1.
+    pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch2) as Hguard2.
+    repeat rewrite res_models_and_iff in Hguard1, Hguard2.
+    destruct Hguard1 as [_ [_ [_ Htotal1]]].
+    destruct Hguard2 as [_ [_ [_ Htotal2]]].
+    cbn [ty_denote_gas].
+    rewrite res_models_and_iff.
+    split.
+    + eapply ty_guard_relevant_of_static_full_total; eauto.
+    + eapply ty_denote_gas_sum_result_body_from_branch_refinement; eauto.
+Qed.
 
 Lemma fundamental_match_both_case Σ Γt Γf x τt τf et ef :
   context_typing_wf Σ (CtxSum Γt Γf)

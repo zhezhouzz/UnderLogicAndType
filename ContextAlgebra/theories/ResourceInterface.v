@@ -1185,6 +1185,27 @@ Lemma res_restrict_eq_of_le (m n : WfWorld) :
   res_restrict n (world_dom (m : World)) = m.
 Proof. apply resA_restrict_eq_of_le. Qed.
 
+Lemma res_le_of_restrict_eq (m n p : WfWorld) :
+  m ⊑ n ->
+  res_restrict p (world_dom (n : World)) = n ->
+  m ⊑ p.
+Proof.
+  intros Hmn Hnp.
+  assert (Hn_p : n ⊑ p).
+  {
+    rewrite <- Hnp. apply res_restrict_le.
+  }
+  etransitivity; eauto.
+Qed.
+
+Lemma res_le_of_projection_eq (m p : WfWorld) :
+  res_restrict p (world_dom (m : World)) = m ->
+  m ⊑ p.
+Proof.
+  intros Hproj.
+  eapply res_le_of_restrict_eq; [apply raw_le_refl|exact Hproj].
+Qed.
+
 Lemma res_le_store_lift
     (m n : WfWorld) (σ : StoreT) :
   m ⊑ n ->

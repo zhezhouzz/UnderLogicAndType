@@ -20,8 +20,9 @@ Definition ty_static_guard_formula
 Fixpoint ty_denote_gas
     (gas : nat) (Σ : lty_env) (τ : context_ty) (e : tm)
     {struct gas} : FormulaT :=
+  let Σg := relevant_env Σ τ e in
   FAnd
-    (ty_guard_formula Σ τ e)
+    (ty_guard_formula Σg τ e)
     (match gas with
     | 0 => FTrue
     | S gas' =>
@@ -29,14 +30,14 @@ Fixpoint ty_denote_gas
       | CTOver b φ =>
           FForall
             (FImpl
-              (expr_result_formula_at (dom Σ)
+              (expr_result_formula_at (lvars_shift_from 0 (dom Σg))
                 (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
                 (FOver (FAtom φ))))
       | CTUnder b φ =>
           FForall
             (FImpl
-              (expr_result_formula_at (dom Σ)
+              (expr_result_formula_at (lvars_shift_from 0 (dom Σg))
                 (tm_shift 0 e) (LVBound 0))
               (FFibVars (qual_vars φ ∖ {[LVBound 0]})
                 (FUnder (FAtom φ))))
@@ -49,10 +50,10 @@ Fixpoint ty_denote_gas
             (ty_denote_gas gas' Σ τ1 e)
             (ty_denote_gas gas' Σ τ2 e)
       | CTSum τ1 τ2 =>
-          let Σr := typed_lty_env_bind Σ (erase_ty τ1) in
+          let Σr := typed_lty_env_bind Σg (erase_ty τ1) in
           FForall
             (FImpl
-              (expr_result_formula_at (dom Σ)
+              (expr_result_formula_at (lvars_shift_from 0 (dom Σg))
                 (tm_shift 0 e) (LVBound 0))
               (FPlus
                 (ty_denote_gas gas' Σr
@@ -60,7 +61,7 @@ Fixpoint ty_denote_gas
                 (ty_denote_gas gas' Σr
                   (cty_shift 0 τ2) (tret (vbvar 0)))))
       | CTArrow τx τr =>
-          let Σx := typed_lty_env_bind Σ (erase_ty τx) in
+          let Σx := typed_lty_env_bind Σg (erase_ty τx) in
           FForall
             (FImpl
               (ty_denote_gas gas' Σx
@@ -68,7 +69,7 @@ Fixpoint ty_denote_gas
               (ty_denote_gas gas' Σx τr
                 (tapp_tm (tm_shift 0 e) (vbvar 0))))
       | CTWand τx τr =>
-          let Σx := typed_lty_env_bind Σ (erase_ty τx) in
+          let Σx := typed_lty_env_bind Σg (erase_ty τx) in
           FBWand 1
             (ty_denote_gas gas' Σx
               (cty_shift 0 τx) (tret (vbvar 0)))
@@ -92,13 +93,77 @@ Lemma formula_open_env_denot_guard η Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
   open_env_values_inj η ->
   formula_open_env η
-    (ty_guard_formula Σ τ e) =
+    (ty_guard_formula (relevant_env Σ τ e) τ e) =
   ty_guard_formula
-    (lty_env_open_lvars η Σ)
+    (relevant_env (lty_env_open_lvars η Σ)
+      (open_cty_env η τ) (open_tm_env η e))
     (open_cty_env η τ)
     (open_tm_env η e).
 Proof.
-Admitted.
+  intros Hfresh Hinj.
+  unfold ty_guard_formula.
+  rewrite !formula_open_env_and.
+  rewrite formula_open_env_context_ty_wf_formula.
+  2:{
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+    intros v Hv.
+    pose proof (relevant_env_dom_subset_direct Σ τ e).
+    unfold relevant_lvars in *.
+    set_solver.
+  }
+  2: exact Hinj.
+  rewrite formula_open_env_basic_world_formula.
+  2:{
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+    intros v Hv.
+    pose proof (relevant_env_dom_subset_direct Σ τ e).
+    set_solver.
+  }
+  2: exact Hinj.
+  rewrite formula_open_env_expr_basic_typing_formula.
+  2:{
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+    intros v Hv.
+    pose proof (relevant_env_dom_subset_direct Σ τ e).
+    unfold relevant_lvars in *.
+    set_solver.
+  }
+  2: exact Hinj.
+  rewrite formula_open_env_expr_total_formula.
+  2:{
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+    intros v Hv.
+    relevant_lvars_norm. better_set_solver.
+  }
+  2: exact Hinj.
+  rewrite relevant_env_open_env by exact Hfresh || exact Hinj.
+  rewrite open_cty_env_preserves_erasure.
+  reflexivity.
+Qed.
+
+Lemma relevant_env_result_domain_open_lift η Σ τ e :
+  open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
+  open_env_values_inj η ->
+  lvars_open_env (kmap S η)
+    (lvars_shift_from 0 (dom (relevant_env Σ τ e))) =
+  lvars_shift_from 0
+    (dom (relevant_env (lty_env_open_lvars η Σ)
+      (open_cty_env η τ) (open_tm_env η e))).
+Proof.
+  intros Hfresh Hinj.
+  rewrite <- open_env_shift_from_zero.
+  rewrite lvars_open_env_shift_from.
+  rewrite <- lty_env_open_lvars_dom.
+  rewrite relevant_env_open_env by exact Hfresh || exact Hinj.
+  reflexivity.
+Unshelve.
+  all: first [exact Hfresh | exact Hinj |
+    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+    intros v Hv;
+    pose proof (relevant_env_dom_subset_direct Σ τ e);
+    unfold relevant_lvars in *;
+    set_solver].
+Qed.
 
 Lemma formula_open_env_ty_denote_gas_zero η Σ τ e :
   open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
@@ -109,7 +174,13 @@ Lemma formula_open_env_ty_denote_gas_zero η Σ τ e :
     (open_cty_env η τ)
     (open_tm_env η e).
 Proof.
-Admitted.
+  intros Hfresh Hinj.
+  cbn [ty_denote_gas].
+  rewrite formula_open_env_and.
+  rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+  rewrite formula_open_env_true.
+  reflexivity.
+Qed.
 
 Ltac denot_open_env_child_fresh Hfresh :=
   eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
@@ -120,6 +191,7 @@ Ltac denot_open_env_child_fresh Hfresh :=
 Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
   let Hfreshφ := fresh "Hfreshφ" in
   let Hfreshe := fresh "Hfreshe" in
+  let HfreshD := fresh "HfreshD" in
   assert (Hfreshφ :
       open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ));
   [ apply open_env_lift_fresh_for_lvars_at_depth1;
@@ -131,19 +203,40 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
     [ eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
       unfold relevant_lvars; set_solver
     | cbn [ty_denote_gas];
+      match goal with
+      | |- context [
+          expr_result_formula_at
+            (lvars_shift_from 0 (dom (relevant_env ?Σ ?τ ?e0)))
+            (tm_shift 0 ?e0) (LVBound 0)] =>
+          assert (HfreshD :
+            open_env_fresh_for_lvars (kmap S η)
+              (lvars_shift_from 0 (dom (relevant_env Σ τ e0))));
+          [ rewrite <- open_env_shift_from_zero;
+            apply open_env_shift_from_fresh_for_lvars;
+            eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
+            intros v Hv;
+            pose proof (relevant_env_dom_subset_direct Σ τ e0);
+            unfold relevant_lvars in *;
+            set_solver
+          | idtac ]
+      end;
       rewrite formula_open_env_and;
       rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj);
       first [rewrite open_cty_env_over by exact Hinj
             |rewrite open_cty_env_under by exact Hinj];
 	      cbn [ty_denote_gas];
 	      rewrite formula_open_env_forall by exact Hinj;
+	      rewrite !formula_open_env_impl;
+	      rewrite open_env_lift_expr_result_at_shift0_core
+	        by (exact HfreshD || exact Hfreshe || exact Hinj);
+	      rewrite relevant_env_result_domain_open_lift
+	        by (exact Hfresh || exact Hinj);
+	      first [rewrite open_cty_env_over by exact Hinj
+	            |rewrite open_cty_env_under by exact Hinj];
 	      rewrite formula_open_env_fibvars;
 	      [|eapply open_env_fresh_for_lvars_mono; [|exact Hfreshφ]; set_solver];
 	      rewrite open_env_lift_qual_diff_bound0
 	        by exact Hfreshφ;
-	      rewrite !formula_open_env_impl;
-	      rewrite open_env_lift_expr_result_shift0_core
-	        by (exact Hfreshe || exact Hinj);
 	      first [rewrite formula_open_env_over
 	            |rewrite formula_open_env_under];
 	      rewrite formula_open_env_atom;
@@ -201,7 +294,7 @@ Proof.
   rewrite lvars_at_depth_union.
   rewrite tm_lvars_depth.
   rewrite tm_lvars_at_shift_under by lia.
-  rewrite lvars_at_depth_singleton_bound0_succ.
+  rewrite ?lvars_at_depth_singleton_bound0_succ.
   set_solver.
 Qed.
 
@@ -215,7 +308,7 @@ Proof.
   rewrite lvars_at_depth_union.
   rewrite tm_lvars_depth.
   rewrite tm_lvars_at_shift_under by lia.
-  rewrite lvars_at_depth_singleton_bound0_succ.
+  rewrite ?lvars_at_depth_singleton_bound0_succ.
   set_solver.
 Qed.
 
@@ -228,7 +321,208 @@ Lemma formula_open_env_ty_denote_gas η gas Σ τ e :
     (open_cty_env η τ)
     (open_tm_env η e).
 Proof.
-Admitted.
+  revert Σ τ e η.
+  induction gas as [|gas IH]; intros Σ τ e η Hfresh Hinj.
+  - apply formula_open_env_ty_denote_gas_zero; assumption.
+  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr].
+    + denot_open_env_qual_case η Hfresh Hinj φ e.
+    + denot_open_env_qual_case η Hfresh Hinj φ e.
+    + denot_open_env_binary_case IH Hfresh Hinj.
+    + denot_open_env_binary_case IH Hfresh Hinj.
+    + assert (HfreshΣg :
+        open_env_fresh_for_lvars η
+          (dom (relevant_env Σ (CTSum τ1 τ2) e))).
+      {
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        intros v Hv.
+        pose proof (relevant_env_dom_subset_direct Σ (CTSum τ1 τ2) e).
+        set_solver.
+      }
+	      assert (Hfresh_res :
+	        open_env_fresh_for_lvars ((kmap S η))
+	          (lvars_shift_from 0
+	            (dom (relevant_env Σ (CTSum τ1 τ2) e)))).
+	      {
+	        rewrite <- open_env_shift_from_zero.
+	        apply open_env_shift_from_fresh_for_lvars.
+	        exact HfreshΣg.
+	      }
+	      assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
+	      {
+	        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	        unfold relevant_lvars. set_solver.
+	      }
+      assert (Hfresh_l :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTSum τ1 τ2) e) (erase_ty τ1)) ∪
+           relevant_lvars (cty_shift 0 τ1) (tret (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        eapply sum_result_lift_support_subset.
+        cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+      }
+      assert (Hfresh_r :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTSum τ1 τ2) e) (erase_ty τ1)) ∪
+           relevant_lvars (cty_shift 0 τ2) (tret (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        eapply sum_result_lift_support_subset.
+        cbn [context_ty_lvars context_ty_lvars_at]. set_solver.
+      }
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_and.
+      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_sum by exact Hinj.
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_forall by exact Hinj.
+	      rewrite formula_open_env_impl.
+	      rewrite open_env_lift_expr_result_at_shift0_core.
+	      2: exact Hfresh_res.
+	      2: exact Hfreshe.
+	      2: exact Hinj.
+	      rewrite relevant_env_result_domain_open_lift
+	        by (exact Hfresh || exact Hinj).
+	      rewrite open_cty_env_sum by exact Hinj.
+	      rewrite formula_open_env_plus.
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTSum τ1 τ2) e) (erase_ty τ1))
+        (cty_shift 0 τ1) (tret (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_l.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTSum τ1 τ2) e) (erase_ty τ1))
+        (cty_shift 0 τ2) (tret (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_r.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
+      rewrite relevant_env_open_env by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_sum by exact Hinj.
+      rewrite open_cty_env_preserves_erasure.
+      rewrite !open_cty_env_lift_shift0_exact by exact Hinj.
+      rewrite !open_tm_env_lift_tret_bound0.
+      reflexivity.
+    + assert (HfreshΣg :
+        open_env_fresh_for_lvars η
+          (dom (relevant_env Σ (CTArrow τx τr) e))).
+      {
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        intros v Hv.
+        pose proof (relevant_env_dom_subset_direct Σ (CTArrow τx τr) e).
+        set_solver.
+      }
+      assert (Hfresh_arg :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)) ∪
+           relevant_lvars (cty_shift 0 τx) (tret (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        apply lvars_at_depth_arrow_arg_lift_support_subset.
+      }
+      assert (Hfresh_body :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx)) ∪
+           relevant_lvars τr
+             (tapp_tm (tm_shift 0 e) (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        apply arrow_body_lvars_lift_support_subset.
+      }
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_and.
+      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_arrow by exact Hinj.
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_forall by exact Hinj.
+      rewrite formula_open_env_impl.
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_arg.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_body.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
+      rewrite relevant_env_open_env by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_arrow by exact Hinj.
+      rewrite open_cty_env_preserves_erasure.
+      rewrite open_cty_env_lift_shift0_exact by exact Hinj.
+      rewrite open_tm_env_lift_tret_bound0.
+      rewrite open_tm_env_lift_tapp_shift_bvar0.
+      reflexivity.
+    + assert (HfreshΣg :
+        open_env_fresh_for_lvars η
+          (dom (relevant_env Σ (CTWand τx τr) e))).
+      {
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        intros v Hv.
+        pose proof (relevant_env_dom_subset_direct Σ (CTWand τx τr) e).
+        set_solver.
+      }
+      assert (Hfresh_arg :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e) (erase_ty τx)) ∪
+           relevant_lvars (cty_shift 0 τx) (tret (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        apply lvars_at_depth_wand_arg_lift_support_subset.
+      }
+      assert (Hfresh_body :
+        open_env_fresh_for_lvars ((kmap S η))
+          (dom (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e) (erase_ty τx)) ∪
+           relevant_lvars τr
+             (tapp_tm (tm_shift 0 e) (vbvar 0)))).
+      {
+        apply open_env_lift_fresh_for_lvars_at_depth1.
+        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+        apply lvars_at_depth_wand_body_lift_support_subset.
+      }
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_and.
+      rewrite formula_open_env_denot_guard by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_wand by exact Hinj.
+      cbn [ty_denote_gas].
+      rewrite formula_open_env_fbwand by exact Hinj.
+      rewrite !open_env_lift_by_one.
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTWand τx τr) e) (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_arg.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite (IH
+        (typed_lty_env_bind
+          (relevant_env Σ (CTWand τx τr) e) (erase_ty τx))
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0)) ((kmap S η))).
+      2: exact Hfresh_body.
+      2:{ apply open_env_values_inj_lift. exact Hinj. }
+      rewrite !typed_lty_env_bind_open_env_lift by exact HfreshΣg.
+      rewrite relevant_env_open_env by (exact Hfresh || exact Hinj).
+      rewrite open_cty_env_wand by exact Hinj.
+      rewrite open_cty_env_preserves_erasure.
+      rewrite open_cty_env_lift_shift0_exact by exact Hinj.
+      rewrite open_tm_env_lift_tret_bound0.
+      rewrite open_tm_env_lift_tapp_shift_bvar0.
+      reflexivity.
+Qed.
 
 Definition ty_denote
     (Δ : gmap atom ty) (τ : context_ty) (e : tm) : FormulaT :=
@@ -274,7 +568,59 @@ Lemma ty_denote_gas_env_agree_on gas Σ1 Σ2 τ e X :
   ty_denote_gas gas Σ1 τ e =
   ty_denote_gas gas Σ2 τ e.
 Proof.
-Admitted.
+  induction gas as [|gas IH] in Σ1, Σ2, τ, e, X |- *; intros Hsub Heq.
+  - cbn [ty_denote_gas].
+    unfold relevant_env, lty_env_restrict_lvars.
+    erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+    reflexivity.
+  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+      cbn [ty_denote_gas].
+    + unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + rewrite (IH Σ1 Σ2 τ1 e X).
+      2: { intros v Hv. apply Hsub.
+           unfold relevant_lvars in *.
+           cbn [context_ty_lvars context_ty_lvars_at] in *.
+           set_solver. }
+      2: exact Heq.
+      rewrite (IH Σ1 Σ2 τ2 e X).
+      2: { intros v Hv. apply Hsub.
+           unfold relevant_lvars in *.
+           cbn [context_ty_lvars context_ty_lvars_at] in *.
+           set_solver. }
+      2: exact Heq.
+      unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + rewrite (IH Σ1 Σ2 τ1 e X).
+      2: { intros v Hv. apply Hsub.
+           unfold relevant_lvars in *.
+           cbn [context_ty_lvars context_ty_lvars_at] in *.
+           set_solver. }
+      2: exact Heq.
+      rewrite (IH Σ1 Σ2 τ2 e X).
+      2: { intros v Hv. apply Hsub.
+           unfold relevant_lvars in *.
+           cbn [context_ty_lvars context_ty_lvars_at] in *.
+           set_solver. }
+      2: exact Heq.
+      unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+    + unfold relevant_env, lty_env_restrict_lvars.
+      erewrite storeA_restrict_eq_mono by (exact Hsub || exact Heq).
+      reflexivity.
+Qed.
 
 Lemma res_models_ty_denote_gas_env_agree_on
     gas Σ1 Σ2 τ e X (m : WfWorldT) :
@@ -419,6 +765,7 @@ Ltac normalize_denot_formula_lvars :=
   rewrite ?context_ty_lvars_depth;
   rewrite ?tm_lvars_at_shift_under by lia;
   rewrite ?context_ty_lvars_at_shift_under by lia;
+  rewrite ?lvars_at_depth_shift_under by lia;
   rewrite ?value_lvars_at_bound0_under;
   rewrite ?tm_lvars_at_tret_bound0_under;
   rewrite ?lvars_at_depth_dom_singleton_bound0_succ;
@@ -426,17 +773,161 @@ Ltac normalize_denot_formula_lvars :=
   rewrite ?lvars_at_depth_empty;
   cbn [context_ty_lvars_at tm_lvars_at value_lvars_at].
 
+Lemma expr_result_shift0_lvars_subset d D e :
+  formula_lvars_at (S d)
+    (expr_result_formula_at (lvars_shift_from 0 D)
+      (tm_shift 0 e) (LVBound 0)) ⊆
+  lvars_at_depth d D ∪ tm_lvars_at d e.
+Proof.
+  unfold expr_result_formula_at, expr_result_qual.
+  cbn [formula_lvars_at qual_vars qual_lvars].
+  rewrite lvars_at_depth_shift_under by lia.
+  rewrite lvars_at_depth_union.
+  rewrite (tm_lvars_depth (tm_shift 0 e) (S d)).
+  rewrite tm_lvars_at_shift_under by lia.
+  rewrite lvars_at_depth_singleton_bound0_succ.
+  set_solver.
+Qed.
+
 Lemma ty_denote_gas_lvars_subset gas d Σ τ e :
   formula_lvars_at d (ty_denote_gas gas Σ τ e) ⊆
-  lvars_at_depth d (dom Σ).
+  tm_lvars_at d e ∪ context_ty_lvars_at d τ.
 Proof.
-Admitted.
+  induction gas as [|gas IH] in d, Σ, τ, e |- *.
+  - cbn [ty_denote_gas formula_lvars_at].
+    normalize_denot_formula_lvars.
+    pose proof (lvars_at_depth_relevant_env_subset_relevant d Σ τ e)
+      as Hrel.
+    assert (Hrel_sub :
+      lvars_at_depth d (dom (relevant_env Σ τ e)) ⊆
+        tm_lvars_at d e ∪ context_ty_lvars_at d τ).
+    {
+      intros v Hv. specialize (Hrel v Hv). better_set_solver.
+    }
+    intros v Hv.
+    set_unfold in Hv.
+    set_unfold.
+    repeat match goal with
+    | Hcase : _ \/ _ |- _ => destruct Hcase as [Hcase|Hcase]
+    end;
+      try solve [specialize (Hrel_sub v Hcase); better_set_solver
+        | better_set_solver].
+  - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+      cbn [ty_denote_gas formula_lvars_at].
+    + normalize_denot_formula_lvars.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTOver b φ) e).
+      pose proof (expr_result_shift0_lvars_subset d
+        (dom (relevant_env Σ (CTOver b φ) e)) e).
+      pose proof (lvars_at_depth_mono (S d)
+        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
+        ltac:(set_solver)).
+      cbn [context_ty_lvars_at].
+      better_set_solver.
+    + normalize_denot_formula_lvars.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTUnder b φ) e).
+      pose proof (expr_result_shift0_lvars_subset d
+        (dom (relevant_env Σ (CTUnder b φ) e)) e).
+      pose proof (lvars_at_depth_mono (S d)
+        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
+        ltac:(set_solver)).
+      cbn [context_ty_lvars_at].
+      better_set_solver.
+    + unfold_formula_lvars_atoms.
+      repeat rewrite ?lvars_at_depth_union.
+      rewrite_tm_support.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTInter τ1 τ2) e).
+      pose proof (IH d Σ τ1 e).
+      pose proof (IH d Σ τ2 e).
+      cbn [context_ty_lvars_at].
+      set_solver.
+    + unfold_formula_lvars_atoms.
+      repeat rewrite ?lvars_at_depth_union.
+      rewrite_tm_support.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTUnion τ1 τ2) e).
+      pose proof (IH d Σ τ1 e).
+      pose proof (IH d Σ τ2 e).
+      cbn [context_ty_lvars_at].
+      set_solver.
+    + unfold_formula_lvars_atoms.
+      repeat rewrite ?lvars_at_depth_union.
+      rewrite_tm_support.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTSum τ1 τ2) e) as Hrel.
+      pose proof (expr_result_shift0_lvars_subset d
+        (dom (relevant_env Σ (CTSum τ1 τ2) e)) e) as Hresult.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ1) (tret (vbvar 0))) as Hleft.
+      rewrite tm_lvars_at_tret_bound0_under in Hleft.
+      rewrite context_ty_lvars_at_shift_under in Hleft by lia.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+          (erase_ty τ1))
+        (cty_shift 0 τ2) (tret (vbvar 0))) as Hright.
+      rewrite tm_lvars_at_tret_bound0_under in Hright.
+      rewrite context_ty_lvars_at_shift_under in Hright by lia.
+      cbn [context_ty_lvars_at] in Hrel |- *.
+      replace (d + 1) with (S d) by lia.
+      set_solver.
+    + unfold_formula_lvars_atoms.
+      repeat rewrite ?lvars_at_depth_union.
+      rewrite_tm_support.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTArrow τx τr) e) as Hrel.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTArrow τx τr) e)
+          (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0))) as Harg.
+      rewrite tm_lvars_at_tret_bound0_under in Harg.
+      rewrite context_ty_lvars_at_shift_under in Harg by lia.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTArrow τx τr) e)
+          (erase_ty τx))
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
+      pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
+      cbn [context_ty_lvars_at] in Hrel |- *.
+      replace (d + 1) with (S d) by lia.
+      set_solver.
+    + unfold_formula_lvars_atoms.
+      repeat rewrite ?lvars_at_depth_union.
+      rewrite_tm_support.
+      pose proof (lvars_at_depth_relevant_env_subset_relevant
+        d Σ (CTWand τx τr) e) as Hrel.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTWand τx τr) e)
+          (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0))) as Harg.
+      rewrite tm_lvars_at_tret_bound0_under in Harg.
+      rewrite context_ty_lvars_at_shift_under in Harg by lia.
+      pose proof (IH (S d)
+        (typed_lty_env_bind (relevant_env Σ (CTWand τx τr) e)
+          (erase_ty τx))
+        τr (tapp_tm (tm_shift 0 e) (vbvar 0))) as Hres.
+      pose proof (tm_lvars_at_tapp_shift0_bound0 e d) as Htapp.
+      cbn [context_ty_lvars_at] in Hrel |- *.
+      replace (d + 1) with (S d) by lia.
+      set_solver.
+Qed.
 
 Lemma ty_denote_gas_fv_subset gas Σ τ e :
   formula_fv (ty_denote_gas gas Σ τ e) ⊆
-  lvars_fv (dom Σ).
+  fv_tm e ∪ fv_cty τ.
 Proof.
-Admitted.
+  rewrite <- (formula_lvars_at_fv 0).
+  transitivity (lvars_fv (relevant_lvars τ e)).
+  - apply lvars_fv_mono.
+    transitivity (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ).
+    + apply ty_denote_gas_lvars_subset.
+    + change (tm_lvars_at 0 e) with (tm_lvars e).
+      change (context_ty_lvars_at 0 τ) with (context_ty_lvars τ).
+      relevant_lvars_norm. better_set_solver.
+  - relevant_lvars_norm. better_set_solver.
+Qed.
 
 Lemma fv_tm_ty_denote_gas_subset_formula gas Σ τ e :
   fv_tm e ⊆ formula_fv (ty_denote_gas gas Σ τ e).
@@ -450,7 +941,10 @@ Lemma relevant_env_fv_ty_denote_gas_subset_formula gas Σ τ e :
   lvars_fv (dom (relevant_env Σ τ e)) ⊆
   formula_fv (ty_denote_gas gas Σ τ e).
 Proof.
-Admitted.
+  destruct gas; cbn [ty_denote_gas]; unfold ty_guard_formula.
+  all: rewrite !formula_fv_and, formula_fv_basic_world_formula;
+    set_solver.
+Qed.
 
 Lemma ty_denote_gas_scope_of_guard
     gas Σ τsmall τbig e (m : WfWorldT) :
@@ -464,6 +958,25 @@ Lemma ty_denote_gas_scope_of_guard
         (expr_total_formula e))) ->
   formula_fv (ty_denote_gas gas Σ τsmall e) ⊆ world_dom (m : WorldT).
 Proof.
-Admitted.
+  intros Hτ Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [_ Htotal_e]]].
+  transitivity (fv_tm e ∪ fv_cty τsmall).
+  - apply ty_denote_gas_fv_subset.
+  - pose proof (res_models_fuel_scoped _ _ _ Htotal_e) as Hscope_e.
+    unfold formula_scoped_in_world in Hscope_e.
+    rewrite formula_fv_expr_total_formula, tm_lvars_fv in Hscope_e.
+    pose proof (context_ty_wf_formula_fv_cty_subset
+      (relevant_env Σ τbig e) τbig m Hwf) as Hτbig_fv.
+    pose proof (proj1 (basic_world_formula_models_iff
+      (relevant_env Σ τbig e) m) Hworld)
+      as [_ [Hworld_dom _]].
+    assert (Hτsmall_fv : fv_cty τsmall ⊆ fv_cty τbig).
+    {
+      rewrite <- !context_ty_lvars_fv.
+      apply lvars_fv_mono. exact Hτ.
+    }
+    set_solver.
+Qed.
 
 End TypeDenoteSupport.

@@ -43,25 +43,26 @@ Definition tm_fiber_equiv_on
       tm_fiber_result_on m X e2 σ0 v.
 
 Definition tm_result_refines_projected_on
-    (m : WfWorldT) (Dinput Dobs : lvset) (e_src e_tgt : tm) : Prop :=
+    (m : WfWorldT) (D : lvset) (e_src e_tgt : tm) : Prop :=
   forall y (my_src : WfWorldT),
-    y ∉ fv_tm e_src ∪ fv_tm e_tgt ∪ lvars_fv Dinput ->
+    y ∉ world_dom (m : WorldT) ∪
+      fv_tm e_src ∪ fv_tm e_tgt ∪ lvars_fv D ->
     world_dom (my_src : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
     res_restrict my_src (world_dom (m : WorldT)) = m ->
-    my_src ⊨ expr_result_formula_at Dinput e_src (LVFree y) ->
+    my_src ⊨ expr_result_formula_at (D ∪ tm_lvars e_src) e_src (LVFree y) ->
     exists my_tgt : WfWorldT,
       world_dom (my_tgt : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
         res_restrict my_tgt (world_dom (m : WorldT)) = m /\
-        my_tgt ⊨ expr_result_formula_at Dinput e_tgt (LVFree y) /\
+        my_tgt ⊨ expr_result_formula_at (D ∪ tm_lvars e_tgt) e_tgt (LVFree y) /\
         res_restrict my_tgt
-          (lvars_fv Dinput ∪ lvars_fv Dobs ∪ {[y]}) =
+          (lvars_fv D ∪ {[y]}) =
         res_restrict my_src
-          (lvars_fv Dinput ∪ lvars_fv Dobs ∪ {[y]}).
+          (lvars_fv D ∪ {[y]}).
 
 Definition tm_result_equiv_projected_on
-    (m : WfWorldT) (Dinput Dobs : lvset) (e1 e2 : tm) : Prop :=
-  tm_result_refines_projected_on m Dinput Dobs e1 e2 /\
-  tm_result_refines_projected_on m Dinput Dobs e2 e1.
+    (m : WfWorldT) (D : lvset) (e1 e2 : tm) : Prop :=
+  tm_result_refines_projected_on m D e1 e2 /\
+  tm_result_refines_projected_on m D e2 e1.
 
 Definition typed_total_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT)
@@ -71,35 +72,40 @@ Definition typed_total_equiv_on
   m ⊨ ty_denote_gas 0 Σ τ e1 /\
   m ⊨ ty_denote_gas 0 Σ τ e2.
 
-(** Type-level term transport is driven by formula-level result graph
-    correspondence at the environment domain used by [ty_denote_gas], observed
-    only through the variables of the target type.  This is not full result
-    graph equality: witnesses may differ outside [FV τ] and the fresh result
-    slot.  The low-level correspondence is still exact in both directions,
-    which is essential because type denotation contains both over- and
-    under-approximate refinements.  Do not replace it by [res_subset]
-    reasoning: exact result formulas are not stable under deleting
-    nondeterministic alternatives. *)
+(** The main type-level transport premise is exact result-set equality inside
+    each [FV τ]-fiber.  This is intentionally stronger and simpler than the
+    projected witness relation used inside Over/Under/Sum: the latter is a
+    derived view of this fiber equality, not the public transport premise.
+    The two gas-zero denotations provide the source/target guards, including
+    strong totality, so [tm_total_equiv_on] is not part of this record. *)
 Definition typed_fiber_equiv_on
     (Σ : lty_env) (τ : context_ty) (m : WfWorldT) (e1 e2 : tm) : Prop :=
-  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2 /\
-  tm_total_equiv_on m e1 e2 /\
+  tm_fiber_equiv_on m (lvars_fv (context_ty_lvars τ)) e1 e2 /\
   m ⊨ ty_denote_gas 0 Σ τ e1 /\
   m ⊨ ty_denote_gas 0 Σ τ e2.
 
 Lemma typed_fiber_equiv_intro
     Σ τ m e1 e2 :
-  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2 ->
-  tm_total_equiv_on m e1 e2 ->
+  tm_fiber_equiv_on m (lvars_fv (context_ty_lvars τ)) e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1 ->
   m ⊨ ty_denote_gas 0 Σ τ e2 ->
   typed_fiber_equiv_on Σ τ m e1 e2.
 Proof.
-  intros Hres Htotal Hzero1 Hzero2.
+  intros Hfib Hzero1 Hzero2.
   unfold typed_fiber_equiv_on.
-  split; [exact Hres|].
-  split; [exact Htotal|].
+  split; [exact Hfib|].
   split; assumption.
+Qed.
+
+Lemma typed_fiber_equiv_sym
+    Σ τ m e1 e2 :
+  typed_fiber_equiv_on Σ τ m e1 e2 ->
+  typed_fiber_equiv_on Σ τ m e2 e1.
+Proof.
+  intros [Hfib [Hzero1 Hzero2]].
+  split.
+  - intros σ0 Hσ0 v. symmetry. apply Hfib. exact Hσ0.
+  - split; assumption.
 Qed.
 
 Lemma tm_fiber_equiv_on_refl m X e :
@@ -460,63 +466,81 @@ Proof.
         exact Heval_u.
 Qed.
 
+Lemma expr_result_formula_msubst_store_to_atom
+    (mfib : WfWorldT) D e x σ :
+  lc_lvars D ->
+  lc_tm e ->
+  x ∉ dom (σ : StoreT) ->
+  dom (σ : StoreT) = lvars_fv (D ∪ tm_lvars e) ->
+  mfib ⊨ formula_msubst_store (store_restrict σ (fv_tm e))
+    (expr_result_formula e (LVFree x)) ->
+  mfib ⊨ formula_msubst_store σ
+    (FAtom (expr_result_qual e (LVFree x))).
+Proof.
+  intros HlcD Hlc_e Hxσ Hdomσ Hplain.
+  rewrite <- (formula_msubst_store_expr_result_formula_restrict σ e x)
+    in Hplain by exact Hxσ.
+  unfold expr_result_formula, expr_result_formula_at in Hplain.
+  rewrite formula_msubst_store_fibvars in Hplain.
+  assert (Hempty :
+      tm_lvars e ∖ lvars_of_atoms (dom (σ : StoreT)) = ∅).
+  {
+    rewrite Hdomσ.
+    rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    rewrite lc_lvars_of_atoms_fv_eq.
+    - set_solver.
+    - intros v Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      + exact (HlcD v Hv).
+      + unfold lvars_of_atoms in Hv.
+        apply elem_of_map in Hv as [a [-> _]]. exact I.
+  }
+  rewrite Hempty in Hplain.
+  apply res_models_fibvars_empty_elim in Hplain.
+  exact Hplain.
+Qed.
+
 Lemma typed_fiber_equiv_total_equiv
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   tm_total_equiv_on m e1 e2.
-Proof. intros [_ [Htotal _]]. exact Htotal. Qed.
+Proof.
+  intros Hequiv.
+  destruct Hequiv as [_ [Hzero1 Hzero2]].
+  pose proof (ty_denote_gas_total_guard_of_zero Σ τ e1 m Hzero1)
+    as Htotal1.
+  pose proof (ty_denote_gas_total_guard_of_zero Σ τ e2 m Hzero2)
+    as Htotal2.
+  intros σ Hσ.
+  apply expr_total_formula_to_atom_world in Htotal1.
+  apply expr_total_formula_to_atom_world in Htotal2.
+  destruct Htotal1 as [_ Hstores1].
+  destruct Htotal2 as [_ Hstores2].
+  assert (Hlift :
+      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
+  { exists σ. split; [exact Hσ | reflexivity]. }
+  split; intros _.
+  - exact (Hstores2 (lstore_lift_free σ) Hlift).
+  - exact (Hstores1 (lstore_lift_free σ) Hlift).
+Qed.
 
-Lemma typed_fiber_equiv_result_projected
+Lemma typed_fiber_equiv_fiber
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
-  tm_result_equiv_projected_on m (dom Σ) (context_ty_lvars τ) e1 e2.
-Proof. intros [Hres _]. exact Hres. Qed.
-
-Lemma tm_result_refines_projected_on_obs_mono
-    m Dinput Dsmall Dbig e1 e2 :
-  Dsmall ⊆ Dbig ->
-  tm_result_refines_projected_on m Dinput Dbig e1 e2 ->
-  tm_result_refines_projected_on m Dinput Dsmall e1 e2.
-Proof.
-  intros Hsub Hbig y my Hy Hdom Hrestrict Hres.
-  destruct (Hbig y my Hy Hdom Hrestrict Hres)
-    as [my_tgt [Hdom_tgt [Hrestrict_tgt [Hres_tgt Hproj_big]]]].
-  exists my_tgt. split; [exact Hdom_tgt|].
-  split; [exact Hrestrict_tgt|].
-  split; [exact Hres_tgt|].
-  eapply res_restrict_eq_subset; [|exact Hproj_big].
-  intros a Ha.
-  repeat rewrite elem_of_union in Ha |- *.
-  destruct Ha as [[Ha|Ha]|Ha].
-  - left. left. exact Ha.
-  - left. right.
-    apply lvars_fv_elem.
-    apply Hsub.
-    apply lvars_fv_elem. exact Ha.
-  - right. exact Ha.
-Qed.
-
-Lemma tm_result_equiv_projected_on_obs_mono
-    m Dinput Dsmall Dbig e1 e2 :
-  Dsmall ⊆ Dbig ->
-  tm_result_equiv_projected_on m Dinput Dbig e1 e2 ->
-  tm_result_equiv_projected_on m Dinput Dsmall e1 e2.
-Proof.
-  intros Hsub [H12 H21].
-  split; eapply tm_result_refines_projected_on_obs_mono; eauto.
-Qed.
+  tm_fiber_equiv_on m (lvars_fv (context_ty_lvars τ)) e1 e2.
+Proof. intros [Hfib _]. exact Hfib. Qed.
 
 Lemma typed_fiber_equiv_zero_src
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e1.
-Proof. intros [_ [_ [Hzero _]]]. exact Hzero. Qed.
+Proof. intros [_ [Hzero _]]. exact Hzero. Qed.
 
 Lemma typed_fiber_equiv_zero_tgt
     Σ τ m e1 e2 :
   typed_fiber_equiv_on Σ τ m e1 e2 ->
   m ⊨ ty_denote_gas 0 Σ τ e2.
-Proof. intros [_ [_ [_ Hzero]]]. exact Hzero. Qed.
+Proof. intros [_ [_ Hzero]]. exact Hzero. Qed.
 
 Lemma typed_fiber_equiv_term_lc
     Σ τ m e1 e2 :
@@ -561,13 +585,17 @@ Proof.
     as [_ [_ Hty2]].
   pose proof (basic_tm_has_ltype_lvars _ _ _ Hty1) as Hfv1.
   pose proof (basic_tm_has_ltype_lvars _ _ _ Hty2) as Hfv2.
+  pose proof (relevant_env_dom_subset_direct Σ τ e1) as Hrel1.
+  pose proof (relevant_env_dom_subset_direct Σ τ e2) as Hrel2.
   intros x Hx.
   apply elem_of_union in Hx as [Hx|Hx].
   - apply lvars_fv_elem.
+    apply Hrel1.
     apply Hfv1.
     unfold lvars_of_atoms. apply elem_of_map.
     exists x. split; [reflexivity|exact Hx].
   - apply lvars_fv_elem.
+    apply Hrel2.
     apply Hfv2.
     unfold lvars_of_atoms. apply elem_of_map.
     exists x. split; [reflexivity|exact Hx].
@@ -595,20 +623,6 @@ Proof.
     apply elem_of_map in Hv as [x [-> Hx]].
     apply lvars_fv_elem.
     apply Hfv. apply elem_of_union_r. exact Hx.
-Qed.
-
-Lemma typed_fiber_equiv_project
-    Σ τsmall τbig m e1 e2 :
-  context_ty_lvars τsmall ⊆ context_ty_lvars τbig ->
-  m ⊨ ty_denote_gas 0 Σ τsmall e1 ->
-  m ⊨ ty_denote_gas 0 Σ τsmall e2 ->
-  typed_fiber_equiv_on Σ τbig m e1 e2 ->
-  typed_fiber_equiv_on Σ τsmall m e1 e2.
-Proof.
-  intros Hobs Hzero_src Hzero_tgt [Hres [Htotal _]].
-  split; [eapply tm_result_equiv_projected_on_obs_mono; eauto|].
-  split; [exact Htotal|].
-  split; assumption.
 Qed.
 
 Lemma tm_total_equiv_of_total_formulas
@@ -910,6 +924,83 @@ Lemma typed_total_equiv_total_equiv
   typed_total_equiv_on Σ τ m e1 e2 ->
   tm_total_equiv_on m e1 e2.
 Proof. intros [_ [Htotal _]]. exact Htotal. Qed.
+
+Lemma typed_total_equiv_term_lc
+    Σ τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  lc_tm e1 /\ lc_tm e2.
+Proof.
+  intros Hequiv.
+  pose proof (typed_total_equiv_source_zero _ _ _ _ _ Hequiv) as Hzero1.
+  pose proof (typed_total_equiv_target_zero _ _ _ _ _ Hequiv) as Hzero2.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1) as Hguard1.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2) as Hguard2.
+  repeat rewrite res_models_and_iff in Hguard1.
+  repeat rewrite res_models_and_iff in Hguard2.
+  destruct Hguard1 as [_ [_ [Hbasic1 _]]].
+  destruct Hguard2 as [_ [_ [Hbasic2 _]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic1
+    as [HlcΣ1 [_ Hty1]].
+  apply expr_basic_typing_formula_models_iff in Hbasic2
+    as [HlcΣ2 [_ Hty2]].
+  split.
+  - eapply basic_tm_has_ltype_lc; [exact HlcΣ1|exact Hty1].
+  - eapply basic_tm_has_ltype_lc; [exact HlcΣ2|exact Hty2].
+Qed.
+
+Lemma typed_total_equiv_term_scope
+    Σ τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hequiv.
+  pose proof (typed_total_equiv_source_zero _ _ _ _ _ Hequiv) as Hzero1.
+  pose proof (typed_total_equiv_target_zero _ _ _ _ _ Hequiv) as Hzero2.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e1 m Hzero1) as Hguard1.
+  pose proof (ty_denote_gas_guard_of_zero Σ τ e2 m Hzero2) as Hguard2.
+  repeat rewrite res_models_and_iff in Hguard1.
+  repeat rewrite res_models_and_iff in Hguard2.
+  destruct Hguard1 as [_ [Hworld1 [Hbasic1 _]]].
+  destruct Hguard2 as [_ [Hworld2 [Hbasic2 _]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic1
+    as [_ [_ Hty1]].
+  apply expr_basic_typing_formula_models_iff in Hbasic2
+    as [_ [_ Hty2]].
+  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty1) as Hfv1.
+  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty2) as Hfv2.
+  apply basic_world_formula_models_iff in Hworld1 as [_ [Hdom1 _]].
+  apply basic_world_formula_models_iff in Hworld2 as [_ [Hdom2 _]].
+  intros x Hx.
+  apply elem_of_union in Hx as [Hx|Hx].
+  - apply Hdom1. apply lvars_fv_elem.
+    apply Hfv1. unfold lvars_of_atoms.
+    apply elem_of_map. exists x. split; [reflexivity|exact Hx].
+  - apply Hdom2. apply lvars_fv_elem.
+    apply Hfv2. unfold lvars_of_atoms.
+    apply elem_of_map. exists x. split; [reflexivity|exact Hx].
+Qed.
+
+Lemma typed_total_equiv_term_lc_lvars
+    Σ τ m e1 e2 :
+  typed_total_equiv_on Σ τ m e1 e2 ->
+  lc_tm e1 /\ lc_tm e2.
+Proof.
+  apply typed_total_equiv_term_lc.
+Qed.
+
+Lemma typed_fiber_equiv_of_tm_equiv
+    Σ τ m e1 e2 :
+  tm_equiv_on m e1 e2 ->
+  m ⊨ ty_denote_gas 0 Σ τ e1 ->
+  m ⊨ ty_denote_gas 0 Σ τ e2 ->
+  typed_fiber_equiv_on Σ τ m e1 e2.
+Proof.
+  intros Heq Hzero1 Hzero2.
+  apply typed_fiber_equiv_intro.
+  - apply tm_equiv_on_to_fiber_equiv. exact Heq.
+  - exact Hzero1.
+  - exact Hzero2.
+Qed.
 
 Lemma tm_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
@@ -1882,6 +1973,110 @@ Proof.
 		          apply elem_of_dom in H0 as [? Hbad].
 		          rewrite Hτvx in Hbad. discriminate.
 		        }
+Qed.
+
+Lemma expr_result_formula_at_of_result_extends
+    D e x F (m mx : WfWorldT) :
+  lc_lvars D ->
+  lc_tm e ->
+  lvars_fv D ⊆ world_dom (m : WorldT) ->
+  fv_tm e ⊆ world_dom (m : WorldT) ->
+  x ∉ lvars_fv D ∪ fv_tm e ->
+  expr_result_extension_witness e x F ->
+  res_extend_by m F mx ->
+  expr_total_on_atom_world e m ->
+  wfworld_closed_on (fv_tm e) m ->
+  mx ⊨ expr_result_formula_at (D ∪ tm_lvars e) e (LVFree x).
+Proof.
+  intros HlcD Hlc_e HDm Hfv_m HxD HF Hext Htotal Hclosed.
+  apply res_models_FFibVars_intro.
+  - unfold formula_scoped_in_world.
+    change (formula_fv (expr_result_formula_at (D ∪ tm_lvars e) e (LVFree x)) ⊆
+      world_dom (mx : WorldT)).
+    rewrite formula_fv_expr_result_formula_at.
+    intros a Ha.
+    pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
+    destruct HF as [_ [Hin Hout] _].
+    rewrite Hdom_mx.
+    change (extA_out F) with (ext_out F).
+    rewrite Hout.
+    rewrite lvars_fv_union in Ha.
+    apply elem_of_union in Ha as [HaD|HaQ].
+    + apply elem_of_union in HaD as [HaD|HaE].
+      * apply elem_of_union_l. exact (HDm a HaD).
+      * apply elem_of_union_l. apply Hfv_m.
+        rewrite <- tm_lvars_fv. exact HaE.
+    + rewrite lvars_fv_union in HaQ.
+      apply elem_of_union in HaQ as [HaE|Hax].
+      * apply elem_of_union_l. apply Hfv_m.
+        rewrite <- tm_lvars_fv. exact HaE.
+      * apply elem_of_union_r.
+        rewrite <- lvars_fv_singleton_free. exact Hax.
+  - intros v Hv.
+    apply elem_of_union in Hv as [Hv|Hv].
+    + exact (HlcD v Hv).
+    + exact (tm_lvars_lc e Hlc_e v Hv).
+  - intros σ mfib Hproj.
+    assert (HlcDe : lc_lvars (D ∪ tm_lvars e)).
+    {
+      intros v Hv.
+      apply elem_of_union in Hv as [Hv|Hv].
+      - exact (HlcD v Hv).
+      - exact (tm_lvars_lc e Hlc_e v Hv).
+    }
+    assert (HXmx :
+        lvars_fv (D ∪ tm_lvars e) ⊆ world_dom (mx : WorldT)).
+    {
+      intros a Ha.
+      pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
+      rewrite Hdom_mx.
+      apply elem_of_union_l.
+      rewrite lvars_fv_union in Ha.
+      apply elem_of_union in Ha as [Ha|Ha].
+      - exact (HDm a Ha).
+      - apply Hfv_m. rewrite <- tm_lvars_fv. exact Ha.
+    }
+    destruct Hproj as [Hproj_store Hfib_eq].
+    pose proof (wfworld_store_dom
+      (res_restrict mx (lvars_fv (D ∪ tm_lvars e))) σ Hproj_store)
+      as Hdomσ.
+    change (dom (σ : StoreT) =
+      world_dom (res_restrict mx (lvars_fv (D ∪ tm_lvars e)) : WorldT))
+      in Hdomσ.
+    rewrite res_restrict_dom in Hdomσ.
+    assert (Hdomσ_eq : dom (σ : StoreT) = lvars_fv (D ∪ tm_lvars e)).
+    {
+      rewrite Hdomσ.
+      apply set_eq. intros a. split.
+      - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+      - intros Ha. apply elem_of_intersection. split; [exact (HXmx a Ha)|exact Ha].
+    }
+    assert (Hxσ : x ∉ dom (σ : StoreT)).
+    {
+      rewrite Hdomσ_eq. intros Hx.
+      apply HxD.
+      rewrite lvars_fv_union in Hx.
+      apply elem_of_union in Hx as [Hx|Hx].
+      - apply elem_of_union_l. exact Hx.
+      - apply elem_of_union_r. rewrite <- tm_lvars_fv. exact Hx.
+    }
+    pose proof (expr_result_extension_fiber_models_result_slot
+      e x F m mx mx mfib
+      (lvars_fv (D ∪ tm_lvars e)) σ
+      HF Hext Hlc_e Htotal Hclosed
+      ltac:(rewrite ?lvars_fv_union;
+        rewrite (tm_lvars_lc_eq_atoms e Hlc_e);
+        rewrite ?lvars_fv_of_atoms; set_solver)
+      ltac:(set_solver)
+      ltac:(apply res_restrict_eq_of_le; apply raw_le_refl)
+      (conj Hproj_store Hfib_eq)) as Hplain.
+    eapply (expr_result_formula_msubst_store_to_atom
+      mfib D e x σ).
+    + exact HlcD.
+    + exact Hlc_e.
+    + exact Hxσ.
+    + exact Hdomσ_eq.
+    + exact Hplain.
 Qed.
 
 Lemma expr_result_formula_msubst_alias_ret_fvar

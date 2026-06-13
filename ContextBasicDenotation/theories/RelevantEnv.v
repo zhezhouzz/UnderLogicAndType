@@ -1536,6 +1536,151 @@ Proof.
       { set_solver. }
 Qed.
 
+Lemma sum_branch_relevant_env_agree_open_one_core
+    (Σsrc : lty_env) Ty y τbranch τsum e_src :
+  context_ty_lvars τbranch ⊆ context_ty_lvars τsum ->
+  y ∉ fv_cty τbranch ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind
+        (relevant_env Σsrc τsum e_src) Ty))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+      (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y (typed_lty_env_bind Σsrc Ty))
+    (relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+      (tret (vfvar y))).
+Proof.
+  intros Hτsub Hyτ.
+  set (X := relevant_lvars (cty_open 0 y (cty_shift 0 τbranch))
+    (tret (vfvar y))).
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ X)) as [HvX|HvX]; [|reflexivity].
+  unfold lty_env_open_one, lvar_store_open_one.
+  replace v with (logic_var_open 0 y (logic_var_open 0 y v))
+    by exact (logic_var_open_involutive 0 y v).
+  rewrite !storeA_rekey_lookup by apply swap_inj.
+  unfold typed_lty_env_bind, lvar_store_bind.
+  set (u := logic_var_open 0 y v).
+  fold u.
+  destruct u as [k|z] eqn:Hu.
+  - destruct k as [|k].
+    + rewrite !lookup_insert_eq. reflexivity.
+    + cbn [insert].
+      rewrite !lookup_insert_ne by discriminate.
+      assert (Hv_eq : v = LVBound (S k)).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVBound (S k))) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      unfold lty_env_shift, lvar_store_shift, lvar_store_shift_from.
+      replace (LVBound (S k)) with (logic_var_shift_from 0 (LVBound k))
+        by reflexivity.
+      rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide (LVBound k ∈ relevant_lvars τsum e_src))
+        as [Hrel|Hrel]; [reflexivity|].
+      exfalso. apply Hrel.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union_l.
+      apply Hτsub.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      2:{ set_solver. }
+      rewrite set_swap_elem in Hopen.
+      rewrite (swap_fresh (LVBound 0) (LVFree y) (LVBound (S k))) in Hopen
+        by congruence.
+      unfold lvars_shift_from in Hopen.
+      apply elem_of_map in Hopen as [w [Hwshift Hw]].
+      destruct w as [n|a]; cbn [logic_var_shift_from] in Hwshift;
+        repeat destruct decide; inversion Hwshift; subst; try lia.
+      exact Hw.
+  - destruct (decide (z = y)) as [->|Hzy].
+    + exfalso.
+      unfold u in Hu.
+      assert (Hv_eq : v = LVBound 0).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVFree y)) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      { rewrite set_swap_elem in Hopen.
+        rewrite swap_l in Hopen.
+        apply Hyτ.
+        change (y ∈ lvars_fv (context_ty_lvars τbranch)).
+        rewrite <- (lvars_shift_from_fv 0 (context_ty_lvars τbranch)).
+        apply lvars_fv_elem. exact Hopen. }
+      { set_solver. }
+    + rewrite !lookup_insert_ne by congruence.
+      assert (Hv_eq : v = LVFree z).
+      {
+        unfold u in Hu.
+        pose proof (f_equal (logic_var_open 0 y) Hu) as Hopen.
+        change (swap (LVBound 0) (LVFree y)
+          (swap (LVBound 0) (LVFree y) v) =
+          swap (LVBound 0) (LVFree y) (LVFree z)) in Hopen.
+        rewrite swap_involutive in Hopen.
+        unfold swap in Hopen.
+        repeat destruct decide; try lia; try congruence.
+      }
+      subst v.
+      unfold lty_env_shift, lvar_store_shift, lvar_store_shift_from.
+      replace (LVFree z) with (logic_var_shift_from 0 (LVFree z))
+        by reflexivity.
+      rewrite !storeA_rekey_lookup by apply logic_var_shift_from_inj.
+      unfold relevant_env, lty_env_restrict_lvars.
+      rewrite storeA_restrict_lookup.
+      destruct (decide (LVFree z ∈ relevant_lvars τsum e_src))
+        as [Hrel|Hrel]; [reflexivity|].
+      exfalso. apply Hrel.
+      subst X.
+      unfold relevant_lvars in *.
+      cbn [tm_lvars tm_lvars_at value_lvars_at] in *.
+      rewrite cty_open_vars in HvX.
+      unfold context_ty_open_lvars in HvX.
+      rewrite cty_shift_vars in HvX.
+      unfold context_ty_shift_lvars in HvX.
+      apply elem_of_union in HvX as [Hopen|Hret].
+      { rewrite set_swap_elem in Hopen.
+        rewrite (swap_fresh (LVBound 0) (LVFree y) (LVFree z)) in Hopen
+          by congruence.
+        unfold lvars_shift_from in Hopen.
+        apply elem_of_map in Hopen as [w [Hwshift Hw]].
+        destruct w as [n|a]; cbn [logic_var_shift_from] in Hwshift;
+          repeat destruct decide; inversion Hwshift; subst; try lia.
+        apply elem_of_union_l. apply Hτsub. exact Hw. }
+      { set_solver. }
+Qed.
+
 Lemma arrow_arg_relevant_env_agree_open_one_core
     (Σsrc : lty_env) Ty y τx τr e_src :
   y ∉ fv_cty τx ->
