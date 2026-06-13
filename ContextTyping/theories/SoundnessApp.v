@@ -9,7 +9,7 @@ From Stdlib Require Import Lia.
 From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
   SmallStep StrongNormalization.
 From ContextStore Require Import Store.
-From ContextAlgebra Require Import ResourceInterface ResourceExtension.
+From ContextAlgebra Require Import ResourceInterface ResourceExtension ResourceCompat.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context

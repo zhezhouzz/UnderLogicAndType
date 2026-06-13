@@ -75,6 +75,33 @@ Proof.
     apply relevant_env_closed. exact HΣclosed.
 Qed.
 
+Lemma result_first_outer_result_ret_value_at_open
+    (Σ : lty_env) τ vf z (m : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_value vf ->
+  z ∉ fv_value vf ->
+  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
+  m ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z) ->
+  m ⊨ formula_open 0 z
+    (expr_result_formula_at
+      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
+      (tm_shift 0 (tret vf)) (LVBound 0)).
+Proof.
+  intros HΣclosed Hvf Hzvf Hzrel Hres.
+  rewrite formula_open_expr_result_formula_at_shift0.
+  - rewrite (lvars_shift_from_lc_at_id 0
+      (dom (relevant_env Σ τ (tret vf)))).
+    + exact Hres.
+    + apply type_equiv_lvars_lc_at_zero_of_lc.
+      apply relevant_env_closed. exact HΣclosed.
+  - apply type_equiv_lc_lvars_shift_from.
+    apply relevant_env_closed. exact HΣclosed.
+  - rewrite lvars_shift_from_fv. exact Hzrel.
+  - constructor. exact Hvf.
+  - cbn [fv_tm fv_value]. exact Hzvf.
+Qed.
+
 Lemma ty_static_guard_relevant_of_full
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
