@@ -727,4 +727,118 @@ Proof.
   - exact Hres.
 Qed.
 
+Lemma tm_total_equiv_tapp_value_fun_result_alias_on
+    (m : WfWorldT) X vf y z :
+  fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+    fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
+  z ∈ X ->
+  fv_value vf ⊆ X ->
+  wfworld_closed_on X m ->
+  lc_value vf ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  tm_total_equiv_on m
+    (tapp_tm (tret (vfvar z)) (vfvar y))
+    (tapp_tm (tret vf) (vfvar y)).
+Proof.
+  intros HfvX HzX Hfvf Hclosed Hvf Hres σ Hσ.
+  set (σX := store_restrict σ X : StoreT).
+  assert (HσX_closed : store_closed σX).
+  { subst σX. exact (Hclosed σ Hσ). }
+  assert (Hfv_app1 : fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ⊆ X)
+    by set_solver.
+  assert (Hfv_app2 : fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X)
+    by set_solver.
+  pose proof (expr_result_formula_ret_value_inst_eq_on
+    m X vf z HzX Hfvf Hclosed Hvf Hres σ Hσ) as Heq.
+  assert (Htm_eq_X :
+      lstore_instantiate_tm (lstore_lift_free σX)
+        (tapp_tm (tret (vfvar z)) (vfvar y)) =
+      lstore_instantiate_tm (lstore_lift_free σX)
+        (tapp_tm (tret vf) (vfvar y))).
+  {
+    subst σX.
+    unfold lstore_instantiate_tm.
+    rewrite !lstore_instantiate_tm_no_bvars by
+      (try apply lc_lstore_lift_free;
+       rewrite ?lstore_free_part_lift_free; exact (proj1 HσX_closed)).
+    rewrite !lstore_free_part_lift_free.
+    rewrite !subst_map_tm_eq_msubst.
+    rewrite !msubst_tapp_tm_lc_arg by
+      (constructor || exact (proj2 HσX_closed)).
+    rewrite !msubst_ret.
+    change (tapp_tm (tret (m{store_restrict σ X} (vfvar z)))
+      (m{store_restrict σ X} (vfvar y)) =
+      tapp_tm (tret (m{store_restrict σ X} vf))
+      (m{store_restrict σ X} (vfvar y))).
+    rewrite Heq.
+    reflexivity.
+  }
+  assert (HappsX :
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp_tm (tret (vfvar z)) (vfvar y))) <->
+      must_terminating
+        (lstore_instantiate_tm (lstore_lift_free σX)
+          (tapp_tm (tret vf) (vfvar y)))).
+  { rewrite Htm_eq_X. reflexivity. }
+  assert (Hlc_app1 : lc_tm (tapp_tm (tret (vfvar z)) (vfvar y))).
+  { apply lc_tapp_tm; constructor; constructor. }
+  assert (Hlc_app2 : lc_tm (tapp_tm (tret vf) (vfvar y))).
+  { apply lc_tapp_tm; [constructor; exact Hvf|constructor]. }
+  assert (Hagree_app1 :
+      store_restrict σX (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y))) =
+      store_restrict σ (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_app1.
+    reflexivity. }
+  assert (Hagree_app2 :
+      store_restrict σX (fv_tm (tapp_tm (tret vf) (vfvar y))) =
+      store_restrict σ (fv_tm (tapp_tm (tret vf) (vfvar y)))).
+  { subst σX. rewrite storeA_restrict_twice_subset by exact Hfv_app2.
+    reflexivity. }
+  split; intros Htotal.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret vf) (vfvar y)) Hlc_app2 Hagree_app2)).
+    apply (proj1 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret (vfvar z)) (vfvar y)) Hlc_app1 Hagree_app1)).
+    exact Htotal.
+  - apply (proj1 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret (vfvar z)) (vfvar y)) Hlc_app1 Hagree_app1)).
+    apply (proj2 HappsX).
+    apply (proj2 (tm_must_terminating_agree_on_fv
+      σX σ (tapp_tm (tret vf) (vfvar y)) Hlc_app2 Hagree_app2)).
+    exact Htotal.
+Qed.
+
+Lemma tm_total_equiv_tapp_value_fun_result_alias
+    (m : WfWorldT) vf y z :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+     fv_tm (tapp_tm (tret vf) (vfvar y))) m ->
+  lc_value vf ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  tm_total_equiv_on m
+    (tapp_tm (tret (vfvar z)) (vfvar y))
+    (tapp_tm (tret vf) (vfvar y)).
+Proof.
+  intros Hclosed Hvf Hres.
+  eapply (tm_total_equiv_tapp_value_fun_result_alias_on
+    m (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+       fv_tm (tapp_tm (tret vf) (vfvar y))) vf y z).
+  - intros a Ha. exact Ha.
+  - apply elem_of_union_l.
+    rewrite fv_tapp_tm.
+    cbn [fv_tm fv_value].
+    apply elem_of_union_l.
+    apply elem_of_singleton_2. reflexivity.
+  - intros a Ha.
+    apply elem_of_union_r.
+    rewrite fv_tapp_tm.
+    cbn [fv_tm].
+    apply elem_of_union_l. exact Ha.
+  - exact Hclosed.
+  - exact Hvf.
+  - exact Hres.
+Qed.
+
 End TypeDenote.
