@@ -281,9 +281,12 @@ Lemma appd_wand_outer_value_open
   m ⊨ ty_denote_gas (cty_depth (CTWand τx τ))
         (atom_env_to_lty_env (erase_ctx Γ1))
         (CTWand τx τ) (tret v1) ->
-  exists (z : atom) (mz : WfWorldT),
+  exists (z : atom) (Fz : fiber_extension) (mz : WfWorldT),
     z ∉ A ∪ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ∪
         world_dom (m : WorldT) /\
+    expr_result_extension_witness_on (world_dom (m : WorldT))
+      (tret v1) z Fz /\
+    res_extend_by m Fz mz /\
     world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]} /\
     res_restrict mz (world_dom (m : WorldT)) = m /\
     mz ⊨ expr_result_formula (tret v1) (LVFree z) /\
@@ -458,8 +461,10 @@ Proof.
     - exact Hext.
     - exact Htotal.
   }
-  exists z, mz.
+  exists z, Fz, mz.
   split; [exact Hzfresh|].
+  split; [exact HFz|].
+  split; [exact Hext|].
   split; [exact Hmz_dom|].
   split; [exact Hmz_restrict|].
   split; [exact Hres_expr|].
