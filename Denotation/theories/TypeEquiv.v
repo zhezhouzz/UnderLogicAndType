@@ -710,6 +710,56 @@ Proof.
   - exact Hsrc.
 Qed.
 
+Lemma ty_denote_gas_tapp_fun_result_alias_from_static
+    gas (Σ : lty_env) τ vf y z s (m : WfWorldT) :
+  LVFree z ∉ dom Σ ->
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty τ ->
+  Σ !! LVFree y = Some s ->
+  lc_value vf ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ expr_basic_typing_formula Σ (tret vf) (s →ₜ erase_ty τ) ->
+  m ⊨ ty_static_guard_formula Σ τ
+    (tapp_tm (tret vf) (vfvar y)) ->
+  m ⊨ ty_denote_gas gas Σ τ
+    (tapp_tm (tret vf) (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y)).
+Proof.
+  intros HzΣ Hzfresh Hy Hvf Hres Hbasic_fun Hstatic Hsrc.
+  pose proof Hstatic as Hstatic_src.
+  unfold ty_static_guard_formula in Hstatic.
+  repeat rewrite res_models_and_iff in Hstatic.
+  destruct Hstatic as [Hwf [Hworld Hbasic_app]].
+  assert (Hclosed_src :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret vf) (vfvar y))) m).
+  {
+    eapply ty_static_guard_wfworld_closed_on_term.
+    exact Hstatic_src.
+  }
+  assert (Hstatic_tgt :
+      m ⊨ ty_static_guard_formula
+        (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+        (tapp_tm (tret (vfvar z)) (vfvar y))).
+  {
+    eapply ty_static_guard_tapp_fun_result_alias; eauto.
+  }
+  assert (Hclosed_tgt :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y))) m).
+  {
+    eapply ty_static_guard_wfworld_closed_on_term.
+    exact Hstatic_tgt.
+  }
+  assert (Hclosed :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+         fv_tm (tapp_tm (tret vf) (vfvar y))) m).
+  { apply wfworld_closed_on_union; assumption. }
+  eapply ty_denote_gas_tapp_fun_result_alias; eauto.
+Qed.
+
 Lemma ty_denote_gas_result_alias_at
     gas (Σ : lty_env) τ e x D (m : WfWorldT) :
   lty_env_closed Σ ->

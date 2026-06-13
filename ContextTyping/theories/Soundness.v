@@ -882,12 +882,48 @@ Lemma fundamental_lam_case Σ Γ τx τ e (L : aset) :
     ty_denote_under Σ Γ (CTArrow τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  (* Result-first Arrow denotation makes the outer binder name the function
-     value produced by [ret (λ...)]. The old proof used that binder as the
-     argument. The replacement proof should discharge the result graph for the
-     lambda value, then reuse [lam_opened_arrow_result] inside
-     [arrow_value_denote_gas]. *)
-Admitted.
+  intros Hwf IH m Hctx.
+  set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
+  set (vf := vlam (erase_ty τx) e).
+  set (gas := Nat.max (cty_depth τx) (cty_depth τ)).
+  pose proof (context_typing_wf_denot_static_guard_full
+    Σ Γ (CTArrow τx τ) (tret vf) m Hwf Hctx) as Hstatic.
+  pose proof (ty_denote_gas_zero_tret_of_static_guard
+    Δ (CTArrow τx τ) vf m Hstatic) as Hzero.
+  unfold ty_denote_under, ty_denote.
+  change (m ⊨ ty_denote_gas (S gas) Δ (CTArrow τx τ) (tret vf)).
+  cbn [ty_denote_gas].
+  rewrite res_models_and_iff.
+  split.
+  - eapply ty_denote_gas_guard_of_zero. exact Hzero.
+  - pose proof (ty_denote_gas_scope_from_zero_any
+      (S gas) Δ (CTArrow τx τ) (tret vf) m Hzero) as Hscope_full.
+    cbn [ty_denote_gas] in Hscope_full.
+    apply (proj1 (formula_scoped_and_iff _ _ _)) in Hscope_full
+      as [_ Hscope_body].
+    eapply res_models_forall_rev_intro; [exact Hscope_body|].
+    exists (L ∪ world_dom (m : WorldT) ∪ dom Σ ∪
+      dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    intros z Hz mz Hdomz Hrestrictz.
+    assert (Hle_m_mz : m ⊑ mz).
+    { rewrite <- Hrestrictz. apply res_restrict_le. }
+    assert (Hz_world : z ∈ world_dom (mz : WorldT)).
+    { rewrite Hdomz. set_solver. }
+    pose proof (formula_scoped_forall_open_res_le
+      m mz z _ Hscope_body Hle_m_mz Hz_world) as Hopened_scope.
+    cbn [formula_open] in Hopened_scope |- *.
+    eapply res_models_impl_intro; [exact Hopened_scope|].
+    intros Hres_raw.
+    assert (Hzfresh :
+        z ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+          fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    { clear -Hz. better_set_solver. }
+    pose proof (lam_result_first_outer_result_plain
+      Σ Γ τx τ e mz z Hwf
+      ltac:(clear -Hzfresh; better_set_solver) Hres_raw) as Hres_plain.
+    eapply lam_result_first_arrow_value_denotation; eauto.
+    eapply formula_scoped_impl_r. exact Hopened_scope.
+Qed.
 
 Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
   context_typing_wf Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) ->
@@ -899,11 +935,48 @@ Lemma fundamental_lamd_case Σ Γ τx τ e (L : aset) :
     ty_denote_under Σ Γ (CTWand τx τ)
       (tret (vlam (erase_ty τx) e)).
 Proof.
-  (* Result-first Wand denotation also adds an outer function-result binder
-     before the [FBWand] argument resource. The replacement proof should first
-     bind the lambda value, then run the old LamD star/resource argument proof
-     inside [wand_value_denote_gas]. *)
-Admitted.
+  intros Hwf IH m Hctx.
+  set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
+  set (vf := vlam (erase_ty τx) e).
+  set (gas := Nat.max (cty_depth τx) (cty_depth τ)).
+  pose proof (context_typing_wf_denot_static_guard_full
+    Σ Γ (CTWand τx τ) (tret vf) m Hwf Hctx) as Hstatic.
+  pose proof (ty_denote_gas_zero_tret_of_static_guard
+    Δ (CTWand τx τ) vf m Hstatic) as Hzero.
+  unfold ty_denote_under, ty_denote.
+  change (m ⊨ ty_denote_gas (S gas) Δ (CTWand τx τ) (tret vf)).
+  cbn [ty_denote_gas].
+  rewrite res_models_and_iff.
+  split.
+  - eapply ty_denote_gas_guard_of_zero. exact Hzero.
+  - pose proof (ty_denote_gas_scope_from_zero_any
+      (S gas) Δ (CTWand τx τ) (tret vf) m Hzero) as Hscope_full.
+    cbn [ty_denote_gas] in Hscope_full.
+    apply (proj1 (formula_scoped_and_iff _ _ _)) in Hscope_full
+      as [_ Hscope_body].
+    eapply res_models_forall_rev_intro; [exact Hscope_body|].
+    exists (L ∪ world_dom (m : WorldT) ∪ dom Σ ∪
+      dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    intros z Hz mz Hdomz Hrestrictz.
+    assert (Hle_m_mz : m ⊑ mz).
+    { rewrite <- Hrestrictz. apply res_restrict_le. }
+    assert (Hz_world : z ∈ world_dom (mz : WorldT)).
+    { rewrite Hdomz. set_solver. }
+    pose proof (formula_scoped_forall_open_res_le
+      m mz z _ Hscope_body Hle_m_mz Hz_world) as Hopened_scope.
+    cbn [formula_open] in Hopened_scope |- *.
+    eapply res_models_impl_intro; [exact Hopened_scope|].
+    intros Hres_raw.
+    assert (Hzfresh :
+        z ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+          fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+    { clear -Hz. better_set_solver. }
+    pose proof (lamd_result_first_outer_result_plain
+      Σ Γ τx τ e mz z Hwf
+      ltac:(clear -Hzfresh; better_set_solver) Hres_raw) as Hres_plain.
+    eapply lam_result_first_wand_value_denotation; eauto.
+    eapply formula_scoped_impl_r. exact Hopened_scope.
+Qed.
 
 Lemma fundamental_appop_case Σ Γ op x :
   context_typing_wf Σ Γ
