@@ -266,6 +266,74 @@ Proof.
               ** exact Hρv.
 Qed.
 
+Lemma basic_tm_has_ltype_tapp_tm_fvar_fun
+    (Σ : lty_env) z y s T :
+  lty_env_closed Σ ->
+  Σ !! LVFree z = Some (s →ₜ T) ->
+  Σ !! LVFree y = Some s ->
+  basic_tm_has_ltype Σ (tapp_tm (tret (vfvar z)) (vfvar y)) T.
+Proof.
+  intros Hclosed Hz Hy.
+  unfold tapp_tm.
+  eapply BTT_Let with (T1 := s →ₜ T) (L := {[y]} ∪ lvars_fv (dom Σ)).
+  - constructor. constructor. exact Hz.
+  - intros f Hf.
+    cbn [open_tm open_value value_shift].
+    eapply BTT_App with (s1 := s) (s2 := T).
+    + constructor. rewrite typed_lty_env_bind_open_current.
+      * apply map_lookup_insert.
+      * intros Hbad. apply Hf.
+        apply elem_of_union_r. apply lvars_fv_elem. exact Hbad.
+      * exact Hclosed.
+    + constructor.
+      rewrite typed_lty_env_bind_open_current.
+      * rewrite lookup_insert_ne by set_solver. exact Hy.
+      * intros Hbad. apply Hf.
+        apply elem_of_union_r. apply lvars_fv_elem. exact Hbad.
+      * exact Hclosed.
+Qed.
+
+Lemma ty_static_guard_tapp_fun_result_alias
+    (Σ : lty_env) τ vf y z s (m : WfWorldT) :
+  LVFree z ∉ dom Σ ->
+  Σ !! LVFree y = Some s ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ context_ty_wf_formula Σ τ ->
+  m ⊨ basic_world_formula Σ ->
+  m ⊨ expr_basic_typing_formula Σ (tret vf) (s →ₜ erase_ty τ) ->
+  m ⊨ ty_static_guard_formula
+    (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
+    (tapp_tm (tret (vfvar z)) (vfvar y)).
+Proof.
+  intros HzΣ Hy Hres Hwf Hworld Hfun_basic.
+  pose proof (basic_world_insert_result_alias
+    Σ (s →ₜ erase_ty τ) (tret vf) z m
+    HzΣ Hres Hworld Hfun_basic) as Hworld_insert.
+  unfold ty_static_guard_formula.
+  repeat rewrite res_models_and_iff.
+  split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf
+      as [Hlc [Hscope Hbasicτ]].
+    apply basic_world_formula_models_iff in Hworld_insert
+      as [Hlc_insert [Hscope_insert _]].
+    split; [exact Hlc_insert|]. split; [exact Hscope_insert|].
+    eapply basic_context_ty_lvars_mono; [|exact Hbasicτ].
+    rewrite dom_insert_L. set_solver.
+  - split; [exact Hworld_insert|].
+    apply expr_basic_typing_formula_models_iff.
+    apply basic_world_formula_models_iff in Hworld_insert
+      as [Hlc_insert [Hscope_insert _]].
+    split; [exact Hlc_insert|]. split; [exact Hscope_insert|].
+    eapply (basic_tm_has_ltype_tapp_tm_fvar_fun
+      (<[LVFree z := s →ₜ erase_ty τ]> Σ) z y s (erase_ty τ)).
+    + exact Hlc_insert.
+    + apply map_lookup_insert.
+    + rewrite lookup_insert_ne by
+        (intros Heq; inversion Heq; subst; apply HzΣ; apply elem_of_dom; eauto).
+      exact Hy.
+Qed.
+
 Lemma ty_static_guard_ret_value_result_alias
     (Σ : lty_env) τ (m : WfWorldT) vx z :
   lty_env_closed Σ ->
