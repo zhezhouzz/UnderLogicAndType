@@ -19,6 +19,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivFiberBase
+  TypeEquivTLet
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import PrimOpContext Typing SoundnessLam SoundnessApp SoundnessAppD
@@ -581,7 +582,8 @@ Proof.
     (<[LVFree x := erase_ty τ1]> (atom_env_to_lty_env (erase_ctx Γ)))
 	    τ2 e1 e2 x Fx m mx
 	    Hxe2
-	    Hxτ2_fv HFx Hext Hbody_zero Hmx_zero_tlet Hbody_insert)
+	    Hxτ2_fv HFx Hext Hbody_zero Hmx_zero_tlet) as Hlet_iff.
+  pose proof (proj1 Hlet_iff Hbody_insert)
     as Hlet_mx_insert.
   unfold ty_denote_under, ty_denote.
   eapply ty_denote_gas_drop_fresh_ext; eauto.
@@ -838,7 +840,8 @@ Proof.
       (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))))
 	    τ2 e1 e2 x Fx (res_product m2 m1 Hc21)
 	    (res_product m2 m1x Hc2x)
-	    Hxe2 Hxτ2_fv HFx Hext_prod Hbody_zero Hmx_zero_tlet Hbody_insert)
+	    Hxe2 Hxτ2_fv HFx Hext_prod Hbody_zero Hmx_zero_tlet) as Hlet_iff.
+  pose proof (proj1 Hlet_iff Hbody_insert)
 	    as Hlet_prod_insert.
   assert (Hctx_prod :
       res_product m1 m2 Hc12 ⊨ ctx_denote_under Σ (CtxStar Γ1 Γ2)).

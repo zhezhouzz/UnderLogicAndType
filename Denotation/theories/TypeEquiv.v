@@ -10,7 +10,8 @@ From Denotation Require Import
   TypeEquivFiberBase
   TypeEquivBody
   TypeEquivArrow
-  TypeEquivWand.
+  TypeEquivWand
+  TypeEquivTLet.
 
 Section TypeDenote.
 
@@ -564,19 +565,6 @@ Proof.
   eapply basic_world_formula_wfworld_closed_on_atoms;
     [eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].
 Qed.
-
-Lemma tlet_intro_denotation
-    gas (Σ : lty_env) τ e1 e2 x Fx m mx :
-  x ∉ fv_tm e2 ->
-  x ∉ fv_cty τ ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m Fx mx ->
-  mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
-  mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2).
-Proof.
-Admitted.
 
 Lemma lam_intro_denotation
     gas (Σ : lty_env) τ T e y (m : WfWorldT) :

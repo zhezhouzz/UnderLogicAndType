@@ -87,6 +87,7 @@ Denotation/theories/TypeEquivFiberBody.v
 Denotation/theories/TypeEquivBody.v
 Denotation/theories/TypeEquivArrow.v
 Denotation/theories/TypeEquivWand.v
+Denotation/theories/TypeEquivTLet.v
 Denotation/theories/TypeEquiv.v
 Denotation/theories/Context.v
 Denotation/theories/ConstDenoteBase.v
