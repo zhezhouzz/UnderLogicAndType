@@ -1788,8 +1788,8 @@ Proof.
            change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
            change (x ∉ dom (σm : StoreT)).
            rewrite Hdomσm. set_solver.
-        -- apply map_lookup_insert.
-Qed.
+	        -- apply map_lookup_insert.
+	Qed.
 
 Lemma expr_result_formula_at_coarsen_domain
     Dsmall Dbig e y (m : WfWorldT) :
@@ -1834,6 +1834,36 @@ Proof.
     apply lvars_fv_elem.
     apply Hsmall_big.
     apply lvars_fv_elem. exact Ha.
+Qed.
+
+Lemma expr_result_formula_at_of_result_extends_on_coarsen
+    Dsmall X e x F (m mx : WfWorldT) :
+  lc_lvars Dsmall ->
+  tm_lvars e ⊆ Dsmall ->
+  Dsmall ⊆ lvars_of_atoms X ->
+  LVFree x ∉ lvars_of_atoms X ->
+  X ⊆ world_dom (m : WorldT) ->
+  expr_result_extension_witness_on X e x F ->
+  res_extend_by m F mx ->
+  expr_total_on_atom_world e m ->
+  mx ⊨ expr_result_formula_at Dsmall e (LVFree x).
+Proof.
+  intros Hlc_small He_small Hsmall_big Hx_big HXm HF Hext Htotal.
+  eapply expr_result_formula_at_coarsen_domain.
+  - exact Hsmall_big.
+  - exact He_small.
+  - exact Hx_big.
+  - eapply expr_result_formula_at_of_result_extends_on.
+    + intros v Hv.
+      destruct v as [k|a]; [|exact I].
+      unfold lvars_of_atoms in Hv.
+      apply elem_of_map in Hv as [a [Ha _]]. discriminate.
+    + intros v Hv. exact (Hsmall_big _ (He_small _ Hv)).
+    + exact Hx_big.
+    + rewrite lvars_fv_of_atoms. exact HXm.
+    + rewrite lvars_fv_of_atoms. exact HF.
+    + exact Hext.
+    + exact Htotal.
 Qed.
 
 Local Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
