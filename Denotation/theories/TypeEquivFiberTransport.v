@@ -992,4 +992,89 @@ Proof.
   - exact Hres.
 Qed.
 
+Lemma tm_equiv_tapp_value_fun_arg_result_alias
+    (m : WfWorldT) vf vx z w :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+     fv_tm (tapp_tm (tret vf) vx)) m ->
+  lc_value vf ->
+  lc_value vx ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ expr_result_formula (tret vx) (LVFree w) ->
+  tm_equiv_on m
+    (tapp_tm (tret (vfvar z)) (vfvar w))
+    (tapp_tm (tret vf) vx).
+Proof.
+  intros Hclosed Hvf Hvx Hfun Harg σ v Hσ.
+  assert (Hclosed_fun :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+         fv_tm (tapp_tm (tret vf) (vfvar w))) m).
+  {
+    eapply wfworld_closed_on_mono; [|exact Hclosed].
+    cbn [fv_tm fv_value].
+    set_solver.
+  }
+  assert (Hclosed_arg :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret vf) (vfvar w)) ∪
+         fv_tm (tapp_tm (tret vf) vx)) m).
+  {
+    eapply wfworld_closed_on_mono; [|exact Hclosed].
+    cbn [fv_tm fv_value].
+    set_solver.
+  }
+  pose proof (tm_equiv_tapp_value_fun_result_alias
+    m vf w z Hclosed_fun Hvf Hfun σ v Hσ) as Hfun_eq.
+  pose proof (tm_equiv_tapp_value_arg_result_alias
+    m (tret vf) vx w Hclosed_arg Hvx Harg σ v Hσ) as Harg_eq.
+  split; intros Heval.
+  - apply (proj1 Harg_eq). apply (proj1 Hfun_eq). exact Heval.
+  - apply (proj2 Hfun_eq). apply (proj2 Harg_eq). exact Heval.
+Qed.
+
+Lemma tm_total_equiv_tapp_value_fun_arg_result_alias
+    (m : WfWorldT) vf vx z w :
+  wfworld_closed_on
+    (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+     fv_tm (tapp_tm (tret vf) vx)) m ->
+  lc_value vf ->
+  lc_value vx ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ expr_result_formula (tret vx) (LVFree w) ->
+  tm_total_equiv_on m
+    (tapp_tm (tret (vfvar z)) (vfvar w))
+    (tapp_tm (tret vf) vx).
+Proof.
+  intros Hclosed Hvf Hvx Hfun Harg σ Hσ.
+  assert (Hclosed_fun :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+         fv_tm (tapp_tm (tret vf) (vfvar w))) m).
+  {
+    eapply wfworld_closed_on_mono; [|exact Hclosed].
+    cbn [fv_tm fv_value].
+    set_solver.
+  }
+  assert (Hclosed_arg :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret vf) (vfvar w)) ∪
+         fv_tm (tapp_tm (tret vf) vx)) m).
+  {
+    eapply wfworld_closed_on_mono; [|exact Hclosed].
+    cbn [fv_tm fv_value].
+    set_solver.
+  }
+  pose proof (tm_total_equiv_tapp_value_fun_result_alias
+    m vf w z Hclosed_fun Hvf Hfun σ Hσ) as Hfun_total.
+  pose proof (tm_total_equiv_tapp_value_arg_result_alias
+    m (tret vf) vx w Hclosed_arg ltac:(constructor; exact Hvf)
+    Hvx Harg σ Hσ) as Harg_total.
+  split.
+  - intros Hsrc.
+    apply (proj1 Harg_total). apply (proj1 Hfun_total). exact Hsrc.
+  - intros Htgt.
+    apply (proj2 Hfun_total). apply (proj2 Harg_total). exact Htgt.
+Qed.
+
 End TypeDenote.
