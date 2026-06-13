@@ -205,3 +205,32 @@ current recovery scope.
   lower lemma should combine result-world pullback with
   `expr_result_formula_at_coarsen_domain`, then use the existing admitted
   `ty_denote_gas_result_alias` only as the alias step.
+
+## Status Update: Match Restored
+
+- `SoundnessMatch.vo` is restored and compiles.
+- The previously remaining Match-side obligations were discharged without
+  reviving the rejected full generic fiber transport theorem.
+- The overly strong `ctsum_open_result_graph_pullback_branches` route was
+  removed.  The successful proof instead uses an exact-domain pullback over
+  `D12 = dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e)`, where both
+  branch worlds can be restricted to the same domain before pulling back the
+  result graph.
+- The active proof graph now compiles through `Soundness.vo`.
+
+Remaining active admits after this recovery:
+
+- `Denotation/theories/TypeEquiv.v`
+  - `ty_denote_gas_result_alias_at`
+  - `tlet_intro_denotation`
+- `ContextTyping/theories/PrimOpConcreteContext.v`
+  - concrete primitive-operation context instantiation lemmas are still
+    admitted.  These are separate from the parameterized Soundness theorem.
+
+Validated commands:
+
+```sh
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessMatch.vo
+timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
+timeout 180s make TIMED=1
+```

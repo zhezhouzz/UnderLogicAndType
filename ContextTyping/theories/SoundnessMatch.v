@@ -400,17 +400,186 @@ Proof.
       exists σ. split; [exact Hσ2|reflexivity].
 Qed.
 
+Lemma sum_branch_source_env_agree
+    Σ τ1 τ2 e y T :
+  lc_context_ty τ1 ->
+  lc_context_ty τ2 ->
+  lc_tm e ->
+  y ∉ fv_cty τ1 ∪ fv_cty τ2 ∪ fv_tm e ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e) T))
+    (relevant_lvars τ1 e) =
+  lty_env_restrict_lvars Σ (relevant_lvars τ1 e).
+Proof.
+  intros Hlcτ1 Hlcτ2 He Hy.
+  rewrite typed_lty_env_bind_open_current.
+  2:{
+    unfold relevant_env, lty_env_restrict_lvars.
+    rewrite storeA_restrict_dom.
+    intros HyD. apply elem_of_intersection in HyD as [_ HyD].
+    apply Hy.
+    apply lvars_fv_elem in HyD.
+    rewrite relevant_lvars_fv in HyD.
+    replace (fv_cty (CTSum τ1 τ2)) with
+      (fv_cty τ1 ∪ fv_cty τ2) in HyD.
+    { clear -HyD. set_solver. }
+    unfold fv_cty.
+    cbn [context_ty_lvars context_ty_lvars_at].
+    rewrite lvars_fv_union. reflexivity.
+  }
+  2:{
+    unfold lty_env_closed, relevant_env, lty_env_restrict_lvars.
+    intros v Hv.
+    rewrite storeA_restrict_dom in Hv.
+    apply elem_of_intersection in Hv as [_ Hv].
+    eapply (lc_lvars_relevant_lvars (CTSum τ1 τ2) e).
+    - exact (conj Hlcτ1 Hlcτ2).
+    - exact He.
+    - exact Hv.
+  }
+  unfold relevant_env, lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ relevant_lvars τ1 e)) as [Hv|Hv];
+    [|reflexivity].
+  assert (Hvy : v <> LVFree y).
+  {
+    intros ->. apply Hy.
+    apply lvars_fv_elem in Hv.
+    rewrite relevant_lvars_fv in Hv.
+    clear -Hv. set_solver.
+  }
+  rewrite lookup_insert_ne by congruence.
+  rewrite storeA_restrict_lookup.
+  destruct (decide (v ∈ relevant_lvars (CTSum τ1 τ2) e)) as [_|Hbad].
+  - reflexivity.
+  - exfalso. apply Hbad.
+    unfold relevant_lvars in *.
+    cbn [context_ty_lvars context_ty_lvars_at].
+    set_solver.
+Qed.
+
+Lemma relevant_env_sum_closed_of_lc Σ τ1 τ2 e :
+  lc_context_ty τ1 ->
+  lc_context_ty τ2 ->
+  lc_tm e ->
+  lty_env_closed (relevant_env Σ (CTSum τ1 τ2) e).
+Proof.
+  intros Hlcτ1 Hlcτ2 He.
+  unfold lty_env_closed, relevant_env, lty_env_restrict_lvars.
+  intros v Hv.
+  rewrite storeA_restrict_dom in Hv.
+  apply elem_of_intersection in Hv as [_ Hv].
+  eapply (lc_lvars_relevant_lvars (CTSum τ1 τ2) e).
+  - exact (conj Hlcτ1 Hlcτ2).
+  - exact He.
+  - exact Hv.
+Qed.
+
+Lemma relevant_env_sum_fresh_of_fv Σ τ1 τ2 e y :
+  y ∉ fv_cty τ1 ∪ fv_cty τ2 ∪ fv_tm e ->
+  LVFree y ∉ dom (relevant_env Σ (CTSum τ1 τ2) e).
+Proof.
+  intros Hy HyD.
+  unfold relevant_env, lty_env_restrict_lvars in HyD.
+  rewrite storeA_restrict_dom in HyD.
+  apply elem_of_intersection in HyD as [_ HyD].
+  apply Hy.
+  apply lvars_fv_elem in HyD.
+  rewrite relevant_lvars_fv in HyD.
+  replace (fv_cty (CTSum τ1 τ2)) with
+    (fv_cty τ1 ∪ fv_cty τ2) in HyD.
+  - exact HyD.
+  - unfold fv_cty.
+    cbn [context_ty_lvars context_ty_lvars_at].
+    rewrite lvars_fv_union. reflexivity.
+Qed.
+
+Lemma sum_branch_source_env_agree_right
+    Σ τ1 τ2 e y T :
+  lc_context_ty τ1 ->
+  lc_context_ty τ2 ->
+  lc_tm e ->
+  y ∉ fv_cty τ1 ∪ fv_cty τ2 ∪ fv_tm e ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 y
+      (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e) T))
+    (relevant_lvars τ2 e) =
+  lty_env_restrict_lvars Σ (relevant_lvars τ2 e).
+Proof.
+  intros Hlcτ1 Hlcτ2 He Hy.
+  rewrite typed_lty_env_bind_open_current.
+  2:{ apply relevant_env_sum_fresh_of_fv. exact Hy. }
+  2:{ apply relevant_env_sum_closed_of_lc; assumption. }
+  unfold relevant_env, lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ relevant_lvars τ2 e)) as [Hv|Hv];
+    [|reflexivity].
+  assert (Hvy : v <> LVFree y).
+  {
+    intros ->. apply Hy.
+    apply lvars_fv_elem in Hv.
+    rewrite relevant_lvars_fv in Hv.
+    clear -Hv. set_solver.
+  }
+  rewrite lookup_insert_ne by congruence.
+  rewrite storeA_restrict_lookup.
+  destruct (decide (v ∈ relevant_lvars (CTSum τ1 τ2) e)) as [_|Hbad].
+  - reflexivity.
+  - exfalso. apply Hbad.
+    unfold relevant_lvars in *.
+    cbn [context_ty_lvars context_ty_lvars_at].
+    set_solver.
+Qed.
+
+Lemma lvars_lc_at_zero_of_lc D :
+  lc_lvars D ->
+  lvars_lc_at 0 D.
+Proof.
+  intros Hlc k Hk.
+  exfalso.
+  exact (Hlc (LVBound k) ltac:(apply lvars_bv_elem; exact Hk)).
+Qed.
+
+Lemma lc_lvars_shift_from k D :
+  lc_lvars D ->
+  lc_lvars (lvars_shift_from k D).
+Proof.
+  intros Hlc v Hv.
+  unfold lvars_shift_from in Hv.
+  apply elem_of_map in Hv as [u [-> Hu]].
+  destruct u as [n|x]; cbn [logic_var_shift_from].
+  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
+  - exact I.
+Qed.
+
+Lemma ty_denote_gas_lc_context_ty
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  lc_context_ty τ.
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Hden) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld _]].
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasic]].
+  apply basic_world_formula_models_iff in Hworld as [HlcD _].
+  eapply basic_context_ty_lvars_lc; eauto.
+Qed.
+
 Lemma ty_denote_gas_sum_open_left_branch_from_pulled
     gas Σ τ1 τ2 e (m1 my1 : WfWorldT) y :
   y ∉ fv_tm e ∪
     lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
     fv_cty τ1 ∪ fv_cty τ2 ->
+  lc_context_ty τ2 ->
+  cty_depth τ1 <= gas ->
   res_restrict my1 (world_dom (m1 : WorldT)) = m1 ->
-  my1 ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)) ->
+  my1 ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e))
+    e (LVFree y) ->
   m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
   my1 ⊨ formula_open 0 y
     (ty_denote_gas gas
@@ -418,25 +587,114 @@ Lemma ty_denote_gas_sum_open_left_branch_from_pulled
         (erase_ty τ1))
       (cty_shift 0 τ1) (tret (vbvar 0))).
 Proof.
-  (* Branch-local alias obligation for the left summand.
-
-     Use the pulled projection [my1 ↾ m1 = m1] to lift the branch denotation to
-     [my1], coarsen the opened branch result graph as needed, then call
-     [ty_denote_gas_result_alias] and normalize the opened branch environment
-     using [sum_branch_relevant_env_agree_open_one_core]. *)
-Admitted.
+  intros Hy Hlcτ2 Hdepth Hrestrict Hres Hbranch.
+  rewrite (formula_open_ty_denote_gas_singleton 0 y) by
+    (rewrite ?typed_lty_env_bind_lvars_fv_dom, ?lvars_shift_from_fv,
+      ?cty_shift_fv; cbn [fv_tm fv_value]; set_solver).
+  pose proof (res_models_lift_projection_eq m1 my1
+    (ty_denote_gas (S gas) Σ τ1 e) Hrestrict Hbranch) as Hbranch_my.
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch_my) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+  assert (Hlcτ1 : lc_context_ty τ1).
+  {
+    apply basic_world_formula_models_iff in Hworld as [HlcD [_ _]].
+    eapply basic_context_ty_lvars_lc; eauto.
+  }
+  assert (Hlc_e : lc_tm e).
+  {
+    eapply basic_tm_has_ltype_lc.
+    - apply basic_world_formula_models_iff in Hworld as [HlcΣ1 _].
+      exact HlcΣ1.
+    - apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+      exact Hty.
+  }
+  set (Σy := lty_env_open_one 0 y
+    (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+      (erase_ty τ1))).
+  set (τy := cty_open 0 y (cty_shift 0 τ1)).
+  assert (Hτy : τy = τ1).
+  {
+    subst τy. apply cty_open_shift_from_lc_fresh; [exact Hlcτ1|].
+    clear -Hy. set_solver.
+  }
+  assert (Hsource : my1 ⊨ ty_denote_gas (cty_depth τ1) Σ τ1 e).
+  {
+    rewrite <- (ty_denote_gas_saturate (S gas) Σ τ1 e)
+      by lia.
+    exact Hbranch_my.
+  }
+  assert (Hsource_y : my1 ⊨ ty_denote_gas (cty_depth τ1) Σy τy e).
+  {
+    subst τy.
+    rewrite Hτy.
+    eapply (res_models_ty_denote_gas_env_agree_on
+      (cty_depth τ1) Σ Σy τ1 e (relevant_lvars τ1 e) my1).
+    - intros v Hv. exact Hv.
+    - subst Σy.
+      symmetry.
+      apply sum_branch_source_env_agree.
+      + exact Hlcτ1.
+      + exact Hlcτ2.
+      + exact Hlc_e.
+      + intros Hin. apply Hy.
+        apply elem_of_union in Hin as [Hin|He].
+        * apply elem_of_union in Hin as [Hτ1|Hτ2].
+          -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+          -- apply elem_of_union_r. exact Hτ2.
+        * apply elem_of_union_l. apply elem_of_union_l.
+          apply elem_of_union_l. exact He.
+    - exact Hsource.
+  }
+  subst τy.
+  rewrite Hτy.
+  rewrite Hτy in Hsource_y.
+  rewrite <- (ty_denote_gas_saturate gas Σy τ1 e)
+    in Hsource_y by lia.
+  eapply (ty_denote_gas_result_alias_at gas Σy τ1 e y
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e)) my1).
+	  - subst Σy.
+	    rewrite typed_lty_env_bind_open_current.
+	    + apply lty_env_closed_insert_free.
+	      apply relevant_env_sum_closed_of_lc; assumption.
+	    + apply relevant_env_sum_fresh_of_fv.
+	      intros Hin. apply Hy.
+	      apply elem_of_union in Hin as [Hin|He].
+	      * apply elem_of_union in Hin as [Hτ1|Hτ2].
+	        -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+	        -- apply elem_of_union_r. exact Hτ2.
+	      * apply elem_of_union_l. apply elem_of_union_l.
+	        apply elem_of_union_l. exact He.
+	    + apply relevant_env_sum_closed_of_lc; assumption.
+	  - subst Σy.
+	    rewrite typed_lty_env_bind_open_current.
+	    + apply map_lookup_insert.
+	    + apply relevant_env_sum_fresh_of_fv.
+	      intros Hin. apply Hy.
+	      apply elem_of_union in Hin as [Hin|He].
+	      * apply elem_of_union in Hin as [Hτ1|Hτ2].
+	        -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+	        -- apply elem_of_union_r. exact Hτ2.
+	      * apply elem_of_union_l. apply elem_of_union_l.
+	        apply elem_of_union_l. exact He.
+	    + apply relevant_env_sum_closed_of_lc; assumption.
+	  - exact Hres.
+  - exact Hsource_y.
+Qed.
 
 Lemma ty_denote_gas_sum_open_right_branch_from_pulled
     gas Σ τ1 τ2 e (m2 my2 : WfWorldT) y :
   y ∉ fv_tm e ∪
     lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
     fv_cty τ1 ∪ fv_cty τ2 ->
+  lc_context_ty τ1 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  cty_depth τ2 <= gas ->
   res_restrict my2 (world_dom (m2 : WorldT)) = m2 ->
-  my2 ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)) ->
+  my2 ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e))
+    e (LVFree y) ->
   m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
   my2 ⊨ formula_open 0 y
     (ty_denote_gas gas
@@ -444,39 +702,141 @@ Lemma ty_denote_gas_sum_open_right_branch_from_pulled
         (erase_ty τ1))
       (cty_shift 0 τ2) (tret (vbvar 0))).
 Proof.
-  (* Branch-local alias obligation for the right summand.
+  intros Hy Hlcτ1 Herase Hdepth Hrestrict Hres Hbranch.
+  rewrite (formula_open_ty_denote_gas_singleton 0 y) by
+    (rewrite ?typed_lty_env_bind_lvars_fv_dom, ?lvars_shift_from_fv,
+      ?cty_shift_fv; cbn [fv_tm fv_value]; set_solver).
+  pose proof (res_models_lift_projection_eq m2 my2
+    (ty_denote_gas (S gas) Σ τ2 e) Hrestrict Hbranch) as Hbranch_my.
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch_my) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+  assert (Hlcτ2 : lc_context_ty τ2).
+  {
+    apply basic_world_formula_models_iff in Hworld as [HlcD [_ _]].
+    eapply basic_context_ty_lvars_lc; eauto.
+  }
+  assert (Hlc_e : lc_tm e).
+  {
+    eapply basic_tm_has_ltype_lc.
+    - apply basic_world_formula_models_iff in Hworld as [HlcΣ2 _].
+      exact HlcΣ2.
+    - apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
+      exact Hty.
+  }
+  set (Σy := lty_env_open_one 0 y
+    (typed_lty_env_bind (relevant_env Σ (CTSum τ1 τ2) e)
+      (erase_ty τ1))).
+  set (τy := cty_open 0 y (cty_shift 0 τ2)).
+  assert (Hτy : τy = τ2).
+  {
+    subst τy. apply cty_open_shift_from_lc_fresh; [exact Hlcτ2|].
+    clear -Hy. set_solver.
+  }
+  assert (Hsource : my2 ⊨ ty_denote_gas (cty_depth τ2) Σ τ2 e).
+  {
+    rewrite <- (ty_denote_gas_saturate (S gas) Σ τ2 e)
+      by lia.
+    exact Hbranch_my.
+  }
+  assert (Hsource_y : my2 ⊨ ty_denote_gas (cty_depth τ2) Σy τy e).
+  {
+    subst τy.
+    rewrite Hτy.
+    eapply (res_models_ty_denote_gas_env_agree_on
+      (cty_depth τ2) Σ Σy τ2 e (relevant_lvars τ2 e) my2).
+    - intros v Hv. exact Hv.
+    - subst Σy. symmetry.
+      apply sum_branch_source_env_agree_right.
+      + exact Hlcτ1.
+      + exact Hlcτ2.
+      + exact Hlc_e.
+      + intros Hin. apply Hy.
+        apply elem_of_union in Hin as [Hin|He].
+        * apply elem_of_union in Hin as [Hτ1|Hτ2].
+          -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+          -- apply elem_of_union_r. exact Hτ2.
+        * apply elem_of_union_l. apply elem_of_union_l.
+          apply elem_of_union_l. exact He.
+    - exact Hsource.
+  }
+  subst τy.
+  rewrite Hτy.
+  rewrite Hτy in Hsource_y.
+  rewrite <- (ty_denote_gas_saturate gas Σy τ2 e)
+    in Hsource_y by lia.
+  eapply (ty_denote_gas_result_alias_at gas Σy τ2 e y
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e)) my2).
+  - subst Σy.
+    rewrite typed_lty_env_bind_open_current.
+    + apply lty_env_closed_insert_free.
+      apply relevant_env_sum_closed_of_lc; assumption.
+    + apply relevant_env_sum_fresh_of_fv.
+      intros Hin. apply Hy.
+      apply elem_of_union in Hin as [Hin|He].
+      * apply elem_of_union in Hin as [Hτ1|Hτ2].
+        -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+        -- apply elem_of_union_r. exact Hτ2.
+      * apply elem_of_union_l. apply elem_of_union_l.
+        apply elem_of_union_l. exact He.
+    + apply relevant_env_sum_closed_of_lc; assumption.
+  - subst Σy.
+    rewrite typed_lty_env_bind_open_current.
+    + rewrite <- Herase. apply map_lookup_insert.
+    + apply relevant_env_sum_fresh_of_fv.
+      intros Hin. apply Hy.
+      apply elem_of_union in Hin as [Hin|He].
+      * apply elem_of_union in Hin as [Hτ1|Hτ2].
+        -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
+        -- apply elem_of_union_r. exact Hτ2.
+      * apply elem_of_union_l. apply elem_of_union_l.
+        apply elem_of_union_l. exact He.
+    + apply relevant_env_sum_closed_of_lc; assumption.
+  - exact Hres.
+  - exact Hsource_y.
+Qed.
 
-     This is analogous to the left branch, but also uses the CTSum shape/guard
-     information to align the result slot typed with [erase_ty τ1] against
-     [τ2]'s erased type. *)
-Admitted.
-
-Lemma ctsum_open_result_graph_pullback_branches
-    Σ τ1 τ2 e (my1 my2 my : WfWorldT) y
-    (Hdef : raw_sum_defined my1 my2) :
-  res_sum my1 my2 Hdef ⊑ my ->
-  my ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)) ->
-  my1 ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)) /\
-  my2 ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)).
+Lemma expr_result_formula_at_pullback_exact_domain
+    D e y (my p : WfWorldT) Hsub :
+  lc_lvars D ->
+  tm_lvars e ⊆ D ->
+  LVFree y ∉ D ->
+  world_dom (p : WorldT) = lvars_fv D ->
+  my ⊨ expr_result_formula_at D e (LVFree y) ->
+  res_pullback_subset_projection my p Hsub ⊨
+    expr_result_formula_at D e (LVFree y).
 Proof.
-  (* Exact result graphs are not ordinary Kripke-downward facts.  This lemma is
-     the precise place where the global result witness must be pulled back to
-     the already-constructed branch result worlds.  Proving it should use the
-     fact that [my1] and [my2] are pullbacks of [my] along the branch base
-     worlds, not a generic formula restriction argument. *)
-Admitted.
+  intros HlcD HeD HyD Hpdom Hres.
+  pose proof Hres as Hscope_my.
+  unfold expr_result_formula_at in Hscope_my.
+  apply res_models_FFibVars_iff in Hscope_my
+    as [Hscope_my _].
+  eapply expr_result_formula_at_intro.
+  - exact HlcD.
+  - exact HeD.
+  - exact HyD.
+  - exact Hscope_my.
+  - intros σ Hσ.
+    apply expr_result_formula_at_models_elim with (m := my) (D := D); eauto.
+    exact (proj1 Hσ).
+  - intros σ v Hσ Heval.
+    destruct Hσ as [Hσmy Hσp].
+    destruct (expr_result_formula_at_fiber_witness
+      D e y my HeD HyD Hres σ v Hσmy Heval)
+      as [σv [Hσv_my [HσvD Hσvy]]].
+    exists σv. split.
+    + split; [exact Hσv_my|].
+      change ((p : WorldT) (store_restrict σ (world_dom (p : WorldT)))) in Hσp.
+      replace (world_dom (p : WorldT)) with (lvars_fv D) in Hσp
+        by (symmetry; exact Hpdom).
+      change ((p : WorldT) (store_restrict σv (world_dom (p : WorldT)))).
+      replace (world_dom (p : WorldT)) with (lvars_fv D)
+        by (symmetry; exact Hpdom).
+      rewrite HσvD.
+      exact Hσp.
+    + split; [exact HσvD|exact Hσvy].
+Qed.
 
 Lemma ty_denote_gas_sum_open_result_split_from_pulled_branches
     gas Σ τ1 τ2 e (m1 m2 my1 my2 my : WfWorldT) y
@@ -487,11 +847,15 @@ Lemma ty_denote_gas_sum_open_result_split_from_pulled_branches
   res_sum my1 my2 Hdef ⊑ my ->
   res_restrict my1 (world_dom (m1 : WorldT)) = m1 ->
   res_restrict my2 (world_dom (m2 : WorldT)) = m2 ->
-  my ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTSum τ1 τ2) e)))
-      (tm_shift 0 e) (LVBound 0)) ->
+  erase_ty τ1 = erase_ty τ2 ->
+  cty_depth τ1 <= gas ->
+  cty_depth τ2 <= gas ->
+  my1 ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e))
+    e (LVFree y) ->
+  my2 ⊨ expr_result_formula_at
+    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e))
+    e (LVFree y) ->
   m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
   m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
   my ⊨ formula_open 0 y
@@ -505,14 +869,26 @@ Lemma ty_denote_gas_sum_open_result_split_from_pulled_branches
           (erase_ty τ1))
         (cty_shift 0 τ2) (tret (vbvar 0)))).
 Proof.
-  intros Hy Hle Hrestrict1 Hrestrict2 Hres Hbranch1 Hbranch2.
-  destruct (ctsum_open_result_graph_pullback_branches
-    Σ τ1 τ2 e my1 my2 my y Hdef Hle Hres) as [Hres1 Hres2].
+  intros Hy Hle Hrestrict1 Hrestrict2 Herase Hdepth1 Hdepth2
+    Hres1 Hres2 Hbranch1 Hbranch2.
   rewrite formula_open_plus.
   eapply res_models_plus_intro with (m1 := my1) (m2 := my2) (Hdef := Hdef).
   - exact Hle.
-  - eapply ty_denote_gas_sum_open_left_branch_from_pulled; eauto.
-  - eapply ty_denote_gas_sum_open_right_branch_from_pulled; eauto.
+  - eapply ty_denote_gas_sum_open_left_branch_from_pulled.
+    + exact Hy.
+    + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
+    + exact Hdepth1.
+    + exact Hrestrict1.
+    + exact Hres1.
+    + exact Hbranch1.
+  - eapply ty_denote_gas_sum_open_right_branch_from_pulled.
+    + exact Hy.
+    + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
+    + exact Herase.
+    + exact Hdepth2.
+    + exact Hrestrict2.
+    + exact Hres2.
+    + exact Hbranch2.
 Qed.
 
 Lemma ty_denote_gas_sum_open_result_split_from_branches
@@ -522,6 +898,9 @@ Lemma ty_denote_gas_sum_open_result_split_from_branches
     lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
     fv_cty τ1 ∪ fv_cty τ2 ->
   res_sum m1 m2 Hdef ⊑ m ->
+  erase_ty τ1 = erase_ty τ2 ->
+  cty_depth τ1 <= gas ->
+  cty_depth τ2 <= gas ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
   my ⊨ formula_open 0 y
@@ -542,22 +921,255 @@ Lemma ty_denote_gas_sum_open_result_split_from_branches
           (erase_ty τ1))
         (cty_shift 0 τ2) (tret (vbvar 0)))).
 Proof.
-  intros Hy Hle Hdom Hrestrict Hres Hbranch1 Hbranch2.
-  assert (Hsum_my : res_sum m1 m2 Hdef ⊑ my).
+  intros Hy Hle Herase Hdepth1 Hdepth2 Hdom Hrestrict Hres Hbranch1 Hbranch2.
+  set (Dsum := dom (relevant_env Σ (CTSum τ1 τ2) e)).
+  set (D1 := dom (relevant_env Σ τ1 e)).
+  set (D2 := dom (relevant_env Σ τ2 e)).
+  set (D12 := D1 ∪ D2).
+  set (S12 := lvars_fv D12).
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch1) as Hguard1.
+  pose proof (ty_denote_gas_guard _ _ _ _ _ Hbranch2) as Hguard2.
+  repeat rewrite res_models_and_iff in Hguard1, Hguard2.
+  destruct Hguard1 as [Hwf1 [Hworld1 [Hbasic1 _]]].
+  destruct Hguard2 as [Hwf2 [Hworld2 [Hbasic2 _]]].
+  apply basic_world_formula_models_iff in Hworld1 as [HlcD1 [HdomD1_m1 _]].
+  apply basic_world_formula_models_iff in Hworld2 as [HlcD2 [HdomD2_m2 _]].
+  assert (Hlc_e : lc_tm e).
   {
-    eapply res_le_of_restrict_eq; [exact Hle|exact Hrestrict].
+    eapply basic_tm_has_ltype_lc.
+    - exact HlcD1.
+    - apply expr_basic_typing_formula_models_iff in Hbasic1 as [_ [_ Hty]].
+      exact Hty.
   }
-  destruct (res_sum_pullback_subset_projection_full my m1 m2 Hdef Hsum_my)
-    as [Hsub1 [Hsub2 [Hdef_full Hle_full]]].
-  eapply ty_denote_gas_sum_open_result_split_from_pulled_branches; eauto.
-  - apply res_pullback_subset_projection_restrict.
-  - apply res_pullback_subset_projection_restrict.
+  assert (Hres_sum : my ⊨ expr_result_formula_at Dsum e (LVFree y)).
+  {
+    subst Dsum.
+    rewrite formula_open_expr_result_formula_at_shift0 in Hres.
+    - rewrite lvars_shift_from_lc_at_id in Hres; [exact Hres|].
+      apply lvars_lc_at_zero_of_lc.
+      apply relevant_env_sum_closed_of_lc.
+      + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
+      + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
+      + exact Hlc_e.
+    - apply lc_lvars_shift_from.
+      apply relevant_env_sum_closed_of_lc.
+      + eapply ty_denote_gas_lc_context_ty; exact Hbranch1.
+      + eapply ty_denote_gas_lc_context_ty; exact Hbranch2.
+      + exact Hlc_e.
+    - clear -Hy. rewrite lvars_shift_from_fv. set_solver.
+    - exact Hlc_e.
+    - clear -Hy. set_solver.
+  }
+  assert (HD1_sum : D1 ⊆ Dsum).
+  {
+    subst D1 Dsum.
+    unfold relevant_env, lty_env_restrict_lvars.
+    rewrite !storeA_restrict_dom.
+    intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
+    apply elem_of_intersection. split; [exact Hv|].
+    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+  }
+  assert (HD2_sum : D2 ⊆ Dsum).
+  {
+    subst D2 Dsum.
+    unfold relevant_env, lty_env_restrict_lvars.
+    rewrite !storeA_restrict_dom.
+    intros v Hv. apply elem_of_intersection in Hv as [Hv Hrel].
+    apply elem_of_intersection. split; [exact Hv|].
+    relevant_lvars_norm. relevant_lvars_norm_in Hrel. better_set_solver.
+  }
+  assert (HeD1 : tm_lvars e ⊆ D1).
+  {
+    apply expr_basic_typing_formula_models_iff in Hbasic1 as [_ [_ Hty1]].
+    intros v Hv.
+    apply (basic_tm_has_ltype_lvars _ _ _ Hty1).
+    apply tm_lvars_lc_subset_atoms_fv; [apply tm_lvars_lc; exact Hlc_e|].
+    exact Hv.
+  }
+  assert (HeD2 : tm_lvars e ⊆ D2).
+  {
+    apply expr_basic_typing_formula_models_iff in Hbasic2 as [_ [_ Hty2]].
+    intros v Hv.
+    apply (basic_tm_has_ltype_lvars _ _ _ Hty2).
+    apply tm_lvars_lc_subset_atoms_fv; [apply tm_lvars_lc; exact Hlc_e|].
+    exact Hv.
+  }
+  assert (HyD1 : LVFree y ∉ D1).
+  {
+    subst D1. intros Hin. apply Hy.
+    assert (HyDsum : y ∈ lvars_fv Dsum).
+    { apply lvars_fv_elem. apply HD1_sum. exact Hin. }
+    subst Dsum. set_solver.
+  }
+  assert (HyD2 : LVFree y ∉ D2).
+  {
+    subst D2. intros Hin. apply Hy.
+    assert (HyDsum : y ∈ lvars_fv Dsum).
+    { apply lvars_fv_elem. apply HD2_sum. exact Hin. }
+    subst Dsum. set_solver.
+  }
+  assert (HyDsum : LVFree y ∉ Dsum).
+  {
+    intros Hin. apply Hy.
+    apply lvars_fv_elem in Hin.
+    subst Dsum. set_solver.
+  }
+  assert (HD12_sum : D12 ⊆ Dsum).
+  {
+    subst D12. intros v Hv.
+    apply elem_of_union in Hv as [Hv|Hv].
+    - apply HD1_sum. exact Hv.
+    - apply HD2_sum. exact Hv.
+  }
+  assert (HeD12 : tm_lvars e ⊆ D12).
+  {
+    subst D12. intros v Hv. apply elem_of_union_l. apply HeD1. exact Hv.
+  }
+  assert (HyD12 : LVFree y ∉ D12).
+  {
+    subst D12. intros Hyin.
+    apply elem_of_union in Hyin as [Hyin|Hyin];
+      [exact (HyD1 Hyin)|exact (HyD2 Hyin)].
+  }
+  pose proof (expr_result_formula_at_coarsen_domain
+    D12 Dsum e y my HD12_sum HeD12
+    HyDsum Hres_sum) as Hres_sum12.
+  assert (Hbranch1D : res_restrict m1 S12 ⊨ ty_denote_gas (S gas) Σ τ1 e).
+  {
+    subst S12.
+    assert (Hfv1D :
+        formula_fv (ty_denote_gas (S gas) Σ τ1 e) ⊆ lvars_fv D12).
+    {
+      pose proof (formula_fv_ty_denote_gas_subset_relevant (S gas) Σ τ1 e)
+        as Hfv1.
+      apply context_ty_wf_formula_models_iff in Hwf1 as [_ [_ Hcty1]].
+      destruct Hcty1 as [Hcty1_vars _].
+      apply expr_basic_typing_formula_models_iff in Hbasic1 as [_ [_ Hty1]].
+      intros a Ha. pose proof (Hfv1 a Ha) as Hrel.
+      apply lvars_fv_elem.
+      subst D12.
+      apply elem_of_union_l.
+      apply elem_of_union in Hrel as [He | Hτ].
+      - apply HeD1.
+        rewrite tm_lvars_lc_eq_atoms by exact Hlc_e.
+        apply elem_of_map. exists a. split; [reflexivity|exact He].
+      - apply Hcty1_vars.
+        apply lvars_fv_elem. rewrite context_ty_lvars_fv. exact Hτ.
+    }
+    exact (proj1 (res_models_minimal_on (lvars_fv D12) m1
+      (ty_denote_gas (S gas) Σ τ1 e) Hfv1D) Hbranch1).
+  }
+  assert (Hbranch2D : res_restrict m2 S12 ⊨ ty_denote_gas (S gas) Σ τ2 e).
+  {
+    subst S12.
+    assert (Hfv2D :
+        formula_fv (ty_denote_gas (S gas) Σ τ2 e) ⊆ lvars_fv D12).
+    {
+      pose proof (formula_fv_ty_denote_gas_subset_relevant (S gas) Σ τ2 e)
+        as Hfv2.
+      apply context_ty_wf_formula_models_iff in Hwf2 as [_ [_ Hcty2]].
+      destruct Hcty2 as [Hcty2_vars _].
+      apply expr_basic_typing_formula_models_iff in Hbasic2 as [_ [_ Hty2]].
+      intros a Ha. pose proof (Hfv2 a Ha) as Hrel.
+      apply lvars_fv_elem.
+      subst D12.
+      apply elem_of_union_r.
+      apply elem_of_union in Hrel as [He | Hτ].
+      - apply HeD2.
+        rewrite tm_lvars_lc_eq_atoms by exact Hlc_e.
+        apply elem_of_map. exists a. split; [reflexivity|exact He].
+      - apply Hcty2_vars.
+        apply lvars_fv_elem. rewrite context_ty_lvars_fv. exact Hτ.
+    }
+    exact (proj1 (res_models_minimal_on (lvars_fv D12) m2
+      (ty_denote_gas (S gas) Σ τ2 e) Hfv2D) Hbranch2).
+  }
+  destruct (res_sum_restrict_same_le m m1 m2 S12 Hdef Hle)
+    as [HdefD HleD].
+  assert (Hsum_myD :
+      res_sum (res_restrict m1 S12) (res_restrict m2 S12)
+        HdefD ⊑ my).
+  {
+    transitivity (res_restrict m S12); [exact HleD|].
+    rewrite <- Hrestrict.
+    rewrite res_restrict_restrict_eq.
+    apply res_restrict_le.
+  }
+  destruct (res_sum_pullback_subset_projection_full my
+    (res_restrict m1 S12) (res_restrict m2 S12)
+    HdefD Hsum_myD) as [Hsub1 [Hsub2 [Hdef_full Hle_full]]].
+  set (my1 := res_pullback_subset_projection my
+    (res_restrict m1 S12) Hsub1).
+  set (my2 := res_pullback_subset_projection my
+    (res_restrict m2 S12) Hsub2).
+  assert (HlcD12 : lc_lvars D12).
+  {
+    subst D12. intros v Hv.
+    apply elem_of_union in Hv as [Hv|Hv].
+    - exact (HlcD1 v Hv).
+    - exact (HlcD2 v Hv).
+  }
+  assert (Hres1 : my1 ⊨ expr_result_formula_at D12 e (LVFree y)).
+  {
+    subst my1.
+    eapply expr_result_formula_at_pullback_exact_domain.
+    - exact HlcD12.
+    - exact HeD12.
+    - exact HyD12.
+    - subst S12.
+      change (world_dom (res_restrict m1 (lvars_fv D12) : WorldT) =
+        lvars_fv D12).
+      rewrite res_restrict_dom.
+      apply set_eq. intros a. rewrite elem_of_intersection. split.
+      + intros [_ Ha]. exact Ha.
+      + intros Ha. split; [|exact Ha].
+        subst D12. rewrite lvars_fv_union in Ha.
+        apply elem_of_union in Ha as [Ha|Ha].
+        * apply HdomD1_m1. exact Ha.
+        * change (a ∈ world_dom (m1 : WorldT)).
+          change (world_dom (m1 : WorldT) =
+            world_dom (m2 : WorldT)) in Hdef.
+          rewrite Hdef. apply HdomD2_m2. exact Ha.
+    - exact Hres_sum12.
+  }
+  assert (Hres2 : my2 ⊨ expr_result_formula_at D12 e (LVFree y)).
+  {
+    subst my2.
+    eapply expr_result_formula_at_pullback_exact_domain.
+    - exact HlcD12.
+    - exact HeD12.
+    - exact HyD12.
+    - subst S12.
+      change (world_dom (res_restrict m2 (lvars_fv D12) : WorldT) =
+        lvars_fv D12).
+      rewrite res_restrict_dom.
+      apply set_eq. intros a. rewrite elem_of_intersection. split.
+      + intros [_ Ha]. exact Ha.
+      + intros Ha. split; [|exact Ha].
+        subst D12. rewrite lvars_fv_union in Ha.
+        apply elem_of_union in Ha as [Ha|Ha].
+        * change (a ∈ world_dom (m2 : WorldT)).
+          change (world_dom (m1 : WorldT) =
+            world_dom (m2 : WorldT)) in Hdef.
+          rewrite <- Hdef. apply HdomD1_m1. exact Ha.
+        * apply HdomD2_m2. exact Ha.
+    - exact Hres_sum12.
+  }
+  eapply ty_denote_gas_sum_open_result_split_from_pulled_branches
+    with (m1 := res_restrict m1 S12)
+         (m2 := res_restrict m2 S12)
+         (my1 := my1) (my2 := my2) (Hdef := Hdef_full); eauto.
+  - subst my1. apply res_pullback_subset_projection_restrict.
+  - subst my2. apply res_pullback_subset_projection_restrict.
 Qed.
 
 Lemma ty_denote_gas_sum_result_body_from_branch_refinement
     gas Σ τ1 τ2 e (m1 m2 m : WfWorldT)
     (Hdef : raw_sum_defined m1 m2) :
   res_sum m1 m2 Hdef ⊑ m ->
+  erase_ty τ1 = erase_ty τ2 ->
+  cty_depth τ1 <= gas ->
+  cty_depth τ2 <= gas ->
   m ⊨ ty_denote_gas 0 Σ (CTSum τ1 τ2) e ->
   m1 ⊨ ty_denote_gas (S gas) Σ τ1 e ->
   m2 ⊨ ty_denote_gas (S gas) Σ τ2 e ->
@@ -578,7 +1190,7 @@ Lemma ty_denote_gas_sum_result_body_from_branch_refinement
               (erase_ty τ1))
             (cty_shift 0 τ2) (tret (vbvar 0))))).
 Proof.
-  intros Hle Hzero Hbranch1 Hbranch2.
+  intros Hle Herase Hdepth1 Hdepth2 Hzero Hbranch1 Hbranch2.
   pose proof (ty_denote_gas_scope_from_zero_any
     (S gas) Σ (CTSum τ1 τ2) e m Hzero) as Hscope_full.
   cbn [ty_denote_gas] in Hscope_full.
@@ -639,21 +1251,24 @@ Proof.
       apply lvars_fv_elem. exact Hτ2.
   }
   apply (ty_denote_gas_sum_open_result_split_from_branches
-    gas Σ τ1 τ2 e m1 m2 m my y Hdef Hfresh_split Hle Hdom Hrestrict Hres
-    Hbranch1 Hbranch2).
+    gas Σ τ1 τ2 e m1 m2 m my y Hdef Hfresh_split Hle
+    Herase Hdepth1 Hdepth2 Hdom Hrestrict Hres Hbranch1 Hbranch2).
 Qed.
 
 Lemma ty_denote_gas_sum_intro_from_branch_refinement
     gas Σ τ1 τ2 e (m1 m2 m : WfWorldT)
     (Hdef : raw_sum_defined m1 m2) :
   res_sum m1 m2 Hdef ⊑ m ->
+  erase_ty τ1 = erase_ty τ2 ->
+  cty_depth τ1 < gas ->
+  cty_depth τ2 < gas ->
   m ⊨ ty_static_guard_formula Σ (CTSum τ1 τ2) e ->
   m ⊨ expr_total_formula e ->
   m1 ⊨ ty_denote_gas gas Σ τ1 e ->
   m2 ⊨ ty_denote_gas gas Σ τ2 e ->
   m ⊨ ty_denote_gas gas Σ (CTSum τ1 τ2) e.
 Proof.
-  intros Hle Hstatic Htotal Hbranch1 Hbranch2.
+  intros Hle Herase Hdepth1 Hdepth2 Hstatic Htotal Hbranch1 Hbranch2.
   destruct gas as [|gas].
   - apply ty_denote_gas_zero_of_guard.
     eapply ty_guard_relevant_of_static_full_total; eauto.
@@ -671,7 +1286,7 @@ Proof.
     rewrite res_models_and_iff.
     split.
     + eapply ty_guard_relevant_of_static_full_total; eauto.
-    + eapply ty_denote_gas_sum_result_body_from_branch_refinement; eauto.
+    + eapply ty_denote_gas_sum_result_body_from_branch_refinement; eauto; lia.
 Qed.
 
 Lemma fundamental_match_both_case Σ Γt Γf x τt τf et ef :
@@ -770,6 +1385,9 @@ Proof.
   eapply ty_denote_gas_sum_intro_from_branch_refinement
     with (m1 := mt) (m2 := mf) (Hdef := Hdef).
   - exact Hle.
+  - exact Herase_ty.
+  - cbn [cty_depth]. lia.
+  - cbn [cty_depth]. lia.
   - exact Hstatic.
   - exact Htotal_m.
   - exact Hmatch_t.

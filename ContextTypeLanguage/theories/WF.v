@@ -299,6 +299,79 @@ Proof.
   apply wf_context_ty_at_lc.
 Qed.
 
+Lemma context_ty_lvars_at_lc d D τ :
+  lc_lvars D ->
+  context_ty_lvars_at d τ ⊆ D ->
+  context_ty_shape_ok τ ->
+  cty_lc_at d τ.
+Proof.
+  intros HD Hvars Hshape.
+  induction τ in d, D, HD, Hvars, Hshape |- *;
+    cbn [cty_lc_at context_ty_lvars_at context_ty_shape_ok] in *.
+  - intros k Hk.
+    destruct (decide (S d <= k)) as [Hle|Hlt]; [|lia].
+    exfalso.
+    specialize (HD (LVBound (k - S d))).
+    apply HD.
+    apply Hvars.
+    rewrite lvars_at_depth_elem.
+    exists (LVBound k). split; [apply lvars_bv_elem; exact Hk|].
+    cbn [logic_var_at_depth].
+    rewrite decide_True by lia.
+    reflexivity.
+  - intros k Hk.
+    destruct (decide (S d <= k)) as [Hle|Hlt]; [|lia].
+    exfalso.
+    specialize (HD (LVBound (k - S d))).
+    apply HD.
+    apply Hvars.
+    rewrite lvars_at_depth_elem.
+    exists (LVBound k). split; [apply lvars_bv_elem; exact Hk|].
+    cbn [logic_var_at_depth].
+    rewrite decide_True by lia.
+    reflexivity.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 [Hshape2 _]].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 Hshape2].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+  - destruct Hshape as [Hshape1 Hshape2].
+    split.
+    + eapply IHτ1; [exact HD| |exact Hshape1].
+      intros v Hv. apply Hvars. set_solver.
+    + eapply IHτ2; [exact HD| |exact Hshape2].
+      intros v Hv. apply Hvars. set_solver.
+Qed.
+
+Lemma basic_context_ty_lvars_lc D τ :
+  lc_lvars D ->
+  basic_context_ty_lvars D τ ->
+  lc_context_ty τ.
+Proof.
+  intros HD [Hvars Hshape].
+  unfold lc_context_ty, context_ty_lvars in *.
+  eapply context_ty_lvars_at_lc; eauto.
+Qed.
+
 Lemma lvars_lc_at_depth_bv_empty d L :
   lvars_lc_at d L ->
   lvars_bv (lvars_at_depth d L) = ∅.
