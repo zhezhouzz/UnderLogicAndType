@@ -16,9 +16,7 @@ From Denotation Require Import
   TypeEquivFiberTransport
   TypeEquivFiberBase
   TypeEquivFiberBody
-  TypeEquivBody
-  TypeEquivArrow
-  TypeEquivWand.
+  TypeEquivBody.
 
 Section TypeDenote.
 
@@ -119,29 +117,29 @@ Local Lemma tlet_intro_denotation_arrow_body
   mx ⊨
     FForall
       (FImpl
-        (ty_denote_gas gas
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))))
+          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
+        (arrow_value_denote_gas_with ty_denote_gas gas
           (typed_lty_env_bind
             (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))
-            (erase_ty τx))
-          τr (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0)))) ->
+            (erase_ty (CTArrow τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))) ->
   mx ⊨
     FForall
       (FImpl
-        (ty_denote_gas gas
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))))
+          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
+        (arrow_value_denote_gas_with ty_denote_gas gas
           (typed_lty_env_bind
             (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))
-            (erase_ty τx))
-          (cty_shift 0 τx) (tret (vbvar 0)))
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))
-            (erase_ty τx))
-          τr (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0)))).
+            (erase_ty (CTArrow τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))).
 Proof.
 Admitted.
 
@@ -166,29 +164,31 @@ Local Lemma tlet_intro_denotation_wand_body
   mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (e2 ^^ x) ->
   mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (tlete e1 e2) ->
   mx ⊨
-    FBWand 1
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) (e2 ^^ x))
-          (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)))
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) (e2 ^^ x))
-          (erase_ty τx))
-        τr (tapp_tm (tm_shift 0 (e2 ^^ x)) (vbvar 0))) ->
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTWand τx τr) (e2 ^^ x))))
+          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
+        (wand_value_denote_gas_with ty_denote_gas gas
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) (e2 ^^ x))
+            (erase_ty (CTWand τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))) ->
   mx ⊨
-    FBWand 1
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-          (erase_ty τx))
-        (cty_shift 0 τx) (tret (vbvar 0)))
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-          (erase_ty τx))
-        τr (tapp_tm (tm_shift 0 (tlete e1 e2)) (vbvar 0))).
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTWand τx τr) (tlete e1 e2))))
+          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
+        (wand_value_denote_gas_with ty_denote_gas gas
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) (tlete e1 e2))
+            (erase_ty (CTWand τx τr)))
+          (cty_shift 0 τx) (cty_shift 1 τr)
+          (tret (vbvar 0)))).
 Proof.
 Admitted.
 
