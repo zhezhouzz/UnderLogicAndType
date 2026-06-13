@@ -506,6 +506,35 @@ Proof.
   - split; [subst F; reflexivity|exact Hext].
 Qed.
 
+Lemma res_extend_by_full_input_frame_restrict
+    (m0 m mz0 mz : WfWorldT) (F : FiberExtensionT) :
+  res_restrict m (world_dom (m0 : WorldT)) = m0 ->
+  ext_in F = world_dom (m0 : WorldT) ->
+  res_extend_by m0 F mz0 ->
+  res_extend_by m F mz ->
+  res_restrict mz (world_dom (mz0 : WorldT)) = mz0.
+Proof.
+  intros Hrestrict Hin Hext0 Hext.
+  pose proof (res_extend_by_projection_eq
+    m0 m F mz0 mz) as Hproj.
+  assert (Hbase_proj :
+      res_restrict m0 (ext_in F) = res_restrict m (ext_in F)).
+  {
+    rewrite Hin.
+    rewrite Hrestrict.
+    apply res_restrict_eq_of_le. apply raw_le_refl.
+  }
+  specialize (Hproj Hbase_proj Hext0 Hext).
+  pose proof (res_extend_by_dom m0 F mz0 Hext0) as Hdom_mz0.
+  unfold ext_in in Hin.
+  change (res_restrict mz0 (extA_in F ∪ extA_out F) =
+    res_restrict mz (extA_in F ∪ extA_out F)) in Hproj.
+  rewrite Hin in Hproj.
+  rewrite <- Hdom_mz0 in Hproj.
+  rewrite <- Hproj.
+  apply res_restrict_eq_of_le. apply raw_le_refl.
+Qed.
+
 Local Lemma ext_rel_exists (F : FiberExtensionT) σ :
   dom σ = ext_in F ->
   exists w, ext_rel F σ w.
