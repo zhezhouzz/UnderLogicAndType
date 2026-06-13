@@ -68,7 +68,7 @@ Lemma fix_body_arrow_outer_value_open
       (atom_env_to_lty_env (erase_ctx Γ)))
     (CTArrow (fix_rec_call_ty b y τx τ) ({0 ~> y} τ))
     (tret ({0 ~> vfvar y} vf)) ->
-  exists (z : atom) (mz : WfWorldT),
+  exists (z : atom) (mz : WfWorldT) (Fz : FiberExtensionT),
     z ∉ world_dom (my : WorldT) ∪ lvars_fv (dom
       ((relevant_env
         (<[LVFree y := erase_ty τx]>
@@ -78,6 +78,7 @@ Lemma fix_body_arrow_outer_value_open
       fv_value vf ∪ fv_cty τx ∪ fv_cty τ ∪ {[y]} /\
     world_dom (mz : WorldT) = world_dom (my : WorldT) ∪ {[z]} /\
     res_restrict mz (world_dom (my : WorldT)) = my /\
+    res_extend_by my Fz mz /\
     mz ⊨ expr_result_formula (tret ({0 ~> vfvar y} vf)) (LVFree z) /\
     mz ⊨ formula_open 0 z
       (arrow_value_denote_gas
@@ -252,10 +253,11 @@ Proof.
     - exact Hextz.
     - exact Htotal_body.
   }
-  exists z, mz.
+  exists z, mz, Fz.
   split; [exact Hzfresh|].
   split; [exact Hmz_dom|].
   split; [exact Hmz_restrict|].
+  split; [exact Hextz|].
   split; [exact Hres_plain|].
   exact Hvalue.
 Qed.
