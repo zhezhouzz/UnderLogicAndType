@@ -15,6 +15,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
+  TypeEquivFiberBase
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand
@@ -573,6 +574,236 @@ Proof.
   - eapply app_arrow_context_wf_insert_env; eauto.
   - exact Hworld.
   - eapply app_arrow_fun_basic_insert_env; eauto.
+Qed.
+
+Lemma app_arrow_outer_value_open
+    Σ Γ τx τ v1 x (m : WfWorldT) :
+  context_typing_wf Σ Γ (tret v1) (CTArrow τx τ) ->
+  x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
+  m ⊨ ty_denote_gas (cty_depth (CTArrow τx τ))
+        (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret v1) ->
+  m ⊨ ty_denote_gas (cty_depth τx)
+        (atom_env_to_lty_env (erase_ctx Γ))
+        τx (tret (vfvar x)) ->
+  exists (z : atom) (mz0 mz : WfWorldT),
+    z ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ∪ world_dom (m : WorldT) /\
+    x ∉ world_dom (mz0 : WorldT) /\
+    world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]} /\
+    res_restrict mz (world_dom (m : WorldT)) = m /\
+    res_restrict mz (world_dom (mz0 : WorldT)) = mz0 /\
+    mz0 ⊨ formula_open 0 z
+      (arrow_value_denote_gas
+        (Nat.max (cty_depth τx) (cty_depth τ))
+        (typed_lty_env_bind
+          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+            (CTArrow τx τ) (tret v1))
+          (erase_ty (CTArrow τx τ)))
+        (cty_shift 0 τx) (cty_shift 1 τ) (tret (vbvar 0))).
+Proof.
+  intros Hwf_fun Hfresh Hfun Harg.
+  set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
+  set (Σrel := relevant_env Δ (CTArrow τx τ) (tret v1)).
+  set (m0 := res_restrict m (world_dom (m : WorldT) ∖ {[x]})).
+  assert (Hfun0 :
+      m0 ⊨ ty_denote_gas (cty_depth (CTArrow τx τ))
+        Δ (CTArrow τx τ) (tret v1)).
+  {
+    subst m0.
+    assert (Hfresh_fun :
+        x ∉ fv_tm (tret v1) ∪ fv_cty (CTArrow τx τ)).
+    {
+      intros Hbad.
+      cbn [fv_tm fv_value] in Hbad.
+      apply elem_of_union in Hbad as [Hv1|Hτarr].
+      - apply Hfresh. apply elem_of_union_l.
+        apply elem_of_union_l. exact Hv1.
+      - cty_fv_syntax_norm_in Hτarr.
+        apply elem_of_union in Hτarr as [Hτx|Hτ].
+        + apply Hfresh. apply elem_of_union_l.
+          apply elem_of_union_r. exact Hτx.
+        + rewrite context_ty_lvars_fv_at in Hτ.
+          apply Hfresh. apply elem_of_union_r. exact Hτ.
+    }
+    exact (ty_denote_gas_restrict_delete_fresh
+      (cty_depth (CTArrow τx τ)) Δ (CTArrow τx τ) (tret v1)
+      x m Hfresh_fun Hfun).
+  }
+  assert (Hx_m : x ∈ world_dom (m : WorldT)).
+  { eapply ty_denote_gas_ret_fvar_world_dom; exact Harg. }
+  assert (Hrestrict_m0 : res_restrict m (world_dom (m0 : WorldT)) = m0).
+  { subst m0. apply res_restrict_self_dom. }
+  assert (Hdom_m0_insert :
+      world_dom (m : WorldT) =
+      world_dom (m0 : WorldT) ∪ {[x]}).
+  { subst m0. apply res_restrict_delete_insert_dom. exact Hx_m. }
+  assert (Hx_m0 : x ∉ world_dom (m0 : WorldT)).
+  { subst m0. apply res_restrict_delete_notin. }
+  set (z := fresh_for
+    (fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ∪
+     world_dom (m : WorldT) ∪ lvars_fv (dom Σrel) ∪ {[x]})).
+  pose proof (fresh_for_not_in
+    (fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ∪
+     world_dom (m : WorldT) ∪ lvars_fv (dom Σrel) ∪ {[x]}))
+    as Hzfresh_all.
+  assert (Hzfresh :
+      z ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ∪ world_dom (m : WorldT)).
+  { subst z. better_set_solver. }
+  assert (HzΣrel : z ∉ lvars_fv (dom Σrel)).
+  { subst z. better_set_solver. }
+  assert (Hzx : z <> x).
+  { intros ->. apply Hzfresh_all. better_set_solver. }
+  assert (Hfv_v1_m0 : fv_tm (tret v1) ⊆ world_dom (m0 : WorldT)).
+  { eapply ty_denote_gas_fv_tm_subset; exact Hfun0. }
+  destruct (expr_result_extension_witness_on_exists
+    (world_dom (m0 : WorldT)) (tret v1) z Hfv_v1_m0
+    ltac:(better_set_solver)) as [Fz HFz].
+  destruct (expr_result_extension_witness_on_shape _ _ _ _ HFz)
+    as [HFz_in HFz_out].
+  unfold ext_in, ext_out in HFz_in, HFz_out.
+  assert (Happ0 : extension_applicable Fz m0).
+  {
+    constructor.
+    - rewrite HFz_in. set_solver.
+    - rewrite HFz_out. subst z. better_set_solver.
+  }
+  assert (Happ : extension_applicable Fz m).
+  {
+    constructor.
+    - rewrite HFz_in. set_solver.
+    - rewrite HFz_out. subst z. better_set_solver.
+  }
+  destruct (res_extend_by_exists m0 Fz Happ0) as [mz0 Hext0].
+  destruct (res_extend_by_exists m Fz Happ) as [mz Hext].
+  assert (Hmz_dom :
+      world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]}).
+  {
+    pose proof (res_extend_by_dom m Fz mz Hext) as Hdom.
+    rewrite Hdom, HFz_out. reflexivity.
+  }
+  assert (Hmz_restrict_m : res_restrict mz (world_dom (m : WorldT)) = m).
+  { exact (res_extend_by_restrict_base m Fz mz Hext). }
+  assert (Hmz_restrict_mz0 :
+      res_restrict mz (world_dom (mz0 : WorldT)) = mz0).
+  {
+    eapply res_extend_by_full_input_frame_restrict;
+      [exact Hrestrict_m0|exact HFz_in|exact Hext0|exact Hext].
+  }
+  assert (Hx_mz0 : x ∉ world_dom (mz0 : WorldT)).
+  {
+    pose proof (res_extend_by_dom m0 Fz mz0 Hext0) as Hdom.
+    rewrite Hdom, HFz_out. set_solver.
+  }
+  assert (Hguard0 :
+      m0 ⊨ ty_guard_formula Σrel (CTArrow τx τ) (tret v1)).
+  {
+    subst Σrel.
+    apply ty_denote_gas_guard_formula with
+      (gas := cty_depth (CTArrow τx τ)).
+    exact Hfun0.
+  }
+  assert (Hzero0 :
+      m0 ⊨ ty_denote_gas 0 Δ (CTArrow τx τ) (tret v1)).
+  { apply ty_denote_gas_zero_of_guard_formula. exact Hguard0. }
+  assert (Htotal0 : expr_total_on_atom_world (tret v1) m0).
+  { eapply ty_denote_gas_zero_total_atom_world; exact Hzero0. }
+  assert (Hbody_outer :
+      m0 ⊨ FForall
+        (FImpl
+          (expr_result_formula_at (lvars_shift_from 0 (dom Σrel))
+            (tm_shift 0 (tret v1)) (LVBound 0))
+          (arrow_value_denote_gas
+            (Nat.max (cty_depth τx) (cty_depth τ))
+            (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
+            (cty_shift 0 τx) (cty_shift 1 τ) (tret (vbvar 0))))).
+  {
+    subst Σrel.
+    cbn [cty_depth ty_denote_gas] in Hfun0.
+    repeat rewrite res_models_and_iff in Hfun0.
+    exact (proj2 Hfun0).
+  }
+  pose proof (res_models_forall_open_named_fresh
+    m0 mz0 z
+    (FImpl
+      (expr_result_formula_at (lvars_shift_from 0 (dom Σrel))
+        (tm_shift 0 (tret v1)) (LVBound 0))
+      (arrow_value_denote_gas
+        (Nat.max (cty_depth τx) (cty_depth τ))
+        (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
+        (cty_shift 0 τx) (cty_shift 1 τ) (tret (vbvar 0))))
+    Hbody_outer ltac:(subst z; better_set_solver)) as Houter_open.
+  assert (Hmz0_dom :
+      world_dom (mz0 : WorldT) = world_dom (m0 : WorldT) ∪ {[z]}).
+  {
+    pose proof (res_extend_by_dom m0 Fz mz0 Hext0) as Hdom.
+    rewrite Hdom, HFz_out. reflexivity.
+  }
+  assert (Hmz0_restrict :
+      res_restrict mz0 (world_dom (m0 : WorldT)) = m0).
+  { exact (res_extend_by_restrict_base m0 Fz mz0 Hext0). }
+  specialize (Houter_open Hmz0_dom Hmz0_restrict).
+  cbn [formula_open] in Houter_open.
+  assert (Hres_at :
+      mz0 ⊨ expr_result_formula_at (dom Σrel) (tret v1) (LVFree z)).
+  {
+    eapply expr_result_formula_at_of_result_extends_on_coarsen
+      with (X := world_dom (m0 : WorldT)) (F := Fz) (m := m0).
+    - subst Σrel. apply relevant_env_closed.
+      apply atom_store_to_lvar_store_closed.
+    - pose proof Hguard0 as Hguard_parts.
+      unfold ty_guard_formula in Hguard_parts.
+      repeat rewrite res_models_and_iff in Hguard_parts.
+      destruct Hguard_parts as [_ [_ [Hbasic _]]].
+      apply expr_basic_typing_formula_models_iff in Hbasic
+        as [_ [_ Hty]].
+      rewrite (tm_lvars_lc_eq_atoms (tret v1)).
+      2:{ constructor. eapply context_typing_wf_ret_lc_value.
+          exact Hwf_fun. }
+      eapply basic_tm_has_ltype_lvars. exact Hty.
+    - pose proof Hguard0 as Hguard_parts.
+      unfold ty_guard_formula in Hguard_parts.
+      repeat rewrite res_models_and_iff in Hguard_parts.
+      destruct Hguard_parts as [_ [Hworld [_ _]]].
+      apply basic_world_formula_models_iff in Hworld
+        as [HlcD [HdomD _]].
+      intros v Hv.
+      destruct v as [k|a].
+      + exfalso. exact (HlcD (LVBound k) Hv).
+      + unfold lvars_of_atoms. apply elem_of_map.
+        exists a. split; [reflexivity|].
+        apply HdomD. apply lvars_fv_elem. exact Hv.
+    - unfold lvars_of_atoms. intros HzD.
+      apply elem_of_map in HzD as [a [Ha HaD]].
+      inversion Ha. subst a.
+      subst z. better_set_solver.
+    - set_solver.
+    - exact HFz.
+    - exact Hext0.
+    - exact Htotal0.
+  }
+  assert (Hres_open :
+      mz0 ⊨ formula_open 0 z
+        (expr_result_formula_at
+          (lvars_shift_from 0 (dom Σrel))
+          (tm_shift 0 (tret v1)) (LVBound 0))).
+  {
+    subst Σrel.
+    eapply result_first_outer_result_ret_value_at_open.
+    - apply atom_store_to_lvar_store_closed.
+    - eapply context_typing_wf_ret_lc_value. exact Hwf_fun.
+    - subst z. better_set_solver.
+    - exact HzΣrel.
+    - exact Hres_at.
+  }
+  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_open)
+    as Hvalue.
+  exists z, mz0, mz.
+  split; [exact Hzfresh|].
+  split; [exact Hx_mz0|].
+  split; [exact Hmz_dom|].
+  split; [exact Hmz_restrict_m|].
+  split; [exact Hmz_restrict_mz0|].
+  exact Hvalue.
 Qed.
 
 Lemma app_arrow_open_result_from_fresh_drop
