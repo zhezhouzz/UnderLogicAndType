@@ -483,4 +483,32 @@ Proof.
     eapply tlet_intro_denotation_reverse; eauto.
 Qed.
 
+(** Result alias is intentionally delegated to the TLet transport layer in the
+    nondeterministic-ready semantics.  The proof route is to instantiate the
+    let body with [ret #0], so the explicit result graph for [e] supplies the
+    same result world as [ret x].  The remaining hard work is exactly the
+    result-first Arrow/Wand TLet transport above. *)
+Lemma tlet_result_alias_denotation_at
+    gas (Σ : lty_env) τ e x D (m : WfWorldT) :
+  lty_env_closed Σ ->
+  Σ !! LVFree x = Some (erase_ty τ) ->
+  m ⊨ expr_result_formula_at D e (LVFree x) ->
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)).
+Proof.
+Admitted.
+
+Lemma tlet_result_alias_denotation
+    gas (Σ : lty_env) τ e x (m : WfWorldT) :
+  lty_env_closed Σ ->
+  Σ !! LVFree x = Some (erase_ty τ) ->
+  m ⊨ expr_result_formula e (LVFree x) ->
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)).
+Proof.
+  intros Hclosed Hlookup Hres Hden.
+  unfold expr_result_formula in Hres.
+  eapply tlet_result_alias_denotation_at; eauto.
+Qed.
+
 End TypeDenote.

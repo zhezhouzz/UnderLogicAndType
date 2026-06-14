@@ -1119,16 +1119,6 @@ Proof.
   eapply ty_denote_gas_tm_equiv; eauto.
 Qed.
 
-Lemma ty_denote_gas_result_alias_at
-    gas (Σ : lty_env) τ e x D (m : WfWorldT) :
-  lty_env_closed Σ ->
-  Σ !! LVFree x = Some (erase_ty τ) ->
-  m ⊨ expr_result_formula_at D e (LVFree x) ->
-  m ⊨ ty_denote_gas gas Σ τ e ->
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)).
-Proof.
-Admitted.
-
 Lemma ty_denote_gas_result_alias
     gas (Σ : lty_env) τ e x (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -1137,9 +1127,18 @@ Lemma ty_denote_gas_result_alias
   m ⊨ ty_denote_gas gas Σ τ e ->
   m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)).
 Proof.
-  intros Hclosed Hlookup Hres Hden.
-  unfold expr_result_formula in Hres.
-  eapply ty_denote_gas_result_alias_at; eauto.
+  apply tlet_result_alias_denotation.
+Qed.
+
+Lemma ty_denote_gas_result_alias_at
+    gas (Σ : lty_env) τ e x D (m : WfWorldT) :
+  lty_env_closed Σ ->
+  Σ !! LVFree x = Some (erase_ty τ) ->
+  m ⊨ expr_result_formula_at D e (LVFree x) ->
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)).
+Proof.
+  apply tlet_result_alias_denotation_at.
 Qed.
 
 Lemma ty_denote_gas_result_ext
