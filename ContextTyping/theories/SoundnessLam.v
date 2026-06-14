@@ -227,7 +227,46 @@ Proof.
 	        -- clear -Hu_tm Hay Haz.
 	           rewrite tm_lvars_tapp_tm_fvar in Hu_tm.
 	           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hu_tm.
-	           set_solver.
+		           set_solver.
+Qed.
+
+Lemma lam_lty_env_restrict_result_first_result_closed_eq
+    (Δ : lty_env) τx τ vf y z :
+  lty_env_closed Δ ->
+  lc_context_ty τ ->
+  y <> z ->
+  y ∉ fv_cty τ ->
+  z ∉ fv_value vf ∪ fv_cty τx ∪ fv_cty τ ->
+  lty_env_restrict_lvars
+    (<[LVFree z := erase_ty (CTArrow τx τ)]>
+      (<[LVFree y := erase_ty τx]> Δ))
+    (relevant_lvars τ (tapp_tm (tret (vfvar z)) (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := erase_ty τx]>
+      (<[LVFree z := erase_ty (CTArrow τx τ)]>
+        (relevant_env Δ (CTArrow τx τ) (tret vf))))
+    (relevant_lvars τ (tapp_tm (tret (vfvar z)) (vfvar y))).
+Proof.
+  intros HΔ Hτ Hyz Hyτ Hz.
+  pose proof (lam_lty_env_restrict_result_first_result_eq
+    Δ τx τ vf y z HΔ
+    ltac:(eapply cty_lvars_open_body_closed_no_fresh;
+      [let HlcD := fresh "HlcD" in
+       assert (HlcD : lc_lvars (context_ty_lvars_at 1 τ));
+       [intros v Hv; destruct v as [k|a]; [|exact I];
+        pose proof (cty_lc_at_lvars_bv_empty 1 τ
+          (cty_lc_at_mono_depth 0 1 τ ltac:(lia) Hτ)) as Hbv;
+        exfalso;
+        assert (k ∈ lvars_bv (context_ty_lvars_at 1 τ))
+          by (apply lvars_bv_elem; exact Hv);
+        rewrite Hbv in H; set_solver|exact HlcD]
+      |intros HyD; apply lvars_fv_elem in HyD;
+       rewrite context_ty_lvars_fv_at in HyD; exact (Hyτ HyD)
+      |reflexivity])
+    Hyz Hyτ Hz) as Heq.
+  rewrite (cty_open_above_lc_fresh 0 0 y τ) in Heq
+    by (lia || exact Hτ || exact Hyτ).
+  exact Heq.
 Qed.
 
 Local Lemma lamd_lty_env_restrict_result_first_result_eq

@@ -1041,6 +1041,82 @@ Proof.
   eapply ty_denote_gas_tapp_fun_result_alias; eauto.
 Qed.
 
+Lemma ty_denote_gas_tapp_fun_arg_result_alias_from_static
+    gas (Σ : lty_env) τ vf vx z w (m : WfWorldT) :
+  LVFree z ∈ dom Σ ->
+  LVFree w ∈ dom Σ ->
+  lc_value vf ->
+  lc_value vx ->
+  m ⊨ expr_result_formula (tret vf) (LVFree z) ->
+  m ⊨ expr_result_formula (tret vx) (LVFree w) ->
+  m ⊨ ty_static_guard_formula Σ τ (tapp_tm (tret vf) vx) ->
+  m ⊨ ty_denote_gas gas Σ τ
+    (tapp_tm (tret (vfvar z)) (vfvar w)) ->
+  m ⊨ ty_denote_gas gas Σ τ (tapp_tm (tret vf) vx).
+Proof.
+  intros HzΣ HwΣ Hvf Hvx Hfun Harg Hstatic Hsrc.
+  assert (Hclosed :
+      wfworld_closed_on
+        (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+         fv_tm (tapp_tm (tret vf) vx)) m).
+  {
+    pose proof (ty_static_guard_basic_world Σ τ
+      (tapp_tm (tret vf) vx) m Hstatic) as Hworld.
+    pose proof (basic_world_formula_wfworld_closed_on_dom
+      Σ m Hworld) as Hclosed_dom.
+    pose proof (ty_static_guard_wfworld_closed_on_term
+      Σ τ (tapp_tm (tret vf) vx) m Hstatic) as Hclosed_tgt.
+    eapply (wfworld_closed_on_mono
+      (fv_tm (tapp_tm (tret (vfvar z)) (vfvar w)) ∪
+       fv_tm (tapp_tm (tret vf) vx))
+      (lvars_fv (dom Σ) ∪ fv_tm (tapp_tm (tret vf) vx))).
+    - rewrite !fv_tapp_tm.
+      change (fv_tm (tret (vfvar z))) with ({[z]} : aset).
+      change (fv_value (vfvar w)) with ({[w]} : aset).
+      intros a Ha.
+      apply elem_of_union in Ha as [Ha|Ha].
+      + apply elem_of_union_l.
+        apply lvars_fv_elem.
+        assert (a = z \/ a = w) as Hazw by set_solver.
+        destruct Hazw as [Haz|Haw]; subst a; [exact HzΣ|exact HwΣ].
+      + apply elem_of_union_r. exact Ha.
+    - apply (wfworld_closed_on_union
+        (lvars_fv (dom Σ))
+        (fv_tm (tapp_tm (tret vf) vx))).
+      + exact Hclosed_dom.
+      + exact Hclosed_tgt.
+  }
+  pose proof (tm_equiv_tapp_value_fun_arg_result_alias
+    m vf vx z w Hclosed Hvf Hvx Hfun Harg) as Hequiv.
+  pose proof (tm_total_equiv_tapp_value_fun_arg_result_alias
+    m vf vx z w Hclosed Hvf Hvx Hfun Harg) as Htotal.
+  pose proof (ty_denote_gas_guard gas Σ τ
+    (tapp_tm (tret (vfvar z)) (vfvar w)) m Hsrc) as Hguard_src.
+  pose proof (ty_denote_gas_zero_of_guard Σ τ
+    (tapp_tm (tret (vfvar z)) (vfvar w)) m Hguard_src) as Hzero_src.
+  assert (Hzero_tgt :
+      m ⊨ ty_denote_gas 0 Σ τ (tapp_tm (tret vf) vx)).
+  {
+    eapply ty_denote_gas_zero_transport_static_tm_equiv.
+    - exact Hequiv.
+    - exact Htotal.
+    - exact Hstatic.
+    - apply lc_tapp_tm; [constructor; exact Hvf|exact Hvx].
+    - eapply ty_static_guard_fv_tm_subset. exact Hstatic.
+    - exact Hzero_src.
+  }
+  assert (Htyped :
+      typed_total_equiv_on Σ τ m
+        (tapp_tm (tret (vfvar z)) (vfvar w))
+        (tapp_tm (tret vf) vx)).
+  {
+    split; [exact Hequiv|].
+    split; [exact Htotal|].
+    split; [exact Hzero_src|exact Hzero_tgt].
+  }
+  eapply ty_denote_gas_tm_equiv; eauto.
+Qed.
+
 Lemma ty_denote_gas_result_alias_at
     gas (Σ : lty_env) τ e x D (m : WfWorldT) :
   lty_env_closed Σ ->
