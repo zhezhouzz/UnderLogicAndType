@@ -6,6 +6,7 @@ From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import
   TypeEquivCore
   TypeEquivTerm
+  TypeEquivFiberBase
   TypeEquivFiberTransport
   TypeEquivBody.
 
@@ -1041,41 +1042,24 @@ Proof.
   - exact Hres_mid.
 Qed.
 
-
-Lemma ty_denote_gas_tm_equiv_arrow_body
-    gas (IH : forall Σ τ e1 e2 (m : WfWorldT),
-      typed_total_equiv_on Σ τ m e1 e2 ->
-      m ⊨ ty_denote_gas gas Σ τ e1 ->
-      m ⊨ ty_denote_gas gas Σ τ e2)
-    (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) :
-  typed_total_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
-  m ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) e1)))
-          (tm_shift 0 e1) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e1)
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))) ->
-  m ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) e2)))
-          (tm_shift 0 e2) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) e2)
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))).
+Lemma ty_denote_gas_zero_type_fv_world
+    Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas 0 Σ τ e ->
+  lvars_fv (context_ty_lvars τ) ⊆ world_dom (m : WorldT).
 Proof.
-Admitted.
+  intros Hzero.
+  cbn [ty_denote_gas] in Hzero.
+  rewrite res_models_and_iff in Hzero.
+  destruct Hzero as [Hguard _].
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld _]].
+  pose proof (context_ty_wf_formula_fv_cty_subset
+    (relevant_env Σ τ e) τ m Hwf) as Hτ.
+  pose proof (proj1 (basic_world_formula_models_iff
+    (relevant_env Σ τ e) m) Hworld) as [_ [Hdom _]].
+  rewrite context_ty_lvars_fv.
+  set_solver.
+Qed.
 
 End TypeDenote.

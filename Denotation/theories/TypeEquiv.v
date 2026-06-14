@@ -10,7 +10,9 @@ From Denotation Require Import
   TypeEquivFiberBase
   TypeEquivBody
   TypeEquivArrow
+  TypeEquivArrowResultFirst
   TypeEquivWand
+  TypeEquivWandResultFirst
   TypeEquivTLet.
 
 Section TypeDenote.
