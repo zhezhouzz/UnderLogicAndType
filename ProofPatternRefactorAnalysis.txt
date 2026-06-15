@@ -778,6 +778,22 @@ These should be equality-preserving.  Solvers should be separate.
    after the shared set/fresh helpers exist; otherwise the split will just move
    noise around.
 
+## Implementation Status
+
+This section is updated as the refactor is implemented so that completed
+directions are not rediscovered in later cleanup passes.
+
+- [ ] DenotationSetMapFacts: add Denotation-local set/map/store/resource facts,
+  replace stable repeated proof fragments, record remaining deferred patterns.
+- [ ] ResultFirstOpen: add result-first forall/impl opening and normalization
+  helpers, replace the most repeated Arrow/Wand result-first fragments.
+- [ ] SoundnessSetMapFacts: add Soundness-local fresh/domain wrappers and small
+  deterministic tactics, replace repeated fresh/domain asserts.
+- [ ] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
+  SoundnessLam along semantic boundaries without changing public statements.
+- [ ] Compile-time optimization: record TIMED=1 before/after observations and
+  convert repeated slow side-condition scripts into small lemmas/tactics.
+
 ## Notes On What Not To Do
 
 - Do not replace semantic steps by a giant solver.  The repeated proof
@@ -811,4 +827,3 @@ using the same result-first TLet machinery.
 
 ContextTyping/theories/PrimOpConcreteContext.v still contains concrete opctx
 draft admits, but the main Soundness files do not.
-
