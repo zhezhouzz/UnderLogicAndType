@@ -33,7 +33,7 @@ Proof.
   eapply res_restrict_eq_subset; [exact Hfv|exact Hproj].
 Qed.
 
-Lemma tlet_intro_denotation_reverse_at
+Lemma result_graph_tlet_reverse_transport
     gas (Σ : lty_env) τ e1 e2 x D (m : WfWorldT) :
   lc_lvars D ->
   tm_lvars e1 ⊆ D ->

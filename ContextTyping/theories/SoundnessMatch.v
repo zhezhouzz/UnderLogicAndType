@@ -496,6 +496,34 @@ Proof.
     rewrite lvars_fv_union. reflexivity.
 Qed.
 
+Lemma relevant_env_sum_branch_union_fresh
+    Σ τ1 τ2 e y :
+  y ∉ fv_tm e ∪
+    lvars_fv (dom (relevant_env Σ (CTSum τ1 τ2) e)) ∪
+    fv_cty τ1 ∪ fv_cty τ2 ->
+  LVFree y ∉
+    dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e).
+Proof.
+  intros Hy HyD.
+  apply Hy.
+  apply elem_of_union_l. apply elem_of_union_l.
+  apply elem_of_union_r.
+  apply lvars_fv_elem.
+  relevant_env_norm_in HyD.
+  relevant_env_norm.
+  apply elem_of_union in HyD as [HyD|HyD].
+  - apply elem_of_intersection in HyD as [Hdom Hrel].
+    apply elem_of_intersection; split; [exact Hdom|].
+    unfold relevant_lvars in Hrel |- *.
+    cbn [context_ty_lvars context_ty_lvars_at] in Hrel |- *.
+    clear -Hrel. set_solver.
+  - apply elem_of_intersection in HyD as [Hdom Hrel].
+    apply elem_of_intersection; split; [exact Hdom|].
+    unfold relevant_lvars in Hrel |- *.
+    cbn [context_ty_lvars context_ty_lvars_at] in Hrel |- *.
+    clear -Hrel. set_solver.
+Qed.
+
 Lemma sum_branch_source_env_agree_right
     Σ τ1 τ2 e y T :
   lc_context_ty τ1 ->
@@ -652,8 +680,8 @@ Proof.
   rewrite Hτy in Hsource_y.
   rewrite <- (ty_denote_gas_saturate gas Σy τ1 e)
     in Hsource_y by lia.
-  eapply (ty_denote_gas_result_alias_at gas Σy τ1 e y
-    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e)) my1).
+	  eapply (ty_denote_gas_result_alias_at gas Σy τ1 e y
+	    (dom (relevant_env Σ τ1 e) ∪ dom (relevant_env Σ τ2 e)) my1).
 	  - subst Σy.
 	    rewrite typed_lty_env_bind_open_current.
 	    + apply lty_env_closed_insert_free.
@@ -667,6 +695,37 @@ Proof.
 	      * apply elem_of_union_l. apply elem_of_union_l.
 	        apply elem_of_union_l. exact He.
 	    + apply relevant_env_sum_closed_of_lc; assumption.
+  - intros v Hv.
+    apply elem_of_union in Hv as [Hv|Hv].
+    + unfold relevant_env, lty_env_restrict_lvars in Hv.
+      rewrite storeA_restrict_dom in Hv.
+      apply elem_of_intersection in Hv as [_ Hv].
+      eapply lc_lvars_relevant_lvars; [exact Hlcτ1|exact Hlc_e|exact Hv].
+    + unfold relevant_env, lty_env_restrict_lvars in Hv.
+      rewrite storeA_restrict_dom in Hv.
+      apply elem_of_intersection in Hv as [_ Hv].
+      eapply lc_lvars_relevant_lvars; [exact Hlcτ2|exact Hlc_e|exact Hv].
+	  - intros v Hv.
+	    apply elem_of_union_l.
+	    eapply ty_denote_gas_zero_tm_lvars_dom.
+	    + apply ty_denote_gas_zero_of_guard.
+	      eapply ty_denote_gas_guard. exact Hsource.
+	    + exact Hv.
+	  - intros v Hv.
+	    apply elem_of_union_l.
+	    eapply ty_denote_gas_zero_context_lvars_dom.
+	    + apply ty_denote_gas_zero_of_guard.
+	      eapply ty_denote_gas_guard. exact Hsource.
+	    + exact Hv.
+  - intros HyD.
+    eapply relevant_env_sum_branch_union_fresh; [exact Hy|].
+    exact HyD.
+  - intros a Ha.
+    pose proof (res_models_scoped _ _ Hres) as Hscope.
+    unfold formula_scoped_in_world in Hscope.
+    rewrite formula_fv_expr_result_formula_at in Hscope.
+    apply Hscope.
+    apply elem_of_union_l. exact Ha.
 	  - subst Σy.
 	    rewrite typed_lty_env_bind_open_current.
 	    + apply map_lookup_insert.
@@ -778,12 +837,43 @@ Proof.
       * apply elem_of_union in Hin as [Hτ1|Hτ2].
         -- apply elem_of_union_l. apply elem_of_union_r. exact Hτ1.
         -- apply elem_of_union_r. exact Hτ2.
-      * apply elem_of_union_l. apply elem_of_union_l.
-        apply elem_of_union_l. exact He.
-    + apply relevant_env_sum_closed_of_lc; assumption.
-  - subst Σy.
-    rewrite typed_lty_env_bind_open_current.
-    + rewrite <- Herase. apply map_lookup_insert.
+	      * apply elem_of_union_l. apply elem_of_union_l.
+	        apply elem_of_union_l. exact He.
+	    + apply relevant_env_sum_closed_of_lc; assumption.
+	  - intros v Hv.
+	    apply elem_of_union in Hv as [Hv|Hv].
+	    + unfold relevant_env, lty_env_restrict_lvars in Hv.
+	      rewrite storeA_restrict_dom in Hv.
+	      apply elem_of_intersection in Hv as [_ Hv].
+	      eapply lc_lvars_relevant_lvars; [exact Hlcτ1|exact Hlc_e|exact Hv].
+	    + unfold relevant_env, lty_env_restrict_lvars in Hv.
+	      rewrite storeA_restrict_dom in Hv.
+	      apply elem_of_intersection in Hv as [_ Hv].
+	      eapply lc_lvars_relevant_lvars; [exact Hlcτ2|exact Hlc_e|exact Hv].
+	  - intros v Hv.
+	    apply elem_of_union_r.
+	    eapply ty_denote_gas_zero_tm_lvars_dom.
+	    + apply ty_denote_gas_zero_of_guard.
+	      eapply ty_denote_gas_guard. exact Hsource.
+	    + exact Hv.
+	  - intros v Hv.
+	    apply elem_of_union_r.
+	    eapply ty_denote_gas_zero_context_lvars_dom.
+	    + apply ty_denote_gas_zero_of_guard.
+	      eapply ty_denote_gas_guard. exact Hsource.
+	    + exact Hv.
+	  - intros HyD.
+	    eapply relevant_env_sum_branch_union_fresh; [exact Hy|].
+	    exact HyD.
+	  - intros a Ha.
+	    pose proof (res_models_scoped _ _ Hres) as Hscope.
+	    unfold formula_scoped_in_world in Hscope.
+	    rewrite formula_fv_expr_result_formula_at in Hscope.
+	    apply Hscope.
+	    apply elem_of_union_l. exact Ha.
+	  - subst Σy.
+	    rewrite typed_lty_env_bind_open_current.
+	    + rewrite <- Herase. apply map_lookup_insert.
     + apply relevant_env_sum_fresh_of_fv.
       intros Hin. apply Hy.
       apply elem_of_union in Hin as [Hin|He].
