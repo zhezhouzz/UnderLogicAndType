@@ -898,6 +898,63 @@ Large-file split progress:
 
 - Avoid putting Soundness-specific ctx/typing lemmas in Denotation.  Denotation
   should receive generic lty_env/store/resource facts; Soundness can wrap them
+
+## TLet Transport Status
+
+Current remaining Denotation admits are the five obligations in
+`Denotation/theories/TypeEquivTLet.v`:
+
+- `tlet_intro_denotation_arrow_body`
+- `tlet_intro_denotation_wand_body`
+- `tlet_intro_denotation_arrow_body_reverse`
+- `tlet_intro_denotation_wand_body_reverse`
+- `tlet_result_alias_denotation_at`
+
+The old `first-complete-proof` route used `ty_denote_gas_tm_equiv` and a full
+`tm_equiv_on` proof for `e2 ^^ x` versus `tlete e1 e2`.  That route is not
+valid for the current nondeterministic/result-first semantics: when `e1` has
+multiple possible results, `tlete e1 e2` can range over all of them, while a
+store in the result-extension world fixes the current `x` value.  The current
+file therefore correctly uses the TLet-specific
+`typed_fiber_equiv_tlet_body_extension` instead.
+
+The proof shape for the Arrow/Wand obligations should not use generic
+application congruence.  After the result-first outer `forall f` is opened,
+the source result graph for `e2 ^^ x` and the target result graph for
+`tlete e1 e2` must first be related by
+`typed_fiber_equiv_result_projected`.  This produces a source opened world
+whose projection agrees with the target opened world on
+`FV(CTArrow/CTWand τx τr) ∪ {f}`.  The remaining value-body formula is about
+`ret f`, so the missing reusable facts are projection/env-agree lemmas of this
+shape:
+
+```coq
+arrow_value_denote_project_result_slot :
+  (* source/target envs agree on the Arrow type variables, and
+     source/target worlds agree on FV(CTArrow τx τr) ∪ {f} *)
+  mf_src ⊨ formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas Σsrc
+      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))) ->
+  mf_tgt ⊨ formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas Σtgt
+      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))).
+
+wand_value_denote_project_result_slot :
+  (* same projection/env-agree idea, but through FBWand's argument/product
+     world instead of ordinary forall/impl *)
+  mf_src ⊨ formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas Σsrc
+      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))) ->
+  mf_tgt ⊨ formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas Σtgt
+      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))).
+```
+
+These lemmas are proof-engineering blockers, not known semantic blockers.  The
+existing `TypeEquivArrowResultFirst.v` and `TypeEquivWandResultFirst.v`
+proofs contain most of the internal open-argument/open-result machinery, but
+their current statements are tied to `typed_total_equiv_on`; the TLet proof
+needs the smaller result-slot projection version above.
   with context_typing_wf premises.
 
 ## Summary Of Current Admit State
