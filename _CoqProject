@@ -110,6 +110,9 @@ ContextTyping/theories/PrimOpContext.v
 ContextTyping/theories/PrimOpConcreteContext.v
 ContextTyping/theories/Typing.v
 ContextTyping/theories/SoundnessSetMapFacts.v
+ContextTyping/theories/SoundnessLamBase.v
+ContextTyping/theories/SoundnessLamArrow.v
+ContextTyping/theories/SoundnessLamWand.v
 ContextTyping/theories/SoundnessLam.v
 ContextTyping/theories/SoundnessApp.v
 ContextTyping/theories/SoundnessAppD.v

@@ -813,7 +813,7 @@ directions are not rediscovered in later cleanup passes.
   and `SoundnessFix.vo`.
   Deferred: App/AppD large fresh blocks and Lam result-first context-domain
   facts; these need more semantic factoring than a tactic-only pass.
-- [ ] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
+- [x] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
   SoundnessLam along semantic boundaries without changing public statements.
 - [ ] Compile-time optimization: record TIMED=1 before/after observations and
   convert repeated slow side-condition scripts into small lemmas/tactics.
@@ -839,6 +839,13 @@ Large-file split progress:
   approximately Core 2.05s, Result 8.51s, Projected 4.92s.  Downstream
   `TypeEquivFiberBody.vo` remains slow at about 39.71s, so it is the first
   target for the timing pass.
+
+- `SoundnessLam.v` has been split into `SoundnessLamBase.v`,
+  `SoundnessLamArrow.v`, and `SoundnessLamWand.v`, with `SoundnessLam.v`
+  retained as a stable re-export.  Verified all three split files plus
+  downstream `SoundnessApp.vo`.  New timing: re-export `SoundnessLam.vo` is
+  about 0.63s; split blocks were approximately Base 2.90s, Arrow 6.97s,
+  Wand 19.56s.
 
 ## Notes On What Not To Do
 
