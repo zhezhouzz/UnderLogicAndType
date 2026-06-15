@@ -791,6 +791,11 @@ directions are not rediscovered in later cleanup passes.
   store restriction helpers out of TypeEquivTerm.  Verified:
   `DenotationSetMapFacts.vo`, `TypeEquivTerm.vo`, `SoundnessLam.vo`,
   `SoundnessApp.vo`, and `SoundnessAppD.vo`.
+  Follow-up: lowered the duplicated pure LN facts `lvars_shift_from_lc` and
+  `lvars_shift_from_lc_eq` into this shared file, replacing local copies in
+  `ConstDenoteBase.v` and `SoundnessFixBase.v`.  Verified:
+  `DenotationSetMapFacts.vo`, `ConstDenoteBase.vo`, and
+  `SoundnessFixBase.vo`.
   Deferred: broader resource extension facts and deeper TypeEquivFiberBase
   store reconstruction lemmas, because those need a focused pass.
 - [x] ResultFirstOpen: added `Denotation/theories/ResultFirstOpen.v`

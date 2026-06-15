@@ -3,8 +3,8 @@
     Constant and primitive-operation direct denotation support for
     Fundamental. *)
 
-From Denotation Require Import Context TypeEquivCore TypeEquivTerm TypeEquivFiberBase
-  TypeEquiv.
+From Denotation Require Import Context DenotationSetMapFacts TypeEquivCore
+  TypeEquivTerm TypeEquivFiberBase TypeEquiv.
 From CoreLang Require Import StrongNormalization.
 
 Section ConstDenoteBase.
@@ -20,37 +20,6 @@ Local Ltac const_fast_set_side :=
   repeat match goal with
   | |- ?a ∈ {[?a]} => apply elem_of_singleton; reflexivity
   end.
-
-Local Lemma const_lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
-Qed.
-
-Local Lemma const_lvars_shift_from_lc_eq k D :
-  lc_lvars D ->
-  lvars_shift_from k D = D.
-Proof.
-  intros Hlc.
-  apply set_eq. intros v. split.
-  - unfold lvars_shift_from.
-    intros Hv.
-    apply elem_of_map in Hv as [u [-> Hu]].
-    destruct u as [n|x]; cbn [logic_var_shift_from].
-    + destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-    + exact Hu.
-  - intros Hv.
-    unfold lvars_shift_from.
-    destruct v as [n|x].
-    + exfalso. exact (Hlc (LVBound n) Hv).
-    + apply elem_of_map. exists (LVFree x). split; [reflexivity|exact Hv].
-Qed.
 
 Lemma context_ty_wf_formula_const_precise_empty c (m : WfWorldT) :
   m ⊨ context_ty_wf_formula (∅ : lty_env)
@@ -487,7 +456,7 @@ Proof.
   pose proof (Hforall_open y HyL mx Hmxdom_forall Hmxrestrict) as Hopened.
   rewrite !formula_open_impl in Hopened.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened.
-  2:{ apply const_lc_lvars_shift_from.
+  2:{ apply lvars_shift_from_lc.
       apply relevant_env_closed. exact HΔclosed. }
   2:{
     rewrite lvars_shift_from_fv.
@@ -606,7 +575,7 @@ Proof.
         apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
         exact (basic_tm_has_ltype_lvars _ _ _ Hty).
   }
-  rewrite (const_lvars_shift_from_lc_eq 0
+  rewrite (lvars_shift_from_lc_eq 0
     (dom (relevant_env Δ τc (tret (vfvar x)))) Hlc_rel) in Hopened.
   pose proof (res_models_impl_elim mx _ _ Hopened Hexpr_y)
     as Hfib_over.

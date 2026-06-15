@@ -12,6 +12,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
+  DenotationSetMapFacts
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
@@ -39,18 +40,6 @@ Local Ltac fix_base_singleton_side :=
   repeat match goal with
   | |- ?a ∈ {[?a]} => apply elem_of_singleton; reflexivity
   end.
-
-Local Lemma fix_base_lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|a]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
-Qed.
 
 Lemma ty_denote_lt_arg_fiber
     gas (Δ : lty_env) b x y (m : WfWorldT) :
@@ -145,7 +134,7 @@ Proof.
     as Hopened.
 		  rewrite !formula_open_impl in Hopened.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened.
-  2:{ apply fix_base_lc_lvars_shift_from.
+  2:{ apply lvars_shift_from_lc.
       apply relevant_env_closed. exact HΔclosed. }
   2:{
     rewrite lvars_shift_from_fv.
@@ -225,7 +214,7 @@ Proof.
         (tret (vfvar x)) (LVFree z)).
     {
       eapply expr_result_formula_at_of_result_extends.
-      - apply fix_base_lc_lvars_shift_from.
+      - apply lvars_shift_from_lc.
         apply relevant_env_closed. exact HΔclosed.
       - apply LC_ret. apply LC_fvar.
       - exact HDm.
