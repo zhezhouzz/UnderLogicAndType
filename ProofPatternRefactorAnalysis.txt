@@ -831,6 +831,14 @@ Compile-time pass result:
   about 39.71s to about 17.27s.  Remaining cost is mostly Sum branch open/env
   normalization and is deferred for a more semantic helper pass.
 
+- Follow-up Sum branch optimization: the two remaining slow Sum obligations
+  were both caused by broad
+  `rewrite !formula_open_ty_denote_gas_singleton by sum_open_side` calls.
+  Added the exact local normalization lemma
+  `formula_open_shifted_ret_bound0_ty_denote_gas`, then rewrote only that
+  shape.  Focused timing for `TypeEquivFiberBody.vo` improved from the prior
+  about 17.27s to about 1.99s.
+
 Final validation for this refactor pass:
 
 - `timeout 180s make TIMED=1` passed.

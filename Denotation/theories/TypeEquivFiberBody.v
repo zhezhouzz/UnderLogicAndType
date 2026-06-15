@@ -63,6 +63,23 @@ Local Ltac sum_open_side :=
     | rewrite cty_shift_fv; assumption
     | cbn [fv_tm fv_value]; set_solver ].
 
+Local Lemma formula_open_shifted_ret_bound0_ty_denote_gas
+    gas (Σ : lty_env) τ y :
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ fv_cty τ ->
+  formula_open 0 y
+    (ty_denote_gas gas Σ (cty_shift 0 τ) (tret (vbvar 0))) =
+  ty_denote_gas gas (lty_env_open_one 0 y Σ)
+    (cty_open 0 y (cty_shift 0 τ)) (tret (vfvar y)).
+Proof.
+  intros HΣ Hτ.
+  rewrite formula_open_ty_denote_gas_singleton.
+  - reflexivity.
+  - exact HΣ.
+  - cbn [fv_tm fv_value]. set_solver.
+  - rewrite cty_shift_fv. exact Hτ.
+Qed.
+
 Lemma formula_fv_open_over_body_obs b φ y :
   formula_fv
     (formula_open 0 y
@@ -589,7 +606,7 @@ Proof.
     - exact Hbody_src.
     - rewrite !formula_open_plus.
       f_equal.
-      + rewrite !formula_open_ty_denote_gas_singleton by sum_open_side.
+      + rewrite !formula_open_shifted_ret_bound0_ty_denote_gas by sum_open_side.
         eapply ty_denote_gas_env_agree_on.
         * reflexivity.
         * transitivity (lty_env_restrict_lvars
@@ -604,7 +621,7 @@ Proof.
 	             ++ cbn [context_ty_lvars context_ty_lvars_at].
 	                intros v Hv. apply elem_of_union_l. exact Hv.
 	             ++ exact Hyτ1.
-      + rewrite !formula_open_ty_denote_gas_singleton by sum_open_side.
+      + rewrite !formula_open_shifted_ret_bound0_ty_denote_gas by sum_open_side.
         eapply ty_denote_gas_env_agree_on.
         * reflexivity.
         * transitivity (lty_env_restrict_lvars
