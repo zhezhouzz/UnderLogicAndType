@@ -99,6 +99,7 @@ Denotation/theories/TypeEquivArrowResultFirst.v
 Denotation/theories/TypeEquivWand.v
 Denotation/theories/TypeEquivWandResultFirst.v
 Denotation/theories/TypeEquivTLet.v
+Denotation/theories/TypeEquivTLetFormula.v
 Denotation/theories/TypeEquiv.v
 Denotation/theories/Context.v
 Denotation/theories/ConstDenoteBase.v
