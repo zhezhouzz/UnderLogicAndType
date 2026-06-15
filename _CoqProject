@@ -81,6 +81,7 @@ Denotation/theories/Notation.v
 Denotation/theories/TypeDenote.v
 Denotation/theories/TypeEquivCore.v
 Denotation/theories/DenotationSetMapFacts.v
+Denotation/theories/ResultFirstOpen.v
 Denotation/theories/TypeEquivTerm.v
 Denotation/theories/TypeEquivFiberTransport.v
 Denotation/theories/TypeEquivFiberBase.v

@@ -793,8 +793,16 @@ directions are not rediscovered in later cleanup passes.
   `SoundnessApp.vo`, and `SoundnessAppD.vo`.
   Deferred: broader resource extension facts and deeper TypeEquivFiberBase
   store reconstruction lemmas, because those need a focused pass.
-- [ ] ResultFirstOpen: add result-first forall/impl opening and normalization
-  helpers, replace the most repeated Arrow/Wand result-first fragments.
+- [x] ResultFirstOpen: added `Denotation/theories/ResultFirstOpen.v`
+  for shared result-first Arrow/Wand value-body FV/scoped facts and a small
+  equality-preserving `result_first_open_norm` normalizer.  Moved the duplicated
+  `formula_fv_open_*_value_body_obs` and scoped wrappers out of
+  `TypeEquivArrowResultFirst.v` / `TypeEquivWandResultFirst.v`.  Verified:
+  `ResultFirstOpen.vo`, `TypeEquivArrowResultFirst.vo`, and
+  `TypeEquivWandResultFirst.vo`.
+  Deferred: larger Soundness outer-result wrappers, because the common core is
+  intertwined with typing/freshness premises and should be addressed together
+  with `SoundnessSetMapFacts`.
 - [ ] SoundnessSetMapFacts: add Soundness-local fresh/domain wrappers and small
   deterministic tactics, replace repeated fresh/domain asserts.
 - [ ] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
