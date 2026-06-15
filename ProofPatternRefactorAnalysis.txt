@@ -831,6 +831,15 @@ Large-file split progress:
   New timing: re-export `TypeEquivTerm.vo` is about 0.62s; split blocks were
   approximately Base 6.33s, Result 16.34s, TLet 17.36s, App 4.27s.
 
+- `TypeEquivFiberBase.v` has been split into `TypeEquivFiberBaseCore.v`,
+  `TypeEquivFiberBaseResult.v`, and `TypeEquivFiberBaseProjected.v`, with
+  `TypeEquivFiberBase.v` retained as a stable re-export.  Verified all three
+  split files plus downstream `TypeEquivFiberBody.vo`.  New timing:
+  re-export `TypeEquivFiberBase.vo` is about 0.84s; split blocks were
+  approximately Core 2.05s, Result 8.51s, Projected 4.92s.  Downstream
+  `TypeEquivFiberBody.vo` remains slow at about 39.71s, so it is the first
+  target for the timing pass.
+
 ## Notes On What Not To Do
 
 - Do not replace semantic steps by a giant solver.  The repeated proof

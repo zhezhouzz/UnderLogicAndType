@@ -88,6 +88,9 @@ Denotation/theories/TypeEquivTermTLet.v
 Denotation/theories/TypeEquivTermApp.v
 Denotation/theories/TypeEquivTerm.v
 Denotation/theories/TypeEquivFiberTransport.v
+Denotation/theories/TypeEquivFiberBaseCore.v
+Denotation/theories/TypeEquivFiberBaseResult.v
+Denotation/theories/TypeEquivFiberBaseProjected.v
 Denotation/theories/TypeEquivFiberBase.v
 Denotation/theories/TypeEquivFiberBody.v
 Denotation/theories/TypeEquivBody.v
