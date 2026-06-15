@@ -783,8 +783,16 @@ These should be equality-preserving.  Solvers should be separate.
 This section is updated as the refactor is implemented so that completed
 directions are not rediscovered in later cleanup passes.
 
-- [ ] DenotationSetMapFacts: add Denotation-local set/map/store/resource facts,
-  replace stable repeated proof fragments, record remaining deferred patterns.
+- [x] DenotationSetMapFacts: added
+  `Denotation/theories/DenotationSetMapFacts.v` with shared
+  `lty_env_insert_free_commute`, store restriction/insert agreement lemmas,
+  and small Denotation-local set/store tactics.  Replaced the duplicate
+  local env-commute lemmas in SoundnessLam/App/AppD and moved the local
+  store restriction helpers out of TypeEquivTerm.  Verified:
+  `DenotationSetMapFacts.vo`, `TypeEquivTerm.vo`, `SoundnessLam.vo`,
+  `SoundnessApp.vo`, and `SoundnessAppD.vo`.
+  Deferred: broader resource extension facts and deeper TypeEquivFiberBase
+  store reconstruction lemmas, because those need a focused pass.
 - [ ] ResultFirstOpen: add result-first forall/impl opening and normalization
   helpers, replace the most repeated Arrow/Wand result-first fragments.
 - [ ] SoundnessSetMapFacts: add Soundness-local fresh/domain wrappers and small
@@ -793,6 +801,10 @@ directions are not rediscovered in later cleanup passes.
   SoundnessLam along semantic boundaries without changing public statements.
 - [ ] Compile-time optimization: record TIMED=1 before/after observations and
   convert repeated slow side-condition scripts into small lemmas/tactics.
+
+Timing note from the first implementation pass: after the shared facts change,
+`Denotation/theories/TypeEquivFiberBody.vo` took about 40.7s before downstream
+files could continue.  This is a priority candidate for the compile-time pass.
 
 ## Notes On What Not To Do
 

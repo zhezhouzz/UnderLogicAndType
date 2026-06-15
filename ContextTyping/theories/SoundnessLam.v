@@ -13,6 +13,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeDenote
   TypeEquivCore
+  DenotationSetMapFacts
   TypeEquivTerm
   TypeEquivFiberBase
   TypeEquivBody
@@ -44,24 +45,6 @@ Proof.
   exfalso.
   apply (Hlc (LVBound k)).
   apply lvars_bv_elem. exact Hk.
-Qed.
-
-Lemma lty_env_insert_free_commute
-    (Σ : lty_env) x y Tx Ty :
-  x <> y ->
-  <[LVFree x := Tx]> (<[LVFree y := Ty]> Σ) =
-  <[LVFree y := Ty]> (<[LVFree x := Tx]> Σ).
-Proof.
-  intros Hxy.
-  apply map_eq. intros u.
-  destruct (decide (u = LVFree x)) as [->|Hux].
-  - rewrite lookup_insert_eq.
-    rewrite lookup_insert_ne by congruence.
-    rewrite lookup_insert_eq. reflexivity.
-  - destruct (decide (u = LVFree y)) as [->|Huy].
-    + rewrite lookup_insert_ne by congruence.
-      rewrite !lookup_insert_eq. reflexivity.
-    + rewrite !lookup_insert_ne by congruence. reflexivity.
 Qed.
 
 Lemma lam_lty_env_restrict_result_first_arg_eq

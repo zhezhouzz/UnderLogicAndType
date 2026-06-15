@@ -13,6 +13,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension ResourceC
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
+  DenotationSetMapFacts
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
@@ -24,24 +25,6 @@ From Denotation Require Import Context
 From ContextTyping Require Import Typing.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
-
-Local Lemma app_lty_env_insert_free_commute
-    (Σ : lty_env) x y Tx Ty :
-  x <> y ->
-  <[LVFree x := Tx]> (<[LVFree y := Ty]> Σ) =
-  <[LVFree y := Ty]> (<[LVFree x := Tx]> Σ).
-Proof.
-  intros Hxy.
-  apply map_eq. intros u.
-  destruct (decide (u = LVFree x)) as [->|Hux].
-  - rewrite lookup_insert_eq.
-    rewrite lookup_insert_ne by congruence.
-    rewrite lookup_insert_eq. reflexivity.
-  - destruct (decide (u = LVFree y)) as [->|Huy].
-    + rewrite lookup_insert_ne by congruence.
-      rewrite !lookup_insert_eq. reflexivity.
-    + rewrite !lookup_insert_ne by congruence. reflexivity.
-Qed.
 
 Local Lemma app_lty_env_restrict_result_first_result_eq
     (Δ : lty_env) τx τ vf x z :
@@ -1219,7 +1202,7 @@ Proof.
           (tapp_tm (tret (vfvar z)) (vfvar x))).
     - reflexivity.
     - rewrite cty_open_preserves_erasure.
-      rewrite app_lty_env_insert_free_commute by
+      rewrite lty_env_insert_free_commute by
         (clear -Hzfresh Harg; intros ->; apply Hzfresh;
          apply elem_of_union_r;
          eapply ty_denote_gas_ret_fvar_world_dom; exact Harg).

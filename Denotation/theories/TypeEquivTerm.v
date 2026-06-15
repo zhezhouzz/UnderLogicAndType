@@ -2,7 +2,8 @@
 
     Term, totality, and fiber-result equivalence support for type denotation transport. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore.
+From Denotation Require Import Notation TypeDenote TypeEquivCore
+  DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
@@ -2396,53 +2397,6 @@ Lemma tm_total_equiv_res_store_subset
 Proof.
   intros [_ Hstores] Htotal σ Hσ.
   apply Htotal. exact (Hstores σ Hσ).
-Qed.
-
-Local Lemma store_restrict_insert_agree_on_subset
-    (σ : StoreT) X Y z (v : value) :
-  Y ⊆ X ->
-  z ∉ dom (σ : StoreT) ->
-  z ∉ X ->
-  store_restrict (<[z := v]> σ) (Y ∪ {[z]}) =
-  store_restrict (<[z := v]> (store_restrict σ X : StoreT)) (Y ∪ {[z]}).
-Proof.
-  intros HYX Hzσ HzX.
-  change (storeA_restrict (<[z := v]> (σ : gmap atom value)) (Y ∪ {[z]}) =
-    storeA_restrict
-      (<[z := v]> (storeA_restrict σ X : gmap atom value)) (Y ∪ {[z]})).
-  transitivity (<[z := v]> (storeA_restrict σ Y : gmap atom value)).
-  - apply storeA_restrict_insert_fresh_union;
-      [apply not_elem_of_dom; exact Hzσ|set_solver].
-  - transitivity (<[z := v]>
-        (storeA_restrict (storeA_restrict σ X : gmap atom value) Y
-          : gmap atom value)).
-    + f_equal.
-      symmetry. apply storeA_restrict_twice_subset. exact HYX.
-    + symmetry.
-	      apply storeA_restrict_insert_fresh_union.
-	      * apply storeA_restrict_lookup_none_r. exact HzX.
-      * set_solver.
-Qed.
-
-Local Lemma store_restrict_insert_agree_on_observed
-    (σ : StoreT) X Z z (v : value) :
-  Z ⊆ X ∪ {[z]} ->
-  z ∉ dom (σ : StoreT) ->
-  z ∉ X ->
-  store_restrict (<[z := v]> σ) Z =
-  store_restrict (<[z := v]> (store_restrict σ X : StoreT)) Z.
-Proof.
-  intros HZX Hzσ HzX.
-  transitivity
-    (store_restrict (store_restrict (<[z := v]> σ) (X ∪ {[z]})) Z).
-  - symmetry. apply storeA_restrict_twice_subset. exact HZX.
-  - transitivity
-      (store_restrict
-        (store_restrict (<[z := v]> (store_restrict σ X : StoreT))
-          (X ∪ {[z]})) Z).
-    + f_equal.
-      apply store_restrict_insert_agree_on_subset; set_solver.
-    + apply storeA_restrict_twice_subset. exact HZX.
 Qed.
 
 Lemma tm_fiber_equiv_tlete_body_extension
