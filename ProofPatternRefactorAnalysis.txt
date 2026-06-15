@@ -815,12 +815,21 @@ directions are not rediscovered in later cleanup passes.
   facts; these need more semantic factoring than a tactic-only pass.
 - [x] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
   SoundnessLam along semantic boundaries without changing public statements.
-- [ ] Compile-time optimization: record TIMED=1 before/after observations and
-  convert repeated slow side-condition scripts into small lemmas/tactics.
+- [x] Compile-time optimization: recorded TIMED=1 before/after observations
+  and converted repeated slow side-condition scripts into small lemmas/tactics.
 
 Timing note from the first implementation pass: after the shared facts change,
 `Denotation/theories/TypeEquivFiberBody.vo` took about 40.7s before downstream
 files could continue.  This is a priority candidate for the compile-time pass.
+
+Compile-time pass result:
+
+- `Denotation/theories/TypeEquivFiberBody.v`: `-time` showed three repeated
+  `rewrite Hdom; set_solver` goals inside `formula_scoped_forall_open_res_le`
+  taking roughly 5.7s, 5.3s, and 7.8s.  Replaced them with the deterministic
+  local lemma `opened_world_dom_contains_slot`.  File timing improved from
+  about 39.71s to about 17.27s.  Remaining cost is mostly Sum branch open/env
+  normalization and is deferred for a more semantic helper pass.
 
 Large-file split progress:
 

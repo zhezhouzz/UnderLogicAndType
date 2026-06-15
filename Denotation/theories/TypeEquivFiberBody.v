@@ -39,6 +39,16 @@ Proof.
     + apply elem_of_map. exists (LVFree x). split; [reflexivity|exact Hv].
 Qed.
 
+Local Lemma opened_world_dom_contains_slot
+    (m my : WfWorldT) y :
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  y ∈ world_dom (my : WorldT).
+Proof.
+  intros Hdom.
+  rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton_2.
+  reflexivity.
+Qed.
+
 Local Ltac expr_result_shift0_side :=
   first
     [ assumption
@@ -253,10 +263,10 @@ Proof.
             (FFibVars (qual_vars φ ∖ {[LVBound 0]})
               (FOver (FAtom φ)))))).
 	  {
-	    eapply formula_scoped_forall_open_res_le.
-	    - exact Hscope_tgt.
-	    - rewrite <- Hrestrict. apply res_restrict_le.
-	    - rewrite Hdom. set_solver.
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope_tgt.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - exact (opened_world_dom_contains_slot m my y Hdom).
 	  }
   rewrite formula_open_impl in Hopened_scope.
   eapply res_models_impl_intro; [exact Hopened_scope|].
@@ -366,7 +376,7 @@ Proof.
     eapply formula_scoped_forall_open_res_le.
     - exact Hscope_tgt.
     - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. set_solver.
+    - exact (opened_world_dom_contains_slot m my y Hdom).
   }
   rewrite formula_open_impl in Hopened_scope.
   eapply res_models_impl_intro; [exact Hopened_scope|].
@@ -520,7 +530,7 @@ Proof.
     eapply formula_scoped_forall_open_res_le.
     - exact Hscope_tgt.
     - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. set_solver.
+    - exact (opened_world_dom_contains_slot m my y Hdom).
   }
   rewrite formula_open_impl in Hopened_scope.
   eapply res_models_impl_intro; [exact Hopened_scope|].
