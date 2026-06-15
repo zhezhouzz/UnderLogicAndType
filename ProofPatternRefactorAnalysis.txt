@@ -831,6 +831,13 @@ Compile-time pass result:
   about 39.71s to about 17.27s.  Remaining cost is mostly Sum branch open/env
   normalization and is deferred for a more semantic helper pass.
 
+Final validation for this refactor pass:
+
+- `timeout 180s make TIMED=1` passed.
+- Admit scan over `Denotation` and `ContextTyping/theories/Soundness*.v`
+  reports only the five expected TLet obligations in
+  `Denotation/theories/TypeEquivTLet.v`.
+
 Large-file split progress:
 
 - `TypeEquivTerm.v` has been split into `TypeEquivTermBase.v`,
