@@ -822,6 +822,15 @@ Timing note from the first implementation pass: after the shared facts change,
 `Denotation/theories/TypeEquivFiberBody.vo` took about 40.7s before downstream
 files could continue.  This is a priority candidate for the compile-time pass.
 
+Large-file split progress:
+
+- `TypeEquivTerm.v` has been split into `TypeEquivTermBase.v`,
+  `TypeEquivTermResult.v`, `TypeEquivTermTLet.v`, and
+  `TypeEquivTermApp.v`, with `TypeEquivTerm.v` retained as a stable re-export.
+  Verified all four split files plus downstream `TypeEquivFiberBase.vo`.
+  New timing: re-export `TypeEquivTerm.vo` is about 0.62s; split blocks were
+  approximately Base 6.33s, Result 16.34s, TLet 17.36s, App 4.27s.
+
 ## Notes On What Not To Do
 
 - Do not replace semantic steps by a giant solver.  The repeated proof
