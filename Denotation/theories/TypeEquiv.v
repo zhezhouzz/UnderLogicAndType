@@ -14,6 +14,7 @@ From Denotation Require Import
   TypeEquivWand
   TypeEquivWandResultFirst
   TypeEquivTLet.
+From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
@@ -1141,6 +1142,111 @@ Proof.
   apply tlet_result_alias_denotation_at.
 Qed.
 
+Local Lemma body_tret_bvar0 :
+  body_tm (tret (vbvar 0)).
+Proof.
+  apply body_ret_iff_value.
+  exists ∅. intros y _.
+  cbn.
+  constructor.
+Qed.
+
+Local Lemma tm_equiv_on_tlete_ret_bvar0
+    (m : WfWorldT) e :
+  tm_equiv_on m e (tlete e (tret (vbvar 0))).
+Proof.
+  intros σ v Hσ.
+  unfold tm_eval_in_store, expr_eval_in_store.
+  split.
+  - intros He.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at].
+    eapply reduction_lete_intro.
+    + apply body_tret_bvar0.
+    + exact He.
+    + apply Steps_refl.
+      pose proof (steps_regular2 _ _ He) as Hret.
+      exact Hret.
+  - intros Hlet.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at] in Hlet.
+    apply reduction_lete in Hlet as [vx [He Hbody]].
+    + cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at
+        lstore_instantiate_value_at lstore_instantiate_value_split_at]
+        in Hbody.
+      pose proof (val_steps_self vx (tret v) Hbody) as Heq.
+      inversion Heq; subst. exact He.
+Qed.
+
+Local Lemma tm_total_equiv_on_tlete_ret_bvar0
+    (m : WfWorldT) e :
+  tm_total_equiv_on m e (tlete e (tret (vbvar 0))).
+Proof.
+  intros σ Hσ.
+  unfold lstore_instantiate_tm.
+  split.
+  - intros Htotal.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at].
+    eapply must_terminating_tlete_intro.
+    + apply body_tret_bvar0.
+    + exact Htotal.
+    + intros vx Hsteps.
+      cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+        lstore_instantiate_tm_split_at
+        lstore_instantiate_value_at lstore_instantiate_value_split_at].
+      change (must_terminating (tret vx)).
+      apply must_terminating_tret.
+      apply lc_ret_iff_value.
+      eapply steps_regular2. exact Hsteps.
+  - intros Htotal.
+    cbn [lstore_instantiate_tm lstore_instantiate_tm_at
+      lstore_instantiate_tm_split_at] in Htotal.
+    eapply must_terminating_tlete_elim_e1. exact Htotal.
+Qed.
+
+Local Lemma expr_basic_typing_tlete_ret_bvar0
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ expr_basic_typing_formula Σ e (erase_ty τ) ->
+  m ⊨ expr_basic_typing_formula Σ
+    (tlete e (tret (vbvar 0))) (erase_ty τ).
+Proof.
+  intros Hbasic.
+  apply expr_basic_typing_formula_models_iff in Hbasic as [HlcΣ [Hsub Hty]].
+  apply expr_basic_typing_formula_models_iff.
+  split; [exact HlcΣ|].
+  split.
+  - cbn [fv_tm fv_value].
+    exact Hsub.
+  - eapply BTT_Let with (T1 := erase_ty τ) (L := lvars_fv (dom Σ)).
+    + exact Hty.
+    + intros y Hy.
+      cbn.
+      constructor. constructor.
+      rewrite typed_lty_env_bind_open_current.
+      * apply map_lookup_insert.
+      * intros HyΣ. apply Hy.
+        apply lvars_fv_elem. exact HyΣ.
+      * exact HlcΣ.
+Qed.
+
+Local Lemma relevant_env_tlete_ret_bvar0
+    (Σ : lty_env) τ e :
+  lc_tm e ->
+  relevant_env Σ τ (tlete e (tret (vbvar 0))) =
+  relevant_env Σ τ e.
+Proof.
+  intros Hlc.
+  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
+  f_equal.
+  rewrite (tm_lvars_lc_eq_atoms e Hlc).
+  rewrite (tm_lvars_lc_eq_atoms (tlete e (tret (vbvar 0)))).
+  - cbn [fv_tm fv_value].
+    set_solver.
+  - apply lc_lete_iff_body. split; [exact Hlc|apply body_tret_bvar0].
+Qed.
+
 Lemma ty_denote_gas_result_ext
     gas (Σ : lty_env) τ e x
     (m mx : WfWorldT) (Fx : FiberExtensionT) :
@@ -1195,9 +1301,147 @@ Proof.
     eapply expr_result_formula_of_result_extends
       with (Σ := relevant_env Σ τ e); eauto.
   }
-  eapply ty_denote_gas_result_alias; eauto.
-  - apply lty_env_closed_insert_free; eauto.
-  - apply map_lookup_insert.
+  set (Σx := <[LVFree x := erase_ty τ]> Σ).
+  assert (Hguard_mx_source :
+      mx ⊨ ty_guard_formula (relevant_env Σx τ e) τ e).
+  { subst Σx. eapply ty_denote_gas_guard_formula. exact Hmx_source. }
+  pose proof Hguard_mx_source as Hguard_mx_parts.
+  unfold ty_guard_formula in Hguard_mx_parts.
+  repeat rewrite res_models_and_iff in Hguard_mx_parts.
+  destruct Hguard_mx_parts as [Hwf_mx [Hworld_mx [Hbasic_mx Htotal_mx]]].
+  assert (Hlc_e : lc_tm e).
+  {
+    apply expr_basic_typing_formula_models_iff in Hbasic_mx as [HlcΣx [_ Hty]].
+    eapply basic_tm_has_ltype_lc; [exact HlcΣx|exact Hty].
+  }
+  assert (Hzero_source :
+      mx ⊨ ty_denote_gas 0 Σx τ e).
+  {
+    subst Σx. eapply ty_denote_gas_zero_of_guard_formula.
+    exact Hguard_mx_source.
+  }
+  assert (Hworld_ret :
+      mx ⊨ basic_world_formula (relevant_env Σx τ (tret (vfvar x)))).
+  {
+    subst Σx.
+    eapply basic_world_formula_subenv
+      with (Σbig := <[LVFree x := erase_ty τ]>
+        (relevant_env (<[LVFree x := erase_ty τ]> Σ) τ e)).
+    - intros v T Hv.
+      unfold relevant_env, lty_env_restrict_lvars in Hv |- *.
+      apply storeA_restrict_lookup_some in Hv as [Hvrel Hv].
+      destruct (decide (v = LVFree x)) as [->|Hvx].
+      + rewrite !lookup_insert in Hv |- *.
+        destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
+          [exact Hv|contradiction].
+      + rewrite lookup_insert_ne by congruence.
+        apply storeA_restrict_lookup_some_2; [exact Hv|].
+        unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
+        unfold relevant_lvars in Hvrel.
+        apply elem_of_union in Hvrel as [Hvτ|Hvxv].
+        * apply elem_of_union_l. exact Hvτ.
+        * cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hvxv.
+          apply elem_of_singleton in Hvxv. contradiction.
+    - eapply basic_world_insert_result_alias.
+      + apply relevant_env_fresh_free.
+        * intros Hxτfv. apply Hxτ.
+          apply lvars_fv_elem.
+          rewrite context_ty_lvars_fv. exact Hxτfv.
+        * exact Hxe.
+      + exact Hres.
+      + exact Hworld_mx.
+      + exact Hbasic_mx.
+  }
+  assert (Hbasic_ret :
+      mx ⊨ expr_basic_typing_formula
+        (relevant_env Σx τ (tret (vfvar x)))
+        (tret (vfvar x)) (erase_ty τ)).
+  {
+    pose proof Hworld_ret as Hworld_ret_parts.
+    apply basic_world_formula_models_iff in Hworld_ret_parts
+      as [Hlc_ret [Hscope_ret _]].
+    eapply ret_fvar_typing_of_lookup.
+    - exact Hlc_ret.
+    - exact Hscope_ret.
+    - unfold relevant_env, lty_env_restrict_lvars.
+      apply storeA_restrict_lookup_some_2.
+      + subst Σx. rewrite lookup_insert.
+        destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
+          [reflexivity|contradiction].
+      + unfold relevant_lvars.
+        apply elem_of_union_r.
+        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+        apply elem_of_singleton. reflexivity.
+  }
+  assert (Hzero_ret :
+      mx ⊨ ty_denote_gas 0 Σx τ (tret (vfvar x))).
+  {
+    eapply ty_denote_gas_zero_of_guard_formula.
+    unfold ty_guard_formula.
+    rewrite res_models_and_iff.
+    split.
+    - eapply context_ty_wf_formula_relevant_env_change_term.
+      + exact Hworld_ret.
+      + exact Hwf_mx.
+    - rewrite res_models_and_iff.
+      split.
+      + exact Hworld_ret.
+      + rewrite res_models_and_iff.
+        split.
+        * exact Hbasic_ret.
+        * eapply expr_total_formula_tret_of_basic.
+          -- exact Hworld_ret.
+          -- exact Hbasic_ret.
+  }
+  assert (Hzero_tlet :
+      mx ⊨ ty_denote_gas 0 Σx τ (tlete e (tret (vbvar 0)))).
+  {
+    eapply ty_denote_gas_zero_of_guard_formula.
+    unfold ty_guard_formula.
+    rewrite relevant_env_tlete_ret_bvar0 by exact Hlc_e.
+    rewrite res_models_and_iff.
+    split; [exact Hwf_mx|].
+    rewrite res_models_and_iff.
+    split; [exact Hworld_mx|].
+    rewrite res_models_and_iff.
+    split.
+    - eapply expr_basic_typing_tlete_ret_bvar0. exact Hbasic_mx.
+    - eapply tm_equiv_total.
+      + apply tm_total_equiv_on_tlete_ret_bvar0.
+      + apply lc_lete_iff_body. split; [exact Hlc_e|apply body_tret_bvar0].
+      + cbn [fv_tm fv_value].
+        apply expr_basic_typing_formula_models_iff in Hbasic_mx
+          as [_ [_ Hty_mx]].
+        pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_mx) as Hfv_lvars.
+        apply basic_world_formula_models_iff in Hworld_mx
+          as [_ [Hdom_mx _]].
+        intros a Ha.
+        apply Hdom_mx.
+        apply lvars_fv_elem.
+        apply Hfv_lvars.
+        unfold lvars_of_atoms.
+        apply elem_of_map. exists a. split; [reflexivity|set_solver].
+      + exact Htotal_mx.
+  }
+  assert (Htlet :
+      mx ⊨ ty_denote_gas gas Σx τ (tlete e (tret (vbvar 0)))).
+  {
+    eapply ty_denote_gas_tm_equiv.
+    - split.
+      + apply tm_equiv_on_tlete_ret_bvar0.
+      + split.
+        * apply tm_total_equiv_on_tlete_ret_bvar0.
+        * split; [exact Hzero_source|exact Hzero_tlet].
+    - exact Hmx_source.
+  }
+  pose proof (tlet_intro_denotation gas Σx τ e (tret (vbvar 0))
+    x Fx m mx) as Hiff.
+  cbn [fv_tm fv_value] in Hiff.
+  specialize (Hiff ltac:(set_solver)
+    ltac:(intros Hbad; apply Hxτ; apply lvars_fv_elem;
+          rewrite context_ty_lvars_fv; exact Hbad)
+    HFx Hext Hzero_ret Hzero_tlet).
+  apply Hiff. exact Htlet.
 Qed.
 
 Lemma formula_fv_ty_denote_gas_subset_relevant gas Σ τ e :
