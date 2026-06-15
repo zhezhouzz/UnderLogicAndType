@@ -803,8 +803,16 @@ directions are not rediscovered in later cleanup passes.
   Deferred: larger Soundness outer-result wrappers, because the common core is
   intertwined with typing/freshness premises and should be addressed together
   with `SoundnessSetMapFacts`.
-- [ ] SoundnessSetMapFacts: add Soundness-local fresh/domain wrappers and small
-  deterministic tactics, replace repeated fresh/domain asserts.
+- [x] SoundnessSetMapFacts: added
+  `ContextTyping/theories/SoundnessSetMapFacts.v` with shared union-building,
+  fresh/domain tactics, and
+  `soundness_fresh_erase_ctx_from_context_union`.  Replaced the local
+  FixApply union/fresh wrapper and made Fix/FixApply/FixSelf import the
+  Denotation env-commute fact explicitly.  Verified:
+  `SoundnessSetMapFacts.vo`, `SoundnessFixApply.vo`, `SoundnessFixSelf.vo`,
+  and `SoundnessFix.vo`.
+  Deferred: App/AppD large fresh blocks and Lam result-first context-domain
+  facts; these need more semantic factoring than a tactic-only pass.
 - [ ] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
   SoundnessLam along semantic boundaries without changing public statements.
 - [ ] Compile-time optimization: record TIMED=1 before/after observations and

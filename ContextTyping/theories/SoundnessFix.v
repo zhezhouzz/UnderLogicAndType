@@ -10,6 +10,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
+  DenotationSetMapFacts
   TypeEquivCore
   TypeEquivFiberBase
   TypeEquivBody

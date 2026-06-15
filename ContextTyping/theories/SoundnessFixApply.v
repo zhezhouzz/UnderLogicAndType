@@ -10,6 +10,7 @@ From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
+  DenotationSetMapFacts
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
@@ -19,39 +20,8 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
+From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLam SoundnessFixBase
   SoundnessFixOpen.
-
-Local Ltac fix_apply_build_union :=
-  first
-    [ assumption
-    | apply elem_of_union_l; fix_apply_build_union
-    | apply elem_of_union_r; fix_apply_build_union
-    | apply elem_of_singleton_2; reflexivity ].
-
-Local Ltac fix_apply_notin_union :=
-  let Hbad := fresh "Hbad" in
-  intros Hbad;
-  match goal with
-  | H : ?x ∉ _ |- False =>
-      apply H; fix_apply_build_union
-  end.
-
-Local Lemma fix_apply_fresh_erase_ctx_from_fix_union
-    (Σ : tyctx) Γ y A B C :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
-  y ∉ dom (erase_ctx Γ).
-Proof.
-  intros Hy.
-  eapply ctx_erasure_under_notin_erase_ctx.
-  intros Hyctx.
-  apply Hy.
-  apply elem_of_union_l.
-  apply elem_of_union_l.
-  apply elem_of_union_l.
-  apply elem_of_union_r.
-  exact Hyctx.
-Qed.
 
 Lemma fix_body_arrow_outer_value_open
     (Σ : tyctx) Γ τx τ vf b (t : ty)
@@ -300,7 +270,7 @@ Proof.
   set (self := vfix (TBase b →ₜ t) vf).
   set (gas := Nat.max (cty_depth τself) (cty_depth τres)).
   assert (HyΓ : y ∉ dom (erase_ctx Γ)).
-  { eapply fix_apply_fresh_erase_ctx_from_fix_union; eauto. }
+  { eapply soundness_fresh_erase_ctx_from_context_union; eauto. }
   assert (Hbody_mid :
       my ⊨ ty_denote_gas (cty_depth (CTArrow τself τres))
         Δy (CTArrow τself τres) (tret body)).
