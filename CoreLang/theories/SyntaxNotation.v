@@ -54,6 +54,7 @@ Definition constant_to_uint (c : constant) : option Number.uint :=
   match c with
   | cnat n => Some (Nat.to_num_uint n)
   | cbool _ => None
+  | clist _ => None
   end.
 
 Number Notation constant constant_of_uint constant_to_uint : core_scope.
@@ -80,9 +81,9 @@ Notation "'let:' e1 'in' e2" := (tlete e1 e2)
 Notation "v1 · v2" := (tapp v1 v2)
   (at level 40, left associativity, format "v1  ·  v2") : core_scope.
 
-Notation "'if' v 'then' et 'else' ef" := (tmatch v et ef)
+Notation "'ifb' v 'then' et 'else' ef" := (tmatch v et ef)
   (at level 100, v at level 200, et at level 200, ef at level 200,
-   format "'[v' if  v  then '/' et '/' else '/' ef ']'") : core_scope.
+   format "'[v' ifb  v  then '/' et '/' else '/' ef ']'") : core_scope.
 
 Notation "'iszero' v" := (tprim op_eq0 v)
   (at level 30, v at level 30, format "iszero  v") : core_scope.
@@ -90,3 +91,5 @@ Notation "'succ' v" := (tprim op_plus1 v)
   (at level 30, v at level 30, format "succ  v") : core_scope.
 Notation "'pred' v" := (tprim op_minus1 v)
   (at level 30, v at level 30, format "pred  v") : core_scope.
+
+Notation "'cons' v1 v2" := (tbinop op_cons v1%core v2%core) (at level 60) : core_scope.

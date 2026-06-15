@@ -21,6 +21,11 @@ Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
   | op_minus1 => (TNat, TNat)
   end.
 
+Definition bin_op_type (op : bin_op) : base_ty * base_ty * base_ty :=
+  match op with
+  | op_cons => (TNat, TList, TList)
+  end.
+
 (** ** Typing judgments *)
 
 (** We define two mutually-inductive relations and expose them via
@@ -57,6 +62,11 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       prim_op_type op = (arg_b, ret_b) →
       Γ ⊢ᵥ v ⋮ TBase arg_b →
       Γ ⊢ₑ (tprim op v) ⋮ TBase ret_b
+  | TT_BinOp Γ op v1 v2 t1 t2 t3 :
+      bin_op_type op = (t1, t2, t3) →
+      Γ ⊢ᵥ v1 ⋮ TBase t1 →
+      Γ ⊢ᵥ v2 ⋮ TBase t2 →
+      Γ ⊢ₑ (tbinop op v1 v2) ⋮ TBase t3
   | TT_App Γ s1 s2 v1 v2 :
       Γ ⊢ᵥ v1 ⋮ (s1 →ₜ s2) →
       Γ ⊢ᵥ v2 ⋮ s1 →
@@ -201,6 +211,7 @@ Proof.
   - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.
+  - econstructor; eauto.
 Qed.
 
 Lemma subst_typing_insert_tm Γ x s e T vx :
@@ -263,6 +274,7 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
+  - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.

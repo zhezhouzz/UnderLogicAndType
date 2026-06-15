@@ -74,6 +74,11 @@ with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
       prim_op_type op = (arg_b, ret_b) ->
       basic_value_has_ltype Σ v (TBase arg_b) ->
       basic_tm_has_ltype Σ (tprim op v) (TBase ret_b)
+  | BTT_BinOp Σ op v1 v2 t1 t2 t3 :
+      bin_op_type op = (t1, t2, t3) ->
+      basic_value_has_ltype Σ v1 (TBase t1) ->
+      basic_value_has_ltype Σ v2 (TBase t2) ->
+      basic_tm_has_ltype Σ (tbinop op v1 v2) (TBase t3)
   | BTT_App Σ s1 s2 v1 v2 :
       basic_value_has_ltype Σ v1 (s1 →ₜ s2) ->
       basic_value_has_ltype Σ v2 s1 ->
@@ -540,6 +545,21 @@ Proof.
     +
     eapply H; eauto.
   - match goal with
+    | Hlc : lc_tm (tbinop _ _ _) |- _ =>
+        apply lc_binop_iff_values in Hlc as [Hlc1 Hlc2]
+    end.
+    eapply BTT_BinOp; first done.
+    + eapply H; eauto.
+      match goal with
+      | Hsub : tm_lvars (tbinop _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H0; eauto.
+      match goal with
+      | Hsub : tm_lvars (tbinop _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+  - match goal with
     | Hlc : lc_tm (tapp _ _) |- _ =>
         apply lc_app_iff_values in Hlc as [Hlc1 Hlc2]
     end.
@@ -722,6 +742,7 @@ Proof.
       specialize (H0 x ltac:(set_solver) (<[x := T1]> Δ)).
       exact (H0 (lvar_store_open_bind_atom_store Δ T1 x ltac:(set_solver))).
   - eapply TT_Op; eauto.
+  - eapply TT_BinOp; eauto.
   - eapply TT_App; eauto.
   - eapply TT_Match; eauto.
 Qed.
@@ -851,6 +872,7 @@ Proof.
       Hop2 : prim_op_type ?op = (?a2, ?r2) |- _ =>
         rewrite Hop1 in Hop2; inversion Hop2; reflexivity
     end.
+  - rewrite e in H6; by simplify_eq.
   - match goal with
     | IH : forall T2, basic_value_has_ltype _ _ T2 -> _,
       Hfun : basic_value_has_ltype _ _ (_ →ₜ _) |- _ =>

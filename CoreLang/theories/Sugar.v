@@ -30,6 +30,7 @@ with tm_shift (k : nat) (e : tm) : tm :=
   | tlete e1 e2 => tlete (tm_shift k e1) (tm_shift (S k) e2)
   | tprim op v => tprim op (value_shift k v)
   | tapp v1 v2 => tapp (value_shift k v1) (value_shift k v2)
+  | tbinop op v1 v2 => tbinop op (value_shift k v1) (value_shift k v2)
   | tmatch v et ef =>
       tmatch (value_shift k v) (tm_shift k et) (tm_shift k ef)
   end.
@@ -122,6 +123,8 @@ Proof.
   - rewrite H by exact H0. reflexivity.
   - rewrite H by exact H1.
     rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
@@ -169,6 +172,8 @@ Proof.
   - rewrite H by exact H1.
     rewrite H0 by lia. reflexivity.
   - rewrite H by exact H0. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
   - rewrite H by exact H1.
     rewrite H0 by exact H1. reflexivity.
   - rewrite H by exact H2.
@@ -241,6 +246,7 @@ Proof.
       rewrite !close_open_var_tm in Hopen by (rewrite ?tm_shift_fv; exact Hxfv).
       exact Hopen.
   - rewrite H. reflexivity.
+  - rewrite H, H0. reflexivity.
   - rewrite H, H0. reflexivity.
   - rewrite H, H0, H1. reflexivity.
 Qed.
@@ -352,13 +358,13 @@ Proof.
   unfold tapp_tm.
   intros Hty.
   inversion Hty as
-    [|Γ0 Tfun Tbody ef ebody L Hef Hbody| | |]; subst.
+    [|Γ0 Tfun Tbody ef ebody L Hef Hbody| | | |]; subst.
   pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e ∪ {[y]})).
   assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e ∪ {[y]})
     by (subst x; apply fresh_for_not_in).
   specialize (Hbody x ltac:(set_solver)).
   change (<[x:=Tfun]> Γ ⊢ₑ tapp (vfvar x) (vfvar y) ⋮ T) in Hbody.
-  inversion Hbody as [| | |Γ1 s1 s2 v1 v2 Hfun Harg|]; subst.
+  inversion Hbody as [| | | |Γ1 s1 s2 v1 v2 Hfun Harg|]; subst.
   inversion Hfun; subst.
   rewrite lookup_insert in H1.
   destruct (decide (x = x)); [|congruence].
@@ -375,7 +381,7 @@ Lemma basic_typing_tapp_tm_tlete_assoc Γ e1 e2 y T :
 Proof.
   intros Hty.
   inversion Hty as
-    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | | |]; subst.
   pose (x := fresh_for (L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})).
   assert (Hx : x ∉ L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]})
     by (subst x; apply fresh_for_not_in).
@@ -413,7 +419,7 @@ Proof.
   intros Hty.
   apply basic_typing_tapp_tm_fvar_inv in Hty as [Tx [Hlet Hy]].
   inversion Hlet as
-    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | |]; subst.
+    [|Γ0 T1 T2 e1' e2' L He1 Hbody| | | |]; subst.
   eapply TT_Let with (L := L ∪ dom Γ ∪ fv_tm e2 ∪ {[y]}).
   - exact He1.
   - intros z Hz.

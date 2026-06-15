@@ -43,6 +43,7 @@ Proof.
   - rewrite lvars_fv_union, H, H0. reflexivity.
   - apply H.
   - rewrite lvars_fv_union, H, H0. reflexivity.
+  - rewrite lvars_fv_union, H, H0. reflexivity.
   - rewrite !lvars_fv_union, H, H0, H1. set_solver.
 Qed.
 
@@ -107,6 +108,7 @@ Proof.
   - rewrite lvars_at_depth_union, H, H0.
     replace (S c + d) with (S (c + d)) by lia. reflexivity.
   - rewrite H. reflexivity.
+  - rewrite lvars_at_depth_union, H, H0. reflexivity.
   - rewrite lvars_at_depth_union, H, H0. reflexivity.
   - rewrite !lvars_at_depth_union, H, H0, H1. reflexivity.
 Qed.
@@ -181,6 +183,9 @@ Proof.
     rewrite <- set_swap_union. reflexivity.
   - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- set_swap_union. reflexivity.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite <- !set_swap_union. set_solver.
 Qed.
@@ -226,6 +231,7 @@ Proof.
     (fun v Hlc IH => IH)
     (fun e1 e2 L Hlc1 IH1 Hbody IH2 => _)
     (fun op v Hlc IH => IH)
+    (fun op v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
     (fun v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
     (fun v et ef Hlcv IHv Hlcet IHet Hlcef IHef => _)).
   - cbn [value_lvars value_lvars_at]. reflexivity.
@@ -273,6 +279,10 @@ Proof.
     assert (Hdepth : lvars_bv (lvars_at_depth 1 (tm_lvars e2)) = ∅).
     { apply lvars_bv_at_depth_succ_empty_of_open0 with (x := x). exact IH2. }
     rewrite Hdepth. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 v1) with (value_lvars v1).
+    change (value_lvars_at 0 v2) with (value_lvars v2).
+    rewrite lvars_bv_union, IH1, IH2. set_solver.
   - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
     change (value_lvars_at 0 v1) with (value_lvars v1).
     change (value_lvars_at 0 v2) with (value_lvars v2).
@@ -474,6 +484,9 @@ Proof.
     + apply H. rewrite lvars_bv_union in H1. set_solver.
     + apply H0. rewrite lvars_bv_union in H1. set_solver.
   - f_equal.
+    + apply H. rewrite lvars_bv_union in H1. set_solver.
+    + apply H0. rewrite lvars_bv_union in H1. set_solver.
+  - f_equal.
     + apply H. rewrite !lvars_bv_union in H2. set_solver.
     + apply H0. rewrite !lvars_bv_union in H2. set_solver.
     + apply H1. rewrite !lvars_bv_union in H2. set_solver.
@@ -653,6 +666,8 @@ Proof.
   - rewrite H by exact H0. reflexivity.
   - rewrite H by exact H1.
     rewrite H0 by exact H1. reflexivity.
+  - rewrite H by exact H1.
+    rewrite H0 by exact H1. reflexivity.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
@@ -690,6 +705,10 @@ Proof.
   - pose proof (IHe2 (S d) (S k) ltac:(lia)) as Hbody.
     rewrite tm_lvars_at_shift_under by lia. set_solver.
   - rewrite value_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite value_lvars_at_shift_under by lia.
     cbn [tm_lvars_at].
     rewrite !value_lvars_at_bound0_under. set_solver.
   - rewrite value_lvars_at_shift_under by lia.
@@ -740,6 +759,9 @@ with lstore_instantiate_tm_split_at
       tlete (lstore_instantiate_tm_split_at d σf σb e1)
         (lstore_instantiate_tm_split_at (S d) σf σb e2)
   | tprim op v => tprim op (lstore_instantiate_value_split_at d σf σb v)
+  | tbinop op v1 v2 =>
+      tbinop op (lstore_instantiate_value_split_at d σf σb v1)
+             (lstore_instantiate_value_split_at d σf σb v2)
   | tapp v1 v2 =>
       tapp (lstore_instantiate_value_split_at d σf σb v1)
         (lstore_instantiate_value_split_at d σf σb v2)
@@ -853,6 +875,7 @@ Proof.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal. apply H. exact H0.
   - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
@@ -930,6 +953,7 @@ Proof.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal. apply H. exact H0.
   - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
@@ -983,6 +1007,7 @@ Proof.
   - rewrite subst_map_ret. f_equal. apply H. exact H0.
   - rewrite subst_map_lete. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tprim. f_equal. apply H. exact H0.
+  - rewrite subst_map_tbinop. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tapp. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tmatch. repeat f_equal;
       [apply H | apply H0 | apply H1]; exact H2.
@@ -1053,6 +1078,7 @@ Proof.
   - f_equal. apply H; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal. apply H; set_solver.
+  - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.

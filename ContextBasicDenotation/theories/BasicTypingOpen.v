@@ -398,6 +398,9 @@ Proof.
 	  - eapply BTT_Op.
 	    + exact e.
 	    + eapply H; set_solver.
+	  - eapply BTT_BinOp; first done.
+	    + eapply H; set_solver.
+	    + eapply H0; set_solver.
 	  - eapply BTT_App.
 	    + eapply H; set_solver.
 	    + eapply H0; set_solver.
@@ -587,6 +590,15 @@ Proof.
     - eapply BTT_Op.
       + exact e.
       + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+    - eapply BTT_BinOp; first done.
+      + eapply H; [|reflexivity].
+        match goal with
+        | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
+        end.
+      + eapply H0; [|reflexivity].
         match goal with
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.

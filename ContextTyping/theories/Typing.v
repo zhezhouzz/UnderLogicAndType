@@ -350,6 +350,16 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       has_context_type Σ Γ (tret (vfvar x)) (primop_arg_ty (Φ op)) →
       has_context_type Σ Γ (tprim op (vfvar x)) ({0 ~> x} (primop_result_ty (Φ op)))
 
+  | CT_Cons Γ x y :
+      context_typing_wf Σ Γ
+        (tbinop op_cons (vfvar x) (vfvar y))
+        ({0~>x} ({0~>y} cons_res_ty)) →
+      has_context_type Σ Γ (tret (vfvar x)) cons_arg1_ty →
+      has_context_type Σ Γ (tret (vfvar y)) cons_arg2_ty →
+      has_context_type Σ Γ
+        (tbinop op_cons (vfvar x) (vfvar y))
+        ({0~>x} ({0~>y} cons_res_ty))
+
   (** T-MatchBoth.  Both boolean branches are reachable and contribute a
       context/type sum. *)
   | CT_MatchBoth Γt Γf x τt τf et ef :

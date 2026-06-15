@@ -437,6 +437,24 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tbinop σ op v1 v2 :
+  m{σ} (tbinop op v1 v2) = tbinop op (m{σ} v1) (m{σ} v2).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tbinop op v1 v2) σ =
+      tbinop op
+        (map_fold (fun x vx acc => {x := vx} acc) v1 σ)
+        (map_fold (fun x vx acc => {x := vx} acc) v2 σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v1).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v2).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tbinop op v1 v2)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_tapp σ v1 v2 :
   m{σ} (tapp v1 v2) = tapp (m{σ} v1) (m{σ} v2).
 Proof.
@@ -542,6 +560,13 @@ Lemma subst_map_tprim σ op v :
 Proof.
   change (m{σ} (tprim op v) = tprim op (m{σ} v)).
   apply msubst_tprim.
+Qed.
+
+Lemma subst_map_tbinop σ op v1 v2 :
+  subst_map σ (tbinop op v1 v2) = tbinop op (subst_map σ v1) (subst_map σ v2).
+Proof.
+  (* change (m{σ} (tapp v1 v2) = tapp (m{σ} v1) (m{σ} v2)). *)
+  apply msubst_tbinop.
 Qed.
 
 Lemma subst_map_tapp σ v1 v2 :

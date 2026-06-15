@@ -23,6 +23,10 @@ Inductive prim_step : prim_op → constant → constant → Prop :=
   | Prim_minus1 n :
       prim_step op_minus1 (cnat n) (cnat (Nat.pred n)).
 
+Inductive binop_step : bin_op → constant → constant → constant → Prop :=
+| Binop_cons n l :
+   binop_step op_cons (cnat n) (clist l) (clist $ n :: l).
+
 #[global] Hint Constructors prim_step : core.
 
 Lemma prim_step_preserves_base op c c' arg_b ret_b :
@@ -44,6 +48,25 @@ Proof.
   rewrite <- Hret. constructor.
 Qed.
 
+Lemma binop_step_preserves_base op v1 v2 v3 t1 t2 t3 :
+  bin_op_type op = (t1, t2, t3) →
+  binop_step op v1 v2 v3 →
+  base_ty_of_const v3 = t3.
+Proof.
+  intros Hop Hstep.
+  inversion Hstep; subst; simpl in Hop; inversion Hop; reflexivity.
+Qed.
+
+Lemma binop_step_result_has_type op v1 v2 v3 t1 t2 t3 :
+  bin_op_type op = (t1, t2, t3) →
+  binop_step op v1 v2 v3 →
+  ∅ ⊢ᵥ vconst v3 ⋮ TBase t3.
+Proof.
+  intros Hop Hstep.
+  pose proof (binop_step_preserves_base op v1 v2 v3 t1 t2 t3) as Hret.
+  rewrite <- Hret; eauto.
+Qed.
+
 (** ** Head reduction *)
 
 (** [head_step e e'] is the *head* (redex) reduction.
@@ -60,6 +83,11 @@ Inductive head_step : tm → tm → Prop :=
       prim_step op c c' →
       lc_tm (tprim op (vconst c)) →
       head_step (tprim op (vconst c)) (tret (vconst c'))
+
+  | HS_Binop op c1 c2 c3 :
+      binop_step op c1 c2 c3 →
+      lc_tm (tbinop op (vconst c1) (vconst c2)) →
+      head_step (tbinop op (vconst c1) (vconst c2)) (tret (vconst c3))
 
   (** [tapp (vlam s body) v  →  body[0 ↦ v]] *)
   | HS_Beta s body v :
@@ -137,6 +165,14 @@ Proof.
   intros H1 H2. inversion H1; inversion H2; subst; try reflexivity; congruence.
 Qed.
 
+Lemma binop_step_det op c1 c2 c3 c3' :
+  binop_step op c1 c2 c3 →
+  binop_step op c1 c2 c3' →
+  c3 = c3'.
+Proof.
+  intros H1 H2. inversion H1; inversion H2; subst; try reflexivity; congruence.
+Qed.
+
 Lemma head_step_det e e1 e2 :
   head_step e e1 →
   head_step e e2 →
@@ -147,11 +183,14 @@ Proof.
     repeat match goal with
     | H : tlete _ _ = tlete _ _ |- _ => inversion H; subst; clear H
     | H : tprim _ _ = tprim _ _ |- _ => inversion H; subst; clear H
+    | H : tbinop _ _ _ = tbinop _ _ _ |- _ => inversion H; subst; clear H
     | H : tapp _ _ = tapp _ _ |- _ => inversion H; subst; clear H
     | H : tmatch _ _ _ = tmatch _ _ _ |- _ => inversion H; subst; clear H
     end;
-    try reflexivity; try discriminate.
-  repeat f_equal. eapply prim_step_det; eauto.
+    try reflexivity; try discriminate;
+  repeat f_equal.
+  - eapply prim_step_det; eauto.
+  - eapply binop_step_det; eauto.
 Qed.
 
 Lemma step_det e e1 e2 :
@@ -205,6 +244,17 @@ Proof.
     simplify_eq; reflexivity.
 Qed.
 
+Lemma binop_step_preserves_type op c1 c2 c3 t1 t2 t3 :
+  binop_step op c1 c2 c3 →
+  bin_op_type op = (t1, t2, t3) →
+  base_ty_of_const c1 = t1 →
+  base_ty_of_const c2 = t2 →
+  base_ty_of_const c3 = t3.
+Proof.
+  intros Hstep Hsig Harg. inversion Hstep; subst; simpl in *;
+    simplify_eq; reflexivity.
+Qed.
+
 Lemma head_step_preserves_type Γ e e' T :
   Γ ⊢ₑ e ⋮ T → head_step e e' → Γ ⊢ₑ e' ⋮ T.
 Proof.
@@ -225,6 +275,10 @@ Proof.
     replace ret_b with (base_ty_of_const c') by
       (eapply prim_step_preserves_type; eauto; reflexivity).
     constructor; constructor.
+  - inv Hty; inv H7; inv H8.
+    replace t3 with (base_ty_of_const c3); last first.
+    { eapply binop_step_preserves_type; eauto. }
+    do 2 constructor.
   - inversion Hty; subst.
     inversion H3; subst.
     pose (x := fresh_for (L ∪ fv_tm body)).

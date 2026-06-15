@@ -100,8 +100,9 @@ Lemma basic_typing_bool_canonical_form v :
   v = vconst (cbool true) ∨ v = vconst (cbool false).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TBool Hty) as [[b|n] [-> Hbase]]; simpl in Hbase.
+  destruct (basic_typing_base_canonical_form v TBool Hty) as [[b|n|l] [-> Hbase]]; simpl in Hbase.
   - destruct b; auto.
+  - discriminate.
   - discriminate.
 Qed.
 
@@ -110,9 +111,10 @@ Lemma basic_typing_nat_canonical_form v :
   ∃ n, v = vconst (cnat n).
 Proof.
   intros Hty.
-  destruct (basic_typing_base_canonical_form v TNat Hty) as [[b|n] [-> Hbase]]; simpl in Hbase.
+  destruct (basic_typing_base_canonical_form v TNat Hty) as [[b|n|?] [-> Hbase]]; simpl in Hbase.
   - discriminate.
   - eauto.
+  - discriminate.
 Qed.
 
 Lemma basic_typing_arrow_canonical_form v s T :
@@ -223,6 +225,14 @@ Proof.
         }
         rewrite Hagree by (simpl; set_solver). reflexivity.
   - econstructor; eauto.
+  - econstructor; eauto;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
   - econstructor;
       match goal with
       | |- _ ⊢ᵥ _ ⋮ _ =>
@@ -322,6 +332,7 @@ Proof.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
+    + econstructor; eauto.
   - intros Hty.
     induction Hty using tm_has_type_mut with
       (P := fun Γ v T _ =>
@@ -389,6 +400,7 @@ Proof.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
+    + econstructor; eauto.
 Qed.
 
 Lemma basic_typing_env_agree_tm Γ Γ' e T :
@@ -447,6 +459,14 @@ Proof.
         }
         rewrite Hagree by (simpl; set_solver). reflexivity.
   - econstructor; eauto.
+  - econstructor; eauto;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
   - econstructor;
       match goal with
       | |- _ ⊢ᵥ _ ⋮ _ =>
@@ -591,6 +611,7 @@ Proof.
         eapply IH; eapply Hopen; set_solver
     end.
   - rewrite e in H2. simplify_eq. reflexivity.
+  - rewrite e in H3; by simplify_eq.
   - match goal with
     | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
       Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
@@ -626,6 +647,7 @@ Proof.
         eapply IH; eapply Hopen; set_solver
     end.
   - rewrite e in H2. simplify_eq. reflexivity.
+  - rewrite e in H3; by simplify_eq.
   - match goal with
     | IH : ∀ T2, Γ ⊢ᵥ v1 ⋮ T2 → TArrow _ _ = T2,
       Hfun : Γ ⊢ᵥ v1 ⋮ TArrow _ _ |- _ =>
@@ -671,6 +693,15 @@ Proof.
     * rewrite insert_insert_ne by set_solver. reflexivity.
     * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
+  - econstructor; eauto.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
   - econstructor.
     + match goal with
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
@@ -733,6 +764,15 @@ Proof.
     * rewrite insert_insert_ne by set_solver. reflexivity.
     * pose proof (open_fv_tm e2 (vfvar y) 0) as Hfv.
       simpl in Hfv. set_solver.
+  - econstructor; eauto.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v2 → Γ ⊢ᵥ v2 ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
   - econstructor.
     + match goal with
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v1 → Γ ⊢ᵥ v1 ⋮ _ |- _ =>

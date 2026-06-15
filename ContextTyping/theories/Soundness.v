@@ -95,7 +95,7 @@ Proof.
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
   inversion Hbasic as
-    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| |]; subst; clear Hbasic.
+    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| | |]; subst; clear Hbasic.
   inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
   pose proof (Φ_wf op) as Hsig.
   pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.
@@ -1039,6 +1039,20 @@ Proof.
   - exact Harg.
 Qed.
 
+Lemma fundamental_cons_case Σ Γ x y :
+   context_typing_wf Σ Γ
+     (tbinop op_cons (vfvar x) (vfvar y))
+     ({0~>x} ({0~>y} cons_res_ty)) →
+   (ctx_denote_under Σ Γ ⊫
+      ty_denote_under Σ Γ cons_arg1_ty (tret (vfvar x))) →
+   (ctx_denote_under Σ Γ ⊫
+      ty_denote_under Σ Γ cons_arg2_ty (tret (vfvar y))) →
+   (ctx_denote_under Σ Γ ⊫
+      ty_denote_under Σ Γ
+        ({0~>x} ({0~>y} cons_res_ty))
+        (tbinop op_cons (vfvar x) (vfvar y))).
+Admitted.
+
 (** ** Fundamental theorem *)
 
 Theorem Fundamental (Σ : gmap atom ty) (Γ : ctx) (e : tm) (τ : context_ty) :
@@ -1059,6 +1073,7 @@ Proof.
   - eapply fundamental_appd_case; eauto using typing_wf_under.
   - eapply fundamental_fix_case; eauto using typing_wf_under.
   - eapply fundamental_appop_case; eauto.
+  - eapply fundamental_cons_case; eauto.
   - eapply fundamental_match_both_case; eauto.
   - eapply fundamental_match_true_case; eauto.
   - eapply fundamental_match_false_case; eauto.

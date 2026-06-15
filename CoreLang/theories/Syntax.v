@@ -12,7 +12,7 @@ From ContextBase Require Import LogicVar BaseTactics.
 (** ** Base and basic types *)
 
 Inductive base_ty : Type :=
-  | TBool | TNat.
+  | TBool | TNat | TList.
 
 Inductive ty : Type :=
   | TBase  (b : base_ty)
@@ -37,7 +37,8 @@ Notation "s1 '→ₜ' s2" := (TArrow s1 s2)
 
 Inductive constant : Type :=
   | cbool (b : bool)
-  | cnat  (n : nat).
+  | cnat  (n : nat)
+  | clist (nl : list nat).
 
 #[global] Instance constant_eqdec : EqDecision constant. Proof. solve_decision. Defined.
 
@@ -46,10 +47,13 @@ Inductive prim_op : Type :=
   | op_plus1     (** successor on natural numbers *)
   | op_minus1.   (** predecessor on natural numbers, with [pred 0 = 0] *)
 
+Inductive bin_op : Type :=
+  | op_cons.
+
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
 Definition base_ty_of_const (c : constant) : base_ty :=
-  match c with cbool _ => TBool | cnat _ => TNat end.
+  match c with cbool _ => TBool | cnat _ => TNat | clist _ => TList end.
 
 (** ** Values and terms — mutual induction, locally nameless
 
@@ -76,6 +80,7 @@ with tm : Type :=
   | tret    (v : value)
   | tlete   (e1 e2 : tm)
   | tprim   (op : prim_op) (arg : value)
+  | tbinop  (op : bin_op) (v1 v2 : value)
   | tapp    (v1 v2 : value)
   | tmatch  (v : value) (etrue efalse : tm).
 
@@ -114,6 +119,7 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
   | tret v          => tret (open_value k s v)
   | tlete e1 e2     => tlete (open_tm k s e1) (open_tm (S k) s e2)
   | tprim op v      => tprim op (open_value k s v)
+  | tbinop op v1 v2 => tbinop op (open_value k s v1) (open_value k s v2)
   | tapp v1 v2      => tapp (open_value k s v1) (open_value k s v2)
   | tmatch v et ef  =>
       tmatch (open_value k s v) (open_tm k s et) (open_tm k s ef)
@@ -146,6 +152,7 @@ with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   | tret v          => tret (close_value x k v)
   | tlete e1 e2     => tlete (close_tm x k e1) (close_tm x (S k) e2)
   | tprim op v      => tprim op (close_value x k v)
+  | tbinop op v1 v2 => tbinop op (close_value x k v1) (close_value x k v2)
   | tapp v1 v2      => tapp (close_value x k v1) (close_value x k v2)
   | tmatch v et ef  =>
       tmatch (close_value x k v) (close_tm x k et) (close_tm x k ef)
@@ -171,6 +178,7 @@ with fv_tm (e : tm) : aset :=
   | tret v          => fv_value v
   | tlete e1 e2     => fv_tm e1 ∪ fv_tm e2
   | tprim _ v       => fv_value v
+  | tbinop _ v1 v2  => fv_value v1 ∪ fv_value v2
   | tapp v1 v2      => fv_value v1 ∪ fv_value v2
   | tmatch v et ef  => fv_value v ∪ fv_tm et ∪ fv_tm ef
   end.
@@ -205,6 +213,7 @@ with tm_lvars_at (d : nat) (e : tm) : lvset :=
   | tret v => value_lvars_at d v
   | tlete e1 e2 => tm_lvars_at d e1 ∪ tm_lvars_at (S d) e2
   | tprim _ v => value_lvars_at d v
+  | tbinop _ v1 v2 => value_lvars_at d v1 ∪ value_lvars_at d v2
   | tapp v1 v2 => value_lvars_at d v1 ∪ value_lvars_at d v2
   | tmatch v et ef =>
       value_lvars_at d v ∪ tm_lvars_at d et ∪ tm_lvars_at d ef
@@ -235,6 +244,7 @@ with tm_swap_atom (x y : atom) (e : tm) : tm :=
   | tret v => tret (value_swap_atom x y v)
   | tlete e1 e2 => tlete (tm_swap_atom x y e1) (tm_swap_atom x y e2)
   | tprim op v => tprim op (value_swap_atom x y v)
+  | tbinop op v1 v2 => tbinop op (value_swap_atom x y v1) (value_swap_atom x y v2)
   | tapp v1 v2 => tapp (value_swap_atom x y v1) (value_swap_atom x y v2)
   | tmatch v et ef =>
       tmatch (value_swap_atom x y v)
@@ -254,6 +264,7 @@ Proof.
     + apply fv_value_swap_atom.
     + rewrite !fv_tm_swap_atom. better_base_solver.
     + apply fv_value_swap_atom.
+    + rewrite !fv_value_swap_atom. better_base_solver.
     + rewrite !fv_value_swap_atom. better_base_solver.
     + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
 Qed.
@@ -334,6 +345,7 @@ with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   | tret v          => tret (value_subst x s v)
   | tlete e1 e2     => tlete (tm_subst x s e1) (tm_subst x s e2)
   | tprim op v      => tprim op (value_subst x s v)
+  | tbinop op v1 v2 => tbinop op (value_subst x s v1) (value_subst x s v2)
   | tapp v1 v2      => tapp (value_subst x s v1) (value_subst x s v2)
   | tmatch v et ef  =>
       tmatch (value_subst x s v) (tm_subst x s et) (tm_subst x s ef)
@@ -384,6 +396,10 @@ with lc_tm : tm → Prop :=
   | LC_op op v :
       lc_value v →
       lc_tm (tprim op v)
+  | LC_binop op v1 v2 :
+      lc_value v1 →
+      lc_value v2 →
+      lc_tm (tbinop op v1 v2)
   | LC_app v1 v2 :
       lc_value v1 → lc_value v2 →
       lc_tm (tapp v1 v2)

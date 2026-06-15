@@ -904,13 +904,11 @@ Definition mk_q_eq (v1 v2 : value) : type_qualifier :=
     the HAT-style construction: each base type chooses a measure into [nat],
     and recursive calls are required to decrease under that measure. *)
 Definition constant_measure_for_base (b : base_ty) (c : constant) : nat :=
-  match b, c with
-  | TNat, cnat n => n
-  | TNat, cbool false => 0
-  | TNat, cbool true => 1
-  | TBool, cbool false => 0
-  | TBool, cbool true => 1
-  | TBool, cnat n => n
+  match c with
+  | cnat n => n
+  | cbool false => 0
+  | cbool true => 1
+  | clist l => foldl Nat.add 0 l
   end.
 
 Definition constant_lt_for_base (b : base_ty) : constant -> constant -> Prop :=

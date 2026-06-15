@@ -54,6 +54,12 @@ Proof.
   split; inversion 1; subst; eauto.
 Qed.
 
+Lemma lc_binop_iff_values op v1 v2 :
+  lc_tm (tbinop op v1 v2) ↔ lc_value v1 ∧ lc_value v2.
+Proof.
+  split; inversion 1; subst; eauto.
+Qed.
+
 Lemma lc_app_iff_values v1 v2 :
   lc_tm (tapp v1 v2) ↔ lc_value v1 ∧ lc_value v2.
 Proof.
@@ -186,6 +192,7 @@ Proof.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
+  - inversion Heq. f_equal; eauto.
 Qed.
 
 Lemma open_rec_open_eq_tm u w (e : tm) i j :
@@ -203,6 +210,7 @@ Proof.
       crush_nat_decides; try contradiction; auto.
   - inversion Heq; subst. f_equal; eauto; lia.
   - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.

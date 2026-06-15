@@ -1556,3 +1556,14 @@ Proof.
     + apply primop_graph_result_denotation.
     + apply primop_graph_result_to_arg_ctx.
 Qed.
+
+Definition cons_arg1_ty : context_ty := precise_ty TNat qual_top.
+Definition cons_arg2_ty : context_ty := precise_ty TList qual_top.
+Definition cons_res_qual : type_qualifier :=
+  tqual ({[LVBound 0; LVBound 1; LVBound 2]})
+    (λ σ, ∃ x l l',
+        denote_lvar_value (lso_store σ) (vbvar 2) = Some (vconst x) ∧
+        denote_lvar_value (lso_store σ) (vbvar 1) = Some (vconst l) ∧
+        denote_lvar_value (lso_store σ) (vbvar 0) = Some (vconst l') ∧ 
+        binop_step op_cons x l l').
+Definition cons_res_ty : context_ty := over_ty TList cons_res_qual.

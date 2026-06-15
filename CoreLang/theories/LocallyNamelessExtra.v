@@ -156,6 +156,7 @@ Proof.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_commute_tm x ux y uy e :
@@ -178,6 +179,7 @@ Proof.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
+  - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
@@ -212,6 +214,7 @@ Proof.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
+  - f_equal; eauto.
 Qed.
 
 Lemma subst_subst_tm x ux y uy e :
@@ -232,6 +235,7 @@ Proof.
     + destruct (decide (x = x0)); subst; simpl.
       * symmetry. by rewrite subst_fresh_value_proven.
       * by rewrite decide_False by done.
+  - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
@@ -313,6 +317,8 @@ Proof.
   - apply f_equal. injection Hopen as H0. eauto.
   - injection Hopen as H1 H2.
     f_equal; eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
   - injection Hopen as H1 H2 H3.
     f_equal; eauto.
 Qed.
@@ -335,6 +341,8 @@ Proof.
   - injection Hopen as H1 H2.
     f_equal; eauto.
   - apply f_equal. injection Hopen as H0. eauto.
+  - injection Hopen as H1 H2.
+    f_equal; eauto.
   - injection Hopen as H1 H2.
     f_equal; eauto.
   - injection Hopen as H1 H2 H3.
@@ -421,6 +429,7 @@ Proof.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
+  - f_equal; eauto; my_set_solver.
 Qed.
 
 Lemma subst_shadow_tm x z u e :
@@ -441,6 +450,7 @@ Proof.
   - f_equal; eauto.
   - f_equal; eauto.
   - f_equal; eauto.
+  - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
   - f_equal; eauto; my_set_solver.
