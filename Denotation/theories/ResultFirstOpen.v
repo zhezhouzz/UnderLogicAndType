@@ -6,6 +6,22 @@ From Denotation Require Import Notation TypeDenote.
 
 Section TypeDenote.
 
+Lemma result_first_forall_impl_open_elim
+    (m my : WfWorldT) y P Q :
+  m ⊨ FForall (FImpl P Q) ->
+  y ∉ world_dom (m : WorldT) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  my ⊨ formula_open 0 y P ->
+  my ⊨ formula_open 0 y Q.
+Proof.
+  intros Hall Hy Hdom Hrestrict HP.
+  pose proof (res_models_forall_open_named_fresh
+    m my y (FImpl P Q) Hall Hy Hdom Hrestrict) as Hopen.
+  cbn [formula_open] in Hopen.
+  eapply res_models_impl_elim; eauto.
+Qed.
+
 Lemma formula_fv_open_arrow_value_body_obs
     gas (Σ : lty_env) τx τr f :
   formula_fv
@@ -120,4 +136,3 @@ Ltac result_first_open_norm :=
   rewrite ?formula_open_expr_result_formula_at_shift0 in *.
 
 End TypeDenote.
-

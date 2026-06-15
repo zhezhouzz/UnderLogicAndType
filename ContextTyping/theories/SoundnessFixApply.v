@@ -11,6 +11,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   DenotationSetMapFacts
+  ResultFirstOpen
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
@@ -125,17 +126,6 @@ Proof.
   assert (Hmz_restrict :
       res_restrict mz (world_dom (my : WorldT)) = my).
   { exact (res_extend_by_restrict_base my Fz mz Hextz). }
-  pose proof (res_models_forall_open_named_fresh
-    my mz z
-    (FImpl
-      (expr_result_formula_at (lvars_shift_from 0 (dom Σrel))
-        (tm_shift 0 (tret body)) (LVBound 0))
-      (arrow_value_denote_gas
-        (Nat.max (cty_depth τself) (cty_depth τres))
-        (typed_lty_env_bind Σrel (erase_ty (CTArrow τself τres)))
-        (cty_shift 0 τself) (cty_shift 1 τres) (tret (vbvar 0))))
-    Hbody_outer Hzmy Hmz_dom Hmz_restrict) as Houter_open.
-  cbn [formula_open] in Houter_open.
   assert (Hzero_body :
       my ⊨ ty_denote_gas 0 Δy (CTArrow τself τres) (tret body)).
   {
@@ -194,8 +184,8 @@ Proof.
     - exact HzΣrel.
     - exact Hres_at.
   }
-  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_open)
-    as Hvalue.
+  pose proof (result_first_forall_impl_open_elim my mz z _ _
+    Hbody_outer Hzmy Hmz_dom Hmz_restrict Hres_open) as Hvalue.
   assert (Hres_plain :
       mz ⊨ expr_result_formula (tret body) (LVFree z)).
   {

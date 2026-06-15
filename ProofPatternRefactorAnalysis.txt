@@ -800,9 +800,12 @@ directions are not rediscovered in later cleanup passes.
   `TypeEquivArrowResultFirst.v` / `TypeEquivWandResultFirst.v`.  Verified:
   `ResultFirstOpen.vo`, `TypeEquivArrowResultFirst.vo`, and
   `TypeEquivWandResultFirst.vo`.
-  Deferred: larger Soundness outer-result wrappers, because the common core is
-  intertwined with typing/freshness premises and should be addressed together
-  with `SoundnessSetMapFacts`.
+  Follow-up: added `result_first_forall_impl_open_elim`, the shared outer
+  `forall f. result(e,f) -> value-body(ret f)` eliminator, and used it in
+  `SoundnessFixApply.v` to replace the manual forall-open plus implication
+  elimination block.  Verified `ResultFirstOpen.vo`, `SoundnessLamWand.vo`,
+  and `SoundnessFixApply.vo`.  Deferred: larger typing/freshness-specific
+  wrappers, because those would expose long Soundness-only premises.
 - [x] SoundnessSetMapFacts: added
   `ContextTyping/theories/SoundnessSetMapFacts.v` with shared union-building,
   fresh/domain tactics, and
