@@ -16,7 +16,7 @@ From Denotation Require Import Context
   TypeEquivFiberBase
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessApp.
+From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessApp.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -211,24 +211,13 @@ Proof.
   { intros ->. apply Hzfresh. apply elem_of_union_r. exact Hx_m2. }
   assert (HzΣrel : LVFree z ∉ dom Σrel).
   {
-    subst Σrel. apply relevant_env_wand_fresh_free.
-    - intros Hbad. apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_l. apply elem_of_union_r. exact Hbad.
-    - intros Hbad. apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_r. exact Hbad.
-    - cbn [fv_tm fv_value]. intros Hbad.
-      apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_l. apply elem_of_union_l. exact Hbad.
+    subst Σrel. apply soundness_relevant_env_wand_value_fresh.
+    soundness_fresh_solve.
   }
   assert (HxΣrel : LVFree x ∉ dom Σrel).
   {
-    subst Σrel. apply relevant_env_wand_fresh_free.
-    - intros Hbad. apply Hfresh. apply elem_of_union_l.
-      apply elem_of_union_r. exact Hbad.
-    - intros Hbad. apply Hfresh. apply elem_of_union_r. exact Hbad.
-    - cbn [fv_tm fv_value]. intros Hbad.
-      apply Hfresh. apply elem_of_union_l.
-      apply elem_of_union_l. exact Hbad.
+    subst Σrel. apply soundness_relevant_env_wand_value_fresh.
+    soundness_fresh_solve.
   }
   rewrite (formula_open_result_first_fun_arg_two
     (Nat.max (cty_depth τx) (cty_depth τ))
@@ -680,15 +669,8 @@ Proof.
           (relevant_env Δ1 (CTWand τx τ) (tret v1))
           (erase_ty τx)))).
   {
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    assert (Hxτx : x ∉ fv_cty τx) by better_set_solver.
-    assert (Hxτ : x ∉ fv_cty τ) by better_set_solver.
-    assert (Hxv1 : x ∉ fv_tm (tret v1)).
-    { cbn [fv_tm fv_value]. better_set_solver. }
-    exact (relevant_env_wand_fresh_free
-      Δ1 τx τ (tret v1) x Hxτx Hxτ Hxv1 Hbad).
+    apply soundness_typed_bind_wand_value_fresh.
+    soundness_fresh_solve.
   }
   assert (HΣfresh_tgt :
       x ∉ lvars_fv
@@ -696,15 +678,8 @@ Proof.
           (relevant_env Δstar (CTArrow τx τ) (tret v1))
           (erase_ty τx)))).
   {
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    assert (Hxτx : x ∉ fv_cty τx) by better_set_solver.
-    assert (Hxτ : x ∉ fv_cty τ) by better_set_solver.
-    assert (Hxv1 : x ∉ fv_tm (tret v1)).
-    { cbn [fv_tm fv_value]. better_set_solver. }
-    exact (relevant_env_arrow_fresh_free
-      Δstar τx τ (tret v1) x Hxτx Hxτ Hxv1 Hbad).
+    apply soundness_typed_bind_arrow_value_fresh.
+    soundness_fresh_solve.
   }
   rewrite (formula_open_ty_denote_gas_singleton 0 x
     (Nat.max (cty_depth τx) (cty_depth τ))

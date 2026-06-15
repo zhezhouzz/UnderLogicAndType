@@ -819,8 +819,12 @@ directions are not rediscovered in later cleanup passes.
   Denotation env-commute fact explicitly.  Verified:
   `SoundnessSetMapFacts.vo`, `SoundnessFixApply.vo`, `SoundnessFixSelf.vo`,
   and `SoundnessFix.vo`.
-  Deferred: App/AppD large fresh blocks and Lam result-first context-domain
-  facts; these need more semantic factoring than a tactic-only pass.
+  Follow-up: added Arrow/Wand value-term relevant-env freshness wrappers and
+  typed-bind freshness wrappers, then replaced repeated App/AppD
+  `relevant_env_*_fresh_free` side-condition blocks.  Verified:
+  `SoundnessSetMapFacts.vo`, `SoundnessApp.vo`, and `SoundnessAppD.vo`.
+  Deferred: deeper AppD proof blocks that use `relevant_env_*_fresh_free in Hin`
+  remain semantic context transport rather than simple fresh side conditions.
 - [x] Large-file split: split TypeEquivTerm, TypeEquivFiberBase, and
   SoundnessLam along semantic boundaries without changing public statements.
 - [x] Compile-time optimization: recorded TIMED=1 before/after observations

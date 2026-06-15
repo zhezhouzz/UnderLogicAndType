@@ -22,7 +22,7 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing.
+From ContextTyping Require Import Typing SoundnessSetMapFacts.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -161,7 +161,8 @@ Proof.
   assert (Hrel_env_fresh :
       LVFree x ∉ dom (relevant_env Δ (CTArrow τx τ) (tret v1) : lty_env)).
   {
-    apply relevant_env_arrow_fresh_free; better_set_solver.
+    apply soundness_relevant_env_arrow_value_fresh.
+    soundness_fresh_solve.
   }
   assert (Hrel_env_closed :
       lty_env_closed (relevant_env Δ (CTArrow τx τ) (tret v1))).
@@ -606,12 +607,8 @@ Proof.
   apply map_subseteq_spec. intros v T Hlook.
   destruct (decide (v = LVFree x)) as [->|Hvx].
   - exfalso.
-    pose proof (relevant_env_arrow_fresh_free
-      Δ τx τ (tret v1) x) as Hrel_fresh.
-    apply Hrel_fresh.
-    + better_set_solver.
-    + better_set_solver.
-    + cbn [fv_tm fv_value]. better_set_solver.
+    eapply soundness_relevant_env_arrow_value_fresh.
+    + soundness_fresh_solve.
     + apply elem_of_dom. eexists. exact Hlook.
   - rewrite lookup_insert_ne by (symmetry; exact Hvx).
     exact Hlook.
@@ -959,24 +956,13 @@ Proof.
   { intros ->. apply Hzfresh. apply elem_of_union_r. exact Hx_m. }
   assert (HxΣrel : LVFree x ∉ dom Σrel).
   {
-    subst Σrel. apply relevant_env_arrow_fresh_free.
-    - intros Hbad. apply Hfresh. apply elem_of_union_l.
-      apply elem_of_union_r. exact Hbad.
-    - intros Hbad. apply Hfresh. apply elem_of_union_r. exact Hbad.
-    - cbn [fv_tm fv_value]. intros Hbad.
-      apply Hfresh. apply elem_of_union_l.
-      apply elem_of_union_l. exact Hbad.
+    subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+    soundness_fresh_solve.
   }
   assert (HzΣrel : LVFree z ∉ dom Σrel).
   {
-    subst Σrel. apply relevant_env_arrow_fresh_free.
-    - intros Hbad. apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_l. apply elem_of_union_r. exact Hbad.
-    - intros Hbad. apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_r. exact Hbad.
-    - cbn [fv_tm fv_value]. intros Hbad.
-      apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_l. apply elem_of_union_l. exact Hbad.
+    subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+    soundness_fresh_solve.
   }
   rewrite (formula_open_result_first_fun_arg_two
     (Nat.max (cty_depth τx) (cty_depth τ))
