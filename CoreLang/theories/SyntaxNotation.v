@@ -39,6 +39,7 @@ Notation tyctx := (gmap atom ty).
 
 Notation "'𝔹'" := TBool : core_scope.
 Notation "'ℕ'" := TNat : core_scope.
+Notation "'𝕃'" := TList : core_scope.
 Notation "T1 '→' T2" := (TArrow T1 T2)
   (at level 99, right associativity) : core_scope.
 Notation "T1 ⇒ T2" := (TArrow T1 T2)
@@ -93,3 +94,8 @@ Notation "'pred' v" := (tprim op_minus1 v)
   (at level 30, v at level 30, format "pred  v") : core_scope.
 
 Notation "'cons' v1 v2" := (tbinop op_cons v1%core v2%core) (at level 60) : core_scope.
+
+Coercion cbool : bool >-> constant.
+Coercion cnat : nat >-> constant.
+Coercion clist : list >-> constant.
+Coercion tret : value >-> tm.

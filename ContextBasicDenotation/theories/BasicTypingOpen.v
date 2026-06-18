@@ -408,6 +408,7 @@ Proof.
 	    + eapply H; set_solver.
 	    + eapply H0; set_solver.
 	    + eapply H1; set_solver.
+	  - eapply BTT_LElim; eauto with set_solver.
 Qed.
 
 Lemma basic_tm_has_ltype_open_one_fresh k y Σ e T :
@@ -624,6 +625,7 @@ Proof.
         match goal with
         | Hfresh : y ∉ lvars_fv (dom Σ0) |- _ => exact Hfresh
         end.
+    - eapply BTT_LElim; naive_solver.
   }
   rewrite close_open_var_tm in Hclosed by set_solver.
   exact Hclosed.

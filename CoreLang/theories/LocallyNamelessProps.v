@@ -74,6 +74,14 @@ Proof.
   - intros [Hlc_v [Hlc_t Hlc_f]]. econstructor; eauto.
 Qed.
 
+Lemma lc_lelim_iff_parts v e f :
+  lc_tm (tlelim v e f) ↔ lc_value v ∧ lc_tm e ∧ lc_value f.
+Proof.
+  split.
+  - inversion 1; subst; eauto.
+  - intros [Hlc_v [Hlc_t Hlc_f]]. econstructor; eauto.
+Qed.
+
 Lemma close_open_var_value (v : value) (x : atom) k :
   x ∉ fv_value v →
   close_value x k (open_value k (vfvar x) v) = v.
@@ -182,11 +190,12 @@ Proof.
         i ≠ j →
         open_tm i u (open_tm j w e) = open_tm j w e →
         open_tm i u e = e);
-      simpl; intros i j Hneq Heq; try reflexivity.
+    simpl; intros i j Hneq Heq; try reflexivity.
   - destruct (decide (j = n)); destruct (decide (i = n)); subst; simpl in *;
       crush_nat_decides; try contradiction; auto.
   - inversion Heq; subst. f_equal; eauto; lia.
   - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
@@ -210,6 +219,7 @@ Proof.
       crush_nat_decides; try contradiction; auto.
   - inversion Heq; subst. f_equal; eauto; lia.
   - inversion Heq; subst. f_equal; eauto; lia.
+  - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.
   - inversion Heq. f_equal; eauto.

@@ -7,7 +7,7 @@
       - [steps e e']     : multi-step reduction (reflexive-transitive closure)
       - [is_val e]       : whether [e] is a value (i.e., [tret v]) *)
 
-From CoreLang Require Export Syntax BasicTyping.
+From CoreLang Require Export Syntax BasicTyping SyntaxNotation.
 From CoreLang Require Import BasicTypingProps.
 
 (** ** Evaluation of primitive operations
@@ -24,8 +24,12 @@ Inductive prim_step : prim_op → constant → constant → Prop :=
       prim_step op_minus1 (cnat n) (cnat (Nat.pred n)).
 
 Inductive binop_step : bin_op → constant → constant → constant → Prop :=
-| Binop_cons n l :
-   binop_step op_cons (cnat n) (clist l) (clist $ n :: l).
+| Binop_cons (n : nat) (l : list nat) :
+   binop_step op_cons n l (n :: l)
+| Binop_app (l1 l2 : list nat) :
+   binop_step op_app l1 l2 (l1 ++ l2)
+| Binop_lt (n m : nat) :
+   binop_step op_lt n m (n <? m)%nat.
 
 #[global] Hint Constructors prim_step : core.
 
@@ -110,7 +114,17 @@ Inductive head_step : tm → tm → Prop :=
 
   | HS_MatchFalse et ef :
       lc_tm (tmatch (vconst (cbool false)) et ef) →
-      head_step (tmatch (vconst (cbool false)) et ef) ef.
+      head_step (tmatch (vconst (cbool false)) et ef) ef
+
+  | HS_LElimNil e f :
+      lc_tm (tlelim (vconst $ clist []) e f) →
+      head_step (tlelim (vconst $ clist []) e f) e
+
+  | HS_LElimCons e f x l:
+      lc_tm (tlelim (vconst $ clist (x :: l)) e f) →
+      head_step (tlelim (vconst $ clist (x :: l)) e f)
+        (tlete (tapp f (vconst $ cnat x))
+           (tapp (vbvar 0) (vconst $ clist l))).
 
 #[global] Hint Constructors head_step : core.
 
@@ -186,6 +200,7 @@ Proof.
     | H : tbinop _ _ _ = tbinop _ _ _ |- _ => inversion H; subst; clear H
     | H : tapp _ _ = tapp _ _ |- _ => inversion H; subst; clear H
     | H : tmatch _ _ _ = tmatch _ _ _ |- _ => inversion H; subst; clear H
+    | H : tlelim _ _ _ = tlelim _ _ _ |- _ => inversion H; subst; clear H
     end;
     try reflexivity; try discriminate;
   repeat f_equal.
@@ -294,6 +309,12 @@ Proof.
     + econstructor; eauto.
   - inversion Hty; subst; eauto.
   - inversion Hty; subst; eauto.
+  - inversion Hty; subst; eauto.
+  - inv Hty; eapply TT_Let with (L:=∅).
+    + naive_solver.
+    + intros ? _; econstructor; last done.
+      rewrite decide_True; last done.
+      econstructor; by rewrite lookup_insert_eq.
 Qed.
 
 (** ** Preservation *)

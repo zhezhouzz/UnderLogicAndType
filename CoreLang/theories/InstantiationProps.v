@@ -493,6 +493,26 @@ Proof.
     rewrite IH. reflexivity.
 Qed.
 
+Lemma msubst_tlelim σ v e f :
+  m{σ} (tlelim v e f) = tlelim (m{σ} v) (m{σ} e) (m{σ} f).
+Proof.
+  unfold msubst.
+  refine (fin_maps.map_fold_ind
+    (fun σ =>
+      map_fold (fun x vx acc => {x := vx} acc) (tlelim v e f) σ =
+      tlelim
+        (map_fold (fun x vx acc => {x := vx} acc) v σ)
+        (map_fold (fun x vx acc => {x := vx} acc) e σ)
+        (map_fold (fun x vx acc => {x := vx} acc) f σ)) _ _ σ).
+  - reflexivity.
+  - intros x vx σ' Hfresh Hfold IH.
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) v).
+    rewrite (Hfold tm (fun x vx acc => {x := vx} acc) e).
+    rewrite (Hfold value (fun x vx acc => {x := vx} acc) f).
+    setoid_rewrite (Hfold tm (fun x vx acc => {x := vx} acc) (tlelim v e f)).
+    rewrite IH. reflexivity.
+Qed.
+
 Lemma msubst_vlam σ s e :
   m{σ} (vlam s e) = vlam s (m{σ} e).
 Proof.
@@ -582,6 +602,13 @@ Lemma subst_map_tmatch σ v et ef :
 Proof.
   change (m{σ} (tmatch v et ef) = tmatch (m{σ} v) (m{σ} et) (m{σ} ef)).
   apply msubst_tmatch.
+Qed.
+
+Lemma subst_map_tlelim σ v e f :
+  subst_map σ (tlelim v e f) =
+  tlelim (subst_map σ v) (subst_map σ e) (subst_map σ f).
+Proof.
+  apply msubst_tlelim.
 Qed.
 
 Lemma msubst_fvar_lookup_closed σ x v :

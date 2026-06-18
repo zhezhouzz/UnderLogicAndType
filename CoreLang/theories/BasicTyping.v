@@ -7,7 +7,7 @@
     Contexts are [gmap atom ty]; typing uses the [Typing] typeclass so
     that the notation [Γ ⊢ e ⋮ T] works for both values and terms. *)
 
-From CoreLang Require Export Syntax.
+From CoreLang Require Export Syntax SyntaxNotation.
 From CoreLang Require Import LocallyNamelessExtra.
 
 (** ** Primitive-operation type signatures
@@ -23,7 +23,9 @@ Definition prim_op_type (op : prim_op) : base_ty * base_ty :=
 
 Definition bin_op_type (op : bin_op) : base_ty * base_ty * base_ty :=
   match op with
-  | op_cons => (TNat, TList, TList)
+  | op_cons => (ℕ, 𝕃, 𝕃)
+  | op_app => (𝕃, 𝕃, 𝕃)
+  | op_lt => (ℕ, ℕ, 𝔹)
   end.
 
 (** ** Typing judgments *)
@@ -76,6 +78,11 @@ with tm_has_type : gmap atom ty → tm → ty → Prop :=
       Γ ⊢ₑ et ⋮ T →
       Γ ⊢ₑ ef ⋮ T →
       Γ ⊢ₑ (tmatch v et ef) ⋮ T
+  | TT_LElim Γ v T e f :
+      Γ ⊢ᵥ v ⋮ TBase TList →
+      Γ ⊢ₑ e ⋮ T →
+      Γ ⊢ᵥ f ⋮ (TBase TNat →ₜ TList →ₜ T) →
+      Γ ⊢ₑ (tlelim v e f) ⋮ T
 
 where "Γ '⊢ᵥ' v '⋮' T" := (value_has_type Γ v T)
   and "Γ '⊢ₑ' e '⋮' T" := (tm_has_type Γ e T).
@@ -212,6 +219,7 @@ Proof.
   - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.
+  - econstructor; eauto.
 Qed.
 
 Lemma subst_typing_insert_tm Γ x s e T vx :
@@ -274,6 +282,7 @@ Proof.
     rewrite <- subst_open_var_tm by eauto;
     eapply H; [set_solver | | exact Hv'];
     rewrite insert_insert_ne by set_solver; reflexivity.
+  - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.
   - econstructor; eauto.

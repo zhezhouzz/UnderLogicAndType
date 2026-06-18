@@ -48,7 +48,9 @@ Inductive prim_op : Type :=
   | op_minus1.   (** predecessor on natural numbers, with [pred 0 = 0] *)
 
 Inductive bin_op : Type :=
-  | op_cons.
+  | op_cons
+  | op_app
+  | op_lt.
 
 #[global] Instance prim_op_eqdec : EqDecision prim_op. Proof. solve_decision. Defined.
 
@@ -82,7 +84,8 @@ with tm : Type :=
   | tprim   (op : prim_op) (arg : value)
   | tbinop  (op : bin_op) (v1 v2 : value)
   | tapp    (v1 v2 : value)
-  | tmatch  (v : value) (etrue efalse : tm).
+  | tmatch  (v : value) (etrue efalse : tm)
+  | tlelim  (v : value) (enil : tm) (fcons : value).
 
 Scheme value_mut := Induction for value Sort Type
   with tm_mut    := Induction for tm    Sort Type.
@@ -123,6 +126,8 @@ with open_tm (k : nat) (s : value) (e : tm) : tm :=
   | tapp v1 v2      => tapp (open_value k s v1) (open_value k s v2)
   | tmatch v et ef  =>
       tmatch (open_value k s v) (open_tm k s et) (open_tm k s ef)
+  | tlelim v e f  =>
+      tlelim (open_value k s v) (open_tm k s e) (open_value k s f)
   end.
 
 #[global] Instance open_value_inst      : Open value value := open_value.
@@ -156,6 +161,8 @@ with close_tm (x : atom) (k : nat) (e : tm) : tm :=
   | tapp v1 v2      => tapp (close_value x k v1) (close_value x k v2)
   | tmatch v et ef  =>
       tmatch (close_value x k v) (close_tm x k et) (close_tm x k ef)
+  | tlelim v e f  =>
+      tlelim (close_value x k v) (close_tm x k e) (close_value x k f)
   end.
 
 #[global] Instance close_value_inst : Close value := close_value.
@@ -181,6 +188,7 @@ with fv_tm (e : tm) : aset :=
   | tbinop _ v1 v2  => fv_value v1 ∪ fv_value v2
   | tapp v1 v2      => fv_value v1 ∪ fv_value v2
   | tmatch v et ef  => fv_value v ∪ fv_tm et ∪ fv_tm ef
+  | tlelim v e f  => fv_value v ∪ fv_tm e ∪ fv_value f
   end.
 
 #[global] Instance stale_value_inst : Stale value := fv_value.
@@ -217,6 +225,8 @@ with tm_lvars_at (d : nat) (e : tm) : lvset :=
   | tapp v1 v2 => value_lvars_at d v1 ∪ value_lvars_at d v2
   | tmatch v et ef =>
       value_lvars_at d v ∪ tm_lvars_at d et ∪ tm_lvars_at d ef
+  | tlelim v e f =>
+      value_lvars_at d v ∪ tm_lvars_at d e ∪ value_lvars_at d f
   end.
 
 Definition value_lvars (v : value) : lvset :=
@@ -249,6 +259,8 @@ with tm_swap_atom (x y : atom) (e : tm) : tm :=
   | tmatch v et ef =>
       tmatch (value_swap_atom x y v)
         (tm_swap_atom x y et) (tm_swap_atom x y ef)
+  | tlelim v e f =>
+      tlelim (value_swap_atom x y v) (tm_swap_atom x y e) (value_swap_atom x y f)
   end.
 
 Lemma fv_value_swap_atom x y v :
@@ -257,7 +269,7 @@ with fv_tm_swap_atom x y e :
   fv_tm (tm_swap_atom x y e) = set_swap x y (fv_tm e).
 Proof.
   - destruct v; simpl; try reflexivity.
-    + better_base_solver.
+    + clear; set_solver.
     + apply fv_tm_swap_atom.
     + apply fv_value_swap_atom.
   - destruct e; simpl.
@@ -266,6 +278,7 @@ Proof.
     + apply fv_value_swap_atom.
     + rewrite !fv_value_swap_atom. better_base_solver.
     + rewrite !fv_value_swap_atom. better_base_solver.
+    + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
     + rewrite fv_value_swap_atom, !fv_tm_swap_atom. better_base_solver.
 Qed.
 
@@ -349,6 +362,8 @@ with tm_subst (x : atom) (s : value) (e : tm) : tm :=
   | tapp v1 v2      => tapp (value_subst x s v1) (value_subst x s v2)
   | tmatch v et ef  =>
       tmatch (value_subst x s v) (tm_subst x s et) (tm_subst x s ef)
+  | tlelim v e f  =>
+      tlelim (value_subst x s v) (tm_subst x s e) (value_subst x s f)
   end.
 
 #[global] Instance subst_value_inst : SubstV value value := value_subst.
@@ -405,7 +420,10 @@ with lc_tm : tm → Prop :=
       lc_tm (tapp v1 v2)
   | LC_match v et ef :
       lc_value v → lc_tm et → lc_tm ef →
-      lc_tm (tmatch v et ef).
+      lc_tm (tmatch v et ef)
+  | LC_lelim v e f :
+      lc_value v → lc_tm e → lc_value f →
+      lc_tm (tlelim v e f).
 
 Scheme lc_value_mut  := Induction for lc_value  Sort Prop
   with lc_tm_mut     := Induction for lc_tm     Sort Prop.

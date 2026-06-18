@@ -424,7 +424,7 @@ Lemma basic_tm_has_ltype_ret_fvar_lookup
   Σ !! LVFree x = Some T.
 Proof.
   intros Hty.
-  inversion Hty as [Γ v U Hval| | | | |]; subst; clear Hty.
+  inversion Hty as [Γ v U Hval| | | | | |]; subst; clear Hty.
   inversion Hval; subst; eauto.
 Qed.
 

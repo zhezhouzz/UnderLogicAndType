@@ -13,7 +13,7 @@ Proof.
   intros Hstep.
   destruct Hstep as
     [v e Hlc | op c c' Heval Hlc | op c1 c2 c3 Heval Hlc | s body v Hlc
-    | Tf vf v Hlc | et ef Hlc | et ef Hlc].
+    | Tf vf v Hlc | et ef Hlc | et ef Hlc | e f Hlc | e f x l Hlc].
   - split.
     + assumption.
     + apply body_open_tm.
@@ -42,6 +42,17 @@ Proof.
   - split.
     + assumption.
     + by apply lc_match_iff_parts in Hlc as [_ [_ ?]].
+  - split.
+    + assumption.
+    + apply lc_lelim_iff_parts in Hlc; naive_solver.
+  - split.
+    + assumption.
+    + apply lc_lelim_iff_parts in Hlc.
+      apply lc_lete_iff_body. split.
+      * apply lc_app_iff_values; naive_solver.
+      * exists ∅; intros ? _.
+        cbn; rewrite decide_True; last done.
+        apply lc_app_iff_values; naive_solver.
 Qed.
 
 Lemma step_regular e e' :
@@ -118,6 +129,8 @@ Proof.
   - my_set_solver.
   - pose proof (open_fv_tm body v 0) as Hopen. my_set_solver.
   - pose proof (open_fv_value vf v 0) as Hopen. my_set_solver.
+  - my_set_solver.
+  - my_set_solver.
   - my_set_solver.
   - my_set_solver.
 Qed.

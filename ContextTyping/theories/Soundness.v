@@ -95,7 +95,7 @@ Proof.
     (tprim op (vfvar x))
     ({0 ~> x} (primop_result_ty (Φ op))) Hwf) as Hbasic.
   inversion Hbasic as
-    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| | |]; subst; clear Hbasic.
+    [| |Γop op' v arg_b ret_b Hop_type Harg_basic| | | |]; subst; clear Hbasic.
   inversion Harg_basic as [|Γv xv T Hlookup| |]; subst; clear Harg_basic.
   pose proof (Φ_wf op) as Hsig.
   pose proof (wf_primop_erasure op (Φ op) Hsig) as Herasure.
@@ -1039,18 +1039,53 @@ Proof.
   - exact Harg.
 Qed.
 
-Lemma fundamental_cons_case Σ Γ x y :
+Lemma fundamental_sum_case Σ Γ1 Γ2 τ1 τ2 e :
+  context_typing_wf Σ (Γ1 ⊕ Γ2) e (τ1 ⊕ τ2) →
+  ctx_denote_under Σ Γ1 ⊫ ty_denote_under Σ Γ1 τ1 e →
+  ctx_denote_under Σ Γ2 ⊫ ty_denote_under Σ Γ2 τ2 e →
+  ctx_denote_under Σ (Γ1 ⊕ Γ2) ⊫ ty_denote_under Σ (Γ1 ⊕ Γ2) (τ1 ⊕ τ2) e.
+Admitted.  
+
+Lemma fundamental_inter_case Σ Γ τ1 τ2 e :
+  context_typing_wf Σ Γ e (τ1 ⊓ τ2) →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ1 e →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ2 e →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ (τ1 ⊓ τ2) e.
+Admitted.
+
+Lemma fundamental_bin_op_case Σ Γ op x y :
    context_typing_wf Σ Γ
-     (tbinop op_cons (vfvar x) (vfvar y))
-     ({0~>x} ({0~>y} cons_res_ty)) →
+     (tbinop op (vfvar x) (vfvar y))
+     (bin_op_res_ty op x y) →
    (ctx_denote_under Σ Γ ⊫
-      ty_denote_under Σ Γ cons_arg1_ty (tret (vfvar x))) →
+      ty_denote_under Σ Γ (bin_op_arg1_ty op) (tret (vfvar x))) →
    (ctx_denote_under Σ Γ ⊫
-      ty_denote_under Σ Γ cons_arg2_ty (tret (vfvar y))) →
+      ty_denote_under Σ Γ (bin_op_arg2_ty op) (tret (vfvar y))) →
    (ctx_denote_under Σ Γ ⊫
       ty_denote_under Σ Γ
-        ({0~>x} ({0~>y} cons_res_ty))
-        (tbinop op_cons (vfvar x) (vfvar y))).
+        (bin_op_res_ty op x y)
+        (tbinop op (vfvar x) (vfvar y))).
+Admitted.
+
+Lemma fundamental_lelim_nil Σ Γ v τ e f :
+  context_typing_wf Σ Γ (tlelim v e f) τ →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ list_nil_ty v →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ (tlelim v e f).
+Admitted.
+
+Lemma fundamental_lelim_cons Σ Γ v P Q τ e f :
+  context_typing_wf Σ Γ (tlelim v e f) τ →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ (list_target_ty P Q) v →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ (list_step_ty P Q τ) f →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ (tlelim v e f).
+Admitted.
+
+Lemma fundamental_lelim_consD Σ Γ v P Q τ e f :
+  context_typing_wf Σ Γ (tlelim v e f) τ →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ (list_targetD_ty P Q) v →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ (list_stepD_ty P Q τ) f →
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ (tlelim v e f).
 Admitted.
 
 (** ** Fundamental theorem *)
@@ -1065,6 +1100,8 @@ Proof.
   - eapply fundamental_const_case; eauto.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
+  - eapply fundamental_sum_case; eauto.
+  - eapply fundamental_inter_case; eauto.
   - eapply fundamental_let_case; eauto using typing_wf_under.
   - eapply fundamental_letd_case; eauto using typing_wf_under.
   - eapply fundamental_lam_case; eauto.
@@ -1073,10 +1110,17 @@ Proof.
   - eapply fundamental_appd_case; eauto using typing_wf_under.
   - eapply fundamental_fix_case; eauto using typing_wf_under.
   - eapply fundamental_appop_case; eauto.
-  - eapply fundamental_cons_case; eauto.
+  - eapply fundamental_bin_op_case; eauto.
   - eapply fundamental_match_both_case; eauto.
   - eapply fundamental_match_true_case; eauto.
   - eapply fundamental_match_false_case; eauto.
+  - eapply fundamental_lelim_nil; eauto.
+  - eapply fundamental_lelim_cons; first done.
+    + apply IHHty1.
+    + naive_solver.
+  - eapply fundamental_lelim_consD; first done.
+    + apply IHHty1.
+    + naive_solver.
 Qed.
 
 (** ** Denotational soundness *)

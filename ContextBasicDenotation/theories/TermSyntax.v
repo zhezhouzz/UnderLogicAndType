@@ -45,6 +45,7 @@ Proof.
   - rewrite lvars_fv_union, H, H0. reflexivity.
   - rewrite lvars_fv_union, H, H0. reflexivity.
   - rewrite !lvars_fv_union, H, H0, H1. set_solver.
+  - rewrite !lvars_fv_union, H, H0, H1. set_solver.
 Qed.
 
 Lemma value_lvars_at_fv v d :
@@ -110,6 +111,7 @@ Proof.
   - rewrite H. reflexivity.
   - rewrite lvars_at_depth_union, H, H0. reflexivity.
   - rewrite lvars_at_depth_union, H, H0. reflexivity.
+  - rewrite !lvars_at_depth_union, H, H0, H1. reflexivity.
   - rewrite !lvars_at_depth_union, H, H0, H1. reflexivity.
 Qed.
 
@@ -188,6 +190,10 @@ Proof.
     rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
     rewrite <- !set_swap_union. set_solver.
+  - rewrite H by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H0 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite H1 by (rewrite ?lvars_fv_union in *; set_solver).
+    rewrite <- !set_swap_union. set_solver.
 Qed.
 
 Lemma value_lvars_at_open v d k y :
@@ -233,7 +239,8 @@ Proof.
     (fun op v Hlc IH => IH)
     (fun op v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
     (fun v1 v2 Hlc1 IH1 Hlc2 IH2 => _)
-    (fun v et ef Hlcv IHv Hlcet IHet Hlcef IHef => _)).
+    (fun v et ef Hlcv IHv Hlcet IHet Hlcef IHef => _)
+    (fun v e f Hlcv IHv Hlce IHe Hlcf IHf => _)).
   - cbn [value_lvars value_lvars_at]. reflexivity.
   - cbn [value_lvars value_lvars_at].
     apply lvars_bv_singleton_free_atom.
@@ -292,6 +299,11 @@ Proof.
     change (tm_lvars_at 0 et) with (tm_lvars et).
     change (tm_lvars_at 0 ef) with (tm_lvars ef).
     rewrite !lvars_bv_union, IHv, IHet, IHef. set_solver.
+  - cbn [value_lvars tm_lvars value_lvars_at tm_lvars_at].
+    change (value_lvars_at 0 v) with (value_lvars v).
+    change (tm_lvars_at 0 e) with (tm_lvars e).
+    change (value_lvars_at 0 f) with (value_lvars f).
+    rewrite !lvars_bv_union, IHv, IHe, IHf. set_solver.
 Qed.
 
 Lemma value_lvars_no_bv_of_lc v :
@@ -490,6 +502,10 @@ Proof.
     + apply H. rewrite !lvars_bv_union in H2. set_solver.
     + apply H0. rewrite !lvars_bv_union in H2. set_solver.
     + apply H1. rewrite !lvars_bv_union in H2. set_solver.
+  - f_equal.
+    + apply H. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H0. rewrite !lvars_bv_union in H2. set_solver.
+    + apply H1. rewrite !lvars_bv_union in H2. set_solver.
 Qed.
 
 Lemma open_tm_shift_no_bv d x e :
@@ -671,6 +687,9 @@ Proof.
   - rewrite H by exact H2.
     rewrite H0 by exact H2.
     rewrite H1 by exact H2. reflexivity.
+  - rewrite H by exact H2.
+    rewrite H0 by exact H2.
+    rewrite H1 by exact H2. reflexivity.
 Qed.
 
 Lemma value_lvars_at_shift_under v d k :
@@ -718,6 +737,11 @@ Proof.
   - rewrite value_lvars_at_shift_under by lia.
     rewrite tm_lvars_at_shift_under by lia.
     rewrite tm_lvars_at_shift_under by lia.
+    cbn [tm_lvars_at].
+    rewrite !value_lvars_at_bound0_under. set_solver.
+  - rewrite value_lvars_at_shift_under by lia.
+    rewrite tm_lvars_at_shift_under by lia.
+    rewrite value_lvars_at_shift_under by lia.
     cbn [tm_lvars_at].
     rewrite !value_lvars_at_bound0_under. set_solver.
 Qed.
@@ -769,6 +793,10 @@ with lstore_instantiate_tm_split_at
       tmatch (lstore_instantiate_value_split_at d σf σb v)
         (lstore_instantiate_tm_split_at d σf σb et)
         (lstore_instantiate_tm_split_at d σf σb ef)
+  | tlelim v e f =>
+      tlelim (lstore_instantiate_value_split_at d σf σb v)
+        (lstore_instantiate_tm_split_at d σf σb e)
+        (lstore_instantiate_value_split_at d σf σb f)
   end.
 
 Definition lstore_instantiate_value_at
@@ -877,6 +905,7 @@ Proof.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_at_restrict_lvars e d (σ : LStoreT) X :
@@ -955,6 +984,7 @@ Proof.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 
 Lemma lstore_instantiate_tm_split_restrict_fv d (σf : StoreT) σb e X :
@@ -1010,6 +1040,8 @@ Proof.
   - rewrite subst_map_tbinop. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tapp. f_equal; [apply H | apply H0]; exact H1.
   - rewrite subst_map_tmatch. repeat f_equal;
+      [apply H | apply H0 | apply H1]; exact H2.
+  - rewrite subst_map_tlelim. repeat f_equal;
       [apply H | apply H0 | apply H1]; exact H2.
 Qed.
 
@@ -1080,6 +1112,7 @@ Proof.
   - f_equal. apply H; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
   - f_equal; [apply H | apply H0]; set_solver.
+  - f_equal; [apply H | apply H0 | apply H1]; set_solver.
   - f_equal; [apply H | apply H0 | apply H1]; set_solver.
 Qed.
 

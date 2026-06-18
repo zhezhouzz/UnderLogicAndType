@@ -87,7 +87,12 @@ with basic_tm_has_ltype : lty_env -> tm -> ty -> Prop :=
       basic_value_has_ltype Σ v (TBase TBool) ->
       basic_tm_has_ltype Σ et T ->
       basic_tm_has_ltype Σ ef T ->
-      basic_tm_has_ltype Σ (tmatch v et ef) T.
+      basic_tm_has_ltype Σ (tmatch v et ef) T
+  | BTT_LElim Σ v T e f :
+      basic_value_has_ltype Σ v 𝕃%core →
+      basic_tm_has_ltype Σ e T →
+      basic_value_has_ltype Σ f (ℕ → 𝕃 → T)%core →
+      basic_tm_has_ltype Σ (tlelim v e f) T.
 
 Scheme basic_value_has_ltype_ind' := Induction for basic_value_has_ltype Sort Prop
   with basic_tm_has_ltype_ind' := Induction for basic_tm_has_ltype Sort Prop.
@@ -594,6 +599,26 @@ Proof.
       | Hsub : tm_lvars (tmatch _ _ _) ⊆ _ |- _ =>
           cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
       end.
+  - match goal with
+    | Hlc : lc_tm (tlelim _ _ _) |- _ =>
+        apply lc_lelim_iff_parts in Hlc as [Hlcv [Hlcet Hlcef]]
+    end.
+    eapply BTT_LElim.
+    + eapply H; eauto.
+      match goal with
+      | Hsub : tm_lvars (tlelim _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H0; eauto.
+      match goal with
+      | Hsub : tm_lvars (tlelim _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
+    + eapply H1; eauto.
+      match goal with
+      | Hsub : tm_lvars (tlelim _ _ _) ⊆ _ |- _ =>
+          cbn [tm_lvars tm_lvars_at] in Hsub; set_solver
+      end.
 Qed.
 
 Lemma basic_value_has_ltype_restrict_lvars_lc Σ v T D :
@@ -745,6 +770,7 @@ Proof.
   - eapply TT_BinOp; eauto.
   - eapply TT_App; eauto.
   - eapply TT_Match; eauto.
+  - econstructor; eauto.
 Qed.
 
 Lemma basic_tm_has_ltype_to_atom_env_typing Δ e T :
@@ -879,6 +905,11 @@ Proof.
         pose proof (IH _ Hfun) as Heq
     end.
     inversion Heq. reflexivity.
+  - match goal with
+    | IH : forall T2, basic_tm_has_ltype _ _ T2 -> _,
+      Hthen : basic_tm_has_ltype _ _ _ |- _ =>
+        exact (IH _ Hthen)
+    end.
   - match goal with
     | IH : forall T2, basic_tm_has_ltype _ _ T2 -> _,
       Hthen : basic_tm_has_ltype _ _ _ |- _ =>

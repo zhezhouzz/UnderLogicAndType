@@ -263,6 +263,19 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
       has_context_type Σ Γ1 e τ
 
+  (** Generic sum rule *)
+  | CT_Sum Γ1 Γ2 τ1 τ2 e :
+      context_typing_wf Σ (Γ1 ⊕ Γ2) e (τ1 ⊕ τ2) →
+      has_context_type Σ Γ1 e τ1 →
+      has_context_type Σ Γ2 e τ2 →
+      has_context_type Σ (Γ1 ⊕ Γ2) e (τ1 ⊕ τ2)
+
+  | CT_Inter Γ τ1 τ2 e :
+      context_typing_wf Σ Γ e (τ1 ⊓ τ2) →
+      has_context_type Σ Γ e τ1 →
+      has_context_type Σ Γ e τ2 →
+      has_context_type Σ Γ e (τ1 ⊓ τ2)
+
   (** T-Let.  Standard additive/bunched let. *)
   | CT_Let Γ τ1 τ2 e1 e2 (L : aset) :
       context_typing_wf Σ Γ (tlete e1 e2) τ2 →
@@ -350,15 +363,15 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       has_context_type Σ Γ (tret (vfvar x)) (primop_arg_ty (Φ op)) →
       has_context_type Σ Γ (tprim op (vfvar x)) ({0 ~> x} (primop_result_ty (Φ op)))
 
-  | CT_Cons Γ x y :
+  | CT_BinOp Γ op x y :
       context_typing_wf Σ Γ
-        (tbinop op_cons (vfvar x) (vfvar y))
-        ({0~>x} ({0~>y} cons_res_ty)) →
-      has_context_type Σ Γ (tret (vfvar x)) cons_arg1_ty →
-      has_context_type Σ Γ (tret (vfvar y)) cons_arg2_ty →
+        (tbinop op (vfvar x) (vfvar y))
+        (bin_op_res_ty op x y) →
+      has_context_type Σ Γ (tret (vfvar x)) (bin_op_arg1_ty op) →
+      has_context_type Σ Γ (tret (vfvar y)) (bin_op_arg2_ty op) →
       has_context_type Σ Γ
-        (tbinop op_cons (vfvar x) (vfvar y))
-        ({0~>x} ({0~>y} cons_res_ty))
+        (tbinop op (vfvar x) (vfvar y))
+        (bin_op_res_ty op x y)
 
   (** T-MatchBoth.  Both boolean branches are reachable and contribute a
       context/type sum. *)
@@ -383,7 +396,26 @@ Inductive has_context_type (Σ : gmap atom ty) : ctx → tm → context_ty → P
       context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ →
       has_context_type Σ Γ (tret (vfvar x)) (bool_precise_ty false) →
       has_context_type Σ Γ ef τ →
-      has_context_type Σ Γ (tmatch (vfvar x) et ef) τ.
+      has_context_type Σ Γ (tmatch (vfvar x) et ef) τ
+
+  (** List elimination *)
+  | CT_LElimNil Γ v τ e f :
+      context_typing_wf Σ Γ (tlelim v e f) τ →
+      has_context_type Σ Γ v list_nil_ty →
+      has_context_type Σ Γ e τ →
+      has_context_type Σ Γ (tlelim v e f) τ
+
+  | CT_LElimCons Γ v P Q τ e f :
+      context_typing_wf Σ Γ (tlelim v e f) τ →
+      has_context_type Σ Γ v (list_target_ty P Q) →
+      has_context_type Σ Γ f (list_step_ty P Q τ) →
+      has_context_type Σ Γ (tlelim v e f) τ
+
+  | CT_LElimConsD Γ v P Q τ e f :
+      context_typing_wf Σ Γ (tlelim v e f) τ →
+      has_context_type Σ Γ v (list_targetD_ty P Q) →
+      has_context_type Σ Γ f (list_stepD_ty P Q τ) →
+      has_context_type Σ Γ (tlelim v e f) τ.
 
 #[global] Hint Constructors has_context_type : core.
 #[global] Instance typing_context_inst : Typing ctx tm context_ty :=

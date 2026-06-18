@@ -254,6 +254,19 @@ Proof.
               eapply IH; intros z Hz; apply Hagree; set_solver
           end
       end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
 Qed.
 
 Lemma basic_typing_swap_value Γ v T x y :
@@ -333,6 +346,7 @@ Proof.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
+    + econstructor; eauto.
   - intros Hty.
     induction Hty using tm_has_type_mut with
       (P := fun Γ v T _ =>
@@ -397,6 +411,7 @@ Proof.
         rewrite kmap_insert by apply swap_inj.
         replace (swap x y (swap x y z)) with z by better_base_solver.
         reflexivity.
+    + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
     + econstructor; eauto.
@@ -472,6 +487,19 @@ Proof.
       | |- _ ⊢ᵥ _ ⋮ _ =>
           match goal with
           | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      end.
+  - econstructor;
+      match goal with
+      | |- _ ⊢ᵥ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_value _ → Γ' !! z = _ !! z) → Γ' ⊢ᵥ _ ⋮ _ |- _ =>
+              eapply IH; intros z Hz; apply Hagree; set_solver
+          end
+      | |- _ ⊢ₑ _ ⋮ _ =>
+          match goal with
+          | IH : ∀ Γ', (∀ z, z ∈ fv_tm _ → Γ' !! z = _ !! z) → Γ' ⊢ₑ _ ⋮ _ |- _ =>
               eapply IH; intros z Hz; apply Hagree; set_solver
           end
       end.
@@ -724,6 +752,19 @@ Proof.
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm e → Γ ⊢ₑ e ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value f → Γ ⊢ᵥ f ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
 Qed.
 
 Lemma basic_typing_strengthen_tm Γ x Tx e T :
@@ -793,6 +834,19 @@ Proof.
       end.
     + match goal with
       | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm ef → Γ ⊢ₑ ef ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+  - econstructor.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value v → Γ ⊢ᵥ v ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_tm e → Γ ⊢ₑ e ⋮ _ |- _ =>
+          eapply IH; [reflexivity | set_solver]
+      end.
+    + match goal with
+      | IH : ∀ Γ, _ = <[x:=Tx]> Γ → x ∉ fv_value f → Γ ⊢ᵥ f ⋮ _ |- _ =>
           eapply IH; [reflexivity | set_solver]
       end.
 Qed.

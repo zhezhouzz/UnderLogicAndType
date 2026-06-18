@@ -5,6 +5,7 @@
 From Stdlib Require Import Arith.Wf_nat Classes.RelationClasses.
 From ContextQualifier Require Export Qualifier.
 From ContextBase Require Import BaseTactics.
+From CoreLang Require Import SyntaxNotation.
 
 (** Scopes live next to the syntax they print.  The legacy
     [ContextTypeLanguage.Notation] file re-exports these definitions for
@@ -1045,6 +1046,72 @@ Definition bool_precise_ty (b : bool) : context_ty :=
 
 Definition const_precise_ty (c : constant) : context_ty :=
   precise_ty (base_ty_of_const c) (mk_q_eq (vbvar 0) (vconst c)).
+
+Definition list_nil_ty : context_ty :=
+  precise_ty 𝕃 (mk_q_eq (vbvar 0) []).
+
+Definition list_is_cons_qual : type_qualifier :=
+  tqual ({[LVBound 0]})
+    (λ σ, ∃ x l, lso_store σ !! LVBound 0 = Some ((x :: l) : value)).
+
+Definition list_is_cons_ty : context_ty :=
+  over_ty 𝕃 list_is_cons_qual.
+
+Section qual.
+  Local Notation LStoreOnT := (LStoreOn (V := value)).
+
+  Local Definition car_value (v : value) : value :=
+    match v with | x :: l => x | _ => v end.
+
+  Local Definition cdr_value (v : value) : value :=
+    match v with | x :: l => l | _ => v end.
+
+  Local Program Definition store_car (σ : LStoreOnT {[LVBound 0]}) :
+    LStoreOnT {[LVBound 0]} :=
+    {| storeAO_store := car_value <$> storeAO_store σ |}.
+  Next Obligation. intros; rewrite dom_fmap_L; by destruct σ. Qed.
+
+  Local Program Definition store_cdr (σ : LStoreOnT {[LVBound 0]}) :
+    LStoreOnT {[LVBound 0]} :=
+    {| storeAO_store := cdr_value <$> storeAO_store σ |}.
+  Next Obligation. intros; rewrite dom_fmap_L; by destruct σ. Qed.
+
+  Local Program Definition store_split (σ : LStoreOnT {[#ₗ0]}) :
+    LStoreOnT {[#ₗ0; #ₗ1]} :=
+    {| storeAO_store :=
+        <[#ₗ0 :=
+            match lso_store σ !! #ₗ0 with
+            | Some v => cdr_value v | _ => 0 end]>
+          (<[#ₗ1 :=
+               match lso_store σ !! #ₗ0 with
+               | Some v => car_value v | _ => 0 end]>(lso_store σ)) |}.
+  Next Obligation. simpl. naive_solver. Qed.
+  Next Obligation. simpl. naive_solver. Qed.
+  Next Obligation. intros; simpl; rewrite !dom_insert_L; destruct σ; set_solver. Qed.
+
+  Definition cons_qual_comb_dpd (P : LStoreOnT {[#ₗ0]} → Prop)
+    (Q : LStoreOnT {[#ₗ0; #ₗ1]} → Prop) :
+    LStoreOnT {[#ₗ0]} → Prop :=
+    λ σ, P (store_car σ) ∧ Q (store_split σ).
+
+  Definition cons_qual_comb (P : LStoreOnT {[#ₗ0]} → Prop)
+    (Q : LStoreOnT {[#ₗ0]} → Prop) :
+    LStoreOnT {[#ₗ0]} → Prop :=
+    λ σ, P (store_car σ) ∧ Q (store_cdr σ).
+
+End qual.
+
+Definition list_step_ty P Q A : context_ty :=
+  over_ty ℕ (tqual {[#ₗ0]} P) → over_ty 𝕃 (tqual {[#ₗ0;#ₗ1]} Q) → A.
+
+Definition list_stepD_ty P Q A : context_ty :=
+  over_ty ℕ (tqual {[#ₗ0]} P) -∗ over_ty 𝕃 (tqual {[#ₗ0]} Q) -∗ A.
+
+Definition list_target_ty P Q : context_ty :=
+  list_is_cons_ty ⊓ under_ty 𝕃 (tqual {[#ₗ0]} (cons_qual_comb_dpd P Q)).
+
+Definition list_targetD_ty P Q : context_ty :=
+  list_is_cons_ty ⊓ under_ty 𝕃 (tqual {[#ₗ0]} (cons_qual_comb P Q)).
 
 Notation "'b0:c=' c" := (mk_q_eq (vbvar 0) (vconst c))
   (at level 5, format "b0:c= c").
