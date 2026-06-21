@@ -806,3 +806,110 @@ Definition under_closure (R : WfWorldT → Prop) : WfWorldT → Prop :=
   λ m', ∃ m, R m ∧ res_subset m' m.
 
 End FormulaConnectives.
+
+(** * Persistent formulas *)
+
+Section FormulaPersistent.
+
+Context {V : Type} `{ValueSig V}.
+
+Local Notation WfWorldT := (WfWorld (V := V)) (only parsing).
+Local Notation WorldT := (World (V := V)) (only parsing).
+Local Notation FormulaT := (Formula (V := V)) (only parsing).
+Local Notation "m ⊨ φ" := (res_models m φ)
+  (at level 70, format "m  ⊨  φ").
+
+Notation "φ ⊫ ψ" := (entails φ ψ)
+  (at level 85, ψ at level 84, no associativity).
+
+Definition formula_equiv (φ ψ : FormulaT) : Prop :=
+  (φ ⊫ ψ) /\ (ψ ⊫ φ).
+
+Notation "φ ⊣⊢ ψ" := (formula_equiv φ ψ)
+  (at level 84, no associativity).
+
+Definition persistent_formula (φ : FormulaT) : Prop :=
+  φ ⊫ FPersist φ.
+
+Lemma persist_elim_entails (φ : FormulaT) :
+  FPersist φ ⊫ φ.
+Proof.
+  intros m Hpersist. exact (res_models_persist_elim m φ Hpersist).
+Qed.
+
+Lemma persistent_formula_persist (φ : FormulaT) :
+  persistent_formula (FPersist φ).
+Proof.
+  unfold persistent_formula, entails. intros m Hpersist.
+  apply res_models_persist_iff in Hpersist
+    as [σ [Hdomσ [Hrestrict Hsingle]]].
+  eapply res_models_persist_intro with (σ := σ).
+  - rewrite formula_fv_persist. exact Hdomσ.
+  - rewrite formula_fv_persist. exact Hrestrict.
+  - eapply res_models_persist_intro with (σ := σ).
+    + exact Hdomσ.
+    + rewrite <- Hdomσ.
+      change (res_restrict
+        (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+        (world_dom
+          ((exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+            : WorldT)) =
+        (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)).
+      apply res_restrict_eq_of_le. reflexivity.
+    + exact Hsingle.
+Qed.
+
+Lemma persistent_formula_equiv_persist (φ : FormulaT) :
+  persistent_formula φ ->
+  φ ⊣⊢ FPersist φ.
+Proof.
+  intros Hpersist. split.
+  - exact Hpersist.
+  - apply persist_elim_entails.
+Qed.
+
+Lemma persistent_star_and (φ ψ : FormulaT) :
+  persistent_formula φ ->
+  FStar φ ψ ⊣⊢ FAnd φ ψ.
+Proof.
+  intros Hpersist. split.
+  - intros m Hstar.
+    apply res_models_star_iff in Hstar
+      as [m1 [m2 [Hc [Hle [Hφ Hψ]]]]].
+    apply res_models_and_intro_from_models.
+    + eapply res_models_kripke; [| exact Hφ].
+      etransitivity; [apply res_product_le_l | exact Hle].
+    + eapply res_models_kripke; [| exact Hψ].
+      etransitivity; [apply res_product_le_r | exact Hle].
+  - intros m Hand.
+    apply res_models_and_iff in Hand as [Hφm Hψm].
+    pose proof (Hpersist m Hφm) as Hpersistm.
+    apply res_models_persist_iff in Hpersistm
+      as [σ [Hdomσ [Hrestrict Hφsingle]]].
+    pose proof (singleton_projection_compat
+      m (formula_fv φ) σ Hdomσ Hrestrict) as Hc.
+    eapply res_models_star_intro
+      with (m1 := (exist _ (singleton_world σ) (wf_singleton_world σ)
+        : WfWorldT)) (m2 := m) (Hc := Hc).
+    + rewrite (res_product_singleton_projection_eq
+        m (formula_fv φ) σ Hc Hdomσ Hrestrict).
+      reflexivity.
+    + exact Hφsingle.
+    + exact Hψm.
+Qed.
+
+Lemma persistent_star_self (φ : FormulaT) :
+  persistent_formula φ ->
+  FStar φ φ ⊣⊢ φ.
+Proof.
+  intros Hpersist. split.
+  - intros m Hstar.
+    pose proof (proj1 (persistent_star_and φ φ Hpersist) m Hstar)
+      as Hand.
+    apply res_models_and_iff in Hand as [Hφ _]. exact Hφ.
+  - intros m Hφ.
+    apply (proj2 (persistent_star_and φ φ Hpersist) m).
+    apply res_models_and_intro_from_models; exact Hφ.
+Qed.
+
+End FormulaPersistent.

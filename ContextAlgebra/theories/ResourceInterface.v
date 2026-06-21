@@ -645,6 +645,23 @@ Proof. apply rawA_compat_unit_r. Qed.
 Lemma wf_singleton_world (σ : StoreT) : wf_world (singleton_world σ).
 Proof. apply wf_singleton_worldA. Qed.
 
+Lemma res_atom_swap_singleton_world x y (σ : StoreT) :
+  res_atom_swap x y
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) =
+  (exist _ (singleton_world (storeA_swap x y σ))
+    (wf_singleton_world (storeA_swap x y σ)) : WfWorld).
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - rewrite world_dom_res_atom_swap.
+    unfold singleton_world. cbn [worldA_dom singleton_worldA].
+    change (set_swap x y (dom (σ : StoreT)) =
+      dom (storeA_swap x y σ : StoreT)).
+    rewrite storeA_swap_dom. reflexivity.
+  - intros τ. split.
+    + intros [σ0 [Hσ0 Hτ]]. destruct Hσ0. destruct Hτ. reflexivity.
+    + intros ->. exists σ. split; reflexivity.
+Qed.
+
 Lemma res_fiber_from_projection_empty_store_dom
     (m mfib : WfWorld) (σ : StoreT) :
   res_fiber_from_projection m ∅ σ mfib ->
@@ -1515,6 +1532,91 @@ Proof. apply resA_le_product_l. Qed.
 Lemma res_product_le_r (w1 w2 : WfWorld) (Hc : world_compat w1 w2) :
   w2 ⊑ res_product w1 w2 Hc.
 Proof. apply resA_le_product_r. Qed.
+
+Lemma singleton_projection_compat
+    (m : WfWorld) (X : aset) (σ : StoreT) :
+  dom (σ : StoreT) = X ->
+  res_restrict m X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) ->
+  world_compat
+    (singleton_world σ)
+    (m : World).
+Proof.
+  intros Hdomσ Hrestrict σ1 σ2 Hσ1 Hσ2.
+  simpl in Hσ1. subst σ1.
+  assert ((res_restrict m X : World) (storeA_restrict σ2 X)) as Hproj.
+  {
+    cbn [raw_world raw_worldA world_stores resA_restrict].
+    exists σ2. split; [exact Hσ2|reflexivity].
+  }
+  rewrite Hrestrict in Hproj.
+  simpl in Hproj.
+  pose proof Hproj as Hrestrictσ2.
+  rewrite <- Hrestrictσ2.
+  unfold storeA_compat, map_compat.
+  intros k v1 v2 H1 H2.
+  apply storeA_restrict_lookup_some in H1 as [_ H1].
+  congruence.
+Qed.
+
+Lemma res_product_singleton_projection_eq
+    (m : WfWorld) (X : aset) (σ : StoreT)
+    (Hc : world_compat (singleton_world σ) (m : World)) :
+  dom (σ : StoreT) = X ->
+  res_restrict m X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) ->
+  res_product
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld)
+    m Hc = m.
+Proof.
+  intros Hdomσ Hrestrict.
+  assert (HXsub : X ⊆ world_dom (m : World)).
+  {
+    pose proof (f_equal (fun w : WfWorld => world_dom (w : World))
+      Hrestrict) as Hdom.
+    change (world_dom (res_restrict m X : World) =
+      world_dom
+        ((exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld)
+          : World)) in Hdom.
+    rewrite res_restrict_dom in Hdom.
+    unfold singleton_world in Hdom.
+    cbn [world_dom raw_world raw_worldA world_dom worldA_dom singleton_worldA] in Hdom.
+    set_solver.
+  }
+  apply wfworld_ext. apply world_ext.
+  - rewrite res_product_dom.
+    cbn [world_dom raw_world raw_worldA world_dom worldA_dom singleton_world].
+    set_solver.
+  - intros τ. split.
+    + intros [σ1 [σ2 [Hσ1 [Hσ2 [Hcomp Hτ]]]]].
+      simpl in Hσ1. subst σ1.
+      assert ((res_restrict m X : World) (storeA_restrict σ2 X)) as Hproj.
+      {
+        cbn [raw_world raw_worldA world_stores resA_restrict].
+        exists σ2. split; [exact Hσ2|reflexivity].
+      }
+      rewrite Hrestrict in Hproj.
+      simpl in Hproj.
+      pose proof Hproj as Hσ2X.
+      subst τ.
+      rewrite <- Hσ2X.
+      rewrite storeA_union_absorb_r.
+      * exact Hσ2.
+      * unfold storeA_compat, map_compat.
+        intros k v1 v2 H1 H2.
+        apply storeA_restrict_lookup_some in H1 as [_ H1].
+        congruence.
+      * rewrite storeA_restrict_dom. set_solver.
+    + intros Hτ.
+      exists σ, τ. repeat split; try assumption.
+      * apply Hc; [constructor|exact Hτ].
+      * rewrite storeA_union_absorb_r.
+        -- reflexivity.
+        -- apply Hc; [constructor|exact Hτ].
+        -- rewrite Hdomσ.
+           rewrite (wfworld_store_dom m τ Hτ).
+           apply HXsub.
+Qed.
 
 Lemma res_sum_comm_eq (w1 w2 : WfWorld) (Hdef : raw_sum_defined w1 w2) :
   ∃ Hdef' : raw_sum_defined w2 w1,

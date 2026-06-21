@@ -30,6 +30,7 @@ Inductive Formula : Type :=
   | FForall  (p : Formula)
   | FOver    (p : Formula)
   | FUnder   (p : Formula)
+  | FPersist (p : Formula)
   | FFibVars (D : lvset) (p : Formula).
 
 Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
@@ -42,7 +43,7 @@ Fixpoint formula_lvars_at (d : nat) (φ : Formula) : lvset :=
   | FBWand n p q =>
       formula_lvars_at (d + n) p ∪ formula_lvars_at (d + n) q
   | FForall p => formula_lvars_at (S d) p
-  | FOver p | FUnder p => formula_lvars_at d p
+  | FOver p | FUnder p | FPersist p => formula_lvars_at d p
   | FFibVars D p => lvars_at_depth d D ∪ formula_lvars_at d p
   end.
 
@@ -63,7 +64,7 @@ Fixpoint formula_wf (φ : Formula) : Prop :=
       formula_wf q ∧
       lvars_fv (formula_lvars_at d p) ⊆
         lvars_fv (formula_lvars_at 0 q)
-  | FForall p | FOver p | FUnder p => formula_wf p
+  | FForall p | FOver p | FUnder p | FPersist p => formula_wf p
   | FFibVars _ p => formula_wf p
   end.
 
@@ -121,6 +122,10 @@ Lemma formula_fv_under p :
   formula_fv (FUnder p) = formula_fv p.
 Proof. reflexivity. Qed.
 
+Lemma formula_fv_persist p :
+  formula_fv (FPersist p) = formula_fv p.
+Proof. reflexivity. Qed.
+
 Lemma formula_fv_fibvars D p :
   formula_fv (FFibVars D p) = lvars_fv D ∪ formula_fv p.
 Proof.
@@ -150,6 +155,7 @@ Proof.
   - rewrite (IHφ (S d)), formula_fv_forall, (IHφ 1). reflexivity.
   - rewrite (IHφ d), formula_fv_over. reflexivity.
   - rewrite (IHφ d), formula_fv_under. reflexivity.
+  - rewrite (IHφ d), formula_fv_persist. reflexivity.
   - rewrite lvars_fv_union, lvars_fv_lvars_at_depth, (IHφ d),
       formula_fv_fibvars.
     reflexivity.
@@ -161,7 +167,7 @@ Fixpoint formula_measure (φ : Formula) : nat :=
   | FAnd p q | FOr p q | FImpl p q | FStar p q | FPlus p q
   | FBWand _ p q =>
       1 + formula_measure p + formula_measure q
-  | FForall p | FOver p | FUnder p | FFibVars _ p =>
+  | FForall p | FOver p | FUnder p | FPersist p | FFibVars _ p =>
       1 + formula_measure p
   end.
 
@@ -179,6 +185,7 @@ Fixpoint formula_mlsubst (ρ : LStoreT) (φ : Formula) : Formula :=
   | FForall p => FForall (formula_mlsubst ρ p)
   | FOver p => FOver (formula_mlsubst ρ p)
   | FUnder p => FUnder (formula_mlsubst ρ p)
+  | FPersist p => FPersist (formula_mlsubst ρ p)
   | FFibVars D p =>
       FFibVars (D ∖ dom (ρ : gmap logic_var V)) (formula_mlsubst ρ p)
   end.
@@ -410,6 +417,7 @@ Fixpoint formula_open (k : nat) (x : atom) (φ : Formula) : Formula :=
   | FForall p => FForall (formula_open (S k) x p)
   | FOver p => FOver (formula_open k x p)
   | FUnder p => FUnder (formula_open k x p)
+  | FPersist p => FPersist (formula_open k x p)
   | FFibVars D p => FFibVars (lvars_open k x D) (formula_open k x p)
   end.
 
@@ -430,6 +438,7 @@ Fixpoint formula_atom_swap (x y : atom) (φ : Formula) : Formula :=
   | FForall p => FForall (formula_atom_swap x y p)
   | FOver p => FOver (formula_atom_swap x y p)
   | FUnder p => FUnder (formula_atom_swap x y p)
+  | FPersist p => FPersist (formula_atom_swap x y p)
   | FFibVars D p => FFibVars (lvars_swap x y D) (formula_atom_swap x y p)
   end.
 
@@ -488,6 +497,11 @@ Proof. reflexivity. Qed.
 Lemma formula_open_under k x p :
   formula_open k x (FUnder p) =
   FUnder (formula_open k x p).
+Proof. reflexivity. Qed.
+
+Lemma formula_open_persist k x p :
+  formula_open k x (FPersist p) =
+  FPersist (formula_open k x p).
 Proof. reflexivity. Qed.
 
 Lemma formula_open_fibvars k x D p :
@@ -580,6 +594,7 @@ Proof.
     rewrite !formula_lvars_at_fv. exact IHφ.
   - rewrite formula_fv_over, IHφ, formula_fv_over. reflexivity.
   - rewrite formula_fv_under, IHφ, formula_fv_under. reflexivity.
+  - rewrite formula_fv_persist, IHφ, formula_fv_persist. reflexivity.
   - rewrite !formula_fv_fibvars.
     rewrite lvars_fv_swap, IHφ, set_swap_union. reflexivity.
 Qed.
@@ -621,6 +636,8 @@ Proof.
     rewrite (IHφ Hx Hy). reflexivity.
   - rewrite formula_fv_under in Hx, Hy.
     rewrite (IHφ Hx Hy). reflexivity.
+  - rewrite formula_fv_persist in Hx, Hy.
+    rewrite (IHφ Hx Hy). reflexivity.
   - rewrite formula_fv_fibvars in Hx, Hy.
     rewrite lvars_swap_fresh, IHφ; set_solver.
 Qed.
@@ -637,6 +654,7 @@ Proof.
   - rewrite IHφ1, IHφ2. reflexivity.
   - rewrite IHφ1, IHφ2. reflexivity.
   - rewrite IHφ1, IHφ2. reflexivity.
+  - rewrite IHφ. reflexivity.
   - rewrite IHφ. reflexivity.
   - rewrite IHφ. reflexivity.
   - rewrite IHφ. reflexivity.
@@ -700,6 +718,7 @@ Proof.
     rewrite IHφ2 by (try lia; exact Hxy). reflexivity.
   - rewrite IHφ1 by assumption. rewrite IHφ2 by assumption. reflexivity.
   - rewrite IHφ by (try lia; exact Hxy). reflexivity.
+  - rewrite IHφ by assumption. reflexivity.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite IHφ by assumption. reflexivity.
   - rewrite lvars_open_commute_fresh by assumption.
@@ -937,6 +956,19 @@ Proof.
     rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
 Qed.
 
+Lemma formula_open_env_persist η φ :
+  formula_open_env η (FPersist φ) =
+  FPersist (formula_open_env η φ).
+Proof.
+  unfold formula_open_env.
+  refine (fin_maps.map_fold_ind
+    (fun η => map_fold (fun k x acc => formula_open k x acc) (FPersist φ) η =
+      FPersist (map_fold (fun k x acc => formula_open k x acc) φ η)) _ _ η).
+  - rewrite !map_fold_empty. reflexivity.
+  - intros k x η' Hfresh Hfold IH.
+    rewrite !Hfold. cbn [formula_open]. rewrite IH. reflexivity.
+Qed.
+
 Lemma formula_open_env_atom η q :
   formula_open_env η (FAtom q) = FAtom (qual_open_env η q).
 Proof.
@@ -1035,6 +1067,7 @@ Proof.
     apply IHφ.
   - apply IHφ.
   - apply IHφ.
+  - apply IHφ.
   - rewrite !lvars_fv_union.
     rewrite !lvars_fv_lvars_at_depth.
     pose proof (lvars_fv_open_subset k x D) as HD.
@@ -1093,6 +1126,7 @@ Ltac formula_fv_syntax_norm :=
   rewrite ?formula_fv_and, ?formula_fv_or, ?formula_fv_impl;
   rewrite ?formula_fv_star, ?formula_fv_fbwand, ?formula_fv_plus;
   rewrite ?formula_fv_forall, ?formula_fv_over, ?formula_fv_under;
+  rewrite ?formula_fv_persist;
   rewrite ?formula_fv_fibvars;
   rewrite ?lvars_fv_union.
 
@@ -1111,6 +1145,7 @@ Ltac formula_fv_syntax_norm_in H :=
   rewrite ?formula_fv_forall in H;
   rewrite ?formula_fv_over in H;
   rewrite ?formula_fv_under in H;
+  rewrite ?formula_fv_persist in H;
   rewrite ?formula_fv_fibvars in H;
   rewrite ?lvars_fv_union in H.
 
@@ -1119,7 +1154,8 @@ Ltac formula_open_syntax_norm :=
   rewrite ?formula_open_and, ?formula_open_or, ?formula_open_impl;
   rewrite ?formula_open_star, ?formula_open_fbwand, ?formula_open_plus;
   rewrite ?formula_open_forall;
-  rewrite ?formula_open_over, ?formula_open_under, ?formula_open_fibvars.
+  rewrite ?formula_open_over, ?formula_open_under, ?formula_open_persist,
+    ?formula_open_fibvars.
 
 Ltac formula_open_syntax_norm_in H :=
   rewrite ?formula_open_true in H;
@@ -1134,6 +1170,7 @@ Ltac formula_open_syntax_norm_in H :=
   rewrite ?formula_open_forall in H;
   rewrite ?formula_open_over in H;
   rewrite ?formula_open_under in H;
+  rewrite ?formula_open_persist in H;
   rewrite ?formula_open_fibvars in H.
 
 Ltac formula_open_env_syntax_norm :=
@@ -1141,6 +1178,7 @@ Ltac formula_open_env_syntax_norm :=
   rewrite ?formula_open_env_and, ?formula_open_env_or, ?formula_open_env_impl;
   rewrite ?formula_open_env_star, ?formula_open_env_plus;
   rewrite ?formula_open_env_over, ?formula_open_env_under;
+  rewrite ?formula_open_env_persist;
   try rewrite ?formula_open_env_fibvars by eauto;
   try rewrite ?formula_open_env_forall by eauto;
   try rewrite ?formula_open_env_fbwand by eauto.
@@ -1156,6 +1194,7 @@ Ltac formula_open_env_syntax_norm_in H :=
   rewrite ?formula_open_env_plus in H;
   rewrite ?formula_open_env_over in H;
   rewrite ?formula_open_env_under in H;
+  rewrite ?formula_open_env_persist in H;
   try rewrite ?formula_open_env_fibvars in H by eauto;
   try rewrite ?formula_open_env_forall in H by eauto.
 
@@ -1195,6 +1234,9 @@ Ltac formula_msubst_syntax_norm_once :=
   | |- context[formula_msubst_store ?σ (FUnder ?p)] =>
       change (formula_msubst_store σ (FUnder p))
         with (FUnder (formula_msubst_store σ p))
+  | |- context[formula_msubst_store ?σ (FPersist ?p)] =>
+      change (formula_msubst_store σ (FPersist p))
+        with (FPersist (formula_msubst_store σ p))
   | |- context[formula_msubst_store ?σ (FFibVars ?D ?p)] =>
       rewrite (formula_msubst_store_fibvars σ D p)
   end.
@@ -1235,6 +1277,9 @@ Ltac formula_msubst_syntax_norm_once_in H :=
   | context[formula_msubst_store ?σ (FUnder ?p)] =>
       change (formula_msubst_store σ (FUnder p))
         with (FUnder (formula_msubst_store σ p)) in H
+  | context[formula_msubst_store ?σ (FPersist ?p)] =>
+      change (formula_msubst_store σ (FPersist p))
+        with (FPersist (formula_msubst_store σ p)) in H
   | context[formula_msubst_store ?σ (FFibVars ?D ?p)] =>
       rewrite (formula_msubst_store_fibvars σ D p) in H
   end.

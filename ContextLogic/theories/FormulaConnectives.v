@@ -243,16 +243,40 @@ Proof.
         * apply (proj1 (IHn ψ gas' (res_atom_swap x y m1)
             ltac:(simpl in Hn; lia))).
           rewrite res_atom_swap_involutive. exact Hm1.
-      + destruct Hbody as [m1 [Hsub Hm1]].
-        exists (res_atom_swap x y m1). split.
-        * pose proof (res_subset_atom_swap x y m1 (res_atom_swap x y m0) Hsub)
-            as Hsub_sw.
-          rewrite res_atom_swap_involutive in Hsub_sw. exact Hsub_sw.
-        * apply (proj1 (IHn ψ gas' (res_atom_swap x y m1)
-            ltac:(simpl in Hn; lia))).
-          rewrite res_atom_swap_involutive. exact Hm1.
-      + destruct Hbody as [Hlc Hfib].
-        split.
+	      + destruct Hbody as [m1 [Hsub Hm1]].
+	        exists (res_atom_swap x y m1). split.
+	        * pose proof (res_subset_atom_swap x y m1 (res_atom_swap x y m0) Hsub)
+	            as Hsub_sw.
+	          rewrite res_atom_swap_involutive in Hsub_sw. exact Hsub_sw.
+	        * apply (proj1 (IHn ψ gas' (res_atom_swap x y m1)
+	            ltac:(simpl in Hn; lia))).
+	          rewrite res_atom_swap_involutive. exact Hm1.
+	    + destruct Hbody as [σ [Hdomσ [Hrestrict Hp]]].
+	        exists (storeA_swap x y σ). split.
+	        * transitivity (set_swap x y (dom (σ : StoreT))).
+	          -- apply storeA_swap_dom.
+	          -- rewrite Hdomσ, formula_fv_atom_swap,
+	               set_swap_involutive. reflexivity.
+	        * split.
+	          -- change (res_restrict (res_atom_swap x y m0)
+	               (formula_fv (formula_atom_swap x y ψ)) =
+	               (exist _ (singleton_world σ) (wf_singleton_world σ)
+	                 : WfWorldT)) in Hrestrict.
+	             rewrite formula_fv_atom_swap in Hrestrict.
+	             rewrite res_restrict_atom_swap in Hrestrict.
+	             apply (f_equal (res_atom_swap x y)) in Hrestrict.
+	             rewrite res_atom_swap_involutive in Hrestrict.
+	             rewrite res_atom_swap_singleton_world in Hrestrict.
+	             exact Hrestrict.
+	          -- apply (proj1 (IHn ψ gas'
+	               (exist _ (singleton_world (storeA_swap x y σ))
+	                 (wf_singleton_world (storeA_swap x y σ)) : WfWorldT)
+	               ltac:(simpl in Hn; lia))).
+	             rewrite res_atom_swap_singleton_world,
+	               storeA_swap_involutive.
+	             exact Hp.
+	      + destruct Hbody as [Hlc Hfib].
+	        split.
         * apply lc_lvars_no_bv.
           pose proof (proj1 (lc_lvars_no_bv _) Hlc) as Hbv_sw.
           rewrite lvars_bv_swap in Hbv_sw. exact Hbv_sw.
@@ -472,12 +496,25 @@ Proof.
         exists (res_atom_swap x y m1). split.
         * exact (res_subset_atom_swap x y m0 m1 Hsub).
         * exact (proj2 (IHn ψ gas' m1 ltac:(simpl in Hn; lia)) Hm1).
-      + destruct Hbody as [m1 [Hsub Hm1]].
-        exists (res_atom_swap x y m1). split.
-        * exact (res_subset_atom_swap x y m1 m0 Hsub).
-        * exact (proj2 (IHn ψ gas' m1 ltac:(simpl in Hn; lia)) Hm1).
-      + destruct Hbody as [Hlc Hfib].
-        split.
+	      + destruct Hbody as [m1 [Hsub Hm1]].
+	        exists (res_atom_swap x y m1). split.
+	        * exact (res_subset_atom_swap x y m1 m0 Hsub).
+	        * exact (proj2 (IHn ψ gas' m1 ltac:(simpl in Hn; lia)) Hm1).
+	      + destruct Hbody as [σ [Hdomσ [Hrestrict Hp]]].
+	        exists (storeA_swap x y σ). split.
+	        * transitivity (set_swap x y (dom (σ : StoreT))).
+	          -- apply storeA_swap_dom.
+	          -- rewrite Hdomσ. symmetry. apply formula_fv_atom_swap.
+	        * split.
+	          -- rewrite formula_fv_atom_swap, res_restrict_atom_swap.
+	             rewrite Hrestrict. apply res_atom_swap_singleton_world.
+	          -- pose proof (proj2 (IHn ψ gas'
+	               (exist _ (singleton_world σ) (wf_singleton_world σ)
+	                 : WfWorldT) ltac:(simpl in Hn; lia)) Hp) as Hp_sw.
+	             rewrite res_atom_swap_singleton_world in Hp_sw.
+	             exact Hp_sw.
+	      + destruct Hbody as [Hlc Hfib].
+	        split.
         * apply lc_lvars_no_bv.
           rewrite lvars_bv_swap.
           exact (proj1 (lc_lvars_no_bv _) Hlc).
@@ -735,6 +772,74 @@ Proof.
   eapply res_models_under_intro_same; [| exact Hφ].
   apply (proj2 (formula_scoped_under_iff m φ)).
   eapply res_models_fuel_scoped; eauto.
+Qed.
+
+Lemma formula_scoped_persist_from_singleton
+    (m : WfWorldT) (φ : FormulaT) (σ : Store (V := V)) :
+  dom (σ : Store (V := V)) = formula_fv φ ->
+  res_restrict m (formula_fv φ) =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  formula_scoped_in_world m (FPersist φ).
+Proof.
+  intros Hdomσ Hrestrict.
+  unfold formula_scoped_in_world.
+  rewrite formula_fv_persist.
+  pose proof (f_equal (fun w : WfWorldT => world_dom (w : WorldT))
+    Hrestrict) as Hdom_restrict.
+  change (world_dom (res_restrict m (formula_fv φ) : WorldT) =
+    world_dom ((exist _ (singleton_world σ) (wf_singleton_world σ)
+      : WfWorldT) : WorldT)) in Hdom_restrict.
+  rewrite res_restrict_dom in Hdom_restrict.
+  change (world_dom ((exist _ (singleton_world σ) (wf_singleton_world σ)
+    : WfWorldT) : WorldT)) with (dom (σ : Store (V := V))) in Hdom_restrict.
+  rewrite Hdomσ in Hdom_restrict.
+  set_solver.
+Qed.
+
+Lemma res_models_persist_intro
+    (m : WfWorldT) (φ : FormulaT) (σ : Store (V := V)) :
+  dom (σ : Store (V := V)) = formula_fv φ ->
+  res_restrict m (formula_fv φ) =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ⊨ φ ->
+  m ⊨ FPersist φ.
+Proof.
+  intros Hdomσ Hrestrict Hφ.
+  unfold res_models. cbn [formula_measure res_models_fuel].
+  split.
+  - eapply formula_scoped_persist_from_singleton; eauto.
+  - exists σ. split; [exact Hdomσ|].
+    split; [exact Hrestrict|].
+    models_fuel_irrel Hφ.
+Qed.
+
+Lemma res_models_persist_iff (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FPersist φ <->
+  exists σ : Store (V := V),
+    dom (σ : Store (V := V)) = formula_fv φ /\
+    res_restrict m (formula_fv φ) =
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) /\
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ⊨ φ.
+Proof.
+  split.
+  - unfold res_models. cbn [formula_measure res_models_fuel].
+    intros [_ [σ [Hdomσ [Hrestrict Hφ]]]].
+    exists σ. split; [exact Hdomσ|].
+    split; [exact Hrestrict|].
+    unfold res_models. exact Hφ.
+  - intros [σ [Hdomσ [Hrestrict Hφ]]].
+    eapply res_models_persist_intro; eauto.
+Qed.
+
+Lemma res_models_persist_elim (m : WfWorldT) (φ : FormulaT) :
+  m ⊨ FPersist φ ->
+  m ⊨ φ.
+Proof.
+  intros Hpersist.
+  apply res_models_persist_iff in Hpersist as [σ [_ [Hrestrict Hφ]]].
+  eapply res_models_kripke; [| exact Hφ].
+  rewrite <- Hrestrict.
+  apply res_restrict_le.
 Qed.
 
 Lemma res_models_FFibVars_intro (m : WfWorldT) (D : lvset) (φ : FormulaT) :
