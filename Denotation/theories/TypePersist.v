@@ -32,6 +32,15 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma relevant_env_persist_eq Σ τ e :
+  relevant_env Σ (CTPersist τ) e =
+  relevant_env Σ τ e.
+Proof.
+  unfold relevant_env, relevant_lvars.
+  cbn [context_ty_lvars context_ty_lvars_at].
+  reflexivity.
+Qed.
+
 Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
   z ∉ lvars_fv (dom Σ) ∪ qual_dom φ ->
   lty_env_restrict_lvars (<[LVFree z := TBase b]> Σ)
@@ -1685,6 +1694,30 @@ Lemma ty_guard_over_to_persist_over
     (CTPersist (CTOver b φ)) e.
 Proof.
   intros Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  rewrite res_models_and_iff. split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasicτ]].
+    split; [exact Hlc|]. split.
+    + exact Hdom.
+    + exact Hbasicτ.
+  - rewrite res_models_and_iff. split.
+    + exact Hworld.
+    + rewrite res_models_and_iff. split.
+      * exact Hbasic.
+      * exact Htotal.
+Qed.
+
+Lemma ty_guard_to_persist
+    Σ τ e (m : WfWorldT) :
+  m ⊨ ty_guard_formula (relevant_env Σ τ e) τ e ->
+  m ⊨ ty_guard_formula (relevant_env Σ (CTPersist τ) e)
+    (CTPersist τ) e.
+Proof.
+  intros Hguard.
+  rewrite relevant_env_persist_eq.
   unfold ty_guard_formula in *.
   repeat rewrite res_models_and_iff in Hguard.
   destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
