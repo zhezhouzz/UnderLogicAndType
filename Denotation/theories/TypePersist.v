@@ -1959,6 +1959,77 @@ Proof.
 	  reflexivity.
 Qed.
 
+Lemma formula_open_result_first_arrow_value_ret_bvar0
+    gas (Σ : lty_env) τx τr Tf f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))) =
+  arrow_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold arrow_value_denote_gas_with.
+  cbn [formula_open].
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  2:{ rewrite !cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr)
+    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{
+    rewrite fv_tapp_tm, tm_shift_fv.
+    cbn [fv_tm fv_value]. set_solver.
+  }
+  2:{ rewrite cty_shift_fv. exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
+  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
+  change (open_tm 1 (vfvar f)
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
+    with (tapp_tm (tret (vfvar f)) (vbvar 0)).
+  rewrite lvar_store_bind_open_under.
+  2:{
+    rewrite typed_lty_env_bind_dom.
+    intros Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply HfΣ.
+      unfold lvars_shift_from in Hbad.
+      apply elem_of_map in Hbad as [v [Hv HvIn]].
+      destruct v; inversion Hv; subst.
+      exact HvIn.
+    - apply elem_of_singleton in Hbad. discriminate.
+  }
+  rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
+  rewrite cty_shift_preserves_erasure.
+  rewrite cty_open_shift_under_gen by lia.
+  change (@open_one atom context_ty open_cty_atom_inst 0 f
+    (cty_shift 0 τx)) with (cty_open 0 f (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
+  rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
+  reflexivity.
+Qed.
+
 Lemma arrow_open_value_over_arg_to_persist_over_arg
     gas_src gas_tgt (Σ : lty_env) bx φx τr f (mf : WfWorldT) :
   lty_env_closed Σ ->
