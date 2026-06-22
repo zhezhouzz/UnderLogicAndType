@@ -856,6 +856,316 @@ Proof.
     + intros Hσ. left. exact Hσ.
 Qed.
 
+Local Lemma store_restrict_product_fiber_union
+    (σn σm τn τm : StoreT) X :
+  storeA_compat τn τm ->
+  store_restrict τn X = σn ->
+  store_restrict τm X = σm ->
+  store_restrict (τn ∪ τm : StoreT) X = (σn ∪ σm : StoreT).
+Proof.
+  intros Hcompat Hn Hm.
+  change (storeA_restrict (@union (gmap atom V) _ τn τm) X =
+    @union (gmap atom V) _ σn σm).
+  transitivity (@union (gmap atom V) _
+    (storeA_restrict τn X) (storeA_restrict τm X)).
+  - exact (storeA_restrict_union τn τm X Hcompat).
+  - rewrite Hn, Hm. reflexivity.
+Qed.
+
+Local Lemma store_restrict_dom_inter (s : StoreT) X :
+  store_restrict s X = store_restrict s (X ∩ dom (s : StoreT)).
+Proof.
+  apply storeA_map_eq. intros a.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (a ∈ X)) as [HaX|HaX].
+  - destruct (decide (a ∈ X ∩ dom (s : StoreT))) as [_|Ha].
+    + reflexivity.
+    + destruct (s !! a) as [v|] eqn:Hsa; [|exact Hsa].
+      exfalso. apply Ha. apply elem_of_intersection. split; [exact HaX|].
+      change (a ∈ dom (s : gmap atom V)).
+      change ((s : gmap atom V) !! a = Some v) in Hsa.
+      apply elem_of_dom_2 in Hsa. exact Hsa.
+  - destruct (decide (a ∈ X ∩ dom (s : StoreT))) as [Ha|_];
+      [set_solver|reflexivity].
+Qed.
+
+Local Lemma store_restrict_union_component_l
+    (τn τm ρn ρm : StoreT) X :
+  dom (τn : StoreT) = dom (ρn : StoreT) ->
+  storeA_compat τn τm ->
+  storeA_compat ρn ρm ->
+  store_restrict (ρn ∪ ρm : StoreT) X =
+    store_restrict (τn ∪ τm : StoreT) X ->
+  store_restrict ρn X = store_restrict τn X.
+Proof.
+  intros Hdom Hcompatτ Hcompatρ Hunion.
+  rewrite (store_restrict_dom_inter ρn X).
+  rewrite (store_restrict_dom_inter τn X).
+  rewrite Hdom.
+  assert (Hsmall :
+      store_restrict (ρn ∪ ρm : StoreT) (X ∩ dom (ρn : StoreT)) =
+      store_restrict (τn ∪ τm : StoreT) (X ∩ dom (ρn : StoreT))).
+  {
+    eapply (storeA_restrict_eq_mono
+      (ρn ∪ ρm : StoreT) (τn ∪ τm : StoreT)
+      (X ∩ dom (ρn : StoreT)) X); [set_solver|exact Hunion].
+  }
+  rewrite (storeA_restrict_union_absorb_l_on
+    (ρn : gmap atom V) (ρm : gmap atom V)
+    (X ∩ dom (ρn : StoreT)) Hcompatρ) in Hsmall by set_solver.
+  rewrite (storeA_restrict_union_absorb_l_on
+    (τn : gmap atom V) (τm : gmap atom V)
+    (X ∩ dom (ρn : StoreT)) Hcompatτ) in Hsmall by set_solver.
+  exact Hsmall.
+Qed.
+
+Local Lemma store_restrict_union_component_r
+    (τn τm ρn ρm : StoreT) X :
+  dom (τm : StoreT) = dom (ρm : StoreT) ->
+  storeA_compat τn τm ->
+  storeA_compat ρn ρm ->
+  store_restrict (ρn ∪ ρm : StoreT) X =
+    store_restrict (τn ∪ τm : StoreT) X ->
+  store_restrict ρm X = store_restrict τm X.
+Proof.
+  intros Hdom Hcompatτ Hcompatρ Hunion.
+  rewrite (store_restrict_dom_inter ρm X).
+  rewrite (store_restrict_dom_inter τm X).
+  rewrite Hdom.
+  assert (Hsmall :
+      store_restrict (ρn ∪ ρm : StoreT) (X ∩ dom (ρm : StoreT)) =
+      store_restrict (τn ∪ τm : StoreT) (X ∩ dom (ρm : StoreT))).
+  {
+    eapply (storeA_restrict_eq_mono
+      (ρn ∪ ρm : StoreT) (τn ∪ τm : StoreT)
+      (X ∩ dom (ρm : StoreT)) X); [set_solver|exact Hunion].
+  }
+  rewrite (storeA_restrict_union_absorb_r_on
+    (ρn : gmap atom V) (ρm : gmap atom V)
+    (X ∩ dom (ρm : StoreT)) Hcompatρ) in Hsmall by set_solver.
+  rewrite (storeA_restrict_union_absorb_r_on
+    (τn : gmap atom V) (τm : gmap atom V)
+    (X ∩ dom (ρm : StoreT)) Hcompatτ) in Hsmall by set_solver.
+  exact Hsmall.
+Qed.
+
+Local Lemma res_fiber_product_subset_of_projection
+    (n m pfib : WfWorldT) X σp
+    (Hc : world_compat (n : WorldT) (m : WorldT)) :
+  res_fiber_from_projection (res_product n m Hc) X σp pfib ->
+  exists (σn σm : StoreT) (nfib mfib : WfWorldT)
+    (Hc_fib : world_compat (nfib : WorldT) (mfib : WorldT)),
+    res_fiber_from_projection n X σn nfib /\
+    res_fiber_from_projection m X σm mfib /\
+    res_product nfib mfib Hc_fib ⊑ pfib.
+Proof.
+  intros Hproj_p.
+  destruct (world_wf pfib) as [[τp Hτp_fib] _].
+  pose proof (res_fiber_from_projection_store_source
+    (res_product n m Hc) pfib X σp τp Hproj_p Hτp_fib) as Hτp_prod.
+  cbn [res_product raw_product rawA_product raw_world raw_worldA world_stores]
+    in Hτp_prod.
+  destruct Hτp_prod as [τn [τm [Hτn [Hτm [Hcompat Hτp_eq]]]]].
+  subst τp.
+  destruct (res_fiber_from_projection_of_store_any n X τn Hτn)
+    as [nfib [Hproj_n Hτn_fib]].
+  destruct (res_fiber_from_projection_of_store_any m X τm Hτm)
+    as [mfib [Hproj_m Hτm_fib]].
+  assert (Hc_fib : world_compat (nfib : WorldT) (mfib : WorldT)).
+  {
+    intros ρn ρm Hρn Hρm.
+    eapply Hc.
+    - eapply res_fiber_from_projection_store_source; eauto.
+    - eapply res_fiber_from_projection_store_source; eauto.
+  }
+  exists (store_restrict τn X), (store_restrict τm X),
+    nfib, mfib, Hc_fib.
+  split; [exact Hproj_n|].
+  split; [exact Hproj_m|].
+  unfold sqsubseteq, wf_worldA_sqsubseteq, resA_le, rawA_le.
+  apply world_ext.
+  - cbn [raw_world raw_worldA rawA_restrict world_dom worldA_dom].
+    rewrite res_product_dom.
+    rewrite (res_fiber_from_projection_world_dom n nfib X
+      (store_restrict τn X) Hproj_n).
+    rewrite (res_fiber_from_projection_world_dom m mfib X
+      (store_restrict τm X) Hproj_m).
+    assert (Hdom_goal :
+        worldA_dom (pfib :> WorldT) =
+        world_dom (n : WorldT) ∪ world_dom (m : WorldT)).
+    {
+      change (world_dom (pfib : WorldT) =
+        world_dom (n : WorldT) ∪ world_dom (m : WorldT)).
+      rewrite (res_fiber_from_projection_world_dom
+        (res_product n m Hc) pfib X σp Hproj_p).
+      rewrite res_product_dom. reflexivity.
+    }
+    change (worldA_dom (raw_world (res_product nfib mfib Hc_fib)))
+      with (world_dom (res_product nfib mfib Hc_fib : WorldT)).
+    rewrite res_product_dom.
+    apply set_eq. intros a. split.
+    + intros Ha.
+      apply elem_of_intersection. split.
+      * change (a ∈ worldA_dom (pfib :> WorldT)).
+        rewrite Hdom_goal. exact Ha.
+      * rewrite (res_fiber_from_projection_world_dom n nfib X
+          (store_restrict τn X) Hproj_n).
+        rewrite (res_fiber_from_projection_world_dom m mfib X
+          (store_restrict τm X) Hproj_m).
+        exact Ha.
+    + intros Ha.
+      apply elem_of_intersection in Ha as [Ha _].
+      change (a ∈ worldA_dom (pfib :> WorldT)) in Ha.
+      rewrite Hdom_goal in Ha. exact Ha.
+  - intros ρ. cbn [raw_world raw_worldA rawA_restrict world_stores worldA_stores].
+    split.
+    + intros Hρprod.
+      exists ρ. split.
+      * change ((pfib : WorldT) ρ).
+        pose proof Hproj_p as [_ Hpfib_eq].
+        change ((pfib : WorldT) =
+          raw_fiber (res_product n m Hc : WorldT) σp) in Hpfib_eq.
+        rewrite Hpfib_eq.
+        cbn [raw_fiber rawA_fiber raw_world raw_worldA world_stores].
+        cbn [res_product raw_product rawA_product raw_world raw_worldA world_stores]
+          in Hρprod.
+        destruct Hρprod as [ρn [ρm [Hρn [Hρm [Hcompatρ Hρeq]]]]].
+        subst ρ.
+        split.
+        -- exists ρn, ρm. repeat split.
+           ++ eapply res_fiber_from_projection_store_source; eauto.
+           ++ eapply res_fiber_from_projection_store_source; eauto.
+           ++ exact Hcompatρ.
+        -- pose proof (res_fiber_from_projection_store_restrict_input
+             n nfib X (store_restrict τn X) ρn Hproj_n Hρn) as HρnX.
+           pose proof (res_fiber_from_projection_store_restrict_input
+             m mfib X (store_restrict τm X) ρm Hproj_m Hρm) as HρmX.
+           assert (Hτp_prod :
+               (res_product n m Hc : WorldT) (τn ∪ τm : StoreT)).
+           {
+             cbn [res_product raw_product rawA_product raw_world raw_worldA world_stores].
+             exists τn, τm. repeat split; eauto.
+           }
+           pose proof (res_fiber_from_projection_store_restrict_input
+             (res_product n m Hc) pfib X σp
+             (τn ∪ τm : StoreT) Hproj_p Hτp_fib) as HτpX.
+           assert (HρX :
+               store_restrict (ρn ∪ ρm : StoreT) X = σp).
+           {
+             transitivity (store_restrict τn X ∪ store_restrict τm X : StoreT).
+             - eapply store_restrict_product_fiber_union; eauto.
+             - rewrite <- HτpX.
+               symmetry.
+               eapply store_restrict_product_fiber_union; eauto.
+           }
+           exact (storeA_restrict_projection_dom
+             (ρn ∪ ρm : StoreT) σp X HρX).
+      * apply storeA_restrict_idemp_eq.
+        rewrite (wfworld_store_dom
+          (res_product nfib mfib Hc_fib) ρ Hρprod).
+        reflexivity.
+    + intros [ρ0 [Hρ0fib Hrestrict]].
+      pose proof Hρ0fib as Hρ0fib_orig.
+      pose proof Hproj_p as [_ Hpfib_eq].
+      change ((pfib :> WorldT) =
+        raw_fiber (res_product n m Hc : WorldT) σp) in Hpfib_eq.
+      change ((pfib :> WorldT) ρ0) in Hρ0fib.
+      rewrite Hpfib_eq in Hρ0fib.
+      cbn [raw_fiber rawA_fiber raw_world raw_worldA world_stores] in Hρ0fib.
+      destruct Hρ0fib as [Hρ0prod Hρ0fix].
+      cbn [res_product raw_product rawA_product raw_world raw_worldA world_stores]
+        in Hρ0prod |- *.
+      pose proof Hρ0prod as Hρ0prod_src.
+      destruct Hρ0prod as [ρn [ρm [Hρn [Hρm [Hcompatρ Hρ0eq]]]]].
+      subst ρ0.
+      assert (Hρeq : ρ = (ρn ∪ ρm : StoreT)).
+      {
+        rewrite <- Hrestrict.
+        assert (HdomU :
+            dom (ρn ∪ ρm : StoreT) =
+            worldA_dom (res_product nfib mfib Hc_fib : WorldT)).
+        {
+          pose proof (wfworld_store_dom (res_product n m Hc)
+            (ρn ∪ ρm : StoreT) Hρ0prod_src) as Hdom_src.
+          change (dom (ρn ∪ ρm : StoreT) =
+            world_dom (res_product n m Hc : WorldT)) in Hdom_src.
+          rewrite res_product_dom in Hdom_src.
+          pose proof (res_fiber_from_projection_world_dom n nfib X
+            (store_restrict τn X) Hproj_n) as Hdom_nf.
+          pose proof (res_fiber_from_projection_world_dom m mfib X
+            (store_restrict τm X) Hproj_m) as Hdom_mf.
+          better_set_solver.
+        }
+        exact (storeA_restrict_idemp_eq
+          (ρn ∪ ρm : StoreT)
+          (worldA_dom (res_product nfib mfib Hc_fib : WorldT))
+          HdomU).
+      }
+      subst ρ.
+      assert (Hτp_prod :
+          (res_product n m Hc : WorldT) (τn ∪ τm : StoreT)).
+      {
+        cbn [res_product raw_product rawA_product raw_world raw_worldA world_stores].
+        exists τn, τm. repeat split; eauto.
+      }
+      pose proof (res_fiber_from_projection_store_restrict_input
+        (res_product n m Hc) pfib X σp
+        (τn ∪ τm : StoreT) Hproj_p Hτp_fib) as HτpX.
+      assert (HunionX :
+          store_restrict (ρn ∪ ρm : StoreT) X =
+          store_restrict (τn ∪ τm : StoreT) X).
+      {
+        pose proof (res_fiber_from_projection_store_restrict_input
+          (res_product n m Hc) pfib X σp
+          (ρn ∪ ρm : StoreT) Hproj_p Hρ0fib_orig) as Hρ0X.
+        transitivity σp; [exact Hρ0X|symmetry; exact HτpX].
+      }
+      exists ρn, ρm.
+      split.
+      * pose proof Hproj_n as [_ Hnfib_eq].
+        change ((nfib :> WorldT) =
+          raw_fiber (n : WorldT) (store_restrict τn X)) in Hnfib_eq.
+        change ((nfib :> WorldT) ρn).
+        rewrite Hnfib_eq.
+        split; [exact Hρn|].
+        assert (Hcomp :
+            store_restrict ρn X = store_restrict τn X).
+        {
+          assert (Hdom_eq : dom (τn : StoreT) = dom (ρn : StoreT)).
+          {
+            transitivity (world_dom (n : WorldT)).
+            - exact (wfworld_store_dom n τn Hτn).
+            - symmetry. exact (wfworld_store_dom n ρn Hρn).
+          }
+          eapply store_restrict_union_component_l; eauto.
+        }
+        exact (storeA_restrict_projection_dom ρn
+          (store_restrict τn X) X Hcomp).
+      * split.
+      -- pose proof Hproj_m as [_ Hmfib_eq].
+         change ((mfib :> WorldT) =
+           raw_fiber (m : WorldT) (store_restrict τm X)) in Hmfib_eq.
+         change ((mfib :> WorldT) ρm).
+         rewrite Hmfib_eq.
+         split; [exact Hρm|].
+         assert (Hcomp :
+             store_restrict ρm X = store_restrict τm X).
+         {
+           assert (Hdom_eq : dom (τm : StoreT) = dom (ρm : StoreT)).
+           {
+             transitivity (world_dom (m : WorldT)).
+             - exact (wfworld_store_dom m τm Hτm).
+             - symmetry. exact (wfworld_store_dom m ρm Hρm).
+           }
+           eapply store_restrict_union_component_r; eauto.
+         }
+         exact (storeA_restrict_projection_dom ρm
+           (store_restrict τm X) X Hcomp).
+      -- split.
+         ++ exact Hcompatρ.
+         ++ exact Hρeq.
+Qed.
+
 Lemma fiberwise_joinable_on_plus_subset_upward X P Q :
   subset_upward_closed_formula P ->
   subset_upward_closed_formula Q ->
@@ -1000,6 +1310,83 @@ Proof.
   intros [L Hopen] X.
   apply fiberwise_joinable_on_forall.
   exists L. intros y Hy. apply Hopen. exact Hy.
+Qed.
+
+Lemma fiberwise_joinable_on_fbwand1 X P Q :
+  (exists L : aset, forall y,
+     y ∉ L ->
+     y ∉ X ->
+     fiberwise_stable_on X (formula_open 0 y P) /\
+     fiberwise_joinable_on X (formula_open 0 y Q)) ->
+  fiberwise_joinable_on X (FBWand 1 P Q).
+Proof.
+  intros [L Hbody] m Hfib.
+  assert (Hscope : formula_scoped_in_world m (FBWand 1 P Q)).
+  {
+    destruct (world_wf m) as [[τ Hτ] _].
+    destruct (res_fiber_from_projection_of_store_any m X τ Hτ)
+      as [mfib [Hproj _]].
+    pose proof (Hfib (store_restrict τ X) mfib Hproj) as Hwand.
+    pose proof (res_models_scoped _ _ Hwand) as Hscope_fib.
+    unfold formula_scoped_in_world in Hscope_fib |- *.
+    rewrite (res_fiber_from_projection_world_dom m mfib X
+      (store_restrict τ X) Hproj) in Hscope_fib.
+    exact Hscope_fib.
+  }
+  eapply res_models_fbwand_intro; [exact Hscope|].
+  exists (L ∪ X ∪ world_dom (m : WorldT)).
+  intros η n Hc Hbind Hηfresh Hdom Harg.
+  destruct (open_env_binds_one_inv η Hbind) as [y ->].
+  rewrite formula_open_env_singleton in Harg |- *.
+  rewrite open_env_atoms_insert in Hηfresh by apply lookup_empty.
+  rewrite open_env_atoms_empty in Hηfresh.
+  rewrite open_env_atoms_insert in Hdom by apply lookup_empty.
+  rewrite open_env_atoms_empty in Hdom.
+  assert (HyL : y ∉ L) by set_solver.
+  assert (HyX : y ∉ X) by set_solver.
+  assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
+  destruct (Hbody y HyL HyX) as [HPstable HQjoin].
+  apply HQjoin.
+  intros σp pfib Hproj_p.
+  destruct (res_fiber_product_subset_of_projection n m pfib X σp Hc
+    Hproj_p)
+    as [σn [σm [nfib [mfib [Hc_fib [Hproj_n [Hproj_m Hle]]]]]]].
+  pose proof (Hfib σm mfib Hproj_m) as Hwand_mfib.
+  assert (Harg_nfib : nfib ⊨ formula_open 0 y P).
+  { eapply HPstable; eauto. }
+  assert (Hymfib : y ∉ world_dom (mfib : WorldT)).
+  {
+    rewrite (res_fiber_from_projection_world_dom m mfib X σm Hproj_m).
+    exact Hym.
+  }
+  assert (Hdom_fib :
+      world_dom (res_product nfib mfib Hc_fib : WorldT) =
+        world_dom (mfib : WorldT) ∪ {[y]}).
+  {
+    rewrite res_product_dom.
+    rewrite (res_fiber_from_projection_world_dom n nfib X σn Hproj_n).
+    rewrite (res_fiber_from_projection_world_dom m mfib X σm Hproj_m).
+    rewrite res_product_dom in Hdom.
+    apply set_eq. intros a. set_solver.
+  }
+  pose proof (res_models_fbwand_open_one_named_fresh
+    mfib nfib y P Q Hc_fib Hwand_mfib Hymfib Hdom_fib Harg_nfib)
+    as HQprod.
+  eapply res_models_kripke; [exact Hle|exact HQprod].
+Qed.
+
+Lemma fiberwise_joinable_fbwand1 P Q :
+  (exists L : aset, forall y,
+     y ∉ L ->
+     fiberwise_stable (formula_open 0 y P) /\
+     fiberwise_joinable (formula_open 0 y Q)) ->
+  fiberwise_joinable (FBWand 1 P Q).
+Proof.
+  intros [L Hbody] X.
+  apply fiberwise_joinable_on_fbwand1.
+  exists L. intros y Hy _.
+  destruct (Hbody y Hy) as [HP HQ].
+  split; [apply HP|apply HQ].
 Qed.
 
 Local Lemma fibvars_atom_refinement_data
