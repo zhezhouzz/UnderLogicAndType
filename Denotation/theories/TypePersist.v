@@ -7,6 +7,204 @@ From Denotation Require Import Notation TypeDenote ResultFirstOpen
 
 Section TypePersist.
 
+Definition over_open_body (φ : type_qualifier) (z : atom) : FormulaT :=
+  FFibVars
+    (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
+    (FOver (FAtom (qual_open_atom 0 z φ))).
+
+Definition under_open_body (φ : type_qualifier) (z : atom) : FormulaT :=
+  FFibVars
+    (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
+    (FUnder (FAtom (qual_open_atom 0 z φ))).
+
+Lemma lvars_open0_difference_bound0_normalize D z :
+  LVFree z ∉ D ->
+  lvars_open 0 z (D ∖ {[LVBound 0]}) =
+  lvars_open 0 z D ∖ {[LVFree z]}.
+Proof.
+  intros HzD.
+  apply set_eq. intros a.
+  rewrite elem_of_difference.
+  split.
+  - intros Ha.
+    split.
+    + change (a ∈ set_swap (LVBound 0) (LVFree z) D).
+      change (a ∈ set_swap (LVBound 0) (LVFree z)
+        (D ∖ {[LVBound 0]})) in Ha.
+      rewrite elem_of_set_swap in Ha.
+      rewrite elem_of_set_swap.
+      set_solver.
+    + intros Haz.
+      apply elem_of_singleton in Haz. subst a.
+      change (LVFree z ∈ set_swap (LVBound 0) (LVFree z)
+        (D ∖ {[LVBound 0]})) in Ha.
+      rewrite elem_of_set_swap in Ha.
+      apply elem_of_difference in Ha as [_ Hnot].
+      apply Hnot. apply elem_of_singleton.
+      unfold swap. rewrite decide_False by discriminate.
+      rewrite decide_True by reflexivity. reflexivity.
+  - intros [Ha Haz].
+    change (a ∈ set_swap (LVBound 0) (LVFree z) D) in Ha.
+    change (a ∈ set_swap (LVBound 0) (LVFree z)
+      (D ∖ {[LVBound 0]})).
+    rewrite elem_of_set_swap in Ha.
+    rewrite elem_of_set_swap.
+    apply elem_of_difference. split; [exact Ha|].
+    intros Hbound.
+    apply Haz. apply elem_of_singleton.
+    apply elem_of_singleton in Hbound.
+    unfold swap in Hbound.
+    repeat destruct decide; congruence.
+Qed.
+
+Lemma formula_open_over_self_body_normalize φ z :
+  LVFree z ∉ qual_vars φ ->
+  formula_open 0 z
+    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ))) =
+  over_open_body φ z.
+Proof.
+  intros Hzφ.
+  unfold over_open_body.
+  rewrite formula_open_fibvars, formula_open_over, formula_open_atom.
+  rewrite qual_open_atom_vars.
+  rewrite lvars_open0_difference_bound0_normalize by exact Hzφ.
+  reflexivity.
+Qed.
+
+Lemma formula_open_under_self_body_normalize φ z :
+  LVFree z ∉ qual_vars φ ->
+  formula_open 0 z
+    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ))) =
+  under_open_body φ z.
+Proof.
+  intros Hzφ.
+  unfold under_open_body.
+  rewrite formula_open_fibvars, formula_open_under, formula_open_atom.
+  rewrite qual_open_atom_vars.
+  rewrite lvars_open0_difference_bound0_normalize by exact Hzφ.
+  reflexivity.
+Qed.
+
+Lemma formula_atom_swap_over_open_body φ x y :
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  formula_atom_swap x y (over_open_body φ x) =
+  over_open_body φ y.
+Proof.
+  intros Hx Hy.
+  set (P := FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ))).
+  assert (Hxvars : LVFree x ∉ qual_vars φ).
+  {
+    intros Hbad. apply Hx.
+    unfold qual_dom. apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hyvars : LVFree y ∉ qual_vars φ).
+  {
+    intros Hbad. apply Hy.
+    unfold qual_dom. apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hxfv : x ∉ formula_fv P).
+  {
+    subst P. rewrite formula_fv_fibvars, formula_fv_over, formula_fv_atom.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad]; [|exact (Hx Hbad)].
+    apply Hx. unfold qual_dom.
+    eapply lvars_fv_mono; [|exact Hbad].
+    set_solver.
+  }
+  assert (Hyfv : y ∉ formula_fv P).
+  {
+    subst P. rewrite formula_fv_fibvars, formula_fv_over, formula_fv_atom.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad]; [|exact (Hy Hbad)].
+    apply Hy. unfold qual_dom.
+    eapply lvars_fv_mono; [|exact Hbad].
+    set_solver.
+  }
+  rewrite <- (formula_open_over_self_body_normalize φ x Hxvars).
+  rewrite formula_atom_swap_open_fresh by (exact Hxfv || exact Hyfv).
+  rewrite formula_open_over_self_body_normalize by exact Hyvars.
+  reflexivity.
+Qed.
+
+Lemma formula_atom_swap_under_open_body φ x y :
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  formula_atom_swap x y (under_open_body φ x) =
+  under_open_body φ y.
+Proof.
+  intros Hx Hy.
+  set (P := FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ))).
+  assert (Hxvars : LVFree x ∉ qual_vars φ).
+  {
+    intros Hbad. apply Hx.
+    unfold qual_dom. apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hyvars : LVFree y ∉ qual_vars φ).
+  {
+    intros Hbad. apply Hy.
+    unfold qual_dom. apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hxfv : x ∉ formula_fv P).
+  {
+    subst P. rewrite formula_fv_fibvars, formula_fv_under, formula_fv_atom.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad]; [|exact (Hx Hbad)].
+    apply Hx. unfold qual_dom.
+    eapply lvars_fv_mono; [|exact Hbad].
+    set_solver.
+  }
+  assert (Hyfv : y ∉ formula_fv P).
+  {
+    subst P. rewrite formula_fv_fibvars, formula_fv_under, formula_fv_atom.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad]; [|exact (Hy Hbad)].
+    apply Hy. unfold qual_dom.
+    eapply lvars_fv_mono; [|exact Hbad].
+    set_solver.
+  }
+  rewrite <- (formula_open_under_self_body_normalize φ x Hxvars).
+  rewrite formula_atom_swap_open_fresh by (exact Hxfv || exact Hyfv).
+  rewrite formula_open_under_self_body_normalize by exact Hyvars.
+  reflexivity.
+Qed.
+
+Lemma formula_fv_over_open_body_subset φ z :
+  formula_fv (over_open_body φ z) ⊆ qual_dom φ ∪ {[z]}.
+Proof.
+  unfold over_open_body.
+  rewrite formula_fv_fibvars, formula_fv_over, formula_fv_atom.
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - apply lvars_fv_elem in Ha.
+    apply elem_of_difference in Ha as [Ha _].
+    rewrite qual_open_atom_vars in Ha.
+    pose proof (lvars_fv_open_subset 0 z (qual_vars φ)) as Hsub.
+    assert (Ha_fv : a ∈ lvars_fv (lvars_open 0 z (qual_vars φ))).
+    { apply lvars_fv_elem. exact Ha. }
+    apply Hsub in Ha_fv.
+    unfold qual_dom. set_solver.
+  - pose proof (qual_open_atom_dom_subset 0 z φ) as Hsub.
+    unfold qual_dom in Ha.
+    apply Hsub in Ha. set_solver.
+Qed.
+
+Lemma formula_fv_under_open_body_subset φ z :
+  formula_fv (under_open_body φ z) ⊆ qual_dom φ ∪ {[z]}.
+Proof.
+  unfold under_open_body.
+  rewrite formula_fv_fibvars, formula_fv_under, formula_fv_atom.
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - apply lvars_fv_elem in Ha.
+    apply elem_of_difference in Ha as [Ha _].
+    rewrite qual_open_atom_vars in Ha.
+    pose proof (lvars_fv_open_subset 0 z (qual_vars φ)) as Hsub.
+    assert (Ha_fv : a ∈ lvars_fv (lvars_open 0 z (qual_vars φ))).
+    { apply lvars_fv_elem. exact Ha. }
+    apply Hsub in Ha_fv.
+    unfold qual_dom. set_solver.
+  - pose proof (qual_open_atom_dom_subset 0 z φ) as Hsub.
+    unfold qual_dom in Ha.
+    apply Hsub in Ha. set_solver.
+Qed.
+
 Lemma ty_denote_gas_persist_open_result
     gas (Σ : lty_env) τ e y (m my : WfWorldT) :
   m ⊨ ty_denote_gas (S gas) Σ (CTPersist τ) e ->
@@ -141,6 +339,269 @@ Proof.
     specialize (Hinv Hclosed_yσ Hydom Heval).
     apply storeA_restrict_lookup_some in Hinv as [_ Hlookup_y].
     rewrite <- Hxy. exact Hlookup_y.
+Qed.
+
+Lemma res_restrict_ret_fvar_result_swap_projection
+    A D x y (m my : WfWorldT) :
+  A ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ A ->
+  y ∉ A ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  res_restrict my (A ∪ {[y]}) =
+    res_atom_swap x y (res_restrict m (A ∪ {[x]})).
+Proof.
+  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase.
+  apply wfworld_ext. apply world_ext.
+  - rewrite res_restrict_dom, world_dom_res_atom_swap, res_restrict_dom.
+    rewrite Hdom_my.
+    apply set_eq. intros a.
+    rewrite elem_of_intersection, elem_of_union.
+    rewrite set_swap_elem, elem_of_intersection, elem_of_union.
+    unfold swap. repeat destruct decide; set_solver.
+  - intros σ. split.
+    + intros [σmy [Hσmy Hσeq]]. subst σ.
+      set (σm := store_restrict σmy (world_dom (m : WorldT)) : StoreT).
+      assert (Hσm : (m : WorldT) σm).
+      {
+        rewrite <- Hbase.
+        subst σm. exists σmy. split; [exact Hσmy|reflexivity].
+      }
+      exists (store_restrict σm (A ∪ {[x]}) : StoreT). split.
+      * exists σm. split; [exact Hσm|reflexivity].
+      * apply storeA_map_eq. intros a.
+        cbn.
+        rewrite !storeA_restrict_lookup.
+        destruct (decide (a ∈ A ∪ {[y]})) as [Ha|Ha].
+        -- destruct (decide (a = y)) as [->|Hay].
+           ++ assert (Hxy : σmy !! y = σmy !! x).
+              {
+                eapply (expr_result_formula_at_ret_fvar_lookup_eq
+                  D x y my σmy);
+                  [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
+                change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
+                rewrite storeA_restrict_dom.
+                rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
+                set_solver.
+              }
+              subst σm.
+              change ((storeA_swap x y
+                (store_restrict (store_restrict σmy (world_dom (m : WorldT)))
+                  (A ∪ {[x]}) : StoreT) : gmap atom value) !! y =
+                σmy !! y).
+              replace y with (swap x y x) by
+                (unfold swap; repeat destruct decide; try congruence;
+                 exfalso; apply Hym; subst; exact Hxm).
+              replace (swap x y x) with (swap x (swap x y x) x) at 1 by
+                (unfold swap; repeat destruct decide; try congruence;
+                 exfalso; apply Hym; subst; exact Hxm).
+              rewrite (storeA_swap_lookup x (swap x y x)
+                (store_restrict (store_restrict σmy (world_dom (m : WorldT)))
+                  (A ∪ {[x]}) : StoreT) x).
+              replace (swap x y x) with y by
+                (unfold swap; repeat destruct decide; try congruence;
+                 exfalso; apply Hym; subst; exact Hxm).
+              rewrite storeA_restrict_lookup.
+              rewrite decide_True by set_solver.
+              rewrite storeA_restrict_lookup.
+              rewrite decide_True by exact Hxm.
+              symmetry. exact Hxy.
+           ++ assert (HaA : a ∈ A) by set_solver.
+              change ((storeA_swap x y
+                (store_restrict σm (A ∪ {[x]}) : StoreT)
+                : gmap atom value) !! a = σmy !! a).
+              replace a with (swap x y a) at 1 by
+                (unfold swap; repeat destruct decide; set_solver).
+              rewrite (storeA_swap_lookup x y
+                (store_restrict σm (A ∪ {[x]}) : StoreT) a).
+              rewrite storeA_restrict_lookup.
+              rewrite decide_True by set_solver.
+              subst σm.
+              rewrite storeA_restrict_lookup.
+              rewrite decide_True by (apply HAm; exact HaA).
+              unfold swap. repeat destruct decide; try congruence.
+              reflexivity.
+        -- change ((storeA_swap x y
+              (store_restrict σm (A ∪ {[x]}) : StoreT)
+              : gmap atom value) !! a = None).
+           destruct (decide (a = x)) as [->|Hax].
+           ++ replace x with (swap x y y) at 1 by
+                (unfold swap; repeat destruct decide; try congruence;
+                 exfalso; apply Hym; subst; exact Hxm).
+              rewrite (storeA_swap_lookup x y
+                (store_restrict σm (A ∪ {[x]}) : StoreT) y).
+              apply storeA_restrict_lookup_none_r. set_solver.
+           ++ replace a with (swap x y a) at 1 by
+                (unfold swap; repeat destruct decide; set_solver).
+              rewrite (storeA_swap_lookup x y
+                (store_restrict σm (A ∪ {[x]}) : StoreT) a).
+              apply storeA_restrict_lookup_none_r. set_solver.
+    + intros [σr [[σm [Hσm Hσm_eq]] Hσswap]]. subst σr σ.
+      assert (Hσm_proj : (res_restrict my (world_dom (m : WorldT)) : WorldT) σm).
+      { rewrite Hbase. exact Hσm. }
+      destruct Hσm_proj as [σmy [Hσmy Hσmy_base]].
+      exists σmy. split; [exact Hσmy|].
+      apply storeA_map_eq. intros a.
+      cbn.
+      rewrite !storeA_restrict_lookup.
+      destruct (decide (a ∈ A ∪ {[y]})) as [Ha|Ha].
+      * destruct (decide (a = y)) as [->|Hay].
+        -- assert (Hxy : σmy !! y = σmy !! x).
+           {
+             eapply (expr_result_formula_at_ret_fvar_lookup_eq
+               D x y my σmy);
+	               [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
+	             change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
+	             rewrite storeA_restrict_dom.
+	             rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
+	             set_solver.
+	           }
+	           change (σmy !! y = (storeA_swap x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT)
+	             : gmap atom value) !! y).
+	           replace y with (swap x y x) at 2 by
+	             (unfold swap; repeat destruct decide; try congruence;
+	              exfalso; apply Hym; subst; exact Hxm).
+	           rewrite (storeA_swap_lookup x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT) x).
+	           rewrite storeA_restrict_lookup.
+	           rewrite decide_True by set_solver.
+	           assert (Hxbase : σm !! x = σmy !! x).
+	           {
+	             symmetry.
+	             eapply store_lookup_eq_of_restrict_eq_full.
+             - exact Hxm.
+             - exact Hσmy_base.
+           }
+	           transitivity (σmy !! x); [exact Hxy|].
+	           symmetry. exact Hxbase.
+	        -- assert (HaA : a ∈ A) by set_solver.
+	           change (σmy !! a = (storeA_swap x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT)
+	             : gmap atom value) !! a).
+	           replace a with (swap x y a) at 2 by
+	             (unfold swap; repeat destruct decide; set_solver).
+	           rewrite (storeA_swap_lookup x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT) a).
+	           rewrite storeA_restrict_lookup.
+	           rewrite decide_True by set_solver.
+	           assert (Habase : σm !! a = σmy !! a).
+	           {
+	             symmetry.
+	             eapply store_lookup_eq_of_restrict_eq_full.
+	             - apply HAm. exact HaA.
+	             - exact Hσmy_base.
+	           }
+	           symmetry. exact Habase.
+	      * change (None = (storeA_swap x y
+	            (store_restrict σm (A ∪ {[x]}) : StoreT)
+	            : gmap atom value) !! a).
+	        destruct (decide (a = x)) as [->|Hax].
+	        -- replace x with (swap x y y) at 1 by
+	             (unfold swap; repeat destruct decide; try congruence;
+	              exfalso; apply Hym; subst; exact Hxm).
+	           rewrite (storeA_swap_lookup x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT) y).
+	           symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+	        -- replace a with (swap x y a) at 1 by
+	             (unfold swap; repeat destruct decide; set_solver).
+	           rewrite (storeA_swap_lookup x y
+	             (store_restrict σm (A ∪ {[x]}) : StoreT) a).
+	           symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+Qed.
+
+Lemma over_open_body_transport_ret_fvar_result
+    D φ x y (m my : WfWorldT) :
+  qual_dom φ ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  my ⊨ over_open_body φ y ->
+  m ⊨ over_open_body φ x.
+Proof.
+  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  pose proof (res_restrict_ret_fvar_result_swap_projection
+    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    Hclosed_x Hdom_my Hbase) as Hproj.
+  set (Sy := qual_dom φ ∪ {[y]}).
+  set (Sx := qual_dom φ ∪ {[x]}).
+  assert (Hbody_y_restrict : res_restrict my Sy ⊨ over_open_body φ y).
+  {
+    pose proof (res_models_minimal_on Sy my (over_open_body φ y)
+      ltac:(subst Sy; apply formula_fv_over_open_body_subset)) as Hmin.
+    exact (proj1 Hmin Hbody_y).
+  }
+  change Sy with (qual_dom φ ∪ {[y]}) in Hbody_y_restrict.
+  rewrite Hproj in Hbody_y_restrict.
+  assert (Hsw :
+      res_atom_swap x y (res_restrict m Sx) ⊨
+      formula_atom_swap x y (over_open_body φ x)).
+  {
+    rewrite formula_atom_swap_over_open_body by assumption.
+    subst Sx. exact Hbody_y_restrict.
+  }
+  pose proof (proj1 (res_models_atom_swap (res_restrict m Sx)
+    (over_open_body φ x) x y) Hsw) as Hbody_x_restrict.
+  pose proof (res_models_minimal_on Sx m (over_open_body φ x)
+    ltac:(subst Sx; apply formula_fv_over_open_body_subset)) as Hmin_x.
+  exact (proj2 Hmin_x Hbody_x_restrict).
+Qed.
+
+Lemma under_open_body_transport_ret_fvar_result
+    D φ x y (m my : WfWorldT) :
+  qual_dom φ ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  my ⊨ under_open_body φ y ->
+  m ⊨ under_open_body φ x.
+Proof.
+  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  pose proof (res_restrict_ret_fvar_result_swap_projection
+    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    Hclosed_x Hdom_my Hbase) as Hproj.
+  set (Sy := qual_dom φ ∪ {[y]}).
+  set (Sx := qual_dom φ ∪ {[x]}).
+  assert (Hbody_y_restrict : res_restrict my Sy ⊨ under_open_body φ y).
+  {
+    pose proof (res_models_minimal_on Sy my (under_open_body φ y)
+      ltac:(subst Sy; apply formula_fv_under_open_body_subset)) as Hmin.
+    exact (proj1 Hmin Hbody_y).
+  }
+  change Sy with (qual_dom φ ∪ {[y]}) in Hbody_y_restrict.
+  rewrite Hproj in Hbody_y_restrict.
+  assert (Hsw :
+      res_atom_swap x y (res_restrict m Sx) ⊨
+      formula_atom_swap x y (under_open_body φ x)).
+  {
+    rewrite formula_atom_swap_under_open_body by assumption.
+    subst Sx. exact Hbody_y_restrict.
+  }
+  pose proof (proj1 (res_models_atom_swap (res_restrict m Sx)
+    (under_open_body φ x) x y) Hsw) as Hbody_x_restrict.
+  pose proof (res_models_minimal_on Sx m (under_open_body φ x)
+    ltac:(subst Sx; apply formula_fv_under_open_body_subset)) as Hmin_x.
+  exact (proj2 Hmin_x Hbody_x_restrict).
 Qed.
 
 Lemma res_restrict_singleton_pullback_ret_fvar_result
