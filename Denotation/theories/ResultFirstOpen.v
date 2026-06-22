@@ -130,6 +130,48 @@ Proof.
   exact Hsub.
 Qed.
 
+Lemma formula_fv_open_persist_value_body_obs
+    gas (Σ : lty_env) τ f :
+  formula_fv
+    (formula_open 0 f
+      (FPersist
+        (ty_denote_gas gas
+          (typed_lty_env_bind Σ (erase_ty τ))
+          (cty_shift 0 τ) (tret (vbvar 0))))) ⊆
+  lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]}.
+Proof.
+  etransitivity; [apply formula_open_fv_subset|].
+  cbn [formula_fv].
+  pose proof (ty_denote_gas_fv_subset gas
+    (typed_lty_env_bind Σ (erase_ty τ))
+    (cty_shift 0 τ) (tret (vbvar 0))) as Hbody.
+  rewrite cty_shift_fv in Hbody.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Hbody |- *.
+  intros a Ha.
+  rewrite formula_fv_persist in Ha.
+  repeat rewrite elem_of_union.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - specialize (Hbody a Ha). set_solver.
+  - set_solver.
+Qed.
+
+Lemma formula_scoped_open_persist_value_body_obs
+    gas (Σ : lty_env) τ f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (formula_open 0 f
+      (FPersist
+        (ty_denote_gas gas
+          (typed_lty_env_bind Σ (erase_ty τ))
+          (cty_shift 0 τ) (tret (vbvar 0))))).
+Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
+  etransitivity; [apply formula_fv_open_persist_value_body_obs|].
+  exact Hsub.
+Qed.
+
 Ltac result_first_open_norm :=
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in *;

@@ -137,16 +137,29 @@ Proof.
           (erase_ty (cty_shift 0 τ0_1)))
         (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))
         ltac:(rewrite cty_shift_preserves_depth; lia)).
-      rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
-        (cty_shift 1 τ0_2)
-        (typed_lty_env_bind
-          (typed_lty_env_bind
-            (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
-            (erase_ty (CTWand τ0_1 τ0_2)))
-          (erase_ty (cty_shift 0 τ0_1)))
-        (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))
-        ltac:(rewrite cty_shift_preserves_depth; lia)).
-      reflexivity.
+	    rewrite (IH (Nat.max (cty_depth τ0_1) (cty_depth τ0_2)) ltac:(lia)
+	      (cty_shift 1 τ0_2)
+	      (typed_lty_env_bind
+	        (typed_lty_env_bind
+	          (relevant_env Σ0 (CTWand τ0_1 τ0_2) e0)
+	          (erase_ty (CTWand τ0_1 τ0_2)))
+	        (erase_ty (cty_shift 0 τ0_1)))
+	      (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))
+	      ltac:(rewrite cty_shift_preserves_depth; lia)).
+	    reflexivity.
+		  - rewrite (IH gas' ltac:(lia) (cty_shift 0 τ0)
+		      (typed_lty_env_bind
+		        (relevant_env Σ0 (CTPersist τ0) e0)
+            (erase_ty (CTPersist τ0)))
+		      (tret (vbvar 0))
+		      ltac:(rewrite cty_shift_preserves_depth; lia)).
+		    rewrite (IH (cty_depth τ0) ltac:(lia) (cty_shift 0 τ0)
+		      (typed_lty_env_bind
+		        (relevant_env Σ0 (CTPersist τ0) e0)
+            (erase_ty (CTPersist τ0)))
+		      (tret (vbvar 0))
+		      ltac:(rewrite cty_shift_preserves_depth; lia)).
+	    reflexivity.
   }
   intros Hgas. apply Hsat. exact Hgas.
 Qed.

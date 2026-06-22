@@ -1241,6 +1241,228 @@ Proof.
   - exact Htlet.
 Qed.
 
+Local Lemma tlet_persist_value_body_env_eq
+    gas (Σ : lty_env) τ e_src e_tgt :
+  lty_env_closed (relevant_env Σ (CTPersist τ) e_src) ->
+  lty_env_closed (relevant_env Σ (CTPersist τ) e_tgt) ->
+  lc_context_ty τ ->
+  ty_denote_gas gas
+    (typed_lty_env_bind (relevant_env Σ (CTPersist τ) e_src)
+      (erase_ty (CTPersist τ)))
+    (cty_shift 0 τ) (tret (vbvar 0)) =
+  ty_denote_gas gas
+    (typed_lty_env_bind (relevant_env Σ (CTPersist τ) e_tgt)
+      (erase_ty (CTPersist τ)))
+    (cty_shift 0 τ) (tret (vbvar 0)).
+Proof.
+  intros HlcΣsrc HlcΣtgt Hlcτ.
+  eapply ty_denote_gas_env_agree_on
+    with (X := relevant_lvars (cty_shift 0 τ) (tret (vbvar 0))).
+  - reflexivity.
+  - unfold relevant_env, relevant_lvars.
+    apply map_eq. intros v.
+    unfold lty_env_restrict_lvars.
+    rewrite (storeA_restrict_lookup
+        (typed_lty_env_bind
+          (lty_env_restrict_lvars Σ (relevant_lvars (CTPersist τ) e_src))
+          (erase_ty (CTPersist τ)))
+      (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0))) v).
+    rewrite (storeA_restrict_lookup
+        (typed_lty_env_bind
+          (lty_env_restrict_lvars Σ (relevant_lvars (CTPersist τ) e_tgt))
+          (erase_ty (CTPersist τ)))
+      (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0))) v).
+    destruct (decide (v ∈ context_ty_lvars (cty_shift 0 τ) ∪
+      tm_lvars (tret (vbvar 0)))) as [Hv|Hv]; cbn.
+    + destruct v as [n|a].
+      * destruct n as [|n].
+        -- unfold typed_lty_env_bind, lvar_store_bind.
+           rewrite !lookup_insert. repeat (destruct decide; [|congruence]).
+           reflexivity.
+        -- clear -HlcΣsrc HlcΣtgt.
+           (* The outer restrict has kept this branch only if the lookup is
+              demanded, but a closed environment shifted under the binder has
+              no positive bound lookup. *)
+           unfold typed_lty_env_bind, lvar_store_bind in *.
+           rewrite !lookup_insert_ne by discriminate.
+           rewrite !lvar_store_shift_closed by assumption.
+           rewrite !lty_env_closed_lookup_bound_none by assumption.
+           reflexivity.
+      * rewrite !typed_lty_env_bind_lookup_free.
+        change (relevant_env Σ (CTPersist τ) e_src !! LVFree a =
+          relevant_env Σ (CTPersist τ) e_tgt !! LVFree a).
+        change ((storeA_restrict Σ (context_ty_lvars τ ∪ tm_lvars e_src)
+          : gmap logic_var ty) !! LVFree a =
+          (storeA_restrict Σ (context_ty_lvars τ ∪ tm_lvars e_tgt)
+          : gmap logic_var ty) !! LVFree a).
+        assert (Haτ : LVFree a ∈ context_ty_lvars τ).
+        {
+          cbn [tm_lvars tm_lvars_at value_lvars_at bvar_lvars_at] in Hv.
+          apply (proj1 (lvars_fv_elem (context_ty_lvars τ) a)).
+          change (a ∈ fv_cty τ).
+          rewrite <- (cty_shift_fv 0 τ).
+          apply (proj2 (lvars_fv_elem
+            (context_ty_lvars (cty_shift 0 τ)) a)).
+          set_solver.
+        }
+        destruct (Σ !! LVFree a) eqn:HaΣ.
+        -- transitivity (Some t).
+           ++ apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].
+           ++ symmetry. apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].
+        -- transitivity (@None ty).
+           ++ apply storeA_restrict_lookup_none_l. exact HaΣ.
+           ++ symmetry. apply storeA_restrict_lookup_none_l. exact HaΣ.
+    + reflexivity.
+Qed.
+
+Lemma tlet_persist_body_transport
+    gas (Σ : lty_env) τ e_src e_tgt (mx : WfWorldT) :
+  mx ⊨ ty_denote_gas 0 Σ (CTPersist τ) e_src ->
+  mx ⊨ ty_denote_gas 0 Σ (CTPersist τ) e_tgt ->
+  tm_result_refines_projected_on mx
+    (context_ty_lvars (CTPersist τ)) e_tgt e_src ->
+  mx ⊨
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTPersist τ) e_src)))
+          (tm_shift 0 e_src) (LVBound 0))
+        (FPersist
+          (ty_denote_gas gas
+            (typed_lty_env_bind
+              (relevant_env Σ (CTPersist τ) e_src)
+              (erase_ty (CTPersist τ)))
+            (cty_shift 0 τ) (tret (vbvar 0))))) ->
+  mx ⊨
+    FForall
+      (FImpl
+        (expr_result_formula_at
+          (lvars_shift_from 0
+            (dom (relevant_env Σ (CTPersist τ) e_tgt)))
+          (tm_shift 0 e_tgt) (LVBound 0))
+        (FPersist
+          (ty_denote_gas gas
+            (typed_lty_env_bind
+              (relevant_env Σ (CTPersist τ) e_tgt)
+              (erase_ty (CTPersist τ)))
+            (cty_shift 0 τ) (tret (vbvar 0))))).
+Proof.
+  intros Hzero_src Hzero_tgt Hproj Hsrc.
+  pose proof (ty_denote_gas_guard_of_zero
+    Σ (CTPersist τ) e_src mx Hzero_src) as Hguard_src.
+  pose proof (ty_denote_gas_guard_of_zero
+    Σ (CTPersist τ) e_tgt mx Hzero_tgt) as Hguard_tgt.
+  cbn [ty_guard_formula] in Hguard_src, Hguard_tgt.
+  repeat rewrite res_models_and_iff in Hguard_src, Hguard_tgt.
+  destruct Hguard_src as [Hwf_src [Hworld_src [Hbasic_src _]]].
+  destruct Hguard_tgt as [_ [Hworld_tgt [Hbasic_tgt _]]].
+  apply context_ty_wf_formula_models_iff in Hwf_src
+    as [HlcΣ_wf_src [_ Hbasic_persist_src]].
+  pose proof (basic_context_ty_lvars_lc
+    (dom (relevant_env Σ (CTPersist τ) e_src)) _
+    HlcΣ_wf_src Hbasic_persist_src) as Hlc_persist.
+  cbn [lc_context_ty cty_lc_at] in Hlc_persist.
+  apply basic_world_formula_models_iff in Hworld_src as [HlcΣ_src _].
+  apply basic_world_formula_models_iff in Hworld_tgt as [HlcΣ_tgt _].
+  apply expr_basic_typing_formula_models_iff in Hbasic_src
+    as [HlcΣ_basic_src [_ Hty_src]].
+  apply expr_basic_typing_formula_models_iff in Hbasic_tgt
+    as [HlcΣ_basic_tgt [_ Hty_tgt]].
+  pose proof (basic_tm_has_ltype_lc _ e_src
+    (erase_ty (CTPersist τ)) HlcΣ_basic_src Hty_src) as Hlc_src_tm.
+  pose proof (basic_tm_has_ltype_lc _ e_tgt
+    (erase_ty (CTPersist τ)) HlcΣ_basic_tgt Hty_tgt) as Hlc_tgt_tm.
+  pose proof (ty_denote_gas_scope_from_zero_any
+    (S gas) Σ (CTPersist τ) e_tgt mx Hzero_tgt) as Hscope_full.
+  cbn [ty_denote_gas] in Hscope_full.
+  pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_tgt.
+  destruct (res_models_forall_rev _ _ Hsrc) as [Lsrc Hsrc_rev].
+  eapply res_models_forall_rev_intro; [exact Hscope_tgt|].
+  exists (Lsrc ∪ world_dom (mx : WorldT) ∪
+    fv_tm e_src ∪ fv_tm e_tgt ∪
+    lvars_fv (dom (relevant_env Σ (CTPersist τ) e_src)) ∪
+    lvars_fv (dom (relevant_env Σ (CTPersist τ) e_tgt)) ∪
+    lvars_fv (context_ty_lvars (CTPersist τ)) ∪ fv_cty τ).
+  intros f Hf mf Hdom Hrestrict.
+  assert (Hf_proj :
+      f ∉ world_dom (mx : WorldT) ∪ fv_tm e_tgt ∪ fv_tm e_src ∪
+        lvars_fv (context_ty_lvars (CTPersist τ))).
+  { clear -Hf. set_solver. }
+  assert (Hf_src : f ∉ Lsrc) by (clear -Hf; set_solver).
+  rewrite formula_open_impl.
+  assert (Hopened_scope :
+      formula_scoped_in_world mf
+        (formula_open 0 f
+          (FImpl
+            (expr_result_formula_at
+              (lvars_shift_from 0
+                (dom (relevant_env Σ (CTPersist τ) e_tgt)))
+              (tm_shift 0 e_tgt) (LVBound 0))
+            (FPersist
+              (ty_denote_gas gas
+                (typed_lty_env_bind
+                  (relevant_env Σ (CTPersist τ) e_tgt)
+                  (erase_ty (CTPersist τ)))
+                (cty_shift 0 τ) (tret (vbvar 0))))))).
+  {
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope_tgt.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. clear. set_solver.
+  }
+  rewrite formula_open_impl in Hopened_scope.
+  eapply res_models_impl_intro; [exact Hopened_scope|].
+  intros Hres_tgt.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
+    by (first
+      [ exact Hlc_tgt_tm
+      | apply lvars_shift_from_lc; exact HlcΣ_tgt
+      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
+      | clear -Hf; set_solver ]).
+  rewrite (lvars_shift_from_lc_eq 0
+    (dom (relevant_env Σ (CTPersist τ) e_tgt)) HlcΣ_tgt)
+    in Hres_tgt.
+  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
+    Σ (CTPersist τ) e_tgt mx Hzero_tgt) in Hres_tgt.
+  destruct (Hproj f mf Hf_proj Hdom Hrestrict Hres_tgt)
+    as [mf_src [Hdom_src [Hrestrict_src [Hres_src Hproj_obs]]]].
+  pose proof (Hsrc_rev f Hf_src mf_src Hdom_src Hrestrict_src)
+    as Hopened_src.
+  rewrite formula_open_impl in Hopened_src.
+  rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
+    by (first
+      [ exact Hlc_src_tm
+      | apply lvars_shift_from_lc; exact HlcΣ_src
+      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
+      | clear -Hf; set_solver ]).
+  rewrite (lvars_shift_from_lc_eq 0
+    (dom (relevant_env Σ (CTPersist τ) e_src)) HlcΣ_src)
+    in Hopened_src.
+  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
+    Σ (CTPersist τ) e_src mx Hzero_src) in Hopened_src.
+  pose proof (res_models_impl_elim _ _ _ Hopened_src Hres_src)
+    as Hvalue_src.
+  assert (Hvalue_tgt_src :
+      mf_src ⊨ formula_open 0 f
+        (FPersist
+          (ty_denote_gas gas
+            (typed_lty_env_bind
+              (relevant_env Σ (CTPersist τ) e_tgt)
+              (erase_ty (CTPersist τ)))
+            (cty_shift 0 τ) (tret (vbvar 0))))).
+  {
+    rewrite <- (tlet_persist_value_body_env_eq
+      gas Σ τ e_src e_tgt HlcΣ_src HlcΣ_tgt Hlc_persist).
+    exact Hvalue_src.
+  }
+  eapply res_models_projection; [|exact Hvalue_tgt_src].
+  eapply res_restrict_eq_subset; [|exact Hproj_obs].
+  rewrite <- (formula_fv_open_persist_value_body_obs gas
+    (relevant_env Σ (CTPersist τ) e_tgt) τ f).
+  reflexivity.
+Qed.
+
 Local Lemma tlet_intro_denotation_forward
     gas (Σ : lty_env) τ e1 e2 x Fx m mx :
   x ∉ fv_tm e2 ->
@@ -1263,7 +1485,7 @@ Proof.
       Σ τ (tlete e1 e2) mx Hzero_tlet) as Hguard_tlet.
     pose proof (ty_denote_gas_scope_from_zero_any
       (S gas) Σ τ (tlete e1 e2) mx Hzero_tlet) as Hscope_tlet_full.
-    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
       cbn [ty_denote_gas] in Hbody |- *;
       rewrite res_models_and_iff in Hbody |- *;
       destruct Hbody as [_ Hbody].
@@ -1326,6 +1548,12 @@ Proof.
       exact (tlet_intro_denotation_wand_body
         gas IH Σ τx τr e1 e2 x Fx m mx
         Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Hbody).
+    + split; [exact Hguard_tlet|].
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [_ Htlet_to_body].
+      eapply (tlet_persist_body_transport
+        gas Σ τ1 (e2 ^^ x) (tlete e1 e2) mx);
+        [exact Hzero_body|exact Hzero_tlet|exact Htlet_to_body|exact Hbody].
 Qed.
 
 Local Lemma tlet_intro_denotation_reverse
@@ -1351,7 +1579,7 @@ Proof.
       Σ τ (e2 ^^ x) mx Hzero_body) as Hguard_body.
     pose proof (ty_denote_gas_scope_from_zero_any
       (S gas) Σ τ (e2 ^^ x) mx Hzero_body) as Hscope_body_full.
-    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
       cbn [ty_denote_gas] in Htlet |- *;
       rewrite res_models_and_iff in Htlet |- *;
       destruct Htlet as [_ Htlet].
@@ -1414,6 +1642,12 @@ Proof.
       exact (tlet_intro_denotation_wand_body_reverse
         gas IH Σ τx τr e1 e2 x Fx m mx
         Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Htlet).
+    + split; [exact Hguard_body|].
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib_sym)
+        as [_ Hbody_to_tlet].
+      eapply (tlet_persist_body_transport
+        gas Σ τ1 (tlete e1 e2) (e2 ^^ x) mx);
+        [exact Hzero_tlet|exact Hzero_body|exact Hbody_to_tlet|exact Htlet].
 Qed.
 
 Lemma tlet_intro_denotation

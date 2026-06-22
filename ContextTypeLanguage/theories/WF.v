@@ -20,6 +20,8 @@ Fixpoint cty_lc_at (d : nat) (τ : context_ty) : Prop :=
   | CTArrow τx τ
   | CTWand τx τ =>
       cty_lc_at d τx /\ cty_lc_at (S d) τ
+  | CTPersist τ =>
+      cty_lc_at d τ
   end.
 
 Definition lc_context_ty (τ : context_ty) : Prop :=
@@ -34,6 +36,8 @@ Fixpoint context_ty_shape_ok (τ : context_ty) : Prop :=
       erase_ty τ1 = erase_ty τ2
   | CTArrow τx τ | CTWand τx τ =>
       context_ty_shape_ok τx /\ context_ty_shape_ok τ
+  | CTPersist τ =>
+      context_ty_shape_ok τ
   end.
 
 Definition basic_context_ty_lvars (D : lvset) (τ : context_ty) : Prop :=
@@ -63,6 +67,8 @@ Fixpoint wf_context_ty_at (d : nat) (D : aset) (τ : context_ty) : Prop :=
   | CTWand τx τ =>
       wf_context_ty_at 0 ∅ τx /\
       wf_context_ty_at (S d) D τ
+  | CTPersist τ =>
+      wf_context_ty_at d D τ
   end.
 
 Definition basic_context_ty (D : aset) (τ : context_ty) : Prop :=
@@ -81,6 +87,7 @@ Proof.
   - destruct Hwf as [H1 [H2 Herase]]. repeat split; eauto.
   - destruct Hwf as [H1 H2]. split; eauto.
   - destruct Hwf as [H1 H2]. split; eauto.
+  - eauto.
 Qed.
 
 #[global] Instance lc_cty_inst : Lc context_ty := lc_context_ty.
@@ -103,6 +110,7 @@ Proof.
     try tauto.
   all: try rewrite !cty_open_preserves_erasure.
   all: try rewrite IHτ1, IHτ2.
+  all: try rewrite IHτ.
   all: tauto.
 Qed.
 
@@ -137,6 +145,7 @@ Proof.
   - destruct Hlc as [H1 H2]. split.
     + eapply IHτ1; [exact Hdd|exact H1].
     + eapply (IHτ2 (S d) (S d')); [lia|exact H2].
+  - eauto.
 Qed.
 
 Lemma cty_open_above_lc_fresh d k x τ :
@@ -203,6 +212,7 @@ Proof.
       unfold fv_cty, context_ty_lvars in Hx |- *.
       cbn [context_ty_lvars_at] in Hx.
       rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx. set_solver.
+  - f_equal. eapply IHτ; eauto.
 Qed.
 
 Lemma cty_open_shift_from_lc_fresh d x τ :
@@ -273,6 +283,7 @@ Proof.
       unfold fv_cty, context_ty_lvars in Hx |- *.
       cbn [context_ty_lvars_at] in Hx. rewrite lvars_fv_union, !context_ty_lvars_fv_at in Hx.
       set_solver.
+  - f_equal. apply IHτ; assumption.
 Qed.
 
 Lemma wf_context_ty_at_lc d D τ :
@@ -289,6 +300,7 @@ Proof.
     + eapply (cty_lc_at_mono_depth 0 d); [lia|].
       eapply IHτ1. exact H1.
     + eapply IHτ2. exact H2.
+  - eauto.
 Qed.
 
 Lemma basic_context_ty_lc D τ :
@@ -360,6 +372,8 @@ Proof.
       intros v Hv. apply Hvars. set_solver.
     + eapply IHτ2; [exact HD| |exact Hshape2].
       intros v Hv. apply Hvars. set_solver.
+  - eapply IHτ; [exact HD| |exact Hshape].
+    exact Hvars.
 Qed.
 
 Lemma basic_context_ty_lvars_lc D τ :
@@ -405,6 +419,7 @@ Proof.
     rewrite lvars_bv_union, IHτ1, IHτ2 by assumption. set_solver.
   - destruct Hlc as [H1 H2].
     rewrite lvars_bv_union, IHτ1, IHτ2 by assumption. set_solver.
+  - eauto.
 Qed.
 
 Lemma wf_context_ty_at_fv_subset d D τ :
@@ -435,6 +450,7 @@ Proof.
     pose proof (IHτ2 (S d) D H2).
     rewrite !context_ty_lvars_fv_at in *.
     set_solver.
+  - eauto.
 Qed.
 
 Lemma wf_context_ty_at_notin_fv d D τ x :
@@ -484,6 +500,7 @@ Proof.
       * pose proof (wf_context_ty_at_fv_subset 0 ∅ τ1 H1) as Hfv.
         set_solver.
     + apply (IHτ2 (S d)); assumption.
+  - apply IHτ; assumption.
 Qed.
 
 Lemma basic_context_ty_fv_subset D τ :

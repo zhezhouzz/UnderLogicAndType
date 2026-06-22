@@ -199,6 +199,17 @@ Proof.
     cbn [cty_open]. rewrite IH. reflexivity.
 Qed.
 
+Lemma open_cty_env_persist η τ :
+  open_cty_env η (CTPersist τ) =
+  CTPersist (open_cty_env η τ).
+Proof.
+  unfold open_cty_env.
+  induction η as [|k x η Hfresh Hfold IH] using fin_maps.map_fold_ind.
+  - rewrite !map_fold_empty. reflexivity.
+  - rewrite !(Hfold context_ty (fun k x acc => cty_open k x acc)).
+    cbn [cty_open]. rewrite IH. reflexivity.
+Qed.
+
 Lemma open_cty_env_arrow η τx τ :
   open_env_values_inj η ->
   open_cty_env η (CTArrow τx τ) =
@@ -560,6 +571,7 @@ Ltac cty_open_env_syntax_norm :=
   rewrite ?open_cty_env_empty;
   rewrite ?open_cty_env_preserves_erasure;
   rewrite ?open_cty_env_inter, ?open_cty_env_union, ?open_cty_env_sum;
+  rewrite ?open_cty_env_persist;
   try rewrite ?open_cty_env_arrow by eauto;
   try rewrite ?open_cty_env_wand by eauto;
   try rewrite ?open_cty_env_over by eauto;
@@ -574,6 +586,7 @@ Ltac cty_open_env_syntax_norm_in H :=
   rewrite ?open_cty_env_inter in H;
   rewrite ?open_cty_env_union in H;
   rewrite ?open_cty_env_sum in H;
+  rewrite ?open_cty_env_persist in H;
   try rewrite ?open_cty_env_arrow in H by eauto;
   try rewrite ?open_cty_env_wand in H by eauto;
   try rewrite ?open_cty_env_over in H by eauto;

@@ -697,7 +697,7 @@ Proof.
     pose proof (ty_denote_gas_guard_of_zero
       Σ τ e2 m Hzero_tgt) as Hguard_tgt.
     repeat rewrite res_models_and_iff in Hguard_tgt.
-    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr];
+    destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
       cbn [ty_denote_gas ty_guard_formula] in Hm |- *;
       unfold ty_guard_formula in Hm |- *;
       repeat rewrite res_models_and_iff in Hm |- *;
@@ -710,6 +710,18 @@ Proof.
     + eapply ty_denote_gas_tm_equiv_sum_body; eauto.
     + eapply ty_denote_gas_tm_equiv_arrow_body; eauto.
     + eapply ty_denote_gas_tm_equiv_wand_body; eauto.
+    + pose proof (typed_fiber_equiv_of_tm_equiv
+        Σ (CTPersist τ1) m e1 e2
+        (typed_total_equiv_tm_equiv _ _ _ _ _ Hequiv)
+        (typed_total_equiv_source_zero _ _ _ _ _ Hequiv)
+        Hzero_tgt) as Hfib.
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [_ Htgt_to_src].
+      eapply (tlet_persist_body_transport gas Σ τ1 e1 e2 m);
+        [eapply typed_total_equiv_source_zero; exact Hequiv
+        |exact Hzero_tgt
+        |exact Htgt_to_src
+        |exact Hbody].
 Qed.
 
 Lemma ty_denote_gas_tapp_fun_result_alias

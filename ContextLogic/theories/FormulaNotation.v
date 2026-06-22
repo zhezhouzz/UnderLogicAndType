@@ -26,6 +26,8 @@ Notation "'under' φ" := (FUnder φ)
   (at level 30, φ at level 30) : formula_scope.
 Notation "'persist' φ" := (FPersist φ)
   (at level 30, φ at level 30) : formula_scope.
+Notation "'□' φ" := (FPersist φ)
+  (at level 30, φ at level 30) : formula_scope.
 Notation "'fib' D '|>' φ" := (FFibVars D φ)
   (at level 30, D at level 9, φ at level 30) : formula_scope.
 Notation "φ ∗ ψ" := (FStar φ ψ)
@@ -76,6 +78,8 @@ Notation "'over' φ" := (FOver φ)
 Notation "'under' φ" := (FUnder φ)
   (in custom form at level 30, φ custom form at level 30, only parsing).
 Notation "'persist' φ" := (FPersist φ)
+  (in custom form at level 30, φ custom form at level 30, only parsing).
+Notation "'□' φ" := (FPersist φ)
   (in custom form at level 30, φ custom form at level 30, only parsing).
 Notation "'fib' D '|>' φ" := (FFibVars D φ)
   (in custom form at level 30, D constr at level 9,
