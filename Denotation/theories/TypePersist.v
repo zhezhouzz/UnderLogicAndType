@@ -2401,6 +2401,180 @@ Proof.
   - exact Hvalue_src.
 Qed.
 
+Lemma ty_denote_gas_arrow_over_arg_to_persist_over_arg
+    gas_src gas_tgt (Σ : lty_env) bx φx τr e (m : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_context_ty (CTOver bx φx) ->
+  cty_lc_at 1 τr ->
+  cty_depth τr <= gas_src ->
+  cty_depth τr <= gas_tgt ->
+  1 <= gas_src ->
+  2 <= gas_tgt ->
+  m ⊨ ty_denote_gas (S gas_src) Σ
+    (CTArrow (CTOver bx φx) τr) e ->
+  m ⊨ ty_denote_gas (S gas_tgt) Σ
+    (CTArrow (CTPersist (CTOver bx φx)) τr) e.
+Proof.
+  intros HΣclosed Hlc_over Hlcτr
+    Hres_src Hres_tgt Harg_src Harg_tgt Hden.
+  pose proof (ty_denote_gas_guard (S gas_src) Σ
+    (CTArrow (CTOver bx φx) τr) e m Hden) as Hguard_src.
+  change (m ⊨ ty_guard_formula
+    (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+    (CTArrow (CTOver bx φx) τr) e) in Hguard_src.
+  assert (Hbody_src :
+      m ⊨ FForall
+        (FImpl
+          (expr_result_formula_at
+            (lvars_shift_from 0
+              (dom (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)))
+            (tm_shift 0 e) (LVBound 0))
+          (arrow_value_denote_gas_with ty_denote_gas gas_src
+            (typed_lty_env_bind
+              (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+              (erase_ty (CTArrow (CTOver bx φx) τr)))
+            (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
+            (tret (vbvar 0))))).
+  {
+    change (m ⊨ FAnd
+      (ty_guard_formula
+        (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+        (CTArrow (CTOver bx φx) τr) e)
+      (FForall
+        (FImpl
+          (expr_result_formula_at
+            (lvars_shift_from 0
+              (dom (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)))
+            (tm_shift 0 e) (LVBound 0))
+          (arrow_value_denote_gas_with ty_denote_gas gas_src
+            (typed_lty_env_bind
+              (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+              (erase_ty (CTArrow (CTOver bx φx) τr)))
+            (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
+            (tret (vbvar 0)))))) in Hden.
+    eapply res_models_and_elim_r. exact Hden.
+  }
+  assert (Hguard_tgt :
+      m ⊨ ty_guard_formula
+        (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+        (CTArrow (CTPersist (CTOver bx φx)) τr) e).
+  { apply ty_guard_arrow_over_arg_to_persist_over_arg. exact Hguard_src. }
+  eapply res_models_and_intro_from_models; [exact Hguard_tgt|].
+  assert (Hlc_shift_over : lc_context_ty (cty_shift 0 (CTOver bx φx))).
+  { apply cty_lc_at_shift_at. exact Hlc_over. }
+  assert (Hscope_full :
+      formula_scoped_in_world m
+        (ty_denote_gas (S gas_tgt) Σ
+          (CTArrow (CTPersist (CTOver bx φx)) τr) e)).
+  {
+    unfold formula_scoped_in_world.
+    eapply ty_denote_gas_scope_of_guard.
+    - reflexivity.
+    - exact Hguard_tgt.
+  }
+  cbn [ty_denote_gas] in Hscope_full.
+  pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_forall.
+  destruct (res_models_forall_rev _ _ Hbody_src) as [Lsrc Hsrc].
+  eapply res_models_forall_rev_intro; [exact Hscope_forall|].
+  set (Σg := relevant_env Σ (CTArrow (CTOver bx φx) τr) e).
+  exists (Lsrc ∪ lvars_fv (dom Σg) ∪ qual_dom φx ∪
+    fv_cty τr ∪ fv_tm e).
+  intros f Hf mf Hdom Hrestrict.
+  assert (Hscope_open :
+      formula_scoped_in_world mf
+        (formula_open 0 f
+          (FImpl
+            (expr_result_formula_at
+              (lvars_shift_from 0
+                (dom (relevant_env Σ
+                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)))
+              (tm_shift 0 e) (LVBound 0))
+            (arrow_value_denote_gas_with ty_denote_gas gas_tgt
+              (typed_lty_env_bind
+                (relevant_env Σ
+                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+                (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
+              (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
+              (tret (vbvar 0)))))).
+  {
+    eapply formula_scoped_forall_open_res_le.
+    - exact Hscope_forall.
+    - rewrite <- Hrestrict. apply res_restrict_le.
+    - rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton.
+      reflexivity.
+  }
+  cbn [formula_open].
+  eapply res_models_impl_intro.
+  { cbn [formula_open] in Hscope_open. exact Hscope_open. }
+  intros Hresult_tgt.
+  assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
+  {
+    intros Hbad.
+    apply lvars_fv_elem in Hbad.
+    clear -Hf Hbad. set_solver.
+  }
+  assert (Hfφ : f ∉ qual_dom φx).
+  { clear -Hf. set_solver. }
+  assert (Hfτr : f ∉ fv_cty τr).
+  { clear -Hf. set_solver. }
+  assert (Hfe : f ∉ fv_tm e).
+  { clear -Hf. set_solver. }
+  assert (Hopened_src :
+      mf ⊨ formula_open 0 f
+        (FImpl
+          (expr_result_formula_at
+            (lvars_shift_from 0 (dom Σg))
+            (tm_shift 0 e) (LVBound 0))
+          (arrow_value_denote_gas_with ty_denote_gas gas_src
+            (typed_lty_env_bind Σg
+              (erase_ty (CTArrow (CTOver bx φx) τr)))
+            (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
+            (tret (vbvar 0))))).
+  {
+    subst Σg.
+    apply Hsrc.
+    - clear -Hf. set_solver.
+    - exact Hdom.
+    - exact Hrestrict.
+  }
+  cbn [formula_open] in Hopened_src.
+  pose proof (res_models_impl_elim _ _ _ Hopened_src Hresult_tgt)
+    as Hvalue_src.
+  assert (Hvalue_tgt_scope :
+      formula_scoped_in_world mf
+        (formula_open 0 f
+          (arrow_value_denote_gas_with ty_denote_gas gas_tgt
+            (typed_lty_env_bind Σg
+              (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
+            (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
+            (tret (vbvar 0))))).
+  {
+    cbn [formula_open] in Hscope_open.
+    eapply formula_scoped_impl_r. exact Hscope_open.
+  }
+  eapply arrow_result_first_open_value_over_arg_to_persist_over_arg.
+  - subst Σg. apply relevant_env_closed. exact HΣclosed.
+  - exact HfΣg.
+  - exact Hlc_over.
+  - exact Hlc_shift_over.
+  - exact Hlcτr.
+  - exact Hfφ.
+  - exact Hfτr.
+  - exact Hres_src.
+  - exact Hres_tgt.
+  - exact Harg_src.
+  - exact Harg_tgt.
+  - subst Σg.
+    change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+      with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+      in Hvalue_tgt_scope.
+    change (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr))
+      with (erase_ty (CTArrow (CTOver bx φx) τr))
+      in Hvalue_tgt_scope.
+    exact Hvalue_tgt_scope.
+  - subst Σg. exact Hvalue_src.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
