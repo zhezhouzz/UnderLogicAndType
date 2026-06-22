@@ -3,7 +3,7 @@
     Semantic support lemmas for the type-level persistency modality. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseResult TypeEquiv.
+  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquiv.
 
 Section TypePersist.
 
