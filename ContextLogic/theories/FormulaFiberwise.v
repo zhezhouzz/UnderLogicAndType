@@ -755,6 +755,60 @@ Definition subset_upward_closed_formula (P : FormulaT) : Prop :=
 Definition subset_downward_closed_formula (P : FormulaT) : Prop :=
   forall m n, res_subset m n -> n ⊨ P -> m ⊨ P.
 
+Lemma subset_downward_closed_over P :
+  subset_downward_closed_formula (FOver P).
+Proof.
+  unfold subset_downward_closed_formula.
+  intros m n Hmn Hover.
+  unfold res_models in Hover |- *.
+  cbn [formula_measure res_models_fuel] in Hover |- *.
+  destruct Hover as [Hscope [mo [Hno Hmo]]].
+  split.
+  - unfold formula_scoped_in_world in *.
+    intros a Ha.
+    destruct Hmn as [Hdom _].
+    pose proof (Hscope a Ha) as Ha_n.
+    change (a ∈ world_dom (n : WorldT)) in Ha_n.
+    set_solver.
+  - exists mo. split; [|exact Hmo].
+    destruct Hmn as [Hmn_dom Hmn_stores].
+    destruct Hno as [Hno_dom Hno_stores].
+    split.
+    + transitivity (world_dom (n : WorldT)); assumption.
+    + intros σ Hσ. apply Hno_stores, Hmn_stores. exact Hσ.
+Qed.
+
+Lemma subset_upward_closed_under P :
+  subset_upward_closed_formula (FUnder P).
+Proof.
+  unfold subset_upward_closed_formula.
+  intros m n Hmn Hunder.
+  unfold res_models in Hunder |- *.
+  cbn [formula_measure res_models_fuel] in Hunder |- *.
+  destruct Hunder as [Hscope [mu [Hum Hmu]]].
+  split.
+  - unfold formula_scoped_in_world in *.
+    intros a Ha.
+    destruct Hmn as [Hdom _].
+    pose proof (Hscope a Ha) as Ha_m.
+    change (a ∈ world_dom (m : WorldT)) in Ha_m.
+    set_solver.
+  - exists mu. split; [|exact Hmu].
+    destruct Hmn as [Hmn_dom Hmn_stores].
+    destruct Hum as [Hum_dom Hum_stores].
+    split.
+    + transitivity (world_dom (m : WorldT)); [exact Hum_dom|exact Hmn_dom].
+    + intros σ Hσ. apply Hmn_stores, Hum_stores. exact Hσ.
+Qed.
+
+Lemma fiberwise_stable_on_over X P :
+  fiberwise_stable_on X (FOver P).
+Proof.
+  intros m σ mfib Hproj Hover.
+  eapply subset_downward_closed_over; [|exact Hover].
+  eapply res_subset_fiber_source; eauto.
+Qed.
+
 Lemma fiberwise_joinable_on_under X P :
   subset_upward_closed_formula P ->
   fiberwise_joinable_on X P ->
