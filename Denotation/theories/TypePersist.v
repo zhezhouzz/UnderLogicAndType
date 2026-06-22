@@ -1609,6 +1609,19 @@ Proof.
     + eapply ty_denote_gas_persist_over_ret_fvar_self_body; eauto.
 Qed.
 
+Lemma ty_denote_persist_over_ret_fvar_elim
+    Δ b φ z (m : WfWorldT) :
+  lty_env_closed (atom_env_to_lty_env Δ) ->
+  z ∉ qual_dom φ ->
+  m ⊨ ty_denote Δ (CTPersist (CTOver b φ)) (tret (vfvar z)) ->
+  m ⊨ ty_denote Δ (CTOver b φ) (tret (vfvar z)).
+Proof.
+  intros HΔclosed Hzφ Hden.
+  unfold ty_denote in *.
+  cbn [cty_depth] in Hden |- *.
+  eapply ty_denote_gas_persist_over_ret_fvar_elim; eauto.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
