@@ -3,7 +3,7 @@
     Denotation of type contexts, expressed directly with the new recursive
     context-type denotation. *)
 
-From Denotation Require Export Notation TypeDenote.
+From Denotation Require Export Notation TypeDenote TypePersist.
 From Denotation Require Import TypeEquivCore.
 
 Section ContextDenotation.
@@ -1275,6 +1275,44 @@ Proof.
     eapply res_models_kripke; [exact Hle|].
     rewrite Heq.
     eapply ctx_denote_under_star_intro_product; eauto.
+Qed.
+
+Lemma ctx_denote_under_star_self_of_persistent
+    (Σ : gmap atom ty) Γ :
+  basic_ctx (dom Σ) Γ ->
+  persistent_formula (ctx_denote_under Σ Γ) ->
+  formula_equiv
+    (ctx_denote_under Σ (CtxStar Γ Γ))
+    (ctx_denote_under Σ Γ).
+Proof.
+  intros Hbasic Hpersist. split.
+  - intros m Hstar.
+    pose proof (ctx_denote_under_star_elim Σ Γ Γ m Hstar)
+      as (m1 & m2 & Hc & Hle & HΓ & _).
+    eapply res_models_kripke; [|exact HΓ].
+    etransitivity; [apply res_product_le_l|exact Hle].
+  - intros m HΓ.
+    pose proof (proj2 (persistent_star_self
+      (ctx_denote_under Σ Γ) Hpersist) m HΓ) as Hstar_body.
+    assert (HΓmin :
+        m ⊨ ctx_denote_under
+          (store_restrict Σ (ctx_fv (CtxStar Γ Γ))) Γ).
+    {
+      rewrite ctx_denote_under_minimal.
+      rewrite ctx_denote_under_minimal in HΓ.
+      cbn [ctx_fv].
+      replace (ctx_fv Γ ∪ ctx_fv Γ) with (ctx_fv Γ) by set_solver.
+      rewrite storeA_restrict_twice_same.
+      exact HΓ.
+    }
+    cbn [ctx_denote_under].
+    rewrite res_models_and_iff. split.
+    + eapply ctx_erasure_under_star_basic_world; eauto;
+        exact (ctx_denote_under_basic_world _ _ _ HΓmin).
+    + cbn [ctx_fv].
+      replace (ctx_fv Γ ∪ ctx_fv Γ) with (ctx_fv Γ) by set_solver.
+      rewrite <- (ctx_denote_under_minimal Σ Γ).
+      exact Hstar_body.
 Qed.
 
 Lemma ctx_denote_under_star_bind_closed_to_comma
