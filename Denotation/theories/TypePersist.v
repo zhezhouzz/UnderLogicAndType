@@ -1046,6 +1046,158 @@ Proof.
     + exact Hbody_open.
 Qed.
 
+Lemma ty_denote_gas_over_ret_fvar_self_body_iff
+    gas Σ b φ z (m : WfWorldT) :
+  lty_env_closed Σ ->
+  z ∉ qual_dom φ ->
+  m ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar z)) <->
+  m ⊨ ty_denote_gas 0 Σ (CTOver b φ) (tret (vfvar z)) /\
+  m ⊨ over_open_body φ z.
+Proof.
+  intros HΣclosed Hzφ.
+  split.
+  - intros Hden. split.
+    + apply ty_denote_gas_zero_of_guard.
+      eapply ty_denote_gas_guard. exact Hden.
+    + eapply ty_denote_gas_over_ret_fvar_self_body; eauto.
+  - intros [Hzero Hbody_z].
+    pose proof (ty_denote_gas_guard_of_zero
+      Σ (CTOver b φ) (tret (vfvar z)) m Hzero) as Hguard.
+    pose proof (ty_denote_gas_ret_fvar_world_dom
+      0 Σ (CTOver b φ) z m Hzero) as Hzm.
+    repeat rewrite res_models_and_iff in Hguard.
+    destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+    apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
+    apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
+    assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
+    {
+      destruct Hbasicτ as [Hvars _].
+      intros a Ha.
+      apply Hrel_dom.
+      apply lvars_fv_elem.
+      apply Hvars.
+      unfold context_ty_lvars.
+      cbn [context_ty_lvars_at].
+      rewrite lvars_at_depth_elem.
+      exists (LVFree a). split.
+      - rewrite <- lvars_fv_elem. exact Ha.
+      - reflexivity.
+    }
+    set (Dres := dom (relevant_env Σ (CTOver b φ) (tret (vfvar z)))).
+    assert (Hlc_D : lc_lvars Dres).
+    { subst Dres. apply relevant_env_closed. exact HΣclosed. }
+    assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
+    {
+      intros v Hv.
+      pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
+      pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
+        v Hv) as Hvfv.
+      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
+      exact (Hfv v Hvfv).
+    }
+    pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+      0 Σ (CTOver b φ) z m Hzero) as Hbasic_z.
+    pose proof (basic_world_formula_wfworld_closed_on_atoms
+      (<[LVFree z := erase_ty (CTOver b φ)]> (∅ : lty_env))
+      ({[z]} : aset) m ltac:(set_solver) Hbasic_z) as Hclosed_z_m.
+    cbn [ty_denote_gas].
+    rewrite res_models_and_iff. split.
+    + exact (ty_denote_gas_guard_of_zero Σ (CTOver b φ)
+        (tret (vfvar z)) m Hzero).
+    + assert (Hscope_full : formula_scoped_in_world m
+          (ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar z)))).
+      {
+        unfold formula_scoped_in_world.
+        eapply ty_denote_gas_scope_of_guard.
+        - reflexivity.
+        - exact (ty_denote_gas_guard_of_zero Σ (CTOver b φ)
+            (tret (vfvar z)) m Hzero).
+      }
+      cbn [ty_denote_gas] in Hscope_full.
+      pose proof (formula_scoped_and_r _ _ _ Hscope_full) as Hscope_forall.
+      eapply res_models_forall_rev_intro; [exact Hscope_forall|].
+      exists (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
+      intros y Hy my Hdom_my Hbase_my.
+      assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hy; set_solver).
+      assert (Hy_my : y ∈ world_dom (my : WorldT)).
+      { rewrite Hdom_my. set_solver. }
+      assert (Hyφ : y ∉ qual_dom φ) by (clear -Hy; set_solver).
+      assert (HyD : LVFree y ∉ Dres).
+      {
+        intros HyD.
+        assert (HyDfv : y ∈ lvars_fv Dres).
+        { apply lvars_fv_elem. exact HyD. }
+        clear -Hy HyDfv. set_solver.
+      }
+      assert (Hle : m ⊑ my).
+      { rewrite <- Hbase_my. apply res_restrict_le. }
+      eapply res_models_impl_intro.
+      * pose proof (formula_scoped_forall_open_res_le
+          m my y
+          (FImpl
+            (expr_result_formula_at
+              (lvars_shift_from 0 Dres)
+              (tm_shift 0 (tret (vfvar z))) (LVBound 0))
+            (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ))))
+          Hscope_forall Hle Hy_my) as Hscope_open.
+        cbn [formula_open] in Hscope_open.
+        exact Hscope_open.
+      * intros Hres_open.
+        assert (Hres_at :
+            my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
+        {
+          subst Dres.
+          eapply result_first_outer_result_ret_value_at.
+          - exact HΣclosed.
+          - constructor.
+          - cbn [fv_value]. set_solver.
+          - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
+          - exact Hres_open.
+        }
+        assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
+        {
+          intros σ Hσ.
+          assert (Hσm :
+              (m : WorldT)
+                (store_restrict σ (world_dom (m : WorldT)))).
+          {
+            assert (Hσres :
+                (res_restrict my (world_dom (m : WorldT)) : WorldT)
+                  (store_restrict σ (world_dom (m : WorldT)))).
+            { exists σ. split; [exact Hσ|reflexivity]. }
+            rewrite Hbase_my in Hσres.
+            exact Hσres.
+          }
+          specialize (Hclosed_z_m _ Hσm).
+          assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
+            by set_solver.
+          rewrite (storeA_restrict_twice_subset σ
+            (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
+          exact Hclosed_z_m.
+        }
+        assert (Hbody_y : my ⊨ over_open_body φ y).
+        {
+          eapply over_open_body_push_ret_fvar_result.
+          + exact Hφm.
+          + exact Hzm.
+          + exact Hym.
+          + exact Hzφ.
+          + exact Hyφ.
+          + exact Htm_D.
+          + exact HyD.
+          + exact Hres_at.
+          + exact Hclosed_z_my.
+          + exact Hdom_my.
+          + exact Hbase_my.
+          + exact Hbody_z.
+        }
+        rewrite <- formula_open_over_self_body_normalize in Hbody_y.
+        -- cbn [formula_open] in Hbody_y. exact Hbody_y.
+        -- intros Hyvars. apply Hyφ.
+           unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
