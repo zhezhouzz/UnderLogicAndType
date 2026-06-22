@@ -3,7 +3,7 @@
     Semantic support lemmas for the type-level persistency modality. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivFiberBaseResult.
+  DenotationSetMapFacts TypeEquivFiberBaseResult TypeEquiv.
 
 Section TypePersist.
 
@@ -62,6 +62,85 @@ Proof.
   rewrite lstore_lift_free_lookup_free in Hy.
   apply storeA_restrict_lookup_some in Hx as [_ Hx].
   transitivity (Some v); [exact Hy|symmetry; exact Hx].
+Qed.
+
+Lemma expr_result_formula_at_ret_fvar_flip
+    Dsrc Dtgt x y (m : WfWorldT) :
+  tm_lvars (tret (vfvar x)) ⊆ Dsrc ->
+  LVFree y ∉ Dsrc ->
+  lc_lvars Dtgt ->
+  tm_lvars (tret (vfvar y)) ⊆ Dtgt ->
+  LVFree x ∉ Dtgt ->
+  lvars_fv Dtgt ∪ {[x; y]} ⊆ world_dom (m : WorldT) ->
+  wfworld_closed_on ({[x]} : aset) m ->
+  wfworld_closed_on ({[y]} : aset) m ->
+  m ⊨ expr_result_formula_at Dsrc (tret (vfvar x)) (LVFree y) ->
+  m ⊨ expr_result_formula_at Dtgt (tret (vfvar y)) (LVFree x).
+Proof.
+  intros HsrcD HyD HlcDtgt HtgtD HxD Hscope_dom Hclosed_x Hclosed_y Hres.
+  eapply expr_result_formula_at_intro.
+  - exact HlcDtgt.
+  - exact HtgtD.
+  - exact HxD.
+  - unfold formula_scoped_in_world.
+    rewrite formula_fv_expr_result_formula_at.
+    cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+    rewrite lvars_fv_union, !lvars_fv_singleton_free.
+    intros a Ha. apply Hscope_dom.
+    set_solver.
+  - intros σ Hσ.
+    pose proof (expr_result_formula_at_ret_fvar_lookup_eq
+      Dsrc x y m σ HsrcD HyD (Hclosed_x σ Hσ) ltac:(
+        change (x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value));
+        rewrite storeA_restrict_dom;
+        rewrite (wfworld_store_dom m σ Hσ);
+        set_solver) Hres Hσ) as Hxy.
+    unfold expr_result_at_store.
+    split.
+    + intros Hbad. apply HxD. apply HtgtD.
+      exact Hbad.
+    + destruct (σ !! y) as [v|] eqn:Hylookup.
+      * exists v. split.
+        -- rewrite lstore_lift_free_lookup_free.
+           rewrite <- Hxy. reflexivity.
+        -- apply (proj1 (tm_eval_in_store_restrict_fv_subset
+             σ (tret (vfvar y)) v ({[y]} : aset)
+             ltac:(cbn [fv_tm fv_value]; set_solver))).
+           apply tm_eval_in_store_ret_fvar_lookup.
+           ++ exact (Hclosed_y σ Hσ).
+           ++ change ((storeA_restrict σ ({[y]} : aset) : gmap atom value)
+                !! y = Some v).
+              apply storeA_restrict_lookup_some_2; [exact Hylookup|set_solver].
+      * exfalso.
+        apply not_elem_of_dom in Hylookup.
+        apply Hylookup.
+        rewrite (wfworld_store_dom m σ Hσ).
+        set_solver.
+  - intros σ v Hσ Heval.
+    exists σ. split; [exact Hσ|]. split; [reflexivity|].
+    pose proof (expr_result_formula_at_ret_fvar_lookup_eq
+      Dsrc x y m σ HsrcD HyD (Hclosed_x σ Hσ) ltac:(
+        change (x ∈ dom (storeA_restrict σ ({[x]} : aset) : gmap atom value));
+        rewrite storeA_restrict_dom;
+        rewrite (wfworld_store_dom m σ Hσ);
+        set_solver) Hres Hσ) as Hxy.
+    pose proof (tm_eval_in_store_ret_fvar_inv
+      (store_restrict σ ({[y]} : aset)) y v) as Hinv.
+    assert (Hclosed_yσ : store_closed (store_restrict σ ({[y]} : aset))).
+    { exact (Hclosed_y σ Hσ). }
+    assert (Hydom :
+        y ∈ dom (store_restrict σ ({[y]} : aset) : StoreT)).
+    {
+      change (y ∈ dom (storeA_restrict σ ({[y]} : aset) : gmap atom value)).
+      rewrite storeA_restrict_dom.
+      rewrite (wfworld_store_dom m σ Hσ).
+      set_solver.
+    }
+    change (tm_eval_in_store (store_restrict σ ({[y]} : aset))
+      (tret (vfvar y)) v) in Heval.
+    specialize (Hinv Hclosed_yσ Hydom Heval).
+    apply storeA_restrict_lookup_some in Hinv as [_ Hlookup_y].
+    rewrite <- Hxy. exact Hlookup_y.
 Qed.
 
 Lemma res_restrict_singleton_pullback_ret_fvar_result
@@ -203,6 +282,183 @@ Proof.
       unfold singleton_world in Hσ.
       cbn [raw_world raw_worldA] in Hσ.
       change (σ = store_restrict σ0 (A ∪ {[x]})) in Hσ.
+      subst σ.
+      exists σ0. split; [exact Hσ0|reflexivity].
+Qed.
+
+Lemma res_restrict_singleton_push_ret_fvar_result
+    A D x y (m my : WfWorldT) σx :
+  A ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ A ->
+  y ∉ A ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  res_restrict m (A ∪ {[x]}) =
+    (exist _ (singleton_world σx) (wf_singleton_world σx) : WfWorldT) ->
+  exists σy : StoreT,
+    dom (σy : StoreT) = A ∪ {[y]} /\
+    res_restrict my (A ∪ {[y]}) =
+      (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT).
+Proof.
+  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase
+    Hsingle_x.
+  destruct (wfA_ne _ (worldA_wf my)) as [σ0 Hσ0].
+  set (σy := store_restrict σ0 (A ∪ {[y]}) : StoreT).
+  exists σy.
+  assert (Hdomσy : dom (σy : StoreT) = A ∪ {[y]}).
+  {
+    subst σy.
+    change (dom (storeA_restrict σ0 (A ∪ {[y]}) : gmap atom value) =
+      A ∪ {[y]}).
+    rewrite storeA_restrict_dom.
+    rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
+    apply set_eq. intros a. set_solver.
+  }
+  split; [exact Hdomσy|].
+  apply wfworld_ext. apply world_ext.
+  - change (world_dom (res_restrict my (A ∪ {[y]}) : WorldT) =
+      dom (σy : StoreT)).
+    rewrite res_restrict_dom, Hdomσy.
+    apply set_eq. intros a. set_solver.
+  - intros σ. split.
+    + intros Hσproj.
+      destruct Hσproj as [σmy [Hσmy Hσeq]]. subst σ.
+      set (σm := store_restrict σmy (world_dom (m : WorldT)) : StoreT).
+      assert (Hσm : (m : WorldT) σm).
+      {
+        rewrite <- Hbase.
+        subst σm. exists σmy. split; [exact Hσmy|reflexivity].
+      }
+      assert (Hσm_base : store_restrict σmy (world_dom (m : WorldT)) = σm)
+        by (subst σm; reflexivity).
+      assert (Hσ0_base : (res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict σ0 (world_dom (m : WorldT)))).
+      {
+        exists σ0. split; [exact Hσ0|reflexivity].
+      }
+      rewrite Hbase in Hσ0_base.
+      pose proof (res_restrict_singleton_store_eq
+        m (A ∪ {[x]}) σx σm Hsingle_x Hσm) as Hσm_x.
+      pose proof (res_restrict_singleton_store_eq
+        m (A ∪ {[x]}) σx
+        (store_restrict σ0 (world_dom (m : WorldT)))
+        Hsingle_x Hσ0_base) as Hσ0_x.
+      assert (Hxy_my : σmy !! y = σmy !! x).
+      {
+        eapply (expr_result_formula_at_ret_fvar_lookup_eq
+          D x y my σmy);
+          [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
+        change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
+        rewrite storeA_restrict_dom.
+        rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
+        set_solver.
+      }
+      assert (Hxy_0 : σ0 !! y = σ0 !! x).
+      {
+        eapply (expr_result_formula_at_ret_fvar_lookup_eq
+          D x y my σ0);
+          [exact HD|exact HyD|exact (Hclosed_x σ0 Hσ0)| |exact Hres|exact Hσ0].
+        change (x ∈ dom (storeA_restrict σ0 ({[x]} : aset) : gmap atom value)).
+        rewrite storeA_restrict_dom.
+        rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
+        set_solver.
+      }
+      subst σy.
+      apply storeA_map_eq. intros a.
+      rewrite !storeA_restrict_lookup.
+      destruct (decide (a ∈ A ∪ {[y]})) as [Ha|Ha].
+      * destruct (decide (a = y)) as [->|Hay].
+        -- assert (Hmy_x : σmy !! x = σm !! x).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - exact Hxm.
+             - exact Hσm_base.
+           }
+           assert (H0_x :
+               σ0 !! x = store_restrict σ0 (world_dom (m : WorldT)) !! x).
+           {
+             destruct (σ0 !! x) as [vx|] eqn:H0look.
+             - symmetry.
+               change (
+                 (storeA_restrict σ0 (world_dom (m : WorldT))
+                   : gmap atom value) !! x = Some vx).
+               apply storeA_restrict_lookup_some_2; [exact H0look|exact Hxm].
+             - exfalso.
+               apply not_elem_of_dom in H0look.
+               apply H0look.
+               rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
+               set_solver.
+           }
+           assert (H0base_x :
+               store_restrict σ0 (world_dom (m : WorldT)) !! x =
+               σx !! x).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+             - exact Hσ0_x.
+           }
+           assert (Hm_x :
+               σm !! x = σx !! x).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+             - exact Hσm_x.
+           }
+           change (σmy !! y = σ0 !! y).
+           rewrite Hxy_my, Hxy_0.
+           rewrite Hmy_x, H0_x, H0base_x, Hm_x.
+           reflexivity.
+        -- assert (HaA : a ∈ A) by set_solver.
+           assert (HaDom : a ∈ world_dom (m : WorldT)) by set_solver.
+           assert (Hmy_a : σmy !! a = σm !! a).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - exact HaDom.
+             - exact Hσm_base.
+           }
+           assert (H0_a :
+               σ0 !! a = store_restrict σ0 (world_dom (m : WorldT)) !! a).
+           {
+             destruct (σ0 !! a) as [va|] eqn:H0look.
+             - symmetry.
+               change (
+                 (storeA_restrict σ0 (world_dom (m : WorldT))
+                   : gmap atom value) !! a = Some va).
+               apply storeA_restrict_lookup_some_2; [exact H0look|exact HaDom].
+             - exfalso.
+               apply not_elem_of_dom in H0look.
+               apply H0look.
+               rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
+               set_solver.
+           }
+           assert (H0base_a :
+               store_restrict σ0 (world_dom (m : WorldT)) !! a =
+               σx !! a).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - apply elem_of_union_l. exact HaA.
+             - exact Hσ0_x.
+           }
+           assert (Hm_a : σm !! a = σx !! a).
+           {
+             eapply store_lookup_eq_of_restrict_eq_full.
+             - apply elem_of_union_l. exact HaA.
+             - exact Hσm_x.
+           }
+           change (σmy !! a = σ0 !! a).
+           rewrite Hmy_a, H0_a, H0base_a, Hm_a.
+           reflexivity.
+      * reflexivity.
+    + intros Hσ.
+      unfold singleton_world in Hσ.
+      cbn [raw_world raw_worldA] in Hσ.
+      change (σ = store_restrict σ0 (A ∪ {[y]})) in Hσ.
       subst σ.
       exists σ0. split; [exact Hσ0|reflexivity].
 Qed.
