@@ -3125,4 +3125,19 @@ Proof.
       exists σ0. split; [exact Hσ0|reflexivity].
 Qed.
 
+Lemma res_restrict_singleton_exact_dom_subset
+    (m : WfWorldT) X σ :
+  dom (σ : StoreT) = X ->
+  res_restrict m X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  X ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hdomσ Hsingle a Ha.
+  assert (Hdom_eq :
+      world_dom (res_restrict m X : WorldT) = dom (σ : StoreT)).
+  { rewrite Hsingle. reflexivity. }
+  rewrite res_restrict_dom, Hdomσ in Hdom_eq.
+  set_solver.
+Qed.
+
 End TypePersist.
