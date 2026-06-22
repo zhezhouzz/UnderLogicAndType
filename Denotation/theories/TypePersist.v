@@ -4,6 +4,7 @@
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
   DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquiv.
+From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
@@ -3188,6 +3189,83 @@ Proof.
   { rewrite Hsingle. reflexivity. }
   rewrite res_restrict_dom, Hdomσ in Hdom_eq.
   set_solver.
+Qed.
+
+Lemma store_singleton_dom_value y (v : value) :
+  dom ({[y := v]} : StoreT) = {[y]}.
+Proof.
+  change (dom ({[y := v]} : gmap atom value) = ({[y]} : aset)).
+  apply dom_singleton_L.
+Qed.
+
+Lemma singleton_world_member_eq (σ τ : StoreT) :
+  (singleton_world σ : WorldT) τ ->
+  τ = σ.
+Proof.
+  unfold singleton_world.
+  cbn [raw_world raw_worldA singleton_worldA].
+  intros ->. reflexivity.
+Qed.
+
+Definition const_fresh_value_extension
+    (X : aset) (y : atom) (v : value) (HyX : y ∉ X) : fiber_extension :=
+  mk_fiber_extension X {[y]}
+    (fun _ =>
+      (exist _ (singleton_world ({[y := v]} : StoreT))
+        (wf_singleton_world ({[y := v]} : StoreT)) : WfWorldT))
+    ltac:(set_solver)
+    ltac:(intros σ Hσ;
+      cbn [world_dom raw_world raw_worldA singleton_world];
+      apply store_singleton_dom_value)
+    ltac:(intros σ Hσ; exists ({[y := v]} : StoreT);
+      cbn [raw_world raw_worldA singleton_world];
+      reflexivity).
+
+Lemma res_extend_by_const_fresh_value
+    (m : WfWorldT) y v :
+  y ∉ world_dom (m : WorldT) ->
+  exists F my,
+    ext_in F = world_dom (m : WorldT) /\
+    ext_out F = {[y]} /\
+    res_extend_by m F my /\
+    world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
+    res_restrict my (world_dom (m : WorldT)) = m /\
+    forall σ, (my : WorldT) σ -> σ !! y = Some v.
+Proof.
+  intros Hy.
+  set (F := const_fresh_value_extension (world_dom (m : WorldT)) y v Hy).
+  assert (Happ : extension_applicable F m).
+  {
+    constructor.
+    - subst F. cbn [const_fresh_value_extension extA_in].
+      reflexivity.
+    - subst F. cbn [const_fresh_value_extension extA_out].
+      set_solver.
+  }
+  destruct (res_extend_by_exists m F Happ) as [my Hext].
+  exists F, my.
+  split; [subst F; reflexivity|].
+  split; [subst F; reflexivity|].
+  split; [exact Hext|].
+  split.
+  - rewrite (res_extend_by_dom m F my Hext).
+    subst F. reflexivity.
+  - split; [exact (res_extend_by_restrict_base m F my Hext)|].
+    intros σ Hσ.
+    pose proof (resA_extend_by_store_iff m F my σ Hext) as Hiff.
+    destruct (proj1 Hiff Hσ) as [σm [we [σe [Hσm [Hrel [Hσe ->]]]]]].
+    subst F.
+    change (we =
+      (exist _ (singleton_world ({[y := v]} : StoreT))
+        (wf_singleton_world ({[y := v]} : StoreT)) : WfWorldT)) in Hrel.
+    rewrite Hrel in Hσe.
+    apply singleton_world_member_eq in Hσe. subst σe.
+    rewrite (lookup_union_r (M:=gmap atom) (A:=value)
+      σm ({[y := v]} : gmap atom value) y).
+    + apply map_lookup_insert.
+    + apply not_elem_of_dom.
+      rewrite (wfworld_store_dom m σm Hσm).
+      exact Hy.
 Qed.
 
 Lemma ty_denote_gas_persist_over_ret_fvar_intro_singleton
