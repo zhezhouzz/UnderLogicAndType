@@ -1563,6 +1563,52 @@ Proof.
     + exact Hbody_y.
 Qed.
 
+Lemma ty_guard_persist_over_to_over
+    Σ b φ e (m : WfWorldT) :
+  m ⊨ ty_guard_formula (relevant_env Σ (CTPersist (CTOver b φ)) e)
+    (CTPersist (CTOver b φ)) e ->
+  m ⊨ ty_guard_formula (relevant_env Σ (CTOver b φ) e)
+    (CTOver b φ) e.
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  rewrite res_models_and_iff. split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasicτ]].
+    split; [exact Hlc|]. split.
+    + exact Hdom.
+    + destruct Hbasicτ as [Hvars Hshape].
+      split; [exact Hvars|exact Hshape].
+  - rewrite res_models_and_iff. split.
+    + exact Hworld.
+    + rewrite res_models_and_iff. split.
+      * exact Hbasic.
+      * exact Htotal.
+Qed.
+
+Lemma ty_denote_gas_persist_over_ret_fvar_elim
+    gas Σ b φ z (m : WfWorldT) :
+  lty_env_closed Σ ->
+  z ∉ qual_dom φ ->
+  m ⊨ ty_denote_gas (S gas) Σ
+    (CTPersist (CTOver b φ)) (tret (vfvar z)) ->
+  m ⊨ ty_denote_gas gas Σ (CTOver b φ) (tret (vfvar z)).
+Proof.
+  intros HΣclosed Hzφ Hden.
+  destruct gas as [|gas].
+  - apply ty_denote_gas_zero_of_guard_formula.
+    apply ty_guard_persist_over_to_over.
+    eapply ty_denote_gas_guard_formula. exact Hden.
+  - apply ty_denote_gas_over_ret_fvar_self_body_iff; [exact HΣclosed|exact Hzφ|].
+    split.
+    + apply ty_denote_gas_zero_of_guard_formula.
+      apply ty_guard_persist_over_to_over.
+      eapply ty_denote_gas_guard_formula. exact Hden.
+    + eapply ty_denote_gas_persist_over_ret_fvar_self_body; eauto.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
