@@ -17,6 +17,44 @@ Definition under_open_body (φ : type_qualifier) (z : atom) : FormulaT :=
     (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
     (FUnder (FAtom (qual_open_atom 0 z φ))).
 
+Definition over_ret_fvar_env (Σ : lty_env) b (φ : type_qualifier) z : lty_env :=
+  <[LVFree z := TBase b]>
+    (lty_env_restrict_lvars Σ (lvars_at_depth 1 (qual_vars φ))).
+
+Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
+  z ∉ lvars_fv (dom Σ) ∪ qual_dom φ ->
+  lty_env_restrict_lvars (<[LVFree z := TBase b]> Σ)
+    (relevant_lvars (CTOver b φ) (tret (vfvar z))) =
+  lty_env_restrict_lvars (over_ret_fvar_env Σ b φ z)
+    (relevant_lvars (CTOver b φ) (tret (vfvar z))).
+Proof.
+  intros Hz.
+  unfold over_ret_fvar_env.
+  unfold relevant_lvars, lty_env_restrict_lvars.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+    value_lvars_at lvar_value_keys].
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ) ∪ {[LVFree z]}))
+    as [Hvrel|Hvrel].
+  2:{ reflexivity. }
+  destruct (decide (v = LVFree z)) as [->|Hvz_ne].
+  - rewrite !lookup_insert.
+    destruct decide as [_|Hbad].
+    2:{
+      exfalso. apply Hbad. reflexivity.
+    }
+    reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ))) as [Hvφ|Hvφ].
+    + rewrite storeA_restrict_lookup.
+      destruct decide as [_|Hbad]; [reflexivity|contradiction].
+    + exfalso.
+      apply elem_of_union in Hvrel as [Hvφ'|Hvz].
+      * exact (Hvφ Hvφ').
+      * apply elem_of_singleton in Hvz. exact (Hvz_ne Hvz).
+Qed.
+
 Lemma lvars_open0_difference_bound0_normalize D z :
   LVFree z ∉ D ->
   lvars_open 0 z (D ∖ {[LVBound 0]}) =
@@ -1715,6 +1753,23 @@ Proof.
   - apply map_lookup_insert.
   - exact Hres.
   - exact Hsource_my.
+Qed.
+
+Lemma over_ret_fvar_insert_env_to_normal_env
+    gas Σ b φ z (m : WfWorldT) :
+  z ∉ lvars_fv (dom Σ) ∪ qual_dom φ ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree z := TBase b]> Σ)
+    (CTOver b φ) (tret (vfvar z)) ->
+  m ⊨ ty_denote_gas gas
+    (over_ret_fvar_env Σ b φ z)
+    (CTOver b φ) (tret (vfvar z)).
+Proof.
+  intros Hz Hden.
+  eapply res_models_ty_denote_gas_env_agree_on.
+  - reflexivity.
+  - apply over_ret_fvar_env_restrict_eq. exact Hz.
+  - exact Hden.
 Qed.
 
 Lemma ty_denote_gas_persist_over_ret_fvar_elim
