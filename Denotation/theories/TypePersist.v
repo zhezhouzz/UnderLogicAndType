@@ -2932,6 +2932,34 @@ Proof.
   - exact Hden.
 Qed.
 
+Theorem ty_denote_arrow_over_param_persist_over_result_forward
+    Δ bx φx br φr e :
+  lty_env_closed (atom_env_to_lty_env Δ) ->
+  lc_context_ty (CTOver bx φx) ->
+  cty_lc_at 1 (CTOver br φr) ->
+  ty_denote Δ (CTArrow (CTOver bx φx) (CTOver br φr)) e ⊫
+  ty_denote Δ
+    (CTArrow (CTPersist (CTOver bx φx)) (CTOver br φr)) e.
+Proof.
+  unfold entails.
+  intros HΔclosed Hlc_arg Hlc_res m Hden.
+  eapply ty_denote_arrow_over_arg_to_persist_over_arg; eauto.
+Qed.
+
+Theorem ty_denote_arrow_over_param_persist_under_result_forward
+    Δ bx φx br φr e :
+  lty_env_closed (atom_env_to_lty_env Δ) ->
+  lc_context_ty (CTOver bx φx) ->
+  cty_lc_at 1 (CTUnder br φr) ->
+  ty_denote Δ (CTArrow (CTOver bx φx) (CTUnder br φr)) e ⊫
+  ty_denote Δ
+    (CTArrow (CTPersist (CTOver bx φx)) (CTUnder br φr)) e.
+Proof.
+  unfold entails.
+  intros HΔclosed Hlc_arg Hlc_res m Hden.
+  eapply ty_denote_arrow_over_arg_to_persist_over_arg; eauto.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
