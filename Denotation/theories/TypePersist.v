@@ -1823,6 +1823,27 @@ Proof.
   - exact Hden.
 Qed.
 
+Lemma ty_denote_gas_ret_fvar_persist_body_intro_singleton
+    gas Σ τ z σ (m : WfWorldT) :
+  dom (σ : StoreT) = fv_cty τ ∪ {[z]} ->
+  res_restrict m (fv_cty τ ∪ {[z]}) =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar z)) ->
+  m ⊨ FPersist
+    (ty_denote_gas gas Σ τ (tret (vfvar z))).
+Proof.
+  intros Hdomσ Hsingle Hden.
+  eapply (res_models_persist_intro_from_singleton_superset
+    m
+    (ty_denote_gas gas Σ τ (tret (vfvar z)))
+    (fv_cty τ ∪ {[z]}) σ).
+  - etransitivity; [apply ty_denote_gas_fv_subset|].
+    cbn [fv_tm fv_value]. set_solver.
+  - exact Hdomσ.
+  - exact Hsingle.
+  - exact Hden.
+Qed.
+
 Lemma ty_denote_gas_over_ret_fvar_persist_body_intro_singleton
     gas Σ b φ z σ (m : WfWorldT) :
   dom (σ : StoreT) = fv_cty (CTOver b φ) ∪ {[z]} ->
@@ -1834,17 +1855,7 @@ Lemma ty_denote_gas_over_ret_fvar_persist_body_intro_singleton
     (ty_denote_gas gas (over_ret_fvar_env Σ b φ z)
       (CTOver b φ) (tret (vfvar z))).
 Proof.
-  intros Hdomσ Hsingle Hden.
-  eapply (res_models_persist_intro_from_singleton_superset
-    m
-    (ty_denote_gas gas (over_ret_fvar_env Σ b φ z)
-      (CTOver b φ) (tret (vfvar z)))
-    (fv_cty (CTOver b φ) ∪ {[z]}) σ).
-  - etransitivity; [apply ty_denote_gas_fv_subset|].
-    cbn [fv_tm fv_value]. set_solver.
-  - exact Hdomσ.
-  - exact Hsingle.
-  - exact Hden.
+  apply ty_denote_gas_ret_fvar_persist_body_intro_singleton.
 Qed.
 
 Lemma ty_denote_gas_persist_over_ret_fvar_elim
