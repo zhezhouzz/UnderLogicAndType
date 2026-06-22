@@ -1612,6 +1612,40 @@ Proof.
       * exact Htotal.
 Qed.
 
+Lemma res_models_persist_intro_from_singleton_superset
+    (m : WfWorldT) (φ : FormulaT) X σ :
+  formula_fv φ ⊆ X ->
+  dom (σ : StoreT) = X ->
+  res_restrict m X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  m ⊨ φ ->
+  m ⊨ FPersist φ.
+Proof.
+  intros Hfv Hdomσ Hsingle Hφ.
+  change (dom (σ : gmap atom value) = X) in Hdomσ.
+  eapply res_models_persist_intro
+    with (σ := store_restrict σ (formula_fv φ)).
+  - change (dom (storeA_restrict σ (formula_fv φ) : gmap atom value) =
+      formula_fv φ).
+    rewrite storeA_restrict_dom, Hdomσ.
+    apply set_eq. intros a. set_solver.
+  - transitivity (res_restrict (res_restrict m X) (formula_fv φ)).
+    + rewrite res_restrict_restrict_eq.
+      replace (X ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+    + rewrite Hsingle. apply res_restrict_singleton_world.
+  - pose proof (res_models_minimal_on X m φ Hfv) as Hmin.
+    rewrite Hsingle in Hmin.
+    pose proof (proj1 Hmin Hφ) as Hsingleton_big.
+    change ((exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+      ⊨ φ) in Hsingleton_big.
+    pose proof (res_models_minimal_on (formula_fv φ)
+      (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)
+      φ ltac:(reflexivity)) as Hmin_small.
+    rewrite res_restrict_singleton_world in Hmin_small.
+    exact (proj1 Hmin_small Hsingleton_big).
+Qed.
+
 Lemma ty_denote_gas_persist_over_ret_fvar_elim
     gas Σ b φ z (m : WfWorldT) :
   lty_env_closed Σ ->
