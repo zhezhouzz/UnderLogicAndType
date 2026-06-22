@@ -3853,4 +3853,20 @@ Proof.
     + exact Hinner_norm.
 Qed.
 
+Lemma ty_denote_persist_ret_fvar_intro_singleton
+    (Δ : gmap atom ty) τ z σ (m : WfWorldT) :
+  z ∉ fv_cty τ ->
+  dom (σ : StoreT) = fv_cty τ ∪ {[z]} ->
+  res_restrict m (fv_cty τ ∪ {[z]}) =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  m ⊨ ty_denote Δ τ (tret (vfvar z)) ->
+  m ⊨ ty_denote Δ (CTPersist τ) (tret (vfvar z)).
+Proof.
+  intros Hzτ Hdomσ Hsingle Hden.
+  unfold ty_denote in *.
+  cbn [cty_depth].
+  eapply ty_denote_gas_persist_ret_fvar_intro_singleton; eauto.
+  apply atom_store_to_lvar_store_closed.
+Qed.
+
 End TypePersist.
