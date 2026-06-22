@@ -17,6 +17,38 @@ Definition ty_static_guard_formula
     (FAnd (basic_world_formula Σ)
       (expr_basic_typing_formula Σ e (erase_ty τ))).
 
+Lemma fiberwise_joinable_on_ty_static_guard_formula X Σ τ e :
+  fiberwise_joinable_on X (ty_static_guard_formula Σ τ e).
+Proof.
+  unfold ty_static_guard_formula.
+  apply fiberwise_joinable_on_and.
+  - apply fiberwise_joinable_on_context_ty_wf_formula.
+  - apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_basic_world_formula.
+    + apply fiberwise_joinable_on_expr_basic_typing_formula.
+Qed.
+
+Lemma fiberwise_joinable_on_ty_guard_formula X Σ τ e :
+  fiberwise_joinable_on X (ty_guard_formula Σ τ e).
+Proof.
+  unfold ty_guard_formula.
+  apply fiberwise_joinable_on_and.
+  - apply fiberwise_joinable_on_context_ty_wf_formula.
+  - apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_basic_world_formula.
+    + apply fiberwise_joinable_on_and.
+      * apply fiberwise_joinable_on_expr_basic_typing_formula.
+      * apply fiberwise_joinable_on_expr_total_formula.
+Qed.
+
+Lemma fiberwise_joinable_ty_static_guard_formula Σ τ e :
+  fiberwise_joinable (ty_static_guard_formula Σ τ e).
+Proof. intros X. apply fiberwise_joinable_on_ty_static_guard_formula. Qed.
+
+Lemma fiberwise_joinable_ty_guard_formula Σ τ e :
+  fiberwise_joinable (ty_guard_formula Σ τ e).
+Proof. intros X. apply fiberwise_joinable_on_ty_guard_formula. Qed.
+
 Definition arrow_value_denote_gas_with
     (denote : nat -> lty_env -> context_ty -> tm -> FormulaT)
     (gas : nat) (Σ : lty_env) (τx τr : context_ty) (ef : tm) :

@@ -1234,6 +1234,21 @@ Proof.
     exact (Hinner σD mfibDX HprojDX).
 Qed.
 
+Lemma fiberwise_joinable_on_fiber_atom X q :
+  fiberwise_joinable_on X (FFiberAtom q).
+Proof.
+  unfold FFiberAtom.
+  eapply fiberwise_joinable_on_fibvars.
+  - rewrite formula_fv_atom. set_solver.
+  - intros σ.
+    change (fiberwise_joinable_on X (FAtom (qual_msubst_store σ q))).
+    apply fiberwise_joinable_on_atom.
+Qed.
+
+Lemma fiberwise_joinable_fiber_atom q :
+  fiberwise_joinable (FFiberAtom q).
+Proof. intros X. apply fiberwise_joinable_on_fiber_atom. Qed.
+
 Lemma fiberwise_joinable_on_fibvars_over_atom X D q :
   X ∩ formula_fv (FOver (FAtom q)) ⊆ lvars_fv D ->
   (forall σ,

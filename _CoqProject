@@ -75,6 +75,7 @@ ContextBasicDenotation/theories/TermExtension.v
 ContextBasicDenotation/theories/TermTLet.v
 ContextBasicDenotation/theories/Qualifier.v
 ContextBasicDenotation/theories/BasicTypingFormula.v
+ContextBasicDenotation/theories/BasicFormulaFiberwise.v
 ContextBasicDenotation/theories/BasicTypingOpen.v
 ContextBasicDenotation/theories/RelevantEnv.v
 

@@ -9,9 +9,10 @@ From ContextAlgebra Require Export ResourceInterface ResourceCompat ResourceExte
 From ContextTypeLanguage Require Export WF.
 From ContextBasicDenotation Require Export Notation.
 From ContextBasicDenotation Require Export StoreTyping TermSyntax TermEval TermOpen
-  TermExtension TermTLet Qualifier BasicTypingFormula BasicTypingOpen RelevantEnv.
+  TermExtension TermTLet Qualifier BasicTypingFormula BasicFormulaFiberwise
+  BasicTypingOpen RelevantEnv.
 From ContextLogic Require Export FormulaNotation FormulaSemantics FormulaConnectives
-  FormulaConnectivesHigher FormulaWorldExtension.
+  FormulaConnectivesHigher FormulaFiberwise FormulaWorldExtension.
 
 Notation FormulaT := (Formula (V := value)) (only parsing).
 Notation StoreT := (Store (V := value)) (only parsing).
