@@ -1877,6 +1877,30 @@ Proof.
   - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
 Qed.
 
+Lemma cty_lc_at_shift_at d τ :
+  cty_lc_at d τ ->
+  cty_lc_at d (cty_shift d τ).
+Proof.
+  induction τ in d |- *; cbn [cty_lc_at cty_shift]; intros Hlc;
+    try tauto.
+  - rewrite qual_shift_from_vars.
+    rewrite lvars_shift_from_lc_at_id by exact Hlc.
+    exact Hlc.
+  - rewrite qual_shift_from_vars.
+    rewrite lvars_shift_from_lc_at_id by exact Hlc.
+    exact Hlc.
+  - destruct Hlc as [H1 H2]. split; [apply IHτ1|apply IHτ2]; assumption.
+  - destruct Hlc as [H1 H2]. split; [apply IHτ1|apply IHτ2]; assumption.
+  - destruct Hlc as [H1 H2]. split; [apply IHτ1|apply IHτ2]; assumption.
+  - destruct Hlc as [H1 H2]. split.
+    + apply IHτ1. exact H1.
+    + apply IHτ2. exact H2.
+  - destruct Hlc as [H1 H2]. split.
+    + apply IHτ1. exact H1.
+    + apply IHτ2. exact H2.
+  - apply IHτ. exact Hlc.
+Qed.
+
 Lemma formula_open_arrow_value_ret_bvar0
     gas (Σ : lty_env) τx τr f :
   lty_env_closed Σ ->
