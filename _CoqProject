@@ -39,6 +39,7 @@ ContextLogic/theories/FormulaSyntax.v
 ContextLogic/theories/FormulaSemantics.v
 ContextLogic/theories/FormulaConnectives.v
 ContextLogic/theories/FormulaConnectivesHigher.v
+ContextLogic/theories/FormulaFiberwise.v
 ContextLogic/theories/FormulaWorldExtension.v
 ContextLogic/theories/FormulaNotation.v
 
