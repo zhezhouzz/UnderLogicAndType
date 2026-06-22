@@ -3869,4 +3869,122 @@ Proof.
   apply atom_store_to_lvar_store_closed.
 Qed.
 
+Lemma arrow_value_persist_over_arg_apply_singleton
+    gas (Σ : lty_env) bx φx τr ef y σ
+    (m my : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_context_ty (CTOver bx φx) ->
+  cty_lc_at 1 τr ->
+  y ∉ world_dom (m : WorldT) ->
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ qual_dom φx ->
+  y ∉ fv_cty τr ->
+  y ∉ fv_tm ef ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  dom (σ : StoreT) = fv_cty (CTOver bx φx) ∪ {[y]} ->
+  res_restrict my (fv_cty (CTOver bx φx) ∪ {[y]}) =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT) ->
+  m ⊨ arrow_value_denote_gas_with ty_denote_gas (S gas) Σ
+    (CTPersist (CTOver bx φx)) τr ef ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := TBase bx]> Σ)
+    (CTOver bx φx) (tret (vfvar y)) ->
+  my ⊨ ty_denote_gas (S gas)
+    (<[LVFree y := TBase bx]> Σ)
+    (cty_open 0 y τr)
+    (open_tm 0 (vfvar y)
+      (tapp_tm (tm_shift 0 ef) (vbvar 0))).
+Proof.
+  intros HΣclosed Hlc_over Hlcτr Hym HyΣ Hyφ Hyτr Hyef
+    Hdom Hrestrict Hdomσ Hsingle Hvalue Harg_over.
+  assert (HyΣlv : LVFree y ∉ dom (Σ : lty_env)).
+  {
+    intros HyD. apply HyΣ. apply lvars_fv_elem. exact HyD.
+  }
+  assert (Harg_persist_norm :
+      my ⊨ ty_denote_gas (S gas)
+        (<[LVFree y := TBase bx]> Σ)
+        (CTPersist (CTOver bx φx)) (tret (vfvar y))).
+  {
+    eapply ty_denote_gas_persist_over_ret_fvar_intro_singleton.
+    - apply lty_env_closed_insert_free. exact HΣclosed.
+    - exact Hyφ.
+    - exact Hdomσ.
+    - exact Hsingle.
+    - exact Harg_over.
+  }
+  pose proof (res_models_forall_open_named_fresh
+    m my y
+    (FImpl
+      (ty_denote_gas (S gas)
+        (typed_lty_env_bind Σ
+          (erase_ty (CTPersist (CTOver bx φx))))
+        (cty_shift 0 (CTPersist (CTOver bx φx)))
+        (tret (vbvar 0)))
+      (ty_denote_gas (S gas)
+        (typed_lty_env_bind Σ
+          (erase_ty (CTPersist (CTOver bx φx))))
+        τr
+        (tapp_tm (tm_shift 0 ef) (vbvar 0))))
+    Hvalue Hym Hdom Hrestrict) as Hopened.
+  cbn [formula_open] in Hopened.
+  assert (Harg_persist_open :
+      my ⊨ formula_open 0 y
+        (ty_denote_gas (S gas)
+          (typed_lty_env_bind Σ
+            (erase_ty (CTPersist (CTOver bx φx))))
+          (cty_shift 0 (CTPersist (CTOver bx φx)))
+          (tret (vbvar 0)))).
+  {
+    rewrite formula_open_ty_denote_gas_singleton.
+    2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
+    2:{
+      cbn [fv_tm fv_value]. intros Hin.
+      rewrite elem_of_empty in Hin. contradiction.
+    }
+    2:{
+      rewrite cty_shift_fv.
+      unfold fv_cty, context_ty_lvars.
+      cbn [context_ty_lvars_at].
+      intros Hbad. apply Hyφ.
+      unfold qual_dom.
+      rewrite lvars_fv_lvars_at_depth in Hbad.
+      exact Hbad.
+    }
+    rewrite cty_open_shift_from_lc_fresh.
+    2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
+    2:{
+      unfold fv_cty, context_ty_lvars.
+      cbn [context_ty_lvars_at].
+      intros Hbad. apply Hyφ.
+      unfold qual_dom.
+      rewrite lvars_fv_lvars_at_depth in Hbad.
+      exact Hbad.
+    }
+    rewrite typed_lty_env_bind_open_current.
+    2:{ exact HyΣlv. }
+    2:{ exact HΣclosed. }
+    change (erase_ty (CTPersist (CTOver bx φx))) with (TBase bx).
+    exact Harg_persist_norm.
+  }
+  pose proof (res_models_impl_elim _ _ _ Hopened Harg_persist_open)
+    as Hres_open.
+  rewrite formula_open_ty_denote_gas_singleton in Hres_open.
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
+  2:{
+    rewrite fv_tapp_tm, tm_shift_fv.
+    cbn [fv_tm fv_value].
+    intros Hin. apply elem_of_union in Hin as [Hin|Hin].
+    - exact (Hyef Hin).
+    - rewrite elem_of_empty in Hin. contradiction.
+  }
+  2:{ exact Hyτr. }
+  rewrite typed_lty_env_bind_open_current in Hres_open.
+  2:{ exact HyΣlv. }
+  2:{ exact HΣclosed. }
+  change (erase_ty (CTPersist (CTOver bx φx))) with (TBase bx) in Hres_open.
+  exact Hres_open.
+Qed.
+
 End TypePersist.
