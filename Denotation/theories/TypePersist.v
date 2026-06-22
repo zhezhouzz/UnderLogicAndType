@@ -604,6 +604,96 @@ Proof.
   exact (proj2 Hmin_x Hbody_x_restrict).
 Qed.
 
+Lemma over_open_body_push_ret_fvar_result
+    D φ x y (m my : WfWorldT) :
+  qual_dom φ ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  m ⊨ over_open_body φ x ->
+  my ⊨ over_open_body φ y.
+Proof.
+  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  pose proof (res_restrict_ret_fvar_result_swap_projection
+    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    Hclosed_x Hdom_my Hbase) as Hproj.
+  set (Sy := qual_dom φ ∪ {[y]}).
+  set (Sx := qual_dom φ ∪ {[x]}).
+  assert (Hbody_x_restrict : res_restrict m Sx ⊨ over_open_body φ x).
+  {
+    pose proof (res_models_minimal_on Sx m (over_open_body φ x)
+      ltac:(subst Sx; apply formula_fv_over_open_body_subset)) as Hmin.
+    exact (proj1 Hmin Hbody_x).
+  }
+  assert (Hsw :
+      res_atom_swap x y (res_restrict m Sx) ⊨
+      formula_atom_swap x y (over_open_body φ x)).
+  {
+    apply (proj2 (res_models_atom_swap (res_restrict m Sx)
+      (over_open_body φ x) x y)).
+    exact Hbody_x_restrict.
+  }
+  rewrite formula_atom_swap_over_open_body in Hsw by assumption.
+  subst Sx.
+  change Sy with (qual_dom φ ∪ {[y]}).
+  rewrite <- Hproj in Hsw.
+  pose proof (res_models_minimal_on Sy my (over_open_body φ y)
+    ltac:(subst Sy; apply formula_fv_over_open_body_subset)) as Hmin_y.
+  exact (proj2 Hmin_y Hsw).
+Qed.
+
+Lemma under_open_body_push_ret_fvar_result
+    D φ x y (m my : WfWorldT) :
+  qual_dom φ ⊆ world_dom (m : WorldT) ->
+  x ∈ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ->
+  x ∉ qual_dom φ ->
+  y ∉ qual_dom φ ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
+  my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
+  wfworld_closed_on ({[x]} : aset) my ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  m ⊨ under_open_body φ x ->
+  my ⊨ under_open_body φ y.
+Proof.
+  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  pose proof (res_restrict_ret_fvar_result_swap_projection
+    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    Hclosed_x Hdom_my Hbase) as Hproj.
+  set (Sy := qual_dom φ ∪ {[y]}).
+  set (Sx := qual_dom φ ∪ {[x]}).
+  assert (Hbody_x_restrict : res_restrict m Sx ⊨ under_open_body φ x).
+  {
+    pose proof (res_models_minimal_on Sx m (under_open_body φ x)
+      ltac:(subst Sx; apply formula_fv_under_open_body_subset)) as Hmin.
+    exact (proj1 Hmin Hbody_x).
+  }
+  assert (Hsw :
+      res_atom_swap x y (res_restrict m Sx) ⊨
+      formula_atom_swap x y (under_open_body φ x)).
+  {
+    apply (proj2 (res_models_atom_swap (res_restrict m Sx)
+      (under_open_body φ x) x y)).
+    exact Hbody_x_restrict.
+  }
+  rewrite formula_atom_swap_under_open_body in Hsw by assumption.
+  subst Sx.
+  change Sy with (qual_dom φ ∪ {[y]}).
+  rewrite <- Hproj in Hsw.
+  pose proof (res_models_minimal_on Sy my (under_open_body φ y)
+    ltac:(subst Sy; apply formula_fv_under_open_body_subset)) as Hmin_y.
+  exact (proj2 Hmin_y Hsw).
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
