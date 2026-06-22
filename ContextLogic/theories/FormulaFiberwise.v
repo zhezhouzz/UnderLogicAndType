@@ -26,6 +26,15 @@ Definition fiberwise_joinable_on (X : aset) (P : FormulaT) : Prop :=
 Definition fiberwise_joinable (P : FormulaT) : Prop :=
   forall X, fiberwise_joinable_on X P.
 
+Definition fiberwise_stable_on (X : aset) (P : FormulaT) : Prop :=
+  forall m σ mfib,
+    res_fiber_from_projection m X σ mfib ->
+    m ⊨ P ->
+    mfib ⊨ P.
+
+Definition fiberwise_stable (P : FormulaT) : Prop :=
+  forall X, fiberwise_stable_on X P.
+
 Local Lemma res_fiber_from_projection_of_store_any
     (m : WfWorldT) (X : aset) (σ : StoreT) :
   (m : WorldT) σ ->
@@ -677,6 +686,209 @@ Lemma fiberwise_joinable_and P Q :
 Proof.
   intros HP HQ X.
   apply fiberwise_joinable_on_and; [apply HP|apply HQ].
+Qed.
+
+Lemma fiberwise_stable_on_and X P Q :
+  fiberwise_stable_on X P ->
+  fiberwise_stable_on X Q ->
+  fiberwise_stable_on X (FAnd P Q).
+Proof.
+  intros HP HQ m σ mfib Hproj Hand.
+  apply res_models_and_iff in Hand as [HPm HQm].
+  apply res_models_and_intro_from_models.
+  - eapply HP; eauto.
+  - eapply HQ; eauto.
+Qed.
+
+Lemma fiberwise_stable_and P Q :
+  fiberwise_stable P ->
+  fiberwise_stable Q ->
+  fiberwise_stable (FAnd P Q).
+Proof.
+  intros HP HQ X.
+  apply fiberwise_stable_on_and; [apply HP|apply HQ].
+Qed.
+
+Lemma fiberwise_joinable_on_impl X P Q :
+  fiberwise_stable_on X P ->
+  fiberwise_joinable_on X Q ->
+  fiberwise_joinable_on X (FImpl P Q).
+Proof.
+  intros HPstable HQjoin m Hfib.
+  assert (Hscope : formula_scoped_in_world m (FImpl P Q)).
+  {
+    destruct (world_wf m) as [[τ Hτ] _].
+    destruct (res_fiber_from_projection_of_store_any m X τ Hτ)
+      as [mfib [Hproj _]].
+    pose proof (Hfib (store_restrict τ X) mfib Hproj) as Himpl.
+    pose proof (res_models_scoped _ _ Himpl) as Hscope_fib.
+    unfold formula_scoped_in_world in Hscope_fib |- *.
+    rewrite (res_fiber_from_projection_world_dom m mfib X
+      (store_restrict τ X) Hproj) in Hscope_fib.
+    exact Hscope_fib.
+  }
+  eapply res_models_impl_intro_future; [exact Hscope|].
+  intros n Hle HPn.
+  assert (HPm : m ⊨ P).
+  {
+    pose proof (formula_scoped_impl_l m P Q Hscope) as HscopeP.
+    eapply (proj2 (res_models_minimal_on (formula_fv P) m P
+      ltac:(reflexivity))).
+    rewrite (res_restrict_le_eq m n (formula_fv P) Hle HscopeP).
+    eapply (proj1 (res_models_minimal_on (formula_fv P) n P
+      ltac:(reflexivity))).
+    exact HPn.
+  }
+  assert (HQm : m ⊨ Q).
+  {
+    apply HQjoin. intros σ mfib Hproj.
+    pose proof (Hfib σ mfib Hproj) as Himpl_fib.
+    eapply res_models_impl_elim; [exact Himpl_fib|].
+    eapply HPstable; eauto.
+  }
+  eapply res_models_kripke; [exact Hle|exact HQm].
+Qed.
+
+Definition subset_upward_closed_formula (P : FormulaT) : Prop :=
+  forall m n, res_subset m n -> m ⊨ P -> n ⊨ P.
+
+Definition subset_downward_closed_formula (P : FormulaT) : Prop :=
+  forall m n, res_subset m n -> n ⊨ P -> m ⊨ P.
+
+Lemma fiberwise_joinable_on_under X P :
+  subset_upward_closed_formula P ->
+  fiberwise_joinable_on X P ->
+  fiberwise_joinable_on X (FUnder P).
+Proof.
+  intros Hup HP m Hfib.
+  apply res_models_under_intro_same_from_model.
+  apply HP. intros σ mfib Hproj.
+  pose proof (Hfib σ mfib Hproj) as Hunder.
+  unfold res_models in Hunder.
+  cbn [formula_measure res_models_fuel] in Hunder.
+  destruct Hunder as [_ [n [Hle HnP]]].
+  eapply Hup; [exact Hle|].
+  unfold res_models. models_fuel_irrel HnP.
+Qed.
+
+Lemma fiberwise_joinable_under P :
+  subset_upward_closed_formula P ->
+  fiberwise_joinable P ->
+  fiberwise_joinable (FUnder P).
+Proof. intros Hup HP X. apply fiberwise_joinable_on_under; [exact Hup|apply HP]. Qed.
+
+Lemma fiberwise_joinable_on_over_downward X P :
+  subset_downward_closed_formula P ->
+  fiberwise_joinable_on X P ->
+  fiberwise_joinable_on X (FOver P).
+Proof.
+  intros Hdown HP m Hfib.
+  apply res_models_over_intro_same_from_model.
+  apply HP. intros σ mfib Hproj.
+  pose proof (Hfib σ mfib Hproj) as Hover.
+  unfold res_models in Hover.
+  cbn [formula_measure res_models_fuel] in Hover.
+  destruct Hover as [_ [n [Hle HnP]]].
+  eapply Hdown; [exact Hle|].
+  unfold res_models. models_fuel_irrel HnP.
+Qed.
+
+Lemma fiberwise_joinable_on_star_persistent_l X P Q :
+  persistent_formula P ->
+  fiberwise_joinable_on X P ->
+  fiberwise_joinable_on X Q ->
+  fiberwise_joinable_on X (FStar P Q).
+Proof.
+  intros HPersist HP HQ m Hfib.
+  apply (proj2 (persistent_star_and P Q HPersist) m).
+  apply res_models_and_intro_from_models.
+  - apply HP. intros σ mfib Hproj.
+    pose proof (Hfib σ mfib Hproj) as Hstar.
+    pose proof (proj1 (persistent_star_and P Q HPersist) mfib Hstar)
+      as Hand.
+    apply res_models_and_elim_l with (ψ := Q). exact Hand.
+  - apply HQ. intros σ mfib Hproj.
+    pose proof (Hfib σ mfib Hproj) as Hstar.
+    pose proof (proj1 (persistent_star_and P Q HPersist) mfib Hstar)
+      as Hand.
+    apply res_models_and_elim_r with (φ := P). exact Hand.
+Qed.
+
+Lemma fiberwise_joinable_star_persistent_l P Q :
+  persistent_formula P ->
+  fiberwise_joinable P ->
+  fiberwise_joinable Q ->
+  fiberwise_joinable (FStar P Q).
+Proof.
+  intros HPersist HP HQ X.
+  eapply fiberwise_joinable_on_star_persistent_l;
+    [exact HPersist|apply HP|apply HQ].
+Qed.
+
+Local Lemma res_subset_sum_l
+    (m1 m2 : WfWorldT) (Hdef : raw_sum_defined (m1 : WorldT) (m2 : WorldT)) :
+  res_subset m1 (res_sum m1 m2 Hdef).
+Proof.
+  split.
+  - reflexivity.
+  - intros σ Hσ. cbn [res_sum raw_sum rawA_sum raw_world raw_worldA world_stores].
+    left. exact Hσ.
+Qed.
+
+Local Lemma res_subset_sum_r
+    (m1 m2 : WfWorldT) (Hdef : raw_sum_defined (m1 : WorldT) (m2 : WorldT)) :
+  res_subset m2 (res_sum m1 m2 Hdef).
+Proof.
+  split.
+  - exact (eq_sym Hdef).
+  - intros σ Hσ. cbn [res_sum raw_sum rawA_sum raw_world raw_worldA world_stores].
+    right. exact Hσ.
+Qed.
+
+Local Lemma res_sum_self_eq_any
+    (m : WfWorldT) (Hdef : raw_sum_defined (m : WorldT) (m : WorldT)) :
+  res_sum m m Hdef = m.
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - reflexivity.
+  - intros σ. split.
+    + intros [Hσ|Hσ]; exact Hσ.
+    + intros Hσ. left. exact Hσ.
+Qed.
+
+Lemma fiberwise_joinable_on_plus_subset_upward X P Q :
+  subset_upward_closed_formula P ->
+  subset_upward_closed_formula Q ->
+  fiberwise_joinable_on X P ->
+  fiberwise_joinable_on X Q ->
+  fiberwise_joinable_on X (FPlus P Q).
+Proof.
+  intros HPup HQup HP HQ m Hfib.
+  assert (HPm : m ⊨ P).
+  {
+    apply HP. intros σ mfib Hproj.
+    pose proof (Hfib σ mfib Hproj) as Hplus.
+    apply res_models_plus_iff in Hplus
+      as [m1 [m2 [Hdef [Hle [HP1 _]]]]].
+    eapply res_models_kripke; [exact Hle|].
+    eapply HPup; [apply res_subset_sum_l|exact HP1].
+  }
+  assert (HQm : m ⊨ Q).
+  {
+    apply HQ. intros σ mfib Hproj.
+    pose proof (Hfib σ mfib Hproj) as Hplus.
+    apply res_models_plus_iff in Hplus
+      as [m1 [m2 [Hdef [Hle [_ HQ2]]]]].
+    eapply res_models_kripke; [exact Hle|].
+    eapply HQup; [apply res_subset_sum_r|exact HQ2].
+  }
+  pose proof (eq_refl (world_dom (m : WorldT))) as Hdef.
+  change (raw_sum_defined (m : WorldT) (m : WorldT)) in Hdef.
+  eapply res_models_plus_intro
+    with (m1 := m) (m2 := m) (Hdef := Hdef).
+  - rewrite (res_sum_self_eq_any m Hdef). reflexivity.
+  - exact HPm.
+  - exact HQm.
 Qed.
 
 Lemma fiberwise_joinable_on_fibvars X D P :
