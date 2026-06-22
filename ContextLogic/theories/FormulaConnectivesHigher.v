@@ -831,6 +831,25 @@ Notation "φ ⊣⊢ ψ" := (formula_equiv φ ψ)
 Definition persistent_formula (φ : FormulaT) : Prop :=
   φ ⊫ FPersist φ.
 
+Lemma persistent_formula_of_singleton_projection (φ : FormulaT) :
+  (forall m : WfWorldT,
+    m ⊨ φ ->
+    exists σ : Store (V := V),
+      dom (σ : Store (V := V)) = formula_fv φ /\
+      res_restrict m (formula_fv φ) =
+        (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)) ->
+  persistent_formula φ.
+Proof.
+  intros Hsingle m Hφ.
+  destruct (Hsingle m Hφ) as [σ [Hdomσ Hrestrict]].
+  eapply res_models_persist_intro with (σ := σ).
+  - exact Hdomσ.
+  - exact Hrestrict.
+  - rewrite <- Hrestrict.
+    exact (proj1 (res_models_minimal_on (formula_fv φ) m φ
+      ltac:(reflexivity)) Hφ).
+Qed.
+
 Lemma persist_elim_entails (φ : FormulaT) :
   FPersist φ ⊫ φ.
 Proof.
