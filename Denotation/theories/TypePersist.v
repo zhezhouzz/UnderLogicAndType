@@ -1347,7 +1347,220 @@ Proof.
         rewrite <- formula_open_under_self_body_normalize in Hbody_y.
         -- cbn [formula_open] in Hbody_y. exact Hbody_y.
         -- intros Hyvars. apply Hyφ.
-           unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
+	           unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
+Qed.
+
+Lemma ty_denote_gas_persist_over_ret_fvar_self_body
+    gas Σ b φ z (m : WfWorldT) :
+  lty_env_closed Σ ->
+  z ∉ qual_dom φ ->
+  m ⊨ ty_denote_gas (S (S gas)) Σ
+    (CTPersist (CTOver b φ)) (tret (vfvar z)) ->
+  m ⊨ over_open_body φ z.
+Proof.
+  intros HΣclosed Hzφ Hden.
+  pose proof (ty_denote_gas_guard (S (S gas)) Σ
+    (CTPersist (CTOver b φ)) (tret (vfvar z)) m Hden) as Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  pose proof (ty_denote_gas_ret_fvar_world_dom
+    (S (S gas)) Σ (CTPersist (CTOver b φ)) z m Hden) as Hzm.
+  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+  apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
+  apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
+  assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
+  {
+    destruct Hbasicτ as [Hvars _].
+    intros a Ha.
+    apply Hrel_dom.
+    apply lvars_fv_elem.
+    apply Hvars.
+    unfold context_ty_lvars.
+    cbn [context_ty_lvars_at].
+    rewrite lvars_at_depth_elem.
+    exists (LVFree a). split.
+    - rewrite <- lvars_fv_elem. exact Ha.
+    - reflexivity.
+  }
+  set (τp := CTPersist (CTOver b φ)).
+  set (Dres := dom (relevant_env Σ τp (tret (vfvar z)))).
+  assert (Hlc_D : lc_lvars Dres).
+  { subst Dres τp. apply relevant_env_closed. exact HΣclosed. }
+  assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
+  {
+    intros v Hv.
+    pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
+    pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
+      v Hv) as Hvfv.
+    pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
+    exact (Hfv v Hvfv).
+  }
+  set (y := fresh_for
+    (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]})).
+  assert (Hyfresh :
+      y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
+  { subst y. apply fresh_for_not_in. }
+  assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
+  assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+  assert (HyD : LVFree y ∉ Dres).
+  {
+    intros HyD.
+    assert (HyDfv : y ∈ lvars_fv Dres).
+    { apply lvars_fv_elem. exact HyD. }
+    apply Hyfresh. set_solver.
+  }
+  destruct (expr_result_extension_witness_on_exists
+    (lvars_fv Dres) (tret (vfvar z)) y) as [Fx HFx].
+  - intros a Ha.
+    apply lvars_fv_elem.
+    apply Htm_D.
+    apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
+    rewrite tm_lvars_fv. exact Ha.
+  - intros HyD_atoms. set_solver.
+  - destruct (res_extend_by_exists m Fx) as [my Hext].
+    {
+      constructor.
+      - change (ext_in Fx ⊆ world_dom (m : WorldT)).
+        destruct HFx as [_ _ [Hin _] _].
+        rewrite Hin. exact Hrel_dom.
+      - change (ext_out Fx ## world_dom (m : WorldT)).
+        destruct HFx as [_ _ [_ Hout] _].
+        rewrite Hout.
+        intros a Haout Ham.
+        apply elem_of_singleton in Haout. subst a. exact (Hym Ham).
+    }
+    pose proof (res_extend_by_dom m Fx my Hext) as Hdom_my.
+    pose proof (res_extend_by_restrict_base m Fx my Hext) as Hbase_my.
+    destruct HFx as [_ _ [Hin_Fx Hout_Fx] Hrel_Fx].
+    assert (Hdom_my' :
+        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]}).
+    {
+      rewrite Hdom_my.
+      change (extA_out Fx) with (ext_out Fx).
+      rewrite Hout_Fx. reflexivity.
+    }
+    assert (Hres_at :
+        my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
+    {
+      eapply expr_result_formula_at_of_result_extends_on.
+      - exact Hlc_D.
+      - exact Htm_D.
+      - exact HyD.
+      - exact Hrel_dom.
+      - constructor.
+        + intros a Ha. apply lvars_fv_elem. apply Htm_D.
+          apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
+          rewrite tm_lvars_fv. exact Ha.
+        + intros HyD_atoms. set_solver.
+        + split; [exact Hin_Fx|exact Hout_Fx].
+        + exact Hrel_Fx.
+      - exact Hext.
+      - apply expr_total_formula_to_atom_world. exact Htotal.
+    }
+    assert (Hres_open :
+        my ⊨ formula_open 0 y
+          (expr_result_formula_at
+            (lvars_shift_from 0 Dres)
+            (tm_shift 0 (tret (vfvar z))) (LVBound 0))).
+    {
+      subst Dres τp.
+      eapply result_first_outer_result_ret_value_at_open.
+      - exact HΣclosed.
+      - constructor.
+      - cbn [fv_value]. set_solver.
+      - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
+      - exact Hres_at.
+    }
+    pose proof (ty_denote_gas_persist_open_result
+      (S gas) Σ (CTOver b φ) (tret (vfvar z)) y m my Hden
+      Hym Hdom_my' Hbase_my Hres_open) as Hpersist_open.
+    rewrite formula_open_persist in Hpersist_open.
+    rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.
+    2:{
+      rewrite typed_lty_env_bind_lvars_fv_dom.
+      subst Dres τp. intros Hyrel.
+      apply HyD. apply lvars_fv_elem. exact Hyrel.
+    }
+    2:{ cbn [fv_tm fv_value]. set_solver. }
+    2:{
+      rewrite cty_shift_fv.
+      intros Hyτ. apply Hyφ.
+      unfold fv_cty, context_ty_lvars in Hyτ.
+      cbn [context_ty_lvars_at] in Hyτ.
+      rewrite lvars_fv_lvars_at_depth in Hyτ.
+      exact Hyτ.
+    }
+    rewrite (cty_open_shift_from_lc_fresh 0 y (CTOver b φ)) in Hpersist_open.
+    2:{
+      pose proof (basic_context_ty_lvars_lc _ _ HlcD Hbasicτ) as Hlcτp.
+      cbn [lc_context_ty cty_lc_at] in Hlcτp.
+      exact Hlcτp.
+    }
+    2:{
+      intros Hyτ. apply Hyφ.
+      unfold fv_cty, context_ty_lvars in Hyτ.
+      cbn [context_ty_lvars_at] in Hyτ.
+      rewrite lvars_fv_lvars_at_depth in Hyτ.
+      exact Hyτ.
+    }
+    apply res_models_persist_elim in Hpersist_open.
+    rewrite (typed_lty_env_bind_open_current y
+      (relevant_env Σ (CTPersist (CTOver b φ)) (tret (vfvar z)))
+      (erase_ty (CTPersist (CTOver b φ)))) in Hpersist_open.
+    2:{ subst Dres τp. exact HyD. }
+    2:{ apply relevant_env_closed. exact HΣclosed. }
+    set (Σy :=
+      <[LVFree y := erase_ty (CTPersist (CTOver b φ))]>
+        (relevant_env Σ (CTPersist (CTOver b φ)) (tret (vfvar z)))) in *.
+    change (my ⊨ ty_denote_gas (S gas) Σy
+      (CTOver b φ) (tret (vfvar y))) in Hpersist_open.
+    assert (HΣy_closed : lty_env_closed Σy).
+    {
+      subst Σy.
+      apply lty_env_closed_insert_free.
+      apply relevant_env_closed. exact HΣclosed.
+    }
+    pose proof (ty_denote_gas_over_ret_fvar_self_body
+      gas Σy b φ y my HΣy_closed Hyφ Hpersist_open) as Hbody_y.
+    pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
+      (S (S gas)) Σ (CTPersist (CTOver b φ)) z m Hden) as Hbasic_z.
+    pose proof (basic_world_formula_wfworld_closed_on_atoms
+      (<[LVFree z := erase_ty (CTPersist (CTOver b φ))]> (∅ : lty_env))
+      ({[z]} : aset) m ltac:(set_solver) Hbasic_z) as Hclosed_z_m.
+    assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
+    {
+      intros σ Hσ.
+      assert (Hσm :
+          (m : WorldT)
+            (store_restrict σ (world_dom (m : WorldT)))).
+      {
+        assert (Hσres :
+            (res_restrict my (world_dom (m : WorldT)) : WorldT)
+              (store_restrict σ (world_dom (m : WorldT)))).
+        { exists σ. split; [exact Hσ|reflexivity]. }
+        rewrite Hbase_my in Hσres.
+        exact Hσres.
+      }
+      specialize (Hclosed_z_m _ Hσm).
+      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
+        by set_solver.
+      rewrite (storeA_restrict_twice_subset σ
+        (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
+      exact Hclosed_z_m.
+    }
+    eapply over_open_body_transport_ret_fvar_result.
+    + exact Hφm.
+    + exact Hzm.
+    + exact Hym.
+    + exact Hzφ.
+    + exact Hyφ.
+    + exact Htm_D.
+    + exact HyD.
+    + exact Hres_at.
+    + exact Hclosed_z_my.
+    + exact Hdom_my'.
+    + exact Hbase_my.
+    + exact Hbody_y.
 Qed.
 
 Lemma res_restrict_singleton_pullback_ret_fvar_result
