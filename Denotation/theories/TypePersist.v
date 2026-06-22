@@ -1877,6 +1877,149 @@ Proof.
   - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
 Qed.
 
+Lemma formula_open_arrow_value_ret_bvar0
+    gas (Σ : lty_env) τx τr f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vbvar 0))) =
+  arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+    (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold arrow_value_denote_gas_with.
+  cbn [formula_open].
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ cbn [fv_tm fv_value]. intros Hbad.
+      rewrite elem_of_empty in Hbad. contradiction. }
+  2:{ rewrite cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    τr (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ rewrite fv_tapp_tm, tm_shift_fv.
+      cbn [fv_tm fv_value].
+      intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad];
+        rewrite elem_of_empty in Hbad; contradiction. }
+  2:{ exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+	  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
+	  rewrite lvar_store_bind_open_under.
+	  2: exact HfΣ.
+	  rewrite lvar_store_open_one_fresh_noop.
+	  2:{
+	    intros Hbound.
+	    unfold lvar_store_closed in HΣclosed.
+	    exact (HΣclosed (LVBound 0) Hbound).
+	  }
+	  2: exact HfΣ.
+	  rewrite cty_open_shift_under_gen by lia.
+	  change (cty_shift 0 (open_one 0 f τx)) with
+	    (cty_shift 0 (cty_open 0 f τx)).
+	  rewrite (cty_open_above_lc_fresh 0 0 f τx)
+	    by (try lia; try exact Hlcτx; exact Hfτx).
+	  rewrite (cty_open_above_lc_fresh 1 1 f τr)
+	    by (try lia; try exact Hlcτr; exact Hfτr).
+	  cbn [open_tm open_value value_shift].
+	  repeat (destruct decide; try lia; try congruence).
+	  reflexivity.
+Qed.
+
+Lemma arrow_open_value_over_arg_to_persist_over_arg
+    gas_src gas_tgt (Σ : lty_env) bx φx τr f (mf : WfWorldT) :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty (CTOver bx φx) ->
+  lc_context_ty (cty_shift 0 (CTOver bx φx)) ->
+  cty_lc_at 1 τr ->
+  f ∉ qual_dom φx ->
+  f ∉ fv_cty τr ->
+  cty_depth τr <= gas_src ->
+  cty_depth τr <= gas_tgt ->
+  1 <= gas_src ->
+  2 <= gas_tgt ->
+  formula_scoped_in_world mf
+    (formula_open 0 f
+      (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
+        (cty_shift 0 (CTPersist (CTOver bx φx))) τr
+        (tret (vbvar 0)))) ->
+  mf ⊨ formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas_src Σ
+      (cty_shift 0 (CTOver bx φx)) τr
+      (tret (vbvar 0))) ->
+  mf ⊨ formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
+      (cty_shift 0 (CTPersist (CTOver bx φx))) τr
+      (tret (vbvar 0))).
+Proof.
+  intros HΣclosed HfΣ Hlc_over Hlc_shift_over Hlcτr Hfφ Hfτr
+    Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue_src.
+	  rewrite (formula_open_arrow_value_ret_bvar0
+	    gas_tgt Σ
+    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f) in Hscope_tgt.
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
+  2: exact Hlcτr.
+	  2:{
+	    rewrite cty_shift_fv.
+	    unfold fv_cty, qual_dom in *.
+	    cbn [context_ty_lvars context_ty_lvars_at] in *.
+	    rewrite lvars_fv_lvars_at_depth.
+	    exact Hfφ.
+	  }
+  2: exact Hfτr.
+	  rewrite (formula_open_arrow_value_ret_bvar0
+	    gas_src Σ (cty_shift 0 (CTOver bx φx)) τr f) in Hvalue_src.
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2: exact Hlc_shift_over.
+  2: exact Hlcτr.
+	  2:{
+	    rewrite cty_shift_fv.
+	    unfold fv_cty, qual_dom in *.
+	    cbn [context_ty_lvars context_ty_lvars_at] in *.
+	    rewrite lvars_fv_lvars_at_depth.
+	    exact Hfφ.
+	  }
+  2: exact Hfτr.
+	  rewrite (formula_open_arrow_value_ret_bvar0
+	    gas_tgt Σ
+    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f).
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
+  2: exact Hlcτr.
+	  2:{
+	    rewrite cty_shift_fv.
+	    unfold fv_cty, qual_dom in *.
+	    cbn [context_ty_lvars context_ty_lvars_at] in *.
+	    rewrite lvars_fv_lvars_at_depth.
+	    exact Hfφ.
+	  }
+  2: exact Hfτr.
+  eapply arrow_value_over_arg_to_persist_over_arg.
+  - exact HΣclosed.
+  - exact Hlc_over.
+  - exact Hlc_shift_over.
+  - exact Hres_src.
+  - exact Hres_tgt.
+  - exact Harg_src.
+  - exact Harg_tgt.
+  - exact Hscope_tgt.
+  - exact Hvalue_src.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
