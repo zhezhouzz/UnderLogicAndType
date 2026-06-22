@@ -104,6 +104,48 @@ Proof.
     + apply storeA_restrict_twice_subset. exact HZX.
 Qed.
 
+Lemma store_lookup_eq_of_restrict_eq
+    (σ1 σ2 : StoreT) X x :
+  x ∈ X ->
+  store_restrict σ1 X = store_restrict σ2 X ->
+  σ1 !! x = σ2 !! x.
+Proof.
+  intros Hx Heq.
+  apply option_eq. intros v. split; intros Hlook.
+  - eapply storeA_restrict_lookup_transport; [exact Hx|exact Heq|exact Hlook].
+  - eapply storeA_restrict_lookup_transport; [exact Hx|symmetry; exact Heq|exact Hlook].
+Qed.
+
+Lemma store_lookup_eq_of_restrict_eq_full
+    (σbig σsmall : StoreT) X x :
+  x ∈ X ->
+  store_restrict σbig X = σsmall ->
+  σbig !! x = σsmall !! x.
+Proof.
+  intros Hx Heq.
+  apply option_eq. intros v. split; intros Hlook.
+  - assert ((store_restrict σbig X : StoreT) !! x = Some v).
+    { apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hx]. }
+    rewrite Heq in H. exact H.
+  - rewrite <- Heq in Hlook.
+    apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
+    exact Hlook.
+Qed.
+
+Lemma res_restrict_singleton_store_eq
+    (m : WfWorldT) X (σX σ : StoreT) :
+  res_restrict m X =
+    (exist _ (singleton_world σX) (wf_singleton_world σX) : WfWorldT) ->
+  (m : WorldT) σ ->
+  store_restrict σ X = σX.
+Proof.
+  intros Hsingle Hσ.
+  assert ((res_restrict m X : WorldT) (store_restrict σ X)).
+  { exists σ. split; [exact Hσ|reflexivity]. }
+  rewrite Hsingle in H. cbn [raw_world raw_worldA singleton_world] in H.
+  exact H.
+Qed.
+
 Ltac denotation_set_norm :=
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *;
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.

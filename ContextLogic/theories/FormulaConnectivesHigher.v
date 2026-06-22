@@ -912,4 +912,27 @@ Proof.
     apply res_models_and_intro_from_models; exact Hφ.
 Qed.
 
+Lemma persistent_formula_and_covered_l (φ ψ : FormulaT) :
+  formula_fv φ ⊆ formula_fv ψ ->
+  persistent_formula ψ ->
+  persistent_formula (FAnd φ ψ).
+Proof.
+  intros Hfv Hpersist m Hand.
+  apply res_models_and_iff in Hand as [Hφ Hψ].
+  pose proof (Hpersist m Hψ) as Hpersistψ.
+  apply res_models_persist_iff in Hpersistψ
+    as [σ [Hdomσ [Hrestrict Hsingleψ]]].
+  eapply res_models_persist_intro with (σ := σ).
+  - rewrite formula_fv_and. set_solver.
+  - rewrite formula_fv_and.
+    replace (formula_fv φ ∪ formula_fv ψ) with (formula_fv ψ)
+      by set_solver.
+    exact Hrestrict.
+  - rewrite res_models_and_iff. split.
+    + rewrite <- Hrestrict.
+      exact (proj1 (res_models_minimal_on (formula_fv ψ) m φ
+        ltac:(set_solver)) Hφ).
+    + exact Hsingleψ.
+Qed.
+
 End FormulaPersistent.

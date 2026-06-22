@@ -101,6 +101,7 @@ Denotation/theories/TypeEquivWandResultFirst.v
 Denotation/theories/TypeEquivTLet.v
 Denotation/theories/TypeEquivTLetFormula.v
 Denotation/theories/TypeEquiv.v
+Denotation/theories/TypePersist.v
 Denotation/theories/Context.v
 Denotation/theories/ConstDenoteBase.v
 Denotation/theories/ConstDenote.v
