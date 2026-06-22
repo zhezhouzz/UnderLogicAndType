@@ -1588,6 +1588,30 @@ Proof.
       * exact Htotal.
 Qed.
 
+Lemma ty_guard_over_to_persist_over
+    Σ b φ e (m : WfWorldT) :
+  m ⊨ ty_guard_formula (relevant_env Σ (CTOver b φ) e)
+    (CTOver b φ) e ->
+  m ⊨ ty_guard_formula (relevant_env Σ (CTPersist (CTOver b φ)) e)
+    (CTPersist (CTOver b φ)) e.
+Proof.
+  intros Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  rewrite res_models_and_iff. split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasicτ]].
+    split; [exact Hlc|]. split.
+    + exact Hdom.
+    + exact Hbasicτ.
+  - rewrite res_models_and_iff. split.
+    + exact Hworld.
+    + rewrite res_models_and_iff. split.
+      * exact Hbasic.
+      * exact Htotal.
+Qed.
+
 Lemma ty_denote_gas_persist_over_ret_fvar_elim
     gas Σ b φ z (m : WfWorldT) :
   lty_env_closed Σ ->
