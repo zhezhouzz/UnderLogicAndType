@@ -1646,6 +1646,77 @@ Proof.
     exact (proj1 Hmin_small Hsingleton_big).
 Qed.
 
+Lemma ty_denote_gas_over_ret_fvar_result_alias_open
+    gas Σ b φ y z D (m my : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_lvars D ->
+  z ∉ lvars_fv (dom Σ) ->
+  z ∉ qual_dom φ ->
+  z <> y ->
+  tm_lvars (tret (vfvar y)) ⊆ D ->
+  context_ty_lvars (CTOver b φ) ⊆ D ->
+  LVFree z ∉ D ->
+  lvars_fv D ⊆ world_dom (my : WorldT) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[z]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  my ⊨ expr_result_formula_at D (tret (vfvar y)) (LVFree z) ->
+  m ⊨ ty_denote_gas gas Σ (CTOver b φ) (tret (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree z := erase_ty (CTOver b φ)]> Σ)
+    (CTOver b φ) (tret (vfvar z)).
+Proof.
+  intros HΣclosed HlcD HzΣ Hzφ Hzy HtmD HτD HzD HDmy Hdom_my Hbase_my
+    Hres Hden.
+  assert (HzΣlv : LVFree z ∉ dom (Σ : lty_env)).
+  {
+    intros Hbad. apply HzΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  assert (Hsource_my :
+      my ⊨ ty_denote_gas gas
+        (<[LVFree z := erase_ty (CTOver b φ)]> Σ)
+        (CTOver b φ) (tret (vfvar y))).
+  {
+    rewrite (ty_denote_gas_insert_fresh_lty_env_eq
+      gas Σ (CTOver b φ) (tret (vfvar y)) z (erase_ty (CTOver b φ))).
+    2: exact HzΣlv.
+    2:{
+      intros Hzτ.
+      apply Hzφ.
+      unfold qual_dom.
+      cbn [context_ty_lvars context_ty_lvars_at] in Hzτ.
+      rewrite lvars_at_depth_elem in Hzτ.
+      destruct Hzτ as [v [Hv Hdepth]].
+      destruct v as [n|a].
+      - cbn [logic_var_at_depth] in Hdepth.
+        destruct decide; discriminate.
+      - cbn [logic_var_at_depth] in Hdepth.
+        inversion Hdepth. subst a.
+        apply lvars_fv_elem. exact Hv.
+    }
+    2:{
+      cbn [fv_tm fv_value].
+      intros Hzy'.
+      apply elem_of_singleton in Hzy'. subst z.
+      exact (Hzy eq_refl).
+    }
+    eapply (res_models_kripke m my).
+    - rewrite <- Hbase_my. apply res_restrict_le.
+    - exact Hden.
+  }
+  eapply (ty_denote_gas_result_alias_at
+    gas (<[LVFree z := erase_ty (CTOver b φ)]> Σ)
+    (CTOver b φ) (tret (vfvar y)) z D my).
+  - apply lty_env_closed_insert_free. exact HΣclosed.
+  - exact HlcD.
+  - exact HtmD.
+  - exact HτD.
+  - exact HzD.
+  - exact HDmy.
+  - apply map_lookup_insert.
+  - exact Hres.
+  - exact Hsource_my.
+Qed.
+
 Lemma ty_denote_gas_persist_over_ret_fvar_elim
     gas Σ b φ z (m : WfWorldT) :
   lty_env_closed Σ ->
