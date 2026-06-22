@@ -1559,6 +1559,33 @@ Proof.
   congruence.
 Qed.
 
+Lemma res_restrict_singleton_world
+    (σ : StoreT) X :
+  res_restrict
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) X =
+  (exist _ (singleton_world (store_restrict σ X))
+    (wf_singleton_world (store_restrict σ X)) : WfWorld).
+Proof.
+  apply wfworld_ext. apply world_ext.
+  - change (world_dom (res_restrict
+        (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld) X
+        : World) =
+      dom (store_restrict σ X : StoreT)).
+    rewrite res_restrict_dom.
+    change (world_dom
+      ((exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorld)
+        : World)) with (dom (σ : StoreT)).
+    symmetry. apply storeA_restrict_dom.
+  - intros σ'. split.
+    + intros [σ0 [Hσ0 Hσ']].
+      simpl in Hσ0. subst σ0 σ'.
+      simpl.
+      reflexivity.
+    + intros Hσ'.
+      simpl in Hσ'. subst σ'.
+      exists σ. split; [reflexivity|reflexivity].
+Qed.
+
 Lemma res_product_singleton_projection_eq
     (m : WfWorld) (X : aset) (σ : StoreT)
     (Hc : world_compat (singleton_world σ) (m : World)) :

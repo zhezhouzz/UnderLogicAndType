@@ -850,6 +850,34 @@ Proof.
       ltac:(reflexivity)) Hφ).
 Qed.
 
+Lemma persistent_formula_of_singleton_projection_subset (φ : FormulaT) :
+  (forall m : WfWorldT,
+    m ⊨ φ ->
+    exists X (σ : Store (V := V)),
+      formula_fv φ ⊆ X /\
+      dom (σ : Store (V := V)) = X /\
+      res_restrict m X =
+        (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT)) ->
+  persistent_formula φ.
+Proof.
+  intros Hsingle.
+  apply persistent_formula_of_singleton_projection.
+  intros m Hφ.
+  destruct (Hsingle m Hφ) as [X [σ [Hfv [Hdomσ Hrestrict]]]].
+  exists (store_restrict σ (formula_fv φ)).
+  split.
+  - change (dom (store_restrict σ (formula_fv φ) : Store (V := V)) =
+      formula_fv φ).
+    transitivity (dom (σ : Store (V := V)) ∩ formula_fv φ).
+    + apply storeA_restrict_dom.
+    + rewrite Hdomσ. apply set_eq. intros x. set_solver.
+  - transitivity (res_restrict (res_restrict m X) (formula_fv φ)).
+    + rewrite res_restrict_restrict_eq.
+      replace (X ∩ formula_fv φ) with (formula_fv φ) by set_solver.
+      reflexivity.
+    + rewrite Hrestrict. apply res_restrict_singleton_world.
+Qed.
+
 Lemma persist_elim_entails (φ : FormulaT) :
   FPersist φ ⊫ φ.
 Proof.

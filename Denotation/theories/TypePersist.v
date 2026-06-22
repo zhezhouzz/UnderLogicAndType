@@ -35,16 +35,17 @@ Qed.
 
 Lemma expr_result_formula_at_ret_fvar_lookup_eq
     D x y (m : WfWorldT) σ :
-  tm_lvars (tret (vfvar x)) ∪ {[LVFree y]} ⊆ D ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
   store_closed (store_restrict σ ({[x]} : aset)) ->
   x ∈ dom (store_restrict σ ({[x]} : aset) : StoreT) ->
   m ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   (m : WorldT) σ ->
   σ !! y = σ !! x.
 Proof.
-  intros HD Hclosed Hxdom Hres Hσ.
-  pose proof (expr_result_formula_at_models_elim_covered
-    D (tret (vfvar x)) y m HD Hres σ Hσ) as Hstore.
+  intros HD HyD Hclosed Hxdom Hres Hσ.
+  pose proof (expr_result_formula_at_models_elim
+    D (tret (vfvar x)) y m HD HyD Hres σ Hσ) as Hstore.
   destruct Hstore as [_ [v [Hy Heval]]].
   assert (Heval_restrict :
       tm_eval_in_store (store_restrict σ ({[x]} : aset))
@@ -70,12 +71,12 @@ Lemma res_restrict_singleton_pullback_ret_fvar_result
   y ∉ world_dom (m : WorldT) ->
   x ∉ A ->
   y ∉ A ->
-  tm_lvars (tret (vfvar x)) ∪ {[LVFree y]} ⊆ D ->
+  tm_lvars (tret (vfvar x)) ⊆ D ->
+  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
-  dom (σy : StoreT) = A ∪ {[y]} ->
   res_restrict my (A ∪ {[y]}) =
     (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT) ->
   exists σx : StoreT,
@@ -83,8 +84,8 @@ Lemma res_restrict_singleton_pullback_ret_fvar_result
     res_restrict m (A ∪ {[x]}) =
       (exist _ (singleton_world σx) (wf_singleton_world σx) : WfWorldT).
 Proof.
-  intros HAm Hxm Hym HxA HyA HD Hres Hclosed_x Hdom_my Hbase
-    _Hdomσy Hsingle_y.
+  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase
+    Hsingle_y.
   destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
   set (σx := store_restrict σ0 (A ∪ {[x]}) : StoreT).
   exists σx.
@@ -118,7 +119,8 @@ Proof.
       assert (Hxy_my : σmy !! y = σmy !! x).
       {
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
-          D x y my σmy); [exact HD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
+          D x y my σmy);
+          [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
         change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
         rewrite storeA_restrict_dom.
         rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
@@ -127,7 +129,8 @@ Proof.
       assert (Hxy_0 : σ0my !! y = σ0my !! x).
       {
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
-          D x y my σ0my); [exact HD|exact (Hclosed_x σ0my Hσ0my)| |exact Hres|exact Hσ0my].
+          D x y my σ0my);
+          [exact HD|exact HyD|exact (Hclosed_x σ0my Hσ0my)| |exact Hres|exact Hσ0my].
         change (x ∈ dom (storeA_restrict σ0my ({[x]} : aset) : gmap atom value)).
         rewrite storeA_restrict_dom.
         rewrite (wfworld_store_dom my σ0my Hσ0my), Hdom_my.
