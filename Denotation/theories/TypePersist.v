@@ -2234,6 +2234,34 @@ Proof.
   - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
 Qed.
 
+Lemma ty_guard_arrow_persist_over_arg_to_over_arg
+    Σ bx φx τr e (m : WfWorldT) :
+  m ⊨ ty_guard_formula
+      (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+      (CTArrow (CTPersist (CTOver bx φx)) τr) e ->
+  m ⊨ ty_guard_formula
+      (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
+      (CTArrow (CTOver bx φx) τr) e.
+Proof.
+  intros Hguard.
+  change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+    with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e) in Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard |- *.
+  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  split.
+  - apply context_ty_wf_formula_models_iff.
+    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
+    split; [exact Hlc|]. split; [exact Hdom|].
+    destruct Hbasic_ty as [Hvars Hshape].
+    split.
+    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
+      exact Hvars.
+    + cbn [context_ty_shape_ok] in Hshape |- *.
+      exact Hshape.
+  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+Qed.
+
 Lemma cty_lc_at_shift_at d τ :
   cty_lc_at d τ ->
   cty_lc_at d (cty_shift d τ).
