@@ -98,3 +98,10 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
 timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
 ```
 
+## Implementation Status
+
+- [x] Replaced the proof-local `SoundnessPersist.v` substitution agreement
+  block with the lowered generic CoreLang lemma
+  `msubst_agree_on_restrict_closed_on`.  This removes a repeated
+  `msubst_restrict_closed_on` rewrite pattern from the Soundness layer while
+  preserving the old Soundness lemma name.

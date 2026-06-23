@@ -864,6 +864,26 @@ Proof.
       set_solver.
 Qed.
 
+Lemma msubst_agree_on_restrict_closed_on
+    {A : Type} (staleA : Stale A) (substA : SubstV value A)
+    (substFreshA : @SubstFresh A staleA substA)
+    (msubstInsertA : @MsubstInsert A substA)
+    (msubstFvA : @MsubstFv A staleA substA)
+    (σ1 σ2 : env) (X : aset) (a : A) :
+  closed_env (map_restrict value σ1 X) ->
+  closed_env (map_restrict value σ2 X) ->
+  stale a ⊆ X ->
+  map_restrict value σ1 X = map_restrict value σ2 X ->
+  m{σ1} a = m{σ2} a.
+Proof.
+  intros Hclosed1 Hclosed2 HaX Hagree.
+  rewrite <- (@msubst_restrict_closed_on A staleA substA
+    substFreshA msubstInsertA msubstFvA σ1 X a Hclosed1 HaX).
+  rewrite <- (@msubst_restrict_closed_on A staleA substA
+    substFreshA msubstInsertA msubstFvA σ2 X a Hclosed2 HaX).
+  rewrite Hagree. reflexivity.
+Qed.
+
 Lemma MsubstRestrict_all
     (A : Type)
     (staleA : Stale A)

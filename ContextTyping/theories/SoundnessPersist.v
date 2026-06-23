@@ -91,13 +91,8 @@ Lemma msubst_value_agree_on_restrict
   m{σ1} v = m{σ2} v.
 Proof.
   intros Hclosed1 Hclosed2 HvX Hagree.
-  rewrite <- (@msubst_restrict_closed_on value _ _ _ _ _
-    σ1 X v Hclosed1 HvX).
-  rewrite <- (@msubst_restrict_closed_on value _ _ _ _ _
-    σ2 X v Hclosed2 HvX).
-  change (m{(store_restrict σ1 X : StoreT)} v =
-    m{(store_restrict σ2 X : StoreT)} v).
-  rewrite Hagree. reflexivity.
+  eapply (@msubst_agree_on_restrict_closed_on value _ _ _ _ _
+    σ1 σ2 X v); eauto.
 Qed.
 
 Lemma expr_result_formula_at_ret_value_closed_result

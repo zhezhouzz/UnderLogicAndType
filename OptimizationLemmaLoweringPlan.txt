@@ -129,3 +129,8 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
   `SoundnessPersist.v` into `RelevantEnv.v`.  The Soundness lemma remains as a
   compatibility wrapper.  Verified: `RelevantEnv.vo`, `TypePersist.vo`, and
   `SoundnessPersist.vo`.
+- [x] Lowered the value multi-substitution restricted-agreement fact from
+  `SoundnessPersist.v` into `CoreLang/theories/InstantiationProps.v` as the
+  generic `msubst_agree_on_restrict_closed_on`.  The Soundness-specific
+  `msubst_value_agree_on_restrict` name remains as a compatibility wrapper.
+  Verified: `InstantiationProps.vo` and `SoundnessPersist.vo`.
