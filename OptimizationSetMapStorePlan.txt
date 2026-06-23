@@ -94,3 +94,13 @@ timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo
 timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
 ```
 
+## Implementation Status
+
+- [x] Added Resource-layer fiber/store wrappers so formula proofs can avoid
+  repeating raw fiber store reconstruction:
+  `res_fiber_from_projection_store_restrict_input` proves the fixed input
+  projection equality, and `res_fiber_from_projection_of_store_any_domain`
+  constructs the fiber containing a chosen store without requiring the
+  observation set to be a subset of the world domain.  Replaced the matching
+  proof blocks in `FormulaFiberwise.v`.  Verified the Logic layer through
+  `FormulaWorldExtension.vo`.

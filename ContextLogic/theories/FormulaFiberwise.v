@@ -42,64 +42,7 @@ Local Lemma res_fiber_from_projection_of_store_any
     res_fiber_from_projection m X (store_restrict σ X) mfib /\
     (mfib : WorldT) σ.
 Proof.
-  intros Hσ.
-  set (σX := store_restrict σ X).
-  assert (HdomσX : dom (σX : StoreT) = world_dom (m : WorldT) ∩ X).
-  {
-    subst σX.
-    change (dom (storeA_restrict σ X : gmap atom V) =
-      world_dom (m : WorldT) ∩ X).
-    rewrite storeA_restrict_dom.
-    rewrite (wfworld_store_dom m σ Hσ).
-    reflexivity.
-  }
-  assert (Hne :
-      exists σ0,
-        (m : WorldT) σ0 /\
-        storeA_restrict σ0 (dom (σX : StoreT)) = σX).
-  {
-    exists σ. split; [exact Hσ|].
-    subst σX.
-    rewrite HdomσX.
-    apply storeA_map_eq. intros a.
-    rewrite !storeA_restrict_lookup.
-    destruct (decide (a ∈ world_dom (m : WorldT) ∩ X)) as [Ha|Ha].
-    + destruct (decide (a ∈ X)) as [_|Hbad]; [reflexivity|set_solver].
-    + destruct (decide (a ∈ X)) as [HaX|_]; [|reflexivity].
-      assert (Haσ : a ∉ dom (σ : StoreT)).
-      {
-        change (a ∉ dom (σ : gmap atom V)).
-        rewrite (wfworld_store_dom m σ Hσ).
-        set_solver.
-      }
-      change (a ∉ dom (σ : gmap atom V)) in Haσ.
-      apply not_elem_of_dom_1 in Haσ.
-      symmetry. exact Haσ.
-  }
-  exists (resA_fiber m σX Hne).
-  split.
-  - split.
-    + exists σ. split; [exact Hσ|reflexivity].
-    + reflexivity.
-  - cbn [raw_world raw_worldA world_stores rawA_fiber].
-    split; [exact Hσ|].
-    change (storeA_restrict σ (dom (σX : StoreT)) = σX).
-    subst σX.
-    rewrite HdomσX.
-    apply storeA_map_eq. intros a.
-    rewrite !storeA_restrict_lookup.
-    destruct (decide (a ∈ world_dom (m : WorldT) ∩ X)) as [Ha|Ha].
-    + destruct (decide (a ∈ X)) as [_|Hbad]; [reflexivity|set_solver].
-    + destruct (decide (a ∈ X)) as [HaX|_]; [|reflexivity].
-      assert (Haσ : a ∉ dom (σ : StoreT)).
-      {
-        change (a ∉ dom (σ : gmap atom V)).
-        rewrite (wfworld_store_dom m σ Hσ).
-        set_solver.
-      }
-      change (a ∉ dom (σ : gmap atom V)) in Haσ.
-      apply not_elem_of_dom_1 in Haσ.
-      symmetry. exact Haσ.
+  apply res_fiber_from_projection_of_store_any_domain.
 Qed.
 
 Lemma res_fiber_from_projection_world_dom
@@ -107,10 +50,7 @@ Lemma res_fiber_from_projection_world_dom
   res_fiber_from_projection m X σ mfib ->
   world_dom (mfib : WorldT) = world_dom (m : WorldT).
 Proof.
-  intros [_ Hfib].
-  pose proof (f_equal world_dom Hfib) as Hdom.
-  cbn [raw_fiber rawA_fiber world_dom worldA_dom] in Hdom.
-  exact Hdom.
+  apply ResourceInterface.res_fiber_from_projection_world_dom.
 Qed.
 
 Lemma res_fiber_from_projection_fresh_eq
@@ -156,54 +96,7 @@ Local Lemma res_fiber_from_projection_store_restrict_input
   (mfib : WorldT) τ ->
   store_restrict τ X = σ.
 Proof.
-  intros Hproj Hτ.
-  pose proof (res_fiber_from_projection_store_source
-    m mfib X σ τ Hproj Hτ) as Hτm.
-  pose proof (res_fiber_from_projection_store_restrict
-    m mfib X σ τ Hproj Hτ) as Hτdom.
-  change ((store_restrict τ (dom (σ : StoreT)) : StoreT) = σ) in Hτdom.
-  pose proof (wfworld_store_dom m τ Hτm) as Hdomτ.
-  change (dom (τ : StoreT) = world_dom (m : WorldT)) in Hdomτ.
-  destruct Hproj as [Hσproj _].
-  pose proof (wfworld_store_dom (res_restrict m X) σ Hσproj)
-    as Hdomσ.
-  change (dom (σ : StoreT) =
-    world_dom (res_restrict m X : WorldT)) in Hdomσ.
-  rewrite res_restrict_dom in Hdomσ.
-  apply storeA_map_eq. intros a.
-  rewrite storeA_restrict_lookup.
-  destruct (decide (a ∈ X)) as [HaX|HaX].
-  - destruct (decide (a ∈ dom (σ : StoreT))) as [Haσ|Haσ].
-    + change (a ∈ dom (σ : gmap atom V)) in Haσ.
-      apply elem_of_dom in Haσ as [v Hσa].
-      assert (Hτa : τ !! a = Some v).
-      {
-        assert ((store_restrict τ (dom (σ : StoreT)) : StoreT) !! a =
-          Some v) as Hlook.
-        { rewrite Hτdom. exact Hσa. }
-        apply storeA_restrict_lookup_some in Hlook as [_ Hτa].
-        exact Hτa.
-      }
-      transitivity (Some v); [exact Hτa|symmetry; exact Hσa].
-    + assert (Haτ : a ∉ dom (τ : StoreT)).
-      {
-        rewrite Hdomτ.
-        intros Ham. apply Haσ.
-        change (a ∈ dom (σ : StoreT)).
-        rewrite Hdomσ. simpl. set_solver.
-      }
-      change (a ∉ dom (τ : gmap atom V)) in Haτ.
-      apply not_elem_of_dom in Haτ.
-      transitivity (@None V); [exact Haτ|].
-      symmetry. apply not_elem_of_dom.
-      change (a ∉ dom (σ : gmap atom V)) in Haσ. exact Haσ.
-  - destruct (σ !! a) as [v|] eqn:Hσa; [|symmetry; exact Hσa].
-    exfalso.
-    assert (Haσ : a ∈ dom (σ : StoreT)).
-    { change (a ∈ dom (σ : gmap atom V)).
-      apply elem_of_dom. exists v. exact Hσa. }
-    rewrite Hdomσ in Haσ. simpl in Haσ.
-    set_solver.
+  apply ResourceInterface.res_fiber_from_projection_store_restrict_input.
 Qed.
 
 Local Lemma lstore_in_lworld_on_lift_res_subset

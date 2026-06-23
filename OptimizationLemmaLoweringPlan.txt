@@ -113,3 +113,14 @@ timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo
 timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
 ```
 
+## Implementation Status
+
+- [x] Lowered the first group of pure fiber helpers from
+  `FormulaFiberwise.v` into `ResourceInterface.v`:
+  `res_fiber_from_projection_world_dom`,
+  `res_fiber_from_projection_store_restrict_input`, and
+  `res_fiber_from_projection_of_store_any_domain`.
+  `FormulaFiberwise.v` now keeps compatibility wrappers / local aliases and
+  no longer expands `raw_fiber` for those facts.  Verified:
+  `ResourceInterface.vo`, `FormulaFiberwise.vo`, and
+  `FormulaWorldExtension.vo`.
