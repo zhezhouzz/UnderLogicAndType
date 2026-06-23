@@ -105,62 +105,7 @@ Lemma expr_result_formula_at_ret_value_closed_result
   my ⊨ expr_result_formula_at D (tret v) (LVFree y) ->
   wfworld_closed_on ({[y]} : aset) my.
 Proof.
-  intros HvD HyD Hvdom Hclosed_v Hv Hres σ Hσ.
-  pose proof (expr_result_formula_at_models_elim
-    D (tret v) y my HvD HyD Hres σ Hσ) as Hstore.
-  destruct Hstore as [_ [vy [Hylook Heval]]].
-  assert (Hylook_free : σ !! y = Some vy).
-  {
-    change (((lstore_lift_free σ : LStoreT) : gmap logic_var value)
-      !! LVFree y = Some vy) in Hylook.
-    rewrite lstore_lift_free_lookup_free in Hylook.
-    exact Hylook.
-  }
-  change (tm_eval_in_store σ (tret v) vy) in Heval.
-  pose proof (proj2 (tm_eval_in_store_restrict_fv_subset
-    σ (tret v) vy (fv_value v) ltac:(cbn [fv_tm]; set_solver)) Heval)
-    as Heval_restrict.
-  assert (Hclosed_restrict : store_closed (store_restrict σ (fv_value v))).
-  { exact (Hclosed_v σ Hσ). }
-  pose proof (tm_eval_in_store_ret_value_inv
-    (store_restrict σ (fv_value v)) v vy
-    Hclosed_restrict Hv Heval_restrict) as Hvy_eq.
-  assert (Hdom_restrict :
-      dom (store_restrict σ (fv_value v) : StoreT) = fv_value v).
-  {
-    change (dom (storeA_restrict σ (fv_value v) : gmap atom value) =
-      fv_value v).
-    rewrite storeA_restrict_dom.
-    rewrite (wfworld_store_dom my σ Hσ).
-    apply set_eq. intros a. set_solver.
-  }
-  split.
-  - unfold closed_env. apply map_Forall_lookup_2.
-    intros a va Hlook.
-    apply storeA_restrict_lookup_some in Hlook as [Hay Hlook].
-    replace a with y in Hlook by set_solver.
-    assert (Hsome : Some va = Some vy).
-    { transitivity (σ !! y); [symmetry; exact Hlook|exact Hylook_free]. }
-    inversion Hsome. subst va.
-    rewrite Hvy_eq.
-    pose proof (msubst_fv_delete_value
-      (store_restrict σ (fv_value v)) v (proj1 Hclosed_restrict))
-      as Hfv.
-    apply set_eq. intros x. split; [|set_solver].
-    intros Hx.
-    pose proof (Hfv x Hx) as Hx'.
-    assert (Hxdom : x ∈ dom (store_restrict σ (fv_value v) : StoreT)).
-    { rewrite Hdom_restrict. set_solver. }
-    set_solver.
-  - unfold lc_env. apply map_Forall_lookup_2.
-    intros a va Hlook.
-    apply storeA_restrict_lookup_some in Hlook as [Hay Hlook].
-    replace a with y in Hlook by set_solver.
-    assert (Hsome : Some va = Some vy).
-    { transitivity (σ !! y); [symmetry; exact Hlook|exact Hylook_free]. }
-    inversion Hsome. subst va.
-    rewrite Hvy_eq.
-    apply msubst_lc; [exact (proj2 Hclosed_restrict)|exact Hv].
+  apply TypeEquivFiberBaseResult.expr_result_formula_at_ret_value_closed_result.
 Qed.
 
 Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :

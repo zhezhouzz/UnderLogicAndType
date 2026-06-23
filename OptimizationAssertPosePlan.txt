@@ -105,3 +105,7 @@ timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
   `msubst_agree_on_restrict_closed_on`.  This removes a repeated
   `msubst_restrict_closed_on` rewrite pattern from the Soundness layer while
   preserving the old Soundness lemma name.
+- [x] Replaced the proof-local `expr_result_formula_at_ret_value_closed_result`
+  block in `SoundnessPersist.v` with a Denotation-layer theorem.  This removes
+  the repeated ret-value result-slot lookup, restricted-store evaluation, and
+  closedness assertions from the typing proof.

@@ -134,3 +134,9 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
   generic `msubst_agree_on_restrict_closed_on`.  The Soundness-specific
   `msubst_value_agree_on_restrict` name remains as a compatibility wrapper.
   Verified: `InstantiationProps.vo` and `SoundnessPersist.vo`.
+- [x] Lowered ret-value result-slot closedness from `SoundnessPersist.v` into
+  `Denotation/theories/TypeEquivFiberBaseResult.v` as
+  `expr_result_formula_at_ret_value_closed_result`, next to the
+  `expr_result_formula_at_models_elim` theorem it depends on.  The Soundness
+  name remains as a compatibility wrapper.  Verified:
+  `TypeEquivFiberBaseResult.vo` and `SoundnessPersist.vo`.
