@@ -106,6 +106,8 @@ Denotation/theories/TypeEquiv.v
 Denotation/theories/TypePersistBase.v
 Denotation/theories/TypePersistArrow.v
 Denotation/theories/TypePersistSingleton.v
+Denotation/theories/TypePersistWandForward.v
+Denotation/theories/TypePersistWandReverse.v
 Denotation/theories/TypePersistWand.v
 Denotation/theories/TypePersist.v
 Denotation/theories/Context.v

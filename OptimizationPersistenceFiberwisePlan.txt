@@ -111,3 +111,6 @@ timeout 180s make TIMED=1
   singleton/result-slot facts, and Wand equivalences now live in separate files.
   This makes future persistence optimization target `TypePersistWand.v`
   directly instead of recompiling unrelated base facts.
+- [x] Split Wand persistence again into forward and reverse files.  The reverse
+  file contains the hard joinable-result direction and is now isolated for any
+  future proof simplification or `-time` pass.

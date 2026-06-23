@@ -116,3 +116,13 @@ timeout 180s make TIMED=1
     about 4.20s, Wand about 63.71s.
   - Deferred: `TypePersistWand.v` is now the clear next compile-time hotspot
     and should be inspected with `-time` before changing proofs.
+- [x] Split `TypePersistWand.v` again into `TypePersistWandForward.v` and
+  `TypePersistWandReverse.v`, with `TypePersistWand.v` retained as re-export.
+  Verified both split files, `TypePersistWand.vo`, `TypePersist.vo`, and
+  downstream `SoundnessPersist.vo`.
+
+  Timing notes:
+  - Before second split, `TypePersistWand.vo` took about 63.71s.
+  - After second split, `TypePersistWand.vo` re-export takes about 0.47s.
+  - Forward takes about 14.49s.
+  - Reverse takes about 49.87s and is the remaining focused hotspot.
