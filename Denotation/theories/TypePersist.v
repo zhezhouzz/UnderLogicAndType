@@ -4335,6 +4335,108 @@ Proof.
   - exact Harg_over_fib.
 Qed.
 
+Lemma fiberwise_joinable_on_ty_denote_gas_over
+    X gas (Σ : lty_env) b φ e :
+  lty_env_closed Σ ->
+  lc_tm e ->
+  tm_lvars e ⊆ dom (relevant_env Σ (CTOver b φ) e) ->
+  X ⊆ lvars_fv (dom (relevant_env Σ (CTOver b φ) e)) ->
+  fiberwise_joinable_on X (ty_denote_gas gas Σ (CTOver b φ) e).
+Proof.
+  intros HΣclosed Hlce HeD HXD.
+  destruct gas as [|gas].
+  - cbn [ty_denote_gas].
+    apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_ty_guard_formula.
+    + apply fiberwise_joinable_on_true.
+  - cbn [ty_denote_gas].
+    apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_ty_guard_formula.
+    + apply fiberwise_joinable_on_forall.
+      exists (X ∪ fv_tm e ∪ qual_dom φ ∪
+        lvars_fv (dom (relevant_env Σ (CTOver b φ) e))).
+      intros r Hr.
+      rewrite formula_open_impl.
+      apply fiberwise_joinable_on_impl.
+      * rewrite formula_open_expr_result_formula_at_shift0.
+        2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
+        2:{ rewrite lvars_shift_from_fv. clear -Hr. set_solver. }
+        2:{ exact Hlce. }
+        2:{ clear -Hr. set_solver. }
+        rewrite (lvars_shift_from_lc_eq 0
+          (dom (relevant_env Σ (CTOver b φ) e)))
+          by (apply relevant_env_closed; exact HΣclosed).
+        intros m σ mfib Hproj Hres.
+        eapply expr_result_formula_at_fiber_stable.
+        -- exact HXD.
+        -- exact HeD.
+        -- intros HrD.
+           assert (HrDfv : r ∈
+             lvars_fv (dom (relevant_env Σ (CTOver b φ) e))).
+           { apply lvars_fv_elem. exact HrD. }
+           apply Hr. clear -HrDfv. set_solver.
+        -- exact Hproj.
+        -- exact Hres.
+      * rewrite formula_open_over_self_body_normalize.
+        -- apply fiberwise_joinable_on_over_open_body.
+           clear -Hr. set_solver.
+        -- intros Hrvars.
+           assert (Hrφ : r ∈ qual_dom φ).
+           { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
+           apply Hr. clear -Hrφ. set_solver.
+Qed.
+
+Lemma fiberwise_joinable_on_ty_denote_gas_under
+    X gas (Σ : lty_env) b φ e :
+  lty_env_closed Σ ->
+  lc_tm e ->
+  tm_lvars e ⊆ dom (relevant_env Σ (CTUnder b φ) e) ->
+  X ⊆ lvars_fv (dom (relevant_env Σ (CTUnder b φ) e)) ->
+  fiberwise_joinable_on X (ty_denote_gas gas Σ (CTUnder b φ) e).
+Proof.
+  intros HΣclosed Hlce HeD HXD.
+  destruct gas as [|gas].
+  - cbn [ty_denote_gas].
+    apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_ty_guard_formula.
+    + apply fiberwise_joinable_on_true.
+  - cbn [ty_denote_gas].
+    apply fiberwise_joinable_on_and.
+    + apply fiberwise_joinable_on_ty_guard_formula.
+    + apply fiberwise_joinable_on_forall.
+      exists (X ∪ fv_tm e ∪ qual_dom φ ∪
+        lvars_fv (dom (relevant_env Σ (CTUnder b φ) e))).
+      intros r Hr.
+      rewrite formula_open_impl.
+      apply fiberwise_joinable_on_impl.
+      * rewrite formula_open_expr_result_formula_at_shift0.
+        2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
+        2:{ rewrite lvars_shift_from_fv. clear -Hr. set_solver. }
+        2:{ exact Hlce. }
+        2:{ clear -Hr. set_solver. }
+        rewrite (lvars_shift_from_lc_eq 0
+          (dom (relevant_env Σ (CTUnder b φ) e)))
+          by (apply relevant_env_closed; exact HΣclosed).
+        intros m σ mfib Hproj Hres.
+        eapply expr_result_formula_at_fiber_stable.
+        -- exact HXD.
+        -- exact HeD.
+        -- intros HrD.
+           assert (HrDfv : r ∈
+             lvars_fv (dom (relevant_env Σ (CTUnder b φ) e))).
+           { apply lvars_fv_elem. exact HrD. }
+           apply Hr. clear -HrDfv. set_solver.
+        -- exact Hproj.
+        -- exact Hres.
+      * rewrite formula_open_under_self_body_normalize.
+        -- apply fiberwise_joinable_on_under_open_body.
+           clear -Hr. set_solver.
+        -- intros Hrvars.
+           assert (Hrφ : r ∈ qual_dom φ).
+           { unfold qual_dom. apply lvars_fv_elem. exact Hrvars. }
+           apply Hr. clear -Hrφ. set_solver.
+Qed.
+
 Lemma ty_denote_gas_over_result_body_elim
     gas (Σ : lty_env) b φ e r
     (m mr : WfWorldT) :
