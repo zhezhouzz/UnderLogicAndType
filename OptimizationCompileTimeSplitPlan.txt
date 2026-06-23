@@ -100,3 +100,19 @@ timeout 50s make TIMED=1 Denotation/theories/TypeDenote.vo
 timeout 180s make TIMED=1
 ```
 
+## Implementation Status
+
+- [x] Split `Denotation/theories/TypePersist.v` into semantic slices:
+  `TypePersistBase.v`, `TypePersistArrow.v`, `TypePersistSingleton.v`, and
+  `TypePersistWand.v`, while keeping `TypePersist.v` as a stable re-export.
+  Verified `TypePersistBase.vo`, `TypePersistArrow.vo`,
+  `TypePersistSingleton.vo`, `TypePersistWand.vo`, `TypePersist.vo`, and
+  downstream `SoundnessPersist.vo`.
+
+  Timing notes:
+  - Before split, focused `TypePersist.vo` took about 74.91s.
+  - After split, `TypePersist.vo` re-export takes about 0.47s.
+  - Split pieces observed: Base about 7.64s, Arrow about 0.94s, Singleton
+    about 4.20s, Wand about 63.71s.
+  - Deferred: `TypePersistWand.v` is now the clear next compile-time hotspot
+    and should be inspected with `-time` before changing proofs.

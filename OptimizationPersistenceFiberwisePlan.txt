@@ -106,3 +106,8 @@ timeout 180s make TIMED=1
   `TypePersist.vo` currently compiles but takes about 75s, so later
   compile-time work should split or optimize that file before more large
   persistence proofs are added.
+- [x] Split type-level persistence support by proof role.  The public
+  `TypePersist.v` import remains stable, while base facts, Arrow forward facts,
+  singleton/result-slot facts, and Wand equivalences now live in separate files.
+  This makes future persistence optimization target `TypePersistWand.v`
+  directly instead of recompiling unrelated base facts.
