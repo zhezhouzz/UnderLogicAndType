@@ -1053,7 +1053,7 @@ Proof.
   exact Hsmall.
 Qed.
 
-Local Lemma res_fiber_product_subset_of_projection
+Lemma res_fiber_product_subset_of_projection
     (n m pfib : WfWorldT) X σp
     (Hc : world_compat (n : WorldT) (m : WorldT)) :
   res_fiber_from_projection (res_product n m Hc) X σp pfib ->
