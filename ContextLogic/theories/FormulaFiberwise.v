@@ -1614,4 +1614,64 @@ Proof.
       eapply res_fiber_from_projection_store_restrict; eauto.
 Qed.
 
+Lemma fiberwise_stable_on_fibvars_over_atom X D q :
+  formula_fv (FFibVars D (FOver (FAtom q))) ⊆ X ->
+  fiberwise_stable_on X (FFibVars D (FOver (FAtom q))).
+Proof.
+  intros HfvX m σX mfibX HprojX Hmodel.
+  apply res_models_FFibVars_iff in Hmodel as [Hscope [HlcD Hbody]].
+  eapply res_models_FFibVars_intro.
+  - unfold formula_scoped_in_world in *.
+    rewrite (res_fiber_from_projection_world_dom m mfibX X σX HprojX).
+    exact Hscope.
+  - exact HlcD.
+  - intros σD mfibD HprojD.
+    destruct HprojD as [HσD HfibD].
+    destruct HσD as [τ [HτfibX HτD]].
+    pose proof (res_fiber_from_projection_store_source
+      m mfibX X σX τ HprojX HτfibX) as Hτm.
+    destruct (res_fiber_from_projection_of_store_any
+      m (lvars_fv D) τ Hτm) as [mfibD_big [HprojD_big Hτbig]].
+    pose proof (res_fiber_from_projection_store_restrict
+      m mfibD_big (lvars_fv D) (store_restrict τ (lvars_fv D))
+      τ HprojD_big Hτbig) as HτbigD.
+    assert (HσD_eq : store_restrict τ (lvars_fv D) = σD).
+      by exact HτD.
+    assert (Hsub : res_subset mfibD mfibD_big).
+    {
+      assert (HprojD_small :
+          res_fiber_from_projection mfibX (lvars_fv D) σD mfibD).
+      { split; [exists τ; split; [exact HτfibX|exact HτD]|exact HfibD]. }
+      split.
+      - change (world_dom (mfibD : WorldT) =
+          world_dom (mfibD_big : WorldT)).
+        rewrite (res_fiber_from_projection_world_dom
+          mfibX mfibD (lvars_fv D) σD HprojD_small).
+        rewrite (res_fiber_from_projection_world_dom
+          m mfibX X σX HprojX).
+        rewrite (res_fiber_from_projection_world_dom
+          m mfibD_big (lvars_fv D) (store_restrict τ (lvars_fv D))
+          HprojD_big).
+        reflexivity.
+      - intros ρ Hρ.
+        destruct HprojD_big as [_ Hbig_eq].
+        change ((mfibD_big : WorldT) ρ).
+        change ((mfibD_big : WorldT) =
+          raw_fiber (m : WorldT) (store_restrict τ (lvars_fv D)))
+          in Hbig_eq.
+        rewrite Hbig_eq.
+        split.
+        + eapply res_fiber_from_projection_store_source; eauto.
+          eapply res_fiber_from_projection_store_source; eauto.
+        + pose proof (res_fiber_from_projection_store_restrict
+            mfibX mfibD (lvars_fv D) σD ρ HprojD_small Hρ) as HρD.
+          rewrite <- HσD_eq in HρD. exact HρD.
+    }
+    pose proof (Hbody (store_restrict τ (lvars_fv D)) mfibD_big HprojD_big)
+      as Hover_big.
+    rewrite HσD_eq in Hover_big.
+    eapply subset_downward_closed_over; [exact Hsub|].
+    unfold res_models. models_fuel_irrel Hover_big.
+Qed.
+
 End FormulaFiberwise.

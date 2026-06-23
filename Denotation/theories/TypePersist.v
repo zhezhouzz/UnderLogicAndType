@@ -3,7 +3,7 @@
     Semantic support lemmas for the type-level persistency modality. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquiv.
+  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquivBody TypeEquiv.
 From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
@@ -315,6 +315,42 @@ Proof.
     apply Hsub in Ha. set_solver.
 Qed.
 
+Lemma basic_over_empty_fv b φ :
+  basic_context_ty ∅ (CTOver b φ) ->
+  fv_cty (CTOver b φ) = ∅.
+Proof.
+  intros Hbasic.
+  apply set_eq. intros x.
+  split.
+  - intros Hx.
+    pose proof (basic_context_ty_fv_subset ∅ (CTOver b φ) Hbasic x Hx)
+      as Hempty.
+    set_solver.
+  - intros Hx. set_solver.
+Qed.
+
+Lemma over_open_body_closed_arg_fv b φ y :
+  basic_context_ty ∅ (CTOver b φ) ->
+  formula_fv (over_open_body φ y) ⊆ {[y]}.
+Proof.
+  intros Hbasic.
+  pose proof (formula_fv_over_open_body_subset φ y) as Hfv.
+  assert (Hφfv : qual_dom φ ⊆ fv_cty (CTOver b φ)).
+  {
+    unfold qual_dom, fv_cty, context_ty_lvars.
+    cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth.
+    reflexivity.
+  }
+  pose proof (basic_context_ty_fv_subset ∅ (CTOver b φ) Hbasic) as Hclosed.
+  intros x Hx.
+  apply Hfv in Hx.
+  apply elem_of_union in Hx as [Hxφ|Hxy].
+  - pose proof (Hclosed x (Hφfv x Hxφ)) as Hempty.
+    set_solver.
+  - exact Hxy.
+Qed.
+
 Lemma fiberwise_joinable_on_over_open_body X φ z :
   z ∉ X ->
   fiberwise_joinable_on X (over_open_body φ z).
@@ -337,6 +373,14 @@ Proof.
     apply fiberwise_joinable_on_over_atom.
 Qed.
 
+Lemma fiberwise_stable_on_over_open_body X φ z :
+  formula_fv (over_open_body φ z) ⊆ X ->
+  fiberwise_stable_on X (over_open_body φ z).
+Proof.
+  unfold over_open_body.
+  apply fiberwise_stable_on_fibvars_over_atom.
+Qed.
+
 Lemma formula_fv_under_open_body_subset φ z :
   formula_fv (under_open_body φ z) ⊆ qual_dom φ ∪ {[z]}.
 Proof.
@@ -355,6 +399,28 @@ Proof.
   - pose proof (qual_open_atom_dom_subset 0 z φ) as Hsub.
     unfold qual_dom in Ha.
     apply Hsub in Ha. set_solver.
+Qed.
+
+Lemma under_open_body_closed_arg_fv b φ y :
+  basic_context_ty ∅ (CTOver b φ) ->
+  formula_fv (under_open_body φ y) ⊆ {[y]}.
+Proof.
+  intros Hbasic.
+  pose proof (formula_fv_under_open_body_subset φ y) as Hfv.
+  assert (Hφfv : qual_dom φ ⊆ fv_cty (CTOver b φ)).
+  {
+    unfold qual_dom, fv_cty, context_ty_lvars.
+    cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth.
+    reflexivity.
+  }
+  pose proof (basic_context_ty_fv_subset ∅ (CTOver b φ) Hbasic) as Hclosed.
+  intros x Hx.
+  apply Hfv in Hx.
+  apply elem_of_union in Hx as [Hxφ|Hxy].
+  - pose proof (Hclosed x (Hφfv x Hxφ)) as Hempty.
+    set_solver.
+  - exact Hxy.
 Qed.
 
 Lemma fiberwise_joinable_on_under_open_body X φ z :
@@ -3450,18 +3516,15 @@ Definition const_fresh_value_extension
       cbn [raw_world raw_worldA singleton_world];
       reflexivity).
 
-Lemma res_extend_by_const_fresh_value
-    (m : WfWorldT) y v :
-  y ∉ world_dom (m : WorldT) ->
-  exists F my,
-    ext_in F = world_dom (m : WorldT) /\
-    ext_out F = {[y]} /\
-    res_extend_by m F my /\
+Lemma res_extend_by_const_fresh_value_exact
+    (m : WfWorldT) y v (Hy : y ∉ world_dom (m : WorldT)) :
+  exists my,
+    res_extend_by m
+      (const_fresh_value_extension (world_dom (m : WorldT)) y v Hy) my /\
     world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
     res_restrict my (world_dom (m : WorldT)) = m /\
     forall σ, (my : WorldT) σ -> σ !! y = Some v.
 Proof.
-  intros Hy.
   set (F := const_fresh_value_extension (world_dom (m : WorldT)) y v Hy).
   assert (Happ : extension_applicable F m).
   {
@@ -3472,9 +3535,7 @@ Proof.
       set_solver.
   }
   destruct (res_extend_by_exists m F Happ) as [my Hext].
-  exists F, my.
-  split; [subst F; reflexivity|].
-  split; [subst F; reflexivity|].
+  exists my.
   split; [exact Hext|].
   split.
   - rewrite (res_extend_by_dom m F my Hext).
@@ -3495,6 +3556,147 @@ Proof.
     + apply not_elem_of_dom.
       rewrite (wfworld_store_dom m σm Hσm).
       exact Hy.
+Qed.
+
+Lemma res_extend_by_const_fresh_value
+    (m : WfWorldT) y v :
+  y ∉ world_dom (m : WorldT) ->
+  exists F my,
+    ext_in F = world_dom (m : WorldT) /\
+    ext_out F = {[y]} /\
+    res_extend_by m F my /\
+    world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} /\
+    res_restrict my (world_dom (m : WorldT)) = m /\
+    forall σ, (my : WorldT) σ -> σ !! y = Some v.
+Proof.
+  intros Hy.
+  set (F := const_fresh_value_extension (world_dom (m : WorldT)) y v Hy).
+  destruct (res_extend_by_const_fresh_value_exact m y v Hy)
+    as [my [Hext [Hdom [Hbase Hlookup]]]].
+  exists F, my.
+  split; [subst F; reflexivity|].
+  split; [subst F; reflexivity|].
+  split; [exact Hext|].
+  split; [exact Hdom|].
+  split; [exact Hbase|exact Hlookup].
+Qed.
+
+Lemma res_yfiber_open_arg_base_subset
+    (m my myfib : WfWorldT) y σy :
+  y ∉ world_dom (m : WorldT) ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  res_fiber_from_projection my {[y]} σy myfib ->
+  res_subset (res_restrict myfib (world_dom (m : WorldT))) m.
+Proof.
+  intros Hy Hdom Hbase Hfib.
+  split.
+  - rewrite res_restrict_dom.
+    rewrite (res_fiber_from_projection_world_dom my myfib {[y]} σy Hfib).
+    rewrite Hdom. set_solver.
+  - intros σ [σ0 [Hσ0 Hrestrict]].
+    destruct Hfib as [_ Hraw].
+    destruct myfib as [wmyfib Hwmyfib].
+    cbn [proj1_sig raw_world raw_worldA world_stores] in Hraw, Hσ0.
+    change (wmyfib = raw_fiber (my : WorldT) σy) in Hraw.
+    rewrite Hraw in Hσ0.
+    destruct Hσ0 as [Hσ0_my _].
+    assert ((res_restrict my (world_dom (m : WorldT)) : WorldT) σ).
+    { exists σ0. split; [exact Hσ0_my|exact Hrestrict]. }
+    rewrite Hbase in H. exact H.
+Qed.
+
+Lemma res_yfiber_sub_const_fresh_extension_concrete
+    (m my myfib : WfWorldT) y v
+    (Hy : y ∉ world_dom (m : WorldT)) :
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  res_fiber_from_projection my {[y]} ({[y := v]} : StoreT) myfib ->
+  exists myconst,
+    res_extend_by m
+      (const_fresh_value_extension (world_dom (m : WorldT)) y v Hy)
+      myconst /\
+    res_subset myfib myconst.
+Proof.
+  intros Hdom Hbase Hfib.
+  destruct (res_extend_by_const_fresh_value_exact m y v Hy)
+    as [myconst [Hext [Hdom_const [Hbase_const Hy_const]]]].
+  exists myconst. split; [exact Hext|].
+  split.
+  - change (world_dom (myfib : WorldT) = world_dom (myconst : WorldT)).
+    rewrite (res_fiber_from_projection_world_dom my myfib {[y]}
+      ({[y := v]} : StoreT) Hfib).
+    rewrite Hdom. symmetry. exact Hdom_const.
+  - intros τ Hτ.
+    pose proof Hfib as Hfib_full.
+    destruct Hfib as [_ Hraw].
+    assert (Hτ_my : (my : WorldT) τ).
+    {
+      change ((myfib : WorldT) = raw_fiber (my : WorldT)
+        ({[y := v]} : StoreT)) in Hraw.
+      destruct myfib as [wmyfib Hwmyfib].
+      cbn [proj1_sig raw_world raw_worldA world_stores] in Hraw, Hτ.
+      rewrite Hraw in Hτ.
+      exact (proj1 Hτ).
+    }
+    pose proof (res_fiber_from_projection_restrict_singleton
+      my myfib {[y]} ({[y := v]} : StoreT)
+      (store_singleton_dom_value y v) Hfib_full) as Hsingle_y.
+    pose proof (res_restrict_singleton_store_eq
+      myfib ({[y]} : aset) ({[y := v]} : StoreT) τ Hsingle_y Hτ)
+      as Hτ_y.
+    set (τbase := store_restrict τ (world_dom (m : WorldT))).
+    assert (Hτbase_m : (m : WorldT) τbase).
+    {
+      subst τbase.
+      assert ((res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict τ (world_dom (m : WorldT)))).
+      { exists τ. split; [exact Hτ_my|reflexivity]. }
+      rewrite Hbase in H. exact H.
+    }
+    assert (Hyτbase : y ∉ dom (τbase : StoreT)).
+    {
+      subst τbase.
+      intros Hyin.
+      change (y ∈ dom (storeA_restrict τ (world_dom (m : WorldT)) : gmap atom value))
+        in Hyin.
+      apply elem_of_dom in Hyin as [vy Hylook].
+      apply storeA_restrict_lookup_some in Hylook as [Hybase _].
+      exact (Hy Hybase).
+    }
+    assert (Hτ_eq : τ = τbase ∪ ({[y := v]} : StoreT)).
+    {
+      assert (Hinsert : (τ : StoreT) = <[y := v]> (τbase : StoreT)).
+      {
+        eapply storeA_eq_insert_of_restrict_singleton
+          with (X := world_dom (m : WorldT)).
+        - rewrite (wfworld_store_dom myfib τ Hτ).
+          rewrite (res_fiber_from_projection_world_dom my myfib {[y]}
+            ({[y := v]} : StoreT) Hfib_full).
+          rewrite Hdom. set_solver.
+        - exact Hy.
+        - subst τbase. reflexivity.
+        - exact Hτ_y.
+      }
+      rewrite Hinsert.
+      symmetry. apply storeA_union_singleton_insert_fresh. exact Hyτbase.
+    }
+    pose proof (resA_extend_by_store_iff
+      m
+      (const_fresh_value_extension (world_dom (m : WorldT)) y v Hy)
+      myconst τ Hext) as Hiff.
+    apply (proj2 Hiff).
+    exists τbase,
+      (exist _ (singleton_world ({[y := v]} : StoreT))
+        (wf_singleton_world ({[y := v]} : StoreT)) : WfWorldT),
+      ({[y := v]} : StoreT).
+    split; [exact Hτbase_m|].
+    split.
+    + cbn [const_fresh_value_extension extA_rel].
+      reflexivity.
+    + split.
+      * cbn [raw_world raw_worldA singleton_world]. reflexivity.
+      * exact Hτ_eq.
 Qed.
 
 Lemma ty_denote_gas_persist_ret_fvar_intro_singleton
@@ -4020,6 +4222,113 @@ Proof.
   cbn [cty_depth].
   eapply ty_denote_gas_persist_ret_fvar_intro_singleton; eauto.
   apply atom_store_to_lvar_store_closed.
+Qed.
+
+Lemma ty_denote_gas_over_ret_fvar_fiber_stable
+    gas (Σ : lty_env) b φ y X σ
+    (my mfib : WfWorldT) :
+  lty_env_closed Σ ->
+  y ∉ qual_dom φ ->
+  formula_fv (over_open_body φ y) ⊆ X ->
+  res_fiber_from_projection my X σ mfib ->
+  my ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar y)) ->
+  mfib ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) (tret (vfvar y)).
+Proof.
+  intros HΣclosed Hyφ HbodyX Hproj Hden.
+  apply ty_denote_gas_over_ret_fvar_self_body_iff.
+  - exact HΣclosed.
+  - exact Hyφ.
+  - split.
+    + eapply ty_denote_gas_zero_res_subset.
+      * eapply res_subset_fiber_source; eauto.
+      * apply ty_denote_gas_zero_of_guard.
+        eapply ty_denote_gas_guard. exact Hden.
+    + eapply fiberwise_stable_on_over_open_body; eauto.
+      eapply ty_denote_gas_over_ret_fvar_self_body; eauto.
+Qed.
+
+Lemma ty_denote_gas_over_result_body_elim
+    gas (Σ : lty_env) b φ e r
+    (m mr : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_tm e ->
+  r ∉ world_dom (m : WorldT) ->
+  r ∉ fv_tm e ->
+  r ∉ lvars_fv (dom (relevant_env Σ (CTOver b φ) e)) ->
+  r ∉ qual_dom φ ->
+  world_dom (mr : WorldT) = world_dom (m : WorldT) ∪ {[r]} ->
+  res_restrict mr (world_dom (m : WorldT)) = m ->
+  mr ⊨ expr_result_formula_at
+        (dom (relevant_env Σ (CTOver b φ) e)) e (LVFree r) ->
+  m ⊨ ty_denote_gas (S gas) Σ (CTOver b φ) e ->
+  mr ⊨ over_open_body φ r.
+Proof.
+  intros HΣclosed Hlce Hrm Hre HrΣ Hrφ Hdom Hbase Hres Hden.
+  cbn [ty_denote_gas] in Hden.
+  rewrite res_models_and_iff in Hden.
+  destruct Hden as [_ Hforall].
+  pose proof (result_first_forall_impl_open_elim
+    m mr r
+    (expr_result_formula_at
+      (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e)))
+      (tm_shift 0 e) (LVBound 0))
+    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))
+    Hforall Hrm Hdom Hbase) as Helim.
+  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
+  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
+  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
+  2:{ exact Hlce. }
+  2:{ exact Hre. }
+  rewrite (lvars_shift_from_lc_eq 0
+    (dom (relevant_env Σ (CTOver b φ) e))) in Helim
+    by (apply relevant_env_closed; exact HΣclosed).
+  specialize (Helim Hres).
+  rewrite formula_open_over_self_body_normalize in Helim.
+  - exact Helim.
+  - intros Hrvars. apply Hrφ.
+    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
+Qed.
+
+Lemma ty_denote_gas_under_result_body_elim
+    gas (Σ : lty_env) b φ e r
+    (m mr : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_tm e ->
+  r ∉ world_dom (m : WorldT) ->
+  r ∉ fv_tm e ->
+  r ∉ lvars_fv (dom (relevant_env Σ (CTUnder b φ) e)) ->
+  r ∉ qual_dom φ ->
+  world_dom (mr : WorldT) = world_dom (m : WorldT) ∪ {[r]} ->
+  res_restrict mr (world_dom (m : WorldT)) = m ->
+  mr ⊨ expr_result_formula_at
+        (dom (relevant_env Σ (CTUnder b φ) e)) e (LVFree r) ->
+  m ⊨ ty_denote_gas (S gas) Σ (CTUnder b φ) e ->
+  mr ⊨ under_open_body φ r.
+Proof.
+  intros HΣclosed Hlce Hrm Hre HrΣ Hrφ Hdom Hbase Hres Hden.
+  cbn [ty_denote_gas] in Hden.
+  rewrite res_models_and_iff in Hden.
+  destruct Hden as [_ Hforall].
+  pose proof (result_first_forall_impl_open_elim
+    m mr r
+    (expr_result_formula_at
+      (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e)))
+      (tm_shift 0 e) (LVBound 0))
+    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))
+    Hforall Hrm Hdom Hbase) as Helim.
+  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
+  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
+  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
+  2:{ exact Hlce. }
+  2:{ exact Hre. }
+  rewrite (lvars_shift_from_lc_eq 0
+    (dom (relevant_env Σ (CTUnder b φ) e))) in Helim
+    by (apply relevant_env_closed; exact HΣclosed).
+  specialize (Helim Hres).
+  rewrite formula_open_under_self_body_normalize in Helim.
+  - exact Helim.
+  - intros Hrvars. apply Hrφ.
+    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
 Qed.
 
 Lemma arrow_value_persist_over_arg_apply_singleton
