@@ -102,7 +102,7 @@ Proof.
       symmetry. exact Haσ.
 Qed.
 
-Local Lemma res_fiber_from_projection_world_dom
+Lemma res_fiber_from_projection_world_dom
     (m mfib : WfWorldT) (X : aset) (σ : StoreT) :
   res_fiber_from_projection m X σ mfib ->
   world_dom (mfib : WorldT) = world_dom (m : WorldT).
