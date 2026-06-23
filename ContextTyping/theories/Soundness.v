@@ -23,7 +23,7 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import PrimOpContext Typing SoundnessLam SoundnessApp SoundnessAppD
-  SoundnessMatch SoundnessFix.
+  SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -1019,6 +1019,7 @@ Proof.
   - eapply fundamental_const_case; eauto.
   - eapply fundamental_sub_case; eauto.
   - eapply fundamental_ctx_sub_case; eauto.
+  - eapply fundamental_persist_intro_case; eauto.
   - eapply fundamental_let_case; eauto using typing_wf_under.
   - eapply fundamental_letd_case; eauto using typing_wf_under.
   - eapply fundamental_lam_case; eauto.

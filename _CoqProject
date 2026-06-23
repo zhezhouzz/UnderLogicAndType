@@ -126,5 +126,6 @@ ContextTyping/theories/SoundnessFixOpen.v
 ContextTyping/theories/SoundnessFixApply.v
 ContextTyping/theories/SoundnessFixSelf.v
 ContextTyping/theories/SoundnessFix.v
+ContextTyping/theories/SoundnessPersist.v
 ContextTyping/theories/Soundness.v
 ContextTyping/theories/SoundnessConcrete.v

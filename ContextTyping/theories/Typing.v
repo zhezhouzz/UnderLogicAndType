@@ -261,6 +261,15 @@ Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm �
       ctx_sub_under Σ (fv_tm e ∪ fv_cty τ) Γ1 Γ2 →
       has_context_type Φ Σ Γ1 e τ
 
+  (** T-PersistIntro.  Persistency introduction is value-only: arbitrary
+      terms may have multiple possible results, while [ret v] exposes one
+      result once the visible context resource is persistent. *)
+  | CT_PersistIntro Γ v τ :
+      context_typing_wf Σ Γ (tret v) (CTPersist τ) →
+      persistent_formula (ctx_denote_under Σ Γ) →
+      has_context_type Φ Σ Γ (tret v) τ →
+      has_context_type Φ Σ Γ (tret v) (CTPersist τ)
+
   (** T-Let.  Standard additive/bunched let. *)
   | CT_Let Γ τ1 τ2 e1 e2 (L : aset) :
       context_typing_wf Σ Γ (tlete e1 e2) τ2 →
