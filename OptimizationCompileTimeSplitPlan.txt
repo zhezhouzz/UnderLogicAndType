@@ -1,0 +1,102 @@
+# Compile-Time And File-Splitting Optimization Plan
+
+## Purpose
+
+This optimization pass uses `TIMED=1` and Rocq `-time` data to reduce compile
+time and keep large files navigable.  File splitting should follow semantic
+boundaries, not arbitrary line counts.
+
+This pass does not delete lemmas.  When a file is split, keep the old public
+file as a lightweight re-export/orchestration file unless the user explicitly
+asks otherwise.
+
+## Skill Guidance Used
+
+- Use 50 second focused checks.
+- If a proof times out or progress is unclear, use `-time`.
+- Stop after four timing/debugging rounds and reassess.
+- Split oversized files or decompose lemmas instead of turning timing into the
+  proof strategy.
+
+## Current Hotspots By Line Count
+
+Current largest files:
+
+- `Denotation/theories/TypePersist.v` (~6500 lines)
+- `Denotation/theories/TypeEquiv.v` (~1900 lines)
+- `Denotation/theories/Context.v` (~1850 lines)
+- `ContextBasicDenotation/theories/RelevantEnv.v` (~1800 lines)
+- `ContextBasicDenotation/theories/TermTLet.v` (~1800 lines)
+- `ContextLogic/theories/FormulaFiberwise.v` (~1700 lines)
+- `ContextTyping/theories/SoundnessFixSelf.v` (~1650 lines)
+- `Denotation/theories/TypeDenote.v` (~1600 lines)
+
+## File Split Candidates
+
+1. `Denotation/theories/TypePersist.v`
+   - `TypePersistBase.v`: core `CTPersist` denotation facts and elim/intro.
+   - `TypePersistOverBody.v`: `over_open_body` / `under_open_body` facts.
+   - `TypePersistArrow.v`: Arrow-related persistent-over facts.
+   - `TypePersistWand.v`: Wand-related persistent-over facts.
+   - `TypePersist.v`: stable re-export.
+
+2. `ContextLogic/theories/FormulaFiberwise.v`
+   - `FormulaFiberwiseBase.v`: definition and simple constructors.
+   - `FormulaFiberwiseConnectives.v`: `FImpl/FStar/FPlus/FForall/FBWand`.
+   - `FormulaFiberwiseAtoms.v`: `FAtom`, `FFiberAtom`, `FOver/FUnder`.
+   - `FormulaFiberwise.v`: stable re-export.
+
+3. `ContextTyping/theories/SoundnessPersist.v`
+   - `SoundnessPersistBase.v`: ret-value singleton/result-slot support.
+   - `SoundnessPersistIntro.v`: `ty_denote_under_value_persist_intro`.
+   - `SoundnessPersist.v`: stable re-export and Fundamental case.
+
+4. `Denotation/theories/TypeDenote.v`
+   - Do not split first; it is central and recursive.
+   - Prefer constructor-specific helper lemmas before splitting.
+
+## Compile-Time Optimization Workflow
+
+1. Measure before changing.
+
+   ```sh
+   timeout 180s make TIMED=1
+   ```
+
+2. For a slow file, run focused timing.
+
+   ```sh
+   timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo
+   ```
+
+3. If a specific proof is slow, run the underlying Rocq command with `-time`
+   or inspect generated make output to find the slow sentence.
+
+4. Replace broad solver calls only after identifying the slow shape.
+   - Add a small lemma if the same side condition appears twice.
+   - Add a local deterministic tactic only for normalized goals.
+
+5. Re-measure and record before/after in this file or a follow-up status
+   section.
+
+## Optimization Targets
+
+- `TypePersist.v`
+  - likely high compile-time risk because it is the new persistence hotspot.
+- `FormulaFiberwise.v`
+  - many resource/fiber proofs; split and lower resource facts if slow.
+- `SoundnessPersist.v`
+  - large proof-local store/freshness chains; lower before splitting.
+- `TypeDenote.v`
+  - recursive proof cost; optimize normalization helpers before splitting.
+
+## Tests
+
+```sh
+timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo
+timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
+timeout 50s make TIMED=1 Denotation/theories/TypeDenote.vo
+timeout 180s make TIMED=1
+```
+

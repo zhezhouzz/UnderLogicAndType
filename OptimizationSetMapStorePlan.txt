@@ -1,0 +1,96 @@
+# Set / Map / Store / Resource Optimization Plan
+
+## Purpose
+
+This optimization pass reduces repeated and fragile stdpp set/map/store proofs.
+The intent is not to hide semantic proof work in a giant solver.  Instead, we
+add small deterministic lemmas and folder-local tactics for recurring algebraic
+facts.
+
+This pass does not delete lemmas.  Existing one-off facts can remain; repeated
+proofs should be redirected to shared facts.
+
+## Skill Guidance Used
+
+- Repeated set/store/freshness proof patterns should move downward.
+- Keep `res_subset`, `res_restrict`/Kripke projection, and fiber observation
+  domains distinct.
+- If a solver gets slow, identify the exact slow sentence with `-time`, then
+  replace it by a small lemma or deterministic local tactic.
+
+## Current Repo Targets
+
+- `Denotation/theories/DenotationSetMapFacts.v`
+- `ContextTyping/theories/SoundnessSetMapFacts.v`
+- `Denotation/theories/TypeEquivTermResult.v`
+- `Denotation/theories/TypeEquivFiberBaseResult.v`
+- `Denotation/theories/TypeEquivFiberBaseProjected.v`
+- `ContextLogic/theories/FormulaFiberwise.v`
+- `ContextTyping/theories/SoundnessPersist.v`
+- `ContextTyping/theories/SoundnessApp.v`
+- `ContextTyping/theories/SoundnessAppD.v`
+- `ContextTyping/theories/SoundnessFixApply.v`
+
+## Concrete Optimization Work
+
+1. Expand Denotation-level set/map facts.
+   - store restriction after insert
+   - store restriction over union/singleton
+   - lookup after disjoint singleton union
+   - output lookup from result extension witness
+   - base restriction from result extension
+
+2. Expand Resource/fiber facts.
+   - fiber of opened world restricts to fiber of base world
+   - fiber and singleton output extension commute
+   - projection equality implies formula transfer for formulas with bounded FV
+   - `world_dom` facts for extension/restriction/fiber worlds
+
+3. Expand Soundness fresh/domain facts.
+   - destructors for `fresh_for` big unions
+   - ctx-erasure fresh wrappers
+   - `atom_env_to_lty_env` insert/lookup wrappers
+   - `relevant_env` fresh wrappers for Arrow/Wand/CTPersist value bodies
+
+4. Add deterministic local tactics.
+   - `denotation_set_norm`
+   - `denotation_set_solve`
+   - `denotation_store_norm`
+   - `soundness_fresh_norm`
+   - `soundness_fresh_solve`
+   - `soundness_ctx_dom_solve`
+
+5. Use solvers only after normalization.
+   - Avoid broad `set_solver` calls in large contexts.
+   - Prefer clearing irrelevant semantic hypotheses before set/map solving.
+
+## Scan Commands
+
+```sh
+rg -n "set_solver|better_set_solver|lookup_insert|lookup_union|store_restrict|storeA_|res_restrict|res_extend_by|world_dom" \
+  Denotation ContextTyping ContextLogic ContextBasicDenotation
+```
+
+## Priority Replacements
+
+- `SoundnessPersist.v`
+  - many ret-value result-slot store equalities should become BasicDenotation or
+    Resource facts.
+- `FormulaFiberwise.v`
+  - several fiber/restrict world-shape assertions should be resource lemmas.
+- `TypeEquivTermResult.v`
+  - result extension store reconstruction should use shared Denotation facts.
+- `SoundnessAppD.v`
+  - product/star resource fresh facts should use Soundness wrappers.
+
+## Tests
+
+```sh
+timeout 50s make TIMED=1 Denotation/theories/DenotationSetMapFacts.vo
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessSetMapFacts.vo
+timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermResult.vo
+timeout 50s make TIMED=1 Denotation/theories/TypeEquivFiberBaseResult.vo
+timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
+```
+

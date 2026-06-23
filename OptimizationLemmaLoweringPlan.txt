@@ -1,0 +1,115 @@
+# Lemma Lowering And Generalization Plan
+
+## Purpose
+
+This optimization pass moves reusable proof facts down to the lowest layer
+where their statements make sense.  The goal is to keep Soundness proofs focused
+on typing/semantic orchestration, while store, qualifier, resource, syntax,
+open/shift, and formula facts live closer to their definitions.
+
+This pass does not delete lemmas.  Existing upper-layer lemmas should be kept as
+compatibility wrappers when callers already use their names.
+
+## Skill Guidance Used
+
+- Prefer lower-layer, reusable statements over proof-local store/set chains.
+- For dependent records, prove raw carrier facts first and keep dependent
+  wrappers thin.
+- Generalize repeated `assert`/`pose` patterns into lower-layer lemmas.
+- Do not silently confuse subset-style facts with Kripke/projection/fiber facts.
+
+## Layering Rules
+
+- `ContextStore`
+  - raw store restriction, insert, lookup, dom, filter/map facts.
+- `ContextAlgebra`
+  - resource restriction, product, sum, extension, fiber, projection facts.
+- `ContextQualifier`
+  - qualifier FV/open/msubst/swap/store-level lookup facts.
+- `ContextLogic`
+  - formula syntax/semantics, `FPersist`, `FFibVars`, `FOver/FUnder`,
+    `fiberwise_joinable_on`, connectives.
+- `ContextBasicDenotation`
+  - term result/total/basic typing atoms and their formula-level wrappers.
+- `Denotation`
+  - type-denotation facts, result-first type transport, context denotation.
+- `ContextTyping`
+  - only facts that genuinely require `has_context_type` or
+    `context_typing_wf`.
+
+## Current Repo Targets
+
+- `ContextTyping/theories/SoundnessPersist.v`
+  - ret-value result slot construction and singleton projection facts should be
+    lowered to BasicDenotation/Logic/Algebra where possible.
+- `Denotation/theories/TypePersist.v`
+  - `over_open_body`/`under_open_body` facts may belong in Denotation, but
+    generic `fiberwise_joinable_on` facts belong in Logic.
+- `ContextLogic/theories/FormulaFiberwise.v`
+  - resource/fiber commute lemmas should move to `ContextAlgebra` if they do
+    not mention formulas.
+- `Denotation/theories/ConstDenoteBase.v`
+  - qualifier open/lookup and empty-basic canonical facts should be below
+    Denotation if possible.
+- `ContextTyping/theories/SoundnessFixBase.v`
+  - store lookup and qualifier-open details should be lowered.
+- `Denotation/theories/TypeEquivTermResult.v`
+  - result extension store decomposition should move to
+    `DenotationSetMapFacts` or `ContextAlgebra`.
+
+## Concrete Optimization Work
+
+1. Audit each long lemma for non-local facts.
+   - If a proof step mentions only store/resource operations, lower it.
+   - If a proof step mentions only qualifier/open syntax, lower it.
+   - If a proof step mentions formula semantics but no type denotation, move it
+     to `ContextLogic`.
+   - If a proof step mentions `ty_denote_gas`, keep it in Denotation.
+
+2. Generalize shape-specific helpers.
+   - Replace facts specialized to `vfix`, `tapp`, `tlet`, or `CTOver` when the
+     proof only needs a generic term/formula/resource shape.
+   - Keep the old specialized lemma as a wrapper.
+
+3. Separate raw and dependent facts.
+   - First prove raw store/world equality.
+   - Then prove a thin `WfWorldT` or `LWorldOn` wrapper.
+
+4. Add compatibility wrappers instead of deleting.
+   - Upper-layer theorem names stay stable.
+   - Wrappers should be short and documented as compatibility wrappers.
+
+## Candidate Lemma Families To Lower
+
+- Store:
+  - `store_restrict_insert_fresh_eq`
+  - `store_restrict_union_singleton_lookup`
+  - `store_restrict_twice_subset_eq`
+- Resource:
+  - `res_fiber_from_projection_restrict_open_world`
+  - `res_fiber_open_world_shape`
+  - singleton projection push/pull for ret-value result slots
+- Qualifier:
+  - `qual_open_atom_vars_diff_bound`
+  - qualifier lookup after open/msubst
+- Logic:
+  - `fiberwise_joinable_on_*`
+  - `FPersist` elimination/duplication laws
+  - `FFibVars`/fiber projection commute facts
+- BasicDenotation:
+  - `expr_result_formula_at_ret_value_*`
+  - `expr_total_formula_ret_value_*`
+  - basic typing atom joinability
+
+## Tests
+
+```sh
+timeout 50s make TIMED=1 ContextStore/StoreRestrict.vo
+timeout 50s make TIMED=1 ContextAlgebra/theories/ResourceExtension.vo
+timeout 50s make TIMED=1 ContextQualifier/theories/Qualifier.vo
+timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo
+timeout 50s make TIMED=1 ContextBasicDenotation/theories/BasicFormulaFiberwise.vo
+timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
+```
+

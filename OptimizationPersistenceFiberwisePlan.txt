@@ -1,0 +1,101 @@
+# Persistence And Fiberwise Joinability Optimization Plan
+
+## Purpose
+
+This optimization pass focuses on the new persistence layer:
+
+- `FPersist`
+- `CTPersist`
+- `persistent_formula`
+- `fiberwise_joinable_on`
+- persistent intro for values
+- persistent-over parameter reasoning
+
+The goal is to make the new persistence proofs reusable and reviewable without
+deleting the lemmas that were introduced during the first proof pass.
+
+## Skill Guidance Used
+
+- Build semantic helper lemmas with short statements.
+- Keep fiber observation domains distinct from resource subset/projection.
+- Normalize proof boundaries before extracting helpers.
+- Lower Logic-level facts from Denotation/Soundness into Logic/Algebra when
+  possible.
+
+## Current Repo Targets
+
+- `ContextLogic/theories/FormulaConnectivesHigher.v`
+  - persistent algebra laws.
+- `ContextLogic/theories/FormulaFiberwise.v`
+  - joinability predicate and connective closure.
+- `ContextBasicDenotation/theories/BasicFormulaFiberwise.v`
+  - atom/guard joinability wrappers.
+- `Denotation/theories/TypePersist.v`
+  - `CTPersist` denotation and persistent-over facts.
+- `ContextTyping/theories/SoundnessPersist.v`
+  - value-only `CT_PersistIntro` soundness.
+- `ContextTyping/theories/Typing.v`
+  - `CT_PersistIntro` rule.
+
+## Concrete Optimization Work
+
+1. Split persistence proof layers.
+   - Logic persistence laws remain in Logic.
+   - Type-level `CTPersist` facts remain in Denotation.
+   - Typing rule soundness remains in ContextTyping.
+
+2. Normalize type-level persistence statements.
+   - Use `ty_denote` layer when gas differences are irrelevant.
+   - Use normalized body abbreviations for `CTOver`/`CTUnder` result bodies.
+   - Avoid public statements with raw `formula_open` or `lvars_open`.
+
+3. Strengthen reusable singleton/fiber lemmas.
+   - ret-value result slot singleton construction;
+   - singleton projection implies `FPersist`;
+   - fiberwise aggregation through `over_open_body` and `under_open_body`;
+   - opened world/fiber commute for `FForall`.
+
+4. Make persistent intro proof shorter.
+   - Move ret-value result extension facts down.
+   - Move context observation coverage facts into SoundnessSetMapFacts if they
+     require typing, otherwise lower them.
+   - Keep `fundamental_persist_intro_case` as a short orchestration lemma.
+
+5. Preserve all persistence lemmas.
+   - Do not delete failed or narrow lemmas during this pass.
+   - If a lemma is too specific, keep it as a wrapper over a more general fact.
+   - Add comments explaining why arbitrary Arrow result generalization is not
+     claimed.
+
+## Current Conceptual Boundaries
+
+- `FPersist P` is Logic-level singleton projection persistence.
+- `CTPersist τ` is Type-level result-first persistence.
+- Value intro is allowed only for `tret v`, not arbitrary terms.
+- General Arrow reverse for persistent over parameters is not claimed; Wand and
+  joinable-result facts should be handled separately.
+- Dependent precise-context duplication remains out of this optimization pass.
+
+## Immediate Refactor Candidates
+
+- `TypePersist.v`
+  - split into persistence base, over/under body facts, arrow/wand facts.
+- `SoundnessPersist.v`
+  - extract ret-value singleton result helper to BasicDenotation or
+    Denotation.
+- `FormulaFiberwise.v`
+  - lower resource-only fiber-shape lemmas to ContextAlgebra.
+- `BasicFormulaFiberwise.v`
+  - add missing wrappers for guards that Soundness/Denotation uses repeatedly.
+
+## Tests
+
+```sh
+timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo
+timeout 50s make TIMED=1 ContextBasicDenotation/theories/BasicFormulaFiberwise.vo
+timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo
+timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
+timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
+timeout 180s make TIMED=1
+```
+
