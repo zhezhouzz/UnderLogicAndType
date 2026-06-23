@@ -315,6 +315,28 @@ Proof.
     apply Hsub in Ha. set_solver.
 Qed.
 
+Lemma fiberwise_joinable_on_over_open_body X φ z :
+  z ∉ X ->
+  fiberwise_joinable_on X (over_open_body φ z).
+Proof.
+  intros HzX.
+  unfold over_open_body.
+  eapply fiberwise_joinable_on_fibvars.
+  - rewrite formula_fv_over, formula_fv_atom.
+    intros a Ha.
+    apply elem_of_intersection in Ha as [HaX Ha].
+    apply lvars_fv_elem.
+    apply elem_of_difference. split.
+    + apply lvars_fv_elem. exact Ha.
+    + intros Haz. apply elem_of_singleton in Haz.
+      inversion Haz. subst a.
+    apply HzX.
+      exact HaX.
+  - intros σ.
+    cbn [formula_msubst_store].
+    apply fiberwise_joinable_on_over_atom.
+Qed.
+
 Lemma formula_fv_under_open_body_subset φ z :
   formula_fv (under_open_body φ z) ⊆ qual_dom φ ∪ {[z]}.
 Proof.
@@ -3293,6 +3315,61 @@ Proof.
   { rewrite Hsingle. reflexivity. }
   rewrite res_restrict_dom, Hdomσ in Hdom_eq.
   set_solver.
+Qed.
+
+Local Lemma res_fiber_from_projection_world_dom
+    (m mfib : WfWorldT) (X : aset) (σ : StoreT) :
+  res_fiber_from_projection m X σ mfib ->
+  world_dom (mfib : WorldT) = world_dom (m : WorldT).
+Proof.
+  intros [_ Hfib].
+  pose proof (f_equal world_dom Hfib) as Hdom.
+  cbn [raw_fiber rawA_fiber world_dom worldA_dom] in Hdom.
+  exact Hdom.
+Qed.
+
+Lemma res_fiber_from_projection_restrict_singleton
+    (m mfib : WfWorldT) X σ :
+  dom (σ : StoreT) = X ->
+  res_fiber_from_projection m X σ mfib ->
+  res_restrict mfib X =
+    (exist _ (singleton_world σ) (wf_singleton_world σ) : WfWorldT).
+Proof.
+  intros Hdomσ Hproj.
+  apply wfworld_ext. apply world_ext.
+  - rewrite res_restrict_dom.
+    rewrite (res_fiber_from_projection_world_dom m mfib X σ Hproj).
+    destruct Hproj as [Hσproj _].
+    pose proof (wfworld_store_dom (res_restrict m X) σ Hσproj)
+      as Hdom_proj.
+    change (dom (σ : StoreT) = world_dom (res_restrict m X : WorldT))
+      in Hdom_proj.
+    rewrite res_restrict_dom in Hdom_proj.
+    cbn [world_dom raw_world raw_worldA singleton_world singleton_worldA].
+    symmetry. exact Hdom_proj.
+  - intros τ. split.
+    + intros [τ0 [Hτ0 Hτ]].
+      pose proof (res_fiber_from_projection_store_restrict
+        m mfib X σ τ0 Hproj Hτ0) as Hτ0σ.
+      change (store_restrict τ0 (dom (σ : StoreT)) = σ) in Hτ0σ.
+      rewrite Hdomσ in Hτ0σ.
+      assert (τ = σ) as ->.
+      { rewrite <- Hτ. exact Hτ0σ. }
+      unfold singleton_world. cbn [raw_world raw_worldA singleton_worldA].
+      reflexivity.
+    + intros Hτ.
+      unfold singleton_world in Hτ.
+      cbn [raw_world raw_worldA singleton_worldA] in Hτ.
+      rewrite Hτ.
+      destruct Hproj as [[τ0 [Hτ0 Hτ0X]] Hfib].
+      exists τ0. split.
+      * destruct mfib as [wmfib Hwmfib].
+        cbn [proj1_sig raw_world raw_worldA world_stores] in Hfib |- *.
+        change (wmfib = rawA_fiber (m : WorldT) σ) in Hfib.
+        rewrite Hfib. split; [exact Hτ0|].
+        change (store_restrict τ0 (dom (σ : StoreT)) = σ).
+        rewrite Hdomσ. exact Hτ0X.
+      * exact Hτ0X.
 Qed.
 
 Lemma store_singleton_dom_value y (v : value) :

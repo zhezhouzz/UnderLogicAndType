@@ -920,6 +920,49 @@ Proof.
   exact Hσ.
 Qed.
 
+Lemma res_models_over_FAtom_intro_store_holds (m : WfWorldT) q :
+  formula_scoped_in_world m (FOver (FAtom q)) ->
+  (forall σ, (m : WorldT) σ -> qualifier_holds_store q σ) ->
+  m ⊨ FOver (FAtom q).
+Proof.
+  intros Hscope Hholds.
+  destruct (world_wf m) as [[σ0 Hσ0] Hdom].
+  set (A := world_dom (m : WorldT)).
+  assert (Hdom0 : dom (σ0 : StoreT) = A).
+  { subst A. apply Hdom. exact Hσ0. }
+  assert (Hholds0 : qualifier_holds_store q σ0).
+  { apply Hholds. exact Hσ0. }
+  set (mo := qualifier_saturated_world A q σ0 Hdom0 Hholds0).
+  unfold res_models. cbn [formula_measure res_models_fuel].
+  split; [exact Hscope|].
+  exists mo. split.
+  - split.
+	    + subst mo A.
+	      cbn [qualifier_saturated_world qualifier_saturated_raw_world
+	        raw_world world_dom].
+      reflexivity.
+	    + intros σ Hσ.
+	      subst mo A.
+	      cbn [qualifier_saturated_world qualifier_saturated_raw_world
+	        raw_world world_stores].
+      split.
+      * apply Hdom. exact Hσ.
+      * apply Hholds. exact Hσ.
+  - unfold res_models. cbn [formula_measure res_models_fuel].
+    split.
+    + unfold formula_scoped_in_world in Hscope |- *.
+      rewrite formula_fv_over, formula_fv_atom in Hscope.
+      rewrite formula_fv_atom.
+	      subst mo A.
+	      cbn [qualifier_saturated_world qualifier_saturated_raw_world
+	        raw_world world_dom].
+      exact Hscope.
+    + apply qualifier_saturated_world_exact.
+      unfold formula_scoped_in_world in Hscope.
+      rewrite formula_fv_over, formula_fv_atom in Hscope.
+      subst A. exact Hscope.
+Qed.
+
 Lemma res_models_FFiberAtom_fibers_iff (m : WfWorldT) q :
   m ⊨ FFiberAtom q <->
   formula_scoped_in_world m (FFiberAtom q) /\

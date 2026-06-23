@@ -844,7 +844,31 @@ Proof.
   cbn [formula_measure res_models_fuel] in Hover.
   destruct Hover as [_ [n [Hle HnP]]].
   eapply Hdown; [exact Hle|].
-  unfold res_models. models_fuel_irrel HnP.
+    unfold res_models. models_fuel_irrel HnP.
+Qed.
+
+Lemma fiberwise_joinable_on_over_atom X q :
+  fiberwise_joinable_on X (FOver (FAtom q)).
+Proof.
+  intros m Hfib.
+  assert (Hscope : formula_scoped_in_world m (FOver (FAtom q))).
+  {
+    destruct (world_wf m) as [[σ Hσ] _].
+    destruct (res_fiber_from_projection_of_store_any m X σ Hσ)
+      as [mfib [Hproj _]].
+    pose proof (Hfib (store_restrict σ X) mfib Hproj) as Hover.
+    pose proof (res_models_scoped _ _ Hover) as Hscope_fib.
+    unfold formula_scoped_in_world in Hscope_fib |- *.
+    rewrite (res_fiber_from_projection_world_dom m mfib X
+      (store_restrict σ X) Hproj) in Hscope_fib.
+    exact Hscope_fib.
+  }
+  eapply res_models_over_FAtom_intro_store_holds; [exact Hscope|].
+  intros τ Hτ.
+  destruct (res_fiber_from_projection_of_store_any m X τ Hτ)
+    as [mfib [Hproj Hτfib]].
+  pose proof (Hfib (store_restrict τ X) mfib Hproj) as Hover.
+  eapply res_models_over_FAtom_store_holds; [exact Hover|exact Hτfib].
 Qed.
 
 Lemma fiberwise_joinable_on_star_persistent_l X P Q :
