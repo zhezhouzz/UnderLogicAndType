@@ -97,3 +97,9 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
 timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
 ```
 
+## Implementation Status
+
+- [x] Moved the normalized `ret v` relevant-env insert/restrict equality to
+  `RelevantEnv.v`, so the value-persist Soundness proof no longer owns that
+  raw `relevant_env` unfolding.  `SoundnessPersist.v` keeps the old lemma name
+  as a short wrapper.  Verified `RelevantEnv.vo` and `SoundnessPersist.vo`.

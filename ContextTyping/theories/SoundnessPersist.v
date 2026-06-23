@@ -178,26 +178,7 @@ Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :
     (<[LVFree y := erase_ty τ]> Σ)
     (relevant_lvars τ (tret (vfvar y))).
 Proof.
-  intros Hy.
-  unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
-  apply storeA_map_eq. intros lv.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (lv ∈ context_ty_lvars τ ∪ tm_lvars (tret (vfvar y))))
-    as [Hvrel|Hvrel]; [|reflexivity].
-  destruct (decide (lv = LVFree y)) as [->|Hvy].
-  - rewrite !lookup_insert.
-    destruct decide as [_|Hbad]; [reflexivity|contradiction].
-  - rewrite !lookup_insert_ne by congruence.
-    rewrite storeA_restrict_lookup.
-    destruct (decide (lv ∈ context_ty_lvars τ ∪ tm_lvars (tret v)))
-      as [Hvsrc|Hvsrc]; [reflexivity|].
-    exfalso.
-    apply elem_of_union in Hvrel as [Hvτ|Hvy_lvars].
-    + apply Hvsrc. apply elem_of_union_l. exact Hvτ.
-    + cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys]
-        in Hvy_lvars.
-      apply elem_of_singleton in Hvy_lvars. subst lv.
-      contradiction.
+  apply RelevantEnv.insert_relevant_env_ret_value_restrict_eq.
 Qed.
 
 Lemma res_restrict_singleton_push_ret_value_result

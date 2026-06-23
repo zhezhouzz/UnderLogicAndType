@@ -99,3 +99,10 @@ timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
 timeout 180s make TIMED=1
 ```
 
+## Implementation Status
+
+- [x] Began shortening the value-only persistent intro support by lowering the
+  value-specific relevant-env normalization out of `SoundnessPersist.v`.
+  `TypePersist.vo` currently compiles but takes about 75s, so later
+  compile-time work should split or optimize that file before more large
+  persistence proofs are added.
