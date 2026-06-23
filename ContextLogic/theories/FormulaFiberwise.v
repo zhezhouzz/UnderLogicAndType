@@ -825,6 +825,32 @@ Proof.
   unfold res_models. models_fuel_irrel HnP.
 Qed.
 
+Lemma fiberwise_joinable_on_under_any X P :
+  fiberwise_joinable_on X (FUnder P).
+Proof.
+  intros m Hfib.
+  destruct (world_wf m) as [[σ Hσ] _].
+  destruct (res_fiber_from_projection_of_store_any m X σ Hσ)
+    as [mfib [Hproj _]].
+  pose proof (Hfib (store_restrict σ X) mfib Hproj) as Hunder_fib.
+  unfold res_models in Hunder_fib |- *.
+  cbn [formula_measure res_models_fuel] in Hunder_fib |- *.
+  destruct Hunder_fib as [Hscope_fib [n [Hn_mfib HnP]]].
+  split.
+  - unfold formula_scoped_in_world in Hscope_fib |- *.
+    rewrite (res_fiber_from_projection_world_dom m mfib X
+      (store_restrict σ X) Hproj) in Hscope_fib.
+    exact Hscope_fib.
+  - exists n. split; [|exact HnP].
+    pose proof (res_subset_fiber_source m mfib X (store_restrict σ X)
+      Hproj) as Hmfib_m.
+    destruct Hn_mfib as [Hdom_n Hstores_n].
+    destruct Hmfib_m as [Hdom_fib Hstores_fib].
+    split.
+    + transitivity (world_dom (mfib : WorldT)); assumption.
+    + intros ρ Hρ. apply Hstores_fib, Hstores_n. exact Hρ.
+Qed.
+
 Lemma fiberwise_joinable_under P :
   subset_upward_closed_formula P ->
   fiberwise_joinable P ->

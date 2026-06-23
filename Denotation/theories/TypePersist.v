@@ -357,6 +357,26 @@ Proof.
     apply Hsub in Ha. set_solver.
 Qed.
 
+Lemma fiberwise_joinable_on_under_open_body X φ z :
+  z ∉ X ->
+  fiberwise_joinable_on X (under_open_body φ z).
+Proof.
+  intros HzX.
+  unfold under_open_body.
+  eapply fiberwise_joinable_on_fibvars.
+  - rewrite formula_fv_under, formula_fv_atom.
+    intros a Ha.
+    apply elem_of_intersection in Ha as [HaX Ha].
+    apply lvars_fv_elem.
+    apply elem_of_difference. split.
+    + apply lvars_fv_elem. exact Ha.
+    + intros Haz. apply elem_of_singleton in Haz.
+      inversion Haz. subst a. exact (HzX HaX).
+  - intros σ.
+    cbn [formula_msubst_store].
+    apply fiberwise_joinable_on_under_any.
+Qed.
+
 Lemma ty_denote_gas_persist_open_result
     gas (Σ : lty_env) τ e y (m my : WfWorldT) :
   m ⊨ ty_denote_gas (S gas) Σ (CTPersist τ) e ->

@@ -1244,6 +1244,55 @@ all: try assumption.
 all: try typeclasses eauto.
 Qed.
 
+Lemma expr_result_formula_at_fiber_stable
+    X D e y (m mfib : WfWorldT) σX :
+  X ⊆ lvars_fv D ->
+  tm_lvars e ⊆ D ->
+  LVFree y ∉ D ->
+  res_fiber_from_projection m X σX mfib ->
+  m ⊨ expr_result_formula_at D e (LVFree y) ->
+  mfib ⊨ expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HXD HeD HyD Hproj Hres.
+  pose proof Hres as Hres_scope.
+  unfold expr_result_formula_at in Hres_scope.
+  apply res_models_FFibVars_iff in Hres_scope as [Hscope [HlcD _]].
+  assert (Hdom_fib : world_dom (mfib : WorldT) = world_dom (m : WorldT)).
+  {
+    destruct Hproj as [_ Hfib_eq].
+    pose proof (f_equal world_dom Hfib_eq) as Hdom.
+    cbn [raw_fiber rawA_fiber world_dom worldA_dom] in Hdom.
+    exact Hdom.
+  }
+  eapply expr_result_formula_at_intro.
+  - exact HlcD.
+  - exact HeD.
+  - exact HyD.
+  - unfold formula_scoped_in_world in *.
+    intros a Ha. rewrite Hdom_fib. exact (Hscope a Ha).
+  - intros τ Hτ.
+    eapply expr_result_formula_at_models_elim; eauto.
+    eapply res_fiber_from_projection_store_source; eauto.
+  - intros τ v Hτ Heval.
+    assert (Hτm : (m : WorldT) τ).
+    { eapply res_fiber_from_projection_store_source; eauto. }
+    destruct (expr_result_formula_at_fiber_witness
+      D e y m HeD HyD Hres τ v Hτm Heval)
+      as [τv [Hτv_m [HτvD Hyv]]].
+    exists τv. split.
+    + pose proof Hproj as [_ Hfib_eq].
+      change ((mfib : WorldT) = raw_fiber (m : WorldT) σX) in Hfib_eq.
+      rewrite Hfib_eq. split; [exact Hτv_m|].
+      pose proof (res_fiber_from_projection_store_restrict
+        m mfib X σX τ Hproj Hτ) as HτX.
+      transitivity (store_restrict τ (dom (σX : StoreT))); [|exact HτX].
+      eapply storeA_restrict_eq_mono; [|exact HτvD].
+      intros a Ha.
+      apply HXD.
+      eapply res_fiber_from_projection_store_dom_subset; eauto.
+    + split; [exact HτvD|exact Hyv].
+Qed.
+
 Lemma expr_result_formula_at_of_result_extends_on
     D e x F (m mx : WfWorldT) :
   lc_lvars D ->
