@@ -126,7 +126,9 @@ timeout 180s make TIMED=1
   - After second split, `TypePersistWand.vo` re-export takes about 0.47s.
   - Forward takes about 14.49s.
   - Reverse takes about 49.87s and is the remaining focused hotspot.
-- [ ] Re-measured `TypePersistWandReverse.vo` during the substitution-lowering
-  batch: it still takes about 50.07s as a single focused compile.  This is not
-  caused by the lowered CoreLang lemma and remains the next compile-time
-  target if we continue optimizing persistence proofs.
+- [x] Re-measured and lightly optimized `TypePersistWandReverse.vo` by turning
+  repeated freshness side conditions into local tactics.  Focused compile time
+  moved from about 49.87-50.07s to about 46.74s in the observed run.  The file
+  remains the persistence hotspot, but further improvement should use
+  statement-level proof extraction or a finer `-time` pass rather than more
+  ad-hoc solver edits.

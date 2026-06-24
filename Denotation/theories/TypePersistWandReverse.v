@@ -9,6 +9,15 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
+Local Ltac persist_eta_fresh_from H :=
+  clear -H; set_solver.
+
+Local Ltac persist_outer_fresh_from H :=
+  clear -H; set_solver.
+
+Local Ltac persist_lvar_fresh_from H :=
+  intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
+
 Lemma wand_value_ret_fvar_persist_over_arg_to_over_arg_over_result
     gas_src gas_tgt (Σ : lty_env) bx φx br φr f Tf
     (m : WfWorldT) :
@@ -47,16 +56,20 @@ Proof.
   rewrite open_env_atoms_empty in Hηfresh.
   rewrite open_env_atoms_insert in Hdom_prod by apply lookup_empty.
   rewrite open_env_atoms_empty in Hdom_prod.
-  assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hηfresh; set_solver).
-  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by (clear -Hηfresh; set_solver).
+  assert (Hym : y ∉ world_dom (m : WorldT)) by
+    persist_eta_fresh_from Hηfresh.
+  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by
+    persist_eta_fresh_from Hηfresh.
   assert (HyΣlv : LVFree y ∉ dom (Σ : lty_env)).
   {
     intros Hbad. apply HyΣ.
     apply lvars_fv_elem. exact Hbad.
   }
-  assert (Hyφx : y ∉ qual_dom φx) by (clear -Hηfresh; set_solver).
-  assert (Hyφr : y ∉ qual_dom φr) by (clear -Hηfresh; set_solver).
-  assert (Hyf : y <> f) by (clear -Hηfresh; set_solver).
+  assert (Hyφx : y ∉ qual_dom φx) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyφr : y ∉ qual_dom φr) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyf : y <> f) by persist_eta_fresh_from Hηfresh.
   assert (Harg_over_tgt :
       n ⊨ ty_denote_gas (S gas_tgt')
         (<[LVFree y := TBase bx]> Σ)
@@ -306,16 +319,20 @@ Proof.
   rewrite open_env_atoms_empty in Hηfresh.
   rewrite open_env_atoms_insert in Hdom_prod by apply lookup_empty.
   rewrite open_env_atoms_empty in Hdom_prod.
-  assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hηfresh; set_solver).
-  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by (clear -Hηfresh; set_solver).
+  assert (Hym : y ∉ world_dom (m : WorldT)) by
+    persist_eta_fresh_from Hηfresh.
+  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by
+    persist_eta_fresh_from Hηfresh.
   assert (HyΣlv : LVFree y ∉ dom (Σ : lty_env)).
   {
     intros Hbad. apply HyΣ.
     apply lvars_fv_elem. exact Hbad.
   }
-  assert (Hyφx : y ∉ qual_dom φx) by (clear -Hηfresh; set_solver).
-  assert (Hyφr : y ∉ qual_dom φr) by (clear -Hηfresh; set_solver).
-  assert (Hyf : y <> f) by (clear -Hηfresh; set_solver).
+  assert (Hyφx : y ∉ qual_dom φx) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyφr : y ∉ qual_dom φr) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyf : y <> f) by persist_eta_fresh_from Hηfresh.
   assert (Harg_over_tgt :
       n ⊨ ty_denote_gas (S gas_tgt')
         (<[LVFree y := TBase bx]> Σ)
@@ -648,15 +665,11 @@ Proof.
   { cbn [formula_open] in Hscope_open. exact Hscope_open. }
   intros Hresult_tgt.
   assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
-  {
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    clear -Hf Hbad. set_solver.
-  }
+  { persist_lvar_fresh_from Hf. }
   assert (Hfφx : f ∉ qual_dom φx).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hfφr : f ∉ qual_dom φr).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hopened_src :
       mf ⊨ formula_open 0 f
         (FImpl
@@ -673,7 +686,7 @@ Proof.
   {
     subst Σg.
     apply Hsrc.
-    - clear -Hf. set_solver.
+    - persist_outer_fresh_from Hf.
     - exact Hdom.
     - exact Hrestrict.
   }
@@ -941,15 +954,11 @@ Proof.
   { cbn [formula_open] in Hscope_open. exact Hscope_open. }
   intros Hresult_tgt.
   assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
-  {
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    clear -Hf Hbad. set_solver.
-  }
+  { persist_lvar_fresh_from Hf. }
   assert (Hfφx : f ∉ qual_dom φx).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hfφr : f ∉ qual_dom φr).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hopened_src :
       mf ⊨ formula_open 0 f
         (FImpl
@@ -966,7 +975,7 @@ Proof.
   {
     subst Σg.
     apply Hsrc.
-    - clear -Hf. set_solver.
+    - persist_outer_fresh_from Hf.
     - exact Hdom.
     - exact Hrestrict.
   }

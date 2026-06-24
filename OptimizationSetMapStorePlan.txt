@@ -104,3 +104,8 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
   observation set to be a subset of the world domain.  Replaced the matching
   proof blocks in `FormulaFiberwise.v`.  Verified the Logic layer through
   `FormulaWorldExtension.vo`.
+- [x] Added deterministic local freshness tactics in
+  `TypePersistWandReverse.v` for the repeated Wand persistence side
+  conditions.  This keeps the hard semantic proof unchanged while removing
+  duplicated `clear ...; set_solver` blocks around fresh argument/result
+  binders.  Verified `TypePersistWandReverse.vo`.

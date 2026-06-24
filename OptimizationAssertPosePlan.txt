@@ -109,3 +109,7 @@ timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
   block in `SoundnessPersist.v` with a Denotation-layer theorem.  This removes
   the repeated ret-value result-slot lookup, restricted-store evaluation, and
   closedness assertions from the typing proof.
+- [x] Converted repeated freshness-only assertions in
+  `TypePersistWandReverse.v` into small local tactics.  The semantic
+  checkpoints in the hard Wand proof are retained, but binder freshness and
+  lvar-domain side conditions no longer repeat raw set-solver scripts.
