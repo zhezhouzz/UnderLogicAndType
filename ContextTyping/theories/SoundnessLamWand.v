@@ -747,18 +747,21 @@ Proof.
 	      Hlc_elam) as [Hopen_to_norm _].
 	    apply Hopen_to_norm. exact Hopened_src.
   }
-  assert (Hsrc_open :
+  assert (Hopened_norm_inserted :
       res_product n mz Hc ⊨ ty_denote_gas gas
-        (lty_env_open_one 0 y (typed_lty_env_bind Δ (erase_ty τx)))
+        (<[LVFree y := erase_ty τx]> Σrel)
         (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
-    eapply ty_equiv_wand_result_src_mid.
-    - subst vf.
-      exact (context_typing_wf_lc_tm
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-    - clear -Hy_rest. better_set_solver.
+    rewrite <- (typed_lty_env_bind_open_current y Σrel (erase_ty τx)).
     - exact Hopened_norm.
+    - subst Σrel.
+      intros Hrel.
+      pose proof (relevant_env_dom_subset_direct
+        Δ (CTWand τx τ) (tret vf) (LVFree y) Hrel) as HΔbad.
+      exact (HyΔ HΔbad).
+    - subst Σrel. apply relevant_env_closed.
+      apply atom_store_to_lvar_store_closed.
   }
   assert (Hsrc :
       res_product n mz Hc ⊨ ty_denote_gas gas
@@ -766,10 +769,18 @@ Proof.
         (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
-	    rewrite <- (typed_lty_env_bind_open_current y Δ (erase_ty τx)).
-	    - exact Hsrc_open.
-	    - exact HyΔ.
-	    - apply atom_store_to_lvar_store_closed.
+    eapply ty_equiv_wand_result_src_mid_inserted.
+    - subst Δ. apply atom_store_to_lvar_store_closed.
+    - exact HyΔ.
+    - intros Hrel.
+      pose proof (relevant_env_dom_subset_direct
+        Δ (CTWand τx τ) (tret vf) (LVFree y) Hrel) as HΔbad.
+      exact (HyΔ HΔbad).
+    - subst vf.
+      exact (context_typing_wf_lc_tm
+        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
+    - clear -Hy_rest. better_set_solver.
+    - exact Hopened_norm_inserted.
   }
 	  assert (Hctx_star :
 	      res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).

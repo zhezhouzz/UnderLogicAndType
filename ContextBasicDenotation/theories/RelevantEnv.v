@@ -383,6 +383,43 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma lty_env_restrict_insert_relevant_tapp_eq
+    (Σ : lty_env) τ τx v1 x :
+  Σ !! LVFree x = Some (erase_ty τx) ->
+  lc_value v1 ->
+  lty_env_restrict_lvars Σ (tm_lvars (tapp v1 (vfvar x))) =
+  lty_env_restrict_lvars
+    (relevant_env
+      (<[LVFree x := erase_ty τx]> Σ)
+      (cty_open 0 x τ) (tapp v1 (vfvar x)))
+    (tm_lvars (tapp v1 (vfvar x))).
+Proof.
+  intros HΣx Hlc_v1.
+  apply storeA_map_eq. intros u.
+  unfold relevant_env, lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (u ∈ tm_lvars (tapp v1 (vfvar x))))
+    as [Hu|Hu]; [|reflexivity].
+  destruct u as [k|y].
+  - pose proof (tm_lvars_lc (tapp v1 (vfvar x))
+      ltac:(constructor; [exact Hlc_v1|constructor])) as Hlc_tm.
+    specialize (Hlc_tm (LVBound k) Hu).
+    cbn [lc_logic_var_key] in Hlc_tm. contradiction.
+  - assert (Hyrel :
+        LVFree y ∈ relevant_lvars (cty_open 0 x τ)
+          (tapp v1 (vfvar x))).
+    { unfold relevant_lvars. better_set_solver. }
+    rewrite decide_True by exact Hyrel.
+    destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lookup_insert.
+      destruct (decide (LVFree x = LVFree x)) as [_|Hneq].
+      * exact HΣx.
+      * contradiction.
+    + rewrite lookup_insert_ne by
+        (intros Heq; apply Hyx; inversion Heq; reflexivity).
+      reflexivity.
+Qed.
+
 Lemma relevant_lvars_ret_fvar_subset_singleton x τ :
   basic_context_ty {[x]} τ ->
   relevant_lvars τ (tret (vfvar x)) ⊆ {[LVFree x]}.

@@ -690,32 +690,6 @@ Proof.
         - exact Hyτx.
         - exact Harg_tgt.
       }
-	      assert (Harg_tgt_plain :
-	          n ⊨ formula_open 0 a
-	            (ty_denote_gas gas
-	              (typed_lty_env_bind
-	                (relevant_env Σ (CTWand τx τr) e2)
-	                (erase_ty τx))
-	              (cty_shift 0 τx) (tret (vbvar 0)))).
-	      {
-	        rewrite (formula_open_ty_denote_gas_singleton 0 a gas
-	          (typed_lty_env_bind
-	            (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))
-	          (cty_shift 0 τx) (tret (vbvar 0))).
-	        2:{ exact HyΣ2. }
-	        2:{ cbn [fv_tm fv_value]. intros Hbad. inversion Hbad. }
-	        2:{ rewrite cty_shift_fv. exact Hyτx. }
-	        change (open_tm 0 (vfvar a) (tret (vbvar 0)))
-	          with (tret (vfvar a)).
-	        rewrite typed_lty_env_bind_open_current
-	          by (exact Hy_rel2 || exact HlcΣ_tgt).
-	        rewrite cty_open_shift_from_lc_fresh
-	          by (exact Hlcτx || exact Hyτx).
-	        exact Harg_tgt_open.
-	      }
-	      pose proof (ty_denote_gas_tm_equiv_wand_open_arg_fbwand
-	        gas Σ τx τr e1 e2 mf_src n a Hequiv_src
-	        Hyτx HyΣ1 HyΣ2 Harg_tgt_plain) as Harg_src_plain.
 	      assert (Hf_rel1 :
 	          LVFree f ∉ dom (relevant_env Σ (CTWand τx τr) e1 : lty_env)).
 	      {
@@ -736,27 +710,9 @@ Proof.
 	          (dom (relevant_env Σ (CTWand τx τr) e1)) HlcΣ_src).
 	        apply elem_of_union_l. exact Hbad.
 	      }
-	      assert (Harg_src :
-	          n ⊨ ty_denote_gas gas
-	            (<[LVFree a := erase_ty τx]>
-	              (relevant_env Σ (CTWand τx τr) e1))
-		          τx (tret (vfvar a))).
-		      {
-		        rewrite (formula_open_ty_denote_gas_singleton 0 a gas
-		          (typed_lty_env_bind
-		            (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
-		          (cty_shift 0 τx) (tret (vbvar 0))) in Harg_src_plain.
-		        2:{ exact HyΣ1. }
-		        2:{ cbn [fv_tm fv_value]. intros Hbad. inversion Hbad. }
-		        2:{ rewrite cty_shift_fv. exact Hyτx. }
-		        change (open_tm 0 (vfvar a) (tret (vbvar 0)))
-		          with (tret (vfvar a)) in Harg_src_plain.
-		        rewrite typed_lty_env_bind_open_current in Harg_src_plain
-		          by (exact Hy_rel1 || exact HlcΣ_src).
-		        rewrite cty_open_shift_from_lc_fresh in Harg_src_plain
-		          by (exact Hlcτx || exact Hyτx).
-		        exact Harg_src_plain.
-		      }
+	      pose proof (ty_denote_gas_tm_equiv_wand_open_arg_fbwand
+	        gas Σ τx τr e1 e2 mf_src n a Hequiv_src
+	        Hyτx Hlcτx HlcΣ_src HlcΣ_tgt HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
 	      assert (Harg_src_formula :
           n ⊨ formula_open 0 a
             (formula_open 1 f

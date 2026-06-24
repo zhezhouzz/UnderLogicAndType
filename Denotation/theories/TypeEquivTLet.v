@@ -100,27 +100,70 @@ Proof.
 Qed.
 
 Local Lemma tlet_arrow_open_arg_env
-    gas (Σ : lty_env) τx τr e_src e_tgt
-    (my : WfWorldT) y :
-  y ∉ fv_cty τx ->
-  my ⊨ ty_denote_gas gas
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env Σ (CTArrow τx τr) e_tgt)
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
-  my ⊨ ty_denote_gas gas
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env Σ (CTArrow τx τr) e_src)
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+	  gas (Σ : lty_env) τx τr e_src e_tgt
+	  (my : WfWorldT) y :
+	  y ∉ fv_cty τx ->
+	  lc_context_ty τx ->
+	  lty_env_closed (relevant_env Σ (CTArrow τx τr) e_src) ->
+	  lty_env_closed (relevant_env Σ (CTArrow τx τr) e_tgt) ->
+	  y ∉ lvars_fv
+	    (dom (typed_lty_env_bind
+	      (relevant_env Σ (CTArrow τx τr) e_src) (erase_ty τx))) ->
+	  y ∉ lvars_fv
+	    (dom (typed_lty_env_bind
+	      (relevant_env Σ (CTArrow τx τr) e_tgt) (erase_ty τx))) ->
+	  my ⊨ ty_denote_gas gas
+	    (<[LVFree y := erase_ty τx]>
+	      (relevant_env Σ (CTArrow τx τr) e_tgt))
+	    τx (tret (vfvar y)) ->
+	  my ⊨ ty_denote_gas gas
+	    (<[LVFree y := erase_ty τx]>
+	      (relevant_env Σ (CTArrow τx τr) e_src))
+	    τx (tret (vfvar y)).
 Proof.
-  intros Hyτx Htgt.
-  set (τa := cty_open 0 y (cty_shift 0 τx)).
-  set (ea := tret (vfvar y)).
-  fold τa ea in Htgt |- *.
-  pose proof (ty_denote_gas_env_agree_on gas
+  intros Hyτx Hτx_lc Hsrc_closed Htgt_closed HyΣsrc HyΣtgt Htgt.
+  assert (Hyrel_src : LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e_src : lty_env)).
+  {
+    intros Hbad. apply HyΣsrc. apply lvars_fv_elem.
+    rewrite typed_lty_env_bind_dom.
+    rewrite (lvars_shift_from_lc_eq 0
+      (dom (relevant_env Σ (CTArrow τx τr) e_src)) Hsrc_closed).
+    apply elem_of_union_l. exact Hbad.
+  }
+  assert (Hyrel_tgt : LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e_tgt : lty_env)).
+  {
+    intros Hbad. apply HyΣtgt. apply lvars_fv_elem.
+    rewrite typed_lty_env_bind_dom.
+    rewrite (lvars_shift_from_lc_eq 0
+      (dom (relevant_env Σ (CTArrow τx τr) e_tgt)) Htgt_closed).
+    apply elem_of_union_l. exact Hbad.
+  }
+  assert (Htgt_raw :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e_tgt)
+            (erase_ty τx)))
+        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current
+      by (exact Hyrel_tgt || exact Htgt_closed).
+    rewrite cty_open_shift_from_lc_fresh
+      by (exact Hτx_lc || exact Hyτx).
+    exact Htgt.
+  }
+  assert (Hsrc_raw :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTArrow τx τr) e_src)
+            (erase_ty τx)))
+        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
+  {
+	  set (τa := cty_open 0 y (cty_shift 0 τx)).
+	  set (ea := tret (vfvar y)).
+    fold τa ea in Htgt_raw |- *.
+	  pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
         (relevant_env Σ (CTArrow τx τr) e_src) (erase_ty τx)))
@@ -138,33 +181,82 @@ Proof.
     ltac:(set_solver)
     (arrow_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_tgt Hyτx)) as Htgt_mid.
-  rewrite Hsrc_mid.
-  rewrite Htgt_mid in Htgt.
-  exact Htgt.
+	  rewrite Hsrc_mid.
+	  rewrite Htgt_mid in Htgt_raw.
+	  exact Htgt_raw.
+  }
+  rewrite typed_lty_env_bind_open_current in Hsrc_raw
+    by (exact Hyrel_src || exact Hsrc_closed).
+  rewrite cty_open_shift_from_lc_fresh in Hsrc_raw
+    by (exact Hτx_lc || exact Hyτx).
+  exact Hsrc_raw.
 Qed.
 
 Local Lemma tlet_wand_open_arg_env
-    gas (Σ : lty_env) τx τr e_src e_tgt
-    (my : WfWorldT) y :
-  y ∉ fv_cty τx ->
-  my ⊨ ty_denote_gas gas
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env Σ (CTWand τx τr) e_tgt)
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
-  my ⊨ ty_denote_gas gas
-    (lty_env_open_one 0 y
-      (typed_lty_env_bind
-        (relevant_env Σ (CTWand τx τr) e_src)
-        (erase_ty τx)))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+	  gas (Σ : lty_env) τx τr e_src e_tgt
+	  (my : WfWorldT) y :
+	  y ∉ fv_cty τx ->
+	  lc_context_ty τx ->
+	  lty_env_closed (relevant_env Σ (CTWand τx τr) e_src) ->
+	  lty_env_closed (relevant_env Σ (CTWand τx τr) e_tgt) ->
+	  y ∉ lvars_fv
+	    (dom (typed_lty_env_bind
+	      (relevant_env Σ (CTWand τx τr) e_src) (erase_ty τx))) ->
+	  y ∉ lvars_fv
+	    (dom (typed_lty_env_bind
+	      (relevant_env Σ (CTWand τx τr) e_tgt) (erase_ty τx))) ->
+	  my ⊨ ty_denote_gas gas
+	    (<[LVFree y := erase_ty τx]>
+	      (relevant_env Σ (CTWand τx τr) e_tgt))
+	    τx (tret (vfvar y)) ->
+	  my ⊨ ty_denote_gas gas
+	    (<[LVFree y := erase_ty τx]>
+	      (relevant_env Σ (CTWand τx τr) e_src))
+	    τx (tret (vfvar y)).
 Proof.
-  intros Hyτx Htgt.
-  set (τa := cty_open 0 y (cty_shift 0 τx)).
-  set (ea := tret (vfvar y)).
-  fold τa ea in Htgt |- *.
-  pose proof (ty_denote_gas_env_agree_on gas
+  intros Hyτx Hτx_lc Hsrc_closed Htgt_closed HyΣsrc HyΣtgt Htgt.
+  assert (Hyrel_src : LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e_src : lty_env)).
+  {
+    intros Hbad. apply HyΣsrc. apply lvars_fv_elem.
+    rewrite typed_lty_env_bind_dom.
+    rewrite (lvars_shift_from_lc_eq 0
+      (dom (relevant_env Σ (CTWand τx τr) e_src)) Hsrc_closed).
+    apply elem_of_union_l. exact Hbad.
+  }
+  assert (Hyrel_tgt : LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e_tgt : lty_env)).
+  {
+    intros Hbad. apply HyΣtgt. apply lvars_fv_elem.
+    rewrite typed_lty_env_bind_dom.
+    rewrite (lvars_shift_from_lc_eq 0
+      (dom (relevant_env Σ (CTWand τx τr) e_tgt)) Htgt_closed).
+    apply elem_of_union_l. exact Hbad.
+  }
+  assert (Htgt_raw :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e_tgt)
+            (erase_ty τx)))
+        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
+  {
+    rewrite typed_lty_env_bind_open_current
+      by (exact Hyrel_tgt || exact Htgt_closed).
+    rewrite cty_open_shift_from_lc_fresh
+      by (exact Hτx_lc || exact Hyτx).
+    exact Htgt.
+  }
+  assert (Hsrc_raw :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind
+            (relevant_env Σ (CTWand τx τr) e_src)
+            (erase_ty τx)))
+        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
+  {
+    set (τa := cty_open 0 y (cty_shift 0 τx)).
+    set (ea := tret (vfvar y)).
+    fold τa ea in Htgt_raw |- *.
+	  pose proof (ty_denote_gas_env_agree_on gas
     (lty_env_open_one 0 y
       (typed_lty_env_bind
         (relevant_env Σ (CTWand τx τr) e_src) (erase_ty τx)))
@@ -182,9 +274,15 @@ Proof.
     ltac:(set_solver)
     (wand_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_tgt Hyτx)) as Htgt_mid.
-  rewrite Hsrc_mid.
-  rewrite Htgt_mid in Htgt.
-  exact Htgt.
+	  rewrite Hsrc_mid.
+	  rewrite Htgt_mid in Htgt_raw.
+	  exact Htgt_raw.
+  }
+  rewrite typed_lty_env_bind_open_current in Hsrc_raw
+    by (exact Hyrel_src || exact Hsrc_closed).
+  rewrite cty_open_shift_from_lc_fresh in Hsrc_raw
+    by (exact Hτx_lc || exact Hyτx).
+  exact Hsrc_raw.
 Qed.
 
 Local Lemma tlet_arrow_value_body_env
@@ -313,34 +411,20 @@ Proof.
     - exact Hyτx.
 	    - exact Harg_tgt.
 	  }
-	  assert (Harg_tgt_regular_raw :
-	      my ⊨ ty_denote_gas gas
-	        (lty_env_open_one 0 y
-	          (typed_lty_env_bind
-	            (relevant_env Σ (CTArrow τx τr) e_tgt)
-	            (erase_ty τx)))
-	        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
-	  {
-	    rewrite typed_lty_env_bind_open_current
-	      by (exact Hy_rel_tgt || exact HlcΣ_tgt).
-	    rewrite cty_open_shift_from_lc_fresh
-	      by (exact Hlcτx || exact Hyτx).
-	    exact Harg_tgt_regular.
-	  }
 	  assert (Harg_src_regular :
 	      my ⊨ ty_denote_gas gas
 	        (<[LVFree y := erase_ty τx]>
 	          (relevant_env Σ (CTArrow τx τr) e_src))
 	        τx (tret (vfvar y))).
 	  {
-	    pose proof (tlet_arrow_open_arg_env
-	      gas Σ τx τr e_src e_tgt my y Hyτx Harg_tgt_regular_raw)
-	      as Harg_src_raw.
-	    rewrite typed_lty_env_bind_open_current in Harg_src_raw
-	      by (exact Hy_rel_src || exact HlcΣ_src).
-	    rewrite cty_open_shift_from_lc_fresh in Harg_src_raw
-	      by (exact Hlcτx || exact Hyτx).
-	    exact Harg_src_raw.
+	    eapply tlet_arrow_open_arg_env.
+	    - exact Hyτx.
+	    - exact Hlcτx.
+	    - exact HlcΣ_src.
+	    - exact HlcΣ_tgt.
+	    - exact HyΣsrc.
+	    - exact HyΣtgt.
+	    - exact Harg_tgt_regular.
 	  }
   assert (Harg_src_formula :
       my ⊨ formula_open 0 y
@@ -728,20 +812,6 @@ Proof.
 	    - exact Haτx.
 	    - exact Harg_tgt.
 	  }
-	  assert (Harg_tgt_regular_raw :
-	      n ⊨ ty_denote_gas gas
-	        (lty_env_open_one 0 a
-	          (typed_lty_env_bind
-	            (relevant_env Σ (CTWand τx τr) e_tgt)
-	            (erase_ty τx)))
-	        (cty_open 0 a (cty_shift 0 τx)) (tret (vfvar a))).
-	  {
-	    rewrite typed_lty_env_bind_open_current
-	      by (exact Ha_rel_tgt || exact HlcΣ_tgt).
-	    rewrite cty_open_shift_from_lc_fresh
-	      by (exact Hlcτx || exact Haτx).
-	    exact Harg_tgt_regular.
-	  }
 	  assert (Hf_rel_src :
 	      LVFree f ∉ dom (relevant_env Σ (CTWand τx τr) e_src : lty_env)).
 	  {
@@ -768,14 +838,14 @@ Proof.
 	          (relevant_env Σ (CTWand τx τr) e_src))
 	        τx (tret (vfvar a))).
 	  {
-	    pose proof (tlet_wand_open_arg_env
-	      gas Σ τx τr e_src e_tgt n a Haτx Harg_tgt_regular_raw)
-	      as Harg_src_raw.
-	    rewrite typed_lty_env_bind_open_current in Harg_src_raw
-	      by (exact Ha_rel_src || exact HlcΣ_src).
-	    rewrite cty_open_shift_from_lc_fresh in Harg_src_raw
-	      by (exact Hlcτx || exact Haτx).
-	    exact Harg_src_raw.
+	    eapply tlet_wand_open_arg_env.
+	    - exact Haτx.
+	    - exact Hlcτx.
+	    - exact HlcΣ_src.
+	    - exact HlcΣ_tgt.
+	    - exact HaΣsrc.
+	    - exact HaΣtgt.
+	    - exact Harg_tgt_regular.
 	  }
 	  assert (Harg_src_formula :
       n ⊨ formula_open 0 a

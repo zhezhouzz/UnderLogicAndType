@@ -1114,9 +1114,48 @@ Proof.
   pose proof (appd_wand_result_to_arrow_open_result
     Σ Γ1 Γ2 τx τ v1 x pz Hwf_fun Hwf_app Hfresh
     Htarget_opened_wand) as Htarget_opened_arrow.
+  assert (Htarget_arrow_norm :
+      pz ⊨ ty_denote_gas gas
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env Δstar (CTArrow τx τ) (tret v1)))
+        (cty_open 0 x τ) (tapp_tm (tret v1) (vfvar x))).
+  {
+    change (pz ⊨ formula_open 0 x
+      (ty_denote_gas gas
+        (typed_lty_env_bind
+          (relevant_env Δstar (CTArrow τx τ) (tret v1))
+          (erase_ty τx))
+        τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))))
+      in Htarget_opened_arrow.
+    rewrite (formula_open_ty_denote_gas_singleton 0 x gas
+      (typed_lty_env_bind
+        (relevant_env Δstar (CTArrow τx τ) (tret v1))
+        (erase_ty τx))
+      τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0)))
+      in Htarget_opened_arrow.
+    2:{
+      rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply lvars_fv_elem in Hbad.
+      subst Δstar. apply relevant_env_arrow_fresh_free in Hbad;
+        cbn [fv_tm fv_value]; clear -Hfresh Hbad; better_set_solver.
+    }
+    2:{ rewrite fv_tapp_tm, tm_shift_fv.
+        cbn [fv_tm fv_value]. clear -Hfresh. better_set_solver. }
+    2:{ clear -Hfresh. better_set_solver. }
+    rewrite open_tapp_tm_shift_bvar0_lc in Htarget_opened_arrow
+      by (constructor; eapply context_typing_wf_ret_lc_value; exact Hwf_fun).
+    rewrite (typed_lty_env_bind_open_current
+      x (relevant_env Δstar (CTArrow τx τ) (tret v1)) (erase_ty τx))
+      in Htarget_opened_arrow.
+    - exact Htarget_opened_arrow.
+    - subst Δstar. apply relevant_env_arrow_fresh_free;
+        cbn [fv_tm fv_value]; clear -Hfresh; better_set_solver.
+    - subst Δstar. apply relevant_env_closed.
+      apply atom_store_to_lvar_store_closed.
+  }
   pose proof (app_arrow_result_to_target
     Σ (CtxStar Γ1 Γ2) τx τ v1 x pz Hwf_app Hfresh
-    Harg_pz_star Htarget_opened_arrow) as Htarget_pz_final.
+    Harg_pz_star Htarget_arrow_norm) as Htarget_pz_final.
   assert (Htarget_psmall :
       psmall ⊨ ty_denote_gas (cty_depth ({0 ~> x} τ))
         Δstar ({0 ~> x} τ) (tapp v1 (vfvar x))).

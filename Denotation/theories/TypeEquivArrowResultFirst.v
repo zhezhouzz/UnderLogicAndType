@@ -680,55 +680,9 @@ Proof.
         - exact Hyτx.
         - exact Harg_tgt.
       }
-      assert (Harg_tgt_open_raw :
-          my ⊨ ty_denote_gas gas
-            (lty_env_open_one 0 y
-              (typed_lty_env_bind
-                (relevant_env Σ (CTArrow τx τr) e2)
-                (erase_ty τx)))
-            (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
-      {
-        assert (Hy_rel2 :
-            LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e2 : lty_env)).
-        {
-          intros Hbad. apply HyΣ2.
-          apply lvars_fv_elem.
-          rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
-            (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
-          apply elem_of_union_l. exact Hbad.
-        }
-        rewrite typed_lty_env_bind_open_current
-          by (exact Hy_rel2 || exact HlcΣ_tgt).
-        rewrite cty_open_shift_from_lc_fresh
-          by (exact Hlcτx || exact Hyτx).
-        exact Harg_tgt_open.
-      }
-      pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
-        gas Σ τx τr e1 e2 mf_src my y Hequiv_src Hdom_y Hrestrict_y
-        Hyτx HyΣ1 HyΣ2 Harg_tgt_open_raw) as Harg_src_raw.
-      assert (Harg_src :
-          my ⊨ ty_denote_gas gas
-            (<[LVFree y := erase_ty τx]>
-              (relevant_env Σ (CTArrow τx τr) e1))
-            τx (tret (vfvar y))).
-      {
-        assert (Hy_rel1 :
-            LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e1 : lty_env)).
-        {
-          intros Hbad. apply HyΣ1.
-          apply lvars_fv_elem.
-          rewrite typed_lty_env_bind_dom.
-          rewrite (arrow_lvars_shift_from_lc_eq 0
-            (dom (relevant_env Σ (CTArrow τx τr) e1)) HlcΣ_src).
-          apply elem_of_union_l. exact Hbad.
-        }
-        rewrite typed_lty_env_bind_open_current in Harg_src_raw
-          by (exact Hy_rel1 || exact HlcΣ_src).
-        rewrite cty_open_shift_from_lc_fresh in Harg_src_raw
-          by (exact Hlcτx || exact Hyτx).
-        exact Harg_src_raw.
-      }
+	      pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
+	        gas Σ τx τr e1 e2 mf_src my y Hequiv_src Hdom_y Hrestrict_y
+	        Hyτx Hlcτx HlcΣ_src HlcΣ_tgt HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
 	      assert (Harg_src_formula :
 	          my ⊨ formula_open 0 y
 		    (formula_open 1 f
