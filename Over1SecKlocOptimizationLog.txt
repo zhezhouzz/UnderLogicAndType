@@ -83,3 +83,21 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 Denotation/theories/TypePersistWandForward.vo`
     passed.
   - New focused time observed: `1.04s`.
+
+## Batch 5: `SoundnessLamWand.v`
+
+- Baseline from `CompileTimeStats.txt`: `10.85s`, `13.01 s/KLOC`.
+- `COQEXTRAFLAGS=-time` showed:
+  - a `set_solver` in the opened product-domain calculation costing `4.44s`;
+  - three repeated `ctx_erasure_under_norm_in Hy_rest; better_set_solver`
+    freshness proofs costing about `1.8-2.0s` each.
+- Optimization:
+  - Added local `union_singleton_empty_r` for the opened one-variable domain
+    equation.
+  - Derived erased-context freshness once as `Hy_eraseΓ`, then derived `HyΔ`
+    once and reused it in the later `typed_lty_env_bind_open_current` and
+    weakening side conditions.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`
+    passed.
+  - New focused time observed: `5.86s`.

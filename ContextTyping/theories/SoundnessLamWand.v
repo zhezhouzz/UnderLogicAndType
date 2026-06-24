@@ -12,6 +12,12 @@ From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
+Local Lemma union_singleton_empty_r (X : aset) y :
+  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
+Proof.
+  set_solver.
+Qed.
+
 Lemma lamd_wand_open_arg_to_bind_denotation
     (Σ : tyctx) Γ τx τ e
     (n : WfWorldT) y :
@@ -528,23 +534,30 @@ Proof.
   rewrite open_env_atoms_empty in Hηfresh.
   rewrite open_env_atoms_insert in Hdom_prod by apply lookup_empty.
   rewrite open_env_atoms_empty in Hdom_prod.
-  assert (Hdom_y :
-      world_dom (res_product n mz Hc : WorldT) =
-        world_dom (mz : WorldT) ∪ ({[y]} : aset)).
-  {
-    rewrite Hdom_prod. set_solver.
-  }
+	  assert (Hdom_y :
+	      world_dom (res_product n mz Hc : WorldT) =
+	        world_dom (mz : WorldT) ∪ ({[y]} : aset)).
+	  {
+	    rewrite Hdom_prod. apply union_singleton_empty_r.
+	  }
   assert (Hy_fresh :
       y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
         fv_tm e ∪ fv_cty τx ∪ fv_cty τ ∪ {[z]}).
   {
     clear -Hηfresh. set_solver.
   }
-  assert (Hy_rest :
-      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
-  { clear -Hy_fresh. better_set_solver. }
-  assert (HyL : y ∉ L) by (clear -Hy_fresh; better_set_solver).
+	  assert (Hy_rest :
+	      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+	        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
+	  { clear -Hy_fresh. better_set_solver. }
+	  assert (Hy_eraseΓ : y ∉ dom (erase_ctx Γ)).
+	  { ctx_erasure_under_norm_in Hy_rest. better_set_solver. }
+	  assert (HyΔ : LVFree y ∉ dom Δ).
+	  {
+	    subst Δ. apply atom_env_to_lty_env_dom_free_notin.
+	    exact Hy_eraseΓ.
+	  }
+	  assert (HyL : y ∉ L) by (clear -Hy_fresh; better_set_solver).
   assert (Hyz : y <> z) by (clear -Hy_fresh; set_solver).
   assert (Harg_norm :
       n ⊨ ty_denote_gas gas
@@ -638,11 +651,11 @@ Proof.
         (CTWand τx τ) (tret (vlam (erase_ty τx) e))) as Hrel.
       intros Hyfv.
       apply lvars_fv_elem in Hyfv.
-      pose proof (Hrel _ Hyfv) as Hatom.
-      rewrite atom_store_to_lvar_store_dom in Hatom.
-      rewrite <- lvars_fv_elem in Hatom.
-      rewrite lvars_fv_of_atoms in Hatom.
-      ctx_erasure_under_norm_in Hy_rest. better_set_solver.
+	      pose proof (Hrel _ Hyfv) as Hatom.
+	      rewrite atom_store_to_lvar_store_dom in Hatom.
+	      rewrite <- lvars_fv_elem in Hatom.
+	      rewrite lvars_fv_of_atoms in Hatom.
+	      exact (Hy_eraseΓ Hatom).
     }
     assert (Htmfresh :
         y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
@@ -689,11 +702,10 @@ Proof.
         (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
-    rewrite <- (typed_lty_env_bind_open_current y Δ (erase_ty τx)).
-    - exact Hsrc_open.
-    - subst Δ. apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hy_rest. better_set_solver.
-    - apply atom_store_to_lvar_store_closed.
+	    rewrite <- (typed_lty_env_bind_open_current y Δ (erase_ty τx)).
+	    - exact Hsrc_open.
+	    - exact HyΔ.
+	    - apply atom_store_to_lvar_store_closed.
   }
   assert (Hctx_star :
       res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
@@ -733,9 +745,8 @@ Proof.
           apply basic_tm_has_ltype_of_atom_env_typing.
           exact (context_typing_wf_basic_typing
             Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-        * apply insert_subseteq. apply not_elem_of_dom.
-          apply atom_env_to_lty_env_dom_free_notin.
-          ctx_erasure_under_norm_in Hy_rest. better_set_solver.
+	        * apply insert_subseteq. apply not_elem_of_dom.
+	          exact HyΔ.
   }
   assert (Hlc_vf : lc_value vf).
   {
