@@ -1,0 +1,32 @@
+# >1s/KLOC Optimization Log
+
+This log tracks optimization batches driven by `CompileTimeStats.txt`.
+
+## Candidate Policy
+
+- Treat every file above `1 s/KLOC` as having possible optimization room.
+- Prioritize files that are both high total time and high density.
+- Ignore tiny re-export files as primary targets unless they hide avoidable
+  imports; their density is dominated by fixed Rocq startup/import overhead.
+- Each batch should identify a concrete slow proof pattern, replace it with a
+  smaller lemma/tactic/normalization step, compile the affected file, and then
+  commit.
+
+## Batch 1: `TypeEquivTermTLet.v`
+
+- Baseline from `CompileTimeStats.txt`: `7.64s`, `20.70 s/KLOC`.
+- Located slow proof fragment with `COQEXTRAFLAGS=-time` partial log:
+  the largest completed hotspot was a `set_solver` inside
+  `tm_fiber_equiv_tlete_body_extension`, costing about `2.11s`.
+- Optimization:
+  - Added local syntax/FV helpers:
+    `fv_tm_open_fvar_tlete_body_subset`,
+    `fv_tm_tlete_left_subset`,
+    `notin_fv_tm_tlete`.
+  - Replaced the expensive generic set proof around
+    `store_restrict_insert_agree_on_observed` with these direct helpers.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermTLet.vo`
+    passed.
+  - New focused time observed: `5.55s`.
+

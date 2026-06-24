@@ -7,6 +7,34 @@ From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
+Local Lemma fv_tm_open_fvar_tlete_body_subset e1 e2 z k :
+  fv_tm (open_tm k (vfvar z) e2) ⊆ fv_tm (tlete e1 e2) ∪ {[z]}.
+Proof.
+  intros a Ha.
+  pose proof (open_fv_tm e2 (vfvar z) k a Ha) as Hopen.
+  cbn [fv_value] in Hopen.
+  apply elem_of_union in Hopen as [Hz|He2].
+  - apply elem_of_union_r. exact Hz.
+  - apply elem_of_union_l.
+    cbn [fv_tm]. apply elem_of_union_r. exact He2.
+Qed.
+
+Local Lemma fv_tm_tlete_left_subset e1 e2 :
+  fv_tm e1 ⊆ fv_tm (tlete e1 e2).
+Proof.
+  intros a Ha. cbn [fv_tm]. apply elem_of_union_l. exact Ha.
+Qed.
+
+Local Lemma notin_fv_tm_tlete e1 e2 z :
+  z ∉ fv_tm e1 ->
+  z ∉ fv_tm e2 ->
+  z ∉ fv_tm (tlete e1 e2).
+Proof.
+  intros Hze1 Hze2 Hz.
+  cbn [fv_tm] in Hz.
+  apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].
+Qed.
+
 Lemma tm_total_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
   res_subset m0 m ->
@@ -93,10 +121,9 @@ Proof.
           (fv_tm (e2 ^^ z))).
     {
       apply store_restrict_insert_agree_on_observed.
-      - pose proof (open_fv_tm e2 (vfvar z) 0) as Hopen.
-        cbn [fv_value] in Hopen. set_solver.
+      - apply fv_tm_open_fvar_tlete_body_subset.
       - exact Hzσ.
-      - cbn [fv_tm]. set_solver.
+      - apply notin_fv_tm_tlete; assumption.
     }
     assert (He2z_restrict :
         tm_eval_in_store
@@ -116,7 +143,7 @@ Proof.
         transitivity (store_restrict σ (fv_tm e1)).
         - apply storeA_restrict_twice_same.
         - symmetry. apply storeA_restrict_twice_subset.
-          cbn [fv_tm]. set_solver.
+          apply fv_tm_tlete_left_subset.
       }
       apply (proj1 (tm_eval_in_store_agree_on_fv
         (store_restrict σ (fv_tm e1))
