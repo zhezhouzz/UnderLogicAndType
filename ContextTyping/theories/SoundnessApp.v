@@ -417,25 +417,13 @@ Proof.
       lc_lvars (relevant_lvars (cty_open 0 x τ)
         (tapp v1 (vfvar x)))).
   {
-    unfold relevant_lvars.
-    intros v Hv.
-    apply elem_of_union in Hv as [Hvτ|Hve].
+    apply lc_lvars_relevant_lvars.
     - pose proof (context_typing_wf_context_ty Σ Γ
         (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf) as Hτwf.
       change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτwf.
-      pose proof (cty_lc_at_lvars_bv_empty 0 (cty_open 0 x τ)
-        (wf_context_ty_at_lc 0 (dom (erase_ctx Γ))
-          (cty_open 0 x τ) Hτwf)) as Hbv.
-      destruct v as [k|y]; [|exact I].
-      exfalso.
-      assert (k ∈ lvars_bv (context_ty_lvars (cty_open 0 x τ)))
-        by (apply lvars_bv_elem; exact Hvτ).
-      change (context_ty_lvars (cty_open 0 x τ))
-        with (context_ty_lvars_at 0 (cty_open 0 x τ)) in H.
-      rewrite Hbv in H. set_solver.
-    - pose proof (tm_lvars_lc (tapp v1 (vfvar x))
-        ltac:(constructor; [exact Hlc_v1|constructor])) as Hlc_tm.
-      exact (Hlc_tm v Hve).
+      exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ))
+        (cty_open 0 x τ) Hτwf).
+    - constructor; [exact Hlc_v1|constructor].
   }
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.

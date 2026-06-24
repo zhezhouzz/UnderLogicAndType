@@ -365,3 +365,21 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
   - New focused time observed: `1.77s`, about `2.60 s/KLOC`.
+
+## Batch 17: `SoundnessApp.v`
+
+- Baseline from the focused run before this batch: `3.91s` for 1309 lines,
+  about `2.99 s/KLOC`.
+- Concrete hotspot:
+  - `app_arrow_result_to_target` manually unfolded `relevant_lvars`, rebuilt
+    the bound-lvar emptiness proof for `cty_open 0 x τ`, and ended in a broad
+    `set_solver`; the timed run charged about `0.286s` to that final solver
+    block.
+- Optimization:
+  - Replaced the whole hand-written `relevant_lvars` proof with the existing
+    `lc_lvars_relevant_lvars` helper, using the `context_typing_wf` LC fact for
+    the opened type and direct LC for `tapp v1 (vfvar x)`.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessApp.vo` passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `3.67s`, about `2.80 s/KLOC`.
