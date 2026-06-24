@@ -62,6 +62,22 @@ Proof.
   apply ResourceInterface.res_fiber_from_projection_fresh_eq.
 Qed.
 
+Ltac formula_regular_fiber_dom :=
+  match goal with
+  | Hproj : res_fiber_from_projection ?m ?X ?σ ?mfib |- _ =>
+      lazymatch goal with
+      | H : world_dom (mfib : WorldT) = world_dom (m : WorldT) |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hdom_fiber" in
+          pose proof (res_fiber_from_projection_world_dom
+            m mfib X σ Hproj) as H
+      end
+  end.
+
+Ltac formula_regular :=
+  try formula_regular_fiber_dom.
+
 Local Lemma res_fiber_from_projection_store_restrict_input
     (m mfib : WfWorldT) (X : aset) (σ τ : StoreT) :
   res_fiber_from_projection m X σ mfib ->
@@ -465,18 +481,17 @@ Lemma res_fiber_open_world_shape
     res_restrict myfib (world_dom (m : WorldT)).
 Proof.
   intros _ Hym Hdom _ Hproj.
-  pose proof (res_fiber_from_projection_world_dom
-    my myfib X σ Hproj) as Hfibdom.
+  formula_regular.
   assert (Hrestrict_dom :
       world_dom
         (res_restrict myfib (world_dom (m : WorldT)) : WorldT) =
       world_dom (m : WorldT)).
   {
-    rewrite res_restrict_dom, Hfibdom, Hdom.
+    rewrite res_restrict_dom, Hdom_fiber, Hdom.
     apply set_eq. intros a. set_solver.
   }
   split.
-  - rewrite Hfibdom, Hrestrict_dom, Hdom. reflexivity.
+  - rewrite Hdom_fiber, Hrestrict_dom, Hdom. reflexivity.
   - rewrite Hrestrict_dom. reflexivity.
 Qed.
 

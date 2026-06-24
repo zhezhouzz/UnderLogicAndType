@@ -46,10 +46,14 @@ Implementation Status
      higher `TypeEquiv.v` layer; moving it requires a separate dependency
      cleanup.
 
-3. Logic/Algebra regular facts: pending.
-   Candidate patterns:
-   - Fiber/restrict shape facts should live near resource/fiber definitions.
-   - Formula-level FV/open facts should stay in Logic files.
+3. Logic/Algebra regular facts: completed initial Logic batch.
+   - Added `formula_regular_fiber_dom` / `formula_regular` in
+     `FormulaFiberwise.v`.
+   - Replaced a representative `res_fiber_from_projection_world_dom`
+     extraction inside `res_fiber_open_world_shape`.
+   - Deferred: broader Algebra facts should be added near
+     `ResourceInterface` / `ResourceCompat` only when replacing concrete
+     repeated upper-layer proof blocks.
 
 4. Proof cleanup sweep: pending.
    Priority files:
@@ -73,3 +77,9 @@ Validation Log
   (`0.37s` real for the final target after changed dependencies).
 - Completed: `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo`
   (`3.86s` real).
+- Completed: `timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo`
+  (`1.57s` real).
+- Completed: `timeout 50s make TIMED=1 ContextBasicDenotation/theories/BasicFormulaFiberwise.vo`
+  (`0.36s` real).
+- Completed: `timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo`
+  (`0.33s` real for the final target after changed dependencies).
