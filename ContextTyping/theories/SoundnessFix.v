@@ -18,7 +18,7 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLamBase
+From ContextTyping Require Import Typing SoundnessLamBase
   SoundnessLam SoundnessFixBase SoundnessFixOpen SoundnessFixApply
   SoundnessFixSelf.
 

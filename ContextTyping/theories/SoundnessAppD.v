@@ -16,7 +16,7 @@ From Denotation Require Import Context
   TypeEquivFiberBase
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessApp.
+From ContextTyping Require Import Typing SoundnessApp.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 

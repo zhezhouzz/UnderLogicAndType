@@ -22,7 +22,7 @@ From Denotation Require Import Context
   TypeEquivTLet
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import PrimOpContext Typing SoundnessSetMapFacts
+From ContextTyping Require Import PrimOpContext Typing
   SoundnessLam SoundnessApp SoundnessAppD SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).

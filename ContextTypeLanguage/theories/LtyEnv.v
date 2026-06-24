@@ -209,6 +209,24 @@ Lemma lty_env_closed_insert_free (Σ : lty_env) x T :
   lty_env_closed (<[LVFree x := T]> Σ).
 Proof. apply lvar_store_closed_insert_free. Qed.
 
+Lemma lty_env_insert_free_commute
+    (Σ : lty_env) x y Tx Ty :
+  x <> y ->
+  <[LVFree x := Tx]> (<[LVFree y := Ty]> Σ) =
+  <[LVFree y := Ty]> (<[LVFree x := Tx]> Σ).
+Proof.
+  intros Hxy.
+  apply map_eq. intros u.
+  destruct (decide (u = LVFree x)) as [->|Hux].
+  - rewrite lookup_insert_eq.
+    rewrite lookup_insert_ne by congruence.
+    rewrite lookup_insert_eq. reflexivity.
+  - destruct (decide (u = LVFree y)) as [->|Huy].
+    + rewrite lookup_insert_ne by congruence.
+      rewrite !lookup_insert_eq. reflexivity.
+    + rewrite !lookup_insert_ne by congruence. reflexivity.
+Qed.
+
 Lemma lty_env_closed_lookup_bound_none (Σ : lty_env) k :
   lty_env_closed Σ ->
   Σ !! LVBound k = None.

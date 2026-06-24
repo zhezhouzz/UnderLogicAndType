@@ -8,7 +8,7 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTerm TypeEquivFiberBase TypeEquivBody TypeEquivArrow TypeEquivWand TypeEquiv ConstDenote.
-From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLamBase.
+From ContextTyping Require Import Typing SoundnessLamBase.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 

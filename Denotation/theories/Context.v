@@ -5,6 +5,7 @@
 
 From Denotation Require Export Notation TypeDenote TypePersist.
 From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseResult.
+From ContextBasicDenotation Require Import TermExtension.
 
 Section ContextDenotation.
 
@@ -227,6 +228,25 @@ Proof.
     rewrite res_models_and_iff in Hctx; exact (proj1 Hctx).
 Qed.
 
+Lemma soundness_result_ext_fresh_ctx_erasure
+    (Σ : tyctx) Γ e x F (m mx : WfWorldT) :
+  m ⊨ ctx_denote_under Σ Γ ->
+  expr_result_extension_witness e x F ->
+  res_extend_by m F mx ->
+  x ∉ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hctx HF Hext HxΔ.
+  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
+  pose proof (basic_world_formula_atom_env_dom_subset
+    (ctx_erasure_under Σ Γ) m Hworld) as HΔworld.
+  pose proof (HΔworld x HxΔ) as Hxworld.
+  pose proof (res_extend_by_output_fresh m F mx Hext) as Hout_fresh.
+  change (ext_out F ## world_dom (m : WorldT)) in Hout_fresh.
+  destruct HF as [_ [_ Hout] _].
+  assert (x ∈ ext_out F) by (rewrite Hout; set_solver).
+  set_solver.
+Qed.
+
 Lemma ctx_denote_under_bind_inv
     (Σ : gmap atom ty) x τ (m : WfWorldT) :
   m ⊨ ctx_denote_under Σ (CtxBind x τ) ->
@@ -336,6 +356,22 @@ Proof.
   apply Hnot.
   eapply ctx_erasure_under_erase_ctx_dom_subset.
   exact Hx.
+Qed.
+
+Lemma soundness_fresh_erase_ctx_from_context_union
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom (erase_ctx Γ).
+Proof.
+  intros Hy.
+  eapply ctx_erasure_under_notin_erase_ctx.
+  intros Hyctx.
+  apply Hy.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_r.
+  exact Hyctx.
 Qed.
 
 Lemma ty_denote_gas_ret_fvar_insert_ctx_erasure_under

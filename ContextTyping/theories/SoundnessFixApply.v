@@ -21,7 +21,7 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLam SoundnessFixBase
+From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
   SoundnessFixOpen.
 
 Local Lemma fix_apply_open_value_fresh vf y z :

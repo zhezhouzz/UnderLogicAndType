@@ -1112,4 +1112,40 @@ Proof.
   apply lstore_instantiate_tm_split_empty_bound. exact Hclosed.
 Qed.
 
+Lemma match_left_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm et ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof.
+  intros ->.
+  cbn [fv_tm fv_value].
+  repeat split; better_set_solver.
+Qed.
+
+Lemma match_right_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm ef ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof.
+  intros ->.
+  cbn [fv_tm fv_value].
+  repeat split; better_set_solver.
+Qed.
+
+Lemma soundness_match_left_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm et ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof. apply match_left_observation_facts. Qed.
+
+Lemma soundness_match_right_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm ef ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof. apply match_right_observation_facts. Qed.
+
 End TermDenotation.

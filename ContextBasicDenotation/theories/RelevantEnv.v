@@ -104,6 +104,50 @@ Proof.
   eapply relevant_env_arrow_fresh_free; eauto.
 Qed.
 
+Lemma soundness_relevant_env_arrow_value_fresh
+    (Δ : lty_env) τx τ v x :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  LVFree x ∉ dom (relevant_env Δ (CTArrow τx τ) (tret v) : lty_env).
+Proof.
+  intros Hfresh.
+  apply relevant_env_arrow_fresh_free; cbn [fv_tm fv_value]; set_solver.
+Qed.
+
+Lemma soundness_relevant_env_wand_value_fresh
+    (Δ : lty_env) τx τ v x :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  LVFree x ∉ dom (relevant_env Δ (CTWand τx τ) (tret v) : lty_env).
+Proof.
+  intros Hfresh.
+  apply relevant_env_wand_fresh_free; cbn [fv_tm fv_value]; set_solver.
+Qed.
+
+Lemma soundness_typed_bind_arrow_value_fresh
+    (Δ : lty_env) τx τ v x T :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  x ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Δ (CTArrow τx τ) (tret v)) T)).
+Proof.
+  intros Hfresh Hbad.
+  rewrite typed_lty_env_bind_lvars_fv_dom in Hbad.
+  apply lvars_fv_elem in Hbad.
+  eapply soundness_relevant_env_arrow_value_fresh; eauto.
+Qed.
+
+Lemma soundness_typed_bind_wand_value_fresh
+    (Δ : lty_env) τx τ v x T :
+  x ∉ fv_value v ∪ fv_cty τx ∪ fv_cty τ ->
+  x ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Δ (CTWand τx τ) (tret v)) T)).
+Proof.
+  intros Hfresh Hbad.
+  rewrite typed_lty_env_bind_lvars_fv_dom in Hbad.
+  apply lvars_fv_elem in Hbad.
+  eapply soundness_relevant_env_wand_value_fresh; eauto.
+Qed.
+
 Lemma lvars_of_atoms_empty :
   lvars_of_atoms (∅ : aset) = (∅ : lvset).
 Proof.

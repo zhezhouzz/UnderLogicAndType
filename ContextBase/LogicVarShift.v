@@ -942,6 +942,28 @@ Proof.
   apply lvars_shift_from_below_id. exact Hlc.
 Qed.
 
+Lemma lvars_shift_from_lc k D :
+  lc_lvars D ->
+  lc_lvars (lvars_shift_from k D).
+Proof.
+  intros Hlc.
+  rewrite lvars_shift_from_lc_at_id; [exact Hlc|].
+  intros n Hn.
+  specialize (Hlc (LVBound n) ltac:(apply lvars_bv_elem; exact Hn)).
+  cbn [lc_logic_var_key] in Hlc. exfalso. exact Hlc.
+Qed.
+
+Lemma lvars_shift_from_lc_eq k D :
+  lc_lvars D ->
+  lvars_shift_from k D = D.
+Proof.
+  intros Hlc.
+  apply lvars_shift_from_lc_at_id.
+  intros n Hn.
+  specialize (Hlc (LVBound n) ltac:(apply lvars_bv_elem; exact Hn)).
+  cbn [lc_logic_var_key] in Hlc. exfalso. exact Hlc.
+Qed.
+
 Lemma lvars_open_shift_from_lc_at_fresh k x D :
   lvars_lc_at k D ->
   x ∉ lvars_fv D ->

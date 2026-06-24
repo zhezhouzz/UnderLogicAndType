@@ -2096,6 +2096,70 @@ Proof.
   exact (extA_app_out _ _ Happ).
 Qed.
 
+Lemma res_restrict_singleton_store_eq
+    (m : WfWorld) X (σX σ : StoreT) :
+  res_restrict m X =
+    (exist _ (singleton_world σX) (wf_singleton_world σX) : WfWorld) ->
+  (m : World) σ ->
+  store_restrict σ X = σX.
+Proof.
+  intros Hsingle Hσ.
+  assert (Hrestrict : (resA_restrict m X : World) (store_restrict σ X)).
+  { exists σ. split; [exact Hσ|reflexivity]. }
+  replace (resA_restrict m X)
+    with (exist _ (singleton_world σX) (wf_singleton_world σX) : WfWorld)
+    in Hrestrict by exact (eq_sym Hsingle).
+  cbn [raw_world raw_worldA singleton_world] in Hrestrict.
+  exact Hrestrict.
+Qed.
+
+Lemma res_extend_by_singleton_output_in_world
+    (m mx : WfWorld) F x :
+  res_extend_by m F mx ->
+  extA_out F = {[x]} ->
+  x ∈ world_dom (mx : World).
+Proof.
+  intros Hext Hout.
+  pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+  change (world_dom (mx : World) =
+    world_dom (m : World) ∪ extA_out F) in Hdom.
+  rewrite Hdom, Hout.
+  set_solver.
+Qed.
+
+Lemma res_extend_by_singleton_output_open_world
+    (m mx : WfWorld) F x :
+  res_extend_by m F mx ->
+  extA_out F = {[x]} ->
+  world_dom (mx : World) = world_dom (m : World) ∪ {[x]} /\
+  res_restrict mx (world_dom (m : World)) = m.
+Proof.
+  intros Hext Hout.
+  split.
+  - pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+    change (world_dom (mx : World) =
+      world_dom (m : World) ∪ extA_out F) in Hdom.
+    rewrite Hdom, Hout. reflexivity.
+  - exact (res_extend_by_restrict_base m F mx Hext).
+Qed.
+
+Lemma res_extend_by_singleton_output_notin_base_store
+    (m mx : WfWorld) F x (σ : StoreT) :
+  res_extend_by m F mx ->
+  extA_out F = {[x]} ->
+  (m : World) σ ->
+  x ∉ dom (σ : StoreT).
+Proof.
+  intros Hext Hout Hσ.
+  pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh.
+  change (extA_out F ## world_dom (m : World)) in Hfresh.
+  pose proof (wfworldA_store_dom m σ Hσ) as Hdomσ.
+  change (dom (σ : StoreT) = world_dom (m : World)) in Hdomσ.
+  rewrite Hdomσ.
+  rewrite Hout in Hfresh.
+  set_solver.
+Qed.
+
 Lemma res_extend_by_exists (m : WfWorld) (F : fiber_extension) :
   extension_applicable F m →
   ∃ n, m #> F ~~> n.
