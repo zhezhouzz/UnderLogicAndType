@@ -479,3 +479,35 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - The remaining per-KLOC number is mostly import/fixed overhead for a very
     small file; no proof command above the import line remained near the old
     hotspots.
+
+## Batch 21: `TypeEquivWand.v` wand app/fresh side conditions
+
+- Baseline from `CompileTimeStats.txt`:
+  `Denotation/theories/TypeEquivWand.v` was about `3.49s` for roughly
+  1432 lines, about `2.44 s/KLOC`.
+- Focused baseline before this batch:
+  `COQEXTRAFLAGS=-time` rebuilt the file in about `3.60s`.
+- Concrete hotspots:
+  - repeated app FV/domain goals in `wfworld_closed_on_wand_open_result_apps`
+    and the product variant were discharged by broad `set_solver` calls;
+  - singleton argument-domain facts were rebuilt from `basic_world_formula`
+    using `set_solver`;
+  - two wand frame fresh goals rewrote `fv_tapp_tm` and then called
+    `set_solver`.
+- Optimization:
+  - Added local helper lemmas for opened-world term scope, app scope under
+    product worlds, and app-FV subset normalization.
+  - Added a tiny `lty_env_closed_empty` fact for the empty bind-open side
+    condition.
+  - Replaced the slow app/FV and singleton-domain solver calls with explicit
+    union, singleton, and empty-set reasoning.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo` passed.
+  - New focused time observed: `1.35s`; normal single-file time observed:
+    `1.22s`, about `0.78 s/KLOC` on the current 1556-line file.
+- Deferred:
+  - Remaining time is mostly import/fixed overhead plus small proof steps under
+    `0.07s`; no remaining local solver call looks worth a separate batch here.

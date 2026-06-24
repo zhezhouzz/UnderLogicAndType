@@ -24,6 +24,114 @@ Local Ltac wand_fresh_from_disjoint Hfresh :=
     [ apply elem_of_union_l; apply elem_of_singleton; reflexivity
     | subst; wand_union_member ].
 
+Local Lemma lty_env_closed_empty : lty_env_closed (∅ : lty_env).
+Proof.
+  unfold lvar_store_closed, lc_lvars.
+  rewrite dom_empty_L.
+  intros v Hv. apply not_elem_of_empty in Hv. contradiction.
+Qed.
+
+Local Lemma wand_open_world_term_scope
+    (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (my : WorldT).
+Proof.
+  intros Hequiv Hdom a Ha.
+  rewrite Hdom.
+  apply elem_of_union_l.
+  exact (typed_total_equiv_term_scope
+    Σ (CTWand τx τr) m e1 e2 Hequiv a Ha).
+Qed.
+
+Local Lemma wand_open_product_tapp_tgt_scope
+    (Σ : lty_env) τx τr e1 e2 (m my n : WfWorldT)
+    y (Hc : world_compat n my) :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆ world_dom (res_product n my Hc : WorldT).
+Proof.
+  intros Hequiv Hdom a Ha.
+  rewrite fv_tapp_tm in Ha.
+  cbn [fv_value] in Ha.
+  pose proof (raw_le_dom (my : WorldT)
+    (res_product n my Hc : WorldT)
+    (res_product_le_r n my Hc)) as Hdom_le.
+  apply Hdom_le.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].
+    apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+Qed.
+
+Local Lemma wand_open_world_tapp_apps_scope
+    (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  fv_tm (tapp_tm e1 (vfvar y)) ∪
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆ world_dom (my : WorldT).
+Proof.
+  intros Hequiv Hdom a Ha.
+  apply elem_of_union in Ha as [Ha|Ha];
+    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
+    apply elem_of_union in Ha as [Ha|Ha].
+  - eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].
+    apply elem_of_union_l. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  - eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].
+    apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+Qed.
+
+Local Lemma wand_product_tapp_apps_scope
+    (Σ : lty_env) τx τr e1 e2 (m n : WfWorldT)
+    y (Hc : world_compat n m) :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  y ∈ world_dom (n : WorldT) ->
+  fv_tm (tapp_tm e1 (vfvar y)) ∪
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆
+  world_dom (res_product n m Hc : WorldT).
+Proof.
+  intros Hequiv Hy a Ha.
+  pose proof (raw_le_dom (n : WorldT)
+    (res_product n m Hc : WorldT)
+    (res_product_le_l n m Hc)) as Hdom_l.
+  pose proof (raw_le_dom (m : WorldT)
+    (res_product n m Hc : WorldT)
+    (res_product_le_r n m Hc)) as Hdom_r.
+  apply elem_of_union in Ha as [Ha|Ha];
+    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
+    apply elem_of_union in Ha as [Ha|Ha].
+  - apply Hdom_r.
+    eapply typed_total_equiv_term_scope; [exact Hequiv|].
+    apply elem_of_union_l. exact Ha.
+  - apply elem_of_singleton in Ha. subst a. apply Hdom_l. exact Hy.
+  - apply Hdom_r.
+    eapply typed_total_equiv_term_scope; [exact Hequiv|].
+    apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a. apply Hdom_l. exact Hy.
+Qed.
+
+Local Lemma wand_tapp_apps_fv_subset e1 e2 y :
+  fv_tm (tapp_tm e1 (vfvar y)) ∪
+  fv_tm (tapp_tm e2 (vfvar y)) ⊆
+  (fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset).
+Proof.
+  intros a Ha.
+  apply elem_of_union in Ha as [Ha|Ha];
+    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
+    apply elem_of_union in Ha as [Ha|Ha].
+  - apply elem_of_union_l. apply elem_of_union_l. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+  - apply elem_of_union_l. apply elem_of_union_r. exact Ha.
+  - apply elem_of_singleton in Ha. subst a.
+    apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma wand_open_arg_to_inserted_env
     gas (Σ : lty_env) τx τr e
     (m : WfWorldT) y :
@@ -315,7 +423,7 @@ Proof.
   assert (Hclosed1 : wfworld_closed_on (fv_tm e1) my).
   {
     eapply wfworld_closed_on_le.
-    - intros a Ha. apply Hscope. set_solver.
+    - intros a Ha. apply Hscope. apply elem_of_union_l. exact Ha.
     - exact Hle.
     - eapply relevant_world_typing_closed_on_term.
       + exact Hworld1.
@@ -324,7 +432,7 @@ Proof.
   assert (Hclosed2 : wfworld_closed_on (fv_tm e2) my).
   {
     eapply wfworld_closed_on_le.
-    - intros a Ha. apply Hscope. set_solver.
+    - intros a Ha. apply Hscope. apply elem_of_union_r. exact Ha.
     - exact Hle.
     - eapply relevant_world_typing_closed_on_term.
       + exact Hworld2.
@@ -333,14 +441,14 @@ Proof.
   assert (Hworld_y :
       my ⊨ basic_world_formula
         (<[LVFree y := erase_ty τx]> (∅ : lty_env))).
-  {
-    change (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty))
-      with (typed_lty_env_bind (∅ : lty_env) (erase_ty τx)) in Hworld.
-    rewrite formula_open_basic_world_bind0 in Hworld.
-    - exact Hworld.
-    - set_solver.
-    - intros v Hv. set_solver.
-  }
+	  {
+	    change (<[LVBound 0 := erase_ty τx]> (∅ : gmap logic_var ty))
+	      with (typed_lty_env_bind (∅ : lty_env) (erase_ty τx)) in Hworld.
+	    rewrite formula_open_basic_world_bind0 in Hworld.
+	    - exact Hworld.
+	    - rewrite dom_empty_L. apply not_elem_of_empty.
+	    - exact lty_env_closed_empty.
+	  }
   assert (Hclosed_y : wfworld_closed_on ({[y]} : aset) my).
   { eapply basic_world_formula_singleton_free_closed_on. exact Hworld_y. }
   assert (Hclosed_my :
@@ -350,15 +458,14 @@ Proof.
   {
     eapply (wfworld_closed_on_mono _
       ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset)) my).
-    - rewrite !fv_tapp_tm. cbn [fv_value]. set_solver.
+    - apply wand_tapp_apps_fv_subset.
     - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset)).
       + apply (wfworld_closed_on_union (fv_tm e1) (fv_tm e2));
           [exact Hclosed1|exact Hclosed2].
       + exact Hclosed_y.
   }
   eapply wfworld_closed_on_le.
-  - rewrite !fv_tapp_tm. cbn [fv_value].
-    rewrite Hdom. pose proof Hscope as Hscope'. set_solver.
+  - eapply wand_open_world_tapp_apps_scope; eauto.
   - apply res_product_le_r.
   - exact Hclosed_my.
 Qed.
@@ -637,7 +744,7 @@ Proof.
         * exact Hrestrict.
       + pose proof (typed_total_equiv_term_scope
           Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-        rewrite Hdom. set_solver.
+        eapply wand_open_world_term_scope; eauto.
   }
   assert (Htotal_tgt :
       res_product n my Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
@@ -664,7 +771,7 @@ Proof.
       - exact Htotal_base_my.
       - exact Hlc1.
       - exact Hlc2.
-      - rewrite Hdom. set_solver.
+      - eapply wand_open_world_term_scope; eauto.
     }
     assert (Heq_base_product :
         tm_equiv_on (res_product n my Hc) e1 e2).
@@ -676,7 +783,7 @@ Proof.
         + exact Hye.
         + exact Hdom.
         + exact Hrestrict.
-      - rewrite Hdom. set_solver.
+      - eapply wand_open_world_term_scope; eauto.
     }
     assert (Htotal_apps :
         tm_total_equiv_on (res_product n my Hc)
@@ -692,11 +799,7 @@ Proof.
     eapply tm_equiv_total.
     - exact Htotal_apps.
     - apply lc_tapp_tm; [exact Hlc2|constructor].
-    - rewrite fv_tapp_tm. cbn [fv_value].
-      pose proof (raw_le_dom (my : WorldT)
-        (res_product n my Hc : WorldT)
-        (res_product_le_r n my Hc)) as Hdom_le.
-      rewrite Hdom in Hdom_le. set_solver.
+    - eapply wand_open_product_tapp_tgt_scope; eauto.
     - exact Htotal_res_src.
   }
   assert (Hworld_tgt :
@@ -787,7 +890,7 @@ Proof.
       + exact Hye.
       + exact Hdom.
       + exact Hrestrict.
-    - set_solver.
+    - eapply wand_open_world_term_scope; eauto.
   }
   assert (Htotal_base_my : tm_total_equiv_on my e1 e2).
   {
@@ -807,7 +910,7 @@ Proof.
     - exact Htotal_base_my.
     - exact Hlc1.
     - exact Hlc2.
-    - set_solver.
+    - eapply wand_open_world_term_scope; eauto.
   }
   split.
   - eapply tm_equiv_tapp_fvar.
@@ -876,18 +979,26 @@ Proof.
   { rewrite cty_shift_fv. exact Hyτx. }
   assert (Harg_tm_fresh : y ∉ fv_tm (tret (vbvar 0))).
   { cbn [fv_tm fv_value]. set_solver. }
-  assert (Hsrc_tm_fresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 e1) (vbvar 0))).
-  {
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_value]. set_solver.
-  }
-  assert (Htgt_tm_fresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 e2) (vbvar 0))).
-  {
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_value]. set_solver.
-  }
+	  assert (Hsrc_tm_fresh :
+	      y ∉ fv_tm (tapp_tm (tm_shift 0 e1) (vbvar 0))).
+	  {
+	    rewrite fv_tapp_tm, tm_shift_fv.
+	    cbn [fv_value].
+	    intros Hy.
+	    apply elem_of_union in Hy as [Hy|Hy].
+	    - apply Hye. apply elem_of_union_l. exact Hy.
+	    - apply not_elem_of_empty in Hy. contradiction.
+	  }
+	  assert (Htgt_tm_fresh :
+	      y ∉ fv_tm (tapp_tm (tm_shift 0 e2) (vbvar 0))).
+	  {
+	    rewrite fv_tapp_tm, tm_shift_fv.
+	    cbn [fv_value].
+	    intros Hy.
+	    apply elem_of_union in Hy as [Hy|Hy].
+	    - apply Hye. apply elem_of_union_r. exact Hy.
+	    - apply not_elem_of_empty in Hy. contradiction.
+	  }
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
       (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
@@ -1013,7 +1124,8 @@ Proof.
 	    rewrite dom_insert_L, dom_empty_L in Hdom_y.
 	    rewrite lvars_fv_union, lvars_fv_empty,
 	      lvars_fv_singleton_free in Hdom_y.
-	    set_solver.
+	    intros a Ha. apply Hdom_y.
+	    apply elem_of_union_l. exact Ha.
 	  }
 	  assert (Hclosed_y :
 	      wfworld_closed_on ({[y]} : aset) (res_product n m Hc)).
@@ -1027,7 +1139,7 @@ Proof.
 	  }
   eapply (wfworld_closed_on_mono _
     ((fv_tm e1 ∪ fv_tm e2) ∪ ({[y]} : aset))).
-  - rewrite !fv_tapp_tm. cbn [fv_value]. set_solver.
+  - apply wand_tapp_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2)
       ({[y]} : aset)); [exact Hclosed_fun|exact Hclosed_y].
 Qed.
@@ -1173,10 +1285,10 @@ Proof.
     - exact Heq_base_product.
     - exact Htotal_base_product.
   }
-  assert (Htotal_tgt :
-      res_product n m Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
-  {
-    eapply tm_equiv_total.
+	  assert (Htotal_tgt :
+	      res_product n m Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
+	  {
+	    eapply tm_equiv_total.
     - exact Htotal_apps.
     - apply lc_tapp_tm; [exact Hlc2|constructor].
     - rewrite fv_tapp_tm. cbn [fv_value].
@@ -1185,9 +1297,9 @@ Proof.
       pose proof (raw_le_dom (n : WorldT)
         (res_product n m Hc : WorldT)
         (res_product_le_l n m Hc)) as Hdom_l.
-      pose proof (raw_le_dom (m : WorldT)
-        (res_product n m Hc : WorldT)
-        (res_product_le_r n m Hc)) as Hdom_r.
+	      pose proof (raw_le_dom (m : WorldT)
+	        (res_product n m Hc : WorldT)
+	        (res_product_le_r n m Hc)) as Hdom_r.
 	      assert (Hy_prod : y ∈ world_dom (res_product n m Hc : WorldT)).
 	      {
 	        apply Hdom_l.
@@ -1198,16 +1310,21 @@ Proof.
 	          τx n y Hyτx HyΣ2 Harg) as Hworld_y_open.
 	        pose proof (basic_world_formula_opened_arg_world
 	          (erase_ty τx) n y Hworld_y_open) as Hworld_y.
-	        apply basic_world_formula_models_iff in Hworld_y
-	          as [_ [Hdom_y _]].
-	        rewrite dom_insert_L, dom_empty_L in Hdom_y.
-	        rewrite lvars_fv_union, lvars_fv_empty,
-	          lvars_fv_singleton_free in Hdom_y.
-	        set_solver.
-	      }
-      set_solver.
-    - exact Htotal_res_src.
-  }
+		        apply basic_world_formula_models_iff in Hworld_y
+		          as [_ [Hdom_y _]].
+		        rewrite dom_insert_L, dom_empty_L in Hdom_y.
+		        rewrite lvars_fv_union, lvars_fv_empty,
+		          lvars_fv_singleton_free in Hdom_y.
+		        apply Hdom_y.
+		        apply elem_of_union_l. apply elem_of_singleton. reflexivity.
+		      }
+		      intros a Ha.
+		      apply elem_of_union in Ha as [Ha|Ha].
+		      + apply Hdom_r. apply Hscope.
+		        apply elem_of_union_r. exact Ha.
+		      + apply elem_of_singleton in Ha. subst a. exact Hy_prod.
+		    - exact Htotal_res_src.
+		  }
   assert (Hworld_tgt :
       res_product n m Hc ⊨ basic_world_formula
         (relevant_env
@@ -1371,18 +1488,26 @@ Proof.
   pose proof Harg as Harg_open.
   pose proof (typed_total_equiv_term_lc
     Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
-  assert (Hsrc_tm_fresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 e1) (vbvar 0))).
-  {
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_value]. set_solver.
-  }
-  assert (Htgt_tm_fresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 e2) (vbvar 0))).
-  {
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_value]. set_solver.
-  }
+	  assert (Hsrc_tm_fresh :
+	      y ∉ fv_tm (tapp_tm (tm_shift 0 e1) (vbvar 0))).
+	  {
+	    rewrite fv_tapp_tm, tm_shift_fv.
+	    cbn [fv_value].
+	    intros Hy.
+	    apply elem_of_union in Hy as [Hy|Hy].
+	    - apply Hye. apply elem_of_union_l. exact Hy.
+	    - apply not_elem_of_empty in Hy. contradiction.
+	  }
+	  assert (Htgt_tm_fresh :
+	      y ∉ fv_tm (tapp_tm (tm_shift 0 e2) (vbvar 0))).
+	  {
+	    rewrite fv_tapp_tm, tm_shift_fv.
+	    cbn [fv_value].
+	    intros Hy.
+	    apply elem_of_union in Hy as [Hy|Hy].
+	    - apply Hye. apply elem_of_union_r. exact Hy.
+	    - apply not_elem_of_empty in Hy. contradiction.
+	  }
   rewrite (formula_open_ty_denote_gas_singleton 0 y gas
     (typed_lty_env_bind
       (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))
