@@ -936,7 +936,7 @@ Proof.
 	          * clear -Hf. fix_self_notin_union.
 	          * clear -Hf. fix_self_notin_union.
 	        + cbn [fv_tm fv_value]. clear -Hf. fix_self_notin_union.
-	      - clear -Hw. set_solver.
+		      - intros ->. apply Hw. fix_self_in_union.
 	      - rewrite dom_insert_L. intros Hin.
 	        apply elem_of_union in Hin as [Hin|Hin].
 	        + apply elem_of_singleton in Hin.
@@ -1011,7 +1011,8 @@ Proof.
 	              (over_ty b (mk_q_lt_base b (vbvar 0) (vfvar xcur))))
 	            (tret (vfvar w))).
 	      - reflexivity.
-	      - rewrite lty_env_insert_free_commute by (clear -Hw; set_solver).
+	      - rewrite lty_env_insert_free_commute by
+	          (intros ->; apply Hw; fix_self_in_union).
 	        rewrite (lty_env_restrict_lvars_insert_fresh
 	          (<[LVFree w := erase_ty
 	              (CTInter (over_ty b φx)
@@ -1302,13 +1303,13 @@ Proof.
           | fix_self_notin_union ].
       - cbn [fv_tm fv_value]. fix_self_notin_union.
     }
-    2:{ clear -Hw. set_solver. }
+	    2:{ intros ->. apply Hw. fix_self_in_union. }
     2:{
       rewrite dom_insert_L.
       intros Hin.
       apply elem_of_union in Hin as [Hin|Hin].
       - apply elem_of_singleton in Hin. inversion Hin. subst.
-        clear -Hw. set_solver.
+	        apply Hw. fix_self_in_union.
       - subst Δx τself selftm τarg.
         eapply relevant_env_fresh_free; [| |exact Hin].
         + apply fv_cty_fix_rec_call_ty_fresh;
@@ -1372,7 +1373,9 @@ Proof.
 	        - apply map_lookup_insert.
 	        - unfold relevant_lvars.
 	          cbn [tm_lvars tm_lvars_at value_lvars_at value_lvars].
-	          set_solver.
+	          apply elem_of_union_r.
+	          apply elem_of_singleton_2.
+	          reflexivity.
 	      }
 	      pose proof (basic_world_formula_union
 	        ({[LVFree w := erase_ty τarg]} : lty_env)
@@ -1444,8 +1447,9 @@ Proof.
 	          as [_ [_ Hbasicτ]].
 	        split; [exact Hlc_app|]. split; [exact Hscope_app|].
 	        eapply basic_context_ty_lvars_mono; [|exact Hbasicτ].
-	        unfold relevant_env, lty_env_restrict_lvars.
-	        rewrite storeA_restrict_dom. set_solver.
+		        unfold relevant_env, lty_env_restrict_lvars.
+		        rewrite storeA_restrict_dom.
+		        clear -Hbasicτ. set_solver.
 	      - exact Hworld_app_env.
 	      - exact Hfun_basic_self.
 	    }
@@ -1468,7 +1472,7 @@ Proof.
         rewrite dom_insert_L in Hfin.
         apply elem_of_union in Hfin as [Hfin|Hfin].
         + apply elem_of_singleton in Hfin. inversion Hfin. subst.
-          clear -Hw. set_solver.
+	          apply Hw. fix_self_in_union.
         + eapply relevant_env_fresh_free; [| |exact Hfin].
           * apply fv_cty_fix_rec_call_ty_fresh;
               [ intros Hfx; apply Hf; repeat apply elem_of_union_r;

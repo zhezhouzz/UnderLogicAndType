@@ -274,3 +274,28 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 Denotation/theories/TypeDenote.vo` passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `3.96s`.
+
+## Batch 14: `SoundnessFixSelf.v`
+
+- Baseline from a clean focused `COQEXTRAFLAGS=-time` run before this batch:
+  `9.09s` for 1652 lines, about `5.50 s/KLOC`.
+- Concrete hotspots:
+  - a freshness side condition for two result-first binders used
+    `set_solver` and spent about `2.55s`;
+  - a singleton `relevant_lvars` membership proof for the recursive argument
+    world also used broad `set_solver` and spent about `2.55s`;
+  - a static-guard environment-domain inclusion spent about `3.23s` before
+    context clearing.
+- Optimization:
+  - Replaced the binder-inequality side conditions by direct contradiction
+    proofs using the fresh hypothesis and `fix_self_in_union`.
+  - Replaced the singleton `relevant_lvars` membership proof by the explicit
+    right-union/singleton proof.
+  - Cleared the context before the remaining domain-inclusion set proof so it
+    solves the actual set expression instead of searching the whole Fix proof
+    context.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixSelf.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `3.33s`, about `2.02 s/KLOC`.
