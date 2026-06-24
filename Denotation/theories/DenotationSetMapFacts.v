@@ -146,6 +146,37 @@ Proof.
   exact H.
 Qed.
 
+Lemma res_extend_by_singleton_output_in_world
+    (m mx : WfWorldT) F x :
+  res_extend_by m F mx ->
+  ext_out F = {[x]} ->
+  x ∈ world_dom (mx : WorldT).
+Proof.
+  intros Hext Hout.
+  pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+  change (world_dom (mx : WorldT) =
+    world_dom (m : WorldT) ∪ ext_out F) in Hdom.
+  rewrite Hdom, Hout.
+  set_solver.
+Qed.
+
+Lemma res_extend_by_singleton_output_notin_base_store
+    (m mx : WfWorldT) F x (σ : StoreT) :
+  res_extend_by m F mx ->
+  ext_out F = {[x]} ->
+  (m : WorldT) σ ->
+  x ∉ dom (σ : StoreT).
+Proof.
+  intros Hext Hout Hσ.
+  pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh.
+  change (ext_out F ## world_dom (m : WorldT)) in Hfresh.
+  pose proof (wfworldA_store_dom m σ Hσ) as Hdomσ.
+  change (dom (σ : StoreT) = world_dom (m : WorldT)) in Hdomσ.
+  rewrite Hdomσ.
+  rewrite Hout in Hfresh.
+  set_solver.
+Qed.
+
 Ltac denotation_set_norm :=
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *;
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.

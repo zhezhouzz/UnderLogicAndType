@@ -41,6 +41,11 @@ Implementation Status
      domain, base restriction, input-domain, and output-fresh facts.
    - Replaced one representative `TypeEquivTLetFormula.v` proof block that
      manually posed `res_extend_by_dom` and `res_extend_by_restrict_base`.
+   - Added regular lemmas for the common singleton-output shapes:
+     `res_extend_by_singleton_output_in_world` and
+     `res_extend_by_singleton_output_notin_base_store`.
+   - Replaced repeated `res_extend_by_output_fresh`/store-domain/set-solver
+     combinations in `TypeEquivTermBase.v`.
    - Deferred: `ty_denote_gas ... (ret x)` regular extraction cannot live in
      `DenotationSetMapFacts.v` because the theorem currently belongs to the
      higher `TypeEquiv.v` layer; moving it requires a separate dependency
@@ -77,6 +82,8 @@ Validation Log
   (`0.37s` real for the final target after changed dependencies).
 - Completed: `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo`
   (`3.86s` real).
+- Completed: `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermBase.vo`
+  (`2.05s` real after singleton-output helper extraction).
 - Completed: `timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo`
   (`1.57s` real).
 - Completed: `timeout 50s make TIMED=1 ContextBasicDenotation/theories/BasicFormulaFiberwise.vo`
