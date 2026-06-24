@@ -722,3 +722,33 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     medium-size freshness/set side conditions around the self-body iff lemmas.
     Continue with another smaller batch rather than hiding them in a broad
     tactic.
+
+## Batch 29: `TypePersistBase.v` self-body fresh/result side conditions
+
+- Baseline before this batch:
+  after Batch 28, focused runs still ranged around `4-5s`; top commands were
+  repeated `set_solver` calls in the self-body iff proofs.
+- Concrete hotspots:
+  - `fresh_for` decompositions for
+    `world_dom m ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}`;
+  - `expr_result_extension_witness_on_exists` side conditions proving
+    `y` fresh for the result domain;
+  - result-first ret-value freshness goals for `tret (vfvar z)`;
+  - repeated swap-domain proof fragments in
+    `res_restrict_ret_fvar_result_swap_projection`.
+- Optimization:
+  - Reused the four-way freshness helpers from Batch 28 throughout the
+    over/under self-body proofs.
+  - Replaced the remaining `HyD_atoms` and `cbn [fv_value]; set_solver`
+    obligations with direct `lvars_fv_elem` and singleton-union reasoning.
+  - Replaced the second-half swap proof's `HaA` and singleton-domain
+    exclusions with the local singleton-union helper lemmas.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: about `2.03s` for about `2079` lines, roughly
+    `0.98 s/KLOC`.
+- Deferred:
+  - Remaining top proof commands are below about `0.11s`; the largest cost is
+    import overhead.  This file is now below the requested `1 s/KLOC` line.

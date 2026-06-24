@@ -906,7 +906,8 @@ Proof.
            }
 	           transitivity (σmy !! x); [exact Hxy|].
 	           symmetry. exact Hxbase.
-	        -- assert (HaA : a ∈ A) by set_solver.
+        -- assert (HaA : a ∈ A)
+             by (eapply elem_union_singleton_not_eq_left; eauto).
 	           change (σmy !! a = (storeA_swap x y
 	             (store_restrict σm (A ∪ {[x]}) : StoreT)
 	             : gmap atom value) !! a).
@@ -915,7 +916,7 @@ Proof.
 	           rewrite (storeA_swap_lookup x y
 	             (store_restrict σm (A ∪ {[x]}) : StoreT) a).
 	           rewrite storeA_restrict_lookup.
-	           rewrite decide_True by set_solver.
+	           rewrite decide_True by (apply elem_of_union_l; exact HaA).
 	           assert (Habase : σm !! a = σmy !! a).
 	           {
 	             symmetry.
@@ -931,14 +932,16 @@ Proof.
 	        -- replace x with (swap x y y) at 1 by
 	             (unfold swap; repeat destruct decide; try congruence;
 	              exfalso; apply Hym; subst; exact Hxm).
-	           rewrite (storeA_swap_lookup x y
-	             (store_restrict σm (A ∪ {[x]}) : StoreT) y).
-	           symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+		           rewrite (storeA_swap_lookup x y
+		             (store_restrict σm (A ∪ {[x]}) : StoreT) y).
+		           symmetry. apply storeA_restrict_lookup_none_r.
+               eapply notin_union_singleton_of_notin_world; eauto.
 	        -- replace a with (swap x y a) at 1 by
 	             (unfold swap; repeat destruct decide; set_solver).
-	           rewrite (storeA_swap_lookup x y
-	             (store_restrict σm (A ∪ {[x]}) : StoreT) a).
-	           symmetry. apply storeA_restrict_lookup_none_r. set_solver.
+		           rewrite (storeA_swap_lookup x y
+		             (store_restrict σm (A ∪ {[x]}) : StoreT) a).
+		           symmetry. apply storeA_restrict_lookup_none_r.
+               eapply notin_union_singleton_swap_ne; eauto.
 Qed.
 
 Lemma over_open_body_transport_ret_fvar_result
@@ -1167,15 +1170,16 @@ Proof.
   assert (Hyfresh :
       y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
   { subst y. apply fresh_for_not_in. }
-  assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
-  assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+  assert (Hym : y ∉ world_dom (m : WorldT))
+    by (eapply notin_union4_l; exact Hyfresh).
+  assert (Hyφ : y ∉ qual_dom φ)
+    by (eapply notin_union4_r1; exact Hyfresh).
   assert (HyD : LVFree y ∉ Dres).
   {
     intros HyD.
     assert (HyDfv : y ∈ lvars_fv Dres).
     { apply lvars_fv_elem. exact HyD. }
-    apply Hyfresh.
-    set_solver.
+    eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].
   }
   destruct (expr_result_extension_witness_on_exists
     (lvars_fv Dres) (tret (vfvar z)) y) as [Fx HFx].
@@ -1184,7 +1188,7 @@ Proof.
     apply Htm_D.
     apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
     rewrite tm_lvars_fv. exact Ha.
-  - intros HyD_atoms. set_solver.
+  - intros HyD_atoms. apply HyD. apply lvars_fv_elem. exact HyD_atoms.
   - destruct (res_extend_by_exists m Fx) as [my Hext].
     {
       constructor.
@@ -1219,7 +1223,7 @@ Proof.
         + intros a Ha. apply lvars_fv_elem. apply Htm_D.
           apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
           rewrite tm_lvars_fv. exact Ha.
-        + intros HyD_atoms. set_solver.
+        + intros HyD_atoms. apply HyD. apply lvars_fv_elem. exact HyD_atoms.
         + split; [exact Hin_Fx|exact Hout_Fx].
         + exact Hrel_Fx.
       - exact Hext.
@@ -1235,7 +1239,8 @@ Proof.
       eapply result_first_outer_result_ret_value_at_open.
       - exact HΣclosed.
       - constructor.
-      - cbn [fv_value]. set_solver.
+      - cbn [fv_value].
+        eapply notin_union4_r3; exact Hyfresh.
       - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
       - exact Hres_at.
     }
@@ -1329,15 +1334,16 @@ Proof.
   assert (Hyfresh :
       y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
   { subst y. apply fresh_for_not_in. }
-  assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
-  assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+  assert (Hym : y ∉ world_dom (m : WorldT))
+    by (eapply notin_union4_l; exact Hyfresh).
+  assert (Hyφ : y ∉ qual_dom φ)
+    by (eapply notin_union4_r1; exact Hyfresh).
   assert (HyD : LVFree y ∉ Dres).
   {
     intros HyD.
     assert (HyDfv : y ∈ lvars_fv Dres).
     { apply lvars_fv_elem. exact HyD. }
-    apply Hyfresh.
-    set_solver.
+    eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].
   }
   destruct (expr_result_extension_witness_on_exists
     (lvars_fv Dres) (tret (vfvar z)) y) as [Fx HFx].
@@ -1346,7 +1352,7 @@ Proof.
     apply Htm_D.
     apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
     rewrite tm_lvars_fv. exact Ha.
-  - intros HyD_atoms. set_solver.
+  - intros HyD_atoms. apply HyD. apply lvars_fv_elem. exact HyD_atoms.
   - destruct (res_extend_by_exists m Fx) as [my Hext].
     {
       constructor.
@@ -1381,7 +1387,7 @@ Proof.
         + intros a Ha. apply lvars_fv_elem. apply Htm_D.
           apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
           rewrite tm_lvars_fv. exact Ha.
-        + intros HyD_atoms. set_solver.
+        + intros HyD_atoms. apply HyD. apply lvars_fv_elem. exact HyD_atoms.
         + split; [exact Hin_Fx|exact Hout_Fx].
         + exact Hrel_Fx.
       - exact Hext.
@@ -1397,7 +1403,8 @@ Proof.
       eapply result_first_outer_result_ret_value_at_open.
       - exact HΣclosed.
       - constructor.
-      - cbn [fv_value]. set_solver.
+      - cbn [fv_value].
+        eapply notin_union4_r3; exact Hyfresh.
       - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
       - exact Hres_at.
     }
@@ -1658,16 +1665,18 @@ Proof.
       eapply res_models_forall_rev_intro; [exact Hscope_forall|].
       exists (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
       intros y Hy my Hdom_my Hbase_my.
-      assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hy; set_solver).
+      assert (Hym : y ∉ world_dom (m : WorldT))
+        by (eapply notin_union4_l; exact Hy).
       assert (Hy_my : y ∈ world_dom (my : WorldT)).
-      { rewrite Hdom_my. set_solver. }
-      assert (Hyφ : y ∉ qual_dom φ) by (clear -Hy; set_solver).
+      { rewrite Hdom_my. apply elem_of_union_r. apply elem_of_singleton. reflexivity. }
+      assert (Hyφ : y ∉ qual_dom φ)
+        by (eapply notin_union4_r1; exact Hy).
       assert (HyD : LVFree y ∉ Dres).
       {
         intros HyD.
         assert (HyDfv : y ∈ lvars_fv Dres).
         { apply lvars_fv_elem. exact HyD. }
-        clear -Hy HyDfv. set_solver.
+        eapply notin_union4_r2; [exact Hy|exact HyDfv].
       }
       assert (Hle : m ⊑ my).
       { rewrite <- Hbase_my. apply res_restrict_le. }
@@ -1774,14 +1783,16 @@ Proof.
   assert (Hyfresh :
       y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]}).
   { subst y. apply fresh_for_not_in. }
-  assert (Hym : y ∉ world_dom (m : WorldT)) by set_solver.
-  assert (Hyφ : y ∉ qual_dom φ) by set_solver.
+  assert (Hym : y ∉ world_dom (m : WorldT))
+    by (eapply notin_union4_l; exact Hyfresh).
+  assert (Hyφ : y ∉ qual_dom φ)
+    by (eapply notin_union4_r1; exact Hyfresh).
   assert (HyD : LVFree y ∉ Dres).
   {
     intros HyD.
     assert (HyDfv : y ∈ lvars_fv Dres).
     { apply lvars_fv_elem. exact HyD. }
-    apply Hyfresh. set_solver.
+    eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].
   }
   destruct (expr_result_extension_witness_on_exists
     (lvars_fv Dres) (tret (vfvar z)) y) as [Fx HFx].
@@ -1790,7 +1801,7 @@ Proof.
     apply Htm_D.
     apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar z))) a)).
     rewrite tm_lvars_fv. exact Ha.
-  - intros HyD_atoms. set_solver.
+  - intros HyD_atoms. apply HyD. apply lvars_fv_elem. exact HyD_atoms.
   - destruct (res_extend_by_exists m Fx) as [my Hext].
     {
       constructor.
