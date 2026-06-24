@@ -56,6 +56,22 @@ Pattern Buckets
      - `res_extend_by_singleton_output_notin_base_store`
    - Remaining files:
      - `TypeEquivTermResult.v`
+       first pass:
+       - Replaced extension input-domain blocks with
+         `denotation_regular_res_extend_input`.
+       - Replaced extension-domain rewrites with
+         `denotation_regular_res_extend_dom` where the local proof immediately
+         needed the generated stdpp fact.
+       - Replaced singleton-output world membership and base-store freshness
+         blocks with `res_extend_by_singleton_output_in_world` and
+         `res_extend_by_singleton_output_notin_base_store`.
+       - Validation:
+         `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermResult.vo`
+         passed in 4.52s.
+         `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTerm.vo`
+         and
+         `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo`
+         passed.
      - `TypeEquivFiberBaseResult.v` first pass:
        - Imported `DenotationSetMapFacts`.
        - Replaced scoped-world `res_extend_by_dom` setup with regular
@@ -138,11 +154,15 @@ Batch Log
   - Cleaned the first repeated `res_extend_by` / singleton-output blocks in
     `TypeEquivFiberBaseResult.v`.
   - `TypeEquivFiberBaseResult.vo` and `TypeEquivFiberBase.vo` passed.
+- Batch C.2: completed.
+  - Cleaned the first repeated `res_extend_by` / singleton-output blocks in
+    `TypeEquivTermResult.v`.
+  - `TypeEquivTermResult.vo`, `TypeEquivTerm.vo`, and `TypeEquiv.vo` passed.
 
 Next Tasks
 ----------
 
-1. Continue optimizing `TypeEquivTermResult.v` `res_extend_by` blocks using
-   existing and new regular lemmas.
-2. Optimize `TypePersistBase.v` repeated singleton-output/domain blocks.
-3. Re-scan counts and update this file.
+1. Optimize `TypePersistBase.v` repeated singleton-output/domain blocks.
+2. Re-scan counts and update this file.
+3. Review the remaining deep store-agree/union lookup proofs in
+   `TypeEquivTermResult.v`; extract only if a general lemma emerges clearly.

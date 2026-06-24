@@ -480,7 +480,7 @@ Proof.
       rewrite storeA_restrict_dom.
       pose proof (wfworldA_store_dom m τm Hτm) as Hdomτm.
       change (dom (τm : StoreT) = world_dom (m : WorldT)) in Hdomτm.
-      pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
+      denotation_regular_res_extend_input.
       set_solver.
     }
     assert (Heval_m :
@@ -494,9 +494,9 @@ Proof.
 	        rewrite <- (storeA_restrict_twice_subset τ
 	          (world_dom (mx : WorldT)) (fv_tm e)).
 	        2:{
-	          pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
-	          pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx_ext.
-	          rewrite <- Hin, Hdom_mx_ext.
+	          denotation_regular_res_extend_input.
+	          denotation_regular_res_extend_dom.
+	          rewrite <- Hin, Hdom_ext.
 	          set_solver.
 	        }
 		        rewrite Hτmx_eq.
@@ -792,9 +792,9 @@ Proof.
 	        assert (Ha_fv : a ∈ fv_tm e) by (rewrite <- tm_lvars_fv; exact Ha).
 	        assert (Ha_mx : a ∈ world_dom (mx : WorldT)).
 	        {
-		          pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
-		          pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx_ext.
-		          rewrite Hdom_mx_ext.
+		          denotation_regular_res_extend_input.
+		          denotation_regular_res_extend_dom.
+		          rewrite Hdom_ext.
 		          set_solver.
 	        }
 	        assert (Hv_lookup :
@@ -890,10 +890,7 @@ Proof.
 	      * subst τmxv.
 	        pose proof (f_equal (fun s : StoreT => s !! x) Hτv_restrict) as Hxlook.
 	        assert (Hx_mx : x ∈ world_dom (mx : WorldT)).
-	        {
-	          pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
-	          rewrite Hdom_mx. set_solver.
-	        }
+	        { exact (res_extend_by_singleton_output_in_world m mx F x Hext Hout). }
 	        change ((store_restrict τv (world_dom (mx : WorldT)) : StoreT) !! x =
 	          (((τm : StoreT) ∪ ({[x := v]} : StoreT)) : StoreT) !! x)
 	          in Hxlook.
@@ -905,12 +902,8 @@ Proof.
 	        apply map_lookup_union_Some_raw. right.
 	        split.
 	        - apply not_elem_of_dom_1.
-	           pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh.
-	           change (ext_out F ## world_dom (m : WorldT)) in Hfresh.
-	           rewrite Hout in Hfresh.
-	           pose proof (wfworldA_store_dom m τm Hτm) as Hdomτm.
-	           change (dom (τm : StoreT) = world_dom (m : WorldT)) in Hdomτm.
-	           change (x ∉ dom (τm : StoreT)). rewrite Hdomτm. set_solver.
+	           exact (res_extend_by_singleton_output_notin_base_store
+	             m mx F x τm Hext Hout Hτm).
 	        - change ((({[x := v]} : gmap atom value) !! x) = Some v).
 		           apply map_lookup_singleton.
 		        }
