@@ -2,7 +2,8 @@
 
     Result-formula and fiber witness support for projected transport. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm TypeEquivFiberBaseCore.
+From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm
+  DenotationSetMapFacts TypeEquivFiberBaseCore.
 From ContextBasicDenotation Require Import StoreTyping TermEval.
 From CoreLang Require Import StrongNormalization InstantiationProps.
 
@@ -1392,10 +1393,10 @@ Proof.
   - unfold formula_scoped_in_world.
     rewrite formula_fv_expr_result_formula_at.
     intros a Ha.
-    pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
+    denotation_regular_res_extend_dom.
     change (world_dom (mx : WorldT) =
-      world_dom (m : WorldT) ∪ ext_out F) in Hdom_mx.
-    rewrite Hdom_mx, Hout.
+      world_dom (m : WorldT) ∪ ext_out F) in Hdom_ext.
+    rewrite Hdom_ext, Hout.
     apply elem_of_union in Ha as [HaD|HaQ].
     + apply elem_of_union_l. exact (HDm a HaD).
     + apply lvars_fv_elem in HaQ.
@@ -1418,7 +1419,7 @@ Proof.
       rewrite storeA_restrict_dom.
       pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
       change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-      pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
+      denotation_regular_res_extend_input.
       set_solver.
     }
     assert (Hinput_dom :
@@ -1465,13 +1466,8 @@ Proof.
         apply map_lookup_union_Some_raw. right.
         split.
         -- apply not_elem_of_dom.
-           pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh.
-           change (ext_out F ## world_dom (m : WorldT)) in Hfresh.
-           rewrite Hout in Hfresh.
-           pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-           change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-           change (x ∉ dom (σm : StoreT)).
-           rewrite Hdomσm. set_solver.
+           exact (res_extend_by_singleton_output_notin_base_store
+             m mx F x σm Hext Hout Hσm).
         -- apply map_lookup_insert.
       * change (tm_eval_in_store (σm ∪ ({[x := u]} : StoreT)) e u).
         assert (Hrestrict_u :
@@ -1506,7 +1502,7 @@ Proof.
       rewrite storeA_restrict_dom.
       pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
       change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-      pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
+      denotation_regular_res_extend_input.
       set_solver.
     }
     assert (Hinput_dom :
@@ -1574,13 +1570,8 @@ Proof.
         apply map_lookup_union_Some_raw. right.
         split.
         -- apply not_elem_of_dom.
-           pose proof (res_extend_by_output_fresh m F mx Hext) as Hfresh.
-           change (ext_out F ## world_dom (m : WorldT)) in Hfresh.
-           rewrite Hout in Hfresh.
-           pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-           change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-           change (x ∉ dom (σm : StoreT)).
-           rewrite Hdomσm. set_solver.
+           exact (res_extend_by_singleton_output_notin_base_store
+             m mx F x σm Hext Hout Hσm).
 	        -- apply map_lookup_insert.
 	Qed.
 

@@ -49,14 +49,25 @@ Pattern Buckets
 ---------------
 
 1. `res_extend_by` regular facts
-   - Status: partially done.
+   - Status: partially done; `TypeEquivFiberBaseResult.v` first pass done.
    - Existing facts:
      - `denotation_regular`
      - `res_extend_by_singleton_output_in_world`
      - `res_extend_by_singleton_output_notin_base_store`
    - Remaining files:
      - `TypeEquivTermResult.v`
-     - `TypeEquivFiberBaseResult.v`
+     - `TypeEquivFiberBaseResult.v` first pass:
+       - Imported `DenotationSetMapFacts`.
+       - Replaced scoped-world `res_extend_by_dom` setup with regular
+         extraction.
+       - Replaced two input-domain subset blocks with regular extraction.
+       - Replaced two singleton-output/base-store freshness blocks with
+         `res_extend_by_singleton_output_notin_base_store`.
+       - Validation:
+         `timeout 50s make TIMED=1 Denotation/theories/TypeEquivFiberBaseResult.vo`
+         passed in 3.70s.
+         `timeout 50s make TIMED=1 Denotation/theories/TypeEquivFiberBase.vo`
+         passed.
      - `TypePersistBase.v`
      - `SoundnessApp.v`
      - `SoundnessAppD.v`
@@ -123,11 +134,15 @@ Batch Log
   - Added match observation facts to `SoundnessSetMapFacts.v`.
   - Cleaned repeated FV/X setup in `SoundnessMatch.v`.
   - `SoundnessSetMapFacts.vo` and `SoundnessMatch.vo` passed.
+- Batch C.1: completed.
+  - Cleaned the first repeated `res_extend_by` / singleton-output blocks in
+    `TypeEquivFiberBaseResult.v`.
+  - `TypeEquivFiberBaseResult.vo` and `TypeEquivFiberBase.vo` passed.
 
 Next Tasks
 ----------
 
-1. Optimize `TypeEquivTermResult.v` / `TypeEquivFiberBaseResult.v`
-   `res_extend_by` blocks using existing and new regular lemmas.
+1. Continue optimizing `TypeEquivTermResult.v` `res_extend_by` blocks using
+   existing and new regular lemmas.
 2. Optimize `TypePersistBase.v` repeated singleton-output/domain blocks.
 3. Re-scan counts and update this file.
