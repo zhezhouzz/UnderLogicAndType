@@ -135,3 +135,6 @@ timeout 180s make TIMED=1
 - [x] Rechecked `TypePersistWandForward.vo` after the freshness cleanup and
   Resource-layer rebuild.  It remains around 13.14s, so the remaining
   compile-time pressure is still concentrated in the reverse proof.
+- [x] Final validation for this optimization pass completed: `timeout 180s
+  make TIMED=1` passed, and `rg -n "Admitted\\.|admit\\." -g '*.v' .`
+  found no proof admits.
