@@ -605,3 +605,32 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
 - Deferred:
   - Remaining time is now mostly import/fixed overhead; no local command above
     about `0.08s` remains in the focused timing output.
+
+## Batch 25: `Soundness.v` ctx-sub observed-variable domain support
+
+- Baseline from the focused `COQEXTRAFLAGS=-time` run:
+  `ContextTyping/theories/Soundness.v` rebuilt in about `4.12s` for
+  1157 lines, about `3.56 s/KLOC`.
+- Concrete hotspot:
+  - `fundamental_ctx_sub_case` rebuilt the proof that the variables observed by
+    `τ` and `e` are in `world_dom m` by unfolding `ctx_erasure_under`, then
+    called `better_set_solver` in a large local context.  The normalization and
+    solver steps together took about `0.26s`.
+- Optimization:
+  - Added the local helper `soundness_wf_observed_vars_world_dom`, which
+    packages the stable path:
+    `context_typing_wf` gives `fv_tm e ∪ fv_cty τ ⊆ dom (erase_ctx Γ)`,
+    `ctx_denote_under` gives the basic-world domain, and
+    `ctx_erasure_under_erase_ctx_dom_subset` bridges the two domains.
+  - Replaced the broad normalization/solver block in `fundamental_ctx_sub_case`
+    with a direct application of that helper plus
+    `formula_fv_ty_denote_gas_subset_relevant`.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: about `3.64s`, about `3.15 s/KLOC`.
+- Deferred:
+  - The remaining cost in `Soundness.v` is mostly import overhead and many
+    small proof steps; further sub-1s/KLOC progress likely needs splitting the
+    main dispatch file or moving more orchestration lemmas into case files.

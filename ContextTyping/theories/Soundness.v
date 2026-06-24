@@ -81,6 +81,25 @@ Proof.
   exact (proj2 (proj2 (proj2 Hguard))).
 Qed.
 
+Local Lemma soundness_wf_observed_vars_world_dom
+    (Σ : gmap atom ty) Γ e τ (m : WfWorldT) :
+  context_typing_wf Σ Γ e τ ->
+  m ⊨ ctx_denote_under Σ Γ ->
+  fv_tm e ∪ fv_cty τ ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hwf Hctx a Ha.
+  pose proof (context_typing_wf_fv_tm_subset Σ Γ e τ Hwf) as Htm.
+  pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ e τ Hwf) as Hτfv.
+  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
+  pose proof (basic_world_formula_atom_env_dom_subset
+    (ctx_erasure_under Σ Γ) m Hworld) as Hdom.
+  apply Hdom.
+  apply ctx_erasure_under_erase_ctx_dom_subset.
+  apply elem_of_union in Ha as [Ha | Ha].
+  - exact (Htm a Ha).
+  - exact (Hτfv a Ha).
+Qed.
+
 Section WithPrimopContext.
 
 Context (Φ : primop_ctx).
@@ -224,14 +243,9 @@ Proof.
   - unfold ty_denote_under, ty_denote.
     pose proof (formula_fv_ty_denote_gas_subset_relevant
       (cty_depth τ) (atom_env_to_lty_env (erase_ctx Γ1)) τ e) as Hfvden.
-    pose proof (context_typing_wf_fv_tm_subset Σ Γ1 e τ Hwf)
-      as Htm.
-    pose proof (context_typing_wf_fv_cty_subset_erase_dom Σ Γ1 e τ Hwf)
-      as Hτ.
-    pose proof (ctx_denote_under_basic_world Σ Γ1 m HΓ1) as Hworld.
-    pose proof (basic_world_formula_atom_env_dom_subset
-      (ctx_erasure_under Σ Γ1) m Hworld) as Hdom.
-    ctx_erasure_under_norm_in Hdom. better_set_solver.
+    pose proof (soundness_wf_observed_vars_world_dom
+      Σ Γ1 e τ m Hwf HΓ1) as Hobs.
+    intros a Ha. exact (Hobs a (Hfvden a Ha)).
   - exact Hle.
   - exact Hden1_m'.
 Qed.
