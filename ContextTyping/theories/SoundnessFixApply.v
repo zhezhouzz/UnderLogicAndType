@@ -165,7 +165,7 @@ Proof.
       apply elem_of_map in HzD as [a [Ha HaD]].
       inversion Ha. subst a.
       exact (Hzmy HaD).
-    - set_solver.
+    - intros a Ha. exact Ha.
     - exact HFz.
     - exact Hextz.
     - exact Htotal_body.
@@ -208,7 +208,7 @@ Proof.
       apply elem_of_map in HzD as [a [Ha HaD]].
       inversion Ha. subst a.
       exact (Hzmy HaD).
-    - set_solver.
+    - intros a Ha. exact Ha.
     - exact HFz.
     - exact Hextz.
     - exact Htotal_body.
@@ -322,6 +322,7 @@ Proof.
         lvars_fv (dom Σrel) ∪ fv_value vf ∪ fv_cty τx ∪
         fv_cty τ ∪ {[y; z]}).
   { subst w. apply fresh_for_not_in. }
+  assert (Hwz : w <> z) by (clear -Hwfresh; set_solver).
   assert (Hw_mz : w ∉ world_dom (mz : WorldT)).
   { clear -Hwfresh. better_set_solver. }
   assert (HwΔ : LVFree w ∉ dom Δy).
@@ -353,6 +354,55 @@ Proof.
   }
   assert (Hwself : w ∉ fv_value self).
   { subst self. cbn [fv_value]. clear -Hwfresh. better_set_solver. }
+  assert (HΔ_ctx :
+      dom Δy ⊆
+      dom (atom_env_to_lty_env
+        (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
+  {
+    subst Δy.
+    intros v Hv.
+    rewrite dom_insert_L in Hv.
+    apply elem_of_union in Hv as [Hyv|HΓv].
+    - apply elem_of_singleton in Hyv. subst v.
+      rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists y. split; [reflexivity|].
+      ctx_erasure_under_norm; ctx_erasure_under_norm.
+      eapply (elem_of_dom_2 _ _ (erase_ty τx)).
+      apply map_lookup_union_Some_raw. right. split.
+      + apply not_elem_of_dom. intros Hy_left.
+        rewrite storeA_restrict_dom in Hy_left.
+        apply elem_of_intersection in Hy_left as [HyΣ _].
+        apply Hy. set_solver.
+      + apply map_lookup_union_Some_raw. right. split.
+        * apply not_elem_of_dom. exact HyΓ.
+        * apply lookup_singleton_eq.
+    - rewrite atom_store_to_lvar_store_dom in HΓv.
+      unfold lvars_of_atoms in HΓv.
+      apply elem_of_map in HΓv as [a [Hv_eq HaΓ]].
+      subst v.
+      rewrite atom_store_to_lvar_store_dom.
+      unfold lvars_of_atoms.
+      apply elem_of_map. exists a. split; [reflexivity|].
+      ctx_erasure_under_norm; ctx_erasure_under_norm.
+      clear -HaΓ. better_set_solver.
+  }
+  assert (HzΔ : LVFree z ∉ dom Δy).
+  {
+    intros HzΔ.
+    pose proof (ctx_denote_under_basic_world
+      Σ (CtxComma Γ (CtxBind y τx)) my Hctx_comma) as Hworld_ctx.
+    apply basic_world_formula_models_iff in Hworld_ctx
+      as [_ [Hscope_ctx _]].
+    assert (Hz_world : z ∈ world_dom (my : WorldT)).
+    {
+      apply Hscope_ctx.
+      apply lvars_fv_elem.
+      apply HΔ_ctx. exact HzΔ.
+    }
+    apply Hzfresh.
+    clear -Hz_world. set_solver.
+  }
   destruct (expr_result_extension_witness_exists
     (tret self) w Hwself) as [Fw HFw].
   assert (Happw : extension_applicable Fw mz).
@@ -422,34 +472,34 @@ Proof.
           (clear -Hwfresh; set_solver).
         assert (Hz_rel_arg :
             LVFree z ∉ relevant_lvars τself (tret (vfvar w))).
-	        {
-	          intros Hbad. apply lvars_fv_elem in Hbad.
-	          rewrite relevant_lvars_fv in Hbad.
-	          cbn [fv_tm fv_value] in Hbad.
+        {
+          intros Hbad. apply lvars_fv_elem in Hbad.
+          rewrite relevant_lvars_fv in Hbad.
+          cbn [fv_tm fv_value] in Hbad.
           pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
-	          clear -Hzfresh Hwfresh Hbad Hfvτself. better_set_solver.
-	        }
+          clear -Hzfresh Hwfresh Hbad Hfvτself. better_set_solver.
+        }
         rewrite (lty_env_restrict_lvars_insert_fresh
           (<[LVFree w := erase_ty τself]> Σrel)
           (relevant_lvars τself (tret (vfvar w))) z
           (erase_ty (CTArrow τself τres)) Hz_rel_arg).
-	        symmetry.
-	        apply lam_lty_env_restrict_result_first_arg_eq.
-	        * exact Hτself_lc.
-	        * clear -Hwbody Hwτself Hwτres. better_set_solver.
+        symmetry.
+        apply lam_lty_env_restrict_result_first_arg_eq.
+        * exact Hτself_lc.
+        * clear -Hwbody Hwτself Hwτres. better_set_solver.
       + exact Hself_w.
     - subst Σrel. apply relevant_env_closed.
       subst Δy. apply lty_env_closed_insert_free.
       apply atom_store_to_lvar_store_closed.
     - intros Hbad. apply Hzfresh. apply lvars_fv_elem in Hbad.
       clear -Hbad. better_set_solver.
-    - clear -Hwfresh. set_solver.
-	    - rewrite dom_insert_L. intros Hin.
-	      apply elem_of_union in Hin as [Hin|Hin].
-	      + apply elem_of_singleton in Hin.
-	        injection Hin as Hzw.
-	        apply Hwfresh. rewrite Hzw. set_solver.
-	      + clear -HwΣrel Hin. apply HwΣrel. exact Hin.
+    - exact Hwz.
+    - rewrite dom_insert_L. intros Hin.
+      apply elem_of_union in Hin as [Hin|Hin].
+      + apply elem_of_singleton in Hin.
+        injection Hin as Hzw.
+        exact (Hwz Hzw).
+      + clear -HwΣrel Hin. apply HwΣrel. exact Hin.
     - exact Hτself_lc.
     - pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
       clear -Hzfresh Hfvτself. better_set_solver.
@@ -478,14 +528,14 @@ Proof.
         apply atom_store_to_lvar_store_closed. }
     2:{ intros Hbad. apply Hzfresh. apply lvars_fv_elem in Hbad.
         clear -Hbad. better_set_solver. }
-    2:{ clear -Hwfresh. set_solver. }
+    2:{ exact Hwz. }
     2:{
-	      rewrite dom_insert_L. intros Hin.
-	      apply elem_of_union in Hin as [Hin|Hin].
-	      - apply elem_of_singleton in Hin.
-	        injection Hin as Hzw.
-	        apply Hwfresh. rewrite Hzw. set_solver.
-	      - clear -HwΣrel Hin. apply HwΣrel. exact Hin.
+      rewrite dom_insert_L. intros Hin.
+      apply elem_of_union in Hin as [Hin|Hin].
+      - apply elem_of_singleton in Hin.
+        injection Hin as Hzw.
+        exact (Hwz Hzw).
+      - clear -HwΣrel Hin. apply HwΣrel. exact Hin.
     }
     2:{ exact Hτres_lc1. }
     2:{
@@ -550,55 +600,6 @@ Proof.
       subst Δy τself τres body.
       eapply context_typing_wf_denot_static_guard_comma_bind_insert;
         eauto.
-    }
-    assert (HΔ_ctx :
-        dom Δy ⊆
-        dom (atom_env_to_lty_env
-          (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
-    {
-      subst Δy.
-      intros v Hv.
-      rewrite dom_insert_L in Hv.
-      apply elem_of_union in Hv as [Hyv|HΓv].
-      - apply elem_of_singleton in Hyv. subst v.
-        rewrite atom_store_to_lvar_store_dom.
-        unfold lvars_of_atoms.
-        apply elem_of_map. exists y. split; [reflexivity|].
-        ctx_erasure_under_norm; ctx_erasure_under_norm.
-        eapply (elem_of_dom_2 _ _ (erase_ty τx)).
-        apply map_lookup_union_Some_raw. right. split.
-        + apply not_elem_of_dom. intros Hy_left.
-          rewrite storeA_restrict_dom in Hy_left.
-          apply elem_of_intersection in Hy_left as [HyΣ _].
-          apply Hy. set_solver.
-        + apply map_lookup_union_Some_raw. right. split.
-          * apply not_elem_of_dom. exact HyΓ.
-          * apply lookup_singleton_eq.
-      - rewrite atom_store_to_lvar_store_dom in HΓv.
-        unfold lvars_of_atoms in HΓv.
-        apply elem_of_map in HΓv as [a [Hv_eq HaΓ]].
-        subst v.
-        rewrite atom_store_to_lvar_store_dom.
-        unfold lvars_of_atoms.
-        apply elem_of_map. exists a. split; [reflexivity|].
-        ctx_erasure_under_norm; ctx_erasure_under_norm.
-        clear -HaΓ. better_set_solver.
-    }
-    assert (HzΔ : LVFree z ∉ dom Δy).
-    {
-      intros HzΔ.
-      pose proof (ctx_denote_under_basic_world
-        Σ (CtxComma Γ (CtxBind y τx)) my Hctx_comma) as Hworld_ctx.
-      apply basic_world_formula_models_iff in Hworld_ctx
-        as [_ [Hscope_ctx _]].
-      assert (Hz_world : z ∈ world_dom (my : WorldT)).
-      {
-        apply Hscope_ctx.
-        apply lvars_fv_elem.
-        apply HΔ_ctx. exact HzΔ.
-      }
-      apply Hzfresh.
-      clear -Hz_world. set_solver.
     }
     pose proof (ty_static_guard_basic_world Δy
       (CTArrow τself τres) (tret body) mw Hstatic_body_mw)
@@ -734,7 +735,7 @@ Proof.
       apply elem_of_union in Hin as [Hin|Hin].
       + apply elem_of_singleton in Hin.
         injection Hin as Hzw.
-        apply Hwfresh. rewrite Hzw. set_solver.
+        exact (Hwz Hzw).
       + exact (HwΔ Hin).
     - intros Hbad. apply Hwτres. apply lvars_fv_elem. exact Hbad.
     - rewrite fv_tapp_tm. cbn [fv_tm fv_value].
@@ -782,52 +783,7 @@ Proof.
       + subst τres.
         pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
         clear -Hzfresh Hfvτres Ha_ty. better_set_solver.
-    - intros Hbad.
-      assert (HΔ_ctx :
-          dom Δy ⊆
-          dom (atom_env_to_lty_env
-            (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
-      {
-        subst Δy.
-        intros v Hv.
-        rewrite dom_insert_L in Hv.
-        apply elem_of_union in Hv as [Hyv|HΓv].
-        - apply elem_of_singleton in Hyv. subst v.
-          rewrite atom_store_to_lvar_store_dom.
-          unfold lvars_of_atoms.
-          apply elem_of_map. exists y. split; [reflexivity|].
-          ctx_erasure_under_norm; ctx_erasure_under_norm.
-          eapply (elem_of_dom_2 _ _ (erase_ty τx)).
-          apply map_lookup_union_Some_raw. right. split.
-          + apply not_elem_of_dom. intros Hy_left.
-            rewrite storeA_restrict_dom in Hy_left.
-            apply elem_of_intersection in Hy_left as [HyΣ _].
-            apply Hy. set_solver.
-          + apply map_lookup_union_Some_raw. right. split.
-            * apply not_elem_of_dom. exact HyΓ.
-            * apply lookup_singleton_eq.
-        - rewrite atom_store_to_lvar_store_dom in HΓv.
-          unfold lvars_of_atoms in HΓv.
-          apply elem_of_map in HΓv as [a [Hv_eq HaΓ]].
-          subst v.
-          rewrite atom_store_to_lvar_store_dom.
-          unfold lvars_of_atoms.
-          apply elem_of_map. exists a. split; [reflexivity|].
-          ctx_erasure_under_norm; ctx_erasure_under_norm.
-          clear -HaΓ. better_set_solver.
-      }
-      pose proof (ctx_denote_under_basic_world
-        Σ (CtxComma Γ (CtxBind y τx)) my Hctx_comma) as Hworld_ctx.
-      apply basic_world_formula_models_iff in Hworld_ctx
-        as [_ [Hscope_ctx _]].
-      assert (Hz_world : z ∈ world_dom (my : WorldT)).
-      {
-        apply Hscope_ctx.
-        apply lvars_fv_elem.
-        apply HΔ_ctx. exact Hbad.
-      }
-      apply Hzfresh.
-      clear -Hz_world. set_solver.
+    - exact HzΔ.
     - intros Hbad.
       apply lvars_fv_elem in Hbad.
       rewrite context_ty_lvars_fv in Hbad.

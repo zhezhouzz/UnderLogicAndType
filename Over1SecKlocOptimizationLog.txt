@@ -101,3 +101,30 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`
     passed.
   - New focused time observed: `5.86s`.
+
+## Batch 6: `SoundnessFixApply.v`
+
+- Baseline from `CompileTimeStats.txt`: `12.19s`, `14.34 s/KLOC`.
+- `COQEXTRAFLAGS=-time` initially showed:
+  - a reflexive world-domain inclusion proof in
+    `expr_result_formula_at_of_result_extends_on_coarsen` costing about
+    `4.84s`;
+  - repeated freshness/domain side proofs around the nested result-extension
+    drop, including a duplicated `ctx_erasure_under` domain proof.
+- Optimization:
+  - Replaced reflexive inclusion side conditions with direct `intros a Ha;
+    exact Ha`.
+  - Hoisted the context-erasure domain inclusion and `z`-fresh-for-`Δy`
+    proof out of the inner static-guard block so both later drops can reuse
+    the same `HzΔ`.
+  - Reused the earlier `Hwz` / `HwΔ` / `HwΣrel` facts in the `w` drop instead
+    of re-solving the same set-map side conditions.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`
+    passed.
+  - Focused `-time` run passed.
+  - New focused time observed: `5.85s`.
+  - Remaining largest timed sentences are now about `0.98s`
+    (`ty_denote_gas_tapp_result_alias`) and `0.83s`
+    (`ty_denote_under_comma_bind_inv`), so no single multi-second solver
+    remains in this file.
