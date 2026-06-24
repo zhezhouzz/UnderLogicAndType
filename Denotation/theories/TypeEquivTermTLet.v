@@ -70,6 +70,19 @@ Proof.
     exact Hlook.
 Qed.
 
+Local Lemma tlet_fresh_for_parts
+    (σ : StoreT) e1 e2 X x z :
+  z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]} ->
+  z ∉ dom (σ : StoreT) /\
+  z ∉ fv_tm e1 /\
+  z ∉ fv_tm e2 /\
+  z ∉ X /\
+  z <> x.
+Proof.
+  intros Hz.
+  repeat split; set_solver.
+Qed.
+
 Lemma tm_total_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
   res_subset m0 m ->
@@ -96,7 +109,7 @@ Proof.
     Htotal_tlet HFx Hext σ0 Hσ0 v.
   destruct HFx as [Hx_e1 [Hin Hout] Hrel].
   assert (Hx_tlet : x ∉ fv_tm (tlete e1 e2)).
-  { cbn [fv_tm]. set_solver. }
+  { apply notin_fv_tm_tlete; assumption. }
   pose proof Hlc_tlet as Hlc_tlet_parts.
   apply lc_lete_iff_body in Hlc_tlet_parts as [_ Hbody_e2].
   split.
@@ -125,10 +138,8 @@ Proof.
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})
       by (subst z; apply fresh_for_not_in).
-    assert (Hzσ : z ∉ dom (σ : StoreT)) by set_solver.
-    assert (Hze1 : z ∉ fv_tm e1) by set_solver.
-    assert (Hze2 : z ∉ fv_tm e2) by set_solver.
-    assert (Hz_ne_x : z <> x) by set_solver.
+    destruct (tlet_fresh_for_parts σ e1 e2 X x z Hzfresh)
+      as [Hzσ [Hze1 [Hze2 [_ Hz_ne_x]]]].
     assert (Hscope_x :
         tm_lvars (e2 ^^ x) ⊆ lvars_of_atoms (dom (σ : StoreT))).
     {
@@ -186,8 +197,15 @@ Proof.
       exact He1.
     }
     exists σ. split; [exact Hσmx|]. split; [exact HσX|].
-    eapply tm_eval_in_store_tlete_intro_closed_on; eauto;
-      try set_solver; try exact He1_tlet.
+    eapply tm_eval_in_store_tlete_intro_closed_on.
+    + exact Hclosedσ.
+    + exact Hlc_tlet.
+    + intros Hz_bad.
+      apply elem_of_union in Hz_bad as [Hz_bad|Hz_bad].
+      * exact (Hzσ Hz_bad).
+      * exact (Hze2 Hz_bad).
+    + exact He1_tlet.
+    + exact He2z_restrict.
   - intros [σ [Hσmx [HσX Hlet]]].
     assert (Hclosedσ : store_closed (store_restrict σ (fv_tm (tlete e1 e2)))).
     { exact (Hclosed_tlet σ Hσmx). }
@@ -195,9 +213,8 @@ Proof.
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})
       by (subst z; apply fresh_for_not_in).
-    assert (Hze1 : z ∉ fv_tm e1) by set_solver.
-    assert (Hze2 : z ∉ fv_tm e2) by set_solver.
-    assert (Hz_ne_x : z <> x) by set_solver.
+    destruct (tlet_fresh_for_parts σ e1 e2 X x z Hzfresh)
+      as [_ [Hze1 [Hze2 [_ Hz_ne_x]]]].
     assert (Hztlet : z ∉ fv_tm (tlete e1 e2)).
     { apply notin_fv_tm_tlete; assumption. }
     destruct (tm_eval_in_store_tlete_elim_closed_on e1 e2 z σ v
@@ -212,11 +229,9 @@ Proof.
       pose proof (extA_rel_dom Fx (store_restrict σm (ext_in Fx)) we) as Hdom_we.
       rewrite <- Hout.
       apply Hdom_we; [|exact HFrel].
-      rewrite storeA_restrict_dom.
-      pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-      change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-      pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
-      set_solver.
+      eapply extA_projection_dom.
+      - apply resA_extend_by_applicable in Hext. exact Hext.
+      - exact Hσm.
     }
     assert (He1_base :
         tm_eval_in_store (store_restrict σm (fv_tm e1)) e1 vx).
@@ -229,7 +244,8 @@ Proof.
         rewrite !storeA_restrict_twice_same.
         apply storeA_restrict_union_ignore_r.
         change (dom (σe : StoreT) ## fv_tm e1).
-        rewrite Hσe_dom. set_solver.
+        rewrite Hσe_dom.
+        apply disjoint_singleton_l. exact Hx_e1.
       }
       apply (proj1 (tm_eval_in_store_agree_on_fv
         (store_restrict ((σm : StoreT) ∪ σe) (fv_tm e1))
@@ -239,16 +255,10 @@ Proof.
     assert (Hσm_dom_fv :
         dom (store_restrict σm (fv_tm e1) : StoreT) = fv_tm e1).
     {
-      change (dom (storeA_restrict σm (fv_tm e1) : gmap atom value) =
-        fv_tm e1).
-      rewrite storeA_restrict_dom.
-      pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
-      pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
-      change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hσm_dom.
-      apply set_eq. intros a.
-      rewrite elem_of_intersection.
-      unfold ext_in in Hin. rewrite <- Hin.
-      set_solver.
+      rewrite <- Hin.
+      eapply extA_projection_dom.
+      - apply resA_extend_by_applicable in Hext. exact Hext.
+      - exact Hσm.
     }
     pose proof (expr_result_extension_apply_total_store e1 x Fx
       (store_restrict σm (fv_tm e1)) we vx
@@ -275,11 +285,12 @@ Proof.
         pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
         change (dom (({[x := vx]} : StoreT) : gmap atom value) = {[x]})
           in Hdom_single.
-        rewrite Hdom_single. set_solver.
+        rewrite Hdom_single. apply disjoint_singleton_l. exact HxX.
       - symmetry.
         apply storeA_restrict_union_ignore_r.
         change (dom (σe : StoreT) ## X).
-        rewrite Hσe_dom. set_solver.
+        rewrite Hσe_dom.
+        apply disjoint_singleton_l. exact HxX.
     }
     assert (Hx_lookup_σx : σx !! x = Some vx).
     {
@@ -292,7 +303,10 @@ Proof.
         rewrite Hout in Hfresh_out.
         pose proof (wfworldA_store_dom m σm Hσm) as Hσm_dom.
         change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hσm_dom.
-        apply elem_of_dom_2 in Hlook. set_solver.
+        apply elem_of_dom_2 in Hlook.
+        apply disjoint_singleton_l in Hfresh_out.
+        apply Hfresh_out.
+        rewrite <- Hσm_dom. exact Hlook.
       - apply map_lookup_singleton.
     }
     assert (Hscope_x :

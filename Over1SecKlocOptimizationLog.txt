@@ -450,3 +450,32 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     especially exact result formula extraction and two y-domain store lookup
     proofs. These should be treated as a separate lower-level lemma/facts
     batch rather than folded into this persist-intro cleanup.
+
+## Batch 20: `TypeEquivTermTLet.v` tlet fiber-extension side conditions
+
+- Baseline from `CompileTimeStats.txt`:
+  `Denotation/theories/TypeEquivTermTLet.v` was about `7.64s` for 369 lines,
+  roughly `20.7 s/KLOC`.
+- Focused baseline before this batch:
+  `COQEXTRAFLAGS=-time` rebuilt the file in about `3.69s`, with hotspots in
+  `tm_fiber_equiv_tlete_body_extension`:
+  repeated fresh-for decomposition, a broad `try set_solver` in
+  `tm_eval_in_store_tlete_intro_closed_on`, and several store/domain
+  side conditions around extension output singletons.
+- Optimization:
+  - Added `tlet_fresh_for_parts` to split the common `fresh_for` union once
+    outside the large proof context.
+  - Replaced the `tlete` intro `try set_solver` block with explicit premises.
+  - Replaced two extension input-domain proofs with `extA_projection_dom`
+    instead of `res_extend_by_input_dom` plus broad set solving.
+  - Replaced singleton-output disjointness and output lookup side conditions
+    with `disjoint_singleton_l` and direct domain facts.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermTLet.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `0.69s`.
+- Deferred:
+  - The remaining per-KLOC number is mostly import/fixed overhead for a very
+    small file; no proof command above the import line remained near the old
+    hotspots.
