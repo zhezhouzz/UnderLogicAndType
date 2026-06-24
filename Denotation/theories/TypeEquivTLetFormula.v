@@ -159,8 +159,7 @@ Proof.
 	        exact (Hx_base HaBase).
     }
     destruct (res_extend_by_exists mbase Fx Happ) as [mx Hext].
-    pose proof (res_extend_by_dom mbase Fx mx Hext) as Hdom_mx.
-    pose proof (res_extend_by_restrict_base mbase Fx mx Hext) as Hbase_mx.
+    denotation_regular.
     assert (Hres_mx_D :
         mx ⊨ expr_result_formula_at D e1 (LVFree x)).
     {
@@ -204,10 +203,10 @@ Proof.
       - exact HD_base.
       - exact Hdom_std.
       - exact Hrestrict_std.
-      - rewrite Hdom_mx.
+      - rewrite Hdom_ext.
         change (extA_out Fx) with (ext_out Fx).
         rewrite HoutFx. reflexivity.
-      - exact Hbase_mx.
+      - exact Hbase_ext.
       - exact Hres_std.
       - exact Hres_mx_D.
     }

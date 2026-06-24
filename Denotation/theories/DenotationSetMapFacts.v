@@ -155,3 +155,60 @@ Ltac denotation_set_solve :=
 
 Ltac denotation_store_norm :=
   rewrite ?storeA_restrict_twice_subset in * by set_solver.
+
+(** ** Regular facts extracted from denotation/resource definitions *)
+
+Ltac denotation_regular_res_extend_dom :=
+  match goal with
+  | Hext : res_extend_by ?m ?F ?mx |- _ =>
+      lazymatch goal with
+      | H : world_dom (mx : WorldT) =
+            world_dom (m : WorldT) ∪ ext_out F |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hdom_ext" in
+          pose proof (res_extend_by_dom m F mx Hext) as H
+      end
+  end.
+
+Ltac denotation_regular_res_extend_base :=
+  match goal with
+  | Hext : res_extend_by ?m ?F ?mx |- _ =>
+      lazymatch goal with
+      | H : res_restrict mx (world_dom (m : WorldT)) = m |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hbase_ext" in
+          pose proof (res_extend_by_restrict_base m F mx Hext) as H
+      end
+  end.
+
+Ltac denotation_regular_res_extend_input :=
+  match goal with
+  | Hext : res_extend_by ?m ?F ?mx |- _ =>
+      lazymatch goal with
+      | H : ext_in F ⊆ world_dom (m : WorldT) |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hin_ext" in
+          pose proof (res_extend_by_input_dom m F mx Hext) as H
+      end
+  end.
+
+Ltac denotation_regular_res_extend_output :=
+  match goal with
+  | Hext : res_extend_by ?m ?F ?mx |- _ =>
+      lazymatch goal with
+      | H : ext_out F ## world_dom (m : WorldT) |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hout_ext" in
+          pose proof (res_extend_by_output_fresh m F mx Hext) as H
+      end
+  end.
+
+Ltac denotation_regular :=
+  try denotation_regular_res_extend_dom;
+  try denotation_regular_res_extend_base;
+  try denotation_regular_res_extend_input;
+  try denotation_regular_res_extend_output.

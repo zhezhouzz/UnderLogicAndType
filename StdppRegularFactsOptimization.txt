@@ -36,11 +36,15 @@ Implementation Status
      hide duplicate-guard failures as a compile-time loop.  The committed
      version is bounded and deterministic.
 
-2. Denotation regular facts: pending.
-   Candidate patterns:
-   - Extract world-domain facts from `ty_denote_gas ... (ret x)`.
-   - Extract result-extension domain facts from `res_extend_by`.
-   - Keep pure store lookup/restrict facts in `DenotationSetMapFacts.v`.
+2. Denotation regular facts: completed initial batch.
+   - Added bounded `denotation_regular` extraction for `res_extend_by`:
+     domain, base restriction, input-domain, and output-fresh facts.
+   - Replaced one representative `TypeEquivTLetFormula.v` proof block that
+     manually posed `res_extend_by_dom` and `res_extend_by_restrict_base`.
+   - Deferred: `ty_denote_gas ... (ret x)` regular extraction cannot live in
+     `DenotationSetMapFacts.v` because the theorem currently belongs to the
+     higher `TypeEquiv.v` layer; moving it requires a separate dependency
+     cleanup.
 
 3. Logic/Algebra regular facts: pending.
    Candidate patterns:
@@ -63,3 +67,9 @@ Validation Log
   (`1.93s` real).
 - Completed: `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo`
   (`3.81s` real for the final target after changed dependencies).
+- Completed: `timeout 50s make TIMED=1 Denotation/theories/DenotationSetMapFacts.vo`
+  (`0.57s` real).
+- Completed: `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTLetFormula.vo`
+  (`0.37s` real for the final target after changed dependencies).
+- Completed: `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo`
+  (`3.86s` real).
