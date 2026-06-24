@@ -8,7 +8,7 @@ From ContextAlgebra Require Import ResourceInterface.
 From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula TermExtension.
 From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
   TypeEquivCore TypeEquivFiberBaseResult TypeEquivFiberTransport TypePersist.
-From ContextTyping Require Import Typing.
+From ContextTyping Require Import Typing SoundnessSetMapFacts.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -667,16 +667,7 @@ Lemma ty_denote_under_value_persist_intro Σ Γ τ v :
       (ty_denote_under Σ Γ (CTPersist τ) (tret v)).
 Proof.
   intros Hwf Hpersist m Hctx.
-  pose proof (context_typing_wf_ret_lc_value
-    Σ Γ v (CTPersist τ) Hwf) as Hv.
-  pose proof (context_typing_wf_ret_value_obs_subset
-    Σ Γ v τ Hwf) as Hobs.
-  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
-  pose proof (basic_world_formula_atom_env_dom_subset
-    (ctx_erasure_under Σ Γ) m Hworld) as Hctxdom.
-  ctx_erasure_under_norm_in Hctxdom.
-  assert (Hobs_world : fv_cty τ ∪ fv_value v ⊆ world_dom (m : WorldT)).
-  { intros a Ha. apply Hctxdom. pose proof (Hobs a Ha). set_solver. }
+  soundness_regular.
   eapply res_models_impl_intro_scoped.
   - unfold formula_scoped_in_world, ty_denote_under, ty_denote.
     etransitivity; [apply formula_fv_ty_denote_gas_subset_relevant|].
@@ -701,10 +692,7 @@ Lemma fundamental_persist_intro_case Σ Γ τ v :
 Proof.
   intros Hwf Hpersist IH m Hctx.
   pose proof (IH m Hctx) as Hτ.
-  pose proof (context_typing_wf_ret_lc_value
-    Σ Γ v (CTPersist τ) Hwf) as Hv.
-  pose proof (context_typing_wf_ret_value_obs_subset
-    Σ Γ v τ Hwf) as Hobs.
+  soundness_regular.
   destruct (ctx_persistent_singleton_on_erase_subset
     Σ Γ (fv_cty τ ∪ fv_value v) m Hobs Hpersist Hctx)
     as [σ [Hdomσ Hsingle]].

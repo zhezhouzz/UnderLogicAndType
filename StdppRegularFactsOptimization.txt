@@ -1,0 +1,65 @@
+Folder-Local Stdpp Facts / Regular Ltac Optimization
+====================================================
+
+Goal
+----
+
+Keep pure stdpp reasoning in local set/map solver layers, and add
+deterministic "regular" extraction only for repository-specific definitions.
+Pure hypotheses such as `x ∉ A ∪ B` or `m !! x = Some v` are not extracted;
+they are handled by the folder solver.  Hypotheses such as
+`context_typing_wf ...`, `ctx_denote_under ...`, `ty_denote_gas ...`, and
+resource-extension predicates may produce derived stdpp facts.
+
+References Checked
+------------------
+
+- UnderType/HATs tactic layering:
+  1. pure set/map solver (`fast_set_solver`, pruning, map lookup helpers),
+  2. regular extraction from project definitions,
+  3. high-level proof tactics that run regular extraction, normalization, then
+     the pure solver.
+- This repo already has the pure solver base in `ContextBase/Tactics.v`.
+
+Implementation Status
+---------------------
+
+1. ContextTyping regular facts: completed.
+   - Added `soundness_wf_ret_persist_obs_subset`.
+   - Added `soundness_wf_ret_persist_observed_world`.
+   - Added deterministic bounded regular tactics:
+     `soundness_regular_observed_world`, `soundness_regular_lc`,
+     `soundness_regular_obs_subset`, and `soundness_regular`.
+   - Replaced repeated persistent-intro proof setup in
+     `SoundnessPersist.v`.
+   - Note: the first `repeat`-based tactic shape was rejected because it could
+     hide duplicate-guard failures as a compile-time loop.  The committed
+     version is bounded and deterministic.
+
+2. Denotation regular facts: pending.
+   Candidate patterns:
+   - Extract world-domain facts from `ty_denote_gas ... (ret x)`.
+   - Extract result-extension domain facts from `res_extend_by`.
+   - Keep pure store lookup/restrict facts in `DenotationSetMapFacts.v`.
+
+3. Logic/Algebra regular facts: pending.
+   Candidate patterns:
+   - Fiber/restrict shape facts should live near resource/fiber definitions.
+   - Formula-level FV/open facts should stay in Logic files.
+
+4. Proof cleanup sweep: pending.
+   Priority files:
+   - `ContextTyping/theories/SoundnessPersist.v`
+   - `ContextTyping/theories/SoundnessApp*.v`
+   - `Denotation/theories/TypePersist*.v`
+   - `Denotation/theories/TypeEquiv*.v`
+
+Validation Log
+--------------
+
+- Completed: `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessSetMapFacts.vo`
+  (`0.82s` real after dependencies).
+- Completed: `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
+  (`1.93s` real).
+- Completed: `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo`
+  (`3.81s` real for the final target after changed dependencies).
