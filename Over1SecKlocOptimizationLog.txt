@@ -576,3 +576,32 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - The largest remaining local command is about `0.10s`; the file is still
     above `1 s/KLOC`, but the obvious local normalization/search hotspot for
     this batch is gone.
+
+## Batch 24: `SoundnessFixOpen.v` Fix opening freshness normalization
+
+- Baseline from the current focused run:
+  `ContextTyping/theories/SoundnessFixOpen.v` rebuilt in about `2.06s`
+  for 596 lines, about `3.46 s/KLOC`.
+- Concrete hotspots:
+  - repeated `ctx_erasure_under_norm_in Hy; better_set_solver` calls appeared
+    throughout the Fix opening support lemmas, each around `0.04s` to `0.12s`;
+  - two relevant-env typed-bind freshness assertions repeated the same
+    `relevant_env_dom_subset_direct` and ctx-erasure normalization proof.
+- Optimization:
+  - Added local freshness wrappers for `ctx_erasure_under`, `erase_ctx`,
+    atom-to-lvar environments, and the Fix Arrow relevant typed-bind domain.
+  - Replaced all repeated `ctx_erasure_under_norm_in Hy` occurrences in the
+    file with direct helper calls or direct set proofs when the goal was only
+    `y ∉ fv_cty τ`.
+  - Kept the helpers local to the file because the shapes are specific to the
+    Fix Arrow opening hypotheses.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixOpen.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+  - New normal and focused time observed: about `0.87s`, about
+    `1.46 s/KLOC`.
+- Deferred:
+  - Remaining time is now mostly import/fixed overhead; no local command above
+    about `0.08s` remains in the focused timing output.

@@ -49,6 +49,63 @@ Proof.
   exact Hyctx.
 Qed.
 
+Local Lemma fix_open_fresh_ctx_erasure_under_from_fix_union
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hy Hyctx.
+  apply Hy.
+  clear -Hyctx. set_solver.
+Qed.
+
+Local Lemma fix_open_fresh_env_erase_ctx_from_fix_union
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom Σ ∪ dom (erase_ctx Γ).
+Proof.
+  intros Hy Hin.
+  apply elem_of_union in Hin as [HyΣ|HyΓ].
+  - apply Hy. clear -HyΣ. set_solver.
+  - eapply fix_open_fresh_erase_ctx_from_fix_union; eauto.
+Qed.
+
+Local Lemma fix_open_fresh_lvar_ctx_erasure_under_from_fix_union
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  LVFree y ∉ dom (atom_env_to_lty_env (ctx_erasure_under Σ Γ)).
+Proof.
+  intros Hy Hbad.
+  rewrite atom_store_to_lvar_store_dom in Hbad.
+  unfold lvars_of_atoms in Hbad.
+  apply elem_of_map in Hbad as [a [Ha Hay]].
+  inversion Ha. subst a.
+  eapply fix_open_fresh_ctx_erasure_under_from_fix_union; eauto.
+Qed.
+
+Local Lemma fix_open_fresh_arrow_relevant_bind_lvars
+    (Σ : tyctx) Γ τx τ vf b t y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_value vf ∪
+      fv_cty τx ∪ fv_cty τ ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)))
+      (erase_ty τx))).
+Proof.
+  intros Hy Hyfv.
+  rewrite typed_lty_env_bind_lvars_fv_dom in Hyfv.
+  apply lvars_fv_elem in Hyfv.
+  pose proof (relevant_env_dom_subset_direct
+    (atom_env_to_lty_env (erase_ctx Γ))
+    (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf))) as Hrel.
+  pose proof (Hrel _ Hyfv) as Hatom.
+  rewrite atom_store_to_lvar_store_dom in Hatom.
+  rewrite <- lvars_fv_elem in Hatom.
+  rewrite lvars_fv_of_atoms in Hatom.
+  clear -Hy Hatom. better_set_solver.
+Qed.
+
 Lemma fix_arrow_opened_app_static_guard_full
     (Σ : tyctx) Γ τx τ vf b t
     (my : WfWorldT) y :
@@ -81,13 +138,16 @@ Proof.
     split.
     + unfold wf_ctx_under. cbn [basic_ctx]. split; [exact HbasicΓ|]. split.
       * apply basic_ctx_bind.
-        -- ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ. better_set_solver.
+        -- rewrite <- HdomΓ.
+           eapply fix_open_fresh_env_erase_ctx_from_fix_union. exact Hy.
         -- eapply (wf_context_ty_at_mono_env
              0 (dom (erase_ctx Γ)) (dom Σ ∪ ctx_dom Γ)).
            ++ rewrite HdomΓ. better_set_solver.
            ++ exact Hτx.
-      * cbn [ctx_dom]. ctx_erasure_under_norm_in Hy. rewrite <- HdomΓ.
-        better_set_solver.
+      * cbn [ctx_dom]. rewrite <- HdomΓ.
+        apply elem_of_disjoint. intros a Ha Hay.
+        apply elem_of_singleton in Hay. subst a.
+        eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy. exact Ha.
     + split.
       * eapply (wf_context_ty_at_mono_env
           0 (dom (erase_ctx Γ) ∪ {[y]})
@@ -136,24 +196,12 @@ Proof.
           (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
             (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)))
           (erase_ty τx)))).
-  {
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    pose proof (relevant_env_dom_subset_direct
-      (atom_env_to_lty_env (erase_ctx Γ))
-      (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf))) as Hrel.
-    intros Hyfv.
-    apply lvars_fv_elem in Hyfv.
-    pose proof (Hrel _ Hyfv) as Hatom.
-    rewrite atom_store_to_lvar_store_dom in Hatom.
-    rewrite <- lvars_fv_elem in Hatom.
-    rewrite lvars_fv_of_atoms in Hatom.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
+  { eapply fix_open_fresh_arrow_relevant_bind_lvars. exact Hy. }
   eapply arrow_open_arg_to_inserted_env_normalized.
   - apply atom_store_to_lvar_store_closed.
   - apply atom_env_to_lty_env_dom_free_notin.
-    ctx_erasure_under_norm_in Hy; better_set_solver.
-  - ctx_erasure_under_norm_in Hy; better_set_solver.
+    eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+  - clear -Hy. set_solver.
   - pose proof (context_typing_wf_context_ty Σ Γ
       (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf)
       as Hτ_arrow.
@@ -221,13 +269,13 @@ Proof.
       (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx y
       (erase_ty τx) (cty_depth τx)); eauto.
     - apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hy. better_set_solver.
+      eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
     - exact (ctx_denote_under_basic_world Σ Γ my Hctx_my).
     - rewrite <- atom_store_to_lvar_store_insert.
       exact Hbind_den.
   }
-  eapply ctx_bind_from_inserted_erasure_denotation.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
+	  eapply ctx_bind_from_inserted_erasure_denotation.
+	  - eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf) as Hwfctx.
     pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
@@ -337,20 +385,7 @@ Proof.
           (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
             (CTArrow τx τ) efix)
           (erase_ty τx)))).
-  {
-    subst efix.
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    pose proof (relevant_env_dom_subset_direct
-      (atom_env_to_lty_env (erase_ctx Γ))
-      (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf))) as Hrel.
-    intros Hyfv.
-    apply lvars_fv_elem in Hyfv.
-    pose proof (Hrel _ Hyfv) as Hatom.
-    rewrite atom_store_to_lvar_store_dom in Hatom.
-    rewrite <- lvars_fv_elem in Hatom.
-    rewrite lvars_fv_of_atoms in Hatom.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
+  { subst efix. eapply fix_open_fresh_arrow_relevant_bind_lvars. exact Hy. }
   assert (Htmfresh :
       y ∉ fv_tm (tapp_tm (tm_shift 0 efix) (vbvar 0))).
   {
@@ -379,7 +414,7 @@ Proof.
     rewrite typed_lty_env_bind_open_current.
     - exact Hunfolded.
     - apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hy. better_set_solver.
+      eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
     - apply atom_store_to_lvar_store_closed.
   }
   assert (Hzero_unfolded :
@@ -436,13 +471,13 @@ Proof.
               (erase_ty τx)))
           (cty_open 0 y τ)
           (tapp_tm (tret (vfix (TBase b →ₜ t) vf)) (vfvar y))).
-	    {
-	      rewrite typed_lty_env_bind_open_current.
-	      - exact Hstatic.
+    {
+      rewrite typed_lty_env_bind_open_current.
+      - exact Hstatic.
       - apply atom_env_to_lty_env_dom_free_notin.
-	        ctx_erasure_under_norm_in Hy. better_set_solver.
-	      - apply atom_store_to_lvar_store_closed.
-	    }
+        eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+      - apply atom_store_to_lvar_store_closed.
+    }
 	    pose proof (ty_denote_gas_guard_of_zero
 	      (lty_env_open_one 0 y
 	        (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
@@ -511,7 +546,7 @@ Proof.
 	  }
   eapply ty_equiv_arrow_result_tgt_goal.
   - exact Hlc_efix.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
+  - clear -Hy. set_solver.
   - exact Hfix_open.
 Qed.
 
@@ -561,7 +596,7 @@ Proof.
           (dom (erase_ctx (CtxComma Γ (CtxBind y τx))))).
         * rewrite erase_ctx_comma_bind_dom. reflexivity.
         * apply wf_context_ty_at_open_at.
-          -- ctx_erasure_under_norm_in Hy. better_set_solver.
+          -- eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
           -- exact Hτres_outer.
       + rewrite cty_open_preserves_erasure.
         eapply basic_typing_tapp_tm.
@@ -588,9 +623,9 @@ Proof.
           rewrite erase_ctx_comma_bind_fresh.
           -- apply insert_subseteq.
              apply not_elem_of_dom.
-             ctx_erasure_under_norm_in Hy. better_set_solver.
-          -- ctx_erasure_under_norm_in Hy. better_set_solver.
+             eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
+          -- eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
   }
   eapply context_typing_wf_denot_static_guard_comma_bind_insert; eauto.
-  ctx_erasure_under_norm_in Hy. better_set_solver.
+  eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
 Qed.
