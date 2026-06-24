@@ -165,14 +165,20 @@ Pattern Buckets
      - `basic_ctx_erase_dom_fresh_none`
    - Remaining:
      - General context world-domain facts in `Soundness.v`.
-     - App/Lam/Fix proof-specific regular extraction.
+     - Lam proof-specific regular extraction.
    - Completed:
      - Added `basic_ctx_erase_dom_fresh_none` in `Denotation/Context.v`,
        extracting the regular consequence of `basic_ctx`: variables in
        `erase_ctx Γ` are fresh for ambient `Σ`.
      - Replaced two repeated local proofs in context-erasure agreement lemmas.
+     - Reused `res_extend_by_singleton_output_open_world` in
+       `SoundnessFixApply.v`, removing two more manual singleton-output
+       open-world domain/base blocks.
    - Validation:
      `timeout 50s make TIMED=1 Denotation/theories/Context.vo` and
+     `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+     `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`,
+     `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFix.vo`, and
      `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
 
 6. Fiber/projection regular facts
@@ -226,6 +232,9 @@ Batch Log
   - Replaced repeated basic-context freshness derivations in context-erasure
     agreement facts.
   - `Context.vo` and `Soundness.vo` passed.
+- Batch G: completed.
+  - Reused singleton-output open-world facts in `SoundnessFixApply.v`.
+  - `SoundnessFixApply.vo`, `SoundnessFix.vo`, and `Soundness.vo` passed.
 
 Next Tasks
 ----------
@@ -234,7 +243,8 @@ Next Tasks
    `TypeEquivTermResult.v`; first review done, deferred as witness-specific.
 2. Review `Denotation/Context.v` context-denotation stdpp blocks. First pass
    done; remaining blocks are mostly larger semantic bridge proofs.
-3. Run final full build/admit scan for this optimization pass.
+3. Review Lam-specific regular extraction opportunities.
+4. Run final full build/admit scan for this optimization pass.
 
 Final Validation For This Pass
 ------------------------------

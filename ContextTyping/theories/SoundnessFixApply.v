@@ -197,15 +197,8 @@ Proof.
     - rewrite HFz_out. clear -Hzmy. set_solver.
   }
   destruct (res_extend_by_exists my Fz Happz) as [mz Hextz].
-  assert (Hmz_dom :
-      world_dom (mz : WorldT) = world_dom (my : WorldT) ∪ {[z]}).
-  {
-    pose proof (res_extend_by_dom my Fz mz Hextz) as Hdom.
-    rewrite Hdom, HFz_out. reflexivity.
-  }
-  assert (Hmz_restrict :
-      res_restrict mz (world_dom (my : WorldT)) = my).
-  { exact (res_extend_by_restrict_base my Fz mz Hextz). }
+  pose proof (res_extend_by_singleton_output_open_world
+    my mz Fz z Hextz HFz_out) as [Hmz_dom Hmz_restrict].
   assert (Hzero_body :
       my ⊨ ty_denote_gas 0 Δy (CTArrow τself τres) (tret body)).
   {
@@ -484,16 +477,11 @@ Proof.
     - unfold ext_out in HFw_out. rewrite HFw_out. clear -Hw_mz. set_solver.
   }
   destruct (res_extend_by_exists mz Fw Happw) as [mw Hextw].
-  assert (Hmw_dom :
-      world_dom (mw : WorldT) = world_dom (mz : WorldT) ∪ {[w]}).
-  {
-    pose proof (res_extend_by_dom mz Fw mw Hextw) as Hdom.
-    destruct HFw as [_ [_ Hout] _].
-    unfold ext_out in Hout. rewrite Hdom, Hout. reflexivity.
-  }
-  assert (Hmw_restrict :
-      res_restrict mw (world_dom (mz : WorldT)) = mz).
-  { exact (res_extend_by_restrict_base mz Fw mw Hextw). }
+  pose proof HFw as HFw_shape_src.
+  destruct HFw_shape_src as [_ [_ HFw_out] _].
+  unfold ext_out in HFw_out.
+  pose proof (res_extend_by_singleton_output_open_world
+    mz mw Fw w Hextw HFw_out) as [Hmw_dom Hmw_restrict].
   assert (Hres_self_w :
       mw ⊨ expr_result_formula (tret self) (LVFree w)).
   {
