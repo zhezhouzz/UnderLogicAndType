@@ -266,6 +266,20 @@ Proof.
     + exact Hlook.
 Qed.
 
+Lemma basic_ctx_erase_dom_fresh_none
+    (Σ : gmap atom ty) Γ x :
+  basic_ctx (dom Σ) Γ ->
+  x ∈ dom (erase_ctx Γ) ->
+  Σ !! x = None.
+Proof.
+  intros Hbasic HxΓ.
+  apply not_elem_of_dom. intros HΣx.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+  rewrite HdomΓ in HxΓ.
+  set_solver.
+Qed.
+
 Lemma erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
     (Σ : gmap atom ty) Γ x :
   basic_ctx (dom Σ) Γ ->
@@ -278,11 +292,7 @@ Proof.
   symmetry.
   apply lookup_union_r.
   apply storeA_restrict_lookup_none_l.
-  apply not_elem_of_dom. intros HΣx.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
-  rewrite HdomΓ in HxΓ.
-  set_solver.
+  eapply basic_ctx_erase_dom_fresh_none; eauto.
 Qed.
 
 Lemma ty_env_agree_ctx_erasure_under_of_basic_ctx
@@ -297,14 +307,7 @@ Proof.
   pose proof (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
     Σ Γ x Hbasic HxΓ) as Herase.
   assert (HΣnone : Σ !! x = None).
-  {
-    apply not_elem_of_dom. intros HΣx.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
-    apply elem_of_disjoint in HfreshΓ.
-    eapply HfreshΓ; [|exact HΣx].
-    rewrite <- HdomΓ. exact HxΓ.
-  }
+  { eapply basic_ctx_erase_dom_fresh_none; eauto. }
   transitivity ((erase_ctx Γ : gmap atom ty) !! x).
   - apply lookup_union_r. exact HΣnone.
   - exact Herase.

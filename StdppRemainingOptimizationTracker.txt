@@ -153,9 +153,18 @@ Pattern Buckets
      - `soundness_wf_ret_persist_obs_subset`
      - `soundness_wf_ret_persist_observed_world`
      - `soundness_regular`
+     - `basic_ctx_erase_dom_fresh_none`
    - Remaining:
      - General context world-domain facts in `Soundness.v`.
      - App/Lam/Fix proof-specific regular extraction.
+   - Completed:
+     - Added `basic_ctx_erase_dom_fresh_none` in `Denotation/Context.v`,
+       extracting the regular consequence of `basic_ctx`: variables in
+       `erase_ctx Γ` are fresh for ambient `Σ`.
+     - Replaced two repeated local proofs in context-erasure agreement lemmas.
+   - Validation:
+     `timeout 50s make TIMED=1 Denotation/theories/Context.vo` and
+     `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
 
 6. Fiber/projection regular facts
    - Status: initial Logic batch done.
@@ -203,10 +212,16 @@ Batch Log
 - Batch E: completed.
   - Reused the singleton-output open-world fact in App/AppD proofs.
   - `SoundnessApp.vo`, `SoundnessAppD.vo`, and `Soundness.vo` passed.
+- Batch F: completed.
+  - Added `basic_ctx_erase_dom_fresh_none` to `Denotation/Context.v`.
+  - Replaced repeated basic-context freshness derivations in context-erasure
+    agreement facts.
+  - `Context.vo` and `Soundness.vo` passed.
 
 Next Tasks
 ----------
 
 1. Review the remaining deep store-agree/union lookup proofs in
    `TypeEquivTermResult.v`; extract only if a general lemma emerges clearly.
-2. Review `Denotation/Context.v` context-denotation stdpp blocks.
+2. Review `Denotation/Context.v` context-denotation stdpp blocks. First pass
+   done; remaining blocks are mostly larger semantic bridge proofs.
