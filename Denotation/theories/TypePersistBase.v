@@ -1201,16 +1201,9 @@ Proof.
         intros a Haout Ham.
         apply elem_of_singleton in Haout. subst a. exact (Hym Ham).
     }
-    pose proof (res_extend_by_dom m Fx my Hext) as Hdom_my.
-    pose proof (res_extend_by_restrict_base m Fx my Hext) as Hbase_my.
     destruct HFx as [_ _ [Hin_Fx Hout_Fx] Hrel_Fx].
-    assert (Hdom_my' :
-        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]}).
-    {
-      rewrite Hdom_my.
-      change (extA_out Fx) with (ext_out Fx).
-      rewrite Hout_Fx. reflexivity.
-    }
+    pose proof (res_extend_by_singleton_output_open_world
+      m my Fx y Hext Hout_Fx) as [Hdom_my' Hbase_my].
     assert (Hres_at :
         my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
     {
@@ -1365,16 +1358,9 @@ Proof.
         intros a Haout Ham.
         apply elem_of_singleton in Haout. subst a. exact (Hym Ham).
     }
-    pose proof (res_extend_by_dom m Fx my Hext) as Hdom_my.
-    pose proof (res_extend_by_restrict_base m Fx my Hext) as Hbase_my.
     destruct HFx as [_ _ [Hin_Fx Hout_Fx] Hrel_Fx].
-    assert (Hdom_my' :
-        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]}).
-    {
-      rewrite Hdom_my.
-      change (extA_out Fx) with (ext_out Fx).
-      rewrite Hout_Fx. reflexivity.
-    }
+    pose proof (res_extend_by_singleton_output_open_world
+      m my Fx y Hext Hout_Fx) as [Hdom_my' Hbase_my].
     assert (Hres_at :
         my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
     {
@@ -1814,16 +1800,9 @@ Proof.
         intros a Haout Ham.
         apply elem_of_singleton in Haout. subst a. exact (Hym Ham).
     }
-    pose proof (res_extend_by_dom m Fx my Hext) as Hdom_my.
-    pose proof (res_extend_by_restrict_base m Fx my Hext) as Hbase_my.
     destruct HFx as [_ _ [Hin_Fx Hout_Fx] Hrel_Fx].
-    assert (Hdom_my' :
-        world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]}).
-    {
-      rewrite Hdom_my.
-      change (extA_out Fx) with (ext_out Fx).
-      rewrite Hout_Fx. reflexivity.
-    }
+    pose proof (res_extend_by_singleton_output_open_world
+      m my Fx y Hext Hout_Fx) as [Hdom_my' Hbase_my].
     assert (Hres_at :
         my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
     {

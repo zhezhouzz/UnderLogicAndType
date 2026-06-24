@@ -90,11 +90,26 @@ Pattern Buckets
      - `SoundnessFixApply.v`
 
 2. Store-domain / singleton-output composition
-   - Status: partially done for one `TypeEquivTermBase.v` block.
+   - Status: partially done for one `TypeEquivTermBase.v` block and the
+     persistence open-world setup.
    - Need:
      - More lemmas combining `res_extend_by`, `wfworld*_store_dom`,
        `ext_out = {[x]}`.
      - Avoid repeated `assert (x ∉ dom σm)` and `assert (x ∈ world_dom mx)`.
+   - Added:
+     - `res_extend_by_singleton_output_open_world`
+       combines extension domain and base restriction for singleton-output
+       extensions.
+   - Replaced three repeated `res_extend_by_dom` /
+     `res_extend_by_restrict_base` / singleton-output domain normalization
+     blocks in `TypePersistBase.v`.
+   - Validation:
+     `timeout 50s make TIMED=1 Denotation/theories/DenotationSetMapFacts.vo`
+     and
+     `timeout 50s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+     passed.
+     `timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo`
+     passed.
 
 3. Match FV observation facts
    - Status: completed first pass.
@@ -158,11 +173,17 @@ Batch Log
   - Cleaned the first repeated `res_extend_by` / singleton-output blocks in
     `TypeEquivTermResult.v`.
   - `TypeEquivTermResult.vo`, `TypeEquivTerm.vo`, and `TypeEquiv.vo` passed.
+- Batch D: completed.
+  - Added `res_extend_by_singleton_output_open_world` to
+    `DenotationSetMapFacts.v`.
+  - Replaced the repeated persistence result-extension open-world setup in
+    `TypePersistBase.v`.
+  - `DenotationSetMapFacts.vo`, `TypePersistBase.vo`, and `TypePersist.vo`
+    passed.
 
 Next Tasks
 ----------
 
-1. Optimize `TypePersistBase.v` repeated singleton-output/domain blocks.
-2. Re-scan counts and update this file.
-3. Review the remaining deep store-agree/union lookup proofs in
+1. Re-scan counts and update this file.
+2. Review the remaining deep store-agree/union lookup proofs in
    `TypeEquivTermResult.v`; extract only if a general lemma emerges clearly.

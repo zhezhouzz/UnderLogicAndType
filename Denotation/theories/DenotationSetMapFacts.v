@@ -160,6 +160,22 @@ Proof.
   set_solver.
 Qed.
 
+Lemma res_extend_by_singleton_output_open_world
+    (m mx : WfWorldT) F x :
+  res_extend_by m F mx ->
+  ext_out F = {[x]} ->
+  world_dom (mx : WorldT) = world_dom (m : WorldT) ∪ {[x]} /\
+  res_restrict mx (world_dom (m : WorldT)) = m.
+Proof.
+  intros Hext Hout.
+  split.
+  - pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+    change (world_dom (mx : WorldT) =
+      world_dom (m : WorldT) ∪ ext_out F) in Hdom.
+    rewrite Hdom, Hout. reflexivity.
+  - exact (res_extend_by_restrict_base m F mx Hext).
+Qed.
+
 Lemma res_extend_by_singleton_output_notin_base_store
     (m mx : WfWorldT) F x (σ : StoreT) :
   res_extend_by m F mx ->
