@@ -1349,10 +1349,12 @@ Ltac solve_lvars_element v :=
       | H : ?x ∈ ∅ |- _ =>
           rewrite elem_of_empty in H; contradiction
       end
-    | left; assumption
-    | right; assumption
-    | right; left; assumption
-    | right; right; assumption ].
+	    | left; assumption
+	    | right; assumption
+	    | left; left; assumption
+	    | left; right; assumption
+	    | right; left; assumption
+	    | right; right; assumption ].
 
 Lemma expr_result_shift0_lvars_subset d D e :
   formula_lvars_at (S d)
@@ -1396,43 +1398,57 @@ Proof.
   - destruct τ as [b φ|b φ|τ1 τ2|τ1 τ2|τ1 τ2|τx τr|τx τr|τ1];
       cbn [ty_denote_gas formula_lvars_at].
     + normalize_denot_formula_lvars.
-      pose proof (lvars_at_depth_relevant_env_subset_relevant
-        d Σ (CTOver b φ) e).
-      pose proof (expr_result_shift0_lvars_subset d
-        (dom (relevant_env Σ (CTOver b φ) e)) e).
-      pose proof (lvars_at_depth_mono (S d)
-        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
-        ltac:(set_solver)).
-      cbn [context_ty_lvars_at].
-      better_set_solver.
-    + normalize_denot_formula_lvars.
-      pose proof (lvars_at_depth_relevant_env_subset_relevant
-        d Σ (CTUnder b φ) e).
-      pose proof (expr_result_shift0_lvars_subset d
-        (dom (relevant_env Σ (CTUnder b φ) e)) e).
-      pose proof (lvars_at_depth_mono (S d)
-        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
-        ltac:(set_solver)).
-      cbn [context_ty_lvars_at].
-      better_set_solver.
-    + unfold_formula_lvars_atoms.
-      repeat rewrite ?lvars_at_depth_union.
-      rewrite_tm_support.
-      pose proof (lvars_at_depth_relevant_env_subset_relevant
-        d Σ (CTInter τ1 τ2) e).
-      pose proof (IH d Σ τ1 e).
-      pose proof (IH d Σ τ2 e).
-      cbn [context_ty_lvars_at].
-      set_solver.
-    + unfold_formula_lvars_atoms.
-      repeat rewrite ?lvars_at_depth_union.
-      rewrite_tm_support.
-      pose proof (lvars_at_depth_relevant_env_subset_relevant
-        d Σ (CTUnion τ1 τ2) e).
-      pose proof (IH d Σ τ1 e).
-      pose proof (IH d Σ τ2 e).
-      cbn [context_ty_lvars_at].
-      set_solver.
+	      pose proof (lvars_at_depth_relevant_env_subset_relevant
+	        d Σ (CTOver b φ) e) as Hrel.
+	      pose proof (expr_result_shift0_lvars_subset d
+	        (dom (relevant_env Σ (CTOver b φ) e)) e) as Hresult.
+	      pose proof (lvars_at_depth_mono (S d)
+	        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
+	        ltac:(intros u Hu; apply elem_of_difference in Hu as [Hu _]; exact Hu))
+	        as Hqual.
+	      cbn [context_ty_lvars_at].
+	      intros v Hv.
+	      set_unfold in Hrel.
+	      set_unfold in Hresult.
+	      set_unfold in Hqual.
+	      set_unfold in Hv.
+	      set_unfold.
+	      solve_lvars_element v.
+	    + normalize_denot_formula_lvars.
+	      pose proof (lvars_at_depth_relevant_env_subset_relevant
+	        d Σ (CTUnder b φ) e) as Hrel.
+	      pose proof (expr_result_shift0_lvars_subset d
+	        (dom (relevant_env Σ (CTUnder b φ) e)) e) as Hresult.
+	      pose proof (lvars_at_depth_mono (S d)
+	        (qual_vars φ ∖ {[LVBound 0]}) (qual_vars φ)
+	        ltac:(intros u Hu; apply elem_of_difference in Hu as [Hu _]; exact Hu))
+	        as Hqual.
+	      cbn [context_ty_lvars_at].
+	      intros v Hv.
+	      set_unfold in Hrel.
+	      set_unfold in Hresult.
+	      set_unfold in Hqual.
+	      set_unfold in Hv.
+	      set_unfold.
+	      solve_lvars_element v.
+	    + unfold_formula_lvars_atoms.
+	      repeat rewrite ?lvars_at_depth_union.
+	      rewrite_tm_support.
+	      pose proof (lvars_at_depth_relevant_env_subset_relevant
+	        d Σ (CTInter τ1 τ2) e).
+	      pose proof (IH d Σ τ1 e).
+	      pose proof (IH d Σ τ2 e).
+	      cbn [context_ty_lvars_at].
+	      set_solver.
+	    + unfold_formula_lvars_atoms.
+	      repeat rewrite ?lvars_at_depth_union.
+	      rewrite_tm_support.
+	      pose proof (lvars_at_depth_relevant_env_subset_relevant
+	        d Σ (CTUnion τ1 τ2) e).
+	      pose proof (IH d Σ τ1 e).
+	      pose proof (IH d Σ τ2 e).
+	      cbn [context_ty_lvars_at].
+	      set_solver.
     + unfold_formula_lvars_atoms.
       repeat rewrite ?lvars_at_depth_union.
       rewrite_tm_support.

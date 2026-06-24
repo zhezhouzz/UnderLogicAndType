@@ -203,3 +203,24 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - Remaining visible hotspots are in the ret-fvar swap/projection proof and
     a basic-world closed-on extraction; those are candidates for a later,
     more semantic helper rather than another tiny side-condition rewrite.
+
+## Batch 11: `TypeDenote.v`
+
+- Baseline focused time before this batch: `5.64s`.
+- `COQEXTRAFLAGS=-time` showed the main hotspots in
+  `ty_denote_gas_lvars_subset`:
+  - the `CTOver` and `CTUnder` cases each spent about `0.78s` in a broad
+    `better_set_solver` after lvars normalization;
+  - `CTInter` and `CTUnion` still spend about `0.63s` each in broad set
+    solving and are left for a later guard-support helper.
+- Optimization:
+  - Reused the existing local `solve_lvars_element` element-level tactic for
+    the `CTOver`/`CTUnder` cases.
+  - Replaced the difference-subset side condition passed to
+    `lvars_at_depth_mono` by a direct `elem_of_difference` proof.
+  - Slightly extended `solve_lvars_element` so it handles both left- and
+    right-associated two-level union goals.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeDenote.vo` passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `3.96s`.
