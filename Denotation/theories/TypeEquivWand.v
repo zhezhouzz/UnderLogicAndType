@@ -180,6 +180,35 @@ Proof.
   exact Harg.
 Qed.
 
+Lemma wand_open_arg_to_inserted_env_normalized
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  lty_env_closed Σ ->
+  LVFree y ∉ dom Σ ->
+  y ∉ fv_cty τx ->
+  lc_context_ty τx ->
+  y ∉ lvars_fv
+    (dom (typed_lty_env_bind
+      (relevant_env Σ (CTWand τx τr) e) (erase_ty τx))) ->
+  m ⊨ formula_open 0 y
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand τx τr) e)
+        (erase_ty τx))
+      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
+Proof.
+  intros HΣclosed HfreshΣ Hyτx Hlc Hfresh_arg Harg.
+  pose proof (wand_open_arg_to_inserted_env
+    gas Σ τx τr e m y HΣclosed HfreshΣ Hyτx Hfresh_arg Harg)
+    as Harg_open.
+  rewrite cty_open_shift_from_lc_fresh in Harg_open
+    by (exact Hlc || exact Hyτx).
+  exact Harg_open.
+Qed.
+
 Lemma ty_denote_gas_tm_equiv_wand_open_arg
     gas (Σ : lty_env) τx τr e1 e2
     (m my n : WfWorldT) y (Hc : world_compat n my) :

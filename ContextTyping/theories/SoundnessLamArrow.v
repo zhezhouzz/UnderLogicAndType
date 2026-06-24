@@ -42,9 +42,10 @@ Proof.
 Qed.
 
 Lemma lam_arrow_open_arg_normalize
-    (Σ : tyctx) Γ τx τ e
-    (my : WfWorldT) y :
+  (Σ : tyctx) Γ τx τ e
+  (my : WfWorldT) y :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  lc_context_ty τx ->
   my ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       (typed_lty_env_bind
@@ -55,9 +56,9 @@ Lemma lam_arrow_open_arg_normalize
   my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
     ((<[LVFree y := erase_ty τx]>
       (atom_env_to_lty_env (erase_ctx Γ))))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+    τx (tret (vfvar y)).
 Proof.
-  intros Hy Harg.
+  intros Hy Hlcτx Harg.
   assert (HΣarg_fresh :
       y ∉ lvars_fv
         (dom (typed_lty_env_bind
@@ -68,7 +69,7 @@ Proof.
     apply soundness_typed_bind_arrow_value_fresh.
     cbn [fv_value]. clear -Hy. better_set_solver.
   }
-  eapply arrow_open_arg_to_inserted_env; eauto.
+  eapply arrow_open_arg_to_inserted_env_normalized; eauto.
   - apply atom_store_to_lvar_store_closed.
   - apply atom_env_to_lty_env_dom_free_notin.
     eapply soundness_fresh_erase_ctx_from_context_union; exact Hy.
@@ -84,36 +85,13 @@ Lemma lam_arrow_open_arg_to_bind_denotation
   my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       ((<[LVFree y := erase_ty τx]>
         (atom_env_to_lty_env (erase_ctx Γ))))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+      τx (tret (vfvar y)) ->
   my ⊨ ty_denote_gas (cty_depth τx)
     (atom_env_to_lty_env (<[y:=erase_ty τx]> (ctx_erasure_under Σ Γ)))
     τx (tret (vfvar y)).
 Proof.
   intros Hwf Hy Harg.
-  assert (Hmid :
-      my ⊨ ty_denote_gas (cty_depth τx)
-        ((<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx Γ))))
-        τx (tret (vfvar y))).
-  {
-    rewrite ty_denote_gas_saturate in Harg by
-      (rewrite cty_open_preserves_depth, cty_shift_preserves_depth; lia).
-    rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
-    assert (Hτnorm :
-        cty_open 0 y (cty_shift 0 τx) = τx).
-    {
-      pose proof (context_typing_wf_context_ty Σ Γ
-        (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτ.
-      cbn [wf_context_ty_at] in Hτ.
-      destruct Hτ as [Hτx _].
-      apply cty_open_shift_from_lc_fresh.
-      - eapply wf_context_ty_at_lc. exact Hτx.
-      - ctx_erasure_under_norm_in Hy. better_set_solver.
-    }
-    rewrite Hτnorm in Harg.
-    exact Harg.
-  }
-  clear Harg.
+  rewrite ty_denote_gas_saturate in Harg by lia.
   eapply lam_arrow_open_arg_mid_to_bind_denotation; eauto.
 Qed.
 
@@ -129,7 +107,7 @@ Lemma lam_arrow_open_arg_to_bind_ctx
   my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       ((<[LVFree y := erase_ty τx]>
         (atom_env_to_lty_env (erase_ctx Γ))))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+      τx (tret (vfvar y)) ->
   my ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind y τx).
 Proof.
   intros Hwf Hctx_my Hdom Hrestrict Hy Harg.
@@ -190,7 +168,7 @@ Lemma lam_arrow_open_arg_to_comma_ctx
   my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       ((<[LVFree y := erase_ty τx]>
         (atom_env_to_lty_env (erase_ctx Γ))))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+      τx (tret (vfvar y)) ->
   my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx)).
 Proof.
   intros Hwf Hctx Hdom Hrestrict Hy Harg.
@@ -589,6 +567,22 @@ Proof.
     intros Hin.
     clear -Hy Hin. better_set_solver.
   }
+  assert (Harg_norm :
+      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+        ((<[LVFree y := erase_ty τx]>
+          (atom_env_to_lty_env (erase_ctx Γ))))
+        τx (tret (vfvar y))).
+  {
+    pose proof Harg as Harg_norm.
+    rewrite cty_open_shift_from_lc_fresh in Harg_norm.
+    - exact Harg_norm.
+    - pose proof (context_typing_wf_context_ty Σ Γ
+        (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτ.
+      cbn [wf_context_ty_at] in Hτ.
+      destruct Hτ as [Hτx _].
+      eapply wf_context_ty_at_lc. exact Hτx.
+    - clear -Hy_rest. better_set_solver.
+  }
   assert (Hctx_comma :
       my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx))).
   {
@@ -598,7 +592,7 @@ Proof.
     - exact Hdom.
     - exact Hrestrict.
     - exact Hy_rest.
-    - exact Harg.
+    - exact Harg_norm.
   }
 		  pose proof (IH y HyL my Hctx_comma) as Hbody.
 		  pose proof (lam_arrow_opened_app_static_guard_full
@@ -940,13 +934,29 @@ Proof.
   assert (Hctx_comma :
       my ⊨ ctx_denote_under Σ (CtxComma Γ (CtxBind y τx))).
   {
+    assert (Harg_old_norm :
+        my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+          ((<[LVFree y := erase_ty τx]>
+            (atom_env_to_lty_env (erase_ctx Γ))))
+          τx (tret (vfvar y))).
+    {
+      pose proof Harg_old as Harg_old_norm.
+      rewrite cty_open_shift_from_lc_fresh in Harg_old_norm.
+      - exact Harg_old_norm.
+      - pose proof (context_typing_wf_context_ty Σ Γ
+          (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτ.
+        cbn [wf_context_ty_at] in Hτ.
+        destruct Hτ as [Hτx _].
+        eapply wf_context_ty_at_lc. exact Hτx.
+      - clear -Hy_fresh. better_set_solver.
+    }
     eapply (lam_arrow_open_arg_to_comma_ctx Σ Γ τx τ e mz my y).
     - exact Hwf.
     - exact Hctx_mz.
     - exact Hdomy.
     - exact Hrestricty.
     - exact Hy_fresh.
-    - exact Harg_old.
+    - exact Harg_old_norm.
   }
   assert (HyL : y ∉ L) by (clear -Hy; better_set_solver).
   pose proof (IH y HyL my Hctx_comma) as Hbody.

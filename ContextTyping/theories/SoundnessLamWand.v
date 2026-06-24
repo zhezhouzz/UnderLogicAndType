@@ -102,7 +102,7 @@ Lemma lamd_wand_open_arg_to_bind_denotation
   n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       ((<[LVFree y := erase_ty τx]>
         (atom_env_to_lty_env (erase_ctx Γ))))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+      τx (tret (vfvar y)) ->
   n ⊨ ty_denote_gas (cty_depth τx)
     (atom_env_to_lty_env
       (<[y := erase_ty τx]> (store_restrict Σ (fv_cty τx))))
@@ -111,17 +111,7 @@ Proof.
   intros Hwf Hy Harg.
   pose proof (context_typing_wf_wand_arg_global Σ Γ
     (tret (vlam (erase_ty τx) e)) τx τ Hwf) as Hτx_global.
-  rewrite ty_denote_gas_saturate in Harg by
-    (rewrite cty_open_preserves_depth, cty_shift_preserves_depth; lia).
-  rewrite cty_open_preserves_depth, cty_shift_preserves_depth in Harg.
-  assert (Hτnorm :
-      cty_open 0 y (cty_shift 0 τx) = τx).
-  {
-	    apply cty_open_shift_from_lc_fresh.
-	    - eapply wf_context_ty_at_lc. exact Hτx_global.
-	    - eapply lam_wand_fresh_arg_ty. exact Hy.
-  }
-  rewrite Hτnorm in Harg.
+  rewrite ty_denote_gas_saturate in Harg by lia.
   eapply ty_denote_gas_ret_fvar_insert_closed_atom_env; eauto.
 Qed.
 
@@ -129,6 +119,7 @@ Lemma lamd_wand_open_arg_normalize
     (Σ : tyctx) Γ τx τ e
     (n : WfWorldT) y :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  lc_context_ty τx ->
   n ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       (typed_lty_env_bind
@@ -139,9 +130,9 @@ Lemma lamd_wand_open_arg_normalize
   n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
     ((<[LVFree y := erase_ty τx]>
       (atom_env_to_lty_env (erase_ctx Γ))))
-    (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)).
+    τx (tret (vfvar y)).
 Proof.
-  intros Hy Harg.
+  intros Hy Hlcτx Harg.
   assert (HΣarg_fresh :
       y ∉ lvars_fv
         (dom (typed_lty_env_bind
@@ -161,7 +152,7 @@ Proof.
     rewrite lvars_fv_of_atoms in Hatom.
     eapply lam_wand_fresh_erase_ctx in Hy. exact (Hy Hatom).
   }
-  eapply wand_open_arg_to_inserted_env; eauto.
+  eapply wand_open_arg_to_inserted_env_normalized; eauto.
   - apply atom_store_to_lvar_store_closed.
   - apply atom_env_to_lty_env_dom_free_notin.
     eapply lam_wand_fresh_erase_ctx. exact Hy.
@@ -180,7 +171,7 @@ Lemma lamd_open_arg_to_star_ctx
 	  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
 	      ((<[LVFree y := erase_ty τx]>
           (atom_env_to_lty_env (erase_ctx Γ))))
-	      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+	      τx (tret (vfvar y)) ->
 	  res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx)).
 	Proof.
   intros Hwf Hctx Hdom Hy Harg.
@@ -524,6 +515,19 @@ Proof.
     intros Hin.
     clear -Hy Hin. better_set_solver.
   }
+  assert (Harg_norm :
+      n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+        ((<[LVFree y := erase_ty τx]>
+          (atom_env_to_lty_env (erase_ctx Γ))))
+        τx (tret (vfvar y))).
+  {
+    pose proof Harg as Harg_norm.
+    rewrite cty_open_shift_from_lc_fresh in Harg_norm.
+    - exact Harg_norm.
+    - eapply wf_context_ty_at_lc.
+      eapply context_typing_wf_wand_arg_global. exact Hwf.
+    - clear -Hy_rest. better_set_solver.
+  }
   assert (Hctx_star :
       res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
   {
@@ -532,7 +536,7 @@ Proof.
     - exact Hctx.
     - exact Hdom.
     - exact Hy_rest.
-    - exact Harg.
+    - exact Harg_norm.
   }
   pose proof (IH y HyL (res_product n m Hc) Hctx_star) as Hbody.
 		  pose proof (lam_wand_opened_app_static_guard_full
@@ -785,12 +789,23 @@ Proof.
   assert (Hctx_star :
       res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
   {
+    assert (Harg_old_norm :
+        n ⊨ ty_denote_gas gas
+          (<[LVFree y := erase_ty τx]> Δ)
+          τx (tret (vfvar y))).
+    {
+      pose proof Harg_old as Harg_old_norm.
+      rewrite cty_open_shift_from_lc_fresh in Harg_old_norm.
+      - exact Harg_old_norm.
+      - exact Hτx_lc.
+      - clear -Hy_rest. better_set_solver.
+    }
     eapply (lamd_open_arg_to_star_ctx Σ Γ τx τ e mz n y Hc).
     - exact Hwf.
     - exact Hctx_mz.
     - exact Hdom_y.
     - exact Hy_rest.
-    - exact Harg_old.
+    - exact Harg_old_norm.
   }
   pose proof (lam_wand_opened_app_static_guard_full
     Σ Γ τx τ e (res_product n mz Hc) y

@@ -262,6 +262,7 @@ Qed.
 Ltac result_first_open_norm :=
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in *;
-  rewrite ?formula_open_expr_result_formula_at_shift0 in *.
+  rewrite ?formula_open_expr_result_formula_at_shift0 in *;
+  try denotation_open_norm.
 
 End TypeDenote.
