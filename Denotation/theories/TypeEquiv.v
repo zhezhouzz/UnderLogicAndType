@@ -47,12 +47,8 @@ Lemma result_first_outer_result_ret_value_at
   lc_value vf ->
   z ∉ fv_value vf ->
   z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
+  m ⊨ result_first_outer_ret_value_formula Σ τ vf z ->
+  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z.
 Proof.
   apply result_first_outer_ret_value_at.
 Qed.
@@ -63,12 +59,8 @@ Lemma result_first_outer_result_ret_value_at_open
   lc_value vf ->
   z ∉ fv_value vf ->
   z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)).
+  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z ->
+  m ⊨ result_first_outer_ret_value_formula Σ τ vf z.
 Proof.
   apply result_first_outer_ret_value_at_open.
 Qed.

@@ -27,6 +27,60 @@ Proof.
   exfalso. exact (Hlc (LVBound k) Hk).
 Qed.
 
+Lemma formula_open_result_first_expr_result_formula_at_shift0 y D e :
+  lc_lvars D ->
+  y ∉ lvars_fv D ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  formula_open 0 y
+    (expr_result_formula_at (lvars_shift_from 0 D)
+      (tm_shift 0 e) (LVBound 0)) =
+  expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HlcD HyD Hlce Hye.
+  rewrite formula_open_expr_result_formula_at_shift0.
+  - rewrite lvars_shift_from_lc_at_id; [reflexivity|].
+    apply result_first_lvars_lc_at_zero_of_lc. exact HlcD.
+  - apply result_first_lc_lvars_shift_from. exact HlcD.
+  - rewrite lvars_shift_from_fv. exact HyD.
+  - exact Hlce.
+  - exact Hye.
+Qed.
+
+Definition result_first_outer_ret_value_formula
+    (Σ : lty_env) τ vf z : FormulaT :=
+  formula_open 0 z
+    (expr_result_formula_at
+      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
+      (tm_shift 0 (tret vf)) (LVBound 0)).
+
+Definition result_first_outer_ret_value_formula_norm
+    (Σ : lty_env) τ vf z : FormulaT :=
+  expr_result_formula_at
+    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
+
+Definition opened_arrow_value_body_obs
+    gas (Σ : lty_env) τx τr f : FormulaT :=
+  formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas Σ
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))).
+
+Definition opened_wand_value_body_obs
+    gas (Σ : lty_env) τx τr f : FormulaT :=
+  formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas Σ
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))).
+
+Definition opened_persist_value_body_obs
+    gas (Σ : lty_env) τ f : FormulaT :=
+  formula_open 0 f
+    (FPersist
+      (ty_denote_gas gas
+        (typed_lty_env_bind Σ (erase_ty τ))
+        (cty_shift 0 τ) (tret (vbvar 0)))).
+
 Lemma result_first_forall_impl_open_elim
     (m my : WfWorldT) y P Q :
   m ⊨ FForall (FImpl P Q) ->
@@ -49,37 +103,21 @@ Lemma result_first_outer_ret_value_at
   lc_value vf ->
   z ∉ fv_value vf ->
   z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
+  m ⊨ result_first_outer_ret_value_formula Σ τ vf z ->
+  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z.
 Proof.
   intros HΣclosed Hvf Hzvf Hzrel Hres.
-  assert (HlcD :
-      lc_lvars
-        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
-  {
-    apply result_first_lc_lvars_shift_from.
-    apply relevant_env_closed. exact HΣclosed.
-  }
-  assert (HzD :
-      z ∉ lvars_fv
-        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
-  {
-    rewrite lvars_shift_from_fv. exact Hzrel.
-  }
+  unfold result_first_outer_ret_value_formula,
+    result_first_outer_ret_value_formula_norm in Hres |- *.
   assert (Hlc_tm : lc_tm (tret vf)) by (constructor; exact Hvf).
   assert (Hz_tm : z ∉ fv_tm (tret vf)).
   { cbn [fv_tm fv_value]. exact Hzvf. }
-  rewrite formula_open_expr_result_formula_at_shift0 in Hres
-    by (exact HlcD || exact HzD || exact Hlc_tm || exact Hz_tm).
-  rewrite (lvars_shift_from_lc_at_id 0
-    (dom (relevant_env Σ τ (tret vf)))) in Hres.
+  rewrite formula_open_result_first_expr_result_formula_at_shift0 in Hres.
   - exact Hres.
-  - apply result_first_lvars_lc_at_zero_of_lc.
-    apply relevant_env_closed. exact HΣclosed.
+  - apply relevant_env_closed. exact HΣclosed.
+  - exact Hzrel.
+  - exact Hlc_tm.
+  - exact Hz_tm.
 Qed.
 
 Lemma result_first_outer_ret_value_at_open
@@ -88,36 +126,26 @@ Lemma result_first_outer_ret_value_at_open
   lc_value vf ->
   z ∉ fv_value vf ->
   z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)).
+  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z ->
+  m ⊨ result_first_outer_ret_value_formula Σ τ vf z.
 Proof.
   intros HΣclosed Hvf Hzvf Hzrel Hres.
-  rewrite formula_open_expr_result_formula_at_shift0.
-  - rewrite (lvars_shift_from_lc_at_id 0
-      (dom (relevant_env Σ τ (tret vf)))).
-    + exact Hres.
-    + apply result_first_lvars_lc_at_zero_of_lc.
-      apply relevant_env_closed. exact HΣclosed.
-  - apply result_first_lc_lvars_shift_from.
-    apply relevant_env_closed. exact HΣclosed.
-  - rewrite lvars_shift_from_fv. exact Hzrel.
+  unfold result_first_outer_ret_value_formula,
+    result_first_outer_ret_value_formula_norm in Hres |- *.
+  rewrite formula_open_result_first_expr_result_formula_at_shift0.
+  - exact Hres.
+  - apply relevant_env_closed. exact HΣclosed.
+  - exact Hzrel.
   - constructor. exact Hvf.
   - cbn [fv_tm fv_value]. exact Hzvf.
 Qed.
 
 Lemma formula_fv_open_arrow_value_body_obs
     gas (Σ : lty_env) τx τr f :
-  formula_fv
-    (formula_open 0 f
-      (arrow_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))) ⊆
+  formula_fv (opened_arrow_value_body_obs gas Σ τx τr f) ⊆
   lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]}.
 Proof.
+  unfold opened_arrow_value_body_obs.
   etransitivity; [apply formula_open_fv_subset|].
   unfold formula_fv, formula_lvars, arrow_value_denote_gas_with.
   cbn [formula_lvars_at].
@@ -152,10 +180,7 @@ Lemma formula_scoped_open_arrow_value_body_obs
   lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]} ⊆
     world_dom (m : WorldT) ->
   formula_scoped_in_world m
-    (formula_open 0 f
-      (arrow_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))).
+    (opened_arrow_value_body_obs gas Σ τx τr f).
 Proof.
   intros Hsub.
   unfold formula_scoped_in_world.
@@ -165,13 +190,10 @@ Qed.
 
 Lemma formula_fv_open_wand_value_body_obs
     gas (Σ : lty_env) τx τr f :
-  formula_fv
-    (formula_open 0 f
-      (wand_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))) ⊆
+  formula_fv (opened_wand_value_body_obs gas Σ τx τr f) ⊆
   lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]}.
 Proof.
+  unfold opened_wand_value_body_obs.
   etransitivity; [apply formula_open_fv_subset|].
   unfold formula_fv, formula_lvars, wand_value_denote_gas_with.
   cbn [formula_lvars_at].
@@ -206,10 +228,7 @@ Lemma formula_scoped_open_wand_value_body_obs
   lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]} ⊆
     world_dom (m : WorldT) ->
   formula_scoped_in_world m
-    (formula_open 0 f
-      (wand_value_denote_gas_with ty_denote_gas gas Σ
-        (cty_shift 0 τx) (cty_shift 1 τr)
-        (tret (vbvar 0)))).
+    (opened_wand_value_body_obs gas Σ τx τr f).
 Proof.
   intros Hsub.
   unfold formula_scoped_in_world.
@@ -219,14 +238,10 @@ Qed.
 
 Lemma formula_fv_open_persist_value_body_obs
     gas (Σ : lty_env) τ f :
-  formula_fv
-    (formula_open 0 f
-      (FPersist
-        (ty_denote_gas gas
-          (typed_lty_env_bind Σ (erase_ty τ))
-          (cty_shift 0 τ) (tret (vbvar 0))))) ⊆
+  formula_fv (opened_persist_value_body_obs gas Σ τ f) ⊆
   lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]}.
 Proof.
+  unfold opened_persist_value_body_obs.
   etransitivity; [apply formula_open_fv_subset|].
   cbn [formula_fv].
   pose proof (ty_denote_gas_fv_subset gas
@@ -247,11 +262,7 @@ Lemma formula_scoped_open_persist_value_body_obs
   lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]} ⊆
     world_dom (m : WorldT) ->
   formula_scoped_in_world m
-    (formula_open 0 f
-      (FPersist
-        (ty_denote_gas gas
-          (typed_lty_env_bind Σ (erase_ty τ))
-          (cty_shift 0 τ) (tret (vbvar 0))))).
+    (opened_persist_value_body_obs gas Σ τ f).
 Proof.
   intros Hsub.
   unfold formula_scoped_in_world.
@@ -262,6 +273,7 @@ Qed.
 Ltac result_first_open_norm :=
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in *;
+  rewrite ?formula_open_result_first_expr_result_formula_at_shift0 in * by eauto;
   rewrite ?formula_open_expr_result_formula_at_shift0 in *;
   try denotation_open_norm.
 
