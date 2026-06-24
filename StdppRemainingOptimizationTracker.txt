@@ -157,14 +157,18 @@ Pattern Buckets
      - `SoundnessAppD.v`: 110
 
 5. `ctx_denote_under` / `context_typing_wf` regular extraction
-   - Status: partially done for persist intro.
+   - Status: completed first pass; remaining pieces are semantic bridges or
+     one-off dispatch side conditions.
    - Existing facts:
      - `soundness_wf_ret_persist_obs_subset`
      - `soundness_wf_ret_persist_observed_world`
      - `soundness_regular`
      - `basic_ctx_erase_dom_fresh_none`
+     - `soundness_result_ext_fresh_ctx_erasure`
    - Remaining:
-     - General context world-domain facts in `Soundness.v`.
+     - General context world-domain facts in `Soundness.v` after first pass are
+       either already local named lemmas (`soundness_wf_observed_vars_world_dom`)
+       or tied to specific let/letd case structure.
    - Completed:
      - Added `basic_ctx_erase_dom_fresh_none` in `Denotation/Context.v`,
        extracting the regular consequence of `basic_ctx`: variables in
@@ -176,6 +180,11 @@ Pattern Buckets
      - Reused `basic_ctx_erase_dom_fresh_none` in `SoundnessLamBase.v` and
        `SoundnessLamArrow.v`, removing two local derivations of
        `Σ !! x = None` from `basic_ctx`.
+     - Added `soundness_result_ext_fresh_ctx_erasure`, extracting the regular
+       fact that a result-extension output variable is fresh for the current
+       context erasure under a context-denotation world.
+     - Rewrote `ctx_comma_bind_of_result_ext` to call
+       `ctx_bind_of_result_ext` instead of duplicating its target-world proof.
    - Validation:
      `timeout 50s make TIMED=1 Denotation/theories/Context.vo` and
      `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
@@ -186,6 +195,9 @@ Pattern Buckets
      `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamArrow.vo`,
      `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLam.vo`, and
      `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+     `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessSetMapFacts.vo`
+     and `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo`
+     passed.
 
 6. Fiber/projection regular facts
    - Status: initial Logic batch done.
@@ -245,6 +257,11 @@ Batch Log
   - Reused `basic_ctx_erase_dom_fresh_none` in Lam regular proofs.
   - `SoundnessLamBase.vo`, `SoundnessLamArrow.vo`, `SoundnessLam.vo`, and
     `Soundness.vo` passed.
+- Batch I: completed.
+  - Added `soundness_result_ext_fresh_ctx_erasure`.
+  - Simplified `ctx_comma_bind_of_result_ext` by reusing
+    `ctx_bind_of_result_ext`.
+  - `SoundnessSetMapFacts.vo` and `Soundness.vo` passed.
 
 Next Tasks
 ----------
@@ -253,9 +270,7 @@ Next Tasks
    `TypeEquivTermResult.v`; first review done, deferred as witness-specific.
 2. Review `Denotation/Context.v` context-denotation stdpp blocks. First pass
    done; remaining blocks are mostly larger semantic bridge proofs.
-3. General context world-domain facts in `Soundness.v`: review and either
-   extract or mark stubborn.
-4. Run final full build/admit scan for this optimization pass.
+3. Run final full build/admit scan for this optimization pass.
 
 Final Validation For This Pass
 ------------------------------

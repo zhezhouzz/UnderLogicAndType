@@ -22,8 +22,8 @@ From Denotation Require Import Context
   TypeEquivTLet
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import PrimOpContext Typing SoundnessLam SoundnessApp SoundnessAppD
-  SoundnessMatch SoundnessFix SoundnessPersist.
+From ContextTyping Require Import PrimOpContext Typing SoundnessSetMapFacts
+  SoundnessLam SoundnessApp SoundnessAppD SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -338,87 +338,14 @@ Proof.
   intros Hwf Hctx Hden HFx HxΓ Hext.
   pose proof (context_typing_wf_ctx Σ Γ e1 τ1 Hwf) as Hwfctx.
   pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
-  pose proof (basic_ctx_dom_fresh (dom Σ) Γ HbasicΓ) as HfreshΓ.
-  assert (HΔworld : dom (ctx_erasure_under Σ Γ) ⊆ world_dom (m : WorldT)).
-  {
-    pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
-    exact (basic_world_formula_atom_env_dom_subset
-      (ctx_erasure_under Σ Γ) m Hworld).
-  }
   assert (HxΔ : x ∉ dom (ctx_erasure_under Σ Γ)).
-  {
-    intros Hx.
-    pose proof (HΔworld x Hx) as Hxworld.
-    pose proof (res_extend_by_output_fresh m Fx mx Hext) as Hout_fresh.
-    change (ext_out Fx ## world_dom (m : WorldT)) in Hout_fresh.
-    destruct HFx as [_ [_ Hout] _].
-    assert (x ∈ ext_out Fx) by (rewrite Hout; set_solver).
-    set_solver.
-  }
+  { eapply soundness_result_ext_fresh_ctx_erasure; eauto. }
   assert (Hctx_mx : mx ⊨ ctx_denote_under Σ Γ).
   {
     eapply res_models_extend_mono; eauto.
   }
-  assert (Hsource_full :
-      m ⊨ ty_denote_gas (cty_depth τ1)
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τ1 e1).
-  {
-    unfold ty_denote_under, ty_denote in Hden.
-    eapply res_models_ty_denote_gas_env_agree_on
-      with (X := relevant_lvars τ1 e1); [reflexivity| |exact Hden].
-    apply atom_env_to_lty_env_restrict_lvars_agree_on
-      with (X := fv_tm e1 ∪ fv_cty τ1).
-    - intros y Hy.
-      assert (HyΓ : y ∈ dom (erase_ctx Γ)).
-      {
-        pose proof (context_typing_wf_fv_tm_subset
-          Σ Γ e1 τ1 Hwf) as Htm.
-        pose proof (context_typing_wf_fv_cty_subset_erase_dom
-          Σ Γ e1 τ1 Hwf) as Hτ.
-        set_solver.
-      }
-      apply erase_ctx_lookup_ctx_erasure_under_of_basic_ctx; assumption.
-    - relevant_lvars_norm. better_set_solver.
-  }
-  assert (Htarget :
-      mx ⊨ ty_denote_gas (cty_depth τ1)
-        (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-        τ1 (tret (vfvar x))).
-  {
-    replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree x := erase_ty τ1]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply ty_denote_gas_result_ext; eauto.
-    - apply atom_store_to_lvar_store_closed.
-    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
-  }
-  assert (Hworld_mx :
-      mx ⊨ basic_world_formula
-        (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))).
-  {
-    replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree x := erase_ty τ1]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply basic_world_insert_of_arg.
-    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
-    - eapply res_models_extend_mono; eauto.
-      eapply ctx_denote_under_basic_world; eauto.
-    - replace (atom_env_to_lty_env
-          (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-        with (<[LVFree x := erase_ty τ1]>
-          (atom_env_to_lty_env (ctx_erasure_under Σ Γ))) in Htarget.
-      + exact Htarget.
-      + symmetry. apply atom_store_to_lvar_store_insert.
-  }
   eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact Hctx_mx|].
-  eapply ctx_bind_from_inserted_erasure_denotation.
-  - exact HxΔ.
-  - eapply ctx_erasure_under_agree_union_on_ty. exact Hwf.
-  - exact Hworld_mx.
-  - exact Htarget.
+  eapply (ctx_bind_of_result_ext Σ Γ τ1 e1 m mx Fx x); eauto.
 Qed.
 
 Lemma ty_denote_gas_zero_tlet_ext

@@ -5,6 +5,8 @@
     generic set/map facts file. *)
 
 From ContextStore Require Import Store.
+From ContextAlgebra Require Import ResourceExtension.
+From ContextBasicDenotation Require Import TermExtension.
 From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula.
 From Denotation Require Import Context.
 From ContextTyping Require Import Typing.
@@ -207,4 +209,23 @@ Proof.
   rewrite typed_lty_env_bind_lvars_fv_dom in Hbad.
   apply lvars_fv_elem in Hbad.
   eapply soundness_relevant_env_wand_value_fresh; eauto.
+Qed.
+
+Lemma soundness_result_ext_fresh_ctx_erasure
+    (Σ : tyctx) Γ e x F (m mx : WfWorldT) :
+  m ⊨ ctx_denote_under Σ Γ ->
+  expr_result_extension_witness e x F ->
+  res_extend_by m F mx ->
+  x ∉ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hctx HF Hext HxΔ.
+  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
+  pose proof (basic_world_formula_atom_env_dom_subset
+    (ctx_erasure_under Σ Γ) m Hworld) as HΔworld.
+  pose proof (HΔworld x HxΔ) as Hxworld.
+  pose proof (res_extend_by_output_fresh m F mx Hext) as Hout_fresh.
+  change (ext_out F ## world_dom (m : WorldT)) in Hout_fresh.
+  destruct HF as [_ [_ Hout] _].
+  assert (x ∈ ext_out F) by (rewrite Hout; set_solver).
+  set_solver.
 Qed.
