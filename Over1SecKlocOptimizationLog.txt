@@ -511,3 +511,37 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
 - Deferred:
   - Remaining time is mostly import/fixed overhead plus small proof steps under
     `0.07s`; no remaining local solver call looks worth a separate batch here.
+
+## Batch 22: `SoundnessLamWand.v` wand soundness freshness/opening
+
+- Baseline from the current focused run:
+  `ContextTyping/theories/SoundnessLamWand.v` rebuilt in about `5.72s`
+  for 835 lines, roughly `6.9 s/KLOC`.
+- Concrete hotspots:
+  - `ctx_erasure_under_norm_in Hy_rest; better_set_solver` in the LamD/Wand
+    value proof took about `2.0s` combined in a large context;
+  - shifted `tapp_tm` freshness side conditions rebuilt `fv_tapp_tm` and then
+    called `better_set_solver`, with one occurrence around `0.85s`;
+  - one `formula_open_ty_denote_gas_singleton` rewrite for the opened Wand
+    result was about `0.47s` inside the largest proof context.
+- Optimization:
+  - Imported `SoundnessSetMapFacts` and added small local helpers for the
+    common Wand fresh premises:
+    `lam_wand_fresh_erase_ctx`, `lam_wand_fresh_tm`,
+    `lam_wand_fresh_arg_ty`, `lam_wand_fresh_result_ty`, and
+    `lam_wand_shifted_tapp_fresh`.
+  - Replaced the repeated `ctx_erasure_under` normalization and broad set
+    searches with direct helper calls.
+  - Added `lam_wand_open_shifted_tapp_denote_iff`, a local result-opening
+    normalizer for the shifted Wand application result, and used it at both
+    opening sites.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+  - New normal and focused time observed: `1.81s`, about `2.17 s/KLOC`.
+- Deferred:
+  - No remaining single proof command is above about `0.13s`; further wins
+    would likely require larger proof restructuring or import splitting rather
+    than another local side-condition cleanup.

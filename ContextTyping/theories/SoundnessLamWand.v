@@ -8,7 +8,7 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTerm TypeEquivFiberBase TypeEquivBody TypeEquivArrow TypeEquivWand TypeEquiv ConstDenote.
-From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow.
+From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLamBase SoundnessLamArrow.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -16,6 +16,81 @@ Local Lemma union_singleton_empty_r (X : aset) y :
   X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
 Proof.
   set_solver.
+Qed.
+
+Local Lemma lam_wand_fresh_erase_ctx
+    (Σ : tyctx) Γ τx τ e y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  y ∉ dom (erase_ctx Γ).
+Proof.
+  intros Hy.
+  eapply soundness_fresh_erase_ctx_from_context_union.
+  exact Hy.
+Qed.
+
+Local Lemma lam_wand_fresh_tm
+    (Σ : tyctx) Γ τx τ e y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  y ∉ fv_tm e.
+Proof.
+  intros Hy.
+  soundness_fresh_solve.
+Qed.
+
+Local Lemma lam_wand_fresh_arg_ty
+    (Σ : tyctx) Γ τx τ e y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  y ∉ fv_cty τx.
+Proof.
+  intros Hy.
+  soundness_fresh_solve.
+Qed.
+
+Local Lemma lam_wand_fresh_result_ty
+    (Σ : tyctx) Γ τx τ e y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  y ∉ fv_cty τ.
+Proof.
+  intros Hy.
+  soundness_fresh_solve.
+Qed.
+
+Local Lemma lam_wand_shifted_tapp_fresh
+    (Σ : tyctx) Γ τx τ e y :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
+    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+  y ∉ fv_tm
+    (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0)).
+Proof.
+  intros Hy.
+  rewrite fv_tapp_tm, tm_shift_fv.
+  cbn [fv_tm fv_value].
+  pose proof (lam_wand_fresh_tm Σ Γ τx τ e y Hy) as Hye.
+  soundness_fresh_solve.
+Qed.
+
+Local Lemma lam_wand_open_shifted_tapp_denote_iff
+    gas (Σ : lty_env) τ elam (m : WfWorldT) y :
+  y ∉ lvars_fv (dom Σ) ->
+  y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0)) ->
+  y ∉ fv_cty τ ->
+  lc_tm elam ->
+  (m ⊨ formula_open 0 y
+    (ty_denote_gas gas Σ τ
+      (tapp_tm (tm_shift 0 elam) (vbvar 0)))) <->
+  (m ⊨ ty_denote_gas gas (lty_env_open_one 0 y Σ)
+    (cty_open 0 y τ) (tapp_tm elam (vfvar y))).
+Proof.
+  intros HΣfresh Htmfresh Hτfresh Hlc_elam.
+  rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ
+    (tapp_tm (tm_shift 0 elam) (vbvar 0)))
+    by (exact HΣfresh || exact Htmfresh || exact Hτfresh).
+  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
+  reflexivity.
 Qed.
 
 Lemma lamd_wand_open_arg_to_bind_denotation
@@ -42,9 +117,9 @@ Proof.
   assert (Hτnorm :
       cty_open 0 y (cty_shift 0 τx) = τx).
   {
-    apply cty_open_shift_from_lc_fresh.
-    - eapply wf_context_ty_at_lc. exact Hτx_global.
-    - ctx_erasure_under_norm_in Hy. better_set_solver.
+	    apply cty_open_shift_from_lc_fresh.
+	    - eapply wf_context_ty_at_lc. exact Hτx_global.
+	    - eapply lam_wand_fresh_arg_ty. exact Hy.
   }
   rewrite Hτnorm in Harg.
   eapply ty_denote_gas_ret_fvar_insert_closed_atom_env; eauto.
@@ -84,13 +159,13 @@ Proof.
     rewrite atom_store_to_lvar_store_dom in Hatom.
     rewrite <- lvars_fv_elem in Hatom.
     rewrite lvars_fv_of_atoms in Hatom.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
+    eapply lam_wand_fresh_erase_ctx in Hy. exact (Hy Hatom).
   }
   eapply wand_open_arg_to_inserted_env; eauto.
   - apply atom_store_to_lvar_store_closed.
   - apply atom_env_to_lty_env_dom_free_notin.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
+    eapply lam_wand_fresh_erase_ctx. exact Hy.
+  - eapply lam_wand_fresh_arg_ty. exact Hy.
 Qed.
 
 Lemma lamd_open_arg_to_star_ctx
@@ -161,7 +236,7 @@ Proof.
   intros Hwf Hy Hbody Hstatic.
   set (elam := tret (vlam (erase_ty τx) e)).
   assert (HyΓ : y ∉ dom (erase_ctx Γ)).
-  { ctx_erasure_under_norm_in Hy. better_set_solver. }
+  { eapply lam_wand_fresh_erase_ctx. exact Hy. }
   pose proof (ty_denote_under_star_bind_to_lvar_insert_direct
     Σ Γ τx ({0 ~> y} τ) (e ^^ y) y my HyΓ Hbody) as Hbody_insert.
   assert (Hmid_body :
@@ -257,10 +332,10 @@ Proof.
 	          (fv_tm (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ∪
 	           fv_tm (e ^^ y)) my).
 	    { apply wfworld_closed_on_union; assumption. }
-	    pose proof (tm_total_equiv_lam_app_body
-	      (erase_ty τx) e y my Hclosed Hbody_lc
-	      ltac:(ctx_erasure_under_norm_in Hy; better_set_solver)
-	      Hy_dom) as Htotal_eq.
+			    pose proof (tm_total_equiv_lam_app_body
+			      (erase_ty τx) e y my Hclosed Hbody_lc
+			      ltac:(eapply lam_wand_fresh_tm; exact Hy)
+			      Hy_dom) as Htotal_eq.
 	    eapply tm_equiv_total;
 	      [ exact Htotal_eq
 	      | exact Hlc_app
@@ -317,10 +392,10 @@ Proof.
       (atom_env_to_lty_env (erase_ctx Γ))))
         (cty_open 0 y τ)
         (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
-  {
-    eapply lam_intro_denotation; eauto.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
+		  {
+		    eapply lam_intro_denotation; eauto.
+		    eapply lam_wand_fresh_tm. exact Hy.
+		  }
   exact Happ_mid.
 Qed.
 
@@ -368,29 +443,19 @@ Proof.
     apply lvars_fv_elem in Hyfv.
     pose proof (Hrel _ Hyfv) as Hatom.
     rewrite atom_store_to_lvar_store_dom in Hatom.
-    rewrite <- lvars_fv_elem in Hatom.
-    rewrite lvars_fv_of_atoms in Hatom.
-    ctx_erasure_under_norm_in Hy. better_set_solver.
-  }
-  assert (Htmfresh :
-      y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
-	    {
-	      subst elam.
-	      rewrite fv_tapp_tm, tm_shift_fv.
-	      cbn [fv_tm fv_value]. better_set_solver.
-	    }
-	    rewrite (formula_open_ty_denote_gas_singleton 0 y
-	      (Nat.max (cty_depth τx) (cty_depth τ))
-	      (typed_lty_env_bind
-	        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTWand τx τ) elam)
-      (erase_ty τx))
-    τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))
-    by (exact HΣfresh || exact Htmfresh || better_set_solver).
-  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
-  subst elam.
-  assert (Happ_mid_open :
-      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+	    rewrite <- lvars_fv_elem in Hatom.
+	    rewrite lvars_fv_of_atoms in Hatom.
+	    eapply lam_wand_fresh_erase_ctx in Hy. exact (Hy Hatom).
+	  }
+	  assert (Htmfresh :
+	      y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
+		    {
+		      subst elam.
+		      eapply lam_wand_shifted_tapp_fresh. exact Hy.
+		    }
+	  subst elam.
+	  assert (Happ_mid_open :
+	      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
         (lty_env_open_one 0 y
           (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
             (erase_ty τx)))
@@ -399,14 +464,25 @@ Proof.
   {
     rewrite typed_lty_env_bind_open_current.
     - exact Happ_mid.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hy. better_set_solver.
+	    - apply atom_env_to_lty_env_dom_free_notin.
+	      eapply lam_wand_fresh_erase_ctx. exact Hy.
     - apply atom_store_to_lvar_store_closed.
-  }
-  eapply ty_equiv_wand_result_tgt_goal.
-  - exact Hlc_elam.
-  - better_set_solver.
-  - exact Happ_mid_open.
+	  }
+		  pose proof (lam_wand_open_shifted_tapp_denote_iff
+	    (Nat.max (cty_depth τx) (cty_depth τ))
+	    (typed_lty_env_bind
+	      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+	        (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
+	      (erase_ty τx))
+	    τ (tret (vlam (erase_ty τx) e)) my y
+	    HΣfresh Htmfresh
+	    ltac:(eapply lam_wand_fresh_result_ty; exact Hy)
+	    Hlc_elam) as [_ Hnorm_to_open].
+	  apply Hnorm_to_open.
+	  eapply ty_equiv_wand_result_tgt_goal.
+	  - exact Hlc_elam.
+	  - better_set_solver.
+	  - exact Happ_mid_open.
 Qed.
 
 Lemma lamd_opened_wand_result
@@ -550,8 +626,8 @@ Proof.
 	      y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
 	        fv_tm e ∪ fv_cty τx ∪ fv_cty τ).
 	  { clear -Hy_fresh. better_set_solver. }
-	  assert (Hy_eraseΓ : y ∉ dom (erase_ctx Γ)).
-	  { ctx_erasure_under_norm_in Hy_rest. better_set_solver. }
+		  assert (Hy_eraseΓ : y ∉ dom (erase_ctx Γ)).
+		  { eapply lam_wand_fresh_erase_ctx. exact Hy_rest. }
 	  assert (HyΔ : LVFree y ∉ dom Δ).
 	  {
 	    subst Δ. apply atom_env_to_lty_env_dom_free_notin.
@@ -657,31 +733,30 @@ Proof.
 	      rewrite lvars_fv_of_atoms in Hatom.
 	      exact (Hy_eraseΓ Hatom).
     }
-    assert (Htmfresh :
-        y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
-	    {
-	      subst elam.
-	      rewrite fv_tapp_tm, tm_shift_fv.
-	      cbn [fv_tm fv_value]. better_set_solver.
-	    }
-    change (res_product n mz Hc ⊨ formula_open 0 y
-      (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTWand τx τ) elam)
-          (erase_ty τx))
-        τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))) in Hopened_src.
-	    rewrite (formula_open_ty_denote_gas_singleton 0 y
+	    assert (Htmfresh :
+	        y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
+		    {
+		      subst elam.
+		      eapply lam_wand_shifted_tapp_fresh. exact Hy_rest.
+		    }
+	    change (res_product n mz Hc ⊨ formula_open 0 y
+	      (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+	        (typed_lty_env_bind
+	          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+	            (CTWand τx τ) elam)
+	          (erase_ty τx))
+	        τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))) in Hopened_src.
+		    pose proof (lam_wand_open_shifted_tapp_denote_iff
 	      (Nat.max (cty_depth τx) (cty_depth τ))
 	      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) elam)
-        (erase_ty τx))
-      τ (tapp_tm (tm_shift 0 elam) (vbvar 0))) in Hopened_src
-      by (exact HΣfresh || exact Htmfresh || better_set_solver).
-    rewrite open_tapp_tm_shift_bvar0_lc in Hopened_src by exact Hlc_elam.
-    subst elam.
-    exact Hopened_src.
+	        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+	          (CTWand τx τ) elam)
+	        (erase_ty τx))
+	      τ elam (res_product n mz Hc) y
+	      HΣfresh Htmfresh
+	      ltac:(eapply lam_wand_fresh_result_ty; exact Hy_rest)
+	      Hlc_elam) as [Hopen_to_norm _].
+	    apply Hopen_to_norm. exact Hopened_src.
   }
   assert (Hsrc_open :
       res_product n mz Hc ⊨ ty_denote_gas gas
