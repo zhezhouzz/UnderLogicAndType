@@ -132,3 +132,6 @@ timeout 180s make TIMED=1
   remains the persistence hotspot, but further improvement should use
   statement-level proof extraction or a finer `-time` pass rather than more
   ad-hoc solver edits.
+- [x] Rechecked `TypePersistWandForward.vo` after the freshness cleanup and
+  Resource-layer rebuild.  It remains around 13.14s, so the remaining
+  compile-time pressure is still concentrated in the reverse proof.

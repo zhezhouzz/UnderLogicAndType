@@ -9,6 +9,15 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
+Local Ltac persist_eta_fresh_from H :=
+  clear -H; set_solver.
+
+Local Ltac persist_outer_fresh_from H :=
+  clear -H; set_solver.
+
+Local Ltac persist_lvar_fresh_from H :=
+  intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
+
 Lemma ty_denote_gas_over_ret_fvar_fiber_stable
     gas (Σ : lty_env) b φ y X σ
     (my mfib : WfWorldT) :
@@ -493,15 +502,19 @@ Proof.
   rewrite formula_open_env_singleton in Harg_persist |- *.
   rewrite open_env_atoms_insert in Hηfresh by apply lookup_empty.
   rewrite open_env_atoms_empty in Hηfresh.
-  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by (clear -Hηfresh; set_solver).
+  assert (HyΣ : y ∉ lvars_fv (dom Σ)) by
+    persist_eta_fresh_from Hηfresh.
   assert (HyΣlv : LVFree y ∉ dom (Σ : lty_env)).
   {
     intros Hbad. apply HyΣ.
     apply lvars_fv_elem. exact Hbad.
   }
-  assert (Hyφ : y ∉ qual_dom φx) by (clear -Hηfresh; set_solver).
-  assert (Hyτr : y ∉ fv_cty τr) by (clear -Hηfresh; set_solver).
-  assert (Hyef : y ∉ fv_tm ef) by (clear -Hηfresh; set_solver).
+  assert (Hyφ : y ∉ qual_dom φx) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyτr : y ∉ fv_cty τr) by
+    persist_eta_fresh_from Hηfresh.
+  assert (Hyef : y ∉ fv_tm ef) by
+    persist_eta_fresh_from Hηfresh.
   assert (Harg_over :
       n ⊨ formula_open 0 y
         (ty_denote_gas (S gas_src')
@@ -832,15 +845,11 @@ Proof.
   { cbn [formula_open] in Hscope_open. exact Hscope_open. }
   intros Hresult_tgt.
   assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
-  {
-    intros Hbad.
-    apply lvars_fv_elem in Hbad.
-    clear -Hf Hbad. set_solver.
-  }
+  { persist_lvar_fresh_from Hf. }
   assert (Hfφ : f ∉ qual_dom φx).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hfτr : f ∉ fv_cty τr).
-  { clear -Hf. set_solver. }
+  { persist_outer_fresh_from Hf. }
   assert (Hopened_src :
       mf ⊨ formula_open 0 f
         (FImpl
@@ -855,7 +864,7 @@ Proof.
   {
     subst Σg.
     apply Hsrc.
-    - clear -Hf. set_solver.
+    - persist_outer_fresh_from Hf.
     - exact Hdom.
     - exact Hrestrict.
   }

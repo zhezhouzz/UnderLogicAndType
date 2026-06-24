@@ -113,3 +113,6 @@ timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
   `TypePersistWandReverse.v` into small local tactics.  The semantic
   checkpoints in the hard Wand proof are retained, but binder freshness and
   lvar-domain side conditions no longer repeat raw set-solver scripts.
+- [x] Applied the same local-tactic cleanup to `TypePersistWandForward.v`.
+  This keeps the forward proof's semantic assertions visible while removing
+  duplicated binder-freshness set proofs.
