@@ -16,7 +16,7 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenoteBase
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLam.
 
 Lemma context_typing_wf_match_inv Σ Γ x et ef τ :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->
@@ -57,10 +57,8 @@ Proof.
       Hbasic_match) as Hbasic_match_lty.
     exact (basic_tm_has_ltype_lvars _ _ _ Hbasic_match_lty).
   }
-  assert (Hfv_et : fv_tm et ⊆ X) by (subst X; cbn [fv_tm]; better_set_solver).
-  assert (Hfv_match : fv_tm (tmatch (vfvar x) et ef) ⊆ X)
-    by (subst X; better_set_solver).
-  assert (HxX : x ∈ X) by (subst X; cbn [fv_tm fv_value]; better_set_solver).
+  destruct (soundness_match_left_observation_facts x et ef X
+    ltac:(subst X; reflexivity)) as [Hfv_et [Hfv_match HxX]].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { exact (HclosedX σ Hσ). }
   assert (HσX_lookup :
@@ -114,10 +112,8 @@ Proof.
       Hbasic_match) as Hbasic_match_lty.
     exact (basic_tm_has_ltype_lvars _ _ _ Hbasic_match_lty).
   }
-  assert (Hfv_ef : fv_tm ef ⊆ X) by (subst X; cbn [fv_tm]; better_set_solver).
-  assert (Hfv_match : fv_tm (tmatch (vfvar x) et ef) ⊆ X)
-    by (subst X; better_set_solver).
-  assert (HxX : x ∈ X) by (subst X; cbn [fv_tm fv_value]; better_set_solver).
+  destruct (soundness_match_right_observation_facts x et ef X
+    ltac:(subst X; reflexivity)) as [Hfv_ef [Hfv_match HxX]].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { exact (HclosedX σ Hσ). }
   assert (HσX_lookup :
@@ -171,10 +167,8 @@ Proof.
       Hbasic_match) as Hbasic_match_lty.
     exact (basic_tm_has_ltype_lvars _ _ _ Hbasic_match_lty).
   }
-  assert (Hfv_et : fv_tm et ⊆ X) by (subst X; cbn [fv_tm]; better_set_solver).
-  assert (Hfv_match : fv_tm (tmatch (vfvar x) et ef) ⊆ X)
-    by (subst X; better_set_solver).
-  assert (HxX : x ∈ X) by (subst X; cbn [fv_tm fv_value]; better_set_solver).
+  destruct (soundness_match_left_observation_facts x et ef X
+    ltac:(subst X; reflexivity)) as [Hfv_et [Hfv_match HxX]].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { exact (HclosedX σ Hσ). }
   assert (HσX_lookup :
@@ -233,10 +227,8 @@ Proof.
       Hbasic_match) as Hbasic_match_lty.
     exact (basic_tm_has_ltype_lvars _ _ _ Hbasic_match_lty).
   }
-  assert (Hfv_ef : fv_tm ef ⊆ X) by (subst X; cbn [fv_tm]; better_set_solver).
-  assert (Hfv_match : fv_tm (tmatch (vfvar x) et ef) ⊆ X)
-    by (subst X; better_set_solver).
-  assert (HxX : x ∈ X) by (subst X; cbn [fv_tm fv_value]; better_set_solver).
+  destruct (soundness_match_right_observation_facts x et ef X
+    ltac:(subst X; reflexivity)) as [Hfv_ef [Hfv_match HxX]].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { exact (HclosedX σ Hσ). }
   assert (HσX_lookup :

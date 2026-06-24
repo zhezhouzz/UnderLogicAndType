@@ -1,0 +1,133 @@
+Remaining Stdpp / Regular Ltac Optimization Tracker
+====================================================
+
+Purpose
+-------
+
+Track remaining stdpp-heavy proof patterns after the first folder-local facts
+pass.  The goal is not to erase all stdpp from the repository: low-level
+Store/Resource files are naturally stdpp-heavy.  The goal is to eliminate
+repeated upper-layer proof blocks where project-specific hypotheses can
+deterministically produce the required stdpp facts.
+
+Current Counts
+--------------
+
+Raw match count for:
+`set_solver|better_set_solver|elem_of_|not_elem_of_|lookup_insert|lookup_delete|dom_union_L|dom_insert_L|map_lookup|storeA_restrict|res_extend_by_*|wfworld*_store_dom`
+
+By folder:
+
+| Folder | Count | Notes |
+| --- | ---: | --- |
+| Denotation | 2217 | Main upper-layer target. Many repeated `res_extend_by`, result graph, store-domain blocks. |
+| ContextTyping | 1057 | Main Soundness target. Many regular facts from `context_typing_wf`, `ctx_denote_under`, fresh unions. |
+| ContextStore | 960 | Mostly low-level store library; optimize only obvious duplicate lemmas, not every stdpp proof. |
+| ContextBasicDenotation | 871 | Term/result formula and RelevantEnv normalization/facts. |
+| ContextAlgebra | 552 | Resource/fiber facts; can host lower-level reusable lemmas. |
+| ContextLogic | 460 | Formula/fiberwise facts; some regular extraction now exists. |
+
+Top files by raw count:
+
+| Count | File | Classification |
+| ---: | --- | --- |
+| 640 | `ContextStore/StoreRestrict.v` | Low-level stdpp-heavy; do not chase all. |
+| 217 | `Denotation/theories/TypeEquivFiberBaseResult.v` | High priority: result graph + extension/fiber facts. |
+| 214 | `Denotation/theories/TypeEquivTermResult.v` | High priority: result extension / result graph facts. |
+| 212 | `ContextAlgebra/theories/ResourceInterface.v` | Low-level; extract only reusable API lemmas. |
+| 210 | `ContextBasicDenotation/theories/TermTLet.v` | Medium: term/result relation facts. |
+| 209 | `Denotation/theories/Context.v` | High priority: ctx denotation regular facts. |
+| 196 | `ContextBasicDenotation/theories/RelevantEnv.v` | Medium: normalization/fv facts; many legitimate. |
+| 182 | `ContextAlgebra/theories/ResourceAlgebra.v` | Low-level; mostly expected. |
+| 168 | `Denotation/theories/TypePersistBase.v` | High priority: new persistence proofs. |
+| 148 | `ContextTyping/theories/SoundnessMatch.v` | High priority: repeated FV/set facts for match equivalences. |
+| 129 | `ContextLogic/theories/FormulaConnectives.v` | Medium: formula connective algebra. |
+| 127 | `ContextTyping/theories/SoundnessApp.v` | High priority: repeated app fresh/domain facts. |
+| 109 | `ContextTyping/theories/SoundnessAppD.v` | High priority: same as App, plus wand resource facts. |
+
+Pattern Buckets
+---------------
+
+1. `res_extend_by` regular facts
+   - Status: partially done.
+   - Existing facts:
+     - `denotation_regular`
+     - `res_extend_by_singleton_output_in_world`
+     - `res_extend_by_singleton_output_notin_base_store`
+   - Remaining files:
+     - `TypeEquivTermResult.v`
+     - `TypeEquivFiberBaseResult.v`
+     - `TypePersistBase.v`
+     - `SoundnessApp.v`
+     - `SoundnessAppD.v`
+     - `SoundnessFixApply.v`
+
+2. Store-domain / singleton-output composition
+   - Status: partially done for one `TypeEquivTermBase.v` block.
+   - Need:
+     - More lemmas combining `res_extend_by`, `wfworld*_store_dom`,
+       `ext_out = {[x]}`.
+     - Avoid repeated `assert (x ∉ dom σm)` and `assert (x ∈ world_dom mx)`.
+
+3. Match FV observation facts
+   - Status: completed first pass.
+   - Repeated shapes in `SoundnessMatch.v`:
+     - `fv_tm et ⊆ X`
+     - `fv_tm ef ⊆ X`
+     - `fv_tm (tmatch (vfvar x) et ef) ⊆ X`
+     - `x ∈ X`
+   - Candidate lemma location:
+     - `SoundnessSetMapFacts.v` because the facts serve Soundness proof shapes,
+       though they are mostly syntactic.
+   - Added:
+     - `soundness_match_left_observation_facts`
+     - `soundness_match_right_observation_facts`
+   - Replaced the four top-level match term/total equivalence setup blocks.
+
+4. App/AppD fresh/domain facts
+   - Status: pending.
+   - Repeated shapes:
+     - `x ∈ world_dom m` from `ty_denote_gas ... (ret x)`.
+     - fresh result-slot facts from `fresh_for` unions.
+     - `res_extend_by_dom` and base restriction after building result worlds.
+   - Need: use existing Denotation facts where possible; add Soundness regular
+     wrappers only for typing-specific hypotheses.
+
+5. `ctx_denote_under` / `context_typing_wf` regular extraction
+   - Status: partially done for persist intro.
+   - Existing facts:
+     - `soundness_wf_ret_persist_obs_subset`
+     - `soundness_wf_ret_persist_observed_world`
+     - `soundness_regular`
+   - Remaining:
+     - General context world-domain facts in `Soundness.v`.
+     - App/Lam/Fix proof-specific regular extraction.
+
+6. Fiber/projection regular facts
+   - Status: initial Logic batch done.
+   - Existing facts:
+     - `formula_regular`
+   - Remaining:
+     - Candidate Resource/Logic lemmas for repeated fiber world/store-domain
+       shapes in `TypeEquivFiberBaseResult.v`.
+
+Batch Log
+---------
+
+- Batch A: completed before this tracker.
+  - Added Soundness regular facts for persist intro.
+  - Added Denotation regular facts for `res_extend_by`.
+  - Added Logic fiber-domain regular extraction.
+  - Full build and admit scan passed.
+- Batch B: completed.
+  - Added match observation facts to `SoundnessSetMapFacts.v`.
+  - Cleaned repeated FV/X setup in `SoundnessMatch.v`.
+  - `SoundnessSetMapFacts.vo` and `SoundnessMatch.vo` passed.
+
+Next Tasks
+----------
+
+1. Optimize `TypeEquivTermResult.v` / `TypeEquivFiberBaseResult.v`
+   `res_extend_by` blocks using existing and new regular lemmas.
+2. Optimize `TypePersistBase.v` repeated singleton-output/domain blocks.
+3. Re-scan counts and update this file.
