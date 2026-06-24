@@ -205,8 +205,11 @@ Proof.
           replace (world_dom (m : WorldT) ∩ A) with A by set_solver.
           reflexivity.
       }
-      assert (HclosedA : wfworld_closed_on A my).
-      { eapply wfworld_closed_on_mono; [|exact Hclosed]. set_solver. }
+	      assert (HclosedA : wfworld_closed_on A my).
+	      {
+	        eapply wfworld_closed_on_mono; [|exact Hclosed].
+	        intros a Ha. apply elem_of_union_l. exact Ha.
+	      }
       assert (Hinst_eq : m{σmy} v = m{σ0} v).
       {
         eapply msubst_value_agree_on_restrict.
@@ -295,7 +298,12 @@ Proof.
 	             reflexivity.
 	           }
 	           rewrite Hv0 in Hlook_my. exact Hlook_my.
-      * assert (HaA : a ∈ A) by set_solver.
+	      * assert (HaA : a ∈ A).
+	        {
+	          apply elem_of_union in Ha as [Ha|Ha].
+	          - exact Ha.
+	          - apply elem_of_singleton in Ha. contradiction.
+	        }
         assert (HmyBig :
             (store_restrict σmy (A ∪ {[y]}) : StoreT) !! a = σmy !! a).
         {
@@ -429,31 +437,59 @@ Proof.
     - exact HtmD_src.
     - constructor. exact Hv.
   }
-  assert (HA_sub : fv_cty τ ∪ fv_value v ⊆ world_dom (m : WorldT)).
-  {
-    pose proof (res_restrict_singleton_exact_dom_subset
-      m (fv_cty τ ∪ fv_value v) σ Hdomσ Hsingle) as Hsub.
-    exact Hsub.
-  }
-  assert (Hy_m : y ∉ world_dom (m : WorldT)).
-  { clear -Hy. set_solver. }
-  assert (Hyτ : y ∉ fv_cty τ).
-  { clear -Hy. set_solver. }
-  assert (Hyv : y ∉ fv_value v).
-  { clear -Hy. set_solver. }
+	  assert (HA_sub : fv_cty τ ∪ fv_value v ⊆ world_dom (m : WorldT)).
+	  {
+	    pose proof (res_restrict_singleton_exact_dom_subset
+	      m (fv_cty τ ∪ fv_value v) σ Hdomσ Hsingle) as Hsub.
+	    exact Hsub.
+	  }
+	  assert (Hτ_world : fv_cty τ ⊆ world_dom (m : WorldT)).
+	  {
+	    intros a Ha. apply HA_sub. apply elem_of_union_l. exact Ha.
+	  }
+	  assert (Hv_world : fv_value v ⊆ world_dom (m : WorldT)).
+	  {
+	    intros a Ha. apply HA_sub. apply elem_of_union_r. exact Ha.
+	  }
+	  assert (Hτ_my : fv_cty τ ⊆ world_dom (my : WorldT)).
+	  {
+	    intros a Ha. rewrite Hdom_my.
+	    apply elem_of_union_l. exact (Hτ_world a Ha).
+	  }
+	  assert (Hv_my : fv_value v ⊆ world_dom (my : WorldT)).
+	  {
+	    intros a Ha. rewrite Hdom_my.
+	    apply elem_of_union_l. exact (Hv_world a Ha).
+	  }
+	  assert (Hy_m : y ∉ world_dom (m : WorldT)).
+	  { clear -Hy. set_solver. }
+	  assert (Hyτ : y ∉ fv_cty τ).
+	  { clear -Hy. set_solver. }
+	  assert (Hyv : y ∉ fv_value v).
+	  { clear -Hy. set_solver. }
+	  assert (HvA : fv_value v ⊆ fv_cty τ ∪ fv_value v).
+	  {
+	    intros a Ha. apply elem_of_union_r. exact Ha.
+	  }
+	  assert (HyA : y ∉ fv_cty τ ∪ fv_value v).
+	  {
+	    intros HyA. apply elem_of_union in HyA as [HyA|HyA].
+	    - exact (Hyτ HyA).
+	    - exact (Hyv HyA).
+	  }
   assert (Hclosed_v_m : wfworld_closed_on (fv_value v) m).
   {
     change (fv_value v) with (fv_tm (tret v)).
     eapply denot_ty_lvar_guard_wfworld_closed_on_term.
     exact Hguard_src.
   }
-  assert (Hclosed_v_my : wfworld_closed_on (fv_value v) my).
-  {
-    eapply wfworld_closed_on_le.
-    - intros a Ha. apply HA_sub. set_solver.
-    - rewrite <- Hbase_my. apply res_restrict_le.
-    - exact Hclosed_v_m.
-  }
+	  assert (Hclosed_v_my : wfworld_closed_on (fv_value v) my).
+	  {
+	    eapply wfworld_closed_on_le.
+	    - exact Hv_world.
+	    - rewrite <- Hbase_my. apply res_restrict_le.
+	    - exact Hclosed_v_m.
+	  }
   assert (HDmy : lvars_fv
       (dom (relevant_env Σ (CTPersist τ) (tret v)))
       ⊆ world_dom (my : WorldT)).
@@ -478,17 +514,16 @@ Proof.
     rewrite relevant_env_persist_eq in HyD.
     exact HyD.
   }
-  assert (Hclosed_y_my : wfworld_closed_on ({[y]} : aset) my).
-  {
-    eapply expr_result_formula_at_ret_value_closed_result.
-    - exact HtmD_result.
-    - exact HyD_result.
-    - rewrite Hdom_my. intros a Ha. apply elem_of_union_l.
-      apply HA_sub. set_solver.
-    - exact Hclosed_v_my.
-    - exact Hv.
-    - exact Hres.
-  }
+	  assert (Hclosed_y_my : wfworld_closed_on ({[y]} : aset) my).
+	  {
+	    eapply expr_result_formula_at_ret_value_closed_result.
+	    - exact HtmD_result.
+	    - exact HyD_result.
+	    - exact Hv_my.
+	    - exact Hclosed_v_my.
+	    - exact Hv.
+	    - exact Hres.
+	  }
   assert (Hclosed_τ_m : wfworld_closed_on (fv_cty τ) m).
   {
     eapply basic_world_formula_wfworld_closed_on_atoms.
@@ -501,13 +536,13 @@ Proof.
       exact Ha.
     - exact Hworld_src.
   }
-  assert (Hclosed_τ_my : wfworld_closed_on (fv_cty τ) my).
-  {
-    eapply wfworld_closed_on_le.
-    - intros a Ha. apply HA_sub. set_solver.
-    - rewrite <- Hbase_my. apply res_restrict_le.
-    - exact Hclosed_τ_m.
-  }
+	  assert (Hclosed_τ_my : wfworld_closed_on (fv_cty τ) my).
+	  {
+	    eapply wfworld_closed_on_le.
+	    - exact Hτ_world.
+	    - rewrite <- Hbase_my. apply res_restrict_le.
+	    - exact Hclosed_τ_m.
+	  }
   assert (Hclosed_Ay :
       wfworld_closed_on (fv_cty τ ∪ fv_value v ∪ {[y]}) my).
   {
@@ -515,13 +550,13 @@ Proof.
     - apply wfworld_closed_on_union; [exact Hclosed_τ_my|exact Hclosed_v_my].
     - exact Hclosed_y_my.
   }
-  pose proof (res_restrict_singleton_push_ret_value_result
-    (fv_cty τ ∪ fv_value v)
-    (dom (relevant_env Σ (CTPersist τ) (tret v)))
-    v y m my σ
-    ltac:(set_solver) HA_sub Hy_m ltac:(set_solver)
-    HtmD_result HyD_result Hres Hclosed_Ay Hv Hdom_my Hbase_my Hsingle)
-    as [σy [Hdomσy Hsingle_y]].
+	  pose proof (res_restrict_singleton_push_ret_value_result
+	    (fv_cty τ ∪ fv_value v)
+	    (dom (relevant_env Σ (CTPersist τ) (tret v)))
+	    v y m my σ
+	    HvA HA_sub Hy_m HyA
+	    HtmD_result HyD_result Hres Hclosed_Ay Hv Hdom_my Hbase_my Hsingle)
+	    as [σy [Hdomσy Hsingle_y]].
   assert (Hinner_insert :
       my ⊨ ty_denote_gas gas
         (<[LVFree y := erase_ty τ]> Σ) τ (tret (vfvar y))).
@@ -569,7 +604,7 @@ Proof.
     - exact Hinner_insert.
   }
   rewrite formula_open_persist.
-  rewrite formula_open_ty_denote_gas_singleton.
+	  rewrite formula_open_ty_denote_gas_singleton.
   2:{
     rewrite typed_lty_env_bind_lvars_fv_dom.
     intros HyD.
@@ -580,7 +615,7 @@ Proof.
     apply lvars_fv_elem in HyD.
     exact HyD.
   }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
+	  2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
   2:{ rewrite cty_shift_fv. exact Hyτ. }
   rewrite cty_open_shift_from_lc_fresh.
   2:{ exact Hlcτ_src. }
@@ -597,9 +632,12 @@ Proof.
         (relevant_env Σ τ (tret v)))
       τ (tret (vfvar y)))
     (fv_cty τ ∪ fv_value v ∪ {[y]}) σy).
-  - etransitivity; [apply ty_denote_gas_fv_subset|].
-    cbn [fv_tm fv_value]. set_solver.
-  - exact Hdomσy.
+	  - etransitivity; [apply ty_denote_gas_fv_subset|].
+	    cbn [fv_tm fv_value].
+	    intros a Ha. apply elem_of_union in Ha as [Ha|Ha].
+	    + apply elem_of_union_r. exact Ha.
+	    + apply elem_of_union_l. apply elem_of_union_l. exact Ha.
+	  - exact Hdomσy.
   - exact Hsingle_y.
   - exact Hinner_norm.
 Qed.

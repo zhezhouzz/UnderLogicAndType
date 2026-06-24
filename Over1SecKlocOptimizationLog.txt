@@ -412,3 +412,41 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - Focused `COQEXTRAFLAGS=-time` run passed before the reverted domain
     experiment; new focused time observed: `4.01s`.
+
+## Batch 19: `SoundnessPersist.v` persist-intro side conditions
+
+- Baseline from focused `COQEXTRAFLAGS=-time` runs before this batch:
+  `SoundnessPersist.vo` around `4.00s` for roughly 676 lines, about
+  `5.9 s/KLOC`.
+- Concrete hotspots:
+  - three `wfworld_closed_on_le` side conditions in
+    `ty_denote_gas_persist_ret_value_intro_singleton` repeatedly solved
+    `fv_cty τ` / `fv_value v` subset goals from the large `HA_sub` context;
+  - embedded `ltac:(set_solver)` arguments to
+    `res_restrict_singleton_push_ret_value_result`;
+  - the final `res_models_persist_intro_from_singleton_superset` support
+    proved a simple `ty_denote_gas_fv_subset` target with a broad
+    `set_solver`, costing about `0.43s`;
+  - inside `res_restrict_singleton_push_ret_value_result`, the proof
+    `a ∈ A ∪ {[y]}, a <> y -> a ∈ A` cost about `0.11s`.
+- Optimization:
+  - Named the `fv_cty τ` and `fv_value v` inclusions into `m` and `my`
+    once (`Hτ_world`, `Hv_world`, `Hτ_my`, `Hv_my`) and reused them in the
+    closedness proofs.
+  - Added explicit small facts `HvA` and `HyA` for the result-slot singleton
+    helper call, replacing embedded `ltac` arguments.
+  - Replaced the final `ty_denote_gas_fv_subset` support solver with a direct
+    two-branch union proof.
+  - Replaced the `a ∈ A` proof in the store-map equality block with direct
+    union/singleton destructuring.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+  - New focused time observed: `2.04s`, about `3.0 s/KLOC`.
+- Deferred:
+  - Remaining time is concentrated in the lower ret-value/result-slot helper,
+    especially exact result formula extraction and two y-domain store lookup
+    proofs. These should be treated as a separate lower-level lemma/facts
+    batch rather than folded into this persist-intro cleanup.
