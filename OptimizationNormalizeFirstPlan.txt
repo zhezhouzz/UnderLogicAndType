@@ -103,3 +103,9 @@ timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo
   `RelevantEnv.v`, so the value-persist Soundness proof no longer owns that
   raw `relevant_env` unfolding.  `SoundnessPersist.v` keeps the old lemma name
   as a short wrapper.  Verified `RelevantEnv.vo` and `SoundnessPersist.vo`.
+- [x] Moved ret-value result-first open normalization into
+  `ResultFirstOpen.v` as `result_first_outer_ret_value_at` and
+  `result_first_outer_ret_value_at_open`.  The old public names in
+  `TypeEquiv.v` remain wrappers, so downstream callers keep working while the
+  equality-preserving normalization lives in the shared result-first layer.
+  Verified `ResultFirstOpen.vo`, `TypeEquiv.vo`, and `SoundnessPersist.vo`.

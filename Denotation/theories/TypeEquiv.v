@@ -10,6 +10,7 @@ From Denotation Require Import
   TypeEquivFiberBase
   TypeEquivBody
   TypeEquivArrow
+  ResultFirstOpen
   TypeEquivArrowResultFirst
   TypeEquivWand
   TypeEquivWandResultFirst
@@ -53,30 +54,7 @@ Lemma result_first_outer_result_ret_value_at
   m ⊨ expr_result_formula_at
     (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
 Proof.
-  intros HΣclosed Hvf Hzvf Hzrel Hres.
-  assert (HlcD :
-      lc_lvars
-        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
-  {
-    apply type_equiv_lc_lvars_shift_from.
-    apply relevant_env_closed. exact HΣclosed.
-  }
-  assert (HzD :
-      z ∉ lvars_fv
-        (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))).
-  {
-    rewrite lvars_shift_from_fv. exact Hzrel.
-  }
-  assert (Hlc_tm : lc_tm (tret vf)) by (constructor; exact Hvf).
-  assert (Hz_tm : z ∉ fv_tm (tret vf)).
-  { cbn [fv_tm fv_value]. exact Hzvf. }
-  rewrite formula_open_expr_result_formula_at_shift0 in Hres
-    by (exact HlcD || exact HzD || exact Hlc_tm || exact Hz_tm).
-  rewrite (lvars_shift_from_lc_at_id 0
-    (dom (relevant_env Σ τ (tret vf)))) in Hres.
-  - exact Hres.
-  - apply type_equiv_lvars_lc_at_zero_of_lc.
-    apply relevant_env_closed. exact HΣclosed.
+  apply result_first_outer_ret_value_at.
 Qed.
 
 Lemma result_first_outer_result_ret_value_at_open
@@ -92,18 +70,7 @@ Lemma result_first_outer_result_ret_value_at_open
       (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
       (tm_shift 0 (tret vf)) (LVBound 0)).
 Proof.
-  intros HΣclosed Hvf Hzvf Hzrel Hres.
-  rewrite formula_open_expr_result_formula_at_shift0.
-  - rewrite (lvars_shift_from_lc_at_id 0
-      (dom (relevant_env Σ τ (tret vf)))).
-    + exact Hres.
-    + apply type_equiv_lvars_lc_at_zero_of_lc.
-      apply relevant_env_closed. exact HΣclosed.
-  - apply type_equiv_lc_lvars_shift_from.
-    apply relevant_env_closed. exact HΣclosed.
-  - rewrite lvars_shift_from_fv. exact Hzrel.
-  - constructor. exact Hvf.
-  - cbn [fv_tm fv_value]. exact Hzvf.
+  apply result_first_outer_ret_value_at_open.
 Qed.
 
 Lemma ty_static_guard_relevant_of_full

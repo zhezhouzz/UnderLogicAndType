@@ -95,3 +95,12 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo
 timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
 ```
 
+## Implementation Status
+
+- [x] Added shared ret-value outer-result normalization helpers to
+  `ResultFirstOpen.v`: `result_first_outer_ret_value_at` and
+  `result_first_outer_ret_value_at_open`.  `TypeEquiv.v` now keeps
+  `result_first_outer_result_ret_value_at(_open)` as compatibility wrappers.
+  This centralizes the repeated `formula_open_expr_result_formula_at_shift0`
+  and `lvars_shift_from_lc_at_id` rewrite chain used by TypePersist,
+  Context, and Soundness.
