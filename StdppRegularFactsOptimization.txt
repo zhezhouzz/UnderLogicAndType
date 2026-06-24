@@ -90,3 +90,5 @@ Validation Log
   (`0.36s` real).
 - Completed: `timeout 50s make TIMED=1 Denotation/theories/TypePersist.vo`
   (`0.33s` real for the final target after changed dependencies).
+- Completed: `timeout 180s make TIMED=1`.
+- Completed: `rg -n "Admitted\\.|admit\\." -g '*.v' .` with no matches.
