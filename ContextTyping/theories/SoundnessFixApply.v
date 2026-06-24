@@ -24,6 +24,60 @@ From Denotation Require Import Context
 From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLam SoundnessFixBase
   SoundnessFixOpen.
 
+Local Lemma fix_apply_open_value_fresh vf y z :
+  z ∉ fv_value vf ∪ {[y]} ->
+  z ∉ fv_value (open_value 0 (vfvar y) vf).
+Proof.
+  intros Hfresh Hbad.
+  pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
+  cbn [fv_value] in Hopen.
+  apply Hopen in Hbad.
+  cbn [fv_value] in Hbad.
+  clear -Hfresh Hbad. set_solver.
+Qed.
+
+Local Lemma fix_apply_open_cty_fresh τ y z :
+  z ∉ fv_cty τ ∪ {[y]} ->
+  z ∉ fv_cty (cty_open 0 y τ).
+Proof.
+  intros Hfresh Hbad.
+  pose proof (cty_open_fv_subset 0 y τ) as Hsub.
+  apply Hsub in Hbad.
+  clear -Hfresh Hbad. set_solver.
+Qed.
+
+Local Lemma fix_apply_fix_rec_call_ty_fresh b y τx τ z :
+  z ∉ fv_cty τx ∪ fv_cty τ ∪ {[y]} ->
+  z ∉ fv_cty (fix_rec_call_ty b y τx τ).
+Proof.
+  intros Hfresh Hbad.
+  pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hsub.
+  apply Hsub in Hbad.
+  clear -Hfresh Hbad. set_solver.
+Qed.
+
+Local Lemma fix_apply_vfix_fresh b t vf z :
+  z ∉ fv_value vf ->
+  z ∉ fv_value (vfix (TBase b →ₜ t) vf).
+Proof.
+  intros Hfresh. cbn [fv_value]. exact Hfresh.
+Qed.
+
+Local Lemma fix_apply_relevant_lvars_tapp_values_fresh
+    τ body self z :
+  z ∉ fv_cty τ ->
+  z ∉ fv_value body ->
+  z ∉ fv_value self ->
+  LVFree z ∉ relevant_lvars τ (tapp_tm (tret body) self).
+Proof.
+  intros Hzτ Hzbody Hzself Hbad.
+  apply lvars_fv_elem in Hbad.
+  rewrite relevant_lvars_fv in Hbad.
+  rewrite fv_tapp_tm in Hbad.
+  cbn [fv_tm fv_value] in Hbad.
+  clear -Hzτ Hzbody Hzself Hbad. set_solver.
+Qed.
+
 Lemma fix_body_arrow_outer_value_open
     (Σ : tyctx) Γ τx τ vf b (t : ty)
     (my : WfWorldT) y :
@@ -306,6 +360,26 @@ Proof.
     as (z & mz & Fz & Hzfresh & Hmz_dom & Hmz_restrict &
         Hextz & Hres_body_z & Hvalue_z).
   set (Σrel := relevant_env Δy (CTArrow τself τres) (tret body)).
+  assert (Hzτself : z ∉ fv_cty τself).
+  {
+    subst τself. apply fix_apply_fix_rec_call_ty_fresh.
+    clear -Hzfresh. set_solver.
+  }
+  assert (Hzτres : z ∉ fv_cty τres).
+  {
+    subst τres. apply fix_apply_open_cty_fresh.
+    clear -Hzfresh. set_solver.
+  }
+  assert (Hzbody : z ∉ fv_value body).
+  {
+    subst body. apply fix_apply_open_value_fresh.
+    clear -Hzfresh. set_solver.
+  }
+  assert (Hzself : z ∉ fv_value self).
+  {
+    subst self. apply fix_apply_vfix_fresh.
+    clear -Hzfresh. set_solver.
+  }
   assert (Hle_my_mz : my ⊑ mz).
   { rewrite <- Hmz_restrict. apply res_restrict_le. }
   assert (Hself_mz :
@@ -333,27 +407,24 @@ Proof.
     clear -Hbad. better_set_solver. }
   assert (Hwτself : w ∉ fv_cty τself).
   {
-    subst τself.
-    pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfv.
-    clear -Hwfresh Hfv. better_set_solver.
+    subst τself. apply fix_apply_fix_rec_call_ty_fresh.
+    clear -Hwfresh. set_solver.
   }
   assert (Hwτres : w ∉ fv_cty τres).
   {
-    subst τres.
-    pose proof (cty_open_fv_subset 0 y τ) as Hfv.
-    clear -Hwfresh Hfv. better_set_solver.
+    subst τres. apply fix_apply_open_cty_fresh.
+    clear -Hwfresh. set_solver.
   }
   assert (Hwbody : w ∉ fv_value body).
   {
-    subst body.
-    pose proof (open_fv_value vf (vfvar y) 0) as Hopen.
-    cbn [fv_value] in Hopen.
-    intros Hbad. apply Hopen in Hbad.
-    cbn [fv_value] in Hbad.
-    clear -Hwfresh Hbad. better_set_solver.
+    subst body. apply fix_apply_open_value_fresh.
+    clear -Hwfresh. set_solver.
   }
   assert (Hwself : w ∉ fv_value self).
-  { subst self. cbn [fv_value]. clear -Hwfresh. better_set_solver. }
+  {
+    subst self. apply fix_apply_vfix_fresh.
+    clear -Hwfresh. set_solver.
+  }
   assert (HΔ_ctx :
       dom Δy ⊆
       dom (atom_env_to_lty_env
@@ -476,8 +547,7 @@ Proof.
           intros Hbad. apply lvars_fv_elem in Hbad.
           rewrite relevant_lvars_fv in Hbad.
           cbn [fv_tm fv_value] in Hbad.
-          pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
-          clear -Hzfresh Hwfresh Hbad Hfvτself. better_set_solver.
+          clear -Hzτself Hwfresh Hbad. better_set_solver.
         }
         rewrite (lty_env_restrict_lvars_insert_fresh
           (<[LVFree w := erase_ty τself]> Σrel)
@@ -501,8 +571,7 @@ Proof.
         exact (Hwz Hzw).
       + clear -HwΣrel Hin. apply HwΣrel. exact Hin.
     - exact Hτself_lc.
-    - pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
-      clear -Hzfresh Hfvτself. better_set_solver.
+    - exact Hzτself.
     - exact Hwτself.
   }
   pose proof (res_models_impl_elim _ _ _ Hinner Harg_open) as Hres_raw.
@@ -538,12 +607,7 @@ Proof.
       - clear -HwΣrel Hin. apply HwΣrel. exact Hin.
     }
     2:{ exact Hτres_lc1. }
-    2:{
-      pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
-      subst τres.
-      pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
-      clear -Hzfresh Hfvτself Hfvτres. better_set_solver.
-    }
+    2:{ clear -Hzτself Hzτres. set_solver. }
     2:{ clear -Hwτself Hwτres. better_set_solver. }
     rewrite (cty_open_above_lc_fresh 0 0 w τres) in Hres_raw
       by (lia || exact Hτres_lc0 || exact Hwτres).
@@ -563,12 +627,7 @@ Proof.
       + exact Hτres_lc0.
       + clear -Hwfresh. set_solver.
       + exact Hwτres.
-      + subst body τres.
-        pose proof (fv_cty_fix_rec_call_ty_subset b y τx τ) as Hfvτself.
-        pose proof (open_fv_value vf (vfvar y) 0) as Hfvbody.
-        pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
-        cbn [fv_value] in Hfvbody.
-        clear -Hzfresh Hfvτself Hfvbody Hfvτres. better_set_solver.
+      + clear -Hzbody Hzτself Hzτres. set_solver.
     - exact Hres_raw.
   }
   assert (Hstatic_target :
@@ -620,17 +679,8 @@ Proof.
       HzΔ Hres_body_z_mw Hworld_Δ Hbasic_body) as Hworld_z.
     assert (Hzrel :
         LVFree z ∉ relevant_lvars τres (tapp_tm (tret body) self)).
-    {
-      intros Hbad. apply lvars_fv_elem in Hbad.
-      rewrite relevant_lvars_fv in Hbad.
-      rewrite fv_tapp_tm in Hbad.
-      cbn [fv_tm fv_value] in Hbad.
-      subst body self τres.
-      pose proof (open_fv_value vf (vfvar y) 0) as Hfvbody.
-      cbn [fv_value] in Hfvbody.
-      pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
-      clear -Hzfresh Hbad Hfvbody Hfvτres. better_set_solver.
-    }
+    { exact (fix_apply_relevant_lvars_tapp_values_fresh
+        τres body self z Hzτres Hzbody Hzself). }
     pose proof (ty_static_guard_insert_irrelevant
       Δy τres (tapp_tm (tret body) self)
       z (erase_ty (CTArrow τself τres)) mw
@@ -676,13 +726,8 @@ Proof.
       Hw_zΔ Hres_self_w Hworld_z Hbasic_self_z) as Hworld_w.
     assert (Hwrel :
         LVFree w ∉ relevant_lvars τres (tapp_tm (tret body) self)).
-    {
-      intros Hbad. apply lvars_fv_elem in Hbad.
-      rewrite relevant_lvars_fv in Hbad.
-      rewrite fv_tapp_tm in Hbad.
-      cbn [fv_tm fv_value] in Hbad.
-      clear -Hwbody Hwself Hwτres Hbad. set_solver.
-    }
+    { exact (fix_apply_relevant_lvars_tapp_values_fresh
+        τres body self w Hwτres Hwbody Hwself). }
     exact (ty_static_guard_insert_irrelevant
       (<[LVFree z := erase_ty (CTArrow τself τres)]> Δy)
       τres (tapp_tm (tret body) self)
@@ -700,16 +745,40 @@ Proof.
     apply lc_ret_iff_value.
     eapply context_typing_wf_lc_tm. exact Hwf.
   }
+  assert (Hz_alias_dom :
+      LVFree z ∈ dom
+        (<[LVFree w := erase_ty τself]>
+          (<[LVFree z := erase_ty (CTArrow τself τres)]> Δy))).
+  {
+    rewrite !dom_insert_L.
+    apply elem_of_union_r.
+    apply elem_of_union_l.
+    apply elem_of_singleton. reflexivity.
+  }
+  assert (Hw_alias_dom :
+      LVFree w ∈ dom
+        (<[LVFree w := erase_ty τself]>
+          (<[LVFree z := erase_ty (CTArrow τself τres)]> Δy))).
+  {
+    rewrite dom_insert_L.
+    apply elem_of_union_l.
+    apply elem_of_singleton. reflexivity.
+  }
+  assert (Hres_body_z_mw_alias :
+      mw ⊨ expr_result_formula (tret body) (LVFree z)).
+  {
+    eapply res_models_kripke; [|exact Hres_body_z].
+    rewrite <- Hmw_restrict. apply res_restrict_le.
+  }
   pose proof (ty_denote_gas_tapp_fun_arg_result_alias_from_static
     gas
     (<[LVFree w := erase_ty τself]>
       (<[LVFree z := erase_ty (CTArrow τself τres)]> Δy))
     τres body self z w mw
-    ltac:(rewrite !dom_insert_L; clear -Hwfresh; set_solver)
-    ltac:(rewrite !dom_insert_L; set_solver)
+    Hz_alias_dom
+    Hw_alias_dom
     Hlc_body Hlc_self
-    ltac:(eapply res_models_kripke; [|exact Hres_body_z];
-          rewrite <- Hmw_restrict; apply res_restrict_le)
+    Hres_body_z_mw_alias
     Hres_self_w Hstatic_target Hres_src) as Htarget_mw.
   assert (Htarget_mz :
       mz ⊨ ty_denote_gas gas
@@ -776,25 +845,15 @@ Proof.
       apply elem_of_union in Ha as [Ha_tm|Ha_ty].
       + rewrite fv_tapp_tm in Ha_tm.
         cbn [fv_tm fv_value] in Ha_tm.
-        subst body self.
-        pose proof (open_fv_value vf (vfvar y) 0) as Hfvbody.
-        cbn [fv_value] in Hfvbody.
-        clear -Hzfresh Hfvbody Ha_tm. better_set_solver.
-      + subst τres.
-        pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
-        clear -Hzfresh Hfvτres Ha_ty. better_set_solver.
+        clear -Hzbody Hzself Ha_tm. set_solver.
+      + clear -Hzτres Ha_ty. set_solver.
     - exact HzΔ.
     - intros Hbad.
       apply lvars_fv_elem in Hbad.
       rewrite context_ty_lvars_fv in Hbad.
-      subst τres.
-      pose proof (cty_open_fv_subset 0 y τ) as Hfvτres.
-      clear -Hzfresh Hbad Hfvτres. better_set_solver.
+      clear -Hzτres Hbad. set_solver.
     - rewrite fv_tapp_tm. cbn [fv_tm fv_value].
-      subst body self.
-      pose proof (open_fv_value vf (vfvar y) 0) as Hfvbody.
-      cbn [fv_value] in Hfvbody.
-      clear -Hzfresh Hfvbody. better_set_solver.
+      clear -Hzbody Hzself. set_solver.
     - exact Hextz.
     - exact Htarget_mz.
   }

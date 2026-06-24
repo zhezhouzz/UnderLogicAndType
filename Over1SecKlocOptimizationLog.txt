@@ -383,3 +383,32 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessApp.vo` passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `3.67s`, about `2.80 s/KLOC`.
+
+## Batch 18: `SoundnessFixApply.v` result-alias side conditions
+
+- Starting point after earlier FixApply cleanup: focused `COQEXTRAFLAGS=-time`
+  run around `5.85s`, with remaining hotspots in opened Fix application side
+  conditions and the nested result-alias call.
+- Concrete hotspots:
+  - repeated proofs that the result slot is fresh for opened body/type syntax
+    and for `relevant_lvars τres (tapp_tm (tret body) self)`;
+  - an embedded `set_solver` in the `ty_denote_gas_tapp_fun_arg_result_alias`
+    call proving inserted-domain membership for `w`, which retimed at about
+    `1.37s` when exposed as a named assertion.
+- Optimization:
+  - Added small local helpers for opened value/type freshness, fix-rec-call
+    type freshness, recursive self freshness, and result-application
+    `relevant_lvars` freshness.
+  - Derived the `z` and `w` freshness facts once and reused them through the
+    result-first open/result alias proof.
+  - Moved the alias theorem side conditions out of embedded `ltac:(...)`
+    arguments and proved the inserted-domain memberships directly by
+    union/singleton constructors.
+  - Tried replacing the context-erasure domain inclusion with a shorter
+    domain-only proof, but it timed out; reverted that part and left it as a
+    deferred lower-level lemma candidate.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed before the reverted domain
+    experiment; new focused time observed: `4.01s`.
