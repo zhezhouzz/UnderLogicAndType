@@ -545,3 +545,34 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - No remaining single proof command is above about `0.13s`; further wins
     would likely require larger proof restructuring or import splitting rather
     than another local side-condition cleanup.
+
+## Batch 23: `SoundnessFixApply.v` Fix apply env-domain conversion
+
+- Baseline from the current `Soundness.vo` timing:
+  `ContextTyping/theories/SoundnessFixApply.v` was about `3.71s` for
+  864 lines, about `4.29 s/KLOC`.
+- Concrete hotspots:
+  - `ty_denote_under_comma_bind_to_lvar_insert` was invoked with `eauto` in a
+    large proof context and took about `0.83s`;
+  - the `dom Δy` subset proof unfolded `ctx_erasure_under` twice and then used
+    broad set solving, with two normalization calls and one set proof around
+    half a second each.
+- Optimization:
+  - Replaced the `eauto` call with explicit arguments, avoiding unnecessary
+    search.
+  - Added `fix_apply_bind_lvar_env_dom_subset`, a small local domain-subset
+    lemma based on `ctx_erasure_under_erase_ctx_dom_subset` and
+    `erase_ctx_comma_bind_dom`.
+  - Replaced the large local `HΔ_ctx` proof with the new wrapper, avoiding
+    expansion of the full `ctx_erasure_under` definition in the main proof.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+  - New normal and focused time observed: about `1.86s`, about
+    `2.15 s/KLOC`.
+- Deferred:
+  - The largest remaining local command is about `0.10s`; the file is still
+    above `1 s/KLOC`, but the obvious local normalization/search hotspot for
+    this batch is gone.

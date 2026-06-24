@@ -63,6 +63,32 @@ Proof.
   intros Hfresh. cbn [fv_value]. exact Hfresh.
 Qed.
 
+Local Lemma fix_apply_bind_lvar_env_dom_subset
+    (Σ : tyctx) Γ y τx :
+  y ∉ dom (erase_ctx Γ) ->
+  dom (<[LVFree y := erase_ty τx]>
+    (atom_env_to_lty_env (erase_ctx Γ))) ⊆
+  dom (atom_env_to_lty_env
+    (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx)))).
+Proof.
+  intros HyΓ v Hv.
+  rewrite dom_insert_L in Hv.
+  rewrite !atom_store_to_lvar_store_dom.
+  apply elem_of_union in Hv as [Hyv|HΓv].
+  - apply elem_of_singleton in Hyv. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists y.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HyΓ. set_solver.
+  - rewrite atom_store_to_lvar_store_dom in HΓv.
+    unfold lvars_of_atoms in HΓv.
+    apply elem_of_map in HΓv as [a [Hv_eq HaΓ]]. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists a.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HaΓ. set_solver.
+Qed.
+
 Local Lemma fix_apply_relevant_lvars_tapp_values_fresh
     τ body self z :
   z ∉ fv_cty τ ->
@@ -320,7 +346,9 @@ Proof.
         Δy (CTArrow τself τres) (tret body)).
   {
     subst Δy τself τres body.
-    eapply ty_denote_under_comma_bind_to_lvar_insert; eauto.
+    eapply ty_denote_under_comma_bind_to_lvar_insert.
+    - exact HyΓ.
+    - exact Hbody_arrow.
   }
   assert (Hτself_lc : lc_context_ty τself).
   {
@@ -429,35 +457,7 @@ Proof.
       dom Δy ⊆
       dom (atom_env_to_lty_env
         (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx))))).
-  {
-    subst Δy.
-    intros v Hv.
-    rewrite dom_insert_L in Hv.
-    apply elem_of_union in Hv as [Hyv|HΓv].
-    - apply elem_of_singleton in Hyv. subst v.
-      rewrite atom_store_to_lvar_store_dom.
-      unfold lvars_of_atoms.
-      apply elem_of_map. exists y. split; [reflexivity|].
-      ctx_erasure_under_norm; ctx_erasure_under_norm.
-      eapply (elem_of_dom_2 _ _ (erase_ty τx)).
-      apply map_lookup_union_Some_raw. right. split.
-      + apply not_elem_of_dom. intros Hy_left.
-        rewrite storeA_restrict_dom in Hy_left.
-        apply elem_of_intersection in Hy_left as [HyΣ _].
-        apply Hy. set_solver.
-      + apply map_lookup_union_Some_raw. right. split.
-        * apply not_elem_of_dom. exact HyΓ.
-        * apply lookup_singleton_eq.
-    - rewrite atom_store_to_lvar_store_dom in HΓv.
-      unfold lvars_of_atoms in HΓv.
-      apply elem_of_map in HΓv as [a [Hv_eq HaΓ]].
-      subst v.
-      rewrite atom_store_to_lvar_store_dom.
-      unfold lvars_of_atoms.
-      apply elem_of_map. exists a. split; [reflexivity|].
-      ctx_erasure_under_norm; ctx_erasure_under_norm.
-      clear -HaΓ. better_set_solver.
-  }
+  { subst Δy. apply fix_apply_bind_lvar_env_dom_subset. exact HyΓ. }
   assert (HzΔ : LVFree z ∉ dom Δy).
   {
     intros HzΔ.
