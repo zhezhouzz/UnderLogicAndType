@@ -821,17 +821,8 @@ Proof.
   - apply lamd_lty_env_restrict_result_first_result_eq.
     + apply atom_store_to_lvar_store_closed.
     + eapply cty_lvars_open_body_closed_no_fresh.
-      * assert (HlcD : lc_lvars (context_ty_lvars_at 1 τ)).
-        {
-          intros v Hv.
-          destruct v as [k|a]; [|exact I].
-          pose proof (cty_lc_at_lvars_bv_empty 1 τ Hτ_lc1) as Hbv.
-          exfalso.
-          assert (k ∈ lvars_bv (context_ty_lvars_at 1 τ))
-            by (apply lvars_bv_elem; exact Hv).
-          rewrite Hbv in H. set_solver.
-        }
-        exact HlcD.
+      * apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+        exact Hτ_lc1.
       * intros HyD.
         apply lvars_fv_elem in HyD.
         rewrite context_ty_lvars_fv_at in HyD.

@@ -299,3 +299,38 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `3.33s`, about `2.02 s/KLOC`.
+
+## Batch 15: `SoundnessLamArrow.v`
+
+- Baseline from the focused `COQEXTRAFLAGS=-time` run before this batch:
+  `3.74s` for about 1100 lines, roughly `3.4 s/KLOC`.
+- Concrete hotspots:
+  - repeated local proofs of
+    `lc_lvars (context_ty_lvars_at 1 τ)` rebuilt the same
+    `cty_lc_at_lvars_bv_empty` argument and ended with a broad `set_solver`;
+  - repeated `ctx_erasure_under_norm_in ...; better_set_solver` proofs for
+    `erase_ctx` freshness and relevant-env freshness;
+  - direct uses of `relevant_env_arrow_fresh_free` /
+    `relevant_env_wand_fresh_free` in the target proof re-ran normalization
+    already available through `SoundnessSetMapFacts`.
+- Optimization:
+  - Added `soundness_lam_lc_lvars_context_ty_lvars_at_of_lc` in
+    `SoundnessLamBase.v` and replaced three duplicated local LC proofs in
+    Lam base/Arrow/Wand support.
+  - Imported `SoundnessSetMapFacts` in `SoundnessLamArrow.v` and replaced
+    repeated direct relevant-env freshness derivations with
+    `soundness_typed_bind_arrow_value_fresh`,
+    `soundness_relevant_env_arrow_value_fresh`,
+    `soundness_relevant_env_wand_value_fresh`, and
+    `soundness_fresh_erase_ctx_from_context_union`.
+  - Replaced one opened-world membership proof by an explicit
+    union/singleton construction instead of `set_solver`.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamBase.vo`
+    passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamArrow.vo`
+    passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `2.60s`, about `2.36 s/KLOC`.

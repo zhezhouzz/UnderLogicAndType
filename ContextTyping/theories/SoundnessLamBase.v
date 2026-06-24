@@ -47,6 +47,20 @@ Proof.
   apply lvars_bv_elem. exact Hk.
 Qed.
 
+Lemma soundness_lam_lc_lvars_context_ty_lvars_at_of_lc d τ :
+  cty_lc_at d τ ->
+  lc_lvars (context_ty_lvars_at d τ).
+Proof.
+  intros Hlc v Hv.
+  destruct v as [k|a]; [|exact I].
+  pose proof (cty_lc_at_lvars_bv_empty d τ Hlc) as Hempty.
+  assert (Hk : k ∈ lvars_bv (context_ty_lvars_at d τ))
+    by (apply lvars_bv_elem; exact Hv).
+  rewrite Hempty in Hk.
+  rewrite elem_of_empty in Hk.
+  exact Hk.
+Qed.
+
 Lemma lam_lty_env_restrict_result_first_arg_eq
     (Δ : lty_env) τx τ vf y :
   lc_context_ty τx ->
@@ -234,15 +248,8 @@ Proof.
   pose proof (lam_lty_env_restrict_result_first_result_eq
     Δ τx τ vf y z HΔ
     ltac:(eapply cty_lvars_open_body_closed_no_fresh;
-      [let HlcD := fresh "HlcD" in
-       assert (HlcD : lc_lvars (context_ty_lvars_at 1 τ));
-       [intros v Hv; destruct v as [k|a]; [|exact I];
-        pose proof (cty_lc_at_lvars_bv_empty 1 τ
-          (cty_lc_at_mono_depth 0 1 τ ltac:(lia) Hτ)) as Hbv;
-        exfalso;
-        assert (k ∈ lvars_bv (context_ty_lvars_at 1 τ))
-          by (apply lvars_bv_elem; exact Hv);
-        rewrite Hbv in H; set_solver|exact HlcD]
+      [apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc;
+       eapply (cty_lc_at_mono_depth 0 1); [lia|exact Hτ]
       |intros HyD; apply lvars_fv_elem in HyD;
        rewrite context_ty_lvars_fv_at in HyD; exact (Hyτ HyD)
       |reflexivity])
