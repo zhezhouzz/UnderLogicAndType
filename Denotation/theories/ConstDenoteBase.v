@@ -535,7 +535,7 @@ Proof.
     eapply expr_result_formula_at_coarsen_domain with
       (Dbig := dom (relevant_env Δ τc (tret (vfvar x))) ∪
         tm_lvars (tret (vfvar x))).
-    - set_solver.
+    - intros v Hv. apply elem_of_union_l. exact Hv.
     - exact Hfv_rel.
     - intros Hybig.
       apply elem_of_union in Hybig as [Hyrel|Hytm].

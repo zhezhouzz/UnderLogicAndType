@@ -143,3 +143,21 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixBase.vo`
     passed.
   - New focused time observed: `0.94s`.
+
+## Batch 8: `ConstDenoteBase.v`
+
+- Baseline from `CompileTimeStats.txt`: `6.41s`, `7.75 s/KLOC`.
+- `COQEXTRAFLAGS=-time` showed one dominant hotspot:
+  - a `set_solver` inclusion side condition in
+    `ty_denote_over_ret_fvar_base_const`, inside
+    `expr_result_formula_at_coarsen_domain`, costing about `4.37s`.
+  - The goal was just
+    `dom (relevant_env ...) ⊆ dom (relevant_env ...) ∪ tm_lvars ...`.
+- Optimization:
+  - Replaced the broad set search with the direct left-union inclusion proof:
+    `intros v Hv; apply elem_of_union_l; exact Hv`.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/ConstDenoteBase.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `1.27s`.
