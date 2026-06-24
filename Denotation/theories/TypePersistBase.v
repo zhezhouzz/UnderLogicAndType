@@ -1096,8 +1096,8 @@ Proof.
         exact Hσres.
       }
       specialize (Hclosed_z_m _ Hσm).
-      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
-        by set_solver.
+      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT)).
+      { intros a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm. }
       rewrite (storeA_restrict_twice_subset σ
         (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
       exact Hclosed_z_m.
@@ -1272,8 +1272,8 @@ Proof.
         exact Hσres.
       }
       specialize (Hclosed_z_m _ Hσm).
-      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
-        by set_solver.
+      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT)).
+      { intros a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm. }
       rewrite (storeA_restrict_twice_subset σ
         (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
       exact Hclosed_z_m.
@@ -1417,8 +1417,8 @@ Proof.
             exact Hσres.
           }
           specialize (Hclosed_z_m _ Hσm).
-          assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
-            by set_solver.
+          assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT)).
+          { intros a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm. }
           rewrite (storeA_restrict_twice_subset σ
             (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
           exact Hclosed_z_m.
@@ -1569,8 +1569,8 @@ Proof.
             exact Hσres.
           }
           specialize (Hclosed_z_m _ Hσm).
-          assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
-            by set_solver.
+          assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT)).
+          { intros a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm. }
           rewrite (storeA_restrict_twice_subset σ
             (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
           exact Hclosed_z_m.
@@ -1728,7 +1728,11 @@ Proof.
       subst Dres τp. intros Hyrel.
       apply HyD. apply lvars_fv_elem. exact Hyrel.
     }
-    2:{ cbn [fv_tm fv_value]. set_solver. }
+    2:{
+      cbn [fv_tm fv_value].
+      intros Hyempty.
+      exact (not_elem_of_empty y Hyempty).
+    }
     2:{
       rewrite cty_shift_fv.
       intros Hyτ. apply Hyφ.
@@ -1789,8 +1793,8 @@ Proof.
         exact Hσres.
       }
       specialize (Hclosed_z_m _ Hσm).
-      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT))
-        by set_solver.
+      assert (Hzsub : ({[z]} : aset) ⊆ world_dom (m : WorldT)).
+      { intros a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm. }
       rewrite (storeA_restrict_twice_subset σ
         (world_dom (m : WorldT)) ({[z]} : aset) Hzsub) in Hclosed_z_m.
       exact Hclosed_z_m.

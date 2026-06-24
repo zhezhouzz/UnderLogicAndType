@@ -180,3 +180,26 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `2.29s`.
+
+## Batch 10: `TypePersistBase.v`
+
+- Baseline from the focused run before this batch: `7.07s`.
+- `COQEXTRAFLAGS=-time` showed the largest local hotspot in
+  `ty_denote_gas_persist_over_ret_fvar_self_body`:
+  - a `cbn [fv_tm fv_value]; set_solver` side condition for a shifted
+    `ret` term, costing about `0.82s`;
+  - repeated singleton-subset side conditions
+    `{[z]} ⊆ world_dom m`, each solved by a broad `set_solver` despite the
+    already available `Hzm : z ∈ world_dom m`.
+- Optimization:
+  - Replaced the shifted-ret FV side condition with a direct
+    `not_elem_of_empty` proof after normalization.
+  - Replaced all five repeated singleton-subset proofs with explicit
+    singleton elimination and `Hzm`.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+    passed.
+  - Focused time after the batch: `5.38s`.
+  - Remaining visible hotspots are in the ret-fvar swap/projection proof and
+    a basic-world closed-on extraction; those are candidates for a later,
+    more semantic helper rather than another tiny side-condition rewrite.
