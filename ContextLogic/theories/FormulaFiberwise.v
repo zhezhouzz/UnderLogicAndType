@@ -1388,7 +1388,19 @@ Proof.
     rewrite (res_fiber_from_projection_world_dom n nfib X σn Hproj_n).
     rewrite (res_fiber_from_projection_world_dom m mfib X σm Hproj_m).
     rewrite res_product_dom in Hdom.
-    apply set_eq. intros a. set_solver.
+    apply set_eq. intros a. split.
+    - intros Ha.
+      rewrite Hdom in Ha.
+      apply elem_of_union in Ha as [Ham|Hay_empty].
+      + apply elem_of_union_l. exact Ham.
+      + apply elem_of_union in Hay_empty as [Hay|Hempty].
+        * apply elem_of_union_r. exact Hay.
+        * exfalso. exact (not_elem_of_empty a Hempty).
+    - intros Ha.
+      apply elem_of_union in Ha as [Ham|Hay].
+      + apply elem_of_union_r. exact Ham.
+      + rewrite Hdom.
+        apply elem_of_union_r. apply elem_of_union_l. exact Hay.
   }
   pose proof (res_models_fbwand_open_one_named_fresh
     mfib nfib y P Q Hc_fib Hwand_mfib Hymfib Hdom_fib Harg_nfib)

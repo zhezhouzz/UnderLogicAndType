@@ -161,3 +161,22 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `1.27s`.
+
+## Batch 9: `FormulaFiberwise.v`
+
+- Focused `COQEXTRAFLAGS=-time` run before this batch showed one dominant
+  hotspot:
+  - a `set_solver` domain equality proof in
+    `fiberwise_joinable_on_fbwand1`, costing about `3.68s`;
+  - the goal was just the opened `FBWand` product-domain condition after
+    rewriting both argument and closure fibers back to their source domains.
+- Optimization:
+  - Replaced the broad set search with a direct membership proof using the
+    already available product-domain hypothesis `Hdom`.
+  - The proof now handles the harmless `{[y]} ∪ ∅` residue explicitly instead
+    of asking the set solver to normalize the whole context.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `2.29s`.
