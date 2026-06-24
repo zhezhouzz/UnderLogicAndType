@@ -367,8 +367,6 @@ Proof.
   intros Hwf.
   pose proof (context_typing_wf_ctx Σ Γ e τ Hwf) as Hwfctx.
   pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
-  pose proof (basic_ctx_dom_fresh (dom Σ) Γ HbasicΓ) as HfreshΓ.
   pose proof (context_typing_wf_fv_cty_subset_erase_dom
     Σ Γ e τ Hwf) as Hτ.
   unfold ty_env_agree_on. intros y Hy.
@@ -376,10 +374,7 @@ Proof.
   pose proof (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
     Σ Γ y HbasicΓ HyΓ) as Herase.
   assert (HΣnone : Σ !! y = None).
-  {
-    apply not_elem_of_dom. intros HΣy.
-    rewrite HdomΓ in HyΓ. set_solver.
-  }
+  { eapply basic_ctx_erase_dom_fresh_none; eauto. }
   transitivity ((erase_ctx Γ : gmap atom ty) !! y).
   - apply lookup_union_r. exact HΣnone.
   - exact Herase.

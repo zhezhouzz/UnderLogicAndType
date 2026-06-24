@@ -158,8 +158,6 @@ Proof.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hwfctx.
     pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ HbasicΓ) as HdomΓ.
-    pose proof (basic_ctx_dom_fresh (dom Σ) Γ HbasicΓ) as HfreshΓ.
     pose proof (context_typing_wf_context_ty Σ Γ
       (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hτwf.
     cbn [wf_context_ty_at] in Hτwf.
@@ -172,10 +170,7 @@ Proof.
     pose proof (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
       Σ Γ z HbasicΓ HzΓ) as Herase.
     assert (HΣnone : Σ !! z = None).
-    {
-      apply not_elem_of_dom. intros HΣz.
-      rewrite HdomΓ in HzΓ. better_set_solver.
-    }
+    { eapply basic_ctx_erase_dom_fresh_none; eauto. }
     transitivity ((erase_ctx Γ : gmap atom ty) !! z).
     + apply lookup_union_r. exact HΣnone.
     + exact Herase.
