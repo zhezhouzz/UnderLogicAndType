@@ -332,15 +332,8 @@ Proof.
     - rewrite HFz_out. subst z. better_set_solver.
   }
   destruct (res_extend_by_exists m Fz Happ) as [mz Hext].
-  assert (Hmz_dom :
-      world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]}).
-  {
-    pose proof (res_extend_by_dom m Fz mz Hext) as Hdom.
-    rewrite Hdom, HFz_out. reflexivity.
-  }
-  assert (Hmz_restrict :
-      res_restrict mz (world_dom (m : WorldT)) = m).
-  { exact (res_extend_by_restrict_base m Fz mz Hext). }
+  pose proof (res_extend_by_singleton_output_open_world
+    m mz Fz z Hext HFz_out) as [Hmz_dom Hmz_restrict].
   assert (Hbody_outer :
       m ⊨ FForall
         (FImpl

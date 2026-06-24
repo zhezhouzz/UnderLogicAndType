@@ -20,30 +20,30 @@ By folder:
 
 | Folder | Count | Notes |
 | --- | ---: | --- |
-| Denotation | 2217 | Main upper-layer target. Many repeated `res_extend_by`, result graph, store-domain blocks. |
-| ContextTyping | 1057 | Main Soundness target. Many regular facts from `context_typing_wf`, `ctx_denote_under`, fresh unions. |
+| Denotation | 2221 | Main upper-layer target. Shallow `res_extend_by` blocks reduced; remaining counts are increasingly deep result/fiber/store proofs. |
+| ContextTyping | 1059 | Main Soundness target. `SoundnessMatch` reduced, App/AppD fresh/domain remains. |
 | ContextStore | 960 | Mostly low-level store library; optimize only obvious duplicate lemmas, not every stdpp proof. |
 | ContextBasicDenotation | 871 | Term/result formula and RelevantEnv normalization/facts. |
-| ContextAlgebra | 552 | Resource/fiber facts; can host lower-level reusable lemmas. |
-| ContextLogic | 460 | Formula/fiberwise facts; some regular extraction now exists. |
+| ContextAlgebra | 567 | Resource/fiber facts; can host lower-level reusable lemmas. |
+| ContextLogic | 468 | Formula/fiberwise facts; some regular extraction now exists. |
 
 Top files by raw count:
 
 | Count | File | Classification |
 | ---: | --- | --- |
 | 640 | `ContextStore/StoreRestrict.v` | Low-level stdpp-heavy; do not chase all. |
-| 217 | `Denotation/theories/TypeEquivFiberBaseResult.v` | High priority: result graph + extension/fiber facts. |
-| 214 | `Denotation/theories/TypeEquivTermResult.v` | High priority: result extension / result graph facts. |
-| 212 | `ContextAlgebra/theories/ResourceInterface.v` | Low-level; extract only reusable API lemmas. |
+| 222 | `ContextAlgebra/theories/ResourceInterface.v` | Low-level; extract only reusable API lemmas. |
+| 210 | `Denotation/theories/TypeEquivFiberBaseResult.v` | Mostly deep result graph + extension/fiber facts after first pass. |
 | 210 | `ContextBasicDenotation/theories/TermTLet.v` | Medium: term/result relation facts. |
 | 209 | `Denotation/theories/Context.v` | High priority: ctx denotation regular facts. |
+| 206 | `Denotation/theories/TypeEquivTermResult.v` | Mostly deep result extension / result graph facts after first pass. |
 | 196 | `ContextBasicDenotation/theories/RelevantEnv.v` | Medium: normalization/fv facts; many legitimate. |
 | 182 | `ContextAlgebra/theories/ResourceAlgebra.v` | Low-level; mostly expected. |
 | 168 | `Denotation/theories/TypePersistBase.v` | High priority: new persistence proofs. |
-| 148 | `ContextTyping/theories/SoundnessMatch.v` | High priority: repeated FV/set facts for match equivalences. |
+| 136 | `ContextTyping/theories/SoundnessMatch.v` | First pass done; remaining mostly branch/resource proof internals. |
 | 129 | `ContextLogic/theories/FormulaConnectives.v` | Medium: formula connective algebra. |
-| 127 | `ContextTyping/theories/SoundnessApp.v` | High priority: repeated app fresh/domain facts. |
-| 109 | `ContextTyping/theories/SoundnessAppD.v` | High priority: same as App, plus wand resource facts. |
+| 130 | `ContextTyping/theories/SoundnessApp.v` | High priority: repeated app fresh/domain facts. |
+| 111 | `ContextTyping/theories/SoundnessAppD.v` | High priority: same as App, plus wand resource facts. |
 
 Pattern Buckets
 ---------------
@@ -127,13 +127,25 @@ Pattern Buckets
    - Replaced the four top-level match term/total equivalence setup blocks.
 
 4. App/AppD fresh/domain facts
-   - Status: pending.
+   - Status: first pass completed.
    - Repeated shapes:
      - `x ∈ world_dom m` from `ty_denote_gas ... (ret x)`.
      - fresh result-slot facts from `fresh_for` unions.
      - `res_extend_by_dom` and base restriction after building result worlds.
    - Need: use existing Denotation facts where possible; add Soundness regular
      wrappers only for typing-specific hypotheses.
+   - Completed:
+     - Reused `res_extend_by_singleton_output_open_world` in
+       `SoundnessApp.v` and `SoundnessAppD.v`.
+     - Removed three manual `res_extend_by_dom` /
+       `res_extend_by_restrict_base` / singleton-output normalization blocks.
+   - Validation:
+     `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessApp.vo`,
+     `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`, and
+     `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+   - Raw count after pass:
+     - `SoundnessApp.v`: 128
+     - `SoundnessAppD.v`: 110
 
 5. `ctx_denote_under` / `context_typing_wf` regular extraction
    - Status: partially done for persist intro.
@@ -180,10 +192,21 @@ Batch Log
     `TypePersistBase.v`.
   - `DenotationSetMapFacts.vo`, `TypePersistBase.vo`, and `TypePersist.vo`
     passed.
+- Re-scan after Batch D:
+  - Top-level counts shifted only slightly because low-level facts add their own
+    stdpp proof lines; however the upper proof bodies now have fewer repeated
+    manual extension blocks.
+  - `SoundnessMatch.v` dropped from 148 to 136.
+  - `TypeEquivFiberBaseResult.v` dropped from 217 to 210 and
+    `TypeEquivTermResult.v` from 214 to 206.
+  - Next best target is App/AppD fresh/domain extraction.
+- Batch E: completed.
+  - Reused the singleton-output open-world fact in App/AppD proofs.
+  - `SoundnessApp.vo`, `SoundnessAppD.vo`, and `Soundness.vo` passed.
 
 Next Tasks
 ----------
 
-1. Re-scan counts and update this file.
-2. Review the remaining deep store-agree/union lookup proofs in
+1. Review the remaining deep store-agree/union lookup proofs in
    `TypeEquivTermResult.v`; extract only if a general lemma emerges clearly.
+2. Review `Denotation/Context.v` context-denotation stdpp blocks.

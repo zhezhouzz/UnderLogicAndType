@@ -737,14 +737,8 @@ Proof.
   }
   destruct (res_extend_by_exists m0 Fz Happ0) as [mz0 Hext0].
   destruct (res_extend_by_exists m Fz Happ) as [mz Hext].
-  assert (Hmz_dom :
-      world_dom (mz : WorldT) = world_dom (m : WorldT) ∪ {[z]}).
-  {
-    pose proof (res_extend_by_dom m Fz mz Hext) as Hdom.
-    rewrite Hdom, HFz_out. reflexivity.
-  }
-  assert (Hmz_restrict_m : res_restrict mz (world_dom (m : WorldT)) = m).
-  { exact (res_extend_by_restrict_base m Fz mz Hext). }
+  pose proof (res_extend_by_singleton_output_open_world
+    m mz Fz z Hext HFz_out) as [Hmz_dom Hmz_restrict_m].
   assert (Hmz_restrict_mz0 :
       res_restrict mz (world_dom (mz0 : WorldT)) = mz0).
   {
@@ -801,15 +795,8 @@ Proof.
         (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
         (cty_shift 0 τx) (cty_shift 1 τ) (tret (vbvar 0))))
     Hbody_outer ltac:(subst z; better_set_solver)) as Houter_open.
-  assert (Hmz0_dom :
-      world_dom (mz0 : WorldT) = world_dom (m0 : WorldT) ∪ {[z]}).
-  {
-    pose proof (res_extend_by_dom m0 Fz mz0 Hext0) as Hdom.
-    rewrite Hdom, HFz_out. reflexivity.
-  }
-  assert (Hmz0_restrict :
-      res_restrict mz0 (world_dom (m0 : WorldT)) = m0).
-  { exact (res_extend_by_restrict_base m0 Fz mz0 Hext0). }
+  pose proof (res_extend_by_singleton_output_open_world
+    m0 mz0 Fz z Hext0 HFz_out) as [Hmz0_dom Hmz0_restrict].
   specialize (Houter_open Hmz0_dom Hmz0_restrict).
   cbn [formula_open] in Houter_open.
   assert (Hres_at :
