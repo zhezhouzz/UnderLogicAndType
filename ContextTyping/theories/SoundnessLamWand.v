@@ -488,11 +488,11 @@ Lemma lamd_opened_wand_result
   m ⊨ ctx_denote_under Σ Γ ->
   world_dom (res_product n m Hc : WorldT) =
     world_dom (m : WorldT) ∪ ({[y]} : aset) ->
-  y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      ((<[LVFree y := erase_ty τx]>
-        (atom_env_to_lty_env (erase_ctx Γ))))
-      (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y)) ->
+	  y ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
+	  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+	      ((<[LVFree y := erase_ty τx]>
+	        (atom_env_to_lty_env (erase_ctx Γ))))
+	      τx (tret (vfvar y)) ->
   res_product n m Hc ⊨ formula_open 0 y
     (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
       (typed_lty_env_bind
@@ -515,19 +515,6 @@ Proof.
     intros Hin.
     clear -Hy Hin. better_set_solver.
   }
-  assert (Harg_norm :
-      n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        ((<[LVFree y := erase_ty τx]>
-          (atom_env_to_lty_env (erase_ctx Γ))))
-        τx (tret (vfvar y))).
-  {
-    pose proof Harg as Harg_norm.
-    rewrite cty_open_shift_from_lc_fresh in Harg_norm.
-    - exact Harg_norm.
-    - eapply wf_context_ty_at_lc.
-      eapply context_typing_wf_wand_arg_global. exact Hwf.
-    - clear -Hy_rest. better_set_solver.
-  }
   assert (Hctx_star :
       res_product n m Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
   {
@@ -536,7 +523,7 @@ Proof.
     - exact Hctx.
     - exact Hdom.
     - exact Hy_rest.
-    - exact Harg_norm.
+    - exact Harg.
   }
   pose proof (IH y HyL (res_product n m Hc) Hctx_star) as Hbody.
 		  pose proof (lam_wand_opened_app_static_guard_full
@@ -669,15 +656,13 @@ Proof.
     - clear -Hz. better_set_solver.
     - clear -Hy_fresh. better_set_solver.
   }
-  assert (Harg_old :
-      n ⊨ ty_denote_gas gas
-        (<[LVFree y := erase_ty τx]> Δ)
-        (cty_open 0 y (cty_shift 0 τx)) (tret (vfvar y))).
-  {
-    rewrite cty_open_shift_from_lc_fresh by
-      (exact Hτx_lc || clear -Hy_fresh; better_set_solver).
-    eapply res_models_ty_denote_gas_env_agree_on
-      with (Σ1 := <[LVFree y := erase_ty τx]>
+	  assert (Harg_old :
+	      n ⊨ ty_denote_gas gas
+	        (<[LVFree y := erase_ty τx]> Δ)
+	        τx (tret (vfvar y))).
+	  {
+	    eapply res_models_ty_denote_gas_env_agree_on
+	      with (Σ1 := <[LVFree y := erase_ty τx]>
         (<[LVFree z := erase_ty (CTWand τx τ)]> Σrel))
         (X := relevant_lvars τx (tret (vfvar y))).
     - reflexivity.
@@ -786,27 +771,16 @@ Proof.
 	    - exact HyΔ.
 	    - apply atom_store_to_lvar_store_closed.
   }
-  assert (Hctx_star :
-      res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
-  {
-    assert (Harg_old_norm :
-        n ⊨ ty_denote_gas gas
-          (<[LVFree y := erase_ty τx]> Δ)
-          τx (tret (vfvar y))).
-    {
-      pose proof Harg_old as Harg_old_norm.
-      rewrite cty_open_shift_from_lc_fresh in Harg_old_norm.
-      - exact Harg_old_norm.
-      - exact Hτx_lc.
-      - clear -Hy_rest. better_set_solver.
-    }
-    eapply (lamd_open_arg_to_star_ctx Σ Γ τx τ e mz n y Hc).
-    - exact Hwf.
-    - exact Hctx_mz.
-    - exact Hdom_y.
-    - exact Hy_rest.
-    - exact Harg_old_norm.
-  }
+	  assert (Hctx_star :
+	      res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
+	  {
+	    eapply (lamd_open_arg_to_star_ctx Σ Γ τx τ e mz n y Hc).
+	    - exact Hwf.
+	    - exact Hctx_mz.
+	    - exact Hdom_y.
+	    - exact Hy_rest.
+	    - exact Harg_old.
+	  }
   pose proof (lam_wand_opened_app_static_guard_full
     Σ Γ τx τ e (res_product n mz Hc) y
     Hwf Hy_rest Hctx_star) as Hstatic_app.
