@@ -334,3 +334,34 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - Focused `COQEXTRAFLAGS=-time` run passed.
   - New focused time observed: `2.60s`, about `2.36 s/KLOC`.
+
+## Batch 16: `SoundnessFix.v`
+
+- Baseline from the focused run before this batch: `3.24s` for 681 lines,
+  about `4.76 s/KLOC`.
+- Concrete hotspots:
+  - two outer result-slot relevant-env freshness proofs directly called
+    `relevant_env_arrow_fresh_free` with repeated
+    `ctx_erasure_under_norm_in ...; better_set_solver`;
+  - the result-first Arrow body repeated the same opened-world membership and
+    `erase_ctx` freshness side conditions as `SoundnessLamArrow.v`;
+  - the final environment-agreement step rebuilt
+    `lc_lvars (context_ty_lvars_at 1 τ)` locally.
+- Optimization:
+  - Imported `SoundnessSetMapFacts` and `SoundnessLamBase` in
+    `SoundnessFix.v`.
+  - Replaced direct relevant-env freshness derivations with
+    `soundness_relevant_env_arrow_value_fresh` and
+    `soundness_typed_bind_arrow_value_fresh`.
+  - Replaced `erase_ctx` freshness obligations by
+    `soundness_fresh_erase_ctx_from_context_union`.
+  - Replaced opened-world membership proofs by explicit union/singleton
+    construction.
+  - Reused `soundness_lam_lc_lvars_context_ty_lvars_at_of_lc` for the
+    result-body relevant-lvars side condition.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFix.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - `timeout 50s make TIMED=1 ContextTyping/theories/Soundness.vo` passed.
+  - New focused time observed: `1.77s`, about `2.60 s/KLOC`.

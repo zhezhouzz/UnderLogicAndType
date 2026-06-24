@@ -18,8 +18,9 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
-  SoundnessFixOpen SoundnessFixApply SoundnessFixSelf.
+From ContextTyping Require Import Typing SoundnessSetMapFacts SoundnessLamBase
+  SoundnessLam SoundnessFixBase SoundnessFixOpen SoundnessFixApply
+  SoundnessFixSelf.
 
 Local Ltac fix_union_left :=
   match goal with
@@ -95,13 +96,10 @@ Proof.
     rewrite lvars_shift_from_fv.
     intros Hzbad.
     apply lvars_fv_elem in Hzbad.
-    pose proof (relevant_env_arrow_fresh_free
+    pose proof (soundness_relevant_env_arrow_value_fresh
       (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-      (tret (vfix (TBase b →ₜ t) vf)) z
-      ltac:(ctx_erasure_under_norm_in Hz; better_set_solver)
-      ltac:(ctx_erasure_under_norm_in Hz; better_set_solver)
-      ltac:(cbn [fv_tm fv_value];
-        ctx_erasure_under_norm_in Hz; better_set_solver)) as Hnot.
+      (vfix (TBase b →ₜ t) vf) z
+      ltac:(cbn [fv_value]; clear -Hz; better_set_solver)) as Hnot.
     exact (Hnot Hzbad).
   }
   assert (Hlc_efix :
@@ -154,13 +152,10 @@ Proof.
     + unfold relevant_lvars. set_solver.
   - set_solver.
   - intros Hzbad.
-    pose proof (relevant_env_arrow_fresh_free
+    pose proof (soundness_relevant_env_arrow_value_fresh
       (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-      (tret (vfix (TBase b →ₜ t) vf)) z
-      ltac:(ctx_erasure_under_norm_in Hz; better_set_solver)
-      ltac:(ctx_erasure_under_norm_in Hz; better_set_solver)
-      ltac:(cbn [fv_tm fv_value];
-        ctx_erasure_under_norm_in Hz; better_set_solver)) as Hnot.
+      (vfix (TBase b →ₜ t) vf) z
+      ltac:(cbn [fv_value]; clear -Hz; better_set_solver)) as Hnot.
     exact (Hnot Hzbad).
   - exact Hres.
 Qed.
@@ -317,7 +312,7 @@ Proof.
   assert (Hle_mz_my : mz ⊑ my).
   { rewrite <- Hrestricty. apply res_restrict_le. }
   assert (Hy_world : y ∈ world_dom (my : WorldT)).
-  { rewrite Hdomy. set_solver. }
+  { rewrite Hdomy. apply elem_of_union_r. apply elem_of_singleton_2. reflexivity. }
   cbn [formula_open arrow_value_denote_gas_with] in Hscope_value |- *.
   pose proof (formula_scoped_forall_open_res_le
     mz my y _ Hscope_value Hle_mz_my Hy_world) as Hopened_scope.
@@ -350,15 +345,20 @@ Proof.
       gas Σrel τx (erase_ty (CTArrow τx τ)) z y) in Harg_raw.
     - exact Harg_raw.
     - subst Σrel Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-    - subst Σrel Δ efix τx. apply relevant_env_arrow_fresh_free;
-        cbn [fv_tm fv_value]; clear -Hz; better_set_solver.
+    - subst Σrel Δ efix τx. apply soundness_relevant_env_arrow_value_fresh.
+      cbn [fv_value]. clear -Hz. better_set_solver.
     - clear -Hy_fresh. set_solver.
     - rewrite dom_insert_L. intros Hin.
       apply elem_of_union in Hin as [Hin|Hin].
       + apply elem_of_singleton in Hin. inversion Hin. subst.
         clear -Hy_fresh. set_solver.
-      + subst Σrel Δ efix τx. apply relevant_env_arrow_fresh_free in Hin;
-          cbn [fv_tm fv_value]; clear -Hy_fresh Hin; better_set_solver.
+      + exfalso.
+        subst Σrel Δ efix τx.
+        eapply (soundness_relevant_env_arrow_value_fresh
+          (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+          (vfix (TBase b →ₜ t) vf) y).
+        * cbn [fv_value]. clear -Hy_fresh. better_set_solver.
+        * exact Hin.
     - exact Hτx_lc.
     - clear -Hz. better_set_solver.
     - clear -Hy_fresh. better_set_solver.
@@ -447,7 +447,9 @@ Proof.
             (CTArrow (over_ty b φx) τ) Hwf).
         * apply insert_subseteq. apply not_elem_of_dom.
           apply atom_env_to_lty_env_dom_free_notin.
-          ctx_erasure_under_norm_in Hy_fresh. better_set_solver.
+          eapply (soundness_fresh_erase_ctx_from_context_union
+            Σ Γ y (fv_value vf) (fv_cty τx) (fv_cty τ)).
+          clear -Hy_fresh. better_set_solver.
   }
   assert (Hlc_vself : lc_value vself).
   {
@@ -517,12 +519,9 @@ Proof.
         τ (tapp_tm (tm_shift 0 efix) (vbvar 0))) in Happ_src.
       - rewrite open_tapp_tm_shift_bvar0_lc in Happ_src by exact Hlc_efix.
         exact Happ_src.
-      - rewrite typed_lty_env_bind_lvars_fv_dom.
-        intros Hybad.
-        apply lvars_fv_elem in Hybad.
-        subst Σrel Δ efix τx.
-        apply relevant_env_arrow_fresh_free in Hybad;
-          cbn [fv_tm fv_value]; clear -Hy_fresh Hybad; better_set_solver.
+      - apply soundness_typed_bind_arrow_value_fresh.
+        subst efix τx.
+        cbn [fv_value]. clear -Hy_fresh. better_set_solver.
       - rewrite fv_tapp_tm, tm_shift_fv.
         subst efix. cbn [fv_tm fv_value].
         clear -Hy_fresh. better_set_solver.
@@ -535,7 +534,8 @@ Proof.
     rewrite typed_lty_env_bind_open_current in Hmid_open.
     - exact Hmid_open.
     - apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm.
+      eapply (soundness_fresh_erase_ctx_from_context_union
+        Σ Γ y (fv_value vf) (fv_cty τx) (fv_cty τ)).
       clear -Hy_fresh. better_set_solver.
     - apply atom_store_to_lvar_store_closed.
   }
@@ -556,16 +556,21 @@ Proof.
   rewrite (formula_open_result_first_fun_result_two
     gas Σrel τx τ (erase_ty (CTArrow τx τ)) z y).
   2:{ subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
-  2:{ subst Σrel efix τx Δ. apply relevant_env_arrow_fresh_free;
-      cbn [fv_tm fv_value]; clear -Hz; better_set_solver. }
+  2:{ subst Σrel efix τx Δ. apply soundness_relevant_env_arrow_value_fresh.
+      cbn [fv_value]. clear -Hz. better_set_solver. }
   2:{ clear -Hy_fresh. set_solver. }
   2:{
     rewrite dom_insert_L. intros Hin.
     apply elem_of_union in Hin as [Hin|Hin].
     - apply elem_of_singleton in Hin. inversion Hin. subst.
       clear -Hy_fresh. set_solver.
-    - subst Σrel efix τx Δ. apply relevant_env_arrow_fresh_free in Hin;
-        cbn [fv_tm fv_value]; clear -Hy_fresh Hin; better_set_solver.
+    - exfalso.
+      subst Σrel efix τx Δ.
+      eapply (soundness_relevant_env_arrow_value_fresh
+        (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+        (vfix (TBase b →ₜ t) vf) y).
+      * cbn [fv_value]. clear -Hy_fresh. better_set_solver.
+      * exact Hin.
   }
   2:{ exact Hτ_lc1. }
   2:{ clear -Hz. better_set_solver. }
@@ -579,17 +584,8 @@ Proof.
   - apply lam_lty_env_restrict_result_first_result_eq.
     + apply atom_store_to_lvar_store_closed.
     + eapply cty_lvars_open_body_closed_no_fresh.
-      * assert (HlcD : lc_lvars (context_ty_lvars_at 1 τ)).
-        {
-          intros v Hv.
-          destruct v as [k|a]; [|exact I].
-          pose proof (cty_lc_at_lvars_bv_empty 1 τ Hτ_lc1) as Hbv.
-          exfalso.
-          assert (k ∈ lvars_bv (context_ty_lvars_at 1 τ))
-            by (apply lvars_bv_elem; exact Hv).
-          rewrite Hbv in H. set_solver.
-        }
-        exact HlcD.
+      * apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+        exact Hτ_lc1.
       * intros HyD.
         apply lvars_fv_elem in HyD.
         rewrite context_ty_lvars_fv_at in HyD.
@@ -650,7 +646,7 @@ Proof.
     assert (Hle_m_mz : m ⊑ mz).
     { rewrite <- Hrestrictz. apply res_restrict_le. }
     assert (Hz_world : z ∈ world_dom (mz : WorldT)).
-    { rewrite Hdomz. set_solver. }
+    { rewrite Hdomz. apply elem_of_union_r. apply elem_of_singleton_2. reflexivity. }
     pose proof (formula_scoped_forall_open_res_le
       m mz z _ Hscope_body Hle_m_mz Hz_world) as Hopened_scope.
     cbn [formula_open] in Hopened_scope |- *.
