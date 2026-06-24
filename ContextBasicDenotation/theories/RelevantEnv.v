@@ -301,6 +301,30 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma lty_env_restrict_open_one_bind_as_insert
+    (Σ : lty_env) (D : lvset) x T :
+  lc_lvars D ->
+  lty_env_restrict_lvars
+    (lty_env_open_one 0 x (typed_lty_env_bind Σ T)) D =
+  lty_env_restrict_lvars (<[LVFree x := T]> Σ) D.
+Proof.
+  intros Hlc.
+  apply storeA_map_eq. intros v.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D)) as [Hv|Hv]; [|reflexivity].
+  destruct v as [k|y].
+  - exfalso. specialize (Hlc (LVBound k) Hv).
+    cbn [lc_logic_var_key] in Hlc. exact Hlc.
+  - destruct (decide (y = x)) as [->|Hyx].
+    + rewrite lty_env_open_one_typed_bind_lookup_current.
+      rewrite lookup_insert_eq. reflexivity.
+    + rewrite lty_env_open_one_typed_bind_lookup_free_ne by congruence.
+      rewrite lookup_insert_ne by
+        (intros Heq; apply Hyx; inversion Heq; reflexivity).
+      reflexivity.
+Qed.
+
 Lemma lty_env_restrict_open_one_bind_agree_on
     (Σ1 Σ2 : lty_env) (D : lvset) x T :
   lc_lvars D ->
@@ -1091,6 +1115,40 @@ Proof.
   intros Hτ He.
   apply lty_restrict_insert_relevant_eq.
   eapply arrow_body_relevant_lvars_subset; eauto.
+Qed.
+
+Lemma wand_body_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src e_body :
+  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τr ->
+  tm_lvars e_body ∖ {[LVFree y]} ⊆ tm_lvars e_src ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTWand τx τr) e_src))
+    (relevant_lvars (cty_open 0 y τr) e_body) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars (cty_open 0 y τr) e_body).
+Proof.
+  intros Hτ He.
+  change (relevant_env Σsrc (CTWand τx τr) e_src)
+    with (relevant_env Σsrc (CTArrow τx τr) e_src).
+  apply arrow_body_relevant_env_agree; assumption.
+Qed.
+
+Lemma wand_arg_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTWand τx τr) e_src))
+    (relevant_lvars τx (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars τx (tret (vfvar y))).
+Proof.
+  apply lty_restrict_insert_relevant_eq.
+  unfold relevant_lvars.
+  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+    value_lvars_at lvar_value_keys].
+  set_solver.
 Qed.
 
 Lemma arrow_body_env_agree

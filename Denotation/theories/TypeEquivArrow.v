@@ -443,6 +443,43 @@ Proof.
   - apply relevant_env_closed. exact HΣclosed.
 Qed.
 
+Lemma ty_equiv_arrow_result_tgt_goal_inserted_lc
+    gas (Σ : lty_env) τx τr e2
+    (my : WfWorldT) y :
+  lc_tm e2 ->
+  y ∉ fv_cty τr ->
+  lc_lvars (relevant_lvars (cty_open 0 y τr)
+    (tapp_tm e2 (vfvar y))) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e2))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hrel_lc Hmid.
+  assert (Hmid_open :
+      my ⊨ ty_denote_gas gas
+        (lty_env_open_one 0 y
+          (typed_lty_env_bind Σ (erase_ty τx)))
+        (cty_open 0 y τr) (tapp_tm e2 (vfvar y))).
+  {
+    eapply res_models_ty_denote_gas_env_agree_on.
+    - reflexivity.
+    - symmetry. apply lty_env_restrict_open_one_bind_as_insert.
+      exact Hrel_lc.
+    - exact Hmid.
+  }
+  pose proof (ty_equiv_arrow_result_tgt_goal
+    gas Σ τx τr e2 my y Hlc Hyτr Hmid_open) as Hgoal.
+  eapply res_models_ty_denote_gas_env_agree_on.
+  - reflexivity.
+  - apply lty_env_restrict_open_one_bind_as_insert.
+    exact Hrel_lc.
+  - exact Hgoal.
+Qed.
+
 Lemma wfworld_closed_on_arrow_open_result_apps
     (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :

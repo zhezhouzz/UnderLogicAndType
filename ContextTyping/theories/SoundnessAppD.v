@@ -14,6 +14,8 @@ From Denotation Require Import Context
   TypeEquivCore
   TypeEquivFiberTransport
   TypeEquivFiberBase
+  TypeEquivArrow
+  TypeEquivWand
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessApp.
@@ -471,6 +473,19 @@ Proof.
   intros Hwf_fun Hwf_app.
   pose proof (context_typing_wf_ret_lc_value
     Σ Γ1 v1 (CTWand τx τ) Hwf_fun) as Hlc_v1.
+  pose proof (context_typing_wf_context_ty Σ (CtxStar Γ1 Γ2)
+    (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hτopen_wf.
+  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf.
+  pose proof (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
+    (cty_open 0 x τ) Hτopen_wf) as Hlcτopen.
+  assert (Hresult_rel_lc :
+      lc_lvars (relevant_lvars (cty_open 0 x τ)
+        (tapp_tm (tret v1) (vfvar x)))).
+  {
+    apply lc_lvars_relevant_lvars.
+    - exact Hlcτopen.
+    - apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor].
+  }
   assert (Hrel_lc :
       lc_lvars (relevant_lvars (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x)))).
@@ -593,6 +608,19 @@ Proof.
   set (Δstar := atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))) in *.
   pose proof (context_typing_wf_ret_lc_value
     Σ Γ1 v1 (CTWand τx τ) Hwf_fun) as Hlc_v1.
+  pose proof (context_typing_wf_context_ty Σ (CtxStar Γ1 Γ2)
+    (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hτopen_wf_result.
+  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf_result.
+  pose proof (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
+    (cty_open 0 x τ) Hτopen_wf_result) as Hlcτopen_result.
+  assert (Hresult_rel_lc :
+      lc_lvars (relevant_lvars (cty_open 0 x τ)
+        (tapp_tm (tret v1) (vfvar x)))).
+  {
+    apply lc_lvars_relevant_lvars.
+    - exact Hlcτopen_result.
+    - apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor].
+  }
   assert (Htmfresh :
       x ∉ fv_tm (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
   {
@@ -637,28 +665,73 @@ Proof.
     by (constructor; exact Hlc_v1).
   assert (Hmid1 :
       m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 x (typed_lty_env_bind Δ1 (erase_ty τx)))
+        (<[LVFree x := erase_ty τx]> Δ1)
         (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x))).
   {
-    eapply ty_equiv_wand_result_src_mid; eauto.
-    better_set_solver.
+    assert (Hsrc_inserted :
+        m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+          (<[LVFree x := erase_ty τx]>
+            (relevant_env Δ1 (CTWand τx τ) (tret v1)))
+          (cty_open 0 x τ)
+          (tapp_tm (tret v1) (vfvar x))).
+    {
+      eapply res_models_ty_denote_gas_env_agree_on.
+      - reflexivity.
+      - apply lty_env_restrict_open_one_bind_as_insert.
+        exact Hresult_rel_lc.
+      - exact Hsrc.
+    }
+    eapply ty_equiv_wand_result_src_mid.
+    - constructor. exact Hlc_v1.
+    - better_set_solver.
+    - exact Hresult_rel_lc.
+    - exact Hsrc_inserted.
   }
   assert (Hmidstar :
       m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 x (typed_lty_env_bind Δstar (erase_ty τx)))
+        (<[LVFree x := erase_ty τx]> Δstar)
         (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x))).
   {
     eapply res_models_ty_denote_gas_env_agree_on.
     - reflexivity.
-    - subst Δ1 Δstar.
-      exact (appd_open_result_env_agree Σ Γ1 Γ2 τx τ v1 x
-        Hwf_fun Hwf_app).
+    - transitivity (lty_env_restrict_lvars
+        (lty_env_open_one 0 x (typed_lty_env_bind Δ1 (erase_ty τx)))
+        (relevant_lvars (cty_open 0 x τ)
+          (tapp_tm (tret v1) (vfvar x)))).
+      + symmetry. apply lty_env_restrict_open_one_bind_as_insert.
+        exact Hresult_rel_lc.
+      + transitivity (lty_env_restrict_lvars
+          (lty_env_open_one 0 x
+            (typed_lty_env_bind Δstar (erase_ty τx)))
+          (relevant_lvars (cty_open 0 x τ)
+            (tapp_tm (tret v1) (vfvar x)))).
+        * subst Δ1 Δstar.
+          exact (appd_open_result_env_agree Σ Γ1 Γ2 τx τ v1 x
+            Hwf_fun Hwf_app).
+        * apply lty_env_restrict_open_one_bind_as_insert.
+          exact Hresult_rel_lc.
     - exact Hmid1.
   }
-  eapply ty_equiv_arrow_result_tgt_goal; eauto.
-  better_set_solver.
+  assert (Hgoal_inserted :
+      m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+        (<[LVFree x := erase_ty τx]>
+          (relevant_env Δstar (CTArrow τx τ) (tret v1)))
+        (cty_open 0 x τ)
+        (tapp_tm (tret v1) (vfvar x))).
+  {
+    eapply ty_equiv_arrow_result_tgt_goal_inserted_lc.
+    - constructor. exact Hlc_v1.
+    - better_set_solver.
+    - exact Hresult_rel_lc.
+    - exact Hmidstar.
+  }
+  eapply res_models_ty_denote_gas_env_agree_on.
+  - reflexivity.
+  - symmetry. apply lty_env_restrict_open_one_bind_as_insert.
+    exact Hresult_rel_lc.
+  - exact Hgoal_inserted.
 Qed.
 
 Lemma appd_wand_basic_world_insert_env

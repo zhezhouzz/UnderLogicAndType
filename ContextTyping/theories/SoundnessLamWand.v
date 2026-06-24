@@ -120,43 +120,19 @@ Lemma lamd_wand_open_arg_normalize
     (n : WfWorldT) y :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
   lc_context_ty τx ->
-  n ⊨ formula_open 0 y
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-          (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTWand τx τ) (tret (vlam (erase_ty τx) e))))
+    τx (tret (vfvar y)) ->
   n ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
     ((<[LVFree y := erase_ty τx]>
       (atom_env_to_lty_env (erase_ctx Γ))))
     τx (tret (vfvar y)).
 Proof.
   intros Hy Hlcτx Harg.
-  assert (HΣarg_fresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-          (erase_ty τx)))).
-  {
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    pose proof (relevant_env_dom_subset_direct
-      (atom_env_to_lty_env (erase_ctx Γ))
-      (CTWand τx τ) (tret (vlam (erase_ty τx) e))) as Hrel.
-    intros Hyfv.
-    apply lvars_fv_elem in Hyfv.
-    pose proof (Hrel _ Hyfv) as Hatom.
-    rewrite atom_store_to_lvar_store_dom in Hatom.
-    rewrite <- lvars_fv_elem in Hatom.
-    rewrite lvars_fv_of_atoms in Hatom.
-    eapply lam_wand_fresh_erase_ctx in Hy. exact (Hy Hatom).
-  }
-  eapply wand_open_arg_to_inserted_env_normalized; eauto.
-  - apply atom_store_to_lvar_store_closed.
-  - apply atom_env_to_lty_env_dom_free_notin.
-    eapply lam_wand_fresh_erase_ctx. exact Hy.
-  - eapply lam_wand_fresh_arg_ty. exact Hy.
+  eapply wand_open_arg_to_inserted_env_normalized.
+  exact Harg.
 Qed.
 
 Lemma lamd_open_arg_to_star_ctx
