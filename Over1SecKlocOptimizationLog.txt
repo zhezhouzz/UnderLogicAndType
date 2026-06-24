@@ -686,3 +686,39 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
 - Deferred:
   - Remaining local commands are below about `0.10s`; the largest cost is now
     import overhead plus small freshness side conditions in `FForall/FBWand`.
+
+## Batch 28: `TypePersistBase.v` ret-fvar singleton/open-world support
+
+- Baseline before this batch:
+  focused `COQEXTRAFLAGS=-time` runs for `Denotation/theories/TypePersistBase.v`
+  were around `5.37s`; the file remained well above `1 s/KLOC`.
+- Concrete hotspots:
+  - several `basic_world_formula_wfworld_closed_on_atoms` side conditions
+    repeatedly used `set_solver` to show the inserted `LVFree z` singleton is
+    present in a one-entry environment;
+  - multiple proofs rebuilt the same fact that closed-on `{z}` transfers from
+    a base world to an opened/result-extension world;
+  - swap/restrict support lemmas repeatedly asked `set_solver` to solve
+    singleton-domain membership and exclusion goals.
+- Optimization:
+  - Added local helpers `singleton_fvar_in_insert_env_dom`,
+    `singleton_subset_world_dom`, and
+    `wfworld_closed_on_open_world_from_base`.
+  - Added small explicit membership helpers for singleton-union and
+    four-way-freshness goals.
+  - Replaced the large repeated `Hclosed_z_my` proof blocks by the
+    `wfworld_closed_on_open_world_from_base` helper.
+  - Replaced the ret-fvar swap domain proof by
+    `swap_opened_singleton_domain`, avoiding a broad
+    `repeat destruct decide; set_solver`.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - Current observed times: normal run about `3.74s`; focused run about
+    `4.99s` with remaining top local set solvers under about `0.29s`.
+- Deferred:
+  - The file is still above `1 s/KLOC`; the remaining hotspots are many
+    medium-size freshness/set side conditions around the self-body iff lemmas.
+    Continue with another smaller batch rather than hiding them in a broad
+    tactic.
