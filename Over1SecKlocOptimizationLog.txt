@@ -66,3 +66,20 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 80s make TIMED=1 Denotation/theories/TypePersistWandReverse.vo`
     passed.
   - New focused time observed: `0.99s`.
+
+## Batch 4: `TypePersistWandForward.v`
+
+- Baseline from `CompileTimeStats.txt`: `13.23s`, `14.21 s/KLOC`.
+- `COQEXTRAFLAGS=-time` completed and showed two dominant hotspots:
+  - two `cbn [fv_tm fv_value]; set_solver` side conditions, about `6.0s`
+    each, inside `formula_open_ty_denote_gas_singleton` calls.
+  - one smaller singleton-union set proof near the persistent-over argument
+    fiber construction.
+- Optimization:
+  - Added local lemma `empty_union_singleton_l`.
+  - Replaced the singleton-union proof with that lemma.
+  - Replaced both empty-FV set searches with `not_elem_of_empty`.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistWandForward.vo`
+    passed.
+  - New focused time observed: `1.04s`.

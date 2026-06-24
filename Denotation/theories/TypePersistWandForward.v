@@ -18,6 +18,12 @@ Local Ltac persist_outer_fresh_from H :=
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
 
+Local Lemma empty_union_singleton_l y :
+  ∅ ∪ {[y]} = ({[y]} : aset).
+Proof.
+  set_solver.
+Qed.
+
 Lemma ty_denote_gas_over_ret_fvar_fiber_stable
     gas (Σ : lty_env) b φ y X σ
     (my mfib : WfWorldT) :
@@ -100,7 +106,8 @@ Proof.
       (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT)).
   {
     rewrite Hfv_empty.
-    replace (∅ ∪ {[y]} : aset) with ({[y]} : aset) by set_solver.
+    replace (∅ ∪ {[y]} : aset) with ({[y]} : aset)
+      by (symmetry; apply empty_union_singleton_l).
     eapply res_fiber_from_projection_restrict_singleton.
     - rewrite Hdomσ, Hfv_empty. set_solver.
     - exact Hproj.
@@ -523,7 +530,7 @@ Proof.
   {
     rewrite formula_open_ty_denote_gas_singleton.
     2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-    2:{ cbn [fv_tm fv_value]. set_solver. }
+    2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
     2:{
       rewrite cty_shift_fv.
       unfold fv_cty, qual_dom in *.
@@ -553,7 +560,7 @@ Proof.
     {
       rewrite formula_open_ty_denote_gas_singleton in Harg_persist.
       2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-      2:{ cbn [fv_tm fv_value]. set_solver. }
+      2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
       2:{
         rewrite cty_shift_fv.
         unfold fv_cty, qual_dom in *.
