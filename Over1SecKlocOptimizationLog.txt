@@ -245,6 +245,29 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - New focused time observed: `1.43s`.
   - Remaining visible cost is mostly fixed imports plus small domain-equality
     proofs around `storeA_restrict_dom`; no multi-second solver remains.
+
+## Batch 13: `TypeEquivTLetFormula.v`
+
+- Baseline from `CompileTimeStats.txt`: `1.98s`, `8.22 s/KLOC`.
+- Focused `COQEXTRAFLAGS=-time` run before the change showed three concrete
+  slow side conditions in `result_graph_tlet_reverse_transport`:
+  - a base-domain exclusion proof after `res_restrict_dom`, about `0.32s`;
+  - an extension-output disjointness proof, about `0.68s`;
+  - an `x ∉ FV(D) ∪ FV(e1)` side condition, about `0.60s`.
+- Optimization:
+  - Replaced the base-domain proof by explicit intersection/difference
+    reasoning from `HDm` and `x ∉ D`.
+  - Replaced output disjointness by a direct singleton contradiction using
+    `Hx_base`.
+  - Replaced the final FV/freshness solver with an explicit split over
+    `lvars_fv D ∪ fv_tm e1`.
+  - Replaced two reflexive domain-subset `ltac:(set_solver)` arguments by
+    identity subset proofs.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTLetFormula.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `0.45s`.
   - Slightly extended `solve_lvars_element` so it handles both left- and
     right-associated two-level union goals.
 - Verification:

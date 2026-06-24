@@ -84,16 +84,20 @@ Proof.
   { subst mbase. apply res_restrict_delete_insert_dom. exact Hx_m. }
   assert (Hrestrict_m : res_restrict m (world_dom (mbase : WorldT)) = mbase).
   { subst mbase. apply res_restrict_self_dom. }
-  assert (HD_base : lvars_fv D ⊆ world_dom (mbase : WorldT)).
-  {
-    subst mbase. rewrite res_restrict_dom.
-    intros a Ha.
-    assert (a <> x).
-    {
-      intros ->. apply HxD. apply lvars_fv_elem. exact Ha.
-    }
-    set_solver.
-  }
+	  assert (HD_base : lvars_fv D ⊆ world_dom (mbase : WorldT)).
+	  {
+	    subst mbase. rewrite res_restrict_dom.
+	    intros a Ha.
+	    assert (a <> x).
+	    {
+	      intros ->. apply HxD. apply lvars_fv_elem. exact Ha.
+	    }
+	    apply elem_of_intersection. split.
+	    - exact (HDm _ Ha).
+	    - apply elem_of_difference. split.
+	      + exact (HDm _ Ha).
+	      + intros Hx. apply H. apply elem_of_singleton in Hx. exact Hx.
+	  }
   assert (Hx_base : x ∉ world_dom (mbase : WorldT)).
   { subst mbase. apply res_restrict_delete_notin. }
   assert (Htotal_e1_base :
@@ -102,10 +106,12 @@ Proof.
   assert (Hclosed_e1_base :
       wfworld_closed_on (fv_tm e1) mbase).
   { subst mbase. exact Hclosed_e1_base_delete. }
-  pose proof (expr_result_formula_at_refine_domain_projected
-    D D D e1 x mbase m
-    ltac:(set_solver) ltac:(set_solver) HlcD HeD HxD Hx_base
-    HD_base Hdom_m Hrestrict_m Htotal_e1_base Hres)
+	  pose proof (expr_result_formula_at_refine_domain_projected
+	    D D D e1 x mbase m
+	    ltac:(intros lv Hlv; exact Hlv)
+	    ltac:(intros lv Hlv; exact Hlv)
+	    HlcD HeD HxD Hx_base
+	    HD_base Hdom_m Hrestrict_m Htotal_e1_base Hres)
     as [mstd [Hdom_std [Hrestrict_std [Hres_std Hproj_std_m]]]].
   assert (Hzero_body_std :
       mstd ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x)).
@@ -146,8 +152,11 @@ Proof.
         apply HD_base.
         apply lvars_fv_elem. apply HeD.
         apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
-      - change (ext_out Fx ## world_dom (mbase : WorldT)).
-        rewrite Hout. set_solver.
+	      - change (ext_out Fx ## world_dom (mbase : WorldT)).
+	        rewrite Hout.
+	        intros a HaX HaBase.
+	        apply elem_of_singleton in HaX. subst a.
+	        exact (Hx_base HaBase).
     }
     destruct (res_extend_by_exists mbase Fx Happ) as [mx Hext].
     pose proof (res_extend_by_dom mbase Fx mx Hext) as Hdom_mx.
@@ -171,7 +180,10 @@ Proof.
           apply HD_base.
           apply lvars_fv_elem. apply HeD.
           apply lvars_fv_elem. rewrite tm_lvars_fv. exact Ha.
-        + set_solver.
+	        + intros Hbad.
+	          apply elem_of_union in Hbad as [Hbad|Hbad].
+	          * apply HxD. apply lvars_fv_elem. exact Hbad.
+	          * exact (Hx_e1 Hbad).
         + exact HFx.
         + exact Hext.
         + exact Htotal_e1_base.
