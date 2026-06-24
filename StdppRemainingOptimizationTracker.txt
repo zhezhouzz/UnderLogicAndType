@@ -72,6 +72,15 @@ Pattern Buckets
          and
          `timeout 50s make TIMED=1 Denotation/theories/TypeEquiv.vo`
          passed.
+       deferred:
+       - Remaining `storeA_restrict_lookup_some_2`, `lookup_union_l'`, and
+         `map_lookup_union_None` blocks are inside witness-specific store
+         agreement proofs.  They relate local stores named `τ`, `τm`, `τe`,
+         `τv`, and singleton stores through proof-local equalities such as
+         `Hτmx_eq` and `Hτv_restrict`.
+       - No short general stdpp-only lemma emerged: a helper would need to
+         mention most of the local result-extension witness shape and would be
+         harder to read than the local proof.  Leave these blocks for now.
      - `TypeEquivFiberBaseResult.v` first pass:
        - Imported `DenotationSetMapFacts`.
        - Replaced scoped-world `res_extend_by_dom` setup with regular
@@ -222,6 +231,14 @@ Next Tasks
 ----------
 
 1. Review the remaining deep store-agree/union lookup proofs in
-   `TypeEquivTermResult.v`; extract only if a general lemma emerges clearly.
+   `TypeEquivTermResult.v`; first review done, deferred as witness-specific.
 2. Review `Denotation/Context.v` context-denotation stdpp blocks. First pass
    done; remaining blocks are mostly larger semantic bridge proofs.
+3. Run final full build/admit scan for this optimization pass.
+
+Final Validation For This Pass
+------------------------------
+
+- `timeout 180s make TIMED=1` passed.
+- `rg -n "Admitted\\.|admit\\." -g '*.v' .` produced no matches.
+- `git status --short` after validation only showed this tracker update.
