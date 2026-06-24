@@ -218,6 +218,33 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     the `CTOver`/`CTUnder` cases.
   - Replaced the difference-subset side condition passed to
     `lvars_at_depth_mono` by a direct `elem_of_difference` proof.
+
+## Batch 12: `TypePersistSingleton.v`
+
+- Focused time before this batch: `4.08s`.
+- `COQEXTRAFLAGS=-time` showed repeated side-condition hotspots in the
+  singleton result-slot support:
+  - `storeA_restrict_dom` membership proofs for the fresh result slot,
+    about `0.10s` each in the pullback/push lemmas;
+  - duplicated derivations of `z ∈ world_dom m` and
+    `fv_cty τ ⊆ world_dom m` from a singleton restriction;
+  - shifted `ret` term FV side conditions solved by broad `set_solver`.
+- Optimization:
+  - Added a local helper `elem_open_world_inter_singleton` for the recurring
+    open-world/singleton membership goal.
+  - Replaced repeated `A`-membership and world-domain asserts with direct
+    union/singleton reasoning.
+  - Reused `res_restrict_singleton_exact_dom_subset` instead of reconstructing
+    singleton-domain inclusions twice.
+  - Replaced shifted-ret FV side conditions with `not_elem_of_empty` and
+    unshifted ret membership with direct singleton proofs.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistSingleton.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: `1.43s`.
+  - Remaining visible cost is mostly fixed imports plus small domain-equality
+    proofs around `storeA_restrict_dom`; no multi-second solver remains.
   - Slightly extended `solve_lvars_element` so it handles both left- and
     right-associated two-level union goals.
 - Verification:

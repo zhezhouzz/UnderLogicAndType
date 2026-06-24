@@ -9,6 +9,16 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
+Local Lemma elem_open_world_inter_singleton x y (B : aset) :
+  x ∈ B ->
+  x ∈ (B ∪ {[y]}) ∩ ({[x]} : aset).
+Proof.
+  intros Hx.
+  apply elem_of_intersection. split.
+  - apply elem_of_union_l. exact Hx.
+  - apply elem_of_singleton. reflexivity.
+Qed.
+
 Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
@@ -66,20 +76,20 @@ Proof.
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
           D x y my σmy);
           [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
-        change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
-        rewrite storeA_restrict_dom.
-        rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
-        set_solver.
+	        change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
+	        rewrite storeA_restrict_dom.
+	        rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
+	        apply elem_open_world_inter_singleton. exact Hxm.
       }
       assert (Hxy_0 : σ0my !! y = σ0my !! x).
       {
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
           D x y my σ0my);
           [exact HD|exact HyD|exact (Hclosed_x σ0my Hσ0my)| |exact Hres|exact Hσ0my].
-        change (x ∈ dom (storeA_restrict σ0my ({[x]} : aset) : gmap atom value)).
-        rewrite storeA_restrict_dom.
-        rewrite (wfworld_store_dom my σ0my Hσ0my), Hdom_my.
-        set_solver.
+	        change (x ∈ dom (storeA_restrict σ0my ({[x]} : aset) : gmap atom value)).
+	        rewrite storeA_restrict_dom.
+	        rewrite (wfworld_store_dom my σ0my Hσ0my), Hdom_my.
+	        apply elem_open_world_inter_singleton. exact Hxm.
       }
       subst σx.
       apply storeA_map_eq. intros a.
@@ -114,8 +124,13 @@ Proof.
            rewrite <- Hbase_my_x, <- Hbase_0_x.
            rewrite <- Hxy_my, <- Hxy_0.
            congruence.
-        -- assert (HaA : a ∈ A) by set_solver.
-           assert (HaDom : a ∈ world_dom (m : WorldT)) by set_solver.
+        -- assert (HaA : a ∈ A).
+           {
+             apply elem_of_union in Ha as [HaA|HaX]; [exact HaA|].
+             apply elem_of_singleton in HaX. subst a. contradiction.
+           }
+           assert (HaDom : a ∈ world_dom (m : WorldT)).
+           { exact (HAm _ HaA). }
            assert (Hbase_my_a : σmy !! a = σm !! a).
            {
              eapply store_lookup_eq_of_restrict_eq_full.
@@ -220,20 +235,20 @@ Proof.
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
           D x y my σmy);
           [exact HD|exact HyD|exact (Hclosed_x σmy Hσmy)| |exact Hres|exact Hσmy].
-        change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
-        rewrite storeA_restrict_dom.
-        rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
-        set_solver.
+	        change (x ∈ dom (storeA_restrict σmy ({[x]} : aset) : gmap atom value)).
+	        rewrite storeA_restrict_dom.
+	        rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
+	        apply elem_open_world_inter_singleton. exact Hxm.
       }
       assert (Hxy_0 : σ0 !! y = σ0 !! x).
       {
         eapply (expr_result_formula_at_ret_fvar_lookup_eq
           D x y my σ0);
           [exact HD|exact HyD|exact (Hclosed_x σ0 Hσ0)| |exact Hres|exact Hσ0].
-        change (x ∈ dom (storeA_restrict σ0 ({[x]} : aset) : gmap atom value)).
-        rewrite storeA_restrict_dom.
-        rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
-        set_solver.
+	        change (x ∈ dom (storeA_restrict σ0 ({[x]} : aset) : gmap atom value)).
+	        rewrite storeA_restrict_dom.
+	        rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
+	        apply elem_open_world_inter_singleton. exact Hxm.
       }
       subst σy.
       apply storeA_map_eq. intros a.
@@ -259,29 +274,34 @@ Proof.
                apply not_elem_of_dom in H0look.
                apply H0look.
                rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
-               set_solver.
+               apply elem_of_union_l. exact Hxm.
            }
            assert (H0base_x :
                store_restrict σ0 (world_dom (m : WorldT)) !! x =
                σx !! x).
            {
              eapply store_lookup_eq_of_restrict_eq_full.
-             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+	             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
              - exact Hσ0_x.
            }
            assert (Hm_x :
                σm !! x = σx !! x).
            {
              eapply store_lookup_eq_of_restrict_eq_full.
-             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+	             - apply elem_of_union_r. apply elem_of_singleton. reflexivity.
              - exact Hσm_x.
            }
            change (σmy !! y = σ0 !! y).
            rewrite Hxy_my, Hxy_0.
            rewrite Hmy_x, H0_x, H0base_x, Hm_x.
            reflexivity.
-        -- assert (HaA : a ∈ A) by set_solver.
-           assert (HaDom : a ∈ world_dom (m : WorldT)) by set_solver.
+        -- assert (HaA : a ∈ A).
+           {
+             apply elem_of_union in Ha as [HaA|HaY]; [exact HaA|].
+             apply elem_of_singleton in HaY. subst a. contradiction.
+           }
+           assert (HaDom : a ∈ world_dom (m : WorldT)).
+           { exact (HAm _ HaA). }
            assert (Hmy_a : σmy !! a = σm !! a).
            {
              eapply store_lookup_eq_of_restrict_eq_full.
@@ -301,7 +321,7 @@ Proof.
                apply not_elem_of_dom in H0look.
                apply H0look.
                rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
-               set_solver.
+               apply elem_of_union_l. exact HaDom.
            }
            assert (H0base_a :
                store_restrict σ0 (world_dom (m : WorldT)) !! a =
@@ -705,33 +725,18 @@ Proof.
     exists z. split; [reflexivity|].
     cbn [fv_tm fv_value]. apply elem_of_singleton. reflexivity.
   }
-  assert (Hzdom : z ∈ world_dom (m : WorldT)).
-  {
-    assert (Hsub : fv_cty τ ∪ {[z]} ⊆ world_dom (m : WorldT)).
-    {
-      intros a Ha.
-      assert (Hdom_eq :
-          world_dom (res_restrict m (fv_cty τ ∪ {[z]}) : WorldT) =
-          dom (σ : StoreT)).
-      { rewrite Hsingle. reflexivity. }
-      rewrite res_restrict_dom, Hdomσ in Hdom_eq.
-      set_solver.
-    }
-    apply Hsub. set_solver.
-  }
-  assert (HA_sub : fv_cty τ ⊆ world_dom (m : WorldT)).
-  {
-    assert (Hsub : fv_cty τ ∪ {[z]} ⊆ world_dom (m : WorldT)).
-    {
-      intros a Ha.
-      assert (Hdom_eq :
-          world_dom (res_restrict m (fv_cty τ ∪ {[z]}) : WorldT) =
-          dom (σ : StoreT)).
-      { rewrite Hsingle. reflexivity. }
-      rewrite res_restrict_dom, Hdomσ in Hdom_eq.
-      set_solver.
-    }
-    intros a Ha. apply Hsub. set_solver.
+	  assert (Hzdom : z ∈ world_dom (m : WorldT)).
+	  {
+	    pose proof (res_restrict_singleton_exact_dom_subset
+	      m (fv_cty τ ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
+	    apply Hsub. apply elem_of_union_r. apply elem_of_singleton.
+	    reflexivity.
+	  }
+	  assert (HA_sub : fv_cty τ ⊆ world_dom (m : WorldT)).
+	  {
+	    pose proof (res_restrict_singleton_exact_dom_subset
+	      m (fv_cty τ ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
+	    intros a Ha. apply Hsub. apply elem_of_union_l. exact Ha.
   }
   assert (Hy_m : y ∉ world_dom (m : WorldT)).
   { clear -Hy. set_solver. }
@@ -811,7 +816,11 @@ Proof.
         rewrite <- context_ty_lvars_fv.
         apply lvars_fv_elem. exact Hy_lvar.
       }
-      2:{ cbn [fv_tm fv_value]. clear -Hy. set_solver. }
+	      2:{
+	        cbn [fv_tm fv_value].
+	        intros Hyz. apply elem_of_singleton in Hyz. subst y.
+	        exact (Hy_m Hzdom).
+	      }
       eapply (res_models_kripke m my).
       + rewrite <- Hbase_my. apply res_restrict_le.
       + exact Hden.
@@ -841,7 +850,10 @@ Proof.
     apply lvars_fv_elem in HyD.
     exact HyD.
   }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
+	  2:{
+	    cbn [fv_tm fv_value].
+	    apply not_elem_of_empty.
+	  }
   2:{
     rewrite cty_shift_fv.
     exact Hyτ.
@@ -957,17 +969,18 @@ Proof.
     exists z. split; [reflexivity|].
     cbn [fv_tm fv_value]. apply elem_of_singleton. reflexivity.
   }
-  assert (Hzdom : z ∈ world_dom (m : WorldT)).
-  {
-    pose proof (res_restrict_singleton_exact_dom_subset
-      m (fv_cty (CTOver b φ) ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
-    apply Hsub. set_solver.
-  }
-  assert (HA_sub : fv_cty (CTOver b φ) ⊆ world_dom (m : WorldT)).
-  {
-    pose proof (res_restrict_singleton_exact_dom_subset
-      m (fv_cty (CTOver b φ) ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
-    intros a Ha. apply Hsub. set_solver.
+	  assert (Hzdom : z ∈ world_dom (m : WorldT)).
+	  {
+	    pose proof (res_restrict_singleton_exact_dom_subset
+	      m (fv_cty (CTOver b φ) ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
+	    apply Hsub. apply elem_of_union_r. apply elem_of_singleton.
+	    reflexivity.
+	  }
+	  assert (HA_sub : fv_cty (CTOver b φ) ⊆ world_dom (m : WorldT)).
+	  {
+	    pose proof (res_restrict_singleton_exact_dom_subset
+	      m (fv_cty (CTOver b φ) ∪ {[z]}) σ Hdomσ Hsingle) as Hsub.
+	    intros a Ha. apply Hsub. apply elem_of_union_l. exact Ha.
   }
   assert (Hy_m : y ∉ world_dom (m : WorldT)).
   { clear -Hy. set_solver. }
@@ -1085,7 +1098,10 @@ Proof.
     apply lvars_fv_elem in HyD.
     exact HyD.
   }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
+	  2:{
+	    cbn [fv_tm fv_value].
+	    apply not_elem_of_empty.
+	  }
   2:{
     rewrite cty_shift_fv.
     intros Hyτ.
@@ -1107,8 +1123,13 @@ Proof.
         (relevant_env Σ (CTOver b φ) (tret (vfvar z))))
       (CTOver b φ) (tret (vfvar y)))
     (fv_cty (CTOver b φ) ∪ {[y]}) σy).
-  - etransitivity; [apply ty_denote_gas_fv_subset|].
-    cbn [fv_tm fv_value]. set_solver.
+	  - etransitivity; [apply ty_denote_gas_fv_subset|].
+	    cbn [fv_tm fv_value].
+	    intros a Ha.
+	    apply elem_of_union in Ha as [Ha|Ha].
+	    + apply elem_of_singleton in Ha. subst a.
+	      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+	    + apply elem_of_union_l. exact Ha.
   - exact Hdomσy.
   - change (fv_cty (CTOver b φ) ∪ {[y]})
       with (fv_cty (CTOver b φ) ∪ {[y]}) in Hsingle_y.
