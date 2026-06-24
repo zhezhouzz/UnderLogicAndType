@@ -20,8 +20,8 @@ By folder:
 
 | Folder | Count | Notes |
 | --- | ---: | --- |
-| Denotation | 2221 | Main upper-layer target. Shallow `res_extend_by` blocks reduced; remaining counts are increasingly deep result/fiber/store proofs. |
-| ContextTyping | 1059 | Main Soundness target. `SoundnessMatch` reduced, App/AppD fresh/domain remains. |
+| Denotation | 2219 | Main upper-layer target. Shallow `res_extend_by` blocks reduced; remaining counts are increasingly deep result/fiber/store proofs. |
+| ContextTyping | 1048 | Soundness-local first pass completed; remaining counts are mostly case-specific proof internals. |
 | ContextStore | 960 | Mostly low-level store library; optimize only obvious duplicate lemmas, not every stdpp proof. |
 | ContextBasicDenotation | 871 | Term/result formula and RelevantEnv normalization/facts. |
 | ContextAlgebra | 567 | Resource/fiber facts; can host lower-level reusable lemmas. |
@@ -35,15 +35,15 @@ Top files by raw count:
 | 222 | `ContextAlgebra/theories/ResourceInterface.v` | Low-level; extract only reusable API lemmas. |
 | 210 | `Denotation/theories/TypeEquivFiberBaseResult.v` | Mostly deep result graph + extension/fiber facts after first pass. |
 | 210 | `ContextBasicDenotation/theories/TermTLet.v` | Medium: term/result relation facts. |
-| 209 | `Denotation/theories/Context.v` | High priority: ctx denotation regular facts. |
+| 208 | `Denotation/theories/Context.v` | First-pass regular facts extracted; remaining mostly semantic bridge internals. |
 | 206 | `Denotation/theories/TypeEquivTermResult.v` | Mostly deep result extension / result graph facts after first pass. |
 | 196 | `ContextBasicDenotation/theories/RelevantEnv.v` | Medium: normalization/fv facts; many legitimate. |
 | 182 | `ContextAlgebra/theories/ResourceAlgebra.v` | Low-level; mostly expected. |
 | 168 | `Denotation/theories/TypePersistBase.v` | High priority: new persistence proofs. |
 | 136 | `ContextTyping/theories/SoundnessMatch.v` | First pass done; remaining mostly branch/resource proof internals. |
 | 129 | `ContextLogic/theories/FormulaConnectives.v` | Medium: formula connective algebra. |
-| 130 | `ContextTyping/theories/SoundnessApp.v` | High priority: repeated app fresh/domain facts. |
-| 111 | `ContextTyping/theories/SoundnessAppD.v` | High priority: same as App, plus wand resource facts. |
+| 128 | `ContextTyping/theories/SoundnessApp.v` | First pass done; remaining mostly app-specific proof internals. |
+| 110 | `ContextTyping/theories/SoundnessAppD.v` | First pass done; remaining mostly wand/app-specific proof internals. |
 
 Pattern Buckets
 ---------------
@@ -206,6 +206,11 @@ Pattern Buckets
    - Remaining:
      - Candidate Resource/Logic lemmas for repeated fiber world/store-domain
        shapes in `TypeEquivFiberBaseResult.v`.
+   - Deferred/stubborn:
+     - Most remaining occurrences are inside low-level `ResourceInterface` /
+       `ResourceAlgebra` or deep projected-result witness proofs.  These are
+       not good candidates for folder-local regular extraction unless a future
+       proof repeats the exact resource/fiber commute shape.
 
 Batch Log
 ---------
@@ -262,15 +267,60 @@ Batch Log
   - Simplified `ctx_comma_bind_of_result_ext` by reusing
     `ctx_bind_of_result_ext`.
   - `SoundnessSetMapFacts.vo` and `Soundness.vo` passed.
+- Re-scan after Batch I:
+  - Folder counts:
+    - Denotation: 2219
+    - ContextTyping: 1048
+    - ContextStore: 960
+    - ContextBasicDenotation: 871
+    - ContextAlgebra: 567
+    - ContextLogic: 468
+  - Remaining top files are classified as:
+    - Low-level natural stdpp-heavy libraries:
+      `ContextStore/StoreRestrict.v`,
+      `ContextAlgebra/ResourceInterface.v`,
+      `ContextAlgebra/ResourceAlgebra.v`.
+    - Definition/normalization libraries with legitimate stdpp:
+      `ContextBasicDenotation/TermTLet.v`,
+      `ContextBasicDenotation/RelevantEnv.v`,
+      `ContextLogic/FormulaConnectives.v`,
+      `ContextLogic/FormulaFiberwise.v`.
+    - Deep witness-specific denotation proofs:
+      `TypeEquivFiberBaseResult.v`,
+      `TypeEquivTermResult.v`,
+      `TypePersistBase.v`,
+      `TypePersistSingleton.v`.
+    - Soundness case internals after first-pass regular extraction:
+      `SoundnessMatch.v`, `SoundnessApp.v`, `SoundnessAppD.v`,
+      `SoundnessFixApply.v`, `SoundnessFixSelf.v`.
 
 Next Tasks
 ----------
 
-1. Review the remaining deep store-agree/union lookup proofs in
-   `TypeEquivTermResult.v`; first review done, deferred as witness-specific.
-2. Review `Denotation/Context.v` context-denotation stdpp blocks. First pass
-   done; remaining blocks are mostly larger semantic bridge proofs.
-3. Run final full build/admit scan for this optimization pass.
+No further broad cleanup item remains for this pass.  The items below are
+classified as stubborn/deferred: either they are low-level stdpp libraries,
+definition/normalization files where stdpp reasoning is the point of the file,
+or deep witness-specific proof blocks where a general lemma would be larger and
+less readable than the local proof.
+
+Remaining Stubborn / Deferred Summary
+-------------------------------------
+
+- `TypeEquivTermResult.v`: deferred because remaining store lookup proofs are
+  witness-specific and depend on local stores/equalities (`τ`, `τm`, `τe`,
+  `τv`, `Hτmx_eq`, `Hτv_restrict`).  A general helper would be larger and less
+  readable than the local proof.
+- `TypeEquivFiberBaseResult.v`: remaining high count is mostly projected result
+  fiber semantics.  Further extraction should wait until another proof needs the
+  same commute shape.
+- `Denotation/Context.v`: first-pass regular facts are extracted.  Remaining
+  stdpp occurs in semantic bridge lemmas (`ctx_denote_under_*`) where the set
+  reasoning is tied to context structure.
+- `Soundness*.v`: App/AppD/Fix/Lam/Match first-pass regular extraction is done.
+  Remaining stdpp is mostly case-local fresh picking and proof-specific
+  resource/frame manipulation.
+- Low-level `ContextStore`, `ContextAlgebra`, and definition/normalization
+  files are intentionally not chased line-by-line.
 
 Final Validation For This Pass
 ------------------------------
