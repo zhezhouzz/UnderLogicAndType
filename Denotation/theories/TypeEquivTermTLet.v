@@ -35,6 +35,41 @@ Proof.
   apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].
 Qed.
 
+Local Lemma elem_of_fv_tm_open_fvar e z k a :
+  a ∈ fv_tm (open_tm k (vfvar z) e) ->
+  a ∈ {[z]} ∪ fv_tm e.
+Proof.
+  intros Ha.
+  pose proof (open_fv_tm e (vfvar z) k a Ha) as Hopen.
+  cbn [fv_value] in Hopen.
+  exact Hopen.
+Qed.
+
+Local Lemma notin_store_union_singleton_dom
+    (σm : StoreT) x vx z :
+  z ∉ dom (σm : StoreT) ->
+  z <> x ->
+  z ∉ dom (((σm : StoreT) ∪ ({[x := vx]} : StoreT)) : StoreT).
+Proof.
+  intros Hzσm Hzx Hzdom.
+  change (z ∈ dom
+    ((((σm : StoreT) : gmap atom value) ∪
+      ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
+  apply elem_of_dom in Hzdom as [vz Hlook].
+  apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
+  - apply Hzσm.
+    change (z ∈ dom (σm : gmap atom value)).
+    apply elem_of_dom. exists vz. exact Hlook.
+  - apply Hzx.
+    pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
+    change (dom (({[x := vx]} : StoreT)) = {[x]}) in Hdom_single.
+    apply elem_of_dom_2 in Hlook.
+    change (z ∈ dom (({[x := vx]} : StoreT))) in Hlook.
+    rewrite Hdom_single in Hlook.
+    apply elem_of_singleton in Hlook.
+    exact Hlook.
+Qed.
+
 Lemma tm_total_equiv_res_store_subset
     (m0 m : WfWorldT) e1 e2 :
   res_subset m0 m ->
@@ -160,9 +195,11 @@ Proof.
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})
       by (subst z; apply fresh_for_not_in).
+    assert (Hze1 : z ∉ fv_tm e1) by set_solver.
     assert (Hze2 : z ∉ fv_tm e2) by set_solver.
+    assert (Hz_ne_x : z <> x) by set_solver.
     assert (Hztlet : z ∉ fv_tm (tlete e1 e2)).
-    { cbn [fv_tm]. set_solver. }
+    { apply notin_fv_tm_tlete; assumption. }
     destruct (tm_eval_in_store_tlete_elim_closed_on e1 e2 z σ v
       Hclosedσ Hztlet Hze2 Hlet) as [vx [He1 He2z]].
     apply (proj1 (resA_extend_by_store_iff m Fx mx σ Hext)) in Hσmx.
@@ -286,9 +323,15 @@ Proof.
         rewrite !storeA_restrict_lookup.
         destruct (decide (a ∈ fv_tm (e2 ^^ z))) as [Ha|Ha]; [|reflexivity].
         assert (Ha_open : a ∈ {[z]} ∪ fv_tm e2).
-        { pose proof (open_fv_tm e2 (vfvar z) 0 a Ha) as Hopen.
-          cbn [fv_value] in Hopen. exact Hopen. }
-        assert (Hax : a <> x) by set_solver.
+        { apply (elem_of_fv_tm_open_fvar e2 z 0). exact Ha. }
+        assert (Hax : a <> x).
+        {
+          intros ->.
+          apply elem_of_union in Ha_open as [Haz|Ha_e2].
+          - apply elem_of_singleton in Haz.
+            exact (Hz_ne_x (eq_sym Haz)).
+          - exact (Hxe2 Ha_e2).
+        }
         destruct (decide (a = z)) as [->|Haz].
         - change (((<[z := vx]>
               (store_restrict ((σm : StoreT) ∪ σe) (fv_tm (tlete e1 e2))
@@ -321,7 +364,14 @@ Proof.
 	              ((σe : StoreT) : gmap atom value))
 	            (fv_tm (tlete e1 e2)) a).
 	          destruct (decide (a ∈ fv_tm (tlete e1 e2))) as [Ha_tlet|Ha_tlet].
-	          2:{ exfalso. cbn [fv_tm] in Ha_tlet. set_solver. }
+	          2:{
+                    exfalso. apply Ha_tlet.
+                    cbn [fv_tm]. apply elem_of_union_r.
+                    apply elem_of_union in Ha_open as [Haz_open|Ha_e2].
+                    - apply elem_of_singleton in Haz_open.
+                      exact (False_rect _ (Haz Haz_open)).
+                    - exact Ha_e2.
+                  }
 	          destruct ((σm : StoreT) !! a) eqn:Haσm.
 	          { transitivity (Some v0).
 	            - transitivity ((σm : StoreT) !! a).
@@ -334,10 +384,12 @@ Proof.
 	            - apply (lookup_union_r (M:=gmap atom) (A:=value)
 	                (σm : StoreT) (σe : StoreT) a). exact Haσm.
 	            - transitivity (@None value).
-	              + change (((σe : StoreT) : gmap atom value) !! a = None).
-	                apply not_elem_of_dom_1.
-	                change (a ∉ dom (σe : StoreT)).
-	                rewrite Hσe_dom. set_solver.
+		              + change (((σe : StoreT) : gmap atom value) !! a = None).
+		                apply not_elem_of_dom_1.
+		                change (a ∉ dom (σe : StoreT)).
+		                rewrite Hσe_dom.
+                                intros Ha_single. apply elem_of_singleton in Ha_single.
+                                exact (Hax Ha_single).
 	              + symmetry.
 	                transitivity (({[x := vx]} : gmap atom value) !! a).
 	                * apply (lookup_union_r (M:=gmap atom) (A:=value)
@@ -353,35 +405,17 @@ Proof.
 	    {
 	      assert (Hzσx : z ∉ dom (σx : StoreT)).
 	      {
-	        unfold σx.
-	        intros Hzdom.
-	        change (z ∈ dom
-	          ((((σm : StoreT) : gmap atom value) ∪
-	            ({[x := vx]} : gmap atom value)) : gmap atom value)) in Hzdom.
-	        apply elem_of_dom in Hzdom as [vz Hlook].
-	        apply map_lookup_union_Some_raw in Hlook as [Hlook|[_ Hlook]].
-		        - assert (Hzold : z ∈ dom ((σm : StoreT) ∪ σe : StoreT)).
-		          {
-		            change (z ∈ dom
-		              ((((σm : StoreT) : gmap atom value) ∪
-		                ((σe : StoreT) : gmap atom value)) : gmap atom value)).
-		            rewrite elem_of_dom. exists vz.
-		            apply map_lookup_union_Some_raw. left. exact Hlook.
-		          }
-		          apply Hzfresh. set_solver.
-		        - destruct (decide (z = x)) as [->|Hzx].
-		          + apply Hzfresh. set_solver.
-		          + assert (Hzin_single :
-		                z ∈ dom (({[x := vx]} : gmap atom value))).
-		            {
-		              rewrite elem_of_dom. exists vz.
-		              change ((({[x := vx]} : gmap atom value) !! z) = Some vz).
-		              exact Hlook.
-		            }
-		            pose proof (dom_singleton_L (M:=gmap atom) x vx) as Hdom_single.
-		            change (dom (({[x := vx]} : gmap atom value)) = {[x]})
-		              in Hdom_single.
-		            rewrite Hdom_single in Hzin_single. set_solver.
+                subst σx.
+	                apply notin_store_union_singleton_dom; [|exact Hz_ne_x].
+	                intros Hzσm.
+	                apply Hzfresh. repeat apply elem_of_union_l.
+	                change (z ∈ dom (σm : gmap atom value)) in Hzσm.
+	                apply elem_of_dom in Hzσm as [vz Hlook].
+	                change (z ∈ dom
+                          ((((σm : StoreT) : gmap atom value) ∪
+                            ((σe : StoreT) : gmap atom value)) : gmap atom value)).
+	                rewrite elem_of_dom. exists vz.
+	                apply map_lookup_union_Some_raw. left. exact Hlook.
 	      }
 	      apply (proj2 (tm_eval_in_store_open_alias e2 σx x z vx v
 	        Hx_lookup_σx Hzσx

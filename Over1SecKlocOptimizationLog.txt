@@ -30,3 +30,20 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     passed.
   - New focused time observed: `5.55s`.
 
+## Batch 2: `TypeEquivTermTLet.v` store/domain cleanup
+
+- Starting point after Batch 1: `5.55s`.
+- Located remaining slow commands with `COQEXTRAFLAGS=-time`; the largest
+  remaining hotspots were `set_solver` calls in the second half of
+  `tm_fiber_equiv_tlete_body_extension`, especially the store-agreement block
+  that proves `z` is fresh for an updated store.
+- Optimization:
+  - Added local helpers `elem_of_fv_tm_open_fvar` and
+    `notin_store_union_singleton_dom`.
+  - Replaced repeated `set_solver` calls for `a <> x`, `a ∈ fv_tm (tlete ...)`,
+    singleton output-domain exclusion, and `z ∉ dom (σm ∪ {[x := vx]})` with
+    direct FV/domain reasoning.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermTLet.vo`
+    passed.
+  - New focused time observed: `3.58s`.
