@@ -314,6 +314,25 @@ Proof.
   symmetry. apply not_elem_of_dom_1. exact Hnotdom.
 Qed.
 
+Local Lemma open_world_restrict_dom_subset (M X : aset) y :
+  y ∉ X ->
+  (M ∪ {[y]}) ∩ X ⊆ M.
+Proof.
+  intros HyX a Ha.
+  apply elem_of_intersection in Ha as [HaM HaX].
+  apply elem_of_union in HaM as [HaM|Hay]; [exact HaM|].
+  apply elem_of_singleton in Hay. subst a. contradiction.
+Qed.
+
+Local Lemma inter_absorb_l_of_subset (A B : aset) :
+  B ⊆ A ->
+  A ∩ B = B.
+Proof.
+  intros Hsub. apply set_eq. intros a. split.
+  - intros Ha. apply elem_of_intersection in Ha as [_ HaB]. exact HaB.
+  - intros HaB. apply elem_of_intersection. split; [apply Hsub|]; exact HaB.
+Qed.
+
 Local Lemma res_restrict_open_world_eq
     (m my : WfWorldT) X y :
   y ∉ X ->
@@ -393,11 +412,12 @@ Proof.
              change (dom (σ : StoreT) =
                world_dom (res_restrict my X : WorldT)) in Hdomσ.
              rewrite res_restrict_dom, Hdom in Hdomσ.
-             rewrite Hdomσ. intros a Ha. set_solver.
+             rewrite Hdomσ. apply open_world_restrict_dom_subset. exact HyX.
            }
            rewrite storeA_restrict_restrict.
            replace (world_dom (m : WorldT) ∩ dom (σ : StoreT))
-             with (dom (σ : StoreT)) by set_solver.
+             with (dom (σ : StoreT))
+             by (symmetry; apply inter_absorb_l_of_subset; exact Hdomσ).
            exact Hτy_fixed.
       * intros [Hτm Hτfixed].
         destruct Hproj as [Hσproj Hfib].
@@ -418,7 +438,7 @@ Proof.
              change (dom (σ : StoreT) =
                world_dom (res_restrict my X : WorldT)) in Hdomσ.
              rewrite res_restrict_dom, Hdom in Hdomσ.
-             rewrite Hdomσ. intros a Ha. set_solver.
+             rewrite Hdomσ. apply open_world_restrict_dom_subset. exact HyX.
            }
            transitivity (store_restrict τ (dom (σ : StoreT))).
            ++ eapply storeA_restrict_eq_mono; [exact Hdomσ|].
@@ -1100,7 +1120,10 @@ Proof.
             (store_restrict τn X) Hproj_n) as Hdom_nf.
           pose proof (res_fiber_from_projection_world_dom m mfib X
             (store_restrict τm X) Hproj_m) as Hdom_mf.
-          better_set_solver.
+          rewrite res_product_dom.
+          transitivity (world_dom (n : WorldT) ∪ world_dom (m : WorldT)).
+          - exact Hdom_src.
+          - rewrite <- Hdom_nf, <- Hdom_mf. reflexivity.
         }
         exact (storeA_restrict_idemp_eq
           (ρn ∪ ρm : StoreT)

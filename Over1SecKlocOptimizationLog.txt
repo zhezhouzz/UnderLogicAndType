@@ -661,3 +661,28 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - Remaining visible costs are mostly import overhead and many tiny
     result-first opening steps; no single local command remains large enough to
     justify further proof surgery in this file right now.
+
+## Batch 27: `FormulaFiberwise.v` opened-world/product fiber domains
+
+- Baseline from the current focused run:
+  `ContextLogic/theories/FormulaFiberwise.v` rebuilt in about `2.34s` for
+  `1591` lines, about `1.47 s/KLOC`.
+- Concrete hotspots:
+  - a product-fiber domain proof in `res_fiber_product_subset_of_projection`
+    called `better_set_solver` and took about `0.73s`;
+  - two opened-world fiber input-domain side conditions each rebuilt the same
+    fact that `(world_dom m ∪ {[y]}) ∩ X ⊆ world_dom m` under `y ∉ X`.
+- Optimization:
+  - Added local lemmas `open_world_restrict_dom_subset` and
+    `inter_absorb_l_of_subset`.
+  - Replaced the opened-world input-domain set searches with those lemmas.
+  - Replaced the product-fiber `better_set_solver` with direct rewriting via
+    `res_product_dom` and the two fiber-domain equalities.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextLogic/theories/FormulaFiberwise.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: about `1.36s`, about `0.85 s/KLOC`.
+- Deferred:
+  - Remaining local commands are below about `0.10s`; the largest cost is now
+    import overhead plus small freshness side conditions in `FForall/FBWand`.
