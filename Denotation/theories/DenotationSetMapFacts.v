@@ -8,32 +8,6 @@
 
 From Denotation Require Import Notation TypeDenote TypeEquivCore.
 
-Lemma store_restrict_insert_agree_on_subset
-    (σ : StoreT) X Y z (v : value) :
-  Y ⊆ X ->
-  z ∉ dom (σ : StoreT) ->
-  z ∉ X ->
-  store_restrict (<[z := v]> σ) (Y ∪ {[z]}) =
-  store_restrict (<[z := v]> (store_restrict σ X : StoreT)) (Y ∪ {[z]}).
-Proof.
-  intros HYX Hzσ HzX.
-  change (storeA_restrict (<[z := v]> (σ : gmap atom value)) (Y ∪ {[z]}) =
-    storeA_restrict
-      (<[z := v]> (storeA_restrict σ X : gmap atom value)) (Y ∪ {[z]})).
-  transitivity (<[z := v]> (storeA_restrict σ Y : gmap atom value)).
-  - apply storeA_restrict_insert_fresh_union;
-      [apply not_elem_of_dom; exact Hzσ|set_solver].
-  - transitivity (<[z := v]>
-        (storeA_restrict (storeA_restrict σ X : gmap atom value) Y
-          : gmap atom value)).
-    + f_equal.
-      symmetry. apply storeA_restrict_twice_subset. exact HYX.
-    + symmetry.
-      apply storeA_restrict_insert_fresh_union.
-      * apply storeA_restrict_lookup_none_r. exact HzX.
-      * set_solver.
-Qed.
-
 Lemma store_restrict_insert_agree_on_observed
     (σ : StoreT) X Z z (v : value) :
   Z ⊆ X ∪ {[z]} ->
@@ -43,16 +17,45 @@ Lemma store_restrict_insert_agree_on_observed
   store_restrict (<[z := v]> (store_restrict σ X : StoreT)) Z.
 Proof.
   intros HZX Hzσ HzX.
+  assert (Hbase :
+      store_restrict (<[z := v]> σ) (X ∪ {[z]}) =
+      store_restrict (<[z := v]> (store_restrict σ X : StoreT)) (X ∪ {[z]})).
+  {
+    change (storeA_restrict (<[z := v]> (σ : gmap atom value)) (X ∪ {[z]}) =
+      storeA_restrict
+        (<[z := v]> (storeA_restrict σ X : gmap atom value)) (X ∪ {[z]})).
+    transitivity (<[z := v]> (storeA_restrict σ X : gmap atom value)).
+    - apply storeA_restrict_insert_fresh_union;
+        [apply not_elem_of_dom; exact Hzσ|set_solver].
+    - transitivity (<[z := v]>
+          (storeA_restrict
+            (storeA_restrict σ X : gmap atom value) X : gmap atom value)).
+      + f_equal.
+        symmetry.
+        apply storeA_restrict_twice_subset.
+        set_solver.
+      + symmetry.
+        apply storeA_restrict_insert_fresh_union.
+        * apply storeA_restrict_lookup_none_r. exact HzX.
+        * set_solver.
+  }
   transitivity
     (store_restrict (store_restrict (<[z := v]> σ) (X ∪ {[z]})) Z).
   - symmetry. apply storeA_restrict_twice_subset. exact HZX.
-  - transitivity
-      (store_restrict
-        (store_restrict (<[z := v]> (store_restrict σ X : StoreT))
-          (X ∪ {[z]})) Z).
-    + f_equal.
-      apply store_restrict_insert_agree_on_subset; set_solver.
-    + apply storeA_restrict_twice_subset. exact HZX.
+  - rewrite Hbase.
+    apply storeA_restrict_twice_subset. exact HZX.
+Qed.
+
+Lemma store_restrict_insert_agree_on_subset
+    (σ : StoreT) X Y z (v : value) :
+  Y ⊆ X ->
+  z ∉ dom (σ : StoreT) ->
+  z ∉ X ->
+  store_restrict (<[z := v]> σ) (Y ∪ {[z]}) =
+  store_restrict (<[z := v]> (store_restrict σ X : StoreT)) (Y ∪ {[z]}).
+Proof.
+  intros HYX Hzσ HzX.
+  apply store_restrict_insert_agree_on_observed; set_solver.
 Qed.
 
 Lemma store_lookup_eq_of_restrict_eq
@@ -74,15 +77,11 @@ Lemma store_lookup_eq_of_restrict_eq_full
   σbig !! x = σsmall !! x.
 Proof.
   intros Hx Heq.
-  change (storeA_restrict σbig X = σsmall) in Heq.
-  apply option_eq. intros v. split; intros Hlook.
-  - assert (Hrestr : (storeA_restrict σbig X : StoreT) !! x = Some v).
-    { apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hx]. }
-    rewrite <- Heq. exact Hrestr.
-  - replace σsmall with (storeA_restrict σbig X) in Hlook
-      by exact Heq.
-    apply storeA_restrict_lookup_some in Hlook as [_ Hlook].
-    exact Hlook.
+  eapply store_lookup_eq_of_restrict_eq; [exact Hx|].
+  rewrite <- Heq.
+  symmetry.
+  apply storeA_restrict_twice_subset.
+  set_solver.
 Qed.
 
 Ltac denotation_set_norm :=
