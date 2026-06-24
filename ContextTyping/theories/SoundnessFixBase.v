@@ -201,9 +201,9 @@ Proof.
       eapply elem_of_dom_2.
       apply storeA_restrict_lookup_some_2; [exact Hxlookup_rel|].
       unfold relevant_lvars.
-      cbn [tm_lvars tm_lvars_at value_lvars_at context_ty_lvars
-        context_ty_lvars_at qual_vars qual_lvars].
-      set_solver.
+      apply elem_of_union_r.
+      cbn [tm_lvars tm_lvars_at value_lvars_at].
+      apply elem_of_singleton. reflexivity.
     }
     pose proof (expr_total_formula_to_atom_world (tret (vfvar x)) m Htotal)
       as Htotal_atom.

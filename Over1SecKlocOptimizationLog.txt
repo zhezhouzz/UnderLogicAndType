@@ -128,3 +128,18 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
     (`ty_denote_gas_tapp_result_alias`) and `0.83s`
     (`ty_denote_under_comma_bind_inv`), so no single multi-second solver
     remains in this file.
+
+## Batch 7: `SoundnessFixBase.v`
+
+- Baseline from `CompileTimeStats.txt`: `6.39s`, `14.01 s/KLOC`.
+- `COQEXTRAFLAGS=-time` showed one dominant hotspot:
+  - a `set_solver` in `ty_denote_lt_arg_fiber` costing about `5.03s`.
+  - The goal was only the fact that `LVFree x` belongs to
+    `relevant_lvars τlt (tret (vfvar x))`, via the term-lvars component.
+- Optimization:
+  - Replaced the broad `set_solver` after unfolding `relevant_lvars` with the
+    direct proof through the right union branch and singleton membership.
+- Verification:
+  - `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessFixBase.vo`
+    passed.
+  - New focused time observed: `0.94s`.
