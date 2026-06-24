@@ -634,3 +634,30 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - The remaining cost in `Soundness.v` is mostly import overhead and many
     small proof steps; further sub-1s/KLOC progress likely needs splitting the
     main dispatch file or moving more orchestration lemmas into case files.
+
+## Batch 26: `TypePersistWandForward.v` y-fiber singleton support
+
+- Baseline from the current focused run:
+  `Denotation/theories/TypePersistWandForward.v` rebuilt in about `1.06s`
+  for about 931 lines, about `1.14 s/KLOC`.
+- Concrete hotspots:
+  - `wand_arg_fiber_models_persist_over_arg` contained two repeated
+    `{y}`-fiber side-condition proofs: one for the projected store domain and
+    one for the singleton restriction.  The local `set_solver` calls took about
+    `0.06s` to `0.07s` each in the larger proof context.
+- Optimization:
+  - Added local helpers `over_y_fiber_store_dom` and
+    `over_y_fiber_restrict_singleton` to package the closed-over-argument
+    `{y}`-fiber shape.
+  - Replaced the inline assertions in
+    `wand_arg_fiber_models_persist_over_arg` with direct `pose proof` calls to
+    those helpers.
+- Verification:
+  - `timeout 50s make TIMED=1 Denotation/theories/TypePersistWandForward.vo`
+    passed.
+  - Focused `COQEXTRAFLAGS=-time` run passed.
+  - New focused time observed: about `0.90s`, now below `1 s/KLOC`.
+- Deferred:
+  - Remaining visible costs are mostly import overhead and many tiny
+    result-first opening steps; no single local command remains large enough to
+    justify further proof surgery in this file right now.
