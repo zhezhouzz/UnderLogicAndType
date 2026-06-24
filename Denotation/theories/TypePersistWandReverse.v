@@ -18,6 +18,12 @@ Local Ltac persist_outer_fresh_from H :=
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
 
+Local Lemma union_singleton_empty_r (X : aset) y :
+  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
+Proof.
+  set_solver.
+Qed.
+
 Lemma wand_value_ret_fvar_persist_over_arg_to_over_arg_over_result
     gas_src gas_tgt (Σ : lty_env) bx φx br φr f Tf
     (m : WfWorldT) :
@@ -77,7 +83,7 @@ Proof.
   {
     rewrite formula_open_ty_denote_gas_singleton in Harg_open.
     2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-    2:{ cbn [fv_tm fv_value]. set_solver. }
+    2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
     2:{
       rewrite cty_shift_fv.
       unfold fv_cty, qual_dom in *.
@@ -193,7 +199,7 @@ Proof.
     {
       rewrite formula_open_ty_denote_gas_singleton.
       2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-      2:{ cbn [fv_tm fv_value]. set_solver. }
+      2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
       2:{
         rewrite cty_shift_fv.
         unfold fv_cty, qual_dom in *.
@@ -227,7 +233,7 @@ Proof.
 	      rewrite res_product_dom in Hdom_prod.
 	      replace (world_dom (m : WorldT) ∪ ({[y]} ∪ ∅))
 	        with (world_dom (m : WorldT) ∪ {[y]}) in Hdom_prod
-	        by set_solver.
+	        by (symmetry; apply union_singleton_empty_r).
 	      exact Hdom_prod.
 	    }
     pose proof (res_models_fbwand_open_one_named_fresh
@@ -340,7 +346,7 @@ Proof.
   {
     rewrite formula_open_ty_denote_gas_singleton in Harg_open.
     2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-    2:{ cbn [fv_tm fv_value]. set_solver. }
+    2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
     2:{
       rewrite cty_shift_fv.
       unfold fv_cty, qual_dom in *.
@@ -456,7 +462,7 @@ Proof.
     {
       rewrite formula_open_ty_denote_gas_singleton.
       2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
-      2:{ cbn [fv_tm fv_value]. set_solver. }
+      2:{ cbn [fv_tm fv_value]. apply not_elem_of_empty. }
       2:{
         rewrite cty_shift_fv.
         unfold fv_cty, qual_dom in *.
@@ -484,13 +490,13 @@ Proof.
         world_dom (res_product nfib m Hc_fib : WorldT) =
           world_dom (m : WorldT) ∪ {[y]}).
     {
-      rewrite res_product_dom.
-      rewrite (res_fiber_from_projection_world_dom n nfib ({[y]} : aset)
-        σn Hproj_n).
-      rewrite res_product_dom in Hdom_prod.
-      replace (world_dom (m : WorldT) ∪ ({[y]} ∪ ∅))
-        with (world_dom (m : WorldT) ∪ {[y]}) in Hdom_prod
-        by set_solver.
+	      rewrite res_product_dom.
+	      rewrite (res_fiber_from_projection_world_dom n nfib ({[y]} : aset)
+	        σn Hproj_n).
+	      rewrite res_product_dom in Hdom_prod.
+	      replace (world_dom (m : WorldT) ∪ ({[y]} ∪ ∅))
+	        with (world_dom (m : WorldT) ∪ {[y]}) in Hdom_prod
+	        by (symmetry; apply union_singleton_empty_r).
       exact Hdom_prod.
     }
     pose proof (res_models_fbwand_open_one_named_fresh

@@ -47,3 +47,22 @@ This log tracks optimization batches driven by `CompileTimeStats.txt`.
   - `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTermTLet.vo`
     passed.
   - New focused time observed: `3.58s`.
+
+## Batch 3: `TypePersistWandReverse.v`
+
+- Baseline from `CompileTimeStats.txt`: `46.78s`, `38.09 s/KLOC`.
+- A `COQEXTRAFLAGS=-time` run timed out at 90s, but the partial log showed
+  the completed dominant hotspot:
+  - `replace (world_dom m ∪ ({[y]} ∪ ∅)) with ... by set_solver`,
+    costing about `21.94s`.
+  - Four repeated `cbn [fv_tm fv_value]; set_solver` side conditions for
+    empty term FV, each around `1.3s` in the partial log.
+- Optimization:
+  - Added local lemma `union_singleton_empty_r`.
+  - Replaced the expensive domain-association `set_solver` calls with the
+    local lemma.
+  - Replaced empty-FV set searches with `not_elem_of_empty`.
+- Verification:
+  - `timeout 80s make TIMED=1 Denotation/theories/TypePersistWandReverse.vo`
+    passed.
+  - New focused time observed: `0.99s`.
