@@ -59,35 +59,7 @@ Lemma res_fiber_from_projection_fresh_eq
   res_fiber_from_projection m X σ mfib ->
   mfib = m.
 Proof.
-  intros Hdisj Hfib.
-  apply wfworld_ext, world_ext.
-  - rewrite (res_fiber_from_projection_world_dom m mfib X σ Hfib).
-    reflexivity.
-  - intros τ. split.
-    + intros Hτ.
-      eapply res_fiber_from_projection_store_source; eauto.
-    + intros Hτ.
-      destruct Hfib as [Hσproj Hfib_eq].
-      change ((mfib : WorldT) = raw_fiber (m : WorldT) σ) in Hfib_eq.
-      rewrite Hfib_eq.
-      split; [exact Hτ|].
-      assert (Hdomσ : dom (σ : StoreT) = ∅).
-      {
-        pose proof (wfworld_store_dom (res_restrict m X) σ Hσproj)
-          as Hdom.
-        change (dom (σ : StoreT) =
-          world_dom (res_restrict m X : WorldT)) in Hdom.
-        rewrite Hdom, res_restrict_dom.
-        clear -Hdisj. set_solver.
-      }
-      change (storeA_restrict τ (dom (σ : StoreT)) = (σ : StoreT)).
-      rewrite Hdomσ.
-      rewrite storeA_restrict_empty_set.
-      symmetry.
-      apply map_empty. intros a.
-      apply not_elem_of_dom.
-      change (a ∉ dom (σ : StoreT)).
-      rewrite Hdomσ. set_solver.
+  apply ResourceInterface.res_fiber_from_projection_fresh_eq.
 Qed.
 
 Local Lemma res_fiber_from_projection_store_restrict_input

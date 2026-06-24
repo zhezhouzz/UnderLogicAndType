@@ -114,3 +114,7 @@ timeout 180s make TIMED=1
 - [x] Split Wand persistence again into forward and reverse files.  The reverse
   file contains the hard joinable-result direction and is now isolated for any
   future proof simplification or `-time` pass.
+- [x] Confirmed the Logic/BasicDenotation joinability wrappers still compile
+  after lowering fresh-domain fiber collapse to `ResourceInterface`.  The
+  persistence layer can now rely on `FormulaFiberwise` without carrying that
+  resource proof locally.

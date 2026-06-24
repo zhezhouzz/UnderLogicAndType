@@ -109,3 +109,7 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
   conditions.  This keeps the hard semantic proof unchanged while removing
   duplicated `clear ...; set_solver` blocks around fresh argument/result
   binders.  Verified `TypePersistWandReverse.vo`.
+- [x] Moved `res_fiber_from_projection_fresh_eq` to the Resource layer.  This
+  removes another raw `world_ext`/empty-store proof from `FormulaFiberwise.v`
+  and makes fresh-domain fiber collapse available to future Logic and
+  Denotation proofs without unfolding fiber internals.

@@ -140,3 +140,8 @@ timeout 50s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo
   `expr_result_formula_at_models_elim` theorem it depends on.  The Soundness
   name remains as a compatibility wrapper.  Verified:
   `TypeEquivFiberBaseResult.vo` and `SoundnessPersist.vo`.
+- [x] Lowered the fresh-domain fiber collapse fact
+  `res_fiber_from_projection_fresh_eq` from `FormulaFiberwise.v` to
+  `ResourceInterface.v`.  The Logic-layer name remains as a compatibility
+  wrapper.  Verified: `ResourceInterface.vo`, `FormulaFiberwise.vo`, and
+  `BasicFormulaFiberwise.vo`.
