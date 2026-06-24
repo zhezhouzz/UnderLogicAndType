@@ -351,7 +351,11 @@ Proof.
     change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
     pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
     unfold ext_in in Hin. rewrite Hin in Hin_sub.
-    set_solver.
+    apply set_eq. intros a. split.
+    - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+    - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+      change (a ∈ dom (σm : StoreT)).
+      rewrite Hdomσm. exact (Hin_sub a Ha).
   }
   assert (HFσX : ext_rel Fx σX we).
   {
@@ -374,7 +378,11 @@ Proof.
     pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
     change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
     pose proof (res_extend_by_input_dom m Fx mx Hext) as Hin_sub.
-    set_solver.
+    apply set_eq. intros a. split.
+    - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+    - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+      change (a ∈ dom (σm : StoreT)).
+      rewrite Hdomσm. exact (Hin_sub a Ha).
   }
   assert (Hσ_restrict :
     store_restrict ((σm : StoreT) ∪ σe) (fv_tm e) =
@@ -382,7 +390,7 @@ Proof.
   {
     apply storeA_restrict_union_ignore_r.
     change (dom (σe : StoreT) ## fv_tm e).
-    rewrite Hσe_dom. set_solver.
+    rewrite Hσe_dom. apply disjoint_singleton_l. exact Hx_fv.
   }
   assert (Htotal : exists vx, tm_eval_in_store σX e vx).
   {
@@ -404,7 +412,9 @@ Proof.
     rewrite Hout in Hfresh_out.
     pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
     change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-    rewrite <- Hdomσm in Hfresh_out. set_solver.
+    apply disjoint_singleton_l in Hfresh_out.
+    change (x ∉ dom (σm : StoreT)).
+    rewrite Hdomσm. exact Hfresh_out.
   }
   exists u. split; [|].
   - change (((σm : gmap atom value) ∪ ({[x := u]} : gmap atom value)) !! x =
@@ -933,7 +943,10 @@ Proof.
         gmap atom value) = lvars_fv (tm_lvars e)).
       rewrite storeA_restrict_dom.
       rewrite (wfworld_store_dom m σ Hσ).
-      set_solver.
+      apply set_eq. intros a. split.
+      - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+      - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+        exact (HDm a Ha).
     }
     assert (HlcQ : lc_lvars (tm_lvars e ∪ {[x]})).
     {
@@ -989,7 +1002,7 @@ Proof.
         exact Hlookup.
       * apply (proj1 (expr_eval_in_store_restrict_lvars e
           (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
-          v ltac:(set_solver))).
+          v ltac:(intros a Ha; apply elem_of_union_l; exact Ha))).
         exact Heval.
   }
   split; [exact Hscope|].
@@ -1075,9 +1088,12 @@ Proof.
 	    change (dom ((store_restrict σ (lvars_fv (tm_lvars e)) : StoreT)
 	      : gmap atom value) =
 	      lvars_fv (tm_lvars e)).
-    rewrite storeA_restrict_dom.
-    rewrite (wfworld_store_dom m σ Hσ).
-    set_solver.
+	    rewrite storeA_restrict_dom.
+	    rewrite (wfworld_store_dom m σ Hσ).
+	    apply set_eq. intros a. split.
+	    - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+	    - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+	      exact (HDm a Ha).
   }
   assert (Hyfresh : LVFree y ∉ tm_lvars e).
   {

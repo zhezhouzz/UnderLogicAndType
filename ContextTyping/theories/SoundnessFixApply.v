@@ -207,85 +207,34 @@ Proof.
   }
   assert (Htotal_body : expr_total_on_atom_world (tret body) my).
   { eapply ty_denote_gas_zero_total_atom_world. exact Hzero_body. }
-  assert (Hres_at :
-      mz ⊨ expr_result_formula_at (dom Σrel) (tret body) (LVFree z)).
-  {
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (my : WorldT)) (F := Fz) (m := my).
-    - subst Σrel. apply relevant_env_closed.
-      subst Δy. apply lty_env_closed_insert_free.
-      apply atom_store_to_lvar_store_closed.
-    - pose proof Hguard_body as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [_ [Hbasic _]]].
-      apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-      rewrite (tm_lvars_lc_eq_atoms (tret body)).
-      + eapply basic_tm_has_ltype_lvars. exact Hty.
-      + constructor. exact Hlc_body.
-    - pose proof Hguard_body as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [Hworld [_ _]]].
-      apply basic_world_formula_models_iff in Hworld as [HlcD [HdomD _]].
-      intros v Hv.
-      destruct v as [k|a].
-      + exfalso. exact (HlcD (LVBound k) Hv).
-      + unfold lvars_of_atoms. apply elem_of_map.
-        exists a. split; [reflexivity|].
-        apply HdomD. apply lvars_fv_elem. exact Hv.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      exact (Hzmy HaD).
-    - intros a Ha. exact Ha.
-    - exact HFz.
-    - exact Hextz.
-    - exact Htotal_body.
-  }
-  assert (Hres_open :
-      mz ⊨ formula_open 0 z
-        (expr_result_formula_at (lvars_shift_from 0 (dom Σrel))
-          (tm_shift 0 (tret body)) (LVBound 0))).
-  {
-    subst Σrel.
-    eapply result_first_outer_result_ret_value_at_open.
-    - subst Δy. apply lty_env_closed_insert_free.
-      apply atom_store_to_lvar_store_closed.
-    - exact Hlc_body.
-    - exact Hzbody.
-    - exact HzΣrel.
-    - exact Hres_at.
-  }
-  pose proof (result_first_forall_impl_open_elim my mz z _ _
-    Hbody_outer Hzmy Hmz_dom Hmz_restrict Hres_open) as Hvalue.
-  assert (Hres_plain :
-      mz ⊨ expr_result_formula (tret body) (LVFree z)).
-  {
-    unfold expr_result_formula.
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (my : WorldT)) (F := Fz) (m := my).
-    - rewrite (tm_lvars_lc_eq_atoms (tret body)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha _]]. inversion Ha. exact I.
-      + constructor. exact Hlc_body.
-    - reflexivity.
-    - rewrite (tm_lvars_lc_eq_atoms (tret body)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha HaIn]].
-        inversion Ha. subst v.
-        apply elem_of_map. exists a. split; [reflexivity|].
-        apply Hbody_fv_my. exact HaIn.
-      + constructor. exact Hlc_body.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      exact (Hzmy HaD).
-    - intros a Ha. exact Ha.
-    - exact HFz.
-    - exact Hextz.
-    - exact Htotal_body.
-  }
+	  assert (Hres_at :
+	      mz ⊨ expr_result_formula_at (dom Σrel) (tret body) (LVFree z)).
+	  {
+	    eapply expr_result_formula_at_env_of_result_extends_from_ty_guard_on.
+	    - exact HFz.
+	    - exact Hextz.
+	    - subst Σrel. exact Hguard_body.
+	  }
+  pose proof (res_models_forall_open_named_fresh
+    my mz z _ Hbody_outer Hzmy Hmz_dom Hmz_restrict) as Hbody_open.
+  cbn [formula_open] in Hbody_open.
+	  rewrite (formula_open_result_first_expr_result_formula_at_shift0
+	    z (dom Σrel) (tret body)) in Hbody_open.
+	  2:{ subst Σrel. apply relevant_env_closed.
+	      subst Δy. apply lty_env_closed_insert_free.
+	      apply atom_store_to_lvar_store_closed. }
+	  2:{ exact HzΣrel. }
+	  2:{ constructor. exact Hlc_body. }
+	  2:{ cbn [fv_tm fv_value]. exact Hzbody. }
+	  pose proof (res_models_impl_elim _ _ _ Hbody_open Hres_at) as Hvalue.
+	  assert (Hres_plain :
+	      mz ⊨ expr_result_formula (tret body) (LVFree z)).
+	  {
+	    eapply expr_result_formula_of_result_extends_on_from_ty_guard.
+	    - exact HFz.
+	    - exact Hextz.
+	    - subst Σrel. exact Hguard_body.
+	  }
   exists z, mz, Fz.
   split; [exact Hzfresh|].
   split; [exact Hmz_dom|].

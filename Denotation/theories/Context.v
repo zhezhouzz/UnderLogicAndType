@@ -1436,46 +1436,51 @@ Proof.
   set (y := fresh_for
     (world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
       fv_tm (tret (vfvar x)))).
-  assert (Hyfresh :
-      y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
-        fv_tm (tret (vfvar x))).
-  { subst y. apply fresh_for_not_in. }
-  assert (Hy_m : y ∉ world_dom (m : WorldT)) by set_solver.
-  assert (Hy_D : LVFree y ∉ Dres).
-  {
-    intros HyD.
-    assert (HyDfv : y ∈ lvars_fv Dres).
-    { apply lvars_fv_elem. exact HyD. }
-    set_solver.
-  }
+	  assert (Hyfresh :
+	      y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
+	        fv_tm (tret (vfvar x))).
+	  { subst y. apply fresh_for_not_in. }
+	  assert (Hy_m : y ∉ world_dom (m : WorldT)).
+	  { intros Hy. apply Hyfresh. repeat apply elem_of_union_l. exact Hy. }
+	  assert (Hy_D : LVFree y ∉ Dres).
+	  {
+	    intros HyD.
+	    assert (HyDfv : y ∈ lvars_fv Dres).
+	    { apply lvars_fv_elem. exact HyD. }
+	    apply Hyfresh. rewrite !elem_of_union. left. right. exact HyDfv.
+	  }
   assert (Hlc_D : lc_lvars Dres).
   { subst Dres. apply relevant_env_closed.
     subst Σx. apply atom_store_to_lvar_store_closed. }
   assert (Htm_D : tm_lvars (tret (vfvar x)) ⊆ Dres).
-  {
-    subst Dres Σx.
-    intros v Hv.
-    unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
-    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-      value_lvars_at lvar_value_keys] in Hv.
-    assert (Hvx : v = LVFree x) by set_solver.
-    subst v.
-    apply elem_of_dom.
-    exists (erase_ty (CTPersist τ)).
-    apply storeA_restrict_lookup_some_2.
-    - rewrite atom_store_to_lvar_store_lookup_free.
-      apply map_lookup_insert.
-    - cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-      set_solver.
-  }
+	  {
+	    subst Dres Σx.
+	    intros v Hv.
+	    unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
+	    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+	      value_lvars_at lvar_value_keys] in Hv.
+	    assert (Hvx : v = LVFree x).
+	    {
+	      apply elem_of_singleton in Hv. exact Hv.
+	    }
+	    subst v.
+	    apply elem_of_dom.
+	    exists (erase_ty (CTPersist τ)).
+	    apply storeA_restrict_lookup_some_2.
+	    - rewrite atom_store_to_lvar_store_lookup_free.
+	      apply map_lookup_insert.
+	    - cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+	      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+	  }
   destruct (expr_result_extension_witness_on_exists
     (lvars_fv Dres) (tret (vfvar x)) y) as [Fx HFx].
   - intros a Ha.
     apply lvars_fv_elem.
     apply Htm_D.
     apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar x))) a)).
-    rewrite tm_lvars_fv. exact Ha.
-  - intros HyD_atoms. set_solver.
+	    rewrite tm_lvars_fv. exact Ha.
+		  - intros HyD_atoms.
+        apply Hyfresh. rewrite !elem_of_union. left. right. exact HyD_atoms.
   - destruct (res_extend_by_exists m Fx) as [my Hext].
     { constructor.
       - change (ext_in Fx ⊆ world_dom (m : WorldT)).
@@ -1509,33 +1514,22 @@ Proof.
         + intros a Ha. apply lvars_fv_elem. apply Htm_D.
           apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar x))) a)).
           rewrite tm_lvars_fv. exact Ha.
-        + intros HyD_atoms. set_solver.
+	        + intros HyD_atoms.
+            apply Hyfresh. rewrite !elem_of_union. left. right. exact HyD_atoms.
         + split; [exact Hin_Fx|exact Hout_Fx].
         + exact Hrel_Fx.
       - exact Hext.
       - apply expr_total_formula_to_atom_world. exact Htotal.
     }
-    assert (Hres_open :
-        my ⊨ formula_open 0 y
-          (expr_result_formula_at
-            (lvars_shift_from 0
-              (dom (relevant_env Σx (CTPersist τ) (tret (vfvar x)))))
-            (tm_shift 0 (tret (vfvar x))) (LVBound 0))).
-    {
-      subst Dres.
-	      eapply result_first_outer_result_ret_value_at_open.
-	      - subst Σx. apply atom_store_to_lvar_store_closed.
-	      - constructor.
-	      - cbn [fv_value].
-	        intros Hyx. apply Hyfresh.
-	        clear -Hyx. set_solver.
-	      - intros Hyrel.
-	        apply Hy_D. apply lvars_fv_elem. exact Hyrel.
-	      - exact Hres_at.
-	    }
     pose proof (ty_denote_gas_persist_open_result
-      (cty_depth τ) Σx τ (tret (vfvar x)) y m my Hden
-      Hy_m Hdom_my' Hbase_my Hres_open) as Hpersist_open.
+      (cty_depth τ) Σx τ (tret (vfvar x)) y m my
+      ltac:(subst Σx; apply atom_store_to_lvar_store_closed)
+      ltac:(constructor; constructor)
+      ltac:(cbn [fv_tm fv_value]; intros Hyx; apply Hyfresh;
+        clear -Hyx; set_solver)
+      ltac:(subst Dres; intros Hyrel; apply Hy_D;
+        apply lvars_fv_elem; exact Hyrel)
+      Hden Hy_m Hdom_my' Hbase_my Hres_at) as Hpersist_open.
 	    rewrite formula_open_persist in Hpersist_open.
 	    rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.
 		    2:{
@@ -1644,12 +1638,12 @@ Proof.
 	      - apply elem_of_singleton in Hay. subst a.
 	        exists (erase_ty (CTPersist τ)).
 	        apply storeA_restrict_lookup_some_2.
-	        + apply lty_env_open_one_typed_bind_lookup_current.
-	        + unfold relevant_lvars.
-	          apply elem_of_union_r.
-	          rewrite <- lvars_fv_elem, tm_lvars_fv.
-	          cbn [fv_tm fv_value open_tm open_value].
-	          set_solver.
+		        + apply lty_env_open_one_typed_bind_lookup_current.
+			        + unfold relevant_lvars.
+			          apply elem_of_union_r.
+			          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
+                  open_tm open_value].
+			          apply elem_of_singleton. reflexivity.
 	    }
 	    assert (Hsingle_Ay :
 	        res_restrict my (fv_cty τ ∪ {[y]}) =
@@ -1659,12 +1653,19 @@ Proof.
 	            (store_restrict σy (fv_cty τ ∪ {[y]}))) : WfWorldT)).
 	    {
 	      rewrite <- Hdomσy in Hsingle_y.
-	      transitivity (res_restrict (res_restrict my (dom (σy : StoreT)))
-	        (fv_cty τ ∪ {[y]})).
-	      - rewrite res_restrict_restrict_eq.
-	        replace (dom (σy : StoreT) ∩ (fv_cty τ ∪ {[y]}))
-	          with (fv_cty τ ∪ {[y]}) by set_solver.
-	        reflexivity.
+		      transitivity (res_restrict (res_restrict my (dom (σy : StoreT)))
+		        (fv_cty τ ∪ {[y]})).
+		      - rewrite res_restrict_restrict_eq.
+		        replace (dom (σy : StoreT) ∩ (fv_cty τ ∪ {[y]}))
+		          with (fv_cty τ ∪ {[y]}).
+			        2:{
+			          apply set_eq. intros a. split.
+			          - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+			            exact (HAy_σy a Ha).
+			          - intros Ha. apply elem_of_intersection in Ha as [_ Ha].
+			            exact Ha.
+			        }
+		        reflexivity.
 	      - rewrite Hsingle_y. apply res_restrict_singleton_world.
 	    }
 	    pose proof (res_restrict_singleton_pullback_ret_fvar_result

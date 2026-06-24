@@ -745,18 +745,24 @@ Proof.
     eapply res_extend_by_full_input_frame_restrict;
       [exact Hrestrict_m0|exact HFz_in|exact Hext0|exact Hext].
   }
-  assert (Hx_mz0 : x ∉ world_dom (mz0 : WorldT)).
-  {
-    pose proof (res_extend_by_dom m0 Fz mz0 Hext0) as Hdom.
-    rewrite Hdom, HFz_out. set_solver.
-  }
-  assert (Hmz_dom_x :
-      world_dom (mz : WorldT) = world_dom (mz0 : WorldT) ∪ {[x]}).
-  {
-    pose proof (res_extend_by_dom m0 Fz mz0 Hext0) as Hdom0.
-    rewrite Hmz_dom, Hdom0, HFz_out, Hdom_m0_insert.
-    set_solver.
-  }
+	  assert (Hx_mz0 : x ∉ world_dom (mz0 : WorldT)).
+	  {
+	    eapply res_extend_by_singleton_output_preserves_notin.
+	    - exact Hx_m0.
+	    - intros Hxz. apply Hzx. symmetry. exact Hxz.
+	    - exact HFz_out.
+	    - exact Hext0.
+	  }
+	  assert (Hmz_dom_x :
+	      world_dom (mz : WorldT) = world_dom (mz0 : WorldT) ∪ {[x]}).
+	  {
+	    eapply res_extend_by_same_singleton_output_open_world_frame.
+	    - exact Hdom_m0_insert.
+	    - intros Hxz. apply Hzx. symmetry. exact Hxz.
+	    - exact HFz_out.
+	    - exact Hext0.
+	    - exact Hext.
+	  }
   assert (Hguard0 :
       m0 ⊨ ty_guard_formula Σrel (CTArrow τx τ) (tret v1)).
   {
@@ -799,89 +805,32 @@ Proof.
     m0 mz0 Fz z Hext0 HFz_out) as [Hmz0_dom Hmz0_restrict].
   specialize (Houter_open Hmz0_dom Hmz0_restrict).
   cbn [formula_open] in Houter_open.
-  assert (Hres_at :
-      mz0 ⊨ expr_result_formula_at (dom Σrel) (tret v1) (LVFree z)).
-  {
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (m0 : WorldT)) (F := Fz) (m := m0).
-    - subst Σrel. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
-    - pose proof Hguard0 as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [_ [Hbasic _]]].
-      apply expr_basic_typing_formula_models_iff in Hbasic
-        as [_ [_ Hty]].
-      rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      2:{ constructor. eapply context_typing_wf_ret_lc_value.
-          exact Hwf_fun. }
-      eapply basic_tm_has_ltype_lvars. exact Hty.
-    - pose proof Hguard0 as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [Hworld [_ _]]].
-      apply basic_world_formula_models_iff in Hworld
-        as [HlcD [HdomD _]].
-      intros v Hv.
-      destruct v as [k|a].
-      + exfalso. exact (HlcD (LVBound k) Hv).
-      + unfold lvars_of_atoms. apply elem_of_map.
-        exists a. split; [reflexivity|].
-        apply HdomD. apply lvars_fv_elem. exact Hv.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      subst z. better_set_solver.
-    - set_solver.
-    - exact HFz.
-    - exact Hext0.
-    - exact Htotal0.
-  }
-  assert (Hres_open :
-      mz0 ⊨ formula_open 0 z
-        (expr_result_formula_at
-          (lvars_shift_from 0 (dom Σrel))
-          (tm_shift 0 (tret v1)) (LVBound 0))).
-  {
-    subst Σrel.
-    eapply result_first_outer_result_ret_value_at_open.
-    - apply atom_store_to_lvar_store_closed.
-    - eapply context_typing_wf_ret_lc_value. exact Hwf_fun.
-    - subst z. better_set_solver.
-    - exact HzΣrel.
-    - exact Hres_at.
-  }
-  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_open)
-    as Hvalue.
-  assert (Hres_expr_mz0 :
-      mz0 ⊨ expr_result_formula (tret v1) (LVFree z)).
-  {
-    unfold expr_result_formula.
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (m0 : WorldT)) (F := Fz) (m := m0).
-    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha _]]. inversion Ha. exact I.
-      + constructor. eapply context_typing_wf_ret_lc_value.
-        exact Hwf_fun.
-    - reflexivity.
-    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha HaIn]].
-        inversion Ha. subst v.
-        apply elem_of_map. exists a. split; [reflexivity|].
-        apply Hfv_v1_m0. exact HaIn.
-      + constructor. eapply context_typing_wf_ret_lc_value.
-        exact Hwf_fun.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      subst z. better_set_solver.
-    - set_solver.
-    - exact HFz.
-    - exact Hext0.
-    - exact Htotal0.
-  }
+	  assert (Hres_at :
+	      mz0 ⊨ expr_result_formula_at (dom Σrel) (tret v1) (LVFree z)).
+	  {
+	    eapply expr_result_formula_at_env_of_result_extends_from_ty_guard_on.
+	    - exact HFz.
+	    - exact Hext0.
+	    - subst Σrel. exact Hguard0.
+	  }
+	  rewrite (formula_open_result_first_expr_result_formula_at_shift0
+	    z (dom Σrel) (tret v1)) in Houter_open.
+	  2:{ subst Σrel. apply relevant_env_closed.
+	      apply atom_store_to_lvar_store_closed. }
+	  2:{ exact HzΣrel. }
+	  2:{ constructor. eapply context_typing_wf_ret_lc_value.
+	      exact Hwf_fun. }
+	  2:{ cbn [fv_tm fv_value]. clear -Hzfresh; better_set_solver. }
+	  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_at)
+	    as Hvalue.
+	  assert (Hres_expr_mz0 :
+	      mz0 ⊨ expr_result_formula (tret v1) (LVFree z)).
+	  {
+	    eapply expr_result_formula_of_result_extends_on_from_ty_guard.
+	    - exact HFz.
+	    - exact Hext0.
+	    - subst Σrel. exact Hguard0.
+	  }
   assert (Hres_expr_mz :
       mz ⊨ expr_result_formula (tret v1) (LVFree z)).
   {

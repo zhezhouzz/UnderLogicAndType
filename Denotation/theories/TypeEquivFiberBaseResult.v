@@ -647,11 +647,14 @@ Proof.
   assert (Hproj_dom : dom (σproj : StoreT) = lvars_fv D).
   {
     subst σproj.
-    change (dom ((store_restrict σ (lvars_fv D) : StoreT)
-      : gmap atom value) = lvars_fv D).
-    rewrite storeA_restrict_dom.
-    rewrite (wfworld_store_dom m σ Hσ).
-    set_solver.
+	    change (dom ((store_restrict σ (lvars_fv D) : StoreT)
+	      : gmap atom value) = lvars_fv D).
+	    rewrite storeA_restrict_dom.
+	    rewrite (wfworld_store_dom m σ Hσ).
+	    apply set_eq. intros a. rewrite elem_of_intersection.
+	    split.
+	    - intros [_ Ha]. exact Ha.
+	    - intros Ha. split; [exact (HDm a Ha)|exact Ha].
   }
   pose proof (expr_result_residual_singleton_on D e y σproj
     HlcD HeD HyD Hproj_dom) as HR_single.
@@ -862,10 +865,10 @@ Proof.
   exists v. split.
   - apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
     exact Hlookup.
-  - apply (proj1 (expr_eval_in_store_restrict_lvars e
-      (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
-      v ltac:(set_solver))).
-    exact Heval.
+	  - apply (proj1 (expr_eval_in_store_restrict_lvars e
+	      (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
+	      v ltac:(intros a Ha; apply elem_of_union_l; exact Ha))).
+	    exact Heval.
 Qed.
 
 Lemma expr_result_formula_at_ret_value_closed_result
@@ -1021,10 +1024,10 @@ Proof.
   exists v. split.
   - apply storeA_restrict_lookup_some in Hlookup as [_ Hlookup].
     exact Hlookup.
-  - apply (proj1 (expr_eval_in_store_restrict_lvars e
-      (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
-      v ltac:(set_solver))).
-    exact Heval.
+	  - apply (proj1 (expr_eval_in_store_restrict_lvars e
+	      (lstore_lift_free σ : LStoreT) (tm_lvars e ∪ {[LVFree y]})
+	      v ltac:(intros a Ha; apply elem_of_union_l; exact Ha))).
+	    exact Heval.
 Qed.
 
 Lemma expr_result_formula_at_intro
@@ -1410,17 +1413,13 @@ Proof.
     destruct Hσmx as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
     assert (Hσe_dom : dom (σe : StoreT) = {[x]}).
     {
-      pose proof (wfworldA_store_dom we σe Hσe) as Hdomσe.
-      change (dom (σe : StoreT) = world_dom (we : WorldT)) in Hdomσe.
-      rewrite Hdomσe.
-      pose proof (extA_rel_dom F (store_restrict σm (ext_in F)) we) as Hdom_we.
-      rewrite <- Hout.
-      apply Hdom_we; [|exact HFrel].
-      rewrite storeA_restrict_dom.
-      pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-      change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-      denotation_regular_res_extend_input.
-      set_solver.
+      pose proof (res_extend_rel_store_dom m mx F σm we σe
+        Hext Hσm
+        ltac:(change (store_restrict σm (extA_in F)) with
+          (store_restrict σm (ext_in F)); exact HFrel)
+        Hσe) as Hdom.
+      change (extA_out F) with (ext_out F) in Hdom.
+      rewrite Hout in Hdom. exact Hdom.
     }
     assert (Hinput_dom :
         dom (store_restrict σm (ext_in F) : StoreT) = ext_in F).
@@ -1493,17 +1492,13 @@ Proof.
     destruct Hσmx as [σm [we [σe [Hσm [HFrel [Hσe ->]]]]]].
     assert (Hσe_dom : dom (σe : StoreT) = {[x]}).
     {
-      pose proof (wfworldA_store_dom we σe Hσe) as Hdomσe.
-      change (dom (σe : StoreT) = world_dom (we : WorldT)) in Hdomσe.
-      rewrite Hdomσe.
-      pose proof (extA_rel_dom F (store_restrict σm (ext_in F)) we) as Hdom_we.
-      rewrite <- Hout.
-      apply Hdom_we; [|exact HFrel].
-      rewrite storeA_restrict_dom.
-      pose proof (wfworldA_store_dom m σm Hσm) as Hdomσm.
-      change (dom (σm : StoreT) = world_dom (m : WorldT)) in Hdomσm.
-      denotation_regular_res_extend_input.
-      set_solver.
+      pose proof (res_extend_rel_store_dom m mx F σm we σe
+        Hext Hσm
+        ltac:(change (store_restrict σm (extA_in F)) with
+          (store_restrict σm (ext_in F)); exact HFrel)
+        Hσe) as Hdom.
+      change (extA_out F) with (ext_out F) in Hdom.
+      rewrite Hout in Hdom. exact Hdom.
     }
     assert (Hinput_dom :
         dom (store_restrict σm (ext_in F) : StoreT) = ext_in F).

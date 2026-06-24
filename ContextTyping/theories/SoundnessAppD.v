@@ -361,89 +361,32 @@ Proof.
     Hbody_outer ltac:(subst z; better_set_solver)
     Hmz_dom Hmz_restrict) as Houter_open.
   cbn [formula_open] in Houter_open.
-  assert (Hres_at :
-      mz ⊨ expr_result_formula_at (dom Σrel) (tret v1) (LVFree z)).
-  {
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (m : WorldT)) (F := Fz) (m := m).
-    - subst Σrel. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
-    - pose proof Hguard as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [_ [Hbasic _]]].
-      apply expr_basic_typing_formula_models_iff in Hbasic
-        as [_ [_ Hty]].
-      rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      2:{ constructor. eapply context_typing_wf_ret_lc_value.
-          exact Hwf_fun. }
-      eapply basic_tm_has_ltype_lvars. exact Hty.
-    - pose proof Hguard as Hguard_parts.
-      unfold ty_guard_formula in Hguard_parts.
-      repeat rewrite res_models_and_iff in Hguard_parts.
-      destruct Hguard_parts as [_ [Hworld [_ _]]].
-      apply basic_world_formula_models_iff in Hworld
-        as [HlcD [HdomD _]].
-      intros v Hv.
-      destruct v as [k|a].
-      + exfalso. exact (HlcD (LVBound k) Hv).
-      + unfold lvars_of_atoms. apply elem_of_map.
-        exists a. split; [reflexivity|].
-        apply HdomD. apply lvars_fv_elem. exact Hv.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      subst z. better_set_solver.
-    - set_solver.
-    - exact HFz.
-    - exact Hext.
-    - exact Htotal.
-  }
-  assert (Hres_open :
-      mz ⊨ formula_open 0 z
-        (expr_result_formula_at
-          (lvars_shift_from 0 (dom Σrel))
-          (tm_shift 0 (tret v1)) (LVBound 0))).
-  {
-    subst Σrel.
-    eapply result_first_outer_result_ret_value_at_open.
-    - apply atom_store_to_lvar_store_closed.
-    - eapply context_typing_wf_ret_lc_value. exact Hwf_fun.
-    - subst z. better_set_solver.
-    - exact HzΣrel.
-    - exact Hres_at.
-  }
-  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_open)
-    as Hvalue.
-  assert (Hres_expr :
-      mz ⊨ expr_result_formula (tret v1) (LVFree z)).
-  {
-    unfold expr_result_formula.
-    eapply expr_result_formula_at_of_result_extends_on_coarsen
-      with (X := world_dom (m : WorldT)) (F := Fz) (m := m).
-    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha _]]. inversion Ha. exact I.
-      + constructor. eapply context_typing_wf_ret_lc_value.
-        exact Hwf_fun.
-    - reflexivity.
-    - rewrite (tm_lvars_lc_eq_atoms (tret v1)).
-      + unfold lvars_of_atoms. intros v Hv.
-        apply elem_of_map in Hv as [a [Ha HaIn]].
-        inversion Ha. subst v.
-        apply elem_of_map. exists a. split; [reflexivity|].
-        apply Hfv_v1_m. exact HaIn.
-      + constructor. eapply context_typing_wf_ret_lc_value.
-        exact Hwf_fun.
-    - unfold lvars_of_atoms. intros HzD.
-      apply elem_of_map in HzD as [a [Ha HaD]].
-      inversion Ha. subst a.
-      subst z. better_set_solver.
-    - set_solver.
-    - exact HFz.
-    - exact Hext.
-    - exact Htotal.
-  }
+	  assert (Hres_at :
+	      mz ⊨ expr_result_formula_at (dom Σrel) (tret v1) (LVFree z)).
+	  {
+	    eapply expr_result_formula_at_env_of_result_extends_from_ty_guard_on.
+	    - exact HFz.
+	    - exact Hext.
+	    - subst Σrel. exact Hguard.
+	  }
+	  rewrite (formula_open_result_first_expr_result_formula_at_shift0
+	    z (dom Σrel) (tret v1)) in Houter_open.
+	  2:{ subst Σrel. apply relevant_env_closed.
+	      apply atom_store_to_lvar_store_closed. }
+	  2:{ exact HzΣrel. }
+	  2:{ constructor. eapply context_typing_wf_ret_lc_value.
+	      exact Hwf_fun. }
+	  2:{ cbn [fv_tm fv_value]. clear -Hzfresh; better_set_solver. }
+	  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_at)
+	    as Hvalue.
+	  assert (Hres_expr :
+	      mz ⊨ expr_result_formula (tret v1) (LVFree z)).
+	  {
+	    eapply expr_result_formula_of_result_extends_on_from_ty_guard.
+	    - exact HFz.
+	    - exact Hext.
+	    - subst Σrel. exact Hguard.
+	  }
   exists z, Fz, mz.
   split; [exact Hzfresh|].
   split; [exact HFz|].

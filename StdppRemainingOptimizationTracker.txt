@@ -218,6 +218,101 @@ Batch Log
 - Batch A: completed before this tracker.
   - Added Soundness regular facts for persist intro.
   - Added Denotation regular facts for `res_extend_by`.
+
+- Batch B: store facts consolidation / dependency cleanup.
+  - `DenotationSetMapFacts.v` now keeps the shared store facts in one file and
+    no longer imports `Denotation.Notation`, `TypeDenote`, or `TypeEquivCore`.
+    It depends only on Core syntax, Store, Type syntax, and Algebra resource
+    interfaces.
+  - Split insertion/restriction reasoning into the core lemma
+    `store_restrict_insert_same_observed`; kept
+    `store_restrict_insert_union_eq_of_restrict_eq` as a compatibility
+    wrapper.
+  - Kept `store_restrict_insert_agree_on_observed` as the general lemma and
+    `store_restrict_insert_agree_on_subset` as a wrapper.
+  - Kept `store_lookup_eq_of_restrict_eq` as the general lemma and
+    `store_lookup_eq_of_restrict_eq_full` as a wrapper.
+  - Timing:
+    `Denotation/theories/DenotationSetMapFacts.v` direct compile is now
+    about 1.31s.
+
+- Batch C: `TypeEquivTermBase.v` set-goal attempt.
+  - The two slow `Hσe_dom` set goals inside
+    `tm_fiber_equiv_result_extension_alias_on` remain stubborn.  A local
+    attempt to clear the context down to `Hin_ext`/`Hout` exposed an
+    `ext_in`/`extA_in` alias mismatch and made `set_solver` fail with
+    "No matching clauses for match"; the patch was reverted.
+  - Current status: keep these local proofs for now.  A future useful lemma
+    should probably be stated directly about
+    `dom (store_restrict σ (ext_in F))` under `res_extend_by` and a singleton
+    output witness, rather than trying to tune the local `set_solver` call.
+  - Timing:
+    `Denotation/theories/TypeEquivTermBase.v` direct compile remains around
+    7.1s; the largest proof-local set goals are about 0.6s each.
+
+- Batch D: fiber-base result/projected set-goal cleanup.
+  - Added `res_extend_rel_store_dom` to `DenotationSetMapFacts.v`, lowering a
+    repeated extension-component store-domain proof that previously expanded
+    `wfworld_store_dom`, `extA_rel_dom`, and input-domain set reasoning.
+  - Replaced two repeated blocks in `TypeEquivFiberBaseResult.v` with the new
+    lemma.  Direct compile improved from about 10.1s to about 5.5s.  Remaining
+    local hotspots are all below about 0.5s; further improvement likely needs
+    semantic file splitting or import diet, not more local set-proof tuning.
+  - Replaced two obvious `store_restrict_obs_result_eq` side conditions in
+    `TypeEquivFiberBaseProjected.v` by direct subset proofs.  Direct compile
+    improved from about 10.5s to about 5.2s.  Remaining proof-local hotspots
+    are below about 0.5s; mark for possible split if the 4s target is strict.
+
+- Batch E: consistency/timing sweep after low-level facts update.
+  - `rg -n "Admitted\\.|admit\\." -g '*.v' .` reported no hits.
+  - Recompiled the affected term/fiber/persistence chains manually until
+    `TypePersist`, `Denotation.Context`, `PrimOpContext`, `Typing`, and
+    `SoundnessPersist` were consistent again.
+  - A full `timeout 240s make TIMED=1` was attempted, but it timed out while
+    compiling `Denotation/theories/TypeDenote.v` after rebuilding many lower
+    dependencies.  This was a timeout, not a proof error.
+  - Slow files observed in that full rebuild:
+    - `ContextLogic/theories/FormulaSyntax.v`: 9.69s
+    - `ContextLogic/theories/FormulaSemantics.v`: 13.36s
+    - `ContextLogic/theories/FormulaConnectives.v`: 14.03s
+    - `ContextLogic/theories/FormulaConnectivesHigher.v`: 9.65s
+    - `CoreLang/theories/LocallyNamelessExtra.v`: 24.35s
+    - `CoreLang/theories/BasicTypingProps.v`: 10.58s
+    - `ContextTypeLanguage/theories/WF.v`: 6.05s
+    - `ContextBasicDenotation/theories/StoreTyping.v`: 5.31s
+    - `ContextBasicDenotation/theories/TermSyntax.v`: 7.59s
+    - `ContextBasicDenotation/theories/TermOpen.v`: 10.75s
+    - `ContextBasicDenotation/theories/TermTLet.v`: 17.65s
+    - `ContextBasicDenotation/theories/Qualifier.v`: 5.29s
+    - `ContextBasicDenotation/theories/BasicTypingFormula.v`: 21.89s
+    - `ContextBasicDenotation/theories/BasicTypingOpen.v`: 7.56s
+    - `ContextBasicDenotation/theories/RelevantEnv.v`: 7.18s
+    - `Denotation/theories/Notation.v`: 5.65s
+  - Per earlier scope, CoreLang slow files are recorded but not targeted in
+    this optimization pass.
+  - A follow-up `timeout 600s make TIMED=1` completed successfully.  No proof
+    errors were reported.
+  - `rg -n "Admitted\\.|admit\\." -g '*.v' .` reported no hits.
+  - Slow non-Core files observed in the successful rebuild and left for the
+    next compile-time pass include:
+    - `Denotation/theories/TypeDenote.v`: 13.72s
+    - `Denotation/theories/TypeEquivTermResult.v`: 7.18s
+    - `Denotation/theories/TypeEquivTermApp.v`: 5.77s
+    - `Denotation/theories/TypeEquivFiberBaseResult.v`: 7.65s
+    - `Denotation/theories/TypeEquivFiberBaseProjected.v`: 5.89s
+    - `Denotation/theories/TypeEquivArrow.v`: 6.20s
+    - `Denotation/theories/TypeEquivTLet.v`: 11.18s
+    - `Denotation/theories/TypeEquiv.v`: 14.69s
+    - `Denotation/theories/TypePersistBase.v`: 11.00s
+    - `Denotation/theories/Context.v`: 7.12s
+    - `ContextTyping/theories/SoundnessLamBase.v`: 7.36s
+    - `ContextTyping/theories/SoundnessLamArrow.v`: 12.16s
+    - `ContextTyping/theories/SoundnessApp.v`: 8.30s
+    - `ContextTyping/theories/SoundnessAppD.v`: 9.59s
+    - `ContextTyping/theories/SoundnessMatch.v`: 8.92s
+    - `ContextTyping/theories/SoundnessFixApply.v`: 9.08s
+    - `ContextTyping/theories/SoundnessFixSelf.v`: 8.48s
+    - `ContextTyping/theories/Soundness.v`: 12.43s
   - Added Logic fiber-domain regular extraction.
   - Full build and admit scan passed.
 - Batch B: completed.

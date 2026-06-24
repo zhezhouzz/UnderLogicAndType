@@ -6,7 +6,14 @@
     and side-condition helpers that used to be reproved locally in the larger
     transport proofs. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore.
+From CoreLang Require Import Syntax.
+From ContextStore Require Import Store.
+From ContextAlgebra Require Import ResourceExtension ResourceInterface.
+From ContextTypeLanguage Require Import Syntax.
+
+Notation StoreT := (Store (V := value)) (only parsing).
+Notation WorldT := (World (V := value)) (only parsing).
+Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
 Lemma store_lookup_eq_of_restrict_eq
     (σ1 σ2 : StoreT) X x :
@@ -34,14 +41,13 @@ Proof.
   set_solver.
 Qed.
 
-Lemma store_restrict_insert_union_eq_of_restrict_eq
+Lemma store_restrict_insert_same_observed
     (σ1 σ2 : StoreT) X z (v : value) :
-  z ∉ X ->
   store_restrict σ1 X = store_restrict σ2 X ->
   store_restrict (<[z := v]> σ1) (X ∪ {[z]}) =
   store_restrict (<[z := v]> σ2) (X ∪ {[z]}).
 Proof.
-  intros HzX Heq.
+  intros Heq.
   change (storeA_restrict (<[z := v]> (σ1 : gmap atom value)) (X ∪ {[z]}) =
     storeA_restrict (<[z := v]> (σ2 : gmap atom value)) (X ∪ {[z]})).
   apply storeA_map_eq. intros a.
@@ -84,6 +90,18 @@ Proof.
       * symmetry. apply storeA_restrict_lookup_none_r. set_solver.
 Qed.
 
+Lemma store_restrict_insert_union_eq_of_restrict_eq
+    (σ1 σ2 : StoreT) X z (v : value) :
+  z ∉ X ->
+  store_restrict σ1 X = store_restrict σ2 X ->
+  store_restrict (<[z := v]> σ1) (X ∪ {[z]}) =
+  store_restrict (<[z := v]> σ2) (X ∪ {[z]}).
+Proof.
+  intros _ Heq.
+  apply store_restrict_insert_same_observed.
+  exact Heq.
+Qed.
+
 Lemma store_restrict_insert_agree_on_observed
     (σ : StoreT) X Z z (v : value) :
   Z ⊆ X ∪ {[z]} ->
@@ -115,6 +133,25 @@ Proof.
   apply store_restrict_insert_agree_on_observed; set_solver.
 Qed.
 
+Lemma res_extend_rel_store_dom
+    (m mx : WfWorldT) (F : fiber_extension)
+    (σm : StoreT) (we : WfWorldT) (σe : StoreT) :
+  res_extend_by m F mx ->
+  (m : WorldT) σm ->
+  extA_rel F (store_restrict σm (extA_in F)) we ->
+  (we : WorldT) σe ->
+  dom (σe : StoreT) = extA_out F.
+Proof.
+  intros Hext Hσm HFrel Hσe.
+  pose proof (wfworld_store_dom we σe Hσe) as Hdomσe.
+  change (dom (σe : StoreT) = world_dom (we : WorldT)) in Hdomσe.
+  rewrite Hdomσe.
+  eapply extA_rel_dom; [|exact HFrel].
+  eapply extA_projection_dom.
+  - apply resA_extend_by_applicable in Hext. exact Hext.
+  - exact Hσm.
+Qed.
+
 Ltac denotation_set_norm :=
   cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *;
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.
@@ -139,7 +176,7 @@ Ltac denotation_regular_res_extend_dom :=
   | Hext : res_extend_by ?m ?F ?mx |- _ =>
       lazymatch goal with
       | H : world_dom (mx : WorldT) =
-            world_dom (m : WorldT) ∪ ext_out F |- _ =>
+            world_dom (m : WorldT) ∪ extA_out F |- _ =>
           fail
       | _ =>
           let H := fresh "Hdom_ext" in
@@ -163,7 +200,7 @@ Ltac denotation_regular_res_extend_input :=
   match goal with
   | Hext : res_extend_by ?m ?F ?mx |- _ =>
       lazymatch goal with
-      | H : ext_in F ⊆ world_dom (m : WorldT) |- _ =>
+      | H : extA_in F ⊆ world_dom (m : WorldT) |- _ =>
           fail
       | _ =>
           let H := fresh "Hin_ext" in
@@ -175,7 +212,7 @@ Ltac denotation_regular_res_extend_output :=
   match goal with
   | Hext : res_extend_by ?m ?F ?mx |- _ =>
       lazymatch goal with
-      | H : ext_out F ## world_dom (m : WorldT) |- _ =>
+      | H : extA_out F ## world_dom (m : WorldT) |- _ =>
           fail
       | _ =>
           let H := fresh "Hout_ext" in

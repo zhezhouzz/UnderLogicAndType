@@ -340,46 +340,6 @@ Proof.
       contradiction.
 Qed.
 
-Lemma lvars_open0_difference_bound0_normalize D z :
-  LVFree z ∉ D ->
-  lvars_open 0 z (D ∖ {[LVBound 0]}) =
-  lvars_open 0 z D ∖ {[LVFree z]}.
-Proof.
-  intros HzD.
-  apply set_eq. intros a.
-  rewrite elem_of_difference.
-  split.
-  - intros Ha.
-    split.
-    + change (a ∈ set_swap (LVBound 0) (LVFree z) D).
-      change (a ∈ set_swap (LVBound 0) (LVFree z)
-        (D ∖ {[LVBound 0]})) in Ha.
-      rewrite elem_of_set_swap in Ha.
-      rewrite elem_of_set_swap.
-      set_solver.
-    + intros Haz.
-      apply elem_of_singleton in Haz. subst a.
-      change (LVFree z ∈ set_swap (LVBound 0) (LVFree z)
-        (D ∖ {[LVBound 0]})) in Ha.
-      rewrite elem_of_set_swap in Ha.
-      apply elem_of_difference in Ha as [_ Hnot].
-      apply Hnot. apply elem_of_singleton.
-      unfold swap. rewrite decide_False by discriminate.
-      rewrite decide_True by reflexivity. reflexivity.
-  - intros [Ha Haz].
-    change (a ∈ set_swap (LVBound 0) (LVFree z) D) in Ha.
-    change (a ∈ set_swap (LVBound 0) (LVFree z)
-      (D ∖ {[LVBound 0]})).
-    rewrite elem_of_set_swap in Ha.
-    rewrite elem_of_set_swap.
-    apply elem_of_difference. split; [exact Ha|].
-    intros Hbound.
-    apply Haz. apply elem_of_singleton.
-    apply elem_of_singleton in Hbound.
-    unfold swap in Hbound.
-    repeat destruct decide; congruence.
-Qed.
-
 Lemma formula_open_over_self_body_normalize φ z :
   LVFree z ∉ qual_vars φ ->
   formula_open 0 z
@@ -638,15 +598,16 @@ Qed.
 
 Lemma ty_denote_gas_persist_open_result
     gas (Σ : lty_env) τ e y (m my : WfWorldT) :
+  lty_env_closed Σ ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  y ∉ lvars_fv (dom (relevant_env Σ (CTPersist τ) e)) ->
   m ⊨ ty_denote_gas (S gas) Σ (CTPersist τ) e ->
   y ∉ world_dom (m : WorldT) ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my (world_dom (m : WorldT)) = m ->
-  my ⊨ formula_open 0 y
-    (expr_result_formula_at
-      (lvars_shift_from 0
-        (dom (relevant_env Σ (CTPersist τ) e)))
-      (tm_shift 0 e) (LVBound 0)) ->
+  my ⊨ expr_result_formula_at
+    (dom (relevant_env Σ (CTPersist τ) e)) e (LVFree y) ->
   my ⊨ formula_open 0 y
     (FPersist
       (ty_denote_gas gas
@@ -655,11 +616,15 @@ Lemma ty_denote_gas_persist_open_result
           (erase_ty (CTPersist τ)))
         (cty_shift 0 τ) (tret (vbvar 0)))).
 Proof.
-  intros Hden Hy Hdom Hrestrict Hresult.
+  intros HΣclosed Hlce Hye HyΣ Hden Hy Hdom Hrestrict Hresult.
   cbn [ty_denote_gas] in Hden.
   rewrite res_models_and_iff in Hden.
   destruct Hden as [_ Hbody].
-  eapply result_first_forall_impl_open_elim; eauto.
+  pose proof (res_models_forall_open_named_fresh
+    m my y _ Hbody Hy Hdom Hrestrict) as Hopen.
+  cbn [formula_open] in Hopen.
+  denotation_result_first_open_norm_in Hopen.
+  eapply res_models_impl_elim; eauto.
 Qed.
 
 Lemma expr_result_formula_at_ret_fvar_lookup_eq
@@ -1222,36 +1187,15 @@ Proof.
       - exact Hext.
       - apply expr_total_formula_to_atom_world. exact Htotal.
     }
-    assert (Hres_open :
-        my ⊨ formula_open 0 y
-          (expr_result_formula_at
-            (lvars_shift_from 0 Dres)
-            (tm_shift 0 (tret (vfvar z))) (LVBound 0))).
-    {
-      subst Dres.
-      eapply result_first_outer_result_ret_value_at_open.
-      - exact HΣclosed.
-      - constructor.
-      - cbn [fv_value].
-        eapply notin_union4_r3; exact Hyfresh.
-      - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
-      - exact Hres_at.
-    }
     pose proof Hden as Hden_full.
     cbn [ty_denote_gas] in Hden.
     rewrite res_models_and_iff in Hden.
     destruct Hden as [_ Hforall].
-    pose proof (result_first_forall_impl_open_elim m my y
-      (expr_result_formula_at
-        (lvars_shift_from 0 Dres)
-        (tm_shift 0 (tret (vfvar z))) (LVBound 0))
-      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))
-      Hforall Hym Hdom_my' Hbase_my Hres_open) as Hbody_open.
-    rewrite formula_open_over_self_body_normalize in Hbody_open.
-    2:{
-      intros Hyvars. apply Hyφ.
-      unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
-    }
+    pose proof (res_models_forall_open_named_fresh
+      m my y _ Hforall Hym Hdom_my' Hbase_my) as Hbody_impl.
+    denotation_result_first_open_norm_in Hbody_impl.
+    pose proof (res_models_impl_elim _ _ _ Hbody_impl Hres_at)
+      as Hbody_open.
     pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
       (S gas) Σ (CTOver b φ) z m Hden_full) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
@@ -1379,36 +1323,15 @@ Proof.
       - exact Hext.
       - apply expr_total_formula_to_atom_world. exact Htotal.
     }
-    assert (Hres_open :
-        my ⊨ formula_open 0 y
-          (expr_result_formula_at
-            (lvars_shift_from 0 Dres)
-            (tm_shift 0 (tret (vfvar z))) (LVBound 0))).
-    {
-      subst Dres.
-      eapply result_first_outer_result_ret_value_at_open.
-      - exact HΣclosed.
-      - constructor.
-      - cbn [fv_value].
-        eapply notin_union4_r3; exact Hyfresh.
-      - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
-      - exact Hres_at.
-    }
     pose proof Hden as Hden_full.
     cbn [ty_denote_gas] in Hden.
     rewrite res_models_and_iff in Hden.
     destruct Hden as [_ Hforall].
-    pose proof (result_first_forall_impl_open_elim m my y
-      (expr_result_formula_at
-        (lvars_shift_from 0 Dres)
-        (tm_shift 0 (tret (vfvar z))) (LVBound 0))
-      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))
-      Hforall Hym Hdom_my' Hbase_my Hres_open) as Hbody_open.
-    rewrite formula_open_under_self_body_normalize in Hbody_open.
-    2:{
-      intros Hyvars. apply Hyφ.
-      unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
-    }
+    pose proof (res_models_forall_open_named_fresh
+      m my y _ Hforall Hym Hdom_my' Hbase_my) as Hbody_impl.
+    denotation_result_first_open_norm_in Hbody_impl.
+    pose proof (res_models_impl_elim _ _ _ Hbody_impl Hres_at)
+      as Hbody_open.
     pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
       (S gas) Σ (CTUnder b φ) z m Hden_full) as Hbasic_z.
     pose proof (basic_world_formula_wfworld_closed_on_atoms
@@ -1525,6 +1448,8 @@ Proof.
       }
       assert (Hle : m ⊑ my).
       { rewrite <- Hbase_my. apply res_restrict_le. }
+      cbn [formula_open].
+      denotation_result_first_open_norm.
       eapply res_models_impl_intro.
       * pose proof (formula_scoped_forall_open_res_le
           m my y
@@ -1532,23 +1457,12 @@ Proof.
             (expr_result_formula_at
               (lvars_shift_from 0 Dres)
               (tm_shift 0 (tret (vfvar z))) (LVBound 0))
-            (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ))))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ))))
           Hscope_forall Hle Hy_my) as Hscope_open.
         cbn [formula_open] in Hscope_open.
+        denotation_result_first_open_norm_in Hscope_open.
         exact Hscope_open.
-      * intros Hres_open.
-        assert (Hres_at :
-            my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
-        {
-          subst Dres.
-          eapply result_first_outer_result_ret_value_at.
-          - exact HΣclosed.
-          - constructor.
-          - cbn [fv_value].
-            eapply notin_union4_r3; exact Hy.
-          - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
-          - exact Hres_open.
-        }
+      * intros Hres_at.
         assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
         {
           eapply wfworld_closed_on_open_world_from_base.
@@ -1573,7 +1487,9 @@ Proof.
           + exact Hbody_z.
         }
         rewrite <- formula_open_over_self_body_normalize in Hbody_y.
-        -- cbn [formula_open] in Hbody_y. exact Hbody_y.
+        -- cbn [formula_open] in Hbody_y.
+           lvars_open_difference_bound0_norm_in Hbody_y.
+           exact Hbody_y.
         -- intros Hyvars. apply Hyφ.
 	           unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
 Qed.
@@ -1666,6 +1582,8 @@ Proof.
       }
       assert (Hle : m ⊑ my).
       { rewrite <- Hbase_my. apply res_restrict_le. }
+      cbn [formula_open].
+      denotation_result_first_open_norm.
       eapply res_models_impl_intro.
       * pose proof (formula_scoped_forall_open_res_le
           m my y
@@ -1673,23 +1591,12 @@ Proof.
             (expr_result_formula_at
               (lvars_shift_from 0 Dres)
               (tm_shift 0 (tret (vfvar z))) (LVBound 0))
-            (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ))))
+          (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ))))
           Hscope_forall Hle Hy_my) as Hscope_open.
         cbn [formula_open] in Hscope_open.
+        denotation_result_first_open_norm_in Hscope_open.
         exact Hscope_open.
-      * intros Hres_open.
-        assert (Hres_at :
-            my ⊨ expr_result_formula_at Dres (tret (vfvar z)) (LVFree y)).
-        {
-	          subst Dres.
-	          eapply result_first_outer_result_ret_value_at.
-	          - exact HΣclosed.
-	          - constructor.
-	          - cbn [fv_value].
-              eapply notin_union4_r3; exact Hy.
-	          - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
-	          - exact Hres_open.
-	        }
+      * intros Hres_at.
         assert (Hclosed_z_my : wfworld_closed_on ({[z]} : aset) my).
         {
           eapply wfworld_closed_on_open_world_from_base.
@@ -1714,7 +1621,9 @@ Proof.
           + exact Hbody_z.
         }
         rewrite <- formula_open_under_self_body_normalize in Hbody_y.
-        -- cbn [formula_open] in Hbody_y. exact Hbody_y.
+        -- cbn [formula_open] in Hbody_y.
+           lvars_open_difference_bound0_norm_in Hbody_y.
+           exact Hbody_y.
         -- intros Hyvars. apply Hyφ.
 	           unfold qual_dom. apply lvars_fv_elem. exact Hyvars.
 Qed.
@@ -1821,24 +1730,14 @@ Proof.
       - exact Hext.
       - apply expr_total_formula_to_atom_world. exact Htotal.
     }
-    assert (Hres_open :
-        my ⊨ formula_open 0 y
-          (expr_result_formula_at
-            (lvars_shift_from 0 Dres)
-            (tm_shift 0 (tret (vfvar z))) (LVBound 0))).
-    {
-	      subst Dres τp.
-	      eapply result_first_outer_result_ret_value_at_open.
-	      - exact HΣclosed.
-	      - constructor.
-	      - cbn [fv_value].
-          eapply notin_union4_r3; exact Hyfresh.
-	      - intros Hyrel. apply HyD. apply lvars_fv_elem. exact Hyrel.
-	      - exact Hres_at.
-	    }
     pose proof (ty_denote_gas_persist_open_result
-      (S gas) Σ (CTOver b φ) (tret (vfvar z)) y m my Hden
-      Hym Hdom_my' Hbase_my Hres_open) as Hpersist_open.
+      (S gas) Σ (CTOver b φ) (tret (vfvar z)) y m my
+      HΣclosed
+      ltac:(constructor; constructor)
+      ltac:(cbn [fv_tm fv_value]; eapply notin_union4_r3; exact Hyfresh)
+      ltac:(subst Dres τp; intros Hyrel; apply HyD;
+        apply lvars_fv_elem; exact Hyrel)
+      Hden Hym Hdom_my' Hbase_my Hres_at) as Hpersist_open.
     rewrite formula_open_persist in Hpersist_open.
     rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.
     2:{

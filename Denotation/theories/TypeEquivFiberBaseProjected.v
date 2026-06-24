@@ -388,8 +388,8 @@ Proof.
 	      transitivity (store_restrict τtgt (lvars_fv D ∪ {[y]})).
 	      * eapply (store_restrict_obs_result_eq
 	          τsrc τpre τtgt D D (lvars_fv D) y v).
-	        -- set_solver.
-	        -- set_solver.
+	        -- intros a Ha. exact Ha.
+	        -- intros a Ha. exact Ha.
 	        -- eapply storeA_restrict_eq_mono; [|exact HτsrcD].
 	           subst Dsrc. rewrite lvars_fv_union. set_solver.
 	        -- transitivity (store_restrict σsrc (lvars_fv D)).
@@ -475,8 +475,8 @@ Proof.
 	      transitivity (store_restrict τsrc (lvars_fv D ∪ {[y]})).
 	      * eapply (store_restrict_obs_result_eq
 	          τtgt τpre τsrc D D (lvars_fv D) y v).
-	        -- set_solver.
-	        -- set_solver.
+	        -- intros a Ha. exact Ha.
+	        -- intros a Ha. exact Ha.
 	        -- eapply storeA_restrict_eq_mono; [|exact HτtgtD].
 	           subst Dtgt. rewrite lvars_fv_union. set_solver.
 	        -- transitivity (store_restrict σtgt (lvars_fv D)).
@@ -743,8 +743,11 @@ Proof.
       (Dsmall ∪ tm_lvars e_tgt)
       (Dbig ∪ tm_lvars e_tgt)
       e_tgt y my_tgt).
-    + set_solver.
-    + set_solver.
+    + intros a Ha.
+      apply elem_of_union in Ha as [Ha|Ha].
+      * apply elem_of_union_l. exact (Hsmall_big a Ha).
+      * apply elem_of_union_r. exact Ha.
+    + intros a Ha. apply elem_of_union_r. exact Ha.
     + exact Hy_tgt_big.
     + exact Hres_tgt_big.
   - transitivity

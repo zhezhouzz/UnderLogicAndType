@@ -2,8 +2,7 @@
 
     Result-graph, result-alias, and result-extension support for term transport. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTermBase.
-From CoreLang Require Import StrongNormalization.
+From Denotation Require Import Notation DenotationSetMapFacts TypeEquivTermBase.
 
 Section TypeDenote.
 
@@ -480,8 +479,14 @@ Proof.
       rewrite storeA_restrict_dom.
       pose proof (wfworldA_store_dom m τm Hτm) as Hdomτm.
       change (dom (τm : StoreT) = world_dom (m : WorldT)) in Hdomτm.
-      denotation_regular_res_extend_input.
-      set_solver.
+      pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
+      unfold ext_in in Hin_sub. unfold ext_in in Hin.
+      rewrite Hin in Hin_sub.
+      apply set_eq. intros a. split.
+      - intros Ha. apply elem_of_intersection in Ha as [_ Ha]. exact Ha.
+      - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+        change (a ∈ dom (τm : StoreT)).
+        rewrite Hdomτm. rewrite Hin in Ha. exact (Hin_sub a Ha).
     }
     assert (Heval_m :
         tm_eval_in_store (store_restrict τm (fv_tm e)) e v).
@@ -514,9 +519,11 @@ Proof.
 	        - apply (proj2 (map_lookup_union_None
 	            (τm : StoreT) τe a)).
 	          split; [exact Hτma|].
-	          apply not_elem_of_dom_1.
-	          change (a ∉ dom (τe : StoreT)).
-	          rewrite Hτe_dom. set_solver.
+              apply not_elem_of_dom_1.
+	            change (a ∉ dom (τe : StoreT)).
+	            rewrite Hτe_dom.
+              apply not_elem_of_singleton_2.
+              intros ->. exact (Hx_fresh Ha).
 	      }
       rewrite <- Hτ_agree.
       exact Heval.
@@ -574,11 +581,12 @@ Proof.
 	                  a ∈ world_dom
 	                    (res_restrict my (world_dom (mx : WorldT)) : WfWorldT)).
 	              { rewrite Hrestrict_my. exact Hamx. }
-	              change (a ∈ world_dom
-	                (res_restrict my (world_dom (mx : WorldT)) : WorldT))
-	                in Ha_restrict.
-	              rewrite res_restrict_dom in Ha_restrict.
-	              set_solver.
+		              change (a ∈ world_dom
+		                (res_restrict my (world_dom (mx : WorldT)) : WorldT))
+		                in Ha_restrict.
+		              rewrite res_restrict_dom in Ha_restrict.
+		              apply elem_of_intersection in Ha_restrict as [Ha_my _].
+                  exact Ha_my.
 	            }
 		            pose proof (wfworld_store_dom my τ Hτ_my) as Hdomτ.
 		            change (dom (τ : StoreT) = world_dom (my : WorldT)) in Hdomτ.
@@ -588,7 +596,8 @@ Proof.
 		            rewrite Hτa in Hlook. discriminate.
 	        - exact Htmp.
 	      }
-	      assert (Hax : a <> x) by set_solver.
+			      assert (Hax : a <> x).
+          { intros ->. exact (HxX HaX). }
       change ((((τm : StoreT) ∪ ({[x := v]} : StoreT)) : gmap atom value) !! a =
         ((τ : StoreT) : gmap atom value) !! a).
       rewrite Hτ_lookup.
@@ -609,8 +618,10 @@ Proof.
 	            (τm : StoreT) τe a)). split.
 	          * exact Hτma.
 	          * apply not_elem_of_dom_1.
-            change (a ∉ dom (τe : StoreT)).
-            rewrite Hτe_dom. set_solver.
+	            change (a ∉ dom (τe : StoreT)).
+	            rewrite Hτe_dom.
+              apply not_elem_of_singleton_2.
+              intros ->. exact (HxX HaX).
     }
 	    assert (Hτmxv_in_restrict :
 	        (res_restrict my (world_dom (mx : WorldT)) : WorldT) τmxv).
@@ -639,8 +650,10 @@ Proof.
 	            {
 	              change (a ∈ dom (σ : gmap atom value)).
 	              rewrite elem_of_dom. eauto.
-	            }
-	            rewrite Hdomσ in H. set_solver.
+			            }
+			            rewrite Hdomσ in H.
+                apply elem_of_intersection in H as [_ HaX'].
+                exact HaX'.
 	          }
 	          destruct (decide (a ∈ world_dom (my : WorldT))) as [Ha_my|Ha_not_my].
 		          2:{
@@ -663,8 +676,10 @@ Proof.
 	                as Hdomσ.
 	              change (dom (σ : StoreT) =
 	                world_dom (res_restrict my X : WorldT)) in Hdomσ.
-		              rewrite Hdomσ, res_restrict_dom.
-		              set_solver.
+			              rewrite Hdomσ, res_restrict_dom.
+                    intros Haσ.
+                    apply elem_of_intersection in Haσ as [Ha_my _].
+                    exact (Ha_not_my Ha_my).
 		            }
 		            change ((τv : StoreT) !! a = (σ : StoreT) !! a).
 		            transitivity (@None value); [exact Hτv_none|].
@@ -758,9 +773,9 @@ Proof.
 	            pose proof (wfworld_store_dom (res_restrict my X) σ Hproj_src)
 	              as Hdomσ.
 	            change (dom (σ : StoreT) =
-	              world_dom (res_restrict my X : WorldT)) in Hdomσ.
-	            rewrite Hdomσ, res_restrict_dom.
-	            set_solver.
+		              world_dom (res_restrict my X : WorldT)) in Hdomσ.
+		            rewrite Hdomσ, res_restrict_dom.
+                apply elem_of_intersection. split; [exact Ha_my|exact HaX].
 	          }
 	          pose proof (f_equal (fun s : StoreT => s !! a) Hτfix) as Hfixa.
 	          change ((store_restrict τ (dom (σ : StoreT)) : StoreT) !! a =
@@ -790,13 +805,15 @@ Proof.
 	        destruct (decide (a ∈ lvars_fv (tm_lvars e))) as [Ha|Ha];
 	          [|reflexivity].
 	        assert (Ha_fv : a ∈ fv_tm e) by (rewrite <- tm_lvars_fv; exact Ha).
-	        assert (Ha_mx : a ∈ world_dom (mx : WorldT)).
-	        {
-		          denotation_regular_res_extend_input.
-		          denotation_regular_res_extend_dom.
-		          rewrite Hdom_ext.
-		          set_solver.
-	        }
+		        assert (Ha_mx : a ∈ world_dom (mx : WorldT)).
+		        {
+              pose proof (res_extend_by_input_dom m F mx Hext) as Hin_sub.
+              unfold ext_in in Hin_sub. unfold ext_in in Hin.
+              rewrite Hin in Hin_sub.
+              pose proof (res_extend_by_dom m F mx Hext) as Hdom_mx.
+              rewrite Hdom_mx. apply elem_of_union_l.
+              exact (Hin_sub a Ha_fv).
+		        }
 	        assert (Hv_lookup :
 	            τv !! a =
 	            (((τm : StoreT) ∪ ({[x := v]} : StoreT)) : StoreT) !! a).
@@ -820,10 +837,11 @@ Proof.
 	                      (res_restrict my (world_dom (mx : WorldT)) : WfWorldT)).
 	                { rewrite Hrestrict_my. exact Ha_mx. }
 	                change (a ∈ world_dom
-	                  (res_restrict my (world_dom (mx : WorldT)) : WorldT))
-	                  in Ha_restrict.
-	                rewrite res_restrict_dom in Ha_restrict.
-	                set_solver.
+		                  (res_restrict my (world_dom (mx : WorldT)) : WorldT))
+		                  in Ha_restrict.
+		                rewrite res_restrict_dom in Ha_restrict.
+		                apply elem_of_intersection in Ha_restrict as [Ha_my _].
+                    exact Ha_my.
 	              }
 	              assert (a ∈ dom (τv : StoreT)) by (rewrite Hdomτv; exact H).
 	              change (a ∈ dom (τv : gmap atom value)) in H0.
@@ -869,7 +887,8 @@ Proof.
 		        { exact Hv_lookup. }
 		        transitivity ((((τm : StoreT) ∪ τe) : StoreT) !! a).
 		        2:{ symmetry. exact Hτ_lookup. }
-		        assert (Hax_fv : a <> x) by set_solver.
+			        assert (Hax_fv : a <> x).
+              { intros ->. exact (Hx_fresh Ha_fv). }
 	        change ((((τm : StoreT) ∪ ({[x := v]} : StoreT)) : gmap atom value) !! a =
 	          (((τm : StoreT) ∪ τe) : gmap atom value) !! a).
 	        destruct ((τm : StoreT) !! a) eqn:Hτma.
@@ -884,9 +903,11 @@ Proof.
 	              apply lookup_singleton_ne. congruence.
 	           ++ symmetry. apply (proj2 (map_lookup_union_None
 	                (τm : StoreT) τe a)). split; [exact Hτma|].
-	              apply not_elem_of_dom_1.
-	              change (a ∉ dom (τe : StoreT)).
-	              rewrite Hτe_dom. set_solver.
+		              apply not_elem_of_dom_1.
+		              change (a ∉ dom (τe : StoreT)).
+		              rewrite Hτe_dom.
+                  apply not_elem_of_singleton_2.
+                  intros ->. exact (Hx_fresh Ha_fv).
 	      * subst τmxv.
 	        pose proof (f_equal (fun s : StoreT => s !! x) Hτv_restrict) as Hxlook.
 	        assert (Hx_mx : x ∈ world_dom (mx : WorldT)).
@@ -924,10 +945,11 @@ Proof.
 	                  (res_restrict my (world_dom (mx : WorldT)) : WfWorldT)).
 	            { rewrite Hrestrict_my. exact Hx_mx. }
 	            change (x ∈ world_dom
-	              (res_restrict my (world_dom (mx : WorldT)) : WorldT))
-	              in Hx_restrict.
-	            rewrite res_restrict_dom in Hx_restrict.
-	            set_solver.
+		              (res_restrict my (world_dom (mx : WorldT)) : WorldT))
+		              in Hx_restrict.
+		            rewrite res_restrict_dom in Hx_restrict.
+		            apply elem_of_intersection in Hx_restrict as [Hx_my _].
+                exact Hx_my.
 	          }
 	          assert (x ∈ dom (τv : StoreT)) by (rewrite Hdomτv; exact H).
 		          change (x ∈ dom (τv : gmap atom value)) in H0.

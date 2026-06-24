@@ -20,51 +20,6 @@ From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
-Local Lemma type_equiv_lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
-Qed.
-
-Local Lemma type_equiv_lvars_lc_at_zero_of_lc D :
-  lc_lvars D ->
-  lvars_lc_at 0 D.
-Proof.
-  intros Hlc k Hk.
-  rewrite lvars_bv_elem in Hk.
-  exfalso. exact (Hlc (LVBound k) Hk).
-Qed.
-
-Lemma result_first_outer_result_ret_value_at
-    (Σ : lty_env) τ vf z (m : WfWorldT) :
-  lty_env_closed Σ ->
-  lc_value vf ->
-  z ∉ fv_value vf ->
-  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ result_first_outer_ret_value_formula Σ τ vf z ->
-  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z.
-Proof.
-  apply result_first_outer_ret_value_at.
-Qed.
-
-Lemma result_first_outer_result_ret_value_at_open
-    (Σ : lty_env) τ vf z (m : WfWorldT) :
-  lty_env_closed Σ ->
-  lc_value vf ->
-  z ∉ fv_value vf ->
-  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ result_first_outer_ret_value_formula_norm Σ τ vf z ->
-  m ⊨ result_first_outer_ret_value_formula Σ τ vf z.
-Proof.
-  apply result_first_outer_ret_value_at_open.
-Qed.
-
 Lemma ty_static_guard_relevant_of_full
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
@@ -1791,6 +1746,91 @@ Proof.
     exists a. split; [reflexivity|exact Ha].
   - rewrite tm_lvars_fv.
     apply expr_result_extension_witness_to_on. exact HF.
+  - exact Hext.
+  - eapply expr_total_formula_to_atom_world. exact Htotal.
+Qed.
+
+Lemma expr_result_formula_at_env_of_result_extends_from_ty_guard_on
+    (Σ : lty_env) τ e x (m mx : WfWorldT) Fx :
+  expr_result_extension_witness_on (world_dom (m : WorldT)) e x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ ty_guard_formula Σ τ e ->
+  mx ⊨ expr_result_formula_at (dom Σ) e (LVFree x).
+Proof.
+  intros HF Hext Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic Htotal]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc Σ e (erase_ty τ) HlcΣ Hty) as Hlc_e.
+  pose proof (basic_tm_has_ltype_lvars Σ e (erase_ty τ) Hty) as He_lvars.
+  apply basic_world_formula_models_iff in Hworld as [HlcΣdom [HΣdom _]].
+  eapply expr_result_formula_at_of_result_extends_on_coarsen
+    with (X := world_dom (m : WorldT)) (F := Fx) (m := m).
+  - exact HlcΣdom.
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    exact He_lvars.
+  - unfold lvars_of_atoms.
+    intros v Hv.
+    destruct v as [k|a].
+    + exfalso. exact (HlcΣdom (LVBound k) Hv).
+    + apply elem_of_map. exists a. split; [reflexivity|].
+      apply HΣdom. apply lvars_fv_elem. exact Hv.
+  - unfold lvars_of_atoms.
+    intros Hx.
+    apply elem_of_map in Hx as [a [Ha HaD]].
+    inversion Ha. subst a.
+    apply (expr_result_extension_witness_on_fresh _ _ _ _ HF).
+    exact HaD.
+  - set_solver.
+  - exact HF.
+  - exact Hext.
+  - eapply expr_total_formula_to_atom_world. exact Htotal.
+Qed.
+
+Lemma expr_result_formula_of_result_extends_on_from_ty_guard
+    (Σ : lty_env) τ e x (m mx : WfWorldT) Fx :
+  expr_result_extension_witness_on (world_dom (m : WorldT)) e x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ ty_guard_formula Σ τ e ->
+  mx ⊨ expr_result_formula e (LVFree x).
+Proof.
+  intros HF Hext Hguard.
+  unfold expr_result_formula.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic Htotal]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc Σ e (erase_ty τ) HlcΣ Hty) as Hlc_e.
+  pose proof (basic_tm_has_ltype_lvars Σ e (erase_ty τ) Hty) as He_lvars.
+  apply basic_world_formula_models_iff in Hworld as [_ [HΣdom _]].
+  eapply expr_result_formula_at_of_result_extends_on_coarsen
+    with (X := world_dom (m : WorldT)) (F := Fx) (m := m).
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    unfold lvars_of_atoms.
+    intros v Hv.
+    apply elem_of_map in Hv as [a [-> _]].
+    exact I.
+  - reflexivity.
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    unfold lvars_of_atoms.
+    intros v Hv.
+    apply elem_of_map in Hv as [a [-> Ha]].
+    apply elem_of_map. exists a. split; [reflexivity|].
+    apply HΣdom. apply lvars_fv_elem.
+    apply He_lvars.
+    unfold lvars_of_atoms. apply elem_of_map.
+    exists a. split; [reflexivity|exact Ha].
+  - unfold lvars_of_atoms.
+    intros Hx.
+    apply elem_of_map in Hx as [a [Ha HaD]].
+    inversion Ha. subst a.
+    apply (expr_result_extension_witness_on_fresh _ _ _ _ HF).
+    exact HaD.
+  - set_solver.
+  - exact HF.
   - exact Hext.
   - eapply expr_total_formula_to_atom_world. exact Htotal.
 Qed.

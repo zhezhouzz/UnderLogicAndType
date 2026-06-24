@@ -2,9 +2,8 @@
 
     Recursive-self support for the Fix Fundamental case. *)
 
-From Stdlib Require Import Lia Logic.Classical.
-From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps
-  SmallStep StrongNormalization.
+From Stdlib Require Import Lia.
+From CoreLang Require Import BasicTyping BasicTypingProps InstantiationProps.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface ResourceExtension.
 From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qualifier
@@ -436,6 +435,10 @@ Proof.
   pose proof (ty_denote_gas_ret_fvar_insert_ctx_erasure_under
     (cty_depth τx) Σ Γ τx z mz HbasicΓ Hτxfv Harg_depth)
     as Harg_erasure.
+  assert (Hzctx_under : z ∉ dom (ctx_erasure_under Σ Γ)).
+  {
+    clear -Hz. set_solver.
+  }
   assert (Hworld_bind :
       mz ⊨ basic_world_formula
         (atom_env_to_lty_env (<[z := erase_ty τx]>
@@ -450,7 +453,7 @@ Proof.
 	      (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx z
 	      (erase_ty τx) (cty_depth τx)).
 	    - apply atom_env_to_lty_env_dom_free_notin.
-	      ctx_erasure_under_norm_in Hz. better_set_solver.
+	      exact Hzctx_under.
 	    - exact (ctx_denote_under_basic_world Σ Γ mz HΓ_mz).
 	    - rewrite <- atom_store_to_lvar_store_insert.
 	      exact Harg_erasure.
@@ -465,7 +468,7 @@ Proof.
       mz ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind z τx)).
   {
     eapply ctx_bind_from_inserted_erasure_denotation.
-    - ctx_erasure_under_norm_in Hz. better_set_solver.
+    - exact Hzctx_under.
     - exact Hagree.
     - exact Hworld_bind.
     - exact Harg_erasure.
@@ -526,6 +529,15 @@ Proof.
   }
   assert (Hzself : z ∉ fv_tm self).
   { subst self. cbn [fv_tm fv_value]. fix_self_notin_union. }
+  assert (Hzctx_under : z ∉ dom (ctx_erasure_under Σ Γ)).
+  {
+    clear -Hzfresh. set_solver.
+  }
+  assert (Hzerase : z ∉ dom (erase_ctx Γ)).
+  {
+    eapply ctx_erasure_under_notin_erase_ctx.
+    exact Hzctx_under.
+  }
   assert (Hlc_self : lc_tm self).
   {
     subst self.
@@ -590,7 +602,7 @@ Proof.
     eapply ty_equiv_arrow_result_src_mid_inserted.
     - subst Δ. apply atom_store_to_lvar_store_closed.
     - subst Δ. apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hzfresh. better_set_solver.
+      exact Hzerase.
     - eapply relevant_env_arrow_fresh_free.
       + exact Hzτx.
       + exact Hzτ.
@@ -622,7 +634,7 @@ Proof.
       apply wf_context_ty_at_lc with
         (D := dom (erase_ctx Γ) ∪ ({[z]} : aset)).
       apply wf_context_ty_at_open_at.
-      + ctx_erasure_under_norm_in Hzfresh. better_set_solver.
+      + exact Hzerase.
       + exact (proj2 Hτ_arrow).
     - apply lc_tapp_tm; [exact Hlc_self|constructor].
   }
@@ -639,13 +651,20 @@ Proof.
       pose proof (cty_open_fv_subset 0 z τ) as Hτopen.
       apply lvars_fv_elem in Hτbad.
       rewrite context_ty_lvars_fv in Hτbad.
-      better_set_solver.
+      pose proof (Hτopen x Hτbad) as Hxz.
+      apply elem_of_union in Hxz as [Hxτ|Hxz].
+      + exact Hxτ.
+      + apply elem_of_singleton in Hxz. subst z.
+        exfalso. apply Hzx. reflexivity.
     - apply Hx_fresh.
       apply elem_of_union_l.
       apply lvars_fv_elem in Htmbad.
       rewrite tm_lvars_fv, fv_tapp_tm in Htmbad.
       cbn [fv_tm fv_value] in Htmbad.
-      better_set_solver.
+      apply elem_of_union in Htmbad as [Hxvf|Hxz].
+      + exact Hxvf.
+      + apply elem_of_singleton in Hxz. subst z.
+        exfalso. apply Hzx. reflexivity.
   }
   assert (Hmid_x :
       mz ⊨ ty_denote_gas Gtarget
@@ -692,7 +711,7 @@ Proof.
 	        inversion Hzx_bad. congruence.
 	      + pose proof (atom_env_to_lty_env_dom_free_notin
 	          (erase_ctx Γ) z
-	          ltac:(ctx_erasure_under_norm_in Hzfresh; better_set_solver))
+	          Hzerase)
 	          as Hznot.
 	        exact (Hznot HzΓ_bad).
     - eapply relevant_env_fresh_free.
@@ -1038,7 +1057,9 @@ Proof.
 	        cty_fv_syntax_norm_in Hbad.
 	        rewrite !context_ty_lvars_fv_at in Hbad.
 	        rewrite fv_cty_over_lt_bound_fvar in Hbad.
-	        clear -Hf Hw Hx_parent_dom Hbad. better_set_solver.
+	        fix_self_break_union Hbad;
+	          try solve [apply Hf; fix_self_in_union];
+	          try solve [apply Hw; fix_self_in_union].
       }
 	      apply storeA_map_eq. intros v.
 	      unfold lty_env_restrict_lvars.
@@ -1105,7 +1126,10 @@ Proof.
         apply lvars_fv_elem in Hbad.
         rewrite relevant_lvars_fv in Hbad.
         cbn [fv_tm fv_value] in Hbad.
-        better_set_solver.
+        apply elem_of_union in Hbad as [Hbad|Hbad].
+        + apply Hx. fix_self_in_union.
+        + apply elem_of_singleton in Hbad. subst w.
+          exfalso. apply Hw. fix_self_in_union.
       - exact Hleft_raw.
     }
     assert (Hlt_z :
@@ -1483,8 +1507,18 @@ Proof.
       - subst selfv.
         cbn [fv_value].
         pose proof (cty_open_fv_subset 0 w τ) as Hopen_fv.
-        clear -Hf Hw Hopen_fv.
-        all: better_set_solver.
+        intros Hbad.
+        repeat match type of Hbad with
+        | _ ∈ _ ∪ _ => apply elem_of_union in Hbad as [Hbad|Hbad]
+        end.
+        + apply Hf. fix_self_in_union.
+        + apply elem_of_singleton in Hbad. subst f.
+          apply Hw. fix_self_in_union.
+        + pose proof (Hopen_fv f Hbad) as Hfw.
+          apply elem_of_union in Hfw as [Hfτ|Hfw].
+          * apply Hf. fix_self_in_union.
+          * apply elem_of_singleton in Hfw. subst f.
+            apply Hw. fix_self_in_union.
       - apply map_lookup_insert.
       - subst selfv.
         apply lc_ret_iff_value.
@@ -1492,40 +1526,74 @@ Proof.
           Σ Γ (tret (vfix (TBase b →ₜ t) vf))
           (CTArrow (over_ty b φx) τ) Hwf).
 	      - (* outer result alias for [f] *)
-	        pose proof (res_models_kripke _ _ _ Hle_mf_mz Hres_fun)
-	          as Hres_fun_mz.
-	        assert (Hres_at :
-	            mz ⊨ expr_result_formula_at
-	              (dom (relevant_env Δx τself selftm))
-	              selftm (LVFree f)).
-	        {
-	          subst Δx τself selftm selfv.
-	          eapply result_first_outer_result_ret_value_at.
-	          - apply lty_env_closed_insert_free.
-	            apply atom_store_to_lvar_store_closed.
-	          - pose proof (context_typing_wf_lc_tm
-	              Σ Γ (tret (vfix (TBase b →ₜ t) vf))
-	              (CTArrow (over_ty b φx) τ) Hwf) as Hlc_fix_tm.
-	            apply lc_ret_iff_value in Hlc_fix_tm.
-	            exact Hlc_fix_tm.
-	          - cbn [fv_value]. clear -Hf. better_set_solver.
-	          - intros Hfin.
-	            apply lvars_fv_elem in Hfin.
-	            eapply relevant_env_fresh_free; [| |exact Hfin].
-	            + apply fv_cty_fix_rec_call_ty_fresh;
-	                [ intros Hfx; apply Hf; repeat apply elem_of_union_r;
-	                  rewrite Hfx; exact Hx_parent_dom
-	                | fix_self_notin_union
-	                | fix_self_notin_union ].
-	            + cbn [fv_tm fv_value]. fix_self_notin_union.
-	          - exact Hres_fun_mz.
-	        }
-	        unfold expr_result_formula.
-	        eapply expr_result_formula_at_coarsen_domain.
-	        + pose proof (res_models_kripke _ _ _ Hle Hzero) as Hzero_mz.
-	          subst Δx τself selftm.
-	          eapply ty_denote_gas_zero_tm_lvars_dom.
-	          exact Hzero_mz.
+		        pose proof (res_models_kripke _ _ _ Hle_mf_mz Hres_fun)
+		          as Hres_at.
+		        subst Δx τself selftm selfv.
+            assert (HresD_lc :
+              lc_lvars (dom (relevant_env
+                (<[LVFree xcur := TBase b]>
+                  (atom_env_to_lty_env (erase_ctx Γ)))
+                (CTArrow τarg τ)
+                (tret (vfix (TBase b →ₜ t) vf))))).
+            {
+              apply relevant_env_closed.
+              apply lty_env_closed_insert_free.
+              apply atom_store_to_lvar_store_closed.
+            }
+            assert (Hf_resD :
+              LVFree f ∉ dom (relevant_env
+                (<[LVFree xcur := TBase b]>
+                  (atom_env_to_lty_env (erase_ctx Γ)))
+                (CTArrow τarg τ)
+                (tret (vfix (TBase b →ₜ t) vf)))).
+            {
+              eapply relevant_env_fresh_free.
+              - subst τarg.
+                cty_fv_syntax_norm.
+                intros Hbad. apply Hf.
+                rewrite !context_ty_lvars_fv_at in Hbad.
+                rewrite fv_cty_over_lt_bound_fvar in Hbad.
+                clear -Hbad Hx_parent_dom.
+                better_set_solver.
+              - cbn [fv_tm fv_value]. fix_self_notin_union.
+            }
+            assert (Hlc_self_tm : lc_tm (tret (vfix (TBase b →ₜ t) vf))).
+            {
+              exact (context_typing_wf_lc_tm
+                Σ Γ (tret (vfix (TBase b →ₜ t) vf))
+                (CTArrow (over_ty b φx) τ) Hwf).
+            }
+            assert (Hf_self_tm : f ∉ fv_tm (tret (vfix (TBase b →ₜ t) vf))).
+            {
+              cbn [fv_tm fv_value]. fix_self_notin_union.
+            }
+            assert (Hf_resD_atoms :
+              f ∉ lvars_fv (dom (relevant_env
+                (<[LVFree xcur := TBase b]>
+                  (atom_env_to_lty_env (erase_ctx Γ)))
+                (CTArrow τarg τ)
+                (tret (vfix (TBase b →ₜ t) vf))))).
+            {
+              intros Hfin. apply Hf_resD.
+              apply lvars_fv_elem. exact Hfin.
+            }
+            cbn [formula_open] in Hres_at.
+            rewrite
+              (formula_open_result_first_expr_result_formula_at_shift0_unfolded
+                f
+                (dom (relevant_env
+                  (<[LVFree xcur := TBase b]>
+                    (atom_env_to_lty_env (erase_ctx Γ)))
+                  (CTArrow τarg τ)
+                  (tret (vfix (TBase b →ₜ t) vf))))
+                (tret (vfix (TBase b →ₜ t) vf))) in Hres_at
+              by (try exact HresD_lc; try exact Hf_resD_atoms;
+                  try exact Hlc_self_tm; try exact Hf_self_tm).
+		        unfold expr_result_formula.
+		        eapply expr_result_formula_at_coarsen_domain.
+		        + pose proof (res_models_kripke _ _ _ Hle Hzero) as Hzero_mz.
+		          eapply ty_denote_gas_zero_tm_lvars_dom.
+		          exact Hzero_mz.
 	        + reflexivity.
 	        + intros Hfin.
 	          eapply relevant_env_fresh_free; [| |exact Hfin].

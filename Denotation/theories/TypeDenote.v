@@ -987,6 +987,157 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma denotation_open_lvars_shift_from_lc k D :
+  lc_lvars D ->
+  lc_lvars (lvars_shift_from k D).
+Proof.
+  intros Hlc v Hv.
+  unfold lvars_shift_from in Hv.
+  apply elem_of_map in Hv as [u [-> Hu]].
+  destruct u as [n|x]; cbn [logic_var_shift_from].
+  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
+  - exact I.
+Qed.
+
+Lemma denotation_open_lvars_lc_at_zero_of_lc D :
+  lc_lvars D ->
+  lvars_lc_at 0 D.
+Proof.
+  intros Hlc k Hk.
+  rewrite lvars_bv_elem in Hk.
+  exfalso. exact (Hlc (LVBound k) Hk).
+Qed.
+
+Lemma set_swap_bound0_difference_free_normalize D z :
+  LVFree z ∉ D ->
+  set_swap (LVBound 0) (LVFree z) (D ∖ {[LVBound 0]}) =
+  set_swap (LVBound 0) (LVFree z) D ∖ {[LVFree z]}.
+Proof.
+  intros HzD.
+  apply set_eq. intros a.
+  rewrite elem_of_difference.
+  split.
+  - intros Ha.
+    split.
+    + rewrite elem_of_set_swap in Ha.
+      rewrite elem_of_set_swap.
+      set_solver.
+    + intros Haz.
+      apply elem_of_singleton in Haz. subst a.
+      rewrite elem_of_set_swap in Ha.
+      apply elem_of_difference in Ha as [_ Hnot].
+      apply Hnot. apply elem_of_singleton.
+      unfold swap. rewrite decide_False by discriminate.
+      rewrite decide_True by reflexivity. reflexivity.
+  - intros [Ha Haz].
+    rewrite elem_of_set_swap in Ha.
+    rewrite elem_of_set_swap.
+    apply elem_of_difference. split; [exact Ha|].
+    intros Hbound.
+    apply Haz. apply elem_of_singleton.
+    apply elem_of_singleton in Hbound.
+    unfold swap in Hbound.
+    repeat destruct decide; congruence.
+Qed.
+
+Lemma lvars_open0_difference_bound0_normalize D z :
+  LVFree z ∉ D ->
+  lvars_open 0 z (D ∖ {[LVBound 0]}) =
+  lvars_open 0 z D ∖ {[LVFree z]}.
+Proof.
+  apply set_swap_bound0_difference_free_normalize.
+Qed.
+
+Lemma set_swap_qual_vars_open_atom0 z (φ : type_qualifier) :
+  set_swap (LVBound 0) (LVFree z) (qual_vars φ) =
+  qual_vars (qual_open_atom 0 z φ).
+Proof.
+  rewrite qual_open_atom_vars. reflexivity.
+Qed.
+
+Lemma formula_open_result_first_expr_result_formula_at_shift0 y D e :
+  lc_lvars D ->
+  y ∉ lvars_fv D ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  formula_open 0 y
+    (expr_result_formula_at (lvars_shift_from 0 D)
+      (tm_shift 0 e) (LVBound 0)) =
+  expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HlcD HyD Hlce Hye.
+  rewrite formula_open_expr_result_formula_at_shift0.
+  - rewrite lvars_shift_from_lc_at_id; [reflexivity|].
+    apply denotation_open_lvars_lc_at_zero_of_lc. exact HlcD.
+  - apply denotation_open_lvars_shift_from_lc. exact HlcD.
+  - rewrite lvars_shift_from_fv. exact HyD.
+  - exact Hlce.
+  - exact Hye.
+Qed.
+
+Lemma formula_open_result_first_expr_result_formula_at_shift0_unfolded y D e :
+  lc_lvars D ->
+  y ∉ lvars_fv D ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  FFibVars
+    (set_swap (LVBound 0) (LVFree y) (lvars_shift_from 0 D))
+    (FAtom
+      (qual_open_atom 0 y (expr_result_qual (tm_shift 0 e) (LVBound 0)))) =
+  expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HlcD HyD Hlce Hye.
+  change
+    (formula_open 0 y
+      (expr_result_formula_at (lvars_shift_from 0 D)
+        (tm_shift 0 e) (LVBound 0)) =
+     expr_result_formula_at D e (LVFree y)).
+  apply formula_open_result_first_expr_result_formula_at_shift0;
+    assumption.
+Qed.
+
+Lemma formula_open_result_first_expr_result_formula_at_no_shift y D e :
+  lc_lvars D ->
+  y ∉ lvars_fv D ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  formula_open 0 y
+    (expr_result_formula_at (lvars_shift_from 0 D) e (LVBound 0)) =
+  expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HlcD HyD Hlce Hye.
+  rewrite formula_open_expr_result_formula_at.
+  - rewrite open_rec_lc_tm by exact Hlce.
+    replace (logic_var_open 0 y (LVBound 0)) with (LVFree y).
+    + rewrite lvars_shift_from_lc_at_id.
+      * rewrite lvars_open_fresh_index; [reflexivity| |exact HyD].
+        intros Hbad. rewrite lvars_bv_elem in Hbad.
+        exact (HlcD (LVBound 0) Hbad).
+      * apply denotation_open_lvars_lc_at_zero_of_lc. exact HlcD.
+    + unfold swap. repeat destruct decide; try lia; try congruence.
+  - exact Hye.
+Qed.
+
+Lemma formula_open_result_first_expr_result_formula_at_no_shift_unfolded y D e :
+  lc_lvars D ->
+  y ∉ lvars_fv D ->
+  lc_tm e ->
+  y ∉ fv_tm e ->
+  FFibVars
+    (set_swap (LVBound 0) (LVFree y) (lvars_shift_from 0 D))
+    (FAtom (qual_open_atom 0 y (expr_result_qual e (LVBound 0)))) =
+  expr_result_formula_at D e (LVFree y).
+Proof.
+  intros HlcD HyD Hlce Hye.
+  change
+    (formula_open 0 y
+      (expr_result_formula_at (lvars_shift_from 0 D)
+        e (LVBound 0)) =
+     expr_result_formula_at D e (LVFree y)).
+  apply formula_open_result_first_expr_result_formula_at_no_shift;
+    assumption.
+Qed.
+
 Lemma formula_open_result_first_fun_arg_two
     gas (Σ : lty_env) τx Tf z y :
   lty_env_closed Σ ->
@@ -1296,11 +1447,47 @@ Notation "'static_guard[' Σ ']' τ e" :=
 Ltac ty_denote_open_one_side :=
   first
     [ assumption
+    | match goal with
+      | H : ?y ∉ qual_dom ?φ |- LVFree ?y ∉ qual_vars ?φ =>
+          intros Hyvars; apply H; unfold qual_dom;
+          apply lvars_fv_elem; exact Hyvars
+      end
+    | match goal with
+      | H : ?y ∉ lvars_fv ?D |- LVFree ?y ∉ ?D =>
+          intros Hyvars; apply H; apply lvars_fv_elem; exact Hyvars
+      end
+    | apply relevant_env_closed; assumption
     | relevant_lvars_norm; better_set_solver
     | type_open_env_syntax_norm;
       cbn [fv_tm fv_value value_lvars value_lvars_at];
       rewrite ?fv_tapp_tm, ?tm_shift_fv, ?cty_shift_fv;
       better_set_solver ].
+
+Ltac lvars_open_difference_bound0_norm :=
+  repeat match goal with
+  | |- context [lvars_open 0 ?z (?D ∖ {[LVBound 0]})] =>
+      rewrite (lvars_open0_difference_bound0_normalize D z)
+        by ty_denote_open_one_side
+  | |- context [set_swap (LVBound 0) (LVFree ?z)
+        (?D ∖ {[LVBound 0]})] =>
+      rewrite (set_swap_bound0_difference_free_normalize D z)
+        by ty_denote_open_one_side
+  | |- context [set_swap (LVBound 0) (LVFree ?z) (qual_vars ?φ)] =>
+      rewrite (set_swap_qual_vars_open_atom0 z φ)
+  end.
+
+Ltac lvars_open_difference_bound0_norm_in H :=
+  repeat match type of H with
+  | context [lvars_open 0 ?z (?D ∖ {[LVBound 0]})] =>
+      rewrite (lvars_open0_difference_bound0_normalize D z) in H
+        by ty_denote_open_one_side
+  | context [set_swap (LVBound 0) (LVFree ?z)
+        (?D ∖ {[LVBound 0]})] =>
+      rewrite (set_swap_bound0_difference_free_normalize D z) in H
+        by ty_denote_open_one_side
+  | context [set_swap (LVBound 0) (LVFree ?z) (qual_vars ?φ)] =>
+      rewrite (set_swap_qual_vars_open_atom0 z φ) in H
+  end.
 
 Ltac open_syntax_norm :=
   formula_syntax_norm;
@@ -1314,6 +1501,7 @@ Ltac open_syntax_norm :=
   rewrite ?open_tm_shift0_lc by eauto;
   rewrite ?open_tm_shift0_lvars_lc by eauto;
   rewrite ?open_tapp_tm_shift_bvar0_lc by eauto;
+  lvars_open_difference_bound0_norm;
   rewrite ?fv_tapp_tm, ?tm_shift_fv.
 
 Ltac open_syntax_norm_in H :=
@@ -1327,11 +1515,84 @@ Ltac open_syntax_norm_in H :=
   rewrite ?open_tm_shift0_lc in H by eauto;
   rewrite ?open_tm_shift0_lvars_lc in H by eauto;
   rewrite ?open_tapp_tm_shift_bvar0_lc in H by eauto;
+  lvars_open_difference_bound0_norm_in H;
   rewrite ?fv_tapp_tm in H;
   rewrite ?tm_shift_fv in H.
 
+Ltac denotation_result_first_open_norm :=
+  cbn [formula_open];
+  repeat match goal with
+  | |- context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        (tm_shift 0 ?e) (LVBound 0))] =>
+      rewrite (formula_open_result_first_expr_result_formula_at_shift0 y D e)
+        by ty_denote_open_one_side
+  | |- context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        ?e (LVBound 0))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_no_shift y D e)
+        by ty_denote_open_one_side
+  | |- context [FFibVars
+      (set_swap (LVBound 0) (LVFree ?y) (lvars_shift_from 0 ?D))
+      (FAtom
+        (qual_open_atom 0 ?y (expr_result_qual (tm_shift 0 ?e)
+          (LVBound 0))))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_shift0_unfolded
+          y D e)
+        by ty_denote_open_one_side
+  | |- context [FFibVars
+      (set_swap (LVBound 0) (LVFree ?y) (lvars_shift_from 0 ?D))
+      (FAtom
+        (qual_open_atom 0 ?y (expr_result_qual ?e (LVBound 0))))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_no_shift_unfolded
+          y D e)
+        by ty_denote_open_one_side
+  end;
+  lvars_open_difference_bound0_norm.
+
+Ltac denotation_result_first_open_norm_in H :=
+  cbn [formula_open] in H;
+  repeat match type of H with
+  | context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        (tm_shift 0 ?e) (LVBound 0))] =>
+      rewrite (formula_open_result_first_expr_result_formula_at_shift0 y D e) in H
+        by ty_denote_open_one_side
+  | context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        ?e (LVBound 0))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_no_shift y D e) in H
+        by ty_denote_open_one_side
+  | context [FFibVars
+      (set_swap (LVBound 0) (LVFree ?y) (lvars_shift_from 0 ?D))
+      (FAtom
+        (qual_open_atom 0 ?y (expr_result_qual (tm_shift 0 ?e)
+          (LVBound 0))))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_shift0_unfolded
+          y D e) in H
+        by ty_denote_open_one_side
+  | context [FFibVars
+      (set_swap (LVBound 0) (LVFree ?y) (lvars_shift_from 0 ?D))
+      (FAtom
+        (qual_open_atom 0 ?y (expr_result_qual ?e (LVBound 0))))] =>
+      rewrite
+        (formula_open_result_first_expr_result_formula_at_no_shift_unfolded
+          y D e) in H
+        by ty_denote_open_one_side
+  end;
+  lvars_open_difference_bound0_norm_in H.
+
 Ltac denotation_open_norm :=
   repeat match goal with
+  | |- context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        (tm_shift 0 ?e) (LVBound 0))] =>
+      denotation_result_first_open_norm
   | |- context [formula_open 0 ?y
       (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
       rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e)
@@ -1346,6 +1607,10 @@ Ltac denotation_open_norm :=
 
 Ltac denotation_open_norm_in H :=
   repeat match type of H with
+  | context [formula_open 0 ?y
+      (expr_result_formula_at (lvars_shift_from 0 ?D)
+        (tm_shift 0 ?e) (LVBound 0))] =>
+      denotation_result_first_open_norm_in H
   | context [formula_open 0 ?y
       (ty_denote_gas ?gas ?Σ ?τ ?e)] =>
       rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ e) in H
@@ -1524,20 +1789,40 @@ Proof.
 	      repeat rewrite ?lvars_at_depth_union.
 	      rewrite_tm_support.
 	      pose proof (lvars_at_depth_relevant_env_subset_relevant
-	        d Σ (CTInter τ1 τ2) e).
-	      pose proof (IH d Σ τ1 e).
-	      pose proof (IH d Σ τ2 e).
+	        d Σ (CTInter τ1 τ2) e) as Hrel.
+	      pose proof (IH d Σ τ1 e) as Hleft.
+	      pose proof (IH d Σ τ2 e) as Hright.
 	      cbn [context_ty_lvars_at].
-	      set_solver.
+	      intros v Hv.
+	      set_unfold in Hv.
+	      set_unfold.
+	      repeat match goal with
+	      | H : _ \/ _ |- _ => destruct H as [H|H]
+	      end;
+	        try solve
+	          [ specialize (Hrel v Hv); set_unfold in Hrel; tauto
+	          | specialize (Hleft v Hv); set_unfold in Hleft; tauto
+	          | specialize (Hright v Hv); set_unfold in Hright; tauto
+	          | tauto ].
 	    + unfold_formula_lvars_atoms.
 	      repeat rewrite ?lvars_at_depth_union.
 	      rewrite_tm_support.
 	      pose proof (lvars_at_depth_relevant_env_subset_relevant
-	        d Σ (CTUnion τ1 τ2) e).
-	      pose proof (IH d Σ τ1 e).
-	      pose proof (IH d Σ τ2 e).
+	        d Σ (CTUnion τ1 τ2) e) as Hrel.
+	      pose proof (IH d Σ τ1 e) as Hleft.
+	      pose proof (IH d Σ τ2 e) as Hright.
 	      cbn [context_ty_lvars_at].
-	      set_solver.
+	      intros v Hv.
+	      set_unfold in Hv.
+	      set_unfold.
+	      repeat match goal with
+	      | H : _ \/ _ |- _ => destruct H as [H|H]
+	      end;
+	        try solve
+	          [ specialize (Hrel v Hv); set_unfold in Hrel; tauto
+	          | specialize (Hleft v Hv); set_unfold in Hleft; tauto
+	          | specialize (Hright v Hv); set_unfold in Hright; tauto
+	          | tauto ].
     + unfold_formula_lvars_atoms.
       repeat rewrite ?lvars_at_depth_union.
       rewrite_tm_support.

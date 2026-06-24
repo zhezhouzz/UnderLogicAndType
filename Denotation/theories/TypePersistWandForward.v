@@ -315,26 +315,12 @@ Proof.
   cbn [ty_denote_gas] in Hden.
   rewrite res_models_and_iff in Hden.
   destruct Hden as [_ Hforall].
-  pose proof (result_first_forall_impl_open_elim
-    m mr r
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e)))
-      (tm_shift 0 e) (LVBound 0))
-    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))
-    Hforall Hrm Hdom Hbase) as Helim.
-  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
-  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
-  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
-  2:{ exact Hlce. }
-  2:{ exact Hre. }
-  rewrite (lvars_shift_from_lc_eq 0
-    (dom (relevant_env Σ (CTOver b φ) e))) in Helim
-    by (apply relevant_env_closed; exact HΣclosed).
-  specialize (Helim Hres).
-  rewrite formula_open_over_self_body_normalize in Helim.
-  - exact Helim.
-  - intros Hrvars. apply Hrφ.
-    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
+  pose proof (res_models_forall_open_named_fresh
+    m mr r _ Hforall Hrm Hdom Hbase) as Himpl.
+  cbn [formula_open] in Himpl.
+  denotation_result_first_open_norm_in Himpl.
+  pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
+  exact Helim.
 Qed.
 
 Lemma ty_denote_gas_under_result_body_elim
@@ -357,26 +343,12 @@ Proof.
   cbn [ty_denote_gas] in Hden.
   rewrite res_models_and_iff in Hden.
   destruct Hden as [_ Hforall].
-  pose proof (result_first_forall_impl_open_elim
-    m mr r
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e)))
-      (tm_shift 0 e) (LVBound 0))
-    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))
-    Hforall Hrm Hdom Hbase) as Helim.
-  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
-  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
-  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
-  2:{ exact Hlce. }
-  2:{ exact Hre. }
-  rewrite (lvars_shift_from_lc_eq 0
-    (dom (relevant_env Σ (CTUnder b φ) e))) in Helim
-    by (apply relevant_env_closed; exact HΣclosed).
-  specialize (Helim Hres).
-  rewrite formula_open_under_self_body_normalize in Helim.
-  - exact Helim.
-  - intros Hrvars. apply Hrφ.
-    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
+  pose proof (res_models_forall_open_named_fresh
+    m mr r _ Hforall Hrm Hdom Hbase) as Himpl.
+  cbn [formula_open] in Himpl.
+  denotation_result_first_open_norm_in Himpl.
+  pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
+  exact Helim.
 Qed.
 
 Lemma arrow_value_persist_over_arg_apply_singleton
