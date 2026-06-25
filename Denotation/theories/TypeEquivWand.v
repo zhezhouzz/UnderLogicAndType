@@ -534,6 +534,30 @@ Proof.
   exact Hmid.
 Qed.
 
+Lemma ty_equiv_wand_result_tgt_goal_inserted
+    gas (Σ : lty_env) τx τr e2
+    (m : WfWorldT) y :
+  lc_tm e2 ->
+  y ∉ fv_cty τr ->
+  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
+    context_ty_lvars_at 1 τr ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTWand τx τr) e2))
+    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hlc Hyτr Hτr_vars Hmid.
+  eapply res_models_ty_denote_gas_env_agree_on.
+  - reflexivity.
+  - symmetry. apply wand_body_relevant_env_agree_insert_core.
+    + exact Hτr_vars.
+    + apply tm_lvars_tapp_tm_fvar_without_arg.
+  - exact Hmid.
+Qed.
+
 Lemma wfworld_closed_on_wand_open_result_apps
     (Σ : lty_env) τx τr e1 e2
     (m my n : WfWorldT) y (Hc : world_compat n my) :

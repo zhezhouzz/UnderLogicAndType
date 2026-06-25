@@ -394,62 +394,35 @@ Proof.
     exact (context_typing_wf_lc_tm
       Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
   }
-  assert (HΣfresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTWand τx τ) elam)
-          (erase_ty τx)))).
+  assert (Hτ_lc1 : cty_lc_at 1 τ).
   {
-    subst elam.
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    pose proof (relevant_env_dom_subset_direct
-      (atom_env_to_lty_env (erase_ctx Γ))
-      (CTWand τx τ) (tret (vlam (erase_ty τx) e))) as Hrel.
-    intros Hyfv.
-    apply lvars_fv_elem in Hyfv.
-    pose proof (Hrel _ Hyfv) as Hatom.
-    rewrite atom_store_to_lvar_store_dom in Hatom.
-	    rewrite <- lvars_fv_elem in Hatom.
-	    rewrite lvars_fv_of_atoms in Hatom.
-	    eapply lam_wand_fresh_erase_ctx in Hy. exact (Hy Hatom).
-	  }
-	  assert (Htmfresh :
-	      y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
-		    {
-		      subst elam.
-		      eapply lam_wand_shifted_tapp_fresh. exact Hy.
-		    }
-	  subst elam.
-	  assert (Happ_mid_open :
-	      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
-            (erase_ty τx)))
-        (cty_open 0 y τ)
-        (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
-  {
-    rewrite typed_lty_env_bind_open_current.
-    - exact Happ_mid.
-	    - apply atom_env_to_lty_env_dom_free_notin.
-	      eapply lam_wand_fresh_erase_ctx. exact Hy.
-    - apply atom_store_to_lvar_store_closed.
-	  }
-		  pose proof (lam_wand_open_shifted_tapp_denote_iff
-	    (Nat.max (cty_depth τx) (cty_depth τ))
-	    (typed_lty_env_bind
-	      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	        (CTWand τx τ) (tret (vlam (erase_ty τx) e)))
-	      (erase_ty τx))
-	    τ (tret (vlam (erase_ty τx) e)) my y
-	    HΣfresh Htmfresh
-	    ltac:(eapply lam_wand_fresh_result_ty; exact Hy)
-	    Hlc_elam) as [_ Hnorm_to_open].
-	  apply Hnorm_to_open.
-	  eapply ty_equiv_wand_result_tgt_goal.
-	  - exact Hlc_elam.
-	  - better_set_solver.
-	  - exact Happ_mid_open.
+    pose proof (context_typing_wf_context_ty Σ Γ
+      (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf) as Hτ_wf.
+    cbn [wf_context_ty_at] in Hτ_wf.
+    eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
+  }
+  subst elam.
+  rewrite formula_open_ty_denote_gas_bind_tapp_shift_bvar0.
+  - eapply ty_equiv_wand_result_tgt_goal_inserted.
+    + exact Hlc_elam.
+    + better_set_solver.
+    + eapply cty_lvars_open_body_closed_no_fresh.
+      * apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+        exact Hτ_lc1.
+      * intros HyD.
+        apply lvars_fv_elem in HyD.
+        rewrite context_ty_lvars_fv_at in HyD.
+        clear -Hy HyD. better_set_solver.
+      * reflexivity.
+    + exact Happ_mid.
+  - apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+  - apply relevant_env_wand_fresh_free.
+    + clear -Hy. better_set_solver.
+    + clear -Hy. better_set_solver.
+    + cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
+  - cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
+  - clear -Hy. better_set_solver.
+  - exact Hlc_elam.
 Qed.
 
 Lemma lamd_opened_wand_result
