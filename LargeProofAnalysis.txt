@@ -1,0 +1,115 @@
+Large Proof Analysis
+====================
+
+Scope
+-----
+
+This file tracks proof blocks in:
+
+- `Denotation/theories/*.v`
+- `ContextTyping/theories/Soundness*.v`
+
+A "large proof" currently means a `Proof ... Qed` block with at least 80
+proof-script lines. The goal is to identify proof bodies that should be split
+along semantic boundaries into reusable helper lemmas.
+
+Snapshot
+--------
+
+After Round 1, 99 proof blocks are at least 80 lines.
+
+Top large proofs:
+
+- 766 lines:
+  `ContextTyping/theories/SoundnessFixSelf.v:666`
+  `fix_self_rec_call_reducible_measure_step`
+- 614 lines:
+  `Denotation/theories/TypeEquivTermResult.v:331`
+  `expr_result_extension_fiber_models_result_slot`
+- 520 lines:
+  `ContextTyping/theories/SoundnessFixApply.v:308`
+  `fix_body_arrow_apply_self`
+- 439 lines:
+  `Denotation/theories/TypeEquivArrowResultFirst.v:389`
+  `ty_denote_gas_tm_equiv_arrow_body`
+- 398 lines:
+  `ContextTyping/theories/SoundnessFixBase.v:44`
+  `ty_denote_lt_arg_fiber`
+- 394 lines:
+  `Denotation/theories/TypeDenote.v:490`
+  `formula_open_env_ty_denote_gas`
+- 381 lines:
+  `Denotation/theories/TypeEquivWandResultFirst.v:390`
+  `ty_denote_gas_tm_equiv_wand_body`
+- 333 lines:
+  `ContextTyping/theories/SoundnessAppD.v:820`
+  `fundamental_appd_case`
+- 332 lines:
+  `Denotation/theories/TypeEquivTermTLet.v:96`
+  `tm_fiber_equiv_tlete_body_extension`
+- 307 lines:
+  `ContextTyping/theories/SoundnessFix.v:241`
+  `fix_result_first_arrow_value_denotation`
+
+High-Value Extraction Candidates
+--------------------------------
+
+1. `TypeEquivTermApp.tm_fiber_equiv_tapp_fvar`
+
+   Repeated internal shape:
+
+   ```coq
+   forall vf,
+     tm_eval_in_store (store_restrict σ X) e1 vf <->
+     tm_eval_in_store (store_restrict σ X) e2 vf
+   ```
+
+   This follows from `tm_fiber_equiv_on m X e1 e2` plus `σ` being in the same
+   `X`-fiber. It is a clean semantic boundary and can be extracted without
+   changing theorem statements.
+
+   Status: implemented as `tm_fiber_equiv_restrict_eval_iff`.
+
+2. `TypeEquivArrowResultFirst.ty_denote_gas_tm_equiv_arrow_body` and
+   `TypeEquivWandResultFirst.ty_denote_gas_tm_equiv_wand_body`
+
+   These contain result-first outer result alignment and inner argument/result
+   transport. Candidate extraction should target the result-first alignment
+   layer, but this is more delicate because it interacts with normalization
+   and opened environments.
+
+3. `SoundnessFixSelf.fix_self_rec_call_reducible_measure_step`
+
+   This is a true semantic induction step. It should be split only around
+   already-understood stages: normalize argument, prove measure decrease, build
+   child context, apply IH/body, unfold transport. Do not split mechanically.
+
+4. `TypeDenote.formula_open_env_ty_denote_gas`
+
+   This is a definition-normalization proof, not an ordinary semantic proof.
+   Extraction should happen by adding smaller boundary normalizer lemmas, not
+   by cutting arbitrary chunks out of the proof.
+
+Implementation Log
+------------------
+
+Round 1:
+
+- Added `tm_fiber_equiv_restrict_eval_iff` to
+  `Denotation/theories/TypeEquivTermApp.v`.
+- Replaced the duplicated internal `Hfun_equiv` proof in
+  `tm_fiber_equiv_tapp_fvar` with calls to the new helper.
+- Result: `tm_fiber_equiv_tapp_fvar` dropped below the 80-line large-proof
+  threshold, and the global count dropped from 101 to 99.
+- Local check:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTermApp.vo`
+  passed in 2.60s.
+
+Deferred
+--------
+
+- The largest Fix proofs are intentionally deferred until a focused pass. They
+  are not good first targets because their size reflects the well-founded
+  recursion structure rather than a small repeated proof idiom.
+- Result-first Arrow/Wand body proofs remain promising, but should be handled
+  together with open-normalization cleanup.

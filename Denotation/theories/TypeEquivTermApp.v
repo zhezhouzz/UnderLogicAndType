@@ -235,6 +235,55 @@ Proof.
 	      exact Heval.
 Qed.
 
+Lemma tm_fiber_equiv_restrict_eval_iff
+    (m : WfWorldT) X e1 e2 σ σ0 :
+  fv_tm e1 ∪ fv_tm e2 ⊆ X ->
+  tm_fiber_equiv_on m X e1 e2 ->
+  (res_restrict m X : WorldT) σ0 ->
+  (m : WorldT) σ ->
+  store_restrict σ X = σ0 ->
+  forall vf,
+    tm_eval_in_store (store_restrict σ X) e1 vf <->
+    tm_eval_in_store (store_restrict σ X) e2 vf.
+Proof.
+  intros HfvX Heq Hσ0 Hσ HσX vf.
+  split; intros Heval_fun.
+  - assert (Hres1 : tm_fiber_result_on m X e1 σ0 vf).
+    {
+      exists σ. split; [exact Hσ|]. split; [exact HσX|].
+      apply (proj1 (tm_eval_in_store_restrict_fv_subset
+        σ e1 vf X ltac:(set_solver))).
+      exact Heval_fun.
+    }
+    destruct (proj1 (Heq σ0 Hσ0 vf) Hres1)
+      as [σ2 [Hσ2 [Hσ2X Heval2]]].
+    assert (Hσ_eq : store_restrict σ X = store_restrict σ2 X).
+    { rewrite HσX, Hσ2X. reflexivity. }
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ e2 vf X ltac:(set_solver))).
+    eapply tm_eval_in_store_agree_on_fv.
+    2: exact Heval2.
+    eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
+    set_solver.
+  - assert (Hres2 : tm_fiber_result_on m X e2 σ0 vf).
+    {
+      exists σ. split; [exact Hσ|]. split; [exact HσX|].
+      apply (proj1 (tm_eval_in_store_restrict_fv_subset
+        σ e2 vf X ltac:(set_solver))).
+      exact Heval_fun.
+    }
+    destruct (proj2 (Heq σ0 Hσ0 vf) Hres2)
+      as [σ1 [Hσ1 [Hσ1X Heval1]]].
+    assert (Hσ_eq : store_restrict σ X = store_restrict σ1 X).
+    { rewrite HσX, Hσ1X. reflexivity. }
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ e1 vf X ltac:(set_solver))).
+    eapply tm_eval_in_store_agree_on_fv.
+    2: exact Heval1.
+    eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
+    set_solver.
+Qed.
+
 Lemma tm_fiber_equiv_tapp_fvar
     (m : WfWorldT) X e1 e2 y :
   fv_tm (tapp_tm e1 (vfvar y)) ∪ fv_tm (tapp_tm e2 (vfvar y)) ⊆ X ->
@@ -258,37 +307,8 @@ Proof.
           tm_eval_in_store (store_restrict σ X) e1 vf <->
           tm_eval_in_store (store_restrict σ X) e2 vf).
     {
-      intros vf. split; intros Heval_fun.
-      - assert (Hres1 : tm_fiber_result_on m X e1 σ0 vf).
-        { exists σ. split; [exact Hσ|]. split; [exact HσX|].
-          apply (proj1 (tm_eval_in_store_restrict_fv_subset
-            σ e1 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-          exact Heval_fun. }
-        destruct (proj1 (Heq σ0 Hσ0 vf) Hres1)
-          as [σ2 [Hσ2 [Hσ2X Heval2]]].
-        assert (Hσ_eq : store_restrict σ X = store_restrict σ2 X).
-        { rewrite HσX, Hσ2X. reflexivity. }
-        apply (proj2 (tm_eval_in_store_restrict_fv_subset
-            σ e2 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-        eapply tm_eval_in_store_agree_on_fv.
-        2: exact Heval2.
-        eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
-        cbn [fv_tm fv_value] in HfvX. set_solver.
-      - assert (Hres2 : tm_fiber_result_on m X e2 σ0 vf).
-        { exists σ. split; [exact Hσ|]. split; [exact HσX|].
-          apply (proj1 (tm_eval_in_store_restrict_fv_subset
-            σ e2 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-          exact Heval_fun. }
-        destruct (proj2 (Heq σ0 Hσ0 vf) Hres2)
-          as [σ1 [Hσ1 [Hσ1X Heval1]]].
-        assert (Hσ_eq : store_restrict σ X = store_restrict σ1 X).
-        { rewrite HσX, Hσ1X. reflexivity. }
-        apply (proj2 (tm_eval_in_store_restrict_fv_subset
-            σ e1 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-        eapply tm_eval_in_store_agree_on_fv.
-        2: exact Heval1.
-        eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
-        cbn [fv_tm fv_value] in HfvX. set_solver.
+      eapply tm_fiber_equiv_restrict_eval_iff; eauto.
+      cbn [fv_tm fv_value] in HfvX. set_solver.
     }
     apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ (tapp_tm e2 (vfvar y)) v X Hfv_app2)).
@@ -307,37 +327,8 @@ Proof.
           tm_eval_in_store (store_restrict σ X) e1 vf <->
           tm_eval_in_store (store_restrict σ X) e2 vf).
     {
-      intros vf. split; intros Heval_fun.
-      - assert (Hres1 : tm_fiber_result_on m X e1 σ0 vf).
-        { exists σ. split; [exact Hσ|]. split; [exact HσX|].
-          apply (proj1 (tm_eval_in_store_restrict_fv_subset
-            σ e1 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-          exact Heval_fun. }
-        destruct (proj1 (Heq σ0 Hσ0 vf) Hres1)
-          as [σ2 [Hσ2 [Hσ2X Heval2]]].
-        assert (Hσ_eq : store_restrict σ X = store_restrict σ2 X).
-        { rewrite HσX, Hσ2X. reflexivity. }
-        apply (proj2 (tm_eval_in_store_restrict_fv_subset
-            σ e2 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-        eapply tm_eval_in_store_agree_on_fv.
-        2: exact Heval2.
-        eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
-        cbn [fv_tm fv_value] in HfvX. set_solver.
-      - assert (Hres2 : tm_fiber_result_on m X e2 σ0 vf).
-        { exists σ. split; [exact Hσ|]. split; [exact HσX|].
-          apply (proj1 (tm_eval_in_store_restrict_fv_subset
-            σ e2 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-          exact Heval_fun. }
-        destruct (proj2 (Heq σ0 Hσ0 vf) Hres2)
-          as [σ1 [Hσ1 [Hσ1X Heval1]]].
-        assert (Hσ_eq : store_restrict σ X = store_restrict σ1 X).
-        { rewrite HσX, Hσ1X. reflexivity. }
-        apply (proj2 (tm_eval_in_store_restrict_fv_subset
-            σ e1 vf X ltac:(cbn [fv_tm fv_value] in HfvX; set_solver))).
-        eapply tm_eval_in_store_agree_on_fv.
-        2: exact Heval1.
-        eapply storeA_restrict_eq_mono; [|exact Hσ_eq].
-        cbn [fv_tm fv_value] in HfvX. set_solver.
+      eapply tm_fiber_equiv_restrict_eval_iff; eauto.
+      cbn [fv_tm fv_value] in HfvX. set_solver.
     }
     apply (proj1 (tm_eval_in_store_restrict_fv_subset
       σ (tapp_tm e1 (vfvar y)) v X Hfv_app1)).
