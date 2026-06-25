@@ -168,7 +168,7 @@ Ltac denotation_set_norm :=
   rewrite ?dom_insert_L, ?dom_union_L, ?dom_singleton_L in *.
 
 Ltac denotation_set_solve :=
-  denotation_set_norm; set_solver.
+  denotation_set_norm; better_set_solver!!.
 
 Ltac soundness_fresh_norm :=
   denotation_set_norm;
@@ -178,7 +178,7 @@ Ltac soundness_fresh_solve :=
   soundness_fresh_norm; better_set_solver.
 
 Ltac denotation_store_norm :=
-  rewrite ?storeA_restrict_twice_subset in * by set_solver.
+  rewrite ?storeA_restrict_twice_subset in * by better_set_solver!!.
 
 (** ** Regular facts extracted from denotation/resource definitions *)
 
