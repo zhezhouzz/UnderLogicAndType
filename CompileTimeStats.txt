@@ -1,309 +1,93 @@
-# Compile Time Statistics
+Compile Time Stats and Optimization Log
+=======================================
 
-Generated from fresh `make clean` followed by `timeout 300s make -B TIMED=1` output saved at `/private/tmp/underlogic_compile_timing_20260624.log`.
+Source: `CompileTimeStatsRaw.txt` from a forced `make -B TIMED=1`, filtered through the current `_CoqProject` after this optimization pass. `BasicTypingFormula.v` uses the post-change local measurement (`4.54s`).
 
-## Summary
+Completed This Pass
+-------------------
 
-- Generated at: 2026-06-24 09:49:15 
-- Full fresh build: passed
-- Files compiled: 114
-- Source lines covered: 85813 (85.81 KLOC)
-- Sum of per-file real time: 167.10s
-- Sum of per-file user CPU time: 156.38s
-- Sum of per-file sys CPU time: 8.22s
-- Overall seconds/KLOC: 1.95
-- Overall KLOC/second: 0.514
+- Removed three tiny re-export wrapper files from the build graph:
+  - `Denotation/theories/TypePersistWand.v`
+  - `Denotation/theories/TypePersist.v`
+  - `ContextTyping/theories/SoundnessLam.v`
+- Replaced their internal imports with direct imports of the component files.
+- Changed `basic_tm_has_ltype_lvars` to use a shared mutual helper `basic_has_ltype_lvars_mutual`, reducing local rebuild time for `BasicTypingFormula.v` from roughly `4.9-5.2s` to `4.54s` in this run.
 
-Note: seconds/KLOC is useful for spotting dense proof files. Very small re-export/wrapper files can look artificially bad, so there is a separate density table restricted to files with at least 100 lines.
+Notes
+-----
 
-## Top 25 By Total Compile Time
+- Remaining very high sec/KLoC items below ~100 lines are mostly fixed Rocq startup/import overhead. They are listed for honesty, but lowering them below 2s/KLoC generally requires deleting/merging wrapper-style files, not proof rewriting.
+- `CoreLang` entries are listed but not optimized in this pass, following the standing convention to avoid Core language unless explicitly requested.
+- Files with no individual `-time` hotspot above ~0.5s are marked as poor candidates for hand rewriting; their cost is distributed across imports and many small commands.
 
-| Rank | File | Lines | Real s | User s | s/KLOC | KLOC/s | Mem MB |
-|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | `CoreLang/theories/LocallyNamelessExtra.v` | 757 | 5.46 | 5.28 | 7.21 | 0.139 | 543.1 |
-| 2 | `Denotation/theories/Context.v` | 1851 | 4.96 | 4.84 | 2.68 | 0.373 | 530.3 |
-| 3 | `Denotation/theories/TypeEquivTermResult.v` | 1360 | 4.90 | 4.78 | 3.60 | 0.278 | 560.7 |
-| 4 | `ContextBasicDenotation/theories/TermTLet.v` | 1802 | 4.51 | 4.38 | 2.50 | 0.400 | 564.3 |
-| 5 | `CoreLang/theories/Syntax.v` | 423 | 4.35 | 4.24 | 10.28 | 0.097 | 521.7 |
-| 6 | `Denotation/theories/TypeDenote.v` | 1643 | 4.19 | 4.05 | 2.55 | 0.392 | 546.5 |
-| 7 | `Denotation/theories/TypeEquivFiberBaseResult.v` | 1663 | 3.92 | 3.79 | 2.36 | 0.424 | 554.3 |
-| 8 | `ContextTyping/theories/Soundness.v` | 1214 | 3.79 | 3.65 | 3.12 | 0.320 | 519.9 |
-| 9 | `ContextTyping/theories/SoundnessApp.v` | 1309 | 3.71 | 3.58 | 2.83 | 0.353 | 547.9 |
-| 10 | `Denotation/theories/TypeEquiv.v` | 1860 | 3.69 | 3.58 | 1.98 | 0.504 | 531.3 |
-| 11 | `ContextBasicDenotation/theories/BasicTypingFormula.v` | 1062 | 3.64 | 3.52 | 3.43 | 0.292 | 524.7 |
-| 12 | `ContextLogic/theories/FormulaConnectives.v` | 1548 | 3.54 | 3.43 | 2.29 | 0.437 | 549.4 |
-| 13 | `ContextLogic/theories/FormulaSyntax.v` | 1303 | 3.51 | 3.37 | 2.69 | 0.371 | 519.5 |
-| 14 | `ContextTyping/theories/SoundnessFixSelf.v` | 1652 | 3.38 | 3.27 | 2.05 | 0.489 | 556.9 |
-| 15 | `Denotation/theories/TypeEquivTLet.v` | 1671 | 3.33 | 3.22 | 1.99 | 0.502 | 522.3 |
-| 16 | `ContextLogic/theories/FormulaSemantics.v` | 1094 | 3.08 | 2.98 | 2.82 | 0.355 | 524.0 |
-| 17 | `CoreLang/theories/BasicTypingProps.v` | 758 | 2.97 | 2.85 | 3.92 | 0.255 | 513.7 |
-| 18 | `ContextAlgebra/theories/ResourceInterface.v` | 2149 | 2.72 | 2.63 | 1.27 | 0.790 | 518.4 |
-| 19 | `ContextTyping/theories/SoundnessLamArrow.v` | 1082 | 2.72 | 2.57 | 2.51 | 0.398 | 526.7 |
-| 20 | `ContextLogic/theories/FormulaConnectivesHigher.v` | 985 | 2.63 | 2.50 | 2.67 | 0.375 | 516.5 |
-| 21 | `ContextTyping/theories/SoundnessAppD.v` | 1244 | 2.58 | 2.45 | 2.07 | 0.482 | 525.7 |
-| 22 | `CoreLang/theories/LocallyNamelessProps.v` | 360 | 2.54 | 2.43 | 7.06 | 0.142 | 492.8 |
-| 23 | `ContextBasicDenotation/theories/TermOpen.v` | 1084 | 2.45 | 2.34 | 2.26 | 0.442 | 519.8 |
-| 24 | `ContextTyping/theories/SoundnessMatch.v` | 1531 | 2.44 | 2.34 | 1.59 | 0.627 | 517.3 |
-| 25 | `Denotation/theories/TypeEquivTermBase.v` | 1044 | 2.33 | 2.25 | 2.23 | 0.448 | 522.0 |
+Files Over 2s/KLoC
+------------------
 
-## Top 25 By Seconds Per KLOC (All Files)
+| sec/KLoC | seconds | lines | file |
+|---:|---:|---:|---|
+| 41.11 | 0.37 | 9 | `Denotation/theories/TypeEquivFiberBase.v` |
+| 37.00 | 0.37 | 10 | `Denotation/theories/TypeEquivTerm.v` |
+| 30.98 | 1.89 | 61 | `ContextBase/Swap/Swap.v` |
+| 23.18 | 0.51 | 22 | `ContextBasicDenotation/theories/Notation.v` |
+| 16.55 | 0.48 | 29 | `Denotation/theories/Notation.v` |
+| 16.30 | 0.44 | 27 | `ContextTyping/theories/SoundnessConcrete.v` |
+| 12.36 | 5.23 | 423 | `CoreLang/theories/Syntax.v` (CoreLang) |
+| 9.39 | 3.38 | 360 | `CoreLang/theories/LocallyNamelessProps.v` (CoreLang) |
+| 8.56 | 6.48 | 757 | `CoreLang/theories/LocallyNamelessExtra.v` (CoreLang) |
+| 8.25 | 0.47 | 57 | `ContextTyping/theories/PrimOpContext.v` |
+| 8.18 | 0.36 | 44 | `CoreLang/theories/Instantiation.v` (CoreLang) |
+| 8.00 | 0.40 | 50 | `ContextLogic/theories/FormulaWorldExtension.v` |
+| 7.30 | 0.46 | 63 | `CoreLang/theories/OperationalResults.v` (CoreLang) |
+| 6.98 | 0.37 | 53 | `CoreLang/theories/Prelude.v` (CoreLang) |
+| 4.63 | 3.51 | 758 | `CoreLang/theories/BasicTypingProps.v` (CoreLang) |
+| 4.29 | 0.42 | 98 | `ContextBasicDenotation/theories/BasicFormulaFiberwise.v` |
+| 4.21 | 4.54 | 1079 | `ContextBasicDenotation/theories/BasicTypingFormula.v` |
+| 4.21 | 0.45 | 107 | `ContextAlgebra/theories/ContextAlgebra.v` |
+| 3.93 | 0.53 | 135 | `ContextBase/BaseTactics.v` |
+| 3.87 | 4.37 | 1130 | `ContextTyping/theories/Soundness.v` |
+| 3.85 | 0.37 | 96 | `CoreLang/theories/SyntaxNotation.v` (CoreLang) |
+| 3.79 | 0.55 | 145 | `ContextBase/Swap/SetSwap.v` |
+| 3.77 | 1.15 | 305 | `CoreLang/theories/BasicTyping.v` (CoreLang) |
+| 3.58 | 0.38 | 106 | `ContextLogic/theories/FormulaNotation.v` |
+| 3.51 | 1.43 | 407 | `ContextBasicDenotation/theories/Qualifier.v` |
+| 3.50 | 0.50 | 143 | `LocallyNameless/Classes.v` |
+| 3.49 | 1.81 | 519 | `ContextTyping/theories/SoundnessLamBase.v` |
+| 3.43 | 3.75 | 1094 | `ContextLogic/theories/FormulaSemantics.v` |
+| 3.31 | 2.10 | 634 | `ContextAlgebra/theories/ResourceCompat.v` |
+| 3.28 | 4.27 | 1303 | `ContextLogic/theories/FormulaSyntax.v` |
+| 3.17 | 1.80 | 567 | `Denotation/theories/TypeEquivTermApp.v` |
+| 3.12 | 3.07 | 985 | `ContextLogic/theories/FormulaConnectivesHigher.v` |
+| 3.00 | 0.61 | 203 | `CoreLang/theories/SmallStep.v` (CoreLang) |
+| 2.86 | 2.31 | 807 | `Denotation/theories/TypeEquivFiberBaseProjected.v` |
+| 2.82 | 1.97 | 699 | `ContextBasicDenotation/theories/BasicTypingOpen.v` |
+| 2.81 | 4.35 | 1548 | `ContextLogic/theories/FormulaConnectives.v` |
+| 2.79 | 2.03 | 727 | `ContextTyping/theories/SoundnessFix.v` |
+| 2.77 | 2.80 | 1012 | `ContextTyping/theories/SoundnessLamArrow.v` |
+| 2.75 | 1.98 | 720 | `ContextTyping/theories/SoundnessLamWand.v` |
+| 2.68 | 0.66 | 246 | `ContextTypeLanguage/theories/LtyEnv.v` |
+| 2.63 | 2.85 | 1084 | `ContextBasicDenotation/theories/TermOpen.v` |
+| 2.59 | 1.30 | 502 | `Denotation/theories/ConstDenote.v` |
+| 2.53 | 0.85 | 336 | `Denotation/theories/TypeEquivFiberBaseCore.v` |
+| 2.50 | 0.83 | 332 | `Denotation/theories/ResultFirstOpen.v` |
+| 2.46 | 2.11 | 858 | `ContextTyping/theories/SoundnessFixApply.v` |
+| 2.45 | 2.57 | 1050 | `ContextTyping/theories/SoundnessApp.v` |
+| 2.39 | 2.43 | 1016 | `Denotation/theories/TypeEquivTermBase.v` |
+| 2.35 | 1.72 | 732 | `ContextTyping/theories/SoundnessPersist.v` |
+| 2.33 | 4.41 | 1892 | `Denotation/theories/TypeEquiv.v` |
+| 2.29 | 4.06 | 1773 | `Denotation/theories/TypeEquivTLet.v` |
+| 2.26 | 1.73 | 766 | `ContextBase/LogicVar.v` |
+| 2.23 | 3.06 | 1375 | `Denotation/theories/TypeEquivTermResult.v` |
+| 2.20 | 0.50 | 227 | `ContextBasicDenotation/theories/TermExtension.v` |
+| 2.19 | 1.00 | 456 | `ContextTyping/theories/SoundnessFixBase.v` |
+| 2.12 | 1.36 | 641 | `Denotation/theories/TypeEquivCore.v` |
+| 2.09 | 2.41 | 1151 | `ContextBasicDenotation/theories/TermSyntax.v` |
+| 2.06 | 1.40 | 681 | `ContextAlgebra/theories/ResourceExtension.v` |
+| 2.05 | 2.39 | 1166 | `ContextTyping/theories/SoundnessAppD.v` |
+| 2.03 | 1.26 | 621 | `Denotation/theories/TypeEquivFiberBody.v` |
 
-| Rank | File | Lines | Real s | User s | s/KLOC | KLOC/s | Mem MB |
-|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | `Denotation/theories/TypePersistWand.v` | 5 | 0.32 | 0.25 | 64.00 | 0.016 | 481.7 |
-| 2 | `Denotation/theories/TypePersist.v` | 6 | 0.31 | 0.24 | 51.67 | 0.019 | 481.4 |
-| 3 | `ContextTyping/theories/SoundnessLam.v` | 8 | 0.35 | 0.27 | 43.75 | 0.023 | 483.3 |
-| 4 | `Denotation/theories/TypeEquivFiberBase.v` | 9 | 0.31 | 0.25 | 34.44 | 0.029 | 478.1 |
-| 5 | `Denotation/theories/TypeEquivTerm.v` | 10 | 0.31 | 0.24 | 31.00 | 0.032 | 478.2 |
-| 6 | `ContextBase/Swap/Swap.v` | 61 | 1.55 | 1.45 | 25.41 | 0.039 | 529.2 |
-| 7 | `ContextBasicDenotation/theories/Notation.v` | 22 | 0.46 | 0.36 | 20.91 | 0.048 | 471.4 |
-| 8 | `Denotation/theories/Notation.v` | 29 | 0.42 | 0.35 | 14.48 | 0.069 | 471.4 |
-| 9 | `ContextTyping/theories/SoundnessConcrete.v` | 27 | 0.39 | 0.29 | 14.44 | 0.069 | 478.4 |
-| 10 | `CoreLang/theories/Syntax.v` | 423 | 4.35 | 4.24 | 10.28 | 0.097 | 521.7 |
-| 11 | `ContextTyping/theories/PrimOpContext.v` | 57 | 0.42 | 0.33 | 7.37 | 0.136 | 475.0 |
-| 12 | `CoreLang/theories/LocallyNamelessExtra.v` | 757 | 5.46 | 5.28 | 7.21 | 0.139 | 543.1 |
-| 13 | `CoreLang/theories/LocallyNamelessProps.v` | 360 | 2.54 | 2.43 | 7.06 | 0.142 | 492.8 |
-| 14 | `CoreLang/theories/Instantiation.v` | 44 | 0.31 | 0.24 | 7.05 | 0.142 | 460.2 |
-| 15 | `ContextLogic/theories/FormulaWorldExtension.v` | 50 | 0.33 | 0.27 | 6.60 | 0.152 | 467.7 |
-| 16 | `CoreLang/theories/OperationalResults.v` | 63 | 0.38 | 0.31 | 6.03 | 0.166 | 475.3 |
-| 17 | `CoreLang/theories/Prelude.v` | 53 | 0.31 | 0.25 | 5.85 | 0.171 | 458.5 |
-| 18 | `ContextTyping/theories/SoundnessSetMapFacts.v` | 97 | 0.41 | 0.34 | 4.23 | 0.237 | 495.4 |
-| 19 | `CoreLang/theories/BasicTypingProps.v` | 758 | 2.97 | 2.85 | 3.92 | 0.255 | 513.7 |
-| 20 | `ContextBasicDenotation/theories/BasicFormulaFiberwise.v` | 98 | 0.36 | 0.26 | 3.67 | 0.272 | 474.7 |
-| 21 | `Denotation/theories/TypeEquivTermResult.v` | 1360 | 4.90 | 4.78 | 3.60 | 0.278 | 560.7 |
-| 22 | `ContextBasicDenotation/theories/BasicTypingFormula.v` | 1062 | 3.64 | 3.52 | 3.43 | 0.292 | 524.7 |
-| 23 | `CoreLang/theories/BasicTyping.v` | 305 | 1.00 | 0.90 | 3.28 | 0.305 | 476.4 |
-| 24 | `ContextAlgebra/theories/ContextAlgebra.v` | 107 | 0.34 | 0.27 | 3.18 | 0.315 | 464.8 |
-| 25 | `CoreLang/theories/SyntaxNotation.v` | 96 | 0.30 | 0.24 | 3.12 | 0.320 | 459.8 |
+Candidate Status
+----------------
 
-## Top 25 By Seconds Per KLOC (Files >= 100 Lines)
-
-| Rank | File | Lines | Real s | User s | s/KLOC | KLOC/s | Mem MB |
-|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | `CoreLang/theories/Syntax.v` | 423 | 4.35 | 4.24 | 10.28 | 0.097 | 521.7 |
-| 2 | `CoreLang/theories/LocallyNamelessExtra.v` | 757 | 5.46 | 5.28 | 7.21 | 0.139 | 543.1 |
-| 3 | `CoreLang/theories/LocallyNamelessProps.v` | 360 | 2.54 | 2.43 | 7.06 | 0.142 | 492.8 |
-| 4 | `CoreLang/theories/BasicTypingProps.v` | 758 | 2.97 | 2.85 | 3.92 | 0.255 | 513.7 |
-| 5 | `Denotation/theories/TypeEquivTermResult.v` | 1360 | 4.90 | 4.78 | 3.60 | 0.278 | 560.7 |
-| 6 | `ContextBasicDenotation/theories/BasicTypingFormula.v` | 1062 | 3.64 | 3.52 | 3.43 | 0.292 | 524.7 |
-| 7 | `CoreLang/theories/BasicTyping.v` | 305 | 1.00 | 0.90 | 3.28 | 0.305 | 476.4 |
-| 8 | `ContextAlgebra/theories/ContextAlgebra.v` | 107 | 0.34 | 0.27 | 3.18 | 0.315 | 464.8 |
-| 9 | `ContextTyping/theories/Soundness.v` | 1214 | 3.79 | 3.65 | 3.12 | 0.320 | 519.9 |
-| 10 | `Denotation/theories/TypeEquivTermApp.v` | 575 | 1.74 | 1.66 | 3.03 | 0.330 | 506.4 |
-| 11 | `ContextBasicDenotation/theories/Qualifier.v` | 407 | 1.23 | 1.14 | 3.02 | 0.331 | 496.9 |
-| 12 | `ContextLogic/theories/FormulaNotation.v` | 106 | 0.32 | 0.26 | 3.02 | 0.331 | 465.6 |
-| 13 | `ContextBase/Swap/SetSwap.v` | 145 | 0.43 | 0.36 | 2.97 | 0.337 | 469.2 |
-| 14 | `ContextTyping/theories/SoundnessLamBase.v` | 532 | 1.53 | 1.44 | 2.88 | 0.348 | 501.7 |
-| 15 | `LocallyNameless/Classes.v` | 143 | 0.41 | 0.33 | 2.87 | 0.349 | 470.5 |
-| 16 | `ContextTyping/theories/SoundnessApp.v` | 1309 | 3.71 | 3.58 | 2.83 | 0.353 | 547.9 |
-| 17 | `ContextTyping/theories/SoundnessPersist.v` | 713 | 2.02 | 1.89 | 2.83 | 0.353 | 507.8 |
-| 18 | `ContextLogic/theories/FormulaSemantics.v` | 1094 | 3.08 | 2.98 | 2.82 | 0.355 | 524.0 |
-| 19 | `ContextLogic/theories/FormulaSyntax.v` | 1303 | 3.51 | 3.37 | 2.69 | 0.371 | 519.5 |
-| 20 | `ContextTyping/theories/SoundnessFix.v` | 676 | 1.82 | 1.71 | 2.69 | 0.371 | 528.3 |
-| 21 | `Denotation/theories/Context.v` | 1851 | 4.96 | 4.84 | 2.68 | 0.373 | 530.3 |
-| 22 | `Denotation/theories/TypeEquivFiberBaseProjected.v` | 871 | 2.33 | 2.20 | 2.68 | 0.374 | 516.8 |
-| 23 | `ContextLogic/theories/FormulaConnectivesHigher.v` | 985 | 2.63 | 2.50 | 2.67 | 0.375 | 516.5 |
-| 24 | `Denotation/theories/TypeDenote.v` | 1643 | 4.19 | 4.05 | 2.55 | 0.392 | 546.5 |
-| 25 | `ContextTyping/theories/SoundnessLamArrow.v` | 1082 | 2.72 | 2.57 | 2.51 | 0.398 | 526.7 |
-
-## Files Above 1s/KLOC (Files >= 100 Lines)
-
-| Rank | File | Lines | Real s | User s | s/KLOC | KLOC/s | Mem MB |
-|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | `CoreLang/theories/Syntax.v` | 423 | 4.35 | 4.24 | 10.28 | 0.097 | 521.7 |
-| 2 | `CoreLang/theories/LocallyNamelessExtra.v` | 757 | 5.46 | 5.28 | 7.21 | 0.139 | 543.1 |
-| 3 | `CoreLang/theories/LocallyNamelessProps.v` | 360 | 2.54 | 2.43 | 7.06 | 0.142 | 492.8 |
-| 4 | `CoreLang/theories/BasicTypingProps.v` | 758 | 2.97 | 2.85 | 3.92 | 0.255 | 513.7 |
-| 5 | `Denotation/theories/TypeEquivTermResult.v` | 1360 | 4.90 | 4.78 | 3.60 | 0.278 | 560.7 |
-| 6 | `ContextBasicDenotation/theories/BasicTypingFormula.v` | 1062 | 3.64 | 3.52 | 3.43 | 0.292 | 524.7 |
-| 7 | `CoreLang/theories/BasicTyping.v` | 305 | 1.00 | 0.90 | 3.28 | 0.305 | 476.4 |
-| 8 | `ContextAlgebra/theories/ContextAlgebra.v` | 107 | 0.34 | 0.27 | 3.18 | 0.315 | 464.8 |
-| 9 | `ContextTyping/theories/Soundness.v` | 1214 | 3.79 | 3.65 | 3.12 | 0.320 | 519.9 |
-| 10 | `Denotation/theories/TypeEquivTermApp.v` | 575 | 1.74 | 1.66 | 3.03 | 0.330 | 506.4 |
-| 11 | `ContextBasicDenotation/theories/Qualifier.v` | 407 | 1.23 | 1.14 | 3.02 | 0.331 | 496.9 |
-| 12 | `ContextLogic/theories/FormulaNotation.v` | 106 | 0.32 | 0.26 | 3.02 | 0.331 | 465.6 |
-| 13 | `ContextBase/Swap/SetSwap.v` | 145 | 0.43 | 0.36 | 2.97 | 0.337 | 469.2 |
-| 14 | `ContextTyping/theories/SoundnessLamBase.v` | 532 | 1.53 | 1.44 | 2.88 | 0.348 | 501.7 |
-| 15 | `LocallyNameless/Classes.v` | 143 | 0.41 | 0.33 | 2.87 | 0.349 | 470.5 |
-| 16 | `ContextTyping/theories/SoundnessApp.v` | 1309 | 3.71 | 3.58 | 2.83 | 0.353 | 547.9 |
-| 17 | `ContextTyping/theories/SoundnessPersist.v` | 713 | 2.02 | 1.89 | 2.83 | 0.353 | 507.8 |
-| 18 | `ContextLogic/theories/FormulaSemantics.v` | 1094 | 3.08 | 2.98 | 2.82 | 0.355 | 524.0 |
-| 19 | `ContextLogic/theories/FormulaSyntax.v` | 1303 | 3.51 | 3.37 | 2.69 | 0.371 | 519.5 |
-| 20 | `ContextTyping/theories/SoundnessFix.v` | 676 | 1.82 | 1.71 | 2.69 | 0.371 | 528.3 |
-| 21 | `Denotation/theories/Context.v` | 1851 | 4.96 | 4.84 | 2.68 | 0.373 | 530.3 |
-| 22 | `Denotation/theories/TypeEquivFiberBaseProjected.v` | 871 | 2.33 | 2.20 | 2.68 | 0.374 | 516.8 |
-| 23 | `ContextLogic/theories/FormulaConnectivesHigher.v` | 985 | 2.63 | 2.50 | 2.67 | 0.375 | 516.5 |
-| 24 | `Denotation/theories/TypeDenote.v` | 1643 | 4.19 | 4.05 | 2.55 | 0.392 | 546.5 |
-| 25 | `ContextTyping/theories/SoundnessLamArrow.v` | 1082 | 2.72 | 2.57 | 2.51 | 0.398 | 526.7 |
-| 26 | `ContextBasicDenotation/theories/TermTLet.v` | 1802 | 4.51 | 4.38 | 2.50 | 0.400 | 564.3 |
-| 27 | `Denotation/theories/DenotationSetMapFacts.v` | 157 | 0.39 | 0.32 | 2.48 | 0.403 | 495.0 |
-| 28 | `ContextAlgebra/theories/ResourceCompat.v` | 602 | 1.49 | 1.41 | 2.48 | 0.404 | 487.8 |
-| 29 | `ContextBasicDenotation/theories/BasicTypingOpen.v` | 699 | 1.69 | 1.60 | 2.42 | 0.414 | 507.1 |
-| 30 | `ContextTypeLanguage/theories/LtyEnv.v` | 228 | 0.55 | 0.47 | 2.41 | 0.415 | 480.3 |
-| 31 | `Denotation/theories/TypeEquivFiberBaseResult.v` | 1663 | 3.92 | 3.79 | 2.36 | 0.424 | 554.3 |
-| 32 | `CoreLang/theories/SmallStep.v` | 203 | 0.47 | 0.41 | 2.32 | 0.432 | 476.7 |
-| 33 | `ContextLogic/theories/FormulaConnectives.v` | 1548 | 3.54 | 3.43 | 2.29 | 0.437 | 549.4 |
-| 34 | `ContextBasicDenotation/theories/TermOpen.v` | 1084 | 2.45 | 2.34 | 2.26 | 0.442 | 519.8 |
-| 35 | `Denotation/theories/TypeEquivTermBase.v` | 1044 | 2.33 | 2.25 | 2.23 | 0.448 | 522.0 |
-| 36 | `ContextBase/BaseTactics.v` | 135 | 0.29 | 0.23 | 2.15 | 0.466 | 459.3 |
-| 37 | `Denotation/theories/TypeEquivFiberBaseCore.v` | 336 | 0.72 | 0.64 | 2.14 | 0.467 | 499.5 |
-| 38 | `ContextTyping/theories/SoundnessFixApply.v` | 864 | 1.83 | 1.69 | 2.12 | 0.472 | 515.5 |
-| 39 | `ContextTyping/theories/SoundnessAppD.v` | 1244 | 2.58 | 2.45 | 2.07 | 0.482 | 525.7 |
-| 40 | `Denotation/theories/ResultFirstOpen.v` | 267 | 0.55 | 0.48 | 2.06 | 0.485 | 497.5 |
-| 41 | `ContextTyping/theories/SoundnessFixSelf.v` | 1652 | 3.38 | 3.27 | 2.05 | 0.489 | 556.9 |
-| 42 | `Denotation/theories/TypeEquivTLet.v` | 1671 | 3.33 | 3.22 | 1.99 | 0.502 | 522.3 |
-| 43 | `Denotation/theories/TypeEquiv.v` | 1860 | 3.69 | 3.58 | 1.98 | 0.504 | 531.3 |
-| 44 | `ContextTyping/theories/SoundnessLamWand.v` | 910 | 1.77 | 1.68 | 1.95 | 0.514 | 520.5 |
-| 45 | `ContextBasicDenotation/theories/TermExtension.v` | 227 | 0.44 | 0.34 | 1.94 | 0.516 | 491.8 |
-| 46 | `Denotation/theories/TypeEquivBody.v` | 504 | 0.96 | 0.84 | 1.90 | 0.525 | 497.3 |
-| 47 | `Denotation/theories/ConstDenote.v` | 564 | 1.05 | 0.96 | 1.86 | 0.537 | 505.9 |
-| 48 | `Denotation/theories/TypeEquivArrow.v` | 1065 | 1.94 | 1.82 | 1.82 | 0.549 | 505.0 |
-| 49 | `ContextTyping/theories/SoundnessFixBase.v` | 455 | 0.82 | 0.75 | 1.80 | 0.555 | 507.5 |
-| 50 | `ContextBase/LogicVar.v` | 766 | 1.38 | 1.30 | 1.80 | 0.555 | 516.6 |
-| 51 | `Denotation/theories/TypeEquivCore.v` | 657 | 1.17 | 1.04 | 1.78 | 0.562 | 500.9 |
-| 52 | `ContextBasicDenotation/theories/TermSyntax.v` | 1115 | 1.96 | 1.87 | 1.76 | 0.569 | 513.8 |
-| 53 | `Denotation/theories/TypeEquivFiberBody.v` | 648 | 1.12 | 1.04 | 1.73 | 0.579 | 502.7 |
-| 54 | `ContextAlgebra/theories/ResourceExtension.v` | 681 | 1.16 | 1.08 | 1.70 | 0.587 | 484.8 |
-| 55 | `ContextAlgebra/theories/ResourceCore.v` | 232 | 0.39 | 0.33 | 1.68 | 0.595 | 476.4 |
-| 56 | `Denotation/theories/ConstDenoteBase.v` | 826 | 1.36 | 1.24 | 1.65 | 0.607 | 509.1 |
-| 57 | `ContextTypeLanguage/theories/WF.v` | 810 | 1.33 | 1.24 | 1.64 | 0.609 | 486.2 |
-| 58 | `ContextTyping/theories/SoundnessMatch.v` | 1531 | 2.44 | 2.34 | 1.59 | 0.627 | 517.3 |
-| 59 | `CoreLang/theories/Sugar.v` | 446 | 0.71 | 0.64 | 1.59 | 0.628 | 482.0 |
-| 60 | `Denotation/theories/TypeEquivArrowResultFirst.v` | 881 | 1.40 | 1.26 | 1.59 | 0.629 | 506.1 |
-| 61 | `Denotation/theories/TypeEquivTLetFormula.v` | 252 | 0.40 | 0.30 | 1.59 | 0.630 | 478.1 |
-| 62 | `Denotation/theories/TypeEquivWandResultFirst.v` | 886 | 1.38 | 1.28 | 1.56 | 0.642 | 503.6 |
-| 63 | `ContextTyping/theories/PrimOpConcreteContext.v` | 1032 | 1.53 | 1.43 | 1.48 | 0.675 | 503.1 |
-| 64 | `ContextAlgebra/theories/ResourceAlgebra.v` | 1403 | 1.94 | 1.85 | 1.38 | 0.723 | 497.7 |
-| 65 | `ContextStore/Store.v` | 230 | 0.31 | 0.25 | 1.35 | 0.742 | 461.8 |
-| 66 | `ContextBase/Prelude.v` | 329 | 0.43 | 0.37 | 1.31 | 0.765 | 471.7 |
-| 67 | `ContextStore/StoreInterface.v` | 708 | 0.92 | 0.81 | 1.30 | 0.770 | 485.8 |
-| 68 | `ContextBase/Tactics.v` | 355 | 0.46 | 0.32 | 1.30 | 0.772 | 469.4 |
-| 69 | `ContextAlgebra/theories/ResourceInterface.v` | 2149 | 2.72 | 2.63 | 1.27 | 0.790 | 518.4 |
-| 70 | `ContextBasicDenotation/theories/StoreTyping.v` | 580 | 0.70 | 0.63 | 1.21 | 0.829 | 495.0 |
-| 71 | `CoreLang/theories/OperationalProps.v` | 500 | 0.60 | 0.53 | 1.20 | 0.833 | 478.4 |
-| 72 | `Denotation/theories/TypeEquivFiberTransport.v` | 1080 | 1.27 | 1.17 | 1.18 | 0.850 | 505.0 |
-| 73 | `ContextTyping/theories/SoundnessFixOpen.v` | 631 | 0.73 | 0.64 | 1.16 | 0.864 | 505.9 |
-| 74 | `Denotation/theories/TypeEquivTermTLet.v` | 443 | 0.51 | 0.41 | 1.15 | 0.869 | 500.6 |
-| 75 | `ContextLogic/theories/FormulaAtom.v` | 750 | 0.84 | 0.75 | 1.12 | 0.893 | 489.2 |
-| 76 | `Denotation/theories/TypePersistSingleton.v` | 1161 | 1.30 | 1.21 | 1.12 | 0.893 | 506.5 |
-| 77 | `CoreLang/theories/InstantiationProps.v` | 1244 | 1.33 | 1.26 | 1.07 | 0.935 | 489.9 |
-| 78 | `ContextTyping/theories/Typing.v` | 407 | 0.43 | 0.36 | 1.06 | 0.947 | 497.3 |
-
-## Full Per-File Table
-
-| Rank | File | Lines | Real s | User s | s/KLOC | KLOC/s | Mem MB |
-|---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | `CoreLang/theories/LocallyNamelessExtra.v` | 757 | 5.46 | 5.28 | 7.21 | 0.139 | 543.1 |
-| 2 | `Denotation/theories/Context.v` | 1851 | 4.96 | 4.84 | 2.68 | 0.373 | 530.3 |
-| 3 | `Denotation/theories/TypeEquivTermResult.v` | 1360 | 4.90 | 4.78 | 3.60 | 0.278 | 560.7 |
-| 4 | `ContextBasicDenotation/theories/TermTLet.v` | 1802 | 4.51 | 4.38 | 2.50 | 0.400 | 564.3 |
-| 5 | `CoreLang/theories/Syntax.v` | 423 | 4.35 | 4.24 | 10.28 | 0.097 | 521.7 |
-| 6 | `Denotation/theories/TypeDenote.v` | 1643 | 4.19 | 4.05 | 2.55 | 0.392 | 546.5 |
-| 7 | `Denotation/theories/TypeEquivFiberBaseResult.v` | 1663 | 3.92 | 3.79 | 2.36 | 0.424 | 554.3 |
-| 8 | `ContextTyping/theories/Soundness.v` | 1214 | 3.79 | 3.65 | 3.12 | 0.320 | 519.9 |
-| 9 | `ContextTyping/theories/SoundnessApp.v` | 1309 | 3.71 | 3.58 | 2.83 | 0.353 | 547.9 |
-| 10 | `Denotation/theories/TypeEquiv.v` | 1860 | 3.69 | 3.58 | 1.98 | 0.504 | 531.3 |
-| 11 | `ContextBasicDenotation/theories/BasicTypingFormula.v` | 1062 | 3.64 | 3.52 | 3.43 | 0.292 | 524.7 |
-| 12 | `ContextLogic/theories/FormulaConnectives.v` | 1548 | 3.54 | 3.43 | 2.29 | 0.437 | 549.4 |
-| 13 | `ContextLogic/theories/FormulaSyntax.v` | 1303 | 3.51 | 3.37 | 2.69 | 0.371 | 519.5 |
-| 14 | `ContextTyping/theories/SoundnessFixSelf.v` | 1652 | 3.38 | 3.27 | 2.05 | 0.489 | 556.9 |
-| 15 | `Denotation/theories/TypeEquivTLet.v` | 1671 | 3.33 | 3.22 | 1.99 | 0.502 | 522.3 |
-| 16 | `ContextLogic/theories/FormulaSemantics.v` | 1094 | 3.08 | 2.98 | 2.82 | 0.355 | 524.0 |
-| 17 | `CoreLang/theories/BasicTypingProps.v` | 758 | 2.97 | 2.85 | 3.92 | 0.255 | 513.7 |
-| 18 | `ContextAlgebra/theories/ResourceInterface.v` | 2149 | 2.72 | 2.63 | 1.27 | 0.790 | 518.4 |
-| 19 | `ContextTyping/theories/SoundnessLamArrow.v` | 1082 | 2.72 | 2.57 | 2.51 | 0.398 | 526.7 |
-| 20 | `ContextLogic/theories/FormulaConnectivesHigher.v` | 985 | 2.63 | 2.50 | 2.67 | 0.375 | 516.5 |
-| 21 | `ContextTyping/theories/SoundnessAppD.v` | 1244 | 2.58 | 2.45 | 2.07 | 0.482 | 525.7 |
-| 22 | `CoreLang/theories/LocallyNamelessProps.v` | 360 | 2.54 | 2.43 | 7.06 | 0.142 | 492.8 |
-| 23 | `ContextBasicDenotation/theories/TermOpen.v` | 1084 | 2.45 | 2.34 | 2.26 | 0.442 | 519.8 |
-| 24 | `ContextTyping/theories/SoundnessMatch.v` | 1531 | 2.44 | 2.34 | 1.59 | 0.627 | 517.3 |
-| 25 | `Denotation/theories/TypeEquivTermBase.v` | 1044 | 2.33 | 2.25 | 2.23 | 0.448 | 522.0 |
-| 26 | `Denotation/theories/TypeEquivFiberBaseProjected.v` | 871 | 2.33 | 2.20 | 2.68 | 0.374 | 516.8 |
-| 27 | `ContextTyping/theories/SoundnessPersist.v` | 713 | 2.02 | 1.89 | 2.83 | 0.353 | 507.8 |
-| 28 | `ContextBasicDenotation/theories/TermSyntax.v` | 1115 | 1.96 | 1.87 | 1.76 | 0.569 | 513.8 |
-| 29 | `Denotation/theories/TypePersistBase.v` | 2207 | 1.95 | 1.85 | 0.88 | 1.132 | 517.1 |
-| 30 | `ContextAlgebra/theories/ResourceAlgebra.v` | 1403 | 1.94 | 1.85 | 1.38 | 0.723 | 497.7 |
-| 31 | `Denotation/theories/TypeEquivArrow.v` | 1065 | 1.94 | 1.82 | 1.82 | 0.549 | 505.0 |
-| 32 | `ContextTyping/theories/SoundnessFixApply.v` | 864 | 1.83 | 1.69 | 2.12 | 0.472 | 515.5 |
-| 33 | `ContextTyping/theories/SoundnessFix.v` | 676 | 1.82 | 1.71 | 2.69 | 0.371 | 528.3 |
-| 34 | `ContextTyping/theories/SoundnessLamWand.v` | 910 | 1.77 | 1.68 | 1.95 | 0.514 | 520.5 |
-| 35 | `Denotation/theories/TypeEquivTermApp.v` | 575 | 1.74 | 1.66 | 3.03 | 0.330 | 506.4 |
-| 36 | `ContextBasicDenotation/theories/BasicTypingOpen.v` | 699 | 1.69 | 1.60 | 2.42 | 0.414 | 507.1 |
-| 37 | `ContextBase/Swap/Swap.v` | 61 | 1.55 | 1.45 | 25.41 | 0.039 | 529.2 |
-| 38 | `ContextBasicDenotation/theories/RelevantEnv.v` | 1849 | 1.55 | 1.46 | 0.84 | 1.193 | 510.8 |
-| 39 | `ContextTyping/theories/PrimOpConcreteContext.v` | 1032 | 1.53 | 1.43 | 1.48 | 0.675 | 503.1 |
-| 40 | `ContextTyping/theories/SoundnessLamBase.v` | 532 | 1.53 | 1.44 | 2.88 | 0.348 | 501.7 |
-| 41 | `ContextStore/StoreRestrict.v` | 1810 | 1.51 | 1.43 | 0.83 | 1.199 | 496.8 |
-| 42 | `ContextAlgebra/theories/ResourceCompat.v` | 602 | 1.49 | 1.41 | 2.48 | 0.404 | 487.8 |
-| 43 | `Denotation/theories/TypeEquivArrowResultFirst.v` | 881 | 1.40 | 1.26 | 1.59 | 0.629 | 506.1 |
-| 44 | `ContextBase/LogicVar.v` | 766 | 1.38 | 1.30 | 1.80 | 0.555 | 516.6 |
-| 45 | `Denotation/theories/TypeEquivWandResultFirst.v` | 886 | 1.38 | 1.28 | 1.56 | 0.642 | 503.6 |
-| 46 | `ContextLogic/theories/FormulaFiberwise.v` | 1614 | 1.37 | 1.29 | 0.85 | 1.178 | 495.5 |
-| 47 | `Denotation/theories/ConstDenoteBase.v` | 826 | 1.36 | 1.24 | 1.65 | 0.607 | 509.1 |
-| 48 | `CoreLang/theories/InstantiationProps.v` | 1244 | 1.33 | 1.26 | 1.07 | 0.935 | 489.9 |
-| 49 | `ContextTypeLanguage/theories/WF.v` | 810 | 1.33 | 1.24 | 1.64 | 0.609 | 486.2 |
-| 50 | `Denotation/theories/TypePersistSingleton.v` | 1161 | 1.30 | 1.21 | 1.12 | 0.893 | 506.5 |
-| 51 | `Denotation/theories/TypeEquivFiberTransport.v` | 1080 | 1.27 | 1.17 | 1.18 | 0.850 | 505.0 |
-| 52 | `ContextBasicDenotation/theories/Qualifier.v` | 407 | 1.23 | 1.14 | 3.02 | 0.331 | 496.9 |
-| 53 | `Denotation/theories/TypeEquivCore.v` | 657 | 1.17 | 1.04 | 1.78 | 0.562 | 500.9 |
-| 54 | `ContextAlgebra/theories/ResourceExtension.v` | 681 | 1.16 | 1.08 | 1.70 | 0.587 | 484.8 |
-| 55 | `Denotation/theories/TypeEquivFiberBody.v` | 648 | 1.12 | 1.04 | 1.73 | 0.579 | 502.7 |
-| 56 | `Denotation/theories/TypeEquivWand.v` | 1556 | 1.08 | 0.99 | 0.69 | 1.441 | 505.3 |
-| 57 | `Denotation/theories/ConstDenote.v` | 564 | 1.05 | 0.96 | 1.86 | 0.537 | 505.9 |
-| 58 | `CoreLang/theories/BasicTyping.v` | 305 | 1.00 | 0.90 | 3.28 | 0.305 | 476.4 |
-| 59 | `Denotation/theories/TypePersistArrow.v` | 1230 | 0.97 | 0.80 | 0.79 | 1.268 | 509.1 |
-| 60 | `Denotation/theories/TypeEquivBody.v` | 504 | 0.96 | 0.84 | 1.90 | 0.525 | 497.3 |
-| 61 | `ContextTypeLanguage/theories/Syntax.v` | 1077 | 0.95 | 0.87 | 0.88 | 1.134 | 499.1 |
-| 62 | `ContextStore/StoreInterface.v` | 708 | 0.92 | 0.81 | 1.30 | 0.770 | 485.8 |
-| 63 | `Denotation/theories/TypePersistWandReverse.v` | 1233 | 0.85 | 0.77 | 0.69 | 1.451 | 511.2 |
-| 64 | `ContextLogic/theories/FormulaAtom.v` | 750 | 0.84 | 0.75 | 1.12 | 0.893 | 489.2 |
-| 65 | `Denotation/theories/TypePersistWandForward.v` | 958 | 0.82 | 0.74 | 0.86 | 1.168 | 509.2 |
-| 66 | `ContextTyping/theories/SoundnessFixBase.v` | 455 | 0.82 | 0.75 | 1.80 | 0.555 | 507.5 |
-| 67 | `ContextBase/LogicVarShift.v` | 1052 | 0.76 | 0.69 | 0.72 | 1.384 | 482.7 |
-| 68 | `ContextStore/LVarStore.v` | 955 | 0.76 | 0.66 | 0.80 | 1.257 | 484.6 |
-| 69 | `ContextBasicDenotation/theories/TermEval.v` | 1139 | 0.75 | 0.67 | 0.66 | 1.519 | 501.2 |
-| 70 | `ContextTyping/theories/SoundnessFixOpen.v` | 631 | 0.73 | 0.64 | 1.16 | 0.864 | 505.9 |
-| 71 | `Denotation/theories/TypeEquivFiberBaseCore.v` | 336 | 0.72 | 0.64 | 2.14 | 0.467 | 499.5 |
-| 72 | `ContextBase/LogicVarOpenEnv.v` | 1023 | 0.71 | 0.64 | 0.69 | 1.441 | 482.2 |
-| 73 | `ContextStore/StoreFilterMapKey.v` | 966 | 0.71 | 0.64 | 0.73 | 1.361 | 486.8 |
-| 74 | `CoreLang/theories/Sugar.v` | 446 | 0.71 | 0.64 | 1.59 | 0.628 | 482.0 |
-| 75 | `ContextBasicDenotation/theories/StoreTyping.v` | 580 | 0.70 | 0.63 | 1.21 | 0.829 | 495.0 |
-| 76 | `ContextStore/StoreCore.v` | 765 | 0.63 | 0.56 | 0.82 | 1.214 | 482.8 |
-| 77 | `ContextQualifier/theories/Qualifier.v` | 702 | 0.61 | 0.53 | 0.87 | 1.151 | 484.9 |
-| 78 | `CoreLang/theories/OperationalProps.v` | 500 | 0.60 | 0.53 | 1.20 | 0.833 | 478.4 |
-| 79 | `ContextTypeLanguage/theories/TypeOpen.v` | 610 | 0.60 | 0.51 | 0.98 | 1.017 | 482.7 |
-| 80 | `ContextTypeLanguage/theories/LtyEnv.v` | 228 | 0.55 | 0.47 | 2.41 | 0.415 | 480.3 |
-| 81 | `Denotation/theories/ResultFirstOpen.v` | 267 | 0.55 | 0.48 | 2.06 | 0.485 | 497.5 |
-| 82 | `Denotation/theories/TypeEquivTermTLet.v` | 443 | 0.51 | 0.41 | 1.15 | 0.869 | 500.6 |
-| 83 | `CoreLang/theories/SmallStep.v` | 203 | 0.47 | 0.41 | 2.32 | 0.432 | 476.7 |
-| 84 | `ContextBase/Tactics.v` | 355 | 0.46 | 0.32 | 1.30 | 0.772 | 469.4 |
-| 85 | `ContextBasicDenotation/theories/Notation.v` | 22 | 0.46 | 0.36 | 20.91 | 0.048 | 471.4 |
-| 86 | `ContextBasicDenotation/theories/TermExtension.v` | 227 | 0.44 | 0.34 | 1.94 | 0.516 | 491.8 |
-| 87 | `ContextBase/Swap/SetSwap.v` | 145 | 0.43 | 0.36 | 2.97 | 0.337 | 469.2 |
-| 88 | `ContextBase/Prelude.v` | 329 | 0.43 | 0.37 | 1.31 | 0.765 | 471.7 |
-| 89 | `CoreLang/theories/StrongNormalization.v` | 621 | 0.43 | 0.36 | 0.69 | 1.444 | 482.3 |
-| 90 | `ContextTyping/theories/Typing.v` | 407 | 0.43 | 0.36 | 1.06 | 0.947 | 497.3 |
-| 91 | `Denotation/theories/Notation.v` | 29 | 0.42 | 0.35 | 14.48 | 0.069 | 471.4 |
-| 92 | `ContextTyping/theories/PrimOpContext.v` | 57 | 0.42 | 0.33 | 7.37 | 0.136 | 475.0 |
-| 93 | `LocallyNameless/Classes.v` | 143 | 0.41 | 0.33 | 2.87 | 0.349 | 470.5 |
-| 94 | `ContextTyping/theories/SoundnessSetMapFacts.v` | 97 | 0.41 | 0.34 | 4.23 | 0.237 | 495.4 |
-| 95 | `Denotation/theories/TypeEquivTLetFormula.v` | 252 | 0.40 | 0.30 | 1.59 | 0.630 | 478.1 |
-| 96 | `ContextAlgebra/theories/ResourceCore.v` | 232 | 0.39 | 0.33 | 1.68 | 0.595 | 476.4 |
-| 97 | `Denotation/theories/DenotationSetMapFacts.v` | 157 | 0.39 | 0.32 | 2.48 | 0.403 | 495.0 |
-| 98 | `ContextTyping/theories/SoundnessConcrete.v` | 27 | 0.39 | 0.29 | 14.44 | 0.069 | 478.4 |
-| 99 | `CoreLang/theories/OperationalResults.v` | 63 | 0.38 | 0.31 | 6.03 | 0.166 | 475.3 |
-| 100 | `ContextBasicDenotation/theories/BasicFormulaFiberwise.v` | 98 | 0.36 | 0.26 | 3.67 | 0.272 | 474.7 |
-| 101 | `ContextTyping/theories/SoundnessLam.v` | 8 | 0.35 | 0.27 | 43.75 | 0.023 | 483.3 |
-| 102 | `ContextAlgebra/theories/ContextAlgebra.v` | 107 | 0.34 | 0.27 | 3.18 | 0.315 | 464.8 |
-| 103 | `ContextLogic/theories/FormulaWorldExtension.v` | 50 | 0.33 | 0.27 | 6.60 | 0.152 | 467.7 |
-| 104 | `ContextLogic/theories/FormulaNotation.v` | 106 | 0.32 | 0.26 | 3.02 | 0.331 | 465.6 |
-| 105 | `LocallyNameless/Tactics.v` | 413 | 0.32 | 0.25 | 0.77 | 1.291 | 459.1 |
-| 106 | `Denotation/theories/TypePersistWand.v` | 5 | 0.32 | 0.25 | 64.00 | 0.016 | 481.7 |
-| 107 | `CoreLang/theories/Prelude.v` | 53 | 0.31 | 0.25 | 5.85 | 0.171 | 458.5 |
-| 108 | `ContextStore/Store.v` | 230 | 0.31 | 0.25 | 1.35 | 0.742 | 461.8 |
-| 109 | `CoreLang/theories/Instantiation.v` | 44 | 0.31 | 0.24 | 7.05 | 0.142 | 460.2 |
-| 110 | `Denotation/theories/TypeEquivTerm.v` | 10 | 0.31 | 0.24 | 31.00 | 0.032 | 478.2 |
-| 111 | `Denotation/theories/TypeEquivFiberBase.v` | 9 | 0.31 | 0.25 | 34.44 | 0.029 | 478.1 |
-| 112 | `Denotation/theories/TypePersist.v` | 6 | 0.31 | 0.24 | 51.67 | 0.019 | 481.4 |
-| 113 | `CoreLang/theories/SyntaxNotation.v` | 96 | 0.30 | 0.24 | 3.12 | 0.320 | 459.8 |
-| 114 | `ContextBase/BaseTactics.v` | 135 | 0.29 | 0.23 | 2.15 | 0.466 | 459.3 |
+- Good next candidates: `ContextBasicDenotation/theories/BasicTypingFormula.v`, `ContextLogic/theories/FormulaSyntax.v`, `ContextLogic/theories/FormulaSemantics.v`, `ContextLogic/theories/FormulaConnectives.v`.
+- Poor next candidates from `-time`: `Denotation/theories/TypeEquivFiberBaseProjected.v` has no large slow tactic; top non-import command was ~0.2s.
+- Wrapper-like but retained for now due broad import churn: `Denotation/theories/TypeEquivTerm.v`, `Denotation/theories/TypeEquivFiberBase.v`.

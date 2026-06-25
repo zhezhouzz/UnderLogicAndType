@@ -21,7 +21,8 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
+  SoundnessLamWand.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 

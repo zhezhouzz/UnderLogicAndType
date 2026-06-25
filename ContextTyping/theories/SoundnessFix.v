@@ -20,7 +20,8 @@ From Denotation Require Import Context
   TypePersistArrow
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLamBase
-  SoundnessLam SoundnessFixBase SoundnessFixOpen SoundnessFixApply
+  SoundnessLamBase SoundnessLamArrow SoundnessLamWand
+  SoundnessFixBase SoundnessFixOpen SoundnessFixApply
   SoundnessFixSelf.
 
 Local Ltac fix_union_left :=

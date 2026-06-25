@@ -7,7 +7,9 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula TermExtension.
 From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
-  TypeEquivCore TypeEquivFiberBaseResult TypeEquivFiberTransport TypePersist.
+  TypeEquivCore TypeEquivFiberBaseResult TypeEquivFiberTransport
+  TypePersistBase TypePersistArrow TypePersistSingleton
+  TypePersistWandForward TypePersistWandReverse.
 From ContextTyping Require Import Typing.
 
 Local Notation StoreT := (gmap atom value) (only parsing).

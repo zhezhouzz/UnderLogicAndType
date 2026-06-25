@@ -22,7 +22,8 @@ From Denotation Require Import Context
   TypeEquiv
   TypePersistArrow
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
+From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
+  SoundnessLamWand SoundnessFixBase
   SoundnessFixOpen.
 
 Local Lemma fix_apply_open_value_fresh vf y z :

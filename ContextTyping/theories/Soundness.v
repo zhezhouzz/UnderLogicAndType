@@ -23,7 +23,8 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import PrimOpContext Typing
-  SoundnessLam SoundnessApp SoundnessAppD SoundnessMatch SoundnessFix SoundnessPersist.
+  SoundnessLamBase SoundnessLamArrow SoundnessLamWand
+  SoundnessApp SoundnessAppD SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).

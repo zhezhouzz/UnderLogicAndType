@@ -1,0 +1,329 @@
+ROCQ DEP VFILES
+.Makefile.d (real: 0.42, user: 0.07, sys: 0.32, mem: 14320 ko)
+rocq makefile -f _CoqProject -o Makefile
+Warning: No common logical root.
+Warning: In this case the -docroot option should be given.
+Warning: Otherwise the install-doc target is going to install files
+Warning: in orphan_ContextBase_ContextStore_ContextQualifier_ContextAlgebra_ContextLogic_ContextTypeLanguage_ContextBasicDenotation_Denotation_LocallyNameless_CoreLang_ContextTyping
+ROCQ DEP VFILES
+.Makefile.d (real: 0.42, user: 0.08, sys: 0.34, mem: 14352 ko)
+rocq makefile -f _CoqProject -o Makefile
+Warning: No common logical root.
+Warning: In this case the -docroot option should be given.
+Warning: Otherwise the install-doc target is going to install files
+Warning: in orphan_ContextBase_ContextStore_ContextQualifier_ContextAlgebra_ContextLogic_ContextTypeLanguage_ContextBasicDenotation_Denotation_LocallyNameless_CoreLang_ContextTyping
+ROCQ DEP VFILES
+.Makefile.d (real: 0.46, user: 0.08, sys: 0.38, mem: 14480 ko)
+rocq makefile -f _CoqProject -o Makefile
+Warning: No common logical root.
+Warning: In this case the -docroot option should be given.
+Warning: Otherwise the install-doc target is going to install files
+Warning: in orphan_ContextBase_ContextStore_ContextQualifier_ContextAlgebra_ContextLogic_ContextTypeLanguage_ContextBasicDenotation_Denotation_LocallyNameless_CoreLang_ContextTyping
+ROCQ compile ContextBase/Tactics.v
+ContextBase/Tactics.vo (real: 0.51, user: 0.41, sys: 0.08, mem: 480416 ko)
+ROCQ compile ContextBase/Swap/Swap.v
+ContextBase/Swap/Swap.vo (real: 1.89, user: 1.74, sys: 0.11, mem: 541936 ko)
+ROCQ compile ContextBase/Swap/SetSwap.v
+ContextBase/Swap/SetSwap.vo (real: 0.55, user: 0.45, sys: 0.09, mem: 480400 ko)
+ROCQ compile ContextBase/Prelude.v
+ContextBase/Prelude.vo (real: 0.54, user: 0.44, sys: 0.08, mem: 483008 ko)
+ROCQ compile ContextBase/LogicVar.v
+ContextBase/LogicVar.vo (real: 1.73, user: 1.63, sys: 0.10, mem: 528992 ko)
+ROCQ compile ContextBase/LogicVarOpenEnv.v
+ContextBase/LogicVarOpenEnv.vo (real: 0.85, user: 0.77, sys: 0.07, mem: 493808 ko)
+ROCQ compile ContextBase/LogicVarShift.v
+ContextBase/LogicVarShift.vo (real: 0.90, user: 0.82, sys: 0.07, mem: 494592 ko)
+ROCQ compile ContextBase/BaseTactics.v
+ContextBase/BaseTactics.vo (real: 0.53, user: 0.33, sys: 0.11, mem: 423136 ko)
+ROCQ compile ContextStore/StoreCore.v
+ContextStore/StoreCore.vo (real: 0.82, user: 0.69, sys: 0.09, mem: 494352 ko)
+ROCQ compile ContextStore/StoreFilterMapKey.v
+ContextStore/StoreFilterMapKey.vo (real: 0.84, user: 0.76, sys: 0.07, mem: 497296 ko)
+ROCQ compile ContextStore/StoreRestrict.v
+ContextStore/StoreRestrict.vo (real: 1.82, user: 1.72, sys: 0.09, mem: 508640 ko)
+ROCQ compile CoreLang/theories/Prelude.v
+CoreLang/theories/Prelude.vo (real: 0.37, user: 0.30, sys: 0.06, mem: 469536 ko)
+ROCQ compile CoreLang/theories/Syntax.v
+CoreLang/theories/Syntax.vo (real: 5.23, user: 5.12, sys: 0.10, mem: 534096 ko)
+ROCQ compile LocallyNameless/Classes.v
+LocallyNameless/Classes.vo (real: 0.50, user: 0.40, sys: 0.07, mem: 482064 ko)
+ROCQ compile ContextStore/LVarStore.v
+ContextStore/LVarStore.vo (real: 0.81, user: 0.73, sys: 0.07, mem: 495872 ko)
+ROCQ compile ContextStore/StoreInterface.v
+ContextStore/StoreInterface.vo (real: 1.04, user: 0.94, sys: 0.08, mem: 497168 ko)
+ROCQ compile ContextStore/Store.v
+ContextStore/Store.vo (real: 0.39, user: 0.32, sys: 0.06, mem: 472864 ko)
+ROCQ compile ContextQualifier/theories/Qualifier.v
+ContextQualifier/theories/Qualifier.vo (real: 0.76, user: 0.67, sys: 0.08, mem: 496848 ko)
+ROCQ compile ContextAlgebra/theories/ResourceCore.v
+ContextAlgebra/theories/ResourceCore.vo (real: 0.46, user: 0.39, sys: 0.06, mem: 488992 ko)
+ROCQ compile ContextAlgebra/theories/ResourceAlgebra.v
+ContextAlgebra/theories/ResourceAlgebra.vo (real: 2.22, user: 2.13, sys: 0.08, mem: 509520 ko)
+ROCQ compile ContextAlgebra/theories/ResourceExtension.v
+ContextAlgebra/theories/ResourceExtension.vo (real: 1.40, user: 1.29, sys: 0.08, mem: 496096 ko)
+ROCQ compile ContextAlgebra/theories/ResourceInterface.v
+ContextAlgebra/theories/ResourceInterface.vo (real: 3.33, user: 3.23, sys: 0.09, mem: 533024 ko)
+ROCQ compile ContextAlgebra/theories/ResourceCompat.v
+ContextAlgebra/theories/ResourceCompat.vo (real: 2.10, user: 1.95, sys: 0.10, mem: 490720 ko)
+ROCQ compile ContextAlgebra/theories/ContextAlgebra.v
+ContextAlgebra/theories/ContextAlgebra.vo (real: 0.45, user: 0.33, sys: 0.08, mem: 475712 ko)
+ROCQ compile ContextLogic/theories/FormulaAtom.v
+ContextLogic/theories/FormulaAtom.vo (real: 0.97, user: 0.88, sys: 0.07, mem: 500864 ko)
+ROCQ compile ContextLogic/theories/FormulaSyntax.v
+File "./ContextLogic/theories/FormulaSyntax.v", line 390, characters 45-66:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextLogic/theories/FormulaSyntax.vo (real: 4.27, user: 4.12, sys: 0.11, mem: 523456 ko)
+ROCQ compile ContextLogic/theories/FormulaSemantics.v
+ContextLogic/theories/FormulaSemantics.vo (real: 3.75, user: 3.61, sys: 0.10, mem: 536624 ko)
+ROCQ compile ContextLogic/theories/FormulaConnectives.v
+ContextLogic/theories/FormulaConnectives.vo (real: 4.35, user: 4.21, sys: 0.11, mem: 562560 ko)
+ROCQ compile ContextLogic/theories/FormulaConnectivesHigher.v
+ContextLogic/theories/FormulaConnectivesHigher.vo (real: 3.07, user: 2.94, sys: 0.09, mem: 529536 ko)
+ROCQ compile ContextLogic/theories/FormulaFiberwise.v
+File "./ContextLogic/theories/FormulaFiberwise.v", line 69, characters 23-36:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./ContextLogic/theories/FormulaFiberwise.v", line 69, characters 51-61:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextLogic/theories/FormulaFiberwise.vo (real: 1.63, user: 1.53, sys: 0.08, mem: 506272 ko)
+ROCQ compile ContextLogic/theories/FormulaWorldExtension.v
+ContextLogic/theories/FormulaWorldExtension.vo (real: 0.40, user: 0.32, sys: 0.06, mem: 478992 ko)
+ROCQ compile ContextLogic/theories/FormulaNotation.v
+ContextLogic/theories/FormulaNotation.vo (real: 0.38, user: 0.31, sys: 0.06, mem: 476752 ko)
+ROCQ compile LocallyNameless/Tactics.v
+LocallyNameless/Tactics.vo (real: 0.37, user: 0.30, sys: 0.06, mem: 469824 ko)
+ROCQ compile CoreLang/theories/SyntaxNotation.v
+CoreLang/theories/SyntaxNotation.vo (real: 0.37, user: 0.29, sys: 0.06, mem: 470848 ko)
+ROCQ compile CoreLang/theories/LocallyNamelessProps.v
+CoreLang/theories/LocallyNamelessProps.vo (real: 3.38, user: 3.21, sys: 0.12, mem: 487136 ko)
+ROCQ compile CoreLang/theories/LocallyNamelessExtra.v
+CoreLang/theories/LocallyNamelessExtra.vo (real: 6.48, user: 6.35, sys: 0.10, mem: 556288 ko)
+ROCQ compile CoreLang/theories/BasicTyping.v
+CoreLang/theories/BasicTyping.vo (real: 1.15, user: 1.04, sys: 0.07, mem: 488048 ko)
+ROCQ compile CoreLang/theories/BasicTypingProps.v
+CoreLang/theories/BasicTypingProps.vo (real: 3.51, user: 3.41, sys: 0.07, mem: 525584 ko)
+ROCQ compile CoreLang/theories/Instantiation.v
+CoreLang/theories/Instantiation.vo (real: 0.36, user: 0.29, sys: 0.06, mem: 470960 ko)
+ROCQ compile CoreLang/theories/InstantiationProps.v
+CoreLang/theories/InstantiationProps.vo (real: 1.63, user: 1.53, sys: 0.08, mem: 501728 ko)
+ROCQ compile CoreLang/theories/SmallStep.v
+CoreLang/theories/SmallStep.vo (real: 0.61, user: 0.50, sys: 0.07, mem: 487904 ko)
+ROCQ compile CoreLang/theories/OperationalProps.v
+CoreLang/theories/OperationalProps.vo (real: 0.70, user: 0.63, sys: 0.06, mem: 489824 ko)
+ROCQ compile CoreLang/theories/OperationalResults.v
+CoreLang/theories/OperationalResults.vo (real: 0.46, user: 0.38, sys: 0.07, mem: 485904 ko)
+ROCQ compile CoreLang/theories/Sugar.v
+CoreLang/theories/Sugar.vo (real: 0.85, user: 0.77, sys: 0.07, mem: 493792 ko)
+ROCQ compile CoreLang/theories/StrongNormalization.v
+CoreLang/theories/StrongNormalization.vo (real: 0.50, user: 0.42, sys: 0.07, mem: 494160 ko)
+ROCQ compile ContextTypeLanguage/theories/Syntax.v
+ContextTypeLanguage/theories/Syntax.vo (real: 1.14, user: 1.04, sys: 0.09, mem: 510832 ko)
+ROCQ compile ContextTypeLanguage/theories/TypeOpen.v
+ContextTypeLanguage/theories/TypeOpen.vo (real: 0.73, user: 0.63, sys: 0.09, mem: 494272 ko)
+ROCQ compile ContextTypeLanguage/theories/LtyEnv.v
+ContextTypeLanguage/theories/LtyEnv.vo (real: 0.66, user: 0.58, sys: 0.07, mem: 491808 ko)
+ROCQ compile ContextTypeLanguage/theories/WF.v
+ContextTypeLanguage/theories/WF.vo (real: 1.57, user: 1.47, sys: 0.08, mem: 497568 ko)
+ROCQ compile ContextBasicDenotation/theories/Notation.v
+ContextBasicDenotation/theories/Notation.vo (real: 0.51, user: 0.39, sys: 0.07, mem: 482416 ko)
+ROCQ compile ContextBasicDenotation/theories/StoreTyping.v
+ContextBasicDenotation/theories/StoreTyping.vo (real: 0.85, user: 0.75, sys: 0.08, mem: 506848 ko)
+ROCQ compile ContextBasicDenotation/theories/TermSyntax.v
+ContextBasicDenotation/theories/TermSyntax.vo (real: 2.41, user: 2.30, sys: 0.08, mem: 527536 ko)
+ROCQ compile ContextBasicDenotation/theories/TermEval.v
+ContextBasicDenotation/theories/TermEval.vo (real: 0.89, user: 0.80, sys: 0.07, mem: 513680 ko)
+ROCQ compile ContextBasicDenotation/theories/TermOpen.v
+ContextBasicDenotation/theories/TermOpen.vo (real: 2.85, user: 2.76, sys: 0.07, mem: 532496 ko)
+ROCQ compile ContextBasicDenotation/theories/TermExtension.v
+ContextBasicDenotation/theories/TermExtension.vo (real: 0.50, user: 0.42, sys: 0.06, mem: 503360 ko)
+ROCQ compile ContextBasicDenotation/theories/TermTLet.v
+ContextBasicDenotation/theories/TermTLet.vo (real: 3.53, user: 3.41, sys: 0.10, mem: 541088 ko)
+ROCQ compile ContextBasicDenotation/theories/Qualifier.v
+ContextBasicDenotation/theories/Qualifier.vo (real: 1.43, user: 1.30, sys: 0.09, mem: 508624 ko)
+ROCQ compile ContextBasicDenotation/theories/BasicTypingFormula.v
+File "./ContextBasicDenotation/theories/BasicTypingFormula.v", line 708, characters 15-57:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./ContextBasicDenotation/theories/BasicTypingFormula.v", line 714, characters 15-57:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextBasicDenotation/theories/BasicTypingFormula.vo (real: 4.52, user: 4.31, sys: 0.12, mem: 515344 ko)
+ROCQ compile ContextBasicDenotation/theories/BasicFormulaFiberwise.v
+ContextBasicDenotation/theories/BasicFormulaFiberwise.vo (real: 0.42, user: 0.31, sys: 0.06, mem: 485696 ko)
+ROCQ compile ContextBasicDenotation/theories/BasicTypingOpen.v
+File "./ContextBasicDenotation/theories/BasicTypingOpen.v", line 17, characters 23-36:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./ContextBasicDenotation/theories/BasicTypingOpen.v", line 23, characters 23-36:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextBasicDenotation/theories/BasicTypingOpen.vo (real: 1.97, user: 1.88, sys: 0.08, mem: 518944 ko)
+ROCQ compile ContextBasicDenotation/theories/RelevantEnv.v
+ContextBasicDenotation/theories/RelevantEnv.vo (real: 1.90, user: 1.80, sys: 0.09, mem: 525136 ko)
+ROCQ compile Denotation/theories/Notation.v
+Denotation/theories/Notation.vo (real: 0.48, user: 0.40, sys: 0.07, mem: 482832 ko)
+ROCQ compile Denotation/theories/TypeDenote.v
+File "./Denotation/theories/TypeDenote.v", line 1680, characters 40-61:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/TypeDenote.v", line 1683, characters 33-56:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/TypeDenote.v", line 1685, characters 36-47:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/TypeDenote.v", line 1701, characters 20-31:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+Denotation/theories/TypeDenote.vo (real: 3.63, user: 3.51, sys: 0.09, mem: 552672 ko)
+ROCQ compile Denotation/theories/TypeEquivCore.v
+Denotation/theories/TypeEquivCore.vo (real: 1.36, user: 1.24, sys: 0.09, mem: 513248 ko)
+ROCQ compile Denotation/theories/DenotationSetMapFacts.v
+File "./Denotation/theories/DenotationSetMapFacts.v", line 398, characters 23-34:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/DenotationSetMapFacts.v", line 399, characters 23-33:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/DenotationSetMapFacts.v", line 411, characters 40-50:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/DenotationSetMapFacts.v", line 423, characters 37-47:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/DenotationSetMapFacts.v", line 435, characters 37-47:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+Denotation/theories/DenotationSetMapFacts.vo (real: 0.65, user: 0.57, sys: 0.07, mem: 501248 ko)
+ROCQ compile Denotation/theories/ResultFirstOpen.v
+Denotation/theories/ResultFirstOpen.vo (real: 0.83, user: 0.75, sys: 0.07, mem: 511408 ko)
+ROCQ compile Denotation/theories/TypeEquivTermBase.v
+Denotation/theories/TypeEquivTermBase.vo (real: 2.43, user: 2.33, sys: 0.09, mem: 528448 ko)
+ROCQ compile Denotation/theories/TypeEquivTermResult.v
+Denotation/theories/TypeEquivTermResult.vo (real: 3.06, user: 2.95, sys: 0.09, mem: 538272 ko)
+ROCQ compile Denotation/theories/TypeEquivTermTLet.v
+Denotation/theories/TypeEquivTermTLet.vo (real: 0.61, user: 0.49, sys: 0.07, mem: 511344 ko)
+ROCQ compile Denotation/theories/TypeEquivTermApp.v
+Denotation/theories/TypeEquivTermApp.vo (real: 1.80, user: 1.70, sys: 0.08, mem: 512512 ko)
+ROCQ compile Denotation/theories/TypeEquivTerm.v
+Denotation/theories/TypeEquivTerm.vo (real: 0.37, user: 0.30, sys: 0.06, mem: 489264 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberTransport.v
+Denotation/theories/TypeEquivFiberTransport.vo (real: 1.46, user: 1.37, sys: 0.07, mem: 516688 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberBaseCore.v
+Denotation/theories/TypeEquivFiberBaseCore.vo (real: 0.85, user: 0.76, sys: 0.07, mem: 511968 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberBaseResult.v
+Denotation/theories/TypeEquivFiberBaseResult.vo (real: 2.26, user: 2.15, sys: 0.08, mem: 528016 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberBaseProjected.v
+Denotation/theories/TypeEquivFiberBaseProjected.vo (real: 2.31, user: 2.18, sys: 0.09, mem: 520192 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberBase.v
+Denotation/theories/TypeEquivFiberBase.vo (real: 0.37, user: 0.29, sys: 0.06, mem: 490224 ko)
+ROCQ compile Denotation/theories/TypeEquivFiberBody.v
+Denotation/theories/TypeEquivFiberBody.vo (real: 1.26, user: 1.18, sys: 0.07, mem: 515184 ko)
+ROCQ compile Denotation/theories/TypeEquivBody.v
+Denotation/theories/TypeEquivBody.vo (real: 0.99, user: 0.90, sys: 0.07, mem: 514480 ko)
+ROCQ compile Denotation/theories/TypeEquivArrow.v
+Denotation/theories/TypeEquivArrow.vo (real: 1.49, user: 1.40, sys: 0.07, mem: 515072 ko)
+ROCQ compile Denotation/theories/TypeEquivArrowResultFirst.v
+Denotation/theories/TypeEquivArrowResultFirst.vo (real: 1.57, user: 1.47, sys: 0.08, mem: 517424 ko)
+ROCQ compile Denotation/theories/TypeEquivWand.v
+Denotation/theories/TypeEquivWand.vo (real: 1.46, user: 1.35, sys: 0.08, mem: 518176 ko)
+ROCQ compile Denotation/theories/TypeEquivWandResultFirst.v
+Denotation/theories/TypeEquivWandResultFirst.vo (real: 1.51, user: 1.43, sys: 0.07, mem: 515808 ko)
+ROCQ compile Denotation/theories/TypeEquivTLet.v
+Denotation/theories/TypeEquivTLet.vo (real: 4.06, user: 3.94, sys: 0.10, mem: 534624 ko)
+ROCQ compile Denotation/theories/TypeEquivTLetFormula.v
+Denotation/theories/TypeEquivTLetFormula.vo (real: 0.48, user: 0.36, sys: 0.08, mem: 489904 ko)
+ROCQ compile Denotation/theories/TypeEquiv.v
+Denotation/theories/TypeEquiv.vo (real: 4.41, user: 4.30, sys: 0.09, mem: 543440 ko)
+ROCQ compile Denotation/theories/TypePersistBase.v
+Denotation/theories/TypePersistBase.vo (real: 3.48, user: 3.37, sys: 0.09, mem: 534272 ko)
+ROCQ compile Denotation/theories/TypePersistArrow.v
+Denotation/theories/TypePersistArrow.vo (real: 1.01, user: 0.88, sys: 0.08, mem: 522032 ko)
+ROCQ compile Denotation/theories/TypePersistSingleton.v
+Denotation/theories/TypePersistSingleton.vo (real: 1.21, user: 1.12, sys: 0.08, mem: 516784 ko)
+ROCQ compile Denotation/theories/TypePersistWandForward.v
+Denotation/theories/TypePersistWandForward.vo (real: 0.95, user: 0.86, sys: 0.07, mem: 521856 ko)
+ROCQ compile Denotation/theories/TypePersistWandReverse.v
+Denotation/theories/TypePersistWandReverse.vo (real: 0.98, user: 0.89, sys: 0.08, mem: 520704 ko)
+ROCQ compile Denotation/theories/TypePersistWand.v
+Denotation/theories/TypePersistWand.vo (real: 0.38, user: 0.30, sys: 0.07, mem: 493216 ko)
+ROCQ compile Denotation/theories/TypePersist.v
+Denotation/theories/TypePersist.vo (real: 0.38, user: 0.30, sys: 0.06, mem: 493520 ko)
+ROCQ compile Denotation/theories/Context.v
+Denotation/theories/Context.vo (real: 2.63, user: 2.51, sys: 0.10, mem: 531008 ko)
+ROCQ compile Denotation/theories/ConstDenoteBase.v
+Denotation/theories/ConstDenoteBase.vo (real: 1.51, user: 1.30, sys: 0.12, mem: 519616 ko)
+ROCQ compile Denotation/theories/ConstDenote.v
+File "./Denotation/theories/ConstDenote.v", line 189, characters 16-41:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/ConstDenote.v", line 191, characters 17-42:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/ConstDenote.v", line 214, characters 25-54:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/ConstDenote.v", line 221, characters 25-46:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/ConstDenote.v", line 233, characters 22-33:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./Denotation/theories/ConstDenote.v", line 233, characters 48-59:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+Denotation/theories/ConstDenote.vo (real: 1.30, user: 1.19, sys: 0.10, mem: 518448 ko)
+ROCQ compile ContextTyping/theories/PrimOpContext.v
+ContextTyping/theories/PrimOpContext.vo (real: 0.47, user: 0.38, sys: 0.07, mem: 486464 ko)
+ROCQ compile ContextTyping/theories/PrimOpConcreteContext.v
+File "./ContextTyping/theories/PrimOpConcreteContext.v", line 269, characters 29-40:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+File "./ContextTyping/theories/PrimOpConcreteContext.v", line 441, characters 29-40:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextTyping/theories/PrimOpConcreteContext.vo (real: 1.79, user: 1.68, sys: 0.09, mem: 515440 ko)
+ROCQ compile ContextTyping/theories/Typing.v
+File "./ContextTyping/theories/Typing.v", line 322, characters 52-62:
+Warning: Cast types are ignored in patterns
+[cast-in-pattern,automation,default]
+ContextTyping/theories/Typing.vo (real: 0.69, user: 0.61, sys: 0.07, mem: 511232 ko)
+ROCQ compile ContextTyping/theories/SoundnessLamBase.v
+ContextTyping/theories/SoundnessLamBase.vo (real: 1.81, user: 1.67, sys: 0.10, mem: 514560 ko)
+ROCQ compile ContextTyping/theories/SoundnessLamArrow.v
+ContextTyping/theories/SoundnessLamArrow.vo (real: 2.80, user: 2.69, sys: 0.10, mem: 534432 ko)
+ROCQ compile ContextTyping/theories/SoundnessLamWand.v
+ContextTyping/theories/SoundnessLamWand.vo (real: 1.98, user: 1.88, sys: 0.08, mem: 528896 ko)
+ROCQ compile ContextTyping/theories/SoundnessLam.v
+ContextTyping/theories/SoundnessLam.vo (real: 0.41, user: 0.29, sys: 0.07, mem: 494976 ko)
+ROCQ compile ContextTyping/theories/SoundnessApp.v
+ContextTyping/theories/SoundnessApp.vo (real: 2.57, user: 2.45, sys: 0.10, mem: 533552 ko)
+ROCQ compile ContextTyping/theories/SoundnessAppD.v
+ContextTyping/theories/SoundnessAppD.vo (real: 2.39, user: 2.28, sys: 0.10, mem: 537824 ko)
+ROCQ compile ContextTyping/theories/SoundnessMatch.v
+ContextTyping/theories/SoundnessMatch.vo (real: 2.79, user: 2.64, sys: 0.10, mem: 527952 ko)
+ROCQ compile ContextTyping/theories/SoundnessFixBase.v
+ContextTyping/theories/SoundnessFixBase.vo (real: 1.00, user: 0.90, sys: 0.07, mem: 520320 ko)
+ROCQ compile ContextTyping/theories/SoundnessFixOpen.v
+ContextTyping/theories/SoundnessFixOpen.vo (real: 0.77, user: 0.68, sys: 0.07, mem: 518432 ko)
+ROCQ compile ContextTyping/theories/SoundnessFixApply.v
+ContextTyping/theories/SoundnessFixApply.vo (real: 2.11, user: 2.00, sys: 0.09, mem: 528880 ko)
+ROCQ compile ContextTyping/theories/SoundnessFixSelf.v
+ContextTyping/theories/SoundnessFixSelf.vo (real: 2.61, user: 2.48, sys: 0.10, mem: 546656 ko)
+ROCQ compile ContextTyping/theories/SoundnessFix.v
+ContextTyping/theories/SoundnessFix.vo (real: 2.03, user: 1.94, sys: 0.08, mem: 536304 ko)
+ROCQ compile ContextTyping/theories/SoundnessPersist.v
+ContextTyping/theories/SoundnessPersist.vo (real: 1.72, user: 1.63, sys: 0.07, mem: 515600 ko)
+ROCQ compile ContextTyping/theories/Soundness.v
+ContextTyping/theories/Soundness.vo (real: 4.37, user: 4.21, sys: 0.12, mem: 541184 ko)
+ROCQ compile ContextTyping/theories/SoundnessConcrete.v
+ContextTyping/theories/SoundnessConcrete.vo (real: 0.44, user: 0.35, sys: 0.07, mem: 490368 ko)
+ROCQ DEP VFILES
+.Makefile.d (real: 0.43, user: 0.08, sys: 0.33, mem: 14464 ko)
+rocq makefile -f _CoqProject -o Makefile
+Warning: No common logical root.
+Warning: In this case the -docroot option should be given.
+Warning: Otherwise the install-doc target is going to install files
+Warning: in orphan_ContextBase_ContextStore_ContextQualifier_ContextAlgebra_ContextLogic_ContextTypeLanguage_ContextBasicDenotation_Denotation_LocallyNameless_CoreLang_ContextTyping

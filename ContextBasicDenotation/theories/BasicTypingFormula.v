@@ -90,13 +90,15 @@ Combined Scheme basic_has_ltype_mutind
 
 Hint Constructors basic_value_has_ltype basic_tm_has_ltype : core.
 
-Lemma basic_tm_has_ltype_lvars Σ e T :
-  basic_tm_has_ltype Σ e T ->
-  lvars_of_atoms (fv_tm e) ⊆ dom Σ.
+Lemma basic_has_ltype_lvars_mutual :
+  (forall Σ v T,
+    basic_value_has_ltype Σ v T ->
+    lvars_of_atoms (fv_value v) ⊆ dom Σ) /\
+  (forall Σ e T,
+    basic_tm_has_ltype Σ e T ->
+    lvars_of_atoms (fv_tm e) ⊆ dom Σ).
 Proof.
-  induction 1 using basic_tm_has_ltype_ind'
-    with (P := fun Σ v T _ => lvars_of_atoms (fv_value v) ⊆ dom Σ);
-    cbn [fv_value fv_tm]; try set_solver.
+  apply basic_has_ltype_mutind; cbn [fv_value fv_tm]; intros; try set_solver.
   - match goal with
     | Hlook : _ !! _ = Some _ |- _ =>
         apply elem_of_dom_2 in Hlook; set_solver
@@ -171,7 +173,9 @@ Proof.
     unfold lvars_of_atoms in Hv.
     apply elem_of_map in Hv as [a [-> Ha]].
     apply elem_of_union in Ha as [Ha|Ha].
-    + apply IHbasic_tm_has_ltype.
+    + match goal with
+      | IH : lvars_of_atoms (fv_tm _) ⊆ dom Σ |- _ => apply IH
+      end.
       unfold lvars_of_atoms. apply elem_of_map.
       exists a. split; [reflexivity|exact Ha].
     + apply lvars_fv_elem.
@@ -183,6 +187,20 @@ Proof.
       * apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
       * destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ T1))));
           set_solver.
+Qed.
+
+Lemma basic_value_has_ltype_lvars Σ v T :
+  basic_value_has_ltype Σ v T ->
+  lvars_of_atoms (fv_value v) ⊆ dom Σ.
+Proof.
+  exact (proj1 basic_has_ltype_lvars_mutual Σ v T).
+Qed.
+
+Lemma basic_tm_has_ltype_lvars Σ e T :
+  basic_tm_has_ltype Σ e T ->
+  lvars_of_atoms (fv_tm e) ⊆ dom Σ.
+Proof.
+  exact (proj2 basic_has_ltype_lvars_mutual Σ e T).
 Qed.
 
 Lemma lty_env_open_one_mono k x (Σ Σ' : lty_env) :

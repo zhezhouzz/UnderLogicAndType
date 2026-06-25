@@ -16,7 +16,8 @@ From Denotation Require Import Context
   TypeEquiv
   ConstDenoteBase
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam.
+From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
+  SoundnessLamWand.
 
 Lemma context_typing_wf_match_inv Σ Γ x et ef τ :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->

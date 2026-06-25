@@ -17,7 +17,8 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase
+From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
+  SoundnessLamWand SoundnessFixBase
   SoundnessFixOpen SoundnessFixApply.
 
 Local Ltac fix_self_in_union :=
