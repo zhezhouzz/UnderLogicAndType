@@ -2,7 +2,7 @@
 
     Shared opening and scope facts for result-first Arrow/Wand denotations. *)
 
-From Denotation Require Import Notation TypeDenote.
+From Denotation Require Import Notation TypeDenote TypeEquivCore.
 
 Section TypeDenote.
 
@@ -673,6 +673,114 @@ Proof.
   2:{ clear -Hyfresh. set_solver. }
   2:{ constructor. constructor. }
   exact Hinner.
+Qed.
+
+Lemma result_first_fun_arg_open_to_inserted_env
+    gas (Σ : lty_env) τx Tf
+    (my : WfWorldT) f y :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom (Σ : lty_env) ->
+  LVFree y ∉ dom (Σ : lty_env) ->
+  f <> y ->
+  lc_context_ty τx ->
+  f ∉ fv_cty τx ->
+  y ∉ fv_cty τx ->
+  my ⊨ formula_open 0 y
+    (formula_open 1 f
+      (ty_denote_gas gas
+        (typed_lty_env_bind
+          (typed_lty_env_bind Σ Tf)
+          (erase_ty (cty_shift 0 τx)))
+        (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))) ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
+Proof.
+  intros HΣclosed HfΣ HyΣ Hfy Hlcτx Hfτx Hyτx Harg.
+  rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y) in Harg.
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2: congruence.
+  2:{
+    rewrite dom_insert_L.
+    intros Hybad. apply elem_of_union in Hybad as [Hybad|Hybad].
+    - apply elem_of_singleton in Hybad. congruence.
+    - exact (HyΣ Hybad).
+  }
+  2: exact Hlcτx.
+  2: exact Hfτx.
+  2: exact Hyτx.
+  rewrite lvar_store_insert_free_commute in Harg by congruence.
+  rewrite (ty_denote_gas_insert_fresh_lty_env_eq gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)) f Tf) in Harg.
+  2:{
+    rewrite dom_insert_L.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply elem_of_singleton in Hbad. congruence.
+    - exact (HfΣ Hbad).
+  }
+  2:{
+    intros Hbad. apply Hfτx.
+    rewrite <- context_ty_lvars_fv.
+    apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  exact Harg.
+Qed.
+
+Lemma result_first_fun_arg_inserted_env_to_open
+    gas (Σ : lty_env) τx Tf
+    (my : WfWorldT) f y :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom (Σ : lty_env) ->
+  LVFree y ∉ dom (Σ : lty_env) ->
+  f <> y ->
+  lc_context_ty τx ->
+  f ∉ fv_cty τx ->
+  y ∉ fv_cty τx ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)) ->
+  my ⊨ formula_open 0 y
+    (formula_open 1 f
+      (ty_denote_gas gas
+        (typed_lty_env_bind
+          (typed_lty_env_bind Σ Tf)
+          (erase_ty (cty_shift 0 τx)))
+        (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))).
+Proof.
+  intros HΣclosed HfΣ HyΣ Hfy Hlcτx Hfτx Hyτx Harg.
+  rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y).
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2: congruence.
+  2:{
+    rewrite dom_insert_L.
+    intros Hybad. apply elem_of_union in Hybad as [Hybad|Hybad].
+    - apply elem_of_singleton in Hybad. congruence.
+    - exact (HyΣ Hybad).
+  }
+  2: exact Hlcτx.
+  2: exact Hfτx.
+  2: exact Hyτx.
+  rewrite lvar_store_insert_free_commute by congruence.
+  rewrite (ty_denote_gas_insert_fresh_lty_env_eq gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)) f Tf).
+  2:{
+    rewrite dom_insert_L.
+    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply elem_of_singleton in Hbad. congruence.
+    - exact (HfΣ Hbad).
+  }
+  2:{
+    intros Hbad. apply Hfτx.
+    rewrite <- context_ty_lvars_fv.
+    apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  exact Harg.
 Qed.
 
 End TypeDenote.

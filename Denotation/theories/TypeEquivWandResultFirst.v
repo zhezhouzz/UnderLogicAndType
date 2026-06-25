@@ -11,125 +11,6 @@ From Denotation Require Import
   TypeEquivWand.
 
 Section TypeDenote.
-Lemma wand_result_first_arg_to_regular_open
-    gas (Σ : lty_env) τx τr e
-    (my : WfWorldT) f y :
-  lty_env_closed (relevant_env Σ (CTWand τx τr) e) ->
-  LVFree f ∉ dom (relevant_env Σ (CTWand τx τr) e : lty_env) ->
-  LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e : lty_env) ->
-  f <> y ->
-  lc_context_ty τx ->
-  f ∉ fv_cty τx ->
-  y ∉ fv_cty τx ->
-  my ⊨ formula_open 0 y
-    (formula_open 1 f
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) e)
-            (erase_ty (CTWand τx τr)))
-          (erase_ty (cty_shift 0 τx)))
-        (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))) ->
-  my ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e))
-    τx (tret (vfvar y)).
-Proof.
-  intros HΣclosed HfΣ HyΣ Hfy Hlcτx Hfτx Hyτx Harg.
-  rewrite (formula_open_result_first_fun_arg_two gas
-    (relevant_env Σ (CTWand τx τr) e) τx
-    (erase_ty (CTWand τx τr)) f y) in Harg.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: congruence.
-  2:{
-    rewrite dom_insert_L.
-    intros Hybad. apply elem_of_union in Hybad as [Hybad|Hybad].
-    - apply elem_of_singleton in Hybad. congruence.
-    - exact (HyΣ Hybad).
-  }
-  2: exact Hlcτx.
-  2: exact Hfτx.
-  2: exact Hyτx.
-  rewrite lvar_store_insert_free_commute in Harg by congruence.
-  rewrite (ty_denote_gas_insert_fresh_lty_env_eq gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e))
-    τx (tret (vfvar y)) f (erase_ty (CTWand τx τr))) in Harg.
-  2:{
-    rewrite dom_insert_L.
-    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
-    - apply elem_of_singleton in Hbad. congruence.
-    - exact (HfΣ Hbad).
-  }
-  2:{
-    intros Hbad. apply Hfτx.
-    rewrite <- context_ty_lvars_fv.
-    apply lvars_fv_elem. exact Hbad.
-  }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
-  exact Harg.
-Qed.
-
-Lemma wand_result_first_regular_to_arg_open
-    gas (Σ : lty_env) τx τr e
-    (my : WfWorldT) f y :
-  lty_env_closed (relevant_env Σ (CTWand τx τr) e) ->
-  LVFree f ∉ dom (relevant_env Σ (CTWand τx τr) e : lty_env) ->
-  LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e : lty_env) ->
-  f <> y ->
-  lc_context_ty τx ->
-  f ∉ fv_cty τx ->
-  y ∉ fv_cty τx ->
-  my ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e))
-    τx (tret (vfvar y)) ->
-  my ⊨ formula_open 0 y
-    (formula_open 1 f
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) e)
-            (erase_ty (CTWand τx τr)))
-          (erase_ty (cty_shift 0 τx)))
-        (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))).
-Proof.
-  intros HΣclosed HfΣ HyΣ Hfy Hlcτx Hfτx Hyτx Harg.
-  rewrite (formula_open_result_first_fun_arg_two gas
-    (relevant_env Σ (CTWand τx τr) e) τx
-    (erase_ty (CTWand τx τr)) f y).
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: congruence.
-  2:{
-    rewrite dom_insert_L.
-    intros Hybad. apply elem_of_union in Hybad as [Hybad|Hybad].
-    - apply elem_of_singleton in Hybad. congruence.
-    - exact (HyΣ Hybad).
-  }
-  2: exact Hlcτx.
-  2: exact Hfτx.
-  2: exact Hyτx.
-  rewrite lvar_store_insert_free_commute by congruence.
-  rewrite (ty_denote_gas_insert_fresh_lty_env_eq gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e))
-    τx (tret (vfvar y)) f (erase_ty (CTWand τx τr))).
-  2:{
-    rewrite dom_insert_L.
-    intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad].
-    - apply elem_of_singleton in Hbad. congruence.
-    - exact (HfΣ Hbad).
-  }
-  2:{
-    intros Hbad. apply Hfτx.
-    rewrite <- context_ty_lvars_fv.
-    apply lvars_fv_elem. exact Hbad.
-  }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
-  exact Harg.
-Qed.
 
 Lemma wand_result_first_result_to_regular_open
     gas (Σ : lty_env) τx τr e
@@ -624,21 +505,21 @@ Proof.
         apply elem_of_union_l. exact Hbad.
       }
 	      assert (Harg_tgt_open :
-	          n ⊨ ty_denote_gas gas
-	            (<[LVFree a := erase_ty τx]>
-	              (relevant_env Σ (CTWand τx τr) e2))
-	            τx (tret (vfvar a))).
-      {
-        eapply wand_result_first_arg_to_regular_open.
-        - exact HlcΣ_tgt.
-        - exact Hf_rel2.
-        - exact Hy_rel2.
-        - exact Hfy.
-        - exact Hlcτx.
-        - exact Hfτx.
-        - exact Hyτx.
-        - exact Harg_tgt.
-      }
+		          n ⊨ ty_denote_gas gas
+		            (<[LVFree a := erase_ty τx]>
+		              (relevant_env Σ (CTWand τx τr) e2))
+		            τx (tret (vfvar a))).
+	      {
+	        eapply result_first_fun_arg_open_to_inserted_env.
+	        - exact HlcΣ_tgt.
+	        - exact Hf_rel2.
+	        - exact Hy_rel2.
+	        - exact Hfy.
+	        - exact Hlcτx.
+	        - exact Hfτx.
+	        - exact Hyτx.
+	        - exact Harg_tgt.
+	      }
 	      assert (Hf_rel1 :
 	          LVFree f ∉ dom (relevant_env Σ (CTWand τx τr) e1 : lty_env)).
 	      {
@@ -662,20 +543,20 @@ Proof.
 		      pose proof (@ty_denote_gas_tm_equiv_wand_open_arg_fbwand
 		        gas Σ τx τr e1 e2 n a
 		        Harg_tgt_open) as Harg_src.
-      pose proof (Hwand_src _ n Hc Hbind
-        ltac:(rewrite open_env_atoms_insert by apply lookup_empty;
-              rewrite open_env_atoms_empty;
-              clear -Hηfresh; set_solver)
-        Hdom_prod ltac:(
-          eapply wand_result_first_regular_to_arg_open;
-          [ exact HlcΣ_src
-          | exact Hf_rel1
-          | exact Hy_rel1
-          | exact Hfy
-          | exact Hlcτx
-          | exact Hfτx
-          | exact Hyτx
-          | exact Harg_src ])) as Hres_src_inner.
+	      pose proof (Hwand_src _ n Hc Hbind
+	        ltac:(rewrite open_env_atoms_insert by apply lookup_empty;
+	              rewrite open_env_atoms_empty;
+	              clear -Hηfresh; set_solver)
+	        Hdom_prod
+	        ltac:(eapply result_first_fun_arg_inserted_env_to_open;
+	          [ exact HlcΣ_src
+	          | exact Hf_rel1
+	          | exact Hy_rel1
+	          | exact Hfy
+	          | exact Hlcτx
+	          | exact Hfτx
+	          | exact Hyτx
+	          | exact Harg_src ])) as Hres_src_inner.
       assert (Hres_src_regular :
           res_product n mf_src Hc ⊨ ty_denote_gas gas
             (<[LVFree a := erase_ty τx]>

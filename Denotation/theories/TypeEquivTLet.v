@@ -717,14 +717,14 @@ Proof.
 	        (<[LVFree a := erase_ty τx]>
 	          (relevant_env Σ (CTWand τx τr) e_tgt))
 	        τx (tret (vfvar a))).
-  {
-    eapply wand_result_first_arg_to_regular_open.
-    - exact HlcΣ_tgt.
-    - exact Hf_rel_tgt.
-    - exact Ha_rel_tgt.
-    - exact Hfa.
-    - exact Hlcτx.
-    - clear -Hfτ. set_solver.
+	  {
+	    eapply result_first_fun_arg_open_to_inserted_env.
+	    - exact HlcΣ_tgt.
+	    - exact Hf_rel_tgt.
+	    - exact Ha_rel_tgt.
+	    - exact Hfa.
+	    - exact Hlcτx.
+	    - clear -Hfτ. set_solver.
 	    - exact Haτx.
 	    - exact Harg_tgt.
 	  }
@@ -763,32 +763,20 @@ Proof.
 	    - exact HaΣtgt.
 	    - exact Harg_tgt_regular.
 	  }
-	  assert (Harg_src_formula :
-      n ⊨ formula_open 0 a
-        (formula_open 1 f
-          (ty_denote_gas gas
-            (typed_lty_env_bind
-              (typed_lty_env_bind
-                (relevant_env Σ (CTWand τx τr) e_src)
-                (erase_ty (CTWand τx τr)))
-              (erase_ty (cty_shift 0 τx)))
-            (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))))).
-  {
-    eapply wand_result_first_regular_to_arg_open.
-    - exact HlcΣ_src.
-    - exact Hf_rel_src.
-    - exact Ha_rel_src.
-    - exact Hfa.
-    - exact Hlcτx.
-    - clear -Hfτ. set_solver.
-    - exact Haτx.
-    - exact Harg_src_regular.
-  }
-  pose proof (Hwand_src _ n Hc Hbind
-    ltac:(rewrite open_env_atoms_insert by apply lookup_empty;
-          rewrite open_env_atoms_empty;
-          clear -Hηfresh; set_solver)
-    Hdom_prod Harg_src_formula) as Hres_src_inner.
+	  pose proof (Hwand_src _ n Hc Hbind
+	    ltac:(rewrite open_env_atoms_insert by apply lookup_empty;
+	          rewrite open_env_atoms_empty;
+	          clear -Hηfresh; set_solver)
+	    Hdom_prod
+	    ltac:(eapply result_first_fun_arg_inserted_env_to_open;
+	      [ exact HlcΣ_src
+	      | exact Hf_rel_src
+	      | exact Ha_rel_src
+	      | exact Hfa
+	      | exact Hlcτx
+	      | clear -Hfτ; set_solver
+	      | exact Haτx
+	      | exact Harg_src_regular ])) as Hres_src_inner.
   assert (Hres_src_regular :
       res_product n mf Hc ⊨ ty_denote_gas gas
         (<[LVFree a := erase_ty τx]>
