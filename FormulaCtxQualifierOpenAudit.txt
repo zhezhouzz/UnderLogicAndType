@@ -265,3 +265,24 @@ Remaining buckets:
     succeeds in about 4.6s.
   - `timeout 20s make TIMED=1 Denotation/theories/TypePersistWandForward.vo`
     succeeds after warmed dependency rebuild.
+
+## Unused Raw-Open Helper Cleanup
+
+- Deleted `basic_world_formula_opened_arg_world` from
+  `Denotation/theories/TypeEquivArrow.v`.
+- It had a raw `formula_open 0 y (basic_world_formula ...)` premise, no
+  repository callers, and only wrapped the existing
+  `formula_open_basic_world_bind0` normalizer.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+    succeeds in about 2.4s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+    succeeds in about 2.4s.
+  - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` succeeds
+    after warmed dependency rebuild; the repeated interruptions were total
+    dependency-chain timeouts, not per-file proof failures.
+- Current lemma-name scan for public `formula_open` helpers now consists of
+  normalizer/support modules:
+  `TypeDenote.v`, `ResultFirstOpen.v`, `TypePersistBase.v`, and the local
+  `formula_open_shifted_ret_bound0_ty_denote_gas` support lemma in
+  `TypeEquivFiberBody.v`.
