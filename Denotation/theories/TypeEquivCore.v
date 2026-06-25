@@ -308,6 +308,33 @@ Proof.
   tauto.
 Qed.
 
+Lemma ty_denote_gas_type_lvars_world
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  lvars_fv (context_ty_lvars τ) ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard gas Σ τ e m Hden) as Hguard.
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard) as Hwf.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
+  pose proof (context_ty_wf_formula_fv_cty_subset
+    (relevant_env Σ τ e) τ m Hwf) as Hτ.
+  pose proof (proj1 (basic_world_formula_models_iff
+    (relevant_env Σ τ e) m) Hworld) as [_ [Hdom _]].
+  rewrite context_ty_lvars_fv.
+  set_solver.
+Qed.
+
+Lemma ty_denote_gas_fv_cty_world
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  fv_cty τ ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hden.
+  rewrite <- context_ty_lvars_fv.
+  exact (ty_denote_gas_type_lvars_world gas Σ τ e m Hden).
+Qed.
+
 Lemma ty_denote_gas_ret_fvar_relevant_lookup
     gas Σ τ x (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->

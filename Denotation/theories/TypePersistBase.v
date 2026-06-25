@@ -944,26 +944,17 @@ Proof.
   intros HΣclosed Hzφ Hden.
   pose proof (ty_denote_gas_guard (S gas) Σ (CTOver b φ)
     (tret (vfvar z)) m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard) as Htotal.
   pose proof (ty_denote_gas_ret_fvar_world_dom
     (S gas) Σ (CTOver b φ) z m Hden) as Hzm.
-  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
   apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
   apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
   assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
   {
-    destruct Hbasicτ as [Hvars _].
-    intros a Ha.
-    apply Hrel_dom.
-    apply lvars_fv_elem.
-    apply Hvars.
-    unfold context_ty_lvars.
-    cbn [context_ty_lvars_at].
-    rewrite lvars_at_depth_elem.
-    exists (LVFree a). split.
-    - rewrite <- lvars_fv_elem. exact Ha.
-    - reflexivity.
+    rewrite <- (context_ty_lvars_over_fv b φ).
+    eapply ty_denote_gas_type_lvars_world. exact Hden.
   }
   set (Dres := dom (relevant_env Σ (CTOver b φ) (tret (vfvar z)))).
   assert (Hlc_D : lc_lvars Dres).
@@ -1080,26 +1071,17 @@ Proof.
   intros HΣclosed Hzφ Hden.
   pose proof (ty_denote_gas_guard (S gas) Σ (CTUnder b φ)
     (tret (vfvar z)) m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard) as Htotal.
   pose proof (ty_denote_gas_ret_fvar_world_dom
     (S gas) Σ (CTUnder b φ) z m Hden) as Hzm.
-  apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
   apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
   apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
   assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
   {
-    destruct Hbasicτ as [Hvars _].
-    intros a Ha.
-    apply Hrel_dom.
-    apply lvars_fv_elem.
-    apply Hvars.
-    unfold context_ty_lvars.
-    cbn [context_ty_lvars_at].
-    rewrite lvars_at_depth_elem.
-    exists (LVFree a). split.
-    - rewrite <- lvars_fv_elem. exact Ha.
-    - reflexivity.
+    rewrite <- (context_ty_lvars_under_fv b φ).
+    eapply ty_denote_gas_type_lvars_world. exact Hden.
   }
   set (Dres := dom (relevant_env Σ (CTUnder b φ) (tret (vfvar z)))).
   assert (Hlc_D : lc_lvars Dres).
@@ -1226,24 +1208,14 @@ Proof.
       Σ (CTOver b φ) (tret (vfvar z)) m Hzero) as Hguard.
     pose proof (ty_denote_gas_ret_fvar_world_dom
       0 Σ (CTOver b φ) z m Hzero) as Hzm.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+    pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+    pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
     apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
     apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
     assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
     {
-      destruct Hbasicτ as [Hvars _].
-      intros a Ha.
-      apply Hrel_dom.
-      apply lvars_fv_elem.
-      apply Hvars.
-      unfold context_ty_lvars.
-      cbn [context_ty_lvars_at].
-      rewrite lvars_at_depth_elem.
-      exists (LVFree a). split.
-      - rewrite <- lvars_fv_elem. exact Ha.
-      - reflexivity.
+      rewrite <- (context_ty_lvars_over_fv b φ).
+      eapply ty_denote_gas_type_lvars_world. exact Hzero.
     }
     set (Dres := dom (relevant_env Σ (CTOver b φ) (tret (vfvar z)))).
     assert (Hlc_D : lc_lvars Dres).
@@ -1360,24 +1332,14 @@ Proof.
       Σ (CTUnder b φ) (tret (vfvar z)) m Hzero) as Hguard.
     pose proof (ty_denote_gas_ret_fvar_world_dom
       0 Σ (CTUnder b φ) z m Hzero) as Hzm.
-    repeat rewrite res_models_and_iff in Hguard.
-    destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-    apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
+    pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+    pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
     apply expr_basic_typing_formula_models_iff in Hbasic as [HlcD [_ Hty]].
     apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
     assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
     {
-      destruct Hbasicτ as [Hvars _].
-      intros a Ha.
-      apply Hrel_dom.
-      apply lvars_fv_elem.
-      apply Hvars.
-      unfold context_ty_lvars.
-      cbn [context_ty_lvars_at].
-      rewrite lvars_at_depth_elem.
-      exists (LVFree a). split.
-      - rewrite <- lvars_fv_elem. exact Ha.
-      - reflexivity.
+      rewrite <- (context_ty_lvars_under_fv b φ).
+      eapply ty_denote_gas_type_lvars_world. exact Hzero.
     }
     set (Dres := dom (relevant_env Σ (CTUnder b φ) (tret (vfvar z)))).
     assert (Hlc_D : lc_lvars Dres).
@@ -1486,8 +1448,10 @@ Proof.
   intros HΣclosed Hzφ Hden.
   pose proof (ty_denote_gas_guard (S (S gas)) Σ
     (CTPersist (CTOver b φ)) (tret (vfvar z)) m Hden) as Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard) as Hworld.
+  pose proof (ty_guard_formula_total _ _ _ _ Hguard) as Htotal.
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard) as Hwf.
   pose proof (ty_denote_gas_ret_fvar_world_dom
     (S (S gas)) Σ (CTPersist (CTOver b φ)) z m Hden) as Hzm.
   apply context_ty_wf_formula_models_iff in Hwf as [_ [_ Hbasicτ]].
@@ -1495,17 +1459,10 @@ Proof.
   apply basic_world_formula_models_iff in Hworld as [_ [Hrel_dom _]].
   assert (Hφm : qual_dom φ ⊆ world_dom (m : WorldT)).
   {
-    destruct Hbasicτ as [Hvars _].
-    intros a Ha.
-    apply Hrel_dom.
-    apply lvars_fv_elem.
-    apply Hvars.
-    unfold context_ty_lvars.
-    cbn [context_ty_lvars_at].
-    rewrite lvars_at_depth_elem.
-    exists (LVFree a). split.
-    - rewrite <- lvars_fv_elem. exact Ha.
-    - reflexivity.
+    rewrite <- (context_ty_lvars_over_fv b φ).
+    change (lvars_fv (context_ty_lvars (CTPersist (CTOver b φ))) ⊆
+      world_dom (m : WorldT)).
+    eapply ty_denote_gas_type_lvars_world. exact Hden.
   }
   set (τp := CTPersist (CTOver b φ)).
   set (Dres := dom (relevant_env Σ τp (tret (vfvar z)))).

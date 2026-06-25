@@ -840,19 +840,7 @@ Lemma ty_denote_gas_zero_type_fv_world
   m ⊨ ty_denote_gas 0 Σ τ e ->
   lvars_fv (context_ty_lvars τ) ⊆ world_dom (m : WorldT).
 Proof.
-  intros Hzero.
-  cbn [ty_denote_gas] in Hzero.
-  rewrite res_models_and_iff in Hzero.
-  destruct Hzero as [Hguard _].
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [Hwf [Hworld _]].
-  pose proof (context_ty_wf_formula_fv_cty_subset
-    (relevant_env Σ τ e) τ m Hwf) as Hτ.
-  pose proof (proj1 (basic_world_formula_models_iff
-    (relevant_env Σ τ e) m) Hworld) as [_ [Hdom _]].
-  rewrite context_ty_lvars_fv.
-  set_solver.
+  apply ty_denote_gas_type_lvars_world.
 Qed.
 
 End TypeDenote.

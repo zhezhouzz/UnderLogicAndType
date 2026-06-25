@@ -517,3 +517,20 @@ Follow-up Batch M: static guard cleanup in alias and Lam helpers.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessLamArrow.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`
+
+Follow-up Batch N: type-FV world regular fact.
+
+- Added `ty_denote_gas_type_lvars_world` and
+  `ty_denote_gas_fv_cty_world` to `TypeEquivCore`.
+- Converted `TypeEquivArrow.ty_denote_gas_zero_type_fv_world` into a wrapper
+  over the new general lemma.
+- Replaced five repeated `TypePersistBase` blocks that derived
+  `qual_dom φ ⊆ world_dom m` by destructing guard, wf, and basic-world facts.
+  The assertions remain as semantic checkpoints, but their bodies now call the
+  type-FV regular lemma.
+- `TypePersistBase.vo` improved from about 6.14s after the initial edit to
+  about 4.01s after removing unnecessary full guard destructs.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
