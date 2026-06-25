@@ -481,7 +481,7 @@ Proof.
   apply (map_fold_insert_L (M:=gmap nat) (A:=atom) (B:=qualifier)
     (fun k x acc => qual_open_atom k x acc) q k x η).
   - intros i j xi xj acc Hij Hi Hj.
-    apply qual_open_commute_fvar; [exact Hij|].
+    apply (qual_open_commute_fvar _ _ _ _ _ Hij).
     intros Heq. subst xj.
     pose proof (open_env_values_inj_insert k x η Hfresh Havoid Hinj)
       as Hinj'.
@@ -616,7 +616,7 @@ Proof.
         + destruct (decide (k <= n)) as [Hkn|Hkn].
           * inversion Hv. lia.
           * inversion Hv. subst n.
-            specialize (Hlc k ltac:(apply lvars_bv_elem; exact HvD)).
+            specialize (Hlc k ltac:(rewrite lvars_bv_elem; exact HvD)).
             lia.
         + discriminate.
     }
@@ -682,7 +682,7 @@ Proof.
         rewrite decide_False in HbadD by
           (intros Heq; apply Hneq; symmetry; exact Heq).
         rewrite decide_True in HbadD by reflexivity.
-        specialize (Hbelow k ltac:(apply lvars_bv_elem; exact HbadD)).
+        specialize (Hbelow k ltac:(rewrite lvars_bv_elem; exact HbadD)).
         lia.
     }
     assert (Hback_eq : lstore_on_open_back k x D s1 = s2).
