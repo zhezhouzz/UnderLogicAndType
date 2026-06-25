@@ -17,6 +17,7 @@ From Denotation Require Import Context
   TypeEquivArrow
   TypeEquivWand
   TypeEquiv
+  TypePersistArrow
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLamBase
   SoundnessLam SoundnessFixBase SoundnessFixOpen SoundnessFixApply
@@ -260,27 +261,23 @@ Lemma fix_result_first_arrow_value_denotation
   z ∉ L ∪ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
     fv_value vf ∪ fv_cty (over_ty b φx) ∪ fv_cty τ ->
   formula_scoped_in_world mz
-    (formula_open 0 z
-      (arrow_value_denote_gas_with ty_denote_gas
-        (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
-        (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow (over_ty b φx) τ)
-            (tret (vfix (TBase b →ₜ t) vf)))
-          (erase_ty (CTArrow (over_ty b φx) τ)))
-        (cty_shift 0 (over_ty b φx)) (cty_shift 1 τ)
-        (tret (vbvar 0)))) ->
+    (arrow_value_denote_gas_with ty_denote_gas
+      (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
+      (<[LVFree z := erase_ty (CTArrow (over_ty b φx) τ)]>
+        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+          (CTArrow (over_ty b φx) τ)
+          (tret (vfix (TBase b →ₜ t) vf))))
+      (over_ty b φx) τ
+      (tret (vfvar z))) ->
   mz ⊨ expr_result_formula (tret (vfix (TBase b →ₜ t) vf)) (LVFree z) ->
-  mz ⊨ formula_open 0 z
-      (arrow_value_denote_gas_with ty_denote_gas
-        (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
-        (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow (over_ty b φx) τ)
-            (tret (vfix (TBase b →ₜ t) vf)))
-          (erase_ty (CTArrow (over_ty b φx) τ)))
-        (cty_shift 0 (over_ty b φx)) (cty_shift 1 τ)
-        (tret (vbvar 0))).
+  mz ⊨ arrow_value_denote_gas_with ty_denote_gas
+    (Nat.max (cty_depth (over_ty b φx)) (cty_depth τ))
+    (<[LVFree z := erase_ty (CTArrow (over_ty b φx) τ)]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTArrow (over_ty b φx) τ)
+        (tret (vfix (TBase b →ₜ t) vf))))
+    (over_ty b φx) τ
+    (tret (vfvar z)).
 Proof.
   intros Hτ Hwf Hbody_wf IH Hctx Hdomz Hrestrictz Hz Hscope_value Hres_z.
   set (τx := over_ty b φx).
@@ -289,6 +286,7 @@ Proof.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)).
   set (gas := Nat.max (cty_depth τx) (cty_depth τ)).
   set (Σrel := relevant_env Δ (CTArrow τx τ) efix).
+  change (over_ty b φx) with τx in Hscope_value.
   assert (Hle_m_mz : m ⊑ mz).
   { rewrite <- Hrestrictz. apply res_restrict_le. }
   assert (Hctx_mz : mz ⊨ ctx_denote_under Σ Γ).
@@ -332,34 +330,44 @@ Proof.
         τx (tret (vfvar y))).
   {
     change (my ⊨ formula_open 0 y
-      (formula_open 1 z
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
-            (erase_ty (cty_shift 0 τx)))
-          (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0)))))
+      (ty_denote_gas gas
+        (typed_lty_env_bind
+          (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+          (erase_ty τx))
+        (cty_shift 0 τx) (tret (vbvar 0))))
       in Harg_raw.
-    rewrite (formula_open_result_first_fun_arg_two
-      gas Σrel τx (erase_ty (CTArrow τx τ)) z y) in Harg_raw.
-    - exact Harg_raw.
-    - subst Σrel Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
-    - subst Σrel Δ efix τx. apply soundness_relevant_env_arrow_value_fresh.
-      cbn [fv_value]. clear -Hz. better_set_solver.
-    - clear -Hy_fresh. set_solver.
-    - rewrite dom_insert_L. intros Hin.
-      apply elem_of_union in Hin as [Hin|Hin].
-      + apply elem_of_singleton in Hin. inversion Hin. subst.
-        clear -Hy_fresh. set_solver.
-      + exfalso.
-        subst Σrel Δ efix τx.
-        eapply (soundness_relevant_env_arrow_value_fresh
-          (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-          (vfix (TBase b →ₜ t) vf) y).
-        * cbn [fv_value]. clear -Hy_fresh. better_set_solver.
-        * exact Hin.
-    - exact Hτx_lc.
-    - clear -Hz. better_set_solver.
-    - clear -Hy_fresh. better_set_solver.
+    assert (Harg_open_eq :
+        formula_open 0 y
+          (ty_denote_gas gas
+            (typed_lty_env_bind
+              (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+              (erase_ty τx))
+            (cty_shift 0 τx) (tret (vbvar 0))) =
+        ty_denote_gas gas
+          (<[LVFree y := erase_ty τx]>
+            (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel))
+          τx (tret (vfvar y))).
+    {
+      apply formula_open_ty_denote_gas_bind_ret_bvar0.
+      - apply lty_env_closed_insert_free.
+        subst Σrel Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+      - rewrite dom_insert_L. intros Hin.
+        apply elem_of_union in Hin as [Hin|Hin].
+        + apply elem_of_singleton in Hin. inversion Hin. subst.
+          clear -Hy_fresh. set_solver.
+        + exfalso.
+          subst Σrel Δ efix τx.
+          pose proof (soundness_relevant_env_arrow_value_fresh
+            (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+            (vfix (TBase b →ₜ t) vf) y
+            ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
+            as Hnot.
+          exact (Hnot Hin).
+      - clear -Hy_fresh. better_set_solver.
+      - exact Hτx_lc.
+    }
+    rewrite Harg_open_eq in Harg_raw.
+    exact Harg_raw.
   }
   assert (Harg_old :
       my ⊨ ty_denote_gas gas
@@ -528,35 +536,46 @@ Proof.
     ltac:(apply map_lookup_insert)
     Hlc_vself Hres_my Hfun_basic Hstatic_app Happ_src_mid) as Htarget_alias.
   change (my ⊨ formula_open 0 y
-    (formula_open 1 z
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
-          (erase_ty (cty_shift 0 τx)))
-        (cty_shift 1 τ)
-        (tapp_tm (tret (vbvar 1)) (vbvar 0))))).
-  rewrite (formula_open_result_first_fun_result_two
-    gas Σrel τx τ (erase_ty (CTArrow τx τ)) z y).
-  2:{ subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
-  2:{ subst Σrel efix τx Δ. apply soundness_relevant_env_arrow_value_fresh.
-      cbn [fv_value]. clear -Hz. better_set_solver. }
-  2:{ clear -Hy_fresh. set_solver. }
-  2:{
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      clear -Hy_fresh. set_solver.
-    - exfalso.
-      subst Σrel efix τx Δ.
-      eapply (soundness_relevant_env_arrow_value_fresh
-        (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
-        (vfix (TBase b →ₜ t) vf) y).
-      * cbn [fv_value]. clear -Hy_fresh. better_set_solver.
-      * exact Hin.
+    (ty_denote_gas gas
+      (typed_lty_env_bind
+        (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+        (erase_ty τx))
+      τ
+      (tapp_tm (tm_shift 0 (tret (vfvar z))) (vbvar 0)))).
+  assert (Hresult_open_eq :
+      formula_open 0 y
+        (ty_denote_gas gas
+          (typed_lty_env_bind
+            (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+            (erase_ty τx))
+          τ
+          (tapp_tm (tm_shift 0 (tret (vfvar z))) (vbvar 0))) =
+      ty_denote_gas gas
+        (<[LVFree y := erase_ty τx]>
+          (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel))
+        (cty_open 0 y τ)
+        (tapp_tm (tret (vfvar z)) (vfvar y))).
+  {
+    apply formula_open_ty_denote_gas_bind_tapp_shift_bvar0.
+    - apply lty_env_closed_insert_free.
+      subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+    - rewrite dom_insert_L. intros Hin.
+      apply elem_of_union in Hin as [Hin|Hin].
+      + apply elem_of_singleton in Hin. inversion Hin. subst.
+        clear -Hy_fresh. set_solver.
+      + exfalso.
+        subst Σrel efix τx Δ.
+        pose proof (soundness_relevant_env_arrow_value_fresh
+          (atom_env_to_lty_env (erase_ctx Γ)) (over_ty b φx) τ
+          (vfix (TBase b →ₜ t) vf) y
+          ltac:(cbn [fv_value]; clear -Hy_fresh; better_set_solver))
+          as Hnot.
+        exact (Hnot Hin).
+    - cbn [fv_tm fv_value]. clear -Hy_fresh. set_solver.
+    - clear -Hy_fresh. better_set_solver.
+    - apply lc_ret_iff_value. constructor.
   }
-  2:{ exact Hτ_lc1. }
-  2:{ clear -Hz. better_set_solver. }
-  2:{ clear -Hy_fresh. better_set_solver. }
+  rewrite Hresult_open_eq.
   eapply res_models_ty_denote_gas_env_agree_on
     with (Σ1 := <[LVFree z := erase_ty τx →ₜ erase_ty (cty_open 0 y τ)]>
         (<[LVFree y := erase_ty τx]> Δ))
@@ -643,6 +662,69 @@ Proof.
       ltac:(subst τx vself; exact Hwf)
       ltac:(subst τx; clear -Hzfresh; better_set_solver)
       Hres_raw) as Hres_plain.
+    assert (Hτx_lc : lc_context_ty τx).
+    {
+      subst τx vself.
+      pose proof (context_typing_wf_context_ty
+        Σ Γ (tret (vfix (TBase b →ₜ t) vf))
+        (CTArrow (over_ty b φx) τ) Hwf) as Hτwf.
+      cbn [wf_context_ty_at] in Hτwf.
+      eapply wf_context_ty_at_lc. exact (proj1 Hτwf).
+    }
+    assert (Hτ_lc1 : cty_lc_at 1 τ).
+    {
+      subst τx vself.
+      pose proof (context_typing_wf_context_ty
+        Σ Γ (tret (vfix (TBase b →ₜ t) vf))
+        (CTArrow (over_ty b φx) τ) Hwf) as Hτwf.
+      cbn [wf_context_ty_at] in Hτwf.
+      eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
+    }
+    assert (Hvalue_scope :
+        formula_scoped_in_world mz
+          (arrow_value_denote_gas_with ty_denote_gas gas
+            (<[LVFree z := erase_ty (CTArrow τx τ)]>
+              (relevant_env Δ (CTArrow τx τ) (tret vself)))
+            τx τ (tret (vfvar z)))).
+    {
+      pose proof (formula_scoped_impl_r _ _ _ Hopened_scope) as Hraw.
+      rewrite (formula_open_result_first_arrow_value_ret_bvar0
+        gas (relevant_env Δ (CTArrow τx τ) (tret vself))
+        τx τ (erase_ty (CTArrow τx τ)) z) in Hraw.
+      - exact Hraw.
+      - subst Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
+      - subst Δ vself τx.
+        eapply relevant_env_arrow_fresh_free.
+        + clear -Hzfresh. better_set_solver.
+        + clear -Hzfresh. better_set_solver.
+        + cbn [fv_tm fv_value]. clear -Hzfresh. better_set_solver.
+      - exact Hτx_lc.
+      - exact Hτ_lc1.
+      - clear -Hzfresh. better_set_solver.
+      - clear -Hzfresh. better_set_solver.
+    }
+    change (mz ⊨ formula_open 0 z
+      (arrow_value_denote_gas_with ty_denote_gas gas
+        (typed_lty_env_bind
+          (relevant_env Δ (CTArrow τx τ) (tret vself))
+          (erase_ty (CTArrow τx τ)))
+        (cty_shift 0 τx) (cty_shift 1 τ)
+        (tret (vbvar 0)))).
+    rewrite (formula_open_result_first_arrow_value_ret_bvar0
+      gas (relevant_env Δ (CTArrow τx τ) (tret vself))
+      τx τ (erase_ty (CTArrow τx τ)) z).
+    2:{ subst Δ. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+    2:{
+      subst Δ vself τx.
+      eapply relevant_env_arrow_fresh_free.
+      - clear -Hzfresh. better_set_solver.
+      - clear -Hzfresh. better_set_solver.
+      - cbn [fv_tm fv_value]. clear -Hzfresh. better_set_solver.
+    }
+    2:{ exact Hτx_lc. }
+    2:{ exact Hτ_lc1. }
+    2:{ clear -Hzfresh. better_set_solver. }
+    2:{ clear -Hzfresh. better_set_solver. }
     eapply (fix_result_first_arrow_value_denotation
       Σ Γ φx τ vf b t L m mz z).
     + exact Hτ.
@@ -653,6 +735,6 @@ Proof.
     + exact Hdomz.
     + exact Hrestrictz.
     + subst τx. exact Hzfresh.
-    + eapply formula_scoped_impl_r. exact Hopened_scope.
+    + exact Hvalue_scope.
     + exact Hres_plain.
 Qed.
