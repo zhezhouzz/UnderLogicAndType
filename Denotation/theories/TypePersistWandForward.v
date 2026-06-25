@@ -269,7 +269,7 @@ Proof.
     apply elem_of_union in Hv as [Hv|Hv];
       apply elem_of_singleton in Hv; subst v;
       eapply elem_of_dom_2; eauto.
-  - unfold relevant_lvars, context_tm_support. apply elem_of_union_r. exact Hv.
+  - unfold relevant_lvars. apply elem_of_union_r. exact Hv.
 Qed.
 
 Lemma singleton_lvar_subset_tapp_ret_fvar_fvar_relevant_env_dom

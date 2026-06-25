@@ -752,7 +752,7 @@ Proof.
     - rewrite atom_store_to_lvar_store_lookup_free.
       unfold store_insert, store_empty.
       apply map_lookup_insert.
-    - unfold relevant_lvars, context_tm_support.
+    - unfold relevant_lvars.
       cbn [tm_lvars tm_lvars_at value_lvars_at].
       unfold over_ty, topq, qual_top.
       cbn [context_ty_lvars context_ty_lvars_at qual_vars qual_lvars].
@@ -930,7 +930,7 @@ Proof.
         unfold relevant_env, lty_env_restrict_lvars.
         apply storeA_restrict_lookup_some_2.
         -- apply primop_arg_erase_env_lookup.
-        -- unfold relevant_lvars, context_tm_support.
+        -- unfold relevant_lvars.
            cbn [tm_lvars tm_lvars_at value_lvars_at].
            unfold precise_ty, over_ty, under_ty, topq, qual_top.
            cbn [context_ty_lvars context_ty_lvars_at qual_vars qual_lvars].
@@ -983,7 +983,7 @@ Proof.
       unfold relevant_env, lty_env_restrict_lvars.
       apply storeA_restrict_lookup_some_2.
       * apply primop_arg_erase_env_lookup.
-      * unfold relevant_lvars, context_tm_support.
+      * unfold relevant_lvars.
         cbn [tm_lvars tm_lvars_at value_lvars_at].
         unfold precise_ty, over_ty, under_ty, topq, qual_top.
         cbn [context_ty_lvars context_ty_lvars_at qual_vars qual_lvars].

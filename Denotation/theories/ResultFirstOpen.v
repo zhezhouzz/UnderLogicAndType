@@ -110,7 +110,7 @@ Proof.
   intros Hlcτr Hτr_top Hyfresh v Hv.
   apply elem_of_difference in Hv as [Hv Hvf].
   apply elem_of_difference in Hv as [Hv Hvy].
-  unfold relevant_lvars, context_tm_support in Hv |- *.
+  unfold relevant_lvars in Hv |- *.
   apply elem_of_union in Hv as [Hvτ | Hve].
   - apply elem_of_union_l.
     apply Hτr_top.

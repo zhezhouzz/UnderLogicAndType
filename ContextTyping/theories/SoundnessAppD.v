@@ -768,7 +768,7 @@ Proof.
            exists y. split; [reflexivity|exact (Hτ_fv y Hyτ)].
         -- exfalso. apply Hyx.
            apply elem_of_singleton in Hyx_single. exact Hyx_single.
-      * unfold relevant_lvars, context_tm_support.
+      * unfold relevant_lvars.
         cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
           context_ty_lvars context_ty_lvars_at].
         assert (Hy_fv_open : y ∈ fv_cty (cty_open 0 x τ)).

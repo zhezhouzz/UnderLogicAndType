@@ -411,9 +411,9 @@ Proof.
     unfold relevant_env, lty_env_restrict_lvars.
     rewrite storeA_restrict_dom.
     intros HyD. apply elem_of_intersection in HyD as [_ HyD].
-    apply Hy.
-    apply lvars_fv_elem in HyD.
-    rewrite relevant_lvars_fv in HyD.
+	    apply Hy.
+	    apply lvars_fv_elem in HyD.
+	    rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in HyD.
     replace (fv_cty (CTSum τ1 τ2)) with
       (fv_cty τ1 ∪ fv_cty τ2) in HyD.
     { clear -HyD. set_solver. }
@@ -434,22 +434,23 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
   apply storeA_map_eq. intros v.
   rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ context_tm_support τ1 e)) as [Hv|Hv];
+  destruct (decide (v ∈ context_ty_lvars τ1 ∪ tm_lvars e)) as [Hv|Hv];
     [|reflexivity].
   assert (Hvy : v <> LVFree y).
   {
     intros ->. apply Hy.
     apply lvars_fv_elem in Hv.
-    unfold context_tm_support in Hv.
+    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
     rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hv.
     clear -Hv. set_solver.
   }
   rewrite lookup_insert_ne by congruence.
   rewrite storeA_restrict_lookup.
-  destruct (decide (v ∈ context_tm_support (CTSum τ1 τ2) e)) as [_|Hbad].
+  destruct (decide (v ∈ context_ty_lvars (CTSum τ1 τ2) ∪ tm_lvars e))
+    as [_|Hbad].
   - reflexivity.
   - exfalso. apply Hbad.
-    unfold context_tm_support in *.
+    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in *.
     cbn [context_ty_lvars context_ty_lvars_at].
     set_solver.
 Qed.
@@ -481,7 +482,7 @@ Proof.
   apply elem_of_intersection in HyD as [_ HyD].
   apply Hy.
   apply lvars_fv_elem in HyD.
-  rewrite relevant_lvars_fv in HyD.
+  rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in HyD.
   replace (fv_cty (CTSum τ1 τ2)) with
     (fv_cty τ1 ∪ fv_cty τ2) in HyD.
   - exact HyD.
@@ -537,22 +538,23 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
   apply storeA_map_eq. intros v.
   rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ context_tm_support τ2 e)) as [Hv|Hv];
+  destruct (decide (v ∈ context_ty_lvars τ2 ∪ tm_lvars e)) as [Hv|Hv];
     [|reflexivity].
   assert (Hvy : v <> LVFree y).
   {
     intros ->. apply Hy.
     apply lvars_fv_elem in Hv.
-    unfold context_tm_support in Hv.
+    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
     rewrite lvars_fv_union, context_ty_lvars_fv, tm_lvars_fv in Hv.
     clear -Hv. set_solver.
   }
   rewrite lookup_insert_ne by congruence.
   rewrite storeA_restrict_lookup.
-  destruct (decide (v ∈ context_tm_support (CTSum τ1 τ2) e)) as [_|Hbad].
+  destruct (decide (v ∈ context_ty_lvars (CTSum τ1 τ2) ∪ tm_lvars e))
+    as [_|Hbad].
   - reflexivity.
   - exfalso. apply Hbad.
-    unfold context_tm_support in *.
+    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at] in *.
     cbn [context_ty_lvars context_ty_lvars_at].
     set_solver.
 Qed.

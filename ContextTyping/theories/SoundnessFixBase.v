@@ -201,7 +201,7 @@ Proof.
       apply elem_of_singleton in Ha. subst a0.
       eapply elem_of_dom_2.
       apply (storeA_restrict_lookup_some_2 _ _ _ _ Hxlookup_rel).
-      unfold relevant_lvars, context_tm_support.
+      unfold relevant_lvars.
       apply elem_of_union_r.
       cbn [tm_lvars tm_lvars_at value_lvars_at].
       apply elem_of_singleton. reflexivity.
@@ -247,7 +247,7 @@ Proof.
       rewrite storeA_restrict_dom.
       apply elem_of_intersection. split.
       + eapply elem_of_dom_2. exact Hxlookup_rel.
-      + unfold relevant_lvars, context_tm_support.
+      + unfold relevant_lvars.
         cbn [tm_lvars tm_lvars_at value_lvars_at context_ty_lvars
           context_ty_lvars_at qual_vars qual_lvars].
         apply elem_of_union_r.

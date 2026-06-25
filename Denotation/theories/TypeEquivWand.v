@@ -855,7 +855,7 @@ Proof.
           LVFree y = Some (erase_ty τx)).
         apply storeA_restrict_lookup_some_2.
         * rewrite lookup_insert_eq. reflexivity.
-        * unfold relevant_lvars, context_tm_support.
+        * unfold relevant_lvars.
           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
           set_solver.
       + rewrite lookup_empty in Hlook. congruence.
@@ -950,7 +950,7 @@ Proof.
           LVFree y = Some (erase_ty τx)).
         apply storeA_restrict_lookup_some_2.
         * rewrite lookup_insert_eq. reflexivity.
-        * unfold relevant_lvars, context_tm_support.
+        * unfold relevant_lvars.
           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
           set_solver.
       + rewrite lookup_empty in Hlook. congruence.
@@ -1112,7 +1112,7 @@ Proof.
 		                LVFree y = Some (erase_ty τx)).
 		              apply storeA_restrict_lookup_some_2.
 		              * rewrite lookup_insert_eq. reflexivity.
-			              * unfold relevant_lvars, context_tm_support.
+			              * unfold relevant_lvars.
 		                cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
 		                set_solver.
 		            + rewrite lookup_empty in Hlook. congruence.

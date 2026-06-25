@@ -628,7 +628,7 @@ Proof.
           -- exact HΣ.
           -- intros ->. apply HxΣ.
              apply elem_of_dom_2 in HΣ. exact HΣ.
-        * unfold relevant_lvars, context_tm_support.
+        * unfold relevant_lvars.
           apply elem_of_union_l.
           apply (proj1 (lvars_fv_elem (context_ty_lvars τ) y)).
           rewrite context_ty_lvars_fv. exact Hyτ.
@@ -638,7 +638,7 @@ Proof.
         apply storeA_restrict_lookup_some_2.
         * rewrite atom_store_to_lvar_store_lookup_free.
           apply map_lookup_insert.
-        * unfold relevant_lvars, context_tm_support.
+        * unfold relevant_lvars.
           apply elem_of_union_r.
           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
           set_solver.
@@ -679,7 +679,7 @@ Proof.
         transitivity (Some (erase_ty τ)).
         * exact HR.
         * symmetry. exact HL.
-      + unfold relevant_lvars, context_tm_support in Hv.
+      + unfold relevant_lvars in Hv.
         cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
         assert (Hyτ : y ∈ fv_cty τ).
         {
@@ -790,7 +790,7 @@ Proof.
     destruct v as [k|y].
     - rewrite !atom_store_to_lvar_store_lookup_bound_none. reflexivity.
     - rewrite !atom_store_to_lvar_store_lookup_free.
-      unfold relevant_lvars, context_tm_support in Hv.
+      unfold relevant_lvars in Hv.
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hv.
       destruct (decide (y = x)) as [->|Hyx].
       + assert (HL :
@@ -1470,7 +1470,7 @@ Proof.
 	    apply storeA_restrict_lookup_some_2.
 	    - rewrite atom_store_to_lvar_store_lookup_free.
 	      apply map_lookup_insert.
-    - unfold context_tm_support.
+    - cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at].
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
 	      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
 	  }
@@ -1588,7 +1588,7 @@ Proof.
 		        + apply storeA_restrict_lookup_some_2.
 		          * exact HT.
 		          * cbn [ctx_fv context_ty_lvars context_ty_lvars_at]. exact Ha.
-		      - unfold relevant_lvars, context_tm_support.
+		      - unfold relevant_lvars.
 	        apply elem_of_union_l.
 	        rewrite <- lvars_fv_elem.
 	        rewrite context_ty_lvars_fv.
@@ -1632,7 +1632,7 @@ Proof.
 	        + rewrite lty_env_open_one_typed_bind_lookup_free_ne
 	            by (clear -HyA Haτ; set_solver).
 	          exact HT.
-		        + unfold relevant_lvars, context_tm_support.
+		        + unfold relevant_lvars.
 	          apply elem_of_union_l.
 	          rewrite cty_open_shift_from_lc_fresh; [|exact Hlcτ|exact HyA].
 	          rewrite <- lvars_fv_elem, context_ty_lvars_fv.
@@ -1641,7 +1641,7 @@ Proof.
 	        exists (erase_ty (CTPersist τ)).
 	        apply storeA_restrict_lookup_some_2.
 		        + apply lty_env_open_one_typed_bind_lookup_current.
-				        + unfold relevant_lvars, context_tm_support.
+				        + unfold relevant_lvars.
 			          apply elem_of_union_r.
 			          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
                   open_tm open_value].

@@ -84,13 +84,13 @@ Proof.
       repeat rewrite decide_True by reflexivity.
       reflexivity.
     + rewrite !lookup_insert_ne by congruence.
-      unfold relevant_env, lty_env_restrict_lvars.
-      rewrite storeA_restrict_lookup.
-      destruct (decide
-        (LVFree a ∈ context_tm_support (CTArrow τx τ) (tret vf)))
+	      unfold relevant_env, lty_env_restrict_lvars.
+	      rewrite storeA_restrict_lookup.
+	      destruct (decide
+	        (LVFree a ∈ context_ty_lvars (CTArrow τx τ) ∪ tm_lvars (tret vf)))
         as [_|Hbad]; [reflexivity|].
       exfalso. apply Hbad.
-      unfold relevant_lvars, context_tm_support in Hu |- *.
+      unfold relevant_lvars in Hu |- *.
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
         context_ty_lvars context_ty_lvars_at] in Hu |- *.
       apply elem_of_union in Hu as [Haτx|Hay_single].
@@ -130,13 +130,13 @@ Proof.
       repeat rewrite decide_True by reflexivity.
       reflexivity.
     + rewrite !lookup_insert_ne by congruence.
-      unfold relevant_env, lty_env_restrict_lvars.
-      rewrite storeA_restrict_lookup.
-      destruct (decide
-        (LVFree a ∈ context_tm_support (CTWand τx τ) (tret vf)))
+	      unfold relevant_env, lty_env_restrict_lvars.
+	      rewrite storeA_restrict_lookup.
+	      destruct (decide
+	        (LVFree a ∈ context_ty_lvars (CTWand τx τ) ∪ tm_lvars (tret vf)))
         as [_|Hbad]; [reflexivity|].
       exfalso. apply Hbad.
-      unfold relevant_lvars, context_tm_support in Hu |- *.
+      unfold relevant_lvars in Hu |- *.
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
         context_ty_lvars context_ty_lvars_at] in Hu |- *.
       apply elem_of_union in Hu as [Haτx|Hay_single].
@@ -197,13 +197,13 @@ Proof.
 	        destruct (decide (LVFree y = LVFree z)); [congruence|].
 	        destruct (decide (LVFree z = LVFree z)); [reflexivity|congruence].
 	      * repeat rewrite lookup_insert_ne by congruence.
-	        unfold relevant_env, lty_env_restrict_lvars.
-	        rewrite storeA_restrict_lookup.
-		        destruct (decide
-		          (LVFree a ∈ context_tm_support (CTArrow τx τ) (tret vf)))
+		        unfold relevant_env, lty_env_restrict_lvars.
+		        rewrite storeA_restrict_lookup.
+			        destruct (decide
+			          (LVFree a ∈ context_ty_lvars (CTArrow τx τ) ∪ tm_lvars (tret vf)))
 	          as [_|Hbad]; [reflexivity|].
 	        exfalso. apply Hbad.
-		        unfold relevant_lvars, context_tm_support in Hu |- *.
+		        unfold relevant_lvars in Hu |- *.
 	        cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
 	          context_ty_lvars context_ty_lvars_at] in Hu |- *.
 	        apply elem_of_union in Hu as [Huτ|Hu_tm].

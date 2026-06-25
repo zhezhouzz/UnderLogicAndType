@@ -180,7 +180,7 @@ Proof.
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
     intros v Hv.
     pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars, context_tm_support in *.
+    unfold relevant_lvars in *.
     set_solver.
   }
   2: exact Hinj.
@@ -197,7 +197,7 @@ Proof.
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
     intros v Hv.
     pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars, context_tm_support in *.
+    unfold relevant_lvars in *.
     set_solver.
   }
   2: exact Hinj.
@@ -256,7 +256,7 @@ Qed.
 
 Ltac denot_open_env_child_fresh Hfresh :=
   eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
-  unfold relevant_lvars, context_tm_support;
+  unfold relevant_lvars;
   intros v Hv; cbn [context_ty_lvars context_ty_lvars_at] in *;
   set_solver.
 
@@ -268,12 +268,12 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
       open_env_fresh_for_lvars ((kmap S η)) (qual_vars φ));
   [ apply open_env_lift_fresh_for_lvars_at_depth1;
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
-	    unfold relevant_lvars, context_tm_support;
+	    unfold relevant_lvars;
     cbn [context_ty_lvars context_ty_lvars_at];
     set_solver
   | assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e));
     [ eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
-	      unfold relevant_lvars, context_tm_support; set_solver
+	      unfold relevant_lvars; set_solver
     | cbn [ty_denote_gas];
       match goal with
       | |- context [
@@ -288,7 +288,7 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
             eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
             intros v Hv;
             pose proof (relevant_env_dom_subset_direct Σ τ e0);
-	            unfold relevant_lvars, context_tm_support in *;
+	            unfold relevant_lvars in *;
             set_solver
           | idtac ]
       end;
@@ -338,7 +338,7 @@ Lemma sum_result_lift_support_subset Σ τsum τ e T :
   dom Σ ∪ relevant_lvars τsum e.
 Proof.
   intros Hτsub.
-  unfold relevant_lvars, context_tm_support.
+  unfold relevant_lvars.
   rewrite lvars_at_depth_union.
   rewrite lvars_at_depth_typed_lty_env_bind.
   rewrite elem_of_subseteq. intros u Hu.
@@ -370,7 +370,7 @@ Proof.
   rewrite !lvars_at_depth_typed_lty_env_bind.
   pose proof (lvars_at_depth_relevant_env_subset_relevant
     0 Σ (CTArrow τx τr) e) as Hrel.
-  unfold relevant_lvars, context_tm_support.
+  unfold relevant_lvars.
   rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
   rewrite !context_ty_lvars_at_shift_under by lia.
   rewrite tm_lvars_at_tret_bound0_under.
@@ -393,7 +393,7 @@ Proof.
   rewrite !lvars_at_depth_typed_lty_env_bind.
   pose proof (lvars_at_depth_relevant_env_subset_relevant
     0 Σ (CTArrow τx τr) e) as Hrel.
-  unfold relevant_lvars, context_tm_support.
+  unfold relevant_lvars.
   rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
   rewrite context_ty_lvars_at_shift_under by lia.
   cbn [tm_lvars_at value_lvars_at].
@@ -451,7 +451,7 @@ Proof.
   rewrite lvars_at_depth_typed_lty_env_bind.
   pose proof (lvars_at_depth_relevant_env_subset_relevant
     0 Σ (CTPersist τ) e) as Hrel.
-  unfold relevant_lvars, context_tm_support.
+  unfold relevant_lvars.
   rewrite lvars_at_depth_union, context_ty_lvars_depth, tm_lvars_depth.
   rewrite context_ty_lvars_at_shift_under by lia.
   rewrite tm_lvars_at_tret_bound0_under.
@@ -525,7 +525,7 @@ Proof.
 	      assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
 	      {
 	        eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-		        unfold relevant_lvars, context_tm_support. set_solver.
+		        unfold relevant_lvars. set_solver.
 	      }
       assert (Hfresh_l :
         open_env_fresh_for_lvars ((kmap S η))
@@ -605,7 +605,7 @@ Proof.
       assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
       {
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold relevant_lvars, context_tm_support. set_solver.
+        unfold relevant_lvars. set_solver.
       }
       assert (Hfresh_arg :
         open_env_fresh_for_lvars (kmap S (kmap S η))
@@ -682,7 +682,7 @@ Proof.
         rewrite lvars_at_depth_typed_lty_env_bind.
         pose proof (lvars_at_depth_relevant_env_subset_relevant
           0 Σ (CTArrow τx τr) e).
-        unfold relevant_lvars, context_tm_support; cbn [context_ty_lvars context_ty_lvars_at].
+        unfold relevant_lvars; cbn [context_ty_lvars context_ty_lvars_at].
         set_solver.
       }
       rewrite relevant_env_open_env by (exact Hfresh || exact Hinj).
@@ -727,7 +727,7 @@ Proof.
       assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
       {
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold relevant_lvars, context_tm_support. set_solver.
+        unfold relevant_lvars. set_solver.
       }
       assert (Hfresh_arg :
         open_env_fresh_for_lvars (kmap S (kmap S η))
@@ -804,7 +804,7 @@ Proof.
         rewrite lvars_at_depth_typed_lty_env_bind.
         pose proof (lvars_at_depth_relevant_env_subset_relevant
           0 Σ (CTWand τx τr) e).
-        unfold relevant_lvars, context_tm_support; cbn [context_ty_lvars context_ty_lvars_at].
+        unfold relevant_lvars; cbn [context_ty_lvars context_ty_lvars_at].
         set_solver.
       }
       rewrite relevant_env_open_env by (exact Hfresh || exact Hinj).
@@ -849,7 +849,7 @@ Proof.
       assert (Hfreshe : open_env_fresh_for_lvars η (tm_lvars e)).
       {
         eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-        unfold relevant_lvars, context_tm_support. set_solver.
+        unfold relevant_lvars. set_solver.
       }
       assert (Hfresh_body :
         open_env_fresh_for_lvars (kmap S η)
@@ -1321,13 +1321,13 @@ Proof.
       reflexivity.
     + rewrite (IH Σ1 Σ2 τ1 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars, context_tm_support in *.
+	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
       rewrite (IH Σ1 Σ2 τ2 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars, context_tm_support in *.
+	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
@@ -1336,13 +1336,13 @@ Proof.
       reflexivity.
     + rewrite (IH Σ1 Σ2 τ1 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars, context_tm_support in *.
+	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
       rewrite (IH Σ1 Σ2 τ2 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars, context_tm_support in *.
+	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.

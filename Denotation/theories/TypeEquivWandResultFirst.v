@@ -313,13 +313,14 @@ Proof.
       + exact Hvsmall.
   }
   destruct Hvrel as [Hvrel1 Hvrel2].
-  change (v ∈ context_tm_support (CTWand τx τr) e1) in Hvrel1.
-  change (v ∈ context_tm_support (CTWand τx τr) e2) in Hvrel2.
+  unfold relevant_lvars in Hvrel1, Hvrel2.
   unfold lty_env_restrict_lvars.
   rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ context_tm_support (CTWand τx τr) e1)) as [_|Hbad];
+  destruct (decide (v ∈ context_ty_lvars (CTWand τx τr) ∪ tm_lvars e1))
+    as [_|Hbad];
     [|exfalso; exact (Hbad Hvrel1)].
-  destruct (decide (v ∈ context_tm_support (CTWand τx τr) e2)) as [_|Hbad];
+  destruct (decide (v ∈ context_ty_lvars (CTWand τx τr) ∪ tm_lvars e2))
+    as [_|Hbad];
     [|exfalso; exact (Hbad Hvrel2)].
   reflexivity.
 Qed.

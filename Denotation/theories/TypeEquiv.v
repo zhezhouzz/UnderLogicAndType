@@ -51,7 +51,7 @@ Proof.
     split; [exact HlcRel|]. split; [exact HscopeRel|].
     unfold relevant_env.
     eapply basic_tm_has_ltype_restrict_lvars_lc; [exact Hty|exact Hlc_e|].
-    unfold relevant_lvars, context_tm_support. set_solver.
+    unfold relevant_lvars. set_solver.
 Qed.
 
 Lemma ty_guard_relevant_of_static_full_total
@@ -1143,7 +1143,7 @@ Local Lemma relevant_env_tlete_ret_bvar0
   relevant_env Σ τ e.
 Proof.
   intros Hlc.
-  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars, context_tm_support.
+  unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
   f_equal.
   rewrite (tm_lvars_lc_eq_atoms e Hlc).
   rewrite (tm_lvars_lc_eq_atoms (tlete e (tret (vbvar 0)))).
@@ -1216,7 +1216,7 @@ Proof.
 	          apply map_lookup_insert.
         + rewrite lookup_insert_ne by congruence.
           apply (storeA_restrict_lookup_some_2 _ _ _ _ Hv).
-          unfold relevant_lvars, context_tm_support in Hvrel |- *.
+          unfold relevant_lvars in Hvrel |- *.
           apply elem_of_union in Hvrel as [Hvτ|Hvxv].
           * apply elem_of_union_l. exact Hvτ.
           * cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys] in Hvxv.
@@ -1243,7 +1243,7 @@ Proof.
       - unfold relevant_env, lty_env_restrict_lvars.
         apply storeA_restrict_lookup_some_2.
         + exact Hlookup.
-        + unfold relevant_lvars, context_tm_support.
+        + unfold relevant_lvars.
           apply elem_of_union_r.
           cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
           apply elem_of_singleton. reflexivity.
@@ -1636,7 +1636,7 @@ Proof.
     unfold relevant_env, lty_env_restrict_lvars.
     apply storeA_restrict_lookup_some_2.
     + exact Hlookup.
-    + unfold relevant_lvars, context_tm_support.
+    + unfold relevant_lvars.
       cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
       set_solver.
   - rewrite lookup_insert_ne in Hsmall by (symmetry; exact Hvx).

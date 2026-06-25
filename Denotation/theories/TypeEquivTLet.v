@@ -1361,7 +1361,7 @@ Proof.
   eapply ty_denote_gas_env_agree_on
     with (X := relevant_lvars (cty_shift 0 τ) (tret (vbvar 0))).
   - reflexivity.
-  - unfold relevant_env, relevant_lvars, context_tm_support.
+  - unfold relevant_env, relevant_lvars.
     apply map_eq. intros v.
     change ((storeA_restrict
       (typed_lty_env_bind
