@@ -1,0 +1,94 @@
+Open Assert/Pose Normalization Analysis
+=======================================
+
+Goal
+----
+
+Track proof-local `assert` / `pose proof` facts in `Denotation` and
+`ContextTyping` whose stated type still exposes normalizable open forms:
+
+- `formula_open`
+- `cty_open`
+- `qual_open_atom`
+- `lty_env_open_one (typed_lty_env_bind ...)`
+
+The optimization rule for this pass is source normalization: when a local fact
+is ordinary proof plumbing, state it in the normalized form before using it.
+Raw opens should remain only in syntax/normalizer lemmas or in facts whose
+logical subject is genuinely an opened type/body.
+
+Scan command
+------------
+
+```sh
+perl -0ne 'while(/(?:assert \([^\.]*?|pose proof \([^\.]*?)(?:formula_open|cty_open|qual_open|lty_env_open_one)[^\.]*\./sg){...}' \
+  Denotation/theories/*.v ContextTyping/theories/*.v
+```
+
+Current Buckets
+---------------
+
+Batch A: result-first outer-scope assertions
+
+- `Denotation/theories/TypeEquivArrowResultFirst.v`
+  - `Hopened_scope` still stated as
+    `formula_scoped_in_world ... (formula_open 0 f (FImpl ...))`.
+  - Should be normalized to the opened result graph plus normalized
+    `arrow_value_denote_gas_with ... (<[f := ...]> Σrel) ... (ret f)`.
+- `Denotation/theories/TypeEquivTLet.v`
+  - Same Arrow `Hopened_scope` pattern in the TLet arrow-value helper.
+- Similar remaining candidates for later:
+  - `TypeEquivWandResultFirst.v`;
+  - `TypeEquivTLet.v` Wand/Persist branches;
+  - `TypePersistArrow.v`, `TypePersistWandForward.v`,
+    `TypePersistWandReverse.v`.
+
+Batch B: result body assertions with `cty_open 0 y τr`
+
+- Examples:
+  - `TypeEquivArrowResultFirst.v`: `Hres_src_regular`,
+    `Hres_tgt_regular`.
+  - `TypeEquivTLet.v`: Arrow/Wand `Hres_*_regular`.
+- These are partly semantic, because the result type is genuinely opened at
+  the argument variable. Do not blindly remove them. Prefer normalizing
+  surrounding env/term opens first; keep the opened type if it is the actual
+  theorem subject.
+
+Batch C: guard regular assertions for opened app result
+
+- Examples:
+  - `TypeEquivArrow.v`, `TypeEquivWand.v`;
+  - `SoundnessApp.v`, `SoundnessAppD.v`, `SoundnessFix*.v`,
+    `SoundnessLam*.v`.
+- Many can likely be replaced by existing regular accessors from
+  `ty_denote_gas 0` or `ty_guard_formula`; defer until result-first outer
+  assertions are normalized.
+
+Batch D: qualifier/open persistence and const facts
+
+- Examples:
+  - `TypePersistBase.v`, `ConstDenoteBase.v`,
+    `SoundnessFixBase.v`.
+- These often involve actual opened qualifiers, but some statements still
+  expose `qual_open_atom 0 y ...` where a named normalized body abbreviation
+  would be clearer. Defer to a Qualifier-specific cleanup.
+
+Progress Log
+------------
+
+- Batch A started: normalize Arrow result-first `Hopened_scope` assertions in
+  `TypeEquivArrowResultFirst.v` and `TypeEquivTLet.v`.
+- Batch A partial completion:
+  - `TypeEquivArrowResultFirst.v` no longer has raw-open `Hopened_scope`.
+    The remaining hits in this file are only `Hres_src_regular` /
+    `Hres_tgt_regular`, whose opened result type is the actual result-body
+    subject.
+  - `TypeEquivTLet.v` Arrow branch no longer has raw-open `Hopened_scope` or
+    raw-open Arrow value-body assertions. Remaining TLet hits are:
+    opened result-body assertions, plus Wand/Persist branch raw-open patterns
+    queued for the next iteration.
+  - Validation:
+    `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+    completed in about 2.33s.
+    `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+    completed in about 6.00s.

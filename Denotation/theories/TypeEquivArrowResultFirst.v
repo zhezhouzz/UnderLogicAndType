@@ -332,41 +332,67 @@ Proof.
 	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
 	    apply elem_of_union_l. exact Hbad.
 	  }
-  rewrite formula_open_impl.
-  assert (Hopened_scope :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (FImpl
-            (expr_result_formula_at
-              (lvars_shift_from 0
-                (dom (relevant_env Σ (CTArrow τx τr) e2)))
-              (tm_shift 0 e2) (LVBound 0))
-            (arrow_value_denote_gas_with ty_denote_gas gas
-              (typed_lty_env_bind
-                (relevant_env Σ (CTArrow τx τr) e2)
-                (erase_ty (CTArrow τx τr)))
-              (cty_shift 0 τx) (cty_shift 1 τr)
-              (tret (vbvar 0)))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Hscope_tgt.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. clear. set_solver.
-  }
-  rewrite formula_open_impl in Hopened_scope.
-  eapply res_models_impl_intro; [exact Hopened_scope|].
-  intros Hres_tgt.
-  rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
-    by (first
-      [ exact Hlc2
-      | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
-      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
-      | clear -Hfe; set_solver ]).
-  rewrite (arrow_lvars_shift_from_lc_eq 0
-    (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt) in Hres_tgt.
-  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
-    Σ (CTArrow τx τr) e2 m Hzero_tgt) in Hres_tgt.
-  destruct (H21 f mf Hf_proj Hdom Hrestrict Hres_tgt)
+	  assert (Hopened_scope :
+	      formula_scoped_in_world mf
+	        (FImpl
+	          (expr_result_formula_at
+	            (context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e2)
+	            e2 (LVFree f))
+	          (arrow_value_denote_gas_with ty_denote_gas gas
+	            (<[LVFree f := erase_ty (CTArrow τx τr)]>
+	              (relevant_env Σ (CTArrow τx τr) e2))
+	            τx τr (tret (vfvar f))))).
+	  {
+	    pose proof (formula_scoped_forall_open_res_le m mf f
+	      _ Hscope_tgt
+	      ltac:(rewrite <- Hrestrict; apply res_restrict_le)
+	      ltac:(rewrite Hdom; clear; set_solver)) as Hopened_scope_raw.
+	    rewrite formula_open_impl in Hopened_scope_raw.
+	    rewrite formula_open_expr_result_formula_at_shift0 in Hopened_scope_raw
+	      by (first
+	        [ exact Hlc2
+	        | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
+	        | rewrite lvars_shift_from_fv; clear -Hf; set_solver
+	        | clear -Hfe; set_solver ]).
+	    rewrite (arrow_lvars_shift_from_lc_eq 0
+	      (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt)
+	      in Hopened_scope_raw.
+	    rewrite (ty_denote_gas_zero_relevant_env_dom_eq
+	      Σ (CTArrow τx τr) e2 m Hzero_tgt) in Hopened_scope_raw.
+	    rewrite (formula_open_result_first_arrow_value_ret_bvar0
+	      gas (relevant_env Σ (CTArrow τx τr) e2) τx τr
+	      (erase_ty (CTArrow τx τr)) f) in Hopened_scope_raw.
+	    2: exact HlcΣ_tgt.
+	    2: exact Hf_rel2.
+	    2: exact Hlcτx.
+	    2: exact Hlcτr.
+	    2: exact Hfτx.
+	    2: exact Hfτr.
+	    exact Hopened_scope_raw.
+	  }
+	  rewrite formula_open_impl.
+	  rewrite formula_open_expr_result_formula_at_shift0
+	    by (first
+	      [ exact Hlc2
+	      | apply result_first_lc_lvars_shift_from; exact HlcΣ_tgt
+	      | rewrite lvars_shift_from_fv; clear -Hf; set_solver
+	      | clear -Hfe; set_solver ]).
+	  rewrite (arrow_lvars_shift_from_lc_eq 0
+	    (dom (relevant_env Σ (CTArrow τx τr) e2)) HlcΣ_tgt).
+	  rewrite (ty_denote_gas_zero_relevant_env_dom_eq
+	    Σ (CTArrow τx τr) e2 m Hzero_tgt).
+	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
+	    gas (relevant_env Σ (CTArrow τx τr) e2) τx τr
+	    (erase_ty (CTArrow τx τr)) f).
+	  2: exact HlcΣ_tgt.
+	  2: exact Hf_rel2.
+	  2: exact Hlcτx.
+	  2: exact Hlcτr.
+	  2: exact Hfτx.
+	  2: exact Hfτr.
+	  eapply res_models_impl_intro; [exact Hopened_scope|].
+	  intros Hres_tgt.
+	  destruct (H21 f mf Hf_proj Hdom Hrestrict Hres_tgt)
     as [mf_src [Hdom_src [Hrestrict_src [Hres_src Hproj_obs]]]].
   pose proof (Hsrc_rev f Hf_src mf_src Hdom_src Hrestrict_src)
     as Hopened_src.
@@ -609,16 +635,7 @@ Proof.
 	        2:{ constructor. constructor. }
 	        exact Hres_tgt_regular.
 		  }
-		  rewrite (formula_open_result_first_arrow_value_ret_bvar0
-		    gas (relevant_env Σ (CTArrow τx τr) e2) τx τr
-		    (erase_ty (CTArrow τx τr)) f).
-		  2: exact HlcΣ_tgt.
-		  2: exact Hf_rel2.
-		  2: exact Hlcτx.
-		  2: exact Hlcτr.
-		  2: exact Hfτx.
-		  2: exact Hfτr.
-		  eapply res_models_projection; [|exact Hvalue_tgt_src].
+			  eapply res_models_projection; [|exact Hvalue_tgt_src].
 		  eapply res_restrict_eq_subset; [|exact Hproj_obs].
 		  apply formula_fv_open_arrow_value_body_obs.
 Qed.
