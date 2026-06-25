@@ -894,15 +894,13 @@ Proof.
     subst Σrel Δ1. apply relevant_env_wand_fresh_free;
       cbn [fv_tm fv_value]; clear -Hfresh; better_set_solver.
   }
-  assert (HxΣz :
-      LVFree x ∉ dom (<[LVFree z := erase_ty (CTWand τx τ)]> Σrel)).
-  {
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      exact (Hz_m2 Hx_m2).
-    - exact (HxΣrel Hin).
-  }
+	  assert (HxΣz :
+	      LVFree x ∉ dom (<[LVFree z := erase_ty (CTWand τx τ)]> Σrel)).
+	  {
+	    apply lty_env_insert_free_fresh.
+	    - intros ->. exact (Hz_m2 Hx_m2).
+	    - exact HxΣrel.
+	  }
   assert (HΣz_closed :
       lty_env_closed (<[LVFree z := erase_ty (CTWand τx τ)]> Σrel)).
   { apply lty_env_closed_insert_free. exact HΣrel_closed. }
@@ -1007,22 +1005,20 @@ Proof.
       reflexivity.
     - exact Hres_norm.
   }
-  assert (Hz_base_env :
-      LVFree z ∉ dom (<[LVFree x := erase_ty τx]> Σrel)).
-  {
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      exact (Hz_m2 Hx_m2).
-    - subst Σrel Δ1. apply relevant_env_wand_fresh_free in Hin;
-        cbn [fv_tm fv_value]; clear -Hzfresh Hin; better_set_solver.
-  }
-  assert (Hz_alias_fresh :
-      z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
-  {
-    pose proof (cty_open_fv_subset 0 x τ z) as Hopen_fv.
-    clear -Hzfresh Hopen_fv Hzx. better_set_solver.
-  }
+	  assert (Hz_base_env :
+	      LVFree z ∉ dom (<[LVFree x := erase_ty τx]> Σrel)).
+	  {
+	    apply lty_env_insert_free_fresh.
+	    - intros ->. exact (Hz_m2 Hx_m2).
+	    - subst Σrel Δ1. apply soundness_relevant_env_wand_value_fresh.
+	      cbn [fv_tm fv_value]. clear -Hzfresh. better_set_solver.
+	  }
+	  assert (Hz_alias_fresh :
+	      z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
+	  {
+	    apply value_open_result_alias_fresh.
+	    clear -Hzfresh Hzx. better_set_solver.
+	  }
   assert (Hres_v1_z_pz :
       pz ⊨ expr_result_formula (tret v1) (LVFree z)).
   {
@@ -1096,14 +1092,16 @@ Proof.
       rewrite Hout in Ha_pz.
       apply elem_of_union in Ha_pz as [Ha_small|Ha_z]; [exact Ha_small|].
       exfalso. apply elem_of_singleton in Ha_z. subst a.
-      apply Hfv in Ha.
-      cbn [fv_tm fv_value] in Ha.
-      pose proof (cty_open_fv_subset 0 x τ z) as Hopen_fv.
-      apply elem_of_union in Ha as [Hzv1|Hzτopen].
-      + apply Hzfresh. better_set_solver.
-      + pose proof (Hopen_fv Hzτopen) as Hzτ.
-        apply Hzfresh. better_set_solver.
-    }
+	      apply Hfv in Ha.
+	      cbn [fv_tm fv_value] in Ha.
+	      assert (Hz_alias_fresh_target :
+	          z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
+	      {
+	        apply value_open_result_alias_fresh.
+	        clear -Hzfresh Hzx. better_set_solver.
+	      }
+	      clear -Hz_alias_fresh_target Ha. better_set_solver.
+	    }
     pose proof (proj1 (res_models_minimal_on
       (world_dom (psmall : WorldT)) pz
       (ty_denote_gas (cty_depth ({0 ~> x} τ))

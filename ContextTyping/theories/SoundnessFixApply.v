@@ -41,10 +41,7 @@ Local Lemma fix_apply_open_cty_fresh τ y z :
   z ∉ fv_cty τ ∪ {[y]} ->
   z ∉ fv_cty (cty_open 0 y τ).
 Proof.
-  intros Hfresh Hbad.
-  pose proof (cty_open_fv_subset 0 y τ) as Hsub.
-  apply Hsub in Hbad.
-  clear -Hfresh Hbad. set_solver.
+  apply cty_open_fresh_notin.
 Qed.
 
 Local Lemma fix_apply_fix_rec_call_ty_fresh b y τx τ z :
@@ -72,22 +69,7 @@ Local Lemma fix_apply_bind_lvar_env_dom_subset
   dom (atom_env_to_lty_env
     (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τx)))).
 Proof.
-  intros HyΓ v Hv.
-  rewrite dom_insert_L in Hv.
-  rewrite !atom_store_to_lvar_store_dom.
-  apply elem_of_union in Hv as [Hyv|HΓv].
-  - apply elem_of_singleton in Hyv. subst v.
-    unfold lvars_of_atoms. apply elem_of_map. exists y.
-    split; [reflexivity|].
-    eapply ctx_erasure_under_erase_ctx_dom_subset.
-    rewrite erase_ctx_comma_bind_dom. clear -HyΓ. set_solver.
-  - rewrite atom_store_to_lvar_store_dom in HΓv.
-    unfold lvars_of_atoms in HΓv.
-    apply elem_of_map in HΓv as [a [Hv_eq HaΓ]]. subst v.
-    unfold lvars_of_atoms. apply elem_of_map. exists a.
-    split; [reflexivity|].
-    eapply ctx_erasure_under_erase_ctx_dom_subset.
-    rewrite erase_ctx_comma_bind_dom. clear -HaΓ. set_solver.
+  apply ctx_erasure_under_comma_bind_insert_lty_env_dom_subset.
 Qed.
 
 Local Lemma fix_apply_relevant_lvars_tapp_values_fresh

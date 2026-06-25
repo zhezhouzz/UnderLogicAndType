@@ -900,25 +900,23 @@ Proof.
       reflexivity.
     - exact Hres_norm.
   }
-  assert (Hz_base_env :
-      LVFree z ∉ dom (<[LVFree x := erase_ty τx]> Σrel)).
-  {
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      apply Hzfresh. apply elem_of_union_r.
-      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg.
-    - subst Σrel. apply relevant_env_arrow_fresh_free in Hin;
-        cbn [fv_tm fv_value]; clear -Hzfresh Hin; better_set_solver.
-  }
-  assert (Hz_alias_fresh :
-      z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
-  {
-    pose proof (cty_open_fv_subset 0 x τ) as Hopen_fv.
-    assert (Hx_m : x ∈ world_dom (m : WorldT)).
-    { eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
-    clear -Hzfresh Hopen_fv Hx_m. better_set_solver.
-  }
+	  assert (Hz_base_env :
+	      LVFree z ∉ dom (<[LVFree x := erase_ty τx]> Σrel)).
+	  {
+	    apply lty_env_insert_free_fresh.
+	    - intros ->. apply Hzfresh. apply elem_of_union_r.
+	      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg.
+	    - subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+	      cbn [fv_tm fv_value]. clear -Hzfresh. better_set_solver.
+	  }
+	  assert (Hz_alias_fresh :
+	      z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
+	  {
+	    apply value_open_result_alias_fresh.
+	    assert (Hx_m : x ∈ world_dom (m : WorldT)).
+	    { eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
+	    clear -Hzfresh Hx_m. better_set_solver.
+	  }
   pose proof (ty_denote_gas_tapp_fun_result_alias_back_from_static
     gas (<[LVFree x := erase_ty τx]> Σrel)
     (cty_open 0 x τ) v1 x z (erase_ty τx) mz
@@ -958,11 +956,16 @@ Proof.
 	      apply Hfv in Ha.
 	      rewrite fv_tapp_tm in Ha.
 	      cbn [fv_tm fv_value] in Ha.
-	      pose proof (cty_open_fv_subset 0 x τ z) as Hopen_fv.
-      assert (Hx_m : x ∈ world_dom (m : WorldT)).
-      { eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
-	      clear -Hzfresh Ha Hopen_fv Hx_m. better_set_solver.
-    }
+	      assert (Hx_m : x ∈ world_dom (m : WorldT)).
+	      { eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
+	      assert (Hz_alias_fresh_target :
+	          z ∉ fv_value v1 ∪ {[x]} ∪ fv_cty (cty_open 0 x τ)).
+	      {
+	        apply value_open_result_alias_fresh.
+	        clear -Hzfresh Hx_m. better_set_solver.
+	      }
+		      clear -Hz_alias_fresh_target Ha. better_set_solver.
+	    }
     pose proof (proj1 (res_models_minimal_on
       (world_dom (m : WorldT)) mz
       (ty_denote_gas gas

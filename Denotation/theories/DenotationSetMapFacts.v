@@ -329,6 +329,40 @@ Proof.
   intros Hzm a Ha. apply elem_of_singleton in Ha. subst a. exact Hzm.
 Qed.
 
+Lemma lty_env_insert_free_fresh
+    (Σ : gmap logic_var ty) x z T :
+  z <> x ->
+  LVFree z ∉ dom Σ ->
+  LVFree z ∉ dom (<[LVFree x := T]> Σ).
+Proof.
+  intros Hzx HzΣ.
+  rewrite dom_insert_L.
+  intros Hin.
+  apply elem_of_union in Hin as [Hin|Hin].
+  - apply elem_of_singleton in Hin. inversion Hin. subst.
+    contradiction.
+  - exact (HzΣ Hin).
+Qed.
+
+Lemma value_open_result_alias_fresh vf τ y z :
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty τ ->
+  z ∉ fv_value vf ∪ {[y]} ∪ fv_cty (cty_open 0 y τ).
+Proof.
+  intros Hz.
+  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in *.
+  set_solver.
+Qed.
+
+Lemma cty_open_fresh_notin τ y z :
+  z ∉ fv_cty τ ∪ {[y]} ->
+  z ∉ fv_cty (cty_open 0 y τ).
+Proof.
+  intros Hz.
+  pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
+  set_solver.
+Qed.
+
 Lemma wfworld_closed_on_open_world_from_base
     (m my : WfWorldT) X :
   X ⊆ world_dom (m : WorldT) ->

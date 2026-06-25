@@ -359,6 +359,48 @@ Proof.
   exact Hx.
 Qed.
 
+Lemma ctx_erasure_under_inserted_erase_ctx_lty_env_fresh
+    (Σ : gmap atom ty) Γ z y T :
+  z <> y ->
+  z ∉ dom (ctx_erasure_under Σ Γ) ->
+  LVFree z ∉ dom (<[LVFree y := T]> (atom_env_to_lty_env (erase_ctx Γ))).
+Proof.
+  intros Hzy Hzctx.
+  rewrite dom_insert_L.
+  intros Hzdom.
+  apply elem_of_union in Hzdom as [Hzdom|Hzdom].
+  - apply elem_of_singleton in Hzdom. inversion Hzdom. subst.
+    contradiction.
+  - exact (atom_env_to_lty_env_dom_free_notin (erase_ctx Γ) z
+      (ctx_erasure_under_notin_erase_ctx Σ Γ z Hzctx) Hzdom).
+Qed.
+
+Lemma ctx_erasure_under_comma_bind_insert_lty_env_dom_subset
+    (Σ : gmap atom ty) Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  dom (<[LVFree y := erase_ty τ]>
+    (atom_env_to_lty_env (erase_ctx Γ))) ⊆
+  dom (atom_env_to_lty_env
+    (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τ)))).
+Proof.
+  intros HyΓ v Hv.
+  rewrite dom_insert_L in Hv.
+  rewrite !atom_store_to_lvar_store_dom.
+  apply elem_of_union in Hv as [Hyv|HΓv].
+  - apply elem_of_singleton in Hyv. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists y.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HyΓ. set_solver.
+  - rewrite atom_store_to_lvar_store_dom in HΓv.
+    unfold lvars_of_atoms in HΓv.
+    apply elem_of_map in HΓv as [a [Hv_eq HaΓ]]. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists a.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HaΓ. set_solver.
+Qed.
+
 Lemma soundness_fresh_erase_ctx_from_context_union
     (Σ : tyctx) Γ y A B C :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->

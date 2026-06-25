@@ -910,27 +910,18 @@ Proof.
   assert (Hz_insert_env :
       LVFree z ∉ dom (<[LVFree y := erase_ty τx]> Δ)).
   {
-    rewrite dom_insert_L.
-    intros Hzdom.
-    apply elem_of_union in Hzdom as [Hzdom|Hzdom].
-    - apply elem_of_singleton in Hzdom. inversion Hzdom. subst.
-      clear -Hy. set_solver.
-    - subst Δ.
-      rewrite atom_store_to_lvar_store_dom in Hzdom.
-      unfold lvars_of_atoms in Hzdom.
-      apply elem_of_map in Hzdom as [a [Ha_eq Ha_dom]].
-      inversion Ha_eq. subst a.
-      pose proof (ctx_erasure_under_erase_ctx_dom_subset Σ Γ z Ha_dom)
-        as Hzctx.
-      clear -Hz Hzctx. better_set_solver.
+    subst Δ. apply
+      (ctx_erasure_under_inserted_erase_ctx_lty_env_fresh
+        Σ Γ z y (erase_ty τx)).
+    - clear -Hy. set_solver.
+    - clear -Hz. better_set_solver.
   }
   assert (Hz_alias_fresh :
       z ∉ fv_value vf ∪ {[y]} ∪ fv_cty (cty_open 0 y τ)).
   {
-    subst vf.
-    pose proof (cty_open_fv_subset 0 y τ) as Hτopen.
-    cbn [fv_value].
-    clear -Hy Hz Hτopen. better_set_solver.
+    apply value_open_result_alias_fresh.
+    subst vf. cbn [fv_value].
+    clear -Hy Hz. better_set_solver.
   }
 	  pose proof (ty_denote_gas_tapp_fun_result_alias_from_static
 		    gas (<[LVFree y := erase_ty τx]> Δ) (cty_open 0 y τ)
