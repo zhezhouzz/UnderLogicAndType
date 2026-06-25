@@ -389,10 +389,11 @@ Proof.
     Σ (CTArrow τx τr) e1 m Hzero_src) as Hguard_src.
   pose proof (ty_denote_gas_guard_of_zero
     Σ (CTArrow τx τr) e2 m Hzero_tgt) as Hguard_tgt.
-  repeat rewrite res_models_and_iff in Hguard_src.
-  repeat rewrite res_models_and_iff in Hguard_tgt.
-  destruct Hguard_src as [Hwf_src [Hworld_src _]].
-  destruct Hguard_tgt as [_ [Hworld_tgt _]].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_src) as Hwf_src.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_src)
+    as Hworld_src.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_tgt)
+    as Hworld_tgt.
   apply context_ty_wf_formula_models_iff in Hwf_src
     as [HlcΣ_wf_src [_ Hbasic_arrow_src]].
   pose proof (basic_context_ty_lvars_lc

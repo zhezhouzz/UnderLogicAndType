@@ -270,13 +270,13 @@ Proof.
   pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
   pose proof (ty_denote_gas_guard_of_zero Σ (CTOver b φ) e1 m Hzero_src)
     as Hguard_src.
-  repeat rewrite res_models_and_iff in Hguard_src.
-  destruct Hguard_src as [_ [Hworld_src _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_src)
+    as Hworld_src.
   apply basic_world_formula_models_iff in Hworld_src as [HlcΣ_src _].
   pose proof (ty_denote_gas_guard_of_zero Σ (CTOver b φ) e2 m Hzero_tgt)
     as Hguard_tgt.
-  repeat rewrite res_models_and_iff in Hguard_tgt.
-  destruct Hguard_tgt as [_ [Hworld_tgt _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_tgt)
+    as Hworld_tgt.
   apply basic_world_formula_models_iff in Hworld_tgt as [HlcΣ_tgt _].
   pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
     as [Hlc1 Hlc2].
@@ -380,13 +380,13 @@ Proof.
   pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
   pose proof (ty_denote_gas_guard_of_zero Σ (CTUnder b φ) e1 m Hzero_src)
     as Hguard_src.
-  repeat rewrite res_models_and_iff in Hguard_src.
-  destruct Hguard_src as [_ [Hworld_src _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_src)
+    as Hworld_src.
   apply basic_world_formula_models_iff in Hworld_src as [HlcΣ_src _].
   pose proof (ty_denote_gas_guard_of_zero Σ (CTUnder b φ) e2 m Hzero_tgt)
     as Hguard_tgt.
-  repeat rewrite res_models_and_iff in Hguard_tgt.
-  destruct Hguard_tgt as [_ [Hworld_tgt _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_tgt)
+    as Hworld_tgt.
   apply basic_world_formula_models_iff in Hworld_tgt as [HlcΣ_tgt _].
   pose proof (typed_fiber_equiv_term_lc _ _ _ _ _ Hequiv)
     as [Hlc1 Hlc2].
@@ -505,13 +505,14 @@ Proof.
   pose proof (typed_fiber_equiv_zero_tgt _ _ _ _ _ Hequiv) as Hzero_tgt.
   pose proof (ty_denote_gas_guard_of_zero Σ (CTSum τ1 τ2) e1 m Hzero_src)
     as Hguard_src.
-  repeat rewrite res_models_and_iff in Hguard_src.
-  destruct Hguard_src as [Hwf_src [Hworld_src _]].
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_src) as Hwf_src.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_src)
+    as Hworld_src.
   apply basic_world_formula_models_iff in Hworld_src as [HlcΣ_src _].
   pose proof (ty_denote_gas_guard_of_zero Σ (CTSum τ1 τ2) e2 m Hzero_tgt)
     as Hguard_tgt.
-  repeat rewrite res_models_and_iff in Hguard_tgt.
-  destruct Hguard_tgt as [_ [Hworld_tgt _]].
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_tgt)
+    as Hworld_tgt.
   apply basic_world_formula_models_iff in Hworld_tgt as [HlcΣ_tgt _].
   pose proof (context_ty_wf_formula_models_iff
     (relevant_env Σ (CTSum τ1 τ2) e1) (CTSum τ1 τ2) m) as Hwf_src_iff.

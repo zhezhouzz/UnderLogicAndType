@@ -604,3 +604,20 @@ Follow-up Batch R: basic-world free-domain freshness.
     completed in about 1.27s after dependency cascade.
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
     completed in about 1.93s.
+
+Follow-up Batch S: fiber/result-first guard regular cleanup.
+
+- Replaced manual zero-guard destructs with regular accessors in:
+  - `Denotation/theories/TypeEquivFiberBody.v`;
+  - `Denotation/theories/TypeEquivArrowResultFirst.v`;
+  - `Denotation/theories/TypeEquivWandResultFirst.v`.
+- This removes old `repeat rewrite res_models_and_iff` / `destruct Hguard`
+  blocks from Over/Under/Sum fiber-body transport and result-first function
+  transport, while keeping the semantic proof shape unchanged.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivFiberBody.vo`
+    completed in about 2.46s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+    completed in about 2.93s after dependency recompilation.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWandResultFirst.vo`
+    completed in about 3.41s after dependency recompilation.
