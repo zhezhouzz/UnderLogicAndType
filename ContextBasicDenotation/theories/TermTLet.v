@@ -113,7 +113,7 @@ Proof.
   assert (HaD : a ∈ lvars_fv (tm_lvars e)).
   { rewrite <- Hproj_dom. exact Ha. }
   destruct ((σ : gmap atom value) !! a) as [va|] eqn:Hσa.
-  - symmetry. apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaD].
+  - symmetry. apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa HaD).
   - symmetry. apply storeA_restrict_lookup_none_l. exact Hσa.
 Qed.
 
@@ -179,7 +179,7 @@ Proof.
     rewrite <- Hproj.
     change (((storeA_restrict σ (lvars_fv (tm_lvars e)) : gmap atom value)
       !! a) = Some va).
-    apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa Ha_fv).
 Qed.
 
 Lemma tm_eval_in_store_tlete_elim_core e1 e2 x σ v :

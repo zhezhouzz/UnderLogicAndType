@@ -450,7 +450,7 @@ Proof.
   apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
   destruct v as [k|z].
   - exfalso.
-    assert (k ∈ lvars_bv Dbody) by (apply lvars_bv_elem; exact HvD).
+    assert (k ∈ lvars_bv Dbody) by (rewrite lvars_bv_elem; exact HvD).
     rewrite Hbv in H. set_solver.
   - destruct (decide (z = x)) as [->|Hzx].
     + rewrite lty_env_open_one_typed_bind_lookup_current.
@@ -458,7 +458,7 @@ Proof.
       inversion Hlook. reflexivity.
     + rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzx.
       rewrite lty_env_open_one_typed_bind_lookup_free_ne in Hlook by exact Hzx.
-      apply storeA_restrict_lookup_some_2; [exact Hlook|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook).
       assert (HzD : LVFree z ∈ D).
       {
         specialize (Hsub _ HvD).
@@ -487,7 +487,7 @@ Proof.
   - constructor.
     match goal with
     | Hlook : ?Σ !! LVFree ?x = Some ?T |- _ =>
-        apply storeA_restrict_lookup_some_2; [exact Hlook|]
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook)
     end.
     match goal with
     | Hsub : value_lvars (vfvar _) ⊆ _ |- _ =>

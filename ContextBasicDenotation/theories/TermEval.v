@@ -887,7 +887,7 @@ Proof.
               gmap atom value) !! z) =
             ((store_restrict σ X : gmap atom value) !! z)).
            apply map_lookup_insert_ne. congruence.
-        -- apply storeA_restrict_lookup_some_2; [exact Hσz|exact HzX].
+      -- apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσz HzX).
     + change ((((σ : gmap atom value) ∪ ({[x := vx]} : gmap atom value)) !! z) =
         ((<[x := vx]> (store_restrict σ X : gmap atom value) : gmap atom value) !! z)).
       transitivity (@None value).
@@ -966,7 +966,7 @@ Proof.
   intros HX [Hx [v [Hlookup Heval]]].
   split; [exact Hx|].
   exists v. split.
-  - apply storeA_restrict_lookup_some_2; [exact Hlookup|set_solver].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup). set_solver.
   - apply (proj2 (expr_eval_in_store_restrict_lvars e σ X v ltac:(set_solver))).
     exact Heval.
 Qed.
@@ -997,7 +997,7 @@ Proof.
     + transitivity (Some u).
 	      * apply storeA_restrict_lookup_some_2; [|exact HzD].
 	        rewrite lstore_lift_free_lookup_free.
-	        apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyD].
+  apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyD).
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free. exact Hσy.
     + transitivity (@None value).

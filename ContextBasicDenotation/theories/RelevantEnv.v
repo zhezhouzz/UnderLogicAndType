@@ -711,7 +711,7 @@ Proof.
   unfold relevant_env, lty_env_restrict_lvars,
     relevant_lvars in Hlookup |- *.
   apply storeA_restrict_lookup_some in Hlookup as [Hv HΣ].
-  apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ HΣ). set_solver.
 Qed.
 
 Lemma relevant_env_dom_mono_context

@@ -949,7 +949,7 @@ Proof.
     + symmetry.
       replace ((σf : gmap atom value) !! x) with (Some v)
         by (symmetry; exact Hlook).
-      apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hx].
+  apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook Hx).
     + symmetry.
       replace ((σf : gmap atom value) !! x) with (@None value)
         by (symmetry; exact Hlook).

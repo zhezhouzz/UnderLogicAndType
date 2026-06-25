@@ -3,6 +3,20 @@ ContextBasicDenotation Apply/Exact Optimization Stats
 
 Candidates: 101
 
+Implementation Status
+---------------------
+
+- Completed: first store-restrict lookup batch in `RelevantEnv.v`,
+  `StoreTyping.v`, `TermSyntax.v`, `TermTLet.v`, `TermEval.v`, and
+  `BasicTypingFormula.v`; `lvars_bv_elem` in `BasicTypingFormula.v` was also
+  converted to deterministic rewrite form.
+- Verified: modified targets compiled. The combined 20s run was dependency
+  heavy, but `RelevantEnv.vo` passed separately in 2.32s after dependencies
+  were warm.
+- Deferred: term regularity lemmas (`msubst_lc`, `body_open_*`,
+  `expr_*_open_back_iff`) and higher-order environment agreement calls should
+  be handled in a separate regularity-helper pass.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextBasicDenotation/theories/RelevantEnv.v` | 714 | `apply storeA_restrict_lookup_some_2; [exact HΣ | set_solver].` |
