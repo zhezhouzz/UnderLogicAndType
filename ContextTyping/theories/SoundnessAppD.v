@@ -18,7 +18,7 @@ From Denotation Require Import Context
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessApp.
+From ContextTyping Require Import Typing SoundnessLamBase SoundnessApp.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
@@ -608,11 +608,18 @@ Proof.
   set (Δstar := atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))) in *.
   pose proof (context_typing_wf_ret_lc_value
     Σ Γ1 v1 (CTWand τx τ) Hwf_fun) as Hlc_v1.
-  pose proof (context_typing_wf_context_ty Σ (CtxStar Γ1 Γ2)
-    (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hτopen_wf_result.
-  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf_result.
-  pose proof (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
-    (cty_open 0 x τ) Hτopen_wf_result) as Hlcτopen_result.
+	  pose proof (context_typing_wf_context_ty Σ (CtxStar Γ1 Γ2)
+	    (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hτopen_wf_result.
+	  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf_result.
+	  pose proof (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
+	    (cty_open 0 x τ) Hτopen_wf_result) as Hlcτopen_result.
+  assert (Hτ_lc1 : cty_lc_at 1 τ).
+  {
+    pose proof (context_typing_wf_context_ty Σ Γ1
+      (tret v1) (CTWand τx τ) Hwf_fun) as Hτ_wf.
+    cbn [wf_context_ty_at] in Hτ_wf.
+    eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
+  }
   assert (Hresult_rel_lc :
       lc_lvars (relevant_lvars (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x)))).
@@ -682,12 +689,19 @@ Proof.
         exact Hresult_rel_lc.
       - exact Hsrc.
     }
-    eapply ty_equiv_wand_result_src_mid.
-    - constructor. exact Hlc_v1.
-    - better_set_solver.
-    - exact Hresult_rel_lc.
-    - exact Hsrc_inserted.
-  }
+	    eapply ty_equiv_wand_result_src_mid.
+	    - constructor. exact Hlc_v1.
+	    - better_set_solver.
+	    - eapply cty_lvars_open_body_closed_no_fresh.
+	      + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+	        exact Hτ_lc1.
+	      + intros HxD.
+	        apply lvars_fv_elem in HxD.
+	        rewrite context_ty_lvars_fv_at in HxD.
+	        clear -Hfresh HxD. better_set_solver.
+	      + reflexivity.
+	    - exact Hsrc_inserted.
+	  }
   assert (Hmidstar :
       m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
         (<[LVFree x := erase_ty τx]> Δstar)

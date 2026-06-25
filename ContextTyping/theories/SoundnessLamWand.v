@@ -394,7 +394,7 @@ Proof.
     exact (context_typing_wf_lc_tm
       Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
   }
-  assert (Hτ_lc1 : cty_lc_at 1 τ).
+  assert (Hτ_body_lc1 : cty_lc_at 1 τ).
   {
     pose proof (context_typing_wf_context_ty Σ Γ
       (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf) as Hτ_wf.
@@ -408,7 +408,7 @@ Proof.
     + better_set_solver.
     + eapply cty_lvars_open_body_closed_no_fresh.
       * apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
-        exact Hτ_lc1.
+        exact Hτ_body_lc1.
       * intros HyD.
         apply lvars_fv_elem in HyD.
         rewrite context_ty_lvars_fv_at in HyD.
@@ -638,8 +638,7 @@ Proof.
     Harg_old) as Hopened_src.
   assert (Hopened_norm :
       res_product n mz Hc ⊨ ty_denote_gas gas
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind Σrel (erase_ty τx)))
+        (<[LVFree y := erase_ty τx]> Σrel)
         (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
@@ -671,12 +670,12 @@ Proof.
 	      rewrite lvars_fv_of_atoms in Hatom.
 	      exact (Hy_eraseΓ Hatom).
     }
-	    assert (Htmfresh :
-	        y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0))).
-		    {
-		      subst elam.
-		      eapply lam_wand_shifted_tapp_fresh. exact Hy_rest.
-		    }
+    assert (Htmfresh : y ∉ fv_tm elam).
+    {
+      subst elam.
+      cbn [fv_tm fv_value].
+      clear -Hy_rest. better_set_solver.
+    }
 	    change (res_product n mz Hc ⊨ formula_open 0 y
 	      (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
 	        (typed_lty_env_bind
@@ -684,38 +683,28 @@ Proof.
 	            (CTWand τx τ) elam)
 	          (erase_ty τx))
 	        τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))) in Hopened_src.
-		    pose proof (lam_wand_open_shifted_tapp_denote_iff
-	      (Nat.max (cty_depth τx) (cty_depth τ))
-	      (typed_lty_env_bind
-	        (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-	          (CTWand τx τ) elam)
-	        (erase_ty τx))
-	      τ elam (res_product n mz Hc) y
-	      HΣfresh Htmfresh
-	      ltac:(eapply lam_wand_fresh_result_ty; exact Hy_rest)
-	      Hlc_elam) as [Hopen_to_norm _].
-	    apply Hopen_to_norm. exact Hopened_src.
-  }
-  assert (Hopened_norm_inserted :
-      res_product n mz Hc ⊨ ty_denote_gas gas
-        (<[LVFree y := erase_ty τx]> Σrel)
-        (cty_open 0 y τ)
-        (tapp_tm (tret vf) (vfvar y))).
-  {
-    rewrite <- (typed_lty_env_bind_open_current y Σrel (erase_ty τx)).
-    - exact Hopened_norm.
-    - subst Σrel.
+    rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
+      y (Nat.max (cty_depth τx) (cty_depth τ))
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+        (CTWand τx τ) elam)
+      τ (erase_ty τx) elam) in Hopened_src.
+    - exact Hopened_src.
+    - apply relevant_env_closed.
+      apply atom_store_to_lvar_store_closed.
+    - subst elam.
       intros Hrel.
       pose proof (relevant_env_dom_subset_direct
-        Δ (CTWand τx τ) (tret vf) (LVFree y) Hrel) as HΔbad.
+        Δ (CTWand τx τ) (tret (vlam (erase_ty τx) e))
+        (LVFree y) Hrel) as HΔbad.
       exact (HyΔ HΔbad).
-    - subst Σrel. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
+    - exact Htmfresh.
+    - eapply lam_wand_fresh_result_ty. exact Hy_rest.
+    - exact Hlc_elam.
   }
-  assert (Hsrc :
-      res_product n mz Hc ⊨ ty_denote_gas gas
-        (<[LVFree y := erase_ty τx]> Δ)
-        (cty_open 0 y τ)
+	  assert (Hsrc :
+	      res_product n mz Hc ⊨ ty_denote_gas gas
+	        (<[LVFree y := erase_ty τx]> Δ)
+	        (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
     eapply ty_equiv_wand_result_src_mid_inserted.
@@ -725,12 +714,20 @@ Proof.
       pose proof (relevant_env_dom_subset_direct
         Δ (CTWand τx τ) (tret vf) (LVFree y) Hrel) as HΔbad.
       exact (HyΔ HΔbad).
-    - subst vf.
-      exact (context_typing_wf_lc_tm
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-    - clear -Hy_rest. better_set_solver.
-    - exact Hopened_norm_inserted.
-  }
+	    - subst vf.
+	      exact (context_typing_wf_lc_tm
+	        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
+	    - clear -Hy_rest. better_set_solver.
+    - eapply cty_lvars_open_body_closed_no_fresh.
+      + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
+        exact Hτ_lc1.
+      + intros HyD.
+        apply lvars_fv_elem in HyD.
+        rewrite context_ty_lvars_fv_at in HyD.
+        clear -Hy_rest HyD. better_set_solver.
+      + reflexivity.
+		    - exact Hopened_norm.
+	  }
 	  assert (Hctx_star :
 	      res_product n mz Hc ⊨ ctx_denote_under Σ (CtxStar Γ (CtxBind y τx))).
 	  {
