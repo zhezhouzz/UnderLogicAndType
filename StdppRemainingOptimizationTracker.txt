@@ -640,3 +640,16 @@ Follow-up Batch T: ret-fvar result freshness consolidation.
 - Validation:
   - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
     completed in about 11.75s after dependency recompilation.
+
+Follow-up Batch U: singleton ret-fvar freshness consolidation.
+
+- Applied the same union-freshness interface to
+  `TypePersistSingleton` singleton pullback/push helpers:
+  - `res_restrict_singleton_pullback_ret_fvar_result`;
+  - `res_restrict_singleton_push_ret_fvar_result`.
+- The persistent ret-fvar singleton intro proof now builds one
+  `Hyfresh_result` side condition for the helper call instead of exposing
+  separate world, type-FV, and result-domain freshness obligations.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistSingleton.vo`
+    completed in about 2.33s.

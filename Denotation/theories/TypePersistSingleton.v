@@ -13,11 +13,9 @@ Lemma res_restrict_singleton_pullback_ret_fvar_result
     A D x y (m my : WfWorldT) σy :
   A ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ A ∪ lvars_fv D ->
   x ∉ A ->
-  y ∉ A ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -29,8 +27,17 @@ Lemma res_restrict_singleton_pullback_ret_fvar_result
     res_restrict m (A ∪ {[x]}) =
       (exist _ (singleton_world σx) (wf_singleton_world σx) : WfWorldT).
 Proof.
-  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase
+  intros HAm Hxm Hyfresh HxA HD Hres Hclosed_x Hdom_my Hbase
     Hsingle_y.
+  assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hyfresh; set_solver).
+  assert (HyA : y ∉ A) by (clear -Hyfresh; set_solver).
+  assert (HyD : LVFree y ∉ D).
+  {
+    intros HyD.
+    apply Hyfresh.
+    assert (HyDfv : y ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HyD).
+    set_solver.
+  }
   destruct (wfA_ne _ (worldA_wf m)) as [σ0 Hσ0].
   set (σx := store_restrict σ0 (A ∪ {[x]}) : StoreT).
   exists σx.
@@ -161,11 +168,9 @@ Lemma res_restrict_singleton_push_ret_fvar_result
     A D x y (m my : WfWorldT) σx :
   A ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ A ∪ lvars_fv D ->
   x ∉ A ->
-  y ∉ A ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -177,8 +182,17 @@ Lemma res_restrict_singleton_push_ret_fvar_result
     res_restrict my (A ∪ {[y]}) =
       (exist _ (singleton_world σy) (wf_singleton_world σy) : WfWorldT).
 Proof.
-  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase
+  intros HAm Hxm Hyfresh HxA HD Hres Hclosed_x Hdom_my Hbase
     Hsingle_x.
+  assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hyfresh; set_solver).
+  assert (HyA : y ∉ A) by (clear -Hyfresh; set_solver).
+  assert (HyD : LVFree y ∉ D).
+  {
+    intros HyD.
+    apply Hyfresh.
+    assert (HyDfv : y ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HyD).
+    set_solver.
+  }
   destruct (wfA_ne _ (worldA_wf my)) as [σ0 Hσ0].
   set (σy := store_restrict σ0 (A ∪ {[y]}) : StoreT).
   exists σy.
@@ -741,11 +755,22 @@ Proof.
     - eapply ty_guard_formula_basic_world. exact Hguard_tgt.
     - exact Hy_m.
   }
+  assert (Hyfresh_result :
+      y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪
+        lvars_fv (dom (relevant_env Σ (CTPersist τ) (tret (vfvar z))))).
+  {
+    intros Hyfresh.
+    apply elem_of_union in Hyfresh as [Hyfresh|HyDfv].
+    - apply elem_of_union in Hyfresh as [Hyworld|Hyτbad].
+      + exact (Hy_m Hyworld).
+      + exact (Hyτ Hyτbad).
+    - apply HyD_result. rewrite lvars_fv_elem in HyDfv. exact HyDfv.
+  }
   pose proof (res_restrict_singleton_push_ret_fvar_result
     (fv_cty τ)
     (dom (relevant_env Σ (CTPersist τ) (tret (vfvar z))))
     z y m my σ
-    HA_sub Hzdom Hy_m Hzτ Hyτ HtmD_result HyD_result Hres
+    HA_sub Hzdom Hyfresh_result Hzτ HtmD_result Hres
     Hclosed_z_my Hdom_my Hbase_my Hsingle)
     as [σy [Hdomσy Hsingle_y]].
   assert (Hinner_insert :

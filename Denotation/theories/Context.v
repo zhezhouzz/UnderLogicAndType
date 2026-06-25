@@ -1696,15 +1696,24 @@ Proof.
 			        }
 		        reflexivity.
 	      - rewrite Hsingle_y. apply res_restrict_singleton_world.
-	    }
-	    pose proof (res_restrict_singleton_pullback_ret_fvar_result
-	      (fv_cty τ) Dres x y m my
-	      (store_restrict σy (fv_cty τ ∪ {[y]}))
-	      HA_m Hxm Hy_m HxA HyA Htm_D
-	      Hy_D
-	      Hres_at
-	      Hclosed_x_my
-	      Hdom_my' Hbase_my
+		    }
+        assert (Hyfresh_result :
+            y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ lvars_fv Dres).
+        {
+          intros Hybad.
+          apply elem_of_union in Hybad as [Hybad|HyDfv].
+          - apply elem_of_union in Hybad as [Hyworld|Hyτbad].
+            + exact (Hy_m Hyworld).
+            + exact (HyA Hyτbad).
+          - apply Hy_D. rewrite lvars_fv_elem in HyDfv. exact HyDfv.
+        }
+		    pose proof (res_restrict_singleton_pullback_ret_fvar_result
+		      (fv_cty τ) Dres x y m my
+		      (store_restrict σy (fv_cty τ ∪ {[y]}))
+		      HA_m Hxm Hyfresh_result HxA Htm_D
+		      Hres_at
+		      Hclosed_x_my
+		      Hdom_my' Hbase_my
 	      Hsingle_Ay) as [σx [Hdomσx Hsingle_x]].
     exists σx. split; [exact Hdomσx|exact Hsingle_x].
 Qed.
