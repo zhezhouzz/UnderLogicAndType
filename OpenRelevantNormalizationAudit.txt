@@ -228,3 +228,21 @@ Count movement:
 - `TypeDenote.v`: 95 -> 93 relevant wrapper hits.
 
 Status: completed.
+
+## Iteration 8: SoundnessApp Unused Raw-Open Helper
+
+Problem:
+
+- `app_arrow_arg_to_opened_antecedent` had a raw
+  `formula_open 0 x (ty_denote_gas ...)` conclusion and no repository callers.
+
+Action:
+
+- Deleted the unused helper instead of wrapping its unnormalized conclusion.
+
+Validation:
+
+- `timeout 50s make TIMED=1 ContextTyping/theories/SoundnessApp.vo`
+- `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`
+
+Status: completed.
