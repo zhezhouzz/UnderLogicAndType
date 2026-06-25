@@ -572,7 +572,7 @@ Proof.
 	        (cty_open 0 y τ)
         (tapp_tm (tret vf) (vfvar y))).
   {
-    eapply ty_equiv_wand_result_src_mid_inserted.
+    eapply ty_equiv_wand_result_src_mid.
     - subst vf.
       exact (context_typing_wf_lc_tm
         Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).

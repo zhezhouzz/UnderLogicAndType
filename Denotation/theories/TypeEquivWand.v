@@ -175,25 +175,6 @@ Proof.
   - exact Hsrc.
 Qed.
 
-Lemma ty_equiv_wand_result_src_mid_inserted
-    gas (Σ : lty_env) τx τr e1
-    (m : WfWorldT) y :
-  lc_tm e1 ->
-  y ∉ fv_cty τr ->
-  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    context_ty_lvars_at 1 τr ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e1))
-    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)) ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]> Σ)
-    (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
-Proof.
-  intros Hlc Hyτr Hτr_vars Hsrc.
-  eapply ty_equiv_wand_result_src_mid; eauto.
-Qed.
-
 Lemma ty_equiv_wand_result_tgt_goal
     gas (Σ : lty_env) τx τr e2
     (m : WfWorldT) y :
@@ -307,6 +288,64 @@ Proof.
   - apply wand_tapp_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2) ({[y]} : aset));
       [exact Hclosed_base_prod|exact Hclosed_y_prod].
+Qed.
+
+Local Lemma wand_open_result_apps_equiv_total_product_right
+    (Σ : lty_env) τx τr e1 e2
+    (m my n : WfWorldT) y (Hc : world_compat n my) :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+  wfworld_closed_on
+    (fv_tm (tapp_tm e1 (vfvar y)) ∪
+     fv_tm (tapp_tm e2 (vfvar y)))
+    (res_product n my Hc) ->
+  tm_equiv_on (res_product n my Hc)
+    (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)) /\
+  tm_total_equiv_on (res_product n my Hc)
+    (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hequiv Hdom Hrestrict Hye Hclosed_apps.
+  pose proof (typed_total_equiv_term_lc
+    Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
+  pose proof (typed_total_equiv_term_scope
+    Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+  assert (Heq_base_product :
+      tm_equiv_on (res_product n my Hc) e1 e2).
+  {
+    eapply tm_equiv_res_product_right.
+    - eapply tm_equiv_full_world_extend_fresh.
+      + eapply typed_total_equiv_tm_equiv. exact Hequiv.
+      + exact Hscope.
+      + exact Hye.
+      + exact Hdom.
+      + exact Hrestrict.
+    - eapply wand_open_world_term_scope; eauto.
+  }
+  assert (Htotal_base_my : tm_total_equiv_on my e1 e2).
+  {
+    eapply tm_total_equiv_full_world_extend_fresh.
+    - eapply typed_total_equiv_total_equiv. exact Hequiv.
+    - exact Hlc1.
+    - exact Hlc2.
+    - exact Hscope.
+    - exact Hye.
+    - exact Hdom.
+    - exact Hrestrict.
+  }
+  assert (Htotal_base_product :
+      tm_total_equiv_on (res_product n my Hc) e1 e2).
+  {
+    eapply tm_total_equiv_res_product_right.
+    - exact Htotal_base_my.
+    - exact Hlc1.
+    - exact Hlc2.
+    - eapply wand_open_world_term_scope; eauto.
+  }
+  split.
+  - eapply tm_equiv_tapp_fvar; eauto.
+  - eapply tm_total_equiv_tapp_fvar; eauto.
 Qed.
 
 Lemma wand_result_source_world
@@ -452,32 +491,6 @@ Proof.
   exact Hlook.
 Qed.
 
-Local Lemma basic_value_has_ltype_wand_inserted_result_target_arg
-    (Σ : lty_env) τx τr e y :
-  basic_value_has_ltype
-    (relevant_env
-      (<[LVFree y := erase_ty τx]> Σ)
-      (cty_open 0 y τr) (tapp_tm e (vfvar y)))
-    (vfvar y) (erase_ty τx).
-Proof.
-  apply basic_value_has_ltype_arrow_inserted_result_target_arg.
-Qed.
-
-Local Lemma basic_tm_has_ltype_wand_inserted_result_target_fun
-    (Σ : lty_env) τtop τx τr e1 e2
-    (m : WfWorldT) y :
-  erase_ty τtop = erase_ty τx →ₜ erase_ty τr ->
-  typed_total_equiv_on Σ τtop m e1 e2 ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
-  basic_tm_has_ltype
-    (relevant_env
-      (<[LVFree y := erase_ty τx]> Σ)
-      (cty_open 0 y τr) (tapp_tm e2 (vfvar y)))
-    e2 (erase_ty τx →ₜ erase_ty τr).
-Proof.
-  apply basic_tm_has_ltype_arrow_inserted_result_target_fun.
-Qed.
-
 Lemma wand_result_target_typing
     gas (Σ : lty_env) τx τr e1 e2
     (m my n : WfWorldT) y (Hc : world_compat n my) :
@@ -512,9 +525,9 @@ Proof.
   rewrite cty_open_preserves_erasure.
   eapply basic_tm_has_ltype_tapp_tm_lvar.
   - exact Hlc_tgt.
-  - eapply (basic_tm_has_ltype_wand_inserted_result_target_fun
+  - eapply (basic_tm_has_ltype_arrow_inserted_result_target_fun
       Σ (CTWand τx τr) τx τr e1 e2 m y); eauto.
-  - apply basic_value_has_ltype_wand_inserted_result_target_arg.
+  - apply basic_value_has_ltype_arrow_inserted_result_target_arg.
 Qed.
 
 Lemma ty_denote_gas_zero_wand_open_result_target
@@ -558,80 +571,15 @@ Proof.
     - exact Hrestrict.
     - eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg.
   }
-  assert (Heq_apps :
-      tm_equiv_on (res_product n my Hc)
-        (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
-  {
-    pose proof (typed_total_equiv_term_lc
-      Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
-    eapply tm_equiv_tapp_fvar.
-    - exact Hclosed_apps.
-    - exact Hlc1.
-    - exact Hlc2.
-    - eapply tm_equiv_res_product_right.
-      + pose proof (typed_total_equiv_term_scope
-          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-        destruct Hequiv as [Heq_base _].
-        eapply tm_equiv_full_world_extend_fresh.
-        * exact Heq_base.
-        * exact Hscope.
-        * exact Hye.
-        * exact Hdom.
-        * exact Hrestrict.
-      + pose proof (typed_total_equiv_term_scope
-          Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-        eapply wand_open_world_term_scope; eauto.
-  }
   assert (Htotal_tgt :
       res_product n my Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
   {
     pose proof (typed_total_equiv_term_lc
       Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
-    pose proof (typed_total_equiv_term_scope
-      Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-    assert (Htotal_base_my : tm_total_equiv_on my e1 e2).
-    {
-      eapply tm_total_equiv_full_world_extend_fresh.
-      - eapply typed_total_equiv_total_equiv. exact Hequiv.
-      - exact Hlc1.
-      - exact Hlc2.
-      - exact Hscope.
-      - exact Hye.
-      - exact Hdom.
-      - exact Hrestrict.
-    }
-    assert (Htotal_base_product :
-        tm_total_equiv_on (res_product n my Hc) e1 e2).
-    {
-      eapply tm_total_equiv_res_product_right.
-      - exact Htotal_base_my.
-      - exact Hlc1.
-      - exact Hlc2.
-      - eapply wand_open_world_term_scope; eauto.
-    }
-    assert (Heq_base_product :
-        tm_equiv_on (res_product n my Hc) e1 e2).
-    {
-      eapply tm_equiv_res_product_right.
-      - eapply tm_equiv_full_world_extend_fresh.
-        + eapply typed_total_equiv_tm_equiv. exact Hequiv.
-        + exact Hscope.
-        + exact Hye.
-        + exact Hdom.
-        + exact Hrestrict.
-      - eapply wand_open_world_term_scope; eauto.
-    }
     assert (Htotal_apps :
         tm_total_equiv_on (res_product n my Hc)
           (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
-    {
-      eapply tm_total_equiv_tapp_fvar.
-      - exact Hclosed_apps.
-      - exact Hlc1.
-      - exact Hlc2.
-      - exact Heq_base_product.
-      - exact Htotal_base_product.
-    }
+    { eapply wand_open_result_apps_equiv_total_product_right; eauto. }
     eapply tm_equiv_total.
     - exact Htotal_apps.
     - apply lc_tapp_tm; [exact Hlc2|constructor].
@@ -700,8 +648,6 @@ Lemma typed_total_equiv_wand_open_result_mid
     (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
 Proof.
   intros Hequiv Hdom Hrestrict Hyτx Hyτr Hye Hres_mid Harg.
-  pose proof (typed_total_equiv_term_lc
-    Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
   pose proof (typed_total_equiv_source_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_src.
   pose proof (ty_denote_gas_guard_of_zero
@@ -725,53 +671,10 @@ Proof.
       Σ τx τr e1 e2 m my n y Hc); eauto.
     eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg.
   }
-  pose proof (typed_total_equiv_term_scope
-    Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
-  assert (Heq_base_product :
-      tm_equiv_on (res_product n my Hc) e1 e2).
-  {
-    eapply tm_equiv_res_product_right.
-    - eapply tm_equiv_full_world_extend_fresh.
-      + eapply typed_total_equiv_tm_equiv. exact Hequiv.
-      + exact Hscope.
-      + exact Hye.
-      + exact Hdom.
-      + exact Hrestrict.
-    - eapply wand_open_world_term_scope; eauto.
-  }
-  assert (Htotal_base_my : tm_total_equiv_on my e1 e2).
-  {
-    eapply tm_total_equiv_full_world_extend_fresh.
-    - eapply typed_total_equiv_total_equiv. exact Hequiv.
-    - exact Hlc1.
-    - exact Hlc2.
-    - exact Hscope.
-    - exact Hye.
-    - exact Hdom.
-    - exact Hrestrict.
-  }
-  assert (Htotal_base_product :
-      tm_total_equiv_on (res_product n my Hc) e1 e2).
-  {
-    eapply tm_total_equiv_res_product_right.
-    - exact Htotal_base_my.
-    - exact Hlc1.
-    - exact Hlc2.
-    - eapply wand_open_world_term_scope; eauto.
-  }
   split.
-  - eapply tm_equiv_tapp_fvar.
-    + exact Hclosed_apps.
-    + exact Hlc1.
-    + exact Hlc2.
-    + exact Heq_base_product.
+  - eapply wand_open_result_apps_equiv_total_product_right; eauto.
   - split.
-    + eapply tm_total_equiv_tapp_fvar.
-      * exact Hclosed_apps.
-      * exact Hlc1.
-      * exact Hlc2.
-      * exact Heq_base_product.
-      * exact Htotal_base_product.
+    + eapply wand_open_result_apps_equiv_total_product_right; eauto.
     + split.
       * apply ty_denote_gas_zero_of_guard.
         eapply ty_denote_gas_guard. exact Hres_mid.
@@ -860,6 +763,45 @@ Proof.
   - apply wand_tapp_apps_fv_subset.
   - apply (wfworld_closed_on_union (fv_tm e1 ∪ fv_tm e2)
       ({[y]} : aset)); [exact Hclosed_fun|exact Hclosed_y].
+Qed.
+
+Local Lemma wand_open_result_apps_equiv_total_product
+    (Σ : lty_env) τx τr e1 e2
+    (m n : WfWorldT) y (Hc : world_compat n m) :
+  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
+  wfworld_closed_on
+    (fv_tm (tapp_tm e1 (vfvar y)) ∪
+     fv_tm (tapp_tm e2 (vfvar y)))
+    (res_product n m Hc) ->
+  tm_equiv_on (res_product n m Hc)
+    (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)) /\
+  tm_total_equiv_on (res_product n m Hc)
+    (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
+Proof.
+  intros Hequiv Hclosed_apps.
+  pose proof (typed_total_equiv_term_lc
+    Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
+  pose proof (typed_total_equiv_term_scope
+    Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
+  assert (Heq_base_product :
+      tm_equiv_on (res_product n m Hc) e1 e2).
+  {
+    eapply tm_equiv_res_product_right.
+    - eapply typed_total_equiv_tm_equiv. exact Hequiv.
+    - exact Hscope.
+  }
+  assert (Htotal_base_product :
+      tm_total_equiv_on (res_product n m Hc) e1 e2).
+  {
+    eapply tm_total_equiv_res_product_right.
+    - eapply typed_total_equiv_total_equiv. exact Hequiv.
+    - exact Hlc1.
+    - exact Hlc2.
+    - exact Hscope.
+  }
+  split.
+  - eapply tm_equiv_tapp_fvar; eauto.
+  - eapply tm_total_equiv_tapp_fvar; eauto.
 Qed.
 
 Lemma basic_world_formula_wand_open_result_target_product
@@ -983,45 +925,10 @@ Proof.
   {
     eapply wfworld_closed_on_wand_open_result_apps_product; eauto.
   }
-  assert (Heq_apps :
-      tm_equiv_on (res_product n m Hc)
-        (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
-  {
-    eapply tm_equiv_tapp_fvar.
-    - exact Hclosed_apps.
-    - exact Hlc1.
-    - exact Hlc2.
-    - eapply tm_equiv_res_product_right.
-      + eapply typed_total_equiv_tm_equiv. exact Hequiv.
-      + eapply typed_total_equiv_term_scope. exact Hequiv.
-  }
-  assert (Htotal_base_product :
-      tm_total_equiv_on (res_product n m Hc) e1 e2).
-  {
-    eapply tm_total_equiv_res_product_right.
-    - eapply typed_total_equiv_total_equiv. exact Hequiv.
-    - exact Hlc1.
-    - exact Hlc2.
-    - eapply typed_total_equiv_term_scope. exact Hequiv.
-  }
-  assert (Heq_base_product :
-      tm_equiv_on (res_product n m Hc) e1 e2).
-  {
-    eapply tm_equiv_res_product_right.
-    - eapply typed_total_equiv_tm_equiv. exact Hequiv.
-    - eapply typed_total_equiv_term_scope. exact Hequiv.
-  }
   assert (Htotal_apps :
       tm_total_equiv_on (res_product n m Hc)
         (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y))).
-  {
-    eapply tm_total_equiv_tapp_fvar.
-    - exact Hclosed_apps.
-    - exact Hlc1.
-    - exact Hlc2.
-    - exact Heq_base_product.
-    - exact Htotal_base_product.
-  }
+  { eapply wand_open_result_apps_equiv_total_product; eauto. }
 	  assert (Htotal_tgt :
 	      res_product n m Hc ⊨ expr_total_formula (tapp_tm e2 (vfvar y))).
 	  {
@@ -1083,9 +990,9 @@ Proof.
     rewrite cty_open_preserves_erasure.
     eapply basic_tm_has_ltype_tapp_tm_lvar.
     - exact Hlc_tgt.
-    - eapply (basic_tm_has_ltype_wand_inserted_result_target_fun
+    - eapply (basic_tm_has_ltype_arrow_inserted_result_target_fun
         Σ (CTWand τx τr) τx τr e1 e2 m y); eauto.
-    - apply basic_value_has_ltype_wand_inserted_result_target_arg.
+    - apply basic_value_has_ltype_arrow_inserted_result_target_arg.
   }
   apply ty_denote_gas_zero_of_guard.
   repeat rewrite res_models_and_iff.
@@ -1121,10 +1028,6 @@ Lemma typed_total_equiv_wand_open_result_mid_product
     (tapp_tm e1 (vfvar y)) (tapp_tm e2 (vfvar y)).
 Proof.
   intros Hequiv Hyτx Hyτr Hye HyΣ2 Hres_mid Harg.
-  pose proof (typed_total_equiv_term_lc
-    Σ (CTWand τx τr) m e1 e2 Hequiv) as [Hlc1 Hlc2].
-  pose proof (typed_total_equiv_term_scope
-    Σ (CTWand τx τr) m e1 e2 Hequiv) as Hscope.
   assert (Hclosed_apps :
       wfworld_closed_on
         (fv_tm (tapp_tm e1 (vfvar y)) ∪
@@ -1133,35 +1036,10 @@ Proof.
   {
     eapply wfworld_closed_on_wand_open_result_apps_product; eauto.
   }
-  assert (Heq_base_product :
-      tm_equiv_on (res_product n m Hc) e1 e2).
-  {
-    eapply tm_equiv_res_product_right.
-    - eapply typed_total_equiv_tm_equiv. exact Hequiv.
-    - exact Hscope.
-  }
-  assert (Htotal_base_product :
-      tm_total_equiv_on (res_product n m Hc) e1 e2).
-  {
-    eapply tm_total_equiv_res_product_right.
-    - eapply typed_total_equiv_total_equiv. exact Hequiv.
-    - exact Hlc1.
-    - exact Hlc2.
-    - exact Hscope.
-  }
   split.
-  - eapply tm_equiv_tapp_fvar.
-    + exact Hclosed_apps.
-    + exact Hlc1.
-    + exact Hlc2.
-    + exact Heq_base_product.
+  - eapply wand_open_result_apps_equiv_total_product; eauto.
   - split.
-    + eapply tm_total_equiv_tapp_fvar.
-      * exact Hclosed_apps.
-      * exact Hlc1.
-      * exact Hlc2.
-      * exact Heq_base_product.
-      * exact Htotal_base_product.
+    + eapply wand_open_result_apps_equiv_total_product; eauto.
     + split.
       * apply ty_denote_gas_zero_of_guard.
         eapply ty_denote_gas_guard. exact Hres_mid.
