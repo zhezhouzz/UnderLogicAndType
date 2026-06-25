@@ -8,15 +8,6 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
-Lemma res_models_formula_eq_local (m : WfWorldT) (φ ψ : FormulaT) :
-  φ = ψ ->
-  m ⊨ φ ->
-  m ⊨ ψ.
-Proof.
-  intros -> H.
-  exact H.
-Qed.
-
 Definition over_open_body (φ : type_qualifier) (z : atom) : FormulaT :=
   FFibVars
     (qual_vars (qual_open_atom 0 z φ) ∖ {[LVFree z]})
@@ -215,16 +206,6 @@ Definition over_ret_fvar_env (Σ : lty_env) b (φ : type_qualifier) z : lty_env 
   <[LVFree z := TBase b]>
     (lty_env_restrict_lvars Σ (lvars_at_depth 1 (qual_vars φ))).
 
-Lemma relevant_env_persist_over_ret_fvar_eq Σ b φ z :
-  relevant_env Σ (CTPersist (CTOver b φ)) (tret (vfvar z)) =
-  relevant_env Σ (CTOver b φ) (tret (vfvar z)).
-Proof.
-  unfold relevant_env, relevant_lvars.
-  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-    value_lvars_at lvar_value_keys].
-  reflexivity.
-Qed.
-
 Lemma relevant_env_persist_eq Σ τ e :
   relevant_env Σ (CTPersist τ) e =
   relevant_env Σ τ e.
@@ -234,8 +215,25 @@ Proof.
   reflexivity.
 Qed.
 
+Local Lemma lvfree_notin_lvars_at_depth1_qual_vars (φ : type_qualifier) z :
+  z ∉ qual_dom φ ->
+  LVFree z ∉ lvars_at_depth 1 (qual_vars φ).
+Proof.
+  unfold qual_dom.
+  intros Hz HzD.
+  apply Hz.
+  rewrite lvars_at_depth_elem in HzD.
+  destruct HzD as [v [Hv Hat]].
+  destruct v as [n|a].
+  - cbn [logic_var_at_depth] in Hat.
+    destruct decide; discriminate.
+  - cbn [logic_var_at_depth] in Hat.
+    inversion Hat. subst a.
+    apply lvars_fv_elem. exact Hv.
+Qed.
+
 Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
-  z ∉ lvars_fv (dom Σ) ∪ qual_dom φ ->
+  z ∉ qual_dom φ ->
   lty_env_restrict_lvars (<[LVFree z := TBase b]> Σ)
     (relevant_lvars (CTOver b φ) (tret (vfvar z))) =
   lty_env_restrict_lvars (over_ret_fvar_env Σ b φ z)
@@ -243,33 +241,14 @@ Lemma over_ret_fvar_env_restrict_eq Σ b φ z :
 Proof.
   intros Hz.
   unfold over_ret_fvar_env.
-  unfold relevant_lvars, lty_env_restrict_lvars.
-  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-    value_lvars_at lvar_value_keys].
-  apply storeA_map_eq. intros v.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ) ∪ {[LVFree z]}))
-    as [Hvrel|Hvrel].
-  2:{ reflexivity. }
-  destruct (decide (v = LVFree z)) as [->|Hvz_ne].
-  - rewrite !lookup_insert.
-    destruct decide as [_|Hbad].
-    2:{
-      exfalso. apply Hbad. reflexivity.
-    }
-    reflexivity.
-  - rewrite !lookup_insert_ne by congruence.
-    destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ))) as [Hvφ|Hvφ].
-    + rewrite storeA_restrict_lookup.
-      destruct decide as [_|Hbad]; [reflexivity|contradiction].
-    + exfalso.
-      apply elem_of_union in Hvrel as [Hvφ'|Hvz].
-      * exact (Hvφ Hvφ').
-      * apply elem_of_singleton in Hvz. exact (Hvz_ne Hvz).
+  relevant_lvars_norm.
+  apply lty_env_restrict_lvars_insert_restrict_current.
+  apply lvfree_notin_lvars_at_depth1_qual_vars.
+  exact Hz.
 Qed.
 
 Lemma over_ret_fvar_relevant_env_restrict_eq Σ b φ z y :
-  y ∉ lvars_fv (dom Σ) ∪ qual_dom φ ∪ {[z]} ->
+  y ∉ qual_dom φ ∪ {[z]} ->
   z ∉ qual_dom φ ->
   lty_env_restrict_lvars
     (<[LVFree y := TBase b]>
@@ -279,33 +258,17 @@ Lemma over_ret_fvar_relevant_env_restrict_eq Σ b φ z y :
     (relevant_lvars (CTOver b φ) (tret (vfvar y))).
 Proof.
   intros Hy Hzφ.
-  unfold over_ret_fvar_env, relevant_env, relevant_lvars,
-    lty_env_restrict_lvars.
-  cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-    value_lvars_at lvar_value_keys].
-  apply storeA_map_eq. intros v.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ) ∪ {[LVFree y]}))
-    as [Hvrel|Hvrel].
-  2:{ reflexivity. }
-  destruct (decide (v = LVFree y)) as [->|Hvy_ne].
-  - rewrite !lookup_insert.
-    destruct decide as [_|Hbad].
-    2:{ exfalso. apply Hbad. reflexivity. }
-    reflexivity.
-  - rewrite !lookup_insert_ne by congruence.
-    destruct (decide (v ∈ lvars_at_depth 1 (qual_vars φ))) as [Hvφ|Hvφ].
-    + rewrite storeA_restrict_lookup.
-      destruct decide as [_|Hbad].
-      2:{ exfalso. apply Hbad. apply elem_of_union_l. exact Hvφ. }
-      rewrite storeA_restrict_lookup.
-      destruct decide as [_|Hbad].
-      2:{ exfalso. apply Hbad. exact Hvφ. }
-      reflexivity.
-    + exfalso.
-      apply elem_of_union in Hvrel as [Hvφ'|Hvy].
-      * exact (Hvφ Hvφ').
-      * apply elem_of_singleton in Hvy. exact (Hvy_ne Hvy).
+  unfold over_ret_fvar_env.
+  relevant_lvars_norm.
+  rewrite lty_env_restrict_lvars_insert_restrict_current.
+  2:{
+    apply lvfree_notin_lvars_at_depth1_qual_vars.
+    clear -Hy. set_solver.
+  }
+  rewrite (relevant_env_restrict_subset Σ (CTOver b φ) (tret (vfvar z))
+    (lvars_at_depth 1 (qual_vars φ))).
+  - reflexivity.
+  - relevant_lvars_norm. set_solver.
 Qed.
 
 Lemma insert_relevant_env_ret_fvar_restrict_eq Σ τ z y :
@@ -2008,7 +1971,7 @@ Proof.
   intros Hz Hden.
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
-  - apply over_ret_fvar_env_restrict_eq. exact Hz.
+  - apply over_ret_fvar_env_restrict_eq. clear -Hz. set_solver.
   - exact Hden.
 Qed.
 

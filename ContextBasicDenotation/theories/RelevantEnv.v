@@ -970,6 +970,32 @@ Proof.
   apply storeA_restrict_insert_notin. exact HxD.
 Qed.
 
+Lemma lty_env_restrict_lvars_insert_restrict_current Σ D x T :
+  LVFree x ∉ D ->
+  lty_env_restrict_lvars (<[LVFree x := T]> Σ)
+    (D ∪ {[LVFree x]}) =
+  lty_env_restrict_lvars
+    (<[LVFree x := T]> (lty_env_restrict_lvars Σ D))
+    (D ∪ {[LVFree x]}).
+Proof.
+  intros HxD.
+  unfold lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ D ∪ {[LVFree x]})) as [Hv|Hv]; [|reflexivity].
+  destruct (decide (v = LVFree x)) as [->|Hvx].
+  - rewrite !lookup_insert.
+    repeat (destruct decide as [_|Hbad]; [|contradiction]).
+    reflexivity.
+  - rewrite !lookup_insert_ne by congruence.
+    rewrite storeA_restrict_lookup.
+    destruct (decide (v ∈ D)) as [HvD|HvD]; [reflexivity|].
+    exfalso.
+    apply elem_of_union in Hv as [HvD'|Hx].
+    + exact (HvD HvD').
+    + apply elem_of_singleton in Hx. subst v. contradiction.
+Qed.
+
 Lemma relevant_env_insert_fresh Σ τ e x T :
   LVFree x ∉ relevant_lvars τ e ->
   relevant_env (<[LVFree x := T]> Σ) τ e =

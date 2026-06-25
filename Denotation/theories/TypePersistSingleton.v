@@ -935,7 +935,7 @@ Proof.
     (dom (relevant_env Σ (CTPersist (CTOver b φ)) (tret (vfvar z)))))
     in Hres
     by (apply relevant_env_closed; exact HΣclosed).
-  rewrite relevant_env_persist_over_ret_fvar_eq in Hres.
+  rewrite relevant_env_persist_eq in Hres.
   pose proof (res_models_and_elim_l _ _ _ Hguard_src) as Hwf_src.
   pose proof (res_models_and_elim_r _ _ _ Hguard_src) as Hguard_rest_src.
   pose proof (res_models_and_elim_l _ _ _ Hguard_rest_src) as Hworld_src.
@@ -1014,7 +1014,7 @@ Proof.
       ⊆ world_dom (my : WorldT)).
   {
     intros a Ha.
-    rewrite relevant_env_persist_over_ret_fvar_eq in Ha.
+    rewrite relevant_env_persist_eq in Ha.
     rewrite Hdom_my.
     apply elem_of_union_l.
     apply Hrel_world. exact Ha.
@@ -1024,7 +1024,7 @@ Proof.
         dom (relevant_env Σ (CTPersist (CTOver b φ)) (tret (vfvar z)))).
   {
     cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-    rewrite relevant_env_persist_over_ret_fvar_eq.
+    rewrite relevant_env_persist_eq.
     exact HtmD_ret_src.
   }
   assert (HyD_result :
@@ -1035,7 +1035,7 @@ Proof.
     apply Hy_m.
     apply Hrel_world.
     apply lvars_fv_elem.
-    rewrite relevant_env_persist_over_ret_fvar_eq in HyD.
+    rewrite relevant_env_persist_eq in HyD.
     exact HyD.
   }
   pose proof (res_restrict_singleton_push_ret_fvar_result
@@ -1060,15 +1060,15 @@ Proof.
     - clear -Hy. set_solver.
     - clear -Hy. set_solver.
     - cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-      rewrite relevant_env_persist_over_ret_fvar_eq.
+      rewrite relevant_env_persist_eq.
       exact HtmD_ret_src.
-    - rewrite relevant_env_persist_over_ret_fvar_eq.
+    - rewrite relevant_env_persist_eq.
       exact HτD_src.
     - intros HyD.
       apply Hy_m.
       apply Hrel_world.
       apply lvars_fv_elem.
-      rewrite relevant_env_persist_over_ret_fvar_eq in HyD.
+      rewrite relevant_env_persist_eq in HyD.
       exact HyD.
     - exact HDmy.
     - exact Hdom_my.
@@ -1094,7 +1094,7 @@ Proof.
     apply Hy_m.
     apply Hrel_world.
     apply lvars_fv_elem.
-    rewrite relevant_env_persist_over_ret_fvar_eq in HyD.
+    rewrite relevant_env_persist_eq in HyD.
     apply lvars_fv_elem in HyD.
     exact HyD.
   }
@@ -1115,7 +1115,7 @@ Proof.
   2:{ exact HyD_result. }
   2:{ apply relevant_env_closed. exact HΣclosed. }
   change (erase_ty (CTPersist (CTOver b φ))) with (TBase b).
-  rewrite relevant_env_persist_over_ret_fvar_eq.
+  rewrite relevant_env_persist_eq.
   eapply (res_models_persist_intro_from_singleton_superset
     my
     (ty_denote_gas gas

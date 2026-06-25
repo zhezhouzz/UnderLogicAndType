@@ -779,38 +779,38 @@ Proof.
     rewrite lvars_fv_lvars_at_depth.
     exact Hfφx.
   }
-  2:{
-    unfold fv_cty, qual_dom in *.
-    cbn [context_ty_lvars context_ty_lvars_at] in *.
-    rewrite lvars_fv_lvars_at_depth.
-    exact Hfφr.
-  }
-  eapply (res_models_formula_eq_local mf
-    (wand_value_denote_gas_with ty_denote_gas gas_tgt
-      (<[LVFree f := erase_ty (CTWand (CTOver bx φx) (CTOver br φr))]>
-        (relevant_env Σ (CTWand (CTOver bx φx) (CTOver br φr)) e))
-      (CTOver bx φx) (CTOver br φr) (tret (vfvar f)))
+	  2:{
+	    unfold fv_cty, qual_dom in *.
+	    cbn [context_ty_lvars context_ty_lvars_at] in *.
+	    rewrite lvars_fv_lvars_at_depth.
+	    exact Hfφr.
+	  }
+  change (mf ⊨
     ((wand_value_denote_gas_with ty_denote_gas gas_tgt
       (typed_lty_env_bind
         (relevant_env Σ (CTWand (CTOver bx φx) (CTOver br φr)) e)
         (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))))
       (cty_shift 0 (CTOver bx φx)) (cty_shift 1 (CTOver br φr))
       (tret (vbvar 0)) ^^ f)%formula)).
-  {
-    symmetry.
-    apply formula_open_result_first_wand_value_ret_bvar0.
-    - apply relevant_env_closed. exact HΣclosed.
-    - exact HfΣg.
-    - exact Hlc_over.
-    - exact Hlc_res.
-    - unfold fv_cty, qual_dom in *.
-      cbn [context_ty_lvars context_ty_lvars_at] in *.
-      rewrite lvars_fv_lvars_at_depth.
-      exact Hfφx.
-    - unfold fv_cty, qual_dom in *.
-      cbn [context_ty_lvars context_ty_lvars_at] in *.
-      rewrite lvars_fv_lvars_at_depth.
-      exact Hfφr.
+  rewrite (formula_open_result_first_wand_value_ret_bvar0
+    gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTOver br φr)) e)
+    (CTOver bx φx) (CTOver br φr)
+    (erase_ty (CTWand (CTOver bx φx) (CTOver br φr))) f).
+  2:{ apply relevant_env_closed. exact HΣclosed. }
+  2:{ exact HfΣg. }
+  2:{ exact Hlc_over. }
+  2:{ exact Hlc_res. }
+  2:{
+    unfold fv_cty, qual_dom in *.
+    cbn [context_ty_lvars context_ty_lvars_at] in *.
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφx.
+  }
+  2:{
+    unfold fv_cty, qual_dom in *.
+    cbn [context_ty_lvars context_ty_lvars_at] in *.
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφr.
   }
   subst Σg.
   change (relevant_env Σ
@@ -1070,36 +1070,36 @@ Proof.
   }
   2:{
     unfold fv_cty, qual_dom in *.
-      cbn [context_ty_lvars context_ty_lvars_at] in *.
-      rewrite lvars_fv_lvars_at_depth.
-      exact Hfφr.
+    cbn [context_ty_lvars context_ty_lvars_at] in *.
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφr.
   }
-  eapply (res_models_formula_eq_local mf
-    (wand_value_denote_gas_with ty_denote_gas gas_tgt
-      (<[LVFree f := erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))]>
-        (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e))
-      (CTOver bx φx) (CTUnder br φr) (tret (vfvar f)))
+  change (mf ⊨
     ((wand_value_denote_gas_with ty_denote_gas gas_tgt
       (typed_lty_env_bind
         (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e)
         (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))))
       (cty_shift 0 (CTOver bx φx)) (cty_shift 1 (CTUnder br φr))
       (tret (vbvar 0)) ^^ f)%formula)).
-  {
-    symmetry.
-    apply formula_open_result_first_wand_value_ret_bvar0.
-    - apply relevant_env_closed. exact HΣclosed.
-    - exact HfΣg.
-    - exact Hlc_over.
-    - exact Hlc_res.
-    - unfold fv_cty, qual_dom in *.
-      cbn [context_ty_lvars context_ty_lvars_at] in *.
-      rewrite lvars_fv_lvars_at_depth.
-      exact Hfφx.
-    - unfold fv_cty, qual_dom in *.
-      cbn [context_ty_lvars context_ty_lvars_at] in *.
-      rewrite lvars_fv_lvars_at_depth.
-      exact Hfφr.
+  rewrite (formula_open_result_first_wand_value_ret_bvar0
+    gas_tgt (relevant_env Σ (CTWand (CTOver bx φx) (CTUnder br φr)) e)
+    (CTOver bx φx) (CTUnder br φr)
+    (erase_ty (CTWand (CTOver bx φx) (CTUnder br φr))) f).
+  2:{ apply relevant_env_closed. exact HΣclosed. }
+  2:{ exact HfΣg. }
+  2:{ exact Hlc_over. }
+  2:{ exact Hlc_res. }
+  2:{
+    unfold fv_cty, qual_dom in *.
+    cbn [context_ty_lvars context_ty_lvars_at] in *.
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφx.
+  }
+  2:{
+    unfold fv_cty, qual_dom in *.
+    cbn [context_ty_lvars context_ty_lvars_at] in *.
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφr.
   }
   subst Σg.
   change (relevant_env Σ
