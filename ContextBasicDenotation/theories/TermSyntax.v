@@ -418,6 +418,50 @@ Proof.
     cbn [fv_tm]. apply elem_of_union_r. exact Ha.
 Qed.
 
+Lemma elem_of_fv_tm_open_fvar e z k a :
+  a ∈ fv_tm (open_tm k (vfvar z) e) ->
+  a ∈ {[z]} ∪ fv_tm e.
+Proof.
+  intros Ha.
+  pose proof (open_fv_tm e (vfvar z) k a Ha) as Hopen.
+  cbn [fv_value] in Hopen.
+  exact Hopen.
+Qed.
+
+Lemma fv_tm_open_fvar_subset e z k :
+  fv_tm (open_tm k (vfvar z) e) ⊆ {[z]} ∪ fv_tm e.
+Proof.
+  intros a Ha.
+  eapply elem_of_fv_tm_open_fvar. exact Ha.
+Qed.
+
+Lemma fv_tm_open_fvar_tlete_body_subset e1 e2 z k :
+  fv_tm (open_tm k (vfvar z) e2) ⊆ fv_tm (tlete e1 e2) ∪ {[z]}.
+Proof.
+  intros a Ha.
+  pose proof (elem_of_fv_tm_open_fvar e2 z k a Ha) as Hopen.
+  apply elem_of_union in Hopen as [Hz|He2].
+  - apply elem_of_union_r. exact Hz.
+  - apply elem_of_union_l.
+    cbn [fv_tm]. apply elem_of_union_r. exact He2.
+Qed.
+
+Lemma fv_tm_tlete_left_subset e1 e2 :
+  fv_tm e1 ⊆ fv_tm (tlete e1 e2).
+Proof.
+  intros a Ha. cbn [fv_tm]. apply elem_of_union_l. exact Ha.
+Qed.
+
+Lemma notin_fv_tm_tlete e1 e2 z :
+  z ∉ fv_tm e1 ->
+  z ∉ fv_tm e2 ->
+  z ∉ fv_tm (tlete e1 e2).
+Proof.
+  intros Hze1 Hze2 Hz.
+  cbn [fv_tm] in Hz.
+  apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].
+Qed.
+
 Lemma open_tm_shift0_lc y e :
   lc_tm e ->
   open_tm 0 (vfvar y) (tm_shift 0 e) = e.

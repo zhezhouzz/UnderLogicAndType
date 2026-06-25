@@ -159,6 +159,20 @@ Current Remaining Exact Duplicates After Round 6
   `context_ty_wf_formula_const_*_empty` lemmas. Consider a focused normalized
   guard helper if this file becomes slow again.
 
+Round 7: TLet FV syntax facts.
+
+- Moved the TLet/open FV facts from local denotation helpers to
+  `ContextBasicDenotation.TermSyntax`.
+- `TypeEquivTermTLet` now reuses:
+  - `elem_of_fv_tm_open_fvar`
+  - `fv_tm_open_fvar_subset`
+  - `fv_tm_open_fvar_tlete_body_subset`
+  - `fv_tm_tlete_left_subset`
+  - `notin_fv_tm_tlete`
+- This is a bottom-layer lowering rather than a duplicate merge: the facts are
+  general term-syntax lemmas and should not live in a denotation transport
+  file.
+
 Deferred Candidates
 -------------------
 

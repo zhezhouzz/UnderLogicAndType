@@ -3,47 +3,10 @@
     TLet-specific term fiber/result-extension support. *)
 
 From Denotation Require Import Notation TypeDenote TypeEquivCore DenotationSetMapFacts TypeEquivTermBase TypeEquivTermResult.
+From ContextBasicDenotation Require Import TermSyntax.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
-
-Local Lemma fv_tm_open_fvar_tlete_body_subset e1 e2 z k :
-  fv_tm (open_tm k (vfvar z) e2) ⊆ fv_tm (tlete e1 e2) ∪ {[z]}.
-Proof.
-  intros a Ha.
-  pose proof (open_fv_tm e2 (vfvar z) k a Ha) as Hopen.
-  cbn [fv_value] in Hopen.
-  apply elem_of_union in Hopen as [Hz|He2].
-  - apply elem_of_union_r. exact Hz.
-  - apply elem_of_union_l.
-    cbn [fv_tm]. apply elem_of_union_r. exact He2.
-Qed.
-
-Local Lemma fv_tm_tlete_left_subset e1 e2 :
-  fv_tm e1 ⊆ fv_tm (tlete e1 e2).
-Proof.
-  intros a Ha. cbn [fv_tm]. apply elem_of_union_l. exact Ha.
-Qed.
-
-Local Lemma notin_fv_tm_tlete e1 e2 z :
-  z ∉ fv_tm e1 ->
-  z ∉ fv_tm e2 ->
-  z ∉ fv_tm (tlete e1 e2).
-Proof.
-  intros Hze1 Hze2 Hz.
-  cbn [fv_tm] in Hz.
-  apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].
-Qed.
-
-Local Lemma elem_of_fv_tm_open_fvar e z k a :
-  a ∈ fv_tm (open_tm k (vfvar z) e) ->
-  a ∈ {[z]} ∪ fv_tm e.
-Proof.
-  intros Ha.
-  pose proof (open_fv_tm e (vfvar z) k a Ha) as Hopen.
-  cbn [fv_value] in Hopen.
-  exact Hopen.
-Qed.
 
 Local Lemma tlet_fresh_for_parts
     (σ : StoreT) e1 e2 X x z :
