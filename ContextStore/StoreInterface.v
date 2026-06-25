@@ -109,7 +109,7 @@ Proof.
   intros Hx.
   rewrite !lstore_to_store_lookup.
   destruct ((s : gmap logic_var V) !! LVFree x) as [v|] eqn:Hs.
-  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hx].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hs Hx).
   - apply storeA_restrict_lookup_none_l. exact Hs.
 Qed.
 
@@ -121,7 +121,7 @@ Proof.
   intros Hk.
   rewrite !lstore_bound_part_lookup.
   destruct ((s : gmap logic_var V) !! LVBound k) as [v|] eqn:Hs.
-  - apply storeA_restrict_lookup_some_2; [exact Hs|exact Hk].
+  - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hs Hk).
   - apply storeA_restrict_lookup_none_l. exact Hs.
 Qed.
 
@@ -592,7 +592,7 @@ Proof.
            { apply storeA_restrict_lookup_none_r. set_solver. }
            destruct ((ρ : LStore) !! LVFree x) as [v|] eqn:Hlook.
            ++ symmetry. apply map_lookup_union_Some_raw. right. split; [exact Hleft|].
-              apply storeA_restrict_lookup_some_2; [exact Hlook|exact HzD].
+              apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook HzD).
            ++ symmetry. apply map_lookup_union_None. split; [exact Hleft|].
               apply storeA_restrict_lookup_none_l. exact Hlook.
     + rewrite lookup_union_r.

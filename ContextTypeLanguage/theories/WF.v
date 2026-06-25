@@ -224,12 +224,12 @@ Proof.
     cbn [cty_lc_at cty_open cty_shift open_one open_cty_atom_inst];
     intros Hlc Hx.
   - f_equal.
-    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    apply (qual_open_shift_from_lc_fresh _ _ _ Hlc).
     unfold fv_cty, context_ty_lvars, qual_dom in Hx.
     cbn [context_ty_lvars_at] in Hx.
     rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
   - f_equal.
-    apply qual_open_shift_from_lc_fresh; [exact Hlc|].
+    apply (qual_open_shift_from_lc_fresh _ _ _ Hlc).
     unfold fv_cty, context_ty_lvars, qual_dom in Hx.
     cbn [context_ty_lvars_at] in Hx.
     rewrite lvars_fv_lvars_at_depth in Hx. exact Hx.
@@ -327,7 +327,7 @@ Proof.
     apply HD.
     apply Hvars.
     rewrite lvars_at_depth_elem.
-    exists (LVBound k). split; [apply lvars_bv_elem; exact Hk|].
+    exists (LVBound k). split; [rewrite <- lvars_bv_elem; exact Hk|].
     cbn [logic_var_at_depth].
     rewrite decide_True by lia.
     reflexivity.
@@ -338,7 +338,7 @@ Proof.
     apply HD.
     apply Hvars.
     rewrite lvars_at_depth_elem.
-    exists (LVBound k). split; [apply lvars_bv_elem; exact Hk|].
+    exists (LVBound k). split; [rewrite <- lvars_bv_elem; exact Hk|].
     cbn [logic_var_at_depth].
     rewrite decide_True by lia.
     reflexivity.
@@ -397,7 +397,7 @@ Proof.
   intros [v [Hv Hdepth]].
   destruct v as [n|x]; cbn [logic_var_at_depth] in Hdepth.
   - destruct (decide (d <= n)) as [Hdn|Hdn]; [|discriminate].
-    exfalso. specialize (Hlc n ltac:(apply lvars_bv_elem; exact Hv)).
+    exfalso. specialize (Hlc n ltac:(rewrite lvars_bv_elem; exact Hv)).
     lia.
   - discriminate.
 Qed.
@@ -520,7 +520,7 @@ Proof.
       pose proof (cty_lc_at_lvars_bv_empty d τ
         (wf_context_ty_at_lc d D τ Hwf)) as Hbv.
       assert (k ∈ lvars_bv (context_ty_lvars_at d τ)) as Hk
-        by (apply lvars_bv_elem; exact Hv).
+        by (rewrite lvars_bv_elem; exact Hv).
       rewrite Hbv in Hk. set_solver.
     + unfold lvars_of_atoms. apply elem_of_map.
       exists x. split; [reflexivity|].

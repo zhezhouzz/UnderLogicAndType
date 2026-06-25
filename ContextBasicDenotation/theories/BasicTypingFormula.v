@@ -5,8 +5,7 @@
     wrapper sugar is intentionally avoided on the new route. *)
 
 From CoreLang Require Import LocallyNamelessExtra.
-From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermEval
-  TermOpen TermTLet.
+From ContextBasicDenotation Require Import Notation StoreTyping TermSyntax TermOpen.
 From ContextBase Require Import BaseTactics.
 From ContextLogic Require Import FormulaConnectives.
 From ContextQualifier Require Import Qualifier.
@@ -91,13 +90,15 @@ Combined Scheme basic_has_ltype_mutind
 
 Hint Constructors basic_value_has_ltype basic_tm_has_ltype : core.
 
-Lemma basic_tm_has_ltype_lvars Σ e T :
-  basic_tm_has_ltype Σ e T ->
-  lvars_of_atoms (fv_tm e) ⊆ dom Σ.
+Lemma basic_has_ltype_lvars_mutual :
+  (forall Σ v T,
+    basic_value_has_ltype Σ v T ->
+    lvars_of_atoms (fv_value v) ⊆ dom Σ) /\
+  (forall Σ e T,
+    basic_tm_has_ltype Σ e T ->
+    lvars_of_atoms (fv_tm e) ⊆ dom Σ).
 Proof.
-  induction 1 using basic_tm_has_ltype_ind'
-    with (P := fun Σ v T _ => lvars_of_atoms (fv_value v) ⊆ dom Σ);
-    cbn [fv_value fv_tm]; try set_solver.
+  apply basic_has_ltype_mutind; cbn [fv_value fv_tm]; intros; try set_solver.
   - match goal with
     | Hlook : _ !! _ = Some _ |- _ =>
         apply elem_of_dom_2 in Hlook; set_solver
@@ -172,7 +173,9 @@ Proof.
     unfold lvars_of_atoms in Hv.
     apply elem_of_map in Hv as [a [-> Ha]].
     apply elem_of_union in Ha as [Ha|Ha].
-    + apply IHbasic_tm_has_ltype.
+    + match goal with
+      | IH : lvars_of_atoms (fv_tm _) ⊆ dom Σ |- _ => apply IH
+      end.
       unfold lvars_of_atoms. apply elem_of_map.
       exists a. split; [reflexivity|exact Ha].
     + apply lvars_fv_elem.
@@ -184,6 +187,20 @@ Proof.
       * apply elem_of_difference in HaΣ as [HaΣ _]. exact HaΣ.
       * destruct (decide (0 ∈ lvars_bv (dom (typed_lty_env_bind Σ T1))));
           set_solver.
+Qed.
+
+Lemma basic_value_has_ltype_lvars Σ v T :
+  basic_value_has_ltype Σ v T ->
+  lvars_of_atoms (fv_value v) ⊆ dom Σ.
+Proof.
+  exact (proj1 basic_has_ltype_lvars_mutual Σ v T).
+Qed.
+
+Lemma basic_tm_has_ltype_lvars Σ e T :
+  basic_tm_has_ltype Σ e T ->
+  lvars_of_atoms (fv_tm e) ⊆ dom Σ.
+Proof.
+  exact (proj2 basic_has_ltype_lvars_mutual Σ e T).
 Qed.
 
 Lemma lty_env_open_one_mono k x (Σ Σ' : lty_env) :
@@ -433,7 +450,7 @@ Proof.
   apply storeA_restrict_lookup_some in Hlook as [HvD Hlook].
   destruct v as [k|z].
   - exfalso.
-    assert (k ∈ lvars_bv Dbody) by (apply lvars_bv_elem; exact HvD).
+    assert (k ∈ lvars_bv Dbody) by (rewrite lvars_bv_elem; exact HvD).
     rewrite Hbv in H. set_solver.
   - destruct (decide (z = x)) as [->|Hzx].
     + rewrite lty_env_open_one_typed_bind_lookup_current.
@@ -441,7 +458,7 @@ Proof.
       inversion Hlook. reflexivity.
     + rewrite lty_env_open_one_typed_bind_lookup_free_ne by exact Hzx.
       rewrite lty_env_open_one_typed_bind_lookup_free_ne in Hlook by exact Hzx.
-      apply storeA_restrict_lookup_some_2; [exact Hlook|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook).
       assert (HzD : LVFree z ∈ D).
       {
         specialize (Hsub _ HvD).
@@ -470,7 +487,7 @@ Proof.
   - constructor.
     match goal with
     | Hlook : ?Σ !! LVFree ?x = Some ?T |- _ =>
-        apply storeA_restrict_lookup_some_2; [exact Hlook|]
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook)
     end.
     match goal with
     | Hsub : value_lvars (vfvar _) ⊆ _ |- _ =>

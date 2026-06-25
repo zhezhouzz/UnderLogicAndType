@@ -2,77 +2,10 @@
 
     Projected result transport and typed-fiber projection helpers. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm TypeEquivFiberBaseCore TypeEquivFiberBaseResult.
+From Denotation Require Import Notation DenotationSetMapFacts TypeDenote TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseCore.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
-
-Local Lemma wfworld_eq_by_dom_stores (m n : WfWorldT) :
-  world_dom (m : WorldT) = world_dom (n : WorldT) ->
-  (forall σ, (m : WorldT) σ <-> (n : WorldT) σ) ->
-  m = n.
-Proof.
-  intros Hdom Hstores.
-  apply wfworldA_ext. apply worldA_ext; assumption.
-Qed.
-
-Local Lemma store_restrict_eq_lookup_in
-    (σ1 σ2 : StoreT) X a :
-  a ∈ X ->
-  store_restrict σ1 X = store_restrict σ2 X ->
-  σ1 !! a = σ2 !! a.
-Proof.
-  intros Ha Heq.
-  destruct (σ1 !! a) as [v1|] eqn:H1.
-  - assert (Hlook :
-      (store_restrict σ2 X : StoreT) !! a = Some v1).
-    { rewrite <- Heq. apply storeA_restrict_lookup_some_2; assumption. }
-    apply storeA_restrict_lookup_some in Hlook as [_ H2].
-    symmetry. exact H2.
-  - destruct (σ2 !! a) as [v2|] eqn:H2; [|reflexivity].
-    assert (Hlook :
-      (store_restrict σ1 X : StoreT) !! a = Some v2).
-    { rewrite Heq. apply storeA_restrict_lookup_some_2; assumption. }
-    apply storeA_restrict_lookup_some in Hlook as [_ H1'].
-    exfalso. eapply eq_None_not_Some; eauto.
-Qed.
-
-Local Lemma store_restrict_obs_result_eq
-    (σv σbase σbig : StoreT) Dsmall Dobs Xbase y v :
-  Dobs ⊆ Dsmall ->
-  lvars_fv Dobs ⊆ Xbase ->
-  store_restrict σv (lvars_fv Dsmall) =
-    store_restrict σbase (lvars_fv Dsmall) ->
-  store_restrict σbase Xbase =
-    store_restrict σbig Xbase ->
-  σv !! y = Some v ->
-  σbig !! y = Some v ->
-  store_restrict σv (lvars_fv Dobs ∪ {[y]}) =
-    store_restrict σbig (lvars_fv Dobs ∪ {[y]}).
-Proof.
-  intros HDobs Hobs_base Hv_base Hbase_big Hyv Hybig.
-  apply storeA_map_eq. intros a.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [Ha|Ha].
-  2:{
-    rewrite !storeA_restrict_lookup_none_r by exact Ha.
-    reflexivity.
-  }
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (a ∈ lvars_fv Dobs ∪ {[y]})) as [_|Hbad];
-    [|contradiction].
-  apply elem_of_union in Ha as [HaD|Hay].
-  - assert (Ha_small : a ∈ lvars_fv Dsmall).
-    {
-      apply lvars_fv_elem. apply HDobs.
-      apply lvars_fv_elem. exact HaD.
-    }
-    assert (Ha_base : a ∈ Xbase) by set_solver.
-    transitivity ((σbase : StoreT) !! a).
-    + eapply store_restrict_eq_lookup_in; [exact Ha_small|exact Hv_base].
-    + eapply store_restrict_eq_lookup_in; [exact Ha_base|exact Hbase_big].
-  - apply elem_of_singleton in Hay as ->.
-    transitivity (Some v); [exact Hyv|symmetry; exact Hybig].
-Qed.
 
 Lemma expr_result_formula_at_projection_eq_of_domains
     Dsmall Dbig Dobs e y (m my_small my_big : WfWorldT) :
@@ -228,7 +161,6 @@ Lemma expr_result_formula_at_refine_domain_projected
   Dobs ⊆ Dsmall ->
   lc_lvars Dbig ->
   tm_lvars e ⊆ Dsmall ->
-  LVFree y ∉ Dbig ->
   y ∉ world_dom (m : WorldT) ->
   lvars_fv Dbig ⊆ world_dom (m : WorldT) ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -242,9 +174,14 @@ Lemma expr_result_formula_at_refine_domain_projected
     res_restrict my_big (lvars_fv Dobs ∪ {[y]}) =
     res_restrict my (lvars_fv Dobs ∪ {[y]}).
 Proof.
-  intros Hsmall_big Hobs_small Hlc_big He_small Hy_big Hy_m Hbig_dom
+  intros Hsmall_big Hobs_small Hlc_big He_small Hy_m Hbig_dom
     Hdom_my Hbase_my Htotal Hsmall.
   assert (He_big : tm_lvars e ⊆ Dbig) by set_solver.
+  assert (Hy_big : LVFree y ∉ Dbig).
+  {
+    intros HyD. apply Hy_m. apply Hbig_dom.
+    apply lvars_fv_elem. exact HyD.
+  }
   assert (Hfv_big : fv_tm e ⊆ lvars_fv Dbig).
   {
     intros a Ha. apply lvars_fv_elem. apply He_big.
@@ -295,11 +232,7 @@ Qed.
 
 Lemma expr_result_formula_at_projection_eq_of_fiber_equiv
     D e_src e_tgt y (m my_src my_tgt : WfWorldT) :
-  lc_lvars (D ∪ tm_lvars e_src) ->
-  lc_lvars (D ∪ tm_lvars e_tgt) ->
   LVFree y ∉ D ∪ tm_lvars e_src ∪ tm_lvars e_tgt ->
-  lvars_fv (D ∪ tm_lvars e_src) ⊆ world_dom (m : WorldT) ->
-  lvars_fv (D ∪ tm_lvars e_tgt) ⊆ world_dom (m : WorldT) ->
   world_dom (my_src : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
   res_restrict my_src (world_dom (m : WorldT)) = m ->
   world_dom (my_tgt : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -310,15 +243,59 @@ Lemma expr_result_formula_at_projection_eq_of_fiber_equiv
   res_restrict my_tgt (lvars_fv D ∪ {[y]}) =
   res_restrict my_src (lvars_fv D ∪ {[y]}).
 Proof.
-  intros Hlc_src Hlc_tgt HyD Hsrc_world Htgt_world
-    Hdom_src Hbase_src Hdom_tgt Hbase_tgt Hfib Hsrc Htgt.
+  intros HyD Hdom_src Hbase_src Hdom_tgt Hbase_tgt Hfib Hsrc Htgt.
   set (Dsrc := D ∪ tm_lvars e_src).
   set (Dtgt := D ∪ tm_lvars e_tgt).
   set (S := lvars_fv D ∪ {[y]}).
+  pose proof Hsrc as Hsrc_info.
+  unfold expr_result_formula_at in Hsrc_info.
+  apply res_models_FFibVars_iff in Hsrc_info
+    as [Hscope_src [Hlc_src _]].
+  pose proof Htgt as Htgt_info.
+  unfold expr_result_formula_at in Htgt_info.
+  apply res_models_FFibVars_iff in Htgt_info
+    as [Hscope_tgt [Hlc_tgt _]].
   assert (He_src : tm_lvars e_src ⊆ Dsrc) by (subst Dsrc; set_solver).
   assert (He_tgt : tm_lvars e_tgt ⊆ Dtgt) by (subst Dtgt; set_solver).
   assert (Hy_src : LVFree y ∉ Dsrc) by (subst Dsrc Dtgt; set_solver).
   assert (Hy_tgt : LVFree y ∉ Dtgt) by (subst Dsrc Dtgt; set_solver).
+  assert (Hsrc_world : lvars_fv Dsrc ⊆ world_dom (m : WorldT)).
+  {
+    intros a Ha.
+    assert (Ha_src : a ∈ world_dom (my_src : WorldT)).
+    {
+      apply Hscope_src.
+      change (a ∈ formula_fv
+        (expr_result_formula_at Dsrc e_src (LVFree y))).
+      rewrite formula_fv_expr_result_formula_at.
+      apply elem_of_union_l. exact Ha.
+    }
+    rewrite Hdom_src in Ha_src.
+    apply elem_of_union in Ha_src as [Ha_m|Ha_y]; [exact Ha_m|].
+    apply elem_of_singleton in Ha_y. subst a.
+    exfalso. apply HyD.
+    subst Dsrc. apply elem_of_union_l.
+    apply lvars_fv_elem. exact Ha.
+  }
+  assert (Htgt_world : lvars_fv Dtgt ⊆ world_dom (m : WorldT)).
+  {
+    intros a Ha.
+    assert (Ha_tgt : a ∈ world_dom (my_tgt : WorldT)).
+    {
+      apply Hscope_tgt.
+      change (a ∈ formula_fv
+        (expr_result_formula_at Dtgt e_tgt (LVFree y))).
+      rewrite formula_fv_expr_result_formula_at.
+      apply elem_of_union_l. exact Ha.
+    }
+    rewrite Hdom_tgt in Ha_tgt.
+    apply elem_of_union in Ha_tgt as [Ha_m|Ha_y]; [exact Ha_m|].
+    apply elem_of_singleton in Ha_y. subst a.
+    exfalso. apply HyD.
+    subst Dtgt.
+    apply lvars_fv_elem in Ha.
+    set_solver.
+  }
   assert (HDm : lvars_fv D ⊆ world_dom (m : WorldT)).
   {
     intros a Ha. apply Hsrc_world.
@@ -388,8 +365,8 @@ Proof.
 	      transitivity (store_restrict τtgt (lvars_fv D ∪ {[y]})).
 	      * eapply (store_restrict_obs_result_eq
 	          τsrc τpre τtgt D D (lvars_fv D) y v).
-	        -- set_solver.
-	        -- set_solver.
+	        -- intros a Ha. exact Ha.
+	        -- intros a Ha. exact Ha.
 	        -- eapply storeA_restrict_eq_mono; [|exact HτsrcD].
 	           subst Dsrc. rewrite lvars_fv_union. set_solver.
 	        -- transitivity (store_restrict σsrc (lvars_fv D)).
@@ -475,8 +452,8 @@ Proof.
 	      transitivity (store_restrict τsrc (lvars_fv D ∪ {[y]})).
 	      * eapply (store_restrict_obs_result_eq
 	          τtgt τpre τsrc D D (lvars_fv D) y v).
-	        -- set_solver.
-	        -- set_solver.
+	        -- intros a Ha. exact Ha.
+	        -- intros a Ha. exact Ha.
 	        -- eapply storeA_restrict_eq_mono; [|exact HτtgtD].
 	           subst Dtgt. rewrite lvars_fv_union. set_solver.
 	        -- transitivity (store_restrict σtgt (lvars_fv D)).
@@ -625,8 +602,6 @@ Proof.
 	  split; [exact Hres_tgt|].
 	  eapply (expr_result_formula_at_projection_eq_of_fiber_equiv
 	    D e_src e_tgt y m my_src my_tgt).
-	  - change (lc_lvars Dsrc). exact Hlc_src.
-	  - change (lc_lvars Dtgt). exact Hlc_tgt.
 	  - intros Hybad. apply Hy.
 	    apply elem_of_union in Hybad as [Hybad|HyT].
 	    apply elem_of_union in Hybad as [HyD|HyS].
@@ -635,10 +610,6 @@ Proof.
 	      clear -HyS. set_solver.
 	    + apply lvars_fv_elem in HyT. rewrite tm_lvars_fv in HyT.
 	      clear -HyT. set_solver.
-	  - change (lvars_fv Dsrc ⊆ world_dom (m : WorldT)).
-	    exact Hsrc_world.
-	  - change (lvars_fv Dtgt ⊆ world_dom (m : WorldT)).
-	    exact Htgt_world.
 	  - exact Hdom_src.
 	  - exact Hbase_src.
 	  - exact Hdom_tgt.
@@ -710,7 +681,6 @@ Proof.
     ltac:(set_solver)
     Hlc_src_big
     ltac:(set_solver)
-    Hy_src_big
     Hy_m
     Hsrc_big_world
     Hdom_src
@@ -743,8 +713,11 @@ Proof.
       (Dsmall ∪ tm_lvars e_tgt)
       (Dbig ∪ tm_lvars e_tgt)
       e_tgt y my_tgt).
-    + set_solver.
-    + set_solver.
+    + intros a Ha.
+      apply elem_of_union in Ha as [Ha|Ha].
+      * apply elem_of_union_l. exact (Hsmall_big a Ha).
+      * apply elem_of_union_r. exact Ha.
+    + intros a Ha. apply elem_of_union_r. exact Ha.
     + exact Hy_tgt_big.
     + exact Hres_tgt_big.
   - transitivity

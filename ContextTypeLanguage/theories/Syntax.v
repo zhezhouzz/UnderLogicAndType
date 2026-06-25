@@ -518,6 +518,16 @@ Proof.
   apply context_ty_lvars_fv_at.
 Qed.
 
+Lemma context_ty_lvars_free_notin_of_fv x τ :
+  x ∉ fv_cty τ ->
+  LVFree x ∉ context_ty_lvars τ.
+Proof.
+  intros Hx Hbad.
+  apply lvars_fv_elem in Hbad.
+  rewrite context_ty_lvars_fv in Hbad.
+  exact (Hx Hbad).
+Qed.
+
 Lemma context_ty_lvars_over_fv b q :
   lvars_fv (context_ty_lvars (CTOver b q)) = qual_dom q.
 Proof.

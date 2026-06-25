@@ -418,6 +418,50 @@ Proof.
     cbn [fv_tm]. apply elem_of_union_r. exact Ha.
 Qed.
 
+Lemma elem_of_fv_tm_open_fvar e z k a :
+  a ∈ fv_tm (open_tm k (vfvar z) e) ->
+  a ∈ {[z]} ∪ fv_tm e.
+Proof.
+  intros Ha.
+  pose proof (open_fv_tm e (vfvar z) k a Ha) as Hopen.
+  cbn [fv_value] in Hopen.
+  exact Hopen.
+Qed.
+
+Lemma fv_tm_open_fvar_subset e z k :
+  fv_tm (open_tm k (vfvar z) e) ⊆ {[z]} ∪ fv_tm e.
+Proof.
+  intros a Ha.
+  eapply elem_of_fv_tm_open_fvar. exact Ha.
+Qed.
+
+Lemma fv_tm_open_fvar_tlete_body_subset e1 e2 z k :
+  fv_tm (open_tm k (vfvar z) e2) ⊆ fv_tm (tlete e1 e2) ∪ {[z]}.
+Proof.
+  intros a Ha.
+  pose proof (elem_of_fv_tm_open_fvar e2 z k a Ha) as Hopen.
+  apply elem_of_union in Hopen as [Hz|He2].
+  - apply elem_of_union_r. exact Hz.
+  - apply elem_of_union_l.
+    cbn [fv_tm]. apply elem_of_union_r. exact He2.
+Qed.
+
+Lemma fv_tm_tlete_left_subset e1 e2 :
+  fv_tm e1 ⊆ fv_tm (tlete e1 e2).
+Proof.
+  intros a Ha. cbn [fv_tm]. apply elem_of_union_l. exact Ha.
+Qed.
+
+Lemma notin_fv_tm_tlete e1 e2 z :
+  z ∉ fv_tm e1 ->
+  z ∉ fv_tm e2 ->
+  z ∉ fv_tm (tlete e1 e2).
+Proof.
+  intros Hze1 Hze2 Hz.
+  cbn [fv_tm] in Hz.
+  apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].
+Qed.
+
 Lemma open_tm_shift0_lc y e :
   lc_tm e ->
   open_tm 0 (vfvar y) (tm_shift 0 e) = e.
@@ -949,7 +993,7 @@ Proof.
     + symmetry.
       replace ((σf : gmap atom value) !! x) with (Some v)
         by (symmetry; exact Hlook).
-      apply storeA_restrict_lookup_some_2; [exact Hlook|exact Hx].
+  apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlook Hx).
     + symmetry.
       replace ((σf : gmap atom value) !! x) with (@None value)
         by (symmetry; exact Hlook).
@@ -1111,5 +1155,41 @@ Proof.
   rewrite lstore_bound_part_empty_of_lc by exact Hlc.
   apply lstore_instantiate_tm_split_empty_bound. exact Hclosed.
 Qed.
+
+Lemma match_left_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm et ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof.
+  intros ->.
+  cbn [fv_tm fv_value].
+  repeat split; better_set_solver.
+Qed.
+
+Lemma match_right_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm ef ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof.
+  intros ->.
+  cbn [fv_tm fv_value].
+  repeat split; better_set_solver.
+Qed.
+
+Lemma soundness_match_left_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm et ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof. apply match_left_observation_facts. Qed.
+
+Lemma soundness_match_right_observation_facts x et ef X :
+  X = fv_tm (tmatch (vfvar x) et ef) ->
+  fv_tm ef ⊆ X /\
+  fv_tm (tmatch (vfvar x) et ef) ⊆ X /\
+  x ∈ X.
+Proof. apply match_right_observation_facts. Qed.
 
 End TermDenotation.

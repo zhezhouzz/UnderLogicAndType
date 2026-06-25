@@ -5,73 +5,20 @@
 From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import
   TypeEquivCore
-  TypeEquivTerm
+  TypeEquivTermBase TypeEquivTermResult
   TypeEquivFiberTransport
-  TypeEquivFiberBase
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivBody
   TypeEquivArrow
   ResultFirstOpen
-  TypeEquivArrowResultFirst
+  TypeEquivArrow
   TypeEquivWand
-  TypeEquivWandResultFirst
+  TypeEquivWand
   TypeEquivTLet
-  TypeEquivTLetFormula.
+  TypeEquivTLet.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
-
-Local Lemma type_equiv_lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
-Qed.
-
-Local Lemma type_equiv_lvars_lc_at_zero_of_lc D :
-  lc_lvars D ->
-  lvars_lc_at 0 D.
-Proof.
-  intros Hlc k Hk.
-  rewrite lvars_bv_elem in Hk.
-  exfalso. exact (Hlc (LVBound k) Hk).
-Qed.
-
-Lemma result_first_outer_result_ret_value_at
-    (Σ : lty_env) τ vf z (m : WfWorldT) :
-  lty_env_closed Σ ->
-  lc_value vf ->
-  z ∉ fv_value vf ->
-  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z).
-Proof.
-  apply result_first_outer_ret_value_at.
-Qed.
-
-Lemma result_first_outer_result_ret_value_at_open
-    (Σ : lty_env) τ vf z (m : WfWorldT) :
-  lty_env_closed Σ ->
-  lc_value vf ->
-  z ∉ fv_value vf ->
-  z ∉ lvars_fv (dom (relevant_env Σ τ (tret vf))) ->
-  m ⊨ expr_result_formula_at
-    (dom (relevant_env Σ τ (tret vf))) (tret vf) (LVFree z) ->
-  m ⊨ formula_open 0 z
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ τ (tret vf))))
-      (tm_shift 0 (tret vf)) (LVBound 0)).
-Proof.
-  apply result_first_outer_ret_value_at_open.
-Qed.
 
 Lemma ty_static_guard_relevant_of_full
     (Σ : lty_env) τ e (m : WfWorldT) :
@@ -314,7 +261,7 @@ Proof.
                 change (a ∈ dom (σe : gmap atom value)).
                 apply elem_of_dom. exists u.
                 subst σe.
-                apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha].
+                apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa Ha).
               }
               eapply basic_tm_eval_value_type; eauto.
            ++ rewrite lookup_insert_ne in HΣins by congruence.
@@ -501,7 +448,7 @@ Proof.
     apply res_models_and_iff. split; [exact Hbasic|exact Htotal_vx].
   }
   pose proof (ty_denote_gas_result_alias_guard
-    Σ τ (tret vx) z m HΣclosed Hlookup Hres Hguard_vx)
+    Σ τ (tret vx) z m Hlookup Hguard_vx)
     as Hguard_z.
   unfold ty_static_guard_formula.
   repeat rewrite res_models_and_iff in Hguard_z.
@@ -606,10 +553,32 @@ Proof.
     [eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].
 Qed.
 
+Lemma ty_static_guard_context_wf
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ context_ty_wf_formula Σ τ.
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic.
+  repeat rewrite res_models_and_iff in Hstatic.
+  tauto.
+Qed.
+
 Lemma ty_static_guard_basic_world
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
   m ⊨ basic_world_formula Σ.
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic.
+  repeat rewrite res_models_and_iff in Hstatic.
+  tauto.
+Qed.
+
+Lemma ty_static_guard_basic_typing
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ expr_basic_typing_formula Σ e (erase_ty τ).
 Proof.
   intros Hstatic.
   unfold ty_static_guard_formula in Hstatic.
@@ -864,20 +833,7 @@ Proof.
     eapply tm_equiv_total.
     - exact Htotal_src_tgt.
     - apply lc_tapp_tm; [constructor; exact Hvf|constructor].
-    - intros a Ha.
-      pose proof Hstatic_tgt as Hstatic_parts.
-      unfold ty_static_guard_formula in Hstatic_parts.
-      repeat rewrite res_models_and_iff in Hstatic_parts.
-      destruct Hstatic_parts as [_ [Hworld_t Hbasic_t]].
-      apply expr_basic_typing_formula_models_iff in Hbasic_t
-        as [_ [_ Hty_t]].
-      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_t) as Hfv_t.
-      apply basic_world_formula_models_iff in Hworld_t as [_ [Hscope_t _]].
-      apply Hscope_t.
-      apply lvars_fv_elem.
-      apply Hfv_t.
-      unfold lvars_of_atoms. apply elem_of_map.
-      exists a. split; [reflexivity|exact Ha].
+    - exact (ty_static_guard_fv_tm_subset _ _ _ _ Hstatic_tgt).
     - exact Htotal_src.
   }
   assert (Hzero_tgt :
@@ -941,10 +897,8 @@ Lemma ty_denote_gas_tapp_fun_result_alias_back_from_static
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
   intros HzΣ Hzfresh Hy Hvf Hres Hbasic_fun Hstatic Hsrc.
-  pose proof Hstatic as Hstatic_parts.
-  unfold ty_static_guard_formula in Hstatic_parts.
-  repeat rewrite res_models_and_iff in Hstatic_parts.
-  destruct Hstatic_parts as [Hwf [Hworld Hbasic_app]].
+  pose proof (ty_static_guard_context_wf _ _ _ _ Hstatic) as Hwf.
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic) as Hworld.
   assert (Hstatic_src :
       m ⊨ ty_static_guard_formula
         (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
@@ -992,9 +946,8 @@ Lemma ty_denote_gas_tapp_fun_result_alias_from_static
 Proof.
   intros HzΣ Hzfresh Hy Hvf Hres Hbasic_fun Hstatic Hsrc.
   pose proof Hstatic as Hstatic_src.
-  unfold ty_static_guard_formula in Hstatic.
-  repeat rewrite res_models_and_iff in Hstatic.
-  destruct Hstatic as [Hwf [Hworld Hbasic_app]].
+  pose proof (ty_static_guard_context_wf _ _ _ _ Hstatic) as Hwf.
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic) as Hworld.
   assert (Hclosed_src :
       wfworld_closed_on
         (fv_tm (tapp_tm (tret vf) (vfvar y))) m).
@@ -1268,7 +1221,7 @@ Proof.
 	          rewrite Hlookup in Hv. inversion Hv. subst T.
 	          apply map_lookup_insert.
         + rewrite lookup_insert_ne by congruence.
-          apply storeA_restrict_lookup_some_2; [exact Hv|].
+          apply (storeA_restrict_lookup_some_2 _ _ _ _ Hv).
           unfold relevant_lvars in Hvrel |- *.
           apply elem_of_union in Hvrel as [Hvτ|Hvxv].
           * apply elem_of_union_l. exact Hvτ.
@@ -1617,85 +1570,6 @@ Proof.
     (ty_denote_gas gas Σ τ e) Hfv_drop) Hden).
 Qed.
 
-Lemma ty_denote_gas_ret_fvar_relevant_lookup
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  Σ !! LVFree x = Some (erase_ty τ).
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [_ [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-  apply basic_tm_has_ltype_ret_fvar_lookup in Hty.
-  unfold relevant_env, lty_env_restrict_lvars in Hty.
-  apply storeA_restrict_lookup_some in Hty as [_ Hty].
-  exact Hty.
-Qed.
-
-Lemma ty_denote_gas_ret_fvar_lookup
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  Σ !! LVFree x = Some (erase_ty τ).
-Proof.
-  intros Hden.
-  eapply ty_denote_gas_ret_fvar_relevant_lookup. exact Hden.
-Qed.
-
-Lemma ty_denote_gas_ret_fvar_world_dom
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  x ∈ world_dom (m : WorldT).
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [Hworld [Hbasic _]]].
-  apply expr_basic_typing_formula_models_iff in Hbasic as [_ [_ Hty]].
-  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hty_lvars.
-  apply basic_world_formula_models_iff in Hworld as [_ [Hdom _]].
-  apply Hdom.
-  apply lvars_fv_elem.
-  apply Hty_lvars.
-  cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-  set_solver.
-Qed.
-
-Lemma ty_denote_gas_ret_fvar_basic_world_singleton
-    gas Σ τ x (m : WfWorldT) :
-  m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->
-  m ⊨ basic_world_formula
-    (<[LVFree x := erase_ty τ]> (∅ : lty_env)).
-Proof.
-  intros Hden.
-  pose proof (ty_denote_gas_guard_formula
-    gas Σ τ (tret (vfvar x)) m Hden) as Hguard.
-  unfold ty_guard_formula in Hguard.
-  repeat rewrite res_models_and_iff in Hguard.
-  destruct Hguard as [_ [Hworld [_ _]]].
-  pose proof (ty_denote_gas_ret_fvar_lookup gas Σ τ x m Hden)
-    as Hlookup.
-  eapply basic_world_formula_subenv; [|exact Hworld].
-  intros v T Hsmall.
-  destruct (decide (v = LVFree x)) as [->|Hvx].
-  - rewrite lookup_insert in Hsmall.
-    destruct (decide (LVFree x = LVFree x)) as [_|Hneq];
-      [|contradiction].
-    inversion Hsmall; subst.
-    unfold relevant_env, lty_env_restrict_lvars.
-    apply storeA_restrict_lookup_some_2.
-    + exact Hlookup.
-    + unfold relevant_lvars.
-      cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-      set_solver.
-  - rewrite lookup_insert_ne in Hsmall by (symmetry; exact Hvx).
-    rewrite lookup_empty in Hsmall. discriminate.
-Qed.
-
 Lemma ty_denote_ret_fvar_base_const
     gas Σ τ b x (m : WfWorldT) :
   erase_ty τ = TBase b ->
@@ -1799,6 +1673,91 @@ Proof.
     exists a. split; [reflexivity|exact Ha].
   - rewrite tm_lvars_fv.
     apply expr_result_extension_witness_to_on. exact HF.
+  - exact Hext.
+  - eapply expr_total_formula_to_atom_world. exact Htotal.
+Qed.
+
+Lemma expr_result_formula_at_env_of_result_extends_from_ty_guard_on
+    (Σ : lty_env) τ e x (m mx : WfWorldT) Fx :
+  expr_result_extension_witness_on (world_dom (m : WorldT)) e x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ ty_guard_formula Σ τ e ->
+  mx ⊨ expr_result_formula_at (dom Σ) e (LVFree x).
+Proof.
+  intros HF Hext Hguard.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic Htotal]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc Σ e (erase_ty τ) HlcΣ Hty) as Hlc_e.
+  pose proof (basic_tm_has_ltype_lvars Σ e (erase_ty τ) Hty) as He_lvars.
+  apply basic_world_formula_models_iff in Hworld as [HlcΣdom [HΣdom _]].
+  eapply expr_result_formula_at_of_result_extends_on_coarsen
+    with (X := world_dom (m : WorldT)) (F := Fx) (m := m).
+  - exact HlcΣdom.
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    exact He_lvars.
+  - unfold lvars_of_atoms.
+    intros v Hv.
+    destruct v as [k|a].
+    + exfalso. exact (HlcΣdom (LVBound k) Hv).
+    + apply elem_of_map. exists a. split; [reflexivity|].
+      apply HΣdom. apply lvars_fv_elem. exact Hv.
+  - unfold lvars_of_atoms.
+    intros Hx.
+    apply elem_of_map in Hx as [a [Ha HaD]].
+    inversion Ha. subst a.
+    apply (expr_result_extension_witness_on_fresh _ _ _ _ HF).
+    exact HaD.
+  - set_solver.
+  - exact HF.
+  - exact Hext.
+  - eapply expr_total_formula_to_atom_world. exact Htotal.
+Qed.
+
+Lemma expr_result_formula_of_result_extends_on_from_ty_guard
+    (Σ : lty_env) τ e x (m mx : WfWorldT) Fx :
+  expr_result_extension_witness_on (world_dom (m : WorldT)) e x Fx ->
+  res_extend_by m Fx mx ->
+  m ⊨ ty_guard_formula Σ τ e ->
+  mx ⊨ expr_result_formula e (LVFree x).
+Proof.
+  intros HF Hext Hguard.
+  unfold expr_result_formula.
+  unfold ty_guard_formula in Hguard.
+  repeat rewrite res_models_and_iff in Hguard.
+  destruct Hguard as [_ [Hworld [Hbasic Htotal]]].
+  apply expr_basic_typing_formula_models_iff in Hbasic
+    as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc Σ e (erase_ty τ) HlcΣ Hty) as Hlc_e.
+  pose proof (basic_tm_has_ltype_lvars Σ e (erase_ty τ) Hty) as He_lvars.
+  apply basic_world_formula_models_iff in Hworld as [_ [HΣdom _]].
+  eapply expr_result_formula_at_of_result_extends_on_coarsen
+    with (X := world_dom (m : WorldT)) (F := Fx) (m := m).
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    unfold lvars_of_atoms.
+    intros v Hv.
+    apply elem_of_map in Hv as [a [-> _]].
+    exact I.
+  - reflexivity.
+  - rewrite (tm_lvars_lc_eq_atoms e Hlc_e).
+    unfold lvars_of_atoms.
+    intros v Hv.
+    apply elem_of_map in Hv as [a [-> Ha]].
+    apply elem_of_map. exists a. split; [reflexivity|].
+    apply HΣdom. apply lvars_fv_elem.
+    apply He_lvars.
+    unfold lvars_of_atoms. apply elem_of_map.
+    exists a. split; [reflexivity|exact Ha].
+  - unfold lvars_of_atoms.
+    intros Hx.
+    apply elem_of_map in Hx as [a [Ha HaD]].
+    inversion Ha. subst a.
+    apply (expr_result_extension_witness_on_fresh _ _ _ _ HF).
+    exact HaD.
+  - set_solver.
+  - exact HF.
   - exact Hext.
   - eapply expr_total_formula_to_atom_world. exact Htotal.
 Qed.

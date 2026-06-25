@@ -136,17 +136,17 @@ Proof.
     apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
     apply elem_of_union in Hxy as [Hx|Hy].
     + eapply closed_env_lookup; [exact HXclosed|].
-      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup Hx).
     + eapply closed_env_lookup; [exact HYclosed|].
-      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup Hy).
   - unfold lc_env.
     apply map_Forall_lookup_2. intros x v Hlookup.
     apply storeA_restrict_lookup_some in Hlookup as [Hxy Hlookup].
     apply elem_of_union in Hxy as [Hx|Hy].
     + eapply lc_env_lookup; [exact HXlc|].
-      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hx].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup Hx).
     + eapply lc_env_lookup; [exact HYlc|].
-      apply storeA_restrict_lookup_some_2; [exact Hlookup|exact Hy].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hlookup Hy).
 Qed.
 
 Lemma wfworld_closed_on_union X Y (m : WfWorld) :
@@ -297,7 +297,7 @@ Lemma storeA_has_type_restrict_store
 Proof.
   intros HΣX. split; intros Htyped x T v HΣ Hσ.
 	  - eapply Htyped; [exact HΣ|].
-	    apply storeA_restrict_lookup_some_2; [exact Hσ|].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσ).
 	    apply HΣX. eapply elem_of_dom_2; exact HΣ.
   - eapply Htyped; [exact HΣ|].
     apply storeA_restrict_lookup_some in Hσ as [_ Hσ].

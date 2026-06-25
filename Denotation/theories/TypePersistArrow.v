@@ -3,7 +3,7 @@
     Arrow-specific consequences of type-level persistency. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquivBody TypeEquiv
+  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase.
 From ContextAlgebra Require Import ResourceAlgebra.
 
@@ -236,6 +236,41 @@ Proof.
 	  exact Hres.
 Qed.
 
+Lemma ty_guard_formula_transport
+    Σ1 Σ2 τ1 τ2 e (m : WfWorldT) :
+  (m ⊨ context_ty_wf_formula Σ1 τ1 ->
+   m ⊨ context_ty_wf_formula Σ2 τ2) ->
+  Σ1 = Σ2 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  m ⊨ ty_guard_formula Σ1 τ1 e ->
+  m ⊨ ty_guard_formula Σ2 τ2 e.
+Proof.
+  intros Hwf -> Herase Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard |- *.
+  destruct Hguard as [Hwf1 [Hworld [Hbasic Htotal]]].
+  split; [apply Hwf; exact Hwf1|].
+  split; [exact Hworld|].
+  split; [|exact Htotal].
+  rewrite <- Herase. exact Hbasic.
+Qed.
+
+Local Ltac persist_over_context_wf :=
+  apply context_ty_wf_formula_models_iff;
+  let Hlc := fresh "Hlc" in
+  let Hdom := fresh "Hdom" in
+  let Hbasic_ty := fresh "Hbasic_ty" in
+  match goal with
+  | H : _ ⊨ context_ty_wf_formula _ _ |- _ =>
+      apply context_ty_wf_formula_models_iff in H as [Hlc [Hdom Hbasic_ty]]
+  end;
+  split; [exact Hlc|];
+  split; [exact Hdom|];
+  destruct Hbasic_ty as [Hvars Hshape];
+  split;
+  [ cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *; exact Hvars
+  | cbn [context_ty_shape_ok] in Hshape |- *; exact Hshape ].
+
 Lemma ty_guard_arrow_over_arg_to_persist_over_arg
     Σ bx φx τr e (m : WfWorldT) :
   m ⊨ ty_guard_formula
@@ -246,22 +281,8 @@ Lemma ty_guard_arrow_over_arg_to_persist_over_arg
       (CTArrow (CTPersist (CTOver bx φx)) τr) e.
 Proof.
   intros Hguard.
-  change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
-    with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e).
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_arrow_persist_over_arg_to_over_arg
@@ -276,20 +297,8 @@ Proof.
   intros Hguard.
   change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
     with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e) in Hguard.
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-	  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_wand_over_arg_to_persist_over_arg
@@ -302,22 +311,8 @@ Lemma ty_guard_wand_over_arg_to_persist_over_arg
       (CTWand (CTPersist (CTOver bx φx)) τr) e.
 Proof.
   intros Hguard.
-  change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
-    with (relevant_env Σ (CTWand (CTOver bx φx) τr) e).
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_wand_persist_over_arg_to_over_arg
@@ -332,20 +327,8 @@ Proof.
   intros Hguard.
   change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
     with (relevant_env Σ (CTWand (CTOver bx φx) τr) e) in Hguard.
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma cty_lc_at_shift_at d τ :
@@ -370,351 +353,6 @@ Proof.
     + apply IHτ1. exact H1.
     + apply IHτ2. exact H2.
   - apply IHτ. exact Hlc.
-Qed.
-
-Lemma formula_open_arrow_value_ret_bvar0
-    gas (Σ : lty_env) τx τr f :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty τx ->
-  cty_lc_at 1 τr ->
-  f ∉ fv_cty τx ->
-  f ∉ fv_cty τr ->
-  formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
-      (tret (vbvar 0))) =
-  arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
-    (tret (vfvar f)).
-Proof.
-  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
-  unfold arrow_value_denote_gas_with.
-  cbn [formula_open].
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind Σ (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0))).
-  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
-  2:{ cbn [fv_tm fv_value]. intros Hbad.
-      rewrite elem_of_empty in Hbad. contradiction. }
-  2:{ rewrite cty_shift_fv. exact Hfτx. }
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind Σ (erase_ty τx))
-    τr (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
-  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
-  2:{ rewrite fv_tapp_tm, tm_shift_fv.
-      cbn [fv_tm fv_value].
-      intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad];
-        rewrite elem_of_empty in Hbad; contradiction. }
-  2:{ exact Hfτr. }
-  cbn [open_tm open_value value_shift].
-	  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
-	  rewrite lvar_store_bind_open_under.
-	  2: exact HfΣ.
-	  rewrite lvar_store_open_one_fresh_noop.
-	  2:{
-	    intros Hbound.
-	    unfold lvar_store_closed in HΣclosed.
-	    exact (HΣclosed (LVBound 0) Hbound).
-	  }
-	  2: exact HfΣ.
-	  rewrite cty_open_shift_under_gen by lia.
-	  change (cty_shift 0 (open_one 0 f τx)) with
-	    (cty_shift 0 (cty_open 0 f τx)).
-	  rewrite (cty_open_above_lc_fresh 0 0 f τx)
-	    by (try lia; try exact Hlcτx; exact Hfτx).
-	  rewrite (cty_open_above_lc_fresh 1 1 f τr)
-	    by (try lia; try exact Hlcτr; exact Hfτr).
-	  cbn [open_tm open_value value_shift].
-	  repeat (destruct decide; try lia; try congruence).
-	  reflexivity.
-Qed.
-
-Lemma formula_open_result_first_arrow_value_ret_bvar0
-    gas (Σ : lty_env) τx τr Tf f :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty τx ->
-  cty_lc_at 1 τr ->
-  f ∉ fv_cty τx ->
-  f ∉ fv_cty τr ->
-  formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas
-      (typed_lty_env_bind Σ Tf)
-      (cty_shift 0 τx) (cty_shift 1 τr)
-      (tret (vbvar 0))) =
-  arrow_value_denote_gas_with ty_denote_gas gas
-    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
-Proof.
-  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
-  unfold arrow_value_denote_gas_with.
-  cbn [formula_open].
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-      (erase_ty (cty_shift 0 τx)))
-    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
-  2:{
-    rewrite !typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
-  }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
-  2:{ rewrite !cty_shift_fv. exact Hfτx. }
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-      (erase_ty (cty_shift 0 τx)))
-    (cty_shift 1 τr)
-    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
-  2:{
-    rewrite !typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
-  }
-  2:{
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_tm fv_value]. set_solver.
-  }
-  2:{ rewrite cty_shift_fv. exact Hfτr. }
-  cbn [open_tm open_value value_shift].
-  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
-  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
-  change (open_tm 1 (vfvar f)
-    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
-    with (tapp_tm (tret (vfvar f)) (vbvar 0)).
-  rewrite lvar_store_bind_open_under.
-  2:{
-    rewrite typed_lty_env_bind_dom.
-    intros Hbad.
-    apply elem_of_union in Hbad as [Hbad|Hbad].
-    - apply HfΣ.
-      unfold lvars_shift_from in Hbad.
-      apply elem_of_map in Hbad as [v [Hv HvIn]].
-      destruct v; inversion Hv; subst.
-      exact HvIn.
-    - apply elem_of_singleton in Hbad. discriminate.
-  }
-  rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
-  rewrite cty_shift_preserves_erasure.
-  rewrite cty_open_shift_under_gen by lia.
-  change (@open_one atom context_ty open_cty_atom_inst 0 f
-    (cty_shift 0 τx)) with (cty_open 0 f (cty_shift 0 τx)).
-  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
-  rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
-	  reflexivity.
-Qed.
-
-Lemma formula_open_wand_value_ret_bvar0
-    gas (Σ : lty_env) τx τr f :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty τx ->
-  cty_lc_at 1 τr ->
-  f ∉ fv_cty τx ->
-  f ∉ fv_cty τr ->
-  formula_open 0 f
-    (wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
-      (tret (vbvar 0))) =
-  wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
-    (tret (vfvar f)).
-Proof.
-  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
-  unfold wand_value_denote_gas_with.
-  rewrite formula_open_fbwand.
-  change (0 + 1) with 1.
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind Σ (erase_ty τx))
-    (cty_shift 0 τx) (tret (vbvar 0))).
-  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
-  2:{ cbn [fv_tm fv_value]. intros Hbad.
-      rewrite elem_of_empty in Hbad. contradiction. }
-  2:{ rewrite cty_shift_fv. exact Hfτx. }
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind Σ (erase_ty τx))
-    τr (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
-  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
-  2:{ rewrite fv_tapp_tm, tm_shift_fv.
-      cbn [fv_tm fv_value].
-      intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad];
-        rewrite elem_of_empty in Hbad; contradiction. }
-  2:{ exact Hfτr. }
-  cbn [open_tm open_value value_shift].
-  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
-  rewrite lvar_store_bind_open_under.
-  2: exact HfΣ.
-  rewrite lvar_store_open_one_fresh_noop.
-  2:{
-    intros Hbound.
-    unfold lvar_store_closed in HΣclosed.
-    exact (HΣclosed (LVBound 0) Hbound).
-  }
-  2: exact HfΣ.
-  rewrite cty_open_shift_under_gen by lia.
-  change (cty_shift 0 (open_one 0 f τx)) with
-    (cty_shift 0 (cty_open 0 f τx)).
-  rewrite (cty_open_above_lc_fresh 0 0 f τx)
-    by (try lia; try exact Hlcτx; exact Hfτx).
-  rewrite (cty_open_above_lc_fresh 1 1 f τr)
-    by (try lia; try exact Hlcτr; exact Hfτr).
-  cbn [open_tm open_value value_shift].
-  repeat (destruct decide; try lia; try congruence).
-  reflexivity.
-Qed.
-
-Lemma formula_open_result_first_wand_value_ret_bvar0
-    gas (Σ : lty_env) τx τr Tf f :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty τx ->
-  cty_lc_at 1 τr ->
-  f ∉ fv_cty τx ->
-  f ∉ fv_cty τr ->
-  formula_open 0 f
-    (wand_value_denote_gas_with ty_denote_gas gas
-      (typed_lty_env_bind Σ Tf)
-      (cty_shift 0 τx) (cty_shift 1 τr)
-      (tret (vbvar 0))) =
-  wand_value_denote_gas_with ty_denote_gas gas
-    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
-Proof.
-  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
-  unfold wand_value_denote_gas_with.
-  rewrite formula_open_fbwand.
-  change (0 + 1) with 1.
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-      (erase_ty (cty_shift 0 τx)))
-    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
-  2:{
-    rewrite !typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
-  }
-  2:{ cbn [fv_tm fv_value]. set_solver. }
-  2:{ rewrite !cty_shift_fv. exact Hfτx. }
-  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
-    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
-      (erase_ty (cty_shift 0 τx)))
-    (cty_shift 1 τr)
-    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
-  2:{
-    rewrite !typed_lty_env_bind_lvars_fv_dom.
-    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
-  }
-  2:{
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_tm fv_value]. set_solver.
-  }
-  2:{ rewrite cty_shift_fv. exact Hfτr. }
-  cbn [open_tm open_value value_shift].
-  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
-  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
-  change (open_tm 1 (vfvar f)
-    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
-    with (tapp_tm (tret (vfvar f)) (vbvar 0)).
-  rewrite lvar_store_bind_open_under.
-  2:{
-    rewrite typed_lty_env_bind_dom.
-    intros Hbad.
-    apply elem_of_union in Hbad as [Hbad|Hbad].
-    - apply HfΣ.
-      unfold lvars_shift_from in Hbad.
-      apply elem_of_map in Hbad as [v [Hv HvIn]].
-      destruct v; inversion Hv; subst.
-      exact HvIn.
-    - apply elem_of_singleton in Hbad. discriminate.
-  }
-  rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
-  rewrite cty_shift_preserves_erasure.
-  rewrite cty_open_shift_under_gen by lia.
-  change (@open_one atom context_ty open_cty_atom_inst 0 f
-    (cty_shift 0 τx)) with (cty_open 0 f (cty_shift 0 τx)).
-  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
-  rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
-  reflexivity.
-Qed.
-
-Lemma arrow_open_value_over_arg_to_persist_over_arg
-    gas_src gas_tgt (Σ : lty_env) bx φx τr f (mf : WfWorldT) :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty (CTOver bx φx) ->
-  lc_context_ty (cty_shift 0 (CTOver bx φx)) ->
-  cty_lc_at 1 τr ->
-  f ∉ qual_dom φx ->
-  f ∉ fv_cty τr ->
-  cty_depth τr <= gas_src ->
-  cty_depth τr <= gas_tgt ->
-  1 <= gas_src ->
-  2 <= gas_tgt ->
-  formula_scoped_in_world mf
-    (formula_open 0 f
-      (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
-        (cty_shift 0 (CTPersist (CTOver bx φx))) τr
-        (tret (vbvar 0)))) ->
-  mf ⊨ formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas_src Σ
-      (cty_shift 0 (CTOver bx φx)) τr
-      (tret (vbvar 0))) ->
-  mf ⊨ formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
-      (cty_shift 0 (CTPersist (CTOver bx φx))) τr
-      (tret (vbvar 0))).
-Proof.
-  intros HΣclosed HfΣ Hlc_over Hlc_shift_over Hlcτr Hfφ Hfτr
-    Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue_src.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_tgt Σ
-    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f) in Hscope_tgt.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_src Σ (cty_shift 0 (CTOver bx φx)) τr f) in Hvalue_src.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: exact Hlc_shift_over.
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_tgt Σ
-    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f).
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-  eapply arrow_value_over_arg_to_persist_over_arg.
-  - exact HΣclosed.
-  - exact Hlc_over.
-  - exact Hlc_shift_over.
-  - exact Hres_src.
-  - exact Hres_tgt.
-  - exact Harg_src.
-  - exact Harg_tgt.
-  - exact Hscope_tgt.
-  - exact Hvalue_src.
 Qed.
 
 Lemma arrow_value_over_arg_to_persist_over_arg_plain
@@ -1082,33 +720,6 @@ Proof.
   exists (Lsrc ∪ lvars_fv (dom Σg) ∪ qual_dom φx ∪
     fv_cty τr ∪ fv_tm e).
   intros f Hf mf Hdom Hrestrict.
-  assert (Hscope_open :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (FImpl
-            (expr_result_formula_at
-              (lvars_shift_from 0
-                (dom (relevant_env Σ
-                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)))
-              (tm_shift 0 e) (LVBound 0))
-            (arrow_value_denote_gas_with ty_denote_gas gas_tgt
-              (typed_lty_env_bind
-                (relevant_env Σ
-                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)
-                (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
-              (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-              (tret (vbvar 0)))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Hscope_forall.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton.
-      reflexivity.
-  }
-  cbn [formula_open].
-  eapply res_models_impl_intro.
-  { cbn [formula_open] in Hscope_open. exact Hscope_open. }
-  intros Hresult_tgt.
   assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
   {
     intros Hbad.
@@ -1121,39 +732,33 @@ Proof.
   { clear -Hf. set_solver. }
   assert (Hfe : f ∉ fv_tm e).
   { clear -Hf. set_solver. }
-  assert (Hopened_src :
-      mf ⊨ formula_open 0 f
-        (FImpl
-          (expr_result_formula_at
-            (lvars_shift_from 0 (dom Σg))
-            (tm_shift 0 e) (LVBound 0))
-          (arrow_value_denote_gas_with ty_denote_gas gas_src
-            (typed_lty_env_bind Σg
-              (erase_ty (CTArrow (CTOver bx φx) τr)))
-            (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
-            (tret (vbvar 0))))).
-  {
-    subst Σg.
-    apply Hsrc.
-    - clear -Hf. set_solver.
-    - exact Hdom.
-    - exact Hrestrict.
-  }
+  pose proof (formula_scoped_forall_open_res_le m mf f
+    (FImpl
+      (expr_result_formula_at
+        (lvars_shift_from 0
+          (dom (relevant_env Σ
+            (CTArrow (CTPersist (CTOver bx φx)) τr) e)))
+        (tm_shift 0 e) (LVBound 0))
+      (arrow_value_denote_gas_with ty_denote_gas gas_tgt
+        (typed_lty_env_bind
+          (relevant_env Σ
+            (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+          (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
+        (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
+        (tret (vbvar 0))))
+    Hscope_forall
+    ltac:(rewrite <- Hrestrict; apply res_restrict_le)
+    ltac:(rewrite Hdom; apply elem_of_union_r; apply elem_of_singleton;
+      reflexivity)) as Hscope_open.
+  cbn [formula_open].
+  eapply res_models_impl_intro.
+  { cbn [formula_open] in Hscope_open. exact Hscope_open. }
+  intros Hresult_tgt.
+  pose proof (Hsrc f ltac:(subst Σg; clear -Hf; set_solver)
+    mf Hdom Hrestrict) as Hopened_src.
   cbn [formula_open] in Hopened_src.
   pose proof (res_models_impl_elim _ _ _ Hopened_src Hresult_tgt)
     as Hvalue_src.
-  assert (Hvalue_tgt_scope :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (arrow_value_denote_gas_with ty_denote_gas gas_tgt
-            (typed_lty_env_bind Σg
-              (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
-            (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-            (tret (vbvar 0))))).
-  {
-    cbn [formula_open] in Hscope_open.
-    eapply formula_scoped_impl_r. exact Hscope_open.
-  }
   eapply arrow_result_first_open_value_over_arg_to_persist_over_arg.
   - subst Σg. apply relevant_env_closed. exact HΣclosed.
   - exact HfΣg.
@@ -1169,11 +774,11 @@ Proof.
   - subst Σg.
     change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
       with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
-      in Hvalue_tgt_scope.
+      in Hscope_open.
     change (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr))
       with (erase_ty (CTArrow (CTOver bx φx) τr))
-      in Hvalue_tgt_scope.
-    exact Hvalue_tgt_scope.
+      in Hscope_open.
+    eapply formula_scoped_impl_r. exact Hscope_open.
 	  - subst Σg. exact Hvalue_src.
 Qed.
 

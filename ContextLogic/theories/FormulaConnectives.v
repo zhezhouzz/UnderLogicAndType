@@ -1093,12 +1093,12 @@ Proof.
     + assert (Hσfixa : σfix !! a = Some va).
       {
         assert (Hr : (store_restrict σall X : Store (V := V)) !! a = Some va).
-        { apply storeA_restrict_lookup_some_2; [exact Ha|exact HaX]. }
+	        { apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha HaX). }
         rewrite Hr in Hfix_lookup. symmetry. exact Hfix_lookup.
       }
       transitivity (Some va); [exact Ha|].
       symmetry. apply map_lookup_union_Some_raw. left.
-      apply storeA_restrict_lookup_some_2; [exact Hσfixa|exact HaY].
+	      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσfixa HaY).
     + assert (Hσfixa : σfix !! a = None).
       {
         assert (Hr : (store_restrict σall X : Store (V := V)) !! a = None).
@@ -1121,7 +1121,7 @@ Proof.
            { rewrite Hfix. exact Hσfixa. }
            apply storeA_restrict_lookup_some in Hr as [HaX' _].
            contradiction.
-        -- apply storeA_restrict_lookup_some_2; [exact Ha|better_set_solver].
+	        -- apply (storeA_restrict_lookup_some_2 _ _ _ _ Ha). better_set_solver.
       * transitivity (@None V); [exact Ha|].
         symmetry. apply map_lookup_union_None. split.
         -- apply storeA_restrict_lookup_none_l.

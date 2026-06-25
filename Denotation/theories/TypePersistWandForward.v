@@ -3,7 +3,7 @@
     Forward Wand facts for persistent-over arguments. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquivBody TypeEquiv
+  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase TypePersistArrow TypePersistSingleton.
 From ContextAlgebra Require Import ResourceAlgebra.
 
@@ -17,12 +17,6 @@ Local Ltac persist_outer_fresh_from H :=
 
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
-
-Local Lemma empty_union_singleton_l y :
-  ∅ ∪ {[y]} = ({[y]} : aset).
-Proof.
-  set_solver.
-Qed.
 
 Local Lemma over_y_fiber_store_dom
     bx φx y σy (n nfib : WfWorldT) :
@@ -315,26 +309,12 @@ Proof.
   cbn [ty_denote_gas] in Hden.
   rewrite res_models_and_iff in Hden.
   destruct Hden as [_ Hforall].
-  pose proof (result_first_forall_impl_open_elim
-    m mr r
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ (CTOver b φ) e)))
-      (tm_shift 0 e) (LVBound 0))
-    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FOver (FAtom φ)))
-    Hforall Hrm Hdom Hbase) as Helim.
-  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
-  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
-  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
-  2:{ exact Hlce. }
-  2:{ exact Hre. }
-  rewrite (lvars_shift_from_lc_eq 0
-    (dom (relevant_env Σ (CTOver b φ) e))) in Helim
-    by (apply relevant_env_closed; exact HΣclosed).
-  specialize (Helim Hres).
-  rewrite formula_open_over_self_body_normalize in Helim.
-  - exact Helim.
-  - intros Hrvars. apply Hrφ.
-    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
+  pose proof (res_models_forall_open_named_fresh
+    m mr r _ Hforall Hrm Hdom Hbase) as Himpl.
+  cbn [formula_open] in Himpl.
+  denotation_result_first_open_norm_in Himpl.
+  pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
+  exact Helim.
 Qed.
 
 Lemma ty_denote_gas_under_result_body_elim
@@ -357,32 +337,19 @@ Proof.
   cbn [ty_denote_gas] in Hden.
   rewrite res_models_and_iff in Hden.
   destruct Hden as [_ Hforall].
-  pose proof (result_first_forall_impl_open_elim
-    m mr r
-    (expr_result_formula_at
-      (lvars_shift_from 0 (dom (relevant_env Σ (CTUnder b φ) e)))
-      (tm_shift 0 e) (LVBound 0))
-    (FFibVars (qual_vars φ ∖ {[LVBound 0]}) (FUnder (FAtom φ)))
-    Hforall Hrm Hdom Hbase) as Helim.
-  rewrite formula_open_expr_result_formula_at_shift0 in Helim.
-  2:{ apply lvars_shift_from_lc. apply relevant_env_closed. exact HΣclosed. }
-  2:{ rewrite lvars_shift_from_fv. exact HrΣ. }
-  2:{ exact Hlce. }
-  2:{ exact Hre. }
-  rewrite (lvars_shift_from_lc_eq 0
-    (dom (relevant_env Σ (CTUnder b φ) e))) in Helim
-    by (apply relevant_env_closed; exact HΣclosed).
-  specialize (Helim Hres).
-  rewrite formula_open_under_self_body_normalize in Helim.
-  - exact Helim.
-  - intros Hrvars. apply Hrφ.
-    unfold qual_dom. apply lvars_fv_elem. exact Hrvars.
+  pose proof (res_models_forall_open_named_fresh
+    m mr r _ Hforall Hrm Hdom Hbase) as Himpl.
+  cbn [formula_open] in Himpl.
+  denotation_result_first_open_norm_in Himpl.
+  pose proof (res_models_impl_elim _ _ _ Himpl Hres) as Helim.
+  exact Helim.
 Qed.
 
 Lemma arrow_value_persist_over_arg_apply_singleton
     gas (Σ : lty_env) bx φx τr ef y σ
     (m my : WfWorldT) :
   lty_env_closed Σ ->
+  lc_tm ef ->
   lc_context_ty (CTOver bx φx) ->
   cty_lc_at 1 τr ->
   y ∉ world_dom (m : WorldT) ->
@@ -400,13 +367,12 @@ Lemma arrow_value_persist_over_arg_apply_singleton
   my ⊨ ty_denote_gas gas
     (<[LVFree y := TBase bx]> Σ)
     (CTOver bx φx) (tret (vfvar y)) ->
-  my ⊨ ty_denote_gas (S gas)
-    (<[LVFree y := TBase bx]> Σ)
-    (cty_open 0 y τr)
-    (open_tm 0 (vfvar y)
-      (tapp_tm (tm_shift 0 ef) (vbvar 0))).
+	  my ⊨ ty_denote_gas (S gas)
+	    (<[LVFree y := TBase bx]> Σ)
+	    (cty_open 0 y τr)
+	    (tapp_tm ef (vfvar y)).
 Proof.
-  intros HΣclosed Hlc_over Hlcτr Hym HyΣ Hyφ Hyτr Hyef
+  intros HΣclosed Hlc_ef Hlc_over Hlcτr Hym HyΣ Hyφ Hyτr Hyef
     Hdom Hrestrict Hdomσ Hsingle Hvalue Harg_over.
   assert (HyΣlv : LVFree y ∉ dom (Σ : lty_env)).
   {
@@ -480,7 +446,7 @@ Proof.
   }
   pose proof (res_models_impl_elim _ _ _ Hopened Harg_persist_open)
     as Hres_open.
-  rewrite formula_open_ty_denote_gas_singleton in Hres_open.
+	  rewrite formula_open_ty_denote_gas_singleton in Hres_open.
   2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
   2:{
     rewrite fv_tapp_tm, tm_shift_fv.
@@ -489,8 +455,9 @@ Proof.
     - exact (Hyef Hin).
     - rewrite elem_of_empty in Hin. contradiction.
   }
-  2:{ exact Hyτr. }
-  rewrite typed_lty_env_bind_open_current in Hres_open.
+	  2:{ exact Hyτr. }
+  rewrite open_tapp_tm_shift_bvar0_lc in Hres_open by exact Hlc_ef.
+	  rewrite typed_lty_env_bind_open_current in Hres_open.
   2:{ exact HyΣlv. }
   2:{ exact HΣclosed. }
   change (erase_ty (CTPersist (CTOver bx φx))) with (TBase bx) in Hres_open.
@@ -500,6 +467,7 @@ Qed.
 Lemma wand_value_over_arg_to_persist_over_arg_plain
     gas_src gas_tgt (Σ : lty_env) bx φx τr ef (m : WfWorldT) :
   lty_env_closed Σ ->
+  lc_tm ef ->
   lc_context_ty (CTOver bx φx) ->
   cty_lc_at 1 τr ->
   cty_depth τr <= gas_src ->
@@ -514,7 +482,7 @@ Lemma wand_value_over_arg_to_persist_over_arg_plain
   m ⊨ wand_value_denote_gas_with ty_denote_gas gas_tgt Σ
     (CTPersist (CTOver bx φx)) τr ef.
 Proof.
-  intros HΣclosed Hlc_over Hlcτr
+  intros HΣclosed Hlc_ef Hlc_over Hlcτr
     Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue.
   cbn [wand_value_denote_gas_with] in Hvalue |- *.
   destruct gas_src as [|gas_src']; [lia|].
@@ -527,7 +495,7 @@ Proof.
     fv_cty τr ∪ fv_tm ef).
   intros η n Hc Hbind Hηfresh Hdom Harg_persist.
   destruct (open_env_binds_one_inv η Hbind) as [y ->].
-  rewrite formula_open_env_singleton in Harg_persist |- *.
+	  rewrite formula_open_env_singleton in Harg_persist |- *.
   rewrite open_env_atoms_insert in Hηfresh by apply lookup_empty.
   rewrite open_env_atoms_empty in Hηfresh.
   assert (HyΣ : y ∉ lvars_fv (dom Σ)) by
@@ -637,7 +605,7 @@ Proof.
   pose proof (Hsrc (<[0 := y]> (∅ : gmap nat atom))
     n Hc Hbind Hηfresh_src Hdom Harg_over) as Hres.
   rewrite formula_open_env_singleton in Hres.
-  rewrite formula_open_ty_denote_gas_singleton in Hres.
+	  rewrite formula_open_ty_denote_gas_singleton in Hres.
   2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
   2:{
     rewrite fv_tapp_tm, tm_shift_fv.
@@ -646,8 +614,9 @@ Proof.
     - exact (Hyef Hin).
     - rewrite elem_of_empty in Hin. contradiction.
   }
-  2:{ exact Hyτr. }
-  rewrite formula_open_ty_denote_gas_singleton.
+	  2:{ exact Hyτr. }
+  rewrite open_tapp_tm_shift_bvar0_lc in Hres by exact Hlc_ef.
+	  rewrite formula_open_ty_denote_gas_singleton.
   2:{ rewrite typed_lty_env_bind_lvars_fv_dom. exact HyΣ. }
   2:{
     rewrite fv_tapp_tm, tm_shift_fv.
@@ -656,8 +625,9 @@ Proof.
     - exact (Hyef Hin).
     - rewrite elem_of_empty in Hin. contradiction.
   }
-  2:{ exact Hyτr. }
-  replace (lvar_store_open_one 0 y
+	  2:{ exact Hyτr. }
+  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_ef.
+	  replace (lvar_store_open_one 0 y
     (typed_lty_env_bind Σ (erase_ty (CTOver bx φx))))
     with (<[LVFree y := erase_ty (CTOver bx φx)]> Σ) in Hres.
   2:{
@@ -671,18 +641,16 @@ Proof.
     symmetry.
     apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].
   }
-  rewrite (ty_denote_gas_saturate (S gas_src')
-    (<[LVFree y := erase_ty (CTOver bx φx)]> Σ)
-    (cty_open 0 y τr)
-    (open_tm 0 (vfvar y)
-      (tapp_tm (tm_shift 0 ef) (vbvar 0)))) in Hres
-    by (rewrite cty_open_preserves_depth; lia).
-  rewrite (ty_denote_gas_saturate (S (S gas_tgt''))
-    (<[LVFree y := erase_ty (CTOver bx φx)]> Σ)
-    (cty_open 0 y τr)
-    (open_tm 0 (vfvar y)
-      (tapp_tm (tm_shift 0 ef) (vbvar 0))))
-    by (rewrite cty_open_preserves_depth; lia).
+	  rewrite (ty_denote_gas_saturate (S gas_src')
+	    (<[LVFree y := erase_ty (CTOver bx φx)]> Σ)
+	    (cty_open 0 y τr)
+	    (tapp_tm ef (vfvar y))) in Hres
+	    by (rewrite cty_open_preserves_depth; lia).
+	  rewrite (ty_denote_gas_saturate (S (S gas_tgt''))
+	    (<[LVFree y := erase_ty (CTOver bx φx)]> Σ)
+	    (cty_open 0 y τr)
+	    (tapp_tm ef (vfvar y)))
+	    by (rewrite cty_open_preserves_depth; lia).
  	  exact Hres.
 Qed.
 
@@ -699,65 +667,21 @@ Lemma wand_result_first_open_value_over_arg_to_persist_over_arg
   1 <= gas_src ->
   2 <= gas_tgt ->
   formula_scoped_in_world mf
-    (formula_open 0 f
-      (wand_value_denote_gas_with ty_denote_gas gas_tgt
-        (typed_lty_env_bind Σ Tf)
-        (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-        (tret (vbvar 0)))) ->
-  mf ⊨ formula_open 0 f
-    (wand_value_denote_gas_with ty_denote_gas gas_src
-      (typed_lty_env_bind Σ Tf)
-      (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
-      (tret (vbvar 0))) ->
-  mf ⊨ formula_open 0 f
     (wand_value_denote_gas_with ty_denote_gas gas_tgt
-      (typed_lty_env_bind Σ Tf)
-      (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-      (tret (vbvar 0))).
+      (<[LVFree f := Tf]> Σ)
+      (CTPersist (CTOver bx φx)) τr (tret (vfvar f))) ->
+  mf ⊨ wand_value_denote_gas_with ty_denote_gas gas_src
+    (<[LVFree f := Tf]> Σ)
+    (CTOver bx φx) τr (tret (vfvar f)) ->
+  mf ⊨ wand_value_denote_gas_with ty_denote_gas gas_tgt
+    (<[LVFree f := Tf]> Σ)
+    (CTPersist (CTOver bx φx)) τr (tret (vfvar f)).
 Proof.
   intros HΣclosed HfΣ Hlc_over Hlcτr Hfφ Hfτr
     Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue_src.
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
-    gas_tgt Σ (CTPersist (CTOver bx φx)) τr Tf f) in Hscope_tgt.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
-  2: exact Hlcτr.
-  2:{
-    unfold fv_cty, qual_dom in *.
-    cbn [context_ty_lvars context_ty_lvars_at] in *.
-    rewrite lvars_fv_lvars_at_depth.
-    exact Hfφ.
-  }
-  2: exact Hfτr.
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
-    gas_src Σ (CTOver bx φx) τr Tf f) in Hvalue_src.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: exact Hlc_over.
-  2: exact Hlcτr.
-  2:{
-    unfold fv_cty, qual_dom in *.
-    cbn [context_ty_lvars context_ty_lvars_at] in *.
-    rewrite lvars_fv_lvars_at_depth.
-    exact Hfφ.
-  }
-  2: exact Hfτr.
-  rewrite (formula_open_result_first_wand_value_ret_bvar0
-    gas_tgt Σ (CTPersist (CTOver bx φx)) τr Tf f).
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
-  2: exact Hlcτr.
-  2:{
-    unfold fv_cty, qual_dom in *.
-    cbn [context_ty_lvars context_ty_lvars_at] in *.
-    rewrite lvars_fv_lvars_at_depth.
-    exact Hfφ.
-  }
-  2: exact Hfτr.
   eapply wand_value_over_arg_to_persist_over_arg_plain.
   - apply lty_env_closed_insert_free; assumption.
+  - constructor. constructor.
   - exact Hlc_over.
   - exact Hlcτr.
   - exact Hres_src.
@@ -897,22 +821,96 @@ Proof.
     - exact Hrestrict.
   }
   cbn [formula_open] in Hopened_src.
+  rewrite (formula_open_result_first_wand_value_ret_bvar0
+    gas_src Σg (CTOver bx φx) τr
+    (erase_ty (CTWand (CTOver bx φx) τr)) f) in Hopened_src.
+  2:{ subst Σg. apply relevant_env_closed. exact HΣclosed. }
+  2:{ exact HfΣg. }
+  2:{ exact Hlc_over. }
+  2:{ exact Hlcτr. }
+  2:{
+    unfold fv_cty, context_ty_lvars.
+    cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφ.
+  }
+  2:{ exact Hfτr. }
   pose proof (res_models_impl_elim _ _ _ Hopened_src Hresult_tgt)
     as Hvalue_src.
   assert (Hvalue_tgt_scope :
       formula_scoped_in_world mf
-        (formula_open 0 f
-          (wand_value_denote_gas_with ty_denote_gas gas_tgt
-            (typed_lty_env_bind Σg
-              (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr)))
-            (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-            (tret (vbvar 0))))).
+        (wand_value_denote_gas_with ty_denote_gas gas_tgt
+          (<[LVFree f := erase_ty (CTWand (CTOver bx φx) τr)]> Σg)
+          (CTPersist (CTOver bx φx)) τr (tret (vfvar f)))).
   {
     cbn [formula_open] in Hscope_open.
-    eapply formula_scoped_impl_r. exact Hscope_open.
+    pose proof (formula_scoped_impl_r _ _ _ Hscope_open) as Hscope_value.
+    rewrite (formula_open_result_first_wand_value_ret_bvar0
+      gas_tgt
+      (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+      (CTPersist (CTOver bx φx)) τr
+      (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr)) f)
+      in Hscope_value.
+    2:{ apply relevant_env_closed. exact HΣclosed. }
+    2:{
+      subst Σg.
+      change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+        with (relevant_env Σ (CTWand (CTOver bx φx) τr) e).
+      exact HfΣg.
+    }
+    2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
+    2:{ exact Hlcτr. }
+    2:{
+      unfold fv_cty, context_ty_lvars.
+      cbn [context_ty_lvars_at].
+      rewrite lvars_fv_lvars_at_depth.
+      exact Hfφ.
+    }
+    2:{ exact Hfτr. }
+    subst Σg.
+    change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+      with (relevant_env Σ (CTWand (CTOver bx φx) τr) e)
+      in Hscope_value.
+    change (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr))
+      with (erase_ty (CTWand (CTOver bx φx) τr))
+      in Hscope_value.
+    exact Hscope_value.
   }
+  change (mf ⊨
+    (wand_value_denote_gas_with ty_denote_gas gas_tgt
+      (typed_lty_env_bind
+        (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+        (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr)))
+      (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
+      (tret (vbvar 0)) ^^ f)%formula).
+  rewrite (formula_open_result_first_wand_value_ret_bvar0
+    gas_tgt
+    (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+    (CTPersist (CTOver bx φx)) τr
+    (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr)) f).
+  2:{ apply relevant_env_closed. exact HΣclosed. }
+  2:{
+    subst Σg.
+    change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+      with (relevant_env Σ (CTWand (CTOver bx φx) τr) e).
+    exact HfΣg.
+  }
+  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
+  2:{ exact Hlcτr. }
+  2:{
+    unfold fv_cty, context_ty_lvars.
+    cbn [context_ty_lvars_at].
+    rewrite lvars_fv_lvars_at_depth.
+    exact Hfφ.
+  }
+  2:{ exact Hfτr. }
+  subst Σg.
+  change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
+    with (relevant_env Σ (CTWand (CTOver bx φx) τr) e).
+  change (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr))
+    with (erase_ty (CTWand (CTOver bx φx) τr)).
   eapply wand_result_first_open_value_over_arg_to_persist_over_arg.
-  - subst Σg. apply relevant_env_closed. exact HΣclosed.
+  - apply relevant_env_closed. exact HΣclosed.
   - exact HfΣg.
   - exact Hlc_over.
   - exact Hlcτr.
@@ -922,15 +920,8 @@ Proof.
   - exact Hres_tgt.
   - exact Harg_src.
   - exact Harg_tgt.
-  - subst Σg.
-    change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
-      with (relevant_env Σ (CTWand (CTOver bx φx) τr) e)
-      in Hvalue_tgt_scope.
-    change (erase_ty (CTWand (CTPersist (CTOver bx φx)) τr))
-      with (erase_ty (CTWand (CTOver bx φx) τr))
-      in Hvalue_tgt_scope.
-    exact Hvalue_tgt_scope.
-  - subst Σg. exact Hvalue_src.
+  - exact Hvalue_tgt_scope.
+  - exact Hvalue_src.
 Qed.
 
 Lemma ty_denote_wand_over_arg_to_persist_over_arg

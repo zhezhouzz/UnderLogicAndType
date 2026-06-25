@@ -327,7 +327,7 @@ Proof.
         -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
            change (X ⊆ dom (σm : gmap atom V)). set_solver.
         -- transitivity (world_dom (my : WorldT)).
-           ++ apply (wfworld_store_dom my); exact Hσmy.
+	           ++ exact (wfworld_store_dom my _ Hσmy).
            ++ rewrite Hdom_my.
               pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
               set_solver.
@@ -376,7 +376,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
@@ -384,7 +384,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         change (dom (σmy : gmap atom V) =
@@ -398,7 +398,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
@@ -533,6 +533,38 @@ Proof.
   rewrite <- Hdom_mz0 in Hproj.
   rewrite <- Hproj.
   apply res_restrict_eq_of_le. apply raw_le_refl.
+Qed.
+
+Lemma res_extend_by_singleton_output_preserves_notin
+    (m mx : WfWorldT) (F : FiberExtensionT) x z :
+  x ∉ world_dom (m : WorldT) ->
+  x <> z ->
+  ext_out F = {[z]} ->
+  res_extend_by m F mx ->
+  x ∉ world_dom (mx : WorldT).
+Proof.
+  intros Hxm Hxz Hout Hext.
+  unfold ext_out in Hout.
+  pose proof (res_extend_by_dom m F mx Hext) as Hdom.
+  rewrite Hdom, Hout.
+  set_solver.
+Qed.
+
+Lemma res_extend_by_same_singleton_output_open_world_frame
+    (m0 m mz0 mz : WfWorldT) (F : FiberExtensionT) x z :
+  world_dom (m : WorldT) = world_dom (m0 : WorldT) ∪ {[x]} ->
+  x <> z ->
+  ext_out F = {[z]} ->
+  res_extend_by m0 F mz0 ->
+  res_extend_by m F mz ->
+  world_dom (mz : WorldT) = world_dom (mz0 : WorldT) ∪ {[x]}.
+Proof.
+  intros Hbase Hxz Hout Hext0 Hext.
+  unfold ext_out in Hout.
+  pose proof (res_extend_by_dom m0 F mz0 Hext0) as Hdom0.
+  pose proof (res_extend_by_dom m F mz Hext) as Hdom.
+  rewrite Hdom, Hdom0, Hout, Hbase.
+  set_solver.
 Qed.
 
 Local Lemma ext_rel_exists (F : FiberExtensionT) σ :

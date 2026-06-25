@@ -3,8 +3,10 @@
     Denotation of type contexts, expressed directly with the new recursive
     context-type denotation. *)
 
-From Denotation Require Export Notation TypeDenote TypePersist.
-From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseResult.
+From Denotation Require Export Notation TypeDenote TypePersistBase TypePersistArrow
+  TypePersistSingleton TypePersistWandForward TypePersistWandReverse.
+From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseCore.
+From ContextBasicDenotation Require Import TermExtension.
 
 Section ContextDenotation.
 
@@ -227,6 +229,25 @@ Proof.
     rewrite res_models_and_iff in Hctx; exact (proj1 Hctx).
 Qed.
 
+Lemma soundness_result_ext_fresh_ctx_erasure
+    (Σ : tyctx) Γ e x F (m mx : WfWorldT) :
+  m ⊨ ctx_denote_under Σ Γ ->
+  expr_result_extension_witness e x F ->
+  res_extend_by m F mx ->
+  x ∉ dom (ctx_erasure_under Σ Γ).
+Proof.
+  intros Hctx HF Hext HxΔ.
+  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
+  pose proof (basic_world_formula_atom_env_dom_subset
+    (ctx_erasure_under Σ Γ) m Hworld) as HΔworld.
+  pose proof (HΔworld x HxΔ) as Hxworld.
+  pose proof (res_extend_by_output_fresh m F mx Hext) as Hout_fresh.
+  change (ext_out F ## world_dom (m : WorldT)) in Hout_fresh.
+  destruct HF as [_ [_ Hout] _].
+  assert (x ∈ ext_out F) by (rewrite Hout; set_solver).
+  set_solver.
+Qed.
+
 Lemma ctx_denote_under_bind_inv
     (Σ : gmap atom ty) x τ (m : WfWorldT) :
   m ⊨ ctx_denote_under Σ (CtxBind x τ) ->
@@ -266,6 +287,20 @@ Proof.
     + exact Hlook.
 Qed.
 
+Lemma basic_ctx_erase_dom_fresh_none
+    (Σ : gmap atom ty) Γ x :
+  basic_ctx (dom Σ) Γ ->
+  x ∈ dom (erase_ctx Γ) ->
+  Σ !! x = None.
+Proof.
+  intros Hbasic HxΓ.
+  apply not_elem_of_dom. intros HΣx.
+  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
+  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
+  rewrite HdomΓ in HxΓ.
+  set_solver.
+Qed.
+
 Lemma erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
     (Σ : gmap atom ty) Γ x :
   basic_ctx (dom Σ) Γ ->
@@ -278,11 +313,7 @@ Proof.
   symmetry.
   apply lookup_union_r.
   apply storeA_restrict_lookup_none_l.
-  apply not_elem_of_dom. intros HΣx.
-  pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-  pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
-  rewrite HdomΓ in HxΓ.
-  set_solver.
+  eapply basic_ctx_erase_dom_fresh_none; eauto.
 Qed.
 
 Lemma ty_env_agree_ctx_erasure_under_of_basic_ctx
@@ -297,14 +328,7 @@ Proof.
   pose proof (erase_ctx_lookup_ctx_erasure_under_of_basic_ctx
     Σ Γ x Hbasic HxΓ) as Herase.
   assert (HΣnone : Σ !! x = None).
-  {
-    apply not_elem_of_dom. intros HΣx.
-    pose proof (basic_ctx_erase_dom (dom Σ) Γ Hbasic) as HdomΓ.
-    pose proof (basic_ctx_dom_fresh (dom Σ) Γ Hbasic) as HfreshΓ.
-    apply elem_of_disjoint in HfreshΓ.
-    eapply HfreshΓ; [|exact HΣx].
-    rewrite <- HdomΓ. exact HxΓ.
-  }
+  { eapply basic_ctx_erase_dom_fresh_none; eauto. }
   transitivity ((erase_ctx Γ : gmap atom ty) !! x).
   - apply lookup_union_r. exact HΣnone.
   - exact Herase.
@@ -333,6 +357,64 @@ Proof.
   apply Hnot.
   eapply ctx_erasure_under_erase_ctx_dom_subset.
   exact Hx.
+Qed.
+
+Lemma ctx_erasure_under_inserted_erase_ctx_lty_env_fresh
+    (Σ : gmap atom ty) Γ z y T :
+  z <> y ->
+  z ∉ dom (ctx_erasure_under Σ Γ) ->
+  LVFree z ∉ dom (<[LVFree y := T]> (atom_env_to_lty_env (erase_ctx Γ))).
+Proof.
+  intros Hzy Hzctx.
+  rewrite dom_insert_L.
+  intros Hzdom.
+  apply elem_of_union in Hzdom as [Hzdom|Hzdom].
+  - apply elem_of_singleton in Hzdom. inversion Hzdom. subst.
+    contradiction.
+  - exact (atom_env_to_lty_env_dom_free_notin (erase_ctx Γ) z
+      (ctx_erasure_under_notin_erase_ctx Σ Γ z Hzctx) Hzdom).
+Qed.
+
+Lemma ctx_erasure_under_comma_bind_insert_lty_env_dom_subset
+    (Σ : gmap atom ty) Γ y τ :
+  y ∉ dom (erase_ctx Γ) ->
+  dom (<[LVFree y := erase_ty τ]>
+    (atom_env_to_lty_env (erase_ctx Γ))) ⊆
+  dom (atom_env_to_lty_env
+    (ctx_erasure_under Σ (CtxComma Γ (CtxBind y τ)))).
+Proof.
+  intros HyΓ v Hv.
+  rewrite dom_insert_L in Hv.
+  rewrite !atom_store_to_lvar_store_dom.
+  apply elem_of_union in Hv as [Hyv|HΓv].
+  - apply elem_of_singleton in Hyv. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists y.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HyΓ. set_solver.
+  - rewrite atom_store_to_lvar_store_dom in HΓv.
+    unfold lvars_of_atoms in HΓv.
+    apply elem_of_map in HΓv as [a [Hv_eq HaΓ]]. subst v.
+    unfold lvars_of_atoms. apply elem_of_map. exists a.
+    split; [reflexivity|].
+    eapply ctx_erasure_under_erase_ctx_dom_subset.
+    rewrite erase_ctx_comma_bind_dom. clear -HaΓ. set_solver.
+Qed.
+
+Lemma soundness_fresh_erase_ctx_from_context_union
+    (Σ : tyctx) Γ y A B C :
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
+  y ∉ dom (erase_ctx Γ).
+Proof.
+  intros Hy.
+  eapply ctx_erasure_under_notin_erase_ctx.
+  intros Hyctx.
+  apply Hy.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_l.
+  apply elem_of_union_r.
+  exact Hyctx.
 Qed.
 
 Lemma ty_denote_gas_ret_fvar_insert_ctx_erasure_under
@@ -657,7 +739,7 @@ Proof.
         * exact (eq_trans Hinsert HT).
         * symmetry.
           apply map_lookup_union_Some_raw. left.
-          apply storeA_restrict_lookup_some_2; [exact HT|].
+          apply (storeA_restrict_lookup_some_2 _ _ _ _ HT).
           rewrite <- context_ty_lvars_fv.
           apply lvars_fv_elem. better_set_solver.
   }
@@ -792,7 +874,7 @@ Proof.
           {
             apply map_lookup_union_Some_raw. left.
             unfold Σtarget.
-            apply storeA_restrict_lookup_some_2; [exact Hylookup|exact Hyτ].
+            apply (storeA_restrict_lookup_some_2 _ _ _ _ Hylookup Hyτ).
           }
           transitivity (Some T); [exact Hsource|symmetry; exact Htarget].
         * assert (Hsource :
@@ -837,6 +919,33 @@ Proof.
       x (erase_ty τ) Hfresh).
   }
   exact Harg_target.
+Qed.
+
+Lemma ctx_bind_from_inserted_erasure_arg_denotation
+    (Σ : gmap atom ty) Γ x τ (m : WfWorldT) :
+  x ∉ dom (ctx_erasure_under Σ Γ) ->
+  ty_env_agree_on (fv_cty τ) (Σ ∪ erase_ctx Γ) (ctx_erasure_under Σ Γ) ->
+  m ⊨ ctx_denote_under Σ Γ ->
+  m ⊨ ty_denote_gas (cty_depth τ)
+    (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+    τ (tret (vfvar x)) ->
+  m ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind x τ).
+Proof.
+  intros HxΔ Hagree Hctx Harg.
+  assert (Hworld :
+      m ⊨ basic_world_formula
+        (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))).
+  {
+    replace (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+      with (<[LVFree x := erase_ty τ]>
+        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
+    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+    eapply basic_world_insert_of_arg.
+    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
+    - exact (ctx_denote_under_basic_world Σ Γ m Hctx).
+    - rewrite <- atom_store_to_lvar_store_insert. exact Harg.
+  }
+  eapply ctx_bind_from_inserted_erasure_denotation; eauto.
 Qed.
 
 Lemma ty_denote_gas_result_ext_base_env_transport
@@ -1397,46 +1506,52 @@ Proof.
   set (y := fresh_for
     (world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
       fv_tm (tret (vfvar x)))).
-  assert (Hyfresh :
-      y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
-        fv_tm (tret (vfvar x))).
-  { subst y. apply fresh_for_not_in. }
-  assert (Hy_m : y ∉ world_dom (m : WorldT)) by set_solver.
-  assert (Hy_D : LVFree y ∉ Dres).
-  {
-    intros HyD.
-    assert (HyDfv : y ∈ lvars_fv Dres).
-    { apply lvars_fv_elem. exact HyD. }
-    set_solver.
-  }
+	  assert (Hyfresh :
+	      y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ {[x]} ∪ lvars_fv Dres ∪
+	        fv_tm (tret (vfvar x))).
+	  { subst y. apply fresh_for_not_in. }
+	  assert (Hy_m : y ∉ world_dom (m : WorldT)).
+	  { intros Hy. apply Hyfresh. repeat apply elem_of_union_l. exact Hy. }
+	  assert (Hy_D : LVFree y ∉ Dres).
+	  {
+	    intros HyD.
+	    assert (HyDfv : y ∈ lvars_fv Dres).
+	    { apply lvars_fv_elem. exact HyD. }
+	    apply Hyfresh. rewrite !elem_of_union. left. right. exact HyDfv.
+	  }
   assert (Hlc_D : lc_lvars Dres).
   { subst Dres. apply relevant_env_closed.
     subst Σx. apply atom_store_to_lvar_store_closed. }
   assert (Htm_D : tm_lvars (tret (vfvar x)) ⊆ Dres).
-  {
-    subst Dres Σx.
-    intros v Hv.
-    unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
-    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
-      value_lvars_at lvar_value_keys] in Hv.
-    assert (Hvx : v = LVFree x) by set_solver.
-    subst v.
-    apply elem_of_dom.
-    exists (erase_ty (CTPersist τ)).
-    apply storeA_restrict_lookup_some_2.
-    - rewrite atom_store_to_lvar_store_lookup_free.
-      apply map_lookup_insert.
-    - cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-      set_solver.
-  }
+	  {
+	    subst Dres Σx.
+	    intros v Hv.
+	    unfold relevant_env, relevant_lvars, lty_env_restrict_lvars.
+	    cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at
+	      value_lvars_at lvar_value_keys] in Hv.
+	    assert (Hvx : v = LVFree x).
+	    {
+	      apply elem_of_singleton in Hv. exact Hv.
+	    }
+	    subst v.
+	    apply elem_of_dom.
+	    exists (erase_ty (CTPersist τ)).
+	    apply storeA_restrict_lookup_some_2.
+	    - rewrite atom_store_to_lvar_store_lookup_free.
+	      apply map_lookup_insert.
+    - cbn [context_ty_lvars context_ty_lvars_at tm_lvars tm_lvars_at value_lvars value_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
+	      apply elem_of_union_r. apply elem_of_singleton. reflexivity.
+	  }
   destruct (expr_result_extension_witness_on_exists
     (lvars_fv Dres) (tret (vfvar x)) y) as [Fx HFx].
   - intros a Ha.
     apply lvars_fv_elem.
     apply Htm_D.
     apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar x))) a)).
-    rewrite tm_lvars_fv. exact Ha.
-  - intros HyD_atoms. set_solver.
+	    rewrite tm_lvars_fv. exact Ha.
+		  - intros HyD_atoms.
+        apply Hyfresh. rewrite !elem_of_union. left. right. exact HyD_atoms.
   - destruct (res_extend_by_exists m Fx) as [my Hext].
     { constructor.
       - change (ext_in Fx ⊆ world_dom (m : WorldT)).
@@ -1470,33 +1585,22 @@ Proof.
         + intros a Ha. apply lvars_fv_elem. apply Htm_D.
           apply (proj1 (lvars_fv_elem (tm_lvars (tret (vfvar x))) a)).
           rewrite tm_lvars_fv. exact Ha.
-        + intros HyD_atoms. set_solver.
+	        + intros HyD_atoms.
+            apply Hyfresh. rewrite !elem_of_union. left. right. exact HyD_atoms.
         + split; [exact Hin_Fx|exact Hout_Fx].
         + exact Hrel_Fx.
       - exact Hext.
       - apply expr_total_formula_to_atom_world. exact Htotal.
     }
-    assert (Hres_open :
-        my ⊨ formula_open 0 y
-          (expr_result_formula_at
-            (lvars_shift_from 0
-              (dom (relevant_env Σx (CTPersist τ) (tret (vfvar x)))))
-            (tm_shift 0 (tret (vfvar x))) (LVBound 0))).
-    {
-      subst Dres.
-	      eapply result_first_outer_result_ret_value_at_open.
-	      - subst Σx. apply atom_store_to_lvar_store_closed.
-	      - constructor.
-	      - cbn [fv_value].
-	        intros Hyx. apply Hyfresh.
-	        clear -Hyx. set_solver.
-	      - intros Hyrel.
-	        apply Hy_D. apply lvars_fv_elem. exact Hyrel.
-	      - exact Hres_at.
-	    }
     pose proof (ty_denote_gas_persist_open_result
-      (cty_depth τ) Σx τ (tret (vfvar x)) y m my Hden
-      Hy_m Hdom_my' Hbase_my Hres_open) as Hpersist_open.
+      (cty_depth τ) Σx τ (tret (vfvar x)) y m my
+      ltac:(subst Σx; apply atom_store_to_lvar_store_closed)
+      ltac:(constructor; constructor)
+      ltac:(cbn [fv_tm fv_value]; intros Hyx; apply Hyfresh;
+        clear -Hyx; set_solver)
+	      ltac:(subst Dres; intros Hyrel; apply Hy_D;
+	        rewrite <- lvars_fv_elem; exact Hyrel)
+      Hden Hy_m Hdom_my' Hbase_my Hres_at) as Hpersist_open.
 	    rewrite formula_open_persist in Hpersist_open.
 	    rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.
 		    2:{
@@ -1553,7 +1657,7 @@ Proof.
 		        + apply storeA_restrict_lookup_some_2.
 		          * exact HT.
 		          * cbn [ctx_fv context_ty_lvars context_ty_lvars_at]. exact Ha.
-	      - unfold relevant_lvars.
+		      - unfold relevant_lvars.
 	        apply elem_of_union_l.
 	        rewrite <- lvars_fv_elem.
 	        rewrite context_ty_lvars_fv.
@@ -1597,7 +1701,7 @@ Proof.
 	        + rewrite lty_env_open_one_typed_bind_lookup_free_ne
 	            by (clear -HyA Haτ; set_solver).
 	          exact HT.
-	        + unfold relevant_lvars.
+		        + unfold relevant_lvars.
 	          apply elem_of_union_l.
 	          rewrite cty_open_shift_from_lc_fresh; [|exact Hlcτ|exact HyA].
 	          rewrite <- lvars_fv_elem, context_ty_lvars_fv.
@@ -1605,12 +1709,12 @@ Proof.
 	      - apply elem_of_singleton in Hay. subst a.
 	        exists (erase_ty (CTPersist τ)).
 	        apply storeA_restrict_lookup_some_2.
-	        + apply lty_env_open_one_typed_bind_lookup_current.
-	        + unfold relevant_lvars.
-	          apply elem_of_union_r.
-	          rewrite <- lvars_fv_elem, tm_lvars_fv.
-	          cbn [fv_tm fv_value open_tm open_value].
-	          set_solver.
+		        + apply lty_env_open_one_typed_bind_lookup_current.
+				        + unfold relevant_lvars.
+			          apply elem_of_union_r.
+			          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys
+                  open_tm open_value].
+			          apply elem_of_singleton. reflexivity.
 	    }
 	    assert (Hsingle_Ay :
 	        res_restrict my (fv_cty τ ∪ {[y]}) =
@@ -1620,22 +1724,38 @@ Proof.
 	            (store_restrict σy (fv_cty τ ∪ {[y]}))) : WfWorldT)).
 	    {
 	      rewrite <- Hdomσy in Hsingle_y.
-	      transitivity (res_restrict (res_restrict my (dom (σy : StoreT)))
-	        (fv_cty τ ∪ {[y]})).
-	      - rewrite res_restrict_restrict_eq.
-	        replace (dom (σy : StoreT) ∩ (fv_cty τ ∪ {[y]}))
-	          with (fv_cty τ ∪ {[y]}) by set_solver.
-	        reflexivity.
+		      transitivity (res_restrict (res_restrict my (dom (σy : StoreT)))
+		        (fv_cty τ ∪ {[y]})).
+		      - rewrite res_restrict_restrict_eq.
+		        replace (dom (σy : StoreT) ∩ (fv_cty τ ∪ {[y]}))
+		          with (fv_cty τ ∪ {[y]}).
+			        2:{
+			          apply set_eq. intros a. split.
+			          - intros Ha. apply elem_of_intersection. split; [|exact Ha].
+			            exact (HAy_σy a Ha).
+			          - intros Ha. apply elem_of_intersection in Ha as [_ Ha].
+			            exact Ha.
+			        }
+		        reflexivity.
 	      - rewrite Hsingle_y. apply res_restrict_singleton_world.
-	    }
-	    pose proof (res_restrict_singleton_pullback_ret_fvar_result
-	      (fv_cty τ) Dres x y m my
-	      (store_restrict σy (fv_cty τ ∪ {[y]}))
-	      HA_m Hxm Hy_m HxA HyA Htm_D
-	      Hy_D
-	      Hres_at
-	      Hclosed_x_my
-	      Hdom_my' Hbase_my
+		    }
+        assert (Hyfresh_result :
+            y ∉ world_dom (m : WorldT) ∪ fv_cty τ ∪ lvars_fv Dres).
+        {
+          intros Hybad.
+          apply elem_of_union in Hybad as [Hybad|HyDfv].
+          - apply elem_of_union in Hybad as [Hyworld|Hyτbad].
+            + exact (Hy_m Hyworld).
+            + exact (HyA Hyτbad).
+          - apply Hy_D. rewrite lvars_fv_elem in HyDfv. exact HyDfv.
+        }
+		    pose proof (res_restrict_singleton_pullback_ret_fvar_result
+		      (fv_cty τ) Dres x y m my
+		      (store_restrict σy (fv_cty τ ∪ {[y]}))
+		      HA_m Hxm Hyfresh_result HxA Htm_D
+		      Hres_at
+		      Hclosed_x_my
+		      Hdom_my' Hbase_my
 	      Hsingle_Ay) as [σx [Hdomσx Hsingle_x]].
     exists σx. split; [exact Hdomσx|exact Hsingle_x].
 Qed.

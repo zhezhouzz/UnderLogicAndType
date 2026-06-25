@@ -145,7 +145,7 @@ Proof.
     + exfalso. exact (Hlc (LVBound k) HvD).
     + rewrite lstore_lift_free_lookup_free.
       unfold atom_store_extend_lstore_on.
-      assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HvD).
+      assert (HxD : x ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HvD).
       assert (Hxdom : x ∈ dom (lstore_to_store (lso_store s) : gmap atom V)).
       {
         change (x ∈ dom (lstore_to_store (lso_store s) : StoreT)).
@@ -339,12 +339,12 @@ Proof.
       rewrite lstore_lift_free_lookup_bound. reflexivity.
     + symmetry. apply storeA_restrict_lookup_none_l.
       rewrite lstore_lift_free_lookup_bound. reflexivity.
-  - assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HzD).
+  - assert (HxD : x ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HzD).
     destruct ((σ : gmap atom V) !! x) as [v|] eqn:Hσx.
     + transitivity (Some v).
       * apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free.
-        apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxD].
+        apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσx HxD).
       * symmetry. apply storeA_restrict_lookup_some_2; [|exact HzD].
         rewrite lstore_lift_free_lookup_free. exact Hσx.
     + transitivity (@None V).
@@ -549,7 +549,7 @@ Proof.
       symmetry.
       change ((storeA_restrict σ (lvars_fv ({[LVFree y]} : lvset))
         : gmap atom V) !! y = Some v).
-      apply storeA_restrict_lookup_some_2; [exact Hσy|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy).
       rewrite lvars_fv_singleton_free. apply elem_of_singleton.
       reflexivity.
     }

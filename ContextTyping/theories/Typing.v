@@ -8,8 +8,12 @@ From ContextLogic Require Import FormulaSemantics.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextTypeLanguage Require Import WF.
+From ContextBasicDenotation Require Import BasicTypingFormula.
 From Denotation Require Import Context.
 From ContextTyping Require Import PrimOpContext.
+
+Local Notation WorldT := (World (V := value)) (only parsing).
+Local Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
 (** * ContextTyping.WellFormed
 
@@ -175,6 +179,50 @@ Lemma context_typing_wf_context_ty Σ Γ e τ :
   wf_context_ty_at 0 (dom (erase_ctx Γ)) τ.
 Proof. intros [_ [Hτ _]]. exact Hτ. Qed.
 
+Lemma context_typing_wf_arrow_arg_lc Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTArrow τx τ) ->
+  lc_context_ty τx.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTArrow τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ)) τx (proj1 Hτ)).
+Qed.
+
+Lemma context_typing_wf_arrow_result_lc1 Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTArrow τx τ) ->
+  cty_lc_at 1 τ.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTArrow τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ)).
+Qed.
+
+Lemma context_typing_wf_wand_arg_lc Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTWand τx τ) ->
+  lc_context_ty τx.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTWand τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 0 ∅ τx (proj1 Hτ)).
+Qed.
+
+Lemma context_typing_wf_wand_result_lc1 Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTWand τx τ) ->
+  cty_lc_at 1 τ.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTWand τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ)).
+Qed.
+
 Lemma context_typing_wf_bind_context_ty Σ x τ e :
   context_typing_wf Σ (CtxBind x τ) e τ ->
   basic_context_ty {[x]} τ.
@@ -228,6 +276,119 @@ Proof.
   cbn [wf_context_ty_at] in Hτ.
   exact (proj1 Hτ).
 Qed.
+
+Lemma soundness_wf_ret_persist_obs_subset
+    Σ Γ τ v :
+  context_typing_wf Σ Γ (tret v) (CTPersist τ) ->
+  fv_cty τ ∪ fv_value v ⊆ dom (erase_ctx Γ).
+Proof.
+  intros Hwf a Ha.
+  apply elem_of_union in Ha as [Ha|Ha].
+  - apply context_typing_wf_fv_cty_subset_erase_dom with
+      (Σ := Σ) (e := tret v) (τ := CTPersist τ) in Hwf.
+    cbn [fv_cty context_ty_lvars context_ty_lvars_at] in Hwf.
+    exact (Hwf a Ha).
+  - pose proof (context_typing_wf_fv_tm_subset Σ Γ (tret v)
+      (CTPersist τ) Hwf) as Hfv.
+    cbn [fv_tm] in Hfv.
+    exact (Hfv a Ha).
+Qed.
+
+Lemma soundness_wf_ret_persist_observed_world
+    Σ Γ τ v (m : WfWorldT) :
+  context_typing_wf Σ Γ (tret v) (CTPersist τ) ->
+  m ⊨ ctx_denote_under Σ Γ ->
+  fv_cty τ ∪ fv_value v ⊆ world_dom (m : WorldT).
+Proof.
+  intros Hwf Hctx.
+  pose proof (soundness_wf_ret_persist_obs_subset
+    Σ Γ τ v Hwf) as Hobs.
+  pose proof (ctx_denote_under_basic_world Σ Γ m Hctx) as Hworld.
+  pose proof (basic_world_formula_atom_env_dom_subset
+    (ctx_erasure_under Σ Γ) m Hworld) as Hctxdom.
+  ctx_erasure_under_norm_in Hctxdom.
+  intros a Ha.
+  pose proof (Hobs a Ha) as Haobs.
+  apply Hctxdom.
+  ctx_erasure_under_norm.
+  set_solver.
+Qed.
+
+Ltac soundness_regular_observed_world :=
+  match goal with
+  | Hwf : context_typing_wf ?Σ ?Γ (tret ?v) (CTPersist ?τ),
+    Hctx : ?m ⊨ ctx_denote_under ?Σ ?Γ |- _ =>
+      lazymatch goal with
+      | H : fv_cty τ ∪ fv_value v ⊆ world_dom (m : WorldT) |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hobs_world" in
+          pose proof (soundness_wf_ret_persist_observed_world
+            Σ Γ τ v m Hwf Hctx) as H
+      end
+  end.
+
+Ltac soundness_regular_lc :=
+  repeat match goal with
+  | Hwf : context_typing_wf ?Σ ?Γ (tret ?v) (CTPersist ?τ) |- _ =>
+      lazymatch goal with
+      | H : lc_value v |- _ => fail
+      | _ =>
+          let H := fresh "Hv" in
+          pose proof (context_typing_wf_ret_lc_value
+            Σ Γ v (CTPersist τ) Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTArrow ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : lc_context_ty τx |- _ => fail
+      | _ =>
+          let H := fresh "Hτx_lc" in
+          pose proof (context_typing_wf_arrow_arg_lc
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTArrow ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : cty_lc_at 1 τ |- _ => fail
+      | _ =>
+          let H := fresh "Hτ_lc1" in
+          pose proof (context_typing_wf_arrow_result_lc1
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTWand ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : lc_context_ty τx |- _ => fail
+      | _ =>
+          let H := fresh "Hτx_lc" in
+          pose proof (context_typing_wf_wand_arg_lc
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTWand ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : cty_lc_at 1 τ |- _ => fail
+      | _ =>
+          let H := fresh "Hτ_lc1" in
+          pose proof (context_typing_wf_wand_result_lc1
+            Σ Γ e τx τ Hwf) as H
+      end
+  end.
+
+Ltac soundness_regular_obs_subset :=
+  match goal with
+  | Hwf : context_typing_wf ?Σ ?Γ (tret ?v) (CTPersist ?τ) |- _ =>
+      lazymatch goal with
+      | H : fv_cty τ ∪ fv_value v ⊆ dom (erase_ctx Γ) |- _ =>
+          fail
+      | _ =>
+          let H := fresh "Hobs" in
+          pose proof (soundness_wf_ret_persist_obs_subset
+            Σ Γ τ v Hwf) as H
+      end
+  end.
+
+Ltac soundness_regular :=
+  try soundness_regular_observed_world;
+  try soundness_regular_lc;
+  try soundness_regular_obs_subset.
 
 Inductive has_context_type (Φ : primop_ctx) (Σ : gmap atom ty) : ctx → tm → context_ty → Prop :=
 
