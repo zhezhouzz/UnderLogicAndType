@@ -275,3 +275,37 @@ Leak check:
 - `SoundnessApp.v` has no remaining `formula_open 0` occurrences.
 
 Status: completed.
+
+## Iteration 10: SoundnessMatch Sum Branches Normalized At Source
+
+Problem:
+
+- Match/Sum branch helpers exposed raw opened branch denotations:
+  `formula_open 0 y (ty_denote_gas ... (cty_shift 0 τ) (ret #0))`.
+- Their env-agree helpers also exposed
+  `lty_env_open_one 0 y (typed_lty_env_bind ...)` and `relevant_lvars`.
+
+Action:
+
+- Changed `sum_branch_source_env_agree` and `_right` to use inserted envs
+  and direct support:
+  `context_ty_lvars τi ∪ tm_lvars e`.
+- Changed left/right pulled-branch helpers to return normalized
+  `ty_denote_gas ... (<[LVFree y := erase_ty τ1]> Σrel) τi (ret y)`.
+- Changed the Sum split helpers to return normalized `FPlus` branches.
+- At the first SoundnessMatch Sum opening point, normalized formula-open,
+  env-open, type-open, and term-open before applying the normalized helper.
+
+Validation:
+
+- `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessMatch.vo`
+- `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo`
+
+Leak check:
+
+- `SoundnessMatch.v` has no remaining
+  `cty_open 0 ... cty_shift 0`,
+  `formula_open 0 ... ty_denote_gas`, or
+  `lty_env_open_one 0 ... typed_lty_env_bind` occurrences.
+
+Status: completed.
