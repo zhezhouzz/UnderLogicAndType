@@ -164,3 +164,21 @@ Count movement:
 - `TypeDenote.v`: 115 -> 107 relevant wrapper hits.
 
 Status: completed.
+
+## Iteration 5: TLet Open-Arg Env-Agree Call Sites
+
+Problem:
+
+- `tlet_arrow_open_arg_env` and `tlet_wand_open_arg_env` still called
+  `ty_denote_gas_env_agree_on` with `relevant_lvars τa ea`.
+
+Action:
+
+- Replaced those four call-site observation sets with
+  `context_ty_lvars τa ∪ tm_lvars ea`.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+
+Status: completed.

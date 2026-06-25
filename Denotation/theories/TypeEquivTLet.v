@@ -168,7 +168,7 @@ Proof.
       (typed_lty_env_bind
         (relevant_env Σ (CTArrow τx τr) e_src) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (relevant_lvars τa ea)
+    τa ea (context_ty_lvars τa ∪ tm_lvars ea)
     ltac:(set_solver)
     (arrow_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_src Hyτx)) as Hsrc_mid.
@@ -177,7 +177,7 @@ Proof.
       (typed_lty_env_bind
         (relevant_env Σ (CTArrow τx τr) e_tgt) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (relevant_lvars τa ea)
+    τa ea (context_ty_lvars τa ∪ tm_lvars ea)
     ltac:(set_solver)
     (arrow_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_tgt Hyτx)) as Htgt_mid.
@@ -261,7 +261,7 @@ Proof.
       (typed_lty_env_bind
         (relevant_env Σ (CTWand τx τr) e_src) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (relevant_lvars τa ea)
+    τa ea (context_ty_lvars τa ∪ tm_lvars ea)
     ltac:(set_solver)
     (wand_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_src Hyτx)) as Hsrc_mid.
@@ -270,7 +270,7 @@ Proof.
       (typed_lty_env_bind
         (relevant_env Σ (CTWand τx τr) e_tgt) (erase_ty τx)))
     (lty_env_open_one 0 y (typed_lty_env_bind Σ (erase_ty τx)))
-    τa ea (relevant_lvars τa ea)
+    τa ea (context_ty_lvars τa ∪ tm_lvars ea)
     ltac:(set_solver)
     (wand_arg_relevant_env_agree_open_one_core
       Σ (erase_ty τx) y τx τr e_tgt Hyτx)) as Htgt_mid.
