@@ -330,8 +330,8 @@ Lemma sum_result_lift_support_subset Σ τsum τ e T :
   context_ty_lvars τ ⊆ context_ty_lvars τsum ->
   lvars_at_depth 1
     (dom (typed_lty_env_bind (relevant_env Σ τsum e) T) ∪
-     relevant_lvars (cty_shift 0 τ) (tret (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars τsum e.
+     (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars τsum ∪ tm_lvars e).
 Proof.
   intros Hτsub.
   unfold relevant_lvars.
@@ -359,8 +359,9 @@ Lemma arrow_value_arg_lift2_support_subset Σ τx τr e :
         (relevant_env Σ (CTArrow τx τr) e)
         (erase_ty (CTArrow τx τr)))
       (erase_ty (cty_shift 0 τx))) ∪
-     relevant_lvars (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars (CTArrow τx τr) e.
+     (context_ty_lvars (cty_shift 0 (cty_shift 0 τx)) ∪
+       tm_lvars (tret (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e).
 Proof.
   rewrite lvars_at_depth_union.
   rewrite !lvars_at_depth_typed_lty_env_bind.
@@ -381,9 +382,9 @@ Lemma arrow_value_body_lift2_support_subset Σ τx τr e :
         (relevant_env Σ (CTArrow τx τr) e)
         (erase_ty (CTArrow τx τr)))
       (erase_ty (cty_shift 0 τx))) ∪
-     relevant_lvars (cty_shift 1 τr)
-       (tapp_tm (tret (vbvar 1)) (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars (CTArrow τx τr) e.
+     (context_ty_lvars (cty_shift 1 τr) ∪
+       tm_lvars (tapp_tm (tret (vbvar 1)) (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e).
 Proof.
   rewrite lvars_at_depth_union.
   rewrite !lvars_at_depth_typed_lty_env_bind.
@@ -406,8 +407,9 @@ Lemma wand_value_arg_lift2_support_subset Σ τx τr e :
         (relevant_env Σ (CTWand τx τr) e)
         (erase_ty (CTWand τx τr)))
       (erase_ty (cty_shift 0 τx))) ∪
-     relevant_lvars (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars (CTWand τx τr) e.
+     (context_ty_lvars (cty_shift 0 (cty_shift 0 τx)) ∪
+       tm_lvars (tret (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars (CTWand τx τr) ∪ tm_lvars e).
 Proof.
   change (relevant_env Σ (CTWand τx τr) e)
     with (relevant_env Σ (CTArrow τx τr) e).
@@ -424,9 +426,9 @@ Lemma wand_value_body_lift2_support_subset Σ τx τr e :
         (relevant_env Σ (CTWand τx τr) e)
         (erase_ty (CTWand τx τr)))
       (erase_ty (cty_shift 0 τx))) ∪
-     relevant_lvars (cty_shift 1 τr)
-       (tapp_tm (tret (vbvar 1)) (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars (CTWand τx τr) e.
+     (context_ty_lvars (cty_shift 1 τr) ∪
+       tm_lvars (tapp_tm (tret (vbvar 1)) (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars (CTWand τx τr) ∪ tm_lvars e).
 Proof.
   change (relevant_env Σ (CTWand τx τr) e)
     with (relevant_env Σ (CTArrow τx τr) e).
@@ -440,8 +442,8 @@ Lemma persist_body_lift_support_subset Σ τ e :
   lvars_at_depth 1
     (dom (typed_lty_env_bind
       (relevant_env Σ (CTPersist τ) e) (erase_ty τ)) ∪
-     relevant_lvars (cty_shift 0 τ) (tret (vbvar 0))) ⊆
-  dom Σ ∪ relevant_lvars (CTPersist τ) e.
+     (context_ty_lvars (cty_shift 0 τ) ∪ tm_lvars (tret (vbvar 0)))) ⊆
+  dom Σ ∪ (context_ty_lvars (CTPersist τ) ∪ tm_lvars e).
 Proof.
   rewrite lvars_at_depth_union.
   rewrite lvars_at_depth_typed_lty_env_bind.

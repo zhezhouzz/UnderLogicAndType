@@ -182,3 +182,26 @@ Validation:
 - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
 
 Status: completed.
+
+## Iteration 6: TypeDenote Lift-Support Lemmas
+
+Problem:
+
+- Sum/Arrow/Wand/Persist lift-support helper statements still used
+  `relevant_lvars` in their support set conclusions.
+
+Action:
+
+- Replaced those statements with direct
+  `context_ty_lvars ... ∪ tm_lvars ...` support.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo`
+- `timeout 180s make TIMED=1`
+
+Count movement:
+
+- `TypeDenote.v`: 107 -> 95 relevant wrapper hits.
+
+Status: completed.
