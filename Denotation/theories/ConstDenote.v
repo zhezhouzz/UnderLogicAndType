@@ -96,25 +96,11 @@ Proof.
       (set_swap (LVBound 0) (LVFree y)
         (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})))
     with (∅ : aset).
-  2:{
-    unfold mk_q_eq, qual_vars.
-    cbn [qual_lvars lvar_value_keys].
-    replace (({[LVBound 0]} ∪ ∅) ∖ {[LVBound 0]} : lvset) with (∅ : lvset)
-      by set_solver.
-    replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset) with (∅ : lvset)
-      by set_solver.
-    rewrite ?set_swap_empty, ?lvars_fv_empty.
-    reflexivity.
-  }
+  2:{ symmetry. apply const_swapped_removed_vars_fv_empty. }
   replace (lvars_fv
       (qual_vars (mk_q_eq (vfvar y) (vconst c))))
     with ({[y]} : aset).
-  2:{
-    unfold qual_dom, mk_q_eq, qual_vars.
-    cbn [qual_lvars lvar_value_keys].
-    rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_free.
-    apply set_eq. intros a. set_solver.
-  }
+  2:{ symmetry. apply const_open_qual_vars_fv. }
   intros a Ha.
   apply elem_of_union in Ha as [Ha|Ha].
   - rewrite elem_of_empty in Ha. contradiction.
@@ -137,25 +123,11 @@ Proof.
       (set_swap (LVBound 0) (LVFree y)
         (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})))
     with (∅ : aset).
-  2:{
-    unfold mk_q_eq, qual_vars.
-    cbn [qual_lvars lvar_value_keys].
-    replace (({[LVBound 0]} ∪ ∅) ∖ {[LVBound 0]} : lvset) with (∅ : lvset)
-      by set_solver.
-    replace ({[LVBound 0]} ∖ {[LVBound 0]} : lvset) with (∅ : lvset)
-      by set_solver.
-    rewrite ?set_swap_empty, ?lvars_fv_empty.
-    reflexivity.
-  }
+  2:{ symmetry. apply const_swapped_removed_vars_fv_empty. }
   replace (lvars_fv
       (qual_vars (mk_q_eq (vfvar y) (vconst c))))
     with ({[y]} : aset).
-  2:{
-    unfold qual_dom, mk_q_eq, qual_vars.
-    cbn [qual_lvars lvar_value_keys].
-    rewrite ?lvars_fv_union, ?lvars_fv_empty, ?lvars_fv_singleton_free.
-    apply set_eq. intros a. set_solver.
-  }
+  2:{ symmetry. apply const_open_qual_vars_fv. }
   intros a Ha.
   apply elem_of_union in Ha as [Ha|Ha].
   - rewrite elem_of_empty in Ha. contradiction.

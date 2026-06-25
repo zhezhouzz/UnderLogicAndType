@@ -194,6 +194,29 @@ Proof.
   set_solver.
 Qed.
 
+Lemma const_qual_vars_bound_without_bound c :
+  qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]} = ∅.
+Proof.
+  rewrite const_qual_vars_bound.
+  set_solver.
+Qed.
+
+Lemma const_swapped_removed_vars_fv_empty c y :
+  lvars_fv
+    (set_swap (LVBound 0) (LVFree y)
+      (qual_vars (mk_q_eq (vbvar 0) (vconst c)) ∖ {[LVBound 0]})) = ∅.
+Proof.
+  rewrite const_qual_vars_bound_without_bound, set_swap_empty, lvars_fv_empty.
+  reflexivity.
+Qed.
+
+Lemma const_open_qual_vars_fv c y :
+  lvars_fv (qual_vars (mk_q_eq (vfvar y) (vconst c))) = {[y]}.
+Proof.
+  rewrite const_qual_open_vars, lvars_fv_singleton_free.
+  reflexivity.
+Qed.
+
 Lemma const_qual_dom_bound_fresh c y :
   y ∉ qual_dom (mk_q_eq (vbvar 0) (vconst c)).
 Proof.

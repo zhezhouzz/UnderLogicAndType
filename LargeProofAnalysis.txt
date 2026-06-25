@@ -134,12 +134,27 @@ Round 3:
   Denotation/theories/TypeEquivWandResultFirst.vo
   Denotation/theories/TypeEquivTLet.vo`.
 
+Round 4:
+
+- Started the focused Const pass identified in the previous round.
+- Added lower-level qualifier/FV facts to `ConstDenoteBase`:
+  `const_qual_vars_bound_without_bound`,
+  `const_swapped_removed_vars_fv_empty`, and
+  `const_open_qual_vars_fv`.
+- Replaced the duplicated local set/FV proof bodies in
+  `ConstDenote.const_open_fib_over_swapped_scoped` and
+  `ConstDenote.const_open_fib_under_swapped_scoped` with those facts.
+- This is a lowering cleanup rather than a large semantic split: the remaining
+  over/under helpers are intentionally kept as readable semantic wrappers.
+
 Next Measurable Large-Proof Target
 ----------------------------------
 
-- The next high-value duplicate reduction target is the Const over/under local
-  helper pair. It probably wants a small polarity abstraction rather than a
-  store/resource lowering.
+- The next high-value duplicate target is now either Const guard tactics
+  (`solve_const_over_guard` / `solve_const_under_guard`) or the result-first
+  Arrow/Wand opening layer. Const scoped fiber FV proof bodies have been
+  lowered; a full polarity abstraction is deferred unless another caller
+  appears.
 
 Deferred
 --------

@@ -136,6 +136,29 @@ Current Remaining Exact Duplicates After Round 5
 - Const `over/under` pairs: likely can be generalized over the polarity of
   refinement, but should be done in a focused Const pass.
 
+Round 6: Const scoped fiber FV facts.
+
+- Added canonical lower-level Const facts in `ConstDenoteBase`:
+  - `const_qual_vars_bound_without_bound`
+  - `const_swapped_removed_vars_fv_empty`
+  - `const_open_qual_vars_fv`
+- Replaced the duplicated local set/FV proof bodies in
+  `const_open_fib_over_swapped_scoped` and
+  `const_open_fib_under_swapped_scoped`.
+- Deliberately did not abstract over `FOver` / `FUnder`: that abstraction made
+  the statement less readable than the two semantic wrapper names. The shared
+  proof content is now in the lower syntax facts.
+
+Current Remaining Exact Duplicates After Round 6
+------------------------------------------------
+
+- `ctx_erasure_under_bind/comma/star`: small definitional `reflexivity`
+  wrappers; leave for now.
+- Const guard tactics `solve_const_over_guard` /
+  `solve_const_under_guard`: still symmetric, but tied to different
+  `context_ty_wf_formula_const_*_empty` lemmas. Consider a focused normalized
+  guard helper if this file becomes slow again.
+
 Deferred Candidates
 -------------------
 

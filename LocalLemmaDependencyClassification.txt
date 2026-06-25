@@ -265,6 +265,27 @@ No remaining local store/resource-only helper after moving
 - `over_y_fiber_store_dom`: stdpp/store + resource + type-syntax
 - `over_y_fiber_restrict_singleton`: stdpp/store + resource + type-syntax
 
+Const Pass Update
+-----------------
+
+### Denotation/theories/ConstDenoteBase.v
+
+- `const_qual_vars_bound_without_bound`: qualifier syntax + stdpp set.
+  This is now the canonical lower fact for removing the bound result slot from
+  the constant equality qualifier.
+- `const_swapped_removed_vars_fv_empty`: qualifier syntax + lvar/set syntax.
+  This is now the canonical lower fact for the swapped removed-domain fragment
+  used by Const over/under result bodies.
+- `const_open_qual_vars_fv`: qualifier syntax + lvar/set syntax. This is now
+  the canonical lower fact for opened constant equality qualifier free atoms.
+
+### Denotation/theories/ConstDenote.v
+
+- `const_open_fib_over_swapped_scoped`: logic/formula + const qualifier facts.
+  The stdpp/FV body has been lowered to `ConstDenoteBase`.
+- `const_open_fib_under_swapped_scoped`: logic/formula + const qualifier facts.
+  The stdpp/FV body has been lowered to `ConstDenoteBase`.
+
 Next Candidate Passes
 ---------------------
 
@@ -275,9 +296,8 @@ Next Candidate Passes
 2. `swap_opened_singleton_domain` is still a pure set/swap lemma, but it is
    tied to one atom-swap proof shape in `TypePersistBase`; lower only if a
    second caller appears.
-3. Const over/under local helpers are symmetric and should be generalized in a
-   focused Const pass rather than moved as store/resource facts.
-4. After pass 10, the next concrete duplicate target is the Const
-   over/under local helper pair. That should be a focused Const pass because
-   it likely needs a polarity abstraction rather than a pure store/resource
-   lowering.
+3. Const scoped fiber local helpers have had their pure set/FV pieces lowered.
+   A full polarity abstraction is deferred because the remaining wrappers are
+   short and more readable as over/under-specific semantic names.
+4. After pass 10, the next concrete duplicate target is either Const guard
+   tactics or result-first Arrow/Wand open-normalization facts.
