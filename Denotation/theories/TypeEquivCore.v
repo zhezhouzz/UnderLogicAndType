@@ -601,25 +601,9 @@ Proof.
     + exact Hlc.
 Qed.
 
-Lemma basic_world_formula_result_alias_target
-    (Σ : lty_env) τ e x (m : WfWorldT) :
-  lty_env_closed Σ ->
-  Σ !! LVFree x = Some (erase_ty τ) ->
-  m ⊨ expr_result_formula e (LVFree x) ->
-  m ⊨ basic_world_formula Σ ->
-  m ⊨ expr_basic_typing_formula Σ e
-    (erase_ty τ) ->
-  m ⊨ basic_world_formula Σ.
-Proof.
-  intros _ _ _ Hworld_src _.
-  exact Hworld_src.
-Qed.
-
 Lemma ty_denote_gas_result_alias_guard
     (Σ : lty_env) τ e x (m : WfWorldT) :
-  lty_env_closed Σ ->
   Σ !! LVFree x = Some (erase_ty τ) ->
-  m ⊨ expr_result_formula e (LVFree x) ->
   m ⊨ FAnd
     (context_ty_wf_formula Σ τ)
     (FAnd
@@ -637,7 +621,7 @@ Lemma ty_denote_gas_result_alias_guard
           (tret (vfvar x)) (erase_ty τ))
         (expr_total_formula (tret (vfvar x))))).
 Proof.
-  intros _ Hlookup _ Hguard.
+  intros Hlookup Hguard.
   repeat rewrite res_models_and_iff in Hguard |- *.
   destruct Hguard as [Hwf [Hworld [_ _]]].
   split; [exact Hwf|].

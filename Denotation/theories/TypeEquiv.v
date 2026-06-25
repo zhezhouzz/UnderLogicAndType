@@ -448,7 +448,7 @@ Proof.
     apply res_models_and_iff. split; [exact Hbasic|exact Htotal_vx].
   }
   pose proof (ty_denote_gas_result_alias_guard
-    Σ τ (tret vx) z m HΣclosed Hlookup Hres Hguard_vx)
+    Σ τ (tret vx) z m Hlookup Hguard_vx)
     as Hguard_z.
   unfold ty_static_guard_formula.
   repeat rewrite res_models_and_iff in Hguard_z.
