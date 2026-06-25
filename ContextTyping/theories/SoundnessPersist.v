@@ -108,6 +108,104 @@ Proof.
   apply TypeEquivFiberBaseResult.expr_result_formula_at_ret_value_closed_result.
 Qed.
 
+Lemma ret_value_result_restrict_y_lookup_iff
+    A v y (my : WfWorldT) σ1 σ2 vy :
+  y ∈ world_dom (my : WorldT) ->
+  fv_value v ⊆ A ->
+  wfworld_closed_on (A ∪ {[y]}) my ->
+  lc_value v ->
+  my ⊨ expr_result_formula (tret v) (LVFree y) ->
+  (my : WorldT) σ1 ->
+  (my : WorldT) σ2 ->
+  store_restrict σ1 A = store_restrict σ2 A ->
+  (store_restrict σ1 (A ∪ {[y]}) : StoreT) !! y = Some vy <->
+  (store_restrict σ2 (A ∪ {[y]}) : StoreT) !! y = Some vy.
+Proof.
+  intros Hym HvA Hclosed Hv Hres Hσ1 Hσ2 HA_eq.
+  assert (HclosedA : wfworld_closed_on A my).
+  {
+    eapply wfworld_closed_on_mono; [|exact Hclosed].
+    intros a Ha. apply elem_of_union_l. exact Ha.
+  }
+  assert (Hinst_eq : m{σ1} v = m{σ2} v).
+  {
+    eapply msubst_value_agree_on_restrict.
+    - exact (proj1 (HclosedA σ1 Hσ1)).
+    - exact (proj1 (HclosedA σ2 Hσ2)).
+    - exact HvA.
+    - exact HA_eq.
+  }
+  pose proof (expr_result_formula_ret_value_inst_eq_on
+    my (A ∪ {[y]}) v y ltac:(set_solver) ltac:(set_solver)
+    Hclosed Hv Hres σ1 Hσ1) as Hy1.
+  pose proof (expr_result_formula_ret_value_inst_eq_on
+    my (A ∪ {[y]}) v y ltac:(set_solver) ltac:(set_solver)
+    Hclosed Hv Hres σ2 Hσ2) as Hy2.
+  assert (Hinst_1_big :
+      m{(store_restrict σ1 (A ∪ {[y]}) : StoreT)} v = m{σ1} v).
+  {
+    apply (@msubst_restrict_closed_on value _ _ _ _ _
+      σ1 (A ∪ {[y]}) v (proj1 (Hclosed σ1 Hσ1))).
+    set_solver.
+  }
+  assert (Hinst_2_big :
+      m{(store_restrict σ2 (A ∪ {[y]}) : StoreT)} v = m{σ2} v).
+  {
+    apply (@msubst_restrict_closed_on value _ _ _ _ _
+      σ2 (A ∪ {[y]}) v (proj1 (Hclosed σ2 Hσ2))).
+    set_solver.
+  }
+  split; intros Hlook.
+  - pose proof Hy1 as Hy1_v.
+    rewrite (msubst_fvar_lookup_closed
+      (store_restrict σ1 (A ∪ {[y]}) : StoreT) y vy
+      (proj1 (Hclosed σ1 Hσ1)) Hlook) in Hy1_v.
+    assert (Hy2_dom : y ∈ dom (σ2 : StoreT)).
+    {
+      rewrite (wfworld_store_dom my σ2 Hσ2).
+      exact Hym.
+    }
+    apply elem_of_dom in Hy2_dom as [v2 Hlook2].
+    assert (Hlook2R :
+        (store_restrict σ2 (A ∪ {[y]}) : StoreT) !! y = Some v2).
+    { apply storeA_restrict_lookup_some_2; [exact Hlook2|set_solver]. }
+    pose proof Hy2 as Hy2_v.
+    rewrite (msubst_fvar_lookup_closed
+      (store_restrict σ2 (A ∪ {[y]}) : StoreT) y v2
+      (proj1 (Hclosed σ2 Hσ2)) Hlook2R) in Hy2_v.
+    assert (Hv2 : v2 = vy).
+    {
+      rewrite Hy2_v, Hinst_2_big, <- Hinst_eq,
+        <- Hinst_1_big, <- Hy1_v.
+      reflexivity.
+    }
+    rewrite Hv2 in Hlook2R. exact Hlook2R.
+  - pose proof Hy2 as Hy2_v.
+    rewrite (msubst_fvar_lookup_closed
+      (store_restrict σ2 (A ∪ {[y]}) : StoreT) y vy
+      (proj1 (Hclosed σ2 Hσ2)) Hlook) in Hy2_v.
+    assert (Hy1_dom : y ∈ dom (σ1 : StoreT)).
+    {
+      rewrite (wfworld_store_dom my σ1 Hσ1).
+      exact Hym.
+    }
+    apply elem_of_dom in Hy1_dom as [v1 Hlook1].
+    assert (Hlook1R :
+        (store_restrict σ1 (A ∪ {[y]}) : StoreT) !! y = Some v1).
+    { apply storeA_restrict_lookup_some_2; [exact Hlook1|set_solver]. }
+    pose proof Hy1 as Hy1_v.
+    rewrite (msubst_fvar_lookup_closed
+      (store_restrict σ1 (A ∪ {[y]}) : StoreT) y v1
+      (proj1 (Hclosed σ1 Hσ1)) Hlook1R) in Hy1_v.
+    assert (Hv1 : v1 = vy).
+    {
+      rewrite Hy1_v, Hinst_1_big, Hinst_eq,
+        <- Hinst_2_big, <- Hy2_v.
+      reflexivity.
+    }
+    rewrite Hv1 in Hlook1R. exact Hlook1R.
+Qed.
+
 Lemma insert_relevant_env_ret_value_restrict_eq Σ τ v y :
   y ∉ lvars_fv (dom Σ) ∪ fv_cty τ ∪ fv_value v ->
   lty_env_restrict_lvars
@@ -205,39 +303,10 @@ Proof.
           replace (world_dom (m : WorldT) ∩ A) with A by set_solver.
           reflexivity.
       }
-	      assert (HclosedA : wfworld_closed_on A my).
-	      {
-	        eapply wfworld_closed_on_mono; [|exact Hclosed].
-	        intros a Ha. apply elem_of_union_l. exact Ha.
-	      }
-      assert (Hinst_eq : m{σmy} v = m{σ0} v).
-      {
-        eapply msubst_value_agree_on_restrict.
-        - exact (proj1 (HclosedA σmy Hσmy)).
-        - exact (proj1 (HclosedA σ0 Hσ0)).
-        - exact HvA.
-        - exact HA_eq.
-      }
-      pose proof (expr_result_formula_ret_value_inst_eq_on
-        my (A ∪ {[y]}) v y ltac:(set_solver) ltac:(set_solver)
-        Hclosed Hv Hres_small σmy Hσmy) as Hy_my.
-      pose proof (expr_result_formula_ret_value_inst_eq_on
-        my (A ∪ {[y]}) v y ltac:(set_solver) ltac:(set_solver)
-        Hclosed Hv Hres_small σ0 Hσ0) as Hy_0.
-      assert (Hinst_my_big :
-          m{(store_restrict σmy (A ∪ {[y]}) : StoreT)} v = m{σmy} v).
-      {
-        apply (@msubst_restrict_closed_on value _ _ _ _ _
-          σmy (A ∪ {[y]}) v (proj1 (Hclosed σmy Hσmy))).
-        set_solver.
-      }
-      assert (Hinst_0_big :
-          m{(store_restrict σ0 (A ∪ {[y]}) : StoreT)} v = m{σ0} v).
-      {
-        apply (@msubst_restrict_closed_on value _ _ _ _ _
-          σ0 (A ∪ {[y]}) v (proj1 (Hclosed σ0 Hσ0))).
-        set_solver.
-      }
+      assert (Hy_my_world : y ∈ world_dom (my : WorldT)).
+      { rewrite Hdom_my. set_solver. }
+      pose proof (ret_value_result_restrict_y_lookup_iff
+        A v y my σmy σ0) as Hy_lookup_iff.
       subst σy.
       apply storeA_map_eq. intros a.
       rewrite !storeA_restrict_lookup.
@@ -247,57 +316,17 @@ Proof.
         -- assert (HlookR :
               (store_restrict σmy (A ∪ {[y]}) : StoreT) !! y = Some vy).
            { apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }
-           pose proof Hy_my as Hy_my_v.
-           rewrite (msubst_fvar_lookup_closed
-             (store_restrict σmy (A ∪ {[y]}) : StoreT) y vy
-             (proj1 (Hclosed σmy Hσmy)) HlookR) in Hy_my_v.
-           assert (Hy0_dom : y ∈ dom (σ0 : StoreT)).
-           {
-             rewrite (wfworld_store_dom my σ0 Hσ0), Hdom_my.
-             set_solver.
-           }
-           apply elem_of_dom in Hy0_dom as [v0 Hlook0].
-           assert (Hlook0R :
-              (store_restrict σ0 (A ∪ {[y]}) : StoreT) !! y = Some v0).
-           { apply storeA_restrict_lookup_some_2; [exact Hlook0|set_solver]. }
-           pose proof Hy_0 as Hy_0_v.
-           rewrite (msubst_fvar_lookup_closed
-             (store_restrict σ0 (A ∪ {[y]}) : StoreT) y v0
-             (proj1 (Hclosed σ0 Hσ0)) Hlook0R) in Hy_0_v.
-           assert (Hv0 : v0 = vy).
-	           {
-	             rewrite Hy_0_v, Hinst_0_big, <- Hinst_eq,
-	               <- Hinst_my_big, <- Hy_my_v.
-	             reflexivity.
-	           }
-	           rewrite Hv0 in Hlook0. exact Hlook0.
+           pose proof (proj1 (Hy_lookup_iff vy Hy_my_world HvA Hclosed Hv
+             Hres_small Hσmy Hσ0 HA_eq) HlookR) as Hlook0R.
+           apply storeA_restrict_lookup_some in Hlook0R as [_ Hlook0].
+           exact Hlook0.
         -- assert (HlookR :
               (store_restrict σ0 (A ∪ {[y]}) : StoreT) !! y = Some vy).
            { apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }
-           pose proof Hy_0 as Hy_0_v.
-           rewrite (msubst_fvar_lookup_closed
-             (store_restrict σ0 (A ∪ {[y]}) : StoreT) y vy
-             (proj1 (Hclosed σ0 Hσ0)) HlookR) in Hy_0_v.
-           assert (Hymy_dom : y ∈ dom (σmy : StoreT)).
-           {
-             rewrite (wfworld_store_dom my σmy Hσmy), Hdom_my.
-             set_solver.
-           }
-           apply elem_of_dom in Hymy_dom as [v0 Hlook_my].
-           assert (Hlook_myR :
-              (store_restrict σmy (A ∪ {[y]}) : StoreT) !! y = Some v0).
-           { apply storeA_restrict_lookup_some_2; [exact Hlook_my|set_solver]. }
-           pose proof Hy_my as Hy_my_v.
-           rewrite (msubst_fvar_lookup_closed
-             (store_restrict σmy (A ∪ {[y]}) : StoreT) y v0
-             (proj1 (Hclosed σmy Hσmy)) Hlook_myR) in Hy_my_v.
-           assert (Hv0 : v0 = vy).
-	           {
-	             rewrite Hy_my_v, Hinst_my_big, Hinst_eq,
-	               <- Hinst_0_big, <- Hy_0_v.
-	             reflexivity.
-	           }
-	           rewrite Hv0 in Hlook_my. exact Hlook_my.
+           pose proof (proj2 (Hy_lookup_iff vy Hy_my_world HvA Hclosed Hv
+             Hres_small Hσmy Hσ0 HA_eq) HlookR) as Hlook_myR.
+           apply storeA_restrict_lookup_some in Hlook_myR as [_ Hlook_my].
+           exact Hlook_my.
 	      * assert (HaA : a ∈ A).
 	        {
 	          apply elem_of_union in Ha as [Ha|Ha].

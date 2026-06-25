@@ -14,6 +14,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   DenotationSetMapFacts
+  ResultFirstOpen
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
@@ -866,83 +867,52 @@ Proof.
     as (z & mz0 & mz & Hzfresh & Hx_mz0 & Hmz_dom_x &
       Hmz_dom & Hmz_restrict_m & Hmz_restrict_mz0 & Hres_v1_z &
       Hvalue).
-  cbn [arrow_value_denote_gas arrow_value_denote_gas_with formula_open]
-    in Hvalue.
-  pose proof (res_models_forall_open_named_fresh
-    mz0 mz x
-    (FImpl
-      (formula_open 1 z
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
-            (erase_ty (cty_shift 0 τx)))
-          (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))))
-      (formula_open 1 z
-        (ty_denote_gas gas
-          (typed_lty_env_bind
-            (typed_lty_env_bind Σrel (erase_ty (CTArrow τx τ)))
-            (erase_ty (cty_shift 0 τx)))
-          (cty_shift 1 τ)
-          (tapp_tm (tret (vbvar 1)) (vbvar 0)))))
-    Hvalue Hx_mz0 Hmz_dom_x Hmz_restrict_mz0) as Hinner.
-  cbn [formula_open] in Hinner.
   pose proof (app_arrow_result_first_arg_antecedent
     Σ Γ τx τ v1 x z m mz Hwf_fun Hfresh Hzfresh
     Hmz_dom Hmz_restrict_m Harg) as Harg_open.
-  rewrite (formula_open_result_first_fun_arg_two
-    gas Σrel τx (erase_ty (CTArrow τx τ)) z x) in Hinner.
-  2:{ subst Σrel. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed. }
-  2:{ subst Σrel. apply relevant_env_arrow_fresh_free;
-      cbn [fv_tm fv_value]; clear -Hzfresh; better_set_solver. }
-  2:{ intros Hxz. subst x.
-      apply Hzfresh. apply elem_of_union_r.
-      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
-  2:{
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      apply Hzfresh. apply elem_of_union_r.
-      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg.
-    - subst Σrel. apply relevant_env_arrow_fresh_free in Hin;
-        cbn [fv_tm fv_value]; clear -Hfresh Hin; better_set_solver.
+  assert (HΣrel_closed : lty_env_closed Σrel).
+  { subst Σrel. apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+  assert (HzΣrel : LVFree z ∉ dom (Σrel : lty_env)).
+  {
+    subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+    clear -Hzfresh. better_set_solver.
   }
-  2:{
+  assert (HxΣrel : LVFree x ∉ dom (Σrel : lty_env)).
+  {
+    subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+    exact Hfresh.
+  }
+  assert (Hzx : z <> x).
+  {
+    intros ->. apply Hzfresh. apply elem_of_union_r.
+    eapply ty_denote_gas_ret_fvar_world_dom. exact Harg.
+  }
+  assert (Hlcτx : lc_context_ty τx).
+  {
     pose proof (context_typing_wf_context_ty
       Σ Γ (tret v1) (CTArrow τx τ) Hwf_fun) as Hτwf.
     cbn [wf_context_ty_at] in Hτwf.
     exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ)) τx (proj1 Hτwf)).
   }
-  2:{ intros Hbad. apply Hzfresh. apply elem_of_union_l.
-      apply elem_of_union_l. apply elem_of_union_r. exact Hbad. }
-  2:{ intros Hbad. apply Hfresh. apply elem_of_union_l.
-      apply elem_of_union_r. exact Hbad. }
-  rewrite (formula_open_result_first_fun_result_two
-    gas Σrel τx τ (erase_ty (CTArrow τx τ)) z x) in Hinner.
-  2:{ subst Σrel. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed. }
-  2:{ subst Σrel. apply relevant_env_arrow_fresh_free;
-      cbn [fv_tm fv_value]; clear -Hzfresh; better_set_solver. }
-  2:{ intros Hxz. subst x.
-      apply Hzfresh. apply elem_of_union_r.
-      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg. }
-  2:{
-    rewrite dom_insert_L. intros Hin.
-    apply elem_of_union in Hin as [Hin|Hin].
-    - apply elem_of_singleton in Hin. inversion Hin. subst.
-      apply Hzfresh. apply elem_of_union_r.
-      eapply ty_denote_gas_ret_fvar_world_dom. exact Harg.
-    - subst Σrel. apply relevant_env_arrow_fresh_free in Hin;
-        cbn [fv_tm fv_value]; clear -Hfresh Hin; better_set_solver.
-  }
-  2:{
+  assert (Hlcτ : cty_lc_at 1 τ).
+  {
     pose proof (context_typing_wf_context_ty
       Σ Γ (tret v1) (CTArrow τx τ) Hwf_fun) as Hτwf.
     cbn [wf_context_ty_at] in Hτwf.
     eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
   }
-  2:{ clear -Hzfresh. better_set_solver. }
-  2:{ clear -Hfresh. better_set_solver. }
+  assert (Hzτ : z ∉ fv_cty τx ∪ fv_cty τ).
+  { clear -Hzfresh. better_set_solver. }
+  assert (Hxτ : x ∉ fv_cty τx ∪ fv_cty τ).
+  { clear -Hfresh. better_set_solver. }
+  pose proof (arrow_value_open_arg_to_regular_imp
+    gas Σrel τx τ (erase_ty (CTArrow τx τ)) z x mz0 mz
+    HΣrel_closed HzΣrel Hzx
+    ltac:(rewrite dom_insert_L; intros Hbad;
+      apply elem_of_union in Hbad as [Hbad|Hbad];
+      [apply elem_of_singleton in Hbad; congruence|exact (HxΣrel Hbad)])
+    Hlcτx Hlcτ Hzτ Hxτ Hvalue Hx_mz0 Hmz_dom_x
+    Hmz_restrict_mz0) as Hinner.
   pose proof (res_models_impl_elim _ _ _ Hinner Harg_open)
     as Hres_norm.
   assert (Hfun_mz :
@@ -1067,10 +1037,6 @@ Proof.
   }
   subst gas.
   eapply app_arrow_result_to_target; eauto.
-  pose proof (context_typing_wf_context_ty Σ Γ
-    (tret v1) (CTArrow τx τ) Hwf_fun) as Hτfun.
-  cbn [wf_context_ty_at] in Hτfun.
-  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτfun)).
 Qed.
 
 

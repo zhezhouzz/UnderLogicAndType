@@ -193,6 +193,73 @@ Proof.
   exact Hsub.
 Qed.
 
+Lemma arrow_value_open_arg_to_regular_imp
+    gas (Σ : lty_env) τx τr Tf f y (my0 my : WfWorldT) :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  f <> y ->
+  LVFree y ∉ dom (<[LVFree f := Tf]> Σ : lty_env) ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ∪ fv_cty τr ->
+  y ∉ fv_cty τx ∪ fv_cty τr ->
+  my0 ⊨ formula_open 0 f
+    (arrow_value_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))) ->
+  y ∉ world_dom (my0 : WorldT) ->
+  world_dom (my : WorldT) = world_dom (my0 : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (my0 : WorldT)) = my0 ->
+  my ⊨ FImpl
+    (ty_denote_gas gas
+      (<[LVFree y := erase_ty τx]> (<[LVFree f := Tf]> Σ))
+      τx (tret (vfvar y)))
+    (ty_denote_gas gas
+      (<[LVFree y := erase_ty τx]> (<[LVFree f := Tf]> Σ))
+      (cty_open 0 y τr)
+      (tapp_tm (tret (vfvar f)) (vfvar y))).
+Proof.
+  intros HΣclosed HfΣ Hfy HyΣ Hlcτx Hlcτr Hffresh Hyfresh
+    Hvalue Hyfresh_world Hdom Hrestrict.
+  cbn [arrow_value_denote_gas arrow_value_denote_gas_with formula_open]
+    in Hvalue.
+  pose proof (res_models_forall_open_named_fresh
+    my0 my y
+    (FImpl
+      (formula_open 1 f
+        (ty_denote_gas gas
+          (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+            (erase_ty (cty_shift 0 τx)))
+          (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))))
+      (formula_open 1 f
+        (ty_denote_gas gas
+          (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+            (erase_ty (cty_shift 0 τx)))
+          (cty_shift 1 τr)
+          (tapp_tm (tret (vbvar 1)) (vbvar 0)))))
+    Hvalue Hyfresh_world Hdom Hrestrict) as Hinner.
+  cbn [formula_open] in Hinner.
+  rewrite (formula_open_result_first_fun_arg_two gas Σ τx Tf f y)
+    in Hinner.
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2: congruence.
+  2: exact HyΣ.
+  2: exact Hlcτx.
+  2: set_solver.
+  2: set_solver.
+  rewrite (formula_open_result_first_fun_result_two gas Σ τx τr Tf f y)
+    in Hinner.
+  2: exact HΣclosed.
+  2: exact HfΣ.
+  2: congruence.
+  2: exact HyΣ.
+  2: exact Hlcτr.
+  2: exact Hffresh.
+  2: exact Hyfresh.
+  exact Hinner.
+Qed.
+
 Ltac result_first_open_norm :=
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in *;
