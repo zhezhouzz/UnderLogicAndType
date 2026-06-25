@@ -7,7 +7,7 @@ From Denotation Require Import
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
-  TypeEquivFiberTransport
+  TypeEquivTermApp
   TypeEquivBody.
 
 Section TypeDenote.

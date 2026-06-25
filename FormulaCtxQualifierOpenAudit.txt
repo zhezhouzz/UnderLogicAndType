@@ -185,3 +185,12 @@ Remaining buckets:
     file, but it was not moved in this pass to avoid dumping unfinished
     dependency work into a lower layer.
   - `SoundnessPersist.vo` and `Soundness.vo` compile.
+- `TypeEquivArrow.v` / `TypeEquivWand.v` import narrowing completed:
+  - Moved `basic_tm_has_ltype_tapp_tm_lvar` and
+    `tm_equiv_full_world_extend_fresh` from `TypeEquivFiberTransport.v` to
+    `TypeEquivTermApp.v`, beside the existing total version and other app
+    transport facts.
+  - Arrow/Wand now import `TypeEquivTermApp` instead of the old raw-open
+    `TypeEquivFiberTransport.v`.
+  - `TypeEquivTermApp.vo`, `TypeEquivFiberTransport.vo`,
+    `TypeEquivArrow.vo`, and `TypeEquivWand.vo` compile.

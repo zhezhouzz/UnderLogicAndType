@@ -8,6 +8,41 @@ From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
+Lemma basic_tm_has_ltype_tapp_tm_lvar
+    (Σ : lty_env) ef vx Tx T :
+  lc_lvars (dom (Σ : gmap logic_var ty)) ->
+  basic_tm_has_ltype Σ ef (Tx →ₜ T) ->
+  basic_value_has_ltype Σ vx Tx ->
+  basic_tm_has_ltype Σ (tapp_tm ef vx) T.
+Proof.
+  intros HlcΣ Hef Hvx.
+  pose proof (basic_value_has_ltype_lc Σ vx Tx HlcΣ Hvx) as Hlc_vx.
+  unfold tapp_tm.
+  eapply BTT_Let with (L := lvars_fv (dom (Σ : gmap logic_var ty)) ∪ fv_value vx).
+  - exact Hef.
+  - intros z Hz.
+    cbn [open_one open_tm_atom_inst open_tm].
+    assert (Hshift_lc : lc_value (value_shift 0 vx)).
+    { rewrite value_shift_lc_id by exact Hlc_vx. exact Hlc_vx. }
+    rewrite (open_rec_lc_value (value_shift 0 vx) Hshift_lc 0 (vfvar z)).
+    rewrite value_shift_lc_id by exact Hlc_vx.
+    eapply BTT_App.
+    + eapply BVT_FVar.
+      apply lty_env_open_one_typed_bind_lookup_current.
+    + eapply basic_value_has_ltype_weaken; [exact Hvx|].
+      apply map_subseteq_spec. intros v U Hlook.
+      destruct v as [n|a].
+      * exfalso.
+        assert (LVBound n ∈ dom Σ) as Hdom.
+        { eapply elem_of_dom_2. exact Hlook. }
+        exact (HlcΣ (LVBound n) Hdom).
+      * rewrite lty_env_open_one_typed_bind_lookup_free_ne.
+        -- exact Hlook.
+        -- intros Haz. subst a.
+           apply Hz. apply elem_of_union_l.
+           apply lvars_fv_elem. eapply elem_of_dom_2. exact Hlook.
+Qed.
+
 Lemma tm_equiv_res_product_right
     (n my : WfWorldT) (Hc : world_compat n my) e1 e2 :
   tm_equiv_on my e1 e2 ->
@@ -94,6 +129,46 @@ Proof.
     apply (proj2 (tm_must_terminating_agree_on_fv
       (store_restrict σ (world_dom (my : WorldT))) σ e2 Hlc2 Hagree2)).
     exact Hsn.
+Qed.
+
+Lemma tm_equiv_full_world_extend_fresh
+    (m my : WfWorldT) y e1 e2 :
+  tm_equiv_on m e1 e2 ->
+  fv_tm e1 ∪ fv_tm e2 ⊆ world_dom (m : WorldT) ->
+  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
+  res_restrict my (world_dom (m : WorldT)) = m ->
+  tm_equiv_on my e1 e2.
+Proof.
+  intros Heq Hfv _ _ Hrestrict σ v Hσ.
+  assert (Hσm :
+      (m : WorldT) (store_restrict σ (world_dom (m : WorldT)))).
+  {
+    assert (Hσr :
+        (res_restrict my (world_dom (m : WorldT)) : WorldT)
+          (store_restrict σ (world_dom (m : WorldT)))).
+    { exists σ. split; [exact Hσ|reflexivity]. }
+    rewrite Hrestrict in Hσr. exact Hσr.
+  }
+  specialize (Heq (store_restrict σ (world_dom (m : WorldT))) v Hσm)
+    as [Heq12 Heq21].
+  assert (Hfv1 : fv_tm e1 ⊆ world_dom (m : WorldT)) by set_solver.
+  assert (Hfv2 : fv_tm e2 ⊆ world_dom (m : WorldT)) by set_solver.
+  split.
+  - intros Heval1.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ e2 v (world_dom (m : WorldT)) Hfv2)).
+    apply Heq12.
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ e1 v (world_dom (m : WorldT)) Hfv1)).
+    exact Heval1.
+  - intros Heval2.
+    apply (proj1 (tm_eval_in_store_restrict_fv_subset
+      σ e1 v (world_dom (m : WorldT)) Hfv1)).
+    apply Heq21.
+    apply (proj2 (tm_eval_in_store_restrict_fv_subset
+      σ e2 v (world_dom (m : WorldT)) Hfv2)).
+    exact Heval2.
 Qed.
 
 Lemma tm_total_equiv_full_world_extend_fresh
