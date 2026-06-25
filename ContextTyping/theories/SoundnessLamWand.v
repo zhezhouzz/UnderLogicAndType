@@ -12,12 +12,6 @@ From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Local Lemma union_singleton_empty_r (X : aset) y :
-  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
-Proof.
-  set_solver.
-Qed.
-
 Local Lemma lam_wand_fresh_erase_ctx
     (Σ : tyctx) Γ τx τ e y :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪

@@ -9,17 +9,6 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
-Local Lemma open_one_cty_shift0_lc_fresh τ x :
-  lc_context_ty τ ->
-  x ∉ fv_cty τ ->
-  @open_one atom context_ty open_cty_atom_inst 0 x (cty_shift 0 τ) = τ.
-Proof.
-  intros Hlc Hfresh.
-  change (@open_one atom context_ty open_cty_atom_inst 0 x (cty_shift 0 τ))
-    with ({0 ~> x} (cty_shift 0 τ))%cty.
-  apply cty_open_shift_from_lc_fresh; assumption.
-Qed.
-
 Lemma arrow_value_over_arg_to_persist_over_arg
     gas_src gas_tgt (Σ : lty_env) bx φx τr ef (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -488,7 +477,9 @@ Proof.
   rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
   rewrite cty_shift_preserves_erasure.
   rewrite cty_open_shift_under_gen by lia.
-  rewrite (open_one_cty_shift0_lc_fresh τx f Hlcτx Hfτx).
+  change (@open_one atom context_ty open_cty_atom_inst 0 f (cty_shift 0 τx))
+    with (cty_open 0 f (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
   rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
 		  reflexivity.
 Qed.
@@ -617,7 +608,9 @@ Proof.
   rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
   rewrite cty_shift_preserves_erasure.
   rewrite cty_open_shift_under_gen by lia.
-  rewrite (open_one_cty_shift0_lc_fresh τx f Hlcτx Hfτx).
+  change (@open_one atom context_ty open_cty_atom_inst 0 f (cty_shift 0 τx))
+    with (cty_open 0 f (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
   rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
   reflexivity.
 Qed.

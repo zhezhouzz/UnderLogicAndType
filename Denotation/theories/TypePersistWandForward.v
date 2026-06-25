@@ -18,12 +18,6 @@ Local Ltac persist_outer_fresh_from H :=
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
 
-Local Lemma empty_union_singleton_l y :
-  ∅ ∪ {[y]} = ({[y]} : aset).
-Proof.
-  set_solver.
-Qed.
-
 Local Lemma over_y_fiber_store_dom
     bx φx y σy (n nfib : WfWorldT) :
   basic_context_ty ∅ (CTOver bx φx) ->

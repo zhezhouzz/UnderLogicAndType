@@ -31,41 +31,6 @@ Proof.
   destruct decide as [_|Hbad]; [reflexivity|contradiction].
 Qed.
 
-Local Lemma notin_union4_l (a : atom) (A B C D : aset) :
-  a ∉ (((A ∪ B) ∪ C) ∪ D) ->
-  a ∉ A.
-Proof.
-  intros Hnot Ha. apply Hnot.
-  apply elem_of_union_l. apply elem_of_union_l. apply elem_of_union_l.
-  exact Ha.
-Qed.
-
-Local Lemma notin_union4_r1 (a : atom) (A B C D : aset) :
-  a ∉ (((A ∪ B) ∪ C) ∪ D) ->
-  a ∉ B.
-Proof.
-  intros Hnot Ha. apply Hnot.
-  apply elem_of_union_l. apply elem_of_union_l. apply elem_of_union_r.
-  exact Ha.
-Qed.
-
-Local Lemma notin_union4_r2 (a : atom) (A B C D : aset) :
-  a ∉ (((A ∪ B) ∪ C) ∪ D) ->
-  a ∉ C.
-Proof.
-  intros Hnot Ha. apply Hnot.
-  apply elem_of_union_l. apply elem_of_union_r.
-  exact Ha.
-Qed.
-
-Local Lemma notin_union4_r3 (a : atom) (A B C D : aset) :
-  a ∉ (((A ∪ B) ∪ C) ∪ D) ->
-  a ∉ D.
-Proof.
-  intros Hnot Ha. apply Hnot.
-  apply elem_of_union_r. exact Ha.
-Qed.
-
 Local Lemma fvar_in_singleton_restrict_dom
     (m my : WfWorldT) (σ : StoreT) x y :
   x ∈ world_dom (m : WorldT) ->
@@ -79,17 +44,6 @@ Proof.
   apply elem_of_intersection. split.
   - apply elem_of_union_l. exact Hxm.
   - apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma elem_union_singleton_not_eq_left (A : aset) a y :
-  a ∈ A ∪ {[y]} ->
-  a <> y ->
-  a ∈ A.
-Proof.
-  intros Ha Hay.
-  apply elem_of_union in Ha as [HaA|Hay'].
-  - exact HaA.
-  - apply elem_of_singleton in Hay'. contradiction.
 Qed.
 
 Local Lemma notin_union_singleton_of_notin_world

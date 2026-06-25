@@ -18,12 +18,6 @@ Local Ltac persist_outer_fresh_from H :=
 Local Ltac persist_lvar_fresh_from H :=
   intros Hbad; apply lvars_fv_elem in Hbad; clear -H Hbad; set_solver.
 
-Local Lemma union_singleton_empty_r (X : aset) y :
-  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
-Proof.
-  set_solver.
-Qed.
-
 Lemma wand_value_ret_fvar_persist_over_arg_to_over_arg_over_result
     gas_src gas_tgt (Σ : lty_env) bx φx br φr f Tf
     (m : WfWorldT) :

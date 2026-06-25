@@ -16,6 +16,54 @@ Notation StoreT := (Store (V := value)) (only parsing).
 Notation WorldT := (World (V := value)) (only parsing).
 Notation WfWorldT := (WfWorld (V := value)) (only parsing).
 
+Lemma union_singleton_empty_r (X : aset) y :
+  X ∪ ({[y]} ∪ ∅) = X ∪ {[y]}.
+Proof. set_solver. Qed.
+
+Lemma empty_union_singleton_l y :
+  ∅ ∪ {[y]} = ({[y]} : aset).
+Proof. set_solver. Qed.
+
+Lemma notin_union4_l (a : atom) (A B C D : aset) :
+  a ∉ A ∪ B ∪ C ∪ D ->
+  a ∉ A.
+Proof. set_solver. Qed.
+
+Lemma notin_union4_r1 (a : atom) (A B C D : aset) :
+  a ∉ A ∪ B ∪ C ∪ D ->
+  a ∉ B.
+Proof. set_solver. Qed.
+
+Lemma notin_union4_r2 (a : atom) (A B C D : aset) :
+  a ∉ A ∪ B ∪ C ∪ D ->
+  a ∉ C.
+Proof. set_solver. Qed.
+
+Lemma notin_union4_r3 (a : atom) (A B C D : aset) :
+  a ∉ A ∪ B ∪ C ∪ D ->
+  a ∉ D.
+Proof. set_solver. Qed.
+
+Lemma elem_union_singleton_not_eq_left (A : aset) a y :
+  a ∈ A ∪ {[y]} ->
+  a <> y ->
+  a ∈ A.
+Proof. set_solver. Qed.
+
+Lemma store_restrict_union_singleton_ignore_r
+    (σ : StoreT) x (v : value) X :
+  x ∉ X ->
+  store_restrict ((σ : StoreT) ∪ ({[x := v]} : StoreT)) X =
+  store_restrict σ X.
+Proof.
+  intros Hx.
+  change ((storeA_restrict
+    (@union (gmap atom value) _ (σ : gmap atom value)
+      ({[x := v]} : gmap atom value)) X : gmap atom value) =
+    storeA_restrict (σ : gmap atom value) X).
+  apply storeA_restrict_union_singleton_ignore_r. exact Hx.
+Qed.
+
 Lemma store_lookup_eq_of_restrict_eq
     (σ1 σ2 : StoreT) X x :
   x ∈ X ->

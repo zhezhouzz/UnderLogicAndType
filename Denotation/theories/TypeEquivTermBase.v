@@ -215,20 +215,6 @@ Proof.
   exact Heval_restricted.
 Qed.
 
-Local Lemma store_restrict_union_singleton_ignore_r
-    (σ : StoreT) x (v : value) X :
-  x ∉ X ->
-  store_restrict ((σ : StoreT) ∪ ({[x := v]} : StoreT)) X =
-  store_restrict σ X.
-Proof.
-  intros Hx.
-  change ((storeA_restrict
-    (@union (gmap atom value) _ (σ : gmap atom value)
-      ({[x := v]} : gmap atom value)) X : gmap atom value) =
-    storeA_restrict (σ : gmap atom value) X).
-  apply storeA_restrict_union_singleton_ignore_r. exact Hx.
-Qed.
-
 Lemma tm_fiber_equiv_result_ext_on
     e x F (m mx : WfWorldT) X :
   fv_tm e ⊆ X ->

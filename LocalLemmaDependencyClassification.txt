@@ -1,0 +1,211 @@
+Local Lemma Dependency Classification
+=====================================
+
+Scope
+-----
+
+This file classifies `Local Lemma` blocks in:
+
+- `Denotation/theories/*.v`
+- `ContextTyping/theories/Soundness*.v`
+
+The scan is intentionally dependency-oriented rather than proof-length-oriented.
+The key question is whether a local lemma really uses the current high-level
+file's definitions, or whether it only uses lower-layer syntax/stdpp/resource
+facts and should be moved down.
+
+Current Count
+-------------
+
+After three lowering passes there are 79 local lemmas in scope.
+
+Completed Lowering Passes
+-------------------------
+
+1. Pure stdpp/set facts were moved to
+   `Denotation/theories/DenotationSetMapFacts.v`:
+
+   - `union_singleton_empty_r`
+   - `empty_union_singleton_l`
+   - `notin_union4_l`
+   - `notin_union4_r1`
+   - `notin_union4_r2`
+   - `notin_union4_r3`
+   - `elem_union_singleton_not_eq_left`
+
+   Removed local copies from:
+
+   - `TypePersistBase.v`
+   - `TypePersistWandForward.v`
+   - `TypePersistWandReverse.v`
+   - `SoundnessLamWand.v`
+
+2. Store restriction over union-singleton was moved to
+   `Denotation/theories/DenotationSetMapFacts.v`:
+
+   - `store_restrict_union_singleton_ignore_r`
+
+   Removed the local copy from `TypeEquivTermBase.v`; existing call sites now
+   use the shared lemma directly.
+
+3. The type-open wrapper `open_one_cty_shift0_lc_fresh` in
+   `TypePersistArrow.v` was removed. Its two call sites now use the existing
+   lower-layer lemma `cty_open_shift_from_lc_fresh` directly, after a local
+   `change` from typeclass `open_one` notation to `cty_open`.
+
+Classification Table
+--------------------
+
+`stdpp/store` means the proof is mostly pure stdpp/map/store manipulation.
+`resource`, `logic/formula`, `basic-term`, `type-syntax`, `denotation`, and
+`typing/context` indicate the first repo-specific layer that appears in the
+proof body or statement.
+
+### ContextTyping/theories/Soundness.v
+
+- `soundness_notin_cty_lvars_of_fv`: type-syntax
+- `soundness_notin_fv_tlete`: stdpp/store + basic-term
+- `soundness_wf_observed_vars_world_dom`: stdpp/store + resource + basic-term + type-syntax + typing/context
+
+### ContextTyping/theories/SoundnessFixApply.v
+
+- `fix_apply_open_value_fresh`: stdpp/store
+- `fix_apply_open_cty_fresh`: stdpp/store + type-syntax
+- `fix_apply_fix_rec_call_ty_fresh`: stdpp/store + type-syntax
+- `fix_apply_vfix_fresh`: syntax wrapper
+- `fix_apply_bind_lvar_env_dom_subset`: stdpp/store + type-syntax + typing/context
+- `fix_apply_relevant_lvars_tapp_values_fresh`: stdpp/store + basic-term + type-syntax
+
+### ContextTyping/theories/SoundnessFixOpen.v
+
+- `fix_open_fresh_erase_ctx_from_fix_union`: typing/context
+- `fix_open_fresh_ctx_erasure_under_from_fix_union`: stdpp/store + typing/context
+- `fix_open_fresh_env_erase_ctx_from_fix_union`: stdpp/store + typing/context
+
+### ContextTyping/theories/SoundnessLamWand.v
+
+- `lam_wand_fresh_erase_ctx`: basic-term + type-syntax + typing/context
+- `lam_wand_fresh_tm`: basic-term + type-syntax + typing/context
+
+### Denotation/theories/ConstDenote.v
+
+- `const_lc_lvars_shift_empty`: stdpp/store
+- `const_lvars_shift_empty`: stdpp/store
+- `const_expr_result_open_scoped`: stdpp/store + resource + logic/formula + basic-term
+- `const_open_fib_over_swapped_scoped`: stdpp/store + resource + logic/formula + qualifier
+- `const_open_fib_under_swapped_scoped`: stdpp/store + resource + logic/formula + qualifier
+
+### Denotation/theories/TypeEquiv.v
+
+- `body_tret_bvar0`: syntax/opening
+- `tm_equiv_on_tlete_ret_bvar0`: basic-term
+- `tm_total_equiv_on_tlete_ret_bvar0`: basic-term/totality
+- `expr_basic_typing_tlete_ret_bvar0`: basic-term + type-syntax
+- `relevant_env_tlete_ret_bvar0`: stdpp/store + basic-term + denotation
+
+### Denotation/theories/TypeEquivArrowResultFirst.v
+
+- `arrow_result_body_relevant_subset`: wrapper over `ResultFirstOpen`
+- `arrow_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
+- `arrow_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+
+### Denotation/theories/TypeEquivFiberBaseProjected.v
+
+- `wfworld_eq_by_dom_stores`: resource
+- `store_restrict_eq_lookup_in`: stdpp/store
+- `store_restrict_obs_result_eq`: stdpp/store
+
+### Denotation/theories/TypeEquivFiberBody.v
+
+- `lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
+- `lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+- `opened_world_dom_contains_slot`: resource
+- `formula_open_shifted_ret_bound0_ty_denote_gas`: logic/formula + basic-term + type-syntax + denotation
+
+### Denotation/theories/TypeEquivTLet.v
+
+- `tlet_guard_wfworld_closed_on_term`: resource + basic-term + denotation
+- `ty_denote_gas_zero_fv_tm_world`: resource + basic-term + denotation
+- `typed_fiber_equiv_tlet_body_extension`: basic-term + type-syntax + denotation
+- `tlet_arrow_open_arg_env`: stdpp/store + type-syntax + denotation
+- `tlet_wand_open_arg_env`: stdpp/store + type-syntax + denotation
+- `tlet_arrow_value_body_env`: stdpp/store + resource + logic/formula + type-syntax + denotation
+- `tlet_arrow_result_first_body_transport`: stdpp/store + resource + logic/formula + basic-term + type-syntax + denotation
+- `tlet_wand_value_body_env`: stdpp/store + resource + logic/formula + type-syntax + denotation
+- `tlet_wand_result_first_body_transport`: stdpp/store + resource + logic/formula + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_arrow_body`: logic/formula + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_arrow_body_reverse`: logic/formula + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_wand_body`: logic/formula + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_wand_body_reverse`: logic/formula + basic-term + type-syntax + denotation
+- `tlet_persist_value_body_env_eq`: stdpp/store + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_forward`: stdpp/store + basic-term + type-syntax + denotation
+- `tlet_intro_denotation_reverse`: stdpp/store + basic-term + type-syntax + denotation
+
+### Denotation/theories/TypeEquivTLetFormula.v
+
+- `ty_denote_gas_models_projection`: resource + logic/formula + denotation
+
+### Denotation/theories/TypeEquivTermBase.v
+
+- No remaining local lemma after moving
+  `store_restrict_union_singleton_ignore_r` to `DenotationSetMapFacts`.
+
+### Denotation/theories/TypeEquivTermTLet.v
+
+- `fv_tm_open_fvar_tlete_body_subset`: stdpp/store + basic-term
+- `fv_tm_tlete_left_subset`: basic-term
+- `notin_fv_tm_tlete`: stdpp/store + basic-term
+- `elem_of_fv_tm_open_fvar`: basic-term
+- `notin_store_union_singleton_dom`: stdpp/store
+- `tlet_fresh_for_parts`: stdpp/store + basic-term
+
+### Denotation/theories/TypeEquivWand.v
+
+- `wand_open_world_term_scope`: resource + basic-term + denotation
+- `wand_open_product_tapp_tgt_scope`: stdpp/store + resource + basic-term + denotation
+- `wand_open_world_tapp_apps_scope`: stdpp/store + resource + basic-term + denotation
+- `wand_tapp_apps_fv_subset`: stdpp/store + basic-term
+- `wand_result_open_vars_subset`: type-syntax
+- `basic_value_has_ltype_wand_inserted_result_target_arg`: wrapper over Arrow helper
+- `basic_tm_has_ltype_wand_inserted_result_target_fun`: wrapper over Arrow helper
+
+### Denotation/theories/TypeEquivWandResultFirst.v
+
+- `wand_result_body_relevant_subset`: wrapper over `ResultFirstOpen`
+- `wand_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
+- `wand_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+
+### Denotation/theories/TypePersistArrow.v
+
+- No remaining local lemma after replacing `open_one_cty_shift0_lc_fresh` with
+  the existing type-language lemma `cty_open_shift_from_lc_fresh`.
+
+### Denotation/theories/TypePersistBase.v
+
+- `singleton_fvar_in_insert_env_dom`: stdpp/store
+- `fvar_in_singleton_restrict_dom`: resource
+- `notin_union_singleton_of_notin_world`: stdpp/store + resource
+- `notin_union_singleton_swap_ne`: stdpp/store
+- `swap_opened_singleton_domain`: stdpp/store
+- `singleton_subset_world_dom`: resource
+- `wfworld_closed_on_open_world_from_base`: stdpp/store + resource
+- `lvfree_notin_lvars_at_depth1_qual_vars`: qualifier
+
+### Denotation/theories/TypePersistSingleton.v
+
+- `elem_open_world_inter_singleton`: stdpp/store
+- `res_fiber_from_projection_world_dom`: resource
+
+### Denotation/theories/TypePersistWandForward.v
+
+- `over_y_fiber_store_dom`: stdpp/store + resource + type-syntax
+- `over_y_fiber_restrict_singleton`: stdpp/store + resource + type-syntax
+
+Next Candidate Passes
+---------------------
+
+1. Consider moving resource-only helpers such as
+   `res_fiber_from_projection_world_dom` and `opened_world_dom_contains_slot`
+   to a resource/fiber facts file.
+2. Const over/under local helpers are symmetric and should be generalized in a
+   focused Const pass.
