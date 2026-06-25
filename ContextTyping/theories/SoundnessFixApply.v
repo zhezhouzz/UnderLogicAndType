@@ -15,7 +15,6 @@ From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberBase
-  TypeEquivFiberTransport
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand

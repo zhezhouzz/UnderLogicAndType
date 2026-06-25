@@ -12,7 +12,6 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
-  TypeEquivFiberTransport
   TypeEquivArrow
   TypeEquiv
   ConstDenote.
