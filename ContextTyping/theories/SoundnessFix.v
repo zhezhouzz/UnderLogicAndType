@@ -473,13 +473,6 @@ Proof.
 	    subst vself. cbn [fv_value].
 	    clear -Hy_fresh Hz. better_set_solver.
 	  }
-  assert (Hlc_efix : lc_tm efix).
-  {
-    subst efix.
-    exact (context_typing_wf_lc_tm
-      Σ Γ (tret (vfix (TBase b →ₜ t) vf))
-      (CTArrow (over_ty b φx) τ) Hwf).
-  }
   assert (Happ_src_mid :
       my ⊨ ty_denote_gas gas
         (<[LVFree y := erase_ty τx]> Δ)
@@ -497,7 +490,7 @@ Proof.
     }
     pose proof (ty_equiv_arrow_result_src_mid_inserted
       gas Δ τx τ efix my y
-      Hlc_efix Hτ_lc1
+      Hτ_lc1
       ltac:(clear -Hy_fresh; better_set_solver)
       Happ_src_norm) as Hmid_open.
     exact Hmid_open.

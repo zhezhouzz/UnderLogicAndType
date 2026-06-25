@@ -426,7 +426,6 @@ Proof.
 				    - exact Hunfolded.
 		  }
 	  eapply ty_equiv_arrow_result_tgt_goal.
-	  - exact Hlc_efix.
 	  - clear -Hy. set_solver.
 	  - apply arrow_result_open_vars_subset; [exact Hτ_lc1|clear -Hy; set_solver].
 	  - exact Hfix_open.

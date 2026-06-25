@@ -557,7 +557,6 @@ Proof.
 	      exact Hsrc.
 	    }
 	    eapply ty_equiv_wand_result_src_mid.
-	    - constructor. exact Hlc_v1.
 	    - better_set_solver.
 	    - eapply cty_lvars_open_body_closed_no_fresh.
 	      + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
@@ -590,7 +589,6 @@ Proof.
         (tapp_tm (tret v1) (vfvar x))).
 	  {
 	    eapply ty_equiv_arrow_result_tgt_goal_inserted_lc.
-	    - constructor. exact Hlc_v1.
 	    - better_set_solver.
 	    - exact Hτ_lc1.
 	    - exact Hmidstar.

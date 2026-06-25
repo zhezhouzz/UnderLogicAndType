@@ -534,7 +534,6 @@ Proof.
       exact Hwf.
     }
     eapply ty_equiv_arrow_result_src_mid_inserted.
-    + exact Hlc_self.
     + exact Hτ_lc1.
     + exact Hzτ.
     + exact Houter_rel.
@@ -635,7 +634,6 @@ Proof.
       exact Hwf.
     }
     eapply ty_equiv_arrow_result_tgt_goal_inserted.
-    + subst self. exact Hlc_self.
     + exact Hτ_lc1.
     + exact Hzτ.
     + exact Hmid_x.

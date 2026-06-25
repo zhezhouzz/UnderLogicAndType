@@ -70,7 +70,6 @@ Qed.
 Lemma ty_equiv_arrow_result_src_mid
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
-  lc_tm e1 ->
   y ∉ fv_cty τr ->
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
@@ -82,7 +81,7 @@ Lemma ty_equiv_arrow_result_src_mid
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hτr_vars Hsrc.
+  intros Hyτr Hτr_vars Hsrc.
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
   - apply arrow_body_relevant_env_agree.
@@ -94,7 +93,6 @@ Qed.
 Lemma ty_equiv_arrow_result_src_mid_inserted
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
-  lc_tm e1 ->
   cty_lc_at 1 τr ->
   y ∉ fv_cty τr ->
   my ⊨ ty_denote_gas gas
@@ -105,7 +103,7 @@ Lemma ty_equiv_arrow_result_src_mid_inserted
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros Hlc Hlcτr Hyτr Hsrc.
+  intros Hlcτr Hyτr Hsrc.
   eapply ty_equiv_arrow_result_src_mid; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.
@@ -114,7 +112,6 @@ Lemma ty_equiv_arrow_result_src_mid_current
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
   Σ !! LVFree y = Some (erase_ty τx) ->
-  lc_tm e1 ->
   cty_lc_at 1 τr ->
   y ∉ fv_cty τr ->
   my ⊨ ty_denote_gas gas
@@ -124,9 +121,9 @@ Lemma ty_equiv_arrow_result_src_mid_current
   my ⊨ ty_denote_gas gas
     Σ (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros HyΣ Hlc Hlcτr Hyτr Hsrc.
+  intros HyΣ Hlcτr Hyτr Hsrc.
   pose proof (ty_equiv_arrow_result_src_mid
-    gas Σ τx τr e1 my y Hlc Hyτr
+    gas Σ τx τr e1 my y Hyτr
     (arrow_result_open_vars_subset τr y Hlcτr Hyτr) Hsrc) as Hmid.
   eapply (res_models_ty_denote_gas_env_agree_on gas
     (<[LVFree y := erase_ty τx]> Σ) Σ
@@ -142,7 +139,6 @@ Qed.
 Lemma ty_equiv_arrow_result_tgt_goal
     gas (Σ : lty_env) τx τr e2
     (my : WfWorldT) y :
-  lc_tm e2 ->
   y ∉ fv_cty τr ->
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
@@ -154,7 +150,7 @@ Lemma ty_equiv_arrow_result_tgt_goal
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hτr_vars Hmid.
+  intros Hyτr Hτr_vars Hmid.
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
   - symmetry. apply arrow_body_relevant_env_agree.
@@ -166,7 +162,6 @@ Qed.
 Lemma ty_equiv_arrow_result_tgt_goal_inserted
     gas (Σ : lty_env) τx τr e2
     (my : WfWorldT) y :
-  lc_tm e2 ->
   cty_lc_at 1 τr ->
   y ∉ fv_cty τr ->
   my ⊨ ty_denote_gas gas
@@ -177,7 +172,7 @@ Lemma ty_equiv_arrow_result_tgt_goal_inserted
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hlc Hlcτr Hyτr Hmid.
+  intros Hlcτr Hyτr Hmid.
   eapply ty_equiv_arrow_result_tgt_goal; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.
@@ -185,7 +180,6 @@ Qed.
 Lemma ty_equiv_arrow_result_tgt_goal_inserted_lc
     gas (Σ : lty_env) τx τr e2
   (my : WfWorldT) y :
-  lc_tm e2 ->
   y ∉ fv_cty τr ->
   cty_lc_at 1 τr ->
   my ⊨ ty_denote_gas gas
@@ -196,7 +190,7 @@ Lemma ty_equiv_arrow_result_tgt_goal_inserted_lc
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hlcτr Hmid.
+  intros Hyτr Hlcτr Hmid.
   eapply ty_equiv_arrow_result_tgt_goal; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.
@@ -792,12 +786,11 @@ Proof.
 	        (<[LVFree y := erase_ty τx]> Σ)
 	        τres esrc).
   {
-    unfold τres, esrc.
-    eapply ty_equiv_arrow_result_src_mid.
-    - exact Hlc1.
-    - exact Hyτr.
-    - apply arrow_result_open_vars_subset; assumption.
-    - exact Hres.
+	    unfold τres, esrc.
+	    eapply ty_equiv_arrow_result_src_mid.
+	    - exact Hyτr.
+	    - apply arrow_result_open_vars_subset; assumption.
+	    - exact Hres.
   }
 	  assert (Htgt_mid_to_goal :
 	      my ⊨ ty_denote_gas gas
@@ -809,12 +802,11 @@ Proof.
 	        τres etgt).
   {
     unfold τres, etgt.
-    intros Hmid.
-    eapply ty_equiv_arrow_result_tgt_goal.
-    - exact Hlc2.
-    - exact Hyτr.
-    - apply arrow_result_open_vars_subset; assumption.
-    - exact Hmid.
+	    intros Hmid.
+	    eapply ty_equiv_arrow_result_tgt_goal.
+	    - exact Hyτr.
+	    - apply arrow_result_open_vars_subset; assumption.
+	    - exact Hmid.
   }
   apply Htgt_mid_to_goal.
   eapply IH.

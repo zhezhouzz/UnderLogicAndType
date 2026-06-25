@@ -329,12 +329,6 @@ Lemma lamd_wand_result_mid_to_opened_goal
 Proof.
   intros Hwf Hy Happ_mid.
   set (elam := tret (vlam (erase_ty τx) e)).
-  assert (Hlc_elam : lc_tm elam).
-  {
-    subst elam.
-    exact (context_typing_wf_lc_tm
-      Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
-  }
   assert (Hτ_body_lc1 : cty_lc_at 1 τ).
   {
     apply (context_typing_wf_wand_result_lc1 Σ Γ
@@ -343,7 +337,6 @@ Proof.
   }
   subst elam.
   eapply ty_equiv_wand_result_tgt_goal.
-  - exact Hlc_elam.
   - better_set_solver.
   - eapply cty_lvars_open_body_closed_no_fresh.
     + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.
@@ -573,9 +566,6 @@ Proof.
         (tapp_tm (tret vf) (vfvar y))).
   {
     eapply ty_equiv_wand_result_src_mid.
-    - subst vf.
-      exact (context_typing_wf_lc_tm
-        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
 	    - clear -Hy_rest. better_set_solver.
     - eapply cty_lvars_open_body_closed_no_fresh.
       + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.

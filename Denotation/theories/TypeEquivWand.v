@@ -154,7 +154,6 @@ Qed.
 Lemma ty_equiv_wand_result_src_mid
     gas (Σ : lty_env) τx τr e1
     (m : WfWorldT) y :
-  lc_tm e1 ->
   y ∉ fv_cty τr ->
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
@@ -166,7 +165,7 @@ Lemma ty_equiv_wand_result_src_mid
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hτr_vars Hsrc.
+  intros Hyτr Hτr_vars Hsrc.
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
   - apply wand_body_relevant_env_agree_insert_core.
@@ -178,7 +177,6 @@ Qed.
 Lemma ty_equiv_wand_result_tgt_goal
     gas (Σ : lty_env) τx τr e2
     (m : WfWorldT) y :
-  lc_tm e2 ->
   y ∉ fv_cty τr ->
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
@@ -190,7 +188,7 @@ Lemma ty_equiv_wand_result_tgt_goal
       (relevant_env Σ (CTWand τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hτr_vars Hmid.
+  intros Hyτr Hτr_vars Hmid.
   eapply res_models_ty_denote_gas_env_agree_on.
   - reflexivity.
   - symmetry. apply wand_body_relevant_env_agree_insert_core.

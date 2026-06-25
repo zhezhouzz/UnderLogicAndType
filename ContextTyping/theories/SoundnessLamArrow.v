@@ -429,12 +429,6 @@ Proof.
   set (elam := tret (vlam (erase_ty τx) e)).
 		  pose proof (lam_arrow_result_mid_app_denotation
 		    Σ Γ τx τ e my y Hwf Hy Hmid Hstatic) as Happ_mid.
-  assert (Hlc_elam : lc_tm elam).
-  {
-    subst elam.
-    exact (context_typing_wf_lc_tm
-      Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
-  }
   assert (Hτ_lc1 : cty_lc_at 1 τ).
   {
     apply (context_typing_wf_arrow_result_lc1 Σ Γ
@@ -443,7 +437,6 @@ Proof.
   }
   subst elam.
 	  eapply ty_equiv_arrow_result_tgt_goal.
-  - exact Hlc_elam.
   - set_solver.
   - apply arrow_result_open_vars_subset; [exact Hτ_lc1|set_solver].
   - exact Happ_mid.

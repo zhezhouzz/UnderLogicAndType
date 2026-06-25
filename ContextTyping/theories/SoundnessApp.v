@@ -69,7 +69,6 @@ Proof.
       (Nat.max (cty_depth τx) (cty_depth τ))
       Δ τx τ (tret v1) m x
       HΔx
-	      ltac:(constructor; exact Hlc_v1)
 	      Hτ_lc1
 	      ltac:(better_set_solver) Hopened) as Hmid.
     exact Hmid.
