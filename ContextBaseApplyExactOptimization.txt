@@ -1,0 +1,33 @@
+ContextBase Apply/Exact Optimization Stats
+==========================================
+
+Candidates: 26
+
+| file | line | shape |
+|---|---:|---|
+| `ContextBase/LogicVarOpenEnv.v` | 516 | `eapply Hfresh; [exact Hη|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 533 | `eapply Hfresh; [exact Hη|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 758 | `eapply Hfresh; [exact Hkx|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 820 | `eapply Hfresh; [exact Hηn|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 832 | `eapply Hfresh; [exact Hjz|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 867 | `eapply Hfresh; [exact Hjx|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 951 | `eapply Hfresh; [exact Hηk|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 973 | `eapply Hfresh; [exact Hη1|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 981 | `eapply Hfresh; [exact Hη1|].` |
+| `ContextBase/LogicVarOpenEnv.v` | 985 | `eapply Hfresh; [exact Hη2|].` |
+| `ContextBase/Prelude.v` | 140 | `exists v. apply map_lookup_filter_Some_2; [exact Hm | exact Hi].` |
+| `ContextBase/Prelude.v` | 234 | `+ apply map_lookup_filter_Some_2; [exact Hm | exact Hx].` |
+| `ContextBase/Prelude.v` | 290 | `* apply map_lookup_filter_Some_2; [exact H1 | exact Hx].` |
+| `ContextBase/LogicVar.v` | 425 | `apply logic_var_swap_open_fresh; [exact Hxy| |].` |
+| `ContextBase/LogicVar.v` | 438 | `+ symmetry. apply logic_var_swap_open_fresh; [exact Hxy| |].` |
+| `ContextBase/LogicVar.v` | 566 | `assert (k ∈ lvars_bv D) by (apply lvars_bv_elem; exact Hv).` |
+| `ContextBase/LogicVar.v` | 699 | `- intros [HyD Hyx]. split; [apply lvars_fv_elem; exact HyD|].` |
+| `ContextBase/LogicVar.v` | 701 | `- intros [HyD Hyx]. split; [apply lvars_fv_elem in HyD; exact HyD|].` |
+| `ContextBase/LogicVar.v` | 721 | `- intros [HyD HyX]. split; [apply lvars_fv_elem; exact HyD |].` |
+| `ContextBase/LogicVar.v` | 726 | `- intros [HyD HyX]. split; [apply lvars_fv_elem in HyD; exact HyD |].` |
+| `ContextBase/LogicVarShift.v` | 196 | `apply elem_of_union in HyD as [HyD | Hyx]; [exact HyD |].` |
+| `ContextBase/LogicVarShift.v` | 921 | `* exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hu)).` |
+| `ContextBase/LogicVarShift.v` | 931 | `* exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hv)).` |
+| `ContextBase/LogicVarShift.v` | 952 | `specialize (Hlc (LVBound n) ltac:(apply lvars_bv_elem; exact Hn)).` |
+| `ContextBase/LogicVarShift.v` | 963 | `specialize (Hlc (LVBound n) ltac:(apply lvars_bv_elem; exact Hn)).` |
+| `ContextBase/LogicVarShift.v` | 1007 | `eapply Hfresh; [exact Hix|].` |

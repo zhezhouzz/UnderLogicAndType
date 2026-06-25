@@ -1,0 +1,110 @@
+ContextTyping Apply/Exact Optimization Stats
+============================================
+
+Candidates: 103
+
+| file | line | shape |
+|---|---:|---|
+| `ContextTyping/theories/SoundnessLamArrow.v` | 181 | `eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact Hctx_my|].` |
+| `ContextTyping/theories/SoundnessLamArrow.v` | 462 | `- apply arrow_result_open_vars_subset; [exact Hτ_lc1|set_solver].` |
+| `ContextTyping/theories/SoundnessLamArrow.v` | 795 | `eapply res_models_forall_rev_intro; [exact Hscope_value|].` |
+| `ContextTyping/theories/SoundnessLamArrow.v` | 807 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/SoundnessLamArrow.v` | 898 | `eapply res_models_kripke; [exact Hle_mz_my|exact Hres_z].` |
+| `ContextTyping/theories/SoundnessPersist.v` | 173 | `{ apply storeA_restrict_lookup_some_2; [exact Hlook2|set_solver]. }` |
+| `ContextTyping/theories/SoundnessPersist.v` | 197 | `{ apply storeA_restrict_lookup_some_2; [exact Hlook1|set_solver]. }` |
+| `ContextTyping/theories/SoundnessPersist.v` | 320 | `{ apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }` |
+| `ContextTyping/theories/SoundnessPersist.v` | 327 | `{ apply storeA_restrict_lookup_some_2; [exact Hlook|set_solver]. }` |
+| `ContextTyping/theories/SoundnessPersist.v` | 402 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `ContextTyping/theories/SoundnessPersist.v` | 414 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `ContextTyping/theories/SoundnessPersist.v` | 440 | `by (apply relevant_env_closed; exact HΣclosed).` |
+| `ContextTyping/theories/SoundnessPersist.v` | 581 | `- apply wfworld_closed_on_union; [exact Hclosed_τ_my|exact Hclosed_v_my].` |
+| `ContextTyping/theories/SoundnessFix.v` | 304 | `eapply res_models_forall_rev_intro; [exact Hscope_value|].` |
+| `ContextTyping/theories/SoundnessFix.v` | 317 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/SoundnessFix.v` | 407 | `eapply res_models_kripke; [exact Hle_mz_my|exact Hres_z].` |
+| `ContextTyping/theories/SoundnessFix.v` | 633 | `eapply res_models_forall_rev_intro; [exact Hscope_body|].` |
+| `ContextTyping/theories/SoundnessFix.v` | 645 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/SoundnessFixOpen.v` | 270 | `eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact Hctx_my|].` |
+| `ContextTyping/theories/SoundnessFixOpen.v` | 410 | `- apply lc_tapp_tm; [exact Hlc_efix|constructor].` |
+| `ContextTyping/theories/SoundnessFixOpen.v` | 449 | `- apply arrow_result_open_vars_subset; [exact Hτ_lc1|clear -Hy; set_solver].` |
+| `ContextTyping/theories/SoundnessFixOpen.v` | 521 | `eapply basic_typing_weaken_value; [exact Hfix_val|]` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 307 | `eapply basic_tm_has_ltype_lc; [exact HΣlc|exact Hty].` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 359 | `try (apply lvars_shift_from_lc; exact HΣlc).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 361 | `intros HyD; apply Hy; apply elem_of_union_l; apply HΣscope; exact HyD).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 363 | `apply HΣscope; apply Hefv; exact Hye).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 367 | `apply HΣscope; apply Hefv; exact Hbad).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 479 | `eapply basic_tm_has_ltype_lc; [exact HΣlc|exact Hty].` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 531 | `try (apply lvars_shift_from_lc; exact HΣlc).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 533 | `intros HyD; apply Hy; apply elem_of_union_l; apply HΣscope; exact HyD).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 535 | `apply HΣscope; apply Hefv; exact Hye).` |
+| `ContextTyping/theories/PrimOpConcreteContext.v` | 539 | `apply HΣscope; apply Hefv; exact Hbad).` |
+| `ContextTyping/theories/SoundnessLamBase.v` | 50 | `by (apply lvars_bv_elem; exact Hv).` |
+| `ContextTyping/theories/SoundnessLamBase.v` | 79 | `apply lc_lvars_relevant_lvars; [exact Hτx|constructor; constructor].` |
+| `ContextTyping/theories/SoundnessLamBase.v` | 125 | `apply lc_lvars_relevant_lvars; [exact Hτx|constructor; constructor].` |
+| `ContextTyping/theories/SoundnessLamBase.v` | 187 | `ltac:(apply relevant_env_closed; exact HΔclosed)) as Hrelk.` |
+| `ContextTyping/theories/SoundnessLamBase.v` | 365 | `assert (HyΓ : y ∈ dom (erase_ctx Γ)) by (apply Hτ; exact Hy).` |
+| `ContextTyping/theories/SoundnessMatch.v` | 67 | `{ apply storeA_restrict_lookup_some_2; [apply Hlookup; exact Hσ|exact HxX]. }` |
+| `ContextTyping/theories/SoundnessMatch.v` | 122 | `{ apply storeA_restrict_lookup_some_2; [apply Hlookup; exact Hσ|exact HxX]. }` |
+| `ContextTyping/theories/SoundnessMatch.v` | 177 | `{ apply storeA_restrict_lookup_some_2; [apply Hlookup; exact Hσ|exact HxX]. }` |
+| `ContextTyping/theories/SoundnessMatch.v` | 237 | `{ apply storeA_restrict_lookup_some_2; [apply Hlookup; exact Hσ|exact HxX]. }` |
+| `ContextTyping/theories/SoundnessMatch.v` | 321 | `eapply ty_guard_relevant_of_static_full_total; [exact Hstatic|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 633 | `subst τy. apply cty_open_shift_from_lc_fresh; [exact Hlcτ1|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 689 | `eapply lc_lvars_relevant_lvars; [exact Hlcτ1|exact Hlc_e|exact Hv].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 693 | `eapply lc_lvars_relevant_lvars; [exact Hlcτ2|exact Hlc_e|exact Hv].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 707 | `eapply relevant_env_sum_branch_union_fresh; [exact Hy|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 779 | `subst τy. apply cty_open_shift_from_lc_fresh; [exact Hlcτ2|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 834 | `eapply lc_lvars_relevant_lvars; [exact Hlcτ1|exact Hlc_e|exact Hv].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 838 | `eapply lc_lvars_relevant_lvars; [exact Hlcτ2|exact Hlc_e|exact Hv].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 852 | `eapply relevant_env_sum_branch_union_fresh; [exact Hy|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 955 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch2.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 962 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch1.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1027 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch1.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1028 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch2.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1032 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch1.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1033 | `+ eapply ty_denote_gas_lc_context_ty; exact Hbranch2.` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1062 | `apply tm_lvars_lc_subset_atoms_fv; [apply tm_lvars_lc; exact Hlc_e|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1070 | `apply tm_lvars_lc_subset_atoms_fv; [apply tm_lvars_lc; exact Hlc_e|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1274 | `eapply res_models_forall_rev_intro; [exact Hscope_body|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1305 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/SoundnessMatch.v` | 1446 | `eapply res_models_kripke; [exact Hle|].` |
+| `ContextTyping/theories/SoundnessLamWand.v` | 469 | `eapply res_models_fbwand_intro; [exact Hscope_value|].` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 419 | `{ eapply res_models_kripke; [exact Hle_my_mz|exact Hself]. }` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 647 | `{ eapply res_models_kripke; [exact Hle_my_mw|exact Hstatic_my]. }` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 652 | `eapply res_models_kripke; [exact Hle_my_mw|].` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 670 | `{ eapply res_models_kripke; [exact Hle_mz_mw|exact Hres_body_z]. }` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 692 | `{ eapply res_models_kripke; [exact Hle_mz_mw|exact Hguard_self]. }` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 702 | `eapply basic_tm_has_ltype_weaken; [exact Hty_self_rel|].` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 789 | `apply elem_of_union in Hfv_mw as [Ha_mz|Ha_w]; [exact Ha_mz|].` |
+| `ContextTyping/theories/SoundnessFixApply.v` | 837 | `apply elem_of_union in Hfv_mz as [Ha_my|Ha_z]; [exact Ha_my|].` |
+| `ContextTyping/theories/SoundnessFixBase.v` | 203 | `apply storeA_restrict_lookup_some_2; [exact Hxlookup_rel|].` |
+| `ContextTyping/theories/SoundnessFixBase.v` | 406 | `apply tm_eval_in_store_ret_fvar_lookup; [exact Hclosed_ret|].` |
+| `ContextTyping/theories/SoundnessFixBase.v` | 436 | `apply storeA_restrict_lookup_some_2; [exact Hσmx_x|].` |
+| `ContextTyping/theories/SoundnessFixBase.v` | 448 | `apply storeA_restrict_lookup_some_2; [exact Hσmx_y|].` |
+| `ContextTyping/theories/SoundnessApp.v` | 478 | `eapply basic_tm_has_ltype_weaken; [exact Hty_rel|].` |
+| `ContextTyping/theories/SoundnessApp.v` | 579 | `{ eapply ty_denote_gas_ret_fvar_world_dom; exact Harg. }` |
+| `ContextTyping/theories/SoundnessApp.v` | 603 | `{ eapply ty_denote_gas_fv_tm_subset; exact Hfun0. }` |
+| `ContextTyping/theories/SoundnessApp.v` | 662 | `{ eapply ty_denote_gas_zero_total_atom_world; exact Hzero0. }` |
+| `ContextTyping/theories/SoundnessApp.v` | 952 | `eapply ty_denote_gas_ret_fvar_world_dom; exact Harg).` |
+| `ContextTyping/theories/SoundnessApp.v` | 1005 | `apply elem_of_union in Ha_mz as [Ha_m|Ha_z]; [exact Ha_m|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 97 | `eapply basic_typing_weaken_tm; [exact Hbasic|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 381 | `apply storeA_restrict_lookup_some_2; [exact Hxmz|exact Hx_parent_dom].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 517 | `apply fv_cty_fix_rec_call_ty_fresh; [exact Hzx|exact Hzτx|exact Hzτ].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 586 | `- apply lc_tapp_tm; [exact Hlc_self|constructor].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 706 | `eapply res_models_forall_rev_intro; [exact Hscope_body|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 717 | `eapply res_models_impl_intro; [exact Hfun_open_scope|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 722 | `eapply res_models_forall_rev_intro; [exact Hvalue_scope|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 736 | `eapply res_models_impl_intro; [exact Harg_open_scope|].` |
+| `ContextTyping/theories/SoundnessFixSelf.v` | 1249 | `eapply basic_tm_has_ltype_weaken; [exact Hty_self_rel|].` |
+| `ContextTyping/theories/Soundness.v` | 203 | `eapply res_models_impl_elim; [exact Himpl|].` |
+| `ContextTyping/theories/Soundness.v` | 336 | `eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact Hctx_mx|].` |
+| `ContextTyping/theories/Soundness.v` | 613 | `- eapply erase_ctx_star_bind_insert_agree_on; [exact Hbasic_top| |exact Hxctx].` |
+| `ContextTyping/theories/Soundness.v` | 799 | `eapply res_models_kripke; [exact Hle21|].` |
+| `ContextTyping/theories/Soundness.v` | 834 | `eapply res_models_forall_rev_intro; [exact Hscope_body|].` |
+| `ContextTyping/theories/Soundness.v` | 845 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/Soundness.v` | 887 | `eapply res_models_forall_rev_intro; [exact Hscope_body|].` |
+| `ContextTyping/theories/Soundness.v` | 898 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `ContextTyping/theories/Soundness.v` | 1029 | `split; [apply tm_eval_in_store_empty_iff; exact Heval|].` |
+| `ContextTyping/theories/SoundnessAppD.v` | 58 | `eapply basic_tm_has_ltype_weaken; [exact Hty_rel|].` |
+| `ContextTyping/theories/SoundnessAppD.v` | 321 | `{ eapply ty_denote_gas_zero_total_atom_world; exact Hzero. }` |
+| `ContextTyping/theories/SoundnessAppD.v` | 323 | `{ eapply ty_denote_gas_fv_tm_subset; exact Hfun. }` |
+| `ContextTyping/theories/SoundnessAppD.v` | 1133 | `apply elem_of_union in Ha_pz as [Ha_small|Ha_z]; [exact Ha_small|].` |
+| `ContextTyping/theories/SoundnessAppD.v` | 1164 | `eapply res_models_kripke; [exact Hpsmall_le_m|].` |

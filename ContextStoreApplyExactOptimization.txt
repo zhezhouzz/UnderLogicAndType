@@ -1,0 +1,94 @@
+ContextStore Apply/Exact Optimization Stats
+===========================================
+
+Candidates: 74
+
+Implementation Status
+---------------------
+
+- Completed: `storeA_restrict_lookup_some_2` calls with immediate `exact`
+  arguments in `StoreInterface.v` and `StoreRestrict.v` were rewritten so
+  the proof arguments are passed directly to `apply`. Solver-produced set
+  side conditions remain as explicit subgoals when needed.
+- Verified: `timeout 50s make TIMED=1 ContextStore/StoreRestrict.vo
+  ContextStore/StoreInterface.vo`.
+- Deferred: remaining candidates include mixed solver/set-map shapes,
+  higher-order hypotheses such as `Hc`, and non-Store lookup lemmas. These
+  should be handled in smaller batches to avoid implicit-argument churn.
+
+| file | line | shape |
+|---|---:|---|
+| `ContextStore/StoreInterface.v` | 112 | `- apply storeA_restrict_lookup_some_2; [exact Hs|exact Hx].` |
+| `ContextStore/StoreInterface.v` | 124 | `- apply storeA_restrict_lookup_some_2; [exact Hs|exact Hk].` |
+| `ContextStore/StoreInterface.v` | 360 | `+ exfalso. pose proof (Hbelow n ltac:(apply lvars_bv_elem; exact Hin)).` |
+| `ContextStore/StoreInterface.v` | 580 | `- apply storeA_restrict_lookup_some_2; [exact Hlook|].` |
+| `ContextStore/StoreInterface.v` | 595 | `apply storeA_restrict_lookup_some_2; [exact Hlook|exact HzD].` |
+| `ContextStore/StoreFilterMapKey.v` | 96 | `eapply IH; [exact Hlookup|exact Hfk|].` |
+| `ContextStore/StoreFilterMapKey.v` | 101 | `* eapply IH; [exact Hlookup|exact Hfk|].` |
+| `ContextStore/StoreFilterMapKey.v` | 847 | `* eapply lvar_store_open_step_commute; [exact Hne|].` |
+| `ContextStore/StoreFilterMapKey.v` | 883 | `eapply storeA_filter_map_key_lookup_some_unique; [exact Hlookup|reflexivity|].` |
+| `ContextStore/StoreCore.v` | 68 | `apply elem_of_union in Hx as [Hx|Hx]; [apply H1|apply H2]; exact Hx.` |
+| `ContextStore/StoreCore.v` | 225 | `apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].` |
+| `ContextStore/StoreCore.v` | 251 | `apply storeA_rekey_lookup_Some_inj_on; [exact Hinj|].` |
+| `ContextStore/StoreCore.v` | 262 | `apply Hg; [exact Hx|exact Hy|].` |
+| `ContextStore/StoreCore.v` | 376 | `symmetry. apply storeA_rekey_lookup_Some_inj_on; [exact Hcomp|].` |
+| `ContextStore/StoreCore.v` | 385 | `apply storeA_rekey_lookup_Some_inj_on; [exact Hg|].` |
+| `ContextStore/StoreCore.v` | 391 | `apply storeA_rekey_lookup_Some_inj_on; [exact Hf|].` |
+| `ContextStore/Store.v` | 219 | `eapply Hc; [exact H1 | exact H2]` |
+| `ContextStore/LVarStore.v` | 151 | `apply storeA_rekey_insert_inj_on; exact Hnone || exact Hinj.` |
+| `ContextStore/LVarStore.v` | 582 | `eapply lvars_fv_subset_insert_free_drop; [exact Hfresh|].` |
+| `ContextStore/StoreRestrict.v` | 34 | `+ apply map_lookup_filter_Some_2; [exact Hs | exact Hz].` |
+| `ContextStore/StoreRestrict.v` | 257 | `* symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].` |
+| `ContextStore/StoreRestrict.v` | 301 | `{ apply storeA_restrict_lookup_some_2; [exact Hlook | exact Hx]. }` |
+| `ContextStore/StoreRestrict.v` | 321 | `+ symmetry. apply storeA_restrict_lookup_some_2; [exact Hs | exact Hz].` |
+| `ContextStore/StoreRestrict.v` | 437 | `apply storeA_restrict_lookup_some_2; [exact H1|exact HiX].` |
+| `ContextStore/StoreRestrict.v` | 444 | `split; [apply storeA_restrict_lookup_none_l; exact H1|].` |
+| `ContextStore/StoreRestrict.v` | 445 | `apply storeA_restrict_lookup_some_2; [exact H2|exact HiX].` |
+| `ContextStore/StoreRestrict.v` | 455 | `split; apply storeA_restrict_lookup_none_r; exact HiX.` |
+| `ContextStore/StoreRestrict.v` | 478 | `apply storeA_restrict_lookup_some_2; [exact Hlookup1 | exact Hi1].` |
+| `ContextStore/StoreRestrict.v` | 492 | `-- apply storeA_restrict_lookup_some_2; [exact Hlookup2 | exact Hi2].` |
+| `ContextStore/StoreRestrict.v` | 512 | `* apply storeA_restrict_lookup_some_2; [exact Hz|set_solver].` |
+| `ContextStore/StoreRestrict.v` | 514 | `apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 518 | `split; apply storeA_restrict_lookup_none_l; exact Hz.` |
+| `ContextStore/StoreRestrict.v` | 523 | `by (apply storeA_restrict_lookup_none_r; exact HzX).` |
+| `ContextStore/StoreRestrict.v` | 526 | `-- apply storeA_restrict_lookup_some_2; [exact Hz|set_solver].` |
+| `ContextStore/StoreRestrict.v` | 527 | `-- symmetry. apply storeA_restrict_lookup_some_2; [exact Hz|exact HzY].` |
+| `ContextStore/StoreRestrict.v` | 553 | `apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 580 | `-- apply storeA_restrict_lookup_some_2; [exact Hs1|exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 591 | `apply storeA_restrict_lookup_some_2; [exact Hs2|].` |
+| `ContextStore/StoreRestrict.v` | 644 | `+ apply storeA_restrict_lookup_some_2; [exact Hlook | better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 682 | `-- symmetry. apply storeA_restrict_lookup_some_2; [exact Hz | exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 749 | `* apply storeA_restrict_lookup_some_2; [exact Hz|better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 751 | `apply storeA_restrict_lookup_some_2; [exact Hz|exact HzS].` |
+| `ContextStore/StoreRestrict.v` | 755 | `split; apply storeA_restrict_lookup_none_l; exact Hz.` |
+| `ContextStore/StoreRestrict.v` | 760 | `by (apply storeA_restrict_lookup_none_r; exact Hx).` |
+| `ContextStore/StoreRestrict.v` | 763 | `-- apply storeA_restrict_lookup_some_2; [exact Hxlook|better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 764 | `-- symmetry. apply storeA_restrict_lookup_some_2; [exact Hxlook|better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 795 | `symmetry. apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 813 | `apply storeA_restrict_lookup_some_2; [exact Hz|exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 814 | `+ rewrite map_lookup_union_None. split; apply storeA_restrict_lookup_none_l; exact Hz.` |
+| `ContextStore/StoreRestrict.v` | 817 | `by (apply storeA_restrict_lookup_none_r; exact HzX).` |
+| `ContextStore/StoreRestrict.v` | 819 | `+ apply storeA_restrict_lookup_some_2; [exact Hz|].` |
+| `ContextStore/StoreRestrict.v` | 840 | `destruct (decide (z ∈ X)) as [HzX|HzX]; [|apply storeA_restrict_lookup_none_r; exact HzX].` |
+| `ContextStore/StoreRestrict.v` | 865 | `destruct (decide (z ∈ Y)) as [HzY|HzY]; [|apply storeA_restrict_lookup_none_r; exact HzY].` |
+| `ContextStore/StoreRestrict.v` | 1025 | `apply storeA_restrict_lookup_some_2; [exact Hs|exact HzX1].` |
+| `ContextStore/StoreRestrict.v` | 1036 | `apply storeA_restrict_lookup_some_2; [exact Hs|exact HzX2].` |
+| `ContextStore/StoreRestrict.v` | 1093 | `apply storeA_restrict_lookup_some_2; [exact Hs|exact HzX1].` |
+| `ContextStore/StoreRestrict.v` | 1164 | `{ apply storeA_restrict_lookup_some_2; [exact Hs1|exact HiD]. }` |
+| `ContextStore/StoreRestrict.v` | 1176 | `-- apply storeA_restrict_lookup_some_2; [exact Hs2y|better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 1243 | `apply storeA_restrict_lookup_some_2; [exact Hsn|exact HiX].` |
+| `ContextStore/StoreRestrict.v` | 1251 | `-- apply storeA_restrict_lookup_some_2; [exact Hsm|better_set_solver].` |
+| `ContextStore/StoreRestrict.v` | 1281 | `apply storeA_restrict_lookup_some_2; [exact Hsn|exact HiX].` |
+| `ContextStore/StoreRestrict.v` | 1294 | `++ apply storeA_restrict_lookup_some_2; [exact Hsm|set_solver].` |
+| `ContextStore/StoreRestrict.v` | 1310 | `-- apply storeA_restrict_lookup_some_2; [exact Hsm|set_solver].` |
+| `ContextStore/StoreRestrict.v` | 1314 | `-- apply storeA_restrict_lookup_some_2; [exact Hsm|exact HiS].` |
+| `ContextStore/StoreRestrict.v` | 1401 | `eapply Hc; [exact H1 |].` |
+| `ContextStore/StoreRestrict.v` | 1417 | `+ eapply Hc; [exact H1 |].` |
+| `ContextStore/StoreRestrict.v` | 1422 | `- eapply Hc; [exact H1 |].` |
+| `ContextStore/StoreRestrict.v` | 1731 | `- apply storeA_restrict_lookup_some_2; [exact H2|].` |
+| `ContextStore/StoreRestrict.v` | 1753 | `eapply Hcomp; [exact H1 |].` |
+| `ContextStore/StoreRestrict.v` | 1754 | `apply storeA_restrict_lookup_some_2; [exact H2 |].` |
+| `ContextStore/StoreRestrict.v` | 1768 | `assert (i ∈ dom (s2 : gmap K V)) as Hin2 by (apply Hsub; exact Hin1).` |
+| `ContextStore/StoreRestrict.v` | 1773 | `+ apply storeA_restrict_lookup_some_2; [exact H2' | exact Hin1].` |
+| `ContextStore/StoreRestrict.v` | 1804 | `{ apply storeA_restrict_lookup_some_2; [exact H1 | exact Hin]. }` |
+| `ContextStore/StoreRestrict.v` | 1806 | `{ apply storeA_restrict_lookup_some_2; [exact H2 | exact Hin]. }` |

@@ -1,0 +1,7 @@
+LocallyNameless Apply/Exact Optimization Stats
+==============================================
+
+Candidates: 0
+
+| file | line | shape |
+|---|---:|---|

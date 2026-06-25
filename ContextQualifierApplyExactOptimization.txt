@@ -1,0 +1,10 @@
+ContextQualifier Apply/Exact Optimization Stats
+===============================================
+
+Candidates: 3
+
+| file | line | shape |
+|---|---:|---|
+| `ContextQualifier/theories/Qualifier.v` | 484 | `apply qual_open_commute_fvar; [exact Hij|].` |
+| `ContextQualifier/theories/Qualifier.v` | 619 | `specialize (Hlc k ltac:(apply lvars_bv_elem; exact HvD)).` |
+| `ContextQualifier/theories/Qualifier.v` | 685 | `specialize (Hbelow k ltac:(apply lvars_bv_elem; exact HbadD)).` |

@@ -1,0 +1,209 @@
+Denotation Apply/Exact Optimization Stats
+=========================================
+
+Candidates: 202
+
+| file | line | shape |
+|---|---:|---|
+| `Denotation/theories/TypeEquivBody.v` | 185 | `split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 186 | `split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 200 | `split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 201 | `split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 224 | `eapply typed_total_equiv_inter_l; exact Hequiv.` |
+| `Denotation/theories/TypeEquivBody.v` | 226 | `eapply typed_total_equiv_inter_r; exact Hequiv.` |
+| `Denotation/theories/TypeEquivBody.v` | 273 | `split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 274 | `split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 288 | `split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 289 | `split; [eapply typed_total_equiv_total_equiv; exact Hequiv|].` |
+| `Denotation/theories/TypeEquivBody.v` | 333 | `+ eapply IH; [exact Hequiv1|exact H1].` |
+| `Denotation/theories/TypeEquivBody.v` | 341 | `+ eapply IH; [exact Hequiv2|exact H2].` |
+| `Denotation/theories/TypePersistSingleton.v` | 119 | `apply elem_of_union in Ha as [HaA|HaX]; [exact HaA|].` |
+| `Denotation/theories/TypePersistSingleton.v` | 262 | `apply storeA_restrict_lookup_some_2; [exact H0look|exact Hxm].` |
+| `Denotation/theories/TypePersistSingleton.v` | 290 | `apply elem_of_union in Ha as [HaA|HaY]; [exact HaA|].` |
+| `Denotation/theories/TypePersistSingleton.v` | 309 | `apply storeA_restrict_lookup_some_2; [exact H0look|exact HaDom].` |
+| `Denotation/theories/TypePersistSingleton.v` | 633 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `Denotation/theories/TypePersistSingleton.v` | 645 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypePersistSingleton.v` | 671 | `by (apply relevant_env_closed; exact HΣclosed).` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 31 | `apply storeA_restrict_lookup_some_2; [exact HΣv|].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 87 | `eapply basic_tm_has_ltype_env_agree_lc; [exact Hty| |].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 88 | `++ eapply basic_tm_has_ltype_lc; [exact HlcΣ|exact Hty].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 254 | `+ eapply ty_denote_gas_zero_context_lvars_dom; [exact Hzero|exact Hv].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 255 | `+ eapply ty_denote_gas_zero_tm_lvars_dom; [exact Hzero|exact Hv].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 268 | `- eapply ty_denote_gas_zero_context_lvars_dom; [exact Hzero|].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 270 | `- eapply ty_denote_gas_zero_tm_lvars_dom; [exact Hzero|].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 280 | `eapply ty_denote_gas_zero_lc_relevant_env; [exact Hzero|].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 282 | `- eapply ty_denote_gas_zero_context_lvars_dom; [exact Hzero|exact Hv].` |
+| `Denotation/theories/TypeEquivFiberBaseCore.v` | 283 | `- eapply ty_denote_gas_zero_tm_lvars_dom; [exact Hzero|exact Hv].` |
+| `Denotation/theories/TypeEquivTermResult.v` | 576 | `+ symmetry. apply storeA_restrict_lookup_some_2; [exact Hτa|exact Hamx].` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 78 | `{ apply lc_tapp_tm; [exact Hlc_e|exact Hvx1]. }` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 80 | `{ apply lc_tapp_tm; [exact Hlc_e|exact Hvx2]. }` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 168 | `apply tm_eval_in_store_ret_value; [exact HσX_closed|exact Hvx].` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 176 | `apply tm_eval_in_store_ret_value; [exact HσX_closed|constructor].` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 452 | `+ eapply basic_value_has_ltype_weaken; [exact Hvx|].` |
+| `Denotation/theories/TypeEquivFiberTransport.v` | 506 | `eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].` |
+| `Denotation/theories/DenotationSetMapFacts.v` | 85 | `- eapply storeA_restrict_lookup_transport; [exact Hx|exact Heq|exact Hlook].` |
+| `Denotation/theories/DenotationSetMapFacts.v` | 86 | `- eapply storeA_restrict_lookup_transport; [exact Hx|symmetry; exact Heq|exact Hlook].` |
+| `Denotation/theories/DenotationSetMapFacts.v` | 96 | `eapply store_lookup_eq_of_restrict_eq; [exact Hx|].` |
+| `Denotation/theories/DenotationSetMapFacts.v` | 134 | `+ eapply store_lookup_eq_of_restrict_eq; [exact Ha_small|exact Hv_base].` |
+| `Denotation/theories/DenotationSetMapFacts.v` | 135 | `+ eapply store_lookup_eq_of_restrict_eq; [exact Ha_base|exact Hbase_big].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 48 | `eapply res_models_fbwand_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 93 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 277 | `eapply res_models_kripke; [exact Hle|exact Hres_src_open].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 307 | `eapply res_models_fbwand_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 352 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 536 | `eapply res_models_kripke; [exact Hle|exact Hres_src_open].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 611 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 625 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 900 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `Denotation/theories/TypePersistWandReverse.v` | 914 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypeEquivWandResultFirst.v` | 236 | `eapply result_first_result_body_relevant_subset; [exact Hlcτr| |].` |
+| `Denotation/theories/TypeEquivWandResultFirst.v` | 419 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivWandResultFirst.v` | 478 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquiv.v` | 53 | `eapply basic_tm_has_ltype_restrict_lvars_lc; [exact Hty|exact Hlc_e|].` |
+| `Denotation/theories/TypeEquiv.v` | 264 | `apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha].` |
+| `Denotation/theories/TypeEquiv.v` | 553 | `[eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].` |
+| `Denotation/theories/TypeEquiv.v` | 595 | `eapply basic_tm_has_ltype_weaken; [exact Hety|].` |
+| `Denotation/theories/TypeEquiv.v` | 718 | `eapply ty_denote_gas_tm_equiv; [exact Htyped|].` |
+| `Denotation/theories/TypeEquiv.v` | 1188 | `eapply basic_tm_has_ltype_lc; [exact HlcΣ|exact Hty].` |
+| `Denotation/theories/TypeEquiv.v` | 1218 | `apply storeA_restrict_lookup_some_2; [exact Hv|].` |
+| `Denotation/theories/TypeEquiv.v` | 1318 | `{ eapply ty_denote_gas_fv_tm_subset; [exact Hsource|exact Ha]. }` |
+| `Denotation/theories/TypeEquiv.v` | 1337 | `{ eapply ty_denote_gas_fv_tm_subset; [exact Hsource|exact Ha]. }` |
+| `Denotation/theories/TypeEquiv.v` | 1434 | `[apply relevant_env_closed; exact HΣclosed| |exact HFx|exact Hext|].` |
+| `Denotation/theories/TypeEquiv.v` | 1454 | `eapply basic_tm_has_ltype_lc; [exact HlcΣ|exact Hty].` |
+| `Denotation/theories/TypeEquiv.v` | 1465 | `eapply ty_denote_gas_zero_relevant_lvars_world; [exact Hzero_m|].` |
+| `Denotation/theories/TypeEquiv.v` | 1468 | `eapply ty_denote_gas_zero_relevant_lvars_world; [exact Hzero_m|].` |
+| `Denotation/theories/TypeEquiv.v` | 1849 | `[eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].` |
+| `Denotation/theories/TypeEquivTLetFormula.v` | 33 | `eapply res_restrict_eq_subset; [exact Hfv|exact Hproj].` |
+| `Denotation/theories/TypeEquivCore.v` | 193 | `split; [apply formula_scoped_true_iff; exact I | exact I].` |
+| `Denotation/theories/TypeEquivCore.v` | 295 | `eapply res_models_extend_mono; [exact Hext | exact Hm].` |
+| `Denotation/theories/TypeEquivCore.v` | 323 | `eapply Hstores; [exact HΣy|].` |
+| `Denotation/theories/ConstDenoteBase.v` | 674 | `apply tm_eval_in_store_ret_fvar_lookup; [exact Hclosed_ret|].` |
+| `Denotation/theories/ConstDenoteBase.v` | 689 | `apply storeA_restrict_lookup_some_2; [exact Hσmx_x|].` |
+| `Denotation/theories/ConstDenoteBase.v` | 785 | `eapply expr_result_formula_ret_const_lookup; [exact Hexpr|].` |
+| `Denotation/theories/ConstDenoteBase.v` | 831 | `eapply expr_result_formula_ret_const_lookup; [exact Hexpr|].` |
+| `Denotation/theories/TypeEquivWand.v` | 55 | `- eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].` |
+| `Denotation/theories/TypeEquivWand.v` | 72 | `- eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].` |
+| `Denotation/theories/TypeEquivWand.v` | 76 | `- eapply wand_open_world_term_scope; [exact Hequiv|exact Hdom|].` |
+| `Denotation/theories/TypeEquivWand.v` | 309 | `eapply res_models_kripke; [exact Hle|exact Hworld_top_tgt].` |
+| `Denotation/theories/TypeEquivWand.v` | 631 | `- apply lc_tapp_tm; [exact Hlc2|constructor].` |
+| `Denotation/theories/TypeEquivWand.v` | 1073 | `- apply lc_tapp_tm; [exact Hlc2|constructor].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 172 | `eapply res_restrict_eq_subset; [exact Hfv|exact Hproj].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 260 | `eapply res_models_FFibVars_intro; [exact Hscope_t|exact HlcD|].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 302 | `by (apply lvars_fv_elem; exact HvD).` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 365 | `apply elem_of_intersection. split; [apply Hsubσ|]; exact Ha_fv.` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 390 | `apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 468 | `apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 566 | `{ apply storeA_restrict_lookup_some_2; [exact Hσproj_a|exact HaQ]. }` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 572 | `{ apply storeA_restrict_lookup_some_2; [exact Hσ_a|exact HaQ]. }` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 870 | `v ltac:(intros a Ha; apply elem_of_union_l; exact Ha))).` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 939 | `apply msubst_lc; [exact (proj2 Hclosed_restrict)|exact Hv].` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 1029 | `v ltac:(intros a Ha; apply elem_of_union_l; exact Ha))).` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 1053 | `eapply res_models_FFibVars_intro; [exact Hscope|exact HlcD|].` |
+| `Denotation/theories/TypeEquivFiberBaseProjected.v` | 463 | `apply elem_of_union in Ha_src as [Ha_m|Ha_y]; [exact Ha_m|].` |
+| `Denotation/theories/TypeEquivFiberBaseProjected.v` | 478 | `- eapply ty_denote_gas_zero_lc_relevant_lvars; [exact Hzero_tgt|].` |
+| `Denotation/theories/TypeEquivFiberBaseProjected.v` | 489 | `- eapply ty_denote_gas_zero_relevant_lvars_world; [exact Hzero_tgt|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 224 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 262 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 334 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 372 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 459 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivFiberBody.v` | 526 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivTermTLet.v` | 35 | `apply elem_of_union in Hz as [Hz|Hz]; [exact (Hze1 Hz)|exact (Hze2 Hz)].` |
+| `Denotation/theories/TypeEquivTermTLet.v` | 123 | `2:{ apply body_open_tm; [exact Hbody_e2|constructor]. }` |
+| `Denotation/theories/TypeEquivTermTLet.v` | 292 | `2:{ apply body_open_tm; [exact Hbody_e2|constructor]. }` |
+| `Denotation/theories/TypeEquivTLet.v` | 39 | `[eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].` |
+| `Denotation/theories/TypeEquivTLet.v` | 86 | `eapply basic_tm_has_ltype_lc; [exact HlcΣ|exact Hty_tlet].` |
+| `Denotation/theories/TypeEquivTLet.v` | 344 | `eapply res_models_impl_intro; [exact Htarget_impl_scope|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 583 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 636 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 745 | `eapply res_models_fbwand_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 986 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 1039 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 1412 | `++ apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].` |
+| `Denotation/theories/TypeEquivTLet.v` | 1413 | `++ symmetry. apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].` |
+| `Denotation/theories/TypeEquivTLet.v` | 1483 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivTLet.v` | 1517 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivArrow.v` | 281 | `eapply res_models_kripke; [exact Hle|exact Hworld_top_tgt].` |
+| `Denotation/theories/TypeEquivArrow.v` | 456 | `eapply basic_tm_has_ltype_env_agree_lc; [exact Hty|exact Hlc_e2|].` |
+| `Denotation/theories/TypeEquivArrow.v` | 637 | `- apply lc_tapp_tm; [exact Hlc2|constructor].` |
+| `Denotation/theories/TypePersistBase.v` | 75 | `-- apply elem_of_union in HaMy as [HaM|Hay']; [exact HaM|].` |
+| `Denotation/theories/TypePersistBase.v` | 78 | `apply elem_of_union in HaAy as [HaA|Hay']; [exact HaA|].` |
+| `Denotation/theories/TypePersistBase.v` | 85 | `apply elem_of_union in HaAx as [HaA|Hax']; [exact HaA|].` |
+| `Denotation/theories/TypePersistBase.v` | 554 | `apply storeA_restrict_lookup_some_2; [exact Hylookup|set_solver].` |
+| `Denotation/theories/TypePersistBase.v` | 662 | `rewrite decide_True by (apply elem_of_union_l; exact HaA).` |
+| `Denotation/theories/TypePersistBase.v` | 665 | `rewrite decide_True by (apply HAm; exact HaA).` |
+| `Denotation/theories/TypePersistBase.v` | 731 | `rewrite decide_True by (apply elem_of_union_l; exact HaA).` |
+| `Denotation/theories/TypePersistBase.v` | 986 | `by (eapply notin_union4_l; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 988 | `by (eapply notin_union4_r1; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 994 | `eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].` |
+| `Denotation/theories/TypePersistBase.v` | 1122 | `by (eapply notin_union4_l; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 1124 | `by (eapply notin_union4_r1; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 1130 | `eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].` |
+| `Denotation/theories/TypePersistBase.v` | 1280 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypePersistBase.v` | 1284 | `by (eapply notin_union4_l; exact Hy).` |
+| `Denotation/theories/TypePersistBase.v` | 1288 | `by (eapply notin_union4_r1; exact Hy).` |
+| `Denotation/theories/TypePersistBase.v` | 1294 | `eapply notin_union4_r2; [exact Hy|exact HyDfv].` |
+| `Denotation/theories/TypePersistBase.v` | 1414 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypePersistBase.v` | 1418 | `by (eapply notin_union4_l; exact Hy).` |
+| `Denotation/theories/TypePersistBase.v` | 1422 | `by (eapply notin_union4_r1; exact Hy).` |
+| `Denotation/theories/TypePersistBase.v` | 1428 | `eapply notin_union4_r2; [exact Hy|exact HyDfv].` |
+| `Denotation/theories/TypePersistBase.v` | 1529 | `by (eapply notin_union4_l; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 1531 | `by (eapply notin_union4_r1; exact Hyfresh).` |
+| `Denotation/theories/TypePersistBase.v` | 1537 | `eapply notin_union4_r2; [exact Hyfresh|exact HyDfv].` |
+| `Denotation/theories/TypePersistBase.v` | 1910 | `- apply ty_denote_gas_over_ret_fvar_self_body_iff; [exact HΣclosed|exact Hzφ|].` |
+| `Denotation/theories/TypePersistArrow.v` | 109 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 140 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 213 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 222 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 252 | `split; [apply Hwf; exact Hwf1|].` |
+| `Denotation/theories/TypePersistArrow.v` | 708 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 735 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 797 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 804 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistArrow.v` | 962 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `Denotation/theories/TypePersistArrow.v` | 978 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/TypeEquivArrowResultFirst.v` | 235 | `eapply result_first_result_body_relevant_subset; [exact Hlcτr| |].` |
+| `Denotation/theories/TypeEquivArrowResultFirst.v` | 418 | `eapply res_models_forall_rev_intro; [exact Hscope_tgt|].` |
+| `Denotation/theories/TypeEquivArrowResultFirst.v` | 477 | `eapply res_models_impl_intro; [exact Hopened_scope|].` |
+| `Denotation/theories/TypeEquivTermApp.v` | 463 | `apply msubst_lc; [exact (proj2 HσX_closed)|exact Hlc1].` |
+| `Denotation/theories/TypeEquivTermApp.v` | 465 | `apply msubst_lc; [exact (proj2 HσX_closed)|exact Hlc2].` |
+| `Denotation/theories/TypeEquivTermApp.v` | 467 | `apply msubst_lc; [exact (proj2 HσX_closed)|constructor].` |
+| `Denotation/theories/TypeEquivTermApp.v` | 534 | `apply msubst_lc; [exact (proj2 HσX_closed)|exact Hvf].` |
+| `Denotation/theories/TypeEquivTermApp.v` | 536 | `apply msubst_lc; [exact (proj2 HσX_closed)|constructor].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 147 | `eapply storeA_restrict_eq_mono; [exact Hsub|exact Hproj_big].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 154 | `eapply storeA_restrict_eq_mono; [exact Hsub|exact Hproj_big].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 337 | `{ apply storeA_restrict_lookup_some_2; [exact Hxσ|set_solver]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 537 | `- eapply basic_tm_has_ltype_lc; [exact HlcΣ1|exact Hty1].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 538 | `- eapply basic_tm_has_ltype_lc; [exact HlcΣ2|exact Hty2].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 650 | `{ apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 699 | `{ apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 704 | `{ apply body_open_tm; [exact Hbody|constructor]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 710 | `intros z Hz. apply body_open_tm; [exact Hbody|constructor].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 774 | `{ apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 831 | `{ apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }` |
+| `Denotation/theories/TypeEquivTermBase.v` | 844 | `- constructor. apply body_open_value; [exact Hbody|constructor].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 920 | `- eapply basic_tm_has_ltype_lc; [exact HlcΣ1|exact Hty1].` |
+| `Denotation/theories/TypeEquivTermBase.v` | 921 | `- eapply basic_tm_has_ltype_lc; [exact HlcΣ2|exact Hty2].` |
+| `Denotation/theories/TypePersistWandForward.v` | 184 | `by (apply relevant_env_closed; exact HΣclosed).` |
+| `Denotation/theories/TypePersistWandForward.v` | 235 | `by (apply relevant_env_closed; exact HΣclosed).` |
+| `Denotation/theories/TypePersistWandForward.v` | 543 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandForward.v` | 567 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandForward.v` | 635 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandForward.v` | 642 | `apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].` |
+| `Denotation/theories/TypePersistWandForward.v` | 753 | `eapply res_models_and_intro_from_models; [exact Hguard_tgt|].` |
+| `Denotation/theories/TypePersistWandForward.v` | 767 | `eapply res_models_forall_rev_intro; [exact Hscope_forall|].` |
+| `Denotation/theories/Context.v` | 700 | `apply storeA_restrict_lookup_some_2; [exact HT|].` |
+| `Denotation/theories/Context.v` | 835 | `apply storeA_restrict_lookup_some_2; [exact Hylookup|exact Hyτ].` |
+| `Denotation/theories/Context.v` | 1316 | `eapply res_models_kripke; [exact Hle|].` |
+| `Denotation/theories/Context.v` | 1322 | `eapply res_models_kripke; [exact Hle|].` |
+| `Denotation/theories/Context.v` | 1711 | `apply ctx_denote_under_star_self_of_persistent; [exact Hbasic|].` |
+| `Denotation/theories/Context.v` | 1791 | `eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact HΓm|].` |
+| `Denotation/theories/TypeDenote.v` | 584 | `(try exact Hinj; apply open_env_values_inj_lift; exact Hinj).` |
+| `Denotation/theories/TypeDenote.v` | 700 | `(try exact Hinj; apply open_env_values_inj_lift; exact Hinj).` |
+| `Denotation/theories/TypeDenote.v` | 822 | `(try exact Hinj; apply open_env_values_inj_lift; exact Hinj).` |
+| `Denotation/theories/TypeDenote.v` | 890 | `(try exact Hinj; apply open_env_values_inj_lift; exact Hinj).` |
+| `Denotation/theories/TypeEquivTermResult.v` | 60 | `ltac:(apply (proj2 (tm_eval_in_store_restrict_fv_exact σ e2 v)); / exact Heval2_full))` |
+| `Denotation/theories/TypeEquivFiberBaseResult.v` | 147 | `ltac:(apply (proj2 (tm_eval_in_store_restrict_fv_exact τ2 e2 v)); / exact Heval2))` |
+| `Denotation/theories/ConstDenote.v` | 495 | `[ apply relevant_lvars_basic_open_tprim_fvar_subset; / exact Hbasic_res` |
+| `Denotation/theories/ConstDenote.v` | 498 | `apply atom_env_restrict_singleton_lookup; / exact Hlookup` |
+| `Denotation/theories/Context.v` | 1357 | `+ eapply ctx_erasure_under_star_basic_world; eauto; / exact (ctx_denote_under_basic_world _ _ _ HΓmin).` |

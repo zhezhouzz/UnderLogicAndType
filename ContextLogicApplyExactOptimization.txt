@@ -1,0 +1,73 @@
+ContextLogic Apply/Exact Optimization Stats
+===========================================
+
+Candidates: 66
+
+| file | line | shape |
+|---|---:|---|
+| `ContextLogic/theories/FormulaFiberwise.v` | 145 | `apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact HaX].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 159 | `apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact HaX].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 277 | `apply elem_of_union in HaM as [HaM|Hay]; [exact HaM|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 287 | `- intros HaB. apply elem_of_intersection. split; [apply Hsub|]; exact HaB.` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 374 | `by (symmetry; apply inter_absorb_l_of_subset; exact Hdomσ).` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 398 | `++ eapply storeA_restrict_eq_mono; [exact Hdomσ|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 605 | `eapply res_models_impl_intro_future; [exact Hscope|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 621 | `eapply res_models_impl_elim; [exact Himpl_fib|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 624 | `eapply res_models_kripke; [exact Hle|exact HQm].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 699 | `eapply Hup; [exact Hle|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 733 | `Proof. intros Hup HP X. apply fiberwise_joinable_on_under; [exact Hup|apply HP]. Qed.` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 747 | `eapply Hdown; [exact Hle|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 767 | `eapply res_models_over_FAtom_intro_store_holds; [exact Hscope|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 772 | `eapply res_models_over_FAtom_store_holds; [exact Hover|exact Hτfib].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1165 | `eapply res_models_kripke; [exact Hle|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1174 | `eapply res_models_kripke; [exact Hle|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1275 | `eapply res_models_forall_rev_intro; [exact Hscope|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1293 | `eapply res_models_forall_open_named_fresh; [exact Hforall_mfib| | |].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1333 | `eapply res_models_fbwand_intro; [exact Hscope|].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1384 | `eapply res_models_kripke; [exact Hle|exact HQprod].` |
+| `ContextLogic/theories/FormulaFiberwise.v` | 1457 | `eapply subset_downward_closed_over; [exact Hsub|].` |
+| `ContextLogic/theories/FormulaAtom.v` | 148 | `assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HvD).` |
+| `ContextLogic/theories/FormulaAtom.v` | 342 | `- assert (HxD : x ∈ lvars_fv D) by (apply lvars_fv_elem; exact HzD).` |
+| `ContextLogic/theories/FormulaAtom.v` | 347 | `apply storeA_restrict_lookup_some_2; [exact Hσx|exact HxD].` |
+| `ContextLogic/theories/FormulaAtom.v` | 397 | `++ apply atom_store_extend_lstore_on_dom; [exact Hlc|exact HsubA].` |
+| `ContextLogic/theories/FormulaAtom.v` | 552 | `apply storeA_restrict_lookup_some_2; [exact Hσy|].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 48 | `eapply res_models_kripke; [exact Hle |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 88 | `eapply res_models_impl_intro_future; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 139 | `eapply res_models_impl_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 168 | `eapply res_models_impl_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 171 | `eapply res_models_impl_elim; [exact Himpl |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 186 | `eapply res_models_impl2_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 189 | `eapply res_models_impl2_elim; [exact Himpl | |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 205 | `eapply res_models_impl2_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 207 | `eapply Hχ; [exact Hφ2 | exact Hψ2 |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 208 | `eapply res_models_impl2_elim; [exact Himpl | |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 603 | `apply res_atom_swap_fresh; [exact Hx | exact Hym].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 626 | `eapply res_models_forall_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 628 | `eapply Hfull; [exact Hy | |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 632 | `- eapply res_extend_by_restrict_base; exact Hext.` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 659 | `eapply res_models_forall_rev_intro; [exact Hscope |].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 688 | `eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 722 | `eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 760 | `eapply res_models_forall_full_world_map; [exact Hscope | | exact Hforall].` |
+| `ContextLogic/theories/FormulaConnectivesHigher.v` | 959 | `apply res_models_and_intro_from_models; exact Hφ.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 162 | `Proof. intros Hscope. apply (proj1 (formula_scoped_forall_iff m φ)); exact Hscope. Qed.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 172 | `Proof. intros Hscope. apply (proj1 (formula_scoped_over_iff m φ)); exact Hscope. Qed.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 182 | `Proof. intros Hscope. apply (proj1 (formula_scoped_under_iff m φ)); exact Hscope. Qed.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 192 | `Proof. intros Hscope. apply (proj1 (formula_scoped_persist_iff m φ)); exact Hscope. Qed.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 707 | `- symmetry. apply res_restrict_le_eq; [exact Hle_n | exact Hp_scope_n].` |
+| `ContextLogic/theories/FormulaSemantics.v` | 715 | `+ apply res_restrict_le_eq; [exact Hle_n | exact Hq_scope_n].` |
+| `ContextLogic/theories/FormulaSemantics.v` | 803 | `+ subst X. eapply res_models_fuel_scoped; exact HpX.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 820 | `+ subst X. eapply res_models_fuel_scoped; exact HpX.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 859 | `eapply res_models_fuel_scoped; exact Hmodel.` |
+| `ContextLogic/theories/FormulaSemantics.v` | 872 | `- eapply res_models_fuel_scoped; exact Hmodel.` |
+| `ContextLogic/theories/FormulaSyntax.v` | 766 | `apply formula_open_commute_fresh; [exact Hij|].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 585 | `+ eapply res_models_and_elim_l; exact Hand.` |
+| `ContextLogic/theories/FormulaConnectives.v` | 586 | `+ eapply res_models_and_elim_r; exact Hand.` |
+| `ContextLogic/theories/FormulaConnectives.v` | 601 | `+ eapply res_models_or_intro_l; [exact Hscope | exact Hφ].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 602 | `+ eapply res_models_or_intro_r; [exact Hscope | exact Hψ].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 917 | `eapply res_models_FAtom_store_holds; [exact Hatom|].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 1096 | `{ apply storeA_restrict_lookup_some_2; [exact Ha|exact HaX]. }` |
+| `ContextLogic/theories/FormulaConnectives.v` | 1101 | `apply storeA_restrict_lookup_some_2; [exact Hσfixa|exact HaY].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 1124 | `-- apply storeA_restrict_lookup_some_2; [exact Ha|better_set_solver].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 1228 | `eapply res_fiber_from_projection_add_fixed_domain; [exact Hfixed|].` |
+| `ContextLogic/theories/FormulaConnectives.v` | 1395 | `eapply storeA_restrict_dom_subset; exact Hx.` |
