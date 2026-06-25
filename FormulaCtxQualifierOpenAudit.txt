@@ -235,3 +235,33 @@ Remaining buckets:
   - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` succeeds
     once the dependency chain is warm; the earlier 20s interruptions were
     dependency rebuilds, not proof failures.
+
+## Result-First Outer Value Open Normalizer
+
+- Moved the four outer value-body open normalizers from
+  `Denotation/theories/TypePersistArrow.v` to
+  `Denotation/theories/ResultFirstOpen.v`:
+  - `formula_open_arrow_value_ret_bvar0`
+  - `formula_open_result_first_arrow_value_ret_bvar0`
+  - `formula_open_wand_value_ret_bvar0`
+  - `formula_open_result_first_wand_value_ret_bvar0`
+- Extended `result_first_open_norm` / `result_first_open_norm_in` so these
+  outer Arrow/Wand value-body opens are handled by the same deterministic
+  result-first normalization tactic rather than by proof-local manual rewrite
+  chains.
+- Added normalized scoped/FV facts for already-opened value bodies:
+  - `formula_scoped_arrow_value_body_obs`
+  - `formula_scoped_wand_value_body_obs`
+  - `formula_fv_persist_value_body_obs`
+  - `formula_scoped_persist_value_body_obs`
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/ResultFirstOpen.vo`
+    succeeds in about 1.2s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+    succeeds in about 2.3s after dependency rebuild.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWandResultFirst.vo`
+    succeeds in about 1.7s after dependency rebuild.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+    succeeds in about 4.6s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistWandForward.vo`
+    succeeds after warmed dependency rebuild.

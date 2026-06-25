@@ -11,6 +11,7 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   DenotationSetMapFacts
+  ResultFirstOpen
   TypeEquivCore
   TypeEquivFiberBase
   TypeEquivBody

@@ -90,6 +90,20 @@ Proof.
     + left. right. exact Hres.
 Qed.
 
+Lemma formula_scoped_arrow_value_body_obs
+    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vfvar f))).
+Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
+  etransitivity; [apply formula_fv_open_arrow_value_body_obs|].
+  exact Hsub.
+Qed.
+
 Lemma formula_scoped_open_arrow_value_body_obs
     gas (Σ : lty_env) τx τr f (m : WfWorldT) :
   lvars_fv (context_ty_lvars (CTArrow τx τr)) ∪ {[f]} ⊆
@@ -216,6 +230,20 @@ Proof.
     + left. right. exact Hres.
 Qed.
 
+Lemma formula_scoped_wand_value_body_obs
+    gas (Σ : lty_env) τx τr f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vfvar f))).
+Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
+  etransitivity; [apply formula_fv_open_wand_value_body_obs|].
+  exact Hsub.
+Qed.
+
 Lemma formula_scoped_open_wand_value_body_obs
     gas (Σ : lty_env) τx τr f (m : WfWorldT) :
   lvars_fv (context_ty_lvars (CTWand τx τr)) ∪ {[f]} ⊆
@@ -299,6 +327,299 @@ Proof.
   exact Hsub.
 Qed.
 
+Lemma formula_fv_persist_value_body_obs
+    gas (Σ : lty_env) τ f :
+  formula_fv
+    (FPersist
+      (ty_denote_gas gas (<[LVFree f := erase_ty τ]> Σ)
+        τ (tret (vfvar f)))) ⊆
+  lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]}.
+Proof.
+  cbn [formula_fv].
+  pose proof (ty_denote_gas_fv_subset gas
+    (<[LVFree f := erase_ty τ]> Σ) τ (tret (vfvar f))) as Hbody.
+  intros a Ha.
+  rewrite formula_fv_persist in Ha.
+  specialize (Hbody a Ha).
+  cbn [fv_tm fv_value context_ty_lvars context_ty_lvars_at] in Hbody |- *.
+  set_solver.
+Qed.
+
+Lemma formula_scoped_persist_value_body_obs
+    gas (Σ : lty_env) τ f (m : WfWorldT) :
+  lvars_fv (context_ty_lvars (CTPersist τ)) ∪ {[f]} ⊆
+    world_dom (m : WorldT) ->
+  formula_scoped_in_world m
+    (FPersist
+      (ty_denote_gas gas (<[LVFree f := erase_ty τ]> Σ)
+        τ (tret (vfvar f)))).
+Proof.
+  intros Hsub.
+  unfold formula_scoped_in_world.
+  etransitivity; [apply formula_fv_persist_value_body_obs|].
+  exact Hsub.
+Qed.
+
+Lemma formula_open_arrow_value_ret_bvar0
+    gas (Σ : lty_env) τx τr f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vbvar 0))) =
+  arrow_value_denote_gas_with ty_denote_gas gas Σ τx τr
+    (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold arrow_value_denote_gas_with.
+  cbn [formula_open].
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ cbn [fv_tm fv_value]. intros Hbad.
+      rewrite elem_of_empty in Hbad. contradiction. }
+  2:{ rewrite cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    τr (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ rewrite fv_tapp_tm, tm_shift_fv.
+      cbn [fv_tm fv_value].
+      intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad];
+        rewrite elem_of_empty in Hbad; contradiction. }
+  2:{ exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
+  rewrite lvar_store_bind_open_under.
+  2: exact HfΣ.
+  rewrite lvar_store_open_one_fresh_noop.
+  2:{
+    intros Hbound.
+    unfold lvar_store_closed in HΣclosed.
+    exact (HΣclosed (LVBound 0) Hbound).
+  }
+  2: exact HfΣ.
+  rewrite cty_open_shift_under_gen by lia.
+  change (cty_shift 0 (open_one 0 f τx)) with
+    (cty_shift 0 (cty_open 0 f τx)).
+  rewrite (cty_open_above_lc_fresh 0 0 f τx)
+    by (try lia; try exact Hlcτx; exact Hfτx).
+  rewrite (cty_open_above_lc_fresh 1 1 f τr)
+    by (try lia; try exact Hlcτr; exact Hfτr).
+  cbn [open_tm open_value value_shift].
+  repeat (destruct decide; try lia; try congruence).
+  reflexivity.
+Qed.
+
+Lemma formula_open_result_first_arrow_value_ret_bvar0
+    gas (Σ : lty_env) τx τr Tf f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (arrow_value_denote_gas_with ty_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))) =
+  arrow_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold arrow_value_denote_gas_with.
+  cbn [formula_open].
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  2:{ rewrite !cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr)
+    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{
+    rewrite fv_tapp_tm, tm_shift_fv.
+    cbn [fv_tm fv_value]. set_solver.
+  }
+  2:{ rewrite cty_shift_fv. exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
+  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
+  change (open_tm 1 (vfvar f)
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
+    with (tapp_tm (tret (vfvar f)) (vbvar 0)).
+  rewrite lvar_store_bind_open_under.
+  2:{
+    rewrite typed_lty_env_bind_dom.
+    intros Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply HfΣ.
+      unfold lvars_shift_from in Hbad.
+      apply elem_of_map in Hbad as [v [Hv HvIn]].
+      destruct v; inversion Hv; subst.
+      exact HvIn.
+    - apply elem_of_singleton in Hbad. discriminate.
+  }
+  rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
+  rewrite cty_shift_preserves_erasure.
+  rewrite cty_open_shift_under_gen by lia.
+  change (@open_one atom context_ty open_cty_atom_inst 0 f (cty_shift 0 τx))
+    with (cty_open 0 f (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
+  rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
+  reflexivity.
+Qed.
+
+Lemma formula_open_wand_value_ret_bvar0
+    gas (Σ : lty_env) τx τr f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
+      (tret (vbvar 0))) =
+  wand_value_denote_gas_with ty_denote_gas gas Σ τx τr
+    (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold wand_value_denote_gas_with.
+  rewrite formula_open_fbwand.
+  change (0 + 1) with 1.
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    (cty_shift 0 τx) (tret (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ cbn [fv_tm fv_value]. intros Hbad.
+      rewrite elem_of_empty in Hbad. contradiction. }
+  2:{ rewrite cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind Σ (erase_ty τx))
+    τr (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{ rewrite typed_lty_env_bind_lvars_fv_dom.
+      intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad. }
+  2:{ rewrite fv_tapp_tm, tm_shift_fv.
+      cbn [fv_tm fv_value].
+      intros Hbad. apply elem_of_union in Hbad as [Hbad|Hbad];
+        rewrite elem_of_empty in Hbad; contradiction. }
+  2:{ exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (0 = 0)) as [_|Hbad]; [|lia]).
+  rewrite lvar_store_bind_open_under.
+  2: exact HfΣ.
+  rewrite lvar_store_open_one_fresh_noop.
+  2:{
+    intros Hbound.
+    unfold lvar_store_closed in HΣclosed.
+    exact (HΣclosed (LVBound 0) Hbound).
+  }
+  2: exact HfΣ.
+  rewrite cty_open_shift_under_gen by lia.
+  change (cty_shift 0 (open_one 0 f τx)) with
+    (cty_shift 0 (cty_open 0 f τx)).
+  rewrite (cty_open_above_lc_fresh 0 0 f τx)
+    by (try lia; try exact Hlcτx; exact Hfτx).
+  rewrite (cty_open_above_lc_fresh 1 1 f τr)
+    by (try lia; try exact Hlcτr; exact Hfτr).
+  cbn [open_tm open_value value_shift].
+  repeat (destruct decide; try lia; try congruence).
+  reflexivity.
+Qed.
+
+Lemma formula_open_result_first_wand_value_ret_bvar0
+    gas (Σ : lty_env) τx τr Tf f :
+  lty_env_closed Σ ->
+  LVFree f ∉ dom Σ ->
+  lc_context_ty τx ->
+  cty_lc_at 1 τr ->
+  f ∉ fv_cty τx ->
+  f ∉ fv_cty τr ->
+  formula_open 0 f
+    (wand_value_denote_gas_with ty_denote_gas gas
+      (typed_lty_env_bind Σ Tf)
+      (cty_shift 0 τx) (cty_shift 1 τr)
+      (tret (vbvar 0))) =
+  wand_value_denote_gas_with ty_denote_gas gas
+    (<[LVFree f := Tf]> Σ) τx τr (tret (vfvar f)).
+Proof.
+  intros HΣclosed HfΣ Hlcτx Hlcτr Hfτx Hfτr.
+  unfold wand_value_denote_gas_with.
+  rewrite formula_open_fbwand.
+  change (0 + 1) with 1.
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{ cbn [fv_tm fv_value]. set_solver. }
+  2:{ rewrite !cty_shift_fv. exact Hfτx. }
+  rewrite (formula_open_ty_denote_gas_singleton 1 f gas
+    (typed_lty_env_bind (typed_lty_env_bind Σ Tf)
+      (erase_ty (cty_shift 0 τx)))
+    (cty_shift 1 τr)
+    (tapp_tm (tm_shift 0 (tret (vbvar 0))) (vbvar 0))).
+  2:{
+    rewrite !typed_lty_env_bind_lvars_fv_dom.
+    intros Hbad. apply HfΣ. apply lvars_fv_elem. exact Hbad.
+  }
+  2:{
+    rewrite fv_tapp_tm, tm_shift_fv.
+    cbn [fv_tm fv_value]. set_solver.
+  }
+  2:{ rewrite cty_shift_fv. exact Hfτr. }
+  cbn [open_tm open_value value_shift].
+  repeat (destruct (decide (1 = 1)) as [_|Hbad]; [|lia]).
+  repeat (destruct (decide (1 = 0)) as [Hbad|_]; [lia|]).
+  change (open_tm 1 (vfvar f)
+    (tapp_tm (tret (vbvar 1)) (vbvar 0)))
+    with (tapp_tm (tret (vfvar f)) (vbvar 0)).
+  rewrite lvar_store_bind_open_under.
+  2:{
+    rewrite typed_lty_env_bind_dom.
+    intros Hbad.
+    apply elem_of_union in Hbad as [Hbad|Hbad].
+    - apply HfΣ.
+      unfold lvars_shift_from in Hbad.
+      apply elem_of_map in Hbad as [v [Hv HvIn]].
+      destruct v; inversion Hv; subst.
+      exact HvIn.
+    - apply elem_of_singleton in Hbad. discriminate.
+  }
+  rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
+  rewrite cty_shift_preserves_erasure.
+  rewrite cty_open_shift_under_gen by lia.
+  change (@open_one atom context_ty open_cty_atom_inst 0 f (cty_shift 0 τx))
+    with (cty_open 0 f (cty_shift 0 τx)).
+  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
+  rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
+  reflexivity.
+Qed.
+
 Lemma arrow_value_open_arg_to_regular_imp
     gas (Σ : lty_env) τx τr Tf f y (my0 my : WfWorldT) :
   lty_env_closed Σ ->
@@ -355,11 +676,87 @@ Proof.
 Qed.
 
 Ltac result_first_open_norm :=
+  repeat match goal with
+  | |- context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f)
+        by (try eassumption; try set_solver)
+  | H : context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] |- _ =>
+      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f) in H
+        by (try eassumption; try set_solver)
+  | |- context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_result_first_arrow_value_ret_bvar0
+        gas Σ τx τr Tf f) by (try eassumption; try set_solver)
+  | H : context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] |- _ =>
+      rewrite (formula_open_result_first_arrow_value_ret_bvar0
+        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
+  | |- context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f)
+        by (try eassumption; try set_solver)
+  | H : context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] |- _ =>
+      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f) in H
+        by (try eassumption; try set_solver)
+  | |- context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_result_first_wand_value_ret_bvar0
+        gas Σ τx τr Tf f) by (try eassumption; try set_solver)
+  | H : context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] |- _ =>
+      rewrite (formula_open_result_first_wand_value_ret_bvar0
+        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
+  end;
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in *;
   denotation_open_norm.
 
 Ltac result_first_open_norm_in H :=
+  repeat match type of H with
+  | context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_arrow_value_ret_bvar0 gas Σ τx τr f) in H
+        by (try eassumption; try set_solver)
+  | context [formula_open 0 ?f
+      (arrow_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_result_first_arrow_value_ret_bvar0
+        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
+  | context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas ?Σ ?τx ?τr
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_wand_value_ret_bvar0 gas Σ τx τr f) in H
+        by (try eassumption; try set_solver)
+  | context [formula_open 0 ?f
+      (wand_value_denote_gas_with ty_denote_gas ?gas
+        (typed_lty_env_bind ?Σ ?Tf)
+        (cty_shift 0 ?τx) (cty_shift 1 ?τr)
+        (tret (vbvar 0)))] =>
+      rewrite (formula_open_result_first_wand_value_ret_bvar0
+        gas Σ τx τr Tf f) in H by (try eassumption; try set_solver)
+  end;
   cbn [formula_open arrow_value_denote_gas arrow_value_denote_gas_with
         wand_value_denote_gas wand_value_denote_gas_with] in H;
   denotation_open_norm_in H.
