@@ -205,3 +205,26 @@ Count movement:
 - `TypeDenote.v`: 107 -> 95 relevant wrapper hits.
 
 Status: completed.
+
+## Iteration 7: TypeDenote Open Singleton And FV Subset
+
+Problem:
+
+- `formula_open_ty_denote_gas_singleton` still built its freshness set using
+  `relevant_lvars τ e`.
+- `ty_denote_gas_fv_subset` used `lvars_fv (relevant_lvars τ e)` as its
+  intermediate set.
+
+Action:
+
+- Replaced both with direct `context_ty_lvars τ ∪ tm_lvars e`.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo`
+
+Count movement:
+
+- `TypeDenote.v`: 95 -> 93 relevant wrapper hits.
+
+Status: completed.

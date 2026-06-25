@@ -911,9 +911,9 @@ Proof.
     intros Hbad. apply HΣ.
     apply lvars_fv_elem. exact Hbad.
   }
-  assert (Hfresh :
-    open_env_fresh_for_lvars (<[k := y]> ∅)
-      (dom Σ ∪ relevant_lvars τ e)).
+	  assert (Hfresh :
+	    open_env_fresh_for_lvars (<[k := y]> ∅)
+	      (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e))).
   {
     apply open_env_fresh_for_lvars_singleton.
     relevant_lvars_norm. better_set_solver.
@@ -1943,7 +1943,7 @@ Lemma ty_denote_gas_fv_subset gas Σ τ e :
   fv_tm e ∪ fv_cty τ.
 Proof.
   rewrite <- (formula_lvars_at_fv 0).
-  transitivity (lvars_fv (relevant_lvars τ e)).
+  transitivity (lvars_fv (context_ty_lvars τ ∪ tm_lvars e)).
   - apply lvars_fv_mono.
     transitivity (tm_lvars_at 0 e ∪ context_ty_lvars_at 0 τ).
     + apply ty_denote_gas_lvars_subset.
