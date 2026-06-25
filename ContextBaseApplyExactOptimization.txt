@@ -3,6 +3,19 @@ ContextBase Apply/Exact Optimization Stats
 
 Candidates: 26
 
+Implementation Status
+---------------------
+
+- Completed: `lvars_bv_elem` proof-term cases in `LogicVar.v` and
+  `LogicVarShift.v` now use deterministic rewrite directions instead of
+  `apply ...; exact ...`.
+- Verified: `timeout 20s make TIMED=1 ContextBase/LogicVarShift.vo`
+  (which also rebuilt the touched ContextBase dependencies).
+- Deferred: `map_lookup_filter_Some_2` has a long stdpp explicit-argument
+  prefix; direct parameterization made the proof less readable and was
+  reverted. Higher-order `Hfresh`/`Hc` applications are left for a later
+  local-regular lemma pass.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextBase/LogicVarOpenEnv.v` | 516 | `eapply Hfresh; [exact Hη|].` |
