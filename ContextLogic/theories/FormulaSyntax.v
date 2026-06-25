@@ -1074,6 +1074,26 @@ Proof.
     specialize (IHφ k). set_solver.
 Qed.
 
+Lemma formula_fv_open_fibvars_qual_body_obs
+    (q : QualifierT) y (P : Formula) :
+  formula_fv P ⊆ qual_dom q ->
+  formula_fv
+    (formula_open 0 y
+      (FFibVars (qual_vars q ∖ {[LVBound 0]}) P)) ⊆
+  qual_dom q ∪ {[y]}.
+Proof.
+  intros HP.
+  etransitivity; [apply formula_open_fv_subset|].
+  rewrite formula_fv_fibvars.
+  assert (HD : lvars_fv (qual_vars q ∖ {[LVBound 0]}) ⊆ qual_dom q).
+  {
+    intros a Ha. unfold qual_dom.
+    rewrite lvars_fv_elem in Ha |- *.
+    apply elem_of_difference in Ha as [Ha _]. exact Ha.
+  }
+  set_solver.
+Qed.
+
 Lemma formula_open_env_fv_subset η φ :
   formula_fv (formula_open_env η φ) ⊆
     formula_fv φ ∪ open_env_atoms η.

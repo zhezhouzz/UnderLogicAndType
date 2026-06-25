@@ -7,24 +7,10 @@ From Denotation Require Import TypeEquivCore TypeEquivTerm.
 From Denotation Require Import TypeEquivFiberBase.
 Section TypeDenote.
 
-Local Lemma lc_lvars_shift_from k D :
-  lc_lvars D ->
-  lc_lvars (lvars_shift_from k D).
-Proof.
-  apply result_first_lc_lvars_shift_from.
-Qed.
-
-Local Lemma lvars_shift_from_lc_eq k D :
-  lc_lvars D ->
-  lvars_shift_from k D = D.
-Proof.
-  apply result_first_lvars_shift_from_lc_eq.
-Qed.
-
 Local Ltac expr_result_shift0_side :=
   first
     [ assumption
-    | apply lc_lvars_shift_from; assumption
+    | apply result_first_lc_lvars_shift_from; assumption
     | rewrite lvars_shift_from_fv; assumption ].
 
 Local Ltac sum_open_side :=
@@ -50,26 +36,6 @@ Proof.
   - exact HΣ.
   - cbn [fv_tm fv_value]. set_solver.
   - rewrite cty_shift_fv. exact Hτ.
-Qed.
-
-Lemma formula_fv_open_fibvars_qual_body_obs
-    (φ : type_qualifier) y (B : FormulaT) :
-  formula_fv B ⊆ qual_dom φ ->
-  formula_fv
-    (formula_open 0 y
-      (FFibVars (qual_vars φ ∖ {[LVBound 0]}) B)) ⊆
-  qual_dom φ ∪ {[y]}.
-Proof.
-  intros HB.
-  etransitivity; [apply formula_open_fv_subset|].
-  rewrite formula_fv_fibvars.
-  assert (HD : lvars_fv (qual_vars φ ∖ {[LVBound 0]}) ⊆ qual_dom φ).
-  {
-    intros a Ha. unfold qual_dom.
-    rewrite lvars_fv_elem in Ha |- *.
-    apply elem_of_difference in Ha as [Ha _]. exact Ha.
-  }
-  set_solver.
 Qed.
 
 Lemma formula_fv_open_over_body_obs b φ y :
@@ -332,7 +298,7 @@ Proof.
   intros Hres_tgt.
   rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTOver b φ) e2)) HlcΣ_tgt) in Hres_tgt.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTOver b φ) e2 m Hzero_tgt) in Hres_tgt.
@@ -343,7 +309,7 @@ Proof.
   rewrite formula_open_impl in Hopened_src.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTOver b φ) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTOver b φ) e1 m Hzero_src) in Hopened_src.
@@ -442,7 +408,7 @@ Proof.
   intros Hres_tgt.
   rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTUnder b φ) e2)) HlcΣ_tgt) in Hres_tgt.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTUnder b φ) e2 m Hzero_tgt) in Hres_tgt.
@@ -453,7 +419,7 @@ Proof.
   rewrite formula_open_impl in Hopened_src.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTUnder b φ) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTUnder b φ) e1 m Hzero_src) in Hopened_src.
@@ -605,7 +571,7 @@ Proof.
   intros Hres_tgt.
   rewrite formula_open_expr_result_formula_at_shift0 in Hres_tgt
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTSum τ1 τ2) e2)) HlcΣ_tgt) in Hres_tgt.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTSum τ1 τ2) e2 m Hzero_tgt) in Hres_tgt.
@@ -616,7 +582,7 @@ Proof.
   rewrite formula_open_impl in Hopened_src.
   rewrite formula_open_expr_result_formula_at_shift0 in Hopened_src
     by expr_result_shift0_side.
-  rewrite (lvars_shift_from_lc_eq 0
+  rewrite (result_first_lvars_shift_from_lc_eq 0
     (dom (relevant_env Σ (CTSum τ1 τ2) e1)) HlcΣ_src) in Hopened_src.
   rewrite (ty_denote_gas_zero_relevant_env_dom_eq
     Σ (CTSum τ1 τ2) e1 m Hzero_src) in Hopened_src.
