@@ -87,9 +87,30 @@ Current Remaining Exact Duplicates
   import-boundary handling because both files expose the same public names.
 - Const `over/under` pairs: likely can be generalized over the polarity of
   refinement, but should be done in a focused Const pass.
-- `ResultFirstOpen` and `TypeDenote` still duplicate two `lvars_shift_from`
-  facts due to dependency direction; moving them lower would require a separate
-  syntax-support file.
+
+Round 4: complete `lvars_shift_from` lowering.
+
+- The canonical `lvars_shift_from_lc` and `lvars_shift_from_lc_eq` facts already
+  live in `ContextBase/LogicVarShift.v`.
+- `ResultFirstOpen.result_first_lc_lvars_shift_from` and
+  `ResultFirstOpen.result_first_lvars_shift_from_lc_eq` are now compatibility
+  wrappers over those bottom-layer facts.
+- `TypeDenote.denotation_open_lvars_shift_from_lc` is also now a wrapper over
+  `ContextBase.lvars_shift_from_lc`.
+- Verified:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo
+  Denotation/theories/ResultFirstOpen.vo`.
+
+Current Remaining Exact Duplicates After Round 4
+------------------------------------------------
+
+- `ctx_erasure_under_bind/comma/star`: small definitional `reflexivity`
+  wrappers; leave for now.
+- `ty_denote_gas_zero_{inter,union,sum}_{l,r}` duplicated between
+  `TypeEquivBody` and `TypeEquivFiberBaseCore`: promising but requires careful
+  import-boundary handling because both files expose the same public names.
+- Const `over/under` pairs: likely can be generalized over the polarity of
+  refinement, but should be done in a focused Const pass.
 
 Deferred Candidates
 -------------------

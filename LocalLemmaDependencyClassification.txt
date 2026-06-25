@@ -17,7 +17,9 @@ facts and should be moved down.
 Current Count
 -------------
 
-After eight lowering passes there are 67 local lemmas in scope.
+After nine lowering passes there are 67 local lemmas in scope. Round 9 did
+not change the local-lemma count; it removed duplicate proof bodies that were
+kept as non-local compatibility wrappers.
 
 Completed Lowering Passes
 -------------------------
@@ -88,6 +90,17 @@ Completed Lowering Passes
    rewritten through public `wfworld_ext`/`world_ext` instead of internal
    resource constructors.
 
+9. `lvars_shift_from` facts were fully lowered to `ContextBase`.
+
+   - The bottom-layer canonical facts are now
+     `ContextBase/LogicVarShift.v:lvars_shift_from_lc` and
+     `ContextBase/LogicVarShift.v:lvars_shift_from_lc_eq`.
+   - `ResultFirstOpen.result_first_lc_lvars_shift_from`,
+     `ResultFirstOpen.result_first_lvars_shift_from_lc_eq`, and
+     `TypeDenote.denotation_open_lvars_shift_from_lc` are compatibility
+     wrappers over those bottom-layer facts.
+   - This removes duplicate proof bodies without deleting public lemma names.
+
 Classification Table
 --------------------
 
@@ -141,8 +154,10 @@ proof body or statement.
 ### Denotation/theories/TypeEquivArrowResultFirst.v
 
 - `arrow_result_body_relevant_subset`: wrapper over `ResultFirstOpen`
-- `arrow_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
-- `arrow_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+- `arrow_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`, whose proof is
+  now backed by bottom-layer `ContextBase.lvars_shift_from_lc`
+- `arrow_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`, whose proof
+  is now backed by bottom-layer `ContextBase.lvars_shift_from_lc_eq`
 
 ### Denotation/theories/TypeEquivFiberBaseProjected.v
 
@@ -152,8 +167,10 @@ proof body or statement.
 
 ### Denotation/theories/TypeEquivFiberBody.v
 
-- `lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
-- `lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+- `lc_lvars_shift_from`: wrapper over `ResultFirstOpen`, now backed by
+  bottom-layer `ContextBase.lvars_shift_from_lc`
+- `lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`, now backed by
+  bottom-layer `ContextBase.lvars_shift_from_lc_eq`
 - `formula_open_shifted_ret_bound0_ty_denote_gas`: logic/formula + basic-term + type-syntax + denotation
 
 ### Denotation/theories/TypeEquivTLet.v
@@ -205,8 +222,10 @@ proof body or statement.
 ### Denotation/theories/TypeEquivWandResultFirst.v
 
 - `wand_result_body_relevant_subset`: wrapper over `ResultFirstOpen`
-- `wand_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`
-- `wand_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`
+- `wand_lc_lvars_shift_from`: wrapper over `ResultFirstOpen`, now backed by
+  bottom-layer `ContextBase.lvars_shift_from_lc`
+- `wand_lvars_shift_from_lc_eq`: wrapper over `ResultFirstOpen`, now backed by
+  bottom-layer `ContextBase.lvars_shift_from_lc_eq`
 
 ### Denotation/theories/TypePersistArrow.v
 
@@ -242,3 +261,6 @@ Next Candidate Passes
    second caller appears.
 3. Const over/under local helpers are symmetric and should be generalized in a
    focused Const pass rather than moved as store/resource facts.
+4. The next concrete lowering target is the zero-denotation projection family
+   duplicated between `TypeEquivBody` and `TypeEquivFiberBaseCore`; do this in
+   a focused pass because it touches public imports.

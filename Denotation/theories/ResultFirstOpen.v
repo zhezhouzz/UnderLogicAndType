@@ -10,31 +10,14 @@ Lemma result_first_lc_lvars_shift_from k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
+  apply lvars_shift_from_lc.
 Qed.
 
 Lemma result_first_lvars_shift_from_lc_eq k D :
   lc_lvars D ->
   lvars_shift_from k D = D.
 Proof.
-  intros Hlc.
-  apply set_eq. intros v. split.
-  - unfold lvars_shift_from.
-    intros Hv.
-    apply elem_of_map in Hv as [u [-> Hu]].
-    destruct u as [n|x]; cbn [logic_var_shift_from].
-    + destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-    + exact Hu.
-  - intros Hv.
-    unfold lvars_shift_from.
-    destruct v as [n|x].
-    + exfalso. exact (Hlc (LVBound n) Hv).
-    + apply elem_of_map. exists (LVFree x). split; [reflexivity|exact Hv].
+  apply lvars_shift_from_lc_eq.
 Qed.
 
 Lemma result_first_lvars_lc_at_zero_of_lc D :

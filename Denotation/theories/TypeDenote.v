@@ -991,12 +991,7 @@ Lemma denotation_open_lvars_shift_from_lc k D :
   lc_lvars D ->
   lc_lvars (lvars_shift_from k D).
 Proof.
-  intros Hlc v Hv.
-  unfold lvars_shift_from in Hv.
-  apply elem_of_map in Hv as [u [-> Hu]].
-  destruct u as [n|x]; cbn [logic_var_shift_from].
-  - destruct (decide (k <= n)); exfalso; exact (Hlc (LVBound n) Hu).
-  - exact I.
+  apply lvars_shift_from_lc.
 Qed.
 
 Lemma denotation_open_lvars_lc_at_zero_of_lc D :

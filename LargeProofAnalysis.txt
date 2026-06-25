@@ -105,6 +105,29 @@ Round 1:
   `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTermApp.vo`
   passed in 2.60s.
 
+Round 2:
+
+- This round focused on duplicate proof body lowering rather than splitting a
+  large semantic proof.
+- `ResultFirstOpen.result_first_lc_lvars_shift_from`,
+  `ResultFirstOpen.result_first_lvars_shift_from_lc_eq`, and
+  `TypeDenote.denotation_open_lvars_shift_from_lc` now delegate to the
+  bottom-layer `ContextBase/LogicVarShift.v` facts.
+- This does not change the large-proof count directly, but it removes repeated
+  syntax proof bodies that were feeding later large result-first proofs.
+- Local check:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo
+  Denotation/theories/ResultFirstOpen.vo` passed.
+
+Next Measurable Large-Proof Target
+----------------------------------
+
+- The next high-value large-proof reduction remains the duplicated
+  zero-denotation projection family between `TypeEquivBody` and
+  `TypeEquivFiberBaseCore`. It is a better target than the Fix induction
+  proofs because it is a repeated proof idiom rather than a semantic induction
+  spine.
+
 Deferred
 --------
 
