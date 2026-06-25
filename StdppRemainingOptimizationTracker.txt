@@ -586,3 +586,21 @@ Follow-up Batch Q: persistent ret-intro regular cleanup.
     completed in about 1.71s.
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
     completed in about 1.80s after dependent recompilation.
+
+Follow-up Batch R: basic-world free-domain freshness.
+
+- Added `basic_world_formula_free_notin_dom` to `TypeEquivCore`.
+- Replaced two target-env freshness proofs that previously went through
+  `relevant_env_persist_eq`, `lvars_fv_elem`, and a world-domain contradiction:
+  - `ContextTyping/theories/SoundnessPersist.v`;
+  - `Denotation/theories/TypePersistSingleton.v`.
+- Left the `TypePersistBase` `HyD` proofs alone because those are pure
+  `fresh_for (... ∪ lvars_fv Dres ...)` side conditions, not semantic
+  basic-world consequences.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
+    completed in about 2.48s.
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistSingleton.vo`
+    completed in about 1.27s after dependency cascade.
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
+    completed in about 1.93s.

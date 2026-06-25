@@ -335,6 +335,19 @@ Proof.
   exact (ty_denote_gas_type_lvars_world gas Σ τ e m Hden).
 Qed.
 
+Lemma basic_world_formula_free_notin_dom
+    Δ (m : WfWorldT) y :
+  m ⊨ basic_world_formula Δ ->
+  y ∉ world_dom (m : WorldT) ->
+  LVFree y ∉ dom Δ.
+Proof.
+  intros Hworld Hy Hdom.
+  apply basic_world_formula_models_iff in Hworld as [_ [Hdom_world _]].
+  apply Hy.
+  apply Hdom_world.
+  apply lvars_fv_elem. exact Hdom.
+Qed.
+
 Lemma ty_denote_gas_tm_lvars_relevant_env_dom
     gas Σ τ e (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ e ->

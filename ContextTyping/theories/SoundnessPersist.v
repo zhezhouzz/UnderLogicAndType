@@ -529,12 +529,9 @@ Proof.
   assert (HyD_result :
       LVFree y ∉ dom (relevant_env Σ (CTPersist τ) (tret v))).
   {
-    intros HyD.
-    apply Hy_m.
-    apply Hrel_world.
-    apply lvars_fv_elem.
-    rewrite relevant_env_persist_eq in HyD.
-    exact HyD.
+    eapply basic_world_formula_free_notin_dom.
+    - eapply ty_guard_formula_basic_world. exact Hguard_tgt.
+    - exact Hy_m.
   }
 	  assert (Hclosed_y_my : wfworld_closed_on ({[y]} : aset) my).
 	  {
