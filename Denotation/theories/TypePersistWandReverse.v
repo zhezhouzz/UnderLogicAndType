@@ -98,16 +98,14 @@ Proof.
       symmetry.
       apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].
     }
-    replace (cty_open 0 y (cty_shift 0 (CTOver bx φx)))
-      with (CTOver bx φx) in Harg_open.
-    2:{
-      symmetry. apply cty_open_shift_from_lc_fresh.
-      - exact Hlc_over.
-      - unfold fv_cty, qual_dom in *.
-        cbn [context_ty_lvars context_ty_lvars_at] in *.
-        rewrite lvars_fv_lvars_at_depth.
-        exact Hyφx.
-    }
+	    rewrite cty_open_shift_from_lc_fresh in Harg_open.
+	    2: exact Hlc_over.
+	    2:{
+	      unfold fv_cty, qual_dom in *.
+	      cbn [context_ty_lvars context_ty_lvars_at] in *.
+	      rewrite lvars_fv_lvars_at_depth.
+	      exact Hyφx.
+	    }
     cbn [open_tm open_value] in Harg_open.
     exact Harg_open.
   }
@@ -210,16 +208,14 @@ Proof.
       rewrite typed_lty_env_bind_open_current.
       2:{ exact HyΣlv. }
       2:{ exact HΣclosed. }
-      replace (cty_open 0 y (cty_shift 0 (CTPersist (CTOver bx φx))))
-        with (CTPersist (CTOver bx φx)).
-      2:{
-        symmetry. apply cty_open_shift_from_lc_fresh.
-        - cbn [lc_context_ty cty_lc_at]. exact Hlc_over.
-        - unfold fv_cty, qual_dom in *.
-          cbn [context_ty_lvars context_ty_lvars_at] in *.
-          rewrite lvars_fv_lvars_at_depth.
-          exact Hyφx.
-      }
+	      rewrite cty_open_shift_from_lc_fresh.
+	      2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
+	      2:{
+	        unfold fv_cty, qual_dom in *.
+	        cbn [context_ty_lvars context_ty_lvars_at] in *.
+	        rewrite lvars_fv_lvars_at_depth.
+	        exact Hyφx.
+	      }
       change (erase_ty (CTPersist (CTOver bx φx))) with (TBase bx).
       exact Harg_persist_fib.
     }
@@ -361,16 +357,14 @@ Proof.
       symmetry.
       apply typed_lty_env_bind_open_current; [exact HyΣlv|exact HΣclosed].
     }
-    replace (cty_open 0 y (cty_shift 0 (CTOver bx φx)))
-      with (CTOver bx φx) in Harg_open.
-    2:{
-      symmetry. apply cty_open_shift_from_lc_fresh.
-      - exact Hlc_over.
-      - unfold fv_cty, qual_dom in *.
-        cbn [context_ty_lvars context_ty_lvars_at] in *.
-        rewrite lvars_fv_lvars_at_depth.
-        exact Hyφx.
-    }
+	    rewrite cty_open_shift_from_lc_fresh in Harg_open.
+	    2: exact Hlc_over.
+	    2:{
+	      unfold fv_cty, qual_dom in *.
+	      cbn [context_ty_lvars context_ty_lvars_at] in *.
+	      rewrite lvars_fv_lvars_at_depth.
+	      exact Hyφx.
+	    }
     cbn [open_tm open_value] in Harg_open.
     exact Harg_open.
   }
@@ -473,16 +467,14 @@ Proof.
       rewrite typed_lty_env_bind_open_current.
       2:{ exact HyΣlv. }
       2:{ exact HΣclosed. }
-      replace (cty_open 0 y (cty_shift 0 (CTPersist (CTOver bx φx))))
-        with (CTPersist (CTOver bx φx)).
-      2:{
-        symmetry. apply cty_open_shift_from_lc_fresh.
-        - cbn [lc_context_ty cty_lc_at]. exact Hlc_over.
-        - unfold fv_cty, qual_dom in *.
-          cbn [context_ty_lvars context_ty_lvars_at] in *.
-          rewrite lvars_fv_lvars_at_depth.
-          exact Hyφx.
-      }
+	      rewrite cty_open_shift_from_lc_fresh.
+	      2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_over. }
+	      2:{
+	        unfold fv_cty, qual_dom in *.
+	        cbn [context_ty_lvars context_ty_lvars_at] in *.
+	        rewrite lvars_fv_lvars_at_depth.
+	        exact Hyφx.
+	      }
       change (erase_ty (CTPersist (CTOver bx φx))) with (TBase bx).
       exact Harg_persist_fib.
     }

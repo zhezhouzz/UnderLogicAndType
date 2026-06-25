@@ -9,6 +9,17 @@ From ContextAlgebra Require Import ResourceAlgebra.
 
 Section TypePersist.
 
+Local Lemma open_one_cty_shift0_lc_fresh τ x :
+  lc_context_ty τ ->
+  x ∉ fv_cty τ ->
+  @open_one atom context_ty open_cty_atom_inst 0 x (cty_shift 0 τ) = τ.
+Proof.
+  intros Hlc Hfresh.
+  change (@open_one atom context_ty open_cty_atom_inst 0 x (cty_shift 0 τ))
+    with ({0 ~> x} (cty_shift 0 τ))%cty.
+  apply cty_open_shift_from_lc_fresh; assumption.
+Qed.
+
 Lemma arrow_value_over_arg_to_persist_over_arg
     gas_src gas_tgt (Σ : lty_env) bx φx τr ef (m : WfWorldT) :
   lty_env_closed Σ ->
@@ -236,6 +247,41 @@ Proof.
 	  exact Hres.
 Qed.
 
+Lemma ty_guard_formula_transport
+    Σ1 Σ2 τ1 τ2 e (m : WfWorldT) :
+  (m ⊨ context_ty_wf_formula Σ1 τ1 ->
+   m ⊨ context_ty_wf_formula Σ2 τ2) ->
+  Σ1 = Σ2 ->
+  erase_ty τ1 = erase_ty τ2 ->
+  m ⊨ ty_guard_formula Σ1 τ1 e ->
+  m ⊨ ty_guard_formula Σ2 τ2 e.
+Proof.
+  intros Hwf -> Herase Hguard.
+  unfold ty_guard_formula in *.
+  repeat rewrite res_models_and_iff in Hguard |- *.
+  destruct Hguard as [Hwf1 [Hworld [Hbasic Htotal]]].
+  split; [apply Hwf; exact Hwf1|].
+  split; [exact Hworld|].
+  split; [|exact Htotal].
+  rewrite <- Herase. exact Hbasic.
+Qed.
+
+Local Ltac persist_over_context_wf :=
+  apply context_ty_wf_formula_models_iff;
+  let Hlc := fresh "Hlc" in
+  let Hdom := fresh "Hdom" in
+  let Hbasic_ty := fresh "Hbasic_ty" in
+  match goal with
+  | H : _ ⊨ context_ty_wf_formula _ _ |- _ =>
+      apply context_ty_wf_formula_models_iff in H as [Hlc [Hdom Hbasic_ty]]
+  end;
+  split; [exact Hlc|];
+  split; [exact Hdom|];
+  destruct Hbasic_ty as [Hvars Hshape];
+  split;
+  [ cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *; exact Hvars
+  | cbn [context_ty_shape_ok] in Hshape |- *; exact Hshape ].
+
 Lemma ty_guard_arrow_over_arg_to_persist_over_arg
     Σ bx φx τr e (m : WfWorldT) :
   m ⊨ ty_guard_formula
@@ -246,22 +292,8 @@ Lemma ty_guard_arrow_over_arg_to_persist_over_arg
       (CTArrow (CTPersist (CTOver bx φx)) τr) e.
 Proof.
   intros Hguard.
-  change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
-    with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e).
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_arrow_persist_over_arg_to_over_arg
@@ -276,20 +308,8 @@ Proof.
   intros Hguard.
   change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
     with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e) in Hguard.
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-	  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_wand_over_arg_to_persist_over_arg
@@ -302,22 +322,8 @@ Lemma ty_guard_wand_over_arg_to_persist_over_arg
       (CTWand (CTPersist (CTOver bx φx)) τr) e.
 Proof.
   intros Hguard.
-  change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
-    with (relevant_env Σ (CTWand (CTOver bx φx) τr) e).
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma ty_guard_wand_persist_over_arg_to_over_arg
@@ -332,20 +338,8 @@ Proof.
   intros Hguard.
   change (relevant_env Σ (CTWand (CTPersist (CTOver bx φx)) τr) e)
     with (relevant_env Σ (CTWand (CTOver bx φx) τr) e) in Hguard.
-  unfold ty_guard_formula in *.
-  repeat rewrite res_models_and_iff in Hguard |- *.
-  destruct Hguard as [Hwf [Hworld [Hbasic Htotal]]].
-  split.
-  - apply context_ty_wf_formula_models_iff.
-    apply context_ty_wf_formula_models_iff in Hwf as [Hlc [Hdom Hbasic_ty]].
-    split; [exact Hlc|]. split; [exact Hdom|].
-    destruct Hbasic_ty as [Hvars Hshape].
-    split.
-    + cbn [context_ty_lvars context_ty_lvars_at] in Hvars |- *.
-      exact Hvars.
-    + cbn [context_ty_shape_ok] in Hshape |- *.
-      exact Hshape.
-  - split; [exact Hworld|split; [exact Hbasic|exact Htotal]].
+  eapply ty_guard_formula_transport; [|reflexivity|reflexivity|exact Hguard].
+  intros Hwf. persist_over_context_wf.
 Qed.
 
 Lemma cty_lc_at_shift_at d τ :
@@ -494,11 +488,9 @@ Proof.
   rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
   rewrite cty_shift_preserves_erasure.
   rewrite cty_open_shift_under_gen by lia.
-  change (@open_one atom context_ty open_cty_atom_inst 0 f
-    (cty_shift 0 τx)) with (cty_open 0 f (cty_shift 0 τx)).
-  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
+  rewrite (open_one_cty_shift0_lc_fresh τx f Hlcτx Hfτx).
   rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
-	  reflexivity.
+		  reflexivity.
 Qed.
 
 Lemma formula_open_wand_value_ret_bvar0
@@ -625,96 +617,9 @@ Proof.
   rewrite (typed_lty_env_bind_open_current f Σ Tf HfΣ HΣclosed).
   rewrite cty_shift_preserves_erasure.
   rewrite cty_open_shift_under_gen by lia.
-  change (@open_one atom context_ty open_cty_atom_inst 0 f
-    (cty_shift 0 τx)) with (cty_open 0 f (cty_shift 0 τx)).
-  rewrite (cty_open_shift_from_lc_fresh 0 f τx Hlcτx Hfτx).
+  rewrite (open_one_cty_shift0_lc_fresh τx f Hlcτx Hfτx).
   rewrite (cty_open_shift_from_lc_fresh 1 f τr Hlcτr Hfτr).
   reflexivity.
-Qed.
-
-Lemma arrow_open_value_over_arg_to_persist_over_arg
-    gas_src gas_tgt (Σ : lty_env) bx φx τr f (mf : WfWorldT) :
-  lty_env_closed Σ ->
-  LVFree f ∉ dom Σ ->
-  lc_context_ty (CTOver bx φx) ->
-  lc_context_ty (cty_shift 0 (CTOver bx φx)) ->
-  cty_lc_at 1 τr ->
-  f ∉ qual_dom φx ->
-  f ∉ fv_cty τr ->
-  cty_depth τr <= gas_src ->
-  cty_depth τr <= gas_tgt ->
-  1 <= gas_src ->
-  2 <= gas_tgt ->
-  formula_scoped_in_world mf
-    (formula_open 0 f
-      (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
-        (cty_shift 0 (CTPersist (CTOver bx φx))) τr
-        (tret (vbvar 0)))) ->
-  mf ⊨ formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas_src Σ
-      (cty_shift 0 (CTOver bx φx)) τr
-      (tret (vbvar 0))) ->
-  mf ⊨ formula_open 0 f
-    (arrow_value_denote_gas_with ty_denote_gas gas_tgt Σ
-      (cty_shift 0 (CTPersist (CTOver bx φx))) τr
-      (tret (vbvar 0))).
-Proof.
-  intros HΣclosed HfΣ Hlc_over Hlc_shift_over Hlcτr Hfφ Hfτr
-    Hres_src Hres_tgt Harg_src Harg_tgt Hscope_tgt Hvalue_src.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_tgt Σ
-    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f) in Hscope_tgt.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_src Σ (cty_shift 0 (CTOver bx φx)) τr f) in Hvalue_src.
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2: exact Hlc_shift_over.
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-	  rewrite (formula_open_arrow_value_ret_bvar0
-	    gas_tgt Σ
-    (cty_shift 0 (CTPersist (CTOver bx φx))) τr f).
-  2: exact HΣclosed.
-  2: exact HfΣ.
-  2:{ cbn [lc_context_ty cty_lc_at]. exact Hlc_shift_over. }
-  2: exact Hlcτr.
-	  2:{
-	    rewrite cty_shift_fv.
-	    unfold fv_cty, qual_dom in *.
-	    cbn [context_ty_lvars context_ty_lvars_at] in *.
-	    rewrite lvars_fv_lvars_at_depth.
-	    exact Hfφ.
-	  }
-  2: exact Hfτr.
-  eapply arrow_value_over_arg_to_persist_over_arg.
-  - exact HΣclosed.
-  - exact Hlc_over.
-  - exact Hlc_shift_over.
-  - exact Hres_src.
-  - exact Hres_tgt.
-  - exact Harg_src.
-  - exact Harg_tgt.
-  - exact Hscope_tgt.
-  - exact Hvalue_src.
 Qed.
 
 Lemma arrow_value_over_arg_to_persist_over_arg_plain
