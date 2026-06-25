@@ -458,27 +458,22 @@ Proof.
     rewrite typed_lty_env_bind_lvars_fv_dom.
     set_solver.
   }
+  pose proof (formula_scoped_forall_open_res_le m mf f
+    (FImpl
+      (expr_result_formula_at
+        (lvars_shift_from 0
+          (dom (relevant_env Σ (CTWand τx τr) e2)))
+        (tm_shift 0 e2) (LVBound 0))
+      (wand_value_denote_gas_with ty_denote_gas gas
+        (typed_lty_env_bind
+          (relevant_env Σ (CTWand τx τr) e2)
+          (erase_ty (CTWand τx τr)))
+        (cty_shift 0 τx) (cty_shift 1 τr)
+        (tret (vbvar 0))))
+    Hscope_tgt
+    ltac:(rewrite <- Hrestrict; apply res_restrict_le)
+    ltac:(rewrite Hdom; clear; set_solver)) as Hopened_scope.
   rewrite formula_open_impl.
-  assert (Hopened_scope :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (FImpl
-            (expr_result_formula_at
-              (lvars_shift_from 0
-                (dom (relevant_env Σ (CTWand τx τr) e2)))
-              (tm_shift 0 e2) (LVBound 0))
-            (wand_value_denote_gas_with ty_denote_gas gas
-              (typed_lty_env_bind
-                (relevant_env Σ (CTWand τx τr) e2)
-                (erase_ty (CTWand τx τr)))
-              (cty_shift 0 τx) (cty_shift 1 τr)
-              (tret (vbvar 0)))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Hscope_tgt.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. clear. set_solver.
-  }
   rewrite formula_open_impl in Hopened_scope.
   eapply res_models_impl_intro; [exact Hopened_scope|].
   intros Hres_tgt.
@@ -547,25 +542,18 @@ Proof.
           (cty_shift 0 τx) (cty_shift 1 τr)
           (tret (vbvar 0)))).
   {
-    assert (Hvalue_tgt_scope_src :
-        formula_scoped_in_world mf_src
-          (formula_open 0 f
-	      (wand_value_denote_gas_with ty_denote_gas gas
-		(typed_lty_env_bind
-		  (relevant_env Σ (CTWand τx τr) e2)
-		  (erase_ty (CTWand τx τr)))
-		(cty_shift 0 τx) (cty_shift 1 τr)
-		(tret (vbvar 0))))).
-    {
-      eapply formula_scoped_open_wand_value_body_obs.
+    pose proof (formula_scoped_open_wand_value_body_obs
+      gas (typed_lty_env_bind (relevant_env Σ (CTWand τx τr) e2)
+        (erase_ty (CTWand τx τr)))
+      τx τr f mf_src) as Hvalue_tgt_scope_src.
+    specialize (Hvalue_tgt_scope_src ltac:(
       pose proof (ty_denote_gas_zero_type_fv_world
-        Σ (CTWand τx τr) e1 m Hzero_src) as Hτworld.
-      rewrite Hdom_src.
-      intros a Ha.
-      apply elem_of_union in Ha as [Ha|Ha].
-      - apply elem_of_union_l. exact (Hτworld a Ha).
-      - apply elem_of_union_r. exact Ha.
-    }
+        Σ (CTWand τx τr) e1 m Hzero_src) as Hτworld;
+      rewrite Hdom_src;
+      intros a Ha;
+      apply elem_of_union in Ha as [Ha|Ha];
+      [ apply elem_of_union_l; exact (Hτworld a Ha)
+      | apply elem_of_union_r; exact Ha ])).
     cbn [formula_open wand_value_denote_gas_with] in Hvalue_src |- *.
     cbn [formula_open wand_value_denote_gas_with] in Hvalue_tgt_scope_src.
     eapply res_models_fbwand_intro.
@@ -674,32 +662,20 @@ Proof.
 		      pose proof (@ty_denote_gas_tm_equiv_wand_open_arg_fbwand
 		        gas Σ τx τr e1 e2 n a
 		        Harg_tgt_open) as Harg_src.
-	      assert (Harg_src_formula :
-          n ⊨ formula_open 0 a
-            (formula_open 1 f
-              (ty_denote_gas gas
-                (typed_lty_env_bind
-                  (typed_lty_env_bind
-                    (relevant_env Σ (CTWand τx τr) e1)
-                    (erase_ty (CTWand τx τr)))
-                  (erase_ty (cty_shift 0 τx)))
-                (cty_shift 0 (cty_shift 0 τx)) (tret (vbvar 0))))).
-      {
-        eapply wand_result_first_regular_to_arg_open.
-        - exact HlcΣ_src.
-        - exact Hf_rel1.
-        - exact Hy_rel1.
-        - exact Hfy.
-        - exact Hlcτx.
-        - exact Hfτx.
-        - exact Hyτx.
-        - exact Harg_src.
-      }
       pose proof (Hwand_src _ n Hc Hbind
         ltac:(rewrite open_env_atoms_insert by apply lookup_empty;
               rewrite open_env_atoms_empty;
               clear -Hηfresh; set_solver)
-        Hdom_prod Harg_src_formula) as Hres_src_inner.
+        Hdom_prod ltac:(
+          eapply wand_result_first_regular_to_arg_open;
+          [ exact HlcΣ_src
+          | exact Hf_rel1
+          | exact Hy_rel1
+          | exact Hfy
+          | exact Hlcτx
+          | exact Hfτx
+          | exact Hyτx
+          | exact Harg_src ])) as Hres_src_inner.
       assert (Hres_src_regular :
           res_product n mf_src Hc ⊨ ty_denote_gas gas
             (<[LVFree a := erase_ty τx]>

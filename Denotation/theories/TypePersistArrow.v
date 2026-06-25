@@ -720,33 +720,6 @@ Proof.
   exists (Lsrc ∪ lvars_fv (dom Σg) ∪ qual_dom φx ∪
     fv_cty τr ∪ fv_tm e).
   intros f Hf mf Hdom Hrestrict.
-  assert (Hscope_open :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (FImpl
-            (expr_result_formula_at
-              (lvars_shift_from 0
-                (dom (relevant_env Σ
-                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)))
-              (tm_shift 0 e) (LVBound 0))
-            (arrow_value_denote_gas_with ty_denote_gas gas_tgt
-              (typed_lty_env_bind
-                (relevant_env Σ
-                  (CTArrow (CTPersist (CTOver bx φx)) τr) e)
-                (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
-              (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-              (tret (vbvar 0)))))).
-  {
-    eapply formula_scoped_forall_open_res_le.
-    - exact Hscope_forall.
-    - rewrite <- Hrestrict. apply res_restrict_le.
-    - rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton.
-      reflexivity.
-  }
-  cbn [formula_open].
-  eapply res_models_impl_intro.
-  { cbn [formula_open] in Hscope_open. exact Hscope_open. }
-  intros Hresult_tgt.
   assert (HfΣg : LVFree f ∉ dom (Σg : lty_env)).
   {
     intros Hbad.
@@ -759,39 +732,33 @@ Proof.
   { clear -Hf. set_solver. }
   assert (Hfe : f ∉ fv_tm e).
   { clear -Hf. set_solver. }
-  assert (Hopened_src :
-      mf ⊨ formula_open 0 f
-        (FImpl
-          (expr_result_formula_at
-            (lvars_shift_from 0 (dom Σg))
-            (tm_shift 0 e) (LVBound 0))
-          (arrow_value_denote_gas_with ty_denote_gas gas_src
-            (typed_lty_env_bind Σg
-              (erase_ty (CTArrow (CTOver bx φx) τr)))
-            (cty_shift 0 (CTOver bx φx)) (cty_shift 1 τr)
-            (tret (vbvar 0))))).
-  {
-    subst Σg.
-    apply Hsrc.
-    - clear -Hf. set_solver.
-    - exact Hdom.
-    - exact Hrestrict.
-  }
+  pose proof (formula_scoped_forall_open_res_le m mf f
+    (FImpl
+      (expr_result_formula_at
+        (lvars_shift_from 0
+          (dom (relevant_env Σ
+            (CTArrow (CTPersist (CTOver bx φx)) τr) e)))
+        (tm_shift 0 e) (LVBound 0))
+      (arrow_value_denote_gas_with ty_denote_gas gas_tgt
+        (typed_lty_env_bind
+          (relevant_env Σ
+            (CTArrow (CTPersist (CTOver bx φx)) τr) e)
+          (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
+        (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
+        (tret (vbvar 0))))
+    Hscope_forall
+    ltac:(rewrite <- Hrestrict; apply res_restrict_le)
+    ltac:(rewrite Hdom; apply elem_of_union_r; apply elem_of_singleton;
+      reflexivity)) as Hscope_open.
+  cbn [formula_open].
+  eapply res_models_impl_intro.
+  { cbn [formula_open] in Hscope_open. exact Hscope_open. }
+  intros Hresult_tgt.
+  pose proof (Hsrc f ltac:(subst Σg; clear -Hf; set_solver)
+    mf Hdom Hrestrict) as Hopened_src.
   cbn [formula_open] in Hopened_src.
   pose proof (res_models_impl_elim _ _ _ Hopened_src Hresult_tgt)
     as Hvalue_src.
-  assert (Hvalue_tgt_scope :
-      formula_scoped_in_world mf
-        (formula_open 0 f
-          (arrow_value_denote_gas_with ty_denote_gas gas_tgt
-            (typed_lty_env_bind Σg
-              (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr)))
-            (cty_shift 0 (CTPersist (CTOver bx φx))) (cty_shift 1 τr)
-            (tret (vbvar 0))))).
-  {
-    cbn [formula_open] in Hscope_open.
-    eapply formula_scoped_impl_r. exact Hscope_open.
-  }
   eapply arrow_result_first_open_value_over_arg_to_persist_over_arg.
   - subst Σg. apply relevant_env_closed. exact HΣclosed.
   - exact HfΣg.
@@ -807,11 +774,11 @@ Proof.
   - subst Σg.
     change (relevant_env Σ (CTArrow (CTPersist (CTOver bx φx)) τr) e)
       with (relevant_env Σ (CTArrow (CTOver bx φx) τr) e)
-      in Hvalue_tgt_scope.
+      in Hscope_open.
     change (erase_ty (CTArrow (CTPersist (CTOver bx φx)) τr))
       with (erase_ty (CTArrow (CTOver bx φx) τr))
-      in Hvalue_tgt_scope.
-    exact Hvalue_tgt_scope.
+      in Hscope_open.
+    eapply formula_scoped_impl_r. exact Hscope_open.
 	  - subst Σg. exact Hvalue_src.
 Qed.
 
