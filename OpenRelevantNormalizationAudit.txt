@@ -97,6 +97,56 @@ Validation:
 
 Status: completed.
 
+## Iteration 12: Result-First Outer Value Open Normalizers
+
+Problem:
+
+- The outer Arrow/Wand value-body open normalizers lived in
+  `TypePersistArrow.v`, so `ResultFirstOpen.v` could not use them in the
+  shared `result_first_open_norm` tactic.
+- Several upper-layer files therefore had to import a persistence module just
+  to normalize ordinary result-first Arrow/Wand value bodies.
+
+Action:
+
+- Moved the four value-body open normalizers into `ResultFirstOpen.v`:
+  `formula_open_arrow_value_ret_bvar0`,
+  `formula_open_result_first_arrow_value_ret_bvar0`,
+  `formula_open_wand_value_ret_bvar0`, and
+  `formula_open_result_first_wand_value_ret_bvar0`.
+- Extended `result_first_open_norm` and `result_first_open_norm_in` to rewrite
+  these shapes by deterministic `match goal` clauses.
+- Added normalized scoped/FV facts for already-opened Arrow/Wand/Persist value
+  bodies so future callers do not need raw-open scope lemmas.
+- Added explicit `ResultFirstOpen` imports to the Soundness files that still
+  call the moved normalizers directly.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/ResultFirstOpen.vo`
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrowResultFirst.vo`
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWandResultFirst.vo`
+- `timeout 20s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+- `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo` after warmed
+  dependency rebuild
+- `timeout 180s make TIMED=1`
+
+Current focused raw-open scan:
+
+```text
+ContextTyping/theories/SoundnessFixBase.v: qualifier-open proof internals for
+  the lt extractor; canonical lt qualifier lemmas are already in
+  ContextBasicDenotation/theories/Qualifier.v.
+Denotation/theories/TypeDenote.v: syntax/normalizer internals.
+Denotation/theories/ResultFirstOpen.v: normalizer proof internals.
+Denotation/theories/TypeEquivFiberBody.v: local syntax-normalization lemma.
+Denotation/theories/Context.v: context-open support lemma.
+Denotation/theories/TypePersistBase.v: normalized over/under body definitions.
+Denotation/theories/ConstDenoteBase.v: const qualifier-open normalizer.
+```
+
+Status: completed.
+
 ## Iteration 3: Env-Agree Observation Set
 
 Problem:
