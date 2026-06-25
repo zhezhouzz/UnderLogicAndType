@@ -645,7 +645,7 @@ Proof.
   intros Hclosed Hbody Hy_fresh Hy_dom σ v Hσ.
   set (X := fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ∪ fv_tm (e ^^ y)).
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { subst X. apply Hclosed. exact Hσ. }
+  { subst X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app : fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ⊆ X)
     by (subst X; set_solver).
   assert (Hfv_body : fv_tm (e ^^ y) ⊆ X)
@@ -694,7 +694,7 @@ Proof.
   intros Hclosed Hbody Hy_fresh Hy_dom σ Hσ.
   set (X := fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ∪ fv_tm (e ^^ y)).
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { subst X. apply Hclosed. exact Hσ. }
+  { subst X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app : fv_tm (tapp_tm (tret (vlam T e)) (vfvar y)) ⊆ X)
     by (subst X; set_solver).
   assert (Hfv_body : fv_tm (e ^^ y) ⊆ X)
@@ -766,7 +766,7 @@ Proof.
             fv_tm (tapp_tm (tret (open_value 0 (vfvar y) vf))
               (vfix Tf vf))).
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { subst X. apply Hclosed. exact Hσ. }
+  { subst X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_src :
       fv_tm (tapp_tm (tret (vfix Tf vf)) (vfvar y)) ⊆ X)
     by (subst X; better_set_solver).
@@ -823,7 +823,7 @@ Proof.
             fv_tm (tapp_tm (tret (open_value 0 (vfvar y) vf))
               (vfix Tf vf))).
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { subst X. apply Hclosed. exact Hσ. }
+  { subst X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_src :
       fv_tm (tapp_tm (tret (vfix Tf vf)) (vfvar y)) ⊆ X)
     by (subst X; better_set_solver).

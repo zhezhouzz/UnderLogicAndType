@@ -6,10 +6,11 @@
     and side-condition helpers that used to be reproved locally in the larger
     transport proofs. *)
 
-From CoreLang Require Import Syntax.
+From CoreLang Require Import Syntax InstantiationProps.
 From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceExtension ResourceInterface.
 From ContextTypeLanguage Require Import Syntax.
+From ContextBasicDenotation Require Import StoreTyping.
 
 Notation StoreT := (Store (V := value)) (only parsing).
 Notation WorldT := (World (V := value)) (only parsing).
@@ -150,6 +151,16 @@ Proof.
   eapply extA_projection_dom.
   - apply resA_extend_by_applicable in Hext. exact Hext.
   - exact Hσm.
+Qed.
+
+Lemma wfworld_closed_on_store_restrict_closed
+    X (m : WfWorldT) (σ : StoreT) :
+  wfworld_closed_on X m ->
+  (m : WorldT) σ ->
+  store_closed (store_restrict σ X).
+Proof.
+  intros Hclosed Hσ.
+  exact (Hclosed σ Hσ).
 Qed.
 
 Ltac denotation_set_norm :=

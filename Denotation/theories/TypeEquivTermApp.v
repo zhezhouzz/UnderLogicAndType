@@ -2,7 +2,8 @@
 
     Product, application, and totality transport support for terms. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTermBase.
+From Denotation Require Import Notation TypeDenote TypeEquivCore
+  TypeEquivTermBase DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
@@ -181,7 +182,7 @@ Proof.
   set (X := fv_tm (tapp_tm e1 (vfvar y)) ∪
             fv_tm (tapp_tm e2 (vfvar y))).
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { subst X. apply Hclosed. exact Hσ. }
+  { subst X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X) by (subst X; set_solver).
   assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X) by (subst X; set_solver).
   assert (Hfv_e1 : fv_tm e1 ⊆ X).
@@ -249,7 +250,7 @@ Proof.
   split; intros [σ [Hσ [HσX Heval]]].
   - exists σ. split; [exact Hσ|]. split; [exact HσX|].
     assert (HσX_closed : store_closed (store_restrict σ X)).
-    { apply Hclosed. exact Hσ. }
+    { eapply wfworld_closed_on_store_restrict_closed; eauto. }
     assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X) by set_solver.
     assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X) by set_solver.
     assert (Hfun_equiv :
@@ -298,7 +299,7 @@ Proof.
     exact Heval.
   - exists σ. split; [exact Hσ|]. split; [exact HσX|].
     assert (HσX_closed : store_closed (store_restrict σ X)).
-    { apply Hclosed. exact Hσ. }
+    { eapply wfworld_closed_on_store_restrict_closed; eauto. }
     assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X) by set_solver.
     assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X) by set_solver.
     assert (Hfun_equiv :
@@ -380,7 +381,7 @@ Proof.
             fv_tm (tapp_tm e2 (vfvar y))).
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
-  { subst σX X. apply Hclosed. exact Hσ. }
+  { subst σX X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm e1 (vfvar y)) ⊆ X)
     by (subst X; set_solver).
   assert (Hfv_app2 : fv_tm (tapp_tm e2 (vfvar y)) ⊆ X)
@@ -516,7 +517,7 @@ Proof.
             fv_tm (tapp vf (vfvar y))).
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
-  { subst σX X. apply Hclosed. exact Hσ. }
+  { subst σX X. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_src : fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X)
     by (subst X; set_solver).
   assert (Hfv_tgt : fv_tm (tapp vf (vfvar y)) ⊆ X)

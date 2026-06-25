@@ -1,0 +1,223 @@
+Assert Pattern Analysis
+=======================
+
+Scope
+-----
+
+This file tracks repeated `assert` shapes in:
+
+- `Denotation/theories/*.v`
+- `ContextTyping/theories/Soundness*.v`
+
+The goal is not to delete every assert. Semantic checkpoints can stay. The
+goal is to extract repeated regular facts, normalization boundaries, and
+stdpp/store side facts into reusable lemmas/tactics so proofs stop rebuilding
+the same facts locally.
+
+Current Assert Count Snapshot
+-----------------------------
+
+Total: 1769 `assert (` occurrences across 41 files.
+
+Highest-count files:
+
+- 94 `Denotation/theories/TypeEquivTermResult.v`
+- 91 `Denotation/theories/TypePersistBase.v`
+- 76 `Denotation/theories/TypeEquivFiberBaseResult.v`
+- 75 `Denotation/theories/TypeEquiv.v`
+- 71 `ContextTyping/theories/SoundnessAppD.v`
+- 69 `ContextTyping/theories/SoundnessApp.v`
+- 68 `ContextTyping/theories/SoundnessFixApply.v`
+- 64 `Denotation/theories/Context.v`
+- 63 `ContextTyping/theories/SoundnessMatch.v`
+- 59 `ContextTyping/theories/Soundness.v`
+- 58 `Denotation/theories/TypeEquivTLet.v`
+- 57 `Denotation/theories/TypeEquivTermApp.v`
+- 57 `ContextTyping/theories/SoundnessFixSelf.v`
+- 56 `Denotation/theories/TypePersistSingleton.v`
+- 56 `Denotation/theories/TypeEquivFiberTransport.v`
+- 56 `Denotation/theories/TypeEquivFiberBaseProjected.v`
+- 54 `Denotation/theories/TypeEquivTermBase.v`
+- 51 `ContextTyping/theories/SoundnessPersist.v`
+
+Repeated Shape Families
+-----------------------
+
+1. `context_typing_wf` LC regularity.
+
+   Repeated local assertions extract:
+
+   - `lc_context_ty τx` from a well-formed `CTArrow τx τ` or `CTWand τx τ`.
+   - `cty_lc_at 1 τ` from the same well-formed function type.
+   - `lc_value v` from `context_typing_wf ... (tret v) ...`.
+
+   Status: first extraction in progress. Add regular lemmas in
+   `ContextTyping/theories/Typing.v` and use them in Soundness instead of
+   repeating `context_typing_wf_context_ty` + `wf_context_ty_at_lc`.
+
+2. Closed restricted stores.
+
+   Common shape:
+
+   ```coq
+   assert (HσX_closed : store_closed (store_restrict σ X)).
+   { exact (Hclosed σ Hσ). }
+   ```
+
+   Candidate extraction:
+
+   ```coq
+   wfworld_closed_on_store_restrict_closed
+   ```
+
+   Status: deferred. This is easy but appears in term-result/fiber transport
+   proofs, so extract after the LC cleanup.
+
+3. Result-first opening and raw open normalization.
+
+   Common shapes still show up around Arrow/Wand/App/Fix:
+
+   - `formula_open ... ty_denote_gas`
+   - `lty_env_open_one 0 y (typed_lty_env_bind ...)`
+   - `cty_open 0 y (cty_shift 0 τx)`
+
+   Status: partially addressed before this file by
+   `arrow_value_open_arg_to_regular_imp`, but the remaining raw-open asserts
+   need source-side normalization rather than wrapper accumulation.
+
+4. Fresh atom to logic-variable/domain side facts.
+
+   Common shapes:
+
+   - `y ∉ dom Σ` -> `LVFree y ∉ dom (atom_env_to_lty_env Σ)`
+   - `fresh_for` large union splitting into `HyΣ`, `HyΓ`, `Hyτ`, `Hye`.
+   - `context_ty_lvars`/`fv_cty` freshness conversion.
+
+   Candidate extraction:
+
+   - extend `SoundnessSetMapFacts.v` regular tactics.
+   - keep pure stdpp goals in set solvers; extract only from repo-specific
+     definitions.
+
+   Status: deferred.
+
+5. Store/resource restriction facts.
+
+   Common shapes:
+
+   - lookup equality from equal restrictions.
+   - membership after `res_restrict`.
+   - base resource membership after an opened-world restriction.
+
+   Status: partially optimized earlier in `DenotationSetMapFacts.v`; more
+   opportunities remain in `TypeEquivTerm*` and `TypePersist*`.
+
+6. Value result-slot lookup in persistent intro.
+
+   Status: completed before this analysis by
+   `ret_value_result_restrict_y_lookup_iff` in
+   `ContextTyping/theories/SoundnessPersist.v`.
+
+Extraction Log
+--------------
+
+Round 1: Soundness LC regularity.
+
+- Add Arrow/Wand LC regularity lemmas in `Typing.v`.
+- Extend `soundness_regular_lc` so it can generate those facts deterministically.
+- Replace at least one repeated local proof in `SoundnessApp.v` with direct
+  regular lemma calls.
+
+Status:
+
+- Completed `context_typing_wf_arrow_arg_lc`.
+- Completed `context_typing_wf_arrow_result_lc1`.
+- Completed `context_typing_wf_wand_arg_lc`.
+- Completed `context_typing_wf_wand_result_lc1`.
+- Extended `soundness_regular_lc` to generate these facts.
+- Replaced repeated local LC extraction in:
+  - `ContextTyping/theories/SoundnessApp.v`
+  - `ContextTyping/theories/SoundnessAppD.v`
+  - `ContextTyping/theories/SoundnessFix.v`
+  - `ContextTyping/theories/SoundnessLamArrow.v`
+  - `ContextTyping/theories/SoundnessLamWand.v`
+  - `ContextTyping/theories/SoundnessFixOpen.v`
+  - `ContextTyping/theories/SoundnessFixSelf.v`
+
+Next round candidate:
+
+- Closed restricted-store assertions in `TypeEquivTermApp.v`,
+  `TypeEquivFiberTransport.v`, and related term-result files.
+
+Round 2: Closed restricted-store facts.
+
+- Added `wfworld_closed_on_store_restrict_closed` to
+  `Denotation/theories/DenotationSetMapFacts.v`.
+- Replaced the first three mechanical `store_closed (store_restrict σ X)`
+  assertions in `Denotation/theories/TypeEquivTermApp.v`.
+- Replaced five matching assertions in
+  `Denotation/theories/TypeEquivFiberTransport.v`.
+- Replaced the remaining matching assertion in
+  `Denotation/theories/TypeEquivFiberBaseResult.v`.
+- Replaced additional direct `Hclosed σ Hσ` proof bodies in:
+  - `Denotation/theories/TypeEquivTermBase.v`
+  - `Denotation/theories/TypeEquivTermTLet.v`
+  - `Denotation/theories/TypeEquivFiberTransport.v`
+- Replaced the remaining two direct `Hclosed σ Hσ` proof bodies in
+  `Denotation/theories/TypeEquivTermApp.v`.
+
+Status:
+
+- Completed for the direct `Hclosed σ Hσ` shape.
+- Deferred for assertions whose target is an already-restricted local store
+  like `store_closed σX`; those need source-specific review rather than the
+  same wrapper.
+
+Round 3: Duplicate local assertions.
+
+- Removed a duplicate `lc_lvars (relevant_lvars ...)` assertion in
+  `ContextTyping/theories/SoundnessAppD.v`.
+- The remaining proof reuses the earlier `lc_lvars_relevant_lvars` result.
+
+Status:
+
+- Completed for the obvious duplicate in AppD.
+- Future duplicate-removal candidates should be checked with local use sites
+  first; many repeated names are semantic checkpoints rather than duplicate
+  propositions.
+
+Deferred / Harder Cases
+-----------------------
+
+- Large semantic asserts in `TypeEquivTermResult.v`,
+  `TypeEquivFiberBaseResult.v`, and `TypeEquiv.v` need proof-specific
+  review. They are not good first extraction targets.
+- Raw-open normalization must be fixed at proof boundaries, not by adding more
+  statement-level wrappers.
+- Some `assert`s are legitimate semantic checkpoints and should stay if
+  inlining would harm readability or compile time.
+
+Residual Assessment After Current Rounds
+----------------------------------------
+
+- LC extraction from direct Arrow/Wand `context_typing_wf` facts is mostly
+  handled. Remaining `cbn [wf_context_ty_at]` occurrences in Soundness usually
+  extract FV/subset/shape facts or opened-type facts, not only LC. These should
+  become separate regular lemmas only after their call-site shapes are grouped.
+
+- Direct closed-store proofs of the shape:
+
+  ```coq
+  exact (Hclosed σ Hσ)
+  ```
+
+  have been factored when the target is exactly
+  `store_closed (store_restrict σ X)` for the same `X`. Remaining closed-store
+  residues pass through prior `rewrite Hrestrict_eq` steps or singleton
+  persistence-specific local hypotheses; those require a different transport
+  lemma and are deferred.
+
+- The next good extraction family is likely FV/subset regularity from
+  `context_typing_wf`, not more LC. The candidate statements should be designed
+  from actual call sites using `wf_context_ty_at_fv_subset` and function-type
+  shape lemmas.

@@ -143,11 +143,9 @@ Proof.
   intros Hwf Hy Harg.
   assert (Hlcτx : lc_context_ty τx).
   {
-    pose proof (context_typing_wf_context_ty Σ Γ
-      (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf)
-      as Hτ_arrow.
-    cbn [wf_context_ty_at] in Hτ_arrow.
-    eapply wf_context_ty_at_lc. exact (proj1 Hτ_arrow).
+    apply (context_typing_wf_arrow_arg_lc Σ Γ
+      (tret (vfix (TBase b →ₜ t) vf)) τx τ).
+    exact Hwf.
   }
   rewrite formula_open_ty_denote_gas_bind_ret_bvar0 in Harg.
   2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
@@ -333,11 +331,9 @@ Proof.
   }
   assert (Hτ_lc1 : cty_lc_at 1 τ).
   {
-    pose proof (context_typing_wf_context_ty
-      Σ Γ (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf)
-      as Hτwf.
-    cbn [wf_context_ty_at] in Hτwf.
-    eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
+    apply (context_typing_wf_arrow_result_lc1 Σ Γ
+      (tret (vfix (TBase b →ₜ t) vf)) τx τ).
+    exact Hwf.
   }
   assert (Hzero_unfolded :
       my ⊨ ty_denote_gas 0

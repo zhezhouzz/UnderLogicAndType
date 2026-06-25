@@ -4,7 +4,8 @@
     [TypeEquivTerm].  Kept separate so the core term/fiber definitions stay
     small and lower-level. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm.
+From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm
+  DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
@@ -22,7 +23,7 @@ Lemma tm_equiv_tapp_value_arg_eq_on
 Proof.
   intros HfvX Hclosed Hvx1 Hvx2 Heq σ v Hσ.
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { exact (Hclosed σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm e vx1) ⊆ X) by better_set_solver.
   assert (Hfv_app2 : fv_tm (tapp_tm e vx2) ⊆ X) by better_set_solver.
   pose proof (tm_eval_in_store_tapp_tm_arg_eq
@@ -59,7 +60,7 @@ Lemma tm_total_equiv_tapp_value_arg_eq_on
 Proof.
   intros HfvX Hclosed Hlc_e Hvx1 Hvx2 Heq σ Hσ.
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { exact (Hclosed σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm e vx1) ⊆ X) by better_set_solver.
   assert (Hfv_app2 : fv_tm (tapp_tm e vx2) ⊆ X) by better_set_solver.
   pose proof (tm_must_terminating_tapp_tm_arg_eq
@@ -112,7 +113,7 @@ Proof.
   { exists σ. split; [exact Hσ | reflexivity]. }
   destruct (Hstores Hlift) as [_ [vz [Hz_lookup Heval_full]]].
   assert (HclosedX : store_closed (store_restrict σ X)).
-  { exact (Hclosed σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hz_lookup_restrict :
       (store_restrict σ X : StoreT) !! z = Some vz).
   {
@@ -150,7 +151,7 @@ Lemma tm_equiv_ret_value_result_alias_on
 Proof.
   intros HfvX HzX Hfvx Hclosed Hvx Hres σ v Hσ.
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { exact (Hclosed σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_z : fv_tm (tret (vfvar z)) ⊆ X) by set_solver.
   assert (Hfv_vx : fv_tm (tret vx) ⊆ X) by set_solver.
   pose proof (expr_result_formula_ret_value_inst_eq_on
@@ -208,7 +209,7 @@ Proof.
   intros HfvX HzX Hfvx Hclosed Hvx Hres σ Hσ.
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
-  { subst σX. exact (Hclosed σ Hσ). }
+  { subst σX. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_z : fv_tm (tret (vfvar z)) ⊆ X) by set_solver.
   assert (Hfv_vx : fv_tm (tret vx) ⊆ X) by set_solver.
   pose proof (expr_result_formula_ret_value_inst_eq_on
@@ -800,7 +801,7 @@ Lemma tm_equiv_tapp_value_fun_result_alias_on
 Proof.
   intros HfvX HzX Hfvf Hclosed Hvf Hres σ v Hσ.
   assert (HσX_closed : store_closed (store_restrict σ X)).
-  { exact (Hclosed σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ⊆ X)
     by set_solver.
   assert (Hfv_app2 : fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X)
@@ -894,7 +895,7 @@ Proof.
   intros HfvX HzX Hfvf Hclosed Hvf Hres σ Hσ.
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
-  { subst σX. exact (Hclosed σ Hσ). }
+  { subst σX. eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ⊆ X)
     by set_solver.
   assert (Hfv_app2 : fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X)

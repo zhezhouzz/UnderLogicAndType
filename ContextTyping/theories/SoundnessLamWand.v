@@ -340,10 +340,9 @@ Proof.
   }
   assert (Hτ_body_lc1 : cty_lc_at 1 τ).
   {
-    pose proof (context_typing_wf_context_ty Σ Γ
-      (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf) as Hτ_wf.
-    cbn [wf_context_ty_at] in Hτ_wf.
-    eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
+    apply (context_typing_wf_wand_result_lc1 Σ Γ
+      (tret (vlam (erase_ty τx) e)) τx τ).
+    exact Hwf.
   }
   subst elam.
   eapply ty_equiv_wand_result_tgt_goal.

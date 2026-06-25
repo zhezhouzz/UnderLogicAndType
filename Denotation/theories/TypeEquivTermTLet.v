@@ -115,7 +115,7 @@ Proof.
   split.
   - intros [σ [Hσmx [HσX He2x]]].
     assert (Hclosedσ : store_closed (store_restrict σ (fv_tm (tlete e1 e2)))).
-    { exact (Hclosed_tlet σ Hσmx). }
+    { eapply wfworld_closed_on_store_restrict_closed; eauto. }
     assert (Hmust_tlet :
         must_terminating (lstore_instantiate_tm (lstore_lift_free σ)
           (tlete e1 e2))).
@@ -208,7 +208,7 @@ Proof.
     + exact He2z_restrict.
   - intros [σ [Hσmx [HσX Hlet]]].
     assert (Hclosedσ : store_closed (store_restrict σ (fv_tm (tlete e1 e2)))).
-    { exact (Hclosed_tlet σ Hσmx). }
+    { eapply wfworld_closed_on_store_restrict_closed; eauto. }
     set (z := fresh_for (dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})).
     assert (Hzfresh :
         z ∉ dom (σ : StoreT) ∪ fv_tm e1 ∪ fv_tm e2 ∪ X ∪ {[x]})

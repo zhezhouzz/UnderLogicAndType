@@ -484,33 +484,10 @@ Proof.
     - exact Hlcτopen.
     - apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor].
   }
-  assert (Hrel_lc :
-      lc_lvars (relevant_lvars (cty_open 0 x τ)
-        (tapp_tm (tret v1) (vfvar x)))).
-  {
-    unfold relevant_lvars. intros u Hu.
-    apply elem_of_union in Hu as [Huτ|Hue].
-    - pose proof (context_typing_wf_context_ty Σ (CtxStar Γ1 Γ2)
-        (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf_app) as Hτwf.
-      change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτwf.
-      pose proof (cty_lc_at_lvars_bv_empty 0 (cty_open 0 x τ)
-        (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
-          (cty_open 0 x τ) Hτwf)) as Hbv.
-      destruct u as [k|a]; [|exact I].
-      exfalso.
-      assert (k ∈ lvars_bv (context_ty_lvars (cty_open 0 x τ)))
-        by (apply lvars_bv_elem; exact Huτ).
-      change (context_ty_lvars (cty_open 0 x τ))
-        with (context_ty_lvars_at 0 (cty_open 0 x τ)) in H.
-      rewrite Hbv in H. set_solver.
-    - pose proof (tm_lvars_lc (tapp_tm (tret v1) (vfvar x))
-        ltac:(apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor])) as Hlc_tm.
-      exact (Hlc_tm u Hue).
-  }
   rewrite <- !lty_env_restrict_open_one_bind_as_insert
     by exact Hresult_rel_lc.
   eapply lty_env_restrict_open_one_bind_agree_on.
-  - exact Hrel_lc.
+  - exact Hresult_rel_lc.
   - intros y HyD Hyx.
     rewrite !atom_store_to_lvar_store_lookup_free.
     destruct (decide (y ∈ fv_value v1 ∪ fv_cty τ)) as [Hyrel|Hyrel].
@@ -609,13 +586,11 @@ Proof.
 	  change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf_result.
 	  pose proof (wf_context_ty_at_lc 0 (dom (erase_ctx (CtxStar Γ1 Γ2)))
 	    (cty_open 0 x τ) Hτopen_wf_result) as Hlcτopen_result.
-  assert (Hτ_lc1 : cty_lc_at 1 τ).
-  {
-    pose proof (context_typing_wf_context_ty Σ Γ1
-      (tret v1) (CTWand τx τ) Hwf_fun) as Hτ_wf.
-    cbn [wf_context_ty_at] in Hτ_wf.
-    eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
-  }
+	  assert (Hτ_lc1 : cty_lc_at 1 τ).
+	  {
+	    apply (context_typing_wf_wand_result_lc1 Σ Γ1 (tret v1) τx τ).
+	    exact Hwf_fun.
+	  }
   assert (Hresult_rel_lc :
       lc_lvars (relevant_lvars (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x)))).
@@ -1011,10 +986,8 @@ Proof.
         exact (Hz_m2 Hx_m2).
       + subst Σrel Δ1. apply relevant_env_wand_fresh_free in Hin;
           cbn [fv_tm fv_value]; clear -Hfresh Hin; better_set_solver.
-    - pose proof (context_typing_wf_context_ty
-        Σ Γ1 (tret v1) (CTWand τx τ) Hwf_fun) as Hτwf.
-      cbn [wf_context_ty_at] in Hτwf.
-      eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
+    - apply (context_typing_wf_wand_result_lc1 Σ Γ1 (tret v1) τx τ).
+      exact Hwf_fun.
     - clear -Hzfresh. better_set_solver.
     - clear -Hfresh. better_set_solver.
   }
@@ -1122,13 +1095,11 @@ Proof.
 	  {
 	    exact Htarget_opened_arrow.
 	  }
-  assert (Hτ_lc1 : cty_lc_at 1 τ).
-  {
-    pose proof (context_typing_wf_context_ty
-      Σ Γ1 (tret v1) (CTWand τx τ) Hwf_fun) as Hτfun.
-    cbn [wf_context_ty_at] in Hτfun.
-    exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ1)) τ (proj2 Hτfun)).
-  }
+	  assert (Hτ_lc1 : cty_lc_at 1 τ).
+	  {
+	    apply (context_typing_wf_wand_result_lc1 Σ Γ1 (tret v1) τx τ).
+	    exact Hwf_fun.
+	  }
 	  pose proof (app_arrow_result_to_target
 	    Σ (CtxStar Γ1 Γ2) τx τ v1 x pz Hwf_app Hτ_lc1 Hfresh
 	    Harg_pz_star Htarget_arrow_norm) as Htarget_pz_final.

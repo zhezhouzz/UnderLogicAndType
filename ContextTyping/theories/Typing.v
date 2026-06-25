@@ -179,6 +179,50 @@ Lemma context_typing_wf_context_ty Σ Γ e τ :
   wf_context_ty_at 0 (dom (erase_ctx Γ)) τ.
 Proof. intros [_ [Hτ _]]. exact Hτ. Qed.
 
+Lemma context_typing_wf_arrow_arg_lc Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTArrow τx τ) ->
+  lc_context_ty τx.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTArrow τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ)) τx (proj1 Hτ)).
+Qed.
+
+Lemma context_typing_wf_arrow_result_lc1 Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTArrow τx τ) ->
+  cty_lc_at 1 τ.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTArrow τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ)).
+Qed.
+
+Lemma context_typing_wf_wand_arg_lc Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTWand τx τ) ->
+  lc_context_ty τx.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTWand τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 0 ∅ τx (proj1 Hτ)).
+Qed.
+
+Lemma context_typing_wf_wand_result_lc1 Σ Γ e τx τ :
+  context_typing_wf Σ Γ e (CTWand τx τ) ->
+  cty_lc_at 1 τ.
+Proof.
+  intros Hwf.
+  pose proof (context_typing_wf_context_ty Σ Γ e
+    (CTWand τx τ) Hwf) as Hτ.
+  cbn [wf_context_ty_at] in Hτ.
+  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ)).
+Qed.
+
 Lemma context_typing_wf_bind_context_ty Σ x τ e :
   context_typing_wf Σ (CtxBind x τ) e τ ->
   basic_context_ty {[x]} τ.
@@ -285,7 +329,7 @@ Ltac soundness_regular_observed_world :=
   end.
 
 Ltac soundness_regular_lc :=
-  match goal with
+  repeat match goal with
   | Hwf : context_typing_wf ?Σ ?Γ (tret ?v) (CTPersist ?τ) |- _ =>
       lazymatch goal with
       | H : lc_value v |- _ => fail
@@ -293,6 +337,38 @@ Ltac soundness_regular_lc :=
           let H := fresh "Hv" in
           pose proof (context_typing_wf_ret_lc_value
             Σ Γ v (CTPersist τ) Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTArrow ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : lc_context_ty τx |- _ => fail
+      | _ =>
+          let H := fresh "Hτx_lc" in
+          pose proof (context_typing_wf_arrow_arg_lc
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTArrow ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : cty_lc_at 1 τ |- _ => fail
+      | _ =>
+          let H := fresh "Hτ_lc1" in
+          pose proof (context_typing_wf_arrow_result_lc1
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTWand ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : lc_context_ty τx |- _ => fail
+      | _ =>
+          let H := fresh "Hτx_lc" in
+          pose proof (context_typing_wf_wand_arg_lc
+            Σ Γ e τx τ Hwf) as H
+      end
+  | Hwf : context_typing_wf ?Σ ?Γ ?e (CTWand ?τx ?τ) |- _ =>
+      lazymatch goal with
+      | H : cty_lc_at 1 τ |- _ => fail
+      | _ =>
+          let H := fresh "Hτ_lc1" in
+          pose proof (context_typing_wf_wand_result_lc1
+            Σ Γ e τx τ Hwf) as H
       end
   end.
 

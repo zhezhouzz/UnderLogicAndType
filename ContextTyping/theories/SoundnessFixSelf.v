@@ -547,11 +547,9 @@ Proof.
   {
     assert (Hτ_lc1 : cty_lc_at 1 τ).
     {
-      pose proof (context_typing_wf_context_ty Σ Γ
-        (tret (vfix (TBase b →ₜ t) vf))
-        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
-      cbn [wf_context_ty_at] in Hτ_arrow.
-      exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
+      apply (context_typing_wf_arrow_result_lc1 Σ Γ
+        (tret (vfix (TBase b →ₜ t) vf)) (over_ty b φx) τ).
+      exact Hwf.
     }
     eapply ty_equiv_arrow_result_src_mid_inserted.
     + exact Hlc_self.
@@ -650,11 +648,9 @@ Proof.
   {
     assert (Hτ_lc1 : cty_lc_at 1 τ).
     {
-      pose proof (context_typing_wf_context_ty Σ Γ
-        (tret (vfix (TBase b →ₜ t) vf))
-        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
-      cbn [wf_context_ty_at] in Hτ_arrow.
-      exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
+      apply (context_typing_wf_arrow_result_lc1 Σ Γ
+        (tret (vfix (TBase b →ₜ t) vf)) (over_ty b φx) τ).
+      exact Hwf.
     }
     eapply ty_equiv_arrow_result_tgt_goal_inserted.
     + subst self. exact Hlc_self.
@@ -740,11 +736,9 @@ Proof.
     intros Hrec_arg.
 	    assert (Hτx_lc : lc_context_ty (over_ty b φx)).
     {
-      pose proof (context_typing_wf_context_ty Σ Γ
-        (tret (vfix (TBase b →ₜ t) vf))
-        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
-      cbn [wf_context_ty_at] in Hτ_arrow.
-      eapply wf_context_ty_at_lc. exact (proj1 Hτ_arrow).
+      apply (context_typing_wf_arrow_arg_lc Σ Γ
+        (tret (vfix (TBase b →ₜ t) vf)) (over_ty b φx) τ).
+      exact Hwf.
     }
     assert (Hx_parent_dom : xcur ∈ world_dom (parent : WorldT)).
     {

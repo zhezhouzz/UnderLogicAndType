@@ -76,11 +76,8 @@ Proof.
   change (open_tm 0 (vfvar x) (tret (vbvar 0))) with (tret (vfvar x)).
   rewrite (cty_open_shift_from_lc_fresh 0 x τx).
   2:{
-    pose proof (context_typing_wf_context_ty Σ Γ
-      (tret v1) (CTArrow τx τ) Hwf_fun) as Hτ.
-    cbn [wf_context_ty_at] in Hτ.
-    destruct Hτ as [Hτx _].
-    eapply wf_context_ty_at_lc. exact Hτx.
+    apply (context_typing_wf_arrow_arg_lc Σ Γ (tret v1) τx τ).
+    exact Hwf_fun.
   }
   2:{
     better_set_solver.
@@ -806,10 +803,8 @@ Proof.
           lc_lvars (relevant_lvars τx (tret (vfvar x)))).
       {
         apply lc_lvars_relevant_lvars; [|constructor; constructor].
-        pose proof (context_typing_wf_context_ty
-          Σ Γ (tret v1) (CTArrow τx τ) Hwf_fun) as Hτwf.
-        cbn [wf_context_ty_at] in Hτwf.
-        exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ)) τx (proj1 Hτwf)).
+        apply (context_typing_wf_arrow_arg_lc Σ Γ (tret v1) τx τ).
+        exact Hwf_fun.
       }
       exact (Hlc_rel (LVBound k) Hu).
     + destruct (decide (a = x)) as [->|Hax].
@@ -889,17 +884,13 @@ Proof.
   }
   assert (Hlcτx : lc_context_ty τx).
   {
-    pose proof (context_typing_wf_context_ty
-      Σ Γ (tret v1) (CTArrow τx τ) Hwf_fun) as Hτwf.
-    cbn [wf_context_ty_at] in Hτwf.
-    exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ)) τx (proj1 Hτwf)).
+    apply (context_typing_wf_arrow_arg_lc Σ Γ (tret v1) τx τ).
+    exact Hwf_fun.
   }
   assert (Hlcτ : cty_lc_at 1 τ).
   {
-    pose proof (context_typing_wf_context_ty
-      Σ Γ (tret v1) (CTArrow τx τ) Hwf_fun) as Hτwf.
-    cbn [wf_context_ty_at] in Hτwf.
-    eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
+    apply (context_typing_wf_arrow_result_lc1 Σ Γ (tret v1) τx τ).
+    exact Hwf_fun.
   }
   assert (Hzτ : z ∉ fv_cty τx ∪ fv_cty τ).
   { clear -Hzfresh. better_set_solver. }

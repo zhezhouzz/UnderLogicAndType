@@ -897,7 +897,7 @@ Proof.
     σ (tret v) vy (fv_value v) ltac:(cbn [fv_tm]; set_solver)) Heval)
     as Heval_restrict.
   assert (Hclosed_restrict : store_closed (store_restrict σ (fv_value v))).
-  { exact (Hclosed_v σ Hσ). }
+  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   pose proof (tm_eval_in_store_ret_value_inv
     (store_restrict σ (fv_value v)) v vy
     Hclosed_restrict Hv Heval_restrict) as Hvy_eq.
