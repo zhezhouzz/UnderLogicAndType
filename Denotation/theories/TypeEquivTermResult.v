@@ -573,7 +573,7 @@ Proof.
 	          (((τm : StoreT) ∪ τe) : StoreT) !! a) in Htmp.
 	        transitivity ((store_restrict τ (world_dom (mx : WorldT)) : StoreT) !! a).
 	        - destruct (τ !! a) eqn:Hτa.
-	          + symmetry. apply storeA_restrict_lookup_some_2; [exact Hτa|exact Hamx].
+	          + symmetry. apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτa Hamx).
 	          + exfalso.
 	            assert (Ha_my : a ∈ world_dom (my : WorldT)).
 	            {

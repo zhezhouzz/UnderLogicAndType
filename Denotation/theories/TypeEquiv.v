@@ -261,7 +261,7 @@ Proof.
                 change (a ∈ dom (σe : gmap atom value)).
                 apply elem_of_dom. exists u.
                 subst σe.
-                apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha].
+                apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa Ha).
               }
               eapply basic_tm_eval_value_type; eauto.
            ++ rewrite lookup_insert_ne in HΣins by congruence.
@@ -1215,7 +1215,7 @@ Proof.
 	          rewrite Hlookup in Hv. inversion Hv. subst T.
 	          apply map_lookup_insert.
         + rewrite lookup_insert_ne by congruence.
-          apply storeA_restrict_lookup_some_2; [exact Hv|].
+          apply (storeA_restrict_lookup_some_2 _ _ _ _ Hv).
           unfold relevant_lvars in Hvrel |- *.
           apply elem_of_union in Hvrel as [Hvτ|Hvxv].
           * apply elem_of_union_l. exact Hvτ.

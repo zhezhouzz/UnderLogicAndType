@@ -259,7 +259,7 @@ Proof.
                change (
                  (storeA_restrict σ0 (world_dom (m : WorldT))
                    : gmap atom value) !! x = Some vx).
-               apply storeA_restrict_lookup_some_2; [exact H0look|exact Hxm].
+               apply (storeA_restrict_lookup_some_2 _ _ _ _ H0look Hxm).
              - exfalso.
                apply not_elem_of_dom in H0look.
                apply H0look.
@@ -306,7 +306,7 @@ Proof.
                change (
                  (storeA_restrict σ0 (world_dom (m : WorldT))
                    : gmap atom value) !! a = Some va).
-               apply storeA_restrict_lookup_some_2; [exact H0look|exact HaDom].
+               apply (storeA_restrict_lookup_some_2 _ _ _ _ H0look HaDom).
              - exfalso.
                apply not_elem_of_dom in H0look.
                apply H0look.

@@ -697,7 +697,7 @@ Proof.
         * exact (eq_trans Hinsert HT).
         * symmetry.
           apply map_lookup_union_Some_raw. left.
-          apply storeA_restrict_lookup_some_2; [exact HT|].
+          apply (storeA_restrict_lookup_some_2 _ _ _ _ HT).
           rewrite <- context_ty_lvars_fv.
           apply lvars_fv_elem. better_set_solver.
   }
@@ -832,7 +832,7 @@ Proof.
           {
             apply map_lookup_union_Some_raw. left.
             unfold Σtarget.
-            apply storeA_restrict_lookup_some_2; [exact Hylookup|exact Hyτ].
+            apply (storeA_restrict_lookup_some_2 _ _ _ _ Hylookup Hyτ).
           }
           transitivity (Some T); [exact Hsource|symmetry; exact Htarget].
         * assert (Hsource :
@@ -1528,8 +1528,8 @@ Proof.
       ltac:(constructor; constructor)
       ltac:(cbn [fv_tm fv_value]; intros Hyx; apply Hyfresh;
         clear -Hyx; set_solver)
-      ltac:(subst Dres; intros Hyrel; apply Hy_D;
-        apply lvars_fv_elem; exact Hyrel)
+	      ltac:(subst Dres; intros Hyrel; apply Hy_D;
+	        rewrite <- lvars_fv_elem; exact Hyrel)
       Hden Hy_m Hdom_my' Hbase_my Hres_at) as Hpersist_open.
 	    rewrite formula_open_persist in Hpersist_open.
 	    rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.

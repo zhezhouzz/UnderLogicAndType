@@ -686,7 +686,7 @@ Proof.
     change (x ∈ dom
       (storeA_restrict σmx (fv_tm (tret (vfvar x))) : gmap atom value)).
     apply elem_of_dom. exists vx.
-    apply storeA_restrict_lookup_some_2; [exact Hσmx_x|].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσmx_x).
     const_fast_set_side.
   }
   pose proof (tm_eval_in_store_ret_fvar_inv

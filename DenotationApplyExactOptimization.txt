@@ -3,6 +3,22 @@ Denotation Apply/Exact Optimization Stats
 
 Candidates: 202
 
+Implementation Status
+---------------------
+
+- Completed: first low-level batch for store-restrict lookup and
+  `lvars_fv_elem` rewrite patterns across `TypeEquivFiberBase*`,
+  `TypeEquivTerm*`, `TypeEquiv.v`, `TypeEquivTLet.v`, `ConstDenoteBase.v`,
+  `Context.v`, `TypePersistBase.v`, `TypePersistSingleton.v`, and
+  `TypePersistBase` dependencies.
+- Verified: modified denotation targets compiled in local batches; notable
+  checks include `TypeEquiv.vo`, `TypeEquivTLet.vo`,
+  `TypeEquivFiberBaseResult.vo`, `TypeEquivTermResult.vo`,
+  `TypePersistBase.vo`, `Context.vo`, and `ConstDenoteBase.vo`.
+- Deferred: denotation-level semantic transport helpers and `eapply` chains
+  with nontrivial side conditions are not mechanical apply/exact cleanup; they
+  should be addressed by regularity/normalization lemmas.
+
 | file | line | shape |
 |---|---:|---|
 | `Denotation/theories/TypeEquivBody.v` | 185 | `split; [eapply typed_total_equiv_tm_equiv; exact Hequiv|].` |

@@ -299,7 +299,7 @@ Proof.
       * unfold lvars_of_atoms.
         apply elem_of_map. exists a. split; [reflexivity|].
         assert (HaD : a ∈ lvars_fv D)
-          by (apply lvars_fv_elem; exact HvD).
+          by (rewrite lvars_fv_elem; exact HvD).
         rewrite <- Hdom in HaD. exact HaD.
     + subst v. reflexivity.
   - intros ->. split; [right; reflexivity|].
@@ -387,7 +387,7 @@ Proof.
       rewrite Hagree.
       change (((storeA_restrict σ (lvars_fv (tm_lvars e)) : gmap atom value)
         !! a) = Some va).
-      apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa Ha_fv).
     }
     change (((storeA_restrict σproj (lvars_fv (tm_lvars e)) : gmap atom value)
       !! a) = Some va) in Hproj_lookup.
@@ -465,7 +465,7 @@ Proof.
       rewrite Hagree.
       change (((storeA_restrict σ (lvars_fv (tm_lvars e)) :
         gmap atom value) !! a) = Some va).
-      apply storeA_restrict_lookup_some_2; [exact Hσa|exact Ha_fv].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa Ha_fv).
     }
     apply storeA_restrict_lookup_some in Hproj_lookup as [_ Hσproj_a].
     first [
@@ -563,13 +563,13 @@ Proof.
     assert (Hleft :
         (store_restrict σproj (lvars_fv (tm_lvars e ∪ {[LVFree y]}))
           : StoreT) !! a = Some vp).
-    { apply storeA_restrict_lookup_some_2; [exact Hσproj_a|exact HaQ]. }
+    { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσproj_a HaQ). }
     rewrite Hleft in Hlook.
     destruct (σ !! a) as [vs|] eqn:Hσ_a.
     + assert (Hright :
 	          (store_restrict σ (lvars_fv (tm_lvars e ∪ {[LVFree y]}))
 	            : StoreT) !! a = Some vs).
-	      { apply storeA_restrict_lookup_some_2; [exact Hσ_a|exact HaQ]. }
+	      { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσ_a HaQ). }
       rewrite Hright in Hlook. inversion Hlook. subst vs.
       rewrite decide_True.
       * change (((σproj : StoreT) : gmap atom value) !! a =

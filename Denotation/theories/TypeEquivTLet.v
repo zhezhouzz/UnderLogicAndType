@@ -1409,8 +1409,8 @@ Proof.
         }
         destruct (Σ !! LVFree a) eqn:HaΣ.
         -- transitivity (Some t).
-           ++ apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].
-           ++ symmetry. apply storeA_restrict_lookup_some_2; [exact HaΣ|set_solver].
+           ++ apply (storeA_restrict_lookup_some_2 _ _ _ _ HaΣ). set_solver.
+           ++ symmetry. apply (storeA_restrict_lookup_some_2 _ _ _ _ HaΣ). set_solver.
         -- transitivity (@None ty).
            ++ apply storeA_restrict_lookup_none_l. exact HaΣ.
            ++ symmetry. apply storeA_restrict_lookup_none_l. exact HaΣ.

@@ -334,7 +334,7 @@ Proof.
     change (x ∈ dom (σ : gmap atom value)) in Hxdomσ.
     apply elem_of_dom in Hxdomσ as [vx Hxσ].
     assert (Hxlook : store_restrict σ ({[x]} : aset) !! x = Some vx).
-    { apply storeA_restrict_lookup_some_2; [exact Hxσ|set_solver]. }
+    { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hxσ). set_solver. }
     pose proof (tm_eval_in_store_ret_value_inv
       (store_restrict σ ({[x]} : aset)) (vfvar x) v
       Hσx_closed ltac:(constructor) Hret_restrict) as Hv_eq.
@@ -647,7 +647,7 @@ Proof.
     set_solver.
   }
   assert (HσXy : store_restrict σ X !! y = Some vy).
-  { apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }
+  { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyX). }
   split.
   - intros Happ.
     apply (proj1 (tm_eval_in_store_restrict_fv_subset σ (e ^^ y) v X Hfv_body)).
@@ -696,7 +696,7 @@ Proof.
     set_solver.
   }
   assert (HσXy : store_restrict σ X !! y = Some vy).
-  { apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }
+  { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyX). }
   pose proof (tm_must_terminating_tapp_tm_lam_body
     (store_restrict σ X) T e y vy HσX_closed Hbody Hy_fresh HσXy)
     as HequivX.
@@ -771,7 +771,7 @@ Proof.
     better_set_solver.
   }
   assert (HσXy : store_restrict σ X !! y = Some vy).
-  { apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }
+  { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyX). }
   split.
   - intros Hsrc.
     apply (proj1 (tm_eval_in_store_restrict_fv_subset
@@ -828,7 +828,7 @@ Proof.
     better_set_solver.
   }
   assert (HσXy : store_restrict σ X !! y = Some vy).
-  { apply storeA_restrict_lookup_some_2; [exact Hσy|exact HyX]. }
+  { apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσy HyX). }
   pose proof (tm_must_terminating_tapp_tm_fix_unfold
     (store_restrict σ X) Tf vf y vy HσX_closed Hbody HσXy)
     as HequivX.

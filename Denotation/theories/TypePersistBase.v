@@ -551,7 +551,7 @@ Proof.
            ++ exact (Hclosed_y σ Hσ).
            ++ change ((storeA_restrict σ ({[y]} : aset) : gmap atom value)
                 !! y = Some v).
-              apply storeA_restrict_lookup_some_2; [exact Hylookup|set_solver].
+              apply (storeA_restrict_lookup_some_2 _ _ _ _ Hylookup). set_solver.
       * exfalso.
         apply not_elem_of_dom in Hylookup.
         apply Hylookup.
@@ -1582,8 +1582,8 @@ Proof.
       HΣclosed
       ltac:(constructor; constructor)
       ltac:(cbn [fv_tm fv_value]; eapply notin_union4_r3; exact Hyfresh)
-      ltac:(subst Dres τp; intros Hyrel; apply HyD;
-        apply lvars_fv_elem; exact Hyrel)
+	      ltac:(subst Dres τp; intros Hyrel; apply HyD;
+	        rewrite <- lvars_fv_elem; exact Hyrel)
       Hden Hym Hdom_my' Hbase_my Hres_at) as Hpersist_open.
     rewrite formula_open_persist in Hpersist_open.
     rewrite formula_open_ty_denote_gas_singleton in Hpersist_open.

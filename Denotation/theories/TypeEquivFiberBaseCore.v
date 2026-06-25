@@ -28,7 +28,7 @@ Proof.
   apply elem_of_dom in HΣv as [T HΣv].
   apply elem_of_dom. exists T.
   unfold relevant_env, lty_env_restrict_lvars, relevant_lvars.
-  apply storeA_restrict_lookup_some_2; [exact HΣv|].
+  apply (storeA_restrict_lookup_some_2 _ _ _ _ HΣv).
   set_solver.
 Qed.
 
