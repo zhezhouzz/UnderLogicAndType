@@ -503,3 +503,17 @@ Follow-up Batch L: static/full guard regular accessors.
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessApp.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`
   - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixApply.vo`
+
+Follow-up Batch M: static guard cleanup in alias and Lam helpers.
+
+- Added `ty_static_guard_context_wf` to complement the existing static guard
+  world/basic-typing accessors.
+- Replaced the remaining `Hstatic_parts` destructs in the app result-alias
+  helpers in `Denotation/theories/TypeEquiv.v`.
+- Replaced `SoundnessLamArrow` / `SoundnessLamWand` manual destructs of
+  `ty_static_guard_relevant_of_full` with `ty_static_guard_context_wf`,
+  `ty_static_guard_basic_world`, and `ty_static_guard_basic_typing`.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquiv.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessLamArrow.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessLamWand.vo`

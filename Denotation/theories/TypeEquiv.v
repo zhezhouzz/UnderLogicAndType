@@ -553,6 +553,17 @@ Proof.
     [eapply basic_tm_has_ltype_lvars; exact Hty|exact Hworld].
 Qed.
 
+Lemma ty_static_guard_context_wf
+    (Σ : lty_env) τ e (m : WfWorldT) :
+  m ⊨ ty_static_guard_formula Σ τ e ->
+  m ⊨ context_ty_wf_formula Σ τ.
+Proof.
+  intros Hstatic.
+  unfold ty_static_guard_formula in Hstatic.
+  repeat rewrite res_models_and_iff in Hstatic.
+  tauto.
+Qed.
+
 Lemma ty_static_guard_basic_world
     (Σ : lty_env) τ e (m : WfWorldT) :
   m ⊨ ty_static_guard_formula Σ τ e ->
@@ -822,20 +833,7 @@ Proof.
     eapply tm_equiv_total.
     - exact Htotal_src_tgt.
     - apply lc_tapp_tm; [constructor; exact Hvf|constructor].
-    - intros a Ha.
-      pose proof Hstatic_tgt as Hstatic_parts.
-      unfold ty_static_guard_formula in Hstatic_parts.
-      repeat rewrite res_models_and_iff in Hstatic_parts.
-      destruct Hstatic_parts as [_ [Hworld_t Hbasic_t]].
-      apply expr_basic_typing_formula_models_iff in Hbasic_t
-        as [_ [_ Hty_t]].
-      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty_t) as Hfv_t.
-      apply basic_world_formula_models_iff in Hworld_t as [_ [Hscope_t _]].
-      apply Hscope_t.
-      apply lvars_fv_elem.
-      apply Hfv_t.
-      unfold lvars_of_atoms. apply elem_of_map.
-      exists a. split; [reflexivity|exact Ha].
+    - exact (ty_static_guard_fv_tm_subset _ _ _ _ Hstatic_tgt).
     - exact Htotal_src.
   }
   assert (Hzero_tgt :
@@ -899,10 +897,8 @@ Lemma ty_denote_gas_tapp_fun_result_alias_back_from_static
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
   intros HzΣ Hzfresh Hy Hvf Hres Hbasic_fun Hstatic Hsrc.
-  pose proof Hstatic as Hstatic_parts.
-  unfold ty_static_guard_formula in Hstatic_parts.
-  repeat rewrite res_models_and_iff in Hstatic_parts.
-  destruct Hstatic_parts as [Hwf [Hworld Hbasic_app]].
+  pose proof (ty_static_guard_context_wf _ _ _ _ Hstatic) as Hwf.
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic) as Hworld.
   assert (Hstatic_src :
       m ⊨ ty_static_guard_formula
         (<[LVFree z := s →ₜ erase_ty τ]> Σ) τ
@@ -950,9 +946,8 @@ Lemma ty_denote_gas_tapp_fun_result_alias_from_static
 Proof.
   intros HzΣ Hzfresh Hy Hvf Hres Hbasic_fun Hstatic Hsrc.
   pose proof Hstatic as Hstatic_src.
-  unfold ty_static_guard_formula in Hstatic.
-  repeat rewrite res_models_and_iff in Hstatic.
-  destruct Hstatic as [Hwf [Hworld Hbasic_app]].
+  pose proof (ty_static_guard_context_wf _ _ _ _ Hstatic) as Hwf.
+  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic) as Hworld.
   assert (Hclosed_src :
       wfworld_closed_on
         (fv_tm (tapp_tm (tret vf) (vfvar y))) m).

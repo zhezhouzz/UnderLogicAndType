@@ -217,9 +217,12 @@ Lemma lam_arrow_result_mid_app_guard
 	  pose proof (ty_static_guard_relevant_of_full _ _ _ _ Hstatic)
 	    as Hstatic_rel.
 	  unfold ty_guard_formula.
-	  unfold ty_static_guard_formula in Hstatic_rel.
-	  repeat rewrite res_models_and_iff in Hstatic_rel.
-	  destruct Hstatic_rel as [Hwf_app [Hworld_app Hbasic_app]].
+	  pose proof (ty_static_guard_context_wf _ _ _ _ Hstatic_rel)
+	    as Hwf_app.
+	  pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic_rel)
+	    as Hworld_app.
+	  pose proof (ty_static_guard_basic_typing _ _ _ _ Hstatic_rel)
+	    as Hbasic_app.
 	  repeat rewrite res_models_and_iff.
 	  split; [exact Hwf_app|].
 	  split; [exact Hworld_app|].
@@ -379,10 +382,10 @@ Proof.
     Σ Γ (erase_ty τx) e (CTArrow τx τ) Hwf) as Hbody.
 	  assert (Hy_dom : y ∈ world_dom (my : WorldT)).
 	  {
-	    pose proof Hstatic as Hstatic_app.
-	    unfold ty_static_guard_formula in Hstatic_app.
-	    repeat rewrite res_models_and_iff in Hstatic_app.
-	    destruct Hstatic_app as [_ [Hworld_app Hbasic_app]].
+	    pose proof (ty_static_guard_basic_world _ _ _ _ Hstatic)
+	      as Hworld_app.
+	    pose proof (ty_static_guard_basic_typing _ _ _ _ Hstatic)
+	      as Hbasic_app.
 	    apply expr_basic_typing_formula_models_iff in Hbasic_app
 	      as [HlcΣ_app [_ Hbasic_ltype_app]].
 	    pose proof (basic_tm_has_ltype_lvars _ _ _ Hbasic_ltype_app)
