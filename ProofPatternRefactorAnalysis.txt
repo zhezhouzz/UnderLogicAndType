@@ -901,14 +901,12 @@ Large-file split progress:
 
 ## TLet Transport Status
 
-Current remaining Denotation admits are the five obligations in
-`Denotation/theories/TypeEquivTLet.v`:
+Status: closed.
 
-- `tlet_intro_denotation_arrow_body`
-- `tlet_intro_denotation_wand_body`
-- `tlet_intro_denotation_arrow_body_reverse`
-- `tlet_intro_denotation_wand_body_reverse`
-- `tlet_result_alias_denotation_at`
+The earlier five `TypeEquivTLet.v` obligations have since been proved, and the
+repository currently has no `Admitted.` / `admit.` occurrences.  This section is
+kept only as historical context for why the TLet-specific transport route was
+chosen over generic application congruence.
 
 The old `first-complete-proof` route used `ty_denote_gas_tm_equiv` and a full
 `tm_equiv_on` proof for `e2 ^^ x` versus `tlete e1 e2`.  That route is not
@@ -950,26 +948,31 @@ wand_value_denote_project_result_slot :
       (cty_shift 0 τx) (cty_shift 1 τr) (tret (vbvar 0))).
 ```
 
-These lemmas are proof-engineering blockers, not known semantic blockers.  The
-existing `TypeEquivArrowResultFirst.v` and `TypeEquivWandResultFirst.v`
-proofs contain most of the internal open-argument/open-result machinery, but
-their current statements are tied to `typed_total_equiv_on`; the TLet proof
-needs the smaller result-slot projection version above.
-  with context_typing_wf premises.
+These lemmas were proof-engineering blockers, not known semantic blockers.  The
+implemented proof now keeps the reusable result-first Arrow/Wand machinery in
+the dedicated result-first files and uses the TLet-specific transport facts in
+`TypeEquivTLet.v`.
 
 ## Summary Of Current Admit State
 
-Current Denotation admits are localized in TypeEquivTLet.v:
+Current admit scan is empty:
 
-- tlet_intro_denotation_arrow_body
-- tlet_intro_denotation_wand_body
-- tlet_intro_denotation_arrow_body_reverse
-- tlet_intro_denotation_wand_body_reverse
-- tlet_result_alias_denotation_at
+```sh
+rg -n "Admitted\.|admit\." -g '*.v' .
+```
 
-The last one is deliberately delegated to TLet transport; once the four
-Arrow/Wand TLet obligations are proved, it should be converted to a real proof
-using the same result-first TLet machinery.
+`PrimOpConcreteContext.v` now compiles as part of the full proof; its remaining
+messages are cast-in-pattern warnings, not admits.
 
-ContextTyping/theories/PrimOpConcreteContext.v still contains concrete opctx
-draft admits, but the main Soundness files do not.
+## Latest Optimization Round
+
+Relation-wrapper cleanup in `TypeEquivTermBase.v`:
+
+- `tm_equiv_on_to_fiber_equiv` is the canonical ordinary-equivalence to
+  fiber-equivalence conversion.
+- `tm_equiv_on_to_fiber_equiv_on` is now a compatibility wrapper over it.
+- This documents the current intended relation hierarchy:
+  ordinary term equivalence, fiber result-set equivalence, projected witness
+  correspondence, and typed gas-zero bundles are distinct layers.  Future
+  proof cleanup should shrink duplicate conversion proofs without collapsing
+  these concepts.

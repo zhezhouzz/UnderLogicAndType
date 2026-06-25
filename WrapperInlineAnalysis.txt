@@ -63,3 +63,22 @@ Deferred:
   Keeping it avoids inlining a large proof into the main lambda case.
 - `lam_arrow_result_mid_app_zero`: short wrapper, but named zero-denotation
   conversion is useful and still has multiple nearby callers.
+
+Batch 3: TypeEquivTermBase relation wrappers
+--------------------------------------------
+
+Keep but shrink:
+
+- `tm_equiv_on_to_fiber_equiv_on`
+
+Reason:
+
+- Same statement as `tm_equiv_on_to_fiber_equiv` up to the historical suffix.
+- External callers may still use the old name, so do not delete it.
+- The proof is now a one-line wrapper over the canonical theorem.
+
+Design note:
+
+- Do not introduce new proofs through `typed_total_equiv_on` unless the theorem
+  is explicitly about ordinary `tm_equiv_on` transport.  For nondeterministic
+  transport, build `typed_fiber_equiv_on` directly.

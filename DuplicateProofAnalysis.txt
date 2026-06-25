@@ -149,6 +149,33 @@ Round 6: Const scoped fiber FV facts.
   the statement less readable than the two semantic wrapper names. The shared
   proof content is now in the lower syntax facts.
 
+Round 7: term-equivalence-to-fiber compatibility wrapper.
+
+- `TypeEquivTermBase.tm_equiv_on_to_fiber_equiv` is the canonical theorem
+  converting ordinary whole-world term equivalence to fiber result-set
+  equivalence.
+- `TypeEquivTermBase.tm_equiv_on_to_fiber_equiv_on` had an identical proof
+  body under an older name.  It is now a one-line compatibility wrapper over
+  the canonical theorem.
+- This keeps the public name while removing a duplicated proof of the same
+  relation conversion.
+
+Relation Design Note
+--------------------
+
+`TypeEquivTermBase.v` currently carries both the old ordinary transport route
+and the newer fiber/projected route.  They should be read as:
+
+- `tm_equiv_on` / `tm_total_equiv_on`: ordinary operational compatibility
+  support, still used by match/fix/alias-style proof code.
+- `tm_fiber_equiv_on` / `typed_fiber_equiv_on`: current nondeterministic-ready
+  transport interface.
+- `tm_result_refines_projected_on` / `tm_result_equiv_projected_on`: derived
+  witness views used locally by Over/Under/Sum body proofs.
+- `typed_total_equiv_on`: compatibility bundle for old ordinary transport
+  proofs.  New transport lemmas should prefer `typed_fiber_equiv_on` or build it
+  from `tm_equiv_on` with `typed_fiber_equiv_of_tm_equiv`.
+
 Current Remaining Exact Duplicates After Round 6
 ------------------------------------------------
 

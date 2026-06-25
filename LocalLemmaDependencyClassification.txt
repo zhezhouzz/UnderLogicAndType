@@ -117,6 +117,17 @@ Completed Lowering Passes
      consolidation: zero-denotation projection belongs to the shared fiber base
      layer, not to the term-equivalence body layer.
 
+11. Term equivalence relation wrapper cleanup.
+
+   - `tm_equiv_on_to_fiber_equiv_on` in `TypeEquivTermBase.v` is not a separate
+     proof obligation; it is now a compatibility wrapper over the canonical
+     `tm_equiv_on_to_fiber_equiv`.
+   - The relation stack remains intentionally layered rather than collapsed:
+     ordinary whole-world equivalence, fiber result-set equivalence, projected
+     witness correspondence, and typed gas-zero bundles serve different callers.
+   - Future lowering should target repeated proof bodies around these
+     conversions, not delete the relation names outright.
+
 Classification Table
 --------------------
 

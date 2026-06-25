@@ -990,16 +990,7 @@ Lemma tm_equiv_on_to_fiber_equiv_on
   tm_equiv_on m e1 e2 ->
   tm_fiber_equiv_on m X e1 e2.
 Proof.
-  intros Heq σ0 Hσ0 v.
-  split.
-  - intros [σ [Hσ [Hproj Heval]]].
-    exists σ. split; [exact Hσ|].
-    split; [exact Hproj|].
-    apply (proj1 (Heq σ v Hσ)). exact Heval.
-  - intros [σ [Hσ [Hproj Heval]]].
-    exists σ. split; [exact Hσ|].
-    split; [exact Hproj|].
-    apply (proj2 (Heq σ v Hσ)). exact Heval.
+  apply tm_equiv_on_to_fiber_equiv.
 Qed.
 
 Lemma res_subset_trans_local (m0 m1 m2 : WfWorldT) :

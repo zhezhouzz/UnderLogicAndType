@@ -22,30 +22,20 @@
 
 ## Temporary Named Admits
 
-This recovery pass intentionally leaves named admits rather than proving the new
-fiber/result transport metatheory immediately.
+Status: closed.  The repository currently has no `Admitted.` or `admit.`
+occurrences.
 
-Main future proof obligations:
-
-- `Denotation/theories/TypeEquivFiber.v`
-  - `ty_denote_gas_tm_fiber_equiv`
-- `Denotation/theories/TypeEquiv.v`
-  - result alias and result extension public interfaces
-- `Denotation/theories/TypeDenote.v`
-  - open/env/support lemmas for the new `dom Σ` support shape
-- `Denotation/theories/TypeEquiv{Core,Body,Arrow,Wand,Term}.v`
-  - old transport helpers currently admitted until rebuilt over the new graph
-    semantics
-- `ContextTyping/theories/Soundness*.v`
-  - old direct case/helper proofs that still relied on `relevant_env` and
-    deterministic result transport
-- `ContextTyping/theories/PrimOpConcreteContext.v`
-  - concrete primitive context proof, currently admitted so parameterized
-    soundness remains usable while nondeterministic primitive support is rebuilt
+Historical note: this file originally tracked the recovery period where
+fiber/result transport, result alias/extension, TLet, Soundness cases, and the
+concrete primitive context were temporarily admitted.  Those obligations have
+since been proved or reorganized into real proof files.
 
 ## Next Proof Direction
 
-The next focused proof pass should start from `ty_denote_gas_tm_fiber_equiv`.
-If a supporting result-alias or result-extension lemma appears to require a new
-gas induction that was not present before, stop and reassess the statement
-before adding large proof obligations.
+The next focused proof pass should not restart from the old admitted skeletons.
+For optimization, use the current proved route:
+
+- ordinary term equivalence remains a compatibility route;
+- fiber result-set equality and projected result correspondence are the
+  nondeterministic-ready route;
+- result-first Arrow/Wand and TLet helpers are the current public bridge.
