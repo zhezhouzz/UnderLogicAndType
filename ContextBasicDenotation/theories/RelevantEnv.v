@@ -1998,6 +1998,74 @@ Proof.
   apply wand_arg_relevant_env_agree_open_one_core. exact Hyτx.
 Qed.
 
+Lemma arrow_arg_relevant_env_agree_inserted_body_irrel
+    (Σ : lty_env) Ty y τx τr e_src e_tgt :
+  y ∉ fv_cty τx ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTArrow τx τr) e_src))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTArrow τx τr) e_tgt))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))).
+Proof.
+  intros Hyτx.
+  assert (Hyτx_lvar : LVFree y ∉ context_ty_lvars τx).
+  {
+    intros Hbad. apply Hyτx.
+    rewrite <- context_ty_lvars_fv.
+    apply lvars_fv_elem. exact Hbad.
+  }
+  unfold relevant_env, lty_env_restrict_lvars.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide
+    (v ∈ context_ty_lvars τx ∪ tm_lvars (tret (vfvar y)))) as [Hv|Hv];
+    [|reflexivity].
+  destruct (decide (v = LVFree y)) as [->|Hvy].
+  - rewrite !lookup_insert.
+    repeat destruct decide; try congruence; reflexivity.
+  - rewrite !lookup_insert_ne by (intros Heq; apply Hvy; symmetry; exact Heq).
+    rewrite !storeA_restrict_lookup.
+    destruct (decide
+      (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e_src))
+      as [_|Hbad_src].
+    2:{
+      exfalso. apply Hbad_src.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
+      clear -Hv Hvy Hyτx_lvar. set_solver.
+    }
+    destruct (decide
+      (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e_tgt))
+      as [_|Hbad_tgt].
+    2:{
+      exfalso. apply Hbad_tgt.
+      cbn [context_ty_lvars context_ty_lvars_at].
+      cbn [tm_lvars tm_lvars_at value_lvars value_lvars_at] in Hv.
+      clear -Hv Hvy Hyτx_lvar. set_solver.
+    }
+    reflexivity.
+Qed.
+
+Lemma wand_arg_relevant_env_agree_inserted_body_irrel
+    (Σ : lty_env) Ty y τx τr e_src e_tgt :
+  y ∉ fv_cty τx ->
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTWand τx τr) e_src))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))) =
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]> (relevant_env Σ (CTWand τx τr) e_tgt))
+    (context_ty_lvars τx ∪ tm_lvars (tret (vfvar y))).
+Proof.
+  intros Hyτx.
+  change (relevant_env Σ (CTWand τx τr) e_src)
+    with (relevant_env Σ (CTArrow τx τr) e_src).
+  change (relevant_env Σ (CTWand τx τr) e_tgt)
+    with (relevant_env Σ (CTArrow τx τr) e_tgt).
+  apply arrow_arg_relevant_env_agree_inserted_body_irrel.
+  exact Hyτx.
+Qed.
+
 End RelevantEnv.
 
 Notation "'rlv[' τ ']'" :=

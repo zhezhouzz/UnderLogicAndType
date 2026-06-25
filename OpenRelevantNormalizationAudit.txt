@@ -341,3 +341,43 @@ Notes:
   contains duplicate transport names compared with `TypeEquivArrow.v` and
   `TypeEquivWand.v`; cleanup should first classify which module owns the
   canonical normalized facts.
+
+## Iteration 11: TLet Open-Argument Env Agreement Directly Normalized
+
+Problem:
+
+- `TypeEquivTLet.v` public open-arg lemmas were normalized, but their proofs
+  still routed through raw
+  `lty_env_open_one 0 y (typed_lty_env_bind ...)` and
+  `cty_open 0 y (cty_shift 0 τx)` intermediate asserts.
+
+Action:
+
+- Added direct inserted-env irrelevance facts in `RelevantEnv.v`:
+  `arrow_arg_relevant_env_agree_inserted_body_irrel` and
+  `wand_arg_relevant_env_agree_inserted_body_irrel`.
+- Rewrote `tlet_arrow_open_arg_env` and `tlet_wand_open_arg_env` to call these
+  direct facts through `res_models_ty_denote_gas_env_agree_on`.
+- Removed the raw-open intermediate assertions from those proofs.
+
+Validation:
+
+- `timeout 20s make TIMED=1 ContextBasicDenotation/theories/RelevantEnv.vo`
+- `timeout 50s make TIMED=1 Denotation/theories/TypeEquivTLet.vo`
+
+Leak check:
+
+- `TypeEquivTLet.v` has no remaining
+  `cty_open 0 y (cty_shift 0 τx)`,
+  `lty_env_open_one 0 y (typed_lty_env_bind ...)`, or
+  `formula_open 0 ... ty_denote_gas` occurrences.
+
+Remaining raw-open buckets:
+
+- `Denotation/theories/TypeEquivFiberTransport.v`: 14
+- `Denotation/theories/TypeEquivFiberBody.v`: 5
+- `Denotation/theories/TypeDenote.v`: 3, normalizer support.
+- `Denotation/theories/TypePersistArrow.v`: 2, normalizer proof internals.
+- `Denotation/theories/Context.v`: 1
+
+Status: completed.
