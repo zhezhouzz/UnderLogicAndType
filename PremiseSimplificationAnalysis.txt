@@ -1,0 +1,166 @@
+Premise Simplification Analysis
+================================
+
+Goal
+----
+
+Scan Denotation and Soundness lemma statements for premises that can be derived
+from stronger regular premises already present at the call site.  The main
+target pattern is:
+
+  fv_tm e_src ∪ fv_tm e_tgt ⊆ X
+
+followed by extra freshness / membership / value-FV premises that are actually
+syntactic consequences of the two terms being observed by X.
+
+Status
+------
+
+2026-06-25:
+
+- Started with the app-result-alias lemmas in
+  Denotation/theories/TypeEquivFiberTransport.v, because
+  tm_total_equiv_tapp_value_fun_result_alias_on was explicitly identified by
+  the user.
+
+Batch 1: TypeEquivFiberTransport app value aliases
+--------------------------------------------------
+
+Candidates:
+
+1. tm_equiv_tapp_value_arg_result_alias_on
+2. tm_total_equiv_tapp_value_arg_result_alias_on
+3. tm_equiv_tapp_value_fun_result_alias_on
+4. tm_total_equiv_tapp_value_fun_result_alias_on
+
+Current redundant premises:
+
+- z ∈ X
+- fv_value vx ⊆ X / fv_value vf ⊆ X
+
+Reason:
+
+For argument alias:
+
+  fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X
+
+already implies both z ∈ X and fv_value vx ⊆ X.
+
+For function alias:
+
+  fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+  fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X
+
+already implies both z ∈ X and fv_value vf ⊆ X.
+
+Planned optimization:
+
+- Remove the redundant premises from the four `_on` lemmas.
+- Derive the needed facts inside the proof with short syntax facts.
+- Simplify wrappers so they no longer manually prove z ∈ X / fv_value _ ⊆ X.
+
+Result:
+
+- Completed.  The four `_on` lemmas now take only the combined app FV support
+  premise plus semantic assumptions.  The public wrappers no longer prove
+  separate `z ∈ X` / `fv_value _ ⊆ X` obligations.
+- Extended to the ret-value aliases:
+  `tm_equiv_ret_value_result_alias_on` and
+  `tm_total_equiv_ret_value_result_alias_on` now derive the same two facts from
+  `fv_tm (ret z) ∪ fv_tm (ret vx) ⊆ X`.
+- Added three local syntax-support facts in `TypeEquivFiberTransport.v`:
+  `ret_value_alias_fv_support_parts`,
+  `tapp_value_arg_alias_fv_support_parts`, and
+  `tapp_value_fun_alias_fv_support_parts`.  These avoid repeating the same
+  stdpp/FV proof in each alias lemma body.
+- Local check passed:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivFiberTransport.vo`.
+
+Batch 2: Arrow/Wand open result helpers
+---------------------------------------
+
+Candidates seen by scan:
+
+- Denotation/theories/TypeEquivArrow.v
+- Denotation/theories/TypeEquivWand.v
+- Denotation/theories/TypeEquivArrowResultFirst.v
+- Denotation/theories/TypeEquivWandResultFirst.v
+- Denotation/theories/TypeEquivTLet.v
+
+Repeated pattern:
+
+- y ∉ fv_cty τx
+- y ∉ fv_cty τr
+- y ∉ fv_tm e1 ∪ fv_tm e2
+- y ∉ lvars_fv (dom (relevant_env ...))
+
+Often these are derived from one large freshness premise or from normalized
+support facts for opened result bodies.  The next pass should introduce or
+reuse regular lemmas that consume the large freshness premise directly.
+
+Result:
+
+- Removed unused premises from:
+  `basic_world_formula_arrow_open_result_subenv` and
+  `basic_world_formula_wand_open_result_subenv`.
+- The deleted premises were `typed_total_equiv_on ...`,
+  `y ∉ fv_cty τx`, `y ∉ fv_cty τr`, and `y ∉ fv_tm e1 ∪ fv_tm e2`;
+  both proofs only use the opened-result lvar subset premise and lookup.
+- Local checks passed:
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
+  and
+  `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`.
+
+Batch 3: Soundness fresh splits
+-------------------------------
+
+Candidates seen by scan:
+
+- SoundnessLamBase.v
+- SoundnessLamWand.v
+- SoundnessAppD.v
+- SoundnessFixSelf.v
+- SoundnessPersist.v
+
+Repeated pattern:
+
+Large premise:
+
+  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ
+
+followed by local asserts extracting individual not-in facts.
+
+Optimization direction:
+
+- Prefer one regular lemma or local tactic that destructs only repo-specific
+  facts such as ctx_erasure_under / erase_ctx / relevant_env.
+- Pure stdpp shapes should stay with set_solver/better_set_solver.
+
+Batch 4: Persistence singleton/fiber helpers
+--------------------------------------------
+
+Candidates:
+
+- TypePersistBase.v
+- TypePersistSingleton.v
+- TypePersistWandForward.v
+- TypePersistWandReverse.v
+
+Repeated pattern:
+
+- freshness from qual_dom φ, lvars_fv D, world_dom m
+- singleton/fiber shape facts before applying persistent intro/elimination
+
+Optimization direction:
+
+- Keep semantic facts as named lemmas.
+- Collapse repeated pure freshness premises when one union premise suffices.
+
+Deferred / stubborn
+-------------------
+
+- Freshness requirements that come from separate semantic side conditions, not
+  syntactic FV support, should not be merged unless a regular lemma makes the
+  dependency obvious.
+- Premises used by automation indirectly need manual confirmation before
+  deletion.

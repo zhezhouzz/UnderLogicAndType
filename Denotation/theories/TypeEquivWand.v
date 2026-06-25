@@ -366,11 +366,7 @@ Proof.
 Qed.
 
 Lemma basic_world_formula_wand_open_result_subenv
-    (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) y :
-  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
-  y ∉ fv_cty τx ->
-  y ∉ fv_cty τr ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+    (Σ : lty_env) τx τr e2 y :
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
   forall v T,
@@ -382,7 +378,7 @@ Lemma basic_world_formula_wand_open_result_subenv
         (relevant_env Σ (CTWand τx τr) e2))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) !! v = Some T.
 Proof.
-  intros _ _ _ _ Hτr_vars v T Hlook.
+  intros Hτr_vars v T Hlook.
   change ((lty_env_restrict_lvars
     (<[LVFree y := erase_ty τx]>
       (relevant_env Σ (CTWand τx τr) e2))
@@ -436,7 +432,8 @@ Proof.
     Σ τx τr e1 e2 m (res_product n my Hc) y
     Hequiv Hyτx Hyτr Hye Hworld_src_prod Hworld_y_prod) as Hworld_big.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
-  eapply basic_world_formula_wand_open_result_subenv; eauto.
+  intros v T Hlook.
+  eapply basic_world_formula_wand_open_result_subenv.
   apply wand_result_open_vars_subset.
   pose proof (typed_total_equiv_target_zero
     Σ (CTWand τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
@@ -452,6 +449,7 @@ Proof.
   cbn [lc_context_ty cty_lc_at] in Hlc_wand.
   exact (proj2 Hlc_wand).
   exact Hyτr.
+  exact Hlook.
 Qed.
 
 Local Lemma basic_value_has_ltype_wand_inserted_result_target_arg

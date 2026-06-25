@@ -320,11 +320,7 @@ Proof.
 Qed.
 
 Lemma basic_world_formula_arrow_open_result_subenv
-    (Σ : lty_env) τx τr e1 e2 (m : WfWorldT) y :
-  typed_total_equiv_on Σ (CTArrow τx τr) m e1 e2 ->
-  y ∉ fv_cty τx ->
-  y ∉ fv_cty τr ->
-  y ∉ fv_tm e1 ∪ fv_tm e2 ->
+    (Σ : lty_env) τx τr e2 y :
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
     context_ty_lvars_at 1 τr ->
   forall v T,
@@ -336,7 +332,7 @@ Lemma basic_world_formula_arrow_open_result_subenv
         (relevant_env Σ (CTArrow τx τr) e2))
       (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) !! v = Some T.
 Proof.
-  intros _ _ _ _ Hτr_vars v T Hlook.
+  intros Hτr_vars v T Hlook.
   change ((lty_env_restrict_lvars
     (<[LVFree y := erase_ty τx]>
       (relevant_env Σ (CTArrow τx τr) e2))
@@ -382,7 +378,8 @@ Proof.
     Σ τx τr e1 e2 m my y Hequiv Hyτx Hyτr Hye
     Hworld_src_my Hworld) as Hworld_big.
   eapply basic_world_formula_subenv; [|exact Hworld_big].
-  eapply basic_world_formula_arrow_open_result_subenv; eauto.
+  intros v T Hlook.
+  eapply basic_world_formula_arrow_open_result_subenv.
   apply arrow_result_open_vars_subset.
   - pose proof (typed_total_equiv_target_zero
       Σ (CTArrow τx τr) m e1 e2 Hequiv) as Hzero_top_tgt.
@@ -398,6 +395,7 @@ Proof.
     cbn [lc_context_ty cty_lc_at] in Hlc_arrow.
     exact (proj2 Hlc_arrow).
   - exact Hyτr.
+  - exact Hlook.
 Qed.
 
 Lemma basic_value_has_ltype_arrow_inserted_result_target_arg

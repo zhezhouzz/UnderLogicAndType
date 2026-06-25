@@ -10,6 +10,42 @@ From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.
 
+Local Lemma ret_value_alias_fv_support_parts X vx z :
+  fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
+  z ∈ X /\ fv_value vx ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    cbn [fv_tm fv_value]. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    cbn [fv_tm]. exact Ha.
+Qed.
+
+Local Lemma tapp_value_arg_alias_fv_support_parts X e vx z :
+  fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
+  z ∈ X /\ fv_value vx ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
+    apply elem_of_union_r. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
+Qed.
+
+Local Lemma tapp_value_fun_alias_fv_support_parts X vf y z :
+  fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
+    fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
+  z ∈ X /\ fv_value vf ⊆ X.
+Proof.
+  intros HfvX. split.
+  - apply HfvX. apply elem_of_union_l.
+    rewrite fv_tapp_tm. cbn [fv_tm fv_value].
+    apply elem_of_union_l. set_solver.
+  - intros a Ha. apply HfvX. apply elem_of_union_r.
+    rewrite fv_tapp_tm. cbn [fv_tm]. set_solver.
+Qed.
+
 Lemma tm_equiv_tapp_value_arg_eq_on
     (m : WfWorldT) X e vx1 vx2 :
   fv_tm (tapp_tm e vx1) ∪ fv_tm (tapp_tm e vx2) ⊆ X ->
@@ -94,14 +130,13 @@ Qed.
 Lemma tm_equiv_ret_value_result_alias_on
     (m : WfWorldT) X vx z :
   fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
-  z ∈ X ->
-  fv_value vx ⊆ X ->
   wfworld_closed_on X m ->
   lc_value vx ->
   m ⊨ expr_result_formula (tret vx) (LVFree z) ->
   tm_equiv_on m (tret (vfvar z)) (tret vx).
 Proof.
-  intros HfvX HzX Hfvx Hclosed Hvx Hres σ v Hσ.
+  intros HfvX Hclosed Hvx Hres σ v Hσ.
+  destruct (ret_value_alias_fv_support_parts X vx z HfvX) as [HzX Hfvx].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_z : fv_tm (tret (vfvar z)) ⊆ X) by set_solver.
@@ -136,29 +171,21 @@ Lemma tm_equiv_ret_value_result_alias
   tm_equiv_on m (tret (vfvar z)) (tret vx).
 Proof.
   intros Hclosed Hvx Hres.
-  eapply (tm_equiv_ret_value_result_alias_on
-    m (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) vx z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    cbn [fv_tm fv_value].
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha. apply elem_of_union_r. exact Ha.
-  - exact Hclosed.
-  - exact Hvx.
-  - exact Hres.
+  apply (tm_equiv_ret_value_result_alias_on
+    m (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) vx z
+    ltac:(intros a Ha; exact Ha) Hclosed Hvx Hres).
 Qed.
 
 Lemma tm_total_equiv_ret_value_result_alias_on
     (m : WfWorldT) X vx z :
   fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
-  z ∈ X ->
-  fv_value vx ⊆ X ->
   wfworld_closed_on X m ->
   lc_value vx ->
   m ⊨ expr_result_formula (tret vx) (LVFree z) ->
   tm_total_equiv_on m (tret (vfvar z)) (tret vx).
 Proof.
-  intros HfvX HzX Hfvx Hclosed Hvx Hres σ Hσ.
+  intros HfvX Hclosed Hvx Hres σ Hσ.
+  destruct (ret_value_alias_fv_support_parts X vx z HfvX) as [HzX Hfvx].
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
   { subst σX. eapply wfworld_closed_on_store_restrict_closed; eauto. }
@@ -224,16 +251,9 @@ Lemma tm_total_equiv_ret_value_result_alias
   tm_total_equiv_on m (tret (vfvar z)) (tret vx).
 Proof.
   intros Hclosed Hvx Hres.
-  eapply (tm_total_equiv_ret_value_result_alias_on
-    m (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) vx z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    cbn [fv_tm fv_value].
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha. apply elem_of_union_r. exact Ha.
-  - exact Hclosed.
-  - exact Hvx.
-  - exact Hres.
+  apply (tm_total_equiv_ret_value_result_alias_on
+    m (fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx)) vx z
+    ltac:(intros a Ha; exact Ha) Hclosed Hvx Hres).
 Qed.
 
 Lemma typed_total_equiv_ret_value_result_alias
@@ -262,14 +282,14 @@ Qed.
 Lemma tm_equiv_tapp_value_arg_result_alias_on
     (m : WfWorldT) X e vx z :
   fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
-  z ∈ X ->
-  fv_value vx ⊆ X ->
   wfworld_closed_on X m ->
   lc_value vx ->
   m ⊨ expr_result_formula (tret vx) (LVFree z) ->
   tm_equiv_on m (tapp_tm e (vfvar z)) (tapp_tm e vx).
 Proof.
-  intros HfvX HzX Hfvx Hclosed Hvx Hres.
+  intros HfvX Hclosed Hvx Hres.
+  destruct (tapp_value_arg_alias_fv_support_parts X e vx z HfvX)
+    as [HzX Hfvx].
   assert (Heq :
       forall σ,
         (m : WorldT) σ ->
@@ -283,15 +303,15 @@ Qed.
 Lemma tm_total_equiv_tapp_value_arg_result_alias_on
     (m : WfWorldT) X e vx z :
   fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx) ⊆ X ->
-  z ∈ X ->
-  fv_value vx ⊆ X ->
   wfworld_closed_on X m ->
   lc_tm e ->
   lc_value vx ->
   m ⊨ expr_result_formula (tret vx) (LVFree z) ->
   tm_total_equiv_on m (tapp_tm e (vfvar z)) (tapp_tm e vx).
 Proof.
-  intros HfvX HzX Hfvx Hclosed Hlc_e Hvx Hres.
+  intros HfvX Hclosed Hlc_e Hvx Hres.
+  destruct (tapp_value_arg_alias_fv_support_parts X e vx z HfvX)
+    as [HzX Hfvx].
   assert (Heq :
       forall σ,
         (m : WorldT) σ ->
@@ -311,22 +331,9 @@ Lemma tm_equiv_tapp_value_arg_result_alias
   tm_equiv_on m (tapp_tm e (vfvar z)) (tapp_tm e vx).
 Proof.
   intros Hclosed Hvx Hres.
-  eapply (tm_equiv_tapp_value_arg_result_alias_on
-    m (fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx)) e vx z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm fv_value].
-    apply elem_of_union_r.
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha.
-    apply elem_of_union_r.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm].
-    apply elem_of_union_r. exact Ha.
-  - exact Hclosed.
-  - exact Hvx.
-  - exact Hres.
+  apply (tm_equiv_tapp_value_arg_result_alias_on
+    m (fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx))
+    e vx z ltac:(intros a Ha; exact Ha) Hclosed Hvx Hres).
 Qed.
 
 Lemma tm_total_equiv_tapp_value_arg_result_alias
@@ -339,31 +346,15 @@ Lemma tm_total_equiv_tapp_value_arg_result_alias
   tm_total_equiv_on m (tapp_tm e (vfvar z)) (tapp_tm e vx).
 Proof.
   intros Hclosed Hlc_e Hvx Hres.
-  eapply (tm_total_equiv_tapp_value_arg_result_alias_on
-    m (fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx)) e vx z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm fv_value].
-    apply elem_of_union_r.
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha.
-    apply elem_of_union_r.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm].
-    apply elem_of_union_r. exact Ha.
-  - exact Hclosed.
-  - exact Hlc_e.
-  - exact Hvx.
-  - exact Hres.
+  apply (tm_total_equiv_tapp_value_arg_result_alias_on
+    m (fv_tm (tapp_tm e (vfvar z)) ∪ fv_tm (tapp_tm e vx))
+    e vx z ltac:(intros a Ha; exact Ha) Hclosed Hlc_e Hvx Hres).
 Qed.
 
 Lemma tm_equiv_tapp_value_fun_result_alias_on
     (m : WfWorldT) X vf y z :
   fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
     fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
-  z ∈ X ->
-  fv_value vf ⊆ X ->
   wfworld_closed_on X m ->
   lc_value vf ->
   m ⊨ expr_result_formula (tret vf) (LVFree z) ->
@@ -371,7 +362,9 @@ Lemma tm_equiv_tapp_value_fun_result_alias_on
     (tapp_tm (tret (vfvar z)) (vfvar y))
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
-  intros HfvX HzX Hfvf Hclosed Hvf Hres σ v Hσ.
+  intros HfvX Hclosed Hvf Hres σ v Hσ.
+  destruct (tapp_value_fun_alias_fv_support_parts X vf y z HfvX)
+    as [HzX Hfvf].
   assert (HσX_closed : store_closed (store_restrict σ X)).
   { eapply wfworld_closed_on_store_restrict_closed; eauto. }
   assert (Hfv_app1 : fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ⊆ X)
@@ -432,31 +425,16 @@ Lemma tm_equiv_tapp_value_fun_result_alias
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
   intros Hclosed Hvf Hres.
-  eapply (tm_equiv_tapp_value_fun_result_alias_on
+  apply (tm_equiv_tapp_value_fun_result_alias_on
     m (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
-       fv_tm (tapp_tm (tret vf) (vfvar y))) vf y z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm fv_value].
-    apply elem_of_union_l.
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha.
-    apply elem_of_union_r.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm].
-    apply elem_of_union_l. exact Ha.
-  - exact Hclosed.
-  - exact Hvf.
-  - exact Hres.
+       fv_tm (tapp_tm (tret vf) (vfvar y)))
+    vf y z ltac:(intros a Ha; exact Ha) Hclosed Hvf Hres).
 Qed.
 
 Lemma tm_total_equiv_tapp_value_fun_result_alias_on
     (m : WfWorldT) X vf y z :
   fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
     fv_tm (tapp_tm (tret vf) (vfvar y)) ⊆ X ->
-  z ∈ X ->
-  fv_value vf ⊆ X ->
   wfworld_closed_on X m ->
   lc_value vf ->
   m ⊨ expr_result_formula (tret vf) (LVFree z) ->
@@ -464,7 +442,9 @@ Lemma tm_total_equiv_tapp_value_fun_result_alias_on
     (tapp_tm (tret (vfvar z)) (vfvar y))
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
-  intros HfvX HzX Hfvf Hclosed Hvf Hres σ Hσ.
+  intros HfvX Hclosed Hvf Hres σ Hσ.
+  destruct (tapp_value_fun_alias_fv_support_parts X vf y z HfvX)
+    as [HzX Hfvf].
   set (σX := store_restrict σ X : StoreT).
   assert (HσX_closed : store_closed σX).
   { subst σX. eapply wfworld_closed_on_store_restrict_closed; eauto. }
@@ -546,23 +526,10 @@ Lemma tm_total_equiv_tapp_value_fun_result_alias
     (tapp_tm (tret vf) (vfvar y)).
 Proof.
   intros Hclosed Hvf Hres.
-  eapply (tm_total_equiv_tapp_value_fun_result_alias_on
+  apply (tm_total_equiv_tapp_value_fun_result_alias_on
     m (fv_tm (tapp_tm (tret (vfvar z)) (vfvar y)) ∪
-       fv_tm (tapp_tm (tret vf) (vfvar y))) vf y z).
-  - intros a Ha. exact Ha.
-  - apply elem_of_union_l.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm fv_value].
-    apply elem_of_union_l.
-    apply elem_of_singleton_2. reflexivity.
-  - intros a Ha.
-    apply elem_of_union_r.
-    rewrite fv_tapp_tm.
-    cbn [fv_tm].
-    apply elem_of_union_l. exact Ha.
-  - exact Hclosed.
-  - exact Hvf.
-  - exact Hres.
+       fv_tm (tapp_tm (tret vf) (vfvar y)))
+    vf y z ltac:(intros a Ha; exact Ha) Hclosed Hvf Hres).
 Qed.
 
 Lemma tm_equiv_tapp_value_fun_arg_result_alias
