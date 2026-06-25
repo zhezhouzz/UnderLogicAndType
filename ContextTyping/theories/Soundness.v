@@ -269,29 +269,10 @@ Proof.
     - apply atom_store_to_lvar_store_closed.
     - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
   }
-  assert (Hworld_mx :
-      mx ⊨ basic_world_formula
-        (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))).
-  {
-    replace (atom_env_to_lty_env (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree x := erase_ty τ1]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply basic_world_insert_of_arg.
-    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
-    - eapply res_models_extend_mono; eauto.
-      eapply ctx_denote_under_basic_world; eauto.
-    - replace (atom_env_to_lty_env
-          (<[x := erase_ty τ1]> (ctx_erasure_under Σ Γ)))
-        with (<[LVFree x := erase_ty τ1]>
-          (atom_env_to_lty_env (ctx_erasure_under Σ Γ))) in Htarget.
-      + exact Htarget.
-      + symmetry. apply atom_store_to_lvar_store_insert.
-  }
-  eapply ctx_bind_from_inserted_erasure_denotation.
+  eapply ctx_bind_from_inserted_erasure_arg_denotation.
   - exact HxΔ.
   - eapply ctx_erasure_under_agree_union_on_ty. exact Hwf.
-  - exact Hworld_mx.
+  - eapply res_models_extend_mono; eauto.
   - exact Htarget.
 Qed.
 

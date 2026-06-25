@@ -181,6 +181,22 @@ Round 8: Soundness entry syntax freshness.
 - Soundness now uses lower syntax facts directly:
   `context_ty_lvars_free_notin_of_fv` and `notin_fv_tm_tlete`.
 
+Round 9: inserted-erasure bind construction.
+
+- Added `ctx_bind_from_inserted_erasure_arg_denotation` in
+  `Denotation/theories/Context.v`.
+- Replaced repeated local proof bodies that first built an inserted
+  `basic_world_formula` with `basic_world_insert_of_arg` and then called
+  `ctx_bind_from_inserted_erasure_denotation`.
+- Updated call sites:
+  - `SoundnessLamArrow.lam_arrow_open_arg_to_bind_ctx`
+  - `SoundnessFixOpen.fix_arrow_open_arg_to_bind_ctx`
+  - `SoundnessFixSelf.fix_rec_child_ctx_from_arg`
+  - `Soundness.ctx_bind_of_result_ext`
+- This keeps the semantic checkpoint as a reusable regular lemma while
+  removing duplicated `atom_store_to_lvar_store_insert` / inserted-world
+  proof blocks from Soundness files.
+
 Deferred Candidates
 -------------------
 

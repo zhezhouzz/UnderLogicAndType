@@ -209,25 +209,8 @@ Proof.
   pose proof (fix_arrow_open_arg_to_bind_denotation
     Σ Γ τx τ vf b t my y Hwf Harg)
     as Hbind_den.
-  assert (Hworld_bind :
-      my ⊨ basic_world_formula
-        (atom_env_to_lty_env (<[y := erase_ty τx]> (ctx_erasure_under Σ Γ)))).
-  {
-    replace (atom_env_to_lty_env (<[y := erase_ty τx]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree y := erase_ty τx]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply (basic_world_insert_of_arg
-      (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx y
-      (erase_ty τx) (cty_depth τx)); eauto.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
-    - exact (ctx_denote_under_basic_world Σ Γ my Hctx_my).
-    - rewrite <- atom_store_to_lvar_store_insert.
-      exact Hbind_den.
-  }
-	  eapply ctx_bind_from_inserted_erasure_denotation.
-	  - eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
+  eapply ctx_bind_from_inserted_erasure_arg_denotation.
+  - eapply fix_open_fresh_ctx_erasure_under_from_fix_union. exact Hy.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf) as Hwfctx.
     pose proof (wf_ctx_under_basic Σ Γ Hwfctx) as HbasicΓ.
@@ -238,7 +221,7 @@ Proof.
     eapply ty_env_agree_ctx_erasure_under_of_basic_ctx.
     + exact HbasicΓ.
     + eapply wf_context_ty_at_fv_subset. exact Hτx.
-  - exact Hworld_bind.
+  - exact Hctx_my.
   - exact Hbind_den.
 Qed.
 

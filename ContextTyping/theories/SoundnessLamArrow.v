@@ -113,24 +113,7 @@ Proof.
   pose proof (lam_arrow_open_arg_to_bind_denotation
     Σ Γ τx τ e my y Hwf Hy Harg)
     as Hbind_den.
-  assert (Hworld_bind :
-      my ⊨ basic_world_formula
-        (atom_env_to_lty_env (<[y := erase_ty τx]> (ctx_erasure_under Σ Γ)))).
-  {
-    replace (atom_env_to_lty_env (<[y := erase_ty τx]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree y := erase_ty τx]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-    eapply (basic_world_insert_of_arg
-      (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx y
-      (erase_ty τx) (cty_depth τx)); eauto.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      ctx_erasure_under_norm_in Hy. better_set_solver.
-    - exact (ctx_denote_under_basic_world Σ Γ my Hctx_my).
-    - rewrite <- atom_store_to_lvar_store_insert.
-      exact Hbind_den.
-  }
-  eapply ctx_bind_from_inserted_erasure_denotation.
+  eapply ctx_bind_from_inserted_erasure_arg_denotation.
   - ctx_erasure_under_norm_in Hy. better_set_solver.
   - pose proof (context_typing_wf_ctx Σ Γ
       (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf) as Hwfctx.
@@ -151,7 +134,7 @@ Proof.
     transitivity ((erase_ctx Γ : gmap atom ty) !! z).
     + apply lookup_union_r. exact HΣnone.
     + exact Herase.
-  - exact Hworld_bind.
+  - exact Hctx_my.
   - exact Hbind_den.
 Qed.
 

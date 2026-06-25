@@ -879,6 +879,33 @@ Proof.
   exact Harg_target.
 Qed.
 
+Lemma ctx_bind_from_inserted_erasure_arg_denotation
+    (Σ : gmap atom ty) Γ x τ (m : WfWorldT) :
+  x ∉ dom (ctx_erasure_under Σ Γ) ->
+  ty_env_agree_on (fv_cty τ) (Σ ∪ erase_ctx Γ) (ctx_erasure_under Σ Γ) ->
+  m ⊨ ctx_denote_under Σ Γ ->
+  m ⊨ ty_denote_gas (cty_depth τ)
+    (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+    τ (tret (vfvar x)) ->
+  m ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind x τ).
+Proof.
+  intros HxΔ Hagree Hctx Harg.
+  assert (Hworld :
+      m ⊨ basic_world_formula
+        (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))).
+  {
+    replace (atom_env_to_lty_env (<[x := erase_ty τ]> (ctx_erasure_under Σ Γ)))
+      with (<[LVFree x := erase_ty τ]>
+        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
+    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
+    eapply basic_world_insert_of_arg.
+    - apply atom_env_to_lty_env_dom_free_notin. exact HxΔ.
+    - exact (ctx_denote_under_basic_world Σ Γ m Hctx).
+    - rewrite <- atom_store_to_lvar_store_insert. exact Harg.
+  }
+  eapply ctx_bind_from_inserted_erasure_denotation; eauto.
+Qed.
+
 Lemma ty_denote_gas_result_ext_base_env_transport
     (Σ : gmap atom ty) Γ τ x (mx : WfWorldT) :
   basic_context_ty (dom Σ) τ ->

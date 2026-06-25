@@ -452,3 +452,24 @@ Follow-up Batch J: ret-fvar regular extraction for open-result target worlds.
     warmed dependency rebuild
   - `timeout 180s make TIMED=1`
   - `rg -n "Admitted\\.|admit\\." -g '*.v' .` produced no matches.
+
+Follow-up Batch K: inserted-erasure bind regular lemma.
+
+- Added `ctx_bind_from_inserted_erasure_arg_denotation` to
+  `Denotation/theories/Context.v`.
+- The lemma packages a repeated proof pattern:
+  `ctx_denote_under Σ Γ`, inserted-erasure argument denotation, freshness, and
+  env agreement imply the `CtxBind` denotation.  Internally it derives the
+  inserted `basic_world_formula` via `basic_world_insert_of_arg` and then calls
+  `ctx_bind_from_inserted_erasure_denotation`.
+- Replaced repeated local `Hworld_bind` construction blocks in:
+  - `ContextTyping/theories/SoundnessLamArrow.v`
+  - `ContextTyping/theories/SoundnessFixOpen.v`
+  - `ContextTyping/theories/SoundnessFixSelf.v`
+  - `ContextTyping/theories/Soundness.v`
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/Context.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessLamArrow.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixOpen.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessFixSelf.vo`
+  - `timeout 20s make TIMED=1 ContextTyping/theories/Soundness.vo`

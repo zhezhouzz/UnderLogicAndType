@@ -431,25 +431,6 @@ Proof.
   {
     clear -Hz. set_solver.
   }
-  assert (Hworld_bind :
-      mz ⊨ basic_world_formula
-        (atom_env_to_lty_env (<[z := erase_ty τx]>
-          (ctx_erasure_under Σ Γ)))).
-  {
-    replace (atom_env_to_lty_env
-        (<[z := erase_ty τx]> (ctx_erasure_under Σ Γ)))
-      with (<[LVFree z := erase_ty τx]>
-        (atom_env_to_lty_env (ctx_erasure_under Σ Γ))).
-    2:{ symmetry. apply atom_store_to_lvar_store_insert. }
-	    eapply (basic_world_insert_of_arg
-	      (atom_env_to_lty_env (ctx_erasure_under Σ Γ)) τx z
-	      (erase_ty τx) (cty_depth τx)).
-	    - apply atom_env_to_lty_env_dom_free_notin.
-	      exact Hzctx_under.
-	    - exact (ctx_denote_under_basic_world Σ Γ mz HΓ_mz).
-	    - rewrite <- atom_store_to_lvar_store_insert.
-	      exact Harg_erasure.
-	  }
   assert (Hagree :
       ty_env_agree_on (fv_cty τx)
         (Σ ∪ erase_ctx Γ) (ctx_erasure_under Σ Γ)).
@@ -459,10 +440,10 @@ Proof.
   assert (Hbind :
       mz ⊨ ctx_denote_under (Σ ∪ erase_ctx Γ) (CtxBind z τx)).
   {
-    eapply ctx_bind_from_inserted_erasure_denotation.
+    eapply ctx_bind_from_inserted_erasure_arg_denotation.
     - exact Hzctx_under.
     - exact Hagree.
-    - exact Hworld_bind.
+    - exact HΓ_mz.
     - exact Harg_erasure.
   }
   subst τx.

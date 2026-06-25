@@ -851,36 +851,7 @@ Proof.
   assert (Hworld_y :
       n ⊨ basic_world_formula
         ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env)).
-  {
-    pose proof (ty_denote_gas_guard gas
-      (<[LVFree y := erase_ty τx]>
-        (relevant_env Σ (CTWand τx τr) e2))
-      τx (tret (vfvar y)) n Harg) as Hguard_arg.
-    repeat rewrite res_models_and_iff in Hguard_arg.
-    destruct Hguard_arg as [_ [Hworld_arg _]].
-    eapply (basic_world_formula_subenv
-      ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env)
-      (relevant_env
-        (<[LVFree y := erase_ty τx]>
-          (relevant_env Σ (CTWand τx τr) e2))
-        τx (tret (vfvar y))) n).
-    - intros v T Hlook.
-      rewrite lookup_insert_Some in Hlook.
-      destruct Hlook as [[<- <-]|[Hne Hlook]].
-      + unfold relevant_env, lty_env_restrict_lvars.
-        change ((storeA_restrict
-          (<[LVFree y := erase_ty τx]>
-            (relevant_env Σ (CTWand τx τr) e2))
-          (relevant_lvars τx (tret (vfvar y))) : lty_env) !!
-          LVFree y = Some (erase_ty τx)).
-        apply storeA_restrict_lookup_some_2.
-        * rewrite lookup_insert_eq. reflexivity.
-        * unfold relevant_lvars.
-          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-          set_solver.
-      + rewrite lookup_empty in Hlook. congruence.
-    - exact Hworld_arg.
-  }
+  { eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg. }
 	  assert (Hy_n : ({[y]} : aset) ⊆ world_dom (n : WorldT)).
 	  {
 	    apply basic_world_formula_models_iff in Hworld_y as [_ [Hdom_y _]].
@@ -946,36 +917,7 @@ Proof.
     assert (Hworld_y_n :
         n ⊨ basic_world_formula
           ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env)).
-    {
-    pose proof (ty_denote_gas_guard gas
-      (<[LVFree y := erase_ty τx]>
-        (relevant_env Σ (CTWand τx τr) e2))
-      τx (tret (vfvar y)) n Harg) as Hguard_arg.
-    repeat rewrite res_models_and_iff in Hguard_arg.
-    destruct Hguard_arg as [_ [Hworld_arg _]].
-    eapply (basic_world_formula_subenv
-      ((<[LVFree y := erase_ty τx]> (∅ : gmap logic_var ty)) : lty_env)
-      (relevant_env
-        (<[LVFree y := erase_ty τx]>
-          (relevant_env Σ (CTWand τx τr) e2))
-        τx (tret (vfvar y))) n).
-    - intros v T Hlook.
-      rewrite lookup_insert_Some in Hlook.
-      destruct Hlook as [[<- <-]|[Hne Hlook]].
-      + unfold relevant_env, lty_env_restrict_lvars.
-        change ((storeA_restrict
-          (<[LVFree y := erase_ty τx]>
-            (relevant_env Σ (CTWand τx τr) e2))
-          (relevant_lvars τx (tret (vfvar y))) : lty_env) !!
-          LVFree y = Some (erase_ty τx)).
-        apply storeA_restrict_lookup_some_2.
-        * rewrite lookup_insert_eq. reflexivity.
-        * unfold relevant_lvars.
-          cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-          set_solver.
-      + rewrite lookup_empty in Hlook. congruence.
-    - exact Hworld_arg.
-    }
+    { eapply ty_denote_gas_ret_fvar_basic_world_singleton. exact Harg. }
     eapply res_models_kripke; [apply res_product_le_l|exact Hworld_y_n].
   }
   pose proof (basic_world_formula_wand_open_result_big
