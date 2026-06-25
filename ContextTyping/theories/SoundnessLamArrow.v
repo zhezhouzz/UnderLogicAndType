@@ -451,6 +451,14 @@ Proof.
     exact (context_typing_wf_lc_tm
       Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf).
   }
+  assert (Hτ_lc1 : cty_lc_at 1 τ).
+  {
+    pose proof (context_typing_wf_context_ty
+      Σ Γ (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) Hwf)
+      as Hτwf.
+    cbn [wf_context_ty_at] in Hτwf.
+    eapply wf_context_ty_at_lc. exact (proj2 Hτwf).
+  }
   assert (HΣfresh :
       y ∉ lvars_fv
         (dom (typed_lty_env_bind
@@ -469,34 +477,27 @@ Proof.
     rewrite fv_tapp_tm, tm_shift_fv.
     cbn [fv_tm fv_value]. set_solver.
   }
-  rewrite (formula_open_ty_denote_gas_singleton 0 y
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (typed_lty_env_bind
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTArrow τx τ) elam)
-      (erase_ty τx))
-    τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))
-    by (exact HΣfresh || exact Htmfresh || set_solver).
-  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
-  subst elam.
-  assert (Happ_mid_open :
-      my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-        (lty_env_open_one 0 y
-          (typed_lty_env_bind (atom_env_to_lty_env (erase_ctx Γ))
-            (erase_ty τx)))
-        (cty_open 0 y τ)
-        (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y))).
-  {
-    rewrite typed_lty_env_bind_open_current.
-    - exact Happ_mid.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      eapply soundness_fresh_erase_ctx_from_context_union; exact Hy.
-    - apply atom_store_to_lvar_store_closed.
+	  rewrite (formula_open_ty_denote_gas_singleton 0 y
+	    (Nat.max (cty_depth τx) (cty_depth τ))
+	    (typed_lty_env_bind
+	      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
+	        (CTArrow τx τ) elam)
+	      (erase_ty τx))
+	    τ (tapp_tm (tm_shift 0 elam) (vbvar 0)))
+	    by (exact HΣfresh || exact Htmfresh || set_solver).
+	  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
+	  subst elam.
+  rewrite typed_lty_env_bind_open_current.
+  2:{
+    apply soundness_relevant_env_arrow_value_fresh.
+    cbn [fv_value]. clear -Hy. better_set_solver.
   }
-  eapply ty_equiv_arrow_result_tgt_goal.
+  2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+	  eapply ty_equiv_arrow_result_tgt_goal.
   - exact Hlc_elam.
   - set_solver.
-  - exact Happ_mid_open.
+  - apply arrow_result_open_vars_subset; [exact Hτ_lc1|set_solver].
+  - exact Happ_mid.
 Qed.
 
 Lemma lam_body_to_opened_arrow_result

@@ -497,12 +497,10 @@ Proof.
         (cty_open 0 y τ)
         (tapp_tm efix (vfvar y))).
   {
-    assert (Happ_src_raw :
+    assert (Happ_src_norm :
         my ⊨ ty_denote_gas gas
-          (lty_env_open_one 0 y
-            (typed_lty_env_bind
-              (relevant_env Δ (CTArrow τx τ) efix)
-              (erase_ty τx)))
+          (<[LVFree y := erase_ty τx]>
+            (relevant_env Δ (CTArrow τx τ) efix))
           (cty_open 0 y τ)
           (tapp_tm efix (vfvar y))).
     {
@@ -518,7 +516,14 @@ Proof.
           (erase_ty τx))
         τ (tapp_tm (tm_shift 0 efix) (vbvar 0))) in Happ_src.
       - rewrite open_tapp_tm_shift_bvar0_lc in Happ_src by exact Hlc_efix.
+        rewrite typed_lty_env_bind_open_current in Happ_src.
         exact Happ_src.
+        + eapply relevant_env_arrow_fresh_free.
+          * clear -Hy_fresh. better_set_solver.
+          * clear -Hy_fresh. better_set_solver.
+          * subst efix. cbn [fv_tm fv_value].
+            clear -Hy_fresh. better_set_solver.
+        + apply relevant_env_closed. apply atom_store_to_lvar_store_closed.
       - apply soundness_typed_bind_arrow_value_fresh.
         subst efix τx.
         cbn [fv_value]. clear -Hy_fresh. better_set_solver.
@@ -527,17 +532,22 @@ Proof.
         clear -Hy_fresh. better_set_solver.
       - clear -Hy_fresh. better_set_solver.
     }
-    pose proof (ty_equiv_arrow_result_src_mid
-      gas Δ τx τ efix my y Hlc_efix
+    pose proof (ty_equiv_arrow_result_src_mid_inserted
+      gas Δ τx τ efix my y
+      ltac:(subst Δ; apply atom_store_to_lvar_store_closed)
+      ltac:(subst Δ; apply atom_env_to_lty_env_dom_free_notin;
+        eapply (soundness_fresh_erase_ctx_from_context_union
+          Σ Γ y (fv_value vf) (fv_cty τx) (fv_cty τ));
+        clear -Hy_fresh; better_set_solver)
+      ltac:(eapply relevant_env_arrow_fresh_free;
+        [clear -Hy_fresh; better_set_solver
+        |clear -Hy_fresh; better_set_solver
+        |subst efix; cbn [fv_tm fv_value];
+          clear -Hy_fresh; better_set_solver])
+      Hlc_efix Hτ_lc1
       ltac:(clear -Hy_fresh; better_set_solver)
-      Happ_src_raw) as Hmid_open.
-    rewrite typed_lty_env_bind_open_current in Hmid_open.
-    - exact Hmid_open.
-    - apply atom_env_to_lty_env_dom_free_notin.
-      eapply (soundness_fresh_erase_ctx_from_context_union
-        Σ Γ y (fv_value vf) (fv_cty τx) (fv_cty τ)).
-      clear -Hy_fresh. better_set_solver.
-    - apply atom_store_to_lvar_store_closed.
+      Happ_src_norm) as Hmid_open.
+    exact Hmid_open.
   }
   pose proof (ty_denote_gas_tapp_fun_result_alias_from_static
     gas (<[LVFree y := erase_ty τx]> Δ) (cty_open 0 y τ)

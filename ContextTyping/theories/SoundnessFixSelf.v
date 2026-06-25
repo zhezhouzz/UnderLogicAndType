@@ -590,6 +590,14 @@ Proof.
         (cty_open 0 z τ)
         (tapp_tm self (vfvar z))).
   {
+    assert (Hτ_lc1 : cty_lc_at 1 τ).
+    {
+      pose proof (context_typing_wf_context_ty Σ Γ
+        (tret (vfix (TBase b →ₜ t) vf))
+        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
+      cbn [wf_context_ty_at] in Hτ_arrow.
+      exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
+    }
     eapply ty_equiv_arrow_result_src_mid_inserted.
     - subst Δ. apply atom_store_to_lvar_store_closed.
     - subst Δ. apply atom_env_to_lty_env_dom_free_notin.
@@ -599,6 +607,7 @@ Proof.
       + exact Hzτ.
       + subst self. exact Hzself.
     - exact Hlc_self.
+    - exact Hτ_lc1.
     - exact Hzτ.
     - exact Houter_rel.
   }
@@ -691,6 +700,14 @@ Proof.
         (cty_open 0 z τ)
         (tapp_tm self (vfvar z))).
   {
+    assert (Hτ_lc1 : cty_lc_at 1 τ).
+    {
+      pose proof (context_typing_wf_context_ty Σ Γ
+        (tret (vfix (TBase b →ₜ t) vf))
+        (CTArrow (over_ty b φx) τ) Hwf) as Hτ_arrow.
+      cbn [wf_context_ty_at] in Hτ_arrow.
+      exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
+    }
     eapply ty_equiv_arrow_result_tgt_goal_inserted.
     - subst Δx Δ. apply lty_env_closed_insert_free.
       apply atom_store_to_lvar_store_closed.
@@ -709,6 +726,7 @@ Proof.
       + exact Hzτself_fix.
       + exact Hzself.
     - subst self. exact Hlc_self.
+    - exact Hτ_lc1.
     - exact Hzτ.
     - exact Hmid_x.
   }

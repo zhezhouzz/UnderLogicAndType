@@ -458,15 +458,13 @@ Lemma appd_open_result_env_agree
   context_typing_wf Σ (CtxStar Γ1 Γ2)
     (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
   lty_env_restrict_lvars
-    (lty_env_open_one 0 x
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx Γ1)) (erase_ty τx)))
+    (<[LVFree x := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx Γ1)))
     (relevant_lvars (cty_open 0 x τ)
       (tapp_tm (tret v1) (vfvar x))) =
   lty_env_restrict_lvars
-    (lty_env_open_one 0 x
-      (typed_lty_env_bind
-        (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))) (erase_ty τx)))
+    (<[LVFree x := erase_ty τx]>
+      (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2))))
     (relevant_lvars (cty_open 0 x τ)
       (tapp_tm (tret v1) (vfvar x))).
 Proof.
@@ -509,6 +507,8 @@ Proof.
         ltac:(apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor])) as Hlc_tm.
       exact (Hlc_tm u Hue).
   }
+  rewrite <- !lty_env_restrict_open_one_bind_as_insert
+    by exact Hresult_rel_lc.
   eapply lty_env_restrict_open_one_bind_agree_on.
   - exact Hrel_lc.
   - intros y HyD Hyx.
@@ -586,22 +586,18 @@ Lemma appd_wand_result_to_arrow_open_result
   context_typing_wf Σ (CtxStar Γ1 Γ2)
     (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
   x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
-  m ⊨ formula_open 0 x
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
-          (CTWand τx τ) (tret v1))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))) ->
-  m ⊨ formula_open 0 x
-    (ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-      (typed_lty_env_bind
-        (relevant_env (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2)))
-          (CTArrow τx τ) (tret v1))
-        (erase_ty τx))
-      τ
-      (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
+  m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree x := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx Γ1))
+        (CTWand τx τ) (tret v1)))
+    (cty_open 0 x τ)
+    (tapp_tm (tret v1) (vfvar x)) ->
+  m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
+    (<[LVFree x := erase_ty τx]>
+      (relevant_env (atom_env_to_lty_env (erase_ctx (CtxStar Γ1 Γ2)))
+        (CTArrow τx τ) (tret v1)))
+    (cty_open 0 x τ)
+    (tapp_tm (tret v1) (vfvar x)).
 Proof.
   intros Hwf_fun Hwf_app Hfresh Hsrc.
   set (Δ1 := atom_env_to_lty_env (erase_ctx Γ1)) in *.
@@ -628,48 +624,6 @@ Proof.
     - exact Hlcτopen_result.
     - apply lc_tapp_tm; [constructor; exact Hlc_v1|constructor].
   }
-  assert (Htmfresh :
-      x ∉ fv_tm (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
-  {
-    rewrite fv_tapp_tm, tm_shift_fv.
-    cbn [fv_tm fv_value]. better_set_solver.
-  }
-  assert (HΣfresh_src :
-      x ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env Δ1 (CTWand τx τ) (tret v1))
-          (erase_ty τx)))).
-  {
-    apply soundness_typed_bind_wand_value_fresh.
-    soundness_fresh_solve.
-  }
-  assert (HΣfresh_tgt :
-      x ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env Δstar (CTArrow τx τ) (tret v1))
-          (erase_ty τx)))).
-  {
-    apply soundness_typed_bind_arrow_value_fresh.
-    soundness_fresh_solve.
-  }
-  rewrite (formula_open_ty_denote_gas_singleton 0 x
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (typed_lty_env_bind
-      (relevant_env Δ1 (CTWand τx τ) (tret v1))
-      (erase_ty τx))
-    τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))) in Hsrc
-    by (exact HΣfresh_src || exact Htmfresh || better_set_solver).
-  rewrite open_tapp_tm_shift_bvar0_lc in Hsrc
-    by (constructor; exact Hlc_v1).
-  rewrite (formula_open_ty_denote_gas_singleton 0 x
-    (Nat.max (cty_depth τx) (cty_depth τ))
-    (typed_lty_env_bind
-      (relevant_env Δstar (CTArrow τx τ) (tret v1))
-      (erase_ty τx))
-    τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0)))
-    by (exact HΣfresh_tgt || exact Htmfresh || better_set_solver).
-  rewrite open_tapp_tm_shift_bvar0_lc
-    by (constructor; exact Hlc_v1).
   assert (Hmid1 :
       m ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
         (<[LVFree x := erase_ty τx]> Δ1)
@@ -682,13 +636,9 @@ Proof.
             (relevant_env Δ1 (CTWand τx τ) (tret v1)))
           (cty_open 0 x τ)
           (tapp_tm (tret v1) (vfvar x))).
-    {
-      eapply res_models_ty_denote_gas_env_agree_on.
-      - reflexivity.
-      - apply lty_env_restrict_open_one_bind_as_insert.
-        exact Hresult_rel_lc.
-      - exact Hsrc.
-    }
+	    {
+	      exact Hsrc.
+	    }
 	    eapply ty_equiv_wand_result_src_mid.
 	    - constructor. exact Hlc_v1.
 	    - better_set_solver.
@@ -710,22 +660,9 @@ Proof.
   {
     eapply res_models_ty_denote_gas_env_agree_on.
     - reflexivity.
-    - transitivity (lty_env_restrict_lvars
-        (lty_env_open_one 0 x (typed_lty_env_bind Δ1 (erase_ty τx)))
-        (relevant_lvars (cty_open 0 x τ)
-          (tapp_tm (tret v1) (vfvar x)))).
-      + symmetry. apply lty_env_restrict_open_one_bind_as_insert.
-        exact Hresult_rel_lc.
-      + transitivity (lty_env_restrict_lvars
-          (lty_env_open_one 0 x
-            (typed_lty_env_bind Δstar (erase_ty τx)))
-          (relevant_lvars (cty_open 0 x τ)
-            (tapp_tm (tret v1) (vfvar x)))).
-        * subst Δ1 Δstar.
-          exact (appd_open_result_env_agree Σ Γ1 Γ2 τx τ v1 x
-            Hwf_fun Hwf_app).
-        * apply lty_env_restrict_open_one_bind_as_insert.
-          exact Hresult_rel_lc.
+    - subst Δ1 Δstar.
+      exact (appd_open_result_env_agree Σ Γ1 Γ2 τx τ v1 x
+        Hwf_fun Hwf_app).
     - exact Hmid1.
   }
   assert (Hgoal_inserted :
@@ -734,18 +671,15 @@ Proof.
           (relevant_env Δstar (CTArrow τx τ) (tret v1)))
         (cty_open 0 x τ)
         (tapp_tm (tret v1) (vfvar x))).
-  {
-    eapply ty_equiv_arrow_result_tgt_goal_inserted_lc.
-    - constructor. exact Hlc_v1.
-    - better_set_solver.
-    - exact Hresult_rel_lc.
-    - exact Hmidstar.
-  }
-  eapply res_models_ty_denote_gas_env_agree_on.
-  - reflexivity.
-  - symmetry. apply lty_env_restrict_open_one_bind_as_insert.
-    exact Hresult_rel_lc.
-  - exact Hgoal_inserted.
+	  {
+	    eapply ty_equiv_arrow_result_tgt_goal_inserted_lc.
+	    - constructor. exact Hlc_v1.
+	    - better_set_solver.
+	    - exact Hτ_lc1.
+	    - exact Hresult_rel_lc.
+	    - exact Hmidstar.
+	  }
+  exact Hgoal_inserted.
 Qed.
 
 Lemma appd_wand_basic_world_insert_env
@@ -1170,79 +1104,35 @@ Proof.
     ltac:(eapply context_typing_wf_ret_lc_value; exact Hwf_fun)
     Hres_v1_z_pz Hbasic_fun_pz Hstatic_pz Hres_alias_src)
     as Htarget_pz.
-  assert (Htarget_opened_wand :
-      pz ⊨ formula_open 0 x
-        (ty_denote_gas gas
-          (typed_lty_env_bind Σrel (erase_ty τx))
-          τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0)))).
-  {
-    rewrite (formula_open_ty_denote_gas_singleton 0 x gas
-      (typed_lty_env_bind Σrel (erase_ty τx))
-      τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))).
-    2:{
-      rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply lvars_fv_elem in Hbad.
-      subst Σrel Δ1. apply relevant_env_wand_fresh_free in Hbad;
-        cbn [fv_tm fv_value]; clear -Hfresh Hbad; better_set_solver.
-    }
-    2:{ rewrite fv_tapp_tm, tm_shift_fv.
-        cbn [fv_tm fv_value]. clear -Hfresh. better_set_solver. }
-    2:{ clear -Hfresh. better_set_solver. }
-    rewrite open_tapp_tm_shift_bvar0_lc
-      by (constructor; eapply context_typing_wf_ret_lc_value; exact Hwf_fun).
-    rewrite (typed_lty_env_bind_open_current
-      x Σrel (erase_ty τx)).
-    - exact Htarget_pz.
-    - subst Σrel Δ1. apply relevant_env_wand_fresh_free;
-        cbn [fv_tm fv_value]; clear -Hfresh; better_set_solver.
-    - subst Σrel Δ1. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
-  }
-  pose proof (appd_wand_result_to_arrow_open_result
-    Σ Γ1 Γ2 τx τ v1 x pz Hwf_fun Hwf_app Hfresh
-    Htarget_opened_wand) as Htarget_opened_arrow.
-  assert (Htarget_arrow_norm :
+	  assert (Htarget_opened_wand :
+	      pz ⊨ ty_denote_gas gas
+	        (<[LVFree x := erase_ty τx]> Σrel)
+	        (cty_open 0 x τ)
+	        (tapp_tm (tret v1) (vfvar x))).
+	  {
+	    exact Htarget_pz.
+	  }
+	  pose proof (appd_wand_result_to_arrow_open_result
+	    Σ Γ1 Γ2 τx τ v1 x pz Hwf_fun Hwf_app Hfresh
+	    Htarget_opened_wand) as Htarget_opened_arrow.
+	  assert (Htarget_arrow_norm :
       pz ⊨ ty_denote_gas gas
-        (<[LVFree x := erase_ty τx]>
-          (relevant_env Δstar (CTArrow τx τ) (tret v1)))
-        (cty_open 0 x τ) (tapp_tm (tret v1) (vfvar x))).
+	        (<[LVFree x := erase_ty τx]>
+	          (relevant_env Δstar (CTArrow τx τ) (tret v1)))
+	        (cty_open 0 x τ) (tapp_tm (tret v1) (vfvar x))).
+	  {
+	    exact Htarget_opened_arrow.
+	  }
+  assert (Hτ_lc1 : cty_lc_at 1 τ).
   {
-    change (pz ⊨ formula_open 0 x
-      (ty_denote_gas gas
-        (typed_lty_env_bind
-          (relevant_env Δstar (CTArrow τx τ) (tret v1))
-          (erase_ty τx))
-        τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0))))
-      in Htarget_opened_arrow.
-    rewrite (formula_open_ty_denote_gas_singleton 0 x gas
-      (typed_lty_env_bind
-        (relevant_env Δstar (CTArrow τx τ) (tret v1))
-        (erase_ty τx))
-      τ (tapp_tm (tm_shift 0 (tret v1)) (vbvar 0)))
-      in Htarget_opened_arrow.
-    2:{
-      rewrite typed_lty_env_bind_lvars_fv_dom.
-      intros Hbad. apply lvars_fv_elem in Hbad.
-      subst Δstar. apply relevant_env_arrow_fresh_free in Hbad;
-        cbn [fv_tm fv_value]; clear -Hfresh Hbad; better_set_solver.
-    }
-    2:{ rewrite fv_tapp_tm, tm_shift_fv.
-        cbn [fv_tm fv_value]. clear -Hfresh. better_set_solver. }
-    2:{ clear -Hfresh. better_set_solver. }
-    rewrite open_tapp_tm_shift_bvar0_lc in Htarget_opened_arrow
-      by (constructor; eapply context_typing_wf_ret_lc_value; exact Hwf_fun).
-    rewrite (typed_lty_env_bind_open_current
-      x (relevant_env Δstar (CTArrow τx τ) (tret v1)) (erase_ty τx))
-      in Htarget_opened_arrow.
-    - exact Htarget_opened_arrow.
-    - subst Δstar. apply relevant_env_arrow_fresh_free;
-        cbn [fv_tm fv_value]; clear -Hfresh; better_set_solver.
-    - subst Δstar. apply relevant_env_closed.
-      apply atom_store_to_lvar_store_closed.
+    pose proof (context_typing_wf_context_ty
+      Σ Γ1 (tret v1) (CTWand τx τ) Hwf_fun) as Hτfun.
+    cbn [wf_context_ty_at] in Hτfun.
+    exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ1)) τ (proj2 Hτfun)).
   }
-  pose proof (app_arrow_result_to_target
-    Σ (CtxStar Γ1 Γ2) τx τ v1 x pz Hwf_app Hfresh
-    Harg_pz_star Htarget_arrow_norm) as Htarget_pz_final.
+	  pose proof (app_arrow_result_to_target
+	    Σ (CtxStar Γ1 Γ2) τx τ v1 x pz Hwf_app Hτ_lc1 Hfresh
+	    Harg_pz_star Htarget_arrow_norm) as Htarget_pz_final.
   assert (Htarget_psmall :
       psmall ⊨ ty_denote_gas (cty_depth ({0 ~> x} τ))
         Δstar ({0 ~> x} τ) (tapp v1 (vfvar x))).

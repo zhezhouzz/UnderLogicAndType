@@ -192,6 +192,7 @@ Qed.
 Lemma app_arrow_result_to_target
     Σ Γ τx τ v1 x (m : WfWorldT) :
   context_typing_wf Σ Γ (tapp v1 (vfvar x)) ({0 ~> x} τ) ->
+  cty_lc_at 1 τ ->
   x ∉ fv_value v1 ∪ fv_cty τx ∪ fv_cty τ ->
   m ⊨ ty_denote_gas (cty_depth τx)
         (atom_env_to_lty_env (erase_ctx Γ))
@@ -205,7 +206,7 @@ Lemma app_arrow_result_to_target
         (atom_env_to_lty_env (erase_ctx Γ))
         ({0 ~> x} τ) (tapp v1 (vfvar x)).
 Proof.
-  intros Hwf Hfresh Harg Hopened.
+  intros Hwf Hτ_lc1 Hfresh Harg Hopened.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
   pose proof (context_typing_wf_app_fun_lc_value
     Σ Γ v1 (vfvar x) ({0 ~> x} τ) Hwf) as Hlc_v1.
@@ -231,14 +232,15 @@ Proof.
       Δ τx τ (tret v1) m x
       ltac:(apply atom_store_to_lvar_store_closed)
       HΔx
-      ltac:(exact Hrel_env_fresh)
-      ltac:(constructor; exact Hlc_v1)
-      ltac:(pose proof (context_typing_wf_context_ty Σ Γ
-        (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf) as Hτopen_wf;
-        change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf;
-        exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ))
-          (cty_open 0 x τ) Hτopen_wf))
-      ltac:(better_set_solver) Hopened) as Hmid.
+	      ltac:(exact Hrel_env_fresh)
+	      ltac:(constructor; exact Hlc_v1)
+	      Hτ_lc1
+	      ltac:(pose proof (context_typing_wf_context_ty Σ Γ
+	        (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf) as Hτopen_wf;
+	        change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf;
+	        exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ))
+	          (cty_open 0 x τ) Hτopen_wf))
+	      ltac:(better_set_solver) Hopened) as Hmid.
     exact Hmid.
   }
   assert (Hzero_src :
@@ -1146,6 +1148,10 @@ Proof.
   }
   subst gas.
   eapply app_arrow_result_to_target; eauto.
+  pose proof (context_typing_wf_context_ty Σ Γ
+    (tret v1) (CTArrow τx τ) Hwf_fun) as Hτfun.
+  cbn [wf_context_ty_at] in Hτfun.
+  exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτfun)).
 Qed.
 
 
