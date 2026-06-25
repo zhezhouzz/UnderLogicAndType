@@ -568,3 +568,21 @@ Follow-up Batch P: Arrow/Wand guard regular cleanup.
     completed in about 1.81s after the final edit.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWand.vo`
     completed in about 1.27s after the final edit.
+
+Follow-up Batch Q: persistent ret-intro regular cleanup.
+
+- Replaced repeated guard/basic-typing destructs in the ret-value and ret-fvar
+  persistent intro proofs:
+  - `ContextTyping/theories/SoundnessPersist.v`;
+  - `Denotation/theories/TypePersistSingleton.v`.
+- Both proofs now use:
+  - `ty_guard_formula_context_wf`;
+  - `ty_guard_formula_basic_world`;
+  - `ty_denote_gas_tm_lvars_relevant_env_dom`.
+- This removes another duplicated route through
+  `expr_basic_typing_formula_models_iff` and `basic_tm_has_ltype_lvars`.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistSingleton.vo`
+    completed in about 1.71s.
+  - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessPersist.vo`
+    completed in about 1.80s after dependent recompilation.

@@ -670,11 +670,8 @@ Proof.
     in Hres
     by (apply relevant_env_closed; exact HΣclosed).
   rewrite relevant_env_persist_eq in Hres.
-  pose proof (res_models_and_elim_l _ _ _ Hguard_src) as Hwf_src.
-  pose proof (res_models_and_elim_r _ _ _ Hguard_src) as Hguard_rest_src.
-  pose proof (res_models_and_elim_l _ _ _ Hguard_rest_src) as Hworld_src.
-  pose proof (res_models_and_elim_r _ _ _ Hguard_rest_src) as Hguard_tail_src.
-  pose proof (res_models_and_elim_l _ _ _ Hguard_tail_src) as Hbasic_src.
+  pose proof (ty_guard_formula_context_wf _ _ _ _ Hguard_src) as Hwf_src.
+  pose proof (ty_guard_formula_basic_world _ _ _ _ Hguard_src) as Hworld_src.
   pose proof Hworld_src as Hworld_src_info.
   apply basic_world_formula_models_iff in Hworld_src_info
     as [_ [Hrel_world _]].
@@ -688,21 +685,10 @@ Proof.
       (dom (relevant_env Σ τ (tret (vfvar z)))) τ);
       eauto.
   }
-  pose proof Hbasic_src as Hbasic_src_info.
-  apply expr_basic_typing_formula_models_iff in Hbasic_src_info
-    as [_ [_ Hbasic_lty_src]].
-  pose proof (basic_tm_has_ltype_lvars _ _ _ Hbasic_lty_src) as HtmD_src.
   assert (HtmD_ret_src :
       tm_lvars (tret (vfvar z)) ⊆ dom (relevant_env Σ τ (tret (vfvar z)))).
   {
-    cbn [tm_lvars tm_lvars_at value_lvars_at lvar_value_keys].
-    intros lv Hlv.
-    apply elem_of_singleton in Hlv. subst lv.
-    apply HtmD_src.
-    unfold lvars_of_atoms.
-    apply elem_of_map.
-    exists z. split; [reflexivity|].
-    cbn [fv_tm fv_value]. apply elem_of_singleton. reflexivity.
+    eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hden.
   }
 	  assert (Hzdom : z ∈ world_dom (m : WorldT)).
 	  {
