@@ -429,14 +429,12 @@ Proof.
         * exact Hdom_src.
         * exact Hrestrict_src.
 	      + split.
-        * eapply (res_models_kripke m mf_src).
-          -- change (m ⊑ mf_src).
-             rewrite <- Hrestrict_src. apply res_restrict_le.
-          -- exact Hzero_src.
-        * eapply (res_models_kripke m mf_src).
-          -- change (m ⊑ mf_src).
-             rewrite <- Hrestrict_src. apply res_restrict_le.
-          -- exact Hzero_tgt.
+	        * eapply (res_models_kripke m mf_src).
+	          -- rewrite <- Hrestrict_src. apply res_restrict_le.
+	          -- exact Hzero_src.
+	        * eapply (res_models_kripke m mf_src).
+	          -- rewrite <- Hrestrict_src. apply res_restrict_le.
+	          -- exact Hzero_tgt.
   }
 	  rewrite (formula_open_result_first_arrow_value_ret_bvar0
 	    gas (relevant_env Σ (CTArrow τx τr) e1) τx τr
