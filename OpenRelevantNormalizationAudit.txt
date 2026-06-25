@@ -137,3 +137,30 @@ Status: completed.
    statements; it is currently the largest Denotation consumer.
 4. `SoundnessApp.v` / `SoundnessAppD.v` / `SoundnessMatch.v`: normalize at the
    first opening point rather than in downstream helper lemmas.
+
+## Iteration 4: TypeDenote Open-Env Freshness
+
+Problem:
+
+- `formula_open_env_denot_guard`,
+  `relevant_env_result_domain_open_lift`,
+  `formula_open_env_ty_denote_gas_zero`, and
+  `formula_open_env_ty_denote_gas` exposed
+  `dom Σ ∪ relevant_lvars τ e` in their freshness premises.
+
+Action:
+
+- Replaced those premises with direct support:
+  `dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e)`.
+- Removed matching proof-local `unfold relevant_lvars in *` steps.
+
+Validation:
+
+- `timeout 20s make TIMED=1 Denotation/theories/TypeDenote.vo`
+- `timeout 180s make TIMED=1`
+
+Count movement:
+
+- `TypeDenote.v`: 115 -> 107 relevant wrapper hits.
+
+Status: completed.

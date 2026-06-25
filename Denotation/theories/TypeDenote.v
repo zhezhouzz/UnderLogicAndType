@@ -162,7 +162,7 @@ Proof.
 Qed.
 
 Lemma formula_open_env_denot_guard η Σ τ e :
-  open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
+  open_env_fresh_for_lvars η (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e)) ->
   open_env_values_inj η ->
   formula_open_env η
     (ty_guard_formula (relevant_env Σ τ e) τ e) =
@@ -177,11 +177,10 @@ Proof.
   rewrite !formula_open_env_and.
   rewrite formula_open_env_context_ty_wf_formula.
   2:{
-    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv.
-    pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars in *.
-    set_solver.
+	    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	    intros v Hv.
+	    pose proof (relevant_env_dom_subset_direct Σ τ e).
+	    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_basic_world_formula.
@@ -194,11 +193,10 @@ Proof.
   2: exact Hinj.
   rewrite formula_open_env_expr_basic_typing_formula.
   2:{
-    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
-    intros v Hv.
-    pose proof (relevant_env_dom_subset_direct Σ τ e).
-    unfold relevant_lvars in *.
-    set_solver.
+	    eapply open_env_fresh_for_lvars_mono; [|exact Hfresh].
+	    intros v Hv.
+	    pose proof (relevant_env_dom_subset_direct Σ τ e).
+	    set_solver.
   }
   2: exact Hinj.
   rewrite formula_open_env_expr_total_formula.
@@ -214,7 +212,7 @@ Proof.
 Qed.
 
 Lemma relevant_env_result_domain_open_lift η Σ τ e :
-  open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
+  open_env_fresh_for_lvars η (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e)) ->
   open_env_values_inj η ->
   lvars_open_env (kmap S η)
     (lvars_shift_from 0 (dom (relevant_env Σ τ e))) =
@@ -233,12 +231,11 @@ Unshelve.
     eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
     intros v Hv;
     pose proof (relevant_env_dom_subset_direct Σ τ e);
-    unfold relevant_lvars in *;
-    set_solver].
+	    set_solver].
 Qed.
 
 Lemma formula_open_env_ty_denote_gas_zero η Σ τ e :
-  open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
+  open_env_fresh_for_lvars η (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e)) ->
   open_env_values_inj η ->
   formula_open_env η (ty_denote_gas 0 Σ τ e) =
   ty_denote_gas 0
@@ -288,7 +285,6 @@ Ltac denot_open_env_qual_case η Hfresh Hinj φ e :=
             eapply open_env_fresh_for_lvars_mono; [|exact Hfresh];
             intros v Hv;
             pose proof (relevant_env_dom_subset_direct Σ τ e0);
-	            unfold relevant_lvars in *;
             set_solver
           | idtac ]
       end;
@@ -488,7 +484,7 @@ Proof.
 Qed.
 
 Lemma formula_open_env_ty_denote_gas η gas Σ τ e :
-  open_env_fresh_for_lvars η (dom Σ ∪ relevant_lvars τ e) ->
+  open_env_fresh_for_lvars η (dom Σ ∪ (context_ty_lvars τ ∪ tm_lvars e)) ->
   open_env_values_inj η ->
   formula_open_env η (ty_denote_gas gas Σ τ e) =
   ty_denote_gas gas
