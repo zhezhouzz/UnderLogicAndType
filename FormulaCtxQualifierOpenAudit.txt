@@ -110,3 +110,46 @@ Top buckets:
     `lamd_result_first_outer_result_plain`.
   - `SoundnessLamArrow.vo` and `Soundness.vo` compile.
 - Next active item: `SoundnessLamWand.v`, then `SoundnessFixApply.v`.
+
+## Current Focused Scan
+
+Command:
+
+```sh
+rg -n "formula_open 0 .*ty_denote_gas|formula_open 1 .*ty_denote_gas|\
+lty_env_open_one 0 .*typed_lty_env_bind|cty_open 0 .*cty_shift 0|\
+qual_open_atom 0" ContextTyping Denotation -g '*.v'
+```
+
+Remaining buckets:
+
+- `ContextTyping/theories/SoundnessLamWand.v`: only proof-local
+  `FBWand` argument/result bridges; public value-denotation statement is
+  already normalized.
+- `ContextTyping/theories/SoundnessFixApply.v`: public
+  `fix_body_arrow_outer_value_open` is normalized; remaining raw opens are
+  proof-local bridges when opening the normalized arrow value.
+- `Denotation/theories/TypeEquivFiberTransport.v`: old transport support
+  still exposes raw `lty_env_open_one` / `cty_open (cty_shift ...)`.
+  Clean same-purpose helpers exist in `TypeEquivArrow.v` and
+  `TypeEquivWand.v`; treat this file as a legacy support bucket before
+  changing callers.
+- `Denotation/theories/TypeEquivFiberBody.v`: Sum-body proof has raw
+  branch-open equivalence assertions.  This is proof-local but likely
+  optimizable by a normalized Sum-branch helper.
+- `Denotation/theories/TypeDenote.v`, `TypePersistBase.v`,
+  `ConstDenoteBase.v`: syntax/normalizer or normalized-body definitions;
+  raw opens are intentional unless a public theorem leaks them.
+
+## Internal Assert Cleanup
+
+- `Denotation/theories/TypeEquivFiberBody.v` Sum branch:
+  - Extracted the repeated raw-open branch-env transfer into the local
+    helper `sum_open_body_env_transport`.
+  - The main induction proof no longer contains the 50-line `replace
+    (formula_open ...)` block with explicit `lty_env_open_one` and
+    `cty_open (cty_shift ...)` transitivity chains.
+  - This is a local cleanup, not a lower-layer abstraction.  The helper still
+    exposes the raw opened Sum body, so the next semantic cleanup would be a
+    true normalized Sum-body API rather than moving this helper downward.
+  - `TypeEquivFiberBody.vo`, `TypeEquiv.vo`, and `Soundness.vo` compile.
