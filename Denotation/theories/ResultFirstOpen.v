@@ -135,14 +135,14 @@ Lemma result_first_result_body_relevant_subset τtop τr e f y :
   cty_lc_at 1 τr ->
   context_ty_lvars_at 1 τr ⊆ context_ty_lvars τtop ->
   y ∉ fv_cty τr ->
-  relevant_lvars (cty_open 0 y τr)
-    (tapp_tm (tret (vfvar f)) (vfvar y)) ∖ {[LVFree y]} ∖ {[LVFree f]} ⊆
-  relevant_lvars τtop e.
+  (context_ty_lvars (cty_open 0 y τr) ∪
+    tm_lvars (tapp_tm (tret (vfvar f)) (vfvar y))) ∖
+    {[LVFree y]} ∖ {[LVFree f]} ⊆
+  context_ty_lvars τtop ∪ tm_lvars e.
 Proof.
   intros Hlcτr Hτr_top Hyfresh v Hv.
   apply elem_of_difference in Hv as [Hv Hvf].
   apply elem_of_difference in Hv as [Hv Hvy].
-  unfold relevant_lvars in Hv |- *.
   apply elem_of_union in Hv as [Hvτ | Hve].
   - apply elem_of_union_l.
     apply Hτr_top.
