@@ -24,13 +24,6 @@ Local Ltac wand_fresh_from_disjoint Hfresh :=
     [ apply elem_of_union_l; apply elem_of_singleton; reflexivity
     | subst; wand_union_member ].
 
-Local Lemma lty_env_closed_empty : lty_env_closed (∅ : lty_env).
-Proof.
-  unfold lvar_store_closed, lc_lvars.
-  rewrite dom_empty_L.
-  intros v Hv. apply not_elem_of_empty in Hv. contradiction.
-Qed.
-
 Local Lemma wand_open_world_term_scope
     (Σ : lty_env) τx τr e1 e2 (m my : WfWorldT) y :
   typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
@@ -84,35 +77,6 @@ Proof.
     apply elem_of_union_r. exact Ha.
   - apply elem_of_singleton in Ha. subst a.
     rewrite Hdom. apply elem_of_union_r. apply elem_of_singleton. reflexivity.
-Qed.
-
-Local Lemma wand_product_tapp_apps_scope
-    (Σ : lty_env) τx τr e1 e2 (m n : WfWorldT)
-    y (Hc : world_compat n m) :
-  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
-  y ∈ world_dom (n : WorldT) ->
-  fv_tm (tapp_tm e1 (vfvar y)) ∪
-  fv_tm (tapp_tm e2 (vfvar y)) ⊆
-  world_dom (res_product n m Hc : WorldT).
-Proof.
-  intros Hequiv Hy a Ha.
-  pose proof (raw_le_dom (n : WorldT)
-    (res_product n m Hc : WorldT)
-    (res_product_le_l n m Hc)) as Hdom_l.
-  pose proof (raw_le_dom (m : WorldT)
-    (res_product n m Hc : WorldT)
-    (res_product_le_r n m Hc)) as Hdom_r.
-  apply elem_of_union in Ha as [Ha|Ha];
-    rewrite fv_tapp_tm in Ha; cbn [fv_value] in Ha;
-    apply elem_of_union in Ha as [Ha|Ha].
-  - apply Hdom_r.
-    eapply typed_total_equiv_term_scope; [exact Hequiv|].
-    apply elem_of_union_l. exact Ha.
-  - apply elem_of_singleton in Ha. subst a. apply Hdom_l. exact Hy.
-  - apply Hdom_r.
-    eapply typed_total_equiv_term_scope; [exact Hequiv|].
-    apply elem_of_union_r. exact Ha.
-  - apply elem_of_singleton in Ha. subst a. apply Hdom_l. exact Hy.
 Qed.
 
 Local Lemma wand_tapp_apps_fv_subset e1 e2 y :

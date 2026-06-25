@@ -39,60 +39,6 @@ Proof.
   soundness_fresh_solve.
 Qed.
 
-Local Lemma lam_wand_fresh_arg_ty
-    (Σ : tyctx) Γ τx τ e y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  y ∉ fv_cty τx.
-Proof.
-  intros Hy.
-  soundness_fresh_solve.
-Qed.
-
-Local Lemma lam_wand_fresh_result_ty
-    (Σ : tyctx) Γ τx τ e y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  y ∉ fv_cty τ.
-Proof.
-  intros Hy.
-  soundness_fresh_solve.
-Qed.
-
-Local Lemma lam_wand_shifted_tapp_fresh
-    (Σ : tyctx) Γ τx τ e y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪
-    fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-  y ∉ fv_tm
-    (tapp_tm (tm_shift 0 (tret (vlam (erase_ty τx) e))) (vbvar 0)).
-Proof.
-  intros Hy.
-  rewrite fv_tapp_tm, tm_shift_fv.
-  cbn [fv_tm fv_value].
-  pose proof (lam_wand_fresh_tm Σ Γ τx τ e y Hy) as Hye.
-  soundness_fresh_solve.
-Qed.
-
-Local Lemma lam_wand_open_shifted_tapp_denote_iff
-    gas (Σ : lty_env) τ elam (m : WfWorldT) y :
-  y ∉ lvars_fv (dom Σ) ->
-  y ∉ fv_tm (tapp_tm (tm_shift 0 elam) (vbvar 0)) ->
-  y ∉ fv_cty τ ->
-  lc_tm elam ->
-  (m ⊨ formula_open 0 y
-    (ty_denote_gas gas Σ τ
-      (tapp_tm (tm_shift 0 elam) (vbvar 0)))) <->
-  (m ⊨ ty_denote_gas gas (lty_env_open_one 0 y Σ)
-    (cty_open 0 y τ) (tapp_tm elam (vfvar y))).
-Proof.
-  intros HΣfresh Htmfresh Hτfresh Hlc_elam.
-  rewrite (formula_open_ty_denote_gas_singleton 0 y gas Σ τ
-    (tapp_tm (tm_shift 0 elam) (vbvar 0)))
-    by (exact HΣfresh || exact Htmfresh || exact Hτfresh).
-  rewrite open_tapp_tm_shift_bvar0_lc by exact Hlc_elam.
-  reflexivity.
-Qed.
-
 Lemma lamd_wand_open_arg_to_bind_denotation
     (Σ : tyctx) Γ τx τ e
     (n : WfWorldT) y :

@@ -51,18 +51,6 @@ Proof.
   apply elem_of_union in Hx as [Hx | Hx]; auto.
 Qed.
 
-Local Lemma soundness_singleton_union_empty_elem y :
-  y ∈ ({[y]} ∪ ∅ : aset).
-Proof.
-  set_solver.
-Qed.
-
-Local Lemma soundness_union_singleton_empty_r (X : aset) y :
-  X ∪ ({[y]} ∪ ∅ : aset) = X ∪ ({[y]} : aset).
-Proof.
-  set_solver.
-Qed.
-
 (** Totality extraction is intentionally a named review point.  The denotation
     guard contains [expr_total_formula], but future proofs around recursive
     functions should decide whether this extraction is direct or goes through

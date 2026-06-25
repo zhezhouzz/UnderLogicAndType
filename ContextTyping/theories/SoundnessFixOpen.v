@@ -20,20 +20,6 @@ From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase.
 
 Local Notation LStoreOnT := (LStoreOn (V := value)) (only parsing).
 
-Local Lemma fix_open_fresh_erase_ctx_from_union
-    (Σ : tyctx) Γ y X :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ X ->
-  y ∉ dom (erase_ctx Γ).
-Proof.
-  intros Hy.
-  eapply ctx_erasure_under_notin_erase_ctx.
-  intros Hyctx.
-  apply Hy.
-  apply elem_of_union_l.
-  apply elem_of_union_r.
-  exact Hyctx.
-Qed.
-
 Local Lemma fix_open_fresh_erase_ctx_from_fix_union
     (Σ : tyctx) Γ y A B C :
   y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
@@ -69,42 +55,6 @@ Proof.
   apply elem_of_union in Hin as [HyΣ|HyΓ].
   - apply Hy. clear -HyΣ. set_solver.
   - eapply fix_open_fresh_erase_ctx_from_fix_union; eauto.
-Qed.
-
-Local Lemma fix_open_fresh_lvar_ctx_erasure_under_from_fix_union
-    (Σ : tyctx) Γ y A B C :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ A ∪ B ∪ C ->
-  LVFree y ∉ dom (atom_env_to_lty_env (ctx_erasure_under Σ Γ)).
-Proof.
-  intros Hy Hbad.
-  rewrite atom_store_to_lvar_store_dom in Hbad.
-  unfold lvars_of_atoms in Hbad.
-  apply elem_of_map in Hbad as [a [Ha Hay]].
-  inversion Ha. subst a.
-  eapply fix_open_fresh_ctx_erasure_under_from_fix_union; eauto.
-Qed.
-
-Local Lemma fix_open_fresh_arrow_relevant_bind_lvars
-    (Σ : tyctx) Γ τx τ vf b t y :
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_value vf ∪
-      fv_cty τx ∪ fv_cty τ ->
-  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)))
-      (erase_ty τx))).
-Proof.
-  intros Hy Hyfv.
-  rewrite typed_lty_env_bind_lvars_fv_dom in Hyfv.
-  apply lvars_fv_elem in Hyfv.
-  pose proof (relevant_env_dom_subset_direct
-    (atom_env_to_lty_env (erase_ctx Γ))
-    (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf))) as Hrel.
-  pose proof (Hrel _ Hyfv) as Hatom.
-  rewrite atom_store_to_lvar_store_dom in Hatom.
-  rewrite <- lvars_fv_elem in Hatom.
-  rewrite lvars_fv_of_atoms in Hatom.
-  clear -Hy Hatom. better_set_solver.
 Qed.
 
 Lemma fix_arrow_opened_app_static_guard_full
