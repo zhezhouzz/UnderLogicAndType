@@ -449,32 +449,6 @@ Proof.
   - exact Happ_mid.
 Qed.
 
-Lemma lam_body_to_opened_arrow_result
-    (Σ : tyctx) Γ τx τ e
-    (my : WfWorldT) y :
-  context_typing_wf Σ Γ
-    (tret (vlam (erase_ty τx) e)) (CTArrow τx τ) ->
-  y ∉ dom Σ ∪ dom (ctx_erasure_under Σ Γ) ∪ fv_tm e ∪ fv_cty τx ∪ fv_cty τ ->
-	  my ⊨ ty_denote_under Σ (CtxComma Γ (CtxBind y τx))
-	    ({0 ~> y} τ) (e ^^ y) ->
-	  my ⊨ ty_static_guard_formula
-	    ((<[LVFree y := erase_ty τx]>
-      (atom_env_to_lty_env (erase_ctx Γ))))
-	    (cty_open 0 y τ)
-	    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)) ->
-	  my ⊨ ty_denote_gas (Nat.max (cty_depth τx) (cty_depth τ))
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-        (CTArrow τx τ) (tret (vlam (erase_ty τx) e))))
-    (cty_open 0 y τ)
-    (tapp_tm (tret (vlam (erase_ty τx) e)) (vfvar y)).
-Proof.
-		  intros Hwf Hy Hbody Hstatic.
-		  pose proof (lam_body_to_arrow_result_mid
-		    Σ Γ τx τ e my y Hwf Hy Hbody) as Hmid.
-		  eapply lam_arrow_result_mid_to_opened_goal; eauto.
-Qed.
-
 Lemma lam_opened_arrow_result
     (Σ : tyctx) Γ τx τ e (L : aset)
     (m my : WfWorldT) y :
@@ -526,11 +500,9 @@ Proof.
 		  pose proof (IH y HyL my Hctx_comma) as Hbody.
 		  pose proof (lam_arrow_opened_app_static_guard_full
 			    Σ Γ τx τ e my y Hwf Hy_rest Hctx_comma) as Hstatic_app.
-		  eapply (lam_body_to_opened_arrow_result Σ Γ τx τ e my y).
-  - exact Hwf.
-  - exact Hy_rest.
-  - exact Hbody.
-  - exact Hstatic_app.
+  pose proof (lam_body_to_arrow_result_mid
+    Σ Γ τx τ e my y Hwf Hy_rest Hbody) as Hmid.
+  eapply lam_arrow_result_mid_to_opened_goal; eauto.
 Qed.
 
 Lemma lam_result_first_outer_result_plain

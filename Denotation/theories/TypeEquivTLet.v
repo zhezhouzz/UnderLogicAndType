@@ -1055,246 +1055,6 @@ Proof.
   - clear -Ha_f. set_solver.
 Qed.
 
-Local Lemma tlet_intro_denotation_arrow_body
-    gas
-    (IH : forall (Σ : lty_env) (τ : context_ty)
-             (e1 e2 : tm) (x : atom) (Fx : FiberExtensionT)
-             (m mx : WfWorldT),
-      x ∉ fv_tm e2 ->
-      x ∉ fv_cty τ ->
-      expr_result_extension_witness e1 x Fx ->
-      res_extend_by m Fx mx ->
-      mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2))
-    (Σ : lty_env) τx τr e1 e2 x Fx m mx :
-  x ∉ fv_tm e2 ->
-  x ∉ fv_cty (CTArrow τx τr) ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m Fx mx ->
-  mx ⊨ ty_denote_gas 0 Σ (CTArrow τx τr) (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas 0 Σ (CTArrow τx τr) (tlete e1 e2) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))))
-          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))))
-          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))).
-Proof.
-  intros Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Hbody.
-  pose proof (typed_fiber_equiv_tlet_body_extension
-    Σ (CTArrow τx τr) e1 e2 x Fx m mx
-    Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet) as Hequiv.
-  pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hequiv)
-    as [_ Htlet_to_body].
-  eapply tlet_arrow_result_first_body_transport.
-  - exact Hzero_body.
-  - exact Hzero_tlet.
-  - exact Htlet_to_body.
-  - exact Hbody.
-Qed.
-
-Local Lemma tlet_intro_denotation_arrow_body_reverse
-    gas
-    (IH : forall (Σ : lty_env) (τ : context_ty)
-             (e1 e2 : tm) (x : atom) (Fx : FiberExtensionT)
-             (m mx : WfWorldT),
-      x ∉ fv_tm e2 ->
-      x ∉ fv_cty τ ->
-      expr_result_extension_witness e1 x Fx ->
-      res_extend_by m Fx mx ->
-      mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x))
-    (Σ : lty_env) τx τr e1 e2 x Fx m mx :
-  x ∉ fv_tm e2 ->
-  x ∉ fv_cty (CTArrow τx τr) ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m Fx mx ->
-  mx ⊨ ty_denote_gas 0 Σ (CTArrow τx τr) (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas 0 Σ (CTArrow τx τr) (tlete e1 e2) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))))
-          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (tlete e1 e2))
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))))
-          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
-        (arrow_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTArrow τx τr) (e2 ^^ x))
-            (erase_ty (CTArrow τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))).
-Proof.
-  intros Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Htlet.
-  pose proof (typed_fiber_equiv_tlet_body_extension
-    Σ (CTArrow τx τr) e1 e2 x Fx m mx
-    Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet) as Hequiv.
-  pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hequiv)
-    as [Hbody_to_tlet _].
-  eapply tlet_arrow_result_first_body_transport.
-  - exact Hzero_tlet.
-  - exact Hzero_body.
-  - exact Hbody_to_tlet.
-  - exact Htlet.
-Qed.
-
-Local Lemma tlet_intro_denotation_wand_body
-    gas
-    (IH : forall (Σ : lty_env) (τ : context_ty)
-             (e1 e2 : tm) (x : atom) (Fx : FiberExtensionT)
-             (m mx : WfWorldT),
-      x ∉ fv_tm e2 ->
-      x ∉ fv_cty τ ->
-      expr_result_extension_witness e1 x Fx ->
-      res_extend_by m Fx mx ->
-      mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2))
-    (Σ : lty_env) τx τr e1 e2 x Fx m mx :
-  x ∉ fv_tm e2 ->
-  x ∉ fv_cty (CTWand τx τr) ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m Fx mx ->
-  mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (tlete e1 e2) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTWand τx τr) (e2 ^^ x))))
-          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
-        (wand_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) (e2 ^^ x))
-            (erase_ty (CTWand τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTWand τx τr) (tlete e1 e2))))
-          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
-        (wand_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-            (erase_ty (CTWand τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))).
-Proof.
-  intros Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Hbody.
-  pose proof (typed_fiber_equiv_tlet_body_extension
-    Σ (CTWand τx τr) e1 e2 x Fx m mx
-    Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet) as Hequiv.
-  pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hequiv)
-    as [_ Htlet_to_body].
-  eapply tlet_wand_result_first_body_transport.
-  - exact Hzero_body.
-  - exact Hzero_tlet.
-  - exact Htlet_to_body.
-  - exact Hbody.
-Qed.
-
-Local Lemma tlet_intro_denotation_wand_body_reverse
-    gas
-    (IH : forall (Σ : lty_env) (τ : context_ty)
-             (e1 e2 : tm) (x : atom) (Fx : FiberExtensionT)
-             (m mx : WfWorldT),
-      x ∉ fv_tm e2 ->
-      x ∉ fv_cty τ ->
-      expr_result_extension_witness e1 x Fx ->
-      res_extend_by m Fx mx ->
-      mx ⊨ ty_denote_gas 0 Σ τ (e2 ^^ x) ->
-      mx ⊨ ty_denote_gas 0 Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (tlete e1 e2) ->
-      mx ⊨ ty_denote_gas gas Σ τ (e2 ^^ x))
-    (Σ : lty_env) τx τr e1 e2 x Fx m mx :
-  x ∉ fv_tm e2 ->
-  x ∉ fv_cty (CTWand τx τr) ->
-  expr_result_extension_witness e1 x Fx ->
-  res_extend_by m Fx mx ->
-  mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (e2 ^^ x) ->
-  mx ⊨ ty_denote_gas 0 Σ (CTWand τx τr) (tlete e1 e2) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTWand τx τr) (tlete e1 e2))))
-          (tm_shift 0 (tlete e1 e2)) (LVBound 0))
-        (wand_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) (tlete e1 e2))
-            (erase_ty (CTWand τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))) ->
-  mx ⊨
-    FForall
-      (FImpl
-        (expr_result_formula_at
-          (lvars_shift_from 0
-            (dom (relevant_env Σ (CTWand τx τr) (e2 ^^ x))))
-          (tm_shift 0 (e2 ^^ x)) (LVBound 0))
-        (wand_value_denote_gas_with ty_denote_gas gas
-          (typed_lty_env_bind
-            (relevant_env Σ (CTWand τx τr) (e2 ^^ x))
-            (erase_ty (CTWand τx τr)))
-          (cty_shift 0 τx) (cty_shift 1 τr)
-          (tret (vbvar 0)))).
-Proof.
-  intros Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Htlet.
-  pose proof (typed_fiber_equiv_tlet_body_extension
-    Σ (CTWand τx τr) e1 e2 x Fx m mx
-    Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet) as Hequiv.
-  pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hequiv)
-    as [Hbody_to_tlet _].
-  eapply tlet_wand_result_first_body_transport.
-  - exact Hzero_tlet.
-  - exact Hzero_body.
-  - exact Hbody_to_tlet.
-  - exact Htlet.
-Qed.
-
 Local Lemma tlet_persist_value_body_env_eq
     gas (Σ : lty_env) τ e_src e_tgt :
   lty_env_closed (relevant_env Σ (CTPersist τ) e_src) ->
@@ -1608,13 +1368,15 @@ Proof.
       exact (ty_denote_gas_tm_fiber_equiv_sum_body
         gas Σ τ1 τ2 (e2 ^^ x) (tlete e1 e2) mx Hfib Hbody).
     + split; [exact Hguard_tlet|].
-      exact (tlet_intro_denotation_arrow_body
-        gas IH Σ τx τr e1 e2 x Fx m mx
-        Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Hbody).
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [_ Htlet_to_body].
+      eapply tlet_arrow_result_first_body_transport;
+        [exact Hzero_body|exact Hzero_tlet|exact Htlet_to_body|exact Hbody].
     + split; [exact Hguard_tlet|].
-      exact (tlet_intro_denotation_wand_body
-        gas IH Σ τx τr e1 e2 x Fx m mx
-        Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Hbody).
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [_ Htlet_to_body].
+      eapply tlet_wand_result_first_body_transport;
+        [exact Hzero_body|exact Hzero_tlet|exact Htlet_to_body|exact Hbody].
     + split; [exact Hguard_tlet|].
       pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
         as [_ Htlet_to_body].
@@ -1702,13 +1464,15 @@ Proof.
       exact (ty_denote_gas_tm_fiber_equiv_sum_body
         gas Σ τ1 τ2 (tlete e1 e2) (e2 ^^ x) mx Hfib_sym Htlet).
     + split; [exact Hguard_body|].
-      exact (tlet_intro_denotation_arrow_body_reverse
-        gas IH Σ τx τr e1 e2 x Fx m mx
-        Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Htlet).
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [Hbody_to_tlet _].
+      eapply tlet_arrow_result_first_body_transport;
+        [exact Hzero_tlet|exact Hzero_body|exact Hbody_to_tlet|exact Htlet].
     + split; [exact Hguard_body|].
-      exact (tlet_intro_denotation_wand_body_reverse
-        gas IH Σ τx τr e1 e2 x Fx m mx
-        Hxe2 Hxτ HFx Hext Hzero_body Hzero_tlet Htlet).
+      pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib)
+        as [Hbody_to_tlet _].
+      eapply tlet_wand_result_first_body_transport;
+        [exact Hzero_tlet|exact Hzero_body|exact Hbody_to_tlet|exact Htlet].
     + split; [exact Hguard_body|].
       pose proof (typed_fiber_equiv_result_projected _ _ _ _ _ Hfib_sym)
         as [_ Hbody_to_tlet].
