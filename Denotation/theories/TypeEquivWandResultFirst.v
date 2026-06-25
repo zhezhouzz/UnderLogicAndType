@@ -710,9 +710,9 @@ Proof.
 	          (dom (relevant_env Σ (CTWand τx τr) e1)) HlcΣ_src).
 	        apply elem_of_union_l. exact Hbad.
 	      }
-	      pose proof (ty_denote_gas_tm_equiv_wand_open_arg_fbwand
-	        gas Σ τx τr e1 e2 mf_src n a Hequiv_src
-	        Hyτx Hlcτx HlcΣ_src HlcΣ_tgt HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
+		      pose proof (@ty_denote_gas_tm_equiv_wand_open_arg_fbwand
+		        gas Σ τx τr e1 e2 n a
+		        Harg_tgt_open) as Harg_src.
 	      assert (Harg_src_formula :
           n ⊨ formula_open 0 a
             (formula_open 1 f

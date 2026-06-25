@@ -680,9 +680,8 @@ Proof.
         - exact Hyτx.
         - exact Harg_tgt.
       }
-	      pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
-	        gas Σ τx τr e1 e2 mf_src my y Hequiv_src Hdom_y Hrestrict_y
-	        Hyτx Hlcτx HlcΣ_src HlcΣ_tgt HyΣ1 HyΣ2 Harg_tgt_open) as Harg_src.
+		      pose proof (ty_denote_gas_tm_equiv_arrow_open_arg
+		        gas Σ τx τr e1 e2 my y Harg_tgt_open) as Harg_src.
 	      assert (Harg_src_formula :
 	          my ⊨ formula_open 0 y
 		    (formula_open 1 f

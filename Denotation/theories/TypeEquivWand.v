@@ -166,54 +166,9 @@ Proof.
   - exact Harg.
 Qed.
 
-Lemma ty_denote_gas_tm_equiv_wand_open_arg
-    gas (Σ : lty_env) τx τr e1 e2
-    (m my n : WfWorldT) y (Hc : world_compat n my) :
-  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
-  world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
-  res_restrict my (world_dom (m : WorldT)) = m ->
-	  y ∉ fv_cty τx ->
-	  lc_context_ty τx ->
-	  lty_env_closed (relevant_env Σ (CTWand τx τr) e1) ->
-	  lty_env_closed (relevant_env Σ (CTWand τx τr) e2) ->
-	  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
-  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
-  n ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e2))
-    τx (tret (vfvar y)) ->
-  n ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e1))
-    τx (tret (vfvar y)).
-Proof.
-  intros _ _ _ _ _ _ _ _ _ Htgt.
-  pose proof (wand_open_arg_to_inserted_env
-    gas Σ τx τr e2 n y Htgt) as Hmid.
-  eapply res_models_ty_denote_gas_env_agree_on.
-  - reflexivity.
-  - symmetry. apply wand_arg_relevant_env_agree_insert_core.
-  - exact Hmid.
-Qed.
-
 Lemma ty_denote_gas_tm_equiv_wand_open_arg_fbwand
     gas (Σ : lty_env) τx τr e1 e2
-    (m n : WfWorldT) y :
-	  typed_total_equiv_on Σ (CTWand τx τr) m e1 e2 ->
-	  y ∉ fv_cty τx ->
-	  lc_context_ty τx ->
-	  lty_env_closed (relevant_env Σ (CTWand τx τr) e1) ->
-	  lty_env_closed (relevant_env Σ (CTWand τx τr) e2) ->
-	  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTWand τx τr) e1) (erase_ty τx))) ->
-  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTWand τx τr) e2) (erase_ty τx))) ->
+    (n : WfWorldT) y :
   n ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]>
       (relevant_env Σ (CTWand τx τr) e2))
@@ -223,7 +178,7 @@ Lemma ty_denote_gas_tm_equiv_wand_open_arg_fbwand
       (relevant_env Σ (CTWand τx τr) e1))
     τx (tret (vfvar y)).
 Proof.
-  intros _ _ _ _ _ _ _ Htgt.
+  intros Htgt.
   pose proof (wand_open_arg_to_inserted_env
     gas Σ τx τr e2 n y Htgt) as Hmid.
   eapply res_models_ty_denote_gas_env_agree_on.
