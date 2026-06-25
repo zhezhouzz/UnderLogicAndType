@@ -454,14 +454,12 @@ Lemma app_arrow_outer_value_open
     res_restrict mz (world_dom (m : WorldT)) = m /\
     res_restrict mz (world_dom (mz0 : WorldT)) = mz0 /\
     mz ⊨ expr_result_formula (tret v1) (LVFree z) /\
-    mz0 ⊨ formula_open 0 z
-      (arrow_value_denote_gas
+    mz0 ⊨ arrow_value_denote_gas_with ty_denote_gas
         (Nat.max (cty_depth τx) (cty_depth τ))
-        (typed_lty_env_bind
+        (<[LVFree z := erase_ty (CTArrow τx τ)]>
           (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) (tret v1))
-          (erase_ty (CTArrow τx τ)))
-        (cty_shift 0 τx) (cty_shift 1 τ) (tret (vbvar 0))).
+            (CTArrow τx τ) (tret v1)))
+        τx τ (tret (vfvar z)).
 Proof.
   intros Hwf_fun Hfresh Hfun Harg.
   set (Δ := atom_env_to_lty_env (erase_ctx Γ)) in *.
@@ -623,6 +621,41 @@ Proof.
 	  2:{ cbn [fv_tm fv_value]. clear -Hzfresh; better_set_solver. }
 	  pose proof (res_models_impl_elim _ _ _ Houter_open Hres_at)
 	    as Hvalue.
+	  assert (HΣrel_closed : lty_env_closed Σrel).
+	  { subst Σrel. apply relevant_env_closed.
+	    apply atom_store_to_lvar_store_closed. }
+	  assert (HzΣrel_dom : LVFree z ∉ dom (Σrel : lty_env)).
+	  {
+	    subst Σrel. apply soundness_relevant_env_arrow_value_fresh.
+	    clear -Hzfresh. better_set_solver.
+	  }
+	  assert (Hlcτx : lc_context_ty τx).
+	  {
+	    apply (context_typing_wf_arrow_arg_lc Σ Γ (tret v1) τx τ).
+	    exact Hwf_fun.
+	  }
+	  assert (Hlcτ : cty_lc_at 1 τ).
+	  {
+	    apply (context_typing_wf_arrow_result_lc1 Σ Γ (tret v1) τx τ).
+	    exact Hwf_fun.
+	  }
+	  assert (Hvalue_norm :
+	      mz0 ⊨ arrow_value_denote_gas_with ty_denote_gas
+	        (Nat.max (cty_depth τx) (cty_depth τ))
+	        (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
+	        τx τ (tret (vfvar z))).
+	  {
+	    rewrite <- (formula_open_result_first_arrow_value_ret_bvar0
+	      (Nat.max (cty_depth τx) (cty_depth τ))
+	      Σrel τx τ (erase_ty (CTArrow τx τ)) z).
+	    - exact Hvalue.
+	    - exact HΣrel_closed.
+	    - exact HzΣrel_dom.
+	    - exact Hlcτx.
+	    - exact Hlcτ.
+	    - clear -Hzfresh. better_set_solver.
+	    - clear -Hzfresh. better_set_solver.
+	  }
 	  assert (Hres_expr_mz0 :
 	      mz0 ⊨ expr_result_formula (tret v1) (LVFree z)).
 	  {
@@ -646,7 +679,7 @@ Proof.
   split; [exact Hmz_restrict_m|].
   split; [exact Hmz_restrict_mz0|].
   split; [exact Hres_expr_mz|].
-  exact Hvalue.
+  exact Hvalue_norm.
 Qed.
 
 Lemma app_arrow_result_first_arg_antecedent
@@ -812,28 +845,13 @@ Proof.
   { clear -Hzfresh. better_set_solver. }
   assert (Hxτ : x ∉ fv_cty τx ∪ fv_cty τ).
   { clear -Hfresh. better_set_solver. }
-  assert (Hvalue_norm :
-      mz0 ⊨ arrow_value_denote_gas_with ty_denote_gas gas
-        (<[LVFree z := erase_ty (CTArrow τx τ)]> Σrel)
-        τx τ (tret (vfvar z))).
-  {
-    rewrite <- (formula_open_result_first_arrow_value_ret_bvar0
-      gas Σrel τx τ (erase_ty (CTArrow τx τ)) z).
-    - exact Hvalue.
-    - exact HΣrel_closed.
-    - exact HzΣrel.
-    - exact Hlcτx.
-    - exact Hlcτ.
-    - clear -Hzτ. set_solver.
-    - clear -Hzτ. set_solver.
-  }
   pose proof (arrow_value_open_arg_to_regular_imp
     gas Σrel τx τ (erase_ty (CTArrow τx τ)) z x mz0 mz
     HΣrel_closed HzΣrel Hzx
     ltac:(rewrite dom_insert_L; intros Hbad;
       apply elem_of_union in Hbad as [Hbad|Hbad];
       [apply elem_of_singleton in Hbad; congruence|exact (HxΣrel Hbad)])
-    Hlcτx Hlcτ Hzτ Hxτ Hvalue_norm Hx_mz0 Hmz_dom_x
+    Hlcτx Hlcτ Hzτ Hxτ Hvalue Hx_mz0 Hmz_dom_x
     Hmz_restrict_mz0) as Hinner.
   pose proof (res_models_impl_elim _ _ _ Hinner Harg_open)
     as Hres_norm.

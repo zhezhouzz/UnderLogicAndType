@@ -246,3 +246,32 @@ Validation:
 - `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`
 
 Status: completed.
+
+## Iteration 9: SoundnessApp Arrow Outer Value Normalized At Source
+
+Problem:
+
+- `app_arrow_outer_value_open` still returned a raw
+  `formula_open 0 z (arrow_value_denote_gas ...)`.
+- The caller immediately rewrote it with
+  `formula_open_result_first_arrow_value_ret_bvar0`, so the source helper was
+  leaking an unnormalized boundary fact.
+
+Action:
+
+- Changed `app_arrow_outer_value_open` to return the normalized
+  `arrow_value_denote_gas_with ... (<[LVFree z := ...]> Σrel) ... (ret z)`
+  formula directly.
+- Moved the single normalization rewrite into the helper proof and removed the
+  caller-side `Hvalue_norm` assert.
+
+Validation:
+
+- `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessApp.vo`
+- `timeout 20s make TIMED=1 ContextTyping/theories/SoundnessAppD.vo`
+
+Leak check:
+
+- `SoundnessApp.v` has no remaining `formula_open 0` occurrences.
+
+Status: completed.
