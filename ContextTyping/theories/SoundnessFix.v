@@ -514,16 +514,6 @@ Proof.
     }
     pose proof (ty_equiv_arrow_result_src_mid_inserted
       gas Δ τx τ efix my y
-      ltac:(subst Δ; apply atom_store_to_lvar_store_closed)
-      ltac:(subst Δ; apply atom_env_to_lty_env_dom_free_notin;
-        eapply (soundness_fresh_erase_ctx_from_context_union
-          Σ Γ y (fv_value vf) (fv_cty τx) (fv_cty τ));
-        clear -Hy_fresh; better_set_solver)
-      ltac:(eapply relevant_env_arrow_fresh_free;
-        [clear -Hy_fresh; better_set_solver
-        |clear -Hy_fresh; better_set_solver
-        |subst efix; cbn [fv_tm fv_value];
-          clear -Hy_fresh; better_set_solver])
       Hlc_efix Hτ_lc1
       ltac:(clear -Hy_fresh; better_set_solver)
       Happ_src_norm) as Hmid_open.

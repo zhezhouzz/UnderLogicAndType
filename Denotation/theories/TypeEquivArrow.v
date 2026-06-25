@@ -30,20 +30,6 @@ Proof.
   - exact Harg.
 Qed.
 
-Lemma arrow_open_arg_to_inserted_env_normalized
-    gas (Σ : lty_env) τx τr e
-    (m : WfWorldT) y :
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTArrow τx τr) e))
-    τx (tret (vfvar y)) ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]> Σ)
-    τx (tret (vfvar y)).
-Proof.
-  apply arrow_open_arg_to_inserted_env.
-Qed.
-
 Lemma ty_denote_gas_tm_equiv_arrow_open_arg
     gas (Σ : lty_env) τx τr e1 e2
     (m my : WfWorldT) y :
@@ -121,9 +107,6 @@ Qed.
 Lemma ty_equiv_arrow_result_src_mid_inserted
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
-  lty_env_closed Σ ->
-  LVFree y ∉ dom Σ ->
-  LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e1 : lty_env) ->
   lc_tm e1 ->
   cty_lc_at 1 τr ->
   y ∉ fv_cty τr ->
@@ -135,7 +118,7 @@ Lemma ty_equiv_arrow_result_src_mid_inserted
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros _ _ _ Hlc Hlcτr Hyτr Hsrc.
+  intros Hlc Hlcτr Hyτr Hsrc.
   eapply ty_equiv_arrow_result_src_mid; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.
@@ -143,12 +126,9 @@ Qed.
 Lemma ty_equiv_arrow_result_src_mid_current
     gas (Σ : lty_env) τx τr e1
     (my : WfWorldT) y :
-  lty_env_closed Σ ->
   Σ !! LVFree y = Some (erase_ty τx) ->
-  LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e1 : lty_env) ->
   lc_tm e1 ->
   cty_lc_at 1 τr ->
-  lc_context_ty (cty_open 0 y τr) ->
   y ∉ fv_cty τr ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]>
@@ -157,7 +137,7 @@ Lemma ty_equiv_arrow_result_src_mid_current
   my ⊨ ty_denote_gas gas
     Σ (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros HΣclosed HyΣ Hyrel Hlc Hlcτr Hlcτr_open Hyτr Hsrc.
+  intros HyΣ Hlc Hlcτr Hyτr Hsrc.
   pose proof (ty_equiv_arrow_result_src_mid
     gas Σ τx τr e1 my y Hlc Hyτr
     (arrow_result_open_vars_subset τr y Hlcτr Hyτr) Hsrc) as Hmid.
@@ -199,9 +179,6 @@ Qed.
 Lemma ty_equiv_arrow_result_tgt_goal_inserted
     gas (Σ : lty_env) τx τr e2
     (my : WfWorldT) y :
-  lty_env_closed Σ ->
-  LVFree y ∉ dom Σ ->
-  LVFree y ∉ dom (relevant_env Σ (CTArrow τx τr) e2 : lty_env) ->
   lc_tm e2 ->
   cty_lc_at 1 τr ->
   y ∉ fv_cty τr ->
@@ -213,7 +190,7 @@ Lemma ty_equiv_arrow_result_tgt_goal_inserted
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros _ _ _ Hlc Hlcτr Hyτr Hmid.
+  intros Hlc Hlcτr Hyτr Hmid.
   eapply ty_equiv_arrow_result_tgt_goal; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.
@@ -224,8 +201,6 @@ Lemma ty_equiv_arrow_result_tgt_goal_inserted_lc
   lc_tm e2 ->
   y ∉ fv_cty τr ->
   cty_lc_at 1 τr ->
-  lc_lvars (relevant_lvars (cty_open 0 y τr)
-    (tapp_tm e2 (vfvar y))) ->
   my ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
@@ -234,7 +209,7 @@ Lemma ty_equiv_arrow_result_tgt_goal_inserted_lc
       (relevant_env Σ (CTArrow τx τr) e2))
     (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
 Proof.
-  intros Hlc Hyτr Hlcτr _ Hmid.
+  intros Hlc Hyτr Hlcτr Hmid.
   eapply ty_equiv_arrow_result_tgt_goal; eauto.
   apply arrow_result_open_vars_subset; assumption.
 Qed.

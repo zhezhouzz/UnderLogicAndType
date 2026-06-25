@@ -676,7 +676,6 @@ Proof.
 	    - constructor. exact Hlc_v1.
 	    - better_set_solver.
 	    - exact Hτ_lc1.
-	    - exact Hresult_rel_lc.
 	    - exact Hmidstar.
 	  }
   exact Hgoal_inserted.

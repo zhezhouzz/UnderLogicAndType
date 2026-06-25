@@ -554,17 +554,10 @@ Proof.
       exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
     }
     eapply ty_equiv_arrow_result_src_mid_inserted.
-    - subst Δ. apply atom_store_to_lvar_store_closed.
-    - subst Δ. apply atom_env_to_lty_env_dom_free_notin.
-      exact Hzerase.
-    - eapply relevant_env_arrow_fresh_free.
-      + exact Hzτx.
-      + exact Hzτ.
-      + subst self. exact Hzself.
-    - exact Hlc_self.
-    - exact Hτ_lc1.
-    - exact Hzτ.
-    - exact Houter_rel.
+    + exact Hlc_self.
+    + exact Hτ_lc1.
+    + exact Hzτ.
+    + exact Houter_rel.
   }
   assert (Hmid_big :
       mz ⊨ ty_denote_gas Gtarget
@@ -664,26 +657,10 @@ Proof.
       exact (wf_context_ty_at_lc 1 (dom (erase_ctx Γ)) τ (proj2 Hτ_arrow)).
     }
     eapply ty_equiv_arrow_result_tgt_goal_inserted.
-    - subst Δx Δ. apply lty_env_closed_insert_free.
-      apply atom_store_to_lvar_store_closed.
-	    - subst Δx Δ.
-	      rewrite dom_insert_L.
-	      intros Hzdom.
-	      apply elem_of_union in Hzdom as [Hzx_bad | HzΓ_bad].
-	      + apply elem_of_singleton in Hzx_bad.
-	        inversion Hzx_bad. congruence.
-	      + pose proof (atom_env_to_lty_env_dom_free_notin
-	          (erase_ctx Γ) z
-	          Hzerase)
-	          as Hznot.
-	        exact (Hznot HzΓ_bad).
-    - eapply relevant_env_fresh_free.
-      + exact Hzτself_fix.
-      + exact Hzself.
-    - subst self. exact Hlc_self.
-    - exact Hτ_lc1.
-    - exact Hzτ.
-    - exact Hmid_x.
+    + subst self. exact Hlc_self.
+    + exact Hτ_lc1.
+    + exact Hzτ.
+    + exact Hmid_x.
   }
   cbn beta iota zeta.
   subst Gtarget Δx τself τarg self.

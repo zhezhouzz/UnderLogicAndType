@@ -131,7 +131,7 @@ Lemma lamd_wand_open_arg_normalize
     τx (tret (vfvar y)).
 Proof.
   intros Hy Hlcτx Harg.
-  eapply wand_open_arg_to_inserted_env_normalized.
+  eapply wand_open_arg_to_inserted_env.
   exact Harg.
 Qed.
 
@@ -400,7 +400,7 @@ Proof.
     eapply wf_context_ty_at_lc. exact (proj2 Hτ_wf).
   }
   subst elam.
-  eapply ty_equiv_wand_result_tgt_goal_inserted.
+  eapply ty_equiv_wand_result_tgt_goal.
   - exact Hlc_elam.
   - better_set_solver.
   - eapply cty_lvars_open_body_closed_no_fresh.
@@ -639,15 +639,9 @@ Proof.
         (tapp_tm (tret vf) (vfvar y))).
   {
     eapply ty_equiv_wand_result_src_mid_inserted.
-    - subst Δ. apply atom_store_to_lvar_store_closed.
-    - exact HyΔ.
-    - intros Hrel.
-      pose proof (relevant_env_dom_subset_direct
-        Δ (CTWand τx τ) (tret vf) (LVFree y) Hrel) as HΔbad.
-      exact (HyΔ HΔbad).
-	    - subst vf.
-	      exact (context_typing_wf_lc_tm
-	        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
+    - subst vf.
+      exact (context_typing_wf_lc_tm
+        Σ Γ (tret (vlam (erase_ty τx) e)) (CTWand τx τ) Hwf).
 	    - clear -Hy_rest. better_set_solver.
     - eapply cty_lvars_open_body_closed_no_fresh.
       + apply soundness_lam_lc_lvars_context_ty_lvars_at_of_lc.

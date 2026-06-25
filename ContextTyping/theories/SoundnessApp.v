@@ -230,16 +230,9 @@ Proof.
     pose proof (ty_equiv_arrow_result_src_mid_current
       (Nat.max (cty_depth τx) (cty_depth τ))
       Δ τx τ (tret v1) m x
-      ltac:(apply atom_store_to_lvar_store_closed)
       HΔx
-	      ltac:(exact Hrel_env_fresh)
 	      ltac:(constructor; exact Hlc_v1)
 	      Hτ_lc1
-	      ltac:(pose proof (context_typing_wf_context_ty Σ Γ
-	        (tapp v1 (vfvar x)) ({0 ~> x} τ) Hwf) as Hτopen_wf;
-	        change ({0 ~> x} τ) with (cty_open 0 x τ) in Hτopen_wf;
-	        exact (wf_context_ty_at_lc 0 (dom (erase_ctx Γ))
-	          (cty_open 0 x τ) Hτopen_wf))
 	      ltac:(better_set_solver) Hopened) as Hmid.
     exact Hmid.
   }

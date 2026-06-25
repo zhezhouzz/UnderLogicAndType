@@ -166,20 +166,6 @@ Proof.
   - exact Harg.
 Qed.
 
-Lemma wand_open_arg_to_inserted_env_normalized
-    gas (Σ : lty_env) τx τr e
-    (m : WfWorldT) y :
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e))
-    τx (tret (vfvar y)) ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]> Σ)
-    τx (tret (vfvar y)).
-Proof.
-  apply wand_open_arg_to_inserted_env.
-Qed.
-
 Lemma ty_denote_gas_tm_equiv_wand_open_arg
     gas (Σ : lty_env) τx τr e1 e2
     (m my n : WfWorldT) y (Hc : world_compat n my) :
@@ -273,9 +259,6 @@ Qed.
 Lemma ty_equiv_wand_result_src_mid_inserted
     gas (Σ : lty_env) τx τr e1
     (m : WfWorldT) y :
-  lty_env_closed Σ ->
-  LVFree y ∉ dom Σ ->
-  LVFree y ∉ dom (relevant_env Σ (CTWand τx τr) e1 : lty_env) ->
   lc_tm e1 ->
   y ∉ fv_cty τr ->
   context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
@@ -288,7 +271,7 @@ Lemma ty_equiv_wand_result_src_mid_inserted
     (<[LVFree y := erase_ty τx]> Σ)
     (cty_open 0 y τr) (tapp_tm e1 (vfvar y)).
 Proof.
-  intros _ _ _ Hlc Hyτr Hτr_vars Hsrc.
+  intros Hlc Hyτr Hτr_vars Hsrc.
   eapply ty_equiv_wand_result_src_mid; eauto.
 Qed.
 
@@ -314,25 +297,6 @@ Proof.
     + exact Hτr_vars.
     + apply tm_lvars_tapp_tm_fvar_without_arg.
   - exact Hmid.
-Qed.
-
-Lemma ty_equiv_wand_result_tgt_goal_inserted
-    gas (Σ : lty_env) τx τr e2
-    (m : WfWorldT) y :
-  lc_tm e2 ->
-  y ∉ fv_cty τr ->
-  context_ty_lvars (cty_open 0 y τr) ∖ {[LVFree y]} ⊆
-    context_ty_lvars_at 1 τr ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]> Σ)
-    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)) ->
-  m ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (relevant_env Σ (CTWand τx τr) e2))
-    (cty_open 0 y τr) (tapp_tm e2 (vfvar y)).
-Proof.
-  intros Hlc Hyτr Hτr_vars Hmid.
-  eapply ty_equiv_wand_result_tgt_goal; eauto.
 Qed.
 
 Lemma wfworld_closed_on_wand_open_result_apps
