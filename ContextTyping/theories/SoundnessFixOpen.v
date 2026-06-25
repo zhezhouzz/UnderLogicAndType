@@ -13,6 +13,7 @@ From Denotation Require Import Context
   TypeEquivCore
   TypeEquivTerm
   TypeEquivFiberTransport
+  TypeEquivArrow
   TypeEquiv
   ConstDenote.
 From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase.
@@ -190,25 +191,28 @@ Lemma fix_arrow_open_arg_normalize
     τx (tret (vfvar y)).
 Proof.
   intros Hwf Hy Harg.
-  assert (HΣarg_fresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) (tret (vfix (TBase b →ₜ t) vf)))
-          (erase_ty τx)))).
-  { eapply fix_open_fresh_arrow_relevant_bind_lvars. exact Hy. }
-  eapply arrow_open_arg_to_inserted_env_normalized.
-  - apply atom_store_to_lvar_store_closed.
-  - apply atom_env_to_lty_env_dom_free_notin.
-    eapply fix_open_fresh_erase_ctx_from_fix_union. exact Hy.
-  - clear -Hy. set_solver.
-  - pose proof (context_typing_wf_context_ty Σ Γ
+  assert (Hlcτx : lc_context_ty τx).
+  {
+    pose proof (context_typing_wf_context_ty Σ Γ
       (tret (vfix (TBase b →ₜ t) vf)) (CTArrow τx τ) Hwf)
       as Hτ_arrow.
     cbn [wf_context_ty_at] in Hτ_arrow.
     eapply wf_context_ty_at_lc. exact (proj1 Hτ_arrow).
-  - exact HΣarg_fresh.
-  - exact Harg.
+  }
+  rewrite formula_open_ty_denote_gas_bind_ret_bvar0 in Harg.
+  2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+  2:{
+    apply relevant_env_arrow_fresh_free.
+    - clear -Hy. better_set_solver.
+    - clear -Hy. better_set_solver.
+    - cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
+  }
+  2:{ clear -Hy. better_set_solver. }
+  2:{ exact Hlcτx. }
+  exact (arrow_open_arg_to_inserted_env
+    (Nat.max (cty_depth τx) (cty_depth τ))
+    (atom_env_to_lty_env (erase_ctx Γ)) τx τ
+    (tret (vfix (TBase b →ₜ t) vf)) my y Harg).
 Qed.
 
 Lemma fix_arrow_open_arg_to_bind_denotation

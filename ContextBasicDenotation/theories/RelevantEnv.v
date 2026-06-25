@@ -1151,6 +1151,20 @@ Proof.
   set_solver.
 Qed.
 
+Lemma arrow_arg_relevant_env_agree_insert_core
+    (Σsrc : lty_env) Ty y τx τr e_src :
+  lty_env_restrict_lvars
+    (<[LVFree y := Ty]>
+      (relevant_env Σsrc (CTArrow τx τr) e_src))
+    (relevant_lvars τx (tret (vfvar y))) =
+  lty_env_restrict_lvars (<[LVFree y := Ty]> Σsrc)
+    (relevant_lvars τx (tret (vfvar y))).
+Proof.
+  change (relevant_env Σsrc (CTArrow τx τr) e_src)
+    with (relevant_env Σsrc (CTWand τx τr) e_src).
+  apply wand_arg_relevant_env_agree_insert_core.
+Qed.
+
 Lemma arrow_body_env_agree
     (Σsrc : lty_env) Ty y τx τr e_src e_body :
   lc_lvars (dom (Σsrc : gmap logic_var ty) : gset logic_var) ->

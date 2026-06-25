@@ -59,21 +59,20 @@ Lemma lam_arrow_open_arg_normalize
     τx (tret (vfvar y)).
 Proof.
   intros Hy Hlcτx Harg.
-  assert (HΣarg_fresh :
-      y ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (atom_env_to_lty_env (erase_ctx Γ))
-            (CTArrow τx τ) (tret (vlam (erase_ty τx) e)))
-          (erase_ty τx)))).
-  {
-    apply soundness_typed_bind_arrow_value_fresh.
-    cbn [fv_value]. clear -Hy. better_set_solver.
+  rewrite formula_open_ty_denote_gas_bind_ret_bvar0 in Harg.
+  2:{ apply relevant_env_closed. apply atom_store_to_lvar_store_closed. }
+  2:{
+    apply relevant_env_arrow_fresh_free.
+    - clear -Hy. better_set_solver.
+    - clear -Hy. better_set_solver.
+    - cbn [fv_tm fv_value]. clear -Hy. better_set_solver.
   }
-  eapply arrow_open_arg_to_inserted_env_normalized; eauto.
-  - apply atom_store_to_lvar_store_closed.
-  - apply atom_env_to_lty_env_dom_free_notin.
-    eapply soundness_fresh_erase_ctx_from_context_union; exact Hy.
-  - ctx_erasure_under_norm_in Hy. better_set_solver.
+  2:{ clear -Hy. better_set_solver. }
+  2:{ exact Hlcτx. }
+  exact (arrow_open_arg_to_inserted_env
+    (Nat.max (cty_depth τx) (cty_depth τ))
+    (atom_env_to_lty_env (erase_ctx Γ)) τx τ
+    (tret (vlam (erase_ty τx) e)) my y Harg).
 Qed.
 
 Lemma lam_arrow_open_arg_to_bind_denotation

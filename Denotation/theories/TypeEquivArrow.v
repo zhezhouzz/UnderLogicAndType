@@ -12,7 +12,7 @@ From Denotation Require Import
 
 Section TypeDenote.
 
-Lemma arrow_open_arg_to_inserted_env
+Lemma arrow_open_arg_raw_to_inserted_env
     gas (Σ : lty_env) τx τr e
     (m : WfWorldT) y :
   lty_env_closed Σ ->
@@ -64,28 +64,36 @@ Proof.
 	  - exact Hyτx.
 Qed.
 
-Lemma arrow_open_arg_to_inserted_env_normalized
+Lemma arrow_open_arg_to_inserted_env
     gas (Σ : lty_env) τx τr e
     (m : WfWorldT) y :
-  lty_env_closed Σ ->
-  LVFree y ∉ dom Σ ->
-  y ∉ fv_cty τx ->
-  lc_context_ty τx ->
-  y ∉ lvars_fv
-    (dom (typed_lty_env_bind
-      (relevant_env Σ (CTArrow τx τr) e) (erase_ty τx))) ->
-  m ⊨ formula_open 0 y
-    (ty_denote_gas gas
-      (typed_lty_env_bind
-        (relevant_env Σ (CTArrow τx τr) e)
-        (erase_ty τx))
-      (cty_shift 0 τx) (tret (vbvar 0))) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e))
+    τx (tret (vfvar y)) ->
   m ⊨ ty_denote_gas gas
     (<[LVFree y := erase_ty τx]> Σ)
     τx (tret (vfvar y)).
 Proof.
-  intros HΣclosed HfreshΣ Hyτx Hlc Hfresh_arg Harg.
-  eapply arrow_open_arg_to_inserted_env; eauto.
+  intros Harg.
+  eapply res_models_ty_denote_gas_env_agree_on.
+  - reflexivity.
+  - apply arrow_arg_relevant_env_agree_insert_core.
+  - exact Harg.
+Qed.
+
+Lemma arrow_open_arg_to_inserted_env_normalized
+    gas (Σ : lty_env) τx τr e
+    (m : WfWorldT) y :
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]>
+      (relevant_env Σ (CTArrow τx τr) e))
+    τx (tret (vfvar y)) ->
+  m ⊨ ty_denote_gas gas
+    (<[LVFree y := erase_ty τx]> Σ)
+    τx (tret (vfvar y)).
+Proof.
+  apply arrow_open_arg_to_inserted_env.
 Qed.
 
 Lemma arrow_inserted_env_to_open_arg

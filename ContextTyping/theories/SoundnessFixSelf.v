@@ -279,36 +279,27 @@ Proof.
       exact (Hzx Hzx_bad).
     - revert HzΓ_bad. fix_self_notin_union.
   }
-  assert (Hzarg_env :
-      z ∉ lvars_fv
-        (dom (typed_lty_env_bind
-          (relevant_env (<[LVFree x := TBase b]> Δ)
-            (fix_rec_call_ty b x τx τ) self)
-          (erase_ty τarg)))).
-  {
-    rewrite typed_lty_env_bind_lvars_fv_dom.
-    intros Hzrel.
-    apply lvars_fv_elem in Hzrel.
+  unfold fix_rec_call_ty in Harg.
+  fold τx τlt τarg self Δ in Harg.
+  rewrite formula_open_ty_denote_gas_bind_ret_bvar0 in Harg.
+  2:{ apply relevant_env_closed. exact HΣclosed. }
+  2:{
     eapply (relevant_env_fresh_free
       (<[LVFree x := TBase b]> Δ)
       (fix_rec_call_ty b x τx τ) self z).
-	    - subst τx.
-	      apply fv_cty_fix_rec_call_ty_fresh.
-	      + exact Hzx.
-	      + fix_self_notin_union.
-	      + fix_self_notin_union.
-	    - subst self. cbn [fv_tm fv_value]. fix_self_notin_union.
-    - exact Hzrel.
+    - subst τx.
+      apply fv_cty_fix_rec_call_ty_fresh.
+      + exact Hzx.
+      + fix_self_notin_union.
+      + fix_self_notin_union.
+    - subst self. cbn [fv_tm fv_value]. fix_self_notin_union.
   }
-  pose proof (arrow_open_arg_to_inserted_env_normalized
+  2:{ exact Hzτarg. }
+  2:{ subst τarg; cbn [cty_lc_at]; split; assumption. }
+  pose proof (arrow_open_arg_to_inserted_env
     (Nat.max (cty_depth τarg) (cty_depth τ))
-    (<[LVFree x := TBase b]> Δ) τarg τ self mz z
-    HΣclosed HzΣ Hzτarg
-    ltac:(subst τarg; cbn [cty_lc_at]; split; assumption)
-    Hzarg_env) as Hopened.
-  unfold fix_rec_call_ty in Harg.
-  fold τx τlt τarg self Δ in Harg.
-  pose proof (Hopened Harg) as Harg_open.
+    (<[LVFree x := TBase b]> Δ) τarg τ self mz z Harg)
+    as Harg_open.
   rewrite ty_denote_gas_saturate in Harg_open by lia.
   subst τarg τx τlt Δ self.
   cbn [cty_depth ty_denote_gas erase_ty] in Harg_open.
