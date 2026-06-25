@@ -1,0 +1,85 @@
+TypeEquivFiberBaseResult Refactor Analysis
+==========================================
+
+Scope
+-----
+
+File inspected:
+
+- `Denotation/theories/TypeEquivFiberBaseResult.v`
+
+Focused lemmas:
+
+- `expr_result_formula_transport_fiber`
+- `formula_fv_msubst_open_over_result_only`
+- `formula_fv_msubst_open_under_result_only`
+
+Findings
+--------
+
+1. `expr_result_formula_transport_fiber` did not duplicate
+   `res_fiber_stores_agree_on_sub` exactly, but it repeated another raw fiber
+   pattern twice:
+
+   ```
+   τ ∈ mfib
+   τ' ∈ m
+   store_restrict τ' X = store_restrict τ X
+   ------------------------------------------
+   τ' ∈ mfib
+   ```
+
+   This was hidden inside two local assertions for `Hτ1fib` and `Hτ2fib`.
+
+2. The two `formula_fv_msubst_open_*_result_only` lemmas had unnormalized
+   premises involving:
+
+   ```
+   lvars_fv (lvars_open 0 y (qual_vars φ ∖ {[LVBound 0]})) ⊆ dom σ
+   ```
+
+   The proof was the same for Over and Under after reducing to the atom case.
+
+3. The file is large because it mixes:
+
+   - result formula fiber transport,
+   - formula FV support for residual formulas,
+   - msubst-back/store-lift facts,
+   - result witness construction/elimination,
+   - result-extension/coarsening facts.
+
+   A future file split should follow these semantic boundaries rather than line
+   count alone.
+
+Implementation Status
+---------------------
+
+Completed:
+
+- Added `res_fiber_store_replace_by_projection_agree`, a small fiber membership
+  replacement lemma.
+- Replaced the two local raw-fiber membership assertions in
+  `expr_result_formula_transport_fiber` with this lemma.
+- Added normalized core lemma:
+
+  ```
+  formula_fv_msubst_open_result_atom_only
+  ```
+
+  whose premise uses:
+
+  ```
+  qual_vars (qual_open_atom 0 y φ) ∖ {[LVFree y]}
+  ```
+
+  instead of raw `lvars_open`.
+- Rewrote the Over/Under FV lemmas as short wrappers over the normalized atom
+  lemma.  Their old names remain for compatibility.
+
+Deferred:
+
+- Split `TypeEquivFiberBaseResult.v` into semantic subfiles.  This should be a
+  separate change because many downstream files import the current aggregate
+  file.
+- Move `res_fiber_store_replace_by_projection_agree` lower if another folder
+  needs the same raw resource fact; for now it is only used here.

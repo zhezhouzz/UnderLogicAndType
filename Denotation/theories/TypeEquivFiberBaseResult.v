@@ -56,6 +56,28 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma res_fiber_store_replace_by_projection_agree
+    (m mfib : WfWorldT) X σ τ τ' :
+  res_fiber_from_projection m X σ mfib ->
+  (mfib : WorldT) τ ->
+  (m : WorldT) τ' ->
+  store_restrict τ' X = store_restrict τ X ->
+  (mfib : WorldT) τ'.
+Proof.
+  intros Hproj Hτ Hτ' Hτ'X.
+  pose proof Hproj as [_ Hfib_eq].
+  change ((mfib : WorldT) = raw_fiber (m : WorldT) σ) in Hfib_eq.
+  rewrite Hfib_eq. split; [exact Hτ'|].
+  pose proof (res_fiber_from_projection_store_restrict m mfib X σ τ
+    Hproj Hτ) as Hτproj.
+  transitivity (store_restrict τ (dom (σ : StoreT))); [|exact Hτproj].
+  eapply storeA_restrict_eq_mono; [|exact Hτ'X].
+  intros a Ha.
+  pose proof (res_fiber_from_projection_store_dom_subset m mfib X σ Hproj)
+    as Hσdom.
+  exact (Hσdom a Ha).
+Qed.
+
 Lemma expr_result_formula_transport_fiber
     (m mfib : WfWorldT) X σ e1 e2 y :
   lc_tm e1 ->
@@ -94,17 +116,8 @@ Proof.
         Heval2) as [τ1 [Hτ1m [Hτ1X Heval1τ1]]].
       assert (Hτ1fib : (mfib : WorldT) τ1).
       {
-        pose proof Hproj as [_ Hfib_eq].
-        change ((mfib : WorldT) = raw_fiber (m : WorldT) σ) in Hfib_eq.
-        rewrite Hfib_eq. split; [exact Hτ1m|].
-        pose proof (res_fiber_from_projection_store_restrict m mfib X σ τ
-          Hproj Hτ) as Hτproj.
-        transitivity (store_restrict τ (dom (σ : StoreT))); [|exact Hτproj].
-        eapply storeA_restrict_eq_mono; [|exact Hτ1X].
-        intros a Ha.
-        pose proof (res_fiber_from_projection_store_dom_subset m mfib X σ Hproj)
-          as Hσdom.
-        exact (Hσdom a Ha).
+        eapply (res_fiber_store_replace_by_projection_agree
+          m mfib X σ τ τ1); eauto.
       }
       split; [exact Hyfresh|].
       exists v. split; [exact Hylookup|].
@@ -130,17 +143,8 @@ Proof.
       as [τ2 [Hτ2m [Hτ2X Heval2]]].
     assert (Hτ2fib : (mfib : WorldT) τ2).
     {
-      pose proof Hproj as [_ Hfib_eq].
-      change ((mfib : WorldT) = raw_fiber (m : WorldT) σ) in Hfib_eq.
-      rewrite Hfib_eq. split; [exact Hτ2m|].
-      pose proof (res_fiber_from_projection_store_restrict m mfib X σ τ
-        Hproj Hτ) as Hτproj.
-      transitivity (store_restrict τ (dom (σ : StoreT))); [|exact Hτproj].
-      eapply storeA_restrict_eq_mono; [|exact Hτ2X].
-      intros a Ha.
-      pose proof (res_fiber_from_projection_store_dom_subset m mfib X σ Hproj)
-        as Hσdom.
-      exact (Hσdom a Ha).
+      eapply (res_fiber_store_replace_by_projection_agree
+        m mfib X σ τ τ2); eauto.
     }
     pose proof (expr_result_formula_fiber_witness e2 y mfib Hres2
       τ2 v Hτ2fib
@@ -172,72 +176,56 @@ Proof.
   eapply res_restrict_eq_subset; [exact Hfv|exact Hproj].
 Qed.
 
+Lemma formula_fv_msubst_open_result_atom_only σ y φ :
+  lvars_fv (qual_vars (qual_open_atom 0 y φ) ∖ {[LVFree y]}) ⊆
+    dom (σ : StoreT) ->
+  formula_fv
+    (formula_msubst_store σ
+      (FAtom (qual_open_atom 0 y φ))) ⊆ {[y]}.
+Proof.
+  intros Hdom.
+  rewrite formula_msubst_store_fv.
+  rewrite formula_fv_atom.
+  unfold qual_dom.
+  intros x Hx.
+  rewrite elem_of_difference in Hx.
+  destruct Hx as [Hx Hxσ].
+  apply lvars_fv_elem in Hx.
+  destruct (decide (x = y)) as [->|Hxy]; [set_solver|].
+  exfalso. apply Hxσ.
+  apply Hdom.
+  rewrite lvars_fv_elem.
+  apply elem_of_difference. split; [exact Hx|].
+  intros Hy.
+  apply elem_of_singleton in Hy. congruence.
+Qed.
+
 Lemma formula_fv_msubst_open_over_result_only σ y φ :
-  lvars_fv (lvars_open 0 y (qual_vars φ ∖ {[LVBound 0]})) ⊆
+  lvars_fv (qual_vars (qual_open_atom 0 y φ) ∖ {[LVFree y]}) ⊆
     dom (σ : StoreT) ->
   formula_fv
     (formula_msubst_store σ
       (formula_open 0 y (FOver (FAtom φ)))) ⊆ {[y]}.
 Proof.
   intros Hdom.
-  rewrite formula_msubst_store_fv.
-  rewrite formula_open_over, formula_fv_over.
-  rewrite formula_open_atom, formula_fv_atom.
-  unfold qual_dom.
-  intros x Hx.
-  rewrite elem_of_difference in Hx.
-  destruct Hx as [Hx Hxσ].
-  apply lvars_fv_elem in Hx.
-  rewrite qual_open_atom_vars in Hx.
-  destruct (decide (x = y)) as [->|Hxy]; [set_solver|].
-  exfalso. apply Hxσ.
-  apply Hdom.
-  rewrite lvars_fv_elem.
-  rewrite elem_of_set_swap in Hx.
-  apply elem_of_set_swap.
-  destruct (decide (swap (LVBound 0) (LVFree y) (LVFree x) = LVBound 0))
-    as [Hbad|Hnot_bound].
-  - unfold swap in Hbad.
-    repeat destruct decide; try congruence.
-  - apply elem_of_difference. split.
-    + exact Hx.
-    + intros Hzero.
-      apply elem_of_singleton in Hzero.
-      exact (Hnot_bound Hzero).
+  rewrite formula_open_over, formula_open_atom.
+  cbn [formula_msubst_store].
+  apply formula_fv_msubst_open_result_atom_only.
+  exact Hdom.
 Qed.
 
 Lemma formula_fv_msubst_open_under_result_only σ y φ :
-  lvars_fv (lvars_open 0 y (qual_vars φ ∖ {[LVBound 0]})) ⊆
+  lvars_fv (qual_vars (qual_open_atom 0 y φ) ∖ {[LVFree y]}) ⊆
     dom (σ : StoreT) ->
   formula_fv
     (formula_msubst_store σ
       (formula_open 0 y (FUnder (FAtom φ)))) ⊆ {[y]}.
 Proof.
   intros Hdom.
-  rewrite formula_msubst_store_fv.
-  rewrite formula_open_under, formula_fv_under.
-  rewrite formula_open_atom, formula_fv_atom.
-  unfold qual_dom.
-  intros x Hx.
-  rewrite elem_of_difference in Hx.
-  destruct Hx as [Hx Hxσ].
-  apply lvars_fv_elem in Hx.
-  rewrite qual_open_atom_vars in Hx.
-  destruct (decide (x = y)) as [->|Hxy]; [set_solver|].
-  exfalso. apply Hxσ.
-  apply Hdom.
-  rewrite lvars_fv_elem.
-  rewrite elem_of_set_swap in Hx.
-  apply elem_of_set_swap.
-  destruct (decide (swap (LVBound 0) (LVFree y) (LVFree x) = LVBound 0))
-    as [Hbad|Hnot_bound].
-  - unfold swap in Hbad.
-    repeat destruct decide; try congruence.
-  - apply elem_of_difference. split.
-    + exact Hx.
-    + intros Hzero.
-      apply elem_of_singleton in Hzero.
-      exact (Hnot_bound Hzero).
+  rewrite formula_open_under, formula_open_atom.
+  cbn [formula_msubst_store].
+  apply formula_fv_msubst_open_result_atom_only.
+  exact Hdom.
 Qed.
 
 Lemma res_models_FFibVars_transport_result_only
