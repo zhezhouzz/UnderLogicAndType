@@ -13,17 +13,15 @@ From Denotation Require Import Context
   DenotationSetMapFacts
   ResultFirstOpen
   TypeEquivCore
-  TypeEquivTerm
-  TypeEquivFiberBase
+  TypeEquivTermBase TypeEquivTermResult
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand
   TypeEquiv
   TypePersistArrow
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
-  SoundnessLamWand SoundnessFixBase
-  SoundnessFixOpen.
+From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase.
 
 Local Lemma fix_apply_open_value_fresh vf y z :
   z ∉ fv_value vf ∪ {[y]} ->

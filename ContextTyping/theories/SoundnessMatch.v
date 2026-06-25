@@ -11,13 +11,12 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
   BasicTypingFormula RelevantEnv.
 From Denotation Require Import Context
   TypeEquivCore
-  TypeEquivTerm
-  TypeEquivFiberBase
+  TypeEquivTermBase TypeEquivTermResult
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquiv
   ConstDenoteBase
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
-  SoundnessLamWand.
+From ContextTyping Require Import Typing SoundnessLam.
 
 Lemma context_typing_wf_match_inv Σ Γ x et ef τ :
   context_typing_wf Σ Γ (tmatch (vfvar x) et ef) τ ->

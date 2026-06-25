@@ -7,7 +7,7 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula TermExtension.
 From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
-  TypeEquivCore TypeEquivTerm TypeEquivFiberBaseResult
+  TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore
   TypePersistBase TypePersistArrow TypePersistSingleton
   TypePersistWandForward TypePersistWandReverse.
 From ContextTyping Require Import Typing.
@@ -107,7 +107,7 @@ Lemma expr_result_formula_at_ret_value_closed_result
   my ⊨ expr_result_formula_at D (tret v) (LVFree y) ->
   wfworld_closed_on ({[y]} : aset) my.
 Proof.
-  apply TypeEquivFiberBaseResult.expr_result_formula_at_ret_value_closed_result.
+  apply TypeEquivFiberBaseCore.expr_result_formula_at_ret_value_closed_result.
 Qed.
 
 Lemma ret_value_result_restrict_y_lookup_iff

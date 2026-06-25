@@ -19,14 +19,14 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   ResultFirstOpen
   TypeEquivCore
-  TypeEquivFiberBase
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivTLet
   TypePersistArrow
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import PrimOpContext Typing
-  SoundnessLamBase SoundnessLamArrow SoundnessLamWand
-  SoundnessApp SoundnessAppD SoundnessMatch SoundnessFix SoundnessPersist.
+From ContextTyping Require Import PrimOpContext PrimOpConcreteContext Typing
+  SoundnessLam
+  SoundnessApp SoundnessMatch SoundnessFix SoundnessPersist.
 
 Local Notation StoreT := (gmap atom value) (only parsing).
 Local Notation WorldT := (World (V := value)) (only parsing).
@@ -1178,3 +1178,21 @@ Theorem denotational_soundness e τ :
 Qed.
 
 End WithPrimopContext.
+
+Theorem concrete_Fundamental Σ Γ e τ :
+  has_context_type concrete_Φ Σ Γ e τ ->
+  ctx_denote_under Σ Γ ⊫ ty_denote_under Σ Γ τ e.
+Proof.
+  apply (Fundamental concrete_Φ concrete_Φ_wf).
+Qed.
+
+Theorem concrete_denotational_soundness e τ :
+  has_context_type concrete_Φ ∅ CtxEmpty e τ ->
+  forall x,
+    exists mres : WfWorldT,
+      closed_result_world_of e x mres /\
+      mres ⊨ ty_denote ({[x := erase_ty τ]} : gmap atom ty) τ
+        (tret (vfvar x)).
+Proof.
+  apply (denotational_soundness concrete_Φ concrete_Φ_wf).
+Qed.

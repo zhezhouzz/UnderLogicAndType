@@ -1,10 +1,10 @@
 (** * Denotation.TypeEquivFiberTransport
 
     Application and opened-result transport lemmas built on top of
-    [TypeEquivTerm].  Kept separate so the core term/fiber definitions stay
+    [TypeEquivTermBase TypeEquivTermResult].  Kept separate so the core term/fiber definitions stay
     small and lower-level. *)
 
-From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTerm
+From Denotation Require Import Notation TypeDenote TypeEquivCore TypeEquivTermBase TypeEquivTermResult
   DenotationSetMapFacts.
 From CoreLang Require Import StrongNormalization.
 

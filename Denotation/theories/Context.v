@@ -5,7 +5,7 @@
 
 From Denotation Require Export Notation TypeDenote TypePersistBase TypePersistArrow
   TypePersistSingleton TypePersistWandForward TypePersistWandReverse.
-From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseResult.
+From Denotation Require Import TypeEquivCore TypeEquiv TypeEquivFiberBaseCore.
 From ContextBasicDenotation Require Import TermExtension.
 
 Section ContextDenotation.

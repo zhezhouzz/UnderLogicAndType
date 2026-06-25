@@ -2,7 +2,7 @@
 
     Projected result transport and typed-fiber projection helpers. *)
 
-From Denotation Require Import Notation DenotationSetMapFacts TypeDenote TypeEquivCore TypeEquivTerm TypeEquivFiberBaseCore TypeEquivFiberBaseResult.
+From Denotation Require Import Notation DenotationSetMapFacts TypeDenote TypeEquivCore TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseCore.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.

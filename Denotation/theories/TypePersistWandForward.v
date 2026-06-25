@@ -3,7 +3,7 @@
     Forward Wand facts for persistent-over arguments. *)
 
 From Denotation Require Import Notation TypeDenote ResultFirstOpen
-  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBase TypeEquivBody TypeEquiv
+  DenotationSetMapFacts TypeEquivCore TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquivBody TypeEquiv
   TypePersistBase TypePersistArrow TypePersistSingleton.
 From ContextAlgebra Require Import ResourceAlgebra.
 

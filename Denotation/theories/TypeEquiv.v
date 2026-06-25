@@ -5,17 +5,17 @@
 From Denotation Require Import Notation TypeDenote.
 From Denotation Require Import
   TypeEquivCore
-  TypeEquivTerm
+  TypeEquivTermBase TypeEquivTermResult
   TypeEquivFiberTransport
-  TypeEquivFiberBase
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivBody
   TypeEquivArrow
   ResultFirstOpen
-  TypeEquivArrowResultFirst
+  TypeEquivArrow
   TypeEquivWand
-  TypeEquivWandResultFirst
+  TypeEquivWand
   TypeEquivTLet
-  TypeEquivTLetFormula.
+  TypeEquivTLet.
 From CoreLang Require Import StrongNormalization.
 
 Section TypeDenote.

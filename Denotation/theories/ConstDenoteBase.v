@@ -4,7 +4,7 @@
     Fundamental. *)
 
 From Denotation Require Import Context DenotationSetMapFacts TypeEquivCore
-  TypeEquivTerm TypeEquivFiberBase TypeEquiv.
+  TypeEquivTermBase TypeEquivTermResult TypeEquivFiberBaseCore TypeEquivFiberBaseProjected TypeEquiv.
 From CoreLang Require Import StrongNormalization.
 
 Section ConstDenoteBase.

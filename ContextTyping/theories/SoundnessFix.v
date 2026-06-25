@@ -13,16 +13,16 @@ From Denotation Require Import Context
   DenotationSetMapFacts
   ResultFirstOpen
   TypeEquivCore
-  TypeEquivFiberBase
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand
   TypeEquiv
   TypePersistArrow
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLamBase
-  SoundnessLamBase SoundnessLamArrow SoundnessLamWand
-  SoundnessFixBase SoundnessFixOpen SoundnessFixApply
+From ContextTyping Require Import Typing SoundnessLam
+  SoundnessLam
+  SoundnessFixBase SoundnessFixApply
   SoundnessFixSelf.
 
 Local Ltac fix_union_left :=

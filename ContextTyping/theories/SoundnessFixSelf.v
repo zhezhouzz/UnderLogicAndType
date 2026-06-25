@@ -11,15 +11,13 @@ From ContextBasicDenotation Require Import StoreTyping TermExtension TermTLet Qu
 From Denotation Require Import Context
   DenotationSetMapFacts
   TypeEquivCore
-  TypeEquivFiberBase
+  TypeEquivFiberBaseCore TypeEquivFiberBaseProjected
   TypeEquivBody
   TypeEquivArrow
   TypeEquivWand
   TypeEquiv
   ConstDenote.
-From ContextTyping Require Import Typing SoundnessLamBase SoundnessLamArrow
-  SoundnessLamWand SoundnessFixBase
-  SoundnessFixOpen SoundnessFixApply.
+From ContextTyping Require Import Typing SoundnessLam SoundnessFixBase SoundnessFixApply.
 
 Local Ltac fix_self_in_union :=
   first
