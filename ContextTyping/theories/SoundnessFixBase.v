@@ -200,7 +200,7 @@ Proof.
       apply elem_of_map in Ha as [a0 [-> Ha]].
       apply elem_of_singleton in Ha. subst a0.
       eapply elem_of_dom_2.
-      apply storeA_restrict_lookup_some_2; [exact Hxlookup_rel|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hxlookup_rel).
       unfold relevant_lvars.
       apply elem_of_union_r.
       cbn [tm_lvars tm_lvars_at value_lvars_at].
@@ -433,7 +433,7 @@ Proof.
         (store_restrict σmx (fv_tm (tret (vfvar x))) : StoreT) !! x =
         Some vx).
     {
-      apply storeA_restrict_lookup_some_2; [exact Hσmx_x|].
+      apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσmx_x).
       fix_base_singleton_side.
     }
     change ((store_restrict σmx (fv_tm (tret (vfvar x))) : StoreT) !! x =
@@ -445,7 +445,7 @@ Proof.
   assert (Hσproj_y' :
       (store_restrict σmx {[y]} : StoreT) !! y = Some vy).
   {
-    apply storeA_restrict_lookup_some_2; [exact Hσmx_y|].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσmx_y).
     fix_base_singleton_side.
   }
   exists cz, cy.

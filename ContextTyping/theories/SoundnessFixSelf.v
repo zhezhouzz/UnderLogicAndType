@@ -378,7 +378,7 @@ Proof.
       store_restrict σmz (world_dom (parent : WorldT)) !! x =
       Some (vconst cxmz)).
   {
-    apply storeA_restrict_lookup_some_2; [exact Hxmz|exact Hx_parent_dom].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hxmz Hx_parent_dom).
   }
   rewrite Hrestrict, Hxparent in Hxmz_restrict.
   inversion Hxmz_restrict. subst cxmz.

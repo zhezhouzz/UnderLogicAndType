@@ -3,6 +3,21 @@ ContextTyping Apply/Exact Optimization Stats
 
 Candidates: 103
 
+Implementation Status
+---------------------
+
+- Completed: first safe Soundness batch: store restriction lookup applications
+  in `SoundnessPersist.v`, `SoundnessFixBase.v`, and `SoundnessFixSelf.v`,
+  plus a deterministic `lvars_bv_elem` rewrite in `SoundnessLamBase.v`.
+- Verified: `timeout 20s make TIMED=1
+  ContextTyping/theories/SoundnessPersist.vo
+  ContextTyping/theories/SoundnessFixBase.vo
+  ContextTyping/theories/SoundnessFixSelf.vo
+  ContextTyping/theories/SoundnessLamBase.vo`.
+- Deferred: semantic `res_models_kripke`, context-denotation constructors,
+  and LC/relevant-lvars chains should be optimized through regularity helper
+  lemmas, not mechanical apply/exact rewriting.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextTyping/theories/SoundnessLamArrow.v` | 181 | `eapply ctx_denote_under_comma_intro; [exact HbasicΓ|exact Hctx_my|].` |

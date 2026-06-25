@@ -47,7 +47,7 @@ Proof.
   destruct v as [k|a]; [|exact I].
   pose proof (cty_lc_at_lvars_bv_empty d τ Hlc) as Hempty.
   assert (Hk : k ∈ lvars_bv (context_ty_lvars_at d τ))
-    by (apply lvars_bv_elem; exact Hv).
+    by (rewrite lvars_bv_elem; exact Hv).
   rewrite Hempty in Hk.
   rewrite elem_of_empty in Hk.
   exact Hk.
