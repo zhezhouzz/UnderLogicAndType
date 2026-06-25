@@ -228,9 +228,10 @@ Local Lemma wand_result_body_relevant_subset τx τr e f y :
   cty_lc_at 1 τr ->
   f ∉ fv_cty τx ∪ fv_cty τr ->
   y ∉ fv_cty τx ∪ fv_cty τr ->
-  relevant_lvars (cty_open 0 y τr)
-    (tapp_tm (tret (vfvar f)) (vfvar y)) ∖ {[LVFree y]} ∖ {[LVFree f]} ⊆
-  relevant_lvars (CTWand τx τr) e.
+  (context_ty_lvars (cty_open 0 y τr) ∪
+    tm_lvars (tapp_tm (tret (vfvar f)) (vfvar y))) ∖
+    {[LVFree y]} ∖ {[LVFree f]} ⊆
+  context_ty_lvars (CTWand τx τr) ∪ tm_lvars e.
 Proof.
   intros Hlcτr Hffresh Hyfresh.
   eapply result_first_result_body_relevant_subset; [exact Hlcτr| |].
@@ -277,13 +278,13 @@ Proof.
     (<[LVFree y := erase_ty τx]>
       (<[LVFree f := erase_ty (CTWand τx τr)]>
         (relevant_env Σ (CTWand τx τr) e2)))
-    τbody ebody (relevant_lvars τbody ebody)
+	    τbody ebody (context_ty_lvars τbody ∪ tm_lvars ebody)
     ltac:(reflexivity)) as Hagree.
   rewrite Hagree in Hres; [exact Hres|].
   unfold lty_env_restrict_lvars, relevant_env.
   apply storeA_map_eq. intros v.
   rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ relevant_lvars τbody ebody)) as [HvX|HvX];
+  destruct (decide (v ∈ context_ty_lvars τbody ∪ tm_lvars ebody)) as [HvX|HvX];
     [|reflexivity].
   destruct (decide (v = LVFree y)) as [->|Hvy].
   { rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity. }
@@ -293,11 +294,13 @@ Proof.
     rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity.
   }
   rewrite !lookup_insert_ne by congruence.
-  assert (Hvrel : v ∈ relevant_lvars (CTWand τx τr) e1 /\
-                  v ∈ relevant_lvars (CTWand τx τr) e2).
+  assert (Hvrel :
+      v ∈ context_ty_lvars (CTWand τx τr) ∪ tm_lvars e1 /\
+      v ∈ context_ty_lvars (CTWand τx τr) ∪ tm_lvars e2).
   {
     assert (Hvsmall :
-        v ∈ relevant_lvars τbody ebody ∖ {[LVFree y]} ∖ {[LVFree f]}).
+        v ∈ (context_ty_lvars τbody ∪ tm_lvars ebody) ∖
+          {[LVFree y]} ∖ {[LVFree f]}).
     { set_solver. }
     unfold τbody, ebody in Hvsmall.
     split.
@@ -313,7 +316,6 @@ Proof.
       + exact Hvsmall.
   }
   destruct Hvrel as [Hvrel1 Hvrel2].
-  unfold relevant_lvars in Hvrel1, Hvrel2.
   unfold lty_env_restrict_lvars.
   rewrite !storeA_restrict_lookup.
   destruct (decide (v ∈ context_ty_lvars (CTWand τx τr) ∪ tm_lvars e1))

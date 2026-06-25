@@ -1301,7 +1301,7 @@ Proof.
 Qed.
 
 Lemma ty_denote_gas_env_agree_on gas Σ1 Σ2 τ e X :
-  relevant_lvars τ e ⊆ X ->
+  context_ty_lvars τ ∪ tm_lvars e ⊆ X ->
   lty_env_restrict_lvars Σ1 X = lty_env_restrict_lvars Σ2 X ->
   ty_denote_gas gas Σ1 τ e =
   ty_denote_gas gas Σ2 τ e.
@@ -1321,13 +1321,11 @@ Proof.
       reflexivity.
     + rewrite (IH Σ1 Σ2 τ1 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
       rewrite (IH Σ1 Σ2 τ2 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
@@ -1336,13 +1334,11 @@ Proof.
       reflexivity.
     + rewrite (IH Σ1 Σ2 τ1 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
       rewrite (IH Σ1 Σ2 τ2 e X).
       2: { intros v Hv. apply Hsub.
-	           unfold relevant_lvars in *.
            cbn [context_ty_lvars context_ty_lvars_at] in *.
            set_solver. }
       2: exact Heq.
@@ -1365,7 +1361,7 @@ Qed.
 
 Lemma res_models_ty_denote_gas_env_agree_on
     gas Σ1 Σ2 τ e X (m : WfWorldT) :
-  relevant_lvars τ e ⊆ X ->
+  context_ty_lvars τ ∪ tm_lvars e ⊆ X ->
   lty_env_restrict_lvars Σ1 X = lty_env_restrict_lvars Σ2 X ->
   m ⊨ ty_denote_gas gas Σ1 τ e ->
   m ⊨ ty_denote_gas gas Σ2 τ e.
