@@ -194,3 +194,10 @@ Remaining buckets:
     `TypeEquivFiberTransport.v`.
   - `TypeEquivTermApp.vo`, `TypeEquivFiberTransport.vo`,
     `TypeEquivArrow.vo`, and `TypeEquivWand.vo` compile.
+- Result-formula support narrowing:
+  - Moved `expr_result_formula_ret_value_inst_eq_on` from
+    `TypeEquivFiberTransport.v` to `TypeEquivTermResult.v`.
+  - `SoundnessPersist.v` now imports `TypeEquivTerm` instead of using
+    `TypeEquivFiberTransport.v` for that ret-value result fact.
+  - `TypeEquivTermResult.vo`, `TypeEquivFiberTransport.vo`,
+    `SoundnessPersist.vo`, and `Soundness.vo` compile.

@@ -7,7 +7,7 @@ From ContextStore Require Import Store.
 From ContextAlgebra Require Import ResourceInterface.
 From ContextBasicDenotation Require Import RelevantEnv BasicTypingFormula TermExtension.
 From Denotation Require Import Context DenotationSetMapFacts TypeEquiv
-  TypeEquivCore TypeEquivFiberBaseResult TypeEquivFiberTransport
+  TypeEquivCore TypeEquivTerm TypeEquivFiberBaseResult
   TypePersistBase TypePersistArrow TypePersistSingleton
   TypePersistWandForward TypePersistWandReverse.
 From ContextTyping Require Import Typing.

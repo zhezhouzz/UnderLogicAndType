@@ -91,54 +91,6 @@ Proof.
     apply (proj1 Htgt_restrict). exact Htotal.
 Qed.
 
-Lemma expr_result_formula_ret_value_inst_eq_on
-    (m : WfWorldT) X vx z :
-  z ∈ X ->
-  fv_value vx ⊆ X ->
-  wfworld_closed_on X m ->
-  lc_value vx ->
-  m ⊨ expr_result_formula (tret vx) (LVFree z) ->
-  forall σ,
-    (m : WorldT) σ ->
-    m{store_restrict σ X} (vfvar z) =
-    m{store_restrict σ X} vx.
-Proof.
-  intros HzX Hfvx Hclosed Hvx Hres σ Hσ.
-  pose proof (expr_result_formula_to_atom_world
-    (tret vx) (LVFree z) m Hres) as Hres_world.
-  destruct Hres_world as [_ [_ Hstores]].
-  specialize (Hstores (lstore_lift_free σ)).
-  assert (Hlift :
-      worldA_stores (res_lift_free m : LWorldT) (lstore_lift_free σ)).
-  { exists σ. split; [exact Hσ | reflexivity]. }
-  destruct (Hstores Hlift) as [_ [vz [Hz_lookup Heval_full]]].
-  assert (HclosedX : store_closed (store_restrict σ X)).
-  { eapply wfworld_closed_on_store_restrict_closed; eauto. }
-  assert (Hz_lookup_restrict :
-      (store_restrict σ X : StoreT) !! z = Some vz).
-  {
-    apply storeA_restrict_lookup_some_2; [|exact HzX].
-    change (((lstore_lift_free σ : LStoreT) : gmap logic_var value) !!
-      LVFree z = Some vz) in Hz_lookup.
-    rewrite lstore_lift_free_lookup_free in Hz_lookup.
-    exact Hz_lookup.
-  }
-  assert (Heval_restrict :
-      tm_eval_in_store (store_restrict σ X) (tret vx) vz).
-  {
-    pose proof (tm_eval_in_store_restrict_fv_subset
-      σ (tret vx) vz X ltac:(cbn [fv_tm]; exact Hfvx)) as Hiff.
-    apply (proj2 Hiff). exact Heval_full.
-  }
-  pose proof (tm_eval_in_store_ret_value_inv
-    (store_restrict σ X) vx vz HclosedX Hvx Heval_restrict)
-    as Hvz.
-  rewrite (msubst_fvar_lookup_closed
-    (store_restrict σ X) z vz)
-    by (exact (proj1 HclosedX) || exact Hz_lookup_restrict).
-  exact Hvz.
-Qed.
-
 Lemma tm_equiv_ret_value_result_alias_on
     (m : WfWorldT) X vx z :
   fv_tm (tret (vfvar z)) ∪ fv_tm (tret vx) ⊆ X ->
