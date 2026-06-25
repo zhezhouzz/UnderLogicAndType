@@ -159,7 +159,7 @@ Qed.
 Lemma formula_scoped_forall_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FForall φ) ->
   formula_scoped_in_world m φ.
-Proof. intros Hscope. apply (proj1 (formula_scoped_forall_iff m φ)); exact Hscope. Qed.
+Proof. intros Hscope. exact (proj1 (formula_scoped_forall_iff m φ) Hscope). Qed.
 
 Lemma formula_scoped_over_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FOver φ) ↔
@@ -169,7 +169,7 @@ Proof. reflexivity. Qed.
 Lemma formula_scoped_over_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FOver φ) ->
   formula_scoped_in_world m φ.
-Proof. intros Hscope. apply (proj1 (formula_scoped_over_iff m φ)); exact Hscope. Qed.
+Proof. intros Hscope. exact (proj1 (formula_scoped_over_iff m φ) Hscope). Qed.
 
 Lemma formula_scoped_under_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FUnder φ) ↔
@@ -179,7 +179,7 @@ Proof. reflexivity. Qed.
 Lemma formula_scoped_under_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FUnder φ) ->
   formula_scoped_in_world m φ.
-Proof. intros Hscope. apply (proj1 (formula_scoped_under_iff m φ)); exact Hscope. Qed.
+Proof. intros Hscope. exact (proj1 (formula_scoped_under_iff m φ) Hscope). Qed.
 
 Lemma formula_scoped_persist_iff (m : WfWorldT) φ :
   formula_scoped_in_world m (FPersist φ) ↔
@@ -189,7 +189,7 @@ Proof. reflexivity. Qed.
 Lemma formula_scoped_persist_body (m : WfWorldT) φ :
   formula_scoped_in_world m (FPersist φ) ->
   formula_scoped_in_world m φ.
-Proof. intros Hscope. apply (proj1 (formula_scoped_persist_iff m φ)); exact Hscope. Qed.
+Proof. intros Hscope. exact (proj1 (formula_scoped_persist_iff m φ) Hscope). Qed.
 
 Lemma formula_scoped_fibvars_iff (m : WfWorldT) D φ :
   formula_scoped_in_world m (FFibVars D φ) ↔

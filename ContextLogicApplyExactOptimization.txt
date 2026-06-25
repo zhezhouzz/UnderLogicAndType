@@ -3,6 +3,20 @@ ContextLogic Apply/Exact Optimization Stats
 
 Candidates: 66
 
+Implementation Status
+---------------------
+
+- Completed: first low-level batch across `FormulaAtom.v`,
+  `FormulaFiberwise.v`, `FormulaConnectives.v`, and `FormulaSemantics.v`.
+  The batch inlines direct proof arguments for store restriction lookups and
+  scoped-body wrappers, and rewrites `lvars_fv_elem` cases deterministically.
+- Verified: target files compiled; the combined run hit the 20s wall only
+  because of dependency rebuilding, and `FormulaFiberwise.vo` passed in 1.91s
+  after dependencies were warm.
+- Deferred: connective-level `res_models_*` eapply chains and higher-order
+  closure hypotheses should be optimized in a dedicated semantic-connective
+  batch rather than mechanically rewritten.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextLogic/theories/FormulaFiberwise.v` | 145 | `apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact HaX].` |

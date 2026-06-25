@@ -142,7 +142,7 @@ Proof.
       assert (HσXa : σX !! a = Some v).
       {
         rewrite <- Hτ0X.
-        apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact HaX].
+        apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτ0a HaX).
       }
       transitivity (Some v); [exact Hτ0a|symmetry; exact HσXa].
     - destruct (decide (a ∈ X)) as [HaX|HaX].
@@ -156,7 +156,7 @@ Proof.
         change (a ∈ dom (σX : gmap atom V)).
         apply elem_of_dom. exists v.
         rewrite <- Hτ0X.
-        apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact HaX].
+        apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτ0a HaX).
       + symmetry.
         rewrite <- Hτ0X.
         apply storeA_restrict_lookup_none_r. exact HaX.
