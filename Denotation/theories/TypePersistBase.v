@@ -588,11 +588,9 @@ Lemma res_restrict_ret_fvar_result_swap_projection
     A D x y (m my : WfWorldT) :
   A ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ A ∪ lvars_fv D ->
   x ∉ A ->
-  y ∉ A ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -600,7 +598,16 @@ Lemma res_restrict_ret_fvar_result_swap_projection
   res_restrict my (A ∪ {[y]}) =
     res_atom_swap x y (res_restrict m (A ∪ {[x]})).
 Proof.
-  intros HAm Hxm Hym HxA HyA HD HyD Hres Hclosed_x Hdom_my Hbase.
+  intros HAm Hxm Hyfresh HxA HD Hres Hclosed_x Hdom_my Hbase.
+  assert (Hym : y ∉ world_dom (m : WorldT)) by (clear -Hyfresh; set_solver).
+  assert (HyA : y ∉ A) by (clear -Hyfresh; set_solver).
+  assert (HyD : LVFree y ∉ D).
+  {
+    intros HyD.
+    apply Hyfresh.
+    assert (HyDfv : y ∈ lvars_fv D) by (rewrite lvars_fv_elem; exact HyD).
+    set_solver.
+  }
   apply wfworld_ext. apply world_ext.
   - rewrite res_restrict_dom, world_dom_res_atom_swap, res_restrict_dom.
     rewrite Hdom_my.
@@ -760,11 +767,9 @@ Lemma over_open_body_transport_ret_fvar_result
     D φ x y (m my : WfWorldT) :
   qual_dom φ ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv D ->
   x ∉ qual_dom φ ->
-  y ∉ qual_dom φ ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -772,9 +777,10 @@ Lemma over_open_body_transport_ret_fvar_result
   my ⊨ over_open_body φ y ->
   m ⊨ over_open_body φ x.
 Proof.
-  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  intros Hφm Hxm Hyfresh Hxφ HD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  assert (Hyφ : y ∉ qual_dom φ) by (clear -Hyfresh; set_solver).
   pose proof (res_restrict_ret_fvar_result_swap_projection
-    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    (qual_dom φ) D x y m my Hφm Hxm Hyfresh Hxφ HD Hres
     Hclosed_x Hdom_my Hbase) as Hproj.
   set (Sy := qual_dom φ ∪ {[y]}).
   set (Sx := qual_dom φ ∪ {[x]}).
@@ -804,11 +810,9 @@ Lemma under_open_body_transport_ret_fvar_result
     D φ x y (m my : WfWorldT) :
   qual_dom φ ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv D ->
   x ∉ qual_dom φ ->
-  y ∉ qual_dom φ ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -816,9 +820,10 @@ Lemma under_open_body_transport_ret_fvar_result
   my ⊨ under_open_body φ y ->
   m ⊨ under_open_body φ x.
 Proof.
-  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  intros Hφm Hxm Hyfresh Hxφ HD Hres Hclosed_x Hdom_my Hbase Hbody_y.
+  assert (Hyφ : y ∉ qual_dom φ) by (clear -Hyfresh; set_solver).
   pose proof (res_restrict_ret_fvar_result_swap_projection
-    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    (qual_dom φ) D x y m my Hφm Hxm Hyfresh Hxφ HD Hres
     Hclosed_x Hdom_my Hbase) as Hproj.
   set (Sy := qual_dom φ ∪ {[y]}).
   set (Sx := qual_dom φ ∪ {[x]}).
@@ -848,11 +853,9 @@ Lemma over_open_body_push_ret_fvar_result
     D φ x y (m my : WfWorldT) :
   qual_dom φ ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv D ->
   x ∉ qual_dom φ ->
-  y ∉ qual_dom φ ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -860,9 +863,10 @@ Lemma over_open_body_push_ret_fvar_result
   m ⊨ over_open_body φ x ->
   my ⊨ over_open_body φ y.
 Proof.
-  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  intros Hφm Hxm Hyfresh Hxφ HD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  assert (Hyφ : y ∉ qual_dom φ) by (clear -Hyfresh; set_solver).
   pose proof (res_restrict_ret_fvar_result_swap_projection
-    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    (qual_dom φ) D x y m my Hφm Hxm Hyfresh Hxφ HD Hres
     Hclosed_x Hdom_my Hbase) as Hproj.
   set (Sy := qual_dom φ ∪ {[y]}).
   set (Sx := qual_dom φ ∪ {[x]}).
@@ -893,11 +897,9 @@ Lemma under_open_body_push_ret_fvar_result
     D φ x y (m my : WfWorldT) :
   qual_dom φ ⊆ world_dom (m : WorldT) ->
   x ∈ world_dom (m : WorldT) ->
-  y ∉ world_dom (m : WorldT) ->
+  y ∉ world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv D ->
   x ∉ qual_dom φ ->
-  y ∉ qual_dom φ ->
   tm_lvars (tret (vfvar x)) ⊆ D ->
-  LVFree y ∉ D ->
   my ⊨ expr_result_formula_at D (tret (vfvar x)) (LVFree y) ->
   wfworld_closed_on ({[x]} : aset) my ->
   world_dom (my : WorldT) = world_dom (m : WorldT) ∪ {[y]} ->
@@ -905,9 +907,10 @@ Lemma under_open_body_push_ret_fvar_result
   m ⊨ under_open_body φ x ->
   my ⊨ under_open_body φ y.
 Proof.
-  intros Hφm Hxm Hym Hxφ Hyφ HD HyD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  intros Hφm Hxm Hyfresh Hxφ HD Hres Hclosed_x Hdom_my Hbase Hbody_x.
+  assert (Hyφ : y ∉ qual_dom φ) by (clear -Hyfresh; set_solver).
   pose proof (res_restrict_ret_fvar_result_swap_projection
-    (qual_dom φ) D x y m my Hφm Hxm Hym Hxφ Hyφ HD HyD Hres
+    (qual_dom φ) D x y m my Hφm Hxm Hyfresh Hxφ HD Hres
     Hclosed_x Hdom_my Hbase) as Hproj.
   set (Sy := qual_dom φ ∪ {[y]}).
   set (Sx := qual_dom φ ∪ {[x]}).
@@ -1045,11 +1048,9 @@ Proof.
     eapply over_open_body_transport_ret_fvar_result.
     + exact Hφm.
     + exact Hzm.
-    + exact Hym.
+    + intros Hybody. apply Hyfresh. apply elem_of_union_l. exact Hybody.
     + exact Hzφ.
-    + exact Hyφ.
     + exact Htm_D.
-    + exact HyD.
     + exact Hres_at.
     + exact Hclosed_z_my.
     + exact Hdom_my'.
@@ -1169,11 +1170,9 @@ Proof.
     eapply under_open_body_transport_ret_fvar_result.
     + exact Hφm.
     + exact Hzm.
-    + exact Hym.
+    + intros Hybody. apply Hyfresh. apply elem_of_union_l. exact Hybody.
     + exact Hzφ.
-    + exact Hyφ.
     + exact Htm_D.
-    + exact HyD.
     + exact Hres_at.
     + exact Hclosed_z_my.
     + exact Hdom_my'.
@@ -1282,11 +1281,9 @@ Proof.
           eapply over_open_body_push_ret_fvar_result.
           + exact Hφm.
           + exact Hzm.
-          + exact Hym.
+          + intros Hybody. apply Hy. apply elem_of_union_l. exact Hybody.
           + exact Hzφ.
-          + exact Hyφ.
           + exact Htm_D.
-          + exact HyD.
           + exact Hres_at.
           + exact Hclosed_z_my.
           + exact Hdom_my.
@@ -1402,11 +1399,9 @@ Proof.
           eapply under_open_body_push_ret_fvar_result.
           + exact Hφm.
           + exact Hzm.
-          + exact Hym.
+          + intros Hybody. apply Hy. apply elem_of_union_l. exact Hybody.
           + exact Hzφ.
-          + exact Hyφ.
           + exact Htm_D.
-          + exact HyD.
           + exact Hres_at.
           + exact Hclosed_z_my.
           + exact Hdom_my.
@@ -1589,11 +1584,9 @@ Proof.
     eapply over_open_body_transport_ret_fvar_result.
     + exact Hφm.
     + exact Hzm.
-    + exact Hym.
+    + intros Hybody. apply Hyfresh. apply elem_of_union_l. exact Hybody.
     + exact Hzφ.
-    + exact Hyφ.
     + exact Htm_D.
-    + exact HyD.
     + exact Hres_at.
     + exact Hclosed_z_my.
     + exact Hdom_my'.

@@ -621,3 +621,22 @@ Follow-up Batch S: fiber/result-first guard regular cleanup.
     completed in about 2.93s after dependency recompilation.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivWandResultFirst.vo`
     completed in about 3.41s after dependency recompilation.
+
+Follow-up Batch T: ret-fvar result freshness consolidation.
+
+- Consolidated the repeated freshness tuple in `TypePersistBase` ret-fvar
+  result/open-body helpers:
+  - `res_restrict_ret_fvar_result_swap_projection`;
+  - `over_open_body_transport_ret_fvar_result`;
+  - `under_open_body_transport_ret_fvar_result`;
+  - `over_open_body_push_ret_fvar_result`;
+  - `under_open_body_push_ret_fvar_result`.
+- The callers now prove one union-shaped side condition
+  `y ∉ world_dom m ∪ qual_dom φ ∪ lvars_fv D` instead of separately proving
+  freshness from the world, qualifier domain, and result-input domain.
+- Kept the local derived `Hyφ`/`HyD` facts inside the helper proofs because
+  they are internal destructuring of the combined premise rather than repeated
+  caller obligations.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+    completed in about 11.75s after dependency recompilation.
