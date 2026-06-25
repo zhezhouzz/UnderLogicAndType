@@ -103,8 +103,6 @@ Lemma arrow_result_first_result_env_agree
     gas (Σ : lty_env) τx τr e1 e2
     (my : WfWorldT) f y :
   cty_lc_at 1 τr ->
-  lc_tm (tapp_tm (tret (vfvar f)) (vfvar y)) ->
-  f <> y ->
   f ∉ fv_cty τx ∪ fv_cty τr ->
   y ∉ fv_cty τx ∪ fv_cty τr ->
   my ⊨ ty_denote_gas gas
@@ -120,71 +118,11 @@ Lemma arrow_result_first_result_env_agree
     (cty_open 0 y τr)
     (tapp_tm (tret (vfvar f)) (vfvar y)).
 Proof.
-  intros Hlcτr Hlcapp Hfy Hffresh Hyfresh Hres.
-  set (τbody := cty_open 0 y τr).
-  set (ebody := tapp_tm (tret (vfvar f)) (vfvar y)).
-  change (my ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (<[LVFree f := erase_ty (CTArrow τx τr)]>
-        (relevant_env Σ (CTArrow τx τr) e1))) τbody ebody) in Hres.
-  change (my ⊨ ty_denote_gas gas
-    (<[LVFree y := erase_ty τx]>
-      (<[LVFree f := erase_ty (CTArrow τx τr)]>
-        (relevant_env Σ (CTArrow τx τr) e2))) τbody ebody).
-  pose proof (ty_denote_gas_env_agree_on gas
-    (<[LVFree y := erase_ty τx]>
-      (<[LVFree f := erase_ty (CTArrow τx τr)]>
-        (relevant_env Σ (CTArrow τx τr) e1)))
-    (<[LVFree y := erase_ty τx]>
-      (<[LVFree f := erase_ty (CTArrow τx τr)]>
-        (relevant_env Σ (CTArrow τx τr) e2)))
-	    τbody ebody (context_ty_lvars τbody ∪ tm_lvars ebody)
-    ltac:(reflexivity)) as Hagree.
-  rewrite Hagree in Hres; [exact Hres|].
-  unfold lty_env_restrict_lvars, relevant_env.
-  apply storeA_map_eq. intros v.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ context_ty_lvars τbody ∪ tm_lvars ebody)) as [HvX|HvX];
-    [|reflexivity].
-  destruct (decide (v = LVFree y)) as [->|Hvy].
-  { rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity. }
-  rewrite !lookup_insert_ne by congruence.
-  destruct (decide (v = LVFree f)) as [->|Hvf].
-  {
-    rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity.
-  }
-  rewrite !lookup_insert_ne by congruence.
-  assert (Hvrel :
-      v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e1 /\
-      v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e2).
-  {
-    assert (Hvsmall :
-        v ∈ (context_ty_lvars τbody ∪ tm_lvars ebody) ∖
-          {[LVFree y]} ∖ {[LVFree f]}).
-    { set_solver. }
-    unfold τbody, ebody in Hvsmall.
-    split.
-    - eapply arrow_result_body_relevant_subset.
-      + exact Hlcτr.
-      + exact Hffresh.
-      + exact Hyfresh.
-      + exact Hvsmall.
-    - eapply arrow_result_body_relevant_subset.
-      + exact Hlcτr.
-      + exact Hffresh.
-      + exact Hyfresh.
-      + exact Hvsmall.
-  }
-  destruct Hvrel as [Hvrel1 Hvrel2].
-  unfold lty_env_restrict_lvars.
-  rewrite !storeA_restrict_lookup.
-  destruct (decide (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e1))
-    as [_|Hbad];
-    [|exfalso; exact (Hbad Hvrel1)].
-  destruct (decide (v ∈ context_ty_lvars (CTArrow τx τr) ∪ tm_lvars e2))
-    as [_|Hbad];
-    [|exfalso; exact (Hbad Hvrel2)].
-  reflexivity.
+  intros Hlcτr Hffresh Hyfresh Hres.
+  eapply result_first_result_env_agree_general.
+  - eapply arrow_result_body_relevant_subset; eauto.
+  - eapply arrow_result_body_relevant_subset; eauto.
+  - exact Hres.
 Qed.
 
 Local Lemma arrow_lvars_shift_from_lc_eq k D :
@@ -600,12 +538,8 @@ Proof.
 		    (cty_open 0 y τr)
 		    (tapp_tm (tret (vfvar f)) (vfvar y))).
 	      {
-		eapply arrow_result_first_result_env_agree.
-		- exact Hlcτr.
-		- apply lc_tapp_tm; constructor; constructor.
-			- intros ->. apply Hy.
-			  clear -Hdom.
-			  rewrite Hdom. set_solver.
+			eapply arrow_result_first_result_env_agree.
+			- exact Hlcτr.
 			- intros Hin.
 			  apply elem_of_union in Hin as [Hin|Hin].
 			  + exact (Hfτx Hin).

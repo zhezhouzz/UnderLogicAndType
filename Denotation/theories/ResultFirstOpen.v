@@ -185,6 +185,58 @@ Proof.
     set_solver.
 Qed.
 
+Lemma result_first_result_env_agree_general
+    gas (Σ : lty_env) τtop τbody ebody e1 e2 Ty Tf
+    (my : WfWorldT) f y :
+  (context_ty_lvars τbody ∪ tm_lvars ebody) ∖
+    {[LVFree y]} ∖ {[LVFree f]} ⊆
+    context_ty_lvars τtop ∪ tm_lvars e1 ->
+  (context_ty_lvars τbody ∪ tm_lvars ebody) ∖
+    {[LVFree y]} ∖ {[LVFree f]} ⊆
+    context_ty_lvars τtop ∪ tm_lvars e2 ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := Ty]>
+      (<[LVFree f := Tf]>
+        (relevant_env Σ τtop e1)))
+    τbody ebody ->
+  my ⊨ ty_denote_gas gas
+    (<[LVFree y := Ty]>
+      (<[LVFree f := Tf]>
+        (relevant_env Σ τtop e2)))
+    τbody ebody.
+Proof.
+  intros Hsub1 Hsub2 Hres.
+  pose proof (ty_denote_gas_env_agree_on gas
+    (<[LVFree y := Ty]> (<[LVFree f := Tf]> (relevant_env Σ τtop e1)))
+    (<[LVFree y := Ty]> (<[LVFree f := Tf]> (relevant_env Σ τtop e2)))
+    τbody ebody (context_ty_lvars τbody ∪ tm_lvars ebody)
+    ltac:(reflexivity)) as Hagree.
+  rewrite Hagree in Hres; [exact Hres|].
+  unfold lty_env_restrict_lvars, relevant_env.
+  apply storeA_map_eq. intros v.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ context_ty_lvars τbody ∪ tm_lvars ebody)) as [HvX|HvX];
+    [|reflexivity].
+  destruct (decide (v = LVFree y)) as [->|Hvy].
+  { rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity. }
+  rewrite !lookup_insert_ne by congruence.
+  destruct (decide (v = LVFree f)) as [->|Hvf].
+  { rewrite !lookup_insert. repeat case_decide; try congruence; reflexivity. }
+  rewrite !lookup_insert_ne by congruence.
+  assert (Hvsmall :
+      v ∈ (context_ty_lvars τbody ∪ tm_lvars ebody) ∖
+        {[LVFree y]} ∖ {[LVFree f]}) by set_solver.
+  pose proof (Hsub1 v Hvsmall) as Hvrel1.
+  pose proof (Hsub2 v Hvsmall) as Hvrel2.
+  unfold lty_env_restrict_lvars.
+  rewrite !storeA_restrict_lookup.
+  destruct (decide (v ∈ context_ty_lvars τtop ∪ tm_lvars e1))
+    as [_|Hbad]; [|exfalso; exact (Hbad Hvrel1)].
+  destruct (decide (v ∈ context_ty_lvars τtop ∪ tm_lvars e2))
+    as [_|Hbad]; [|exfalso; exact (Hbad Hvrel2)].
+  reflexivity.
+Qed.
+
 Lemma formula_fv_open_wand_value_body_obs
     gas (Σ : lty_env) τx τr f :
   formula_fv

@@ -353,14 +353,12 @@ Proof.
             (relevant_env Σ (CTArrow τx τr) e_tgt)))
         (cty_open 0 y τr)
         (tapp_tm (tret (vfvar f)) (vfvar y))).
-  {
-    eapply arrow_result_first_result_env_agree.
-    - exact Hlcτr.
-    - apply lc_tapp_tm; constructor; constructor.
-    - exact Hfy.
-    - exact Hfτ.
-    - clear -Hyτx Hyτr. set_solver.
-	    - exact Hres_src_regular.
+	  {
+	    eapply arrow_result_first_result_env_agree.
+	    - exact Hlcτr.
+	    - exact Hfτ.
+	    - clear -Hyτx Hyτr. set_solver.
+		    - exact Hres_src_regular.
 	  }
 	  rewrite (formula_open_ty_denote_gas_bind_tapp_shift_bvar0
 	    y gas
@@ -802,14 +800,12 @@ Proof.
             (relevant_env Σ (CTWand τx τr) e_tgt)))
         (cty_open 0 a τr)
         (tapp_tm (tret (vfvar f)) (vfvar a))).
-  {
-    eapply wand_result_first_result_env_agree.
-    - exact Hlcτr.
-    - apply lc_tapp_tm; constructor; constructor.
-    - exact Hfa.
-    - exact Hfτ.
-    - clear -Haτx Haτr. set_solver.
-    - exact Hres_src_regular.
+	  {
+	    eapply wand_result_first_result_env_agree.
+	    - exact Hlcτr.
+	    - exact Hfτ.
+	    - clear -Haτx Haτr. set_solver.
+	    - exact Hres_src_regular.
   }
   eapply wand_result_first_regular_to_result_open.
   - exact HlcΣ_tgt.
