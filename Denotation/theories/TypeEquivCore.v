@@ -335,6 +335,24 @@ Proof.
   exact (ty_denote_gas_type_lvars_world gas Σ τ e m Hden).
 Qed.
 
+Lemma ty_denote_gas_tm_lvars_relevant_env_dom
+    gas Σ τ e (m : WfWorldT) :
+  m ⊨ ty_denote_gas gas Σ τ e ->
+  tm_lvars e ⊆ dom (relevant_env Σ τ e).
+Proof.
+  intros Hden.
+  pose proof (ty_denote_gas_guard gas Σ τ e m Hden) as Hguard.
+  pose proof (ty_guard_formula_basic_typing _ _ _ _ Hguard) as Hbasic.
+  apply expr_basic_typing_formula_models_iff in Hbasic as [HlcΣ [_ Hty]].
+  pose proof (basic_tm_has_ltype_lc _ _ _ HlcΣ Hty) as Hlc_tm.
+  pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
+  intros v Hv.
+  apply Hfv.
+  pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
+    v Hv) as Hvfv.
+  exact Hvfv.
+Qed.
+
 Lemma ty_denote_gas_ret_fvar_relevant_lookup
     gas Σ τ x (m : WfWorldT) :
   m ⊨ ty_denote_gas gas Σ τ (tret (vfvar x)) ->

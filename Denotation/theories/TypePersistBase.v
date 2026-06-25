@@ -961,12 +961,8 @@ Proof.
   { subst Dres. apply relevant_env_closed. exact HΣclosed. }
   assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
   {
-    intros v Hv.
-    pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
-    pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
-      v Hv) as Hvfv.
-    pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
-    exact (Hfv v Hvfv).
+    subst Dres.
+    eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hden.
   }
   set (y := fresh_for
     (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]})).
@@ -1088,12 +1084,8 @@ Proof.
   { subst Dres. apply relevant_env_closed. exact HΣclosed. }
   assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
   {
-    intros v Hv.
-    pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
-    pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
-      v Hv) as Hvfv.
-    pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
-    exact (Hfv v Hvfv).
+    subst Dres.
+    eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hden.
   }
   set (y := fresh_for
     (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]})).
@@ -1222,12 +1214,8 @@ Proof.
     { subst Dres. apply relevant_env_closed. exact HΣclosed. }
     assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
     {
-      intros v Hv.
-      pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
-      pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
-        v Hv) as Hvfv.
-      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
-      exact (Hfv v Hvfv).
+      subst Dres.
+      eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hzero.
     }
     pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
       0 Σ (CTOver b φ) z m Hzero) as Hbasic_z.
@@ -1346,12 +1334,8 @@ Proof.
     { subst Dres. apply relevant_env_closed. exact HΣclosed. }
     assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
     {
-      intros v Hv.
-      pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
-      pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
-        v Hv) as Hvfv.
-      pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
-      exact (Hfv v Hvfv).
+      subst Dres.
+      eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hzero.
     }
     pose proof (ty_denote_gas_ret_fvar_basic_world_singleton
       0 Σ (CTUnder b φ) z m Hzero) as Hbasic_z.
@@ -1470,12 +1454,8 @@ Proof.
   { subst Dres τp. apply relevant_env_closed. exact HΣclosed. }
   assert (Htm_D : tm_lvars (tret (vfvar z)) ⊆ Dres).
   {
-    intros v Hv.
-    pose proof (basic_tm_has_ltype_lc _ _ _ HlcD Hty) as Hlc_tm.
-    pose proof (tm_lvars_lc_subset_atoms_fv _ (tm_lvars_lc _ Hlc_tm)
-      v Hv) as Hvfv.
-    pose proof (basic_tm_has_ltype_lvars _ _ _ Hty) as Hfv.
-    exact (Hfv v Hvfv).
+    subst Dres τp.
+    eapply ty_denote_gas_tm_lvars_relevant_env_dom. exact Hden.
   }
   set (y := fresh_for
     (world_dom (m : WorldT) ∪ qual_dom φ ∪ lvars_fv Dres ∪ {[z]})).

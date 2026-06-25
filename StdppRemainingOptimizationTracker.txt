@@ -534,3 +534,18 @@ Follow-up Batch N: type-FV world regular fact.
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
   - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivArrow.vo`
   - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+
+Follow-up Batch O: term-lvars relevant-env regular fact.
+
+- Added `ty_denote_gas_tm_lvars_relevant_env_dom` to `TypeEquivCore`.
+- The lemma packages the repeated route:
+  `ty_denote_gas -> ty_guard_formula -> expr_basic_typing_formula ->
+  basic typing LC/FV regularity -> tm_lvars e ⊆ dom (relevant_env Σ τ e)`.
+- Replaced five repeated `TypePersistBase` local `Htm_D` proofs with calls to
+  the new regular lemma.  These assertions are still useful semantic
+  checkpoints, but their proof bodies no longer manually destruct basic typing
+  and LC/FV facts.
+- Validation:
+  - `timeout 20s make TIMED=1 Denotation/theories/TypeEquivCore.vo`
+  - `timeout 20s make TIMED=1 Denotation/theories/TypePersistBase.vo`
+    completed in about 4.46s after warmed dependencies.
