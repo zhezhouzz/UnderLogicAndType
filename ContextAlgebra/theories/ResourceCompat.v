@@ -327,7 +327,7 @@ Proof.
         -- pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
            change (X ⊆ dom (σm : gmap atom V)). set_solver.
         -- transitivity (world_dom (my : WorldT)).
-           ++ apply (wfworld_store_dom my); exact Hσmy.
+	           ++ exact (wfworld_store_dom my _ Hσmy).
            ++ rewrite Hdom_my.
               pose proof (wfworld_store_dom m σm Hσm) as Hdomσm.
               set_solver.
@@ -376,7 +376,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.
@@ -384,7 +384,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         change (dom (σmy : gmap atom V) =
@@ -398,7 +398,7 @@ Proof.
             dom (σmy : gmap atom V) = world_dom (m : WorldT) ∪ {[y]}).
         {
           transitivity (world_dom (my : WorldT)).
-          - apply (wfworld_store_dom my); exact Hσmy.
+	          - exact (wfworld_store_dom my _ Hσmy).
           - exact Hdom_my.
         }
         rewrite Hdomσmy. set_solver.

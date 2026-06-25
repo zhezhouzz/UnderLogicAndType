@@ -3,6 +3,19 @@ ContextAlgebra Apply/Exact Optimization Stats
 
 Candidates: 22
 
+Implementation Status
+---------------------
+
+- Completed: direct proof-argument passing for repeated
+  `wfworld_store_dom` and `storeA_restrict_lookup_some_2` occurrences in
+  `ResourceCompat.v` / `ResourceInterface.v`.
+- Verified: `timeout 20s make TIMED=1
+  ContextAlgebra/theories/ResourceInterface.vo
+  ContextAlgebra/theories/ResourceCompat.vo` after dependencies were warm.
+- Deferred: higher-order compatibility hypotheses, disjointness chains, and
+  mixed `elem_of_*` scripts should be handled with resource-regular facts
+  rather than one-off apply rewrites.
+
 | file | line | shape |
 |---|---:|---|
 | `ContextAlgebra/theories/ResourceCompat.v` | 330 | `++ apply (wfworld_store_dom my); exact Hσmy.` |

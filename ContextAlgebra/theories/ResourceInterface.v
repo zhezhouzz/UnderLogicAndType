@@ -918,7 +918,7 @@ Proof.
   - destruct (decide (a ∈ Y)) as [HaY|HaY]; [|reflexivity].
     destruct (σ !! a) as [v|] eqn:Hσa; [|reflexivity].
     exfalso. apply Ha. apply elem_of_dom. exists v.
-    apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaY].
+    apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa HaY).
 Qed.
 
 Lemma res_fiber_from_projection_drop_fixed_domain
@@ -1015,7 +1015,7 @@ Proof.
              change ((storeA_restrict τ (dom (σfix : StoreT)) : StoreT) !! a =
                τ !! a).
              destruct (τ !! a) as [va|] eqn:Hτa.
-             - apply storeA_restrict_lookup_some_2; [exact Hτa|exact Hafix].
+	             - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτa Hafix).
              - apply storeA_restrict_lookup_none_l. exact Hτa.
            }
            assert (Hτ0fix : τ0 !! a = σfix !! a).
@@ -1025,7 +1025,7 @@ Proof.
              change ((storeA_restrict τ0 (dom (σfix : StoreT)) : StoreT) !! a =
                τ0 !! a).
              destruct (τ0 !! a) as [va|] eqn:Hτ0a.
-             - apply storeA_restrict_lookup_some_2; [exact Hτ0a|exact Hafix].
+	             - apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτ0a Hafix).
              - apply storeA_restrict_lookup_none_l. exact Hτ0a.
            }
            transitivity (σfix !! a); [exact Hτfix|].
@@ -1044,11 +1044,11 @@ Proof.
                  gmap atom V)) : StoreT) !! a).
            ++ symmetry.
               destruct (τ !! a) as [va|] eqn:Hτa.
-              ** apply storeA_restrict_lookup_some_2; [exact Hτa|exact Haσres].
+	              ** apply (storeA_restrict_lookup_some_2 _ _ _ _ Hτa Haσres).
               ** apply storeA_restrict_lookup_none_l. exact Hτa.
            ++ rewrite Hτres.
               destruct (σ !! a) as [va|] eqn:Hσa.
-              ** apply storeA_restrict_lookup_some_2; [exact Hσa|exact HaYfix].
+	              ** apply (storeA_restrict_lookup_some_2 _ _ _ _ Hσa HaYfix).
               ** apply storeA_restrict_lookup_none_l. exact Hσa.
 Qed.
 
@@ -1098,7 +1098,7 @@ Proof.
 		              exact (Hanotfix Hafix_dom).
 	           ++ assert (HfixY :
 	                (store_restrict σfix Y : StoreT) !! a = Some va).
-	              { eapply storeA_restrict_lookup_some_2; [exact Hva|exact HaY]. }
+		              { eapply (storeA_restrict_lookup_some_2 _ _ _ _ Hva HaY). }
 	              exact HfixY.
       * assert (Hτ0res_a : τ0 !! a = σres !! a).
         {
